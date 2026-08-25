@@ -31,6 +31,7 @@ param(
 $ErrorActionPreference = 'Stop'
 function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
+function Canh($m) { Write-Host "  [!!] $m" -ForegroundColor Yellow }
 function Note($m) { Write-Host "  $m" -ForegroundColor Yellow }
 
 $isAdmin = ([Security.Principal.WindowsPrincipal] `
@@ -60,6 +61,43 @@ foreach ($d in @($Root, $dataDir, $secrets, $logs, $backups, $tools)) {
     if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
 }
 Ok "Da tao $Root"
+
+Head 'Kiem ma nguon truoc khi dong vao ban dang chay'
+# ---------------------------------------------------------------------------
+# VI SAO CHOT NAY O DAY, VA O TRUOC Stop-Service
+#
+# Deploy la robocopy + alembic. Truoc 2026-08-25 KHONG co gi chan mot tep .py
+# cut: neu ai do dang ghi do mot tep luc deploy chay, ban cut duoc chep thang
+# sang production va dich vu khong khoi dong lai duoc.
+#
+# Khong phai gia thuyet. Ngay 25/08 gate bao [FAIL] "bien dich duoc" mot nhip
+# roi tu xanh lai, khong ai sua gi o giua -- no bat dung luc mot tep dang duoc
+# ghi. Hai phien Claude lam song song tren cung cay nguon, va do la trang thai
+# binh thuong cua du an nay.
+#
+# Chot chay TRUOC `Stop-Service`: hong o day thi dich vu VAN DANG CHAY va
+# khong ai mat gi. Dat sau do thi ta da tu tay tao ra downtime roi moi phat
+# hien khong deploy duoc.
+$pyKiem = $null
+foreach ($ung in @($venvPy, 'python', 'py')) {
+    if ($ung -and (Get-Command $ung -ErrorAction SilentlyContinue)) { $pyKiem = $ung; break }
+}
+if ($pyKiem) {
+    # compileall: doc va bien dich MOI tep .py trong cay nguon. -q chi in loi.
+    # /XD cua robocopy o duoi khong ap dung o day nen loai tay may thu muc lon.
+    $bo = @('-m', 'compileall', '-q', '-j', '0',
+            '-x', '(node_modules|\.git|\.venv|venv|__pycache__|dist|build)',
+            $src)
+    & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host $kqKiem -ForegroundColor Red
+        throw "Co tep .py KHONG bien dich duoc. DUNG deploy, dich vu chua bi dung."
+    }
+    Ok "Toan bo .py bien dich duoc"
+    $global:LASTEXITCODE = 0
+} else {
+    Canh "Khong tim thay python de kiem ma nguon - BO QUA chot bien dich"
+}
 
 Head 'Copy ma nguon'
 # Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,

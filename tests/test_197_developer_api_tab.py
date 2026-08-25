@@ -110,7 +110,10 @@ def test_every_built_section_answers(portal, path):
     response = portal.get(path)
     assert response.status_code == 200, path
     # Each section renders the shared shell, so navigation never disappears.
-    assert 'class="dev-nav"' in response.text
+    # 25/08: the shell became a grouped sidebar (`.app-side`) instead of a flat
+    # 16-tab strip. The property under test is unchanged — every section keeps
+    # the same navigation — only the element carrying it moved.
+    assert 'class="app-side"' in response.text
 
 
 def test_the_navigation_is_the_same_on_every_section(portal):
@@ -119,7 +122,7 @@ def test_the_navigation_is_the_same_on_every_section(portal):
     for path in BUILT:
         # Only the nav block: a section may of course link elsewhere in its body
         # (the overview's call-to-action does).
-        block = re.search(r'<nav class="dev-nav".*?</nav>', portal.get(path).text,
+        block = re.search(r'<nav class="app-side".*?</nav>', portal.get(path).text,
                           re.S)
         assert block, path
         found = re.findall(r'<a href="(/developers[^"]*)"', block.group(0))
@@ -245,11 +248,42 @@ def test_no_section_shows_another_account_anything(portal):
         assert alice_key_id not in text, path
 
 
-def test_every_section_needs_a_session(portal):
-    for path in BUILT:
+def test_every_PRIVATE_section_needs_a_session(portal):
+    """Mọi mục GẮN VỚI TÀI KHOẢN vẫn phải đòi đăng nhập.
+
+    Ngày 25/08 hai mục được mở công khai có chủ ý — `quickstart` và `tools`.
+    Chúng không đọc một dòng nào của tài khoản; đặt chúng sau `require_account`
+    là bắt một người đang **cân nhắc** tạo tài khoản trước khi biết ta bán gì.
+    Xem `TRANG_CONG_KHAI` trong `server/routes/developer.py`.
+
+    Phép kiểm này **thu hẹp lại chứ không bị xoá**: tính chất nó giữ — mục gắn
+    với tài khoản thì không hiện cho người lạ — vẫn là tính chất đúng, và nó
+    vẫn phủ 11 mục còn lại. Danh sách miễn trừ đọc từ mã nguồn chứ không chép
+    tay, nên mở thêm một mục mà quên đọc lại phép kiểm này là không thể.
+    """
+    from server.routes.developer import TRANG_CONG_KHAI, SECTIONS
+
+    cong_khai = {href for key, href, _label in SECTIONS
+                 if key in TRANG_CONG_KHAI}
+    rieng_tu = [p for p in BUILT if p not in cong_khai]
+    assert len(rieng_tu) >= 10, "danh sach mien tru dang nuot qua nhieu muc"
+    for path in rieng_tu:
         response = portal.get(path, follow_redirects=False)
         assert response.status_code in (302, 303), path
         assert "/login" in response.headers.get("location", ""), path
+
+
+def test_public_sections_open_without_a_session(portal):
+    """Chiều còn lại: hai mục công khai phải mở THẬT.
+
+    Đóng lại một trang đang mở là bịt đầu phễu bán hàng, và nó im lặng — không
+    có lỗi nào, chỉ có ít người đăng ký hơn.
+    """
+    from server.routes.developer import TRANG_CONG_KHAI, SECTIONS
+
+    for key, href, _label in SECTIONS:
+        if key in TRANG_CONG_KHAI:
+            assert portal.get(href, follow_redirects=False).status_code == 200, href
 
 
 def test_writes_still_need_a_csrf_token(portal):

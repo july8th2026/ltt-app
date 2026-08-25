@@ -1,0 +1,113 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Hướng dẫn cắm API") }} · LTT AI Studio{% endblock %}
+{% block content %}
+
+{# 🔴 TRANG NÀY CÔNG KHAI — KHÔNG ĐẶT SAU `require_account`.
+
+   Một người đang cân nhắc phải đọc được cách tích hợp TRƯỚC khi tạo tài khoản.
+   Trước 25/08 cả 18 trang của cổng lập trình viên đều trả 303 về `/login`, nên
+   không ai bên ngoài đọc được một dòng nào — cùng thứ tự ngược mà trang giá đã
+   mắc và đã sửa. Xem `docs/PUBLIC_API/KE_HOACH_MVP_CONG_LAP_TRINH_VIEN.md` §1.1.
+#}
+
+<div class="card">
+  <h1 style="margin-top:0;">{{ _("Cắm model của LTT Studios vào công cụ của bạn") }}</h1>
+  <p>{{ _("API tương thích Anthropic Messages và OpenAI Responses. Nếu công cụ của bạn nói được một trong hai giao thức đó thì chỉ cần đổi địa chỉ và khoá — không phải viết lại gì.") }}</p>
+  <p class="muted">
+    <a href="/gia-api">{{ _("Xem giá") }}</a> ·
+    <a href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a> ·
+    <a href="/huong-dan/cong-cu">{{ _("Công cụ cắm tự động") }}</a> ·
+    {# Trang tình trạng CÓ SẴN và công khai, nhưng trước 25/08 không trang nào
+       trỏ tới nó — nên nó chỉ hữu ích với người đã biết địa chỉ, tức đúng những
+       người không cần nó. #}
+    <a href="/status/api">{{ _("Tình trạng API") }}</a> ·
+    <a href="/register">{{ _("Đăng ký lấy khoá") }}</a>
+  </p>
+</div>
+
+
+{# 🔴 THE TAI CONG CU — dung MOT nguon voi trang `/developers/cli`.
+   Bo cai 25,9 MB da nam tren may chu tu 25/08 va `/tai/cong-cu-cam` tra 200,
+   nhung neu khong trang nao tro toi thi no coi nhu khong ton tai. #}
+<div class="card" id="cong-cu">
+  <h2 style="margin-top:0;">⚡ {{ _("Cách nhanh nhất: để công cụ ghi hộ") }}</h2>
+  <p>{{ _("Công cụ cắm tự ghi đúng cấu hình cho cả năm bề mặt, đặt sẵn hai rào chắn của Claude Desktop, và gỡ ra trả lại nguyên trạng.") }}</p>
+  <p>
+    <a class="btn btn-primary" href="/tai/cong-cu-cam">{{ _("Tải công cụ cắm") }}
+      {%- if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a>
+    <a class="btn btn-ghost" href="/huong-dan/cong-cu" style="margin-left:8px;">{{ _("Nó làm gì, chạm vào đâu") }}</a>
+  </p>
+  {% if bo_cai %}
+    <p class="muted" style="margin-bottom:0;">{{ _("Bản") }} {{ bo_cai.phien_ban }} ·
+      Windows · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>
+  {% endif %}
+  <p class="muted">{{ _("Muốn tự tay thì đọc tiếp — mọi bước đều ghi đầy đủ bên dưới.") }}</p>
+</div>
+
+{% include "_cam_chon.html" %}
+
+<div class="card" id="goi-thu">
+  <h2 style="margin-top:0;">{{ _("Gọi thử bằng cURL") }}</h2>
+  <p class="muted">{{ _("Thay") }} <code>$LTT_API_KEY</code> {{ _("bằng khoá của bạn.") }}</p>
+  <pre style="overflow-x:auto;"><code>{{ curl_chat }}</code></pre>
+</div>
+
+{# 🔴 MỤC NÀY SINH RA VÌ MỘT SỐ ĐO. Trang này — trang công khai DUY NHẤT nói về
+   tích hợp — nhắc `ltt_llm` 16 lần và `image.ltt` **0 lần**. Ta bán hai thứ và
+   giới thiệu một; người chưa đăng ký thấy giá ảnh ở /gia-api rồi hết đường.
+
+   ⚠️ Nó KHÔNG mâu thuẫn với chốt "/developers/* sau đăng nhập": danh mục và
+      playground là của tài khoản, còn "ta có bán tạo ảnh, và đây là ba bước
+      gọi" trả lời câu **có đáng mua không**. #}
+<div class="card" id="tao-anh">
+  <h2 style="margin-top:0;">{{ _("Tạo ảnh bằng model của LTT Studios") }}</h2>
+  <p>{{ _("Model chạy trên máy của chúng tôi, không qua nhà cung cấp nào. Đây là HTTP thuần — không cần thư viện của chúng tôi, gọi được từ Python, PHP, n8n, Make hay curl.") }}</p>
+
+  <table class="table">
+    <thead><tr>
+      <th scope="col">{{ _("Chế độ") }}</th><th scope="col">{{ _("Làm gì") }}</th>
+      <th scope="col">{{ _("Điều kiện") }}</th>
+    </tr></thead>
+    {# ⚠️ Mã chế độ đến từ hợp đồng (`ANH_CHE_DO_MA`); văn xuôi thì viết ở đây,
+       vì `examples.py` không có bộ dịch và cố ý giữ như vậy — nó sinh ĐOẠN MÃ,
+       không sinh câu chữ hiển thị. #}
+    <tbody>
+      <tr><td><code>{{ anh_che_do[0] }}</code></td>
+          <td>{{ _("Chỉ từ mô tả chữ.") }}</td>
+          <td class="muted">{{ _("Không nhận ảnh tham chiếu — gửi kèm image_key sẽ bị TỪ CHỐI.") }}</td></tr>
+      <tr><td><code>{{ anh_che_do[1] }}</code></td>
+          <td>{{ _("Sửa một ảnh tham chiếu, giữ nguyên phần còn lại.") }}</td>
+          <td class="muted">{{ _("Bắt buộc có image_key. Chạy lâu hơn hẳn nên tốn hơn hẳn.") }}</td></tr>
+      <tr><td><code>{{ anh_che_do[2] }}</code></td>
+          <td>{{ _("Giữ nguyên một người hoặc vật sang bối cảnh mới.") }}</td>
+          <td class="muted">{{ _("Bắt buộc có image_key. Chạy lâu hơn hẳn nên tốn hơn hẳn.") }}</td></tr>
+    </tbody>
+  </table>
+
+  <h3>{{ _("Ba lời gọi") }}</h3>
+  <pre style="overflow-x:auto;"><code>{{ curl_anh }}</code></pre>
+
+  <p class="muted">⏱️ {{ _("Đo thật ngày 25/08 từ một máy ngoài, qua Internet: một ảnh mất") }}
+     <strong>{{ _("138 giây") }}</strong>{{ _(". Vì vượt xa trần 100 giây của Cloudflare nên đường ảnh BẮT BUỘC là bất đồng bộ — gửi rồi hỏi lại, hoặc đăng ký webhook. Đặt timeout của bạn theo con số đó.") }}</p>
+  <p class="muted">💰 {{ _("Giá phụ thuộc số ảnh và chế độ, nên") }} <code>POST /quotes</code>
+     {{ _("là nơi duy nhất nói giá — và báo giá được ký, nên lúc chạy không ai đổi được con số.") }}
+     <a href="/gia-api">{{ _("Xem bảng giá") }} →</a></p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Thư viện một tệp, không phụ thuộc") }}</h2>
+  <p>{{ _("Không bắt buộc — API là HTTP thuần. Nhưng nếu muốn nhanh:") }}</p>
+  <ul>
+    {% for g in goi_tai %}
+      <li><a href="/tai/{{ g.ten }}">{{ g.ten }}</a> <span class="muted">— {{ g.mo_ta }}</span></li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Chưa có tài khoản?") }}</h2>
+  <p>{{ _("Đăng ký, nạp credit, tạo khoá — rồi quay lại trang này chép cấu hình.") }}</p>
+  <p><a class="btn" href="/register">{{ _("Đăng ký") }}</a></p>
+</div>
+
+{% endblock %}

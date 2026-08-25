@@ -183,7 +183,13 @@ def home(request: Request):
     # trang trắng.
     from tools import doctor
     report = doctor.run(check_sheet_flag=False)
-    visible = [a for a in ok_apps if visible_on_surface(
+    # `enabled` phải lọc ở ĐÂY nữa, không chỉ ở nhánh ẩn danh bên trên.
+    # Thiếu nó thì một app đang tắt cờ vẫn hiện thẻ cho người đã đăng nhập, mà
+    # route của nó trả 404 — bấm vào là ngõ cụt. Thanh bên và header
+    # (`server/templating.py`) đã lọc `enabled` từ trước, nên trang chủ còn là
+    # chỗ DUY NHẤT nói khác; ba nơi mô tả cùng một danh sách thì phải nói giống
+    # nhau. Đo 25/08: app `vps` (cờ `LTT_VPS` chưa đặt) lọt đúng kiểu này.
+    visible = [a for a in ok_apps if a.manifest.enabled and visible_on_surface(
         a.manifest, authenticated=True, operator=is_operator(request))]
     db_user = None
     try:

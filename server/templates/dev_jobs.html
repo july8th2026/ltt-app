@@ -7,8 +7,8 @@
   {% else %}
     <table class="table">
       <thead><tr>
-        <th>Job</th><th>{{ _("Công cụ") }}</th><th>{{ _("Khóa") }}</th>
-        <th>{{ _("Trạng thái") }}</th><th>{{ _("Lúc") }}</th>
+        <th scope="col">Job</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
+        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Lúc") }}</th>
       </tr></thead>
       <tbody>
         {% for job in recent_jobs %}

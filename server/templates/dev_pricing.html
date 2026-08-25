@@ -32,17 +32,17 @@
     <table class="table" style="margin-top:16px;">
       <tbody>
         <tr>
-          <th>{{ _("Sẽ tính") }}</th>
-          <td><strong class="tnum" style="font-size:20px;">{{ result.credit }}</strong> credit</td>
+          <th scope="row">{{ _("Sẽ tính") }}</th>
+          <td><strong class="tnum" style="font-size:20px;">{{ result.credit | so }}</strong> credit</td>
         </tr>
         <tr>
-          <th>{{ _("Phiên bản giá") }}</th>
+          <th scope="row">{{ _("Phiên bản giá") }}</th>
           <td><code>{{ result.pricing_version }}</code></td>
         </tr>
         {% if result.bounded %}
           <tr>
-            <th>{{ _("Công thức app tính") }}</th>
-            <td class="tnum">{{ result.raw_credit }}
+            <th scope="row">{{ _("Công thức app tính") }}</th>
+            <td class="tnum">{{ result.raw_credit | so }}
               <span class="muted">{{ _("— bị chặn bởi sàn/trần của phiên bản trên") }}</span></td>
           </tr>
         {% endif %}

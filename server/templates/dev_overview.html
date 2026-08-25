@@ -1,56 +1,149 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Tình trạng") }}</h2>
-  <ul>
-    <li>{{ _("API công khai:") }}
-      <strong>{% if not api_enabled %}{{ _("đang tắt") }}
-        {% elif read_only %}{{ _("chỉ đọc") }}
-        {% else %}{{ _("đang phục vụ") }}{% endif %}</strong></li>
-    <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
-    <li>{{ _("Đã dùng hôm nay:") }} <strong>{{ usage_today.net_charged_credit }}</strong>
-        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit }})
-        {% if limits.daily_credit_limit %}
-          — {{ _("trần ngày") }} {{ limits.daily_credit_limit }}
-        {% else %}
-          — <span class="muted">{{ _("chưa đặt trần ngày") }}</span>
-        {% endif %}</li>
-    <li>{{ _("Project:") }} <strong>{{ counts.projects }}</strong> ·
-        {{ _("khóa đang hoạt động:") }} <strong>{{ counts.active_keys }}</strong></li>
-    <li>{{ _("Job qua API (30 ngày):") }} <strong>{{ counts.api_jobs }}</strong></li>
-    <li>Webhook:
-      {% if counts.webhooks == 0 %}<span class="muted">{{ _("chưa đăng ký") }}</span>
-      {% else %}<strong>{{ counts.webhooks }}</strong>
-        {% if counts.webhook_failures %}
-          — <span class="alert-err">{{ counts.webhook_failures }}
-            {{ _("lần giao thất bại gần đây") }}</span>
-        {% else %}— {{ _("đang khỏe") }}{% endif %}
-      {% endif %}</li>
-    <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
-        {{ limits.create_rpm }} {{ _("job/phút") }},
-        {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}</li>
-  </ul>
+{# ── Luoi chi so ───────────────────────────────────────────────────────────
+
+   🔴 Ban cu la mot `<ul>` bay dong bullet, va bay dong do tron bay LOAI so
+      khac nhau: tinh trang dich vu, so du tien, muc dung hom nay, so dem, va
+      han muc. Doc mot danh sach nhu vay khong tra loi duoc cau hoi ma trang
+      nay ton tai de tra loi — **co gi dang lo khong**.
+
+   ⭐ Mot luoi chi so tra loi duoc, vi no cho phep QUET chu khong phai DOC: so
+      to, nhan nho, va thu can chu y tu no doi mau. Chu san pham 25/08 goi ban
+      cu la *"qua basic, qua don gian"* — va do la mot nhan xet ve cau truc,
+      khong phai ve mau sac.
+
+   ⚠️ Mau KHONG bao gio dung mot minh o day: o co van de mang them chu
+      ("thất bại", "vượt trần"). Mot o do ma khong co chu la mot o vo nghia voi
+      nguoi khong phan biet duoc mau. #}
+<div class="chi-so-luoi">
+
+  <div class="chi-so{% if not api_enabled %} co-van-de{% elif read_only %} canh-bao{% endif %}">
+    <span class="chi-so-nhan">{{ _("API công khai") }}</span>
+    <strong class="chi-so-gt">{% if not api_enabled %}{{ _("đang tắt") }}
+      {%- elif read_only %}{{ _("chỉ đọc") }}{% else %}{{ _("đang phục vụ") }}{% endif %}</strong>
+    <span class="chi-so-phu">{% if api_enabled and not read_only %}{{ _("mọi tuyến bình thường") }}
+      {%- else %}{{ _("tạo job đang bị từ chối") }}{% endif %}</span>
+  </div>
+
+  <div class="chi-so">
+    <span class="chi-so-nhan">{{ _("Số dư") }}</span>
+    <strong class="chi-so-gt">{{ balance | so }}</strong>
+    <span class="chi-so-phu">credit · <a href="/nap">{{ _("nạp thêm") }}</a></span>
+  </div>
+
+  {% set vuot = limits.daily_credit_limit and usage_today.net_charged_credit >= limits.daily_credit_limit %}
+  <div class="chi-so{% if vuot %} co-van-de{% endif %}">
+    <span class="chi-so-nhan">{{ _("Dùng hôm nay") }}</span>
+    <strong class="chi-so-gt">{{ usage_today.net_charged_credit | so }}</strong>
+    <span class="chi-so-phu">
+      {%- if limits.daily_credit_limit %}{{ _("trên trần") }} {{ limits.daily_credit_limit | so }}
+        {%- if vuot %} — <strong>{{ _("đã vượt trần") }}</strong>{% endif %}
+      {%- else %}{{ _("chưa đặt trần ngày") }}{% endif %}
+      {%- if usage_today.held_credit %} · {{ _("giữ chỗ") }} {{ usage_today.held_credit | so }}{% endif %}</span>
+  </div>
+
+  <div class="chi-so{% if counts.active_keys == 0 %} canh-bao{% endif %}">
+    <span class="chi-so-nhan">{{ _("Khóa đang hoạt động") }}</span>
+    <strong class="chi-so-gt">{{ counts.active_keys }}</strong>
+    <span class="chi-so-phu">{{ counts.projects }} project ·
+      <a href="/developers/keys">{{ _("quản lý") }}</a></span>
+  </div>
+
+  <div class="chi-so">
+    <span class="chi-so-nhan">{{ _("Job qua API") }}</span>
+    <strong class="chi-so-gt">{{ counts.api_jobs }}</strong>
+    <span class="chi-so-phu">{{ _("30 ngày qua") }} ·
+      <a href="/developers/jobs">{{ _("xem") }}</a></span>
+  </div>
+
+  {# Webhook that bai la thu DUY NHAT tren luoi nay co the dang hong ma khach
+     khong biet — job hong thi khach thay ngay, webhook hong thi im lang. #}
+  <div class="chi-so{% if counts.webhook_failures %} co-van-de{% endif %}">
+    <span class="chi-so-nhan">Webhook</span>
+    <strong class="chi-so-gt">{{ counts.webhooks }}</strong>
+    <span class="chi-so-phu">
+      {%- if counts.webhook_failures %}<strong>{{ counts.webhook_failures }}
+        {{ _("lần giao thất bại") }}</strong> — <a href="/developers/webhooks">{{ _("xem") }}</a>
+      {%- elif counts.webhooks %}{{ _("đang khỏe") }}
+      {%- else %}{{ _("chưa đăng ký") }}{% endif %}</span>
+  </div>
+
 </div>
 
+<p class="muted" style="margin:0 0 16px;">{{ _("Hạn mức:") }}
+  <strong>{{ limits.request_rpm }}</strong> {{ _("request/phút") }} ·
+  <strong>{{ limits.create_rpm }}</strong> {{ _("job/phút") }} ·
+  {{ _("tối đa") }} <strong>{{ limits.max_active_jobs }}</strong> {{ _("job đang chạy") }}</p>
+
+{# ── Bốn bước tới lượt gọi đầu tiên ────────────────────────────────────────
+
+   Trước 25/08 đây là ba liên kết rời: không biết bước nào đã làm, và sau khi
+   tạo khoá xong không có gì đưa khách sang lượt gọi đầu. Một danh sách ba bước
+   mà không biết mình đang ở đâu thì không phải hướng dẫn, nó là một cái menu.
+
+   Trạng thái đọc từ CSDL thật (`_overview_counts`), không phải từ cookie hay
+   từ việc khách đã bấm vào đâu — bấm vào một trang không có nghĩa là đã làm
+   xong việc ở đó. #}
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
-  {% if counts.active_keys == 0 %}
-    <p>{{ _("Chưa có khóa nào. Ba bước để gọi được lần đầu:") }}</p>
-    <ol>
-      <li><a href="/developers/projects">{{ _("Tạo một project") }}</a>
-          — {{ _("mỗi tích hợp một project.") }}</li>
-      <li><a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
-          — {{ _("chuỗi bí mật chỉ hiện một lần.") }}</li>
-      <li><a href="/developers/docs">{{ _("Gọi thử theo hướng dẫn") }}</a></li>
-    </ol>
-  {% else %}
-    <p class="muted">{{ _("Bạn đã có khóa. Những nơi hay dùng:") }}</p>
+
+  {% set xong_project = counts.projects > 0 %}
+  {% set xong_khoa    = counts.active_keys > 0 %}
+  {% set xong_goi     = counts.da_goi_api %}
+  {% set tat_ca_xong  = xong_project and xong_khoa and xong_goi %}
+
+  {% if tat_ca_xong %}
+    <p class="muted">{{ _("Bạn đã gọi được. Những nơi hay dùng:") }}</p>
     <p>
       <a class="btn" href="/developers/keys">{{ _("Khóa API") }}</a>
       <a class="btn" href="/developers/tools">{{ _("Công cụ & model") }}</a>
+      <a class="btn" href="/developers/playground">{{ _("Chạy thử") }}</a>
       <a class="btn" href="/developers/jobs">{{ _("Job gần đây") }}</a>
-      <a class="btn" href="/developers/docs">{{ _("Tài liệu & SDK") }}</a>
+      <a class="btn" href="/developers/logs">{{ _("Nhật ký request") }}</a>
+    </p>
+  {% else %}
+    <ol class="dev-buoc">
+      {# Mỗi bước tự nói nó xong chưa. Dấu ✓ đi kèm chữ, không đứng một mình:
+         một dấu tick không màu không nói được gì cho người đọc bằng bộ đọc
+         màn hình, và màu một mình cũng thế. #}
+      <li>
+        {% if xong_project %}<strong>✓ {{ _("Đã có project") }}</strong>
+          <span class="muted">({{ counts.projects }})</span>
+        {% else %}<a href="/developers/projects">{{ _("Tạo một project") }}</a>
+          — {{ _("mỗi tích hợp một project.") }}
+        {% endif %}
+      </li>
+      <li>
+        {% if xong_khoa %}<strong>✓ {{ _("Đã có khóa đang hoạt động") }}</strong>
+          <span class="muted">({{ counts.active_keys }})</span>
+        {% else %}<a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
+          — {{ _("chuỗi bí mật chỉ hiện một lần.") }}
+        {% endif %}
+      </li>
+      <li>
+        {% if xong_goi %}<strong>✓ {{ _("Đã gọi được lần đầu") }}</strong>
+        {% else %}{{ _("Gọi thử — lệnh này không tốn credit:") }}
+          {% if xong_khoa %}
+            <pre>{{ lenh_thu }}</pre>
+            <p class="muted" style="margin:6px 0 0;font-size:.9em;">
+              {{ _("Đặt khóa vào biến môi trường trước:") }}
+              <code>LTT_API_KEY</code>.
+              {{ _("Trả 200 là xong — xác thực, phạm vi và hạn mức đều đúng.") }}
+            </p>
+          {% else %}
+            <span class="muted">{{ _("(cần khóa ở bước trên trước)") }}</span>
+          {% endif %}
+        {% endif %}
+      </li>
+    </ol>
+    <p class="muted" style="margin:10px 0 0;">
+      {# Chay thu phai voi toi duoc tu DAY. No khong con tren thanh dieu huong
+         (no la muc con cua "Cong cu & model" tu 25/08), nen neu trang dau
+         khong tro toi thi mot nguoi chua tao khoa xong khong biet no ton tai. #}
+      <a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a> ·
+      <a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a> ·
+      <a href="/developers/playground">{{ _("Chạy thử ngay trên trình duyệt") }}</a>
     </p>
   {% endif %}
 </div>

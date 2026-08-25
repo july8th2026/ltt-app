@@ -517,14 +517,14 @@ Scopes: `jobs:create`
 Input:
 
 - `prompt` — string, **required**, max length 4000, What to draw. Written in any language - the platform translates it to English before the model sees it, because this model only understands English and Chinese. Text you want DRAWN INSIDE the image must be in double quotes; it is kept exactly as written.
-- `mode` — string, one of `t2i`, `edit`, `subject`, default t2i, t2i = from text only. edit = change one reference image while keeping the rest. subject = keep the same person or object across a new scene. Both need image_key, and both cost three times more because they take about three times as long.
+- `mode` — string, one of `t2i`, `edit`, `subject`, default t2i, t2i = from text only. edit = change one reference image while keeping the rest. subject = keep the same person or object across a new scene. edit and subject both need image_key and both cost three times more because they take about three times as long; t2i refuses a reference image.
 - `count` — integer, min 1, max 4, default 1, How many images to return, 1 to 4.
-- `image_key` — string, Reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. Required for edit and subject; ignored for t2i.
+- `image_key` — string, Reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. Required for edit and subject. Sending it with t2i is REJECTED, not ignored.
 - `negative_prompt` — string, max length 1000, What to avoid. Optional.
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `93dbcde993e11c2b`
+Contract hash: `fb38cff7d6272b32`
 
 ### `image.thumbnail`
 
@@ -599,14 +599,14 @@ Input:
 
 - `messages` — array, **required**, Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.
 - `model` — string, one of `ltt_llm`, `ltt_llm_vision`, default ltt_llm, `ltt_llm` for text (64K context). `ltt_llm_vision` also reads images.
-- `max_tokens` — integer, min 1, max 16384, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
+- `max_tokens` — integer, min 1, max 32768, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
 - `reasoning_effort` — string, one of `low`, `medium`, `xhigh`, default medium, How much the model thinks before answering. Deeper costs more output tokens.
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `32d617ca0c0130d2`
+Contract hash: `9d866077c00f7e90`
 
 ### `text.prompt_package`
 

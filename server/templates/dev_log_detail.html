@@ -35,7 +35,7 @@
 
     {% if timeline.events %}
       <table class="table">
-        <thead><tr><th>#</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Thông báo") }}</th></tr></thead>
+        <thead><tr><th scope="col">#</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Thông báo") }}</th></tr></thead>
         <tbody>
           {% for event in timeline.events %}
             <tr>
@@ -55,7 +55,7 @@
     <h2 style="margin-top:0;">Credit</h2>
     {% if timeline.credit %}
       <table class="table">
-        <thead><tr><th>{{ _("Lúc") }}</th><th>{{ _("Loại") }}</th><th>{{ _("Thay đổi") }}</th></tr></thead>
+        <thead><tr><th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Thay đổi") }}</th></tr></thead>
         <tbody>
           {% for entry in timeline.credit %}
             <tr>
@@ -89,8 +89,8 @@
       <h2 style="margin-top:0;">Webhook</h2>
       <table class="table">
         <thead><tr>
-          <th>{{ _("Sự kiện") }}</th><th>{{ _("Trạng thái") }}</th>
-          <th>{{ _("Lần thử") }}</th><th>HTTP</th>
+          <th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
+          <th scope="col">{{ _("Lần thử") }}</th><th scope="col">HTTP</th>
         </tr></thead>
         <tbody>
           {% for delivery in timeline.webhooks %}

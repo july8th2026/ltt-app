@@ -243,7 +243,15 @@ def test_node_da_day_vi_MAY_CUA_CHU_NHA_thi_khong_moi_khach_tao(moi_truong,
         r = client.get("/vps")
         assert r.status_code == 200
         # RAM còn ~2 GB: chỉ gói nhỏ nhất còn chỗ, hai gói lớn phải báo hết.
-        assert "hết chỗ" in r.text
+        #
+        # Kiểm TÍNH CHẤT, không kiểm nguyên văn: câu chữ đã đổi một lần
+        # ("hết chỗ" -> "Hết chỗ cho cấu hình này.") và sẽ còn đổi.
+        assert "Hết chỗ" in r.text, "trang khong bao goi nao het cho"
+        # W1 (25/08): hết chỗ thì phải NÓI ĐI ĐÂU. Trước đó trang dừng ở hai
+        # chữ "hết chỗ" và bỏ khách giữa luồng mua — ở đây gói nhỏ VẪN còn
+        # chỗ, nên thẻ hết chỗ bắt buộc phải chỉ sang nó.
+        assert "Còn chỗ:" in r.text, (
+            "the 'het cho' khong chi sang goi con lai")
         assert r.text.count('action="/vps/tao"') == 1
     finally:
         client.close()
@@ -442,3 +450,101 @@ def test_moi_thuoc_tinh_plan_va_os_trong_template_deu_co_that():
             thieu = sorted(x for x in dung
                            if not hasattr(lop, x) and x not in lop.__annotations__)
             assert not thieu, f"{tep}: {bien}.{thieu} khong co tren {lop.__name__}"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Trang bán công khai (25/08)
+#
+# `/vps` phục vụ **hai thứ tuỳ người xem**. Đó là một quyết định, không phải một
+# tiện lợi: thẻ app trong catalog hiện cho cả khách chưa đăng nhập, nên nếu
+# `/vps` đòi đăng nhập thì người lạ bấm vào sẽ rơi thẳng vào trang đăng nhập —
+# một ngõ cụt ở đúng bước đầu tiên của phễu bán hàng.
+#
+# Ba chốt dưới đây giữ cả hai vế. Vế dễ quên là vế thứ hai: mở cho khách ẩn danh
+# KHÔNG được kéo theo việc để lộ máy của người khác hay dựng một biểu mẫu sẽ POST
+# rồi ăn 401.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_khach_AN_DANH_xem_duoc_bang_gia_khong_can_dang_nhap(moi_truong,
+                                                             monkeypatch):
+    monkeypatch.setenv("LTT_VPS", "1")
+    client = _client()
+    try:
+        r = client.get("/vps")          # KHÔNG đăng nhập
+        assert r.status_code == 200, "khach an danh bi chan khoi trang ban"
+        assert "149.000" in r.text, "khong thay bang gia"
+        # Kiem TINH CHAT, khong kiem nguyen van: khach an danh phai co CA HAI
+        # loi ra — tao tai khoan (phan lon nguoi doc trang nay chua co) va dang
+        # nhap (nguoi da co). Cau chu cua nut se con doi; hai duong nay thi khong.
+        assert 'href="/register"' in r.text, "khong co duong tao tai khoan"
+        assert "/login?next=" in r.text, "khong co duong dang nhap giu lai next"
+    finally:
+        client.close()
+
+
+def test_khach_AN_DANH_khong_thay_bieu_mau_va_khong_thay_may_cua_ai(
+        moi_truong, monkeypatch):
+    """Biểu mẫu cho khách ẩn danh = một cái nút dẫn tới lỗi 401.
+
+    Và `_may_cua_toi(db, "")` sẽ quét cả bảng — nên nhánh ẩn danh phải KHÔNG gọi
+    nó, chứ không phải gọi rồi lọc.
+    """
+    monkeypatch.setenv("LTT_VPS", "1")
+    _tao_khach(moi_truong)
+    client = _client()
+    try:
+        r = client.get("/vps")
+        assert 'action="/vps/tao"' not in r.text, "bieu mau se POST va an 401"
+        assert "Máy của tôi" not in r.text
+        # Cổng cờ vẫn đứng trước: công khai nghĩa là "không đòi đăng nhập",
+        # không phải "bỏ qua cờ".
+        monkeypatch.delenv("LTT_VPS", raising=False)
+        assert client.get("/vps").status_code == 404
+    finally:
+        client.close()
+
+
+def test_khach_DA_DANG_NHAP_thay_bieu_mau_chu_khong_thay_loi_moi_dang_nhap(
+        moi_truong, monkeypatch):
+    monkeypatch.setenv("LTT_VPS", "1")
+    _tao_khach(moi_truong)
+    client = _client()
+    try:
+        _dang_nhap(client)
+        r = client.get("/vps")
+        assert r.status_code == 200
+        assert "Đăng nhập để thuê máy" not in r.text, (
+            "moi nguoi da dang nhap di dang nhap lan nua")
+        assert "Tạo tài khoản" not in r.text
+        # KHÔNG chốt sự tồn tại của biểu mẫu ở đây: môi trường test không nối
+        # được tới Proxmox nên `suc_chua` là None, và fail-closed đúng nghĩa là
+        # không dựng biểu mẫu. `test_khong_doc_duoc_suc_chua_thi_KHONG_cho_tao_may`
+        # mới là chỗ chốt điều đó. Ở đây chỉ chốt: bảng giá vẫn hiện.
+        assert "149.000" in r.text
+    finally:
+        client.close()
+
+
+def test_app_TAT_khong_lot_vao_trang_chu_cua_nguoi_da_dang_nhap(moi_truong,
+                                                                monkeypatch):
+    """Ba nơi liệt kê app phải nói GIỐNG NHAU.
+
+    `server/templating.py` (thanh bên + header) lọc `manifest.enabled`; nhánh ẩn
+    danh của `dashboard.py` cũng lọc. Nhánh **đã đăng nhập** thì không — nên một
+    app đang tắt cờ vẫn hiện thẻ, và route của nó trả 404. Bấm vào là ngõ cụt.
+
+    Đo được ngày 25/08 với chính app `vps`. Lỗi có sẵn từ trước, không phải do
+    `public=True`: nhánh đó trả `authenticated or public`, nên `public=False`
+    cũng lọt y hệt.
+    """
+    monkeypatch.delenv("LTT_VPS", raising=False)
+    _tao_khach(moi_truong)
+    client = _client()
+    try:
+        assert client.get("/vps").status_code == 404, "tien de: route phai 404"
+        assert "LTT VPS" not in client.get("/").text, "the app lot khi chua dang nhap"
+        _dang_nhap(client)
+        assert "LTT VPS" not in client.get("/").text, (
+            "app tat van hien the cho nguoi da dang nhap -> bam vao la 404")
+    finally:
+        client.close()

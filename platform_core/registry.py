@@ -541,16 +541,65 @@ def _validate_param_docs(manifest: AppManifest, tool: ToolSpec, params,
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} params[{param!r}] phải là dict").format(
                     slug=manifest.slug, tool=tool.name, param=name))
-        unknown = set(spec) - {"description", "example"}
+        unknown = set(spec) - {"description", "example", "only_when"}
         if unknown:
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} params[{param!r}] có khoá lạ: {keys}"
             ).format(slug=manifest.slug, tool=tool.name, param=name,
                      keys=sorted(unknown)))
+        if "only_when" in spec:
+            _validate_only_when(manifest, tool, name, spec["only_when"], hidden)
         if not str(spec.get("description") or "").strip():
             raise RegistryError(_t(
                 "[{slug}] tool {tool!r} params[{param!r}] thiếu description"
             ).format(slug=manifest.slug, tool=tool.name, param=name))
+
+
+def _validate_only_when(manifest: AppManifest, tool: ToolSpec, param: str,
+                        dieu_kien, hidden) -> None:
+    """`only_when` phải trỏ vào một tham số CÓ THẬT và những giá trị CÓ THẬT.
+
+    🔴 VÌ SAO PHẢI KIỂM, chứ không chỉ chép ra. `only_when` là thứ trang tài liệu
+       dùng để **lọc** tham số. Khai `{"mode": ["edti"]}` (gõ sai) thì điều kiện
+       không bao giờ khớp, và tham số đó **biến mất** khỏi mọi chế độ — khách
+       không bao giờ biết mình gửi được nó.
+
+    ⛔ Một điều kiện không ai kiểm thì cũng vô dụng đúng như câu văn xuôi mà nó
+       vừa thay thế. Khác biệt duy nhất là nó **trông** như dữ liệu.
+
+    ⚠️ Không cho trỏ vào tham số **ẩn**: điều kiện đó khách không điều khiển
+       được, nên hiển thị nó là bảo người ta xoay một cái nút không tồn tại.
+    """
+    if not isinstance(dieu_kien, dict) or not dieu_kien:
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} params[{param!r}].only_when phải là dict "
+            "không rỗng").format(slug=manifest.slug, tool=tool.name, param=param))
+    for khoa, gia_tri in dieu_kien.items():
+        if khoa not in tool.params_schema:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào "
+                "tham số không tồn tại: {k!r}").format(
+                    slug=manifest.slug, tool=tool.name, param=param, k=khoa))
+        if khoa in hidden:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào "
+                "tham số đang ẩn: {k!r}").format(
+                    slug=manifest.slug, tool=tool.name, param=param, k=khoa))
+        if not isinstance(gia_tri, (list, tuple)) or not gia_tri:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] phải "
+                "là danh sách không rỗng").format(
+                    slug=manifest.slug, tool=tool.name, param=param, k=khoa))
+        # Giá trị phải nằm trong `enum` đã khai — nếu tham số đó có enum.
+        hop_le = tool.params_schema[khoa].get("values")
+        if hop_le is not None:
+            la = [v for v in gia_tri if v not in hop_le]
+            if la:
+                raise RegistryError(_t(
+                    "[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] "
+                    "có giá trị không nằm trong enum: {la}").format(
+                        slug=manifest.slug, tool=tool.name, param=param,
+                        k=khoa, la=sorted(map(str, la))))
 
 
 def _validate_model_aliases(manifest: AppManifest, tool: ToolSpec,

@@ -30,10 +30,24 @@ templates = Jinja2Templates(directory=str(_TEMPLATE_DIR))
 _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 
 
+#: Mọi tài sản tĩnh có đính `?v={{ asset_ver }}`. Thêm tệp mới thì thêm vào đây.
+#:
+#: 🔴 TRƯỚC 25/08 HÀM NÀY CHỈ BĂM `ltt.css`. Nên một tệp JS mới, dù link có
+#:    `?v=…`, sẽ mang **đúng con số của CSS** — đổi JS mà không đổi CSS thì URL
+#:    không đổi, và Cloudflare tiếp tục phục vụ bản cũ tới khi hết TTL.
+#:
+#: ⛔ Đó chính là cái bẫy quy tắc 6 của `CLAUDE.md` mô tả, và nó đã xảy ra một
+#:    lần với `ltt.css`: sửa xong ở origin mà người dùng vẫn nhận bản cũ 4 tiếng.
+TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js")
+
+
 def _tinh_asset_ver() -> str:
     import hashlib
+    h = hashlib.md5()
     try:
-        return hashlib.md5((_STATIC_DIR / "ltt.css").read_bytes()).hexdigest()[:8]
+        for ten in TAI_SAN_CO_VERSION:
+            h.update((_STATIC_DIR / ten).read_bytes())
+        return h.hexdigest()[:8]
     except Exception:
         return "0"
 
@@ -94,7 +108,63 @@ PUBLIC_LINKS = {
     "privacy": "https://lttstudios.com/privacy-policy/",
     "terms": "https://lttstudios.com/terms/",
     "data_deletion": "https://lttstudios.com/data-deletion/",
+    # Điều khoản RIÊNG của LTT VPS. Tách khỏi `terms` chung vì nó mang
+    # những con số vận hành cụ thể (chu kỳ 30 ngày, ân hạn 7 ngày, hạn
+    # mức băng thông) mà `test_294` chốt phải khớp mã nguồn.
+    "vps_terms": "https://lttstudios.com/vps-terms/",
 }
+def _tien_vnd(so) -> str:
+    """`149000` → `149.000đ`. Một chỗ duy nhất định dạng tiền cho template.
+
+    Trước đây mỗi nơi tự viết `"{:,}".format(x).replace(",", ".") + "đ"`. Ba bản
+    sao của cùng một phép, và ký tự `đ` nằm rải trong template — thứ khiến bánh
+    cóc i18n báo động đúng, vì nó không phân biệt được một ký hiệu tiền tệ với
+    một câu chưa dịch.
+
+    Định dạng tiền là **quy ước hiển thị**, không phải chuỗi cần dịch: một người
+    đọc bản tiếng Anh vẫn trả bằng đồng.
+    """
+    try:
+        return f"{int(so):,}".replace(",", ".") + "đ"
+    except (TypeError, ValueError):
+        return str(so)
+
+
+def _so(gt) -> str:
+    """`50000` → `50.000`. Anh em của `tien_vnd`, chỉ khác là **không** có `đ`.
+
+    🔴 VÌ SAO CẦN MỘT FILTER RIÊNG. Không phải mọi con số đều là tiền: credit,
+       token, số request đều cần dấu phân cách nghìn nhưng **không** phải hậu tố
+       tiền tệ. Thiếu filter này thì template hoặc viết
+       `"{:,}".format(x)` rải rác — đúng thứ chú thích của `tien_vnd` nói là
+       đừng làm — hoặc bỏ luôn dấu phân cách.
+
+    ⛔ ĐO 25/08: khu API hiện `50000 credit` trong khi trang VPS hiện `149.000`.
+       Cùng một sản phẩm, hai quy ước đọc số. `50000` là con số mắt phải đếm chữ
+       số mới đọc được, và đọc nhầm một bậc là hiểu sai giá gấp mười lần.
+
+    ⚠️ Dấu chấm chứ không phải dấu phẩy: đây là quy ước Việt Nam, và nó **không**
+       phải chuỗi cần dịch — cùng lý do đã ghi ở `tien_vnd`.
+
+    ⭐ HỎI TRƯỚC, KHÔNG BẮT NGOẠI LỆ. `tien_vnd` bọc `try/except` và điều đó làm
+       bánh cóc `check_silent_except` đỏ khi thêm cái thứ hai — đúng việc của nó.
+       Một filter hiển thị chỉ có hai ca (số / không phải số), và cả hai đều hỏi
+       được bằng `isinstance`. Bắt ngoại lệ ở đây là dùng cơ chế báo lỗi để làm
+       việc của một câu `if`.
+    """
+    if isinstance(gt, str):
+        rut = gt.strip()
+        if not rut.lstrip("-").isdigit():
+            return str(gt)
+        gt = int(rut)
+    # `bool` là con của `int`: để lọt thì `True` hiện ra thành `1`.
+    if isinstance(gt, bool) or not isinstance(gt, (int, float)):
+        return str(gt)
+    return f"{int(gt):,}".replace(",", ".")
+
+
+templates.env.filters["tien_vnd"] = _tien_vnd
+templates.env.filters["so"] = _so
 templates.env.globals["public_links"] = PUBLIC_LINKS
 
 # Hợp đồng app (H5): app được mang template RIÊNG trong `apps/<slug>/templates/`

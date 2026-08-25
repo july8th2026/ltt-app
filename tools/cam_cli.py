@@ -61,6 +61,7 @@ Hoac bam dup `cam_cli.bat` o cung thu muc.
 from __future__ import annotations
 
 import argparse
+import datetime
 import json
 import os
 import pathlib
@@ -76,7 +77,26 @@ except (AttributeError, ValueError):
     pass
 
 GOC_MAC_DINH = "https://app.lttstudios.com"
+
+#: Phien ban cong cu. NGUON DUY NHAT - `tools/installer/cam_cli.iss` phai khai
+#: dung so nay, va `test_283` chot dieu do.
+#:
+#: 🔴 VI SAO CAN. Truoc 25/08 bo cai khai `1.0.0` con chuong trinh ben trong
+#:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
+#:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
+#:    ho tro.
+PHIEN_BAN = "1.0.0"
+
 MODEL = "ltt_llm"
+
+#: Ten tuyen RIENG cho Claude Desktop. Xem `server/api/streaming.py`
+#: (`TUYEN_TUONG_THICH`) de biet vi sao no phai chua chuoi "claude".
+#:
+#: 🔴 Claude Desktop LOC danh sach model truoc khi hien picker: ten khong chua
+#:    "claude"/"anthropic"/ten dong Claude thi bi bo. `ltt_llm` bi bo, va hau qua
+#:    la **nut gui vo hieu, khong mot loi bao loi**. Dung "sua" dong nay ve
+#:    `MODEL` cho gon - do la dung lai chinh cai bay da mat mot buoi de tim.
+MODEL_DESKTOP = "ltt-llm-claude-compat"
 ENV_KHOA_CODEX = "LTT_API_KEY"
 ENV_KHOA_CLAUDE = "ANTHROPIC_AUTH_TOKEN"
 
@@ -87,6 +107,40 @@ MOC_DONG = "# <<< LTT Studios <<<"
 
 NHA = pathlib.Path.home()
 TEP_TRANG_THAI = NHA / ".ltt" / "cam_cli_trang_thai.json"
+
+
+#: Nhat ky cua cong cu, tren MAY KHACH.
+#:
+#: 🔴 VI SAO CAN MOT TEP CHU KHONG PHAI MAN HINH. Khi khach bao "cam khong
+#:    duoc", thu duy nhat ta co la loi ke cua ho. Cua so GUI in nhat ky ra mot
+#:    `<div>` - dong cua so la mat. Mot tep de ho gui kem cho ta la khac biet
+#:    giua "chan doan duoc" va "doan mo".
+#:
+#: ⛔ TUYET DOI KHONG GHI KHOA VAO DAY. Nhat ky la thu khach se gui di - qua
+#:    email, qua chat, dinh kem vao mot ticket. Chi ghi TEN lenh va KET QUA.
+TEP_NHAT_KY = pathlib.Path(
+    os.environ.get("LOCALAPPDATA") or (NHA / ".local" / "share")
+) / "LTTStudios" / "cam-cli.log"
+
+#: Tran 512 KB roi cat mot nua. Khong dung `logging.handlers` de giu cong cu
+#: khong phu thuoc gi ngoai thu vien chuan toi thieu.
+_TRAN_NHAT_KY = 512 * 1024
+
+
+def _ghi_nhat_ky(dong: str) -> None:
+    """Them mot dong vao nhat ky. Loi o day KHONG duoc lam hong lenh chinh."""
+    try:
+        TEP_NHAT_KY.parent.mkdir(parents=True, exist_ok=True)
+        if TEP_NHAT_KY.exists() and TEP_NHAT_KY.stat().st_size > _TRAN_NHAT_KY:
+            cu = TEP_NHAT_KY.read_text(encoding="utf-8", errors="replace")
+            TEP_NHAT_KY.write_text(cu[len(cu) // 2:], encoding="utf-8")
+        moc = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with TEP_NHAT_KY.open("a", encoding="utf-8") as f:
+            f.write(f"{moc} v{PHIEN_BAN} {dong}\n")
+    except OSError:
+        # Khong ghi duoc nhat ky la mot bat tien, khong phai mot loi. Bao loi o
+        # day se lam hong `cam` tren mot may co o dia chi doc.
+        pass
 
 
 # ── Tien ich ────────────────────────────────────────────────────────────────
@@ -439,10 +493,22 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
         "inferenceGatewayBaseUrl": goc + "/api",
         "inferenceGatewayApiKey": khoa,
         "inferenceGatewayAuthScheme": "bearer",
-        "inferenceModels": '[{"name": "' + MODEL + '"}]',
+        "inferenceModels": '[{"name": "' + MODEL_DESKTOP + '"}]',
         # Tat tu do model: danh sach cua ta chi co mot ten, va mot lan do sai se
         # lam ung dung hien nhung model no khong goi duoc.
         "modelDiscoveryEnabled": "false",
+        # 🔴 THIEU DONG NAY LA CAM XONG MA VAN KHONG CHAT DUOC.
+        #
+        #    Mac dinh ban 3p chi mo tab **Code** (tab Cowork bi mo). Tab Code
+        #    khong noi thang voi gateway - no mo mot **phien tac tu cuc bo**, va
+        #    phien do can mot runtime tren may (`claude`/`node`). May khach
+        #    khong co thi ung dung **khong gui gi ca**: khong log, khong toast,
+        #    khong bao loi. Bam Enter, bam nut - deu im.
+        #
+        # ⛔ Do dung 25/08 tren VM sach: cau hinh da `healthy`, model da hien
+        #    trong picker, nhung 0 request toi may chu. Bat co nay xong thi
+        #    hien cong tac **Chat / Cowork** va lan gui dau tien di ngay.
+        "chatTabEnabled": "true",
     }
     ghi_nho = tt.setdefault("desktop", {}).setdefault("khoa_da_them", {})
     for ten, gt in gia_tri.items():
@@ -763,6 +829,8 @@ def lenh_go(a) -> int:
 
 def lenh_xem(a) -> int:
     tt = _doc_trang_thai()
+    print(f"LTT Studios - cam cong cu   phien ban {PHIEN_BAN}")
+    print(f"Nhat ky: {TEP_NHAT_KY}")
     print(f"Trang thai: {'DA CAM' if tt.get('da_cam') else 'chua cam'}"
           f"   goc={tt.get('goc') or '-'}\n")
 
@@ -814,7 +882,18 @@ def lenh_xem(a) -> int:
     print(f"    inferenceGatewayBaseUrl: {_reg_doc(REG_DESKTOP_HKCU, 'inferenceGatewayBaseUrl') or '-'}")
     _k = _reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayApiKey")
     print(f"    inferenceGatewayApiKey : {'(da dat, ' + str(len(_k)) + ' ky tu)' if _k else '-'}")
-    print(f"    inferenceModels        : {_reg_doc(REG_DESKTOP_HKCU, 'inferenceModels') or '-'}")
+    _m = _reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or "-"
+    print(f"    inferenceModels        : {_m}")
+    if _m != "-" and MODEL_DESKTOP not in _m:
+        print(f"      !! ten model KHONG phai {MODEL_DESKTOP} - Claude Desktop se")
+        print( "         LOC BO no khoi picker, va nut gui tat han ma KHONG bao gi")
+    _c = _reg_doc(REG_DESKTOP_HKCU, "chatTabEnabled") or "-"
+    print(f"    chatTabEnabled         : {_c}")
+    # Chi canh bao khi Desktop DA duoc cau hinh. May chua cam gi thi moi dong
+    # deu la "-", va mot loi canh bao o do chi lam nhieu.
+    if _reg_doc(REG_DESKTOP_HKCU, "inferenceProvider") and _c != "true":
+        print( "      !! chua bat -> ung dung chi mo tab Code, thu can runtime cuc")
+        print( "         bo (claude/node). Khong co thi no KHONG GUI GI CA.")
 
     print("\n  Bien moi truong cap nguoi dung:")
     for ten in CLAUDE_ENV:
@@ -895,7 +974,29 @@ def lenh_kiem(a) -> int:
     if m != 200:
         print(f"       {b[:300].decode('utf-8', 'replace')}")
         return 1
+
+    # 🔴 PHAI KIEM RIENG BE MAT CLAUDE DESKTOP, va day la mot bai hoc dat gia.
+    #
+    #    Ban truoc cua `kiem` chi goi `/messages` voi `MODEL` va `stream: True`.
+    #    Dem 24/08 no bao XANH trong khi Claude Desktop KHONG GUI NOI mot tin
+    #    nhan nao - vi be mat do dung MOT TEN MODEL KHAC (`MODEL_DESKTOP`) va
+    #    tham do bang mot request KHONG STREAM. Ca hai deu nam ngoai phep thu.
+    #
+    # ⭐ Mot phep tu kiem khong phu duoc be mat ma chinh no vua cau hinh la mot
+    #    phep tu kiem dang tran an nham cho.
+    m, b = goi("/messages", {"model": MODEL_DESKTOP, "max_tokens": 32,
+                             "messages": [{"role": "user",
+                                           "content": "Tra loi mot tu: OK"}]},
+               phuong="POST")
+    print(f"  POST /messages (Desktop, khong stream) -> {m}")
+    if m != 200:
+        print(f"       {b[:300].decode('utf-8', 'replace')}")
+        print(f"       Ten tuyen `{MODEL_DESKTOP}` khong goi duoc -> Claude "
+              f"Desktop se im lang hoan toan.")
+        return 1
+
     print("\nCam duoc. Mo lai VS Code roi dung binh thuong.")
+    print("Voi Claude Desktop: phai THOAT HAN roi mo lai.")
     return 0
 
 
@@ -923,9 +1024,29 @@ def main(argv=None) -> int:
     k.add_argument("--khoa", default="")
     k.add_argument("--goc", default="")
 
+    ap.add_argument("--phien-ban", action="version",
+                    version=f"cam_cli {PHIEN_BAN}")
+
     a = ap.parse_args(argv)
-    return {"cam": lenh_cam, "go": lenh_go,
-            "xem": lenh_xem, "kiem": lenh_kiem}[a.lenh](a)
+
+    # ⭐ MOT CHO DUY NHAT ghi nhat ky, va no ghi ten lenh + ma thoat.
+    #    Dat o day chu khong rai trong tung lenh: mot lenh moi them sau nay se
+    #    duoc ghi lai ma khong ai phai nho.
+    # ⛔ KHONG ghi `a.khoa`, khong ghi bat ky gia tri tham so nao - nhat ky la
+    #    thu khach se gui di kem khi bao loi.
+    co_khoa = bool(getattr(a, "khoa", ""))
+    _ghi_nhat_ky(f"{a.lenh} bat dau"
+                 + (" (co --khoa)" if co_khoa else "")
+                 + (" --vscode" if getattr(a, "vscode", False) else "")
+                 + (" --toan-cuc" if getattr(a, "toan_cuc", False) else ""))
+    try:
+        ma = {"cam": lenh_cam, "go": lenh_go,
+              "xem": lenh_xem, "kiem": lenh_kiem}[a.lenh](a)
+    except BaseException as e:                                  # noqa: BLE001
+        _ghi_nhat_ky(f"{a.lenh} NEM {type(e).__name__}")
+        raise
+    _ghi_nhat_ky(f"{a.lenh} ket thuc ma={ma}")
+    return ma
 
 
 if __name__ == "__main__":

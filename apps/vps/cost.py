@@ -68,6 +68,13 @@ class Plan:
     bang_thong_gb: int
     gia_thang_vnd: int
     mo_ta: str
+    #: Gói **khuyến nghị**. Đúng MỘT gói được đặt cờ này.
+    #:
+    #: Có nó vì trang bán cần đánh dấu một gói, và hai cách còn lại đều trôi:
+    #: đọc văn xuôi trong `mo_ta` thì trượt khi đổi câu chữ; viết cứng id gói
+    #: trong template thì trượt khi đổi id. Cả hai trôi **lặng lẽ** — trang vẫn
+    #: render, chỉ là không còn dấu nào.
+    nen_chon: bool = False
 
     @property
     def credit_thang(self) -> int:
@@ -99,6 +106,7 @@ PLANS: tuple[Plan, ...] = (
         mo_ta=N_("Chạy được mọi bản trong danh mục: Server 2016 và 2022 có giao "
                  "diện, hoặc Windows 10 LTSC. Đây là gói phần lớn người dùng nên "
                  "chọn."),
+        nen_chon=True,
     ),
     Plan(
         id="vps-lon",

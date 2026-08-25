@@ -11,6 +11,10 @@
         — {{ mode_rule }}</li>
     <li>{{ _("Phạm vi cần:") }}
         {% for scope in tool.required_scopes %}<code>{{ scope }}</code> {% endfor %}</li>
+    {# ⭐ Cơ chế xác thực phải nằm NGAY ĐÂY, không bắt khách đi tìm.
+       Nó là thứ khác nhau giữa các khu API và là thứ hỏng đầu tiên. #}
+    <li>{{ _("Xác thực:") }} <code>Authorization: Bearer &lt;ltt_sk_…&gt;</code>
+        — <a href="/huong-dan">{{ _("cách lấy khoá và cắm vào công cụ") }}</a></li>
     <li>{{ _("Dấu vân tay hợp đồng:") }} <code>{{ tool.contract_hash }}</code></li>
     {% if tool.aliases %}
       <li>{{ _("Tên cũ vẫn dùng được:") }}
@@ -22,7 +26,23 @@
   </ul>
 </div>
 
+{# Trang này dài — bảy mục. Không có mục lục thì mục thứ tư trở đi coi như
+   không tồn tại với người đang tìm một thứ cụ thể. #}
 <div class="card">
+  <h2 style="margin-top:0;">{{ _("Trong trang này") }}</h2>
+  <p class="muted" style="line-height:2;">
+    <a href="#goi-the-nao">{{ _("Gọi thế nào") }}</a> ·
+    <a href="#bien-vao">{{ _("Biến đầu vào") }}</a> ·
+    <a href="#ket-qua">{{ _("Kết quả") }}</a> ·
+    <a href="#model">Model</a> ·
+    <a href="#webhook">{{ _("Sự kiện webhook") }}</a> ·
+    <a href="#gioi-han">{{ _("Giới hạn") }}</a> ·
+    <a href="#loi">{{ _("Lỗi và cách thử lại") }}</a> ·
+    <a href="/gia-api">{{ _("Bảng giá") }} ↗</a>
+  </p>
+</div>
+
+<div class="card" id="goi-the-nao">
   <h2 style="margin-top:0;">{{ _("Gọi thế nào") }}</h2>
   <ol>
     <li><code>POST /api/v1/quotes</code> — {{ _("nhận giá và một báo giá đã ký, sống 15 phút.") }}</li>
@@ -37,13 +57,13 @@
   <pre style="overflow-x:auto;"><code>{{ example_request }}</code></pre>
 </div>
 
-<div class="card">
+<div class="card" id="bien-vao">
   <h2 style="margin-top:0;">{{ _("Biến đầu vào") }}</h2>
   <table class="table">
     <thead><tr>
-      <th>{{ _("Tên") }}</th><th>{{ _("Kiểu") }}</th>
-      <th>{{ _("Bắt buộc") }}</th><th>{{ _("Giới hạn") }}</th>
-      <th>{{ _("Mặc định") }}</th><th>{{ _("Mô tả") }}</th>
+      <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Kiểu") }}</th>
+      <th scope="col">{{ _("Bắt buộc") }}</th><th scope="col">{{ _("Giới hạn") }}</th>
+      <th scope="col">{{ _("Mặc định") }}</th><th scope="col">{{ _("Mô tả") }}</th>
     </tr></thead>
     <tbody>
       {% for param in params %}
@@ -59,7 +79,22 @@
           </td>
           <td>{% if param.default is not none %}<code>{{ param.default }}</code>
               {% else %}—{% endif %}</td>
-          <td>{{ param.description }}
+          <td>
+            {# 🔴 "Chỉ dùng khi …" phải là thứ ĐẬP VÀO MẮT, không phải một mệnh
+               đề giữa một đoạn tiếng Anh. Trước 25/08 điều kiện này chỉ nằm
+               trong `description`, nên bộ sinh ví dụ không biết mà tránh, và đã
+               dựng ra một thân tự mâu thuẫn: `mode=t2i` kèm `image_key`.
+               Giá trị đến từ hợp đồng (`x-ltt-only-when`), không phải từ việc
+               đọc câu chữ. #}
+            {% if param.only_when %}
+              {% for khoa, gia_tri in param.only_when.items() %}
+                <div class="badge badge-warn" style="margin-bottom:6px;">
+                  {{ _("chỉ dùng khi") }} <code>{{ khoa }}</code> =
+                  {% for v in gia_tri %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+                </div>
+              {% endfor %}
+            {% endif %}
+            {{ param.description }}
             {% if param.example is not none %}
               <br><span class="muted">{{ _("ví dụ:") }}
                 <code>{{ param.example }}</code></span>
@@ -72,10 +107,10 @@
   <p class="muted">{{ _("Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị lặng lẽ bỏ đi là cách khách trả tiền cho một job không làm đúng việc.") }}</p>
 </div>
 
-<div class="card">
+<div class="card" id="ket-qua">
   <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
   <table class="table">
-    <thead><tr><th>{{ _("Trường") }}</th><th>{{ _("Kiểu") }}</th></tr></thead>
+    <thead><tr><th scope="col">{{ _("Trường") }}</th><th scope="col">{{ _("Kiểu") }}</th></tr></thead>
     <tbody>
       {% for name, spec in tool.output_schema.properties.items() %}
         <tr><td><code>{{ name }}</code></td><td>{{ spec.type }}</td></tr>
@@ -83,14 +118,26 @@
     </tbody>
   </table>
   {% if has_artifacts %}
-    <p class="muted">{{ _("Trường kiểu artifact trả về một id; đổi id lấy đường tải ngắn hạn ở /api/v1/artifacts.") }}</p>
+    {# 🔴 ĐO 25/08 BẰNG MỘT LƯỢT GỌI THẬT. Câu cũ chỉ nói "trường kiểu artifact
+       trả về một id" — và khách đọc bảng trên rồi đi tìm `result.image_keys`.
+       Chỗ đó KHÔNG có gì. Artifact nằm ở `outputs[]`, còn `result` chỉ giữ
+       phần dữ liệu thuần. Kịch bản `tools/khach_gia_lap_anh.py` vấp đúng đây:
+       job xong, tiền đã thu, ảnh đã có — mà mã của khách không lấy được. #}
+    <p>{{ _("Trường kiểu artifact KHÔNG nằm trong") }} <code>result</code>.
+       {{ _("Chúng nằm ở") }} <code>outputs[]</code> {{ _("của job, mỗi phần tử mang") }}
+       <code>id</code>, <code>field</code> {{ _("và") }} <code>index</code>:</p>
+    <pre><code>{{ vi_du_outputs }}</code></pre>
+    <p class="muted">{{ _("Lấy từng") }} <code>outputs[].id</code>
+       {{ _("rồi gọi") }} <code>GET /api/v1/artifacts/{id}</code>
+       {{ _("để đổi lấy đường tải ngắn hạn.") }}</p>
   {% else %}
-    <p class="muted">{{ _("Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong job.") }}</p>
+    <p class="muted">{{ _("Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong") }}
+       <code>result</code>{{ _(", không qua") }} <code>outputs[]</code>.</p>
   {% endif %}
 </div>
 
 {% if models %}
-  <div class="card">
+  <div class="card" id="model">
     <h2 style="margin-top:0;">Model</h2>
     <ul>
       {% for model in models %}
@@ -101,7 +148,7 @@
   </div>
 {% endif %}
 
-<div class="card">
+<div class="card" id="webhook">
   <h2 style="margin-top:0;">{{ _("Sự kiện webhook") }}</h2>
   <ul>
     {% for event in events %}<li><code>{{ event }}</code></li>{% endfor %}
@@ -109,25 +156,25 @@
   <p class="muted">{{ _("Đăng ký ở POST /api/v1/webhooks. Mỗi lần giao có chữ ký; giao trùng là an toàn vì mỗi sự kiện có id riêng.") }}</p>
 </div>
 
-<div class="card">
+<div class="card" id="gioi-han">
   <h2 style="margin-top:0;">{{ _("Giới hạn") }}</h2>
   <ul>
     <li>{{ limits.request_rpm }} {{ _("request/phút") }},
         {{ limits.create_rpm }} {{ _("job/phút") }}</li>
     <li>{{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy cùng lúc") }}
         {% if limits.daily_credit_limit %}, {{ _("trần") }}
-          {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
+          {{ limits.daily_credit_limit | so }} {{ _("credit/ngày") }}{% endif %}</li>
     <li>{{ _("thân request tối đa") }} {{ limits.max_body_kib }} KiB
         — {{ _("tệp lớn đi qua /api/v1/uploads.") }}</li>
   </ul>
 </div>
 
-<div class="card">
+<div class="card" id="loi">
   <h2 style="margin-top:0;">{{ _("Lỗi và cách thử lại") }}</h2>
   <table class="table">
     <thead><tr>
-      <th>{{ _("Mã") }}</th><th>HTTP</th><th>{{ _("Thử lại") }}</th>
-      <th>{{ _("Dùng lại Idempotency-Key") }}</th><th>{{ _("Nên làm gì") }}</th>
+      <th scope="col">{{ _("Mã") }}</th><th scope="col">HTTP</th><th scope="col">{{ _("Thử lại") }}</th>
+      <th scope="col">{{ _("Dùng lại Idempotency-Key") }}</th><th scope="col">{{ _("Nên làm gì") }}</th>
     </tr></thead>
     <tbody>
       {% for row in errors %}

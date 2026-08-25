@@ -475,7 +475,12 @@ def test_desktop_ghi_dung_sau_khoa_chinh_sach(cc):
     k = cc.REG_DESKTOP_HKCU
     assert g[(k, "inferenceProvider")] == "gateway"
     assert g[(k, "inferenceGatewayAuthScheme")] == "bearer"
-    assert g[(k, "inferenceModels")] == '[{"name": "ltt_llm"}]'
+    # 🔴 KHONG phai `ltt_llm`. Claude Desktop LOC danh sach model truoc khi hien
+    #    picker; ten khong chua "claude"/"anthropic"/ten dong Claude thi bi bo,
+    #    picker rong, va **nut gui vo hieu ma khong bao gi**. Luat day du +
+    #    ly do chon dung ten nay: `tests/test_290_ten_tuyen_claude_desktop.py`.
+    assert g[(k, "inferenceModels")] == '[{"name": "' + cc.MODEL_DESKTOP + '"}]'
+    assert cc.MODEL_DESKTOP != cc.MODEL
     assert g[(k, "modelDiscoveryEnabled")] == "false"
 
 
@@ -527,3 +532,68 @@ def test_desktop_KHONG_in_khoa_ra_man_hinh(cc):
     khoa = "ltt_sk_" + "q" * 60
     ra = cc.cam_desktop("https://app.lttstudios.com", khoa, {})
     assert not any(khoa in d for d in ra), "khoa bi in ra man hinh"
+
+
+# ── Phien ban, nhat ky, va pham vi cua `kiem` ────────────────────────────────
+#
+# 🔴 Ba thu nay deu la bai hoc tu mot lan that bai co that, khong phai "cho day
+#    du". Xem `docs/PUBLIC_API/KE_HOACH_MVP_CONG_LAP_TRINH_VIEN.md` §1.5–1.6.
+
+def test_phien_ban_trong_ma_KHOP_bo_cai(cc):
+    """Mot so, hai noi. Test nay la thu duy nhat giu chung khong lech.
+
+    ⛔ Bo cai khai `1.0.0` con chuong trinh khong biet minh la ban nao thi cau
+       hoi DAU TIEN cua moi lan ho tro ("ban chay ban nao?") khong tra loi duoc.
+    """
+    import pathlib
+    import re
+    iss = (pathlib.Path(__file__).resolve().parents[1]
+           / "tools" / "installer" / "cam_cli.iss").read_text(encoding="utf-8")
+    m = re.search(r'#define\s+PhienBan\s+"([^"]+)"', iss)
+    assert m, "khong tim thay #define PhienBan trong cam_cli.iss"
+    assert m.group(1) == cc.PHIEN_BAN, (
+        f"bo cai khai {m.group(1)} con ma khai {cc.PHIEN_BAN}")
+
+
+def test_nhat_ky_ghi_duoc_va_KHONG_chua_khoa(cc, tmp_path, monkeypatch):
+    """Nhat ky la thu khach GUI DI kem khi bao loi.
+
+    ⛔ Nen no tuyet doi khong duoc chua khoa. Test nay chay `cam` that (voi mot
+       khoa gia) roi doc lai ca tep.
+    """
+    monkeypatch.setattr(cc, "TEP_NHAT_KY", tmp_path / "cam-cli.log")
+    khoa = "ltt_sk_" + "9" * 60
+    cc._ghi_nhat_ky("thu mot dong")
+    cc.main(["xem"])
+
+    noi = (tmp_path / "cam-cli.log").read_text(encoding="utf-8")
+    assert "thu mot dong" in noi
+    assert "xem bat dau" in noi and "xem ket thuc ma=0" in noi
+    assert cc.PHIEN_BAN in noi
+    assert khoa not in noi and "ltt_sk_" not in noi
+
+
+def test_nhat_ky_KHONG_lam_hong_lenh_khi_khong_ghi_duoc(cc, tmp_path, monkeypatch):
+    """O dia chi doc la mot bat tien, khong phai mot ly do de `cam` that bai."""
+    hong = tmp_path / "khong-ton-tai" / "sau" / "cam-cli.log"
+    monkeypatch.setattr(cc, "TEP_NHAT_KY", hong)
+    monkeypatch.setattr(cc.pathlib.Path, "mkdir",
+                        lambda *a, **k: (_ for _ in ()).throw(OSError("chi doc")))
+    cc._ghi_nhat_ky("khong ghi duoc")      # khong duoc nem
+
+
+def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop(cc):
+    """🔴 Ban truoc bao XANH trong khi Claude Desktop im lang hoan toan.
+
+    Vi no chi thu `MODEL` + `stream: True`, con be mat do dung `MODEL_DESKTOP`
+    va tham do bang mot request KHONG stream. Ca hai deu nam ngoai phep thu.
+    """
+    import inspect
+    ma = inspect.getsource(cc.lenh_kiem)
+    assert "MODEL_DESKTOP" in ma, (
+        "`kiem` khong thu ten tuyen cua Claude Desktop -> no se bao xanh trong "
+        "khi be mat do dang hong")
+    # Request khong stream: khong duoc co `"stream": True` o luot Desktop.
+    sau = ma.split("MODEL_DESKTOP", 1)[1]
+    assert '"stream"' not in sau.split("phuong=", 1)[0], (
+        "luot thu Claude Desktop phai la request KHONG stream")

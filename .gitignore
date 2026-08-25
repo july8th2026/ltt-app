@@ -29,6 +29,9 @@ data/audit_log.jsonl
 # LTT Nexus: ban cai + manifest la DU LIEU VAN HANH (dat tren server,
 # khong nhoi binary vao git; manifest thieu binary = link vo). Deploy rieng.
 data/nexus_dist/
+# Bo cai cong cu cam (~25 MB). Cung ly do voi nexus_dist: nhi phan phat hanh
+# khong nam trong kho ma, no duoc tha vao thu muc van hanh tren may chu.
+data/api_dist/
 data/nexus_versions.json
 
 # ─── H37 bench: so do thi COMMIT, anh va trong so thi KHONG ───────────────────
@@ -127,6 +130,17 @@ data/translations/desktop.ini
 # Anh chup phan tich PLENX (tu lieu, khong commit)
 /plenx-*.png
 /ltt-*.png
+# Anh chup man hinh cua cac phien lam viec. Luat nay them 2026-08-25 sau khi
+# chuyen do xay ra LAN THU HAI: commit 14f3bc6 ten la "Bo anh chup man hinh lot
+# vao repo", va 14 tep vps-*.png/vultr-*.png da lot vao ngay sau do. Mot luat
+# chan truoc re hon mot commit don sau.
+/vps-*.png
+/vultr-*.png
+/vm200-*.png
+/nexus_*.png
+/audit_*.png
+/live_nexus_*.png
+/vultr-*.jpg
 
 # Playwright CLI temp
 .playwright-cli/

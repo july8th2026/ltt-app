@@ -247,6 +247,21 @@ def register_chat_routes(api, config, tag: str) -> None:
                         principal.user_id[:8], e)
             raise service_unavailable(
                 "The model could not serve this request.") from None
+        except BaseException:
+            # ⚠️ Nhánh trên bắt `Exception`, và điều đó **nghe như** đã bắt hết.
+            #    Nhưng `asyncio.CancelledError` KHÔNG kế thừa `Exception` — mà
+            #    đó lại là ca hay xảy ra nhất ở một cửa đồng bộ: khách bỏ đi
+            #    giữa chừng. Khi ấy phần giữ chỗ nằm lại và không ai quét, vì
+            #    đường này không tạo `Job`.
+            #
+            #    Cùng một lỗ đã làm mất tiền thật ở `/messages` ngày 25/08; ở đây
+            #    nó hẹp hơn nên chưa nổ, không phải vì nó không có.
+            #
+            # ⛔ KHÔNG đổi thành `service_unavailable`: huỷ là huỷ, nuốt nó đi là
+            #    nói dối vòng đời của request. Hoàn tiền rồi ném tiếp nguyên trạng.
+            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+            db.commit()
+            raise
 
         thu = thanh_toan.quyet_toan_hoac_hoan(
             db, user_id=principal.user_id, request_id=request_id,

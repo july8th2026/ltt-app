@@ -28,21 +28,52 @@ if str(GOC) not in sys.path:
 
 
 def _nap_app_env() -> None:
-    """Doc `secrets/app.env` neu co. Khong ghi de bien da co san trong moi truong."""
-    f = GOC / "secrets" / "app.env"
-    if not f.exists():
-        return
-    for dong in f.read_text(encoding="utf-8-sig").splitlines():
-        dong = dong.strip()
-        if not dong or dong.startswith("#") or "=" not in dong:
+    """Nap bien moi truong. **Ban DA CAI truoc, cay nguon sau.**
+
+    Thu tu nay quan trong: `secrets/app.env` trong cay nguon giu mat khau CSDL
+    CU, va dung no thi loi hien ra la `password authentication failed for user
+    ltt_app` -- mot cau chi thang vao Postgres trong khi nguyen nhan la doc nham
+    tep. Da mat thi gio vi no hai lan.
+    """
+    for tep in (pathlib.Path("C:/LTTPlatform/secrets/app.env"),
+                GOC / "secrets" / "app.env"):
+        if not tep.exists():
             continue
-        ten, gt = dong.split("=", 1)
-        os.environ.setdefault(ten.strip(), gt.strip().strip('"').strip("'"))
+        for dong in tep.read_text(encoding="utf-8-sig").splitlines():
+            if "=" in dong and not dong.strip().startswith("#"):
+                k, v = dong.split("=", 1)
+                os.environ.setdefault(k.strip(), v.strip())
 
 
 def _gb(byte) -> float:
     return round(int(byte or 0) / 1024 ** 3, 1)
 
+
+def _doi_chieu_bon_nguon(client) -> int:
+    """In bao cao doi chieu. Phep quet nam o `apps/vps/doi_chieu.py`.
+
+    Tep nay chi HIEN THI. Chep logic quet vao day nghia la co hai ban, va
+    ban trong vong bao tri (thu that su chay hang ngay) se la ban bi quen.
+    """
+    from apps.vps import doi_chieu
+    from platform_core.db import get_session
+
+    print()
+    print("== Doi chieu bon nguon su that ==")
+    gen = get_session()
+    db = next(gen)
+    try:
+        kq = doi_chieu.quet(db, client)
+        for x in kq.khong_doc_duoc:
+            print(f"  khong doc duoc {x}")
+        for lech in kq.lech:
+            print(f"  MO COI {lech.nhan}: {list(lech.muc)}")
+            print(f"         -> {lech.hau_qua}")
+        if not kq.lech:
+            print(f"  sach ({kq.so_may} may, {kq.so_ip} IP) - khong co gi mo coi")
+        return kq.tong_mo_coi
+    finally:
+        gen.close()
 
 def main() -> int:
     _nap_app_env()
@@ -129,10 +160,11 @@ def main() -> int:
     # ── 5. Ket luan: suc chua theo dung phep tinh app se dung ──────────────
     if tt and kho:
         goc = capacity.suc_chua_tu_proxmox(tt, kho)
-        ram_ck, dia_ck = capacity.cam_ket_tu_vm(vms if 'vms' in dir() else [])
+        ram_ck, dia_ck, vcpu_ck = capacity.cam_ket_tu_vm(vms if 'vms' in dir() else [])
         lon = capacity.kho_lon_nhat(kho)
         sc = capacity.SucChua(
             ram_mb_tong=goc.ram_mb_tong, dia_gb_tong=goc.dia_gb_tong,
+            cpu_tong=goc.cpu_tong, vcpu_da_hua=vcpu_ck,
             ram_mb_da_hua=ram_ck, dia_gb_da_hua=dia_ck,
             dia_gb_dang_dung=int(lon.get("used") or 0) // 1024 ** 3)
         print()
@@ -191,6 +223,56 @@ def main() -> int:
         print(f"  {img.id:<18} {volid}  {'OK' if co else 'KHONG THAY TREN NODE'}")
         if not co:
             loi += 1
+
+    # ── Ban sao luu cua cong vao co con khop khong ───────────────────────────
+    #
+    # Bo luat tren cong vao doi ma ban sao luu khong doi => kich ban dung lai se
+    # sinh ra mot cong vao KHAC cai dang chay, va khong ai biet cho toi luc phai
+    # dung no. Kiem o day vi day la cho duy nhat chay dinh ky va doc duoc CA HAI.
+    print()
+    print("== Ban sao luu cong vao ==")
+    import subprocess
+    from pathlib import Path as _P
+
+    sao_luu = _P("secrets/cong_vao/nftables.conf")
+    if not sao_luu.exists():
+        print("  CHUA SAO LUU — cong vao chet la khong dung lai duoc")
+        print("  (khoa rieng WireGuard chi ton tai tren chinh con VPS ay)")
+        loi += 1
+    else:
+        try:
+            that = subprocess.run(
+                ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10",
+                 "ltt-gw", "cat /etc/nftables.conf"],
+                capture_output=True, text=True, timeout=30).stdout
+        except Exception as exc:                 # noqa: BLE001
+            that = ""
+            print(f"  khong doc duoc cong vao: {str(exc)[:60]}")
+        if that:
+            cu = [d.strip() for d in sao_luu.read_text(encoding="utf-8").splitlines()
+                  if d.strip() and not d.strip().startswith("#")]
+            moi = [d.strip() for d in that.splitlines()
+                   if d.strip() and not d.strip().startswith("#")]
+            if cu == moi:
+                print("  nftables.conf: KHOP ban dang chay")
+            else:
+                print("  nftables.conf: LECH ban dang chay — sao luu lai")
+                loi += 1
+        for ten in ("wg_private.key", "wg_public.key"):
+            print(f"  {ten}: {'co' if (sao_luu.parent / ten).exists() else 'THIEU'}")
+
+    try:
+        loi += _doi_chieu_bon_nguon(client)
+    except Exception as exc:                     # noqa: BLE001
+        # Doi chieu can CSDL + router + gateway + Vultr. Bat ky cai nao khong
+        # tra loi cung khong duoc lam mat cac phep kiem DA CHAY XONG o tren --
+        # nguoi chay doctor thuong dang tim mot su co, va mot traceback thay cho
+        # bao cao la mot buoc lui.
+        print()
+        print("== Doi chieu bon nguon su that ==")
+        print(f"  KHONG CHAY DUOC: {type(exc).__name__}: "
+              f"{str(exc)[:90]}")
+        loi += 1
 
     print()
     print("RESULT:", "PASS" if loi == 0 else f"CO {loi} MUC CAN XEM")

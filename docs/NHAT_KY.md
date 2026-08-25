@@ -14,6 +14,96 @@
 
 ---
 
+## 2026-08-25 — Sáu cái bẫy nằm trong **chính cổng chất lượng**
+
+- **Hạng mục:** hạ tầng kiểm thử (không thuộc H nào) — hoàn thành
+- **Trạng thái:** xong
+
+### Đã làm
+
+Không sửa gì trong sản phẩm. Sửa **thứ dùng để chứng minh sản phẩm đúng** — sáu
+chỗ mà một phép kiểm *tồn tại*, *không đo thứ nó có vẻ đang đo*, và *báo PASS*.
+Toàn bộ chi tiết + bằng chứng ở `docs/BAY_TRONG_CONG_CHAT_LUONG.md`.
+
+| # | Bẫy | Hậu quả nếu không sửa | Đã chặn bằng |
+|---|---|---|---|
+| 1 | `check_so_test.py` chốt **số lượng** chứ không chốt **tập hợp** | hai phiên cùng tạo `test_303_*` mà báo PASS — đã xảy ra thật | mốc thành tập hợp (`# tap-hop-so-bi-trung`) |
+| 2 | `gate --quick` in `RESULT: PASS` y hệt gate đầy đủ | **cả ba lỗi thật hôm 25/08** nằm đúng ở bước `pytest` mà nó bỏ | dòng kết quả kể tên thứ bị bỏ |
+| 3 | 203 `msgstr` rỗng + 76 `#, fuzzy` không ai canh | trang tiếng Anh in ra tiếng Việt, không triệu chứng | `tools/check_dich_thieu.py`, mốc 279 |
+| 4 | ba `{timeout: 1900}` viết cứng trong test vitest | test đỏ rải rác, và tôi **chẩn đoán sai** thành "máy tải nặng" | nâng hạn + `testTimeout` ở cả ba `vite.config.ts` |
+| 5 | gate đầy đủ mất 2,9–4,4 giờ, cây đổi giữa chừng | lượt 4,4 giờ báo lỗi ở tệp **đã đổi tên từ nhiều giờ trước** | dấu vân tay cây ở cả hai đầu |
+| 6 | `503 passed, **2 skipped**` | hai phép kiểm **duy nhất** chốt bộ luật nftables chưa từng chạy ở đâu | `tools/check_bo_qua.py`, mốc 12 chỗ |
+
+Ba điều đáng ghi riêng, vì chúng là *lý do* chứ không phải *việc*:
+
+1. **Bẫy 1 là một luật, không phải một lỗi.** Mọi bánh cóc đếm số lượng đều có
+   một cửa hoán đổi một-đổi-một đi lọt. Cả hai bánh cóc thêm hôm nay đều chốt
+   tập hợp, và `test_306` có một phép kiểm cho **đúng ca hoán đổi đó**: dịch một
+   mục cũ + thêm một mục mới, tổng vẫn 279, và nó **vẫn phải đỏ**.
+
+2. **Bẫy 6 không sửa bằng cách ép test chạy.** Phần lớn chỗ bỏ qua là đúng
+   (không PostgreSQL / ffmpeg / R2 / Windows). Ép chúng chạy là đổi một phép
+   kiểm im lặng lấy một phép kiểm báo động giả. Cách sửa là bắt mỗi chỗ bỏ qua
+   phải **được khai báo** và **được gọi tên ở mỗi lượt gate**.
+
+3. **Bẫy 4: tôi suy ra nguyên nhân từ một con số trong khi dòng lỗi thật vẫn còn
+   đọc được.** Tôi thấy 3.288ms so với hạn mặc định 5.000ms và kết luận "quá hạn
+   khi tải nặng". Dòng thật là `2381ms … Unable to find role="button"` — một hạn
+   1.900ms viết cứng. Suy luận nghe hợp lý và sai.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools/gate.py --quick` | **PASS 19/19** (gồm hai bước mới) |
+| `python -m pytest tests/test_306_banh_coc_bo_qua_va_dich.py -q` | **10 passed** |
+| `python -m pytest tests/test_145_gate_covers_everything.py -q` | **12 passed** (2 phép kiểm mới) |
+| chứng minh bẫy 3 chặn thật (thêm chuỗi mới) | **FAIL, exit 1** — đúng như mong đợi |
+| chứng minh bẫy 3 chặn **ca hoán đổi** (tổng vẫn 279) | **FAIL, exit 1** — mốc đếm số lượng sẽ PASS ở đây |
+| chứng minh `--accept` **từ chối** nâng mốc | **exit 1** |
+| chứng minh bẫy 6 chặn thật (thêm một `skipif`) | **FAIL, exit 1** |
+
+**Chưa chạy:** `python tools/gate.py` đầy đủ. Ba lượt đầy đủ ngày 25/08 không
+lượt nào chạy trên một cây đứng yên (2,9h → 3 đỏ, 1 thật; 4,4h → 3 đỏ đều về tệp
+đã đổi tên; một lượt chết im lặng), nên **không có lượt đầy đủ nào đáng gọi là
+bằng chứng** — chính là bẫy 5. Cụm VPS thì có: **503 passed, 2 skipped, 874s**,
+và hai chữ `s` đó nay được gọi tên ở mỗi lượt gate.
+
+### Quyết định mới
+
+Không có quyết định nền tảng mới. Bốn bánh cóc nay là hợp đồng của cổng chất
+lượng — bảng "cái gì canh cái gì" ở cuối `docs/BAY_TRONG_CONG_CHAT_LUONG.md`.
+
+### Cách lùi lại
+
+Xoá `tools/check_bo_qua.py`, `tools/check_bo_qua.moc`,
+`tools/check_dich_thieu.py`, `tools/check_dich_thieu.moc`,
+`tests/test_306_banh_coc_bo_qua_va_dich.py`,
+`docs/BAY_TRONG_CONG_CHAT_LUONG.md`; hoàn `tools/gate.py`,
+`tools/check_so_test.py`, `tools/check_so_test.moc`,
+`tests/test_145_gate_covers_everything.py`, ba `vite.config.ts` và hai tệp test
+vitest.
+
+### Còn tồn đọng
+
+- **279 mục bản EN chưa dịch** (203 rỗng + 76 fuzzy) — cố ý giữ, chỉ chặn tăng.
+  Chúng nằm ở khu socialbot đóng băng, các app cũ, trang admin.
+- **`test_293` vẫn bỏ qua** trên mọi máy làm việc, vì `secrets/cong_vao/` không
+  được commit. Nay **hiện tên**, nhưng vẫn chưa chạy ở đâu — muốn nó chạy thật
+  thì phải chạy trên chính cổng vào, và đó là một quyết định hạ tầng.
+- **Chưa có lượt gate đầy đủ nào trên cây đứng yên.** Cần một lượt khi hai phiên
+  không cùng sửa.
+
+### Việc tiếp theo
+
+1. Chạy `python tools/gate.py` đầy đủ khi cây đứng yên, và tin nó **chỉ khi**
+   dòng "CAY DA DOI TRONG LUC CHAY" không xuất hiện.
+2. Bật `LTT_VPS` + 13 biến môi trường rồi kiểm `/vps` trên **URL công khai**.
+3. Hạ dần mốc 279 khi động tới trang nào thì dịch trang đó — đừng mở một buổi
+   dịch 279 mục không ai kiểm lại được.
+
+---
+
 ## 2026-08-24 (chiều) — Trọng tài card chạy thật; và bốn thứ tôi đã hiểu sai
 
 - **Hạng mục:** V1–V4 của `CHIA_GPU_HAI_MODEL.md`; nghiên cứu dùng hai card máy A.
@@ -636,7 +726,8 @@ thuộc về cam kết dịch vụ, không phải chuyện kỹ thuật vặt.
 ### Ba cái bẫy nhỏ đã mất thời gian
 
 - **`pathlib.write_text` trên Windows ghi CRLF.** Script `.sh` gửi sang Linux thành
-  `pipefail` → *"invalid option name"*, báo ở dòng khác hẳn chỗ sai. Phải
+  `pipefail
+` → *"invalid option name"*, báo ở dòng khác hẳn chỗ sai. Phải
   `newline="
 "`.
 - **Backtick trong `echo "..."`** bị bash hiểu là thay-thế-lệnh.

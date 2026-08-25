@@ -1,0 +1,103 @@
+{# Kiểu của các thành phần dùng chung — DÙNG CHO CẢ HAI VỎ.
+
+   🔴 VÌ SAO TÁCH RA — ĐO 25/08 BẰNG TRÌNH DUYỆT THẬT.
+
+      Khối CSS này trước nằm **nội tuyến trong `base.html`**, tức chỉ vỏ đã đăng
+      nhập mới có. `base_public.html` có khối `<style>` riêng chỉ đặt nền `body`.
+
+   ⛔ Hậu quả: **mọi trang công khai** — `/gia-api`, `/huong-dan`,
+      `/huong-dan/cong-cu` — render với `class="card"`, `class="table"` và `<pre>`
+      mà **không có một luật CSS nào khớp**. Nhìn trên Chrome: các thẻ không tách
+      khỏi nhau, bảng chỉ là mấy cột chữ trôi nổi, khối mã là chữ trần trên nền
+      trang. Đúng những trang một người **đang cân nhắc** nhìn thấy đầu tiên.
+
+   ⚠️ `ltt.css` KHÔNG có `.card`, `.table` hay `pre` — đừng đi tìm ở đó. Kiểu của
+      hai thứ đó luôn nằm trong template, và đó chính là lý do chúng lệch nhau.
+#}
+<style>
+    /* ── Components ─────────────────────────────────────────── */
+    h1 { font-size:20px; margin:0 0 4px; }
+    h2 { font-size:15px; margin:0 0 10px; }
+    .page-sub { color:var(--muted); margin:0 0 20px; }
+
+    .card {
+      background:var(--panel); border:1px solid var(--line);
+      border-radius:10px; padding:16px 18px; margin-bottom:14px;
+    }
+    .card > h2 { display:flex; align-items:center; gap:8px; }
+    .card-accent { height:3px; border-radius:3px 3px 0 0; margin:-16px -18px 14px; }
+
+    .row { display:flex; gap:14px; align-items:flex-start; margin-bottom:12px; flex-wrap:wrap; }
+    .field { display:flex; flex-direction:column; gap:5px; flex:1 1 260px; min-width:0; }
+    .field label { color:var(--muted); font-size:12px; }
+    .field .hint { color:var(--dim); font-size:11px; }
+
+    input[type=text], input[type=password], input[type=number], input[type=email], select, textarea {
+      padding:9px 10px; border-radius:6px; border:1px solid var(--line);
+      background:var(--panel2); color:var(--fg); font-size:13px; width:100%;
+      font-family:inherit;
+    }
+    textarea { min-height:74px; resize:vertical; font-family:Consolas,monospace; font-size:12px; }
+    button, .btn {
+      padding:9px 14px; border-radius:6px; border:none; background:var(--accent);
+      color:#fff; cursor:pointer; font-size:13px; font-family:inherit;
+      text-decoration:none; display:inline-block;
+    }
+    button:hover, .btn:hover { filter:brightness(1.12); }
+    .btn-ghost { background:var(--panel2); border:1px solid var(--line); }
+    .btn-danger { background:#b91c1c; }
+    .btn-sm { padding:5px 10px; font-size:12px; }
+
+    .check { display:flex; align-items:center; gap:8px; color:var(--fg); }
+    .check input { width:auto; }
+
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    th { text-align:left; color:var(--dim); font-weight:500; padding:6px 8px 6px 0; font-size:11px;
+         text-transform:uppercase; letter-spacing:.5px; }
+    td { padding:8px 8px 8px 0; border-top:1px solid var(--line); }
+
+    .badge { display:inline-block; padding:2px 8px; border-radius:20px; font-size:11px; }
+    .badge-ok   { background:#0f2417; color:var(--ok);   border:1px solid #14532d; }
+    .badge-warn { background:#2a2314; color:var(--warn); border:1px solid #7c5e10; }
+    .badge-err  { background:#2a1416; color:var(--err);  border:1px solid #7f1d1d; }
+
+    .alert { border-radius:10px; padding:12px 16px; margin-bottom:14px; border:1px solid; }
+    .alert-ok   { background:#0f2417; border-color:#14532d; }
+    .alert-warn { background:#2a2314; border-color:#7c5e10; }
+    .alert-err  { background:#2a1416; border-color:#7f1d1d; }
+
+
+    .muted { color:var(--muted); }
+    .dim   { color:var(--dim); }
+    .mono  { font-family:Consolas,monospace; }
+
+    /* ── Khối mã ────────────────────────────────────────────────
+       🔴 Trang hướng dẫn tồn tại để khách CHÉP cấu hình. Trước 25/08 `pre` không
+          có nền, không viền, không lề — chữ trần nằm lẫn vào phần văn xuôi, và
+          người đọc phải tự tô để chép. Với một trang tài liệu thì đó là hỏng
+          đúng việc chính của nó. */
+    pre { margin:0; background:var(--panel2); border:1px solid var(--line);
+          border-radius:8px; padding:12px 14px; overflow-x:auto;
+          color:#c3c9d4; font-size:12px; font-family:Consolas,monospace;
+          /* ⚠️ `pre` chứ không phải `pre-wrap`: một dòng `base_url = "..."` bị
+             bẻ giữa chừng là một dòng khách chép về sẽ sai. Thà cuộn ngang. */
+          white-space:pre; word-break:normal; }
+    pre code { font-family:inherit; font-size:inherit; color:inherit; }
+
+    /* Bảng: có đường kẻ và nền tiêu đề thì mới quét mắt theo hàng được. */
+    .table th { border-bottom:1px solid var(--line); }
+    .table td, .table th { padding:8px 12px 8px 0; }
+
+    /* Nút sao chép, do `sao_chep.js` gắn vào. Không có JS thì không có nút —
+       và trang vẫn đọc được bình thường. */
+    .khoi-ma { position:relative; }
+    .khoi-ma > .nut-chep {
+      position:absolute; top:8px; right:8px; padding:4px 10px; font-size:11px;
+      border:1px solid var(--line); border-radius:6px;
+      background:var(--panel); color:var(--muted); cursor:pointer; opacity:0;
+      transition:opacity .12s;
+    }
+    .khoi-ma:hover > .nut-chep, .khoi-ma > .nut-chep:focus-visible { opacity:1; }
+    .khoi-ma > .nut-chep.xong { color:var(--ok); border-color:var(--ok); opacity:1; }
+    @media (hover: none) { .khoi-ma > .nut-chep { opacity:1; } }
+</style>

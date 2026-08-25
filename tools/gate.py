@@ -64,11 +64,37 @@ def _steps(quick: bool) -> list[Step]:
         # KHONG don qua khu (doi ten tep test cua phien khac la dung vao viec dang
         # do cua ho) — no chan tuong lai.
         Step("trung so test", [sys.executable, "tools/check_so_test.py"], ROOT),
+        # 🔴 Banh coc: khong cho THEM cho bo qua ma khong khai bao.
+        #
+        #    `pytest -q` in mot chu `s` cho moi test bi bo qua, va gate chi giu
+        #    4 dong cuoi cua dau ra — nen mot phep kiem NGUNG chay la mot su
+        #    kien khong co trieu chung nao.
+        #
+        #    Do 25/08: cum VPS "503 passed, 2 skipped". Hai cai `s` do la hai
+        #    phep kiem DUY NHAT chot rang kich ban dung lai cong vao con khop bo
+        #    luat nftables that — va chung khong bao gio chay o dau, vi
+        #    `secrets/` khong duoc commit.
+        #
+        # ⭐ Buoc nay KHONG ep chung chay (may khong co PostgreSQL/ffmpeg/R2 thi
+        #    bo qua la dung). No in HET danh sach moi luot va bao do khi co cho
+        #    MOI — bo qua tro thanh mot thu duoc khai bao, khong phai mot thu
+        #    xay ra.
+        Step("bo qua im lang", [sys.executable, "tools/check_bo_qua.py"], ROOT),
         # H24: banh coc chong THEM chuoi chua boc _(). Con ~2.310 chuoi chua dich;
         # cam tuyet doi thi chan moi viec khac, nen chi cam TANG. Khong co buoc
         # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh
         # lot vao giua trang tieng Viet ma khong ai biet tu luc nao.
         Step("chuoi chua dich", [sys.executable, "tools/check_i18n.py"], ROOT),
+        # 🔴 …va banh coc thu HAI, cho buoc SAU do. `check_i18n.py` canh chuoi
+        #    chua duoc boc `_()`. Buoc nay canh chuoi DA vao `messages.po` roi
+        #    ma `msgstr` van rong — tuc trang tieng Anh in ra tieng Viet.
+        #
+        #    Do 25/08: 203 muc `msgstr` rong + 76 muc `#, fuzzy` tren 2.352.
+        #    Fuzzy dem NHU RONG: `msgfmt` bo qua moi muc fuzzy, nen mot ban dich
+        #    fuzzy khong bao gio toi mat nguoi dung — no chi TRONG NHU da xong
+        #    khi doc tep `.po`.
+        Step("dich thieu ban EN",
+             [sys.executable, "tools/check_dich_thieu.py"], ROOT),
         # Hồ sơ là bản đồ để AI/người mới hiểu code. Nếu không khóa freshness,
         # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
         Step("system profile", [sys.executable, "tools/build_system_profile.py",
@@ -79,6 +105,38 @@ def _steps(quick: bool) -> list[Step]:
         # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
         Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
              ROOT),
+        # 🔴 ANH CHUP HOP DONG VANG — do 25/08, va no da do TREN NHANH mot ngay
+        #    ma khong ai thay.
+        #
+        #    Tran `max_tokens` cua `text.chat` nang 16.384 -> 32.768 hom 24/08.
+        #    Ma doi, CHANGELOG doi, con `tests/golden/public_api_catalog_v1.json`
+        #    thi khong — nen `test_181` va `test_187` do suot tu do.
+        #
+        # ⛔ VI SAO KHONG AI THAY: hai test do chi chay trong pytest, ma
+        #    `gate --quick` KHONG chay pytest. Ca hai phien deu chay `--quick`
+        #    truoc khi deploy va deu thay PASS.
+        #
+        # ⭐ Phep kiem nay re (dung catalog roi so JSON), nen no chay ca o
+        #    `--quick`. Mot thay doi hop dong co y thi chay
+        #    `python tools\\sinh_golden_api.py --ghi` — va lan ghi do hien ra
+        #    trong diff cho nguoi review thay, dung nhu buoc tren.
+        Step("anh chup hop dong", [sys.executable, "tools/sinh_golden_api.py"],
+             ROOT),
+        # 🔴 TÀI LIỆU SINH RA CŨNG TRÔI ĐƯỢC — và nó đã trôi, ngay trong HEAD.
+        #
+        #    `DEVELOPER_GUIDE.md` là tài liệu ta **xuất bản cho khách**. Commit
+        #    `c246858` nâng `MAX_TOKENS_TRAN` 16.384 → 32.768 nhưng không sinh
+        #    lại tài liệu, nên từ đó **mã nói 32.768 còn tài liệu nói 16.384**.
+        #
+        # ⛔ VÀ NÓ SAI VỀ PHÍA KHÔNG AI BÁO LỖI: tài liệu báo trần THẤP hơn thực
+        #    tế. Khách đọc, tự kẹp ở 16.384, và không bao giờ dùng hết thứ họ đã
+        #    trả tiền để được dùng. Không có triệu chứng, không có ai khiếu nại.
+        #
+        # ⭐ `--check` đã tồn tại và đã trả mã 1 khi lệch — nhưng nó chỉ chạy
+        #    trong pytest, thứ `gate --quick` bỏ qua. Cùng lỗ với ảnh chụp hợp
+        #    đồng: phép kiểm CÓ, mà không ai gặp nó đúng lúc cần.
+        Step("tai lieu sinh ra", [sys.executable, "tools/build_public_api_docs.py",
+                                  "--check"], ROOT),
         # EXT-18: SDK thiếu một route không bao giờ báo lỗi — nó chỉ để người
         # dùng tự viết lấy, rồi họ viết sai retry hoặc quên Idempotency-Key.
         Step("SDK khop hop dong",
@@ -148,6 +206,37 @@ def _console_text(value: str, encoding: str | None = None) -> str:
         return value.encode("ascii", errors="backslashreplace").decode("ascii")
 
 
+#: Tên các bước `--quick` KHÔNG chạy. In ra ở dòng kết quả — xem `main`.
+BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "pytest")
+
+
+def _dau_van_tay_cay() -> str:
+    """Dấu vân tay của cây nguồn: đường dẫn + kích thước + thời điểm sửa.
+
+    Không băm nội dung — chỉ cần biết cây **có đổi hay không** trong lúc chạy,
+    và băm nội dung toàn cây tốn thêm hàng chục giây cho đúng một câu trả lời
+    có/không.
+    """
+    import hashlib
+
+    h = hashlib.sha256()
+    for thu_muc in ("apps", "platform_core", "server", "tools", "tests",
+                    "alembic", "locale"):
+        goc = ROOT / thu_muc
+        if not goc.exists():
+            continue
+        for f in sorted(goc.rglob("*")):
+            if not f.is_file() or "__pycache__" in f.parts:
+                continue
+            try:
+                st = f.stat()
+            except OSError:
+                continue
+            h.update(f"{f.relative_to(ROOT).as_posix()}:{st.st_size}:"
+                     f"{int(st.st_mtime)}\n".encode())
+    return h.hexdigest()[:16]
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Chay toan bo cong chat luong.")
     parser.add_argument("--quick", action="store_true",
@@ -155,6 +244,7 @@ def main() -> int:
     args = parser.parse_args()
 
     steps = _steps(args.quick)
+    van_tay_dau = _dau_van_tay_cay()
     print(f"Gate: {len(steps)} buoc\n")
     for step in steps:
         print(f"  ... {step.name}", flush=True)
@@ -170,7 +260,38 @@ def main() -> int:
         for step in failed:
             print(_console_text(f"\n--- {step.name} ---\n{step.tail}"))
     print("=" * 62)
-    print("RESULT:", "PASS" if not failed else f"FAIL ({len(failed)}/{len(steps)})")
+
+    # 🔴 Một lượt gate đầy đủ mất 2,9–4,4 giờ. Trên kho này — hai phiên làm
+    #    việc song song — cây đổi vài phút một lần. Ngày 25/08 có ba lượt đầy
+    #    đủ, và lượt 4,4 giờ báo lỗi ở **một tệp đã đổi tên từ nhiều giờ
+    #    trước**.
+    #
+    #    Kết quả ấy không sai lúc nó đo. Nó **trả lời về quá khứ** — và đọc nó
+    #    như bằng chứng cho hiện tại là cách sinh ra ba vòng sửa những thứ
+    #    không còn hỏng.
+    van_tay_cuoi = _dau_van_tay_cay()
+    if van_tay_cuoi != van_tay_dau:
+        print(f"CAY DA DOI TRONG LUC CHAY ({van_tay_dau} -> {van_tay_cuoi}).")
+        print("Ket qua duoi day noi ve cay luc BAT DAU, khong phai cay hien tai.")
+        print("Chay lai tren mot cay dung yen neu can no lam BANG CHUNG.")
+        print("=" * 62)
+
+    ket = "PASS" if not failed else f"FAIL ({len(failed)}/{len(steps)})"
+    if args.quick:
+        # 🔴 `--quick` ĐÚNG khi bỏ pytest — đó là mục đích nó khai. Lỗi nằm ở
+        #    chỗ dòng kết quả in **y hệt** gate đầy đủ, nên người đọc hiểu nó
+        #    là "mọi thứ xanh".
+        #
+        #    Cả hai phiên Claude làm việc trong kho này ngày 25/08 đều đọc như
+        #    vậy — và **mọi lỗi thật hôm đó đều nằm ở đúng bước `pytest`** mà
+        #    chế độ này bỏ: migration vỡ trên SQLite, liên kết điều khoản 404,
+        #    trùng số tệp test.
+        print(f"RESULT: {ket}  [--quick: KHONG chay {', '.join(BO_QUA_KHI_QUICK)}]")
+        if not failed:
+            print("        Chua phai bang chung day du - moi loi THAT ngay")
+            print("        25/08 deu nam o buoc `pytest` ma che do nay bo qua.")
+    else:
+        print("RESULT:", ket)
     return 0 if not failed else 1
 
 

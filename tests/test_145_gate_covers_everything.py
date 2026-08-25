@@ -152,3 +152,34 @@ def test_platform_core_khong_con_cho_nuot_loi_nao():
                        cwd=ROOT, capture_output=True, text=True)
     con = [l.strip() for l in r.stdout.splitlines() if "platform_core/" in l]
     assert not con, f"platform_core còn nuốt lỗi lặng lẽ: {con}"
+
+
+# ── Hai bay cua chinh gate, do 25/08/2026 ──────────────────────────────────
+
+def test_gate_NOI_RA_khi_cay_doi_trong_luc_chay():
+    """🔴 Mot luot gate day du mat 2,9-4,4 gio. Kho nay co hai phien lam viec
+    song song, nen cay doi vai phut mot lan — va luot 4,4 gio ngay 25/08 bao
+    loi o mot tep **da doi ten tu nhieu gio truoc**.
+
+    Ket qua ay khong sai luc no do. No tra loi ve QUA KHU, va doc no nhu bang
+    chung cho hien tai la cach sinh ra ba vong sua nhung thu khong con hong.
+    """
+    ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "_dau_van_tay_cay" in ma, "gate khong biet cay co doi hay khong"
+    assert "CAY DA DOI TRONG LUC CHAY" in ma
+    assert ma.count("_dau_van_tay_cay()") >= 3, (
+        "phai lay van tay CA hai dau (truoc + sau), khong chi mot dau")
+
+
+def test_quick_PHAI_noi_no_khong_chay_gi():
+    """⛔ `--quick` dung khi bo pytest — do la muc dich no khai. Loi nam o cho
+    dong ket qua in Y HET gate day du, nen nguoi doc hieu no la "moi thu xanh".
+
+    Ca hai phien Claude lam viec trong kho nay ngay 25/08 deu doc nhu vay — va
+    MOI loi that hom do deu nam o dung buoc `pytest` ma che do nay bo qua:
+    migration vo tren SQLite, lien ket dieu khoan 404, trung so tep test.
+    """
+    ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "BO_QUA_KHI_QUICK" in ma
+    assert "KHONG chay" in ma, "dong RESULT cua --quick phai ke ten thu bi bo"
+    assert "Chua phai bang chung day du" in ma

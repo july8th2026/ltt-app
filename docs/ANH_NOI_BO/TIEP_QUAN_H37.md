@@ -104,7 +104,7 @@ chắn**: đang vẽ > 90 giây mà VRAM < 5 GB.
 | G10 mở cho khách | 🔨 **đang 24/08** | 4 cổng đã mở; còn nghiệm thu một job thật từ ngoài vào |
 | G11 giám sát chất lượng | ⏸️ chưa | |
 
-**Đường găng còn lại: chỉ còn nghiệm thu G10** — một job ảnh đi thật từ ngoài vào qua `/api/v1`, và nó chờ **hai lệnh của chủ sản phẩm** (§4 Đợt C).
+~~**Đường găng còn lại: chỉ còn nghiệm thu G10**~~ — **G10/C4 ĐÓNG 25/08.** Việc còn lại nay ở `DUT_DIEM.md` — một job ảnh đi thật từ ngoài vào qua `/api/v1`, và nó chờ **hai lệnh của chủ sản phẩm** (§4 Đợt C).
 
 ⚠️ **Đã đảo thứ tự so với bản đầu của tài liệu này.** Bản đầu xếp *không mở tool trước khi xong Đợt A + B*. Tôi đổi, và ghi ra để không ai tưởng là quên:
 
@@ -177,7 +177,7 @@ sẽ không biết vì thứ nào.
 | C1 | ✅ **XONG 24/08** — chốt định vị và giá theo §3 | chủ sản phẩm |
 | C2 | ✅ **XONG** — `gia.py` 5 → 3, `PHIEN_BAN_GIA` → `ltt-image-2026-08-24b`, `/gia-api` tự đổi theo | tôi |
 | C3 | ✅ **XONG** — `is_active=True` + `LTT_PUBLIC_API_TOOLS` thêm `image.ltt` | tôi |
-| C4 | Một job thật đi từ ngoài vào qua `https://app.lttstudios.com/api/v1`, đối soát credit bằng tay | tôi |
+| C4 | ✅ **XONG 24/08** bằng `tools/nghiem_thu_anh_e2e.py` (xem `APP_API_COVERAGE_FINAL.md` §4) — dòng này để sót ở trạng thái chưa xong. **25/08 thêm một phép thử khác loại:** Job `fbefed09` chạy từ VM 192.168.2.136 qua Cloudflare bằng thư viện chuẩn: `quote` 3 credit → `succeeded` sau **138 giây** → tải **5.583.155 byte**. Đối soát tay: `hold −3` → `settle` *giữ 3, thu 3, provider 3, variance 0*; số dư 1218 → 1215. Kịch bản: `tools/khach_gia_lap_anh.py`. **Và nó tìm ra một lỗi tài liệu đang sống** — xem `DUT_DIEM.md` §2 | tôi |
 | C5 | Điền một dòng vào mục 4 của `APP_API_COVERAGE_FINAL.md` | tôi |
 
 ⛔ **C4 không thay được bằng test.** H38 có 739 test xanh và vẫn để lọt lỗi

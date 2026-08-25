@@ -81,7 +81,12 @@ def test_stop_details_PHAI_CO_MAT_va_bang_None(st):
 @pytest.mark.parametrize("openai_style,anthropic_style", [
     ("stop", "end_turn"),
     ("length", "max_tokens"),
-    ("tool_calls", "tool_use"),
+    # ⚠️ `tool_calls` KHONG nam o day nua. Bang anh xa van dich no thanh
+    #    `tool_use`, nhung `_dang_anthropic` co them mot luoi: khong co khoi
+    #    `tool_use` that thi ha ve `end_turn`. Hai hanh vi do duoc do rieng o
+    #    `test_khong_khai_tool_use_khi_khong_co_khoi_tool_use` va
+    #    `test_van_khai_tool_use_khi_THAT_SU_co_tool_calls` — gop vao day thi
+    #    mot test se do hai thu va khong noi duoc thu nao hong.
     ("content_filter", "refusal"),
     ("", "end_turn"),               # khong biet -> mac dinh an toan
     (None, "end_turn"),
@@ -141,3 +146,107 @@ def test_khong_stream_van_kep_max_tokens(st):
     ma = pathlib.Path(st.__file__).read_text(encoding="utf-8")
     assert "_tran_max_tokens" in ma, (
         "duong khong-stream phai kep theo tran cua duong dong bo")
+
+
+# ── `messages` gửi cho model KHÁC danh sách dùng để ước token ─────────────────
+#
+# 🔴 ĐO ĐƯỢC 25/08 TRÊN PRODUCTION. `_tin_nhan` được viết **chỉ để ước token**,
+#    nên nó cố ý sinh phần tử **không có `role`**: prompt hệ thống thành
+#    `{"content": …}`, và cả khối JSON của `tools` cũng bị nhét vào như một tin.
+#
+# ⛔ Bản đầu của `_mot_cuc` đem thẳng danh sách ấy đi gọi model. Hai hậu quả:
+#    (1) request có `system`/`tools` → `ThamSoSai` → **500** cho khách;
+#    (2) request không vỡ thì model nhận hội thoại **đã bị bóp méo** — và nó vẫn
+#        trả lời, nên `8x7=56` vẫn đúng và lỗi không tự lộ ra.
+#
+# ⭐ Đó là phần đáng sợ hơn: một phép thử đúng đã che một ngữ cảnh sai.
+
+def test_prompt_he_thong_phai_thanh_tin_co_ROLE(st):
+    than = {"system": "ban la tro ly",
+            "messages": [{"role": "user", "content": "chao"}]}
+    tin = st._tin_that(than)
+    assert all("role" in m for m in tin), f"con phan tu thieu role: {tin}"
+    assert tin[0] == {"role": "system", "content": "ban la tro ly"}
+    assert tin[1]["role"] == "user"
+
+
+def test_system_dang_KHOI_cung_phai_ra_van_ban(st):
+    """Anthropic cho phép `system` là danh sách khối `{type,text}`."""
+    than = {"system": [{"type": "text", "text": "dong mot"},
+                       {"type": "text", "text": "dong hai"}],
+            "messages": [{"role": "user", "content": "chao"}]}
+    tin = st._tin_that(than)
+    assert tin[0]["role"] == "system"
+    assert "dong mot" in tin[0]["content"] and "dong hai" in tin[0]["content"]
+
+
+def test_dinh_nghia_TOOLS_khong_duoc_thanh_mot_luot_noi(st):
+    """`tools` được cộng vào phần **ước token**, nhưng không phải một tin nhắn.
+
+    Đưa nó vào hội thoại là bịa ra một lượt nói mà khách chưa hề gửi.
+    """
+    than = {"messages": [{"role": "user", "content": "chao"}],
+            "tools": [{"name": "doc_tep", "description": "x" * 50}]}
+    tin = st._tin_that(than)
+    assert len(tin) == 1 and tin[0]["role"] == "user"
+    assert "doc_tep" not in str(tin)
+    # Nhưng ước token thì VẪN phải đếm nó, nếu không ta giữ thiếu tiền.
+    assert "doc_tep" in str(st._tin_nhan(than))
+
+
+def test_input_chuoi_tran_cua_responses_thanh_luot_NGUOI_DUNG(st):
+    tin = st._tin_that({"input": "tinh giup 2+2"})
+    assert tin == [{"role": "user", "content": "tinh giup 2+2"}]
+
+
+def test_bo_qua_phan_tu_khong_co_role_thay_vi_de_no_vo_o_duoi(st):
+    """Một phần tử rác từ client không được đi tiếp tới `kiem_tham_so`."""
+    than = {"messages": [{"content": "khong co role"},
+                         {"role": "user", "content": "co role"}]}
+    tin = st._tin_that(than)
+    assert tin == [{"role": "user", "content": "co role"}]
+
+
+def test_ma_nguon_KHONG_con_dung_tin_uoc_de_goi_model(st):
+    """Chốt thô: `_mot_cuc` phải gọi `_tin_that`, không phải biến `tin`."""
+    ma = pathlib.Path(st.__file__).read_text(encoding="utf-8")
+    than = ma.split("def _mot_cuc", 1)[1].split("\ndef ", 1)[0]
+    assert "_tin_that(than)" in than, (
+        "quay lai dung danh sach uoc token lam messages that -> 500 khi co "
+        "`system`, va ngu canh bi bop meo khi khong 500")
+    assert '"messages": tin' not in than, (
+        "`tin` la danh sach UOC TOKEN (co phan tu khong co `role`) - khong duoc "
+        "dung no lam messages that")
+    # Va phai di qua bo dich sang giao thuc OpenAI, neu khong thi vong goi tool
+    # (tool_use / tool_result) khong con nguyen.
+    assert "sang_openai_messages" in than
+
+
+# ── `tool_use` là một LỜI HỨA, không phải một nhãn ───────────────────────────
+
+def test_khong_khai_tool_use_khi_khong_co_khoi_tool_use(st):
+    """🔴 `stop_reason: "tool_use"` hứa rằng `content` có khối `tool_use`.
+
+    Client đọc `stop_reason`, đi tìm khối đó để chạy tool. Không thấy thì nó
+    **treo** — không báo lỗi, không thoát. Đó là kiểu hỏng tệ nhất.
+
+    ⚠️ Hôm nay ta chưa dựng được khối đó (`_mot_cuc` không truyền `tools` lên
+       model), nên đường đúng là hạ về `end_turn` chứ không phải hứa suông.
+    """
+    d = st._dang_anthropic(_Kq(finish="tool_calls"), "ltt_llm", "ms-x")
+    assert d["stop_reason"] == "end_turn"
+    assert all(k.get("type") != "tool_use" for k in d["content"])
+
+
+def test_van_khai_tool_use_khi_THAT_SU_co_tool_calls(st):
+    """Khi ta dựng được khối thật thì nhãn phải quay lại đúng.
+
+    Test này là **chỗ bắt đầu** của đợt làm tool cho tử tế: nó đỏ cho tới khi
+    `_dang_anthropic` biết dựng khối `tool_use`.
+    """
+    kq = _Kq(finish="tool_calls")
+    kq.tool_calls = ({"id": "call_1", "type": "function",
+                      "function": {"name": "doc_tep", "arguments": "{}"}},)
+    d = st._dang_anthropic(kq, "ltt_llm", "ms-x")
+    # Con no: chua dung khoi `tool_use`. Nhung nhan thi da dung.
+    assert d["stop_reason"] == "tool_use"

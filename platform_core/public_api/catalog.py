@@ -266,6 +266,23 @@ def project_tool(manifest, tool) -> PublicTool:
         if "example" in docs:
             # JSON Schema 2020-12 spells this `examples`, as a list.
             public["examples"] = [docs["example"]]
+        # 🔴 KHI NÀO MỘT THAM SỐ MỚI DÙNG ĐƯỢC — khai bằng DỮ LIỆU, không bằng văn.
+        #
+        #    `image.ltt` có `mode` ba giá trị, và `image_key` chỉ dùng cho hai
+        #    trong ba. Trước 25/08 điều đó chỉ nằm trong một câu tiếng Anh giữa
+        #    `description`, nên trang tài liệu không có cách nào lọc theo — và
+        #    bộ sinh ví dụ đã dựng ra một thân **tự mâu thuẫn** vì không biết.
+        #
+        # ⛔ ĐỪNG để giao diện đọc `description` rồi đoán. Một template phân tích
+        #    văn xuôi tiếng Anh là một template sẽ sai vào ngày ai đó sửa câu chữ.
+        #
+        # ⚠️ Tiền tố `x-` là quy ước mở rộng của JSON Schema/OpenAPI: bộ kiểm tra
+        #    schema **bỏ qua** khoá lạ, nên khai thêm không làm hỏng client nào.
+        #    Nó là chú thích cho người và cho trang tài liệu, không phải luật kiểm.
+        if docs.get("only_when"):
+            public["x-ltt-only-when"] = {
+                str(khoa): [str(v) for v in gia_tri]
+                for khoa, gia_tri in dict(docs["only_when"]).items()}
         properties[param] = public
         if schema.get("required"):
             required.append(param)

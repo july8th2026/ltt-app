@@ -1,0 +1,51 @@
+{# Vỏ khu VPS: menu trái + nội dung phải.
+
+   Bốn trang VPS trước 25/08 mỗi trang tự dựng `topbar_title` riêng và **không
+   trang nào biết trang kia tồn tại** — đó là lý do `/vps/{id}` không có đường
+   về `/vps`. Không phải ai quên thêm một liên kết, mà là không có chỗ để thêm.
+
+   🔴 **Menu CHỈ hiện cho người đã đăng nhập.** Vultr chia làm hai site và điều
+      đó đáng học: `vultr.com` bán hàng (nav ngang, không thanh bên),
+      `console.vultr.com` điều khiển (thanh bên). Người chưa có tài khoản không
+      bao giờ thấy thanh bên — nó là công cụ của người ĐÃ mua. Đưa một bảng
+      điều khiển ra trước mặt người chưa mua là bắt họ đọc một công cụ thay vì
+      đọc một lời chào.
+
+   Menu dựng ở `apps/vps/nav.py` — dữ liệu, không phải HTML chép tay. Thêm một
+   trang là thêm một dòng ở đó. #}
+{% extends "base.html" %}
+{% block page_mode %}wide{% endblock %}
+
+{% block content %}
+
+{% if menu_trai %}
+<div class="app-shell">
+  <nav class="app-side" aria-label="{{ _('Khu VPS') }}">
+    <ul>
+      {% for m in menu_trai %}
+        <li>
+          {% if m.nhom %}
+            <div class="nhom">{{ m.nhan }}</div>
+          {% elif m.href %}
+            <a href="{{ m.href }}"
+               {% if m.active %}class="active" aria-current="page"{% endif %}>{{ m.nhan }}</a>
+          {% else %}
+            {# Chưa có route. Hiện tên là thông tin — nó nói khu này đang đi
+               đâu; một liên kết 404 thì không nói gì ngoài sự cẩu thả. #}
+            <span class="sap-co" title="{{ _('Sắp có') }}">{{ m.nhan }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </nav>
+
+  <div class="app-main">
+    {% block noi_dung %}{% endblock %}
+  </div>
+</div>
+{% else %}
+  {# Khách ẩn danh: không vỏ điều khiển, chỉ nội dung. #}
+  {% block noi_dung_an_danh %}{{ self.noi_dung() }}{% endblock %}
+{% endif %}
+
+{% endblock %}

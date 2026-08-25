@@ -120,12 +120,46 @@ def _may_cua_toi(db, user_id: str) -> list:
     return ket_qua
 
 
+def _menu(active: str, *, may=None, ds=()) -> list:
+    """Menu trái cho vỏ `vps_base.html`. Rỗng ⇒ không dựng vỏ điều khiển.
+
+    Trả rỗng cho khách ẩn danh là **có chủ ý**: menu là công cụ của người đã
+    mua. Vultr chia làm hai site vì lẽ đó — `vultr.com` bán hàng không có thanh
+    bên, `console.vultr.com` mới có.
+    """
+    from apps.vps import nav
+
+    return nav.menu(active, may=may,
+                    danh_sach_may=[{"id": x["may"].id, "ten": x["may"].ten}
+                                   for x in ds])
+
+
+def _ai_do(request: Request) -> str:
+    """`user_id` cua nguoi dang xem, hoac chuoi rong neu chua dang nhap.
+
+    Khac `_chu`: `_chu` NEM 401 khi khong co ai. Dung cho nhung trang phuc vu ca
+    khach an danh — o day chi co mot trang nhu vay, va no la trang ban.
+    """
+    return str(getattr(user_hien_tai(request), "id", "") or "")
+
+
 @router.get("", response_class=HTMLResponse)
 def trang_chinh(request: Request,
                 _g: None = Depends(_cong_co),
-                _u: str = Depends(require_login),
                 db=Depends(get_db)):
-    user_id = _chu(request)
+    """Trang ban. **Khong doi dang nhap** — xem `_ai_do`.
+
+    Khach an danh thay bang gia va ly do nen mua; khach da dang nhap thay may cua
+    ho va bieu mau tao may. Mot URL, chia se duoc, khong ngo cut.
+
+    Truoc 25/08 trang nay doi dang nhap, nen the app trong catalog (hien cho ca
+    khach an danh vi `public=True`) tro toi mot trang dang nhap — mot ngo cut o
+    dung buoc dau tien cua pheu ban hang.
+
+    `_cong_co` van dung TRUOC: cong khai nghia la "khong doi dang nhap", khong
+    phai "bo qua co `LTT_VPS`".
+    """
+    user_id = _ai_do(request)
     suc_chua, loi_ha_tang = _suc_chua(db)
 
     goi = []
@@ -140,13 +174,24 @@ def trang_chinh(request: Request,
                    if os_images.hop_le(p.id, o.id)[0]],
         })
 
+    may_cua_toi = _may_cua_toi(db, user_id) if user_id else []
     return templates.TemplateResponse(request, "vps.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "csrf_token": issue_csrf_token(request),
         "goi": goi,
         # Dựng từ CSDL, không viết cứng: xem `provisioning.vung_dang_mo`.
         "vung": provisioning.vung_dang_mo(db),
-        "may_cua_toi": _may_cua_toi(db, user_id),
+        # Danh sách ĐẦY ĐỦ để trang tạo máy dựng sẵn mọi lựa chọn một lần; JS ẩn
+        # bớt theo gói đang chọn. Không có JS thì khách vẫn thấy hết và máy chủ
+        # vẫn từ chối tổ hợp sai (`os_images.hop_le`) — trang không bao giờ im
+        # lặng bán một thứ không cài được.
+        "os_ban_duoc": os_images.os_ban_duoc(),
+        # Khach an danh khong co may nao; goi ham nay voi user_id rong se quet
+        # ca bang va tra ve may cua NGUOI KHAC.
+        "may_cua_toi": may_cua_toi,
+        "da_dang_nhap": bool(user_id),
+        # Rỗng cho khách ẩn danh ⇒ `vps_base.html` không dựng vỏ điều khiển.
+        "menu_trai": _menu("tong_quan", ds=may_cua_toi) if user_id else [],
         "suc_chua": suc_chua,
         "loi_ha_tang": loi_ha_tang,
         "loi": request.query_params.get("loi", ""),
@@ -304,6 +349,7 @@ def huong_dan_cai_dat(instance_id: str, request: Request,
     return templates.TemplateResponse(request, "vps_cai_dat.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "menu_trai": _menu("cai_dat", may=may),
         "os": img,
         "plan": lay_plan(may.plan_id),
         "dia_chi": ip.dia_chi if ip is not None else "",
@@ -426,9 +472,29 @@ def trang_chi_tiet(instance_id: str, request: Request,
     su_kien = db.execute(
         select(VpsEvent).where(VpsEvent.instance_id == may.id)
         .order_by(VpsEvent.created_at.desc()).limit(20)).scalars().all()
+
+    # Sao kê thanh toán — điều khoản LTT VPS hứa "sao kê từng lần thu nằm trong
+    # trang máy của bạn", nên nó phải có thật.
+    #
+    # Nguồn là `vps_event` chứ không phải `credit_entries`: sổ credit chỉ có
+    # `user_id`, không có `instance_id`, nên **không quy được một lần thu về một
+    # máy cụ thể**. Khách có ba máy thì ba dòng trừ tiền giống hệt nhau, và
+    # không ai trả lời được "cái nào của máy nào".
+    sao_ke = [
+        {
+            "luc": e.created_at,
+            "credit": int((e.chi_tiet or {}).get("credit") or 0),
+            "den": str((e.chi_tiet or {}).get("den") or "")[:10],
+        }
+        for e in db.execute(
+            select(VpsEvent)
+            .where(VpsEvent.instance_id == may.id, VpsEvent.loai == "thu_phi")
+            .order_by(VpsEvent.created_at.desc()).limit(24)).scalars()
+    ]
     return templates.TemplateResponse(request, "vps_chi_tiet.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "menu_trai": _menu("may", may=may),
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
         "sao_luu_luc": may.sao_luu_luc,
         "bang_thong": {
@@ -444,6 +510,8 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "con_han": billing.con_han(may),
         "con_ngay": billing.con_bao_nhieu_ngay(may),
         "su_kien": su_kien,
+        "sao_ke": sao_ke,
+        "tong_da_tra": sum(x["credit"] for x in sao_ke),
         "os_ban_duoc": os_images.os_ban_duoc(),
         "csrf_token": issue_csrf_token(request),
         "loi": request.query_params.get("loi", ""),
@@ -481,6 +549,7 @@ def trang_console(instance_id: str, request: Request,
     return templates.TemplateResponse(request, "vps_console.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
+        "menu_trai": _menu("console", may=may),
         "ve": console.cap_ve(db, may, _chu(request),
                              cong=ve_pve.get("port") or 0,
                              pve_ve=ve_pve.get("ticket") or ""),

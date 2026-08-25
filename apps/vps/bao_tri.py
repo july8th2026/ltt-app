@@ -12,7 +12,7 @@ Nguyên nhân gốc không phải quên: **hợp đồng app không có chỗ kh
 Nên chỗ đó đã được thêm vào hợp đồng (`AppManifest.bao_tri`) thay vì đi vòng, và
 file này là thứ nó trỏ tới.
 
-## Năm việc, theo đúng thứ tự đó
+## Sáu việc, theo đúng thứ tự đó
 
 0. **Đo băng thông** — cộng dồn bộ đếm của router vào từng máy, hãm tốc máy vượt
    trần. Chạy **trước** vòng thu: thu một chu kỳ mới đặt lại bộ đếm chu kỳ về 0,
@@ -22,7 +22,9 @@ file này là thứ nó trỏ tới.
    mà máy vẫn chạy thì "treo" chỉ là một nhãn: khách dùng miễn phí đủ 7 ngày ân
    hạn, và RAM vẫn bị giữ suốt thời gian đó.
 3. **Xoá** máy đã treo quá 7 ngày (V8) — đẩy vào hàng đợi, không xoá tại chỗ.
-4. **Chụp ảnh tuần**, giữ đúng một bản — xem `services/sao_luu.py` để biết vì sao
+4. **Hoàn tiền** cho máy chưa từng chạy được — khách bị trừ trước khi job dựng
+   máy, và job hỏng thì họ trả tiền để nhận một dòng chữ "Lỗi".
+5. **Chụp ảnh tuần**, giữ đúng một bản — xem `services/sao_luu.py` để biết vì sao
    là ảnh chụp chứ không phải `vzdump`, và vì sao trang bán phải nói đúng điều đó.
 
 ## Vì sao xoá bằng JOB chứ không xoá thẳng ở đây
@@ -45,6 +47,7 @@ trình vẫn nổ lên trên như bình thường.
 from __future__ import annotations
 
 import logging
+import time
 
 from apps.vps.services import billing
 from apps.vps.services.proxmox import ChuaCauHinh, ProxmoxError, client_tu_moi_truong
@@ -220,6 +223,113 @@ def _bay_gio():
     return datetime.now(timezone.utc)
 
 
+def _hoan_may_tao_hong(db) -> int:
+    """Hoàn tiền cho máy **chưa từng chạy được**. Trả số máy đã hoàn.
+
+    ## Lỗ hổng này có thật, và nó im lặng
+
+    Trang bán trừ credit **trước** khi nộp job (`routes.tao_may`), và đó là lựa
+    chọn đúng: không trừ trước thì một người hết tiền vẫn chiếm được chỗ. Nhưng
+    khi job dựng máy hỏng — Vultr cạn hạn ngạch IP, Proxmox không trả lời, kho
+    đầy — thì máy vào trạng thái `loi` và **không ai hoàn lại chu kỳ đã thu**.
+
+    Khách trả 149.000–329.000đ và nhận một dòng chữ "Lỗi". Không log nào báo,
+    không ai quét. Đúng lớp lỗi mà phiên Public API vừa tìm ra ở cửa `/messages`,
+    chỉ khác đường đi.
+
+    ## Chỉ hoàn khi máy CHƯA TỪNG chạy
+
+    Máy chạy được một thời gian rồi hỏng là chuyện khác: dịch vụ chạy best effort,
+    không có SLA, và điều khoản nói rõ chu kỳ đã bắt đầu thì không hoàn. Nên mốc
+    phân biệt là sự kiện `tao_xong` — **có** nghĩa là máy đã từng lên; **không**
+    nghĩa là khách chưa nhận được gì.
+
+    ## Chạy lại được
+
+    Đánh dấu bằng chính sự kiện `hoan_tien`. Không có mốc đó thì mỗi giờ hoàn một
+    lần, và một máy hỏng biến thành một máy in tiền.
+    """
+    from sqlalchemy import select
+
+    from platform_core import credit
+
+    from apps.vps.tables import VpsEvent, VpsInstance
+
+    da_hoan = 0
+    for may in db.execute(select(VpsInstance).where(
+            VpsInstance.trang_thai == "loi")).scalars():
+        loai = {e.loai: e for e in db.execute(
+            select(VpsEvent).where(VpsEvent.instance_id == may.id)).scalars()}
+        if "tao_xong" in loai:
+            continue                      # đã từng chạy — không hoàn
+        if "hoan_tien" in loai:
+            continue                      # đã hoàn rồi
+        thu = loai.get("thu_phi")
+        so = int((thu.chi_tiet or {}).get("credit") or 0) if thu else 0
+        if so <= 0:
+            continue                      # chưa thu gì thì không có gì để hoàn
+
+        credit.hoan_phi(db, may.user_id, so, kind=billing.KIND,
+                        note=f"Hoan chu ky VPS: may {may.id[:8]} tao khong xong")
+        billing.ghi_su_kien(db, may.id, "hoan_tien", boi="he_thong",
+                            credit=so, ly_do=may.ly_do or "")
+        # Máy hỏng vẫn có thể đang giữ một VM dở dang trên Proxmox, một địa chỉ
+        # trong mạng riêng, và một IP đang tính tiền. Đẩy job xoá để nhả hết.
+        try:
+            _nop_job_xoa(db, may)
+        except Exception as exc:          # noqa: BLE001 - hoan tien da xong roi
+            log.warning("VPS: hoan tien may %s xong nhung khong nop duoc job xoa: %s",
+                        may.id, exc)
+        da_hoan += 1
+    if da_hoan:
+        db.commit()
+    return da_hoan
+
+
+#: Doi chieu bon nguon su that moi bao lau. Hang ngay, khong hang gio: no goi
+#: ra Proxmox + router + gateway + Vultr, va thu no tim (mo coi) khong xuat
+#: hien theo nhip gio.
+DOI_CHIEU_MOI_GIAY = 24 * 3600
+
+#: Moc lan doi chieu gan nhat, theo dong ho don dieu cua tien trinh.
+#: Worker khoi dong lai thi chay lai mot luot — vo hai, vi phep quet chi DOC.
+_moc_doi_chieu = 0.0
+
+
+def _doi_chieu_dinh_ky(db, client) -> int:
+    """Quet mo coi moi ngay, ghi CANH BAO neu co. Tra so muc mo coi.
+
+    ## Vi sao viec nay phai TU CHAY
+
+    `tools/vps_doctor.py` da doi chieu duoc tu 25/08, nhung **khong ai chay
+    no dinh ky**. Mot phep soi khong ai chay la mot phep soi khong ton tai —
+    va thu no tim ra (nhat la Reserved IP mo coi, $3/thang) chinh la loai
+    hong khong bao gio tu keu len.
+
+    Ghi bang `log.warning` chu khong nem: mot muc mo coi khong phai ly do de
+    dung vong bao tri, no la ly do de co nguoi doc.
+    """
+    global _moc_doi_chieu
+    if client is None:
+        return 0
+    if time.monotonic() < _moc_doi_chieu:
+        return 0
+    # Dat moc TRUOC khi chay: quet nem thi luot sau van cho du mot ngay,
+    # khong quay lai ngay va nem lai moi gio.
+    _moc_doi_chieu = time.monotonic() + DOI_CHIEU_MOI_GIAY
+
+    from apps.vps import doi_chieu
+
+    kq = doi_chieu.quet(db, client)
+    for x in kq.khong_doc_duoc:
+        log.warning('VPS doi chieu: %s', x)
+    for lech in kq.lech:
+        log.warning('VPS MO COI - %s', lech)
+    if not kq.lech:
+        log.info('VPS doi chieu: sach (%s may, %s IP)', kq.so_may, kq.so_ip)
+    return kq.tong_mo_coi
+
+
 def mot_luot(db, *, now=None) -> dict:
     """Một lượt bảo trì. Tách khỏi `chay()` để test được mà không cần worker."""
     da_doi_giam_toc = _dong_bo_bang_thong(db)
@@ -246,6 +356,8 @@ def mot_luot(db, *, now=None) -> dict:
     if da_don:
         db.commit()
     ket_qua["da_don_ve"] = da_don
+    ket_qua["da_hoan"] = _hoan_may_tao_hong(db)
+    ket_qua["mo_coi"] = _doi_chieu_dinh_ky(db, client)
 
     da_nop_xoa = 0
     for may in billing.den_han_xoa(db, now=now):
@@ -274,8 +386,9 @@ def chay() -> None:
         # rác mỗi ngày, và nó làm người đọc bỏ qua đúng dòng cần đọc.
         if any(kq.values()):
             log.info("VPS bao tri: thu %s, treo %s, nop xoa %s, doi giam toc %s, "
-                     "chup anh %s, don ve %s",
+                     "chup anh %s, don ve %s, hoan %s, mo coi %s",
                      kq["da_thu"], kq["da_treo"], kq["da_nop_xoa"],
-                     kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"])
+                     kq["da_doi_giam_toc"], kq["da_chup"], kq["da_don_ve"],
+                     kq["da_hoan"], kq["mo_coi"])
     finally:
         gen.close()

@@ -74,28 +74,6 @@ class OsImage:
 
 OS_IMAGES: tuple[OsImage, ...] = (
     OsImage(
-        id="debian-12", ten=N_("Debian 12 (nội bộ)"), ho="linux",
-        ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
-        khach_thay=False,
-        ghi_chu="Ban NOI BO de chung minh duong ong, khong ban (V9). Day la anh "
-                "cloud co san cloud-init nen may len trong ~40 giay, khac han "
-                "Windows phai co nguoi ngoi cai. PHAI la ban `generic`, KHONG "
-                "phai `genericcloud`: genericcloud co y bo driver phan cung that "
-                "(ke ca AHCI), ma dia cua ta la sata0 vi virtio treo tren cum nay.",
-    ),
-    OsImage(
-        id="ubuntu-24-04", ten="Ubuntu 24.04 LTS", ho="linux",
-        ram_mb_toi_thieu=1024, disk_gb_toi_thieu=10, cong_quen=22,
-        khach_thay=False,
-        ghi_chu="Template NOI BO, KHONG dung nua. No chet vi virtio: cum nay "
-                "chay long trong VMware va guest ghi vao thanh ghi notify cua "
-                "virtio-pci thi khong bao gio quay ra. Dung `debian-12`.",
-    ),
-    # Một ISO Server phục vụ CẢ HAI bản Core và có giao diện: chọn bản nào là một
-    # màn hình trong trình cài đặt, không phải hai bộ cài khác nhau. Tách thành hai
-    # mục ở đây vì **sàn RAM khác nhau** (2 GB với Core, 4 GB với giao diện) — và
-    # đó là thứ quyết định gói nào bán được bản nào.
-    OsImage(
         id="winsrv2016-core", ten="Windows Server 2016 (Core)", ho="windows",
         ram_mb_toi_thieu=2048, disk_gb_toi_thieu=32, cong_quen=3389,
         khach_thay=True,

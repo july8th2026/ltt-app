@@ -254,6 +254,64 @@ def curl_chat() -> str:
             f"  -d '{_json(_chat_body())}'")
 
 
+#: Công cụ tạo ảnh, tên công khai. Một chỗ để mọi trang nói cùng một tên.
+ANH_TOOL = "image.ltt"
+
+#: Đầu vào mẫu cho một lượt vẽ. Giữ ở đây để ba đoạn dưới không lệch nhau.
+ANH_INPUT = {"prompt": "a calico cat on a windowsill", "mode": "t2i", "count": 1}
+
+#: Ba chế độ, chỉ MÃ. Văn xuôi mô tả nằm ở template — nơi `_()` hoạt động.
+#:
+#: ⚠️ Module này **không có bộ dịch**, và cố ý giữ như vậy: nó sinh **đoạn mã**,
+#:    không sinh câu chữ hiển thị. Mọi chú thích trong đây là tiếng Anh, giống
+#:    phần còn lại của tệp. Viết văn xuôi tiếng Việt vào đây là làm bánh cóc i18n
+#:    báo động đúng — và nó đã báo, ngày 25/08, 9 chuỗi cùng lúc.
+ANH_CHE_DO_MA = ("t2i", "edit", "subject")
+
+
+def curl_anh_ba_buoc() -> str:
+    """Three calls that make one image — copy-paste runnable.
+
+    🔴 WHY THIS EXISTS. Measured 25/08: the only public integration page
+       mentioned `ltt_llm` 16 times and `image.ltt` **zero**. We sell two things
+       and advertise one.
+
+    ⚠️ Step 3 reads the artifact from `outputs[]`, **not** from `result` — the
+       exact place a real call stumbled while following the old docs.
+    """
+    than = _json(ANH_INPUT).replace("\n", " ").replace("  ", " ")
+    goi_1 = f'{{"tool": "{ANH_TOOL}", "input": {than}}}'
+    goi_2 = (f'{{"tool": "{ANH_TOOL}", "quote": "<quote from step 1>", '
+             f'"input": {than}}}')
+    return "\n".join([
+        "# 1. Quote - cheap, never charged, safe to repeat",
+        f'curl -X POST "${ENV_BASE_URL}/api/v1/quotes" \\',
+        f'  -H "Authorization: Bearer ${ENV_API_KEY}" \\',
+        '  -H "Content-Type: application/json" \\',
+        f"  -d '{goi_1}'",
+        "",
+        "# 2. Run - send that quote back, plus ONE Idempotency-Key.",
+        "#    Reuse the SAME key on every retry of this call: a new key is a",
+        "#    second job and a second charge.",
+        f'curl -X POST "${ENV_BASE_URL}/api/v1/jobs" \\',
+        f'  -H "Authorization: Bearer ${ENV_API_KEY}" \\',
+        '  -H "Content-Type: application/json" \\',
+        '  -H "Idempotency-Key: $(uuidgen)" \\',
+        f"  -d '{goi_2}'",
+        "",
+        "# 3. Poll until done. Artifacts live in outputs[], NOT in result.",
+        f'curl "${ENV_BASE_URL}/api/v1/jobs/<job_id>" \\',
+        f'  -H "Authorization: Bearer ${ENV_API_KEY}"',
+        '#   -> {"status": "succeeded",',
+        '#       "outputs": [{"id": "<job_id>.image_keys.0",',
+        '#                    "field": "image_keys", "index": 0}]}',
+        "",
+        f'curl "${ENV_BASE_URL}/api/v1/artifacts/<outputs[0].id>" \\',
+        f'  -H "Authorization: Bearer ${ENV_API_KEY}"',
+        '#   -> {"url": "...", "expires_in": ...}   download that url',
+    ])
+
+
 def openai_python_chat() -> str:
     """As close to "point the SDK at us" as it gets — and the one line to add."""
     return (
@@ -444,6 +502,21 @@ CHAT_DIFFERENCES = (
 #: move to a different model later without breaking them (test_212).
 CLI_MODEL = "ltt_llm"
 
+#: The route name Claude Desktop needs — and it is a **route name**, not a
+#: product name. Everything a customer buys is still `ltt_llm`.
+#:
+#: Claude Desktop in `gateway` mode filters the model list before drawing the
+#: picker: a name that does not contain `claude`, `anthropic`, or a Claude family
+#: word is dropped. `ltt_llm` is dropped, the picker ends up empty, and the send
+#: button then does nothing at all — no log line, no toast, no banner. Measured
+#: 2026-08-24 against the shipped build; see `server.api.streaming` for the rule
+#: as read out of the app's own bundle.
+#:
+#: The filter only asks that the name *contain* `claude`; it does not ask for a
+#: real Anthropic model. So this name clears the gate without borrowing another
+#: company's product name.
+DESKTOP_MODEL = "ltt-llm-claude-compat"
+
 
 def _goc(base_url: str) -> str:
     return (base_url or "https://app.lttstudios.com").rstrip("/")
@@ -604,7 +677,7 @@ def claude_desktop_registry(base_url: str) -> str:
       `HKEY_CURRENT_USER` one **entirely**.
     """
     khoa = r"[HKEY_CURRENT_USER\SOFTWARE\Policies\Claude]"
-    mo = '[{\\"name\\": \\"' + CLI_MODEL + '\\"}]'
+    mo = '[{\\"name\\": \\"' + DESKTOP_MODEL + '\\"}]'
     dong = [
         "Windows Registry Editor Version 5.00",
         "",
@@ -615,6 +688,10 @@ def claude_desktop_registry(base_url: str) -> str:
         '"inferenceGatewayAuthScheme"="bearer"',
         '"inferenceModels"="' + mo + '"',
         '"modelDiscoveryEnabled"="false"',
+        # Without this the app opens only its Code tab, which starts a local
+        # agent session instead of talking to the gateway — and with no local
+        # runtime installed it sends nothing at all, silently.
+        '"chatTabEnabled"="true"',
     ]
     return "\n".join(dong) + "\n"
 
@@ -630,7 +707,7 @@ def claude_desktop_steps(base_url: str) -> tuple:
         ("Gateway base URL", f"{_goc(base_url)}/api"),
         ("Gateway API key", "your ltt_sk_… key"),
         ("Gateway auth scheme", "Bearer"),
-        ("inferenceModels", CLI_MODEL),
+        ("inferenceModels", DESKTOP_MODEL),
         ("Finish", "Apply locally, then let the app relaunch"),
     )
 
@@ -652,15 +729,104 @@ CLI_BAY = (
     ("Claude Desktop ignores ANTHROPIC_BASE_URL",
      "It reads its own Third-Party Inference configuration instead. Setting the "
      "environment variable there does nothing at all."),
-    ("Claude Desktop needs inferenceModels spelled out",
-     "Its model auto-discovery keeps only IDs that look like Claude, so this "
-     "model never appears on its own and the picker stays empty with nothing to "
-     "explain why."),
-    ("Streaming is required on these two routes",
-     'Send "stream": true. For a single non-streaming answer use '
-     "POST /api/v1/chat/completions, which is what the SDKs call."),
+    ("Claude Desktop takes a different model name from every other client",
+     f"It keeps only names containing claude, anthropic, or a Claude family "
+     f"word, and drops the rest before the picker is drawn — so ltt_llm is "
+     f"discarded, the picker ends up empty, and the send button silently stops "
+     f"working. Give it {DESKTOP_MODEL}: the same model, under the one name "
+     f"that clears its filter."),
+    ("Only /responses requires streaming",
+     'It is a streaming route: send "stream": true. POST /api/v1/messages '
+     "serves both, and POST /api/v1/chat/completions is the plain "
+     "request-response route the SDKs call."),
     ("A retry costs money",
      "These routes take no Idempotency-Key, because no CLI sends one. You are "
      "billed for the tokens actually produced, so an abandoned stream bills for "
      "what it generated — and a retry generates again."),
 )
+
+
+# ── Ho so TUNG BE MAT — cho trang cam kieu "chon mot, thay dung phan cua minh"
+#
+# 🔴 VI SAO CO KHOI NAY. Trang cam cu xep chong MOI be mat len nhau: nam khu,
+#    muoi the, 133 dong. Khach cam Codex van phai cuon qua ca phan Claude
+#    Desktop, va — te hon — van co the CHEP NHAM doan cua be mat khac. Hai gia
+#    tri nguy hiem nhat cua ca khu API deu KHAC NHAU giua cac be mat:
+#
+#        dia chi   /api/v1  (Codex)   ><   /api  (Claude Code, Desktop)
+#        model     ltt_llm            ><   ltt-llm-claude-compat (Desktop)
+#
+#    Xep chong nghia la ca hai gia tri cung nam tren man hinh cung luc, khong
+#    co gi noi cai nao la cua ai. Do la mot cai bay do chinh trang huong dan
+#    dung len.
+#
+# ⭐ Cach chua, doc duoc tu `api.nghimmo.com/huongdan` (soi that 25/08): MOT o
+#    chon o dau, va TOAN BO ben duoi ve lai — dia chi, canh bao, ten model, cac
+#    buoc. Do khi bam tu "Key Claude" sang "Key Codex": base URL doi, dong canh
+#    bao doi, bang model doi, va ca bo tab cai dat doi theo. Khach khong bao gio
+#    nhin thay thu khong ap dung cho minh.
+#
+# ⚠️ Ham nay KHONG sinh ra gia tri moi — no chi GOM lai nhung thu da co o tren.
+#    Them mot nguon thu hai cho cung mot dia chi la cach hai nguon lech nhau.
+
+#: Ma be mat → nhan hien thi. Tach rieng de test doi chieu duoc hai chieu.
+BE_MAT_MA = ("codex", "claude-code", "vscode", "desktop", "http")
+
+#: Ma buoc → doan ma. Tach khoi VAN XUOI co chu dich, xem `be_mat_cam`.
+BUOC_MA = ("codex-config", "codex-profile", "dat-khoa", "env", "settings",
+           "vscode-claude", "vscode-codex", "reg", "curl")
+
+
+def be_mat_cam(base_url: str) -> tuple:
+    """Mot ban ghi cho MOI be mat: dia chi, ten model, cac buoc.
+
+    ⛔ KHONG co van xuoi hien thi o day, va do la mot chot chu khong phai mot
+       thieu sot. Module nay sinh DOAN MA va co y khong co bo dich — mot cau
+       tieng Viet viet o day se hien ra mat dau tren trang, dung nhu lan
+       25/08 da mac. Van xuoi nam trong `_cam_chon.html`, boc trong `_()`.
+
+    ⇒ Ban ghi chi mang thu KHONG dich duoc: dia chi, ten model, ten san pham,
+      ten giao thuc, duong dan tep, va chinh cac doan ma.
+    """
+    goc = _goc(base_url)
+    return (
+        {"ma": "codex", "ten": "Codex CLI", "the": "OPENAI RESPONSES",
+         "dia_chi": f"{goc}/api/v1", "model": CLI_MODEL,
+         "buoc": (("codex-config", "~/.codex/config.toml", codex_config(goc)),
+                  ("codex-profile", "~/.codex/ltt.config.toml", codex_profile()),
+                  ("dat-khoa", None, f'setx {ENV_API_KEY} "<...>"')),
+         "chay": "codex --profile ltt"},
+        {"ma": "claude-code", "ten": "Claude Code (CLI)", "the": "ANTHROPIC MESSAGES",
+         "dia_chi": f"{goc}/api", "model": CLI_MODEL,
+         "buoc": (("env", None, claude_code_env(goc)),
+                  ("settings", "~/.claude/settings.json", claude_code_settings(goc))),
+         "chay": "claude"},
+        # 🔴 BE MAT DUY NHAT PHUC VU HAI TIEN ICH, VA CHUNG DUNG HAI DIA CHI.
+        #
+        #    Ban dau khu nay khai mot dia chi `/api`, trong khi doan ma Codex
+        #    ben trong no dung `/api/v1`. Tuc bang "Ket noi" **noi dung mot nua
+        #    khu va sai nua con lai** — khach doc dong dia chi roi chep doan ma
+        #    Codex se cam theo hai gia tri khong khop nhau.
+        #
+        #    `test_303` bat duoc bang cach doi chieu dia chi KHAI voi dia chi
+        #    NAM TRONG doan ma. Do khong phai mot chi tiet trinh bay: no la
+        #    dung cai bay ma ca trang cam duoc dung lai de dong.
+        #
+        # ⇒ Khu nao phuc vu nhieu hon mot cong cu thi khai `dia_chi_theo`, va
+        #   bang Ket noi ve MOT DONG CHO MOI cong cu.
+        {"ma": "vscode", "ten": "VS Code", "the": "CAU HINH RIENG",
+         "dia_chi": f"{goc}/api", "model": CLI_MODEL,
+         "dia_chi_theo": (("Claude Code", f"{goc}/api", CLI_MODEL),
+                          ("Codex", f"{goc}/api/v1", CLI_MODEL)),
+         "buoc": (("vscode-claude", "settings.json", vscode_claude_settings(goc)),
+                  ("vscode-codex", "~/.codex/config.toml", vscode_codex_config(goc))),
+         "chay": None},
+        {"ma": "desktop", "ten": "Claude Desktop", "the": "REGISTRY",
+         "dia_chi": f"{goc}/api", "model": DESKTOP_MODEL,
+         "buoc": (("reg", ".reg", claude_desktop_registry(goc)),),
+         "chay": None},
+        {"ma": "http", "ten": "cURL", "the": "HTTP",
+         "dia_chi": f"{goc}/api/v1", "model": CLI_MODEL,
+         "buoc": (("curl", None, curl_chat()),),
+         "chay": None},
+    )

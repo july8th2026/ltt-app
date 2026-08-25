@@ -542,7 +542,7 @@ từ chối tạo máy kèm lý do, chứ không chạy nửa vời.
 > `_template_noi_bo` trong `jobs.py` **từ chối** mọi bản bán cho khách kể cả khi
 > biến môi trường tương ứng được đặt. Đó là hàng rào, không phải quy ước: thiếu
 > nó thì một biến gõ nhầm đưa mọi khách về chung một mật khẩu, lặng lẽ.
-> Test chốt: `tests/test_285_vps_dinh_danh.py`.
+> Test chốt: `tests/test_295_vps_dinh_danh.py`.
 
 Token Proxmox phải **bật privilege separation** và chỉ cấp quyền trên đường dẫn hẹp
 nhất (`/pool/khach`, role `PVEVMUser`). Đừng dùng `root@pam`.

@@ -27,9 +27,15 @@
   </details>
 
   <div class="hdr-right">
+    {# 🔴 API phải có mặt ở thanh trên, cho cả người CHƯA đăng nhập.
+       Trước 25/08 lối duy nhất vào khu API là mục "API cho lập trình viên" nằm
+       trong menu tài khoản — tức **chỉ hiện sau khi đăng nhập**. Một lập trình
+       viên đang cân nhắc mở trang chủ ra thì không có đường nào tới tài liệu.
+       Trỏ `/huong-dan` (công khai), không trỏ `/developers` (303 về /login). #}
+    <a class="hdr-link" href="/huong-dan">API</a>
     <a class="hdr-link pricing" href="/nap">{{ _("Bảng giá") }}</a>
     {% set _bal = so_du_credit(request) %}
-    {% if _bal is not none %}<a class="pill" href="/nap" title="{{ _('Số dư credit') }}">💎 {{ _bal }} credit</a>{% endif %}
+    {% if _bal is not none %}<a class="pill" href="/nap" title="{{ _('Số dư credit') }}">💎 {{ _bal | so }} credit</a>{% endif %}
     {% set _acc = tai_khoan(request) %}
     {% if _acc %}
       <details class="menu avatar">
@@ -43,7 +49,7 @@
           {% if is_admin(request) %}<a href="/settings"><span class="ic">🔧</span> {{ _("Cấu hình hệ thống") }}</a>
           <a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
           <a href="/admin/apikeys"><span class="ic">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
-          {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal }} credit <a href="/nap">{{ _("Nạp thêm") }}</a></div>{% endif %}
+          {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal | so }} credit <a href="/nap">{{ _("Nạp thêm") }}</a></div>{% endif %}
           <div class="sep"></div>
           <form method="post" action="/logout" style="margin:0">
             <input type="hidden" name="csrf_token" value="{{ phien_csrf(request) }}">

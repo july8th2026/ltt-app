@@ -26,8 +26,8 @@
   {% else %}
     <table class="table">
       <thead><tr>
-        <th>URL</th><th>{{ _("Sự kiện") }}</th><th>{{ _("Trạng thái") }}</th>
-        <th>{{ _("Tạo lúc") }}</th><th></th>
+        <th scope="col">URL</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
+        <th scope="col">{{ _("Tạo lúc") }}</th><th scope="col"></th>
       </tr></thead>
       <tbody>
         {% for hook in subscriptions %}
@@ -72,9 +72,9 @@
   {% else %}
     <table class="table">
       <thead><tr>
-        <th>{{ _("Lúc") }}</th><th>{{ _("Sự kiện") }}</th><th>Job</th>
-        <th>{{ _("Trạng thái") }}</th><th>{{ _("Lần thử") }}</th>
-        <th>HTTP</th><th></th>
+        <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">Job</th>
+        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Lần thử") }}</th>
+        <th scope="col">HTTP</th><th scope="col"></th>
       </tr></thead>
       <tbody>
         {% for item in deliveries %}
@@ -105,7 +105,7 @@
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Danh mục sự kiện") }}</h2>
   <table class="table">
-    <thead><tr><th>{{ _("Loại") }}</th><th>{{ _("Khi nào") }}</th></tr></thead>
+    <thead><tr><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Khi nào") }}</th></tr></thead>
     <tbody>
       {% for name, when in event_catalog %}
         <tr><td><code>{{ name }}</code></td><td>{{ when }}</td></tr>

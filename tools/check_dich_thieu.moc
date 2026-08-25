@@ -1,0 +1,280 @@
+# tap-hop-muc-chua-dich
+FUZZY	Artifact token không hợp lệ.
+FUZZY	Assets: chưa sẵn sàng
+FUZZY	Attach file không toàn vẹn.
+FUZZY	AutoSub Video
+FUZZY	Batch upload đã gắn với job không hợp lệ.
+FUZZY	BỊ CHẶN
+FUZZY	Bộ đo chất lượng đầu ra
+FUZZY	Calibration case phải là object.
+FUZZY	Calibration degradation không hợp lệ.
+FUZZY	Calibration media_kind không hợp lệ.
+FUZZY	Chi phí dự kiến
+FUZZY	Chưa có evaluation.
+FUZZY	Chữ ký vote không hợp lệ.
+FUZZY	Contract video
+FUZZY	Cần tài khoản quản trị CSDL để tạo evaluation job.
+FUZZY	Cần ảnh LR đầu vào
+FUZZY	Dataset phải có từ 1 đến 500 sample.
+FUZZY	Evaluation gần đây
+FUZZY	Evaluator artifact phải là object.
+FUZZY	Evaluator chưa sẵn sàng
+FUZZY	Evaluator manifest không có artifact.
+FUZZY	File chưa upload xong.
+FUZZY	Input rỗng hoặc vượt 90 MB.
+FUZZY	Không trích được frame video để đánh giá.
+FUZZY	Không tìm thấy evaluation.
+FUZZY	Không được có
+FUZZY	Không đặt
+FUZZY	Không đọc được thời lượng video nguồn.
+FUZZY	Kích thước file không hợp lệ.
+FUZZY	Kích thước file thực tế không khớp khai báo.
+FUZZY	Kích thước file vượt giới hạn.
+FUZZY	Kích thước khớp HR
+FUZZY	Loại file không được hỗ trợ.
+FUZZY	Luồng tiếng đúng yêu cầu
+FUZZY	Lựa chọn A/B không hợp lệ.
+FUZZY	Metadata evaluator artifact không hợp lệ.
+FUZZY	Màu thương hiệu
+FUZZY	Pack đánh giá không hợp lệ.
+FUZZY	Promote file không toàn vẹn.
+FUZZY	Report chưa sẵn sàng.
+FUZZY	Sai lệch thời lượng
+FUZZY	Sample dataset phải là object.
+FUZZY	Sample intake phải là object.
+FUZZY	Source artifact không tồn tại.
+FUZZY	Số bộ tham chiếu không khớp batch.
+FUZZY	Số cue
+FUZZY	Thông lượng xử lý
+FUZZY	Thương hiệu
+FUZZY	Tên evaluator artifact không hợp lệ.
+FUZZY	Tên file không hợp lệ.
+FUZZY	Tốc độ khung hình
+FUZZY	Upload không thuộc job này.
+FUZZY	Upload đã gắn với job không hợp lệ.
+FUZZY	Upscale foundation
+FUZZY	Upscale video diagnostic
+FUZZY	Video trên 90MB cần bật upload trực tiếp R2.
+FUZZY	Vote không hợp lệ.
+FUZZY	Vé upload không hợp lệ hoặc không thuộc tài khoản.
+FUZZY	Vé upload không tồn tại hoặc không thuộc user.
+FUZZY	Vé upload tham chiếu không hợp lệ.
+FUZZY	Vé upload ảnh không hợp lệ.
+FUZZY	[{slug}] tool {tool!r} alias không hợp lệ: {value!r}
+FUZZY	[{slug}] tool {tool!r} execution_mode không hợp lệ: {value!r}
+FUZZY	[{slug}] tool {tool!r} public_name không hợp lệ: {value!r}
+FUZZY	credit tối đa
+FUZZY	cue không có nội dung
+FUZZY	subtitle rỗng
+FUZZY	timestamp không hợp lệ
+FUZZY	{quantity} video · dự kiến {estimated} credit; không thu vượt mức xác nhận
+FUZZY	Đích project upload không hợp lệ.
+FUZZY	Định dạng
+FUZZY	Định dạng input chưa được hỗ trợ.
+FUZZY	Định dạng video không được hỗ trợ.
+FUZZY	Ảnh HR reference không tồn tại.
+FUZZY	Ảnh LR đầu vào không tồn tại.
+FUZZY	Ứng dụng upload không hợp lệ.
+TRONG	, 
+TRONG	Artifact proxy
+TRONG	Assets: đã verify
+TRONG	Audio
+TRONG	AutoSub foundation
+TRONG	BLOCKED cho SaaS thương mại; chỉ xem xét lại khi có license riêng.
+TRONG	BLOCKED cho SaaS thương mại; tác giả yêu cầu liên hệ để dùng thương mại.
+TRONG	Batch upload đã dùng một phần; không thể nộp lại.
+TRONG	Bicubic PSNR
+TRONG	Bicubic baseline
+TRONG	Bicubic local SSIM
+TRONG	Blind secret phải có ít nhất 16 ký tự.
+TRONG	Block boundary excess
+TRONG	Báo giá không còn khớp với cấu hình hệ thống.
+TRONG	Báo giá đã hết hạn hoặc cấu hình đã đổi. Vui lòng chờ báo giá mới.
+TRONG	BẬT
+TRONG	Bộ đo
+TRONG	CHƯA DUYỆT
+TRONG	Calibration case id rỗng hoặc trùng.
+TRONG	Calibration slice rỗng hoặc quá dài.
+TRONG	Calibration suite phải có từ 1 đến 500 case.
+TRONG	Calibration suite phải dùng schema_version=1.
+TRONG	Candidate/reference giải mã được
+TRONG	Cao (px)
+TRONG	Chiều cao
+TRONG	Chưa calibrated
+TRONG	Chưa calibrated — chỉ chẩn đoán
+TRONG	Chưa calibrated; model gốc nhắm 1080p HDTV ở khoảng 3H
+TRONG	Chưa có baseline theo GPU/model/resolution
+TRONG	Chưa có baseline theo model/slice
+TRONG	Chưa cấu hình khóa ký báo giá.
+TRONG	Chưa giữ credit nên không thể lưu file.
+TRONG	Contract A/V, paired frame, temporal và job performance.
+TRONG	Contract đầu ra Upscale; perceptual/temporal mở ở H31.3.
+TRONG	Cue chồng nhau
+TRONG	Cue có duration sai
+TRONG	Cần transcript chuẩn
+TRONG	Cần ít nhất hai cặp frame đồng bộ.
+TRONG	Dataset intake chưa có sample.
+TRONG	Dataset intake phải dùng schema v1 cho Upscale.
+TRONG	Dataset manifest phải dùng schema_version=1.
+TRONG	Dataset này không thuộc pack Upscale.
+TRONG	Dataset split chưa được hỗ trợ.
+TRONG	Decode, stream, kích thước, duration, FPS và audio.
+TRONG	Dùng cho Upscale paired ảnh/video. Candidate ở ô File cần đo phía trên.
+TRONG	Dùng snapshot thật để tính processing time/throughput; peak VRAM chưa có sẽ là UNKNOWN.
+TRONG	Dữ liệu production thiếu consent hoặc retention.
+TRONG	Evaluation mới
+TRONG	Evaluator artifact lệch bytes hoặc SHA-256.
+TRONG	Evaluator hoặc package version không khớp registry.
+TRONG	FFmpeg/libvmaf không sẵn sàng.
+TRONG	FFprobe hoạt động
+TRONG	FPS
+TRONG	File cần đo
+TRONG	File subtitle vượt 4 MB.
+TRONG	Flicker độ sáng dư
+TRONG	Foundation chưa calibrated; không dùng kết quả này làm release gate.
+TRONG	Frame-paired/temporal/performance proxy; chưa human-calibrated.
+TRONG	Full-reference
+TRONG	Full-reference diagnostic; implementation/model pinned by FFmpeg hash.
+TRONG	Full-reference theo frame
+TRONG	Giải mã và đọc contract ảnh; không phải metric cảm nhận.
+TRONG	H31.4: model align theo ngôn ngữ và token diarization riêng.
+TRONG	H31.4: pin model tiếng Việt + checksum trước khi bật.
+TRONG	H31.5: chỉ subset custom-input sau benchmark tài nguyên.
+TRONG	HR reference (ảnh/video)
+TRONG	Hiệu năng job nguồn
+TRONG	Hoặc HR storage key
+TRONG	Hoặc LR storage key
+TRONG	Hoặc storage key
+TRONG	JSON evidence
+TRONG	Job Upscale nguồn (tùy chọn)
+TRONG	Job nguồn phải là job Upscale đã hoàn tất.
+TRONG	Khoảng thời lượng clip không hợp lệ (5–180 giây).
+TRONG	Không nhập thì WER = UNKNOWN
+TRONG	Không xóa được input tạm của Quality Lab.
+TRONG	Khả năng đọc
+TRONG	Kiểu degradation chưa được hỗ trợ.
+TRONG	Kênh màu
+TRONG	Kích thước candidate khớp HR
+TRONG	Ký tự tối đa mỗi dòng
+TRONG	Kết quả foundation dùng để chẩn đoán; chưa được hiệu chuẩn với đánh giá mù của con người và không được dùng làm release gate.
+TRONG	LGPL/GPL theo build cài đặt
+TRONG	LPIPS thiếu linear weight hoặc AlexNet backbone.
+TRONG	LR đầu vào để dựng bicubic baseline
+TRONG	Local SSIM trung bình
+TRONG	Lấy mẫu frame đồng bộ
+TRONG	MIME video không khớp định dạng được hỗ trợ.
+TRONG	Media contract
+TRONG	Media giải mã được
+TRONG	Meta Director đã chọn không còn khả dụng.
+TRONG	Mất kết nối tạm thời. Tiến độ sẽ tự cập nhật khi mạng trở lại.
+TRONG	Một khối prompt đã chọn không còn khả dụng.
+TRONG	Một rater chỉ được chấm một lần mỗi case.
+TRONG	Mở report
+TRONG	Mở timeline kỹ thuật của job
+TRONG	Nhất quán theo thời gian
+TRONG	Nạp file vào Lab hoặc dùng storage key. File nạp trực tiếp sẽ bị xóa ngay sau job.
+TRONG	Nội dung file không khớp định dạng khai báo.
+TRONG	Operator-only; foundation evaluator không tải model lúc chạy.
+TRONG	Output dataset đã tồn tại; không được ghi đè.
+TRONG	PSNR delta so với bicubic
+TRONG	PSNR trung bình
+TRONG	PSNR/local-SSIM/bicubic/artifact proxy; chưa human-calibrated.
+TRONG	Pack paired cần HR reference.
+TRONG	Pack paired thiếu ảnh HR reference.
+TRONG	Parse cue, timing, overlap, CPS, line và transcript error.
+TRONG	Peak VRAM
+TRONG	Phase foundation; deploy phải lưu ffprobe -version/configuration.
+TRONG	Phong cách đã chọn không còn khả dụng.
+TRONG	Phải có
+TRONG	Quality Lab
+TRONG	Ready chỉ cho phép review threshold; không tự bật release gate.
+TRONG	Runtime Upscale chưa ghi peak VRAM theo job
+TRONG	Rộng (px)
+TRONG	SRT đọc được
+TRONG	SSIM delta so với bicubic
+TRONG	Sai lệch FPS
+TRONG	Sai schema evaluator manifest.
+TRONG	Sai số biến thiên frame
+TRONG	Sample chưa có bằng chứng sở hữu/license.
+TRONG	Sample id chỉ được gồm chữ, số, dấu chấm, gạch ngang hoặc gạch dưới.
+TRONG	Sample id rỗng hoặc bị trùng.
+TRONG	Sample thiếu license_evidence_id có thể kiểm toán.
+TRONG	So candidate với HR và bicubic baseline; chưa release gate.
+TRONG	So với bicubic
+TRONG	Source hoặc license evaluator không khớp registry.
+TRONG	Số frame đã lấy mẫu
+TRONG	Số frame đã xử lý
+TRONG	Số luồng hình
+TRONG	Số luồng tiếng
+TRONG	Target gần 1; chưa calibrated
+TRONG	Theo dõi
+TRONG	Thiếu calibration version hoặc dataset manifest hash.
+TRONG	Thiếu dataset_version.
+TRONG	Thiếu evaluator artifact đã khai báo.
+TRONG	Thiếu rater id.
+TRONG	Thiếu source artifact key.
+TRONG	Thời gian xử lý Upscale
+TRONG	Timestamp không tăng
+TRONG	Trang sẽ tự làm mới.
+TRONG	Transcript chuẩn (AutoSub, tùy chọn)
+TRONG	Transcript chuẩn vượt 100 KB.
+TRONG	Transcript còn lỗi nội dung/timing phải sửa trước khi xuất video.
+TRONG	Trạng thái audio được giữ
+TRONG	Tên file nếu key không có đuôi
+TRONG	Tạo evaluation job
+TRONG	Tạo quá nhiều lượt upload. Vui lòng thử lại sau.
+TRONG	Tỉ lệ năng lượng cạnh
+TRONG	Tốc độ đọc cao nhất
+TRONG	Upload đã gắn vào project khác.
+TRONG	Upload đã được dùng cho job khác.
+TRONG	Upload đã được dùng cho job.
+TRONG	Upscale paired diagnostic
+TRONG	Upscale/AutoSub foundation trước; model cảm nhận mở ở phase sau.
+TRONG	VMAF trả điểm không hữu hạn.
+TRONG	Vé upload đã hết hạn hoặc đã được dùng.
+TRONG	[{slug}] tool {tool!r} alias model {alias!r} có khoá lạ: {keys}
+TRONG	[{slug}] tool {tool!r} alias model {alias!r} có stability lạ: {value!r}
+TRONG	[{slug}] tool {tool!r} alias model {alias!r} thiếu `id` nội bộ
+TRONG	[{slug}] tool {tool!r} alias model {alias!r} trỏ tới alias không tồn tại: {value!r}
+TRONG	[{slug}] tool {tool!r} alias model {alias!r} đánh dấu deprecated nhưng không nói thay bằng gì
+TRONG	[{slug}] tool {tool!r} alias trùng chính public_name
+TRONG	[{slug}] tool {tool!r} api_contract có khoá lạ: {keys}
+TRONG	[{slug}] tool {tool!r} api_contract nhắc tham số không tồn tại: {param!r}
+TRONG	[{slug}] tool {tool!r} api_contract phải là dict
+TRONG	[{slug}] tool {tool!r} api_contract.output_counts phải là dict
+TRONG	[{slug}] tool {tool!r} api_contract.params phải là dict
+TRONG	[{slug}] tool {tool!r} có api_contract nhưng api_exposed=False — bỏ hợp đồng hoặc bật cờ, đừng để nửa vời
+TRONG	[{slug}] tool {tool!r} enum {param!r} lấy giá trị từ nguồn nội bộ nhưng api_contract không khai `enums` cũng không đưa vào `hidden`
+TRONG	[{slug}] tool {tool!r} khai execution_mode {value!r} nhưng nền tảng chưa thi hành mode đó
+TRONG	[{slug}] tool {tool!r} models/enums phải là dict
+TRONG	[{slug}] tool {tool!r} output_counts khai {output!r} nhưng đó không phải đầu ra dạng danh sách
+TRONG	[{slug}] tool {tool!r} output_counts trỏ tới tham số không tồn tại: {param!r}
+TRONG	[{slug}] tool {tool!r} params mô tả tham số không tồn tại: {param!r}
+TRONG	[{slug}] tool {tool!r} params mô tả tham số đang ẩn: {param!r}
+TRONG	[{slug}] tool {tool!r} params[{param!r}] có khoá lạ: {keys}
+TRONG	[{slug}] tool {tool!r} params[{param!r}] phải là dict
+TRONG	[{slug}] tool {tool!r} params[{param!r}] thiếu description
+TRONG	[{slug}] tool {tool!r} scope lạ: {scopes}
+TRONG	[{slug}] tool {tool!r} tham số {param!r} là model_ref nhưng api_contract thiếu alias `models` — không được để id model/nhà cung cấp thật lọt ra API công khai
+TRONG	cue thiếu dòng thời gian
+TRONG	không có file staging: {key}
+TRONG	media_kind chưa được hỗ trợ.
+TRONG	metric_value phải hữu hạn.
+TRONG	tag rỗng, trùng hoặc quá dài.
+TRONG	tags phải là list tối đa 12 mục.
+TRONG	từ
+TRONG	Đang kiểm tra contract
+TRONG	Đang tổng hợp bằng chứng
+TRONG	Đang đọc artifact
+TRONG	Đang đọc artifact để đánh giá.
+TRONG	Điểm rubric phải nằm trong 1..5.
+TRONG	Đo contract và chất lượng đầu ra bằng bằng chứng có phiên bản.
+TRONG	Đo theo vector bằng chứng. Foundation chưa calibrated và không được dùng làm release gate.
+TRONG	Đã tạo report chất lượng.
+TRONG	Đã đánh giá xong
+TRONG	Đã đạt giới hạn upload đang chờ.
+TRONG	Đối chiếu Upscale paired
+TRONG	Đối chiếu cặp
+TRONG	Ảnh giải mã được
+TRONG	Ứng viên thương mại; phải provision offline linear weight + torchvision backbone và khóa checksum trước khi bật.
+TRONG	← Quality Lab

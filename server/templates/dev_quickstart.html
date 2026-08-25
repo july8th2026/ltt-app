@@ -31,7 +31,7 @@
   <h2 style="margin-top:0;">{{ _("Biến môi trường") }}</h2>
   <table class="table">
     <thead><tr>
-      <th>{{ _("Tên") }}</th><th>{{ _("Ví dụ") }}</th><th>{{ _("Để làm gì") }}</th>
+      <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Ví dụ") }}</th><th scope="col">{{ _("Để làm gì") }}</th>
     </tr></thead>
     <tbody>
       {% for name, sample, purpose in env_vars %}

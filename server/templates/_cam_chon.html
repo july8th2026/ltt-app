@@ -1,0 +1,167 @@
+{# Than huong dan cam — MOT O CHON, toan bo ben duoi ve lai.
+
+   🔴 THAY CHO BAN XEP CHONG. Ban cu (`_cam_than.html`) do moi be mat len nhau:
+      nam khu, muoi the, 133 dong. Hai van de, ca hai deu that:
+
+      1. Khach cam Codex phai cuon qua ca phan Claude Desktop moi het trang.
+      2. 🔴 Nguy hiem hon: HAI GIA TRI DE SAI NHAT cua ca khu API nam canh nhau
+         tren cung mot man hinh, khong co gi noi cai nao la cua ai —
+
+             dia chi   /api/v1  ><  /api        (lech dung bon ky tu)
+             model     ltt_llm  ><  ...-compat  (chi Claude Desktop)
+
+         Chep nham thi Codex nhan 404, hoac nut gui cua Claude Desktop im lang
+         khong lam gi ca. Ca hai deu la trieu chung vo dung. Trang huong dan
+         KHONG duoc phep la thu dung nen cai bay do.
+
+   ⭐ Cach chua doc tu `api.nghimmo.com/huongdan` (soi that 25/08): bam tu
+      "Key Claude" sang "Key Codex" thi base URL, dong canh bao, bang model va
+      ca bo tab cai dat deu doi theo. Khach khong bao gio nhin thay thu khong
+      ap dung cho minh.
+
+   ⚠️ Khong co JS thi HIEN HET, moi be mat mot the co tieu de day du. Trang van
+      dung, chi la dai — chu khong phai trang trong. #}
+
+{#- Van xuoi cua tung be mat NAM O DAY, khong nam trong `examples.py`.
+    Module do sinh doan ma va co y khong co bo dich; mot cau tieng Viet viet o
+    do se hien ra MAT DAU tren trang. Da mac dung loi nay 25/08 va sua tai cho. -#}
+{% set luu_y = {
+  "codex": _("Có /api/v1 — Codex tự ghép /responses vào sau."),
+  "claude-code": _("KHÔNG có /v1 — Claude Code tự ghép /v1/messages vào sau."),
+  "vscode": _("Cắm xong cho CLI là CHƯA đủ: tiện ích không đọc biến môi trường của hệ điều hành như CLI."),
+  "desktop": _("Bề mặt DUY NHẤT dùng tên model khác — và dùng sai tên thì nút gửi im lặng không làm gì cả."),
+  "http": _("Không cần thư viện của chúng tôi — đây là HTTP thuần."),
+} %}
+{% set doc_gi = {
+  "codex": _("~/.codex/config.toml, chạy với --profile ltt"),
+  "claude-code": _("biến môi trường, hoặc ~/.claude/settings.json"),
+  "vscode": _("settings.json cấp NGƯỜI DÙNG — đặt ở workspace thì không có tác dụng"),
+  "desktop": _("chính sách registry của Windows"),
+  "http": _("không đọc tệp nào cả"),
+} %}
+{% set ten_be_mat = {
+  "vscode": _("Tiện ích VS Code"), "http": _("cURL / tự viết mã"),
+} %}
+{% set the_be_mat = {
+  "vscode": _("CẤU HÌNH RIÊNG"), "desktop": _("CHÍNH SÁCH REGISTRY"), "http": _("HTTP THUẦN"),
+} %}
+{% set nhan_buoc = {
+  "dat-khoa": _("Đặt khoá rồi mở lại cửa sổ lệnh"),
+  "env": _("Biến môi trường"),
+  "settings": _("Bền hơn, ghi vào tệp"),
+  "vscode-claude": _("Claude Code — settings.json cấp NGƯỜI DÙNG"),
+  "vscode-codex": _("Codex — đặt ở GỐC tệp, không trong [profiles]"),
+  "reg": _("Lưu thành một tệp .reg rồi bấm đúp"),
+  "curl": _("Gọi thử"),
+} %}
+
+<div class="card cam-chon" data-cam-chon>
+  <h2 style="margin-top:0;">{{ _("Bạn cắm vào công cụ nào?") }}</h2>
+  <div class="chon-hang" role="tablist" aria-label="{{ _('Công cụ') }}">
+    {% for b in be_mat %}
+      <button type="button" class="chon-o" role="tab" data-ma="{{ b.ma }}"
+              id="tab-{{ b.ma }}" aria-controls="khu-{{ b.ma }}"
+              aria-selected="{{ 'true' if loop.first else 'false' }}">
+        <span class="chon-ten">{{ ten_be_mat.get(b.ma, b.ten) }}</span>
+        <span class="chon-the">{{ the_be_mat.get(b.ma, b.the) }}</span>
+      </button>
+    {% endfor %}
+  </div>
+</div>
+
+{% for b in be_mat %}
+<section class="cam-khu" id="khu-{{ b.ma }}" data-khu="{{ b.ma }}"
+         role="tabpanel" aria-labelledby="tab-{{ b.ma }}">
+
+  {# Tieu de nay CHI hien khi khong co JS (luc do moi khu deu hien, nen chung
+     phai tu noi minh la khu nao). Co JS thi o chon o tren da noi roi. #}
+  <h2 class="cam-khu-ten">{{ ten_be_mat.get(b.ma, b.ten) }}</h2>
+
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Kết nối") }}</h3>
+    <table class="table">
+      <tbody>
+        {# 🔴 KHU PHUC VU HAI CONG CU thi bang nay phai co HAI DONG.
+           `vscode` chua ca tien ich Claude Code (`/api`) lan tien ich Codex
+           (`/api/v1`). Mot dong dia chi duy nhat o day **noi dung mot nua khu
+           va sai nua con lai** — khach doc dong do roi chep doan ma Codex ben
+           duoi se cam theo hai gia tri khong khop nhau. `test_303` chot no. #}
+        {% if b.dia_chi_theo %}
+          {% for ten_cc, dia_chi, model in b.dia_chi_theo %}
+            <tr><th scope="row" style="white-space:nowrap;">{{ ten_cc }}</th>
+                <td><code class="to-dam">{{ dia_chi }}</code>
+                    <span class="muted">· {{ _("model") }}</span>
+                    <code class="to-dam">{{ model }}</code></td></tr>
+          {% endfor %}
+        {% else %}
+          <tr><th scope="row" style="white-space:nowrap;">{{ _("Địa chỉ") }}</th>
+              <td><code class="to-dam">{{ b.dia_chi }}</code></td></tr>
+          <tr><th scope="row">{{ _("Tên model") }}</th>
+              <td><code class="to-dam">{{ b.model }}</code></td></tr>
+        {% endif %}
+        <tr><th scope="row">{{ _("Khoá") }}</th>
+            <td><code>ltt_sk_…</code> <span class="muted">— {{ _("đặt ở biến môi trường") }}
+                <code>{{ env_key }}</code></span></td></tr>
+        <tr><th scope="row">{{ _("Đọc cấu hình ở") }}</th>
+            <td class="muted">{{ doc_gi.get(b.ma, "") }}</td></tr>
+      </tbody>
+    </table>
+    <p class="cam-luu-y">⚠️ {{ luu_y.get(b.ma, "") }}</p>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Các bước") }}</h3>
+    {% for ma_buoc, tep, doan in b.buoc %}
+      <h4>{{ loop.index }}.
+        {%- if tep %} <code>{{ tep }}</code>{% endif %}
+        {%- if nhan_buoc.get(ma_buoc) %} <span class="muted" style="font-weight:400;">{{ nhan_buoc[ma_buoc] }}</span>{% endif %}</h4>
+      <pre style="overflow-x:auto;"><code>{{ doan }}</code></pre>
+    {% endfor %}
+    {% if b.chay %}
+      <p class="muted">{{ _("Rồi chạy") }} <code>{{ b.chay }}</code>.</p>
+    {% endif %}
+  </div>
+
+  {% if b.ma == "desktop" %}
+  {# Chi be mat nay moi co hai rao chan im lang. Dat TRONG khu cua no chu khong
+     phai o cuoi trang: khach cam Codex khong bao gio can doc no. #}
+  <div class="card">
+    <h3 style="margin-top:0;">⚠️ {{ _("Hai rào chắn im lặng") }}</h3>
+    <p>{{ _("Cả hai cho CÙNG một triệu chứng: bấm gửi, không có gì xảy ra. Không log, không thông báo, không banner.") }}</p>
+    <h4>1. {{ _("Tên model phải là") }} <code>{{ model_desktop }}</code></h4>
+    <p>{{ _("Claude Desktop lọc danh sách model trước khi vẽ ô chọn: tên không chứa claude, anthropic hay tên một dòng Claude thì bị bỏ. Tên") }}
+       <code>{{ model }}</code> {{ _("bị bỏ, ô chọn rỗng, và khi ô chọn rỗng thì nút gửi bị vô hiệu.") }}</p>
+    <p class="muted">{{ _("Đây là TÊN TUYẾN của một cổng tương thích, không phải tên sản phẩm. Thứ bạn mua vẫn là") }}
+       <code>{{ model }}</code>{{ _(", và model đứng sau vẫn là model của LTT Studios.") }}</p>
+    <h4>2. <code>chatTabEnabled</code> {{ _("phải bằng") }} <code>true</code></h4>
+    <p>{{ _("Mặc định ứng dụng chỉ mở tab Code. Tab đó không nói thẳng với API — nó mở một phiên tác tử chạy trên máy bạn, và phiên đó cần sẵn công cụ dòng lệnh trên máy. Không có thì ứng dụng không gửi request nào cả.") }}</p>
+    <p class="muted">{{ _("Cách phân biệt nhanh với lỗi khoá: gọi thẳng API bằng đúng khoá đó. Trả 200 mà ứng dụng vẫn im thì không phải lỗi khoá.") }}</p>
+    <h4>3. {{ _("Hoặc điền tay trong ứng dụng") }}</h4>
+    <table class="table">
+      <tbody>
+        {% for ten, gt in desktop %}
+          <tr><th scope="row" style="white-space:nowrap;">{{ ten }}</th><td><code>{{ gt }}</code></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {% if b.ma == "vscode" %}
+  <div class="card">
+    <h3 style="margin-top:0;">{{ _("Chỗ hay vấp của tiện ích") }}</h3>
+    <ul class="muted">{% for x in vscode_bay %}<li>{{ x }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+</section>
+{% endfor %}
+
+{# Dung chung cho MOI be mat, nen no o ngoai cac khu. #}
+<div class="card" id="hay-vap">
+  <h2 style="margin-top:0;">{{ _("Những chỗ hay vấp — chung cho mọi công cụ") }}</h2>
+  {% for ten, vi_sao in bay %}
+    <h3>{{ ten }}</h3>
+    <p>{{ vi_sao }}</p>
+  {% endfor %}
+</div>

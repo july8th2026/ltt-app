@@ -39,6 +39,7 @@ from platform_core.public_api.errors import (insufficient_credit,
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
 from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
+from server.api import tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 
@@ -47,6 +48,38 @@ log = logging.getLogger("server.api.streaming")
 _SSE = {"Cache-Control": "no-store", "X-Accel-Buffering": "no"}
 _NO_STORE = {"Cache-Control": "no-store"}
 TOOL_CHAT = "text.chat"
+
+#: Tên tuyến **tương thích**, chỉ tồn tại vì một ràng buộc phía CLIENT.
+#:
+#: 🔴 VÌ SAO CÓ MỤC NÀY. Claude Desktop ở chế độ `gateway` **lọc danh sách model
+#:    trước khi hiện picker**. Luật đọc được từ chính bản cài (1.34493.1.0, tệp
+#:    `ce459c687-CEBp0mVy.js`):
+#:
+#:        Be = /…|gpt|gemini|glm|llama|minimax|mistral|qwen|…/     # CẤM
+#:        qe = ["claude", …tên dòng Claude…, "anthropic"]          # PHẢI chứa
+#:        Ke(t) = !Be.test(t) && (Ne.test(t) || qe.some(s => t.includes(s)))
+#:
+#: ⛔ HẬU QUẢ ĐO ĐƯỢC 24/08: `ltt_llm` không chứa chuỗi nào trong `qe` ⇒ bị **lọc
+#:    khỏi mảng** ⇒ picker rỗng ⇒ **nút gửi vô hiệu, không một lời báo lỗi nào**.
+#:    Cả Enter lẫn bấm nút đều im lặng: không log, không toast, không banner. Mất
+#:    một buổi mới tìm ra, vì triệu chứng không hề chỉ về phía nguyên nhân.
+#:    (`qwen` còn nằm trong danh sách CẤM, nên tên trung thực nhất cũng bị chặn.)
+#:
+#: ⭐ VÌ SAO TÊN NÀY CHỨ KHÔNG PHẢI `claude-sonnet-4-5`. Luật chỉ đòi tên **chứa**
+#:    chuỗi `claude`; nó **không** đòi một model Anthropic có thật. Nên ta qua
+#:    được cổng mà **không** mượn tên sản phẩm của hãng khác. Đây là **tên tuyến**
+#:    của một cổng tương thích, không phải tên sản phẩm: catalog, bảng giá và
+#:    `/api/v1/tools` vẫn chỉ nói `ltt_llm`, và model đứng sau vẫn là model nhà.
+#:
+#: ⚠️ ĐỪNG đưa tên này vào `features.ALIAS_SANG_ID`. Chỗ đó là **từ vựng sản phẩm**
+#:    của app; mục này là **chi tiết giao thức của một client**. Trộn hai thứ là
+#:    cách một hằng số tạm bợ trở thành thứ ta phải đỡ mãi mãi.
+TUYEN_TUONG_THICH = {"ltt-llm-claude-compat": "ltt_llm"}
+
+
+def _giai_ten_model(ten: str) -> str:
+    """Tên tuyến tương thích → alias thật. Tên khác giữ nguyên để lỗi ở chỗ cũ."""
+    return TUYEN_TUONG_THICH.get(ten, ten)
 
 #: 🔴 NGÂN SÁCH MỞ LUỒNG — 75 giây, và con số này có lý do.
 #:
@@ -162,6 +195,20 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         raise insufficient_credit(str(e)) from None
     db.commit()
 
+    # 🔴 LƯỚI AN TOÀN CHO TIỀN — VÀ NÓ ĐÃ PHẢI TRẢ GIÁ MỘT LẦN.
+    #
+    #    Bản đầu chỉ hoàn tiền cho **ba** loại ngoại lệ có tên. Mọi ngoại lệ khác
+    #    thoát thẳng ra ngoài, thành `500` — và **để nguyên tiền trong hold**.
+    #
+    # ⛔ ĐO ĐƯỢC 25/08, tiền thật của khách: Claude Desktop gọi một lượt, ta ném
+    #    một ngoại lệ không có trong danh sách, và sổ credit còn lại đúng một
+    #    dòng mồ côi: `23:58:10  -1  hold  ms:84e9b…` — **không settle, không
+    #    hoàn**. Đường đồng bộ này KHÔNG có Job row, nên `_hoan_credit` của
+    #    worker không bao giờ chạm tới nó. Không ai quét. Khách mất tiền im lặng.
+    #
+    # ⭐ Nên cờ dưới đây đo đúng một điều: **tiền đã được định đoạt chưa** (quyết
+    #    toán HOẶC hoàn). Đừng đổi nó thành "đã hoàn chưa" — hai nhánh except bên
+    #    trong đã hoàn rồi mới ném tiếp, và hoàn lần hai là trả tiền thừa.
     try:
         # 🔴 ĐI ĐƯỜNG CHUNG, ĐỪNG TỰ DỰNG CLIENT.
         #
@@ -177,9 +224,25 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    đúng những ca mà `dieu_phoi` sinh ra để xử.
         #
         #    `features.chay` là đúng cửa mà `/chat/completions` đã dùng.
-        kq = features.chay(db, {"model": ten, "messages": tin,
-                                "max_tokens": tran},
-                           timeout_s=float(_tran_giay()))
+        # ⚠️ `_tin_that`, KHÔNG phải `tin`. `tin` là danh sách **ước token** và
+        #    các phần tử của nó cố ý không có `role` — xem `_tin_that`.
+        #
+        # ⭐ Rồi dịch sang giao thức OpenAI: máy B nói OpenAI, khách nói Anthropic.
+        #    `sang_openai_messages` là thứ giữ được **vòng gọi tool** — khối
+        #    `tool_use` thành `tool_calls`, khối `tool_result` thành các tin
+        #    `role="tool"` riêng, đúng thứ tự.
+        sach = {"model": ten, "max_tokens": tran,
+                "messages": tool_dich.sang_openai_messages(_tin_that(than))}
+        cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
+        if cong_cu:
+            sach["tools"] = cong_cu
+        kq = features.chay(db, sach, timeout_s=float(_tran_giay()))
+    except features.ThamSoSai as e:
+        # Tham số sai là lỗi của **yêu cầu**, không phải của máy chủ: 400, không
+        # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise invalid_request(str(e)) from None
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
@@ -191,6 +254,22 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         db.commit()
         log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
         raise service_unavailable("The model could not serve this request.") from None
+    except BaseException:
+        # ⛔ ĐO ĐƯỢC 25/08, TIỀN THẬT CỦA KHÁCH. Ba nhánh trên chỉ bắt ngoại lệ
+        #    **có tên**. Một ngoại lệ ngoài danh sách thoát thẳng ra thành `500`
+        #    và **để nguyên tiền trong hold**: sổ credit còn đúng một dòng mồ côi
+        #    `23:58:10  -1  hold  ms:84e9b…` — không quyết toán, không hoàn.
+        #
+        # ⚠️ Và KHÔNG AI QUÉT NÓ. Đường đồng bộ này không tạo `Job`, nên
+        #    `_hoan_credit` của worker không bao giờ nhìn thấy. Khách mất tiền
+        #    lặng lẽ, và không có báo cáo nào chỉ ra điều đó.
+        #
+        # ⭐ Vì sao `BaseException` chứ không phải `Exception`: khách ngắt kết nối
+        #    giữa chừng có thể tới dưới dạng `CancelledError` — thứ **không** kế
+        #    thừa `Exception`. Đó chính là ca hay xảy ra nhất ở một cửa đồng bộ.
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise
 
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
     # tu boc token roi truyen so le: chinh no biet cach xu khi KHONG DO DUOC
@@ -199,11 +278,19 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     #    `KetQuaChat` cua cong (co `.su_dung`). Boc y het `/chat/completions`,
     #    ke ca `dang_tin=kq.do_duoc` - do la co bao "co do duoc token khong", va
     #    `quyet_toan_hoac_hoan` dua vao no de HOAN DU khi khong do duoc.
-    thanh_toan.quyet_toan_hoac_hoan(
-        db, user_id=principal.user_id, request_id=request_id,
-        su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
-                       token_vao_cache=kq.token_vao_cache,
-                       dang_tin=kq.do_duoc))
+    try:
+        thanh_toan.quyet_toan_hoac_hoan(
+            db, user_id=principal.user_id, request_id=request_id,
+            su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                           token_vao_cache=kq.token_vao_cache,
+                           dang_tin=kq.do_duoc))
+    except BaseException:
+        # Cùng một lý do với lưới ở trên: hold đã đặt rồi, nên đường thoát nào
+        # cũng phải trả nó lại. Hỏng ở bước quyết toán mà bỏ chạy thì tiền kẹt.
+        db.rollback()
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise
     db.commit()
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
@@ -245,12 +332,40 @@ def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
        một bộ giải mã chặt.
     """
     ly_do = LY_DO_DUNG.get(kq.finish_reason or "", "end_turn")
+
+    khoi = tool_dich.sang_anthropic_content(kq.noi_dung,
+                                            getattr(kq, "tool_calls", ()))
+
+    # 🔴 KHÔNG ĐƯỢC KHAI `tool_use` KHI KHÔNG CÓ KHỐI `tool_use` NÀO.
+    #
+    #    Hợp đồng Anthropic: `stop_reason: "tool_use"` là lời hứa rằng trong
+    #    `content` có ít nhất một khối `{"type": "tool_use", …}`. Client đọc
+    #    `stop_reason`, đi tìm khối đó để chạy tool — không thấy thì nó **treo**,
+    #    chứ không báo lỗi.
+    #
+    # ⚠️ Và hôm nay ta **chưa** dựng được khối đó: `_mot_cuc` không truyền `tools`
+    #    lên model, nên model không có gì để gọi. Hỗ trợ tool cho đúng cần dịch
+    #    HAI CHIỀU (`tools`/`tool_use`/`tool_result` của Anthropic ↔ `tools`/
+    #    `tool_calls`/tin `tool` của OpenAI) — một việc riêng, có test riêng.
+    #
+    # ⭐ Cho tới lúc đó, thà nói `end_turn` còn hơn hứa một thứ không có. Một câu
+    #    trả lời thiếu tool là chuyện khách thấy ngay; một client treo thì không.
+    if ly_do == "tool_use" and not any(k.get("type") == "tool_use" for k in khoi):
+        log.warning("upstream bao tool_calls nhung khong dung duoc khoi tool_use; "
+                    "ha ve end_turn de client khong treo")
+        ly_do = "end_turn"
+    # Và chiều ngược lại: có khối `tool_use` thì `stop_reason` PHẢI nói `tool_use`,
+    # dù thượng nguồn báo `stop`. Client dừng vòng lặp theo `stop_reason`; nói
+    # `end_turn` trong khi vừa đưa ra một lời gọi tool là bảo nó **đừng chạy**.
+    elif any(k.get("type") == "tool_use" for k in khoi):
+        ly_do = "tool_use"
+
     return {
         "id": "msg_" + request_id,
         "type": "message",
         "role": "assistant",
         "model": ten,
-        "content": [{"type": "text", "text": kq.noi_dung}],
+        "content": khoi,
         "stop_reason": ly_do,
         "stop_sequence": None,
         "stop_details": None,
@@ -281,16 +396,34 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     require_tool(build_catalog(config), TOOL_CHAT, principal)
 
 
-    ten = str(than.get("model") or "")
+    ten = _giai_ten_model(str(than.get("model") or ""))
     if ten not in features.ALIAS_SANG_ID:
         raise invalid_request(
-            f"`model` must be one of {list(features.ALIAS_SANG_ID)}. Claude Code "
-            f"sends whatever ANTHROPIC_MODEL is set to, and Codex sends `model` "
-            f"from its profile — set them to one of these.")
+            f"`model` must be one of {list(features.ALIAS_SANG_ID)}"
+            f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
+            f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
+            f"sends `model` from its profile — set them to one of these.")
 
     tin = _tin_nhan(than)
     if not tin:
         raise invalid_request("the request carries no input to answer")
+
+    # 🔴 `tool_choice` CHƯA ĐI QUA ĐƯỢC CHUỖI GỌI, nên phải TỪ CHỐI, không bỏ qua.
+    #
+    #    `features.chay` → `dieu_phoi.goi` nhận `tools` nhưng **không** nhận
+    #    `tool_choice`. Nuốt im lặng một tham số có nghĩa là đúng cái lỗi vừa mất
+    #    cả buổi để tìm: khách khai `{"type": "tool", "name": "x"}` để **ép** model
+    #    gọi một tool, ta bỏ qua, model trả lời bằng chữ — và không ai biết vì sao.
+    #
+    # ⭐ `auto` thì bỏ qua được thật, vì nó **đã là** mặc định của thượng nguồn.
+    _chon = than.get("tool_choice")
+    if _chon is not None:
+        _loai = _chon if isinstance(_chon, str) else (_chon or {}).get("type")
+        if _loai != "auto":
+            raise invalid_request(
+                f"`tool_choice` {_loai!r} is not supported yet; only \"auto\" "
+                f"(the default) is honoured. Omit the field to let the model "
+                f"decide.")
 
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
@@ -517,6 +650,55 @@ def _tin_nhan(than: dict) -> list:
     if isinstance(cong_cu, list) and cong_cu:
         import json
         ra.append({"content": json.dumps(cong_cu, ensure_ascii=False)})
+    return ra
+
+
+def _chu_trong(khoi) -> str:
+    """Văn bản trong một trường có thể là chuỗi **hoặc** danh sách khối Anthropic."""
+    if isinstance(khoi, str):
+        return khoi
+    if isinstance(khoi, list):
+        return "\n".join(str((m or {}).get("text", "")) for m in khoi
+                         if isinstance(m, dict))
+    return ""
+
+
+def _tin_that(than: dict) -> list:
+    """`messages` **THẬT** để gửi cho model — khác hẳn `_tin_nhan`.
+
+    🔴 HAI HÀM NÀY TRÔNG GIỐNG NHAU VÀ KHÔNG THỂ THAY NHAU. `_tin_nhan` chỉ để
+       **ước token**, nên nó cố ý sinh ra những phần tử **không có `role`**:
+       prompt hệ thống thành `{"content": …}`, và cả khối JSON của `tools` cũng
+       được nhét vào như một "tin nhắn" để cộng token.
+
+    ⛔ ĐO ĐƯỢC 25/08, TRÊN PRODUCTION. Bản đầu của `_mot_cuc` đem thẳng danh sách
+       ước ấy đi gọi model. Hai hậu quả, và cái thứ hai tệ hơn:
+
+       1. Request nào có `system` hoặc `tools` thì `kiem_tham_so` ném
+          `ThamSoSai: moi phan tu cua messages phai co role` → **500**.
+       2. Request nào **không** vỡ thì model nhận một hội thoại đã bị bóp méo:
+          prompt hệ thống mất vai trò, và định nghĩa tool trở thành một lượt nói
+          của người dùng. Nó **vẫn trả lời**, nên lỗi này không tự lộ ra — phép
+          thử `8x7` vẫn đúng, và điều đó che mất chuyện ngữ cảnh đã sai.
+
+    ⭐ Nên đường gọi model phải có hàm riêng, và `_tin_nhan` ở lại đúng việc của
+       nó. Ước token được phép cẩu thả; thứ gửi cho model thì không.
+    """
+    ra: list = []
+    he = _chu_trong(than.get("system"))
+    if he.strip():
+        ra.append({"role": "system", "content": he})
+
+    for m in than.get("messages") or []:
+        if isinstance(m, dict) and m.get("role"):
+            ra.append(m)
+
+    # `/responses` gọi nó là `input`, và nó có thể là chuỗi trần.
+    vao = than.get("input")
+    if isinstance(vao, str) and vao.strip():
+        ra.append({"role": "user", "content": vao})
+    elif isinstance(vao, list):
+        ra.extend(m for m in vao if isinstance(m, dict) and m.get("role"))
     return ra
 
 

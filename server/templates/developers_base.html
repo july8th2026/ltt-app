@@ -1,51 +1,122 @@
-{# Shell for the whole developer API area: one portal, one navigation.
+{# Vo cua ca khu API cho lap trinh vien: MOT cong, MOT he dieu huong.
 
-   The sections below used to be one long page. They became routes when the area
-   grew past what a person can scan — but they stayed a *single* portal, because
-   two places to manage the same key is how a customer revokes the wrong one. #}
+   Cac muc ben duoi tung la mot trang dai. Chung thanh route khi khu nay lon
+   qua suc quet cua mot nguoi — nhung van la MOT cong, vi hai cho quan ly cung
+   mot khoa la cach mot khach thu hoi nham khoa.
+
+   🔴 25/08 doi tu DAI TAB NGANG sang THANH BEN CO NHOM. Ly do o
+      `server/routes/developer.py` (khoi chu thich tren `NHOM_NAV`), rut gon:
+      muoi sau muc phang tren mot dai cuon ngang khong phai dieu huong, va
+      chung tron ba nghe khac nhau — cam vao cong cu / tra cuu API / xem tai
+      khoan — vao cung mot hang ngang cap.
+
+   ⭐ Vo `.app-shell` dung lai nguyen cua khu VPS. Chinh phien dung no da ghi
+      truoc trong `ltt.css` rang cong lap trinh vien se dung lai, kem dung ly
+      do nay. Khong dung ban thu hai. #}
 {% extends "base.html" %}
 {% block title %}{{ section_title }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("API cho lập trình viên") }}</strong>{% endblock %}
 {% block content %}
 
-<nav class="dev-nav" aria-label="{{ _('Khu API') }}">
-  <ul>
-    {% for item in nav %}
-      <li>
-        {% if item.href %}
-          <a href="{{ item.href }}"
-             {% if item.active %}aria-current="page" class="active"{% endif %}>
-            {{ item.label }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
-          </a>
-        {% else %}
-          {# Named but not built yet. A dead link is worse than an honest label:
-             the shape of the area is information, a 404 is not. #}
-          <span class="muted" title="{{ _('Sắp có') }}">{{ item.label }}
-            <span class="pill">{{ _("sắp có") }}</span></span>
-        {% endif %}
-      </li>
+<div class="app-shell">
+
+  <nav class="app-side" aria-label="{{ _('Khu API') }}">
+    {% for g in nav %}
+      <div class="nhom">{{ g.nhom }}</div>
+      <ul>
+        {% for item in g.muc %}
+          <li>
+            {# ⚠️ `aria-current="page"` chi duoc co DUNG MOT tren ca trang — no
+               tra loi "day la trang hien tai", va hai cau tra loi cho mot cau
+               hoi thi trinh doc man hinh khong biet tin cai nao.
+
+               Khi trang co dai muc con thi dai DO mang `page` (no la cap trong
+               cung, sat voi trang that), con thanh ben chi noi "nhanh nay dang
+               mo" bang `aria-current="true"`. Khong co dai muc con thi thanh
+               ben la cap trong cung, va no lay lai `page`. #}
+            <a href="{{ item.href }}"
+               {% if item.active %}aria-current="{{ 'true' if muc_con else 'page' }}" class="active"{% endif %}>
+              {{ item.label }}{% if item.badge %} <span class="pill">{{ item.badge }}</span>{% endif %}
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
     {% endfor %}
-  </ul>
-</nav>
+  </nav>
 
-{% if not api_enabled %}
-  <div class="alert alert-warn" role="status">
-    <strong>{{ _("API công khai đang tắt trên máy chủ này.") }}</strong>
-    {{ _("Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. Quản trị viên bật bằng biến môi trường LTT_PUBLIC_API.") }}
+  <div class="app-main">
+
+    {% if not api_enabled %}
+      <div class="alert alert-warn" role="status">
+        <strong>{{ _("API công khai đang tắt trên máy chủ này.") }}</strong>
+        {{ _("Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. Quản trị viên bật bằng biến môi trường LTT_PUBLIC_API.") }}
+      </div>
+    {% elif read_only %}
+      <div class="alert alert-warn" role="status">
+        <strong>{{ _("API đang ở chế độ chỉ đọc.") }}</strong>
+        {{ _("Đọc vẫn chạy; tạo job tạm thời bị từ chối.") }}
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="alert alert-err" role="alert">{{ error }}</div>
+    {% endif %}
+
+    <h1 class="dev-h1">{{ section_title }}</h1>
+
+    {# Dai muc con: sau trang da bi ha khoi cap cao nhat van o day, ben trong
+       dung cha cua chung. Chung KHONG bi xoa route — mot URL da vao dau trang
+       va tin nhan ho tro thi 404 la thiet hai that, con roi khoi thanh dieu
+       huong thi khong. #}
+    {% if muc_con %}
+      <nav class="dev-sub" aria-label="{{ section_title }}">
+        <ul>
+          {% for s in muc_con %}
+            <li><a href="{{ s.href }}"
+                   {% if s.active %}aria-current="page" class="active"{% endif %}>{{ s.label }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+    {% endif %}
+
+    {% if not da_dang_nhap %}
+    {# Khach an danh doc duoc trang nay (xem `TRANG_CONG_KHAI` trong
+       `server/routes/developer.py`). Noi thang buoc tiep theo ngay duoi tieu
+       de, chu khong de ho tu tim nut "Dang ky" tren thanh tieu de — nguoi dang
+       doc mot trang tai lieu khong nhin len thanh tieu de.
+
+       Dat o day, MOT cho, cho MOI trang cong khai: them trang thu ba vao
+       `TRANG_CONG_KHAI` thi no co loi moi nay ngay, khong phai nho chep sang. #}
+    <div class="card" style="margin-bottom:16px;">
+      <p style="margin:0 0 10px;">
+        {{ _("Trang này đọc được không cần tài khoản. Để gọi thật, bạn cần một khóa API — và khóa thì cần tài khoản.") }}
+      </p>
+      <p style="margin:0;">
+        <a class="btn" href="/register">{{ _("Đăng ký lấy khóa") }}</a>
+        <a class="btn btn-ghost" href="/login?next={{ request.url.path }}"
+           style="margin-left:8px;">{{ _("Tôi đã có tài khoản") }}</a>
+        <a href="/gia-api" style="margin-left:12px;">{{ _("Xem giá") }}</a>
+      </p>
+    </div>
+    {% endif %}
+
+    {% block section %}{% endblock %}
+
   </div>
-{% elif read_only %}
-  <div class="alert alert-warn" role="status">
-    <strong>{{ _("API đang ở chế độ chỉ đọc.") }}</strong>
-    {{ _("Đọc vẫn chạy; tạo job tạm thời bị từ chối.") }}
-  </div>
-{% endif %}
+</div>
 
-{% if error %}
-  <div class="alert alert-err" role="alert">{{ error }}</div>
-{% endif %}
+{% endblock %}
 
-<h1 class="dev-h1">{{ section_title }}</h1>
+{# Nut "sao chep" cho moi khoi ma trong khu API.
 
-{% block section %}{% endblock %}
+   `dev_quickstart.html` co 10 khoi <pre> va truoc 25/08 khong co nut nao — ma
+   do dung la trang ton tai DE khach chep. To hut mot dong trong mot lenh cURL
+   nhieu dong thi loi hien ra o tan luot goi API, duoi mot thong diep khong
+   lien quan gi toi viec chep thieu.
 
+   Dung chung dung tep ma trang cong khai dung (`sao_chep.js`), va kieu cua nut
+   da co san vi `base.html` include `_kieu_chung.html`. Khong dung ban thu hai. #}
+{% block scripts %}
+<script src="/static/sao_chep.js?v={{ asset_ver }}" defer></script>
+<script src="/static/cam_chon.js?v={{ asset_ver }}" defer></script>
 {% endblock %}

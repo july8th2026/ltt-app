@@ -3,15 +3,15 @@
 
 <div class="card">
   <ul>
-    <li>{{ _("Số dư:") }} <strong>{{ balance }}</strong> credit</li>
+    <li>{{ _("Số dư:") }} <strong>{{ balance | so }}</strong> credit</li>
     <li>{{ _("Đã dùng hôm nay qua API:") }}
-        <strong>{{ usage_today.net_charged_credit }}</strong>
-        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit }})</li>
+        <strong>{{ usage_today.net_charged_credit | so }}</strong>
+        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit | so }})</li>
     <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
         {{ limits.create_rpm }} {{ _("job/phút") }},
         {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}
         {% if limits.daily_credit_limit %}, {{ _("trần của máy chủ") }}
-          {{ limits.daily_credit_limit }} {{ _("credit/ngày") }}{% endif %}</li>
+          {{ limits.daily_credit_limit | so }} {{ _("credit/ngày") }}{% endif %}</li>
   </ul>
   <p><a class="btn" href="/nap">{{ _("Nạp credit") }}</a></p>
 </div>
@@ -23,9 +23,9 @@
   {% if budgets %}
     <table class="table">
       <thead><tr>
-        <th>{{ _("Phạm vi") }}</th><th>{{ _("Kỳ") }}</th>
-        <th>{{ _("Đã dùng") }}</th><th>{{ _("Ngưỡng cảnh báo") }}</th>
-        <th>{{ _("Kiểu") }}</th><th></th>
+        <th scope="col">{{ _("Phạm vi") }}</th><th scope="col">{{ _("Kỳ") }}</th>
+        <th scope="col">{{ _("Đã dùng") }}</th><th scope="col">{{ _("Ngưỡng cảnh báo") }}</th>
+        <th scope="col">{{ _("Kiểu") }}</th><th scope="col"></th>
       </tr></thead>
       <tbody>
         {% for item in budgets %}
@@ -115,8 +115,8 @@
   {% else %}
     <table class="table">
       <thead><tr>
-        <th>{{ _("Lúc") }}</th><th>{{ _("Công cụ") }}</th><th>{{ _("Khóa") }}</th>
-        <th>{{ _("Trạng thái") }}</th><th>{{ _("Đã tính") }}</th>
+        <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
+        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Đã tính") }}</th>
       </tr></thead>
       <tbody>
         {% for line in lines %}

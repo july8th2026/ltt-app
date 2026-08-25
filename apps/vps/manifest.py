@@ -60,12 +60,28 @@ MANIFEST = AppManifest(
     # dùng nhãn marketing để giả trạng thái — đổi sang `released` khi P1 xanh.
     lifecycle="development",
     capabilities=("Utilities",),
-    group=N_("Ứng dụng"),
+    # Nhóm RIÊNG trên thanh tiêu đề, ngang hàng với "Ứng dụng" — chốt của chủ
+    # sản phẩm 25/08: *"VPS là menu riêng; Ứng dụng là các tiện ích sau này tôi
+    # xây dựng."*
+    #
+    # Tên nhóm để nguyên "VPS", không dịch và không bọc `N_()`: nó giống nhau ở
+    # cả hai ngôn ngữ, và một msgid không có gì để dịch chỉ làm bánh cóc i18n
+    # phải đếm thêm một dòng vô ích.
+    #
+    # ⚠️ Nhóm này có ĐÚNG MỘT app. Bốn nhóm kia gom nhiều app; thêm một nhóm
+    # một-app làm thanh tiêu đề dài ra cho MỌI trang và MỌI người dùng, kể cả
+    # người không mua VPS. Đó là cái giá, và chủ sản phẩm đã biết khi chốt.
+    group="VPS",
 
     # Fail-closed. Cờ tắt = không có trong catalog, không ai thấy.
     enabled=vps_app.enabled(),
-    # Chưa mở cho khách duyệt khi chưa có máy thật chạy được.
-    public=False,
+    # Hiện thẻ app cho cả khách CHƯA đăng nhập. `/vps` phục vụ hai thứ tuỳ
+    # người xem: ẩn danh thấy bảng giá, đã đăng nhập thấy máy của mình — nên
+    # thẻ này không dẫn tới ngõ cụt.
+    #
+    # Vẫn an toàn khi chưa mở bán: `enabled` đọc cờ `LTT_VPS`, và cờ tắt thì app
+    # KHÔNG xuất hiện trong catalog dù `public=True`.
+    public=True,
 
     notes="Proxmox chạy LỒNG trong VMware trên máy B. Trần công suất là ĐĨA và "
           "RAM — xem docs/VPS/PHAN_TICH_VPS_PROXMOX.md muc 2 truoc khi doi gia.",

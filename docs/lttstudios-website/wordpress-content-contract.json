@@ -15,12 +15,29 @@
     "contact": "https://lttstudios.com/contact/",
     "privacy": "https://lttstudios.com/privacy-policy/",
     "terms": "https://lttstudios.com/terms/",
-    "data_deletion": "https://lttstudios.com/data-deletion/"
+    "data_deletion": "https://lttstudios.com/data-deletion/",
+    "vps_terms": "https://lttstudios.com/vps-terms/"
   },
   "wordpress_replacements": [
-    {"surface": "global_login", "current_contains": "/wp-login.php", "target": "https://app.lttstudios.com/login"},
-    {"surface": "primary_open_tool", "current_contains": "/ltt-tools-ai/", "target": "https://app.lttstudios.com/"},
-    {"surface": "account_register", "current_contains": "/wp-login.php?action=register", "target": "https://app.lttstudios.com/register"},
-    {"surface": "pricing_or_buy_credits", "current_contains": null, "target": "https://app.lttstudios.com/nap"}
+    {
+      "surface": "global_login",
+      "current_contains": "/wp-login.php",
+      "target": "https://app.lttstudios.com/login"
+    },
+    {
+      "surface": "primary_open_tool",
+      "current_contains": "/ltt-tools-ai/",
+      "target": "https://app.lttstudios.com/"
+    },
+    {
+      "surface": "account_register",
+      "current_contains": "/wp-login.php?action=register",
+      "target": "https://app.lttstudios.com/register"
+    },
+    {
+      "surface": "pricing_or_buy_credits",
+      "current_contains": null,
+      "target": "https://app.lttstudios.com/nap"
+    }
   ]
 }

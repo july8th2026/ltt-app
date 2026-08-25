@@ -312,6 +312,12 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # Công khai, không phụ thuộc cờ LTT_NEXUS (tải/hướng dẫn không lộ gì).
     from server import nexus_download as nexus_download_routes
     app.include_router(nexus_download_routes.router)
+    # Tài liệu API CÔNG KHAI + tải công cụ cắm và SDK. Không phụ thuộc cờ
+    # `LTT_PUBLIC_API`: khách phải đọc được cách tích hợp **trước** khi có tài
+    # khoản, và trước 25/08 cả 18 trang cổng lập trình viên đều trả 303 về
+    # `/login` — xem `docs/PUBLIC_API/KE_HOACH_MVP_CONG_LAP_TRINH_VIEN.md` §1.1.
+    from server.routes import tai_lieu_api as tai_lieu_api_routes
+    app.include_router(tai_lieu_api_routes.router)
 
     # Trang "Máy của tôi": người dùng tự xem/đổi tên/THU HỒI máy của mình. Route
     # tự trả 404 khi cờ `LTT_NEXUS` tắt (fail-closed như route agent).

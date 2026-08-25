@@ -18,7 +18,19 @@ máy B (GPU) và một VM Windows 10 sạch. Chỗ nào chưa đo thì nói rõ 
 | **Claude Code CLI** | biến môi trường | ✅ máy A **và máy B** |
 | **Tiện ích Codex (VS Code)** | `~/.codex/config.toml` — **chỉ dạng GỐC** | ✅ VM, trả lời `144` |
 | **Tiện ích Claude Code (VS Code)** | `settings.json` **cấp người dùng** | ✅ VM, trả lời `7 x 9 = 63` |
-| **Claude Desktop** | **chính sách registry** (`HKCU\SOFTWARE\Policies\Claude`) | ⏳ đang tải bản cài trên VM để thử |
+| **Claude Desktop** | **chính sách registry** (`HKCU\SOFTWARE\Policies\Claude`) + **tên model riêng** | ✅ VM, sau khi đổi tên tuyến |
+
+🔴 **Claude Desktop có HAI rào chắn riêng, và chúng cho CÙNG một triệu chứng:**
+bấm gửi — không có gì xảy ra, không log, không toast, không banner.
+
+| Rào chắn | Phải làm gì | Chi tiết |
+|---|---|---|
+| Bộ lọc tên model | dùng `ltt-llm-claude-compat`, **không** phải `ltt_llm` | §2.5b |
+| Chỉ mở tab **Code** | đặt `chatTabEnabled = true` | §2.5c |
+
+⚠️ Sửa xong cái thứ nhất mà vẫn im là chỗ rất dễ kết luận nhầm rằng bản sửa không
+ăn thua. Đo thật 25/08: đã `healthy`, picker đã đúng, mà vẫn **0 request** tới máy
+chủ. Công cụ `cam` đặt sẵn cả hai.
 
 ⛔ **"Cấu hình xong cho CLI" KHÔNG có nghĩa là tiện ích chạy được.** Hai tiện ích
 VS Code đi đường xác thực khác hẳn CLI. Đây là chỗ mất nhiều thời gian nhất khi
@@ -157,11 +169,86 @@ Windows Registry Editor Version 5.00
 "inferenceGatewayBaseUrl"="https://app.lttstudios.com/api"
 "inferenceGatewayApiKey"="<khoa ltt_sk_... cua ban>"
 "inferenceGatewayAuthScheme"="bearer"
-"inferenceModels"="[{\"name\": \"ltt_llm\"}]"
+"inferenceModels"="[{\"name\": \"ltt-llm-claude-compat\"}]"
 "modelDiscoveryEnabled"="false"
+"chatTabEnabled"="true"
 ```
 
 Hoặc để công cụ làm: `LTTStudios-CamCLI.exe cam --khoa ...` đã bao gồm bước này.
+
+---
+
+### 2.5b 🔴 Vì sao ở đây tên model là `ltt-llm-claude-compat`, không phải `ltt_llm`
+
+Đây là chỗ **im lặng nhất** trong cả tài liệu này, nên nói kỹ.
+
+Claude Desktop ở chế độ `gateway` **lọc danh sách model trước khi vẽ picker**.
+Luật đọc từ chính bản cài (`Claude 1.34493.1.0`, tệp
+`app/resources/ion-dist/assets/v1/ce459c687-CEBp0mVy.js`) — **tài liệu công khai
+không nói gì về nó**:
+
+```js
+Be = /…|gpt|gemini|glm|llama|minimax|mistral|qwen|…/     // CẤM
+qe = ["claude", …tên dòng Claude…, "anthropic"]          // PHẢI chứa
+Ke(t) = !Be.test(t) && (Ne.test(t) || qe.some(s => t.includes(s)))
+```
+
+`ltt_llm` không chứa chuỗi nào trong `qe` ⇒ bị **loại khỏi mảng** ⇒ picker rỗng.
+
+⛔ **Triệu chứng khi sai — và nó không chỉ về phía nguyên nhân chút nào:**
+
+| Bạn thấy | Sự thật |
+|---|---|
+| Gõ xong, bấm Enter — **không có gì xảy ra** | model rỗng nên nút gửi bị vô hiệu |
+| Bấm nút gửi — con trỏ chỉ nhảy vào ô nhập | nháy chuột rơi xuyên qua nút đã tắt |
+| **Không** log, **không** toast, **không** banner | ứng dụng không coi đây là lỗi |
+| Ứng dụng vẫn hiện `Gateway` ở góc dưới trái | phần xác thực **đã** đúng |
+
+⭐ **Cách phân biệt nhanh với lỗi khoá:** gọi thẳng API bằng đúng khoá trong
+registry. Trả `200` mà ứng dụng vẫn im ⇒ **không phải khoá**, là bộ lọc tên.
+
+⚠️ **`qwen` nằm trong danh sách CẤM.** Nên kể cả tên trung thực nhất
+(`qwen3-27b`) cũng bị chặn thẳng. Không có cách nào lách bằng "đặt tên cho đúng
+sự thật hơn".
+
+**Vì sao chọn `ltt-llm-claude-compat` chứ không phải `claude-sonnet-4-5`:** luật
+chỉ đòi tên **chứa** chuỗi `claude`; nó **không** đòi một model Anthropic có
+thật. Nên cái tên này qua cổng mà không mượn tên sản phẩm của hãng khác. Nó là
+**tên tuyến của một cổng tương thích**, không phải tên sản phẩm — thứ bạn mua vẫn
+là `ltt_llm`, catalog và bảng giá vẫn chỉ nói `ltt_llm`, và model đứng sau vẫn là
+model nhà.
+
+Chốt bằng test: `tests/test_290_ten_tuyen_claude_desktop.py` chép nguyên luật lọc
+từ bản cài và bắt lỗi nếu ai đó "dọn cho gọn" tên tuyến về `ltt_llm`.
+
+---
+
+### 2.5c 🔴 Rào chắn thứ hai: `chatTabEnabled`
+
+Sửa xong tên model, picker đã hiện đúng, cấu hình đã `healthy` — **và vẫn không
+gửi được gì**. Đây là một rào chắn **khác**, im lặng y hệt.
+
+Mặc định bản triển khai bên-thứ-ba chỉ mở tab **Code** (tab Cowork bị mờ). Tab
+Code **không nói thẳng với gateway**: nó mở một **phiên tác tử cục bộ**, và phiên
+đó cần một runtime trên máy (`claude` / `node`). Máy khách không có thì ứng dụng
+**không gửi gì cả**.
+
+⛔ Đo trên VM sạch 25/08, sau khi tên model đã đúng:
+
+| Bằng chứng | Giá trị |
+|---|---|
+| `ConfigHealth` trong log ứng dụng | `state: 'healthy', provider: 'gateway'` |
+| Picker | hiện đúng `ltt-llm-claude-compat` |
+| `claude` / `node` trên PATH | **không có** |
+| Số request tới máy chủ sau khi bấm Enter | **0** |
+| Dòng log của ứng dụng khi bấm Enter | **không có dòng nào** |
+
+Bật `chatTabEnabled` xong thì hiện công tắc **Chat / Cowork** ngay trong ô soạn,
+và lần gửi đầu tiên đi ngay: `8 × 7 = 56`, rồi `12 × 12 = 144`.
+
+⭐ Vì sao đáng ghi lại: hai rào chắn này **cho cùng một triệu chứng** — bấm gửi,
+không có gì xảy ra, không lời giải thích. Sửa xong cái thứ nhất mà vẫn im thì rất
+dễ kết luận nhầm rằng bản sửa không ăn thua.
 
 **Bốn chốt của tài liệu chính thức, đừng đoán lại:**
 

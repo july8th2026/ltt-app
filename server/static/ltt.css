@@ -564,15 +564,35 @@ html{background:var(--surface-canvas)}
 
 /* EXT-05 Developer API area: one portal, one navigation. The sub-nav scrolls
    horizontally on a phone rather than wrapping into a wall of links. */
-.dev-nav{margin:0 0 14px;border-bottom:1px solid var(--border-subtle);overflow-x:auto;scrollbar-width:none}
-.dev-nav::-webkit-scrollbar{display:none}
-.dev-nav ul{display:flex;gap:2px;margin:0;padding:0;list-style:none;white-space:nowrap}
-.dev-nav li{margin:0}
-.dev-nav a,.dev-nav span{display:inline-flex;align-items:center;gap:5px;min-height:40px;padding:8px 12px;border-bottom:2px solid transparent;color:var(--text-secondary);font-size:13px;text-decoration:none}
-.dev-nav a:hover{color:var(--text-primary)}
-.dev-nav a.active{border-bottom-color:var(--brand-primary);color:var(--text-primary);font-weight:600}
-.dev-nav span{cursor:not-allowed;opacity:.55}
-.dev-nav .pill{padding:1px 6px;border-radius:99px;background:var(--surface-overlay);font-size:9px}
+/* ── Dai muc con trong mot trang cua khu API ──────────────────────────────
+ *
+ * Thay cho `.dev-nav` (dai 16 tab ngang) da go 25/08. No KHONG phai dieu huong
+ * cap cao nhat nua — thanh ben `.app-side` giu vai tro do — nen no phai TRONG
+ * KHAC han, khong phai chi nho hon: dang vien thuoc, nam trong long trang,
+ * khong co duong ke chia doi man hinh.
+ *
+ * ⚠️ Hai he dieu huong trong nhin giong nhau la hai he cung xung cap cao nhat,
+ *    va khach se khong doan duoc cai nao chua cai nao.
+ */
+/* ⚠️ Vo `.app-shell`/`.app-side` la PRIMITIVE DUNG CHUNG (khu VPS + khu API),
+ *    khong phai CSS cua rieng khu nao. Doi be ngang hay mau vien la cham ca
+ *    hai. Neu can hai be ngang khac nhau thi dat mot bien
+ *    (`--app-side-rong`) — dung viet cung hai gia tri o hai cho, vi hai gia
+ *    tri cho cung mot thu la thu se lech.
+ *
+ *    Cac khoi duoi day (`.dev-sub`, `.cam-chon`, `.tool-the`, `.chi-so-*`) thi
+ *    NGUOC LAI: chi khu API dung, va chung co y KHONG mang tien to `app-`.
+ */
+.dev-sub{margin:0 0 16px}
+.dev-sub ul{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.dev-sub li{margin:0}
+.dev-sub a{display:inline-flex;align-items:center;gap:5px;min-height:30px;padding:5px 12px;
+  border:1px solid var(--border-subtle);border-radius:99px;background:transparent;
+  color:var(--text-secondary);font-size:12.5px;text-decoration:none}
+.dev-sub a:hover{background:var(--surface-overlay);color:var(--text-primary)}
+/* Vien DAY len chu khong chi doi mau: nguoi khong phan biet duoc mau van thay. */
+.dev-sub a.active{border-color:var(--brand-primary);background:var(--surface-overlay);
+  color:var(--text-primary);font-weight:600}
 .dev-h1{margin:0 0 12px;font-size:20px}
 
 /* EXT-08 playground: the response pane is the point of the page, so it gets
@@ -581,3 +601,188 @@ html{background:var(--surface-canvas)}
 .pg-out.err{border-color:var(--status-danger);color:var(--status-danger)}
 #playground label{color:var(--text-secondary);font-size:12px}
 #playground input[type=text],#playground input[type=password],#playground input[type=number],#playground select,#playground textarea{max-width:min(560px,100%)}
+
+/* ── Vỏ khu ứng dụng: menu trái + nội dung phải ───────────────────────────
+ *
+ * Dựng cho khu VPS (2026-08-25), nhưng đặt ở ĐÂY chứ không nhét vào
+ * `vps.html` vì cổng lập trình viên sẽ dùng lại: dải tab ngang `.dev-nav`
+ * của họ cuộn ngang khi hẹp, và 16 mục trên một dải cuộn ngang là thứ không
+ * ai quét mắt được.
+ *
+ * 🔴 KHÔNG chép thanh bên của Vultr nguyên si, và lý do là cấu trúc chứ
+ *    không phải gu:
+ *
+ *    - Của họ `position:fixed`, cao toàn màn hình, rộng 300px — hợp vì
+ *      `console.vultr.com` KHÔNG có header sản phẩm nào ở trên.
+ *    - Ta ĐÃ CÓ thanh tiêu đề nền tảng (Images · Video · Chat · Apps). Một
+ *      thanh bên toàn màn hình sẽ tranh chỗ với nó và tạo HAI hệ điều hướng
+ *      cùng xưng cấp cao nhất.
+ *
+ *    Nên vỏ này nằm TRONG `<main>`, `sticky` chứ không `fixed`, và 210px —
+ *    tầm của điều hướng một app, không phải của cả một đám mây.
+ */
+.app-shell{display:grid;grid-template-columns:210px minmax(0,1fr);gap:24px;align-items:start}
+.app-side{position:sticky;top:16px;align-self:start;min-width:0}
+.app-side ul{margin:0;padding:0;list-style:none}
+.app-side li{margin:0}
+.app-side a,.app-side .sap-co{display:block;padding:7px 10px;border-left:2px solid transparent;
+  border-radius:0 6px 6px 0;color:var(--text-secondary);font-size:13px;text-decoration:none;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.app-side a:hover{background:var(--surface-overlay);color:var(--text-primary)}
+/* Mục đang mở: viền trái + nền — cùng ngôn ngữ với hàng đang chọn của Vultr.
+   Viền CHỨ KHÔNG chỉ màu chữ: người không phân biệt được màu vẫn thấy. */
+.app-side a.active{border-left-color:var(--brand-primary);background:var(--surface-overlay);
+  color:var(--text-primary);font-weight:600}
+/* Tiêu đề nhóm: chia khối, không bấm được, không giả làm liên kết. */
+.app-side .nhom{margin:16px 0 4px;padding:0 10px;color:var(--text-secondary);
+  font-size:10px;letter-spacing:.8px;text-transform:uppercase;opacity:.75}
+.app-side .nhom:first-child{margin-top:0}
+/* "Sắp có": hiện tên là thông tin — nó nói khu này đang đi đâu. Một liên kết
+   404 thì không nói gì ngoài sự cẩu thả. */
+.app-side .sap-co{cursor:not-allowed;opacity:.45}
+.app-side .sap-co::after{content:"";}
+.app-main{min-width:0}
+
+/* Hẹp: một cột, menu XẾP LÊN TRÊN.
+ * Không dùng nút "hamburger" — bốn mục giấu sau một nút bấm là bốn mục không
+ * ai tìm. */
+@media (max-width:820px){
+  .app-shell{grid-template-columns:1fr;gap:14px}
+  .app-side{position:static;overflow-x:auto;scrollbar-width:none;
+    border-bottom:1px solid var(--border-subtle);padding-bottom:6px}
+  .app-side::-webkit-scrollbar{display:none}
+  .app-side ul{display:flex;gap:2px;white-space:nowrap}
+  .app-side a,.app-side .sap-co{border-left:0;border-bottom:2px solid transparent;
+    border-radius:6px 6px 0 0}
+  .app-side a.active{border-left:0;border-bottom-color:var(--brand-primary)}
+  .app-side .nhom{display:none}
+}
+
+/* ── O chon be mat tren trang huong dan cam ───────────────────────────────
+ *
+ * Doc tu `api.nghimmo.com/huongdan` (soi that 25/08): o chon la nhung THE CO
+ * BE MAT, khong phai mot dai tab chu. Ly do la thu tu doc — the du cho hai
+ * dong, nen ten cong cu va GIAO THUC no noi (`OPENAI RESPONSES`,
+ * `ANTHROPIC MESSAGES`) doc duoc cung luc. Mot dai tab chu chi cho duoc ten,
+ * va ten khong tra loi cau "cai nay co phai cua toi khong".
+ */
+.cam-chon .chon-hang{display:grid;gap:8px;
+  grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.cam-chon .chon-o{display:flex;flex-direction:column;align-items:flex-start;gap:3px;
+  padding:10px 12px;border:1px solid var(--border-subtle);border-radius:10px;
+  background:transparent;color:var(--text-secondary);text-align:left;cursor:pointer;
+  font:inherit;transition:border-color .12s,background .12s}
+.cam-chon .chon-o:hover{background:var(--surface-overlay);color:var(--text-primary)}
+.cam-chon .chon-ten{font-size:13.5px;font-weight:600;color:var(--text-primary)}
+.cam-chon .chon-the{font-size:9.5px;letter-spacing:.6px;text-transform:uppercase;
+  opacity:.7}
+/* Vien DAY len + nen, khong chi doi mau chu: nguoi khong phan biet duoc mau
+   van thay minh dang chon cai nao. Cung luat voi `.app-side a.active`. */
+.cam-chon .chon-o.dang-chon{border-color:var(--brand-primary);
+  background:var(--surface-overlay);color:var(--text-primary)}
+.cam-chon .chon-o:focus-visible{outline:2px solid var(--brand-primary);outline-offset:2px}
+
+/* Tieu de ten khu: CHI hien khi khong co JS — luc do moi khu deu hien nen
+   chung phai tu noi minh la khu nao. Co JS thi o chon o tren da noi roi. */
+.cam-khu-ten{margin:22px 0 10px;font-size:17px}
+body.cam-co-js .cam-khu-ten{display:none}
+/* An khu CHI KHI script da chay. Thu tu nay quan trong: neu JS chet truoc khi
+   dat class thi khong co gi bi an, va trang van doc duoc day du. */
+body.cam-co-js [data-khu]{display:none}
+body.cam-co-js [data-khu].hien{display:block}
+
+/* Dong canh bao rieng cua tung be mat. No la thu de sai nhat tren trang nen
+   no duoc mot dai mau rieng, khong tron vao `.muted`. */
+.cam-luu-y{margin:10px 0 0;padding:8px 11px;border-left:3px solid var(--status-warn,#d89b2c);
+  border-radius:0 6px 6px 0;background:var(--surface-overlay);
+  color:var(--text-secondary);font-size:12.5px}
+/* Hai gia tri de chep nham nhat: dia chi va ten model. To dam co chu dich. */
+code.to-dam{font-weight:600;color:var(--text-primary)}
+
+/* ── The cong cu gap duoc trong danh muc API ──────────────────────────────
+ *
+ * Doc tu `plenxai.com/developer` (soi that 25/08): the GAP MAC DINH, mo mot
+ * cai moi lan. Ca be mat API lot vao mot man hinh duoi dang danh sach quet
+ * duoc; trai phang thi trang dai 4.000 pixel va khong ai nhin thay cai thu hai.
+ *
+ * Dong gap chi mang BA thu, va thu tu do la co y:
+ *   ① nhan che do chay — quyet dinh khach phai viet ma kieu gi (doi hay hoi lai)
+ *   ② ten cong cu, phong don cach
+ *   ③ MOT dong mo ta, khong hai
+ */
+.tool-the{margin:0 0 8px;border:1px solid var(--border-subtle);border-radius:10px;
+  background:var(--surface-raised,var(--surface-overlay));overflow:hidden}
+.tool-the > summary{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  cursor:pointer;list-style:none;font-size:13px}
+.tool-the > summary::-webkit-details-marker{display:none}
+.tool-the > summary:hover{background:var(--surface-overlay)}
+.tool-the[open] > summary{border-bottom:1px solid var(--border-subtle)}
+.tool-the > summary:focus-visible{outline:2px solid var(--brand-primary);outline-offset:-2px}
+/* Nhan che do chay: mau theo NGHIA, cung nguyen tac ma plenxai to mau dong tu
+   HTTP. `ASYNC` phai doi xu khac trong ma khach viet, nen no phai khac mau. */
+.the-che-do{flex:none;padding:2px 8px;border-radius:5px;font-size:9.5px;font-weight:700;
+  letter-spacing:.5px;text-transform:uppercase;background:var(--surface-overlay);
+  color:var(--text-secondary)}
+/* 🔴 TEN LOP PHAI KHOP CHINH XAC gia tri `execution_mode` viet thuong.
+ *    Ban dau viet `.che-do-async` trong khi che do that la `ASYNC_JOB` ->
+ *    `che-do-async_job`. Nhan van hien, chi la mau xam mac dinh — tuc no HONG
+ *    IM LANG: trang van dung, chi mat dung thu no duoc them vao de lam.
+ *
+ *    Bat duoc bang cach do `getComputedStyle(...).color` tren trang render,
+ *    khong phai bang cach doc HTML. Bon gia tri that o
+ *    `platform_core/public_api/protocol.py`: ASYNC_JOB · SYNC · SYNC_BILLED · STREAM.
+ *
+ * ⭐ Mau theo NGHIA: cai quyet dinh khach phai viet ma kieu gi.
+ *    ASYNC_JOB = doi va hoi lai   -> ho phach (thu can chu y)
+ *    SYNC/SYNC_BILLED = tra ngay  -> xanh la
+ *    STREAM = doc tung phan       -> xanh duong
+ */
+.che-do-async_job{background:rgba(217,155,44,.16);color:#d89b2c}
+.che-do-sync_billed,.che-do-sync{background:rgba(46,160,90,.16);color:#2ea05a}
+.che-do-stream{background:rgba(88,130,220,.16);color:#5882dc}
+/* BATCH: doi hang loat, khach viet ma khac han hai kieu tren. */
+.che-do-batch{background:rgba(150,120,200,.16);color:#9678c8}
+/* NOT_PUBLIC: khong bao gio hien trong danh muc (danh muc chi liet ke thu da
+   mo). Lop nay ton tai de phep kiem "moi che do deu co mau" DAY DU — mot phep
+   do co ngoai le la mot phep do se bi noi ngoai le. Neu no hien ra that thi
+   mau do la dung: co gi do khai sai. */
+.che-do-not_public{background:rgba(217,83,79,.16);color:#d9534f}
+.the-ten{flex:none;font-weight:600;color:var(--text-primary)}
+/* Mo ta cat mot dong: hai dong lam moi hang cao thap khac nhau, va luc do
+   danh sach khong con quet duoc bang mat nua — dung thu ta vua di sua. */
+.the-mo-ta{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  color:var(--text-secondary)}
+.the-nhom{flex:none;color:var(--text-secondary);font-size:11px;opacity:.75}
+.tool-than{padding:4px 14px 14px}
+.tool-than h4{margin:16px 0 6px;font-size:12.5px;color:var(--text-secondary);
+  letter-spacing:.4px;text-transform:uppercase}
+/* "Chi dung khi mode = edit, subject" — lay tu hop dong, va no la thu quyet
+   dinh mot request bi TU CHOI hay khong, nen no khong duoc chim vao `.muted`. */
+.chi-khi{display:inline-block;margin-top:3px;padding:1px 7px;border-radius:5px;
+  background:rgba(217,155,44,.14);color:#d89b2c;font-size:11px}
+@media (max-width:700px){
+  .tool-the > summary{flex-wrap:wrap}
+  .the-mo-ta{flex-basis:100%;white-space:normal}
+  .the-nhom{display:none}
+}
+
+/* ── Luoi chi so (Tong quan cong lap trinh vien) ──────────────────────────
+ *
+ * Thay cho mot `<ul>` bay dong tron bay LOAI so khac nhau. Muc dich cua no la
+ * cho phep QUET chu khong phai DOC: so to, nhan nho.
+ *
+ * ⚠️ Mau khong bao gio dung mot minh — o co van de luon mang them CHU. Mot o
+ *    do khong co chu la mot o vo nghia voi nguoi khong phan biet duoc mau.
+ */
+.chi-so-luoi{display:grid;gap:10px;margin:0 0 14px;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.chi-so{display:flex;flex-direction:column;gap:2px;padding:12px 14px;
+  border:1px solid var(--border-subtle);border-left:3px solid var(--border-subtle);
+  border-radius:0 10px 10px 0;background:var(--surface-raised,var(--surface-overlay))}
+.chi-so-nhan{font-size:11px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text-secondary);opacity:.8}
+.chi-so-gt{font-size:22px;line-height:1.2;color:var(--text-primary)}
+.chi-so-phu{font-size:11.5px;color:var(--text-secondary)}
+.chi-so.canh-bao{border-left-color:#d89b2c}
+.chi-so.co-van-de{border-left-color:var(--status-danger,#d9534f)}
+.chi-so.co-van-de .chi-so-gt{color:var(--status-danger,#d9534f)}

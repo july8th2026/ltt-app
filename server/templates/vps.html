@@ -1,9 +1,211 @@
-{% extends "base.html" %}
-{% block title %}{{ app.display_name }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ app.display_name }}</strong>{% endblock %}
-{% block content %}
+{% extends "vps_base.html" %}
+{% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
+{% block noi_dung %}
+
+{# ── Thẻ gói ───────────────────────────────────────────────────────────────
+   MỘT macro cho cả hai vỏ: trang bán (ẩn danh, thẻ dẫn tới `/register`) và
+   trang tạo máy (đã đăng nhập, thẻ là `<label>` bọc radio). Hai bản sao của
+   cùng một thẻ giá sẽ lệch nhau, và cái lệch sẽ là cái nói sai giá.
+
+   Vultr dùng bảng cho ~40 gói NHƯNG dùng thẻ cho 4 nhóm. Ba gói của ta gần
+   "4 nhóm" hơn là gần "40 gói": một thẻ gộp thông số + việc-nó-hợp + giá vào
+   MỘT tầm mắt, trong khi bảng đẩy ba thứ đó ra ba cột cách nhau nửa màn hình. #}
+{% macro the_goi(g, con_cho_khac, chon_duoc, dau_tien) %}
+  {% set dung_duoc = g.con_cho and g.os %}
+  <label class="goi-the{{ ' goi-het' if not dung_duoc else '' }}">
+    {% if chon_duoc %}
+      <input type="radio" name="plan_id" value="{{ g.plan.id }}"
+             data-credit="{{ g.credit }}"
+             data-ten="{{ _(g.plan.ten) }}"
+             data-cauhinh="{{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM · {{ g.plan.disk_gb }} GB"
+             data-bangthong="{{ g.plan.bang_thong_gb }}"
+             data-os="{{ g.os | map(attribute='id') | join(',') }}"
+             {% if not dung_duoc %}disabled{% endif %}
+             {% if dau_tien %}checked{% endif %}>
+    {% endif %}
+    <span class="goi-ten">
+      {{ _(g.plan.ten) }}
+      {% if g.plan.nen_chon %}<span class="pill">{{ _("nên chọn") }}</span>{% endif %}
+    </span>
+    <span class="goi-so">{{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM<br>
+      {{ g.plan.disk_gb }} GB NVMe · {{ g.plan.bang_thong_gb }} GB {{ _("băng thông") }}</span>
+    <span class="goi-mota">{{ _(g.plan.mo_ta) }}</span>
+    <span class="goi-gia">{{ g.plan.gia_thang_vnd | tien_vnd }}
+      <small class="muted">/ {{ _("30 ngày") }}</small></span>
+
+    {# 🔑 W1 — hết chỗ thì NÓI ĐI ĐÂU.
+       Trước 25/08 trang chỉ nói `hết chỗ` rồi dừng: khách hết đường ngay giữa
+       luồng mua. Vultr làm đúng chỗ này — chọn một gói không có ở vùng đang
+       chọn thì bảng tổng liệt kê thẳng những vùng CÓ.
+       Dữ liệu đã sẵn (`g.con_cho` tính cho từng gói); chỉ là trang chưa dùng
+       nó để đề xuất. #}
+    {% if not g.con_cho %}
+      <span class="goi-trangthai">{{ _("Hết chỗ cho cấu hình này.") }}
+        {% if con_cho_khac %}
+          {{ _("Còn chỗ:") }}
+          {% for k in con_cho_khac %}<b>{{ _(k.plan.ten) }}</b>{{ "" if loop.last else " · " }}{% endfor %}
+        {% endif %}
+      </span>
+    {% elif not g.os %}
+      <span class="goi-trangthai">{{ _("Chưa có hệ điều hành nào phù hợp với cấu hình này.") }}</span>
+    {% elif not chon_duoc %}
+      <a class="btn btn-goi" href="/register">{{ _("Chọn gói này") }}</a>
+    {% endif %}
+  </label>
+{% endmacro %}
+
+<style>
+  /* Lưới thẻ gói. Ba thẻ ngang ở màn rộng, xếp dọc ở màn hẹp — `auto-fit` lo
+     việc đó mà không cần media query riêng. */
+  .goi-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:12px;margin:0 0 16px}
+  .goi-the{display:flex;flex-direction:column;gap:6px;padding:14px;
+    border:1px solid rgba(128,128,128,.3);border-radius:10px;cursor:pointer}
+  /* Thẻ đang chọn: viền DÀY + nền, không chỉ chấm radio 13px. Cùng ngôn ngữ
+     với thẻ đang chọn của Vultr. */
+  .goi-the:has(input:checked){border-width:2px;border-color:currentColor;
+    padding:13px;background:rgba(128,128,128,.08)}
+  .goi-the.goi-het{opacity:.62;cursor:not-allowed}
+  .goi-ten{font-weight:600}
+  .goi-so{font-size:.86em;opacity:.75;line-height:1.5}
+  .goi-mota{font-size:.88em;opacity:.8;flex:1}
+  .goi-gia{margin-top:4px;font-size:1.25rem;font-weight:600}
+  .goi-trangthai{font-size:.85em;opacity:.85}
+  .goi-the input[type=radio]{margin:0 0 4px}
+  /* Tóm tắt: mỗi trường một ô có viền — quét mắt theo ô, không theo hàng. */
+  .tt-o{margin:0;display:grid;gap:8px}
+  .tt-o > div{padding:8px 10px;border:1px solid rgba(128,128,128,.28);border-radius:8px}
+  .tt-o dt,.tt-tien dt{margin:0;font-size:10px;letter-spacing:.6px;
+    text-transform:uppercase;opacity:.7}
+  .tt-o dd{margin:2px 0 0;font-size:.92em}
+  /* Số tiền là thứ khách đọc kỹ nhất trên cả trang — nó không được trông
+     ngang hàng với "Băng thông 300 GB". */
+  .tt-tien{margin-top:10px;padding:10px 12px;border:1px solid rgba(128,128,128,.4);
+    border-radius:8px}
+  .tt-tien dd{margin:2px 0 0;font-size:1.5rem;font-weight:600;line-height:1.2}
+</style>
+
+
+  {# `<h1>` DUY NHAT cua trang. Truoc 25/08 trang khong co cai nao: nhay thang
+     tu thanh tieu de xuong hai `<h2>`. Do la loi cau truc, khong phai loi kieu
+     dang — mot trang khong co `h1` la mot trang khong noi duoc no ve cai gi. #}
+  <style>
+      /* Thẻ chọn — kiểu nằm ở ĐÂY chứ không nội tuyến.
+         `vps-the` là CLASS KIỂU; `vps-os` là MÓC cho JS lọc. Hai việc khác
+         nhau nên hai tên khác nhau: gộp làm một thì đổi kiểu sẽ chạm hành vi —
+         đã dính đúng thế khi thẻ gói mượn `vps-os` và bị bộ lọc ẩn sạch.
+         JS lọc hệ điều hành theo gói; nếu `display` nằm nội tuyến thì
+         `o.style.display = ''` sẽ xoá nó và nhãn rơi về `inline` (mặc định của
+         <label>) — bố cục vỡ ngay khi tải trang. Ẩn bằng class thì không có gì
+         để xoá nhầm. */
+      .vps-the {
+        display: block; border: 1px solid rgba(128,128,128,.3);
+        border-radius: 8px; padding: 8px 12px; margin: 0 0 6px; cursor: pointer;
+      }
+      .vps-the[hidden] { display: none; }
+      /* Thẻ đang chọn phải NHÌN THẤY được là đang chọn, không chỉ bằng chấm
+         radio 13px. Dùng viền + nền, không dùng riêng màu — người không phân
+         biệt được màu vẫn thấy viền dày lên. */
+      .vps-the:has(input:checked) {
+        border-color: currentColor; border-width: 2px; padding: 7px 11px;
+        background: rgba(128,128,128,.08);
+      }
+
+      /* Bảng giá: tên gói là tiêu đề HÀNG (`<th scope="row">`) để bộ đọc màn
+         hình biết ô "179.000đ" thuộc gói nào. Nhưng luật cho tiêu đề CỘT ở
+         `base.html` đặt `text-transform:uppercase` — và một dòng mô tả 30 chữ
+         viết hoa hết thì không ai đọc. Trả lại chữ thường ở đây. */
+      .tbl th[scope="row"] {
+        text-transform: none; letter-spacing: 0; font-size: 1rem;
+        color: var(--fg); vertical-align: top; padding-right: 18px;
+      }
+      /* Nút chọn gói dùng accent của APP, không dùng accent toàn cục — accent
+         toàn cục ở đây là màu đỏ, tức màu của hành động phá huỷ trong gần hết
+         quy ước giao diện. */
+      /* KHONG gioi han trong `.tbl`: tu S4 nut nay nam trong the goi,
+         khong con trong bang. Mot luat gioi han theo to tien la mot luat
+         se im lang mat tac dung ngay lan doi bo cuc dau tien. */
+      .btn-goi { background: {{ app.accent }}; }
+    </style>
+
+  <h1 class="sr-title" style="font-size:1.35rem;margin:0 0 14px;">
+    {{ _("Máy chủ ảo Windows, trả bằng credit") }}</h1>
 
   {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
+
+  {% if not da_dang_nhap %}
+  {# ── Khach chua dang nhap ───────────────────────────────────────────────
+     Ho can biet MUA GI va GIA BAO NHIEU truoc khi bo cong tao tai khoan. Bat
+     dang nhap roi moi cho xem gia la doi ho tra truoc mot thu (thong tin ca
+     nhan) de biet gia cua mot thu khac — va phan lon se quay ra.
+
+     Khoi nay CHI hien cho khach an danh: nguoi da dang nhap khong can duoc ban
+     hang nua, ho can thay may cua ho. #}
+  <div class="card">
+    <div class="card-accent" style="background:{{ app.accent }};"></div>
+    <h2 style="margin-top:0;">{{ _("Thuê một máy Windows trong khoảng 20 giây") }}</h2>
+    <p>
+      {{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Bạn vào máy bằng Remote Desktop như một máy Windows bình thường, hoặc bằng console ngay trong trình duyệt khi cần cứu hộ.") }}
+    </p>
+    <ul>
+      <li>{{ _("Tạo xong trong khoảng 20 giây, rồi bạn tự cài Windows qua console.") }}</li>
+      <li>{{ _("Bạn tự đặt tài khoản và mật khẩu của mình — chúng tôi không biết mật khẩu của bạn.") }}</li>
+      <li>{{ _("Trả theo chu kỳ 30 ngày bằng credit. Không hợp đồng, không ràng buộc; xoá máy là dừng các chu kỳ sau.") }}</li>
+    </ul>
+    {# ── Giá, ngay trong khối mở đầu ──────────────────────────────────────
+       Đo ngày 25/08 trước khi sửa: trên 390×844, giá đầu tiên nằm ở y=1121,
+       tức **dưới màn hình đầu 277px** — khách phải cuộn qua sáu dòng cảnh báo
+       mới thấy một con số. Người chưa biết giá thì chưa có lý do đọc tiếp.
+
+       "chỉ từ …đ/tháng" là quy ước của thị trường Việt (AZDIGI, Tino Group đều
+       nêu đúng dạng này). Con số lấy từ `goi`, không viết cứng — đổi giá trong
+       `cost.py` là đổi ở đây. #}
+    {% set re_nhat = goi | map(attribute="plan") | map(attribute="gia_thang_vnd") | min %}
+    <p style="margin:14px 0 0;font-size:1.15rem;">
+      {{ _("Chỉ từ") }}
+      {# `tien_vnd`, KHÔNG phải `"{:,}".format(...)` + `đ` viết rời. Chú thích
+         của chính filter đó nói vì sao: ký tự `đ` nằm rải trong template làm
+         bánh cóc i18n báo động đúng — nó không phân biệt được một ký hiệu tiền
+         tệ với một câu chưa dịch. Tôi vừa dính đúng bẫy đó. #}
+      <strong style="font-size:1.5rem;">{{ re_nhat | tien_vnd }}</strong>
+      <span class="muted">/ {{ _("30 ngày") }}</span>
+    </p>
+
+    {# ── Bốn thứ ta thật sự hơn ───────────────────────────────────────────
+       Đặt đúng chỗ đối thủ đặt dải "99.9% uptime · hỗ trợ 24/7 · sao lưu".
+       Ta KHÔNG chép dải đó: ta không có cả ba, và chép là quảng cáo sai
+       (`docs/VPS/GIAO_DIEN.md` đã chốt). Bốn dòng dưới đây đều kiểm chứng
+       được, và ba trong bốn là thứ đối thủ ở tầm giá này không có.
+
+       ⚠️ "~20 giây" là SỐ ĐO THẬT (G-series, đo trên chính cụm này: 17 giây).
+       Nếu có ngày nó không còn đúng thì phải bỏ khỏi trang — một con số đo
+       được hôm qua vẫn là một lời hứa hôm nay. #}
+    <ul style="list-style:none;padding:0;margin:14px 0 0;display:flex;
+               flex-wrap:wrap;gap:8px 18px;">
+      <li>✓ {{ _("IP riêng, dùng được mọi cổng") }}</li>
+      <li>✓ {{ _("Tạo xong trong khoảng 20 giây") }}</li>
+      <li>✓ {{ _("Không hợp đồng, xoá là dừng") }}</li>
+      <li>✓ {{ _("Chúng tôi không biết mật khẩu của bạn") }}</li>
+    </ul>
+
+    <p style="margin:16px 0 0;">
+      {# Nút CHÍNH là "Tạo tài khoản": người đang đọc trang này phần lớn CHƯA
+         có tài khoản. Trước 25/08 nút chính là "Đăng nhập" — mời một người
+         chưa có tài khoản đi đăng nhập. #}
+      <a class="btn" href="/register"
+         style="background:{{ app.accent }};">{{ _("Tạo tài khoản để thuê máy") }}</a>
+      <a class="btn btn-ghost" href="/login?next={{ app.route_prefix }}"
+         style="margin-left:8px;">{{ _("Tôi đã có tài khoản") }}</a>
+    </p>
+    <p class="muted" style="margin:10px 0 0;font-size:.9em;">
+      {{ _("Đọc") }}
+      <a href="{{ public_links.vps_terms }}" target="_blank" rel="noopener">{{ _("Điều khoản LTT VPS") }}</a>
+      {{ _("trước khi thuê — nó nói rõ những gì dịch vụ này KHÔNG cam kết.") }}
+    </p>
+  </div>
+  {% endif %}
+
 
   {# Bốn câu dưới đây KHÔNG phải trang trí — chúng là điều kiện của Q103 và là
      những con số ĐO THẬT. Khách phải đọc được TRƯỚC khi trả tiền, không phải sau.
@@ -23,6 +225,10 @@
          là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu,
          tức lúc tệ nhất có thể. Xem `services/sao_luu.py`. #}
       <li>{{ _("Ảnh chụp hằng tuần, giữ 1 bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn.") }}</li>
+      {# Giay phep Windows la rui ro lon nhat cua dich vu nay, va khach
+         khong tu doan ra. Dat no NGAY trong khoi doc-truoc-khi-thue chu
+         khong giau trong dieu khoan: nguoi doc dieu khoan la thieu so. #}
+      <li>{{ _("Giá KHÔNG bao gồm giấy phép Windows. Chúng tôi cấp đĩa cài (bản Evaluation của Microsoft); bạn tự cài và tự chịu trách nhiệm về giấy phép.") }}</li>
     </ul>
   </div>
 
@@ -32,21 +238,23 @@
     </div>
   {% endif %}
 
+
   {# ── Máy của tôi ──────────────────────────────────────────────────────── #}
-  {% if may_cua_toi %}
+  {% if da_dang_nhap and may_cua_toi %}
+
   <div class="card">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
     <h2>{{ _("Máy của tôi") }}</h2>
     <table class="tbl" style="width:100%;">
       <thead>
         <tr>
-          <th>{{ _("Cấu hình") }}</th>
-          <th>{{ _("Hệ điều hành") }}</th>
-          <th>{{ _("Địa chỉ") }}</th>
-          <th>{{ _("Trạng thái") }}</th>
-          <th>{{ _("Băng thông") }}</th>
-          <th>{{ _("Trả tới") }}</th>
-          <th></th>
+          <th scope="col">{{ _("Cấu hình máy") }}</th>
+          <th scope="col">{{ _("Hệ điều hành") }}</th>
+          <th scope="col">{{ _("Địa chỉ") }}</th>
+          <th scope="col">{{ _("Trạng thái") }}</th>
+          <th scope="col">{{ _("Băng thông") }}</th>
+          <th scope="col">{{ _("Trả tới") }}</th>
+          <th scope="col"></th>
         </tr>
       </thead>
       <tbody>
@@ -89,7 +297,7 @@
               {% endif %}
             {% else %}<span class="muted">—</span>{% endif %}
           </td>
-          <td><a class="btn btn-sm" href="{{ app.route_prefix }}/{{ m.may.id }}">{{ _("Quản lý") }}</a></td>
+          <td><a class="btn btn-sm btn-goi" href="{{ app.route_prefix }}/{{ m.may.id }}">{{ _("Quản lý") }}</a></td>
         </tr>
         {% endfor %}
       </tbody>
@@ -97,63 +305,224 @@
   </div>
   {% endif %}
 
-  {# ── Bảng giá ─────────────────────────────────────────────────────────── #}
+  {# ── Chọn và tạo máy ───────────────────────────────────────────────────
+     MỘT biểu mẫu, hai bước, một trang.
+
+     Vì sao không phải hai trang như Vultr: Vultr cần hai vì họ có 32 vùng × 6 họ
+     gói. Ta có **ba** gói và **một** vùng. Bắt khách bấm "Tiếp theo" giữa hai
+     màn chỉ để chọn ba thứ là thêm ma sát mà không đổi lại được gì.
+
+     Bảng tóm tắt là phần BẮT BUỘC, không phải trang trí: nền tảng bán theo
+     credit, nên người mua cần thấy **số sẽ trừ** và **số dư còn lại** TRƯỚC khi
+     bấm. Bản trước hiện giá bằng đồng ở một chỗ và số credit ở chỗ khác, còn số
+     dư thì chỉ có trên thanh tiêu đề — ba mảnh của cùng một phép tính, và khách
+     phải tự cộng. #}
+  {% set so_du = so_du_credit(request) %}
+  {% set goi_ban_duoc = goi | selectattr("con_cho") | selectattr("os") | list %}
+  {# W1: goi nao con dung duoc — de mot the "het cho" chi ngay sang cai
+     con lai, thay vi bo khach o do. #}
+  {# `ban_duoc` gop HAI dieu kien, va ca hai deu bat buoc:
+       - co it nhat mot goi con cho, VA
+       - doc duoc suc chua (`suc_chua` None = chua cau hinh Proxmox / khong noi
+         duoc toi no).
+     Thieu ve thu hai thi trang van dung bieu mau trong khi nen tang khong biet
+     con bao nhieu cho — `test_khong_doc_duoc_suc_chua_thi_KHONG_cho_tao_may`
+     chot dung dieu do. Fail-closed: khong chac thi khong ban. #}
+  {# Khach an danh KHONG duoc thay bieu mau: no se POST va bi 401, tuc mot nut
+     dan toi mot loi. Ho thay bang gia chi doc, va nut dang nhap o tren. #}
+  {% set ban_duoc = da_dang_nhap and goi_ban_duoc and suc_chua %}
   <div class="card">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
-    <h2>{{ _("Chọn cấu hình") }}</h2>
+    <h2>{{ _("Tạo máy mới") if ban_duoc else _("Bảng giá") }}</h2>
 
-    {% for g in goi %}
-    <div class="card" style="margin:12px 0;">
-      <h3 style="margin-top:0;">
-        {{ _(g.plan.ten) }}
-        <span class="muted" style="font-weight:400;">
-          — {{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM
-          · {{ _("tối đa") }} {{ g.plan.disk_gb }} GB NVMe
-        </span>
-      </h3>
-      <p class="muted" style="margin-top:0;">{{ _(g.plan.mo_ta) }}</p>
-      <p><strong>{{ "{:,}".format(g.plan.gia_thang_vnd).replace(",", ".") }}đ</strong> / {{ _("30 ngày") }} <span class="muted">({{ g.credit }} credit)</span></p>
-
-      {% if not g.con_cho %}
-        <p class="muted">{{ _("Hiện đã hết chỗ cho cấu hình này.") }}</p>
-      {% elif not g.os %}
-        <p class="muted">{{ _("Chưa có hệ điều hành nào phù hợp với cấu hình này.") }}</p>
-      {% else %}
-      <form method="post" action="{{ app.route_prefix }}/tao" style="max-width:none;">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-        <input type="hidden" name="plan_id" value="{{ g.plan.id }}">
-        <div class="row" style="gap:10px; align-items:flex-end;">
-          <div class="field" style="margin:0;">
-            <label for="os-{{ g.plan.id }}">{{ _("Hệ điều hành") }}</label>
-            <select id="os-{{ g.plan.id }}" name="os_id">
-              {% for o in g.os %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
-            </select>
-          </div>
-          {# Bộ chọn vùng dựng từ CSDL. Viết cứng danh sách ở đây đã một lần
-             để lại lựa chọn "dùng cổng chung" sau khi mô hình đó bị bỏ, và mặc
-             định của form trỏ vào chính lựa chọn đã chết. #}
-          {% if vung|length > 1 %}
-          <div class="field" style="margin:0;">
-            <label for="vung-{{ g.plan.id }}">{{ _("Vùng đặt máy") }}</label>
-            <select id="vung-{{ g.plan.id }}" name="vung">
-              {% for ma, nhan in vung %}<option value="{{ ma }}">{{ _(nhan) }}</option>{% endfor %}
-            </select>
-          </div>
-          {% elif vung %}
-          {# Một vùng duy nhất thì bộ chọn chỉ là một ô bắt bấm mà không cho
-             chọn gì. Nói thẳng nó ở đâu, và gửi giá trị bằng trường ẩn. #}
-          <input type="hidden" name="vung" value="{{ vung[0][0] }}">
-          <span class="hint">{{ _("Địa chỉ IP của máy đặt tại %(noi)s.", noi=vung[0][1]) }}</span>
-          {% endif %}
-          <button type="submit" style="background:{{ app.accent }};">{{ _("Thuê máy này") }}</button>
-        </div>
-      </form>
-      {% endif %}
+    {% if not ban_duoc %}
+    {# Bang gia CHI DOC. Hien luon, ke ca khi khong ban duoc: khach vao dung luc
+       node day ma khong thay ta ban gi thi khong co ly do quay lai. Nhung
+       TUYET DOI khong dung <form> o day — mot bieu mau ton tai la mot duong
+       POST ton tai. #}
+    {% if da_dang_nhap %}
+    <p class="muted">{{ _("Hiện chưa nhận máy mới. Bảng giá dưới đây vẫn đúng.") }}</p>
+    {% endif %}
+    {# Thẻ để QUYẾT ĐỊNH, bảng để ĐỐI CHIẾU. Bảng vẫn là thứ so sánh
+       cột-với-cột tốt nhất, nên nó ở lại — chỉ là nó không còn đứng một mình
+       làm cả việc thuyết phục lẫn việc so sánh. #}
+    <div class="goi-luoi">
+      {% for g in goi %}
+        {{ the_goi(g, goi_ban_duoc | reject("equalto", g) | list, false, false) }}
+      {% endfor %}
     </div>
-    {% endfor %}
+
+    <details>
+      <summary class="muted" style="cursor:pointer;font-size:.9em;">{{ _("So sánh ba gói") }}</summary>
+      <table class="tbl" style="width:100%;margin-top:10px;">
+        <thead><tr>
+          <th scope="col">{{ _("Gói") }}</th>
+          <th scope="col">{{ _("Cấu hình máy") }}</th>
+          <th scope="col">{{ _("Băng thông") }}</th>
+          <th scope="col">{{ _("Giá / 30 ngày") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for g in goi %}
+          <tr>
+            <th scope="row" style="font-weight:600;text-align:left;">{{ _(g.plan.ten) }}</th>
+            <td>{{ g.plan.vcpu }} vCPU · {{ (g.plan.ram_mb / 1024) | int }} GB RAM
+                · {{ g.plan.disk_gb }} GB</td>
+            <td>{{ g.plan.bang_thong_gb }} GB</td>
+            <td>{{ g.plan.gia_thang_vnd | tien_vnd }}
+                <span class="muted">({{ g.credit }} credit)</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+
+    {% else %}
+    <form method="post" action="{{ app.route_prefix }}/tao" id="vps-tao"
+          style="max-width:none;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      {% if vung %}<input type="hidden" name="vung" value="{{ vung[0][0] }}">{% endif %}
+
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
+        {# ── Cot trai: hai buoc ─────────────────────────────────────────── #}
+        <div style="flex:1 1 380px;min-width:300px;">
+
+          <h3 style="margin:0 0 2px;">{{ _("Bước 1 · Chọn máy") }}</h3>
+          <p class="muted" style="margin:0 0 10px;font-size:.88em;">{{ _("Cấu hình phần cứng và băng thông. Đổi được sau bằng cách tạo máy khác.") }}</p>
+          <div class="goi-luoi">
+            {% for g in goi %}
+              {{ the_goi(g, goi_ban_duoc | reject("equalto", g) | list, true,
+                         g == goi_ban_duoc[0]) }}
+            {% endfor %}
+          </div>
+
+          <h3 style="margin:18px 0 2px;">{{ _("Bước 2 · Chọn hệ điều hành") }}</h3>
+          <p class="muted" style="margin:0 0 10px;font-size:.88em;">{{ _("Đĩa cài được gắn sẵn; bạn tự chạy trình cài đặt. Cài lại được bất cứ lúc nào.") }}</p>
+          {# Moi goi chay duoc mot tap ban Windows khac nhau (san RAM khac nhau).
+             Danh sach duoi day hien DU, va JS an bot theo goi dang chon — khong
+             co JS thi khach van thay het va may chu van tu choi to hop sai
+             (`os_images.hop_le`), nen trang khong bao gio im lang ban sai. #}
+          {% for o in os_ban_duoc %}
+          <label class="vps-the vps-os" data-id="{{ o.id }}">
+            <input type="radio" name="os_id" value="{{ o.id }}"
+                   {% if loop.first %}checked{% endif %}>
+            {{ _(o.ten) }}
+            {% if o.ghi_chu %}<br><span class="muted" style="font-size:.9em;">{{ _(o.ghi_chu) }}</span>{% endif %}
+          </label>
+          {% endfor %}
+        </div>
+
+        {# ── Cot phai: tom tat ──────────────────────────────────────────── #}
+        <div style="flex:0 1 300px;min-width:260px;">
+          <div class="card" style="margin:0;position:sticky;top:16px;">
+            <h3 style="margin-top:0;">{{ _("Tóm tắt") }}</h3>
+            {# Các Ô có viền, không phải bảng hai cột chữ nhỏ đều nhau.
+               Trước 25/08 `SẼ TRỪ 1.490 credit` trông ngang hàng với
+               `BĂNG THÔNG 300 GB` — một cái là SỐ TIỀN, cái kia là thông số.
+               Vultr đặt `Total Price` ở ô riêng, cỡ chữ lớn hẳn. #}
+            <dl class="tt-o">
+              <div><dt>{{ _("Gói") }}</dt><dd id="tt-ten">—</dd></div>
+              <div><dt>{{ _("Cấu hình máy") }}</dt><dd id="tt-cauhinh">—</dd></div>
+              <div><dt>{{ _("Băng thông") }}</dt><dd id="tt-bangthong">—</dd></div>
+              <div><dt>{{ _("Hệ điều hành") }}</dt><dd id="tt-os">—</dd></div>
+              {% if vung %}
+              <div><dt>{{ _("Địa chỉ IP") }}</dt>
+                   <dd>{{ _("riêng, tại %(noi)s", noi=_(vung[0][1])) }}</dd></div>
+              {% endif %}
+            </dl>
+
+            <div class="tt-tien">
+              <dt>{{ _("Sẽ trừ") }}</dt>
+              <dd><strong id="tt-gia">—</strong> credit
+                  <small class="muted">/ {{ _("30 ngày") }}</small></dd>
+              {% if so_du is not none %}
+              <p class="muted" style="margin:6px 0 0;font-size:.85em;">
+                {{ _("Số dư") }} {{ so_du | so }} ·
+                {{ _("Còn lại") }} <span id="tt-conlai" data-sodu="{{ so_du }}">—</span>
+              </p>
+              {% endif %}
+            </div>
+
+            <p id="tt-thieu" class="alert-err" style="display:none;padding:6px 10px;
+               border-radius:4px;margin:10px 0 0;">
+              {{ _("Không đủ credit.") }} <a href="/nap">{{ _("Nạp thêm") }}</a>
+            </p>
+
+            <button type="submit" id="tt-nut" style="background:{{ app.accent }};
+                    width:100%;margin-top:12px;">{{ _("Tạo máy") }}</button>
+            {# Clickwrap: bam la dong y. Dat NGAY duoi nut, khong o chan trang —
+               mot lien ket dieu khoan o cuoi trang la mot lien ket khong ai bam. #}
+            <p class="muted" style="margin:8px 0 0;font-size:.85em;">
+              {{ _("Bấm “Tạo máy” là bạn đồng ý với") }}
+              <a href="{{ public_links.vps_terms }}" target="_blank" rel="noopener">{{ _("Điều khoản LTT VPS") }}</a>.
+            </p>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <script>
+    // Bang tom tat song. Khong khung, khong phu thuoc: mot trang ban ma phai cho
+    // tai mot thu vien moi hien duoc gia la mot trang ban cham hon can thiet.
+    (function () {
+      var form = document.getElementById('vps-tao');
+      if (!form) return;
+      var $ = function (id) { return document.getElementById(id); };
+
+      function capNhat() {
+        var goi = form.querySelector('input[name=plan_id]:checked');
+        if (!goi) return;
+        var duoc = (goi.dataset.os || '').split(',').filter(Boolean);
+
+        // An nhung ban OS ma goi nay khong chay noi, va neu ban dang chon bi an
+        // thi chuyen sang ban dau tien con hop le — de khong gui di mot to hop
+        // ma may chu se tu choi.
+        var dauTien = null, dangChon = null;
+        form.querySelectorAll('.vps-os').forEach(function (o) {
+          var hop = duoc.indexOf(o.dataset.id) >= 0;
+          // `hidden` thay vi `style.display`: thuoc tinh nay khong the bi
+          // mot doan ma khac ghi de nham, va no cung noi dung y voi bo doc
+          // man hinh (phan tu bi loai khoi cay, khong chi bi an bang CSS).
+          o.hidden = !hop;
+          var r = o.querySelector('input');
+          r.disabled = !hop;
+          if (hop && !dauTien) dauTien = r;
+          if (hop && r.checked) dangChon = r;
+        });
+        if (!dangChon && dauTien) { dauTien.checked = true; dangChon = dauTien; }
+
+        var gia = parseInt(goi.dataset.credit, 10) || 0;
+        $('tt-ten').textContent = goi.dataset.ten;
+        $('tt-cauhinh').textContent = goi.dataset.cauhinh;
+        $('tt-bangthong').textContent = goi.dataset.bangthong + ' GB';
+        $('tt-os').textContent = dangChon
+          ? dangChon.closest('.vps-os').textContent.trim().split('\n')[0] : '—';
+        $('tt-gia').textContent = gia.toLocaleString('vi-VN');
+
+        var oConLai = $('tt-conlai');
+        if (oConLai) {
+          var soDu = parseInt(oConLai.dataset.sodu, 10) || 0;
+          var conLai = soDu - gia;
+          oConLai.textContent = conLai.toLocaleString('vi-VN') + ' credit';
+          oConLai.style.color = conLai < 0 ? '#c92a2a' : '';
+          // KHONG khoa nut khi thieu credit: may chu van tu choi va tra ve mot
+          // cau ro rang. Khoa o day thi khach thieu mot credit se thay mot nut
+          // chet ma khong biet vi sao.
+          $('tt-thieu').style.display = conLai < 0 ? '' : 'none';
+        }
+      }
+
+      form.addEventListener('change', capNhat);
+      capNhat();
+    })();
+    </script>
+    {% endif %}
   </div>
 
   {% if suc_chua %}
+  {# Chỉ cho người ĐÃ đăng nhập. Với khách lạ, "còn 186 GB đĩa" là con số của
+     NGƯỜI VẬN HÀNH, không phải của họ: nó nói cả hệ thống nhỏ cỡ nào, trong khi
+     câu họ cần là "gói tôi muốn còn chỗ không" — và câu đó đã có ở từng gói. #}
+  {% if da_dang_nhap %}
   <p class="muted" style="font-size:.9em;">
     {# `dia_gb_con_that`, KHÔNG phải `dia_gb_con` — thuộc tính sau không tồn tại,
        và Jinja in thuộc tính không tồn tại thành CHUỖI RỖNG thay vì báo lỗi. Câu
@@ -161,6 +530,7 @@
     {{ _("Còn trống") }}: {{ (suc_chua.ram_mb_con / 1024) | round(1) }} GB RAM
     · {{ suc_chua.dia_gb_con_that }} GB {{ _("đĩa") }}
   </p>
+  {% endif %}
   {% endif %}
 
 {% endblock %}

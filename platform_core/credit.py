@@ -109,6 +109,40 @@ def tru(db: DbSession, user_id: str, amount: int, *, kind: str,
     return True
 
 
+def hoan_phi(db: DbSession, user_id: str, amount: int, *, kind: str,
+             note: str = "") -> CreditEntry:
+    """Hoàn lại một khoản đã trừ bằng `tru()`. Nửa còn thiếu của `tru()`.
+
+    ## Vì sao không dùng `nap()` cho việc này
+
+    `nap()` ghi `kind=CREDIT_TOPUP` — tức "khách nạp tiền". Dùng nó để hoàn phí
+    làm **doanh thu nạp bị thổi lên** bằng đúng số tiền ta trả lại, và mọi báo
+    cáo đối soát sau đó đều lệch. Hoàn phí phải mang **cùng `kind` với khoản đã
+    trừ**, để một truy vấn `sum(delta) where kind=...` ra đúng doanh thu ròng của
+    miền đó.
+
+    ## Vì sao không dùng `cap_tay()`
+
+    `cap_tay` là *admin cấp tay* và đòi `by`. Một lần hoàn tự động không phải
+    hành động của người nào cả; ghi nó như admin-cấp-tay là làm bẩn nhật ký kiểm
+    toán, đúng thứ `nhat_ky_admin` sinh ra để giữ sạch.
+
+    ## Vì sao gap này tồn tại tới 2026-08-25
+
+    `tru()` có từ đầu cho phí trực tiếp (thuê bao Nexus, VPS). Nhưng **không app
+    nào từng cần hoàn một khoản phí trực tiếp** — cho tới khi app `vps` phát hiện
+    ra một đường mà khách bị trừ tiền rồi job dựng máy hỏng: khách trả một chu kỳ
+    và nhận một máy ở trạng thái "Lỗi". Không có hàm này thì cách sửa duy nhất là
+    lạm dụng một trong hai hàm trên.
+    """
+    if amount <= 0:
+        raise ValueError("so credit hoan phai duong")
+    if not _ton_tai(db, user_id):
+        raise NguoiDungKhongTonTai(f"khong co user {user_id!r}")
+    return _ghi(db, user_id=user_id, delta=int(amount), kind=str(kind)[:16],
+                note=note)
+
+
 class NguoiDungKhongTonTai(ValueError):
     """Cấp credit cho một user_id không có trong bảng `users`."""
 

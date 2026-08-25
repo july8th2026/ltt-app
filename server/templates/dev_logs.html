@@ -5,7 +5,7 @@
   <ul>
     <li>{{ _("7 ngày qua:") }} <strong>{{ counts.requests }}</strong>
         {{ _("request") }}, <strong>{{ counts.failures }}</strong>
-        {{ _("lỗi") }}, <strong>{{ counts.credit }}</strong> credit</li>
+        {{ _("lỗi") }}, <strong>{{ counts.credit | so }}</strong> credit</li>
     <li class="muted">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</li>
   </ul>
 
@@ -56,9 +56,9 @@
   {% else %}
     <table class="table">
       <thead><tr>
-        <th>{{ _("Lúc") }}</th><th>{{ _("Lời gọi") }}</th>
-        <th>{{ _("Kết quả") }}</th><th>{{ _("Công cụ") }}</th>
-        <th>{{ _("Độ trễ") }}</th><th>Credit</th><th>request_id</th>
+        <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Lời gọi") }}</th>
+        <th scope="col">{{ _("Kết quả") }}</th><th scope="col">{{ _("Công cụ") }}</th>
+        <th scope="col">{{ _("Độ trễ") }}</th><th scope="col">Credit</th><th scope="col">request_id</th>
       </tr></thead>
       <tbody>
         {% for row in rows %}
@@ -71,7 +71,7 @@
             </td>
             <td>{{ row.tool or "—" }}</td>
             <td>{{ row.latency_ms }} ms</td>
-            <td>{% if row.credit_delta %}{{ row.credit_delta }}{% else %}—{% endif %}</td>
+            <td>{% if row.credit_delta %}{{ row.credit_delta | so }}{% else %}—{% endif %}</td>
             <td><a href="/developers/logs/{{ row.request_id }}">
               <code>{{ row.request_id[:8] }}</code></a></td>
           </tr>

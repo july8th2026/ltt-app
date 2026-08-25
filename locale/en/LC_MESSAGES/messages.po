@@ -21,19 +21,21 @@ msgstr ""
 #: platform_core/public_api/alerting.py:185
 #, python-format
 msgid "%(n)s sự kiện webhook không giao được"
-msgstr ""
+msgstr "%(n)s webhook events could not be delivered"
 
 #: platform_core/public_api/alerting.py:104
 #, python-format
 msgid "%(spent)s/%(amount)s credit trong kỳ này."
-msgstr ""
+msgstr "%(spent)s/%(amount)s credit this period."
 
 #: platform_core/public_api/alerting.py:129
 #, python-format
 msgid ""
-"%(spent)s/%(ceiling)s credit hôm nay. Hạn mức này do quản trị viên đặt và "
-"không nới được từ phía tài khoản."
+"%(spent)s/%(ceiling)s credit hôm nay. Hạn mức này do quản trị viên "
+"đặt và không nới được từ phía tài khoản."
 msgstr ""
+"%(spent)s/%(ceiling)s credit today. This cap is set by an "
+"administrator and cannot be raised from the account side."
 
 #: server/templates/nap_don.html:18
 msgid "&larr; Gói nạp"
@@ -101,7 +103,8 @@ msgstr "60 seconds"
 
 #: server/templates/dev_logs.html:6
 msgid "7 ngày qua:"
-msgstr ""
+msgstr "Last 7 days:"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:67
 msgid "90 giây"
@@ -140,19 +143,23 @@ msgstr "AI writes a complete YouTube script: hook, body, outro, description and 
 #: server/templates/_header.html:41 server/templates/developers_base.html:7
 #: server/templates/developers_base.html:8 server/templates/home.html:31
 msgid "API cho lập trình viên"
-msgstr ""
+msgstr "Developer API"
+
 
 #: server/templates/developers_base.html:33
 msgid "API công khai đang tắt trên máy chủ này."
-msgstr ""
+msgstr "The public API is switched off on this server."
+
 
 #: server/templates/dev_overview.html:7
 msgid "API công khai:"
-msgstr ""
+msgstr "Public API:"
+
 
 #: server/templates/developers_base.html:38
 msgid "API đang ở chế độ chỉ đọc."
-msgstr ""
+msgstr "The API is in read-only mode."
+
 
 #: apps/upscalevideo/templates/upscalevideo.html:48
 msgid "Agent chạy trên máy chứa folder; web không nhận đường dẫn local."
@@ -167,12 +174,16 @@ msgstr "Who"
 #: platform_core/public_api/governance.py:118
 msgid "Ai đang dò khoá. Chỉ lưu nửa CÔNG KHAI của khoá đã thử."
 msgstr ""
+"Who is probing for keys. Only the PUBLIC half of the attempted key "
+"is stored."
 
 #: platform_core/public_api/governance.py:93
 msgid ""
-"Ai đã làm gì với tài khoản của khách. Một nhật ký kiểm toán xoá được thì "
-"không phải nhật ký kiểm toán."
+"Ai đã làm gì với tài khoản của khách. Một nhật ký kiểm toán xoá được "
+"thì không phải nhật ký kiểm toán."
 msgstr ""
+"Who did what to a customer's account. An audit log you can delete is "
+"not an audit log."
 
 #: server/templates/nexus_nhat_ky.html:17
 msgid "Ai đã vào máy của bạn"
@@ -180,11 +191,13 @@ msgstr "Who connected to your machines"
 
 #: server/templates/dev_privacy.html:33
 msgid "Ai đọc được"
-msgstr ""
+msgstr "Who can read it"
+
 
 #: server/templates/dev_settings.html:5
 msgid "An toàn khóa"
-msgstr ""
+msgstr "Key safety"
+
 
 #: apps/agent/routes/runs.py:174
 msgid "Artifact không còn tồn tại."
@@ -285,7 +298,7 @@ msgstr ""
 
 #: platform_core/public_api/costing.py:307
 msgid "Biên lợi nhuận ước tính đang âm"
-msgstr ""
+msgstr "Estimated margin is negative"
 
 #: apps/taoanh/templates/image.html:11
 msgid "Biến mô tả thành tối đa bốn ảnh, theo dõi tiến độ và so sánh output thật."
@@ -295,7 +308,8 @@ msgstr ""
 
 #: server/templates/dev_quickstart.html:26
 msgid "Biến môi trường"
-msgstr ""
+msgstr "Environment variables"
+
 
 #: apps/agent/manifest.py:13
 msgid "Biến mục tiêu thành kế hoạch nhiều bước, báo giá trước và chạy có kiểm soát."
@@ -318,6 +332,8 @@ msgstr "Variant"
 #: platform_core/public_api/governance.py:175
 msgid "Biến thể (crop, upscale, đổi tỉ lệ) sinh ra từ một tài nguyên gốc."
 msgstr ""
+"Variants (crop, upscale, aspect change) derived from an original "
+"asset."
 
 #: apps/taoclipngan/manifest.py:32
 msgid ""
@@ -332,9 +348,8 @@ msgid "Biến ý tưởng thành một hệ cảnh nhất quán."
 msgstr "Turn an idea into a consistent set of scenes."
 
 #: server/templates/dev_tool_detail.html:41
-#, fuzzy
 msgid "Biến đầu vào"
-msgstr "Input length"
+msgstr "Input variables"
 
 #: apps/qualitylab/calibration.py:26
 msgid "Blind secret phải có ít nhất 16 ký tự."
@@ -373,9 +388,9 @@ msgid "Báo giá đã thay đổi."
 msgstr "The quote has changed."
 
 #: server/templates/dev_playground.html:20
-#, fuzzy, python-brace-format
+#, python-brace-format
 msgid "Báo giá: {n} credit"
-msgstr "Credit packages"
+msgstr "Quote: {n} credit"
 
 #: apps/taoclipngan/routes.py:30
 msgid "Bình luận/tin"
@@ -408,7 +423,7 @@ msgstr "You"
 
 #: server/routes/developer.py:763
 msgid "Bạn bấm Gửi thử. Không job nào chạy, không credit nào chuyển."
-msgstr ""
+msgstr "You pressed Send test. No job ran and no credit moved."
 
 #: server/templates/home.html:66
 msgid "Bạn chưa dùng app nào."
@@ -428,13 +443,18 @@ msgstr "You must confirm you have the right to use this video."
 
 #: server/templates/developers_base.html:34
 msgid ""
-"Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. Quản trị "
-"viên bật bằng biến môi trường LTT_PUBLIC_API."
+"Bạn vẫn tạo được khóa, nhưng lời gọi tới /api/v1 sẽ không có đích. "
+"Quản trị viên bật bằng biến môi trường LTT_PUBLIC_API."
 msgstr ""
+"You can still create keys, but calls to /api/v1 have nowhere to "
+"land. An administrator turns it on with the LTT_PUBLIC_API "
+"environment variable."
+
 
 #: server/templates/dev_overview.html:48
 msgid "Bạn đã có khóa. Những nơi hay dùng:"
-msgstr ""
+msgstr "You have a key. The places you will use most:"
+
 
 #: server/templates/nap_don.html:24
 msgid "Bạn đã huỷ ở bước thanh toán —"
@@ -443,18 +463,25 @@ msgstr "You cancelled at the payment step —"
 #: platform_core/public_api/governance.py:165
 msgid "Bản chụp một workflow để người dùng quay lại phiên bản cũ."
 msgstr ""
+"A snapshot of a workflow so the user can go back to an earlier "
+"version."
 
 #: platform_core/public_api/governance.py:198
 msgid "Bản đồ mã nguồn, sinh lại được bằng một lệnh."
-msgstr ""
+msgstr "A map of the source tree, regenerable with one command."
 
 #: server/templates/dev_privacy.html:5
 msgid ""
 "Bảng dưới đây sinh trực tiếp từ chính sách mà worker đang thi hành "
-"(platform_core/public_api/governance.py). Nó không thể lệch với thực tế: nếu"
-" một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước khi trang này kịp"
-" nói dối bạn."
+"(platform_core/public_api/governance.py). Nó không thể lệch với thực "
+"tế: nếu một quy tắc lưu trữ không có ai chạy, bộ test sẽ đỏ trước "
+"khi trang này kịp nói dối bạn."
 msgstr ""
+"The table below is generated straight from the policy the workers "
+"actually enforce (platform_core/public_api/governance.py). It cannot "
+"drift from reality: if a retention rule has nobody running it, the "
+"test suite goes red before this page gets a chance to lie to you."
+
 
 #: server/templates/_header.html:30
 msgid "Bảng giá"
@@ -466,7 +493,8 @@ msgstr "Dashboard"
 
 #: server/templates/dev_quickstart.html:5
 msgid "Bảy bước tới lời gọi đầu tiên"
-msgstr ""
+msgstr "Seven steps to your first call"
+
 
 #: server/routes/register.py:134
 msgid "Bấm vào liên kết dưới đây để xác thực tài khoản (hết hạn sau 24 giờ):"
@@ -519,7 +547,8 @@ msgstr "Control started"
 
 #: server/templates/dev_privacy.html:19
 msgid "Bằng chứng — không bao giờ xoá"
-msgstr ""
+msgstr "Evidence — never deleted"
+
 
 #: apps/qualitylab/templates/qualitylab.html:54
 #, fuzzy
@@ -538,9 +567,8 @@ msgid "Bỏ chọn"
 msgstr "Clear selection"
 
 #: server/templates/dev_logs.html:44 server/templates/dev_tools.html:21
-#, fuzzy
 msgid "Bỏ lọc"
-msgstr "Clear filters"
+msgstr "Clear filter"
 
 #: apps/taoclipngan/templates/taoclipngan.html:50
 msgid "Bộ nhận diện"
@@ -557,7 +585,7 @@ msgstr "High quality"
 
 #: platform_core/public_api/governance.py:121
 msgid "Bộ đếm của từng tiến trình theo phút, để cộng lại khi đọc."
-msgstr ""
+msgstr "Per-process, per-minute counters, summed at read time."
 
 #: apps/mediatools/jobs.py:37
 msgid "Bộ ảnh có asset trùng hoặc không còn tồn tại."
@@ -635,7 +663,7 @@ msgstr "Cost before running"
 
 #: platform_core/public_api/governance.py:124
 msgid "Chi phí ƯỚC TÍNH để tính biên lợi nhuận. Không phải sổ sách."
-msgstr ""
+msgstr "ESTIMATED cost, used to compute margin. Not an accounting record."
 
 #: apps/upscalevideo/templates/upscalevideo.html:54
 msgid "Chi phí ước tính"
@@ -647,7 +675,8 @@ msgstr "Cost:"
 
 #: server/templates/dev_usage.html:86
 msgid "Chi tiêu theo lời gọi"
-msgstr ""
+msgstr "Spending per call"
+
 
 #: server/templates/dev_notifications.html:14
 #: server/templates/nexus_nhat_ky.html:34
@@ -687,15 +716,21 @@ msgstr "Motion"
 
 #: server/templates/dev_settings.html:7
 msgid ""
-"Chuỗi bí mật chỉ hiện một lần, lúc tạo. Máy chủ giữ dấu vân tay một chiều "
-"nên không ai lấy lại được — kể cả quản trị viên."
+"Chuỗi bí mật chỉ hiện một lần, lúc tạo. Máy chủ giữ dấu vân tay một "
+"chiều nên không ai lấy lại được — kể cả quản trị viên."
 msgstr ""
+"The secret is shown once, at creation. The server keeps a one-way "
+"fingerprint, so nobody can retrieve it — administrators included."
+
 
 #: server/templates/dev_privacy.html:13
 msgid ""
-"Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở đâu cả, "
-"nên không có gì để xuất."
+"Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở "
+"đâu cả, nên không có gì để xuất."
 msgstr ""
+"Key secrets are NOT in the file — the server does not store them "
+"anywhere, so there is nothing to export."
+
 
 #: server/routes/register.py:133
 msgid "Chào bạn,"
@@ -707,13 +742,16 @@ msgstr "Photoreal"
 
 #: server/templates/dev_keys.html:8
 msgid ""
-"Chép và cất ngay bây giờ. Tải lại trang là mất, và không ai lấy lại được "
-"(máy chủ chỉ giữ dấu vân tay một chiều của nó)."
+"Chép và cất ngay bây giờ. Tải lại trang là mất, và không ai lấy lại "
+"được (máy chủ chỉ giữ dấu vân tay một chiều của nó)."
 msgstr ""
+"Copy it and store it now. Reload the page and it is gone, and nobody "
+"can get it back (the server keeps only a one-way fingerprint of it)."
+
 
 #: platform_core/public_api/policy.py:255
 msgid "Chính sách phải có tên."
-msgstr ""
+msgstr "A policy must have a name."
 
 #: server/templates/dev_privacy.html:55
 msgid "Chính sách riêng tư"
@@ -830,34 +868,34 @@ msgstr "No conversations yet."
 
 #: server/templates/dev_jobs.html:6
 msgid "Chưa có job nào tạo qua API."
-msgstr ""
+msgstr "No jobs have been created through the API yet."
+
 
 #: apps/upscalevideo/templates/upscalevideo.html:105
 msgid "Chưa có job. Chọn video để bắt đầu."
 msgstr "No jobs yet. Pick a video to get started."
 
 #: server/templates/dev_keys.html:17
-#, fuzzy
 msgid "Chưa có khóa nào."
-msgstr "No jobs yet."
+msgstr "No keys yet."
 
 #: server/templates/dev_overview.html:39
 msgid "Chưa có khóa nào. Ba bước để gọi được lần đầu:"
-msgstr ""
+msgstr "No keys yet. Three steps to your first call:"
+
 
 #: server/templates/dev_webhooks.html:71
-#, fuzzy
 msgid "Chưa có lần giao nào."
-msgstr "No jobs yet."
+msgstr "No deliveries yet."
 
 #: server/templates/dev_logs.html:53
 msgid "Chưa có lời gọi API nào. Nhật ký bắt đầu từ request đầu tiên."
-msgstr ""
+msgstr "No API calls yet. The log starts with your first request."
+
 
 #: server/templates/dev_usage.html:114
-#, fuzzy
 msgid "Chưa có lời gọi nào khớp."
-msgstr "No jobs yet."
+msgstr "No calls match."
 
 #: server/templates/nexus_trang_chinh.html:20
 msgid "Chưa có máy nào được ghép vào tài khoản này."
@@ -870,6 +908,9 @@ msgstr "No sources used yet. Valid assets appear after your first job."
 #: server/templates/dev_projects.html:31
 msgid "Chưa có project nào. Tạo khóa đầu tiên sẽ tự sinh project “Default”."
 msgstr ""
+"No projects yet. Creating your first key will create a “Default” "
+"project for you."
+
 
 #: apps/agent/templates/_agent_progress.html:17
 msgid "Chưa có quyết định thực thi."
@@ -886,9 +927,13 @@ msgstr "No thumbnails yet"
 
 #: server/templates/dev_notifications.html:6
 msgid ""
-"Chưa có thông báo nào. Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân "
-"sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc."
+"Chưa có thông báo nào. Cảnh báo xuất hiện ở đây khi số dư xuống "
+"thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc."
 msgstr ""
+"No notifications yet. Alerts show up here when your balance runs "
+"low, a budget hits its threshold, a key is about to expire, or a "
+"webhook gives up."
+
 
 #: apps/taovideo/templates/taovideo.html:57
 msgid ""
@@ -938,7 +983,7 @@ msgstr "Could not fetch the model list (is the sidecar ready?)."
 
 #: server/templates/status_api.html:33
 msgid "Chưa mở năng lực nào ra API công khai."
-msgstr ""
+msgstr "No capability has been opened to the public API yet."
 
 #: apps/thumbnail/jobs.py:179
 msgid "Chưa nhập chủ đề thumbnail."
@@ -966,9 +1011,8 @@ msgid "Chưa thấy file trên kho lưu trữ."
 msgstr "The file was not found in storage."
 
 #: server/templates/dev_webhooks.html:25
-#, fuzzy
 msgid "Chưa đăng ký điểm nhận nào."
-msgstr "Not signed in"
+msgstr "No endpoint registered yet."
 
 #: apps/chataistudio/templates/chataistudio_admin.html:15
 msgid "Chưa đăng nhập"
@@ -976,19 +1020,23 @@ msgstr "Not signed in"
 
 #: server/templates/dev_usage.html:52
 msgid "Chưa đặt ngân sách nào."
-msgstr ""
+msgstr "No budget set yet."
+
 
 #: server/templates/dev_tools.html:35
 msgid "Chạy kiểu"
-msgstr ""
+msgstr "Execution"
+
 
 #: server/templates/dev_tool_detail.html:10
 msgid "Chạy kiểu:"
-msgstr ""
+msgstr "Execution:"
+
 
 #: server/templates/dev_playground.html:47
 msgid "Chạy thật"
-msgstr ""
+msgstr "Run for real"
+
 
 #: apps/autosubvideo/templates/autosubvideo.html:53
 #: apps/upscalevideo/templates/upscalevideo.html:92
@@ -1010,7 +1058,8 @@ msgstr "Quality, brand, and publishing package"
 
 #: server/templates/dev_usage.html:76
 msgid "Chặn lời gọi khi vượt (ngân sách cứng)"
-msgstr ""
+msgstr "Block calls when exceeded (hard budget)"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:89
 #: apps/taoanh/templates/image.html:19
@@ -1023,9 +1072,8 @@ msgid "Chế độ Tạo ảnh AI"
 msgstr "AI image modes"
 
 #: server/templates/dev_playground.html:59
-#, fuzzy
 msgid "Chế độ chạy khác"
-msgstr "Response mode"
+msgstr "Other execution modes"
 
 #: apps/taoanh/jobs.py:209
 msgid "Chế độ chỉnh sửa cần ảnh nguồn."
@@ -1033,7 +1081,7 @@ msgstr "Edit mode needs a source image."
 
 #: platform_core/public_api/governance.py:96
 msgid "Chế độ giá nào đang có hiệu lực lúc một khoản tiền được tính."
-msgstr ""
+msgstr "Which pricing regime was in force when an amount was charged."
 
 #: apps/upscalevideo/templates/upscalevideo.html:14
 msgid "Chế độ nâng cấp"
@@ -1061,7 +1109,8 @@ msgstr "Only admins can view operations."
 
 #: server/templates/dev_keys.html:119
 msgid "Chỉ cho phép gọi từ IP/CIDR (để trống = mọi nơi)"
-msgstr ""
+msgstr "Allow calls only from these IPs/CIDRs (blank = anywhere)"
+
 
 #: apps/taoanh/templates/image.html:24
 msgid "Chỉ hiển thị dữ liệu bạn đã nhập"
@@ -1069,7 +1118,8 @@ msgstr "Shows only the data you entered"
 
 #: server/templates/dev_quickstart.html:74
 msgid "Chỉ một quy tắc, và nó là quy tắc giữ tiền:"
-msgstr ""
+msgstr "Just one rule, and it is the rule that protects your money:"
+
 
 #: apps/chataistudio/features.py:53
 msgid "Chỉ nhận PNG/JPEG/WebP, TXT/MD/CSV/JSON hoặc PDF."
@@ -1090,16 +1140,23 @@ msgstr "Only images, video or audio are accepted."
 
 #: server/templates/dev_privacy.html:6
 msgid ""
-"Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, workflow…) "
-"có vòng đời riêng của app."
+"Chỉ nói về khu API. Nội dung do từng app lưu (chat, storyboard, "
+"workflow…) có vòng đời riêng của app."
 msgstr ""
+"This covers the API area only. Content stored by individual apps "
+"(chat, storyboards, workflows…) has its own lifecycle."
+
 
 #: server/templates/dev_playground.html:25
 msgid ""
-"Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu ngoài "
-"chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn phải dán khóa"
-" mình đang giữ."
+"Chỉ nằm trong tab này: không lưu vào trình duyệt, không gửi đi đâu "
+"ngoài chính API này. Máy chủ không đọc lại được khóa đã cấp, nên bạn "
+"phải dán khóa mình đang giữ."
 msgstr ""
+"It stays in this tab only: not stored in the browser, not sent "
+"anywhere except this API. The server cannot read back a key it has "
+"issued, so you have to paste the one you are holding."
+
 
 #: apps/upscalevideo/routes.py:314
 msgid "Chỉ quản trị viên được xem telemetry."
@@ -1233,12 +1290,11 @@ msgstr "Stabilisation"
 
 #: platform_core/public_api/governance.py:130
 msgid "Chống tính tiền hai lần trong cửa sổ thử lại."
-msgstr ""
+msgstr "Prevents double billing inside the retry window."
 
 #: server/templates/dev_quickstart.html:19
-#, fuzzy
 msgid "Chờ kết quả bằng"
-msgstr "✅ Result"
+msgstr "Wait for the result with"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:42
 msgid "Chụp phiên bản"
@@ -1254,10 +1310,13 @@ msgstr "Video topic"
 
 #: platform_core/public_api/governance.py:103
 msgid ""
-"Chứng từ thanh toán: khách trả bao nhiêu, lúc nào, qua cổng nào. Đây là phía"
-" đối ứng của sổ credit — mất nó thì không đối soát được tiền thật với credit"
-" đã cấp."
+"Chứng từ thanh toán: khách trả bao nhiêu, lúc nào, qua cổng nào. Đây "
+"là phía đối ứng của sổ credit — mất nó thì không đối soát được tiền "
+"thật với credit đã cấp."
 msgstr ""
+"Payment records: how much a customer paid, when, and through which "
+"gateway. This is the counterpart of the credit ledger — lose it and "
+"real money can no longer be reconciled against issued credit."
 
 #: apps/qualitylab/calibration.py:214
 #, fuzzy
@@ -1332,7 +1391,8 @@ msgstr ""
 
 #: server/routes/developer.py:136
 msgid "Cài đặt & bảo mật"
-msgstr ""
+msgstr "Settings & security"
+
 
 #: apps/agent/templates/agent_run.html:14
 msgid "Các bước"
@@ -1375,19 +1435,20 @@ msgstr "Something went wrong."
 
 #: server/templates/dev_quickstart.html:14
 msgid "Có tệp đầu vào thì tải lên trước:"
-msgstr ""
+msgstr "If you have input files, upload them first:"
+
 
 #: server/templates/dev_jobs.html:10 server/templates/dev_logs.html:25
 #: server/templates/dev_logs.html:60 server/templates/dev_playground.html:29
 #: server/templates/dev_pricing.html:13 server/templates/dev_tools.html:34
 #: server/templates/dev_usage.html:88 server/templates/dev_usage.html:118
-#, fuzzy
 msgid "Công cụ"
-msgstr "Search tools"
+msgstr "Tool"
 
 #: server/routes/developer.py:127 server/templates/dev_overview.html:51
 msgid "Công cụ & model"
-msgstr ""
+msgstr "Tools & models"
+
 
 #: server/templates/home.html:5
 msgid "Công cụ AI theo credit, gọn trong một tài khoản"
@@ -1402,25 +1463,31 @@ msgid "Công cụ handoff chưa khả dụng."
 msgstr "The handoff tool is not available yet."
 
 #: server/templates/dev_tools.html:59
-#, fuzzy
 msgid "Công cụ nhận"
-msgstr "tools ready"
+msgstr "The tool accepts"
 
 #: server/templates/dev_tool_detail.html:88
-msgid "Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong job."
+msgid ""
+"Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong "
+"job."
 msgstr ""
+"This tool returns data, not files: the result sits directly in the "
+"job."
+
 
 #: platform_core/public_api/pricing.py:165
 msgid "Công cụ này đã có phiên bản trùng nhãn."
-msgstr ""
+msgstr "This tool already has a version with that label."
 
 #: server/templates/dev_pricing.html:44
 msgid "Công thức app tính"
-msgstr ""
+msgstr "Formula the app computes"
+
 
 #: server/templates/dev_usage.html:135
 msgid "Cùng dữ liệu có ở"
-msgstr ""
+msgstr "The same data is available at"
+
 
 #: apps/taovideo/templates/taovideo.html:76
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -1429,13 +1496,16 @@ msgstr "Oldest"
 
 #: server/templates/dev_notifications.html:29
 msgid ""
-"Cảnh báo về tiền và về khóa còn được gửi qua email; những cái còn lại chỉ "
-"hiện ở đây, để hộp thư của bạn không thành nơi bị bỏ qua."
+"Cảnh báo về tiền và về khóa còn được gửi qua email; những cái còn "
+"lại chỉ hiện ở đây, để hộp thư của bạn không thành nơi bị bỏ qua."
 msgstr ""
+"Alerts about money and about keys are also emailed; the rest appear "
+"here only, so your inbox does not become the place you stop reading."
+
 
 #: platform_core/public_api/governance.py:115
 msgid "Cảnh báo đã đọc rồi thì hết giá trị."
-msgstr ""
+msgstr "An alert you have already read has served its purpose."
 
 #: apps/prompt_ai_ommi/routes/storyboard.py:229
 msgid "Cảnh chưa đủ mô tả để sinh ảnh."
@@ -1448,6 +1518,9 @@ msgstr "Session ticket issued"
 #: apps/taovideo/templates/taovideo.html:12 server/templates/home.html:21
 msgid "Cấu hình"
 msgstr "Settings"
+
+msgid "Cấu hình máy"
+msgstr "Specs"
 
 #: apps/taoanh/templates/image.html:24 apps/thumbnail/templates/thumbnail.html:53
 #: apps/thumbnail/templates/thumbnail_fragment.html:31
@@ -1524,7 +1597,7 @@ msgstr "The input set needs 1–12 images."
 
 #: server/templates/status_api.html:8
 msgid "Cập nhật lúc"
-msgstr ""
+msgstr "Updated at"
 
 #: apps/nexus/routes.py:178
 msgid "Cắt phiên"
@@ -1548,11 +1621,12 @@ msgstr "Community opens once there is a real space for discussion"
 
 #: platform_core/public_api/pricing.py:176
 msgid "Cửa sổ hiệu lực phải kết thúc sau khi bắt đầu."
-msgstr ""
+msgstr "The effective window must end after it starts."
 
 #: server/templates/dev_webhooks.html:106
 msgid "Danh mục sự kiện"
-msgstr ""
+msgstr "Event catalogue"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -1565,7 +1639,8 @@ msgstr "Project list"
 
 #: server/templates/dev_jobs.html:26
 msgid "Danh sách đầy đủ và chi tiết từng job:"
-msgstr ""
+msgstr "Full list and per-job detail:"
+
 
 #: apps/qualitylab/materializer.py:57
 msgid "Dataset intake chưa có sample."
@@ -1598,7 +1673,8 @@ msgstr ""
 
 #: server/templates/dev_keys.html:94
 msgid "Default"
-msgstr ""
+msgstr "Default"
+
 
 #: apps/demo/manifest.py:37
 msgid "Demo — kiểm tra hạ tầng"
@@ -1610,11 +1686,12 @@ msgstr "Approving places a hold"
 
 #: server/templates/dev_playground.html:18
 msgid "Dán khóa API vào ô bên trên trước đã."
-msgstr ""
+msgstr "Paste an API key into the field above first."
+
 
 #: platform_core/public_api/governance.py:112
 msgid "Dòng thời gian một job. Dòng nội bộ chỉ giữ 30 ngày."
-msgstr ""
+msgstr "The timeline of a job. Internal entries are kept for 30 days only."
 
 #: apps/qualitylab/templates/qualitylab.html:32
 msgid "Dùng cho Upscale paired ảnh/video. Candidate ở ô File cần đo phía trên."
@@ -1632,11 +1709,13 @@ msgstr ""
 
 #: server/templates/dev_tool_detail.html:130
 msgid "Dùng lại Idempotency-Key"
-msgstr ""
+msgstr "Reused Idempotency-Key"
+
 
 #: server/templates/dev_keys.html:24
 msgid "Dùng lần cuối"
-msgstr ""
+msgstr "Last used"
+
 
 #: apps/qualitylab/templates/qualitylab.html:37
 msgid ""
@@ -1658,7 +1737,8 @@ msgstr "Grid view"
 
 #: server/templates/dev_tool_detail.html:14
 msgid "Dấu vân tay hợp đồng:"
-msgstr ""
+msgstr "Contract fingerprint:"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:116
 msgid "Dễ đọc, chia theo từng cảnh."
@@ -1673,14 +1753,12 @@ msgid "Dừng"
 msgstr "Stop"
 
 #: server/routes/developer.py:137
-#, fuzzy
 msgid "Dữ liệu & lưu trữ"
-msgstr "Real data"
+msgstr "Data & retention"
 
 #: server/templates/dev_settings.html:16
-#, fuzzy
 msgid "Dữ liệu của bạn"
-msgstr "Your credits"
+msgstr "Your data"
 
 #: apps/qualitylab/datasets.py:83
 msgid "Dữ liệu production thiếu consent hoặc retention."
@@ -1693,6 +1771,8 @@ msgstr "Real data"
 #: platform_core/public_api/governance.py:155
 msgid "Dự án của các editor có trạng thái. Vòng đời do app quản."
 msgstr ""
+"Projects belonging to the stateful editors. The app owns their "
+"lifecycle."
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:24
 msgid "Dự án mới"
@@ -1700,10 +1780,14 @@ msgstr "New project"
 
 #: platform_core/public_api/governance.py:146
 msgid ""
-"Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) chứ không "
-"xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại RESTRICT, và xoá được "
-"thì bằng chứng mất theo."
+"Email, mật khẩu đã băm, vai trò. Vô hiệu hoá (`is_active=False`) chứ "
+"không xoá — sổ credit và nhật ký trỏ về đây bằng khoá ngoại "
+"RESTRICT, và xoá được thì bằng chứng mất theo."
 msgstr ""
+"Email, hashed password, roles. Deactivated (`is_active=False`) "
+"rather than deleted — the credit ledger and the logs point back here "
+"through RESTRICT foreign keys, and deleting the row would take the "
+"evidence with it."
 
 #: apps/upscalevideo/jobs.py:63
 msgid "Engine Real-ESRGAN chưa sẵn sàng."
@@ -1894,7 +1978,8 @@ msgstr "Gemini translation has no API key configured."
 
 #: server/templates/dev_tools.html:59 server/templates/status_api.html:18
 msgid "Ghi chú"
-msgstr ""
+msgstr "Notes"
+
 
 #: apps/kichban/templates/script.html:10
 msgid "Ghi chú nghiên cứu"
@@ -1903,6 +1988,8 @@ msgstr "Research notes"
 #: platform_core/public_api/governance.py:179
 msgid "Ghi nhận tài nguyên nào đã dùng ở cảnh nào, để tra ngược."
 msgstr ""
+"Records which asset was used in which scene, so it can be traced "
+"back."
 
 #: apps/mediatools/manifest.py:59
 msgid "Ghép 2–12 ảnh thành một contact sheet ngang, dọc hoặc dạng lưới."
@@ -1925,30 +2012,47 @@ msgid "Ghép một máy mới"
 msgstr "Pair a new machine"
 
 #: server/templates/dev_webhooks.html:129
-msgid "Giao trùng là có thể (worker nhặt lại, hoặc bạn bấm Gửi lại). Khử trùng theo"
+msgid ""
+"Giao trùng là có thể (worker nhặt lại, hoặc bạn bấm Gửi lại). Khử "
+"trùng theo"
 msgstr ""
+"Duplicate deliveries do happen (a worker picks the job back up, or "
+"you press Resend). Dedupe on"
+
 
 #: server/routes/developer.py:129
 msgid "Giá & mô phỏng"
-msgstr ""
+msgstr "Pricing & simulator"
+
 
 #: server/templates/dev_tool_detail.html:36
 msgid ""
-"Giá phụ thuộc toàn bộ input, nên báo giá là nơi duy nhất nói giá. Credit "
-"được giữ lúc tạo job và quyết toán đúng một lần khi job kết thúc."
+"Giá phụ thuộc toàn bộ input, nên báo giá là nơi duy nhất nói giá. "
+"Credit được giữ lúc tạo job và quyết toán đúng một lần khi job kết "
+"thúc."
 msgstr ""
+"The price depends on the whole input, so the quote is the only place "
+"that states it. Credit is held when the job is created and settled "
+"exactly once when the job ends."
+
 
 #: platform_core/public_api/pricing.py:170
 msgid "Giá sàn không được lớn hơn giá trần."
-msgstr ""
+msgstr "The floor price cannot be higher than the cap."
 
 #: server/templates/dev_pricing.html:5
 msgid ""
-"Giá ở đây được tính bằng ĐÚNG công thức mà báo giá thật dùng, rồi áp cùng "
-"một sàn/trần/làm tròn của phiên bản giá đang có hiệu lực. Nếu con số ở đây "
-"khác con số bạn nhận khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, "
-"không phải khác biệt cố ý."
+"Giá ở đây được tính bằng ĐÚNG công thức mà báo giá thật dùng, rồi áp "
+"cùng một sàn/trần/làm tròn của phiên bản giá đang có hiệu lực. Nếu "
+"con số ở đây khác con số bạn nhận khi gọi /api/v1/quotes thì đó là "
+"lỗi của chúng tôi, không phải khác biệt cố ý."
 msgstr ""
+"The prices here are computed with the SAME formula a real quote "
+"uses, then put through the same floor, cap and rounding of the price "
+"version in force. If a number here differs from what you get from "
+"/api/v1/quotes, that is a bug on our side, not a deliberate "
+"difference."
+
 
 #: server/templates/demo.html:23
 msgid "Giá: 1 credit mỗi 100 ký tự (do manifest quyết định)."
@@ -1974,27 +2078,39 @@ msgstr "Tone"
 #: server/templates/dev_tool_detail.html:45
 #: server/templates/dev_tool_detail.html:113
 msgid "Giới hạn"
-msgstr ""
+msgstr "Limits"
+
 
 #: server/templates/dev_settings.html:10
 msgid "Giới hạn khóa theo IP/CIDR và đặt hạn dùng khi giao cho bên thứ ba."
 msgstr ""
+"Restrict a key by IP/CIDR and give it an expiry when you hand it to "
+"a third party."
+
 
 #: server/templates/dev_keys.html:135
 msgid "Giới hạn theo công cụ (tùy chọn)"
-msgstr ""
+msgstr "Restrict to specific tools (optional)"
+
 
 #: server/templates/dev_overview.html:30 server/templates/dev_usage.html:10
 msgid "Giới hạn:"
-msgstr ""
+msgstr "Limits:"
+
 
 #: server/templates/dev_privacy.html:32
 msgid "Giữ bao lâu"
-msgstr ""
+msgstr "Kept for"
+
 
 #: server/templates/dev_log_detail.html:69
-msgid "Giữ chỗ rồi quyết toán đúng một lần. Job hỏng hoặc bị hủy thì hoàn đủ."
+msgid ""
+"Giữ chỗ rồi quyết toán đúng một lần. Job hỏng hoặc bị hủy thì hoàn "
+"đủ."
 msgstr ""
+"Held, then settled exactly once. A failed or cancelled job is "
+"refunded in full."
+
 
 #: apps/upscalevideo/templates/upscalevideo.html:37
 msgid "Giữ nguyên FPS gốc"
@@ -2018,19 +2134,21 @@ msgstr "A temporary interruption occurred. The system will retry automatically."
 
 #: server/templates/dev_tool_detail.html:26
 msgid "Gọi thế nào"
-msgstr ""
+msgstr "How to call it"
+
 
 #: server/templates/dev_docs.html:25
 msgid "Gọi thử"
-msgstr ""
+msgstr "Try a call"
 
 #: server/templates/dev_overview.html:45
 msgid "Gọi thử theo hướng dẫn"
-msgstr ""
+msgstr "Make a test call using the guide"
+
 
 #: platform_core/public_api/governance.py:109
 msgid "Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."
-msgstr ""
+msgstr "For debugging an integration. Holds no payload, only metadata."
 
 #: apps/chataistudio/templates/chataistudio.html:39
 msgid "Gợi ý bắt đầu"
@@ -2045,15 +2163,18 @@ msgid "Gửi liên kết đặt lại"
 msgstr "Send reset link"
 
 #: server/templates/dev_webhooks.html:94
-#, fuzzy
 msgid "Gửi lại"
-msgstr "Try again"
+msgstr "Resend"
 
 #: server/templates/dev_webhooks.html:101
 msgid ""
-"Gửi lại dùng ĐÚNG event id và payload cũ: bên nhận khử trùng theo id nên "
-"không xử lý hai lần, và job cùng credit không hề bị chạm."
+"Gửi lại dùng ĐÚNG event id và payload cũ: bên nhận khử trùng theo id "
+"nên không xử lý hai lần, và job cùng credit không hề bị chạm."
 msgstr ""
+"Resend uses the SAME event id and the original payload: a receiver "
+"that dedupes on the id will not process it twice, and neither the "
+"job nor your credit is touched."
+
 
 #: server/templates/dev_webhooks.html:45
 msgid "Gửi thử"
@@ -2077,9 +2198,13 @@ msgstr ""
 
 #: server/templates/dev_webhooks.html:127
 msgid ""
-"Header chữ ký có thể chứa NHIỀU chữ ký cách nhau bằng dấu phẩy trong lúc đổi"
-" secret; chấp nhận nếu KHỚP MỘT trong số đó."
+"Header chữ ký có thể chứa NHIỀU chữ ký cách nhau bằng dấu phẩy trong "
+"lúc đổi secret; chấp nhận nếu KHỚP MỘT trong số đó."
 msgstr ""
+"During a secret rotation the signature header may carry SEVERAL "
+"comma-separated signatures; accept the request if ANY ONE of them "
+"matches."
+
 
 #: apps/qualitylab/services/upscale_video.py:140
 msgid "Hiệu năng job nguồn"
@@ -2102,9 +2227,8 @@ msgid "Hoàn tất"
 msgstr "Done"
 
 #: platform_core/public_api/status.py:58
-#, fuzzy
 msgid "Hoạt động bình thường."
-msgstr "Your activity"
+msgstr "Operating normally."
 
 #: server/templates/home.html:48
 msgid "Hoạt động của bạn"
@@ -2157,12 +2281,12 @@ msgstr "LTT infrastructure"
 #: platform_core/public_api/policy.py:381
 #, python-brace-format
 msgid "Hạn mức không được âm: {field}"
-msgstr ""
+msgstr "A limit cannot be negative: {field}"
 
 #: platform_core/public_api/policy.py:378
 #, python-brace-format
 msgid "Hạn mức phải là số nguyên: {field}"
-msgstr ""
+msgstr "A limit must be an integer: {field}"
 
 #: server/templates/nap_don.html:41
 msgid "Hết hạn"
@@ -2186,13 +2310,13 @@ msgid "Hội thoại mới"
 msgstr "New conversation"
 
 #: platform_core/public_api/governance.py:169
-#, fuzzy
 msgid "Hội thoại người dùng."
-msgstr "A user account is required."
+msgstr "User conversations."
 
 #: server/templates/dev_tools.html:76
 msgid "Hợp đồng đầy đủ của từng công cụ:"
-msgstr ""
+msgstr "Full contract for each tool:"
+
 
 #: apps/taovideo/templates/taovideo.html:85
 msgid "Hủy"
@@ -2213,10 +2337,14 @@ msgstr "Cancel job"
 #: server/templates/dev_privacy.html:27
 msgid "Hữu ích khi còn mới, vô nghĩa khi đã cũ. Worker tự dọn theo lịch."
 msgstr ""
+"Useful while fresh, meaningless once stale. Workers clean it up on a "
+"schedule."
+
 
 #: server/templates/dev_playground.html:41
 msgid "Input dạng JSON"
-msgstr ""
+msgstr "Input as JSON"
+
 
 #: apps/qualitylab/routes.py:60
 #, fuzzy
@@ -2233,21 +2361,20 @@ msgstr ""
 
 #: server/templates/dev_playground.html:35
 msgid "JSON thô"
-msgstr ""
+msgstr "Raw JSON"
+
 
 #: server/routes/developer.py:131
-#, fuzzy
 msgid "Job"
-msgstr "Open Jobs"
+msgstr "Jobs"
 
 #: apps/qualitylab/templates/qualitylab.html:37
 msgid "Job Upscale nguồn (tùy chọn)"
 msgstr ""
 
 #: server/routes/developer.py:761
-#, fuzzy
 msgid "Job bị hủy — credit đã được hoàn."
-msgstr "Credits have been refunded."
+msgstr "Job cancelled — the credit has been refunded."
 
 #: apps/prompt_ai_ommi/routes/resources.py:514
 #: apps/prompt_ai_ommi/routes/storyboard.py:279
@@ -2259,9 +2386,8 @@ msgid "Job chạy nền — trang tự cập nhật khi xong."
 msgstr "The job runs in the background — this page updates itself when it finishes."
 
 #: server/templates/dev_overview.html:52
-#, fuzzy
 msgid "Job gần đây"
-msgstr "recent jobs"
+msgstr "Recent jobs"
 
 #: apps/kichban/templates/_script_view.html:4
 msgid "Job gốc bất biến; mỗi lần lưu tạo revision mới có kiểm tra xung đột."
@@ -2270,9 +2396,8 @@ msgstr ""
 "conflict check."
 
 #: server/routes/developer.py:760
-#, fuzzy
 msgid "Job hỏng — credit đã được hoàn."
-msgstr "Credits have been refunded."
+msgstr "Job failed — the credit has been refunded."
 
 #: apps/prompt_ai_ommi/routes/resources.py:520
 #: apps/prompt_ai_ommi/routes/storyboard.py:282
@@ -2281,7 +2406,7 @@ msgstr "The job returned no images."
 
 #: server/routes/developer.py:759
 msgid "Job kết thúc thành công."
-msgstr ""
+msgstr "The job finished successfully."
 
 #: apps/qualitylab/routes.py:142
 msgid "Job nguồn phải là job Upscale đã hoàn tất."
@@ -2289,7 +2414,8 @@ msgstr ""
 
 #: server/templates/dev_log_detail.html:50
 msgid "Job này chưa ghi sự kiện nào cho khách."
-msgstr ""
+msgstr "This job has not recorded any customer-facing event yet."
+
 
 #: apps/prompt_ai_ommi/routes/resources.py:516
 msgid "Job này không sinh ảnh."
@@ -2297,7 +2423,8 @@ msgstr "This job does not produce images."
 
 #: server/templates/dev_overview.html:21
 msgid "Job qua API (30 ngày):"
-msgstr ""
+msgstr "Jobs via API (30 days):"
+
 
 #: apps/qualitylab/templates/qualitylab_report.html:14
 msgid "Job đang ở trạng thái"
@@ -2310,7 +2437,8 @@ msgstr "MONETISATION 2026"
 
 #: server/templates/dev_webhooks.html:108
 msgid "Khi nào"
-msgstr ""
+msgstr "When"
+
 
 #: server/templates/home.html:18
 msgid "Kho tài nguyên cá nhân chưa được phát hành"
@@ -2331,21 +2459,23 @@ msgstr "Invalid storage key."
 
 #: platform_core/public_api/admin_console.py:427
 msgid "Khoá này đã bị thu hồi rồi."
-msgstr ""
+msgstr "This key has already been revoked."
 
 #: platform_core/public_api/admin_console.py:411
 msgid "Khoá đã thu hồi thì không bật lại được."
-msgstr ""
+msgstr "A revoked key cannot be re-enabled."
 
 #: platform_core/public_api/admin_console.py:401
 msgid "Khoá đã thu hồi thì không tắt/bật được nữa."
-msgstr ""
+msgstr "A revoked key can no longer be disabled or enabled."
 
 #: platform_core/public_api/governance.py:98
 msgid ""
-"Khoá đã thu hồi vẫn giữ lại: nó là bằng chứng ai đã tiêu cái gì. Chỉ giữ dấu"
-" vân tay một chiều, không giữ bí mật."
+"Khoá đã thu hồi vẫn giữ lại: nó là bằng chứng ai đã tiêu cái gì. Chỉ "
+"giữ dấu vân tay một chiều, không giữ bí mật."
 msgstr ""
+"Revoked keys are kept: they are the evidence of who spent what. Only "
+"a one-way fingerprint is stored, never the secret."
 
 #: apps/autosubvideo/routes.py:543
 msgid "Khoảng số speaker không hợp lệ."
@@ -2357,14 +2487,18 @@ msgstr ""
 
 #: server/templates/developers_base.html:11
 msgid "Khu API"
-msgstr ""
+msgstr "API area"
+
 
 #: server/routes/developer.py:968
 msgid ""
-"Khu API của tài khoản này. KHÔNG bao gồm nội dung do từng app lưu (chat, "
-"storyboard, workflow…) — mỗi app giữ dữ liệu của nó, và trang này không nói "
-"thay được."
+"Khu API của tài khoản này. KHÔNG bao gồm nội dung do từng app lưu "
+"(chat, storyboard, workflow…) — mỗi app giữ dữ liệu của nó, và trang "
+"này không nói thay được."
 msgstr ""
+"The API area of this account. It does NOT cover content stored by "
+"individual apps (chat, storyboards, workflows…) — each app keeps its "
+"own data, and this page cannot speak for it."
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:66
 msgid "Khách hàng mục tiêu"
@@ -2374,30 +2508,37 @@ msgstr "Target audience"
 #: server/templates/dev_projects.html:10 server/templates/dev_usage.html:95
 #: server/templates/dev_usage.html:118
 msgid "Khóa"
-msgstr ""
+msgstr "Key"
+
 
 #: platform_core/public_api/alerting.py:156
 #, python-format
 msgid ""
-"Khóa %(key)s (%(name)s) hết hạn %(date)s. Tạo khóa mới, chuyển ứng dụng "
-"sang, rồi thu hồi khóa cũ."
+"Khóa %(key)s (%(name)s) hết hạn %(date)s. Tạo khóa mới, chuyển ứng "
+"dụng sang, rồi thu hồi khóa cũ."
 msgstr ""
+"Key %(key)s (%(name)s) expires on %(date)s. Create a new key, move "
+"your application over, then revoke the old one."
 
 #: server/routes/developer.py:126 server/templates/dev_overview.html:50
 #: server/templates/dev_playground.html:22
 msgid "Khóa API"
-msgstr ""
+msgstr "API keys"
+
 
 #: platform_core/public_api/alerting.py:155
 #, python-format
 msgid "Khóa API hết hạn sau %(days)s ngày"
-msgstr ""
+msgstr "API key expires in %(days)s days"
 
 #: server/templates/dev_settings.html:11
 msgid ""
-"Khóa bị lộ: thu hồi ngay ở mục Khóa API, rồi kiểm mục Job xem có lời gọi lạ "
-"không."
+"Khóa bị lộ: thu hồi ngay ở mục Khóa API, rồi kiểm mục Job xem có lời "
+"gọi lạ không."
 msgstr ""
+"Key leaked: revoke it immediately under API keys, then check Jobs "
+"for calls you do not recognise."
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:59
 msgid "Khóa câu chuyện và mục tiêu trước khi AI phân cảnh."
@@ -2405,38 +2546,54 @@ msgstr "Lock the story and the goal before the AI breaks it into scenes."
 
 #: server/templates/dev_keys.html:7
 msgid "Khóa mới — chỉ hiện một lần"
-msgstr ""
+msgstr "New key — shown once only"
+
 
 #: server/templates/dev_docs.html:35
 msgid ""
-"Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ "
-"credit, nên lộ ra cũng không mất tiền."
+"Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm "
+"vào sổ credit, nên lộ ra cũng không mất tiền."
 msgstr ""
+"A test key CANNOT spend credit. Not spends-less — it never touches "
+"the credit ledger, so leaking one costs you nothing."
 
 #: server/templates/dev_keys.html:111
 msgid ""
-"Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, nên lộ ra"
-" cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live chỉ nhìn thấy job"
-" live."
+"Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, "
+"nên lộ ra cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live "
+"chỉ nhìn thấy job live."
 msgstr ""
+"Test keys start with ltt_tk and never touch the credit ledger, so "
+"leaking one costs you nothing. A test key sees test jobs only; a "
+"live key sees live jobs only."
+
 
 #: server/templates/dev_docs.html:33
 msgid ""
-"Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — "
-"xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và "
-"chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả "
-"mẫu theo đúng output_schema đã công bố."
+"Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi "
+"qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, "
+"job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà "
+"cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố."
 msgstr ""
+"Test keys start with ltt_tk. They go through exactly the same chain "
+"a live key does — authentication, scopes, parameter validation, "
+"quoting, Idempotency-Key, job, webhook and signature — differing in "
+"one link only: no provider is called, and a sample result is "
+"returned that matches the published output_schema."
 
 #: server/templates/dev_docs.html:36
 msgid ""
-"Khóa test chỉ thấy job test; khóa live chỉ thấy job live. Hỏi chéo trả 404 y"
-" hệt job của người khác."
+"Khóa test chỉ thấy job test; khóa live chỉ thấy job live. Hỏi chéo "
+"trả 404 y hệt job của người khác."
 msgstr ""
+"A test key sees test jobs only; a live key sees live jobs only. "
+"Crossing over returns 404, exactly as it would for someone else's "
+"job."
 
 #: server/templates/dev_log_detail.html:13
 msgid "Khóa:"
-msgstr ""
+msgstr "Key:"
+
 
 #: apps/taovideo/templates/taovideo.html:37
 msgid "Không bắt buộc"
@@ -2444,24 +2601,32 @@ msgstr "Optional"
 
 #: server/templates/dev_usage.html:78
 msgid "Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%."
-msgstr ""
+msgstr "Leave unchecked = only send alerts at 50%, 80% and 100%."
+
 
 #: server/templates/dev_keys.html:142
 msgid "Không chọn gì = khóa dùng được mọi công cụ đang mở."
-msgstr ""
+msgstr "Select nothing = the key can use every tool that is open."
+
 
 #: server/templates/dev_keys.html:131
 #, python-format
 msgid ""
-"Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu "
-"credit."
+"Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ "
+"để tiêu credit."
 msgstr ""
+"Select nothing = the default scopes (%(scopes)s) — enough to read, "
+"not enough to spend credit."
+
 
 #: server/templates/dev_playground.html:13
 msgid ""
-"Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng một "
-"đường đi."
+"Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng "
+"một đường đi."
 msgstr ""
+"There is no free dry-run mode — if there were, this would no longer "
+"be the same code path."
+
 
 #: server/templates/dashboard.html:15
 msgid "Không có lỗi chặn"
@@ -2481,9 +2646,8 @@ msgid "Không có việc nào đang chạy."
 msgstr "No jobs are running."
 
 #: server/templates/dev_tools.html:27
-#, fuzzy
 msgid "Không công cụ nào khớp."
-msgstr "No jobs are running."
+msgstr "No tool matches."
 
 #: apps/taoclipngan/jobs.py:213
 msgid "Không dựng được clip nào từ video (thử video khác/tier khác)."
@@ -2516,7 +2680,8 @@ msgstr "The video host could not be resolved."
 
 #: server/templates/dev_logs.html:52
 msgid "Không request nào khớp."
-msgstr ""
+msgstr "No request matches."
+
 
 #: platform_core/jobs.py:231
 msgid "Không thể hoàn tất yêu cầu. Bạn có thể thử lại."
@@ -2584,9 +2749,8 @@ msgid "Không tìm thấy job."
 msgstr "Job not found."
 
 #: server/routes/developer.py:1082
-#, fuzzy
 msgid "Không tìm thấy khóa."
-msgstr "Share not found."
+msgstr "Key not found."
 
 #: apps/prompt_ai_ommi/routes/projects.py:290
 msgid "Không tìm thấy kết quả job."
@@ -2697,7 +2861,7 @@ msgstr "Not found."
 
 #: server/routes/developer.py:389
 msgid "Không tính được giá cho đầu vào này."
-msgstr ""
+msgstr "The price cannot be computed for this input."
 
 #: apps/taoanh/templates/image_thumbnail_shell.html:26
 msgid "Không tải được công cụ Thumbnail"
@@ -2710,13 +2874,13 @@ msgstr ""
 "permissions."
 
 #: server/templates/dev_quickstart.html:65
-#, fuzzy
 msgid "Không viết mã"
-msgstr "Unable to save"
+msgstr "Without writing code"
 
 #: server/routes/developer.py:431
 msgid "Không xác thực được (401)"
-msgstr ""
+msgstr "Not authenticated (401)"
+
 
 #: apps/prompt_ai_ommi/routes/handoff.py:21
 msgid "Không xác định được app nhận handoff."
@@ -2780,9 +2944,8 @@ msgid "Kiểm chất lượng với chi phí thấp."
 msgstr "Check quality at a low cost."
 
 #: server/templates/dev_webhooks.html:119
-#, fuzzy
 msgid "Kiểm chữ ký"
-msgstr "Text style"
+msgstr "Verify the signature"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:91
 msgid "Kiểm tra & xem prompt"
@@ -2794,9 +2957,8 @@ msgstr "Check your connection and try again."
 
 #: server/templates/dev_tool_detail.html:44
 #: server/templates/dev_tool_detail.html:78 server/templates/dev_usage.html:28
-#, fuzzy
 msgid "Kiểu"
-msgstr "Text style"
+msgstr "Type"
 
 #: apps/thumbnail/routes.py:253
 msgid "Kiểu chữ"
@@ -2816,9 +2978,8 @@ msgid "Kiểu hiển thị"
 msgstr "View style"
 
 #: platform_core/public_api/pricing.py:167
-#, fuzzy
 msgid "Kiểu làm tròn không hợp lệ."
-msgstr "Invalid storage key."
+msgstr "Invalid rounding mode."
 
 #: apps/thumbnail/routes.py:255
 msgid "Kiểu trend"
@@ -2877,9 +3038,8 @@ msgstr "Agent plan"
 #: apps/qualitylab/templates/qualitylab.html:61
 #: server/templates/dev_log_detail.html:77 server/templates/dev_logs.html:60
 #: server/templates/dev_tool_detail.html:76
-#, fuzzy
 msgid "Kết quả"
-msgstr "✅ Result"
+msgstr "Result"
 
 #: apps/qualitylab/contracts.py:86
 msgid ""
@@ -2933,11 +3093,12 @@ msgstr "Finished scripts will appear here."
 
 #: platform_core/public_api/governance.py:191
 msgid "Kịch bản hình của người dùng: khung sườn của một video."
-msgstr ""
+msgstr "The user's storyboard: the skeleton of a video."
 
 #: server/templates/dev_usage.html:26 server/templates/dev_usage.html:60
 msgid "Kỳ"
-msgstr ""
+msgstr "Period"
+
 
 #: apps/qualitylab/templates/qualitylab.html:39
 msgid "Kỳ vọng kỹ thuật"
@@ -2974,14 +3135,18 @@ msgstr "LTT Red"
 #: platform_core/public_api/governance.py:167
 msgid "Link chia sẻ riêng tư tới một workflow: ai cầm link thì xem được."
 msgstr ""
+"A private share link to a workflow: whoever holds the link can view "
+"it."
 
 #: server/templates/dev_keys.html:36
 msgid "Live"
-msgstr ""
+msgstr "Live"
+
 
 #: server/templates/dev_keys.html:105
 msgid "Live — gọi nhà cung cấp thật, trừ credit thật"
-msgstr ""
+msgstr "Live — calls the real provider, spends real credit"
+
 
 #: server/templates/_platform_footer.html:6
 msgid "Liên hệ"
@@ -2989,7 +3154,7 @@ msgstr "Contact"
 
 #: platform_core/public_api/governance.py:184
 msgid "Liên kết một tài nguyên vào một bộ sưu tập."
-msgstr ""
+msgstr "Links an asset into a collection."
 
 #: server/templates/_platform_footer.html:9
 msgid "Liên kết pháp lý"
@@ -3047,9 +3212,8 @@ msgid "Lúc"
 msgstr "At"
 
 #: server/templates/dev_log_detail.html:11
-#, fuzzy
 msgid "Lúc:"
-msgstr "At"
+msgstr "At:"
 
 #: apps/chataistudio/templates/chataistudio_admin.html:30
 msgid "Lưu API key"
@@ -3081,10 +3245,13 @@ msgstr "Archive"
 #: platform_core/public_api/governance.py:101
 msgid "Lưu trữ (archive) chứ không xoá — job và bút toán trỏ về nó."
 msgstr ""
+"Archived rather than deleted — jobs and ledger entries point back to "
+"it."
 
 #: server/templates/dev_projects.html:21
 msgid "Lưu trữ project này? Mọi khóa của nó bị thu hồi."
-msgstr ""
+msgstr "Archive this project? All of its keys will be revoked."
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:105
 #: apps/upscalevideo/templates/upscalevideo.html:85
@@ -3092,9 +3259,8 @@ msgid "Lưới"
 msgstr "Grid"
 
 #: server/templates/dev_privacy.html:10
-#, fuzzy
 msgid "Lấy dữ liệu của bạn"
-msgstr "Your credits"
+msgstr "Get your data"
 
 #: apps/qualitylab/services/upscale_video.py:200
 msgid "Lấy mẫu"
@@ -3105,9 +3271,8 @@ msgid "Lấy mẫu frame đồng bộ"
 msgstr ""
 
 #: server/templates/dev_webhooks.html:69
-#, fuzzy
 msgid "Lần giao gần đây"
-msgstr "recent jobs"
+msgstr "Recent deliveries"
 
 #: server/templates/dev_log_detail.html:93 server/templates/dev_webhooks.html:76
 msgid "Lần thử"
@@ -3144,9 +3309,8 @@ msgstr "Processing history"
 
 #: server/templates/dev_logs.html:42 server/templates/dev_tools.html:19
 #: server/templates/dev_usage.html:110
-#, fuzzy
 msgid "Lọc"
-msgstr "At"
+msgstr "Filter"
 
 #: apps/upscalevideo/templates/upscalevideo.html:85
 msgid "Lọc hàng đợi"
@@ -3184,11 +3348,13 @@ msgstr "Error"
 
 #: server/routes/developer.py:430
 msgid "Lỗi của request (4xx)"
-msgstr ""
+msgstr "Request error (4xx)"
+
 
 #: server/routes/developer.py:436
 msgid "Lỗi máy chủ (5xx)"
-msgstr ""
+msgstr "Server error (5xx)"
+
 
 #: apps/taoclipngan/templates/taoclipngan.html:98
 msgid "Lỗi mạng khi tải video"
@@ -3203,23 +3369,32 @@ msgid "Lời gọi"
 msgstr "Calls"
 
 #: platform_core/public_api/alerting.py:84
-msgid "Lời gọi API sẽ bị từ chối khi không đủ credit cho báo giá. Nạp thêm ở /nap."
+msgid ""
+"Lời gọi API sẽ bị từ chối khi không đủ credit cho báo giá. Nạp thêm "
+"ở /nap."
 msgstr ""
+"API calls are refused once there is not enough credit for the quote. "
+"Top up at /nap."
 
 #: server/templates/dev_log_detail.html:110
 msgid ""
-"Lời gọi này không tạo job — nên không có timeline job, và đó thường chính là"
-" câu trả lời: request bị từ chối trước khi chạm tới hàng đợi."
+"Lời gọi này không tạo job — nên không có timeline job, và đó thường "
+"chính là câu trả lời: request bị từ chối trước khi chạm tới hàng "
+"đợi."
 msgstr ""
+"This call created no job — so there is no job timeline, and that is "
+"usually the answer itself: the request was refused before it reached "
+"the queue."
+
 
 #: server/templates/dev_log_detail.html:71
-#, fuzzy
 msgid "Lời gọi này không động tới credit."
-msgstr "Not enough credits."
+msgstr "This call does not touch credit."
 
 #: server/templates/dev_playground.html:12
 msgid "Lời gọi ở đây tiêu credit thật."
-msgstr ""
+msgstr "Calls made here spend real credit."
+
 
 #: apps/qualitylab/calibration.py:124
 #, fuzzy
@@ -3256,7 +3431,7 @@ msgstr ""
 
 #: platform_core/public_api/governance.py:186
 msgid "Meta-prompt người dùng viết để sinh ra prompt khác."
-msgstr ""
+msgstr "A meta-prompt the user writes to generate other prompts."
 
 #: apps/qualitylab/evaluator_assets.py:71
 #, fuzzy
@@ -3269,9 +3444,12 @@ msgstr "Model"
 
 #: server/templates/dev_settings.html:9
 msgid ""
-"Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, "
-"rồi thu hồi khóa cũ."
+"Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng "
+"sang, rồi thu hồi khóa cũ."
 msgstr ""
+"To replace a key without downtime: create a second key, move your "
+"application over, then revoke the old one."
+
 
 #: apps/thumbnail/templates/thumbnail.html:35
 #: apps/thumbnail/templates/thumbnail_fragment.html:19
@@ -3299,10 +3477,14 @@ msgstr "The social-video importer is not installed on this server."
 #: server/templates/dev_playground.html:6
 msgid "Máy chủ này chưa mở công cụ nào ra API, nên chưa có gì để thử."
 msgstr ""
+"This server has not opened any tool to the API, so there is nothing "
+"to try yet."
+
 
 #: server/templates/dev_tools.html:29
 msgid "Máy chủ này chưa mở công cụ nào ra API."
-msgstr ""
+msgstr "This server has not opened any tool to the API yet."
+
 
 #: apps/mediatools/jobs.py:211
 msgid "Máy chủ video không có địa chỉ hợp lệ."
@@ -3318,7 +3500,8 @@ msgstr "Static camera"
 
 #: server/templates/dev_tool_detail.html:129
 msgid "Mã"
-msgstr ""
+msgstr "Code"
+
 
 #: server/templates/nexus_ma_ghep.html:44
 msgid ""
@@ -3359,11 +3542,13 @@ msgstr "Support ID"
 
 #: server/templates/dev_keys.html:21
 msgid "Mã khóa"
-msgstr ""
+msgstr "Key id"
+
 
 #: server/templates/dev_keys.html:10
 msgid "Mã khóa công khai:"
-msgstr ""
+msgstr "Public key id:"
+
 
 #: apps/autosubvideo/routes.py:571
 msgid "Mã ngôn ngữ đích không hợp lệ."
@@ -3379,14 +3564,18 @@ msgstr "Order number returned by the payment gateway:"
 
 #: server/templates/dev_pricing.html:6
 msgid ""
-"Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi "
-"POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời."
+"Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó "
+"để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu "
+"trả lời."
 msgstr ""
+"The simulator does NOT issue a quote and does NOT spend credit, so "
+"you cannot use it to call POST /jobs — a quote has to be signed, and "
+"this is only an answer."
+
 
 #: server/templates/dev_tool_detail.html:46
-#, fuzzy
 msgid "Mô tả"
-msgstr "Image prompt"
+msgstr "Description"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:64
 msgid "Mô tả bối cảnh, nhân vật, hành động và kết quả mong muốn..."
@@ -3430,7 +3619,7 @@ msgstr "Environment"
 
 #: server/templates/dev_docs.html:32
 msgid "Môi trường test"
-msgstr ""
+msgstr "Test environment"
 
 #: apps/upscalevideo/templates/upscalevideo.html:41
 msgid "Mượt chuyển động 2×"
@@ -3447,7 +3636,7 @@ msgstr ""
 
 #: platform_core/public_api/governance.py:188
 msgid "Mẩu prompt người dùng lưu để chèn lại nhiều nơi."
-msgstr ""
+msgstr "A prompt snippet the user saved to paste in several places."
 
 #: server/templates/home.html:17
 msgid "Mẫu"
@@ -3472,22 +3661,25 @@ msgstr "New password"
 #: apps/prompt_ai_ommi/services/composer.py:79
 #: server/templates/dev_tool_detail.html:46
 msgid "Mặc định"
-msgstr ""
+msgstr "Default"
+
 
 #: server/templates/dev_logs.html:27 server/templates/dev_usage.html:90
-#, fuzzy
 msgid "Mọi công cụ"
-msgstr "Search tools"
+msgstr "All tools"
 
 #: server/templates/dev_logs.html:35 server/templates/dev_usage.html:97
 msgid "Mọi khóa"
-msgstr ""
+msgstr "All keys"
+
 
 #: server/templates/dev_docs.html:28
 msgid ""
-"Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — "
-"xem PROTOCOL_V1.md mục 2.1."
+"Mọi lời gọi tốn credit đều cần một báo giá đã ký và một "
+"Idempotency-Key — xem PROTOCOL_V1.md mục 2.1."
 msgstr ""
+"Every call that spends credit needs a signed quote and an "
+"Idempotency-Key — see PROTOCOL_V1.md section 2.1."
 
 #: server/templates/dev_tools.html:13
 msgid "Mọi nhóm"
@@ -3499,9 +3691,11 @@ msgstr "All statuses"
 
 #: server/templates/dev_docs.html:37
 msgid ""
-"Mỗi job và mỗi webhook đều có trường mode để bên nhận phân biệt hai thế giới"
-" bằng một endpoint."
+"Mỗi job và mỗi webhook đều có trường mode để bên nhận phân biệt hai "
+"thế giới bằng một endpoint."
 msgstr ""
+"Every job and every webhook carries a mode field, so a receiver can "
+"tell the two worlds apart from a single endpoint."
 
 #: apps/autosubvideo/jobs.py:84 apps/autosubvideo/routes.py:369
 msgid "Mỗi lượt chép lời tối đa 120 phút."
@@ -3513,23 +3707,32 @@ msgstr "Each turn accepts at most 3 files."
 
 #: server/templates/dev_webhooks.html:120
 msgid "Mỗi request mang ba header:"
-msgstr ""
+msgstr "Every request carries three headers:"
+
 
 #: server/templates/dev_webhooks.html:18
 msgid ""
-"Mỗi sự kiện có id riêng và được ký; giao trùng là an toàn nếu bên nhận khử "
-"trùng theo id đó."
+"Mỗi sự kiện có id riêng và được ký; giao trùng là an toàn nếu bên "
+"nhận khử trùng theo id đó."
 msgstr ""
+"Each event has its own id and is signed; duplicate deliveries are "
+"safe as long as your receiver dedupes on that id."
+
 
 #: server/templates/dev_projects.html:5
 msgid ""
-"Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng. Lưu trữ "
-"một project sẽ thu hồi khóa của nó và không đụng tới job hay sổ credit."
+"Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng. "
+"Lưu trữ một project sẽ thu hồi khóa của nó và không đụng tới job hay "
+"sổ credit."
 msgstr ""
+"One project per integration: revoke it on its own, read its logs on "
+"its own. Archiving a project revokes its keys and leaves jobs and "
+"the credit ledger untouched."
+
 
 #: platform_core/public_api/governance.py:192
 msgid "Một cảnh trong storyboard, kèm prompt và tham số của nó."
-msgstr ""
+msgstr "One scene in a storyboard, with its prompt and parameters."
 
 #: apps/prompt_ai_ommi/routes/projects.py:57
 msgid "Một khối prompt đã chọn không còn khả dụng."
@@ -3537,7 +3740,7 @@ msgstr ""
 
 #: platform_core/public_api/governance.py:161
 msgid "Một lần chạy agent: đầu vào, các bước, kết quả."
-msgstr ""
+msgstr "One agent run: input, steps, result."
 
 #: apps/taoanh/jobs.py:93 apps/taoanh/jobs.py:207
 msgid "Một node Image chỉ nhận tối đa 8 ảnh tham chiếu."
@@ -3555,7 +3758,7 @@ msgstr "An astronaut exploring a futuristic city, cinematic lighting, highly det
 
 #: platform_core/public_api/governance.py:190
 msgid "Một phiên bản của prompt, giữ lại để so sánh và quay lui."
-msgstr ""
+msgstr "One version of a prompt, kept for comparison and rollback."
 
 #: apps/qualitylab/calibration.py:223
 msgid "Một rater chỉ được chấm một lần mỗi case."
@@ -3601,9 +3804,8 @@ msgid "Mở danh sách ứng dụng"
 msgstr "Open the app list"
 
 #: platform_core/public_api/notifications.py:198
-#, fuzzy
 msgid "Mở khu API"
-msgstr "New password"
+msgstr "Open the API area"
 
 #: server/templates/home.html:31
 msgid "Mở menu tài khoản"
@@ -3687,20 +3889,25 @@ msgstr ""
 "will appear on their own, and"
 
 #: server/templates/dev_usage.html:20
-#, fuzzy
 msgid "Ngân sách của bạn"
-msgstr "Your scripts"
+msgstr "Your budgets"
 
 #: platform_core/public_api/alerting.py:106
 msgid "Ngân sách cứng: lời gọi mới bị từ chối."
-msgstr ""
+msgstr "Hard budget: new calls are refused."
 
 #: server/templates/dev_usage.html:21
 msgid ""
-"Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. Ngân "
-"sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. Nếu máy chủ "
-"đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy cái chặt hơn."
+"Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. "
+"Ngân sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. "
+"Nếu máy chủ đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy "
+"cái chặt hơn."
 msgstr ""
+"Budgets watch API spending and never change the credit ledger. A "
+"soft budget only warns; a hard budget refuses the next call. If the "
+"server has set a lower cap, that cap still wins — the tighter one "
+"always applies."
+
 
 #: apps/agent/templates/agent.html:16
 msgid "Ngân sách tối đa (credit)"
@@ -3725,7 +3932,8 @@ msgstr ""
 
 #: server/templates/dev_usage.html:27
 msgid "Ngưỡng cảnh báo"
-msgstr ""
+msgstr "Alert threshold"
+
 
 #: apps/chataistudio/features.py:23 apps/taoclipngan/routes.py:24
 #: apps/upscalevideo/templates/upscalevideo.html:92
@@ -3742,21 +3950,22 @@ msgstr "Duplicate project"
 
 #: platform_core/public_api/governance.py:177
 msgid "Nhãn người dùng gắn lên một tài nguyên cụ thể."
-msgstr ""
+msgstr "A tag the user attached to a specific asset."
 
 #: server/templates/dev_tools.html:11 server/templates/dev_tools.html:34
 #: server/templates/dev_tools.html:58
 msgid "Nhóm"
-msgstr ""
+msgstr "Group"
+
 
 #: platform_core/public_api/governance.py:182
-#, fuzzy
 msgid "Nhóm tài nguyên người dùng tự gom lại."
-msgstr "A user account is required."
+msgstr "Collections of assets the user grouped themselves."
 
 #: server/templates/dev_tool_detail.html:9
 msgid "Nhóm:"
-msgstr ""
+msgstr "Group:"
+
 
 #: apps/taoclipngan/routes.py:31
 msgid "Nhạc thiếu nhi"
@@ -3818,9 +4027,12 @@ msgstr "Activity log"
 #: server/templates/dev_logs.html:9
 #, python-format
 msgid ""
-"Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ "
-"xương của lời gọi."
+"Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — "
+"chỉ bộ xương của lời gọi."
 msgstr ""
+"Logs are kept for %(days)s days. Request and response bodies are not "
+"stored — only the skeleton of the call."
+
 
 #: server/templates/nexus_nhat_ky.html:22
 msgid ""
@@ -3835,9 +4047,8 @@ msgid "Nhật ký quyết định"
 msgstr "Decision log"
 
 #: server/routes/developer.py:130
-#, fuzzy
 msgid "Nhật ký request"
-msgstr "Decision log"
+msgstr "Request log"
 
 #: apps/chataistudio/templates/chataistudio.html:45
 msgid "Nhắn cho AI… (Enter gửi, Shift+Enter xuống dòng)"
@@ -3883,7 +4094,8 @@ msgstr "Upscales video to 1080p, 2K or 4K with Real-ESRGAN."
 
 #: server/templates/dev_tool_detail.html:130
 msgid "Nên làm gì"
-msgstr ""
+msgstr "What to do"
+
 
 #: apps/taoclipngan/routes.py:27
 msgid "Nói chuyện/vlog"
@@ -3891,7 +4103,7 @@ msgstr "Talking head/vlog"
 
 #: server/templates/status_api.html:18
 msgid "Năng lực"
-msgstr ""
+msgstr "Capability"
 
 #: apps/taovideo/templates/taovideo.html:39
 msgid "Năng động"
@@ -3986,9 +4198,8 @@ msgid "Nội dung caption"
 msgstr "Caption text"
 
 #: server/templates/dev_privacy.html:21
-#, fuzzy
 msgid "Nội dung của bạn"
-msgstr "Caption text"
+msgstr "Your content"
 
 #: platform_core/upload_sessions.py:168
 msgid "Nội dung file không khớp định dạng khai báo."
@@ -4000,7 +4211,7 @@ msgstr "Conversation"
 
 #: platform_core/public_api/governance.py:171
 msgid "Nội dung tin nhắn — thứ nhạy cảm nhất trong nhóm này."
-msgstr ""
+msgstr "Message content — the most sensitive thing in this group."
 
 #: apps/mediatools/jobs.py:334
 msgid "Nội dung tải về không phải video hợp lệ."
@@ -4101,8 +4312,13 @@ msgstr ""
 
 #: server/templates/dev_webhooks.html:115
 #, python-format
-msgid "Payload có %(version)s ở trường `type` và một `id` duy nhất cho mỗi sự kiện."
+msgid ""
+"Payload có %(version)s ở trường `type` và một `id` duy nhất cho mỗi "
+"sự kiện."
 msgstr ""
+"The payload carries %(version)s in the `type` field and a unique "
+"`id` for each event."
+
 
 #: apps/qualitylab/services/upscale_video.py:136
 msgid "Peak VRAM"
@@ -4113,21 +4329,20 @@ msgid "Phase foundation; deploy phải lưu ffprobe -version/configuration."
 msgstr ""
 
 #: server/templates/dev_pricing.html:39
-#, fuzzy
 msgid "Phiên bản giá"
-msgstr "Save version"
+msgstr "Price version"
 
 #: platform_core/public_api/pricing.py:161
 msgid "Phiên bản giá phải có nhãn."
-msgstr ""
+msgstr "A price version must have a label."
 
 #: platform_core/public_api/pricing.py:159
 msgid "Phiên bản giá phải gắn với một công cụ."
-msgstr ""
+msgstr "A price version must belong to a tool."
 
 #: platform_core/public_api/governance.py:194
 msgid "Phiên bản một cảnh, kèm góp ý của người dùng."
-msgstr ""
+msgstr "A version of a scene, with the user's feedback on it."
 
 #: apps/agent/routes/workspace.py:46
 msgid "Phiên bản trình bày không hợp lệ."
@@ -4138,9 +4353,8 @@ msgid "Phiên bản đã chụp"
 msgstr "Saved versions"
 
 #: platform_core/public_api/pricing.py:207
-#, fuzzy
 msgid "Phiên bản đã ngừng thì không phát hành lại."
-msgstr "Invalid presentation version."
+msgstr "A retired version cannot be published again."
 
 #: apps/chataistudio/routes.py:196
 msgid "Phiên hết hạn — tải lại trang."
@@ -4155,9 +4369,8 @@ msgid "Phiên phải thuộc về một tài khoản."
 msgstr "A session must belong to an account."
 
 #: apps/qualitylab/routes.py:101
-#, fuzzy
 msgid "Phiên đã hết hạn — tải lại trang rồi thử lại."
-msgstr "Your session has expired — reload the page."
+msgstr "Your session expired — reload the page and try again."
 
 #: apps/prompt_ai_ommi/routes/_shared.py:78 apps/taoclipngan/routes.py:269
 msgid "Phiên đã hết hạn — tải lại trang."
@@ -4176,6 +4389,8 @@ msgstr "Your session has expired."
 #: platform_core/public_api/governance.py:133
 msgid "Phiên đăng nhập web. Lưu SHA-256 của token, không lưu token."
 msgstr ""
+"Web login sessions. The SHA-256 of the token is stored, never the "
+"token."
 
 #: apps/taovideo/templates/taovideo.html:39 apps/thumbnail/routes.py:254
 msgid "Phong cách"
@@ -4207,29 +4422,31 @@ msgstr ""
 #: server/templates/dev_keys.html:23 server/templates/dev_usage.html:26
 #: server/templates/dev_usage.html:65
 msgid "Phạm vi"
-msgstr ""
+msgstr "Scopes"
+
 
 #: server/templates/dev_keys.html:123
 msgid "Phạm vi (scope)"
-msgstr ""
+msgstr "Scopes"
+
 
 #: server/templates/dev_tools.html:35
 msgid "Phạm vi cần"
-msgstr ""
+msgstr "Scope required"
+
 
 #: server/templates/dev_tool_detail.html:12
 msgid "Phạm vi cần:"
-msgstr ""
+msgstr "Scope required:"
+
 
 #: platform_core/public_api/policy.py:312
-#, fuzzy
 msgid "Phạm vi gán không hợp lệ."
-msgstr "That is not a valid image file."
+msgstr "Invalid assignment scope."
 
 #: platform_core/public_api/policy.py:433
-#, fuzzy
 msgid "Phạm vi kill switch không hợp lệ."
-msgstr "That is not a valid image file."
+msgstr "Invalid kill-switch scope."
 
 #: apps/qualitylab/templates/qualitylab.html:44
 msgid "Phải có"
@@ -4239,15 +4456,15 @@ msgstr ""
 #: platform_core/public_api/policy.py:439
 #, python-brace-format
 msgid "Phải ghi lý do (ít nhất {n} ký tự) cho thao tác này."
-msgstr ""
+msgstr "This action needs a reason (at least {n} characters)."
 
 #: platform_core/public_api/policy.py:436
 msgid "Phải nêu đối tượng cho phạm vi này."
-msgstr ""
+msgstr "This scope needs a target to be named."
 
 #: platform_core/public_api/policy.py:315
 msgid "Phải nêu đối tượng được gán."
-msgstr ""
+msgstr "The assignment target must be named."
 
 #: apps/taoclipngan/routes.py:28
 msgid "Phỏng vấn"
@@ -4264,7 +4481,8 @@ msgstr "Subtitles"
 
 #: server/routes/developer.py:128
 msgid "Playground"
-msgstr ""
+msgstr "Playground"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:85
 msgid "Preflight miễn phí. Bạn luôn thấy chi phí trước khi gửi provider."
@@ -4277,9 +4495,8 @@ msgid "Preset được đưa vào render thật; không thay bằng CSS preview.
 msgstr "Presets go into the real render; they are not faked with a CSS preview."
 
 #: server/routes/developer.py:125 server/templates/dev_keys.html:22
-#, fuzzy
 msgid "Project"
-msgstr "Duplicate project"
+msgstr "Project"
 
 #: apps/prompt_ai_ommi/routes/projects.py:145
 msgid "Project không ở trạng thái lưu trữ."
@@ -4287,7 +4504,8 @@ msgstr "This project is not archived."
 
 #: server/templates/dev_projects.html:36
 msgid "Project mới"
-msgstr ""
+msgstr "New project"
+
 
 #: apps/prompt_ai_ommi/project_schema.py:101
 msgid "Project phải là object."
@@ -4301,7 +4519,8 @@ msgstr "This project was changed in another session."
 
 #: server/templates/dev_overview.html:19
 msgid "Project:"
-msgstr ""
+msgstr "Projects:"
+
 
 #: platform_core/upload_sessions.py:224
 #, fuzzy
@@ -4395,7 +4614,7 @@ msgstr ""
 
 #: server/templates/dev_docs.html:14
 msgid "SDK một file, không phụ thuộc ngoài."
-msgstr ""
+msgstr "A single-file SDK with no external dependencies."
 
 #: apps/qualitylab/services/subtitle.py:74 apps/qualitylab/services/subtitle.py:89
 msgid "SRT đọc được"
@@ -4407,9 +4626,8 @@ msgid "SSIM delta so với bicubic"
 msgstr ""
 
 #: server/routes/developer.py:434
-#, fuzzy
 msgid "Sai dữ liệu (422)"
-msgstr "Delete my data"
+msgstr "Invalid data (422)"
 
 #: apps/prompt_ai_ommi/project_schema.py:103
 msgid "Sai loại project PROMPT AI OMMI."
@@ -4460,9 +4678,12 @@ msgstr ""
 
 #: server/templates/dev_docs.html:38
 msgid ""
-"Sandbox không chứng minh được CHẤT LƯỢNG kết quả. Muốn biết đầu ra thật thế "
-"nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất."
+"Sandbox không chứng minh được CHẤT LƯỢNG kết quả. Muốn biết đầu ra "
+"thật thế nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất."
 msgstr ""
+"The sandbox cannot prove anything about the QUALITY of a result. To "
+"see what the real output looks like, make one live call on the "
+"cheapest tool."
 
 #: apps/upscalevideo/templates/upscalevideo.html:79
 msgid "Sau"
@@ -4471,13 +4692,18 @@ msgstr "After"
 #: server/templates/dev_webhooks.html:8
 #, python-format
 msgid ""
-"Secret cũ vẫn được ký kèm trong %(hours)s giờ nữa, nên bạn có thời gian đổi "
-"bên nhận mà không mất sự kiện nào."
+"Secret cũ vẫn được ký kèm trong %(hours)s giờ nữa, nên bạn có thời "
+"gian đổi bên nhận mà không mất sự kiện nào."
 msgstr ""
+"The old secret keeps signing alongside it for another %(hours)s "
+"hours, so you have time to switch your receiver over without losing "
+"an event."
+
 
 #: server/templates/dev_webhooks.html:6
 msgid "Secret mới — chỉ hiện một lần"
-msgstr ""
+msgstr "New secret — shown once only"
+
 
 #: apps/taovideo/routes.py:171 apps/taovideo/routes.py:173
 msgid "Seed phải là số nguyên từ 0 đến 2147483647."
@@ -4501,7 +4727,8 @@ msgstr "Generates voice-over with style control using Gemini TTS."
 
 #: server/templates/dev_privacy.html:22
 msgid "Sinh lại được"
-msgstr ""
+msgstr "Regenerable"
+
 
 #: apps/taoanh/manifest.py:147
 msgid "Sinh một lô 2–4 ảnh đồng nhất từ cùng mô tả và model."
@@ -4513,13 +4740,16 @@ msgstr "Generates YouTube thumbnails with a title, a style and type settings."
 
 #: platform_core/public_api/governance.py:200
 msgid "Sinh từ OpenAPI."
-msgstr ""
+msgstr "Generated from OpenAPI."
 
 #: server/templates/dev_quickstart.html:52
 msgid ""
-"Sinh từ chính hợp đồng của công cụ, nên không lệch với thứ máy chủ nhận. Đổi"
-" công cụ:"
+"Sinh từ chính hợp đồng của công cụ, nên không lệch với thứ máy chủ "
+"nhận. Đổi công cụ:"
 msgstr ""
+"Generated from the tool contract itself, so it cannot drift from "
+"what the server accepts. Switch tool:"
+
 
 #: apps/taoanh/manifest.py:56
 msgid "Sinh từ một đến bốn ảnh bằng Gemini Image từ mô tả tự do."
@@ -4607,11 +4837,11 @@ msgstr "Type style"
 
 #: platform_core/public_api/governance.py:181
 msgid "Style người dùng lưu lại để tái dùng giữa các cảnh."
-msgstr ""
+msgstr "A style the user saved to reuse across scenes."
 
 #: platform_core/public_api/governance.py:163
 msgid "Sơ đồ các bước tự động do người dùng dựng trên canvas."
-msgstr ""
+msgstr "The diagram of automated steps the user builds on the canvas."
 
 #: server/templates/developers_base.html:23
 msgid "Sắp có"
@@ -4619,7 +4849,8 @@ msgstr "Coming soon"
 
 #: server/templates/dev_tool_detail.html:20
 msgid "Sắp ngừng hỗ trợ:"
-msgstr ""
+msgstr "Deprecated on:"
+
 
 #: apps/taovideo/templates/taovideo.html:76
 msgid "Sắp xếp"
@@ -4647,9 +4878,8 @@ msgid "Số clip mong muốn"
 msgstr "Desired number of clips"
 
 #: server/templates/dev_usage.html:58
-#, fuzzy
 msgid "Số credit"
-msgstr "Credit balance"
+msgstr "Credit"
 
 #: apps/qualitylab/services/subtitle.py:90
 #, fuzzy
@@ -4669,9 +4899,9 @@ msgid "Số dư credit"
 msgstr "Credit balance"
 
 #: platform_core/public_api/alerting.py:83
-#, fuzzy, python-format
+#, python-format
 msgid "Số dư còn %(n)s credit"
-msgstr "Credit balance"
+msgstr "%(n)s credit left"
 
 #: server/templates/_nap_trangthai.html:26
 msgid "Số dư hiện tại"
@@ -4679,7 +4909,8 @@ msgstr "Current balance"
 
 #: server/templates/dev_overview.html:11 server/templates/dev_usage.html:6
 msgid "Số dư:"
-msgstr ""
+msgstr "Balance:"
+
 
 #: apps/upscalevideo/routes.py:385
 msgid "Số file không khớp manifest."
@@ -4707,11 +4938,11 @@ msgstr "Count / variants"
 
 #: server/routes/developer.py:1112
 msgid "Số ngày hết hạn phải là một số nguyên."
-msgstr ""
+msgstr "The expiry in days must be a whole number."
 
 #: server/routes/developer.py:1115
 msgid "Số ngày hết hạn phải lớn hơn 0."
-msgstr ""
+msgstr "The expiry in days must be greater than 0."
 
 #: server/templates/nap.html:59 server/templates/nap_don.html:31
 msgid "Số tiền"
@@ -4729,30 +4960,38 @@ msgstr "Number of images"
 
 #: platform_core/public_api/governance.py:90
 msgid ""
-"Sổ credit là chân lý thanh toán. Một tranh chấp hoàn tiền sáu tháng sau được"
-" trả lời từ đây."
+"Sổ credit là chân lý thanh toán. Một tranh chấp hoàn tiền sáu tháng "
+"sau được trả lời từ đây."
 msgstr ""
+"The credit ledger is the billing truth. A refund dispute six months "
+"from now is answered from here."
 
 #: server/templates/dev_privacy.html:25
 msgid ""
-"Sổ credit, nhật ký thao tác quản trị, lịch sử giá, khoá đã cấp. Giữ vô thời "
-"hạn — một tranh chấp hoàn tiền sáu tháng sau được trả lời từ đây, và một "
-"nhật ký kiểm toán xoá được thì không phải nhật ký kiểm toán."
+"Sổ credit, nhật ký thao tác quản trị, lịch sử giá, khoá đã cấp. Giữ "
+"vô thời hạn — một tranh chấp hoàn tiền sáu tháng sau được trả lời từ "
+"đây, và một nhật ký kiểm toán xoá được thì không phải nhật ký kiểm "
+"toán."
 msgstr ""
+"The credit ledger, the admin action log, price history, issued keys. "
+"Kept indefinitely — a refund dispute six months from now is answered "
+"from here, and an audit log you can delete is not an audit log."
+
 
 #: server/routes/developer.py:132
-#, fuzzy
 msgid "Sử dụng & credit"
-msgstr "Credit balance"
+msgstr "Usage & credit"
 
 #: server/templates/dev_log_detail.html:38 server/templates/dev_log_detail.html:92
 #: server/templates/dev_webhooks.html:29 server/templates/dev_webhooks.html:75
 msgid "Sự kiện"
-msgstr ""
+msgstr "Events"
+
 
 #: server/templates/dev_tool_detail.html:105
 msgid "Sự kiện webhook"
-msgstr ""
+msgstr "Webhook events"
+
 
 #: apps/qualitylab/services/upscale.py:157
 msgid "Target gần 1; chưa calibrated"
@@ -4764,11 +5003,13 @@ msgstr "Admin telemetry"
 
 #: server/templates/dev_keys.html:34 server/templates/dev_usage.html:127
 msgid "Test"
-msgstr ""
+msgstr "Test"
+
 
 #: server/templates/dev_keys.html:109
 msgid "Test — kết quả mẫu, không gọi nhà cung cấp, không trừ credit"
-msgstr ""
+msgstr "Test — sample results, no provider call, no credit spent"
+
 
 #: apps/taovideo/templates/taovideo.html:45 apps/thumbnail/routes.py:261
 msgid "Tham chiếu"
@@ -4787,9 +5028,8 @@ msgid "Thay vùng theo mô tả"
 msgstr "Replace a region from a prompt"
 
 #: server/templates/dev_log_detail.html:58
-#, fuzzy
 msgid "Thay đổi"
-msgstr "No changes yet"
+msgstr "Change"
 
 #: apps/qualitylab/templates/qualitylab.html:63
 msgid "Theo dõi"
@@ -4865,7 +5105,8 @@ msgstr "Translation is missing a project, track or language."
 
 #: server/routes/developer.py:432
 msgid "Thiếu quyền (403)"
-msgstr ""
+msgstr "Missing permission (403)"
+
 
 #: apps/qualitylab/calibration.py:95
 msgid "Thiếu rater id."
@@ -4904,13 +5145,17 @@ msgstr "Revoke"
 
 #: server/templates/dev_settings.html:8
 msgid "Thu hồi có hiệu lực ở request kế tiếp và không đảo ngược được."
-msgstr ""
+msgstr "Revocation takes effect on the next request and cannot be undone."
+
 
 #: server/templates/dev_keys.html:74
 msgid ""
-"Thu hồi không đảo ngược được. Muốn thay khóa mà không gián đoạn: tạo khóa "
-"thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ."
+"Thu hồi không đảo ngược được. Muốn thay khóa mà không gián đoạn: tạo "
+"khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ."
 msgstr ""
+"Revoking cannot be undone. To replace a key without downtime: create "
+"a second key, move your application over, then revoke the old one."
+
 
 #: apps/nexus/routes.py:174
 msgid "Thu hồi máy"
@@ -4930,13 +5175,13 @@ msgid "Thumbnail YouTube"
 msgstr "YouTube thumbnail"
 
 #: server/templates/dev_keys.html:88
-#, fuzzy
 msgid "Thuộc project"
-msgstr "Duplicate project"
+msgstr "In project"
 
 #: server/routes/developer.py:429
 msgid "Thành công (2xx)"
-msgstr ""
+msgstr "Success (2xx)"
+
 
 #: server/templates/home.html:31
 msgid "Thành viên"
@@ -4944,7 +5189,8 @@ msgstr "Member"
 
 #: server/routes/developer.py:134 server/templates/dev_log_detail.html:38
 msgid "Thông báo"
-msgstr ""
+msgstr "Notifications"
+
 
 #: apps/qualitylab/services/upscale_video.py:133
 #, fuzzy
@@ -5003,13 +5249,18 @@ msgstr "Time"
 
 #: platform_core/public_api/policy.py:444
 msgid "Thời điểm hết hiệu lực phải ở tương lai."
-msgstr ""
+msgstr "The end of the effective window must be in the future."
 
 #: server/templates/dev_webhooks.html:128
 msgid ""
-"Thứ tự không được bảo đảm: hai sự kiện của hai job có thể tới ngược thứ tự. "
-"Hãy dựa vào trạng thái trong payload, đừng dựa vào thứ tự tới."
+"Thứ tự không được bảo đảm: hai sự kiện của hai job có thể tới ngược "
+"thứ tự. Hãy dựa vào trạng thái trong payload, đừng dựa vào thứ tự "
+"tới."
 msgstr ""
+"Order is not guaranteed: two events from two jobs can arrive in the "
+"wrong order. Trust the state inside the payload, not the order of "
+"arrival."
+
 
 #: apps/taoanh/templates/image_thumbnail_shell.html:28
 #: apps/taovideo/templates/taovideo.html:98
@@ -5018,25 +5269,30 @@ msgid "Thử lại"
 msgstr "Try again"
 
 #: server/templates/dev_quickstart.html:73
-#, fuzzy
 msgid "Thử lại cho đúng"
-msgstr "Try again"
+msgstr "Fix it and retry"
 
 #: server/templates/dev_log_detail.html:21
-#, fuzzy
 msgid "Thử lại:"
-msgstr "Try again"
+msgstr "Retry:"
 
 #: server/templates/dev_pricing.html:10
 msgid "Thử một lời gọi"
-msgstr ""
+msgstr "Try a call"
+
 
 #: server/templates/dev_quickstart.html:76
 msgid ""
-"Timeout mạng là ca nguy hiểm nhất: request có thể đã thành công. Thử lại với"
-" ĐÚNG Idempotency-Key cũ thì kết quả xấu nhất là nhận lại câu trả lời đầu "
-"tiên, thay vì mua lần thứ hai. Bảng lỗi đầy đủ nằm trong trang từng công cụ."
+"Timeout mạng là ca nguy hiểm nhất: request có thể đã thành công. Thử "
+"lại với ĐÚNG Idempotency-Key cũ thì kết quả xấu nhất là nhận lại câu "
+"trả lời đầu tiên, thay vì mua lần thứ hai. Bảng lỗi đầy đủ nằm trong "
+"trang từng công cụ."
 msgstr ""
+"A network timeout is the dangerous case: the request may already "
+"have succeeded. Retry with the SAME Idempotency-Key and the worst "
+"outcome is that you get the first answer back, instead of buying it "
+"a second time. The full error table lives on each tool page."
+
 
 #: apps/qualitylab/services/subtitle.py:93
 msgid "Timestamp không tăng"
@@ -5136,24 +5392,30 @@ msgstr "This page is for admins only."
 
 #: server/templates/dev_playground.html:10
 msgid ""
-"Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi,"
-" cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của "
-"bạn; bị từ chối ở đây thì cũng bị từ chối ở đó."
+"Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng "
+"phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được "
+"từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó."
 msgstr ""
+"This page calls /api/v1 directly with your key — same "
+"authentication, same scopes, same limits, same credit ledger. If it "
+"works here it works from your server; if it is refused here it is "
+"refused there too."
+
 
 #: server/templates/dev_privacy.html:53
 msgid ""
-"Trang này mô tả kỹ thuật. Cam kết pháp lý nằm ở các trang chính thức, và "
-"chúng tôi cố ý KHÔNG chép lại chúng ở đây — hai bản của một lời hứa thì sớm "
-"muộn sẽ khác nhau."
+"Trang này mô tả kỹ thuật. Cam kết pháp lý nằm ở các trang chính "
+"thức, và chúng tôi cố ý KHÔNG chép lại chúng ở đây — hai bản của một "
+"lời hứa thì sớm muộn sẽ khác nhau."
 msgstr ""
+"This page is a technical description. The legal commitments live on "
+"the official pages, and we deliberately do NOT copy them here — two "
+"copies of one promise will eventually disagree."
+
 
 #: server/templates/status_api.html:40
-msgid ""
-"Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. "
-"Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request "
-"trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần."
-msgstr ""
+msgid "Trang này nói theo NĂNG LỰC, không theo hạ tầng bên trong — cố ý như vậy. Muốn biết một lời gọi cụ thể của bạn hỏng ở đâu thì xem Nhật ký request trong khu API của bạn; correlation id trên phản hồi là thứ hỗ trợ cần."
+msgstr "This page speaks in terms of CAPABILITIES, not internal infrastructure — deliberately so. To find out where one specific call of yours failed, look at Request logs in your API area; the correlation id on the response is what support needs."
 
 #: apps/qualitylab/templates/qualitylab_report.html:14
 msgid "Trang sẽ tự làm mới."
@@ -5199,9 +5461,13 @@ msgstr ""
 #, python-brace-format
 msgid ""
 "Trong {hours} giờ gần nhất, chi phí ước tính vượt doanh thu khoảng "
-"{shortfall} credit. Con số chi phí là ƯỚC LƯỢNG, dựng từ đơn giá cấu hình — "
-"hãy đối chiếu hoá đơn thật trước khi đổi giá."
+"{shortfall} credit. Con số chi phí là ƯỚC LƯỢNG, dựng từ đơn giá cấu "
+"hình — hãy đối chiếu hoá đơn thật trước khi đổi giá."
 msgstr ""
+"Over the last {hours} hours, estimated cost exceeded revenue by "
+"about {shortfall} credit. The cost figure is an ESTIMATE built from "
+"configured unit prices — check the real invoices before changing any "
+"price."
 
 #: apps/chataistudio/manifest.py:18
 msgid ""
@@ -5225,24 +5491,33 @@ msgstr "Before you give this code to anyone"
 
 #: server/templates/dev_tool_detail.html:78
 msgid "Trường"
-msgstr ""
+msgstr "Field"
+
 
 #: platform_core/public_api/policy.py:369
 #, python-brace-format
 msgid "Trường hạn mức không hợp lệ: {field}"
-msgstr ""
+msgstr "Invalid limit field: {field}"
 
 #: server/templates/dev_tool_detail.html:86
 msgid ""
 "Trường kiểu artifact trả về một id; đổi id lấy đường tải ngắn hạn ở "
 "/api/v1/artifacts."
 msgstr ""
+"Artifact fields return an id; exchange the id for a short-lived "
+"download link at /api/v1/artifacts."
+
 
 #: server/templates/dev_tool_detail.html:72
 msgid ""
-"Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị lặng lẽ "
-"bỏ đi là cách khách trả tiền cho một job không làm đúng việc."
+"Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị "
+"lặng lẽ bỏ đi là cách khách trả tiền cho một job không làm đúng "
+"việc."
 msgstr ""
+"Unknown fields are rejected, not ignored: a misspelled parameter "
+"that gets silently dropped is how a customer pays for a job that did "
+"the wrong thing."
+
 
 #: apps/agent/templates/agent_run.html:10
 #: apps/qualitylab/templates/qualitylab.html:61 server/templates/dev_jobs.html:11
@@ -5262,11 +5537,14 @@ msgstr ""
 
 #: server/templates/dev_tool_detail.html:30
 msgid "Trả 201 và một job id."
-msgstr ""
+msgstr "Returns 201 and a job id."
+
 
 #: platform_core/public_api/governance.py:153
 msgid "Trần chi khách tự đặt. Chỉ QUAN SÁT, không đổi sổ credit."
 msgstr ""
+"A spending cap the customer sets. It only OBSERVES; it never changes "
+"the credit ledger."
 
 #: apps/chataistudio/templates/chataistudio.html:11
 msgid "Trợ lý AI chưa sẵn sàng — quản trị viên cần đăng nhập tài khoản AI."
@@ -5294,7 +5572,8 @@ msgstr "Accounts, pages and token status."
 
 #: server/routes/developer.py:135 server/templates/dev_overview.html:53
 msgid "Tài liệu & SDK"
-msgstr ""
+msgstr "Docs & SDKs"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:10
 #: server/templates/home.html:18
@@ -5303,7 +5582,7 @@ msgstr "Assets"
 
 #: platform_core/public_api/governance.py:173
 msgid "Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI."
-msgstr ""
+msgstr "Assets (images, files) the user uploaded to PROMPT AI OMMI."
 
 #: apps/taovideo/jobs.py:103
 msgid "Tài nguyên tham chiếu không còn tồn tại."
@@ -5336,18 +5615,16 @@ msgstr "Extracts evenly spaced frames from a video with FFmpeg."
 #: server/templates/dev_keys.html:21 server/templates/dev_projects.html:9
 #: server/templates/dev_quickstart.html:29
 #: server/templates/dev_tool_detail.html:44
-#, fuzzy
 msgid "Tên"
-msgstr "Name A–Z"
+msgstr "Name"
 
 #: server/templates/home.html:29
 msgid "Tên A–Z"
 msgstr "Name A–Z"
 
 #: server/templates/dev_tool_detail.html:16
-#, fuzzy
 msgid "Tên cũ vẫn dùng được:"
-msgstr "Not available yet"
+msgstr "The old name still works:"
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:63
 msgid "Tên dự án"
@@ -5377,12 +5654,11 @@ msgstr "Name or content…"
 
 #: platform_core/public_api/governance.py:180
 msgid "Tên nhãn do người dùng tự đặt để sắp xếp tài nguyên."
-msgstr ""
+msgstr "Tag names the user defines to organise assets."
 
 #: server/templates/dev_projects.html:39
-#, fuzzy
 msgid "Tên project"
-msgstr "Duplicate project"
+msgstr "Project name"
 
 #: apps/thumbnail/templates/thumbnail.html:33
 #: apps/thumbnail/templates/thumbnail_fragment.html:18
@@ -5501,28 +5777,24 @@ msgid "Tạo job PROMPT AI OMMI đang tạm khóa."
 msgstr "Creating PROMPT AI OMMI jobs is temporarily disabled."
 
 #: server/templates/dev_keys.html:145
-#, fuzzy
 msgid "Tạo khóa"
-msgstr "Make AI images"
+msgstr "Create key"
 
 #: server/templates/dev_keys.html:79
-#, fuzzy
 msgid "Tạo khóa mới"
-msgstr "Generate a new image"
+msgstr "Create a new key"
 
 #: server/templates/dev_docs.html:40
 msgid "Tạo khóa test ở tab Khóa, chọn Môi trường = Test."
-msgstr ""
+msgstr "Create a test key on the Keys tab and set Environment = Test."
 
 #: server/templates/dev_overview.html:43 server/templates/dev_quickstart.html:9
-#, fuzzy
 msgid "Tạo khóa trong project đó"
-msgstr "Generate images in chat:"
+msgstr "Create a key in that project"
 
 #: server/templates/dev_projects.html:10 server/templates/dev_webhooks.html:30
-#, fuzzy
 msgid "Tạo lúc"
-msgstr "created at"
+msgstr "Created"
 
 #: apps/thumbnail/templates/thumbnail.html:62
 msgid "Tạo lần đầu tiên; kết quả thật sẽ xuất hiện ở đây để mở và so sánh."
@@ -5532,7 +5804,8 @@ msgstr ""
 
 #: server/templates/dev_overview.html:41
 msgid "Tạo một project"
-msgstr ""
+msgstr "Create a project"
+
 
 #: apps/chataistudio/templates/chataistudio.html:39
 msgid "Tạo một ảnh minh hoạ theo mô tả sau:"
@@ -5544,7 +5817,8 @@ msgstr "Branch"
 
 #: server/templates/dev_projects.html:42 server/templates/dev_quickstart.html:7
 msgid "Tạo project"
-msgstr ""
+msgstr "Create project"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:51
 msgid ""
@@ -5621,7 +5895,8 @@ msgstr "Generate images ·"
 
 #: server/templates/dev_log_detail.html:31
 msgid "Tạo:"
-msgstr ""
+msgstr "Created:"
+
 
 #: apps/taoclipngan/templates/taoclipngan.html:80
 #: server/templates/job_detail.html:13
@@ -5651,16 +5926,15 @@ msgstr "Download MD"
 
 #: server/templates/dev_docs.html:15
 msgid "Tải OpenAPI (có phiên bản)"
-msgstr ""
+msgstr "Download OpenAPI (versioned)"
 
 #: apps/taoclipngan/templates/taoclipngan.html:84
 msgid "Tải ZIP"
 msgstr "Download ZIP"
 
 #: server/templates/dev_privacy.html:12
-#, fuzzy
 msgid "Tải dữ liệu (JSON)"
-msgstr "Download JSON"
+msgstr "Download data (JSON)"
 
 #: apps/taovideo/templates/taovideo.html:80
 msgid "Tải video"
@@ -5668,9 +5942,12 @@ msgstr "Download video"
 
 #: server/templates/dev_privacy.html:11
 msgid ""
-"Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), job, "
-"bút toán credit, ngân sách, webhook và nhật ký request gần đây."
+"Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), "
+"job, bút toán credit, ngân sách, webhook và nhật ký request gần đây."
 msgstr ""
+"Download as JSON: account, projects, keys (public half only), jobs, "
+"credit ledger entries, budgets, webhooks and recent request logs."
+
 
 #: apps/upscalevideo/templates/upscalevideo.html:98
 #: apps/upscalevideo/templates/upscalevideo.html:101
@@ -5684,18 +5961,16 @@ msgid "Tất cả"
 msgstr "All"
 
 #: server/templates/dev_tool_detail.html:4
-#, fuzzy
 msgid "Tất cả công cụ"
-msgstr "Search tools"
+msgstr "All tools"
 
 #: apps/taovideo/templates/taovideo.html:76
 msgid "Tất cả model"
 msgstr "All models"
 
 #: server/templates/dev_log_detail.html:4
-#, fuzzy
 msgid "Tất cả request"
-msgstr "All aspect ratios"
+msgstr "All requests"
 
 #: apps/taovideo/templates/taovideo.html:76
 msgid "Tất cả tỉ lệ"
@@ -5703,11 +5978,13 @@ msgstr "All aspect ratios"
 
 #: server/templates/dev_webhooks.html:56
 msgid "Tắt"
-msgstr ""
+msgstr "Disable"
+
 
 #: server/templates/dev_webhooks.html:54
 msgid "Tắt điểm nhận này?"
-msgstr ""
+msgstr "Disable this endpoint?"
+
 
 #: apps/upscalevideo/templates/upscalevideo.html:37
 msgid "Tắt để chuẩn hóa 30 FPS."
@@ -5811,9 +6088,8 @@ msgid "Tốt nhất ưu tiên chất lượng; Nhanh ưu tiên thời gian xử 
 msgstr "Best prioritizes quality; Fast prioritizes processing time."
 
 #: server/routes/developer.py:123 server/routes/developer.py:151
-#, fuzzy
 msgid "Tổng quan"
-msgstr "General images"
+msgstr "Overview"
 
 #: server/templates/status_api.html:11
 msgid "Tổng thể"
@@ -5825,8 +6101,13 @@ msgstr "Saved assets and new files together must not exceed 4."
 
 #: server/templates/dev_webhooks.html:126
 #, python-format
-msgid "Từ chối nếu timestamp lệch quá %(seconds)s giây — đó là thứ chặn phát lại."
+msgid ""
+"Từ chối nếu timestamp lệch quá %(seconds)s giây — đó là thứ chặn "
+"phát lại."
 msgstr ""
+"Reject it if the timestamp is more than %(seconds)s seconds off — "
+"that is what stops replays."
+
 
 #: server/templates/jobs.html:15
 msgid "Từ ngày"
@@ -5843,7 +6124,8 @@ msgstr "From idea to hook, outline, body and metadata in a single workspace."
 
 #: server/templates/dev_keys.html:114
 msgid "Tự hết hạn sau (ngày, để trống = không hết hạn)"
-msgstr ""
+msgstr "Expires after (days, blank = never)"
+
 
 #: server/templates/_nap_trangthai.html:71
 msgid "Tự kiểm tra mỗi 4 giây."
@@ -6049,7 +6331,7 @@ msgstr "That session ticket cannot be used."
 
 #: platform_core/public_api/governance.py:138
 msgid "Vé tải lên chưa dùng. Bytes ở staging bị quét dọn cùng lúc."
-msgstr ""
+msgstr "Unused upload tickets. The staged bytes are swept at the same time."
 
 #: apps/taoclipngan/routes.py:346 apps/upscalevideo/routes.py:517
 #: apps/upscalevideo/routes.py:686
@@ -6082,15 +6364,18 @@ msgstr "Why did the AI pick this segment?"
 
 #: server/templates/dev_privacy.html:33
 msgid "Vì sao giữ"
-msgstr ""
+msgstr "Why it is kept"
+
 
 #: server/templates/dev_quickstart.html:29
 msgid "Ví dụ"
-msgstr ""
+msgstr "Example"
+
 
 #: server/templates/dev_quickstart.html:50
 msgid "Ví dụ chạy được"
-msgstr ""
+msgstr "Runnable example"
+
 
 #: apps/kichban/templates/script.html:10
 msgid "Ví dụ: Cách học tiếng Anh hiệu quả trong 30 ngày"
@@ -6113,7 +6398,8 @@ msgstr "The reference text exceeds the 32,000 character limit."
 
 #: server/routes/developer.py:435
 msgid "Vượt hạn mức (429)"
-msgstr ""
+msgstr "Rate limit exceeded (429)"
+
 
 #: apps/qualitylab/manifest.py:28
 msgid "Vận hành"
@@ -6121,7 +6407,8 @@ msgstr "Operations"
 
 #: server/templates/dev_privacy.html:20
 msgid "Vận hành — tự hết hạn"
-msgstr ""
+msgstr "Operational — expires on its own"
+
 
 #: server/templates/_auth_brand.html:1
 msgid "Về trang chủ LTT AI Studio"
@@ -6154,7 +6441,8 @@ msgstr "The watch batch is missing a request id."
 
 #: server/routes/developer.py:133
 msgid "Webhook"
-msgstr ""
+msgstr "Webhooks"
+
 
 #: apps/agent/routes/sharing.py:64 apps/agent/routes/sharing.py:77
 msgid "Workflow không còn tồn tại."
@@ -6174,7 +6462,8 @@ msgstr "View full diagnostics →"
 
 #: server/templates/dev_quickstart.html:12
 msgid "Xem công cụ và model"
-msgstr ""
+msgstr "Look at the tools and models"
+
 
 #: apps/taoanh/templates/image.html:21 apps/thumbnail/templates/thumbnail.html:48
 #: apps/thumbnail/templates/thumbnail_fragment.html:28
@@ -6223,7 +6512,8 @@ msgstr "View order"
 
 #: server/templates/dev_usage.html:44
 msgid "Xoá"
-msgstr ""
+msgstr "Delete"
+
 
 #: apps/chataistudio/templates/chataistudio.html:26
 msgid "Xoá hội thoại"
@@ -6235,11 +6525,13 @@ msgstr "Delete this conversation?"
 
 #: server/templates/dev_usage.html:42
 msgid "Xoá ngân sách này?"
-msgstr ""
+msgstr "Delete this budget?"
+
 
 #: server/routes/developer.py:433
 msgid "Xung đột (409)"
-msgstr ""
+msgstr "Conflict (409)"
+
 
 #: apps/prompt_ai_ommi/templates/prompt_ai_ommi.html:13
 msgid "Xuất"
@@ -6255,9 +6547,13 @@ msgstr "Export metadata for"
 
 #: server/templates/dev_settings.html:17
 msgid ""
-"Xuất và xoá dữ liệu tích hợp là hạng mục riêng, chưa có ở bước này. Trong "
-"lúc chờ, liên hệ hỗ trợ kèm mã khóa công khai."
+"Xuất và xoá dữ liệu tích hợp là hạng mục riêng, chưa có ở bước này. "
+"Trong lúc chờ, liên hệ hỗ trợ kèm mã khóa công khai."
 msgstr ""
+"Exporting and deleting integration data is a separate piece of work "
+"and is not here yet. In the meantime, contact support with your "
+"public key id."
+
 
 #: apps/taovideo/templates/taovideo.html:85
 msgid "Xác nhận chi phí"
@@ -6300,9 +6596,8 @@ msgid "Yêu cầu liên kết mới"
 msgstr "Request a new link"
 
 #: server/templates/dev_privacy.html:57
-#, fuzzy
 msgid "Yêu cầu xoá dữ liệu"
-msgstr "Delete my data"
+msgstr "Request data deletion"
 
 #: platform_core/registry.py:593
 #, python-brace-format
@@ -6476,10 +6771,14 @@ msgstr ""
 
 #: platform_core/public_api/governance.py:141
 msgid ""
-"`params`, `result` và file sinh ra là nội dung của chính khách, hết hạn sau "
-"30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán credit trỏ về nó — bằng "
-"chứng và nội dung là hai thứ khác nhau."
+"`params`, `result` và file sinh ra là nội dung của chính khách, hết "
+"hạn sau 30 ngày. Hàng job thì Ở LẠI vĩnh viễn vì bút toán credit trỏ "
+"về nó — bằng chứng và nội dung là hai thứ khác nhau."
 msgstr ""
+"`params`, `result` and generated files are the customer's own "
+"content and expire after 30 days. The job row itself STAYS forever "
+"because credit ledger entries point at it — evidence and content are "
+"two different things."
 
 #: apps/taoclipngan/templates/taoclipngan.html:35
 msgid "asset"
@@ -6490,9 +6789,8 @@ msgid "báo giá"
 msgstr "quote"
 
 #: server/templates/dev_quickstart.html:18
-#, fuzzy
 msgid "báo giá rồi chạy."
-msgstr "The quote has changed."
+msgstr "quote, then run."
 
 #: server/templates/nexus_nhat_ky.html:46
 msgid "bạn"
@@ -6504,52 +6802,58 @@ msgstr "started:"
 
 #: server/templates/dev_webhooks.html:17
 msgid "bỏ cuộc:"
-msgstr ""
+msgstr "gave up:"
+
 
 #: apps/prompt_ai_ommi/services/composer.py:15
 msgid "catalog prompt không hợp lệ"
 msgstr "invalid catalog prompt"
 
 #: server/templates/dev_overview.html:44 server/templates/dev_quickstart.html:10
-#, fuzzy
 msgid "chuỗi bí mật chỉ hiện một lần."
-msgstr "The batch retry only matched partially."
+msgstr "the secret is shown once only."
 
 #: server/templates/dev_docs.html:16
 msgid ""
-"chính tài liệu API đang phục vụ, lưu thành file kèm số phiên bản trong tên —"
-" để sáu tháng sau còn biết client nào sinh từ bản nào."
+"chính tài liệu API đang phục vụ, lưu thành file kèm số phiên bản "
+"trong tên — để sáu tháng sau còn biết client nào sinh từ bản nào."
 msgstr ""
+"the very contract the API is serving, saved as a file with the "
+"version in its name — so that six months from now you can still tell "
+"which client was generated from which version."
 
 #: server/templates/nap_don.html:24
 msgid "chưa trừ tiền"
 msgstr "no money was taken"
 
 #: server/templates/dev_overview.html:23
-#, fuzzy
 msgid "chưa đăng ký"
-msgstr "Not signed in"
+msgstr "not registered"
 
 #: server/templates/dev_overview.html:17
 msgid "chưa đặt trần ngày"
-msgstr ""
+msgstr "no daily cap set"
+
 
 #: server/routes/developer.py:315
-#, fuzzy
 msgid "chạy job"
-msgstr "Cancel job"
+msgstr "runs a job"
 
 #: server/templates/dev_docs.html:11
 msgid "chế độ chạy, quy ước, bảng lỗi và khi nào nên thử lại."
-msgstr ""
+msgstr "execution modes, conventions, the error table, and when to retry."
 
 #: server/templates/dev_playground.html:62
-msgid "chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu này."
-msgstr ""
+msgid ""
+"chỉ dành cho thao tác đọc; không công cụ nào tiêu credit theo kiểu "
+"này."
+msgstr "read operations only; no tool spends credit this way."
+
 
 #: server/templates/dev_keys.html:47
 msgid "chỉ từ:"
-msgstr ""
+msgstr "only from:"
+
 
 #: server/templates/dev_overview.html:9
 msgid "chỉ đọc"
@@ -6582,13 +6886,12 @@ msgstr "read-only"
 #: platform_core/public_api/governance.py:191
 #: platform_core/public_api/governance.py:192
 #: platform_core/public_api/governance.py:193
-#, fuzzy
 msgid "chủ tài khoản"
-msgstr "Create an account"
+msgstr "the account owner"
 
 #: platform_core/public_api/governance.py:111
 msgid "chủ tài khoản (dòng customer)"
-msgstr ""
+msgstr "the account owner (customer rows)"
 
 #: platform_core/public_api/governance.py:89
 #: platform_core/public_api/governance.py:97
@@ -6596,9 +6899,8 @@ msgstr ""
 #: platform_core/public_api/governance.py:102
 #: platform_core/public_api/governance.py:108
 #: platform_core/public_api/governance.py:145
-#, fuzzy
 msgid "chủ tài khoản + vận hành"
-msgstr "Already have an account? Sign in"
+msgstr "the account owner + operations"
 
 #: apps/taoclipngan/routes.py:188
 msgid "clip"
@@ -6606,9 +6908,13 @@ msgstr "clips"
 
 #: server/templates/dev_docs.html:18
 msgid ""
-"collection + environment, SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi "
-"đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt."
+"collection + environment, SINH từ OpenAPI. Đừng sửa tay: lần sinh "
+"sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi "
+"dạt."
 msgstr ""
+"collection + environment, GENERATED from OpenAPI. Do not edit by "
+"hand: the next generation overwrites it, and a second copy of a "
+"contract is always the one that drifts."
 
 #: apps/chataistudio/templates/chataistudio.html:56
 msgid "credit"
@@ -6620,9 +6926,8 @@ msgid "credit tối đa"
 msgstr "credits held"
 
 #: server/templates/dev_tool_detail.html:119 server/templates/dev_usage.html:14
-#, fuzzy
 msgid "credit/ngày"
-msgstr "credits"
+msgstr "credit/day"
 
 #: apps/autosubvideo/schemas.py:204
 msgid "cue end phải lớn hơn start"
@@ -6652,25 +6957,24 @@ msgstr "remaining"
 #: server/templates/dev_tool_detail.html:53
 #: server/templates/dev_tool_detail.html:138
 msgid "có"
-msgstr ""
+msgstr "yes"
+
 
 #: server/templates/home.html:63
 msgid "công cụ sẵn sàng"
 msgstr "tools ready"
 
 #: server/templates/dev_keys.html:43
-#, fuzzy
 msgid "công cụ:"
-msgstr "Search tools"
+msgstr "tools:"
 
 #: platform_core/public_api/governance.py:199
 msgid "công khai"
-msgstr ""
+msgstr "public"
 
 #: server/routes/developer.py:658 server/templates/dev_usage.html:67
-#, fuzzy
 msgid "cả tài khoản"
-msgstr "Create an account"
+msgstr "the whole account"
 
 #: server/templates/home.html:44
 msgid "cần thiết lập"
@@ -6678,56 +6982,69 @@ msgstr "needs setup"
 
 #: server/templates/dev_usage.html:38
 msgid "cứng — chặn"
-msgstr ""
+msgstr "hard — blocks"
+
 
 #: server/templates/dev_logs.html:15
 msgid "dán request_id từ phản hồi hoặc ticket"
-msgstr ""
+msgstr "paste a request_id from a response or a support ticket"
+
 
 #: server/templates/dev_log_detail.html:21
 msgid "dùng lại Idempotency-Key cũ"
-msgstr ""
+msgstr "reused an existing Idempotency-Key"
+
 
 #: server/templates/dev_keys.html:11
 msgid "dùng mã này khi cần hỗ trợ; đừng gửi chuỗi bí mật ở trên cho ai."
 msgstr ""
+"quote this id when you contact support; never send anyone the secret "
+"above."
+
 
 #: apps/taoclipngan/templates/taoclipngan.html:96
 msgid "giây"
 msgstr "seconds"
 
 #: server/templates/dev_docs.html:20
-msgid "gọi bằng cURL, PowerShell, n8n, Make hoặc HTTP thuần — không cần SDK."
+msgid ""
+"gọi bằng cURL, PowerShell, n8n, Make hoặc HTTP thuần — không cần "
+"SDK."
 msgstr ""
+"call it with cURL, PowerShell, n8n, Make or plain HTTP — no SDK "
+"needed."
 
 #: server/templates/dev_tool_detail.html:29
 msgid "gửi kèm báo giá đó và một"
-msgstr ""
+msgstr "send that quote along with an"
+
 
 #: server/templates/dev_quickstart.html:13
 msgid "hoặc gọi"
-msgstr ""
+msgstr "or call"
+
 
 #: server/templates/dev_quickstart.html:20
 msgid "hoặc webhook, rồi lấy tệp ở"
-msgstr ""
+msgstr "or a webhook, then fetch the file at"
+
 
 #: server/templates/dev_tool_detail.html:31
 msgid "hoặc đăng ký webhook để khỏi hỏi liên tục."
-msgstr ""
+msgstr "or subscribe to a webhook so you do not have to poll."
+
 
 #: server/templates/dev_docs.html:9
 msgid "hướng dẫn bắt đầu và tham chiếu từng công cụ."
-msgstr ""
+msgstr "a getting-started guide and a reference for each tool."
 
 #: server/templates/dev_keys.html:51
 msgid "hết hạn:"
 msgstr "expires:"
 
 #: server/routes/developer.py:374
-#, fuzzy
 msgid "input phải là một object JSON"
-msgstr "The project must be an object."
+msgstr "input must be a JSON object"
 
 #: apps/taoanh/templates/image.html:28 apps/thumbnail/templates/thumbnail.html:61
 #: apps/thumbnail/templates/thumbnail_fragment.html:35
@@ -6743,15 +7060,13 @@ msgid "job đang chạy"
 msgstr "jobs running"
 
 #: server/templates/dev_tool_detail.html:117
-#, fuzzy
 msgid "job đang chạy cùng lúc"
-msgstr "The job has not finished yet."
+msgstr "jobs running at once"
 
 #: server/templates/dev_overview.html:31 server/templates/dev_tool_detail.html:116
 #: server/templates/dev_usage.html:11
-#, fuzzy
 msgid "job/phút"
-msgstr "minutes"
+msgstr "jobs/min"
 
 #: platform_core/storage.py:178
 msgid "key rỗng"
@@ -6759,12 +7074,13 @@ msgstr "empty key"
 
 #: server/templates/dev_overview.html:20
 msgid "khóa đang hoạt động:"
-msgstr ""
+msgstr "active keys:"
+
 
 #: platform_core/public_api/governance.py:129
 #: platform_core/public_api/governance.py:132
 msgid "không ai (nội bộ)"
-msgstr ""
+msgstr "nobody (internal)"
 
 #: platform_core/storage.py:251
 #, python-brace-format
@@ -6776,9 +7092,8 @@ msgid "không cần chuyển lại"
 msgstr "you do not need to pay again"
 
 #: platform_core/public_api/alerting.py:159
-#, fuzzy
 msgid "không tên"
-msgstr "Unable to save"
+msgstr "unnamed"
 
 #: apps/taovideo/templates/taovideo.html:74
 msgid "kết quả phù hợp"
@@ -6794,11 +7109,13 @@ msgstr "label"
 
 #: server/templates/dev_tool_detail.html:33
 msgid "lấy đường tải kết quả."
-msgstr ""
+msgstr "gets you a download link for the result."
+
 
 #: server/templates/dev_overview.html:27
 msgid "lần giao thất bại gần đây"
-msgstr ""
+msgstr "recent failed deliveries"
+
 
 #: apps/autosubvideo/templates/autosubvideo.html:93
 #: server/templates/dev_logs.html:8
@@ -6815,23 +7132,29 @@ msgstr ""
 
 #: server/templates/dev_keys.html:85
 msgid "máy chủ sản xuất"
-msgstr ""
+msgstr "production server"
+
 
 #: server/templates/dev_docs.html:7
 msgid "mô tả máy đọc được, kèm schema của từng công cụ."
-msgstr ""
+msgstr "a machine-readable description, with the schema of every tool."
 
 #: server/templates/dev_usage.html:39
 msgid "mềm — chỉ báo"
-msgstr ""
+msgstr "soft — warns only"
+
 
 #: server/templates/dev_playground.html:61
-msgid "mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → artifact."
-msgstr ""
+msgid ""
+"mọi công cụ đang mở đều chạy kiểu này: báo giá → job → theo dõi → "
+"artifact."
+msgstr "every open tool works this way: quote → job → poll → artifact."
+
 
 #: server/templates/dev_overview.html:42 server/templates/dev_quickstart.html:8
 msgid "mỗi tích hợp một project."
-msgstr ""
+msgstr "one project per integration."
+
 
 #: apps/chataistudio/templates/chataistudio_admin.html:16
 msgid "một tài khoản ChatGPT riêng"
@@ -6839,12 +7162,12 @@ msgstr "a separate ChatGPT account"
 
 #: server/templates/dev_notifications.html:20
 msgid "mới"
-msgstr ""
+msgstr "new"
+
 
 #: server/templates/dev_privacy.html:39 server/templates/dev_usage.html:63
-#, fuzzy
 msgid "ngày"
-msgstr "From date"
+msgstr "days"
 
 #: server/templates/nexus_nhat_ky.html:44
 #: server/templates/nexus_trang_chinh.html:97
@@ -6853,7 +7176,8 @@ msgstr "LTT staff"
 
 #: server/templates/dev_tool_detail.html:28
 msgid "nhận giá và một báo giá đã ký, sống 15 phút."
-msgstr ""
+msgstr "returns a price and a signed quote, valid for 15 minutes."
+
 
 #: platform_core/public_api/governance.py:197
 msgid "nội bộ"
@@ -6868,18 +7192,19 @@ msgid "phút nguồn"
 msgstr "source minutes"
 
 #: server/templates/dev_log_detail.html:14
-#, fuzzy
 msgid "project"
-msgstr "Duplicate project"
+msgstr "project"
 
 #: server/templates/dev_logs.html:7
 msgid "request"
-msgstr ""
+msgstr "requests"
+
 
 #: server/templates/dev_overview.html:30 server/templates/dev_tool_detail.html:115
 #: server/templates/dev_usage.html:10
 msgid "request/phút"
-msgstr ""
+msgstr "requests/min"
+
 
 #: apps/autosubvideo/schemas.py:274
 msgid "speaker id/tên hiển thị không hợp lệ"
@@ -6903,17 +7228,18 @@ msgid "tags phải là list tối đa 12 mục."
 msgstr ""
 
 #: server/templates/dev_privacy.html:40
-#, fuzzy
 msgid "theo vòng đời tài khoản"
-msgstr "Create an account"
+msgstr "for the lifetime of the account"
 
 #: server/templates/dev_usage.html:62
 msgid "tháng"
-msgstr ""
+msgstr "month"
+
 
 #: server/templates/dev_tool_detail.html:120
 msgid "thân request tối đa"
-msgstr ""
+msgstr "max request body"
+
 
 #: apps/qualitylab/services/subtitle.py:29
 #, fuzzy
@@ -6925,9 +7251,8 @@ msgid "track id bị trùng"
 msgstr "duplicate track id"
 
 #: server/templates/dev_projects.html:41
-#, fuzzy
 msgid "trang bán hàng"
-msgstr "Payment successful"
+msgstr "the sales page"
 
 #: server/templates/nap_khong_thay.html:24
 msgid "trang nạp credit"
@@ -6935,20 +7260,22 @@ msgstr "the add-credit page"
 
 #: server/templates/dev_tool_detail.html:118
 msgid "trần"
-msgstr ""
+msgstr "cap"
+
 
 #: server/templates/dev_usage.html:13
 msgid "trần của máy chủ"
-msgstr ""
+msgstr "server cap"
+
 
 #: server/templates/dev_overview.html:15
-#, fuzzy
 msgid "trần ngày"
-msgstr "From date"
+msgstr "daily cap"
 
 #: server/templates/dev_tools.html:10
 msgid "tìm theo tên, mô tả hoặc tên tham số"
-msgstr ""
+msgstr "search by name, description or parameter name"
+
 
 #: server/templates/demo.html:47
 msgid "tính"
@@ -6968,7 +7295,8 @@ msgstr "files"
 
 #: server/templates/dev_tool_detail.html:121
 msgid "tệp lớn đi qua /api/v1/uploads."
-msgstr ""
+msgstr "large files go through /api/v1/uploads."
+
 
 #: server/templates/dev_overview.html:32 server/templates/dev_tool_detail.html:117
 #: server/templates/dev_usage.html:12
@@ -6976,9 +7304,9 @@ msgid "tối đa"
 msgstr "max"
 
 #: server/routes/developer.py:573
-#, fuzzy, python-format
+#, python-format
 msgid "tối đa %(n)s ký tự"
-msgstr "At least 8 characters"
+msgstr "at most %(n)s characters"
 
 #: server/templates/status_api.html:29
 msgid "từ"
@@ -6986,18 +7314,19 @@ msgstr ""
 
 #: server/templates/dev_tool_detail.html:64
 msgid "ví dụ:"
-msgstr ""
+msgstr "example:"
+
 
 #: platform_core/public_api/governance.py:92
 #: platform_core/public_api/governance.py:117
 #: platform_core/public_api/governance.py:120
 #: platform_core/public_api/governance.py:123
 msgid "vận hành"
-msgstr ""
+msgstr "operations"
 
 #: platform_core/public_api/governance.py:95
 msgid "vận hành + công khai"
-msgstr ""
+msgstr "operations + public"
 
 #: apps/autosubvideo/schemas.py:189
 msgid "word end phải lớn hơn start"
@@ -7086,7 +7415,7 @@ msgstr "Rendering clips"
 
 #: platform_core/public_api/status.py:61
 msgid "Đang gián đoạn."
-msgstr ""
+msgstr "Down."
 
 #: server/templates/dev_playground.html:19
 msgid "Đang gọi…"
@@ -7131,7 +7460,7 @@ msgstr "Remixing from the selected output"
 
 #: platform_core/public_api/status.py:59
 msgid "Đang trục trặc — lời gọi mới có thể bị từ chối tạm thời."
-msgstr ""
+msgstr "Degraded — new calls may be refused for a while."
 
 #: apps/taovideo/templates/taovideo.html:85
 #: apps/taovideo/templates/taovideo.html:97
@@ -7224,16 +7553,18 @@ msgid "Điểm kỹ thuật v1: độ tương phản, chi tiết và phơi sáng
 msgstr "Technical score v1: contrast, detail and exposure"
 
 #: server/templates/dev_webhooks.html:23
-#, fuzzy
 msgid "Điểm nhận"
-msgstr "Change the background"
+msgstr "Endpoint"
 
 #: platform_core/public_api/alerting.py:187
 #, python-format
 msgid ""
-"Điểm nhận %(url)s đã bỏ cuộc sau đủ số lần thử. Job và credit không bị ảnh "
-"hưởng; gửi lại từ khu Webhook sau khi sửa xong."
+"Điểm nhận %(url)s đã bỏ cuộc sau đủ số lần thử. Job và credit không "
+"bị ảnh hưởng; gửi lại từ khu Webhook sau khi sửa xong."
 msgstr ""
+"Endpoint %(url)s gave up after its retries were exhausted. Jobs and "
+"credit are unaffected; resend from the Webhooks area once you have "
+"fixed it."
 
 #: apps/qualitylab/calibration.py:139
 msgid "Điểm rubric phải nằm trong 1..5."
@@ -7259,14 +7590,19 @@ msgstr ""
 
 #: server/templates/dev_notifications.html:10
 msgid "Đánh dấu đã đọc"
-msgstr ""
+msgstr "Mark as read"
+
 
 #: server/templates/dev_tools.html:5
 msgid ""
 "Đây là những gì máy chủ này đang mở. Giá của một lời gọi lấy từ POST "
-"/api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định "
-"theo model."
+"/api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố "
+"định theo model."
 msgstr ""
+"This is what this server currently exposes. The price of a call "
+"comes from POST /api/v1/quotes — it depends on the whole input, so "
+"there is no fixed per-model number."
+
 
 #: apps/taoclipngan/templates/taoclipngan.html:95
 msgid "Đã chọn"
@@ -7274,7 +7610,7 @@ msgstr "Selected"
 
 #: platform_core/public_api/policy.py:258
 msgid "Đã có chính sách trùng tên."
-msgstr ""
+msgstr "A policy with that name already exists."
 
 #: server/templates/register.html:24
 msgid "Đã có tài khoản? Đăng nhập"
@@ -7287,16 +7623,17 @@ msgstr "Used"
 #: platform_core/public_api/alerting.py:127
 #, python-format
 msgid "Đã dùng %(percent)s%% hạn mức credit ngày của máy chủ"
-msgstr ""
+msgstr "%(percent)s%% of the server's daily credit cap used"
 
 #: platform_core/public_api/alerting.py:101
 #, python-format
 msgid "Đã dùng %(percent)s%% ngân sách %(period)s"
-msgstr ""
+msgstr "%(percent)s%% of the %(period)s budget used"
 
 #: server/templates/dev_usage.html:7
 msgid "Đã dùng hôm nay qua API:"
-msgstr ""
+msgstr "Spent today through the API:"
+
 
 #: server/templates/dev_overview.html:12
 msgid "Đã dùng hôm nay:"
@@ -7312,7 +7649,7 @@ msgstr "Response stopped. Content already received is still saved."
 
 #: platform_core/public_api/governance.py:127
 msgid "Đã gửi callback chưa, và bên nhận trả lời gì."
-msgstr ""
+msgstr "Whether a callback was delivered, and what the receiver answered."
 
 #: platform_core/jobs.py:176
 msgid "Đã hoàn tất."
@@ -7417,15 +7754,21 @@ msgstr "Sign up again"
 
 #: server/templates/dev_webhooks.html:65
 msgid ""
-"Đăng ký điểm nhận mới bằng POST /api/v1/webhooks — secret chỉ hiện một lần "
-"trong phản hồi đó."
+"Đăng ký điểm nhận mới bằng POST /api/v1/webhooks — secret chỉ hiện "
+"một lần trong phản hồi đó."
 msgstr ""
+"Register a new endpoint with POST /api/v1/webhooks — the secret "
+"appears once, in that response only."
+
 
 #: server/templates/dev_tool_detail.html:109
 msgid ""
-"Đăng ký ở POST /api/v1/webhooks. Mỗi lần giao có chữ ký; giao trùng là an "
-"toàn vì mỗi sự kiện có id riêng."
+"Đăng ký ở POST /api/v1/webhooks. Mỗi lần giao có chữ ký; giao trùng "
+"là an toàn vì mỗi sự kiện có id riêng."
 msgstr ""
+"Subscribe at POST /api/v1/webhooks. Every delivery is signed; "
+"duplicate deliveries are safe because each event carries its own id."
+
 
 #: server/templates/_header.html:54 server/templates/login.html:22
 msgid "Đăng nhập"
@@ -7509,15 +7852,17 @@ msgstr "Output"
 
 #: server/templates/dev_pricing.html:21
 msgid "Đầu vào (JSON)"
-msgstr ""
+msgstr "Input (JSON)"
+
 
 #: server/templates/dev_docs.html:6
 msgid "Đặc tả OpenAPI"
-msgstr ""
+msgstr "OpenAPI specification"
 
 #: server/templates/dev_quickstart.html:11
 msgid "Đặt biến môi trường (bảng bên dưới)."
-msgstr ""
+msgstr "Set the environment variables (table below)."
+
 
 #: server/routes/register.py:206
 msgid "Đặt lại mật khẩu LTT AI Studio"
@@ -7533,7 +7878,8 @@ msgstr "Set a new password"
 
 #: server/templates/dev_usage.html:80
 msgid "Đặt ngân sách"
-msgstr ""
+msgstr "Set budget"
+
 
 #: server/templates/jobs.html:16
 msgid "Đến ngày"
@@ -7549,15 +7895,20 @@ msgstr "That proposal has expired, or is not valid."
 
 #: server/templates/dev_quickstart.html:29
 msgid "Để làm gì"
-msgstr ""
+msgstr "What it is for"
+
 
 #: apps/taovideo/templates/taovideo.html:39
 msgid "Để trống = ngẫu nhiên"
 msgstr "Leave empty for random"
 
 #: platform_core/public_api/governance.py:150
-msgid "Địa chỉ nhận callback + secret ký, **đã mã hoá**. Xoá khi khách xoá đăng ký."
+msgid ""
+"Địa chỉ nhận callback + secret ký, **đã mã hoá**. Xoá khi khách xoá "
+"đăng ký."
 msgstr ""
+"The callback address + signing secret, **encrypted**. Deleted when "
+"the customer deletes the subscription."
 
 #: server/templates/dev_projects.html:9
 msgid "Định danh"
@@ -7608,7 +7959,8 @@ msgstr "Content direction"
 
 #: server/templates/developers_base.html:39
 msgid "Đọc vẫn chạy; tạo job tạm thời bị từ chối."
-msgstr ""
+msgstr "Reads still work; creating jobs is refused for now."
+
 
 #: apps/qualitylab/templates/qualitylab.html:31
 msgid "Đối chiếu Upscale paired"
@@ -7625,12 +7977,14 @@ msgstr "Audience"
 
 #: server/templates/dev_keys.html:61
 msgid "Đổi bí mật"
-msgstr ""
+msgstr "Rotate secret"
+
 
 #: server/templates/dev_log_detail.html:83
 #, python-brace-format
 msgid "Đổi id lấy đường tải ở GET /api/v1/artifacts/{id}."
-msgstr ""
+msgstr "Exchange the id for a download link at GET /api/v1/artifacts/{id}."
+
 
 #: apps/taoclipngan/templates/taoclipngan.html:32
 msgid "Đổi nguồn"
@@ -7646,7 +8000,8 @@ msgstr "Change the background"
 
 #: server/templates/dev_webhooks.html:50
 msgid "Đổi secret"
-msgstr ""
+msgstr "Rotate secret"
+
 
 #: apps/kichban/templates/script.html:10
 msgid "Độ dài"
@@ -7667,17 +8022,22 @@ msgstr "Output resolution"
 
 #: server/templates/dev_logs.html:61
 msgid "Độ trễ"
-msgstr ""
+msgstr "Latency"
+
 
 #: server/templates/dev_tools.html:58
 msgid "Độ ổn định"
-msgstr ""
+msgstr "Stability"
+
 
 #: server/templates/dev_quickstart.html:45
 msgid ""
-"Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log và vào "
-"ảnh chụp màn hình."
+"Đừng viết khóa thẳng vào mã nguồn: nó sẽ đi theo mã vào git, vào log "
+"và vào ảnh chụp màn hình."
 msgstr ""
+"Do not put a key straight into your source: it travels with the code "
+"into git, into logs, and into screenshots."
+
 
 #: server/templates/dev_webhooks.html:38
 msgid "đang bật"
@@ -7692,9 +8052,8 @@ msgid "đang khỏe"
 msgstr "healthy"
 
 #: server/templates/dev_overview.html:10
-#, fuzzy
 msgid "đang phục vụ"
-msgstr "Analyzing video"
+msgstr "serving"
 
 #: server/templates/dev_webhooks.html:16
 msgid "đang thử lại:"
@@ -7709,9 +8068,8 @@ msgid "điểm"
 msgstr "score"
 
 #: server/templates/dev_webhooks.html:15
-#, fuzzy
 msgid "đã giao:"
-msgstr "Transaction ID"
+msgstr "delivered:"
 
 #: apps/chataistudio/templates/chataistudio.html:40
 #: apps/chataistudio/templates/chataistudio.html:56
@@ -7720,13 +8078,17 @@ msgstr "saved in history"
 
 #: server/templates/dev_webhooks.html:38
 msgid "đã tắt"
-msgstr ""
+msgstr "disabled"
+
 
 #: server/templates/dev_playground.html:64
 msgid ""
-"đã đặc tả nhưng chưa operation nào dùng, nên chưa có gì để thử ở đây. Xem "
-"PROTOCOL_V1.md mục 1.1."
+"đã đặc tả nhưng chưa operation nào dùng, nên chưa có gì để thử ở "
+"đây. Xem PROTOCOL_V1.md mục 1.1."
 msgstr ""
+"specified but not used by any operation yet, so there is nothing to "
+"try here. See PROTOCOL_V1.md section 1.1."
+
 
 #: server/templates/nap_khong_thay.html:25
 msgid ""
@@ -7886,11 +8248,15 @@ msgstr ""
 
 #: server/templates/dev_pricing.html:46
 msgid "— bị chặn bởi sàn/trần của phiên bản trên"
-msgstr ""
+msgstr "— clamped by the floor/cap of the version above"
+
 
 #: server/templates/dev_log_detail.html:16
 msgid "— chính là X-Correlation-ID trong phản hồi; gửi kèm khi cần hỗ trợ."
 msgstr ""
+"— this is the X-Correlation-ID from the response; include it when "
+"you contact support."
+
 
 #: apps/agent/templates/agent_run.html:5
 msgid "← Mục tiêu mới"
@@ -8686,3 +9052,1414 @@ msgstr "Four images from a description"
 
 msgid "Một ảnh có ảnh tham chiếu"
 msgstr "One image with a reference image"
+
+msgid "Cắm vào Codex / Claude"
+msgstr "Plug into Codex / Claude"
+
+msgid ""
+"Máy khách đã thuê: gói, đĩa, hệ điều hành, vmid. Đây là phía đối ứng "
+"của hoá đơn — mất nó thì không đối soát được khách trả tiền cho cái "
+"gì."
+msgstr ""
+"The machines a customer rented: plan, disk, operating system, vmid. "
+"This is the counterpart of the invoice — lose it and there is no way "
+"to reconcile what the customer paid for."
+
+msgid ""
+"Địa chỉ IP đã cấp cho máy nào, từ lúc nào. Là thứ duy nhất trả lời "
+"được một yêu cầu về lạm dụng từ bên ngoài."
+msgstr ""
+"Which IP address was issued to which machine, and from when. It is "
+"the only thing that can answer an abuse report from outside."
+
+msgid ""
+"Vé mở console máy ảo. Lưu SHA-256 của vé, không lưu vé. Hết hạn sau "
+"60 giây và bị xoá ngay khi dùng."
+msgstr ""
+"Tickets that open a VM console. The SHA-256 of the ticket is stored, "
+"never the ticket. It expires after 60 seconds and is deleted the "
+"moment it is used."
+
+msgid ""
+"Nhật ký vòng đời một máy — thứ trả lời \"vì sao máy tôi bị tắt\". "
+"Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
+"hỏi của khách thì đến sau ba tháng."
+msgstr ""
+"The lifecycle log of a machine — the thing that answers \"why was my "
+"machine shut down\". This very table records that it exists because "
+"logs rotate away, while the customer's question arrives three months "
+"later."
+
+msgid ""
+"Ai đã điều khiển máy nào, từ IP nào, bắt đầu và kết thúc lúc nào. "
+"Chỉ giữ dấu vân tay một chiều của vé, không giữ vé."
+msgstr ""
+"Who controlled which machine, from which IP, and when the session "
+"started and ended. Only a one-way fingerprint of the ticket is kept, "
+"never the ticket."
+
+msgid ""
+"Máy nào đã từng được tin, ghép lúc nào, ai thu hồi. Thu hồi ghi "
+"`revoked_at` chứ không xoá dòng — xoá là xoá luôn câu trả lời. Chỉ "
+"giữ khoá CÔNG KHAI, không bao giờ có khoá riêng."
+msgstr ""
+"Which machines were ever trusted, when they were paired, and who "
+"revoked them. Revoking writes `revoked_at` instead of deleting the "
+"row — deleting it would delete the answer too. Only PUBLIC keys are "
+"kept; a private key is never held here."
+
+msgid ""
+"Mã ghép đã dùng là mẩu kiểm toán 'máy này ghép lúc nào, từ IP nào'; "
+"mã hết hạn không ai dùng thì không kiểm toán gì và rụng sau 30 ngày. "
+"Chỉ giữ digest, không giữ mã."
+msgstr ""
+"A used pairing code is the audit trail for 'when this machine was "
+"paired, and from which IP'; an expired code nobody used audits "
+"nothing and drops after 30 days. Only the digest is kept, never the "
+"code."
+
+msgid ""
+"Trang này đọc được không cần tài khoản. Để gọi thật, bạn cần một "
+"khóa API — và khóa thì cần tài khoản."
+msgstr ""
+"You can read this page without an account. To make a real call you "
+"need an API key — and a key needs an account."
+
+msgid "Đăng ký lấy khóa"
+msgstr "Sign up for a key"
+
+msgid "Tôi đã có tài khoản"
+msgstr "I already have an account"
+
+msgid "Xem giá"
+msgstr "See pricing"
+
+msgid "Đã có project"
+msgstr "Project created"
+
+msgid "Đã có khóa đang hoạt động"
+msgstr "Key is active"
+
+msgid "Đã gọi được lần đầu"
+msgstr "First call succeeded"
+
+msgid "Gọi thử — lệnh này không tốn credit:"
+msgstr "Make a test call — this one costs no credit:"
+
+msgid "(cần khóa ở bước trên trước)"
+msgstr "(needs the key from the step above)"
+
+msgid "Đặt khóa vào biến môi trường trước:"
+msgstr "Put your key in an environment variable first:"
+
+msgid "Trả 200 là xong — xác thực, phạm vi và hạn mức đều đúng."
+msgstr ""
+"A 200 means you are done — authentication, scopes and limits are all "
+"correct."
+
+msgid "Bạn đã gọi được. Những nơi hay dùng:"
+msgstr "You are calling successfully. The places you will use most:"
+
+msgid "Hướng dẫn đầy đủ"
+msgstr "Full guide"
+
+msgid "Xem có những công cụ gì"
+msgstr "See what tools exist"
+
+msgid ""
+"Máy chủ chưa cấu hình xong để cấp khóa. Đây là lỗi phía chúng tôi, "
+"không phải của bạn — chúng tôi đã được báo. Vui lòng thử lại sau."
+msgstr ""
+"This server is not finished being configured to issue keys. That is "
+"a fault on our side, not yours — we have been notified. Please try "
+"again later."
+
+msgid "Khóa live ở đây tiêu credit thật."
+msgstr "A live key here spends real credit."
+
+msgid ""
+"Muốn thử không mất tiền thì dùng khóa Test — nó đi qua đúng chuỗi "
+"này nhưng không gọi nhà cung cấp và không chạm vào sổ credit."
+msgstr ""
+"To try it for free, use a Test key — it goes through exactly this "
+"chain but calls no provider and never touches the credit ledger."
+
+msgid "Bạn chưa có khóa nào dùng được."
+msgstr "You have no usable key yet."
+
+msgid ""
+"Trang này không tự điền khóa hộ bạn được — máy chủ chỉ giữ dấu vân "
+"tay một chiều, nên chính chúng tôi cũng không đọc lại được khóa đã "
+"cấp."
+msgstr ""
+"This page cannot fill the key in for you — the server keeps only a "
+"one-way fingerprint, so not even we can read back a key we issued."
+
+msgid "Tạo một khóa Test"
+msgstr "Create a Test key"
+
+msgid "chọn Môi trường = Test — không tốn credit nào."
+msgstr "set Environment = Test — it costs no credit at all."
+
+msgid "Khóa đang dùng được của bạn — dán chuỗi bí mật của một trong số này:"
+msgstr "Your usable keys — paste the secret of one of these:"
+
+msgid "không tốn credit"
+msgstr "costs no credit"
+
+msgid "Không nhớ chuỗi bí mật? Nó chỉ hiện một lần lúc tạo —"
+msgstr "Cannot remember the secret? It is shown once, at creation —"
+
+msgid "tạo khóa mới"
+msgstr "create a new key"
+
+msgid "rồi thu hồi khóa cũ."
+msgstr "then revoke the old one."
+
+msgid "LTT VPS — máy chủ ảo Windows"
+msgstr "LTT VPS — Windows virtual machines"
+
+msgid "Máy chủ ảo Windows, trả bằng credit"
+msgstr "Windows virtual machines, paid with credit"
+
+msgid ""
+"Thuê máy chủ ảo Windows, tạo xong trong vài phút, trả bằng credit. "
+"Bạn tự chọn cấu hình và vùng đặt máy."
+msgstr ""
+"Rent a Windows virtual machine, ready in minutes, paid with credit. "
+"You pick the size and the region."
+
+msgid "Thuê một máy Windows trong khoảng 20 giây"
+msgstr "Rent a Windows machine in about 20 seconds"
+
+msgid "Chỉ từ"
+msgstr "From"
+
+msgid "30 ngày"
+msgstr "30 days"
+
+msgid "Gói"
+msgstr "Plan"
+
+msgid "Chọn"
+msgstr "Select"
+
+msgid "Chọn gói này"
+msgstr "Choose this plan"
+
+msgid "nên chọn"
+msgstr "recommended"
+
+msgid "Giá / 30 ngày"
+msgstr "Price / 30 days"
+
+msgid "Băng thông"
+msgstr "Bandwidth"
+
+msgid "băng thông"
+msgstr "bandwidth"
+
+msgid "Hệ điều hành"
+msgstr "Operating system"
+
+msgid "Địa chỉ"
+msgstr "Address"
+
+msgid "Địa chỉ IP"
+msgstr "IP address"
+
+msgid "Đĩa của máy"
+msgstr "Machine disk"
+
+msgid "đĩa"
+msgstr "disk"
+
+msgid "Còn trống"
+msgstr "Available"
+
+msgid "Còn lại"
+msgstr "Remaining"
+
+msgid "Số dư"
+msgstr "Balance"
+
+msgid "Sẽ trừ"
+msgstr "Will charge"
+
+msgid "Tóm tắt"
+msgstr "Summary"
+
+msgid "Việt Nam"
+msgstr "Vietnam"
+
+msgid "riêng, tại %(noi)s"
+msgstr "dedicated, in %(noi)s"
+
+msgid "— vào bằng %(cong)s"
+msgstr "— connect on %(cong)s"
+
+msgid "VPS Nhỏ"
+msgstr "VPS Small"
+
+msgid "VPS Vừa"
+msgstr "VPS Medium"
+
+msgid "VPS Lớn"
+msgstr "VPS Large"
+
+msgid ""
+"Chạy được Windows Server 2016 hoặc 2022 bản Core (không có giao diện "
+"đồ hoạ). Hợp khi bạn chỉ cần một máy chạy phần mềm hoặc script nền."
+msgstr ""
+"Runs Windows Server 2016 or 2022 Core (no graphical desktop). A good "
+"fit when all you need is a machine running background software or "
+"scripts."
+
+msgid ""
+"Chạy được mọi bản trong danh mục: Server 2016 và 2022 có giao diện, "
+"hoặc Windows 10 LTSC. Đây là gói phần lớn người dùng nên chọn."
+msgstr ""
+"Runs every edition in the catalogue: Server 2016 and 2022 with a "
+"desktop, or Windows 10 LTSC. This is the plan most people should "
+"pick."
+
+msgid ""
+"Gấp đôi CPU và RAM của gói Vừa, đĩa 80 GB. Hợp khi bạn chạy phần mềm "
+"nặng hoặc nhiều việc cùng lúc — không phải để cài thêm bản Windows "
+"nào khác."
+msgstr ""
+"Twice the CPU and RAM of Medium, with an 80 GB disk. A good fit for "
+"heavy software or several jobs at once — not for installing any "
+"additional Windows edition."
+
+msgid "Gói không hợp lệ."
+msgstr "Invalid plan."
+
+msgid "Đọc trước khi thuê"
+msgstr "Read before you rent"
+
+msgid "Đọc"
+msgstr "Read"
+
+msgid "Điều khoản LTT VPS"
+msgstr "LTT VPS Terms"
+
+msgid "trước khi thuê — nó nói rõ những gì dịch vụ này KHÔNG cam kết."
+msgstr "before you rent — it spells out what this service does NOT promise."
+
+msgid ""
+"Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời "
+"gian hoạt động. Máy chủ có thể khởi động lại để bảo trì."
+msgstr ""
+"The service runs on a best-effort basis — we make no uptime "
+"commitment. Hosts may be restarted for maintenance."
+
+msgid ""
+"Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy "
+"chủ đặt tại Việt Nam, đường vào đi qua Singapore."
+msgstr ""
+"Each machine gets its own IP address in Singapore, with every port "
+"usable. The hosts are in Vietnam; traffic reaches them through "
+"Singapore."
+
+msgid ""
+"Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ "
+"cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó."
+msgstr ""
+"Disk size is an allowance on shared storage, not a dedicated drive. "
+"You occupy only what you actually use."
+
+msgid ""
+"Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không "
+"bị tính thêm tiền."
+msgstr ""
+"Bandwidth is capped per plan. Going over it means being throttled, "
+"never being charged extra."
+
+msgid ""
+"Ảnh chụp hằng tuần, giữ 1 bản. Ảnh chụp nằm trên cùng kho lưu trữ "
+"với máy — nó cứu bạn khỏi xoá nhầm hoặc một bản vá hỏng, nhưng KHÔNG "
+"thay thế bản sao lưu của riêng bạn."
+msgstr ""
+"Weekly snapshot, one kept. The snapshot sits on the same storage as "
+"the machine — it saves you from a mistaken deletion or a bad patch, "
+"but it is NOT a substitute for your own backup."
+
+msgid ""
+"Giá KHÔNG bao gồm giấy phép Windows. Chúng tôi cấp đĩa cài (bản "
+"Evaluation của Microsoft); bạn tự cài và tự chịu trách nhiệm về giấy "
+"phép."
+msgstr ""
+"The price does NOT include a Windows licence. We provide the install "
+"media (Microsoft's Evaluation edition); you install it yourself and "
+"are responsible for licensing."
+
+msgid "IP riêng, dùng được mọi cổng"
+msgstr "Dedicated IP, every port usable"
+
+msgid "Tạo xong trong khoảng 20 giây"
+msgstr "Ready in about 20 seconds"
+
+msgid "Không hợp đồng, xoá là dừng"
+msgstr "No contract — delete it and it stops"
+
+msgid "Chúng tôi không biết mật khẩu của bạn"
+msgstr "We never know your password"
+
+msgid ""
+"Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Bạn "
+"vào máy bằng Remote Desktop như một máy Windows bình thường, hoặc "
+"bằng console ngay trong trình duyệt khi cần cứu hộ."
+msgstr ""
+"Each machine gets its own IP address in Singapore, with every port "
+"usable. You connect over Remote Desktop like any Windows machine, or "
+"through a console right in your browser when you need rescuing."
+
+msgid "Tạo xong trong khoảng 20 giây, rồi bạn tự cài Windows qua console."
+msgstr ""
+"Ready in about 20 seconds, then you install Windows yourself through "
+"the console."
+
+msgid ""
+"Bạn tự đặt tài khoản và mật khẩu của mình — chúng tôi không biết mật "
+"khẩu của bạn."
+msgstr "You set your own account and password — we never know your password."
+
+msgid ""
+"Trả theo chu kỳ 30 ngày bằng credit. Không hợp đồng, không ràng "
+"buộc; xoá máy là dừng các chu kỳ sau."
+msgstr ""
+"Billed in 30-day cycles with credit. No contract, no lock-in; delete "
+"the machine and no further cycle is charged."
+
+msgid "Tạo tài khoản để thuê máy"
+msgstr "Create an account to rent a machine"
+
+msgid "Tạo máy"
+msgstr "Create machine"
+
+msgid "Tạo máy mới"
+msgstr "Create a machine"
+
+msgid "Bước 1 · Chọn máy"
+msgstr "Step 1 · Choose a machine"
+
+msgid "Bước 2 · Chọn hệ điều hành"
+msgstr "Step 2 · Choose an operating system"
+
+msgid "Hiện chưa nhận máy mới."
+msgstr "Not accepting new machines right now."
+
+msgid "Hiện chưa nhận máy mới. Bảng giá dưới đây vẫn đúng."
+msgstr ""
+"Not accepting new machines right now. The prices below are still "
+"current."
+
+msgid "Hiện đã hết chỗ cho cấu hình này."
+msgstr "No capacity left for this size."
+
+msgid "Đã hết chỗ cho cấu hình này. Vui lòng chọn gói nhỏ hơn."
+msgstr "No capacity left for this size. Please pick a smaller plan."
+
+msgid "Chưa có hệ điều hành nào phù hợp với cấu hình này."
+msgstr "No operating system fits this size yet."
+
+msgid "chưa có hệ điều hành"
+msgstr "no operating system"
+
+msgid "còn chỗ"
+msgstr "available"
+
+msgid "hết chỗ"
+msgstr "full"
+
+msgid "Hệ thống đang bận, chưa nhận máy mới. Thử lại sau."
+msgstr "The system is busy and is not taking new machines. Try again later."
+
+msgid "Hệ thống đang bận, thử lại sau."
+msgstr "The system is busy; try again later."
+
+msgid "Vùng bạn chọn hiện không nhận máy mới."
+msgstr "The region you picked is not taking new machines right now."
+
+msgid "Không đủ credit: %(ly_do)s"
+msgstr "Not enough credit: %(ly_do)s"
+
+msgid "Máy đang bận hoặc đã bị xoá."
+msgstr "The machine is busy or has been deleted."
+
+msgid "Máy chủ không nhận lệnh lúc này. Thử lại sau ít phút."
+msgstr ""
+"The host is not accepting commands right now. Try again in a few "
+"minutes."
+
+msgid "Windows Server 2016 (có giao diện)"
+msgstr "Windows Server 2016 (with desktop)"
+
+msgid "Windows Server 2022 (có giao diện)"
+msgstr "Windows Server 2022 (with desktop)"
+
+msgid "Bản cũ hơn 2022. Chọn nó khi phần mềm của bạn cần đúng đời này."
+msgstr ""
+"Older than 2022. Pick it when your software needs this exact "
+"generation."
+
+msgid "Không có giao diện đồ hoạ. Nhẹ nhất trong các bản Windows."
+msgstr "No graphical desktop. The lightest Windows edition."
+
+msgid "có giao diện đồ hoạ như Windows thường."
+msgstr "has a graphical desktop like ordinary Windows."
+
+msgid "chỉ có dòng lệnh, nhẹ hơn nhiều."
+msgstr "command line only, and much lighter."
+
+msgid "Chọn phiên bản:"
+msgstr "Choose an edition:"
+
+msgid "Chọn nhầm thì phải cài lại, nên đọc kỹ dòng này."
+msgstr ""
+"Picking the wrong one means reinstalling, so read this line "
+"carefully."
+
+msgid "Giữ nguyên hệ điều hành"
+msgstr "Keep the current operating system"
+
+msgid "Đang tạo"
+msgstr "Creating"
+
+msgid "đang chuẩn bị"
+msgstr "preparing"
+
+msgid "đang chuẩn bị…"
+msgstr "preparing…"
+
+msgid "Đã tắt"
+msgstr "Stopped"
+
+msgid "Bị tạm dừng"
+msgstr "Suspended"
+
+msgid "Đã xoá"
+msgstr "Deleted"
+
+msgid "đang giảm tốc"
+msgstr "throttled"
+
+msgid "Bật"
+msgstr "Start"
+
+msgid "Khởi động lại"
+msgstr "Restart"
+
+msgid "Quản lý"
+msgstr "Manage"
+
+msgid "Về trang máy"
+msgstr "Back to the machine"
+
+msgid "Chưa có gì."
+msgstr "Nothing yet."
+
+msgid "Máy đang được tạo. Tải lại trang sau vài phút."
+msgstr "The machine is being created. Reload the page in a few minutes."
+
+msgid ""
+"Máy đang bị treo do hết hạn thanh toán. Nạp credit và gia hạn để "
+"dùng lại."
+msgstr ""
+"The machine is suspended because payment lapsed. Top up credit and "
+"renew to use it again."
+
+msgid ""
+"Máy đang bị giảm tốc vì đã vượt hạn mức. Không bị tính thêm tiền — "
+"tốc độ trở lại bình thường khi sang chu kỳ mới."
+msgstr ""
+"The machine is throttled because it went over its allowance. Nothing "
+"extra is charged — full speed returns with the next cycle."
+
+msgid "Băng thông chu kỳ này"
+msgstr "Bandwidth this cycle"
+
+msgid "Trả tới"
+msgstr "Paid until"
+
+msgid "Trả cho tới"
+msgstr "Paid until"
+
+msgid "còn %(n)s ngày"
+msgstr "%(n)s days left"
+
+msgid "Mở console"
+msgstr "Open console"
+
+msgid "Mở console ở tab mới"
+msgstr "Open the console in a new tab"
+
+msgid "Mở console ở tab khác rồi để trang này bên cạnh mà làm theo."
+msgstr ""
+"Open the console in another tab and keep this page beside it to "
+"follow along."
+
+msgid "Không mở được console lúc này. Thử lại sau ít phút."
+msgstr "The console cannot be opened right now. Try again in a few minutes."
+
+msgid ""
+"Dùng khi bạn không vào được bằng RDP — ví dụ vừa đổi tường lửa trong "
+"máy."
+msgstr ""
+"Use it when you cannot get in over RDP — for example right after "
+"changing the firewall inside the machine."
+
+msgid "Hướng dẫn cài Windows"
+msgstr "How to install Windows"
+
+msgid "Cài Windows"
+msgstr "Install Windows"
+
+msgid "Trước khi bắt đầu"
+msgstr "Before you start"
+
+msgid ""
+"Máy của bạn là một máy trống đã gắn sẵn đĩa cài Windows. Bạn tự chạy "
+"trình cài đặt và tự đặt tài khoản của mình — chúng tôi không biết "
+"mật khẩu của bạn và không đặt lại được nó."
+msgstr ""
+"Your machine is an empty one with the Windows install media already "
+"attached. You run the installer and create your own account — we "
+"never know your password and cannot reset it."
+
+msgid ""
+"Máy giao cho bạn là máy trống có đĩa cài — bạn tự đặt tài khoản và "
+"mật khẩu của mình."
+msgstr ""
+"The machine you get is empty with install media attached — you set "
+"your own account and password."
+
+msgid ""
+"Bạn KHÔNG cần nạp thêm driver nào. Máy dùng ổ SATA và card mạng "
+"e1000, Windows nhận sẵn cả hai."
+msgstr ""
+"You do NOT need to load any driver. The machine uses a SATA disk and "
+"an e1000 network card, and Windows recognises both out of the box."
+
+msgid ""
+"Mở console. Máy đã sẵn ở màn hình đầu tiên của trình cài đặt Windows "
+"— bạn không phải bấm gì để vào đó."
+msgstr ""
+"Open the console. The machine is already at the first screen of the "
+"Windows installer — you do not have to press anything to get there."
+
+msgid ""
+"Khi thấy dòng “Press any key to boot from CD or DVD…”, đừng bấm gì "
+"cả."
+msgstr "When you see “Press any key to boot from CD or DVD…”, press nothing."
+
+msgid ""
+"Bấm vào đó là quay lại đầu trình cài đặt. Không bấm thì sau vài giây "
+"máy tự đi tiếp."
+msgstr ""
+"Pressing a key sends you back to the start of the installer. Leave "
+"it and the machine carries on by itself after a few seconds."
+
+msgid "Chọn ngôn ngữ, bàn phím → Next → Install now."
+msgstr "Choose language and keyboard → Next → Install now."
+
+msgid "Chấp nhận điều khoản → chọn Custom: Install Windows only (advanced)."
+msgstr ""
+"Accept the licence terms → choose Custom: Install Windows only "
+"(advanced)."
+
+msgid "Chọn ổ đĩa duy nhất trong danh sách (Drive 0) → Next."
+msgstr "Select the only disk in the list (Drive 0) → Next."
+
+msgid "Chờ cài. Máy sẽ tự khởi động lại vài lần."
+msgstr "Wait for the install. The machine restarts itself a few times."
+
+msgid "Cài xong mất khoảng 15–25 phút, phần lớn là ngồi chờ."
+msgstr "The install takes roughly 15–25 minutes, most of it waiting."
+
+msgid ""
+"Đặt mật khẩu cho tài khoản Administrator. Đây là mật khẩu của riêng "
+"bạn — hãy lưu lại ngay, chúng tôi không giữ bản nào và không đặt lại "
+"được."
+msgstr ""
+"Set a password for the Administrator account. This password is yours "
+"alone — save it now: we keep no copy and cannot reset it."
+
+msgid ""
+"Remote Desktop mặc định TẮT trong Windows. Không bật thì bạn chỉ vào "
+"được bằng console."
+msgstr ""
+"Remote Desktop is OFF by default in Windows. Without turning it on, "
+"the console is your only way in."
+
+msgid ""
+"Bật Remote Desktop để vào máy từ nhà. Mở PowerShell trong máy và "
+"dán:"
+msgstr ""
+"Turn on Remote Desktop so you can reach the machine from home. Open "
+"PowerShell inside the machine and paste:"
+
+msgid "Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới"
+msgstr "From your own computer, open Remote Desktop (mstsc) and connect to"
+
+msgid ""
+"Từ máy của bạn, mở Remote Desktop (mstsc) và nối tới địa chỉ của "
+"máy."
+msgstr ""
+"From your own computer, open Remote Desktop (mstsc) and connect to "
+"the machine's address."
+
+msgid "Địa chỉ để vào sau khi cài"
+msgstr "Address to connect to after installing"
+
+msgid "Quay lại trang này và bấm nút bên dưới để gỡ đĩa cài ra."
+msgstr ""
+"Come back to this page and press the button below to detach the "
+"install media."
+
+msgid "Tôi đã cài xong — gỡ đĩa cài"
+msgstr "I have finished installing — detach the media"
+
+msgid "Đã cài xong"
+msgstr "Installed"
+
+msgid ""
+"Gỡ đĩa cài ra khỏi máy, và cho máy khởi động thẳng vào Windows. Bấm "
+"nút này SAU KHI đã cài xong."
+msgstr ""
+"Detaches the install media and makes the machine boot straight into "
+"Windows. Press this AFTER the install has finished."
+
+msgid ""
+"Cần cài lại sau này thì dùng nút “Cài lại máy” ở trang máy — nó gắn "
+"đĩa cài trở lại."
+msgstr ""
+"If you need to reinstall later, use the “Reinstall” button on the "
+"machine page — it attaches the install media again."
+
+msgid "Ảnh chụp gần nhất"
+msgstr "Latest snapshot"
+
+msgid "Máy này chưa có ảnh chụp nào."
+msgstr "This machine has no snapshot yet."
+
+msgid ""
+"Máy này chưa có ảnh chụp nào. Bản đầu tiên được chụp trong vòng một "
+"tuần kể từ khi tạo máy."
+msgstr ""
+"This machine has no snapshot yet. The first one is taken within a "
+"week of the machine being created."
+
+msgid "chưa có — bản đầu tiên chụp trong vòng một tuần"
+msgstr "none yet — the first is taken within a week"
+
+msgid "Khôi phục"
+msgstr "Restore"
+
+msgid "Khôi phục về ảnh chụp"
+msgstr "Restore to snapshot"
+
+msgid ""
+"Quay máy về bản chụp ngày %(ngay)s. Mọi thay đổi sau thời điểm đó sẽ "
+"mất. Máy sẽ tắt."
+msgstr ""
+"Rolls the machine back to the snapshot from %(ngay)s. Everything "
+"changed after that point is lost. The machine will be powered off."
+
+msgid "Gõ đúng tên máy để xác nhận khôi phục."
+msgstr "Type the machine name exactly to confirm the restore."
+
+msgid "Nguy hiểm"
+msgstr "Danger"
+
+msgid "Cài lại"
+msgstr "Reinstall"
+
+msgid "Cài lại máy"
+msgstr "Reinstall the machine"
+
+msgid ""
+"Xoá sạch đĩa và cài lại từ đầu. Địa chỉ IP được giữ nguyên. KHÔNG "
+"hoàn tác được."
+msgstr ""
+"Wipes the disk and starts the install from scratch. The IP address "
+"is kept. This CANNOT be undone."
+
+msgid "Gõ đúng tên máy để xác nhận cài lại."
+msgstr "Type the machine name exactly to confirm the reinstall."
+
+msgid "Xoá máy"
+msgstr "Delete machine"
+
+msgid "Xoá vĩnh viễn"
+msgstr "Delete permanently"
+
+msgid ""
+"Xoá vĩnh viễn máy và trả địa chỉ IP về. KHÔNG hoàn tác được và không "
+"hoàn tiền chu kỳ đang dùng."
+msgstr ""
+"Permanently deletes the machine and returns the IP address. This "
+"CANNOT be undone, and the current cycle is not refunded."
+
+msgid "Gõ đúng tên máy để xác nhận xoá."
+msgstr "Type the machine name exactly to confirm the deletion."
+
+msgid "Gõ %(ten)s để xác nhận"
+msgstr "Type %(ten)s to confirm"
+
+msgid "Gõ: %(ten)s"
+msgstr "Type: %(ten)s"
+
+msgid ""
+"Tắt máy dùng lệnh tắt mềm — hệ điều hành có thời gian dọn dẹp. Máy "
+"đã tắt vẫn tính phí vì nó vẫn giữ chỗ và giữ dữ liệu."
+msgstr ""
+"Shuts the machine down gracefully, giving the operating system time "
+"to tidy up. A stopped machine is still billed, because it still "
+"holds its capacity and its data."
+
+msgid "Sao kê thanh toán"
+msgstr "Payment statement"
+
+msgid "Đây là sao kê để bạn đối chiếu, không phải hoá đơn điện tử."
+msgstr "This is a statement for your own reconciliation, not a tax invoice."
+
+msgid "Tổng đã trả cho máy này: %(n)s credit."
+msgstr "Total paid for this machine: %(n)s credit."
+
+msgid "bản không ghi gì thêm"
+msgstr "no further detail recorded"
+
+msgid "Bấm \"Tạo máy\" là bạn đồng ý với"
+msgstr "Pressing \"Create machine\" means you agree to the"
+
+msgid ""
+"Console dùng khi bạn không vào được bằng RDP — ví dụ vừa đổi tường "
+"lửa hoặc cấu hình mạng trong máy. Nó chậm hơn RDP, đừng dùng để làm "
+"việc hằng ngày."
+msgstr ""
+"The console is for when you cannot get in over RDP — for example "
+"right after changing the firewall or the network settings inside the "
+"machine. It is slower than RDP; do not use it for everyday work."
+
+msgid "Đang kết nối…"
+msgstr "Connecting…"
+
+msgid "Đã kết nối. Bấm vào khung rồi gõ như trên máy thật."
+msgstr ""
+"Connected. Click inside the frame and type as you would on a real "
+"machine."
+
+msgid "Đã ngắt kết nối."
+msgstr "Disconnected."
+
+msgid "Kết nối lại"
+msgstr "Reconnect"
+
+msgid "Mất kết nối. Tải lại trang để mở console mới."
+msgstr "Connection lost. Reload the page to open a new console."
+
+msgid "Máy chủ từ chối phiên console. Tải lại trang để lấy vé mới."
+msgstr ""
+"The host refused the console session. Reload the page to get a fresh "
+"ticket."
+
+msgid "Bấm “Tạo máy” là bạn đồng ý với"
+msgstr "Pressing “Create machine” means you agree to the"
+
+msgid "Sao kê"
+msgstr "Statement"
+
+msgid "Ảnh chụp"
+msgstr "Snapshots"
+
+msgid "← Tất cả máy"
+msgstr "← All machines"
+
+msgid "Tắt máy"
+msgstr "Stop"
+
+msgid "Còn chỗ:"
+msgstr "Available:"
+
+msgid "Hết chỗ cho cấu hình này."
+msgstr "No capacity left for this size."
+
+msgid "So sánh ba gói"
+msgstr "Compare the three plans"
+
+msgid ""
+"Cấu hình phần cứng và băng thông. Đổi được sau bằng cách tạo máy "
+"khác."
+msgstr "Hardware and bandwidth. To change it later, create another machine."
+
+msgid ""
+"Đĩa cài được gắn sẵn; bạn tự chạy trình cài đặt. Cài lại được bất cứ "
+"lúc nào."
+msgstr ""
+"The install media is already attached; you run the installer "
+"yourself. You can reinstall at any time."
+
+# ── Khu API cho lap trinh vien — dot dung lai giao dien 25/08 ──
+
+msgid "Bạn cắm vào công cụ nào?"
+msgstr "Which tool are you wiring up?"
+
+msgid "Tiện ích VS Code"
+msgstr "VS Code extension"
+
+msgid "cURL / tự viết mã"
+msgstr "cURL / your own code"
+
+msgid "CẤU HÌNH RIÊNG"
+msgstr "SEPARATE CONFIG"
+
+msgid "CHÍNH SÁCH REGISTRY"
+msgstr "REGISTRY POLICY"
+
+msgid "HTTP THUẦN"
+msgstr "PLAIN HTTP"
+
+msgid "Kết nối"
+msgstr "Connection"
+
+msgid "Tên model"
+msgstr "Model name"
+
+msgid "Khoá"
+msgstr "Key"
+
+msgid "đặt ở biến môi trường"
+msgstr "set in the environment variable"
+
+msgid "Đọc cấu hình ở"
+msgstr "Reads its config from"
+
+msgid "Rồi chạy"
+msgstr "Then run"
+
+msgid "Có /api/v1 — Codex tự ghép /responses vào sau."
+msgstr "Includes /api/v1 — Codex appends /responses itself."
+
+msgid "KHÔNG có /v1 — Claude Code tự ghép /v1/messages vào sau."
+msgstr "NO /v1 — Claude Code appends /v1/messages itself."
+
+msgid "Cắm xong cho CLI là CHƯA đủ: tiện ích không đọc biến môi trường của hệ điều hành như CLI."
+msgstr "Wiring the CLI is NOT enough: the extension does not read OS environment variables the way the CLI does."
+
+msgid "Bề mặt DUY NHẤT dùng tên model khác — và dùng sai tên thì nút gửi im lặng không làm gì cả."
+msgstr "The ONLY surface that takes a different model name — and with the wrong name the send button silently does nothing."
+
+msgid "Không cần thư viện của chúng tôi — đây là HTTP thuần."
+msgstr "No library of ours needed — this is plain HTTP."
+
+msgid "~/.codex/config.toml, chạy với --profile ltt"
+msgstr "~/.codex/config.toml, run with --profile ltt"
+
+msgid "biến môi trường, hoặc ~/.claude/settings.json"
+msgstr "environment variables, or ~/.claude/settings.json"
+
+msgid "settings.json cấp NGƯỜI DÙNG — đặt ở workspace thì không có tác dụng"
+msgstr "USER-level settings.json — putting it in the workspace has no effect"
+
+msgid "chính sách registry của Windows"
+msgstr "Windows registry policy"
+
+msgid "không đọc tệp nào cả"
+msgstr "no file at all"
+
+msgid "Đặt khoá rồi mở lại cửa sổ lệnh"
+msgstr "Set the key, then reopen your terminal"
+
+msgid "Bền hơn, ghi vào tệp"
+msgstr "More durable: write it to a file"
+
+msgid "Claude Code — settings.json cấp NGƯỜI DÙNG"
+msgstr "Claude Code — USER-level settings.json"
+
+msgid "Codex — đặt ở GỐC tệp, không trong [profiles]"
+msgstr "Codex — put it at the ROOT of the file, not under [profiles]"
+
+msgid "Lưu thành một tệp .reg rồi bấm đúp"
+msgstr "Save as a .reg file and double-click it"
+
+msgid "Hai rào chắn im lặng"
+msgstr "Two silent barriers"
+
+msgid "Cả hai cho CÙNG một triệu chứng: bấm gửi, không có gì xảy ra. Không log, không thông báo, không banner."
+msgstr "Both produce the SAME symptom: you press send and nothing happens. No log, no toast, no banner."
+
+msgid "Tên model phải là"
+msgstr "The model name must be"
+
+msgid "Claude Desktop lọc danh sách model trước khi vẽ ô chọn: tên không chứa claude, anthropic hay tên một dòng Claude thì bị bỏ. Tên"
+msgstr "Claude Desktop filters the model list before drawing the picker: a name containing neither claude, anthropic nor a Claude family word is dropped. The name"
+
+msgid "bị bỏ, ô chọn rỗng, và khi ô chọn rỗng thì nút gửi bị vô hiệu."
+msgstr "is dropped, the picker ends up empty, and an empty picker disables the send button."
+
+msgid "Đây là TÊN TUYẾN của một cổng tương thích, không phải tên sản phẩm. Thứ bạn mua vẫn là"
+msgstr "This is the ROUTE NAME of a compatibility gateway, not a product name. What you bought is still"
+
+msgid ", và model đứng sau vẫn là model của LTT Studios."
+msgstr ", and the model behind it is still the LTT Studios one."
+
+msgid "phải bằng"
+msgstr "must be"
+
+msgid "Mặc định ứng dụng chỉ mở tab Code. Tab đó không nói thẳng với API — nó mở một phiên tác tử chạy trên máy bạn, và phiên đó cần sẵn công cụ dòng lệnh trên máy. Không có thì ứng dụng không gửi request nào cả."
+msgstr "By default the app opens only the Code tab. That tab does not talk to the API directly — it opens an agent session running on your machine, and that session needs the command-line tool installed. Without it the app sends no request at all."
+
+msgid "Cách phân biệt nhanh với lỗi khoá: gọi thẳng API bằng đúng khoá đó. Trả 200 mà ứng dụng vẫn im thì không phải lỗi khoá."
+msgstr "Quick way to rule out a key problem: call the API directly with that same key. If it returns 200 and the app stays silent, the key is not the issue."
+
+msgid "Hoặc điền tay trong ứng dụng"
+msgstr "Or fill it in by hand inside the app"
+
+msgid "Chỗ hay vấp của tiện ích"
+msgstr "Where the extension trips people up"
+
+msgid "Những chỗ hay vấp — chung cho mọi công cụ"
+msgstr "Common pitfalls — across every tool"
+
+msgid "Đây là những gì máy chủ này đang mở cho tài khoản của bạn. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model."
+msgstr "This is what this server has open for your account. The price of a call comes from POST /api/v1/quotes — it depends on the whole input, so there is no fixed per-model number."
+
+msgid "Máy chủ này chưa mở công cụ nào ra API. Đây là trạng thái mặc định, không phải lỗi — quản trị viên mở từng công cụ một bằng LTT_PUBLIC_API_TOOLS."
+msgstr "This server has not opened any tool to the API. That is the default state, not a fault — an administrator opens tools one at a time via LTT_PUBLIC_API_TOOLS."
+
+msgid "công cụ đang mở — bấm một thẻ để xem hợp đồng đầy đủ."
+msgstr "tools open — click a card for its full contract."
+
+msgid "Chạy thử công cụ này"
+msgstr "Try this tool"
+
+msgid "Trang riêng đầy đủ"
+msgstr "Full dedicated page"
+
+msgid "Tham số"
+msgstr "Parameters"
+
+msgid "không"
+msgstr "no"
+
+msgid "mặc định"
+msgstr "default"
+
+msgid "chỉ dùng khi"
+msgstr "only when"
+
+msgid "Ví dụ gửi đi"
+msgstr "Example request"
+
+msgid "Kết quả trả về"
+msgstr "What comes back"
+
+msgid "Hợp đồng máy đọc được:"
+msgstr "Machine-readable contract:"
+
+msgid "API công khai"
+msgstr "Public API"
+
+msgid "mọi tuyến bình thường"
+msgstr "all routes normal"
+
+msgid "tạo job đang bị từ chối"
+msgstr "job creation is being refused"
+
+msgid "nạp thêm"
+msgstr "top up"
+
+msgid "Dùng hôm nay"
+msgstr "Used today"
+
+msgid "trên trần"
+msgstr "of a cap of"
+
+msgid "đã vượt trần"
+msgstr "cap exceeded"
+
+msgid "giữ chỗ"
+msgstr "held"
+
+msgid "Khóa đang hoạt động"
+msgstr "Active keys"
+
+msgid "quản lý"
+msgstr "manage"
+
+msgid "Job qua API"
+msgstr "Jobs via API"
+
+msgid "30 ngày qua"
+msgstr "last 30 days"
+
+msgid "xem"
+msgstr "view"
+
+msgid "lần giao thất bại"
+msgstr "failed deliveries"
+
+msgid "Hạn mức:"
+msgstr "Limits:"
+
+msgid "Cắm model vào công cụ viết mã của bạn"
+msgstr "Wire the model into your coding tool"
+
+msgid "Chép cấu hình bên dưới, đặt khoá, mở lại ứng dụng."
+msgstr "Copy the config below, set your key, restart the app."
+
+msgid "Khoá lấy ở"
+msgstr "Get a key on the"
+
+msgid "trang Khóa API"
+msgstr "API keys page"
+
+msgid "Nó chỉ hiện một lần lúc tạo, nên trang này không điền hộ được — hãy đặt nó vào biến môi trường"
+msgstr "It is shown once, at creation, so this page cannot fill it in for you — put it in the environment variable"
+
+msgid "Cách nhanh nhất: để công cụ ghi hộ"
+msgstr "Fastest way: let the tool write it for you"
+
+msgid "Công cụ cắm tự ghi đúng cấu hình cho cả năm bề mặt, đặt sẵn hai rào chắn của Claude Desktop, và gỡ ra trả lại nguyên trạng."
+msgstr "The wiring tool writes the correct config for all five surfaces, clears both Claude Desktop barriers, and restores everything on uninstall."
+
+msgid "Tải công cụ cắm"
+msgstr "Download the wiring tool"
+
+msgid "Nó làm gì, chạm vào đâu"
+msgstr "What it does, what it touches"
+
+msgid "Bản"
+msgstr "Version"
+
+msgid "Chưa có bản phát hành nào trên máy chủ này — hãy làm theo hướng dẫn tay bên dưới."
+msgstr "No release has been published on this server — follow the manual steps below."
+
+msgid "Muốn tự tay thì đọc tiếp — mọi bước đều ghi đầy đủ bên dưới."
+msgstr "Prefer to do it by hand? Read on — every step is written out below."
+
+msgid "Hoạt động"
+msgstr "Activity"
+
+msgid "Cắm vào công cụ"
+msgstr "Wire up a tool"
+
+msgid "Tài khoản"
+msgstr "Account"
+
+msgid "Bốn bước đầu"
+msgstr "First four steps"
+
+msgid "Danh mục"
+msgstr "Catalog"
+
+msgid "Chạy thử"
+msgstr "Try it"
+
+msgid "Bảo mật"
+msgstr "Security"
+
+msgid "Chạy thử ngay trên trình duyệt"
+msgstr "Try it right in the browser"
+
+# ── Khu API — tai lieu & trang tham chieu cong cu (25/08, dot 2) ──
+
+msgid "Hướng dẫn cắm vào công cụ của bạn"
+msgstr "How to wire it into your tool"
+
+msgid "Codex, Claude Code, hai tiện ích VS Code, Claude Desktop. Công khai, chia sẻ được cho đồng nghiệp chưa có tài khoản."
+msgstr "Codex, Claude Code, both VS Code extensions, Claude Desktop. Public, so you can share it with a colleague who has no account yet."
+
+msgid "Công cụ cắm tự động"
+msgstr "Automatic wiring tool"
+
+msgid "ghi hộ cấu hình cho cả năm bề mặt, gỡ ra trả lại nguyên trạng."
+msgstr "writes the config for all five surfaces and restores everything on uninstall."
+
+msgid "số lấy từ chính hàm ra hoá đơn, kèm ví dụ chi phí thật."
+msgstr "numbers taken from the billing function itself, with real cost examples."
+
+msgid "Đặc tả và thư viện"
+msgstr "Specification and libraries"
+
+msgid "Tải OpenAPI (có số phiên bản trong tên)"
+msgstr "Download OpenAPI (the filename carries the version)"
+
+msgid "để sáu tháng sau còn biết client nào sinh từ bản nào."
+msgstr "so that six months from now you can still tell which client came from which revision."
+
+msgid "SDK Python một tệp, không phụ thuộc ngoài."
+msgstr "Single-file Python SDK, no external dependencies."
+
+msgid "SDK TypeScript một tệp."
+msgstr "Single-file TypeScript SDK."
+
+msgid "và"
+msgstr "and"
+
+msgid "SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt."
+msgstr "GENERATED from OpenAPI. Do not hand-edit: the next generation overwrites it, and a second copy of the contract is always the one that drifts."
+
+msgid "Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key."
+msgstr "Every chargeable call needs a signed quote and an Idempotency-Key."
+
+msgid "Dùng nó để dựng và chạy CI mà không đốt tiền, rồi đổi sang khóa live khi đã chắc."
+msgstr "Use it to build and run CI without spending anything, then switch to a live key once you are confident."
+
+msgid "Xác thực:"
+msgstr "Authentication:"
+
+msgid "cách lấy khoá và cắm vào công cụ"
+msgstr "how to get a key and wire it into your tool"
+
+msgid "Trong trang này"
+msgstr "On this page"
+
+msgid "Trường kiểu artifact KHÔNG nằm trong"
+msgstr "Artifact-typed fields are NOT inside"
+
+msgid "Chúng nằm ở"
+msgstr "They live in"
+
+msgid "của job, mỗi phần tử mang"
+msgstr "of the job, each element carrying"
+
+msgid "Lấy từng"
+msgstr "Take each"
+
+msgid "rồi gọi"
+msgstr "then call"
+
+msgid "để đổi lấy đường tải ngắn hạn."
+msgstr "to exchange it for a short-lived download URL."
+
+msgid "Công cụ này trả về dữ liệu, không phải tệp: kết quả nằm thẳng trong"
+msgstr "This tool returns data, not files: the result sits directly in"
+
+msgid ", không qua"
+msgstr ", not via"
+
+# Khu API — con sot mot chuoi trong `_vi_du_outputs` (developer.py)
+
+msgid "phần dữ liệu thuần, không phải tệp"
+msgstr "the plain data, not the files"
+
+# ── Khu API — PHAN CONG KHAI (huong dan cam, cong cu, 25/08) ──
+
+msgid "Hướng dẫn cắm API"
+msgstr "API wiring guide"
+
+msgid "Cắm model của LTT Studios vào công cụ của bạn"
+msgstr "Wire the LTT Studios model into your tool"
+
+msgid "API tương thích Anthropic Messages và OpenAI Responses. Nếu công cụ của bạn nói được một trong hai giao thức đó thì chỉ cần đổi địa chỉ và khoá — không phải viết lại gì."
+msgstr "The API speaks Anthropic Messages and OpenAI Responses. If your tool talks either protocol, you only change the address and the key — nothing gets rewritten."
+
+msgid "Đăng ký lấy khoá"
+msgstr "Sign up for a key"
+
+msgid "Gọi thử bằng cURL"
+msgstr "Try it with cURL"
+
+msgid "bằng khoá của bạn."
+msgstr "with your own key."
+
+msgid "Tạo ảnh bằng model của LTT Studios"
+msgstr "Generate images with the LTT Studios model"
+
+msgid "Model chạy trên máy của chúng tôi, không qua nhà cung cấp nào. Đây là HTTP thuần — không cần thư viện của chúng tôi, gọi được từ Python, PHP, n8n, Make hay curl."
+msgstr "The model runs on our own machine, through no third-party provider. This is plain HTTP — no library of ours required; call it from Python, PHP, n8n, Make or curl."
+
+msgid "Làm gì"
+msgstr "What it does"
+
+msgid "Điều kiện"
+msgstr "Requires"
+
+msgid "Chỉ từ mô tả chữ."
+msgstr "From a text description only."
+
+msgid "Không nhận ảnh tham chiếu — gửi kèm image_key sẽ bị TỪ CHỐI."
+msgstr "Takes no reference image — sending an image_key is REJECTED."
+
+msgid "Sửa một ảnh tham chiếu, giữ nguyên phần còn lại."
+msgstr "Edits a reference image, leaving the rest untouched."
+
+msgid "Giữ nguyên một người hoặc vật sang bối cảnh mới."
+msgstr "Carries a person or object into a new setting."
+
+msgid "Bắt buộc có image_key. Chạy lâu hơn hẳn nên tốn hơn hẳn."
+msgstr "image_key is required. It runs considerably longer, so it costs considerably more."
+
+msgid "Ba lời gọi"
+msgstr "Three calls"
+
+msgid "Đo thật ngày 25/08 từ một máy ngoài, qua Internet: một ảnh mất"
+msgstr "Measured for real on 25/08 from an outside machine, over the internet: one image took"
+
+msgid "138 giây"
+msgstr "138 seconds"
+
+msgid ". Vì vượt xa trần 100 giây của Cloudflare nên đường ảnh BẮT BUỘC là bất đồng bộ — gửi rồi hỏi lại, hoặc đăng ký webhook. Đặt timeout của bạn theo con số đó."
+msgstr ". Because that is well past Cloudflare's 100-second ceiling, the image path MUST be asynchronous — submit then poll, or register a webhook. Set your timeout from that number."
+
+msgid "Giá phụ thuộc số ảnh và chế độ, nên"
+msgstr "Price depends on the image count and the mode, so"
+
+msgid "là nơi duy nhất nói giá — và báo giá được ký, nên lúc chạy không ai đổi được con số."
+msgstr "is the only place that states a price — and the quote is signed, so nobody can change the number at run time."
+
+msgid "Xem bảng giá"
+msgstr "See the price table"
+
+msgid "Thư viện một tệp, không phụ thuộc"
+msgstr "Single-file libraries, no dependencies"
+
+msgid "Không bắt buộc — API là HTTP thuần. Nhưng nếu muốn nhanh:"
+msgstr "Optional — the API is plain HTTP. But if you want a shortcut:"
+
+msgid "Chưa có tài khoản?"
+msgstr "No account yet?"
+
+msgid "Đăng ký, nạp credit, tạo khoá — rồi quay lại trang này chép cấu hình."
+msgstr "Sign up, add credit, create a key — then come back here and copy the config."
+
+msgid "Công cụ cắm API"
+msgstr "API wiring tool"
+
+msgid "Công cụ cắm — Windows"
+msgstr "Wiring tool — Windows"
+
+msgid "Một chương trình nhỏ ghi hộ bạn đúng cấu hình cho cả năm bề mặt, và gỡ ra trả lại đúng trạng thái cũ."
+msgstr "A small program that writes the correct config for all five surfaces and, on uninstall, restores exactly what was there before."
+
+msgid "Tải bộ cài"
+msgstr "Download the installer"
+
+msgid "Chưa có bản phát hành nào. Bạn vẫn cấu hình tay được — xem hướng dẫn."
+msgstr "No release published yet. You can still configure it by hand — see the guide."
+
+msgid "Trước khi mở, bạn nên tự kiểm băm — nó khớp thì tệp đúng là bản chúng tôi dựng:"
+msgstr "Before opening it, check the hash yourself — if it matches, the file really is the build we produced:"
+
+msgid "Windows sẽ cảnh báo khi mở — điều đó đúng như dự kiến"
+msgstr "Windows will warn you when you open it — that is expected"
+
+msgid "Chúng tôi không mua chứng chỉ ký số, nên SmartScreen hiện cảnh báo cho mọi tệp chưa đủ lượt tải. Bấm"
+msgstr "We do not buy a code-signing certificate, so SmartScreen warns about any file without enough downloads. Click"
+
+msgid "Chúng tôi KHÔNG bao giờ đề nghị bạn tắt phần mềm diệt virus. Nếu bạn không yên tâm thì cấu hình tay — hướng dẫn đầy đủ, không thiếu bước nào."
+msgstr "We will NEVER ask you to turn off your antivirus. If you are not comfortable, configure it by hand — the guide is complete, with no step left out."
+
+msgid "Nó chạm vào đúng những chỗ này"
+msgstr "Exactly what it touches"
+
+msgid "Nơi"
+msgstr "Where"
+
+msgid "chèn một khối có mốc mở/đóng — phần còn lại của tệp không bị chạm"
+msgstr "inserts a block with open/close markers — the rest of the file is untouched"
+
+msgid "tạo mới; nếu đã có thì sao lưu trước khi ghi"
+msgstr "creates it; if one exists, it is backed up before writing"
+
+msgid "biến môi trường cấp người dùng"
+msgstr "user-level environment variables"
+
+msgid "chính sách cho Claude Desktop"
+msgstr "policy for Claude Desktop"
+
+msgid "settings.json của VS Code"
+msgstr "VS Code settings.json"
+
+msgid "trả lại đúng giá trị cũ của từng khoá nó đã đổi, và chỉ xoá những khoá do chính nó thêm."
+msgstr "restores the previous value of every key it changed, and deletes only the keys it added itself."
+
+msgid "Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry."
+msgstr "The key is NEVER written into a config file. Config files get synced between machines, committed, screenshotted — a key does not belong there. It goes only into environment variables and registry policy."
+
+msgid "Lệnh"
+msgstr "Command"
+
+msgid "Khi nào dùng"
+msgstr "When to use it"
+
+msgid "Ba lệnh"
+msgstr "Three commands"
+
+msgid "Không có tham số thì nó mở giao diện."
+msgstr "With no arguments it opens the graphical interface."
+
+msgid "ghi cấu hình"
+msgstr "write the config"
+
+msgid "gỡ ra, trả lại nguyên trạng"
+msgstr "uninstall, restoring the original state"
+
+msgid "gọi thật một lượt để chắc chắn"
+msgstr "make one real call to be sure"
+
+msgid "Cờ"
+msgstr "Flag"
+
+msgid "không cờ"
+msgstr "no flag"
+
+msgid "chỉ dùng CLI"
+msgstr "CLI only"
+
+msgid "dùng tiện ích VS Code"
+msgstr "using the VS Code extension"
+
+msgid "an toàn nhất — mặc định của bạn không đổi"
+msgstr "safest — your defaults are left alone"
+
+msgid "Codex khai ở gốc, nên thay luôn mặc định của lệnh codex"
+msgstr "Codex is declared at the root, so it also replaces the default of the codex command"
+
+msgid "ghi ~/.claude/settings.json — MỌI phiên Claude Code trên máy đi qua LTT"
+msgstr "writes ~/.claude/settings.json — EVERY Claude Code session on the machine goes through LTT"
+
+msgid "Đánh đổi"
+msgstr "Trade-off"
+
+msgid "Riêng Claude Desktop cần hai thứ khác"
+msgstr "Claude Desktop alone needs two different things"
+
+msgid "Công cụ đặt sẵn cả hai. Nếu cấu hình tay thì phải nhớ, vì thiếu một trong hai là ứng dụng im lặng hoàn toàn — bấm gửi, không có gì xảy ra, không một lời báo lỗi:"
+msgstr "The tool sets both for you. If you configure by hand you must remember them, because missing either one makes the app go completely silent — you press send, nothing happens, not one error message:"
+
+msgid "tên model là"
+msgstr "the model name is"
+
+msgid "chứ không phải"
+msgstr "and not"
+
+msgid "chỉ khi có"
+msgstr "only when"
+
+msgid "Giải thích đầy đủ ở trang hướng dẫn"
+msgstr "Explained in full on the guide page"
+
+msgid "Hướng dẫn cấu hình tay"
+msgstr "Manual configuration guide"
+
+msgid "tiện ích Claude Code"
+msgstr "the Claude Code extension"
+
+# ── Trang gia API — hai chuoi phep do RENDER tim ra (phep do doc tep khong
+#    cham toi `gia_api.html`) ──
+
+msgid "Xem cách cắm"
+msgstr "See how to wire it up"
+
+msgid "Hoặc dùng công cụ cắm tự động cho Windows"
+msgstr "Or use the automatic wiring tool for Windows"
+
+msgid "tạo tài khoản"
+msgstr "create an account"
+
+# ── Trang tinh trang API — phep do render tim ra khi liet ke tu bang dinh tuyen ──
+

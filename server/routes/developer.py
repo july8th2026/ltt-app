@@ -18,6 +18,7 @@ seeing that they exist, let alone their preview.
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -62,6 +63,25 @@ def require_account(request: Request):
         # Break-glass admin (Q29) has no `users` row, so no keys and no credit.
         raise _redirect("/login?next=/developers")
     return user
+
+
+def tai_khoan_tuy_chon(request: Request):
+    """Nguoi dang xem, hoac `None` neu chua dang nhap.
+
+    Khac `require_account`: ham do NEM chuyen huong ve `/login`. Dung cho hai
+    trang trong `TRANG_CONG_KHAI` — chung khong doc gi cua tai khoan, nen doi
+    dang nhap chi de xem chung la mot rao can khong mua duoc gi.
+    """
+    # KHONG boc try o day. `user_hien_tai` (server/deps.py:44) da tra `None`
+    # cho ca ba truong hop ta quan tam — chua dang nhap, dang nhap bang duong
+    # admin-env, CSDL chua cau hinh — va no da co try rieng ben trong.
+    #
+    # Mot lop `except Exception` nua o day khong bat them duoc gi that, nhung
+    # no nuot moi loi KHAC: CSDL sap, cau hinh sai, mot bug trong chinh
+    # `user_hien_tai`. Ba thu do se im lang bien thanh "khach an danh", va
+    # trieu chung la trang van tra 200 voi noi dung sai. Banh coc
+    # `tools/check_silent_except.py` bat dung cho nay.
+    return user_hien_tai(request)
 
 
 def _redirect(location: str, status_code: int = 303):
@@ -127,22 +147,151 @@ SECTIONS = (
     ("tools", "/developers/tools", N_("Công cụ & model")),
     ("playground", "/developers/playground", N_("Playground")),
     ("pricing", "/developers/pricing", N_("Giá & mô phỏng")),
-    ("logs", "/developers/logs", N_("Nhật ký request")),
+    # ⭐ "Hoat dong" chu khong phai "Nhat ky request": muc nay nay gom CA nhat
+    # ky (loi goi HTTP) va job (viec chay bat dong bo). Dat ten cha trung ten
+    # mot dua con la noi rang dua con kia la thu phu — ma no khong phai.
+    ("logs", "/developers/logs", N_("Hoạt động")),
     ("jobs", "/developers/jobs", N_("Job")),
     ("usage", "/developers/usage", N_("Sử dụng & credit")),
     ("webhooks", "/developers/webhooks", N_("Webhook")),
     ("notifications", "/developers/notifications", N_("Thông báo")),
-    ("cli", "/developers/cli", N_("Cắm vào Codex / Claude")),
+    ("cli", "/developers/cli", N_("Cắm vào công cụ")),
     ("docs", "/developers/docs", N_("Tài liệu & SDK")),
     ("settings", "/developers/settings", N_("Cài đặt & bảo mật")),
     ("privacy", "/developers/privacy", N_("Dữ liệu & lưu trữ")),
 )
 
+# ── Điều hướng: BA NHÓM, mười mục — không phải mười sáu mục phẳng ────────────
+#
+# 🔴 VÌ SAO ĐỔI. Mười sáu mục nằm trên một dải cuộn ngang không phải là điều
+#    hướng, nó là một danh sách. Và nó trộn **ba nghề khác nhau** vào cùng một
+#    hàng ngang cấp:
+#
+#      "làm sao cắm được"      quickstart · cli · docs
+#      "API này nhận gì"       tools · pricing · playground
+#      "tài khoản tôi ra sao"  keys · projects · logs · jobs · usage · …
+#
+#    Ba nghề đó khách làm ở BA THỜI ĐIỂM khác nhau — cắm một lần, tra cứu khi
+#    viết mã, xem tài khoản khi vận hành. Xếp chúng ngang nhau buộc khách quét
+#    cả mười sáu mục mỗi lần cần một mục.
+#
+# ⭐ Hai trang tham chiếu (soi thật 25/08) đều KHÔNG có điều hướng phẳng:
+#    `api.nghimmo.com/huongdan` không có điều hướng nào cả — một ô chọn ở đầu
+#    vẽ lại toàn bộ bên dưới; `plenxai.com/developer` gom vào thanh bên ba khu.
+#
+# ⚠️ SÁU MỤC BỊ HẠ KHỎI CẤP CAO NHẤT VẪN CÒN NGUYÊN ROUTE. Chúng thành mục con
+#    của trang cha (xem `CHA_CUA`), không bị xoá. Lý do rất cụ thể: một URL đã
+#    đi vào dấu trang, tin nhắn hỗ trợ và ảnh chụp màn hình thì việc nó 404 là
+#    thiệt hại thật, còn việc nó rời khỏi thanh điều hướng thì không.
+NHOM_NAV = (
+    (N_("Bắt đầu"), ("overview", "cli")),
+    (N_("Tham chiếu"), ("tools", "pricing", "docs")),
+    (N_("Tài khoản"), ("keys", "logs", "usage", "webhooks", "settings")),
+)
 
-def _nav(active: str) -> list:
-    return [{"key": key, "href": href, "label": _t(label),
+#: Mục con → mục cha. Mở một mục con thì mục cha sáng, nên khách luôn biết
+#: mình đang đứng ở đâu trong cây — thay vì thấy thanh bên không có gì sáng cả.
+CHA_CUA = {
+    "quickstart": "cli",
+    "projects": "keys",
+    "playground": "tools",
+    "jobs": "logs",
+    "notifications": "overview",
+    "privacy": "settings",
+}
+
+#: Dải mục con hiện bên trong trang cha. Trống nghĩa là trang không có mục con.
+#:
+#: ⭐ Nhãn ở đây là nhãn TRONG NGỮ CẢNH của cha, nên nó khác nhãn ở `SECTIONS`:
+#:    đứng trong "Khóa API" thì mục con tên "Project" là đủ, không cần nói lại
+#:    nó là project của cái gì.
+MUC_CON = {
+    "cli": (("cli", N_("Cắm vào công cụ")), ("quickstart", N_("Bốn bước đầu"))),
+    "keys": (("keys", N_("Khóa")), ("projects", N_("Project"))),
+    "tools": (("tools", N_("Danh mục")), ("playground", N_("Chạy thử"))),
+    "logs": (("logs", N_("Nhật ký request")), ("jobs", N_("Job"))),
+    "settings": (("settings", N_("Bảo mật")), ("privacy", N_("Dữ liệu & lưu trữ"))),
+    "overview": (("overview", N_("Tổng quan")), ("notifications", N_("Thông báo"))),
+}
+
+
+# Trang MO cho khach chua dang nhap. Ranh gioi la mot cau, va no da duoc viet
+# ra o `KE_HOACH_MVP_CONG_LAP_TRINH_VIEN.md` §2.3: **thu giup nguoi ta quyet
+# dinh mua thi cong khai; thu gan voi tai khoan thi sau dang nhap.**
+#
+# `quickstart` va `tools` khong doc mot dong nao cua tai khoan — chung dung tu
+# catalog. Dat chung sau `require_account` la bat mot nguoi dang CAN NHAC phai
+# tao tai khoan truoc khi biet ta ban gi.
+#
+# Du an da hoc dung bai nay ba lan (trang gia, huong dan cam, trang VPS) va moi
+# lan chi sua dung trang dang dau. Danh sach nay ton tai de lan sau khong phai
+# hoc lai — va `test_300` chot no ca HAI chieu: mo them mot trang rieng tu vao
+# day la gate do.
+# 🔴 RONG, va do la mot CHOT chu khong phai mot viec chua lam.
+#
+# Chu san pham chot 25/08 (nguyen van o
+# `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §1):
+#
+#   "/developers/tools dung sau dang nhap la dung roi. he thong cua ta API
+#    can phai dang nhap moi duoc kich hoat"
+#
+# ⇒ Danh muc cong cu la trang cua MOT TAI KHOAN (cong cu nao dang mo cho tai
+#   khoan nay), khong phai trang ban hang. Cai ban hang la `/gia-api` va
+#   `/huong-dan`, ca hai da cong khai.
+#
+# `quickstart` khong nam trong chot do, va no KHONG duoc mo theo suy dien: mo
+# mot trang ra roi dong lai te hon la mo cham.
+#
+# Cau phan biet, de lan sau khong phai hoi lai: **thu tra loi "co dang mua
+# khong" thi cong khai; thu tra loi "toi dang dung cai gi" thi sau dang nhap.**
+#
+# Bo may duoi day giu nguyen va dung ngay duoc khi co chot mo mot trang nao:
+# them khoa cua trang do vao day la du, va `test_300` chot CA HAI chieu.
+TRANG_CONG_KHAI: frozenset = frozenset()
+
+
+def _duong(key: str) -> str:
+    for k, href, _label in SECTIONS:
+        if k == key:
+            return href
+    return "/developers"
+
+
+def _nav(active: str, da_dang_nhap: bool = True) -> list:
+    """Thanh dieu huong ben trai, gom theo NHOM_NAV.
+
+    Khach an danh chi thay nhung trang ho vao duoc: hien du muc cho ho nghia la
+    mot thanh dieu huong ma phan lon la ngo cut bat ve `/login`.
+
+    Mo mot muc con thi muc cha sang — nen khong bao gio co trang nao lam thanh
+    ben trong rong khong co gi duoc chon.
+    """
+    sang = CHA_CUA.get(active, active)
+    ra = []
+    for ten_nhom, khoa in NHOM_NAV:
+        muc = []
+        for key in khoa:
+            if not da_dang_nhap and key not in TRANG_CONG_KHAI:
+                continue
+            muc.append({"key": key, "href": _duong(key),
+                        "label": _title(key), "active": key == sang})
+        # Nhom rong thi bo han tieu de: mot tieu de nhom khong co muc nao la
+        # mot dong chu khong noi gi.
+        if muc:
+            ra.append({"nhom": _t(ten_nhom), "muc": muc})
+    return ra
+
+
+def _muc_con(active: str) -> list:
+    """Dai muc con cua trang dang mo, hoac rong.
+
+    ⚠️ Lay theo CHA chu khong theo `active`: dung o `/developers/projects` thi
+       dai nay van phai la dai cua "Khoa API", voi "Project" dang duoc chon.
+    """
+    cha = CHA_CUA.get(active, active)
+    return [{"key": key, "href": _duong(key), "label": _t(label),
              "active": key == active}
-            for key, href, label in SECTIONS]
+            for key, label in MUC_CON.get(cha, ())]
 
 
 def _title(active: str) -> str:
@@ -160,9 +309,16 @@ def _base_context(request: Request, db: Session, user, active: str,
         "csrf_token": issue_csrf_token(request),
         "api_enabled": config.enabled,
         "read_only": config.read_only,
-        "nav": _nav(active),
-        "section_title": _title(active),
+        "nav": _nav(active, da_dang_nhap=user is not None),
+        "muc_con": _muc_con(active),
+        # Tieu de trang la tieu de cua CHA khi dang o mot muc con: dai muc con
+        # ngay ben duoi da noi ro dang o nhanh nao, nen lap lai ten nhanh o
+        # tieu de la mot dong thua noi cung mot thu hai lan.
+        "section_title": _title(CHA_CUA.get(active, active)),
         "error": error,
+        # Trang cong khai dung no de doi loi keu goi: khach an danh thay "Dang
+        # ky lay khoa", khach da dang nhap thay duong toi khoa cua ho.
+        "da_dang_nhap": user is not None,
     }
 
 
@@ -224,7 +380,7 @@ def _overview_counts(db: Session, user) -> dict:
     from sqlalchemy import func
 
     from platform_core.public_api.tables import (WEBHOOK_DEAD, WEBHOOK_FAILED,
-                                                 WebhookDelivery)
+                                                 ApiRequestLog, WebhookDelivery)
 
     now = datetime.now(timezone.utc)
     active_keys = sum(1 for key in devkeys.list_for_user(db, user.id)
@@ -239,12 +395,20 @@ def _overview_counts(db: Session, user) -> dict:
         select(Job).where(Job.user_id == user.id,
                           Job.created_at >= since)).scalars().all()
         if api_meta(job))
+    # Đã từng gọi API chưa — KHÔNG suy ra từ `api_jobs`: phần lớn lượt gọi
+    # đầu tiên là `GET /tools` hoặc `/credits/balance`, chúng không tạo job
+    # nào. Suy từ job sẽ nói "chưa gọi bao giờ" với người vừa gọi xong, và đó
+    # là kiểu sai làm người ta ngờ cả phần còn lại của trang.
+    da_goi = bool(db.execute(
+        select(func.count(ApiRequestLog.id)).where(
+            ApiRequestLog.user_id == user.id)).scalar_one())
     return {
         "projects": len(projects.list_for(db, user_id=user.id)),
         "active_keys": active_keys,
         "webhooks": len(_webhooks(db, user.id)),
         "webhook_failures": failures,
         "api_jobs": api_jobs,
+        "da_goi_api": da_goi,
     }
 
 
@@ -270,8 +434,15 @@ def _keys_page(request: Request, db: Session, user, *, revealed: str = "",
 def developer_overview(request: Request, user=Depends(require_account),
                        db: Session = Depends(get_db)):
     config = _public_api_config(request)
+    # Bước cuối phải là một lệnh CHẠY ĐƯỢC, không phải một liên kết tới tài
+    # liệu. `GET /tools` vì nó là lượt gọi rẻ nhất chứng minh được khoá sống:
+    # không báo giá, không job, không tốn credit — nếu nó trả 200 thì mọi thứ
+    # từ xác thực tới phạm vi đều đúng.
     return _render(request, db, user, "overview", "dev_overview.html",
                    counts=_overview_counts(db, user),
+                   lenh_thu=("curl -s " + _goc_url(request) + "/api/v1/tools \
+"
+                             '  -H "Authorization: Bearer $LTT_API_KEY"'),
                    **_usage_context(db, user, config))
 
 
@@ -406,7 +577,8 @@ def developer_pricing(request: Request, user=Depends(require_account),
 
 
 @router.get("/playground", response_class=HTMLResponse)
-def developer_playground(request: Request, user=Depends(require_account),
+def developer_playground(request: Request, tool: str = "",
+                         user=Depends(require_account),
                          db: Session = Depends(get_db)):
     """A request builder that calls the public API the way a customer does.
 
@@ -421,7 +593,22 @@ def developer_playground(request: Request, user=Depends(require_account),
     config = _public_api_config(request)
     catalog = build_catalog(config)
     published = [tool.to_public_dict() for tool in catalog]
+    # Trang không điền hộ khoá được (xem docstring), nhưng nó BIẾT khách có
+    # khoá nào — nửa công khai của khoá không phải bí mật. Nói ra để một người
+    # chưa có khoá không mắc kẹt trước một ô nhập họ không điền được nổi.
+    now = datetime.now(timezone.utc)
+    khoa = [k for k in devkeys.list_for_user(db, user.id) if k.is_usable(now=now)]
+    ten = {item["name"] for item in published}
     return _render(request, db, user, "playground", "dev_playground.html",
+                   # Chi nhan ten CO THAT trong danh muc. Doi chieu voi danh
+                   # muc chu khong loc ky tu: mot ten la thi bo qua, va o chon
+                   # ve mac dinh — khong dung nao de mot chuoi tu URL di thang
+                   # vao trang.
+                   tool_chon=tool if tool in ten else "",
+                   khoa_dung_duoc=[
+                       {"key_id": k.key_id, "name": k.name,
+                        "mode": str(getattr(k, "mode", "live") or "live")}
+                       for k in khoa],
                    catalog=[{"name": item["name"],
                              "execution_mode": item["execution_mode"]}
                             for item in published],
@@ -533,13 +720,69 @@ def developer_tools(request: Request, q: str = "", capability: str = "",
     return _render(request, db, user, "tools", "dev_tools.html",
                    query=needle, capability=wanted,
                    capabilities=capabilities_of(catalog),
-                   catalog=[{"name": tool.name, "description": tool.description,
-                             "capability": tool.capability,
-                             "execution_mode": tool.execution_mode,
-                             "scopes": list(tool.scopes)}
-                            for tool in shown],
+                   catalog=[_the_cong_cu(tool) for tool in shown],
                    models=[model.to_public_dict()
                            for model in build_models(shown)])
+
+
+def _the_cong_cu(tool) -> dict:
+    """Mot the trong danh muc — DU de doc het ma khong roi trang.
+
+    🔴 VI SAO DOI. Danh muc cu la mot BANG PHANG: ten, nhom, che do chay, pham
+       vi. Muon biet mot cong cu nhan tham so gi thi phai mo mot trang khac —
+       nen so sanh hai cong cu la hai lan tai trang, va quet ca be mat API la N
+       lan tai trang.
+
+    ⭐ `plenxai.com/developer` (soi that 25/08) lam nguoc lai: the GAP MAC DINH,
+       mo mot cai moi lan, va trong the mo co du bang tham so + vi du + phan
+       hoi mau. Ca be mat API lot vao MOT man hinh duoi dang danh sach quet
+       duoc; trai phang thi trang dai 4.000 pixel va khong ai nhin thay cai thu
+       hai.
+
+    ⚠️ Bang tham so o day sinh tu DUNG mot ham ma trang chi tiet dung
+       (`_tham_so`). Hai noi hien thi, mot ban sinh — nen chung khong the lech.
+    """
+    body = tool.to_public_dict()
+    params = _tham_so(body["input_schema"])
+    return {"name": tool.name, "description": tool.description,
+            "capability": tool.capability,
+            "execution_mode": tool.execution_mode,
+            "scopes": list(tool.scopes),
+            "params": params,
+            "example_request": _example_request(tool, params),
+            "outputs": _vi_du_outputs(body["output_schema"].get("properties", {}))}
+
+
+def _tham_so(schema: dict) -> list:
+    """Bang tham so, SINH TU `input_schema` — khong go tay.
+
+    ⛔ Go tay mot bang tham so la tao ban sao thu hai cua hop dong, va ban sao
+       do se lech AM THAM: khach doc trang, gui tham so theo trang, nhan 422.
+       Xem `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §5.
+
+    ⭐ Tach ra khoi route chi tiet 25/08 de danh muc cong cu dung LAI duoc no:
+       tu do moi the trong danh muc bung ra duoc bang tham so day du ma khong
+       phai tai mot trang khac. Mot ban sinh, hai noi dung.
+    """
+    required = set(schema.get("required", ()))
+    ra = []
+    for name, spec in schema.get("properties", {}).items():
+        bounds = ""
+        if "minimum" in spec or "maximum" in spec:
+            bounds = f"{spec.get('minimum', '')}–{spec.get('maximum', '')}"
+        elif "maxLength" in spec:
+            bounds = _t("tối đa %(n)s ký tự") % {"n": spec["maxLength"]}
+        ra.append({
+            "name": name, "type": spec.get("type", "string"),
+            "required": name in required, "enum": spec.get("enum"),
+            "bounds": bounds, "default": spec.get("default"),
+            "description": spec.get("description", ""),
+            "example": (spec.get("examples") or [None])[0],
+            # "Chỉ dùng khi mode = edit, subject" — lấy từ hợp đồng, không đọc
+            # câu tiếng Anh trong `description` rồi đoán. Xem `catalog.py`.
+            "only_when": spec.get("x-ltt-only-when") or {},
+        })
+    return ra
 
 
 @router.get("/tools/{tool_name}", response_class=HTMLResponse)
@@ -569,23 +812,7 @@ def developer_tool_detail(request: Request, tool_name: str,
         raise _redirect("/developers/tools", status_code=404) from exc
 
     body = tool.to_public_dict()
-    schema = body["input_schema"]
-    required = set(schema.get("required", ()))
-    params = []
-    for name, spec in schema.get("properties", {}).items():
-        bounds = ""
-        if "minimum" in spec or "maximum" in spec:
-            bounds = f"{spec.get('minimum', '')}–{spec.get('maximum', '')}"
-        elif "maxLength" in spec:
-            bounds = _t("tối đa %(n)s ký tự") % {"n": spec["maxLength"]}
-        params.append({
-            "name": name, "type": spec.get("type", "string"),
-            "required": name in required, "enum": spec.get("enum"),
-            "bounds": bounds, "default": spec.get("default"),
-            "description": spec.get("description", ""),
-            "example": (spec.get("examples") or [None])[0],
-        })
-
+    params = _tham_so(body["input_schema"])
     example = _example_request(tool, params)
     outputs = body["output_schema"].get("properties", {})
     return _render(
@@ -595,6 +822,10 @@ def developer_tool_detail(request: Request, tool_name: str,
         example_request=example,
         has_artifacts=any(str(spec.get("type", "")).startswith("artifact")
                           for spec in outputs.values()),
+        # Hình dạng THẬT của `outputs[]`, dựng từ chính `output_schema` — không
+        # gõ tay, nên nó không thể lệch khỏi thứ job trả về. Xem chú thích trong
+        # template: khách trước nay đi tìm `result.<tên trường>` và không thấy.
+        vi_du_outputs=_vi_du_outputs(outputs),
         models=[model.to_public_dict() for model in build_models([tool])],
         events=sorted(TERMINAL_EVENTS),
         errors=as_rows(),
@@ -605,15 +836,68 @@ def developer_tool_detail(request: Request, tool_name: str,
                 "max_body_kib": config.max_body_bytes // 1024})
 
 
+def _vi_du_outputs(outputs: dict) -> str:
+    """Một mẩu `outputs[]` thật, dựng từ `output_schema`.
+
+    🔴 VÌ SAO CẦN. Bảng "Kết quả" liệt kê tên trường và kiểu, nên người đọc suy
+       ra `result.<tên trường>` — chỗ đó **không có gì**. Artifact nằm ở
+       `outputs[]`, `result` chỉ giữ phần dữ liệu thuần.
+
+    ⛔ Đo 25/08 bằng một lượt gọi thật: kịch bản làm đúng theo tài liệu đã dừng
+       lại **sau khi job xong và tiền đã bị thu**. Không lỗi nào từ máy chủ —
+       chỉ là mã của khách tìm sai chỗ.
+
+    ⚠️ Sinh từ schema chứ không gõ tay: một mẩu JSON chép tay là bản sao thứ hai
+       của hợp đồng, và nó sẽ lệch đúng vào hôm ai đó đổi tên trường.
+    """
+    import json
+
+    mau = []
+    for ten, spec in outputs.items():
+        if not str(spec.get("type", "")).startswith("artifact"):
+            continue
+        mau.append({"id": f"<job_id>.{ten}.0", "field": ten, "index": 0})
+    return json.dumps({"outputs": mau or [{"id": "<job_id>.<field>.0",
+                                           "field": "<field>", "index": 0}],
+                       "result": {"…": _t("phần dữ liệu thuần, không phải tệp")}},
+                      ensure_ascii=False, indent=2)
+
+
 def _example_request(tool, params) -> str:
-    """A quote call a reader can paste, built from the tool's own examples."""
+    """A quote call a reader can paste — the SMALLEST one that works.
+
+    🔴 VÌ SAO KHÔNG NHÉT MỌI THAM SỐ VÀO. Bản trước dựng ví dụ từ **mọi** thuộc
+       tính có `examples`, và với `image.ltt` nó cho ra một thân tự mâu thuẫn:
+
+           "mode": "t2i",
+           "image_key": "upl_from_POST_/api/v1/uploads"
+
+       Trong khi chính `description` của `image_key` nói *"Required for edit and
+       subject; **ignored for t2i**"*. Tức ví dụ mẫu dạy khách gửi một trường mà
+       chế độ đang chọn bỏ qua.
+
+    ⛔ Một ví dụ tự mâu thuẫn tệ hơn không có ví dụ: nó **chạy được**, nên không
+       ai phát hiện, và khách bê nguyên cấu trúc đó vào mã của họ.
+
+    ⭐ Nên luật là: **bắt buộc, cộng những gì có `default`.** Tham số tuỳ chọn
+       không có mặc định là tham số chỉ dùng trong một số ca — và ví dụ đầu tiên
+       không phải chỗ để trình bày mọi ca. Bảng ngay dưới đã liệt kê đủ.
+
+    ⚠️ Đây **không** phải chỗ sửa gốc. Gốc là `input_schema` chưa khai được điều
+       kiện "trường này chỉ dùng khi mode=edit". Xem
+       `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §9.
+    """
     import json
 
     payload = {}
     for param in params:
+        if not param["required"] and param["default"] is None:
+            continue
         if param["example"] is not None:
             payload[param["name"]] = param["example"]
-        elif param["required"] and param["default"] is None:
+        elif param["default"] is not None:
+            payload[param["name"]] = param["default"]
+        else:
             payload[param["name"]] = f"<{param['type']}>"
     body = json.dumps({"tool": tool.name, "input": payload},
                       ensure_ascii=False, indent=2)
@@ -886,6 +1170,7 @@ def developer_cli(request: Request, user=Depends(require_account),
        `examples.py` đã theo: *"No snippet ever contains a key."*
     """
     from platform_core.public_api import examples
+    from server.routes.tai_lieu_api import bo_cai_moi_nhat
 
     goc = str(request.base_url).rstrip("/")
     return _render(
@@ -900,8 +1185,13 @@ def developer_cli(request: Request, user=Depends(require_account),
         vscode_codex=examples.vscode_codex_config(goc),
         vscode_bay=examples.VSCODE_BAY,
         desktop_reg=examples.claude_desktop_registry(goc),
+        be_mat=examples.be_mat_cam(goc),
+        # Bo cai .exe: cung nguon `bo_cai_moi_nhat()` ma trang cong khai dung,
+        # nen so phien ban va bam SHA-256 khong the lech giua hai trang.
+        bo_cai=bo_cai_moi_nhat(),
         bay=examples.CLI_BAY,
         model=examples.CLI_MODEL,
+        model_desktop=examples.DESKTOP_MODEL,
         env_key=examples.ENV_API_KEY)
 
 
@@ -1062,6 +1352,44 @@ def developer_settings(request: Request, user=Depends(require_account),
     return _render(request, db, user, "settings", "dev_settings.html")
 
 
+def _goc_url(request: Request) -> str:
+    """Gốc URL công khai, để lệnh mẫu chép ra là chạy được ngay.
+
+    Viết cứng `https://app.lttstudios.com` thì lệnh sẽ SAI trên mọi cài đặt
+    khác — và nó sai một cách im lặng: khách chép, chạy, nhận lỗi mạng, và
+    không nghĩ rằng chính trang hướng dẫn đưa nhầm địa chỉ.
+    """
+    goc = os.environ.get("LTT_BASE_URL", "").strip().rstrip("/")
+    if goc:
+        return goc
+    return str(request.base_url).rstrip("/")
+
+
+def _kiem_cau_hinh_khoa() -> str:
+    """Chuỗi lỗi cho khách nếu MÁY CHỦ chưa cấu hình được để cấp khoá.
+
+    Trả chuỗi rỗng khi mọi thứ ổn.
+
+    `current_pepper()` là hàm **chỉ** kiểm cấu hình máy chủ, nên gọi riêng nó
+    tách được hai loại lỗi mà không cần khớp chuỗi: hỏng ở đây là lỗi của ta,
+    hỏng ở `devkeys.issue()` là thứ khách sửa được.
+
+    Khách nhận một câu nói rõ đây không phải lỗi của họ và họ không sửa được;
+    tên biến môi trường đi vào log. Một khách đọc `LTT_API_KEY_PEPPER is missing`
+    học được cấu hình nội bộ của ta và vẫn không làm gì được.
+    """
+    from platform_core.public_api import keys as _keys
+
+    try:
+        _keys.current_pepper()
+    except Exception as exc:  # noqa: BLE001 — mọi lỗi ở đây đều là lỗi của ta
+        _log.error("developer keys: may chu chua cau hinh cap khoa: %s", exc)
+        return _t("Máy chủ chưa cấu hình xong để cấp khóa. Đây là lỗi phía "
+                  "chúng tôi, không phải của bạn — chúng tôi đã được báo. "
+                  "Vui lòng thử lại sau.")
+    return ""
+
+
 @router.post("/keys", response_class=HTMLResponse)
 def create_key(request: Request, name: str = Form(""),
                scopes: list[str] = Form(default=[]),
@@ -1072,6 +1400,9 @@ def create_key(request: Request, name: str = Form(""),
                db: Session = Depends(get_db)):
     if not verify_csrf_token(request, csrf_token):
         raise _redirect("/developers/keys")
+    loi_may_chu = _kiem_cau_hinh_khoa()
+    if loi_may_chu:
+        return _keys_page(request, db, user, error=loi_may_chu)
     try:
         project = (projects.get_owned(db, user_id=user.id, project_id=project_id)
                    if project_id else projects.default_for(db, user_id=user.id))

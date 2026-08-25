@@ -99,9 +99,24 @@ def unhandled_exception_handler(request: Request, exc: Exception):
     and a traceback is free reconnaissance. The real cause is logged with the
     correlation id, which is what support needs.
     """
-    logging.getLogger(__name__).exception(
-        "unhandled public api error [%s] %s %s", request_id(request),
-        request.method, request.url.path)
+    # 🔴 `logger.exception()` DOC `sys.exc_info()`, va o day KHONG co gi de doc.
+    #
+    #    Một handler của FastAPI **không** chạy trong khối `except`; ngoại lệ tới
+    #    qua tham số `exc`. Nên `.exception()` ghi đúng chữ `NoneType: None` — một
+    #    dòng log trông như đã có vết, mà rỗng.
+    #
+    # ⛔ HẬU QUẢ ĐO ĐƯỢC 25/08: Claude Desktop lam ta tra mot 500 that. Ban ghi
+    #    duy nhat de giai thich no chi noi "NoneType: None", con vet o logger kia
+    #    thi bi cat truoc khi toi day. Tuc **ca hai duong deu khong noi loi gi**,
+    #    va mot loi 500 co that tro thanh khong the chan doan.
+    #
+    # ⭐ Kieu + thong diep di TRUOC, trong chinh dong message. Vet co the bi cat,
+    #    dong message thi khong. Van KHONG tra thu nay ra cho khach (than 500 co
+    #    dinh) — day chi la thu nguoi van hanh doc.
+    logging.getLogger(__name__).error(
+        "unhandled public api error [%s] %s %s -> %s: %s", request_id(request),
+        request.method, request.url.path, type(exc).__name__, exc,
+        exc_info=exc)
     return status_problem_response(request, 500)
 
 

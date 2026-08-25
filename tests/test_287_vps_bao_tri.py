@@ -122,8 +122,10 @@ def test_thu_duoc_thi_khong_treo_va_khong_xoa(monkeypatch):
     _dung_billing(monkeypatch, den_han_thu=[_May()])
     monkeypatch.setattr(bao_tri, "_client_hoac_none", lambda: _ClientGia())
     kq = bao_tri.mot_luot(_DbGia(), now=NOW)
-    assert kq == {"da_thu": 1, "da_treo": 0, "da_nop_xoa": 0,
-                  "da_doi_giam_toc": 0, "da_chup": 0, "da_don_ve": 0}
+    # So theo TAP KHOA thay vi so bang nhau: mot lượt bảo trì làm nhiều việc, và
+    # thêm một việc mới không phải lý do để test về "thu tiền" báo đỏ.
+    assert kq["da_thu"] == 1
+    assert all(kq[k] == 0 for k in kq if k != "da_thu"), kq
 
 
 def test_thieu_credit_thi_TREO_chu_khong_bo_qua(monkeypatch):

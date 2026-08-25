@@ -1,8 +1,23 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+{# 🔴 DANH MUC = THE GAP, khong phai bang phang.
+
+   Ban cu la mot bang bon cot (ten, nhom, che do chay, pham vi). Muon biet mot
+   cong cu nhan tham so gi thi phai mo mot trang khac — nen so sanh hai cong cu
+   la hai lan tai trang, va quet ca be mat API la N lan tai trang.
+
+   ⭐ `plenxai.com/developer` (soi that 25/08) lam nguoc lai: the gap mac dinh,
+      mo mot cai moi lan, trong the mo co du bang tham so + vi du + phan hoi.
+      Ca be mat API lot vao MOT man hinh duoi dang danh sach quet duoc.
+
+   ⚠️ Dung `<details>` cua trinh duyet chu khong phai JS: no gap/mo duoc ma
+      KHONG can script, tim kiem trong trang (Ctrl+F) van thay chu ben trong,
+      va no tu co dung ngu nghia cho trinh doc man hinh. Mot ban tu viet bang
+      JS se mat ca ba thu do. #}
+
 <div class="card">
-  <p class="muted">{{ _("Đây là những gì máy chủ này đang mở. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}</p>
+  <p class="muted">{{ _("Đây là những gì máy chủ này đang mở cho tài khoản của bạn. Giá của một lời gọi lấy từ POST /api/v1/quotes — giá phụ thuộc toàn bộ input, nên không có con số cố định theo model.") }}</p>
 
   <form method="get" action="/developers/tools" role="search">
     <label for="tool-q" class="sr-only">{{ _("Tìm công cụ") }}</label>
@@ -21,42 +36,97 @@
       <a class="btn btn-ghost" href="/developers/tools">{{ _("Bỏ lọc") }}</a>
     {% endif %}
   </form>
+</div>
 
-  {% if not catalog %}
+{% if not catalog %}
+  <div class="card">
     {% if query or capability %}
       <p class="muted">{{ _("Không công cụ nào khớp.") }}</p>
     {% else %}
-      <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API.") }}</p>
+      {# ⛔ Danh muc rong KHONG phai loi — do la fail-closed cua Q92 dang lam
+         dung viec: `LTT_PUBLIC_API_TOOLS` mac dinh rong, nen bat co API mot
+         minh khong mo tool nao. Noi thang de khong ai di sua nham cho khac. #}
+      <p class="muted">{{ _("Máy chủ này chưa mở công cụ nào ra API. Đây là trạng thái mặc định, không phải lỗi — quản trị viên mở từng công cụ một bằng LTT_PUBLIC_API_TOOLS.") }}</p>
     {% endif %}
-  {% else %}
-    <table class="table">
-      <thead><tr>
-        <th>{{ _("Công cụ") }}</th><th>{{ _("Nhóm") }}</th>
-        <th>{{ _("Chạy kiểu") }}</th><th>{{ _("Phạm vi cần") }}</th>
-      </tr></thead>
-      <tbody>
-        {% for tool in catalog %}
-          <tr>
-            <td><a href="/developers/tools/{{ tool.name }}">
-                  <code>{{ tool.name }}</code></a><br>
-                <span class="muted">{{ tool.description }}</span></td>
-            <td>{{ tool.capability }}</td>
-            <td><code>{{ tool.execution_mode }}</code></td>
-            <td>{% for scope in tool.scopes %}<code>{{ scope }}</code> {% endfor %}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  {% endif %}
-</div>
+  </div>
+{% else %}
+  <p class="muted" style="margin:0 0 10px;">{{ catalog | length }}
+    {{ _("công cụ đang mở — bấm một thẻ để xem hợp đồng đầy đủ.") }}</p>
+
+  {% for tool in catalog %}
+    <details class="tool-the">
+      <summary>
+        {# Nhan che do chay dung vai tro cua nhan method ben plenxai: no la thu
+           quyet dinh KHACH PHAI VIET MA KIEU GI (doi hay hoi lai), nen no la
+           thu dau tien can doc, khong phai mot cot phu o cuoi bang. #}
+        <span class="the-che-do che-do-{{ tool.execution_mode | lower }}">{{ tool.execution_mode }}</span>
+        <code class="the-ten">{{ tool.name }}</code>
+        <span class="the-mo-ta">{{ tool.description }}</span>
+        <span class="the-nhom">{{ tool.capability }}</span>
+      </summary>
+
+      <div class="tool-than">
+        <p class="muted" style="margin-top:0;">{{ _("Phạm vi cần:") }}
+          {% for scope in tool.scopes %}<code>{{ scope }}</code> {% endfor %}
+          · <a href="/gia-api">{{ _("Xem giá") }} →</a>
+          · <a href="/developers/playground?tool={{ tool.name }}">{{ _("Chạy thử công cụ này") }} →</a>
+          · <a href="/developers/tools/{{ tool.name }}">{{ _("Trang riêng đầy đủ") }} →</a></p>
+
+        <h4>{{ _("Tham số") }}</h4>
+        {# ⛔ Bang nay SINH tu `input_schema` (xem `_tham_so`). Go tay la tao ban
+           sao thu hai cua hop dong, va ban sao do lech AM THAM. #}
+        <table class="table">
+          <thead><tr>
+            <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Kiểu") }}</th>
+            <th scope="col">{{ _("Bắt buộc") }}</th><th scope="col">{{ _("Mô tả") }}</th>
+          </tr></thead>
+          <tbody>
+            {% for p in tool.params %}
+              <tr>
+                <td><code>{{ p.name }}</code></td>
+                <td><code>{{ p.type }}</code>
+                    {%- if p.enum %}<br><span class="muted" style="font-size:11px;">
+                      {% for v in p.enum %}<code>{{ v }}</code> {% endfor %}</span>{% endif %}
+                    {%- if p.bounds %}<br><span class="muted" style="font-size:11px;">{{ p.bounds }}</span>{% endif %}</td>
+                <td>{% if p.required %}<strong>{{ _("có") }}</strong>
+                    {%- else %}<span class="muted">{{ _("không") }}
+                      {%- if p.default is not none %} · {{ _("mặc định") }}
+                        <code>{{ p.default }}</code>{% endif %}</span>{% endif %}</td>
+                <td>{{ p.description }}
+                  {%- if p.only_when %}
+                    {# Tham so CO o che do nay va KHONG o che do kia — lay tu hop
+                       dong (`x-ltt-only-when`), khong doc van xuoi roi doan. #}
+                    <br><span class="chi-khi">{{ _("chỉ dùng khi") }}
+                      {% for k, vs in p.only_when.items() %}<code>{{ k }}</code> =
+                        {% for v in vs %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+                      {% endfor %}</span>
+                  {% endif %}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <h4>{{ _("Ví dụ gửi đi") }}</h4>
+        <pre style="overflow-x:auto;"><code>{{ tool.example_request }}</code></pre>
+
+        <h4>{{ _("Kết quả trả về") }}</h4>
+        {# 🔴 Doan nay ton tai vi mot loi THAT ngay 25/08: khach doc bang "Ket
+           qua" roi di tim `result.<ten truong>` — cho do KHONG CO GI. Artifact
+           nam o `outputs[]`. Kich ban gia lap da dung lai dung o day, SAU khi
+           job xong va tien da bi thu. #}
+        <pre style="overflow-x:auto;"><code>{{ tool.outputs }}</code></pre>
+      </div>
+    </details>
+  {% endfor %}
+{% endif %}
 
 {% if models %}
-  <div class="card">
+  <div class="card" style="margin-top:16px;">
     <h2 style="margin-top:0;">Model</h2>
     <table class="table">
       <thead><tr>
-        <th>Alias</th><th>{{ _("Nhóm") }}</th><th>{{ _("Độ ổn định") }}</th>
-        <th>{{ _("Công cụ nhận") }}</th><th>{{ _("Ghi chú") }}</th>
+        <th scope="col">Alias</th><th scope="col">{{ _("Nhóm") }}</th><th scope="col">{{ _("Độ ổn định") }}</th>
+        <th scope="col">{{ _("Công cụ nhận") }}</th><th scope="col">{{ _("Ghi chú") }}</th>
       </tr></thead>
       <tbody>
         {% for model in models %}
@@ -73,7 +143,7 @@
   </div>
 {% endif %}
 
-<p class="muted">{{ _("Hợp đồng đầy đủ của từng công cụ:") }}
+<p class="muted">{{ _("Hợp đồng máy đọc được:") }}
   <code>GET /api/v1/tools/{tool_name}</code> ·
   <a href="/api/v1/openapi.json">OpenAPI</a></p>
 

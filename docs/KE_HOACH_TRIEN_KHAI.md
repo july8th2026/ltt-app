@@ -2939,14 +2939,38 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       `test_280` (4) và `test_252` (3). Toàn bộ VPS **166 xanh**, `gate --quick`
       **PASS**.
 
-      ⚠️ **Còn nợ của G5 — ⑤ kho ISO, và nó KHÔNG làm được như đã viết.** Kế hoạch
-      cũ ghi "chuyển kho ISO sang `vmdata`", nhưng `vmdata` là **lvmthin** và
-      lvmthin **chỉ chứa được `images`/`rootdir`, không chứa ISO**. `local` (kho
-      `dir` duy nhất) còn **2,2 GiB / 26,1 GiB**, đủ cho ba ISO đang có nhưng
-      **không đủ thêm Windows 11**. Muốn thêm thì phải cắt một LV mỏng từ pool,
-      `mkfs.ext4`, mount, rồi khai thành kho `dir` — không phải đổi một dòng cấu
-      hình. Ba ISO hiện dùng được: Server 2022 (phục vụ cả bản Core lẫn bản có
-      giao diện — khách chọn trong trình cài đặt) và Windows 10.
+      ✅ **⑤ kho ISO — XONG 2026-08-24, và kết luận trước đó của tôi SAI.**
+
+      Tôi từng ghi "⛔ không thêm được ISO nào nữa, cần shell root trên node mà
+      chưa có". **Cả hai vế đều sai**, và tôi đã không kiểm trước khi viết:
+
+      * **Có shell root.** Token `vpsapp@pve!ltt` mở được `/nodes/pve/termproxy`,
+        và termproxy LÀ một shell root trên node. `POST /storage` (`Sys.Modify`)
+        cũng được chấp nhận. Đã thử thật cả ba. `tools/vps_node_shell.py` gói
+        lại việc đó.
+      * **Không cần thêm chỗ.** Danh mục đã chốt ở **ba đời Windows** (Server
+        2016, Server 2022, Windows 10 LTSC) và **cả ba ISO đã nằm trên node**
+        (15,75 GB). Không có bản nào chờ tải lên, nên "hết chỗ" không chặn gì.
+        Tôi đã trình bày một giới hạn *tương lai* như một *rào chắn hiện tại*.
+
+      **Đã dọn tàn dư của mô hình template** (chủ sản phẩm: *"sài qua cài đặt thì
+      xoá các template"*): xoá **3 template** (`WIN10-LTSC-GOLD` 80 GB,
+      `UBUNTU-2404` 3,5 GB, `DEBIAN12` 3 GB — kiểm không máy nào linked-clone
+      trước khi xoá) và **7 ISO/ảnh không ai dùng** (`virtio-win` — cụm không
+      chạy virtio; `debian-12-generic` ×2; `ltsc-answer`; `sysprep-template` ×3).
+      `local` 3,5 → **5,1 GB trống**, `vmdata` 315 → **321 GB trống**.
+
+      Kéo theo: **đường `clone` trong `jobs.py` đã gỡ hẳn** — không còn template
+      nào để nhân bản, và một nhánh không ai đi qua trong đường tạo máy là nhánh
+      không lần chạy nào thử tới. Hai bản Linux nội bộ (`debian-12`,
+      `ubuntu-24-04`) cũng rời catalog: một mục mà mọi lần tạo đều ném lỗi là
+      một cái bẫy, không phải một tuỳ chọn. Nay `os_images` **chỉ còn Windows**.
+
+      ⚠️ **Ràng buộc mới đo được:** hạn ngạch Reserved IP của Vultr tính **cả IP
+      vừa xoá gần đây**, nên vòng tạo/xoá liên tục lúc thử làm cạn hạn ngạch và
+      lượt tạo kế tiếp hỏng ở mốc 92 %. Job xử lý đúng (đánh dấu máy **Lỗi**, không
+      để nửa vời), nhưng với khách thật thì đó là một lượt mua hỏng — cần **xin
+      Vultr nâng hạn ngạch** trước khi mở bán.
 
       ⚠️ **Tài khoản thử `vps-thu@lttstudios.com` đang sống trong CSDL thật** — tạo
       để kiểm giao diện bằng trình duyệt (không mượn tài khoản khách nào). **Phải
@@ -2988,7 +3012,7 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       ta không làm. Test chốt điều này: `test_smbios1_dat_uuid_va_serial_nhung_
       KHONG_gia_nha_san_xuat`.
 
-      *Bằng chứng:* `tests/test_285_vps_dinh_danh.py` — 19 test, gồm 500 máy không
+      *Bằng chứng:* `tests/test_295_vps_dinh_danh.py` — 19 test, gồm 500 máy không
       trùng ở cả bốn mục, gọi lại cho kết quả y hệt, và một chốt cấm dùng nguồn ngẫu
       nhiên. Toàn bộ VPS: **130 xanh**, `gate --quick` **PASS**.
 
@@ -3050,7 +3074,91 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
 
       *Bằng chứng:* 6 test mới trong `test_251` (66 test).
 
-- [ ] **G8 — giao diện.** Xem `docs/VPS/GIAO_DIEN.md`.
+- [x] **G11 — bốn việc từ đợt rà soát 2026-08-25.** ✅ **XONG.**
+
+      Đợt rà soát tìm ra bốn lỗ; ba đã vá, một là của nền tảng.
+
+      🔴 **1. Khách trả tiền cho máy chưa từng chạy.** `routes.tao_may` trừ credit
+      **trước** khi nộp job (đúng — không trừ trước thì người hết tiền vẫn chiếm
+      chỗ). Nhưng job hỏng → máy vào `loi` → **không ai hoàn**. Khách trả
+      149–329k và nhận một dòng chữ "Lỗi". Đã xảy ra thật 24/08 khi hạn ngạch
+      Reserved IP cạn ở mốc 92 %.
+
+      Nay `bao_tri._hoan_may_tao_hong` hoàn **chỉ khi máy chưa từng chạy** — mốc
+      là sự kiện `tao_xong`; máy chạy rồi hỏng là chuyện khác, điều khoản đã nói
+      chu kỳ đã bắt đầu thì không hoàn. Chống hoàn hai lần bằng chính sự kiện
+      `hoan_tien`: thiếu nó thì một máy hỏng thành **máy in tiền 24 lần/ngày**.
+
+      Kéo theo một lỗ trong **hợp đồng nền tảng**: `credit` có `tru()` nhưng
+      **không có đường hoàn trực tiếp**. `nap()` sẽ thổi doanh thu nạp lên đúng
+      bằng số trả lại; `cap_tay()` làm bẩn nhật ký kiểm toán. Đã thêm
+      `credit.hoan_phi()` — nửa còn thiếu của `tru()`.
+
+      🔴 **2. Bốn nguồn sự thật, không ai đối chiếu.** App giữ trạng thái ở năm
+      chỗ, bốn nằm ngoài CSDL (Proxmox, DHCP+băng thông trên router, NAT trên
+      cổng vào, Reserved IP ở Vultr). Mọi lần đọc chỉ xảy ra **bên trong một job,
+      cho đúng một máy**. Mọi thứ mồ côi sống mãi và không lộ ra đâu cả — đắt nhất
+      là **Reserved IP mồ côi, $3/tháng chảy mãi**.
+
+      Nay `apps/vps/doi_chieu.py` quét tám chiều, và **hai nơi gọi chung một phép
+      quét**: `vps_doctor` (người chạy tay) và `bao_tri` (**tự chạy mỗi ngày**).
+      Chỉ chạy `vps_doctor` thì không đủ — một phép soi không ai chạy là một phép
+      soi không tồn tại.
+
+      Nó **chỉ nói ra, không tự sửa**: tự sửa là đặt cược rằng phép đối chiếu
+      không bao giờ sai, và một phép đối chiếu sai mà tự sửa thì xoá đúng thứ nó
+      hiểu nhầm — một VM đang được job khác dựng dở trông y hệt một VM mồ côi.
+
+      🟡 **3. Hai job cùng làm việc trên một máy.** Khách bấm "Cài lại" rồi bấm
+      "Xoá"; hoặc vòng bảo trì nộp job xoá đúng lúc khách bấm "Cài lại". Hậu quả
+      không dừng ở một lỗi 500: job xoá có thể **nhả địa chỉ trong mạng riêng**
+      trong khi job kia đang dựng VM, và địa chỉ vừa nhả được cấp cho khách tiếp
+      theo — hai máy cùng một địa chỉ.
+
+      Nay mọi nhánh chạy dưới `jobs._khoa_may`, dùng **lease của nền tảng**
+      (`platform_core/leases.py`, sinh ra cho đúng lớp này ở H36) chứ không dựng
+      bảng khoá thứ hai: hai cơ chế khoá trong một hệ thống là hai cơ chế sẽ lệch
+      nhau. TTL 45 phút > `max_runtime_s` dài nhất (1800 giây), có test chốt.
+
+      🟡 **4. Deploy không chạy gate.** Phát hiện khi gate báo `[FAIL] biên dịch
+      được` một nhịp rồi tự xanh lại — nó bắt đúng lúc một tệp đang được ghi dở,
+      vì hai phiên làm song song trên cùng cây nguồn. Phiên Public API kiểm và xác
+      nhận: deploy chỉ robocopy + alembic, **không có gì chặn một tệp `.py` cụt**.
+
+      Nay `setup/2-cai-dat.ps1` chạy `compileall` **TRƯỚC `Stop-Service`** — hỏng
+      ở đó thì dịch vụ vẫn đang chạy và không ai mất gì; đặt sau thì ta đã tự tay
+      tạo ra downtime rồi mới phát hiện không deploy được. Đã thử chốt bằng một
+      tệp cụt thật: chặn đúng.
+
+      *Bằng chứng:* `test_296` (12) + `test_297` (17). Toàn bộ VPS **307 xanh**.
+
+- [x] **G8 — giao diện + trang bán công khai.** ✅ **XONG 2026-08-25.**
+      Xem `docs/VPS/GIAO_DIEN.md`.
+
+      **Trang tạo máy hai bước** với bảng tóm tắt dính bên phải: chọn gói → chọn
+      hệ điều hành, giá và số dư còn lại cập nhật ngay khi bấm. Danh sách hệ điều
+      hành lọc theo gói bằng JS, nhưng **máy chủ vẫn từ chối tổ hợp sai**
+      (`os_images.hop_le`) — không có JS thì khách thấy đủ và vẫn không mua nhầm
+      được.
+
+      🔑 **`/vps` là MỘT URL phục vụ hai loại người xem**, không phải hai trang.
+      Lý do cụ thể: thẻ app trong catalog hiện cho cả khách chưa đăng nhập
+      (`manifest.public=True`), nên nếu `/vps` đòi đăng nhập thì người lạ bấm vào
+      sẽ rơi thẳng vào trang đăng nhập — **ngõ cụt ở đúng bước đầu của phễu bán
+      hàng**. Nay khách ẩn danh thấy sản phẩm là gì, bảng giá, và điều khoản;
+      khách đã đăng nhập thấy máy của mình và biểu mẫu tạo máy.
+
+      **Ba thứ mở-cho-khách-ẩn-danh KHÔNG kéo theo**, mỗi thứ một chốt trong
+      `test_252`: không lộ máy của người khác (`_may_cua_toi` không được gọi với
+      `user_id` rỗng — nó sẽ quét cả bảng), không dựng biểu mẫu sẽ POST rồi ăn
+      401, và **cổng cờ `LTT_VPS` vẫn đứng trước** — công khai nghĩa là "không
+      đòi đăng nhập", không phải "bỏ qua cờ".
+
+      ⚠️ **Một lỗi dịch chỉ nhìn thấy khi render thật.** Cột thông số hiện là
+      *"Settings"* trong bản tiếng Anh, vì msgid `"Cấu hình"` dùng chung với liên
+      kết admin `⚙ Cấu hình` trỏ tới `/settings`. Đã tách thành `"Cấu hình máy"`
+      → *"Specs"*. Đáng ghi lại vì việc đổi ngôn ngữ mặc định sang `vi` (phiên
+      Public API, cùng ngày) **giấu** lỗi này đi chứ không sửa nó.
 
 - [x] **G9a — ảnh chụp hằng tuần + khôi phục.** ✅ **XONG 2026-08-24, đo thật.**
 
@@ -3087,15 +3195,121 @@ khoản, mật khẩu của chính họ**. Áp dụng cho **mọi phiên bản W
       *Bằng chứng:* `tests/test_289_vps_sao_luu.py` (22 test), migration
       `a4d70e93f158`.
 
-- [ ] **G9b — cổng vào thứ hai.** Hiện **một con VPS Vultr ngã là MỌI khách mất
-      đường vào cùng lúc**. Mã đã sẵn sàng cho nhiều cổng (`vps_gateway` là một
-      bảng, `chon_gateway` chọn cổng còn nhiều chỗ nhất, `tools/vps_them_cong_vao.py`
-      khai thêm một dòng là xong) — thứ còn thiếu là **quyết định mua thêm một VPS
-      $6/tháng**, và đó là việc của chủ sản phẩm.
-      *Xong khi:* chuyển được một máy đang chạy sang cổng dự phòng.
+- [~] **G9b — chịu được cổng vào chết.** 🔨 **Đường đã dựng 2026-08-24; DIỄN
+      TẬP CHƯA LÀM** — nói rõ như vậy, vì "có script" khác "đã chứng minh".
 
-- [ ] **G10 — nghiệm thu và mở bán.** Điều khoản sử dụng, ba dòng cảnh báo bắt buộc,
-      hoá đơn theo luật VN, rồi mới đặt `LTT_VPS=1`.
+      ⚠️ **Bản trước của mục này tôi viết SAI**: rằng nó "cần mua thêm một VPS
+      $6/tháng", như thể đó là điều kiện duy nhất. Ràng buộc thật hẹp hơn nhiều
+      — **IP công khai phải nằm trên một máy Vultr** (Reserved IP chỉ gắn được
+      vào instance Vultr, và nhà không có IP định tuyến được). Một cổng **chạy
+      song song** thì đúng là cần máy thứ hai; nhưng **dựng lại trong vài phút**
+      thì không, vì Reserved IP **không chết theo máy**.
+
+      **Đã làm — thứ quan trọng nhất trước:** sao lưu khoá WireGuard của cổng
+      vào ra `secrets/cong_vao/` (nằm trong `.gitignore`, đã kiểm). Trước đó khoá
+      đó **chỉ tồn tại trên chính con VPS ấy**, và router bên nhà **ghim** khoá
+      công khai của nó — nghĩa là cổng chết là mọi khách mất đường vào và **không
+      dựng lại được** trừ khi sửa cả router. Đã đối chiếu: khoá sao lưu khớp đúng
+      thứ router đang ghim (`2E96sK…`).
+
+      **`tools/vps_gateway/dung-lai-cong-vao.sh`** — dựng một cổng vào hoàn chỉnh
+      từ VPS Debian trắng: WireGuard (đòi khoá cũ, **từ chối tự sinh khoá mới**),
+      chuyển tiếp gói, `rp_filter=2`, nftables nền, mở 51820, nới UFW.
+
+      **`tools/vps_dung_lai_cong_vao.py`** — phần đi qua API: gỡ-rồi-gắn lại
+      Reserved IP sang máy mới, mở lại đường NAT cho từng khách đọc từ `vps_ip`,
+      cập nhật `vps_gateway`. Cố ý **không** tạo instance Vultr: tạo máy là thao
+      tác tiêu tiền, và tạo nhầm một con là một dòng tiền nhỏ nhưng đều.
+
+      🔴 **Một lỗi tôi tự tạo rồi tự bắt, và nó đáng ghi lại:** bản đầu của kịch
+      bản do tôi **tự viết lại** một bộ luật "tương đương" bộ đang chạy. Nó thiếu
+      đúng một dòng — `ip saddr 10.51.0.0/24 oifname "enp1s0" masquerade` — tức
+      đường ra cho máy **chưa** được gắn IP riêng. Thiếu nó thì máy lên bình
+      thường và không ra được Internet, im lặng. Một kịch bản dựng lại sinh ra
+      cổng vào *gần giống* thì **tệ hơn không có**, vì nó trông như đã chạy xong.
+      Nay kịch bản nhúng thẳng **bản sao lưu của bộ luật thật**, `test_291` chốt
+      hai thứ không trôi khỏi nhau, và `vps_doctor` đối chiếu sao-lưu ↔ đang-chạy
+      mỗi lần chạy.
+
+      ⛔ **Vì sao chưa diễn tập:** diễn tập thật là **xoá con VPS đang chạy** rồi
+      dựng lại. Hôm nay nó chứng minh được rất ít — **không có khách nào, không
+      Reserved IP nào**, nên phần khó nhất (gắn lại IP, mở lại đường) sẽ chạy qua
+      một danh sách rỗng. Và nó là thao tác không hoàn tác được trên một máy đang
+      trả tiền. Đây là **quyết định của chủ sản phẩm**, không phải của tôi.
+
+      *Xong khi:* có ít nhất một máy khách đang chạy với IP riêng → xoá thẳng
+      cổng vào → chạy hai lệnh → khách vào lại được, **đo bằng đồng hồ**.
+
+      *Bằng chứng hiện có:* `tests/test_293_vps_dung_lai_cong_vao.py` (14 test).
+
+- [~] **G10 — nghiệm thu và mở bán.** 🔨 **Điều khoản + sao kê XONG 2026-08-25;
+      còn hai việc cần chủ sản phẩm.**
+
+      **Điều khoản riêng cho LTT VPS** — `docs/lttstudios-website/{vi/,}legal/vps-terms.html`,
+      13 mục, cả hai ngôn ngữ. Đặt ở trang web chứ không trong app, theo đúng quy
+      tắc có sẵn của nền tảng: *"a second copy of a legal promise is a second
+      promise, and the two will differ"* (`public_api/governance.py`).
+
+      🔑 **Điều đáng nói nhất không phải nội dung mà là cách nó không trôi được:**
+      `test_298` đối chiếu **từng con số** trong điều khoản với hằng số thật —
+      chu kỳ 30 ngày, ân hạn 7 ngày, giá và cấu hình cả ba gói, hạn mức băng
+      thông, tốc độ hãm 1 MB/s (đọc từ `cai-dat-router.sh`), ba cổng thư bị chặn,
+      nhịp ảnh chụp, hạn vé console 60 giây, tỷ giá credit. Đổi giá mà quên sửa
+      điều khoản = **gate đỏ**. Đã kiểm phép kiểm có bám thật: thay bất kỳ số nào
+      cũng làm test đỏ.
+
+      Trang này từng mắc đúng lớp lỗi đó ở quy mô nhỏ hơn — hứa *"sao lưu hằng
+      tuần"* khi không có mã nào làm, trong khi `cost.py` cùng kho lại viết ta
+      *không có* backup.
+
+      ⚠️ **Rủi ro lớn nhất đã viết thẳng ra: giấy phép Windows.** Đĩa cài đang
+      dùng là bản **Evaluation** của Microsoft (180 ngày); Windows 10 LTSC cần
+      giấy phép khối lượng. Điều khoản nói rõ **giá KHÔNG bao gồm giấy phép**,
+      khách tự chấp nhận EULA và tự chịu trách nhiệm. Câu này còn được đặt **ngay
+      trong khối "Đọc trước khi thuê"** trên trang bán, không giấu trong điều
+      khoản — người đọc điều khoản là thiểu số.
+
+      **Dọn sạch dấu vết diễn tập (25/08).** Không còn VM lạ trên Proxmox (chỉ
+      100–107 của chủ nhà + router 199), **0 Reserved IP** bên Vultr, router và
+      cổng vào rỗng, `vps_instance`/`vps_event`/`vps_ip`/`vps_console_ve` đều 0
+      dòng. Giữ lại `vps_gateway` (1 dòng cấu hình production).
+
+      🔑 **Tài khoản thử `vps-thu@lttstudios.com` bị VÔ HIỆU HOÁ, không bị xoá.**
+      Nó có bút toán trong `credit_entries`, và sổ credit là **append-only** (H3)
+      — xoá người dùng mà để bút toán nằm lại là để lại một bút toán không truy
+      được về ai. Thay vào đó: `is_active=false` + mật khẩu đổi thành chuỗi 40 ký
+      tự ngẫu nhiên **không ghi lại ở đâu**. Rủi ro (một tài khoản sống trong CSDL
+      thật với mật khẩu nằm trong nhật ký phiên) biến mất, sổ sách nguyên vẹn.
+
+      **Sao kê thanh toán** trong trang máy (điều khoản hứa thì phải có). Nguồn là
+      `vps_event` chứ **không** phải `credit_entries`: sổ credit chỉ có `user_id`,
+      không có `instance_id`, nên khách ba máy sẽ thấy ba dòng trừ tiền giống hệt
+      nhau và không ai trả lời được "cái nào của máy nào".
+
+      ⛔ **Đây KHÔNG phải hoá đơn điện tử, và trang nói thẳng như vậy.** Hoá đơn
+      điện tử theo **Nghị định 123/2020** + **Thông tư 78/2021** phải phát hành
+      qua nhà cung cấp được cấp phép và đăng ký với cơ quan thuế — cần mã số
+      thuế, hợp đồng với một bên như Viettel/VNPT/MISA, và đăng ký. Không phải
+      thứ viết bằng mã. `test_298` **cấm** chữ "hoá đơn"/"invoice" xuất hiện
+      trong điều khoản cho tới khi việc đó có thật.
+
+      **Còn lại — hai việc của chủ sản phẩm, không phải của mã:**
+
+      1. 🔴 **Hạn ngạch Reserved IP của Vultr.** Nó tính **cả IP vừa xoá gần
+         đây**, và đã cạn khi tôi diễn tập hôm 24/08 — lượt tạo kế tiếp hỏng ở
+         mốc 92 %. Job xử lý đúng (đánh dấu **Lỗi**, dọn sạch), nhưng với khách
+         thật đó là một lượt mua hỏng. **Xin Vultr nâng hạn ngạch trước khi mở
+         bán.**
+      2. 🔴 **Quyết định về giấy phép Windows.** Ba đường: (a) giữ như hiện tại —
+         khách tự lo giấy phép, ta chỉ cấp đĩa; (b) mua **SPLA** của Microsoft và
+         bán kèm giấy phép; (c) yêu cầu khách mang khoá của chính họ. Điều khoản
+         đang viết theo **(a)**. Đây là quyết định kinh doanh có hệ quả pháp lý,
+         và tôi không thay chủ sản phẩm quyết.
+
+      *Xong khi:* hai việc trên đã chốt → `setup\cong_tac_tool_api.ps1` hoặc đặt
+      `LTT_VPS=1` trong `secrets/app.env` của bản đã cài → deploy → kiểm trên
+      **URL công khai** `https://app.lttstudios.com/vps` (quy tắc 5b) → xoá tài
+      khoản thử `vps-thu@lttstudios.com`.
 
 ### 🔴 Một quyết định về giá phải chốt trước G4
 

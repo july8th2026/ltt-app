@@ -6,8 +6,8 @@
   {% if projects %}
     <table class="table">
       <thead><tr>
-        <th>{{ _("Tên") }}</th><th>{{ _("Định danh") }}</th>
-        <th>{{ _("Khóa") }}</th><th>{{ _("Tạo lúc") }}</th><th></th>
+        <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Định danh") }}</th>
+        <th scope="col">{{ _("Khóa") }}</th><th scope="col">{{ _("Tạo lúc") }}</th><th scope="col"></th>
       </tr></thead>
       <tbody>
         {% for project in projects %}

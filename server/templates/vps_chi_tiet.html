@@ -1,12 +1,21 @@
-{% extends "base.html" %}
-{% block title %}{{ may.ten or may.id[:8] }} — {{ app.display_name }}{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ may.ten or may.id[:8] }}</strong>{% endblock %}
-{% block content %}
+{% extends "vps_base.html" %}
+{% block title %}{{ may.ten or may.id[:8] }} — {{ _(app.display_name) }}{% endblock %}
+{% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block noi_dung %}
+<style>
+  /* Trang này là các hàng nhãn/giá trị. Ở 1390px, mắt phải quét ngang cả màn
+     hình để nối một nhãn với giá trị của nó — giới hạn bề ngang đọc được.
+     Khối console và bảng sao kê tự vượt ra nếu cần. */
+  .app-main > .card { max-width: 940px; }
+  /* Nút điều khiển máy dùng accent của APP. `.btn` mặc định lấy `--accent`
+     toàn cục = màu đỏ, tức màu của hành động KHÔNG hoàn tác được — mà "Bật"
+     và "Khởi động lại" thì hoàn tác được bằng cách bấm cái kia. */
+  .btn-may { background: {{ app.accent }}; }
+</style>
 
   {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
 
   <p style="margin:0 0 12px;">
-    <a href="{{ app.route_prefix }}">&larr; {{ _("Máy của tôi") }}</a>
   </p>
 
   {# ── 1. Tổng quan ──────────────────────────────────────────────────────
@@ -30,7 +39,7 @@
       <tr><th>{{ _("Trạng thái") }}</th>
         <td>{{ _(trang_thai_nhan) }}
           {% if may.ly_do %}<br><span class="muted">{{ may.ly_do }}</span>{% endif %}</td></tr>
-      <tr><th>{{ _("Cấu hình") }}</th>
+      <tr><th>{{ _("Cấu hình máy") }}</th>
         <td>{% if plan %}{{ _(plan.ten) }} — {{ plan.vcpu }} vCPU ·
           {{ (plan.ram_mb / 1024) | round | int }} GB RAM · {{ plan.disk_gb }} GB
           {% else %}{{ may.plan_id }}{% endif %}</td></tr>
@@ -86,11 +95,19 @@
       <p class="muted" style="margin:0;">{{ _("Máy đang được tạo. Tải lại trang sau vài phút.") }}</p>
     {% else %}
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        {% for hanh_dong, nhan in [("bat", _("Bật")), ("tat", _("Tắt")),
+        {# `_("Tắt máy")` chứ không phải `_("Tắt")`: msgid trần dùng chung với
+           nút vô hiệu hoá webhook ở khu API, nơi bản dịch đúng là "Disable" —
+           sai hẳn nghĩa với một cái máy. Cùng lớp lỗi với `"Cấu hình"` bị dịch
+           thành "Settings".
+
+           ⚠️ Chú thích Jinja KHÔNG đặt được bên trong một biểu thức `{% %}` —
+           đặt vào đó là `TemplateSyntaxError` lúc render. #}
+        {% for hanh_dong, nhan in [("bat", _("Bật")),
+                                     ("tat", _("Tắt máy")),
                                    ("khoi-dong-lai", _("Khởi động lại"))] %}
         <form method="post" action="{{ app.route_prefix }}/{{ may.id }}/{{ hanh_dong }}">
           <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-          <button class="btn" type="submit">{{ nhan }}</button>
+          <button class="btn btn-may" type="submit">{{ nhan }}</button>
         </form>
         {% endfor %}
       </div>
@@ -106,7 +123,7 @@
         </span>
       </p>
       <p style="margin:12px 0 0;">
-        <a class="btn" href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Mở console") }}</a>
+        <a class="btn btn-may" href="{{ app.route_prefix }}/{{ may.id }}/console">{{ _("Mở console") }}</a>
         <span class="muted" style="margin-left:8px;">
           {{ _("Dùng khi bạn không vào được bằng RDP — ví dụ vừa đổi tường lửa trong máy.") }}
         </span>
@@ -116,6 +133,39 @@
       </p>
     {% endif %}
   </div>
+
+  {# ── Sao kê thanh toán ─────────────────────────────────────────────────
+     Điều khoản LTT VPS hứa "sao kê từng lần thu nằm trong trang máy của bạn".
+     Tách khỏi nhật ký chung: nhật ký trộn mọi loại sự kiện và hiện JSON thô,
+     còn đây là thứ khách cần khi đối chiếu chi tiêu. #}
+  {% if sao_ke %}
+  <div class="card">
+    <h2>{{ _("Sao kê thanh toán") }}</h2>
+    <table class="tbl" style="width:100%;">
+      <thead><tr>
+        <th style="width:170px;">{{ _("Thời điểm") }}</th>
+        <th>{{ _("Số tiền") }}</th>
+        <th>{{ _("Trả cho tới") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for d in sao_ke %}
+        <tr>
+          <td>{{ d.luc.strftime('%d/%m/%Y %H:%M') }}</td>
+          <td>{{ "{:,}".format(d.credit).replace(",", ".") }} credit</td>
+          <td>{% if d.den %}{{ d.den[8:10] }}/{{ d.den[5:7] }}/{{ d.den[0:4] }}{% else %}—{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="muted" style="margin:10px 0 0;">
+      {{ _("Tổng đã trả cho máy này: %(n)s credit.") % {"n": "{:,}".format(tong_da_tra).replace(",", ".")} }}
+      {# Noi thang: day KHONG phai hoa don dien tu theo Nghi dinh 123/2020.
+         Goi no la "hoa don" khi chua dang ky voi co quan thue la mot cau sai
+         co hau qua phap ly, khong phai mot cach dien dat. #}
+      {{ _("Đây là sao kê để bạn đối chiếu, không phải hoá đơn điện tử.") }}
+    </p>
+  </div>
+  {% endif %}
 
   {# ── 3. Nhật ký vòng đời ───────────────────────────────────────────────
      Đây là thứ trả lời "vì sao máy tôi bị tắt" khi khách hỏi sau ba tháng. #}
@@ -182,7 +232,7 @@
         {% for o in os_ban_duoc %}<option value="{{ o.id }}">{{ _(o.ten) }}</option>{% endfor %}
       </select>
       <input class="inp" name="xac_nhan" placeholder="{{ _('Gõ: %(ten)s') % {'ten': may.ten or may.id[:8]} }}" required>
-      <button class="btn" type="submit">{{ _("Cài lại") }}</button>
+      <button class="btn btn-may" type="submit">{{ _("Cài lại") }}</button>
     </form>
 
     <h3 style="margin:20px 0 4px;">{{ _("Xoá máy") }}</h3>

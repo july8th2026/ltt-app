@@ -9,10 +9,49 @@
 <div class="card">
   <p class="muted">{{ _("Trang này gọi thẳng /api/v1 bằng khóa của bạn — cùng xác thực, cùng phạm vi, cùng hạn mức, cùng sổ credit. Chạy được ở đây thì chạy được từ máy chủ của bạn; bị từ chối ở đây thì cũng bị từ chối ở đó.") }}</p>
   <p class="alert alert-warn" role="status">
-    <strong>{{ _("Lời gọi ở đây tiêu credit thật.") }}</strong>
+    <strong>{{ _("Khóa live ở đây tiêu credit thật.") }}</strong>
     {{ _("Không có chế độ chạy thử miễn phí — nếu có, nó sẽ không còn là cùng một đường đi.") }}
+    {# Nhưng khoá TEST thì có, và nó là thứ phần lớn người vào đây đang tìm.
+       Không nói ra là để họ hoặc trả tiền cho một lượt thử, hoặc quay ra. #}
+    {{ _("Muốn thử không mất tiền thì dùng khóa Test — nó đi qua đúng chuỗi này nhưng không gọi nhà cung cấp và không chạm vào sổ credit.") }}
   </p>
 </div>
+
+{# ── Khách chưa có khoá ────────────────────────────────────────────────────
+   Trang này cố ý KHÔNG điền hộ khoá: máy chủ không đọc lại được khoá đã cấp,
+   và một cổng nội bộ mượn phiên đăng nhập để gọi thay sẽ là đường thứ hai tới
+   đường tính tiền.
+
+   Nhưng nó BIẾT khách có khoá nào — nửa công khai của khoá không phải bí mật.
+   Một người chưa có khoá mà chỉ thấy một ô nhập trống thì mắc kẹt tại đây. #}
+{% if not khoa_dung_duoc %}
+  <div class="card">
+    <p><strong>{{ _("Bạn chưa có khóa nào dùng được.") }}</strong></p>
+    <p class="muted">{{ _("Trang này không tự điền khóa hộ bạn được — máy chủ chỉ giữ dấu vân tay một chiều, nên chính chúng tôi cũng không đọc lại được khóa đã cấp.") }}</p>
+    <p>
+      <a class="btn" href="/developers/keys">{{ _("Tạo một khóa Test") }}</a>
+      <span class="muted" style="margin-left:10px;">{{ _("chọn Môi trường = Test — không tốn credit nào.") }}</span>
+    </p>
+  </div>
+{% else %}
+  <div class="card">
+    <p class="muted" style="margin:0 0 6px;">{{ _("Khóa đang dùng được của bạn — dán chuỗi bí mật của một trong số này:") }}</p>
+    <ul style="margin:0;">
+      {% for k in khoa_dung_duoc %}
+        <li><code>{{ k.key_id }}</code>
+          {% if k.name %}— {{ k.name }}{% endif %}
+          <span class="pill">{{ _("Test") if k.mode == "test" else _("Live") }}</span>
+          {% if k.mode == "test" %}<span class="muted">{{ _("không tốn credit") }}</span>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    <p class="muted" style="margin:8px 0 0;font-size:.9em;">
+      {{ _("Không nhớ chuỗi bí mật? Nó chỉ hiện một lần lúc tạo —") }}
+      <a href="/developers/keys">{{ _("tạo khóa mới") }}</a>
+      {{ _("rồi thu hồi khóa cũ.") }}
+    </p>
+  </div>
+{% endif %}
 
 <div id="playground" class="card"
      data-need-key="{{ _('Dán khóa API vào ô bên trên trước đã.') }}"
@@ -27,9 +66,14 @@
 
   <p>
     <label for="pg-tool">{{ _("Công cụ") }}</label><br>
+    {# `?tool=` cho phep mot the trong danh muc tro THANG vao day voi dung
+       cong cu do da chon. Do la cho plenxai dat nut "thu ngay" — quyet dinh
+       thu mot API xay ra luc dang doc hop dong cua no, khong phai sau khi tim
+       lai no trong mot o chon dai. #}
     <select id="pg-tool">
       {% for tool in catalog %}
-        <option value="{{ tool.name }}">{{ tool.name }} — {{ tool.execution_mode }}</option>
+        <option value="{{ tool.name }}"
+                {% if tool.name == tool_chon %}selected{% endif %}>{{ tool.name }} — {{ tool.execution_mode }}</option>
       {% endfor %}
     </select>
     <button type="button" id="pg-raw-toggle" class="btn btn-ghost">{{ _("JSON thô") }}</button>

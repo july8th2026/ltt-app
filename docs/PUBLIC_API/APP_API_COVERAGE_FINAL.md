@@ -59,11 +59,11 @@ Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều �
 | Tool | App | Trạng thái | Lý do |
 |---|---|---|---|
 | `image.thumbnail` | thumbnail | **EXPOSE_V1** | Giá phẳng 5/ảnh, chốt trước khi chạy; `model` bị ẩn vì giá không theo model. |
-| `image.ltt` | anhnoibo | **EXPOSE_V1 — MỞ 24/08** | Model nhà, không tốn tiền provider nhưng chiếm GPU nên giá tính theo **thời gian máy**. `image_keys` ẩn vì tầng API chỉ giải được một tệp cho một tham số; `model` ẩn vì mới có một model và giá không theo model. Vắng ở mục 4 là **đúng**: nó chưa chạy thật từ ngoài vào bao giờ. H37/L1–L7 (24/08) đã đóng các chỗ lệch so với khuôn bán model nhà (`docs/KHUON_BAN_MODEL_NHA.md`): quyết toán theo ảnh thật, thăm dò sống/chết + GPU cho cổng render, giá công bố. **Bốn cổng đã mở cùng ngày** (D-053 + G10). Giá **hạ một phần ba**: 5 → 3 credit/ảnh, tham chiếu 15 → 9. ⛔ Mở **không phải** vì nó đẹp hơn — G6b đã chấm và nhà thua rõ (D-045); nó là một mặt hàng riêng, rẻ hơn. Việc có chữ tiếng Việt vẫn đi `image.thumbnail` (D-048). |
+| `image.ltt` | anhnoibo | **EXPOSE_V1 — MỞ 24/08** | Model nhà, không tốn tiền provider nhưng chiếm GPU nên giá tính theo **thời gian máy**. `image_keys` ẩn vì tầng API chỉ giải được một tệp cho một tham số; `model` ẩn vì mới có một model và giá không theo model. ~~Vắng ở mục 4 là **đúng**: nó chưa chạy thật từ ngoài vào bao giờ.~~ **Đã có mặt ở mục 4 từ 24/08** (tiền thật), và **25/08 thêm một lượt từ MÁY KHÁC** qua Cloudflare bằng thư viện chuẩn — lượt đó tìm ra lỗi tài liệu `outputs[]`. H37/L1–L7 (24/08) đã đóng các chỗ lệch so với khuôn bán model nhà (`docs/KHUON_BAN_MODEL_NHA.md`): quyết toán theo ảnh thật, thăm dò sống/chết + GPU cho cổng render, giá công bố. **Bốn cổng đã mở cùng ngày** (D-053 + G10). Giá **hạ một phần ba**: 5 → 3 credit/ảnh, tham chiếu 15 → 9. ⛔ Mở **không phải** vì nó đẹp hơn — G6b đã chấm và nhà thua rõ (D-045); nó là một mặt hàng riêng, rẻ hơn. Việc có chữ tiếng Việt vẫn đi `image.thumbnail` (D-048). |
 | `image.generate` | taoanh | **EXPOSE_V1** | Bốn alias model có giá riêng; `image_keys` ẩn vì mảng chưa được hỗ trợ. |
 | `image.upscale` | upscalevideo | **EXPOSE_V1** | Giá phẳng 2/4 theo preset; ảnh vào qua upload đã kiểm magic-byte. |
 | `text.prompt_package` | prompt_ai_ommi | **EXPOSE_V1** | Giá theo `scene_count`; `operation/model/resources` ẩn vì là đường định tuyến nội bộ. |
-| `text.chat` | ltt_llm | **EXPOSE_V1 — chưa mở** | Hai alias `ltt_llm` / `ltt_llm_vision` cùng giá, khác ở chỗ bản vision nạp thêm bộ chiếu ảnh. Không ẩn tham số nào: hợp đồng đúng bằng hình dạng OpenAI mà khách đã biết. Alias **cố ý trùng tên với id nội bộ** — ta không hứa gì về model nền, nên đổi nó sau này không phá mã khách. Vắng ở mục 4 là **đúng**: chưa có lượt nào đi từ ngoài vào qua `/api/v1`. |
+| `text.chat` | ltt_llm | **EXPOSE_V1 — MỞ** | Hai alias `ltt_llm` / `ltt_llm_vision` cùng giá, khác ở chỗ bản vision nạp thêm bộ chiếu ảnh. Không ẩn tham số nào: hợp đồng đúng bằng hình dạng OpenAI mà khách đã biết. Alias **cố ý trùng tên với id nội bộ** — ta không hứa gì về model nền, nên đổi nó sau này không phá mã khách. ~~Vắng ở mục 4 là **đúng**: chưa có lượt nào đi từ ngoài vào.~~ **Đã mở và đã chạy thật**: Codex CLI, Claude Code CLI, hai tiện ích VS Code và Claude Desktop đều đã gọi qua `/api/v1` và bị thu tiền đúng (24–25/08). |
 | `story.storyboard` | prompt_ai_ommi | **EXPOSE_V1** | Cùng hợp đồng, khác đầu ra; tách làm hai operation logic thay vì một cờ. |
 | `image.batch_generate` | taoanh | ĐÓNG | Trùng năng lực với `image.generate` vì tham số `count` đã làm được việc đó. |
 | `video.generate` | taovideo | ĐÓNG | Tập tuỳ chọn hợp lệ đổi theo model, chưa publish được một hợp đồng đúng. |
@@ -118,6 +118,21 @@ lần nghiệm thu đầy đủ **không tốn credit, không cần provider, kh
 kể cả với operation chạy GPU.
 
 ⭐ **`image.ltt` là dòng DUY NHẤT ở bảng này được nghiệm thu bằng TIỀN THẬT**, 24/08 sau khi deploy. Cố ý: model nhà chạy trên máy B, và test-mode (EXT-12) trả kết quả giả nên **không** chạm tới GPU — tức nó chứng minh được đường ống HTTP nhưng **không** chứng minh được job thật vẽ ra ảnh thật và thu đúng tiền.
+
+**Bổ sung 25/08 — một phép thử KHÁC LOẠI, và nó tìm ra lỗi.**
+`nghiem_thu_anh_e2e.py` do ta viết, chạy trên **máy A**, và biết trước hình dạng
+phản hồi. Ngày 25/08 chạy `tools/khach_gia_lap_anh.py` từ **một máy khác**
+(VM Windows sạch), qua Cloudflare, bằng **thư viện chuẩn**, chỉ biết những gì
+tài liệu nói: job `fbefed09`, **138 giây**, tải **5.583.155 byte**, đối soát tay
+`hold −3 → settle giữ 3 / thu 3 / variance 0`.
+
+⛔ **Và nó dừng lại ở bước lấy ảnh** — vì tài liệu nói artifact nằm trong
+`result`, còn thật ra chúng ở `outputs[]`. Job xong, tiền đã thu, ảnh đã có, mà
+mã của khách không lấy được. Đã sửa cùng ngày.
+
+⭐ Bài học: hai phép thử **cùng gọi một API và cùng xanh** vẫn có thể chứng minh
+hai điều khác nhau. Cái do ta viết chứng minh **máy chủ chạy đúng**; cái chỉ đọc
+tài liệu chứng minh **khách dùng được**.
 
 Số đo, ba lượt liên tiếp qua `https://app.lttstudios.com/api/v1` (`tools/nghiem_thu_anh_e2e.py`):
 

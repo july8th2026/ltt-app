@@ -251,7 +251,16 @@ describe('CanvasShell', () => {
     })
     render(<CanvasShell />)
     fireEvent.click(await screen.findByRole('button',{name:'Thêm Văn bản'}))
-    expect(await screen.findByRole('button',{name:'Tải bản mới'},{timeout:1900})).toBeInTheDocument()
+    // 🔴 Cho nay tung viet `{timeout:1900}` va lam ca buoc gate chap chon.
+    // Nut chi hien sau khi autosave PUT tra 409; chuoi debounce + fetch tren
+    // may RANH mat ~1,5s, nen 1900ms chi con ~400ms bien. Do duoc mot luot do
+    // that: that bai o 2381ms — duoi xa gio cua vitest, tuc KHONG phai het
+    // gio khung test ma la mot con so chinh cho may ranh.
+    //
+    // ⚠️ Mot con so cho lon KHONG giau loi: neu nut khong bao gio hien, phep
+    // kiem van do — chi la do muon hon. Cai no bo di la bien qua mong giua
+    // "cham" va "hong".
+    expect(await screen.findByRole('button',{name:'Tải bản mới'},{timeout:10_000})).toBeInTheDocument()
     expect(screen.getAllByText('Xung đột').length).toBeGreaterThan(0)
   })
 
@@ -268,7 +277,7 @@ describe('CanvasShell', () => {
     expect(putCount()).toBe(before)
     Object.defineProperty(navigator,'onLine',{configurable:true,value:true})
     fireEvent(window,new Event('online'))
-    await waitFor(()=>expect(putCount()).toBeGreaterThan(before),{timeout:1900})
+    await waitFor(()=>expect(putCount()).toBeGreaterThan(before),{timeout:10_000})
     Object.defineProperty(window,'innerWidth',{configurable:true,value:390})
     fireEvent(window,new Event('resize'))
     expect(screen.getByRole('button',{name:'Chạy'})).toBeDisabled()
@@ -297,7 +306,7 @@ describe('CanvasShell', () => {
     await waitFor(()=>expect(vi.mocked(globalThis.fetch).mock.calls.some(([,init])=>{
       if(init?.method!=='PUT'||typeof init.body!=='string')return false
       return JSON.parse(init.body).canvas?.pages?.[0]?.edges?.length===0
-    })).toBe(true),{timeout:1800})
+    })).toBe(true),{timeout:10_000})
   })
 
   it('hides reference options that would loop back into the current block',async()=>{

@@ -141,19 +141,34 @@ MANIFEST = AppManifest(
                     "description": (
                         "t2i = from text only. edit = change one reference image "
                         "while keeping the rest. subject = keep the same person "
-                        "or object across a new scene. Both need image_key, "
-                        "and both cost three times more because they take "
-                        "about three times as long."),
+                        "or object across a new scene. edit and subject both "
+                        "need image_key and both cost three times more because "
+                        "they take about three times as long; t2i refuses a "
+                        "reference image."),
                     "example": "t2i",
                 },
                 "count": {"description": "How many images to return, 1 to 4.",
                           "example": 1},
                 "image_key": {
+                    # 🔴 CAU TRUOC NOI SAI HANH VI, va sai theo huong lam khach
+                    #    viet ma hong: no ghi "ignored for t2i". May chu KHONG bo
+                    #    qua — no TU CHOI:
+                    #
+                    #        if che_do == "t2i" and refs:
+                    #            raise LoiTaoAnh('Che do t2i khong nhan anh tham chieu.')
+                    #        (apps/anhnoibo/features.py)
+                    #
+                    #    Khach doc "ignored" se gui kem cho tien, va nhan mot loi
+                    #    ho khong hieu tu dau ra. Do 25/08.
                     "description": (
                         "Reference image, given as the id of an upload you "
                         "confirmed or of an artifact from an earlier job. "
-                        "Required for edit and subject; ignored for t2i."),
+                        "Required for edit and subject. Sending it with t2i is "
+                        "REJECTED, not ignored."),
                     "example": "upl_from_POST_/api/v1/uploads",
+                    # Khai bang DU LIEU de trang tai lieu loc duoc, thay vi de no
+                    # doc cau tieng Anh o tren roi doan.
+                    "only_when": {"mode": ["edit", "subject"]},
                 },
                 "negative_prompt": {
                     "description": "What to avoid. Optional.",

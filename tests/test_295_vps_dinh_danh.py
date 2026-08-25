@@ -171,25 +171,31 @@ def os_module():
     return os_images
 
 
-def test_duong_template_TU_CHOI_moi_ban_ban_cho_khach(monkeypatch):
-    """Hàng rào thật, không phải quy ước: đặt biến môi trường template cho một
-    bản khách thấy thì hàm phải trả 0.
+def test_KHONG_con_duong_nhan_ban_template():
+    """Ba template cuối bị xoá khỏi cụm 24/08 (chủ sản phẩm chốt: "sài qua cài
+    đặt thì xoá các template"), nên nhánh `clone` không còn đối tượng nào để
+    nhân bản.
 
-    Không có hàng rào này thì một biến gõ nhầm đưa mọi khách về chung một mật
-    khẩu của template — và không lỗi nào được ghi ra."""
-    from apps.vps import jobs, os_images
+    Giữ lại một nhánh không ai đi qua **trong đường tạo máy** là giữ mã không
+    lần chạy nào thử tới — và nó sẽ được ai đó "sửa lại cho chạy" vào một ngày
+    không ai nhớ vì sao nó ở đó."""
+    import inspect
 
-    for img in os_images.OS_IMAGES:
-        khoa = "LTT_VPS_TEMPLATE_" + img.id.upper().replace("-", "_")
-        monkeypatch.setenv(khoa, "9100")
-        got = jobs._template_noi_bo(img.id)
-        if img.khach_thay:
-            assert got == 0, f"{img.id} ban cho khach ma van nhan template"
-        else:
-            assert got == 9100, f"{img.id} noi bo van phai dung duoc"
-
-
-def test_os_id_la_ra_thi_khong_nhan_template(monkeypatch):
     from apps.vps import jobs
-    monkeypatch.setenv("LTT_VPS_TEMPLATE_KHONG_CO", "9100")
-    assert jobs._template_noi_bo("khong-co") == 0
+
+    assert not hasattr(jobs, "_template_noi_bo")
+    nguon = inspect.getsource(jobs._tao_may)
+    assert "clone(" not in nguon, "van con nhanh nhan ban"
+    assert "tao_may(" in nguon, "chi con mot duong: may trong + dia cai"
+
+
+def test_khong_con_bien_moi_truong_template():
+    """`LTT_VPS_TEMPLATE_*` không còn ai đọc. Để lại trong `app.env` thì lần sau
+    có người đặt nó và tưởng nó có tác dụng."""
+    from pathlib import Path
+
+    tep = Path("secrets/app.env")
+    if not tep.exists():
+        return
+    noi_dung = tep.read_text(encoding="utf-8-sig")
+    assert "LTT_VPS_TEMPLATE_" not in noi_dung

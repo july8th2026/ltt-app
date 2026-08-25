@@ -5,6 +5,10 @@
     <a href="{{ public_links.support }}">{{ _("Hỗ trợ") }}</a>
     <a href="{{ public_links.contact }}">{{ _("Liên hệ") }}</a>
     <a href="/nap">{{ _("Credit &amp; thanh toán") }}</a>
+    {# API: hai đường CÔNG KHAI. Trước 25/08 người ngoài không có cách nào tới
+       được tài liệu tích hợp — mọi trang đều sau `require_account`. #}
+    <a href="/gia-api">{{ _("Giá API") }}</a>
+    <a href="/huong-dan">{{ _("Hướng dẫn API") }}</a>
   </nav>
   <nav aria-label="{{ _('Liên kết pháp lý') }}">
     <a href="{{ public_links.privacy }}">{{ _("Quyền riêng tư") }}</a>

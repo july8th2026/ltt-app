@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "vps_base.html" %}
 {% block title %}{{ _("Console") }} — {{ may.ten or may.id[:8] }}{% endblock %}
-{% block topbar_title %}<strong>{{ app.icon }} {{ _("Console") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
-{% block content %}
+{% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ _("Console") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{% block noi_dung %}
 
   <p style="margin:0 0 12px;">
     <a href="{{ app.route_prefix }}/{{ may.id }}">&larr; {{ _("Về trang máy") }}</a>

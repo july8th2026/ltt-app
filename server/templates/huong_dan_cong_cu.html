@@ -1,0 +1,81 @@
+{% extends "base_public.html" %}
+{% block title %}{{ _("Công cụ cắm API") }} · LTT AI Studio{% endblock %}
+{% block content %}
+
+<div class="card">
+  <h1 style="margin-top:0;">{{ _("Công cụ cắm — Windows") }}</h1>
+  <p>{{ _("Một chương trình nhỏ ghi hộ bạn đúng cấu hình cho cả năm bề mặt, và gỡ ra trả lại đúng trạng thái cũ.") }}</p>
+  {% if bo_cai %}
+    <p style="margin:18px 0 8px;">
+      <a class="btn" href="/tai/cong-cu-cam">{{ _("Tải bộ cài") }} · {{ bo_cai.kich_thuoc_mb }} MB</a>
+    </p>
+    <p class="muted">{{ _("Phiên bản") }} <code>{{ bo_cai.phien_ban }}</code> · <code>{{ bo_cai.ten }}</code></p>
+    <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ bo_cai.sha256 }}</code></p>
+  {% else %}
+    <p class="muted">{{ _("Chưa có bản phát hành nào. Bạn vẫn cấu hình tay được — xem hướng dẫn.") }}</p>
+  {% endif %}
+  <p class="muted"><a href="/huong-dan">← {{ _("Hướng dẫn cấu hình tay") }}</a></p>
+</div>
+
+{% if bo_cai %}
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Windows sẽ cảnh báo khi mở — điều đó đúng như dự kiến") }}</h2>
+  <p>{{ _("Chúng tôi không mua chứng chỉ ký số, nên SmartScreen hiện cảnh báo cho mọi tệp chưa đủ lượt tải. Bấm") }}
+     <em>{{ _("More info") }}</em> → <em>{{ _("Run anyway") }}</em>.</p>
+  <p>{{ _("Trước khi mở, bạn nên tự kiểm băm — nó khớp thì tệp đúng là bản chúng tôi dựng:") }}</p>
+  <pre style="overflow-x:auto;"><code>Get-FileHash .\{{ bo_cai.ten }} -Algorithm SHA256</code></pre>
+  <p class="muted">⛔ {{ _("Chúng tôi KHÔNG bao giờ đề nghị bạn tắt phần mềm diệt virus. Nếu bạn không yên tâm thì cấu hình tay — hướng dẫn đầy đủ, không thiếu bước nào.") }}</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Ba lệnh") }}</h2>
+  <pre style="overflow-x:auto;"><code>LTTStudios-CamCLI.exe cam --khoa ltt_sk_...   {{ _("ghi cấu hình") }}
+LTTStudios-CamCLI.exe kiem                     {{ _("gọi thật một lượt để chắc chắn") }}
+LTTStudios-CamCLI.exe go                       {{ _("gỡ ra, trả lại nguyên trạng") }}</code></pre>
+  <p class="muted">{{ _("Không có tham số thì nó mở giao diện.") }}</p>
+
+  <table class="table" style="margin-top:14px;">
+    <thead><tr><th>{{ _("Cờ") }}</th><th>{{ _("Khi nào dùng") }}</th><th>{{ _("Đánh đổi") }}</th></tr></thead>
+    <tbody>
+      <tr><td><span class="muted">{{ _("không cờ") }}</span></td>
+          <td>{{ _("chỉ dùng CLI") }}</td>
+          <td>{{ _("an toàn nhất — mặc định của bạn không đổi") }}</td></tr>
+      <tr><td><code>--vscode</code></td>
+          <td>{{ _("dùng tiện ích VS Code") }}</td>
+          <td>{{ _("Codex khai ở gốc, nên thay luôn mặc định của lệnh codex") }}</td></tr>
+      <tr><td><code>--toan-cuc</code></td>
+          <td>{{ _("tiện ích Claude Code") }}</td>
+          <td>⚠️ {{ _("ghi ~/.claude/settings.json — MỌI phiên Claude Code trên máy đi qua LTT") }}</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Nó chạm vào đúng những chỗ này") }}</h2>
+  <table class="table">
+    <thead><tr><th>{{ _("Nơi") }}</th><th>{{ _("Làm gì") }}</th></tr></thead>
+    <tbody>
+      <tr><td><code>~/.codex/config.toml</code></td><td>{{ _("chèn một khối có mốc mở/đóng — phần còn lại của tệp không bị chạm") }}</td></tr>
+      <tr><td><code>~/.codex/ltt.config.toml</code></td><td>{{ _("tạo mới; nếu đã có thì sao lưu trước khi ghi") }}</td></tr>
+      <tr><td><code>~/.claude/settings.json</code></td><td>{{ _("chỉ khi có") }} <code>--toan-cuc</code></td></tr>
+      <tr><td>{{ _("settings.json của VS Code") }}</td><td>{{ _("chỉ khi có") }} <code>--vscode</code></td></tr>
+      <tr><td><code>HKCU\SOFTWARE\Policies\Claude</code></td><td>{{ _("chính sách cho Claude Desktop") }}</td></tr>
+      <tr><td>{{ _("biến môi trường cấp người dùng") }}</td><td><code>LTT_API_KEY</code>, <code>ANTHROPIC_AUTH_TOKEN</code>, <code>ANTHROPIC_BASE_URL</code>…</td></tr>
+    </tbody>
+  </table>
+  <p class="muted" style="margin-top:12px;">⭐ {{ _("Khoá KHÔNG bao giờ được ghi vào tệp cấu hình. Tệp cấu hình bị đồng bộ giữa máy, bị commit, bị chụp màn hình — khoá thì không nên nằm ở đó. Nó chỉ vào biến môi trường và chính sách registry.") }}</p>
+  <p class="muted">{{ _("Lệnh") }} <code>go</code> {{ _("trả lại đúng giá trị cũ của từng khoá nó đã đổi, và chỉ xoá những khoá do chính nó thêm.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Riêng Claude Desktop cần hai thứ khác") }}</h2>
+  <p>{{ _("Công cụ đặt sẵn cả hai. Nếu cấu hình tay thì phải nhớ, vì thiếu một trong hai là ứng dụng im lặng hoàn toàn — bấm gửi, không có gì xảy ra, không một lời báo lỗi:") }}</p>
+  <ul>
+    <li>{{ _("tên model là") }} <code>{{ model_desktop }}</code> {{ _("chứ không phải") }} <code>{{ model }}</code></li>
+    <li><code>chatTabEnabled = true</code></li>
+  </ul>
+  <p class="muted"><a href="/huong-dan">{{ _("Giải thích đầy đủ ở trang hướng dẫn") }} →</a></p>
+</div>
+
+{% endblock %}

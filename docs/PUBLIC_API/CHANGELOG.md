@@ -23,6 +23,93 @@ lần ghi lại đó hiện ra trong diff.
 
 ---
 
+## 2026-08-25
+
+**ADDED — cổng lập trình viên: điều hướng gom nhóm, trang cắm chọn-một-bề-mặt,
+danh mục công cụ gập được.**
+
+*Có phá vỡ tương thích không:* **không.** `/api/v1` không đổi một byte. Đây
+hoàn toàn là bề mặt HTML của `/developers` và `/huong-dan`.
+
+*Phải làm gì:* **không gì cả.** Mọi URL cũ vẫn trả `200` — sáu trang bị hạ khỏi
+thanh điều hướng (`projects`, `playground`, `jobs`, `quickstart`, `privacy`,
+`notifications`) **vẫn còn nguyên route** và tìm lại được từ dải mục con của
+trang cha. `test_303` chốt cả hai chiều.
+
+Ba việc, mỗi việc có một số đo đứng sau:
+
+| Đổi gì | Trước | Sau |
+|---|---|---|
+| Điều hướng | 16 mục phẳng, cuộn ngang | 10 mục, 3 nhóm, thanh bên |
+| Trang cắm | 5 bề mặt xếp chồng, 133 dòng | 1 ô chọn → 1 địa chỉ + 1 tên model trên màn hình |
+| Danh mục công cụ | bảng phẳng, phải mở trang khác mới thấy tham số | thẻ gập, bảng tham số **sinh từ `input_schema`** ngay trong thẻ |
+
+⛔ Cái thứ hai là **sửa một cái bẫy**, không phải làm đẹp. Bản xếp chồng đặt hai
+giá trị dễ sai nhất của cả khu API cạnh nhau, không có gì nói cái nào của ai:
+địa chỉ `/api/v1` (Codex) và `/api` (Claude Code, Desktop) lệch **đúng bốn ký
+tự**; tên model `ltt_llm` và `ltt-llm-claude-compat` chỉ khác nhau ở **một bề
+mặt duy nhất**. Chép nhầm thì Codex nhận `404`, hoặc nút gửi của Claude Desktop
+**im lặng không làm gì cả**.
+
+**ADDED — công cụ cắm `.exe` nay có mặt trong khu đã đăng nhập.**
+
+Bộ cài đã nằm trên máy chủ từ 25/08 và `/tai/cong-cu-cam` vẫn trả `200`, nhưng
+**không một trang nào trong `/developers` trỏ tới nó** — nên với người đã đăng
+nhập, công cụ coi như không tồn tại. Nay nó đứng trên cùng `/developers/cli`,
+kèm số phiên bản, dung lượng và SHA-256 lấy từ **chính tệp đang phục vụ**.
+
+---
+
+
+**FIXED — `image.ltt`: tài liệu nói SAI hành vi của `image_key`.**
+
+*Có phá vỡ tương thích không:* **không.** Mã máy chủ không đổi một dòng. Thứ đổi
+là **lời mô tả** — nó đang nói sai.
+
+*Cái gì sai:* mô tả công khai ghi *"ignored for t2i"*. Máy chủ **không bỏ qua** —
+nó **từ chối**:
+
+```python
+if che_do == "t2i" and refs:
+    raise LoiTaoAnh('Chế độ t2i không nhận ảnh tham chiếu.')
+```
+
+*Phải làm gì:* nếu mã của bạn gửi kèm `image_key` ở chế độ `t2i` vì tin rằng nó
+được bỏ qua — **bỏ trường đó đi**. Lượt gọi đó đang hỏng, và nó hỏng ngay từ
+lượt đầu chứ không phải mới hỏng.
+
+⛔ Vì sao đáng ghi thành một mục: một tài liệu nói *"bị bỏ qua"* trong khi máy
+chủ **từ chối** không phải một câu chữ chưa chuẩn — nó là một chỉ dẫn khiến khách
+viết mã hỏng, và họ sẽ đi tìm nguyên nhân ở phía họ.
+
+---
+
+**ADDED — `x-ltt-only-when`: khai điều kiện dùng của tham số bằng DỮ LIỆU.**
+
+*Có phá vỡ tương thích không:* **không.** Nó là khoá mở rộng theo quy ước `x-`
+của JSON Schema; mọi bộ kiểm tra schema **bỏ qua** khoá lạ.
+
+```json
+"image_key": {
+  "type": "string",
+  "x-ltt-only-when": {"mode": ["edit", "subject"]}
+}
+```
+
+*Phải làm gì:* không phải làm gì. Nếu bạn sinh client từ đặc tả, bạn **có thể**
+đọc khoá này để biết trường nào chỉ hợp lệ ở chế độ nào.
+
+*Vì sao thêm:* điều kiện đó trước nay chỉ nằm trong một câu tiếng Anh giữa
+`description`. Trang tài liệu không có cách nào lọc theo, và **bộ sinh ví dụ
+không biết mà tránh** — nó đã dựng ra một thân tự mâu thuẫn (`mode: "t2i"` kèm
+`image_key`) mà máy chủ sẽ từ chối. Một ví dụ mẫu dạy sai thì mọi người chép
+theo.
+
+⚠️ `contract_hash` của `image.ltt` đổi `93dbcde993e11c2b` → `fb38cff7d6272b32`.
+Nếu bạn đang lưu dấu vân tay để phát hiện hợp đồng đổi thì đây là lý do.
+
+---
+
 ## 2026-08-24
 
 **ADDED — `text.chat`: trần `max_tokens` 16.384 → 32.768.**
@@ -50,6 +137,18 @@ sinh ra**.
 ⛔ Trần của `POST /api/v1/chat/completions` **không** đổi và vẫn **từ chối** thay
 vì kẹp. Lý do của nó khác hẳn: trần 100 giây của Cloudflare cho một lượt gọi đồng
 bộ. Kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
+
+🔴 **Bổ sung 25/08 — ảnh chụp hợp đồng vàng bị bỏ quên mất một ngày.**
+`tests/golden/public_api_catalog_v1.json` vẫn ghi `maximum: 16384` cho tới
+25/08, nên `test_181` và `test_187` **đỏ trên nhánh** suốt thời gian đó mà không
+ai thấy — vì `gate --quick` **không chạy pytest**, và cả hai phiên đang làm đều
+chạy `--quick` trước khi deploy.
+
+⭐ Bài học, và nó không phải "nhớ chạy gate đầy đủ": **thay đổi hợp đồng có ba nơi
+phải khớp** — mã (`MAX_TOKENS_TRAN`), tài liệu (mục này), và ảnh chụp vàng. Ghi
+được hai, quên một, thì phần bị quên chính là phần *duy nhất* biết tự la lên.
+Đã chốt lại bằng `python tools\sinh_golden_api.py --ghi`; `contract_hash` của
+`text.chat` đổi `32d617ca0c0130d2` → `9d866077c00f7e90`.
 
 ---
 

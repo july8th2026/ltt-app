@@ -192,11 +192,18 @@ def test_goi_nho_khong_chay_ban_co_giao_dien():
     assert "RAM" in ly_do
 
 
-def test_ubuntu_khong_nam_trong_catalog_ban():
-    """V9 chốt catalog chỉ Windows. Ubuntu là template kỹ thuật, khách không thấy."""
-    ids = {o.id for o in os_images.os_ban_duoc()}
-    assert "ubuntu-24-04" not in ids
-    assert os_images.lay_os("ubuntu-24-04") is not None
+def test_catalog_CHI_con_Windows():
+    """V9 chốt catalog chỉ Windows. Hai bản Linux nội bộ (`debian-12`,
+    `ubuntu-24-04`) từng nằm đây để phục vụ đường nhân bản template — đường đó
+    đã bị gỡ 24/08 sau khi ba template cuối bị xoá khỏi cụm, nên hai bản đó
+    không còn cách nào tạo được máy.
+
+    Một mục trong catalog mà mọi lần tạo đều ném lỗi là một cái bẫy, không phải
+    một tuỳ chọn."""
+    for cu_ky in ("ubuntu-24-04", "debian-12"):
+        assert os_images.lay_os(cu_ky) is None, f"{cu_ky} van con trong catalog"
+    assert {o.ho for o in os_images.OS_IMAGES} == {"windows"}
+    assert all(o.khach_thay for o in os_images.OS_IMAGES)
 
 
 def test_ten_bien_dia_cai_dat_doc_duoc_tu_ma_os():

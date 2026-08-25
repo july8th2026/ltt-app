@@ -106,7 +106,7 @@
               "subject"
             ],
             "default": "t2i",
-            "description": "t2i = from text only. edit = change one reference image while keeping the rest. subject = keep the same person or object across a new scene. Both need image_key, and both cost three times more because they take about three times as long.",
+            "description": "t2i = from text only. edit = change one reference image while keeping the rest. subject = keep the same person or object across a new scene. edit and subject both need image_key and both cost three times more because they take about three times as long; t2i refuses a reference image.",
             "examples": [
               "t2i"
             ]
@@ -123,10 +123,16 @@
           },
           "image_key": {
             "type": "string",
-            "description": "Reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. Required for edit and subject; ignored for t2i.",
+            "description": "Reference image, given as the id of an upload you confirmed or of an artifact from an earlier job. Required for edit and subject. Sending it with t2i is REJECTED, not ignored.",
             "examples": [
               "upl_from_POST_/api/v1/uploads"
-            ]
+            ],
+            "x-ltt-only-when": {
+              "mode": [
+                "edit",
+                "subject"
+              ]
+            }
           },
           "negative_prompt": {
             "type": "string",
@@ -156,7 +162,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "93dbcde993e11c2b"
+      "contract_hash": "fb38cff7d6272b32"
     },
     {
       "name": "image.thumbnail",
@@ -461,7 +467,7 @@
           "max_tokens": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 16384,
+            "maximum": 32768,
             "default": 4096,
             "description": "Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.",
             "examples": [
@@ -520,7 +526,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "32d617ca0c0130d2"
+      "contract_hash": "9d866077c00f7e90"
     },
     {
       "name": "text.prompt_package",

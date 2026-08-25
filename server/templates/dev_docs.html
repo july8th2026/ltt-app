@@ -1,23 +1,40 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+{# 🔴 BẢN TRƯỚC CỦA TRANG NÀY LIỆT KÊ CHO KHÁCH CÁC ĐƯỜNG DẪN TỆP TRONG KHO MÃ
+      CỦA TA — `docs/PUBLIC_API/DEVELOPER_GUIDE.md`, `sdk/python/…`, `sdk/postman/`.
+      Khách không có kho mã. Bảy mục thì năm mục vô nghĩa với người đọc, và trang
+      trông như một mục lục đầy đủ — đó mới là phần tệ, vì nó làm CHÍNH TA tin
+      rằng tài liệu đã tới tay khách.
+
+   ⭐ Luật từ nay: trang cho khách chỉ được trỏ tới **URL tải được**. #}
+
 <div class="card">
+  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  <ul>
+    <li><a href="/huong-dan">{{ _("Hướng dẫn cắm vào công cụ của bạn") }}</a>
+        — {{ _("Codex, Claude Code, hai tiện ích VS Code, Claude Desktop. Công khai, chia sẻ được cho đồng nghiệp chưa có tài khoản.") }}</li>
+    <li><a href="/huong-dan/cong-cu">{{ _("Công cụ cắm tự động") }}</a>
+        — {{ _("ghi hộ cấu hình cho cả năm bề mặt, gỡ ra trả lại nguyên trạng.") }}</li>
+    <li><a href="/gia-api">{{ _("Bảng giá") }}</a>
+        — {{ _("số lấy từ chính hàm ra hoá đơn, kèm ví dụ chi phí thật.") }}</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Đặc tả và thư viện") }}</h2>
   <ul>
     <li><a href="/api/v1/openapi.json">{{ _("Đặc tả OpenAPI") }}</a>
         — {{ _("mô tả máy đọc được, kèm schema của từng công cụ.") }}</li>
-    <li><code>docs/PUBLIC_API/DEVELOPER_GUIDE.md</code>
-        — {{ _("hướng dẫn bắt đầu và tham chiếu từng công cụ.") }}</li>
-    <li><code>docs/PUBLIC_API/PROTOCOL_V1.md</code>
-        — {{ _("chế độ chạy, quy ước, bảng lỗi và khi nào nên thử lại.") }}</li>
-    <li><code>sdk/python/ltt_public_api.py</code>,
-        <code>sdk/typescript/ltt-public-api.ts</code>
-        — {{ _("SDK một file, không phụ thuộc ngoài.") }}</li>
-    <li><a href="/developers/openapi/download">{{ _("Tải OpenAPI (có phiên bản)") }}</a>
-        — {{ _("chính tài liệu API đang phục vụ, lưu thành file kèm số phiên bản trong tên — để sáu tháng sau còn biết client nào sinh từ bản nào.") }}</li>
-    <li><code>sdk/postman/</code>
-        — {{ _("collection + environment, SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt.") }}</li>
-    <li><code>docs/PUBLIC_API/RECIPES.md</code>
-        — {{ _("gọi bằng cURL, PowerShell, n8n, Make hoặc HTTP thuần — không cần SDK.") }}</li>
+    <li><a href="/developers/openapi/download">{{ _("Tải OpenAPI (có số phiên bản trong tên)") }}</a>
+        — {{ _("để sáu tháng sau còn biết client nào sinh từ bản nào.") }}</li>
+    <li><a href="/tai/ltt_public_api.py">ltt_public_api.py</a>
+        — {{ _("SDK Python một tệp, không phụ thuộc ngoài.") }}</li>
+    <li><a href="/tai/ltt-public-api.ts">ltt-public-api.ts</a>
+        — {{ _("SDK TypeScript một tệp.") }}</li>
+    <li><a href="/tai/ltt-public-api.postman_collection.json">Postman collection</a>
+        {{ _("và") }} <a href="/tai/ltt-public-api.postman_environment.json">environment</a>
+        — {{ _("SINH từ OpenAPI. Đừng sửa tay: lần sinh sau ghi đè, và một bản sao thứ hai của hợp đồng luôn là bản trôi dạt.") }}</li>
   </ul>
 </div>
 
@@ -25,7 +42,7 @@
   <h2 style="margin-top:0;">{{ _("Gọi thử") }}</h2>
   <pre style="overflow-x:auto;"><code>curl -H "Authorization: Bearer $LTT_API_KEY" \
      {{ base_url }}/api/v1/me</code></pre>
-  <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key — xem PROTOCOL_V1.md mục 2.1.") }}</p>
+  <p class="muted">{{ _("Mọi lời gọi tốn credit đều cần một báo giá đã ký và một Idempotency-Key.") }}</p>
 </div>
 
 <div class="card">
@@ -33,11 +50,8 @@
   <p>{{ _("Khóa test bắt đầu bằng ltt_tk. Nó đi qua đúng chuỗi mà khóa live đi qua — xác thực, phạm vi, kiểm tham số, báo giá, Idempotency-Key, job, webhook và chữ ký — chỉ khác đúng một mắt xích: không gọi nhà cung cấp, mà trả kết quả mẫu theo đúng output_schema đã công bố.") }}</p>
   <ul>
     <li>{{ _("Khóa test KHÔNG tiêu được credit. Không phải tiêu ít — là không chạm vào sổ credit, nên lộ ra cũng không mất tiền.") }}</li>
-    <li>{{ _("Khóa test chỉ thấy job test; khóa live chỉ thấy job live. Hỏi chéo trả 404 y hệt job của người khác.") }}</li>
-    <li>{{ _("Mỗi job và mỗi webhook đều có trường mode để bên nhận phân biệt hai thế giới bằng một endpoint.") }}</li>
-    <li>{{ _("Sandbox không chứng minh được CHẤT LƯỢNG kết quả. Muốn biết đầu ra thật thế nào thì gọi một lần bằng khóa live trên công cụ rẻ nhất.") }}</li>
+    <li>{{ _("Dùng nó để dựng và chạy CI mà không đốt tiền, rồi đổi sang khóa live khi đã chắc.") }}</li>
   </ul>
-  <p class="muted">{{ _("Tạo khóa test ở tab Khóa, chọn Môi trường = Test.") }}</p>
 </div>
 
 {% endblock %}

@@ -20,6 +20,9 @@ một job treo — hai thứ đó nhìn giống nhau trong log nhưng cần hai 
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
+from datetime import timedelta
+
 import logging
 import os
 import time
@@ -50,16 +53,81 @@ class VpsJobError(RuntimeError):
     """Lỗi có thông điệp đọc được. Ném ra để nền tảng hoàn credit đã giữ."""
 
 
+#: Khoa song bao lau truoc khi bi thu hoi. Dai hon `max_runtime_s` cua job dai
+#: nhat (`vps.provision`, 1800 giay) de mot job cham KHONG bi cuop khoa giua
+#: chung. Doi lai: mot worker chet de lai khoa treo toi 45 phut — chap nhan
+#: duoc, vi may cua mot job vua chet cung khong phai thu nen dung vao ngay.
+KHOA_MAY_TTL = timedelta(minutes=45)
+
+
+@contextmanager
+def _khoa_may(instance_id: str, job_type: str):
+    """Giu khoa doc quyen cho MOT may trong suot mot job.
+
+    ## Vi sao can
+
+    Truoc 25/08 hai job tren cung mot may chay song song duoc. Duong that:
+    khach bam "Cai lai" roi doi y bam "Xoa"; hoac vong bao tri nop job xoa
+    (qua han an han) dung luc khach bam "Cai lai".
+
+    Ket qua: mot job xoa VM trong khi job kia dang dung no. Proxmox tra 500
+    o mot cho ngau nhien, may nam lai nua voi, va dia chi trong mang rieng
+    co the bi nha trong khi VM van con — tuc **may khach tiep theo nhan dung
+    dia chi do**.
+
+    ## Vi sao dung lease cua nen tang
+
+    `platform_core/leases.py` sinh ra cho dung lop van de nay (H36) va da
+    duoc dung cho vong bao tri. Dung lai no thay vi tu dung mot bang khoa
+    thu hai: hai co che khoa trong mot he thong la hai co che se lech nhau.
+
+    Khoa chay tren **phien rieng**: `leases.acquire` co commit ben trong, va
+    dung chung phien voi job se commit nhung thay doi con dang do.
+    """
+    from platform_core import leases
+
+    ten = f"vps-may:{instance_id}"
+    db, gen = _mo_db()
+    try:
+        khoa = leases.acquire(db, name=ten, ttl=KHOA_MAY_TTL)
+        if khoa is None:
+            # KHONG phai loi lap trinh: mot job khac dang lam viec tren may
+            # nay. Nem de hang doi thu lai — `max_attempts` cua manifest lo
+            # phan con lai, va viec nay tu giai quyet trong vai giay.
+            raise VpsJobError(
+                f"may {instance_id} dang co job khac chay ({job_type}); "
+                f"hang doi se thu lai")
+        try:
+            yield
+        finally:
+            try:
+                leases.release(db, khoa)
+            except Exception:            # noqa: BLE001
+                # Khong nha duoc thi khoa tu het han sau TTL. Ghi lai, nhung
+                # KHONG de no che mat ket qua (hay ngoai le) cua chinh job.
+                log.exception("vps: khong nha duoc khoa %s", ten)
+    finally:
+        gen.close()
+
+
 def handle(params: dict, ctx=None) -> dict:
-    """Điểm vào duy nhất; phân nhánh theo `ctx.job_type` (hợp đồng nền tảng)."""
+    """Diem vao duy nhat; phan nhanh theo `ctx.job_type` (hop dong nen tang).
+
+    Moi nhanh chay **duoi mot khoa theo may** — xem `_khoa_may`.
+    """
     job_type = getattr(ctx, "job_type", "") or str(params.get("job_type", ""))
-    if job_type == "vps.provision":
-        return _tao_may(params, ctx)
-    if job_type == "vps.rebuild":
-        return _dung_lai(params, ctx)
-    if job_type == "vps.destroy":
-        return _xoa_may(params, ctx)
-    raise VpsJobError(f"job_type khong biet: {job_type!r}")
+    nhanh = {"vps.provision": _tao_may,
+             "vps.rebuild": _dung_lai,
+             "vps.destroy": _xoa_may}.get(job_type)
+    if nhanh is None:
+        raise VpsJobError(f"job_type khong biet: {job_type!r}")
+
+    instance_id = str(params.get("instance_id") or "")
+    if not instance_id:
+        raise VpsJobError("thieu instance_id")
+
+    with _khoa_may(instance_id, job_type):
+        return nhanh(params, ctx)
 
 
 # ── tiện ích ────────────────────────────────────────────────────────────────
@@ -118,12 +186,11 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # đặt, khách tự chạy trình cài qua console và tự đặt tài khoản/mật khẩu
         # của chính họ — nền tảng không bao giờ biết mật khẩu của ai.
         #
-        # Đường `template` chỉ còn cho bản Linux NỘI BỘ (`khach_thay=False`):
-        # nó lên trong ~40 giây nên dùng để tách "lỗi đường ống" khỏi "lỗi trong
-        # lúc cài Windows". Không bán bằng đường đó.
+        # **Chỉ còn MỘT đường.** Ba template cuối cùng đã bị xoá khỏi cụm ngày
+        # 24/08, nên nhánh `clone` không còn đối tượng nào để nhân bản — và một
+        # nhánh không ai đi qua trong đường tạo máy là một nhánh không ai thử.
         iso = os_images.dia_cai_dat(may.os_id)
-        template = 0 if iso else _template_noi_bo(may.os_id)
-        if not iso and not template:
+        if not iso:
             raise VpsJobError(
                 f"chua khai dia cai dat cho {img.ten}: dat bien "
                 f"{os_images.khoa_moi_truong(may.os_id)} trong secrets/app.env")
@@ -155,13 +222,8 @@ def _tao_may(params: dict, ctx=None) -> dict:
         # 2) Dựng máy — bước KHÔNG idempotent, nên hỏi thế giới thật trước.
         _bao(ctx, 15, "dang chuan bi may")
         if not _vm_da_ton_tai(client, may.vmid):
-            if iso:
-                upid = client.tao_may(
-                    may.vmid,
-                    **_cau_hinh_may_trong(may, plan, img, iso))
-            else:
-                upid = client.clone(template, may.vmid,
-                                    ten=f"vps-{may.id[:8]}", full=False)
+            upid = client.tao_may(
+                may.vmid, **_cau_hinh_may_trong(may, plan, img, iso))
             _cho_tac_vu(client, upid, ctx, moc=35)
 
         # 3) Địa chỉ trong mạng riêng — cấp TRƯỚC khi cấu hình, vì cloud-init
@@ -175,11 +237,11 @@ def _tao_may(params: dict, ctx=None) -> dict:
         _bao(ctx, 60, "dang dat cau hinh")
         cau_hinh = {"cores": plan.vcpu, "memory": plan.ram_mb,
                     "name": f"vps-{may.id[:8]}",
-                    # `vga` PHẢI đặt tường minh. Template nội bộ đặt `vga:
-                    # serial0` để đọc được log khởi động qua cổng nối tiếp —
-                    # nhưng máy nào thừa hưởng nó thì **không có màn hình đồ hoạ
-                    # nào cả**, và console trong trình duyệt mở ra chỉ thấy một
-                    # kết nối bị đóng ngay. Với khách Windows thì console là
+                    # `vga` PHẢI đặt tường minh. Một máy mang `vga: serial0`
+                    # (để đọc log khởi động qua cổng nối tiếp) thì **không có
+                    # màn hình đồ hoạ nào cả**, và console trong trình duyệt mở
+                    # ra chỉ thấy một kết nối bị đóng ngay. Với khách Windows
+                    # thì console là
                     # ĐƯỜNG CỨU HỘ khi họ tự chặn mất RDP của chính mình, nên
                     # mất nó là mất đường về duy nhất.
                     #
@@ -188,24 +250,20 @@ def _tao_may(params: dict, ctx=None) -> dict:
                     # thấy (quy tắc 5 của CLAUDE.md).
                     "vga": "std"}
         cau_hinh.update(mang.cau_hinh_qemu(
-            mang.mang_cho_may(gateway, ip_noi_bo), co_cloud_init=not iso,
+            # `co_cloud_init=False` **luôn**: máy khách tự cài Windows, không
+            # có ổ cloud-init nào. Địa chỉ tới máy bằng DHCP theo MAC.
+            mang.mang_cho_may(gateway, ip_noi_bo), co_cloud_init=False,
             mac=dinh_danh.mac(may.id)))
-        # GỠ mọi card thừa của template. `cau_hinh_qemu` chỉ đặt `net0`; template
-        # nào có sẵn `net1` thì máy khách thừa hưởng nó — và nếu card đó cắm
-        # `vmbr0` thì **máy bán cho khách có một chân trong LAN nhà**, đúng thứ
-        # `mang.py` nói tuyệt đối không được có.
+        # GỠ mọi card thừa. `cau_hinh_qemu` chỉ đặt `net0`, nên một máy có sẵn
+        # `net1` sẽ GIỮ nó — và nếu card đó cắm `vmbr0` thì **máy bán cho khách
+        # có một chân trong LAN nhà**, đúng thứ `mang.py` nói tuyệt đối không
+        # được có.
         #
-        # Không lý thuyết: template `WIN10-LTSC-GOLD` có `net1`, và máy thử ngày
-        # 24/08 hiện ra hai card ("Ethernet" và "Ethernet 2") trong Windows.
+        # Mô hình template đã bỏ, nhưng luật này KHÔNG thừa: job chạy lại trên
+        # một máy đã có, và `vps.rebuild` cũng đi qua đây. Nó từng bắt được lỗi
+        # thật — máy thử 24/08 hiện ra hai card trong Windows.
         cau_hinh.update(_go_card_thua(client, may.vmid))
         client.dat_cau_hinh(may.vmid, **cau_hinh)
-
-        # Đường ISO đã tạo đĩa đúng cỡ ngay từ đầu; chỉ đường nhân bản mới cần
-        # nới, vì đĩa của template luôn nhỏ hơn gói.
-        can_dia = dia_tong_gb(may.plan_id, may.dia_them_gb)
-        if not iso and can_dia > img.disk_gb_toi_thieu:
-            # Proxmox chỉ nới ra, không thu vào — an toàn khi chạy lại.
-            client.nong_dia(may.vmid, _dia_goc(client, may.vmid), f"{can_dia}G")
 
         # 4b) Đặt chỗ DHCP trên VM router — TRƯỚC khi bật máy.
         #
@@ -406,33 +464,6 @@ def _tra_ip_cong_khai(db, may: VpsInstance) -> None:
                 dia_chi=ip.dia_chi, vultr_id=ip.vultr_id, loi=str(exc)[:200])
 
 
-def _template_noi_bo(os_id: str) -> int:
-    """VMID template cho bản Linux **nội bộ**. 0 = không có.
-
-    ## Hàng rào, không phải tuỳ chọn
-
-    Mô hình template đã bị bỏ ngày 2026-08-24: máy bán cho khách luôn là máy
-    trống + đĩa cài, khách tự đặt tài khoản và mật khẩu của chính họ.
-
-    Đường này chỉ còn sống cho bản có `khach_thay=False` — bản Linux nội bộ lên
-    trong ~40 giây, dùng để tách "lỗi đường ống" khỏi "lỗi trong lúc cài Windows".
-
-    **Nếu ai đó sau này đặt `LTT_VPS_TEMPLATE_WIN10` thì hàm này TỪ CHỐI**, thay
-    vì lặng lẽ quay lại mô hình cũ. Không có hàng rào đó thì một biến môi trường
-    gõ nhầm là mọi khách nhận chung một mật khẩu — và không lỗi nào được ghi ra.
-    """
-    import os as _os
-
-    img = os_images.lay_os(os_id)
-    if img is None or img.khach_thay:
-        return 0
-    khoa = "LTT_VPS_TEMPLATE_" + str(os_id or "").upper().replace("-", "_")
-    try:
-        return int(str(_os.environ.get(khoa, "")).strip() or 0)
-    except ValueError:
-        return 0
-
-
 def _cau_hinh_may_trong(may: VpsInstance, plan, img, iso: str) -> dict:
     """Cấu hình một máy TRỐNG có gắn đĩa cài đặt, để khách tự cài.
 
@@ -552,6 +583,10 @@ def _dung_lai(params: dict, ctx=None) -> dict:
             _cho_tac_vu(client, upid, ctx, moc=30)
 
         may.trang_thai = "dang_tao"
+        # Xoá VM là xoá luôn mọi ảnh chụp của nó. Không xoá mốc này thì trang máy
+        # vẫn khoe "Ảnh chụp gần nhất: <ngày>" cho một bản **không còn tồn tại**,
+        # và nút Khôi phục hiện ra rồi báo "chưa có ảnh chụp nào" khi bấm.
+        may.sao_luu_luc = None
         provisioning.ghi_su_kien(db, may.id, "dung_lai", boi="he_thong",
                                  os_id=params.get("os_id") or may.os_id)
         if params.get("os_id"):
@@ -593,6 +628,8 @@ def _xoa_may(params: dict, ctx=None) -> dict:
 
         _bao(ctx, 78, "dang go cho dia chi")
         _go_cho_dhcp(may)
+        # Cùng lý do như ở `_dung_lai`: ảnh chụp đi theo VM.
+        may.sao_luu_luc = None
 
         _bao(ctx, 80, "dang tra dia chi cong khai")
         _tra_ip_cong_khai(db, may)

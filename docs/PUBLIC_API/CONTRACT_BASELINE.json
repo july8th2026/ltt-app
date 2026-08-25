@@ -312,7 +312,7 @@
     },
     "image.ltt": {
       "aliases": [],
-      "contract_hash": "93dbcde993e11c2b",
+      "contract_hash": "fb38cff7d6272b32",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],

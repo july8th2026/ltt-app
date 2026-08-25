@@ -18,10 +18,10 @@
   {% else %}
     <table class="table">
       <thead><tr>
-        <th>{{ _("Mã khóa") }}</th><th>{{ _("Tên") }}</th>
-        <th>{{ _("Project") }}</th><th>{{ _("Môi trường") }}</th>
-        <th>{{ _("Trạng thái") }}</th><th>{{ _("Phạm vi") }}</th>
-        <th>{{ _("Dùng lần cuối") }}</th><th></th>
+        <th scope="col">{{ _("Mã khóa") }}</th><th scope="col">{{ _("Tên") }}</th>
+        <th scope="col">{{ _("Project") }}</th><th scope="col">{{ _("Môi trường") }}</th>
+        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Phạm vi") }}</th>
+        <th scope="col">{{ _("Dùng lần cuối") }}</th><th scope="col"></th>
       </tr></thead>
       <tbody>
       {% for key in keys %}

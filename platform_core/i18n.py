@@ -23,9 +23,24 @@ Dừng ở tầng đầu tiên có kết quả:
 4. **`CF-IPCountry`** — `VN` → vi, quốc gia khác → en. Cloudflare gắn sẵn header
    này (IP Geolocation đang bật), nên không cần thư viện GeoIP nào.
 5. **`Accept-Language`** — cứu lúc Cloudflare trả `XX` (Tor, VPN, mạng lạ).
-6. **Mặc định `en`** — chốt của chủ sản phẩm: khách nước ngoài gặp trang tiếng
-   Việt thì không đọc nổi cả nút đổi ngôn ngữ, còn người Việt gặp tiếng Anh vẫn
-   bấm đổi được.
+6. **Mặc định `vi`** — chốt lại 2026-08-25 theo yêu cầu chủ sản phẩm.
+
+   ⚠️ ĐÂY LÀ MỘT QUYẾT ĐỊNH ĐÃ ĐẢO, nên ghi cả hai chiều để không ai đảo lại
+   bằng trí nhớ:
+
+   * **Chốt cũ (`en`)** có lý do thật: *"khách nước ngoài gặp trang tiếng Việt
+     thì không đọc nổi cả nút đổi ngôn ngữ, còn người Việt gặp tiếng Anh vẫn bấm
+     đổi được."*
+   * **Vì sao lý do đó không còn đúng:** `_doi_ngon_ngu.html` hiện nhãn bằng
+     **chính ngôn ngữ đích** — nút tiếng Anh ghi `English`, không phải "Tiếng
+     Anh". Một người không đọc được tiếng Việt vẫn nhận ra chữ `English` và bấm
+     được. Cái giá của chốt cũ đã được trả bằng thiết kế của nút, không phải
+     bằng ngôn ngữ mặc định.
+
+   ⭐ Và nhớ tầng này **chỉ chạy khi bốn tầng trên đều im**: không tiền tố, không
+   cookie, không hồ sơ, `CF-IPCountry` khác `VN`, và `Accept-Language` không có
+   tiếng Việt. Khách nước ngoài có `Accept-Language` bình thường vẫn ra `en` ở
+   tầng 5 — tầng này chỉ đỡ những ca thật sự không suy ra được gì.
 """
 from __future__ import annotations
 
@@ -41,7 +56,7 @@ from typing import Optional
 VI = "vi"
 EN = "en"
 NGON_NGU = (VI, EN)
-MAC_DINH = EN                 # khi không suy ra được gì (xem docstring)
+MAC_DINH = VI                 # khi không suy ra được gì (xem docstring, mục 6)
 GOC = VI                      # ngôn ngữ của msgid, ở đường dẫn gốc
 COOKIE = "ltt_lang"
 COOKIE_TUOI = 365 * 24 * 3600
@@ -145,7 +160,17 @@ def tu_accept_language(header: str) -> Optional[str]:
             return VI
         if goc == EN:
             return EN
-    return None
+    # 🔴 CLIENT ĐÃ NÓI, VÀ NÓ KHÔNG NÓI TIẾNG VIỆT.
+    #
+    #    `ja-JP` không khớp `vi` lẫn `en`, nhưng nó **không phải là im lặng** —
+    #    trình duyệt vừa khai rõ người dùng đọc tiếng Nhật. Trả `None` ở đây là
+    #    đẩy ca đó xuống tầng mặc định, và từ 25/08 mặc định là **tiếng Việt**.
+    #
+    # ⛔ Hậu quả nếu để `None`: một người đọc tiếng Nhật nhận trang tiếng Việt.
+    #    Giữa hai ngôn ngữ ta có, tiếng Anh gần họ hơn hẳn. Đây đúng là lỗi mà
+    #    `test_159` bắt được ngay khi đổi mặc định — một tín hiệu **có** mà bị
+    #    coi như **không có**.
+    return EN
 
 
 def chuan_hoa(lang: Optional[str]) -> Optional[str]:

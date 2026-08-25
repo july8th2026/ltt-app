@@ -125,11 +125,35 @@ def test_khong_dinh_vi_duoc_thi_xet_tiep_trinh_duyet():
     assert i18n.chon(quoc_gia="XX", accept_language="vi-VN,vi;q=0.9") == "vi"
 
 
-def test_khong_co_tin_hieu_nao_thi_ra_mac_dinh_EN():
-    """Chốt của chủ sản phẩm: khách nước ngoài gặp trang tiếng Việt thì không đọc
-    nổi cả nút đổi ngôn ngữ; người Việt gặp tiếng Anh vẫn bấm đổi được."""
-    assert i18n.chon() == "en"
-    assert i18n.MAC_DINH == "en"
+def test_khong_co_tin_hieu_nao_thi_ra_mac_dinh_VI():
+    """Chốt lại 25/08 theo yêu cầu chủ sản phẩm: mặc định là **tiếng Việt**.
+
+    ⚠️ ĐÂY LÀ MỘT QUYẾT ĐỊNH ĐÃ ĐẢO. Chốt cũ là `en`, với lý do thật: *"khách
+       nước ngoài gặp trang tiếng Việt thì không đọc nổi cả nút đổi ngôn ngữ"*.
+
+    ⭐ Lý do đó không còn đúng vì `_doi_ngon_ngu.html` ghi nhãn bằng **chính ngôn
+       ngữ đích** — nút tiếng Anh ghi `English`, không phải "Tiếng Anh". Người
+       không đọc được tiếng Việt vẫn nhận ra chữ đó.
+
+    ⛔ Và tầng này CHỈ chạy khi bốn tầng trên đều im. Trình duyệt khai bất kỳ
+       ngôn ngữ nào — kể cả tiếng Nhật — vẫn ra `en` ở tầng `Accept-Language`;
+       xem `test_accept_language_ngon_ngu_LA_van_ra_en`.
+    """
+    assert i18n.chon() == "vi"
+    assert i18n.MAC_DINH == "vi"
+
+
+def test_accept_language_ngon_ngu_LA_van_ra_en():
+    """🔴 Một tín hiệu CÓ mà bị coi như KHÔNG CÓ — lỗi `test_159` bắt được.
+
+    `ja-JP` không khớp `vi` lẫn `en`, nhưng nó **không phải im lặng**: trình duyệt
+    vừa khai rõ người dùng đọc tiếng Nhật. Đẩy ca đó xuống tầng mặc định (nay là
+    tiếng Việt) là đưa trang tiếng Việt cho người đọc tiếng Nhật.
+    """
+    for header in ("ja-JP,ja;q=0.9", "ko-KR", "fr-FR,fr;q=0.8", "zh-CN"):
+        assert i18n.tu_accept_language(header) == "en", header
+    # Im lang that su thi van la None -> roi xuong mac dinh.
+    assert i18n.tu_accept_language("") is None
 
 
 # ── 5. Accept-Language ───────────────────────────────────────────────────────
@@ -142,7 +166,12 @@ def test_accept_language_theo_trong_so_q():
 def test_accept_language_bo_qua_ngon_ngu_khong_ho_tro():
     """Trình duyệt tiếng Pháp: bỏ qua fr, xét tiếp tới en."""
     assert i18n.tu_accept_language("fr-FR,fr;q=0.9,en;q=0.5") == "en"
-    assert i18n.tu_accept_language("ja-JP,ja") is None
+    # ⚠️ Đổi 25/08 cùng lúc với việc đảo mặc định sang tiếng Việt. Trước đây dòng
+    #    này chốt `None` — và `None` nghĩa là "rơi xuống mặc định". Khi mặc định
+    #    còn là `en` thì kết quả cuối vẫn đúng, nên không ai thấy vấn đề. Đổi mặc
+    #    định sang `vi` là ca này lập tức sai: người đọc tiếng Nhật nhận trang
+    #    tiếng Việt. Xem `test_accept_language_ngon_ngu_LA_van_ra_en`.
+    assert i18n.tu_accept_language("ja-JP,ja") == "en"
 
 
 def test_accept_language_rac_khong_lam_sap():

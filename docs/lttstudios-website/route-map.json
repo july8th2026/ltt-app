@@ -6,47 +6,264 @@
   "production_owner": "wordpress",
   "source_owner": "legacy-static-reference",
   "rules": [
-    {"source": "/", "production": "/", "disposition": "canonical", "locale": "vi"},
-    {"source": "/en/", "production": "/en/", "disposition": "canonical", "locale": "en", "source_exists": false},
-    {"source": "/about.html", "production": "/en/about/", "disposition": "redirect", "locale": "en"},
-    {"source": "/products.html", "production": "/en/products/", "disposition": "redirect", "locale": "en"},
-    {"source": "/support.html", "production": "/en/faq/", "disposition": "redirect", "locale": "en"},
-    {"source": "/contact.html", "production": "/en/contact/", "disposition": "redirect", "locale": "en"},
-    {"source": "/download.html", "production": "/en/applications/", "disposition": "redirect", "locale": "en"},
-    {"source": "/changelog.html", "production": "/en/resources/", "disposition": "redirect", "locale": "en"},
-    {"source": "/architecture.html", "production": "/en/about/", "disposition": "redirect", "locale": "en"},
-    {"source": "/transparency.html", "production": "/en/about/", "disposition": "redirect", "locale": "en"},
-    {"source": "/compliance/meta.html", "production": "/en/privacy-policy/", "disposition": "redirect", "locale": "en"},
-    {"source": "/compliance/tiktok.html", "production": "/en/privacy-policy/", "disposition": "redirect", "locale": "en"},
-    {"source": "/legal/privacy.html", "production": "/en/privacy-policy/", "disposition": "redirect", "locale": "en"},
-    {"source": "/legal/terms.html", "production": "/en/terms/", "disposition": "redirect", "locale": "en"},
-    {"source": "/legal/data-deletion.html", "production": "/en/data-deletion/", "disposition": "redirect", "locale": "en"},
-    {"source": "/legal/cookies.html", "production": "/en/privacy-policy/", "disposition": "redirect", "locale": "en"},
-    {"source": "/legal/dpa.html", "production": "/en/privacy-policy/", "disposition": "redirect", "locale": "en"},
-    {"source": "/legal/security.html", "production": "/en/report-abuse/", "disposition": "redirect", "locale": "en"},
-    {"source": "/auth/fb-callback.html", "production": "/auth/fb-callback.html", "disposition": "oauth_callback", "locale": "neutral"},
-    {"source": "/legal/callback.html", "production": "/legal/callback.html", "disposition": "oauth_callback", "locale": "neutral"},
-    {"source": "/404.html", "production": null, "disposition": "server_error_page", "locale": "en"},
-    {"source": "/500.html", "production": null, "disposition": "server_error_page", "locale": "en"},
-
-    {"source": "/vi/", "production": "/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/about.html", "production": "/gioi-thieu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/products.html", "production": "/san-pham/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/support.html", "production": "/cau-hoi-thuong-gap/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/contact.html", "production": "/lien-he/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/download.html", "production": "/ung-dung/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/changelog.html", "production": "/tai-nguyen/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/architecture.html", "production": "/gioi-thieu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/transparency.html", "production": "/gioi-thieu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/compliance/meta.html", "production": "/chinh-sach-quyen-rieng-tu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/compliance/tiktok.html", "production": "/chinh-sach-quyen-rieng-tu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/legal/privacy.html", "production": "/chinh-sach-quyen-rieng-tu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/legal/terms.html", "production": "/dieu-khoan-su-dung/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/legal/data-deletion.html", "production": "/xoa-du-lieu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/legal/cookies.html", "production": "/chinh-sach-quyen-rieng-tu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/legal/dpa.html", "production": "/chinh-sach-quyen-rieng-tu/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/legal/security.html", "production": "/bao-cao-lam-dung/", "disposition": "locale_fallback", "locale": "vi"},
-    {"source": "/vi/404.html", "production": null, "disposition": "server_error_page", "locale": "vi"},
-    {"source": "/vi/500.html", "production": null, "disposition": "server_error_page", "locale": "vi"}
+    {
+      "source": "/",
+      "production": "/",
+      "disposition": "canonical",
+      "locale": "vi"
+    },
+    {
+      "source": "/en/",
+      "production": "/en/",
+      "disposition": "canonical",
+      "locale": "en",
+      "source_exists": false
+    },
+    {
+      "source": "/about.html",
+      "production": "/en/about/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/products.html",
+      "production": "/en/products/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/support.html",
+      "production": "/en/faq/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/contact.html",
+      "production": "/en/contact/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/download.html",
+      "production": "/en/applications/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/changelog.html",
+      "production": "/en/resources/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/architecture.html",
+      "production": "/en/about/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/transparency.html",
+      "production": "/en/about/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/compliance/meta.html",
+      "production": "/en/privacy-policy/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/compliance/tiktok.html",
+      "production": "/en/privacy-policy/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/legal/privacy.html",
+      "production": "/en/privacy-policy/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/legal/terms.html",
+      "production": "/en/terms/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/legal/data-deletion.html",
+      "production": "/en/data-deletion/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/legal/cookies.html",
+      "production": "/en/privacy-policy/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/legal/dpa.html",
+      "production": "/en/privacy-policy/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/legal/security.html",
+      "production": "/en/report-abuse/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/auth/fb-callback.html",
+      "production": "/auth/fb-callback.html",
+      "disposition": "oauth_callback",
+      "locale": "neutral"
+    },
+    {
+      "source": "/legal/callback.html",
+      "production": "/legal/callback.html",
+      "disposition": "oauth_callback",
+      "locale": "neutral"
+    },
+    {
+      "source": "/404.html",
+      "production": null,
+      "disposition": "server_error_page",
+      "locale": "en"
+    },
+    {
+      "source": "/500.html",
+      "production": null,
+      "disposition": "server_error_page",
+      "locale": "en"
+    },
+    {
+      "source": "/vi/",
+      "production": "/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/about.html",
+      "production": "/gioi-thieu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/products.html",
+      "production": "/san-pham/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/support.html",
+      "production": "/cau-hoi-thuong-gap/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/contact.html",
+      "production": "/lien-he/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/download.html",
+      "production": "/ung-dung/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/changelog.html",
+      "production": "/tai-nguyen/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/architecture.html",
+      "production": "/gioi-thieu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/transparency.html",
+      "production": "/gioi-thieu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/compliance/meta.html",
+      "production": "/chinh-sach-quyen-rieng-tu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/compliance/tiktok.html",
+      "production": "/chinh-sach-quyen-rieng-tu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/legal/privacy.html",
+      "production": "/chinh-sach-quyen-rieng-tu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/legal/terms.html",
+      "production": "/dieu-khoan-su-dung/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/legal/data-deletion.html",
+      "production": "/xoa-du-lieu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/legal/cookies.html",
+      "production": "/chinh-sach-quyen-rieng-tu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/legal/dpa.html",
+      "production": "/chinh-sach-quyen-rieng-tu/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/legal/security.html",
+      "production": "/bao-cao-lam-dung/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/404.html",
+      "production": null,
+      "disposition": "server_error_page",
+      "locale": "vi"
+    },
+    {
+      "source": "/vi/500.html",
+      "production": null,
+      "disposition": "server_error_page",
+      "locale": "vi"
+    },
+    {
+      "source": "/legal/vps-terms.html",
+      "production": "/vps-terms/",
+      "disposition": "redirect",
+      "locale": "en"
+    },
+    {
+      "source": "/vi/legal/vps-terms.html",
+      "production": "/dieu-khoan-vps/",
+      "disposition": "locale_fallback",
+      "locale": "vi"
+    }
   ]
 }

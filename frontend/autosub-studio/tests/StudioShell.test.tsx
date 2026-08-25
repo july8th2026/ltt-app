@@ -161,7 +161,7 @@ it('polls a WhisperX job and reloads the project when transcription completes', 
   render(<StudioShell csrfToken="csrf"/>)
   fireEvent.click(await screen.findByRole('button',{name:/WhisperX/}))
   await waitFor(() => expect(screen.getByRole('status'))
-    .toHaveTextContent('AI auxiliary hoàn tất · 0 credit'), {timeout:3000})
+    .toHaveTextContent('AI auxiliary hoàn tất · 0 credit'), {timeout:10_000})
   expect(screen.getByText('1 track · 1 cue')).toBeInTheDocument()
   expect(screen.getAllByText('Xin chào LTT').length).toBeGreaterThan(0)
 })

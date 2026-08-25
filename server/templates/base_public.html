@@ -12,6 +12,12 @@
       radial-gradient(900px 460px at -6% 6%, #7c211a1a, transparent 55%), var(--bg);
       color:var(--fg); font-family:var(--font); font-size:14px}
   </style>
+  {# 🔴 Vỏ công khai TRƯỚC 25/08 không có khối này, nên `/gia-api` và
+     `/huong-dan` render với `card`/`table`/`pre` **không có luật CSS nào khớp**.
+     Xem `_kieu_chung.html` để biết chuyện đó nhìn ra sao trên trình duyệt thật. #}
+  {% include "_kieu_chung.html" %}
+  <script src="/static/sao_chep.js?v={{ asset_ver }}" defer></script>
+  <script src="/static/cam_chon.js?v={{ asset_ver }}" defer></script>
   {# hreflang (H24) — xem base.html. #}
   {%- set _p = request.scope.get('path', '/') %}
   <link rel="alternate" hreflang="vi" href="{{ request.base_url|string|trim('/') }}{{ _p }}">

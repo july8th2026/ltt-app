@@ -71,9 +71,21 @@ def test_noi_ro_BA_LUAT_tinh_tien_de_gay_hieu_lam(web):
 
 
 def test_chi_duong_dang_ky(web):
+    """🔴 SỬA 25/08: bước "xem cách cắm" phải trỏ vào trang CÔNG KHAI.
+
+    Bản trước chốt `/developers/cli` — thứ trả `303` về `/login`. Tức trang giá
+    công khai dẫn người đọc vào một **cánh cửa đóng**, đúng ở bước họ muốn biết
+    "cắm thế nào". Cùng thứ tự ngược mà chính trang giá này đã được tách ra khỏi
+    `/developers/pricing` để sửa — chỉ là lần đó chỉ sửa được một nửa.
+
+    ⚠️ `/developers/keys` thì GIỮ: nó là bước sau khi đã có tài khoản, nên nằm
+       sau cổng đăng nhập là đúng chỗ.
+    """
     page = web.get("/gia-api").text
-    for d in ("/register", "/developers/keys", "/developers/cli"):
+    for d in ("/register", "/developers/keys", "/huong-dan"):
         assert d in page, f"thieu duong dan {d}"
+    assert "/developers/cli" not in page, (
+        "trang gia CONG KHAI khong duoc tro vao mot duong 303 ve /login")
 
 
 def test_KHONG_lo_id_noi_bo(web):

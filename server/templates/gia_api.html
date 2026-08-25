@@ -62,7 +62,11 @@
 </div>
 
 <div class="card">
-  <h1 style="margin-top:0;">{{ _("Giá API tạo ảnh") }}</h1>
+  {# ⚠️ `h2`, không phải `h1` thứ hai. Một trang có hai `h1` là một trang không
+     nói được nó nói về cái gì: trình đọc màn hình và công cụ tìm kiếm đều đọc
+     `h1` như "chủ đề của trang", nên hai cái là hai chủ đề ngang hàng. Đây là
+     trang **giá**, và tạo ảnh là một mục của nó. #}
+  <h2 style="margin-top:0;font-size:20px;">{{ _("Giá API tạo ảnh") }}</h2>
   <p>{{ _("Model ảnh chạy trên máy của chúng tôi. Tính theo ảnh, và chỉ tính những ảnh thật sự sinh ra được.") }}</p>
   <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang_anh.phien_ban_gia }}</code></p>
 
@@ -123,11 +127,15 @@
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  {# ⚠️ Bước thứ ba phải trỏ vào trang CÔNG KHAI. Bản trước trỏ
+     `/developers/cli`, thứ trả 303 về `/login` — tức trang giá công khai dẫn
+     người đọc vào một cánh cửa đóng, đúng ở bước họ muốn xem "cắm thế nào". #}
   <p>
-    <a href="/register">{{ _("Tạo tài khoản") }}</a> →
-    <a href="/developers/keys">{{ _("tạo khoá API") }}</a> →
-    <a href="/developers/cli">{{ _("cắm vào Codex hoặc Claude") }}</a>
+    <a href="/huong-dan">{{ _("Xem cách cắm") }}</a> →
+    <a href="/register">{{ _("tạo tài khoản") }}</a> →
+    <a href="/developers/keys">{{ _("tạo khoá API") }}</a>
   </p>
+  <p class="muted"><a href="/huong-dan/cong-cu">{{ _("Hoặc dùng công cụ cắm tự động cho Windows") }} →</a></p>
   <p class="muted">{{ _("Khoá dùng được ngay với thư viện OpenAI, Codex CLI, Claude Code và Claude Desktop — không cần thư viện riêng.") }}</p>
 </div>
 

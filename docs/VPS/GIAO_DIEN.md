@@ -124,14 +124,55 @@ câu quảng cáo sai là một vụ tranh chấp về sau.
 
 ## Việc phải làm (G8)
 
-- [ ] `server/templates/vps_tao.html` — hai bước + bảng tóm tắt cập nhật trực tiếp
-- [ ] `server/templates/vps_danh_sach.html` — bảng + thanh băng thông + cảnh báo gia hạn
-- [ ] `server/templates/vps_chi_tiet.html` — bốn khối ở trên
-- [ ] Proxy noVNC + vé dùng-một-lần (chung với G3)
-- [ ] Trang bán công khai + điều khoản (chung với G10)
-- [ ] Kiểm trên **URL công khai** `https://app.lttstudios.com`, không chỉ loopback
-      (quy tắc 5b của `CLAUDE.md` — Cloudflare từng phục vụ CSS cũ 4 tiếng)
-- [ ] Đính `?v={{ asset_ver }}` cho mọi asset tĩnh mới (quy tắc 6)
+- [x] **Hai bước + bảng tóm tắt sống** — nằm trong `vps.html`, không tách tệp
+      riêng: một trang, một biểu mẫu. Tóm tắt hiện **số credit sẽ trừ** và **số dư
+      còn lại** trước khi bấm; bản trước hiện giá bằng đồng ở một chỗ, số credit ở
+      chỗ khác, số dư chỉ trên thanh tiêu đề — ba mảnh của cùng một phép tính.
+      *Đo bằng trình duyệt thật:* chọn VPS Lớn (3.290) với số dư 2.000 → "Còn lại
+      **−1.290 credit**" màu đỏ + cảnh báo, danh sách OS tự giãn từ 2 lên 5 bản.
+      ⚠️ Bản đầu của tôi phá một chốt an toàn: nó hiện biểu mẫu **luôn**, kể cả
+      khi không đọc được sức chứa. Hai thứ bị gộp nhầm — *hiện bảng giá* và *cho
+      đặt mua*. Nay bảng giá hiện luôn (chỉ đọc), biểu mẫu chỉ khi bán được.
+- [x] `vps.html` — bảng máy + thanh băng thông + cảnh báo gia hạn
+- [x] `vps_chi_tiet.html` — bốn khối + sao kê + ảnh chụp + khôi phục
+- [x] Proxy noVNC + vé dùng-một-lần
+- [x] Điều khoản LTT VPS + clickwrap ngay dưới nút
+- [x] **Trang bán công khai (chưa đăng nhập)** — ✅ 25/08.
+
+      **Một URL, hai loại người xem.** `/vps` phục vụ cả hai chứ không tách thành
+      `/vps` + `/vps/bang-gia`. Lý do cụ thể: thẻ app trong catalog hiện cho cả
+      khách chưa đăng nhập, nên `/vps` đòi đăng nhập = người lạ bấm vào rơi thẳng
+      vào trang đăng nhập — **ngõ cụt ở đúng bước đầu của phễu bán hàng**. Hai URL
+      thì lại có hai trang cùng nói về một sản phẩm, và chúng sẽ lệch nhau.
+
+      Khách ẩn danh thấy: sản phẩm là gì → điều kiện ("Đọc trước khi thuê") →
+      bảng giá chỉ đọc → hai nút *Đăng nhập để thuê máy* / *Tạo tài khoản* →
+      liên kết điều khoản. Khách đã đăng nhập thấy máy của mình và biểu mẫu.
+
+      **Thứ tự đó là kết quả của việc nhìn trang render thật.** Bản đầu đặt sáu
+      dòng cảnh báo TRƯỚC khi nói đây là cái gì — người chưa biết sản phẩm mà đọc
+      sáu điều nó không hứa thì đóng tab, không đọc tiếp.
+
+      **Mở cho khách ẩn danh KHÔNG kéo theo ba thứ** (mỗi thứ một chốt trong
+      `test_252`): không lộ máy của người khác — `_may_cua_toi(db, "")` sẽ quét
+      cả bảng, nên nhánh ẩn danh phải *không gọi* nó chứ không phải gọi rồi lọc;
+      không dựng biểu mẫu sẽ POST rồi ăn 401; và **cổng cờ `LTT_VPS` vẫn đứng
+      trước** — công khai nghĩa là "không đòi đăng nhập", không phải "bỏ qua cờ".
+
+      ⚠️ **Hai lỗi chỉ nhìn thấy khi render thật, không test nào bắt được:**
+
+      1. Cột thông số hiện là *"Settings"* trong bản tiếng Anh — msgid `"Cấu hình"`
+         dùng chung với liên kết admin `⚙ Cấu hình` trỏ tới `/settings`. Đã tách
+         `"Cấu hình máy"` → *"Specs"*.
+      2. **App đang TẮT vẫn hiện thẻ trên trang chủ của người đã đăng nhập**, mà
+         route trả 404 — lại đúng cái ngõ cụt trên. `server/templating.py` (thanh
+         bên + header) và nhánh ẩn danh của `dashboard.py` đều lọc
+         `manifest.enabled`; nhánh đã-đăng-nhập thì không. Lỗi **có sẵn từ trước**,
+         không phải do `public=True`: nhánh đó trả `authenticated or public` nên
+         `public=False` cũng lọt y hệt. Đã sửa + chốt test.
+- [ ] Kiểm trên **URL công khai** `https://app.lttstudios.com` — chỉ làm được sau
+      khi đặt `LTT_VPS=1`; hiện `/vps` trả 404 đúng như fail-closed phải thế
+- [x] Asset tĩnh đính `?v={{ asset_ver }}` (dùng chung `ltt.css`, không thêm asset mới)
 
 ## Nguồn
 
