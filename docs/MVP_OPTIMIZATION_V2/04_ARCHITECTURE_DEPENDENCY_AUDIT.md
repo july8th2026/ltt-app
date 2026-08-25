@@ -72,9 +72,42 @@ minh cho *sự tồn tại của route*, **không** biện minh cho việc hằn
 của một app (`MAX_TOKENS_TRAN`, `tran_theo_ngu_canh`) bị đọc thẳng từ tầng vận
 chuyển.
 
-**Đề xuất:** đưa hai hằng số + hàm kẹp trần ra sau một bề mặt **không mang tên
-app**. Bất biến: **trần token khách thấy không đổi một con số nào** — chốt bằng
-`tests/golden/public_api_catalog_v1.json`, thứ đã tồn tại đúng để làm việc này.
+### ⚠️ Đọc kỹ hơn: nó **không phải** chỉ là hằng số
+
+Bản nháp mục này đề xuất *"đưa hai hằng số ra sau một bề mặt không mang tên app"*.
+Đọc kỹ 5 chỗ import thì phạm vi rộng hơn thế:
+
+```
+chat.py:75        MAX_TOKENS_TRAN                     ← hằng số
+chat.py:98        features                            ← HÀM NGHIỆP VỤ
+streaming.py:177  features                            ← HÀM NGHIỆP VỤ
+streaming.py:390  features                            ← HÀM NGHIỆP VỤ
+streaming.py:711  MAX_TOKENS_MAC_DINH, tran_theo_ngu_canh
+```
+
+`features` cung cấp `uoc_token_vao()`, `kiem_tham_so()`, `chay()` — tức tầng vận
+chuyển **gọi thẳng hàm nghiệp vụ** của một app, không chỉ đọc hằng số của nó.
+
+⛔ **Nên không sửa vội, và đây là lý do.** Ba đường `/messages`, `/responses`,
+`/chat/completions` là **streaming đồng bộ** — chúng *không thể* đi qua hàng đợi
+job như mọi app khác, nên `registry`/`job_type` (primitive sẵn có) **không giải
+được** ca này. Sửa đúng cần một khái niệm mới trong hợp đồng app: *executor đồng
+bộ*, phân giải theo **năng lực** thay vì theo **tên**.
+
+Theo §F, cơ chế mới chỉ được thêm khi 1–4 không giải quyết được — ca này **đúng
+là** như vậy. Nhưng nó là **P2**, và thêm một khái niệm vào hợp đồng app là việc
+đáng làm tỉnh táo, không phải việc đáng làm ở cuối một phiên dài.
+
+**Đề xuất:** giữ nguyên, ghi thành **ngoại lệ có cổng thoát**:
+
+1. Ghi vào `AGENTS.md` §8.4 rằng `server/api/` được biết `apps.ltt_llm` như một
+   **ngoại lệ có tên**, kèm lý do (hợp đồng tương thích OpenAI/Anthropic là
+   streaming đồng bộ).
+2. Bất biến phải giữ: **trần token khách thấy không đổi một con số nào** — đã có
+   `tests/golden/public_api_catalog_v1.json` chốt.
+3. **Cổng thoát:** khi app thứ hai cần đường streaming đồng bộ, ngoại lệ hết hiệu
+   lực và phải làm khái niệm *executor đồng bộ*. Một ngoại lệ cho một app là
+   ngoại lệ; cho hai app là một cơ chế đang thiếu.
 
 ### A-01 — cạnh cross-product duy nhất
 

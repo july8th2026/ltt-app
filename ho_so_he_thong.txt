@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:296213d90054209838aa83c49d1b7e75f5b6207c7f6df2dfa9d09a6eca349f95
-Nguồn đã quét : 1164 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:4bcbf2f044b4ae6fedddd2a03055d5aa7a410c7dd136a70c5f7dea2e5a2bd998
+Nguồn đã quét : 1168 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1346,8 +1346,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1164 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37, .md:14, .mjs:3, .ps1:20, .py:891, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1168 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39, .md:14, .mjs:3, .ps1:20, .py:893, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2466,7 +2466,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (91)
+[tools] (95)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2492,15 +2492,18 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - tools/check_api_compat.py
 - tools/check_bien_dich.py
 - tools/check_bo_qua.py
+- tools/check_chuong_chua_treo.py
 - tools/check_dich_thieu.py
 - tools/check_fuzzy_dich.py
 - tools/check_i18n.py
 - tools/check_multiproc.py
 - tools/check_sdk_contract.py
+- tools/check_server_routes.py
 - tools/check_silent_except.py
 - tools/check_so_test.py
 - tools/check_undefined_names.py
 - tools/chuan_hoa_anh.py
+- tools/chuong_baseline.json
 - tools/cleanup_agent_canary.py
 - tools/create_admin.py
 - tools/do_bo_cuc.py
@@ -2536,6 +2539,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - tools/run_qualitylab_fixture.ps1
 - tools/scan_source_secrets.py
 - tools/seed_credit_packages.py
+- tools/server_routes_baseline.json
 - tools/silent_except_baseline.json
 - tools/sinh_golden_api.py
 - tools/system_profile/__init__.py
@@ -2568,7 +2572,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1164 file; 11281788 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1168 file; 11297479 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2982,7 +2986,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=e40e070199e806b7de024960dcfcee3256d458a4c7242f269a7db09a74322ea5 BYTES=29671 LINES=349
+SHA256=45c5a50873bb28e0b960c0d621f9ee70885385fb9eeb065e79e35a04703e4cb2 BYTES=30414 LINES=368
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3252,11 +3256,30 @@ không phải bởi code.
 Đọc `docs/PUBLIC_API/TAM_DUNG_2026-08-17.md` trước khi mở lại — nó ghi mở lại
 thì bắt đầu từ đâu và ba cái bẫy đã dính.
 
-Một câu về trạng thái: **hạ tầng đã sống, cửa hàng chưa mở.** Khu API bật
-(`LTT_PUBLIC_API=1`) nhưng `LTT_PUBLIC_API_TOOLS` **rỗng**, nên
-`GET /api/v1/tools` trả `200` với danh sách rỗng — fail-closed của Q92 làm đúng
-việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool** (bắt đầu bằng
-`image.thumbnail`), **xoay khoá provider**, và **H35.10** (tool video).
+🔴 **SỬA 2026-08-26 — ĐOẠN NÀY TRƯỚC ĐÓ NÓI SAI, VÀ NÓI SAI VỀ PHÍA NGUY HIỂM.**
+
+Nó từng viết *"hạ tầng đã sống, **cửa hàng chưa mở**… `LTT_PUBLIC_API_TOOLS`
+**rỗng**"*. Đọc production ngày 26/08:
+
+```
+LTT_PUBLIC_API=1
+LTT_PUBLIC_API_TOOLS=text.chat,image.ltt
+```
+
+**Hai tool đang mở và đang thu tiền thật.** Cùng tài liệu này, hàng H38 nói LLM
+*"ĐANG BÁN 2026-08-24"* — tức hai câu trong **một** tệp mâu thuẫn nhau suốt hai
+ngày.
+
+⛔ Vì sao nó nguy hiểm chứ không chỉ sai: một phiên sau đọc đoạn này sẽ tin
+`/api/v1` **không phục vụ ai**, rồi sửa nó **như sửa mã chết**. Nó đang phục vụ
+khách trả tiền.
+
+⭐ Và tool đã mở **không phải** `image.thumbnail` như kế hoạch từng ghi — thứ tự
+mở cửa đã đổi trên thực tế mà kế hoạch không theo kịp.
+
+**Trạng thái đúng:** khu API bật, **hai tool mở** (`text.chat`, `image.ltt`),
+fail-closed của Q92 vẫn đúng việc với mọi tool còn lại. Năm điều kiện §11 đã
+đóng; còn nợ: **xoay khoá provider** và **H35.10** (tool video).
 
 **H37 (bắt đầu 2026-08-21, Q102)** — model tạo ảnh chạy trên **máy B**
 (`MAY-B` 192.168.2.66, RTX 3090 24 GB, RAM 192 GB). Nó là **một provider**
@@ -221674,6 +221697,195 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_chuong_chua_treo.py
+SHA256=90fc43f55dc9c21ef2ad432fdc43716be79fd020092c2e9a64abb6fc3f6188f8 BYTES=7913 LINES=183
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""check_chuong_chua_treo.py — chuông đã đúc mà chưa ai treo.
+
+## 🔴 VÌ SAO TỆP NÀY TỒN TẠI — bốn ca, cùng một hình dạng
+
+Audit 2026-08-26 tìm ra bốn lỗi tưởng như độc lập. Đo ra thì chúng là **một**:
+
+| | Máy móc có sẵn? | Có ai gọi không? |
+|---|---|---|
+| Giữ chỗ credit treo | `usage.reconcile` đếm được | ❌ chỉ test + một CLI thủ công |
+| Biên lợi nhuận âm | `costing.scan_for_alerts` đủ docstring, test, `__all__` | ❌ **không gì gọi** |
+| Sao lưu | `backup.ps1` thiết kế đúng, tách bí mật | ❌ chưa từng chạy |
+| Link 404 trong nav | `anhnoibo` đã biết cách tránh và **đã viết ra lý do** | ❌ chưa thành phép kiểm |
+
+⛔ **Một hàm cảnh báo không được cắm vào đâu trông Y HỆT một hàm cảnh báo đang
+chạy** — cho tới ngày cần nó. Nó có docstring, có test, có trong `__all__`. Mọi
+dấu hiệu bề ngoài của một thứ đang hoạt động, trừ chính việc hoạt động.
+
+Cụ thể: cảnh báo *"nền tảng đang bán dưới giá vốn"* đã nằm trong mã suốt thời
+gian nền tảng bán ảnh ở **45–57 % giá vốn trong 22 ngày**. Nó không im vì nó
+hỏng. Nó im vì **không ai cắm dây**.
+
+## 💡 CHỖ TỰ NGHĨ — ghi rõ vì nó là chỗ yếu nhất
+
+Ý đầu tiên là bắt mục *"Còn tồn đọng"* trong `NHAT_KY.md` phải mang mã hạng mục.
+**Bỏ ý đó**, vì hai lý do:
+
+1. 104 mục hiện có đều là văn xuôi tự do ⇒ ép mã là **dọn quá khứ**, trong khi
+   bánh cóc phải **chặn tương lai**.
+2. Một phép kiểm phán xét văn phong sẽ kêu sai liên tục, và một máy dò kêu suốt
+   ngày là một máy dò bị tắt trong tuần đầu — đúng cái bẫy `test_307` đã cảnh.
+
+Hình dạng THẬT của bốn ca trên không phải "ghi chép thiếu mã". Nó là: **một hàm
+quét/cảnh báo tồn tại mà không đường thực thi nào gọi tới**. Cái đó đo được bằng
+máy, không cần phán xét gì.
+
+⇒ Phép kiểm này tìm **hàm quét/cảnh báo** trong `platform_core/` và đòi mỗi hàm
+có ít nhất một người gọi **ngoài** chính module của nó và **ngoài** `tests/`.
+
+## ⛔ Giới hạn — nói thẳng để không ai tin quá
+
+Nó **không** bắt được ca sao lưu (kịch bản PowerShell) và ca link-404 (một bài
+học nằm trong chú thích). Nó bắt được **hai ca nguy hiểm nhất**, và bắt chắc
+chắn. Một phép kiểm hẹp mà đúng có giá trị hơn một phép kiểm rộng mà đoán.
+
+    python tools/check_chuong_chua_treo.py
+    python tools/check_chuong_chua_treo.py --update   # sau khi ĐÃ cắm dây
+"""
+from __future__ import annotations
+
+import argparse
+import ast
+import json
+import pathlib
+import sys
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+MOC = pathlib.Path(__file__).resolve().parent / "chuong_baseline.json"
+
+#: Tên hàm mang nghĩa "đi tìm chuyện bất thường rồi báo". Danh sách này CỐ Ý hẹp:
+#: mỗi tiền tố ở đây đều là một động từ tìm-kiếm, không phải một động từ tính-toán.
+#: Một hàm tính toán không được gọi thì chỉ là mã chết; một hàm CẢNH BÁO không
+#: được gọi là một sự im lặng bị hiểu nhầm thành bình yên.
+TIEN_TO = ("scan_", "quet_", "reconcile", "sweep", "kiem_tra_dinh_ky",
+           "_alerts", "raise_alerts", "tim_bat_thuong")
+
+#: Quét ở đâu. Chỉ `platform_core/` — nơi các máy dò sống.
+KHU = "platform_core"
+
+#: Nơi lời gọi ĐƯỢC TÍNH. `tests/` cố ý KHÔNG có ở đây: đó chính là cái bẫy —
+#: `costing.scan_for_alerts` CÓ test, và test đó là thứ duy nhất gọi nó.
+NGUOI_GOI = ("platform_core", "server", "apps", "job_worker.py",
+             "codex_sidecar_main.py")
+
+
+def _tep(khu: str):
+    d = GOC / khu if (GOC / khu).is_dir() else None
+    if d is None:
+        f = GOC / khu
+        return [f] if f.is_file() else []
+    return [f for f in sorted(d.rglob("*.py")) if "__pycache__" not in f.parts]
+
+
+def tim_ham_canh_bao() -> dict[str, str]:
+    """Trả {ten_ham: duong_dan} cho mọi hàm quét/cảnh báo cấp module."""
+    ra: dict[str, str] = {}
+    for f in _tep(KHU):
+        try:
+            cay = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in cay.body:                      # chỉ hàm cấp module
+            if not isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+            ten = n.name
+            if ten.startswith("__"):
+                continue
+            if any(t in ten for t in TIEN_TO):
+                ra[ten] = f.relative_to(GOC).as_posix()
+    return ra
+
+
+def tim_nguoi_goi(ten_ham: set[str]) -> dict[str, set[str]]:
+    """Trả {ten_ham: {tep goi no}} — chỉ tính lời gọi thật `x(...)`."""
+    goi: dict[str, set[str]] = {t: set() for t in ten_ham}
+    for khu in NGUOI_GOI:
+        for f in _tep(khu):
+            rel = f.relative_to(GOC).as_posix()
+            try:
+                cay = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+            except SyntaxError:
+                continue
+            for n in ast.walk(cay):
+                if not isinstance(n, ast.Call):
+                    continue
+                fn = n.func
+                ten = getattr(fn, "id", None) or getattr(fn, "attr", None)
+                if ten in goi:
+                    goi[ten].add(rel)
+    return goi
+
+
+def quet() -> list[dict]:
+    ham = tim_ham_canh_bao()
+    goi = tim_nguoi_goi(set(ham))
+    treo = []
+    for ten, o_dau in sorted(ham.items()):
+        # ⛔ TINH CA NGUOI GOI CUNG MODULE. Ban dau toi loai chung (`c != o_dau`)
+        #    va no cho ra 6 duong tinh GIA ngay lap tuc: `_quet_giu_cho_treo` CO
+        #    duoc goi — tu `_mot_luot_bao_tri`, cung tep. Duoc goi tu cung module
+        #    van la DUOC CAM DAY.
+        #
+        # ⚠️ Cai gia phai tra, noi thang: mot ham chet duoc goi boi mot ham chet
+        #    khac trong cung module se lot. Phep kiem dung se la kha-nang-voi-toi
+        #    tu diem vao that. Chua lam, vi phep kiem hep ma DUNG co gia tri hon
+        #    phep kiem rong ma doan — va no van bat duoc ca nguy hiem nhat:
+        #    ham co docstring + test + `__all__` ma KHONG AI ngoai test goi.
+        if not goi[ten]:
+            treo.append({"ham": ten, "o": o_dau})
+    return treo
+
+
+def main() -> int:
+    p = argparse.ArgumentParser()
+    p.add_argument("--update", action="store_true")
+    args = p.parse_args()
+
+    treo = quet()
+    khoa = sorted(f"{t['o']}::{t['ham']}" for t in treo)
+
+    if args.update:
+        MOC.write_text(json.dumps(khoa, ensure_ascii=False, indent=2) + "\n",
+                       encoding="utf-8")
+        print(f"da ghi moc: {len(khoa)} ham chua duoc goi")
+        return 0
+
+    moc = json.loads(MOC.read_text(encoding="utf-8")) if MOC.is_file() else []
+    moi = sorted(set(khoa) - set(moc))
+    da_cam = sorted(set(moc) - set(khoa))
+
+    for k in khoa:
+        print(f"{'!!' if k in moi else '  '} {k}")
+
+    if da_cam:
+        print(f"\nDA CAM DAY: {', '.join(da_cam)}")
+        print("Chay --update de ha moc.")
+
+    if moi:
+        print(f"\nTHEM {len(moi)} ham quet/canh bao KHONG AI GOI:")
+        for k in moi:
+            print(f"   {k}")
+        print("\nMot ham canh bao khong duoc cam vao dau trong Y HET mot ham")
+        print("canh bao dang chay. Cam no vao `_mot_luot_bao_tri` hoac mot")
+        print("duong thuc thi that — hoac xoa no di.")
+        print("RESULT: FAIL")
+        return 1
+
+    print(f"\nChua duoc goi: {len(khoa)} | moc: {len(moc)} — khong them.")
+    print("RESULT: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_dich_thieu.py
 SHA256=f9f776fefd54e754cd8a2af464a77b5e72f41bb477c53302d0cf115bbfa86410 BYTES=6286 LINES=163
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -222455,6 +222667,146 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_server_routes.py
+SHA256=119d2ac24ee3ba23509513fd8ada1ae893aa50767919184ffdb2d6b8e3222f4c BYTES=5208 LINES=134
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""check_server_routes.py — bánh cóc kích thước cho `server/routes/`.
+
+## ⭐ VÌ SAO TỆP NÀY TỒN TẠI
+
+`tools/lint_app_contract.py` thi hành trần **900 dòng / 30 handler** cho `apps/`.
+Trần đó ra đời sau khi đo được một điều thật: *"hợp đồng không nói logic nghiệp
+vụ nằm ở đâu, nên route thành chỗ để mọi thứ rơi vào"* — và đã có tệp route
+**1.799 dòng** vì vậy.
+
+`server/` thì **không có ngưỡng nào**. Và ba tệp lớn nhất kho đều nằm ở đó:
+
+    server/admin_api.py         1.897 dòng
+    server/routes/developer.py  1.521 dòng · 32 handler
+    server/admin.py             1.388 dòng
+
+`developer.py` vượt **cả hai** ngưỡng của `apps/` — 1.521 > 900 và 32 > 30 — mà
+không có gì cân nó, chỉ vì nó nằm ở thư mục khác. Cùng một lực đang tác dụng lên
+cùng một loại tệp; chỉ khác là một bên có cân, một bên không.
+
+## 💡 VÌ SAO LÀ BÁNH CÓC CHỨ KHÔNG PHẢI TRẦN CỨNG
+
+Đặt trần cứng 900 dòng hôm nay thì gate đỏ ngay, và ba tệp trên **không phải lỗi
+cần sửa gấp** — audit 2026-08-26 đo change locality của chúng:
+
+  `developer.py`  sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5)
+                  => nghiệp vụ đang sống trong tầng vận chuyển. ĐÁNG chẻ.
+  `admin_api.py`  churn 16, bạn đồng hành thưa (4/3/3)
+                  => tệp lớn mà ít đổi và đổi cô lập là CHI PHÍ THẤP. Chưa đáng.
+
+Chẻ `admin_api.py` bây giờ là trả tiền hôm nay cho một vấn đề chưa xuất hiện.
+
+⇒ Bánh cóc: **chốt tập hợp hiện có, không cho THÊM**. Cùng khuôn
+`check_silent_except.py` và `check_bo_qua.py`.
+
+⛔ Và chốt **TẬP HỢP**, không chốt **SỐ LƯỢNG**: một tệp mới vượt ngưỡng trong khi
+một tệp cũ được chẻ sẽ giữ nguyên tổng số, và một bánh cóc đếm số sẽ im lặng cho
+qua. Bài học đó đã trả giá ở `check_so_test.py`.
+
+    python tools/check_server_routes.py            # kiểm
+    python tools/check_server_routes.py --update   # hạ mốc sau khi ĐÃ chẻ thật
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import re
+import sys
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+MOC = pathlib.Path(__file__).resolve().parent / "server_routes_baseline.json"
+
+#: Cùng con số với `lint_app_contract.py`. Một hợp đồng, hai nơi thi hành — nếu
+#: hai bên lệch nhau thì người đọc không biết tin bên nào.
+MAX_DONG = 900
+MAX_HANDLER = 30
+
+#: Quét ở đâu. `server/api/` cố ý KHÔNG có ở đây: nó là bề mặt hợp đồng công khai
+#: đã bị đóng băng bởi `check_api_compat.py` + ảnh chụp golden, tức đã có thứ
+#: khác canh, và canh chặt hơn.
+THU_MUC = ("server/routes", "server")
+
+HANDLER = re.compile(r"^\s*@(?:router|app)\.(get|post|put|delete|patch)\(", re.M)
+
+
+def do(f: pathlib.Path) -> tuple[int, int]:
+    txt = f.read_text(encoding="utf-8", errors="replace")
+    return len(txt.splitlines()), len(HANDLER.findall(txt))
+
+
+def quet() -> dict[str, dict]:
+    ra: dict[str, dict] = {}
+    for thu_muc in THU_MUC:
+        d = GOC / thu_muc
+        if not d.is_dir():
+            continue
+        for f in sorted(d.glob("*.py")):
+            if f.name.startswith("_"):
+                continue
+            dong, handler = do(f)
+            if dong > MAX_DONG or handler > MAX_HANDLER:
+                ra[f.relative_to(GOC).as_posix()] = {"dong": dong,
+                                                     "handler": handler}
+    return ra
+
+
+def _doc_moc() -> dict:
+    if not MOC.is_file():
+        return {}
+    return json.loads(MOC.read_text(encoding="utf-8"))
+
+
+def main() -> int:
+    p = argparse.ArgumentParser()
+    p.add_argument("--update", action="store_true",
+                   help="ghi lai moc — chi dung sau khi DA che that")
+    args = p.parse_args()
+
+    hien = quet()
+    if args.update:
+        MOC.write_text(json.dumps(hien, ensure_ascii=False, indent=2,
+                                  sort_keys=True) + "\n", encoding="utf-8")
+        print(f"da ghi moc: {len(hien)} tep vuot nguong")
+        return 0
+
+    moc = _doc_moc()
+    moi = sorted(set(hien) - set(moc))
+    da_sua = sorted(set(moc) - set(hien))
+
+    for ten in sorted(hien):
+        s = hien[ten]
+        dau = "!!" if ten in moi else "  "
+        print(f"{dau} {ten:<38} {s['dong']:5d} dong  {s['handler']:3d} handler")
+
+    if da_sua:
+        print(f"\nDA XU LY (khong con vuot nguong): {', '.join(da_sua)}")
+        print("Chay --update de ha moc.")
+
+    if moi:
+        print(f"\nTHEM {len(moi)} tep vuot nguong {MAX_DONG} dong / "
+              f"{MAX_HANDLER} handler:")
+        for ten in moi:
+            print(f"   {ten}")
+        print("\nTach theo USE CASE ra module rieng — dung cat doi cho du con so.")
+        print("RESULT: FAIL")
+        return 1
+
+    print(f"\nVuot nguong: {len(hien)} tep | moc: {len(moc)} tep — khong them.")
+    print("RESULT: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_silent_except.py
 SHA256=b82ac95865871606470343431fc276ab5afc06f5db3f6a2cc6c849e7f7704e81 BYTES=4453 LINES=125
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -223061,6 +223413,15 @@ def main(argv: Optional[list[str]] = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/chuong_baseline.json
+SHA256=11598dcd47338768fb5788e98e20adbef21458745c16d89e32841fad6f53318b BYTES=55 LINES=3
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+[
+  "platform_core/upload_sessions.py::reconcile"
+]
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -224129,7 +224490,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=f517c39845e3271dfc4af8c7c742b6db21ab581292e5a548b176155b85cecae5 BYTES=15300 LINES=299
+SHA256=abf2a543a36fd4a488a9c64111806374a0133aa389fdefa3f1e95ea995d25246 BYTES=16850 LINES=324
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -224185,6 +224546,31 @@ def _steps(quick: bool) -> list[Step]:
              ROOT),
         Step("secret scan", [sys.executable, "tools/scan_source_secrets.py"], ROOT),
         Step("app contract lint", [sys.executable, "tools/lint_app_contract.py"], ROOT),
+        # 🔴 Banh coc kich thuoc cho `server/routes/`. Hop dong app thi hanh tran
+        #    900 dong / 30 handler cho `apps/` — con `server/` KHONG co nguong
+        #    nao, va ba tep lon nhat kho deu nam o do. `developer.py` vuot CA HAI
+        #    nguong (1.521 dong / 32 handler) chi vi no nam o thu muc khac.
+        #
+        # ⭐ Banh coc chu khong phai tran cung: audit 26/08 do change locality va
+        #    thay `admin_api.py` co churn thap + ban dong hanh thua => te lon ma
+        #    it doi va doi co lap la CHI PHI THAP, chua dang che. Che no bay gio
+        #    la tra tien hom nay cho mot van de chua xuat hien.
+        Step("kich thuoc route server",
+             [sys.executable, "tools/check_server_routes.py"], ROOT),
+        # 🔴 CHUONG DA DUC MA CHUA AI TREO — banh coc goc re nhat cua audit 26/08.
+        #
+        #    Bon loi tuong nhu doc lap hoa ra mot hinh dang: mot ham quet/canh bao
+        #    TON TAI, co docstring, co test, co trong `__all__` — va KHONG DUONG
+        #    THUC THI NAO goi toi. No trong y het mot ham dang chay.
+        #
+        #    Ca dat nhat: canh bao "dang ban duoi gia von" nam trong ma suot thoi
+        #    gian nen tang ban anh o 45-57% gia von trong 22 ngay. No khong im vi
+        #    hong — im vi khong ai cam day.
+        #
+        # ⭐ Da chung minh phep kiem nay BAT DUNG ca goc: go dong cam
+        #    `costing.scan_for_alerts` ra thi no bao ngay.
+        Step("chuong chua treo",
+             [sys.executable, "tools/check_chuong_chua_treo.py"], ROOT),
         # Re nhung bat duoc thu test khong bat: mot route khong co test ma thieu
         # import thi chi vo khi nguoi dung bam. Xem tools/check_undefined_names.py.
         Step("ten chua dinh nghia", [sys.executable, "tools/check_undefined_names.py"], ROOT),
@@ -229125,6 +229511,26 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/server_routes_baseline.json
+SHA256=15f1873d7251db90820a70e33240c5cf598f0d84fd2f25437da2bbcd04dc7a5a BYTES=222 LINES=14
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{
+  "server/admin.py": {
+    "dong": 1388,
+    "handler": 0
+  },
+  "server/admin_api.py": {
+    "dong": 1897,
+    "handler": 0
+  },
+  "server/routes/developer.py": {
+    "dong": 1521,
+    "handler": 32
+  }
+}
 
 @@@LTT_PROFILE_FILE_END@@@
 

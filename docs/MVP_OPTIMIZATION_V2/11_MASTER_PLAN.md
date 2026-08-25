@@ -135,8 +135,8 @@ dưới ghi những gì **đã tự quyết** và **vì sao**, cùng ba thứ **
 
 | ID | Câu hỏi | Vì sao |
 |---|---|---|
-| **D-07** | Bù 2 credit đã kẹt cho khách? | **Chuyển tiền trên tài khoản khách thật.** Phiên này không tự ghi bút toán tiền |
-| **D-02** | Cho phép đếm chỉ-đọc CSDL production? | Cổng quyền của phiên chặn. **Không đi vòng, không nhờ phiên khác** |
+| ~~D-07~~ ✅ | Bù 2 credit đã kẹt? | **ĐÓNG** — chủ sản phẩm xác nhận chưa có khách thật ⇒ đó là tài khoản nội bộ, không cần bù |
+| ~~D-02~~ ✅ | Đếm CSDL production? | **ĐÓNG bằng câu trả lời trực tiếp**: chưa có khách thật. Phép đo kỹ thuật không còn cần thiết |
 | **D-06** | Khi nào deploy? | Không nằm trong bộ pack — Prompt 15 cấm tự deploy |
 | **S-A/B/C** | Bề mặt MVP: 5 app `development` có ở lại catalog công khai? | Lời hứa với khách, và cần D-02 |
 | **O-01** | Bật lịch sao lưu | Cần Administrator (UAC) |
@@ -149,7 +149,7 @@ dưới ghi những gì **đã tự quyết** và **vì sao**, cùng ba thứ **
 READY_FOR_CORRECTNESS_LANE: YES  (phần lớn đã thi hành)
 READY_FOR_STRUCTURAL_LANE:  YES
 READY_FOR_UI_LANE:          MỘT PHẦN  (R-01 chờ quyết định sản phẩm)
-OPEN_OWNER_DECISIONS:       5   (D-07, D-02, D-06, S-A/B/C, O-01)
+OPEN_OWNER_DECISIONS:       3   (D-06 deploy, S-A/B/C be mat MVP, O-01 sao luu — de cuoi)
 ```
 
 ⭐ **Câu quan trọng nhất của bản kế hoạch này không nằm ở ba lane.** Nó ở mục C:

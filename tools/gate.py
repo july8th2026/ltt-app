@@ -52,6 +52,31 @@ def _steps(quick: bool) -> list[Step]:
              ROOT),
         Step("secret scan", [sys.executable, "tools/scan_source_secrets.py"], ROOT),
         Step("app contract lint", [sys.executable, "tools/lint_app_contract.py"], ROOT),
+        # 🔴 Banh coc kich thuoc cho `server/routes/`. Hop dong app thi hanh tran
+        #    900 dong / 30 handler cho `apps/` — con `server/` KHONG co nguong
+        #    nao, va ba tep lon nhat kho deu nam o do. `developer.py` vuot CA HAI
+        #    nguong (1.521 dong / 32 handler) chi vi no nam o thu muc khac.
+        #
+        # ⭐ Banh coc chu khong phai tran cung: audit 26/08 do change locality va
+        #    thay `admin_api.py` co churn thap + ban dong hanh thua => te lon ma
+        #    it doi va doi co lap la CHI PHI THAP, chua dang che. Che no bay gio
+        #    la tra tien hom nay cho mot van de chua xuat hien.
+        Step("kich thuoc route server",
+             [sys.executable, "tools/check_server_routes.py"], ROOT),
+        # 🔴 CHUONG DA DUC MA CHUA AI TREO — banh coc goc re nhat cua audit 26/08.
+        #
+        #    Bon loi tuong nhu doc lap hoa ra mot hinh dang: mot ham quet/canh bao
+        #    TON TAI, co docstring, co test, co trong `__all__` — va KHONG DUONG
+        #    THUC THI NAO goi toi. No trong y het mot ham dang chay.
+        #
+        #    Ca dat nhat: canh bao "dang ban duoi gia von" nam trong ma suot thoi
+        #    gian nen tang ban anh o 45-57% gia von trong 22 ngay. No khong im vi
+        #    hong — im vi khong ai cam day.
+        #
+        # ⭐ Da chung minh phep kiem nay BAT DUNG ca goc: go dong cam
+        #    `costing.scan_for_alerts` ra thi no bao ngay.
+        Step("chuong chua treo",
+             [sys.executable, "tools/check_chuong_chua_treo.py"], ROOT),
         # Re nhung bat duoc thu test khong bat: mot route khong co test ma thieu
         # import thi chi vo khi nguoi dung bam. Xem tools/check_undefined_names.py.
         Step("ten chua dinh nghia", [sys.executable, "tools/check_undefined_names.py"], ROOT),

@@ -15,24 +15,28 @@ chặn** khi nối CSDL production. Tôi **không** đi vòng, và **không** nh
 chạy hộ — đó là lách quyền.
 
 ```text
-CO_KHACH_THAT_KHONG:  UNMEASURABLE
+CO_KHACH_THAT_KHONG:  KHONG  ← chu san pham tra loi truc tiep 2026-08-26
 ```
 
-Ảnh hưởng: mọi ô "đề xuất" ở mục 4 là **giả thuyết có cơ sở kỹ thuật**, chưa phải
-kết luận sản phẩm. Ba nhãn `RETIRE_REMOVE_CANDIDATE` **không được thi hành** cho
-tới khi có số.
+⛔ **Phép đo kỹ thuật bị chặn, nhưng câu hỏi thì đã có câu trả lời** — từ người
+duy nhất biết chắc. Chủ sản phẩm xác nhận **chưa có khách thật**.
 
-⭐ Tiền lệ trong chính kho này cho thấy phép đo đó quyết định điều gì: đợt gỡ
-`socialbot` an toàn **vì đã đo trước** — 0 job, 0 `app_access`, 0 `app_projects`,
-không có `tokens.enc`. Không đo mà gỡ là đoán.
+Điều đó đổi bốn thứ, và đổi theo hai chiều ngược nhau:
 
-**Script đã sẵn** — chủ sản phẩm chạy được ngay:
+| | |
+|---|---|
+| ✅ **D-07 đóng** | 2 credit kẹt là tài khoản nội bộ, **không phải tiền khách**. Không cần bút toán bù |
+| ✅ **Nhãn `RETIRE_REMOVE_CANDIDATE` nay AN TOÀN để bàn** | Không có khách nghĩa là gỡ một app không làm gãy ai. Đây chính là điều kiện đã làm đợt gỡ `socialbot` an toàn |
+| ⚠️ **M-01 giảm mức KHẨN, không giảm mức NGHIÊM TRỌNG** | Cửa sổ vẫn mở y nguyên, và nó sẽ mở **đúng lúc có khách đầu tiên**. Sửa trước khi có khách rẻ hơn nhiều lần sửa sau |
+| ⚠️ **5 app `development` trên catalog công khai đổi tính chất** | Không còn là "lời hứa sai với khách đang có", mà là **ấn tượng đầu tiên với khách sắp tới**. Vẫn là quyết định sản phẩm, chỉ bớt gấp |
 
-```sql
-SELECT app_slug, count(*) jobs, count(DISTINCT user_id) khach,
-       min(created_at)::date dau, max(created_at)::date cuoi
-FROM jobs GROUP BY app_slug ORDER BY jobs DESC;
-```
+⭐ **Và đây là cửa sổ rẻ nhất mà một nền tảng từng có.** Mọi quyết định gỡ / đổi
+giá / đổi bề mặt lúc này đều **không làm gãy ai**. Tiền lệ trong chính kho này:
+đợt gỡ `socialbot` an toàn **vì đã đo trước** — 0 job, 0 `app_access`, 0
+`app_projects`, không có `tokens.enc`. Hôm nay điều kiện đó đúng cho **toàn bộ**
+danh mục, không chỉ một app.
+
+⇒ Nếu có việc nào thuộc loại "đáng làm nhưng sợ gãy khách", **bây giờ là lúc**.
 
 ---
 
@@ -131,9 +135,18 @@ Ba mệnh đề phụ, mỗi cái có bằng chứng:
 | `nexus` | **MVP_SUPPORT_SURFACE** | `released`, đã thu credit thật; web chỉ là cửa giới thiệu + tài khoản |
 | `vps` | **DEFER_POST_MVP** | ~95 % xong nhưng còn G7b/G9b, và khách **tự cài Windows** — gánh hỗ trợ khác hẳn phần còn lại của danh mục |
 
-⛔ **Không nhãn `RETIRE_REMOVE_CANDIDATE` nào được đề xuất.** Lý do trung thực:
-không có số dùng thật (§0) thì đề xuất gỡ là đoán — và kho này vừa trả giá cho
-một lần đoán (Q109 lấy mất node đầu vào của Agent).
+⛔ **Không nhãn `RETIRE_REMOVE_CANDIDATE` nào được đề xuất** — và lý do **đã đổi**
+sau khi biết chưa có khách thật.
+
+Bản đầu không đề xuất gỡ vì *"không có số dùng thật thì gỡ là đoán"*. Nay lý do
+là khác và nhẹ hơn: **gỡ lúc này an toàn về mặt khách hàng**, nhưng mỗi app trong
+danh mục vẫn là một khoản đã đầu tư, và quyết định giữ/bỏ là **chiến lược sản
+phẩm**, không phải kết luận rút ra từ một bản audit kỹ thuật.
+
+⭐ Khác biệt đáng giữ: trước là *"chưa đủ dữ kiện để quyết"*; nay là *"đủ dữ kiện,
+nhưng đây không phải quyết định của tôi"*. Hai câu đó dẫn tới hai hành động khác
+nhau — câu sau nói rằng chủ sản phẩm **quyết được ngay hôm nay**, không phải chờ
+đo thêm.
 
 ---
 
