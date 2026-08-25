@@ -3425,6 +3425,52 @@ ba mốc (chuỗi chưa bọc `_()` 1.413→816, nuốt lỗi lặng lẽ 90→7
 
 - [ ] **H40.5 — deploy** ⏳ chờ chủ sản phẩm. Production vẫn chạy bản đủ 19 app.
       Điểm lùi trước cả đợt: **`ec6a00c`**.
-- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b của dự án đòi
-      kiểm trên **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau**
-      H40.5, không phải trước.
+- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b đòi kiểm trên
+      **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau** H40.5.
+
+### 🔴 H40.7 — `gate.py` đầy đủ: **CHƯA CHẠY XONG LẦN NÀO**
+
+Chủ sản phẩm quyết **bỏ gate** ngày 2026-08-25 để chuyển sang đợt sửa soạn lại hệ
+thống. Ghi thẳng ở đây, không tô hồng: **hạng mục H40 đóng mà KHÔNG có một lượt
+`python tools/gate.py` đầy đủ nào hoàn tất.**
+
+Bốn lượt đều dừng giữa chừng, và ba lượt là do cây đổi chứ không do lỗi:
+
+| Lượt | Dừng ở | Vì sao |
+|---|---|---|
+| 1 | bước 18/22 | chủ sản phẩm giao thêm 3 app → cây sắp đổi |
+| 2 | `pytest` | audit tìm ra residue phải dọn |
+| 3 | `pytest` (23 phút) | một phiên khác chạy `pytest` song song 23:30–23:50 ⇒ hai bộ tranh thư mục tạm/CSDL test, kết quả không đáng tin |
+| 4 | `pytest` | chủ sản phẩm quyết bỏ |
+
+⭐ **Bằng chứng THẬT SỰ có** (chạy trên đúng cây đã commit `09ee8e9`), để phiên sau
+không phải chạy lại từ đầu:
+
+```
+bien dich duoc          PASS  2.100 tep, hong 0
+ten chua dinh nghia     PASS  406 tep, 0
+lint hop dong app       PASS  14 app, ERROR 0, WARN 1 (qualitylab, co tu truoc)
+quet bi mat             PASS  0 finding
+system profile          PASS  khop nguon
+golden API              khong khac biet
+hop dong API            27 route, 7 tool, 22 ma loi — khong doi
+tai lieu sinh ra        PASS   SDK khop hop dong   PASS
+pytest theo cum         test_35·37·43·60·61·63·66·72·88·145·147·173·187·190·212 PASS
+go THAT vao URL         21/21 URL app da go -> 404 · 12/12 URL con song -> 200/303
+```
+
+⛔ **Thứ CHƯA có bằng chứng** — phiên sau phải tự chạy, đừng tin là đã xong:
+
+1. **`pytest` toàn bộ 4.093 test** trên cây cuối. Các cụm đã chạy phủ phần bị đợt
+   xoá đụng tới, nhưng **không phủ hết kho**.
+2. **Ba bộ test frontend** trên cây cuối (chúng xanh ở `gate --quick` của một
+   trạng thái cây **trước đó**, không phải cây này).
+3. **Bất biến đa tiến trình** (`tools/check_multiproc.py`) — bước này chỉ có ở gate
+   đầy đủ.
+4. **Kiểm trên trình duyệt thật** — xem H40.6.
+
+⚠️ Và một thứ đã đỏ **từ trước đợt xoá**, đừng chẩn đoán nhầm thành hậu quả của nó:
+`test_44_release_build` đỏ 2 test vì **ba bundle frontend cũ** so với `vite.config.ts`
+(phiên khác đổi). Đã chứng minh bằng `git stash`: đỏ y hệt ở `ec6a00c`. Hệ quả:
+`tools/build_release.py` **chưa dựng được gói phát hành** cho tới khi chạy
+`npm run build` cho cả ba rồi `python tools/build_system_profile.py`.

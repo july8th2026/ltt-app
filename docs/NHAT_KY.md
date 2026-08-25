@@ -14,6 +14,59 @@
 
 ---
 
+## 2026-08-25 (khuya, chốt phiên) — Đóng H40, và gate **KHÔNG** chạy
+
+- **Hạng mục:** H40 (Q108 + Q109) — đóng theo quyết định chủ sản phẩm
+- **Trạng thái:** đã commit; **gate đầy đủ chưa chạy xong lần nào**; chưa deploy
+
+### Chuyện gì đã xảy ra
+
+Chủ sản phẩm chuyển sang **đợt sửa soạn lại hệ thống**, và quyết **bỏ gate** cho
+hạng mục này. Ghi thẳng vì `AGENTS.md` mục 4 cấm tuyên bố hoàn thành dựa trên kế
+hoạch: **H40 đóng mà không có một lượt `python tools/gate.py` đầy đủ nào hoàn tất.**
+
+Bốn lượt gate đều dừng giữa chừng. Ba lượt là do **cây đổi**, không do lỗi — và
+hai trong ba là thiếu sót của tôi về **thứ tự**:
+
+| Lượt | Vì sao dừng | Lẽ ra |
+|---|---|---|
+| 1 | chủ sản phẩm giao thêm 3 app | đúng, không tránh được |
+| 2 | audit tìm ra residue phải dọn | **audit TRƯỚC khi chạy gate** |
+| 3 | phiên khác chạy `pytest` song song 23:30–23:50 | **hỏi các phiên khác TRƯỚC khi chạy** |
+| 4 | chủ sản phẩm quyết bỏ | — |
+
+⭐ Bài học, và nó rộng hơn phiên này: **gate là bước cuối, nên mọi thứ có thể làm
+cây đổi phải xong trước nó** — kể cả audit của chính mình, kể cả việc xin các phiên
+khác đứng yên. Một lượt gate 3 giờ chạy trên cây đang động không rẻ hơn việc chuẩn
+bị 10 phút, nó chỉ tốn 3 giờ để nói với ta điều đó.
+
+Danh sách *bằng chứng đã có* / *thứ chưa có bằng chứng* nằm ở **H40.7** trong
+`KE_HOACH_TRIEN_KHAI.md`. Đừng đọc H40 là "đã kiểm đủ".
+
+### Bốn thứ phiên sau nên biết trước khi tái cấu trúc
+
+1. **Ba bundle frontend đang stale** (`agent-canvas`, `prompt-ai-ommi`,
+   `autosub-studio`) ⇒ `tools/build_release.py` **không dựng được gói phát hành**.
+   Đỏ từ **trước** đợt xoá — đã chứng minh bằng `git stash` ở `ec6a00c`. Sửa:
+   `npm run build` cả ba rồi `python tools/build_system_profile.py`.
+2. **Ba trạng thái khác nhau đang tồn tại song song**, và đây là thứ dễ chẩn đoán
+   nhầm nhất: production `C:\LTTPlatform\app` chạy **19 app + 43 route legacy**;
+   git HEAD `09ee8e9` có **14 app**; hai bên chỉ khớp lại sau lần deploy kế tiếp.
+3. **`.claude/worktrees/wonderful-jepsen-f190f3` giữ trạng thái TRƯỚC đợt xoá.**
+   Một lệnh `grep -r` toàn kho đếm nó hai lần — phiên khác đã suýt kết luận "còn
+   residue socialbot" trong khi nguồn đã sạch. Loại thư mục đó ra khi quét.
+4. **Mọi phép kiểm bám tên thư mục sẽ IM LẶNG NGỪNG ĐO khi cấu trúc đổi**, thay vì
+   báo đỏ. Với một đợt tái cấu trúc thì đó là rủi ro lớn nhất và nó không tự kêu.
+   Luật rút ra trong ngày: **mỗi phép kiểm bám đường dẫn phải đi kèm một phép kiểm
+   HÀNH VI cho cùng điều đó** — đường dẫn bắt ca "xoá sót", hành vi bắt ca "cấu
+   trúc đổi".
+
+### Cách lùi lại
+
+`git revert 09ee8e9 9bb8f85`. Điểm lùi cho trạng thái production: **`ec6a00c`**.
+
+---
+
 ## 2026-08-25 (khuya) — Gỡ nốt ba app: `kichban`, `mediatools`, `demo` (Q109)
 
 - **Hạng mục:** Q109 — đợt dọn app lỗi thời, phần hai
@@ -114,7 +167,7 @@ vào** của workflow — gỡ chúng là gỡ đường đưa tệp của khác
 | `test_72` (vận hành, thanh điều hướng, dedupe) | **26 passed** |
 | `check_bien_dich` · `check_undefined_names` · `lint_app_contract` | PASS |
 | `sinh_golden_api` | không khác biệt |
-| `gate.py` đầy đủ | ⏳ **đang chạy** |
+| `gate.py` đầy đủ | 🔴 **CHƯA CHẠY XONG LẦN NÀO** — xem H40.7 |
 
 **Bánh cóc hạ được nhờ đợt này** — cả ba đều theo hướng tốt:
 
@@ -165,7 +218,7 @@ production trước cả hai đợt xoá vẫn là **`ec6a00c`**.
 ## 2026-08-25 (tối) — Gỡ HẲN app socialbot: 22.000 dòng, và ba móc nối vào nền tảng
 
 - **Hạng mục:** Q108 (thay Q10) — dọn app lỗi thời
-- **Trạng thái:** mã xong, gate đang chạy; **CHƯA DEPLOY**
+- **Trạng thái:** mã xong, đã commit; **gate đầy đủ CHƯA CHẠY XONG** (chủ sản phẩm quyết bỏ); **CHƯA DEPLOY**
 
 ### Đã làm
 
@@ -313,7 +366,7 @@ production trước đợt xoá là **`ec6a00c`**.
   tách khỏi việc gỡ mã.
 - **Đăng ký Meta App + TikTok app** là tài sản ngoài kho. Nếu không dùng nữa thì
   nên gỡ ứng dụng bên Meta/TikTok — mã đã đi, nhưng đăng ký thì không tự mất.
-- **Gate đầy đủ** (có `pytest`) chưa chạy xong.
+- **Gate đầy đủ chưa chạy xong** — chủ sản phẩm quyết bỏ để chuyển sang đợt sửa soạn lại hệ thống. Danh sách *bằng chứng đã có* và *thứ chưa có bằng chứng* ở H40.7 của `KE_HOACH_TRIEN_KHAI.md`.
 
 ---
 
