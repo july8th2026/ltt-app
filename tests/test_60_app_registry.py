@@ -72,6 +72,36 @@ def test_portfolio_surface_and_lifecycle_match_locked_decisions():
     assert customer_cards and all(m.capabilities for m in customer_cards)
 
 
+def test_khong_app_nao_moc_mot_dong_nav_tro_vao_404():
+    """⛔ BAT BIEN NAY SINH RA TU MOT LOI THAT, do 2026-08-26.
+
+    `apps/ltt_llm` khai `surface="customer"`, khong khai `catalog_parent`, va
+    khong co `routes.py`. Hau qua: `visible_on_surface(authenticated=True)` tra
+    `True`, `nav_entries()` tu sinh mot dong tro vao `/ltt-llm`, va
+    `GET /ltt-llm` tra **404** — mot link chet trong header cua **moi** khach da
+    dang nhap, suot nhieu tuan, khong phep kiem nao thay.
+
+    ⭐ Cai bay: `nav=()` KHONG co nghia la "khong co nav". `nav_entries()` sinh
+       lai mot dong mac dinh khi app khong khai gi. Mot app "chua co giao dien"
+       van moc mot dong nav.
+
+    ⭐ Va dieu dang ghi hon ca loi: `apps/anhnoibo` DA tranh dung cai bay nay
+       bang `catalog_parent`, va con VIET RA ly do trong chu thich. Bai hoc da
+       duoc hoc va da duoc ghi — no chi chua bao gio thanh mot phep kiem.
+       Do la khoang cach giua "da biet" va "da chot", va day la cho dong no.
+
+    Phep kiem doi ung o `tools/lint_app_contract.py` chay ca trong `gate --quick`
+    (che do bo pytest), nen bat bien nay duoc canh o hai cho.
+    """
+    hong = [a.slug for a in discover()
+            if a.manifest is not None
+            and visible_on_surface(a.manifest, authenticated=True)
+            and a.router is None]
+    assert hong == [], (
+        f"App hien trong nav ma khong co router -> link 404: {hong}. "
+        "Khai catalog_parent, hoac them routes.py.")
+
+
 def test_every_apps_subfolder_has_a_manifest():
     """Một folder trong apps/ mà thiếu manifest.py sẽ bị bỏ qua HOÀN TOÀN im
     lặng — code có đó, route không bao giờ chạy, và rất khó nhận ra."""

@@ -116,6 +116,27 @@ MANIFEST = AppManifest(
     accent="#3F51B5",
 
     nav=(),                     # chưa có giao diện web — API trước, UI sau
+
+    # ⛔ SỬA 2026-08-26 — TRƯỚC ĐÓ ĐÂY LÀ MỘT LINK 404 TRONG HEADER CỦA **MỌI**
+    #    KHÁCH ĐÃ ĐĂNG NHẬP. Đo được: `GET /ltt-llm` → **404**, mà
+    #    `visible_on_surface(authenticated=True)` vẫn trả `True`.
+    #
+    #    Vì sao: `nav=()` **không** có nghĩa là "không có nav" — `nav_entries()`
+    #    tự sinh lại một dòng trỏ vào `route_prefix` khi app không khai gì. Và
+    #    app này không có `routes.py`, nên đích của dòng đó không tồn tại.
+    #
+    # ⭐ `catalog_parent` là cơ chế hợp đồng đã có sẵn cho đúng việc này, và
+    #    `anhnoibo` đã dùng nó để tránh **đúng cái bẫy này** — chú thích ở
+    #    `apps/anhnoibo/manifest.py` mô tả chính xác kịch bản trên. App này thì
+    #    không, nên nó rơi vào.
+    #
+    #    Chọn `chataistudio` làm cha: đó là sản phẩm văn bản/hội thoại mà khách
+    #    thấy được. Model nhà là **một executor nữa** dưới sản phẩm đó — đúng
+    #    nghĩa mà hợp đồng đặt ra cho `catalog_parent`.
+    #
+    # ⛔ KHÔNG đổi `surface` để chữa: Public API chỉ nhận `"customer"`
+    #    (`PUBLIC_SURFACES`), nên đổi surface là đóng luôn đường bán API.
+    catalog_parent="chataistudio",
     job_types=("ltt_llm.chat",),
     requires=("api",),          # KHÔNG cần GPU của máy A: việc nặng ở máy B
     credit_cost=_cost,

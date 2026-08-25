@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d848627e0ddff27a8289a6a12bfe882ac493edd69a7dc8e64539835a711504c2
+Fingerprint   : sha256:eb7e9609b3ae5a115970d28fbab5839f5d5ac092ddcdf521180950f34aef150a
 Nguồn đã quét : 1164 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -147,7 +147,7 @@ Các lớp chính:
 
 [ltt_llm] LTT LLM — model ngôn ngữ của nhà
   URL=/ltt-llm | surface=customer | lifecycle=development
-  enabled=True | public=False | parent=-
+  enabled=True | public=False | parent=chataistudio
   requires=api | capabilities=AI Text
   HTTP routes=0 | table_prefix=- | manifest_error=-
   credit_cost=apps.ltt_llm.manifest._cost
@@ -2568,7 +2568,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1164 file; 11272672 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1164 file; 11277265 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -15943,7 +15943,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=aca1768033e0815646c08a132459c7b3d4aa403998622b195b4d996e60cc2ca2 BYTES=11738 LINES=224
+SHA256=de84bd971497411e1794c00ad84c2057a81b2346d7ed91d9a769602bb2a9f738 BYTES=13084 LINES=245
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16063,6 +16063,27 @@ MANIFEST = AppManifest(
     accent="#3F51B5",
 
     nav=(),                     # chưa có giao diện web — API trước, UI sau
+
+    # ⛔ SỬA 2026-08-26 — TRƯỚC ĐÓ ĐÂY LÀ MỘT LINK 404 TRONG HEADER CỦA **MỌI**
+    #    KHÁCH ĐÃ ĐĂNG NHẬP. Đo được: `GET /ltt-llm` → **404**, mà
+    #    `visible_on_surface(authenticated=True)` vẫn trả `True`.
+    #
+    #    Vì sao: `nav=()` **không** có nghĩa là "không có nav" — `nav_entries()`
+    #    tự sinh lại một dòng trỏ vào `route_prefix` khi app không khai gì. Và
+    #    app này không có `routes.py`, nên đích của dòng đó không tồn tại.
+    #
+    # ⭐ `catalog_parent` là cơ chế hợp đồng đã có sẵn cho đúng việc này, và
+    #    `anhnoibo` đã dùng nó để tránh **đúng cái bẫy này** — chú thích ở
+    #    `apps/anhnoibo/manifest.py` mô tả chính xác kịch bản trên. App này thì
+    #    không, nên nó rơi vào.
+    #
+    #    Chọn `chataistudio` làm cha: đó là sản phẩm văn bản/hội thoại mà khách
+    #    thấy được. Model nhà là **một executor nữa** dưới sản phẩm đó — đúng
+    #    nghĩa mà hợp đồng đặt ra cho `catalog_parent`.
+    #
+    # ⛔ KHÔNG đổi `surface` để chữa: Public API chỉ nhận `"customer"`
+    #    (`PUBLIC_SURFACES`), nên đổi surface là đóng luôn đường bán API.
+    catalog_parent="chataistudio",
     job_types=("ltt_llm.chat",),
     requires=("api",),          # KHÔNG cần GPU của máy A: việc nặng ở máy B
     credit_cost=_cost,
@@ -99077,7 +99098,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=d5a5954631ba78121b0e38f44f0a75b6a80c722ab323f1b9956ac7ef706c82e1 BYTES=60708 LINES=1335
+SHA256=6c61100a146e0db07047c6d6523701111223d2620dd56900fcbc31c25ae6fa3c BYTES=60712 LINES=1335
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -99726,7 +99747,7 @@ def _quet_giu_cho_treo() -> int:
                         "nên khoản này không tự lành — muốn trả lại cho khách "
                         "thì phải ghi một bút toán bù."
                     ).format(credit=t.credit, user=t.user_id[:8],
-                             khoa=t.job_id or "(rỗng)",
+                             khoa=t.job_id or _t("(rỗng)"),
                              luc=t.tao_luc, ly_do=t.ly_do))
                 if row is not None:
                     notifications.send_email_for(db, row)
@@ -207212,7 +207233,7 @@ def test_doctor_van_in_duoc_tren_console_windows_doi_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_60_app_registry.py
-SHA256=e502bd99b6b88e2964df690f1829f00342b6fe5e3935ac30dedbbad2d61404b6 BYTES=25024 LINES=538
+SHA256=9dba146d3b87ad568df408f43309e6d9484d5a365ba85e1aeb76ef773c501e73 BYTES=26496 LINES=568
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hợp đồng app registry — thứ quyết định chi phí thêm app thứ 10.
 
@@ -207286,6 +207307,36 @@ def test_portfolio_surface_and_lifecycle_match_locked_decisions():
     customer_cards = [m for m in apps.values()
                       if m.surface == "customer" and not m.catalog_parent]
     assert customer_cards and all(m.capabilities for m in customer_cards)
+
+
+def test_khong_app_nao_moc_mot_dong_nav_tro_vao_404():
+    """⛔ BAT BIEN NAY SINH RA TU MOT LOI THAT, do 2026-08-26.
+
+    `apps/ltt_llm` khai `surface="customer"`, khong khai `catalog_parent`, va
+    khong co `routes.py`. Hau qua: `visible_on_surface(authenticated=True)` tra
+    `True`, `nav_entries()` tu sinh mot dong tro vao `/ltt-llm`, va
+    `GET /ltt-llm` tra **404** — mot link chet trong header cua **moi** khach da
+    dang nhap, suot nhieu tuan, khong phep kiem nao thay.
+
+    ⭐ Cai bay: `nav=()` KHONG co nghia la "khong co nav". `nav_entries()` sinh
+       lai mot dong mac dinh khi app khong khai gi. Mot app "chua co giao dien"
+       van moc mot dong nav.
+
+    ⭐ Va dieu dang ghi hon ca loi: `apps/anhnoibo` DA tranh dung cai bay nay
+       bang `catalog_parent`, va con VIET RA ly do trong chu thich. Bai hoc da
+       duoc hoc va da duoc ghi — no chi chua bao gio thanh mot phep kiem.
+       Do la khoang cach giua "da biet" va "da chot", va day la cho dong no.
+
+    Phep kiem doi ung o `tools/lint_app_contract.py` chay ca trong `gate --quick`
+    (che do bo pytest), nen bat bien nay duoc canh o hai cho.
+    """
+    hong = [a.slug for a in discover()
+            if a.manifest is not None
+            and visible_on_surface(a.manifest, authenticated=True)
+            and a.router is None]
+    assert hong == [], (
+        f"App hien trong nav ma khong co router -> link 404: {hong}. "
+        "Khai catalog_parent, hoac them routes.py.")
 
 
 def test_every_apps_subfolder_has_a_manifest():
@@ -226423,7 +226474,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=099ec0fd9d930e38af712033cb31b2e737c9ba02c0659f60433230097f466885 BYTES=7325 LINES=162
+SHA256=e0b9f57d0550f191bcdddca337edb2f681624be3c064afa2e887c948fab0fd6a BYTES=9096 LINES=191
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -226509,6 +226560,35 @@ def lint() -> list:
         if m and m.group(1) != app:
             findings.append(Finding(app, "ERROR",
                                     f"slug {m.group(1)!r} != ten thu muc {app!r}"))
+        # 🔴 THEM 2026-08-26 — DA CO MOT LINK 404 TRONG HEADER CUA MOI KHACH
+        #    DA DANG NHAP, VA KHONG PHEP KIEM NAO THAY.
+        #
+        #    `apps/ltt_llm` khai `surface="customer"`, khong khai
+        #    `catalog_parent`, va KHONG co `routes.py`. Hai dieu dau lam
+        #    `visible_on_surface(authenticated=True)` tra True; dieu thu ba lam
+        #    dich cua no khong ton tai. Do that: `GET /ltt-llm` -> 404.
+        #
+        # ⛔ Cai bay nam o cho `nav=()` KHONG co nghia la "khong co nav":
+        #    `nav_entries()` tu sinh lai mot dong tro vao `route_prefix` khi app
+        #    khong khai gi. Nen mot app "chua co giao dien" van moc mot dong nav.
+        #
+        # ⭐ `apps/anhnoibo` da tranh dung cai bay nay bang `catalog_parent`, va
+        #    con VIET RA ly do trong chu thich. Nghia la bai hoc DA duoc hoc va
+        #    DA duoc ghi - no chi chua bao gio thanh mot phep kiem. Day la luat
+        #    hoa no: mot app sinh the catalog/nav thi phai co trang de dap xuong.
+        #
+        #    Dat o linter chu khong chi o pytest, vi `gate --quick` bo pytest.
+        khai_customer = bool(re.search(r"surface\s*=\s*['\"]customer['\"]", mtext))
+        co_cha = bool(re.search(r"catalog_parent\s*=\s*['\"][^'\"]+['\"]", mtext))
+        co_route = (d / "routes.py").is_file() or (d / "routes").is_dir()
+        if khai_customer and not co_cha and not co_route:
+            findings.append(Finding(
+                app, "ERROR",
+                "surface=customer + khong catalog_parent + khong routes.py "
+                "=> nav_entries() sinh mot dong tro vao route_prefix KHONG TON TAI "
+                "(link 404 trong header cua moi khach da dang nhap). "
+                "Khai catalog_parent, hoac them routes.py."))
+
         has_jobtypes = bool(re.search(r"job_types\s*=\s*\(\s*['\"]", mtext))
         if has_jobtypes:
             jobs = d / "jobs.py"
@@ -228967,10 +229047,10 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/silent_except_baseline.json
-SHA256=4e42cf058760061a1fd1748f6d5a2abe055fa0961846edc40ba9b3579f141701 BYTES=19 LINES=3
+SHA256=815c56916c22cee8117dc99ddec2557a3defeec70754989d882ff3071a34ac1b BYTES=19 LINES=3
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
-  "max": 74
+  "max": 63
 }
 
 @@@LTT_PROFILE_FILE_END@@@

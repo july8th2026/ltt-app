@@ -82,6 +82,35 @@ def lint() -> list:
         if m and m.group(1) != app:
             findings.append(Finding(app, "ERROR",
                                     f"slug {m.group(1)!r} != ten thu muc {app!r}"))
+        # 🔴 THEM 2026-08-26 — DA CO MOT LINK 404 TRONG HEADER CUA MOI KHACH
+        #    DA DANG NHAP, VA KHONG PHEP KIEM NAO THAY.
+        #
+        #    `apps/ltt_llm` khai `surface="customer"`, khong khai
+        #    `catalog_parent`, va KHONG co `routes.py`. Hai dieu dau lam
+        #    `visible_on_surface(authenticated=True)` tra True; dieu thu ba lam
+        #    dich cua no khong ton tai. Do that: `GET /ltt-llm` -> 404.
+        #
+        # ⛔ Cai bay nam o cho `nav=()` KHONG co nghia la "khong co nav":
+        #    `nav_entries()` tu sinh lai mot dong tro vao `route_prefix` khi app
+        #    khong khai gi. Nen mot app "chua co giao dien" van moc mot dong nav.
+        #
+        # ⭐ `apps/anhnoibo` da tranh dung cai bay nay bang `catalog_parent`, va
+        #    con VIET RA ly do trong chu thich. Nghia la bai hoc DA duoc hoc va
+        #    DA duoc ghi - no chi chua bao gio thanh mot phep kiem. Day la luat
+        #    hoa no: mot app sinh the catalog/nav thi phai co trang de dap xuong.
+        #
+        #    Dat o linter chu khong chi o pytest, vi `gate --quick` bo pytest.
+        khai_customer = bool(re.search(r"surface\s*=\s*['\"]customer['\"]", mtext))
+        co_cha = bool(re.search(r"catalog_parent\s*=\s*['\"][^'\"]+['\"]", mtext))
+        co_route = (d / "routes.py").is_file() or (d / "routes").is_dir()
+        if khai_customer and not co_cha and not co_route:
+            findings.append(Finding(
+                app, "ERROR",
+                "surface=customer + khong catalog_parent + khong routes.py "
+                "=> nav_entries() sinh mot dong tro vao route_prefix KHONG TON TAI "
+                "(link 404 trong header cua moi khach da dang nhap). "
+                "Khai catalog_parent, hoac them routes.py."))
+
         has_jobtypes = bool(re.search(r"job_types\s*=\s*\(\s*['\"]", mtext))
         if has_jobtypes:
             jobs = d / "jobs.py"
