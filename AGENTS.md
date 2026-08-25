@@ -240,6 +240,49 @@ Ngưỡng chọn theo phân bố thật: file route lớn nhất **còn đọc �
 Tách `routes.py` thành package thì giữ nguyên bề mặt: `routes/__init__.py` chỉ
 export `router` và import các module miền để handler kịp đăng ký.
 
+### 8.2b App được dùng **đúng bốn** module của `server` — không hơn
+
+```
+server.deps            get_db, user_hien_tai
+server.auth.session    require_login
+server.auth.csrf       issue_csrf_token, verify_csrf_token
+server.templating      templates
+```
+
+Đây là **hợp đồng web của app**, và nó được đo trước khi được chốt: phân tích AST
+trên 732 tệp cho thấy 12 app chạm đúng bốn module này, **không app nào chạm sâu
+hơn**. Nghĩa là biên này đã tồn tại trên thực tế từ lâu — việc duy nhất còn thiếu
+là viết nó ra.
+
+⛔ **Import bất cứ thứ gì khác từ `server` là gate ĐỎ.** `tools/lint_app_contract.py`
+thi hành, nên nó bị bắt cả ở `gate --quick`.
+
+⭐ **Vì sao khai báo chứ không dời chỗ.** Bốn module này sống ở `server/` (tầng
+vận chuyển) trong khi về vai trò chúng là nền tảng. Dời sang `platform_core/web/`
+thì tên đúng hơn — nhưng phải sửa **72 chỗ import trong 12 app**, và rủi ro thật
+không phải cái tên: nó là *lần sau ai đó với tay sâu hơn*. Luật này chặn đúng
+điều đó với giá một vòng lặp. Xem §F của execution rules V2: ưu tiên convention
+hiện có trước khi dựng cơ chế mới.
+
+Cần thêm một module vào danh sách? Đó là **một quyết định kiến trúc** — sửa
+`SERVER_APP_CO_THE_DUNG` có chủ ý và ghi lý do, đừng làm cho tiện.
+
+### 8.2c App sinh thẻ catalog/nav thì **phải có trang để đáp xuống**
+
+`surface="customer"` + không `catalog_parent` + không `routes.py` ⇒ gate **ĐỎ**.
+
+Sinh ra từ một lỗi thật (2026-08-26): `apps/ltt_llm` khai `nav=()` với ý "chưa có
+giao diện" — nhưng `nav_entries()` **tự sinh lại** một dòng trỏ vào `route_prefix`
+khi app không khai gì. Kết quả: `/ltt-llm` là link **404 trong header của mọi
+khách đã đăng nhập**, nhiều tuần, không phép kiểm nào thấy.
+
+⭐ `apps/anhnoibo` đã tránh đúng bẫy này bằng `catalog_parent`, **và còn viết ra
+lý do trong chú thích**. Bài học đã được học và đã được ghi — nó chỉ chưa bao giờ
+thành một phép kiểm. Đây là chỗ đóng khoảng cách đó.
+
+Chưa có giao diện thì khai `catalog_parent="<app cha>"`. **Đừng** chữa bằng cách
+đổi `surface` — Public API chỉ nhận `"customer"`, đổi là đóng luôn đường bán API.
+
 ### 8.3 Việc dùng chung thì ở `platform_core`, không ở app
 
 App gọi vào ruột app khác = gỡ hay đổi tên app đó làm gãy app không liên quan.

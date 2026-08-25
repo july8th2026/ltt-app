@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:eb7e9609b3ae5a115970d28fbab5839f5d5ac092ddcdf521180950f34aef150a
+Fingerprint   : sha256:296213d90054209838aa83c49d1b7e75f5b6207c7f6df2dfa9d09a6eca349f95
 Nguồn đã quét : 1164 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2568,7 +2568,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1164 file; 11277265 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1164 file; 11281788 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2583,7 +2583,7 @@ ho_so_he_thong.txt -whitespace
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ AGENTS.md
-SHA256=e56d70a0743dae4cdf4d70213de4cc717033b4bbf50b885fd72fb784ddc0431c BYTES=18108 LINES=350
+SHA256=abd40f8189f3e129a7d5abf9867e0c459014acdcc165f9ceddcb03b2166d7a04 BYTES=20603 LINES=393
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quy tắc làm việc trong dự án này
 
@@ -2826,6 +2826,49 @@ Ngưỡng chọn theo phân bố thật: file route lớn nhất **còn đọc �
 
 Tách `routes.py` thành package thì giữ nguyên bề mặt: `routes/__init__.py` chỉ
 export `router` và import các module miền để handler kịp đăng ký.
+
+### 8.2b App được dùng **đúng bốn** module của `server` — không hơn
+
+```
+server.deps            get_db, user_hien_tai
+server.auth.session    require_login
+server.auth.csrf       issue_csrf_token, verify_csrf_token
+server.templating      templates
+```
+
+Đây là **hợp đồng web của app**, và nó được đo trước khi được chốt: phân tích AST
+trên 732 tệp cho thấy 12 app chạm đúng bốn module này, **không app nào chạm sâu
+hơn**. Nghĩa là biên này đã tồn tại trên thực tế từ lâu — việc duy nhất còn thiếu
+là viết nó ra.
+
+⛔ **Import bất cứ thứ gì khác từ `server` là gate ĐỎ.** `tools/lint_app_contract.py`
+thi hành, nên nó bị bắt cả ở `gate --quick`.
+
+⭐ **Vì sao khai báo chứ không dời chỗ.** Bốn module này sống ở `server/` (tầng
+vận chuyển) trong khi về vai trò chúng là nền tảng. Dời sang `platform_core/web/`
+thì tên đúng hơn — nhưng phải sửa **72 chỗ import trong 12 app**, và rủi ro thật
+không phải cái tên: nó là *lần sau ai đó với tay sâu hơn*. Luật này chặn đúng
+điều đó với giá một vòng lặp. Xem §F của execution rules V2: ưu tiên convention
+hiện có trước khi dựng cơ chế mới.
+
+Cần thêm một module vào danh sách? Đó là **một quyết định kiến trúc** — sửa
+`SERVER_APP_CO_THE_DUNG` có chủ ý và ghi lý do, đừng làm cho tiện.
+
+### 8.2c App sinh thẻ catalog/nav thì **phải có trang để đáp xuống**
+
+`surface="customer"` + không `catalog_parent` + không `routes.py` ⇒ gate **ĐỎ**.
+
+Sinh ra từ một lỗi thật (2026-08-26): `apps/ltt_llm` khai `nav=()` với ý "chưa có
+giao diện" — nhưng `nav_entries()` **tự sinh lại** một dòng trỏ vào `route_prefix`
+khi app không khai gì. Kết quả: `/ltt-llm` là link **404 trong header của mọi
+khách đã đăng nhập**, nhiều tuần, không phép kiểm nào thấy.
+
+⭐ `apps/anhnoibo` đã tránh đúng bẫy này bằng `catalog_parent`, **và còn viết ra
+lý do trong chú thích**. Bài học đã được học và đã được ghi — nó chỉ chưa bao giờ
+thành một phép kiểm. Đây là chỗ đóng khoảng cách đó.
+
+Chưa có giao diện thì khai `catalog_parent="<app cha>"`. **Đừng** chữa bằng cách
+đổi `surface` — Public API chỉ nhận `"customer"`, đổi là đóng luôn đường bán API.
 
 ### 8.3 Việc dùng chung thì ở `platform_core`, không ở app
 
@@ -226474,7 +226517,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=e0b9f57d0550f191bcdddca337edb2f681624be3c064afa2e887c948fab0fd6a BYTES=9096 LINES=191
+SHA256=70e132061773971444c01b964fac9a104edef4cffe22c3441186ba126aba5dd9 BYTES=11124 LINES=230
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -226522,6 +226565,22 @@ SKIP_APPS: set = set()
 # ma van de doc trong repo la ~870 dong / 23 handler (autosubvideo), nen dat
 # tran o 900 dong va 30 handler - vua du de khong bao dong gia, vua chan duoc
 # hai file 1.300-1.800 dong hien tai.
+#: Bon module cua `server` ma app DUOC PHEP import. Danh sach nay la HOP DONG,
+#: khong phai anh chup: no duoc DO tu thuc te (A-04) roi CHOT LAI, de lan sau ai
+#: do voi tay sau hon thi gate do thay vi im lang.
+#:
+#: Do bang AST tren 732 tep: 12 app cham DUNG bon module nay, khong app nao cham
+#: sau hon. Nghia la day KHONG phai coupling lan man - day la HOP DONG WEB CUA
+#: APP, da on dinh, chi la no dang song nham goi.
+#:
+#: Them mot muc vao day la MOT QUYET DINH KIEN TRUC - lam co y, dung lam cho tien.
+SERVER_APP_CO_THE_DUNG = {
+    "server.deps",            # get_db, user_hien_tai
+    "server.auth.session",    # require_login
+    "server.auth.csrf",       # issue/verify_csrf_token
+    "server.templating",      # templates
+}
+
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
 
@@ -226603,6 +226662,29 @@ def lint() -> list:
         # `routes/`. Bo qua dang package thi linter im lang dung voi hai app
         # LON NHAT ngay sau khi chung duoc tach - moi kiem CSRF/auth/co-lap
         # duoi day bien mat ma khong ai biet.
+        # ── BIEN `apps/` -> `server/` (A-04, do 2026-08-26) ───────────────
+        #
+        # ⭐ Vi sao KHAI BAO chu khong DOI CHO: doi 4 module nay sang
+        #    `platform_core/web/` la 72 lan sua import trong 12 app, de doi lay
+        #    mot cai ten dung hon. Rui ro THAT khong phai cai ten - no la lan
+        #    sau ai do voi tay SAU hon bon module nay. Luat duoi day chan dung
+        #    dieu do, voi gia mot vong lap.
+        #
+        # Xem docs/MVP_OPTIMIZATION_V2/04_ARCHITECTURE_DEPENDENCY_AUDIT.md A-04.
+        for f in sorted(d.rglob("*.py")):
+            if "__pycache__" in f.parts:
+                continue
+            for m2 in re.finditer(
+                    r"^\s*from\s+(server\.[A-Za-z0-9_.]+)\s+import", _read(f), re.M):
+                mod = m2.group(1)
+                if not any(mod == ok or mod.startswith(ok + ".")
+                           for ok in SERVER_APP_CO_THE_DUNG):
+                    findings.append(Finding(
+                        app, "ERROR",
+                        f"{f.relative_to(d).as_posix()} import {mod!r} — app chi duoc "
+                        f"dung {sorted(SERVER_APP_CO_THE_DUNG)} tu `server`. Can them "
+                        "thi bo sung vao HOP DONG truoc, dung di vong."))
+
         route_files = ([d / "routes.py"] if (d / "routes.py").is_file()
                        else sorted((d / "routes").glob("*.py"))
                        if (d / "routes").is_dir() else [])

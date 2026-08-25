@@ -44,6 +44,22 @@ SKIP_APPS: set = set()
 # ma van de doc trong repo la ~870 dong / 23 handler (autosubvideo), nen dat
 # tran o 900 dong va 30 handler - vua du de khong bao dong gia, vua chan duoc
 # hai file 1.300-1.800 dong hien tai.
+#: Bon module cua `server` ma app DUOC PHEP import. Danh sach nay la HOP DONG,
+#: khong phai anh chup: no duoc DO tu thuc te (A-04) roi CHOT LAI, de lan sau ai
+#: do voi tay sau hon thi gate do thay vi im lang.
+#:
+#: Do bang AST tren 732 tep: 12 app cham DUNG bon module nay, khong app nao cham
+#: sau hon. Nghia la day KHONG phai coupling lan man - day la HOP DONG WEB CUA
+#: APP, da on dinh, chi la no dang song nham goi.
+#:
+#: Them mot muc vao day la MOT QUYET DINH KIEN TRUC - lam co y, dung lam cho tien.
+SERVER_APP_CO_THE_DUNG = {
+    "server.deps",            # get_db, user_hien_tai
+    "server.auth.session",    # require_login
+    "server.auth.csrf",       # issue/verify_csrf_token
+    "server.templating",      # templates
+}
+
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
 
@@ -125,6 +141,29 @@ def lint() -> list:
         # `routes/`. Bo qua dang package thi linter im lang dung voi hai app
         # LON NHAT ngay sau khi chung duoc tach - moi kiem CSRF/auth/co-lap
         # duoi day bien mat ma khong ai biet.
+        # ── BIEN `apps/` -> `server/` (A-04, do 2026-08-26) ───────────────
+        #
+        # ⭐ Vi sao KHAI BAO chu khong DOI CHO: doi 4 module nay sang
+        #    `platform_core/web/` la 72 lan sua import trong 12 app, de doi lay
+        #    mot cai ten dung hon. Rui ro THAT khong phai cai ten - no la lan
+        #    sau ai do voi tay SAU hon bon module nay. Luat duoi day chan dung
+        #    dieu do, voi gia mot vong lap.
+        #
+        # Xem docs/MVP_OPTIMIZATION_V2/04_ARCHITECTURE_DEPENDENCY_AUDIT.md A-04.
+        for f in sorted(d.rglob("*.py")):
+            if "__pycache__" in f.parts:
+                continue
+            for m2 in re.finditer(
+                    r"^\s*from\s+(server\.[A-Za-z0-9_.]+)\s+import", _read(f), re.M):
+                mod = m2.group(1)
+                if not any(mod == ok or mod.startswith(ok + ".")
+                           for ok in SERVER_APP_CO_THE_DUNG):
+                    findings.append(Finding(
+                        app, "ERROR",
+                        f"{f.relative_to(d).as_posix()} import {mod!r} — app chi duoc "
+                        f"dung {sorted(SERVER_APP_CO_THE_DUNG)} tu `server`. Can them "
+                        "thi bo sung vao HOP DONG truoc, dung di vong."))
+
         route_files = ([d / "routes.py"] if (d / "routes.py").is_file()
                        else sorted((d / "routes").glob("*.py"))
                        if (d / "routes").is_dir() else [])
