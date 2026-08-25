@@ -39,10 +39,19 @@ PROJECT_SUSPENDED = "project.suspended"
 #: same table and the same dedupe because the machinery is the same; only the
 #: audience differs, and it is delivered to each admin account (EXT-15).
 MARGIN_NEGATIVE = "margin.negative"
+#: The second operator-addressed kind: a customer's credit is held and nothing
+#: can ever settle or refund it. Measured on production 2026-08-26 — two entries
+#: from 24/08, one credit each, neither with a `Job` row to point at.
+#:
+#: ⛔ Unlike `MARGIN_NEGATIVE` this is **not** an estimate. It is money that has
+#:    already left a customer's balance and will not come back on its own: the
+#:    ledger is append-only. That difference is why it earns an email below and
+#:    the margin alert does not.
+HOLD_STRANDED = "hold.stranded"
 
 KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
          QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED,
-         MARGIN_NEGATIVE)
+         MARGIN_NEGATIVE, HOLD_STRANDED)
 
 #: How long the same subject stays quiet after being raised. Long enough that a
 #: customer is not paged by a condition they have already seen; short enough
@@ -60,6 +69,12 @@ COOLDOWN = {
     # price. Daily is often enough to keep it in view without becoming the
     # thing operators filter out.
     MARGIN_NEGATIVE: timedelta(days=1),
+    # Dedupe is per stranded hold (the subject is its key), so this cooldown is
+    # not about volume — it is about how long an operator has to act before the
+    # same one is raised again. A week is long enough not to nag about a hold
+    # already queued for a compensating entry, short enough that one forgotten
+    # in a busy week comes back.
+    HOLD_STRANDED: timedelta(days=7),
 }
 DEFAULT_COOLDOWN = timedelta(days=1)
 
@@ -67,7 +82,13 @@ DEFAULT_COOLDOWN = timedelta(days=1)
 #: The test is simple: would they want to be interrupted? Money and credentials,
 #: yes; a threshold they set themselves to be informative, on the page only.
 EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
-                         KEY_EXPIRING, PROJECT_SUSPENDED})
+                         KEY_EXPIRING, PROJECT_SUSPENDED, HOLD_STRANDED})
+# `HOLD_STRANDED` **is** here, and the reason is the whole point of the alert:
+# the two real cases went 1/2 on manual detection. One was noticed by somebody
+# who happened to look; the other was noticed by nobody, for two days, until an
+# audit went looking. A page an operator may not visit is exactly the channel
+# that produced 1/2. Money already gone is worth interrupting somebody for.
+#
 # `MARGIN_NEGATIVE` is deliberately absent. The number behind it is an estimate
 # built from configured rates, and an estimate has no business interrupting
 # anybody at night — it belongs on the page an operator visits to decide about

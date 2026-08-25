@@ -200,12 +200,30 @@ def reconcile(db, *, user_id: str = "", since: datetime | None = None,
             mismatches.append({"user_id": owner, "lines": line_total,
                                "window": window_total})
 
-    orphan_entries = int(db.execute(
-        select(func.count(CreditEntry.id)).where(
-            CreditEntry.created_at >= start, CreditEntry.created_at <= end,
-            CreditEntry.kind == CREDIT_HOLD, CreditEntry.job_id == "")
-    ).scalar_one())
+    # 🔴 VỊ NGỮ CŨ Ở ĐÂY LÀ `job_id == ""`, VÀ NÓ BẮT 0/2 TRÊN DỮ LIỆU THẬT.
+    #
+    #    Đo trên production 2026-08-26: hai khoản giữ chỗ ngày 24/08 không bao
+    #    giờ được kết sổ. Cả hai mang `job_id` **khác rỗng** (`ms:de4cc565…`,
+    #    `ms:84e9b141…`) vì bốn đường giữ chỗ trong-request đều truyền
+    #    `request_id`/`umsg_id`/`run.id` — `thanh_toan.giu_cho_luot` còn
+    #    `raise ValueError` nếu id rỗng. Nên phép đếm cũ **không thể** thấy
+    #    chúng, và nó vẫn in `ok: True` trong khi tiền đang kẹt.
+    #
+    # ⭐ Phép đo thật sống ở `platform_core/credit` — chủ sở hữu cuốn sổ. Module
+    #    này là tầng báo cáo của `/api/v1`; nó không nên tự định nghĩa "thế nào
+    #    là treo", vì như vậy là bản sao thứ hai của một luật về tiền.
+    from platform_core import credit
+
+    treo = credit.giu_cho_treo(db, user_id=user_id)
+    khong_co_khoa = [t for t in treo if t.ly_do == "khong_co_khoa"]
 
     return {"accounts_checked": checked, "jobs": len(jobs),
-            "mismatches": mismatches, "holds_without_job": orphan_entries,
-            "ok": not mismatches and orphan_entries == 0}
+            "mismatches": mismatches,
+            # Giữ nguyên tên cũ: nó là tập CON (giữ chỗ không có khoá kết sổ),
+            # và đã có phép kiểm chốt nó từ trước.
+            "holds_without_job": len(khong_co_khoa),
+            "holds_stranded": len(treo),
+            "stranded_credit": sum(t.credit for t in treo),
+            "stranded": [{"user_id": t.user_id, "job_id": t.job_id,
+                          "credit": t.credit, "ly_do": t.ly_do} for t in treo],
+            "ok": not mismatches and not treo}

@@ -22,10 +22,13 @@ import time
 from contextlib import contextmanager
 from typing import Optional
 
+from sqlalchemy import select
+
 from platform_core import jobs as jobq
 from platform_core import job_events
 from platform_core.db import get_session
 from platform_core.i18n import N_
+from platform_core.i18n import _ as _t
 from platform_core.models import (JOB_CANCELLED, JOB_ERROR, JOB_RUNNING,
                                    Job)
 
@@ -584,6 +587,72 @@ def _giao_webhook() -> None:
 #: be useful and rare enough to cost nothing.
 ALERT_SCAN_INTERVAL_S = 15 * 60
 
+#: Nhịp quét giữ chỗ treo. Thưa hơn hẳn quét cảnh báo, và có lý do: một khoản
+#: giữ chỗ chỉ được coi là treo sau `credit.TREO_SAU` (6 giờ), nên quét 15 phút
+#: một lần chỉ là hỏi đi hỏi lại cùng một câu hỏi mà câu trả lời không thể đổi.
+HOLD_SCAN_INTERVAL_S = 60 * 60
+
+
+def _quet_giu_cho_treo() -> int:
+    """Tìm tiền của khách đang bị giữ mà không ai còn kết sổ được, rồi BÁO.
+
+    🔴 Vì sao bước này tồn tại: đo trên production 2026-08-26 thấy **hai** khoản
+       giữ chỗ ngày 24/08 không bao giờ được quyết toán hay hoàn. Cả hai nằm
+       ngoài vòng đời job, nên `reclaim_orphans` không bao giờ nhìn thấy chúng.
+       Trong hai lần đó **chỉ một** được người ghi lại — tỉ lệ phát hiện thủ
+       công 1/2.
+
+    ⛔ CHỈ BÁO, KHÔNG TỰ HOÀN. Tự ghi bút toán bù là một quyết định tiền, và
+       quyết định tiền thuộc về chủ sản phẩm (D-04/D-07). Bước này chỉ làm cho
+       một thứ vô hình trở thành một thứ có tên — mà đó đã là khác biệt giữa
+       1/2 và 2/2.
+
+    ⭐ Nằm trong `_mot_luot_bao_tri` chứ không phải trong vòng job: cả khối đó
+       chạy dưới lease `bao_tri`, nên việc này chạy **đúng một lần trên toàn
+       cụm** dù có bao nhiêu tiến trình worker. Đặt nhầm chỗ thì mỗi tiến trình
+       gửi một thư về cùng một khoản tiền.
+    """
+    from platform_core import credit
+    from platform_core.models import User
+    from platform_core.public_api import notifications
+
+    tong = 0
+    for db in _one_session():
+        treo = credit.giu_cho_treo(db)
+        if not treo:
+            return 0
+
+        tien = sum(t.credit for t in treo)
+        # Log trước, gửi thư sau: nếu hộp thư hỏng thì con số vẫn còn dấu vết.
+        log.warning("GIU CHO TREO: %d khoan, %d credit cua khach dang bi giu "
+                    "ma khong ai ket so duoc", len(treo), tien)
+
+        nguoi_truc = db.execute(select(User).where(
+            User.role == "admin", User.is_active.is_(True))).scalars().all()
+        for t in treo:
+            for ai in nguoi_truc:
+                row = notifications.raise_alert(
+                    db, user_id=ai.id, kind=notifications.HOLD_STRANDED,
+                    # Khoá khử trùng lặp là chính khoản tiền đó: một khoản treo
+                    # mãi không được báo mãi, và một khoản MỚI không bị im lặng
+                    # chỉ vì khoản cũ vừa được báo.
+                    subject=f"hold:{t.job_id or 'khong-khoa'}",
+                    title=_t("Credit của khách đang bị giữ mà không ai kết sổ được"),
+                    body=_t(
+                        "Khoản giữ chỗ {credit} credit của tài khoản {user} "
+                        "(khoá {khoa}, tạo lúc {luc}) không có quyết toán và "
+                        "không có hoàn. Lý do: {ly_do}. Sổ credit CHỈ GHI THÊM "
+                        "nên khoản này không tự lành — muốn trả lại cho khách "
+                        "thì phải ghi một bút toán bù."
+                    ).format(credit=t.credit, user=t.user_id[:8],
+                             khoa=t.job_id or _t("(rỗng)"),
+                             luc=t.tao_luc, ly_do=t.ly_do))
+                if row is not None:
+                    notifications.send_email_for(db, row)
+                    tong += 1
+        db.commit()
+    return tong
+
 
 def _quet_canh_bao() -> None:
     """Raise the alerts that are true right now, and age out the old ones.
@@ -592,12 +661,30 @@ def _quet_canh_bao() -> None:
     condition on every pass is harmless by design — which is what lets this be a
     plain periodic scan instead of an event pipeline.
     """
-    from platform_core.public_api import alerting, notifications, ops_alerts
+    from platform_core.public_api import (alerting, costing, notifications,
+                                          ops_alerts)
     from platform_core.public_api.config import load_public_api_config
 
     config = load_public_api_config()
     for db in _one_session():
         raised = alerting.scan_all(db, config=config)
+
+        # 🔴 THEM 2026-08-26 — CHUONG NAY DA DUC TU LAU MA CHUA AI TREO.
+        #
+        #    `costing.scan_for_alerts` bao cho nguoi truc khi bien loi nhuan uoc
+        #    tinh am. No co day du: docstring, test (`test_207`), ten trong
+        #    `__all__`. Va cho toi hom nay **khong gi goi no** ngoai chinh test
+        #    cua no — nen canh bao "dang ban lo" chua bao gio no tren production.
+        #
+        # ⛔ Do khong phai truong hop ca biet. Cung ngay, tim duoc mot ca thu hai
+        #    y het (`usage.reconcile` dem giu cho mo coi, cung chi chay tu test +
+        #    mot lenh CLI thu cong). Hai lan cung mot hinh dang: ham canh bao
+        #    viet xong, khong cam vao dau, va trong y het mot ham dang chay.
+        #
+        # ⭐ Vi vay `test_307` chot bang `inspect.getsource` rang cac ham quet
+        #    duoc GOI, khong chi ton tai.
+        raised += len(costing.scan_for_alerts(db))
+
         gone = notifications.purge_expired(db)
         db.commit()
         if raised:
@@ -1131,6 +1218,18 @@ def _mot_luot_bao_tri(moc: dict) -> None:
     if time.monotonic() >= moc["alert"]:
         _quet_canh_bao()
         moc["alert"] = time.monotonic() + ALERT_SCAN_INTERVAL_S
+
+    # 🔴 Tiền của khách bị giữ mà không ai kết sổ được. Đặt SAU `_quet_canh_bao`
+    #    và nhịp riêng, vì nó hỏi một câu khác hẳn: các cảnh báo trên nói về
+    #    thứ đang xảy ra, cái này nói về thứ đã hỏng và đang nằm im.
+    if time.monotonic() >= moc.get("hold_scan", 0.0):
+        try:
+            _quet_giu_cho_treo()
+        except Exception:                        # noqa: BLE001
+            # Một hộp thư hỏng hay một truy vấn chậm không được làm dừng việc
+            # dọn dữ liệu và giao webhook ở trên.
+            log.exception("quet giu cho treo that bai")
+        moc["hold_scan"] = time.monotonic() + HOLD_SCAN_INTERVAL_S
 
 
 def _vong_bao_tri(stop) -> None:

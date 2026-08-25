@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9fb94658b0865053ab533e500eea6c927f0fa8b3425509d2c4953282884df301
-Nguồn đã quét : 1163 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d848627e0ddff27a8289a6a12bfe882ac493edd69a7dc8e64539835a711504c2
+Nguồn đã quét : 1164 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1045,7 +1045,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (273 file pytest + 3 frontend)
+10. QUALITY GATES (274 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1278,6 +1278,7 @@ Test inventory:
 - tests/test_304_vps_giao_dien_ban_hang.py
 - tests/test_305_vps_render_ban_en.py
 - tests/test_306_banh_coc_bo_qua_va_dich.py
+- tests/test_307_giu_cho_treo.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1345,8 +1346,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1163 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37, .md:14, .mjs:3, .ps1:20, .py:890, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1164 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37, .md:14, .mjs:3, .ps1:20, .py:891, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2172,7 +2173,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (290)
+[tests] (291)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2416,6 +2417,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - tests/test_304_vps_giao_dien_ban_hang.py
 - tests/test_305_vps_render_ban_en.py
 - tests/test_306_banh_coc_bo_qua_va_dich.py
+- tests/test_307_giu_cho_treo.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2566,7 +2568,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1163 file; 11238531 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1164 file; 11272672 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -72498,7 +72500,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=649796c677143796220c234b4dacf31ca11ba59b125d069eba38ec74f8b1c76e BYTES=239987 LINES=3430
+SHA256=3b48d19983c63151e4a56024aaef4bc94ece76a196906f2ddb296edd5cb71d8e BYTES=245862 LINES=3505
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -75927,9 +75929,84 @@ ba mốc (chuỗi chưa bọc `_()` 1.413→816, nuốt lỗi lặng lẽ 90→7
 
 - [ ] **H40.5 — deploy** ⏳ chờ chủ sản phẩm. Production vẫn chạy bản đủ 19 app.
       Điểm lùi trước cả đợt: **`ec6a00c`**.
-- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b của dự án đòi
-      kiểm trên **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau**
-      H40.5, không phải trước.
+- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b đòi kiểm trên
+      **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau** H40.5.
+
+### 🔴 H40.7 — `gate.py` đầy đủ: **CHƯA CHẠY XONG LẦN NÀO**
+
+Chủ sản phẩm quyết **bỏ gate** ngày 2026-08-25 để chuyển sang đợt sửa soạn lại hệ
+thống. Ghi thẳng ở đây, không tô hồng: **hạng mục H40 đóng mà KHÔNG có một lượt
+`python tools/gate.py` đầy đủ nào hoàn tất.**
+
+Bốn lượt đều dừng giữa chừng, và ba lượt là do cây đổi chứ không do lỗi:
+
+| Lượt | Dừng ở | Vì sao |
+|---|---|---|
+| 1 | bước 18/22 | chủ sản phẩm giao thêm 3 app → cây sắp đổi |
+| 2 | `pytest` | audit tìm ra residue phải dọn |
+| 3 | `pytest` (23 phút) | một phiên khác chạy `pytest` song song 23:30–23:50 ⇒ hai bộ tranh thư mục tạm/CSDL test, kết quả không đáng tin |
+| 4 | `pytest` | chủ sản phẩm quyết bỏ |
+
+⭐ **Bằng chứng THẬT SỰ có** (chạy trên đúng cây đã commit `09ee8e9`), để phiên sau
+không phải chạy lại từ đầu:
+
+```
+bien dich duoc          PASS  2.100 tep, hong 0
+ten chua dinh nghia     PASS  406 tep, 0
+lint hop dong app       PASS  14 app, ERROR 0, WARN 1 (qualitylab, co tu truoc)
+quet bi mat             PASS  0 finding
+system profile          PASS  khop nguon
+golden API              khong khac biet
+hop dong API            27 route, 7 tool, 22 ma loi — khong doi
+tai lieu sinh ra        PASS   SDK khop hop dong   PASS
+pytest theo cum         test_35·37·43·60·61·63·66·72·88·145·147·173·187·190·212 PASS
+go THAT vao URL         21/21 URL app da go -> 404 · 12/12 URL con song -> 200/303
+```
+
+⛔ **Thứ CHƯA có bằng chứng** — phiên sau phải tự chạy, đừng tin là đã xong:
+
+1. **`pytest` toàn bộ 4.093 test** trên cây cuối. Các cụm đã chạy phủ phần bị đợt
+   xoá đụng tới, nhưng **không phủ hết kho**.
+2. **Ba bộ test frontend** trên cây cuối (chúng xanh ở `gate --quick` của một
+   trạng thái cây **trước đó**, không phải cây này).
+3. **Bất biến đa tiến trình** (`tools/check_multiproc.py`) — bước này chỉ có ở gate
+   đầy đủ.
+4. **Kiểm trên trình duyệt thật** — xem H40.6.
+
+⚠️ Và một thứ đã đỏ **từ trước đợt xoá**, đừng chẩn đoán nhầm thành hậu quả của nó:
+`test_44_release_build` đỏ 2 test vì **ba bundle frontend cũ** so với `vite.config.ts`
+(phiên khác đổi). Đã chứng minh bằng `git stash`: đỏ y hệt ở `ec6a00c`. Hệ quả:
+`tools/build_release.py` **chưa dựng được gói phát hành** cho tới khi chạy
+`npm run build` cho cả ba rồi `python tools/build_system_profile.py`.
+
+### H40.8 — Việc còn treo của đợt H40, chuyển từ nhật ký sang đây
+
+⚠️ **Vì sao mục này tồn tại, và nó là một bài học về quy trình chứ không về việc.**
+
+Sáu việc dưới đây vốn nằm ở mục *"Còn tồn đọng"* cuối hai mục nhật ký ngày
+2026-08-25. Đo lại: **3/6 chưa từng vào kế hoạch.** Nghĩa là chúng chỉ tồn tại ở
+một nơi được đọc **theo thời gian**, trong khi việc thì được tìm **theo việc** —
+một việc chỉ nằm ở nhật ký là một việc chỉ tồn tại trong quá khứ.
+
+⛔ Và đây đúng là lớp lỗi vừa sinh ra một sự cố tiền thật ở chỗ khác: chú thích
+   `server/api/streaming.py:257` ghi thẳng *"KHÔNG AI QUÉT NÓ… khách mất tiền
+   lặng lẽ"* — người viết **đã biết**, **đã ghi**, và việc vẫn không vào lịch.
+   Khoảng cách giữa *"đã biết"* và *"đã xếp lịch"* là chỗ hỏng, không phải mã.
+
+| # | Việc | Ai làm |
+|---|---|---|
+| a | **Deploy** đợt xoá 4 app | chủ sản phẩm |
+| b | **7/10 workflow Agent mất node** ngay khi deploy. Không có bước di trú. Nếu muốn đỡ: một thông báo trong Canvas khi mở workflow có node không còn tồn tại — **không** hồi sinh app | chủ sản phẩm quyết, tôi làm được |
+| c | **Ba bundle frontend stale** ⇒ `tools/build_release.py` không dựng được gói phát hành. Đỏ **từ trước** đợt xoá (chứng minh bằng `git stash` ở `ec6a00c`). Sửa: `npm run build` cả ba **rồi** `python tools/build_system_profile.py` | phiên nào rảnh |
+| d | **14 ảnh PNG ở gốc kho đang được git theo dõi** (`audit_*`, `nexus_*`, `vm200-*`, `live_nexus_hero`). `.gitignore` không tác động tới tệp đã theo dõi ⇒ cần `git rm --cached`. Là tài sản của hai phiên khác | chủ sản phẩm |
+| e | **Dữ liệu socialbot còn trong `data/`** (`config.json`, `content_history.db`, `audit_log.jsonl`, `session_locks/`). Không tiến trình nào còn mở chúng; xoá tệp trên máy đang chạy thật là **không đảo được** nên tách khỏi việc gỡ mã | chủ sản phẩm |
+| f | **Đăng ký Meta App + TikTok app** — tài sản **ngoài kho**. Mã đã đi, đăng ký không tự mất | chủ sản phẩm |
+| g | **Bẫy 7 + 8 chưa vào `BAY_TRONG_CONG_CHAT_LUONG.md`**: ⑦ `__pycache__` mồ côi hồi sinh một app đã xoá (gate báo *"thiếu manifest.py"* cho một thư mục rỗng); ⑧ `_frontend_source_sha256` băm cả `tests/` nên đổi một hằng số `timeout` làm gói phát hành thành stale, với câu báo lỗi **nêu tên sai nghi phạm** (*"built with the wrong Node"* trong khi Node vẫn đúng) | phiên nào đụng tới tài liệu đó |
+
+⭐ **Đề xuất chặn tương lai, không dọn quá khứ:** thêm một bánh cóc vào gate đòi
+mỗi gạch đầu dòng *"Còn tồn đọng"* trong `NHAT_KY.md` phải có mã ứng với một dòng
+trong tệp này — cùng họ với `check_bo_qua.py` và `check_dich_thieu.py`. Chi phí
+một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -95727,7 +95804,7 @@ def tong_credits(credits_base: int, bonus_percent: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/credit.py
-SHA256=f1e3ef3decd7d06f5df87ab3e078ccf04897bafc7bc60a0bae0c74590b089cf6 BYTES=17890 LINES=403
+SHA256=64a256fef3411abf1184d3d7133ae33d05f5a15155b1d6343014b74a55a9bb72 BYTES=26057 LINES=560
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 credit.py — sổ credit (H3). Phần ít code nhất, ít được phép sai nhất.
@@ -95748,6 +95825,7 @@ quyết toán khi job xong) quyết định ranh giới transaction.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 import logging
 from typing import Optional
 
@@ -96132,6 +96210,162 @@ def hoan(db: DbSession, user_id: str, job_id: str) -> None:
             details={"credit": int(held), "status": job.status},
             event_key="credit-refunded",
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GIỮ CHỖ TREO — bút toán `hold` không bao giờ được kết sổ
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 🔴 VÌ SAO PHẦN NÀY TỒN TẠI, VÀ NÓ ĐÃ LẤY TIỀN THẬT CỦA KHÁCH
+#
+#    Đo trên production 2026-08-26: hai bút toán `hold` ngày 24/08 không có
+#    `settle`, không có `refund`, và **không có hàng `Job` nào** để chỉ vào:
+#
+#        ms:de4cc565…   1 credit   2026-08-24 22:28:06
+#        ms:84e9b141…   1 credit   2026-08-24 23:58:10
+#
+#    Số dư khách bị trừ vĩnh viễn. Không màn hình nào giải thích, và sổ này là
+#    **chỉ ghi thêm** nên nó không tự lành.
+#
+# ⛔ VÌ SAO NÓ LỌT: LƯỚI HOÀN TIỀN CHỈ CĂNG BÊN TRONG TIẾN TRÌNH
+#
+#    Job qua worker thì an toàn — `jobs.reclaim_orphans` luôn đẩy job tới trạng
+#    thái cuối, nên tiền luôn được kết sổ. Nhưng bốn đường giữ chỗ **trong một
+#    request** (`llm/thanh_toan`, hai chỗ ở `chataistudio/routes`, và
+#    `agent/budget`) không tạo hàng `Job` nào, nên **không có vòng quét nào
+#    nhìn thấy chúng**. Chúng chỉ dựa vào `try/except/finally` của chính tiến
+#    trình đó.
+#
+#    Và `setup/2-cai-dat.ps1` `Stop-Service -Force` chính tiến trình web trước
+#    mỗi lần chép đè. Python không chạy `finally` khi Windows kết liễu tiến
+#    trình. ⇒ **Deploy là hành động mở cửa sổ này**, đều đặn, rộng bằng đúng độ
+#    dài một luồng LLM (đã đo 119 giây).
+#
+# ⭐ NGUYÊN TẮC LẤY TỪ NGÀNH THANH TOÁN
+#
+#    Với thẻ, một khoản giữ chỗ (authorization hold) **luôn có tuổi thọ**:
+#    không capture thì nó tự hết hạn và tiền quay về khách. Khách không bao giờ
+#    bị giữ tiền vĩnh viễn. Sổ này vi phạm đúng điểm đó — giữ chỗ ở đây không
+#    có tuổi thọ nào cả.
+#
+#    Hàm dưới đây **chỉ ĐỌC**: nó trả lời "khoản nào đang treo", không tự hoàn.
+#    Tự hoàn là một quyết định tiền và nó thuộc về chủ sản phẩm (D-04/D-07).
+#    Treo được cái chuông trước đã — vì hai lần trước, chỉ một lần có người
+#    tình cờ nhìn thấy.
+
+#: Sau bao lâu thì một giữ chỗ chưa kết sổ được coi là TREO.
+#:
+#: Phải dài hơn **mọi việc hợp lệ còn đang chạy**, nếu không vòng quét sẽ báo
+#: động về chính công việc đang diễn ra bình thường: luồng LLM đo được 119 giây,
+#: job qua worker có trần thời gian riêng, và một `AgentRun` đã duyệt có thể
+#: chạy lâu hơn cả hai. 6 giờ là mức mà "vẫn còn ai đó đang xử lý" không còn là
+#: lời giải thích hợp lý, mà vẫn phát hiện được trong ngày.
+TREO_SAU = timedelta(hours=6)
+
+#: Trần số dòng trả về một lượt. Vòng bảo trì cần **biết có chuyện**, không cần
+#: tải cả sổ về: nếu treo tới mức chạm trần này thì con số chính xác không còn
+#: là thứ quyết định hành động nữa.
+TREO_TRAN = 200
+
+
+@dataclass(frozen=True)
+class GiuChoTreo:
+    """Một khoản giữ chỗ không ai còn kết sổ được.
+
+    `ly_do` phân biệt hai lớp **sửa khác nhau**, nên nó không phải nhãn trang trí:
+
+    - `khong_co_khoa`: `job_id` rỗng. Không ai còn kết sổ được **vì khoá kết sổ
+      không tồn tại** — `quyet_toan`/`hoan` đều tra theo `job_id`. Hỏng ngay từ
+      lúc sinh, không cần chờ hết hạn, và đây là lỗi của phía ghi bút toán.
+    - `khong_ai_ket_so`: có khoá, quá hạn, mà không hàng `Job` nào đang sống
+      mang khoá đó. Đây là ca của bốn đường giữ chỗ trong-request.
+    """
+
+    user_id: str
+    job_id: str
+    credit: int
+    tao_luc: datetime
+    ly_do: str
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    """PostgreSQL trả datetime có múi giờ, SQLite trả naive. So sánh cần cùng loại."""
+    if value is None:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def giu_cho_treo(db: DbSession, *, treo_sau: timedelta = TREO_SAU,
+                 now: datetime | None = None, user_id: str = "",
+                 tran: int = TREO_TRAN) -> list[GiuChoTreo]:
+    """Những khoản giữ chỗ đã mất đường về. **Chỉ đọc, không sửa gì.**
+
+    Một khoản bị coi là treo khi cả ba điều đúng:
+
+    1. có bút toán `hold` cho `job_id` đó;
+    2. **không** có `settle` và **không** có `refund` nào cho cùng `job_id`;
+    3. và không còn ai có thể kết sổ nó — tức `job_id` rỗng (không có khoá), hoặc
+       đã quá `treo_sau` mà không hàng `Job` nào **đang sống** mang khoá đó.
+
+    ⛔ Điều kiện 3 là chỗ dễ viết sai nhất, và viết sai theo hướng **báo động
+       giả**: một job nằm trong hàng đợi 8 tiếng vì hàng đợi tắc thì tiền của nó
+       **không** treo — nó chỉ đang chờ, và `reclaim_orphans` mới là thứ canh
+       đường đó. Nên job còn `queued`/`running` phải bị loại ra.
+
+    ⭐ Ngược lại, một `AgentRun` kẹt ở `running` thì **được** báo, và đó là chủ
+       ý: không có vòng quét nào thu hồi `AgentRun` treo (đã kiểm 2026-08-26),
+       nên nó đúng là tiền không có đường về.
+    """
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
+
+    moc = (now or datetime.now(timezone.utc)) - treo_sau
+
+    # Khoá nào đã kết sổ rồi thì không cần xét nữa. Một truy vấn, không N.
+    da_ket_so = select(CreditEntry.job_id).where(
+        CreditEntry.kind.in_((CREDIT_SETTLE, CREDIT_REFUND)))
+
+    cau = (select(CreditEntry.user_id, CreditEntry.job_id,
+                  func.sum(CreditEntry.delta).label("tong"),
+                  func.min(CreditEntry.created_at).label("tao_luc"))
+           .where(CreditEntry.kind == CREDIT_HOLD,
+                  CreditEntry.job_id.notin_(da_ket_so)))
+    if user_id:
+        cau = cau.where(CreditEntry.user_id == str(user_id))
+    hang = db.execute(
+        cau.group_by(CreditEntry.user_id, CreditEntry.job_id)
+           .order_by(func.min(CreditEntry.created_at))
+    ).all()
+
+    # Hỏi trạng thái job MỘT lần cho tất cả khoá, thay vì một truy vấn mỗi dòng:
+    # vòng bảo trì chạy trên cùng CSDL với đường phục vụ khách.
+    khoa = [r.job_id for r in hang if r.job_id]
+    con_song: set[str] = set()
+    if khoa:
+        con_song = {
+            row[0] for row in db.execute(
+                select(Job.id).where(Job.id.in_(khoa),
+                                     Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
+            ).all()
+        }
+
+    ra: list[GiuChoTreo] = []
+    for r in hang:
+        giu = -int(r.tong or 0)
+        if giu <= 0:                       # đã cân bằng bằng bút toán bù
+            continue
+        if not r.job_id:
+            ly_do = "khong_co_khoa"
+        else:
+            if r.job_id in con_song:
+                continue                   # có người đang xử lý — không phải treo
+            if (_aware(r.tao_luc) or moc) > moc:
+                continue                   # còn trong hạn, chưa kết luận được
+            ly_do = "khong_ai_ket_so"
+        ra.append(GiuChoTreo(user_id=r.user_id, job_id=r.job_id, credit=giu,
+                             tao_luc=_aware(r.tao_luc), ly_do=ly_do))
+        if len(ra) >= tran:
+            break
+    return ra
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -98843,7 +99077,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=d9114f9c674b567ebc7b95eace88a8448556136889689e35fab66497c9f87269 BYTES=55255 LINES=1236
+SHA256=d5a5954631ba78121b0e38f44f0a75b6a80c722ab323f1b9956ac7ef706c82e1 BYTES=60708 LINES=1335
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -98869,10 +99103,13 @@ import time
 from contextlib import contextmanager
 from typing import Optional
 
+from sqlalchemy import select
+
 from platform_core import jobs as jobq
 from platform_core import job_events
 from platform_core.db import get_session
 from platform_core.i18n import N_
+from platform_core.i18n import _ as _t
 from platform_core.models import (JOB_CANCELLED, JOB_ERROR, JOB_RUNNING,
                                    Job)
 
@@ -99431,6 +99668,72 @@ def _giao_webhook() -> None:
 #: be useful and rare enough to cost nothing.
 ALERT_SCAN_INTERVAL_S = 15 * 60
 
+#: Nhịp quét giữ chỗ treo. Thưa hơn hẳn quét cảnh báo, và có lý do: một khoản
+#: giữ chỗ chỉ được coi là treo sau `credit.TREO_SAU` (6 giờ), nên quét 15 phút
+#: một lần chỉ là hỏi đi hỏi lại cùng một câu hỏi mà câu trả lời không thể đổi.
+HOLD_SCAN_INTERVAL_S = 60 * 60
+
+
+def _quet_giu_cho_treo() -> int:
+    """Tìm tiền của khách đang bị giữ mà không ai còn kết sổ được, rồi BÁO.
+
+    🔴 Vì sao bước này tồn tại: đo trên production 2026-08-26 thấy **hai** khoản
+       giữ chỗ ngày 24/08 không bao giờ được quyết toán hay hoàn. Cả hai nằm
+       ngoài vòng đời job, nên `reclaim_orphans` không bao giờ nhìn thấy chúng.
+       Trong hai lần đó **chỉ một** được người ghi lại — tỉ lệ phát hiện thủ
+       công 1/2.
+
+    ⛔ CHỈ BÁO, KHÔNG TỰ HOÀN. Tự ghi bút toán bù là một quyết định tiền, và
+       quyết định tiền thuộc về chủ sản phẩm (D-04/D-07). Bước này chỉ làm cho
+       một thứ vô hình trở thành một thứ có tên — mà đó đã là khác biệt giữa
+       1/2 và 2/2.
+
+    ⭐ Nằm trong `_mot_luot_bao_tri` chứ không phải trong vòng job: cả khối đó
+       chạy dưới lease `bao_tri`, nên việc này chạy **đúng một lần trên toàn
+       cụm** dù có bao nhiêu tiến trình worker. Đặt nhầm chỗ thì mỗi tiến trình
+       gửi một thư về cùng một khoản tiền.
+    """
+    from platform_core import credit
+    from platform_core.models import User
+    from platform_core.public_api import notifications
+
+    tong = 0
+    for db in _one_session():
+        treo = credit.giu_cho_treo(db)
+        if not treo:
+            return 0
+
+        tien = sum(t.credit for t in treo)
+        # Log trước, gửi thư sau: nếu hộp thư hỏng thì con số vẫn còn dấu vết.
+        log.warning("GIU CHO TREO: %d khoan, %d credit cua khach dang bi giu "
+                    "ma khong ai ket so duoc", len(treo), tien)
+
+        nguoi_truc = db.execute(select(User).where(
+            User.role == "admin", User.is_active.is_(True))).scalars().all()
+        for t in treo:
+            for ai in nguoi_truc:
+                row = notifications.raise_alert(
+                    db, user_id=ai.id, kind=notifications.HOLD_STRANDED,
+                    # Khoá khử trùng lặp là chính khoản tiền đó: một khoản treo
+                    # mãi không được báo mãi, và một khoản MỚI không bị im lặng
+                    # chỉ vì khoản cũ vừa được báo.
+                    subject=f"hold:{t.job_id or 'khong-khoa'}",
+                    title=_t("Credit của khách đang bị giữ mà không ai kết sổ được"),
+                    body=_t(
+                        "Khoản giữ chỗ {credit} credit của tài khoản {user} "
+                        "(khoá {khoa}, tạo lúc {luc}) không có quyết toán và "
+                        "không có hoàn. Lý do: {ly_do}. Sổ credit CHỈ GHI THÊM "
+                        "nên khoản này không tự lành — muốn trả lại cho khách "
+                        "thì phải ghi một bút toán bù."
+                    ).format(credit=t.credit, user=t.user_id[:8],
+                             khoa=t.job_id or "(rỗng)",
+                             luc=t.tao_luc, ly_do=t.ly_do))
+                if row is not None:
+                    notifications.send_email_for(db, row)
+                    tong += 1
+        db.commit()
+    return tong
+
 
 def _quet_canh_bao() -> None:
     """Raise the alerts that are true right now, and age out the old ones.
@@ -99439,12 +99742,30 @@ def _quet_canh_bao() -> None:
     condition on every pass is harmless by design — which is what lets this be a
     plain periodic scan instead of an event pipeline.
     """
-    from platform_core.public_api import alerting, notifications, ops_alerts
+    from platform_core.public_api import (alerting, costing, notifications,
+                                          ops_alerts)
     from platform_core.public_api.config import load_public_api_config
 
     config = load_public_api_config()
     for db in _one_session():
         raised = alerting.scan_all(db, config=config)
+
+        # 🔴 THEM 2026-08-26 — CHUONG NAY DA DUC TU LAU MA CHUA AI TREO.
+        #
+        #    `costing.scan_for_alerts` bao cho nguoi truc khi bien loi nhuan uoc
+        #    tinh am. No co day du: docstring, test (`test_207`), ten trong
+        #    `__all__`. Va cho toi hom nay **khong gi goi no** ngoai chinh test
+        #    cua no — nen canh bao "dang ban lo" chua bao gio no tren production.
+        #
+        # ⛔ Do khong phai truong hop ca biet. Cung ngay, tim duoc mot ca thu hai
+        #    y het (`usage.reconcile` dem giu cho mo coi, cung chi chay tu test +
+        #    mot lenh CLI thu cong). Hai lan cung mot hinh dang: ham canh bao
+        #    viet xong, khong cam vao dau, va trong y het mot ham dang chay.
+        #
+        # ⭐ Vi vay `test_307` chot bang `inspect.getsource` rang cac ham quet
+        #    duoc GOI, khong chi ton tai.
+        raised += len(costing.scan_for_alerts(db))
+
         gone = notifications.purge_expired(db)
         db.commit()
         if raised:
@@ -99978,6 +100299,18 @@ def _mot_luot_bao_tri(moc: dict) -> None:
     if time.monotonic() >= moc["alert"]:
         _quet_canh_bao()
         moc["alert"] = time.monotonic() + ALERT_SCAN_INTERVAL_S
+
+    # 🔴 Tiền của khách bị giữ mà không ai kết sổ được. Đặt SAU `_quet_canh_bao`
+    #    và nhịp riêng, vì nó hỏi một câu khác hẳn: các cảnh báo trên nói về
+    #    thứ đang xảy ra, cái này nói về thứ đã hỏng và đang nằm im.
+    if time.monotonic() >= moc.get("hold_scan", 0.0):
+        try:
+            _quet_giu_cho_treo()
+        except Exception:                        # noqa: BLE001
+            # Một hộp thư hỏng hay một truy vấn chậm không được làm dừng việc
+            # dọn dữ liệu và giao webhook ở trên.
+            log.exception("quet giu cho treo that bai")
+        moc["hold_scan"] = time.monotonic() + HOLD_SCAN_INTERVAL_S
 
 
 def _vong_bao_tri(stop) -> None:
@@ -112087,7 +112420,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS, now=None) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/notifications.py
-SHA256=d86e898a6a50c00493ecd2393c01303ac53ce714d668f64d72a4270a55f10e06 BYTES=9235 LINES=216
+SHA256=d759c1ac371dc610abaf8d64e50c1054cc3ad1c2ee9c19056c55bb38d62e0b55 BYTES=10374 LINES=237
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Alerts a developer sees, with the deduplication that keeps them worth seeing.
 
@@ -112130,10 +112463,19 @@ PROJECT_SUSPENDED = "project.suspended"
 #: same table and the same dedupe because the machinery is the same; only the
 #: audience differs, and it is delivered to each admin account (EXT-15).
 MARGIN_NEGATIVE = "margin.negative"
+#: The second operator-addressed kind: a customer's credit is held and nothing
+#: can ever settle or refund it. Measured on production 2026-08-26 — two entries
+#: from 24/08, one credit each, neither with a `Job` row to point at.
+#:
+#: ⛔ Unlike `MARGIN_NEGATIVE` this is **not** an estimate. It is money that has
+#:    already left a customer's balance and will not come back on its own: the
+#:    ledger is append-only. That difference is why it earns an email below and
+#:    the margin alert does not.
+HOLD_STRANDED = "hold.stranded"
 
 KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
          QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED,
-         MARGIN_NEGATIVE)
+         MARGIN_NEGATIVE, HOLD_STRANDED)
 
 #: How long the same subject stays quiet after being raised. Long enough that a
 #: customer is not paged by a condition they have already seen; short enough
@@ -112151,6 +112493,12 @@ COOLDOWN = {
     # price. Daily is often enough to keep it in view without becoming the
     # thing operators filter out.
     MARGIN_NEGATIVE: timedelta(days=1),
+    # Dedupe is per stranded hold (the subject is its key), so this cooldown is
+    # not about volume — it is about how long an operator has to act before the
+    # same one is raised again. A week is long enough not to nag about a hold
+    # already queued for a compensating entry, short enough that one forgotten
+    # in a busy week comes back.
+    HOLD_STRANDED: timedelta(days=7),
 }
 DEFAULT_COOLDOWN = timedelta(days=1)
 
@@ -112158,7 +112506,13 @@ DEFAULT_COOLDOWN = timedelta(days=1)
 #: The test is simple: would they want to be interrupted? Money and credentials,
 #: yes; a threshold they set themselves to be informative, on the page only.
 EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
-                         KEY_EXPIRING, PROJECT_SUSPENDED})
+                         KEY_EXPIRING, PROJECT_SUSPENDED, HOLD_STRANDED})
+# `HOLD_STRANDED` **is** here, and the reason is the whole point of the alert:
+# the two real cases went 1/2 on manual detection. One was noticed by somebody
+# who happened to look; the other was noticed by nobody, for two days, until an
+# audit went looking. A page an operator may not visit is exactly the channel
+# that produced 1/2. Money already gone is worth interrupting somebody for.
+#
 # `MARGIN_NEGATIVE` is deliberately absent. The number behind it is an estimate
 # built from configured rates, and an estimate has no business interrupting
 # anybody at night — it belongs on the page an operator visits to decide about
@@ -116574,7 +116928,7 @@ class ApiSecurityEvent(Base):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/usage.py
-SHA256=a598bafb9a7db3771732a359e12cc271bcccb991ad6108cf1929ce2faf003983 BYTES=8952 LINES=211
+SHA256=389305ea11edb1c9ddfc084ffa8735cc0800cd1718a393202da7d6647c987d2d BYTES=9984 LINES=229
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Usage and balance — **derived** from the credit ledger, never stored twice.
 
@@ -116778,15 +117132,33 @@ def reconcile(db, *, user_id: str = "", since: datetime | None = None,
             mismatches.append({"user_id": owner, "lines": line_total,
                                "window": window_total})
 
-    orphan_entries = int(db.execute(
-        select(func.count(CreditEntry.id)).where(
-            CreditEntry.created_at >= start, CreditEntry.created_at <= end,
-            CreditEntry.kind == CREDIT_HOLD, CreditEntry.job_id == "")
-    ).scalar_one())
+    # 🔴 VỊ NGỮ CŨ Ở ĐÂY LÀ `job_id == ""`, VÀ NÓ BẮT 0/2 TRÊN DỮ LIỆU THẬT.
+    #
+    #    Đo trên production 2026-08-26: hai khoản giữ chỗ ngày 24/08 không bao
+    #    giờ được kết sổ. Cả hai mang `job_id` **khác rỗng** (`ms:de4cc565…`,
+    #    `ms:84e9b141…`) vì bốn đường giữ chỗ trong-request đều truyền
+    #    `request_id`/`umsg_id`/`run.id` — `thanh_toan.giu_cho_luot` còn
+    #    `raise ValueError` nếu id rỗng. Nên phép đếm cũ **không thể** thấy
+    #    chúng, và nó vẫn in `ok: True` trong khi tiền đang kẹt.
+    #
+    # ⭐ Phép đo thật sống ở `platform_core/credit` — chủ sở hữu cuốn sổ. Module
+    #    này là tầng báo cáo của `/api/v1`; nó không nên tự định nghĩa "thế nào
+    #    là treo", vì như vậy là bản sao thứ hai của một luật về tiền.
+    from platform_core import credit
+
+    treo = credit.giu_cho_treo(db, user_id=user_id)
+    khong_co_khoa = [t for t in treo if t.ly_do == "khong_co_khoa"]
 
     return {"accounts_checked": checked, "jobs": len(jobs),
-            "mismatches": mismatches, "holds_without_job": orphan_entries,
-            "ok": not mismatches and orphan_entries == 0}
+            "mismatches": mismatches,
+            # Giữ nguyên tên cũ: nó là tập CON (giữ chỗ không có khoá kết sổ),
+            # và đã có phép kiểm chốt nó từ trước.
+            "holds_without_job": len(khong_co_khoa),
+            "holds_stranded": len(treo),
+            "stranded_credit": sum(t.credit for t in treo),
+            "stranded": [{"user_id": t.user_id, "job_id": t.job_id,
+                          "credit": t.credit, "ly_do": t.ly_do} for t in treo],
+            "ok": not mismatches and not treo}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -134573,9 +134945,9 @@ SHA256=f76310ee1df600a8b6b522149f5e629cc5ad905172cb269eeabce129d5ff5dcd BYTES=70
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/agent-canvas/build-meta.json
-SHA256=169e47f87369c9cfa2dc0e9c9249a596d5d88045207e021a52bb4ddaa9cb1fc3 BYTES=131 LINES=1
+SHA256=25f06447da7c4a80a998e7c9f95226c961466824546eb588ca7cd2079c2bc1b0 BYTES=131 LINES=1
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-{"schema":1,"source_sha256":"058c4c0b96a0b235dab7154faa66a4d390b305eafcfa0250a02d1517f9e3209a","node":"24.17.0","sourcemap":false}
+{"schema":1,"source_sha256":"8f3396e533f6885a8e790bbd843ebc4d8f6510c3d13a49b24564520fb4d6eb28","node":"24.17.0","sourcemap":false}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -134619,11 +134991,11 @@ SHA256=62d91472ab95e4ed647809dc09d292f519a765dbcfb5e7434d206a383801bb7d BYTES=20
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/autosub-studio/build-meta.json
-SHA256=f7a01135550c8932e79fcf00239bdcbc78d1450954c456f5a650fb7e25e4d45e BYTES=148 LINES=6
+SHA256=6c5d0c03f289cc9f7e866ded2066ab66f1576eb6ea902b399f6c648fba00a555 BYTES=148 LINES=6
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "schema": 1,
-  "source_sha256": "ad917b8bd96507936700bfad0432ac79cbce4d8d91b6f5bca51a7f3a4249db11",
+  "source_sha256": "65ce4061e8f255dad9ec4a0ffca35e7b5f52503686a570637985c2f34608ca64",
   "node": "24.17.0",
   "sourcemap": false
 }
@@ -135890,11 +136262,11 @@ Error generating stack: `+e.message+`
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/prompt-ai-ommi/build-meta.json
-SHA256=8af95ea3f3b8df6402fa5abe2507d9b332038263a30578a6e7be5902017043ad BYTES=148 LINES=6
+SHA256=9a06f3dbea27422835ec425d78a1f22438198ffc761709e452ef27f1cba09683 BYTES=148 LINES=6
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "schema": 1,
-  "source_sha256": "c5f7dd22b6adb1763a83dc5fa991369716242219a9fc04067ece0608a5dac2b9",
+  "source_sha256": "898139a9e7d341d791ef346c99f05cef2d9736aa662b81ad6868fa9f5cb29397",
   "node": "24.17.0",
   "sourcemap": false
 }
@@ -205111,6 +205483,308 @@ def test_ca_hai_chay_ca_o_che_do_quick():
     truoc_quick = gate.split("if not quick:")[0]
     assert "tools/check_bo_qua.py" in truoc_quick
     assert "tools/check_dich_thieu.py" in truoc_quick
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_307_giu_cho_treo.py
+SHA256=3658680cff5fa13557dc6d63192bb84eacdda7599dd4271bbb19b73b205e0a1a BYTES=12475 LINES=296
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_307 — ⛔ GIỮ CHỖ TREO: tiền khách bị giữ mà không ai còn kết sổ được.
+
+Không mạng, không GPU.
+
+## ⭐ VÌ SAO TỆP NÀY TỒN TẠI — nó không phòng xa, nó dọn một vụ đã xảy ra
+
+Đo trên CSDL production 2026-08-26: **hai** bút toán `hold` ngày 24/08 không có
+`settle`, không có `refund`, và không có hàng `Job` nào để chỉ vào.
+
+    ms:de4cc565…   1 credit   2026-08-24 22:28:06
+    ms:84e9b141…   1 credit   2026-08-24 23:58:10
+
+Số dư khách bị trừ vĩnh viễn — sổ credit là **chỉ ghi thêm**, nên nó không tự
+lành.
+
+## ⛔ ĐIỀU ĐÁNG SỢ HƠN CẢ SỐ TIỀN
+
+Máy dò **đã tồn tại** trước khi có tệp này: `public_api/usage.reconcile()` đếm
+`holds_without_job`. Nhưng vị ngữ của nó là `job_id == ""` — **rỗng** — trong khi
+cả bốn đường giữ chỗ trong-request đều truyền id **khác rỗng** (`request_id`,
+`umsg_id`, `run.id`), và `thanh_toan.giu_cho_luot` còn `raise ValueError` nếu id
+rỗng.
+
+⇒ Máy dò bắt **0/2** trên chính dữ liệu thật. Chuông đã đúc, chưa ai treo, và nó
+được chỉnh để nghe đúng thứ âm thanh không bao giờ phát ra.
+
+Và trong hai lần đó, **chỉ một** được người ghi lại. Tỉ lệ phát hiện thủ công
+1/2 — nghĩa là con số thật **≥** con số biết, không bao giờ nhỏ hơn.
+
+## 💡 CHỖ DỄ VIẾT SAI, GHI RA VÌ NÓ LÀ CHỖ YẾU NHẤT
+
+Cám dỗ là báo mọi `hold` chưa kết sổ. Làm vậy thì mỗi job đang nằm trong hàng đợi
+đều thành một báo động — và một máy dò kêu suốt ngày là một máy dò bị tắt trong
+tuần đầu. Nên `test_job_dang_cho_thi_khong_phai_treo` là phép kiểm quan trọng
+ngang phép kiểm bắt được lỗi thật: nó chốt rằng cái chuông **im khi phải im**.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'treo.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        yield s
+    finally:
+        s.close(); dbmod.reset_engine()
+
+
+def _hold(db, *, user_id: str, job_id: str, credit: int, gio_truoc: float = 0.0):
+    """Ghi thẳng một bút toán `hold` với tuổi tuỳ ý."""
+    from platform_core.models import CREDIT_HOLD, CreditEntry
+    row = CreditEntry(
+        user_id=user_id, delta=-int(credit), kind=CREDIT_HOLD, job_id=job_id,
+        note="test",
+        created_at=datetime.now(timezone.utc) - timedelta(hours=gio_truoc))
+    db.add(row); db.commit()
+    return row
+
+
+# ── Cái chuông phải KÊU ────────────────────────────────────────────────────────
+
+def test_giu_cho_khong_co_khoa_bi_bat_ngay_khong_can_cho_het_han(db):
+    """`job_id` rỗng = không ai còn kết sổ được, vì khoá kết sổ không tồn tại.
+
+    `quyet_toan` và `hoan` đều tra theo `job_id`. Một bút toán không có khoá thì
+    hỏng **ngay từ lúc sinh** — chờ thêm 6 tiếng không làm nó bớt hỏng.
+    """
+    from platform_core import credit
+
+    _hold(db, user_id="u1", job_id="", credit=5, gio_truoc=0)
+    treo = credit.giu_cho_treo(db)
+    assert len(treo) == 1
+    assert treo[0].ly_do == "khong_co_khoa"
+    assert treo[0].credit == 5
+
+
+def test_bat_duoc_dung_ca_da_xay_ra_that_tren_production(db):
+    """Ca `ms:84e9b141…` — id KHÁC RỖNG, không có hàng Job, quá hạn.
+
+    Đây chính là ca mà vị ngữ cũ (`job_id == ""`) bắt hụt. Nếu test này đỏ thì
+    lỗi 24/08 đã quay lại.
+    """
+    from platform_core import credit
+
+    _hold(db, user_id="u1", job_id="ms:84e9b141", credit=1, gio_truoc=48)
+    treo = credit.giu_cho_treo(db)
+    assert [t.job_id for t in treo] == ["ms:84e9b141"]
+    assert treo[0].ly_do == "khong_ai_ket_so"
+
+
+def test_agent_run_ket_o_running_van_bi_bao(db):
+    """Không có vòng quét nào thu hồi `AgentRun` treo (đã kiểm 2026-08-26).
+
+    Nên tiền của nó đúng là tiền không có đường về, và phải được báo — dù hàng
+    `agent_runs` vẫn còn đó.
+    """
+    from platform_core import credit
+
+    _hold(db, user_id="u1", job_id="run-abc", credit=20, gio_truoc=12)
+    assert len(credit.giu_cho_treo(db)) == 1
+
+
+# ── Cái chuông phải IM ─────────────────────────────────────────────────────────
+
+def test_job_dang_cho_thi_khong_phai_treo(db):
+    """⛔ Hàng đợi tắc **không phải** tiền treo — nó chỉ là hàng đợi tắc.
+
+    Một máy dò kêu vì công việc bình thường là một máy dò sẽ bị tắt.
+    """
+    from platform_core import credit
+    from platform_core.models import JOB_QUEUED, Job
+
+    db.add(Job(id="job-1", user_id="u1", app_slug="thu", job_type="thu.x",
+               status=JOB_QUEUED, params={}))
+    db.commit()
+    _hold(db, user_id="u1", job_id="job-1", credit=9, gio_truoc=48)
+
+    assert credit.giu_cho_treo(db) == []
+
+
+def test_con_trong_han_thi_chua_ket_luan(db):
+    """Một luồng LLM đo được 119 giây. Báo động sau 2 phút là báo động về chính
+    công việc đang chạy đúng."""
+    from platform_core import credit
+
+    _hold(db, user_id="u1", job_id="ms:dang-chay", credit=3, gio_truoc=0.05)
+    assert credit.giu_cho_treo(db) == []
+
+
+def test_da_quyet_toan_thi_khong_treo(db):
+    from platform_core import credit
+    from platform_core.models import CREDIT_SETTLE, CreditEntry
+
+    _hold(db, user_id="u1", job_id="ms:xong", credit=7, gio_truoc=48)
+    db.add(CreditEntry(user_id="u1", delta=7, kind=CREDIT_SETTLE,
+                       job_id="ms:xong", note="test"))
+    db.commit()
+    assert credit.giu_cho_treo(db) == []
+
+
+def test_da_hoan_thi_khong_treo(db):
+    from platform_core import credit
+    from platform_core.models import CREDIT_REFUND, CreditEntry
+
+    _hold(db, user_id="u1", job_id="ms:hoan", credit=7, gio_truoc=48)
+    db.add(CreditEntry(user_id="u1", delta=7, kind=CREDIT_REFUND,
+                       job_id="ms:hoan", note="test"))
+    db.commit()
+    assert credit.giu_cho_treo(db) == []
+
+
+def test_khong_bao_gio_sua_gi(db):
+    """Hàm này CHỈ ĐỌC. Tự hoàn tiền là một quyết định tiền, thuộc chủ sản phẩm.
+
+    Chốt bằng số dư trước/sau, không bằng lời hứa trong docstring.
+    """
+    from platform_core import credit
+
+    _hold(db, user_id="u1", job_id="", credit=5, gio_truoc=48)
+    truoc = credit.so_du(db, "u1")
+    credit.giu_cho_treo(db)
+    assert credit.so_du(db, "u1") == truoc
+
+
+def test_tran_chan_khong_cho_tai_ca_so_ve(db):
+    from platform_core import credit
+
+    for i in range(12):
+        _hold(db, user_id="u1", job_id=f"ms:{i}", credit=1, gio_truoc=48)
+    assert len(credit.giu_cho_treo(db, tran=5)) == 5
+
+
+# ── Cái chuông phải ĐƯỢC TREO ─────────────────────────────────────────────────
+#
+# ⭐ Ba phép kiểm dưới đây tồn tại vì **P-01**: trong kho này đã có HAI cái
+#    chuông được đúc rồi bỏ đó.
+#
+#    ① `usage.reconcile` đếm giữ chỗ mồ côi — chỉ được gọi từ test và một lệnh
+#       CLI thủ công; vòng bảo trì không đụng tới.
+#    ② `costing.scan_for_alerts` báo biên lợi nhuận âm cho người trực — có test,
+#       có trong `__all__`, và **không gì gọi nó** ngoài chính test của nó.
+#
+#    Một hàm cảnh báo không được cắm vào đâu thì trông y hệt một hàm cảnh báo
+#    đang chạy, cho tới ngày cần nó. Nên "có hàm" không phải điều đáng chốt —
+#    "hàm được GỌI" mới là.
+
+def test_chuong_duoc_cam_vao_vong_bao_tri():
+    """Chốt bằng mã nguồn: quét treo phải được vòng bảo trì gọi thật.
+
+    Không chốt bằng "hàm tồn tại" — đó chính là cái bẫy P-01.
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    bao_tri = inspect.getsource(job_runner._mot_luot_bao_tri)
+    assert "_quet_giu_cho_treo()" in bao_tri, (
+        "quet giu cho treo khong duoc goi tu vong bao tri — chuong chua duoc treo")
+
+
+def test_chay_duoi_lease_bao_tri_nen_khong_bao_N_lan():
+    """`_mot_luot_bao_tri` chạy dưới lease `bao_tri`, nên toàn cụm một lần.
+
+    Nếu đặt nhầm vào vòng job thì mỗi tiến trình worker gửi một thư về **cùng
+    một khoản tiền** — số tiến trình mặc định bằng số GPU.
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    vong = inspect.getsource(job_runner._vong_bao_tri)
+    assert "leases.acquire" in vong and "leases.MAINTENANCE" in vong
+
+
+def test_bao_cao_va_khu_trung_lap_theo_tung_khoan(db, monkeypatch):
+    """Báo một lần cho mỗi khoản; lượt sau im. Và khoản MỚI vẫn được báo.
+
+    Khử trùng lặp theo `subject` = khoá của chính khoản đó, nên một khoản đang
+    chờ xử lý không làm im lặng một khoản khác vừa xuất hiện.
+    """
+    from platform_core import job_runner
+    from platform_core.models import User
+    from platform_core.public_api.tables import ApiNotification
+
+    db.add(User(id="admin-1", email="ops@x.test", password_hash="x",
+                role="admin", is_active=True))
+    db.commit()
+
+    _hold(db, user_id="u1", job_id="ms:treo-1", credit=4, gio_truoc=48)
+
+    # `_one_session` mở session riêng; trỏ nó về đúng CSDL test của fixture.
+    monkeypatch.setattr(job_runner, "_one_session", lambda: iter([db]))
+    monkeypatch.setattr(
+        "platform_core.public_api.notifications.send_email_for",
+        lambda *a, **k: None)
+
+    assert job_runner._quet_giu_cho_treo() == 1
+    assert job_runner._quet_giu_cho_treo() == 0        # cooldown — im
+
+    _hold(db, user_id="u1", job_id="ms:treo-2", credit=6, gio_truoc=48)
+    assert job_runner._quet_giu_cho_treo() == 1        # khoản MỚI vẫn kêu
+
+    chu_de = {r.subject for r in db.execute(
+        __import__("sqlalchemy").select(ApiNotification)).scalars().all()}
+    assert chu_de == {"hold:ms:treo-1", "hold:ms:treo-2"}
+
+
+def test_quet_khong_bao_gio_dong_vao_tien(db, monkeypatch):
+    """⛔ Bước này CHỈ BÁO. Tự ghi bút toán bù là quyết định của chủ sản phẩm."""
+    from platform_core import credit, job_runner
+    from platform_core.models import User
+
+    db.add(User(id="admin-1", email="ops@x.test", password_hash="x",
+                role="admin", is_active=True))
+    db.commit()
+    _hold(db, user_id="u1", job_id="ms:treo-1", credit=4, gio_truoc=48)
+
+    monkeypatch.setattr(job_runner, "_one_session", lambda: iter([db]))
+    monkeypatch.setattr(
+        "platform_core.public_api.notifications.send_email_for",
+        lambda *a, **k: None)
+
+    truoc = credit.so_du(db, "u1")
+    job_runner._quet_giu_cho_treo()
+    assert credit.so_du(db, "u1") == truoc
+    assert credit.giu_cho_treo(db)          # vẫn treo — chưa ai sửa gì cả
+
+
+def test_chuong_bien_loi_nhuan_am_cung_da_duoc_treo():
+    """M-02 — ca thứ hai của cùng loại lỗi, tìm ra trong lúc sửa ca thứ nhất.
+
+    `costing.scan_for_alerts` có docstring, có test (`test_207`), có tên trong
+    `__all__` — và cho tới 2026-08-26 **không gì gọi nó** ngoài chính test của
+    nó. Nghĩa là cảnh báo "nền tảng đang bán lỗ" chưa từng nổ trên production,
+    trong khi `docs/PHAN_TICH_MVP_2026-08-23.md` đo được ảnh bán ở 45–57 % giá
+    vốn suốt 22 ngày.
+
+    Hai ca, một hình dạng. Nếu chỉ sửa ca đầu thì đã bỏ lỡ điều nó đang nói.
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    src = inspect.getsource(job_runner._quet_canh_bao)
+    assert "costing.scan_for_alerts(db)" in src, (
+        "canh bao bien loi nhuan am van chua duoc cam vao vong bao tri")
 
 @@@LTT_PROFILE_FILE_END@@@
 

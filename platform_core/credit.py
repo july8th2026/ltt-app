@@ -17,6 +17,7 @@ quyết toán khi job xong) quyết định ranh giới transaction.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 import logging
 from typing import Optional
 
@@ -401,3 +402,159 @@ def hoan(db: DbSession, user_id: str, job_id: str) -> None:
             details={"credit": int(held), "status": job.status},
             event_key="credit-refunded",
         )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GIỮ CHỖ TREO — bút toán `hold` không bao giờ được kết sổ
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# 🔴 VÌ SAO PHẦN NÀY TỒN TẠI, VÀ NÓ ĐÃ LẤY TIỀN THẬT CỦA KHÁCH
+#
+#    Đo trên production 2026-08-26: hai bút toán `hold` ngày 24/08 không có
+#    `settle`, không có `refund`, và **không có hàng `Job` nào** để chỉ vào:
+#
+#        ms:de4cc565…   1 credit   2026-08-24 22:28:06
+#        ms:84e9b141…   1 credit   2026-08-24 23:58:10
+#
+#    Số dư khách bị trừ vĩnh viễn. Không màn hình nào giải thích, và sổ này là
+#    **chỉ ghi thêm** nên nó không tự lành.
+#
+# ⛔ VÌ SAO NÓ LỌT: LƯỚI HOÀN TIỀN CHỈ CĂNG BÊN TRONG TIẾN TRÌNH
+#
+#    Job qua worker thì an toàn — `jobs.reclaim_orphans` luôn đẩy job tới trạng
+#    thái cuối, nên tiền luôn được kết sổ. Nhưng bốn đường giữ chỗ **trong một
+#    request** (`llm/thanh_toan`, hai chỗ ở `chataistudio/routes`, và
+#    `agent/budget`) không tạo hàng `Job` nào, nên **không có vòng quét nào
+#    nhìn thấy chúng**. Chúng chỉ dựa vào `try/except/finally` của chính tiến
+#    trình đó.
+#
+#    Và `setup/2-cai-dat.ps1` `Stop-Service -Force` chính tiến trình web trước
+#    mỗi lần chép đè. Python không chạy `finally` khi Windows kết liễu tiến
+#    trình. ⇒ **Deploy là hành động mở cửa sổ này**, đều đặn, rộng bằng đúng độ
+#    dài một luồng LLM (đã đo 119 giây).
+#
+# ⭐ NGUYÊN TẮC LẤY TỪ NGÀNH THANH TOÁN
+#
+#    Với thẻ, một khoản giữ chỗ (authorization hold) **luôn có tuổi thọ**:
+#    không capture thì nó tự hết hạn và tiền quay về khách. Khách không bao giờ
+#    bị giữ tiền vĩnh viễn. Sổ này vi phạm đúng điểm đó — giữ chỗ ở đây không
+#    có tuổi thọ nào cả.
+#
+#    Hàm dưới đây **chỉ ĐỌC**: nó trả lời "khoản nào đang treo", không tự hoàn.
+#    Tự hoàn là một quyết định tiền và nó thuộc về chủ sản phẩm (D-04/D-07).
+#    Treo được cái chuông trước đã — vì hai lần trước, chỉ một lần có người
+#    tình cờ nhìn thấy.
+
+#: Sau bao lâu thì một giữ chỗ chưa kết sổ được coi là TREO.
+#:
+#: Phải dài hơn **mọi việc hợp lệ còn đang chạy**, nếu không vòng quét sẽ báo
+#: động về chính công việc đang diễn ra bình thường: luồng LLM đo được 119 giây,
+#: job qua worker có trần thời gian riêng, và một `AgentRun` đã duyệt có thể
+#: chạy lâu hơn cả hai. 6 giờ là mức mà "vẫn còn ai đó đang xử lý" không còn là
+#: lời giải thích hợp lý, mà vẫn phát hiện được trong ngày.
+TREO_SAU = timedelta(hours=6)
+
+#: Trần số dòng trả về một lượt. Vòng bảo trì cần **biết có chuyện**, không cần
+#: tải cả sổ về: nếu treo tới mức chạm trần này thì con số chính xác không còn
+#: là thứ quyết định hành động nữa.
+TREO_TRAN = 200
+
+
+@dataclass(frozen=True)
+class GiuChoTreo:
+    """Một khoản giữ chỗ không ai còn kết sổ được.
+
+    `ly_do` phân biệt hai lớp **sửa khác nhau**, nên nó không phải nhãn trang trí:
+
+    - `khong_co_khoa`: `job_id` rỗng. Không ai còn kết sổ được **vì khoá kết sổ
+      không tồn tại** — `quyet_toan`/`hoan` đều tra theo `job_id`. Hỏng ngay từ
+      lúc sinh, không cần chờ hết hạn, và đây là lỗi của phía ghi bút toán.
+    - `khong_ai_ket_so`: có khoá, quá hạn, mà không hàng `Job` nào đang sống
+      mang khoá đó. Đây là ca của bốn đường giữ chỗ trong-request.
+    """
+
+    user_id: str
+    job_id: str
+    credit: int
+    tao_luc: datetime
+    ly_do: str
+
+
+def _aware(value: datetime | None) -> datetime | None:
+    """PostgreSQL trả datetime có múi giờ, SQLite trả naive. So sánh cần cùng loại."""
+    if value is None:
+        return None
+    return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+
+
+def giu_cho_treo(db: DbSession, *, treo_sau: timedelta = TREO_SAU,
+                 now: datetime | None = None, user_id: str = "",
+                 tran: int = TREO_TRAN) -> list[GiuChoTreo]:
+    """Những khoản giữ chỗ đã mất đường về. **Chỉ đọc, không sửa gì.**
+
+    Một khoản bị coi là treo khi cả ba điều đúng:
+
+    1. có bút toán `hold` cho `job_id` đó;
+    2. **không** có `settle` và **không** có `refund` nào cho cùng `job_id`;
+    3. và không còn ai có thể kết sổ nó — tức `job_id` rỗng (không có khoá), hoặc
+       đã quá `treo_sau` mà không hàng `Job` nào **đang sống** mang khoá đó.
+
+    ⛔ Điều kiện 3 là chỗ dễ viết sai nhất, và viết sai theo hướng **báo động
+       giả**: một job nằm trong hàng đợi 8 tiếng vì hàng đợi tắc thì tiền của nó
+       **không** treo — nó chỉ đang chờ, và `reclaim_orphans` mới là thứ canh
+       đường đó. Nên job còn `queued`/`running` phải bị loại ra.
+
+    ⭐ Ngược lại, một `AgentRun` kẹt ở `running` thì **được** báo, và đó là chủ
+       ý: không có vòng quét nào thu hồi `AgentRun` treo (đã kiểm 2026-08-26),
+       nên nó đúng là tiền không có đường về.
+    """
+    from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
+
+    moc = (now or datetime.now(timezone.utc)) - treo_sau
+
+    # Khoá nào đã kết sổ rồi thì không cần xét nữa. Một truy vấn, không N.
+    da_ket_so = select(CreditEntry.job_id).where(
+        CreditEntry.kind.in_((CREDIT_SETTLE, CREDIT_REFUND)))
+
+    cau = (select(CreditEntry.user_id, CreditEntry.job_id,
+                  func.sum(CreditEntry.delta).label("tong"),
+                  func.min(CreditEntry.created_at).label("tao_luc"))
+           .where(CreditEntry.kind == CREDIT_HOLD,
+                  CreditEntry.job_id.notin_(da_ket_so)))
+    if user_id:
+        cau = cau.where(CreditEntry.user_id == str(user_id))
+    hang = db.execute(
+        cau.group_by(CreditEntry.user_id, CreditEntry.job_id)
+           .order_by(func.min(CreditEntry.created_at))
+    ).all()
+
+    # Hỏi trạng thái job MỘT lần cho tất cả khoá, thay vì một truy vấn mỗi dòng:
+    # vòng bảo trì chạy trên cùng CSDL với đường phục vụ khách.
+    khoa = [r.job_id for r in hang if r.job_id]
+    con_song: set[str] = set()
+    if khoa:
+        con_song = {
+            row[0] for row in db.execute(
+                select(Job.id).where(Job.id.in_(khoa),
+                                     Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
+            ).all()
+        }
+
+    ra: list[GiuChoTreo] = []
+    for r in hang:
+        giu = -int(r.tong or 0)
+        if giu <= 0:                       # đã cân bằng bằng bút toán bù
+            continue
+        if not r.job_id:
+            ly_do = "khong_co_khoa"
+        else:
+            if r.job_id in con_song:
+                continue                   # có người đang xử lý — không phải treo
+            if (_aware(r.tao_luc) or moc) > moc:
+                continue                   # còn trong hạn, chưa kết luận được
+            ly_do = "khong_ai_ket_so"
+        ra.append(GiuChoTreo(user_id=r.user_id, job_id=r.job_id, credit=giu,
+                             tao_luc=_aware(r.tao_luc), ly_do=ly_do))
+        if len(ra) >= tran:
+            break
+    return ra
