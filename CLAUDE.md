@@ -121,7 +121,9 @@ Thêm **một thư mục** vào `apps/`. **Không sửa** `platform_core/` hay `
 Nếu thấy buộc phải sửa nền tảng thì **dừng lại và nói rõ vì sao** — đó là dấu
 hiệu hợp đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không đi vòng.
 
-Xem `docs/03_THEM_APP_MOI.md`. Copy `apps/demo/` làm khuôn.
+Xem `docs/03_THEM_APP_MOI.md` — khuôn đầy đủ nằm trong chính tài liệu đó.
+⚠️ **Không còn app mẫu để copy**: `apps/demo/` đã gỡ 2026-08-25 (Q109). App thật
+nhỏ gọn để tham khảo: `apps/anhnoibo/` (chỉ job) hoặc `apps/thumbnail/` (có route).
 
 ### Đặt file đúng chỗ ngay từ đầu
 
@@ -159,8 +161,8 @@ ngay khi file đổi chỗ, và hỏng lặng lẽ (trang vẫn trả 200, chỉ
 | Serve video lớn ngoài Cloudflare | hạn chế ToS | Phải chuyển sang R2 |
 
 **Việc dài hơn vài giây bắt buộc đi qua hàng đợi job**, không được làm đồng bộ
-trong một request. `apps/demo` chạy thẳng trong request chỉ vì nó mất vài
-mili-giây — **đừng lấy đó làm mẫu cho app thật**.
+trong một request. *(App cũ `apps/demo` chạy thẳng trong request được chỉ vì nó
+mất vài mili-giây; nó đã bị gỡ, và cách làm đó chưa bao giờ là mẫu cho app thật.)*
 
 Khi chạm trần: thêm backend R2 vào `platform_core/storage.py`, **không sửa app
 nào**.
@@ -178,8 +180,8 @@ nào**.
 | Cloudflare Tunnel LIVE + Turnstile + Resend | ✅ xong (H0.1) |
 | Cốt lõi vận hành: catalog công khai + SSO + launcher | ✅ xong (H6/H6.6) |
 | Tool thật đầu tiên — thumbnail (Gemini, tính credit) | ✅ xong (H5) |
-| App socialbot (FB+TikTok) | ⏸️ đóng băng — không phát triển thêm |
-| App demo | ✅ dùng để nghiệm thu, tốn 0 đồng |
+| App socialbot (FB+TikTok) | 🗑️ **ĐÃ GỠ HẲN 2026-08-25 (Q108, thay Q10)** — xoá `apps/socialbot/`, `core/` (15.046 dòng), `utils/`, `server/services/`, 7 module route (43 route = 62% bề mặt công khai cũ), 10 template, 44 tệp test (~1.017 test). Đo trước khi xoá: **0** job, **0** `app_access`, **0** `app_projects`, và **không có** `tokens.enc` — chưa khách nào từng kết nối. Mã còn trong lịch sử git. ⚠️ Đăng ký Meta App + TikTok app là tài sản **ngoài kho**, chủ sản phẩm quyết |
+| App demo · kichban · mediatools | 🗑️ **ĐÃ GỠ HẲN 2026-08-25 (Q109)** — danh mục app **19 → 14**. `demo` được thay bằng **app THỬ tổng hợp** trong `tests/conftest.py::app_thu` (sống trong bộ nhớ một test, không thư mục, không route, không lên catalog). ⚠️ Cái giá đã đo và chủ sản phẩm đã chấp nhận: **4–7 trong 10 workflow Agent đang lưu mất node** — 4 tool `asset.*` của `mediatools` là node **đầu vào** của workflow |
 | **Củng cố MVP (Hardening)** — Wave 0+1+2 | ✅ xong 2026-07-31 (H7) |
 | Bộ máy APIKEYS (provider + 4 category, mã hoá, allocator) — Pha 1 | ✅ xong 2026-07-31 (H8) |
 | APIKEYS Pha 2: telemetry rpm/tpm/token + cascade đa-provider + làm mới model | ✅ xong 2026-08-01 (H8) |
@@ -213,10 +215,10 @@ Cửa mở khách trả tiền giờ phụ thuộc **H9 (Thanh toán)**.
 chung về `platform_core`, và **cắt hết phụ thuộc của app vào `core/`**.
 
 Ba việc còn lại, **hai trong đó chờ chủ sản phẩm quyết**:
-- **H22.10** ✅ — 43 route bảng điều khiển FB/TikTok cũ nay nằm sau cờ
-  `LTT_SOCIALBOT_ROUTES`. **Mặc định BẬT** để không ai mất bảng điều khiển một
-  cách lặng lẽ. Đặt `LTT_SOCIALBOT_ROUTES=0` trong `secrets/app.env` khi đã xác
-  nhận không còn ai dùng → bề mặt route công khai giảm 62%.
+- **H22.10** ✅ → **VƯỢT QUA 2026-08-25**: 43 route đó không còn nằm sau cờ
+  nữa, chúng **đã bị xoá** cùng app socialbot (Q108). Cờ `LTT_SOCIALBOT_ROUTES`
+  không còn được đọc ở đâu; để lại trong `secrets/app.env` là một dòng vô nghĩa,
+  không phải một lỗi. Bề mặt route công khai giảm đúng 62% như đã dự tính.
 - **H22.11** ✅ — đã xoá 2 module `core/` không ai gọi (533 dòng). Ba file
   `__init__.py` giữ lại vì là dấu hiệu package.
 - **H22.12** ✅ — `platform_core` sạch hết chỗ nuốt lỗi; 90 chỗ còn lại trong mã

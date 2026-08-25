@@ -14,6 +14,391 @@
 
 ---
 
+## 2026-08-25 (khuya) — Gỡ nốt ba app: `kichban`, `mediatools`, `demo` (Q109)
+
+- **Hạng mục:** Q109 — đợt dọn app lỗi thời, phần hai
+- **Trạng thái:** mã xong, gate đầy đủ đang chạy; **CHƯA DEPLOY**
+
+### Đã làm
+
+Chủ sản phẩm đọc cảnh báo về workflow bị gãy và **vẫn quyết gỡ cả ba**. Ghi rõ
+điều đó ở đây vì nó là một quyết định có giá, không phải một lượt dọn dẹp.
+
+**Danh mục app: 19 → 14.**
+
+| App | Xoá gì |
+|---|---|
+| `kichban` | 728 dòng, 2 ToolSpec (`text.script`, `text.generate`), 3 tệp test |
+| `mediatools` | 453 dòng, **8 ToolSpec**, 1 tệp test |
+| `demo` | 224 dòng + `demo.html`, và **9 tệp test phải viết lại phần nền** |
+
+Kèm theo: 11 nhãn palette trong `apps/agent/routes/_shared.py`, phần giả lập
+`kichban` trong `tools/agent_browser_server.py`, và 6 dòng trong hai bảng phân
+loại app mà `test_190`/`test_212` đọc như dữ liệu.
+
+### 🔴 `demo` không phải một mặt hàng — nó là KHUÔN của bốn bộ test hạ tầng
+
+Đây là phần đáng đọc nhất của đợt này.
+
+`test_67` (hàng đợi) · `test_68` (sổ credit) · `test_151` (giữ chỗ GPU) ·
+`test_173` (vòng đời upload) đều nộp job bằng `app_slug="demo"`,
+`job_type="demo.reverse"`. Tức **hợp đồng của nền tảng đang dựa vào một mặt
+hàng**.
+
+⛔ Đó là một phụ thuộc ngược, và hậu quả rất cụ thể: muốn dẹp một app 60 dòng thì
+   phải viết lại phần nền của bốn bộ test. Đúng cái bẫy đã giữ `core/` sống thêm
+   ba tuần dưới Q10 — *"~700 test đang dựa vào nó"*.
+
+⭐ Cách sửa **không phải** trỏ test sang một app thật khác. Làm thế chỉ đổi chủ
+   nợ: app tiếp theo lại thành thứ không xoá được.
+
+Cách sửa là một **app THỬ tổng hợp** (`tests/conftest.py::app_thu`): sống trong
+bộ nhớ của đúng một test, không thư mục, không route, không lên catalog, không
+vào bản phát hành, không ai phải nhớ tắt ở production.
+
+**Và nó không cần sửa một dòng nào trong `platform_core/`** — vì
+`registry.discover` và `jobs.resolve_handler` đều được tra **tại thời điểm gọi**
+từ globals của module chúng, nên `monkeypatch` là đủ. Tôi có kiểm điều đó trước
+khi viết, không đoán: `_vram_can`, `_tran_thoi_gian` và `credit_for` đều
+`from platform_core.registry import discover` **bên trong hàm**.
+
+### 🔴 Một test xanh vì lý do SAI, lộ ra đúng lúc gỡ
+
+`test_67::test_chay_job_loi_thi_fail` khẳng định *"handler ném lỗi → job fail"*.
+Sau khi `demo` biến mất, nó **vẫn xanh** — nhưng vì `resolve_handler` ném
+*"không app nào nhận job_type"*, chứ không phải vì handler ném. Job vẫn thành
+`error`, khẳng định vẫn đúng, và thứ nó nói là đang đo thì không hề chạy.
+
+⇒ Đã buộc nó khai `app_thu` và ghi lý do vào docstring. **Một test xanh vì lý do
+sai tệ hơn một test đỏ** — test đỏ thì có người sửa.
+
+### 🔴 Và một phép kiểm tôi suýt viết sai theo đúng kiểu đó
+
+Hai test thanh điều hướng hai tầng dùng `socialbot` (8 trang con). Tôi chuyển
+sang `agent` (`/agent` + `/agent/canvas`) rồi khẳng định `"Canvas" not in body`.
+
+**Đỏ.** Vì `home.html` có một liên kết nhanh *"Agent Canvas"* viết cứng — chuỗi
+đó luôn có mặt, không liên quan gì tới thanh điều hướng.
+
+⇒ Sửa bằng cách **đo thứ quyết định thay vì đo HTML**: gọi thẳng `_nav_apps()`
+và khẳng định mỗi app đúng một dòng. Đây chính là luật mà phiên khu API rút ra
+cùng hôm: *đường dẫn bắt "xoá sót", hành vi bắt "cấu trúc đổi"* — và một phép
+kiểm khớp chuỗi trong HTML là loại mong manh nhất trong cả hai.
+
+### Quyết định mới
+
+**Q109** — tách khỏi Q108 có chủ ý, vì **lý do khác hẳn**. Socialbot gỡ được vì
+*không ai dùng* (0 job, 0 token). Ba app này **có dấu vết dùng thật**, và quyết
+định vẫn là gỡ — nên lý do phải đứng riêng, không núp bóng Q108.
+
+**Cái giá đã đo và đã chấp nhận** (hỏi CSDL production):
+
+```
+agent_workflows : 10 dong
+  text.script      3    text.generate  4    (kichban)
+  asset.image      1                        (mediatools)
+agent_runs      : 4 dong tham chieu text.script
+```
+
+⇒ **4–7 trong 10 workflow đang lưu mất node.** Bốn tool `asset.*` là node **đầu
+vào** của workflow — gỡ chúng là gỡ đường đưa tệp của khách vào một chuỗi Agent.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest --collect-only` | **4.093 test**, 0 lỗi import |
+| `test_67` · `test_68` · `test_151` | **PASS** sau khi nối vào `app_thu` |
+| `test_173` · `test_60` · `test_190` · `test_66` | **PASS** |
+| `test_88` (palette + hợp đồng ToolSpec) | **39 passed** |
+| `test_72` (vận hành, thanh điều hướng, dedupe) | **26 passed** |
+| `check_bien_dich` · `check_undefined_names` · `lint_app_contract` | PASS |
+| `sinh_golden_api` | không khác biệt |
+| `gate.py` đầy đủ | ⏳ **đang chạy** |
+
+**Bánh cóc hạ được nhờ đợt này** — cả ba đều theo hướng tốt:
+
+```
+chuoi chua boc _()      886 -> 816
+nuot loi lang le         79 ->  74
+so tep test trung so     23 ->  22   (don duoc so 130)
+```
+
+⚠️ `dich thieu ban EN` giữ nguyên **279**. Cố ý: hạ mốc đó phải bằng cách **dịch**,
+không bao giờ bằng cách **trích lại** — xem mục 2026-08-25 (tối), `msgmerge` tự
+đoán và sinh thêm 25 bản dịch sai.
+
+### Dọn thêm nhân tiện
+
+- `tools/system_profile_config.json` còn liệt kê `core` và `utils` trong
+  `source_roots` — vô hại (builder bỏ qua root thiếu) nhưng là một dòng cấu hình
+  nói về hai thư mục không tồn tại. Đã bỏ.
+- `tools/check_silent_except.py` in `"Nuot loi lang le (ngoai core/)"` **mỗi
+  lượt gate** — không sai, chỉ vô nghĩa, và loại đó khó thấy hơn loại sai. Đã bỏ
+  cả chú thích lẫn dòng in.
+
+### Cách lùi lại
+
+`git revert` commit này. Mã còn nguyên trong lịch sử. Điểm lùi cho trạng thái
+production trước cả hai đợt xoá vẫn là **`ec6a00c`**.
+
+### Còn tồn đọng
+
+- **Chưa deploy.** Production vẫn chạy bản có đủ 19 app.
+- **7 workflow Agent sẽ mất node ngay khi deploy.** Không có bước di trú nào —
+  chủ sản phẩm chấp nhận. Nếu sau này muốn đỡ, cách đúng là một thông báo trong
+  giao diện Canvas khi mở một workflow có node không còn tồn tại, chứ không phải
+  hồi sinh app.
+- **Ba bundle frontend vẫn stale** (`agent-canvas`, `prompt-ai-ommi`,
+  `autosub-studio`) — do phiên khác đổi `vite.config.ts`, đã xác nhận có chủ.
+  `tools/build_release.py` chưa dựng được gói phát hành cho tới khi chạy
+  `npm run build` cho cả ba **rồi** `python tools/build_system_profile.py`.
+- **14 ảnh PNG ở gốc kho đang được git theo dõi** — cần `git rm --cached`, là
+  tài sản của hai phiên khác, chờ chủ sản phẩm.
+- **Bẫy 7 và 8 chưa vào `BAY_TRONG_CONG_CHAT_LUONG.md`**: `__pycache__` mồ côi
+  hồi sinh một app đã xoá; và `_frontend_source_sha256` băm cả `tests/` nên đổi
+  một hằng số `timeout` làm gói phát hành thành stale với câu báo lỗi nêu tên
+  sai nghi phạm (*"built with the wrong Node"*).
+
+---
+
+## 2026-08-25 (tối) — Gỡ HẲN app socialbot: 22.000 dòng, và ba móc nối vào nền tảng
+
+- **Hạng mục:** Q108 (thay Q10) — dọn app lỗi thời
+- **Trạng thái:** mã xong, gate đang chạy; **CHƯA DEPLOY**
+
+### Đã làm
+
+Chủ sản phẩm giao dẹp bốn app lỗi thời; đây là app **thứ nhất**. Ba app còn lại
+(`kichban`, `demo`, `mediatools`) đã khảo sát nhưng **chưa động vào** — xem
+"Còn tồn đọng".
+
+**Đo trước khi xoá, không xoá theo cảm tính.** Hỏi thẳng CSDL production:
+
+```
+app_access socialbot : 0        jobs socialbot         : 0
+app_projects         : 0        data/tokens.enc        : KHONG TON TAI
+                                data/tiktok_tokens.enc : KHONG TON TAI
+```
+
+**Chưa một khách nào từng kết nối Facebook hay TikTok.** Xoá không mất dữ liệu
+của ai, và không có token nào phải thu hồi.
+
+**Đã xoá** — 22.000 dòng, 135 tệp:
+
+| Nhóm | Chỗ |
+|---|---|
+| App | `apps/socialbot/` |
+| Engine cũ | `core/` (15.046 dòng, gồm `facebook/` + `tiktok/`) |
+| Tiện ích | `utils/` (sheet_client, notifier, drive_downloader, logger, audit_logger) |
+| Tầng service | `server/services/` — cả 12 tệp, không sót tệp nào phục vụ phần sống |
+| Route web | 7 module = **43 route công khai** (62% bề mặt cũ) |
+| Template | 10 tệp, trong đó `dashboard.html` **không route nào render** — mã chết từ trước |
+| Test | **44 tệp, ~1.017 test** (21,5% bộ test) |
+| Khác | `worker_main.py`, `config.example.json`, 5 `scripts/_*`, `docs/tiktok-submission/` |
+
+### 🔴 Ba móc nối phải gỡ TRƯỚC, nếu không production sập
+
+Đây là phần đáng đọc nhất, vì cả ba đều **không hiện ra khi grep "socialbot"**.
+
+**① `/health/ready` phụ thuộc tệp cấu hình của socialbot.**
+`server/app.py` gọi `core.settings.load_settings()` → đọc `data/config.json` —
+mà tệp đó là **100% cấu hình socialbot** (Meta App ID, Sheet ID, tên cột, chống
+spam). Không đọc được → `core_settings=None` → `/health/ready` trả **503** →
+nssm khởi động lại dịch vụ liên tục.
+
+⭐ Nghĩa là suốt thời gian ấy, **một app đã đóng băng quyết định được nền tảng
+có sẵn sàng hay không**. Và sự cố BOM ghi ở `AGENTS.md` mục 5 (*"json.load() vỡ
+→ /health/ready trả 503 trong khi dịch vụ vẫn chạy bình thường"*) đi **đúng**
+đường này. Gỡ app cũng là gỡ luôn lớp lỗi đó.
+
+⚠️ Nhưng quy tắc không-BOM **vẫn nguyên**: `cloudflare/config.yml` và
+`secrets/app.env` vẫn phải ghi không BOM. Mất một đường dính lỗi, không mất quy tắc.
+
+Cách sửa: `platform_core/settings.py` mới, **chỉ** giữ `Environment` +
+`resolve_environment`. `load_settings`, `AppSettings`, `MissingConfigError`,
+`CONFIG_SCHEMA_VERSION` và cả `core.config_validator` đi theo app — nền tảng nay
+**không đọc tệp cấu hình nào** lúc khởi động.
+
+**② Trang chủ chạy `doctor.run()` mỗi lượt tải.**
+`tools/doctor.py` có sáu mục kiểm, **năm** thuộc socialbot. Và
+`manifest.blocker_titles` — cơ chế gắn huy hiệu "cần thiết lập" lên thẻ app —
+**chỉ socialbot khai**. Nên vòng lặp đó đã luôn cho ra `{}` trong khi vẫn bắt
+mỗi người dùng đã đăng nhập trả giá một lượt chạy doctor mỗi lượt tải trang chủ.
+
+**③ `tests/conftest.py` có ba fixture `autouse`.**
+Chúng chạy trước và sau **mọi** test trong kho, kể cả test VPS, Public API và
+GPU. Cả ba tồn tại vì engine đăng bài giữ trạng thái toàn cục. Hơn 3.700 test
+không liên quan gì tới Facebook đều phải mở một kết nối SQLite và chạy một lệnh
+`DELETE` để dọn hộ một engine chúng không dùng.
+
+⭐ Bài học chung: **một fixture `autouse` là khoản thuế thu trên toàn bộ, và nó
+không hiện ra ở đâu cả.**
+
+### 🔴 Hai thứ tôi định làm mà số đo bác lại
+
+**① Trích lại `.po` để bỏ chuỗi socialbot — LÀM HỎNG HƠN LÀ DỌN.**
+Chạy `python tools/i18n.py trich` xong: mục 2.353 → 2.344 (chỉ bớt 9), nhưng
+`fuzzy` **76 → 101**. `msgmerge` tự **đoán** bản dịch cho msgid mới bằng cách
+khớp gần đúng với msgid vừa xoá — tức nó **sinh thêm 25 bản dịch sai** đang nằm
+chờ. `check_dich_thieu` chuyển sang FAIL, đúng như nó phải thế.
+
+⇒ Đã lùi `.po`/`.mo`/`.pot`. Chuỗi socialbot còn nằm trong catalog là **vô hại**
+(msgid không ai dùng thì không tốn gì lúc chạy); 25 mục fuzzy mới thì không.
+
+**② `/status` — tôi suýt kết luận "doctor nền tảng bị teo".**
+Sự thật: **chưa bao giờ có doctor của nền tảng.** Không mục nào từng kiểm CSDL,
+kho R2, worker hay Tunnel. Chỗ trống đó có sẵn từ trước, nay chỉ nhìn thấy được.
+Đã ghi thẳng vào docstring `tools/doctor.py` để phiên sau không lấp nó cho đầy
+rồi tưởng đã sửa được gì.
+
+### 🔴 "App ma" — `__pycache__` mồ côi làm gate đỏ
+
+Sau một lượt `git stash` / `stash pop` (dùng để chứng minh hai lỗi `test_44` có
+sẵn từ trước), Python đã kịp import và ghi lại `apps/socialbot/__pycache__/`.
+`.py` biến mất, `.pyc` ở lại — và `lint_app_contract` báo
+`[ERROR] socialbot: thieu manifest.py` cho một thư mục **rỗng**.
+
+⇒ Xoá một package thì phải xoá cả `__pycache__`, nếu không nó hồi sinh thành một
+app không có mã. Quét toàn kho tìm `__pycache__` mồ côi: có hai (`core/`,
+`scripts/`), đã dọn.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest --collect-only` | **4.222 test**, 0 lỗi import |
+| `pytest` cụm nền tảng (35/37/43/60/62/63/66/145) | PASS sau khi sửa 3 test khoá hành vi cũ |
+| `pytest` cụm hợp đồng (190/212/88/147/60) | **189 passed** |
+| `pytest` cụm bộ cài (61/44/45/46) | PASS trừ 2 lỗi **có sẵn từ trước** |
+| Smoke `TestClient` | `/health/ready` **200** (trước là 503); `/`, `/login`, `/register`, `/gia-api`, `/huong-dan` đều 200 |
+
+⚠️ **Hai lỗi `test_44_release_build` KHÔNG phải do đợt này.** Chứng minh bằng
+`git stash`: chúng đỏ y hệt ở commit điểm lùi `ec6a00c`. Nguyên nhân là bundle
+`frontend/agent-canvas` cũ so với `vite.config.ts` mà phiên khác vừa đổi —
+**`tools/build_release.py` hiện không dựng được gói phát hành.** Deploy không bị
+chặn (`setup/2-cai-dat.ps1` dùng robocopy, không dùng build_release).
+
+### Quyết định mới
+
+**Q108 (thay Q10)** — gỡ hẳn thay vì đóng băng. Lý do đầy đủ ở bảng quyết định;
+phần cốt lõi: *đóng băng không phải trạng thái nghỉ, nó là chi phí đang chạy*, và
+lý do gốc của Q10 (~700 test dựa vào `core/`) **đã hết hiệu lực từ H22** —
+`platform_core/` và 18 app còn lại import `core/` đúng **0 lần**.
+
+### Cách lùi lại
+
+`git revert` commit này. Mã còn nguyên trong lịch sử. Điểm lùi cho trạng thái
+production trước đợt xoá là **`ec6a00c`**.
+
+### Còn tồn đọng
+
+- **Chưa deploy.** Chủ sản phẩm quyết thời điểm.
+- **Ba app còn lại trong danh sách.** Khảo sát xong, chưa động:
+  - `mediatools` — sạch nhất về mã (5 tệp test, 0 app nào import), **nhưng** 8
+    ToolSpec của nó nối vào palette Agent Canvas (`asset.image`, `asset.video`…
+    là các node **đầu vào** của workflow), và **1 trong 10 workflow đang lưu**
+    dùng `asset.image`.
+  - `kichban` — chỉ chú thích + 5 tệp test, nhưng **3 workflow** dùng
+    `text.script` và **4** dùng `text.generate`; **4 `agent_runs`** cũng vậy.
+  - `demo` — khó nhất: nó là app cố định mà `test_67` (hàng đợi), `test_68`
+    (credit), `test_151` (GPU), `test_173` (upload) dùng làm khuôn. Xoá là phải
+    viết lại phần nền của bốn bộ đó.
+
+  ⇒ **Cần chủ sản phẩm xác nhận** có chấp nhận 4–7 trong 10 workflow đang lưu bị
+  gãy node hay không, trước khi gỡ `kichban`/`mediatools`.
+- **Dữ liệu trong `data/`** (`config.json`, `content_history.db`,
+  `audit_log.jsonl`, `session_locks/`) chưa xoá — không tiến trình nào còn mở
+  chúng, nhưng xoá tệp trên máy đang chạy thật là hành động **không đảo được**,
+  tách khỏi việc gỡ mã.
+- **Đăng ký Meta App + TikTok app** là tài sản ngoài kho. Nếu không dùng nữa thì
+  nên gỡ ứng dụng bên Meta/TikTok — mã đã đi, nhưng đăng ký thì không tự mất.
+- **Gate đầy đủ** (có `pytest`) chưa chạy xong.
+
+---
+
+## 2026-08-25 — Dựng lại giao diện cổng lập trình viên (`/developers`)
+
+- **Hạng mục:** H35 Public API — lớp giao diện; đã DEPLOY
+- **Trạng thái:** xong, `EXITCODE=0` lúc 19:58:42
+
+**Chủ sản phẩm nêu:** *"quá nhiều tab dư thừa… giao diện hiển thị vẫn quá basic"*,
+tham chiếu `plenxai.com/developer` và `api.nghimmo.com/huongdan`.
+
+**Chẩn đoán:** 16 tab phẳng trên một dải cuộn ngang, trộn **ba nghề** vào cùng
+một hàng ngang cấp — cắm vào công cụ / tra cứu API / xem tài khoản. Ba nghề đó
+khách làm ở ba thời điểm khác nhau.
+
+| Đổi gì | Trước | Sau |
+|---|---|---|
+| Điều hướng | 16 mục phẳng | 10 mục, 3 nhóm, thanh bên |
+| Trang cắm | 5 bề mặt xếp chồng, 133 dòng | 1 ô chọn → 1 địa chỉ + 1 tên model |
+| Danh mục công cụ | bảng phẳng, phải mở trang khác | thẻ gập 41px → 1181px, bảng tham số sinh từ `input_schema` |
+| Công cụ `.exe` | không trang nào trong `/developers` trỏ tới | trên cùng `/developers/cli`, kèm SHA-256 |
+
+⛔ Sáu mục hạ khỏi điều hướng (`projects`, `playground`, `jobs`, `quickstart`,
+`privacy`, `notifications`) **vẫn còn nguyên route** — một URL đã vào dấu trang
+thì 404 là thiệt hại thật, rời khỏi thanh điều hướng thì không. `test_303` chốt
+cả hai chiều.
+
+**Bốn lỗi thật do chốt mới bắt được, không phải test cũ:**
+
+1. **Khu VS Code khai một địa chỉ nhưng chứa hai.** Nó phục vụ Claude Code
+   (`/api`) và Codex (`/api/v1`); bảng Kết nối nói đúng một nửa khu. ⇒ Đã gỡ
+   bẫy ở cấp *"năm bề mặt xếp chồng"* rồi **dựng lại chính nó** ở cấp *"một bề
+   mặt, hai công cụ"*.
+2. **Nhãn chế độ chạy không lên màu** — template sinh `che-do-async_job`, CSS
+   viết `.che-do-async`. Đọc HTML không thấy, đọc CSS không thấy; chỉ đo
+   `getComputedStyle` trên trang render mới lộ. Chốt viết để chặn lại bắt tiếp
+   hai chế độ chưa ai biết (`BATCH`, `NOT_PUBLIC`).
+3. **190 chuỗi khu API chưa dịch** — bản EN đang hiện tiếng Việt, 67 chuỗi nằm
+   đúng ở trang người **chưa có tài khoản** đọc.
+4. **`vps_terms` trỏ tới một trang 404 thật** → chặn deploy đến khi sửa xong.
+
+**🔴 Bài học lớn nhất, lặp năm lần trong một buổi:**
+
+> **Phạm vi của phép đo được định nghĩa bằng một thứ không phải là thứ cần đo.**
+
+Lần lượt: tệp *của ai* → tên thư mục (`dev_*`) → *ai include tệp này* → *có
+chuyển hướng không* → *`.po` nhìn thấy gì*. **Bốn trong năm lần vùng mù rơi
+đúng vào trang thương mại** — vì trang thương mại được viết sớm nhất và đặt tên
+theo hệ khác, còn phép đo luôn viết sau và bám vào hệ tên lúc nó ra đời.
+
+⇒ Chữa: `test_299` nay **liệt kê trang từ bảng định tuyến**, gọi thẳng `/en/…`
+(đo thật: tiền tố thắng cả header), phân loại công khai bằng **đích đến cuối**,
+và **khẳng định số trang đo được** thay vì để `skip` đọc như xanh.
+
+**⚠️ Nghịch đảo ở cuối: chính thước đo hỏng.** Đo màu nút trên production ra kết
+quả **vô lý về logic** — hai phần tử cùng class, không hover/focus, không quy
+tắc nào khớp riêng, mà khác màu. Khung trình duyệt không dựng khung hình nên
+`getComputedStyle` trả **ảnh chụp style đóng băng từ lúc tải**; `classList` thì
+sống. Tải lại thật sự → đúng ngay. **Suýt báo một lỗi production không tồn tại.**
+⇒ Khi trình duyệt cho kết quả vô lý về logic, nghi máy đo trước khi nghi mã.
+
+**Ba lỗi tự gây, ghi để không lặp:**
+
+- `\b` viết qua heredoc thành ký tự **backspace `\x08` thật** — vô hình trong
+  `grep`, regex im lặng không khớp. Mắc **ngay khi đang viết tài liệu về nó**.
+  Soi bằng `repr(compiled.pattern)`; dùng công cụ ghi tệp, đừng heredoc.
+- **Nối msgid vào cuối `.po` khi nó đã có ở trên với `msgstr ""`** → `msgfmt`
+  lấy bản **đầu** (rỗng). `.po` nhìn như đã dịch, trang vẫn tiếng Việt, triệu
+  chứng y hệt "chưa dịch". ⇒ Tìm entry có sẵn rồi điền, đừng nối thêm; kiểm
+  bằng `gettext()`, đừng đọc `.po`.
+- **33 tệp đổi LF → CRLF** vì `p.write_text(s, encoding="utf-8")` thiếu
+  `newline="\n"`. Không đổi hành vi, nhưng làm diff không đọc được đúng lúc ba
+  phiên cần đọc nhau. Đã trả về LF (chỉ tệp mà HEAD vốn LF — kho này trộn cả hai).
+
+**Bộ test không chạy trọn được.** Bốn lượt đều bị cắt (2 lượt một-lệnh chết ở
+34% sau >2 giờ; 4 cụm song song timeout). Và có lý do sâu hơn "chậm": trên cây
+hai phiên cùng sửa, **một phép đo 4 giờ trả lời về một cây không còn tồn tại** —
+`test_177` đỏ trong cụm rồi xanh trên cây hiện tại, đúng vì vậy. Không đưa con
+số từ lượt chạy dở.
+
+**Tài liệu:** `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §7b, §7b-bis,
+§7c, §7d + bảng kiểm 15 chốt. `CHANGELOG.md` có mục ADDED cho cả ba việc.
+
+---
+
 ## 2026-08-25 — Sáu cái bẫy nằm trong **chính cổng chất lượng**
 
 - **Hạng mục:** hạ tầng kiểm thử (không thuộc H nào) — hoàn thành

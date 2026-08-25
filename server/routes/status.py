@@ -11,8 +11,8 @@ Two pages live here, and the difference between them is the point:
 A page that mixed them would either be useless to a customer or dangerous to
 publish (EXT-17).
 
-Reuses tools/doctor.py rather than reimplementing the checks, so the CLI
-and the dashboard can never disagree about whether the bot can publish.
+Reuses tools/doctor.py rather than reimplementing the checks, so the CLI and
+the browser can never disagree.
 """
 from __future__ import annotations
 
@@ -60,22 +60,33 @@ def public_api_status(request: Request, db: Session = Depends(get_db)):
 @router.get("/status", response_class=HTMLResponse)
 def status_page(
     request: Request,
-    check_sheet: str = "",
     user: str = Depends(require_operator),
 ):
+    """Báo cáo cho người vận hành.
+
+    ⚠️ Từ 2026-08-25 trang này **mỏng đi rõ rệt**, và cần đọc đúng lý do.
+       `tools/doctor.py` từng có sáu mục kiểm; năm mục thuộc app socialbot
+       (cấu hình, token FB/TikTok, worker, service account, Google Sheet) và
+       đã bị gỡ cùng app đó. Còn lại: hồ sơ môi trường + tóm tắt Nexus.
+
+    ⛔ Đừng đọc thành *"doctor của nền tảng bị teo"*. **Chưa bao giờ có doctor
+       của nền tảng** — không mục nào từng kiểm CSDL, kho R2, worker hay
+       Tunnel. Thứ trống ở đây là một chỗ trống đã tồn tại sẵn, nay nhìn thấy
+       được. Lấp nó là một việc phải làm có chủ ý.
+
+    Tham số `check_sheet` đã bỏ: nó chỉ bật mục kiểm Google Sheet, mà mục đó
+    không còn.
+    """
     from tools import doctor
 
-    # Sheet checks hit the Google API, so they are opt-in per request
-    # rather than running on every page view.
-    want_sheet = check_sheet == "1"
-    report = doctor.run(check_sheet_flag=want_sheet)
+    report = doctor.run()
 
     return templates.TemplateResponse(request, "status.html", {
         "user": user,
         "nav": "status",
         "sections": report.sections,
         "blockers": [s for s in report.sections if s["status"] == doctor.BLOCK],
-        "checked_sheet": want_sheet,
+        "checked_sheet": False,
         "nexus": _tom_tat_nexus(),
     })
 

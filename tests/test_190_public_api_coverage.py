@@ -79,11 +79,7 @@ DISPOSITION = {
     # the relay decision and the AGPL legal review (Q93, docs/nexus/).
     "nexus": (DEFER, ()),
 
-    "mediatools": (INTERNAL_ONLY, ()),
     "qualitylab": (INTERNAL_ONLY, ()),
-    "demo": (INTERNAL_ONLY, ()),
-    "socialbot": (INTERNAL_ONLY, ()),
-    "kichban": (RETIRED_NO_EXPOSE, ()),
 }
 
 
@@ -118,7 +114,7 @@ def test_each_app_publishes_exactly_what_its_disposition_says(slug):
 
 def test_closed_apps_are_closed_by_construction_not_only_by_flag():
     """Belt and braces: the catalog gate refuses them even if a flag flipped."""
-    for slug in ("demo", "qualitylab", "mediatools", "kichban", "socialbot"):
+    for slug in ("qualitylab",):
         item = _apps()[slug]
         assert app_may_be_public(item.manifest, error=item.error) is False, slug
 
@@ -144,14 +140,22 @@ def test_a_migrate_decision_names_the_blocker_in_the_document():
                    for line in text.splitlines()), slug
 
 
-def test_the_frozen_app_is_still_frozen():
-    """Q10/Q78: socialbot is maintenance, browser-driven and OAuth-bearing."""
-    manifest = _apps()["socialbot"].manifest
-    assert manifest.lifecycle == "maintenance"
-    assert manifest.public is False
-    assert "browser" in manifest.requires
-    # It has no job types and no price, so it could not be charged for anyway.
-    assert manifest.job_types == () and manifest.credit_cost is None
+def test_the_removed_apps_stay_removed():
+    """Bon app da bi go han khoi kho ma 2026-08-25: socialbot (Q108), roi
+    kichban, mediatools, demo.
+
+    Phep kiem cu o day chot rang app do van "dong bang dung cach". Dong bang
+    khong con la mot trang thai cua he thong nay — app da di, cung voi `core/`,
+    `utils/`, `server/services/` va 43 route cong khai cua no.
+
+    Giu mot phep kiem o day chu khong xoa han: bang `DISPOSITION` phia tren la
+    hop dong hai chieu voi registry, nen mot ngay ai do dua app tro lai ma quen
+    phan loai no thi `test_every_app_in_the_registry_has_a_decision` se do —
+    nhung no se do voi mot thong bao kho hieu. Dong nay noi thang ly do.
+    """
+    for da_go in ("socialbot", "kichban", "mediatools", "demo"):
+        assert da_go not in _apps(), da_go
+        assert da_go not in DISPOSITION, da_go
 
 
 def test_the_chat_app_still_has_no_job_contract():

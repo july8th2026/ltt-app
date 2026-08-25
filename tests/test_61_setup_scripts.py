@@ -105,10 +105,15 @@ def test_install_sets_app_directory():
 
 
 def test_install_never_overwrites_real_config_or_secrets():
-    """Chạy lại script cài mà xoá mất cấu hình thật hoặc khoá mã hoá token là
-    mất dữ liệu không khôi phục được."""
+    """Chạy lại script cài mà xoá mất bí mật đang dùng là mất dữ liệu không
+    khôi phục được.
+
+    Vế `data/config.json` bỏ đi 2026-08-25 (Q108): tệp đó là cấu hình của app
+    socialbot, và bộ cài không còn tạo hay đụng tới nó. Vế `secrets/app.env`
+    thì giữ nguyên — đó mới là chỗ chứa khoá phiên và khoá mã hoá token, và
+    ghi đè nó là **mất vĩnh viễn** mọi token đã lưu của khách.
+    """
     text = (SETUP / "2-cai-dat.ps1").read_text(encoding="ascii")
-    assert "if (Test-Path $cfg)" in text
     assert "if (Test-Path $envFile)" in text
 
 

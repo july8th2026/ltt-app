@@ -1654,11 +1654,15 @@ mobile. Chín hạng mục ưu tiên ở `03_SCORECARD.md` §5.
 - [x] H22.9 Presign R2 không nuốt lỗi thật — 2026-08-06 (`9f40b18`): thêm
   `Storage.try_url_for()` / `try_put_url()`, chuyển 15 chỗ gọi. Vẫn degrade
   nhưng **ghi log** để sự cố R2 nhìn thấy được.
-- [x] H22.10 ✅ ĐÓNG 2026-08-06 (`352ad67`) — 43 route vào cờ `LTT_SOCIALBOT_ROUTES`,
-  **mặc định BẬT**. Chủ sản phẩm đặt `=0` khi xác nhận không còn ai dùng. Gốc:
-  ~~đưa 43 route FB/TikTok cũ vào cờ~~
-  bật/tắt (`LTT_SOCIALBOT_ROUTES`), mặc định TẮT ở production. Chưa làm vì tắt
-  nghĩa là bảng điều khiển cũ biến mất khỏi web; cần biết có ai còn dùng không.
+- [x] H22.10 ✅ ĐÓNG 2026-08-06 (`352ad67`) → **VƯỢT QUA 2026-08-25 (Q108)** — 43
+  route đó **đã bị xoá**, không còn nằm sau cờ nữa. Cờ `LTT_SOCIALBOT_ROUTES`
+  không còn được đọc ở đâu.
+  Gốc: ~~43 route vào cờ `LTT_SOCIALBOT_ROUTES`, mặc định BẬT; chủ sản phẩm đặt
+  `=0` khi xác nhận không còn ai dùng~~ — câu hỏi *"có ai còn dùng không"* nay
+  đã có số đo, và câu trả lời là **không ai**: CSDL production có 0 job, 0
+  `app_access`, 0 `app_projects` mang slug socialbot, và hai kho token
+  `tokens.enc`/`tiktok_tokens.enc` **chưa bao giờ được tạo**. Cờ tồn tại để
+  hoãn một quyết định thiếu dữ liệu; có dữ liệu rồi thì quyết định được.
 - [x] H22.11 ✅ ĐÓNG 2026-08-06 (`59846bf`) — xoá **2 module / 533 dòng**, không
   phải 5/535: ba file `__init__.py` là dấu hiệu package, xoá là gãy
   `core.facebook.commenter` đang chạy. Gốc: ~~chưa làm vì xoá~~
@@ -3370,3 +3374,57 @@ Hiệu quả đo được ngay: trước V14 node bán được **0 máy** (đĩ
 
 *(Việc kiểm router VNPT forward dải cổng — **hết là vấn đề** từ Q104: đường về nhà là
 WireGuard do phía nhà chủ động gọi ra, không cần mở cổng nào trên router.)*
+
+---
+
+## H40 — Dẹp app lỗi thời: gỡ HẲN 4 app khỏi kho mã
+
+**Chốt 2026-08-25** theo yêu cầu chủ sản phẩm. Quyết định nền: **Q108** (socialbot,
+thay Q10) và **Q109** (kichban · mediatools · demo).
+
+- [x] **H40.1 — `socialbot`** ✅ **XONG 2026-08-25.** Xoá `apps/socialbot/`,
+      `core/` (15.046 dòng), `utils/`, `server/services/` (12 tệp), 7 module route
+      = **43 route công khai (62% bề mặt cũ)**, 10 template, **44 tệp test
+      (~1.017 test)**, `worker_main.py`, `config.example.json`,
+      `docs/tiktok-submission/`.
+      *Đo trước khi xoá:* CSDL production có **0** job, **0** `app_access`, **0**
+      `app_projects` mang slug đó, và hai kho token `tokens.enc`/`tiktok_tokens.enc`
+      **chưa bao giờ được tạo** — chưa khách nào từng kết nối.
+
+- [x] **H40.2 — ba móc nối của nền tảng vào `core/`** ✅ **XONG 2026-08-25.**
+      Không cái nào hiện ra khi grep "socialbot":
+      ① `/health/ready` trả 503 khi không đọc được `data/config.json` — tệp cấu
+      hình **của socialbot** → nay nền tảng không đọc tệp cấu hình nào lúc khởi
+      động (`platform_core/settings.py` mới, chỉ giữ `Environment`);
+      ② trang chủ chạy `doctor.run()` mỗi lượt tải để tính một huy hiệu mà **chỉ
+      socialbot khai** (`blocker_titles`);
+      ③ `tests/conftest.py` có **ba fixture `autouse`** bắt MỌI test trong kho trả
+      thuế dọn hộ một engine chúng không dùng.
+
+- [x] **H40.3 — `kichban` · `mediatools` · `demo`** ✅ **XONG 2026-08-25.**
+      1.405 dòng, **11 ToolSpec**, 4 tệp test, 11 nhãn palette Agent Canvas.
+      ⚠️ **Cái giá đã đo và chủ sản phẩm đã chấp nhận:** **7/10 workflow Agent đang
+      lưu mất node** (3 `text.script`, 4 `text.generate`, 1 `asset.image`) + **4
+      `agent_runs`**. Bốn tool `asset.*` là node **đầu vào** của workflow.
+      `apps/demo` — khuôn của bốn bộ test hạ tầng — thay bằng **app THỬ tổng hợp**
+      ở `tests/conftest.py::app_thu`, sống trong bộ nhớ một test.
+
+- [x] **H40.4 — audit dọn sạch** ✅ **XONG 2026-08-25.** Tìm ra và đã xử lý ba nhóm
+      sót: ① `tools/demo_fb`, `tools/demo_v2`, `scripts/` — đồ dựng video nộp hồ sơ
+      TikTok/FB (2.456 dòng + 3,3 MB media, gitignore nên **xoá không đảo được**);
+      ② **10 chỗ tài liệu** chỉ vào `apps/demo/` như một khuôn còn tồn tại —
+      nghiêm trọng nhất là `CLAUDE.md` và `docs/03_THEM_APP_MOI.md` dặn *"copy
+      `apps/demo/`"*; ③ **105 mục `.po`** chỉ còn trỏ tới tệp đã xoá — **cố ý giữ**,
+      vì trích lại làm `msgmerge` sinh thêm **25 bản dịch sai**.
+      *Bằng chứng:* gõ thật vào **21 URL** của app đã gỡ → 404 cả 21; **12 URL** còn
+      sống → 200/303. Không đếm đối tượng route: bản Starlette này để lại
+      `_IncludedRouter` không mở ra được.
+
+**Kết quả:** danh mục app **19 → 14**; bộ test **4.727 → 4.093**; bánh cóc hạ được
+ba mốc (chuỗi chưa bọc `_()` 1.413→816, nuốt lỗi lặng lẽ 90→74, test trùng số 24→22).
+
+- [ ] **H40.5 — deploy** ⏳ chờ chủ sản phẩm. Production vẫn chạy bản đủ 19 app.
+      Điểm lùi trước cả đợt: **`ec6a00c`**.
+- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b của dự án đòi
+      kiểm trên **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau**
+      H40.5, không phải trước.

@@ -28,13 +28,9 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 | `taoclipngan` | **MIGRATE_CAPABILITY_THEN_EXPOSE** | — | Cùng nguyên nhân: giá theo `duration_s` + nâng hold; thêm GPU. |
 | `chataistudio` | **DEFER** | — | **Không có Job**: credit giữ theo id tin nhắn, chạy streaming qua sidecar. Toàn bộ hợp đồng job/quote/settle không áp dụng được. Mở cần thiết kế async riêng + quyết định ToS về sidecar. |
 | `agent` | **DEFER** | — | Là **runtime điều phối**, không phải một tool: public nó là public cả một cơ chế chạy. Cần ranh giới chi phí/sandbox riêng trước khi bàn. |
-| `mediatools` | **INTERNAL_ONLY** | — | `surface=runtime` (Q72). Có `video.social_import` nhận URL từ người gọi → SSRF nếu public. |
 | `qualitylab` | **INTERNAL_ONLY** | — | `surface=admin`, operator-only (Q83). |
-| `demo` | **INTERNAL_ONLY** | — | App thử hạ tầng, khách phải nhận 404 (Q71). |
-| `socialbot` | **INTERNAL_ONLY** | — | Đóng băng (Q10/Q78), cần browser + OAuth, không job_types, không giá. Mở cần threat model riêng cho tự động hoá credential. |
 | `nexus` | **DEFER** | — | **Quản lý thiết bị, không phải một tool có giá.** Không có `ToolSpec` và không sinh Job, nên toàn bộ hợp đồng quote/settle không áp được. Public nó nghĩa là công bố một hợp đồng về **danh tính thiết bị** — phải chờ quyết định hạ tầng relay (D2) và legal review ranh giới AGPL. Q93, xem `docs/nexus/`. |
 | `vps` | **DEFER** | — | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần — quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có `ToolSpec`), không phải một quyết định sản phẩm; chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
-| `kichban` | **RETIRED_NO_EXPOSE** | — | Retired (Q69). Có ToolSpec `text.generate` với `customer_visible=True` — đó là cờ palette của Agent, **không phải** cờ public. Muốn năng lực sinh text thì migrate sang app được hỗ trợ, không hồi sinh app cũ. |
 
 > ⚠️ **`apps/vps` chưa có trong bảng này — CÓ CHỦ ĐÍCH, không phải bỏ sót.**
 > App đó **đang được xây dở ở một dự án/phiên khác** nên cố ý chưa commit (chủ
@@ -55,8 +51,7 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 | `text.prompt_package` | prompt_ai_ommi | theo `scene_count` | ẩn `operation`/`model`/`resources` |
 | `story.storyboard` | prompt_ai_ommi | theo `scene_count` | như trên |
 
-16 ToolSpec còn lại **không** public: 9 của `mediatools` (internal), 2 của
-`kichban` (retired), `video.generate`, `video.upscale`, `video.subtitle`,
+5 ToolSpec còn lại **không** public: `video.generate`, `video.upscale`, `video.subtitle`,
 `video.short_clips` (chờ migrate), `image.batch_generate` (trùng năng lực với
 `image.generate`, `count` đã làm được).
 
@@ -100,7 +95,7 @@ không cần thiết cho V1.
 
 ## 5. Vẫn đúng sau 3 wave
 
-- `customer_visible=True` **không** làm một tool public — `kichban` là bằng chứng
+- `customer_visible=True` **không** làm một tool public — `kichban` (đã gỡ 2026-08-25) từng là bằng chứng
   sống, và có test.
 - App `retired/internal/maintenance` hoặc `surface` `admin/runtime` **không bao
   giờ** public: chặn ở `catalog.app_may_be_public()`, không phụ thuộc cờ trong

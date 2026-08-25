@@ -12,7 +12,6 @@ Nền tảng nhiều app tự động hoá, mỗi app một đường dẫn dư�
 | App | Đường dẫn | Trạng thái |
 |---|---|---|
 | Đăng bài Facebook + TikTok | `/facebook`, `/sheet/...`, `/manual/...` | chạy production |
-| Demo — nghiệm thu hạ tầng | `/demo` | dùng để kiểm tra, tốn 0 đồng |
 
 ## Thêm app mới
 

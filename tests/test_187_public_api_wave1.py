@@ -6,7 +6,7 @@ a fixture, so the tests ask three things:
 * does the whole chain work — catalog → quote → job → **the app's own handler in
   the worker** → artifact → settle → usage → webhook;
 * does the API charge exactly what the UI charges for the same operation;
-* did anything that must stay closed (demo, kichban, unexposed tools) open.
+* did anything that must stay closed (internal apps, unexposed tools) open.
 
 The provider call is stubbed. A real canary belongs on a deployment with keys
 and a budget, not in a test suite that must be free and offline.
@@ -60,25 +60,27 @@ def test_the_wave_one_tools_are_exposed():
 
 
 def test_the_retired_and_internal_apps_stayed_closed():
-    """The three traps Prompt 01 called out, checked against the live registry."""
+    """The traps Prompt 01 called out, checked against the live registry.
+
+    Three of the four apps this test used to name — `kichban` (retired),
+    `demo` (infrastructure canary) and `mediatools` (runtime-only, and the one
+    that fetches a caller-supplied URL) — were deleted on 2026-08-25 under Q108
+    and Q109. Deletion closes them harder than any flag could, so the check that
+    remains is the one still capable of failing: an internal app must never
+    acquire `api_exposed` by accident.
+    """
     by_slug = {item.manifest.slug: item for item in discover()}
 
-    # `kichban` is retired and still declares a customer-visible ToolSpec; that
-    # flag is for the Agent palette, and it must not have leaked into the API.
-    kichban = by_slug["kichban"].manifest
-    assert kichban.lifecycle == "retired"
-    assert not any(tool.api_exposed for tool in kichban.tools)
+    # Operator tooling stays off the customer surface.
+    manifest = by_slug["qualitylab"].manifest
+    assert manifest.surface == "admin" and manifest.lifecycle == "internal"
+    assert not any(tool.api_exposed for tool in manifest.tools)
 
-    # Infrastructure canary and operator tooling stay off the customer surface.
-    for slug in ("demo", "qualitylab"):
-        manifest = by_slug[slug].manifest
-        assert manifest.surface == "admin" and manifest.lifecycle == "internal"
-        assert not any(tool.api_exposed for tool in manifest.tools)
-
-    # Runtime-only capability (including the URL-fetching one) is not public.
-    mediatools = by_slug["mediatools"].manifest
-    assert mediatools.surface == "runtime"
-    assert not any(tool.api_exposed for tool in mediatools.tools)
+    # And nothing that is not a customer surface may publish a tool at all.
+    for item in discover():
+        if item.manifest.surface == "customer":
+            continue
+        assert not any(tool.api_exposed for tool in item.manifest.tools),             item.manifest.slug
 
 
 def test_the_published_contract_matches_the_golden_snapshot():

@@ -5,7 +5,7 @@ Trọng tâm: chặn ở **tầng route**, không chỉ ẩn nút. Test quan tr�
 thẳng URL của một app bị ẩn/khoá và xác nhận bị chặn — vì "ẩn khỏi trang chủ
 nhưng vẫn gọi được URL" là lỗ hổng chứ không phải phân quyền.
 
-Chạy trên SQLite tạm. Dùng app khách hàng `agent` làm đối tượng; `demo` có
+Chạy trên SQLite tạm. Dùng app khách hàng `agent` làm đối tượng; `qualitylab` có
 surface admin và được kiểm riêng để không biến app vận hành thành UI khách.
 """
 from __future__ import annotations
@@ -46,9 +46,9 @@ def test_admin_luon_mo_du_co_dong_khoa(db):
     admin = tao_nguoi_dung(db, email="ad@x.com", password="pw12345678", role="admin")
     db.commit()
     # Kể cả khi có dòng khoá, admin vẫn mở.
-    dat_quyen(db, admin.id, "demo", "hidden")
+    dat_quyen(db, admin.id, "qualitylab", "hidden")
     db.commit()
-    assert muc_quyen(db, admin, "demo") == ENABLED
+    assert muc_quyen(db, admin, "qualitylab") == ENABLED
 
 
 def test_dat_quyen_va_ve_mac_dinh_thi_xoa_dong(db):
@@ -60,12 +60,12 @@ def test_dat_quyen_va_ve_mac_dinh_thi_xoa_dong(db):
     u = tao_nguoi_dung(db, email="b@x.com", password="pw12345678")
     db.commit()
 
-    dat_quyen(db, u.id, "demo", HIDDEN)
+    dat_quyen(db, u.id, "qualitylab", HIDDEN)
     db.commit()
-    assert muc_quyen(db, u, "demo") == HIDDEN
+    assert muc_quyen(db, u, "qualitylab") == HIDDEN
     assert db.execute(select(AppAccess)).scalars().all(), "phai co dong khi khac mac dinh"
 
-    dat_quyen(db, u.id, "demo", "enabled")  # ve mac dinh
+    dat_quyen(db, u.id, "qualitylab", "enabled")  # ve mac dinh
     db.commit()
     assert db.execute(select(AppAccess)).scalars().all() == [], \
         "ve mac dinh phai XOA dong, khong luu"
@@ -77,7 +77,7 @@ def test_dat_quyen_gia_tri_sai_bi_tu_choi(db):
     u = tao_nguoi_dung(db, email="c@x.com", password="pw12345678")
     db.commit()
     with pytest.raises(ValueError):
-        dat_quyen(db, u.id, "demo", "superuser")
+        dat_quyen(db, u.id, "qualitylab", "superuser")
 
 
 # ── Ánh xạ path → app ─────────────────────────────────────────────────────────
@@ -87,10 +87,14 @@ def test_app_cho_path_khop_prefix_dai_nhat():
     from platform_core.registry import discover
     loaded = discover()
 
-    assert app_cho_path("/demo", loaded) == "demo"
-    assert app_cho_path("/demo/tai-ve/abc", loaded) == "demo"
-    # socialbot khai nav /sheet/facebook, /manual/tiktok...
-    assert app_cho_path("/sheet/facebook", loaded) == "socialbot"
+    assert app_cho_path("/agent", loaded) == "agent"
+    assert app_cho_path("/agent/canvas", loaded) == "agent"
+    # Một app khai nav NGOÀI `route_prefix` của nó vẫn phải khớp đúng chủ.
+    # Ví dụ cũ ở đây là socialbot (`/sheet/facebook`, `/manual/tiktok`), gỡ
+    # 2026-08-25; `thumbnail` giữ nguyên vai trò đó vì nó là app con của
+    # `taoanh` (`catalog_parent`) nhưng vẫn có prefix riêng.
+    assert app_cho_path("/thumbnail", loaded) == "thumbnail"
+    assert app_cho_path("/thumbnail/lich-su", loaded) == "thumbnail"
     # Đường không thuộc app nào.
     assert app_cho_path("/login", loaded) is None
     assert app_cho_path("/", loaded) is None
@@ -182,13 +186,19 @@ def test_app_an_bi_bo_khoi_trang_chu(client):
         "khi an thi phai bien khoi trang chu"
 
 
-def test_demo_surface_admin_tra_404_cho_customer(client):
+def test_app_surface_admin_tra_404_cho_customer(client):
+    """App `surface="admin"` phải trả 404 cho khách thường, không phải 403.
+
+    Trước 2026-08-25 dùng `demo`; app đó đã gỡ nên dùng `qualitylab` — cũng
+    `surface="admin"` (Q83). Tính chất được chốt là của **hợp đồng surface**,
+    không của một app.
+    """
     _dang_nhap(client)
-    assert client.get("/demo", follow_redirects=False).status_code == 404
+    assert client.get("/qualitylab", follow_redirects=False).status_code == 404
 
 
 def test_an_danh_khong_bi_middleware_nuot_redirect(client):
-    """Chưa đăng nhập vào /demo vẫn phải được require_login đưa về /login (303),
-    middleware phân quyền không được nuốt mất redirect đó."""
-    r = client.get("/demo", follow_redirects=False)
+    """Chưa đăng nhập vào một route app vẫn phải được require_login đưa về
+    /login (303); middleware phân quyền không được nuốt mất redirect đó."""
+    r = client.get("/qualitylab", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"].startswith("/login")

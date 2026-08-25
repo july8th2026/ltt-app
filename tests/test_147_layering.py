@@ -138,23 +138,26 @@ def test_routes_package_van_xuat_ra_router():
 
 
 def test_nen_tang_va_app_khong_phu_thuoc_core_legacy():
-    """`core/` là 15.668 dòng thừa kế từ thời sản phẩm còn là bot FB/TikTok.
-    App socialbot dùng nó đã **đóng băng**.
+    """`core/` **đã bị xoá hẳn 2026-08-25** (Q108). Đừng dựng lại nó.
 
-    Trước 2026-08-06 mọi app đều dính `core/` — không phải vì chúng cần, mà vì
-    `platform_core/storage.py` gọi `core.runtime_paths`, kéo cả cây theo. Một
-    sợi dây duy nhất khiến bản đồ phụ thuộc nói dối: nhìn vào tưởng `core/` là
-    hạ tầng chung, thực ra 99,4% của nó không phục vụ app nào đang bán
-    (xem docs/APP_AUDIT/control-plane/2026-08-06/04_BAN_DO_CORE.md).
+    Lịch sử, vì nó giải thích vì sao phép kiểm này vẫn còn giá trị sau khi thứ
+    nó canh đã biến mất: `core/` là 15.046 dòng thừa kế từ thời sản phẩm còn là
+    bot FB/TikTok. Trước 2026-08-06 **mọi** app đều dính nó — không phải vì
+    chúng cần, mà vì `platform_core/storage.py` gọi `core.runtime_paths`, kéo cả
+    cây theo. Một sợi dây duy nhất khiến bản đồ phụ thuộc nói dối: nhìn vào
+    tưởng `core/` là hạ tầng chung, thực ra 99,4% của nó không phục vụ app nào
+    đang bán (xem docs/APP_AUDIT/control-plane/2026-08-06/04_BAN_DO_CORE.md).
 
-    `runtime_paths` đã chuyển sang `platform_core/`. Đừng nối lại sợi dây đó:
-    thứ nhiều nơi cần là hạ tầng, và hạ tầng thuộc về `platform_core/`.
+    H22 cắt sợi dây đó; Q108 xoá luôn phần còn lại. Phép kiểm giữ nguyên vì nó
+    nay canh một điều khác và vẫn đáng canh: **thứ nhiều nơi cần là hạ tầng, và
+    hạ tầng thuộc về `platform_core/`** — đừng tạo một `core/` thứ hai dưới tên
+    khác.
     """
     offenders = {}
     for area in ("apps", "platform_core"):
         for path in (ROOT / area).rglob("*.py"):
-            if "__pycache__" in path.parts or "socialbot" in path.parts:
-                continue          # socialbot là app CỦA core/, đóng băng cùng nó
+            if "__pycache__" in path.parts:
+                continue
             text = path.read_text(encoding="utf-8", errors="ignore")
             hits = re.findall(r"^\s*(?:from|import)\s+(core(?:\.[\w.]+)?)", text, re.M)
             if hits:

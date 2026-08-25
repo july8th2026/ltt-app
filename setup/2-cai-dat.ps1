@@ -13,7 +13,7 @@
       - tai NSSM neu chua co
       - dang ky va khoi dong dich vu Windows
 
-    An toan khi chay lai: KHONG BAO GIO ghi de data\config.json,
+    An toan khi chay lai: KHONG BAO GIO ghi de du lieu van hanh,
     secrets\app.env, hay khoa ma hoa da co.
 
 .EXAMPLE
@@ -216,14 +216,16 @@ if (-not $whisperPy) {
 }
 
 Head 'Cau hinh van hanh'
-$cfg = Join-Path $dataDir 'config.json'
-if (Test-Path $cfg) {
-    Ok 'config.json da co - GIU NGUYEN (khong ghi de cau hinh that cua ban)'
-} else {
-    Copy-Item (Join-Path $appDir 'config.example.json') $cfg -Force
-    Ok 'Tao config.json tu config.example.json'
-    Note 'CAN LAM: sua Sheet ID, ten cot, va thong tin app trong data\config.json'
-}
+# BUOC TAO data\config.json DA BO 2026-08-25 (Q108).
+#
+# Tep do la cau hinh cua app socialbot (Meta App ID, Sheet ID, ten cot, chong
+# spam) va app do da bi go han. Nen tang KHONG doc tep cau hinh nao luc khoi
+# dong nua: ho so moi truong suy ra tu LTT_ENV, moi thu con lai nam trong
+# secretspp.env.
+#
+# Tep cu con nam lai trong data\ tren may da cai thi khong sao - khong tien
+# trinh nao mo no. Xoa la viec cua chu san pham, khong phai cua bo cai.
+Ok 'Khong con buoc cau hinh - nen tang doc bien moi truong, khong doc tep'
 
 Head 'Siet quyen thu muc bi mat'
 icacls $secrets /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" | Out-Null
@@ -520,7 +522,7 @@ for ($i = 0; $i -lt 10; $i++) {
     } catch { Start-Sleep -Seconds 2 }
 }
 if ($okHealth) { Ok 'Ung dung san sang' }
-else { Note 'Chua ready - thuong do config.json chua dien. Xem logs\service-err.log' }
+else { Note 'Chua ready - thuong do CSDL chua noi duoc. Xem logs\service-err.log' }
 
 Write-Host ""
 Write-Host ("-" * 62)
@@ -534,7 +536,6 @@ if ($newPassword) {
     Write-Host ""
 }
 Write-Host "Buoc tiep theo:" -ForegroundColor Cyan
-Write-Host "  1. Sua $dataDir\config.json (Sheet ID, ten cot, thong tin app)"
 Write-Host "  2. Chay: .\setup\3-cloudflare.ps1   (can ban dang nhap Cloudflare)"
 Write-Host "  3. Chay: .\setup\4-nghiem-thu.ps1"
 Write-Host ""

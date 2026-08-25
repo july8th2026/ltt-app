@@ -6,7 +6,7 @@ dieu_phoi.py — MỘT đường gọi model ngôn ngữ cho toàn nền tảng.
      platform_core/agent/planner.py    ghi cứng `thu_tu_provider=["gemini"]` VÀ
                                        ghi cứng luôn HTTP của Gemini
      apps/autosubvideo/ai_workflows.py
-     apps/kichban/jobs.py
+     apps/<slug>/jobs.py
 
    Cascade đa-provider của H8 **có tồn tại**, nhưng chỉ ở tầng *cấp key*. Không ai
    bắc cầu nó sang tầng *gọi model*. Hệ quả: thêm một provider vào `REGISTRY`

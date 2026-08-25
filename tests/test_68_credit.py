@@ -14,8 +14,9 @@ Trọng tâm:
 """
 from __future__ import annotations
 
-from tests.conftest import bao_dam_user
 import pytest
+
+from tests.conftest import APP_THU_JOB, APP_THU_SLUG, bao_dam_user
 
 
 @pytest.fixture()
@@ -139,43 +140,43 @@ def _nap(db, uid, n):
     credit.nap(db, uid, n); db.commit()
 
 
-def test_submit_giu_cho_dung_gia(db):
+def test_submit_giu_cho_dung_gia(db, app_thu):
     from platform_core import credit
     from platform_core.job_submit import submit_with_credit
     _nap(db, "u1", 100)
-    # demo._cost = max(1, len//100). text 250 ky tu -> 2 credit.
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "x" * 250})
+    # gia cua app thu = max(1, len//100). text 250 ky tu -> 2 credit.
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "x" * 250})
     db.commit()
     assert credit.so_da_giu(db, job.id) == 2
     assert credit.so_du(db, "u1") == 98
 
 
-def test_submit_thieu_credit_khong_tao_job(db):
+def test_submit_thieu_credit_khong_tao_job(db, app_thu):
     from platform_core import credit
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import Job
     # Khong nap gi -> so du 0.
     with pytest.raises(credit.ThieuCreditError):
-        submit_with_credit(db, user_id="u1", app_slug="demo",
-                           job_type="demo.reverse", params={"text": "abc"})
+        submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                           job_type=APP_THU_JOB, params={"text": "abc"})
     db.rollback()
     assert db.query(Job).count() == 0, "thieu credit thi KHONG duoc tao job"
     assert credit.so_du(db, "u1") == 0
 
 
-def test_submit_trung_khong_tru_hai_lan(db):
+def test_submit_trung_khong_tru_hai_lan(db, app_thu):
     """Bấm lại / F5 (cùng dedupe_key khi job cũ còn chạy) → giữ chỗ MỘT lần."""
     from platform_core import credit
     from platform_core.job_submit import submit_with_credit
     _nap(db, "u1", 100)
-    j1 = submit_with_credit(db, user_id="u1", app_slug="demo",
-                            job_type="demo.reverse", params={"text": "abc"},
+    j1 = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                            job_type=APP_THU_JOB, params={"text": "abc"},
                             dedupe_key="dk1")
     db.commit()
     sau_lan_1 = credit.so_du(db, "u1")
-    j2 = submit_with_credit(db, user_id="u1", app_slug="demo",
-                            job_type="demo.reverse", params={"text": "abc"},
+    j2 = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                            job_type=APP_THU_JOB, params={"text": "abc"},
                             dedupe_key="dk1")
     db.commit()
     assert j1.id == j2.id
@@ -184,14 +185,14 @@ def test_submit_trung_khong_tru_hai_lan(db):
 
 # ── Vòng đời trọn vẹn qua worker ──────────────────────────────────────────────
 
-def test_job_thanh_cong_tru_dung_credit(db):
+def test_job_thanh_cong_tru_dung_credit(db, app_thu):
     from platform_core import credit
     from platform_core.job_runner import _chay_mot_job
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import Job, JOB_DONE
     _nap(db, "u1", 100)
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "xin chao"})
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "xin chao"})
     db.commit()
     jid = job.id
     held = credit.so_da_giu(db, jid)
@@ -203,21 +204,26 @@ def test_job_thanh_cong_tru_dung_credit(db):
     assert credit.so_du(db, "u1") == 100 - held, "tru dung phan da giu"
 
 
-def test_worker_cong_khai_so_thu_da_cap_thay_vi_gia_provider(db, monkeypatch):
+def test_worker_cong_khai_so_thu_da_cap_thay_vi_gia_provider(db, monkeypatch,
+                                                             app_thu):
     from platform_core import credit
+    from platform_core import jobs as jobs_mod
     from platform_core.job_runner import _chay_mot_job
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import Job, JobEvent
-    from apps.demo import jobs as demo_jobs
 
     _nap(db, "u1", 100)
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "abc"})
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "abc"})
     db.commit()
     held = credit.so_da_giu(db, job.id)
+    # Handler báo về một giá CAO HƠN phần đã giữ. Thay handler qua
+    # `resolve_handler` chứ không qua module của một app: app thử không có
+    # module trên đĩa, và đó là chủ ý — xem `conftest.app_thu`.
     monkeypatch.setattr(
-        demo_jobs, "handle",
-        lambda params, ctx=None: {"text": "cba", "credit_cost": held + 49},
+        jobs_mod, "resolve_handler",
+        lambda jt: (lambda params, ctx=None: {"text": "cba",
+                                              "credit_cost": held + 49}),
     )
 
     _chay_mot_job("w-cap")
@@ -233,15 +239,15 @@ def test_worker_cong_khai_so_thu_da_cap_thay_vi_gia_provider(db, monkeypatch):
     assert event.level == "warning"
 
 
-def test_job_that_bai_hoan_credit(db):
+def test_job_that_bai_hoan_credit(db, app_thu):
     from platform_core import credit
     from platform_core.job_runner import _chay_mot_job
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import Job, JOB_ERROR
     _nap(db, "u1", 100)
-    # text rong -> demo handler nem loi. max_attempts=1 -> that bai la error luon.
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "   "},
+    # text rong -> handler cua app thu nem loi. max_attempts=1 -> that bai la error luon.
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "   "},
                              max_attempts=1)
     db.commit()
     jid = job.id

@@ -36,7 +36,7 @@ def _running(db, user_id="u1"):
 
 def test_job_cu_giu_default_safe(db):
     from platform_core import jobs
-    job = jobs.submit(db, user_id="u", app_slug="demo", job_type="demo.reverse",
+    job = jobs.submit(db, user_id="u", app_slug="appthu", job_type="appthu.dao_nguoc",
                       params={"text": "abc"})
     db.commit()
     assert (job.parent_id, job.plan_id, job.step_id) == ("", "", "")
@@ -82,15 +82,15 @@ def test_chi_running_moi_tao_child(db):
     from platform_core.agent import runs
     run = runs.create_run(db, user_id="u1", goal="x")
     with pytest.raises(runs.AgentRunError):
-        runs.submit_child(db, run, step_id="s1", app_slug="demo",
-                          job_type="demo.reverse", params={"text": "a"})
+        runs.submit_child(db, run, step_id="s1", app_slug="appthu",
+                          job_type="appthu.dao_nguoc", params={"text": "a"})
 
 
 def test_child_job_nhan_owner_tu_run_va_khong_tin_client(db):
     from platform_core.agent import runs
     run = _running(db, user_id="owner-a")
     child = runs.submit_child(
-        db, run, step_id="s1", app_slug="demo", job_type="demo.reverse",
+        db, run, step_id="s1", app_slug="appthu", job_type="appthu.dao_nguoc",
         params={"text": "a", "owner_id": "attacker"})
     assert child.params["owner_id"] == "owner-a"
 
@@ -99,11 +99,11 @@ def test_bon_child_cung_parent_va_mot_loi_duoc_dem_dung(db):
     from platform_core import jobs
     from platform_core.agent import runs
     run = _running(db)
-    parent = runs.submit_child(db, run, step_id="s1", app_slug="demo",
-                               job_type="demo.reverse", params={"text": "parent"})
+    parent = runs.submit_child(db, run, step_id="s1", app_slug="appthu",
+                               job_type="appthu.dao_nguoc", params={"text": "parent"})
     children = [
-        runs.submit_child(db, run, step_id="s2", app_slug="demo",
-                          job_type="demo.reverse", params={"text": str(i)},
+        runs.submit_child(db, run, step_id="s2", app_slug="appthu",
+                          job_type="appthu.dao_nguoc", params={"text": str(i)},
                           parent_id=parent.id, dedupe_key=f"{run.id}:s2:{i}",
                           max_attempts=1)
         for i in range(4)
@@ -123,8 +123,8 @@ def test_orphan_child_duoc_reclaim(db):
     from platform_core.agent import runs
     from platform_core.models import JOB_QUEUED
     run = _running(db)
-    child = runs.submit_child(db, run, step_id="s1", app_slug="demo",
-                              job_type="demo.reverse", params={"text": "x"})
+    child = runs.submit_child(db, run, step_id="s1", app_slug="appthu",
+                              job_type="appthu.dao_nguoc", params={"text": "x"})
     db.commit()
     claimed = jobs.claim(db, worker_id="dead-worker")
     assert claimed.id == child.id

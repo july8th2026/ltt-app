@@ -51,7 +51,7 @@ EXCLUDED_SUFFIXES = (
 REQUIRED_ENTRIES = (
     "ho_so_he_thong.txt",
     "server/app.py",
-    "core/worker_app.py",
+    "job_worker.py",
     "requirements.txt",
     "requirements-server.txt",
     "deploy/windows/install.ps1",

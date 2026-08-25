@@ -169,7 +169,7 @@ nền tảng như một dịch vụ.
 - 🤖 Từ đây tôi gọi `https://app.lttstudios.com/health/ready` (mạng ngoài) —
   mong `{"status":"ready","environment":"production"}`.
 - 🤖 Mở `https://app.lttstudios.com` bằng trình duyệt thật (Playwright), kiểm
-  đăng nhập + chạy demo qua hàng đợi.
+  đăng nhập + chạy một job qua hàng đợi.
 - 🧑 Bạn mở `https://lttstudios.com` xác nhận **trang chủ vẫn chạy** như cũ.
 - 🤖 Đổi `LTT_ENV` sang `production` nếu chưa (cookie Secure hợp với HTTPS).
 

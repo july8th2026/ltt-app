@@ -112,7 +112,7 @@ def test_claim_khong_nhac_trung_hai_worker(Sess):
     uid = u.id
     N = 20
     for i in range(N):
-        jobs.submit(s, user_id=uid, app_slug="demo", job_type="demo.reverse",
+        jobs.submit(s, user_id=uid, app_slug="appthu", job_type="appthu.dao_nguoc",
                     params={"i": i})
     s.commit()
     s.close()
@@ -157,8 +157,8 @@ def test_claim_bon_child_agent_khong_trung(Sess):
     runs.transition(s, run, AGENT_AWAITING_APPROVAL)
     run.status = AGENT_RUNNING  # structural P3 fixture; P5 approval is tested below
     for i in range(4):
-        runs.submit_child(s, run, step_id="s1", app_slug="demo",
-                          job_type="demo.reverse", params={"text": str(i)},
+        runs.submit_child(s, run, step_id="s1", app_slug="appthu",
+                          job_type="appthu.dao_nguoc", params={"text": str(i)},
                           dedupe_key=f"{run.id}:s1:{i}")
     s.commit(); s.close()
 

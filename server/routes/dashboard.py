@@ -1,12 +1,11 @@
 """Trang chủ — danh sách app, sinh từ apps/*/manifest.py.
 
-Trước đây "/" chỉ hiện tóm tắt blocker. Giờ nó là cửa vào của nền tảng nhiều
-app, nhưng vẫn giữ phần blocker ở trên: đây là trang thấy đầu tiên sau khi
-đăng nhập, nên là chỗ đúng nhất để nói "bot chưa đăng được vì thiếu X".
+Trước đây "/" chỉ hiện tóm tắt blocker của bot đăng bài. Giờ nó là cửa vào của
+nền tảng nhiều app: catalog công khai cho khách chưa đăng nhập (Q30/H6), và
+workspace có lịch sử dùng cho người đã đăng nhập.
 
-Phần blocker dùng lại tools/doctor.py để trang chủ, /status và CLI không bao
-giờ nói khác nhau. Bỏ qua kiểm tra Sheet vì trang này tải mỗi lần đăng nhập,
-mà kiểm tra Sheet tốn một vòng gọi mạng.
+Phần blocker đã gỡ 2026-08-25 cùng app socialbot — xem khối `app_setup` bên
+dưới. Trang này không còn chạy `tools/doctor.py` mỗi lượt tải nữa.
 """
 from __future__ import annotations
 
@@ -178,11 +177,14 @@ def home(request: Request):
             "home_categories": categories,
         })
 
-    # Đã đăng nhập: lọc theo quyền (H1.4) + tính "cần thiết lập" theo TỪNG app.
+    # Đã đăng nhập: lọc theo quyền (H1.4).
     # Bọc an toàn: DB trục trặc / admin-env thì hiện đủ, không để phân quyền làm
     # trang trắng.
-    from tools import doctor
-    report = doctor.run(check_sheet_flag=False)
+    #
+    # ⭐ KHÔNG còn gọi `doctor.run()` ở đây (bỏ 2026-08-25). Xem khối `app_setup`
+    #    bên dưới để biết vì sao — và vì sao đó là một lượt tải trang nhanh hơn,
+    #    không phải một tính năng bị mất.
+    #
     # `enabled` phải lọc ở ĐÂY nữa, không chỉ ở nhánh ẩn danh bên trên.
     # Thiếu nó thì một app đang tắt cờ vẫn hiện thẻ cho người đã đăng nhập, mà
     # route của nó trả 404 — bấm vào là ngõ cụt. Thanh bên và header
@@ -206,16 +208,24 @@ def home(request: Request):
     except Exception:
         pass
 
-    # Blocker doctor gắn vào ĐÚNG thẻ app (H6.6): không còn banner FB/TikTok toàn
-    # cục. Khớp theo manifest.blocker_titles do app tự khai — nền tảng KHÔNG
-    # hardcode tên app. Blocker không thuộc app nào vẫn xem đầy đủ ở /status.
-    block_sections = [s for s in report.sections if s["status"] == doctor.BLOCK]
+    # ── Huy hiệu "cần thiết lập" trên thẻ app (H6.6): ĐÃ GỠ 2026-08-25 ───────
+    #
+    # Cơ chế cũ: `doctor.run()` sinh danh sách lỗi chặn, rồi khớp tiêu đề với
+    # `manifest.blocker_titles` do app tự khai. Nó tồn tại để nền tảng gắn huy
+    # hiệu lên ĐÚNG thẻ app mà không hardcode tên app nào.
+    #
+    # ⛔ Nhưng **chỉ socialbot khai `blocker_titles`** (đúng hai mục: "Tài khoản
+    #    Facebook", "Tài khoản TikTok"), và cả hai mục sinh ra chúng trong
+    #    `tools/doctor.py` đều đã bị gỡ cùng app đó. Nên vòng lặp này đã trở
+    #    thành một vòng lặp luôn cho ra `{}` — trong khi vẫn bắt **mỗi lượt tải
+    #    trang chủ của mỗi người dùng đã đăng nhập** trả giá một lượt chạy
+    #    doctor.
+    #
+    # ⭐ Giữ `app_setup` trong ngữ cảnh template (rỗng) chứ không gỡ khỏi
+    #    `home.html`: hợp đồng `AppManifest.blocker_titles` vẫn còn, nên app sau
+    #    khai nó thì chỉ cần một nơi sinh dữ liệu là huy hiệu sống lại. Gỡ cả
+    #    template là bắt người sau dựng lại phần đã đúng.
     app_setup: dict = {}
-    for item in visible:
-        titles = getattr(item.manifest, "blocker_titles", ()) or ()
-        hits = [s for s in block_sections if s["check"] in titles]
-        if hits:
-            app_setup[item.manifest.slug] = hits
 
     # Dùng toàn bộ manifest đã nạp để lịch sử của mode ẩn trong catalog (ví dụ
     # Thumbnail) vẫn hiện đúng tên/icon; card chỉ lấy từ ``visible``.

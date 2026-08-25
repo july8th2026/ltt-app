@@ -28,8 +28,30 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 def test_discovers_every_app_folder():
     slugs = {a.slug for a in discover()}
-    assert "demo" in slugs
-    assert "socialbot" in slugs
+    assert "thumbnail" in slugs
+    assert "vps" in slugs
+
+
+def test_bon_app_da_go_va_phai_o_nguyen_trang_thai_do():
+    """Bốn app bị gỡ 2026-08-25 — `socialbot` (Q108), rồi `kichban`,
+    `mediatools`, `demo`. Giữ cho chúng đã gỡ.
+
+    Xoá mã thì dễ; **giữ cho nó ở trạng thái đã xoá** mới khó. Một app hồi sinh
+    một nửa tệ hơn cả hai trạng thái, vì nó trông như dùng được rồi hỏng ở chỗ
+    dùng — đúng bài học mà `test_52_desktop_removed` từng chốt cho giai đoạn
+    desktop→web, và tệp đó nay đã đi cùng thứ nó canh.
+
+    ⛔ Nếu phép kiểm này đỏ vì ai đó **cố ý** đưa socialbot về, thì việc đúng
+       không phải sửa dòng này: đó là một quyết định sản phẩm, phải thêm dòng
+       mới vào bảng quyết định trước (AGENTS.md mục 6).
+    """
+    slugs = {a.slug for a in discover()}
+    for da_go in ("socialbot", "kichban", "mediatools", "demo"):
+        assert da_go not in slugs, da_go
+        assert not (ROOT / "apps" / da_go).exists(), da_go
+    assert not (ROOT / "core").exists()
+    assert not (ROOT / "utils").exists()
+    assert not (ROOT / "server" / "services").exists()
 
 
 def test_no_app_fails_to_load():
@@ -39,17 +61,10 @@ def test_no_app_fails_to_load():
 
 def test_portfolio_surface_and_lifecycle_match_locked_decisions():
     apps = {a.slug: a.manifest for a in discover()}
-    assert apps["kichban"].surface == "runtime"
-    assert apps["kichban"].lifecycle == "retired"
-    assert apps["mediatools"].surface == "runtime"
-    assert apps["demo"].surface == "admin"
-    assert apps["socialbot"].lifecycle == "maintenance"
+    assert apps["qualitylab"].surface == "admin"
+    assert apps["nexus"].surface == "customer"
     assert {apps[slug].lifecycle for slug in (
         "upscalevideo", "prompt_ai_ommi", "taovideo")} == {"released"}
-    script = next(tool for tool in apps["kichban"].tools
-                  if tool.name == "text.script")
-    assert script.customer_visible is False
-    assert any(tool.name == "text.generate" for tool in apps["kichban"].tools)
     assert apps["thumbnail"].catalog_parent == "taoanh"
     assert apps["thumbnail"].job_types == ("thumbnail.generate",)
     customer_cards = [m for m in apps.values()
@@ -161,11 +176,16 @@ def test_validate_tu_choi_job_type_trung():
 
 # ── credit: chỗ mất tiền ───────────────────────────────────────────────────
 
-def test_credit_is_computed_from_params_not_fixed():
+def test_credit_is_computed_from_params_not_fixed(app_thu):
     """Giá phải là hàm của tham số. Seedance tính theo giây video × độ phân
-    giải; một hằng số sẽ tính sai ngay từ job đầu tiên."""
-    small = credit_for("demo.reverse", {"text": "x" * 50})
-    big = credit_for("demo.reverse", {"text": "x" * 5000})
+    giải; một hằng số sẽ tính sai ngay từ job đầu tiên.
+
+    Dùng app THỬ tổng hợp (`conftest.app_thu`) chứ không dùng một app có thật:
+    trước 2026-08-25 phép kiểm này gọi `demo.reverse`, và đó là một trong những
+    sợi dây làm `apps/demo` thành thứ không xoá được.
+    """
+    small = credit_for(app_thu.job_type, {"text": "x" * 50})
+    big = credit_for(app_thu.job_type, {"text": "x" * 5000})
     assert big > small
 
 
@@ -380,7 +400,7 @@ def test_no_app_slug_is_hardcoded_in_the_platform():
     # What still covers the real risk: ``test_platform_core_never_imports_apps``
     # above. Blinding a substring does not let ``platform_core`` import the app.
     slugs = [a.slug for a in discover()
-             if a.slug not in ("demo", "agent", "nexus", "ltt_llm")]
+             if a.slug not in ("agent", "nexus", "ltt_llm")]
 
     # 🔴 TÊN BẢNG KHÔNG PHẢI TÊN APP — và bỏ qua điều đó làm hai bánh cóc đánh nhau.
     #
@@ -503,18 +523,16 @@ def test_bo_quet_van_bat_slug_trong_CHUOI_THUONG():
     assert "taovideo" in _ma_thuc_thi(_nguon('TEN = "taovideo"'))
 
 
-# ── app demo phải luôn chạy được ───────────────────────────────────────────
+# ── app thử: handler phải NÉM khi thất bại ─────────────────────────────────
 
-def test_demo_job_handler_works():
-    from apps.demo import jobs
-    out = jobs.handle({"text": "abc def"})
-    assert out["output"] == "fed cba"
-    assert out["words"] == 2
+def test_handler_phai_nem_loi_khi_that_bai(app_thu):
+    """Handler trả về êm ru khi thất bại nghĩa là job "thành công" và credit đã
+    giữ vẫn bị trừ — khách trả tiền cho một kết quả không có.
 
-
-def test_demo_job_rejects_empty_input():
-    """Handler phải NÉM lỗi khi thất bại. Trả về êm ru nghĩa là job 'thành
-    công' và credit đã giữ vẫn bị trừ."""
-    from apps.demo import jobs
+    Trước 2026-08-25 phép kiểm này gọi `apps/demo/jobs.py`. App đó đã bị gỡ, và
+    tính chất được chốt ở đây **không thuộc về app nào** — nó là một điều khoản
+    của hợp đồng handler. Nên nó chuyển sang app thử tổng hợp.
+    """
+    assert app_thu.handle({"text": "abc"})["output"] == "cba"
     with pytest.raises(ValueError):
-        jobs.handle({"text": "   "})
+        app_thu.handle({"text": "   "})

@@ -82,8 +82,8 @@ backup + lệnh explicit theo `docs/DATA_RETENTION_POLICY.md`.
 ## Ma trận app
 
 Mọi job type khai trong manifest và chạy qua `platform_core.job_runner` đều nhận
-automatic lifecycle events: `agent`, `autosubvideo`, `chataistudio`, `demo`,
-`kichban`, `mediatools`, `prompt_ai_ommi`, `socialbot` (frozen), `taoanh`,
+automatic lifecycle events: `agent`, `anhnoibo`, `autosubvideo`, `chataistudio`,
+`ltt_llm`, `prompt_ai_ommi`, `qualitylab`, `taoanh`,
 `taoclipngan`, `taovideo`, `thumbnail`, `upscalevideo`. Không app nào được tự
 ghi file log riêng hoặc ghi payload vào `JobEvent`.
 

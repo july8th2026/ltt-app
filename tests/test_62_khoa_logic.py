@@ -50,15 +50,15 @@ def _source_files() -> list[pathlib.Path]:
 _DUOC_PHEP_DU_PHONG = {
     # Chuyển từ `core/` sang `platform_core/` ngày 2026-08-06 khi cắt phụ thuộc
     # cuối cùng của nền tảng vào `core/` legacy.
+    #
+    # Tám mục còn lại của danh sách này (`core/session_lock.py`,
+    # `core/token_store.py`, `core/tiktok/*`, `core/content_history.py`,
+    # `core/page_health.py`, `core/page_warmup.py`, `utils/audit_logger.py`)
+    # bỏ đi ngày 2026-08-25 cùng app socialbot. Chúng là **lý do gốc** của phép
+    # kiểm này — token Facebook/TikTok ghi vào `app\\data\\` rồi biến mất sau
+    # lần cập nhật kế tiếp — nên đọc docstring dưới đây như lịch sử, không phải
+    # như mô tả hiện trạng.
     "platform_core/runtime_paths.py",
-    "core/session_lock.py",
-    "core/token_store.py",
-    "core/tiktok/token_store.py",
-    "core/tiktok/account_warmup.py",
-    "core/content_history.py",
-    "core/page_health.py",
-    "core/page_warmup.py",
-    "utils/audit_logger.py",
 }
 
 _DUONG_DAN_TUONG_DOI = re.compile(r"""os\.path\.join\(\s*["']data["']""")

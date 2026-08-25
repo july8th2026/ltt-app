@@ -11,7 +11,7 @@ llm — năng lực GỌI MODEL NGÔN NGỮ dùng chung cho mọi app. (H38)
      platform_core/agent/planner.py   ghi cứng `thu_tu_provider=["gemini"]` VÀ
                                       ghi cứng luôn HTTP của Gemini
      apps/autosubvideo/ai_workflows.py
-     apps/kichban/jobs.py
+     apps/<slug>/jobs.py
 
    Hệ quả: cascade đa-provider của H8 có tồn tại, nhưng chỉ ở tầng **cấp key** —
    không ai bắc cầu nó sang tầng **gọi model**. Nên thêm một provider vào

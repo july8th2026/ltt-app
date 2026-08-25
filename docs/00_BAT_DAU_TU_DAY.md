@@ -46,8 +46,8 @@ trạng thái sai còn tệ hơn không có bảng nào.
 | **Cốt lõi vận hành: catalog công khai + SSO + login return-to** | ✅ xong (H6) |
 | **LTT Agent AI + React Canvas + 7 tool ảnh/text/video/GPU** | ✅ xong, production public (H12 P0–P13) |
 | Tool thật đầu tiên — `thumbnail` (Gemini Image, tính credit) | ✅ xong (H5) |
-| App socialbot (Facebook + TikTok) | ⏸️ **đóng băng** — giữ chạy, không phát triển thêm |
-| App demo (nghiệm thu hạ tầng, tốn 0 đồng) | ✅ xong |
+| App socialbot (Facebook + TikTok) | 🗑️ **ĐÃ GỠ HẲN 2026-08-25** (Q108 thay Q10) — cùng `core/`, `utils/`, `server/services/`, 43 route |
+| App demo (nghiệm thu hạ tầng) | 🗑️ **ĐÃ GỠ 2026-08-25** — bốn bộ test hạ tầng nay dùng app THỬ tổng hợp trong `tests/conftest.py`, không dựa vào một mặt hàng nữa |
 | Bộ cài 4 script + cập nhật + rollback + lịch backup | ✅ xong |
 | Kho mã nguồn trong git | ✅ từ 2026-07-31 |
 | Bộ test | ✅ 1.849 pass, 8 skip, 23 subtest |
@@ -58,7 +58,7 @@ trạng thái sai còn tệ hơn không có bảng nào.
 là **catalog công khai** — khách chưa đăng nhập xem được các tool (manifest
 `public=True`), bấm vào thì bị đưa về `/login?next=/<slug>` rồi quay lại đúng
 chỗ. **1 tài khoản dùng cho mọi app** (SSO tự nhiên: cùng host, 1 cookie phiên).
-App `public=False` (demo, socialbot) ẩn khỏi catalog khách, chỉ vào qua sidebar
+App `public=False` (qualitylab) ẩn khỏi catalog khách, chỉ vào qua sidebar
 sau khi đăng nhập + phân quyền.
 
 ### Chưa có — việc phía trước
@@ -82,14 +82,10 @@ LTTSTUDIOSAPP/
 │   └── storage.py       lớp bọc lưu file (đổi sang R2 chỉ sửa ở đây)
 │
 ├── apps/                MỖI APP MỘT THƯ MỤC
-│   ├── socialbot/       Facebook + TikTok — đóng băng (public=False)
 │   ├── thumbnail/       Tạo thumbnail YouTube (Gemini Image) — tool thật
-│   └── demo/            app mẫu, dùng nghiệm thu hạ tầng (public=False)
 │
 ├── server/              vỏ web: đăng nhập, trang chủ, route dùng chung
-├── core/                nghiệp vụ socialbot (15.489 dòng) — đóng băng
-├── utils/               sheet_client, logger, audit_logger
-├── tools/               doctor.py, build_release.py, quét bí mật
+├── tools/               doctor.py, gate.py, build_release.py, quét bí mật
 ├── tests/               ~1.400 test
 ├── deploy/windows/      install / update / rollback / backup
 ├── setup/               ★ BỘ CÀI — 4 script chạy theo thứ tự
@@ -137,7 +133,7 @@ python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 ```
 
 Mở `http://127.0.0.1:8100` — chưa đăng nhập sẽ thấy **catalog công khai** (chỉ
-app `public=True`). Đăng nhập rồi vào `/demo`, gõ gì đó rồi bấm chạy. Ra kết quả
+app `public=True`). Đăng nhập rồi mở một app bất kỳ và nộp một job. Ra kết quả
 kèm số credit nghĩa là hợp đồng app đang hoạt động đúng.
 
 > **Cổng 8100 chứ không phải 8000.** Máy này còn chạy một hệ thống nội bộ khác
@@ -154,7 +150,7 @@ kèm số credit nghĩa là hợp đồng app đang hoạt động đúng.
 | Chờ phản hồi | **100 giây** | Lâu hơn bị 524 dù job vẫn chạy tốt |
 | Serve file lớn ngoài Cloudflare | hạn chế ToS | Phải chuyển sang R2 |
 
-**Việc dài hơn vài giây bắt buộc đi qua hàng đợi job.** `apps/demo` chạy thẳng
+**Việc dài hơn vài giây bắt buộc đi qua hàng đợi job.** *(App cũ `apps/demo`, đã gỡ 2026-08-25, chạy thẳng
 trong request chỉ vì nó mất vài mili-giây — **đừng lấy đó làm mẫu cho app thật**.
 
 ---

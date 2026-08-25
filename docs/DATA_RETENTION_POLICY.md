@@ -88,12 +88,21 @@ chiếu bằng storage key không bị Quality Lab xóa; nó vẫn theo policy c
 hữu. Foundation chưa lưu frame/crop/audio evidence riêng và không dùng dữ liệu
 production nếu chưa có consent.
 
-## Dữ liệu Socialbot đóng băng
+## Dữ liệu Socialbot — app ĐÃ GỠ 2026-08-25 (Q108)
 
-`data/audit_log.jsonl`, `content_history.db`, retry state, session lock và OAuth
-token là runtime lịch sử Q10; vẫn theo rotation/maintenance cũ. H26 không refactor
-hay đổi retention nghiệp vụ Socialbot. OAuth token chỉ mất khi disconnect/revoke;
-không được đưa vào support export hoặc log mới.
+Mã đọc/ghi các tệp này không còn tồn tại: `data/audit_log.jsonl`,
+`content_history.db`, retry state, session lock, và hai kho token
+`tokens.enc` / `tiktok_tokens.enc`.
+
+⚠️ **Hai kho token chưa bao giờ được tạo trên máy chủ này** — kiểm ngày
+2026-08-25, cả hai đường dẫn đều không tồn tại, và CSDL có 0 job, 0
+`app_access`, 0 `app_projects` mang slug `socialbot`. Không có token khách nào
+để thu hồi.
+
+⛔ **Các tệp còn nằm lại trong `data/` là dữ liệu vận hành, không phải mã.**
+Xoá chúng là một hành động **không đảo được** trên máy đang chạy thật, tách
+khỏi việc gỡ mã, và thuộc quyết định của chủ sản phẩm. Cho tới lúc đó chúng chỉ
+nằm im — không tiến trình nào còn mở chúng.
 
 ## Changelog
 
@@ -103,4 +112,6 @@ không được đưa vào support export hoặc log mới.
 - 2026-08-09: thay tài liệu desktop cũ bằng policy platform Q75/Q76; thêm
   dry-run, terminal Job purge explicit, support export lọc và ranh giới ledger/
   artifact/Socialbot.
+- 2026-08-25: app Socialbot bị gỡ khỏi kho mã (Q108); mục retention của nó
+  chuyển thành ghi chú về dữ liệu còn sót trong `data/`.
 - 2026-07-29: policy desktop/Socialbot ban đầu.

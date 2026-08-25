@@ -5,7 +5,7 @@ Vì sao là middleware chứ không phải dependency gắn từng route: chặn
 **mọi** đường vào một app, kể cả khi người dùng gõ thẳng URL, và phải làm được
 mà **không sửa từng app** (giữ hợp đồng: nền tảng không biết trước app nào tồn
 tại). Một middleware đọc registry rồi ánh xạ path → app làm đúng điều đó cho cả
-app mount động lẫn các route đặc cách của socialbot.
+app mount động lẫn các route khai `nav` ngoài `route_prefix` của mình.
 
 Thứ tự middleware: lớp này phải chạy **sau** SessionMiddleware để đọc được
 `request.session`. Trong Starlette, middleware thêm TRƯỚC là lớp trong (chạy

@@ -253,24 +253,27 @@ def _palette_tool(name, spec, owner, loaded) -> dict:
         if rule.get("type") == "model_ref":
             variants[field] = {str(value): resolve_params_schema(
                 name, {field: value}, apps=loaded) for value in rule.get("values", [])}
+    # Nhãn hiển thị cho palette. Đây là bảng TRA CỨU CÓ MẶC ĐỊNH — tool không có
+    # trong đây vẫn hiện, chỉ là lấy nhãn suy ra từ chính tên nó (xem
+    # `presentation.get(...)` ngay dưới). Thiếu một dòng ở đây không bao giờ làm
+    # mất một node; nó chỉ làm node đó trông kém trau chuốt.
+    #
+    # 🗑️ Gỡ 11 dòng ngày 2026-08-25 cùng ba app `kichban`, `mediatools`, `demo`:
+    #    `text.generate` · `text.script` · `audio.generate` · `asset.image` ·
+    #    `asset.images` · `asset.video` · `asset.audio` · `video.extract_frames`
+    #    · `media.merge_image` · `media.merge_video` · `video.social_import`.
+    #
+    # ⚠️ Bốn tool `asset.*` là các node **ĐẦU VÀO** của workflow — đường đưa tệp
+    #    của khách vào một chuỗi Agent. Gỡ chúng là gỡ luôn đường đó, và **7
+    #    trong 10 workflow đang lưu** có node thuộc nhóm 11 tool trên. Chủ sản
+    #    phẩm đã biết con số đó và vẫn quyết gỡ (xem NHAT_KY 2026-08-25).
     presentation = {
-        "text.generate": ("Tạo văn bản", "content", True),
         "image.generate": ("Tạo hình ảnh", "content", True),
         "video.generate": ("Tạo video", "content", True),
-        "text.script": ("Viết kịch bản", "specialized", False),
         "image.thumbnail": ("Tạo thumbnail", "specialized", False),
         "image.batch_generate": ("Tạo nhiều ảnh", "specialized", False),
-        "audio.generate": ("Tạo âm thanh", "content", True),
-        "asset.image": ("Ảnh đầu vào", "input", False),
-        "asset.images": ("Bộ ảnh", "input", False),
-        "asset.video": ("Video đầu vào", "input", False),
-        "asset.audio": ("Âm thanh đầu vào", "input", False),
         "image.upscale": ("Nâng cấp ảnh", "transform", False),
         "video.upscale": ("Nâng cấp video", "transform", False),
-        "video.extract_frames": ("Tách khung hình", "transform", False),
-        "media.merge_image": ("Ghép ảnh", "transform", False),
-        "media.merge_video": ("Ghép video", "transform", False),
-        "video.social_import": ("Social Video", "input", False),
     }
     label, category, primary = presentation.get(
         spec.name, (spec.name.replace(".", " ").title(), "advanced", False))

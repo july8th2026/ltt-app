@@ -43,18 +43,14 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `taoclipngan` | MIGRATE_CAPABILITY_THEN_EXPOSE | `upscalevideo` (đã có trần GPU và huỷ-hoàn) | ASYNC_JOB | Cùng nguyên nhân nâng hold, cộng thêm GPU nên trần đồng thời phải chốt trước. |
 | `chataistudio` | DEFER | — | không có hợp đồng job | Không sinh Job: credit giữ theo id tin nhắn và chạy streaming qua sidecar, nên toàn bộ hợp đồng quote/settle không áp được. |
 | `agent` | DEFER | — | không có hợp đồng job | Là runtime điều phối chứ không phải một tool; mở nó là mở cả một cơ chế chạy. |
-| `mediatools` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | `surface=runtime` (Q72), và có đường nhận URL từ người gọi nên public là mở SSRF. |
 | `qualitylab` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | `surface=admin`, chỉ dành cho người vận hành (Q83). |
-| `demo` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | App thử hạ tầng; khách phải nhận 404 chứ không phải một tool tính tiền (Q71). |
-| `socialbot` | INTERNAL_ONLY | — | không có hợp đồng job | Đã đóng băng (Q10/Q78); cần browser và OAuth, chưa có threat model cho tự động hoá credential. |
 | `nexus` | DEFER | — | không có hợp đồng job | Không sinh Job và không có `ToolSpec`: đây là bề mặt **quản lý thiết bị** (ghép máy, thu hồi, nhật ký phiên) chứ không phải một tool tính tiền. Mở nó ra API nghĩa là công bố một hợp đồng về **danh tính thiết bị**, và điều đó phải chờ hạ tầng relay (D2) cùng legal review AGPL — xem `docs/nexus/`. Q93. |
 | `vps` | DEFER | — | không có hợp đồng job | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần. Quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có ToolSpec), không phải một quyết định sản phẩm — chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
-| `kichban` | RETIRED_NO_EXPOSE | — | ASYNC_JOB nội bộ | App đã nghỉ (Q69); muốn năng lực sinh text thì migrate sang app được hỗ trợ chứ không hồi sinh app cũ. |
 
 ## 2. 22/22 ToolSpec
 
 `customer_visible=True` **không** làm một tool public — đó là cờ palette của
-Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều đó.
+Agent. `kichban` (gỡ 2026-08-25, Q109) từng là bằng chứng sống của điều đó.
 
 | Tool | App | Trạng thái | Lý do |
 |---|---|---|---|
@@ -70,17 +66,6 @@ Agent. `kichban` là bằng chứng sống, và có test riêng chốt điều �
 | `video.subtitle` | autosubvideo | ĐÓNG | Giá theo thời lượng khách khai, worker nâng hold nên quote đã ký không giữ được. |
 | `video.short_clips` | taoclipngan | ĐÓNG | Cùng vấn đề nâng hold, thêm ràng buộc GPU chưa chốt được trần đồng thời. |
 | `video.upscale` | upscalevideo | ĐÓNG | Video dài vượt trần 100 giây của Cloudflare, cần hợp đồng chạy khác. |
-| `text.script` | kichban | ĐÓNG | Thuộc app đã nghỉ; muốn năng lực này thì migrate chứ không hồi sinh app cũ. |
-| `text.generate` | kichban | ĐÓNG | Cùng app đã nghỉ; cờ `customer_visible` ở đây là palette Agent, không phải public. |
-| `asset.image` | mediatools | ĐÓNG | Là bước đưa file vào workflow nội bộ, không phải một năng lực bán được. |
-| `asset.images` | mediatools | ĐÓNG | Là bước đưa file vào workflow nội bộ, không phải một năng lực bán được. |
-| `asset.video` | mediatools | ĐÓNG | Là bước đưa file vào workflow nội bộ, không phải một năng lực bán được. |
-| `asset.audio` | mediatools | ĐÓNG | Là bước đưa file vào workflow nội bộ, không phải một năng lực bán được. |
-| `audio.generate` | mediatools | ĐÓNG | App `surface=runtime` nên chưa có giá và hợp đồng cho khách gọi thẳng. |
-| `video.extract_frames` | mediatools | ĐÓNG | Mảnh ghép FFmpeg nội bộ mà các app khác gọi, không có hợp đồng riêng. |
-| `media.merge_image` | mediatools | ĐÓNG | Mảnh ghép FFmpeg nội bộ mà các app khác gọi, không có hợp đồng riêng. |
-| `media.merge_video` | mediatools | ĐÓNG | Mảnh ghép FFmpeg nội bộ mà các app khác gọi, không có hợp đồng riêng. |
-| `video.social_import` | mediatools | ĐÓNG | Nhận URL từ người gọi nên publish là mở thẳng một đường SSRF. |
 
 ## 3. 6/6 alias model
 

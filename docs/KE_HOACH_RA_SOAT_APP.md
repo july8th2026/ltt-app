@@ -10,14 +10,14 @@
 |---|---|---|---|
 | thumbnail | BOT GEMINI `thumbnail_api` (có `DOI_CHIEU_THUMBNAIL.md`) | api | parity ~93%, fast-follow ảnh ref/batch |
 | taoanh | BOT GEMINI `gemini_image` | api | parity, batch/ảnh ref |
-| kichban | BOT GEMINI `youtube_script` | api | parity, preset/lịch sử |
+| ~~kichban~~ (đã gỡ 2026-08-25) | BOT GEMINI `youtube_script` | api | parity, preset/lịch sử |
 | taovideo | BOT GEMINI `seedance_video` | api | credit token thật, asset://, heal, mod-retry |
 | autosubvideo | BOT GEMINI `auto_sub_video` | ffmpeg | ffmpeg-PATH worker, font, credit, upload lớn |
 | upscalevideo | BOT GEMINI `video_upscale` | gpu | GPU/NVENC, chunk đĩa, credit, seedance-reuse |
 | chataistudio | BOT GEMINI `codex` (AI Creative Studio) | chat | sidecar, ToS/quota dùng-chung, streaming, credit |
 | taoclipngan | FULL AUTO VIDEO `cut_clip_short` | gpu | title/score trống, ffmpeg-PATH, model stage |
-| demo | — | — | app test (kiểm hợp đồng, không doanh thu) |
-| socialbot | ⏸️ đóng băng | browser | KHÔNG rà (không phát triển) |
+| ~~demo~~ (đã gỡ 2026-08-25) | — | — | app test (kiểm hợp đồng, không doanh thu) |
+| socialbot | 🗑️ đã gỡ 2026-08-25 (Q108) | — | không còn tồn tại |
 
 ## 1. RUBRIC rà soát — 7 trục (áp cho MỌI app)
 
@@ -76,10 +76,10 @@ song, để lại rubric + báo cáo tái dùng cho app sau.
 ## 3. Thứ tự ưu tiên (rủi ro × doanh thu)
 
 1. **taovideo** (doanh thu cao + credit token phức tạp + asset:///heal).
-2. **thumbnail, taoanh, kichban** (doanh thu, parity đã ghi hoãn — soi gap).
+2. **thumbnail, taoanh** (doanh thu, parity đã ghi hoãn — soi gap). *(`kichban` gỡ 2026-08-25.)*
 3. **autosubvideo, upscalevideo, taoclipngan** (GPU/ffmpeg — bug hạ tầng worker).
 4. **chataistudio** (streaming + ToS/quota + credit theo lượt).
-5. **demo** (chỉ kiểm hợp đồng).
+5. ~~**demo**~~ — app đã gỡ 2026-08-25 (Q109).
 
 ## 4. Sản phẩm rà soát (output)
 

@@ -12,6 +12,8 @@ Ba cách hỏng mà file này chốt, xếp theo mức thiệt hại:
 """
 from __future__ import annotations
 
+from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+
 import pytest
 
 from platform_core import gpu as gpu_mod
@@ -40,8 +42,8 @@ def _gpu(i, uuid, free_mb=16000):
 def _submit(db, **kw):
     from platform_core.jobs import submit
     kw.setdefault("user_id", "u1")
-    kw.setdefault("app_slug", "demo")
-    kw.setdefault("job_type", "demo.reverse")
+    kw.setdefault("app_slug", APP_THU_SLUG)
+    kw.setdefault("job_type", APP_THU_JOB)
     kw.setdefault("params", {"text": "xin chao"})
     j = submit(db, **kw)
     db.commit()
@@ -194,7 +196,7 @@ def test_vram_doc_dung_tu_manifest_that():
     assert khai, "chưa app nào khai gpu_vram_mb — test này thành vô nghĩa"
     for jt, mb in khai.items():
         assert _vram_can(jt) == mb, f"{jt}: worker đọc sai nhu cầu VRAM"
-    assert _vram_can("demo.reverse") == 0
+    assert _vram_can(APP_THU_JOB) == 0
 
 
 # ── Không app nào được tự đọc GPU 0 nữa ──────────────────────────────────────

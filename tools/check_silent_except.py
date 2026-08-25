@@ -17,7 +17,8 @@ Cong cu chay theo kieu BANH COC (ratchet): so hien tai duoc chot trong
 moc. Ly do khong doi 0 ngay: 131 cho trong ma song la mot dot sua lon, rui ro
 regression cao, gia tri tung cho thap - nhung tuyet doi khong duoc them cho moi.
 
-`core/` bi loai khoi phep do: 78 cho, thuoc san pham socialbot da DONG BANG.
+`core/` truoc day bi loai khoi phep do (78 cho, thuoc socialbot). Tu 2026-08-25
+ca thu muc do da bi XOA (Q108), nen phep do nay gio phu toan bo ma song.
 
     python tools/check_silent_except.py            # kiem theo moc
     python tools/check_silent_except.py --list     # in tung cho
@@ -33,7 +34,6 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BASELINE = ROOT / "tools" / "silent_except_baseline.json"
 
-# `core/` la san pham dong bang - sua no la churn khong ai huong loi.
 SCAN = ("apps", "platform_core", "server", "tools")
 SKIP_PARTS = {"__pycache__", "vendor", "node_modules", ".venv", "venv", "dist", "build"}
 
@@ -104,7 +104,7 @@ def main() -> int:
         return 0
 
     moc = _moc()
-    print(f"Nuot loi lang le (ngoai core/): {n} | moc: {moc}")
+    print(f"Nuot loi lang le: {n} | moc: {moc}")
     if moc < 0:
         print("Chua co moc. Chay --update de chot.")
         print("RESULT: FAIL")

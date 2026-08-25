@@ -12,7 +12,8 @@ Ba điều được chốt ở đây:
 2. Các route web-broker cũ trả **404** khi cờ tắt — không chỉ ẩn khỏi menu, mà
    gõ thẳng URL cũng không mở.
 3. Bật `LTT_NEXUS_WEB_BROKER=1` thì lấy lại được bảng cũ (không xoá lặng lẽ thứ
-   có thể còn người dùng — tiền lệ `LTT_SOCIALBOT_ROUTES` của H22.10).
+   có thể còn người dùng — tiền lệ `LTT_SOCIALBOT_ROUTES` của H22.10, cờ đó nay
+   đã đi hết vòng: đo xong là không ai dùng, và bị xoá hẳn 2026-08-25 theo Q108).
 """
 from __future__ import annotations
 

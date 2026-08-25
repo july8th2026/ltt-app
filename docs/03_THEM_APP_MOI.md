@@ -31,8 +31,14 @@ tảng). Nhờ vậy "thêm app = thêm thư mục" đúng cho cả giao diện.
 kiểm sở hữu theo key. KHÔNG dùng `storage.download_token` qua ranh giới
 worker→web (token giữ trong RAM mỗi tiến trình).
 
-Cách nhanh nhất: **copy `apps/demo/` rồi sửa**. Nó là khuôn mẫu tối thiểu và
-luôn chạy được.
+⚠️ **Không còn app khuôn để copy.** `apps/demo/` — app mẫu tối thiểu — đã bị gỡ
+2026-08-25 (Q109). Nó tồn tại để bốn bộ test hạ tầng có chỗ nộp job, và chính vai
+trò đó biến nó thành thứ không xoá được; nay việc đó do một app THỬ tổng hợp
+trong `tests/conftest.py::app_thu` đảm nhiệm.
+
+⇒ Dùng **khuôn đầy đủ ngay bên dưới** (mục 1–4) — nó là nguồn chân lý, không phải
+bản tóm tắt của một app. Muốn xem một app THẬT nhỏ gọn thì đọc `apps/anhnoibo/`
+(chỉ job, không route) hoặc `apps/thumbnail/` (có route + template).
 
 ---
 
@@ -105,9 +111,9 @@ MANIFEST = AppManifest(
   gãy link người dùng đã lưu;
 - **duy nhất toàn hệ thống** — trùng `route_prefix` bị `test_60` chặn.
 
-`route_prefix` không bắt buộc trùng slug (socialbot slug là `socialbot` nhưng
-khai nav ở `/sheet/facebook`, `/manual/tiktok`… vì lý do lịch sử — xem Q10).
-App mới nên đặt `route_prefix="/<slug>"` cho nhất quán và dễ đoán.
+`route_prefix` không bắt buộc trùng slug — một app có thể khai `nav` trỏ ra
+ngoài prefix của nó vì lý do lịch sử. App mới nên đặt `route_prefix="/<slug>"`
+cho nhất quán và dễ đoán.
 
 ### `public` — hiện trên trang chủ công khai hay không (H6/Q30)
 
@@ -119,7 +125,7 @@ là một thẻ, bấm vào thì bị đưa về `/login?next=<route_prefix>` r�
   thương mại muốn khách nhìn thấy để mua.
 - `public=False` → app **ẩn khỏi catalog khách**, chỉ hiện trong sidebar sau khi
   đăng nhập và **được phân quyền** (`app_access`). Dùng cho công cụ nội bộ
-  (`demo` — nghiệm thu hạ tầng) hoặc app riêng chưa mở bán (`socialbot`).
+  (`qualitylab` — đo chất lượng) hoặc app riêng chưa mở bán.
 
 `public` chỉ chi phối **hiển thị trên catalog**. Chặn truy cập thật vẫn nằm ở
 tầng route (`require_login`) + phân quyền `app_access` — một app `public=False`
@@ -263,5 +269,5 @@ muốn, và với API tính theo giây thì đó là mất tiền thật.
 
 **Chạy việc dài ngay trong request.** Cloudflare cắt ở **100 giây** (lỗi 524)
 dù bot vẫn đang chạy tốt. Việc dài hơn vài giây phải đi qua hàng đợi job.
-`apps/demo` chạy trực tiếp trong request được **chỉ vì** nó mất vài
+App cũ `apps/demo` từng chạy trực tiếp trong request được **chỉ vì** nó mất vài
 mili-giây — đừng lấy đó làm mẫu cho app thật.

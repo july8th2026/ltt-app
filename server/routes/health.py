@@ -33,11 +33,21 @@ def ready(request: Request, response: Response) -> dict:
     `che_mat_khau()` first — driver messages routinely embed the whole
     connection string, and this endpoint is unauthenticated by design so the
     reverse proxy can probe it.
+
+    ⭐ Từ 2026-08-25 hàm này **không còn đọc tệp cấu hình nào**. Trước đó nó trả
+       503 "config not loaded" khi `data/config.json` hỏng — mà tệp đó là cấu
+       hình của app socialbot, nay đã gỡ. Nghĩa là suốt thời gian ấy một app
+       đóng băng quyết định được nền tảng có sẵn sàng hay không, và nssm khởi
+       động lại tiến trình theo câu trả lời đó. Sự cố BOM ghi ở `AGENTS.md`
+       mục 5 đi đúng đường này.
+
+       Hồ sơ môi trường nay lấy từ `LTT_ENV` (đã nằm sẵn trong
+       `server_settings`, không phải một lượt đọc đĩa), nên "sẵn sàng" chỉ còn
+       đúng một nghĩa: **CSDL nối được**.
     """
-    core_settings = getattr(request.app.state, "core_settings", None)
-    if core_settings is None:
-        response.status_code = 503
-        return {"status": "not_ready", "reason": "config not loaded"}
+    server_settings = getattr(request.app.state, "server_settings", None)
+    environment = (server_settings.environment.value
+                   if server_settings is not None else "unknown")
 
     db_ok, db_reason = _kiem_tra_csdl()
     if not db_ok:
@@ -45,12 +55,12 @@ def ready(request: Request, response: Response) -> dict:
         return {
             "status": "not_ready",
             "reason": f"database: {db_reason}",
-            "environment": core_settings.environment.value,
+            "environment": environment,
         }
 
     return {
         "status": "ready",
-        "environment": core_settings.environment.value,
+        "environment": environment,
         "database": "ok",
     }
 

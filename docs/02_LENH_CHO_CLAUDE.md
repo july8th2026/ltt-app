@@ -43,11 +43,13 @@ hợp đồng app thành thứ được kiểm chứng thật, thay vì chỉ l�
 ## Nghiệm thu hạ tầng sau khi sửa
 
 ```
-Chạy nghiệm thu hạ tầng bằng app demo (không dùng app tính phí API):
+Chạy nghiệm thu hạ tầng (⚠️ app `demo` đã gỡ 2026-08-25 — dùng một app thật và
+chấp nhận nó tiêu credit, hoặc chạy `pytest tests/test_67 tests/test_68` là bộ
+kiểm cùng chuỗi mà không tốn gì):
 1. python -m pytest -q  → phải xanh hết
 2. python tools/scan_source_secrets.py  → phải 0 finding
 3. chạy uvicorn cục bộ, mở /, xác nhận trang chủ liệt kê đủ app
-4. mở /demo, chạy một job, xác nhận có kết quả và có số credit
+4. mở một app bất kỳ, chạy một job, xác nhận có kết quả và có số credit
 Báo lại từng bước kèm kết quả thật.
 ```
 

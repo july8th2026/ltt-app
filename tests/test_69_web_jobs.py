@@ -75,7 +75,7 @@ def test_job_hien_o_trang_viec_cua_toi(env):
     client.post("/demo/queue", data={"text": "abc", "csrf_token": tok},
                 follow_redirects=False)
     html = client.get("/jobs").text
-    assert "demo.reverse" in html
+    assert "appthu.dao_nguoc" in html
     assert 'name="date_from"' in html and 'name="date_to"' in html
 
 
@@ -112,7 +112,7 @@ def test_timeline_owner_va_debug_chi_operator(env):
     assert retention.json()["policy"]["customer_days"] == 365
     metrics = client.get("/ops/jobs-metrics")
     assert metrics.status_code == 200
-    assert metrics.json()["apps"]["demo"]["slo"]["state"] == "insufficient_data"
+    assert metrics.json()["apps"]["appthu"]["slo"]["state"] == "insufficient_data"
 
     _login(client, "customer@x.com")
     assert client.get(f"/ops/jobs/{job_id}/events").status_code == 403

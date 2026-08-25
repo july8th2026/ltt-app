@@ -24,9 +24,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 APPS = ROOT / "apps"
 
 # App co ly do rieng, mien tru mot so kiem tra.
-#   demo: app test hop dong toi thieu.
-#   socialbot: dong bang, khong phat trien.
-SKIP_APPS = {"socialbot"}
+#
+# Muc `socialbot` bo di 2026-08-25 cung app do (Q108). Danh sach nay nay RONG,
+# va giu nguyen no rong la mot muc tieu: moi mien tru la mot app khong bi hop
+# dong soi, va ly do mien tru thi song lau hon hoan canh sinh ra no.
+SKIP_APPS: set = set()
 
 # ── Nguong tang nghiep vu (audit control-plane 2026-08-06) ──────────────────
 #

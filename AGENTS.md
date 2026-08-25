@@ -64,8 +64,10 @@ theo hướng dẫn trong đó**.
    đó là dấu hiệu hợp đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không
    đi vòng.
 4. **Không triển khai lên máy chủ, không đổi DNS** trừ khi được yêu cầu rõ ràng.
-5. **App socialbot đã đóng băng.** Không tối ưu, không thêm tính năng. Sửa chỉ
-   khi nó chặn hạ tầng.
+5. **App socialbot đã bị gỡ hẳn** (2026-08-25, Q108 thay Q10). Cùng với nó:
+   `core/`, `utils/`, `server/services/`, 43 route và 44 tệp test. Đừng dựng
+   lại — `tests/test_60_app_registry.py` chốt trạng thái đã gỡ. Muốn đưa về thì
+   đó là một quyết định sản phẩm, phải thêm dòng mới vào bảng quyết định trước.
 6. Cổng của nền tảng là **8100**. Cổng 8000 thuộc về hệ thống khác trên cùng máy.
 
 ---
@@ -133,10 +135,14 @@ Bốn điều dưới đây đều **đã thực sự gây sự cố** trong d�
    khi truyền cho `.exe`, nên `r"C:\path"` tới Python thành `rC:\path`. Ghi ra
    file `.py` rồi chạy.
 
-4. **Mọi đường dẫn dữ liệu đi qua `core.runtime_paths.data_path()`.** Chuỗi
-   `os.path.join("data", ...)` là tương đối theo thư mục làm việc; trên máy chủ
-   nó rơi vào `app\data\` — thư mục **bị xoá và thay toàn bộ mỗi lần cập nhật**.
-   Có test chốt (`tests/test_62_khoa_logic.py`).
+4. **Mọi đường dẫn dữ liệu đi qua `platform_core.runtime_paths.data_path()`.**
+   Chuỗi `os.path.join("data", ...)` là tương đối theo thư mục làm việc; trên
+   máy chủ nó rơi vào `app\data\` — thư mục **bị xoá và thay toàn bộ mỗi lần
+   cập nhật**. Có test chốt (`tests/test_62_khoa_logic.py`).
+
+   *(Tên module đúng là `platform_core.runtime_paths` từ 2026-08-06; dòng này
+   ghi `core.runtime_paths` cho tới 2026-08-25 — tức chỉ vào một module đã
+   chuyển nhà từ ba tuần trước, và nay đã bị xoá hẳn.)*
 
 ---
 

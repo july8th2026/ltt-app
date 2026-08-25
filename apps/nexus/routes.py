@@ -57,10 +57,15 @@ def _web_broker_bat() -> bool:
     giới thiệu / tài khoản / credit. Luồng web-broker ở file này đã ĐÓNG BĂNG,
     nên mặc định **TẮT** — gõ thẳng URL cũng không mở.
 
-    Không xoá hẳn, mà đặt sau cờ, theo đúng tiền lệ `LTT_SOCIALBOT_ROUTES`
-    (H22.10): xoá lặng lẽ một bề mặt đang chạy là cách làm mất thứ có người còn
-    dùng mà không ai kịp nói. Đặt `LTT_NEXUS_WEB_BROKER=1` trong `secrets/app.env`
-    để lấy lại.
+    Không xoá hẳn, mà đặt sau cờ: xoá lặng lẽ một bề mặt đang chạy là cách làm
+    mất thứ có người còn dùng mà không ai kịp nói. Đặt `LTT_NEXUS_WEB_BROKER=1`
+    trong `secrets/app.env` để lấy lại.
+
+    ⭐ Tiền lệ là `LTT_SOCIALBOT_ROUTES` (H22.10) — **và nó đã đi hết một vòng**:
+    cờ đó sống 19 ngày, đủ để đo rằng **không ai dùng** (0 job, 0 phân quyền, 0
+    token), rồi cả 43 route bị xoá hẳn ngày 2026-08-25 (Q108). Đó là cách một cờ
+    như thế này nên kết thúc: **hoãn quyết định cho tới khi có số đo**, không
+    phải hoãn mãi mãi. Nên khi Nexus web-broker có số đo, hãy quyết cho nó.
     """
     raw = str(os.environ.get("LTT_NEXUS_WEB_BROKER", "0")).strip().lower()
     return raw in {"1", "true", "yes", "on"}

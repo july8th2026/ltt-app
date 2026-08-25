@@ -43,7 +43,8 @@ nào (`AGENTS.md` 8.4) — nhờ vậy luật kiểm được bằng unit test k
 
 FastAPI/Starlette bản này **không làm phẳng** `include_router`: mỗi lần include
 để lại một `_IncludedRouter` không có `.path` (đã có ghi chú ở
-`tests/test_152_socialbot_route_flag.py` và `tests/test_51_oauth_web.py`).
+`tests/test_152_socialbot_route_flag.py` và `tests/test_51_oauth_web.py` — cả
+hai đã bị xoá cùng app socialbot ngày 2026-08-25; hành vi Starlette không đổi).
 Mount một sub-app cho ba thứ miễn phí:
 
 1. **Inventory** — route của bề mặt là một danh sách, không phải một cuộc duyệt cây.

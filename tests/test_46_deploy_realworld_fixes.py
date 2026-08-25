@@ -184,13 +184,20 @@ def test_doctor_fix_hints_never_reference_the_desktop_app():
         assert phrase not in src, f"doctor.py still references the desktop: {phrase!r}"
 
 
-def test_doctor_explains_a_sheets_403_as_a_sharing_problem():
-    """A 403 from Sheets is almost always "the spreadsheet was never shared
-    with the service account" — telling the operator to check the file path
-    sends them to the wrong place. Found live on the VPS."""
+def test_doctor_van_in_duoc_tren_console_windows_doi_cu():
+    """`doctor` phải in được trên console dùng bảng mã cũ (cp1252 / cp437).
+
+    Lỗi thật trên VPS: báo cáo có tiếng Việt và biểu tượng trạng thái, nên
+    `print` ném `UnicodeEncodeError` và giết tiến trình — **công cụ chẩn đoán
+    chết đúng lúc người vận hành cần nó**.
+
+    Vế thứ hai của phép kiểm cũ (403 từ Google Sheets nghĩa là "chưa chia sẻ
+    bảng tính cho service account") bỏ đi 2026-08-25 cùng app socialbot: doctor
+    không còn mục kiểm nào chạm Sheets. Bài học về console thì vẫn nguyên, và
+    nó rộng hơn Sheets.
+    """
     with open(os.path.join(_project_root(), "tools", "doctor.py"),
               encoding="utf-8") as f:
         src = f.read()
-    assert "_service_account_email" in src
-    assert "chưa được chia sẻ" in src
-    assert "403" in src
+    assert "_force_utf8_output" in src
+    assert 'errors="replace"' in src

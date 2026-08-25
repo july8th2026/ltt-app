@@ -1,9 +1,9 @@
 """
 Server-specific settings (P3) — session secret and admin credentials.
 
-Layered on top of core.settings (environment profile + runtime paths),
-not a replacement for it. Never stores or logs a secret value; only reads
-them from the environment.
+Layered on top of platform_core.settings (environment profile), not a
+replacement for it. Never stores or logs a secret value; only reads them from
+the environment.
 """
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ import os
 import secrets
 from dataclasses import dataclass
 
-from core.settings import Environment, resolve_environment
+from platform_core.settings import Environment, resolve_environment
 
 
 class MissingServerSecretError(RuntimeError):

@@ -90,7 +90,7 @@
 {% if not home_workspace|default(false) %}
 {% include "_header.html" %}
 
-{# Nav NỘI BỘ của app đang mở (app nhiều trang, vd socialbot) — thay sub-nav
+{# Nav NỘI BỘ của app đang mở (app nhiều trang, vd vps) — thay sub-nav
    sidebar cũ; app một trang thì không có thanh này. #}
 {% set _tabs = app_tabs(request) %}
 {% if _tabs %}

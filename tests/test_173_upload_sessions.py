@@ -1,6 +1,8 @@
 """R2 — staging upload, promote-after-hold, cleanup và reconcile."""
 from __future__ import annotations
 
+from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+
 from datetime import datetime, timedelta, timezone
 import io
 
@@ -33,7 +35,7 @@ def env(tmp_path, monkeypatch):
 def _session(db, *, size=len(MP4), now=None):
     from platform_core import upload_sessions
     return upload_sessions.create(
-        db, user_id="u1", app_slug="demo", filename="source.mp4",
+        db, user_id="u1", app_slug=APP_THU_SLUG, filename="source.mp4",
         content_type="video/mp4", expected_size=size, max_size=1024,
         allowed_types=("video/mp4",), now=now,
     )
@@ -65,27 +67,27 @@ def test_confirm_tu_choi_file_gia_mao_va_size_sai(env):
         upload_sessions.confirm(db, storage, wrong_magic)
 
 
-def test_chi_promote_sau_hold_va_gan_job_owner(env):
+def test_chi_promote_sau_hold_va_gan_job_owner(env, app_thu):
     from platform_core import credit, upload_sessions
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import Job
     db, storage = env
     session = _session(db)
     storage.put(session.staging_key, io.BytesIO(MP4), content_type="video/mp4")
-    no_hold = Job(user_id="u1", app_slug="demo", job_type="demo.reverse",
+    no_hold = Job(user_id="u1", app_slug=APP_THU_SLUG, job_type=APP_THU_JOB,
                   params={"text": "x"})
     db.add(no_hold); db.flush()
     with pytest.raises(upload_sessions.UploadSessionError, match="credit"):
         upload_sessions.promote(
-            db, storage, session, job=no_hold, final_key=f"demo/u1/{no_hold.id}/source.mp4")
+            db, storage, session, job=no_hold, final_key=f"appthu/u1/{no_hold.id}/source.mp4")
     db.rollback()
 
     session = _session(db)
     storage.put(session.staging_key, io.BytesIO(MP4), content_type="video/mp4")
     credit.nap(db, "u1", 10)
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "x"})
-    final = f"demo/u1/{job.id}/source.mp4"
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "x"})
+    final = f"appthu/u1/{job.id}/source.mp4"
     key = upload_sessions.promote(db, storage, session, job=job, final_key=final)
     db.commit()
 
@@ -100,7 +102,7 @@ def test_attach_project_owner_scoped_ttl_va_sweep(env):
     start = datetime(2026, 8, 12, tzinfo=timezone.utc)
     session = _session(db, now=start)
     storage.put(session.staging_key, io.BytesIO(MP4), content_type="video/mp4")
-    final = "demo/u1/drafts/project-1/source.mp4"
+    final = "appthu/u1/drafts/project-1/source.mp4"
 
     key = upload_sessions.attach_to_project(
         db, storage, session, project_id="project-1", final_key=final, now=start)
@@ -109,10 +111,10 @@ def test_attach_project_owner_scoped_ttl_va_sweep(env):
     assert key == final and session.status == "attached"
     assert session.project_id == "project-1" and storage.exists(final)
     assert upload_sessions.project_attachment(
-        db, user_id="u1", app_slug="demo", project_id="project-1",
+        db, user_id="u1", app_slug=APP_THU_SLUG, project_id="project-1",
         final_key=final) is session
     assert upload_sessions.project_attachment(
-        db, user_id="other", app_slug="demo", project_id="project-1",
+        db, user_id="other", app_slug=APP_THU_SLUG, project_id="project-1",
         final_key=final) is None
 
     assert upload_sessions.touch_project_attachment(
@@ -154,16 +156,16 @@ def test_sweeper_dry_run_delete_idempotent_va_reconcile(env):
     assert upload_sessions.reconcile(db, storage)["missing"] == 0
 
 
-def test_compensate_tra_file_ve_staging_sau_db_rollback(env):
+def test_compensate_tra_file_ve_staging_sau_db_rollback(env, app_thu):
     from platform_core import credit, upload_sessions
     from platform_core.job_submit import submit_with_credit
     db, storage = env
     session = _session(db)
     storage.put(session.staging_key, io.BytesIO(MP4), content_type="video/mp4")
     credit.nap(db, "u1", 10)
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "x"})
-    final = f"demo/u1/{job.id}/source.mp4"
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "x"})
+    final = f"appthu/u1/{job.id}/source.mp4"
     upload_sessions.promote(db, storage, session, job=job, final_key=final)
 
     # Giả lập commit CSDL thất bại sau khi object storage đã move thành công.
@@ -173,7 +175,7 @@ def test_compensate_tra_file_ve_staging_sau_db_rollback(env):
     assert storage.exists(session.staging_key) and not storage.exists(final)
 
 
-def test_sweeper_bo_qua_input_cua_job_dang_chay(env):
+def test_sweeper_bo_qua_input_cua_job_dang_chay(env, app_thu):
     from platform_core import credit, upload_sessions
     from platform_core.job_submit import submit_with_credit
     from platform_core.models import JOB_RUNNING
@@ -182,9 +184,9 @@ def test_sweeper_bo_qua_input_cua_job_dang_chay(env):
     session = _session(db, now=start)
     storage.put(session.staging_key, io.BytesIO(MP4), content_type="video/mp4")
     credit.nap(db, "u1", 10)
-    job = submit_with_credit(db, user_id="u1", app_slug="demo",
-                             job_type="demo.reverse", params={"text": "x"})
-    final = f"demo/u1/{job.id}/source.mp4"
+    job = submit_with_credit(db, user_id="u1", app_slug=APP_THU_SLUG,
+                             job_type=APP_THU_JOB, params={"text": "x"})
+    final = f"appthu/u1/{job.id}/source.mp4"
     upload_sessions.promote(db, storage, session, job=job, final_key=final,
                             now=start)
     job.status = JOB_RUNNING

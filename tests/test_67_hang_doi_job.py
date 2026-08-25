@@ -14,6 +14,8 @@ Trọng tâm:
 """
 from __future__ import annotations
 
+from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+
 from datetime import timedelta
 
 import pytest
@@ -35,10 +37,19 @@ def db(tmp_path, monkeypatch):
 
 
 def _submit(db, **kw):
+    """Nộp một job qua `jobs.submit` (KHÔNG đi qua credit).
+
+    Dùng app THỬ tổng hợp ở `conftest.py` chứ không dùng một app có thật: hợp
+    đồng của hàng đợi không được dựa vào một mặt hàng. Xem `conftest.app_thu`.
+
+    ⚠️ `jobs.submit` không tra giá, nên phần lớn test ở đây chạy được mà **không
+       cần** fixture `app_thu`. Chỉ ba test chạm tới `resolve_handler` hoặc vòng
+       worker mới cần nó — và chúng khai fixture đó tường minh.
+    """
     from platform_core.jobs import submit
     kw.setdefault("user_id", "u1")
-    kw.setdefault("app_slug", "demo")
-    kw.setdefault("job_type", "demo.reverse")
+    kw.setdefault("app_slug", APP_THU_SLUG)
+    kw.setdefault("job_type", APP_THU_JOB)
     kw.setdefault("params", {"text": "abc"})
     j = submit(db, **kw)
     db.commit()
@@ -219,9 +230,9 @@ def test_reclaim_khong_dung_job_dang_song(db):
 
 # ── Tra handler + chạy trọn một job ───────────────────────────────────────────
 
-def test_resolve_handler_demo(db):
+def test_resolve_handler_tra_dung_handler_cua_app(db, app_thu):
     from platform_core.jobs import resolve_handler
-    h = resolve_handler("demo.reverse")
+    h = resolve_handler(app_thu.job_type)
     assert callable(h)
     assert h({"text": "abc"}, None)["output"] == "cba"
 
@@ -232,8 +243,8 @@ def test_resolve_handler_job_type_la(db):
         resolve_handler("khong-ai-nhan.xyz")
 
 
-def test_chay_tron_mot_job_demo(db, monkeypatch):
-    """Worker loop nhặt job demo → chạy handler → complete với kết quả đúng."""
+def test_chay_tron_mot_job(db, monkeypatch, app_thu):
+    """Worker loop nhặt job → chạy handler → complete với kết quả đúng."""
     from platform_core.job_runner import _chay_mot_job
     from platform_core.models import Job, JOB_DONE
 
@@ -250,12 +261,18 @@ def test_chay_tron_mot_job_demo(db, monkeypatch):
     assert job.progress == 100
 
 
-def test_chay_job_loi_thi_fail(db):
-    """Handler ném lỗi (text rỗng) → job fail, không complete."""
+def test_chay_job_loi_thi_fail(db, app_thu):
+    """Handler ném lỗi (text rỗng) → job fail, không complete.
+
+    ⚠️ Phải khai `app_thu`. Không có nó thì `resolve_handler` ném vì **không ai
+       nhận job_type** — job vẫn thành `error`, nên test vẫn XANH, nhưng nó xanh
+       vì một lý do khác hẳn thứ nó nói là đang đo. Một test xanh vì lý do sai
+       tệ hơn một test đỏ.
+    """
     from platform_core.job_runner import _chay_mot_job
     from platform_core.models import Job, JOB_QUEUED, JOB_ERROR
 
-    j = _submit(db, params={"text": "   "}, max_attempts=1)  # demo nem loi khi rong
+    j = _submit(db, params={"text": "   "}, max_attempts=1)  # handler nem loi khi rong
     jid = j.id
     _chay_mot_job("w-test")
 

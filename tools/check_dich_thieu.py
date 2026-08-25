@@ -23,7 +23,7 @@ VI SAO CO TEP NAY, VA VI SAO NO KHAC `check_i18n.py`
 
 ⛔ VI SAO KHONG DICH HET 279 MUC NGAY BAY GIO
 
-   Chung nam rai o khu socialbot dong bang, cac app cu, va trang admin — nhung
+   Chung nam rai o cac app cu va trang admin — nhung
    cho ban tieng Anh chua ai xem. Dich het la mot buoi lam khong ai kiem lai
    duoc, va no khong sua NGUYEN NHAN: hom sau them mot trang moi la lai thieu.
 

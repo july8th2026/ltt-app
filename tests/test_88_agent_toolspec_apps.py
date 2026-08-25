@@ -9,13 +9,17 @@ from platform_core.agent.tools import (ToolParamsError, discover_tools,
 from platform_core.registry import credit_for, discover
 
 
+# 🗑️ Bo 11 tool ngay 2026-08-25 cung ba app `kichban`, `mediatools`, `demo`:
+#    text.script · text.generate · asset.image · asset.images · asset.video ·
+#    asset.audio · video.extract_frames · media.merge_image · media.merge_video ·
+#    audio.generate · video.social_import.
+#
+# ⚠️ Bon tool `asset.*` la node DAU VAO cua workflow Agent. Go chung la go duong
+#    dua tep cua khach vao mot chuoi Agent — chu san pham da biet va van quyet.
 EXPECTED = {
-    "text.script", "image.generate", "image.thumbnail", "video.generate",
+    "image.generate", "image.thumbnail", "video.generate",
     "video.subtitle", "video.upscale", "video.short_clips",
-    "text.generate", "image.batch_generate",
-    "asset.image", "asset.images", "asset.video", "asset.audio", "video.extract_frames",
-    "media.merge_image", "media.merge_video",
-    "audio.generate", "video.social_import", "image.upscale",
+    "image.batch_generate", "image.upscale",
     "text.prompt_package", "story.storyboard",
     # Model anh NOI BO (H37/Q102). No vao bang nay vi `discover_tools()` lay MOI
     # ToolSpec job-based — khong phai vi ai do quyet dinh mo no cho Agent. Ba cong
@@ -46,19 +50,11 @@ def test_dung_toan_bo_tool_job_based_duoc_discover():
 
 def test_app_khong_phu_hop_khong_bi_ep_toolspec():
     manifests = {item.slug: item.manifest for item in discover()}
-    assert manifests["demo"].tools == ()
-    assert manifests["socialbot"].tools == ()
     assert manifests["chataistudio"].tools == ()
+    assert manifests["nexus"].tools == ()
 
 
 VALID_CASES = {
-    "text.script": {
-        "topic": "Cách làm phim ngắn",
-        "duration": "3-5_phut", "tone": "educational",
-        "audience": "general", "language": "vi",
-    },
-    "text.generate": {"prompt": "Viết một đoạn giới thiệu", "model": "gemini-2.5-flash",
-                      "format": "markdown"},
     "image.generate": {
         "prompt": "Một thành phố tương lai", "model": "gemini-2.5-flash-image",
         "aspect_ratio": "16:9", "count": 4,
@@ -67,17 +63,6 @@ VALID_CASES = {
         "prompt": "Bốn góc máy của một sản phẩm", "model": "gemini-2.5-flash-image",
         "aspect_ratio": "1:1", "count": 4,
     },
-    "asset.image": {"image_key": "$input.image"},
-    "asset.images": {"image_keys": ["agent-assets/u/1.png", "agent-assets/u/2.png"]},
-    "asset.video": {"video_key": "$input.video"},
-    "asset.audio": {"audio_key": "$input.audio"},
-    "video.extract_frames": {"video_key": "$input.video", "interval_sec": 2,
-                             "max_frames": 12},
-    "media.merge_image": {"images": ["$s1.image_key", "$s2.image_key"], "layout": "grid"},
-    "media.merge_video": {"videos": ["$s1.video_key", "$s2.video_key"], "transition": "cut"},
-    "audio.generate": {"text": "Xin chào", "model": "gemini-2.5-flash-preview-tts",
-                       "voice": "Kore", "style": "Natural"},
-    "video.social_import": {"url": "https://cdn.example.com/owned.mp4", "confirm_rights": True},
     "image.upscale": {"image_key": "$s1.image_key", "preset": "fast"},
     "image.thumbnail": {
         "topic": "Du lịch Việt Nam", "model": "gemini-2.5-flash-image",
@@ -126,7 +111,6 @@ def test_params_that_toi_thieu_toi_da_hop_le(tool_name):
 
 
 @pytest.mark.parametrize(("tool_name", "params"), [
-    ("text.script", {"topic": "x", "duration": "khong-co"}),
     ("image.generate", {"prompt": "x", "model": "model-khong-co", "count": 1}),
     ("image.thumbnail", {"topic": "x", "model": "gemini-2.5-flash-image", "count": 5}),
     ("video.generate", {"prompt": "x", "model": "seedance-2.0-mini", "resolution": "4k"}),
@@ -149,19 +133,8 @@ def test_gia_toolspec_dung_nguon_credit_hien_hanh(tool_name):
 
 
 RESULT_FIXTURES = {
-    "text.script": {"script": {"title": "T", "hook": "H"}},
-    "text.generate": {"text": "Nội dung"},
     "image.generate": {"image_keys": ["image/u/1.png"], "prompt": "p"},
     "image.batch_generate": {"image_keys": ["image/u/1.png", "image/u/2.png"], "prompt": "p"},
-    "asset.image": {"image_key": "agent-assets/u/1.png"},
-    "asset.images": {"image_keys": ["agent-assets/u/1.png", "agent-assets/u/2.png"]},
-    "asset.video": {"video_key": "agent-assets/u/1.mp4"},
-    "asset.audio": {"audio_key": "agent-assets/u/1.wav"},
-    "video.extract_frames": {"image_keys": ["mediatools/u/1/1.jpg"]},
-    "media.merge_image": {"image_key": "mediatools/u/1/merged.jpg"},
-    "media.merge_video": {"video_key": "mediatools/u/1/merged.mp4"},
-    "audio.generate": {"audio_key": "mediatools/u/1/speech.wav"},
-    "video.social_import": {"video_key": "mediatools/u/1/imported.mp4"},
     "image.upscale": {"image_key": "upscalevideo/u/1/image-x4.png"},
     "image.thumbnail": {"image_keys": ["thumbnail/u/1.png"], "prompt": "p"},
     "video.generate": {"video_key": "taovideo/u/1.mp4"},

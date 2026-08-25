@@ -77,26 +77,17 @@ for _mod in (agent_routes.legacy_runs,      # POST /agent/plan
     assert hasattr(_mod, "plan_once"), f"{_mod.__name__} khong con dung plan_once"
     _mod.plan_once = _fake_plan
 
-import apps.kichban.jobs as script_jobs
 import apps.taoanh.jobs as image_jobs
 import apps.thumbnail.jobs as thumbnail_jobs
 import apps.taoclipngan.jobs as clip_jobs
 
 
-def _script_handle(params, ctx=None):
-    if ctx: ctx.progress(100, "xong")
-    # kichban serves both text.script (topic -> script) and text.generate
-    # (prompt -> text). Returning the script shape for both leaves
-    # `$node.text` unresolvable, which is the canvas starter chain.
-    if str(params.get("prompt") or "").strip():
-        return {"text": "Văn bản kiểm thử từ LTT Studio.", "credit_cost": 3}
-    script = {"title": params.get("topic"), "hook": "Hook kiểm thử",
-              "sections": [{"title": "Phần một", "content": "Nội dung kiểm thử"}],
-              "outro": "CTA kiểm thử", "description": "Mô tả kiểm thử",
-              "tags": ["ltt", "test"]}
-    from apps.kichban.features import derive_shot_list
-    return {"script": script, "shot_list": derive_shot_list(script), "credit_cost": 3}
-
+# `_script_handle` DA GO 2026-08-25 cung app `kichban` (Q109). No gia lap hai
+# tool `text.script` va `text.generate`; ca hai da bien mat khoi registry, nen
+# chuoi khoi dau cu cua Canvas trong fixture nay khong con doi tuong.
+#
+# ⚠️ Neu kich ban Playwright nao con di qua mot node van ban thi no se hong o
+#    buoc do — va hong DUNG CHO, vi nang luc do khong con ton tai.
 
 def _image_handle(params, ctx=None):
     from apps.taoanh.manifest import unit_credit
@@ -119,7 +110,6 @@ def _image_handle(params, ctx=None):
             "prompt": str(params.get("prompt") or "")}
 
 
-script_jobs.handle = _script_handle
 image_jobs.handle = _image_handle
 
 

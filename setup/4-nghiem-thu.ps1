@@ -100,25 +100,10 @@ if (Test-Path (Join-Path $secrets 'app.env')) {
 } else { Bad 'THIEU secrets\app.env' }
 
 Head 'Cau hinh'
-$cfg = Join-Path $dataDir 'config.json'
-if (Test-Path $cfg) {
-    $bytes = [IO.File]::ReadAllBytes($cfg)[0..2]
-    if ($bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191) {
-        # Code doc bang utf-8-sig nen van chay, nhung sua bang cong cu khac
-        # thi de vo. Bao de biet.
-        Warn 'config.json co BOM - nen ghi lai khong BOM'
-    } else { Ok 'config.json khong BOM' }
-    try {
-        $j = Get-Content $cfg -Raw | ConvertFrom-Json
-        $n = ($j.PSObject.Properties | Measure-Object).Count
-        Ok "config.json doc duoc, $n khoa"
-        $todo = @()
-        foreach ($k in @('sheet_id', 'google_credentials_path')) {
-            if ("$($j.$k)" -match 'REPLACE_ME|^$') { $todo += $k }
-        }
-        if ($todo.Count -gt 0) { Warn "Chua dien that: $($todo -join ', ')" }
-    } catch { Bad "config.json khong phai JSON hop le: $($_.Exception.Message)" }
-} else { Bad 'THIEU data\config.json' }
+# KIEM data\config.json DA BO 2026-08-25 (Q108): tep do la cau hinh cua app
+# socialbot, va app do da bi go han. Nen tang khong doc tep cau hinh nao luc
+# khoi dong - moi thu nam trong secretspp.env, da kiem o muc tren.
+Ok 'Nen tang khong doc tep cau hinh - da kiem secretspp.env o tren'
 
 Head 'App da nap'
 if (Test-Path $venvPy) {

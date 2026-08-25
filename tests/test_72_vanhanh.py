@@ -3,7 +3,7 @@ H6 — cốt lõi vận hành: catalog công khai + SSO UX + login return-to.
 
 Khoá hành vi (Q30):
 - trang chủ `/` CÔNG KHAI: khách chưa đăng nhập vẫn xem được, chỉ hiện app
-  `public=True`, KHÔNG hiện app nội bộ (demo/socialbot) và KHÔNG có sidebar;
+  `public=True`, KHÔNG hiện app nội bộ (qualitylab) và KHÔNG có sidebar;
 - route app yêu cầu đăng nhập → 303 `/login?next=<path>`;
 - `safe_next` chống open-redirect;
 - đăng nhập xong quay lại đúng `next`;
@@ -70,10 +70,10 @@ def test_progress_bao_terminal_de_trang_tu_nap_action_va_artifact(client):
     try:
         user = tao_nguoi_dung(db, email="job-progress@example.com",
                               password="matkhau-tot-12", is_verified=True)
-        running = Job(user_id=user.id, app_slug="demo", job_type="demo.reverse",
+        running = Job(user_id=user.id, app_slug="appthu", job_type="appthu.dao_nguoc",
                       status=JOB_RUNNING)
-        done = Job(user_id=user.id, app_slug="demo", job_type="demo.reverse",
-                   status=JOB_DONE, result={"text_key": "demo/result.txt"})
+        done = Job(user_id=user.id, app_slug="appthu", job_type="appthu.dao_nguoc",
+                   status=JOB_DONE, result={"text_key": "appthu/result.txt"})
         db.add_all([running, done]); db.commit()
         running_id, done_id = running.id, done.id
     finally:
@@ -172,21 +172,36 @@ def _tao_va_dang_nhap(client, email, role="user"):
 # ── Vỏ hai tầng (H6.6): launcher + trang con theo ngữ cảnh ───────────────────────
 
 def test_sidebar_launcher_mot_dong_moi_app(client):
-    """Ở trang chủ: mỗi app MỘT dòng; trang con của app KHÔNG tràn ra sidebar."""
+    """Ở trang chủ: mỗi app MỘT dòng; trang con của app KHÔNG tràn ra sidebar.
+
+    Trước 2026-08-25 phép kiểm này dùng `socialbot` (8 trang con). App đó đã bị
+    gỡ; app nhiều trang duy nhất còn lại là `agent` (`/agent` + `/agent/canvas`).
+    Tính chất được chốt ở đây **không đổi** — nó là hợp đồng của thanh điều
+    hướng hai tầng, không phải của một app.
+    """
     _tao_va_dang_nhap(client, "u1@example.com")
     body = client.get("/").text
-    assert "Đăng bài Facebook + TikTok" in body      # dòng app (tầng 1) hiện
-    assert "Sheet TikTok" not in body                # trang con (tầng 2) ẩn
-    assert "Manual TikTok" not in body
+    assert "LTT Agent AI" in body                    # dòng app (tầng 1) hiện
+
+    # ⚠️ KHÔNG khẳng định `"Canvas" not in body`. `home.html` có một liên kết
+    #    nhanh "Agent Canvas" viết cứng, nên chuỗi đó LUÔN có mặt và phép kiểm
+    #    sẽ đỏ vì một lý do chẳng liên quan gì tới thanh điều hướng.
+    #
+    # ⭐ Đo THỨ QUYẾT ĐỊNH thay vì đo HTML: `_nav_apps()` là nơi chọn tầng 1.
+    #    Nó phải trả về **một mục cho mỗi app**, không bung trang con ra.
+    from server.templating import _nav_apps
+    muc = _nav_apps()
+    slugs = [a.manifest.slug for a in muc]
+    assert len(slugs) == len(set(slugs)), f"app bị lặp dòng ở tầng 1: {slugs}"
+    assert "agent" in slugs
 
 
 def test_sidebar_bung_trang_con_khi_trong_app(client):
     """Khi đang Ở TRONG một app nhiều trang, trang con của nó mới bung ra."""
     _tao_va_dang_nhap(client, "u2@example.com")
-    r = client.get("/facebook", follow_redirects=False)
+    r = client.get("/agent", follow_redirects=False)
     assert r.status_code == 200
-    assert "Sheet TikTok" in r.text                  # trang con bung ra
-    assert "Manual TikTok" in r.text
+    assert "Canvas" in r.text                        # trang con bung ra
 
 
 def test_link_quan_tri_chi_hien_cho_admin(client):
@@ -706,14 +721,24 @@ def test_double_submit_khong_tao_2_job(client):
     client.post("/login", data={"username": "dup@example.com",
                                 "password": "matkhau-tot-12", "csrf_token": tok})
 
-    # Endpoint hàng đợi (đi qua submit_with_credit + dedupe) là POST /demo/queue.
-    r1 = client.post("/demo/queue", data={"text": "xin chao",
-                                          "csrf_token": _csrf(client, "/demo")},
-                     follow_redirects=False)
-    r2 = client.post("/demo/queue", data={"text": "xin chao",
-                                          "csrf_token": _csrf(client, "/demo")},
-                     follow_redirects=False)
-    assert r1.status_code == 303 and r2.status_code == 303
+    # Endpoint hàng đợi phải đi qua `submit_with_credit` + `dedupe_key_for`.
+    # Trước 2026-08-25 dùng `POST /demo/queue`; app đó đã gỡ nên dùng
+    # `POST /taoanh/queue` — vẫn là một route THẬT của khách, đúng thứ phép
+    # kiểm này nói là đang đo (dedupe phải đấu **ở tầng route**, không phải chỉ
+    # ở tầng hàm).
+    #
+    # ⚠️ Job chỉ được XẾP HÀNG, không chạy: không worker nào chạy trong test
+    #    này, nên không có lệnh gọi provider nào và không tốn gì.
+    def _nop(**kw):
+        return client.post("/taoanh/queue", data={
+            "prompt": "mot con meo tam the",
+            "model": "gemini-2.5-flash-image",
+            "aspect_ratio": "16:9", "count": 1, "edit_mode": "generate",
+            "csrf_token": _csrf(client, "/taoanh")}, follow_redirects=False)
+
+    r1, r2 = _nop(), _nop()
+    assert r1.status_code == 303 and r2.status_code == 303, (r1.text[:400],
+                                                             r2.text[:400])
 
     gen = dbmod.get_session(); db = next(gen)
     try:

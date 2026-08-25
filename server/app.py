@@ -19,19 +19,12 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from starlette.middleware.sessions import SessionMiddleware
 
-from core.settings import Environment, load_settings
+from platform_core.settings import Environment
 from server.auth.rate_limit import RateLimiter
-from server.routes import accounts as accounts_routes
 from server.routes import auth as auth_routes
 from server.routes import dashboard as dashboard_routes
 from server.routes import health as health_routes
-from server.routes import manual as manual_routes
-from server.routes import monitor as monitor_routes
-from server.routes import oauth as oauth_routes
-from server.routes import sheet as sheet_routes
-from server.routes import settings as settings_routes
 from server.routes import status as status_routes
-from server.routes import workers as workers_routes
 from server.settings import load_server_settings
 from server.templating import templates
 
@@ -67,11 +60,14 @@ _HASHED_FRONTEND_ASSET = re.compile(
 )
 
 
-# ── Maintenance daemon ─────────────────────────────────────────────────────────
-# Only `gui/main_window.py` ever started this daemon. With the desktop gone,
-# nothing would prune old content_history / page_health records or probe the
-# Meta + TikTok app status, so retention (DATA_RETENTION_POLICY.md) would
-# silently stop being enforced. The web app owns it now.
+# ── Vòng bảo trì của socialbot: ĐÃ GỠ 2026-08-25 ──────────────────────────────
+# `MaintenanceDaemon` chỉ dọn hai bảng `content_history` và `page_health` — cả
+# hai thuộc app socialbot và đã biến mất cùng nó. Giữ lại một luồng nền dọn
+# những bảng không còn tồn tại là giữ một lời hứa rỗng đang tốn một luồng.
+#
+# Việc dọn dữ liệu hết hạn CỦA NỀN TẢNG không nằm ở đây và chưa bao giờ nằm ở
+# đây: nó ở `platform_core/job_runner.py::_don_du_lieu_het_han`, chạy dưới
+# lease `bao_tri` nên đúng một lần trên toàn cụm (H36).
 
 
 #: Chu kỳ xả bộ đếm của tiến trình web. Là hằng số module để test rút ngắn được
@@ -114,19 +110,6 @@ def _xa_metrics_web(dung) -> None:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    app.state.maintenance = None
-    cs = getattr(app.state, "core_settings", None)
-    if cs is not None:
-        try:
-            from core.maintenance import MaintenanceDaemon
-            daemon = MaintenanceDaemon(config=dict(cs.config))
-            daemon.start()
-            app.state.maintenance = daemon
-        except Exception:
-            # A failed sweep scheduler must not stop the dashboard from
-            # serving — the operator needs it most when something is wrong.
-            logging.getLogger(__name__).warning(
-                "MaintenanceDaemon failed to start", exc_info=True)
     dung_metrics = threading.Event()
     luong_metrics = threading.Thread(
         target=_xa_metrics_web, args=(dung_metrics,),
@@ -137,23 +120,6 @@ async def _lifespan(app: FastAPI):
     finally:
         dung_metrics.set()
         luong_metrics.join(timeout=5)
-        daemon = getattr(app.state, "maintenance", None)
-        if daemon is not None:
-            daemon.stop()
-
-
-def _socialbot_routes_enabled(env: dict | None = None) -> bool:
-    """Có gắn 43 route bảng điều khiển FB/TikTok cũ không (H22.10).
-
-    Mặc định BẬT. Chọn mặc định bật chứ không tắt vì tắt sẵn là để bảng điều
-    khiển cũ biến mất **lặng lẽ** với người còn đang dùng, ngay lần deploy tới —
-    một quyết định sản phẩm không nên nằm trong một lần refactor.
-    """
-    import os
-    raw = (env or os.environ).get("LTT_SOCIALBOT_ROUTES")
-    if raw is None:
-        return True
-    return str(raw).strip().lower() not in {"0", "false", "no", "off", ""}
 
 
 def create_app(*, env: dict | None = None) -> FastAPI:
@@ -178,18 +144,17 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     # Per-app so separate app instances never share login-attempt counters.
     app.state.login_rate_limiter = RateLimiter(max_attempts=5, window_seconds=60.0)
 
-    # Resolved synchronously at app-creation time (not a lifespan hook —
-    # there's no async resource to wait on yet, and a sync check keeps
-    # /health/ready correct immediately, including under TestClient
-    # instances that are never entered as a context manager).
-    try:
-        app.state.core_settings = load_settings(env=env)
-    except Exception:
-        # /health/ready reports not_ready rather than raising here — an
-        # operator can still reach the dashboard to see *why* (once a
-        # settings/diagnostics view exists; for now this just keeps the
-        # process able to start instead of crashing on an invalid config).
-        app.state.core_settings = None
+    # ⭐ KHÔNG đọc tệp cấu hình nào lúc khởi động (từ 2026-08-25).
+    #
+    # Trước đây chỗ này gọi `load_settings()` để đọc `data/config.json`, và
+    # `/health/ready` trả 503 khi đọc hỏng. Nhưng tệp đó là cấu hình của app
+    # socialbot — nên một app đã gỡ vẫn quyết định được nền tảng có "sẵn sàng"
+    # hay không, và trình quản lý dịch vụ khởi động lại tiến trình theo câu trả
+    # lời đó. Sự cố BOM ghi ở `AGENTS.md` mục 5 là đúng đường này.
+    #
+    # Nay hồ sơ môi trường suy ra từ `LTT_ENV` (`platform_core/settings.py`) và
+    # nằm sẵn trong `server_settings`; sẵn sàng = **CSDL nối được**, đúng nghĩa
+    # của từ đó.
 
     # Phân quyền app (H1.4). Add TRƯỚC SessionMiddleware — trong Starlette,
     # middleware add trước là lớp trong, chạy SAU, nên nó đọc được
@@ -346,32 +311,15 @@ def create_app(*, env: dict | None = None) -> FastAPI:
     from server import nexus as nexus_agent_routes
     app.include_router(nexus_agent_routes.router)
 
-    # ── Bảng điều khiển FB/TikTok cũ (H22.10) ────────────────────────────────
+    # ── Bảng điều khiển FB/TikTok cũ: ĐÃ XOÁ 2026-08-25 ──────────────────────
     #
-    # Bảy router này là bản port từ GUI desktop của sản phẩm socialbot — app đó
-    # đã **đóng băng, không phát triển thêm**. Chúng chiếm **43/69 = 62% route
-    # công khai** của nền tảng, trong khi nền tảng giờ bán công cụ AI theo
-    # credit. Mỗi route là một chỗ phải xét lại mỗi lần rà bảo mật, cho một
-    # nghiệp vụ không còn bán.
+    # Bảy router (`accounts`, `workers`, `settings`, `sheet`, `manual`,
+    # `monitor`, `oauth`) = **43/69 route công khai của nền tảng**, phục vụ một
+    # sản phẩm không còn bán. Từ H22.10 chúng nằm sau cờ `LTT_SOCIALBOT_ROUTES`
+    # mặc định BẬT; nay cả bảy đã bị gỡ khỏi kho cùng app socialbot.
     #
-    # Gắn sau một cờ để tắt được mà KHÔNG xoá code — socialbot đóng băng chứ
-    # chưa khai tử, nên xoá là quyết định sản phẩm, còn tắt thì bật lại được
-    # bằng một biến môi trường.
-    #
-    # Mặc định giữ BẬT: tắt sẵn nghĩa là nếu còn ai đang dùng bảng điều khiển
-    # cũ thì nó biến mất lặng lẽ sau lần deploy tới. Đổi `LTT_SOCIALBOT_ROUTES=0`
-    # khi đã xác nhận không còn ai dùng.
-    if _socialbot_routes_enabled(env):
-        app.include_router(accounts_routes.router)
-        app.include_router(workers_routes.router)
-        app.include_router(settings_routes.router)
-        app.include_router(sheet_routes.router)
-        app.include_router(manual_routes.router)
-        app.include_router(monitor_routes.router)
-        app.include_router(oauth_routes.router)
-    else:
-        logging.getLogger(__name__).info(
-            "LTT_SOCIALBOT_ROUTES=0 — khong gan 43 route bang dieu khien FB/TikTok cu")
+    # Cờ `LTT_SOCIALBOT_ROUTES` **không còn được đọc ở đâu cả**. Đặt nó trong
+    # `secrets/app.env` từ nay là một dòng vô nghĩa, không phải một lỗi.
 
     # Thanh toán / nạp credit (H9)
     from server.routes import billing as billing_routes

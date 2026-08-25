@@ -50,7 +50,7 @@ def _goi_model(db: DbSession, prompt: str) -> str:
        ghi cứng `thu_tu_provider=["gemini"]`. Hai hệ quả:
 
          1. Thêm một provider vào `REGISTRY` **không làm chỗ này dùng nó**;
-         2. Cùng đoạn mã đó bị chép ở `apps/autosubvideo` và `apps/kichban`.
+         2. Cùng đoạn mã đó từng bị chép ở hai app khác nhau.
 
        `dieu_phoi` gom việc dịch giao thức về một chỗ, nên nay đổi nhà cung cấp là
        đổi **một danh sách**, không phải sửa ba tệp.

@@ -116,7 +116,7 @@ def _cac_model(tool) -> list[str]:
     """Model mà tool này **thật sự** chạy được, suy từ `params_schema`.
 
     ⛔ Phải lọc theo `category` của `model_ref`. Lần chạy đầu tôi bỏ qua nó và bánh
-    cóc báo nhầm 12 tổ hợp: `kichban/text.generate` khai `category="chat"` nhưng bộ
+    cóc báo nhầm 12 tổ hợp: một tool text khai `category="chat"` nhưng bộ
     lọc của tôi gom cả model **ảnh** của provider `gemini` rồi so giá bán một đoạn
     văn với giá vốn một tấm ảnh.
 

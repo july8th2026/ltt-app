@@ -100,12 +100,32 @@ def test_health_ready_ok_when_config_loads(tmp_path):
     assert resp.json()["status"] == "ready"
 
 
-def test_health_ready_503_when_config_missing(tmp_path):
+def test_health_ready_khong_con_phu_thuoc_tep_cau_hinh(tmp_path):
+    """Thiếu `data/config.json` **không còn** làm nền tảng "chưa sẵn sàng".
+
+    ⭐ Đây là một hành vi bị ĐẢO có chủ ý ngày 2026-08-25, nên ghi cả hai chiều.
+
+    Trước đó phép kiểm ở đây đòi **503** khi tệp cấu hình không đọc được. Nhưng
+    tệp đó là `data/config.json` — cấu hình của app **socialbot** (Meta App ID,
+    Sheet ID, tên cột, chống spam). Nghĩa là một app đã đóng băng quyết định
+    được nền tảng có sẵn sàng hay không, và nssm khởi động lại tiến trình theo
+    đúng câu trả lời đó.
+
+    ⛔ Nó không phải chuyện lý thuyết: `AGENTS.md` mục 5 ghi sự cố thật *"BOM
+       trong config.json → json.load() vỡ → /health/ready trả 503 trong khi
+       dịch vụ vẫn chạy bình thường"*. Đường dính lỗi đó đi qua đúng đây.
+
+    Nay "sẵn sàng" chỉ còn một nghĩa: **CSDL nối được**. Hồ sơ môi trường lấy
+    từ `LTT_ENV`, không phải từ một lượt đọc đĩa.
+    """
     env = _test_env(tmp_path, LTT_CONFIG_PATH=str(tmp_path / "does_not_exist.json"))
     app = create_app(env=env)
     client = TestClient(app, follow_redirects=False)
     resp = client.get("/health/ready")
-    assert resp.status_code == 503
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "ready"
+    # Và nó vẫn nói được mình đang chạy hồ sơ nào — thứ người vận hành cần.
+    assert resp.json()["environment"] == "development"
 
 
 # ─── authorization boundary ────────────────────────────────────────────────────
@@ -318,22 +338,27 @@ def test_status_page_renders_doctor_report_for_logged_in_user(tmp_path):
     assert "Môi trường" in resp.text
 
 
-def test_status_page_does_not_hit_sheet_api_by_default(tmp_path, monkeypatch):
-    """Sheet checks cost a network round trip; they must be opt-in."""
+def test_status_page_khong_goi_mang_nao(tmp_path):
+    """`/status` phải trả lời được **không cần một lượt gọi mạng nào**.
+
+    Phép kiểm cũ canh đúng một đường: mục kiểm Google Sheet phải là tuỳ chọn,
+    vì nó tốn một vòng gọi API. Mục đó đã đi cùng app socialbot (2026-08-25),
+    nhưng **nguyên tắc thì không**: trang chẩn đoán là thứ người vận hành mở
+    lúc hệ thống đang có sự cố, nên nó không được phụ thuộc vào thứ đang hỏng.
+
+    Nay `doctor.run()` chỉ đọc biến môi trường và đường dẫn — kiểm bằng chữ ký
+    của nó, để ai thêm một mục kiểm gọi mạng sẽ phải đọc dòng này trước.
+    """
+    import inspect
+
     from tools import doctor
 
-    called = {"sheet": False}
-
-    def _spy(report, config, workers):
-        called["sheet"] = True
-
-    monkeypatch.setattr(doctor, "check_sheet", _spy)
+    assert "check_sheet_flag" not in inspect.signature(doctor.run).parameters
 
     client = _client(tmp_path)
     token = _get_csrf_token(client)
     client.post("/login", data={
         "username": "admin", "password": ADMIN_PASSWORD, "csrf_token": token,
     })
-    client.get("/status")
-
-    assert called["sheet"] is False
+    resp = client.get("/status")
+    assert resp.status_code == 200
