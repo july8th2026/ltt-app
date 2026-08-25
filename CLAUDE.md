@@ -266,11 +266,30 @@ không phải bởi code.
 Đọc `docs/PUBLIC_API/TAM_DUNG_2026-08-17.md` trước khi mở lại — nó ghi mở lại
 thì bắt đầu từ đâu và ba cái bẫy đã dính.
 
-Một câu về trạng thái: **hạ tầng đã sống, cửa hàng chưa mở.** Khu API bật
-(`LTT_PUBLIC_API=1`) nhưng `LTT_PUBLIC_API_TOOLS` **rỗng**, nên
-`GET /api/v1/tools` trả `200` với danh sách rỗng — fail-closed của Q92 làm đúng
-việc. Năm điều kiện §11 đã đóng; còn nợ ba việc: **mở tool** (bắt đầu bằng
-`image.thumbnail`), **xoay khoá provider**, và **H35.10** (tool video).
+🔴 **SỬA 2026-08-26 — ĐOẠN NÀY TRƯỚC ĐÓ NÓI SAI, VÀ NÓI SAI VỀ PHÍA NGUY HIỂM.**
+
+Nó từng viết *"hạ tầng đã sống, **cửa hàng chưa mở**… `LTT_PUBLIC_API_TOOLS`
+**rỗng**"*. Đọc production ngày 26/08:
+
+```
+LTT_PUBLIC_API=1
+LTT_PUBLIC_API_TOOLS=text.chat,image.ltt
+```
+
+**Hai tool đang mở và đang thu tiền thật.** Cùng tài liệu này, hàng H38 nói LLM
+*"ĐANG BÁN 2026-08-24"* — tức hai câu trong **một** tệp mâu thuẫn nhau suốt hai
+ngày.
+
+⛔ Vì sao nó nguy hiểm chứ không chỉ sai: một phiên sau đọc đoạn này sẽ tin
+`/api/v1` **không phục vụ ai**, rồi sửa nó **như sửa mã chết**. Nó đang phục vụ
+khách trả tiền.
+
+⭐ Và tool đã mở **không phải** `image.thumbnail` như kế hoạch từng ghi — thứ tự
+mở cửa đã đổi trên thực tế mà kế hoạch không theo kịp.
+
+**Trạng thái đúng:** khu API bật, **hai tool mở** (`text.chat`, `image.ltt`),
+fail-closed của Q92 vẫn đúng việc với mọi tool còn lại. Năm điều kiện §11 đã
+đóng; còn nợ: **xoay khoá provider** và **H35.10** (tool video).
 
 **H37 (bắt đầu 2026-08-21, Q102)** — model tạo ảnh chạy trên **máy B**
 (`MAY-B` 192.168.2.66, RTX 3090 24 GB, RAM 192 GB). Nó là **một provider**
