@@ -26,6 +26,39 @@ cả ba thứ cùng lúc.
 
 ---
 
+## 0-bis. ✅ TRẠNG THÁI THI HÀNH — cập nhật 2026-08-26 cuối buổi
+
+Chủ sản phẩm bỏ cổng duyệt và yêu cầu chạy thẳng chuỗi. Đã chạy hết 00→15.
+
+| Phiên | Prompt | Trạng thái |
+|---|---|---|
+| S0 | 00 | ✅ báo cáo + Phần II đo sâu |
+| S1 | 01 + 02 | ✅ |
+| S2 | 03 | ✅ hợp đồng nghiệm thu + 6 Golden Journey + 9 bất biến |
+| S3 | 04 + 05 | ✅ |
+| S4 | 06 + 07 + 08 | ✅ |
+| S5 | 09 + 10 | ✅ (09 có E3 thật trên URL công khai) |
+| S6 | 11 | ✅ |
+| S7 | 12 | ✅ M-01, M-02, B-01, U-02, D-01, F-07 — ⏳ còn O-01 (cần UAC) |
+| S8 | 13 | ✅ A-04 + 2 bánh cóc mới — ⏳ còn A-01, A-02, 05.2 |
+| S9 | 14 | ⏸️ R-01 cần quyết định sản phẩm; E3 còn lại phải lấy **sau deploy** |
+| S10 | 15 | ✅ `15_FINAL_MVP_AUDIT.md` |
+
+**Kết quả:** `MVP_OPTIMIZED: KHÔNG` — và đó là câu trả lời đúng. Ba điều kiện
+chưa đạt, tất cả đã có tên: sao lưu chưa chạy theo lịch (O-01) · 4 Golden Journey
+mới ở E2 · INV-5 mới được *quan sát*, chưa được *bảo đảm*.
+
+⚠️ **Ba quyết định đã đổi trong lúc chạy**, ghi lại vì chúng làm mất hiệu lực vài
+mục bên dưới:
+
+- **D-02/D-07 ĐÓNG** — chủ sản phẩm xác nhận **chưa có khách thật**. 2 credit kẹt
+  là tài khoản nội bộ, không cần bù.
+- **O-01 để cuối** theo yêu cầu của chủ sản phẩm.
+- **Cổng duyệt ở mục 5 không còn hiệu lực** — giữ lại làm ghi chép, không phải
+  hàng đợi đang chờ.
+
+---
+
 ## 1. Trạng thái xuất phát — chốt lại cho khỏi lệch
 
 | Hạng mục | Trạng thái |

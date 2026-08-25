@@ -159,3 +159,83 @@ thứ `--quick` bỏ qua.
 Bằng chứng rằng cả bốn **chặn thật**, không chỉ tồn tại:
 `tests/test_306_banh_coc_bo_qua_va_dich.py` (10 phép kiểm, gồm ca hoán đổi của
 bẫy 1) và hai phép kiểm mới trong `tests/test_145_gate_covers_everything.py`.
+
+---
+
+## Bẫy 7 — Một phép kiểm bảo mật đỏ **vì lý do khác** vẫn là một phép kiểm bảo mật không chạy
+
+`tools/build_release.py` có đường chặn: phát hiện bí mật trong gói phát hành thì
+`SystemExit`. Phép kiểm canh nó là
+`test_44_release_build::test_secret_abort_path_reports_location_and_exits`.
+
+Phép kiểm đó **đỏ nhiều ngày** — và không phải vì đường chặn hỏng:
+
+```
+AssertionError: assert '1 secret finding' in
+  'frontend/agent-canvas bundle is stale or built with the wrong Node'
+```
+
+Chốt "bundle cũ" bắn **trước**, ném `SystemExit` của chính nó, và **nuốt mất**
+`SystemExit` mà phép kiểm định bắt.
+
+⛔ Một gốc (ba bundle lệch hash nguồn), **hai** triệu chứng — và triệu chứng thứ
+hai đáng lo hơn hẳn: suốt thời gian đó **không ai kiểm đường chặn rò rỉ bí mật**,
+trong khi bảng kết quả chỉ hiện *"2 failed"* trông như một lỗi build tầm thường.
+
+⭐ **Bài học:** khi một phép kiểm đỏ, đọc **thông điệp**, không đọc **số**. Hai
+test đỏ cùng một tệp có thể là hai vấn đề, và cái thứ hai có thể đang bị cái thứ
+nhất che.
+
+*(Đóng 2026-08-26 ở `a5274bf`: dựng lại ba bundle ⇒ 35 passed, phép kiểm bí mật
+chạy lại.)*
+
+---
+
+## Bẫy 8 — Con số PASS nói về một tập hợp khác với tập hợp bạn tưởng
+
+`tools/check_bien_dich.py` báo **"2.101 tệp .py đã kiểm | hỏng: 0"**. Nghe như
+toàn bộ kho đã biên dịch được.
+
+Ngày 26/08, sau khi gỡ một git worktree bỏ quên trong `.claude/worktrees/`, con
+số tụt xuống **1.357**. Chênh **744 tệp** chính là một **bản sao cũ của cả kho**
+— có `core/`, có `apps/socialbot`, có `test_152` đã xoá.
+
+⇒ Suốt thời gian đó cổng biên dịch **thổi phồng độ phủ ~35 %**. Kết quả PASS
+không sai, nhưng nó nói về một tập hợp **rộng hơn và cũ hơn** tập hợp người đọc
+tưởng. Và `tmp/h26-canary-*/` (1,8 GB, 695 tệp `.py`) vẫn còn đó, vẫn được đếm.
+
+⚠️ Cùng bản sao bóng đó suýt tạo một kết luận sai khác: lần quét
+`LTT_SOCIALBOT_ROUTES` đầu tiên trả **13 kết quả từ worktree** trước khi tới kết
+quả thật — đủ để báo *"còn residue socialbot"* trong khi nguồn đã sạch.
+
+⭐ **Bài học:** mọi lệnh quét toàn kho phải mang `| grep -v '\.claude/worktrees/'`,
+và khi một cổng in ra một con số lớn, hỏi *"con số đó đếm những gì"* trước khi
+thấy yên tâm.
+
+---
+
+## Bẫy 9 — Cái chuông đã đúc mà chưa ai treo
+
+Bốn ca trong một đợt audit, cùng một hình dạng:
+
+| | Máy móc có sẵn? | Có ai gọi? |
+|---|---|---|
+| Giữ chỗ credit treo | `usage.reconcile` đếm được | ❌ chỉ test + CLI thủ công, **và vị ngữ bắt hụt 0/2** |
+| Biên lợi nhuận âm | `costing.scan_for_alerts` đủ docstring, test, `__all__` | ❌ **không gì gọi** |
+| Sao lưu | `backup.ps1` thiết kế đúng | ❌ **chưa từng chạy** |
+| Link 404 trong nav | bài học đã viết trong chú thích `anhnoibo` | ❌ chưa thành phép kiểm |
+
+⛔ **Một hàm cảnh báo không được cắm vào đâu trông Y HỆT một hàm cảnh báo đang
+chạy.** Nó có docstring, có test, có trong `__all__` — mọi dấu hiệu bề ngoài của
+một thứ đang hoạt động, trừ chính việc hoạt động.
+
+Ca đắt nhất: cảnh báo *"đang bán dưới giá vốn"* nằm trong mã **suốt 22 ngày nền
+tảng bán ảnh ở 45–57 % giá vốn**. Nó không im vì hỏng — im vì không ai cắm dây.
+
+⭐ Vì vậy `test_307` và `test_308` chốt bằng `inspect.getsource` rằng các hàm quét
+**ĐƯỢC GỌI**, không chỉ **tồn tại**. Và `tools/check_chuong_chua_treo.py` (trong
+gate) luật hoá điều đó: mọi hàm quét/cảnh báo trong `platform_core/` phải có ít
+nhất một người gọi ngoài `tests/`.
+
+⚠️ Giới hạn nói thẳng: nó không bắt được ca sao lưu (PowerShell) và ca link-404
+(một chú thích). Nó bắt hai ca nguy hiểm nhất, và bắt chắc chắn.

@@ -294,3 +294,29 @@ def test_chuong_bien_loi_nhuan_am_cung_da_duoc_treo():
     src = inspect.getsource(job_runner._quet_canh_bao)
     assert "costing.scan_for_alerts(db)" in src, (
         "canh bao bien loi nhuan am van chua duoc cam vao vong bao tri")
+
+
+def test_viec_bao_tri_cua_app_chay_duoi_lease_nen_khong_tru_tien_N_lan():
+    """M-03 — `credit.tru()` là TRỪ THẲNG, không giữ chỗ. Chạy hai lần trong một
+    chu kỳ là trừ khách hai lần.
+
+    Hai chỗ dùng nó đều là mô hình thuê bao và đều chạy qua
+    `AppManifest.bao_tri`: `apps/vps/services/billing.py` và
+    `platform_core/nexus/billing.py`.
+
+    ⭐ Bất biến bảo vệ chúng **không** nằm trong hai tệp đó — nó nằm ở chỗ
+       `_bao_tri_cac_app` được gọi từ **bên trong** `_mot_luot_bao_tri`, mà cả
+       khối đó chạy dưới lease `bao_tri`. Nên đây mới là chỗ đáng chốt.
+
+    ⛔ `CLAUDE.md` ghi thẳng cái giá của việc đặt sai chỗ: *"app tự dựng vòng lặp
+       sẽ trừ tiền khách N lần mỗi chu kỳ"* — số tiến trình worker mặc định bằng
+       số GPU.
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    bao_tri = inspect.getsource(job_runner._mot_luot_bao_tri)
+    assert "_bao_tri_cac_app(moc)" in bao_tri, (
+        "viec bao tri cua app khong con chay trong `_mot_luot_bao_tri` => no da "
+        "ra ngoai lease `bao_tri`, va moi tien trinh worker se chay no mot lan")

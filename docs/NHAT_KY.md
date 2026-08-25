@@ -14,6 +14,101 @@
 
 ---
 
+## 2026-08-26 — Chạy trọn bộ prompt MVP Optimization V2, và tìm ra một gốc chung
+
+- **Mục tiêu:** audit toàn hệ thống theo `AppStudios_MVP_Optimization_Prompt_Pack_V2`
+  rồi thi hành, chủ sản phẩm **bỏ cổng duyệt** và yêu cầu chạy thẳng 00→15
+- **Hạng mục:** H41 (mới) — xem `docs/MVP_OPTIMIZATION_V2/`
+- **Trạng thái:** 12 báo cáo pha A xong · 4 lỗi đóng bằng mã có test · 3 bánh cóc
+  mới · gate 19 → 21 bước · **chưa deploy**
+
+### 🔴 Phát hiện chính: bốn lỗi tưởng độc lập, hoá ra MỘT gốc
+
+| | Máy móc có sẵn? | Có ai gọi? |
+|---|---|---|
+| Giữ chỗ credit treo | `usage.reconcile` đếm được | ❌ chỉ test + CLI thủ công, **và vị ngữ bắt hụt 0/2** |
+| Biên lợi nhuận âm | `costing.scan_for_alerts` đủ docstring, test, `__all__` | ❌ **không gì gọi** |
+| Sao lưu | `backup.ps1` thiết kế đúng, tách bí mật | ❌ **chưa từng chạy** |
+| Link 404 trong nav | `anhnoibo` đã biết cách tránh, **đã viết ra lý do** | ❌ chưa thành phép kiểm |
+
+**P-01 — một hàm cảnh báo không được cắm vào đâu trông y hệt một hàm cảnh báo
+đang chạy.** Có docstring, có test, có trong `__all__`. Mọi dấu hiệu bề ngoài của
+một thứ đang hoạt động, trừ chính việc hoạt động.
+
+Ca đắt nhất: cảnh báo *"đang bán dưới giá vốn"* nằm trong mã **suốt 22 ngày nền
+tảng bán ảnh ở 45–57 % giá vốn**. Nó không im vì hỏng — im vì không ai cắm dây.
+
+### Đã luật hoá, không chỉ đã sửa
+
+`tools/check_chuong_chua_treo.py` vào gate. Đã **chứng minh nó bắt đúng ca gốc**:
+gỡ dòng cắm `costing.scan_for_alerts` trên một cây giả trong `tmp` ⇒ báo ngay
+(`test_308`). Và nó tìm ra **ca thứ ba** chưa ai biết: `upload_sessions.reconcile`.
+
+💡 Ý đầu của tôi là bắt mục *"Còn tồn đọng"* phải mang mã hạng mục. **Đã bỏ**:
+104 mục hiện có là văn xuôi tự do ⇒ ép mã là *dọn quá khứ*, và một phép kiểm phán
+xét văn phong sẽ kêu sai rồi bị tắt trong tuần đầu. Hình dạng thật là *"hàm cảnh
+báo không ai gọi"* — cái đó đo được bằng máy, không cần phán xét.
+
+### M-01 — tiền kẹt thật trên production
+
+Đo được **2 bút toán `hold`** ngày 24/08 không có `settle`, không có `refund`,
+không có hàng `Job`. Tỉ lệ phát hiện thủ công **1/2** — một cái có người tình cờ
+thấy, một cái không ai ghi ở đâu.
+
+Cách gọi tên đúng: **lưới hoàn tiền CÓ, nhưng chỉ căng bên trong tiến trình — và
+`Stop-Service -Force` khi deploy là hành động giết tiến trình.** Đây không phải
+một lỗ hổng chung chung; đây là **một quy trình vận hành tự mở lỗ của chính nó**,
+rộng bằng đúng độ dài một luồng LLM (đã đo 119 giây).
+
+⚠️ Chủ sản phẩm xác nhận **chưa có khách thật** ⇒ hai khoản đó là tài khoản nội
+bộ, không cần bù. Giảm mức **khẩn**, không giảm mức **nghiêm trọng**: cửa sổ sẽ
+mở đúng lúc có khách đầu tiên.
+
+### Ba lần tôi tự sửa lại chính mình
+
+| Tôi đã viết | Sự thật |
+|---|---|
+| 105 mục `.po` "nên dọn" (P2) | Trích lại sinh thêm **25 bản dịch SAI** (fuzzy 76→101) ⇒ dọn làm nợ **tăng**. Đổi thành `HISTORICAL_ONLY` |
+| `deploy-self.ps1` thiếu `LTTNexus` | `LTTNexus` là **nhị phân riêng** ở `Program Files`, không chạy mã trong `app\`. Ba dịch vụ hiện tại **đúng và đủ** — tôi suýt sửa một đường deploy đang chạy đúng |
+| "bốn đường chỉ dựa vào `try/finally`" | `streaming.py:257` **đã có** `except BaseException` từ 25/08 |
+
+Và một lỗi kỹ thuật bắt được bằng `git diff`: dựng lại trạng thái cũ để thử
+nghiệm, tôi ghi `job_runner.py` không đặt `newline="
+"` ⇒ Windows đổi **toàn bộ
+1.335 dòng** sang CRLF. Không kiểm diff thì một commit "không đổi gì" đã mang
+theo cả tệp.
+
+### Bằng chứng E3 — trên URL công khai, không loopback
+
+`app.lttstudios.com`: 0 lỗi console · không tràn ngang desktop 1280 và mobile 375
+· `ltt.css?v=828a9c98` cache-bust hoạt động · 9 thẻ sản phẩm **khớp chính xác**
+phép đo nguồn.
+
+⭐ Phân biệt chỉ E3 mới cho được: **bốn app đã gỡ KHÔNG hiện trong catalog** dù mã
+vẫn trên production. Residue nằm ở tầng **route**, không ở mặt tiền khách hàng.
+
+### Còn tồn đọng
+
+- **H41.1** — bật lịch sao lưu (`5-lich-backup.ps1` + `backup.ps1 -IncludeSecrets`
+  + một lần diễn tập khôi phục). Cần Administrator. **Chủ sản phẩm để cuối.**
+- **H41.2** — E3 cho 4 trang Golden Journey còn lại, **sau deploy**.
+- **H41.3** — `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*.
+- **H41.4** — `server/api` thôi biết tên `apps.ltt_llm` (cần khái niệm *executor
+  đồng bộ* trong hợp đồng app).
+- **H41.5** — khai bề mặt công khai của `upscalevideo` (cạnh cross-product duy nhất).
+- **H41.6** — chẻ `server/routes/developer.py` theo use case.
+- **H41.7** — bề mặt MVP: 5 app `development` có ở lại catalog công khai không?
+  **Quyết định sản phẩm.**
+
+### Việc tiếp theo
+
+1. Chủ sản phẩm quyết H41.7, rồi deploy (D-06).
+2. H41.1 sau khi deploy xong.
+3. H41.2 ngay sau deploy — production hiện chạy `ec6a00c`, mọi thay đổi đợt này
+   chưa có ở đó, kể cả bản vá link 404.
+
+---
+
 ## 2026-08-25 (khuya, chốt phiên) — Đóng H40, và gate **KHÔNG** chạy
 
 - **Hạng mục:** H40 (Q108 + Q109) — đóng theo quyết định chủ sản phẩm

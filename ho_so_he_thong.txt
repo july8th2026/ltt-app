@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4bcbf2f044b4ae6fedddd2a03055d5aa7a410c7dd136a70c5f7dea2e5a2bd998
-Nguồn đã quét : 1168 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:10d9e77b20430ac11ca93d633b6ffc768710362181b9ab781fb4cd4fbe06e1c1
+Nguồn đã quét : 1169 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1045,7 +1045,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (274 file pytest + 3 frontend)
+10. QUALITY GATES (275 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1279,6 +1279,7 @@ Test inventory:
 - tests/test_305_vps_render_ban_en.py
 - tests/test_306_banh_coc_bo_qua_va_dich.py
 - tests/test_307_giu_cho_treo.py
+- tests/test_308_banh_coc_moi.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1346,8 +1347,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1168 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39, .md:14, .mjs:3, .ps1:20, .py:893, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1169 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39, .md:14, .mjs:3, .ps1:20, .py:894, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2173,7 +2174,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 
-[tests] (291)
+[tests] (292)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2418,6 +2419,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39
 - tests/test_305_vps_render_ban_en.py
 - tests/test_306_banh_coc_bo_qua_va_dich.py
 - tests/test_307_giu_cho_treo.py
+- tests/test_308_banh_coc_moi.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2572,7 +2574,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1168 file; 11297479 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11303823 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -205574,7 +205576,7 @@ def test_ca_hai_chay_ca_o_che_do_quick():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_307_giu_cho_treo.py
-SHA256=3658680cff5fa13557dc6d63192bb84eacdda7599dd4271bbb19b73b205e0a1a BYTES=12475 LINES=296
+SHA256=1e1ce56b7fdc8567dd9105ef811417b542b7edc7bdcaabc0fcc7b540dba23717 BYTES=13728 LINES=322
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_307 — ⛔ GIỮ CHỖ TREO: tiền khách bị giữ mà không ai còn kết sổ được.
 
@@ -205872,6 +205874,151 @@ def test_chuong_bien_loi_nhuan_am_cung_da_duoc_treo():
     src = inspect.getsource(job_runner._quet_canh_bao)
     assert "costing.scan_for_alerts(db)" in src, (
         "canh bao bien loi nhuan am van chua duoc cam vao vong bao tri")
+
+
+def test_viec_bao_tri_cua_app_chay_duoi_lease_nen_khong_tru_tien_N_lan():
+    """M-03 — `credit.tru()` là TRỪ THẲNG, không giữ chỗ. Chạy hai lần trong một
+    chu kỳ là trừ khách hai lần.
+
+    Hai chỗ dùng nó đều là mô hình thuê bao và đều chạy qua
+    `AppManifest.bao_tri`: `apps/vps/services/billing.py` và
+    `platform_core/nexus/billing.py`.
+
+    ⭐ Bất biến bảo vệ chúng **không** nằm trong hai tệp đó — nó nằm ở chỗ
+       `_bao_tri_cac_app` được gọi từ **bên trong** `_mot_luot_bao_tri`, mà cả
+       khối đó chạy dưới lease `bao_tri`. Nên đây mới là chỗ đáng chốt.
+
+    ⛔ `CLAUDE.md` ghi thẳng cái giá của việc đặt sai chỗ: *"app tự dựng vòng lặp
+       sẽ trừ tiền khách N lần mỗi chu kỳ"* — số tiến trình worker mặc định bằng
+       số GPU.
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    bao_tri = inspect.getsource(job_runner._mot_luot_bao_tri)
+    assert "_bao_tri_cac_app(moc)" in bao_tri, (
+        "viec bao tri cua app khong con chay trong `_mot_luot_bao_tri` => no da "
+        "ra ngoai lease `bao_tri`, va moi tien trinh worker se chay no mot lan")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_308_banh_coc_moi.py
+SHA256=746f2433a40d89781c0ab4fa773fe2d3fa10b598884b4b5afaceaa493bebf4cc BYTES=5091 LINES=113
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_308 — hai bánh cóc mới của audit 2026-08-26, và bằng chứng chúng KÊU.
+
+Không mạng, không GPU, không CSDL.
+
+## ⭐ VÌ SAO PHẢI CHỨNG MINH BÁNH CÓC KÊU
+
+Cả đợt audit này xoay quanh một phát hiện: **một phép kiểm không được cắm vào đâu
+trông y hệt một phép kiểm đang chạy.** Bốn ca đã dính (`usage.reconcile`,
+`costing.scan_for_alerts`, `backup.ps1`, bài học `anhnoibo`).
+
+Thêm hai bánh cóc mới rồi tin là chúng hoạt động sẽ là **lặp lại đúng lỗi vừa
+tìm ra**. Nên mỗi phép kiểm ở đây chốt hai điều:
+
+  1. nó IM trên cây hiện tại (không báo động giả);
+  2. nó KÊU khi dựng lại đúng vi phạm mà nó sinh ra để bắt.
+
+Điều (2) mới là điều đáng chốt. Điều (1) một tệp rỗng cũng làm được.
+"""
+from __future__ import annotations
+
+import pathlib
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+
+# ── Bánh cóc 1: chuông đã đúc mà chưa ai treo ─────────────────────────────────
+
+def test_chuong_chua_treo_im_tren_cay_hien_tai():
+    from tools import check_chuong_chua_treo as c
+
+    treo = {f"{t['o']}::{t['ham']}" for t in c.quet()}
+    moc = set(__import__("json").loads(
+        (ROOT / "tools" / "chuong_baseline.json").read_text(encoding="utf-8")))
+    assert treo - moc == set(), f"co ham quet/canh bao MOI khong ai goi: {treo - moc}"
+
+
+def test_chuong_chua_treo_KEU_khi_go_mot_day_cam(tmp_path, monkeypatch):
+    """Dựng lại đúng trạng thái trước `a5274bf`: gỡ dòng gọi
+    `costing.scan_for_alerts` ra khỏi vòng bảo trì.
+
+    ⭐ Đây là phép kiểm quan trọng nhất tệp này. Nó chứng minh bánh cóc bắt được
+       **ca có thật**, chứ không phải một ca giả tưởng dựng cho vừa phép kiểm.
+    """
+    from tools import check_chuong_chua_treo as c
+
+    goc = (ROOT / "platform_core" / "job_runner.py").read_text(encoding="utf-8")
+    dong = "        raised += len(costing.scan_for_alerts(db))\n"
+    assert dong in goc, "day cam da bien mat — hoac da doi hinh dang"
+
+    # Dung mot cay GIA trong tmp_path; KHONG dong vao kho that.
+    gia = tmp_path / "kho"
+    (gia / "platform_core" / "public_api").mkdir(parents=True)
+    (gia / "server").mkdir()
+    (gia / "apps").mkdir()
+    (gia / "platform_core" / "job_runner.py").write_text(
+        goc.replace(dong, ""), encoding="utf-8")
+    (gia / "platform_core" / "public_api" / "costing.py").write_text(
+        (ROOT / "platform_core" / "public_api" / "costing.py").read_text(
+            encoding="utf-8"), encoding="utf-8")
+
+    monkeypatch.setattr(c, "GOC", gia)
+    ten = {f"{t['o']}::{t['ham']}" for t in c.quet()}
+    assert any("scan_for_alerts" in t for t in ten), (
+        f"banh coc KHONG bat duoc ca goc. Tim thay: {ten}")
+
+
+# ── Bánh cóc 2: kích thước route của `server/` ────────────────────────────────
+
+def test_kich_thuoc_route_server_im_tren_cay_hien_tai():
+    from tools import check_server_routes as c
+
+    hien = set(c.quet())
+    moc = set(__import__("json").loads(
+        (ROOT / "tools" / "server_routes_baseline.json").read_text(encoding="utf-8")))
+    assert hien - moc == set(), f"co tep route server MOI vuot nguong: {hien - moc}"
+
+
+def test_kich_thuoc_route_server_KEU_voi_mot_tep_qua_lon(tmp_path, monkeypatch):
+    from tools import check_server_routes as c
+
+    gia = tmp_path / "kho"
+    (gia / "server" / "routes").mkdir(parents=True)
+    (gia / "server" / "routes" / "phinh_to.py").write_text(
+        "\n".join(f"# dong {i}" for i in range(c.MAX_DONG + 50)), encoding="utf-8")
+
+    monkeypatch.setattr(c, "GOC", gia)
+    assert "server/routes/phinh_to.py" in c.quet()
+
+
+def test_hai_noi_thi_hanh_dung_MOT_con_so():
+    """Trần 900/30 được thi hành ở hai chỗ. Lệch nhau thì người đọc không biết
+    tin bên nào — nên chốt chúng bằng nhau."""
+    from tools import check_server_routes, lint_app_contract
+
+    assert check_server_routes.MAX_DONG == lint_app_contract.MAX_ROUTES_LINES
+    assert check_server_routes.MAX_HANDLER == lint_app_contract.MAX_ROUTES_HANDLERS
+
+
+# ── Bánh cóc 3 (đã có từ `db6147e`): app sinh nav phải có trang ──────────────
+
+def test_bien_apps_toi_server_van_duoc_thi_hanh():
+    """Hợp đồng bốn module. Nếu ai đó nới nó ra thì phải là hành động CÓ Ý —
+    phép kiểm này làm cho việc nới im lặng trở thành việc không thể."""
+    from tools.lint_app_contract import SERVER_APP_CO_THE_DUNG
+
+    assert SERVER_APP_CO_THE_DUNG == {
+        "server.deps", "server.auth.session",
+        "server.auth.csrf", "server.templating",
+    }, ("hop dong apps->server da doi. Do la mot QUYET DINH KIEN TRUC — cap nhat "
+        "AGENTS.md 8.2b va phep kiem nay cung luc, dung sua mot ben.")
 
 @@@LTT_PROFILE_FILE_END@@@
 

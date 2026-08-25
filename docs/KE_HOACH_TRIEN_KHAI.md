@@ -3503,3 +3503,74 @@ một việc chỉ nằm ở nhật ký là một việc chỉ tồn tại trong
 mỗi gạch đầu dòng *"Còn tồn đọng"* trong `NHAT_KY.md` phải có mã ứng với một dòng
 trong tệp này — cùng họ với `check_bo_qua.py` và `check_dich_thieu.py`. Chi phí
 một lần, và nó bịt **lớp lỗi** thay vì từng ca.
+
+> ### ✅ ĐỐI CHIẾU 2026-08-26 — đề xuất trên ĐÃ ĐƯỢC THI HÀNH, nhưng **khác cách**
+>
+> Nhận định của H40.8 đúng và nó là gốc rễ. Nhưng khi bắt tay làm, cách *"bắt mục
+> Còn tồn đọng phải mang mã"* **đã bị bỏ**, vì hai lý do đo được:
+>
+> 1. **104 mục** hiện có đều là văn xuôi tự do ⇒ ép mã là **dọn quá khứ**, trong
+>    khi bánh cóc phải **chặn tương lai**.
+> 2. Một phép kiểm phán xét văn phong sẽ kêu sai liên tục — và một máy dò kêu
+>    suốt ngày là một máy dò bị tắt trong tuần đầu.
+>
+> ⭐ Hình dạng **thật** của lớp lỗi không phải *"ghi chép thiếu mã"*. Nó là:
+> **một hàm quét/cảnh báo tồn tại mà không đường thực thi nào gọi tới.** Cái đó
+> đo được bằng máy, không cần phán xét gì.
+>
+> ⇒ Đã làm `tools/check_chuong_chua_treo.py`, vào gate. **Đã chứng minh nó bắt
+> đúng ca gốc**: gỡ dòng cắm `costing.scan_for_alerts` trên một cây giả ⇒ báo
+> ngay (`test_308`). Và nó tìm ra **ca thứ ba** chưa ai biết:
+> `upload_sessions.reconcile`.
+>
+> ⚠️ **Nói thẳng giới hạn:** nó **không** bắt được ca sao lưu (kịch bản
+> PowerShell) và ca link-404 (bài học nằm trong chú thích). Nó bắt hai ca nguy
+> hiểm nhất, và bắt chắc chắn. Một phép kiểm hẹp mà đúng có giá trị hơn một phép
+> kiểm rộng mà đoán.
+>
+> **Mục (c) của bảng trên cũng đã xong** — ba bundle đã dựng lại, `test_44` từ
+> 2 đỏ về **35 passed** (`a5274bf`). Đáng ghi thêm một tầng mà bảng trên chưa
+> nêu: lỗi thứ hai của `test_44` đỏ **không phải** vì đường chặn bí mật hỏng, mà
+> vì chốt bundle-cũ bắn trước và **nuốt mất** `SystemExit` mà phép kiểm đó định
+> bắt ⇒ **phép kiểm chặn rò rỉ bí mật đã không chạy** suốt thời gian đó. Một
+> gốc, hai triệu chứng, và triệu chứng thứ hai đáng lo hơn hẳn.
+
+---
+
+## H41 — Chạy trọn bộ prompt MVP Optimization V2 (2026-08-26)
+
+**Nguồn:** `AppStudios_MVP_Optimization_Prompt_Pack_V2` (16 prompt, 2 pha).
+**Báo cáo:** `docs/MVP_OPTIMIZATION_V2/` — 14 tệp.
+**Chủ sản phẩm bỏ cổng duyệt** và yêu cầu chạy thẳng 00→15.
+
+### Đã xong
+
+| | Việc | Commit |
+|---|---|---|
+| ✅ | 12 báo cáo pha A (00→11) | `ede373a`, `05a20ac` |
+| ✅ | **M-01** máy dò giữ chỗ treo + cắm vào bảo trì dưới lease + cảnh báo `HOLD_STRANDED` | `a5274bf` |
+| ✅ | **M-02** cắm cảnh báo biên lợi nhuận âm (viết xong từ lâu, chưa ai gọi) | `a5274bf` |
+| ✅ | **B-01** dựng lại 3 bundle ⇒ gói phát hành dựng được, phép kiểm bí mật chạy lại | `a5274bf` |
+| ✅ | **U-02** link 404 `/ltt-llm` trong header mọi khách + luật linter + bất biến `test_60` | `db6147e` |
+| ✅ | **A-04** hợp đồng `apps → server` (4 module) + linter + `AGENTS.md` §8.2b/8.2c | `3d804ee` |
+| ✅ | Bánh cóc **kích thước route `server/`** (3 tệp baseline) | `f625199` |
+| ✅ | Bánh cóc **chuông chưa treo** + `test_308` | `f625199` |
+| ✅ | Sửa mâu thuẫn `CLAUDE.md` về `LTT_PUBLIC_API_TOOLS` | `3d804ee` |
+
+**Gate: 19 → 21 bước.**
+
+### Còn treo
+
+| ID | Việc | Ai làm |
+|---|---|---|
+| **H41.1** | Bật lịch sao lưu: `5-lich-backup.ps1` + `backup.ps1 -IncludeSecrets` + **một lần diễn tập khôi phục**. Bản mới nhất là 2026-08-17; scheduled task **không tồn tại**; thư mục sao lưu bí mật **chưa từng có** | chủ sản phẩm (cần Administrator) — **đã chọn để cuối** |
+| **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
+| **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
+| **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
+| **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
+| **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
+| **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
+| **H41.8** | Cân nhắc đổi mặc định `AppManifest.public` thành `False` — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **chủ sản phẩm** |
+
+⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
+link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
