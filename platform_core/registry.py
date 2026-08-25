@@ -28,7 +28,10 @@ route thành chỗ mọi thứ rơi vào — hai file route đã vượt 1.300 d
 chỗ mặc định thì mỗi người chọn một kiểu, và đó là điều đã xảy ra.
 `tools/lint_app_contract.py` cảnh báo khi `routes.py` vượt ngưỡng.
 
-Xem `apps/demo/` làm mẫu tối thiểu và `docs/03_THEM_APP_MOI.md` để làm theo.
+⚠️ **Không còn app mẫu để copy.** `apps/demo/` — app khuôn tối thiểu — đã bị gỡ
+2026-08-25 (Q109). Khuôn đầy đủ nằm trong `docs/03_THEM_APP_MOI.md`; muốn xem một
+app THẬT nhỏ gọn thì đọc `apps/anhnoibo/` (chỉ job, không route) hoặc
+`apps/thumbnail/` (có route + template).
 """
 from __future__ import annotations
 

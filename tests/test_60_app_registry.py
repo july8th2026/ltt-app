@@ -513,9 +513,9 @@ def test_bo_quet_van_bat_slug_trong_MA_CHAY_DUOC():
 
 def test_bo_quet_KHONG_bat_slug_trong_docstring_hay_chu_thich():
     ma = _ma_thuc_thi(_nguon('"""Xem apps/taovideo/translate.py."""',
-                             '# cung nhu apps/kichban/jobs.py',
+                             '# cung nhu apps/autosubvideo/jobs.py',
                              'x = 1'))
-    assert "taovideo" not in ma and "kichban" not in ma
+    assert "taovideo" not in ma and "autosubvideo" not in ma
 
 
 def test_bo_quet_van_bat_slug_trong_CHUOI_THUONG():

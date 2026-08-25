@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:13d3a3f6d494467b60f2c5205365fd08e36c33e7ba951365f52c1140e0d1eeee
+Fingerprint   : sha256:9fb94658b0865053ab533e500eea6c927f0fa8b3425509d2c4953282884df301
 Nguồn đã quét : 1163 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2566,7 +2566,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:37
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1163 file; 11234572 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1163 file; 11238531 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -72498,7 +72498,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=f8df021700f53e1558e59b39645235b13fcbffbd680ea29587df83a56fc7cd95 BYTES=236277 LINES=3376
+SHA256=649796c677143796220c234b4dacf31ca11ba59b125d069eba38ec74f8b1c76e BYTES=239987 LINES=3430
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -75876,6 +75876,60 @@ Hiệu quả đo được ngay: trước V14 node bán được **0 máy** (đĩ
 
 *(Việc kiểm router VNPT forward dải cổng — **hết là vấn đề** từ Q104: đường về nhà là
 WireGuard do phía nhà chủ động gọi ra, không cần mở cổng nào trên router.)*
+
+---
+
+## H40 — Dẹp app lỗi thời: gỡ HẲN 4 app khỏi kho mã
+
+**Chốt 2026-08-25** theo yêu cầu chủ sản phẩm. Quyết định nền: **Q108** (socialbot,
+thay Q10) và **Q109** (kichban · mediatools · demo).
+
+- [x] **H40.1 — `socialbot`** ✅ **XONG 2026-08-25.** Xoá `apps/socialbot/`,
+      `core/` (15.046 dòng), `utils/`, `server/services/` (12 tệp), 7 module route
+      = **43 route công khai (62% bề mặt cũ)**, 10 template, **44 tệp test
+      (~1.017 test)**, `worker_main.py`, `config.example.json`,
+      `docs/tiktok-submission/`.
+      *Đo trước khi xoá:* CSDL production có **0** job, **0** `app_access`, **0**
+      `app_projects` mang slug đó, và hai kho token `tokens.enc`/`tiktok_tokens.enc`
+      **chưa bao giờ được tạo** — chưa khách nào từng kết nối.
+
+- [x] **H40.2 — ba móc nối của nền tảng vào `core/`** ✅ **XONG 2026-08-25.**
+      Không cái nào hiện ra khi grep "socialbot":
+      ① `/health/ready` trả 503 khi không đọc được `data/config.json` — tệp cấu
+      hình **của socialbot** → nay nền tảng không đọc tệp cấu hình nào lúc khởi
+      động (`platform_core/settings.py` mới, chỉ giữ `Environment`);
+      ② trang chủ chạy `doctor.run()` mỗi lượt tải để tính một huy hiệu mà **chỉ
+      socialbot khai** (`blocker_titles`);
+      ③ `tests/conftest.py` có **ba fixture `autouse`** bắt MỌI test trong kho trả
+      thuế dọn hộ một engine chúng không dùng.
+
+- [x] **H40.3 — `kichban` · `mediatools` · `demo`** ✅ **XONG 2026-08-25.**
+      1.405 dòng, **11 ToolSpec**, 4 tệp test, 11 nhãn palette Agent Canvas.
+      ⚠️ **Cái giá đã đo và chủ sản phẩm đã chấp nhận:** **7/10 workflow Agent đang
+      lưu mất node** (3 `text.script`, 4 `text.generate`, 1 `asset.image`) + **4
+      `agent_runs`**. Bốn tool `asset.*` là node **đầu vào** của workflow.
+      `apps/demo` — khuôn của bốn bộ test hạ tầng — thay bằng **app THỬ tổng hợp**
+      ở `tests/conftest.py::app_thu`, sống trong bộ nhớ một test.
+
+- [x] **H40.4 — audit dọn sạch** ✅ **XONG 2026-08-25.** Tìm ra và đã xử lý ba nhóm
+      sót: ① `tools/demo_fb`, `tools/demo_v2`, `scripts/` — đồ dựng video nộp hồ sơ
+      TikTok/FB (2.456 dòng + 3,3 MB media, gitignore nên **xoá không đảo được**);
+      ② **10 chỗ tài liệu** chỉ vào `apps/demo/` như một khuôn còn tồn tại —
+      nghiêm trọng nhất là `CLAUDE.md` và `docs/03_THEM_APP_MOI.md` dặn *"copy
+      `apps/demo/`"*; ③ **105 mục `.po`** chỉ còn trỏ tới tệp đã xoá — **cố ý giữ**,
+      vì trích lại làm `msgmerge` sinh thêm **25 bản dịch sai**.
+      *Bằng chứng:* gõ thật vào **21 URL** của app đã gỡ → 404 cả 21; **12 URL** còn
+      sống → 200/303. Không đếm đối tượng route: bản Starlette này để lại
+      `_IncludedRouter` không mở ra được.
+
+**Kết quả:** danh mục app **19 → 14**; bộ test **4.727 → 4.093**; bánh cóc hạ được
+ba mốc (chuỗi chưa bọc `_()` 1.413→816, nuốt lỗi lặng lẽ 90→74, test trùng số 24→22).
+
+- [ ] **H40.5 — deploy** ⏳ chờ chủ sản phẩm. Production vẫn chạy bản đủ 19 app.
+      Điểm lùi trước cả đợt: **`ec6a00c`**.
+- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b của dự án đòi
+      kiểm trên **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau**
+      H40.5, không phải trước.
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -117193,7 +117247,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=2b0b36b70496ffb97cb5c1c5fd1914b27077b386578ae240f06990e975f68ac8 BYTES=45851 LINES=893
+SHA256=d4e29b48150ded840b8f6e76a92989460cc21dafdf02f2352efaaff203923e4e BYTES=46090 LINES=896
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -117225,7 +117279,10 @@ route thành chỗ mọi thứ rơi vào — hai file route đã vượt 1.300 d
 chỗ mặc định thì mỗi người chọn một kiểu, và đó là điều đã xảy ra.
 `tools/lint_app_contract.py` cảnh báo khi `routes.py` vượt ngưỡng.
 
-Xem `apps/demo/` làm mẫu tối thiểu và `docs/03_THEM_APP_MOI.md` để làm theo.
+⚠️ **Không còn app mẫu để copy.** `apps/demo/` — app khuôn tối thiểu — đã bị gỡ
+2026-08-25 (Q109). Khuôn đầy đủ nằm trong `docs/03_THEM_APP_MOI.md`; muốn xem một
+app THẬT nhỏ gọn thì đọc `apps/anhnoibo/` (chỉ job, không route) hoặc
+`apps/thumbnail/` (có route + template).
 """
 from __future__ import annotations
 
@@ -206481,7 +206538,7 @@ def test_doctor_van_in_duoc_tren_console_windows_doi_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_60_app_registry.py
-SHA256=4daee21f81111f452ad0dc45916101f0ddba8b7de7ea64cf61e3c37a679ecec9 BYTES=25014 LINES=538
+SHA256=e502bd99b6b88e2964df690f1829f00342b6fe5e3935ac30dedbbad2d61404b6 BYTES=25024 LINES=538
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hợp đồng app registry — thứ quyết định chi phí thêm app thứ 10.
 
@@ -206998,9 +207055,9 @@ def test_bo_quet_van_bat_slug_trong_MA_CHAY_DUOC():
 
 def test_bo_quet_KHONG_bat_slug_trong_docstring_hay_chu_thich():
     ma = _ma_thuc_thi(_nguon('"""Xem apps/taovideo/translate.py."""',
-                             '# cung nhu apps/kichban/jobs.py',
+                             '# cung nhu apps/autosubvideo/jobs.py',
                              'x = 1'))
-    assert "taovideo" not in ma and "kichban" not in ma
+    assert "taovideo" not in ma and "autosubvideo" not in ma
 
 
 def test_bo_quet_van_bat_slug_trong_CHUOI_THUONG():
