@@ -109,7 +109,64 @@ def test_input_reference_hop_le_va_sai_kieu():
     assert "port_type" in _codes(validate_plan(plan, input_types={"video": "image"}))
 
 
-def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_port():
+@pytest.fixture()
+def tool_gop_thu(monkeypatch):
+    """Một tool TỔNG HỢP có cổng nhận tập hợp (`video[]`), chỉ sống trong test này.
+
+    ⛔ Trước 26/08 phép kiểm dưới đây dùng `media.merge_video` — tool của
+       `mediatools`, đã gỡ ở Q109. Nó đỏ ngay lượt `pytest` đầy đủ đầu tiên sau
+       đó.
+
+    ⭐ Và khi đi tìm tool thay thế thì lộ ra một điều đáng ghi: **không tool nào
+       còn lại có đầu vào dạng danh sách.** `media.merge_video` là cái duy nhất.
+
+       Nghĩa là năng lực "cổng nhận tập hợp" của validator hiện **không mặt hàng
+       nào dùng tới**. Nhưng mã đó vẫn được phát hành, nên bỏ phép kiểm đi là
+       chọn cách để mã phát hành mà không ai canh — tệ hơn hẳn.
+
+    ⇒ Phép kiểm này kiểm **validator**, không kiểm một mặt hàng. Cùng bài học với
+      `app_thu`: test hạ tầng không được phụ thuộc vào một sản phẩm.
+    """
+    from platform_core import registry as reg
+
+    spec = reg.ToolSpec(
+        name="thu.gop_video", job_type="appthu.gop",
+        description="Gop video (chi co trong test)",
+        params_schema={"videos": {"type": "video[]"},
+                       "transition": {"type": "enum", "values": ["cut"],
+                                      "default": "cut"}},
+        returns={"video_key": {"type": "video"}})
+    manifest = reg.AppManifest(
+        slug="thugop", display_name="App gop thu", route_prefix="/thugop",
+        job_types=("appthu.gop",), requires=("api",), credit_cost=lambda p: 1,
+        # `enabled=True` la BAT BUOC: validator chi tra tool cua app dang bat.
+        # `surface="runtime"` van giu app nay vo hinh voi khach (catalog + nav).
+        tools=(spec,), enabled=True, public=False,
+        surface="runtime", lifecycle="internal")
+    loaded = reg.LoadedApp(manifest=manifest)
+
+    that = reg.discover
+
+    def kem_tool_thu(apps_dir=None):
+        goc = that() if apps_dir is None else that(apps_dir)
+        return list(goc) + [loaded]
+
+    # ⛔ PHAI va o CA HAI cho. `validator.py` lam
+    #    `from platform_core.registry import discover`, tuc no BIND ten do vao
+    #    namespace cua chinh no luc import — va tu do mot `setattr` len module
+    #    `registry` khong toi duoc no nua.
+    #
+    #    Trieu chung khi quen: validator van bao "Tool khong ton tai", trong khi
+    #    `reg.discover()` goi tay thi THAY tool. Hai cau tra loi khac nhau cho
+    #    cung mot cau hoi, va cai sai la cai minh khong goi.
+    monkeypatch.setattr(reg, "discover", kem_tool_thu)
+    from platform_core.agent import validator as val
+    monkeypatch.setattr(val, "discover", kem_tool_thu)
+    return spec
+
+
+def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_port(
+        tool_gop_thu):
     base = {"fanout": 1, "max_retry": 0, "on_fail": "retry_same", "verify": None}
     plan = {"version": 1, "goal": "Nối hai video", "budget_max_credit": 1000,
             "steps": [
@@ -117,7 +174,7 @@ def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_p
          "params": {"prompt": "Video thứ nhất"}},
         {"id": "v2", "tool": "video.generate", "after": [], **base,
          "params": {"prompt": "Video thứ hai"}},
-        {"id": "merge", "tool": "media.merge_video", "after": ["v1", "v2"], **base,
+        {"id": "merge", "tool": "thu.gop_video", "after": ["v1", "v2"], **base,
          "params": {"videos": ["$v1.video_key", "$v2.video_key"], "transition": "cut"}},
     ]}
     assert validate_plan(plan).valid

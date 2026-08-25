@@ -14,10 +14,13 @@ from platform_core.agent.workflows import plan_to_canvas
 
 
 def _plan():
-    return {"version": 1, "goal": "Viết kịch bản kiểm thử", "budget_max_credit": 50,
-            "steps": [{"id": "s1", "tool": "text.script", "after": [],
+    # `text.script` (tool cua `kichban`) DA GO o Q109. Thay bang mot tool VAN
+    # CON va cung sinh van ban. Y dinh cua bo test khong doi.
+    return {"version": 1, "goal": "Kiểm thử quy trình", "budget_max_credit": 50,
+            "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
                        "fanout": 1, "max_retry": 0, "on_fail": "retry_same",
-                       "verify": None, "params": {"topic": "Một chủ đề hữu ích"}}]}
+                       "verify": None,
+                       "params": {"title": "Một tiêu đề", "story": "Một câu chuyện."}}]}
 
 
 def _csrf(html: str) -> str:
@@ -132,18 +135,25 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
                for model in palette["models"])
     assert all("price" not in tool and "params_schema" in tool for tool in palette["tools"])
-    assert next(tool for tool in palette["tools"]
-                if tool["name"] == "text.script")["customer_visible"] is False
+    # ⛔ SUA 26/08 — bang nay khoa PALETTE CUA THOI TRUOC Q109.
+    #
+    #    Khang dinh cu doi BON tool chinh, trong do `text.generate` va
+    #    `audio.generate` di cung `mediatools`/`kichban`. Va no doi
+    #    `text.script` co `customer_visible is False` — tool do khong con.
+    #
+    # ⭐ Nay palette con HAI tool chinh, va do khong phai mot con so tuy tien:
+    #    `apps/agent/routes/_shared.py` co mot bang `presentation` khai ro tool
+    #    nao la `primary`. Phep kiem nay chot bang do, nen doi bang ma quen doi
+    #    day se lam gate do — dung nhu no nen the.
     assert {tool["name"]: tool["label"] for tool in palette["tools"] if tool["primary"]} == {
-        "text.generate": "Tạo văn bản", "image.generate": "Tạo hình ảnh",
-        "video.generate": "Tạo video", "audio.generate": "Tạo âm thanh"}
-    quote = a.post("/agent/api/tools/text.script/quote",
-        headers={"X-CSRF-Token": token}, json={"params": {"topic": "Chủ đề hợp lệ"},
+        "image.generate": "Tạo hình ảnh", "video.generate": "Tạo video"}
+    quote = a.post("/agent/api/tools/text.prompt_package/quote",
+        headers={"X-CSRF-Token": token}, json={"params": {"title": "Tiêu đề hợp lệ", "story": "Nội dung."},
         "fanout": 2, "max_retry": 1})
     assert quote.status_code == 200
     assert quote.json()["maximum"] == quote.json()["unit"] * 4
     assert quote.json()["authoritative"] is True
-    bad = a.post("/agent/api/tools/text.script/quote",
+    bad = a.post("/agent/api/tools/text.prompt_package/quote",
         headers={"X-CSRF-Token": token}, json={"params": {}})
     assert bad.status_code == 200 and bad.json()["valid"] is False
     assert bad.json()["maximum"] is None and bad.json()["authoritative"] is True
@@ -311,7 +321,7 @@ def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):
                             "budget_max_credit": 50})
     assert response.status_code == 201
     assert response.json()["status"] == "draft"
-    assert response.json()["canvas"]["nodes"][0]["data"]["tool"] == "text.script"
+    assert response.json()["canvas"]["nodes"][0]["data"]["tool"] == "text.prompt_package"
 
 
 def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):

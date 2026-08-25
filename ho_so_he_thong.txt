@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4de46b4207c0e72f32020bf5cc19480f58aab33de75fa27d1b8c5047fd11d5e4
+Fingerprint   : sha256:4637447a55bcb3c57e0ac85aff0f245a875437922e011d255516a35dac9b8cb7
 Nguồn đã quét : 1169 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2574,7 +2574,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11314763 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11319449 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -214851,7 +214851,7 @@ def test_orphan_child_duoc_reclaim(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_90_agent_planner_validator.py
-SHA256=7436e793708f238c1c526c3e0fffe20ce190b56918ad46efc301c5dcf1adb50d BYTES=7923 LINES=184
+SHA256=014b324dd188cc6e4581ecad08c1ee055861f0bdceacda8925086dd492b5215e BYTES=10714 LINES=241
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """P4: untrusted planner output is normalized and deterministically rejected/accepted."""
 from __future__ import annotations
@@ -214964,7 +214964,64 @@ def test_input_reference_hop_le_va_sai_kieu():
     assert "port_type" in _codes(validate_plan(plan, input_types={"video": "image"}))
 
 
-def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_port():
+@pytest.fixture()
+def tool_gop_thu(monkeypatch):
+    """Một tool TỔNG HỢP có cổng nhận tập hợp (`video[]`), chỉ sống trong test này.
+
+    ⛔ Trước 26/08 phép kiểm dưới đây dùng `media.merge_video` — tool của
+       `mediatools`, đã gỡ ở Q109. Nó đỏ ngay lượt `pytest` đầy đủ đầu tiên sau
+       đó.
+
+    ⭐ Và khi đi tìm tool thay thế thì lộ ra một điều đáng ghi: **không tool nào
+       còn lại có đầu vào dạng danh sách.** `media.merge_video` là cái duy nhất.
+
+       Nghĩa là năng lực "cổng nhận tập hợp" của validator hiện **không mặt hàng
+       nào dùng tới**. Nhưng mã đó vẫn được phát hành, nên bỏ phép kiểm đi là
+       chọn cách để mã phát hành mà không ai canh — tệ hơn hẳn.
+
+    ⇒ Phép kiểm này kiểm **validator**, không kiểm một mặt hàng. Cùng bài học với
+      `app_thu`: test hạ tầng không được phụ thuộc vào một sản phẩm.
+    """
+    from platform_core import registry as reg
+
+    spec = reg.ToolSpec(
+        name="thu.gop_video", job_type="appthu.gop",
+        description="Gop video (chi co trong test)",
+        params_schema={"videos": {"type": "video[]"},
+                       "transition": {"type": "enum", "values": ["cut"],
+                                      "default": "cut"}},
+        returns={"video_key": {"type": "video"}})
+    manifest = reg.AppManifest(
+        slug="thugop", display_name="App gop thu", route_prefix="/thugop",
+        job_types=("appthu.gop",), requires=("api",), credit_cost=lambda p: 1,
+        # `enabled=True` la BAT BUOC: validator chi tra tool cua app dang bat.
+        # `surface="runtime"` van giu app nay vo hinh voi khach (catalog + nav).
+        tools=(spec,), enabled=True, public=False,
+        surface="runtime", lifecycle="internal")
+    loaded = reg.LoadedApp(manifest=manifest)
+
+    that = reg.discover
+
+    def kem_tool_thu(apps_dir=None):
+        goc = that() if apps_dir is None else that(apps_dir)
+        return list(goc) + [loaded]
+
+    # ⛔ PHAI va o CA HAI cho. `validator.py` lam
+    #    `from platform_core.registry import discover`, tuc no BIND ten do vao
+    #    namespace cua chinh no luc import — va tu do mot `setattr` len module
+    #    `registry` khong toi duoc no nua.
+    #
+    #    Trieu chung khi quen: validator van bao "Tool khong ton tai", trong khi
+    #    `reg.discover()` goi tay thi THAY tool. Hai cau tra loi khac nhau cho
+    #    cung mot cau hoi, va cai sai la cai minh khong goi.
+    monkeypatch.setattr(reg, "discover", kem_tool_thu)
+    from platform_core.agent import validator as val
+    monkeypatch.setattr(val, "discover", kem_tool_thu)
+    return spec
+
+
+def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_port(
+        tool_gop_thu):
     base = {"fanout": 1, "max_retry": 0, "on_fail": "retry_same", "verify": None}
     plan = {"version": 1, "goal": "Nối hai video", "budget_max_credit": 1000,
             "steps": [
@@ -214972,7 +215029,7 @@ def test_collection_input_accepts_multiple_scalar_references_and_rejects_wrong_p
          "params": {"prompt": "Video thứ nhất"}},
         {"id": "v2", "tool": "video.generate", "after": [], **base,
          "params": {"prompt": "Video thứ hai"}},
-        {"id": "merge", "tool": "media.merge_video", "after": ["v1", "v2"], **base,
+        {"id": "merge", "tool": "thu.gop_video", "after": ["v1", "v2"], **base,
          "params": {"videos": ["$v1.video_key", "$v2.video_key"], "transition": "cut"}},
     ]}
     assert validate_plan(plan).valid
@@ -215554,7 +215611,7 @@ def test_inconclusive_retry_huu_han_roi_dung(runtime):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_94_agent_app.py
-SHA256=783da84e26a467a3b5d23d4f65b4ac68fd3e003d08fd9b0faa45c48eda6f9f5a BYTES=8380 LINES=184
+SHA256=ce511764f09f1ed97c636d258b8bd185ccc6bce55564a05cd251a1ec5791f2d7 BYTES=9350 LINES=198
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """P8 regression: authenticated Agent routes, CSRF, ownership and UX contract."""
 from __future__ import annotations
@@ -215606,10 +215663,19 @@ def web(tmp_path, monkeypatch):
     # Va vao module CHUA route, khong phai package: `plan_once` duoc import
     # theo gia tri nen va o `apps.agent.routes` khong doi duoc cai handler goi.
     from apps.agent.routes import legacy_runs
+    # ⛔ TRUOC 26/08 cho nay dung `text.script` — tool cua `kichban`, DA GO o
+    #    Q109. Ke hoach vi vay khong qua duoc validator, va sau phep kiem trong
+    #    tep nay do voi trieu chung khong he chi vao nguyen nhan (`assert 200 ==
+    #    303`: route dung lai va dung trang kem loi thay vi chuyen huong).
+    #
+    # ⭐ Thay bang `text.prompt_package` (`prompt_ai_ommi`) — mot tool VAN CON
+    #    trong palette va cung sinh van ban. Y dinh cua bo test khong doi: ke
+    #    hoach -> bao gia -> giu cho -> chay. No khong phu thuoc vao viec tool do
+    #    ten la gi.
     good_plan = {"version": 1, "budget_max_credit": 50, "steps": [{
-        "id": "s1", "tool": "text.script", "after": [], "fanout": 1,
+        "id": "s1", "tool": "text.prompt_package", "after": [], "fanout": 1,
         "max_retry": 0, "on_fail": "retry_same", "verify": None,
-        "params": {"topic": "A useful test topic"},
+        "params": {"title": "Mot tieu de thu", "story": "Mot cau chuyen thu."},
     }]}
     monkeypatch.setattr(legacy_runs, "plan_once", lambda *_a, **_k: dict(good_plan))
     yield client, uid, other_id, db_url
@@ -215642,7 +215708,12 @@ def test_plan_hien_gia_va_chua_hold(web):
     assert response.status_code == 303
     run_id = response.headers["location"].rsplit("/", 1)[-1]
     page = client.get(response.headers["location"])
-    assert "tối đa 7 credit" in page.text.lower()
+    # 10, khong phai 7. Doi tool => doi gia, va con so nay den tu he thong chu
+    # khong tu tep test: `credit_for('prompt_ai_ommi.generate', ...)` mot minh
+    # tra 6, con Agent giu cho 10 vi no cong them phan cua chinh no (fanout,
+    # verifier, retry). Ghi ra vi hai so do khac nhau la CO LY DO, khong phai
+    # mot trong hai sai.
+    assert "tối đa 10 credit" in page.text.lower()
     from platform_core import credit
     from platform_core.db import get_session
     db = next(get_session())
@@ -215658,12 +215729,12 @@ def test_approve_csrf_idempotent_va_api_du_plan(web):
         "csrf_token": _csrf(page.text), "version": 1})
     assert response.status_code == 303
     api = client.get(location + "/api").json()
-    assert api["status"] == "running" and api["estimated"] == 7
-    assert api["plan"]["steps"][0]["tool"] == "text.script"
+    assert api["status"] == "running" and api["estimated"] == 10
+    assert api["plan"]["steps"][0]["tool"] == "text.prompt_package"
     from platform_core import credit
     from platform_core.db import get_session
     db = next(get_session())
-    assert credit.so_da_giu(db, run_id) == 7 and credit.so_du(db, uid) == 93
+    assert credit.so_da_giu(db, run_id) == 10 and credit.so_du(db, uid) == 90
     db.close()
     assert client.post(location + "/approve", data={"version": 1}).status_code == 400
 
@@ -216122,7 +216193,7 @@ def test_scope_frame_resolve_tu_document_server():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_97_agent_workflow_api.py
-SHA256=170ae4d3402fc0742a5637fd5b3c233e87ff1a5ea2e4143892eb260d43eb55c0 BYTES=24340 LINES=445
+SHA256=054425e31355769fb9163a58a848e2ff3d895d52df32467c31556896b54bb228 BYTES=24949 LINES=455
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """P10 HTTP API: CSRF, ownership, ETag, palette and import/export."""
 from __future__ import annotations
@@ -216140,10 +216211,13 @@ from platform_core.agent.workflows import plan_to_canvas
 
 
 def _plan():
-    return {"version": 1, "goal": "Viết kịch bản kiểm thử", "budget_max_credit": 50,
-            "steps": [{"id": "s1", "tool": "text.script", "after": [],
+    # `text.script` (tool cua `kichban`) DA GO o Q109. Thay bang mot tool VAN
+    # CON va cung sinh van ban. Y dinh cua bo test khong doi.
+    return {"version": 1, "goal": "Kiểm thử quy trình", "budget_max_credit": 50,
+            "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
                        "fanout": 1, "max_retry": 0, "on_fail": "retry_same",
-                       "verify": None, "params": {"topic": "Một chủ đề hữu ích"}}]}
+                       "verify": None,
+                       "params": {"title": "Một tiêu đề", "story": "Một câu chuyện."}}]}
 
 
 def _csrf(html: str) -> str:
@@ -216258,18 +216332,25 @@ def test_validate_server_price_and_palette_are_authoritative(api):
     assert any(model["id"] == "seedance-2.0" and len(model["providers"]) == 2
                for model in palette["models"])
     assert all("price" not in tool and "params_schema" in tool for tool in palette["tools"])
-    assert next(tool for tool in palette["tools"]
-                if tool["name"] == "text.script")["customer_visible"] is False
+    # ⛔ SUA 26/08 — bang nay khoa PALETTE CUA THOI TRUOC Q109.
+    #
+    #    Khang dinh cu doi BON tool chinh, trong do `text.generate` va
+    #    `audio.generate` di cung `mediatools`/`kichban`. Va no doi
+    #    `text.script` co `customer_visible is False` — tool do khong con.
+    #
+    # ⭐ Nay palette con HAI tool chinh, va do khong phai mot con so tuy tien:
+    #    `apps/agent/routes/_shared.py` co mot bang `presentation` khai ro tool
+    #    nao la `primary`. Phep kiem nay chot bang do, nen doi bang ma quen doi
+    #    day se lam gate do — dung nhu no nen the.
     assert {tool["name"]: tool["label"] for tool in palette["tools"] if tool["primary"]} == {
-        "text.generate": "Tạo văn bản", "image.generate": "Tạo hình ảnh",
-        "video.generate": "Tạo video", "audio.generate": "Tạo âm thanh"}
-    quote = a.post("/agent/api/tools/text.script/quote",
-        headers={"X-CSRF-Token": token}, json={"params": {"topic": "Chủ đề hợp lệ"},
+        "image.generate": "Tạo hình ảnh", "video.generate": "Tạo video"}
+    quote = a.post("/agent/api/tools/text.prompt_package/quote",
+        headers={"X-CSRF-Token": token}, json={"params": {"title": "Tiêu đề hợp lệ", "story": "Nội dung."},
         "fanout": 2, "max_retry": 1})
     assert quote.status_code == 200
     assert quote.json()["maximum"] == quote.json()["unit"] * 4
     assert quote.json()["authoritative"] is True
-    bad = a.post("/agent/api/tools/text.script/quote",
+    bad = a.post("/agent/api/tools/text.prompt_package/quote",
         headers={"X-CSRF-Token": token}, json={"params": {}})
     assert bad.status_code == 200 and bad.json()["valid"] is False
     assert bad.json()["maximum"] is None and bad.json()["authoritative"] is True
@@ -216437,7 +216518,7 @@ def test_prompt_creates_editable_canvas_without_approval(api, monkeypatch):
                             "budget_max_credit": 50})
     assert response.status_code == 201
     assert response.json()["status"] == "draft"
-    assert response.json()["canvas"]["nodes"][0]["data"]["tool"] == "text.script"
+    assert response.json()["canvas"]["nodes"][0]["data"]["tool"] == "text.prompt_package"
 
 
 def test_api_round_trips_canvas_v2_without_losing_non_execution_content(api):
@@ -216573,7 +216654,7 @@ def test_admin_audit_metrics_and_safe_cancel_hide_user_content(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_98_agent_canvas_run.py
-SHA256=ad70a9db840000e532f1815dda63da2b6d9aedd5a6f28476f679163372e3d317 BYTES=6443 LINES=123
+SHA256=4d1d214488a44d6c36e52a2024205b1be16cfe9e7d358736f1911ad6fa37063f BYTES=6759 LINES=128
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """P12 integration: Canvas snapshot executes all seven real ToolSpec contracts."""
 from __future__ import annotations
@@ -216602,9 +216683,13 @@ def _plan():
     base = {"fanout": 1, "max_retry": 0, "on_fail": "retry_same", "verify": None}
     return {"version": 1, "goal": "Tạo bộ nội dung đủ ảnh chữ video GPU",
             "budget_max_credit": 5000, "steps": [
-        {"id": "text", "tool": "text.script", "after": [], **base,
-         "params": {"topic": "Cách làm phim ngắn", "duration": "3-5_phut",
-                    "tone": "educational", "audience": "general", "language": "vi"}},
+        # `text.script` (tool cua `kichban`) DA GO o Q109. Thay bang
+        # `text.prompt_package` — buoc van la "sinh van ban", va bo test van
+        # kiem dung thu no sinh ra de kiem: mot chuoi bay buoc di het.
+        {"id": "text", "tool": "text.prompt_package", "after": [], **base,
+         "params": {"title": "Cách làm phim ngắn",
+                    "story": "Một hướng dẫn ngắn về dựng phim.",
+                    "scene_count": 3, "aspect_ratio": "16:9"}},
         {"id": "image", "tool": "image.generate", "after": [], **base, "fanout": 2,
          "params": {"prompt": "Một thành phố tương lai", "model": "gemini-2.5-flash-image",
                     "aspect_ratio": "16:9", "count": 1}},
@@ -216652,7 +216737,8 @@ def test_canvas_to_immutable_run_all_seven_tools_resume_and_settle(db_user):
     db.commit()
 
     results = {
-        "text.script": {"script": {"title": "T", "hook": "H"}},
+        "text.prompt_package": {"prompt_package": {"title": "T"},
+                                "master_prompt": "M"},
         "image.generate": {"image_keys": ["image/test/1.png"], "prompt": "p"},
         "image.thumbnail": {"image_keys": ["thumbnail/test/1.png"], "prompt": "p"},
         "video.generate": {"video_key": "taovideo/test/1.mp4"},

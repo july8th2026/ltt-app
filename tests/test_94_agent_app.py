@@ -48,10 +48,19 @@ def web(tmp_path, monkeypatch):
     # Va vao module CHUA route, khong phai package: `plan_once` duoc import
     # theo gia tri nen va o `apps.agent.routes` khong doi duoc cai handler goi.
     from apps.agent.routes import legacy_runs
+    # ⛔ TRUOC 26/08 cho nay dung `text.script` — tool cua `kichban`, DA GO o
+    #    Q109. Ke hoach vi vay khong qua duoc validator, va sau phep kiem trong
+    #    tep nay do voi trieu chung khong he chi vao nguyen nhan (`assert 200 ==
+    #    303`: route dung lai va dung trang kem loi thay vi chuyen huong).
+    #
+    # ⭐ Thay bang `text.prompt_package` (`prompt_ai_ommi`) — mot tool VAN CON
+    #    trong palette va cung sinh van ban. Y dinh cua bo test khong doi: ke
+    #    hoach -> bao gia -> giu cho -> chay. No khong phu thuoc vao viec tool do
+    #    ten la gi.
     good_plan = {"version": 1, "budget_max_credit": 50, "steps": [{
-        "id": "s1", "tool": "text.script", "after": [], "fanout": 1,
+        "id": "s1", "tool": "text.prompt_package", "after": [], "fanout": 1,
         "max_retry": 0, "on_fail": "retry_same", "verify": None,
-        "params": {"topic": "A useful test topic"},
+        "params": {"title": "Mot tieu de thu", "story": "Mot cau chuyen thu."},
     }]}
     monkeypatch.setattr(legacy_runs, "plan_once", lambda *_a, **_k: dict(good_plan))
     yield client, uid, other_id, db_url
@@ -84,7 +93,12 @@ def test_plan_hien_gia_va_chua_hold(web):
     assert response.status_code == 303
     run_id = response.headers["location"].rsplit("/", 1)[-1]
     page = client.get(response.headers["location"])
-    assert "tối đa 7 credit" in page.text.lower()
+    # 10, khong phai 7. Doi tool => doi gia, va con so nay den tu he thong chu
+    # khong tu tep test: `credit_for('prompt_ai_ommi.generate', ...)` mot minh
+    # tra 6, con Agent giu cho 10 vi no cong them phan cua chinh no (fanout,
+    # verifier, retry). Ghi ra vi hai so do khac nhau la CO LY DO, khong phai
+    # mot trong hai sai.
+    assert "tối đa 10 credit" in page.text.lower()
     from platform_core import credit
     from platform_core.db import get_session
     db = next(get_session())
@@ -100,12 +114,12 @@ def test_approve_csrf_idempotent_va_api_du_plan(web):
         "csrf_token": _csrf(page.text), "version": 1})
     assert response.status_code == 303
     api = client.get(location + "/api").json()
-    assert api["status"] == "running" and api["estimated"] == 7
-    assert api["plan"]["steps"][0]["tool"] == "text.script"
+    assert api["status"] == "running" and api["estimated"] == 10
+    assert api["plan"]["steps"][0]["tool"] == "text.prompt_package"
     from platform_core import credit
     from platform_core.db import get_session
     db = next(get_session())
-    assert credit.so_da_giu(db, run_id) == 7 and credit.so_du(db, uid) == 93
+    assert credit.so_da_giu(db, run_id) == 10 and credit.so_du(db, uid) == 90
     db.close()
     assert client.post(location + "/approve", data={"version": 1}).status_code == 400
 

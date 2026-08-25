@@ -25,9 +25,13 @@ def _plan():
     base = {"fanout": 1, "max_retry": 0, "on_fail": "retry_same", "verify": None}
     return {"version": 1, "goal": "Tạo bộ nội dung đủ ảnh chữ video GPU",
             "budget_max_credit": 5000, "steps": [
-        {"id": "text", "tool": "text.script", "after": [], **base,
-         "params": {"topic": "Cách làm phim ngắn", "duration": "3-5_phut",
-                    "tone": "educational", "audience": "general", "language": "vi"}},
+        # `text.script` (tool cua `kichban`) DA GO o Q109. Thay bang
+        # `text.prompt_package` — buoc van la "sinh van ban", va bo test van
+        # kiem dung thu no sinh ra de kiem: mot chuoi bay buoc di het.
+        {"id": "text", "tool": "text.prompt_package", "after": [], **base,
+         "params": {"title": "Cách làm phim ngắn",
+                    "story": "Một hướng dẫn ngắn về dựng phim.",
+                    "scene_count": 3, "aspect_ratio": "16:9"}},
         {"id": "image", "tool": "image.generate", "after": [], **base, "fanout": 2,
          "params": {"prompt": "Một thành phố tương lai", "model": "gemini-2.5-flash-image",
                     "aspect_ratio": "16:9", "count": 1}},
@@ -75,7 +79,8 @@ def test_canvas_to_immutable_run_all_seven_tools_resume_and_settle(db_user):
     db.commit()
 
     results = {
-        "text.script": {"script": {"title": "T", "hook": "H"}},
+        "text.prompt_package": {"prompt_package": {"title": "T"},
+                                "master_prompt": "M"},
         "image.generate": {"image_keys": ["image/test/1.png"], "prompt": "p"},
         "image.thumbnail": {"image_keys": ["thumbnail/test/1.png"], "prompt": "p"},
         "video.generate": {"video_key": "taovideo/test/1.mp4"},
