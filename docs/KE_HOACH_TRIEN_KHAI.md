@@ -3474,3 +3474,32 @@ go THAT vao URL         21/21 URL app da go -> 404 · 12/12 URL con song -> 200/
 (phiên khác đổi). Đã chứng minh bằng `git stash`: đỏ y hệt ở `ec6a00c`. Hệ quả:
 `tools/build_release.py` **chưa dựng được gói phát hành** cho tới khi chạy
 `npm run build` cho cả ba rồi `python tools/build_system_profile.py`.
+
+### H40.8 — Việc còn treo của đợt H40, chuyển từ nhật ký sang đây
+
+⚠️ **Vì sao mục này tồn tại, và nó là một bài học về quy trình chứ không về việc.**
+
+Sáu việc dưới đây vốn nằm ở mục *"Còn tồn đọng"* cuối hai mục nhật ký ngày
+2026-08-25. Đo lại: **3/6 chưa từng vào kế hoạch.** Nghĩa là chúng chỉ tồn tại ở
+một nơi được đọc **theo thời gian**, trong khi việc thì được tìm **theo việc** —
+một việc chỉ nằm ở nhật ký là một việc chỉ tồn tại trong quá khứ.
+
+⛔ Và đây đúng là lớp lỗi vừa sinh ra một sự cố tiền thật ở chỗ khác: chú thích
+   `server/api/streaming.py:257` ghi thẳng *"KHÔNG AI QUÉT NÓ… khách mất tiền
+   lặng lẽ"* — người viết **đã biết**, **đã ghi**, và việc vẫn không vào lịch.
+   Khoảng cách giữa *"đã biết"* và *"đã xếp lịch"* là chỗ hỏng, không phải mã.
+
+| # | Việc | Ai làm |
+|---|---|---|
+| a | **Deploy** đợt xoá 4 app | chủ sản phẩm |
+| b | **7/10 workflow Agent mất node** ngay khi deploy. Không có bước di trú. Nếu muốn đỡ: một thông báo trong Canvas khi mở workflow có node không còn tồn tại — **không** hồi sinh app | chủ sản phẩm quyết, tôi làm được |
+| c | **Ba bundle frontend stale** ⇒ `tools/build_release.py` không dựng được gói phát hành. Đỏ **từ trước** đợt xoá (chứng minh bằng `git stash` ở `ec6a00c`). Sửa: `npm run build` cả ba **rồi** `python tools/build_system_profile.py` | phiên nào rảnh |
+| d | **14 ảnh PNG ở gốc kho đang được git theo dõi** (`audit_*`, `nexus_*`, `vm200-*`, `live_nexus_hero`). `.gitignore` không tác động tới tệp đã theo dõi ⇒ cần `git rm --cached`. Là tài sản của hai phiên khác | chủ sản phẩm |
+| e | **Dữ liệu socialbot còn trong `data/`** (`config.json`, `content_history.db`, `audit_log.jsonl`, `session_locks/`). Không tiến trình nào còn mở chúng; xoá tệp trên máy đang chạy thật là **không đảo được** nên tách khỏi việc gỡ mã | chủ sản phẩm |
+| f | **Đăng ký Meta App + TikTok app** — tài sản **ngoài kho**. Mã đã đi, đăng ký không tự mất | chủ sản phẩm |
+| g | **Bẫy 7 + 8 chưa vào `BAY_TRONG_CONG_CHAT_LUONG.md`**: ⑦ `__pycache__` mồ côi hồi sinh một app đã xoá (gate báo *"thiếu manifest.py"* cho một thư mục rỗng); ⑧ `_frontend_source_sha256` băm cả `tests/` nên đổi một hằng số `timeout` làm gói phát hành thành stale, với câu báo lỗi **nêu tên sai nghi phạm** (*"built with the wrong Node"* trong khi Node vẫn đúng) | phiên nào đụng tới tài liệu đó |
+
+⭐ **Đề xuất chặn tương lai, không dọn quá khứ:** thêm một bánh cóc vào gate đòi
+mỗi gạch đầu dòng *"Còn tồn đọng"* trong `NHAT_KY.md` phải có mã ứng với một dòng
+trong tệp này — cùng họ với `check_bo_qua.py` và `check_dich_thieu.py`. Chi phí
+một lần, và nó bịt **lớp lỗi** thay vì từng ca.
