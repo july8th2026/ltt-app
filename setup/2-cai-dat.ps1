@@ -221,7 +221,7 @@ Head 'Cau hinh van hanh'
 # Tep do la cau hinh cua app socialbot (Meta App ID, Sheet ID, ten cot, chong
 # spam) va app do da bi go han. Nen tang KHONG doc tep cau hinh nao luc khoi
 # dong nua: ho so moi truong suy ra tu LTT_ENV, moi thu con lai nam trong
-# secretspp.env.
+# secrets\app.env.
 #
 # Tep cu con nam lai trong data\ tren may da cai thi khong sao - khong tien
 # trinh nao mo no. Xoa la viec cua chu san pham, khong phai cua bo cai.

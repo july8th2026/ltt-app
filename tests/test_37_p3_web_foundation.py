@@ -125,7 +125,15 @@ def test_health_ready_khong_con_phu_thuoc_tep_cau_hinh(tmp_path):
     assert resp.status_code == 200
     assert resp.json()["status"] == "ready"
     # Và nó vẫn nói được mình đang chạy hồ sơ nào — thứ người vận hành cần.
-    assert resp.json()["environment"] == "development"
+    #
+    # ⭐ Chốt đúng giá trị `_test_env` khai (`local-server-test`), KHÔNG phải
+    #    `"development"`. Đó mới là phép kiểm mạnh: nó chứng minh con số đến từ
+    #    `LTT_ENV`, chứ không phải từ một mặc định trùng hợp.
+    #
+    #    Bản đầu khẳng định `"development"` trong khi fixture đặt
+    #    `LTT_ENV="local-server-test"` — test mâu thuẫn với chính fixture của nó,
+    #    và nó đỏ ngay lượt `pytest` đầy đủ đầu tiên chạy sau đó (26/08).
+    assert resp.json()["environment"] == "local-server-test"
 
 
 # ─── authorization boundary ────────────────────────────────────────────────────

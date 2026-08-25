@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:10d9e77b20430ac11ca93d633b6ffc768710362181b9ab781fb4cd4fbe06e1c1
+Fingerprint   : sha256:4de46b4207c0e72f32020bf5cc19480f58aab33de75fa27d1b8c5047fd11d5e4
 Nguồn đã quét : 1169 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2574,7 +2574,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11303823 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11314763 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -72589,7 +72589,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=3b48d19983c63151e4a56024aaef4bc94ece76a196906f2ddb296edd5cb71d8e BYTES=245862 LINES=3505
+SHA256=be13b563dd3d708386bf980f9ae6c3f4fce1ca6e23c31b91b3392d86611c48f1 BYTES=251236 LINES=3576
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -76096,6 +76096,77 @@ một việc chỉ nằm ở nhật ký là một việc chỉ tồn tại trong
 mỗi gạch đầu dòng *"Còn tồn đọng"* trong `NHAT_KY.md` phải có mã ứng với một dòng
 trong tệp này — cùng họ với `check_bo_qua.py` và `check_dich_thieu.py`. Chi phí
 một lần, và nó bịt **lớp lỗi** thay vì từng ca.
+
+> ### ✅ ĐỐI CHIẾU 2026-08-26 — đề xuất trên ĐÃ ĐƯỢC THI HÀNH, nhưng **khác cách**
+>
+> Nhận định của H40.8 đúng và nó là gốc rễ. Nhưng khi bắt tay làm, cách *"bắt mục
+> Còn tồn đọng phải mang mã"* **đã bị bỏ**, vì hai lý do đo được:
+>
+> 1. **104 mục** hiện có đều là văn xuôi tự do ⇒ ép mã là **dọn quá khứ**, trong
+>    khi bánh cóc phải **chặn tương lai**.
+> 2. Một phép kiểm phán xét văn phong sẽ kêu sai liên tục — và một máy dò kêu
+>    suốt ngày là một máy dò bị tắt trong tuần đầu.
+>
+> ⭐ Hình dạng **thật** của lớp lỗi không phải *"ghi chép thiếu mã"*. Nó là:
+> **một hàm quét/cảnh báo tồn tại mà không đường thực thi nào gọi tới.** Cái đó
+> đo được bằng máy, không cần phán xét gì.
+>
+> ⇒ Đã làm `tools/check_chuong_chua_treo.py`, vào gate. **Đã chứng minh nó bắt
+> đúng ca gốc**: gỡ dòng cắm `costing.scan_for_alerts` trên một cây giả ⇒ báo
+> ngay (`test_308`). Và nó tìm ra **ca thứ ba** chưa ai biết:
+> `upload_sessions.reconcile`.
+>
+> ⚠️ **Nói thẳng giới hạn:** nó **không** bắt được ca sao lưu (kịch bản
+> PowerShell) và ca link-404 (bài học nằm trong chú thích). Nó bắt hai ca nguy
+> hiểm nhất, và bắt chắc chắn. Một phép kiểm hẹp mà đúng có giá trị hơn một phép
+> kiểm rộng mà đoán.
+>
+> **Mục (c) của bảng trên cũng đã xong** — ba bundle đã dựng lại, `test_44` từ
+> 2 đỏ về **35 passed** (`a5274bf`). Đáng ghi thêm một tầng mà bảng trên chưa
+> nêu: lỗi thứ hai của `test_44` đỏ **không phải** vì đường chặn bí mật hỏng, mà
+> vì chốt bundle-cũ bắn trước và **nuốt mất** `SystemExit` mà phép kiểm đó định
+> bắt ⇒ **phép kiểm chặn rò rỉ bí mật đã không chạy** suốt thời gian đó. Một
+> gốc, hai triệu chứng, và triệu chứng thứ hai đáng lo hơn hẳn.
+
+---
+
+## H41 — Chạy trọn bộ prompt MVP Optimization V2 (2026-08-26)
+
+**Nguồn:** `AppStudios_MVP_Optimization_Prompt_Pack_V2` (16 prompt, 2 pha).
+**Báo cáo:** `docs/MVP_OPTIMIZATION_V2/` — 14 tệp.
+**Chủ sản phẩm bỏ cổng duyệt** và yêu cầu chạy thẳng 00→15.
+
+### Đã xong
+
+| | Việc | Commit |
+|---|---|---|
+| ✅ | 12 báo cáo pha A (00→11) | `ede373a`, `05a20ac` |
+| ✅ | **M-01** máy dò giữ chỗ treo + cắm vào bảo trì dưới lease + cảnh báo `HOLD_STRANDED` | `a5274bf` |
+| ✅ | **M-02** cắm cảnh báo biên lợi nhuận âm (viết xong từ lâu, chưa ai gọi) | `a5274bf` |
+| ✅ | **B-01** dựng lại 3 bundle ⇒ gói phát hành dựng được, phép kiểm bí mật chạy lại | `a5274bf` |
+| ✅ | **U-02** link 404 `/ltt-llm` trong header mọi khách + luật linter + bất biến `test_60` | `db6147e` |
+| ✅ | **A-04** hợp đồng `apps → server` (4 module) + linter + `AGENTS.md` §8.2b/8.2c | `3d804ee` |
+| ✅ | Bánh cóc **kích thước route `server/`** (3 tệp baseline) | `f625199` |
+| ✅ | Bánh cóc **chuông chưa treo** + `test_308` | `f625199` |
+| ✅ | Sửa mâu thuẫn `CLAUDE.md` về `LTT_PUBLIC_API_TOOLS` | `3d804ee` |
+
+**Gate: 19 → 21 bước.**
+
+### Còn treo
+
+| ID | Việc | Ai làm |
+|---|---|---|
+| **H41.1** | Bật lịch sao lưu: `5-lich-backup.ps1` + `backup.ps1 -IncludeSecrets` + **một lần diễn tập khôi phục**. Bản mới nhất là 2026-08-17; scheduled task **không tồn tại**; thư mục sao lưu bí mật **chưa từng có** | chủ sản phẩm (cần Administrator) — **đã chọn để cuối** |
+| **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
+| **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
+| **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
+| **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
+| **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
+| **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
+| **H41.8** | Cân nhắc đổi mặc định `AppManifest.public` thành `False` — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **chủ sản phẩm** |
+
+⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
+link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -143356,7 +143427,7 @@ if ($script:Fail -gt 0) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/2-cai-dat.ps1
-SHA256=31e120b0e87d7fc55a9f3b2d82dff83bfbda8a0e0ad5234e479ca535ac851302 BYTES=26874 LINES=543
+SHA256=b4873b95d00d834b1f75574c0350c8e635f51a7cfe981b50eca4493defa26236 BYTES=26875 LINES=543
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -143581,7 +143652,7 @@ Head 'Cau hinh van hanh'
 # Tep do la cau hinh cua app socialbot (Meta App ID, Sheet ID, ten cot, chong
 # spam) va app do da bi go han. Nen tang KHONG doc tep cau hinh nao luc khoi
 # dong nua: ho so moi truong suy ra tu LTT_ENV, moi thu con lai nam trong
-# secretspp.env.
+# secrets\app.env.
 #
 # Tep cu con nam lai trong data\ tren may da cai thi khong sao - khong tien
 # trinh nao mo no. Xoa la viec cua chu san pham, khong phai cua bo cai.
@@ -144183,7 +144254,7 @@ if ($reached) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/4-nghiem-thu.ps1
-SHA256=67df06f8fa801d8cff00576e4e7e860b23ab7164a07bff05677527dcf1bb7995 BYTES=6083 LINES=145
+SHA256=ec086a8722ef07502f147e2ebc1ecb18eb6aedf5d98260a455360ce539304c69 BYTES=6085 LINES=145
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -144289,8 +144360,8 @@ if (Test-Path (Join-Path $secrets 'app.env')) {
 Head 'Cau hinh'
 # KIEM data\config.json DA BO 2026-08-25 (Q108): tep do la cau hinh cua app
 # socialbot, va app do da bi go han. Nen tang khong doc tep cau hinh nao luc
-# khoi dong - moi thu nam trong secretspp.env, da kiem o muc tren.
-Ok 'Nen tang khong doc tep cau hinh - da kiem secretspp.env o tren'
+# khoi dong - moi thu nam trong secrets\app.env, da kiem o muc tren.
+Ok 'Nen tang khong doc tep cau hinh - da kiem secrets\app.env o tren'
 
 Head 'App da nap'
 if (Test-Path $venvPy) {
@@ -144742,7 +144813,7 @@ async page => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/conftest.py
-SHA256=351f4bd7ac5da01f88dae8da227e383ea96b7e9a6036aad0899da731148c1906 BYTES=6407 LINES=143
+SHA256=eef6501c28019f4e6e6b7fa67ef746427175493a9612573ecaed6f7050dbc060 BYTES=9787 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Fixture dùng chung cho toàn bộ bộ test.
@@ -144773,6 +144844,21 @@ kia. Ba fixture đó là phần vá cho một thiết kế đã bị gỡ.
 from __future__ import annotations
 
 import pytest
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+# ⛔ BON TEN TREN PHAI o CAP MODULE, khong duoc import ben trong `_router_thu()`.
+#
+#    Tep nay co `from __future__ import annotations`, nen moi chu thich kieu
+#    thanh CHUOI. FastAPI phai giai chuoi do bang `get_type_hints`, va no chi
+#    nhin thay **globals cua module**. Import ben trong ham thi `Request` la mot
+#    ten CUC BO — FastAPI khong giai duoc, va no doan `request` la mot tham so
+#    QUERY:
+#
+#        GET /appthu -> 422
+#        {"detail":[{"type":"missing","loc":["query","request"], ...}]}
+#
+#    Da dinh that 26/08, va trieu chung khong he chi vao nguyen nhan.
 
 
 # ── App THỬ tổng hợp, thay cho `apps/demo` đã gỡ ─────────────────────────────
@@ -144820,6 +144906,47 @@ def _handler_thu(params: dict, ctx=None) -> dict:
     return {"output": text[::-1]}
 
 
+def _router_thu():
+    """Be mat web toi thieu cua app THU: mot trang co CSRF + mot duong nop job.
+
+    Du de kiem duong web that (CSRF, giu cho credit, chuyen trang sang `/jobs/`),
+    khong hon. Moi thu khac deu la be mat that cua nen tang.
+    """
+    from server.auth.csrf import issue_csrf_token, verify_csrf_token
+    from server.auth.session import require_login
+    from server.deps import get_db, user_hien_tai
+
+    router = APIRouter()
+
+    @router.get("", response_class=HTMLResponse)
+    def trang(request: Request, user: str = Depends(require_login)):
+        return HTMLResponse(
+            '<form method="post" action="/appthu/queue">'
+            f'<input type="hidden" name="csrf_token" value="{issue_csrf_token(request)}">'
+            '<input name="text"></form>')
+
+    @router.post("/queue")
+    def queue(request: Request, text: str = Form(""),
+              csrf_token: str = Form(""), user: str = Depends(require_login),
+              db=Depends(get_db)):
+        from platform_core import credit
+        from platform_core.job_submit import submit_with_credit
+
+        if not verify_csrf_token(request, csrf_token):
+            return RedirectResponse("/appthu", status_code=303)
+        u = user_hien_tai(request)
+        try:
+            job = submit_with_credit(db, user_id=u.id, app_slug=APP_THU_SLUG,
+                                     job_type=APP_THU_JOB, params={"text": text})
+            db.commit()
+        except credit.ThieuCreditError:
+            db.rollback()
+            return HTMLResponse("Khong du credit", status_code=402)
+        return RedirectResponse(f"/jobs/{job.id}", status_code=303)
+
+    return router
+
+
 @pytest.fixture()
 def app_thu(monkeypatch):
     """Đăng ký một app tổng hợp cho đúng một test. Trả về module-namespace nhỏ.
@@ -144846,7 +144973,24 @@ def app_thu(monkeypatch):
         # Không bao giờ hiện ở đâu: đây là đồ dùng của test, không phải mặt hàng.
         enabled=False, public=False, surface="runtime", lifecycle="internal",
     )
-    loaded = reg.LoadedApp(manifest=manifest)
+    # ⭐ App THU co ROUTE, va day khong phai chi tiet thua.
+    #
+    #    Q109 go `apps/demo` va di tru bon bo test ha tang sang app THU nay.
+    #    Nhung `test_69_web_jobs.py` kiem duong WEB — form -> job -> huy -> co
+    #    lap chu so huu — va app THU luc do khong co route nao, nen 9 phep kiem
+    #    do chet lang le. Chung van tro vao `/demo/queue`, mot duong 404.
+    #
+    # ⛔ Do la 9 phep kiem phu mot Golden Journey (nop job qua web + A khong doc
+    #    duoc job cua B) NGUNG CHAY ma khong ai biet, cho toi luot `pytest` day
+    #    du dau tien chay sau do (26/08).
+    #
+    # ⭐ KHONG tro chung sang mot app that: `CLAUDE.md` canh dung cai bay do
+    #    ("chi doi chu no"), vi khi ay bo test lai phu thuoc vao mot mat hang.
+    #    Dung cach la app THU co du be mat ma hop dong app co — ke ca route.
+    #
+    #    `mount_all` gan router BAT KE `enabled`, nen app nay van vo hinh trong
+    #    catalog (`enabled=False`, `surface="runtime"`) ma route van chay.
+    loaded = reg.LoadedApp(manifest=manifest, router=_router_thu())
 
     discover_that = reg.discover
 
@@ -205418,7 +205562,7 @@ def test_po_khong_co_msgid_trung():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_306_banh_coc_bo_qua_va_dich.py
-SHA256=24fa79d92ee42e85948c9673415afb5bda4001d9c4b6ec3af2a13c6aa568390d BYTES=6771 LINES=152
+SHA256=f17a7185b8ab89dc0f14870b11c5f3e80d325c4b06f3c0641831bb852baead35 BYTES=7906 LINES=172
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hai banh coc them ngay 25/08/2026 — va bang chung rang chung CHAN THAT.
 
@@ -205498,9 +205642,27 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
     assert "FUZZY\t" in moc, "muc fuzzy phai nam trong moc, khong duoc mien"
 
 
+# ⛔ BA TEST DUOI DAY GHI DE `locale/en/LC_MESSAGES/messages.po` THAT.
+#
+#    Khoi phuc trong `finally` PHAI la `write_bytes`, khong duoc `write_text`.
+#    Do that 26/08: ban dau chung dung `write_text(..., encoding="utf-8")`, va
+#    tren Windows `Path.write_text` dich LF thanh CRLF. Ban "khoi phuc" khac ban
+#    goc **10.465 dong** - nguyen tep, chi doi kieu xuong dong.
+#
+#    Hai hau qua, ca hai am tham:
+#      1. `git status` cua bat ky ai chay pytest bong co mot tep .po sua doi
+#         khong hieu tu dau ra;
+#      2. `tools/gate.py` lay dau van tay cay o CA HAI DAU => in "CAY DA DOI
+#         TRONG LUC CHAY", tuc **mot luot gate 2 gio tu vo hieu hoa chinh no**.
+#
+# ⭐ Chinh tep nay DA lam dung cho tep `.moc` (`read_bytes`/`write_bytes`) o
+#    `test_accept_TU_CHOI_khi_con_muc_moi`. Bai hoc: khi mot tep can byte-exact
+#    thi MOI tep trong cung ham deu can - khong chi tep minh nho toi.
+
 def test_chuoi_MOI_chua_dich_lam_do():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
+    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                             'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
@@ -205509,7 +205671,7 @@ def test_chuoi_MOI_chua_dich_lam_do():
         assert r.returncode == 1, "them mot chuoi chua dich MOI ma van PASS"
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
-        po.write_text(goc, encoding="utf-8")
+        po.write_bytes(goc_byte)
 
 
 def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
@@ -205520,6 +205682,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
     """
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
+    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
     mot = next(d.split("\t", 1)[1]
                for d in moc.splitlines() if d.startswith("TRONG\t"))
@@ -205537,13 +205700,14 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
             "phai TAP HOP")
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
-        po.write_text(goc, encoding="utf-8")
+        po.write_bytes(goc_byte)
 
 
 def test_accept_TU_CHOI_khi_con_muc_moi():
     """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no."""
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
+    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     moc_truoc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
@@ -205552,7 +205716,7 @@ def test_accept_TU_CHOI_khi_con_muc_moi():
         r = _chay("check_dich_thieu.py", "--accept")
         assert r.returncode == 1, "--accept nang moc len duoc"
     finally:
-        po.write_text(goc, encoding="utf-8")
+        po.write_bytes(goc_byte)
         (GOC / "tools" / "check_dich_thieu.moc").write_bytes(moc_truoc)
 
 
@@ -206258,7 +206422,7 @@ def test_khong_con_module_core(  ):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_37_p3_web_foundation.py
-SHA256=0150afc2859953410eb5e9e377261cb64bef8a9ec63c984fa43cf594a0de1e47 BYTES=15336 LINES=364
+SHA256=aacce5c8768946e04dc3f62d4f6ad04c728825d80974e948f90e73dc5d6a93c8 BYTES=15890 LINES=372
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 P3 — web platform foundation tests.
@@ -206387,7 +206551,15 @@ def test_health_ready_khong_con_phu_thuoc_tep_cau_hinh(tmp_path):
     assert resp.status_code == 200
     assert resp.json()["status"] == "ready"
     # Và nó vẫn nói được mình đang chạy hồ sơ nào — thứ người vận hành cần.
-    assert resp.json()["environment"] == "development"
+    #
+    # ⭐ Chốt đúng giá trị `_test_env` khai (`local-server-test`), KHÔNG phải
+    #    `"development"`. Đó mới là phép kiểm mạnh: nó chứng minh con số đến từ
+    #    `LTT_ENV`, chứ không phải từ một mặc định trùng hợp.
+    #
+    #    Bản đầu khẳng định `"development"` trong khi fixture đặt
+    #    `LTT_ENV="local-server-test"` — test mâu thuẫn với chính fixture của nó,
+    #    và nó đỏ ngay lượt `pytest` đầy đủ đầu tiên chạy sau đó (26/08).
+    assert resp.json()["environment"] == "local-server-test"
 
 
 # ─── authorization boundary ────────────────────────────────────────────────────
@@ -210228,7 +210400,7 @@ def test_job_that_bai_hoan_credit(db, app_thu):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_69_web_jobs.py
-SHA256=8329ddce19e05745bce56bafca67b3c16f389930b24a8fe3a24096f8245d728a BYTES=8970 LINES=228
+SHA256=cb69af544b9920f1ee9da7dd7606dd6e09018595a3c84e2dfc57c0b005c705bf BYTES=9464 LINES=235
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 H2.3 — web submit qua hàng đợi + trang job + cách ly người dùng.
@@ -210244,7 +210416,7 @@ import pytest
 
 
 @pytest.fixture()
-def env(tmp_path, monkeypatch):
+def env(tmp_path, monkeypatch, app_thu):
     from fastapi.testclient import TestClient
     url = f"sqlite:///{(tmp_path / 'w.db').as_posix()}"
     monkeypatch.setenv("LTT_DATABASE_URL", url)
@@ -210286,15 +210458,15 @@ def _login(client, email):
     assert r.status_code == 303
 
 
-def _demo_csrf(client):
-    return re.search(r'name="csrf_token" value="([^"]+)"', client.get("/demo").text).group(1)
+def _appthu_csrf(client):
+    return re.search(r'name="csrf_token" value="([^"]+)"', client.get("/appthu").text).group(1)
 
 
 def test_submit_qua_hang_doi_tao_job_va_chuyen_trang(env):
     client, _ = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "xin chao", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "xin chao", "csrf_token": tok},
                     follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"].startswith("/jobs/")
@@ -210303,8 +210475,8 @@ def test_submit_qua_hang_doi_tao_job_va_chuyen_trang(env):
 def test_job_hien_o_trang_viec_cua_toi(env):
     client, _ = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    client.post("/demo/queue", data={"text": "abc", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    client.post("/appthu/queue", data={"text": "abc", "csrf_token": tok},
                 follow_redirects=False)
     html = client.get("/jobs").text
     assert "appthu.dao_nguoc" in html
@@ -210314,8 +210486,8 @@ def test_job_hien_o_trang_viec_cua_toi(env):
 def test_timeline_owner_va_debug_chi_operator(env):
     client, _ = env
     _login(client, "a@x.com")
-    submitted = client.post("/demo/queue", data={
-        "text": "timeline", "csrf_token": _demo_csrf(client),
+    submitted = client.post("/appthu/queue", data={
+        "text": "timeline", "csrf_token": _appthu_csrf(client),
     }, follow_redirects=False)
     job_path = submitted.headers["location"]
     job_id = job_path.rsplit("/", 1)[-1]
@@ -210324,7 +210496,7 @@ def test_timeline_owner_va_debug_chi_operator(env):
     assert detail.status_code == 200
     assert "Lịch sử xử lý" in detail.text
     assert "Đã tiếp nhận yêu cầu" in detail.text
-    history = client.get("/api/jobs?app=demo&status=queued")
+    history = client.get("/api/jobs?app=appthu&status=queued")
     assert history.status_code == 200
     assert history.json()["items"][0]["id"] == job_id
     assert "params" not in history.json()["items"][0]
@@ -210358,8 +210530,8 @@ def test_A_khong_doc_duoc_job_cua_B(env):
     client, (ua_id, ub_id) = env
     # B tạo job.
     _login(client, "b@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "cua B", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "cua B", "csrf_token": tok},
                     follow_redirects=False)
     job_b = r.headers["location"]      # /jobs/<id cua B>
 
@@ -210382,18 +210554,22 @@ def test_thieu_credit_khong_tao_job(env):
     except StopIteration: pass
 
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "x" * 500, "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "x" * 500, "csrf_token": tok},
                     follow_redirects=False)
-    assert r.status_code == 400
+    # 402, khong phai 400. App THAT tra 402 khi thieu credit
+    # (`apps/autosubvideo/routes.py:510` va :671). Con so 400 o day la thoi quen
+    # rieng cua `apps/demo` da go — app THU mo phong app that, khong mo phong
+    # cai da bien mat.
+    assert r.status_code == 402
     assert "credit" in r.text.lower()
 
 
 def test_tien_do_fragment_tra_html(env):
     client, _ = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "abc", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "abc", "csrf_token": tok},
                     follow_redirects=False)
     jid = r.headers["location"].split("/jobs/")[1]
     frag = client.get(f"/jobs/{jid}/progress")
@@ -210404,8 +210580,8 @@ def test_tien_do_fragment_tra_html(env):
 def test_owner_huy_job_va_thu_lai_tao_job_moi(env):
     client, (ua_id, _) = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    submitted = client.post("/demo/queue", data={"text": "retry me", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    submitted = client.post("/appthu/queue", data={"text": "retry me", "csrf_token": tok},
                             follow_redirects=False)
     old_path = submitted.headers["location"]
     old_id = old_path.rsplit("/", 1)[-1]
@@ -210442,12 +210618,12 @@ def test_owner_huy_job_va_thu_lai_tao_job_moi(env):
 def test_user_khac_khong_huy_duoc_job(env):
     client, _ = env
     _login(client, "a@x.com")
-    submitted = client.post("/demo/queue", data={"text": "owner only",
-                            "csrf_token": _demo_csrf(client)}, follow_redirects=False)
+    submitted = client.post("/appthu/queue", data={"text": "owner only",
+                            "csrf_token": _appthu_csrf(client)}, follow_redirects=False)
     job_path = submitted.headers["location"]
 
     _login(client, "b@x.com")
-    csrf = _demo_csrf(client)
+    csrf = _appthu_csrf(client)
     denied = client.post(job_path + "/cancel", data={"csrf_token": csrf},
                          follow_redirects=False)
     assert denied.status_code == 404
@@ -210456,7 +210632,10 @@ def test_user_khac_khong_huy_duoc_job(env):
 def test_normal_user_khong_vao_duoc_cau_hinh_va_status_operator(env):
     client, _ = env
     _login(client, "customer@x.com")
-    assert client.get("/settings", follow_redirects=False).status_code == 403
+    # `/settings` DA DI cung app socialbot (Q108) — trang do la cau hinh cua
+    # RIENG app do. Khang dinh cu doi 403 (co trang, chan nguoi thuong); nay
+    # trang khong con, nen 404. Bo han thay vi doi thanh 404: mot phep kiem
+    # "trang khong ton tai" khong canh gi ca.
     assert client.get("/status", follow_redirects=False).status_code == 403
 
 @@@LTT_PROFILE_FILE_END@@@

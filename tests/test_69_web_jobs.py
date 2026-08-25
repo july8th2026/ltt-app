@@ -12,7 +12,7 @@ import pytest
 
 
 @pytest.fixture()
-def env(tmp_path, monkeypatch):
+def env(tmp_path, monkeypatch, app_thu):
     from fastapi.testclient import TestClient
     url = f"sqlite:///{(tmp_path / 'w.db').as_posix()}"
     monkeypatch.setenv("LTT_DATABASE_URL", url)
@@ -54,15 +54,15 @@ def _login(client, email):
     assert r.status_code == 303
 
 
-def _demo_csrf(client):
-    return re.search(r'name="csrf_token" value="([^"]+)"', client.get("/demo").text).group(1)
+def _appthu_csrf(client):
+    return re.search(r'name="csrf_token" value="([^"]+)"', client.get("/appthu").text).group(1)
 
 
 def test_submit_qua_hang_doi_tao_job_va_chuyen_trang(env):
     client, _ = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "xin chao", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "xin chao", "csrf_token": tok},
                     follow_redirects=False)
     assert r.status_code == 303
     assert r.headers["location"].startswith("/jobs/")
@@ -71,8 +71,8 @@ def test_submit_qua_hang_doi_tao_job_va_chuyen_trang(env):
 def test_job_hien_o_trang_viec_cua_toi(env):
     client, _ = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    client.post("/demo/queue", data={"text": "abc", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    client.post("/appthu/queue", data={"text": "abc", "csrf_token": tok},
                 follow_redirects=False)
     html = client.get("/jobs").text
     assert "appthu.dao_nguoc" in html
@@ -82,8 +82,8 @@ def test_job_hien_o_trang_viec_cua_toi(env):
 def test_timeline_owner_va_debug_chi_operator(env):
     client, _ = env
     _login(client, "a@x.com")
-    submitted = client.post("/demo/queue", data={
-        "text": "timeline", "csrf_token": _demo_csrf(client),
+    submitted = client.post("/appthu/queue", data={
+        "text": "timeline", "csrf_token": _appthu_csrf(client),
     }, follow_redirects=False)
     job_path = submitted.headers["location"]
     job_id = job_path.rsplit("/", 1)[-1]
@@ -92,7 +92,7 @@ def test_timeline_owner_va_debug_chi_operator(env):
     assert detail.status_code == 200
     assert "Lịch sử xử lý" in detail.text
     assert "Đã tiếp nhận yêu cầu" in detail.text
-    history = client.get("/api/jobs?app=demo&status=queued")
+    history = client.get("/api/jobs?app=appthu&status=queued")
     assert history.status_code == 200
     assert history.json()["items"][0]["id"] == job_id
     assert "params" not in history.json()["items"][0]
@@ -126,8 +126,8 @@ def test_A_khong_doc_duoc_job_cua_B(env):
     client, (ua_id, ub_id) = env
     # B tạo job.
     _login(client, "b@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "cua B", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "cua B", "csrf_token": tok},
                     follow_redirects=False)
     job_b = r.headers["location"]      # /jobs/<id cua B>
 
@@ -150,18 +150,22 @@ def test_thieu_credit_khong_tao_job(env):
     except StopIteration: pass
 
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "x" * 500, "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "x" * 500, "csrf_token": tok},
                     follow_redirects=False)
-    assert r.status_code == 400
+    # 402, khong phai 400. App THAT tra 402 khi thieu credit
+    # (`apps/autosubvideo/routes.py:510` va :671). Con so 400 o day la thoi quen
+    # rieng cua `apps/demo` da go — app THU mo phong app that, khong mo phong
+    # cai da bien mat.
+    assert r.status_code == 402
     assert "credit" in r.text.lower()
 
 
 def test_tien_do_fragment_tra_html(env):
     client, _ = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    r = client.post("/demo/queue", data={"text": "abc", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    r = client.post("/appthu/queue", data={"text": "abc", "csrf_token": tok},
                     follow_redirects=False)
     jid = r.headers["location"].split("/jobs/")[1]
     frag = client.get(f"/jobs/{jid}/progress")
@@ -172,8 +176,8 @@ def test_tien_do_fragment_tra_html(env):
 def test_owner_huy_job_va_thu_lai_tao_job_moi(env):
     client, (ua_id, _) = env
     _login(client, "a@x.com")
-    tok = _demo_csrf(client)
-    submitted = client.post("/demo/queue", data={"text": "retry me", "csrf_token": tok},
+    tok = _appthu_csrf(client)
+    submitted = client.post("/appthu/queue", data={"text": "retry me", "csrf_token": tok},
                             follow_redirects=False)
     old_path = submitted.headers["location"]
     old_id = old_path.rsplit("/", 1)[-1]
@@ -210,12 +214,12 @@ def test_owner_huy_job_va_thu_lai_tao_job_moi(env):
 def test_user_khac_khong_huy_duoc_job(env):
     client, _ = env
     _login(client, "a@x.com")
-    submitted = client.post("/demo/queue", data={"text": "owner only",
-                            "csrf_token": _demo_csrf(client)}, follow_redirects=False)
+    submitted = client.post("/appthu/queue", data={"text": "owner only",
+                            "csrf_token": _appthu_csrf(client)}, follow_redirects=False)
     job_path = submitted.headers["location"]
 
     _login(client, "b@x.com")
-    csrf = _demo_csrf(client)
+    csrf = _appthu_csrf(client)
     denied = client.post(job_path + "/cancel", data={"csrf_token": csrf},
                          follow_redirects=False)
     assert denied.status_code == 404
@@ -224,5 +228,8 @@ def test_user_khac_khong_huy_duoc_job(env):
 def test_normal_user_khong_vao_duoc_cau_hinh_va_status_operator(env):
     client, _ = env
     _login(client, "customer@x.com")
-    assert client.get("/settings", follow_redirects=False).status_code == 403
+    # `/settings` DA DI cung app socialbot (Q108) — trang do la cau hinh cua
+    # RIENG app do. Khang dinh cu doi 403 (co trang, chan nguoi thuong); nay
+    # trang khong con, nen 404. Bo han thay vi doi thanh 404: mot phep kiem
+    # "trang khong ton tai" khong canh gi ca.
     assert client.get("/status", follow_redirects=False).status_code == 403

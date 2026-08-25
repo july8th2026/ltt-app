@@ -102,8 +102,8 @@ if (Test-Path (Join-Path $secrets 'app.env')) {
 Head 'Cau hinh'
 # KIEM data\config.json DA BO 2026-08-25 (Q108): tep do la cau hinh cua app
 # socialbot, va app do da bi go han. Nen tang khong doc tep cau hinh nao luc
-# khoi dong - moi thu nam trong secretspp.env, da kiem o muc tren.
-Ok 'Nen tang khong doc tep cau hinh - da kiem secretspp.env o tren'
+# khoi dong - moi thu nam trong secrets\app.env, da kiem o muc tren.
+Ok 'Nen tang khong doc tep cau hinh - da kiem secrets\app.env o tren'
 
 Head 'App da nap'
 if (Test-Path $venvPy) {

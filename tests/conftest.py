@@ -27,6 +27,21 @@ kia. Ba fixture đó là phần vá cho một thiết kế đã bị gỡ.
 from __future__ import annotations
 
 import pytest
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+
+# ⛔ BON TEN TREN PHAI o CAP MODULE, khong duoc import ben trong `_router_thu()`.
+#
+#    Tep nay co `from __future__ import annotations`, nen moi chu thich kieu
+#    thanh CHUOI. FastAPI phai giai chuoi do bang `get_type_hints`, va no chi
+#    nhin thay **globals cua module**. Import ben trong ham thi `Request` la mot
+#    ten CUC BO — FastAPI khong giai duoc, va no doan `request` la mot tham so
+#    QUERY:
+#
+#        GET /appthu -> 422
+#        {"detail":[{"type":"missing","loc":["query","request"], ...}]}
+#
+#    Da dinh that 26/08, va trieu chung khong he chi vao nguyen nhan.
 
 
 # ── App THỬ tổng hợp, thay cho `apps/demo` đã gỡ ─────────────────────────────
@@ -74,6 +89,47 @@ def _handler_thu(params: dict, ctx=None) -> dict:
     return {"output": text[::-1]}
 
 
+def _router_thu():
+    """Be mat web toi thieu cua app THU: mot trang co CSRF + mot duong nop job.
+
+    Du de kiem duong web that (CSRF, giu cho credit, chuyen trang sang `/jobs/`),
+    khong hon. Moi thu khac deu la be mat that cua nen tang.
+    """
+    from server.auth.csrf import issue_csrf_token, verify_csrf_token
+    from server.auth.session import require_login
+    from server.deps import get_db, user_hien_tai
+
+    router = APIRouter()
+
+    @router.get("", response_class=HTMLResponse)
+    def trang(request: Request, user: str = Depends(require_login)):
+        return HTMLResponse(
+            '<form method="post" action="/appthu/queue">'
+            f'<input type="hidden" name="csrf_token" value="{issue_csrf_token(request)}">'
+            '<input name="text"></form>')
+
+    @router.post("/queue")
+    def queue(request: Request, text: str = Form(""),
+              csrf_token: str = Form(""), user: str = Depends(require_login),
+              db=Depends(get_db)):
+        from platform_core import credit
+        from platform_core.job_submit import submit_with_credit
+
+        if not verify_csrf_token(request, csrf_token):
+            return RedirectResponse("/appthu", status_code=303)
+        u = user_hien_tai(request)
+        try:
+            job = submit_with_credit(db, user_id=u.id, app_slug=APP_THU_SLUG,
+                                     job_type=APP_THU_JOB, params={"text": text})
+            db.commit()
+        except credit.ThieuCreditError:
+            db.rollback()
+            return HTMLResponse("Khong du credit", status_code=402)
+        return RedirectResponse(f"/jobs/{job.id}", status_code=303)
+
+    return router
+
+
 @pytest.fixture()
 def app_thu(monkeypatch):
     """Đăng ký một app tổng hợp cho đúng một test. Trả về module-namespace nhỏ.
@@ -100,7 +156,24 @@ def app_thu(monkeypatch):
         # Không bao giờ hiện ở đâu: đây là đồ dùng của test, không phải mặt hàng.
         enabled=False, public=False, surface="runtime", lifecycle="internal",
     )
-    loaded = reg.LoadedApp(manifest=manifest)
+    # ⭐ App THU co ROUTE, va day khong phai chi tiet thua.
+    #
+    #    Q109 go `apps/demo` va di tru bon bo test ha tang sang app THU nay.
+    #    Nhung `test_69_web_jobs.py` kiem duong WEB — form -> job -> huy -> co
+    #    lap chu so huu — va app THU luc do khong co route nao, nen 9 phep kiem
+    #    do chet lang le. Chung van tro vao `/demo/queue`, mot duong 404.
+    #
+    # ⛔ Do la 9 phep kiem phu mot Golden Journey (nop job qua web + A khong doc
+    #    duoc job cua B) NGUNG CHAY ma khong ai biet, cho toi luot `pytest` day
+    #    du dau tien chay sau do (26/08).
+    #
+    # ⭐ KHONG tro chung sang mot app that: `CLAUDE.md` canh dung cai bay do
+    #    ("chi doi chu no"), vi khi ay bo test lai phu thuoc vao mot mat hang.
+    #    Dung cach la app THU co du be mat ma hop dong app co — ke ca route.
+    #
+    #    `mount_all` gan router BAT KE `enabled`, nen app nay van vo hinh trong
+    #    catalog (`enabled=False`, `surface="runtime"`) ma route van chay.
+    loaded = reg.LoadedApp(manifest=manifest, router=_router_thu())
 
     discover_that = reg.discover
 
