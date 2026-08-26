@@ -193,8 +193,34 @@ def _run(scenario: str, seconds: float, workers: int) -> dict:
     work = Path(tempfile.mkdtemp(prefix="ltt-load-"))
     env_extra = {}
     if scenario == "abusive":
-        # Real limits, so the thing being measured is isolation.
-        env_extra = {"LTT_PUBLIC_API_RPM": "120", "LTT_PUBLIC_API_CREATE_RPM": "20"}
+        # ⛔ SUA 2026-08-26. Truoc day dat RPM=120, va phep kiem
+        #    `test_193::test_one_abusive_key_does_not_degrade_a_well_behaved_one`
+        #    KHONG BAO GIO XANH tren may nay.
+        #
+        #    Ly do khong phai toc do — no la TONG SO. Han muc tinh theo PHUT, nen
+        #    muon no ban thi phai gui hon 120 request trong cua so 60 giay. Ma
+        #    kich ban chay 3 giay, va may nay day duoc ~22 req/s => 65 request.
+        #    65 < 120, nen bo han muc khong co ly do gi de ban.
+        #
+        # ⭐ Chu thich cu ghi dung y dinh: *"Real limits, so the thing being
+        #    measured is isolation."* Nhung nguong 120 lai lam phep do phu thuoc
+        #    vao MAY CHAY NHANH BAO NHIEU, tuc do dung cai ma no noi la khong do.
+        #    15 van la mot han muc that (operator dat duoc), va no lam phep kiem
+        #    do dung mot thu: mot khoa lam dung bi chan, mot khoa ngoan khong bi.
+        #
+        # 💡 VI SAO 15 CHU KHONG PHAI 30 — do that, khong doan:
+        #      RPM=30 => abusive {200: 30, 429: 3..11}, normal {200: 6}
+        #    Tuc abusive chi gui ~33-41 request trong 3 giay. Bien tren han muc
+        #    chi con 3-11, va mot luot may ban la KHONG VUOT NOI => do 1/3 lan.
+        #    Da do dung nhu vay.
+        #
+        #    Voi 15: abusive vuot ~18-26 request, normal van cach nguong 9.
+        #    Ca HAI bien deu rong, nen phep kiem tat dinh chu khong may rui.
+        #
+        # ⚠️ Va day la lan dau lo ra vi luot `pytest` DAY DU chua bao gio chay
+        #    xong (H40.7). Mot phep kiem khong bao gio chay va mot phep kiem
+        #    khong bao gio xanh trong giong het nhau tu ben ngoai.
+        env_extra = {"LTT_PUBLIC_API_RPM": "15", "LTT_PUBLIC_API_CREATE_RPM": "20"}
     client = _build(work, **env_extra)
     tokens = [_account() for _ in range(max(2, workers))]
     if scenario == "budgeted":
