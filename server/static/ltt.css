@@ -1467,6 +1467,103 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .vps-chang h3{margin:0;font-size:14px}
 .vps-chang-mo-ta{margin:0 0 10px 29px;font-size:12px;color:var(--text-secondary)}
 
+
+/* ═══ ĐỢT 4 · TRUNG TÂM ĐIỀU KHIỂN MỘT MÁY ══════════════════════════════ */
+
+/* ── Dải danh tính máy (macro `dinh_may`) ────────────────────────────────
+ * Dùng ở CẢ BA trang trong một máy: tổng quan · cài Windows · console. Ba bản
+ * sao của cùng một danh tính sẽ lệch, và cái lệch sẽ là cái nói sai địa chỉ —
+ * tức nói sai đúng thứ khách tới đây để lấy.
+ */
+.vps-dinh{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;
+  padding:14px 16px;margin:0 0 14px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-dinh-ten{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-size:20px;font-weight:700;letter-spacing:-.02em;margin-right:auto;
+  word-break:break-word}
+.vps-dinh-o{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vps-dinh-o .nhan{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text-muted)}
+.vps-dinh-o .gt{font-size:13px;color:var(--text-primary);word-break:break-all}
+
+/* ── Dải hành động, THEO TRẠNG THÁI ──────────────────────────────────────
+ * ⚠️ Không bày mọi nút ngang hàng. Nút chính đổi theo trạng thái: máy đã tắt
+ *    thì "Bật" là việc duy nhất đáng làm, còn máy đang tạo thì không việc nào.
+ *    Danh sách nào hợp lệ là việc của `dieu_khien.kiem_dieu_khien_duoc`.
+ */
+.vps-hd{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.vps-hd form{margin:0}
+.vps-hd .btn{min-width:124px;justify-content:center}
+
+/* ── Lưới các ô thông tin ────────────────────────────────────────────────*/
+.vps-o-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:12px;margin:0 0 16px;align-items:start}
+.vps-o{padding:14px 16px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-o > h3{margin:0 0 10px;font-size:13px;font-weight:600;
+  letter-spacing:.02em;color:var(--text-secondary)}
+.vps-o-lon{grid-column:1 / -1}
+/* Ba con số tài nguyên: to, đều, đọc theo cột. */
+.vps-tn{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));
+  gap:10px;margin:0;padding:0;list-style:none}
+.vps-tn li{display:flex;flex-direction:column;gap:1px}
+.vps-tn b{font-size:19px;font-weight:700;line-height:1.15;
+  font-variant-numeric:tabular-nums}
+.vps-tn span{font-size:11px;color:var(--text-muted)}
+
+/* ── Nhật ký thành dòng thời gian ────────────────────────────────────────
+ * Trước Đợt 4 nó là một bảng ba cột với cột thứ ba đổ **JSON thô** ra cho khách
+ * xem. Nhật ký này tồn tại để trả lời *"vì sao máy tôi bị tắt"* sau ba tháng —
+ * nó chỉ làm được việc đó nếu người đọc là người, không phải người vận hành.
+ */
+.vps-nhat-ky{margin:0;padding:0;list-style:none}
+.vps-nhat-ky li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle);
+  font-size:13px}
+.vps-nhat-ky li:last-child{border-bottom:0}
+.vps-nhat-ky .cham{width:8px;height:8px;border-radius:50%;margin-top:6px;
+  background:var(--vps-teal-hover)}
+.vps-nhat-ky li.xau .cham{background:var(--status-danger)}
+.vps-nhat-ky .luc{color:var(--text-muted);font-size:12px;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.vps-nhat-ky .ct{display:block;color:var(--text-secondary);font-size:12px;
+  word-break:break-word}
+@media(max-width:600px){
+  .vps-nhat-ky li{grid-template-columns:auto minmax(0,1fr)}
+  .vps-nhat-ky .luc{grid-column:2;order:3}
+}
+
+/* ── Khối Nguy hiểm ──────────────────────────────────────────────────────
+ *
+ * 🔴 Đỏ **chỉ** ở đây và ở lỗi. Nếu một bảng có sáu nút đỏ thì sáu lần mất nhìn
+ *    thấy cảnh báo — đến lúc cần cảnh báo thật thì nó không nói lên được gì.
+ *
+ * Thứ tự trong lưới là **ít thiệt hại trước**: khôi phục → cài lại → xoá. Khách
+ * vào khối này vì máy hỏng, và đưa lựa chọn ít thiệt hại hơn lên trước là việc
+ * của người thiết kế, không phải của người đang hoảng.
+ */
+.vps-nguy{border:1px solid var(--status-danger-border);border-radius:var(--radius-lg);
+  background:var(--status-danger-soft);padding:16px 18px;margin:0 0 16px}
+.vps-nguy > h2{margin:0 0 4px;font-size:15px;color:var(--status-danger)}
+.vps-nguy > p{margin:0 0 14px;font-size:13px;color:var(--text-secondary);
+  max-width:78ch}
+.vps-nguy-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:12px}
+.vps-nguy-o{display:flex;flex-direction:column;gap:8px;padding:14px;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-md);
+  background:var(--surface-base)}
+.vps-nguy-o h3{margin:0;font-size:13.5px}
+.vps-nguy-o p{margin:0;flex:1;font-size:12px;color:var(--text-secondary);
+  line-height:1.55}
+.vps-nguy-o form{display:flex;flex-direction:column;gap:8px;margin:0}
+.vps-nguy-o .inp{width:100%}
+
+/* ── Đổi tên (D-01) ──────────────────────────────────────────────────────
+ * Một biểu mẫu nhỏ, KHÔNG có ô xác nhận: đổi nhãn là việc đảo được.
+ */
+.vps-doi-ten{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0}
+.vps-doi-ten .inp{max-width:230px}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ĐỢT 2 KHU API (.khu-dev) — bám ảnh demo 2026-08-27
    ═══════════════════════════════════════════════════════════════════════════
@@ -1644,6 +1741,44 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .khu-dev .dev-ma-teal{border-color:var(--dev-cyan-line);
   background:linear-gradient(180deg,var(--dev-cyan-soft),transparent)}
 
+/* ── Danh mục công cụ dạng LƯỚI THẺ (ảnh demo: 3 cột, mỗi thẻ có ô biểu tượng
+ *    màu + tên + mô tả + chân "N model · Docs · Thử ngay") ──────────────────
+ * Scoped: chỉ đổi CÁCH BÀY của `.tool-the` TRONG khu API; component gốc (danh
+ * sách quét được) giữ nguyên cho mọi nơi khác. Vẫn là `<details>` — mở ra xem
+ * hợp đồng đầy đủ ngay trong thẻ. */
+.khu-dev .dev-tool-luoi{display:grid;gap:12px;margin:0 0 16px;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));align-items:start}
+.khu-dev .dev-tool-luoi .tool-the{margin:0;display:flex;flex-direction:column;
+  background:var(--surface-raised)}
+.khu-dev .dev-tool-luoi .tool-the>summary{flex-direction:column;align-items:stretch;
+  gap:9px;padding:14px}
+.khu-dev .dev-tool-luoi .tool-the>summary:hover{background:transparent}
+.khu-dev .dev-tool-luoi .tool-the:hover{border-color:var(--border-strong)}
+/* Hàng đầu thẻ: ô biểu tượng màu + tên + nhãn chế độ chạy dồn phải. */
+.khu-dev .tool-dau{display:flex;align-items:center;gap:10px}
+.khu-dev .tool-icon{display:grid;place-items:center;width:34px;height:34px;
+  border-radius:9px;font-size:14px;font-weight:800;color:#fff;flex:none}
+.khu-dev .tool-icon.cap-image{background:#3b82c4}
+.khu-dev .tool-icon.cap-text{background:#0f9d8a}
+.khu-dev .tool-icon.cap-vision{background:#8b5cc8}
+.khu-dev .tool-icon.cap-audio{background:#d08a2c}
+.khu-dev .tool-icon.cap-video{background:#c8548f}
+.khu-dev .tool-icon.cap-code{background:#4a9d5a}
+.khu-dev .tool-icon.cap-other{background:var(--dev-cyan-line)}
+.khu-dev .dev-tool-luoi .the-ten{flex:1;min-width:0;font-size:13.5px;
+  overflow:hidden;text-overflow:ellipsis}
+/* Mô tả HAI dòng trong lưới (khác danh sách một-dòng). */
+.khu-dev .dev-tool-luoi .the-mo-ta{flex:none;white-space:normal;font-size:12px;
+  line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;min-height:36px}
+/* Chân thẻ: N model · Docs · Thử ngay — dồn đáy để các thẻ thẳng hàng. */
+.khu-dev .tool-chan{display:flex;align-items:center;gap:10px;margin-top:2px;
+  padding-top:10px;border-top:1px solid var(--border-subtle);font-size:11.5px;
+  color:var(--text-muted)}
+.khu-dev .tool-chan a{color:var(--dev-cyan);text-decoration:none}
+.khu-dev .tool-chan a:hover{color:var(--dev-cyan-hover)}
+.khu-dev .tool-chan .day{margin-left:auto}
+
 /* ── Kết quả ước tính giá (ảnh: số credit to + VND + hộp lưu ý hổ phách) ── */
 .khu-dev .dev-uoc-tinh{display:flex;align-items:baseline;gap:8px}
 .khu-dev .dev-uoc-tinh .so{font-size:38px;font-weight:700;letter-spacing:-.02em;
@@ -1683,3 +1818,15 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .khu-dev .dev-chu-thich .o{width:10px;height:2px;display:inline-block}
 .khu-dev .dev-chu-thich .o-req{background:var(--dev-cyan)}
 .khu-dev .dev-chu-thich .o-credit{background:var(--brand-primary)}
+
+/* ── Vòng phân bổ theo công cụ (ảnh demo: donut + chú thích %) ──────────── */
+.khu-dev .dev-vong{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.khu-dev .dev-vong .vong-svg{width:150px;height:150px;flex:none}
+.khu-dev .dev-vong .vong-so{fill:var(--text-primary);font-size:22px;font-weight:700}
+.khu-dev .dev-vong .vong-nhan{fill:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.khu-dev .dev-vong-chu{flex:1;min-width:150px;margin:0;padding:0;list-style:none}
+.khu-dev .dev-vong-chu li{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.khu-dev .dev-vong-chu .cham{width:9px;height:9px;border-radius:2px;flex:none}
+.khu-dev .dev-vong-chu code{flex:1;min-width:0;color:var(--text-secondary)}
+.khu-dev .dev-vong-chu .pct{color:var(--text-primary);font-weight:600}
+.khu-dev .dev-vong-chu .val{color:var(--text-muted);font-size:11px}

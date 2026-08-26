@@ -27,13 +27,14 @@ from sqlalchemy import select
 
 import apps.vps as vps_app
 from apps.vps import bang_thong, dieu_khoan, nhan, os_images, ten_may
-from apps.vps.cost import PLANS, lay_plan
+from apps.vps.cost import CHU_KY_NGAY, PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
-                               provisioning)
+                               provisioning, sao_luu)
 from apps.vps.services.proxmox import (ChuaCauHinh, ProxmoxError,
                                        client_tu_moi_truong)
 from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
+from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.csrf import issue_csrf_token, verify_csrf_token
 from server.auth.session import require_login
@@ -123,6 +124,63 @@ def _may_cua_toi(db, user_id: str) -> list:
             "con_ngay": billing.con_bao_nhieu_ngay(m),
         })
     return ket_qua
+
+
+#: Khoá trong `chi_tiet` **không hiện cho khách**, vì hai lý do khác nhau:
+#:
+#: * `upid`, `vmid` — chỉ có nghĩa với người vận hành, và chúng nói ra hình dạng
+#:   của cụm (số hiệu máy trong Proxmox, id tác vụ);
+#: * `boi`, `anh`, `bang_thong_byte` — có nghĩa, nhưng đã có **chỗ tốt hơn**:
+#:   người thực hiện thì hiện ở nhãn sự kiện, tên ảnh chụp thì ở ô Ảnh chụp, và
+#:   `bang_thong_byte` được chụp để dựng **lịch sử về sau** (D-04), không phải để
+#:   đọc trong nhật ký.
+_KHOA_NOI_BO = frozenset({"upid", "vmid", "boi", "anh", "bang_thong_byte"})
+
+#: Khoá → nhãn người đọc. Khoá không có trong bảng này thì hiện **nguyên khoá**,
+#: cùng lý do với `nhan.trang_thai()`: một mã lạ ít nhất cho ta thứ để tra khi
+#: khách chụp màn hình gửi tới, còn một ô trống thì không.
+_NHAN_KHOA = {
+    "credit": N_("credit"),
+    "den": N_("trả tới"),
+    "plan_id": N_("gói"),
+    "os_id": N_("hệ điều hành"),
+    "vung": N_("vùng"),
+    "loi": N_("lỗi"),
+    "cu": N_("tên cũ"),
+    "moi": N_("tên mới"),
+}
+
+
+def _gia_tri_doc_duoc(khoa: str, gt) -> str:
+    """Vài giá trị cần đổi dạng trước khi hiện.
+
+    ⚠️ `den` là ISO 8601 (`2026-09-19T00:00:00`) — đúng cho máy đọc, và **sai**
+       cho một dòng nhật ký mà người Việt đang đọc. Cắt về `dd/mm/yyyy`; không
+       parse thành `datetime` vì chuỗi này do chính ta ghi ra và cắt là đủ, còn
+       một lần parse là một chỗ để ném ngoại lệ trên trang của khách.
+    """
+    if khoa == "den" and isinstance(gt, str) and len(gt) >= 10:
+        return f"{gt[8:10]}/{gt[5:7]}/{gt[0:4]}"
+    return str(gt)
+
+
+def _chi_tiet_doc_duoc(chi_tiet) -> str:
+    """`chi_tiet` (JSON tự do) → một câu ngắn, hoặc chuỗi rỗng.
+
+    Trước Đợt 4 trang máy đổ **nguyên dict** ra cột thứ ba của nhật ký. Đó là
+    thứ viết cho người vận hành đọc — mà nhật ký này tồn tại để trả lời khách
+    câu *"vì sao máy tôi bị tắt"* sau ba tháng.
+
+    ⚠️ Chỉ đổi **cách gọi**, không đổi **ngữ nghĩa**: không gộp hai khoá, không
+       suy diễn thêm, không bỏ một khoá vì nó trông xấu. Bỏ chỉ khi nó có chỗ
+       tốt hơn — xem `_KHOA_NOI_BO`.
+    """
+    if not isinstance(chi_tiet, dict):
+        return ""
+    phan = [f"{_t(_NHAN_KHOA.get(k, k))}: {_gia_tri_doc_duoc(k, v)}"
+            for k, v in sorted(chi_tiet.items())
+            if k not in _KHOA_NOI_BO and v not in (None, "", [], {})]
+    return " · ".join(phan)
 
 
 def _thong_ke(ds: list) -> dict:
@@ -569,9 +627,26 @@ def trang_chi_tiet(instance_id: str, request: Request,
     may = _may_cua_khach(db, request, instance_id)
     ip = db.execute(
         select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
-    su_kien = db.execute(
-        select(VpsEvent).where(VpsEvent.instance_id == may.id)
-        .order_by(VpsEvent.created_at.desc()).limit(20)).scalars().all()
+    # Nhật ký: dịch mã máy đọc thành câu người đọc **ở đây**, không trong
+    # template. Template chỉ lặp; một bảng tra chép tay trong Jinja là bản sao
+    # thứ hai của `nhan.SU_KIEN`, và bản sao sẽ lệch.
+    #
+    # ⚠️ `chi_tiet` là JSON tự do. Trước Đợt 4 nó đổ **nguyên dict** ra cho khách
+    #    xem. Ở đây rút thành một câu ngắn, và **bỏ những khoá chỉ có nghĩa với
+    #    người vận hành** (`upid` của Proxmox, `vmid`) — chúng không giúp khách
+    #    và chúng nói ra hình dạng của cụm.
+    su_kien = [
+        {
+            "luc": e.created_at,
+            "nhan": nhan.su_kien(e.loai),
+            "that_bai": nhan.su_kien_that_bai(e.loai),
+            "xau": nhan.su_kien_xau(e.loai),
+            "chi_tiet": _chi_tiet_doc_duoc(e.chi_tiet),
+        }
+        for e in db.execute(
+            select(VpsEvent).where(VpsEvent.instance_id == may.id)
+            .order_by(VpsEvent.created_at.desc()).limit(20)).scalars()
+    ]
 
     # Sao kê thanh toán — điều khoản LTT VPS hứa "sao kê từng lần thu nằm trong
     # trang máy của bạn", nên nó phải có thật.
@@ -615,6 +690,16 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "sao_ke": sao_ke,
         "tong_da_tra": sum(x["credit"] for x in sao_ke),
         "os_ban_duoc": os_images.os_ban_duoc(),
+        # Cổng để dựng địa chỉ RDP. Chỉ để **hiển thị hướng dẫn**: NAT 1:1 mở
+        # toàn bộ cổng của IP riêng cho máy đó.
+        "cong": (os_images.lay_os(may.os_id).cong_quen
+                 if os_images.lay_os(may.os_id) else 3389),
+        # Ba hằng số này hiện ra trước mặt khách, nên chúng phải đọc từ mã chứ
+        # không viết cứng trong template: đổi chu kỳ hay nhịp ảnh chụp mà quên
+        # sửa trang là nói sai với người đang trả tiền.
+        "chu_ky_ngay": CHU_KY_NGAY,
+        "an_han_ngay": billing.AN_HAN_TRUOC_KHI_XOA_NGAY,
+        "so_anh_giu": sao_luu.GIU,
         "csrf_token": issue_csrf_token(request),
         "loi": request.query_params.get("loi", ""),
     })

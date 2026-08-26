@@ -619,6 +619,129 @@ def test_o_TEN_MAY_khong_bat_buoc_va_co_goi_y():
     assert 'maxlength="40"' in the, "thieu tran do dai o phia trinh duyet"
 
 
+# ── 9 · Đợt 4 · Trung tâm điều khiển một máy ──────────────────────────────
+
+def _chi_tiet_html() -> str:
+    t = (TEMPLATES / "vps_chi_tiet.html").read_text(encoding="utf-8")
+    return re.sub(r"(?s)\{#.*?#\}", " ", t)
+
+
+def test_trang_may_KHONG_co_o_mat_khau():
+    """🔴 Chốt quan trọng nhất của trang này.
+
+    Ảnh tham chiếu vẽ một ô `Password ••••••` có nút hiện và nút chép. Nền tảng
+    **không giữ mật khẩu nào** — khách tự cài Windows và tự đặt tài khoản. Vẽ ô
+    đó ra là hứa một thứ không tồn tại, đúng lúc khách đang cần nó nhất, và cách
+    duy nhất họ phát hiện ra là bấm vào rồi thấy trống.
+
+    Trang **có** một hàng "Mật khẩu" — nhưng nó nói ra sự thật, không nhận là
+    giữ được gì.
+    """
+    t = _chi_tiet_html()
+    assert 'type="password"' not in t, "co mot o nhap mat khau tren trang may"
+    for cam in ("••", "&bull;", "reveal", "hien-mat-khau", "show-password"):
+        assert cam not in t, f"co dau hieu mot o mat khau bi che: {cam!r}"
+    i = t.index('_("Mật khẩu")')
+    assert "không giữ bản nào" in t[i:i + 400], (
+        "hang 'Mat khau' khong noi ro nen tang KHONG giu mat khau")
+
+
+def test_trang_may_KHONG_hua_thu_khong_co():
+    """Cùng danh sách cấm với trang bán — mở rộng ra trang một máy.
+
+    Ảnh tham chiếu có cột trái "Uptime SLA 99.95% · Hỗ trợ 24/7 · NVMe
+    Enterprise" và một nút "Gia hạn ngay" không dẫn tới đâu.
+    """
+    t = _chi_tiet_html()
+    for cam in ("99,9", "99.9", "uptime", "Uptime", "SLA", "24/7",
+                "Enterprise", "Gia hạn ngay", "hàng ngày", "Tạo ticket"):
+        assert cam not in t, f"trang may hua mot thu ta khong co: {cam!r}"
+
+
+def test_nhip_anh_chup_va_chu_ky_DOC_TU_MA():
+    """Đổi `sao_luu.GIU` hay `CHU_KY_NGAY` mà quên sửa trang là nói sai với
+    người đang trả tiền — và nó sai **lặng lẽ**, vì trang vẫn render.
+    """
+    t = _chi_tiet_html()
+    for bien in ("so_anh_giu", "chu_ky_ngay", "an_han_ngay"):
+        assert bien in t, f"trang may viet cung thay vi doc `{bien}`"
+
+    src = (GOC / "apps" / "vps" / "routes.py").read_text(encoding="utf-8")
+    assert "sao_luu.GIU" in src and "CHU_KY_NGAY" in src, (
+        "route khong con lay ba hang so do tu ma")
+    assert "AN_HAN_TRUOC_KHI_XOA_NGAY" in src
+
+
+def test_dai_hanh_dong_THEO_TRANG_THAI():
+    """Không bày mọi nút ngang hàng. Máy đã tắt thì "Bật" là việc duy nhất đáng
+    làm; máy đang tạo thì không việc nào — và một nút bị máy chủ từ chối tệ hơn
+    không có nút.
+    """
+    t = _chi_tiet_html()
+    i = t.index('class="vps-hd"')
+
+    # `dang_tao` và `bi_treo` ra nhánh CHỈ THÔNG TIN — tức trước cả dải nút.
+    for tt in ("bi_treo", "dang_tao"):
+        assert f'may.trang_thai == "{tt}"' in t[:i], (
+            f"trang thai {tt!r} khong co nhanh rieng truoc dai hanh dong")
+
+    # Trong dải nút, `da_tat` đổi NÚT CHÍNH: "Bật" thay cho "Khởi động lại /
+    # Tắt máy". Không phải hai dải khác nhau — cùng một dải, khác nút.
+    dai = t[i:t.index("{% endif %}", t.index("Cài Windows", i))]
+    assert 'may.trang_thai == "da_tat"' in dai, (
+        "dai hanh dong khong re nhanh theo trang thai")
+    assert dai.index('_("Bật")') < dai.index('_("Khởi động lại")'), (
+        "voi may da tat, 'Bat' phai la nhanh dau — no la viec duy nhat dang lam")
+
+
+def test_nhat_ky_KHONG_do_JSON_tho_va_KHONG_lo_chi_tiet_cum():
+    """`upid` của Proxmox và `vmid` không giúp khách việc gì, và chúng nói ra
+    hình dạng của cụm."""
+    from apps.vps.routes import _chi_tiet_doc_duoc
+
+    ra = _chi_tiet_doc_duoc({"upid": "UPID:pve:0000A1B2", "vmid": 9001,
+                             "credit": 1790, "den": "2026-09-19T00:00:00"})
+    assert "UPID" not in ra and "9001" not in ra, f"lo chi tiet noi bo: {ra}"
+    assert "1790" in ra, "mat mot chi tiet co nghia voi khach"
+    assert "19/09/2026" in ra, (
+        "ngay van o dang ISO — dung cho may doc, sai cho mot dong nhat ky")
+    assert _chi_tiet_doc_duoc(None) == ""
+    assert _chi_tiet_doc_duoc("mot chuoi") == ""
+
+
+def test_khoi_NGUY_HIEM_giu_o_go_ten_o_CA_BA_viec():
+    """Ảnh tham chiếu bỏ mất ô gõ tên và chỉ để lại ba cái nút. Ảnh sai.
+
+    Khuôn "gõ đúng tên" của GitHub tồn tại vì ba việc này **không hoàn tác
+    được** — chúng phải khó bấm nhầm hơn một cú click.
+    """
+    t = _chi_tiet_html()
+    i = t.index('class="vps-nguy"')
+    khoi = t[i:]
+    assert khoi.count('name="xac_nhan"') == 3, (
+        f"chi con {khoi.count('name=\"xac_nhan\"')} o go xac nhan, phai co 3")
+    assert khoi.count("required") >= 3, "o xac nhan khong con bat buoc"
+    # Thứ tự: ít thiệt hại trước.
+    assert (khoi.index("khoi-phuc") < khoi.index("cai-lai")
+            < khoi.index('/xoa"')), (
+        "thu tu khoi Nguy hiem phai la khoi phuc -> cai lai -> xoa")
+
+
+def test_ba_trang_trong_mot_may_dung_CHUNG_macro_danh_tinh():
+    """Ba trang cùng hiện **một** danh tính máy. Ba bản sao sẽ lệch, và cái lệch
+    sẽ là cái nói sai địa chỉ — tức nói sai đúng thứ khách tới đây để lấy.
+
+    ⚠️ Ở Đợt 4 mới có **một** trang dùng; Đợt 5 và 6 nối tiếp. Phép kiểm chốt
+       rằng macro tồn tại và không ai dựng bản thứ hai bằng tay.
+    """
+    mac = (TEMPLATES / "_vps_mac.html").read_text(encoding="utf-8")
+    assert "{% macro dinh_may(" in mac
+    assert "may.id" in mac and "may.vmid" not in mac, (
+        "dai danh tinh dang hien `vmid` — do la so hieu ben trong Proxmox, "
+        "khach khong dung duoc vao viec gi con ta thi lo hinh dang cua cum")
+    assert 'mac.dinh_may(' in _chi_tiet_html(), "trang may khong dung macro chung"
+
+
 # ── phụ trợ ───────────────────────────────────────────────────────────────
 
 def _ma_trang_thai_trong_bang() -> set[str]:

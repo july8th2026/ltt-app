@@ -11389,3 +11389,92 @@ msgstr "Leave it empty and we will name it “%(ten)s”."
 
 msgid "Điều cần biết về dịch vụ"
 msgstr "What to know about this service"
+
+# Khu VPS — trang mot may (Dot 4)
+
+msgid "%(n)s ngày"
+msgstr "%(n)s days"
+
+msgid "Chu kỳ"
+msgstr "Billing cycle"
+
+msgid "Thanh toán"
+msgstr "Billing"
+
+msgid "Thông tin truy cập"
+msgstr "How to connect"
+
+msgid "Địa chỉ RDP"
+msgstr "RDP address"
+
+msgid "Lệnh trên máy bạn"
+msgstr "Command on your computer"
+
+msgid "Lý do"
+msgstr "Reason"
+
+msgid "Máy đang bị tạm dừng"
+msgstr "This machine is suspended"
+
+msgid "thất bại"
+msgstr "failed"
+
+msgid "Là của bạn — chúng tôi không giữ bản nào và không đặt lại được."
+msgstr "Yours — we keep no copy and cannot reset it."
+
+msgid "Chưa vào được bằng RDP? Bật Remote Desktop trong máy theo"
+msgstr "Cannot get in over RDP? Turn on Remote Desktop inside the machine, following the"
+
+msgid "hướng dẫn cài Windows"
+msgstr "Windows setup guide"
+
+msgid "hoặc dùng console khi đã đổi tường lửa và tự khoá mình ra ngoài."
+msgstr "or use the console if you changed the firewall and locked yourself out."
+
+msgid "Đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng."
+msgstr "Disk is an allowance on shared storage, not a dedicated drive."
+
+msgid "Phí tự thu mỗi chu kỳ từ số dư credit. Hết credit thì máy bị tạm dừng, dữ liệu giữ trong %(n)s ngày."
+msgstr "The fee is charged automatically each cycle from your credit balance. Run out and the machine is suspended; your data is kept for %(n)s days."
+
+msgid "Ảnh chụp hằng tuần, giữ %(n)s bản, trên cùng kho lưu trữ với máy. Nó KHÔNG thay thế bản sao lưu của riêng bạn."
+msgstr "A weekly snapshot, %(n)s kept, on the same storage as the machine. It does NOT replace a backup of your own."
+
+msgid "Tên chỉ để bạn nhận ra máy trong danh sách. Đây cũng là tên bạn phải gõ để xác nhận các thao tác không hoàn tác được bên dưới."
+msgstr "The name is only so you can recognise the machine in your list. It is also the name you type to confirm the irreversible actions below."
+
+msgid "Ba việc dưới đây không hoàn tác được. Gõ đúng tên máy để xác nhận — cùng khuôn với GitHub, và cùng lý do: chúng phải khó bấm nhầm hơn một cú click."
+msgstr "The three actions below cannot be undone. Type the machine name to confirm — the same pattern as GitHub, for the same reason: they must be harder to hit by accident than one click."
+
+msgid "trả tới"
+msgstr "paid until"
+
+msgid "gói"
+msgstr "plan"
+
+msgid "hệ điều hành"
+msgstr "operating system"
+
+msgid "vùng"
+msgstr "region"
+
+msgid "tên cũ"
+msgstr "old name"
+
+msgid "tên mới"
+msgstr "new name"
+
+msgid "Phân bổ theo công cụ"
+msgstr "Breakdown by tool"
+
+msgid "Vòng phân bổ credit theo công cụ"
+msgstr "Credit breakdown by tool"
+
+msgid "Chưa có chi tiêu để phân bổ."
+msgstr "No spending to break down yet."
+
+msgid "Khi các job qua API bắt đầu tiêu credit, tỉ lệ theo công cụ hiện ở đây."
+msgstr "Once API jobs start spending credit, the per-tool split shows up here."
+
+msgid "Thử ngay"
+msgstr "Try it"

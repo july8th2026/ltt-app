@@ -180,7 +180,7 @@ def _tao_may_gia(dbmod, user_id: str) -> None:
     from datetime import datetime, timedelta, timezone
 
     from apps.vps.cost import lay_plan
-    from apps.vps.tables import VpsInstance, VpsIp
+    from apps.vps.tables import VpsEvent, VpsInstance, VpsIp
 
     gen = dbmod.get_session()
     db = next(gen)
@@ -204,6 +204,20 @@ def _tao_may_gia(dbmod, user_id: str) -> None:
             db.flush()
             if ip:
                 db.add(VpsIp(gateway_id=gid, dia_chi=ip, instance_id=m.id))
+            # Nhật ký giả: đủ loại để soi CẢ nhãn người đọc, CẢ chấm đỏ của sự
+            # kiện xấu, CẢ nhánh `_that_bai` mà `dieu_khien._lam` sinh động.
+            for j, (loai, ct) in enumerate((
+                    ("tao_moi", {"plan_id": plan_id, "os_id": os_id, "vung": "sgp"}),
+                    ("tao_xong", {"vmid": 9000 + i}),
+                    ("thu_phi", {"credit": 1790, "den": "2026-09-19T00:00:00",
+                                 "bang_thong_byte": 92 * 1024 ** 3}),
+                    ("bat", {"upid": "UPID:pve:0000A1B2:..."}),
+                    ("tat_that_bai", {"loi": "may khong tra loi lenh tat mem"}),
+                    ("sao_luu", {"anh": "ltt-auto-20260823-031200"}),
+            )):
+                db.add(VpsEvent(instance_id=m.id, loai=loai, boi="he_thong",
+                                chi_tiet=ct,
+                                created_at=bay_gio - timedelta(hours=6 - j)))
         db.commit()
     finally:
         try:
@@ -217,6 +231,24 @@ def select_gateway():
 
     from apps.vps.tables import VpsGateway
     return select(VpsGateway)
+
+
+def _danh_sach_may(dbmod) -> list[dict]:
+    """`[{id, trang_thai}]` của các máy giả — để dựng trang C cho từng trạng thái."""
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInstance
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        return [{"id": str(m.id), "trang_thai": str(m.trang_thai)}
+                for m in db.execute(select(VpsInstance)).scalars()]
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 def _dang_nhap(client) -> None:
@@ -347,6 +379,14 @@ def dung(ra: pathlib.Path) -> list[pathlib.Path]:
             r = client.get("/vps")
             assert r.status_code == 200
             tep.append(_ghi(ra, "B_dang_nhap_co_may", r.text, can))
+
+            # ── C · Trang một máy, ở từng trạng thái ───────────────────────
+            #    Đây là ba trang mà KHÔNG có máy thì không mở được — lý do
+            #    công cụ này tồn tại.
+            for m in _danh_sach_may(dbmod):
+                r = client.get(f"/vps/{m['id']}")
+                assert r.status_code == 200,                     f"/vps/{m['id']} tra {r.status_code}"
+                tep.append(_ghi(ra, f"C_may_{m['trang_thai']}", r.text, can))
         finally:
             client.close()
             dbmod.reset_engine()

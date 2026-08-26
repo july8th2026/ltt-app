@@ -79,6 +79,46 @@
 {%- endmacro %}
 
 
+{# ── Dải danh tính máy ─────────────────────────────────────────────────────
+   Dùng ở CẢ BA trang trong một máy: tổng quan · cài Windows · console.
+
+   🔴 Ba trang cùng hiện **một** danh tính. Ba bản sao sẽ lệch, và cái lệch sẽ là
+      cái nói sai địa chỉ — tức nói sai đúng thứ khách tới đây để lấy.
+
+   ⚠️ **Mã máy là `may.id`, KHÔNG phải `vmid`.** `vmid` là số hiệu bên trong
+      Proxmox: khách không dùng được nó vào việc gì, còn ta thì để lộ hình dạng
+      của cụm. Ảnh tham chiếu có hiện một "ID máy chủ" — nó không phải thứ này.
+
+   ⛔ Vùng nói ĐÚNG mô hình thật: IP riêng ở Singapore, máy chủ đặt tại Việt
+      Nam, đường vào đi qua Singapore. Ảnh tham chiếu ghi "Hanoi, Vietnam" —
+      nửa đúng là sai, và khách đo ping sẽ thấy Singapore. #}
+{% macro dinh_may(may, nhan_tt, cls, plan, os, dia_chi) %}
+  <div class="vps-dinh">
+    <div class="vps-dinh-ten">
+      {{ may.ten or may.id[:8] }}
+      {{ badge_trang_thai(nhan_tt, cls) }}
+    </div>
+    <div class="vps-dinh-o">
+      <span class="nhan">{{ _("Địa chỉ") }}</span>
+      {% if dia_chi %}<code class="gt" data-chep>{{ dia_chi }}</code>
+      {% else %}<span class="gt muted">{{ _("đang chuẩn bị…") }}</span>{% endif %}
+    </div>
+    <div class="vps-dinh-o">
+      <span class="nhan">{{ _("Hệ điều hành") }}</span>
+      <span class="gt">{{ _(os.ten) if os else may.os_id }}</span>
+    </div>
+    <div class="vps-dinh-o">
+      <span class="nhan">{{ _("Gói") }}</span>
+      <span class="gt">{{ _(plan.ten) if plan else may.plan_id }}</span>
+    </div>
+    <div class="vps-dinh-o">
+      <span class="nhan">{{ _("Mã máy") }}</span>
+      <code class="gt" data-chep>{{ may.id }}</code>
+    </div>
+  </div>
+{%- endmacro %}
+
+
 {# ── Hạn thanh toán ────────────────────────────────────────────────────────
    Một cách viết duy nhất cho "trả tới ngày nào, còn mấy ngày" ở cả hai trang.
 
