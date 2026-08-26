@@ -34,6 +34,53 @@ from platform_core.models import GpuLease
 
 log = logging.getLogger(__name__)
 
+# ── Mặt phẳng chung cấp máy — mã ở platform_core, dữ liệu ở ProgramData ──────
+#
+# Máy A còn HAI hệ khác dùng chung 2 card RTX 5060 Ti: `gpu_arbiter` (6 bot ở
+# D:\FULL AUTO VIDEO) và Cut_only ver2. Cả ta lẫn họ đều đã kiểm `free_mb` thật
+# nên không mù nhau hoàn toàn — nhưng còn đúng MỘT khoảng hở:
+#
+#   CỬA SỔ NẠP MODEL. Từ lúc giành được card tới lúc VRAM hiện ra trong
+#   nvidia-smi mất 20-60 giây. Trong khoảng đó `free_mb` NÓI DỐI với mọi bên,
+#   nên hai hệ cùng thấy card trống và cùng nhảy vào.
+#
+# Và một luật cứng hơn: CHÍNH SÁCH CARD cấp máy. `acquire()` bên dưới sắp xếp
+# theo `free_mb` giảm dần, nên khi bot chiếm GPU0 thì GPU1 thành card trống
+# nhất và job nặng của khách sẽ rơi vào đó — GPU1 LÀ CARD ĐANG XUẤT HÌNH.
+# Máy đã sập thật 2026-08-26, bugcheck 0x116 VIDEO_TDR_FAILURE, vì một job
+# ~12.6 GB chạy 100% suốt 9 phút trên đúng card đó: trình điều khiển hiển thị
+# mất quyền điều khiển GPU quá hạn 2 giây và reset thất bại.
+#
+# Lớp này KHÔNG đổi mô hình lease, KHÔNG đụng bảng PostgreSQL, KHÔNG thêm phụ
+# thuộc. Nó chỉ đọc/ghi vài tệp JSON nhỏ ở thư mục trung lập.
+#
+# ⚠️ TOÀN BỘ bọc try/except và fail-open: thiếu tệp, hỏng tệp, hay lỗi bất kỳ
+#    đều quay về ĐÚNG hành vi trước đây. Job của khách không bao giờ được chết
+#    vì lớp phối hợp này.
+_CLAIM_OWNER = "lttplatform"
+_claim_tokens: dict[int, str] = {}
+
+# Chỉ tính công bố còn trong cửa sổ nạp model. Công bố cũ hơn thì VRAM của nó đã
+# nằm trong `free_mb` rồi — trừ tiếp là trừ hai lần và ta tự chặn mình vô cớ.
+_CUA_SO_NAP_MODEL_S = 90.0
+
+
+def _claims():
+    """Module gpu_claims, hoặc None nếu chưa có (khi đó chạy đúng như cũ).
+
+    ⚠️ Nạp từ TRONG KHO, không phải từ thư mục dùng chung. Bản đầu tiên của
+    bản vá này làm sys.path.insert(0, thư-mục-chung) rồi import — thư mục đó
+    có quyền ghi cho mọi tài khoản trên máy, nên đó là đường thực thi mã lạ
+    vào tiến trình dịch vụ, và insert(0) còn cho phép che khuất module chuẩn.
+    Chỉ DỮ LIỆU (claims/, policy.json) mới nằm ở thư mục chung.
+    """
+    try:
+        from platform_core import gpu_claims
+        return gpu_claims
+    except Exception as e:
+        log.debug("gpu_lease/claims bo qua loi: %s", e)
+        return None
+
 # Worker chết giữa chừng thì lease phải tự hết hạn, nếu không GPU khoá vĩnh viễn.
 # Rộng hơn nhịp đập nhiều lần để một lần GC dài hay đĩa chậm không cướp mất GPU
 # của job đang chạy thật.
@@ -94,9 +141,34 @@ def acquire(db: DbSession, *, worker_id: str, job_id: str = "",
 
     reclaim_orphans(db)
     taken = busy_uuids(db)
-    ung_vien = [g for g in gpus
-                if g.uuid not in taken and g.free_mb >= need_mb + HEADROOM_MB]
-    ung_vien.sort(key=lambda g: g.free_mb, reverse=True)
+    cm = _claims()
+    da_giu = {}
+    if cm is not None:
+        try:
+            da_giu = cm.reserved_mb_by_gpu(exclude_owner=_CLAIM_OWNER,
+                                           only_unrealized_s=_CUA_SO_NAP_MODEL_S)
+        except Exception as e:
+            log.debug("gpu_lease/claims bo qua loi: %s", e)
+            da_giu = {}
+
+    def _con_cho(g) -> bool:
+        # Trừ phần hệ khác vừa công bố nhưng nvidia-smi chưa thấy.
+        con = g.free_mb - da_giu.get(g.index, 0)
+        if con < need_mb + HEADROOM_MB:
+            return False
+        # Chính sách máy: card đang xuất hình không nhận job nặng (chống TDR).
+        if cm is not None:
+            try:
+                if not cm.gpu_allows(g.index, need_mb):
+                    log.info("Bo qua GPU %s: chinh sach may cam job %sMB (%s)",
+                             g.index, need_mb, cm.gpu_note(g.index)[:60])
+                    return False
+            except Exception as e:
+                log.debug("gpu_lease/claims bo qua loi: %s", e)
+        return True
+
+    ung_vien = [g for g in gpus if g.uuid not in taken and _con_cho(g)]
+    ung_vien.sort(key=lambda g: g.free_mb - da_giu.get(g.index, 0), reverse=True)
 
     for g in ung_vien:
         lease = GpuLease(host=host_name(), gpu_uuid=g.uuid, gpu_index=g.index,
@@ -112,6 +184,18 @@ def acquire(db: DbSession, *, worker_id: str, job_id: str = "",
             db.rollback()
             continue
         db.refresh(lease)
+        # Công bố ra mặt phẳng chung. exclusive=True vì mô hình của ta là
+        # UNIQUE(host, gpu_uuid) — một job chiếm TRỌN card. Bên kia chia phần
+        # theo VRAM nên nếu không nói rõ, họ sẽ nhét thêm job vào card của ta.
+        if cm is not None:
+            try:
+                tok = cm.publish(owner=_CLAIM_OWNER, gpu_index=g.index,
+                                 mb=max(need_mb, 1024), job=job_id[:32],
+                                 exclusive=True)
+                if tok:
+                    _claim_tokens[lease.id] = tok
+            except Exception as e:
+                log.debug("gpu_lease/claims bo qua loi: %s", e)
         log.info("Giành GPU %s (index %s) cho job %s", g.uuid[:20], g.index, job_id[:8])
         return lease
     return None
@@ -119,12 +203,26 @@ def acquire(db: DbSession, *, worker_id: str, job_id: str = "",
 
 def heartbeat(db: DbSession, lease: GpuLease) -> None:
     """Báo lease còn sống. Phải gọi định kỳ suốt thời gian chạy."""
+    cm = _claims()
+    tok = _claim_tokens.get(lease.id)
+    if cm is not None and tok:
+        try:
+            cm.heartbeat(tok)
+        except Exception as e:
+            log.debug("gpu_lease/claims bo qua loi: %s", e)
     lease.heartbeat_at = _now()
     db.commit()
 
 
 def release(db: DbSession, lease: GpuLease) -> None:
     """Trả chỗ. Gọi được nhiều lần mà không sao."""
+    cm = _claims()
+    tok = _claim_tokens.pop(lease.id, None)
+    if cm is not None and tok:
+        try:
+            cm.release(tok)
+        except Exception as e:
+            log.debug("gpu_lease/claims bo qua loi: %s", e)
     obj = db.get(GpuLease, lease.id)
     if obj is not None:
         db.delete(obj)
