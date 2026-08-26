@@ -23,14 +23,20 @@ def test_runtime_public_links_match_wordpress_content_contract():
 
 
 def test_default_legal_links_use_live_pretty_urls_and_callbacks_stay_legacy():
-    for rel in ("config.example.json", "data/config.json"):
-        config = json.loads((ROOT / rel).read_text(encoding="utf-8"))
-        assert config["app_privacy_policy_url"] == PUBLIC_LINKS["privacy"]
-        assert config["privacy_policy_url"] == PUBLIC_LINKS["privacy"]
-        assert config["app_terms_url"] == PUBLIC_LINKS["terms"]
-        assert config["tiktok_redirect_uri"] == "REPLACE_ME_tiktok_redirect_uri"
-        assert config["meta_redirect_uri"] == "REPLACE_ME_meta_redirect_uri"
-
+    # ⛔ BO 26/08 — vong lap doc `config.example.json` va `data/config.json`.
+    #
+    #    `config.example.json` DA XOA o `9bb8f85` (Q108): no la khuon cau hinh
+    #    CUA APP socialbot (Meta App ID, Sheet ID, ten cot, chong spam), khong
+    #    phai cau hinh nen tang. `data/config.json` la du lieu van hanh, bi
+    #    gitignore — mot ban clone moi khong co no, nen mot phep kiem doc no
+    #    xanh hay do tuy vao may chay.
+    #
+    #    Nam khang dinh trong vong lap do noi ve `tiktok_redirect_uri` va
+    #    `meta_redirect_uri` — hai truong cua mot san pham khong con ban.
+    #
+    # ⭐ Phan CON LAI cua phep kiem van dung nguyen gia tri: no chot rang lien
+    #    ket phap ly cua WEBSITE khai o mot cho. Do la thu khong di cung
+    #    socialbot.
     route_map = json.loads((ROOT / "docs/lttstudios-website/route-map.json")
                            .read_text(encoding="utf-8"))
     callbacks = {rule["production"] for rule in route_map["rules"]

@@ -262,9 +262,23 @@ def test_lien_ket_dieu_khoan_khai_o_MOT_cho():
     from server.templating import PUBLIC_LINKS
 
     assert "vps_terms" in PUBLIC_LINKS
-    assert PUBLIC_LINKS["vps_terms"].endswith("/vi/legal/vps-terms.html")
+
+    # ⛔ SUA 26/08 — truoc day cho nay ghim
+    #    `.endswith("/vi/legal/vps-terms.html")`. Trang web da chuyen sang
+    #    "pretty URL" (`/vps-terms/`) va CA BANG `PUBLIC_LINKS` doi theo, nen
+    #    phep kiem do do vi mot thay doi CO CHU Y.
+    #
+    # ⭐ Y dinh cua phep kiem nay khong bao gio la "duong dan phai la chuoi X".
+    #    No la: **URL khai o MOT cho**, va template khong duoc viet cung. Nen
+    #    chot dung hai dieu do — mot phep kiem ghim chuoi se do lai o lan doi
+    #    ten mien sau, va lan do nguoi ta se sua no bang cach ghim chuoi moi.
+    assert PUBLIC_LINKS["vps_terms"].startswith("https://")
+    assert "vps-terms" in PUBLIC_LINKS["vps_terms"]
+
     t = Path("server/templates/vps.html").read_text(encoding="utf-8")
-    assert "lttstudios.com/vi/legal" not in t, "dung PUBLIC_LINKS, dung viet cung"
+    assert "lttstudios.com" not in t, (
+        "template viet cung mot URL lttstudios.com — dung `public_links` de lan "
+        "doi ten mien sau khong bo sot dung cho nay")
 
 
 def test_trang_ban_CANH_BAO_giay_phep_Windows_ngay_o_khoi_doc_truoc():

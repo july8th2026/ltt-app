@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4637447a55bcb3c57e0ac85aff0f245a875437922e011d255516a35dac9b8cb7
+Fingerprint   : sha256:fe8b8ba53b6ae81e15a5fe337a499b8443f1dde6611add654878624feb02fde4
 Nguồn đã quét : 1169 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2574,7 +2574,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:83, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11319449 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1169 file; 11322537 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -109762,7 +109762,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=4810773aee89078fae7a1408b2706ae4d51dc81a682afde75bdb7fb78620d38b BYTES=37948 LINES=832
+SHA256=c3cb7e4098a394e79ed1aff7d85e03a09375ae7311f558481dae19790137712a BYTES=38573 LINES=839
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -110450,7 +110450,14 @@ def claude_desktop_registry(base_url: str) -> str:
         khoa,
         '"inferenceProvider"="gateway"',
         '"inferenceGatewayBaseUrl"="' + base_url + '/api"',
-        '"inferenceGatewayApiKey"="<your ltt_sk_... key>"',
+        # ⛔ Dấu `…` (một ký tự), KHÔNG phải `...` (ba dấu chấm ASCII).
+        #    Hai dòng anh em ngay dưới và ở `_gia_tri_cam()` đều dùng `…`, và
+        #    `test_272::test_trang_cli_KHONG_chua_khoa_that` chốt rằng trang
+        #    `/developers/cli` không chứa `ltt_sk_` nào NGOÀI hai chỗ giữ chỗ đã
+        #    biết. Một biến thể thứ ba làm phép kiểm đó đỏ — và nó đỏ ĐÚNG: phép
+        #    kiểm ấy canh việc một khoá THẬT rò ra trang, nên nó phải nghi ngờ
+        #    mọi chuỗi `ltt_sk_` nó chưa từng thấy.
+        '"inferenceGatewayApiKey"="<your ltt_sk_… key>"',
         '"inferenceGatewayAuthScheme"="bearer"',
         '"inferenceModels"="' + mo + '"',
         '"modelDiscoveryEnabled"="false"',
@@ -148934,7 +148941,7 @@ def test_no_old_vi_route_can_point_to_an_unrelated_product():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_126_website_link_consistency.py
-SHA256=aa4e2eb7229e3977ecbf7cf783962d76e681f4c2ef95fcfcaba6828309f338d3 BYTES=2187 LINES=47
+SHA256=5eae442d5b912ef76220baf8aab32938febf399b3f2ebfbdc342cc8297be0637 BYTES=2462 LINES=53
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """WEB-002: App/Support/Legal/Commerce links share one current contract."""
 from __future__ import annotations
@@ -148961,14 +148968,20 @@ def test_runtime_public_links_match_wordpress_content_contract():
 
 
 def test_default_legal_links_use_live_pretty_urls_and_callbacks_stay_legacy():
-    for rel in ("config.example.json", "data/config.json"):
-        config = json.loads((ROOT / rel).read_text(encoding="utf-8"))
-        assert config["app_privacy_policy_url"] == PUBLIC_LINKS["privacy"]
-        assert config["privacy_policy_url"] == PUBLIC_LINKS["privacy"]
-        assert config["app_terms_url"] == PUBLIC_LINKS["terms"]
-        assert config["tiktok_redirect_uri"] == "REPLACE_ME_tiktok_redirect_uri"
-        assert config["meta_redirect_uri"] == "REPLACE_ME_meta_redirect_uri"
-
+    # ⛔ BO 26/08 — vong lap doc `config.example.json` va `data/config.json`.
+    #
+    #    `config.example.json` DA XOA o `9bb8f85` (Q108): no la khuon cau hinh
+    #    CUA APP socialbot (Meta App ID, Sheet ID, ten cot, chong spam), khong
+    #    phai cau hinh nen tang. `data/config.json` la du lieu van hanh, bi
+    #    gitignore — mot ban clone moi khong co no, nen mot phep kiem doc no
+    #    xanh hay do tuy vao may chay.
+    #
+    #    Nam khang dinh trong vong lap do noi ve `tiktok_redirect_uri` va
+    #    `meta_redirect_uri` — hai truong cua mot san pham khong con ban.
+    #
+    # ⭐ Phan CON LAI cua phep kiem van dung nguyen gia tri: no chot rang lien
+    #    ket phap ly cua WEBSITE khai o mot cho. Do la thu khong di cung
+    #    socialbot.
     route_map = json.loads((ROOT / "docs/lttstudios-website/route-map.json")
                            .read_text(encoding="utf-8"))
     callbacks = {rule["production"] for rule in route_map["rules"]
@@ -195909,7 +195922,7 @@ def test_luong_no_thi_loi_NOI_LEN_va_so_dem_van_con():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_272_cua_streaming.py
-SHA256=3f12fe84ada769eb084c5ea415dc46f0b08a8b55b015057d74cecf1f0e0f3af6 BYTES=17302 LINES=436
+SHA256=5d57f20745701d2f6dd5f6ddc029290dd29af1f240cde256898a7bdade680a4c BYTES=17916 LINES=446
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_272_cua_streaming — `POST /api/v1/messages` và `/responses`. (Q107, Đợt 4)
@@ -196224,13 +196237,23 @@ def test_hai_route_di_dung_duong_thuong_nguon(api, monkeypatch):
 
 # ── 7. Tham số ──────────────────────────────────────────────────────────────
 
-def test_thieu_stream_true_thi_TU_CHOI_va_chi_sang_cua_kia(api, monkeypatch):
-    goi = _dat_luong(monkeypatch)
-    _u, token = _account()
-    r = api.post(MSG, json=_than(stream=False), headers=_h(token))
-    assert r.status_code == 400
-    assert "chat/completions" in r.text
-    assert goi == []
+# ⛔ GO 26/08 — `test_thieu_stream_true_thi_TU_CHOI_va_chi_sang_cua_kia`.
+#
+#    No chot rang `/messages` TU CHOI (400) mot request khong-stream. Hanh vi do
+#    da bi doi CO CHU Y o `cee5ca1`: cau tu choi ay CHAN LUON Claude Desktop —
+#    ung dung tham do model bang mot request khong streaming, nhan 400, va ket
+#    luan "Gateway rejected model", chan o o chat.
+#
+# ⛔ Nen tu do co HAI phep kiem noi nguoc nhau trong cung mot kho:
+#      test_272 (day)  : "khong-stream phai bi TU CHOI"
+#      test_285        : "ma nguon KHONG con tu choi request khong-stream"
+#
+#    Mot trong hai phai sai, va cai sai la cai nay. Giu ca hai thi lan sau ai do
+#    se "sua" cai dang do bang cach mo lai lo hong da vit.
+#
+# ⭐ Hanh vi MOI duoc phu day du o `tests/test_285_messages_khong_stream.py`
+#    (19 phep kiem), gom ca mot chot tho chan cau tu choi cu quay lai. Khong mat
+#    do phu nao khi go phep kiem nay.
 
 
 def test_prompt_he_thong_va_tools_duoc_TINH_vao_uoc_token():
@@ -202810,7 +202833,7 @@ def test_script_deploy_THUAN_ASCII():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_298_vps_dieu_khoan.py
-SHA256=23a3a7915cf5eec9ee3cf6b8bc43e8df7393eaabca76df958cef3e0400463e75 BYTES=16196 LINES=340
+SHA256=5f4151ab3b4f296b2f4803df3e8b0178893f60c34bdc621c8f994d85d937e9ea BYTES=16905 LINES=354
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39/G10 — điều khoản LTT VPS phải khớp thứ phần mềm THỰC SỰ thi hành.
 
@@ -203076,9 +203099,23 @@ def test_lien_ket_dieu_khoan_khai_o_MOT_cho():
     from server.templating import PUBLIC_LINKS
 
     assert "vps_terms" in PUBLIC_LINKS
-    assert PUBLIC_LINKS["vps_terms"].endswith("/vi/legal/vps-terms.html")
+
+    # ⛔ SUA 26/08 — truoc day cho nay ghim
+    #    `.endswith("/vi/legal/vps-terms.html")`. Trang web da chuyen sang
+    #    "pretty URL" (`/vps-terms/`) va CA BANG `PUBLIC_LINKS` doi theo, nen
+    #    phep kiem do do vi mot thay doi CO CHU Y.
+    #
+    # ⭐ Y dinh cua phep kiem nay khong bao gio la "duong dan phai la chuoi X".
+    #    No la: **URL khai o MOT cho**, va template khong duoc viet cung. Nen
+    #    chot dung hai dieu do — mot phep kiem ghim chuoi se do lai o lan doi
+    #    ten mien sau, va lan do nguoi ta se sua no bang cach ghim chuoi moi.
+    assert PUBLIC_LINKS["vps_terms"].startswith("https://")
+    assert "vps-terms" in PUBLIC_LINKS["vps_terms"]
+
     t = Path("server/templates/vps.html").read_text(encoding="utf-8")
-    assert "lttstudios.com/vi/legal" not in t, "dung PUBLIC_LINKS, dung viet cung"
+    assert "lttstudios.com" not in t, (
+        "template viet cung mot URL lttstudios.com — dung `public_links` de lan "
+        "doi ten mien sau khong bo sot dung cho nay")
 
 
 def test_trang_ban_CANH_BAO_giay_phep_Windows_ngay_o_khoi_doc_truoc():
@@ -205562,7 +205599,7 @@ def test_po_khong_co_msgid_trung():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_306_banh_coc_bo_qua_va_dich.py
-SHA256=f17a7185b8ab89dc0f14870b11c5f3e80d325c4b06f3c0641831bb852baead35 BYTES=7906 LINES=172
+SHA256=9f47e19f20b37903c7dbb5dc8e44fcb4c69be202bf29b7412e0aa404626fb3a3 BYTES=8771 LINES=188
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hai banh coc them ngay 25/08/2026 — va bang chung rang chung CHAN THAT.
 
@@ -205578,6 +205615,7 @@ SHA256=f17a7185b8ab89dc0f14870b11c5f3e80d325c4b06f3c0641831bb852baead35 BYTES=79
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import subprocess
 import sys
@@ -205658,11 +205696,18 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
 # ⭐ Chinh tep nay DA lam dung cho tep `.moc` (`read_bytes`/`write_bytes`) o
 #    `test_accept_TU_CHOI_khi_con_muc_moi`. Bai hoc: khi mot tep can byte-exact
 #    thi MOI tep trong cung ham deu can - khong chi tep minh nho toi.
+#
+# ⛔ VA PHAI TRA LAI CA DAU THOI GIAN (`os.utime`), khong chi noi dung.
+#    Do that luot sau: `git status` SACH (byte y het) ma gate VAN in
+#    "CAY DA DOI TRONG LUC CHAY". Dau van tay cua gate dung
+#    `st_mtime`, nen mot lan ghi-lai-y-het van lam no keu. Mot lan
+#    gate 2 gio nua bi vo hieu vi dung mot dong nay.
 
 def test_chuoi_MOI_chua_dich_lam_do():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
+    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                             'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
@@ -205672,6 +205717,7 @@ def test_chuoi_MOI_chua_dich_lam_do():
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
         po.write_bytes(goc_byte)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
 
 
 def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
@@ -205683,6 +205729,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
+    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
     mot = next(d.split("\t", 1)[1]
                for d in moc.splitlines() if d.startswith("TRONG\t"))
@@ -205701,6 +205748,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
         po.write_bytes(goc_byte)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
 
 
 def test_accept_TU_CHOI_khi_con_muc_moi():
@@ -205708,7 +205756,9 @@ def test_accept_TU_CHOI_khi_con_muc_moi():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
+    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     moc_truoc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
+    moc_mtime = (GOC / "tools" / "check_dich_thieu.moc").stat().st_mtime_ns
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                             'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
@@ -205717,7 +205767,10 @@ def test_accept_TU_CHOI_khi_con_muc_moi():
         assert r.returncode == 1, "--accept nang moc len duoc"
     finally:
         po.write_bytes(goc_byte)
-        (GOC / "tools" / "check_dich_thieu.moc").write_bytes(moc_truoc)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
+        moc_tep = GOC / "tools" / "check_dich_thieu.moc"
+        moc_tep.write_bytes(moc_truoc)
+        os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
 
 
 # ── 3. Ca hai phai nam TRONG gate ──────────────────────────────────────────

@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import subprocess
 import sys
@@ -92,11 +93,18 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
 # ⭐ Chinh tep nay DA lam dung cho tep `.moc` (`read_bytes`/`write_bytes`) o
 #    `test_accept_TU_CHOI_khi_con_muc_moi`. Bai hoc: khi mot tep can byte-exact
 #    thi MOI tep trong cung ham deu can - khong chi tep minh nho toi.
+#
+# ⛔ VA PHAI TRA LAI CA DAU THOI GIAN (`os.utime`), khong chi noi dung.
+#    Do that luot sau: `git status` SACH (byte y het) ma gate VAN in
+#    "CAY DA DOI TRONG LUC CHAY". Dau van tay cua gate dung
+#    `st_mtime`, nen mot lan ghi-lai-y-het van lam no keu. Mot lan
+#    gate 2 gio nua bi vo hieu vi dung mot dong nay.
 
 def test_chuoi_MOI_chua_dich_lam_do():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
+    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                             'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
@@ -106,6 +114,7 @@ def test_chuoi_MOI_chua_dich_lam_do():
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
         po.write_bytes(goc_byte)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
 
 
 def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
@@ -117,6 +126,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
+    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
     mot = next(d.split("\t", 1)[1]
                for d in moc.splitlines() if d.startswith("TRONG\t"))
@@ -135,6 +145,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
         assert "MUC MOI CHUA DICH" in r.stdout
     finally:
         po.write_bytes(goc_byte)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
 
 
 def test_accept_TU_CHOI_khi_con_muc_moi():
@@ -142,7 +153,9 @@ def test_accept_TU_CHOI_khi_con_muc_moi():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
+    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     moc_truoc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
+    moc_mtime = (GOC / "tools" / "check_dich_thieu.moc").stat().st_mtime_ns
     try:
         po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
                             'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
@@ -151,7 +164,10 @@ def test_accept_TU_CHOI_khi_con_muc_moi():
         assert r.returncode == 1, "--accept nang moc len duoc"
     finally:
         po.write_bytes(goc_byte)
-        (GOC / "tools" / "check_dich_thieu.moc").write_bytes(moc_truoc)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
+        moc_tep = GOC / "tools" / "check_dich_thieu.moc"
+        moc_tep.write_bytes(moc_truoc)
+        os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
 
 
 # ── 3. Ca hai phai nam TRONG gate ──────────────────────────────────────────

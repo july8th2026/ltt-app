@@ -311,13 +311,23 @@ def test_hai_route_di_dung_duong_thuong_nguon(api, monkeypatch):
 
 # ── 7. Tham số ──────────────────────────────────────────────────────────────
 
-def test_thieu_stream_true_thi_TU_CHOI_va_chi_sang_cua_kia(api, monkeypatch):
-    goi = _dat_luong(monkeypatch)
-    _u, token = _account()
-    r = api.post(MSG, json=_than(stream=False), headers=_h(token))
-    assert r.status_code == 400
-    assert "chat/completions" in r.text
-    assert goi == []
+# ⛔ GO 26/08 — `test_thieu_stream_true_thi_TU_CHOI_va_chi_sang_cua_kia`.
+#
+#    No chot rang `/messages` TU CHOI (400) mot request khong-stream. Hanh vi do
+#    da bi doi CO CHU Y o `cee5ca1`: cau tu choi ay CHAN LUON Claude Desktop —
+#    ung dung tham do model bang mot request khong streaming, nhan 400, va ket
+#    luan "Gateway rejected model", chan o o chat.
+#
+# ⛔ Nen tu do co HAI phep kiem noi nguoc nhau trong cung mot kho:
+#      test_272 (day)  : "khong-stream phai bi TU CHOI"
+#      test_285        : "ma nguon KHONG con tu choi request khong-stream"
+#
+#    Mot trong hai phai sai, va cai sai la cai nay. Giu ca hai thi lan sau ai do
+#    se "sua" cai dang do bang cach mo lai lo hong da vit.
+#
+# ⭐ Hanh vi MOI duoc phu day du o `tests/test_285_messages_khong_stream.py`
+#    (19 phep kiem), gom ca mot chot tho chan cau tu choi cu quay lai. Khong mat
+#    do phu nao khi go phep kiem nay.
 
 
 def test_prompt_he_thong_va_tools_duoc_TINH_vao_uoc_token():

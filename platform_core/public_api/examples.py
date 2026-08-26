@@ -684,7 +684,14 @@ def claude_desktop_registry(base_url: str) -> str:
         khoa,
         '"inferenceProvider"="gateway"',
         '"inferenceGatewayBaseUrl"="' + base_url + '/api"',
-        '"inferenceGatewayApiKey"="<your ltt_sk_... key>"',
+        # ⛔ Dấu `…` (một ký tự), KHÔNG phải `...` (ba dấu chấm ASCII).
+        #    Hai dòng anh em ngay dưới và ở `_gia_tri_cam()` đều dùng `…`, và
+        #    `test_272::test_trang_cli_KHONG_chua_khoa_that` chốt rằng trang
+        #    `/developers/cli` không chứa `ltt_sk_` nào NGOÀI hai chỗ giữ chỗ đã
+        #    biết. Một biến thể thứ ba làm phép kiểm đó đỏ — và nó đỏ ĐÚNG: phép
+        #    kiểm ấy canh việc một khoá THẬT rò ra trang, nên nó phải nghi ngờ
+        #    mọi chuỗi `ltt_sk_` nó chưa từng thấy.
+        '"inferenceGatewayApiKey"="<your ltt_sk_… key>"',
         '"inferenceGatewayAuthScheme"="bearer"',
         '"inferenceModels"="' + mo + '"',
         '"modelDiscoveryEnabled"="false"',
