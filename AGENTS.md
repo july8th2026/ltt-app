@@ -470,3 +470,96 @@ $p = Start-Process powershell -ArgumentList '-File','"<script>.ps1"' `
 Wrapper phải ghi `EXITCODE` ra file. `EXITCODE` **rỗng** nghĩa là tiến trình
 không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai thứ đó thì sẽ báo
 "đã deploy xong" trong khi chưa có gì xảy ra.
+
+---
+
+## 10. Hai phiên Claude cùng một cây làm việc
+
+Chốt 2026-08-27, sau một buổi hai phiên chạy song song (`/developers` và khu VPS)
+với **0 lần đè nhau**.
+
+### 10.1 Vì sao mục này tồn tại
+
+`D:\LTTSTUDIOSAPP` thường có **nhiều phiên Claude chạy cùng lúc trên cùng một
+cây** — không phải nhánh riêng, không phải worktree riêng, **cùng đĩa**. Ngày
+27/08 `ListAgents` liệt năm phiên interactive.
+
+Hai phiên cùng `Write` một tệp thì bản sau đè bản trước, **im lặng**. Và một
+`git commit` whole-file nuốt luôn phần đang dở của phiên kia.
+
+⭐ Cách tránh không phải là khoá file. Là **nói chuyện trước**, một lần, mất hai
+phút.
+
+### 10.2 Lập giao ước NGAY khi phát hiện có phiên khác
+
+Không đợi va chạm. `ListAgents` → `SendMessage` tới phiên kia, chốt bốn điều:
+
+**① Ranh giới tệp.** Mỗi bên liệt kê "tệp của tôi" và "tệp của bạn", cam kết
+không chạm khu kia. Cụ thể theo khu, không nói chung chung.
+
+**② Tệp DÙNG CHUNG: chỉ `Edit` khớp chuỗi chính xác, KHÔNG `Write`/`cat >`.**
+
+| Tệp | Cách chia |
+|---|---|
+| `server/static/ltt.css` | mỗi khu một **khối có nhãn** ở cuối tệp (`LỚP NGỮ NGHĨA CỦA KHU VPS`, `.khu-dev`). Hai vùng tách rời ⇒ không xung đột, miễn không ai ghi đè cả tệp |
+| `locale/en/LC_MESSAGES/messages.po` | **chỉ nối thêm cuối**, và **đọc lại tệp ngay trước mỗi lần ghi**. Giữ LF, không BOM. ⛔ Không chạy `i18n.py trich` — nó xếp lại cả tệp. Kiểm 0 msgid trùng sau cùng |
+| `server/templates/_kieu_chung.html`, `base.html` | **nhắn trước khi sửa** — luật ở đó chạm mọi trang của mọi app, nên chúng không thuộc khu của ai |
+
+**③ Tệp DẪN XUẤT: người commit SAU CÙNG mới sinh.**
+
+`tools/gui/ltt.css` (`tools/dong_goi_gui.py`) và `ho_so_he_thong.txt`
+(`tools/build_system_profile.py`) chụp **cả cây**. Sinh giữa chừng là commit một
+nửa công việc đang dở của phiên kia, **dưới tên đợt của mình**.
+
+Quy tắc: mỗi bên commit **mã nguồn** của mình, không kèm hai tệp đó. Khi mọi
+nguồn đã commit thì một bên sinh lại và commit chúng trong **một commit riêng**.
+Commit trung gian đỏ `test_284`/`test_177` là chấp nhận được; commit dẫn xuất
+cuối vá lại.
+
+**④ Commit chọn lọc.** `git add` từng path của mình, rồi kiểm `git diff --cached`
+không dính tệp phiên kia.
+
+### 10.3 Ba cái bẫy của cây dùng chung
+
+🔴 **`git stash` là hành động rủi ro.** Nó cuốn cả phần dở của phiên kia rồi trả
+lại, và một lần ghi xen giữa `stash` và `pop` là một xung đột. Muốn đo baseline
+sạch thì:
+
+```bash
+git worktree add --detach <tmp> HEAD   # đo ở đây
+git worktree remove --force <tmp>
+```
+
+🔴 **Gate đỏ chưa chắc là lỗi của mình.** Kiểm `git status` và
+`git log -1 -- <tệp>` **trước khi đi sửa**. Đã dính: bốn phép kiểm đỏ hoá ra do
+`CONTRACT_BASELINE.json` và `developers_base.html` của phiên kia.
+
+🔴 **`CÂY ĐÃ ĐỔI TRONG LÚC CHẠY`** — `tools/gate.py` tự in dòng này khi có ai ghi
+vào cây giữa lượt chạy. Khi thấy nó, kết quả nói về cây lúc **bắt đầu**. Đừng
+trích nó làm bằng chứng; chạy lại trên một cây đứng yên.
+
+### 10.4 Báo cho nhau thứ mình bắt được ở khu của họ
+
+⭐ **Đây là phần đổi lại được nhiều nhất, và nó không tự xảy ra.** Ba lỗi bắt
+được trong một buổi 27/08, không cái nào một phiên tự tìm ra được, và cả ba đều
+**chỉ hiện khi render hoặc chạy thật** — không thấy khi đọc HTML hay đọc diff:
+
+1. `_kieu_chung.html` là khối `<style>` nội tuyến trong `<head>` **đứng sau**
+   thẻ `<link>` tới `ltt.css`, và nó khai `button, .btn { background:
+   var(--accent) }`. Cùng độ đặc hiệu nhưng đến sau ⇒ nó thắng **mọi** luật
+   `.btn-*` một-class viết trong `ltt.css`, và nút vận hành ra **màu đỏ** —
+   tức màu của hành động không hoàn tác được. Chỉ thấy bằng `getComputedStyle`.
+   ⇒ Viết `.btn.<lop>` (0,2,0).
+2. Rác test lọt vào tệp thật khi một lượt chạy bị ngắt giữa `write`↔`finally`
+   (`image.ghost` trong `CONTRACT_BASELINE.json`).
+3. Chỗ-giữ khoá API phải đúng ký tự `…` (U+2026), không phải `...` ASCII —
+   `test_272` bóc `ltt_sk_…` để chứng minh trang không lộ khoá thật.
+
+### 10.5 `memory/` cũng là thư mục dùng chung
+
+`.claude/projects/D--LTTSTUDIOSAPP/memory/` dùng chung cho **mọi phiên của dự
+án**. Trước khi ghi một memory mới, **đọc `MEMORY.md`** — hai bản gần trùng thì
+lần sửa sau chỉ sửa một bản, đúng cái bệnh mục này sinh ra để tránh.
+
+Đã suýt dính ngày 27/08: hai phiên cùng định ghi khuôn phối hợp này. Cách xử lý
+đúng là **gộp vào bản có sẵn rồi xoá bản trùng**, kèm dòng chỉ mục của nó.
