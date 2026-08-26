@@ -1114,3 +1114,884 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 .dev-gioi-han code{padding:1px 6px;border:1px solid var(--border-subtle);
   border-radius:5px;background:var(--surface-overlay);
   color:var(--text-secondary);font-size:11px;white-space:nowrap}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LỚP NGỮ NGHĨA CỦA KHU VPS (.vps-* · .goi-* · .tt-*) — MVP giao diện 2026-08-26
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🔴 VÌ SAO KIỂU CỦA KHU VPS PHẢI SỐNG Ở ĐÂY, KHÔNG PHẢI TRONG TEMPLATE.
+
+      Trước 26/08, kiểu của khu VPS nằm trong **hai khối `<style>` bên trong
+      `vps.html`** và **một khối nữa trong `vps_chi_tiet.html`**. Ba khối đó có
+      ba vấn đề, và vấn đề thứ ba mới là vấn đề thật:
+
+      ① Trang C · D · E sắp dùng lại cùng những nguyên tố ấy (thẻ, đo, badge,
+        khối mã). Kiểu nằm trong một trang thì trang thứ hai phải **chép**, và
+        bản chép sẽ lệch.
+      ② Kiểu nội tuyến không đi qua `?v={{ asset_ver }}`… nhưng trang HTML thì
+        `Cache-Control: no-store`, nên nó **tới người dùng ngay** — đó là lý do
+        nó có vẻ tiện, và là cái bẫy: nó tiện cho người viết, không tiện cho
+        người sửa lần sau.
+      ③ ⭐ **Một khối `<style>` trong template là một chỗ để trộn KIỂU với DỮ
+        LIỆU.** `vps.html` đã có `.btn-goi{background:{{ app.accent }}}` — một
+        luật CSS mà giá trị của nó do Jinja sinh. Không công cụ nào kiểm được
+        nó, không tệp CSS nào biết nó tồn tại, và không ai grep `.btn-goi` trong
+        `ltt.css` mà tìm thấy gì.
+
+   ⚠️ TẦNG NÀY LÀ **NGỮ NGHĨA CỦA MỘT KHU**, KHÔNG PHẢI PRIMITIVE TOÀN CỤC.
+      Cùng lý do với lớp `.dev-*` ngay bên trên. `.card`, `.badge`, `.btn`,
+      `.tbl`, `.chi-so-*`, `.app-shell` đã là primitive dùng chung — khu VPS
+      **dùng lại** chúng, không dựng bản thứ hai.
+
+   ⛔ BỐN CÁI BẪY ĐÃ TRẢ GIÁ Ở CHÍNH KHU NÀY (audit 25/08). Đọc trước khi sửa:
+      ① `o.style.display = ''` **xoá** thuộc tính nội tuyến, không đặt lại giá
+        trị — `<label>` rơi về `inline` và bố cục vỡ **ngay khi tải trang**. Vì
+        thế ẩn/hiện ở đây dùng thuộc tính `[hidden]` + class, KHÔNG dùng
+        `style.display`. Không có gì nội tuyến thì không có gì để xoá nhầm.
+      ② Một class **không được** vừa là kiểu vừa là móc JS. `.vps-the` là KIỂU,
+        `.vps-os` là MÓC. Gộp làm một thì đổi kiểu sẽ chạm hành vi — đã dính
+        đúng thế khi thẻ gói mượn `.vps-os` và bị bộ lọc ẩn sạch.
+      ③ Thẻ đang chọn phải nhìn thấy được **không chỉ bằng màu**: viền dày lên
+        VÀ nền đổi, để người không phân biệt được màu vẫn thấy.
+      ④ Nút điều khiển máy KHÔNG được lấy `--accent` toàn cục — accent toàn cục
+        là **màu đỏ thương hiệu**, tức màu của hành động không hoàn tác được
+        trong gần hết quy ước giao diện. "Bật" và "Khởi động lại" thì hoàn tác
+        được bằng cách bấm cái kia.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Token màu vận hành của khu ───────────────────────────────────────────
+ *
+ * `MANIFEST.accent` (#0B7285) là **màu của app trong catalog**; đổi nó là đổi
+ * thẻ app trên trang chủ, tức đổi một thứ ngoài khu này. Nên khu VPS có token
+ * riêng, và template trỏ vào token thay vì trỏ vào `{{ app.accent }}`.
+ *
+ * ⚠️ ĐỢT 1 CỐ Ý ĐẶT ĐÚNG GIÁ TRỊ ĐANG CHẠY. Đợt này là một phép **refactor
+ *    thuần**: bằng chứng nó đúng là ảnh chụp trước/sau **trùng khít**. Đổi màu
+ *    trong cùng một đợt sẽ phá chính phép kiểm đó — lúc ấy không ai phân biệt
+ *    được "màu mới" với "refactor làm hỏng một luật". Việc chỉnh sắc độ cho hợp
+ *    nền carbon là việc của Đợt 2, và nó phải đi kèm số đo tương phản.
+ */
+:root{
+  --vps-teal:#0B7285;
+  --vps-teal-hover:#0e8fa3;
+  --vps-teal-soft:rgba(11,114,133,.14);
+  --vps-teal-line:#146d7e;
+}
+
+/* ── Lưới thẻ gói ────────────────────────────────────────────────────────
+ * Ba thẻ ngang ở màn rộng, xếp dọc ở màn hẹp — `auto-fit` lo việc đó mà không
+ * cần media query riêng.
+ *
+ * Vultr dùng bảng cho ~40 gói NHƯNG dùng thẻ cho 4 nhóm. Ba gói của ta gần
+ * "4 nhóm" hơn là gần "40 gói": một thẻ gộp thông số + việc-nó-hợp + giá vào
+ * MỘT tầm mắt, trong khi bảng đẩy ba thứ đó ra ba cột cách nhau nửa màn hình.
+ */
+.goi-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+  gap:12px;margin:0 0 16px}
+.goi-the{display:flex;flex-direction:column;gap:6px;padding:14px;
+  border:1px solid rgba(128,128,128,.3);border-radius:10px;cursor:pointer}
+/* Thẻ đang chọn: viền DÀY + nền, không chỉ chấm radio 13px (bẫy ③). */
+.goi-the:has(input:checked){border-width:2px;border-color:currentColor;
+  padding:13px;background:rgba(128,128,128,.08)}
+.goi-the.goi-het{opacity:.62;cursor:not-allowed}
+.goi-ten{font-weight:600}
+.goi-so{font-size:.86em;opacity:.75;line-height:1.5}
+.goi-mota{font-size:.88em;opacity:.8;flex:1}
+.goi-gia{margin-top:4px;font-size:1.25rem;font-weight:600}
+.goi-trangthai{font-size:.85em;opacity:.85}
+.goi-the input[type=radio]{margin:0 0 4px}
+
+/* ── Bảng tóm tắt đơn hàng ───────────────────────────────────────────────
+ * Mỗi trường một ô có viền — quét mắt theo ô, không theo hàng.
+ */
+.tt-o{margin:0;display:grid;gap:8px}
+.tt-o > div{padding:8px 10px;border:1px solid rgba(128,128,128,.28);border-radius:8px}
+.tt-o dt,.tt-tien dt{margin:0;font-size:10px;letter-spacing:.6px;
+  text-transform:uppercase;opacity:.7}
+.tt-o dd{margin:2px 0 0;font-size:.92em}
+/* Số tiền là thứ khách đọc kỹ nhất trên cả trang — nó không được trông ngang
+ * hàng với "Băng thông 300 GB". Vultr đặt `Total Price` ở ô riêng, chữ lớn hẳn.
+ */
+.tt-tien{margin-top:10px;padding:10px 12px;border:1px solid rgba(128,128,128,.4);
+  border-radius:8px}
+.tt-tien dd{margin:2px 0 0;font-size:1.5rem;font-weight:600;line-height:1.2}
+
+/* ── Thẻ chọn (hệ điều hành) ─────────────────────────────────────────────
+ * `.vps-the` là CLASS KIỂU; `.vps-os` là MÓC cho JS lọc — hai việc khác nhau
+ * nên hai tên khác nhau (bẫy ②).
+ *
+ * 🔴 Ẩn bằng `[hidden]`, KHÔNG bằng `style.display` (bẫy ①). Thuộc tính này
+ *    cũng nói đúng ý với bộ đọc màn hình: phần tử bị loại khỏi cây, không chỉ
+ *    bị ẩn bằng CSS.
+ */
+.vps-the{display:block;border:1px solid rgba(128,128,128,.3);
+  border-radius:8px;padding:8px 12px;margin:0 0 6px;cursor:pointer}
+.vps-the[hidden]{display:none}
+.vps-the:has(input:checked){border-color:currentColor;border-width:2px;
+  padding:7px 11px;background:rgba(128,128,128,.08)}
+
+/* ── Nút của khu ─────────────────────────────────────────────────────────
+ * `.btn-goi` (chọn gói) và `.btn-may` (điều khiển máy) đều là hành động **vận
+ * hành**, không phải hành động phá huỷ — nên chúng lấy teal của khu, không lấy
+ * `--accent` đỏ toàn cục (bẫy ④).
+ *
+ * 🔴 `.btn.btn-goi` CHỨ KHÔNG PHẢI `.btn-goi`, và đây là một cái bẫy của NỀN
+ *    TẢNG chứ không của khu này. `_kieu_chung.html` là một khối `<style>` **nội
+ *    tuyến trong `<head>` của `base.html`, đứng SAU thẻ `<link>` tới ltt.css**,
+ *    và nó khai:
+ *
+ *        button, .btn { background: var(--accent); … }
+ *
+ *    Cùng độ đặc hiệu (0,1,0) nhưng **đến sau** ⇒ nó thắng mọi luật `.btn-*`
+ *    một-class viết trong tệp này. Không có cảnh báo nào; nút chỉ đơn giản là
+ *    màu đỏ.
+ *
+ *    ⚠️ Đó cũng chính là lý do bản cũ đặt `.btn-goi` trong `<style>` của
+ *       template — khối ấy đứng sau `_kieu_chung.html` nên thắng. Chuyển sang
+ *       ltt.css mà giữ nguyên độ đặc hiệu là **làm sống lại đúng lỗi ④**: đo
+ *       26/08 bằng Chrome thật, `backgroundColor` của "Chọn gói này" trả về
+ *       `rgb(239,55,49)` = `--brand-primary`. Hai class (0,2,0) thắng lại, và
+ *       `.btn-goi` luôn đi kèm `.btn` trong mọi template nên không mất chỗ nào.
+ */
+.btn.btn-goi,.btn.btn-may{background:var(--vps-teal)}
+.btn.btn-goi:hover,.btn.btn-may:hover{background:var(--vps-teal-hover)}
+
+/* ── Bảng giá: tên gói là tiêu đề HÀNG ───────────────────────────────────
+ * `<th scope="row">` để bộ đọc màn hình biết ô "179.000đ" thuộc gói nào. Nhưng
+ * luật cho tiêu đề CỘT ở `base.html` đặt `text-transform:uppercase` — và một
+ * dòng mô tả 30 chữ viết hoa hết thì không ai đọc. Trả lại chữ thường ở đây.
+ */
+.tbl th[scope="row"]{text-transform:none;letter-spacing:0;font-size:1rem;
+  color:var(--fg);vertical-align:top;padding-right:18px}
+
+/* ── Trang một máy: giới hạn bề ngang đọc được ───────────────────────────
+ * Ở 1390px, mắt phải quét ngang cả màn hình để nối một nhãn với giá trị của nó.
+ * Khối console và bảng sao kê tự vượt ra nếu cần.
+ */
+.vps-may .app-main > .card{max-width:940px}
+
+
+/* ═══ ĐỢT 2 · STOREFRONT CÔNG KHAI ═══════════════════════════════════════
+ *
+ * Chỉ dùng ở nhánh **khách ẩn danh** của `vps.html`. Người đã đăng nhập không
+ * cần được bán hàng nữa — họ cần thấy máy của họ (Đợt 3).
+ */
+
+/* ── Khối mở đầu: hai cột ────────────────────────────────────────────────
+ *
+ * 🔴 CỘT TRANH TRÍ BIẾN MẤT Ở MÀN HẸP, VÀ ĐÓ LÀ LUẬT CHỨ KHÔNG PHẢI SỞ THÍCH.
+ *    Đo 25/08 trên 390×844: giá đầu tiên nằm ở **y=1121**, tức dưới màn hình
+ *    đầu 277px, vì khách phải cuộn qua sáu dòng cảnh báo mới thấy một con số.
+ *    Đợt trước đã kéo nó lên y=524. Một hình trang trí đặt trên giá ở màn hẹp
+ *    sẽ **đẩy nó xuống lại** — tức tự tay làm hỏng thứ vừa sửa xong.
+ *    Nên dưới 860px: `display:none`. Hình này không mang thông tin nào.
+ */
+.vps-hero{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);
+  gap:28px;align-items:center}
+.vps-hero-chu{min-width:0}
+.vps-hero-art{min-width:0;display:flex;justify-content:center;align-items:center}
+.vps-hero-art svg{width:100%;max-width:300px;height:auto}
+@media(max-width:860px){
+  .vps-hero{grid-template-columns:1fr;gap:0}
+  .vps-hero-art{display:none}
+}
+
+/* Giá "chỉ từ" — quy ước của thị trường Việt (AZDIGI, Tino Group). */
+.vps-gia-tu{display:flex;align-items:baseline;flex-wrap:wrap;gap:8px;
+  margin:16px 0 0}
+.vps-gia-tu b{font-size:2rem;font-weight:700;line-height:1.1;
+  letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.vps-gia-tu .nhan{font-size:.95rem;color:var(--text-secondary)}
+
+/* ── Dải đặc điểm ────────────────────────────────────────────────────────
+ *
+ * 🔴 ĐÂY LÀ CHỖ ĐỐI THỦ ĐẶT "99.9% uptime · hỗ trợ 24/7 · sao lưu", VÀ TA CỐ Ý
+ *    KHÔNG CHÉP DẢI ĐÓ. Ta không có cả ba. Mọi ô ở đây phải **kiểm chứng được**
+ *    — `docs/VPS/GIAO_DIEN.md` đã chốt, `test_304` canh.
+ */
+.vps-dai{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  gap:1px;margin:0 0 16px;padding:0;list-style:none;
+  background:var(--border-subtle);border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);overflow:hidden}
+.vps-dai li{display:flex;gap:10px;padding:12px 14px;background:var(--surface-raised)}
+.vps-dai .ico{flex:0 0 auto;color:var(--vps-teal-text);line-height:1.35}
+.vps-dai b{display:block;font-weight:600;font-size:13px}
+.vps-dai span{display:block;font-size:12px;color:var(--text-secondary);
+  line-height:1.5}
+
+/* ── Thẻ gói: thông số thành chip ────────────────────────────────────────
+ * Một dòng "1 vCPU · 2 GB RAM · 40 GB NVMe · 300 GB băng thông" bắt người ta
+ * ĐỌC để lấy ra bốn con số; bốn chip thì quét mắt là xong. Cùng lý do với
+ * `.dev-han-muc` của khu API.
+ */
+.goi-thong-so{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0;padding:0;
+  list-style:none}
+.goi-thong-so li{padding:3px 9px;border:1px solid var(--border-subtle);
+  border-radius:6px;background:var(--surface-base);font-size:11.5px;
+  color:var(--text-secondary);font-variant-numeric:tabular-nums;
+  white-space:nowrap}
+/* Gói khuyến nghị: viền teal + nền, KHÔNG chỉ một chữ "nên chọn" màu khác. */
+.goi-the.goi-chon{border-color:var(--vps-teal-line);
+  background:var(--vps-teal-soft)}
+.goi-the .btn{width:100%;justify-content:center}
+
+/* ── Cột phải: những thứ ta thật sự hơn ──────────────────────────────────*/
+.vps-ban{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,420px);
+  gap:16px;align-items:start}
+/* `align-self` trên CHÍNH thẻ, không chỉ `align-items` trên lưới: `.card` mang
+ * luật riêng của nó và ô lưới vẫn bị kéo cao bằng cột phải — để lại một khoảng
+ * trống 230px bên trong thẻ bảng giá, đo được ở 1440. */
+.vps-ban > .card{align-self:start}
+@media(max-width:1080px){.vps-ban{grid-template-columns:1fr}}
+/* Sáu ô xếp MỘT cột cao hơn hẳn ba thẻ gói bên trái, để lại một khoảng trống
+ * 200px trong ô lưới — đo được ở 1440. Hai cột × ba hàng cao xấp xỉ bằng thẻ gói. */
+.vps-loi-ich{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;
+  margin:0;padding:0;list-style:none}
+@media(max-width:1240px){.vps-loi-ich{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+.vps-loi-ich li{padding:12px 14px;border:1px solid var(--border-subtle);
+  border-left:3px solid var(--vps-teal-line);border-radius:0 10px 10px 0;
+  background:var(--surface-raised)}
+.vps-loi-ich b{display:block;font-size:13px;font-weight:600;margin:0 0 3px}
+.vps-loi-ich span{font-size:12px;color:var(--text-secondary);line-height:1.55}
+
+/* ── "Đọc trước khi thuê" thành lưới ─────────────────────────────────────
+ *
+ * ⚠️ **TOÀN VĂN SÁU DÒNG LÀ ĐIỀU KIỆN CỦA Q103, KHÔNG PHẢI VĂN BẢN TRANG TRÍ.**
+ *    `test_298` đối chiếu **từng con số** trong đó với hằng số thật. Lưới này
+ *    chỉ đổi **cách bày**, không được đổi một chữ nào — và tuyệt đối không rút
+ *    gọn để trang gọn hơn.
+ */
+.vps-doc-truoc{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:10px 22px;margin:10px 0 0;padding:0;list-style:none}
+/* Sáu mục ⇒ **ba** cột là hai hàng đầy; bốn cột là 4+2, một hàng cụt. `auto-fit`
+ * cho ra bốn cột từ ~1240px nên phải chốt tay. */
+@media(min-width:1100px){.vps-doc-truoc{grid-template-columns:repeat(3,1fr)}}
+.vps-doc-truoc li{display:flex;gap:9px;font-size:13px;line-height:1.6}
+.vps-doc-truoc .ico{flex:0 0 auto;opacity:.85}
+
+/* ── Thẻ CTA cuối ────────────────────────────────────────────────────────*/
+.vps-cta{display:flex;flex-wrap:wrap;gap:16px;align-items:center;
+  justify-content:space-between;padding:18px 20px;
+  border:1px solid var(--vps-teal-line);border-radius:var(--radius-lg);
+  background:var(--vps-teal-soft)}
+.vps-cta h2{margin:0 0 4px;font-size:1.05rem}
+.vps-cta p{margin:0;font-size:13px;color:var(--text-secondary)}
+.vps-cta .nut{display:flex;gap:8px;flex-wrap:wrap}
+
+
+/* ═══ ĐỢT 3 · NHÀ CỦA KHÁCH + TẠO MÁY ═══════════════════════════════════ */
+
+/* ── Đồng hồ đo băng thông (macro `do_bang_thong`) ───────────────────────
+ * Dùng chung ở trang danh sách VÀ trang một máy. Trước Đợt 3, hai trang tự dựng
+ * thanh đo riêng với hai ngưỡng màu khác nhau — cùng một máy hiện hai mức cảnh
+ * báo tuỳ trang khách đang mở.
+ *
+ * Ba mức, và mức giữa là mức đáng có nhất: 80% là lúc còn kịp làm gì đó, 100%
+ * là lúc đã muộn.
+ */
+.vps-do{display:flex;flex-direction:column;gap:5px}
+.vps-do-so{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px}
+.vps-do-so b{font-variant-numeric:tabular-nums;font-weight:600}
+.vps-do-thanh{height:5px;border-radius:3px;background:var(--surface-interactive);
+  overflow:hidden}
+.vps-do-thanh>span{display:block;height:100%;border-radius:3px;
+  background:var(--vps-teal-hover)}
+.vps-do-thanh>span.gan-han{background:var(--status-warning)}
+.vps-do-thanh>span.qua-han{background:var(--status-danger)}
+
+/* ── Hàng nhãn / giá trị có nút chép (macro `o_sao_chep`) ────────────────*/
+.vps-doi{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  padding:7px 0;border-bottom:1px solid var(--border-subtle)}
+.vps-doi:last-child{border-bottom:0}
+.vps-doi-nhan{flex:0 0 auto;min-width:88px;font-size:11px;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--text-muted)}
+.vps-doi-gt{font-size:13px;word-break:break-all}
+code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
+  border-radius:5px;background:var(--surface-base);color:var(--text-primary)}
+
+/* ── Thẻ máy ─────────────────────────────────────────────────────────────
+ *
+ * 🔴 THẺ, KHÔNG PHẢI BẢNG BẢY CỘT. Bảng bắt mắt quét ngang cả màn hình để nối
+ *    một máy với sáu thuộc tính của nó, và ở 390px thì bảy cột không còn là một
+ *    bảng nữa. Prompt 02 nói thẳng: ưu tiên **machine-object** khi mật độ dữ
+ *    liệu cho phép — ba tới năm máy thì thẻ đọc nhanh hơn hàng.
+ *
+ * ⚠️ Viền TRÁI mang màu trạng thái, nhưng badge vẫn ở trong thẻ: viền màu là
+ *    thứ quét được từ xa, badge là thứ đọc được. Bỏ badge đi thì thẻ chỉ còn
+ *    nói bằng màu.
+ */
+.vps-may-ds{display:grid;gap:12px;margin:0 0 16px}
+.vps-may-the{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) auto;
+  gap:14px 18px;align-items:start;padding:14px 16px;
+  border:1px solid var(--border-subtle);border-left:3px solid var(--border-strong);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0;background:var(--surface-raised)}
+.vps-may-the.tt-ok{border-left-color:var(--status-success)}
+.vps-may-the.tt-warn{border-left-color:var(--status-warning)}
+.vps-may-the.tt-err{border-left-color:var(--status-danger)}
+.vps-may-dau{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 6px}
+.vps-may-ten{font-size:15px;font-weight:600;letter-spacing:-.01em;
+  word-break:break-word}
+.vps-may-phu{font-size:12px;color:var(--text-secondary);line-height:1.6}
+.vps-may-nut{display:flex;flex-direction:column;gap:6px;min-width:132px}
+.vps-may-nut .btn{justify-content:center}
+@media(max-width:820px){
+  .vps-may-the{grid-template-columns:1fr}
+  .vps-may-nut{flex-direction:row;flex-wrap:wrap;min-width:0}
+  .vps-may-nut .btn{flex:1 1 auto}
+}
+
+/* ── Trạng thái rỗng ─────────────────────────────────────────────────────*/
+.vps-rong{padding:26px 20px;text-align:center;border:1px dashed var(--border-strong);
+  border-radius:var(--radius-lg);background:var(--surface-base);margin:0 0 16px}
+.vps-rong h3{margin:0 0 6px;font-size:15px}
+.vps-rong p{margin:0 auto;max-width:52ch;font-size:13px;color:var(--text-secondary)}
+
+/* ── Bố cục "danh sách bên trái, tạo máy bên phải" ───────────────────────
+ * Nội dung quyết định, không phải pixel: dưới 1180px thì cột tạo máy xuống
+ * dưới, vì một biểu mẫu ba chặng nhét vào 300px là một biểu mẫu không ai điền.
+ */
+.vps-nha{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);
+  gap:16px;align-items:start}
+@media(max-width:1180px){.vps-nha{grid-template-columns:1fr}}
+
+/* ── Ba chặng của biểu mẫu tạo máy ───────────────────────────────────────
+ * Đánh số vì đây **thật sự là một trình tự**: chọn máy → chọn hệ điều hành →
+ * xem sẽ trừ bao nhiêu. Số ở đây mang thông tin, không trang trí.
+ */
+.vps-chang{display:flex;align-items:baseline;gap:9px;margin:0 0 2px}
+.vps-chang .so{flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--vps-teal-soft);border:1px solid var(--vps-teal-line);
+  color:var(--vps-teal-text);font-size:11px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.vps-chang h3{margin:0;font-size:14px}
+.vps-chang-mo-ta{margin:0 0 10px 29px;font-size:12px;color:var(--text-secondary)}
+
+
+/* ═══ ĐỢT 4 · TRUNG TÂM ĐIỀU KHIỂN MỘT MÁY ══════════════════════════════ */
+
+/* ── Dải danh tính máy (macro `dinh_may`) ────────────────────────────────
+ * Dùng ở CẢ BA trang trong một máy: tổng quan · cài Windows · console. Ba bản
+ * sao của cùng một danh tính sẽ lệch, và cái lệch sẽ là cái nói sai địa chỉ —
+ * tức nói sai đúng thứ khách tới đây để lấy.
+ */
+.vps-dinh{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;
+  padding:14px 16px;margin:0 0 14px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-dinh-ten{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  font-size:20px;font-weight:700;letter-spacing:-.02em;margin-right:auto;
+  word-break:break-word}
+.vps-dinh-o{display:flex;flex-direction:column;gap:2px;min-width:0}
+.vps-dinh-o .nhan{font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;
+  color:var(--text-muted)}
+.vps-dinh-o .gt{font-size:13px;color:var(--text-primary);word-break:break-all}
+
+/* ── Dải hành động, THEO TRẠNG THÁI ──────────────────────────────────────
+ * ⚠️ Không bày mọi nút ngang hàng. Nút chính đổi theo trạng thái: máy đã tắt
+ *    thì "Bật" là việc duy nhất đáng làm, còn máy đang tạo thì không việc nào.
+ *    Danh sách nào hợp lệ là việc của `dieu_khien.kiem_dieu_khien_duoc`.
+ */
+.vps-hd{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.vps-hd form{margin:0}
+.vps-hd .btn{min-width:124px;justify-content:center}
+
+/* ── Lưới các ô thông tin ────────────────────────────────────────────────*/
+.vps-o-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+  gap:12px;margin:0 0 16px;align-items:start}
+.vps-o{padding:14px 16px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-o > h3{margin:0 0 10px;font-size:13px;font-weight:600;
+  letter-spacing:.02em;color:var(--text-secondary)}
+.vps-o-lon{grid-column:1 / -1}
+/* Ba con số tài nguyên: to, đều, đọc theo cột. */
+.vps-tn{display:grid;grid-template-columns:repeat(auto-fit,minmax(78px,1fr));
+  gap:10px;margin:0;padding:0;list-style:none}
+.vps-tn li{display:flex;flex-direction:column;gap:1px}
+.vps-tn b{font-size:19px;font-weight:700;line-height:1.15;
+  font-variant-numeric:tabular-nums}
+.vps-tn span{font-size:11px;color:var(--text-muted)}
+
+/* ── Nhật ký thành dòng thời gian ────────────────────────────────────────
+ * Trước Đợt 4 nó là một bảng ba cột với cột thứ ba đổ **JSON thô** ra cho khách
+ * xem. Nhật ký này tồn tại để trả lời *"vì sao máy tôi bị tắt"* sau ba tháng —
+ * nó chỉ làm được việc đó nếu người đọc là người, không phải người vận hành.
+ */
+.vps-nhat-ky{margin:0;padding:0;list-style:none}
+.vps-nhat-ky li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+  gap:10px;padding:8px 0;border-bottom:1px solid var(--border-subtle);
+  font-size:13px}
+.vps-nhat-ky li:last-child{border-bottom:0}
+.vps-nhat-ky .cham{width:8px;height:8px;border-radius:50%;margin-top:6px;
+  background:var(--vps-teal-hover)}
+.vps-nhat-ky li.xau .cham{background:var(--status-danger)}
+.vps-nhat-ky .luc{color:var(--text-muted);font-size:12px;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.vps-nhat-ky .ct{display:block;color:var(--text-secondary);font-size:12px;
+  word-break:break-word}
+@media(max-width:600px){
+  .vps-nhat-ky li{grid-template-columns:auto minmax(0,1fr)}
+  .vps-nhat-ky .luc{grid-column:2;order:3}
+}
+
+/* ── Khối Nguy hiểm ──────────────────────────────────────────────────────
+ *
+ * 🔴 Đỏ **chỉ** ở đây và ở lỗi. Nếu một bảng có sáu nút đỏ thì sáu lần mất nhìn
+ *    thấy cảnh báo — đến lúc cần cảnh báo thật thì nó không nói lên được gì.
+ *
+ * Thứ tự trong lưới là **ít thiệt hại trước**: khôi phục → cài lại → xoá. Khách
+ * vào khối này vì máy hỏng, và đưa lựa chọn ít thiệt hại hơn lên trước là việc
+ * của người thiết kế, không phải của người đang hoảng.
+ */
+.vps-nguy{border:1px solid var(--status-danger-border);border-radius:var(--radius-lg);
+  background:var(--status-danger-soft);padding:16px 18px;margin:0 0 16px}
+.vps-nguy > h2{margin:0 0 4px;font-size:15px;color:var(--status-danger)}
+.vps-nguy > p{margin:0 0 14px;font-size:13px;color:var(--text-secondary);
+  max-width:78ch}
+.vps-nguy-luoi{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:12px}
+.vps-nguy-o{display:flex;flex-direction:column;gap:8px;padding:14px;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-md);
+  background:var(--surface-base)}
+.vps-nguy-o h3{margin:0;font-size:13.5px}
+.vps-nguy-o p{margin:0;flex:1;font-size:12px;color:var(--text-secondary);
+  line-height:1.55}
+.vps-nguy-o form{display:flex;flex-direction:column;gap:8px;margin:0}
+.vps-nguy-o .inp{width:100%}
+
+/* ── Đổi tên (D-01) ──────────────────────────────────────────────────────
+ * Một biểu mẫu nhỏ, KHÔNG có ô xác nhận: đổi nhãn là việc đảo được.
+ */
+.vps-doi-ten{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0}
+.vps-doi-ten .inp{max-width:230px}
+
+
+/* ═══ ĐỢT 5 · HƯỚNG DẪN CÀI WINDOWS ═════════════════════════════════════ */
+
+/* ── Cột bước + nội dung ─────────────────────────────────────────────────
+ *
+ * ⚠️ Cột bước là một **mục lục có mỏ neo**, KHÔNG phải một thanh tiến độ.
+ *    Không có tiến độ nào lưu ở máy chủ, nên không có "3/8", không có dấu tích
+ *    lưu được, không có nút "Tôi đã hoàn tất bước này" — ảnh tham chiếu có cả
+ *    ba, và cả ba đều hứa một thứ backend không có (Prompt 04).
+ *
+ * Ở màn hẹp cột bước lên TRÊN: một mục lục đặt dưới nội dung là một mục lục
+ * người ta chỉ thấy sau khi đã đọc xong.
+ */
+.vps-buoc-bo{display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);
+  gap:18px;align-items:start}
+/* 🔴 `minmax(0,1fr)` CHỨ KHÔNG `1fr`. Một cột `1fr` mặc định là
+ * `minmax(auto,1fr)`, tức **sàn của nó là min-content** — nội dung dài hơn cột
+ * thì cột nở ra và tràn khỏi trang. Đo 390px: `.vps-buoc-ds` rộng 385 trong một
+ * khung 366, tràn 7px. Lỗi này im lặng: trang vẫn render, chỉ là cuộn ngang. */
+@media(max-width:900px){.vps-buoc-bo{grid-template-columns:minmax(0,1fr)}}
+.vps-buoc-ds{position:sticky;top:16px;margin:0;padding:0;list-style:none;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  background:var(--surface-raised);overflow:hidden}
+@media(max-width:900px){.vps-buoc-ds{position:static}}
+.vps-buoc-ds li{border-bottom:1px solid var(--border-subtle)}
+.vps-buoc-ds li:last-child{border-bottom:0}
+.vps-buoc-ds a{display:flex;gap:10px;padding:9px 13px;text-decoration:none;
+  color:var(--text-secondary);border-left:2px solid transparent}
+.vps-buoc-ds a:hover{background:var(--surface-overlay);color:var(--text-primary)}
+/* `:target` — mục đang xem tô đậm bằng CSS thuần, không cần JS. Chỉ dấu vị trí,
+ * KHÔNG phải chỉ dấu "đã xong". */
+.vps-buoc-ds li:target a,.vps-buoc-ds a:focus-visible{
+  border-left-color:var(--vps-teal);background:var(--vps-teal-soft);
+  color:var(--text-primary)}
+.vps-buoc-ds .so{flex:0 0 auto;width:19px;height:19px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--surface-interactive);border:1px solid var(--border-strong);
+  font-size:10.5px;font-variant-numeric:tabular-nums;margin-top:1px}
+.vps-buoc-ds .nhan{font-size:13px;line-height:1.4}
+
+.vps-buoc{padding:16px 18px;margin:0 0 12px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised);
+  scroll-margin-top:16px}
+.vps-buoc > h3{display:flex;align-items:baseline;gap:9px;margin:0 0 8px;
+  font-size:15px}
+.vps-buoc > h3 .so{flex:0 0 auto;width:21px;height:21px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--vps-teal-soft);border:1px solid var(--vps-teal-line);
+  color:var(--vps-teal-text);font-size:11px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.vps-buoc p{margin:0 0 8px;font-size:13.5px;line-height:1.65}
+.vps-buoc p:last-child{margin-bottom:0}
+.vps-buoc ul{margin:0 0 8px;padding-left:20px;font-size:13.5px;line-height:1.65}
+
+/* ── Cảnh báo KHÔNG ĐƯỢC BỎ LỠ ───────────────────────────────────────────
+ * "Press any key to boot from CD or DVD…" là chỗ tốn công nhất trong cả quá
+ * trình cài, và nó không tự hiện ra — phải nói trước.
+ *
+ * ⚠️ Nổi bật, nhưng KHÔNG phải neon trang trí (Prompt 04). Nó phải đọc được;
+ *    một khối nhấp nháy là một khối người ta học cách bỏ qua.
+ */
+.vps-canh-to{border:1px solid var(--status-warning-border);
+  border-left:4px solid var(--status-warning);border-radius:0 var(--radius-md) var(--radius-md) 0;
+  background:var(--status-warning-soft);padding:13px 16px;margin:0 0 10px}
+.vps-canh-to b{display:block;color:var(--status-warning);font-size:12px;
+  letter-spacing:.5px;text-transform:uppercase;margin:0 0 6px}
+.vps-canh-to .dung{color:var(--status-danger);font-weight:600}
+
+/* ── Sơ đồ hộp thoại Windows (D-03) ──────────────────────────────────────
+ *
+ * 🔴 Đây là một **SƠ ĐỒ**, không phải ảnh chụp giả. Ảnh tham chiếu có một ảnh
+ *    chụp hộp thoại "Where do you want to install Windows?"; một ảnh bitmap sai
+ *    theo bốn hướng: phải chụp trên máy thật (phụ thuộc quyết định D-02), năm
+ *    bản Windows là năm giao diện, số liệu CỨNG (`80.0 GB`) hiện cho khách gói
+ *    Nhỏ (thật: 40 GB), và là tài sản tĩnh mới phải nhớ cache-bust.
+ *
+ * ⭐ Sơ đồ dựng từ `plan.disk_gb` **đúng hơn** một ảnh chụp: con số là đĩa thật
+ *    của khách. Nó cũng dịch được và đọc được bằng trình đọc màn hình.
+ *
+ * ⚠️ Giữ chữ tiếng Anh đúng như Windows hiện (`Drive 0 Unallocated Space`) — đó
+ *    là thứ khách phải NHẬN RA trên màn hình — nhưng đóng khung bằng kiểu của
+ *    trang, không bắt chước khung cửa sổ Windows.
+ */
+.vps-so-do{border:1px solid var(--border-strong);border-radius:var(--radius-md);
+  background:var(--surface-base);overflow:hidden;margin:0 0 8px;font-size:12.5px}
+/* Bảng bốn cột chữ đơn cách không thu nhỏ được dưới một mức — cho nó cuộn
+ * TRONG khung của nó, thay vì đẩy cả trang cuộn ngang. */
+.vps-so-do-cuon{overflow-x:auto}
+.vps-so-do-dau{padding:8px 12px;border-bottom:1px solid var(--border-subtle);
+  background:var(--surface-overlay);color:var(--text-secondary);font-size:12px}
+.vps-so-do table{width:100%;border-collapse:collapse;font-family:var(--mono);
+  font-size:11.5px}
+.vps-so-do th{text-align:left;padding:6px 12px;color:var(--text-muted);
+  font-weight:400;border-bottom:1px solid var(--border-subtle)}
+.vps-so-do td{padding:8px 12px;color:var(--text-primary)}
+.vps-so-do tr.chon td{background:var(--vps-teal-soft)}
+.vps-so-do-chu{padding:7px 12px;border-top:1px solid var(--border-subtle);
+  color:var(--text-muted);font-size:11.5px}
+
+
+/* ═══ ĐỢT 6 · CONSOLE TRONG TRÌNH DUYỆT ═════════════════════════════════
+ *
+ * ⛔ ĐỢT NÀY CHỈ ĐỔI TRÌNH BÀY. Không chạm: cấp vé, tiêu vé, đường WebSocket,
+ *    mật khẩu VNC, `scaleViewport`, `resizeSession=false`, hành vi
+ *    KHÔNG-tự-nối-lại. Vé sống 60 giây và dùng **đúng một lần**.
+ *
+ * ⛔ BA THỨ TRONG ẢNH THAM CHIẾU BỊ TỪ CHỐI:
+ *    ① "Mã hoá AES-256" — khẩu hiệu bịa, không nơi nào trong mã khẳng định
+ *      thuật toán;
+ *    ② đồng hồ "Phiên sẽ hết hạn sau 14:47" — vé tiêu **ngay lúc mở
+ *      WebSocket**, nên sau khi nối xong KHÔNG CÒN HẠN NÀO ĐỂ ĐẾM;
+ *    ③ "Trình duyệt Chrome 124 · IP của bạn 113.170.**.**" — dữ liệu client,
+ *      không phải dữ liệu phiên, và IP khách là thông tin riêng tư.
+ */
+.vps-console{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);
+  gap:16px;align-items:start}
+@media(max-width:1080px){.vps-console{grid-template-columns:minmax(0,1fr)}}
+
+/* Thanh công cụ: chỉ những việc **thực sự làm được**. */
+.vps-cs-thanh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  margin:0 0 10px}
+.vps-cs-thanh .tt{display:flex;align-items:center;gap:7px;margin-left:auto;
+  font-size:12.5px}
+
+/* 🔴 Khung VNC là TRUNG TÂM THỊ GIÁC. Trước Đợt 6 nó nằm trong một `.card` có
+ *    viền + đệm 18px + một đoạn văn phía trên — tức thứ quan trọng nhất trên
+ *    trang bị bọc trong hai lớp trang trí. Ở đây nó là một khối đen liền, và
+ *    những thứ khác lùi ra.
+ *
+ * ⚠️ `tabindex="0"` nằm trên chính khung (ở template): thiếu nó thì chuột chạy
+ *    mà bàn phím không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra.
+ */
+.vps-cs-khung{width:100%;height:min(74vh,760px);background:#000;
+  border:1px solid var(--border-strong);border-radius:var(--radius-md);
+  overflow:hidden;outline:none}
+.vps-cs-khung:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+/* Toàn màn hình: API của trình duyệt, không phải của noVNC. Nền đen để khung
+ * không viền trắng khi phóng to. */
+.vps-cs-khung:fullscreen{height:100vh;border:0;border-radius:0}
+
+.vps-cs-cot{display:grid;gap:12px}
+.vps-cs-o{padding:14px 16px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-cs-o h3{margin:0 0 8px;font-size:13px;font-weight:600;
+  color:var(--text-secondary)}
+.vps-cs-o ul{margin:0;padding-left:19px;font-size:12.5px;line-height:1.7;
+  color:var(--text-secondary)}
+.vps-cs-o ul + h3{margin-top:14px}
+.vps-cs-meo{border-left:3px solid var(--status-warning);
+  background:var(--status-warning-soft);border-color:var(--status-warning-border);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.vps-cs-meo b{display:block;color:var(--status-warning);font-size:11.5px;
+  letter-spacing:.5px;text-transform:uppercase;margin:0 0 5px}
+.vps-cs-meo p{margin:0;font-size:12.5px;line-height:1.6;
+  color:var(--text-secondary)}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ĐỢT 2 KHU API (.khu-dev) — bám ảnh demo 2026-08-27
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🔴 VÌ SAO LÀ MỘT LỚP PHẠM VI, KHÔNG SỬA `:root`.
+      Ảnh demo dùng carbon TRUNG TÍNH + accent CYAN kỹ thuật. Token nền tảng là
+      carbon ngả đỏ-nâu và không có cyan. Nhưng `:root`, `_kieu_chung.html` và
+      `.app-shell` dùng chung cho 14 app + khu VPS. Nên ta KHÔNG đổi `:root`:
+      ta bọc nội dung khu API trong `.khu-dev` và override giá trị token NGAY
+      TRONG phạm vi đó. `:root` nguyên vẹn ⇒ VPS bất biến ⇒ phép so ảnh
+      trước/sau của Đợt 1 vẫn đúng. (Two-tier tokens: nguồn cộng đồng
+      kevindench.design / chromatichq.com.)
+
+   ⭐ Đỏ thương hiệu GIỮ NGUYÊN: ảnh dùng đỏ cho mục đang chọn, nút chính, lỗi —
+      trùng vai `--brand-primary`. Chỉ viền/nền trung tính hoá, và thêm cyan cho
+      accent vận hành (chip môi trường, ô mã, biểu tượng, đường "Request").
+
+   ⛔ Không `!important`. Không token thứ hai ngoài họ `--dev-*`. Không đổi
+      `:root`. */
+
+/* Họ accent vận hành — tên MỚI, không đụng ai. Đặt ở phạm vi khu để cả topbar
+   (ngoài .app-shell) lẫn nội dung đều với tới được qua `.khu-dev`/`.dev-topbar`. */
+.khu-dev,.dev-topbar{
+  --dev-cyan:#2bb8c9; --dev-cyan-hover:#49d3e3;
+  --dev-cyan-soft:rgba(43,184,201,.13); --dev-cyan-line:#1d6f7a;
+}
+
+/* Override token ngữ nghĩa — CHỈ trong khu API. Trung tính hoá sắc ấm để nền
+   carbon khớp ảnh; giữ nguyên độ sáng nên mật độ/độ tương phản không đổi. */
+.khu-dev{
+  --surface-base:#0d0d0f;
+  --surface-raised:#141416;
+  --surface-overlay:#1b1b1f;
+  --surface-interactive:#232329;
+  --border-subtle:#26262c;
+  --border-strong:#3a3a44;
+}
+
+/* ── Khối thương hiệu đầu thanh bên (ảnh) ────────────────────────────────
+ * `.app-side` dùng chung khu VPS, nên khối này chỉ hiện trong khu API qua
+ * phạm vi `.khu-dev .app-side`. */
+.khu-dev .app-side .dev-thuong-hieu{display:flex;align-items:center;gap:10px;
+  padding:0 10px 14px;margin-bottom:6px;border-bottom:1px solid var(--border-subtle)}
+.khu-dev .app-side .dev-thuong-hieu .logo{display:grid;place-items:center;
+  width:30px;height:30px;border-radius:8px;background:var(--brand-primary);
+  color:#fff;font-size:11px;font-weight:800;letter-spacing:.02em}
+.khu-dev .app-side .dev-thuong-hieu .ten{display:flex;flex-direction:column;line-height:1.25}
+.khu-dev .app-side .dev-thuong-hieu .ten strong{font-size:13px;color:var(--text-primary)}
+.khu-dev .app-side .dev-thuong-hieu .ten small{font-size:10.5px;color:var(--text-muted)}
+@media(max-width:820px){.khu-dev .app-side .dev-thuong-hieu{display:none}}
+
+/* ── Đầu trang có ô hành động (ảnh: H1 + phụ đề trái · nút phải) ─────────── */
+.khu-dev .dev-dau{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:16px;flex-wrap:wrap;margin:0 0 16px}
+.khu-dev .dev-dau>div:first-child{min-width:0}
+.khu-dev .dev-dau .dev-h1{margin:0 0 3px}
+.khu-dev .dev-dau .dev-dan{margin:0}
+.khu-dev .dev-dau-nut{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+@media(max-width:640px){.khu-dev .dev-dau-nut{width:100%}}
+
+/* ── Thanh trên riêng của khu (liên kết phụ · viên trạng thái · chuông) ─── */
+.dev-topbar{display:flex;align-items:center;gap:18px;font-size:12.5px}
+.dev-topbar a{color:var(--text-secondary);text-decoration:none}
+.dev-topbar a:hover{color:var(--text-primary)}
+.dev-topbar .dev-tt-he{display:inline-flex;align-items:center;gap:7px;
+  padding:3px 11px;border:1px solid var(--status-success-border);border-radius:99px;
+  background:var(--status-success-soft);color:var(--status-success);font-size:11.5px}
+.dev-topbar .dev-tt-he.canh{border-color:var(--status-warning-border);
+  background:var(--status-warning-soft);color:var(--status-warning)}
+.dev-topbar .dev-tt-he.loi{border-color:var(--status-danger-border);
+  background:var(--status-danger-soft);color:var(--status-danger)}
+.dev-topbar .dev-tt-he::before{content:"";width:7px;height:7px;border-radius:50%;
+  background:currentColor}
+.dev-topbar .dev-chuong{position:relative;display:inline-flex;color:var(--text-secondary)}
+.dev-topbar .dev-chuong .so{position:absolute;top:-6px;right:-7px;min-width:15px;
+  height:15px;padding:0 4px;border-radius:99px;background:var(--brand-primary);
+  color:#fff;font-size:9.5px;line-height:15px;text-align:center;font-weight:700}
+
+/* ── Lưới nội dung 2 cột (ảnh: biểu đồ|checklist, cấu hình|chọn, soạn|kết quả)
+ * `2fr / 1fr` ở màn rộng; gãy xuống một cột dưới 1024px. */
+.khu-dev .dev-luoi{display:grid;gap:16px;margin:0 0 16px}
+.khu-dev .dev-luoi-2-1{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.khu-dev .dev-luoi-1-1{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:1024px){
+  .khu-dev .dev-luoi-2-1,.khu-dev .dev-luoi-1-1{grid-template-columns:1fr}
+}
+
+/* ── Dải mục con: viên thuốc → TAB GẠCH CHÂN (ảnh) ───────────────────────
+ * Ghi đè `.dev-sub` chỉ trong khu. `aria-current` giữ nguyên — chỉ đổi hình. */
+.khu-dev .dev-sub{border-bottom:1px solid var(--border-subtle);margin:0 0 18px}
+.khu-dev .dev-sub ul{gap:2px}
+.khu-dev .dev-sub a{min-height:34px;padding:7px 14px;border:0;border-radius:0;
+  border-bottom:2px solid transparent;background:transparent;margin-bottom:-1px}
+.khu-dev .dev-sub a:hover{background:transparent;color:var(--text-primary)}
+.khu-dev .dev-sub a.active{border-bottom-color:var(--brand-primary);
+  background:transparent;color:var(--text-primary)}
+
+/* ── Thẻ chỉ số: thêm ô biểu tượng phải + dòng biến thiên (ảnh) ───────────
+ * Trần 4 cột (ảnh có 4, ta gộp 6→4). Ô biểu tượng dùng cyan-soft. */
+.khu-dev .chi-so-luoi{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+@media(min-width:1100px){.khu-dev .chi-so-luoi{grid-template-columns:repeat(4,1fr)}}
+.khu-dev .chi-so{position:relative;border-radius:var(--radius-lg);
+  border-left:1px solid var(--border-subtle);padding:14px 16px;gap:3px;
+  background:var(--surface-raised)}
+.khu-dev .chi-so-gt{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.khu-dev .chi-so-icon{position:absolute;top:13px;right:13px;display:grid;
+  place-items:center;width:34px;height:34px;border-radius:9px;
+  background:var(--dev-cyan-soft);color:var(--dev-cyan)}
+.khu-dev .chi-so-bt{font-size:11px;color:var(--status-success)}
+.khu-dev .chi-so-bt.giam{color:var(--status-danger)}
+.khu-dev .chi-so.canh-bao{border-left:3px solid var(--status-warning)}
+.khu-dev .chi-so.co-van-de{border-left:3px solid var(--status-danger)}
+
+/* ── Panel: thẻ có đầu (tiêu đề + "xem tất cả") — ảnh dùng khắp nơi ─────── */
+.khu-dev .dev-panel{border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  background:var(--surface-raised);overflow:hidden}
+.khu-dev .dev-panel>header{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:13px 16px;border-bottom:1px solid var(--border-subtle)}
+.khu-dev .dev-panel>header h2,.khu-dev .dev-panel>header h3{margin:0;font-size:14px;
+  font-weight:600}
+.khu-dev .dev-panel>header a{font-size:12px;color:var(--dev-cyan);text-decoration:none}
+.khu-dev .dev-panel>header a:hover{color:var(--dev-cyan-hover)}
+.khu-dev .dev-panel-than{padding:14px 16px}
+.khu-dev .dev-panel .dev-bang{border:0;border-radius:0;background:transparent}
+
+/* ── Tab lọc trong đầu panel (ảnh keys: Tất cả · Live · Test) ──────────── */
+.khu-dev .dev-loc-tab{display:inline-flex;gap:2px;padding:2px;border-radius:8px;
+  background:var(--surface-overlay);border:1px solid var(--border-subtle)}
+.khu-dev .dev-loc-tab a{padding:4px 12px;border-radius:6px;font-size:12px;
+  color:var(--text-secondary);text-decoration:none;line-height:1.6}
+.khu-dev .dev-loc-tab a:hover{color:var(--text-primary)}
+.khu-dev .dev-loc-tab a.active{background:var(--surface-interactive);
+  color:var(--text-primary);font-weight:600}
+
+/* ── Chip môi trường / nhãn kỹ thuật: dùng cyan (ảnh) ──────────────────── */
+.khu-dev .dev-chip-mt{display:inline-flex;align-items:center;padding:2px 9px;
+  border:1px solid var(--dev-cyan-line);border-radius:6px;background:var(--dev-cyan-soft);
+  color:var(--dev-cyan);font-size:11px;font-family:var(--mono)}
+.khu-dev .dev-chip-mt.test{border-color:var(--border-strong);
+  background:var(--surface-overlay);color:var(--text-secondary)}
+
+/* ── Bậc thang 4 bước (ảnh: xong ✓ teal · đang làm đỏ · chưa tới xám) ───── */
+.khu-dev .dev-bac{display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+  margin:0 0 4px;padding:0;list-style:none}
+.khu-dev .dev-bac>li{display:flex;align-items:center;gap:10px;flex:1;min-width:150px}
+.khu-dev .dev-bac .num{display:grid;place-items:center;width:30px;height:30px;
+  border-radius:50%;border:1px solid var(--border-strong);background:var(--surface-overlay);
+  color:var(--text-secondary);font-size:13px;font-weight:600;flex-shrink:0}
+.khu-dev .dev-bac .lbl{font-size:12.5px;color:var(--text-secondary)}
+.khu-dev .dev-bac .noi{flex:1;height:1px;background:var(--border-subtle);min-width:14px}
+.khu-dev .dev-bac>li.xong .num{border-color:var(--dev-cyan-line);
+  background:var(--dev-cyan-soft);color:var(--dev-cyan)}
+.khu-dev .dev-bac>li.xong .lbl{color:var(--text-primary)}
+.khu-dev .dev-bac>li.dang .num{border-color:var(--brand-primary);
+  background:var(--brand-primary);color:#fff}
+.khu-dev .dev-bac>li.dang .lbl{color:var(--text-primary);font-weight:600}
+
+/* ── Danh sách gọn (thông báo, request gần đây trong panel) ─────────────── */
+.khu-dev .dev-ds{margin:0;padding:0;list-style:none}
+.khu-dev .dev-ds>li{display:flex;gap:11px;padding:11px 0;
+  border-top:1px solid var(--border-subtle)}
+.khu-dev .dev-ds>li:first-child{border-top:0}
+.khu-dev .dev-ds .cham{width:8px;height:8px;margin-top:5px;border-radius:50%;
+  background:var(--text-muted);flex-shrink:0}
+.khu-dev .dev-ds .cham.canh{background:var(--status-warning)}
+.khu-dev .dev-ds .cham.loi{background:var(--status-danger)}
+.khu-dev .dev-ds .cham.tin{background:var(--dev-cyan)}
+.khu-dev .dev-ds .noi-dung{min-width:0;flex:1}
+.khu-dev .dev-ds .noi-dung strong{display:block;font-size:12.5px;color:var(--text-primary);
+  font-weight:600}
+.khu-dev .dev-ds .noi-dung p{margin:2px 0 0;font-size:11.5px;color:var(--text-secondary)}
+.khu-dev .dev-ds time{font-size:11px;color:var(--text-muted);white-space:nowrap;flex-shrink:0}
+
+/* ── Ô mã sắc teal (ảnh: khối .env xanh lục-lam) ───────────────────────── */
+.khu-dev .dev-ma-teal>figcaption{border-color:var(--dev-cyan-line);
+  background:var(--dev-cyan-soft);color:var(--dev-cyan)}
+.khu-dev .dev-ma-teal .khoi-ma,.khu-dev .dev-ma-teal>pre{
+  border:1px solid var(--dev-cyan-line);
+  background:linear-gradient(180deg,var(--dev-cyan-soft),transparent)}
+.khu-dev .dev-ma-teal .khoi-ma pre{border:0;background:transparent}
+/* Hàng lưới ở đầu trang không kéo giãn hai thẻ cao bằng nhau. */
+.khu-dev .dev-luoi-tren{align-items:start}
+
+/* ── Danh mục công cụ dạng LƯỚI THẺ (ảnh demo: 3 cột, mỗi thẻ có ô biểu tượng
+ *    màu + tên + mô tả + chân "N model · Docs · Thử ngay") ──────────────────
+ * Scoped: chỉ đổi CÁCH BÀY của `.tool-the` TRONG khu API; component gốc (danh
+ * sách quét được) giữ nguyên cho mọi nơi khác. Vẫn là `<details>` — mở ra xem
+ * hợp đồng đầy đủ ngay trong thẻ. */
+.khu-dev .dev-tool-luoi{display:grid;gap:12px;margin:0 0 16px;
+  grid-template-columns:repeat(auto-fill,minmax(320px,1fr));align-items:start}
+.khu-dev .dev-tool-luoi .tool-the{margin:0;display:flex;flex-direction:column;
+  background:var(--surface-raised)}
+.khu-dev .dev-tool-luoi .tool-the>summary{flex-direction:column;align-items:stretch;
+  gap:9px;padding:14px}
+.khu-dev .dev-tool-luoi .tool-the>summary:hover{background:transparent}
+.khu-dev .dev-tool-luoi .tool-the:hover{border-color:var(--border-strong)}
+/* Hàng đầu thẻ: ô biểu tượng màu + tên + nhãn chế độ chạy dồn phải. */
+.khu-dev .tool-dau{display:flex;align-items:center;gap:10px}
+.khu-dev .tool-icon{display:grid;place-items:center;width:34px;height:34px;
+  border-radius:9px;font-size:14px;font-weight:800;color:#fff;flex:none}
+.khu-dev .tool-icon.cap-image{background:#3b82c4}
+.khu-dev .tool-icon.cap-text{background:#0f9d8a}
+.khu-dev .tool-icon.cap-vision{background:#8b5cc8}
+.khu-dev .tool-icon.cap-audio{background:#d08a2c}
+.khu-dev .tool-icon.cap-video{background:#c8548f}
+.khu-dev .tool-icon.cap-code{background:#4a9d5a}
+.khu-dev .tool-icon.cap-other{background:var(--dev-cyan-line)}
+.khu-dev .dev-tool-luoi .the-ten{flex:1;min-width:0;font-size:13.5px;
+  overflow:hidden;text-overflow:ellipsis}
+/* Mô tả HAI dòng trong lưới (khác danh sách một-dòng). */
+.khu-dev .dev-tool-luoi .the-mo-ta{flex:none;white-space:normal;font-size:12px;
+  line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;min-height:36px}
+/* Chân thẻ: N model · Docs · Thử ngay — dồn đáy để các thẻ thẳng hàng. */
+.khu-dev .tool-chan{display:flex;align-items:center;gap:10px;margin-top:2px;
+  padding-top:10px;border-top:1px solid var(--border-subtle);font-size:11.5px;
+  color:var(--text-muted)}
+.khu-dev .tool-chan a{color:var(--dev-cyan);text-decoration:none}
+.khu-dev .tool-chan a:hover{color:var(--dev-cyan-hover)}
+.khu-dev .tool-chan .day{margin-left:auto}
+
+/* ── Kết quả ước tính giá (ảnh: số credit to + VND + hộp lưu ý hổ phách) ── */
+.khu-dev .dev-uoc-tinh{display:flex;align-items:baseline;gap:8px}
+.khu-dev .dev-uoc-tinh .so{font-size:38px;font-weight:700;letter-spacing:-.02em;
+  color:var(--status-warning)}
+.khu-dev .dev-uoc-tinh .don-vi{font-size:16px;color:var(--status-warning)}
+.khu-dev .dev-vnd{margin:2px 0 0;color:var(--text-secondary);font-size:13px}
+.khu-dev .dev-luu-y{margin-top:16px;padding:12px 14px;border-radius:var(--radius-md);
+  border:1px solid var(--status-warning-border);background:var(--status-warning-soft)}
+.khu-dev .dev-luu-y strong{display:block;margin-bottom:6px;color:var(--status-warning);
+  font-size:12.5px}
+.khu-dev .dev-luu-y ul{margin:0;padding-left:18px;color:var(--text-secondary);font-size:12px}
+.khu-dev .dev-luu-y li{margin:3px 0}
+
+/* ── Biểu mẫu tạo khoá gập được (nút "+ Tạo khoá mới" ở đầu trang) ────────
+ * `<details>` thuần, không JS. Mở/đóng bằng chính trình duyệt. */
+.khu-dev .dev-tao{border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  background:var(--surface-raised);margin-top:16px}
+.khu-dev .dev-tao>summary{padding:13px 16px;cursor:pointer;font-weight:600;
+  font-size:14px;list-style:none;display:flex;align-items:center;gap:8px}
+.khu-dev .dev-tao>summary::-webkit-details-marker{display:none}
+.khu-dev .dev-tao>summary::before{content:"+";display:grid;place-items:center;
+  width:22px;height:22px;border-radius:6px;background:var(--brand-primary);color:#fff}
+.khu-dev .dev-tao[open]>summary::before{content:"\2212"}
+.khu-dev .dev-tao-than{padding:0 16px 16px;border-top:1px solid var(--border-subtle)}
+
+/* ── Biểu đồ SVG sinh phía máy chủ (Đợt 3) — không thư viện, không JS ───── */
+.khu-dev .dev-bieu-do{width:100%;height:auto;display:block}
+.khu-dev .dev-bieu-do .luoi{stroke:var(--border-subtle);stroke-width:1}
+.khu-dev .dev-bieu-do .duong-req{fill:none;stroke:var(--dev-cyan);stroke-width:2;
+  vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.khu-dev .dev-bieu-do .duong-credit{fill:none;stroke:var(--brand-primary);stroke-width:2;
+  vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.khu-dev .dev-bieu-do .nhan{fill:var(--text-muted);font-size:10px}
+/* Vùng tô mờ dưới mỗi đường (ảnh demo) — nhạt để không nuốt lưới. */
+.khu-dev .dev-bieu-do .vung-req{fill:var(--dev-cyan);opacity:.10;stroke:none}
+.khu-dev .dev-bieu-do .vung-credit{fill:var(--brand-primary);opacity:.09;stroke:none}
+.khu-dev .dev-chu-thich{display:inline-flex;gap:14px;font-size:11.5px;
+  color:var(--text-secondary)}
+.khu-dev .dev-chu-thich>span{display:inline-flex;align-items:center;gap:5px}
+.khu-dev .dev-chu-thich .o{width:10px;height:2px;display:inline-block}
+.khu-dev .dev-chu-thich .o-req{background:var(--dev-cyan)}
+.khu-dev .dev-chu-thich .o-credit{background:var(--brand-primary)}
+
+/* ── Vòng phân bổ theo công cụ (ảnh demo: donut + chú thích %) ──────────── */
+.khu-dev .dev-vong{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.khu-dev .dev-vong .vong-svg{width:150px;height:150px;flex:none}
+.khu-dev .dev-vong .vong-so{fill:var(--text-primary);font-size:22px;font-weight:700}
+.khu-dev .dev-vong .vong-nhan{fill:var(--text-muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.khu-dev .dev-vong-chu{flex:1;min-width:150px;margin:0;padding:0;list-style:none}
+.khu-dev .dev-vong-chu li{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px}
+.khu-dev .dev-vong-chu .cham{width:9px;height:9px;border-radius:2px;flex:none}
+.khu-dev .dev-vong-chu code{flex:1;min-width:0;color:var(--text-secondary)}
+.khu-dev .dev-vong-chu .pct{color:var(--text-primary);font-weight:600}
+.khu-dev .dev-vong-chu .val{color:var(--text-muted);font-size:11px}
