@@ -59,64 +59,68 @@
 
 <div class="card" id="bien-vao">
   <h2 style="margin-top:0;">{{ _("Biến đầu vào") }}</h2>
-  <table class="table">
-    <thead><tr>
-      <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Kiểu") }}</th>
-      <th scope="col">{{ _("Bắt buộc") }}</th><th scope="col">{{ _("Giới hạn") }}</th>
-      <th scope="col">{{ _("Mặc định") }}</th><th scope="col">{{ _("Mô tả") }}</th>
-    </tr></thead>
-    <tbody>
-      {% for param in params %}
-        <tr>
-          <td><code>{{ param.name }}</code></td>
-          <td>{{ param.type }}</td>
-          <td>{% if param.required %}{{ _("có") }}{% else %}—{% endif %}</td>
-          <td>
-            {% if param.enum %}
-              {% for value in param.enum %}<code>{{ value }}</code> {% endfor %}
-            {% elif param.bounds %}{{ param.bounds }}
-            {% else %}—{% endif %}
-          </td>
-          <td>{% if param.default is not none %}<code>{{ param.default }}</code>
-              {% else %}—{% endif %}</td>
-          <td>
-            {# 🔴 "Chỉ dùng khi …" phải là thứ ĐẬP VÀO MẮT, không phải một mệnh
-               đề giữa một đoạn tiếng Anh. Trước 25/08 điều kiện này chỉ nằm
-               trong `description`, nên bộ sinh ví dụ không biết mà tránh, và đã
-               dựng ra một thân tự mâu thuẫn: `mode=t2i` kèm `image_key`.
-               Giá trị đến từ hợp đồng (`x-ltt-only-when`), không phải từ việc
-               đọc câu chữ. #}
-            {% if param.only_when %}
-              {% for khoa, gia_tri in param.only_when.items() %}
-                <div class="badge badge-warn" style="margin-bottom:6px;">
-                  {{ _("chỉ dùng khi") }} <code>{{ khoa }}</code> =
-                  {% for v in gia_tri %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
-                </div>
-              {% endfor %}
-            {% endif %}
-            {{ param.description }}
-            {% if param.example is not none %}
-              <br><span class="muted">{{ _("ví dụ:") }}
-                <code>{{ param.example }}</code></span>
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="dev-bang">
+    <table class="table">
+      <thead><tr>
+        <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Kiểu") }}</th>
+        <th scope="col">{{ _("Bắt buộc") }}</th><th scope="col">{{ _("Giới hạn") }}</th>
+        <th scope="col">{{ _("Mặc định") }}</th><th scope="col">{{ _("Mô tả") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for param in params %}
+          <tr>
+            <td><code>{{ param.name }}</code></td>
+            <td>{{ param.type }}</td>
+            <td>{% if param.required %}{{ _("có") }}{% else %}—{% endif %}</td>
+            <td>
+              {% if param.enum %}
+                {% for value in param.enum %}<code>{{ value }}</code> {% endfor %}
+              {% elif param.bounds %}{{ param.bounds }}
+              {% else %}—{% endif %}
+            </td>
+            <td>{% if param.default is not none %}<code>{{ param.default }}</code>
+                {% else %}—{% endif %}</td>
+            <td>
+              {# 🔴 "Chỉ dùng khi …" phải là thứ ĐẬP VÀO MẮT, không phải một mệnh
+                 đề giữa một đoạn tiếng Anh. Trước 25/08 điều kiện này chỉ nằm
+                 trong `description`, nên bộ sinh ví dụ không biết mà tránh, và đã
+                 dựng ra một thân tự mâu thuẫn: `mode=t2i` kèm `image_key`.
+                 Giá trị đến từ hợp đồng (`x-ltt-only-when`), không phải từ việc
+                 đọc câu chữ. #}
+              {% if param.only_when %}
+                {% for khoa, gia_tri in param.only_when.items() %}
+                  <div class="badge badge-warn" style="margin-bottom:6px;">
+                    {{ _("chỉ dùng khi") }} <code>{{ khoa }}</code> =
+                    {% for v in gia_tri %}<code>{{ v }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+                  </div>
+                {% endfor %}
+              {% endif %}
+              {{ param.description }}
+              {% if param.example is not none %}
+                <br><span class="muted">{{ _("ví dụ:") }}
+                  <code>{{ param.example }}</code></span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   <p class="muted">{{ _("Trường lạ bị từ chối chứ không bị bỏ qua: một tham số gõ sai mà bị lặng lẽ bỏ đi là cách khách trả tiền cho một job không làm đúng việc.") }}</p>
 </div>
 
 <div class="card" id="ket-qua">
   <h2 style="margin-top:0;">{{ _("Kết quả") }}</h2>
-  <table class="table">
-    <thead><tr><th scope="col">{{ _("Trường") }}</th><th scope="col">{{ _("Kiểu") }}</th></tr></thead>
-    <tbody>
-      {% for name, spec in tool.output_schema.properties.items() %}
-        <tr><td><code>{{ name }}</code></td><td>{{ spec.type }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="dev-bang">
+    <table class="table">
+      <thead><tr><th scope="col">{{ _("Trường") }}</th><th scope="col">{{ _("Kiểu") }}</th></tr></thead>
+      <tbody>
+        {% for name, spec in tool.output_schema.properties.items() %}
+          <tr><td><code>{{ name }}</code></td><td>{{ spec.type }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% if has_artifacts %}
     {# 🔴 ĐO 25/08 BẰNG MỘT LƯỢT GỌI THẬT. Câu cũ chỉ nói "trường kiểu artifact
        trả về một id" — và khách đọc bảng trên rồi đi tìm `result.image_keys`.
@@ -171,23 +175,25 @@
 
 <div class="card" id="loi">
   <h2 style="margin-top:0;">{{ _("Lỗi và cách thử lại") }}</h2>
-  <table class="table">
-    <thead><tr>
-      <th scope="col">{{ _("Mã") }}</th><th scope="col">HTTP</th><th scope="col">{{ _("Thử lại") }}</th>
-      <th scope="col">{{ _("Dùng lại Idempotency-Key") }}</th><th scope="col">{{ _("Nên làm gì") }}</th>
-    </tr></thead>
-    <tbody>
-      {% for row in errors %}
-        <tr>
-          <td><code>{{ row.code }}</code></td>
-          <td>{{ row.status }}</td>
-          <td><code>{{ row.retry }}</code></td>
-          <td>{% if row.reuse_idempotency_key %}{{ _("có") }}{% else %}—{% endif %}</td>
-          <td>{{ row.action }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="dev-bang">
+    <table class="table">
+      <thead><tr>
+        <th scope="col">{{ _("Mã") }}</th><th scope="col">HTTP</th><th scope="col">{{ _("Thử lại") }}</th>
+        <th scope="col">{{ _("Dùng lại Idempotency-Key") }}</th><th scope="col">{{ _("Nên làm gì") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for row in errors %}
+          <tr>
+            <td><code>{{ row.code }}</code></td>
+            <td>{{ row.status }}</td>
+            <td><code>{{ row.retry }}</code></td>
+            <td>{% if row.reuse_idempotency_key %}{{ _("có") }}{% else %}—{% endif %}</td>
+            <td>{{ row.action }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 {% endblock %}

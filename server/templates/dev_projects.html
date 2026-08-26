@@ -1,34 +1,44 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+<p class="dev-dan">{{ _("Một project gom khóa, nhật ký và chi tiêu của một tích hợp lại — để thu hồi và đọc báo cáo được riêng từng cái.") }}</p>
+
 <div class="card">
   <p class="muted">{{ _("Mỗi tích hợp một project: thu hồi được riêng, đọc log được riêng. Lưu trữ một project sẽ thu hồi khóa của nó và không đụng tới job hay sổ credit.") }}</p>
   {% if projects %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Định danh") }}</th>
-        <th scope="col">{{ _("Khóa") }}</th><th scope="col">{{ _("Tạo lúc") }}</th><th scope="col"></th>
-      </tr></thead>
-      <tbody>
-        {% for project in projects %}
-          <tr>
-            <td>{{ project.name }}</td>
-            <td><code>{{ project.slug }}</code></td>
-            <td>{{ project.key_count }}</td>
-            <td>{{ project.created_at.strftime("%Y-%m-%d") }}</td>
-            <td>
-              <form method="post" action="/developers/projects/{{ project.id }}/archive"
-                    onsubmit="return confirm('{{ _("Lưu trữ project này? Mọi khóa của nó bị thu hồi.") }}');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-ghost">{{ _("Lưu trữ") }}</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Định danh") }}</th>
+          <th scope="col">{{ _("Khóa") }}</th><th scope="col">{{ _("Tạo lúc") }}</th><th scope="col"></th>
+        </tr></thead>
+        <tbody>
+          {% for project in projects %}
+            <tr>
+              <td>{{ project.name }}</td>
+              <td><code class="dev-id">{{ project.slug }}</code></td>
+              <td>{{ project.key_count }}</td>
+              <td class="tnum">{{ project.created_at.strftime("%Y-%m-%d") }}</td>
+              <td>
+                <div class="dev-hanh-dong">
+                <form method="post" action="/developers/projects/{{ project.id }}/archive"
+                      onsubmit="return confirm('{{ _("Lưu trữ project này? Mọi khóa của nó bị thu hồi.") }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-danger btn-sm">{{ _("Lưu trữ") }}</button>
+                </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="muted">{{ _("Chưa có project nào. Tạo khóa đầu tiên sẽ tự sinh project “Default”.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa có project nào.") }}</strong>
+      <p>{{ _("Không bắt buộc phải tạo trước: khóa đầu tiên của bạn sẽ tự sinh một project tên “Default”. Tạo project riêng khi bạn có từ hai tích hợp trở lên.") }}</p>
+      <a class="btn btn-ghost" href="/developers/keys">{{ _("Sang tạo khóa") }}</a>
+    </div>
   {% endif %}
 </div>
 
@@ -36,10 +46,12 @@
   <h2 style="margin-top:0;">{{ _("Project mới") }}</h2>
   <form method="post" action="/developers/projects">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label for="project-name">{{ _("Tên project") }}</label>
-    <input id="project-name" name="name" maxlength="120"
-           placeholder="{{ _('trang bán hàng') }}" required>
-    <button type="submit" class="btn btn-primary">{{ _("Tạo project") }}</button>
+    <div class="dev-field" style="max-width:420px;">
+      <label for="project-name">{{ _("Tên project") }}</label>
+      <input id="project-name" type="text" name="name" maxlength="120"
+             placeholder="{{ _('trang bán hàng') }}" required>
+    </div>
+    <button type="submit" class="btn">{{ _("Tạo project") }}</button>
   </form>
 </div>
 

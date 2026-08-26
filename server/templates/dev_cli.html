@@ -24,7 +24,7 @@
 
   <h3>1. {{ _("Tool EXE — có giao diện") }}</h3>
   <p>{{ _("Phù hợp cho một máy cá nhân: chọn từng bề mặt, xem trạng thái từ file và registry, rồi kiểm API ngay trong cửa sổ.") }}</p>
-  <p><a class="btn btn-primary" href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></p>
+  <p><a class="btn" href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></p>
   {% if bo_cai %}<p class="muted">{{ _("Bản") }} {{ bo_cai.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>{% endif %}
 
   <h3>2. {{ _("ZIP + BAT — không GUI, chạy Administrator") }}</h3>

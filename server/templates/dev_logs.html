@@ -1,20 +1,26 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
-<div class="card">
-  <ul>
-    <li>{{ _("7 ngày qua:") }} <strong>{{ counts.requests }}</strong>
-        {{ _("request") }}, <strong>{{ counts.failures }}</strong>
-        {{ _("lỗi") }}, <strong>{{ counts.credit | so }}</strong> credit</li>
-    <li class="muted">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</li>
-  </ul>
+<p class="dev-dan">{{ _("Mọi lời gọi tài khoản này thực hiện, kể cả những lời gọi chưa bao giờ chạy — 401, 403, 429 là thứ không có job nào giải thích hộ.") }}</p>
 
-  <form method="get" action="/developers/logs" role="search">
-    <label for="lg-request" class="sr-only">request_id</label>
+{# ── Bay ngay so ─────────────────────────────────────────────────────────
+   Truoc day la mot `<ul>` hai gach dau dong tron ba con so voi mot cau chinh
+   sach. Ba con so thi quet mat; mot cau chinh sach thi doc — dat chung canh
+   nhau lam nguoi ta khong lam duoc viec nao ca. #}
+<dl class="dev-han-muc">
+  <div><dt>{{ _("Request (7 ngày)") }}</dt><dd class="tnum">{{ counts.requests }}</dd></div>
+  <div><dt>{{ _("Lỗi") }}</dt><dd class="tnum">{{ counts.failures }}</dd></div>
+  <div><dt>Credit</dt><dd class="tnum">{{ counts.credit | so }}</dd></div>
+</dl>
+
+<form method="get" action="/developers/logs" role="search" class="dev-loc">
+  <div class="dev-field rong">
+    <label for="lg-request">request_id</label>
     <input id="lg-request" type="search" name="request_id" value="{{ filters.request_id }}"
-           placeholder="{{ _('dán request_id từ phản hồi hoặc ticket') }}"
-           style="min-width:min(320px,100%)">
-    <label for="lg-status" class="sr-only">{{ _("Trạng thái") }}</label>
+           placeholder="{{ _('dán request_id từ phản hồi hoặc ticket') }}">
+  </div>
+  <div class="dev-field">
+    <label for="lg-status">{{ _("Trạng thái") }}</label>
     <select id="lg-status" name="status">
       <option value="">{{ _("Mọi trạng thái") }}</option>
       {% for value, label in status_choices %}
@@ -22,7 +28,9 @@
                 {% if value == filters.status %}selected{% endif %}>{{ label }}</option>
       {% endfor %}
     </select>
-    <label for="lg-tool" class="sr-only">{{ _("Công cụ") }}</label>
+  </div>
+  <div class="dev-field">
+    <label for="lg-tool">{{ _("Công cụ") }}</label>
     <select id="lg-tool" name="tool">
       <option value="">{{ _("Mọi công cụ") }}</option>
       {% for name in tools %}
@@ -30,7 +38,9 @@
                 {% if name == filters.tool %}selected{% endif %}>{{ name }}</option>
       {% endfor %}
     </select>
-    <label for="lg-key" class="sr-only">{{ _("Khóa") }}</label>
+  </div>
+  <div class="dev-field">
+    <label for="lg-key">{{ _("Khóa") }}</label>
     <select id="lg-key" name="key_id">
       <option value="">{{ _("Mọi khóa") }}</option>
       {% for key in keys %}
@@ -39,21 +49,31 @@
           {{ key.name or key.key_id[:8] }}</option>
       {% endfor %}
     </select>
+  </div>
+  <div class="dev-nut">
     <button type="submit" class="btn">{{ _("Lọc") }}</button>
     {% if filters.any %}
       <a class="btn btn-ghost" href="/developers/logs">{{ _("Bỏ lọc") }}</a>
     {% endif %}
-  </form>
-</div>
+  </div>
+</form>
 
-<div class="card">
-  {% if not rows %}
-    <p class="muted">
-      {% if filters.any %}{{ _("Không request nào khớp.") }}
-      {% else %}{{ _("Chưa có lời gọi API nào. Nhật ký bắt đầu từ request đầu tiên.") }}
-      {% endif %}
-    </p>
-  {% else %}
+{% if not rows %}
+  {# ⛔ "Chua co loi goi API nao." mot minh la mot ngo cut, khong phai mot
+     trang thai rong. No phai noi CAI GI, VI SAO, va BUOC TIEP. #}
+  <div class="dev-trong">
+    {% if filters.any %}
+      <strong>{{ _("Không request nào khớp bộ lọc.") }}</strong>
+      <p>{{ _("Nhật ký chỉ giữ %(days)s ngày gần nhất — một request cũ hơn thế đã bị dọn.")|format(days=retention_days) }}</p>
+      <a class="btn btn-ghost" href="/developers/logs">{{ _("Bỏ lọc") }}</a>
+    {% else %}
+      <strong>{{ _("Chưa có lời gọi API nào.") }}</strong>
+      <p>{{ _("Sau request đầu tiên, mọi lời gọi sẽ hiện ở đây kèm trạng thái, mã lỗi, độ trễ và credit — đủ để tìm ra chuyện gì đã xảy ra.") }}</p>
+      <a class="btn" href="/developers/cli">{{ _("Thực hiện request đầu tiên") }}</a>
+    {% endif %}
+  </div>
+{% else %}
+  <div class="dev-bang">
     <table class="table">
       <thead><tr>
         <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Lời gọi") }}</th>
@@ -63,22 +83,30 @@
       <tbody>
         {% for row in rows %}
           <tr>
-            <td>{{ row.created_at.strftime("%m-%d %H:%M:%S") }}</td>
+            <td class="tnum">{{ row.created_at.strftime("%m-%d %H:%M:%S") }}</td>
             <td><code>{{ row.method }} {{ row.route }}</code></td>
             <td>
-              <strong>{{ row.status }}</strong>
-              {% if row.code %}<br><code>{{ row.code }}</code>{% endif %}
+              {# 🔴 Truoc day o nay in `<strong>200</strong>` va `<strong>500</strong>`
+                 bang CUNG mot hinh dang, CUNG mot mau. Do la Golden Outcome D
+                 (REQUEST → STATUS → ERROR CODE) hut ngay o chu thu hai: mat
+                 khong co gi de bat, phai doc tung dong.
+
+                 ⚠️ Con so van la con so that; mau chi them vao. #}
+              <span class="dev-tt {% if row.status < 300 %}ok{% elif row.status < 500 %}canh{% else %}loi{% endif %}">{{ row.status }}</span>
+              {% if row.code %}<code class="dev-ma-loi">{{ row.code }}</code>{% endif %}
             </td>
-            <td>{{ row.tool or "—" }}</td>
-            <td>{{ row.latency_ms }} ms</td>
-            <td>{% if row.credit_delta %}{{ row.credit_delta | so }}{% else %}—{% endif %}</td>
+            <td class="{% if not row.tool %}dev-trong-o{% endif %}">{{ row.tool or "—" }}</td>
+            <td class="tnum">{{ row.latency_ms }} ms</td>
+            <td class="tnum {% if not row.credit_delta %}dev-trong-o{% endif %}">
+              {%- if row.credit_delta %}{{ row.credit_delta | so }}{% else %}—{% endif %}</td>
             <td><a href="/developers/logs/{{ row.request_id }}">
-              <code>{{ row.request_id[:8] }}</code></a></td>
+              <code class="dev-id">{{ row.request_id[:12] }}</code></a></td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
-  {% endif %}
-</div>
+  </div>
+  <p class="muted" style="margin:12px 0 0;">{{ _("Nhật ký giữ %(days)s ngày. Không lưu nội dung request hay response — chỉ bộ xương của lời gọi.")|format(days=retention_days) }}</p>
+{% endif %}
 
 {% endblock %}

@@ -1,6 +1,8 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+<p class="dev-dan">{{ _("Tình trạng tài khoản API của bạn và bước tiếp theo để gọi được.") }}</p>
+
 {# ── Luoi chi so ───────────────────────────────────────────────────────────
 
    🔴 Ban cu la mot `<ul>` bay dong bullet, va bay dong do tron bay LOAI so
@@ -71,10 +73,13 @@
 
 </div>
 
-<p class="muted" style="margin:0 0 16px;">{{ _("Hạn mức:") }}
-  <strong>{{ limits.request_rpm }}</strong> {{ _("request/phút") }} ·
-  <strong>{{ limits.create_rpm }}</strong> {{ _("job/phút") }} ·
-  {{ _("tối đa") }} <strong>{{ limits.max_active_jobs }}</strong> {{ _("job đang chạy") }}</p>
+{# Ba con số này trước nằm trong một câu văn xuôi. Cặp nhãn–giá trị thì quét
+   mắt lấy được ngay; một câu thì phải đọc hết rồi mới tách ra được. #}
+<dl class="dev-han-muc">
+  <div><dt>{{ _("Request/phút") }}</dt><dd class="tnum">{{ limits.request_rpm }}</dd></div>
+  <div><dt>{{ _("Job/phút") }}</dt><dd class="tnum">{{ limits.create_rpm }}</dd></div>
+  <div><dt>{{ _("Job chạy cùng lúc") }}</dt><dd class="tnum">{{ limits.max_active_jobs }}</dd></div>
+</dl>
 
 {# ── Bốn bước tới lượt gọi đầu tiên ────────────────────────────────────────
 
@@ -94,34 +99,39 @@
   {% set tat_ca_xong  = xong_project and xong_khoa and xong_goi %}
 
   {% if tat_ca_xong %}
+    {# ⚠️ MOT nut chinh, con lai la nut phu.
+       Ban cu la nam nut do dac canh nhau — do la nam thu deu keu "bam toi
+       truoc", tuc khong thu nao keu duoc. Va no dot chay mau nhan hieu o dung
+       cho khong co gi de nhan manh: day la nam duong tat ngang hang nhau.
+       Mau do o khu nay danh cho hanh dong CHINH, muc dang mo, va canh bao. #}
     <p class="muted">{{ _("Bạn đã gọi được. Những nơi hay dùng:") }}</p>
-    <p>
-      <a class="btn" href="/developers/keys">{{ _("Khóa API") }}</a>
-      <a class="btn" href="/developers/tools">{{ _("Công cụ & model") }}</a>
-      <a class="btn" href="/developers/playground">{{ _("Chạy thử") }}</a>
-      <a class="btn" href="/developers/jobs">{{ _("Job gần đây") }}</a>
+    <p class="dev-tat">
       <a class="btn" href="/developers/logs">{{ _("Nhật ký request") }}</a>
+      <a class="btn btn-ghost" href="/developers/keys">{{ _("Khóa API") }}</a>
+      <a class="btn btn-ghost" href="/developers/tools">{{ _("Công cụ & model") }}</a>
+      <a class="btn btn-ghost" href="/developers/playground">{{ _("Chạy thử") }}</a>
+      <a class="btn btn-ghost" href="/developers/jobs">{{ _("Job gần đây") }}</a>
     </p>
   {% else %}
     <ol class="dev-buoc">
       {# Mỗi bước tự nói nó xong chưa. Dấu ✓ đi kèm chữ, không đứng một mình:
          một dấu tick không màu không nói được gì cho người đọc bằng bộ đọc
          màn hình, và màu một mình cũng thế. #}
-      <li>
+      <li class="{{ 'xong' if xong_project }}">
         {% if xong_project %}<strong>✓ {{ _("Đã có project") }}</strong>
           <span class="muted">({{ counts.projects }})</span>
         {% else %}<a href="/developers/projects">{{ _("Tạo một project") }}</a>
           — {{ _("mỗi tích hợp một project.") }}
         {% endif %}
       </li>
-      <li>
+      <li class="{{ 'xong' if xong_khoa }}">
         {% if xong_khoa %}<strong>✓ {{ _("Đã có khóa đang hoạt động") }}</strong>
           <span class="muted">({{ counts.active_keys }})</span>
         {% else %}<a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
           — {{ _("chuỗi bí mật chỉ hiện một lần.") }}
         {% endif %}
       </li>
-      <li>
+      <li class="{{ 'xong' if xong_goi }}">
         {% if xong_goi %}<strong>✓ {{ _("Đã gọi được lần đầu") }}</strong>
         {% else %}{{ _("Gọi thử — lệnh này không tốn credit:") }}
           {% if xong_khoa %}

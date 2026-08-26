@@ -1,136 +1,179 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
-<div class="card">
-  <ul>
-    <li>{{ _("Số dư:") }} <strong>{{ balance | so }}</strong> credit</li>
-    <li>{{ _("Đã dùng hôm nay qua API:") }}
-        <strong>{{ usage_today.net_charged_credit | so }}</strong>
-        credit ({{ _("đang giữ chỗ") }} {{ usage_today.held_credit | so }})</li>
-    <li>{{ _("Giới hạn:") }} {{ limits.request_rpm }} {{ _("request/phút") }},
-        {{ limits.create_rpm }} {{ _("job/phút") }},
-        {{ _("tối đa") }} {{ limits.max_active_jobs }} {{ _("job đang chạy") }}
-        {% if limits.daily_credit_limit %}, {{ _("trần của máy chủ") }}
-          {{ limits.daily_credit_limit | so }} {{ _("credit/ngày") }}{% endif %}</li>
-  </ul>
-  <p><a class="btn" href="/nap">{{ _("Nạp credit") }}</a></p>
+<p class="dev-dan">{{ _("Credit đã tiêu qua API, và ngân sách bạn tự đặt để không tiêu quá tay. Ngân sách quan sát chi tiêu — nó không bao giờ đổi sổ credit.") }}</p>
+
+{# Nam con so trong ba gach dau dong van xuoi -> mot luoi chi so va mot dai
+   han muc. Chung tra loi hai cau hoi khac nhau ('toi con bao nhieu' va
+   'may chu cho toi bao nhieu'), nen chung khong nen nam chung mot khoi. #}
+<div class="chi-so-luoi">
+  <div class="chi-so">
+    <span class="chi-so-nhan">{{ _("Số dư") }}</span>
+    <strong class="chi-so-gt">{{ balance | so }}</strong>
+    <span class="chi-so-phu">credit · <a href="/nap">{{ _("nạp thêm") }}</a></span>
+  </div>
+  {% set vuot = limits.daily_credit_limit and usage_today.net_charged_credit >= limits.daily_credit_limit %}
+  <div class="chi-so{% if vuot %} co-van-de{% endif %}">
+    <span class="chi-so-nhan">{{ _("Dùng hôm nay") }}</span>
+    <strong class="chi-so-gt">{{ usage_today.net_charged_credit | so }}</strong>
+    <span class="chi-so-phu">
+      {%- if limits.daily_credit_limit %}{{ _("trên trần") }} {{ limits.daily_credit_limit | so }}
+        {%- if vuot %} — <strong>{{ _("đã vượt trần") }}</strong>{% endif %}
+      {%- else %}{{ _("chưa đặt trần ngày") }}{% endif %}</span>
+  </div>
+  <div class="chi-so">
+    <span class="chi-so-nhan">{{ _("Đang giữ chỗ") }}</span>
+    <strong class="chi-so-gt">{{ usage_today.held_credit | so }}</strong>
+    <span class="chi-so-phu">{{ _("credit của job chưa quyết toán") }}</span>
+  </div>
 </div>
+
+<dl class="dev-han-muc">
+  <div><dt>{{ _("Request/phút") }}</dt><dd class="tnum">{{ limits.request_rpm }}</dd></div>
+  <div><dt>{{ _("Job/phút") }}</dt><dd class="tnum">{{ limits.create_rpm }}</dd></div>
+  <div><dt>{{ _("Job chạy cùng lúc") }}</dt><dd class="tnum">{{ limits.max_active_jobs }}</dd></div>
+  {% if limits.daily_credit_limit %}
+    <div><dt>{{ _("Trần của máy chủ") }}</dt><dd class="tnum">{{ limits.daily_credit_limit | so }} credit/{{ _("ngày") }}</dd></div>
+  {% endif %}
+</dl>
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Ngân sách của bạn") }}</h2>
   <p class="muted">{{ _("Ngân sách quan sát chi tiêu qua API và không bao giờ đổi sổ credit. Ngân sách mềm chỉ cảnh báo; ngân sách cứng từ chối lời gọi kế tiếp. Nếu máy chủ đã đặt trần thấp hơn thì trần đó vẫn thắng — luôn lấy cái chặt hơn.") }}</p>
 
   {% if budgets %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">{{ _("Phạm vi") }}</th><th scope="col">{{ _("Kỳ") }}</th>
-        <th scope="col">{{ _("Đã dùng") }}</th><th scope="col">{{ _("Ngưỡng cảnh báo") }}</th>
-        <th scope="col">{{ _("Kiểu") }}</th><th scope="col"></th>
-      </tr></thead>
-      <tbody>
-        {% for item in budgets %}
-          <tr>
-            <td>{{ item.scope_label }}</td>
-            <td>{{ item.budget.period }}</td>
-            <td><strong>{{ item.spent }}</strong>/{{ item.amount }}
-                ({{ item.percent }}%)</td>
-            <td>{% for value in item.budget.thresholds %}{{ value }}% {% endfor %}</td>
-            <td>{% if item.budget.hard_cap %}{{ _("cứng — chặn") }}
-                {% else %}{{ _("mềm — chỉ báo") }}{% endif %}</td>
-            <td>
-              <form method="post" action="/developers/budgets/{{ item.budget.id }}/delete"
-                    onsubmit="return confirm('{{ _("Xoá ngân sách này?") }}');">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-ghost">{{ _("Xoá") }}</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">{{ _("Phạm vi") }}</th><th scope="col">{{ _("Kỳ") }}</th>
+          <th scope="col">{{ _("Đã dùng") }}</th><th scope="col">{{ _("Ngưỡng cảnh báo") }}</th>
+          <th scope="col">{{ _("Kiểu") }}</th><th scope="col"></th>
+        </tr></thead>
+        <tbody>
+          {% for item in budgets %}
+            <tr>
+              <td>{{ item.scope_label }}</td>
+              <td>{{ item.budget.period }}</td>
+              <td><strong>{{ item.spent }}</strong>/{{ item.amount }}
+                  ({{ item.percent }}%)</td>
+              <td>{% for value in item.budget.thresholds %}{{ value }}% {% endfor %}</td>
+              <td>{% if item.budget.hard_cap %}{{ _("cứng — chặn") }}
+                  {% else %}{{ _("mềm — chỉ báo") }}{% endif %}</td>
+              <td>
+                <form method="post" action="/developers/budgets/{{ item.budget.id }}/delete"
+                      onsubmit="return confirm('{{ _("Xoá ngân sách này?") }}');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                  <button type="submit" class="btn btn-danger btn-sm">{{ _("Xoá") }}</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% else %}
-    <p class="muted">{{ _("Chưa đặt ngân sách nào.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa đặt ngân sách nào.") }}</strong>
+      <p>{{ _("Không có ngân sách thì chi tiêu chỉ dừng khi hết credit. Đặt một ngân sách mềm để được cảnh báo ở 50%, 80% và 100%.") }}</p>
+    </div>
   {% endif %}
 
   <form method="post" action="/developers/budgets">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <p>
-      <label for="bg-amount">{{ _("Số credit") }}</label>
-      <input id="bg-amount" name="amount" inputmode="numeric" placeholder="500" required>
-      <label for="bg-period">{{ _("Kỳ") }}</label>
-      <select id="bg-period" name="period">
-        <option value="month">{{ _("tháng") }}</option>
-        <option value="day">{{ _("ngày") }}</option>
-      </select>
-      <label for="bg-project">{{ _("Phạm vi") }}</label>
-      <select id="bg-project" name="project_id">
-        <option value="">{{ _("cả tài khoản") }}</option>
-        {% for project in projects %}
-          <option value="{{ project.id }}">{{ project.name }}</option>
-        {% endfor %}
-      </select>
-    </p>
-    <p>
+    <div class="dev-hang">
+      <div class="dev-field">
+        <label for="bg-amount">{{ _("Số credit") }}</label>
+        <input id="bg-amount" type="text" name="amount" inputmode="numeric" placeholder="500" required>
+      </div>
+      <div class="dev-field">
+        <label for="bg-period">{{ _("Kỳ") }}</label>
+        <select id="bg-period" name="period">
+          <option value="month">{{ _("tháng") }}</option>
+          <option value="day">{{ _("ngày") }}</option>
+        </select>
+      </div>
+      <div class="dev-field">
+        <label for="bg-project">{{ _("Phạm vi") }}</label>
+        <select id="bg-project" name="project_id">
+          <option value="">{{ _("cả tài khoản") }}</option>
+          {% for project in projects %}
+            <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="dev-chon" style="margin-bottom:13px;">
       <label>
         <input type="checkbox" name="hard_cap" value="1">
-        {{ _("Chặn lời gọi khi vượt (ngân sách cứng)") }}
+        <span>{{ _("Chặn lời gọi khi vượt (ngân sách cứng)") }}</span>
       </label>
-      <span class="muted">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</span>
-    </p>
-    <button type="submit" class="btn btn-primary">{{ _("Đặt ngân sách") }}</button>
+    </div>
+    <p class="muted" style="margin:0 0 13px;">{{ _("Không chọn = chỉ gửi cảnh báo ở 50%, 80% và 100%.") }}</p>
+    <button type="submit" class="btn">{{ _("Đặt ngân sách") }}</button>
   </form>
   {% if error %}{% endif %}
 </div>
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Chi tiêu theo lời gọi") }}</h2>
-  <form method="get" action="/developers/usage">
-    <label for="us-tool" class="sr-only">{{ _("Công cụ") }}</label>
-    <select id="us-tool" name="tool">
-      <option value="">{{ _("Mọi công cụ") }}</option>
-      {% for name in tools %}
-        <option value="{{ name }}" {% if name == filters.tool %}selected{% endif %}>{{ name }}</option>
-      {% endfor %}
-    </select>
-    <label for="us-key" class="sr-only">{{ _("Khóa") }}</label>
-    <select id="us-key" name="key_id">
-      <option value="">{{ _("Mọi khóa") }}</option>
-      {% for key in keys %}
-        <option value="{{ key.key_id }}" {% if key.key_id == filters.key_id %}selected{% endif %}>
-          {{ key.name or key.key_id[:8] }}</option>
-      {% endfor %}
-    </select>
-    <label for="us-status" class="sr-only">{{ _("Trạng thái") }}</label>
-    <select id="us-status" name="status">
-      <option value="">{{ _("Mọi trạng thái") }}</option>
-      {% for value in statuses %}
-        <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{{ value }}</option>
-      {% endfor %}
-    </select>
-    <button type="submit" class="btn">{{ _("Lọc") }}</button>
+  <form method="get" action="/developers/usage" class="dev-loc">
+    <div class="dev-field">
+      <label for="us-tool">{{ _("Công cụ") }}</label>
+      <select id="us-tool" name="tool">
+        <option value="">{{ _("Mọi công cụ") }}</option>
+        {% for name in tools %}
+          <option value="{{ name }}" {% if name == filters.tool %}selected{% endif %}>{{ name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="dev-field">
+      <label for="us-key">{{ _("Khóa") }}</label>
+      <select id="us-key" name="key_id">
+        <option value="">{{ _("Mọi khóa") }}</option>
+        {% for key in keys %}
+          <option value="{{ key.key_id }}" {% if key.key_id == filters.key_id %}selected{% endif %}>
+            {{ key.name or key.key_id[:8] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="dev-field">
+      <label for="us-status">{{ _("Trạng thái") }}</label>
+      <select id="us-status" name="status">
+        <option value="">{{ _("Mọi trạng thái") }}</option>
+        {% for value in statuses %}
+          <option value="{{ value }}" {% if value == filters.status %}selected{% endif %}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="dev-nut"><button type="submit" class="btn">{{ _("Lọc") }}</button></div>
   </form>
 
   {% if not lines %}
-    <p class="muted">{{ _("Chưa có lời gọi nào khớp.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa có lời gọi nào khớp.") }}</strong>
+      <p>{{ _("Mỗi lời gọi có tính tiền sẽ thành một dòng ở đây, kèm khóa nào gọi và đã tính bao nhiêu.") }}</p>
+    </div>
   {% else %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
-        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Đã tính") }}</th>
-      </tr></thead>
-      <tbody>
-        {% for line in lines %}
-          <tr>
-            <td>{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
-            <td>{{ line.tool or "—" }}</td>
-            <td><code>{{ (line.key_id or "")[:8] }}</code>
-              {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
-            <td>{{ line.status }}</td>
-            <td>{{ line.credit.net_charged }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
+          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Đã tính") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for line in lines %}
+            <tr>
+              <td class="tnum">{{ line.created_at[:16].replace("T", " ") if line.created_at else "" }}</td>
+              <td class="{% if not line.tool %}dev-trong-o{% endif %}">{{ line.tool or "—" }}</td>
+              <td><code class="dev-id">{{ (line.key_id or "")[:12] }}</code>
+                {% if line.mode == 'test' %}<span class="chip v">{{ _("Test") }}</span>{% endif %}</td>
+              <td><span class="dev-tt {{ {'settled':'ok','held':'canh','refunded':'tat'}.get(line.status,'') }}">{{ line.status }}</span></td>
+              <td class="tnum">{{ line.credit.net_charged }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
   <p class="muted">{{ _("Cùng dữ liệu có ở") }} <code>GET /api/v1/usage</code>.</p>
 </div>

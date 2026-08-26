@@ -29,20 +29,22 @@
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Biến môi trường") }}</h2>
-  <table class="table">
-    <thead><tr>
-      <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Ví dụ") }}</th><th scope="col">{{ _("Để làm gì") }}</th>
-    </tr></thead>
-    <tbody>
-      {% for name, sample, purpose in env_vars %}
-        <tr>
-          <td><code>{{ name }}</code></td>
-          <td>{% if sample %}<code>{{ sample }}</code>{% else %}—{% endif %}</td>
-          <td>{{ purpose }}</td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="dev-bang">
+    <table class="table">
+      <thead><tr>
+        <th scope="col">{{ _("Tên") }}</th><th scope="col">{{ _("Ví dụ") }}</th><th scope="col">{{ _("Để làm gì") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for name, sample, purpose in env_vars %}
+          <tr>
+            <td><code>{{ name }}</code></td>
+            <td>{% if sample %}<code>{{ sample }}</code>{% else %}—{% endif %}</td>
+            <td>{{ purpose }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   {% for shell, snippet in shells %}
     <p class="muted" style="margin-bottom:2px;">{{ shell }}</p>
     <pre style="overflow-x:auto;"><code>{{ snippet }}</code></pre>

@@ -1,27 +1,38 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+<p class="dev-dan">{{ _("Mười job gần nhất tạo qua API. Đây là bản tóm để liếc nhanh — danh sách đầy đủ nằm ở %(route)s.")|format(route="GET /api/v1/jobs") }}</p>
+
 <div class="card">
   {% if not recent_jobs %}
-    <p class="muted">{{ _("Chưa có job nào tạo qua API.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa có job nào tạo qua API.") }}</strong>
+      <p>{{ _("Job xuất hiện ở đây sau lời gọi POST /jobs đầu tiên. Lời gọi chỉ đọc (như GET /tools) không tạo job nào — chúng nằm ở mục Nhật ký request.") }}</p>
+      <a class="btn btn-ghost" href="/developers/logs">{{ _("Xem nhật ký request") }}</a>
+    </div>
   {% else %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">Job</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
-        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Lúc") }}</th>
-      </tr></thead>
-      <tbody>
-        {% for job in recent_jobs %}
-          <tr>
-            <td><code>{{ job.id[:8] }}</code></td>
-            <td>{{ job.tool }}</td>
-            <td><code>{{ job.key_id[:8] }}</code></td>
-            <td>{{ job.status }}</td>
-            <td>{{ job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "" }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">Job</th><th scope="col">{{ _("Công cụ") }}</th><th scope="col">{{ _("Khóa") }}</th>
+          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Lúc") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for job in recent_jobs %}
+            <tr>
+              <td><code class="dev-id">{{ job.id[:12] }}</code></td>
+              <td>{{ job.tool }}</td>
+              <td><code class="dev-id">{{ job.key_id[:12] }}</code></td>
+              <td>
+                {# Cung luat voi bang nhat ky: chu van la chu that, mau chi
+                   them vao. `done` va `error` truoc day in giong het nhau. #}
+                <span class="dev-tt {{ {'done':'ok','running':'canh','queued':'canh','error':'loi','cancelled':'tat'}.get(job.status,'') }}">{{ job.status }}</span></td>
+              <td class="tnum">{{ job.created_at.strftime("%Y-%m-%d %H:%M") if job.created_at else "" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
   <p class="muted">{{ _("Danh sách đầy đủ và chi tiết từng job:") }}
      <code>GET /api/v1/jobs</code>.</p>

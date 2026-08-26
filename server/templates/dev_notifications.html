@@ -3,28 +3,33 @@
 
 <div class="card">
   {% if not rows %}
-    <p class="muted">{{ _("Chưa có thông báo nào. Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa có thông báo nào.") }}</strong>
+      <p>{{ _("Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc. Không có gì ở đây là một tin tốt.") }}</p>
+    </div>
   {% else %}
     <form method="post" action="/developers/notifications/read">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button type="submit" class="btn">{{ _("Đánh dấu đã đọc") }}</button>
     </form>
-    <table class="table">
-      <thead><tr>
-        <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Việc") }}</th><th scope="col">{{ _("Chi tiết") }}</th>
-      </tr></thead>
-      <tbody>
-        {% for row in rows %}
-          <tr>
-            <td>{{ row.created_at.strftime("%m-%d %H:%M") }}
-                {% if not row.read_at %}<br><span class="pill">{{ _("mới") }}</span>{% endif %}</td>
-            <td><strong>{{ row.title }}</strong><br>
-                <code>{{ row.kind }}</code></td>
-            <td>{{ row.body }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Việc") }}</th><th scope="col">{{ _("Chi tiết") }}</th>
+        </tr></thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="tnum">{{ row.created_at.strftime("%m-%d %H:%M") }}
+                  {% if not row.read_at %}<br><span class="pill">{{ _("mới") }}</span>{% endif %}</td>
+              <td><strong>{{ row.title }}</strong><br>
+                  <code>{{ row.kind }}</code></td>
+              <td>{{ row.body }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
   <p class="muted">{{ _("Cảnh báo về tiền và về khóa còn được gửi qua email; những cái còn lại chỉ hiện ở đây, để hộp thư của bạn không thành nơi bị bỏ qua.") }}</p>
 </div>

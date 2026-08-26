@@ -32,20 +32,85 @@
     .field label { color:var(--muted); font-size:12px; }
     .field .hint { color:var(--dim); font-size:11px; }
 
-    input[type=text], input[type=password], input[type=number], input[type=email], select, textarea {
+    /* ⚠️ CHON THEO `:not([type])` CHU KHONG CHI LIET KE `type`.
+
+       🔴 Do bang trinh duyet 26/08: mot `<input>` KHONG co thuoc tinh `type`
+          khong khop `input[type=text]` — thuoc tinh phai CO MAT thi bo chon
+          moi khop. Nen `<input name="name">` (dung o dev_keys, dev_projects,
+          dev_usage) va `type=search` (dev_logs, dev_tools) roi thang ra ngoai
+          moi luat cua nen tang, va Chrome ve chung bang mac dinh cua no:
+
+            duoc ve :  bg rgb(27,20,19)  1px solid  radius 6px  padding 9/10px
+            roi ra  :  bg rgb(59,59,59)  2px INSET  radius 0     padding 1/2px
+
+          Hai o do nam canh nhau trong cung mot form, cach nhau 12 pixel. Do
+          chinh la thu bi goi la "giong trang HTML tho".
+
+       ⭐ Danh sach loai TRU ngan hon va dung hon danh sach liet ke: mot loai
+          `type` moi (`date`, `url`, `tel`...) tu dong duoc ve, thay vi lai roi
+          ra am tham cho toi khi co nguoi chup man hinh. */
+    input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]):not([type=submit]):not([type=button]):not([type=image]):not([type=hidden]),
+    select, textarea {
       padding:9px 10px; border-radius:6px; border:1px solid var(--line);
       background:var(--panel2); color:var(--fg); font-size:13px; width:100%;
       font-family:inherit;
     }
+    input::placeholder, textarea::placeholder { color:var(--dim); }
+    input:disabled, select:disabled, textarea:disabled { opacity:.55; cursor:not-allowed; }
+    input[aria-invalid=true], select[aria-invalid=true], textarea[aria-invalid=true] { border-color:var(--err); }
     textarea { min-height:74px; resize:vertical; font-family:Consolas,monospace; font-size:12px; }
+
+    /* Checkbox/radio: chi doi MAU DAU, khong thay the bang phan tu tu ve —
+       giu nguyen ngu nghia va dieu khien ban phim cua native.
+       `accent-color` la mot dong, va no la ly do 5 app truoc day khong can
+       phai co (`.tv-*`, `.th-*`, `.im-*`, `.clip-*`, `.up-*` moi bo tu dung
+       lai mot bo chip rieng — nam lan dung mot thu la mot primitive con
+       thieu, khong phai nam app cau tha). */
+    input[type=checkbox], input[type=radio] {
+      width:16px; height:16px; accent-color:var(--accent); flex:0 0 auto;
+    }
+
+    /* `fieldset` mac dinh cua trinh duyet la `2px groove` mau xam — mot cai
+       khung noi 3D giua mot trang phang toi mau. Ba cai nhu vay tren
+       /developers/keys.
+       ⚠️ Bo vien la AN TOAN chu khong lieu: nam lop app dang co
+       (`.tv-fieldset`, `.th-group`, `.im-group`, `.clip-group`,
+       `.clip-package fieldset`) DA TU dat `border:0` — luat chung nay chi noi
+       ra thu tat ca chung da lam rieng. */
+    fieldset { min-width:0; margin:0 0 14px; padding:0; border:0; }
+    legend { padding:0; color:var(--muted); font-size:12px; }
+    /* ⚠️ `border:1px solid transparent` CHU KHONG PHAI `border:none`.
+
+       🔴 `border:none` dat `border-style:none`, va mot bien the chi doi
+          `border-color` (nhu `.btn.ghost` trong ltt.css) khong the thang lai
+          duoc: khong co STYLE thi khong co vien, du mau la gi. Hau qua do
+          duoc ngay 26/08 tren /developers/keys — **khong mot nut nao tren
+          trang co vien, va moi nut deu do dac**, ke ca nut phu.
+
+       ⭐ Vien trong suot cung giu chieu cao khong doi khi mot bien the them
+          vien vao — khong nut nao nhay 2px so voi nut ben canh.
+
+       ⛔ VA DUNG DOI GI KHAC O DAY. Luat nay cham MOI trang cua nen tang.
+          Ban dau toi da doi `inline-block` -> `inline-flex` + `gap` +
+          `white-space:nowrap` cho dep; do bang trinh duyet cho thay
+          `/autosubvideo` co chin nut mau chu tu ve bang `display:grid` va
+          `nowrap` se an vao chu mau ben trong chung. Khong mot nguyen nhan goc
+          nao doi ba thuoc tinh do — nen chung bi bo. Can nut kieu flex thi dat
+          o lop `.dev-*`, dung ep ca nen tang. */
     button, .btn {
-      padding:9px 14px; border-radius:6px; border:none; background:var(--accent);
-      color:#fff; cursor:pointer; font-size:13px; font-family:inherit;
-      text-decoration:none; display:inline-block;
+      padding:9px 14px; border-radius:6px; border:1px solid transparent;
+      background:var(--accent); color:#fff; cursor:pointer; font-size:13px;
+      font-family:inherit; text-decoration:none; display:inline-block;
     }
     button:hover, .btn:hover { filter:brightness(1.12); }
-    .btn-ghost { background:var(--panel2); border:1px solid var(--line); }
-    .btn-danger { background:#b91c1c; }
+    button:disabled, .btn[disabled], .btn.disabled { opacity:.55; cursor:not-allowed; filter:none; }
+    .btn-ghost { background:var(--panel2); border-color:var(--line2); color:var(--fg); }
+    .btn-ghost:hover { background:var(--panel3); filter:none; }
+    /* Nguy hiem = VIEN, khong phai nen dac. Mot bang co sau hang thi sau nut
+       do dac la sau lan mat nhin thay canh bao — den luc can canh bao that thi
+       no khong con noi len duoc gi. Nen chi to len khi ro chuot. */
+    .btn-danger { background:transparent; border-color:var(--err-line); color:var(--err); }
+    .btn-danger:hover { background:var(--err-bg); filter:none; }
     .btn-sm { padding:5px 10px; font-size:12px; }
 
     .check { display:flex; align-items:center; gap:8px; color:var(--fg); }

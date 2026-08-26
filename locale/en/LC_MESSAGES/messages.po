@@ -10101,6 +10101,18 @@ msgstr "view"
 msgid "lần giao thất bại"
 msgstr "failed deliveries"
 
+msgid "Tình trạng tài khoản API của bạn và bước tiếp theo để gọi được."
+msgstr "Your API account at a glance, and the next step to a working call."
+
+msgid "Request/phút"
+msgstr "Requests/min"
+
+msgid "Job/phút"
+msgstr "Jobs/min"
+
+msgid "Job chạy cùng lúc"
+msgstr "Concurrent jobs"
+
 msgid "Hạn mức:"
 msgstr "Limits:"
 
@@ -10569,3 +10581,470 @@ msgstr "HKCU policy; the app must be fully closed"
 
 msgid "Mỗi gói phát hành đều công bố SHA-256 để bạn đối chiếu trước khi chạy."
 msgstr "Every release publishes its SHA-256 so you can verify it before running."
+
+# --- Dieu khoan LTT VPS: trang con cua /vps (26/08/2026) ---
+# Dich TAY, khong qua `i18n.py trich`: msgmerge doan ban dich bang
+# cach khop gan dung voi msgid vua xoa, va do 26/08 no tu sinh 25 ban
+# dich SAI moi trong mot luot don 9 chuoi chet.
+
+#: apps/vps/dieu_khoan.py
+msgid "Pháp lý"
+msgstr "Legal"
+
+#: apps/vps/dieu_khoan.py
+msgid "Máy chủ ảo Windows · Hiệu lực %(ngay)s"
+msgstr "Windows virtual servers · Effective %(ngay)s"
+
+#: apps/vps/dieu_khoan.py
+msgid "Mục lục"
+msgstr "Contents"
+
+#: apps/vps/dieu_khoan.py
+msgid "← Về trang LTT VPS"
+msgstr "← Back to LTT VPS"
+
+#: apps/vps/dieu_khoan.py
+msgid "Trang này là điều khoản <strong>riêng cho dịch vụ LTT VPS</strong>. Điều khoản dịch vụ chung của LTT Studios vẫn áp dụng; chỗ nào hai bên khác nhau thì trang này thắng, vì nó nói về chính dịch vụ bạn đang dùng."
+msgstr "These terms cover <strong>the LTT VPS service specifically</strong>. The general LTT Studios Terms of Service still apply; where the two differ, this page wins, because it describes the service you are actually using."
+
+#: apps/vps/dieu_khoan.py
+msgid "Mọi con số trong trang này là con số <strong>hệ thống thật sự thi hành</strong>, không phải mục tiêu — chúng được dựng thẳng từ chính hằng số mà phần mềm dùng, nên chúng không thể lệch."
+msgstr "Every number on this page is what the system <strong>actually enforces</strong>, not a target — each one is built straight from the same constant the software uses, so they cannot drift apart."
+
+#: apps/vps/dieu_khoan.py
+msgid "Máy được giao như thế nào"
+msgstr "How the machine is delivered"
+
+#: apps/vps/dieu_khoan.py
+msgid "Giấy phép Windows — đọc kỹ mục này"
+msgstr "Windows licensing — read this section"
+
+#: apps/vps/dieu_khoan.py
+msgid "Thanh toán và chu kỳ"
+msgstr "Billing and cycle"
+
+#: apps/vps/dieu_khoan.py
+msgid "Hết hạn, tạm dừng, và xoá"
+msgstr "Expiry, suspension, and deletion"
+
+#: apps/vps/dieu_khoan.py
+msgid "Tài nguyên và hạn mức"
+msgstr "Resources and limits"
+
+#: apps/vps/dieu_khoan.py
+msgid "Ảnh chụp — không phải bản sao lưu"
+msgstr "Snapshots — not backups"
+
+#: apps/vps/dieu_khoan.py
+msgid "Sử dụng chấp nhận được"
+msgstr "Acceptable use"
+
+#: apps/vps/dieu_khoan.py
+msgid "Mức độ sẵn sàng"
+msgstr "Availability"
+
+#: apps/vps/dieu_khoan.py
+msgid "Hoàn tiền"
+msgstr "Refunds"
+
+#: apps/vps/dieu_khoan.py
+msgid "Thay đổi điều khoản"
+msgstr "Changes to these terms"
+
+#: apps/vps/dieu_khoan.py
+msgid "Luật áp dụng"
+msgstr "Governing law"
+
+#: apps/vps/dieu_khoan.py
+msgid "Máy giao cho bạn là một <strong>máy trống đã gắn sẵn đĩa cài Windows</strong>. Bạn tự chạy trình cài đặt qua console trong trình duyệt và <strong>tự đặt tài khoản và mật khẩu của chính mình</strong>."
+msgstr "You receive a <strong>blank machine with Windows installation media attached</strong>. You run the installer yourself through the browser console and <strong>set your own account and password</strong>."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chúng tôi <strong>không biết mật khẩu của bạn</strong> và <strong>không đặt lại được</strong> nó. Không giữ thì không làm lộ được."
+msgstr "We <strong>do not know your password</strong> and <strong>cannot reset it</strong>. What we never hold, we cannot leak."
+
+#: apps/vps/dieu_khoan.py
+msgid "Mất mật khẩu đồng nghĩa với phải cài lại máy, tức <strong>mất toàn bộ dữ liệu</strong> trên đó."
+msgstr "Losing the password means reinstalling the machine, which means <strong>losing all data on it</strong>."
+
+#: apps/vps/dieu_khoan.py
+msgid "Bạn tự chịu trách nhiệm về mọi thứ chạy bên trong máy: bản vá, tường lửa, phần mềm, và ai được vào."
+msgstr "Everything inside the machine is yours to manage: patches, firewall, software, and who gets in."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>Giá dịch vụ KHÔNG bao gồm giấy phép Windows.</strong> Chúng tôi cung cấp <em>đĩa cài đặt</em>, không cung cấp <em>giấy phép</em>."
+msgstr "<strong>The price does NOT include a Windows licence.</strong> We supply <em>installation media</em>, not a <em>licence</em>."
+
+#: apps/vps/dieu_khoan.py
+msgid "Đĩa cài Windows Server 2016 và Windows Server 2022 là <strong>bản Evaluation của Microsoft</strong> — bản dùng thử, thời hạn 180 ngày."
+msgstr "The Windows Server 2016 and Windows Server 2022 media are Microsoft <strong>Evaluation editions</strong> — 180-day trials."
+
+#: apps/vps/dieu_khoan.py
+msgid "Windows 10 LTSC cần giấy phép khối lượng riêng."
+msgstr "Windows 10 LTSC requires its own volume licence."
+
+#: apps/vps/dieu_khoan.py
+msgid "Khi bạn chạy trình cài đặt, <strong>bạn</strong> là người chấp nhận thoả thuận sử dụng của Microsoft, và <strong>bạn</strong> chịu trách nhiệm về việc sử dụng đúng giấy phép cho mục đích của mình."
+msgstr "When you run the installer, <strong>you</strong> accept Microsoft's licence agreement, and <strong>you</strong> are responsible for licensing your use correctly."
+
+#: apps/vps/dieu_khoan.py
+msgid "Nếu bạn cần Windows có giấy phép cho mục đích thương mại, hãy tự mua giấy phép phù hợp hoặc dùng khoá của chính bạn. Chúng tôi không bán lại giấy phép Microsoft."
+msgstr "If you need licensed Windows for commercial use, obtain your own licence or use your own key. We do not resell Microsoft licences."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chu kỳ là <strong>%(n)s ngày</strong>, <strong>trả trước</strong> bằng credit."
+msgstr "The cycle is <strong>%(n)s days</strong>, <strong>paid in advance</strong> with credit."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>1 credit = %(n)s đồng.</strong>"
+msgstr "<strong>1 credit = %(n)s VND.</strong>"
+
+#: apps/vps/dieu_khoan.py
+msgid "Giá hiện hành mỗi chu kỳ:"
+msgstr "Current price per cycle:"
+
+#: apps/vps/dieu_khoan.py
+msgid "%(ten)s — %(vcpu)s vCPU · %(ram)s GB RAM · %(dia)s GB đĩa · %(bt)s GB băng thông — <strong>%(gia)s</strong> (%(credit)s credit)"
+msgstr "%(ten)s — %(vcpu)s vCPU · %(ram)s GB RAM · %(dia)s GB disk · %(bt)s GB bandwidth — <strong>%(gia)s</strong> (%(credit)s credit)"
+
+#: apps/vps/dieu_khoan.py
+msgid "Đĩa thêm: mỗi <strong>%(lo)s GB</strong> — %(gia)s/chu kỳ"
+msgstr "Extra disk: per <strong>%(lo)s GB</strong> — %(gia)s/cycle"
+
+#: apps/vps/dieu_khoan.py
+msgid "Đến kỳ, hệ thống tự trừ credit cho chu kỳ tiếp theo. Bạn không phải thao tác gì."
+msgstr "At each renewal the system deducts credit automatically. Nothing for you to do."
+
+#: apps/vps/dieu_khoan.py
+msgid "Sao kê từng lần thu nằm trong trang máy của bạn."
+msgstr "A statement of every charge is on your machine's page."
+
+#: apps/vps/dieu_khoan.py
+msgid "Đây là mục quan trọng nhất của trang này. Chúng tôi viết nó thẳng vì hậu quả không hoàn tác được."
+msgstr "This is the most important section here. We state it bluntly because the consequence cannot be undone."
+
+#: apps/vps/dieu_khoan.py
+msgid "Đến kỳ mà số dư credit <strong>không đủ</strong>: máy bị <strong>tạm dừng ngay</strong> — máy tắt, nhưng <strong>dữ liệu còn nguyên</strong>."
+msgstr "At renewal, if your credit balance is <strong>insufficient</strong>: the machine is <strong>suspended immediately</strong> — powered off, but <strong>your data is kept</strong>."
+
+#: apps/vps/dieu_khoan.py
+msgid "Bạn có <strong>%(n)s ngày</strong> kể từ lúc tạm dừng để nạp credit và dùng tiếp."
+msgstr "You have <strong>%(n)s days</strong> from suspension to top up and resume."
+
+#: apps/vps/dieu_khoan.py
+msgid "Quá %(n)s ngày: máy bị <strong>xoá vĩnh viễn</strong> — đĩa và mọi ảnh chụp bị huỷ. <strong>Chúng tôi không khôi phục được</strong>, kể cả khi bạn trả tiền sau đó."
+msgstr "After %(n)s days the machine is <strong>permanently deleted</strong> — disk and all snapshots destroyed. <strong>We cannot restore it</strong>, even if you pay afterwards."
+
+#: apps/vps/dieu_khoan.py
+msgid "Địa chỉ IP riêng được trả lại kho khi máy bị xoá. Máy mới của bạn sẽ nhận một địa chỉ khác."
+msgstr "The dedicated IP address returns to the pool when a machine is deleted. A new machine will get a different address."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>RAM là tài nguyên cấp riêng.</strong> Bạn mua bao nhiêu thì giữ chỗ thật bấy nhiêu."
+msgstr "<strong>RAM is dedicated.</strong> What you buy is reserved for you."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung</strong>, không phải một ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó."
+msgstr "<strong>Disk size is a quota on shared storage</strong>, not a dedicated drive. You occupy what you actually use."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>CPU là tài nguyên chia sẻ.</strong> Máy của bạn có thể chậm hơn khi các máy khác trên cùng máy chủ đang bận."
+msgstr "<strong>CPU is shared.</strong> Your machine can run slower while other machines on the same host are busy."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>Băng thông có hạn mức theo gói.</strong> Vượt hạn mức thì tốc độ bị giảm còn <strong>%(toc)s MB/giây</strong> cho tới hết chu kỳ. Chúng tôi <strong>không tính thêm tiền</strong> và không cắt mạng của bạn."
+msgstr "<strong>Bandwidth is capped per plan.</strong> Past the cap, speed is reduced to <strong>%(toc)s MB/second</strong> for the rest of the cycle. We do <strong>not charge overage</strong> and we do not cut you off."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chúng tôi chụp ảnh máy của bạn <strong>mỗi %(nhip)s ngày</strong> và giữ <strong>%(giu)s bản</strong>. Bạn khôi phục về ảnh chụp gần nhất bằng một nút trong trang máy."
+msgstr "We snapshot your machine <strong>every %(nhip)s days</strong> and keep <strong>%(giu)s</strong>. You can roll back to the latest snapshot from your machine's page."
+
+#: apps/vps/dieu_khoan.py
+msgid "Nhưng hãy hiểu đúng thứ bạn nhận được:"
+msgstr "Understand what that gives you:"
+
+#: apps/vps/dieu_khoan.py
+msgid "Ảnh chụp nằm <strong>trên cùng kho lưu trữ</strong> với máy của bạn. Kho hỏng thì mất cả hai. Nó <strong>không thay thế bản sao lưu của riêng bạn</strong>."
+msgstr "Snapshots live <strong>on the same storage</strong> as your machine. If that storage fails, both are lost. A snapshot <strong>does not replace your own backup</strong>."
+
+#: apps/vps/dieu_khoan.py
+msgid "Ảnh chụp được lấy khi máy đang chạy, giống như rút điện rồi bật lại. Nó giữ những gì <strong>đã ghi xuống đĩa</strong>, không phải mọi thứ tại đúng thời điểm chụp. Dữ liệu vừa ghi trong vài giây trước đó có thể không có trong ảnh."
+msgstr "Snapshots are taken while the machine runs — like pulling the power and booting again. They capture what has <strong>reached the disk</strong>, not everything as of that exact instant. Data written seconds earlier may not be in the snapshot."
+
+#: apps/vps/dieu_khoan.py
+msgid "Khôi phục làm <strong>mất mọi thay đổi</strong> sau thời điểm chụp, và không hoàn tác được."
+msgstr "Rolling back <strong>discards every change</strong> made after the snapshot, and cannot be undone."
+
+#: apps/vps/dieu_khoan.py
+msgid "Dữ liệu quan trọng, bạn nên tự sao lưu ra ngoài."
+msgstr "Keep your own backup of anything that matters."
+
+#: apps/vps/dieu_khoan.py
+msgid "Những việc sau bị cấm, và vi phạm dẫn tới <strong>tạm dừng ngay lập tức không báo trước</strong>:"
+msgstr "The following are prohibited, and a violation leads to <strong>immediate suspension without notice</strong>:"
+
+#: apps/vps/dieu_khoan.py
+msgid "Gửi thư rác, hoặc tiếp tay cho việc gửi thư rác dưới bất kỳ hình thức nào."
+msgstr "Sending spam, or assisting the sending of spam in any form."
+
+#: apps/vps/dieu_khoan.py
+msgid "Quét cổng, dò mật khẩu, tấn công từ chối dịch vụ, hoặc bất kỳ hành vi tấn công nào nhắm vào hệ thống của người khác."
+msgstr "Port scanning, credential stuffing, denial-of-service attacks, or any attack directed at someone else's systems."
+
+#: apps/vps/dieu_khoan.py
+msgid "Lưu trữ hoặc phát tán nội dung vi phạm pháp luật Việt Nam, hoặc vi phạm quyền sở hữu trí tuệ của người khác."
+msgstr "Storing or distributing content that breaks Vietnamese law or infringes someone else's intellectual property."
+
+#: apps/vps/dieu_khoan.py
+msgid "Đào tiền mã hoá. CPU là tài nguyên chia sẻ, và một máy chạy hết công suất liên tục làm chậm máy của mọi khách khác."
+msgstr "Cryptocurrency mining. CPU is shared, and one machine running flat out continuously slows every other customer's machine."
+
+#: apps/vps/dieu_khoan.py
+msgid "Bán lại hoặc chia sẻ lại dịch vụ cho bên thứ ba."
+msgstr "Reselling or resharing the service to third parties."
+
+#: apps/vps/dieu_khoan.py
+msgid "<strong>Các cổng ra %(cong)s bị chặn ở tầng mạng</strong> cho mọi máy. Đây là biện pháp kỹ thuật, không phải chính sách có thể xin miễn: một máy gửi thư rác làm địa chỉ của toàn hệ thống vào danh sách đen, và khi đó mọi khách cùng chịu. Nếu bạn cần gửi thư từ ứng dụng, hãy dùng API của một dịch vụ gửi thư qua HTTPS."
+msgstr "<strong>Outbound ports %(cong)s are blocked at the network layer</strong> for every machine. This is a technical control, not a policy you can request an exception to: one machine sending spam puts the whole system's addresses on blocklists, and then every customer pays for it. If your application needs to send mail, use a mail provider's API over HTTPS."
+
+#: apps/vps/dieu_khoan.py
+msgid " và "
+msgstr " and "
+
+#: apps/vps/dieu_khoan.py
+msgid "Dịch vụ chạy theo chế độ <strong>best effort</strong>. Chúng tôi <strong>không cam kết thời gian hoạt động</strong> và không có SLA."
+msgstr "The service runs on a <strong>best-effort</strong> basis. We make <strong>no uptime commitment</strong> and offer no SLA."
+
+#: apps/vps/dieu_khoan.py
+msgid "Máy chủ có thể khởi động lại để bảo trì hoặc cập nhật."
+msgstr "Hosts may reboot for maintenance or updates."
+
+#: apps/vps/dieu_khoan.py
+msgid "Đường vào Internet đi qua một máy chủ trung gian; máy đó gặp sự cố thì bạn tạm thời không vào được máy của mình, dù máy vẫn chạy."
+msgstr "Internet access reaches your machine through an intermediate server; if that server fails you temporarily cannot reach your machine, even though it is running."
+
+#: apps/vps/dieu_khoan.py
+msgid "Nếu công việc của bạn không chịu được gián đoạn, dịch vụ này chưa phù hợp. Chúng tôi nói trước còn hơn để bạn phát hiện vào lúc không mong muốn."
+msgstr "If your work cannot tolerate interruption, this service is not yet a fit. We would rather say so now than have you find out at a bad moment."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chu kỳ <strong>đã bắt đầu thì không hoàn</strong>: tài nguyên (RAM, đĩa, địa chỉ IP) đã được giữ chỗ thật cho bạn ngay từ đầu chu kỳ, và không dùng lại được cho người khác."
+msgstr "A cycle that has <strong>started is not refundable</strong>: the resources (RAM, disk, IP address) were reserved for you from the start of the cycle and cannot be resold to someone else."
+
+#: apps/vps/dieu_khoan.py
+msgid "Bạn có thể xoá máy bất cứ lúc nào; việc xoá dừng các chu kỳ <em>tiếp theo</em>, không hoàn lại chu kỳ đang dùng."
+msgstr "You may delete a machine at any time; deletion stops <em>future</em> cycles and does not refund the current one."
+
+#: apps/vps/dieu_khoan.py
+msgid "Nếu dịch vụ không sử dụng được vì lỗi từ phía chúng tôi, hãy liên hệ <a href=\"mailto:support@lttstudios.com\">support@lttstudios.com</a>; chúng tôi xem xét từng trường hợp."
+msgstr "If the service is unusable because of a fault on our side, contact <a href=\"mailto:support@lttstudios.com\">support@lttstudios.com</a> and we will look at it case by case."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chúng tôi <strong>không truy cập</strong> vào bên trong máy của bạn. Chúng tôi không có mật khẩu của bạn."
+msgstr "We <strong>do not access</strong> the inside of your machine. We do not have your password."
+
+#: apps/vps/dieu_khoan.py
+msgid "Console trong trình duyệt hiển thị màn hình máy bạn. Nó chỉ mở được từ tài khoản của chính bạn, bằng vé dùng một lần, hết hạn sau %(n)s giây."
+msgstr "The browser console shows your machine's screen. It opens only from your own account, using a single-use ticket that expires after %(n)s seconds."
+
+#: apps/vps/dieu_khoan.py
+msgid "Xoá máy là xoá đĩa và mọi ảnh chụp. Không khôi phục được."
+msgstr "Deleting a machine destroys the disk and every snapshot. It cannot be restored."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chúng tôi giữ nhật ký vòng đời máy (tạo, bật, tắt, tạm dừng, xoá) và bút toán thanh toán, để trả lời được các câu hỏi về vận hành và đối soát."
+msgstr "We retain machine lifecycle logs (created, started, stopped, suspended, deleted) and billing ledger entries, so that operational and accounting questions can be answered."
+
+#: apps/vps/dieu_khoan.py
+msgid "Chúng tôi có thể sửa trang này. Với thay đổi <strong>bất lợi cho bạn</strong> (tăng giá, giảm hạn mức, thêm hạn chế), chúng tôi báo trước <strong>%(n)s ngày</strong> qua email. Bạn không đồng ý thì có quyền xoá máy trước khi thay đổi có hiệu lực."
+msgstr "We may revise this page. For changes that are <strong>adverse to you</strong> (price increases, reduced limits, new restrictions) we give <strong>%(n)s days'</strong> notice by email. If you disagree, you may delete your machine before the change takes effect."
+
+#: apps/vps/dieu_khoan.py
+msgid "Điều khoản này áp dụng pháp luật Việt Nam. Tranh chấp không giải quyết được bằng thương lượng sẽ đưa ra toà án có thẩm quyền tại Việt Nam."
+msgstr "These terms are governed by the law of Vietnam. Disputes that cannot be settled by negotiation go to a competent court in Vietnam."
+
+#: apps/vps/dieu_khoan.py
+msgid "<a href=\"mailto:support@lttstudios.com\">support@lttstudios.com</a>"
+msgstr "<a href=\"mailto:support@lttstudios.com\">support@lttstudios.com</a>"
+
+# --- Chan trang dung chung: da boc `_()` nhung CHUA TUNG vao catalog ---
+# Do la mot lo giua hai banh coc: `check_i18n` chi canh chuoi CHUA boc,
+# `check_dich_thieu` chi canh muc DA vao .po ma rong. Chuoi vua boc vua
+# vang mat khoi catalog thi khong ai thay — no ra tieng Viet tren ban EN.
+
+#: server/templates/_platform_footer.html
+msgid "Giá API"
+msgstr "API pricing"
+
+#: server/templates/_platform_footer.html
+msgid "Hướng dẫn API"
+msgstr "API guide"
+
+# --- Khu VPS: hai chuoi da boc `_()` ma chua tung vao catalog ---
+# Ca hai KHONG co dau tieng Viet, nen phep kiem phu song EN cua khu VPS
+# (`test_304`) khong thay: no chi soi chuoi CO dau. Mot chuoi tieng Viet
+# viet khong dau van la mot chuoi tieng Viet.
+
+#: server/templates/vps_base.html
+msgid "Khu VPS"
+msgstr "VPS area"
+
+#: apps/vps/nav.py
+msgid "Console"
+msgstr "Console"
+
+msgid "Khóa là thứ duy nhất đứng giữa tài khoản của bạn và người khác. Mỗi tích hợp một khóa, và thu hồi được riêng từng cái."
+msgstr "A key is the only thing between your account and everyone else. One key per integration, so you can revoke them one at a time."
+
+msgid "Khóa của bạn"
+msgstr "Your keys"
+
+msgid "Chưa có khóa API nào."
+msgstr "No API keys yet."
+
+msgid "Khóa là thứ xác thực lời gọi tới /api/v1. Tạo một khóa ở khối bên dưới, chép chuỗi bí mật, rồi gọi thử."
+msgstr "A key is what authenticates calls to /api/v1. Create one below, copy the secret, then make a call."
+
+msgid "Tạo khóa đầu tiên"
+msgstr "Create your first key"
+
+msgid "Đổi bí mật của khóa này? Chuỗi cũ ngừng hoạt động ngay lập tức."
+msgstr "Rotate this key's secret? The old string stops working immediately."
+
+msgid "Thu hồi khóa này? Không đảo ngược được — mọi lời gọi dùng nó sẽ hỏng ngay."
+msgstr "Revoke this key? This cannot be undone — every call using it breaks at once."
+
+msgid "Chỉ để bạn nhận ra khóa nào là khóa nào."
+msgstr "Only so you can tell your keys apart."
+
+msgid "Mỗi tích hợp một project thì báo cáo chi tiêu tách được."
+msgstr "One project per integration keeps spend reporting separable."
+
+msgid "Gọi nhà cung cấp thật, trừ credit thật."
+msgstr "Calls the real provider, spends real credit."
+
+msgid "Kết quả mẫu, không gọi nhà cung cấp, không trừ credit."
+msgstr "Sample results, no provider call, no credit spent."
+
+msgid "Thu hẹp thêm (tùy chọn)"
+msgstr "Narrow it further (optional)"
+
+msgid "Tự hết hạn sau (ngày)"
+msgstr "Expire automatically after (days)"
+
+msgid "Để trống = không hết hạn."
+msgstr "Blank = never expires."
+
+msgid "Chỉ cho phép gọi từ IP/CIDR"
+msgstr "Allow calls only from these IPs/CIDRs"
+
+msgid "Để trống = mọi nơi."
+msgstr "Blank = anywhere."
+
+msgid "Chuỗi bí mật sẽ hiện đúng một lần ở màn hình tiếp theo."
+msgstr "The secret is shown exactly once, on the next screen."
+
+msgid "Mọi lời gọi tài khoản này thực hiện, kể cả những lời gọi chưa bao giờ chạy — 401, 403, 429 là thứ không có job nào giải thích hộ."
+msgstr "Every call this account made, including the ones that never ran — no job explains a 401, a 403 or a 429."
+
+msgid "Request (7 ngày)"
+msgstr "Requests (7 days)"
+
+msgid "Không request nào khớp bộ lọc."
+msgstr "No request matches this filter."
+
+msgid "Nhật ký chỉ giữ %(days)s ngày gần nhất — một request cũ hơn thế đã bị dọn."
+msgstr "Logs keep only the last %(days)s days — anything older has been cleared."
+
+msgid "Chưa có lời gọi API nào."
+msgstr "No API calls yet."
+
+msgid "Sau request đầu tiên, mọi lời gọi sẽ hiện ở đây kèm trạng thái, mã lỗi, độ trễ và credit — đủ để tìm ra chuyện gì đã xảy ra."
+msgstr "After your first request, every call appears here with its status, error code, latency and credit — enough to work out what happened."
+
+msgid "Thực hiện request đầu tiên"
+msgstr "Make your first request"
+
+msgid "Một project gom khóa, nhật ký và chi tiêu của một tích hợp lại — để thu hồi và đọc báo cáo được riêng từng cái."
+msgstr "A project groups one integration's keys, logs and spend — so you can revoke and report on each separately."
+
+msgid "Chưa có project nào."
+msgstr "No projects yet."
+
+msgid "Không bắt buộc phải tạo trước: khóa đầu tiên của bạn sẽ tự sinh một project tên “Default”. Tạo project riêng khi bạn có từ hai tích hợp trở lên."
+msgstr "You do not have to create one first: your first key auto-creates a project called “Default”. Create your own once you have two or more integrations."
+
+msgid "Sang tạo khóa"
+msgstr "Go create a key"
+
+msgid "Mười job gần nhất tạo qua API. Đây là bản tóm để liếc nhanh — danh sách đầy đủ nằm ở %(route)s."
+msgstr "The ten most recent jobs created through the API. This is a glance — the full list lives at %(route)s."
+
+msgid "Job xuất hiện ở đây sau lời gọi POST /jobs đầu tiên. Lời gọi chỉ đọc (như GET /tools) không tạo job nào — chúng nằm ở mục Nhật ký request."
+msgstr "Jobs appear here after your first POST /jobs. Read-only calls (like GET /tools) create no job — those live under Request log."
+
+msgid "Xem nhật ký request"
+msgstr "View the request log"
+
+msgid "Chưa có thông báo nào."
+msgstr "No notifications yet."
+
+msgid "Cảnh báo xuất hiện ở đây khi số dư xuống thấp, ngân sách chạm ngưỡng, khóa sắp hết hạn hoặc webhook bỏ cuộc. Không có gì ở đây là một tin tốt."
+msgstr "Alerts show up here when your balance runs low, a budget hits a threshold, a key nears expiry, or a webhook gives up. An empty list is good news."
+
+msgid "Những gì nền tảng đảm bảo về khóa của bạn, và bạn nên làm gì khi một khóa bị lộ."
+msgstr "What the platform guarantees about your keys, and what to do when one leaks."
+
+msgid "Bạn tải được toàn bộ dữ liệu khu API của mình dưới dạng JSON, và xem được từng nơi lưu giữ gì trong bao lâu."
+msgstr "You can download all of your API-area data as JSON, and see what each store keeps and for how long."
+
+msgid "Dữ liệu &amp; lưu trữ"
+msgstr "Data &amp; retention"
+
+msgid "Sự kiện nền tảng đẩy tới máy chủ của bạn khi job xong hoặc hỏng. Mỗi sự kiện được ký và có id riêng — giao trùng là an toàn nếu bên nhận khử trùng theo id đó."
+msgstr "Events the platform pushes to your server when a job finishes or fails. Every event is signed and has its own id — duplicate deliveries are safe if your receiver dedupes on that id."
+
+msgid "Đang chờ giao"
+msgstr "Pending"
+
+msgid "Đã giao"
+msgstr "Delivered"
+
+msgid "Đang thử lại"
+msgstr "Retrying"
+
+msgid "Bỏ cuộc"
+msgstr "Gave up"
+
+msgid "Không có webhook thì bạn phải hỏi lại trạng thái job bằng cách gọi vòng lặp. Đăng ký bằng POST /api/v1/webhooks — secret chỉ hiện một lần trong phản hồi đó."
+msgstr "Without a webhook you have to poll for job status. Register one with POST /api/v1/webhooks — the secret is shown once, in that response."
+
+msgid "Xem tài liệu webhook"
+msgstr "Read the webhook docs"
+
+msgid "Đổi secret? Secret cũ vẫn được ký kèm trong thời gian ân hạn, nên bên nhận không mất sự kiện nào."
+msgstr "Rotate the secret? The old one keeps being signed alongside during the grace window, so your receiver misses nothing."
+
+msgid "Tắt điểm nhận này? Bạn sẽ không nhận sự kiện nào nữa cho tới khi bật lại."
+msgstr "Disable this endpoint? You will receive no events until it is turned back on."
+
+msgid "Lịch sử giao xuất hiện sau job đầu tiên kết thúc, hoặc ngay bây giờ nếu bạn bấm Gửi thử ở khối trên."
+msgstr "Delivery history appears once your first job finishes — or right now, if you press Send test above."
+
+msgid "Credit đã tiêu qua API, và ngân sách bạn tự đặt để không tiêu quá tay. Ngân sách quan sát chi tiêu — nó không bao giờ đổi sổ credit."
+msgstr "Credit spent through the API, and the budgets you set to keep it in check. A budget observes spending — it never changes the credit ledger."
+
+msgid "Đang giữ chỗ"
+msgstr "On hold"
+
+msgid "credit của job chưa quyết toán"
+msgstr "credit for jobs not yet settled"
+
+msgid "Trần của máy chủ"
+msgstr "Server cap"
+
+msgid "Không có ngân sách thì chi tiêu chỉ dừng khi hết credit. Đặt một ngân sách mềm để được cảnh báo ở 50%, 80% và 100%."
+msgstr "Without a budget, spending only stops when credit runs out. Set a soft budget to be warned at 50%, 80% and 100%."
+
+msgid "Mỗi lời gọi có tính tiền sẽ thành một dòng ở đây, kèm khóa nào gọi và đã tính bao nhiêu."
+msgstr "Every billed call becomes a row here, with the key that made it and what it was charged."

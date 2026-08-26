@@ -1,148 +1,215 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+<p class="dev-dan">{{ _("Khóa là thứ duy nhất đứng giữa tài khoản của bạn và người khác. Mỗi tích hợp một khóa, và thu hồi được riêng từng cái.") }}</p>
+
 {% if revealed_secret %}
-  {# Hiện ĐÚNG MỘT LẦN. Máy chủ không lưu chuỗi này và không tái tạo được. #}
-  <div class="card" style="border-color:#B4530A;">
-    <h2 style="margin-top:0;">{{ _("Khóa mới — chỉ hiện một lần") }}</h2>
+  {# ⛔ HIEN DUNG MOT LAN, va do la mot HOP DONG chu khong phai mot lua chon
+     giao dien: may chu chi giu dau van tay mot chieu co pepper cua chuoi nay,
+     nen khong route nao — ke ca route nay, lan sau — tai tao lai duoc no.
+     Xem `docs/developer_portal_mvp_ui/02_BEHAVIOR_AND_SECURITY_CONTRACT.md` §C.
+
+     ⚠️ `<code>` quanh chuoi bi mat la HINH DANG MA TEST DOC:
+        `test_191` tim `<code>(ltt_sk_[^<]+)</code>` de chung minh plaintext
+        chi song o phan hoi nay. Doi the la lam vo bang chung do. #}
+  <div class="dev-mat" role="alert">
+    <h2>{{ _("Khóa mới — chỉ hiện một lần") }}</h2>
     <p>{{ _("Chép và cất ngay bây giờ. Tải lại trang là mất, và không ai lấy lại được (máy chủ chỉ giữ dấu vân tay một chiều của nó).") }}</p>
-    <pre style="user-select:all; overflow-x:auto;"><code>{{ revealed_secret }}</code></pre>
-    <p class="muted">{{ _("Mã khóa công khai:") }} <code>{{ created_key }}</code> —
+    <pre class="chuoi"><code>{{ revealed_secret }}</code></pre>
+    <p class="muted" style="margin:0;">{{ _("Mã khóa công khai:") }}
+       <code class="dev-id">{{ created_key }}</code> —
        {{ _("dùng mã này khi cần hỗ trợ; đừng gửi chuỗi bí mật ở trên cho ai.") }}</p>
   </div>
 {% endif %}
 
 <div class="card">
+  <h2 style="margin-top:0;">{{ _("Khóa của bạn") }}</h2>
   {% if not keys %}
-    <p class="muted">{{ _("Chưa có khóa nào.") }}</p>
+    {# Mot trang thai rong phai tra loi ba cau: la gi, vi sao trong, lam gi
+       tiep. "Chua co khoa nao." mot minh chi tra loi cau thu hai. #}
+    <div class="dev-trong">
+      <strong>{{ _("Chưa có khóa API nào.") }}</strong>
+      <p>{{ _("Khóa là thứ xác thực lời gọi tới /api/v1. Tạo một khóa ở khối bên dưới, chép chuỗi bí mật, rồi gọi thử.") }}</p>
+      <a class="btn" href="#tao-khoa">{{ _("Tạo khóa đầu tiên") }}</a>
+    </div>
   {% else %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">{{ _("Mã khóa") }}</th><th scope="col">{{ _("Tên") }}</th>
-        <th scope="col">{{ _("Project") }}</th><th scope="col">{{ _("Môi trường") }}</th>
-        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Phạm vi") }}</th>
-        <th scope="col">{{ _("Dùng lần cuối") }}</th><th scope="col"></th>
-      </tr></thead>
-      <tbody>
-      {% for key in keys %}
-        <tr>
-          <td><code>{{ key.key_id }}</code></td>
-          <td>{{ key.name }}</td>
-          <td>{{ key.project or '—' }}</td>
-          <td>
-            {% if key.mode == 'test' %}
-              <span class="chip v">{{ _("Test") }}</span>
-            {% else %}
-              {{ _("Live") }}
-            {% endif %}
-          </td>
-          <td>{{ key.status }}</td>
-          <td>
-            {% for scope in key.scopes %}<code>{{ scope }}</code> {% endfor %}
-            {% if key.allowed_tools %}
-              <br><span class="muted">{{ _("công cụ:") }}
-              {% for tool in key.allowed_tools %}<code>{{ tool }}</code> {% endfor %}</span>
-            {% endif %}
-            {% if key.allowed_ips %}
-              <br><span class="muted">{{ _("chỉ từ:") }}
-              {% for cidr in key.allowed_ips %}<code>{{ cidr }}</code> {% endfor %}</span>
-            {% endif %}
-            {% if key.expires_at %}
-              <br><span class="muted">{{ _("hết hạn:") }}
-              {{ key.expires_at.strftime('%Y-%m-%d') }}</span>
-            {% endif %}
-          </td>
-          <td>{{ key.last_used_at.strftime('%Y-%m-%d %H:%M') if key.last_used_at else '—' }}</td>
-          <td>
-            {% if key.status == 'active' %}
-              <form method="post" action="/developers/keys/{{ key.key_id }}/rotate"
-                    style="display:inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn">{{ _("Đổi bí mật") }}</button>
-              </form>
-              <form method="post" action="/developers/keys/{{ key.key_id }}/revoke"
-                    style="display:inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-danger">{{ _("Thu hồi") }}</button>
-              </form>
-            {% endif %}
-          </td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <p class="muted">{{ _("Thu hồi không đảo ngược được. Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.") }}</p>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">{{ _("Mã khóa") }}</th><th scope="col">{{ _("Tên") }}</th>
+          <th scope="col">{{ _("Project") }}</th><th scope="col">{{ _("Môi trường") }}</th>
+          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Giới hạn") }}</th>
+          <th scope="col">{{ _("Dùng lần cuối") }}</th><th scope="col"></th>
+        </tr></thead>
+        <tbody>
+        {% for key in keys %}
+          <tr>
+            <td><code class="dev-id">{{ key.key_id }}</code></td>
+            <td>{{ key.name or '—' }}</td>
+            <td>{{ key.project or '—' }}</td>
+            <td>
+              {% if key.mode == 'test' %}
+                <span class="chip v">{{ _("Test") }}</span>
+              {% else %}
+                {{ _("Live") }}
+              {% endif %}
+            </td>
+            <td>
+              {# ⚠️ CHU van la chu that (`active`, `revoked`) — mau chi them
+                 vao. Truoc day trang in `active` va `revoked` bang cung mot
+                 kieu, nen phai DOC moi phan biet duoc. #}
+              <span class="dev-tt {{ {'active':'ok','expired':'canh','disabled':'tat'}.get(key.status,'loi') }}">{{ key.status }}</span>
+            </td>
+            <td>
+              {# Gop bon rang buoc vao MOT cot "Gioi han": pham vi, cong cu, IP,
+                 han. Truoc day chung tran ra cot "Pham vi" thanh mot buc tuong
+                 `<code>` cao bon dong lam moi hang bang cao gap ba. #}
+              <div class="dev-gioi-han">
+                {% for scope in key.scopes %}<code>{{ scope }}</code>{% endfor %}
+              </div>
+              {% if key.allowed_tools %}
+                <div class="dev-gioi-han"><span class="nhan">{{ _("công cụ:") }}</span>
+                {% for tool in key.allowed_tools %}<code>{{ tool }}</code>{% endfor %}</div>
+              {% endif %}
+              {% if key.allowed_ips %}
+                <div class="dev-gioi-han"><span class="nhan">{{ _("chỉ từ:") }}</span>
+                {% for cidr in key.allowed_ips %}<code>{{ cidr }}</code>{% endfor %}</div>
+              {% endif %}
+              {% if key.expires_at %}
+                <div class="dev-gioi-han"><span class="nhan">{{ _("hết hạn:") }}</span>
+                <code>{{ key.expires_at.strftime('%Y-%m-%d') }}</code></div>
+              {% endif %}
+            </td>
+            <td class="{% if not key.last_used_at %}dev-trong-o{% endif %}">
+              {{ key.last_used_at.strftime('%Y-%m-%d %H:%M') if key.last_used_at else '—' }}</td>
+            <td>
+              {% if key.status == 'active' %}
+                <div class="dev-hanh-dong">
+                  <form method="post" action="/developers/keys/{{ key.key_id }}/rotate"
+                        onsubmit="return confirm('{{ _("Đổi bí mật của khóa này? Chuỗi cũ ngừng hoạt động ngay lập tức.") }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-ghost btn-sm">{{ _("Đổi bí mật") }}</button>
+                  </form>
+                  {# Thu hoi la nut VIEN chu khong phai nen do dac. Mot bang bon
+                     hang thi bon nut do dac la bon lan mat nhin thay canh bao —
+                     den luc can canh bao that thi no khong noi len duoc gi.
+                     Va no khong dao nguoc duoc, nen no phai hoi lai. #}
+                  <form method="post" action="/developers/keys/{{ key.key_id }}/revoke"
+                        onsubmit="return confirm('{{ _("Thu hồi khóa này? Không đảo ngược được — mọi lời gọi dùng nó sẽ hỏng ngay.") }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-danger btn-sm">{{ _("Thu hồi") }}</button>
+                  </form>
+                </div>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin:12px 0 0;">{{ _("Thu hồi không đảo ngược được. Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.") }}</p>
   {% endif %}
 </div>
 
-<div class="card">
+<div class="card" id="tao-khoa">
   <h2 style="margin-top:0;">{{ _("Tạo khóa mới") }}</h2>
   <form method="post" action="/developers/keys">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <p>
-      <label for="key-name">{{ _("Tên gợi nhớ") }}</label><br>
-      <input id="key-name" name="name" maxlength="120"
-             placeholder="{{ _('máy chủ sản xuất') }}">
-    </p>
-    <p>
-      <label for="key-project">{{ _("Thuộc project") }}</label><br>
-      <select id="key-project" name="project_id">
-        {# Chỉ hiện lựa chọn rỗng khi CHƯA có project nào: khi đã có, project
-           mặc định đã nằm trong danh sách, và hai dòng cùng tên "Default" làm
-           người dùng tưởng có hai project. #}
-        {% if not projects %}
-          <option value="">{{ _("Default") }}</option>
-        {% endif %}
-        {% for project in projects %}
-          <option value="{{ project.id }}">{{ project.name }}</option>
-        {% endfor %}
-      </select>
-    </p>
-    <fieldset>
+
+    <div class="dev-hang">
+      <div class="dev-field">
+        <label for="key-name">{{ _("Tên gợi nhớ") }}</label>
+        <input id="key-name" type="text" name="name" maxlength="120"
+               placeholder="{{ _('máy chủ sản xuất') }}">
+        <span class="goi-y">{{ _("Chỉ để bạn nhận ra khóa nào là khóa nào.") }}</span>
+      </div>
+      <div class="dev-field">
+        <label for="key-project">{{ _("Thuộc project") }}</label>
+        <select id="key-project" name="project_id">
+          {# Chỉ hiện lựa chọn rỗng khi CHƯA có project nào: khi đã có, project
+             mặc định đã nằm trong danh sách, và hai dòng cùng tên "Default" làm
+             người dùng tưởng có hai project. #}
+          {% if not projects %}
+            <option value="">{{ _("Default") }}</option>
+          {% endif %}
+          {% for project in projects %}
+            <option value="{{ project.id }}">{{ project.name }}</option>
+          {% endfor %}
+        </select>
+        <span class="goi-y">{{ _("Mỗi tích hợp một project thì báo cáo chi tiêu tách được.") }}</span>
+      </div>
+    </div>
+
+    <fieldset class="dev-nhom">
       <legend>{{ _("Môi trường") }}</legend>
-      <label style="display:inline-block; margin-right:1rem;">
-        <input type="radio" name="mode" value="live" checked>
-        {{ _("Live — gọi nhà cung cấp thật, trừ credit thật") }}
-      </label>
-      <label style="display:inline-block;">
-        <input type="radio" name="mode" value="test">
-        {{ _("Test — kết quả mẫu, không gọi nhà cung cấp, không trừ credit") }}
-      </label>
-      <p class="muted">{{ _("Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, nên lộ ra cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live chỉ nhìn thấy job live.") }}</p>
-    </fieldset>
-    <p>
-      <label for="key-expiry">{{ _("Tự hết hạn sau (ngày, để trống = không hết hạn)") }}</label><br>
-      <input id="key-expiry" name="expires_in_days" inputmode="numeric"
-             placeholder="90">
-    </p>
-    <p>
-      <label for="key-ips">{{ _("Chỉ cho phép gọi từ IP/CIDR (để trống = mọi nơi)") }}</label><br>
-      <input id="key-ips" name="allowed_ips" placeholder="203.0.113.4, 198.51.100.0/24">
-    </p>
-    <fieldset>
-      <legend>{{ _("Phạm vi (scope)") }}</legend>
-      {% for scope in scopes %}
-        <label style="display:inline-block; margin-right:1rem;">
-          <input type="checkbox" name="scopes" value="{{ scope }}"
-                 {% if scope in default_scopes %}checked{% endif %}>
-          <code>{{ scope }}</code>
+      <div class="dev-chon doc">
+        <label>
+          <input type="radio" name="mode" value="live" checked>
+          <span>
+            <strong>{{ _("Live") }}</strong>
+            <small>{{ _("Gọi nhà cung cấp thật, trừ credit thật.") }}</small>
+          </span>
         </label>
-      {% endfor %}
-      <p class="muted">{{ _("Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu credit.")|format(scopes=default_scopes|join(', ')) }}</p>
+        <label>
+          <input type="radio" name="mode" value="test">
+          <span>
+            <strong>{{ _("Test") }}</strong>
+            <small>{{ _("Kết quả mẫu, không gọi nhà cung cấp, không trừ credit.") }}</small>
+          </span>
+        </label>
+      </div>
+      <p class="ghi-chu">{{ _("Khóa test bắt đầu bằng ltt_tk và không bao giờ chạm vào sổ credit, nên lộ ra cũng không mất tiền. Nó chỉ nhìn thấy job test; khóa live chỉ nhìn thấy job live.") }}</p>
     </fieldset>
-    {% if tools %}
-      <fieldset>
-        <legend>{{ _("Giới hạn theo công cụ (tùy chọn)") }}</legend>
-        {% for tool in tools %}
-          <label style="display:inline-block; margin-right:1rem;">
-            <input type="checkbox" name="allowed_tools" value="{{ tool }}">
-            <code>{{ tool }}</code>
+
+    <fieldset class="dev-nhom">
+      <legend>{{ _("Phạm vi (scope)") }}</legend>
+      <div class="dev-chon">
+        {% for scope in scopes %}
+          <label>
+            <input type="checkbox" name="scopes" value="{{ scope }}"
+                   {% if scope in default_scopes %}checked{% endif %}>
+            <code>{{ scope }}</code>
           </label>
         {% endfor %}
-        <p class="muted">{{ _("Không chọn gì = khóa dùng được mọi công cụ đang mở.") }}</p>
+      </div>
+      <p class="ghi-chu">{{ _("Không chọn gì = phạm vi mặc định (%(scopes)s) — đủ để xem, không đủ để tiêu credit.")|format(scopes=default_scopes|join(', ')) }}</p>
+    </fieldset>
+
+    {% if tools %}
+      <fieldset class="dev-nhom">
+        <legend>{{ _("Giới hạn theo công cụ (tùy chọn)") }}</legend>
+        <div class="dev-chon">
+          {% for tool in tools %}
+            <label>
+              <input type="checkbox" name="allowed_tools" value="{{ tool }}">
+              <code>{{ tool }}</code>
+            </label>
+          {% endfor %}
+        </div>
+        <p class="ghi-chu">{{ _("Không chọn gì = khóa dùng được mọi công cụ đang mở.") }}</p>
       </fieldset>
     {% endif %}
-    <button type="submit" class="btn btn-primary">{{ _("Tạo khóa") }}</button>
+
+    <fieldset class="dev-nhom">
+      <legend>{{ _("Thu hẹp thêm (tùy chọn)") }}</legend>
+      <div class="dev-hang">
+        <div class="dev-field">
+          <label for="key-expiry">{{ _("Tự hết hạn sau (ngày)") }}</label>
+          <input id="key-expiry" type="text" name="expires_in_days" inputmode="numeric"
+                 placeholder="90">
+          <span class="goi-y">{{ _("Để trống = không hết hạn.") }}</span>
+        </div>
+        <div class="dev-field">
+          <label for="key-ips">{{ _("Chỉ cho phép gọi từ IP/CIDR") }}</label>
+          <input id="key-ips" type="text" name="allowed_ips"
+                 placeholder="203.0.113.4, 198.51.100.0/24">
+          <span class="goi-y">{{ _("Để trống = mọi nơi.") }}</span>
+        </div>
+      </div>
+    </fieldset>
+
+    <button type="submit" class="btn">{{ _("Tạo khóa") }}</button>
+    <span class="muted" style="margin-left:10px;font-size:12px;">{{ _("Chuỗi bí mật sẽ hiện đúng một lần ở màn hình tiếp theo.") }}</span>
   </form>
 </div>
 

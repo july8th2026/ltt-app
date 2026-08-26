@@ -1,66 +1,74 @@
 {% extends "developers_base.html" %}
 {% block section %}
 
+<p class="dev-dan">{{ _("Sự kiện nền tảng đẩy tới máy chủ của bạn khi job xong hoặc hỏng. Mỗi sự kiện được ký và có id riêng — giao trùng là an toàn nếu bên nhận khử trùng theo id đó.") }}</p>
+
 {% if revealed_secret %}
-  <div class="card" style="border-color:#B4530A;">
-    <h2 style="margin-top:0;">{{ _("Secret mới — chỉ hiện một lần") }}</h2>
-    <pre style="user-select:all; overflow-x:auto;"><code>{{ revealed_secret }}</code></pre>
+  <div class="dev-mat" role="alert">
+    <h2>{{ _("Secret mới — chỉ hiện một lần") }}</h2>
+    <pre class="chuoi"><code>{{ revealed_secret }}</code></pre>
     <p class="muted">{{ _("Secret cũ vẫn được ký kèm trong %(hours)s giờ nữa, nên bạn có thời gian đổi bên nhận mà không mất sự kiện nào.")|format(hours=grace_hours) }}</p>
   </div>
 {% endif %}
 
-<div class="card">
-  <ul>
-    <li>{{ _("Đang chờ giao:") }} <strong>{{ health.pending }}</strong>
-        · {{ _("đã giao:") }} <strong>{{ health.delivered }}</strong>
-        · {{ _("đang thử lại:") }} <strong>{{ health.failed }}</strong>
-        · {{ _("bỏ cuộc:") }} <strong>{{ health.dead }}</strong></li>
-    <li class="muted">{{ _("Mỗi sự kiện có id riêng và được ký; giao trùng là an toàn nếu bên nhận khử trùng theo id đó.") }}</li>
-  </ul>
-</div>
+<dl class="dev-han-muc">
+  <div><dt>{{ _("Đang chờ giao") }}</dt><dd class="tnum">{{ health.pending }}</dd></div>
+  <div><dt>{{ _("Đã giao") }}</dt><dd class="tnum">{{ health.delivered }}</dd></div>
+  <div><dt>{{ _("Đang thử lại") }}</dt><dd class="tnum">{{ health.failed }}</dd></div>
+  <div><dt>{{ _("Bỏ cuộc") }}</dt><dd class="tnum">{{ health.dead }}</dd></div>
+</dl>
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Điểm nhận") }}</h2>
   {% if not subscriptions %}
-    <p class="muted">{{ _("Chưa đăng ký điểm nhận nào.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa đăng ký điểm nhận nào.") }}</strong>
+      <p>{{ _("Không có webhook thì bạn phải hỏi lại trạng thái job bằng cách gọi vòng lặp. Đăng ký bằng POST /api/v1/webhooks — secret chỉ hiện một lần trong phản hồi đó.") }}</p>
+      <a class="btn btn-ghost" href="/developers/docs">{{ _("Xem tài liệu webhook") }}</a>
+    </div>
   {% else %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">URL</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
-        <th scope="col">{{ _("Tạo lúc") }}</th><th scope="col"></th>
-      </tr></thead>
-      <tbody>
-        {% for hook in subscriptions %}
-          <tr>
-            <td><code>{{ hook.url }}</code></td>
-            <td>{% for event in hook.events %}<code>{{ event }}</code> {% endfor %}
-                {% if not hook.events %}<span class="muted">{{ _("tất cả") }}</span>{% endif %}</td>
-            <td>{% if hook.enabled %}{{ _("đang bật") }}{% else %}{{ _("đã tắt") }}{% endif %}</td>
-            <td>{{ hook.created_at.strftime("%Y-%m-%d") if hook.created_at else "" }}</td>
-            <td>
-              {% if hook.enabled %}
-                <form method="post" action="/developers/webhooks/{{ hook.id }}/test"
-                      style="display:inline;">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                  <button type="submit" class="btn">{{ _("Gửi thử") }}</button>
-                </form>
-                <form method="post" action="/developers/webhooks/{{ hook.id }}/rotate"
-                      style="display:inline;">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                  <button type="submit" class="btn">{{ _("Đổi secret") }}</button>
-                </form>
-                <form method="post" action="/developers/webhooks/{{ hook.id }}/disable"
-                      style="display:inline;"
-                      onsubmit="return confirm('{{ _("Tắt điểm nhận này?") }}');">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                  <button type="submit" class="btn btn-danger">{{ _("Tắt") }}</button>
-                </form>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">URL</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
+          <th scope="col">{{ _("Tạo lúc") }}</th><th scope="col"></th>
+        </tr></thead>
+        <tbody>
+          {% for hook in subscriptions %}
+            <tr>
+              <td><code class="dev-id">{{ hook.url }}</code></td>
+              <td>{% for event in hook.events %}<code>{{ event }}</code> {% endfor %}
+                  {% if not hook.events %}<span class="muted">{{ _("tất cả") }}</span>{% endif %}</td>
+              <td><span class="dev-tt {{ 'ok' if hook.enabled else 'tat' }}">{%- if hook.enabled %}{{ _("đang bật") }}{% else %}{{ _("đã tắt") }}{% endif %}</span></td>
+              <td class="tnum">{{ hook.created_at.strftime("%Y-%m-%d") if hook.created_at else "" }}</td>
+              <td>
+                {% if hook.enabled %}
+                <div class="dev-hanh-dong">
+                  <form method="post" action="/developers/webhooks/{{ hook.id }}/test">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm">{{ _("Gửi thử") }}</button>
+                  </form>
+                  {# Doi secret KHONG dut lien lac: secret cu con duoc ky kem
+                     trong thoi gian an han. Noi ra o cho khach bam, vi day la
+                     dieu quyet dinh ho co dam bam hay khong. #}
+                  <form method="post" action="/developers/webhooks/{{ hook.id }}/rotate"
+                        onsubmit="return confirm('{{ _("Đổi secret? Secret cũ vẫn được ký kèm trong thời gian ân hạn, nên bên nhận không mất sự kiện nào.") }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-ghost btn-sm">{{ _("Đổi secret") }}</button>
+                  </form>
+                  <form method="post" action="/developers/webhooks/{{ hook.id }}/disable"
+                        onsubmit="return confirm('{{ _("Tắt điểm nhận này? Bạn sẽ không nhận sự kiện nào nữa cho tới khi bật lại.") }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-danger btn-sm">{{ _("Tắt") }}</button>
+                  </form>
+                </div>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   {% endif %}
   <p class="muted">{{ _("Đăng ký điểm nhận mới bằng POST /api/v1/webhooks — secret chỉ hiện một lần trong phản hồi đó.") }}</p>
 </div>
@@ -68,50 +76,59 @@
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Lần giao gần đây") }}</h2>
   {% if not deliveries %}
-    <p class="muted">{{ _("Chưa có lần giao nào.") }}</p>
+    <div class="dev-trong">
+      <strong>{{ _("Chưa có lần giao nào.") }}</strong>
+      <p>{{ _("Lịch sử giao xuất hiện sau job đầu tiên kết thúc, hoặc ngay bây giờ nếu bạn bấm Gửi thử ở khối trên.") }}</p>
+    </div>
   {% else %}
-    <table class="table">
-      <thead><tr>
-        <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">Job</th>
-        <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Lần thử") }}</th>
-        <th scope="col">HTTP</th><th scope="col"></th>
-      </tr></thead>
-      <tbody>
-        {% for item in deliveries %}
-          <tr>
-            <td>{{ item.created_at.strftime("%m-%d %H:%M:%S") if item.created_at else "" }}</td>
-            <td><code>{{ item.event_type }}</code><br>
-                <span class="muted"><code>{{ item.event_id[:12] }}</code></span></td>
-            <td>{% if item.job_id %}<code>{{ item.job_id[:8] }}</code>{% else %}—{% endif %}</td>
-            <td>{{ item.status }}
-                {% if item.last_error %}<br><span class="muted">{{ item.last_error[:80] }}</span>{% endif %}</td>
-            <td>{{ item.attempts }}</td>
-            <td>{{ item.last_status_code or "—" }}</td>
-            <td>
-              <form method="post" action="/developers/webhooks/deliveries/{{ item.id }}/resend"
-                    style="display:inline;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                <button type="submit" class="btn btn-ghost">{{ _("Gửi lại") }}</button>
-              </form>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">Job</th>
+          <th scope="col">{{ _("Trạng thái") }}</th><th scope="col">{{ _("Lần thử") }}</th>
+          <th scope="col">HTTP</th><th scope="col"></th>
+        </tr></thead>
+        <tbody>
+          {% for item in deliveries %}
+            <tr>
+              <td class="tnum">{{ item.created_at.strftime("%m-%d %H:%M:%S") if item.created_at else "" }}</td>
+              <td><code>{{ item.event_type }}</code><br>
+                  <span class="muted"><code>{{ item.event_id[:12] }}</code></span></td>
+              <td class="{% if not item.job_id %}dev-trong-o{% endif %}">{%- if item.job_id %}<code class="dev-id">{{ item.job_id[:12] }}</code>{% else %}—{% endif %}</td>
+              <td>
+                <span class="dev-tt {{ {'delivered':'ok','pending':'canh','sending':'canh','failed':'canh','dead':'loi'}.get(item.status,'') }}">{{ item.status }}</span>
+                {% if item.last_error %}<span class="dev-ma-loi">{{ item.last_error[:80] }}</span>{% endif %}</td>
+              <td class="tnum">{{ item.attempts }}</td>
+              <td class="tnum {% if not item.last_status_code %}dev-trong-o{% endif %}">{{ item.last_status_code or "—" }}</td>
+              <td>
+                <div class="dev-hanh-dong">
+                  <form method="post" action="/developers/webhooks/deliveries/{{ item.id }}/resend">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-ghost btn-sm">{{ _("Gửi lại") }}</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
     <p class="muted">{{ _("Gửi lại dùng ĐÚNG event id và payload cũ: bên nhận khử trùng theo id nên không xử lý hai lần, và job cùng credit không hề bị chạm.") }}</p>
   {% endif %}
 </div>
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Danh mục sự kiện") }}</h2>
-  <table class="table">
-    <thead><tr><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Khi nào") }}</th></tr></thead>
-    <tbody>
-      {% for name, when in event_catalog %}
-        <tr><td><code>{{ name }}</code></td><td>{{ when }}</td></tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  <div class="dev-bang">
+    <table class="table">
+      <thead><tr><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Khi nào") }}</th></tr></thead>
+      <tbody>
+        {% for name, when in event_catalog %}
+          <tr><td><code>{{ name }}</code></td><td>{{ when }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
   <p class="muted">{{ _("Payload có %(version)s ở trường `type` và một `id` duy nhất cho mỗi sự kiện.")|format(version="`" + payload_version + "`") }}</p>
 </div>
 
@@ -121,7 +138,10 @@
     <code>{{ headers.signature }}</code>,
     <code>{{ headers.timestamp }}</code>,
     <code>{{ headers.event }}</code>.</p>
-  <pre style="overflow-x:auto;"><code>{{ verify_snippet }}</code></pre>
+  <figure class="dev-ma">
+    <figcaption><span>{{ _("Kiểm chữ ký") }}</span><span>Python</span></figcaption>
+    <pre><code>{{ verify_snippet }}</code></pre>
+  </figure>
   <ul>
     <li>{{ _("Từ chối nếu timestamp lệch quá %(seconds)s giây — đó là thứ chặn phát lại.")|format(seconds=tolerance_s) }}</li>
     <li>{{ _("Header chữ ký có thể chứa NHIỀU chữ ký cách nhau bằng dấu phẩy trong lúc đổi secret; chấp nhận nếu KHỚP MỘT trong số đó.") }}</li>

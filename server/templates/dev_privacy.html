@@ -9,7 +9,7 @@
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Lấy dữ liệu của bạn") }}</h2>
   <p>{{ _("Tải về dưới dạng JSON: tài khoản, project, khoá (chỉ nửa công khai), job, bút toán credit, ngân sách, webhook và nhật ký request gần đây.") }}</p>
-  <p><a class="btn btn-primary" href="/developers/privacy/export">{{ _("Tải dữ liệu (JSON)") }}</a></p>
+  <p><a class="btn" href="/developers/privacy/export">{{ _("Tải dữ liệu (JSON)") }}</a></p>
   <p class="muted">{{ _("Chuỗi bí mật của khoá KHÔNG nằm trong file — máy chủ không lưu nó ở đâu cả, nên không có gì để xuất.") }}</p>
 </div>
 
@@ -26,8 +26,8 @@
     {% elif klass == "operational" %}
       <p class="muted">{{ _("Hữu ích khi còn mới, vô nghĩa khi đã cũ. Worker tự dọn theo lịch.") }}</p>
     {% endif %}
-    <div class="tablewrap">
-      <table class="ui-table">
+    <div class="dev-bang">
+      <table class="table">
         <thead><tr>
           <th scope="col">{{ _("Nơi lưu") }}</th><th scope="col">{{ _("Giữ bao lâu") }}</th>
           <th scope="col">{{ _("Ai đọc được") }}</th><th scope="col">{{ _("Vì sao giữ") }}</th>

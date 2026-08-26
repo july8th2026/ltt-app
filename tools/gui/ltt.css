@@ -824,3 +824,293 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 .ltt-file-name{overflow:hidden;color:var(--text-muted);font-size:10px;text-overflow:ellipsis;white-space:nowrap}
 .ltt-file[data-co-tep="1"]{border-style:solid;border-color:var(--brand-primary);background:var(--brand-soft)}
 .ltt-file[data-co-tep="1"] .ltt-file-name{color:var(--text-primary)}
+
+/* Điều khoản LTT VPS — /vps/dieu-khoan.
+   Cột đọc hẹp là cả điểm: `page--wide` (1600px) đúng cho một bảng điều khiển và
+   sai cho văn bản pháp lý — một dòng 1600px bắt mắt quét ngang rồi lạc dòng khi
+   quay lại, và đây là trang duy nhất trong khu mà người ta thật sự ĐỌC. */
+.dk{max-width:72ch;margin:0 auto;font-size:15px;line-height:1.72}
+.dk-dau{margin:0 0 26px}
+.dk-dau h1{margin:6px 0 4px;font-size:28px;letter-spacing:-.4px}
+.dk h2{margin:34px 0 10px;font-size:18.5px;letter-spacing:-.2px;scroll-margin-top:76px}
+.dk p{margin:0 0 12px}
+.dk ul,.dk ol{margin:0 0 14px;padding-left:22px}
+.dk li{margin:0 0 7px}
+.dk strong{font-weight:650}
+.dk-muc-luc{margin:22px 0 30px;padding:14px 18px;border:1px solid var(--line);
+  border-radius:12px;background:var(--panel2,transparent)}
+.dk-muc-luc ol{margin:0;padding-left:20px;columns:2;column-gap:26px}
+.dk-muc-luc li{margin:0 0 5px;font-size:13.5px;break-inside:avoid}
+.dk-ve{margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
+@media(max-width:640px){.dk-muc-luc ol{columns:1}.dk-dau h1{font-size:23px}}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LỚP NGỮ NGHĨA CỦA KHU API (.dev-*) — MVP giao diện 2026-08-26
+   ═══════════════════════════════════════════════════════════════════════════
+
+   🔴 VÌ SAO NÓ LÀ MỘT LỚP RIÊNG, KHÔNG PHẢI PRIMITIVE TOÀN CỤC.
+
+      Sáu nguyên nhân gốc đo được ở
+      `docs/developer_portal_mvp_ui/03_UI_ROOT_CAUSE_AUDIT.md` chia làm hai
+      loại, và chúng phải sửa ở hai chỗ khác nhau:
+
+      ① **Lỗ hổng cấp nền tảng** — ô nhập không có `type`, `type=search`,
+        checkbox/radio, `fieldset`. Bốn thứ này không khớp luật nào trong CẢ
+        nền tảng, và năm app đã tự vá quanh chúng. Đã sửa ở
+        `_kieu_chung.html`, nơi luật nguyên tố sống.
+
+      ② **Cấu trúc riêng của khu API** — dải lọc, vỏ cuộn bảng, trạng thái
+        request, khối bí mật hiện-một-lần. Chỉ khu này có. Chúng ở đây, mang
+        tiền tố `.dev-`, và KHÔNG mang tiền tố `app-` (tiền tố đó dành cho thứ
+        dùng chung với khu VPS — xem chú thích ở `.app-shell`).
+
+   ⚠️ Đừng đưa khối này thành primitive toàn cục "cho gọn". Đổi một luật ở đây
+      là chạm 16 trang; đưa nó lên toàn cục là chạm cả nền tảng để phục vụ một
+      khu. Ranh giới đó là chủ ý.
+
+   ⛔ Và đừng dựng bộ token thứ hai: mọi màu dưới đây là biến của `:root`. */
+
+/* ── Vỏ cuộn cho bảng ─────────────────────────────────────────────────────
+ *
+ * 🔴 SỬA MỘT LỖI ĐO ĐƯỢC, không phải trang trí. `<table class="table">` trần
+ *    làm TÀI LIỆU tràn ngang — 8 trường hợp thật ngày 26/08: `keys` tràn từ
+ *    1024px trở xuống (1087 > 1024), `logs`/`usage`/`webhooks`/`quickstart`
+ *    tràn ở 390px. Cha của bảng khi đó có `overflow-x: visible`.
+ *
+ * ⭐ Cuộn NẰM TRONG vỏ chứ không phải cả trang: người đọc kéo cái bảng, không
+ *    kéo cả tài liệu. Đó là khác biệt giữa "bảng rộng" và "trang hỏng".
+ *
+ * ⛔ Tuyệt đối KHÔNG dùng `body{overflow-x:hidden}` để giấu chuyện này — nó
+ *    không sửa gì, nó chỉ cắt mất phần khách cần đọc. */
+.dev-bang{overflow-x:auto;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-base);
+  overscroll-behavior-inline:contain}
+.dev-bang>table{margin:0;font-size:12.5px}
+/* Mot form ngay sau bang doc thanh 'hang sua duoc cua bang do' neu hai
+   canh dinh nhau. Do o /developers/usage 26/08. */
+.dev-bang+form,.dev-bang+p{margin-top:14px}
+.dev-bang thead th{padding:9px 14px;border-bottom:1px solid var(--border-subtle);
+  background:var(--surface-overlay);color:var(--text-muted);font-size:10px;
+  letter-spacing:.06em;white-space:nowrap}
+.dev-bang tbody td{padding:10px 14px;border-top:1px solid var(--border-subtle);
+  vertical-align:middle}
+.dev-bang tbody tr:hover{background:var(--surface-overlay)}
+/* Cột hành động: dồn phải, các nút nằm trên MỘT hàng. Trước đây hai form
+   `display:inline` xếp chồng làm mỗi hàng cao gấp đôi. */
+/* ⚠️ `nowrap` chu khong phai `wrap`, va do la mot phep DO chu khong phai mot
+   gu: o khung 1920 cot hanh dong duoc chia 128px trong khi hai nut can
+   91+60+6 = 157px, nen chung xep chong va moi hang bang cao gap doi. Voi
+   `nowrap`, be rong toi thieu cua flex container thanh TONG cac nut, va thuat
+   toan bang tu chia du cho cot do. Bang co rong ra thi da co `.dev-bang` cuon. */
+.dev-hanh-dong{display:flex;justify-content:flex-end;gap:6px;flex-wrap:nowrap}
+.dev-hanh-dong form{display:contents}
+/* Ngay gio va con so khong duoc be dong — mot cot 84px se cat
+   "2026-08-26 09:49" thanh hai dong va lam ca hang cao them. */
+.dev-bang .tnum,.dev-bang td>.dev-tt{white-space:nowrap}
+/* Ô không có gì: một dấu gạch mờ đọc nhanh hơn một dấu gạch cùng màu chữ. */
+.dev-trong-o{color:var(--text-muted)}
+/* Chuỗi định danh dài (key_id, request_id) không được kéo giãn cột. */
+.dev-id{font-family:var(--mono);font-size:11.5px;color:var(--text-secondary)}
+
+/* ── Dải lọc ──────────────────────────────────────────────────────────────
+ *
+ * 🔴 `input,select{width:100%}` + một `<form>` không có bố cục = mỗi điều
+ *    khiển giãn hết bề ngang và XẾP CHỒNG DỌC. Đo ở `/developers/logs`: bốn
+ *    ô, mỗi ô 850px, cao tổng cộng ~180px cho một dải lọc.
+ *
+ * ⭐ Ở đây chúng thành một HÀNG, mỗi ô rộng theo nội dung nó chứa. Hẹp thì
+ *    xuống dòng — không cuộn ngang, vì một bộ lọc bị giấu ngoài mép màn hình
+ *    là một bộ lọc không ai dùng. */
+.dev-loc{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;
+  margin:0 0 14px;padding:12px 14px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-base)}
+.dev-loc .dev-field{margin:0;flex:0 1 auto;min-width:150px}
+.dev-loc .dev-field.rong{flex:1 1 260px;min-width:200px}
+.dev-loc .dev-nut{display:flex;gap:8px;margin-left:auto}
+
+/* ── Trường và hàng trường ────────────────────────────────────────────────
+ *
+ * Thay cho `<p><label>…<br><input></p>` — một khuôn không nói được nhãn nào
+ * thuộc ô nào khi hai trường nằm cạnh nhau, và không có chỗ cho dòng gợi ý. */
+.dev-field{display:flex;flex-direction:column;gap:5px;margin-bottom:13px;min-width:0}
+.dev-field>label{color:var(--text-secondary);font-size:12px;font-weight:500}
+.dev-field .goi-y{color:var(--text-muted);font-size:11px}
+.dev-field .goi-y code{font-size:11px}
+.dev-hang{display:grid;gap:12px;margin-bottom:13px;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.dev-hang>.dev-field{margin-bottom:0}
+
+/* ── Nhóm trường ──────────────────────────────────────────────────────────
+ *
+ * Chỗ `fieldset` trần từng vẽ một khung `2px groove` xám nổi 3D giữa trang
+ * phẳng tối màu. Nay là một khối phẳng có tiêu đề dạng nhãn nhỏ.
+ *
+ * ⚠️ `float` trên `legend` là cố ý, không phải thói quen cũ: `legend` không
+ *    nhận `display:block` một cách nhất quán giữa các trình duyệt, và đây là
+ *    cách duy nhất cho nó chiếm trọn một dòng mà vẫn là `legend` thật — tức
+ *    vẫn là tên mà trình đọc màn hình đọc cho cả nhóm. */
+.dev-nhom{margin:0 0 14px;padding:13px 15px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);background:var(--surface-base)}
+.dev-nhom>legend{float:left;width:100%;margin:0 0 9px;
+  color:var(--text-secondary);font-size:10.5px;font-weight:600;
+  letter-spacing:.1em;text-transform:uppercase}
+.dev-nhom>legend+*{clear:both}
+.dev-nhom>p:last-child{margin-bottom:0}
+.dev-nhom .ghi-chu{margin:10px 0 0;color:var(--text-muted);font-size:11.5px}
+
+/* ── Ô chọn dạng chip ─────────────────────────────────────────────────────
+ *
+ * ⚠️ Checkbox/radio native VẪN NẰM TRONG chip và vẫn nhìn thấy được — không
+ *    giấu đi rồi vẽ lại bằng `::before`. Cách đó phá dấu hiệu trạng thái mà
+ *    trình đọc màn hình và chế độ tương phản cao của hệ điều hành dựa vào.
+ *    Chip chỉ là vùng bấm rộng hơn quanh nó.
+ *
+ * ⭐ Đang chọn thì ĐỔI CẢ VIỀN LẪN NỀN, không chỉ màu chữ — cùng luật với
+ *    `.app-side a.active` và `.cam-chon .chon-o.dang-chon`. */
+.dev-chon{display:flex;flex-wrap:wrap;gap:7px}
+.dev-chon>label{display:inline-flex;align-items:center;gap:8px;
+  min-height:34px;padding:5px 11px;border:1px solid var(--border-subtle);
+  border-radius:8px;background:var(--surface-overlay);color:var(--text-secondary);
+  font-size:12px;cursor:pointer}
+.dev-chon>label:hover{border-color:var(--border-strong);color:var(--text-primary)}
+.dev-chon>label:has(input:checked){border-color:var(--brand-primary);
+  background:var(--brand-soft);color:var(--text-primary)}
+.dev-chon>label:has(input:focus-visible){outline:2px solid var(--focus-ring);
+  outline-offset:2px}
+.dev-chon code{color:inherit;font-size:11.5px}
+/* Lựa chọn có mô tả dài (live/test) — xếp dọc, mô tả xuống dòng dưới tên. */
+.dev-chon.doc{flex-direction:column;align-items:stretch}
+.dev-chon.doc>label{align-items:flex-start;gap:10px;padding:10px 12px}
+.dev-chon.doc>label>span{display:flex;flex-direction:column;gap:2px}
+.dev-chon.doc strong{color:var(--text-primary);font-size:12.5px;font-weight:600}
+.dev-chon.doc small{color:var(--text-muted);font-size:11px}
+
+/* ── Trạng thái ───────────────────────────────────────────────────────────
+ *
+ * 🔴 `dev_logs.html` in `<strong>{{ row.status }}</strong>`: trên màn hình
+ *    `200` và `500` là CÙNG hình dạng, CÙNG màu. Đó là Golden Outcome D
+ *    (REQUEST → STATUS → ERROR CODE) hụt ngay ở chữ thứ hai.
+ *
+ * ⚠️ Chữ vẫn là chữ thật (`200`, `revoked`), màu chỉ thêm vào. Không có ô nào
+ *    chỉ mang màu. */
+.dev-tt{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;
+  border:1px solid var(--border-subtle);border-radius:99px;
+  background:var(--surface-overlay);color:var(--text-secondary);
+  font-family:var(--mono);font-size:11.5px;font-weight:600;white-space:nowrap}
+.dev-tt::before{content:"";width:6px;height:6px;border-radius:50%;
+  background:currentColor;flex:0 0 auto}
+.dev-tt.ok{border-color:var(--status-success-border);background:var(--status-success-soft);
+  color:var(--status-success)}
+.dev-tt.canh{border-color:var(--status-warning-border);background:var(--status-warning-soft);
+  color:var(--status-warning)}
+.dev-tt.loi{border-color:var(--status-danger-border);background:var(--status-danger-soft);
+  color:var(--status-danger)}
+.dev-tt.tat{border-color:var(--border-strong);color:var(--text-muted)}
+/* Mã lỗi đi kèm trạng thái: dòng thứ hai, mờ hơn, không tranh chỗ với con số. */
+.dev-ma-loi{display:block;margin-top:3px;color:var(--text-muted);
+  font-family:var(--mono);font-size:10.5px}
+
+/* ── Trạng thái rỗng ──────────────────────────────────────────────────────
+ *
+ * 🔴 "Chưa có lời gọi API nào." một mình không phải trạng thái rỗng, nó là
+ *    một ngõ cụt. Khuôn này bắt trang trả lời đủ ba câu: **cái gì · vì sao ·
+ *    bước tiếp**. Không cần minh hoạ. */
+.dev-trong{display:grid;justify-items:center;gap:8px;padding:34px 22px;
+  border:1px dashed var(--border-strong);border-radius:var(--radius-lg);
+  background:var(--surface-base);text-align:center}
+.dev-trong strong{color:var(--text-primary);font-size:14px}
+.dev-trong p{max-width:52ch;margin:0;color:var(--text-secondary);font-size:12.5px}
+.dev-trong .btn{margin-top:4px}
+
+/* ── Khối bí mật hiện MỘT LẦN ─────────────────────────────────────────────
+ *
+ * ⛔ Đây là chỗ duy nhất trong cả nền tảng mà một chuỗi bí mật đi qua HTML, và
+ *    nó đi qua đúng một lần: máy chủ chỉ giữ băm một chiều, tải lại trang là
+ *    mất vĩnh viễn. Kiểu ở đây phải làm cho việc đó KHÔNG THỂ bị đọc lướt qua.
+ *    Xem `docs/developer_portal_mvp_ui/02_BEHAVIOR_AND_SECURITY_CONTRACT.md` §C. */
+.dev-mat{margin:0 0 16px;padding:15px 17px;border:1px solid var(--status-warning-border);
+  border-left:4px solid var(--status-warning);border-radius:var(--radius-lg);
+  background:var(--status-warning-soft)}
+.dev-mat>h2{margin:0 0 6px;color:var(--status-warning);font-size:14px}
+.dev-mat .chuoi{margin:11px 0 9px;user-select:all;
+  border-color:var(--status-warning-border);color:var(--text-primary);
+  font-size:13px;word-break:break-all;white-space:pre-wrap}
+
+/* ── Khối mã ──────────────────────────────────────────────────────────────
+ *
+ * `pre` đã có kiểu ở `_kieu_chung.html`; ở đây chỉ thêm cái nó thiếu — một
+ * nhãn nói khối này là NGÔN NGỮ gì, vì trang quickstart có 10 khối liền nhau.
+ * Nút chép vẫn do `sao_chep.js` gắn vào `.khoi-ma`, không dựng bản thứ hai. */
+.dev-ma{margin:0 0 13px}
+.dev-ma>figcaption{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:6px 12px;border:1px solid var(--border-subtle);border-bottom:0;
+  border-radius:var(--radius-md) var(--radius-md) 0 0;background:var(--surface-overlay);
+  color:var(--text-muted);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase}
+.dev-ma>figcaption+.khoi-ma pre,.dev-ma>figcaption+pre{border-radius:0 0 var(--radius-md) var(--radius-md)}
+.dev-ma .khoi-ma{margin:0}
+
+/* ── Dải mục trong một trang (trang có nhiều khối) ───────────────────────── */
+.dev-muc{margin:0 0 20px}
+.dev-muc>h2{display:flex;align-items:center;gap:9px;margin:0 0 4px;font-size:15px}
+.dev-muc>.mo-ta{margin:0 0 11px;max-width:78ch;color:var(--text-secondary);font-size:12.5px}
+
+/* Hẹp: dải lọc thành một cột, nút xuống dòng riêng. */
+@media (max-width:700px){
+  .dev-loc{padding:11px}
+  .dev-loc .dev-field,.dev-loc .dev-field.rong{flex:1 1 100%;min-width:0}
+  .dev-loc .dev-nut{margin-left:0;width:100%}
+  .dev-loc .dev-nut .btn{flex:1;justify-content:center}
+  .dev-hanh-dong{justify-content:flex-start}
+}
+
+/* ── Bốn bước tới lượt gọi đầu tiên ───────────────────────────────────────
+ *
+ * 🔴 `dev_overview.html` DÙNG `.dev-buoc` từ 25/08 và lớp đó **chưa bao giờ
+ *    được định nghĩa** — nên danh sách quan trọng nhất của khu (Golden Outcome
+ *    A: từ không có gì tới lượt gọi đầu tiên) vẫn vẽ bằng `<ol>` mặc định của
+ *    trình duyệt: số nhỏ, xám, dính vào lề.
+ *
+ * ⭐ Số bước thành một huy hiệu tròn — nó nói "đây là thứ tự", không phải "đây
+ *    là mấy gạch đầu dòng". Bước ĐÃ XONG đổi cả màu huy hiệu lẫn dấu ✓ trong
+ *    chữ; không bao giờ chỉ đổi màu. */
+.dev-buoc{counter-reset:buoc;margin:0;padding:0;list-style:none}
+.dev-buoc>li{counter-increment:buoc;position:relative;
+  margin:0 0 12px;padding:0 0 0 38px;color:var(--text-secondary);font-size:13px}
+.dev-buoc>li::before{content:counter(buoc);position:absolute;left:0;top:-1px;
+  display:grid;place-items:center;width:25px;height:25px;border-radius:50%;
+  border:1px solid var(--border-strong);background:var(--surface-overlay);
+  color:var(--text-secondary);font-size:11.5px;font-weight:700}
+.dev-buoc>li.xong::before{border-color:var(--status-success-border);
+  background:var(--status-success-soft);color:var(--status-success)}
+.dev-buoc>li:last-child{margin-bottom:0}
+.dev-buoc pre{margin-top:8px}
+
+/* Dải đường tắt: một nút chính, còn lại là nút phụ. Xuống dòng khi hẹp. */
+.dev-tat{display:flex;flex-wrap:wrap;gap:8px;margin:0}
+
+/* Dòng hạn mức: các cặp nhãn–giá trị, không phải một câu văn xuôi.
+   Một câu "120 request/phút · 20 job/phút · tối đa 5 job đang chạy" bắt người
+   ta ĐỌC để lấy ra ba con số; ba cặp thì quét mắt là xong. */
+.dev-han-muc{display:flex;flex-wrap:wrap;gap:6px 22px;margin:0 0 16px;
+  padding:10px 14px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-md);background:var(--surface-base);font-size:12px}
+.dev-han-muc>div{display:flex;align-items:baseline;gap:7px}
+.dev-han-muc dt,.dev-han-muc .nhan{color:var(--text-muted)}
+.dev-han-muc dd,.dev-han-muc .gt{margin:0;color:var(--text-primary);font-weight:600;
+  font-variant-numeric:tabular-nums}
+
+/* ── Ràng buộc của một khóa, trong một ô bảng ─────────────────────────────
+ *
+ * 🔴 Bốn ràng buộc (phạm vi · công cụ · IP · hạn) trước đây tràn ra cột "Phạm
+ *    vi" dưới dạng `<code>` ngăn nhau bằng `<br>` — mỗi hàng bảng cao gấp ba,
+ *    và mắt không tách được "đây là scope" khỏi "đây là IP".
+ *
+ * ⭐ Mỗi dòng một loại, nhãn loại đứng trước, giá trị là chip đơn cách. Đọc
+ *    được cả cột mà không cần mở khóa ra xem. */
+.dev-gioi-han{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px;
+  margin:0 0 4px;line-height:1.7}
+.dev-gioi-han:last-child{margin-bottom:0}
+.dev-gioi-han>.nhan{color:var(--text-muted);font-size:11px}
+.dev-gioi-han code{padding:1px 6px;border:1px solid var(--border-subtle);
+  border-radius:5px;background:var(--surface-overlay);
+  color:var(--text-secondary);font-size:11px;white-space:nowrap}

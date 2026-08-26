@@ -1,18 +1,25 @@
-// Soi khu /developers bang trinh duyet that (chay qua `playwright-cli run-code`).
+// Soi khu /developers bang trinh duyet that.
 //
 // Chup anh + do BA thu ma mot anh chup khong noi duoc: be rong that su duoc
-// dung, loi console, va tran ngang cua tai lieu.
+// dung, o nhap nao dang hien tho, va tran ngang cua tai lieu.
 //
-//   playwright-cli -s=devui open
-//   playwright-cli -s=devui run-code --filename=tools/qa/dev_portal_qa.js
+//   playwright-cli -s=devui open "http://127.0.0.1:8101/?qa=before"
+//   playwright-cli -s=devui --raw run-code --filename=tools/qa/dev_portal_qa.js
 //
-// Doi dich/thu muc bang bien moi truong QA_BASE / QA_OUT.
-const fs = require('node:fs');
-const path = require('node:path');
-
-module.exports = async page => {
-  const BASE = process.env.QA_BASE || 'http://127.0.0.1:8101';
-  const OUT = process.env.QA_OUT || 'docs/developer_portal_mvp_ui/evidence/before';
+// ⚠️ `run-code` nap tep nay nhu MOT BIEU THUC HAM — khong require, khong import,
+//    khong `process`, khong ghi tep (tru `page.screenshot({path})`, Playwright
+//    tu tao thu muc). Ket qua tra ve duoi dang JSON de ben goi ghi ra tep.
+//
+// ⭐ Dich va thu muc ra LAY TU DIA CHI DANG MO — vi do la thu duy nhat ben goi
+//    truyen vao duoc. Goc trang = dich; `?qa=<nhan>` = ten thu muc anh.
+async page => {
+  // Boi tay chu khong `new URL`: boi canh cua `run-code` khong co URL, khong
+  // co process, khong co require. Dung mot bieu thuc, dung mot lan.
+  const mo = page.url();
+  const BASE = (mo.match(/^https?:\/\/[^/?#]+/) || ['http://127.0.0.1:8101'])[0];
+  const nhanRa = ((mo.match(/[?&]qa=([^&#]*)/) || [])[1] || 'before')
+    .replace(/[^a-z0-9_-]/gi, '');
+  const OUT = 'docs/developer_portal_mvp_ui/evidence/' + (nhanRa || 'before');
   const EMAIL = 'dev-ui-qa@example.com', PASS = 'a-good-password-12';
 
   const TRANG = [
@@ -32,12 +39,12 @@ module.exports = async page => {
   const CHINH = new Set(['overview', 'keys', 'logs', 'quickstart', 'tools', 'pricing']);
 
   const loi = [], mang = [], bao = [];
-  page.on('console', m => { if (m.type() === 'error') loi.push(`${page.url()} :: ${m.text()}`); });
-  page.on('pageerror', e => loi.push(`${page.url()} :: PAGEERROR ${e.message}`));
-  page.on('response', r => { if (r.status() >= 400) mang.push(`${r.status()} ${r.url()}`); });
+  page.on('console', m => { if (m.type() === 'error') loi.push(page.url() + ' :: ' + m.text()); });
+  page.on('pageerror', e => loi.push(page.url() + ' :: PAGEERROR ' + e.message));
+  page.on('response', r => { if (r.status() >= 400) mang.push(r.status() + ' ' + r.url()); });
 
   await page.setViewportSize({ width: 1920, height: 1080 });
-  await page.goto(`${BASE}/login`, { waitUntil: 'networkidle' });
+  await page.goto(BASE + '/login', { waitUntil: 'networkidle' });
   await page.fill('input[name=username]', EMAIL);
   await page.fill('input[name=password]', PASS);
   await page.click('button[type=submit]');
@@ -46,7 +53,6 @@ module.exports = async page => {
 
   for (const [nhan, w, h] of KHUNG) {
     await page.setViewportSize({ width: w, height: h });
-    fs.mkdirSync(path.join(OUT, nhan), { recursive: true });
     for (const [ten, duong] of TRANG) {
       if (w !== 1920 && w !== 390 && !CHINH.has(ten)) continue;
       await page.goto(BASE + duong, { waitUntil: 'networkidle' });
@@ -57,7 +63,7 @@ module.exports = async page => {
           for (const el of document.querySelectorAll('body *')) {
             const b = el.getBoundingClientRect();
             if (b.right > window.innerWidth + 1 && b.width > 4)
-              tran.push(`${el.tagName.toLowerCase()}.${String(el.className || '').slice(0, 36)}@${Math.round(b.right)}`);
+              tran.push(el.tagName.toLowerCase() + '.' + String(el.className || '').slice(0, 36) + '@' + Math.round(b.right));
             if (tran.length > 6) break;
           }
         }
@@ -69,43 +75,23 @@ module.exports = async page => {
           noiDungW: r(document.querySelector('.app-main')),
           tranNgang: document.documentElement.scrollWidth > window.innerWidth + 1,
           thuPham: tran,
-          // Bao nhieu o nhap KHONG khop luat CSS nao cua ta -> hien tho.
+          // O nhap KHONG khop luat CSS nao cua ta thi trinh duyet ve no: nen
+          // sang tren mot trang toi. Do bang mau tinh duoc, khong bang mat.
           oTho: [...document.querySelectorAll('.app-main input, .app-main select, .app-main textarea')]
             .filter(el => {
-              const t = (el.getAttribute('type') || '').toLowerCase();
-              if (t === 'hidden') return false;
-              const bg = getComputedStyle(el).backgroundColor;
-              // Nen sang = trinh duyet ve, khong phai ta ve (nen cua ta toi).
-              const m = bg.match(/\d+/g);
+              if ((el.getAttribute('type') || '').toLowerCase() === 'hidden') return false;
+              const m = getComputedStyle(el).backgroundColor.match(/\d+/g);
               return m && (+m[0] + +m[1] + +m[2]) / 3 > 120;
             })
-            .map(el => `${el.tagName.toLowerCase()}[${el.getAttribute('type') || 'no-type'}]#${el.id || '?'}`),
-          soFieldsetTho: [...document.querySelectorAll('.app-main fieldset')]
+            .map(el => el.tagName.toLowerCase() + '[' + (el.getAttribute('type') || 'no-type') + ']#' + (el.id || '?')),
+          fieldsetTho: [...document.querySelectorAll('.app-main fieldset')]
             .filter(el => getComputedStyle(el).borderTopStyle === 'groove').length,
         };
       });
-      bao.push({ khung: nhan, trang: ten, duong, ...d });
-      await page.screenshot({ path: path.join(OUT, nhan, `${ten}.png`), fullPage: true });
+      bao.push(Object.assign({ khung: nhan, trang: ten, duong }, d));
+      await page.screenshot({ path: OUT + '/' + nhan + '/' + ten + '.png', fullPage: true });
     }
   }
-
-  fs.writeFileSync(path.join(OUT, 'do_dac.json'), JSON.stringify(
-    { base: BASE, luc: new Date().toISOString(), do: bao, loiConsole: loi, mangLoi: mang }, null, 2));
-
-  const d1920 = bao.filter(x => x.khung === '1920');
-  const dong = ['== BE RONG @1920 (khung nhin 1920) =='];
-  for (const r of d1920)
-    dong.push(`  ${r.trang.padEnd(14)} main.page=${r.trangW}  .app-main=${r.noiDungW}  tran=${r.tranNgang}`);
-  const tho = d1920.filter(x => x.oTho.length);
-  dong.push('', `== O NHAP HIEN THO (nen sang) ==`);
-  tho.forEach(t => dong.push(`  ${t.trang}: ${t.oTho.join(', ')}`));
-  const fs2 = d1920.filter(x => x.soFieldsetTho);
-  dong.push('', `== FIELDSET VIEN GROOVE MAC DINH ==`);
-  fs2.forEach(t => dong.push(`  ${t.trang}: ${t.soFieldsetTho}`));
-  const tr = bao.filter(x => x.tranNgang);
-  dong.push('', `== TRAN NGANG: ${tr.length} ==`);
-  tr.forEach(t => dong.push(`  ${t.khung}/${t.trang}: ${t.taiLieu}>${t.khungNhin} :: ${t.thuPham.join(' | ')}`));
-  dong.push('', `loi console: ${loi.length}`, ...loi.slice(0, 12).map(l => '  ' + l));
-  dong.push(`phan hoi >=400: ${mang.length}`, ...mang.slice(0, 12).map(l => '  ' + l));
-  return dong.join('\n');
-};
+  return JSON.stringify({ base: BASE, luc: new Date().toISOString(),
+                          do: bao, loiConsole: loi, mangLoi: mang });
+}

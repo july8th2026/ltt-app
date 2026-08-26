@@ -1,4 +1,4 @@
-# Sáu cái bẫy trong chính cổng chất lượng
+# Mười lăm cái bẫy trong chính cổng chất lượng
 
 **2026-08-25.** Không phải bẫy trong sản phẩm — bẫy trong **thứ dùng để chứng
 minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
@@ -7,7 +7,7 @@ minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
 > Nó **không đo thứ nó có vẻ đang đo**, nên nó không cảnh gì cả.
 > Và nó báo **PASS**, nên cái PASS đó đọc y hệt một cái PASS thật.
 
-Sáu cái này lộ ra trong một ngày, vì trong ngày đó có **hai phiên làm việc song
+Sáu cái đầu lộ ra trong một ngày, vì trong ngày đó có **hai phiên làm việc song
 song trên cùng một cây nguồn** — điều kiện làm mọi giả định "chỉ có một người"
 gãy cùng lúc.
 
@@ -143,26 +143,123 @@ khi xuất hiện một chỗ **mới** chưa có trong mốc.
 
 ---
 
-## Cái gì canh cái gì, sau ngày 25/08
+## Bẫy 7 — `__pycache__` mồ côi làm sống lại một app đã xoá
 
-| Bước gate | Chặn | Mốc |
-|---|---|---|
-| `trung so test` | thêm số tệp test bị trùng | `check_so_test.moc` (tập hợp) |
-| `bo qua im lang` | thêm chỗ bỏ qua không khai báo | `check_bo_qua.moc` (12) |
-| `chuoi chua dich` | thêm chuỗi chưa bọc `_()` | `check_i18n` |
-| `dich thieu ban EN` | thêm `msgstr` rỗng / `fuzzy` | `check_dich_thieu.moc` (279) |
+*Tìm ra bởi phiên xoá app socialbot, 26/08.*
 
-Cả bốn chạy **cả ở `--quick`** — chúng chỉ đọc tệp, tốn dưới 5 giây. Ba lỗi thật
-lọt lên tàu ngày 25/08 đều lọt vì phép kiểm **có** mà chỉ sống trong `pytest`,
-thứ `--quick` bỏ qua.
+Sau một lượt `git stash` / `stash pop`, Python kịp import và ghi lại
+`apps/socialbot/__pycache__/`. Tệp `.py` đã đi, `.pyc` ở lại — và gate báo:
 
-Bằng chứng rằng cả bốn **chặn thật**, không chỉ tồn tại:
-`tests/test_306_banh_coc_bo_qua_va_dich.py` (10 phép kiểm, gồm ca hoán đổi của
-bẫy 1) và hai phép kiểm mới trong `tests/test_145_gate_covers_everything.py`.
+```
+[ERROR] socialbot: thieu manifest.py
+```
+
+cho một thư mục **rỗng**. Quét cả kho thì có **hai** `__pycache__` mồ côi
+(`core/`, `scripts/`).
+
+Cùng hình dạng với sáu cái trên: phép kiểm chạy đúng, nói về một thứ **không còn
+tồn tại**, và câu báo lỗi chỉ sai hướng hoàn toàn — nó mời người ta đi tìm một
+`manifest.py` cho một app đã chết.
 
 ---
 
-## Bẫy 7 — Một phép kiểm bảo mật đỏ **vì lý do khác** vẫn là một phép kiểm bảo mật không chạy
+## Bẫy 8 — câu báo lỗi nêu đích danh một nghi phạm vô tội
+
+`tools/build_release.py` băm **toàn bộ** cây nguồn frontend để biết bundle còn
+mới không — kể cả thư mục `tests/`. Nên đổi một con số `timeout` trong một tệp
+test làm gói phát hành bị đánh dấu stale, **dù JS xuất ra giống hệt từng byte**.
+
+Phép kiểm không sai; nó chọn phía an toàn. Vấn đề nằm ở câu nó nói:
+
+```
+frontend/agent-canvas bundle is stale or built with the wrong Node
+```
+
+Node vẫn đúng `24.17.0`, và bản Node là một **hằng số trong test**. Câu báo lỗi
+nêu tên một nghi phạm không thể sai, nên người đọc đi kiểm Node trước.
+
+⭐ **Một câu báo lỗi nêu sai tên còn tốn thời gian hơn một câu báo lỗi mơ hồ.**
+Cách sửa rẻ nhất là tách nó làm hai vế: *"nguồn đã đổi"* ≠ *"Node sai bản"*.
+
+⚠️ Và `test_44` `SystemExit` ở bundle đầu tiên, nên nó chỉ báo **một** trong ba
+bundle hỏng. Sửa xong cái đầu thì nó báo cái thứ hai.
+
+---
+
+## Bẫy 9 — chuỗi đã bọc `_()` mà **không có trong catalog**
+
+Một chuỗi phải qua **ba** cửa mới tới được mắt người đọc bản tiếng Anh:
+
+| # | Cửa | Ai canh |
+|---|---|---|
+| 1 | được bọc `_()` | `check_i18n.py` |
+| 2 | **có mặt trong `.po`** | *(không ai — cho tới 26/08)* |
+| 3 | `msgstr` không rỗng | `check_dich_thieu.py` |
+
+Cửa thứ hai đã lọt thật. Hai chuỗi ở chân trang dùng chung — `Giá API` và
+`Hướng dẫn API` — ra **tiếng Việt trên mọi trang của bản EN**. Chúng bọc `_()`
+từ lâu nên `check_i18n` báo đẹp; chúng **không có một dòng nào** trong `.po` nên
+phép đếm mục rỗng cũng không thấy. Chúng chỉ hỏng ở chỗ không ai nhìn.
+
+Nguyên nhân: **`.po` trôi lại phía sau mã nguồn**. Ai đó thêm một chuỗi đã bọc
+`_()` và không chạy `i18n.py trich` — và không trách được họ, vì `trich` có giá
+riêng của nó (xem dưới). Đo lúc thêm phép kiểm: **67 chuỗi** đang ở trạng thái đó.
+
+**Đã sửa.** `check_dich_thieu.py` nay trích msgid từ mã nguồn **trong bộ nhớ**
+(không ghi gì) và báo loại `VANG` cho chuỗi vắng khỏi catalog.
+
+### 🔴 Và đây là lý do không dọn bằng cách trích lại
+
+Một phiên khác thử `i18n.py trich` để dọn chuỗi của app vừa xoá:
+
+```
+muc      2.353 -> 2.344   (chỉ bớt 9)
+fuzzy       76 ->   101   (+25)
+```
+
+`msgmerge` **đoán** bản dịch cho msgid mới bằng cách khớp gần đúng với msgid vừa
+biến mất — nên nó tự sinh **25 bản dịch sai mới** (`Ngân sách của bạn` →
+`Your scripts`). Dọn ít hơn phần nó làm hỏng.
+
+⭐ **Luật: hạ mốc dịch bằng cách DỊCH, không bao giờ bằng cách TRÍCH LẠI.**
+
+### Một cửa thoát, và nó bị chặn hai phía
+
+Thêm một **loại** kiểm tra mới vào bánh cóc thì lượt chạy đầu luôn thấy "hàng
+chục mục mới" — chúng không mới, chúng vừa được nhìn thấy lần đầu. `--accept` từ
+chối (đúng), nên có `--khoi-tao-loai VANG`. Nó **chỉ** nhận mục của đúng loại
+được gọi tên; mọi loại khác vẫn phải sạch trước. Một cửa thoát không giới hạn sẽ
+thành cách người ta làm im lặng mọi thứ khác.
+
+---
+
+## Bẫy 10 — một lượt test bị giết để lại rác trong tệp đã commit
+
+`tests/test_209_versioning_status.py` **sửa** `docs/PUBLIC_API/CONTRACT_BASELINE.json`
+rồi khôi phục trong `finally`. Chạy một mình thì sạch — đã đo: 32 passed, tệp
+không bẩn.
+
+Nhưng cái `finally` chỉ chạy khi tiến trình **sống tới đó**. Giết một lượt gate
+giữa chừng (hoặc để hai lượt test chồng lên nhau, khi lượt này đọc `saved` trong
+lúc lượt kia đang sửa) thì con ma ở lại trong tệp:
+
+```
+[BREAKING] header: X-Ghost removed clients read it
+```
+
+Và từ đó **mọi** phép kiểm tương thích đều đỏ, vì cái chúng so với đã hỏng. Đã
+gặp hai lần trong một giờ, mỗi lần một con ma khác (`X-Ghost`, `ghost_field`).
+
+Chữa: `git checkout -- docs/PUBLIC_API/CONTRACT_BASELINE.json`, **trước** khi
+chẩn đoán bất cứ thứ gì khác.
+
+⭐ Bài học chung: một test sửa tệp đã commit chỉ an toàn khi nó **luôn** tới được
+phần dọn dẹp — và trên một kho có nhiều phiên làm việc song song, điều đó không
+được bảo đảm.
+
+---
+
+## Bẫy 11 — Một phép kiểm bảo mật đỏ **vì lý do khác** vẫn là một phép kiểm bảo mật không chạy
 
 `tools/build_release.py` có đường chặn: phát hiện bí mật trong gói phát hành thì
 `SystemExit`. Phép kiểm canh nó là
@@ -191,7 +288,7 @@ chạy lại.)*
 
 ---
 
-## Bẫy 8 — Con số PASS nói về một tập hợp khác với tập hợp bạn tưởng
+## Bẫy 12 — Con số PASS nói về một tập hợp khác với tập hợp bạn tưởng
 
 `tools/check_bien_dich.py` báo **"2.101 tệp .py đã kiểm | hỏng: 0"**. Nghe như
 toàn bộ kho đã biên dịch được.
@@ -214,7 +311,7 @@ thấy yên tâm.
 
 ---
 
-## Bẫy 9 — Cái chuông đã đúc mà chưa ai treo
+## Bẫy 13 — Cái chuông đã đúc mà chưa ai treo
 
 Bốn ca trong một đợt audit, cùng một hình dạng:
 
@@ -242,7 +339,7 @@ nhất một người gọi ngoài `tests/`.
 
 ---
 
-## Bẫy 10 — Công cụ chạy đúng khi bạn gọi tay, vỡ khi có thứ khác hứng đầu ra
+## Bẫy 14 — Công cụ chạy đúng khi bạn gọi tay, vỡ khi có thứ khác hứng đầu ra
 
 Ngày 26/08, `gate.py` đỏ ở bước `bo test (song song)` sau **0,1 giây** — tức
 **trước khi** bộ test kịp chạy lấy một phép kiểm nào:
@@ -276,3 +373,96 @@ kiểm đọc mã và từ chối ký tự ngoài ASCII trong dòng `print` củ
 
 ⇒ **Luật rút ra:** công cụ trong `tools/` phải được thử **dưới đúng cách gate gọi
 nó** (đầu ra bị hứng), không chỉ dưới cách bạn gọi nó.
+
+---
+
+## Bẫy 15 — Cái chuông của Bẫy 5 kêu ở **mọi** lượt gate đầy đủ
+
+Bẫy 5 đã được sửa đúng: gate lấy dấu vân tay cây nguồn ở hai đầu và nói ra khi
+lệch. Nhưng ngày 26/08, **bốn lượt gate đầy đủ liên tiếp** đều in dòng đó — kể
+cả lượt chạy khi không phiên nào khác còn sống.
+
+Nguyên nhân không phải phiên song song. Nó là **chính bộ test**:
+
+| | |
+|---|---|
+| `_dau_van_tay_cay()` băm `đường dẫn : kích thước : **mtime**` | `tools/gate.py:265` |
+| ba tệp trong `TEP_NOI_TIEP` **ghi đè tệp thật rồi khôi phục trong `finally`** | `tools/test_nhanh.py:71` |
+| `test_306` ghi đè `locale/en/LC_MESSAGES/messages.po` và `tools/check_dich_thieu.moc` | đúng như thiết kế — nó kiểm chính bánh cóc dịch |
+
+Khôi phục **nội dung** không khôi phục **mtime**. Nên dấu vân tay cuối luôn khác
+dấu vân tay đầu, và cảnh báo nổ ở mọi lượt.
+
+⛔ **Vì sao nó tệ hơn là không có cảnh báo nào.** Một cảnh báo kêu mọi lần là một
+cảnh báo không ai đọc. Đến lượt gate mà cây **thật sự** bị một phiên khác đổi
+giữa chừng — đúng tình huống Bẫy 5 sinh ra để bắt — dòng chữ đó trông y hệt bốn
+lần trước, và nó bị lướt qua.
+
+⭐ **Đo được ngày 26/08.** Ba tệp bị ghi trong lượt gate, giờ theo mtime:
+
+```
+21:40:23  server/templates/vps_dieu_khoan.html
+21:40:25  locale/en/LC_MESSAGES/messages.po
+21:40:25  tools/check_dich_thieu.moc
+```
+
+Và `git diff` chứng minh **nội dung không hề bị hỏng**: `.po` có 479 dòng thêm,
+**0 dòng xoá**, không con ma nào, vẫn LF. Tệp được khôi phục đúng. Chỉ mtime là
+không.
+
+⚠️ Đây cũng là lý do `--quick` **không** in dòng đó: nó bỏ `pytest` đầy đủ, nên
+bỏ luôn pha nối tiếp — tức bỏ luôn ba tệp ghi vào cây. Hai lệnh cho hai câu trả
+lời khác nhau về cùng một câu hỏi, và câu trả lời yên tĩnh hơn lại là câu của
+lệnh kiểm **ít hơn**. Ghép với Bẫy 2 thì thành một cặp khó chịu.
+
+**Chưa sửa.** Hai đường, và cả hai đều là một dòng:
+
+1. **Loại trừ `TEP_NOI_TIEP` + hai tệp mốc khỏi dấu vân tay.** Đơn giản nhất,
+   nhưng làm mù đúng ba tệp mà một phiên khác dễ đụng vào nhất.
+2. **Băm nội dung thay vì mtime cho riêng bảy thư mục đó.** Chú thích trong
+   `_dau_van_tay_cay` nói không băm nội dung vì "tốn thêm hàng chục giây" — đúng
+   với cả cây, nhưng ta chỉ cần băm lại **những tệp có mtime đổi**, và ngày
+   thường đó là ba tệp.
+
+⇒ **Cho tới khi sửa: đừng đọc dòng đó như tín hiệu.** Muốn biết cây có thật sự
+đổi không thì đo trực tiếp:
+
+```bash
+python -c "
+import pathlib,time,datetime
+nguong=time.time()-60*10
+for d in ('apps','platform_core','server','tools','tests','alembic','locale'):
+    g=pathlib.Path(d)
+    if not g.exists(): continue
+    for f in g.rglob('*'):
+        if f.is_file() and '__pycache__' not in f.parts and f.stat().st_mtime>=nguong:
+            print(datetime.datetime.fromtimestamp(f.stat().st_mtime).strftime('%H:%M:%S'), f)"
+```
+
+Ba tệp quen mặt ⇒ là bộ test. Có tệp lạ ⇒ mới là Bẫy 5 thật.
+
+---
+
+## Cái gì canh cái gì, sau ngày 25/08
+
+| Bước gate | Chặn | Mốc |
+|---|---|---|
+| `trung so test` | thêm số tệp test bị trùng | `check_so_test.moc` (tập hợp) |
+| `bo qua im lang` | thêm chỗ bỏ qua không khai báo | `check_bo_qua.moc` (12) |
+| `chuoi chua dich` | thêm chuỗi chưa bọc `_()` | `check_i18n` |
+| `dich thieu ban EN` | thêm `msgstr` rỗng / `fuzzy` / **vắng khỏi catalog** | `check_dich_thieu.moc` (344) |
+
+Cả bốn chạy **cả ở `--quick`** — chúng chỉ đọc tệp, tốn dưới 5 giây. Ba lỗi thật
+lọt lên tàu ngày 25/08 đều lọt vì phép kiểm **có** mà chỉ sống trong `pytest`,
+thứ `--quick` bỏ qua.
+
+Bằng chứng rằng cả bốn **chặn thật**, không chỉ tồn tại:
+`tests/test_306_banh_coc_bo_qua_va_dich.py` (13 phép kiểm — gồm ca hoán đổi của
+bẫy 1, lớp `VANG` của bẫy 9, và ca cửa-thoát-nuốt-loại-khác) cùng hai phép kiểm
+mới trong `tests/test_145_gate_covers_everything.py`.
+
+⚠️ Bẫy 7, 8 và 10 **chưa có bánh cóc**. Chúng được ghi ở đây vì cả ba đều là
+loại chỉ nhận ra khi đã biết trước — và cái giá của việc không biết là một vòng
+chẩn đoán đi sai hướng ngay từ câu đầu tiên.
+
+---

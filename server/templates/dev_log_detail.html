@@ -34,18 +34,20 @@
     </ul>
 
     {% if timeline.events %}
-      <table class="table">
-        <thead><tr><th scope="col">#</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Thông báo") }}</th></tr></thead>
-        <tbody>
-          {% for event in timeline.events %}
-            <tr>
-              <td>{{ event.sequence }}</td>
-              <td><code>{{ event.event_code }}</code></td>
-              <td>{{ event.public_message }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="dev-bang">
+        <table class="table">
+          <thead><tr><th scope="col">#</th><th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Thông báo") }}</th></tr></thead>
+          <tbody>
+            {% for event in timeline.events %}
+              <tr>
+                <td>{{ event.sequence }}</td>
+                <td><code>{{ event.event_code }}</code></td>
+                <td>{{ event.public_message }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="muted">{{ _("Job này chưa ghi sự kiện nào cho khách.") }}</p>
     {% endif %}
@@ -54,18 +56,20 @@
   <div class="card">
     <h2 style="margin-top:0;">Credit</h2>
     {% if timeline.credit %}
-      <table class="table">
-        <thead><tr><th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Thay đổi") }}</th></tr></thead>
-        <tbody>
-          {% for entry in timeline.credit %}
-            <tr>
-              <td>{{ entry.created_at.strftime("%H:%M:%S") if entry.created_at else "" }}</td>
-              <td><code>{{ entry.kind }}</code></td>
-              <td>{{ entry.delta }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="dev-bang">
+        <table class="table">
+          <thead><tr><th scope="col">{{ _("Lúc") }}</th><th scope="col">{{ _("Loại") }}</th><th scope="col">{{ _("Thay đổi") }}</th></tr></thead>
+          <tbody>
+            {% for entry in timeline.credit %}
+              <tr>
+                <td>{{ entry.created_at.strftime("%H:%M:%S") if entry.created_at else "" }}</td>
+                <td><code>{{ entry.kind }}</code></td>
+                <td>{{ entry.delta }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
       <p class="muted">{{ _("Giữ chỗ rồi quyết toán đúng một lần. Job hỏng hoặc bị hủy thì hoàn đủ.") }}</p>
     {% else %}
       <p class="muted">{{ _("Lời gọi này không động tới credit.") }}</p>
@@ -87,22 +91,24 @@
   {% if timeline.webhooks %}
     <div class="card">
       <h2 style="margin-top:0;">Webhook</h2>
-      <table class="table">
-        <thead><tr>
-          <th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
-          <th scope="col">{{ _("Lần thử") }}</th><th scope="col">HTTP</th>
-        </tr></thead>
-        <tbody>
-          {% for delivery in timeline.webhooks %}
-            <tr>
-              <td><code>{{ delivery.event_type }}</code></td>
-              <td>{{ delivery.status }}</td>
-              <td>{{ delivery.attempts }}</td>
-              <td>{{ delivery.last_status_code or "—" }}</td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      <div class="dev-bang">
+        <table class="table">
+          <thead><tr>
+            <th scope="col">{{ _("Sự kiện") }}</th><th scope="col">{{ _("Trạng thái") }}</th>
+            <th scope="col">{{ _("Lần thử") }}</th><th scope="col">HTTP</th>
+          </tr></thead>
+          <tbody>
+            {% for delivery in timeline.webhooks %}
+              <tr>
+                <td><code>{{ delivery.event_type }}</code></td>
+                <td>{{ delivery.status }}</td>
+                <td>{{ delivery.attempts }}</td>
+                <td>{{ delivery.last_status_code or "—" }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
   {% endif %}
 {% else %}

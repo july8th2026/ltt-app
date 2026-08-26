@@ -14,6 +14,19 @@
       truoc trong `ltt.css` rang cong lap trinh vien se dung lai, kem dung ly
       do nay. Khong dung ban thu hai. #}
 {% extends "base.html" %}
+
+{# ⛔ DONG NAY LA MOT SUA LOI, KHONG PHAI MOT SO THICH.
+
+   Khong khai `page_mode` thi `base.html` dung mac dinh `standard`, tuc
+   `.page{max-width:1180px}` (ltt.css). Tru 210px thanh ben + 24px khe, noi
+   dung that con **898px** — do bang trinh duyet 26/08 tren CA 16 TRANG, o
+   khung 1920 thi la **47% be ngang man hinh**, phan con lai bo trong.
+   Bang chung: `docs/developer_portal_mvp_ui/03_UI_ROOT_CAUSE_AUDIT.md` RC-1.
+
+   `wide` (1600px) la token DA CO, va la token khu VPS dang dung — khong dat
+   mot con so moi o mot cho moi. Bang 8 cot cua trang khoa can no. #}
+{% block page_mode %}wide{% endblock %}
+
 {% block title %}{{ section_title }} — {{ _("API cho lập trình viên") }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ _("API cho lập trình viên") }}</strong>{% endblock %}
 {% block content %}
