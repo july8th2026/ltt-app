@@ -23,13 +23,11 @@
     "alembic.ini",
     "babel.cfg",
     "codex_sidecar_main.py",
-    "config.example.json",
     "job_worker.py",
     "requirements.txt",
     "requirements-server.txt",
     "requirements-whisperx.txt",
-    "version.py",
-    "worker_main.py"
+    "version.py"
   ],
   "authoritative_docs": [
     "docs/QUYET_DINH_NEN_TANG.md",

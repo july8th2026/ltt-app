@@ -45,15 +45,23 @@ def test_profile_embeds_every_selected_source_once_without_size_limit():
         (ROOT / "tools/system_profile_config.json").read_text(encoding="utf-8")
     )
     assert "max_bytes" not in config
+    # ⛔ SUA 26/08 — bo `core`, `utils`, `scripts` khoi danh sach bat buoc.
+    #    Ca ba thu muc do DA XOA cung app socialbot (Q108). `system_profile_config`
+    #    da duoc cap nhat ngay luc do; phep kiem nay thi khong, nen no do o luot
+    #    `pytest` day du dau tien chay sau dot xoa.
+    #
+    # ⭐ Them `sdk` — no CO trong config va la be mat khach lap trinh vien doc,
+    #    nen no dang duoc nhung vao ho so va dang duoc chot o day.
     required_roots = {
-        "alembic", "apps", "codex_sidecar", "core", "cutclipshort", "deploy",
-        "frontend", "platform_core", "scripts", "server", "setup", "tests",
-        "tools", "utils",
+        "alembic", "apps", "codex_sidecar", "cutclipshort", "deploy",
+        "frontend", "platform_core", "sdk", "server", "setup", "tests",
+        "tools",
     }
     assert required_roots.issubset(config["source_roots"])
+    # `worker_main.py` DA XOA cung socialbot (Q108) — no la diem vao cua worker
+    # dang bai FB/TikTok, khong phai worker job cua nen tang (`job_worker.py`).
     required_entrypoints = {
-        "codex_sidecar_main.py", "job_worker.py", "worker_main.py",
-        "requirements-whisperx.txt",
+        "codex_sidecar_main.py", "job_worker.py", "requirements-whisperx.txt",
     }
     assert required_entrypoints.issubset(config["root_sources"])
 

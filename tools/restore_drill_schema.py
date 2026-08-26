@@ -157,6 +157,16 @@ def main() -> int:
                     "uq_vps_ip_dia_chi",
                     "uq_vps_ip_instance",
                     "uq_vps_port_map_cong",
+                    # THEM 2026-08-26. Rang buoc nay vao o
+                    # `20260824_1200_vps_mot_ip_moi_vm.py` (mot IP moi VM) ma
+                    # KHONG duoc dua vao day — dung cai bay ma chu thich ngay
+                    # tren canh: "them mot UNIQUE moi ma quen dua vao day".
+                    #
+                    # Canh 6 dong tren no chan mot dia chi noi bo bi cap cho HAI
+                    # may trong cung mot gateway. Mat no thi hai may ao cung IP
+                    # LAN: mang khong bao loi, no chi im lang hong — va trieu
+                    # chung se hien o cho khac, muon hon, va kho truy hon nhieu.
+                    "uq_vps_instance_ip",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot

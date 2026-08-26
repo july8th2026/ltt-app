@@ -46,8 +46,10 @@
           <a href="/jobs"><span class="ic">📋</span> {{ _("Việc của tôi") }}</a>
           <a href="/developers"><span class="ic">🔌</span> {{ _("API cho lập trình viên") }}</a>
           {% if nexus_bat() %}<a href="/may-cua-toi"><span class="ic">🖥️</span> {{ _("Máy của tôi") }}</a>{% endif %}
-          {% if is_admin(request) %}<a href="/settings"><span class="ic">🔧</span> {{ _("Cấu hình hệ thống") }}</a>
-          <a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
+          {# `/settings` GO 2026-08-26: route cua no (`server/routes/settings.py`)
+             da di cung app socialbot o Q108, nen link nay tra 404 cho MOI admin
+             tu do toi nay. Cung lop loi voi `/ltt-llm`. #}
+          {% if is_admin(request) %}<a href="/status"><span class="ic">🩺</span> {{ _("Tình trạng hệ thống") }}</a>
           <a href="/admin/apikeys"><span class="ic">🛡️</span> {{ _("Quản trị") }}</a>{% endif %}
           {% if _bal is not none %}<div class="acc-credit">💎 {{ _bal | so }} credit <a href="/nap">{{ _("Nạp thêm") }}</a></div>{% endif %}
           <div class="sep"></div>
