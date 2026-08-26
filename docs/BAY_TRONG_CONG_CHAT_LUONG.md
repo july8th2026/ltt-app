@@ -239,3 +239,40 @@ nhất một người gọi ngoài `tests/`.
 
 ⚠️ Giới hạn nói thẳng: nó không bắt được ca sao lưu (PowerShell) và ca link-404
 (một chú thích). Nó bắt hai ca nguy hiểm nhất, và bắt chắc chắn.
+
+---
+
+## Bẫy 10 — Công cụ chạy đúng khi bạn gọi tay, vỡ khi có thứ khác hứng đầu ra
+
+Ngày 26/08, `gate.py` đỏ ở bước `bo test (song song)` sau **0,1 giây** — tức
+**trước khi** bộ test kịp chạy lấy một phép kiểm nào:
+
+```text
+UnicodeEncodeError: 'charmap' codec can't encode characters in position 2-71
+```
+
+Nguyên nhân: `tools/test_nhanh.py` in một đường kẻ khung `─` làm nhãn bước. Gọi
+tay thì console là UTF-8 nên nó luôn xanh. Nhưng gate **hứng** đầu ra, stdout
+không còn là console, Python rơi về `cp1252`, và một dấu gạch trang trí làm hỏng
+cả bước.
+
+⭐ **Điều đáng học không phải chuyện mã hoá.** Là chuyện một công cụ có thể **xanh
+100% khi người viết nó thử** và **luôn đỏ ở nơi nó thật sự chạy** — vì môi trường
+khác nhau ở một chỗ không ai nghĩ tới. Nó vỡ ở đúng nơi ít người nhìn nhất.
+
+⛔ Và nó **không nằm trong bộ test**. Không phép kiểm nào chạy `test_nhanh.py`
+dưới stdout bị hứng, nên bộ test xanh trong khi công cụ chạy bộ test thì hỏng.
+*Thứ chạy phép kiểm không tự nó được kiểm.*
+
+**Đã bịt bằng hai lớp, và lớp thứ hai là lớp không được vắng:**
+
+1. `_ep_utf8()` ép `stdout`/`stderr` về UTF-8 — nhưng `reconfigure` chỉ có trên
+   `io.TextIOWrapper`, và dưới một trình hứng khác nó có thể **biến mất không báo
+   gì**;
+2. chuỗi in ra là **ASCII thuần**, nên không phụ thuộc lớp (1) nữa.
+
+`test_309` chốt cả hai: một phép kiểm dựng lại đúng `cp1252` bị hứng, một phép
+kiểm đọc mã và từ chối ký tự ngoài ASCII trong dòng `print` của `_chay`.
+
+⇒ **Luật rút ra:** công cụ trong `tools/` phải được thử **dưới đúng cách gate gọi
+nó** (đầu ra bị hứng), không chỉ dưới cách bạn gọi nó.

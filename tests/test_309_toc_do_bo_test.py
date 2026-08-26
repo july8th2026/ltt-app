@@ -145,3 +145,74 @@ def test_bo_chay_nhanh_tach_dung_cac_tep_ghi_vao_cay_kho():
         "tests/test_210_sdk_ecosystem.py",
         "tests/test_306_banh_coc_bo_qua_va_dich.py",
     )
+
+
+# ── Bẫy mã hoá: công cụ chạy đúng khi gọi tay, vỡ khi bị hứng ────────────────
+
+def test_nhan_buoc_in_duoc_khi_stdout_bi_HUNG_bang_cp1252():
+    """26/08: `gate.py` đỏ ở bước `bo test (song song)` — **trước khi** bộ test
+    chạy lấy một phép kiểm nào.
+
+    ⭐ Vì sao đáng một phép kiểm riêng: lỗi này **chạy đúng khi gọi tay**. Console
+       của người sửa là UTF-8, nên `python tools/test_nhanh.py` luôn xanh; nó chỉ
+       vỡ khi stdout bị một trình khác hứng và Python rơi về `cp1252`. Tức nó vỡ
+       ở đúng chỗ ít người nhìn nhất — trong gate, và sớm nhất là trong CI.
+    """
+    import importlib.util
+    import io
+    import pathlib
+    import sys
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    spec = importlib.util.spec_from_file_location(
+        "tn_kiem", goc / "tools" / "test_nhanh.py")
+    tn = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tn)  # type: ignore[union-attr]
+
+    buf = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict")
+    that_out, that_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    try:
+        tn._ep_utf8()
+        tn._chay([sys.executable, "-c", "pass"], "PHA 1 — song song, tiếng Việt")
+    except UnicodeEncodeError as e:      # pragma: no cover - chinh la thu can chan
+        sys.stdout, sys.stderr = that_out, that_err
+        raise AssertionError(f"nhan buoc lam vo cp1252: {e}") from e
+    finally:
+        sys.stdout, sys.stderr = that_out, that_err
+
+
+def test_MOI_dong_sinh_dau_ra_cua_test_nhanh_deu_la_ASCII():
+    """Hai lớp, và lớp này là lớp không được phép vắng mặt.
+
+    `_ep_utf8` dựa vào `reconfigure`, thứ chỉ có trên `io.TextIOWrapper` — dưới
+    một trình hứng khác stdout có thể là thứ khác và phương thức đó biến mất
+    **không báo gì**. Nên chính chuỗi in ra phải là ASCII.
+
+    ⛔ BẢN ĐẦU CỦA PHÉP KIỂM NÀY CHỈ SOI HÀM `_chay`, VÀ ĐÃ BỎ LỌT BA CHỖ.
+       Ngay lượt gate kế tiếp: nhãn `PHA 2 —` in ra thành `PHA 2 ?`, và khối tổng
+       kết in ra `═══...` thay vì một đường kẻ.
+
+    ⭐ Bài học là bài học của chính bánh cóc: **một phép kiểm bắt được nửa vấn đề
+       nguy hiểm hơn không có phép kiểm nào**, vì nó mua về cảm giác đã xong. Nên
+       phạm vi ở đây là CẢ TỆP, không phải một hàm.
+    """
+    import pathlib
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    src = (goc / "tools" / "test_nhanh.py").read_text(encoding="utf-8")
+
+    xau = []
+    for so, dong in enumerate(src.splitlines(), 1):
+        if dong.lstrip().startswith("#"):      # chu thich duoc phep co dau
+            continue
+        if "print(" not in dong and "_chay(" not in dong:
+            continue
+        if not dong.isascii():
+            xau.append((so, dong.strip()))
+
+    assert not xau, (
+        "dong sinh dau ra co ky tu ngoai ASCII: "
+        + "; ".join(f"dong {s}: {d}" for s, d in xau)
+        + " -- duoi mot trinh hung dung cp1252, chung in ra rac hoac lam VO"
+          " ca buoc truoc khi bo test kip chay.")

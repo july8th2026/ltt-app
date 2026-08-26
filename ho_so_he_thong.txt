@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4e435a2327c07f67b367385951a87f3ba1da1d3954b91d2ecac09d0ee5ea0c5e
+Fingerprint   : sha256:71d56640b25baaab3694773639e9e5737daaf8d53e22b8781912475ea7b9bf77
 Nguồn đã quét : 1177 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2583,7 +2583,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1177 file; 11353432 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1177 file; 11357704 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -206550,7 +206550,7 @@ def test_be_mat_cong_khai_cua_upscalevideo_chot_CA_TEN_khong_chi_module():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_309_toc_do_bo_test.py
-SHA256=5a8bd7d5006ec46f76b46aa9aa33d75110b70bfcf451c0374cfc803685845c83 BYTES=6240 LINES=147
+SHA256=f60fda7c39df46307bab33839d828ac2f98657bcfbd9166fedc2f76aacd70cc5 BYTES=9551 LINES=218
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_309 — bộ máy chạy test nhanh, và hai hàng rào giữ nó khỏi production.
 
@@ -206699,6 +206699,77 @@ def test_bo_chay_nhanh_tach_dung_cac_tep_ghi_vao_cay_kho():
         "tests/test_210_sdk_ecosystem.py",
         "tests/test_306_banh_coc_bo_qua_va_dich.py",
     )
+
+
+# ── Bẫy mã hoá: công cụ chạy đúng khi gọi tay, vỡ khi bị hứng ────────────────
+
+def test_nhan_buoc_in_duoc_khi_stdout_bi_HUNG_bang_cp1252():
+    """26/08: `gate.py` đỏ ở bước `bo test (song song)` — **trước khi** bộ test
+    chạy lấy một phép kiểm nào.
+
+    ⭐ Vì sao đáng một phép kiểm riêng: lỗi này **chạy đúng khi gọi tay**. Console
+       của người sửa là UTF-8, nên `python tools/test_nhanh.py` luôn xanh; nó chỉ
+       vỡ khi stdout bị một trình khác hứng và Python rơi về `cp1252`. Tức nó vỡ
+       ở đúng chỗ ít người nhìn nhất — trong gate, và sớm nhất là trong CI.
+    """
+    import importlib.util
+    import io
+    import pathlib
+    import sys
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    spec = importlib.util.spec_from_file_location(
+        "tn_kiem", goc / "tools" / "test_nhanh.py")
+    tn = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tn)  # type: ignore[union-attr]
+
+    buf = io.TextIOWrapper(io.BytesIO(), encoding="cp1252", errors="strict")
+    that_out, that_err = sys.stdout, sys.stderr
+    sys.stdout = sys.stderr = buf
+    try:
+        tn._ep_utf8()
+        tn._chay([sys.executable, "-c", "pass"], "PHA 1 — song song, tiếng Việt")
+    except UnicodeEncodeError as e:      # pragma: no cover - chinh la thu can chan
+        sys.stdout, sys.stderr = that_out, that_err
+        raise AssertionError(f"nhan buoc lam vo cp1252: {e}") from e
+    finally:
+        sys.stdout, sys.stderr = that_out, that_err
+
+
+def test_MOI_dong_sinh_dau_ra_cua_test_nhanh_deu_la_ASCII():
+    """Hai lớp, và lớp này là lớp không được phép vắng mặt.
+
+    `_ep_utf8` dựa vào `reconfigure`, thứ chỉ có trên `io.TextIOWrapper` — dưới
+    một trình hứng khác stdout có thể là thứ khác và phương thức đó biến mất
+    **không báo gì**. Nên chính chuỗi in ra phải là ASCII.
+
+    ⛔ BẢN ĐẦU CỦA PHÉP KIỂM NÀY CHỈ SOI HÀM `_chay`, VÀ ĐÃ BỎ LỌT BA CHỖ.
+       Ngay lượt gate kế tiếp: nhãn `PHA 2 —` in ra thành `PHA 2 ?`, và khối tổng
+       kết in ra `═══...` thay vì một đường kẻ.
+
+    ⭐ Bài học là bài học của chính bánh cóc: **một phép kiểm bắt được nửa vấn đề
+       nguy hiểm hơn không có phép kiểm nào**, vì nó mua về cảm giác đã xong. Nên
+       phạm vi ở đây là CẢ TỆP, không phải một hàm.
+    """
+    import pathlib
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    src = (goc / "tools" / "test_nhanh.py").read_text(encoding="utf-8")
+
+    xau = []
+    for so, dong in enumerate(src.splitlines(), 1):
+        if dong.lstrip().startswith("#"):      # chu thich duoc phep co dau
+            continue
+        if "print(" not in dong and "_chay(" not in dong:
+            continue
+        if not dong.isascii():
+            xau.append((so, dong.strip()))
+
+    assert not xau, (
+        "dong sinh dau ra co ky tu ngoai ASCII: "
+        + "; ".join(f"dong {s}: {d}" for s, d in xau)
+        + " -- duoi mot trinh hung dung cp1252, chung in ra rac hoac lam VO"
+          " ca buoc truoc khi bo test kip chay.")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -231558,7 +231629,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/test_nhanh.py
-SHA256=4e3a6d9b33c3688c1a49d4882032f60bcbbc19d5a9702a83c0fddb90eda38f3c BYTES=6061 LINES=139
+SHA256=43d5de01302ce62a5788b3e3470f602b2d7842c43d257d4bbbc80ca5b07f9b59 BYTES=7022 LINES=161
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_nhanh.py — chạy toàn bộ pytest song song, KẾT QUẢ Y HỆT lượt nối tiếp.
 
@@ -231639,14 +231710,36 @@ TEP_NOI_TIEP = (
 BO_QUA = ("--ignore=tmp", "--ignore=test-results")
 
 
+def _ep_utf8() -> None:
+    """Cho phep tieng Viet trong nhan buoc ngay ca khi stdout bi HUNG.
+
+    ⛔ Rieng viec nay KHONG thay duoc ASCII o `_chay`: `reconfigure` chi co tren
+       `io.TextIOWrapper`, va stdout co the la thu khac duoi mot trinh hung khac.
+       Hai lop, vi lop nay co the vang mat ma khong bao gi.
+    """
+    for luong in (sys.stdout, sys.stderr):
+        try:
+            luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):
+            pass
+
+
 def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
-    print(f"\n{'─' * 70}\n  {nhan}\n{'─' * 70}", flush=True)
+    # ASCII, khong phai ky tu ke khung. Da dinh that 26/08: `gate.py` HUNG dau
+    # ra nen stdout khong con la console, Python roi ve `cp1252`, va mot dau
+    # gach ke khung lam vo CA BUOC — trong khi bo test chua chay lay mot phep
+    # kiem nao.
+    #
+    # ⛔ Cai bay nam o cho no CHAY DUNG khi goi tay (console UTF-8) va chi vo
+    #    khi bi hung — tuc vo o cho it nguoi nhin nhat, va vo som nhat trong CI.
+    print(f"\n{'-' * 70}\n  {nhan}\n{'-' * 70}", flush=True)
     t0 = time.monotonic()
     ma = subprocess.run(argv, cwd=GOC).returncode
     return ma, time.monotonic() - t0
 
 
 def main() -> int:
+    _ep_utf8()
     p = argparse.ArgumentParser(description="Chay pytest song song, ket qua y het.")
     p.add_argument("-n", default="auto",
                    help="so worker (mac dinh: auto = so nhan CPU)")
@@ -231673,26 +231766,26 @@ def main() -> int:
     # ── Pha 1: song song, TRU cac tep lam ban cay ────────────────────────────
     loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
     ma1, t1 = _chay(chung + ["-n", args.n, "--dist", "loadfile", *loai],
-                    f"PHA 1 — song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
+                    f"PHA 1 - song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
 
     # ── Pha 2: cac tep ghi vao cay kho, noi tiep ─────────────────────────────
     # ⛔ Chay ca khi pha 1 do: bo qua chung se lam bao cao cuoi noi doi ve do phu.
     co = [t for t in TEP_NOI_TIEP if (GOC / t).is_file()]
     ma2, t2 = (0, 0.0)
     if co:
-        ma2, t2 = _chay(chung + co, f"PHA 2 — noi tiep ({len(co)} tep ghi vao cay kho)")
+        ma2, t2 = _chay(chung + co, f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")
 
     tong = time.monotonic() - t_dau
-    print(f"\n{'═' * 70}")
+    print(f"\n{'=' * 70}")
     print(f"  pha 1 song song : {t1:6.0f} giay")
     print(f"  pha 2 noi tiep  : {t2:6.0f} giay")
     print(f"  TONG            : {tong:6.0f} giay ({tong / 60:.1f} phut)")
-    print(f"{'═' * 70}")
+    print(f"{'=' * 70}")
 
     ma = ma1 or ma2
     print("RESULT: PASS" if ma == 0 else "RESULT: FAIL")
     if ma == 0:
-        print("\n⚠️  Day KHONG thay the `tools/gate.py`. Gate con chay 21 phep kiem")
+        print("\n!!  Day KHONG thay the `tools/gate.py`. Gate con chay 21 phep kiem")
         print("    tinh + ba bo test frontend + bat bien da tien trinh.")
     return ma
 

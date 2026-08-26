@@ -77,14 +77,36 @@ TEP_NOI_TIEP = (
 BO_QUA = ("--ignore=tmp", "--ignore=test-results")
 
 
+def _ep_utf8() -> None:
+    """Cho phep tieng Viet trong nhan buoc ngay ca khi stdout bi HUNG.
+
+    ⛔ Rieng viec nay KHONG thay duoc ASCII o `_chay`: `reconfigure` chi co tren
+       `io.TextIOWrapper`, va stdout co the la thu khac duoi mot trinh hung khac.
+       Hai lop, vi lop nay co the vang mat ma khong bao gi.
+    """
+    for luong in (sys.stdout, sys.stderr):
+        try:
+            luong.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[union-attr]
+        except (AttributeError, ValueError):
+            pass
+
+
 def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
-    print(f"\n{'─' * 70}\n  {nhan}\n{'─' * 70}", flush=True)
+    # ASCII, khong phai ky tu ke khung. Da dinh that 26/08: `gate.py` HUNG dau
+    # ra nen stdout khong con la console, Python roi ve `cp1252`, va mot dau
+    # gach ke khung lam vo CA BUOC — trong khi bo test chua chay lay mot phep
+    # kiem nao.
+    #
+    # ⛔ Cai bay nam o cho no CHAY DUNG khi goi tay (console UTF-8) va chi vo
+    #    khi bi hung — tuc vo o cho it nguoi nhin nhat, va vo som nhat trong CI.
+    print(f"\n{'-' * 70}\n  {nhan}\n{'-' * 70}", flush=True)
     t0 = time.monotonic()
     ma = subprocess.run(argv, cwd=GOC).returncode
     return ma, time.monotonic() - t0
 
 
 def main() -> int:
+    _ep_utf8()
     p = argparse.ArgumentParser(description="Chay pytest song song, ket qua y het.")
     p.add_argument("-n", default="auto",
                    help="so worker (mac dinh: auto = so nhan CPU)")
@@ -111,26 +133,26 @@ def main() -> int:
     # ── Pha 1: song song, TRU cac tep lam ban cay ────────────────────────────
     loai = [f"--deselect={t}" for t in TEP_NOI_TIEP]
     ma1, t1 = _chay(chung + ["-n", args.n, "--dist", "loadfile", *loai],
-                    f"PHA 1 — song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
+                    f"PHA 1 - song song ({args.n} worker), tru {len(TEP_NOI_TIEP)} tep")
 
     # ── Pha 2: cac tep ghi vao cay kho, noi tiep ─────────────────────────────
     # ⛔ Chay ca khi pha 1 do: bo qua chung se lam bao cao cuoi noi doi ve do phu.
     co = [t for t in TEP_NOI_TIEP if (GOC / t).is_file()]
     ma2, t2 = (0, 0.0)
     if co:
-        ma2, t2 = _chay(chung + co, f"PHA 2 — noi tiep ({len(co)} tep ghi vao cay kho)")
+        ma2, t2 = _chay(chung + co, f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")
 
     tong = time.monotonic() - t_dau
-    print(f"\n{'═' * 70}")
+    print(f"\n{'=' * 70}")
     print(f"  pha 1 song song : {t1:6.0f} giay")
     print(f"  pha 2 noi tiep  : {t2:6.0f} giay")
     print(f"  TONG            : {tong:6.0f} giay ({tong / 60:.1f} phut)")
-    print(f"{'═' * 70}")
+    print(f"{'=' * 70}")
 
     ma = ma1 or ma2
     print("RESULT: PASS" if ma == 0 else "RESULT: FAIL")
     if ma == 0:
-        print("\n⚠️  Day KHONG thay the `tools/gate.py`. Gate con chay 21 phep kiem")
+        print("\n!!  Day KHONG thay the `tools/gate.py`. Gate con chay 21 phep kiem")
         print("    tinh + ba bo test frontend + bat bien da tien trinh.")
     return ma
 

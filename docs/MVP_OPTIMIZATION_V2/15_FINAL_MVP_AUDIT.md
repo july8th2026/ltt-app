@@ -353,11 +353,86 @@ login** thay vì **404** như từ Q108.
 MVP_OPTIMIZED: KHONG
 ```
 
-Điều kiện (2) đã đóng — E3 nay có trên URL công khai. Điều kiện (3) đã đóng — INV-5
-được **bảo đảm** bởi lease, chứng minh ở trên. Còn lại đúng một:
+Điều kiện (3) đã đóng — INV-5 được **bảo đảm** bởi lease, chứng minh ở trên.
 
-- **`DATA_RECOVERY_GATE` vẫn FAIL** (O-01). Một bản chụp tay không phải một lịch,
-  và một lịch chưa diễn tập phục hồi không phải một đường lùi.
+🔴 **Điều kiện (2) thì KHÔNG, và bản nháp đầu của phụ lục này nói sai về phía dễ
+dãi.** Nó viết *"E3 nay có trên URL công khai"*. Đúng một nửa: E3 có cho **bề mặt
+ẩn danh** (danh mục, `/gia-api`), không phải cho **bốn Golden Journey còn lại** —
+và chính chúng mới là thứ hợp đồng đòi. Xem §"Vì sao E3 dừng ở đây".
+
+Còn lại: **`DATA_RECOVERY_GATE`** (O-01) và **GJ E3 phần cần đăng nhập**.
 
 Cộng thêm **một quyết định sản phẩm** không thuộc thẩm quyền một phiên Claude:
 5 trong 9 app khách chưa đăng nhập nhìn thấy vẫn mang nhãn *Đang phát triển*.
+
+---
+
+## Phụ lục 2 — O-01 ĐÓNG, và vì sao E3 dừng ở đúng chỗ nó dừng
+
+### Lịch sao lưu — và cái hình dạng quen thuộc tìm thấy trên đường
+
+Trước khi chạy: `D:\LTTBackups` và `D:\LTTBackups-secrets` **đã tồn tại, ACL đã
+siết**, mà Scheduled Task **chưa bao giờ được đăng ký**.
+
+⭐ Đó là **lần thứ năm** trong dự án này đúng một hình dạng: *bộ máy dựng xong,
+không ai cắm dây.* Bốn ca trước là `usage.reconcile`, `costing.scan_for_alerts`,
+`backup.ps1`, và bài học `anhnoibo`. Bánh cóc `check_chuong_chua_treo.py` bắt
+được dạng đó **trong mã Python**; ca này sống ở **hạ tầng Windows**, ngoài tầm
+với của nó. Đó là một giới hạn đã biết của bánh cóc, không phải một lỗ hổng của
+nó — và ghi ra đây để phiên sau không tin rằng bánh cóc phủ hết.
+
+Nay: task `LTTStudioBackup` chạy hằng ngày 02:30 dưới SYSTEM, đã chạy thử
+`LastTaskResult = 0`, sinh ra `ltt_data_20260826_153550.zip` và
+`ltt_secrets_20260826_153550.zip` ở **hai thư mục anh em** (H35.9).
+
+### Diễn tập phục hồi — nửa việc mà một cái lịch không thay được
+
+Phục hồi bản mới nhất vào một CSDL **vứt đi** (`lttplatform_dientap`), đối chiếu
+với bản đang chạy, rồi xoá:
+
+```text
+users               22    22   khop      api_keys            8     8   khop
+credit_entries     289   289   khop      app_access          0     0   khop
+jobs                32    32   khop      alembic_version     1     1   khop
+api_notifications    2     2   khop      SO BANG            59    59   khop
+```
+
+`pg_restore rc=0` · **8/8 khớp** · CSDL diễn tập đã xoá · bản giải nén đã dọn
+(nó chứa dump, không nên nằm lại dù thư mục đã siết ACL).
+
+⛔ Toàn bộ diễn tập chạy trên tên CSDL **chốt cứng và kiểm lại trước mỗi lệnh phá
+huỷ**. Một diễn tập phục hồi trỏ nhầm vào bản thật là cách nhanh nhất biến một
+đường lùi thành một sự cố.
+
+```text
+DATA_RECOVERY_GATE: PASS
+```
+
+⚠️ Còn một điều **chưa** đóng và đừng đọc nhầm: bản sao secrets nằm **cùng ổ** với
+bản dữ liệu. Một zip bị lấy cắp thì đã chặn được; **một ổ hỏng vẫn mất cả hai.**
+Off-site là việc của giai đoạn thương mại.
+
+### Vì sao E3 dừng ở đây, và đó là một ranh giới chứ không phải một việc còn dở
+
+E3 đã lấy được, trên URL công khai, cho mọi thứ **khách chưa đăng nhập** thấy:
+
+| Bề mặt | Kết quả |
+|---|---|
+| Danh mục `/` | 9 app render · **0 lỗi console** · **0 request hỏng** |
+| Tài nguyên tĩnh | cache-bust `?v=c4537190` đủ ba tệp — bẫy CLAUDE.md §6 không tái diễn |
+| `/gia-api` | render đúng, giá **khớp D-052/D-053** (3 credit t2i · 9 ảnh tham chiếu) |
+| `/developers/*` | 303 về login (lỗ 404 từ Q108 đã bịt) |
+
+**Bốn hành trình còn lại đòi một phiên đăng nhập, và một phiên Claude không được
+tạo ra nó.** Hai lớp chặn, cả hai đều đúng:
+
+1. `/login` bung **thử thách chống bot của Cloudflare**. Vượt nó là việc bị cấm —
+   và ở đây nó còn là *bằng chứng lớp bảo vệ đang chạy*, nên vượt được mới là tin xấu.
+2. Nhập mật khẩu hay tạo tài khoản nằm ngoài thẩm quyền của một phiên Claude.
+
+⛔ Có một lối tắt và nó **đã bị bác bỏ có chủ ý**: tự phát một token phiên trong
+CSDL để chụp ảnh màn hình. Nó là **giả mạo xác thực**, và một hợp đồng nghiệm thu
+chứng minh bằng bằng chứng tự giả mạo thì không chứng minh gì cả.
+
+⇒ GJ-1, GJ-2, GJ-3, GJ-6 **giữ nguyên E2**. Việc còn lại là **một hành động của
+chủ sản phẩm** — đăng nhập một lần — chứ không phải một hạng mục kỹ thuật.

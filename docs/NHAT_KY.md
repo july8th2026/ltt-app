@@ -13751,3 +13751,38 @@ console, 0 request hỏng, cache-bust `?v=c4537190` đủ trên ba tài nguyên 
 
 Còn nợ: **O-01** (lịch sao lưu + diễn tập phục hồi, cần UAC) và **một quyết định
 sản phẩm** — 5/9 app khách thấy vẫn mang nhãn *Đang phát triển*.
+
+## 2026-08-26 (tiếp) — O-01 ĐÓNG: lịch sao lưu + diễn tập phục hồi
+
+**Phát hiện trên đường, đáng nhớ hơn chính việc làm:** hai thư mục sao lưu đã tồn
+tại, ACL đã siết, mà Scheduled Task **chưa bao giờ đăng ký**. Lần thứ **năm** trong
+dự án này gặp đúng hình dạng *bộ máy dựng xong, không ai cắm dây*. Bánh cóc
+`check_chuong_chua_treo.py` bắt dạng đó trong mã Python; ca này sống ở hạ tầng
+Windows nên nằm ngoài tầm nó — **giới hạn đã biết, không phải lỗ hổng**.
+
+Nay `LTTStudioBackup` chạy hằng ngày 02:30 dưới SYSTEM, đã chạy thử `rc=0`, sinh
+hai zip ở hai thư mục anh em (H35.9).
+
+**Diễn tập phục hồi** — nửa việc mà một cái lịch không thay được. Phục hồi vào CSDL
+vứt đi `lttplatform_dientap`, đối chiếu rồi xoá: `pg_restore rc=0`, **8/8 khớp**
+(users 22 · credit_entries 289 · jobs 32 · 59 bảng). Tên CSDL chốt cứng và kiểm
+lại trước mỗi lệnh phá huỷ — một diễn tập trỏ nhầm vào bản thật là cách nhanh nhất
+biến đường lùi thành sự cố.
+
+```text
+DATA_RECOVERY_GATE: PASS
+```
+
+⚠️ Chưa đóng: bản sao secrets **cùng ổ** với bản dữ liệu. Chặn được một zip bị lấy
+cắp; **một ổ hỏng vẫn mất cả hai.** Off-site là việc giai đoạn thương mại.
+
+**Sửa lại chính mình:** phụ lục deploy bản đầu viết *"E3 nay có trên URL công
+khai"* — nói quá về phía dễ dãi. E3 có cho bề mặt **ẩn danh** (danh mục 0 lỗi
+console/0 request hỏng, `/gia-api` giá khớp D-052/D-053), không phải cho bốn
+Golden Journey cần đăng nhập. `/login` bung thử thách chống bot của Cloudflare, và
+vượt nó — hay tự phát token phiên trong CSDL để chụp ảnh — đều nằm ngoài thẩm
+quyền một phiên Claude. Một hợp đồng nghiệm thu chứng minh bằng bằng chứng tự giả
+mạo thì không chứng minh gì cả.
+
+⇒ GJ-1/2/3/6 giữ E2. Việc còn lại là **một hành động của chủ sản phẩm** — đăng
+nhập một lần — không phải một hạng mục kỹ thuật.
