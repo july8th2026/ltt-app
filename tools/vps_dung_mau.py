@@ -1,0 +1,304 @@
+"""Dựng HTML thật của các trang VPS, ra tệp, để soi bằng trình duyệt thật.
+
+    python tools\\vps_dung_mau.py                 # dựng hết vào scratchpad
+    python tools\\vps_dung_mau.py --ra D:\\tmp\\vps
+
+## 🔴 Vì sao công cụ này phải tồn tại
+
+Ba trong năm trang VPS (`/vps/{id}`, `/cai-dat`, `/console`) **không mở được nếu
+không có một máy**. Sau đợt dọn 25/08, bốn bảng `vps_*` về **0 dòng**, 0 VM,
+0 Reserved IP — nên trên máy này, ba trang đó không có cách nào để nhìn thấy.
+
+Ba đường không đi được:
+
+* **Sửa rồi xem trên production.** `/vps` đang bán hàng thật (`LTT_VPS=1` trên
+  máy chủ). Deploy để xem một thay đổi trình bày là đổi thứ khách đang dùng để
+  lấy một ảnh chụp.
+* **Tạo một máy thật.** Trừ credit thật (bút toán append-only, không xoá được)
+  và ăn một Reserved IP — mà hạn ngạch của Vultr đếm **cả IP vừa xoá**.
+* **Đọc template rồi suy ra.** `CLAUDE.md` mục 5 đã chốt không được, và audit
+  25/08 chứng minh vì sao: ba lỗi nặng nhất hôm đó đều có **HTML đúng** và **cây
+  trợ năng đúng**. Chỉ `getComputedStyle` trên trang render mới thấy.
+
+⇒ Đường thứ tư: render **bằng chính ứng dụng** (đúng `ltt.css`, đúng `asset_ver`,
+đúng i18n, đúng macro) trên một CSDL SQLite dùng một lần, ghi ra tệp, rồi mở bằng
+`file://`. Không tốn tiền, không chạm production, và vẫn là **bố cục thật**.
+
+## ⛔ Nó KHÔNG chứng minh được gì
+
+Nói rõ ở đây để không ai trích dẫn nó sai:
+
+* WebSocket console (cần Proxmox thật),
+* luồng POST đầu-tới-cuối (tạo · bật · tắt · xoá),
+* hành vi thật của job trong worker,
+* mọi thứ đi qua Cloudflare (cache, CSP biên, minify) — quy tắc 5b.
+
+Nó chứng minh: **bố cục, tràn ngang, tương phản, reflow, và trạng thái nào hiện
+ra cái gì.** Đúng phần mà đọc mã không trả lời được, và không hơn.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import pathlib
+import re
+import sys
+import tempfile
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(GOC))
+
+TINH = GOC / "server" / "static"
+
+#: Bề ngang nên soi. Sáu mốc của Prompt 06; công cụ chỉ ghi ra, người soi tự đặt.
+BE_NGANG = (1920, 1440, 1280, 1024, 768, 390)
+
+
+def _mo_moi_truong(thu_muc: pathlib.Path):
+    """CSDL SQLite dùng một lần + cờ bật + khoá phiên giả.
+
+    ⚠️ **Không** chạm `LTT_DATABASE_URL` thật. Đặt biến môi trường TRƯỚC khi
+    `platform_core.db` dựng engine, và gọi `reset_engine()` để chắc chắn không
+    dùng lại engine của một lần import trước.
+    """
+    os.environ["LTT_DATABASE_URL"] = f"sqlite:///{(thu_muc / 'mau.db').as_posix()}"
+    os.environ["LTT_ENV"] = "development"
+    os.environ["LTT_SESSION_SECRET"] = "vps-dung-mau"
+    os.environ["LTT_VPS"] = "1"
+    os.environ.pop("TURNSTILE_SECRET_KEY", None)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.vps.tables       # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    return dbmod
+
+
+def _tao_khach(dbmod, credit_ban_dau: int = 50_000) -> str:
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="mau@lttstudios.test",
+                           password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        credit.nap(db, u.id, credit_ban_dau)
+        db.commit()
+        return str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _client():
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    return TestClient(create_app(), base_url="https://testserver",
+                      follow_redirects=False)
+
+
+def _co_suc_chua(bat: bool) -> None:
+    """Giả vờ node Proxmox trả lời (hoặc không).
+
+    🔴 **Vì sao phải giả, và vì sao phải nói rõ là giả.** Máy phát triển không
+    nói được tới Proxmox, nên `routes._suc_chua()` trả `None` và trang đi vào
+    nhánh **fail-closed**: bảng giá chỉ đọc, không dựng `<form>`, mọi gói hiện
+    "hết chỗ". Đó là một trạng thái **thật và đáng soi** — nhưng nó KHÔNG phải
+    trạng thái mà khách đang thấy trên production, nơi node trả lời bình thường.
+
+    Dựng cả hai cảnh là cách duy nhất để so ảnh chụp với trang đang chạy.
+
+    ⚠️ Con số dưới đây là **hư cấu để render**, không phải số đo. Đừng trích nó
+       vào bất kỳ tài liệu nào nói về công suất thật — số thật ở
+       `docs/VPS/PHAN_TICH_VPS_PROXMOX.md`.
+    """
+    from apps.vps import routes
+    from apps.vps.services import capacity
+
+    if not bat:
+        routes._suc_chua = lambda db: (None, "may phat trien: khong co Proxmox")
+        return
+
+    gia = capacity.SucChua(ram_mb_tong=196_608, dia_gb_tong=900,
+                           ram_mb_da_hua=24_576, dia_gb_da_hua=240,
+                           dia_gb_dang_dung=96, cpu_tong=32, vcpu_da_hua=8)
+    routes._suc_chua = lambda db: (gia, "")
+
+
+def _co_cong_vao(dbmod) -> None:
+    """Một cổng vào đang nhận máy — nếu không thì `vung` rỗng và biểu mẫu thiếu
+    trường ẩn `vung`, tức một biểu mẫu không gửi được."""
+    from apps.vps.tables import VpsGateway
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(VpsGateway(ten="cong-vao-mau", vung="sg",
+                          ip_cong_khai="203.0.113.10",
+                          dang_nhan_may_moi=True))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _dang_nhap(client) -> None:
+    login = client.get("/login")
+    token = re.search(r'name="csrf_token" value="([^"]+)"', login.text).group(1)
+    client.post("/login", data={"username": "mau@lttstudios.test",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": token})
+
+
+_RE_TINH = re.compile(r'(["\'])/static/([^"\'?]+)(\?[^"\']*)?\1')
+
+
+def _doi_duong_tinh(html: str, can: set[str]) -> str:
+    """`/static/x?v=abc` → `static/x`, và ghi lại tệp nào cần chép sang.
+
+    🔑 Giữ nguyên **nội dung** tệp tĩnh, chỉ đổi đường dẫn: mục đích của công cụ
+    này là soi đúng `ltt.css` đang chạy, không phải một bản sao.
+
+    🔴 **Đường TƯƠNG ĐỐI, phục vụ qua HTTP — KHÔNG phải `file://`.** Bản đầu của
+       công cụ này ghi `file:///D:/...` và Chrome (qua `playwright-cli`) **chặn
+       thẳng giao thức `file:`**.
+
+       ⚠️ Triệu chứng của lần đó rất dễ đọc nhầm: mọi số đo trả về **0** và
+          `docH == chiều cao khung nhìn` — trông y hệt *"trang render ra rỗng"*,
+          trong khi sự thật là *"trình duyệt từ chối mở tệp"*. Suýt nữa thì đi
+          tìm lỗi trong template.
+
+    ⚠️ Bỏ `?v=` vì tệp chép sang không mang chuỗi truy vấn. Điều đó **không** làm
+       mất tính chất đang soi: ở đây ta soi **bố cục**, còn cache-bust thì
+       `test_304` và quy tắc 6 của `CLAUDE.md` canh ở chỗ khác.
+    """
+    def thay(m):
+        ten = m.group(2)
+        can.add(ten)
+        return f'{m.group(1)}static/{ten}?v={_bam(ten)}{m.group(1)}'
+
+    return _RE_TINH.sub(thay, html)
+
+
+def _bam(ten: str) -> str:
+    """Tám ký tự băm nội dung tệp tĩnh — để đổi tệp là đổi URL.
+
+    🔴 **Không phải trang trí. Thiếu nó thì công cụ này nói dối.** Đo 26/08: sửa
+       `ltt.css`, dựng lại, đo lại — và Chrome trả về **màu cũ**, vì URL
+       `static/ltt.css` không đổi nên nó phục vụ bản trong bộ nhớ đệm. Suýt nữa
+       thì kết luận "luật CSS mới không thắng được độ đặc hiệu", trong khi luật
+       mới còn chưa bao giờ tới trình duyệt.
+
+    ⭐ Đây đúng là quy tắc 6 của `CLAUDE.md` — cái bẫy Cloudflare đã cắn dự án
+       này một lần ở production — tái diễn ở quy mô một thư mục tạm. Cùng bệnh,
+       cùng thuốc: **đổi nội dung = đổi URL**.
+    """
+    import hashlib
+
+    p = TINH / ten
+    if not p.is_file():
+        return "0"
+    return hashlib.md5(p.read_bytes()).hexdigest()[:8]
+
+
+def _ghi(ra: pathlib.Path, ten: str, html: str, can: set[str]) -> pathlib.Path:
+    p = ra / f"{ten}.html"
+    p.write_text(_doi_duong_tinh(html, can), encoding="utf-8", newline="")
+    return p
+
+
+def _chep_tinh(ra: pathlib.Path, can: set[str]) -> None:
+    """Chép đúng những tệp tĩnh mà các trang vừa dựng **thật sự tham chiếu**.
+
+    Chép cả `server/static/` là chép cả bộ noVNC và mọi bundle React — hàng chục
+    MB cho một lần soi bố cục.
+    """
+    import shutil
+
+    for ten in sorted(can):
+        nguon = TINH / ten
+        if not nguon.is_file():
+            print(f"  ! thieu tep tinh: {ten}")
+            continue
+        dich = ra / "static" / ten
+        dich.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(nguon, dich)
+
+
+def dung(ra: pathlib.Path) -> list[pathlib.Path]:
+    """Dựng mọi cảnh. Trả danh sách tệp đã ghi."""
+    ra.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="vps-mau-") as tmp:
+        dbmod = _mo_moi_truong(pathlib.Path(tmp))
+        _tao_khach(dbmod)
+        _co_cong_vao(dbmod)
+        client = _client()
+        tep: list[pathlib.Path] = []
+        can: set[str] = set()
+        try:
+            # ── A · Storefront, khách ẩn danh, node còn chỗ ────────────────
+            #    Đây là cảnh khớp với production — dùng nó để so ảnh chụp.
+            _co_suc_chua(True)
+            r = client.get("/vps")
+            assert r.status_code == 200, f"/vps an danh tra {r.status_code}"
+            tep.append(_ghi(ra, "A_storefront_an_danh", r.text, can))
+
+            # ── A' · Cùng trang, nhưng node KHÔNG trả lời ──────────────────
+            #    Fail-closed: bảng giá chỉ đọc, không `<form>`, mọi gói hết chỗ.
+            #    Khách vào đúng lúc cụm bận sẽ thấy trang này, nên nó phải đẹp
+            #    và phải nói được đi đâu — không chỉ "hết chỗ" rồi dừng.
+            _co_suc_chua(False)
+            r = client.get("/vps")
+            tep.append(_ghi(ra, "A_storefront_het_suc_chua", r.text, can))
+
+            # ── Điều khoản (không có vỏ điều khiển — chốt của test_298) ────
+            r = client.get("/vps/dieu-khoan")
+            assert r.status_code == 200
+            tep.append(_ghi(ra, "A_dieu_khoan", r.text, can))
+
+            # ── B · Đã đăng nhập, 0 máy, tạo được ──────────────────────────
+            _co_suc_chua(True)
+            _dang_nhap(client)
+            r = client.get("/vps")
+            assert r.status_code == 200, f"/vps da dang nhap tra {r.status_code}"
+            tep.append(_ghi(ra, "B_dang_nhap_khong_may", r.text, can))
+        finally:
+            client.close()
+            dbmod.reset_engine()
+        _chep_tinh(ra, can)
+        return tep
+
+
+def main() -> int:
+    mac_dinh = pathlib.Path(
+        os.environ.get("TEMP", tempfile.gettempdir())) / "vps_mau"
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--ra", type=pathlib.Path, default=mac_dinh,
+                    help="thu muc ghi HTML")
+    ap.add_argument("--cong", type=int, default=8321,
+                    help="cong goi y cho `python -m http.server`")
+    tham_so = ap.parse_args()
+
+    tep = dung(tham_so.ra)
+    print(f"Da dung {len(tep)} canh vao {tham_so.ra}:")
+    for p in tep:
+        print(f"  {p.name}")
+    # ⚠️ Phai phuc vu qua HTTP: Chrome (qua playwright-cli) CHAN giao thuc
+    #    `file:`, va khi bi chan no khong bao loi ro — moi so do ve 0.
+    print("\nSoi bang trinh duyet that (Chrome CHAN `file:`):")
+    print(f"  cd {tham_so.ra}")
+    print(f"  python -m http.server {tham_so.cong}")
+    print(f"  playwright-cli open http://127.0.0.1:{tham_so.cong}/{tep[0].name}")
+    print(f"  playwright-cli resize {BE_NGANG[1]} 900")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

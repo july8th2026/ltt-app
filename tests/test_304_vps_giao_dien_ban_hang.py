@@ -33,6 +33,10 @@ import pytest
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
 VPS_HTML = GOC / "server" / "templates" / "vps.html"
+LTT_CSS = GOC / "server" / "static" / "ltt.css"
+
+#: Đầu mục của lớp kiểu khu VPS trong `ltt.css` (Đợt 1 MVP giao diện, 26/08).
+MOC_LOP_VPS = "LỚP NGỮ NGHĨA CỦA KHU VPS"
 
 
 def _bo_chu_thich(noi_dung: str) -> str:
@@ -59,10 +63,38 @@ def t() -> str:
 
 @pytest.fixture(scope="module")
 def kieu() -> str:
-    """Riêng khối `<style>` — vài phép kiểm cần chính nó."""
-    m = re.findall(r"(?s)<style\b.*?</style>",
-                   VPS_HTML.read_text(encoding="utf-8"))
-    return "\n".join(m)
+    """Kiểu của khu VPS — vài phép kiểm cần chính nó.
+
+    ⚠️ **Đổi nguồn 2026-08-26 (Đợt 1 MVP giao diện).** Trước đó fixture này đọc
+    các khối `<style>` **bên trong `vps.html`**; nay chúng đã chuyển hết vào mục
+    `LỚP NGỮ NGHĨA CỦA KHU VPS` trong `ltt.css`, cùng khuôn với lớp `.dev-*` của
+    khu API.
+
+    🔑 Đây là **đổi nguồn, không phải hạ mốc.** Cùng những luật đó vẫn phải tồn
+    tại và vẫn bị chốt bởi cùng những phép kiểm; chỉ là chúng sống ở chỗ khác.
+    Nếu ngày nào đó lớp này bị xoá khỏi `ltt.css` thì fixture trả rỗng và **mọi**
+    phép kiểm dùng nó đỏ — mốc không tự tụt xuống 0 một cách im lặng.
+
+    `test_KHONG_con_khoi_style_trong_template_VPS` canh chiều ngược lại: kiểu
+    **không được** quay về template.
+
+    ⚠️ **Bóc `/* … */` trước khi trả về** — cùng lý do với `_bo_chu_thich()` ở
+    trên, và tôi đã dính lại **ngay trong đợt này**: chú thích giải thích cái bẫy
+    `.btn-goi{background:{{ app.accent }}}` chứa đúng chuỗi mà phép kiểm
+    "không được ăn accent đỏ" đi tìm, nên phép kiểm đỏ vì lời bàn về mã chứ không
+    vì mã. Lần thứ năm của lớp lỗi này trong dự án.
+    """
+    css = LTT_CSS.read_text(encoding="utf-8")
+    i = css.find(MOC_LOP_VPS)
+    assert i > 0, f"khong tim thay muc `{MOC_LOP_VPS}` trong ltt.css"
+    # 🔴 Cắt từ `/*` MỞ khối chứa mốc, không cắt từ chính mốc. Mốc nằm *bên
+    #    trong* một chú thích, nên cắt từ nó sẽ để lát cắt bắt đầu giữa một chú
+    #    thích đang mở — bộ bóc thấy `*/` trước `/*` và ghép lệch một nhịp, tức
+    #    nó bóc **mã** và giữ lại **chú thích**. Đúng ngược điều nó sinh ra để làm,
+    #    và tôi đã dính chính lỗi đó khi viết fixture này.
+    dau = css.rfind("/*", 0, i)
+    assert dau >= 0, "muc khu VPS khong nam trong mot chu thich mo dau"
+    return re.sub(r"(?s)/\*.*?\*/", " ", css[dau:])
 
 
 # ── 1 · Lỗi đang sống: JS không được xoá kiểu ─────────────────────────────
@@ -113,6 +145,49 @@ def test_the_dang_chon_nhin_thay_duoc_khong_chi_bang_cham_radio(kieu):
     khoi = kieu[kieu.index(".vps-the:has(input:checked)"):][:260]
     # Viền/nền, không chỉ màu chữ: người không phân biệt được màu vẫn phải thấy.
     assert "border" in khoi and "background" in khoi
+
+
+def test_KHONG_con_khoi_style_trong_template_VPS():
+    """Kiểu của khu VPS sống ở `ltt.css`, không sống trong template.
+
+    🔴 **Vì sao đây là một bánh cóc chứ không phải một sở thích sắp xếp.** Một
+       khối `<style>` trong template là một chỗ để trộn KIỂU với DỮ LIỆU — và
+       trang này đã từng làm đúng thế:
+
+           .btn-goi { background: {{ app.accent }}; }
+
+       Một luật CSS mà **giá trị của nó do Jinja sinh**. Không tệp CSS nào biết
+       nó tồn tại, không công cụ nào kiểm được nó, và grep `.btn-goi` trong
+       `ltt.css` không ra gì. Nó cũng là cách `--accent` đỏ toàn cục lọt được
+       vào một nút vận hành mà không ai thấy.
+
+    ⚠️ Chốt **tập hợp tệp**, không chốt số lượng: một template VPS mới thêm vào
+       cũng bị soi, thay vì lọt qua vì bộ đếm vẫn đúng.
+    """
+    tep = sorted((GOC / "server" / "templates").glob("vps*.html"))
+    assert len(tep) >= 5, f"chi thay {len(tep)} template VPS — glob hong"
+    co_style = [p.name for p in tep
+                if re.search(r"(?s)<style\b.*?</style>",
+                             p.read_text(encoding="utf-8"))]
+    assert co_style == [], (
+        f"{len(co_style)} template VPS con khoi <style>: {co_style}. "
+        f"Chuyen vao muc `{MOC_LOP_VPS}` trong ltt.css.")
+
+
+def test_nut_van_hanh_KHONG_an_accent_do_toan_cuc(kieu):
+    """`.btn` mặc định lấy `--accent` = **đỏ thương hiệu**, tức màu của hành
+    động không hoàn tác được trong gần hết quy ước giao diện.
+
+    Mà "Bật" và "Khởi động lại" thì hoàn tác được bằng cách bấm cái kia, và
+    "Chọn gói này" thì càng không phá huỷ gì. Cả hai phải lấy teal của khu.
+    """
+    assert "--vps-teal:" in kieu, "khu VPS chua khai token mau van hanh rieng"
+    for nut in (".btn-goi", ".btn-may"):
+        assert nut in kieu, f"{nut} khong con luat nao trong ltt.css"
+    khoi = kieu[kieu.index(".btn-goi"):][:220]
+    assert "var(--vps-teal)" in khoi, (
+        ".btn-goi/.btn-may phai tro vao token cua khu, khong tro vao "
+        "`{{ app.accent }}` hay mot ma mau viet cung")
 
 
 # ── 2 · Cấu trúc tài liệu ─────────────────────────────────────────────────

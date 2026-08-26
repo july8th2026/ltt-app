@@ -107,9 +107,25 @@ def thu_mot_chu_ky(db: DbSession, may: VpsInstance, *,
                note=f"VPS {may.plan_id} — {CHU_KY_NGAY} ngay")
     may.paid_until = _moc_ke_tiep(may, thoi_diem)
     may.xoa_sau = None
+
+    # 🔑 ĐỌC TRƯỚC KHI ĐẶT LẠI. `_dat_lai_bang_thong` đưa bộ đếm về 0, và ta
+    # **không có bảng lịch sử băng thông** — nên mỗi chu kỳ trôi qua mà không
+    # chụp lại con số này là một chu kỳ **mất vĩnh viễn**, không có bản sao nào
+    # ở đâu để dựng lại.
+    #
+    # Chi phí để giữ nó: một trường trong `chi_tiet` của một sự kiện đã được ghi
+    # sẵn ở đúng thời điểm này. Không bảng mới, không di trú, không route mới,
+    # không đổi gì khách nhìn thấy. Đổi lại, sau vài chu kỳ ta có dữ liệu thật
+    # để trả lời câu duy nhất đáng hỏi về băng thông: *"chu kỳ trước tôi dùng
+    # bao nhiêu?"* — xem D-04 ở `docs/VPS/UI_MVP_V2/01_QUYET_DINH_D01_D04.md`.
+    #
+    # ⭐ Khuôn nên lặp lại: **dữ liệu không chụp là dữ liệu mất; giao diện thì
+    #    lúc nào dựng cũng được.** Ghi trước, vẽ sau.
+    da_dung_byte = int(may.bang_thong_byte or 0)
     _dat_lai_bang_thong(may)
     ghi_su_kien(db, may.id, "thu_phi", boi="he_thong",
-                credit=gia, den=may.paid_until.isoformat())
+                credit=gia, den=may.paid_until.isoformat(),
+                bang_thong_byte=da_dung_byte)
     return gia
 
 

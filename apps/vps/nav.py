@@ -46,8 +46,18 @@ GOC = "/vps"
 SAP_CO_KHU: tuple[tuple[str, str], ...] = (
     ("sao_ke", N_("Sao kê")),
 )
+#: ⛔ `anh_chup` ĐÃ BỎ 2026-08-26 (D-04). Ta chụp **đúng một** bản, **tự động**
+#: hằng tuần (`sao_luu.GIU = 1`), khách không tự chụp được — nên "trang ảnh chụp"
+#: sẽ là một trang hiện **một hàng**, với một nút đã có sẵn trong khối Nguy hiểm
+#: của trang máy. Đó là một trang ta không có lý do nào để xây, và luật ngay trên
+#: đây tự cấm: mục "sắp có" phải *"có thật trong kế hoạch, không phải chỗ giữ chỗ
+#: cho vui"*. Ngày nào cho khách tự chụp và giữ nhiều bản thì nó quay lại.
+#:
+#: `bang_thong` thì Ở LẠI, và từ 26/08 nó có lý do thật: `billing.thu_mot_chu_ky`
+#: nay chụp `bang_thong_byte` vào sự kiện `thu_phi` trước khi đặt lại, nên sau
+#: vài chu kỳ sẽ **có lịch sử** để trang đó nói một điều mà trang máy không nói
+#: được — *"chu kỳ trước bạn dùng bao nhiêu"*.
 SAP_CO_MAY: tuple[tuple[str, str], ...] = (
-    ("anh_chup", N_("Ảnh chụp")),
     ("bang_thong", N_("Băng thông")),
 )
 

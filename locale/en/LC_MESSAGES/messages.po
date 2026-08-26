@@ -11048,3 +11048,208 @@ msgstr "Without a budget, spending only stops when credit runs out. Set a soft b
 
 msgid "Mỗi lời gọi có tính tiền sẽ thành một dòng ở đây, kèm khóa nào gọi và đã tính bao nhiêu."
 msgstr "Every billed call becomes a row here, with the key that made it and what it was charged."
+
+# Khu VPS — nhan trang thai + nhat ky (Dot 1 MVP giao dien, 2026-08-26)
+
+msgid "Yêu cầu tạo máy"
+msgstr "Create requested"
+
+msgid "Máy đã sẵn sàng"
+msgstr "Machine ready"
+
+msgid "Đã thu phí một chu kỳ"
+msgstr "One cycle charged"
+
+msgid "Đã hoàn credit"
+msgstr "Credit refunded"
+
+msgid "Máy được bật"
+msgstr "Machine started"
+
+msgid "Máy được tắt"
+msgstr "Machine shut down"
+
+msgid "Máy bị tắt cứng"
+msgstr "Machine force-stopped"
+
+msgid "Máy khởi động lại"
+msgstr "Machine restarted"
+
+msgid "Đã gỡ đĩa cài"
+msgstr "Installation media removed"
+
+msgid "Yêu cầu cài lại máy"
+msgstr "Reinstall requested"
+
+msgid "Đã chụp ảnh máy"
+msgstr "Snapshot taken"
+
+msgid "Máy bị tạm dừng"
+msgstr "Machine suspended"
+
+msgid "Tạm dừng nhưng chưa tắt được máy"
+msgstr "Suspended, but the machine could not be stopped"
+
+msgid "Máy dừng lại"
+msgstr "Machine stopped"
+
+msgid "Yêu cầu xoá máy"
+msgstr "Delete requested"
+
+msgid "Máy đã bị xoá"
+msgstr "Machine deleted"
+
+msgid "Có lỗi xảy ra"
+msgstr "Something went wrong"
+
+msgid "Máy đã tắt. Bấm “Bật” để chạy lại. Máy đã tắt vẫn tính phí vì nó vẫn giữ chỗ và giữ dữ liệu."
+msgstr "This machine is off. Press “Start” to run it again. A stopped machine is still billed because it keeps holding its slot and your data."
+
+msgid "Máy bị tạm dừng do hết hạn thanh toán. Dữ liệu vẫn còn. Nạp credit để dùng lại."
+msgstr "This machine is suspended because payment expired. Your data is still there — top up credit to use it again."
+
+msgid "Máy gặp lỗi. Xem lý do bên dưới, hoặc cài lại máy."
+msgstr "This machine hit an error. See the reason below, or reinstall it."
+
+msgid "Máy đã bị xoá. Không khôi phục được."
+msgstr "This machine has been deleted. It cannot be recovered."
+
+msgid "Chưa trả được địa chỉ IP"
+msgstr "IP address could not be released"
+
+msgid "Request gần đây"
+msgstr "Recent requests"
+
+msgid "Công cụ / tuyến"
+msgstr "Tool / route"
+
+msgid "Chưa có request nào."
+msgstr "No requests yet."
+
+msgid "Mỗi lời gọi tới /api/v1 hiện ở đây — thành công lẫn thất bại — để bạn tra khi tích hợp."
+msgstr "Every call to /api/v1 shows up here — successes and failures alike — so you can look them up while integrating."
+
+msgid "Chưa có thông báo."
+msgstr "No notifications yet."
+
+msgid "Cảnh báo về số dư, hạn mức, khóa sắp hết hạn hay webhook hỏng sẽ hiện ở đây."
+msgstr "Alerts about balance, limits, keys about to expire or failing webhooks show up here."
+
+msgid "Tham chiếu API, ví dụ, tải OpenAPI."
+msgstr "API reference, examples, OpenAPI download."
+
+msgid "Tính trước chi phí một lời gọi."
+msgstr "Estimate the cost of a call in advance."
+
+msgid "Gọi API ngay trên trình duyệt."
+msgstr "Call the API right in your browser."
+
+msgid "Lọc theo môi trường"
+msgstr "Filter by environment"
+
+msgid "Không có khóa nào ở môi trường này."
+msgstr "No keys in this environment."
+
+msgid "Bỏ bộ lọc để xem tất cả khóa."
+msgstr "Clear the filter to see all keys."
+
+msgid "Kết nối LTT API vào công cụ viết mã trong vài phút."
+msgstr "Connect the LTT API to your coding tool in minutes."
+
+msgid "Tạo khóa API"
+msgstr "Create API key"
+
+msgid "Chọn công cụ"
+msgstr "Choose tool"
+
+msgid "Gửi request"
+msgstr "Send request"
+
+msgid "Tổng cộng %(n)s khóa. Thu hồi không đảo ngược được — muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ."
+msgstr "%(n)s keys in total. Revoking cannot be undone — to replace a key without downtime: create a second key, move your app over, then revoke the old one."
+
+msgid "API đang tắt"
+msgstr "API is off"
+
+msgid "Chỉ đọc"
+msgstr "Read only"
+
+msgid "Cổng lập trình viên"
+msgstr "Developer portal"
+
+msgid "Hệ thống bình thường"
+msgstr "All systems normal"
+
+msgid "Trạng thái hệ thống"
+msgstr "System status"
+
+msgid "Tài liệu"
+msgstr "Docs"
+
+msgid "Sử dụng 7 ngày qua"
+msgstr "Usage over the last 7 days"
+
+msgid "Biểu đồ Request và Credit 7 ngày qua"
+msgstr "Request and Credit chart over the last 7 days"
+
+msgid "Chưa có lưu lượng để vẽ."
+msgstr "No traffic to chart yet."
+
+msgid "Sau vài lời gọi API, biểu đồ 7 ngày sẽ hiện ở đây."
+msgstr "After a few API calls, a 7-day chart shows up here."
+
+msgid "LTT API"
+msgstr "LTT API"
+
+# Khu VPS — storefront cong khai (Dot 2 MVP giao dien, 2026-08-26)
+
+msgid "Toàn quyền Administrator"
+msgstr "Full Administrator rights"
+
+msgid "Bạn tự chạy trình cài đặt Windows và tự đặt tài khoản quản trị của mình."
+msgstr "You run the Windows installer yourself and set your own administrator account."
+
+msgid "Console ngay trong trình duyệt"
+msgstr "Console right in your browser"
+
+msgid "Ảnh chụp hằng tuần"
+msgstr "Weekly snapshot"
+
+msgid "Quay máy về bản chụp gần nhất khi bạn xoá nhầm hoặc gặp một bản vá hỏng."
+msgstr "Roll the machine back to the latest snapshot after an accidental delete or a bad update."
+
+msgid "Cài lại bất cứ lúc nào"
+msgstr "Reinstall any time"
+
+msgid "Đổi sang bản Windows khác trong danh mục mà vẫn giữ nguyên địa chỉ IP."
+msgstr "Switch to another Windows edition in the catalogue and keep the same IP address."
+
+msgid "Sao kê từng lần thu"
+msgstr "A statement for every charge"
+
+msgid "Mỗi chu kỳ đã trả là một dòng trong trang máy của bạn, để đối chiếu chi tiêu."
+msgstr "Every cycle you have paid for is a row on your machine page, so you can reconcile spending."
+
+msgid "Không phí khởi tạo"
+msgstr "No setup fee"
+
+msgid "Bạn chỉ trả tiền chu kỳ. Không có khoản thu nào khác khi tạo hay xoá máy."
+msgstr "You pay for the cycle and nothing else. Creating or deleting a machine costs nothing extra."
+
+msgid "Toàn bộ cổng của địa chỉ đó thuộc về máy bạn."
+msgstr "Every port on that address belongs to your machine."
+
+msgid "Máy giao cho bạn là máy trống đã gắn sẵn đĩa cài."
+msgstr "You get a blank machine with the installation media already attached."
+
+msgid "Trả từng chu kỳ 30 ngày bằng credit."
+msgstr "Pay per 30-day cycle with credit."
+
+msgid "Bạn tự cài Windows và tự đặt tài khoản của mình."
+msgstr "You install Windows yourself and set your own account."
+
+msgid "Sẵn sàng bắt đầu?"
+msgstr "Ready to start?"
+
+msgid "Tạo tài khoản, nạp credit, rồi tạo máy. Không hợp đồng, không phí khởi tạo."
+msgstr "Create an account, top up credit, then create a machine. No contract, no setup fee."

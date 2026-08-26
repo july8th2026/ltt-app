@@ -1,17 +1,12 @@
 {% extends "vps_base.html" %}
 {% block title %}{{ may.ten or may.id[:8] }} — {{ _(app.display_name) }}{% endblock %}
 {% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ may.ten or may.id[:8] }}</strong>{% endblock %}
+{# `vps-may` la MOC PHAM VI, khong phai class kieu: luat gioi han be ngang doc
+   duoc chi dung cho trang nay, con `.app-main` thi khu API cung dung. Mot luat
+   khong pham vi o `ltt.css` se lang le bop ca cong lap trinh vien.
+   Kieu that nam o muc "LOP NGU NGHIA CUA KHU VPS" trong `ltt.css`. #}
+{% block body_class %}vps-may{% endblock %}
 {% block noi_dung %}
-<style>
-  /* Trang này là các hàng nhãn/giá trị. Ở 1390px, mắt phải quét ngang cả màn
-     hình để nối một nhãn với giá trị của nó — giới hạn bề ngang đọc được.
-     Khối console và bảng sao kê tự vượt ra nếu cần. */
-  .app-main > .card { max-width: 940px; }
-  /* Nút điều khiển máy dùng accent của APP. `.btn` mặc định lấy `--accent`
-     toàn cục = màu đỏ, tức màu của hành động KHÔNG hoàn tác được — mà "Bật"
-     và "Khởi động lại" thì hoàn tác được bằng cách bấm cái kia. */
-  .btn-may { background: {{ app.accent }}; }
-</style>
 
   {% if loi %}<div class="alert alert-err" style="margin:0 0 12px;">{{ loi }}</div>{% endif %}
 
