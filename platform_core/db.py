@@ -95,6 +95,35 @@ def _connect_args(url: str) -> dict:
     return {}
 
 
+#: Pragma chi ap cho SQLite NGOAI production. Do that 2026-08-26:
+#:
+#:     create_all 44 bang, tep SQLite thuong          2,16 giay
+#:     ...cung the + hai pragma duoi day              0,05 giay      (43 lan)
+#:
+#: 🔴 Vi sao no dang gia toi vay: bo test dung mot CSDL SQLite MOI cho gan nhu
+#:    moi test, va moi lan deu chay `create_all`. 2,8 giay x 4.090 test la hon
+#:    BA GIO chi de tao bang — do la toan bo nut co chai cua bo test, khong phai
+#:    logic test va cung khong phai viec dung ung dung (`create_app` mat 0,01s).
+#:
+#: ⭐ Chi phi that nam o `fsync`: SQLite dong bo xuong dia sau moi cau lenh DDL.
+#:    Tat dong bo cho mot CSDL TAM — thu se bi xoa ngay sau test — khong danh
+#:    doi gi ca.
+#:
+#: ⛔ VA NO KHONG BAO GIO CHAM PRODUCTION, hai rao doc lap:
+#:      1. production dung PostgreSQL, nen nhanh SQLite khong chay;
+#:      2. ngay ca voi SQLite, `LTT_ENV=production` cung khong ap.
+#:    Mat mot rao van con rao kia. `test_309` chot ca hai.
+_PRAGMA_SQLITE_TEST = ("PRAGMA synchronous=OFF", "PRAGMA journal_mode=MEMORY")
+
+
+def _nen_tang_toc_sqlite(url: str) -> bool:
+    """CSDL nay co phai SQLite dung ngoai production khong?"""
+    import os
+    if not url.startswith("sqlite"):
+        return False
+    return (os.environ.get("LTT_ENV") or "").strip().lower() != "production"
+
+
 def get_engine(url: str | None = None) -> Engine:
     """Engine dùng chung cho cả tiến trình. Tạo một lần rồi tái sử dụng."""
     global _engine, _session_factory
@@ -112,6 +141,16 @@ def get_engine(url: str | None = None) -> Engine:
             echo=False,
             future=True,
         )
+        if _nen_tang_toc_sqlite(target):
+            from sqlalchemy import event
+
+            @event.listens_for(_engine, "connect")
+            def _dat_pragma(dbapi_con, _ghi):        # noqa: ANN001
+                cur = dbapi_con.cursor()
+                for cau in _PRAGMA_SQLITE_TEST:
+                    cur.execute(cau)
+                cur.close()
+
         _session_factory = sessionmaker(bind=_engine, expire_on_commit=False,
                                         class_=Session)
     return _engine

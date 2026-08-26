@@ -165,7 +165,55 @@ byte-exact thì **mọi** tệp trong cùng hàm đều cần — không chỉ t
 đầu là chính tôi khi dựng lại một trạng thái để thử nghiệm. Cả hai lần đều chỉ
 lộ ra vì có người nhìn `git diff`.
 
-### (b) 36 test đỏ — **residue của Q108/Q109 trong bộ test**
+### (b) Bốn lượt gate, và con đường 36 → 8 → 4 → 2
+
+| Lượt | pytest | Cây có đổi? | Đã sửa gì sau đó |
+|---|---|---|---|
+| 1 | **36 failed** / 4054 passed | ⚠️ có | residue Agent + `test_69` + BEL trong `.ps1` + `test_37` |
+| 2 | **8 failed** / 4082 passed | ⚠️ có | `test_272` mâu thuẫn · placeholder `ltt_sk_` · `test_298` · `test_126` |
+| 3 | **4 failed** / 4085 passed | ✅ không | link chết `/settings` · plugin thiếu 2 chuyển hướng · `uq_vps_instance_ip` · cấu hình hồ sơ |
+| 4 | **2 failed** / 4088 passed | ✅ không | hạn mức nhịp phụ thuộc tốc độ máy |
+
+⭐ **Từ lượt 3 trở đi không còn cảnh báo `CÂY ĐÃ ĐỔI`** — sau khi `test_306` trả
+lại cả **dấu thời gian** (`os.utime`), không chỉ nội dung. Trước đó hai lượt gate
+(≈4 giờ) tự vô hiệu hoá chính chúng.
+
+⛔ **Không lỗi nào trong 36 là do đợt tối ưu này gây ra.** Tất cả đã có sẵn, và
+chúng chưa từng lộ ra vì lượt `pytest` đầy đủ chưa bao giờ chạy xong (H40.7).
+
+### (c) Ba lỗ THẬT mà lượt chạy đầy đủ tìm ra
+
+Đây là phần trả lời cho câu hỏi *"chạy `pytest` đầy đủ có đáng hai giờ không"*:
+
+1. **`/settings` trả 404 cho mọi admin** kể từ Q108 — ba template vẫn trỏ vào
+   nó. Cùng lớp với `/ltt-llm`, khác một điểm: `/ltt-llm` sinh **tự động** từ
+   manifest nên luật linter bắt được; `/settings` **viết tay** trong template
+   nên luật đó không với tới. Đã thêm phép kiểm đóng đúng khoảng trống ấy.
+2. **Hai alias chuyển hướng thiếu trong plugin WordPress** — link cũ tới điều
+   khoản VPS trả 404 trên website thật.
+3. **`uq_vps_instance_ip` rơi khỏi lưới diễn tập khôi phục** — đúng cái bẫy mà
+   chú thích ngay trên danh sách đó đã cảnh. Nó chặn một địa chỉ nội bộ bị cấp
+   cho **hai** máy trong cùng gateway; mất nó thì mạng không báo lỗi, chỉ im
+   lặng hỏng.
+
+### (d) Và một phép kiểm **chưa bao giờ xanh** trên máy này
+
+`test_193::test_one_abusive_key_does_not_degrade_a_well_behaved_one`.
+
+Hạn mức tính theo **phút** (`RPM=120`); kịch bản chạy **3 giây**; máy đẩy được
+~22 req/s ⇒ 65 request. 65 < 120 nên bộ hạn mức không có lý do gì để bắn.
+
+⭐ Chú thích cũ ghi đúng ý định — *"real limits, so the thing being measured is
+isolation"* — nhưng ngưỡng 120 làm phép đo phụ thuộc **máy chạy nhanh bao
+nhiêu**, tức đo đúng cái nó nói là không đo.
+
+Hạ xuống 15, và **đo trước khi chọn**: với 30 thì biên chỉ 3–11 request và đỏ
+1/3 lần (đã đo đúng vậy); với 15 thì biên hai phía đều rộng. 5/5 lượt xanh.
+
+⇒ *Một phép kiểm không bao giờ chạy và một phép kiểm không bao giờ xanh trông
+giống hệt nhau từ bên ngoài.* Đây là bằng chứng cụ thể cho **O-02**.
+
+### (e) residue Q108/Q109 trong bộ test — lớp thứ 16
 
 Chẩn đoán từ mẫu đã soi (`test_97`, `test_98`, 9 lỗi):
 
