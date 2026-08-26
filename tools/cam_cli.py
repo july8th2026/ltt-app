@@ -16,14 +16,12 @@ Hoac bam dup `cam_cli.bat` o cung thu muc.
   mot bien moi truong phai dat o cap NGUOI DUNG chu khong phai trong mot cua so
   terminal. Moi thu do hong lang le voi mot trieu chung vo ich.
 
-* VI SAO KHONG DONG GOI THANH .EXE
+* BA BE MAT PHAT HANH, MOT LOI
 
-  Mot .exe nho, khong ky so, ghi vao thu muc cau hinh cua nguoi dung - do DUNG
-  la mo ta hanh vi cua malware. SmartScreen chan, diet virus bao dong gia, va
-  phai nuoi ba ban dung. Ma phan loi chi la vai chuc dong ghi tep.
-
-  Mot tep .py doc duoc thi KHACH DOC DUOC TRUOC KHI CHAY - dieu do quan trong
-  vi no dang ghi vao cau hinh cua ho.
+  `cam_cli.py` la loi doc duoc va test duoc. No duoc dung boi GUI EXE, console
+  EXE trong goi ZIP + BAT, va huong dan thu cong. GUI va console la hai binary
+  rieng vi Windows GUI subsystem khong tra stdout/exit code dang tin cay cho
+  `.bat`; gia vo mot GUI EXE la CLI chinh la loi lam ban 1.0 trong nhu treo.
 
 ================================================================================
 !! BON CHOT, VA MOI CHOT DEU TRA GIA MOT LAN O DAU DO
@@ -71,6 +69,11 @@ import urllib.error
 import urllib.request
 
 try:
+    import winreg
+except ImportError:  # pragma: no cover - chi co tren Windows
+    winreg = None
+
+try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 except (AttributeError, ValueError):
@@ -85,7 +88,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.0.0"
+PHIEN_BAN = "1.1.0"
 
 MODEL = "ltt_llm"
 
@@ -99,6 +102,16 @@ MODEL = "ltt_llm"
 MODEL_DESKTOP = "ltt-llm-claude-compat"
 ENV_KHOA_CODEX = "LTT_API_KEY"
 ENV_KHOA_CLAUDE = "ANTHROPIC_AUTH_TOKEN"
+
+MUC_CODEX_CLI = "codex-cli"
+MUC_CODEX_VSCODE = "codex-vscode"
+MUC_CLAUDE_CLI = "claude-cli"
+MUC_CLAUDE_VSCODE = "claude-vscode"
+MUC_CLAUDE_DESKTOP = "claude-desktop"
+CAC_MUC = (MUC_CODEX_CLI, MUC_CODEX_VSCODE, MUC_CLAUDE_CLI,
+           MUC_CLAUDE_VSCODE, MUC_CLAUDE_DESKTOP)
+MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
+                MUC_CLAUDE_VSCODE, MUC_CLAUDE_DESKTOP)
 
 #: Dau moc hai dau. Moi thu giua chung la cua ta; moi thu ngoai chung la cua
 #: khach va KHONG duoc dung toi.
@@ -269,12 +282,26 @@ def _go_khoi(van: str) -> tuple[str, bool]:
 def _setx(ten: str, gt: str) -> bool:
     """Dat bien moi truong o cap NGUOI DUNG.
 
-    !! `setx` chi anh huong tien trinh MOI. VS Code / terminal dang mo se KHONG
-       thay - phai mo lai. Day la cho hay lam nguoi ta tuong cong cu hong.
+    Dung registry native tren Windows thay vi goi `setx.exe`.
+
+    🔴 Ban 1.0 goi 5-12 tien trinh con `setx`/`reg`, moi tien trinh co timeout
+       30 giay. GUI khong co tien do trung gian, nen mot may co registry cham co
+       the nam o chu "Dang cam" nhieu phut. Native registry xoa ca chuoi cho do.
+
+    !! Bien cap nguoi dung chi anh huong tien trinh MOI. VS Code / terminal
+       dang mo se KHONG thay - phai mo lai.
     """
+    if winreg is not None and os.name == "nt":
+        try:
+            with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                winreg.SetValueEx(k, ten, 0, winreg.REG_SZ, gt)
+            _bao_moi_truong_doi()
+            return True
+        except OSError:
+            return False
     try:
         r = subprocess.run(["setx", ten, gt], capture_output=True, text=True,
-                           timeout=30)
+                           timeout=10)
         return r.returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
@@ -283,18 +310,35 @@ def _setx(ten: str, gt: str) -> bool:
 def _xoa_env(ten: str) -> bool:
     """Xoa bien moi truong cap nguoi dung. `setx TEN ""` de lai mot bien RONG,
     khong xoa han - nen phai dung `reg delete`."""
+    if winreg is not None and os.name == "nt":
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment", 0,
+                                winreg.KEY_SET_VALUE) as k:
+                winreg.DeleteValue(k, ten)
+            _bao_moi_truong_doi()
+            return True
+        except FileNotFoundError:
+            return True
+        except OSError:
+            return False
     try:
         r = subprocess.run(["reg", "delete", "HKCU\\Environment", "/F", "/V", ten],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=10)
         return r.returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
 
 
 def _doc_env_nguoi_dung(ten: str) -> str | None:
+    if winreg is not None and os.name == "nt":
+        try:
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Environment") as k:
+                return str(winreg.QueryValueEx(k, ten)[0])
+        except (FileNotFoundError, OSError):
+            return None
     try:
         r = subprocess.run(["reg", "query", "HKCU\\Environment", "/V", ten],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=10)
         if r.returncode != 0:
             return None
         for dong in r.stdout.splitlines():
@@ -303,6 +347,25 @@ def _doc_env_nguoi_dung(ten: str) -> str | None:
     except (OSError, subprocess.SubprocessError):
         return None
     return None
+
+
+def _bao_moi_truong_doi() -> None:
+    """Bao Explorer rang bien cap nguoi dung da doi; toi da cho 2 giay.
+
+    Viec nay KHONG lam tien trinh dang mo nhan gia tri moi. No chi giup tien
+    trinh mo sau thong bao ke thua nhanh hon. Loi broadcast khong duoc lam hong
+    viec ghi registry da thanh cong.
+    """
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        ket_qua = ctypes.c_size_t()
+        ctypes.windll.user32.SendMessageTimeoutW(
+            0xFFFF, 0x001A, 0, "Environment", 0x0002, 2000,
+            ctypes.byref(ket_qua))
+    except (AttributeError, OSError):
+        pass
 
 
 # ── Codex ───────────────────────────────────────────────────────────────────
@@ -424,32 +487,69 @@ REG_DESKTOP_HKLM = r"HKLM\SOFTWARE\Policies\Claude"
 #: kể cả số và mảng — mảng phải là **chuỗi JSON**.
 _DESKTOP_KHOA = ("inferenceProvider", "inferenceGatewayBaseUrl",
                  "inferenceGatewayApiKey", "inferenceGatewayAuthScheme",
-                 "inferenceModels", "modelDiscoveryEnabled")
+                 "inferenceModels", "modelDiscoveryEnabled", "chatTabEnabled")
+
+
+def _tach_khoa_registry(khoa: str):
+    if winreg is None or os.name != "nt":
+        return None
+    if "\\" not in khoa:
+        return None
+    goc_ten, nhanh = khoa.split("\\", 1)
+    goc = {"HKCU": winreg.HKEY_CURRENT_USER,
+           "HKLM": winreg.HKEY_LOCAL_MACHINE}.get(goc_ten.upper())
+    return (goc, nhanh) if goc is not None else None
 
 
 def _reg_ghi(khoa: str, ten: str, gt: str) -> bool:
+    tach = _tach_khoa_registry(khoa)
+    if tach:
+        try:
+            with winreg.CreateKey(tach[0], tach[1]) as k:
+                winreg.SetValueEx(k, ten, 0, winreg.REG_SZ, gt)
+            return True
+        except OSError:
+            return False
     try:
         r = subprocess.run(["reg", "add", khoa, "/v", ten, "/t", "REG_SZ",
                             "/d", gt, "/f"],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=10)
         return r.returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
 
 
 def _reg_xoa(khoa: str, ten: str) -> bool:
+    tach = _tach_khoa_registry(khoa)
+    if tach:
+        try:
+            with winreg.OpenKey(tach[0], tach[1], 0,
+                                winreg.KEY_SET_VALUE) as k:
+                winreg.DeleteValue(k, ten)
+            return True
+        except FileNotFoundError:
+            return True
+        except OSError:
+            return False
     try:
         r = subprocess.run(["reg", "delete", khoa, "/v", ten, "/f"],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=10)
         return r.returncode == 0
     except (OSError, subprocess.SubprocessError):
         return False
 
 
 def _reg_doc(khoa: str, ten: str) -> str | None:
+    tach = _tach_khoa_registry(khoa)
+    if tach:
+        try:
+            with winreg.OpenKey(tach[0], tach[1]) as k:
+                return str(winreg.QueryValueEx(k, ten)[0])
+        except (FileNotFoundError, OSError):
+            return None
     try:
         r = subprocess.run(["reg", "query", khoa, "/v", ten],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=10)
         if r.returncode != 0:
             return None
         for dong in r.stdout.splitlines():
@@ -720,6 +820,103 @@ def go_claude(tt: dict) -> list:
     return ra
 
 
+# ── Trang thai THUC va lua chon be mat ─────────────────────────────────────
+
+def _cac_muc(a) -> tuple[str, ...]:
+    """Chuan hoa lua chon tu CLI/GUI, va chan hai che do Codex xung dot."""
+    raw = getattr(a, "muc", None)
+    if not raw:
+        muc = list(MUC_MAC_DINH)
+        if getattr(a, "vscode", False):
+            muc.remove(MUC_CODEX_CLI)
+            muc.insert(0, MUC_CODEX_VSCODE)
+    else:
+        muc = []
+        for phan in raw:
+            for ten in str(phan).split(","):
+                ten = ten.strip().lower()
+                if ten and ten not in muc:
+                    muc.append(ten)
+    sai = [m for m in muc if m not in CAC_MUC]
+    if sai:
+        raise ValueError("Hang muc khong hop le: " + ", ".join(sai))
+    if MUC_CODEX_CLI in muc and MUC_CODEX_VSCODE in muc:
+        raise ValueError("Chi chon MOT trong codex-cli va codex-vscode.")
+    if not muc:
+        raise ValueError("Chua chon hang muc nao de cam.")
+    return tuple(muc)
+
+
+def _doc_json_an_toan(tep: pathlib.Path) -> dict:
+    try:
+        if not tep.exists():
+            return {}
+        d = json.loads(tep.read_text(encoding="utf-8"))
+        return d if isinstance(d, dict) else {}
+    except (OSError, ValueError):
+        return {}
+
+
+def trang_thai_thuc(goc: str | None = None) -> dict:
+    """Do tu file/registry that; KHONG tin co `da_cam` trong tep trang thai.
+
+    Ham nay chi tra boolean va ten che do. Khong tra gia tri khoa.
+    """
+    goc = (goc or _doc_trang_thai().get("goc") or GOC_MAC_DINH).rstrip("/")
+    cfg = NHA / ".codex" / "config.toml"
+    van = ""
+    try:
+        van = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
+    except OSError:
+        pass
+    co_khoi = MOC_MO in van and MOC_DONG in van
+    khoi = ""
+    if co_khoi:
+        khoi = van.split(MOC_MO, 1)[1].split(MOC_DONG, 1)[0]
+    codex_vscode = co_khoi and 'model_provider = "ltt"' in khoi
+    codex_cli = (co_khoi and not codex_vscode
+                 and (NHA / ".codex" / "ltt.config.toml").exists())
+
+    env_codex = _doc_env_nguoi_dung(ENV_KHOA_CODEX)
+    env_claude = _doc_env_nguoi_dung(ENV_KHOA_CLAUDE)
+    claude_cli = (
+        _doc_env_nguoi_dung("ANTHROPIC_BASE_URL") == goc + "/api"
+        and _doc_env_nguoi_dung("ANTHROPIC_MODEL") == MODEL
+        and bool(env_claude)
+    )
+
+    vs = _doc_json_an_toan(_vscode_settings())
+    bien_vs = {x.get("name"): x.get("value")
+               for x in (vs.get("claudeCode.environmentVariables") or [])
+               if isinstance(x, dict)}
+    claude_vscode = (
+        bool(env_claude)
+        and vs.get("claudeCode.disableLoginPrompt") is True
+        and bien_vs.get("ANTHROPIC_BASE_URL") == goc + "/api"
+        and bien_vs.get("ANTHROPIC_MODEL") == MODEL
+    )
+
+    hk = REG_DESKTOP_HKCU
+    desktop = (
+        not _reg_doc(REG_DESKTOP_HKLM, "inferenceProvider")
+        and _reg_doc(hk, "inferenceProvider") == "gateway"
+        and _reg_doc(hk, "inferenceGatewayBaseUrl") == goc + "/api"
+        and bool(_reg_doc(hk, "inferenceGatewayApiKey"))
+        and MODEL_DESKTOP in (_reg_doc(hk, "inferenceModels") or "")
+        and _reg_doc(hk, "chatTabEnabled") == "true"
+    )
+    muc = {
+        MUC_CODEX_CLI: bool(codex_cli and env_codex),
+        MUC_CODEX_VSCODE: bool(codex_vscode and env_codex),
+        MUC_CLAUDE_CLI: bool(claude_cli),
+        MUC_CLAUDE_VSCODE: bool(claude_vscode),
+        MUC_CLAUDE_DESKTOP: bool(desktop),
+    }
+    return {"goc": goc, "muc": muc, "dang_cam": any(muc.values()),
+            "codex_mode": ("vscode" if muc[MUC_CODEX_VSCODE]
+                           else "profile" if muc[MUC_CODEX_CLI] else "-")}
+
+
 # ── Lenh ────────────────────────────────────────────────────────────────────
 
 def _cach_goi(lenh: str) -> str:
@@ -734,6 +931,11 @@ def _cach_goi(lenh: str) -> str:
 
 
 def lenh_cam(a) -> int:
+    try:
+        muc = _cac_muc(a)
+    except ValueError as exc:
+        print(f"Khong the cam: {exc}")
+        return 1
     khoa = (a.khoa or os.environ.get(ENV_KHOA_CODEX) or "").strip()
     if not khoa:
         print("Thieu khoa. Dung --khoa ltt_sk_... hoac dat san "
@@ -746,32 +948,51 @@ def lenh_cam(a) -> int:
 
     tt = _doc_trang_thai()
     tt["goc"] = a.goc
-    print(f"Cam vao {a.goc}\n")
-    print("Codex:")
-    for d in cam_codex(a.goc, tt, getattr(a, 'vscode', False)):
-        print(d)
-    print("\nClaude Code:")
-    for d in cam_claude(a.goc, tt, a.toan_cuc):
-        print(d)
+    tt["muc_da_chon"] = list(muc)
+    print(f"Cam vao {a.goc}")
+    print("Hang muc: " + ", ".join(muc) + "\n")
 
-    print("")
-    print("Tien ich VS Code:")
-    for d in cam_vscode(a.goc, tt):
-        print(d)
+    if MUC_CODEX_CLI in muc or MUC_CODEX_VSCODE in muc:
+        print("Codex:")
+        for d in cam_codex(a.goc, tt, MUC_CODEX_VSCODE in muc):
+            print(d)
+        print(f"  [{'OK' if _setx(ENV_KHOA_CODEX, khoa) else '!!'}] "
+              f"{ENV_KHOA_CODEX}")
 
-    print("")
-    print("Claude Desktop:")
-    for d in cam_desktop(a.goc, khoa, tt):
-        print(d)
+    if MUC_CLAUDE_CLI in muc:
+        print("\nClaude Code:")
+        for d in cam_claude(a.goc, tt, a.toan_cuc):
+            print(d)
 
-    print("\nKhoa:")
-    for ten in (ENV_KHOA_CODEX, ENV_KHOA_CLAUDE):
-        print(f"  [{'OK' if _setx(ten, khoa) else '!!'}] {ten}")
+    if MUC_CLAUDE_VSCODE in muc:
+        print("\nTien ich Claude Code trong VS Code:")
+        for d in cam_vscode(a.goc, tt):
+            print(d)
+
+    if MUC_CLAUDE_CLI in muc or MUC_CLAUDE_VSCODE in muc:
+        print("\nKhoa Claude:")
+        print(f"  [{'OK' if _setx(ENV_KHOA_CLAUDE, khoa) else '!!'}] "
+              f"{ENV_KHOA_CLAUDE}")
+
+    if MUC_CLAUDE_DESKTOP in muc:
+        print("\nClaude Desktop:")
+        for d in cam_desktop(a.goc, khoa, tt):
+            print(d)
+
     # !! KHONG ghi khoa vao tep trang thai. Tep do khong phai cho bi mat.
-    tt["da_cam"] = True
+    thuc = trang_thai_thuc(a.goc)
+    hong = [ten for ten in muc if not thuc["muc"].get(ten)]
+    tt["da_cam"] = thuc["dang_cam"]
+    tt["muc_hong"] = hong
     _ghi_trang_thai(tt)
 
     print("\n" + "=" * 70)
+    if hong:
+        print("[THAT BAI MOT PHAN] Chua cam duoc: " + ", ".join(hong))
+        print("Mo nhat ky tung buoc o tren; cong cu KHONG danh dau xanh gia.")
+    else:
+        print("[OK] Da doi chieu lai file + registry: tat ca hang muc da chon co mat.")
+
     print("!! PHAI MO LAI VS CODE / TERMINAL. `setx` chi anh huong tien trinh MOI;")
     print("   cua so dang mo van dung gia tri cu, va do la cho hay lam nguoi ta")
     print("   tuong cong cu nay hong.")
@@ -792,7 +1013,7 @@ def lenh_cam(a) -> int:
     print("")
     for nhan, lenh in (("Kiem lai", "kiem"), ("Go ra", "go")):
         print(f"{nhan + ':':13}{_cach_goi(lenh)}")
-    return 0
+    return 1 if hong else 0
 
 
 def lenh_go(a) -> int:
@@ -829,10 +1050,18 @@ def lenh_go(a) -> int:
 
 def lenh_xem(a) -> int:
     tt = _doc_trang_thai()
+    thuc = trang_thai_thuc(tt.get("goc"))
     print(f"LTT Studios - cam cong cu   phien ban {PHIEN_BAN}")
     print(f"Nhat ky: {TEP_NHAT_KY}")
-    print(f"Trang thai: {'DA CAM' if tt.get('da_cam') else 'chua cam'}"
-          f"   goc={tt.get('goc') or '-'}\n")
+    print(f"Trang thai: {'DA CAM' if thuc['dang_cam'] else 'chua cam'}"
+          f"   goc={thuc['goc']}\n")
+
+    print("  Hang muc do tu he thong that:")
+    for ten in CAC_MUC:
+        print(f"    {ten:22} : {'OK' if thuc['muc'][ten] else '-'}")
+    if tt.get("da_cam") and not thuc["dang_cam"]:
+        print("    !! Tep trang thai noi da cam, nhung file/registry KHONG xac nhan.")
+    print("")
 
     cfg = NHA / ".codex" / "config.toml"
     co = cfg.exists() and MOC_MO in cfg.read_text(encoding="utf-8")
@@ -1016,6 +1245,9 @@ def main(argv=None) -> int:
     c.add_argument("--toan-cuc", action="store_true", dest="toan_cuc",
                    help="ghi ca ~/.claude/settings.json (TOAN CUC cho moi phien "
                         "Claude Code tren may nay)")
+    c.add_argument("--muc", action="append", choices=CAC_MUC,
+                   help="hang muc can cam; lap lai co nay de chon nhieu. "
+                        "Bo qua thi dung bo mac dinh tuong thich ban 1.0")
 
     sub.add_parser("go", help="go ra, tra ve nguyen trang")
     sub.add_parser("xem", help="xem dang cam gi")

@@ -3574,3 +3574,28 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 
 ⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
 link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
+
+---
+
+## H42 — Dev API: ba phương thức cắm Codex/Claude (2026-08-26)
+
+**Quyết định:** Q110. **Nguồn yêu cầu:** chủ sản phẩm yêu cầu hoàn thiện và
+deploy trong cùng phiên.
+
+- [ ] **H42.1 — EXE MVP thật:** chọn từng bề mặt, bắt lỗi bridge, hiện thời gian,
+      đo trạng thái từ file/registry thật; có Codex VS Code; bước hỏng trả mã
+      khác 0, không được ghi nhận thành công.
+- [ ] **H42.2 — ZIP + BAT không GUI:** console EXE thật, không cần Python; BAT
+      tự xin Administrator; khóa nhập ẩn và chỉ truyền qua environment của tiến
+      trình con, không nằm trên command line hay tệp tạm.
+- [ ] **H42.3 — web + hướng dẫn:** `/developers/cli`, `/huong-dan` và trang công
+      cụ trình bày đúng ba phương thức; có route tải ZIP, phiên bản, dung lượng,
+      SHA-256; hướng dẫn tay vẫn đầy đủ.
+- [ ] **H42.4 — phát hành:** test + `gate.py` xanh trên cây sạch; EXE/ZIP được
+      quét Defender; artifact chép vào `C:\LTTPlatform\data\api_dist`; deploy
+      bằng release ZIP; Playwright xác minh tải được cả hai artifact, hướng dẫn
+      tay hiển thị và không có console/network error.
+
+**Rollback:** code/web dùng `C:\LTTPlatform\app.previous` qua
+`deploy/windows/rollback.ps1`; artifact là dữ liệu ngoài release nên giữ lại
+bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.

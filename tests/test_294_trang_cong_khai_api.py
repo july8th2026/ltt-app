@@ -119,6 +119,8 @@ def test_chua_phat_hanh_thi_503_chu_khong_phai_404(khach, tl, monkeypatch):
     """
     monkeypatch.setattr(tl, "bo_cai_moi_nhat", lambda: None)
     assert khach.get("/tai/cong-cu-cam").status_code == 503
+    monkeypatch.setattr(tl, "goi_bat_moi_nhat", lambda: None)
+    assert khach.get("/tai/cong-cu-cam-bat").status_code == 503
 
 
 def test_bam_tinh_TU_CHINH_TEP_dang_phuc_vu(tl, tmp_path, monkeypatch):
@@ -156,6 +158,19 @@ def test_chon_ban_MOI_NHAT_khi_thu_muc_co_nhieu_ban(tl, tmp_path, monkeypatch):
     assert tl.bo_cai_moi_nhat()["phien_ban"] == "1.10.0"
 
 
+def test_goi_BAT_zip_co_bam_va_chon_ban_moi_nhat(tl, tmp_path, monkeypatch):
+    import hashlib
+    thu_muc = tmp_path / "api_dist"
+    thu_muc.mkdir()
+    for v in ("1.0.0", "1.1.0"):
+        (thu_muc / f"LTTStudios-CamCLI-BAT-{v}.zip").write_bytes(v.encode())
+    monkeypatch.setattr(tl, "_thu_muc_ban_phat", lambda: thu_muc)
+    tl._BAM_DA_TINH.clear()
+    kq = tl.goi_bat_moi_nhat()
+    assert kq["phien_ban"] == "1.1.0"
+    assert kq["sha256"] == hashlib.sha256(b"1.1.0").hexdigest()
+
+
 # ── Một nguồn duy nhất cho hướng dẫn ────────────────────────────────────────
 
 def test_hai_trang_dung_CHUNG_mot_than(khach):
@@ -180,6 +195,7 @@ def test_trang_cong_cu_hien_bam_va_KHONG_bao_tat_diet_virus(khach):
     noi = khach.get("/huong-dan/cong-cu").text
     assert "SHA-256" in noi
     assert "/tai/cong-cu-cam" in noi
+    assert "/tai/cong-cu-cam-bat" in noi
     # ⛔ Bao khach tat phan mem diet virus la loi khuyen ta khong bao gio duoc dua.
     for cam in ("tắt phần mềm diệt virus", "tat dinh kem", "disable antivirus"):
         if cam == "tắt phần mềm diệt virus":

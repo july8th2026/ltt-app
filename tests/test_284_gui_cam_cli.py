@@ -165,3 +165,62 @@ def test_bat_thuan_ascii_khong_BOM():
     assert b[:3] != b"\xef\xbb\xbf"
     xau = [(i, hex(c)) for i, c in enumerate(b) if c > 127]
     assert not xau, f"ky tu ngoai ASCII trong .bat: {xau[:3]}"
+
+
+def test_launcher_ps1_thuan_ascii_khong_BOM_va_khong_lo_khoa():
+    p = GOC / "tools" / "cam_cli_launcher.ps1"
+    b = p.read_bytes()
+    assert b[:3] != b"\xef\xbb\xbf"
+    assert not [c for c in b if c > 127]
+    van = b.decode("ascii")
+    assert "Read-Host 'Paste API key (input is hidden)' -AsSecureString" in van
+    assert "LTT_API_KEY" in van
+    assert "LTT_CAM_CLI_OUTPUT" in van
+    assert "Start-Process" in van and "-Wait" in van
+
+
+@pytest.mark.parametrize("ten", ["cam_cli_admin.bat", "cam_cli_admin.ps1"])
+def test_goi_bat_admin_thuan_ascii_khong_BOM(ten):
+    b = (GOC / "tools" / ten).read_bytes()
+    assert b[:3] != b"\xef\xbb\xbf"
+    assert not [c for c in b if c > 127]
+
+
+def test_goi_zip_thuc_su_yeu_cau_administrator():
+    ps = (GOC / "tools" / "cam_cli_admin.ps1").read_text(encoding="ascii")
+    bat = (GOC / "tools" / "cam_cli_admin.bat").read_text(encoding="ascii")
+    assert "WindowsBuiltInRole]::Administrator" in ps
+    assert "-Verb RunAs" in ps
+    assert "LTTStudios-CamCLI-Console.exe" in bat
+
+
+def test_gui_cho_chon_tung_be_mat_va_hien_loi_bridge():
+    html = (GOC / "tools" / "gui" / "index.html").read_text(encoding="utf-8")
+    for ten in ("codex", "claude_cli", "claude_vscode", "claude_desktop"):
+        assert ten in html
+    assert "api().cam(k, luaChon)" in html
+    assert "catch (e)" in html
+    assert "Hoàn tất sau" in html
+
+
+def test_cau_cam_chuyen_lua_chon_thanh_dung_hang_muc(monkeypatch):
+    gui = _nap("cam_cli_gui")
+
+    class LoiGia:
+        GOC_MAC_DINH = "https://x"
+        MUC_CODEX_CLI = "codex-cli"
+        MUC_CODEX_VSCODE = "codex-vscode"
+        MUC_CLAUDE_CLI = "claude-cli"
+        MUC_CLAUDE_VSCODE = "claude-vscode"
+        MUC_CLAUDE_DESKTOP = "claude-desktop"
+
+        @staticmethod
+        def lenh_cam(a):
+            assert a.muc == ["codex-vscode", "claude-vscode"]
+            return 0
+
+    kq = gui.Cau(LoiGia()).cam("ltt_sk_x", {
+        "codex": "vscode", "claude_cli": False,
+        "claude_vscode": True, "claude_desktop": False,
+    })
+    assert kq["ma"] == 0

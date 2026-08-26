@@ -24,7 +24,7 @@
 
 #define TenApp      "LTT Studios - Cam cong cu viet ma"
 #define TenNgan     "LTTStudios-CamCLI"
-#define PhienBan    "1.0.0"
+#define PhienBan    "1.1.0"
 #define NhaXB       "LTT Studios"
 #define Web         "https://app.lttstudios.com"
 #define ThuMucNguon "..\..\build\exe\pyinstaller\LTTStudios-CamCLI"
@@ -72,9 +72,15 @@ Name: "desktopicon"; Description: "{cm:TaoLoiTatManHinh}"; \
 ; - dung loai hong khong co log de doc.
 Source: "{#ThuMucNguon}\*"; DestDir: "{app}"; \
   Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\cam_cli.bat"; DestDir: "{app}"; DestName: "LTTStudios-CamCLI.bat"; \
+  Flags: ignoreversion
+Source: "..\cam_cli_launcher.ps1"; DestDir: "{app}"; \
+  Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#TenApp}"; Filename: "{app}\{#TenNgan}.exe"
+Name: "{group}\{#TenApp} - Batch launcher"; \
+  Filename: "{app}\LTTStudios-CamCLI.bat"; WorkingDir: "{app}"
 Name: "{group}\{cm:UninstallProgram,{#TenApp}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#TenApp}"; Filename: "{app}\{#TenNgan}.exe"; \
   Tasks: desktopicon

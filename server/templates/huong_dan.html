@@ -30,20 +30,21 @@
    Bo cai 25,9 MB da nam tren may chu tu 25/08 va `/tai/cong-cu-cam` tra 200,
    nhung neu khong trang nao tro toi thi no coi nhu khong ton tai. #}
 <div class="card" id="cong-cu">
-  <h2 style="margin-top:0;">⚡ {{ _("Cách nhanh nhất: để công cụ ghi hộ") }}</h2>
-  <p>{{ _("Công cụ cắm tự ghi đúng cấu hình cho cả năm bề mặt, đặt sẵn hai rào chắn của Claude Desktop, và gỡ ra trả lại nguyên trạng.") }}</p>
-  <p>
-    <a class="btn btn-primary" href="/tai/cong-cu-cam">{{ _("Tải công cụ cắm") }}
-      {%- if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a>
-    <a class="btn btn-ghost" href="/huong-dan/cong-cu" style="margin-left:8px;">{{ _("Nó làm gì, chạm vào đâu") }}</a>
-  </p>
-  {% if bo_cai %}
-    <p class="muted" style="margin-bottom:0;">{{ _("Bản") }} {{ bo_cai.phien_ban }} ·
-      Windows · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>
-  {% endif %}
-  <p class="muted">{{ _("Muốn tự tay thì đọc tiếp — mọi bước đều ghi đầy đủ bên dưới.") }}</p>
+  <h2 style="margin-top:0;">{{ _("Ba cách cắm API") }}</h2>
+  <ol>
+    <li><strong>{{ _("Tool EXE") }}</strong> — {{ _("có giao diện, chọn từng hạng mục và đọc lại trạng thái thật.") }}
+      <a href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></li>
+    <li><strong>{{ _("ZIP + BAT") }}</strong> — {{ _("không GUI, tự xin quyền Administrator, khóa được nhập ẩn.") }}
+      <a href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT") }}{% if goi_bat %} ({{ goi_bat.kich_thuoc_mb }} MB){% endif %}</a></li>
+    <li><strong>{{ _("Thủ công") }}</strong> — {{ _("không tải gì; chép đúng cấu hình ở phần bên dưới.") }}
+      <a href="#cau-hinh-tay">{{ _("Xem hướng dẫn") }}</a></li>
+  </ol>
+  {% if bo_cai %}<p class="muted">EXE {{ bo_cai.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>{% endif %}
+  {% if goi_bat %}<p class="muted">BAT {{ goi_bat.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ goi_bat.sha256 }}</code></p>{% endif %}
+  <p class="muted"><a href="/huong-dan/cong-cu">{{ _("Nó làm gì, chạm vào đâu") }}</a></p>
 </div>
 
+<div id="cau-hinh-tay"></div>
 {% include "_cam_chon.html" %}
 
 <div class="card" id="goi-thu">

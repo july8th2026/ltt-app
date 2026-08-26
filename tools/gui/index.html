@@ -34,6 +34,15 @@ label.lbl{display:block;font-size:11.5px;font-weight:600;color:var(--muted);
       border-radius:var(--radius-sm)}
 .tick input{margin:2px 0 0;accent-color:var(--brand-primary);flex:none}
 .tick .canh{color:var(--warn);font-size:11.5px;margin-top:3px}
+.chon{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.muc{display:flex;gap:9px;align-items:flex-start;padding:10px 11px;border:1px solid var(--line);
+     border-radius:var(--radius-sm);background:var(--panel2);cursor:pointer}
+.muc input{margin:2px 0 0;accent-color:var(--brand-primary);flex:none}
+.muc b{display:block;font-size:12px}.muc small{display:block;color:var(--dim);margin-top:2px}
+.muc.rong{grid-column:1/-1}.nhom{margin-top:14px}
+.radio{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px}
+.radio label{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.radio input{accent-color:var(--brand-primary)}
 .dsach{list-style:none;margin:0;padding:0}
 .dsach li{display:flex;align-items:center;gap:10px;padding:8px 0;
           border-bottom:1px solid var(--line);font-size:12.5px}
@@ -60,6 +69,7 @@ a:hover{text-decoration:underline}
       transition:color var(--motion-fast),border-color var(--motion-fast)}
 .chep:hover{color:var(--fg);border-color:var(--line2)}
 .chep.xong{color:var(--ok);border-color:var(--ok-line)}
+@media(max-width:600px){.chon{grid-template-columns:1fr}.muc.rong{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -80,11 +90,26 @@ a:hover{text-decoration:underline}
     <p class="lam">Khoá chỉ hiện <b>một lần</b> lúc tạo.
       <a href="#" id="mokhoa">Lấy khoá ở trang Khoá API ↗</a></p>
 
+    <div class="nhom">
+      <label class="lbl">Codex</label>
+      <div class="radio">
+        <label><input type="radio" name="codex" value="profile" checked> CLI qua profile <code>ltt</code></label>
+        <label><input type="radio" name="codex" value="vscode"> Tiện ích VS Code + mặc định CLI</label>
+        <label><input type="radio" name="codex" value="none"> Không cắm</label>
+      </div>
+      <p class="lam">Chế độ VS Code thay luôn model mặc định của lệnh <code>codex</code>.</p>
+    </div>
+
+    <div class="chon">
+      <label class="muc"><input type="checkbox" id="claude_cli" checked><span><b>Claude Code CLI</b><small>Biến môi trường cấp người dùng</small></span></label>
+      <label class="muc"><input type="checkbox" id="claude_vscode" checked><span><b>Claude Code trong VS Code</b><small>Thiết lập cấp người dùng</small></span></label>
+      <label class="muc rong"><input type="checkbox" id="claude_desktop" checked><span><b>Claude Desktop</b><small>Chính sách registry + chế độ Chat; phải thoát hẳn rồi mở lại</small></span></label>
+    </div>
+
     <label class="tick">
       <input type="checkbox" id="toancuc">
-      <span>
-        Áp cho <b>mọi</b> phiên Claude Code trên máy này
-        <div class="canh">⚠ Kể cả gói Anthropic thật của bạn. Bỏ tích thì chỉ đặt biến môi trường.</div>
+      <span>Ghi thêm vào <code>~/.claude/settings.json</code>
+        <div class="canh">⚠ Mọi phiên Claude Code, kể cả phiên đang dùng dịch vụ Anthropic thật, sẽ đi qua LTT. Biến môi trường chỉ có tác dụng sau khi mở phiên mới.</div>
       </span>
     </label>
 
@@ -97,23 +122,25 @@ a:hover{text-decoration:underline}
   </div>
 
   <div class="card">
-    <p class="hd">Công cụ được cắm</p>
+    <p class="hd">Trạng thái đo từ máy này</p>
     <ul class="dsach">
-      <li><span class="ten">Codex</span><span class="noi">~/.codex/config.toml</span></li>
-      <li><span class="ten">Claude Code</span><span class="noi">biến môi trường</span></li>
-      <li><span class="ten">Tiện ích VS Code</span><span class="noi">dùng chung cấu hình trên</span></li>
+      <li><span class="ten">Codex CLI</span><span class="noi" id="st_codex_cli">—</span></li>
+      <li><span class="ten">Codex trong VS Code</span><span class="noi" id="st_codex_vscode">—</span></li>
+      <li><span class="ten">Claude Code CLI</span><span class="noi" id="st_claude_cli">—</span></li>
+      <li><span class="ten">Claude Code trong VS Code</span><span class="noi" id="st_claude_vscode">—</span></li>
+      <li><span class="ten">Claude Desktop</span><span class="noi" id="st_claude_desktop">—</span></li>
     </ul>
-    <p class="lam">Sau khi cắm phải <b>mở lại VS Code</b> — biến môi trường chỉ
-      áp cho tiến trình mới.</p>
+    <p class="lam">Màu xanh chỉ xuất hiện sau khi công cụ đọc lại file và registry,
+      không dựa vào việc nút vừa chạy xong.</p>
   </div>
 
   <div class="card">
-    <p class="hd">Claude Desktop · cấu hình tay</p>
-    <p class="lam" style="margin-top:0">Ứng dụng này không đọc tệp cấu hình nào —
-      phải điền trong app: <span class="mono">Developer → Configure Third-Party Inference</span>.</p>
+    <p class="hd">Đối chiếu Claude Desktop</p>
+    <p class="lam" style="margin-top:0">Công cụ tự ghi bằng chính sách Windows.
+      Các giá trị dưới đây để đối chiếu; tên model riêng tránh lỗi nút Gửi bị vô hiệu mà không báo.</p>
     <div class="cp"><span class="k">Gateway base URL</span><code>https://app.lttstudios.com/api</code><button class="chep" data-chep="https://app.lttstudios.com/api">chép</button></div>
     <div class="cp"><span class="k">Auth scheme</span><code>Bearer</code><button class="chep" data-chep="Bearer">chép</button></div>
-    <div class="cp"><span class="k">inferenceModels</span><code>ltt_llm</code><button class="chep" data-chep="ltt_llm">chép</button></div>
+    <div class="cp"><span class="k">inferenceModels</span><code>ltt-llm-claude-compat</code><button class="chep" data-chep="ltt-llm-claude-compat">chép</button></div>
     <div class="cp"><span class="k">Gateway API key</span><code>khoá của bạn</code></div>
   </div>
 
@@ -127,19 +154,34 @@ const api = () => (window.pywebview && window.pywebview.api) || null;
 function ve(kq) {
   // Hien nguyen van tung dong loi tra ve. KHONG tom tat: khi mot buoc that bai,
   // dong `[!!]` cua no la thu duy nhat noi duoc that bai o dau.
-  $("nhatky").textContent = (kq.dong || []).join("\n");
+  if (!kq || typeof kq !== "object") {
+    $("nhatky").textContent = "[LỖI] Cầu nối không trả về kết quả hợp lệ.";
+    return;
+  }
+  const dong = kq.dong || [];
+  const duoi = typeof kq.giay === "number" ? `\n\nHoàn tất sau ${kq.giay.toFixed(1)} giây · mã ${kq.ma}` : "";
+  $("nhatky").textContent = dong.join("\n") + duoi;
 }
 
-function datTrangThai(dangCam) {
+function datTrangThai(tt) {
+  const dangCam = !!(tt && tt.dang_cam);
   $("cham").className = "cham " + (dangCam ? "on" : "off");
-  $("tt").textContent = dangCam ? "Đang cắm vào LTT Studios" : "Chưa cắm";
+  $("tt").textContent = dangCam ? "Có cấu hình LTT Studios trên máy" : "Chưa cắm";
+  const muc = (tt && tt.muc) || {};
+  for (const ten of ["codex_cli", "codex_vscode", "claude_cli", "claude_vscode", "claude_desktop"]) {
+    const id = "st_" + ten;
+    if ($(id)) $(id).textContent = muc[ten.replaceAll("_", "-")] ? "Đã cắm ✓" : "Chưa cắm";
+  }
 }
 
 async function lamMoi() {
   const a = api(); if (!a) return;
-  const kq = await a.xem();
-  ve(kq);
-  datTrangThai((kq.dong || []).some((d) => d.includes("DA CAM")));
+  try {
+    const kq = await a.xem();
+    ve(kq); datTrangThai(kq.trang_thai);
+  } catch (e) {
+    $("nhatky").textContent = "[LỖI] Không đọc được trạng thái: " + String(e);
+  }
 }
 
 function khoaNut(khoa) {
@@ -148,14 +190,25 @@ function khoaNut(khoa) {
 
 async function chay(ten, fn) {
   khoaNut(true);
-  $("nhatky").textContent = ten + "…";
-  try { ve(await fn()); } finally { khoaNut(false); }
+  const batDau = Date.now();
+  $("nhatky").textContent = ten + "… 0 giây";
+  const dongHo = setInterval(() => {
+    $("nhatky").textContent = ten + "… " + Math.floor((Date.now() - batDau) / 1000) + " giây";
+  }, 1000);
+  try {
+    ve(await fn());
+  } catch (e) {
+    $("nhatky").textContent = "[LỖI] " + ten + " thất bại: " + String(e) +
+      "\nKhông có bước nào bị coi là thành công chỉ vì nút đã được bấm.";
+  } finally {
+    clearInterval(dongHo); khoaNut(false);
+  }
   // Doc lai trang thai TU HE THONG thay vi suy tu "lenh da chay xong". Mot lenh
   // tra ma 0 khong co nghia moi buoc ben trong deu thanh cong.
   const a = api();
   if (a) {
-    const kq = await a.xem();
-    datTrangThai((kq.dong || []).some((d) => d.includes("DA CAM")));
+    try { const kq = await a.xem(); datTrangThai(kq.trang_thai); }
+    catch (e) { $("tt").textContent = "Không đọc lại được trạng thái"; }
   }
 }
 
@@ -164,7 +217,16 @@ window.addEventListener("pywebviewready", lamMoi);
 $("bcam").onclick = () => {
   const k = $("khoa").value.trim();
   if (!k) { $("nhatky").textContent = "Chưa dán khoá."; return; }
-  chay("Đang cắm", () => api().cam(k, $("toancuc").checked));
+  const codex = document.querySelector('input[name="codex"]:checked').value;
+  const luaChon = {codex,
+    claude_cli: $("claude_cli").checked,
+    claude_vscode: $("claude_vscode").checked,
+    claude_desktop: $("claude_desktop").checked,
+    toan_cuc: $("toancuc").checked};
+  if (codex === "none" && !luaChon.claude_cli && !luaChon.claude_vscode && !luaChon.claude_desktop) {
+    $("nhatky").textContent = "Chưa chọn hạng mục nào."; return;
+  }
+  chay("Đang cắm các hạng mục đã chọn", () => api().cam(k, luaChon));
 };
 $("bkiem").onclick = () => chay("Đang gọi thật một lượt", () => api().kiem());
 $("bgo").onclick = () => chay("Đang gỡ", () => api().go());

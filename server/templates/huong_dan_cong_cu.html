@@ -3,8 +3,8 @@
 {% block content %}
 
 <div class="card">
-  <h1 style="margin-top:0;">{{ _("Công cụ cắm — Windows") }}</h1>
-  <p>{{ _("Một chương trình nhỏ ghi hộ bạn đúng cấu hình cho cả năm bề mặt, và gỡ ra trả lại đúng trạng thái cũ.") }}</p>
+  <h1 style="margin-top:0;">{{ _("Ba cách cắm API — Windows") }}</h1>
+  <p>{{ _("Chọn EXE có giao diện, ZIP + BAT không giao diện, hoặc làm hoàn toàn thủ công. Hai gói tự động dùng chung một lõi và cùng kiểm lại file + registry sau khi ghi.") }}</p>
   {% if bo_cai %}
     <p style="margin:18px 0 8px;">
       <a class="btn" href="/tai/cong-cu-cam">{{ _("Tải bộ cài") }} · {{ bo_cai.kich_thuoc_mb }} MB</a>
@@ -13,6 +13,11 @@
     <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ bo_cai.sha256 }}</code></p>
   {% else %}
     <p class="muted">{{ _("Chưa có bản phát hành nào. Bạn vẫn cấu hình tay được — xem hướng dẫn.") }}</p>
+  {% endif %}
+  {% if goi_bat %}
+    <p style="margin:18px 0 8px;"><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT (Administrator, không GUI)") }} · {{ goi_bat.kich_thuoc_mb }} MB</a></p>
+    <p class="muted">{{ _("Phiên bản") }} <code>{{ goi_bat.phien_ban }}</code> · <code>{{ goi_bat.ten }}</code></p>
+    <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ goi_bat.sha256 }}</code></p>
   {% endif %}
   <p class="muted"><a href="/huong-dan">← {{ _("Hướng dẫn cấu hình tay") }}</a></p>
 </div>
@@ -29,21 +34,22 @@
 {% endif %}
 
 <div class="card">
-  <h2 style="margin-top:0;">{{ _("Ba lệnh") }}</h2>
-  <pre style="overflow-x:auto;"><code>LTTStudios-CamCLI.exe cam --khoa ltt_sk_...   {{ _("ghi cấu hình") }}
-LTTStudios-CamCLI.exe kiem                     {{ _("gọi thật một lượt để chắc chắn") }}
-LTTStudios-CamCLI.exe go                       {{ _("gỡ ra, trả lại nguyên trạng") }}</code></pre>
-  <p class="muted">{{ _("Không có tham số thì nó mở giao diện.") }}</p>
+  <h2 style="margin-top:0;">{{ _("Cách chạy") }}</h2>
+  <p><strong>EXE:</strong> {{ _("mở từ Start Menu, chọn hạng mục rồi bấm Cắm vào. Đồng hồ chạy và mọi lỗi đều hiện trong nhật ký.") }}</p>
+  <p><strong>ZIP + BAT:</strong> {{ _("giải nén toàn bộ, bấm") }} <code>cam_cli_admin.bat</code>. {{ _("Launcher tự xin Administrator, che khóa khi nhập, và cho chọn từng hạng mục.") }}</p>
+  <pre style="overflow-x:auto;"><code>LTTStudios-CamCLI-Console.exe xem
+LTTStudios-CamCLI-Console.exe cam --muc codex-cli --muc claude-desktop
+LTTStudios-CamCLI-Console.exe kiem
+LTTStudios-CamCLI-Console.exe go</code></pre>
 
   <table class="table" style="margin-top:14px;">
     <thead><tr><th>{{ _("Cờ") }}</th><th>{{ _("Khi nào dùng") }}</th><th>{{ _("Đánh đổi") }}</th></tr></thead>
     <tbody>
-      <tr><td><span class="muted">{{ _("không cờ") }}</span></td>
-          <td>{{ _("chỉ dùng CLI") }}</td>
-          <td>{{ _("an toàn nhất — mặc định của bạn không đổi") }}</td></tr>
-      <tr><td><code>--vscode</code></td>
-          <td>{{ _("dùng tiện ích VS Code") }}</td>
-          <td>{{ _("Codex khai ở gốc, nên thay luôn mặc định của lệnh codex") }}</td></tr>
+      <tr><td><code>--muc codex-cli</code></td><td>{{ _("Codex CLI qua profile ltt") }}</td><td>{{ _("không đổi mặc định Codex") }}</td></tr>
+      <tr><td><code>--muc codex-vscode</code></td><td>{{ _("tiện ích Codex trong VS Code") }}</td><td>{{ _("thay mặc định của lệnh codex") }}</td></tr>
+      <tr><td><code>--muc claude-cli</code></td><td>{{ _("Claude Code CLI") }}</td><td>{{ _("biến môi trường cấp người dùng") }}</td></tr>
+      <tr><td><code>--muc claude-vscode</code></td><td>{{ _("Claude Code trong VS Code") }}</td><td>{{ _("settings cấp người dùng") }}</td></tr>
+      <tr><td><code>--muc claude-desktop</code></td><td>{{ _("Claude Desktop") }}</td><td>{{ _("chính sách HKCU; phải thoát hẳn app") }}</td></tr>
       <tr><td><code>--toan-cuc</code></td>
           <td>{{ _("tiện ích Claude Code") }}</td>
           <td>⚠️ {{ _("ghi ~/.claude/settings.json — MỌI phiên Claude Code trên máy đi qua LTT") }}</td></tr>

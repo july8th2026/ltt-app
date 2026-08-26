@@ -103,7 +103,7 @@ def test_chi_co_dung_mot_aria_current_page(portal):  # noqa: F811
         assert text.count('aria-current="page"') == 1, duong
 
 
-def test_cong_cu_cam_exe_co_mat_trong_cong_lap_trinh_vien(portal):  # noqa: F811
+def test_ba_cach_cam_co_mat_trong_cong_lap_trinh_vien(portal):  # noqa: F811
     """🔴 Chu san pham 25/08: *"tool ho tro gan len claude va codex chua day len
        trang"*.
 
@@ -114,7 +114,10 @@ def test_cong_cu_cam_exe_co_mat_trong_cong_lap_trinh_vien(portal):  # noqa: F811
     hinh ho" co gia tri.
     """
     _register(portal, f"exe-{uuid.uuid4().hex[:6]}@example.com")
-    assert 'href="/tai/cong-cu-cam"' in portal.get("/developers/cli").text
+    text = portal.get("/developers/cli").text
+    assert 'href="/tai/cong-cu-cam"' in text
+    assert 'href="/tai/cong-cu-cam-bat"' in text
+    assert 'href="#cau-hinh-tay"' in text
 
 
 def test_moi_che_do_chay_deu_co_lop_mau_trong_css():

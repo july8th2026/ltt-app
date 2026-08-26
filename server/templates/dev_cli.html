@@ -19,22 +19,26 @@
    Người vừa tạo khoá xong đang đứng đúng ở đây. Đó là thời điểm duy nhất câu
    "để tôi ghi cấu hình hộ" có giá trị. #}
 <div class="card">
-  <h2 style="margin-top:0;">⚡ {{ _("Cách nhanh nhất: để công cụ ghi hộ") }}</h2>
-  <p>{{ _("Công cụ cắm tự ghi đúng cấu hình cho cả năm bề mặt, đặt sẵn hai rào chắn của Claude Desktop, và gỡ ra trả lại nguyên trạng.") }}</p>
-  <p>
-    <a class="btn btn-primary" href="/tai/cong-cu-cam">{{ _("Tải công cụ cắm") }}
-      {%- if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a>
-    <a class="btn btn-ghost" href="/huong-dan/cong-cu" style="margin-left:8px;">{{ _("Nó làm gì, chạm vào đâu") }}</a>
-  </p>
-  {% if bo_cai %}
-    <p class="muted" style="margin-bottom:0;">{{ _("Bản") }} {{ bo_cai.phien_ban }} ·
-      Windows · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>
-  {% else %}
-    <p class="muted" style="margin-bottom:0;">{{ _("Chưa có bản phát hành nào trên máy chủ này — hãy làm theo hướng dẫn tay bên dưới.") }}</p>
-  {% endif %}
-  <p class="muted">{{ _("Muốn tự tay thì đọc tiếp — mọi bước đều ghi đầy đủ bên dưới.") }}</p>
+  <h2 style="margin-top:0;">{{ _("Ba cách cắm API") }}</h2>
+  <p>{{ _("Chọn đúng cách bạn muốn vận hành. Cả ba dùng cùng một cấu hình và cùng một phép kiểm thật.") }}</p>
+
+  <h3>1. {{ _("Tool EXE — có giao diện") }}</h3>
+  <p>{{ _("Phù hợp cho một máy cá nhân: chọn từng bề mặt, xem trạng thái từ file và registry, rồi kiểm API ngay trong cửa sổ.") }}</p>
+  <p><a class="btn btn-primary" href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></p>
+  {% if bo_cai %}<p class="muted">{{ _("Bản") }} {{ bo_cai.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>{% endif %}
+
+  <h3>2. {{ _("ZIP + BAT — không GUI, chạy Administrator") }}</h3>
+  <p>{{ _("Giải nén, bấm cam_cli_admin.bat, dán khóa trong ô nhập được che, rồi chọn Codex, Claude Code, VS Code hoặc Claude Desktop.") }}</p>
+  <p><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT") }}{% if goi_bat %} ({{ goi_bat.kich_thuoc_mb }} MB){% endif %}</a></p>
+  {% if goi_bat %}<p class="muted">{{ _("Bản") }} {{ goi_bat.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ goi_bat.sha256 }}</code></p>{% endif %}
+
+  <h3>3. {{ _("Hướng dẫn thủ công") }}</h3>
+  <p>{{ _("Không tải chương trình nào. Đọc từng đoạn cấu hình bên dưới, chép đúng base URL và tên model của bề mặt bạn dùng.") }}</p>
+  <p><a class="btn btn-ghost" href="#cau-hinh-tay">{{ _("Xem cấu hình thủ công") }}</a>
+     <a class="btn btn-ghost" href="/huong-dan/cong-cu" style="margin-left:8px;">{{ _("Công cụ chạm vào đâu") }}</a></p>
 </div>
 
+<div id="cau-hinh-tay"></div>
 {% include "_cam_chon.html" %}
 
 {% endblock %}

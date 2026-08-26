@@ -34,6 +34,7 @@ import shutil
 import subprocess
 import sys
 import time
+import zipfile
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -47,6 +48,7 @@ TOOLS = GOC / "tools"
 #: moi cho bo quet la noi rong no; doi mot duong dan thi re hon nhieu.
 RA = GOC / "build" / "exe"
 TEN = "LTTStudios-CamCLI"
+TEN_CONSOLE = "LTTStudios-CamCLI-Console"
 
 DEFENDER = pathlib.Path(r"C:\Program Files\Windows Defender\MpCmdRun.exe")
 
@@ -80,6 +82,11 @@ def _kich_thuoc(thu_muc: pathlib.Path) -> str:
 
 
 def dung_pyinstaller() -> pathlib.Path | None:
+    # GUI dung ban sao CSS; dong bo ngay trong lenh dung de khong co ban EXE
+    # "moi" mang giao dien cu. Gate van giu phep --kiem doc lap.
+    ma_gui, _ = _chay([sys.executable, str(TOOLS / "dong_goi_gui.py")], cwd=GOC)
+    if ma_gui != 0:
+        return None
     dich = RA / "pyinstaller"
     if dich.exists():
         shutil.rmtree(dich, ignore_errors=True)
@@ -100,6 +107,62 @@ def dung_pyinstaller() -> pathlib.Path | None:
     ], cwd=GOC)
     print(f"   ma={ma}  {giay}  kich thuoc={_kich_thuoc(dich)}")
     return (dich / TEN / f"{TEN}.exe") if ma == 0 else None
+
+
+def dung_console() -> pathlib.Path | None:
+    """Dung console EXE that cho goi ZIP + BAT.
+
+    GUI EXE dung Windows GUI subsystem (`--windowed`), nen cmd/PowerShell khong
+    doi va khong nhan stdout nhu mot console program. BAT can mot binary console
+    that; neu khong no lai dung o "dang chay" ma khong co ket qua.
+    """
+    dich = RA / "console"
+    if dich.exists():
+        shutil.rmtree(dich, ignore_errors=True)
+    print("== PyInstaller console (cho ZIP + BAT) ==")
+    ma, giay = _chay([
+        sys.executable, "-m", "PyInstaller",
+        "--noconfirm", "--clean",
+        "--name", TEN_CONSOLE,
+        "--console",
+        "--distpath", str(dich),
+        "--workpath", str(RA / "_work_console"),
+        "--specpath", str(RA / "_spec_console"),
+        str(TOOLS / "cam_cli_console.py"),
+    ], cwd=GOC)
+    print(f"   ma={ma}  {giay}  kich thuoc={_kich_thuoc(dich)}")
+    return (dich / TEN_CONSOLE / f"{TEN_CONSOLE}.exe") if ma == 0 else None
+
+
+def _phien_ban() -> str:
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("cam_cli_build", TOOLS / "cam_cli.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return str(mod.PHIEN_BAN)
+
+
+def dung_zip() -> pathlib.Path | None:
+    """Dong goi console runtime + BAT/PS1, khong co GUI va khong can Python."""
+    nguon = RA / "console" / TEN_CONSOLE
+    exe = nguon / f"{TEN_CONSOLE}.exe"
+    if not exe.exists():
+        print("   Chua co console EXE. Chay bo `console` truoc.")
+        return None
+    for ten in ("cam_cli_admin.bat", "cam_cli_admin.ps1", "cam_cli_launcher.ps1"):
+        shutil.copy2(TOOLS / ten, nguon / ten)
+    dich = RA / "zip"
+    dich.mkdir(parents=True, exist_ok=True)
+    tep = dich / f"LTTStudios-CamCLI-BAT-{_phien_ban()}.zip"
+    if tep.exists():
+        tep.unlink()
+    with zipfile.ZipFile(tep, "w", compression=zipfile.ZIP_DEFLATED,
+                         compresslevel=9) as z:
+        for p in sorted(nguon.rglob("*")):
+            if p.is_file():
+                z.write(p, p.relative_to(nguon))
+    print(f"== ZIP + BAT ==\n   {tep.name}  {tep.stat().st_size / 1_048_576:.1f} MB")
+    return tep
 
 
 def dung_nuitka() -> pathlib.Path | None:
@@ -183,19 +246,24 @@ def quet(duong: pathlib.Path | None, nhan: str) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Dung .exe cho GUI cam_cli")
-    ap.add_argument("bo", choices=["pyinstaller", "nuitka", "ca-hai", "installer"])
+    ap.add_argument("bo", choices=["pyinstaller", "nuitka", "ca-hai", "installer",
+                                    "console", "zip", "phat-hanh"])
     ap.add_argument("--quet", action="store_true",
                     help="quet bang Windows Defender sau khi dung")
     a = ap.parse_args(argv)
 
     RA.mkdir(parents=True, exist_ok=True)
     kq = {}
-    if a.bo in ("pyinstaller", "ca-hai"):
+    if a.bo in ("pyinstaller", "ca-hai", "phat-hanh"):
         kq["pyinstaller"] = dung_pyinstaller()
     if a.bo in ("nuitka", "ca-hai"):
         kq["nuitka"] = dung_nuitka()
-    if a.bo == "installer":
+    if a.bo in ("installer", "phat-hanh"):
         kq["installer"] = dung_installer()
+    if a.bo in ("console", "phat-hanh"):
+        kq["console"] = dung_console()
+    if a.bo in ("zip", "phat-hanh"):
+        kq["zip"] = dung_zip()
 
     if a.quet:
         print("\n== Quet Windows Defender (cuc bo) ==")

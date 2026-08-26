@@ -207,7 +207,7 @@ def developer_cli(request: Request, user=Depends(require_account),
        `examples.py` đã theo: *"No snippet ever contains a key."*
     """
     from platform_core.public_api import examples
-    from server.routes.tai_lieu_api import bo_cai_moi_nhat
+    from server.routes.tai_lieu_api import bo_cai_moi_nhat, goi_bat_moi_nhat
 
     goc = str(request.base_url).rstrip("/")
     return _render(
@@ -226,6 +226,7 @@ def developer_cli(request: Request, user=Depends(require_account),
         # Bo cai .exe: cung nguon `bo_cai_moi_nhat()` ma trang cong khai dung,
         # nen so phien ban va bam SHA-256 khong the lech giua hai trang.
         bo_cai=bo_cai_moi_nhat(),
+        goi_bat=goi_bat_moi_nhat(),
         bay=examples.CLI_BAY,
         model=examples.CLI_MODEL,
         model_desktop=examples.DESKTOP_MODEL,

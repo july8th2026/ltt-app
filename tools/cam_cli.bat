@@ -1,85 +1,29 @@
 @echo off
-REM cam_cli.bat - vo boc de bam dup, khong phai noi chua logic.
-REM
-REM !! MOI THU O DAY PHAI LA ASCII THUAN va khong BOM. `.bat` doc theo bang ma
-REM    ANSI cua he thong; mot dau tieng Viet lam hong ca cau lenh va bao loi o
-REM    mot dong khac (cung ho voi quy tac 2 cua CLAUDE.md cho .ps1). Co test
-REM    chot dieu nay (test_284).
-REM
-REM !! KHONG viet lai logic o day. Toan bo nam trong cam_cli.py vi Python test
-REM    duoc con .bat thi khong. Tep nay chi lam DUNG ba viec: tim python, thu mo
-REM    GUI, va NEU KHONG MO DUOC thi lui ve menu dong lenh.
-REM
-REM *  DUONG LUI LA BAT BUOC (U5), khong phai tien nghi. GUI can `pywebview` -
-REM    mot `pip install`. Khong co no thi cong cu VAN PHAI DUNG DUOC, vi dong
-REM    lenh la thu da chay duoc va da co 12 test. Mot cong cu chet vi thieu mot
-REM    thu vien giao dien la mot cong cu tu bien minh thanh khong dung duoc.
-
+REM LTT Studios CamCLI launcher.
+REM ASCII only, no BOM. Business logic stays in cam_cli.py.
 setlocal
 cd /d "%~dp0"
 
+if exist "%~dp0LTTStudios-CamCLI.exe" (
+  powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0cam_cli_launcher.ps1" -Exe "%~dp0LTTStudios-CamCLI.exe"
+  exit /b %ERRORLEVEL%
+)
+
+REM Source-tree fallback for developers. The installed package uses the branch
+REM above and does not require Python.
 set PY=
 for %%P in (py.exe python.exe) do (
-    if not defined PY (
-        where %%P >nul 2>nul && set PY=%%P
-    )
+  if not defined PY where %%P >nul 2>nul && set PY=%%P
 )
-
 if not defined PY (
-    echo.
-    echo Khong tim thay Python tren may nay.
-    echo Cai tai https://www.python.org/downloads/ roi chay lai tep nay.
-    echo Nho tich "Add python.exe to PATH" luc cai.
-    echo.
-    pause
-    exit /b 1
+  echo Python was not found, and the packaged EXE is not next to this file.
+  pause
+  exit /b 1
 )
 
-REM Tham so tren dong lenh thi di thang, khong qua menu.
-if not "%~1"=="" (
-    %PY% cam_cli.py %*
-    echo.
-    pause
-    exit /b %ERRORLEVEL%
-)
-
-REM Thu mo GUI truoc. `cam_cli_gui.py` tra ve 2 khi khong co pywebview.
 %PY% cam_cli_gui.py
-if "%ERRORLEVEL%"=="2" goto :menu
+if "%ERRORLEVEL%"=="2" (
+  echo GUI dependency is missing. Use: %PY% cam_cli.py xem
+  pause
+)
 exit /b %ERRORLEVEL%
-
-:menu
-echo.
-echo   ============================================================
-echo    LTT Studios - cam Codex / Claude Code vao API cua ban
-echo   ============================================================
-echo.
-echo    (Giao dien do hoa can `pip install pywebview`.
-echo     Khong co cung khong sao - dung menu nay la du.)
-echo.
-echo    1. Xem dang cam gi          (khong doi gi ca)
-echo    2. Cam vao                  (can khoa ltt_sk_...)
-echo    3. Kiem bang mot luot goi that
-echo    4. Go ra, tra ve nguyen trang
-echo.
-set /p CHON="   Chon 1-4 (Enter de thoat): "
-
-if "%CHON%"=="1" ( %PY% cam_cli.py xem & goto :xong )
-if "%CHON%"=="3" ( %PY% cam_cli.py kiem & goto :xong )
-if "%CHON%"=="4" ( %PY% cam_cli.py go & goto :xong )
-if "%CHON%"=="2" goto :cam
-goto :xong
-
-:cam
-echo.
-echo   Lay khoa o: https://app.lttstudios.com/developers/keys
-echo   Khoa chi hien MOT LAN luc tao.
-echo.
-set /p KHOA="   Dan khoa ltt_sk_... vao day: "
-if "%KHOA%"=="" goto :xong
-%PY% cam_cli.py cam --khoa %KHOA%
-
-:xong
-echo.
-pause
-endlocal

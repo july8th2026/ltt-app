@@ -29,8 +29,10 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import pathlib
 import sys
+import time
 
 def _thu_muc_goc() -> pathlib.Path:
     """Thư mục chứa tài sản, đúng ở **cả hai** chế độ chạy.
@@ -83,6 +85,8 @@ class _Args:
         self.khoa = kw.get("khoa", "")
         self.goc = kw.get("goc", "")
         self.toan_cuc = kw.get("toan_cuc", False)
+        self.vscode = kw.get("vscode", False)
+        self.muc = kw.get("muc")
 
 
 class Cau:
@@ -96,23 +100,46 @@ class Cau:
         import contextlib
         import io
         buf = io.StringIO()
+        bat_dau = time.monotonic()
         try:
             with contextlib.redirect_stdout(buf):
                 ma = ham(*a)
         except Exception as exc:                              # noqa: BLE001
             # ⛔ Mot ngoai le KHONG duoc lam cua so trang. Khach phai thay chuyen
             #    gi da xay ra, ke ca khi do la mot loi ta chua nghi toi.
-            return {"ma": 1, "dong": [f"[LOI] {type(exc).__name__}: {exc}"]}
-        return {"ma": ma, "dong": buf.getvalue().splitlines()}
+            return {"ma": 1, "dong": [f"[LOI] {type(exc).__name__}: {exc}"],
+                    "giay": round(time.monotonic() - bat_dau, 2)}
+        return {"ma": ma, "dong": buf.getvalue().splitlines(),
+                "giay": round(time.monotonic() - bat_dau, 2)}
 
     def xem(self) -> dict:
-        return self._chay(self._loi.lenh_xem, _Args())
+        kq = self._chay(self._loi.lenh_xem, _Args())
+        try:
+            kq["trang_thai"] = self._loi.trang_thai_thuc()
+        except Exception as exc:                              # noqa: BLE001
+            kq["trang_thai"] = {"dang_cam": False, "muc": {},
+                                  "loi": f"{type(exc).__name__}: {exc}"}
+        return kq
 
-    def cam(self, khoa: str, toan_cuc: bool) -> dict:
+    def cam(self, khoa: str, lua_chon=None) -> dict:
+        chon = lua_chon if isinstance(lua_chon, dict) else {}
+        muc = []
+        codex = chon.get("codex", "profile")
+        if codex == "profile":
+            muc.append(self._loi.MUC_CODEX_CLI)
+        elif codex == "vscode":
+            muc.append(self._loi.MUC_CODEX_VSCODE)
+        if chon.get("claude_cli", True):
+            muc.append(self._loi.MUC_CLAUDE_CLI)
+        if chon.get("claude_vscode", True):
+            muc.append(self._loi.MUC_CLAUDE_VSCODE)
+        if chon.get("claude_desktop", True):
+            muc.append(self._loi.MUC_CLAUDE_DESKTOP)
         return self._chay(self._loi.lenh_cam,
                           _Args(khoa=(khoa or "").strip(),
                                 goc=self._loi.GOC_MAC_DINH,
-                                toan_cuc=bool(toan_cuc)))
+                                toan_cuc=bool(chon.get("toan_cuc", False)),
+                                vscode=(codex == "vscode"), muc=muc))
 
     def go(self) -> dict:
         return self._chay(self._loi.lenh_go, _Args())
@@ -190,7 +217,19 @@ def main(argv=None) -> int:
     if "--tu-kiem" in tham:
         return tu_kiem()
     if tham and tham[0] in LENH_DONG_LENH:
-        return _nap_loi().main(tham)
+        # Ban GUI duoc dung voi `--windowed`, nen stdout khong co console.
+        # Launcher .bat dat duong dan nay de lay ket qua ve va in ra. Tep chi
+        # chua trang thai, KHONG chua khoa (loi khong bao gio in khoa).
+        tep_ra = (os.environ.get("LTT_CAM_CLI_OUTPUT") or "").strip()
+        if not tep_ra:
+            return _nap_loi().main(tham)
+        import contextlib
+        try:
+            with pathlib.Path(tep_ra).open("w", encoding="utf-8") as f:
+                with contextlib.redirect_stdout(f), contextlib.redirect_stderr(f):
+                    return _nap_loi().main(tham)
+        except OSError:
+            return 1
     try:
         import webview
     except ImportError:

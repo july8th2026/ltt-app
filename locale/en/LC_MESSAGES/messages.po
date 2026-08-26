@@ -10462,4 +10462,108 @@ msgid "tạo tài khoản"
 msgstr "create an account"
 
 # ── Trang tinh trang API — phep do render tim ra khi liet ke tu bang dinh tuyen ──
+msgid "Ba cách cắm API"
+msgstr "Three ways to connect the API"
+
+msgid "Chọn đúng cách bạn muốn vận hành. Cả ba dùng cùng một cấu hình và cùng một phép kiểm thật."
+msgstr "Choose the workflow that suits you. All three use the same configuration and real verification."
+
+msgid "Tool EXE — có giao diện"
+msgstr "EXE tool — graphical interface"
+
+msgid "Phù hợp cho một máy cá nhân: chọn từng bề mặt, xem trạng thái từ file và registry, rồi kiểm API ngay trong cửa sổ."
+msgstr "Best for a personal computer: select each target, read actual file and registry status, then test the API in the window."
+
+msgid "Tải EXE"
+msgstr "Download EXE"
+
+msgid "ZIP + BAT — không GUI, chạy Administrator"
+msgstr "ZIP + BAT — no GUI, runs as Administrator"
+
+msgid "Giải nén, bấm cam_cli_admin.bat, dán khóa trong ô nhập được che, rồi chọn Codex, Claude Code, VS Code hoặc Claude Desktop."
+msgstr "Extract the archive, run cam_cli_admin.bat, paste the key into the masked prompt, then select Codex, Claude Code, VS Code, or Claude Desktop."
+
+msgid "Tải ZIP + BAT"
+msgstr "Download ZIP + BAT"
+
+msgid "Hướng dẫn thủ công"
+msgstr "Manual instructions"
+
+msgid "Không tải chương trình nào. Đọc từng đoạn cấu hình bên dưới, chép đúng base URL và tên model của bề mặt bạn dùng."
+msgstr "Download nothing. Follow the configuration below and copy the correct base URL and model name for your client."
+
+msgid "Xem cấu hình thủ công"
+msgstr "View manual configuration"
+
+msgid "Công cụ chạm vào đâu"
+msgstr "What the tool changes"
+
+msgid "Tool EXE"
+msgstr "EXE tool"
+
+msgid "có giao diện, chọn từng hạng mục và đọc lại trạng thái thật."
+msgstr "has a graphical interface, target selection, and real status verification."
+
+msgid "ZIP + BAT"
+msgstr "ZIP + BAT"
+
+msgid "không GUI, tự xin quyền Administrator, khóa được nhập ẩn."
+msgstr "has no GUI, requests Administrator access, and masks the key while you type."
+
+msgid "Thủ công"
+msgstr "Manual"
+
+msgid "không tải gì; chép đúng cấu hình ở phần bên dưới."
+msgstr "requires no download; copy the configuration shown below."
+
+msgid "Xem hướng dẫn"
+msgstr "View instructions"
+
+msgid "Ba cách cắm API — Windows"
+msgstr "Three ways to connect the API — Windows"
+
+msgid "Chọn EXE có giao diện, ZIP + BAT không giao diện, hoặc làm hoàn toàn thủ công. Hai gói tự động dùng chung một lõi và cùng kiểm lại file + registry sau khi ghi."
+msgstr "Choose the graphical EXE, the GUI-free ZIP + BAT, or a fully manual setup. Both automated packages share one core and verify files and registry after writing."
+
+msgid "Tải ZIP + BAT (Administrator, không GUI)"
+msgstr "Download ZIP + BAT (Administrator, no GUI)"
+
+msgid "Cách chạy"
+msgstr "How to run it"
+
+msgid "mở từ Start Menu, chọn hạng mục rồi bấm Cắm vào. Đồng hồ chạy và mọi lỗi đều hiện trong nhật ký."
+msgstr "open it from the Start Menu, select targets, then click Connect. The timer runs and every error appears in the log."
+
+msgid "giải nén toàn bộ, bấm"
+msgstr "extract everything, then run"
+
+msgid "Launcher tự xin Administrator, che khóa khi nhập, và cho chọn từng hạng mục."
+msgstr "The launcher requests Administrator access, masks the key, and lets you select each target."
+
+msgid "Codex CLI qua profile ltt"
+msgstr "Codex CLI through the ltt profile"
+
+msgid "không đổi mặc định Codex"
+msgstr "does not change the Codex default"
+
+msgid "tiện ích Codex trong VS Code"
+msgstr "Codex extension in VS Code"
+
+msgid "thay mặc định của lệnh codex"
+msgstr "changes the default for the codex command"
+
+msgid "Claude Code CLI"
+msgstr "Claude Code CLI"
+
+msgid "Claude Code trong VS Code"
+msgstr "Claude Code in VS Code"
+
+msgid "settings cấp người dùng"
+msgstr "user-level settings"
+
+msgid "Claude Desktop"
+msgstr "Claude Desktop"
+
+msgid "chính sách HKCU; phải thoát hẳn app"
+msgstr "HKCU policy; the app must be fully closed"
 

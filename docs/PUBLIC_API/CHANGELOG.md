@@ -23,6 +23,27 @@ lần ghi lại đó hiện ra trong diff.
 
 ---
 
+## 2026-08-26
+
+**ADDED — ba phương thức cắm Codex/Claude, CamCLI 1.1.0.**
+
+*Có phá vỡ tương thích không:* **không.** API `/api/v1` và các URL tải EXE cũ
+không đổi. Bản 1.0 tiếp tục chạy được; trang web chỉ ưu tiên bản mới nhất.
+
+*Cái gì đổi:* khu Dev API nay công bố ba đường dùng chung một lõi cấu hình:
+
+1. EXE có giao diện, cho chọn riêng từng bề mặt;
+2. ZIP + BAT tự xin Administrator, chạy console thật và không cần Python/GUI;
+3. hướng dẫn thủ công đầy đủ.
+
+Bản 1.1 đọc lại file, biến môi trường và registry để xác nhận từng hạng mục;
+không còn coi nút đã chạy hay cờ trạng thái cũ là bằng chứng thành công. GUI có
+đồng hồ tiến độ, bắt lỗi cầu nối và hỗ trợ riêng Codex CLI/Codex VS Code.
+
+*Phải làm gì:* tải lại bản 1.1.0 từ `/developers/cli` hoặc
+`/huong-dan/cong-cu`. Nếu chính sách máy chặn EXE GUI chưa ký số, dùng gói ZIP +
+BAT hoặc làm tay. Sau khi cắm biến môi trường, đóng và mở lại VS Code/terminal.
+
 ## 2026-08-25
 
 **ADDED — cổng lập trình viên: điều hướng gom nhóm, trang cắm chọn-một-bề-mặt,

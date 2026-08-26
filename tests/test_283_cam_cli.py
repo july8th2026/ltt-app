@@ -64,15 +64,20 @@ def cc(tmp_path, monkeypatch):
     """
     mod = _nap(tmp_path)
     ghi = {}
-    monkeypatch.setattr(mod, "_setx", lambda *a: True)
-    monkeypatch.setattr(mod, "_xoa_env", lambda *a: True)
-    monkeypatch.setattr(mod, "_doc_env_nguoi_dung", lambda t: None)
+    env = {}
+    monkeypatch.setattr(mod, "_setx",
+                        lambda t, v: (env.__setitem__(t, v), True)[1])
+    monkeypatch.setattr(mod, "_xoa_env",
+                        lambda t: (env.pop(t, None), True)[1])
+    monkeypatch.setattr(mod, "_doc_env_nguoi_dung", lambda t: env.get(t))
     monkeypatch.setattr(mod, "_reg_ghi",
                         lambda k, t, v: (ghi.__setitem__((k, t), v), True)[1])
     monkeypatch.setattr(mod, "_reg_xoa",
                         lambda k, t: (ghi.pop((k, t), None), True)[1])
     monkeypatch.setattr(mod, "_reg_doc", lambda k, t: ghi.get((k, t)))
     mod._registry_gia = ghi          # test doc duoc da ghi gi
+    mod._env_gia = env
+    (tmp_path / "AppData" / "Roaming" / "Code" / "User").mkdir(parents=True)
     return mod
 
 
@@ -223,7 +228,6 @@ def test_mac_dinh_KHONG_dung_toi_settings_json(cc, tmp_path, monkeypatch):
 
 def test_KHONG_tep_nao_chua_khoa_sau_khi_cam(cc, tmp_path, monkeypatch):
     """Luật đã có trong mã: *"No snippet ever contains a key."*"""
-    monkeypatch.setattr(cc, "_setx", lambda *a: True)
     khoa = "ltt_sk_" + "z" * 60
 
     a = type("A", (), {"khoa": khoa, "goc": "https://app.lttstudios.com",
@@ -597,3 +601,42 @@ def test_kiem_PHAI_kiem_ca_be_mat_claude_desktop(cc):
     sau = ma.split("MODEL_DESKTOP", 1)[1]
     assert '"stream"' not in sau.split("phuong=", 1)[0], (
         "luot thu Claude Desktop phai la request KHONG stream")
+
+
+# ── Ban 1.1: chon be mat + trang thai that ─────────────────────────────────
+
+def test_chon_RIENG_codex_cli_khong_dung_toi_claude(cc, tmp_path):
+    khoa = "ltt_sk_" + "a" * 40
+    a = type("A", (), {"khoa": khoa, "goc": "https://app.lttstudios.com",
+                       "toan_cuc": False, "vscode": False,
+                       "muc": [cc.MUC_CODEX_CLI]})()
+    assert cc.lenh_cam(a) == 0
+    assert cc.ENV_KHOA_CODEX in cc._env_gia
+    assert cc.ENV_KHOA_CLAUDE not in cc._env_gia
+    assert not cc._registry_gia, "chon Codex ma lai ghi registry Claude Desktop"
+    assert not (tmp_path / ".claude").exists()
+
+
+def test_hai_che_do_codex_xung_dot_bi_tu_choi(cc):
+    a = type("A", (), {"muc": [cc.MUC_CODEX_CLI, cc.MUC_CODEX_VSCODE],
+                       "vscode": False})()
+    with pytest.raises(ValueError, match="Chi chon MOT"):
+        cc._cac_muc(a)
+
+
+def test_cam_tra_ma_1_neu_doi_chieu_that_khong_thay_hang_muc(cc, monkeypatch):
+    khoa = "ltt_sk_" + "b" * 40
+    monkeypatch.setattr(cc, "trang_thai_thuc",
+                        lambda g=None: {"dang_cam": False,
+                                        "muc": {cc.MUC_CODEX_CLI: False}})
+    a = type("A", (), {"khoa": khoa, "goc": "https://app.lttstudios.com",
+                       "toan_cuc": False, "vscode": False,
+                       "muc": [cc.MUC_CODEX_CLI]})()
+    assert cc.lenh_cam(a) == 1, (
+        "ban 1.0 tra 0 va danh dau da_cam du file/registry khong co gi")
+
+
+def test_trang_thai_khong_tin_co_da_cam_trong_tep(cc):
+    cc._ghi_trang_thai({"da_cam": True, "goc": "https://app.lttstudios.com"})
+    thuc = cc.trang_thai_thuc()
+    assert thuc["dang_cam"] is False

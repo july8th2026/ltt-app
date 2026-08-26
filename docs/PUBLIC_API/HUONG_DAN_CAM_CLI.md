@@ -38,20 +38,45 @@ thử thật, và nó không hiển nhiên từ tài liệu của nhà nào cả
 
 ---
 
-## 1. Cách nhanh nhất: dùng công cụ
+## 1. Ba cách được hỗ trợ
 
-```
-LTTStudios-CamCLI-Setup-1.0.0.exe      cai (khong can quyen admin)
-LTTStudios-CamCLI.exe xem              xem dang cam gi
-LTTStudios-CamCLI.exe cam --khoa ltt_sk_... --vscode --toan-cuc
-LTTStudios-CamCLI.exe kiem             goi that mot luot
-LTTStudios-CamCLI.exe go               go ra, tra ve nguyen trang
+### 1.1 Tool EXE — có giao diện
+
+Tải `LTTStudios-CamCLI-Setup-1.1.0.exe`, cài không cần Administrator, rồi chọn
+từng bề mặt ngay trong cửa sổ. Bản 1.1 không tin cờ trạng thái do chính nó ghi:
+sau mỗi lần cắm, nó đọc lại file + registry và chỉ tô xanh thứ thật sự có mặt.
+
+### 1.2 ZIP + BAT — không GUI, chạy Administrator
+
+Tải `LTTStudios-CamCLI-BAT-1.1.0.zip`, giải nén **toàn bộ**, rồi bấm
+`cam_cli_admin.bat`. Launcher tự xin UAC, che khoá khi nhập và cho chọn riêng:
+`codex-cli`, `codex-vscode`, `claude-cli`, `claude-vscode`, `claude-desktop`.
+
+Gói này mang console EXE thật. Đây là điểm quan trọng: GUI EXE dùng Windows GUI
+subsystem nên `.bat` không nhận stdout/mã thoát đáng tin cậy; dùng nó làm CLI là
+nguyên nhân bản cũ trông như chạy mãi không có kết quả.
+
+### 1.3 Hướng dẫn thủ công
+
+Không tải chương trình nào. Làm theo §2 dưới đây; mỗi bề mặt có base URL và tên
+model riêng.
+
+### CLI của gói ZIP
+
+```text
+LTTStudios-CamCLI-Console.exe xem
+LTTStudios-CamCLI-Console.exe cam --muc codex-cli --muc claude-desktop
+LTTStudios-CamCLI-Console.exe kiem
+LTTStudios-CamCLI-Console.exe go
 ```
 
 | Cờ | Khi nào dùng | Đánh đổi |
 |---|---|---|
-| *(không cờ)* | chỉ dùng **CLI** | an toàn nhất: mặc định của khách **không đổi** |
-| `--vscode` | dùng **tiện ích VS Code** | Codex khai ở **gốc** ⇒ thay luôn mặc định của lệnh `codex` |
+| `--muc codex-cli` | Codex CLI qua profile | an toàn nhất: mặc định Codex không đổi |
+| `--muc codex-vscode` | tiện ích Codex VS Code | Codex khai ở **gốc** ⇒ thay luôn mặc định của lệnh `codex` |
+| `--muc claude-cli` | Claude Code CLI | biến môi trường cấp người dùng |
+| `--muc claude-vscode` | tiện ích Claude Code | ghi settings cấp người dùng, khoá vẫn ở biến môi trường |
+| `--muc claude-desktop` | Claude Desktop | ghi chính sách HKCU, phải thoát hẳn app |
 | `--toan-cuc` | tiện ích **Claude Code** | ghi `~/.claude/settings.json` ⇒ **mọi** phiên Claude Code trên máy đi qua LTT |
 
 ⚠️ **`--toan-cuc` chuyển hướng cả gói Anthropic thật của bạn.** Không phải mặc
@@ -174,7 +199,7 @@ Windows Registry Editor Version 5.00
 "chatTabEnabled"="true"
 ```
 
-Hoặc để công cụ làm: `LTTStudios-CamCLI.exe cam --khoa ...` đã bao gồm bước này.
+Hoặc để EXE/ZIP + BAT làm; cả hai đã bao gồm bước này.
 
 ---
 
@@ -286,7 +311,8 @@ môi trường cũ. Đo thật trên VM sạch 24/08:
 động nó từ một `cmd` do explorer **cũ** sinh ra, explorer mới **kế thừa đúng môi
 trường cũ**. Một vòng luẩn quẩn không nhìn thấy được.
 
-⇒ `LTTStudios-CamCLI.exe xem` có riêng một mục cho việc này:
+⇒ Mục **Trạng thái đo từ máy này** trong EXE, hoặc lệnh
+`LTTStudios-CamCLI-Console.exe xem` trong gói ZIP, có riêng một mục cho việc này:
 
 ```
 Tien trinh HIEN TAI co nhin thay khong:

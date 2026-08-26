@@ -57,10 +57,11 @@ def _thu_muc_ban_phat() -> pathlib.Path:
 
 #: Tên tệp bộ cài: `LTTStudios-CamCLI-Setup-<phien ban>.exe`.
 _MAU_BO_CAI = re.compile(r"^LTTStudios-CamCLI-Setup-([0-9][0-9.]*)\.exe$")
+_MAU_GOI_BAT = re.compile(r"^LTTStudios-CamCLI-BAT-([0-9][0-9.]*)\.zip$")
 
 
-def bo_cai_moi_nhat() -> dict | None:
-    """Bộ cài mới nhất trong thư mục phát hành, hoặc `None` nếu chưa có.
+def _goi_moi_nhat(mau: re.Pattern) -> dict | None:
+    """Artifact mới nhất khớp mẫu, hoặc `None` nếu chưa phát hành.
 
     ⚠️ **Dò theo thư mục, không phải theo một bản kê phải sửa tay.** Một bản kê
        là một bản sao thứ hai của sự thật, và nó sẽ lệch đúng vào hôm ta quên.
@@ -71,7 +72,7 @@ def bo_cai_moi_nhat() -> dict | None:
         return None
     thay = []
     for tep in thu_muc.iterdir():
-        m = _MAU_BO_CAI.match(tep.name)
+        m = mau.match(tep.name)
         if m and tep.is_file():
             thay.append((tuple(int(x) for x in m.group(1).split(".") if x.isdigit()),
                          m.group(1), tep))
@@ -81,6 +82,14 @@ def bo_cai_moi_nhat() -> dict | None:
     return {"ten": tep.name, "phien_ban": phien_ban,
             "kich_thuoc_mb": round(tep.stat().st_size / (1024 * 1024), 1),
             "sha256": _bam(tep), "duong": tep}
+
+
+def bo_cai_moi_nhat() -> dict | None:
+    return _goi_moi_nhat(_MAU_BO_CAI)
+
+
+def goi_bat_moi_nhat() -> dict | None:
+    return _goi_moi_nhat(_MAU_GOI_BAT)
 
 
 #: Băm đã tính, theo (đường dẫn, kích thước, thời điểm sửa). Băm một tệp 25 MB
@@ -173,6 +182,7 @@ def trang_huong_dan(request: Request):
     ctx["curl_anh"] = examples.curl_anh_ba_buoc()
     ctx["anh_che_do"] = examples.ANH_CHE_DO_MA
     ctx["bo_cai"] = bo_cai_moi_nhat()
+    ctx["goi_bat"] = goi_bat_moi_nhat()
     ctx["goi_tai"] = [{"ten": t, "mo_ta": v[2]} for t, v in GOI_TAI.items()]
     return templates.TemplateResponse(request, "huong_dan.html", ctx)
 
@@ -183,9 +193,10 @@ def trang_cong_cu(request: Request):
     from platform_core.public_api import examples
 
     bo_cai = bo_cai_moi_nhat()
+    goi_bat = goi_bat_moi_nhat()
     return templates.TemplateResponse(
         request, "huong_dan_cong_cu.html",
-        {"bo_cai": bo_cai,
+        {"bo_cai": bo_cai, "goi_bat": goi_bat,
          "model": examples.CLI_MODEL,
          "model_desktop": examples.DESKTOP_MODEL,
          "base_url": str(request.base_url).rstrip("/")})
@@ -207,6 +218,18 @@ def tai_cong_cu():
     return FileResponse(
         bo_cai["duong"], filename=bo_cai["ten"],
         media_type="application/vnd.microsoft.portable-executable",
+        headers={"Cache-Control": "public, max-age=300"})
+
+
+@router.get("/tai/cong-cu-cam-bat")
+def tai_cong_cu_bat():
+    """Gói ZIP console + BAT, không GUI; launcher tự xin Administrator."""
+    goi = goi_bat_moi_nhat()
+    if goi is None:
+        raise HTTPException(status_code=503,
+                            detail="Chua co goi BAT nao duoc phat hanh.")
+    return FileResponse(
+        goi["duong"], filename=goi["ten"], media_type="application/zip",
         headers={"Cache-Control": "public, max-age=300"})
 
 
