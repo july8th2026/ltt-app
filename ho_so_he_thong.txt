@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c081dcd45e8a9933258a448ecdcf772f22ecc1437f993b3e53b176a740b5938d
-Nguồn đã quét : 1170 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:4e435a2327c07f67b367385951a87f3ba1da1d3954b91d2ecac09d0ee5ea0c5e
+Nguồn đã quét : 1177 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -553,40 +553,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:270
 - [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:214
 - [platform] GET    / → home | auth~optional | server/routes/dashboard.py:154
+- [platform] GET    / → developer_overview | auth~unspecified | server/routes/developer/trang.py:32
 - [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
 - [platform] GET    /api/jobs/{job_id} → job_api | auth~login | server/routes/jobs.py:241
-- [platform] GET    /developers → developer_overview | auth~unspecified | server/routes/developer.py:434
-- [platform] POST   /developers/budgets → developer_create_budget | auth~unspecified | server/routes/developer.py:965
-- [platform] POST   /developers/budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer.py:990
-- [platform] GET    /developers/cli → developer_cli | auth~unspecified | server/routes/developer.py:1158
-- [platform] GET    /developers/docs → developer_docs | auth~unspecified | server/routes/developer.py:1199
-- [platform] GET    /developers/jobs → developer_jobs | auth~unspecified | server/routes/developer.py:911
-- [platform] GET    /developers/keys → developer_keys | auth~unspecified | server/routes/developer.py:457
-- [platform] POST   /developers/keys → create_key | auth~unspecified | server/routes/developer.py:1394
-- [platform] POST   /developers/keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer.py:1436
-- [platform] POST   /developers/keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer.py:1449
-- [platform] GET    /developers/logs → developer_logs | auth~unspecified | server/routes/developer.py:634
-- [platform] GET    /developers/logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer.py:667
-- [platform] GET    /developers/notifications → developer_notifications | auth~unspecified | server/routes/developer.py:1006
-- [platform] POST   /developers/notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer.py:1016
-- [platform] GET    /developers/openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer.py:1208
-- [platform] GET    /developers/playground → developer_playground | auth~unspecified | server/routes/developer.py:580
-- [platform] GET    /developers/pricing → developer_pricing | auth~unspecified | server/routes/developer.py:522
-- [platform] GET    /developers/privacy → developer_privacy | auth~unspecified | server/routes/developer.py:1250
-- [platform] GET    /developers/privacy/export → developer_privacy_export | auth~unspecified | server/routes/developer.py:1270
-- [platform] GET    /developers/projects → developer_projects | auth~unspecified | server/routes/developer.py:450
-- [platform] POST   /developers/projects → create_project | auth~unspecified | server/routes/developer.py:1493
-- [platform] POST   /developers/projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer.py:1509
-- [platform] GET    /developers/quickstart → developer_quickstart | auth~unspecified | server/routes/developer.py:463
-- [platform] GET    /developers/settings → developer_settings | auth~unspecified | server/routes/developer.py:1350
-- [platform] GET    /developers/tools → developer_tools | auth~unspecified | server/routes/developer.py:698
-- [platform] GET    /developers/tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer.py:789
-- [platform] GET    /developers/usage → developer_usage | auth~unspecified | server/routes/developer.py:918
-- [platform] GET    /developers/webhooks → developer_webhooks | auth~unspecified | server/routes/developer.py:1045
-- [platform] POST   /developers/webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer.py:1136
-- [platform] POST   /developers/webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer.py:1114
-- [platform] POST   /developers/webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer.py:1092
-- [platform] POST   /developers/webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer.py:1074
+- [platform] POST   /budgets → developer_create_budget | auth~unspecified | server/routes/developer/su_dung.py:112
+- [platform] POST   /budgets/{budget_id}/delete → developer_delete_budget | auth~unspecified | server/routes/developer/su_dung.py:137
+- [platform] GET    /cli → developer_cli | auth~unspecified | server/routes/developer/trang.py:195
+- [platform] GET    /docs → developer_docs | auth~unspecified | server/routes/developer/trang.py:236
 - [platform] POST   /doi-ngon-ngu → doi_ngon_ngu | auth~unspecified | server/routes/ngon_ngu.py:25
 - [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:339
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
@@ -597,15 +570,22 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /health/version → version | auth~unspecified | server/routes/health.py:92
 - [platform] GET    /huong-dan → trang_huong_dan | auth~unspecified | server/routes/tai_lieu_api.py:165
 - [platform] GET    /huong-dan/cong-cu → trang_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:181
+- [platform] GET    /jobs → developer_jobs | auth~unspecified | server/routes/developer/su_dung.py:97
 - [platform] GET    /jobs → danh_sach | auth~login | server/routes/jobs.py:129
 - [platform] GET    /jobs/{job_id} → chi_tiet | auth~login | server/routes/jobs.py:183
 - [platform] GET    /jobs/{job_id}/artifacts/{index} → tai_artifact | auth~login | server/routes/jobs.py:408
 - [platform] POST   /jobs/{job_id}/cancel → huy_job | auth~login | server/routes/jobs.py:259
 - [platform] GET    /jobs/{job_id}/progress → tien_do | auth~login | server/routes/jobs.py:198
 - [platform] POST   /jobs/{job_id}/retry → thu_lai_job | auth~login | server/routes/jobs.py:282
+- [platform] GET    /keys → developer_keys | auth~unspecified | server/routes/developer/khoa_du_an.py:39
+- [platform] POST   /keys → create_key | auth~unspecified | server/routes/developer/khoa_du_an.py:51
+- [platform] POST   /keys/{key_id}/revoke → revoke_key | auth~unspecified | server/routes/developer/khoa_du_an.py:93
+- [platform] POST   /keys/{key_id}/rotate → rotate_key | auth~unspecified | server/routes/developer/khoa_du_an.py:106
 - [platform] GET    /login → login_form | auth~optional | server/routes/auth.py:71
 - [platform] POST   /login → login_submit | auth~optional | server/routes/auth.py:94
 - [platform] POST   /logout → logout | auth~unspecified | server/routes/auth.py:202
+- [platform] GET    /logs → developer_logs | auth~unspecified | server/routes/developer/su_dung.py:32
+- [platform] GET    /logs/{wanted_id} → developer_log_detail | auth~unspecified | server/routes/developer/su_dung.py:65
 - [platform] GET    /may-cua-toi → trang_may | auth~login | server/routes/nexus_devices.py:81
 - [platform] POST   /may-cua-toi/{device_id}/doi-ten → doi_ten | auth~login | server/routes/nexus_devices.py:121
 - [platform] POST   /may-cua-toi/{device_id}/thu-hoi → thu_hoi_may | auth~login | server/routes/nexus_devices.py:144
@@ -614,20 +594,40 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /nap/don/{order_id}/trangthai → trang_thai_don | auth~login | server/routes/billing.py:129
 - [platform] POST   /nap/tao → tao_don | auth~login | server/routes/billing.py:50
 - [platform] GET    /nexus-sso → doi_ve_lay_phien | auth~unspecified | server/routes/nexus_sso.py:36
+- [platform] GET    /notifications → developer_notifications | auth~unspecified | server/routes/developer/su_dung.py:153
+- [platform] POST   /notifications/read → developer_notifications_read | auth~unspecified | server/routes/developer/su_dung.py:163
+- [platform] GET    /openapi/download → developer_openapi_download | auth~unspecified | server/routes/developer/trang.py:245
 - [platform] GET    /ops/jobs-metrics → jobs_metrics | auth~admin | server/routes/jobs.py:383
 - [platform] GET    /ops/jobs-retention → jobs_retention | auth~admin | server/routes/jobs.py:369
 - [platform] GET    /ops/jobs/{job_id}/events → debug_events | auth~admin | server/routes/jobs.py:319
 - [platform] GET    /ops/jobs/{job_id}/support-export → support_export | auth~admin | server/routes/jobs.py:346
+- [platform] GET    /playground → developer_playground | auth~unspecified | server/routes/developer/trang.py:152
+- [platform] GET    /pricing → developer_pricing | auth~unspecified | server/routes/developer/trang.py:94
+- [platform] GET    /privacy → developer_privacy | auth~unspecified | server/routes/developer/rieng_tu.py:32
+- [platform] GET    /privacy/export → developer_privacy_export | auth~unspecified | server/routes/developer/rieng_tu.py:52
+- [platform] GET    /projects → developer_projects | auth~unspecified | server/routes/developer/khoa_du_an.py:32
+- [platform] POST   /projects → create_project | auth~unspecified | server/routes/developer/khoa_du_an.py:122
+- [platform] POST   /projects/{project_id}/archive → archive_project | auth~unspecified | server/routes/developer/khoa_du_an.py:138
+- [platform] GET    /quickstart → developer_quickstart | auth~unspecified | server/routes/developer/trang.py:48
 - [platform] GET    /register → register_form | auth~unspecified | server/routes/register.py:71
 - [platform] POST   /register → register_submit | auth~optional | server/routes/register.py:76
 - [platform] GET    /reset-password → reset_form | auth~unspecified | server/routes/register.py:219
 - [platform] POST   /reset-password → reset_submit | auth~optional | server/routes/register.py:230
+- [platform] GET    /settings → developer_settings | auth~unspecified | server/routes/developer/khoa_du_an.py:45
 - [platform] GET    /status → status_page | auth~admin | server/routes/status.py:61
 - [platform] GET    /status/api → public_api_status | auth~unspecified | server/routes/status.py:30
 - [platform] GET    /tai/cong-cu-cam → tai_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:195
 - [platform] GET    /tai/{ten} → tai_goi | auth~unspecified | server/routes/tai_lieu_api.py:214
+- [platform] GET    /tools → developer_tools | auth~unspecified | server/routes/developer/cong_cu.py:31
+- [platform] GET    /tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer/cong_cu.py:62
+- [platform] GET    /usage → developer_usage | auth~unspecified | server/routes/developer/su_dung.py:104
 - [platform] GET    /verify-email → verify_email | auth~optional | server/routes/register.py:144
+- [platform] GET    /webhooks → developer_webhooks | auth~unspecified | server/routes/developer/webhook.py:32
+- [platform] POST   /webhooks/deliveries/{delivery_id}/resend → developer_webhook_resend | auth~unspecified | server/routes/developer/webhook.py:123
 - [platform] POST   /webhooks/payment/payos → payos_webhook | auth~unspecified | server/routes/webhooks.py:20
+- [platform] POST   /webhooks/{subscription_id}/disable → developer_webhook_disable | auth~unspecified | server/routes/developer/webhook.py:101
+- [platform] POST   /webhooks/{subscription_id}/rotate → developer_webhook_rotate | auth~unspecified | server/routes/developer/webhook.py:79
+- [platform] POST   /webhooks/{subscription_id}/test → developer_webhook_test | auth~unspecified | server/routes/developer/webhook.py:61
 - [prompt_ai_ommi] GET    /prompt-ai-ommi → page | auth~login | apps/prompt_ai_ommi/routes/pages.py:13
 - [prompt_ai_ommi] POST   /prompt-ai-ommi/api/admin/catalog → admin_catalog | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:139
 - [prompt_ai_ommi] GET    /prompt-ai-ommi/api/admin/health → admin_health | auth~login | apps/prompt_ai_ommi/routes/assets_catalog.py:22
@@ -1348,8 +1348,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1170 file)
-Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39, .md:14, .mjs:3, .ps1:20, .py:896, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1177 file)
+Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39, .md:14, .mjs:3, .ps1:20, .py:903, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2032,7 +2032,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (130)
+[server] (137)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2069,7 +2069,14 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39
 - server/routes/auth.py
 - server/routes/billing.py
 - server/routes/dashboard.py
-- server/routes/developer.py
+- server/routes/developer/__init__.py
+- server/routes/developer/_chung.py
+- server/routes/developer/cong_cu.py
+- server/routes/developer/khoa_du_an.py
+- server/routes/developer/rieng_tu.py
+- server/routes/developer/su_dung.py
+- server/routes/developer/trang.py
+- server/routes/developer/webhook.py
 - server/routes/health.py
 - server/routes/jobs.py
 - server/routes/nexus_devices.py
@@ -2576,7 +2583,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1170 file; 11344617 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1177 file; 11353432 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -132006,8 +132013,8 @@ def _user_hien_tai(request: Request):
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer.py
-SHA256=9371d3330d3ae31ce2210493647e207cf5b1578dd7078a69054e9fbb14bb25a1 BYTES=71237 LINES=1521
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/__init__.py
+SHA256=e4de55855dc5527a78abcfa90bc0c014b8e890e5973a18559995af890ea0cbb9 BYTES=2156 LINES=40
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/developers`` — the portal where a customer manages their API keys.
 
@@ -132025,6 +132032,42 @@ whole point:
 Deliberately not here: any provider credential. ``platform_core.api_keys`` holds
 the platform's own keys for Gemini and friends; a customer has no business
 seeing that they exist, let alone their preview.
+
+
+⛔ Import cac module nhom duoi day la BAT BUOC, khong phai thua: handler chi
+   duoc dang ky vao `router` khi module chua no duoc NAP. Bo mot dong la lam
+   bien mat lang le mot nhom route — `test_197` chot 32 route de chan dieu do.
+"""
+from server.routes.developer._chung import (  # noqa: F401
+    CHA_CUA, MUC_CON, NHOM_NAV, RECENT_JOBS, SECTIONS, TRANG_CONG_KHAI,
+    _overview_counts, require_account, router, tai_khoan_tuy_chon)
+from server.routes.developer import (  # noqa: F401
+    cong_cu, khoa_du_an, rieng_tu, su_dung, trang, webhook)
+
+#: ⛔ BE MAT CU PHAI GIU NGUYEN. Truoc khi che, `server/routes/developer.py` la
+#:    mot module, nen `from server.routes.developer import SECTIONS` chay duoc.
+#:    Che thanh package ma khong xuat lai cac ten nay se lam GAY nhung noi goi
+#:    tu ben ngoai — va no gay o cho khong lien quan gi den viec che.
+#:
+#:    Da dinh that ngay 26/08: `test_197` va `test_300` do voi ImportError ngay
+#:    luot chay dau tien sau khi che.
+#:
+#: ⭐ Mot lan che dung nghia la NGUOI GOI KHONG BIET no da xay ra. Danh sach nay
+#:    la thu bao dam dieu do.
+__all__ = ["router", "SECTIONS", "TRANG_CONG_KHAI", "NHOM_NAV", "CHA_CUA",
+           "MUC_CON", "RECENT_JOBS", "require_account", "tai_khoan_tuy_chon"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/_chung.py
+SHA256=e4a1f129a65d8860aeb26f48c1c83a16d0761efa6619a8efd2c79c2dd3519596 BYTES=31438 LINES=696
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nhan dung chung cua cong lap trinh vien.
+
+Tach ra 2026-08-26 khi che `developer.py` (1.521 dong / 32 handler) theo USE
+CASE. Phan nay KHONG phai rac con lai — no la phan that su duoc moi nhom dung
+chung: `router`, `require_account`, cay dieu huong (`SECTIONS`, `NHOM_NAV`,
+`CHA_CUA`, `MUC_CON`) va cac ham dung context + `_render`.
 """
 from __future__ import annotations
 
@@ -132441,6 +132484,899 @@ def _keys_page(request: Request, db: Session, user, *, revealed: str = "",
                    **_keys_context(db, user, config))
 
 
+# One idempotency key per logical call, reused on every retry of it. Written
+# out rather than described, because "reuse the key" is the sentence everyone
+# agrees with and then implements as `uuid4()` inside the retry loop.
+RETRY_EXAMPLE = """key = str(uuid.uuid4())          # ONCE, outside the loop
+
+for attempt in range(5):
+    try:
+        job = call("POST", "/jobs", body, {"Idempotency-Key": key})
+        break
+    except Timeout:               # the request may have succeeded
+        time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
+
+
+#: Status filters people actually think in. "4xx" is a question, "412" is not.
+STATUS_CHOICES = (("2xx", N_("Thành công (2xx)")),
+                  ("4xx", N_("Lỗi của request (4xx)")),
+                  ("401", N_("Không xác thực được (401)")),
+                  ("403", N_("Thiếu quyền (403)")),
+                  ("409", N_("Xung đột (409)")),
+                  ("422", N_("Sai dữ liệu (422)")),
+                  ("429", N_("Vượt hạn mức (429)")),
+                  ("5xx", N_("Lỗi máy chủ (5xx)")))
+
+
+def _the_cong_cu(tool) -> dict:
+    """Mot the trong danh muc — DU de doc het ma khong roi trang.
+
+    🔴 VI SAO DOI. Danh muc cu la mot BANG PHANG: ten, nhom, che do chay, pham
+       vi. Muon biet mot cong cu nhan tham so gi thi phai mo mot trang khac —
+       nen so sanh hai cong cu la hai lan tai trang, va quet ca be mat API la N
+       lan tai trang.
+
+    ⭐ `plenxai.com/developer` (soi that 25/08) lam nguoc lai: the GAP MAC DINH,
+       mo mot cai moi lan, va trong the mo co du bang tham so + vi du + phan
+       hoi mau. Ca be mat API lot vao MOT man hinh duoi dang danh sach quet
+       duoc; trai phang thi trang dai 4.000 pixel va khong ai nhin thay cai thu
+       hai.
+
+    ⚠️ Bang tham so o day sinh tu DUNG mot ham ma trang chi tiet dung
+       (`_tham_so`). Hai noi hien thi, mot ban sinh — nen chung khong the lech.
+    """
+    body = tool.to_public_dict()
+    params = _tham_so(body["input_schema"])
+    return {"name": tool.name, "description": tool.description,
+            "capability": tool.capability,
+            "execution_mode": tool.execution_mode,
+            "scopes": list(tool.scopes),
+            "params": params,
+            "example_request": _example_request(tool, params),
+            "outputs": _vi_du_outputs(body["output_schema"].get("properties", {}))}
+
+
+def _tham_so(schema: dict) -> list:
+    """Bang tham so, SINH TU `input_schema` — khong go tay.
+
+    ⛔ Go tay mot bang tham so la tao ban sao thu hai cua hop dong, va ban sao
+       do se lech AM THAM: khach doc trang, gui tham so theo trang, nhan 422.
+       Xem `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §5.
+
+    ⭐ Tach ra khoi route chi tiet 25/08 de danh muc cong cu dung LAI duoc no:
+       tu do moi the trong danh muc bung ra duoc bang tham so day du ma khong
+       phai tai mot trang khac. Mot ban sinh, hai noi dung.
+    """
+    required = set(schema.get("required", ()))
+    ra = []
+    for name, spec in schema.get("properties", {}).items():
+        bounds = ""
+        if "minimum" in spec or "maximum" in spec:
+            bounds = f"{spec.get('minimum', '')}–{spec.get('maximum', '')}"
+        elif "maxLength" in spec:
+            bounds = _t("tối đa %(n)s ký tự") % {"n": spec["maxLength"]}
+        ra.append({
+            "name": name, "type": spec.get("type", "string"),
+            "required": name in required, "enum": spec.get("enum"),
+            "bounds": bounds, "default": spec.get("default"),
+            "description": spec.get("description", ""),
+            "example": (spec.get("examples") or [None])[0],
+            # "Chỉ dùng khi mode = edit, subject" — lấy từ hợp đồng, không đọc
+            # câu tiếng Anh trong `description` rồi đoán. Xem `catalog.py`.
+            "only_when": spec.get("x-ltt-only-when") or {},
+        })
+    return ra
+
+
+def _vi_du_outputs(outputs: dict) -> str:
+    """Một mẩu `outputs[]` thật, dựng từ `output_schema`.
+
+    🔴 VÌ SAO CẦN. Bảng "Kết quả" liệt kê tên trường và kiểu, nên người đọc suy
+       ra `result.<tên trường>` — chỗ đó **không có gì**. Artifact nằm ở
+       `outputs[]`, `result` chỉ giữ phần dữ liệu thuần.
+
+    ⛔ Đo 25/08 bằng một lượt gọi thật: kịch bản làm đúng theo tài liệu đã dừng
+       lại **sau khi job xong và tiền đã bị thu**. Không lỗi nào từ máy chủ —
+       chỉ là mã của khách tìm sai chỗ.
+
+    ⚠️ Sinh từ schema chứ không gõ tay: một mẩu JSON chép tay là bản sao thứ hai
+       của hợp đồng, và nó sẽ lệch đúng vào hôm ai đó đổi tên trường.
+    """
+    import json
+
+    mau = []
+    for ten, spec in outputs.items():
+        if not str(spec.get("type", "")).startswith("artifact"):
+            continue
+        mau.append({"id": f"<job_id>.{ten}.0", "field": ten, "index": 0})
+    return json.dumps({"outputs": mau or [{"id": "<job_id>.<field>.0",
+                                           "field": "<field>", "index": 0}],
+                       "result": {"…": _t("phần dữ liệu thuần, không phải tệp")}},
+                      ensure_ascii=False, indent=2)
+
+
+def _example_request(tool, params) -> str:
+    """A quote call a reader can paste — the SMALLEST one that works.
+
+    🔴 VÌ SAO KHÔNG NHÉT MỌI THAM SỐ VÀO. Bản trước dựng ví dụ từ **mọi** thuộc
+       tính có `examples`, và với `image.ltt` nó cho ra một thân tự mâu thuẫn:
+
+           "mode": "t2i",
+           "image_key": "upl_from_POST_/api/v1/uploads"
+
+       Trong khi chính `description` của `image_key` nói *"Required for edit and
+       subject; **ignored for t2i**"*. Tức ví dụ mẫu dạy khách gửi một trường mà
+       chế độ đang chọn bỏ qua.
+
+    ⛔ Một ví dụ tự mâu thuẫn tệ hơn không có ví dụ: nó **chạy được**, nên không
+       ai phát hiện, và khách bê nguyên cấu trúc đó vào mã của họ.
+
+    ⭐ Nên luật là: **bắt buộc, cộng những gì có `default`.** Tham số tuỳ chọn
+       không có mặc định là tham số chỉ dùng trong một số ca — và ví dụ đầu tiên
+       không phải chỗ để trình bày mọi ca. Bảng ngay dưới đã liệt kê đủ.
+
+    ⚠️ Đây **không** phải chỗ sửa gốc. Gốc là `input_schema` chưa khai được điều
+       kiện "trường này chỉ dùng khi mode=edit". Xem
+       `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §9.
+    """
+    import json
+
+    payload = {}
+    for param in params:
+        if not param["required"] and param["default"] is None:
+            continue
+        if param["example"] is not None:
+            payload[param["name"]] = param["example"]
+        elif param["default"] is not None:
+            payload[param["name"]] = param["default"]
+        else:
+            payload[param["name"]] = f"<{param['type']}>"
+    body = json.dumps({"tool": tool.name, "input": payload},
+                      ensure_ascii=False, indent=2)
+    return (f'curl -X POST "$LTT_BASE_URL/api/v1/quotes" \\\n'
+            f'  -H "Authorization: Bearer $LTT_API_KEY" \\\n'
+            f'  -H "Content-Type: application/json" \\\n'
+            f"  -d '{body}'")
+
+
+def _usage_page(request: Request, db: Session, user, *, tool: str = "",
+                key_id: str = "", status: str = "",
+                error: str = "") -> HTMLResponse:
+    from platform_core.public_api import budgets as budget_mod
+
+    config = _public_api_config(request)
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(days=30)
+    lines = usage.usage_lines(db, user_id=user.id, since=window_start,
+                              until=now, tool=tool, key_id=key_id, limit=50)
+    if status:
+        lines = [line for line in lines if line.get("status") == status]
+
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    rows = []
+    for budget in budget_mod.list_for(db, user_id=user.id):
+        state = budget_mod.status(db, budget)
+        rows.append({
+            "budget": budget, "spent": state["spent"],
+            "amount": state["amount"], "percent": state["percent"],
+            "scope_label": (names.get(budget.project_id, budget.project_id)
+                            if budget.scope == budget_mod.SCOPE_PROJECT
+                            else _t("cả tài khoản")),
+        })
+
+    return _render(
+        request, db, user, "usage", "dev_usage.html", error=error,
+        budgets=rows, lines=lines,
+        tools=[item.name for item in build_catalog(config)],
+        keys=[{"key_id": key.key_id, "name": key.name}
+              for key in devkeys.list_for_user(db, user.id)],
+        statuses=["queued", "running", "succeeded", "failed", "cancelled"],
+        filters={"tool": tool, "key_id": key_id, "status": status},
+        **_projects_context(db, user),
+        **_usage_context(db, user, config))
+
+
+#: Session slot for a value that must be shown once and never persisted.
+SECRET_ONCE_KEY = "webhook_secret_once"
+
+VERIFY_SNIPPET = """import hmac, hashlib, time
+
+def verify(secret, headers, body):                 # body = raw bytes
+    stamp = int(headers["X-LTT-Timestamp"])
+    if abs(time.time() - stamp) > 300:             # replay window
+        return False
+    signed = f"{stamp}.{headers['X-LTT-Event-Id']}.".encode() + body
+    expected = "v1=" + hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
+    # The header may carry several signatures during a secret rotation.
+    return any(hmac.compare_digest(expected, part.strip())
+               for part in headers["X-LTT-Signature"].split(","))"""
+
+
+def _goc_url(request: Request) -> str:
+    """Gốc URL công khai, để lệnh mẫu chép ra là chạy được ngay.
+
+    Viết cứng `https://app.lttstudios.com` thì lệnh sẽ SAI trên mọi cài đặt
+    khác — và nó sai một cách im lặng: khách chép, chạy, nhận lỗi mạng, và
+    không nghĩ rằng chính trang hướng dẫn đưa nhầm địa chỉ.
+    """
+    goc = os.environ.get("LTT_BASE_URL", "").strip().rstrip("/")
+    if goc:
+        return goc
+    return str(request.base_url).rstrip("/")
+
+
+def _kiem_cau_hinh_khoa() -> str:
+    """Chuỗi lỗi cho khách nếu MÁY CHỦ chưa cấu hình được để cấp khoá.
+
+    Trả chuỗi rỗng khi mọi thứ ổn.
+
+    `current_pepper()` là hàm **chỉ** kiểm cấu hình máy chủ, nên gọi riêng nó
+    tách được hai loại lỗi mà không cần khớp chuỗi: hỏng ở đây là lỗi của ta,
+    hỏng ở `devkeys.issue()` là thứ khách sửa được.
+
+    Khách nhận một câu nói rõ đây không phải lỗi của họ và họ không sửa được;
+    tên biến môi trường đi vào log. Một khách đọc `LTT_API_KEY_PEPPER is missing`
+    học được cấu hình nội bộ của ta và vẫn không làm gì được.
+    """
+    from platform_core.public_api import keys as _keys
+
+    try:
+        _keys.current_pepper()
+    except Exception as exc:  # noqa: BLE001 — mọi lỗi ở đây đều là lỗi của ta
+        _log.error("developer keys: may chu chua cau hinh cap khoa: %s", exc)
+        return _t("Máy chủ chưa cấu hình xong để cấp khóa. Đây là lỗi phía "
+                  "chúng tôi, không phải của bạn — chúng tôi đã được báo. "
+                  "Vui lòng thử lại sau.")
+    return ""
+
+
+def _split_ips(value: str) -> list:
+    """Accept commas, newlines or spaces — people paste all three."""
+    raw = str(value or "").replace("\n", ",").replace(" ", ",")
+    return [part.strip() for part in raw.split(",") if part.strip()]
+
+
+def _expiry_from_days(value: str):
+    """Turn "90" into a timestamp, or nothing at all.
+
+    A key with no expiry is the default because most integrations run for years
+    and a surprise expiry at 3am is worse than a long-lived key that can be
+    revoked in one click. An expiry is offered because a key handed to a
+    contractor should stop working on its own.
+    """
+    raw = str(value or "").strip()
+    if not raw:
+        return None
+    try:
+        days = int(raw)
+    except ValueError as exc:
+        raise devkeys.DeveloperKeyError(
+            _t("Số ngày hết hạn phải là một số nguyên.")) from exc
+    if days <= 0:
+        raise devkeys.DeveloperKeyError(
+            _t("Số ngày hết hạn phải lớn hơn 0."))
+    return datetime.now(timezone.utc) + timedelta(days=days)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/cong_cu.py
+SHA256=22dd425aedac41280844f31a4281493f7e325358d958ffbb4135e818c580cbeb BYTES=5082 LINES=109
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Danh muc cong cu cong khai cua /api/v1."""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from platform_core import credit
+from platform_core.i18n import N_, _ as _t
+from platform_core.models import Job
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.invocation import api_meta
+from platform_core.public_api.scopes import DEFAULT_SCOPES, KNOWN_SCOPES
+from platform_core.public_api.tables import WebhookSubscription
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+from server.routes.developer._chung import (  # noqa: F401
+    _example_request, _public_api_config, _redirect, _render, _tham_so, _the_cong_cu, _vi_du_outputs, require_account, router)
+
+@router.get("/tools", response_class=HTMLResponse)
+def developer_tools(request: Request, q: str = "", capability: str = "",
+                    user=Depends(require_account),
+                    db: Session = Depends(get_db)):
+    from platform_core.public_api.catalog import build_models, capabilities_of
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    needle = str(q or "").strip().lower()
+    wanted = str(capability or "").strip()
+
+    def _matches(tool) -> bool:
+        if wanted and tool.capability != wanted:
+            return False
+        if not needle:
+            return True
+        # Search the parameter names too: "aspect_ratio" is how somebody looks
+        # for the tool that takes it.
+        haystack = " ".join([tool.name, tool.description,
+                             " ".join(tool.input_schema.get("properties", {}))])
+        return needle in haystack.lower()
+
+    shown = [tool for tool in catalog if _matches(tool)]
+    return _render(request, db, user, "tools", "dev_tools.html",
+                   query=needle, capability=wanted,
+                   capabilities=capabilities_of(catalog),
+                   catalog=[_the_cong_cu(tool) for tool in shown],
+                   models=[model.to_public_dict()
+                           for model in build_models(shown)])
+
+
+@router.get("/tools/{tool_name}", response_class=HTMLResponse)
+def developer_tool_detail(request: Request, tool_name: str,
+                          user=Depends(require_account),
+                          db: Session = Depends(get_db)):
+    """The reference page for one tool, rendered from its contract.
+
+    Nothing here is written twice: every field comes from the same catalog the
+    API serves, so a page cannot describe a parameter the server does not
+    accept. That is the whole point of generating it (EXT-06).
+    """
+    from platform_core.public_api.catalog import build_models, require_tool
+    from platform_core.public_api.error_registry import as_rows
+    from platform_core.public_api.protocol import MODE_RULES
+    from platform_core.public_api.webhooks import TERMINAL_EVENTS
+
+    config = _public_api_config(request)
+    catalog = build_catalog(config)
+    try:
+        tool = require_tool(catalog, tool_name)
+    except Exception as exc:  # noqa: BLE001 - a missing tool is a 404 page
+        from platform_core.public_api.errors import ApiError
+
+        if not isinstance(exc, ApiError):
+            raise
+        raise _redirect("/developers/tools", status_code=404) from exc
+
+    body = tool.to_public_dict()
+    params = _tham_so(body["input_schema"])
+    example = _example_request(tool, params)
+    outputs = body["output_schema"].get("properties", {})
+    return _render(
+        request, db, user, "tools", "dev_tool_detail.html",
+        section_title=tool.name, tool=body, params=params,
+        mode_rule=MODE_RULES.get(tool.execution_mode, ""),
+        example_request=example,
+        has_artifacts=any(str(spec.get("type", "")).startswith("artifact")
+                          for spec in outputs.values()),
+        # Hình dạng THẬT của `outputs[]`, dựng từ chính `output_schema` — không
+        # gõ tay, nên nó không thể lệch khỏi thứ job trả về. Xem chú thích trong
+        # template: khách trước nay đi tìm `result.<tên trường>` và không thấy.
+        vi_du_outputs=_vi_du_outputs(outputs),
+        models=[model.to_public_dict() for model in build_models([tool])],
+        events=sorted(TERMINAL_EVENTS),
+        errors=as_rows(),
+        limits={"request_rpm": config.request_rpm,
+                "create_rpm": config.create_rpm,
+                "max_active_jobs": config.max_active_jobs,
+                "daily_credit_limit": config.daily_credit_limit,
+                "max_body_kib": config.max_body_bytes // 1024})
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/khoa_du_an.py
+SHA256=008fc070bd68f05f2af4e619c98e797eba2b10e99e3e8fddf5ac57e0f4e68703 BYTES=7062 LINES=150
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Khoa API va du an."""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from platform_core import credit
+from platform_core.i18n import N_, _ as _t
+from platform_core.models import Job
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.invocation import api_meta
+from platform_core.public_api.scopes import DEFAULT_SCOPES, KNOWN_SCOPES
+from platform_core.public_api.tables import WebhookSubscription
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+from server.routes.developer._chung import (  # noqa: F401
+    _expiry_from_days, _keys_page, _kiem_cau_hinh_khoa, _projects_context, _redirect, _render, _split_ips, require_account, router)
+
+
+@router.get("/projects", response_class=HTMLResponse)
+def developer_projects(request: Request, user=Depends(require_account),
+                       db: Session = Depends(get_db)):
+    return _render(request, db, user, "projects", "dev_projects.html",
+                   **_projects_context(db, user))
+
+
+@router.get("/keys", response_class=HTMLResponse)
+def developer_keys(request: Request, user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    return _keys_page(request, db, user)
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def developer_settings(request: Request, user=Depends(require_account),
+                       db: Session = Depends(get_db)):
+    return _render(request, db, user, "settings", "dev_settings.html")
+
+
+@router.post("/keys", response_class=HTMLResponse)
+def create_key(request: Request, name: str = Form(""),
+               scopes: list[str] = Form(default=[]),
+               allowed_tools: list[str] = Form(default=[]),
+               project_id: str = Form(""), allowed_ips: str = Form(""),
+               expires_in_days: str = Form(""), mode: str = Form("live"),
+               csrf_token: str = Form(""), user=Depends(require_account),
+               db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        raise _redirect("/developers/keys")
+    loi_may_chu = _kiem_cau_hinh_khoa()
+    if loi_may_chu:
+        return _keys_page(request, db, user, error=loi_may_chu)
+    try:
+        project = (projects.get_owned(db, user_id=user.id, project_id=project_id)
+                   if project_id else projects.default_for(db, user_id=user.id))
+        if project is None or not project.is_active():
+            # Ownership is resolved from the session user, so a forged id
+            # simply does not resolve — it never reaches the key.
+            return _keys_page(request, db, user,
+                              error=_t("Không tìm thấy project."))
+        expiry = _expiry_from_days(expires_in_days)
+        key, token = devkeys.issue(
+            db, user_id=user.id, name=name, scopes=scopes,
+            allowed_tools=allowed_tools, project_id=project.id,
+            allowed_ips=_split_ips(allowed_ips), expires_at=expiry,
+            mode=(sandbox.MODE_TEST if mode == sandbox.MODE_TEST
+                  else sandbox.MODE_LIVE))
+    except Exception as exc:  # noqa: BLE001 - message is for this one customer
+        from platform_core.public_api.scopes import ScopeError
+
+        if not isinstance(exc, (devkeys.DeveloperKeyError, ScopeError,
+                                projects.ProjectError)):
+            raise
+        db.rollback()
+        return _keys_page(request, db, user, error=str(exc))
+    # The plaintext exists only in this response. Nothing stores it, and the
+    # page below says so — a customer who closes the tab must create a new key.
+    return _keys_page(request, db, user, revealed=token,
+                      created_key=key.key_id)
+
+
+@router.post("/keys/{key_id}/revoke")
+def revoke_key(request: Request, key_id: str, csrf_token: str = Form(""),
+               user=Depends(require_account), db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/keys", status_code=303)
+    key = devkeys.get_owned(db, user_id=user.id, key_id=key_id)
+    if key is not None:
+        devkeys.revoke(db, key)
+    # Same redirect whether or not the key existed: a portal must not become a
+    # way to find out which key ids belong to somebody else.
+    return RedirectResponse("/developers/keys", status_code=303)
+
+
+@router.post("/keys/{key_id}/rotate", response_class=HTMLResponse)
+def rotate_key(request: Request, key_id: str, csrf_token: str = Form(""),
+               user=Depends(require_account), db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        raise _redirect("/developers/keys")
+    key = devkeys.get_owned(db, user_id=user.id, key_id=key_id)
+    if key is None:
+        return _keys_page(request, db, user, error=_t("Không tìm thấy khóa."))
+    try:
+        token = devkeys.rotate(db, key)
+    except devkeys.DeveloperKeyError as exc:
+        return _keys_page(request, db, user, error=str(exc))
+    return _keys_page(request, db, user, revealed=token,
+                      created_key=key.key_id)
+
+
+@router.post("/projects", response_class=HTMLResponse)
+def create_project(request: Request, name: str = Form(""),
+                   csrf_token: str = Form(""), user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        raise _redirect("/developers/projects")
+    try:
+        projects.create(db, user_id=user.id, name=name)
+    except projects.ProjectError as exc:
+        db.rollback()
+        return _render(request, db, user, "projects", "dev_projects.html",
+                       error=str(exc), **_projects_context(db, user))
+    db.commit()
+    raise _redirect("/developers/projects")
+
+
+@router.post("/projects/{project_id}/archive")
+def archive_project(request: Request, project_id: str,
+                    csrf_token: str = Form(""), user=Depends(require_account),
+                    db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/projects", status_code=303)
+    project = projects.get_owned(db, user_id=user.id, project_id=project_id)
+    if project is not None:
+        # Archiving revokes the project's keys and touches nothing else: jobs,
+        # ledger entries and usage rows record money that moved, and retiring an
+        # integration cannot make them untrue.
+        projects.archive(db, project)
+        db.commit()
+    return RedirectResponse("/developers/projects", status_code=303)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/rieng_tu.py
+SHA256=e024be10320f0cec7d48837e92c9e7bf5c216d60406830fe843449583dd70020 BYTES=6285 LINES=128
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Rieng tu: xem va xuat du lieu cua chinh minh."""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from platform_core import credit
+from platform_core.i18n import N_, _ as _t
+from platform_core.models import Job
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.invocation import api_meta
+from platform_core.public_api.scopes import DEFAULT_SCOPES, KNOWN_SCOPES
+from platform_core.public_api.tables import WebhookSubscription
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+from server.routes.developer._chung import (  # noqa: F401
+    _render, require_account, router)
+
+
+@router.get("/privacy", response_class=HTMLResponse)
+def developer_privacy(request: Request, user=Depends(require_account),
+                      db: Session = Depends(get_db)):
+    """What this area keeps about you, for how long, and why.
+
+    Built from `governance.STORES` rather than written by hand, so the page
+    cannot drift from the policy the worker actually enforces — a privacy page
+    that describes a retention rule nobody runs is the worst kind of wrong.
+    """
+    from platform_core.public_api import governance
+
+    # Translated here rather than in the template: a privacy page the reader
+    # cannot read is not a disclosure.
+    classes = [(klass, [governance.translated(store)
+                        for store in governance.by_class(klass)])
+               for klass in governance.CLASSES]
+    return _render(request, db, user, "privacy", "dev_privacy.html",
+                   classes=classes, legal=governance.LEGAL_LINKS)
+
+
+@router.get("/privacy/export")
+def developer_privacy_export(request: Request, user=Depends(require_account),
+                             db: Session = Depends(get_db)):
+    """The API area's data about this account, as a file.
+
+    Scoped to this area on purpose. A whole-account export would have to speak
+    for every app's tables as well, and promising that from here would be a
+    promise this code cannot keep — so the page says what is and is not in it.
+
+    Redacted with the same function the support trace uses: one definition of
+    "what must never leave", applied in both directions.
+    """
+    import json
+
+    from sqlalchemy import select
+    from starlette.responses import Response
+
+    from platform_core import credit
+    from platform_core.models import CreditEntry, Job
+    from platform_core.public_api import projects, request_log, support, usage
+    from platform_core.public_api.invocation import api_meta
+    from platform_core.public_api.tables import ApiBudget, WebhookSubscription
+
+    keys = devkeys.list_for_user(db, user.id)
+    jobs = [job for job in db.execute(
+        select(Job).where(Job.user_id == user.id)
+        .order_by(Job.created_at.desc()).limit(500)).scalars()
+        if api_meta(job)]
+
+    body = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "scope": _t("Khu API của tài khoản này. KHÔNG bao gồm nội dung do từng "
+                    "app lưu (chat, storyboard, workflow…) — mỗi app giữ dữ "
+                    "liệu của nó, và trang này không nói thay được."),
+        "account": {"id": user.id, "email": user.email,
+                    "created_at": user.created_at,
+                    "credit_balance": credit.so_du(db, user.id)},
+        "projects": [{"id": row.id, "name": row.name, "slug": row.slug,
+                      "status": row.status, "created_at": row.created_at}
+                     for row in projects.list_for(db, user_id=user.id,
+                                                  include_archived=True)],
+        # Public halves only. The secret half is not stored anywhere, so there
+        # is nothing here to withhold.
+        "api_keys": [{"key_id": row.key_id, "name": row.name,
+                      "mode": getattr(row, "mode", "live"),
+                      "status": row.status(), "created_at": row.created_at,
+                      "last_used_at": row.last_used_at} for row in keys],
+        "jobs": [{"id": job.id, "tool": api_meta(job).get("tool"),
+                  "status": job.status, "created_at": job.created_at,
+                  "finished_at": job.finished_at} for job in jobs],
+        "credit_entries": [
+            {"kind": row.kind, "delta": row.delta, "job_id": row.job_id,
+             "note": row.note, "created_at": row.created_at}
+            for row in db.execute(select(CreditEntry).where(
+                CreditEntry.user_id == user.id)
+                .order_by(CreditEntry.created_at)).scalars()],
+        "budgets": [{"scope": row.scope, "period": row.period,
+                     "amount": row.amount, "hard_cap": row.hard_cap}
+                    for row in db.execute(select(ApiBudget).where(
+                        ApiBudget.user_id == user.id)).scalars()],
+        "webhooks": [{"url": row.url, "events": list(row.events or ()),
+                      "enabled": row.enabled, "created_at": row.created_at}
+                     for row in db.execute(select(WebhookSubscription).where(
+                         WebhookSubscription.user_id == user.id)).scalars()],
+        "recent_requests": [
+            {"request_id": row.request_id, "method": row.method,
+             "route": row.route, "status": row.status, "code": row.code,
+             "created_at": row.created_at}
+            for row in request_log.list_for(db, user_id=user.id, limit=200)],
+    }
+
+    name = f"ltt-api-data-{user.id[:8]}.json"
+    return Response(
+        json.dumps(support.redact(body), ensure_ascii=False, indent=2,
+                   default=str),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{name}"',
+                 "Cache-Control": "no-store"})
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/su_dung.py
+SHA256=0d190a2ef5849cd23f49548940fdedaeb7bff3ef661e97cf679a86ea358a73a9 BYTES=7889 LINES=172
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Su dung, ngan sach, viec da chay, nhat ky, thong bao."""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from platform_core import credit
+from platform_core.i18n import N_, _ as _t
+from platform_core.models import Job
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.invocation import api_meta
+from platform_core.public_api.scopes import DEFAULT_SCOPES, KNOWN_SCOPES
+from platform_core.public_api.tables import WebhookSubscription
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+from server.routes.developer._chung import (  # noqa: F401
+    STATUS_CHOICES, _public_api_config, _recent_api_jobs, _redirect, _render, _usage_page, require_account, router)
+
+
+@router.get("/logs", response_class=HTMLResponse)
+def developer_logs(request: Request, request_id: str = "", status: str = "",
+                   tool: str = "", key_id: str = "",
+                   user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    """This account's own API calls — including the ones that never ran.
+
+    A job explains a job. Nothing else explained the 401 that stopped an
+    integration, the 403 that named a scope the developer thought they had, or
+    the 429 that arrived when their queue backed up; those are exactly the calls
+    somebody needs to look up, and until now only an operator could.
+    """
+    from platform_core.public_api import request_log
+
+    config = _public_api_config(request)
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    rows = request_log.list_for(db, user_id=user.id, request_id=request_id,
+                                status=status, tool=tool, key_id=key_id,
+                                limit=100)
+    return _render(
+        request, db, user, "logs", "dev_logs.html",
+        rows=rows,
+        counts=request_log.counts(db, user_id=user.id, since=since),
+        retention_days=request_log.RETENTION_DAYS,
+        tools=[item.name for item in build_catalog(config)],
+        keys=[{"key_id": key.key_id, "name": key.name}
+              for key in devkeys.list_for_user(db, user.id)],
+        status_choices=[(value, _t(label)) for value, label in STATUS_CHOICES],
+        filters={"request_id": request_id, "status": status, "tool": tool,
+                 "key_id": key_id,
+                 "any": bool(request_id or status or tool or key_id)})
+
+
+@router.get("/logs/{wanted_id}", response_class=HTMLResponse)
+def developer_log_detail(request: Request, wanted_id: str,
+                         user=Depends(require_account),
+                         db: Session = Depends(get_db)):
+    """One request, and everything reachable from it.
+
+    Assembled from rows that already exist — the job, its customer-visible
+    events, the ledger entries, the artifacts, the webhook deliveries. Storing a
+    second copy of any of that would be a second thing to keep true.
+    """
+    from platform_core.public_api import request_log
+    from platform_core.public_api.error_registry import REGISTRY
+
+    row = request_log.get_owned(db, user_id=user.id, request_id=wanted_id)
+    if row is None:
+        # Same 404 a request that never existed gets: a log page must not
+        # confirm that somebody else's request id is real.
+        raise _redirect("/developers/logs", status_code=404)
+    spec = REGISTRY.get(row.code)
+    names = {project.id: project.name
+             for project in projects.list_for(db, user_id=user.id,
+                                              include_archived=True)}
+    return _render(
+        request, db, user, "logs", "dev_log_detail.html",
+        section_title=row.request_id[:8],
+        row=row, timeline=request_log.timeline(db, row),
+        project_name=names.get(row.project_id, ""),
+        advice=({"action": spec.action, "retry": spec.retry,
+                 "reuse_idempotency_key": spec.reuse_idempotency_key}
+                if spec is not None else None))
+
+
+@router.get("/jobs", response_class=HTMLResponse)
+def developer_jobs(request: Request, user=Depends(require_account),
+                   db: Session = Depends(get_db)):
+    return _render(request, db, user, "jobs", "dev_jobs.html",
+                   recent_jobs=_recent_api_jobs(db, user.id))
+
+
+@router.get("/usage", response_class=HTMLResponse)
+def developer_usage(request: Request, tool: str = "", key_id: str = "",
+                    status: str = "", user=Depends(require_account),
+                    db: Session = Depends(get_db)):
+    return _usage_page(request, db, user, tool=tool, key_id=key_id,
+                       status=status)
+
+
+@router.post("/budgets", response_class=HTMLResponse)
+def developer_create_budget(request: Request, amount: str = Form(""),
+                            period: str = Form("month"),
+                            project_id: str = Form(""),
+                            hard_cap: str = Form(""),
+                            csrf_token: str = Form(""),
+                            user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import budgets as budget_mod
+
+    if not verify_csrf_token(request, csrf_token):
+        raise _redirect("/developers/usage")
+    scope = (budget_mod.SCOPE_PROJECT if project_id
+             else budget_mod.SCOPE_ACCOUNT)
+    try:
+        budget_mod.create(db, user_id=user.id, amount=amount, period=period,
+                          scope=scope, project_id=project_id,
+                          hard_cap=bool(hard_cap))
+    except budget_mod.BudgetError as exc:
+        db.rollback()
+        return _usage_page(request, db, user, error=str(exc))
+    db.commit()
+    raise _redirect("/developers/usage")
+
+
+@router.post("/budgets/{budget_id}/delete")
+def developer_delete_budget(request: Request, budget_id: str,
+                            csrf_token: str = Form(""),
+                            user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import budgets as budget_mod
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/usage", status_code=303)
+    budget = budget_mod.get_owned(db, user_id=user.id, budget_id=budget_id)
+    if budget is not None:
+        db.delete(budget)
+        db.commit()
+    return RedirectResponse("/developers/usage", status_code=303)
+
+
+@router.get("/notifications", response_class=HTMLResponse)
+def developer_notifications(request: Request, user=Depends(require_account),
+                            db: Session = Depends(get_db)):
+    from platform_core.public_api import notifications
+
+    return _render(request, db, user, "notifications",
+                   "dev_notifications.html",
+                   rows=notifications.list_for(db, user_id=user.id))
+
+
+@router.post("/notifications/read")
+def developer_notifications_read(request: Request, csrf_token: str = Form(""),
+                                 user=Depends(require_account),
+                                 db: Session = Depends(get_db)):
+    from platform_core.public_api import notifications
+
+    if not verify_csrf_token(request, csrf_token):
+        return RedirectResponse("/developers/notifications", status_code=303)
+    notifications.mark_all_read(db, user_id=user.id)
+    db.commit()
+    return RedirectResponse("/developers/notifications", status_code=303)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/trang.py
+SHA256=62a8d876fa775ebf4fd8c43bbdfbfced4f442738b052b627452cda2bb08f8571 BYTES=13542 LINES=283
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trang doc va tai lieu cua cong lap trinh vien."""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from platform_core import credit
+from platform_core.i18n import N_, _ as _t
+from platform_core.models import Job
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.invocation import api_meta
+from platform_core.public_api.scopes import DEFAULT_SCOPES, KNOWN_SCOPES
+from platform_core.public_api.tables import WebhookSubscription
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+from server.routes.developer._chung import (  # noqa: F401
+    RETRY_EXAMPLE, _goc_url, _log, _overview_counts, _public_api_config, _redirect, _render, _usage_context, require_account, router)
+
+
 @router.get("", response_class=HTMLResponse)
 def developer_overview(request: Request, user=Depends(require_account),
                        db: Session = Depends(get_db)):
@@ -132455,19 +133391,6 @@ def developer_overview(request: Request, user=Depends(require_account),
 "
                              '  -H "Authorization: Bearer $LTT_API_KEY"'),
                    **_usage_context(db, user, config))
-
-
-@router.get("/projects", response_class=HTMLResponse)
-def developer_projects(request: Request, user=Depends(require_account),
-                       db: Session = Depends(get_db)):
-    return _render(request, db, user, "projects", "dev_projects.html",
-                   **_projects_context(db, user))
-
-
-@router.get("/keys", response_class=HTMLResponse)
-def developer_keys(request: Request, user=Depends(require_account),
-                   db: Session = Depends(get_db)):
-    return _keys_page(request, db, user)
 
 
 @router.get("/quickstart", response_class=HTMLResponse)
@@ -132515,19 +133438,6 @@ def developer_quickstart(request: Request, tool: str = "",
         chat_snippets=examples.chat_snippets() if co_chat else (),
         chat_khac_biet=examples.CHAT_DIFFERENCES if co_chat else (),
         retry_snippet=RETRY_EXAMPLE)
-
-
-# One idempotency key per logical call, reused on every retry of it. Written
-# out rather than described, because "reuse the key" is the sentence everyone
-# agrees with and then implements as `uuid4()` inside the retry loop.
-RETRY_EXAMPLE = """key = str(uuid.uuid4())          # ONCE, outside the loop
-
-for attempt in range(5):
-    try:
-        job = call("POST", "/jobs", body, {"Idempotency-Key": key})
-        break
-    except Timeout:               # the request may have succeeded
-        time.sleep(2 ** attempt)  # same key -> replay, not a second job"""
 
 @router.get("/pricing", response_class=HTMLResponse)
 def developer_pricing(request: Request, user=Depends(require_account),
@@ -132630,426 +133540,130 @@ def developer_playground(request: Request, tool: str = "",
                    .replace("<", "\\u003c"))
 
 
-#: Status filters people actually think in. "4xx" is a question, "412" is not.
-STATUS_CHOICES = (("2xx", N_("Thành công (2xx)")),
-                  ("4xx", N_("Lỗi của request (4xx)")),
-                  ("401", N_("Không xác thực được (401)")),
-                  ("403", N_("Thiếu quyền (403)")),
-                  ("409", N_("Xung đột (409)")),
-                  ("422", N_("Sai dữ liệu (422)")),
-                  ("429", N_("Vượt hạn mức (429)")),
-                  ("5xx", N_("Lỗi máy chủ (5xx)")))
+@router.get("/cli", response_class=HTMLResponse)
+def developer_cli(request: Request, user=Depends(require_account),
+                  db: Session = Depends(get_db)):
+    """Cấu hình sẵn cho Codex, Claude Code và Claude Desktop.
+
+    ⭐ VÌ SAO TRANG NÀY TỒN TẠI. Thứ chặn một lập trình viên gần như không bao
+       giờ là giao thức — nó là **điền đúng một file cấu hình**. Hai base URL
+       lệch nhau bốn ký tự, một tên model phải khớp chính xác, và một biến môi
+       trường phải đặt ở cấp người dùng chứ không phải trong một cửa sổ terminal.
+       Mỗi thứ đó hỏng lặng lẽ với một triệu chứng vô ích.
+
+    ⛔ Trang này **không** chèn khoá thật vào cấu hình. Khoá chỉ hiện một lần lúc
+       tạo và máy chủ không giữ lại được — cùng luật mà mọi ví dụ khác trong
+       `examples.py` đã theo: *"No snippet ever contains a key."*
+    """
+    from platform_core.public_api import examples
+    from server.routes.tai_lieu_api import bo_cai_moi_nhat
+
+    goc = str(request.base_url).rstrip("/")
+    return _render(
+        request, db, user, "cli", "dev_cli.html",
+        base_url=goc,
+        codex_config=examples.codex_config(goc),
+        codex_profile=examples.codex_profile(),
+        claude_env=examples.claude_code_env(goc),
+        claude_settings=examples.claude_code_settings(goc),
+        desktop=examples.claude_desktop_steps(goc),
+        vscode_claude=examples.vscode_claude_settings(goc),
+        vscode_codex=examples.vscode_codex_config(goc),
+        vscode_bay=examples.VSCODE_BAY,
+        desktop_reg=examples.claude_desktop_registry(goc),
+        be_mat=examples.be_mat_cam(goc),
+        # Bo cai .exe: cung nguon `bo_cai_moi_nhat()` ma trang cong khai dung,
+        # nen so phien ban va bam SHA-256 khong the lech giua hai trang.
+        bo_cai=bo_cai_moi_nhat(),
+        bay=examples.CLI_BAY,
+        model=examples.CLI_MODEL,
+        model_desktop=examples.DESKTOP_MODEL,
+        env_key=examples.ENV_API_KEY)
 
 
-@router.get("/logs", response_class=HTMLResponse)
-def developer_logs(request: Request, request_id: str = "", status: str = "",
-                   tool: str = "", key_id: str = "",
-                   user=Depends(require_account),
+@router.get("/docs", response_class=HTMLResponse)
+def developer_docs(request: Request, user=Depends(require_account),
                    db: Session = Depends(get_db)):
-    """This account's own API calls — including the ones that never ran.
-
-    A job explains a job. Nothing else explained the 401 that stopped an
-    integration, the 403 that named a scope the developer thought they had, or
-    the 429 that arrived when their queue backed up; those are exactly the calls
-    somebody needs to look up, and until now only an operator could.
-    """
-    from platform_core.public_api import request_log
-
-    config = _public_api_config(request)
-    since = datetime.now(timezone.utc) - timedelta(days=7)
-    rows = request_log.list_for(db, user_id=user.id, request_id=request_id,
-                                status=status, tool=tool, key_id=key_id,
-                                limit=100)
-    return _render(
-        request, db, user, "logs", "dev_logs.html",
-        rows=rows,
-        counts=request_log.counts(db, user_id=user.id, since=since),
-        retention_days=request_log.RETENTION_DAYS,
-        tools=[item.name for item in build_catalog(config)],
-        keys=[{"key_id": key.key_id, "name": key.name}
-              for key in devkeys.list_for_user(db, user.id)],
-        status_choices=[(value, _t(label)) for value, label in STATUS_CHOICES],
-        filters={"request_id": request_id, "status": status, "tool": tool,
-                 "key_id": key_id,
-                 "any": bool(request_id or status or tool or key_id)})
+    # The origin as the caller's browser sees it, so the copyable curl example
+    # works on a laptop, behind the tunnel and in a test alike.
+    return _render(request, db, user, "docs", "dev_docs.html",
+                   base_url=str(request.base_url).rstrip("/"))
 
 
-@router.get("/logs/{wanted_id}", response_class=HTMLResponse)
-def developer_log_detail(request: Request, wanted_id: str,
-                         user=Depends(require_account),
-                         db: Session = Depends(get_db)):
-    """One request, and everything reachable from it.
+@router.get("/openapi/download")
+def developer_openapi_download(request: Request,
+                               user=Depends(require_account)):
+    """The spec as a file, with the API version in its name.
 
-    Assembled from rows that already exist — the job, its customer-visible
-    events, the ledger entries, the artifacts, the webhook deliveries. Storing a
-    second copy of any of that would be a second thing to keep true.
-    """
-    from platform_core.public_api import request_log
-    from platform_core.public_api.error_registry import REGISTRY
-
-    row = request_log.get_owned(db, user_id=user.id, request_id=wanted_id)
-    if row is None:
-        # Same 404 a request that never existed gets: a log page must not
-        # confirm that somebody else's request id is real.
-        raise _redirect("/developers/logs", status_code=404)
-    spec = REGISTRY.get(row.code)
-    names = {project.id: project.name
-             for project in projects.list_for(db, user_id=user.id,
-                                              include_archived=True)}
-    return _render(
-        request, db, user, "logs", "dev_log_detail.html",
-        section_title=row.request_id[:8],
-        row=row, timeline=request_log.timeline(db, row),
-        project_name=names.get(row.project_id, ""),
-        advice=({"action": spec.action, "retry": spec.retry,
-                 "reuse_idempotency_key": spec.reuse_idempotency_key}
-                if spec is not None else None))
-
-@router.get("/tools", response_class=HTMLResponse)
-def developer_tools(request: Request, q: str = "", capability: str = "",
-                    user=Depends(require_account),
-                    db: Session = Depends(get_db)):
-    from platform_core.public_api.catalog import build_models, capabilities_of
-
-    config = _public_api_config(request)
-    catalog = build_catalog(config)
-    needle = str(q or "").strip().lower()
-    wanted = str(capability or "").strip()
-
-    def _matches(tool) -> bool:
-        if wanted and tool.capability != wanted:
-            return False
-        if not needle:
-            return True
-        # Search the parameter names too: "aspect_ratio" is how somebody looks
-        # for the tool that takes it.
-        haystack = " ".join([tool.name, tool.description,
-                             " ".join(tool.input_schema.get("properties", {}))])
-        return needle in haystack.lower()
-
-    shown = [tool for tool in catalog if _matches(tool)]
-    return _render(request, db, user, "tools", "dev_tools.html",
-                   query=needle, capability=wanted,
-                   capabilities=capabilities_of(catalog),
-                   catalog=[_the_cong_cu(tool) for tool in shown],
-                   models=[model.to_public_dict()
-                           for model in build_models(shown)])
-
-
-def _the_cong_cu(tool) -> dict:
-    """Mot the trong danh muc — DU de doc het ma khong roi trang.
-
-    🔴 VI SAO DOI. Danh muc cu la mot BANG PHANG: ten, nhom, che do chay, pham
-       vi. Muon biet mot cong cu nhan tham so gi thi phai mo mot trang khac —
-       nen so sanh hai cong cu la hai lan tai trang, va quet ca be mat API la N
-       lan tai trang.
-
-    ⭐ `plenxai.com/developer` (soi that 25/08) lam nguoc lai: the GAP MAC DINH,
-       mo mot cai moi lan, va trong the mo co du bang tham so + vi du + phan
-       hoi mau. Ca be mat API lot vao MOT man hinh duoi dang danh sach quet
-       duoc; trai phang thi trang dai 4.000 pixel va khong ai nhin thay cai thu
-       hai.
-
-    ⚠️ Bang tham so o day sinh tu DUNG mot ham ma trang chi tiet dung
-       (`_tham_so`). Hai noi hien thi, mot ban sinh — nen chung khong the lech.
-    """
-    body = tool.to_public_dict()
-    params = _tham_so(body["input_schema"])
-    return {"name": tool.name, "description": tool.description,
-            "capability": tool.capability,
-            "execution_mode": tool.execution_mode,
-            "scopes": list(tool.scopes),
-            "params": params,
-            "example_request": _example_request(tool, params),
-            "outputs": _vi_du_outputs(body["output_schema"].get("properties", {}))}
-
-
-def _tham_so(schema: dict) -> list:
-    """Bang tham so, SINH TU `input_schema` — khong go tay.
-
-    ⛔ Go tay mot bang tham so la tao ban sao thu hai cua hop dong, va ban sao
-       do se lech AM THAM: khach doc trang, gui tham so theo trang, nhan 422.
-       Xem `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §5.
-
-    ⭐ Tach ra khoi route chi tiet 25/08 de danh muc cong cu dung LAI duoc no:
-       tu do moi the trong danh muc bung ra duoc bang tham so day du ma khong
-       phai tai mot trang khac. Mot ban sinh, hai noi dung.
-    """
-    required = set(schema.get("required", ()))
-    ra = []
-    for name, spec in schema.get("properties", {}).items():
-        bounds = ""
-        if "minimum" in spec or "maximum" in spec:
-            bounds = f"{spec.get('minimum', '')}–{spec.get('maximum', '')}"
-        elif "maxLength" in spec:
-            bounds = _t("tối đa %(n)s ký tự") % {"n": spec["maxLength"]}
-        ra.append({
-            "name": name, "type": spec.get("type", "string"),
-            "required": name in required, "enum": spec.get("enum"),
-            "bounds": bounds, "default": spec.get("default"),
-            "description": spec.get("description", ""),
-            "example": (spec.get("examples") or [None])[0],
-            # "Chỉ dùng khi mode = edit, subject" — lấy từ hợp đồng, không đọc
-            # câu tiếng Anh trong `description` rồi đoán. Xem `catalog.py`.
-            "only_when": spec.get("x-ltt-only-when") or {},
-        })
-    return ra
-
-
-@router.get("/tools/{tool_name}", response_class=HTMLResponse)
-def developer_tool_detail(request: Request, tool_name: str,
-                          user=Depends(require_account),
-                          db: Session = Depends(get_db)):
-    """The reference page for one tool, rendered from its contract.
-
-    Nothing here is written twice: every field comes from the same catalog the
-    API serves, so a page cannot describe a parameter the server does not
-    accept. That is the whole point of generating it (EXT-06).
-    """
-    from platform_core.public_api.catalog import build_models, require_tool
-    from platform_core.public_api.error_registry import as_rows
-    from platform_core.public_api.protocol import MODE_RULES
-    from platform_core.public_api.webhooks import TERMINAL_EVENTS
-
-    config = _public_api_config(request)
-    catalog = build_catalog(config)
-    try:
-        tool = require_tool(catalog, tool_name)
-    except Exception as exc:  # noqa: BLE001 - a missing tool is a 404 page
-        from platform_core.public_api.errors import ApiError
-
-        if not isinstance(exc, ApiError):
-            raise
-        raise _redirect("/developers/tools", status_code=404) from exc
-
-    body = tool.to_public_dict()
-    params = _tham_so(body["input_schema"])
-    example = _example_request(tool, params)
-    outputs = body["output_schema"].get("properties", {})
-    return _render(
-        request, db, user, "tools", "dev_tool_detail.html",
-        section_title=tool.name, tool=body, params=params,
-        mode_rule=MODE_RULES.get(tool.execution_mode, ""),
-        example_request=example,
-        has_artifacts=any(str(spec.get("type", "")).startswith("artifact")
-                          for spec in outputs.values()),
-        # Hình dạng THẬT của `outputs[]`, dựng từ chính `output_schema` — không
-        # gõ tay, nên nó không thể lệch khỏi thứ job trả về. Xem chú thích trong
-        # template: khách trước nay đi tìm `result.<tên trường>` và không thấy.
-        vi_du_outputs=_vi_du_outputs(outputs),
-        models=[model.to_public_dict() for model in build_models([tool])],
-        events=sorted(TERMINAL_EVENTS),
-        errors=as_rows(),
-        limits={"request_rpm": config.request_rpm,
-                "create_rpm": config.create_rpm,
-                "max_active_jobs": config.max_active_jobs,
-                "daily_credit_limit": config.daily_credit_limit,
-                "max_body_kib": config.max_body_bytes // 1024})
-
-
-def _vi_du_outputs(outputs: dict) -> str:
-    """Một mẩu `outputs[]` thật, dựng từ `output_schema`.
-
-    🔴 VÌ SAO CẦN. Bảng "Kết quả" liệt kê tên trường và kiểu, nên người đọc suy
-       ra `result.<tên trường>` — chỗ đó **không có gì**. Artifact nằm ở
-       `outputs[]`, `result` chỉ giữ phần dữ liệu thuần.
-
-    ⛔ Đo 25/08 bằng một lượt gọi thật: kịch bản làm đúng theo tài liệu đã dừng
-       lại **sau khi job xong và tiền đã bị thu**. Không lỗi nào từ máy chủ —
-       chỉ là mã của khách tìm sai chỗ.
-
-    ⚠️ Sinh từ schema chứ không gõ tay: một mẩu JSON chép tay là bản sao thứ hai
-       của hợp đồng, và nó sẽ lệch đúng vào hôm ai đó đổi tên trường.
+    The same document `/api/v1/openapi.json` serves — fetched from the running
+    app rather than rebuilt, because two ways of producing a spec is one way
+    too many. What this adds is a *name*: a generated client is only debuggable
+    six months later if you can tell which spec produced it.
     """
     import json
 
-    mau = []
-    for ten, spec in outputs.items():
-        if not str(spec.get("type", "")).startswith("artifact"):
-            continue
-        mau.append({"id": f"<job_id>.{ten}.0", "field": ten, "index": 0})
-    return json.dumps({"outputs": mau or [{"id": "<job_id>.<field>.0",
-                                           "field": "<field>", "index": 0}],
-                       "result": {"…": _t("phần dữ liệu thuần, không phải tệp")}},
-                      ensure_ascii=False, indent=2)
+    from starlette.responses import Response
 
+    from platform_core.public_api import protocol
+    from server.api.inventory import API_V1_PREFIX
 
-def _example_request(tool, params) -> str:
-    """A quote call a reader can paste — the SMALLEST one that works.
+    document = None
+    for route in request.app.routes:
+        sub = getattr(route, "app", None)
+        if sub is not None and getattr(route, "path", "") == "/api/v1" \
+                and hasattr(sub, "openapi"):
+            document = sub.openapi()
+            break
+    if document is None:
+        raise _redirect("/developers/docs")
 
-    🔴 VÌ SAO KHÔNG NHÉT MỌI THAM SỐ VÀO. Bản trước dựng ví dụ từ **mọi** thuộc
-       tính có `examples`, và với `image.ltt` nó cho ra một thân tự mâu thuẫn:
+    # FastAPI adds `servers` when it *serves* the document, from the mount
+    # path — so a copy taken straight from `sub.openapi()` would arrive without
+    # one, and a client generated from it would have no base URL to call. Caught
+    # by comparing the two byte for byte, which is the only way this kind of
+    # difference gets noticed.
+    document.setdefault("servers", [{"url": API_V1_PREFIX}])
 
-           "mode": "t2i",
-           "image_key": "upl_from_POST_/api/v1/uploads"
+    name = f"ltt-public-api-{protocol.API_VERSION}-openapi.json"
+    return Response(
+        json.dumps(document, ensure_ascii=False, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": f'attachment; filename="{name}"',
+                 "Cache-Control": "no-store"})
 
-       Trong khi chính `description` của `image_key` nói *"Required for edit and
-       subject; **ignored for t2i**"*. Tức ví dụ mẫu dạy khách gửi một trường mà
-       chế độ đang chọn bỏ qua.
+@@@LTT_PROFILE_FILE_END@@@
 
-    ⛔ Một ví dụ tự mâu thuẫn tệ hơn không có ví dụ: nó **chạy được**, nên không
-       ai phát hiện, và khách bê nguyên cấu trúc đó vào mã của họ.
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/developer/webhook.py
+SHA256=2e7ba4d8e36cf477ee07c887d32f4237457c86794fb751bb41fa241dbbd5c3da BYTES=6677 LINES=141
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Dang ky webhook: thu, xoay khoa ky, tat, gui lai."""
+from __future__ import annotations
 
-    ⭐ Nên luật là: **bắt buộc, cộng những gì có `default`.** Tham số tuỳ chọn
-       không có mặc định là tham số chỉ dùng trong một số ca — và ví dụ đầu tiên
-       không phải chỗ để trình bày mọi ca. Bảng ngay dưới đã liệt kê đủ.
+import logging
+import os
+from datetime import datetime, timedelta, timezone
 
-    ⚠️ Đây **không** phải chỗ sửa gốc. Gốc là `input_schema` chưa khai được điều
-       kiện "trường này chỉ dùng khi mode=edit". Xem
-       `docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §9.
-    """
-    import json
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-    payload = {}
-    for param in params:
-        if not param["required"] and param["default"] is None:
-            continue
-        if param["example"] is not None:
-            payload[param["name"]] = param["example"]
-        elif param["default"] is not None:
-            payload[param["name"]] = param["default"]
-        else:
-            payload[param["name"]] = f"<{param['type']}>"
-    body = json.dumps({"tool": tool.name, "input": payload},
-                      ensure_ascii=False, indent=2)
-    return (f'curl -X POST "$LTT_BASE_URL/api/v1/quotes" \\\n'
-            f'  -H "Authorization: Bearer $LTT_API_KEY" \\\n'
-            f'  -H "Content-Type: application/json" \\\n'
-            f"  -d '{body}'")
+from platform_core import credit
+from platform_core.i18n import N_, _ as _t
+from platform_core.models import Job
+from platform_core.public_api import keys as devkeys, projects, sandbox, usage
+from platform_core.public_api.catalog import build_catalog
+from platform_core.public_api.config import load_public_api_config
+from platform_core.public_api.invocation import api_meta
+from platform_core.public_api.scopes import DEFAULT_SCOPES, KNOWN_SCOPES
+from platform_core.public_api.tables import WebhookSubscription
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
 
-
-@router.get("/jobs", response_class=HTMLResponse)
-def developer_jobs(request: Request, user=Depends(require_account),
-                   db: Session = Depends(get_db)):
-    return _render(request, db, user, "jobs", "dev_jobs.html",
-                   recent_jobs=_recent_api_jobs(db, user.id))
-
-
-@router.get("/usage", response_class=HTMLResponse)
-def developer_usage(request: Request, tool: str = "", key_id: str = "",
-                    status: str = "", user=Depends(require_account),
-                    db: Session = Depends(get_db)):
-    return _usage_page(request, db, user, tool=tool, key_id=key_id,
-                       status=status)
-
-
-def _usage_page(request: Request, db: Session, user, *, tool: str = "",
-                key_id: str = "", status: str = "",
-                error: str = "") -> HTMLResponse:
-    from platform_core.public_api import budgets as budget_mod
-
-    config = _public_api_config(request)
-    now = datetime.now(timezone.utc)
-    window_start = now - timedelta(days=30)
-    lines = usage.usage_lines(db, user_id=user.id, since=window_start,
-                              until=now, tool=tool, key_id=key_id, limit=50)
-    if status:
-        lines = [line for line in lines if line.get("status") == status]
-
-    names = {project.id: project.name
-             for project in projects.list_for(db, user_id=user.id,
-                                              include_archived=True)}
-    rows = []
-    for budget in budget_mod.list_for(db, user_id=user.id):
-        state = budget_mod.status(db, budget)
-        rows.append({
-            "budget": budget, "spent": state["spent"],
-            "amount": state["amount"], "percent": state["percent"],
-            "scope_label": (names.get(budget.project_id, budget.project_id)
-                            if budget.scope == budget_mod.SCOPE_PROJECT
-                            else _t("cả tài khoản")),
-        })
-
-    return _render(
-        request, db, user, "usage", "dev_usage.html", error=error,
-        budgets=rows, lines=lines,
-        tools=[item.name for item in build_catalog(config)],
-        keys=[{"key_id": key.key_id, "name": key.name}
-              for key in devkeys.list_for_user(db, user.id)],
-        statuses=["queued", "running", "succeeded", "failed", "cancelled"],
-        filters={"tool": tool, "key_id": key_id, "status": status},
-        **_projects_context(db, user),
-        **_usage_context(db, user, config))
-
-
-@router.post("/budgets", response_class=HTMLResponse)
-def developer_create_budget(request: Request, amount: str = Form(""),
-                            period: str = Form("month"),
-                            project_id: str = Form(""),
-                            hard_cap: str = Form(""),
-                            csrf_token: str = Form(""),
-                            user=Depends(require_account),
-                            db: Session = Depends(get_db)):
-    from platform_core.public_api import budgets as budget_mod
-
-    if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers/usage")
-    scope = (budget_mod.SCOPE_PROJECT if project_id
-             else budget_mod.SCOPE_ACCOUNT)
-    try:
-        budget_mod.create(db, user_id=user.id, amount=amount, period=period,
-                          scope=scope, project_id=project_id,
-                          hard_cap=bool(hard_cap))
-    except budget_mod.BudgetError as exc:
-        db.rollback()
-        return _usage_page(request, db, user, error=str(exc))
-    db.commit()
-    raise _redirect("/developers/usage")
-
-
-@router.post("/budgets/{budget_id}/delete")
-def developer_delete_budget(request: Request, budget_id: str,
-                            csrf_token: str = Form(""),
-                            user=Depends(require_account),
-                            db: Session = Depends(get_db)):
-    from platform_core.public_api import budgets as budget_mod
-
-    if not verify_csrf_token(request, csrf_token):
-        return RedirectResponse("/developers/usage", status_code=303)
-    budget = budget_mod.get_owned(db, user_id=user.id, budget_id=budget_id)
-    if budget is not None:
-        db.delete(budget)
-        db.commit()
-    return RedirectResponse("/developers/usage", status_code=303)
-
-
-@router.get("/notifications", response_class=HTMLResponse)
-def developer_notifications(request: Request, user=Depends(require_account),
-                            db: Session = Depends(get_db)):
-    from platform_core.public_api import notifications
-
-    return _render(request, db, user, "notifications",
-                   "dev_notifications.html",
-                   rows=notifications.list_for(db, user_id=user.id))
-
-
-@router.post("/notifications/read")
-def developer_notifications_read(request: Request, csrf_token: str = Form(""),
-                                 user=Depends(require_account),
-                                 db: Session = Depends(get_db)):
-    from platform_core.public_api import notifications
-
-    if not verify_csrf_token(request, csrf_token):
-        return RedirectResponse("/developers/notifications", status_code=303)
-    notifications.mark_all_read(db, user_id=user.id)
-    db.commit()
-    return RedirectResponse("/developers/notifications", status_code=303)
-
-
-#: Session slot for a value that must be shown once and never persisted.
-SECRET_ONCE_KEY = "webhook_secret_once"
-
-VERIFY_SNIPPET = """import hmac, hashlib, time
-
-def verify(secret, headers, body):                 # body = raw bytes
-    stamp = int(headers["X-LTT-Timestamp"])
-    if abs(time.time() - stamp) > 300:             # replay window
-        return False
-    signed = f"{stamp}.{headers['X-LTT-Event-Id']}.".encode() + body
-    expected = "v1=" + hmac.new(secret.encode(), signed, hashlib.sha256).hexdigest()
-    # The header may carry several signatures during a secret rotation.
-    return any(hmac.compare_digest(expected, part.strip())
-               for part in headers["X-LTT-Signature"].split(","))"""
+from server.routes.developer._chung import (  # noqa: F401
+    SECRET_ONCE_KEY, VERIFY_SNIPPET, _all_webhooks, _render, require_account, router)
 
 
 @router.get("/webhooks", response_class=HTMLResponse)
@@ -133163,373 +133777,6 @@ def developer_webhook_resend(request: Request, delivery_id: str,
     except webhook_console.WebhookConsoleError:
         db.rollback()
     return RedirectResponse("/developers/webhooks", status_code=303)
-
-
-@router.get("/cli", response_class=HTMLResponse)
-def developer_cli(request: Request, user=Depends(require_account),
-                  db: Session = Depends(get_db)):
-    """Cấu hình sẵn cho Codex, Claude Code và Claude Desktop.
-
-    ⭐ VÌ SAO TRANG NÀY TỒN TẠI. Thứ chặn một lập trình viên gần như không bao
-       giờ là giao thức — nó là **điền đúng một file cấu hình**. Hai base URL
-       lệch nhau bốn ký tự, một tên model phải khớp chính xác, và một biến môi
-       trường phải đặt ở cấp người dùng chứ không phải trong một cửa sổ terminal.
-       Mỗi thứ đó hỏng lặng lẽ với một triệu chứng vô ích.
-
-    ⛔ Trang này **không** chèn khoá thật vào cấu hình. Khoá chỉ hiện một lần lúc
-       tạo và máy chủ không giữ lại được — cùng luật mà mọi ví dụ khác trong
-       `examples.py` đã theo: *"No snippet ever contains a key."*
-    """
-    from platform_core.public_api import examples
-    from server.routes.tai_lieu_api import bo_cai_moi_nhat
-
-    goc = str(request.base_url).rstrip("/")
-    return _render(
-        request, db, user, "cli", "dev_cli.html",
-        base_url=goc,
-        codex_config=examples.codex_config(goc),
-        codex_profile=examples.codex_profile(),
-        claude_env=examples.claude_code_env(goc),
-        claude_settings=examples.claude_code_settings(goc),
-        desktop=examples.claude_desktop_steps(goc),
-        vscode_claude=examples.vscode_claude_settings(goc),
-        vscode_codex=examples.vscode_codex_config(goc),
-        vscode_bay=examples.VSCODE_BAY,
-        desktop_reg=examples.claude_desktop_registry(goc),
-        be_mat=examples.be_mat_cam(goc),
-        # Bo cai .exe: cung nguon `bo_cai_moi_nhat()` ma trang cong khai dung,
-        # nen so phien ban va bam SHA-256 khong the lech giua hai trang.
-        bo_cai=bo_cai_moi_nhat(),
-        bay=examples.CLI_BAY,
-        model=examples.CLI_MODEL,
-        model_desktop=examples.DESKTOP_MODEL,
-        env_key=examples.ENV_API_KEY)
-
-
-@router.get("/docs", response_class=HTMLResponse)
-def developer_docs(request: Request, user=Depends(require_account),
-                   db: Session = Depends(get_db)):
-    # The origin as the caller's browser sees it, so the copyable curl example
-    # works on a laptop, behind the tunnel and in a test alike.
-    return _render(request, db, user, "docs", "dev_docs.html",
-                   base_url=str(request.base_url).rstrip("/"))
-
-
-@router.get("/openapi/download")
-def developer_openapi_download(request: Request,
-                               user=Depends(require_account)):
-    """The spec as a file, with the API version in its name.
-
-    The same document `/api/v1/openapi.json` serves — fetched from the running
-    app rather than rebuilt, because two ways of producing a spec is one way
-    too many. What this adds is a *name*: a generated client is only debuggable
-    six months later if you can tell which spec produced it.
-    """
-    import json
-
-    from starlette.responses import Response
-
-    from platform_core.public_api import protocol
-    from server.api.inventory import API_V1_PREFIX
-
-    document = None
-    for route in request.app.routes:
-        sub = getattr(route, "app", None)
-        if sub is not None and getattr(route, "path", "") == "/api/v1" \
-                and hasattr(sub, "openapi"):
-            document = sub.openapi()
-            break
-    if document is None:
-        raise _redirect("/developers/docs")
-
-    # FastAPI adds `servers` when it *serves* the document, from the mount
-    # path — so a copy taken straight from `sub.openapi()` would arrive without
-    # one, and a client generated from it would have no base URL to call. Caught
-    # by comparing the two byte for byte, which is the only way this kind of
-    # difference gets noticed.
-    document.setdefault("servers", [{"url": API_V1_PREFIX}])
-
-    name = f"ltt-public-api-{protocol.API_VERSION}-openapi.json"
-    return Response(
-        json.dumps(document, ensure_ascii=False, indent=2),
-        media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="{name}"',
-                 "Cache-Control": "no-store"})
-
-
-@router.get("/privacy", response_class=HTMLResponse)
-def developer_privacy(request: Request, user=Depends(require_account),
-                      db: Session = Depends(get_db)):
-    """What this area keeps about you, for how long, and why.
-
-    Built from `governance.STORES` rather than written by hand, so the page
-    cannot drift from the policy the worker actually enforces — a privacy page
-    that describes a retention rule nobody runs is the worst kind of wrong.
-    """
-    from platform_core.public_api import governance
-
-    # Translated here rather than in the template: a privacy page the reader
-    # cannot read is not a disclosure.
-    classes = [(klass, [governance.translated(store)
-                        for store in governance.by_class(klass)])
-               for klass in governance.CLASSES]
-    return _render(request, db, user, "privacy", "dev_privacy.html",
-                   classes=classes, legal=governance.LEGAL_LINKS)
-
-
-@router.get("/privacy/export")
-def developer_privacy_export(request: Request, user=Depends(require_account),
-                             db: Session = Depends(get_db)):
-    """The API area's data about this account, as a file.
-
-    Scoped to this area on purpose. A whole-account export would have to speak
-    for every app's tables as well, and promising that from here would be a
-    promise this code cannot keep — so the page says what is and is not in it.
-
-    Redacted with the same function the support trace uses: one definition of
-    "what must never leave", applied in both directions.
-    """
-    import json
-
-    from sqlalchemy import select
-    from starlette.responses import Response
-
-    from platform_core import credit
-    from platform_core.models import CreditEntry, Job
-    from platform_core.public_api import projects, request_log, support, usage
-    from platform_core.public_api.invocation import api_meta
-    from platform_core.public_api.tables import ApiBudget, WebhookSubscription
-
-    keys = devkeys.list_for_user(db, user.id)
-    jobs = [job for job in db.execute(
-        select(Job).where(Job.user_id == user.id)
-        .order_by(Job.created_at.desc()).limit(500)).scalars()
-        if api_meta(job)]
-
-    body = {
-        "exported_at": datetime.now(timezone.utc).isoformat(),
-        "scope": _t("Khu API của tài khoản này. KHÔNG bao gồm nội dung do từng "
-                    "app lưu (chat, storyboard, workflow…) — mỗi app giữ dữ "
-                    "liệu của nó, và trang này không nói thay được."),
-        "account": {"id": user.id, "email": user.email,
-                    "created_at": user.created_at,
-                    "credit_balance": credit.so_du(db, user.id)},
-        "projects": [{"id": row.id, "name": row.name, "slug": row.slug,
-                      "status": row.status, "created_at": row.created_at}
-                     for row in projects.list_for(db, user_id=user.id,
-                                                  include_archived=True)],
-        # Public halves only. The secret half is not stored anywhere, so there
-        # is nothing here to withhold.
-        "api_keys": [{"key_id": row.key_id, "name": row.name,
-                      "mode": getattr(row, "mode", "live"),
-                      "status": row.status(), "created_at": row.created_at,
-                      "last_used_at": row.last_used_at} for row in keys],
-        "jobs": [{"id": job.id, "tool": api_meta(job).get("tool"),
-                  "status": job.status, "created_at": job.created_at,
-                  "finished_at": job.finished_at} for job in jobs],
-        "credit_entries": [
-            {"kind": row.kind, "delta": row.delta, "job_id": row.job_id,
-             "note": row.note, "created_at": row.created_at}
-            for row in db.execute(select(CreditEntry).where(
-                CreditEntry.user_id == user.id)
-                .order_by(CreditEntry.created_at)).scalars()],
-        "budgets": [{"scope": row.scope, "period": row.period,
-                     "amount": row.amount, "hard_cap": row.hard_cap}
-                    for row in db.execute(select(ApiBudget).where(
-                        ApiBudget.user_id == user.id)).scalars()],
-        "webhooks": [{"url": row.url, "events": list(row.events or ()),
-                      "enabled": row.enabled, "created_at": row.created_at}
-                     for row in db.execute(select(WebhookSubscription).where(
-                         WebhookSubscription.user_id == user.id)).scalars()],
-        "recent_requests": [
-            {"request_id": row.request_id, "method": row.method,
-             "route": row.route, "status": row.status, "code": row.code,
-             "created_at": row.created_at}
-            for row in request_log.list_for(db, user_id=user.id, limit=200)],
-    }
-
-    name = f"ltt-api-data-{user.id[:8]}.json"
-    return Response(
-        json.dumps(support.redact(body), ensure_ascii=False, indent=2,
-                   default=str),
-        media_type="application/json",
-        headers={"Content-Disposition": f'attachment; filename="{name}"',
-                 "Cache-Control": "no-store"})
-
-
-@router.get("/settings", response_class=HTMLResponse)
-def developer_settings(request: Request, user=Depends(require_account),
-                       db: Session = Depends(get_db)):
-    return _render(request, db, user, "settings", "dev_settings.html")
-
-
-def _goc_url(request: Request) -> str:
-    """Gốc URL công khai, để lệnh mẫu chép ra là chạy được ngay.
-
-    Viết cứng `https://app.lttstudios.com` thì lệnh sẽ SAI trên mọi cài đặt
-    khác — và nó sai một cách im lặng: khách chép, chạy, nhận lỗi mạng, và
-    không nghĩ rằng chính trang hướng dẫn đưa nhầm địa chỉ.
-    """
-    goc = os.environ.get("LTT_BASE_URL", "").strip().rstrip("/")
-    if goc:
-        return goc
-    return str(request.base_url).rstrip("/")
-
-
-def _kiem_cau_hinh_khoa() -> str:
-    """Chuỗi lỗi cho khách nếu MÁY CHỦ chưa cấu hình được để cấp khoá.
-
-    Trả chuỗi rỗng khi mọi thứ ổn.
-
-    `current_pepper()` là hàm **chỉ** kiểm cấu hình máy chủ, nên gọi riêng nó
-    tách được hai loại lỗi mà không cần khớp chuỗi: hỏng ở đây là lỗi của ta,
-    hỏng ở `devkeys.issue()` là thứ khách sửa được.
-
-    Khách nhận một câu nói rõ đây không phải lỗi của họ và họ không sửa được;
-    tên biến môi trường đi vào log. Một khách đọc `LTT_API_KEY_PEPPER is missing`
-    học được cấu hình nội bộ của ta và vẫn không làm gì được.
-    """
-    from platform_core.public_api import keys as _keys
-
-    try:
-        _keys.current_pepper()
-    except Exception as exc:  # noqa: BLE001 — mọi lỗi ở đây đều là lỗi của ta
-        _log.error("developer keys: may chu chua cau hinh cap khoa: %s", exc)
-        return _t("Máy chủ chưa cấu hình xong để cấp khóa. Đây là lỗi phía "
-                  "chúng tôi, không phải của bạn — chúng tôi đã được báo. "
-                  "Vui lòng thử lại sau.")
-    return ""
-
-
-@router.post("/keys", response_class=HTMLResponse)
-def create_key(request: Request, name: str = Form(""),
-               scopes: list[str] = Form(default=[]),
-               allowed_tools: list[str] = Form(default=[]),
-               project_id: str = Form(""), allowed_ips: str = Form(""),
-               expires_in_days: str = Form(""), mode: str = Form("live"),
-               csrf_token: str = Form(""), user=Depends(require_account),
-               db: Session = Depends(get_db)):
-    if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers/keys")
-    loi_may_chu = _kiem_cau_hinh_khoa()
-    if loi_may_chu:
-        return _keys_page(request, db, user, error=loi_may_chu)
-    try:
-        project = (projects.get_owned(db, user_id=user.id, project_id=project_id)
-                   if project_id else projects.default_for(db, user_id=user.id))
-        if project is None or not project.is_active():
-            # Ownership is resolved from the session user, so a forged id
-            # simply does not resolve — it never reaches the key.
-            return _keys_page(request, db, user,
-                              error=_t("Không tìm thấy project."))
-        expiry = _expiry_from_days(expires_in_days)
-        key, token = devkeys.issue(
-            db, user_id=user.id, name=name, scopes=scopes,
-            allowed_tools=allowed_tools, project_id=project.id,
-            allowed_ips=_split_ips(allowed_ips), expires_at=expiry,
-            mode=(sandbox.MODE_TEST if mode == sandbox.MODE_TEST
-                  else sandbox.MODE_LIVE))
-    except Exception as exc:  # noqa: BLE001 - message is for this one customer
-        from platform_core.public_api.scopes import ScopeError
-
-        if not isinstance(exc, (devkeys.DeveloperKeyError, ScopeError,
-                                projects.ProjectError)):
-            raise
-        db.rollback()
-        return _keys_page(request, db, user, error=str(exc))
-    # The plaintext exists only in this response. Nothing stores it, and the
-    # page below says so — a customer who closes the tab must create a new key.
-    return _keys_page(request, db, user, revealed=token,
-                      created_key=key.key_id)
-
-
-@router.post("/keys/{key_id}/revoke")
-def revoke_key(request: Request, key_id: str, csrf_token: str = Form(""),
-               user=Depends(require_account), db: Session = Depends(get_db)):
-    if not verify_csrf_token(request, csrf_token):
-        return RedirectResponse("/developers/keys", status_code=303)
-    key = devkeys.get_owned(db, user_id=user.id, key_id=key_id)
-    if key is not None:
-        devkeys.revoke(db, key)
-    # Same redirect whether or not the key existed: a portal must not become a
-    # way to find out which key ids belong to somebody else.
-    return RedirectResponse("/developers/keys", status_code=303)
-
-
-@router.post("/keys/{key_id}/rotate", response_class=HTMLResponse)
-def rotate_key(request: Request, key_id: str, csrf_token: str = Form(""),
-               user=Depends(require_account), db: Session = Depends(get_db)):
-    if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers/keys")
-    key = devkeys.get_owned(db, user_id=user.id, key_id=key_id)
-    if key is None:
-        return _keys_page(request, db, user, error=_t("Không tìm thấy khóa."))
-    try:
-        token = devkeys.rotate(db, key)
-    except devkeys.DeveloperKeyError as exc:
-        return _keys_page(request, db, user, error=str(exc))
-    return _keys_page(request, db, user, revealed=token,
-                      created_key=key.key_id)
-
-
-def _split_ips(value: str) -> list:
-    """Accept commas, newlines or spaces — people paste all three."""
-    raw = str(value or "").replace("\n", ",").replace(" ", ",")
-    return [part.strip() for part in raw.split(",") if part.strip()]
-
-
-def _expiry_from_days(value: str):
-    """Turn "90" into a timestamp, or nothing at all.
-
-    A key with no expiry is the default because most integrations run for years
-    and a surprise expiry at 3am is worse than a long-lived key that can be
-    revoked in one click. An expiry is offered because a key handed to a
-    contractor should stop working on its own.
-    """
-    raw = str(value or "").strip()
-    if not raw:
-        return None
-    try:
-        days = int(raw)
-    except ValueError as exc:
-        raise devkeys.DeveloperKeyError(
-            _t("Số ngày hết hạn phải là một số nguyên.")) from exc
-    if days <= 0:
-        raise devkeys.DeveloperKeyError(
-            _t("Số ngày hết hạn phải lớn hơn 0."))
-    return datetime.now(timezone.utc) + timedelta(days=days)
-
-
-@router.post("/projects", response_class=HTMLResponse)
-def create_project(request: Request, name: str = Form(""),
-                   csrf_token: str = Form(""), user=Depends(require_account),
-                   db: Session = Depends(get_db)):
-    if not verify_csrf_token(request, csrf_token):
-        raise _redirect("/developers/projects")
-    try:
-        projects.create(db, user_id=user.id, name=name)
-    except projects.ProjectError as exc:
-        db.rollback()
-        return _render(request, db, user, "projects", "dev_projects.html",
-                       error=str(exc), **_projects_context(db, user))
-    db.commit()
-    raise _redirect("/developers/projects")
-
-
-@router.post("/projects/{project_id}/archive")
-def archive_project(request: Request, project_id: str,
-                    csrf_token: str = Form(""), user=Depends(require_account),
-                    db: Session = Depends(get_db)):
-    if not verify_csrf_token(request, csrf_token):
-        return RedirectResponse("/developers/projects", status_code=303)
-    project = projects.get_owned(db, user_id=user.id, project_id=project_id)
-    if project is not None:
-        # Archiving revokes the project's keys and touches nothing else: jobs,
-        # ledger entries and usage rows record money that moved, and retiring an
-        # integration cannot make them untrue.
-        projects.archive(db, project)
-        db.commit()
-    return RedirectResponse("/developers/projects", status_code=303)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -230309,7 +230556,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/server_routes_baseline.json
-SHA256=15f1873d7251db90820a70e33240c5cf598f0d84fd2f25437da2bbcd04dc7a5a BYTES=222 LINES=14
+SHA256=c79857eff4d0f4d1e9059330c69acc138f9a36f0ddf74e88766ea2af637678bf BYTES=143 LINES=10
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "server/admin.py": {
@@ -230319,10 +230566,6 @@ SHA256=15f1873d7251db90820a70e33240c5cf598f0d84fd2f25437da2bbcd04dc7a5a BYTES=22
   "server/admin_api.py": {
     "dong": 1897,
     "handler": 0
-  },
-  "server/routes/developer.py": {
-    "dong": 1521,
-    "handler": 32
   }
 }
 

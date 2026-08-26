@@ -6,9 +6,5 @@
   "server/admin_api.py": {
     "dong": 1897,
     "handler": 0
-  },
-  "server/routes/developer.py": {
-    "dong": 1521,
-    "handler": 32
   }
 }
