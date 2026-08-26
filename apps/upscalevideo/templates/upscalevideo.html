@@ -61,7 +61,7 @@
     {% if is_admin(request) %}<section class="up-telemetry" id="up-telemetry" aria-live="polite"><strong>{{ _("Telemetry quản trị") }}</strong><span>{{ _("Đang đọc dữ liệu thật…") }}</span></section>{% endif %}
     <section class="up-stage">
       <div class="up-drop" id="up-drop">
-        <input type="file" id="vfile" name="video" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*">
+        <input class="ltt-input-tep-an" type="file" id="vfile" name="video" accept="video/mp4,video/quicktime,video/x-matroska,video/webm,video/*">
         <div class="up-upload-icon">⇧</div>
         <h1>{{ _("Kéo &amp; thả video vào đây") }}</h1>
         <p>MP4, MOV, MKV, AVI</p>

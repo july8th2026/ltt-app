@@ -30,11 +30,16 @@ def test_primitive_ltt_file_ton_tai_va_an_input_native():
     css = (GOC / "server" / "static" / "ltt.css").read_text(encoding="utf-8")
     assert ".ltt-file{" in css, "primitive .ltt-file da bien mat khoi ltt.css"
 
-    an = re.search(r"\.ltt-file input\[type=file\]\{([^}]*)\}", css)
+    # Luat an dung chung cho CA hai: input trong `.ltt-file`, va tien ich
+    # `.ltt-input-tep-an` dat truc tiep len input o trang da co cho bam rieng.
+    an = re.search(r"\.ltt-file input\[type=file\][^{]*\{([^}]*)\}", css)
     assert an, "khong con luat an input native"
     than = an.group(1)
     for phai_co in ("position:absolute", "width:1px", "opacity:0"):
         assert phai_co in than, f"thieu `{phai_co}` — input native se hien lai"
+
+    assert ".ltt-input-tep-an" in css, (
+        "mat tien ich an input dung chung — hai app dang dua vao no")
 
 
 def test_ten_tep_PHAI_bi_cat_bang_ellipsis():
@@ -179,3 +184,65 @@ def test_o_chon_tep_khong_dung_innerHTML_cho_ten_tep():
     assert "textContent" in ma, "khong con dat ten tep bang textContent"
     assert "innerHTML" not in ma, (
         "chon_tep.js dat ten tep bang innerHTML — ten tep la du lieu nguoi dung")
+
+
+# ── Hàng rào cho tiện ích ẩn input ──────────────────────────────────────────
+
+def test_moi_input_bi_AN_deu_con_MOT_CHO_BAM():
+    """⛔ PHÉP KIỂM QUAN TRỌNG NHẤT CỦA ĐỢT NÀY.
+
+    `.ltt-input-tep-an` ẩn input file native đi. Nếu trang không còn chỗ bấm nào
+    khác thì **người dùng mất khả năng chọn tệp** — ta đã đổi một lỗi hiển thị
+    lấy một lỗi chức năng, và đó là cuộc đổi tệ hơn nhiều.
+
+    ⚠️ Suýt xảy ra thật ngày 26/08. `/upscalevideo` có `<div class="up-drop">`
+       bắt `dragover`/`drop` nhưng **không có handler `click`** — nhìn qua tưởng
+       là dropzone đầy đủ. Nếu ẩn input mà không kiểm thì trang chỉ còn kéo-thả,
+       và người dùng bàn phím mất hẳn đường vào. (Hoá ra trang đã có
+       `#choosebtn` gọi `input.click()`, nên ẩn được — nhưng ta biết điều đó vì
+       đã **đọc**, không phải vì đã **đoán**.)
+
+    Chấp nhận một trong hai chỗ bấm:
+      · `<label for="<id>">`  — native, không cần JS
+      · một nút JS gọi `.click()` trên input đó
+    """
+    import pathlib
+    import re
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    thieu = []
+    for tep in sorted(goc.glob("apps/**/templates/*.html")) + \
+               sorted(goc.glob("server/templates/*.html")):
+        src = tep.read_text(encoding="utf-8", errors="replace")
+        if "ltt-input-tep-an" not in src:
+            continue
+        for the in re.findall(r"<input[^>]*ltt-input-tep-an[^>]*>", src):
+            m = re.search(r'id="([^"]+)"', the)
+            if not m:
+                thieu.append(f"{tep.name}: input an ma KHONG co id")
+                continue
+            ma = m.group(1)
+            co_label = f'for="{ma}"' in src
+            co_js = re.search(re.escape(ma) + r"['\"]\s*\)[^;]{0,80}\.click\(\)", src) \
+                or re.search(r"\.click\(\)", src) and f"'{ma}'" in src
+            if not (co_label or co_js):
+                thieu.append(f"{tep.name}: `{ma}` bi an ma khong con cho bam")
+
+    assert not thieu, (
+        "input file bi an mat cho bam — nguoi dung se KHONG chon duoc tep:\n  "
+        + "\n  ".join(thieu))
+
+
+def test_bon_ban_sao_cua_luat_chip_deu_da_cho_xuong_dong():
+    """Bốn app sao chép cùng một luật hàng chip (`im-`, `th-`, `clip-`). Chúng
+    cuộn ngang thay vì xuống dòng, nên lựa chọn model — thứ **quyết định giá
+    tiền** — bị giấu sau một cử chỉ. Đo được: `.th-chips` cần 1322px trong 391px,
+    tức hơn ba màn hình cuộn."""
+    import re
+
+    css = (GOC / "server" / "static" / "ltt.css").read_text(encoding="utf-8")
+    for ten in (".im-chips", ".th-chips", ".clip-chips"):
+        m = re.search(re.escape(ten) + r"\{([^}]*)\}", css)
+        assert m, f"mat luat {ten}"
+        assert "flex-wrap:wrap" in m.group(1), (
+            f"{ten} quay lai cuon ngang — ten model se bi cat giua chung")
