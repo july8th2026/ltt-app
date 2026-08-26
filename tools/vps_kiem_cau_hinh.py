@@ -84,58 +84,55 @@ def _doc(tep: pathlib.Path) -> dict:
 
 
 def kiem_dieu_khoan() -> str:
-    """Trang Điều khoản LTT VPS có SỐNG không. Trả chuỗi lỗi, hoặc rỗng.
+    """Trang Điều khoản LTT VPS có tồn tại không. Trả chuỗi lỗi, hoặc rỗng.
 
     🔴 Vì sao đây là điều kiện MỞ BÁN chứ không phải một liên kết hỏng thường:
     khối clickwrap trên trang tạo máy nói *"Bấm 'Tạo máy' là bạn đồng ý với
-    Điều khoản LTT VPS"*. Một liên kết 404 ở đó làm cả câu ấy rỗng — khách
+    Điều khoản LTT VPS"*. Một liên kết chết ở đó làm cả câu ấy rỗng — khách
     "đồng ý" với một trang không tồn tại, và đó là lúc họ sắp trả tiền.
 
-    Đo ngày 25/08: URL cũ `/vi/legal/vps-terms.html` chuyển hướng tới
-    `/legal/vps-terms.html` rồi **404**. Hai tệp có trong kho
-    (`docs/lttstudios-website/{,vi/}legal/vps-terms.html`) nhưng chưa được
-    xuất bản lên WordPress.
+    ## Phép kiểm này ĐỔI BẢN CHẤT ngày 26/08, và đó là tin tốt
 
-    ⚠️ Không nối được mạng thì trả **cảnh báo**, không trả lỗi: một máy chủ
-    không ra được Internet vẫn là một máy chủ cấu hình đúng.
+    Trước đó nó gọi HTTP ra `lttstudios.com` để xem trang WordPress có sống
+    không — và suốt từ 25/08 câu trả lời là **404**: hai tệp HTML nằm trong kho
+    nhưng chưa ai xuất bản. Một điều kiện mở bán phụ thuộc vào một thao tác thủ
+    công trên một hệ thống khác, không có gì nhắc.
+
+    Chủ sản phẩm chốt 26/08: điều khoản là **trang con của `/vps`**. Nên nó
+    không thể "chưa xuất bản" nữa — nó lên tàu cùng app. Phép kiểm còn lại chỉ
+    cần trả lời: **route có thật, và template có thật** không.
+
+    ⭐ Không gọi mạng nữa cũng bỏ luôn cả một lớp nhiễu: hôm 25/08 chính máy này
+       bị chặn 403 sau vài chục lần gọi, và khi đó `/terms/` — một trang chắc
+       chắn sống — cũng trả 403. Một phép đo cần phân biệt ba trạng thái nay chỉ
+       cần phân biệt hai.
     """
     # Chay tu `tools/` nen goc kho khong nam san trong `sys.path`.
     import sys
-    goc = str(pathlib.Path(__file__).resolve().parent.parent)
-    if goc not in sys.path:
-        sys.path.insert(0, goc)
-    try:
-        from server.templating import PUBLIC_LINKS
-        url = PUBLIC_LINKS.get("vps_terms", "")
-    except Exception as exc:  # noqa: BLE001 — công cụ dòng lệnh, không sập
-        return f"khong doc duoc PUBLIC_LINKS: {exc}"
-    if not url:
-        return "PUBLIC_LINKS khong co khoa `vps_terms`"
-    # Phân biệt BA trạng thái, không gộp làm hai:
-    #
-    #   200  -> trang sống, mở bán được
-    #   404  -> trang KHÔNG có, chặn mở bán
-    #   khác -> KHÔNG kết luận được (403 vì WAF, hết mạng, hết giờ chờ)
-    #
-    # ⚠️ Gộp "không mở được" thành "không có" là sai theo hướng nguy hiểm:
-    #    ngày 25/08 chính máy này bị chặn 403 sau vài chục lần gọi, và lúc đó
-    #    `/terms/` — một trang CHẮC CHẮN sống, đo 200 mười phút trước — cũng
-    #    trả 403. Một phép đo không phân biệt được hai thứ đó sẽ báo "trang
-    #    Điều khoản chưa xuất bản" về một trang đang phục vụ.
-    import urllib.error
-    import urllib.request
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    if str(goc) not in sys.path:
+        sys.path.insert(0, str(goc))
 
-    xin = urllib.request.Request(url, headers={"User-Agent": "ltt-kiem-cau-hinh"})
-    try:
-        with urllib.request.urlopen(xin, timeout=10) as r:
-            return "" if r.status == 200 else f"{url} tra {r.status}"
-    except urllib.error.HTTPError as exc:
-        if exc.code == 404:
-            return f"{url} tra 404 — trang chua duoc xuat ban"
-        return f"KHONG KET LUAN DUOC ({url} tra {exc.code}) — kiem bang trinh duyet"
-    except Exception as exc:  # noqa: BLE001
-        return f"KHONG KET LUAN DUOC ({url}: {exc}) — kiem bang trinh duyet"
+    mau = goc / "server" / "templates" / "vps_dieu_khoan.html"
+    if not mau.exists():
+        return f"thieu template {mau.name}"
 
+    ma = (goc / "apps" / "vps" / "routes.py").read_text(encoding="utf-8")
+    if '"/dieu-khoan"' not in ma:
+        return "apps/vps/routes.py khong khai route /dieu-khoan"
+
+    try:
+        from apps.vps import dieu_khoan
+        muc = dieu_khoan.NOI_DUNG()
+    except Exception as exc:  # noqa: BLE001 — cong cu dong lenh, khong sap
+        return f"khong dung duoc noi dung dieu khoan: {exc}"
+    if len(muc) < 12:
+        return f"dieu khoan chi co {len(muc)} muc — thieu so voi ban da duyet"
+
+    ban = (goc / "server" / "templates" / "vps.html").read_text(encoding="utf-8")
+    if "/dieu-khoan" not in ban:
+        return "trang ban khong dan toi dieu khoan"
+    return ""
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
@@ -195,7 +192,10 @@ def main() -> int:
     print()
 
     # Chỉ CHẶN khi chắc chắn 404. "Không kết luận được" chỉ cảnh báo.
-    chac_chan_thieu = "404" in loi_dk
+    # Truoc 26/08 cho nay chi chan khi chac chan 404, vi mot loi mang
+    # khong phan biet duoc voi mot trang thieu. Nay phep kiem doc TEP
+    # trong chinh kho — khong con trang thai "khong ket luan duoc".
+    chac_chan_thieu = bool(loi_dk)
     if thieu_bb or chac_chan_thieu:
         if chac_chan_thieu and not thieu_bb:
             print("CHUA MO BAN DUOC: du bien moi truong, nhung trang Dieu khoan")

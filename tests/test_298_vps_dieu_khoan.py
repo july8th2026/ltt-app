@@ -11,15 +11,32 @@ trong khi **không có mã nào làm việc đó**, và chính `cost.py` trong c
 viết rằng ta *không có* backup. Hai file nói ngược nhau, và file nói sai là file
 khách đọc.
 
-Nên mọi con số vận hành trong điều khoản đều bị chốt ở đây, đối chiếu với hằng số
-thật. Đổi giá, đổi hạn mức, đổi thời hạn ân hạn mà quên sửa điều khoản → gate đỏ.
+## 🔴 BỘ TEST NÀY ĐỔI BẢN CHẤT NGÀY 26/08 — đọc kỹ trước khi sửa
 
-## Vì sao điều khoản nằm ở `docs/lttstudios-website/` chứ không trong app
+Trước đó điều khoản là **hai tệp HTML tĩnh** ở `docs/lttstudios-website/`, mọi
+con số gõ tay, và bộ test này đối chiếu **từng con số** với hằng số thật. Nó làm
+đúng việc nó khai, nhưng nó chỉ nói cho ta biết **sau khi ta đã quên**.
 
-Quy tắc có sẵn của nền tảng (`public_api/governance.py`): *"a second copy of a
-legal promise is a second promise, and the two will differ"*. Văn bản pháp lý
-sống ở trang web, app chỉ **liên kết** tới. Bộ test này đọc thẳng tệp HTML đó —
-làm được vì trang web nằm trong chính kho này.
+Nay nội dung sinh từ `apps/vps/dieu_khoan.py`, nơi mỗi con số đến thẳng từ hằng
+số mà phần mềm dùng. Nên các phép kiểm số ở dưới **không còn bắt "số đã trôi"**
+— chuyện đó không xảy ra được nữa.
+
+⭐ Chúng vẫn có việc, và việc đó không nhỏ: chúng chốt rằng **trang THẬT SỰ HIỆN
+   RA con số đó**. Một mục bị xoá nhầm, một vòng lặp template hỏng, một khối
+   không render — tất cả đều làm điều khoản im lặng bỏ mất một cam kết, và
+   không phép kiểm nào khác thấy.
+
+## Vì sao điều khoản chuyển từ site marketing vào app
+
+`platform_core/public_api/governance.py` có một luật đáng giữ:
+
+> *a second copy of a legal promise is a second promise, and the two will differ*
+
+Luật đó **không** nói văn bản pháp lý phải nằm ở site marketing. Nó nói không
+được có **hai** bản. Vẫn đúng một bản — chỉ đổi chỗ ở, và chỗ ở mới tốt hơn theo
+một cách đo được: bản WordPress **chưa bao giờ được xuất bản**
+(`https://lttstudios.com/vps-terms/` trả 404 suốt từ 25/08) trong khi clickwrap
+đã trỏ vào đó. Khách "đồng ý" với một trang không tồn tại, đúng lúc sắp trả tiền.
 """
 from __future__ import annotations
 
@@ -28,30 +45,75 @@ from pathlib import Path
 
 import pytest
 
-VI = Path("docs/lttstudios-website/vi/legal/vps-terms.html")
-EN = Path("docs/lttstudios-website/legal/vps-terms.html")
+#: Giá và số credit hiện **cùng một quy ước ở cả hai ngôn ngữ** (`149.000đ`,
+#: `1.490`) — đó là quyết định đã có của nền tảng, ghi ở
+#: `server/templating.py:_tien_vnd`: định dạng tiền là **quy ước hiển thị**,
+#: không phải chuỗi cần dịch, vì một người đọc bản tiếng Anh vẫn trả bằng đồng.
+#:
+#: ⚠️ Bản WordPress cũ dùng `149,000₫`. Nó đã đi lệch khỏi phần còn lại của sản
+#:    phẩm, và không ai thấy vì nó là bản sao thứ hai.
+def _dinh_dang(n: int) -> str:
+    return f"{n:,}".replace(",", ".")
 
 
-def _doc(p: Path) -> str:
-    return p.read_text(encoding="utf-8")
+def _render(duong: str) -> str:
+    """HTML thật của một trang, render qua ứng dụng.
+
+    Đọc trang **đã render** chứ không đọc template: một `{% block %}` đặt sai
+    chỗ, một biến thiếu, hay một điều kiện chặn cả khối đều làm template *chứa*
+    câu chữ mà trang *không* hiện nó. Bộ test này từng bị đúng thứ đó lừa.
+    """
+    import os
+    import tempfile
+
+    from fastapi.testclient import TestClient
+
+    tmp = Path(tempfile.mkdtemp())
+    cu = {k: os.environ.get(k) for k in
+          ("LTT_DATABASE_URL", "LTT_ENV", "LTT_SESSION_SECRET", "LTT_VPS",
+           "TURNSTILE_SECRET_KEY")}
+    os.environ.update(LTT_DATABASE_URL=f"sqlite:///{(tmp / 'dk.db').as_posix()}",
+                      LTT_ENV="development", LTT_SESSION_SECRET="test-dk",
+                      LTT_VPS="1")
+    os.environ.pop("TURNSTILE_SECRET_KEY", None)
+    try:
+        import platform_core.db as dbmod
+        dbmod.reset_engine()
+        import apps.vps.tables       # noqa: F401
+        import platform_core.models  # noqa: F401
+        dbmod.Base.metadata.create_all(dbmod.get_engine())
+        from server.app import create_app
+        with TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False) as c:
+            r = c.get(duong)
+        assert r.status_code == 200, f"{duong} tra {r.status_code}"
+        return r.text
+    finally:
+        for k, v in cu.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        import platform_core.db as dbmod
+        dbmod.reset_engine()
 
 
 @pytest.fixture(scope="module")
 def vi() -> str:
-    return _doc(VI)
+    return _render("/vps/dieu-khoan")
 
 
 @pytest.fixture(scope="module")
 def en() -> str:
-    return _doc(EN)
+    return _render("/en/vps/dieu-khoan")
 
 
 # ── 1. Cả hai bản đều tồn tại và cùng cấu trúc ──────────────────────────────
 
-def test_co_ca_hai_ngon_ngu():
-    """Trang VI trỏ sang EN bằng nút đổi ngôn ngữ. Thiếu bản EN là một liên kết
-    chết ngay trên trang pháp lý."""
-    assert VI.exists() and EN.exists()
+def test_co_ca_hai_ngon_ngu(vi, en):
+    """Cả hai bản phải render 200 — `_render` đã khẳng định điều đó, nên phép
+    kiểm này chốt thêm rằng chúng có nội dung thật chứ không phải một vỏ rỗng."""
+    assert "<h2>" in vi and "<h2>" in en
 
 
 def test_hai_ban_cung_so_muc(vi, en):
@@ -60,9 +122,23 @@ def test_hai_ban_cung_so_muc(vi, en):
     assert len(re.findall(r"<h2>", vi)) == len(re.findall(r"<h2>", en))
 
 
-def test_hai_ban_tro_sang_nhau(vi, en):
-    assert "/legal/vps-terms.html" in vi
-    assert "/vi/legal/vps-terms.html" in en
+def test_doc_duoc_KHI_CHUA_dang_nhap(vi):
+    """Đây là điều kiện làm clickwrap có nghĩa. Một trang điều khoản đòi đăng
+    nhập là một trang khách **không đọc được trước khi quyết định**, tức họ đồng
+    ý với một thứ chưa từng thấy.
+
+    `_render` gọi không kèm phiên nào, nên 200 ở đây đã là bằng chứng. Chốt thêm
+    rằng nó không lặng lẽ trả về trang đăng nhập với mã 200.
+    """
+    assert "Điều khoản LTT VPS" in vi
+    assert 'name="password"' not in vi
+
+
+def test_KHONG_dung_vo_dieu_khien(vi, en):
+    """Menu trái là công cụ của người đã mua. Điều khoản là một văn bản để đọc,
+    và một thanh bên cạnh nó chỉ làm người ta đọc kém hơn."""
+    for ban in (vi, en):
+        assert "app-shell" not in ban and "app-side" not in ban
 
 
 # ── 2. Chu kỳ, ân hạn, xoá ──────────────────────────────────────────────────
@@ -96,14 +172,13 @@ def test_gia_va_cau_hinh_moi_goi_khop_ma(vi, en):
     from apps.vps.cost import PLANS, credit_thang
 
     for p in PLANS:
-        gia_vi = f"{p.gia_thang_vnd:,}".replace(",", ".") + "đ"
-        gia_en = f"{p.gia_thang_vnd:,}₫"
-        assert gia_vi in vi, f"{p.id}: thieu gia {gia_vi} trong ban VI"
-        assert gia_en in en, f"{p.id}: thieu gia {gia_en} trong ban EN"
+        gia = _dinh_dang(p.gia_thang_vnd) + "đ"
+        for ban, ten in ((vi, "VI"), (en, "EN")):
+            assert gia in ban, f"{p.id}: thieu gia {gia} trong ban {ten}"
 
-        tin = credit_thang(p.id)
-        assert f"{tin:,}".replace(",", ".") in vi, f"{p.id}: thieu so credit"
-        assert f"{tin:,}" in en, f"{p.id}: thieu so credit (EN)"
+        tin = _dinh_dang(credit_thang(p.id))
+        for ban, ten in ((vi, "VI"), (en, "EN")):
+            assert tin in ban, f"{p.id}: thieu so credit {tin} ({ten})"
 
         for ban, don in ((vi, "vCPU"), (en, "vCPU")):
             assert f"{p.vcpu} {don}" in ban, f"{p.id}: thieu {p.vcpu} vCPU"
@@ -115,17 +190,17 @@ def test_han_muc_bang_thong_moi_goi_khop_ma(vi, en):
     from apps.vps.cost import PLANS
 
     for p in PLANS:
-        so = f"{p.bang_thong_gb:,}".replace(",", ".")
-        assert f"{so} GB" in vi, f"{p.id}: thieu bang thong {so} GB (VI)"
-        assert f"{p.bang_thong_gb:,} GB" in en, f"{p.id}: thieu bang thong (EN)"
+        so = _dinh_dang(p.bang_thong_gb)
+        for ban, ten in ((vi, "VI"), (en, "EN")):
+            assert f"{so} GB" in ban, f"{p.id}: thieu bang thong {so} GB ({ten})"
 
 
 def test_gia_dia_them_khop_ma(vi, en):
     from apps.vps.cost import DIA_THEM_MOI_LO_GB, GIA_MOI_LO_DIA_VND
 
-    assert f"<strong>{DIA_THEM_MOI_LO_GB} GB</strong>" in vi
-    assert f"{GIA_MOI_LO_DIA_VND:,}".replace(",", ".") + "đ" in vi
-    assert f"<strong>{DIA_THEM_MOI_LO_GB} GB</strong>" in en
+    for ban in (vi, en):
+        assert f"<strong>{DIA_THEM_MOI_LO_GB} GB</strong>" in ban
+        assert _dinh_dang(GIA_MOI_LO_DIA_VND) + "đ" in ban
 
 
 def test_ty_gia_credit_khop_ma(vi, en):
@@ -245,41 +320,41 @@ def test_trang_ban_DAN_lien_ket_dieu_khoan():
     """Một liên kết điều khoản ở chân trang là một liên kết không ai bấm. Nó phải
     nằm **ngay dưới nút thuê**, và nói rõ bấm là đồng ý."""
     t = Path("server/templates/vps.html").read_text(encoding="utf-8")
-    assert "public_links.vps_terms" in t, "trang ban khong dan toi dieu khoan VPS"
+    assert "/dieu-khoan" in t, "trang ban khong dan toi dieu khoan VPS"
     # Trang dan toi dieu khoan o HAI cho, va ca hai deu dung:
     #   - khoi cho khach an danh (doc truoc khi quyet dinh tao tai khoan)
     #   - ngay duoi nut "Tao may" (clickwrap: bam la dong y)
     # Nen kiem cai SAU nut, khong kiem cai dau tien tim thay.
     i_nut = t.index('_("Tạo máy")')
-    assert "public_links.vps_terms" in t[i_nut:], (
+    assert "/dieu-khoan" in t[i_nut:], (
         "thieu lien ket dieu khoan NGAY DUOI nut tao may")
     assert "đồng ý với" in t[i_nut:]
 
 
 def test_lien_ket_dieu_khoan_khai_o_MOT_cho():
-    """Viết cứng URL trong template thì lần đổi tên miền sau sẽ bỏ sót đúng chỗ
-    này. Nền tảng đã có `PUBLIC_LINKS` cho việc đó."""
-    from server.templating import PUBLIC_LINKS
+    """Viết cứng URL trong template thì lần đổi đường dẫn sau sẽ bỏ sót đúng chỗ
+    này.
 
-    assert "vps_terms" in PUBLIC_LINKS
+    ## Ý định của phép kiểm này chưa bao giờ là "đường dẫn phải là chuỗi X"
 
-    # ⛔ SUA 26/08 — truoc day cho nay ghim
-    #    `.endswith("/vi/legal/vps-terms.html")`. Trang web da chuyen sang
-    #    "pretty URL" (`/vps-terms/`) va CA BANG `PUBLIC_LINKS` doi theo, nen
-    #    phep kiem do do vi mot thay doi CO CHU Y.
-    #
-    # ⭐ Y dinh cua phep kiem nay khong bao gio la "duong dan phai la chuoi X".
-    #    No la: **URL khai o MOT cho**, va template khong duoc viet cung. Nen
-    #    chot dung hai dieu do — mot phep kiem ghim chuoi se do lai o lan doi
-    #    ten mien sau, va lan do nguoi ta se sua no bang cach ghim chuoi moi.
-    assert PUBLIC_LINKS["vps_terms"].startswith("https://")
-    assert "vps-terms" in PUBLIC_LINKS["vps_terms"]
+    Nó đã đổi mốc **hai lần**: `/vi/legal/vps-terms.html` → `/vps-terms/` →
+    `/vps/dieu-khoan`. Hai lần đầu nó đỏ vì một thay đổi **có chủ ý**, và mỗi
+    lần người sửa lại ghim một chuỗi mới — tức lần sau nó lại đỏ như thế.
 
+    ⭐ Nên chốt đúng **tính chất**: đường dẫn dựng từ **một** nguồn
+       (`route_prefix` của manifest), và template không viết cứng tên miền nào.
+    """
     t = Path("server/templates/vps.html").read_text(encoding="utf-8")
+    assert "{{ app.route_prefix }}/dieu-khoan" in t, (
+        "lien ket dieu khoan phai dung tu `route_prefix`, khong viet cung `/vps`")
     assert "lttstudios.com" not in t, (
-        "template viet cung mot URL lttstudios.com — dung `public_links` de lan "
-        "doi ten mien sau khong bo sot dung cho nay")
+        "template viet cung mot URL lttstudios.com — dieu khoan nay da chuyen "
+        "vao app, khong con o site marketing")
 
+    from server.templating import PUBLIC_LINKS
+    assert "vps_terms" not in PUBLIC_LINKS, (
+        "`vps_terms` tro toi site marketing; trang do da bi go 26/08 va mot "
+        "muc con lai la mot lien ket chet cho ai do dung lai sau")
 
 def test_trang_ban_CANH_BAO_giay_phep_Windows_ngay_o_khoi_doc_truoc():
     """Người đọc điều khoản là thiểu số. Rủi ro lớn nhất của dịch vụ này phải

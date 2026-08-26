@@ -547,6 +547,113 @@ số từ lượt chạy dở.
 
 ---
 
+## 2026-08-26 — Điều khoản LTT VPS thành **trang con của `/vps`**
+
+- **Hạng mục:** H39 (VPS) — hoàn thành
+- **Trạng thái:** xong
+
+### Đã làm
+
+Chủ sản phẩm chốt: điều khoản là trang con của `/vps`, không nằm ở site
+marketing nữa. Lý do nó gấp: `https://lttstudios.com/vps-terms/` trả **404 suốt
+từ 25/08** trong khi clickwrap dưới nút *"Tạo máy"* đã trỏ vào đó — khách "đồng
+ý" với một trang không tồn tại, **đúng lúc họ sắp trả tiền**. Đây là điều kiện mở
+bán duy nhất phụ thuộc vào một thao tác thủ công trên một hệ thống khác.
+
+| Việc | Trước | Sau |
+|---|---|---|
+| Nội dung | hai tệp HTML tĩnh, số **gõ tay** | `apps/vps/dieu_khoan.py` — số dựng từ hằng số thật |
+| Đường dẫn | `lttstudios.com/vps-terms/` (404) | `/vps/dieu-khoan`, lên tàu cùng app |
+| Bản EN | tệp HTML riêng, quy ước tiền `149,000₫` | gettext, quy ước `149.000đ` như phần còn lại |
+| Liên kết | `PUBLIC_LINKS["vps_terms"]` | `{{ app.route_prefix }}/dieu-khoan` |
+| Kiểm | đối chiếu **từng con số** với mã | render trang thật rồi đối chiếu |
+
+Bốn điều đáng ghi vì chúng là *lý do*, không phải *việc*:
+
+1. **Không tạo bản sao thứ hai.** `public_api/governance.py` có luật *"a second
+   copy of a legal promise is a second promise, and the two will differ"*. Luật
+   đó không nói văn bản pháp lý phải ở site marketing — nó nói không được có
+   **hai** bản. Nên hai tệp WordPress đã **xoá**, cùng hai mục trong
+   `route-map.json`, một mục trong `wordpress-content-contract.json`, và hai dòng
+   chuyển hướng trong plugin PHP.
+
+2. **Số không thể lệch nữa.** Trước đây đổi giá một gói phải sửa **ba** chỗ và
+   một phép kiểm chỉ báo *sau khi* ta đã quên. Nay `cost.py` là nguồn duy nhất.
+   Các phép kiểm số ở `test_298` vẫn có việc, và việc đó không nhỏ: chúng chốt
+   rằng **trang thật sự hiện ra** con số đó — một mục bị xoá nhầm hay một vòng
+   lặp template hỏng đều làm điều khoản im lặng bỏ mất một cam kết.
+
+3. **Trang đọc được khi CHƯA đăng nhập**, và không dựng vỏ điều khiển. Một trang
+   điều khoản đòi đăng nhập là một trang khách không đọc được **trước khi quyết
+   định**. Menu trái là công cụ của người đã mua.
+
+4. **`tools/vps_kiem_cau_hinh.py` đổi bản chất:** không gọi mạng nữa. Điều kiện
+   mở bán nay đọc **tệp trong chính kho**, nên mất luôn trạng thái "không kết
+   luận được" — hôm 25/08 chính máy này bị chặn 403 sau vài chục lần gọi, và khi
+   đó `/terms/` (chắc chắn sống) cũng trả 403.
+
+### Bốn lỗi bắt được dọc đường, ba trong đó KHÔNG phải của việc này
+
+- **`test_148` bắt tôi vi phạm đúng quy tắc trong CLAUDE.md.** Bản đầu của
+  `dieu_khoan.py` neo tới kịch bản router bằng `Path(__file__).parents[2]`. Nay
+  app giữ hằng số của app, và `test_298` giữ hai bên khớp nhau.
+- **`test_304` báo "chưa dịch" về một chuỗi đã dịch xong và đang chạy đúng.** Bộ
+  đọc `.po` của nó dùng `(?:\.|[^"])` — trong nhóm thay thế, `\.` là *một dấu
+  chấm*, không phải ký tự thoát. Mọi msgid có `\"` bên trong bị **cắt ngang**.
+  Lộ ra nhờ câu ở mục Hoàn tiền có `<a href="mailto:…">`. Cùng hàm còn hai lệnh
+  `.replace("\n", "\n")` rỗng.
+- **`_header.html` in tên app không qua `_()`** ở hai chỗ, nên tên app ra tiếng
+  Việt trên bản EN **dù bản dịch đã có sẵn** trong `.po`. Sửa hai token.
+- **Bẫy 9 (mới):** `Giá API` và `Hướng dẫn API` ra tiếng Việt trên **mọi** trang
+  bản EN. Chúng bọc `_()` từ lâu (nên `check_i18n` báo đẹp) và **không có một
+  dòng nào** trong `.po` (nên phép đếm mục rỗng cũng không thấy). Đo được **67
+  chuỗi** đang ở trạng thái đó.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `pytest` 10 tệp liên quan (252·298·304·305·125·126·127·148·145·306) | **130 passed** |
+| `python tools/gate.py --quick` | **PASS 21/21** |
+| `python tools/test_nhanh.py` | **4.069 passed, 26 skipped** ở lượt sạch |
+| Trình duyệt thật (harness cổng 8124) | `/vps/dieu-khoan` 200, cột đọc 582px, mục lục 2 cột, **0 lỗi console**, mobile 375px không tràn ngang |
+| Đo tiếng Việt còn lại trên bản EN | **0 đoạn** (chỉ còn `149.000đ` — quy ước hiển thị đã chốt ở `_tien_vnd`) |
+| VI qua HTTP thật | 13 mục, đủ `30 ngày · 7 ngày · 149.000đ · 1 MB/giây · 60 giây · 25, 465 và 587` |
+
+⚠️ **Chưa chạy:** `gate.py` đầy đủ. Một phiên khác đang chạy `pytest` trong cùng
+cây; lượt `--quick` của tôi in đúng dòng `CAY DA DOI TRONG LUC CHAY`, và đó là
+bẫy 5 làm đúng việc chứ không phải một lỗi.
+
+### Quyết định mới
+
+Không có số Q mới. Một quyết định cũ **đổi chỗ ở** chứ không đổi nội dung: văn
+bản pháp lý của VPS chuyển từ site marketing vào app. Luật "chỉ một bản" giữ
+nguyên và đã được thi hành bằng cách xoá bản kia.
+
+### Cách lùi lại
+
+`git checkout -- apps/vps/ server/templates/vps.html server/templating.py
+docs/lttstudios-website/ deploy/wordpress/ locale/ tests/test_298* tests/test_304*
+tests/test_305* tools/vps_kiem_cau_hinh.py` và xoá
+`apps/vps/dieu_khoan.py`, `server/templates/vps_dieu_khoan.html`.
+
+### Còn tồn đọng
+
+- **65 chuỗi `VANG`** (bọc `_()` mà vắng khỏi catalog) — chốt mốc, chỉ chặn tăng.
+- **`/vps` vẫn 404 trên production**: 18 biến đã chuẩn bị sẵn script ghi, nhưng
+  ghi vào `secrets/app.env` bị cổng an toàn của phiên chặn — chủ sản phẩm chạy.
+  Ghi xong vẫn phải **deploy** thì `/vps` mới lên (nssm nướng biến lúc cài).
+- **Ba bundle frontend stale** — `npm run build` cho cả ba rồi
+  `build_system_profile.py`. `tools/build_release.py` chưa dựng được gói.
+
+### Việc tiếp theo
+
+1. Chủ sản phẩm chạy script bật cờ VPS, rồi một phiên khác deploy.
+2. Kiểm `/vps/dieu-khoan` trên **URL công khai** sau deploy.
+3. Dựng lại ba bundle frontend + hồ sơ hệ thống.
+
+---
+
 ## 2026-08-25 — Sáu cái bẫy nằm trong **chính cổng chất lượng**
 
 - **Hạng mục:** hạ tầng kiểm thử (không thuộc H nào) — hoàn thành

@@ -15,8 +15,7 @@
     "contact": "https://lttstudios.com/contact/",
     "privacy": "https://lttstudios.com/privacy-policy/",
     "terms": "https://lttstudios.com/terms/",
-    "data_deletion": "https://lttstudios.com/data-deletion/",
-    "vps_terms": "https://lttstudios.com/vps-terms/"
+    "data_deletion": "https://lttstudios.com/data-deletion/"
   },
   "wordpress_replacements": [
     {

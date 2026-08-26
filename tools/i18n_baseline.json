@@ -110,11 +110,10 @@
     "server/templates/register.html": 3,
     "server/templates/register_sent.html": 5,
     "server/templates/reset_password.html": 4,
-    "server/templates/settings.html": 44,
     "server/templates/status.html": 7,
     "server/templates/verify_result.html": 3,
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 816
+  "tong": 772
 }

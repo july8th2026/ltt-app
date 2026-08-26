@@ -1,0 +1,63 @@
+{# Điều khoản LTT VPS — trang con của /vps.
+
+   🔴 **Không có một câu văn bản nào trong tệp này.** Toàn bộ nội dung đến từ
+      `apps/vps/dieu_khoan.py`, nơi mọi con số được dựng thẳng từ hằng số thật
+      (`cost.py`, `billing.py`, `sao_luu.py`, `console.py`, và kịch bản router).
+
+      Lý do không phải là gu kiến trúc. Trước 26/08 văn bản này là HTML tĩnh với
+      số gõ tay, và giữ nó khớp mã cần một phép kiểm đối chiếu **từng con số** —
+      thứ chỉ báo cho ta biết sau khi ta đã quên. Ở đây quên là chuyện không xảy
+      ra được.
+
+   ⚠️ `|safe` là **có chủ ý**: chuỗi chứa `<strong>` ở đúng những chỗ mất nhấn
+      mạnh là mất tác dụng (mục 2 giấy phép Windows, mục 4 xoá vĩnh viễn). An
+      toàn vì nguồn chuỗi là mã của ta + catalog dịch của ta, không phải dữ liệu
+      người dùng. #}
+{% extends "vps_base.html" %}
+
+{% block title %}{{ _("Điều khoản LTT VPS") }}{% endblock %}
+
+{% block noi_dung %}
+<article class="dk">
+
+  <header class="dk-dau">
+    <span class="eyebrow">{{ _("Pháp lý") }}</span>
+    <h1>{{ _("Điều khoản LTT VPS") }}</h1>
+    <p class="muted">{{ _("Máy chủ ảo Windows · Hiệu lực %(ngay)s") % {"ngay": hieu_luc} }}</p>
+  </header>
+
+  {% for loai, noi in mo_dau %}
+    <p>{{ noi|safe }}</p>
+  {% endfor %}
+
+  {# Mục lục: trang dài 12 mục, và mục 2 (giấy phép) với mục 4 (xoá vĩnh viễn)
+     là hai thứ khách cần tìm lại nhanh nhất. #}
+  <nav class="dk-muc-luc" aria-label="{{ _('Mục lục') }}">
+    <ol>
+      {% for m in muc %}
+        {% if m.so %}<li><a href="#dk-{{ m.so }}">{{ m.so }}. {{ m.tieu_de }}</a></li>{% endif %}
+      {% endfor %}
+    </ol>
+  </nav>
+
+  {% for m in muc %}
+    <section id="dk-{{ m.so or 'lien-he' }}">
+      <h2>{% if m.so %}{{ m.so }}. {% endif %}{{ m.tieu_de }}</h2>
+      {% for loai, noi in m.khoi %}
+        {% if loai == "p" %}
+          <p>{{ noi|safe }}</p>
+        {% elif loai == "ul" %}
+          <ul>{% for d in noi %}<li>{{ d|safe }}</li>{% endfor %}</ul>
+        {% elif loai == "ol" %}
+          <ol>{% for d in noi %}<li>{{ d|safe }}</li>{% endfor %}</ol>
+        {% endif %}
+      {% endfor %}
+    </section>
+  {% endfor %}
+
+  <p class="dk-ve">
+    <a href="{{ app.route_prefix }}">{{ _("← Về trang LTT VPS") }}</a>
+  </p>
+
+</article>
+{% endblock %}

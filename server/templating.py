@@ -111,7 +111,6 @@ PUBLIC_LINKS = {
     # Điều khoản RIÊNG của LTT VPS. Tách khỏi `terms` chung vì nó mang
     # những con số vận hành cụ thể (chu kỳ 30 ngày, ân hạn 7 ngày, hạn
     # mức băng thông) mà `test_294` chốt phải khớp mã nguồn.
-    "vps_terms": "https://lttstudios.com/vps-terms/",
 }
 def _tien_vnd(so) -> str:
     """`149000` → `149.000đ`. Một chỗ duy nhất định dạng tiền cho template.

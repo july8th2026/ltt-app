@@ -97,6 +97,9 @@ def menu(active: str, *, may: Any = None, danh_sach_may: Any = ()) -> list[dict]
 
     ra = [
         _muc("tong_quan", N_("Tổng quan"), GOC, active),
+        # Điều khoản là trang con của khu từ 26/08 (trước đó là một liên kết ra
+        # site marketing, và site đó chưa bao giờ xuất bản nó — 404 suốt).
+        _muc("dieu_khoan", N_("Điều khoản"), f"{GOC}/dieu-khoan", active),
     ]
     ds = list(danh_sach_may or ())
     if ds:

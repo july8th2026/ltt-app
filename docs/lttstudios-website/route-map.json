@@ -252,18 +252,6 @@
       "production": null,
       "disposition": "server_error_page",
       "locale": "vi"
-    },
-    {
-      "source": "/legal/vps-terms.html",
-      "production": "/vps-terms/",
-      "disposition": "redirect",
-      "locale": "en"
-    },
-    {
-      "source": "/vi/legal/vps-terms.html",
-      "production": "/dieu-khoan-vps/",
-      "disposition": "locale_fallback",
-      "locale": "vi"
     }
   ]
 }

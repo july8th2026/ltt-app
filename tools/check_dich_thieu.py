@@ -5,14 +5,28 @@ check_dich_thieu.py — banh coc chan CHUOI RA TIENG VIET TREN BAN TIENG ANH.
     py tools/check_dich_thieu.py --list     # liet ke tung muc con thieu
     py tools/check_dich_thieu.py --accept   # ha moc (chi khi da dich bot)
 
-VI SAO CO TEP NAY, VA VI SAO NO KHAC `check_i18n.py`
+BA LOP, VA MOT CHUOI CO THE HONG O BAT KY LOP NAO
 
-   `check_i18n.py` canh chuoi CHUA DUOC BOC `_()` — tuc chuoi khong bao gio vao
-   duoc tep dich. Tep nay canh buoc SAU do: chuoi da vao `messages.po` roi, ma
-   `msgstr` van rong. Hai loi khac nhau, va loi thu hai khong co ai canh.
+   Mot chuoi phai qua BA cua moi toi duoc mat nguoi doc ban tieng Anh:
 
-   Do 25/08/2026 tren `locale/en/LC_MESSAGES/messages.po`: 2.352 muc, trong do
-   **203 muc `msgstr` rong** va **76 muc `#, fuzzy`**.
+     1. duoc BOC `_()`          -> `check_i18n.py` canh cua nay
+     2. co MAT trong catalog    -> loai `VANG` o tep nay
+     3. co `msgstr` khong rong  -> loai `TRONG` / `FUZZY` o tep nay
+
+   Do 25/08/2026: **203 muc `msgstr` rong** va **76 muc `#, fuzzy`** tren 2.352.
+
+🔴 CUA THU HAI KHONG AI CANH, VA NO DA LOT THAT
+
+   Ngay 26/08, hai chuoi o chan trang dung chung — `Gia API` va `Huong dan API` —
+   ra **tieng Viet tren moi trang cua ban EN**. Chung da boc `_()` tu tuoi,
+   nen `check_i18n` bao dep. Chung **khong co mot dong nao** trong `.po`, nen
+   phep dem muc rong cung khong thay. Chung chi hong o cho khong ai nhin.
+
+   Nguyen nhan: `.po` **troi lai phia sau ma nguon**. Ai do them mot chuoi da
+   boc `_()` va khong chay `i18n.py trich` — va khong the trach ho, vi
+   `trich` co gia rieng cua no (xem duoi).
+
+   Do luc them phep kiem nay: **67 chuoi** dang o trang thai do.
 
 ⛔ FUZZY DEM NHU RONG, KHONG DEM NHU DA DICH
 
@@ -62,6 +76,42 @@ def _khoa(loai: str, msgid) -> str:
     return f"{loai}\t{thoat}"
 
 
+def _msgid_trong_ma_nguon() -> set:
+    """Moi chuoi da boc `_()`/`N_()`/`_t()` ma babel trich duoc tu MA NGUON.
+
+    Trich **trong bo nho**, khong ghi gi. Do la khac biet quan trong nhat giua
+    ham nay va `i18n.py trich`: `trich` goi `msgmerge`, va `msgmerge` DOAN ban
+    dich cho msgid moi bang cach khop gan dung voi msgid vua bien mat.
+
+    ⛔ Do 26/08: mot luot trich de don 9 chuoi chet da tu sinh **25 ban dich SAI
+       moi** (`Ngan sach cua ban` -> `Your scripts`). Don it hon phan no lam hong.
+
+    ⭐ Nen luat la: **ha moc bang cach DICH, khong bao gio bang cach TRICH LAI.**
+       Ham nay chi DOC de so sanh, va do la ly do no an toan de chay moi luot gate.
+    """
+    import io
+    import warnings
+
+    from babel.messages import extract
+    from babel.messages.frontend import parse_mapping_cfg
+
+    cau_hinh = GOC / "babel.cfg"
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fh = io.StringIO(cau_hinh.read_text(encoding="utf-8"))
+        method_map, options_map = parse_mapping_cfg(fh)
+        tu_khoa = {**extract.DEFAULT_KEYWORDS, "N_": None, "_t": None}
+        ra = set()
+        for _tep, _dong, msg, _c, _x in extract.extract_from_dir(
+                str(GOC), method_map=method_map, options_map=options_map,
+                keywords=tu_khoa):
+            if isinstance(msg, (tuple, list)):
+                msg = msg[0] if msg else ""
+            if isinstance(msg, str) and msg:
+                ra.add(msg)
+    return ra
+
+
 def quet() -> dict:
     """{khoa: vi tri dau tien trong ma nguon}."""
     with TEP_PO.open("rb") as fh:
@@ -80,6 +130,15 @@ def quet() -> dict:
             continue
         noi = muc.locations[0] if muc.locations else ("?", 0)
         ra[_khoa(loai, muc.id)] = f"{noi[0]}:{noi[1]}"
+
+    # Lop thu hai: da boc `_()` ma KHONG co mot dong nao trong catalog.
+    trong_catalog = set()
+    for muc in catalog:
+        if muc.id:
+            mid = muc.id[0] if isinstance(muc.id, (tuple, list)) else muc.id
+            trong_catalog.add(mid)
+    for mid in _msgid_trong_ma_nguon() - trong_catalog:
+        ra[_khoa("VANG", mid)] = "chua tung vao catalog"
     return ra
 
 
@@ -108,6 +167,9 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser(description="Chan them chuoi chua dich o ban EN")
     p.add_argument("--list", action="store_true", help="liet ke tung muc")
     p.add_argument("--accept", action="store_true", help="ha moc xuong hien tai")
+    p.add_argument("--khoi-tao-loai", metavar="LOAI",
+                   help="MOT LAN khi them mot LOAI moi (TRONG/FUZZY/VANG): nhan "
+                        "trang thai hien co CUA RIENG loai do vao moc")
     a = p.parse_args(argv)
 
     if not TEP_PO.exists():
@@ -121,10 +183,36 @@ def main(argv=None) -> int:
 
     trong = sum(1 for k in thieu if k.startswith("TRONG"))
     fuzzy = sum(1 for k in thieu if k.startswith("FUZZY"))
+    vang = sum(1 for k in thieu if k.startswith("VANG"))
 
     if a.list:
         for khoa in sorted(thieu):
             print(f"  {_an_toan(khoa)}   [{thieu[khoa]}]")
+
+    if a.khoi_tao_loai:
+        # 🔴 CUA THOAT DUY NHAT, VA NO BI CHAN HAI PHIA.
+        #
+        #    Them mot LOAI kiem tra moi vao banh coc thi lan chay dau tien luon
+        #    thay "hang chuc muc moi" — chung khong moi, chung vua duoc nhin thay
+        #    lan dau. `--accept` tu choi (dung), nen can mot duong khoi tao.
+        #
+        # ⛔ Nhung mot cua thoat khong gioi han se thanh cach nguoi ta lam im
+        #    lang moi thu khac. Nen no chi nhan muc CUA DUNG MOT LOAI duoc goi
+        #    ten, va moi loai khac van phai sach truoc da.
+        loai = a.khoi_tao_loai.upper()
+        khac = [k for k in moi if not k.startswith(loai + "\t")]
+        if khac:
+            print(f"KHONG khoi tao duoc: con {len(khac)} muc MOI ngoai loai "
+                  f"{loai}. Dich chung truoc.", file=sys.stderr)
+            for k in khac[:10]:
+                print(f"  {_an_toan(k)}", file=sys.stderr)
+            return 1
+        TEP_MOC.write_text(DAU_HIEU + "\n"
+                           + "".join(f"{k}\n" for k in sorted(thieu)),
+                           encoding="utf-8")
+        print(f"Da khoi tao loai {loai}: nhan {len(moi)} muc vao moc "
+              f"(tong {len(thieu)}). Tu day chung chi duoc phep GIAM.")
+        return 0
 
     if a.accept:
         if moi:
@@ -136,12 +224,14 @@ def main(argv=None) -> int:
         TEP_MOC.write_text(DAU_HIEU + "\n"
                            + "".join(f"{k}\n" for k in sorted(thieu)),
                            encoding="utf-8")
-        print(f"Da ghi moc: {len(thieu)} muc ({trong} trong, {fuzzy} fuzzy)"
+        print(f"Da ghi moc: {len(thieu)} muc "
+              f"({trong} trong, {fuzzy} fuzzy, {vang} vang)"
               + (f"; bo {len(da_dich)} muc da dich" if da_dich else ""))
         return 0
 
     print(f"Ban EN con thieu: {len(thieu)} muc "
-          f"({trong} msgstr rong, {fuzzy} fuzzy) | moc: {len(moc)}")
+          f"({trong} msgstr rong, {fuzzy} fuzzy, {vang} vang khoi catalog) "
+          f"| moc: {len(moc)}")
     if da_dich:
         print(f"  da dich them {len(da_dich)} muc -> chay `--accept` de ha moc")
     if moi:
@@ -153,6 +243,8 @@ def main(argv=None) -> int:
         print("\nDich chung trong locale/en/LC_MESSAGES/messages.po roi chay")
         print("`python tools/i18n.py bien-dich`. Muc `#, fuzzy` thi ra soat ban")
         print("dich roi BO co fuzzy — msgfmt bo qua fuzzy, nen no khong toi ai.")
+        print("Muc `VANG` thi THEM TAY vao .po (msgid + msgstr) — dung chay")
+        print("`i18n.py trich`: msgmerge se doan ban dich cho chung.")
         print("RESULT: FAIL")
         return 1
     print("RESULT: PASS")

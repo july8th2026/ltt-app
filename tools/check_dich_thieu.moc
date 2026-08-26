@@ -278,3 +278,68 @@ TRONG	Đối chiếu cặp
 TRONG	Ảnh giải mã được
 TRONG	Ứng viên thương mại; phải provision offline linear weight + torchvision backbone và khóa checksum trước khi bật.
 TRONG	← Quality Lab
+VANG	 — còn khoảng {p} phút
+VANG	(máy đã xoá)
+VANG	(rỗng)
+VANG	Ai đã điều khiển máy của bạn, lúc nào. Bản ghi này không sửa được và không mất khi thu hồi máy.
+VANG	Chưa chọn tệp
+VANG	Chưa có phiên điều khiển nào.
+VANG	Chưa nhập mô tả ảnh.
+VANG	Chế độ không hợp lệ: {ten}
+VANG	Chế độ này cần ít nhất một ảnh tham chiếu.
+VANG	Chế độ t2i không nhận ảnh tham chiếu.
+VANG	Chọn tệp
+VANG	Chữ cần vẽ vào ảnh có dấu tiếng Việt ({danh_sach}). Model dựng chữ Latin không dấu rất chính xác nhưng SAI DẤU tiếng Việt (đo thật: 'CƠM TẤM' ra 'CỜM TÀM'). Cân nhắc bỏ dấu, hoặc để phần chữ ghép sau bằng phông chữ thật.
+VANG	Credit của khách đang bị giữ mà không ai kết sổ được
+VANG	Cần nạp thêm credit để điều khiển máy này.
+VANG	Email hoặc mật khẩu không đúng.
+VANG	Gemini trả lời rỗng — có thể prompt bị bộ lọc an toàn chặn.
+VANG	Khoản giữ chỗ {credit} credit của tài khoản {user} (khoá {khoa}, tạo lúc {luc}) không có quyết toán và không có hoàn. Lý do: {ly_do}. Sổ credit CHỈ GHI THÊM nên khoản này không tự lành — muốn trả lại cho khách thì phải ghi một bút toán bù.
+VANG	Không cấp được vé tải ảnh lên. Model nội bộ cần lưu trữ R2 — máy tạo ảnh không giữ khoá lưu trữ nào.
+VANG	Không cấp được đường tải ảnh tham chiếu ({khoa}). Chế độ dùng ảnh tham chiếu cần lưu trữ R2.
+VANG	Không dịch được prompt sang tiếng Anh ({ly_do}). Model tạo ảnh nội bộ chỉ hiểu tiếng Anh và tiếng Trung. Bạn có thể thử lại, hoặc tự viết prompt bằng tiếng Anh để đi thẳng không cần dịch.
+VANG	Không tìm thấy phiên.
+VANG	Kéo dài
+VANG	LTT LLM (coding · chat · agent)
+VANG	LTT LLM — model ngôn ngữ của nhà
+VANG	LTT LLM — đọc ảnh
+VANG	LTT Studios — model ngôn ngữ tại nhà
+VANG	LTT Studios — máy nhà (RTX 3090)
+VANG	LTT nội bộ (HiDream-O1)
+VANG	Model ngôn ngữ chạy trên máy nhà: coding, chat, agent, tóm tắt, đọc ảnh. Bán qua API cho khách lập trình.
+VANG	Model nội bộ chưa được cấu hình trên máy chủ này (thiếu LTT_RENDER_BASE_URL).
+VANG	More info
+VANG	Máy này đã đăng ký ở tài khoản khác.
+VANG	Máy tạo ảnh báo lỗi: {ma} {loi}
+VANG	Máy tạo ảnh báo thành công nhưng không trả về ảnh nào.
+VANG	Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau, hoặc chọn model đám mây.
+VANG	Máy đích chưa sẵn sàng.
+VANG	Mất liên lạc với máy tạo ảnh: {loi}
+VANG	Mở App Store
+VANG	Nhật ký truy cập
+VANG	Phiên không còn mở.
+VANG	Quá {phut:.0f} phút mà chưa xong — đã huỷ.
+VANG	Run anyway
+VANG	Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.
+VANG	Thay
+VANG	Thiếu mã phiên.
+VANG	Thiếu thông tin kết nối.
+VANG	Thiếu thông tin người dùng để kiểm ảnh tham chiếu.
+VANG	Tạo ảnh bằng model chạy trên máy của LTT Studios. Sinh ảnh từ mô tả, sửa ảnh theo lệnh, giữ nhân vật nhất quán qua nhiều ảnh.
+VANG	Tạo ảnh bằng model nội bộ của LTT Studios.
+VANG	Tối đa {n} ảnh tham chiếu.
+VANG	Từ IP
+VANG	[{slug}] tool {tool!r} params[{param!r}].only_when phải là dict không rỗng
+VANG	[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào tham số không tồn tại: {k!r}
+VANG	[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào tham số đang ẩn: {k!r}
+VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] có giá trị không nằm trong enum: {la}
+VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] phải là danh sách không rỗng
+VANG	chữ tiếng Việt CÓ DẤU vẽ trong ảnh bị sai dấu
+VANG	cửa sổ 64K là trần Cloudflare, không phải trần model: prompt lấp đầy tốn ~62 giây prefill
+VANG	model
+VANG	máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi
+VANG	nạp thêm bộ chiếu ảnh nên tốn hơn ~1,1 GB VRAM so với bản không ảnh
+VANG	prompt phải là tiếng Anh — nền tảng tự dịch
+VANG	Điều khiển máy tính của bạn từ xa — không mở cổng, không cần IP tĩnh. Cài ứng dụng, đăng nhập cùng tài khoản, máy hiện ra là bấm vào dùng.
+VANG	đang mở
+VANG	Ảnh nội bộ (máy nhà)

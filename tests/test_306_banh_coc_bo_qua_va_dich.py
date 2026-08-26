@@ -186,3 +186,61 @@ def test_ca_hai_chay_ca_o_che_do_quick():
     truoc_quick = gate.split("if not quick:")[0]
     assert "tools/check_bo_qua.py" in truoc_quick
     assert "tools/check_dich_thieu.py" in truoc_quick
+
+
+# ── 4. Lop thu BA: da boc `_()` ma khong co trong catalog ──────────────────
+
+def test_dem_ca_ba_lop():
+    """Mot chuoi phai qua ba cua moi toi duoc mat nguoi doc ban tieng Anh:
+
+        1. duoc BOC `_()`          `check_i18n.py`
+        2. co MAT trong catalog    loai `VANG`
+        3. `msgstr` khong rong     loai `TRONG` / `FUZZY`
+
+    Cua thu HAI khong ai canh cho toi 26/08 — va no da lot that: hai chuoi o
+    chan trang dung chung (`Gia API`, `Huong dan API`) ra tieng Viet tren MOI
+    trang cua ban EN. Chung da boc `_()` tu lau nen `check_i18n` bao dep; chung
+    khong co mot dong nao trong `.po` nen phep dem muc rong cung khong thay.
+    """
+    r = _chay("check_dich_thieu.py")
+    assert r.returncode == 0, r.stdout + r.stderr
+    for tu in ("msgstr rong", "fuzzy", "vang khoi catalog"):
+        assert tu in r.stdout, f"dong tom tat khong ke ra {tu!r}"
+
+
+def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
+    """Bang chung cho lop thu ba. Khong co phep kiem nay thi no chi la mot y dinh."""
+    mau = GOC / "server" / "templates" / "vps_dieu_khoan.html"
+    goc = mau.read_text(encoding="utf-8")
+    try:
+        mau.write_text(
+            goc.replace("{% block noi_dung %}",
+                        '{% block noi_dung %}\n'
+                        '<!-- {{ _("Chuoi thu banh coc VANG") }} -->', 1),
+            encoding="utf-8", newline="\n")
+        r = _chay("check_dich_thieu.py")
+        assert r.returncode == 1, "chuoi boc `_()` ma vang khoi catalog van PASS"
+        assert "VANG" in r.stdout
+    finally:
+        mau.write_text(goc, encoding="utf-8", newline="\n")
+
+
+def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac():
+    """`--khoi-tao-loai` la cua thoat duy nhat, va no phai bi chan hai phia.
+
+    Mot cua thoat khong gioi han se thanh cach nguoi ta lam im lang moi thu
+    khac — nen no chi nhan muc CUA DUNG MOT LOAI duoc goi ten.
+    """
+    po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    goc = po.read_bytes()
+    moc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
+    try:
+        po.write_bytes(goc.rstrip(b"\n") + b'\n\nmsgid "Chuoi thu loai TRONG"\n'
+                                           b'msgstr ""\n')
+        r = _chay("check_dich_thieu.py", "--khoi-tao-loai", "VANG")
+        assert r.returncode == 1, (
+            "khoi tao loai VANG da nuot mot muc TRONG moi")
+        assert "ngoai loai VANG" in (r.stdout + r.stderr)
+    finally:
+        po.write_bytes(goc)
+        (GOC / "tools" / "check_dich_thieu.moc").write_bytes(moc)

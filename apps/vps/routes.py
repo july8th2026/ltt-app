@@ -26,7 +26,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import bang_thong, nhan, os_images
+from apps.vps import bang_thong, dieu_khoan, nhan, os_images
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
@@ -195,6 +195,35 @@ def trang_chinh(request: Request,
         "suc_chua": suc_chua,
         "loi_ha_tang": loi_ha_tang,
         "loi": request.query_params.get("loi", ""),
+    })
+
+
+@router.get("/dieu-khoan", response_class=HTMLResponse)
+def trang_dieu_khoan(request: Request, _g: None = Depends(_cong_co)):
+    """Dieu khoan LTT VPS. **Khong doi dang nhap** — va do la ca van de.
+
+    Clickwrap ngay duoi nut "Tao may" tro toi day. Mot trang dieu khoan doi dang
+    nhap la mot trang khach KHONG doc duoc truoc khi quyet dinh, tuc ho dong y
+    voi mot thu ho chua tung thay.
+
+    ⭐ Truoc 26/08 trang nay nam o site marketing WordPress va **chua bao gio
+       duoc xuat ban** — `https://lttstudios.com/vps-terms/` tra 404 suot tu
+       25/08, trong khi clickwrap da tro vao do. Khach "dong y" voi mot trang
+       khong ton tai, dung luc ho sap tra tien. Mot trang do chinh app phuc vu
+       khong the o trang thai do: no song hay chet cung phan con lai cua app.
+
+    ⚠️ Khong dung `_menu(...)`: menu trai la cong cu cua nguoi DA mua, va trang
+       nay phai doc duoc boi nguoi chua co tai khoan. Xem `vps_base.html`.
+    """
+    return templates.TemplateResponse(request, "vps_dieu_khoan.html", {
+        "nav": MANIFEST.slug, "app": MANIFEST,
+        "hieu_luc": dieu_khoan.HIEU_LUC,
+        "mo_dau": dieu_khoan.mo_dau(),
+        "muc": dieu_khoan.NOI_DUNG(),
+        # Ro rang la rong: khach an danh khong thay vo dieu khien. Da dang nhap
+        # cung khong — dieu khoan la mot van ban de doc, khong phai mot trang
+        # cong cu, va mot menu ben canh no chi lam nguoi ta doc kem hon.
+        "menu_trai": [],
     })
 
 

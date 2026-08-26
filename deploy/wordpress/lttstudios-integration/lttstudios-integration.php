@@ -36,7 +36,6 @@ function ltt_legacy_route_map(): array {
         // co trong `docs/lttstudios-website/route-map.json` nhung plugin
         // chua thuc hien, nen link cu toi dieu khoan VPS tra 404 tren
         // website. `test_127` bat duoc dieu do o luot pytest day du.
-        '/legal/vps-terms.html' => '/vps-terms/',
         '/vi/' => '/',
         '/vi/about.html' => '/gioi-thieu/',
         '/vi/products.html' => '/san-pham/',
@@ -54,7 +53,6 @@ function ltt_legacy_route_map(): array {
         '/vi/legal/cookies.html' => '/chinh-sach-quyen-rieng-tu/',
         '/vi/legal/dpa.html' => '/chinh-sach-quyen-rieng-tu/',
         '/vi/legal/security.html' => '/bao-cao-lam-dung/',
-        '/vi/legal/vps-terms.html' => '/dieu-khoan-vps/',
     ];
 }
 

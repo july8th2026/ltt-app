@@ -320,17 +320,36 @@ def _doc_po() -> dict:
     noi_dung = (GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po").read_text(
         encoding="utf-8")
 
+    # 🔴 SỬA 26/08 — hai lỗi im lặng nằm trong chính bộ đọc `.po` này.
+    #
+    #    ① `(?:\.|[^"])` — trong một nhóm thay thế, `\.` là **một dấu chấm**,
+    #       không phải "ký tự thoát". Nên mọi msgid có `\"` bên trong bị **cắt
+    #       ngang** ở dấu nháy thoát đầu tiên, và phần còn lại biến mất.
+    #
+    #    ⛔ Hậu quả đi đúng hướng nguy hiểm: msgid cắt cụt **không khớp** msgid
+    #       thật, nên tra bảng trả `None` và test báo *"chuỗi này chưa có bản
+    #       dịch"* về một chuỗi **đã dịch xong và đang chạy đúng**. Người đọc kết
+    #       quả sẽ đi dịch lại một thứ không hỏng.
+    #
+    #    ⭐ Bắt được 26/08 nhờ câu ở mục Hoàn tiền có `<a href="mailto:...">` —
+    #       chuỗi đầu tiên trong khu VPS chứa dấu nháy thoát. Ba tháng trước đó
+    #       bộ đọc này vẫn "xanh", chỉ vì chưa có dữ liệu chạm tới lỗi.
+    #
+    #    ② `.replace("\n", "\n")` và `.replace("\t", "\t")` là **lệnh rỗng**: hai
+    #       vế là cùng một ký tự thật. Ý định là bỏ thoát chuỗi hai ký tự `\` `n`
+    #       thành một dấu xuống dòng. Chưa có msgid nhiều dòng nào trong khu VPS
+    #       nên nó chưa gây chuyện — nhưng khi gây, nó gây theo đúng kiểu trên.
     def gop(x):
-        return "".join(re.findall(r'"((?:\.|[^"])*)"', x))
+        return "".join(re.findall(r'"((?:\\.|[^"\\])*)"', x))
 
     def bo_thoat(s):
-        return (s.replace('\\"', '"').replace("\n", "\n")
-                 .replace("\t", "\t").replace("\\\\", "\\"))
+        return (s.replace('\\"', '"').replace("\\n", "\n")
+                 .replace("\\t", "\t").replace("\\\\", "\\"))
 
     ra = {}
     for khoi in noi_dung.split("\n\n"):
-        m = re.search(r'(?m)^msgid ((?:"(?:\.|[^"])*"\n?)+)'
-                      r'msgstr ((?:"(?:\.|[^"])*"\n?)+)', khoi)
+        m = re.search(r'(?m)^msgid ((?:"(?:\\.|[^"\\])*"\n?)+)'
+                      r'msgstr ((?:"(?:\\.|[^"\\])*"\n?)+)', khoi)
         if m:
             mid = bo_thoat(gop(m.group(1)))
             if mid:
