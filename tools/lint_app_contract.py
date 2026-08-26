@@ -60,6 +60,34 @@ SERVER_APP_CO_THE_DUNG = {
     "server.templating",      # templates
 }
 
+#: App NAO duoc goi sang app NAO, va CU THE goi cai gi. Mac dinh la RONG: hai
+#: app khong duoc biet nhau.
+#:
+#: 🔴 Do bang AST 2026-08-26: ca kho co DUNG MOT canh xuyen-san-pham —
+#:    `taovideo -> upscalevideo`, hai cho import.
+#:
+#: ⭐ Doc them mot tang thi no KHONG phai mot sai lam cau tha: hai thu duoc goi
+#:    co ten dung nghia be mat cong khai (`service.submit_upscale_job`,
+#:    `cost.uoc_luong_credit`). Van de la be mat do CHUA duoc khai la cong khai,
+#:    nen khong co gi ngan lan sau ai do voi tay vao cho sau hon.
+#:
+#: ⛔ VI SAO KHAI BAO chu khong CAT CANH: cat no nghia la doi viec dieu phoi
+#:    "nang cap mot video vua tao" di dau do — va khong cho nao tot hon cho hien
+#:    tai. Route cua `taovideo` la noi khach bam nut, va bao gia phai la bao gia
+#:    THAT cua `upscalevideo`, khong phai mot ban sao se troi.
+#:
+#: ⭐ Chot CA TEN DUOC IMPORT, khong chi ten module. Chot moi module thi
+#:    `from apps.upscalevideo import bat_cu_gi` van lot, va hop dong nay chi con
+#:    la mot loi de ngo.
+#:
+#: Them mot dong vao day la MOT QUYET DINH KIEN TRUC — lam co y, ghi ly do.
+APP_DUOC_DUNG_APP: dict = {
+    ("taovideo", "upscalevideo"): {
+        ("apps.upscalevideo", "cost"),                        # bao gia nang cap
+        ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
+    },
+}
+
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
 
@@ -153,8 +181,30 @@ def lint() -> list:
         for f in sorted(d.rglob("*.py")):
             if "__pycache__" in f.parts:
                 continue
+            noi_dung = _read(f)
+
+            # ── BIEN `apps/` -> `apps/` (A-01) ───────────────────────────
+            for m3 in re.finditer(
+                    r"^\s*from\s+(apps\.[A-Za-z0-9_.]+)\s+import\s+(.+)$",
+                    noi_dung, re.M):
+                mod, ten_raw = m3.group(1), m3.group(2).split("#")[0]
+                phan = mod.split(".")
+                if len(phan) < 2 or phan[1] == app:
+                    continue                  # trong cung app — khong phai canh
+                cho_phep = APP_DUOC_DUNG_APP.get((app, phan[1]), set())
+                for ten in (t.strip().split(" as ")[0].strip()
+                            for t in ten_raw.split(",")):
+                    if not ten or (mod, ten) in cho_phep:
+                        continue
+                    findings.append(Finding(
+                        app, "ERROR",
+                        f"{f.relative_to(d).as_posix()} import {ten!r} tu {mod!r} "
+                        "— app khong duoc goi vao ruot app khac. Be mat duoc "
+                        f"phep cua `{phan[1]}`: {sorted(cho_phep) or 'KHONG CO'}. "
+                        "Can them thi khai vao `APP_DUOC_DUNG_APP` truoc."))
+
             for m2 in re.finditer(
-                    r"^\s*from\s+(server\.[A-Za-z0-9_.]+)\s+import", _read(f), re.M):
+                    r"^\s*from\s+(server\.[A-Za-z0-9_.]+)\s+import", noi_dung, re.M):
                 mod = m2.group(1)
                 if not any(mod == ok or mod.startswith(ok + ".")
                            for ok in SERVER_APP_CO_THE_DUNG):

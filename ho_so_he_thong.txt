@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0e00ccc07d6d54824bdcdb94c170a04307ffae238941fb275cd76c2aba3c681d
+Fingerprint   : sha256:c081dcd45e8a9933258a448ecdcf772f22ecc1437f993b3e53b176a740b5938d
 Nguồn đã quét : 1170 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2576,7 +2576,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1170 file; 11337375 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1170 file; 11344617 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2591,7 +2591,7 @@ ho_so_he_thong.txt -whitespace
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ AGENTS.md
-SHA256=c557be986d58471537f22885a03c0a707eb0c53764d8ba6410cdfe172c7bfcba BYTES=23201 LINES=438
+SHA256=6a8174c15060796429af69c1b1cc25536f0acafb6c06fc6c2586cd25979bbbba BYTES=25133 LINES=472
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quy tắc làm việc trong dự án này
 
@@ -2927,6 +2927,40 @@ Chưa có giao diện thì khai `catalog_parent="<app cha>"`. **Đừng** chữa
 
 App gọi vào ruột app khác = gỡ hay đổi tên app đó làm gãy app không liên quan.
 Đã dính hai lần, nay có test chặn.
+
+#### Cạnh app→app: mặc định **CẤM**, và cả kho hiện có đúng **một**
+
+Đo bằng AST 2026-08-26: `taovideo → upscalevideo`, hai chỗ import. Đó là cạnh
+xuyên-sản-phẩm **duy nhất**.
+
+```python
+# tools/lint_app_contract.py
+APP_DUOC_DUNG_APP = {
+    ("taovideo", "upscalevideo"): {
+        ("apps.upscalevideo", "cost"),                        # báo giá nâng cấp
+        ("apps.upscalevideo.service", "submit_upscale_job"),  # nộp job nâng cấp
+    },
+}
+```
+
+⭐ **Vì sao khai báo chứ không cắt cạnh.** Đọc kỹ thì đây không phải sai lầm cẩu
+thả: hai thứ được gọi đã có tên đúng nghĩa bề mặt công khai. Cắt nó nghĩa là dời
+việc điều phối *"nâng cấp một video vừa tạo"* đi đâu đó — và không chỗ nào tốt
+hơn chỗ hiện tại: route của `taovideo` là nơi khách bấm nút, và báo giá phải là
+báo giá **thật** của `upscalevideo`, không phải một bản sao sẽ trôi.
+
+Cái thiếu không phải cạnh, mà là **lời khai**: bề mặt đó chưa được gọi là công
+khai, nên không có gì ngăn lần sau ai đó với tay vào chỗ sâu hơn.
+
+⛔ **Chốt cả TÊN được import, không chỉ tên module.** Chốt mỗi module thì
+`from apps.upscalevideo import bất_cứ_gì` vẫn lọt, và hợp đồng chỉ còn là một
+lời để ngỏ. Đã chứng minh luật bắn đúng trên 7 ca, gồm cả ca tinh tế: **`taoanh`
+dùng cùng bề mặt đó cũng bị chặn** — danh sách theo **từng cặp**, vì mỗi cạnh là
+một quyết định riêng chứ không phải một cửa mở chung.
+
+⚠️ Và `test_308` chốt **hai chiều**: thêm cạnh mới mà quên khai thì đỏ, *và* khai
+một cạnh mà thực tế không còn ai dùng cũng đỏ — một quyền được cấp rồi bỏ đó là
+một cánh cửa không ai canh.
 
 | Việc | Dùng | Đừng tự viết lại |
 |---|---|---|
@@ -206087,7 +206121,7 @@ def test_viec_bao_tri_cua_app_chay_duoi_lease_nen_khong_tru_tien_N_lan():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_308_banh_coc_moi.py
-SHA256=746f2433a40d89781c0ab4fa773fe2d3fa10b598884b4b5afaceaa493bebf4cc BYTES=5091 LINES=113
+SHA256=883863713d405b4c37fcbb2e742f75f4f760181ed2c99633bb5ce4ca34880062 BYTES=7804 LINES=176
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_308 — hai bánh cóc mới của audit 2026-08-26, và bằng chứng chúng KÊU.
 
@@ -206202,6 +206236,69 @@ def test_bien_apps_toi_server_van_duoc_thi_hanh():
         "server.auth.csrf", "server.templating",
     }, ("hop dong apps->server da doi. Do la mot QUYET DINH KIEN TRUC — cap nhat "
         "AGENTS.md 8.2b va phep kiem nay cung luc, dung sua mot ben.")
+
+
+# ── Bánh cóc 4: biên `apps/` → `apps/` (A-01) ────────────────────────────────
+
+def test_chi_MOT_canh_xuyen_san_pham_va_no_da_duoc_khai():
+    """Đo bằng AST, không tin danh sách: kho có đúng một cạnh app→app.
+
+    Nếu ai đó thêm cạnh thứ hai mà quên khai vào `APP_DUOC_DUNG_APP`, phép kiểm
+    ở dưới đã đỏ. Phép kiểm **này** bắt trường hợp ngược lại: khai một cạnh
+    trong hợp đồng mà thực tế không còn ai dùng — một quyền được cấp rồi bỏ đó
+    là một cánh cửa không ai canh.
+    """
+    import ast
+    import pathlib
+
+    from tools.lint_app_contract import APP_DUOC_DUNG_APP
+
+    that = set()
+    for f in sorted(pathlib.Path("apps").rglob("*.py")):
+        phan = str(f).replace("\\", "/").split("/")
+        if "__pycache__" in phan:
+            continue
+        nguon = phan[1]
+        try:
+            cay = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in ast.walk(cay):
+            mods = []
+            if isinstance(n, ast.Import):
+                mods = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom) and not n.level and n.module:
+                mods = [n.module]
+            for m in mods:
+                p = m.split(".")
+                if p[0] == "apps" and len(p) > 1 and p[1] != nguon:
+                    that.add((nguon, p[1]))
+
+    assert that == set(APP_DUOC_DUNG_APP), (
+        f"canh thuc te {sorted(that)} khac hop dong "
+        f"{sorted(APP_DUOC_DUNG_APP)}")
+
+
+def test_be_mat_cong_khai_cua_upscalevideo_chot_CA_TEN_khong_chi_module():
+    """⛔ Chốt tên, không chốt module.
+
+    Chốt mỗi module thì `from apps.upscalevideo import bat_cu_gi` vẫn lọt, và
+    hợp đồng chỉ còn là một lời để ngỏ. Đã chứng minh luật bắn đúng:
+
+        im   from apps.upscalevideo import cost
+        im   from apps.upscalevideo.service import submit_upscale_job
+        BAN  from apps.upscalevideo import jobs
+        BAN  from apps.upscalevideo.service import _noi_bo
+        BAN  from apps.upscalevideo import cost, jobs
+        BAN  taoanh: from apps.upscalevideo import cost   (khac cap)
+    """
+    from tools.lint_app_contract import APP_DUOC_DUNG_APP
+
+    assert APP_DUOC_DUNG_APP[("taovideo", "upscalevideo")] == {
+        ("apps.upscalevideo", "cost"),
+        ("apps.upscalevideo.service", "submit_upscale_job"),
+    }, ("be mat cong khai cua `upscalevideo` da doi. Do la mot QUYET DINH KIEN "
+        "TRUC — cap nhat AGENTS.md muc 8.3 cung luc, dung sua mot ben.")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -227514,7 +227611,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=70e132061773971444c01b964fac9a104edef4cffe22c3441186ba126aba5dd9 BYTES=11124 LINES=230
+SHA256=a2f2997b5eed2a3cfe06d34841575c243656bd08d02b6cc44b4d90eb43ceb5aa BYTES=13721 LINES=280
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -227576,6 +227673,34 @@ SERVER_APP_CO_THE_DUNG = {
     "server.auth.session",    # require_login
     "server.auth.csrf",       # issue/verify_csrf_token
     "server.templating",      # templates
+}
+
+#: App NAO duoc goi sang app NAO, va CU THE goi cai gi. Mac dinh la RONG: hai
+#: app khong duoc biet nhau.
+#:
+#: 🔴 Do bang AST 2026-08-26: ca kho co DUNG MOT canh xuyen-san-pham —
+#:    `taovideo -> upscalevideo`, hai cho import.
+#:
+#: ⭐ Doc them mot tang thi no KHONG phai mot sai lam cau tha: hai thu duoc goi
+#:    co ten dung nghia be mat cong khai (`service.submit_upscale_job`,
+#:    `cost.uoc_luong_credit`). Van de la be mat do CHUA duoc khai la cong khai,
+#:    nen khong co gi ngan lan sau ai do voi tay vao cho sau hon.
+#:
+#: ⛔ VI SAO KHAI BAO chu khong CAT CANH: cat no nghia la doi viec dieu phoi
+#:    "nang cap mot video vua tao" di dau do — va khong cho nao tot hon cho hien
+#:    tai. Route cua `taovideo` la noi khach bam nut, va bao gia phai la bao gia
+#:    THAT cua `upscalevideo`, khong phai mot ban sao se troi.
+#:
+#: ⭐ Chot CA TEN DUOC IMPORT, khong chi ten module. Chot moi module thi
+#:    `from apps.upscalevideo import bat_cu_gi` van lot, va hop dong nay chi con
+#:    la mot loi de ngo.
+#:
+#: Them mot dong vao day la MOT QUYET DINH KIEN TRUC — lam co y, ghi ly do.
+APP_DUOC_DUNG_APP: dict = {
+    ("taovideo", "upscalevideo"): {
+        ("apps.upscalevideo", "cost"),                        # bao gia nang cap
+        ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
+    },
 }
 
 MAX_ROUTES_LINES = 900
@@ -227671,8 +227796,30 @@ def lint() -> list:
         for f in sorted(d.rglob("*.py")):
             if "__pycache__" in f.parts:
                 continue
+            noi_dung = _read(f)
+
+            # ── BIEN `apps/` -> `apps/` (A-01) ───────────────────────────
+            for m3 in re.finditer(
+                    r"^\s*from\s+(apps\.[A-Za-z0-9_.]+)\s+import\s+(.+)$",
+                    noi_dung, re.M):
+                mod, ten_raw = m3.group(1), m3.group(2).split("#")[0]
+                phan = mod.split(".")
+                if len(phan) < 2 or phan[1] == app:
+                    continue                  # trong cung app — khong phai canh
+                cho_phep = APP_DUOC_DUNG_APP.get((app, phan[1]), set())
+                for ten in (t.strip().split(" as ")[0].strip()
+                            for t in ten_raw.split(",")):
+                    if not ten or (mod, ten) in cho_phep:
+                        continue
+                    findings.append(Finding(
+                        app, "ERROR",
+                        f"{f.relative_to(d).as_posix()} import {ten!r} tu {mod!r} "
+                        "— app khong duoc goi vao ruot app khac. Be mat duoc "
+                        f"phep cua `{phan[1]}`: {sorted(cho_phep) or 'KHONG CO'}. "
+                        "Can them thi khai vao `APP_DUOC_DUNG_APP` truoc."))
+
             for m2 in re.finditer(
-                    r"^\s*from\s+(server\.[A-Za-z0-9_.]+)\s+import", _read(f), re.M):
+                    r"^\s*from\s+(server\.[A-Za-z0-9_.]+)\s+import", noi_dung, re.M):
                 mod = m2.group(1)
                 if not any(mod == ok or mod.startswith(ok + ".")
                            for ok in SERVER_APP_CO_THE_DUNG):

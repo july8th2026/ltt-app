@@ -333,6 +333,40 @@ Chưa có giao diện thì khai `catalog_parent="<app cha>"`. **Đừng** chữa
 App gọi vào ruột app khác = gỡ hay đổi tên app đó làm gãy app không liên quan.
 Đã dính hai lần, nay có test chặn.
 
+#### Cạnh app→app: mặc định **CẤM**, và cả kho hiện có đúng **một**
+
+Đo bằng AST 2026-08-26: `taovideo → upscalevideo`, hai chỗ import. Đó là cạnh
+xuyên-sản-phẩm **duy nhất**.
+
+```python
+# tools/lint_app_contract.py
+APP_DUOC_DUNG_APP = {
+    ("taovideo", "upscalevideo"): {
+        ("apps.upscalevideo", "cost"),                        # báo giá nâng cấp
+        ("apps.upscalevideo.service", "submit_upscale_job"),  # nộp job nâng cấp
+    },
+}
+```
+
+⭐ **Vì sao khai báo chứ không cắt cạnh.** Đọc kỹ thì đây không phải sai lầm cẩu
+thả: hai thứ được gọi đã có tên đúng nghĩa bề mặt công khai. Cắt nó nghĩa là dời
+việc điều phối *"nâng cấp một video vừa tạo"* đi đâu đó — và không chỗ nào tốt
+hơn chỗ hiện tại: route của `taovideo` là nơi khách bấm nút, và báo giá phải là
+báo giá **thật** của `upscalevideo`, không phải một bản sao sẽ trôi.
+
+Cái thiếu không phải cạnh, mà là **lời khai**: bề mặt đó chưa được gọi là công
+khai, nên không có gì ngăn lần sau ai đó với tay vào chỗ sâu hơn.
+
+⛔ **Chốt cả TÊN được import, không chỉ tên module.** Chốt mỗi module thì
+`from apps.upscalevideo import bất_cứ_gì` vẫn lọt, và hợp đồng chỉ còn là một
+lời để ngỏ. Đã chứng minh luật bắn đúng trên 7 ca, gồm cả ca tinh tế: **`taoanh`
+dùng cùng bề mặt đó cũng bị chặn** — danh sách theo **từng cặp**, vì mỗi cạnh là
+một quyết định riêng chứ không phải một cửa mở chung.
+
+⚠️ Và `test_308` chốt **hai chiều**: thêm cạnh mới mà quên khai thì đỏ, *và* khai
+một cạnh mà thực tế không còn ai dùng cũng đỏ — một quyền được cấp rồi bỏ đó là
+một cánh cửa không ai canh.
+
 | Việc | Dùng | Đừng tự viết lại |
 |---|---|---|
 | Kiểm ảnh người dùng tải lên | `platform_core.image_input.validate_reference` | |

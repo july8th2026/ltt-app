@@ -111,3 +111,66 @@ def test_bien_apps_toi_server_van_duoc_thi_hanh():
         "server.auth.csrf", "server.templating",
     }, ("hop dong apps->server da doi. Do la mot QUYET DINH KIEN TRUC — cap nhat "
         "AGENTS.md 8.2b va phep kiem nay cung luc, dung sua mot ben.")
+
+
+# ── Bánh cóc 4: biên `apps/` → `apps/` (A-01) ────────────────────────────────
+
+def test_chi_MOT_canh_xuyen_san_pham_va_no_da_duoc_khai():
+    """Đo bằng AST, không tin danh sách: kho có đúng một cạnh app→app.
+
+    Nếu ai đó thêm cạnh thứ hai mà quên khai vào `APP_DUOC_DUNG_APP`, phép kiểm
+    ở dưới đã đỏ. Phép kiểm **này** bắt trường hợp ngược lại: khai một cạnh
+    trong hợp đồng mà thực tế không còn ai dùng — một quyền được cấp rồi bỏ đó
+    là một cánh cửa không ai canh.
+    """
+    import ast
+    import pathlib
+
+    from tools.lint_app_contract import APP_DUOC_DUNG_APP
+
+    that = set()
+    for f in sorted(pathlib.Path("apps").rglob("*.py")):
+        phan = str(f).replace("\\", "/").split("/")
+        if "__pycache__" in phan:
+            continue
+        nguon = phan[1]
+        try:
+            cay = ast.parse(f.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in ast.walk(cay):
+            mods = []
+            if isinstance(n, ast.Import):
+                mods = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom) and not n.level and n.module:
+                mods = [n.module]
+            for m in mods:
+                p = m.split(".")
+                if p[0] == "apps" and len(p) > 1 and p[1] != nguon:
+                    that.add((nguon, p[1]))
+
+    assert that == set(APP_DUOC_DUNG_APP), (
+        f"canh thuc te {sorted(that)} khac hop dong "
+        f"{sorted(APP_DUOC_DUNG_APP)}")
+
+
+def test_be_mat_cong_khai_cua_upscalevideo_chot_CA_TEN_khong_chi_module():
+    """⛔ Chốt tên, không chốt module.
+
+    Chốt mỗi module thì `from apps.upscalevideo import bat_cu_gi` vẫn lọt, và
+    hợp đồng chỉ còn là một lời để ngỏ. Đã chứng minh luật bắn đúng:
+
+        im   from apps.upscalevideo import cost
+        im   from apps.upscalevideo.service import submit_upscale_job
+        BAN  from apps.upscalevideo import jobs
+        BAN  from apps.upscalevideo.service import _noi_bo
+        BAN  from apps.upscalevideo import cost, jobs
+        BAN  taoanh: from apps.upscalevideo import cost   (khac cap)
+    """
+    from tools.lint_app_contract import APP_DUOC_DUNG_APP
+
+    assert APP_DUOC_DUNG_APP[("taovideo", "upscalevideo")] == {
+        ("apps.upscalevideo", "cost"),
+        ("apps.upscalevideo.service", "submit_upscale_job"),
+    }, ("be mat cong khai cua `upscalevideo` da doi. Do la mot QUYET DINH KIEN "
+        "TRUC — cap nhat AGENTS.md muc 8.3 cung luc, dung sua mot ben.")
