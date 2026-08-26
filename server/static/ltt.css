@@ -1564,6 +1564,162 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .vps-doi-ten{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0}
 .vps-doi-ten .inp{max-width:230px}
 
+
+/* ═══ ĐỢT 5 · HƯỚNG DẪN CÀI WINDOWS ═════════════════════════════════════ */
+
+/* ── Cột bước + nội dung ─────────────────────────────────────────────────
+ *
+ * ⚠️ Cột bước là một **mục lục có mỏ neo**, KHÔNG phải một thanh tiến độ.
+ *    Không có tiến độ nào lưu ở máy chủ, nên không có "3/8", không có dấu tích
+ *    lưu được, không có nút "Tôi đã hoàn tất bước này" — ảnh tham chiếu có cả
+ *    ba, và cả ba đều hứa một thứ backend không có (Prompt 04).
+ *
+ * Ở màn hẹp cột bước lên TRÊN: một mục lục đặt dưới nội dung là một mục lục
+ * người ta chỉ thấy sau khi đã đọc xong.
+ */
+.vps-buoc-bo{display:grid;grid-template-columns:minmax(0,250px) minmax(0,1fr);
+  gap:18px;align-items:start}
+/* 🔴 `minmax(0,1fr)` CHỨ KHÔNG `1fr`. Một cột `1fr` mặc định là
+ * `minmax(auto,1fr)`, tức **sàn của nó là min-content** — nội dung dài hơn cột
+ * thì cột nở ra và tràn khỏi trang. Đo 390px: `.vps-buoc-ds` rộng 385 trong một
+ * khung 366, tràn 7px. Lỗi này im lặng: trang vẫn render, chỉ là cuộn ngang. */
+@media(max-width:900px){.vps-buoc-bo{grid-template-columns:minmax(0,1fr)}}
+.vps-buoc-ds{position:sticky;top:16px;margin:0;padding:0;list-style:none;
+  border:1px solid var(--border-subtle);border-radius:var(--radius-lg);
+  background:var(--surface-raised);overflow:hidden}
+@media(max-width:900px){.vps-buoc-ds{position:static}}
+.vps-buoc-ds li{border-bottom:1px solid var(--border-subtle)}
+.vps-buoc-ds li:last-child{border-bottom:0}
+.vps-buoc-ds a{display:flex;gap:10px;padding:9px 13px;text-decoration:none;
+  color:var(--text-secondary);border-left:2px solid transparent}
+.vps-buoc-ds a:hover{background:var(--surface-overlay);color:var(--text-primary)}
+/* `:target` — mục đang xem tô đậm bằng CSS thuần, không cần JS. Chỉ dấu vị trí,
+ * KHÔNG phải chỉ dấu "đã xong". */
+.vps-buoc-ds li:target a,.vps-buoc-ds a:focus-visible{
+  border-left-color:var(--vps-teal);background:var(--vps-teal-soft);
+  color:var(--text-primary)}
+.vps-buoc-ds .so{flex:0 0 auto;width:19px;height:19px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--surface-interactive);border:1px solid var(--border-strong);
+  font-size:10.5px;font-variant-numeric:tabular-nums;margin-top:1px}
+.vps-buoc-ds .nhan{font-size:13px;line-height:1.4}
+
+.vps-buoc{padding:16px 18px;margin:0 0 12px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised);
+  scroll-margin-top:16px}
+.vps-buoc > h3{display:flex;align-items:baseline;gap:9px;margin:0 0 8px;
+  font-size:15px}
+.vps-buoc > h3 .so{flex:0 0 auto;width:21px;height:21px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--vps-teal-soft);border:1px solid var(--vps-teal-line);
+  color:var(--vps-teal-text);font-size:11px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.vps-buoc p{margin:0 0 8px;font-size:13.5px;line-height:1.65}
+.vps-buoc p:last-child{margin-bottom:0}
+.vps-buoc ul{margin:0 0 8px;padding-left:20px;font-size:13.5px;line-height:1.65}
+
+/* ── Cảnh báo KHÔNG ĐƯỢC BỎ LỠ ───────────────────────────────────────────
+ * "Press any key to boot from CD or DVD…" là chỗ tốn công nhất trong cả quá
+ * trình cài, và nó không tự hiện ra — phải nói trước.
+ *
+ * ⚠️ Nổi bật, nhưng KHÔNG phải neon trang trí (Prompt 04). Nó phải đọc được;
+ *    một khối nhấp nháy là một khối người ta học cách bỏ qua.
+ */
+.vps-canh-to{border:1px solid var(--status-warning-border);
+  border-left:4px solid var(--status-warning);border-radius:0 var(--radius-md) var(--radius-md) 0;
+  background:var(--status-warning-soft);padding:13px 16px;margin:0 0 10px}
+.vps-canh-to b{display:block;color:var(--status-warning);font-size:12px;
+  letter-spacing:.5px;text-transform:uppercase;margin:0 0 6px}
+.vps-canh-to .dung{color:var(--status-danger);font-weight:600}
+
+/* ── Sơ đồ hộp thoại Windows (D-03) ──────────────────────────────────────
+ *
+ * 🔴 Đây là một **SƠ ĐỒ**, không phải ảnh chụp giả. Ảnh tham chiếu có một ảnh
+ *    chụp hộp thoại "Where do you want to install Windows?"; một ảnh bitmap sai
+ *    theo bốn hướng: phải chụp trên máy thật (phụ thuộc quyết định D-02), năm
+ *    bản Windows là năm giao diện, số liệu CỨNG (`80.0 GB`) hiện cho khách gói
+ *    Nhỏ (thật: 40 GB), và là tài sản tĩnh mới phải nhớ cache-bust.
+ *
+ * ⭐ Sơ đồ dựng từ `plan.disk_gb` **đúng hơn** một ảnh chụp: con số là đĩa thật
+ *    của khách. Nó cũng dịch được và đọc được bằng trình đọc màn hình.
+ *
+ * ⚠️ Giữ chữ tiếng Anh đúng như Windows hiện (`Drive 0 Unallocated Space`) — đó
+ *    là thứ khách phải NHẬN RA trên màn hình — nhưng đóng khung bằng kiểu của
+ *    trang, không bắt chước khung cửa sổ Windows.
+ */
+.vps-so-do{border:1px solid var(--border-strong);border-radius:var(--radius-md);
+  background:var(--surface-base);overflow:hidden;margin:0 0 8px;font-size:12.5px}
+/* Bảng bốn cột chữ đơn cách không thu nhỏ được dưới một mức — cho nó cuộn
+ * TRONG khung của nó, thay vì đẩy cả trang cuộn ngang. */
+.vps-so-do-cuon{overflow-x:auto}
+.vps-so-do-dau{padding:8px 12px;border-bottom:1px solid var(--border-subtle);
+  background:var(--surface-overlay);color:var(--text-secondary);font-size:12px}
+.vps-so-do table{width:100%;border-collapse:collapse;font-family:var(--mono);
+  font-size:11.5px}
+.vps-so-do th{text-align:left;padding:6px 12px;color:var(--text-muted);
+  font-weight:400;border-bottom:1px solid var(--border-subtle)}
+.vps-so-do td{padding:8px 12px;color:var(--text-primary)}
+.vps-so-do tr.chon td{background:var(--vps-teal-soft)}
+.vps-so-do-chu{padding:7px 12px;border-top:1px solid var(--border-subtle);
+  color:var(--text-muted);font-size:11.5px}
+
+
+/* ═══ ĐỢT 6 · CONSOLE TRONG TRÌNH DUYỆT ═════════════════════════════════
+ *
+ * ⛔ ĐỢT NÀY CHỈ ĐỔI TRÌNH BÀY. Không chạm: cấp vé, tiêu vé, đường WebSocket,
+ *    mật khẩu VNC, `scaleViewport`, `resizeSession=false`, hành vi
+ *    KHÔNG-tự-nối-lại. Vé sống 60 giây và dùng **đúng một lần**.
+ *
+ * ⛔ BA THỨ TRONG ẢNH THAM CHIẾU BỊ TỪ CHỐI:
+ *    ① "Mã hoá AES-256" — khẩu hiệu bịa, không nơi nào trong mã khẳng định
+ *      thuật toán;
+ *    ② đồng hồ "Phiên sẽ hết hạn sau 14:47" — vé tiêu **ngay lúc mở
+ *      WebSocket**, nên sau khi nối xong KHÔNG CÒN HẠN NÀO ĐỂ ĐẾM;
+ *    ③ "Trình duyệt Chrome 124 · IP của bạn 113.170.**.**" — dữ liệu client,
+ *      không phải dữ liệu phiên, và IP khách là thông tin riêng tư.
+ */
+.vps-console{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,300px);
+  gap:16px;align-items:start}
+@media(max-width:1080px){.vps-console{grid-template-columns:minmax(0,1fr)}}
+
+/* Thanh công cụ: chỉ những việc **thực sự làm được**. */
+.vps-cs-thanh{display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  margin:0 0 10px}
+.vps-cs-thanh .tt{display:flex;align-items:center;gap:7px;margin-left:auto;
+  font-size:12.5px}
+
+/* 🔴 Khung VNC là TRUNG TÂM THỊ GIÁC. Trước Đợt 6 nó nằm trong một `.card` có
+ *    viền + đệm 18px + một đoạn văn phía trên — tức thứ quan trọng nhất trên
+ *    trang bị bọc trong hai lớp trang trí. Ở đây nó là một khối đen liền, và
+ *    những thứ khác lùi ra.
+ *
+ * ⚠️ `tabindex="0"` nằm trên chính khung (ở template): thiếu nó thì chuột chạy
+ *    mà bàn phím không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra.
+ */
+.vps-cs-khung{width:100%;height:min(74vh,760px);background:#000;
+  border:1px solid var(--border-strong);border-radius:var(--radius-md);
+  overflow:hidden;outline:none}
+.vps-cs-khung:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+/* Toàn màn hình: API của trình duyệt, không phải của noVNC. Nền đen để khung
+ * không viền trắng khi phóng to. */
+.vps-cs-khung:fullscreen{height:100vh;border:0;border-radius:0}
+
+.vps-cs-cot{display:grid;gap:12px}
+.vps-cs-o{padding:14px 16px;border:1px solid var(--border-subtle);
+  border-radius:var(--radius-lg);background:var(--surface-raised)}
+.vps-cs-o h3{margin:0 0 8px;font-size:13px;font-weight:600;
+  color:var(--text-secondary)}
+.vps-cs-o ul{margin:0;padding-left:19px;font-size:12.5px;line-height:1.7;
+  color:var(--text-secondary)}
+.vps-cs-o ul + h3{margin-top:14px}
+.vps-cs-meo{border-left:3px solid var(--status-warning);
+  background:var(--status-warning-soft);border-color:var(--status-warning-border);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0}
+.vps-cs-meo b{display:block;color:var(--status-warning);font-size:11.5px;
+  letter-spacing:.5px;text-transform:uppercase;margin:0 0 5px}
+.vps-cs-meo p{margin:0;font-size:12.5px;line-height:1.6;
+  color:var(--text-secondary)}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ĐỢT 2 KHU API (.khu-dev) — bám ảnh demo 2026-08-27
    ═══════════════════════════════════════════════════════════════════════════
@@ -1812,6 +1968,9 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .khu-dev .dev-bieu-do .duong-credit{fill:none;stroke:var(--brand-primary);stroke-width:2;
   vector-effect:non-scaling-stroke;stroke-linejoin:round}
 .khu-dev .dev-bieu-do .nhan{fill:var(--text-muted);font-size:10px}
+/* Vùng tô mờ dưới mỗi đường (ảnh demo) — nhạt để không nuốt lưới. */
+.khu-dev .dev-bieu-do .vung-req{fill:var(--dev-cyan);opacity:.10;stroke:none}
+.khu-dev .dev-bieu-do .vung-credit{fill:var(--brand-primary);opacity:.09;stroke:none}
 .khu-dev .dev-chu-thich{display:inline-flex;gap:14px;font-size:11.5px;
   color:var(--text-secondary)}
 .khu-dev .dev-chu-thich>span{display:inline-flex;align-items:center;gap:5px}

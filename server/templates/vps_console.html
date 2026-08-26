@@ -1,27 +1,79 @@
 {% extends "vps_base.html" %}
+{% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ _("Console") }} — {{ may.ten or may.id[:8] }}{% endblock %}
 {% block topbar_title %}<strong><a href="/vps" style="color:inherit;text-decoration:none;opacity:.7;">{{ app.icon }} VPS</a> <span style="opacity:.45;">›</span> {{ _("Console") }} — {{ may.ten or may.id[:8] }}</strong>{% endblock %}
 {% block noi_dung %}
 
-  <p style="margin:0 0 12px;">
-    <a href="{{ app.route_prefix }}/{{ may.id }}">&larr; {{ _("Về trang máy") }}</a>
-  </p>
+{# ══ MÀN E · CONSOLE TRONG TRÌNH DUYỆT (Đợt 6, ảnh 5) ══════════════════════
 
-  <div class="card">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
-    <p class="muted" style="margin:0 0 8px;">
-      {{ _("Console dùng khi bạn không vào được bằng RDP — ví dụ vừa đổi tường lửa hoặc cấu hình mạng trong máy. Nó chậm hơn RDP, đừng dùng để làm việc hằng ngày.") }}
-    </p>
-    <div id="tt" class="muted" style="margin:0 0 8px;">{{ _("Đang kết nối…") }}</div>
-    {# `tabindex` để khung nhận được phím; thiếu nó thì chuột chạy mà bàn phím
-       không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra. #}
-    <div id="khung" tabindex="0"
-         style="width:100%; height:70vh; background:#000; border-radius:6px;
-                overflow:hidden; outline:none;"></div>
-    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-      <button class="btn" id="nut-ctrlaltdel" type="button">Ctrl + Alt + Del</button>
-      <button class="btn" id="nut-noi-lai" type="button" style="display:none;">
-        {{ _("Kết nối lại") }}</button>
+   ⛔ ĐỢT NÀY CHỈ ĐỔI TRÌNH BÀY. Giao thức giữ nguyên từng dòng: vé cấp ở route,
+      tiêu ở bước mở WebSocket, sống {{ han_ve_giay }} giây và dùng **đúng một
+      lần**; mật khẩu VNC là vé của Proxmox; `scaleViewport = true`;
+      `resizeSession = false`; KHÔNG tự nối lại bằng vé đã tiêu.
+
+   ⛔ BA THỨ TRONG ẢNH THAM CHIẾU BỊ TỪ CHỐI, và lý do từng cái:
+     ① "Mã hoá AES-256" — không nơi nào trong mã khẳng định thuật toán. Đường đi
+       là WSS qua Cloudflare rồi RFB; nói "AES-256" là nói một điều ta không đo.
+     ② đồng hồ "Phiên sẽ hết hạn sau 14:47" — vé tiêu **ngay lúc mở WebSocket**,
+       nên sau khi nối xong **không còn hạn nào để đếm**. Một đồng hồ ở đây đếm
+       một thứ không có.
+     ③ "Trình duyệt Chrome 124 · IP của bạn 113.170.**.**" — dữ liệu client, và
+       IP của khách là thông tin riêng tư không cần hiện lại cho chính họ.
+
+   ⭐ Thứ ta GIỮ từ ảnh: "phiên truy cập một lần" — vé **đúng là** một lần, và
+      đó là một tính chất bảo mật thật, đáng nói ra. Chỉ bỏ cái đồng hồ. #}
+
+  {{ mac.dinh_may(may, trang_thai_nhan, badge, plan, os, dia_chi) }}
+
+  <div class="vps-console">
+    <div>
+      <div class="vps-cs-thanh">
+        <button class="btn btn-ghost" id="nut-ctrlaltdel" type="button">Ctrl + Alt + Del</button>
+        {# "Kết nối lại" = TẢI LẠI TRANG, không phải `rfb.connect()`. Vé đã tiêu,
+           nên lần sau phải xin vé mới — mà vé chỉ cấp ở route. Tự nối lại bằng
+           vé cũ chỉ tạo một vòng lặp thất bại im lặng. #}
+        <button class="btn btn-ghost" id="nut-noi-lai" type="button"
+                style="display:none;">{{ _("Kết nối lại") }}</button>
+        {# Toàn màn hình: API của TRÌNH DUYỆT, không phải của noVNC. Không chạm
+           giao thức, không chạm phiên — nên nó an toàn để thêm. #}
+        <button class="btn btn-ghost" id="nut-toan-man" type="button">{{ _("Toàn màn hình") }}</button>
+        <a class="btn btn-ghost" href="{{ app.route_prefix }}/{{ may.id }}">{{ _("Về trang máy") }}</a>
+        <span class="tt" id="tt"></span>
+      </div>
+
+      {# `tabindex` để khung nhận được phím; thiếu nó thì chuột chạy mà bàn phím
+         không, và triệu chứng là "gõ không lên chữ" — rất khó đoán ra. #}
+      <div id="khung" class="vps-cs-khung" tabindex="0"
+           aria-label="{{ _('Màn hình máy %(ten)s') % {'ten': may.ten or may.id[:8]} }}"></div>
+
+      <p class="muted" style="margin:8px 0 0;font-size:12px;">
+        {{ _("Bấm vào khung rồi gõ như trên máy thật. Console dùng để cứu hộ — nó chậm hơn RDP và không hỗ trợ copy/paste hay kéo-thả.") }}
+      </p>
+    </div>
+
+    <div class="vps-cs-cot">
+      <div class="vps-cs-o">
+        <h3>{{ _("Khi nào nên dùng console") }}</h3>
+        <ul>
+          <li>{{ _("Không vào được máy bằng RDP") }}</li>
+          <li>{{ _("Vừa đổi tường lửa hoặc cấu hình mạng và tự khoá mình ra ngoài") }}</li>
+          <li>{{ _("Đang cài Windows lần đầu") }}</li>
+          <li>{{ _("Windows không khởi động được") }}</li>
+        </ul>
+        <h3>{{ _("Khi nào nên dùng RDP") }}</h3>
+        <ul>
+          <li>{{ _("Làm việc hằng ngày trên máy") }}</li>
+          <li>{{ _("Truyền tệp, copy/paste dữ liệu") }}</li>
+          <li>{{ _("Cần hình mượt và độ trễ thấp") }}</li>
+        </ul>
+      </div>
+
+      <div class="vps-cs-o vps-cs-meo">
+        <b>{{ _("Phiên truy cập một lần") }}</b>
+        {# Nói ĐÚNG tính chất, và bỏ cái đồng hồ. Vé tiêu ngay lúc nối, nên
+           "còn 14:47" là một con số không có nguồn. #}
+        <p>{{ _("Mỗi lần mở console là một vé dùng một lần. Mất kết nối thì phải tải lại trang để xin vé mới — nút “Kết nối lại” làm đúng việc đó.") }}</p>
+      </div>
     </div>
   </div>
 
@@ -41,14 +93,17 @@
 
     let rfb = null;
 
-    function bao(chu, loi) {
-      tt.textContent = chu;
-      tt.className = loi ? "alert alert-err" : "muted";
+    // Trạng thái thành BADGE, cùng ngôn ngữ với phần còn lại của khu VPS:
+    // chấm + chữ, không bao giờ chỉ màu.
+    function bao(chu, lop) {
+      tt.className = "tt badge " + lop;
+      tt.innerHTML = '<span class="dot"></span>';
+      tt.appendChild(document.createTextNode(chu));
     }
 
     function noi() {
       nutNoiLai.style.display = "none";
-      bao({{ _("Đang kết nối…") | tojson }}, false);
+      bao({{ _("Đang kết nối…") | tojson }}, "b-warn");
       // Mật khẩu VNC là vé của Proxmox. Nó chỉ mở được ĐÚNG cổng của phiên
       // này, trên một máy chủ mà khách không biết địa chỉ.
       rfb = new RFB(khung, duong, {
@@ -59,24 +114,35 @@
       // Đừng đổi độ phân giải máy của khách chỉ vì cửa sổ trình duyệt to hay nhỏ.
       rfb.resizeSession = false;
       rfb.addEventListener("connect", () => {
-        bao({{ _("Đã kết nối. Bấm vào khung rồi gõ như trên máy thật.") | tojson }}, false);
+        bao({{ _("Đã kết nối") | tojson }}, "b-ok");
         khung.focus();
       });
       rfb.addEventListener("disconnect", (e) => {
         // Vé đã tiêu, nên KHÔNG tự nối lại: lần sau phải xin vé mới, tức tải
         // lại trang. Tự nối lại bằng vé cũ chỉ tạo một vòng lặp thất bại im lặng.
         bao(e.detail.clean
-          ? {{ _("Đã ngắt kết nối.") | tojson }}
-          : {{ _("Mất kết nối. Tải lại trang để mở console mới.") | tojson }}, !e.detail.clean);
+          ? {{ _("Đã ngắt kết nối") | tojson }}
+          : {{ _("Mất kết nối") | tojson }}, e.detail.clean ? "b-grey" : "b-err");
         nutNoiLai.style.display = "";
       });
       rfb.addEventListener("securityfailure", () => {
-        bao({{ _("Máy chủ từ chối phiên console. Tải lại trang để lấy vé mới.") | tojson }}, true);
+        bao({{ _("Máy chủ từ chối phiên") | tojson }}, "b-err");
+        nutNoiLai.style.display = "";
       });
     }
 
     document.getElementById("nut-ctrlaltdel")
-      .addEventListener("click", () => rfb && rfb.sendCtrlAltDel());
+      .addEventListener("click", () => {
+        if (rfb) { rfb.sendCtrlAltDel(); khung.focus(); }
+      });
+    // Trả tiêu điểm về khung sau mỗi nút: một thanh công cụ giữ tiêu điểm là
+    // một thanh công cụ làm khách "gõ không lên chữ" ngay sau khi bấm nó.
+    document.getElementById("nut-toan-man")
+      .addEventListener("click", () => {
+        if (document.fullscreenElement) document.exitFullscreen();
+        else if (khung.requestFullscreen) khung.requestFullscreen();
+        khung.focus();
+      });
     nutNoiLai.addEventListener("click", () => location.reload());
     noi();
   </script>

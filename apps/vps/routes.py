@@ -27,7 +27,7 @@ from sqlalchemy import select
 
 import apps.vps as vps_app
 from apps.vps import bang_thong, dieu_khoan, nhan, os_images, ten_may
-from apps.vps.cost import CHU_KY_NGAY, PLANS, lay_plan
+from apps.vps.cost import CHU_KY_NGAY, PLANS, dia_tong_gb, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
                                provisioning, sao_luu)
@@ -125,6 +125,23 @@ def _may_cua_toi(db, user_id: str) -> list:
         })
     return ket_qua
 
+
+#: Mục lục của trang cài Windows — **một nguồn** cho cả cột bên trái lẫn thứ tự
+#: các mục bên phải.
+#:
+#: ⚠️ Đây là **mục lục**, không phải tiến độ. Không có bước nào lưu ở máy chủ, và
+#:    Prompt 04 cấm dựng một cái: một dấu tích lưu được là một lời hứa rằng hệ
+#:    thống biết khách đang ở đâu, mà nó thì không biết.
+BUOC_CAI_DAT: tuple[tuple[int, str], ...] = (
+    (1, N_("Mở console")),
+    (2, N_("Bắt đầu cài")),
+    (3, N_("Chọn ổ đĩa")),
+    (4, N_("Chờ cài và khởi động lại")),
+    (5, N_("Đặt mật khẩu Administrator")),
+    (6, N_("Bật Remote Desktop")),
+    (7, N_("Gỡ đĩa cài")),
+    (8, N_("Nối bằng Remote Desktop")),
+)
 
 #: Khoá trong `chi_tiet` **không hiện cho khách**, vì hai lý do khác nhau:
 #:
@@ -504,14 +521,21 @@ def huong_dan_cai_dat(instance_id: str, request: Request,
     ip = db.execute(
         select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
     img = os_images.lay_os(may.os_id)
+    plan = lay_plan(may.plan_id)
     return templates.TemplateResponse(request, "vps_cai_dat.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
         "menu_trai": _menu("cai_dat", may=may),
         "os": img,
-        "plan": lay_plan(may.plan_id),
+        "plan": plan,
+        "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
+        "badge": nhan.badge(may.trang_thai),
         "dia_chi": ip.dia_chi if ip is not None else "",
         "cong": img.cong_quen if img is not None else 3389,
+        # Đĩa THẬT của máy này (gói + đĩa mua thêm) — sơ đồ hộp thoại Windows
+        # dựng từ con số này, nên nó khớp đúng thứ khách sắp nhìn thấy (D-03).
+        "dia_gb": dia_tong_gb(may.plan_id, may.dia_them_gb) if plan else 0,
+        "buoc_muc_luc": BUOC_CAI_DAT,
         "csrf_token": issue_csrf_token(request),
     })
 
@@ -733,10 +757,19 @@ def trang_console(instance_id: str, request: Request,
         log.warning("VPS console: khong mo duoc phien VNC cho %s: %s", may.id, exc)
         return _ve_trang(_t("Không mở được console lúc này. Thử lại sau ít phút."))
 
+    ip = db.execute(
+        select(VpsIp).where(VpsIp.instance_id == may.id)).scalars().first()
     return templates.TemplateResponse(request, "vps_console.html", {
         "nav": MANIFEST.slug, "app": MANIFEST,
         "may": may,
         "menu_trai": _menu("console", may=may),
+        # Dải danh tính dùng chung với trang máy và trang cài Windows: ba trang
+        # cùng hiện MỘT danh tính, và ba bản sao sẽ lệch.
+        "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
+        "badge": nhan.badge(may.trang_thai),
+        "plan": lay_plan(may.plan_id),
+        "os": os_images.lay_os(may.os_id),
+        "dia_chi": ip.dia_chi if ip is not None else "",
         "ve": console.cap_ve(db, may, _chu(request),
                              cong=ve_pve.get("port") or 0,
                              pve_ve=ve_pve.get("ticket") or ""),

@@ -49,3 +49,16 @@
 {% endif %}
 
 {% endblock %}
+
+{# Nút "sao chép" cho mọi khối mã và mọi `<code data-chep>` trên các trang VPS.
+
+   ⚠️ Nạp ở VỎ, không ở từng trang: ba trang trong một máy đều có thứ để chép
+      (địa chỉ, lệnh `mstsc`, khối PowerShell bật RDP), và trang nào quên nạp
+      thì mất nút **lặng lẽ** — khối vẫn hiện, chỉ là không có nút, và không ai
+      để ý cho tới khi một khách chép hụt một dòng.
+
+   `?v={{ asset_ver }}` là bắt buộc: quy tắc 6 của `CLAUDE.md`. Tệp này đã có
+   trong `TAI_SAN_CO_VERSION`. #}
+{% block scripts %}
+<script src="/static/sao_chep.js?v={{ asset_ver }}" defer></script>
+{% endblock %}

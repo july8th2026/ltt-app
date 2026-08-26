@@ -742,6 +742,139 @@ def test_ba_trang_trong_mot_may_dung_CHUNG_macro_danh_tinh():
     assert 'mac.dinh_may(' in _chi_tiet_html(), "trang may khong dung macro chung"
 
 
+# ── 10 · Đợt 5 · Hướng dẫn cài Windows ────────────────────────────────────
+
+def _cai_dat_html() -> str:
+    t = (TEMPLATES / "vps_cai_dat.html").read_text(encoding="utf-8")
+    return re.sub(r"(?s)\{#.*?#\}", " ", t)
+
+
+def test_cot_buoc_la_MUC_LUC_khong_phai_TIEN_DO():
+    """🔴 Không có tiến độ nào lưu ở máy chủ, và Prompt 04 cấm dựng một cái.
+
+    Ảnh tham chiếu có "3 / 8", dấu tích, và nút "Tôi đã hoàn tất bước này". Cả
+    ba đều hứa rằng hệ thống **biết khách đang ở đâu** — mà nó thì không biết.
+    Một dấu tích không lưu được còn tệ hơn không có: nó biến mất khi tải lại
+    trang, và khách sẽ tưởng mình mất tiến độ.
+    """
+    t = _cai_dat_html()
+    for cam in ("hoàn tất bước này", "Bỏ qua hướng dẫn", "checked", "progress",
+                "Tạo ticket", "24/7"):
+        assert cam not in t, f"trang cai dat co dau hieu tien do/ho tro gia: {cam!r}"
+    assert not re.search(r"\d\s*/\s*8", t), "co mot bo dem tien do kieu `3 / 8`"
+    assert 'href="#buoc-' in t, "cot buoc khong phai muc luc co mo neo"
+
+
+def test_tam_buoc_doc_tu_MOT_nguon():
+    """Cột bên trái và các mục bên phải phải cùng một danh sách. Hai danh sách
+    chép tay thì lần thêm bước sau chỉ sửa một bên, và mục lục trỏ vào hư không.
+    """
+    from apps.vps.routes import BUOC_CAI_DAT
+
+    assert len(BUOC_CAI_DAT) == 8, f"co {len(BUOC_CAI_DAT)} buoc, cho doi 8"
+    t = _cai_dat_html()
+    assert "buoc_muc_luc" in t, "cot buoc khong doc tu route"
+    for so, _nhan in BUOC_CAI_DAT:
+        assert f'id="buoc-{so}"' in t, f"khong co muc tuong ung buoc {so}"
+
+
+def test_canh_bao_PRESS_ANY_KEY_giu_NGUYEN_VAN():
+    """Đây là chỗ tốn công nhất trong cả quá trình cài, và nó không tự hiện ra.
+
+    Bấm một phím ở màn hình đó là quay lại **đầu** trình cài đặt — tức mất 15–25
+    phút vừa chờ.
+    """
+    t = _cai_dat_html()
+    assert "Press any key to boot from CD or DVD" in t
+    assert "đừng bấm gì cả" in t
+    assert "quay lại đầu trình cài đặt" in t, (
+        "mat cau giai thich HAU QUA — canh bao khong noi vi sao thi khong ai nghe")
+    i = t.index("Press any key")
+    assert "vps-canh-to" in t[max(0, i - 700):i], (
+        "canh bao khong con nam trong khoi noi bat")
+
+
+def test_so_do_o_dia_DUNG_SO_THAT_cua_khach():
+    """🔴 D-03 · Sơ đồ, KHÔNG phải ảnh chụp.
+
+    Một ảnh bitmap mang số liệu **cứng** (`80.0 GB`) sẽ hiện `80.0 GB` cho khách
+    gói Nhỏ — sai đúng ở con số họ cần đối chiếu, và sai ở bước mà chọn nhầm thì
+    phải cài lại từ đầu.
+    """
+    t = _cai_dat_html()
+    assert "Drive 0 Unallocated Space" in t, (
+        "mat chuoi khach phai NHAN RA tren man hinh")
+    assert "{{ dia_gb }}" in t, "so do dang viet cung dung luong dia"
+    assert "<img" not in t, "trang dang dung mot anh — xem quyet dinh D-03"
+
+    from apps.vps.routes import huong_dan_cai_dat   # noqa: F401
+    src = (GOC / "apps" / "vps" / "routes.py").read_text(encoding="utf-8")
+    assert "dia_tong_gb(may.plan_id, may.dia_them_gb)" in src, (
+        "dia_gb phai gom ca dia mua them, khong chi dia cua goi")
+
+
+# ── 11 · Đợt 6 · Console ──────────────────────────────────────────────────
+
+def _console_html() -> str:
+    t = (TEMPLATES / "vps_console.html").read_text(encoding="utf-8")
+    return re.sub(r"(?s)\{#.*?#\}", " ", t)
+
+
+def test_console_KHONG_hua_thuat_toan_ma_hoa_va_KHONG_dem_nguoc():
+    """🔴 Hai lời hứa bịa trong ảnh tham chiếu.
+
+    ① "AES-256" — không nơi nào trong mã khẳng định thuật toán.
+    ② "Phiên sẽ hết hạn sau 14:47" — vé tiêu **ngay lúc mở WebSocket**, nên sau
+      khi nối xong **không còn hạn nào để đếm**. Một đồng hồ ở đây đếm một thứ
+      không có, và nó sẽ chạy hết rồi… không có gì xảy ra.
+    """
+    t = _console_html()
+    for cam in ("AES", "Encrypted", "setInterval", "countdown", "dem_nguoc",
+                "Chrome", "navigator.userAgent"):
+        assert cam not in t, f"console hua/hien mot thu khong co nguon: {cam!r}"
+    # Tính chất "một lần" thì GIỮ — nó có thật và đáng nói ra.
+    assert "một lần" in t, "mat tinh chat 've dung mot lan', mot thu CO that"
+
+
+def test_console_GIU_NGUYEN_giao_thuc():
+    """⛔ Đợt 6 chỉ đổi trình bày. Bốn thứ này là giao thức, không phải giao diện.
+
+    Mất một trong bốn là mất một tính chất bảo mật hoặc một hành vi mà khách
+    dựa vào — và mất **lặng lẽ**, vì trang vẫn hiện ra một khung đen.
+    """
+    t = _console_html()
+    assert "rfb.scaleViewport = true" in t
+    assert "rfb.resizeSession = false" in t, (
+        "dang doi do phan giai may cua khach theo cua so trinh duyet")
+    assert 'tabindex="0"' in t, (
+        "khung mat `tabindex` — chuot chay ma ban phim khong, va trieu chung la "
+        "'go khong len chu'")
+    assert "location.reload()" in t and "rfb.connect" not in t, (
+        "dang tu noi lai bang ve DA TIEU — mot vong lap that bai im lang")
+
+
+def test_console_anh_xa_DUNG_BA_su_kien_RFB_dang_co():
+    """Không phát minh sự kiện thứ tư. noVNC phát `connect`, `disconnect`
+    (clean hoặc không) và `securityfailure` — bốn trạng thái, ba sự kiện.
+    """
+    t = _console_html()
+    for sk in ("connect", "disconnect", "securityfailure"):
+        assert f'addEventListener("{sk}"' in t, f"mat nhanh su kien {sk!r}"
+    assert "e.detail.clean" in t, (
+        "khong con phan biet ngat SACH voi MAT ket noi — hai thu khac nhau voi "
+        "nguoi dang dung")
+
+
+def test_console_trang_thai_la_BADGE_co_cham_VA_chu():
+    """Màu không bao giờ đứng một mình — luật của cả khu, và console là chỗ dễ
+    quên nhất vì nó gần như không có chữ nào khác."""
+    t = _console_html()
+    assert 'tt.className = "tt badge "' in t, "trang thai console khong dung badge"
+    for lop in ("b-ok", "b-err", "b-warn", "b-grey"):
+        assert lop in t, f"thieu mau trang thai {lop!r}"
+    assert 'innerHTML = \'<span class="dot"></span>\'' in t, "badge khong co cham"
+
+
 # ── phụ trợ ───────────────────────────────────────────────────────────────
 
 def _ma_trang_thai_trong_bang() -> set[str]:

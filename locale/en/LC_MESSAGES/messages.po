@@ -11478,3 +11478,94 @@ msgstr "Once API jobs start spending credit, the per-tool split shows up here."
 
 msgid "Thử ngay"
 msgstr "Try it"
+
+# Khu VPS — huong dan cai Windows (Dot 5)
+
+msgid "Bắt đầu cài"
+msgstr "Start the installer"
+
+msgid "Chọn ổ đĩa"
+msgstr "Choose the disk"
+
+msgid "Chờ cài và khởi động lại"
+msgstr "Wait through the reboots"
+
+msgid "Đặt mật khẩu Administrator"
+msgstr "Set the Administrator password"
+
+msgid "Bật Remote Desktop"
+msgstr "Turn on Remote Desktop"
+
+msgid "Gỡ đĩa cài"
+msgstr "Remove the installation media"
+
+msgid "Nối bằng Remote Desktop"
+msgstr "Connect over Remote Desktop"
+
+msgid "Quan trọng"
+msgstr "Important"
+
+msgid "Máy đã sẵn ở màn hình đầu tiên của trình cài đặt Windows — bạn không phải bấm gì để vào đó."
+msgstr "The machine is already at the first screen of the Windows installer — you do not have to press anything to get there."
+
+msgid "Sơ đồ minh hoạ — máy của bạn có 1 ổ %(n)s GB, hệ thống sẽ hiển thị đúng như dòng trên."
+msgstr "Illustration — your machine has one %(n)s GB disk, and the installer will show exactly the row above."
+
+msgid "Địa chỉ đang được chuẩn bị — tải lại trang sau vài phút."
+msgstr "The address is still being prepared — reload this page in a few minutes."
+
+# Khu VPS — console (Dot 6)
+
+msgid "Toàn màn hình"
+msgstr "Full screen"
+
+msgid "Đã kết nối"
+msgstr "Connected"
+
+msgid "Đã ngắt kết nối"
+msgstr "Disconnected"
+
+msgid "Mất kết nối"
+msgstr "Connection lost"
+
+msgid "Máy chủ từ chối phiên"
+msgstr "The server refused the session"
+
+msgid "Màn hình máy %(ten)s"
+msgstr "Screen of machine %(ten)s"
+
+msgid "Bấm vào khung rồi gõ như trên máy thật. Console dùng để cứu hộ — nó chậm hơn RDP và không hỗ trợ copy/paste hay kéo-thả."
+msgstr "Click the frame and type as you would on a real machine. The console is for recovery — it is slower than RDP and supports neither copy/paste nor drag and drop."
+
+msgid "Khi nào nên dùng console"
+msgstr "When to use the console"
+
+msgid "Khi nào nên dùng RDP"
+msgstr "When to use RDP"
+
+msgid "Không vào được máy bằng RDP"
+msgstr "You cannot reach the machine over RDP"
+
+msgid "Vừa đổi tường lửa hoặc cấu hình mạng và tự khoá mình ra ngoài"
+msgstr "You just changed the firewall or network settings and locked yourself out"
+
+msgid "Đang cài Windows lần đầu"
+msgstr "You are installing Windows for the first time"
+
+msgid "Windows không khởi động được"
+msgstr "Windows will not boot"
+
+msgid "Làm việc hằng ngày trên máy"
+msgstr "Day-to-day work on the machine"
+
+msgid "Truyền tệp, copy/paste dữ liệu"
+msgstr "Transferring files, copy and paste"
+
+msgid "Cần hình mượt và độ trễ thấp"
+msgstr "You need a smooth picture and low latency"
+
+msgid "Phiên truy cập một lần"
+msgstr "One-time access session"
+
+msgid "Mỗi lần mở console là một vé dùng một lần. Mất kết nối thì phải tải lại trang để xin vé mới — nút “Kết nối lại” làm đúng việc đó."
+msgstr "Each console session uses a one-time ticket. If the connection drops you must reload the page to get a new one — that is exactly what “Reconnect” does."

@@ -233,6 +233,71 @@ def select_gateway():
     return select(VpsGateway)
 
 
+def _ghi_console(ra: pathlib.Path, dbmod, can: set[str]) -> pathlib.Path:
+    """Dựng trang console bằng cách render template trực tiếp.
+
+    🔴 **Không đi qua route.** `trang_console` mở một phiên VNC thật trên Proxmox
+       trước khi render — không có Proxmox thì nó chuyển hướng kèm câu lỗi, và ta
+       không bao giờ thấy trang. Ở đây ta gọi thẳng template với một vé giả.
+
+    ⛔ Vì thế cảnh này chứng minh **bố cục và trạng thái ban đầu**, và KHÔNG
+       chứng minh gì về: bắt tay RFB, gõ phím, chuột, Ctrl+Alt+Del, ngắt–nối
+       lại. Những thứ đó cần Proxmox thật (quyết định D-02).
+    """
+    from apps.vps import nhan, os_images
+    from apps.vps.cost import lay_plan
+    from apps.vps.manifest import MANIFEST
+    from apps.vps.services import console as console_svc
+    from server.templating import templates
+
+    may = _doi_tuong_may_dau(dbmod)
+    assert may is not None, "khong co may gia nao de dung trang console"
+    html = templates.get_template("vps_console.html").render(
+        request=_YEU_CAU_GIA, nav=MANIFEST.slug, app=MANIFEST, may=may,
+        menu_trai=[], trang_thai_nhan=nhan.trang_thai(may.trang_thai),
+        badge=nhan.badge(may.trang_thai), plan=lay_plan(may.plan_id),
+        os=os_images.lay_os(may.os_id), dia_chi="45.77.23.125",
+        ve="ve-gia-chi-de-render", vnc_mat_khau="mat-khau-gia",
+        han_ve_giay=console_svc.HAN_VE_GIAY,
+        lang_hien_tai=lambda: "vi", asset_ver="mau", so_du_credit=lambda r: 0,
+        url_for=lambda ten, path="": f"/static/{path}",
+        app_tabs=lambda r: [], home_workspace=False, csrf_token="x")
+    return _ghi(ra, "E_console", html, can)
+
+
+class _YeuCauGia:
+    """Đủ thuộc tính để `base.html` render — không hơn."""
+    scope = {"path": "/vps/console-mau"}
+    base_url = "https://mau.local/"
+    query_params: dict = {}
+    cookies: dict = {}
+    headers: dict = {}
+    session: dict = {}
+    state = type("S", (), {})()
+
+
+_YEU_CAU_GIA = _YeuCauGia()
+
+
+def _doi_tuong_may_dau(dbmod):
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsInstance
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        m = db.execute(select(VpsInstance)).scalars().first()
+        if m is not None:
+            db.expunge(m)
+        return m
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
 def _danh_sach_may(dbmod) -> list[dict]:
     """`[{id, trang_thai}]` của các máy giả — để dựng trang C cho từng trạng thái."""
     from sqlalchemy import select
@@ -387,6 +452,22 @@ def dung(ra: pathlib.Path) -> list[pathlib.Path]:
                 r = client.get(f"/vps/{m['id']}")
                 assert r.status_code == 200,                     f"/vps/{m['id']} tra {r.status_code}"
                 tep.append(_ghi(ra, f"C_may_{m['trang_thai']}", r.text, can))
+
+            # ── D · Hướng dẫn cài Windows ─────────────────────────────────
+            #    Hai bản: một máy Windows Server (có bước chọn phiên bản) và
+            #    một máy Windows 10 (không có) — nhánh điều kiện phải soi được.
+            for m in _danh_sach_may(dbmod)[:3]:
+                r = client.get(f"/vps/{m['id']}/cai-dat")
+                assert r.status_code == 200,                     f"/cai-dat tra {r.status_code}"
+                tep.append(_ghi(ra, f"D_cai_dat_{m['trang_thai']}", r.text, can))
+
+            # ── E · Console ───────────────────────────────────────────────
+            #    ⚠️ Route console gọi Proxmox THẬT để mở phiên VNC, nên ở đây nó
+            #       luôn chuyển hướng về trang máy kèm một câu lỗi. Ta dựng
+            #       trang bằng cách gọi thẳng template với dữ liệu giả — đủ để
+            #       soi BỐ CỤC (thứ đọc mã không trả lời được), và KHÔNG đủ để
+            #       nói gì về giao thức. Nói rõ ở đây để không ai trích dẫn sai.
+            tep.append(_ghi_console(ra, dbmod, can))
         finally:
             client.close()
             dbmod.reset_engine()
