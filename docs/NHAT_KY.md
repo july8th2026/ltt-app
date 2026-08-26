@@ -13813,3 +13813,60 @@ script Turnstile của Cloudflare).
 
 Còn nợ: bản sao secrets cùng ổ · A-02 · xoay khoá provider + H35.10. Và **một
 quyết định của chủ sản phẩm**: 5/9 app khách thấy vẫn nhãn *Đang phát triển*.
+
+## 2026-08-26 — H42: CamCLI 1.1.0, ba đường cắm và deploy production
+
+- **Mục tiêu:** sửa luồng “Cắm code” đứng vô hạn; phát hành EXE, ZIP+BAT và
+  hướng dẫn tay trên trang Dev API.
+- **Hạng mục:** H42 — hoàn thành.
+- **Trạng thái:** xong, production `ready`.
+
+### Nguyên nhân và thay đổi
+
+Bản 1.0 là GUI EXE (`--windowed`) nhưng BAT/tài liệu gọi như console, nên
+PowerShell không nhận stdout/exit code đáng tin cậy. GUI không bắt Promise lỗi,
+không có tiến độ, chưa cắm Codex VS Code và tin cờ `da_cam` cũ thay vì đọc lại
+file/registry. Nhiều lệnh con `reg`/`setx`, mỗi lệnh có timeout dài, làm triệu
+chứng “Đang cắm…” kéo dài thêm.
+
+Bản 1.1.0 dùng một lõi cho ba bề mặt nhưng tách đúng hai binary: GUI EXE và
+console EXE. Người dùng chọn từng target; trạng thái đo từ hệ thống thật; lỗi
+bridge/bước con hiện rõ và trả mã khác 0. ZIP chứa console EXE + BAT/PowerShell
+tự xin Administrator, không cần Python; khoá nhập ẩn và không nằm trên command
+line/tệp tạm. Web có route tải riêng, phiên bản, dung lượng và SHA-256.
+
+### Test và phát hành đã chạy
+
+| Lệnh / kiểm tra | Kết quả thật |
+|---|---|
+| `python tools\scan_source_secrets.py` | **PASS**, 0 finding |
+| `python tools\test_nhanh.py` lần đầu trên worktree sạch | **FAIL 2**: trang chỉ hiện SHA/link khi chưa có artifact; vendor engine bị Git loại trừ khỏi worktree |
+| `python tools\test_nhanh.py --lf` sau sửa | **PASS**, lỗi vừa sửa 1 pass + pha tuần tự 59 pass |
+| `python tools\gate.py` lần đầu | backend + 20 bước pass; **FAIL 3 frontend** vì worktree sạch thiếu `node_modules` |
+| `python tools\gate.py` sau nối dependency đã khoá | **PASS 23/23**; backend 4.066 pass, 28 skip + pha tuần tự 59 pass; ba frontend pass |
+| `python tools\dong_goi_exe.py phat-hanh --quet` | installer 24,8 MB + ZIP 7,4 MB; GUI, installer, console và ZIP đều Defender **SẠCH** |
+| console `--phien-ban` | **PASS**, `cam_cli 1.1.0` |
+| `python tools\build_release.py --output D:\LTTReleasesH42` | **PASS**, 2.111 file, 63,7 MB, secret scan 0 |
+| `deploy/windows/update.ps1` qua wrapper nâng quyền | **EXITCODE=0**; backup, migration, ba dịch vụ và readiness PASS |
+| GET range hai URL tải | **206**; EXE 25.953.944 byte, ZIP 7.788.967 byte |
+| Playwright production `/huong-dan/cong-cu` + `/developers/cli` | **PASS**: đủ 3 phương thức, đúng 1.1.0/hash; console 0 error; request trang Dev không hỏng |
+
+Artifact nằm ở `C:\LTTPlatform\data\api_dist`; giữ nguyên bộ cài 1.0.0 để có
+đường lùi. Backup trước deploy: `ltt_data_20260826_180400.zip`. Release trước ở
+`C:\LTTPlatform\app.previous`.
+
+### Quyết định mới
+
+Q110 đã thêm: ba đường phân phối dùng một lõi, GUI/console là hai binary riêng,
+artifact bắt buộc có phiên bản + SHA-256 + Defender scan.
+
+### Cách lùi lại
+
+Chạy `C:\LTTPlatform\app\deploy\windows\rollback.ps1`. Artifact ở ngoài release;
+nếu chỉ CamCLI 1.1.0 lỗi thì giữ code web và gỡ đúng hai tệp 1.1.0 sau khi đã
+xác nhận target, trang sẽ tự chọn lại 1.0.0.
+
+### Còn tồn đọng
+
+EXE chưa có chứng chỉ ký số nên SmartScreen có thể cảnh báo; web nói rõ cách
+đối chiếu SHA-256 và không bao giờ yêu cầu tắt antivirus.
