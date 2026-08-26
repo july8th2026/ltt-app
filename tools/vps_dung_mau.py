@@ -138,7 +138,7 @@ def _co_cong_vao(dbmod) -> None:
     gen = dbmod.get_session()
     db = next(gen)
     try:
-        db.add(VpsGateway(ten="cong-vao-mau", vung="sg",
+        db.add(VpsGateway(ten="cong-vao-mau", vung="sgp",
                           ip_cong_khai="203.0.113.10",
                           dang_nhan_may_moi=True))
         db.commit()
@@ -147,6 +147,76 @@ def _co_cong_vao(dbmod) -> None:
             next(gen)
         except StopIteration:
             pass
+
+
+#: Bộ máy giả phủ các trạng thái mà Prompt 02 đòi soi bằng mắt.
+#:
+#: ⚠️ Đây là **dữ liệu để render**, không phải dữ liệu thật và không phải một
+#:    kịch bản thử nghiệp vụ. Nó tồn tại để trả lời đúng một câu hỏi: *"trạng
+#:    thái này hiện ra trông thế nào"* — câu mà đọc template không trả lời được.
+MAY_MAU = (
+    # (ten, plan, os, trang_thai, con_ngay, bang_thong_%, giam_toc, ip, ly_do)
+    ("vps-01", "vps-vua", "winsrv2022-gui", "dang_chay", 24, 14, False,
+     "45.77.23.125", ""),
+    ("vps-02", "vps-nho", "winsrv2022-core", "da_tat", 2, 92, False,
+     "45.77.23.126", ""),
+    ("may-render", "vps-lon", "win10", "dang_tao", 30, 0, False, "", ""),
+    ("vps-04", "vps-nho", "winsrv2016-core", "bi_treo", -3, 100, True,
+     "45.77.23.128", "Hết hạn thanh toán ngày 24/08/2026."),
+    ("vps-05", "vps-vua", "winsrv2022-gui", "loi", 12, 41, False, "",
+     "Không cấp được địa chỉ IP: hết địa chỉ rảnh ở cổng vào."),
+)
+
+
+def _tao_may_gia(dbmod, user_id: str) -> None:
+    """Dựng bộ máy giả để soi màn B (và màn C ở Đợt 4).
+
+    🔴 **Vì sao phải giả.** Sau đợt dọn 25/08, bốn bảng `vps_*` về **0 dòng** —
+       không có máy nào trên máy này, và tạo một máy thật thì trừ credit thật và
+       ăn một Reserved IP của Vultr (hạn ngạch đếm cả IP vừa xoá). Mà ba trạng
+       thái đáng soi nhất — `dang_tao`, `bi_treo`, `loi` — thì **không dựng được
+       theo yêu cầu** kể cả khi có máy thật: phải chờ chúng tự xảy ra.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from apps.vps.cost import lay_plan
+    from apps.vps.tables import VpsInstance, VpsIp
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        gw = db.execute(select_gateway()).scalars().first()
+        gid = gw.id if gw is not None else ""
+        bay_gio = datetime.now(timezone.utc)
+        for i, (ten, plan_id, os_id, tt, con_ngay, pt, giam, ip, ly_do) in \
+                enumerate(MAY_MAU):
+            plan = lay_plan(plan_id)
+            han = int(plan.bang_thong_gb) * 1024 ** 3 if plan else 0
+            m = VpsInstance(
+                user_id=user_id, ten=ten, plan_id=plan_id, os_id=os_id,
+                gateway_id=gid, trang_thai=tt, vmid=9000 + i, ly_do=ly_do,
+                bang_thong_byte=int(han * pt / 100), bi_giam_toc=giam,
+                paid_until=bay_gio + timedelta(days=con_ngay),
+                sao_luu_luc=(bay_gio - timedelta(days=3)
+                             if tt in ("dang_chay", "da_tat") else None),
+            )
+            db.add(m)
+            db.flush()
+            if ip:
+                db.add(VpsIp(gateway_id=gid, dia_chi=ip, instance_id=m.id))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def select_gateway():
+    from sqlalchemy import select
+
+    from apps.vps.tables import VpsGateway
+    return select(VpsGateway)
 
 
 def _dang_nhap(client) -> None:
@@ -237,7 +307,7 @@ def dung(ra: pathlib.Path) -> list[pathlib.Path]:
     ra.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="vps-mau-") as tmp:
         dbmod = _mo_moi_truong(pathlib.Path(tmp))
-        _tao_khach(dbmod)
+        user_id = _tao_khach(dbmod)
         _co_cong_vao(dbmod)
         client = _client()
         tep: list[pathlib.Path] = []
@@ -263,12 +333,20 @@ def dung(ra: pathlib.Path) -> list[pathlib.Path]:
             assert r.status_code == 200
             tep.append(_ghi(ra, "A_dieu_khoan", r.text, can))
 
-            # ── B · Đã đăng nhập, 0 máy, tạo được ──────────────────────────
+            # ── B · Đã đăng nhập, 0 máy — trạng thái RỖNG ─────────────────
+            #    Người vừa tạo tài khoản xong thấy đúng màn này. Một bảng trống
+            #    ở đây là một ngõ cụt: họ không biết bước tiếp là gì.
             _co_suc_chua(True)
             _dang_nhap(client)
             r = client.get("/vps")
             assert r.status_code == 200, f"/vps da dang nhap tra {r.status_code}"
             tep.append(_ghi(ra, "B_dang_nhap_khong_may", r.text, can))
+
+            # ── B' · Đã đăng nhập, NĂM máy ở năm trạng thái khác nhau ─────
+            _tao_may_gia(dbmod, user_id)
+            r = client.get("/vps")
+            assert r.status_code == 200
+            tep.append(_ghi(ra, "B_dang_nhap_co_may", r.text, can))
         finally:
             client.close()
             dbmod.reset_engine()

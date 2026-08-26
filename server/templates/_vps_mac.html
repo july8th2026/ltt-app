@@ -1,0 +1,100 @@
+{# Macro dùng chung của khu VPS.
+
+   ## Vì sao tệp này sinh ra ở Đợt 3, không phải Đợt 1
+
+   Kế hoạch ban đầu tạo nó ở Đợt 1 cùng với tầng CSS. Đã hoãn, và lý do đáng ghi
+   lại: ở Đợt 1 **không macro nào có người dùng thứ hai**. Một tệp macro mà mỗi
+   macro chỉ được gọi từ một chỗ là một tầng gián tiếp không đổi lại được gì —
+   và nó ra đời ở đúng cái đợt mà tiêu chí là *"không đổi gì"*.
+
+   Từ Đợt 3 thì khác: `badge_trang_thai` và `do_bang_thong` dùng ở trang danh
+   sách (B) **và** trang một máy (C, Đợt 4). Hai bản sao của cùng một bảng màu
+   trạng thái sẽ lệch, và cái lệch sẽ là cái nói sai về máy của khách.
+
+   ## Ranh giới: chỉ những gì lặp ở ≥ 2 TRANG
+
+   Không macro cho hero, khối Nguy hiểm, cột bước cài đặt hay thanh công cụ
+   console — mỗi thứ chỉ sống ở **một** trang. Prompt 00 §8 cấm dựng một khung
+   thành phần; đây không phải một khung, đây là bốn hàm.
+#}
+
+{# ── Badge trạng thái ──────────────────────────────────────────────────────
+   Màu ĐỌC TỪ `nhan.badge()`, không viết trong template. Bốn trang cùng hiện
+   trạng thái này; bốn bảng màu chép tay thì lần sửa sau chỉ sửa một bảng.
+
+   ⚠️ Chấm + CHỮ, luôn luôn. Một ô đỏ không có chữ là một ô vô nghĩa với người
+      không phân biệt được màu — và `.badge` của `ltt.css` đã dựng sẵn cả hai. #}
+   ⚠️ Nhận **nhãn + class đã tra sẵn**, không nhận mã thô. Tra bảng là việc của
+      `apps/vps/nhan.py` và route đã làm nó (`trang_thai_nhan`, `badge`); cho
+      template tự tra nghĩa là phải đăng ký thêm hàm toàn cục vào
+      `server/templating.py` — một tệp **mọi app đi qua** — để phục vụ một khu. #}
+{% macro badge_trang_thai(nhan_tt, cls) %}
+  <span class="badge {{ cls }}"><span class="dot"></span>{{ _(nhan_tt) }}</span>
+{%- endmacro %}
+
+
+{# ── Đồng hồ đo băng thông ─────────────────────────────────────────────────
+   Một công thức phần trăm, một ngưỡng cảnh báo, dùng chung cho trang danh sách
+   và trang một máy. Trước Đợt 3, hai trang tự dựng thanh đo riêng với hai màu
+   ngưỡng khác nhau — cùng một máy hiện hai mức cảnh báo tuỳ trang khách đang mở.
+
+   `phan_tram` do `bang_thong.phan_tram()` tính (trần 999 để không vỡ bố cục);
+   ở đây chỉ kẹp bề rộng thanh về 100%. #}
+{% macro do_bang_thong(bt, rong='100%') %}
+  <div class="vps-do" style="max-width:{{ rong }};">
+    <div class="vps-do-so">
+      <b>{{ bt.da_dung }}</b>
+      {% if bt.han_muc_gb %}<span class="muted">/ {{ bt.han_muc_gb }} GB</span>{% endif %}
+      {% if bt.bi_giam_toc %}
+        <span class="badge b-warn"><span class="dot"></span>{{ _("đang giảm tốc") }}</span>
+      {% endif %}
+    </div>
+    {% if bt.han_muc_gb %}
+    {# `aria-*` để bộ đọc màn hình đọc được con số, không chỉ thấy một thanh màu. #}
+    <div class="vps-do-thanh" role="img"
+         aria-label="{{ _('Đã dùng %(n)s phần trăm hạn mức băng thông') % {'n': bt.phan_tram} }}">
+      <span class="{{ 'qua-han' if bt.phan_tram >= 100 else ('gan-han' if bt.phan_tram >= 80 else '') }}"
+            style="width:{{ [bt.phan_tram, 100] | min }}%;"></span>
+    </div>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+
+{# ── Một dòng nhãn / giá trị, kèm nút sao chép ─────────────────────────────
+   Địa chỉ máy, endpoint RDP, lệnh `mstsc` — ba thứ khách phải chép chính xác,
+   và tô bằng chuột thì hụt một ký tự là một lỗi hiện ra ở tận lúc kết nối.
+
+   ⭐ Tăng cường dần: không có JS thì không có nút, và `<code>` vẫn tô chép được
+      như thường. Nút do `sao_chep.js` gắn vào, cùng khuôn với trang tài liệu. #}
+{% macro o_sao_chep(nhan_o, gia_tri, trong='') %}
+  <div class="vps-doi">
+    <span class="vps-doi-nhan">{{ nhan_o }}</span>
+    {% if gia_tri %}
+      <code class="vps-doi-gt" data-chep>{{ gia_tri }}</code>
+    {% else %}
+      <span class="vps-doi-gt muted">{{ trong or _("đang chuẩn bị…") }}</span>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+
+{# ── Hạn thanh toán ────────────────────────────────────────────────────────
+   Một cách viết duy nhất cho "trả tới ngày nào, còn mấy ngày" ở cả hai trang.
+
+   ⚠️ Ngưỡng cảnh báo (3 ngày) phải khớp `routes._thong_ke`, nếu không thì ô chỉ
+      số "Sắp hết hạn" và nhãn đỏ trong danh sách nói hai câu khác nhau về cùng
+      một máy. Hết hạn là **treo ngay** và xoá sau 7 ngày (V8) — khách mất máy vì
+      không biết sắp hết hạn là lỗi của giao diện, không phải của họ. #}
+{% macro han_thanh_toan(may, con_ngay) %}
+  {% if may.paid_until %}
+    {{ may.paid_until.strftime('%d/%m/%Y') }}
+    {% if con_ngay is not none %}
+      {% if con_ngay <= 3 %}
+        <span class="badge b-err"><span class="dot"></span>{{ _("còn %(n)s ngày") % {"n": con_ngay} }}</span>
+      {% else %}
+        <span class="muted">({{ _("còn %(n)s ngày") % {"n": con_ngay} }})</span>
+      {% endif %}
+    {% endif %}
+  {% else %}<span class="muted">—</span>{% endif %}
+{%- endmacro %}

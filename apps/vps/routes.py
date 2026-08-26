@@ -26,7 +26,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy import select
 
 import apps.vps as vps_app
-from apps.vps import bang_thong, dieu_khoan, nhan, os_images
+from apps.vps import bang_thong, dieu_khoan, nhan, os_images, ten_may
 from apps.vps.cost import PLANS, lay_plan
 from apps.vps.manifest import MANIFEST
 from apps.vps.services import (billing, capacity, console, dieu_khien,
@@ -104,6 +104,11 @@ def _may_cua_toi(db, user_id: str) -> list:
         ket_qua.append({
             "may": m,
             "trang_thai_nhan": nhan.trang_thai(m.trang_thai),
+            # Class badge tra SAN o day, khong tra trong template: cho template
+            # tu tra nghia la phai dang ky them mot ham toan cuc vao
+            # `server/templating.py` — mot tep MOI app di qua — de phuc vu mot khu.
+            "badge": nhan.badge(m.trang_thai),
+            "buoc_tiep": nhan.buoc_tiep(m.trang_thai),
             "bang_thong": {
                 "da_dung": bang_thong.doc_duoc(m.bang_thong_byte),
                 "han_muc_gb": (lay_plan(m.plan_id).bang_thong_gb
@@ -118,6 +123,26 @@ def _may_cua_toi(db, user_id: str) -> list:
             "con_ngay": billing.con_bao_nhieu_ngay(m),
         })
     return ket_qua
+
+
+def _thong_ke(ds: list) -> dict:
+    """Bốn con số ở đầu trang: tổng · đang chạy · đã tắt · sắp hết hạn.
+
+    Đếm **ở đây, không trong template**: một vòng lặp đếm trong Jinja là logic
+    không test được, và bốn con số này là thứ khách quét mắt đầu tiên — sai một
+    con số ở đó là sai ấn tượng đầu tiên về trạng thái hệ thống của họ.
+
+    "Sắp hết hạn" dùng đúng ngưỡng mà trang đã cảnh báo đỏ (`con_ngay <= 3`), để
+    ô chỉ số và nhãn đỏ trong danh sách **không bao giờ nói hai câu khác nhau**
+    về cùng một máy.
+    """
+    con_ngay = [x["con_ngay"] for x in ds]
+    return {
+        "tong": len(ds),
+        "dang_chay": sum(1 for x in ds if x["may"].trang_thai == "dang_chay"),
+        "da_tat": sum(1 for x in ds if x["may"].trang_thai == "da_tat"),
+        "sap_het_han": sum(1 for n in con_ngay if n is not None and n <= 3),
+    }
 
 
 def _menu(active: str, *, may=None, ds=()) -> list:
@@ -189,6 +214,10 @@ def trang_chinh(request: Request,
         # Khach an danh khong co may nao; goi ham nay voi user_id rong se quet
         # ca bang va tra ve may cua NGUOI KHAC.
         "may_cua_toi": may_cua_toi,
+        "thong_ke": _thong_ke(may_cua_toi),
+        # Tên gợi ý cho ô "Tên máy" — điền sẵn để khách bỏ trống cũng có một cái
+        # tên gõ được, thay vì một chuỗi hex 8 ký tự ở ô xác nhận phá huỷ (D-01).
+        "ten_goi_y": ten_may.tu_sinh(db, user_id) if user_id else "",
         "da_dang_nhap": bool(user_id),
         # Rỗng cho khách ẩn danh ⇒ `vps_base.html` không dựng vỏ điều khiển.
         "menu_trai": _menu("tong_quan", ds=may_cua_toi) if user_id else [],
@@ -236,6 +265,9 @@ def tao_may(request: Request,
             # đã bị bỏ — nên mọi lần gửi thiếu trường này đều hỏng, và hỏng bằng
             # một câu lỗi nội bộ hiện ra trước mặt khách.
             vung: str = Form(...),
+            # D-01. Bỏ trống ⇒ tự sinh `vps-01`. **Không** bắt buộc: một trường
+            # bắt buộc ở bước cuối của luồng mua là một chỗ để khách bỏ dở.
+            ten: str = Form(""),
             dia_them_gb: int = Form(0),
             _g: None = Depends(_cong_co),
             _u: str = Depends(require_login),
@@ -271,7 +303,16 @@ def tao_may(request: Request,
     except provisioning.KhongCoGatewayError:
         return _ve_trang(_t("Vùng bạn chọn hiện không nhận máy mới."))
 
+    # Tên: bỏ trống thì tự sinh. Kiểm TRƯỚC khi ghi gì vào CSDL — một tên trùng
+    # phát hiện sau khi đã trừ tiền là một lỗi phải hoàn tiền để sửa.
+    try:
+        ten_may_moi = (ten_may.kiem_va_doc_nhat(db, user_id, ten)
+                       if str(ten or "").strip() else ten_may.tu_sinh(db, user_id))
+    except ten_may.TenKhongHopLeError as exc:
+        return _ve_trang(str(exc))
+
     may = VpsInstance(user_id=user_id, plan_id=plan_id, os_id=os_id,
+                      ten=ten_may_moi,
                       dia_them_gb=int(dia_them_gb or 0),
                       gateway_id=gateway.id, trang_thai="dang_tao")
     db.add(may)
@@ -360,6 +401,36 @@ def go_dia_cai(instance_id: str, request: Request, csrf_token: str = Form(...),
                db=Depends(get_db)):
     """Khách bấm khi đã cài xong Windows. Xem `dieu_khien.go_dia_cai`."""
     return _thao_tac(request, csrf_token, instance_id, db, dieu_khien.go_dia_cai)
+
+
+@router.post("/{instance_id}/doi-ten")
+def doi_ten_may(instance_id: str, request: Request, csrf_token: str = Form(...),
+                ten: str = Form(""),
+                _g: None = Depends(_cong_co), _u: str = Depends(require_login),
+                db=Depends(get_db)):
+    """Đổi **nhãn** của máy (D-01). Không chạm vào máy, không chạm hệ điều hành.
+
+    ⚠️ **KHÔNG đòi gõ xác nhận**, khác hẳn ba nút trong khối Nguy hiểm. Đổi nhãn
+       là việc **đảo được** — đặt rào chắn ở việc đảo được thì rào chắn ở việc
+       KHÔNG đảo được bị nhờn, và đó là lúc nó thôi bảo vệ được ai.
+
+    Ghi vào nhật ký vì nó đổi thứ mà ô xác nhận phá huỷ đòi gõ: khách đổi tên
+    rồi ba tháng sau không xoá được máy sẽ cần biết tên cũ là gì.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _ve_trang(_t("Phiên đã hết hạn — tải lại trang rồi thử lại."))
+    may = _may_cua_khach(db, request, instance_id)
+    cu = may.ten or ""
+    try:
+        may.ten = ten_may.kiem_va_doc_nhat(db, _chu(request), ten,
+                                           tru_id=may.id)
+    except ten_may.TenKhongHopLeError as exc:
+        return _ve_trang(str(exc))
+    if may.ten != cu:
+        provisioning.ghi_su_kien(db, may.id, "doi_ten", boi=_chu(request),
+                                 cu=cu, moi=may.ten)
+    db.commit()
+    return RedirectResponse(f"{MANIFEST.route_prefix}/{may.id}", status_code=303)
 
 
 @router.get("/{instance_id}/cai-dat", response_class=HTMLResponse)
@@ -525,6 +596,8 @@ def trang_chi_tiet(instance_id: str, request: Request,
         "may": may,
         "menu_trai": _menu("may", may=may),
         "trang_thai_nhan": nhan.trang_thai(may.trang_thai),
+        "badge": nhan.badge(may.trang_thai),
+        "buoc_tiep": nhan.buoc_tiep(may.trang_thai),
         "sao_luu_luc": may.sao_luu_luc,
         "bang_thong": {
             "da_dung": bang_thong.doc_duoc(may.bang_thong_byte),

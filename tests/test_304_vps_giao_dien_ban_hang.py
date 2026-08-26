@@ -232,13 +232,36 @@ def test_bo_chen_scope_KHONG_lam_hong_the_thead(t):
 
 # ── 3 · Đường từ "đây là gì" tới "bao nhiêu tiền" ─────────────────────────
 
+#: Ranh giới của **khối mở đầu cho khách ẩn danh**.
+#:
+#: ⚠️ **Mốc kết thúc đổi 2026-08-26 (Đợt 3).** Trước đó hai phép kiểm dưới đây
+#:    cắt tới `_("Đọc trước khi thuê")`. Từ Đợt 3, khối cảnh báo là một **macro**
+#:    — vì nó xuất hiện ở hai chỗ khác nhau tuỳ người xem (khách ẩn danh: ngay
+#:    dưới bảng giá; chủ máy: gấp lại ở cuối trang) — nên chuỗi đó nay nằm ở
+#:    **đầu tệp**, trước cả `{% if not da_dang_nhap %}`, và lát cắt trả về RỖNG.
+#:
+#: 🔴 Một lát cắt rỗng làm mọi `assert ... not in` xanh: phép kiểm thôi kiểm gì
+#:    cả mà vẫn báo PASS. Nên hàm này **khẳng định lát cắt không rỗng** trước khi
+#:    trả về — nếu mốc lại trôi, nó đỏ ở đây với một câu nói đúng nguyên nhân,
+#:    thay vì xanh giả ở bốn chỗ khác.
+#:
+#: 🔑 Mốc mới là **lời gọi** macro, tức đúng ranh giới thật của khối. Đây là đổi
+#:    MỐC, không hạ mốc: cùng những điều cấm, trên đúng vùng đó.
+def _khoi_mo_dau(t: str) -> str:
+    dau = t.index("{% if not da_dang_nhap %}")
+    cuoi = t.index("{{ doc_truoc() }}", dau)
+    khoi = t[dau:cuoi]
+    assert len(khoi) > 500, (
+        f"lat cat khoi mo dau chi {len(khoi)} ky tu — moc da troi, va mot lat "
+        f"cat rong lam moi phep kiem 'khong duoc chua X' xanh gia")
+    return khoi
+
+
 def test_gia_nam_trong_khoi_mo_dau_chu_khong_chi_trong_bang(t):
     """Đo ngày 25/08 trên 390×844: giá đầu tiên ở y=1121, **dưới màn hình đầu
     277px**. Khách phải cuộn qua sáu dòng cảnh báo mới thấy một con số.
     """
-    i_mo_dau = t.index("{% if not da_dang_nhap %}")
-    i_canh_bao = t.index('_("Đọc trước khi thuê")')
-    khoi = t[i_mo_dau:i_canh_bao]
+    khoi = _khoi_mo_dau(t)
     assert "Chỉ từ" in khoi, "gia khong nam trong khoi mo dau"
     assert "re_nhat" in khoi and "| min" in khoi, (
         "gia phai lay tu `goi`, khong viet cung — doi gia trong cost.py phai "
@@ -264,7 +287,7 @@ def test_dai_bon_o_noi_thu_KIEM_CHUNG_DUOC(t):
     **không trượt** thành lời hứa ta không giữ được.
     """
     i = t.index("{% if not da_dang_nhap %}")
-    khoi = t[i:t.index('_("Đọc trước khi thuê")')]
+    khoi = _khoi_mo_dau(t)
     for cam in ("99,9", "99.9", "uptime", "Uptime", "24/7", "không giới hạn",
                 "unlimited", "cloud"):
         assert cam not in khoi, f"khoi mo dau hua mot thu ta khong co: {cam!r}"

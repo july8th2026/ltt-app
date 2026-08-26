@@ -1378,6 +1378,95 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 .vps-cta p{margin:0;font-size:13px;color:var(--text-secondary)}
 .vps-cta .nut{display:flex;gap:8px;flex-wrap:wrap}
 
+
+/* ═══ ĐỢT 3 · NHÀ CỦA KHÁCH + TẠO MÁY ═══════════════════════════════════ */
+
+/* ── Đồng hồ đo băng thông (macro `do_bang_thong`) ───────────────────────
+ * Dùng chung ở trang danh sách VÀ trang một máy. Trước Đợt 3, hai trang tự dựng
+ * thanh đo riêng với hai ngưỡng màu khác nhau — cùng một máy hiện hai mức cảnh
+ * báo tuỳ trang khách đang mở.
+ *
+ * Ba mức, và mức giữa là mức đáng có nhất: 80% là lúc còn kịp làm gì đó, 100%
+ * là lúc đã muộn.
+ */
+.vps-do{display:flex;flex-direction:column;gap:5px}
+.vps-do-so{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13px}
+.vps-do-so b{font-variant-numeric:tabular-nums;font-weight:600}
+.vps-do-thanh{height:5px;border-radius:3px;background:var(--surface-interactive);
+  overflow:hidden}
+.vps-do-thanh>span{display:block;height:100%;border-radius:3px;
+  background:var(--vps-teal-hover)}
+.vps-do-thanh>span.gan-han{background:var(--status-warning)}
+.vps-do-thanh>span.qua-han{background:var(--status-danger)}
+
+/* ── Hàng nhãn / giá trị có nút chép (macro `o_sao_chep`) ────────────────*/
+.vps-doi{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+  padding:7px 0;border-bottom:1px solid var(--border-subtle)}
+.vps-doi:last-child{border-bottom:0}
+.vps-doi-nhan{flex:0 0 auto;min-width:88px;font-size:11px;letter-spacing:.5px;
+  text-transform:uppercase;color:var(--text-muted)}
+.vps-doi-gt{font-size:13px;word-break:break-all}
+code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
+  border-radius:5px;background:var(--surface-base);color:var(--text-primary)}
+
+/* ── Thẻ máy ─────────────────────────────────────────────────────────────
+ *
+ * 🔴 THẺ, KHÔNG PHẢI BẢNG BẢY CỘT. Bảng bắt mắt quét ngang cả màn hình để nối
+ *    một máy với sáu thuộc tính của nó, và ở 390px thì bảy cột không còn là một
+ *    bảng nữa. Prompt 02 nói thẳng: ưu tiên **machine-object** khi mật độ dữ
+ *    liệu cho phép — ba tới năm máy thì thẻ đọc nhanh hơn hàng.
+ *
+ * ⚠️ Viền TRÁI mang màu trạng thái, nhưng badge vẫn ở trong thẻ: viền màu là
+ *    thứ quét được từ xa, badge là thứ đọc được. Bỏ badge đi thì thẻ chỉ còn
+ *    nói bằng màu.
+ */
+.vps-may-ds{display:grid;gap:12px;margin:0 0 16px}
+.vps-may-the{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr) auto;
+  gap:14px 18px;align-items:start;padding:14px 16px;
+  border:1px solid var(--border-subtle);border-left:3px solid var(--border-strong);
+  border-radius:0 var(--radius-lg) var(--radius-lg) 0;background:var(--surface-raised)}
+.vps-may-the.tt-ok{border-left-color:var(--status-success)}
+.vps-may-the.tt-warn{border-left-color:var(--status-warning)}
+.vps-may-the.tt-err{border-left-color:var(--status-danger)}
+.vps-may-dau{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 6px}
+.vps-may-ten{font-size:15px;font-weight:600;letter-spacing:-.01em;
+  word-break:break-word}
+.vps-may-phu{font-size:12px;color:var(--text-secondary);line-height:1.6}
+.vps-may-nut{display:flex;flex-direction:column;gap:6px;min-width:132px}
+.vps-may-nut .btn{justify-content:center}
+@media(max-width:820px){
+  .vps-may-the{grid-template-columns:1fr}
+  .vps-may-nut{flex-direction:row;flex-wrap:wrap;min-width:0}
+  .vps-may-nut .btn{flex:1 1 auto}
+}
+
+/* ── Trạng thái rỗng ─────────────────────────────────────────────────────*/
+.vps-rong{padding:26px 20px;text-align:center;border:1px dashed var(--border-strong);
+  border-radius:var(--radius-lg);background:var(--surface-base);margin:0 0 16px}
+.vps-rong h3{margin:0 0 6px;font-size:15px}
+.vps-rong p{margin:0 auto;max-width:52ch;font-size:13px;color:var(--text-secondary)}
+
+/* ── Bố cục "danh sách bên trái, tạo máy bên phải" ───────────────────────
+ * Nội dung quyết định, không phải pixel: dưới 1180px thì cột tạo máy xuống
+ * dưới, vì một biểu mẫu ba chặng nhét vào 300px là một biểu mẫu không ai điền.
+ */
+.vps-nha{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,400px);
+  gap:16px;align-items:start}
+@media(max-width:1180px){.vps-nha{grid-template-columns:1fr}}
+
+/* ── Ba chặng của biểu mẫu tạo máy ───────────────────────────────────────
+ * Đánh số vì đây **thật sự là một trình tự**: chọn máy → chọn hệ điều hành →
+ * xem sẽ trừ bao nhiêu. Số ở đây mang thông tin, không trang trí.
+ */
+.vps-chang{display:flex;align-items:baseline;gap:9px;margin:0 0 2px}
+.vps-chang .so{flex:0 0 auto;width:20px;height:20px;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:var(--vps-teal-soft);border:1px solid var(--vps-teal-line);
+  color:var(--vps-teal-text);font-size:11px;font-weight:600;
+  font-variant-numeric:tabular-nums}
+.vps-chang h3{margin:0;font-size:14px}
+.vps-chang-mo-ta{margin:0 0 10px 29px;font-size:12px;color:var(--text-secondary)}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ĐỢT 2 KHU API (.khu-dev) — bám ảnh demo 2026-08-27
    ═══════════════════════════════════════════════════════════════════════════
@@ -1554,6 +1643,19 @@ code.to-dam{font-weight:600;color:var(--text-primary)}
 /* ── Ô mã sắc teal (ảnh: khối .env xanh lục-lam) ───────────────────────── */
 .khu-dev .dev-ma-teal{border-color:var(--dev-cyan-line);
   background:linear-gradient(180deg,var(--dev-cyan-soft),transparent)}
+
+/* ── Kết quả ước tính giá (ảnh: số credit to + VND + hộp lưu ý hổ phách) ── */
+.khu-dev .dev-uoc-tinh{display:flex;align-items:baseline;gap:8px}
+.khu-dev .dev-uoc-tinh .so{font-size:38px;font-weight:700;letter-spacing:-.02em;
+  color:var(--status-warning)}
+.khu-dev .dev-uoc-tinh .don-vi{font-size:16px;color:var(--status-warning)}
+.khu-dev .dev-vnd{margin:2px 0 0;color:var(--text-secondary);font-size:13px}
+.khu-dev .dev-luu-y{margin-top:16px;padding:12px 14px;border-radius:var(--radius-md);
+  border:1px solid var(--status-warning-border);background:var(--status-warning-soft)}
+.khu-dev .dev-luu-y strong{display:block;margin-bottom:6px;color:var(--status-warning);
+  font-size:12.5px}
+.khu-dev .dev-luu-y ul{margin:0;padding-left:18px;color:var(--text-secondary);font-size:12px}
+.khu-dev .dev-luu-y li{margin:3px 0}
 
 /* ── Biểu mẫu tạo khoá gập được (nút "+ Tạo khoá mới" ở đầu trang) ────────
  * `<details>` thuần, không JS. Mở/đóng bằng chính trình duyệt. */

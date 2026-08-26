@@ -86,6 +86,9 @@ SU_KIEN = {
     "tat_cung": N_("Máy bị tắt cứng"),
     "khoi_dong_lai": N_("Máy khởi động lại"),
     "go_dia_cai": N_("Đã gỡ đĩa cài"),
+    # Ghi lại vì nó đổi thứ mà ô xác nhận phá huỷ đòi gõ: khách đổi tên rồi ba
+    # tháng sau không xoá được máy sẽ cần biết tên cũ là gì.
+    "doi_ten": N_("Đổi tên máy"),
     "xin_cai_lai": N_("Yêu cầu cài lại máy"),
     "khoi_phuc": N_("Khôi phục về ảnh chụp"),
     "sao_luu": N_("Đã chụp ảnh máy"),

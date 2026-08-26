@@ -1,4 +1,8 @@
 {% extends "vps_base.html" %}
+{# `with context`: macro dung `_()` va cac bien cua trang. Thieu no thi
+   moi chuoi ben trong macro ra tieng Viet tren ban EN — va khong phep kiem
+   `.po` nao bat duoc, vi chuoi CO trong catalog va DA dich. #}
+{% import "_vps_mac.html" as mac with context %}
 {% block title %}{{ _(app.display_name) }} — LTT AI Studio{% endblock %}
 {% block topbar_title %}<strong>{{ app.icon }} {{ _(app.display_name) }}</strong>{% endblock %}
 {% block noi_dung %}
@@ -66,6 +70,48 @@
     {% endif %}
   </label>
 {% endmacro %}
+
+{# ── Đọc trước khi thuê ────────────────────────────────────────────────
+   MACRO vì khối này xuất hiện ở **hai chỗ khác nhau tuỳ người xem**:
+
+   * khách ẩn danh — **trước** khi quyết định, ngay dưới bảng giá;
+   * chủ máy — **cuối trang**, vì họ đã mua rồi. Sáu dòng hạn chế đặt
+     trên đầu trang của người đang muốn xem máy mình là bắt họ đọc lại
+     mỗi ngày một thứ họ đã đồng ý một lần.
+
+   Một macro, một bản văn. Hai bản sao thì lần sửa sau chỉ sửa một bản,
+   và `test_298` đối chiếu từng con số ở đây với hằng số thật trong mã. #}
+{% macro doc_truoc() %}
+  {# Sáu câu dưới đây KHÔNG phải trang trí — chúng là điều kiện của Q103 và là
+   những con số ĐO THẬT. Khách phải đọc được TRƯỚC khi trả tiền, không phải sau.
+   Câu về IP đã đổi ngày 24/08: từ khi mỗi máy có một IP công khai riêng, câu
+   cũ ("bạn nhận cổng, không nhận IP") trở thành SAI — và một dòng cảnh báo sai
+   còn tệ hơn không có, vì khách tin nó.
+
+   ⚠️ **TOÀN VĂN LÀ RÀNG BUỘC.** `test_298` đối chiếu **từng con số** ở đây với
+      hằng số thật trong mã. Đợt 2 chỉ đổi CÁCH BÀY (một dòng dọc → lưới hai
+      cột), không đổi một chữ nào — và tuyệt đối không rút gọn để trang gọn hơn. #}
+<div class="alert alert-warn" style="margin:0 0 16px;">
+  <strong>{{ _("Đọc trước khi thuê") }}</strong>
+  <ul class="vps-doc-truoc">
+    <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</span></li>
+    <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy chủ đặt tại Việt Nam, đường vào đi qua Singapore.") }}</span></li>
+    <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</span></li>
+    <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không bị tính thêm tiền.") }}</span></li>
+    {# Nói ĐÚNG thứ khách nhận. Bản trước viết "sao lưu", nhưng thứ hạ
+       tầng này làm được là **ảnh chụp**, và nó nằm trên cùng kho với đĩa
+       gốc — pool hỏng là mất cả hai. Hứa "sao lưu" rồi giao một ảnh chụp
+       là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu,
+       tức lúc tệ nhất có thể. Xem `services/sao_luu.py`. #}
+    <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Ảnh chụp hằng tuần, giữ 1 bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn.") }}</span></li>
+    {# Giay phep Windows la rui ro lon nhat cua dich vu nay, va khach
+       khong tu doan ra. Dat no NGAY trong khoi doc-truoc-khi-thue chu
+       khong giau trong dieu khoan: nguoi doc dieu khoan la thieu so. #}
+    <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Giá KHÔNG bao gồm giấy phép Windows. Chúng tôi cấp đĩa cài (bản Evaluation của Microsoft); bạn tự cài và tự chịu trách nhiệm về giấy phép.") }}</span></li>
+  </ul>
+</div>
+{% endmacro %}
+
 
 {# Kieu cua khu VPS (`.goi-*`, `.tt-*`, `.vps-the`, `.btn-goi`) nam trong muc
    "LOP NGU NGHIA CUA KHU VPS" o `server/static/ltt.css`, khong nam o day.
@@ -247,39 +293,9 @@
         <span>{{ _("Bạn chỉ trả tiền chu kỳ. Không có khoản thu nào khác khi tạo hay xoá máy.") }}</span></li>
     </ul>
   </div>
-  {% endif %}
 
+  {{ doc_truoc() }}
 
-  {# Sáu câu dưới đây KHÔNG phải trang trí — chúng là điều kiện của Q103 và là
-     những con số ĐO THẬT. Khách phải đọc được TRƯỚC khi trả tiền, không phải sau.
-     Câu về IP đã đổi ngày 24/08: từ khi mỗi máy có một IP công khai riêng, câu
-     cũ ("bạn nhận cổng, không nhận IP") trở thành SAI — và một dòng cảnh báo sai
-     còn tệ hơn không có, vì khách tin nó.
-
-     ⚠️ **TOÀN VĂN LÀ RÀNG BUỘC.** `test_298` đối chiếu **từng con số** ở đây với
-        hằng số thật trong mã. Đợt 2 chỉ đổi CÁCH BÀY (một dòng dọc → lưới hai
-        cột), không đổi một chữ nào — và tuyệt đối không rút gọn để trang gọn hơn. #}
-  <div class="alert alert-warn" style="margin:0 0 16px;">
-    <strong>{{ _("Đọc trước khi thuê") }}</strong>
-    <ul class="vps-doc-truoc">
-      <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Dịch vụ chạy theo chế độ best effort — chúng tôi không cam kết thời gian hoạt động. Máy chủ có thể khởi động lại để bảo trì.") }}</span></li>
-      <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Mỗi máy có một địa chỉ IP riêng ở Singapore, dùng được mọi cổng. Máy chủ đặt tại Việt Nam, đường vào đi qua Singapore.") }}</span></li>
-      <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Dung lượng đĩa là hạn mức trên kho lưu trữ dùng chung, không phải ổ cứng cấp riêng. Bạn dùng tới đâu chiếm tới đó.") }}</span></li>
-      <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Băng thông có hạn mức theo gói. Vượt hạn mức thì bị giảm tốc, không bị tính thêm tiền.") }}</span></li>
-      {# Nói ĐÚNG thứ khách nhận. Bản trước viết "sao lưu", nhưng thứ hạ
-         tầng này làm được là **ảnh chụp**, và nó nằm trên cùng kho với đĩa
-         gốc — pool hỏng là mất cả hai. Hứa "sao lưu" rồi giao một ảnh chụp
-         là loại lời hứa người ta chỉ phát hiện sai đúng vào lúc mất dữ liệu,
-         tức lúc tệ nhất có thể. Xem `services/sao_luu.py`. #}
-      <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Ảnh chụp hằng tuần, giữ 1 bản. Ảnh chụp nằm trên cùng kho lưu trữ với máy — nó cứu bạn khỏi xoá nhầm hoặc một bản vá hỏng, nhưng KHÔNG thay thế bản sao lưu của riêng bạn.") }}</span></li>
-      {# Giay phep Windows la rui ro lon nhat cua dich vu nay, va khach
-         khong tu doan ra. Dat no NGAY trong khoi doc-truoc-khi-thue chu
-         khong giau trong dieu khoan: nguoi doc dieu khoan la thieu so. #}
-      <li><span class="ico" aria-hidden="true">•</span><span>{{ _("Giá KHÔNG bao gồm giấy phép Windows. Chúng tôi cấp đĩa cài (bản Evaluation của Microsoft); bạn tự cài và tự chịu trách nhiệm về giấy phép.") }}</span></li>
-    </ul>
-  </div>
-
-  {% if not da_dang_nhap %}
   {# CTA cuối: người đọc hết sáu dòng hạn chế mà vẫn còn ở đây là người sẵn
      sàng nhất trên trang này — và trước Đợt 2 họ phải cuộn ngược lên đầu để
      tìm một cái nút. #}
@@ -302,72 +318,112 @@
   {% endif %}
 
 
-  {# ── Máy của tôi ──────────────────────────────────────────────────────── #}
-  {% if da_dang_nhap and may_cua_toi %}
+  {# ══ MÀN B · MÁY CỦA TÔI (Đợt 3, ảnh 2) ═══════════════════════════════
+     Bốn ô chỉ số → danh sách thẻ máy → biểu mẫu tạo máy ở cột phải.
 
-  <div class="card">
-    <div class="card-accent" style="background:{{ app.accent }};"></div>
-    <h2>{{ _("Máy của tôi") }}</h2>
-    <table class="tbl" style="width:100%;">
-      <thead>
-        <tr>
-          <th scope="col">{{ _("Cấu hình máy") }}</th>
-          <th scope="col">{{ _("Hệ điều hành") }}</th>
-          <th scope="col">{{ _("Địa chỉ") }}</th>
-          <th scope="col">{{ _("Trạng thái") }}</th>
-          <th scope="col">{{ _("Băng thông") }}</th>
-          <th scope="col">{{ _("Trả tới") }}</th>
-          <th scope="col"></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in may_cua_toi %}
-        <tr>
-          <td>{{ _(m.plan.ten) if m.plan else m.may.plan_id }}</td>
-          <td>{{ _(m.os.ten) if m.os else m.may.os_id }}</td>
-          <td>
-            {% if m.dia_chi %}<code>{{ m.dia_chi }}</code>
-            {% else %}<span class="muted">{{ _("đang chuẩn bị") }}</span>{% endif %}
-          </td>
-          <td>
-            {{ _(m.trang_thai_nhan) }}
-            {% if m.may.ly_do %}<br><span class="muted">{{ m.may.ly_do }}</span>{% endif %}
-          </td>
-          {# Băng thông hiện ở đây chứ không giấu trong trang chi tiết: hạn mức
-             là thứ khách chỉ nhớ tới khi máy đã chậm, và lúc đó thì đã muộn. #}
-          <td style="min-width:130px;">
-            {{ m.bang_thong.da_dung }}
-            {% if m.bang_thong.han_muc_gb %}
-              <span class="muted">/ {{ m.bang_thong.han_muc_gb }} GB</span>
-              <div style="height:4px;background:rgba(128,128,128,.25);border-radius:2px;margin-top:4px;">
-                <div style="height:4px;border-radius:2px;width:{{ [m.bang_thong.phan_tram, 100] | min }}%;
-                            background:{{ '#c92a2a' if m.bang_thong.phan_tram >= 100 else app.accent }};"></div>
-              </div>
-            {% endif %}
-            {% if m.bang_thong.bi_giam_toc %}
-              <br><span class="alert-err" style="padding:1px 6px;border-radius:4px;">
-                {{ _("đang giảm tốc") }}</span>
-            {% endif %}
-          </td>
-          <td>
-            {% if m.may.paid_until %}{{ m.may.paid_until.strftime('%d/%m/%Y') }}
-              {# Cảnh báo SỚM, không phải sau khi mất máy: hết hạn là treo ngay
-                 và xoá sau 7 ngày (V8). Khách mất máy vì không biết sắp hết hạn
-                 là lỗi của giao diện, không phải của họ. #}
-              {% if m.con_ngay is not none and m.con_ngay <= 3 %}
-                <br><span class="alert-err" style="padding:1px 6px;border-radius:4px;">
-                  {{ _("còn %(n)s ngày") % {"n": m.con_ngay} }}</span>
-              {% endif %}
-            {% else %}<span class="muted">—</span>{% endif %}
-          </td>
-          <td><a class="btn btn-sm btn-goi" href="{{ app.route_prefix }}/{{ m.may.id }}">{{ _("Quản lý") }}</a></td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+     🔴 THẺ, KHÔNG PHẢI BẢNG BẢY CỘT. Bảng bắt mắt quét ngang cả màn hình để nối
+        một máy với sáu thuộc tính của nó, và ở 390px thì bảy cột không còn là
+        một bảng nữa. Ba tới năm máy thì thẻ đọc nhanh hơn hàng — đó là mật độ
+        dữ liệu thật của sản phẩm này, không phải của Vultr với bốn mươi máy. #}
+  {% if da_dang_nhap %}
+  {% if may_cua_toi %}
+  {# Bốn ô để QUÉT, không phải để đọc: số to, nhãn nhỏ. Đếm ở `routes._thong_ke`
+     chứ không trong Jinja — một vòng lặp đếm trong template là logic không test
+     được, và bốn con số này là thứ khách nhìn đầu tiên. #}
+  <ul class="chi-so-luoi" style="list-style:none;padding:0;">
+    <li class="chi-so">
+      <span class="chi-so-nhan">{{ _("Tổng số máy") }}</span>
+      <span class="chi-so-gt">{{ thong_ke.tong }}</span></li>
+    <li class="chi-so">
+      <span class="chi-so-nhan">{{ _("Đang chạy") }}</span>
+      <span class="chi-so-gt">{{ thong_ke.dang_chay }}</span></li>
+    <li class="chi-so">
+      <span class="chi-so-nhan">{{ _("Đã tắt") }}</span>
+      <span class="chi-so-gt">{{ thong_ke.da_tat }}</span>
+      <span class="chi-so-phu">{{ _("vẫn tính phí") }}</span></li>
+    {# Ô này đổi màu khi có máy sắp hết hạn — cùng ngưỡng 3 ngày với nhãn đỏ
+       trong danh sách, để ô chỉ số và thẻ máy không nói hai câu khác nhau. #}
+    <li class="chi-so{{ ' co-van-de' if thong_ke.sap_het_han else '' }}">
+      <span class="chi-so-nhan">{{ _("Sắp hết hạn") }}</span>
+      <span class="chi-so-gt">{{ thong_ke.sap_het_han }}</span>
+      {% if thong_ke.sap_het_han %}
+      <span class="chi-so-phu">{{ _("còn 3 ngày hoặc ít hơn") }}</span>{% endif %}
+    </li>
+  </ul>
   {% endif %}
 
+  <div class="vps-nha">
+    <div>
+      <h2 style="margin:0 0 10px;font-size:1.05rem;">{{ _("Máy của tôi") }}</h2>
+
+      {% if not may_cua_toi %}
+      {# Trạng thái rỗng: một lời mời, không phải một bảng trống. Người vừa tạo
+         tài khoản xong mà thấy "Chưa có gì" thì không biết bước tiếp là gì. #}
+      <div class="vps-rong">
+        <h3>{{ _("Bạn chưa có máy nào") }}</h3>
+        <p>{{ _("Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng trong khoảng 20 giây, rồi bạn tự cài Windows qua console.") }}</p>
+      </div>
+      {% else %}
+
+      <div class="vps-may-ds">
+        {% for m in may_cua_toi %}
+        {% set nguy = m.may.trang_thai in ("loi",) %}
+        <div class="vps-may-the {{ 'tt-err' if nguy else ('tt-ok' if m.may.trang_thai == 'dang_chay' else ('tt-warn' if m.may.trang_thai in ('dang_tao', 'bi_treo') else '')) }}">
+          <div>
+            <div class="vps-may-dau">
+              <span class="vps-may-ten">{{ m.may.ten or m.may.id[:8] }}</span>
+              {{ mac.badge_trang_thai(m.trang_thai_nhan, m.badge) }}
+            </div>
+            {# Địa chỉ là thứ khách tới trang này để lấy — nên nó đứng ngay dưới
+               tên, có nút chép, và KHÔNG bị chôn trong một cột thứ tư. #}
+            {{ mac.o_sao_chep(_("Địa chỉ"), m.dia_chi) }}
+            <div class="vps-may-phu" style="margin-top:6px;">
+              {{ _(m.plan.ten) if m.plan else m.may.plan_id }} ·
+              {% if m.plan %}{{ m.plan.vcpu }} vCPU · {{ (m.plan.ram_mb / 1024) | int }} GB RAM ·
+              {{ m.plan.disk_gb }} GB{% endif %}<br>
+              {{ _(m.os.ten) if m.os else m.may.os_id }}
+            </div>
+            {% if m.may.ly_do %}
+            <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ m.may.ly_do }}</p>
+            {% elif m.buoc_tiep %}
+            {# Nhãn trạng thái nói máy đang ở đâu; câu này nói khách phải làm gì
+               tiếp. `bi_treo` là ví dụ rõ nhất — "Bị tạm dừng" không cho biết
+               dữ liệu còn hay mất. Nguồn: `apps/vps/nhan.py:BUOC_TIEP`. #}
+            <p class="muted" style="margin:6px 0 0;font-size:12px;">{{ _(m.buoc_tiep) }}</p>
+            {% endif %}
+          </div>
+
+          <div class="vps-may-phu">
+            <div style="margin:0 0 8px;">
+              <span class="vps-doi-nhan">{{ _("Băng thông chu kỳ này") }}</span>
+              {{ mac.do_bang_thong(m.bang_thong) }}
+            </div>
+            <div>
+              <span class="vps-doi-nhan">{{ _("Trả tới") }}</span><br>
+              {{ mac.han_thanh_toan(m.may, m.con_ngay) }}
+            </div>
+          </div>
+
+          <div class="vps-may-nut">
+            <a class="btn btn-goi" href="{{ app.route_prefix }}/{{ m.may.id }}">{{ _("Quản lý") }}</a>
+            {# Console CHỈ khi máy thật sự điều khiển được. Một nút mở ra rồi báo
+               lỗi tệ hơn một nút mờ có lý do — `dieu_khien.kiem_dieu_khien_duoc`
+               là nguồn chân lý, template chỉ hỏi lại nó qua trạng thái. #}
+            {% if m.may.trang_thai in ("dang_chay", "da_tat") %}
+            <a class="btn btn-ghost" href="{{ app.route_prefix }}/{{ m.may.id }}/console">{{ _("Console") }}</a>
+            {% else %}
+            <span class="btn btn-ghost" aria-disabled="true"
+                  style="opacity:.45;cursor:not-allowed;text-align:center;"
+                  title="{{ _('Máy phải đang chạy hoặc đã tắt thì mới mở được console.') }}">{{ _("Console") }}</span>
+            {% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div>
   {# ── Chọn và tạo máy ───────────────────────────────────────────────────
      MỘT biểu mẫu, hai bước, một trang.
 
@@ -393,14 +449,14 @@
      chot dung dieu do. Fail-closed: khong chac thi khong ban. #}
   {# Khach an danh KHONG duoc thay bieu mau: no se POST va bi 401, tuc mot nut
      dan toi mot loi. Ho thay bang gia chi doc, va nut dang nhap o tren. #}
+  {# ⚠️ Từ Đợt 2, khối này chỉ dựng cho người ĐÃ ĐĂNG NHẬP (nó nằm trong nhánh
+     `da_dang_nhap` mở ở màn B bên trên). Khách ẩn danh đã có bảng giá riêng ở
+     nhánh storefront; dựng cả hai là hiện **hai** bảng giá trên cùng một trang,
+     và bản thứ hai sẽ là bản người ta đọc sau — tức bản có tiếng nói cuối cùng
+     về giá, dù nó chỉ tình cờ đứng dưới. Cả hai gọi cùng macro `the_goi`, nên
+     con số vẫn là một nguồn. #}
   {% set ban_duoc = da_dang_nhap and goi_ban_duoc and suc_chua %}
-  {# ⚠️ Từ Đợt 2, thẻ này chỉ dựng cho người ĐÃ ĐĂNG NHẬP.
-     Khách ẩn danh đã có bảng giá riêng ở nhánh storefront bên trên; dựng cả hai
-     là hiện **hai** bảng giá trên cùng một trang, và bản thứ hai sẽ là bản
-     người ta đọc sau — tức bản có tiếng nói cuối cùng về giá, dù nó chỉ tình cờ
-     đứng dưới. Cả hai đều gọi cùng macro `the_goi`, nên con số vẫn là một. #}
-  {% if da_dang_nhap %}
-  <div class="card">
+  <div class="card" style="margin:0;">
     <div class="card-accent" style="background:{{ app.accent }};"></div>
     <h2>{{ _("Tạo máy mới") if ban_duoc else _("Bảng giá") }}</h2>
 
@@ -451,12 +507,18 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       {% if vung %}<input type="hidden" name="vung" value="{{ vung[0][0] }}">{% endif %}
 
-      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;">
-        {# ── Cot trai: hai buoc ─────────────────────────────────────────── #}
-        <div style="flex:1 1 380px;min-width:300px;">
+      {# Ba chặng ĐÁNH SỐ, vì đây thật sự là một trình tự: chọn máy → chọn hệ
+         điều hành → xem sẽ trừ bao nhiêu. Số ở đây mang thông tin, không trang
+         trí — bỏ số đi thì ba tiêu đề trở thành ba mục ngang hàng.
 
-          <h3 style="margin:0 0 2px;">{{ _("Bước 1 · Chọn máy") }}</h3>
-          <p class="muted" style="margin:0 0 10px;font-size:.88em;">{{ _("Cấu hình phần cứng và băng thông. Đổi được sau bằng cách tạo máy khác.") }}</p>
+         Vẫn là MỘT biểu mẫu, một trang. Vultr cần hai màn vì họ có 32 vùng × 6
+         họ gói; ta có ba gói và một vùng. Bắt khách bấm "Tiếp theo" giữa hai màn
+         chỉ để chọn ba thứ là thêm ma sát mà không đổi lại được gì. #}
+      <div>
+        <div>
+          <div class="vps-chang"><span class="so" aria-hidden="true">1</span>
+            <h3>{{ _("Chọn máy") }}</h3></div>
+          <p class="vps-chang-mo-ta">{{ _("Cấu hình phần cứng và băng thông. Đổi được sau bằng cách tạo máy khác.") }}</p>
           <div class="goi-luoi">
             {% for g in goi %}
               {{ the_goi(g, goi_ban_duoc | reject("equalto", g) | list, true,
@@ -464,8 +526,10 @@
             {% endfor %}
           </div>
 
-          <h3 style="margin:18px 0 2px;">{{ _("Bước 2 · Chọn hệ điều hành") }}</h3>
-          <p class="muted" style="margin:0 0 10px;font-size:.88em;">{{ _("Đĩa cài được gắn sẵn; bạn tự chạy trình cài đặt. Cài lại được bất cứ lúc nào.") }}</p>
+          <div class="vps-chang" style="margin-top:18px;">
+            <span class="so" aria-hidden="true">2</span>
+            <h3>{{ _("Chọn hệ điều hành") }}</h3></div>
+          <p class="vps-chang-mo-ta">{{ _("Đĩa cài được gắn sẵn; bạn tự chạy trình cài đặt. Cài lại được bất cứ lúc nào.") }}</p>
           {# Moi goi chay duoc mot tap ban Windows khac nhau (san RAM khac nhau).
              Danh sach duoi day hien DU, va JS an bot theo goi dang chon — khong
              co JS thi khach van thay het va may chu van tu choi to hop sai
@@ -480,9 +544,32 @@
           {% endfor %}
         </div>
 
-        {# ── Cot phai: tom tat ──────────────────────────────────────────── #}
-        <div style="flex:0 1 300px;min-width:260px;">
-          <div class="card" style="margin:0;position:sticky;top:16px;">
+        {# ── Chặng 3 · Tên máy + tóm tắt tiền ───────────────────────────── #}
+          <div class="vps-chang" style="margin-top:18px;">
+            <span class="so" aria-hidden="true">3</span>
+            <h3>{{ _("Đặt tên và xác nhận") }}</h3></div>
+          <p class="vps-chang-mo-ta">{{ _("Tên chỉ để bạn nhận ra máy trong danh sách. Đổi được bất cứ lúc nào.") }}</p>
+
+          {# D-01. Bỏ trống thì máy chủ tự đặt `vps-01`, `vps-02`… — KHÔNG bắt
+             buộc, vì một trường bắt buộc ở bước cuối của luồng mua là một chỗ
+             để khách bỏ dở.
+
+             ⚠️ Tên này là thứ ba ô xác nhận PHÁ HUỶ đòi gõ. Trước D-01 nó luôn
+                rỗng và nhánh thật đang chạy là `may.id[:8]` — tức để xoá máy,
+                khách phải chép tay một chuỗi hex 8 ký tự. Chép–dán không có
+                khoảnh khắc dừng lại mà rào chắn đó dựa vào. #}
+          <div class="field" style="margin:0 0 12px;">
+            <label for="vps-ten">{{ _("Tên máy") }}</label>
+            <input class="inp" id="vps-ten" name="ten" type="text"
+                   maxlength="40" autocomplete="off"
+                   placeholder="{{ ten_goi_y }}"
+                   aria-describedby="vps-ten-gt">
+            <p id="vps-ten-gt" class="muted" style="margin:4px 0 0;font-size:.85em;">
+              {{ _("Bỏ trống thì chúng tôi đặt là “%(ten)s”.") % {"ten": ten_goi_y} }}
+            </p>
+          </div>
+
+          <div class="card" style="margin:0;">
             <h3 style="margin-top:0;">{{ _("Tóm tắt") }}</h3>
             {# Các Ô có viền, không phải bảng hai cột chữ nhỏ đều nhau.
                Trước 25/08 `SẼ TRỪ 1.490 credit` trông ngang hàng với
@@ -586,7 +673,17 @@
     </script>
     {% endif %}
   </div>
-  {% endif %}{# da_dang_nhap — thẻ "Tạo máy mới / Bảng giá" #}
+    </div>{# cột phải của .vps-nha #}
+  </div>{# .vps-nha #}
+  {# Chủ máy đã đồng ý sáu dòng này một lần, lúc bấm "Tạo máy". Đặt chúng ở đầu
+     trang của người đang muốn xem máy mình là bắt họ đọc lại mỗi ngày một thứ họ
+     đã quyết. Nhưng KHÔNG bỏ hẳn: chúng vẫn là thứ trả lời "vì sao máy tôi chậm"
+     và "ảnh chụp có phải sao lưu không". Gấp lại, ở cuối, mở được. #}
+  <details style="margin:0 0 16px;">
+    <summary class="muted" style="cursor:pointer;font-size:.9em;">{{ _("Điều cần biết về dịch vụ") }}</summary>
+    <div style="margin-top:10px;">{{ doc_truoc() }}</div>
+  </details>
+  {% endif %}{# da_dang_nhap — MÀN B #}
 
   {% if suc_chua %}
   {# Chỉ cho người ĐÃ đăng nhập. Với khách lạ, "còn 186 GB đĩa" là con số của

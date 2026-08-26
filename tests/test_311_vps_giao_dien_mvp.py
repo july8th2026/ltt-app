@@ -25,6 +25,8 @@ import ast
 import pathlib
 import re
 
+import pytest
+
 from apps.vps import nav, nhan
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
@@ -292,7 +294,51 @@ def _vps_html() -> str:
     return re.sub(r"(?s)\{#.*?#\}", " ", t)
 
 
-def test_khach_AN_DANH_chi_thay_MOT_bang_gia():
+@pytest.fixture(scope="module")
+def trang_an_danh(tmp_path_factory) -> str:
+    """HTML **thật** của `/vps` cho khách ẩn danh.
+
+    Vài tính chất chỉ trả lời được bằng cái hiện ra, không bằng hình dạng của mã
+    sinh ra nó — xem `test_khach_AN_DANH_chi_thay_MOT_bang_gia` để biết bản đọc
+    template đã sai thế nào.
+    """
+    import os
+
+    from fastapi.testclient import TestClient
+
+    cu = {k: os.environ.get(k) for k in
+          ("LTT_DATABASE_URL", "LTT_ENV", "LTT_SESSION_SECRET", "LTT_VPS")}
+    thu_muc = tmp_path_factory.mktemp("vps311")
+    os.environ.update({
+        "LTT_DATABASE_URL": f"sqlite:///{(thu_muc / 'x.db').as_posix()}",
+        "LTT_ENV": "development",
+        "LTT_SESSION_SECRET": "test-vps-311",
+        "LTT_VPS": "1",
+    })
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models   # noqa: F401
+    import apps.vps.tables        # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    try:
+        r = client.get("/vps")
+        assert r.status_code == 200, f"/vps an danh tra {r.status_code}"
+        return r.text
+    finally:
+        client.close()
+        dbmod.reset_engine()
+        for k, v in cu.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
+def test_khach_AN_DANH_chi_thay_MOT_bang_gia(trang_an_danh):
     """🔴 Hai bảng giá trên một trang là hai nguồn cho cùng một con số.
 
     Từ Đợt 2, nhánh ẩn danh có bảng giá riêng. Thẻ "Tạo máy mới / Bảng giá" cũ
@@ -300,17 +346,20 @@ def test_khach_AN_DANH_chi_thay_MOT_bang_gia():
     hai lần, và bản đứng dưới là bản có tiếng nói cuối cùng dù nó chỉ tình cờ ở
     đó.
 
-    ⚠️ Cả hai vỏ gọi **cùng macro** `the_goi`, nên con số vẫn là một nguồn. Phép
-       kiểm này chốt *không hiện hai lần*, không chốt *không có hai bản dữ liệu* —
-       việc đó `test_304::test_moi_goi_co_mo_ta_va_mot_loi_ra` đã canh.
+    ⚠️ **Đo trên HTML ĐÃ RENDER, không đọc template.** Bản đầu của phép kiểm này
+       tìm chuỗi `{% if da_dang_nhap %}` ngay trước thẻ tạo máy, và nó đỏ ngay ở
+       Đợt 3 khi khối đó chuyển vào một nhánh `da_dang_nhap` mở **xa hơn ở trên**
+       — mã đúng, phép kiểm sai. Một câu hỏi về *cái gì hiện ra* phải được trả
+       lời bằng *cái hiện ra*, không bằng hình dạng của mã sinh ra nó.
+
+    Cả hai vỏ gọi **cùng macro** `the_goi`, nên con số vẫn là một nguồn; phép
+    kiểm này chốt *không hiện hai lần*, còn *không có hai bản dữ liệu* thì
+    `test_304::test_moi_goi_co_mo_ta_va_mot_loi_ra` đã canh.
     """
-    t = _vps_html()
-    i = t.index('_("Tạo máy mới") if ban_duoc')
-    truoc = t[:i]
-    assert truoc.rstrip().endswith("{% if da_dang_nhap %}") or \
-        "{% if da_dang_nhap %}" in truoc[-400:], (
-        "the 'Tao may moi / Bang gia' khong con duoc bao boi `da_dang_nhap` — "
-        "khach an danh se thay bang gia HAI lan")
+    assert trang_an_danh.count('class="goi-luoi"') == 1, (
+        "khach an danh thay nhieu hon MOT luoi bang gia")
+    assert 'action="/vps/tao"' not in trang_an_danh, (
+        "khach an danh thay bieu mau — no se POST va an 401")
 
 
 def test_hinh_trang_tri_KHONG_day_gia_xuong_duoi_man_hinh_dau():
@@ -378,6 +427,196 @@ def test_sau_dong_DOC_TRUOC_van_du_sau():
     assert khoi.count("<li>") == 6, (
         f"khoi 'Doc truoc khi thue' con {khoi.count('<li>')} muc, phai co 6 — "
         f"day la dieu kien cua Q103, khong phai van ban trang tri")
+
+
+# ── 7 · Đợt 3 · Nhà của khách + tạo máy ───────────────────────────────────
+
+def test_bon_o_chi_so_dem_o_ROUTE_chu_khong_trong_template():
+    """Một vòng lặp đếm trong Jinja là logic không test được — và bốn con số này
+    là thứ khách quét mắt đầu tiên.
+
+    Chốt **hành vi của hàm đếm**, không chốt hình dạng template: đó là chỗ duy
+    nhất có thể sai.
+    """
+    from apps.vps.routes import _thong_ke
+
+    class _May:
+        def __init__(self, tt):
+            self.trang_thai = tt
+
+    ds = [
+        {"may": _May("dang_chay"), "con_ngay": 24},
+        {"may": _May("dang_chay"), "con_ngay": 2},     # vừa chạy vừa sắp hết hạn
+        {"may": _May("da_tat"), "con_ngay": 0},
+        {"may": _May("dang_tao"), "con_ngay": None},   # chưa thu chu kỳ nào
+        {"may": _May("loi"), "con_ngay": 30},
+    ]
+    tk = _thong_ke(ds)
+    assert tk == {"tong": 5, "dang_chay": 2, "da_tat": 1, "sap_het_han": 2}, tk
+
+    # `con_ngay is None` KHÔNG được tính là sắp hết hạn: `None` nghĩa là chưa thu
+    # chu kỳ nào, không nghĩa là hết hạn. `None <= 3` ném TypeError ở Python 3,
+    # nên lỗi này không im lặng — nhưng nó nổ TRÊN TRANG của khách.
+    assert _thong_ke([{"may": _May("dang_tao"), "con_ngay": None}])["sap_het_han"] == 0
+
+
+def test_nguong_SAP_HET_HAN_khop_giua_o_chi_so_va_the_may():
+    """Ô chỉ số và nhãn đỏ trong danh sách phải nói **cùng một câu** về cùng một
+    máy. Hai ngưỡng khác nhau ở hai chỗ là thứ chỉ lộ ra khi có đúng một máy rơi
+    vào khe giữa chúng — tức muộn, và với một khách thật.
+    """
+    src = (GOC / "apps" / "vps" / "routes.py").read_text(encoding="utf-8")
+    mac = (TEMPLATES / "_vps_mac.html").read_text(encoding="utf-8")
+    assert "n <= 3" in src, "nguong o chi so doi roi"
+    assert "con_ngay <= 3" in mac, "nguong tren the may doi roi"
+
+
+def test_console_KHONG_mo_khi_may_khong_dieu_khien_duoc():
+    """Một nút mở ra rồi báo lỗi tệ hơn một nút mờ có lý do.
+
+    `dieu_khien.kiem_dieu_khien_duoc` là nguồn chân lý; template chỉ được hỏi
+    lại nó, không tự phát minh một danh sách trạng thái thứ hai.
+    """
+    from apps.vps.services import dieu_khien
+
+    t = _vps_html()
+    i = t.index('class="vps-may-nut"')
+    khoi = t[i:t.index("</div>", t.index("aria-disabled", i))]
+    assert "aria-disabled" in khoi, "khong con nhanh vo hieu hoa cho Console"
+
+    # Tập trạng thái mà template cho mở console phải là TẬP CON của tập mà
+    # service thật sự cho phép — nếu không, nút mở ra rồi máy chủ từ chối.
+    class _May:
+        # `kiem_dieu_khien_duoc` đọc cả `vmid` — máy chưa có vmid là máy chưa
+        # dựng xong, và nó từ chối vì lý do đó chứ không vì trạng thái.
+        def __init__(self, tt):
+            self.trang_thai = tt
+            self.vmid = 9001
+
+    cho_mo = set(re.findall(r'trang_thai in \("([a-z_]+)", "([a-z_]+)"\)', khoi))
+    assert cho_mo, "khong doc duoc danh sach trang thai trong template"
+    for bo in cho_mo:
+        for tt in bo:
+            dieu_khien.kiem_dieu_khien_duoc(_May(tt))   # không được ném
+
+
+def test_DANH_SACH_may_khong_con_la_bang_bay_cot():
+    """Bảng bắt mắt quét ngang cả màn hình để nối một máy với sáu thuộc tính của
+    nó, và ở 390px thì bảy cột không còn là một bảng nữa.
+    """
+    t = _vps_html()
+    # ⚠️ Cắt đúng danh sách máy. Bản đầu cắt từ `_("Máy của tôi")` tới hết và
+    #    đỏ vì **bảng so sánh ba gói** trong biểu mẫu tạo máy bên dưới — một cái
+    #    bảng hoàn toàn hợp lệ, và là thứ bảng làm tốt nhất (so cột với cột).
+    #    "Đừng dùng bảng" chưa bao giờ là luật; luật là *đừng dùng bảng cho một
+    #    đối tượng có sáu thuộc tính*.
+    i = t.index('class="vps-may-ds"')
+    khoi = t[i:t.index("{% endfor %}", i)]
+    assert "<table" not in khoi, "danh sach may van la mot bang"
+    assert 'class="vps-may-the' in khoi, "khong dung the may"
+    assert "badge_trang_thai" in khoi and "do_bang_thong" in khoi, (
+        "the may khong dung macro chung — hai trang se lech ngon ngu trang thai")
+
+
+def test_DOC_TRUOC_hien_MOT_lan_cho_moi_nguoi_xem(trang_an_danh):
+    """Khách ẩn danh: mở sẵn, ngay dưới bảng giá — họ đang **quyết định**.
+    Chủ máy: gấp lại ở cuối trang — họ đã đồng ý một lần rồi, lúc bấm "Tạo máy".
+
+    Một macro, một bản văn: `test_298` đối chiếu từng con số trong đó với hằng
+    số thật, và hai bản sao thì lần sửa sau chỉ sửa một bản.
+    """
+    t = _vps_html()
+    assert t.count("{% macro doc_truoc()") == 1, "khoi canh bao khong con la MOT macro"
+    assert t.count("{{ doc_truoc() }}") == 2, (
+        "phai goi dung hai lan — mot cho khach an danh, mot cho chu may")
+
+    assert trang_an_danh.count('_("Đọc trước khi thuê")') == 0     # đã render
+    assert trang_an_danh.count("Đọc trước khi thuê") == 1, (
+        "khach an danh thay khoi canh bao nhieu hon mot lan")
+    assert "<details" not in trang_an_danh[
+        trang_an_danh.index("Đọc trước khi thuê") - 400:
+        trang_an_danh.index("Đọc trước khi thuê")], (
+        "khoi canh bao bi gap lai cho khach AN DANH — ho dang quyet dinh, "
+        "khong duoc giau sau mot cu bam")
+
+
+# ── 8 · D-01 · Tên máy ────────────────────────────────────────────────────
+
+def test_ten_may_la_NHAN_khong_phai_hostname():
+    """Khách tự cài Windows từ ISO — không cloud-init, không sysprep. Nền tảng
+    **không có cách nào** đặt tên bên trong máy.
+
+    Chốt bằng tài liệu vì đây là thứ một phiên sau sẽ đoán sai: cái tên `ten`
+    không tự nói ra rằng nó không phải hostname.
+    """
+    from apps.vps import ten_may
+
+    assert "hostname" in (ten_may.__doc__ or "").lower(), (
+        "docstring khong noi ro `ten` KHONG phai hostname")
+
+
+def test_ten_may_chuan_hoa_truoc_khi_so_sanh():
+    """`"may  A "` và `"may A"` phải là **một** tên.
+
+    Thiếu bước này thì khách gõ tên vào ô xác nhận phá huỷ sẽ bị từ chối một
+    chuỗi **trông giống hệt** cái đang hiện trên màn hình — và không có cách nào
+    để họ tự thấy khoảng trắng thừa.
+    """
+    from apps.vps import ten_may
+
+    assert ten_may.chuan_hoa("  may  A  ") == "may A"
+    assert ten_may.chuan_hoa(None) == ""
+    assert ten_may.kiem("  vps 01 ") == "vps 01"
+
+
+def test_ten_may_tu_chi_dung_ky_tu_an_toan():
+    from apps.vps import ten_may
+
+    for xau in ("", "a", "x" * 41, "<script>", "a/b", "a\\b", "a;b"):
+        try:
+            ten_may.kiem(xau)
+        except ten_may.TenKhongHopLeError:
+            continue
+        raise AssertionError(f"nhan mot ten khong nen nhan: {xau!r}")
+
+    # Dấu tiếng Việt PHẢI qua được: tên là dữ liệu của khách.
+    assert ten_may.kiem("Máy bán hàng") == "Máy bán hàng"
+
+
+def test_ten_tu_sinh_KHONG_dung_phep_cong_de_dem():
+    """Khách có `vps-01` và `vps-03` (đã xoá `vps-02`) thì `len(may) + 1` cho ra
+    `vps-03` — một tên **đã tồn tại**. Lỗi đó chỉ lộ ra ở bước kiểm trùng, dưới
+    dạng một câu lỗi khó hiểu cho một tên mà khách không hề gõ.
+    """
+    src = (GOC / "apps" / "vps" / "ten_may.py").read_text(encoding="utf-8")
+    than = re.sub(r'(?s)""".*?"""', " ", src)
+    khoi = than[than.index("def tu_sinh"):]
+    assert "for i in range" in khoi, "tu_sinh khong con quet tim so con trong"
+    assert "len(" not in khoi.split("return")[0], (
+        "tu_sinh dang dem bang do dai danh sach — se sinh ra ten da ton tai")
+
+
+def test_doi_ten_KHONG_doi_go_xac_nhan():
+    """Đổi nhãn là việc **đảo được**. Đặt rào chắn ở việc đảo được thì rào chắn ở
+    việc KHÔNG đảo được bị nhờn — và đó là lúc nó thôi bảo vệ được ai.
+    """
+    src = (GOC / "apps" / "vps" / "routes.py").read_text(encoding="utf-8")
+    khoi = src[src.index("def doi_ten_may"):]
+    khoi = khoi[: khoi.index("\n@router")]
+    assert "verify_csrf_token" in khoi, "doi ten khong kiem CSRF"
+    assert "_may_cua_khach" in khoi, "doi ten khong kiem chu so huu"
+    assert "xac_nhan" not in khoi, (
+        "doi ten dang doi go xac nhan — day la viec dao duoc")
+
+
+def test_o_TEN_MAY_khong_bat_buoc_va_co_goi_y():
+    """Một trường bắt buộc ở bước cuối của luồng mua là một chỗ để khách bỏ dở."""
+    t = _vps_html()
+    i = t.index('id="vps-ten"')
+    the = t[t.rindex("<input", 0, i):t.index(">", i)]
+    assert "required" not in the, "o ten dang bat buoc"
+    assert "ten_goi_y" in the, "o ten khong co goi y"
+    assert 'maxlength="40"' in the, "thieu tran do dai o phia trinh duyet"
 
 
 # ── phụ trợ ───────────────────────────────────────────────────────────────

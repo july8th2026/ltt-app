@@ -11253,3 +11253,139 @@ msgstr "Ready to start?"
 
 msgid "Tạo tài khoản, nạp credit, rồi tạo máy. Không hợp đồng, không phí khởi tạo."
 msgstr "Create an account, top up credit, then create a machine. No contract, no setup fee."
+
+msgid "Tính trước chi phí một lời gọi, bằng đúng công thức mà báo giá thật dùng."
+msgstr "Estimate the cost of a call in advance, using the exact formula real quotes use."
+
+msgid "Soạn lời gọi"
+msgstr "Compose a call"
+
+msgid "Kết quả ước tính"
+msgstr "Estimate"
+
+msgid "Lưu ý"
+msgstr "Note"
+
+msgid "Đây chỉ là mô phỏng, không gọi nhà cung cấp thật."
+msgstr "This is only a simulation; it does not call the real provider."
+
+msgid "Không sinh báo giá và không trừ credit — không dùng để gọi POST /jobs."
+msgstr "It mints no quote and spends no credit — you cannot use it to call POST /jobs."
+
+msgid "Giá phụ thuộc toàn bộ đầu vào, nên đổi input là đổi giá."
+msgstr "The price depends on the whole input, so changing the input changes the price."
+
+msgid "Chọn công cụ và bấm Tính thử."
+msgstr "Pick a tool and press Estimate."
+
+msgid "Con số hiện ở đây là số bạn sẽ bị tính khi gọi /api/v1/quotes với cùng đầu vào."
+msgstr "The number here is what you would be charged calling /api/v1/quotes with the same input."
+
+msgid "Nếu con số ở đây khác con số khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý — cùng một hàm sinh cả hai."
+msgstr "If the number here differs from what /api/v1/quotes returns, that is our bug, not a deliberate difference — one function produces both."
+
+msgid "— bị chặn bởi sàn/trần"
+msgstr "— clamped by the floor/ceiling"
+
+msgid "Sử dụng 30 ngày qua"
+msgstr "Usage over the last 30 days"
+
+msgid "Biểu đồ Request và Credit 30 ngày qua"
+msgstr "Request and Credit chart over the last 30 days"
+
+msgid "Sau vài lời gọi API, biểu đồ 30 ngày sẽ hiện ở đây."
+msgstr "After a few API calls, a 30-day chart shows up here."
+
+msgid "Giao thành công"
+msgstr "Delivered"
+
+msgid "sự kiện"
+msgstr "events"
+
+msgid "Tổng sự kiện"
+msgstr "Total events"
+
+msgid "đang chờ giao"
+msgstr "pending delivery"
+
+msgid "không còn tồn đọng"
+msgstr "nothing backed up"
+
+msgid "hoạt động"
+msgstr "active"
+
+msgid "tạm dừng"
+msgstr "paused"
+
+msgid "Cần chú ý"
+msgstr "Needs attention"
+
+msgid "bỏ cuộc"
+msgstr "dead"
+
+msgid "đang thử lại"
+msgstr "retrying"
+
+msgid "không có gì kẹt"
+msgstr "nothing stuck"
+
+# Khu VPS — nha cua khach + tao may (Dot 3 MVP giao dien, 2026-08-26)
+
+msgid "Tổng số máy"
+msgstr "Machines"
+
+msgid "Sắp hết hạn"
+msgstr "Expiring soon"
+
+msgid "còn 3 ngày hoặc ít hơn"
+msgstr "3 days left or fewer"
+
+msgid "vẫn tính phí"
+msgstr "still billed"
+
+msgid "Bạn chưa có máy nào"
+msgstr "You do not have any machine yet"
+
+msgid "Chọn một gói ở bên và bấm “Tạo máy”. Máy sẵn sàng trong khoảng 20 giây, rồi bạn tự cài Windows qua console."
+msgstr "Pick a plan on the side and press “Create machine”. The machine is ready in about 20 seconds, then you install Windows yourself through the console."
+
+msgid "Máy phải đang chạy hoặc đã tắt thì mới mở được console."
+msgstr "The console only opens when the machine is running or stopped."
+
+msgid "Đổi tên máy"
+msgstr "Machine renamed"
+
+msgid "Tên máy phải có ít nhất %(n)s ký tự."
+msgstr "A machine name needs at least %(n)s characters."
+
+msgid "Tên máy dài quá %(n)s ký tự."
+msgstr "A machine name cannot be longer than %(n)s characters."
+
+msgid "Tên máy chỉ được dùng chữ, số, dấu gạch ngang, gạch dưới, dấu chấm và khoảng trắng."
+msgstr "A machine name may only use letters, digits, hyphens, underscores, dots and spaces."
+
+msgid "Bạn đã có một máy tên “%(ten)s”. Chọn tên khác."
+msgstr "You already have a machine named “%(ten)s”. Pick another name."
+
+msgid "Đã dùng %(n)s phần trăm hạn mức băng thông"
+msgstr "%(n)s percent of the bandwidth allowance used"
+
+# Khu VPS — bieu mau tao may (Dot 3)
+
+msgid "Chọn máy"
+msgstr "Choose a machine"
+
+msgid "Chọn hệ điều hành"
+msgstr "Choose an operating system"
+
+msgid "Đặt tên và xác nhận"
+msgstr "Name it and confirm"
+
+msgid "Tên chỉ để bạn nhận ra máy trong danh sách. Đổi được bất cứ lúc nào."
+msgstr "The name is only so you can recognise the machine in your list. You can change it any time."
+
+msgid "Bỏ trống thì chúng tôi đặt là “%(ten)s”."
+msgstr "Leave it empty and we will name it “%(ten)s”."
+
+msgid "Điều cần biết về dịch vụ"
+msgstr "What to know about this service"
