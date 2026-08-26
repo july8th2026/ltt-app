@@ -13720,3 +13720,34 @@ chưa — xem giao thức ở AGENTS.md mục 6.>
 2.
 3.
 ```
+
+## 2026-08-26 — DEPLOY `1f0e93c` (đợt MVP Optimization V2)
+
+`rc=0` · ba dịch vụ chạy · `health/ready = 200` trên cả loopback **và**
+`https://app.lttstudios.com`. CSDL đã ở đúng head `a4d70e93f158` từ trước ⇒ deploy
+**chỉ mã, không migration**.
+
+Chụp `pg_dump` trước khi bấm (237 KB, đã mở lại kiểm: 59 bảng có dữ liệu). Phát
+hiện `D:\LTTBackups` **rỗng hoàn toàn** — O-01 còn nợ nguyên, và ACL chặn ghi ở đó
+là H7 làm đúng việc chứ không phải lỗi.
+
+**Điều đáng ghi nhất không phải deploy, mà là thứ production tự nói ngay sau đó:**
+
+```text
+15:29:16  [w1] giu lease 'maintenance'      <- hai worker, dung MOT cam lease
+15:29:20  [w1] WARNING GIU CHO TREO: 2 khoan, 2 credit
+15:29:21  [w1] POST api.resend.com/emails 200
+```
+
+M-01 lên E4: bộ dò tìm đúng 2 khoản treo 24/08 trên dữ liệu thật, chuông kêu
+**một** lần, email tới người thật. Bất biến đa tiến trình của H36 trước nay chỉ có
+`test_214` bảo đảm — nay có một lượt chạy thật.
+
+Chỉ báo, **không tự hoàn** (chủ sản phẩm đã chốt: chưa có khách thật, không bù).
+
+Kèm theo: 43 route socialbot nay 404 (D-03 đóng như hệ quả của Q108, không phải
+một việc phải làm); `/developers/settings` từ 404 → 303 về login; danh mục 0 lỗi
+console, 0 request hỏng, cache-bust `?v=c4537190` đủ trên ba tài nguyên tĩnh.
+
+Còn nợ: **O-01** (lịch sao lưu + diễn tập phục hồi, cần UAC) và **một quyết định
+sản phẩm** — 5/9 app khách thấy vẫn mang nhãn *Đang phát triển*.

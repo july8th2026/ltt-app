@@ -281,3 +281,83 @@ quyết định sản phẩm**.
 
 **Đề xuất** *(không tự làm)*: sau khi O-01 xong và deploy, gắn thẻ
 `MVP_OPTIMIZED_V2`.
+
+---
+
+## Phụ lục — DEPLOY 2026-08-26 15:26, và bằng chứng E4 nó mở ra
+
+`1f0e93c` đã lên production. `rc=0`, ba dịch vụ chạy, `health/ready = 200` trên
+**cả** loopback và `https://app.lttstudios.com`.
+
+Trước khi bấm: cây sạch, không tệp nào bị ghi trong 10 phút, gate 23/23, và
+**CSDL production đã ở đúng `a4d70e93f158`** — tức deploy này *chỉ mã, không đụng
+lược đồ*. Đó là lý do nó chạy được dù `DATA_RECOVERY_GATE` chưa đóng.
+
+### Vẫn chụp một bản CSDL trước, dù không có migration
+
+`D:\LTTBackups` **rỗng hoàn toàn** — chưa từng có bản sao lưu nào (O-01, xác nhận
+cứng). Đã chụp `pg_dump -Fc` (13 MB → 237 KB) và **đọc lại mục lục để kiểm**:
+59 bảng có dữ liệu, 391 mục.
+
+⭐ Việc kiểm đó không thừa. Cả đợt audit này xoay quanh đúng một bài học — *thứ
+chưa ai kiểm không phải thứ đang chạy* — nên chụp xong mà không mở ra xem thì
+chỉ là lặp lại chính lỗi vừa tìm ra, ở một chỗ mới.
+
+⚠️ `D:\LTTBackups` chặn ghi bởi ACL. Đó là **H7 đang làm đúng việc**, không phải
+lỗi; bản chụp nằm tạm ở `D:\` và O-01 vẫn còn nợ nguyên.
+
+### M-01 — chuyển từ E2 lên E4, bằng lời của chính production
+
+Chạy bộ dò vừa deploy lên dữ liệu thật (chỉ đọc): tìm ra **đúng 2 khoản treo ngày
+24/08**, phân loại `khong_ai_ket_so`. Rồi worker tự nói, không ai gọi tay:
+
+```text
+15:29:16  [w1] giu lease 'maintenance'          <- w1 giu, w0 khong
+15:29:20  [w1] WARNING GIU CHO TREO: 2 khoan, 2 credit cua khach
+15:29:21  [w1] POST https://api.resend.com/emails  200
+15:29:23  [w1] POST https://api.resend.com/emails  200
+```
+
+Ba điều được chốt cùng lúc, và điều thứ ba là điều không ai đặt hàng:
+
+1. bộ dò **nhận ra** trạng thái xấu đã biết trên dữ liệu thật;
+2. chuông **có người treo** — nó chạy trong vòng bảo trì và **tới được người
+   thật** (2 dòng `api_notifications`, 2 email đi);
+3. **bất biến đa tiến trình của H36 đúng trên máy thật**: hai worker chạy song
+   song, đúng một cầm lease, cảnh báo phát **một** lần chứ không hai.
+
+Điểm (3) trước nay chỉ có `test_214` đứng ra bảo đảm. Nay có một lượt chạy thật.
+
+⛔ Bộ dò **chỉ báo, không tự hoàn tiền** — chủ sản phẩm đã chốt *"chưa có khách
+thật không cần bù"*. Hai credit đó vẫn treo, có chủ ý, và nay **được đếm**.
+
+### D-03 đóng như một hệ quả, không phải một việc
+
+43 route socialbot cũ nay trả 404 (`/socialbot`, `/fb/connect`, `/tiktok/connect`).
+Không ai phải đặt `LTT_SOCIALBOT_ROUTES=0`: Q108 đã **xoá** mã đó, nên deploy này
+tự mang việc ấy theo. Cờ trong `secrets/app.env` giờ là một dòng vô nghĩa, đúng
+như H22.10 đã dự đoán.
+
+### Trình duyệt thật, trên URL công khai (§5b)
+
+Danh mục render đủ 9 app, **0 lỗi console**, **0 request hỏng**, và cache-bust
+`?v=c4537190` gắn đủ trên cả ba tài nguyên tĩnh — tức bẫy "Cloudflare phục vụ CSS
+cũ" ở CLAUDE.md §6 không tái diễn.
+
+Một lỗ thật đã bịt, đo trên production: `/developers/settings` trả **303 về
+login** thay vì **404** như từ Q108.
+
+### Câu trả lời nghiệm thu vẫn KHÔNG, và vì một lý do chứ không phải ba
+
+```text
+MVP_OPTIMIZED: KHONG
+```
+
+Điều kiện (2) đã đóng — E3 nay có trên URL công khai. Điều kiện (3) đã đóng — INV-5
+được **bảo đảm** bởi lease, chứng minh ở trên. Còn lại đúng một:
+
+- **`DATA_RECOVERY_GATE` vẫn FAIL** (O-01). Một bản chụp tay không phải một lịch,
+  và một lịch chưa diễn tập phục hồi không phải một đường lùi.
+
+Cộng thêm **một quyết định sản phẩm** không thuộc thẩm quyền một phiên Claude:
+5 trong 9 app khách chưa đăng nhập nhìn thấy vẫn mang nhãn *Đang phát triển*.
