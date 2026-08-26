@@ -5,17 +5,18 @@
 <div class="card">
   <h1 style="margin-top:0;">{{ _("Ba cách cắm API — Windows") }}</h1>
   <p>{{ _("Chọn EXE có giao diện, ZIP + BAT không giao diện, hoặc làm hoàn toàn thủ công. Hai gói tự động dùng chung một lõi và cùng kiểm lại file + registry sau khi ghi.") }}</p>
+  <p class="muted">{{ _("Mỗi gói phát hành đều công bố SHA-256 để bạn đối chiếu trước khi chạy.") }}</p>
+  <p style="margin:18px 0 8px;">
+    <a class="btn" href="/tai/cong-cu-cam">{{ _("Tải bộ cài") }}{% if bo_cai %} · {{ bo_cai.kich_thuoc_mb }} MB{% endif %}</a>
+  </p>
   {% if bo_cai %}
-    <p style="margin:18px 0 8px;">
-      <a class="btn" href="/tai/cong-cu-cam">{{ _("Tải bộ cài") }} · {{ bo_cai.kich_thuoc_mb }} MB</a>
-    </p>
     <p class="muted">{{ _("Phiên bản") }} <code>{{ bo_cai.phien_ban }}</code> · <code>{{ bo_cai.ten }}</code></p>
     <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ bo_cai.sha256 }}</code></p>
   {% else %}
     <p class="muted">{{ _("Chưa có bản phát hành nào. Bạn vẫn cấu hình tay được — xem hướng dẫn.") }}</p>
   {% endif %}
+  <p style="margin:18px 0 8px;"><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT (Administrator, không GUI)") }}{% if goi_bat %} · {{ goi_bat.kich_thuoc_mb }} MB{% endif %}</a></p>
   {% if goi_bat %}
-    <p style="margin:18px 0 8px;"><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT (Administrator, không GUI)") }} · {{ goi_bat.kich_thuoc_mb }} MB</a></p>
     <p class="muted">{{ _("Phiên bản") }} <code>{{ goi_bat.phien_ban }}</code> · <code>{{ goi_bat.ten }}</code></p>
     <p class="muted" style="word-break:break-all;">SHA-256 <code>{{ goi_bat.sha256 }}</code></p>
   {% endif %}

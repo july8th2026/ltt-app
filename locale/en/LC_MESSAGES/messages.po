@@ -10567,3 +10567,5 @@ msgstr "Claude Desktop"
 msgid "chính sách HKCU; phải thoát hẳn app"
 msgstr "HKCU policy; the app must be fully closed"
 
+msgid "Mỗi gói phát hành đều công bố SHA-256 để bạn đối chiếu trước khi chạy."
+msgstr "Every release publishes its SHA-256 so you can verify it before running."
