@@ -426,3 +426,127 @@ def test_the_worker_prunes_the_request_log():
 
     source = Path("platform_core/job_runner.py").read_text(encoding="utf-8")
     assert "request_log.purge_expired" in source
+
+
+def test_daily_buckets_by_day_and_fills_gaps():
+    """`daily()` feeds the overview chart: one row per calendar day in the
+    window, zero-filled, with requests/failures/credit aggregated per day.
+
+    Gaps must be present as zeros — the chart draws a continuous line, and a
+    missing day would otherwise become a segment the renderer guesses through.
+    """
+    import os
+
+    os.environ["LTT_DATABASE_URL"] = "sqlite:///:memory:"
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    Base.metadata.create_all(get_engine())
+
+    gen, db = _session()
+    try:
+        uid = "u-" + uuid.uuid4().hex
+        now = datetime(2026, 8, 27, 12, 0, tzinfo=timezone.utc)
+        # Two calls today (one a 500), one call two days ago worth 7 credit.
+        request_log.record(db, request_id="a", user_id=uid, status=200,
+                           credit_delta=3, now=now)
+        request_log.record(db, request_id="b", user_id=uid, status=500,
+                           credit_delta=0, now=now)
+        request_log.record(db, request_id="c", user_id=uid, status=200,
+                           credit_delta=7, now=now - timedelta(days=2))
+        # Another account's traffic must never leak into this series.
+        request_log.record(db, request_id="z", user_id="someone-else",
+                           status=200, credit_delta=99, now=now)
+        db.commit()
+
+        series = request_log.daily(db, user_id=uid,
+                                   since=now - timedelta(days=2), until=now)
+        assert [r["date"].isoformat() for r in series] == [
+            "2026-08-25", "2026-08-26", "2026-08-27"]
+        assert series[0] == {"date": series[0]["date"], "requests": 1,
+                             "failures": 0, "credit": 7}
+        assert series[1] == {"date": series[1]["date"], "requests": 0,
+                             "failures": 0, "credit": 0}     # gap, zero-filled
+        assert series[2] == {"date": series[2]["date"], "requests": 2,
+                             "failures": 1, "credit": 3}     # 500 counts as failure
+    finally:
+        _close(gen)
+        dbmod.reset_engine()
+
+
+def test_daily_is_empty_list_when_no_traffic():
+    """No traffic → every day still emitted at zero, so the caller decides to
+    show an empty state rather than the function inventing one."""
+    import os
+
+    os.environ["LTT_DATABASE_URL"] = "sqlite:///:memory:"
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    Base.metadata.create_all(get_engine())
+
+    gen, db = _session()
+    try:
+        now = datetime(2026, 8, 27, 12, 0, tzinfo=timezone.utc)
+        series = request_log.daily(db, user_id="nobody",
+                                   since=now - timedelta(days=6), until=now)
+        assert len(series) == 7
+        assert all(r["requests"] == 0 and r["credit"] == 0 for r in series)
+    finally:
+        _close(gen)
+        dbmod.reset_engine()
+
+
+def test_by_tool_aggregates_net_credit_over_the_whole_window():
+    """`usage.by_tool()` feeds the usage-page donut: net credit + call count per
+    tool, biggest first, across the FULL window (not one page)."""
+    import os
+    from datetime import datetime, timedelta, timezone
+
+    os.environ["LTT_DATABASE_URL"] = "sqlite:///:memory:"
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    Base.metadata.create_all(get_engine())
+
+    from platform_core.models import CREDIT_HOLD, CreditEntry, Job
+    from platform_core.public_api import usage
+    from platform_core.public_api.invocation import API_META_KEY
+
+    from platform_core.users import tao_nguoi_dung
+
+    gen, db = _session()
+    try:
+        user = tao_nguoi_dung(db, email="bytool@example.com", password="a-good-password-12")
+        db.flush()
+        uid = user.id
+        now = datetime(2026, 8, 27, tzinfo=timezone.utc)
+
+        def _job(tool, hold, when):
+            jid = uuid.uuid4().hex
+            job = Job(id=jid, user_id=uid, app_slug="anhnoibo", job_type="t",
+                      status="succeeded", created_at=when)
+            # api_meta lives in job params; set the same key the API sets.
+            job.params = {API_META_KEY: {"tool": tool, "mode": "live"}}
+            db.add(job)
+            db.add(CreditEntry(user_id=uid, job_id=jid,
+                               kind=CREDIT_HOLD, delta=-hold, created_at=when))
+            return jid
+
+        _job("image.ltt", 10, now - timedelta(days=1))
+        _job("image.ltt", 5, now - timedelta(days=2))
+        _job("text.chat", 3, now - timedelta(days=3))
+        db.commit()
+
+        rows = usage.by_tool(db, user_id=uid,
+                             since=now - timedelta(days=29), until=now)
+        by = {r["tool"]: r for r in rows}
+        assert rows[0]["tool"] == "image.ltt"          # biggest first
+        assert by["image.ltt"]["credit"] == 15 and by["image.ltt"]["calls"] == 2
+        assert by["text.chat"]["credit"] == 3 and by["text.chat"]["calls"] == 1
+    finally:
+        _close(gen)
+        dbmod.reset_engine()

@@ -36,9 +36,10 @@ def developer_projects(request: Request, user=Depends(require_account),
 
 
 @router.get("/keys", response_class=HTMLResponse)
-def developer_keys(request: Request, user=Depends(require_account),
+def developer_keys(request: Request, mode: str = "",
+                   user=Depends(require_account),
                    db: Session = Depends(get_db)):
-    return _keys_page(request, db, user)
+    return _keys_page(request, db, user, mode_filter=mode)
 
 
 @router.get("/settings", response_class=HTMLResponse)

@@ -1,7 +1,11 @@
 {% extends "developers_base.html" %}
-{% block section %}
 
-<p class="dev-dan">{{ _("Khóa là thứ duy nhất đứng giữa tài khoản của bạn và người khác. Mỗi tích hợp một khóa, và thu hồi được riêng từng cái.") }}</p>
+{% block dev_phu_de %}{{ _("Khóa là thứ duy nhất đứng giữa tài khoản của bạn và người khác. Mỗi tích hợp một khóa, và thu hồi được riêng từng cái.") }}{% endblock %}
+
+{# Nút chính về đầu trang (ảnh demo). Mở khối tạo khóa ở cuối trang. #}
+{% block dau_hanh_dong %}<a class="btn" href="#tao-khoa">+ {{ _("Tạo khóa mới") }}</a>{% endblock %}
+
+{% block section %}
 
 {% if revealed_secret %}
   {# ⛔ HIEN DUNG MOT LAN, va do la mot HOP DONG chu khong phai mot lua chon
@@ -22,15 +26,37 @@
   </div>
 {% endif %}
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Khóa của bạn") }}</h2>
+{# Danh sách khoá — panel có đầu chứa tab lọc môi trường (ảnh: Tất cả·Live·Test).
+   Tab chỉ đổi tham số `?mode=`, không thêm route. #}
+{% set keys_hien = keys | selectattr('mode','equalto',mode_filter) | list if mode_filter else keys %}
+<section class="dev-panel">
+  <header>
+    <h2>{{ _("Khóa của bạn") }}</h2>
+    {% if keys %}
+    <nav class="dev-loc-tab" aria-label="{{ _('Lọc theo môi trường') }}">
+      <a href="/developers/keys" {% if not mode_filter %}class="active" aria-current="true"{% endif %}>{{ _("Tất cả") }}</a>
+      <a href="/developers/keys?mode=live" {% if mode_filter == 'live' %}class="active" aria-current="true"{% endif %}>Live</a>
+      <a href="/developers/keys?mode=test" {% if mode_filter == 'test' %}class="active" aria-current="true"{% endif %}>Test</a>
+    </nav>
+    {% endif %}
+  </header>
   {% if not keys %}
     {# Mot trang thai rong phai tra loi ba cau: la gi, vi sao trong, lam gi
        tiep. "Chua co khoa nao." mot minh chi tra loi cau thu hai. #}
-    <div class="dev-trong">
-      <strong>{{ _("Chưa có khóa API nào.") }}</strong>
-      <p>{{ _("Khóa là thứ xác thực lời gọi tới /api/v1. Tạo một khóa ở khối bên dưới, chép chuỗi bí mật, rồi gọi thử.") }}</p>
-      <a class="btn" href="#tao-khoa">{{ _("Tạo khóa đầu tiên") }}</a>
+    <div class="dev-panel-than">
+      <div class="dev-trong">
+        <strong>{{ _("Chưa có khóa API nào.") }}</strong>
+        <p>{{ _("Khóa là thứ xác thực lời gọi tới /api/v1. Tạo một khóa ở khối bên dưới, chép chuỗi bí mật, rồi gọi thử.") }}</p>
+        <a class="btn" href="#tao-khoa">{{ _("Tạo khóa đầu tiên") }}</a>
+      </div>
+    </div>
+  {% elif not keys_hien %}
+    <div class="dev-panel-than">
+      <div class="dev-trong">
+        <strong>{{ _("Không có khóa nào ở môi trường này.") }}</strong>
+        <p>{{ _("Bỏ bộ lọc để xem tất cả khóa.") }}</p>
+        <a class="btn btn-ghost" href="/developers/keys">{{ _("Xem tất cả") }}</a>
+      </div>
     </div>
   {% else %}
     <div class="dev-bang">
@@ -42,16 +68,16 @@
           <th scope="col">{{ _("Dùng lần cuối") }}</th><th scope="col"></th>
         </tr></thead>
         <tbody>
-        {% for key in keys %}
+        {% for key in keys_hien %}
           <tr>
             <td><code class="dev-id">{{ key.key_id }}</code></td>
             <td>{{ key.name or '—' }}</td>
             <td>{{ key.project or '—' }}</td>
             <td>
               {% if key.mode == 'test' %}
-                <span class="chip v">{{ _("Test") }}</span>
+                <span class="dev-chip-mt test">Test</span>
               {% else %}
-                {{ _("Live") }}
+                <span class="dev-chip-mt">Live</span>
               {% endif %}
             </td>
             <td>
@@ -107,12 +133,16 @@
         </tbody>
       </table>
     </div>
-    <p class="muted" style="margin:12px 0 0;">{{ _("Thu hồi không đảo ngược được. Muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.") }}</p>
+    <p class="dev-panel-than" style="padding-top:0;color:var(--text-secondary);font-size:12px;margin:0;">{{ _("Tổng cộng %(n)s khóa. Thu hồi không đảo ngược được — muốn thay khóa mà không gián đoạn: tạo khóa thứ hai, chuyển ứng dụng sang, rồi thu hồi khóa cũ.")|format(n=keys|length) }}</p>
   {% endif %}
-</div>
+</section>
 
-<div class="card" id="tao-khoa">
-  <h2 style="margin-top:0;">{{ _("Tạo khóa mới") }}</h2>
+{# Biểu mẫu tạo khóa gập được. Mở sẵn khi CHƯA có khóa nào (đường Golden Outcome
+   C của người mới); gập lại khi đã có khóa để bảng gọn — nút "+ Tạo khóa mới" ở
+   đầu trang cuộn xuống đây. #}
+<details class="dev-tao" id="tao-khoa" {% if not keys %}open{% endif %}>
+  <summary>{{ _("Tạo khóa mới") }}</summary>
+  <div class="dev-tao-than">
   <form method="post" action="/developers/keys">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
@@ -211,6 +241,7 @@
     <button type="submit" class="btn">{{ _("Tạo khóa") }}</button>
     <span class="muted" style="margin-left:10px;font-size:12px;">{{ _("Chuỗi bí mật sẽ hiện đúng một lần ở màn hình tiếp theo.") }}</span>
   </form>
-</div>
+  </div>
+</details>
 
 {% endblock %}

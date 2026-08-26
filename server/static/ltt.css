@@ -1894,8 +1894,14 @@ code.vps-doi-gt{padding:2px 7px;border:1px solid var(--border-subtle);
 .khu-dev .dev-ds time{font-size:11px;color:var(--text-muted);white-space:nowrap;flex-shrink:0}
 
 /* ── Ô mã sắc teal (ảnh: khối .env xanh lục-lam) ───────────────────────── */
-.khu-dev .dev-ma-teal{border-color:var(--dev-cyan-line);
+.khu-dev .dev-ma-teal>figcaption{border-color:var(--dev-cyan-line);
+  background:var(--dev-cyan-soft);color:var(--dev-cyan)}
+.khu-dev .dev-ma-teal .khoi-ma,.khu-dev .dev-ma-teal>pre{
+  border:1px solid var(--dev-cyan-line);
   background:linear-gradient(180deg,var(--dev-cyan-soft),transparent)}
+.khu-dev .dev-ma-teal .khoi-ma pre{border:0;background:transparent}
+/* Hàng lưới ở đầu trang không kéo giãn hai thẻ cao bằng nhau. */
+.khu-dev .dev-luoi-tren{align-items:start}
 
 /* ── Danh mục công cụ dạng LƯỚI THẺ (ảnh demo: 3 cột, mỗi thẻ có ô biểu tượng
  *    màu + tên + mô tả + chân "N model · Docs · Thử ngay") ──────────────────

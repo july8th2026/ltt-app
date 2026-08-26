@@ -1,54 +1,76 @@
 {% extends "developers_base.html" %}
+
+{% block dev_phu_de %}{{ _("Tính trước chi phí một lời gọi, bằng đúng công thức mà báo giá thật dùng.") }}{% endblock %}
+
 {% block section %}
 
-<div class="card">
-  <p>{{ _("Giá ở đây được tính bằng ĐÚNG công thức mà báo giá thật dùng, rồi áp cùng một sàn/trần/làm tròn của phiên bản giá đang có hiệu lực. Nếu con số ở đây khác con số bạn nhận khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý.") }}</p>
-  <p class="muted">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
+{# Hai cột (ảnh demo): soạn lời gọi (trái) · kết quả ước tính (phải). #}
+<div class="dev-luoi dev-luoi-2-1">
+
+  <section class="dev-panel">
+    <header><h2>{{ _("Soạn lời gọi") }}</h2></header>
+    <div class="dev-panel-than">
+      <form method="get" action="/developers/pricing">
+        <div class="dev-field">
+          <label for="pr-tool">{{ _("Công cụ") }}</label>
+          <select id="pr-tool" name="tool">
+            {% for name in tools %}
+              <option value="{{ name }}" {% if name == chosen %}selected{% endif %}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="dev-field">
+          <label for="pr-input">{{ _("Đầu vào (JSON)") }}</label>
+          <textarea id="pr-input" name="input" rows="10"
+                    style="width:100%;font-family:var(--mono);font-size:12.5px;">{{ input_json }}</textarea>
+        </div>
+        <button type="submit" class="btn">{{ _("Tính thử") }}</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="dev-panel">
+    <header><h2>{{ _("Kết quả ước tính") }}</h2></header>
+    <div class="dev-panel-than">
+      {% if error %}
+        <p class="badge b-err" style="display:block;padding:10px;margin:0;">{{ error }}</p>
+      {% elif result %}
+        <div class="dev-uoc-tinh">
+          <strong class="so tnum">{{ result.credit | so }}</strong>
+          <span class="don-vi">credit</span>
+        </div>
+        {# 1 credit = 100đ (Q31). Con so tham chieu, khong phai hoa don. #}
+        <p class="dev-vnd tnum">≈ {{ (result.credit * 100) | so }} VND</p>
+
+        <dl class="dev-han-muc" style="margin-top:14px;">
+          <div><dt>{{ _("Phiên bản giá") }}</dt><dd><code>{{ result.pricing_version }}</code></dd></div>
+          {% if result.bounded %}
+          <div><dt>{{ _("Công thức app tính") }}</dt>
+            <dd class="tnum">{{ result.raw_credit | so }}
+              <span class="muted">{{ _("— bị chặn bởi sàn/trần") }}</span></dd></div>
+          {% endif %}
+        </dl>
+
+        <div class="dev-luu-y">
+          <strong>{{ _("Lưu ý") }}</strong>
+          <ul>
+            <li>{{ _("Đây chỉ là mô phỏng, không gọi nhà cung cấp thật.") }}</li>
+            <li>{{ _("Không sinh báo giá và không trừ credit — không dùng để gọi POST /jobs.") }}</li>
+            <li>{{ _("Giá phụ thuộc toàn bộ đầu vào, nên đổi input là đổi giá.") }}</li>
+          </ul>
+        </div>
+      {% else %}
+        <div class="dev-trong">
+          <strong>{{ _("Chọn công cụ và bấm Tính thử.") }}</strong>
+          <p>{{ _("Con số hiện ở đây là số bạn sẽ bị tính khi gọi /api/v1/quotes với cùng đầu vào.") }}</p>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
 </div>
 
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Thử một lời gọi") }}</h2>
-  <form method="get" action="/developers/pricing">
-    <p>
-      <label for="pr-tool">{{ _("Công cụ") }}</label><br>
-      <select id="pr-tool" name="tool">
-        {% for name in tools %}
-          <option value="{{ name }}" {% if name == chosen %}selected{% endif %}>{{ name }}</option>
-        {% endfor %}
-      </select>
-    </p>
-    <p>
-      <label for="pr-input">{{ _("Đầu vào (JSON)") }}</label><br>
-      <textarea id="pr-input" name="input" rows="8" style="width:100%; font-family:var(--mono, monospace);">{{ input_json }}</textarea>
-    </p>
-    <button type="submit" class="btn">{{ _("Tính thử") }}</button>
-  </form>
-
-  {% if error %}
-    <p class="badge b-err" style="display:block; padding:10px; margin-top:12px;">{{ error }}</p>
-  {% endif %}
-
-  {% if result %}
-    <table class="table" style="margin-top:16px;">
-      <tbody>
-        <tr>
-          <th scope="row">{{ _("Sẽ tính") }}</th>
-          <td><strong class="tnum" style="font-size:20px;">{{ result.credit | so }}</strong> credit</td>
-        </tr>
-        <tr>
-          <th scope="row">{{ _("Phiên bản giá") }}</th>
-          <td><code>{{ result.pricing_version }}</code></td>
-        </tr>
-        {% if result.bounded %}
-          <tr>
-            <th scope="row">{{ _("Công thức app tính") }}</th>
-            <td class="tnum">{{ result.raw_credit | so }}
-              <span class="muted">{{ _("— bị chặn bởi sàn/trần của phiên bản trên") }}</span></td>
-          </tr>
-        {% endif %}
-      </tbody>
-    </table>
-  {% endif %}
-</div>
+<p class="muted" style="margin-top:14px;">{{ _("Mô phỏng KHÔNG sinh báo giá và KHÔNG trừ credit, nên không dùng nó để gọi POST /jobs được — báo giá phải được ký, còn đây chỉ là câu trả lời.") }}</p>
+<p class="muted" style="margin-top:6px;">{{ _("Nếu con số ở đây khác con số khi gọi /api/v1/quotes thì đó là lỗi của chúng tôi, không phải khác biệt cố ý — cùng một hàm sinh cả hai.") }}</p>
 
 {% endblock %}

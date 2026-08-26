@@ -25,7 +25,7 @@ from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
 from server.routes.developer._chung import (  # noqa: F401
-    RETRY_EXAMPLE, _goc_url, _log, _overview_counts, _public_api_config, _redirect, _render, _usage_context, require_account, router)
+    RETRY_EXAMPLE, _chart_points, _goc_url, _log, _overview_counts, _public_api_config, _redirect, _render, _usage_context, require_account, router)
 
 
 @router.get("", response_class=HTMLResponse)
@@ -36,8 +36,25 @@ def developer_overview(request: Request, user=Depends(require_account),
     # liệu. `GET /tools` vì nó là lượt gọi rẻ nhất chứng minh được khoá sống:
     # không báo giá, không job, không tốn credit — nếu nó trả 200 thì mọi thứ
     # từ xác thực tới phạm vi đều đúng.
+    # Hai panel bên phải ảnh demo: request gần đây + thông báo. Cả hai đọc
+    # THẲNG từ nguồn đã có — `request_log` và `notifications` — không bảng mới,
+    # không số bịa. Rỗng thì template hiện `.dev-trong` với bước tiếp theo.
+    from datetime import datetime, timedelta, timezone
+
+    from platform_core.public_api import notifications, request_log
+
+    recent = request_log.list_for(db, user_id=user.id, limit=5)
+    notes = notifications.list_for(db, user_id=user.id)[:4]
+    # Biểu đồ 7 ngày (ảnh demo): gom theo ngày từ chính bảng nhật ký, không
+    # bảng mới. `_chart_points` trả None khi chưa có gì để vẽ — template hiện
+    # trạng thái rỗng chứ không vẽ một đường phẳng qua các số 0.
+    now = datetime.now(timezone.utc)
+    daily = request_log.daily(db, user_id=user.id,
+                              since=now - timedelta(days=6), until=now)
     return _render(request, db, user, "overview", "dev_overview.html",
                    counts=_overview_counts(db, user),
+                   recent=recent, notes=notes,
+                   chart=_chart_points(daily),
                    lenh_thu=("curl -s " + _goc_url(request) + "/api/v1/tools \
 "
                              '  -H "Authorization: Bearer $LTT_API_KEY"'),
@@ -210,8 +227,14 @@ def developer_cli(request: Request, user=Depends(require_account),
     from server.routes.tai_lieu_api import bo_cai_moi_nhat, goi_bat_moi_nhat
 
     goc = str(request.base_url).rstrip("/")
+    counts = _overview_counts(db, user)
     return _render(
         request, db, user, "cli", "dev_cli.html",
+        # Bậc thang 4 bước (ảnh demo): chỉ bước có DỮ LIỆU thật mới tô "xong" —
+        # có khoá chưa, đã gọi lần đầu chưa. Hai bước giữa là nội dung của chính
+        # trang này, không có trạng thái để bịa.
+        da_co_khoa=counts["active_keys"] > 0,
+        da_goi_api=counts["da_goi_api"],
         base_url=goc,
         codex_config=examples.codex_config(goc),
         codex_profile=examples.codex_profile(),

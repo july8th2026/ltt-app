@@ -1,41 +1,75 @@
 {% extends "developers_base.html" %}
+
+{% block dev_phu_de %}{{ _("Kết nối LTT API vào công cụ viết mã trong vài phút.") }}{% endblock %}
+
 {% block section %}
 
-{# Thân dùng chung với trang công khai `/huong-dan` — xem `_cam_chon.html`.
-   Trang này chỉ thêm một câu về nơi lấy khoá, thứ chỉ có nghĩa khi đã đăng nhập. #}
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Cắm model vào công cụ viết mã của bạn") }}</h2>
-  <p>{{ _("Chép cấu hình bên dưới, đặt khoá, mở lại ứng dụng.") }}</p>
-  <p class="muted">{{ _("Khoá lấy ở") }} <a href="/developers/keys">{{ _("trang Khóa API") }}</a>.
-    {{ _("Nó chỉ hiện một lần lúc tạo, nên trang này không điền hộ được — hãy đặt nó vào biến môi trường") }}
-    <code>{{ env_key }}</code>.</p>
-</div>
+{# ── Bậc thang 4 bước (ảnh demo) ─────────────────────────────────────────
+   Chỉ bước 1 và 4 mang trạng thái thật (`da_co_khoa`, `da_goi_api`); hai bước
+   giữa là nội dung của chính trang này — không có gì để bịa "đang làm". #}
+<ol class="dev-bac">
+  <li class="{{ 'xong' if da_co_khoa else 'dang' }}">
+    <span class="num">{% if da_co_khoa %}✓{% else %}1{% endif %}</span>
+    <span class="lbl">{{ _("Tạo khóa API") }}</span><span class="noi"></span>
+  </li>
+  <li>
+    <span class="num">2</span>
+    <span class="lbl">{{ _("Chọn công cụ") }}</span><span class="noi"></span>
+  </li>
+  <li>
+    <span class="num">3</span>
+    <span class="lbl">{{ _("Cấu hình") }}</span><span class="noi"></span>
+  </li>
+  <li class="{{ 'xong' if da_goi_api else '' }}">
+    <span class="num">{% if da_goi_api %}✓{% else %}4{% endif %}</span>
+    <span class="lbl">{{ _("Gửi request") }}</span>
+  </li>
+</ol>
 
-{# 🔴 CÔNG CỤ CẮM ĐẶT Ở ĐÂY, TRÊN CÙNG, không ở cuối trang và không chỉ trên
-   trang công khai. Đo 25/08: `/tai/cong-cu-cam` trả 200 và bộ cài 25,9 MB đã
-   nằm trên máy chủ, nhưng KHÔNG một trang nào trong khu `/developers` nhắc tới
-   nó — nên với người đã đăng nhập, công cụ coi như không tồn tại.
+{# Hai cột (ảnh demo): Cấu hình môi trường (trái) · Ba cách cắm API (phải).
+   Phần chi tiết (chọn công cụ + kết nối + các bước) ở `_cam_chon.html` bên dưới,
+   dùng chung với trang công khai `/huong-dan` — KHÔNG lặp lại ở đây. #}
+<div class="dev-luoi dev-luoi-1-1 dev-luoi-tren">
 
-   Người vừa tạo khoá xong đang đứng đúng ở đây. Đó là thời điểm duy nhất câu
-   "để tôi ghi cấu hình hộ" có giá trị. #}
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Ba cách cắm API") }}</h2>
-  <p>{{ _("Chọn đúng cách bạn muốn vận hành. Cả ba dùng cùng một cấu hình và cùng một phép kiểm thật.") }}</p>
+  <section class="dev-panel">
+    <header><h2>{{ _("Cấu hình môi trường") }}</h2></header>
+    <div class="dev-panel-than">
+      <p style="margin-top:0;">{{ _("Đặt hai biến này vào môi trường của ứng dụng, rồi mở lại nó:") }}</p>
+      <figure class="dev-ma dev-ma-teal">
+        <figcaption>.env</figcaption>
+        {# ⛔ KHÔNG bao giờ in khoá thật — dùng placeholder. #}
+        <pre><code>{{ env_key }}=ltt_sk_...
+LTT_BASE_URL={{ base_url }}/api/v1</code></pre>
+      </figure>
+      <p class="muted" style="margin-bottom:0;">
+        {{ _("Khoá chỉ hiện một lần lúc tạo, nên trang này không điền hộ được —") }}
+        <a href="/developers/keys">{{ _("lấy khoá ở trang Khóa API") }}</a>.</p>
+    </div>
+  </section>
 
-  <h3>1. {{ _("Tool EXE — có giao diện") }}</h3>
-  <p>{{ _("Phù hợp cho một máy cá nhân: chọn từng bề mặt, xem trạng thái từ file và registry, rồi kiểm API ngay trong cửa sổ.") }}</p>
-  <p><a class="btn" href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></p>
-  {% if bo_cai %}<p class="muted">{{ _("Bản") }} {{ bo_cai.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ bo_cai.sha256 }}</code></p>{% endif %}
+  {# 🔴 CÔNG CỤ CẮM ĐẶT Ở ĐÂY, không chỉ trên trang công khai. Đo 25/08:
+     `/tai/cong-cu-cam` trả 200 và bộ cài đã nằm trên máy chủ, nhưng KHÔNG trang
+     nào trong khu `/developers` nhắc tới nó — nên với người đã đăng nhập, công
+     cụ coi như không tồn tại. Người vừa tạo khoá xong đang đứng đúng ở đây. #}
+  <section class="dev-panel">
+    <header><h2>{{ _("Ba cách cắm API") }}</h2></header>
+    <div class="dev-panel-than">
+      <h3 style="margin-top:0;">1. {{ _("Tool EXE — có giao diện") }}</h3>
+      <p>{{ _("Phù hợp cho một máy cá nhân: chọn từng bề mặt, xem trạng thái từ file và registry, rồi kiểm API ngay trong cửa sổ.") }}</p>
+      <p><a class="btn" href="/tai/cong-cu-cam">{{ _("Tải EXE") }}{% if bo_cai %} ({{ bo_cai.kich_thuoc_mb }} MB){% endif %}</a></p>
+      {% if bo_cai %}<p class="muted" style="font-size:11px;">{{ _("Bản") }} {{ bo_cai.phien_ban }} · SHA-256 <code style="font-size:10.5px;">{{ bo_cai.sha256[:24] }}…</code></p>{% endif %}
 
-  <h3>2. {{ _("ZIP + BAT — không GUI, chạy Administrator") }}</h3>
-  <p>{{ _("Giải nén, bấm cam_cli_admin.bat, dán khóa trong ô nhập được che, rồi chọn Codex, Claude Code, VS Code hoặc Claude Desktop.") }}</p>
-  <p><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT") }}{% if goi_bat %} ({{ goi_bat.kich_thuoc_mb }} MB){% endif %}</a></p>
-  {% if goi_bat %}<p class="muted">{{ _("Bản") }} {{ goi_bat.phien_ban }} · SHA-256 <code style="font-size:11px;">{{ goi_bat.sha256 }}</code></p>{% endif %}
+      <h3>2. {{ _("ZIP + BAT — không GUI, chạy Administrator") }}</h3>
+      <p>{{ _("Giải nén, bấm cam_cli_admin.bat, dán khóa trong ô nhập được che, rồi chọn Codex, Claude Code, VS Code hoặc Claude Desktop.") }}</p>
+      <p><a class="btn btn-ghost" href="/tai/cong-cu-cam-bat">{{ _("Tải ZIP + BAT") }}{% if goi_bat %} ({{ goi_bat.kich_thuoc_mb }} MB){% endif %}</a></p>
 
-  <h3>3. {{ _("Hướng dẫn thủ công") }}</h3>
-  <p>{{ _("Không tải chương trình nào. Đọc từng đoạn cấu hình bên dưới, chép đúng base URL và tên model của bề mặt bạn dùng.") }}</p>
-  <p><a class="btn btn-ghost" href="#cau-hinh-tay">{{ _("Xem cấu hình thủ công") }}</a>
-     <a class="btn btn-ghost" href="/huong-dan/cong-cu" style="margin-left:8px;">{{ _("Công cụ chạm vào đâu") }}</a></p>
+      <h3>3. {{ _("Hướng dẫn thủ công") }}</h3>
+      <p>{{ _("Không tải chương trình nào. Đọc từng đoạn cấu hình bên dưới, chép đúng base URL và tên model của bề mặt bạn dùng.") }}</p>
+      <p><a class="btn btn-ghost" href="#cau-hinh-tay">{{ _("Xem cấu hình thủ công") }}</a>
+         <a class="btn btn-ghost" href="/huong-dan/cong-cu" style="margin-left:8px;">{{ _("Công cụ chạm vào đâu") }}</a></p>
+    </div>
+  </section>
+
 </div>
 
 <div id="cau-hinh-tay"></div>

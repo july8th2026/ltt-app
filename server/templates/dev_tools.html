@@ -53,16 +53,28 @@
   <p class="muted" style="margin:0 0 10px;">{{ catalog | length }}
     {{ _("công cụ đang mở — bấm một thẻ để xem hợp đồng đầy đủ.") }}</p>
 
+  {# Lưới thẻ 3 cột (ảnh demo). Mỗi thẻ vẫn là `<details>` — mở ra xem hợp đồng
+     đầy đủ ngay trong thẻ, không rời trang. #}
+  <div class="dev-tool-luoi">
   {% for tool in catalog %}
+    {%- set cap = tool.capability | lower -%}
+    {%- set cap_cls = cap if cap in ('image','text','vision','audio','video','code') else 'other' -%}
     <details class="tool-the">
       <summary>
-        {# Nhan che do chay dung vai tro cua nhan method ben plenxai: no la thu
-           quyet dinh KHACH PHAI VIET MA KIEU GI (doi hay hoi lai), nen no la
-           thu dau tien can doc, khong phai mot cot phu o cuoi bang. #}
-        <span class="the-che-do che-do-{{ tool.execution_mode | lower }}">{{ tool.execution_mode }}</span>
-        <code class="the-ten">{{ tool.name }}</code>
+        <span class="tool-dau">
+          {# Ô biểu tượng màu theo NHÓM (thật, từ `capability`) — không phải
+             badge Stable/Beta/Alpha (ToolSpec không có trường đó, xem freeze). #}
+          <span class="tool-icon cap-{{ cap_cls }}" aria-hidden="true">{{ tool.name[0] | upper }}</span>
+          <code class="the-ten">{{ tool.name }}</code>
+          {# Nhan che do chay: quyet dinh khach phai viet ma kieu gi. #}
+          <span class="the-che-do che-do-{{ tool.execution_mode | lower }}">{{ tool.execution_mode }}</span>
+        </span>
         <span class="the-mo-ta">{{ tool.description }}</span>
-        <span class="the-nhom">{{ tool.capability }}</span>
+        <span class="tool-chan">
+          {% if tool.model_count %}<span>{{ tool.model_count }} model</span>{% else %}<span>{{ tool.capability }}</span>{% endif %}
+          <a href="/developers/tools/{{ tool.name }}" onclick="event.stopPropagation()">Docs</a>
+          <a href="/developers/playground?tool={{ tool.name }}" onclick="event.stopPropagation()" class="day">{{ _("Thử ngay") }} →</a>
+        </span>
       </summary>
 
       <div class="tool-than">
@@ -120,6 +132,7 @@
       </div>
     </details>
   {% endfor %}
+  </div>{# /dev-tool-luoi #}
 {% endif %}
 
 {% if models %}

@@ -1,7 +1,8 @@
 {% extends "developers_base.html" %}
-{% block section %}
 
-<p class="dev-dan">{{ _("Mọi lời gọi tài khoản này thực hiện, kể cả những lời gọi chưa bao giờ chạy — 401, 403, 429 là thứ không có job nào giải thích hộ.") }}</p>
+{% block dev_phu_de %}{{ _("Mọi lời gọi tài khoản này thực hiện, kể cả những lời gọi chưa bao giờ chạy — 401, 403, 429 là thứ không có job nào giải thích hộ.") }}{% endblock %}
+
+{% block section %}
 
 {# ── Bay ngay so ─────────────────────────────────────────────────────────
    Truoc day la mot `<ul>` hai gach dau dong tron ba con so voi mot cau chinh

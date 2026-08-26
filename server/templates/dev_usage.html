@@ -1,30 +1,37 @@
 {% extends "developers_base.html" %}
-{% block section %}
 
-<p class="dev-dan">{{ _("Credit đã tiêu qua API, và ngân sách bạn tự đặt để không tiêu quá tay. Ngân sách quan sát chi tiêu — nó không bao giờ đổi sổ credit.") }}</p>
+{% block dev_phu_de %}{{ _("Credit đã tiêu qua API, và ngân sách bạn tự đặt để không tiêu quá tay. Ngân sách quan sát chi tiêu — nó không bao giờ đổi sổ credit.") }}{% endblock %}
+
+{% block section %}
 
 {# Nam con so trong ba gach dau dong van xuoi -> mot luoi chi so va mot dai
    han muc. Chung tra loi hai cau hoi khac nhau ('toi con bao nhieu' va
    'may chu cho toi bao nhieu'), nen chung khong nen nam chung mot khoi. #}
+{# Bốn thẻ chỉ số (ảnh demo có bốn), mỗi thẻ một ô biểu tượng cyan. #}
 <div class="chi-so-luoi">
   <div class="chi-so">
-    <span class="chi-so-nhan">{{ _("Số dư") }}</span>
-    <strong class="chi-so-gt">{{ balance | so }}</strong>
+    <span class="chi-so-nhan">{{ _("Credit khả dụng") }}</span>
+    <strong class="chi-so-gt tnum">{{ balance | so }}</strong>
     <span class="chi-so-phu">credit · <a href="/nap">{{ _("nạp thêm") }}</a></span>
+    <span class="chi-so-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h15a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l2-3h11l2 3M16 12h.5"/></svg></span>
   </div>
-  {% set vuot = limits.daily_credit_limit and usage_today.net_charged_credit >= limits.daily_credit_limit %}
-  <div class="chi-so{% if vuot %} co-van-de{% endif %}">
-    <span class="chi-so-nhan">{{ _("Dùng hôm nay") }}</span>
-    <strong class="chi-so-gt">{{ usage_today.net_charged_credit | so }}</strong>
-    <span class="chi-so-phu">
-      {%- if limits.daily_credit_limit %}{{ _("trên trần") }} {{ limits.daily_credit_limit | so }}
-        {%- if vuot %} — <strong>{{ _("đã vượt trần") }}</strong>{% endif %}
-      {%- else %}{{ _("chưa đặt trần ngày") }}{% endif %}</span>
+  <div class="chi-so">
+    <span class="chi-so-nhan">{{ _("Đã dùng 30 ngày") }}</span>
+    <strong class="chi-so-gt tnum">{{ used_30d | so }}</strong>
+    <span class="chi-so-phu">credit</span>
+    <span class="chi-so-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19V5M4 19h16M8 16l4-5 3 3 5-6"/></svg></span>
+  </div>
+  <div class="chi-so">
+    <span class="chi-so-nhan">{{ _("Request 30 ngày") }}</span>
+    <strong class="chi-so-gt tnum">{{ req_30d | so }}</strong>
+    <span class="chi-so-phu">{{ _("lời gọi API") }}</span>
+    <span class="chi-so-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12h16M4 12l4-4M4 12l4 4"/></svg></span>
   </div>
   <div class="chi-so">
     <span class="chi-so-nhan">{{ _("Đang giữ chỗ") }}</span>
-    <strong class="chi-so-gt">{{ usage_today.held_credit | so }}</strong>
+    <strong class="chi-so-gt tnum">{{ usage_today.held_credit | so }}</strong>
     <span class="chi-so-phu">{{ _("credit của job chưa quyết toán") }}</span>
+    <span class="chi-so-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
   </div>
 </div>
 
@@ -36,6 +43,83 @@
     <div><dt>{{ _("Trần của máy chủ") }}</dt><dd class="tnum">{{ limits.daily_credit_limit | so }} credit/{{ _("ngày") }}</dd></div>
   {% endif %}
 </dl>
+
+{# Hai cột (ảnh demo): biểu đồ 30 ngày (trái) · vòng phân bổ theo công cụ
+   (phải). Cả hai SVG sinh phía máy chủ, không JS. #}
+<div class="dev-luoi dev-luoi-2-1">
+  <section class="dev-panel">
+    <header>
+      <h2>{{ _("Sử dụng 30 ngày qua") }}</h2>
+      {% if chart %}
+      <span class="dev-chu-thich">
+        <span><span class="o o-req"></span>Request</span>
+        <span><span class="o o-credit"></span>Credit</span>
+      </span>
+      {% endif %}
+    </header>
+    <div class="dev-panel-than">
+      {% if chart %}
+      <svg class="dev-bieu-do" viewBox="0 0 {{ chart.width }} {{ chart.height + 16 }}"
+           role="img" aria-label="{{ _('Biểu đồ Request và Credit 30 ngày qua') }}"
+           preserveAspectRatio="none">
+        <line class="luoi" x1="6" y1="{{ chart.height }}" x2="{{ chart.width - 6 }}" y2="{{ chart.height }}"/>
+        <line class="luoi" x1="6" y1="6" x2="{{ chart.width - 6 }}" y2="6" opacity="0.5"/>
+        <polygon class="vung-credit" points="{{ chart.credit_area }}"/>
+        <polygon class="vung-req" points="{{ chart.req_area }}"/>
+        <polyline class="duong-credit" points="{{ chart.credit_points }}"/>
+        <polyline class="duong-req" points="{{ chart.req_points }}"/>
+        {% for lb in chart.labels %}
+          <text class="nhan" x="{{ '%.1f'|format(lb.x) }}" y="{{ chart.height + 13 }}"
+                text-anchor="{{ lb.anchor }}">{{ lb.text }}</text>
+        {% endfor %}
+      </svg>
+      {% else %}
+      <div class="dev-trong">
+        <strong>{{ _("Chưa có lưu lượng để vẽ.") }}</strong>
+        <p>{{ _("Sau vài lời gọi API, biểu đồ 30 ngày sẽ hiện ở đây.") }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="dev-panel">
+    <header><h2>{{ _("Phân bổ theo công cụ") }}</h2></header>
+    <div class="dev-panel-than">
+      {% if donut %}
+      <div class="dev-vong">
+        <svg viewBox="0 0 160 160" class="vong-svg" role="img"
+             aria-label="{{ _('Vòng phân bổ credit theo công cụ') }}">
+          <g transform="rotate(-90 80 80)">
+            {% for seg in donut.segments %}
+            <circle cx="80" cy="80" r="{{ donut.radius }}" fill="none"
+                    stroke="{{ seg.color }}" stroke-width="18"
+                    stroke-dasharray="{{ seg.dash }} {{ seg.gap }}"
+                    stroke-dashoffset="{{ seg.offset }}"/>
+            {% endfor %}
+          </g>
+          <text x="80" y="76" text-anchor="middle" class="vong-so">{{ donut.total | so }}</text>
+          <text x="80" y="94" text-anchor="middle" class="vong-nhan">credit</text>
+        </svg>
+        <ul class="dev-vong-chu">
+          {% for item in donut.legend %}
+          <li>
+            <span class="cham" style="background:{{ item.color }}"></span>
+            <code>{{ item.tool }}</code>
+            <span class="pct tnum">{{ item.percent }}%</span>
+            <span class="val tnum">({{ item.value | so }})</span>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% else %}
+      <div class="dev-trong">
+        <strong>{{ _("Chưa có chi tiêu để phân bổ.") }}</strong>
+        <p>{{ _("Khi các job qua API bắt đầu tiêu credit, tỉ lệ theo công cụ hiện ở đây.") }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</div>
 
 <div class="card">
   <h2 style="margin-top:0;">{{ _("Ngân sách của bạn") }}</h2>

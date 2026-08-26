@@ -136,6 +136,25 @@ def _seed(db, user) -> None:
             latency_ms=ms, credit_delta=cre,
             created_at=now - timedelta(minutes=7 * i)))
 
+    # A handful of billed API jobs so Usage lines, the tool-breakdown donut and
+    # the "jobs via API" count show real data — not just request-log rows.
+    from platform_core.models import CREDIT_HOLD, CreditEntry, Job
+    from platform_core.public_api.invocation import API_META_KEY
+    jobs_mau = [("image.ltt", 296, 6), ("image.ltt", 0, 5), ("text.chat", 187, 4),
+                ("vision.ltt", 99, 8), ("audio.ltt", 46, 12), ("text.chat", 0, 1)]
+    for i, (tool, credit_net, days_ago) in enumerate(jobs_mau):
+        jid = str(uuid.uuid4())
+        job = Job(id=jid, user_id=user.id, app_slug="anhnoibo", job_type="api",
+                  status="succeeded",
+                  params={API_META_KEY: {"tool": tool, "mode": "live",
+                                         "key_id": kid}},
+                  created_at=now - timedelta(days=days_ago, minutes=i))
+        db.add(job)
+        if credit_net:
+            db.add(CreditEntry(user_id=user.id, job_id=jid, kind=CREDIT_HOLD,
+                               delta=-credit_net,
+                               created_at=now - timedelta(days=days_ago)))
+
     db.add(ApiBudget(id=str(uuid.uuid4()), user_id=user.id, scope="account",
                      period="month", amount=2000, thresholds=[50, 80, 100],
                      hard_cap=False, created_at=now))
@@ -157,6 +176,20 @@ def _seed(db, user) -> None:
             last_error="" if st == WEBHOOK_DELIVERED else "503 Service Unavailable",
             next_attempt_at=now, created_at=now - timedelta(hours=i),
             delivered_at=now if st == WEBHOOK_DELIVERED else None))
+
+    # A couple of notifications so the bell, the overview panel and the
+    # notifications page show a real list rather than only an empty state.
+    from platform_core.public_api import notifications
+    notifications.raise_alert(
+        db, user_id=user.id, kind=notifications.WEBHOOK_FAILING,
+        subject=sub.id, title="Webhook đang giao hỏng",
+        body="Điểm nhận https://example.com/ltt/hook có lần giao bỏ cuộc.",
+        now=now - timedelta(hours=2))
+    notifications.raise_alert(
+        db, user_id=user.id, kind=notifications.KEY_EXPIRING,
+        subject=kid, title="Một khóa sắp hết hạn",
+        body="Khóa production-web hết hạn trong 90 ngày.",
+        now=now - timedelta(days=1))
 
 
 if __name__ == "__main__":

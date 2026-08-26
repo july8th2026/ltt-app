@@ -309,7 +309,23 @@ def _base_context(request: Request, db: Session, user, active: str,
         # Trang cong khai dung no de doi loi keu goi: khach an danh thay "Dang
         # ky lay khoa", khach da dang nhap thay duong toi khoa cua ho.
         "da_dang_nhap": user is not None,
+        # So thong bao chua doc — cho chuong o thanh tren cua khu. Mot COUNT re,
+        # va chi chay khi da dang nhap; khach an danh khong co thong bao nao.
+        "unread": (_unread_count(db, user) if user is not None else 0),
     }
+
+
+def _unread_count(db: Session, user) -> int:
+    """So thong bao chua doc cua tai khoan, hoac 0 neu co bat ky truc trac gi.
+
+    Chuong o thanh tren la trang tri thong tin, khong phai duong song con: mot
+    loi khi dem thong bao khong duoc lam sap ca trang. Nen boc va tra 0."""
+    try:
+        from platform_core.public_api import notifications
+        return int(notifications.unread_count(db, user_id=user.id))
+    except Exception as exc:  # noqa: BLE001 - chuong hong thi trang van phai len
+        _log.warning("dev topbar: dem thong bao chua doc that bai: %s", exc)
+        return 0
 
 
 def _projects_context(db: Session, user) -> dict:
@@ -402,6 +418,87 @@ def _overview_counts(db: Session, user) -> dict:
     }
 
 
+def _chart_points(series: list, *, width: int = 560, height: int = 150,
+                  pad: int = 6) -> dict:
+    """Turn `request_log.daily()` rows into ready-to-draw SVG geometry.
+
+    Both lines share one Y scale (the demo's axis does), so a flat line is an
+    honest "almost nothing happened that day", not a rescaled illusion. Returns
+    ``None`` when there is nothing to draw — the template shows an empty state
+    rather than a line through zeros.
+    """
+    if not series or all(r["requests"] == 0 and r["credit"] == 0
+                         for r in series):
+        return None
+    ymax = max(1, max(max(r["requests"], r["credit"]) for r in series))
+    n = len(series)
+    span_x = width - 2 * pad
+    span_y = height - 2 * pad
+
+    def _xy(index: int, value: int) -> str:
+        x = pad + (span_x * index / (n - 1) if n > 1 else span_x / 2)
+        y = pad + span_y * (1 - value / ymax)
+        return f"{x:.1f},{y:.1f}"
+
+    req = " ".join(_xy(i, r["requests"]) for i, r in enumerate(series))
+    credit = " ".join(_xy(i, r["credit"]) for i, r in enumerate(series))
+    # Closed polygons for the translucent area fill under each line (demo look):
+    # the line, then down to the baseline and back to the start.
+    base = f"{pad + span_x:.1f},{pad + span_y:.1f} {pad:.1f},{pad + span_y:.1f}"
+    req_area = f"{req} {base}"
+    credit_area = f"{credit} {base}"
+    labels = [{"x": pad + (span_x * i / (n - 1) if n > 1 else span_x / 2),
+               "text": r["date"].strftime("%d/%m"),
+               # First/last labels anchor inward so they never clip the edge.
+               "anchor": ("start" if i == 0 else
+                          "end" if i == n - 1 else "middle")}
+              for i, r in enumerate(series)
+              # At most ~7 x-axis labels so they never collide.
+              if n <= 8 or i % (n // 7 or 1) == 0]
+    return {"width": width, "height": height, "ymax": ymax,
+            "req_points": req, "credit_points": credit,
+            "req_area": req_area, "credit_area": credit_area, "labels": labels}
+
+
+#: Palette for the tool-breakdown donut — distinct hues that read on carbon,
+#: assigned by rank so the biggest slice is always the same colour run to run.
+_DONUT_MAU = ("#2bb8c9", "#c8548f", "#8b5cc8", "#d08a2c", "#4a9d5a",
+              "#ef3731", "#5882dc", "#6b7280")
+
+
+def _donut(rows: list, *, by: str = "credit") -> dict:
+    """Segments for an SVG donut of `by_tool()` rows, or None if nothing to show.
+
+    The circumference trick: each slice is a circle stroke whose dasharray is
+    (arc, rest) and whose offset stacks the previous arcs. Returns the segments
+    plus a legend so the template draws no arithmetic of its own.
+    """
+    items = [row for row in (rows or []) if int(row.get(by, 0)) > 0]
+    if not items:
+        return None
+    total = sum(int(row[by]) for row in items)
+    if total <= 0:
+        return None
+    radius = 60.0
+    circ = 2 * 3.141592653589793 * radius
+    segments, legend = [], []
+    offset = 0.0
+    for index, row in enumerate(items[:8]):
+        value = int(row[by])
+        frac = value / total
+        arc = frac * circ
+        colour = _DONUT_MAU[index % len(_DONUT_MAU)]
+        segments.append({"color": colour, "dash": round(arc, 2),
+                         "gap": round(circ - arc, 2),
+                         "offset": round(-offset, 2)})
+        legend.append({"tool": row["tool"], "color": colour,
+                       "percent": round(frac * 100, 1),
+                       "value": value, "calls": row.get("calls", 0)})
+        offset += arc
+    return {"radius": radius, "circ": round(circ, 2), "total": total,
+            "segments": segments, "legend": legend}
+
+
 def _render(request: Request, db: Session, user, active: str, template: str,
             **extra) -> HTMLResponse:
     context = _base_context(request, db, user, active,
@@ -411,11 +508,17 @@ def _render(request: Request, db: Session, user, active: str, template: str,
 
 
 def _keys_page(request: Request, db: Session, user, *, revealed: str = "",
-               error: str = "", created_key=None) -> HTMLResponse:
+               error: str = "", created_key=None,
+               mode_filter: str = "") -> HTMLResponse:
     config = _public_api_config(request)
+    # `mode_filter` chi loc HIEN THI (tab Tat ca / Live / Test cua anh demo) —
+    # khong them route, nen `test_197` van chot dung 32. Loc o template tren
+    # danh sach nho; khong dung truy van rieng.
     return _render(request, db, user, "keys", "dev_keys.html",
                    error=error, revealed_secret=revealed,
                    created_key=created_key,
+                   mode_filter=(mode_filter if mode_filter in ("live", "test")
+                                else ""),
                    **_projects_context(db, user),
                    **_keys_context(db, user, config))
 
@@ -467,6 +570,10 @@ def _the_cong_cu(tool) -> dict:
             "capability": tool.capability,
             "execution_mode": tool.execution_mode,
             "scopes": list(tool.scopes),
+            # So model alias khai cho tool nay (ảnh demo: "N model"). Lay tu
+            # hop dong cong khai, khong dem tay.
+            "model_count": len((getattr(tool, "api_contract", {}) or {}).get(
+                "models", {})),
             "params": params,
             "example_request": _example_request(tool, params),
             "outputs": _vi_du_outputs(body["output_schema"].get("properties", {}))}
@@ -579,12 +686,28 @@ def _usage_page(request: Request, db: Session, user, *, tool: str = "",
                 key_id: str = "", status: str = "",
                 error: str = "") -> HTMLResponse:
     from platform_core.public_api import budgets as budget_mod
+    from platform_core.public_api import request_log
 
     config = _public_api_config(request)
     now = datetime.now(timezone.utc)
     window_start = now - timedelta(days=30)
     lines = usage.usage_lines(db, user_id=user.id, since=window_start,
                               until=now, tool=tool, key_id=key_id, limit=50)
+    # Biểu đồ 30 ngày (ảnh demo) — tái dùng đúng hàm chỉ-đọc của overview, cửa
+    # sổ rộng hơn. None ⇒ template hiện trạng thái rỗng, không vẽ đường phẳng.
+    chart30 = _chart_points(
+        request_log.daily(db, user_id=user.id,
+                          since=now - timedelta(days=29), until=now),
+        width=660, height=170)
+    # Vòng phân bổ theo công cụ (ảnh demo: "Phân bổ theo công cụ") — dữ liệu
+    # thật từ sổ credit, gom theo tool. None ⇒ trạng thái rỗng.
+    tool_rows = usage.by_tool(db, user_id=user.id,
+                              since=now - timedelta(days=29), until=now)
+    donut = _donut(tool_rows)
+    # Hai chỉ số 30 ngày cho thẻ (ảnh demo có 4 thẻ): credit đã tiêu + số request.
+    used_30d = sum(int(r["credit"]) for r in tool_rows)
+    req_30d = request_log.counts(db, user_id=user.id,
+                                 since=now - timedelta(days=30))["requests"]
     if status:
         lines = [line for line in lines if line.get("status") == status]
 
@@ -604,7 +727,8 @@ def _usage_page(request: Request, db: Session, user, *, tool: str = "",
 
     return _render(
         request, db, user, "usage", "dev_usage.html", error=error,
-        budgets=rows, lines=lines,
+        budgets=rows, lines=lines, chart=chart30, donut=donut,
+        used_30d=used_30d, req_30d=req_30d,
         tools=[item.name for item in build_catalog(config)],
         keys=[{"key_id": key.key_id, "name": key.name}
               for key in devkeys.list_for_user(db, user.id)],

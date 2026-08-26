@@ -1,23 +1,11 @@
 {% extends "developers_base.html" %}
+
+{# Phụ đề về đầu trang (ảnh demo: ngay dưới tiêu đề), không nằm trong thân. #}
+{% block dev_phu_de %}{{ _("Tình trạng tài khoản API của bạn và bước tiếp theo để gọi được.") }}{% endblock %}
+
 {% block section %}
 
-<p class="dev-dan">{{ _("Tình trạng tài khoản API của bạn và bước tiếp theo để gọi được.") }}</p>
-
-{# ── Luoi chi so ───────────────────────────────────────────────────────────
-
-   🔴 Ban cu la mot `<ul>` bay dong bullet, va bay dong do tron bay LOAI so
-      khac nhau: tinh trang dich vu, so du tien, muc dung hom nay, so dem, va
-      han muc. Doc mot danh sach nhu vay khong tra loi duoc cau hoi ma trang
-      nay ton tai de tra loi — **co gi dang lo khong**.
-
-   ⭐ Mot luoi chi so tra loi duoc, vi no cho phep QUET chu khong phai DOC: so
-      to, nhan nho, va thu can chu y tu no doi mau. Chu san pham 25/08 goi ban
-      cu la *"qua basic, qua don gian"* — va do la mot nhan xet ve cau truc,
-      khong phai ve mau sac.
-
-   ⚠️ Mau KHONG bao gio dung mot minh o day: o co van de mang them chu
-      ("thất bại", "vượt trần"). Mot o do ma khong co chu la mot o vo nghia voi
-      nguoi khong phan biet duoc mau. #}
+{# ── Bốn thẻ chỉ số (ảnh demo có bốn, mỗi thẻ một ô biểu tượng bên phải) ──── #}
 <div class="chi-so-luoi">
 
   <div class="chi-so{% if not api_enabled %} co-van-de{% elif read_only %} canh-bao{% endif %}">
@@ -26,136 +14,224 @@
       {%- elif read_only %}{{ _("chỉ đọc") }}{% else %}{{ _("đang phục vụ") }}{% endif %}</strong>
     <span class="chi-so-phu">{% if api_enabled and not read_only %}{{ _("mọi tuyến bình thường") }}
       {%- else %}{{ _("tạo job đang bị từ chối") }}{% endif %}</span>
+    <span class="chi-so-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    </span>
   </div>
 
   <div class="chi-so">
     <span class="chi-so-nhan">{{ _("Số dư") }}</span>
-    <strong class="chi-so-gt">{{ balance | so }}</strong>
+    <strong class="chi-so-gt tnum">{{ balance | so }}</strong>
     <span class="chi-so-phu">credit · <a href="/nap">{{ _("nạp thêm") }}</a></span>
-  </div>
-
-  {% set vuot = limits.daily_credit_limit and usage_today.net_charged_credit >= limits.daily_credit_limit %}
-  <div class="chi-so{% if vuot %} co-van-de{% endif %}">
-    <span class="chi-so-nhan">{{ _("Dùng hôm nay") }}</span>
-    <strong class="chi-so-gt">{{ usage_today.net_charged_credit | so }}</strong>
-    <span class="chi-so-phu">
-      {%- if limits.daily_credit_limit %}{{ _("trên trần") }} {{ limits.daily_credit_limit | so }}
-        {%- if vuot %} — <strong>{{ _("đã vượt trần") }}</strong>{% endif %}
-      {%- else %}{{ _("chưa đặt trần ngày") }}{% endif %}
-      {%- if usage_today.held_credit %} · {{ _("giữ chỗ") }} {{ usage_today.held_credit | so }}{% endif %}</span>
+    <span class="chi-so-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></svg>
+    </span>
   </div>
 
   <div class="chi-so{% if counts.active_keys == 0 %} canh-bao{% endif %}">
     <span class="chi-so-nhan">{{ _("Khóa đang hoạt động") }}</span>
-    <strong class="chi-so-gt">{{ counts.active_keys }}</strong>
+    <strong class="chi-so-gt tnum">{{ counts.active_keys }}</strong>
     <span class="chi-so-phu">{{ counts.projects }} project ·
       <a href="/developers/keys">{{ _("quản lý") }}</a></span>
-  </div>
-
-  <div class="chi-so">
-    <span class="chi-so-nhan">{{ _("Job qua API") }}</span>
-    <strong class="chi-so-gt">{{ counts.api_jobs }}</strong>
-    <span class="chi-so-phu">{{ _("30 ngày qua") }} ·
-      <a href="/developers/jobs">{{ _("xem") }}</a></span>
+    <span class="chi-so-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="15" r="4"/><path d="M11 12l7-7 3 3M15 8l2 2"/></svg>
+    </span>
   </div>
 
   {# Webhook that bai la thu DUY NHAT tren luoi nay co the dang hong ma khach
      khong biet — job hong thi khach thay ngay, webhook hong thi im lang. #}
   <div class="chi-so{% if counts.webhook_failures %} co-van-de{% endif %}">
     <span class="chi-so-nhan">Webhook</span>
-    <strong class="chi-so-gt">{{ counts.webhooks }}</strong>
+    <strong class="chi-so-gt tnum">{{ counts.webhooks }}</strong>
     <span class="chi-so-phu">
       {%- if counts.webhook_failures %}<strong>{{ counts.webhook_failures }}
         {{ _("lần giao thất bại") }}</strong> — <a href="/developers/webhooks">{{ _("xem") }}</a>
       {%- elif counts.webhooks %}{{ _("đang khỏe") }}
       {%- else %}{{ _("chưa đăng ký") }}{% endif %}</span>
+    <span class="chi-so-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12a8 8 0 1 1 8 8M8 16l-4 4M4 12h4"/></svg>
+    </span>
   </div>
 
 </div>
 
-{# Ba con số này trước nằm trong một câu văn xuôi. Cặp nhãn–giá trị thì quét
-   mắt lấy được ngay; một câu thì phải đọc hết rồi mới tách ra được. #}
+{# Ba giới hạn — cặp nhãn–giá trị quét mắt được ngay. #}
 <dl class="dev-han-muc">
   <div><dt>{{ _("Request/phút") }}</dt><dd class="tnum">{{ limits.request_rpm }}</dd></div>
   <div><dt>{{ _("Job/phút") }}</dt><dd class="tnum">{{ limits.create_rpm }}</dd></div>
   <div><dt>{{ _("Job chạy cùng lúc") }}</dt><dd class="tnum">{{ limits.max_active_jobs }}</dd></div>
 </dl>
 
-{# ── Bốn bước tới lượt gọi đầu tiên ────────────────────────────────────────
+{# ── Hàng: Biểu đồ 7 ngày (trái) · Bắt đầu / checklist (phải) — ảnh demo ───
+   Biểu đồ sinh phía máy chủ (SVG, không JS, không thư viện). `chart` là None
+   khi chưa có gì để vẽ ⇒ trạng thái rỗng, KHÔNG vẽ đường phẳng qua các số 0. #}
+<div class="dev-luoi dev-luoi-2-1">
 
-   Trước 25/08 đây là ba liên kết rời: không biết bước nào đã làm, và sau khi
-   tạo khoá xong không có gì đưa khách sang lượt gọi đầu. Một danh sách ba bước
-   mà không biết mình đang ở đâu thì không phải hướng dẫn, nó là một cái menu.
+  <section class="dev-panel">
+    <header>
+      <h2>{{ _("Sử dụng 7 ngày qua") }}</h2>
+      {% if chart %}
+      <span class="dev-chu-thich">
+        <span><span class="o o-req"></span>Request</span>
+        <span><span class="o o-credit"></span>Credit</span>
+      </span>
+      {% endif %}
+    </header>
+    <div class="dev-panel-than">
+      {% if chart %}
+      <svg class="dev-bieu-do" viewBox="0 0 {{ chart.width }} {{ chart.height + 16 }}"
+           role="img" aria-label="{{ _('Biểu đồ Request và Credit 7 ngày qua') }}"
+           preserveAspectRatio="none">
+        <line class="luoi" x1="6" y1="{{ chart.height }}" x2="{{ chart.width - 6 }}" y2="{{ chart.height }}"/>
+        <line class="luoi" x1="6" y1="6" x2="{{ chart.width - 6 }}" y2="6" opacity="0.5"/>
+        <polygon class="vung-credit" points="{{ chart.credit_area }}"/>
+        <polygon class="vung-req" points="{{ chart.req_area }}"/>
+        <polyline class="duong-credit" points="{{ chart.credit_points }}"/>
+        <polyline class="duong-req" points="{{ chart.req_points }}"/>
+        {% for lb in chart.labels %}
+          <text class="nhan" x="{{ '%.1f'|format(lb.x) }}" y="{{ chart.height + 13 }}"
+                text-anchor="{{ lb.anchor }}">{{ lb.text }}</text>
+        {% endfor %}
+      </svg>
+      {% else %}
+      <div class="dev-trong">
+        <strong>{{ _("Chưa có lưu lượng để vẽ.") }}</strong>
+        <p>{{ _("Sau vài lời gọi API, biểu đồ 7 ngày sẽ hiện ở đây.") }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
 
-   Trạng thái đọc từ CSDL thật (`_overview_counts`), không phải từ cookie hay
-   từ việc khách đã bấm vào đâu — bấm vào một trang không có nghĩa là đã làm
-   xong việc ở đó. #}
-<div class="card">
-  <h2 style="margin-top:0;">{{ _("Bắt đầu") }}</h2>
+  {# ── Bắt đầu: checklist đọc từ CSDL thật (`_overview_counts`) ──────────── #}
+  <section class="dev-panel">
+    <header><h2>{{ _("Bắt đầu") }}</h2></header>
+    <div class="dev-panel-than">
+      {% set xong_project = counts.projects > 0 %}
+      {% set xong_khoa    = counts.active_keys > 0 %}
+      {% set xong_goi     = counts.da_goi_api %}
+      {% set tat_ca_xong  = xong_project and xong_khoa and xong_goi %}
 
-  {% set xong_project = counts.projects > 0 %}
-  {% set xong_khoa    = counts.active_keys > 0 %}
-  {% set xong_goi     = counts.da_goi_api %}
-  {% set tat_ca_xong  = xong_project and xong_khoa and xong_goi %}
+      {% if tat_ca_xong %}
+        <p class="muted" style="margin-top:0;">{{ _("Bạn đã gọi được. Những nơi hay dùng:") }}</p>
+        <p class="dev-tat">
+          <a class="btn" href="/developers/logs">{{ _("Nhật ký request") }}</a>
+          <a class="btn btn-ghost" href="/developers/keys">{{ _("Khóa API") }}</a>
+          <a class="btn btn-ghost" href="/developers/tools">{{ _("Công cụ & model") }}</a>
+          <a class="btn btn-ghost" href="/developers/playground">{{ _("Chạy thử") }}</a>
+        </p>
+      {% else %}
+        <ol class="dev-buoc">
+          <li class="{{ 'xong' if xong_project }}">
+            {% if xong_project %}<strong>✓ {{ _("Đã có project") }}</strong>
+              <span class="muted">({{ counts.projects }})</span>
+            {% else %}<a href="/developers/projects">{{ _("Tạo một project") }}</a>
+              — {{ _("mỗi tích hợp một project.") }}
+            {% endif %}
+          </li>
+          <li class="{{ 'xong' if xong_khoa }}">
+            {% if xong_khoa %}<strong>✓ {{ _("Đã có khóa đang hoạt động") }}</strong>
+              <span class="muted">({{ counts.active_keys }})</span>
+            {% else %}<a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
+              — {{ _("chuỗi bí mật chỉ hiện một lần.") }}
+            {% endif %}
+          </li>
+          <li class="{{ 'xong' if xong_goi }}">
+            {% if xong_goi %}<strong>✓ {{ _("Đã gọi được lần đầu") }}</strong>
+            {% else %}{{ _("Gọi thử — lệnh này không tốn credit:") }}
+              {% if xong_khoa %}
+                <pre>{{ lenh_thu }}</pre>
+              {% else %}
+                <span class="muted">{{ _("(cần khóa ở bước trên trước)") }}</span>
+              {% endif %}
+            {% endif %}
+          </li>
+        </ol>
+        <p class="muted" style="margin:10px 0 0;">
+          <a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a> ·
+          <a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a> ·
+          <a href="/developers/playground">{{ _("Chạy thử") }}</a>
+        </p>
+      {% endif %}
+    </div>
+  </section>
 
-  {% if tat_ca_xong %}
-    {# ⚠️ MOT nut chinh, con lai la nut phu.
-       Ban cu la nam nut do dac canh nhau — do la nam thu deu keu "bam toi
-       truoc", tuc khong thu nao keu duoc. Va no dot chay mau nhan hieu o dung
-       cho khong co gi de nhan manh: day la nam duong tat ngang hang nhau.
-       Mau do o khu nay danh cho hanh dong CHINH, muc dang mo, va canh bao. #}
-    <p class="muted">{{ _("Bạn đã gọi được. Những nơi hay dùng:") }}</p>
-    <p class="dev-tat">
-      <a class="btn" href="/developers/logs">{{ _("Nhật ký request") }}</a>
-      <a class="btn btn-ghost" href="/developers/keys">{{ _("Khóa API") }}</a>
-      <a class="btn btn-ghost" href="/developers/tools">{{ _("Công cụ & model") }}</a>
-      <a class="btn btn-ghost" href="/developers/playground">{{ _("Chạy thử") }}</a>
-      <a class="btn btn-ghost" href="/developers/jobs">{{ _("Job gần đây") }}</a>
-    </p>
-  {% else %}
-    <ol class="dev-buoc">
-      {# Mỗi bước tự nói nó xong chưa. Dấu ✓ đi kèm chữ, không đứng một mình:
-         một dấu tick không màu không nói được gì cho người đọc bằng bộ đọc
-         màn hình, và màu một mình cũng thế. #}
-      <li class="{{ 'xong' if xong_project }}">
-        {% if xong_project %}<strong>✓ {{ _("Đã có project") }}</strong>
-          <span class="muted">({{ counts.projects }})</span>
-        {% else %}<a href="/developers/projects">{{ _("Tạo một project") }}</a>
-          — {{ _("mỗi tích hợp một project.") }}
-        {% endif %}
-      </li>
-      <li class="{{ 'xong' if xong_khoa }}">
-        {% if xong_khoa %}<strong>✓ {{ _("Đã có khóa đang hoạt động") }}</strong>
-          <span class="muted">({{ counts.active_keys }})</span>
-        {% else %}<a href="/developers/keys">{{ _("Tạo khóa trong project đó") }}</a>
-          — {{ _("chuỗi bí mật chỉ hiện một lần.") }}
-        {% endif %}
-      </li>
-      <li class="{{ 'xong' if xong_goi }}">
-        {% if xong_goi %}<strong>✓ {{ _("Đã gọi được lần đầu") }}</strong>
-        {% else %}{{ _("Gọi thử — lệnh này không tốn credit:") }}
-          {% if xong_khoa %}
-            <pre>{{ lenh_thu }}</pre>
-            <p class="muted" style="margin:6px 0 0;font-size:.9em;">
-              {{ _("Đặt khóa vào biến môi trường trước:") }}
-              <code>LTT_API_KEY</code>.
-              {{ _("Trả 200 là xong — xác thực, phạm vi và hạn mức đều đúng.") }}
-            </p>
-          {% else %}
-            <span class="muted">{{ _("(cần khóa ở bước trên trước)") }}</span>
-          {% endif %}
-        {% endif %}
-      </li>
-    </ol>
-    <p class="muted" style="margin:10px 0 0;">
-      {# Chay thu phai voi toi duoc tu DAY. No khong con tren thanh dieu huong
-         (no la muc con cua "Cong cu & model" tu 25/08), nen neu trang dau
-         khong tro toi thi mot nguoi chua tao khoa xong khong biet no ton tai. #}
-      <a href="/developers/quickstart">{{ _("Hướng dẫn đầy đủ") }}</a> ·
-      <a href="/developers/tools">{{ _("Xem có những công cụ gì") }}</a> ·
-      <a href="/developers/playground">{{ _("Chạy thử ngay trên trình duyệt") }}</a>
-    </p>
-  {% endif %}
+</div>
+
+{# ── Hàng: Request gần đây (trái) · Thông báo (phải) — ảnh demo ────────────
+   Hai panel, đúng bố cục ảnh. Dữ liệu THẬT từ `request_log`/`notifications`. #}
+<div class="dev-luoi dev-luoi-2-1">
+
+  <section class="dev-panel">
+    <header>
+      <h2>{{ _("Request gần đây") }}</h2>
+      <a href="/developers/logs">{{ _("Xem tất cả") }}</a>
+    </header>
+    {% if recent %}
+    <div class="dev-bang">
+      <table class="table">
+        <thead><tr>
+          <th>{{ _("Lúc") }}</th><th>{{ _("Trạng thái") }}</th><th>{{ _("Công cụ / tuyến") }}</th>
+          <th class="tnum">{{ _("Độ trễ") }}</th><th class="tnum">Credit</th>
+        </tr></thead>
+        <tbody>
+          {% for r in recent %}
+          <tr>
+            <td class="tnum">{{ r.created_at.strftime('%H:%M:%S') }}</td>
+            <td>
+              {%- set cls = 'ok' if r.status < 400 else ('canh' if r.status < 500 else 'loi') -%}
+              <span class="dev-tt {{ cls }}">{{ r.status }}</span>
+            </td>
+            <td>{% if r.tool %}<code>{{ r.tool }}</code>{% else %}<span class="dev-id">{{ r.route }}</span>{% endif %}</td>
+            <td class="tnum">{{ r.latency_ms }}ms</td>
+            <td class="tnum">{% if r.credit_delta %}{{ r.credit_delta | abs }}{% else %}<span class="dev-trong-o">0</span>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="dev-panel-than">
+      <div class="dev-trong">
+        <strong>{{ _("Chưa có request nào.") }}</strong>
+        <p>{{ _("Mỗi lời gọi tới /api/v1 hiện ở đây — thành công lẫn thất bại — để bạn tra khi tích hợp.") }}</p>
+        <a class="btn" href="/developers/cli">{{ _("Cắm vào công cụ") }}</a>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="dev-panel">
+    <header>
+      <h2>{{ _("Thông báo") }}</h2>
+      <a href="/developers/notifications">{{ _("Xem tất cả") }}</a>
+    </header>
+    <div class="dev-panel-than">
+      {% if notes %}
+      <ul class="dev-ds">
+        {% for n in notes %}
+        {%- set k = n.kind or '' -%}
+        {%- if 'exceed' in k or 'fail' in k or 'negative' in k or 'dead' in k %}{% set cham = 'loi' %}
+        {%- elif 'low' in k or 'near' in k or 'threshold' in k or 'expir' in k %}{% set cham = 'canh' %}
+        {%- else %}{% set cham = 'tin' %}{% endif -%}
+        <li>
+          <span class="cham {{ cham }}" aria-hidden="true"></span>
+          <span class="noi-dung">
+            <strong>{{ n.title or n.kind }}</strong>
+            {% if n.body %}<p>{{ n.body }}</p>{% endif %}
+          </span>
+          <time datetime="{{ n.created_at.isoformat() }}">{{ n.created_at.strftime('%d/%m %H:%M') }}</time>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="dev-trong">
+        <strong>{{ _("Chưa có thông báo.") }}</strong>
+        <p>{{ _("Cảnh báo về số dư, hạn mức, khóa sắp hết hạn hay webhook hỏng sẽ hiện ở đây.") }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+
 </div>
 
 {% endblock %}

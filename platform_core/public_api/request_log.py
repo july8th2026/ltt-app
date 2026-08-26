@@ -188,6 +188,56 @@ def timeline(db, row) -> dict:
     return found
 
 
+def daily(db, *, user_id: str, since: datetime,
+          until: datetime | None = None) -> list:
+    """Requests, failures and credit bucketed by calendar day (UTC).
+
+    Read-only, and deliberately bucketed in Python rather than with a
+    ``GROUP BY date(...)``: the two databases in play (SQLite in the harness,
+    PostgreSQL in production) disagree on how ``date()`` treats a timezone-aware
+    column, and a chart is the last place to discover that. The window is capped
+    at the retention horizon, the query is served by
+    ``ix_public_api_requests_owner_time``, and every day in range is emitted —
+    **including the empty ones** — so a gap reads as "no calls that day", not as
+    a line the renderer had to guess through.
+    """
+    end = _aware(until) if until is not None else _now()
+    start = _aware(since)
+    rows = db.execute(select(
+        ApiRequestLog.created_at, ApiRequestLog.status,
+        ApiRequestLog.credit_delta,
+    ).where(ApiRequestLog.user_id == str(user_id or ""),
+            ApiRequestLog.created_at >= start,
+            ApiRequestLog.created_at <= end)).all()
+
+    buckets: dict = {}
+    for created_at, status, credit_delta in rows:
+        day = _aware(created_at).date()
+        acc = buckets.setdefault(day, {"requests": 0, "failures": 0,
+                                       "credit": 0})
+        acc["requests"] += 1
+        if int(status or 0) >= 400:
+            acc["failures"] += 1
+        acc["credit"] += abs(int(credit_delta or 0))
+
+    out = []
+    day = start.date()
+    last = end.date()
+    while day <= last:
+        acc = buckets.get(day, {"requests": 0, "failures": 0, "credit": 0})
+        out.append({"date": day, "requests": acc["requests"],
+                    "failures": acc["failures"], "credit": acc["credit"]})
+        day += timedelta(days=1)
+    return out
+
+
+def _aware(value: datetime) -> datetime:
+    """A timezone-aware copy — SQLite hands back naive datetimes."""
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
 def counts(db, *, user_id: str, since: datetime) -> dict:
     """A small summary for the top of the page: total, failures, spend."""
     rows = db.execute(select(

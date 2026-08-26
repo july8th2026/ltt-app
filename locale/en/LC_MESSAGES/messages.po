@@ -11569,3 +11569,27 @@ msgstr "One-time access session"
 
 msgid "Mỗi lần mở console là một vé dùng một lần. Mất kết nối thì phải tải lại trang để xin vé mới — nút “Kết nối lại” làm đúng việc đó."
 msgstr "Each console session uses a one-time ticket. If the connection drops you must reload the page to get a new one — that is exactly what “Reconnect” does."
+
+msgid "Credit khả dụng"
+msgstr "Available credit"
+
+msgid "Cấu hình môi trường"
+msgstr "Environment config"
+
+msgid "Khoá chỉ hiện một lần lúc tạo, nên trang này không điền hộ được —"
+msgstr "The key is shown once, at creation, so this page cannot fill it in —"
+
+msgid "Request 30 ngày"
+msgstr "Requests, 30 days"
+
+msgid "lấy khoá ở trang Khóa API"
+msgstr "get a key on the API keys page"
+
+msgid "lời gọi API"
+msgstr "API calls"
+
+msgid "Đã dùng 30 ngày"
+msgstr "Used, 30 days"
+
+msgid "Đặt hai biến này vào môi trường của ứng dụng, rồi mở lại nó:"
+msgstr "Put these two variables in your application's environment, then reopen it:"

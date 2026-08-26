@@ -143,6 +143,32 @@ def usage_lines(db, *, user_id: str, since: datetime, until: datetime,
     return lines
 
 
+def by_tool(db, *, user_id: str, since: datetime, until: datetime) -> list:
+    """Net credit and call count per tool over the window, biggest first.
+
+    Feeds the usage page's tool-breakdown donut. Read-only, and it walks the
+    **whole** window rather than one page: a breakdown that only counts the
+    first 20 jobs is a chart that lies. Reuses ``_line`` so the per-tool credit
+    is the same net figure the transaction list shows.
+    """
+    jobs = db.execute(
+        select(Job).where(Job.user_id == str(user_id),
+                          Job.created_at >= since, Job.created_at <= until)
+    ).scalars().all()
+    ledger = _ledger_by_job(db, user_id, [job.id for job in jobs])
+    agg: dict = {}
+    for job in jobs:
+        line = _line(job, ledger.get(job.id, {}))
+        tool = line["tool"]
+        if not tool:
+            continue
+        acc = agg.setdefault(tool, {"tool": tool, "calls": 0, "credit": 0})
+        acc["calls"] += 1
+        acc["credit"] += int(line["credit"]["net_charged"])
+    return sorted(agg.values(),
+                  key=lambda row: (row["credit"], row["calls"]), reverse=True)
+
+
 def usage_totals(db, *, user_id: str, since: datetime, until: datetime) -> dict:
     """Window totals straight from the ledger, independent of the page above.
 
