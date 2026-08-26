@@ -42,7 +42,10 @@ def test_gate_runs_the_scanners_and_pytest():
     # import. Da tim thay mot cai that o POST /upscalevideo/queue (2026-08-06).
     assert "ten chua dinh nghia" in names
     assert "system profile" in names
-    assert "pytest" in names
+    # DOI TEN 2026-08-26: buoc nay khong con goi `pytest` truc tiep. No di
+    # qua `tools/test_nhanh.py` (hai pha: song song + noi tiep cho ba tep
+    # ghi vao cay kho), cung tap pass/fail nhung 4 phut thay vi 2 gio.
+    assert "bo test (song song)" in names
     for frontend in _frontends_on_disk():
         assert f"frontend {frontend}" in names
 
@@ -51,8 +54,10 @@ def test_gate_runs_the_scanners_and_pytest():
 #: một chỗ để nới ra mỗi lần thêm bước chậm: mỗi tên ở đây là một thứ mà người
 #: chạy `--quick` sẽ KHÔNG được kiểm, và họ cần biết chính xác đó là gì.
 BUOC_CHAM = {
-    # Bộ test đầy đủ: ~78 phút, không thể nằm trong vòng lặp sửa-chạy.
-    "pytest",
+    # Bộ test đầy đủ. ⭐ Nay chỉ còn **~4 phút** (trước: 2 giờ) nhờ
+    # `tools/test_nhanh.py`. Vẫn để trong danh sách này vì `--quick` là vòng lặp
+    # tính bằng giây, và 4 phút vẫn là một khoảng chờ có cảm nhận được.
+    "bo test (song song)",
     # H36.9: đẻ tiến trình worker thật trên PostgreSQL, ~135 giây. Là bằng chứng
     # duy nhất cho việc webhook không gửi trùng và cảnh báo không nhân đôi khi
     # nhiều tiến trình chạy cùng lúc — nên nó BẮT BUỘC có trong gate đầy đủ,
@@ -102,6 +107,58 @@ def test_the_gate_command_is_documented(doc):
     text = (ROOT / doc).read_text(encoding="utf-8")
     assert "tools/gate.py" in text or "tools\\gate.py" in text, (
         f"{doc} chưa nhắc tới tools/gate.py")
+
+
+#: Tài liệu **chỉ dẫn người ta làm việc** — khác tài liệu ghi lịch sử. Chỉ những
+#: tệp này bị soi: một bản audit cũ hay một mục nhật ký được phép nhắc lệnh cũ,
+#: vì nó đang kể một chuyện đã xảy ra chứ không bảo ai làm gì.
+TAI_LIEU_CHI_DAN = (
+    "CLAUDE.md", "AGENTS.md",
+    "docs/00_BAT_DAU_TU_DAY.md", "docs/01_COPY_LEN_SERVER.md",
+    "docs/02_LENH_CHO_CLAUDE.md", "docs/03_THEM_APP_MOI.md",
+)
+
+
+@pytest.mark.parametrize("doc", TAI_LIEU_CHI_DAN)
+def test_khong_tai_lieu_nao_con_bao_chay_pytest_TOAN_BO(doc):
+    """⛔ `python -m pytest -q` cho TOÀN BỘ kho không còn là cách chạy đúng.
+
+    Hai lý do, và lý do thứ hai mới là lý do thật:
+
+    1. nó **không** chạy 77 test frontend ⇒ "full regression xanh" là câu nói sai;
+    2. nó chạy **một luồng, 25 phút**, trong khi `tools/test_nhanh.py` cho **cùng
+       tập pass/fail** trong 4 phút (đo 26/08: 4096 passed / 26 skipped ở cả hai).
+
+    ⭐ Vì sao chốt điều này thay vì chỉ sửa tài liệu một lần: trước 26/08 bộ test
+       mất **2 giờ**, và điều đó đổi cách người ta làm việc — `pytest` thôi là một
+       vòng lặp và thành một sự kiện. Hệ quả đo được: H40 đóng mà **chưa lượt
+       `pytest` đầy đủ nào chạy xong**, và lượt đầu tiên sau đó tìm ra **36 lỗi**.
+
+       Sửa sáu dòng tài liệu chỉ chữa hôm nay. Phép kiểm này chữa ngày mai.
+
+    ⚠️ Lệnh chạy **một tệp** (`pytest tests/test_60_...py`) vẫn đúng và vẫn được
+       khuyến khích cho vòng lặp ngắn — nó không bị chặn ở đây.
+    """
+    import re
+
+    text = (ROOT / doc).read_text(encoding="utf-8")
+    # `pytest` + CHI cac co, roi het dong (khong duong dan tep nao theo sau).
+    #
+    # ⚠️ Da phai sua HAI lan, va ghi lai vi mot banh coc bat hut mot nua thi
+    #    NGUY HIEM HON khong co — no tao cam giac da duoc canh:
+    #      lan 1: `\s+-\w+`  bo sot `--tb=line`      (dau `=`)
+    #      lan 2: them `=`   van bo sot `-p no:cacheprovider`
+    #             (gia tri cua co la mot token KHONG co dau gach)
+    #
+    # ⭐ Cho phep mot token gia tri sau moi co, nhung KHONG chua `/` hay `\` —
+    #    do chinh la thu phan biet "gia tri cua co" voi "duong dan mot tep test".
+    #    Nho vay `pytest tests/test_60_....py -q` van im, dung nhu no nen the.
+    xau = re.compile(
+        r"python -m pytest(?:\s+-{1,2}[-\w=.:]+(?:\s+[\w=.:,]+)?)*\s*$", re.M)
+    pham = [d.strip() for d in text.splitlines() if xau.search(d)]
+    assert not pham, (
+        f"{doc} van bao chay pytest TOAN BO: {pham}. "
+        r"Dung `python tools\test_nhanh.py` (~4 phut) hoac `python tools\gate.py`.")
 
 
 def test_banh_coc_nuot_loi_khong_cho_tang_them():

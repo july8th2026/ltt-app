@@ -92,20 +92,65 @@ theo hướng dẫn trong đó**.
   Đó là nơi ghi logic nghiệp vụ nằm ở đâu, ngưỡng phình của `routes.py`, và
   những việc dùng chung phải gọi `platform_core` chứ không chép lại.
 - Không xoá test đang xanh, trừ khi có quyết định sản phẩm được ghi lại.
-- Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**:
-  ```powershell
-  python tools\gate.py            # pytest + test 3 frontend + 2 scanner
-  python tools\gate.py --quick    # bỏ full pytest, cho vòng lặp ngắn
-  ```
-  `python -m pytest -q` KHÔNG chạy test frontend. Chạy mỗi nó rồi báo "full
-  regression xanh" là bỏ sót 77 test vitest — `tools/gate.py` sinh ra để không
-  ai phải nhớ điều đó. Thêm frontend mới thì khai vào `FRONTENDS`;
-  `test_145` sẽ đỏ nếu quên.
+- Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**: `python tools\gate.py`.
+  Xem **mục 4b** cho ba lệnh chạy test và lệnh nào dùng khi nào.
 - Ghi **đúng lệnh đã chạy và kết quả thật** vào nhật ký. Phân biệt rõ
   `đã chạy` / `chưa chạy` / `pass` / `fail`.
 - **Không bao giờ tuyên bố hoàn thành dựa trên kế hoạch hay số test thu thập
   được.** Chỉ dựa trên kết quả chạy thật.
 - Thay đổi rủi ro: viết trước cách lùi lại, rồi mới làm.
+
+## 4b. Chạy test — ba lệnh, và **đừng gọi `pytest` trực tiếp**
+
+| Lệnh | Dùng khi | Thời gian |
+|---|---|---|
+| `python tools	est_nhanh.py` | vòng lặp làm việc — **mặc định** | **~4 phút** |
+| `python tools	est_nhanh.py --lf` | ngay sau khi sửa một lỗi | giây → phút |
+| `python tools\gate.py` | **trước khi báo xong** | ~8 phút |
+
+⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
+mới là lý do thật:
+
+1. Nó **không** chạy 77 test frontend, nên "full regression xanh" sẽ là câu nói
+   sai — `gate.py` sinh ra để không ai phải nhớ điều đó.
+2. Nó chạy **một luồng và mất 25 phút**, trong khi `test_nhanh.py` cho **cùng
+   tập pass/fail** trong 4 phút. Đo 2026-08-26:
+
+   ```
+   nối tiếp   4096 passed, 26 skipped   1.534 giây
+   song song  4096 passed, 26 skipped     234 giây
+   ```
+
+⭐ **Vì sao tốc độ ở đây là vấn đề ĐÚNG ĐẮN, không phải tiện nghi.** Trước
+2026-08-26 bộ test mất **2 giờ**, và điều đó đổi cách người ta làm việc: `pytest`
+thôi là một vòng lặp và thành một sự kiện. Hệ quả đo được — hạng mục H40 đóng mà
+**chưa lượt `pytest` đầy đủ nào chạy xong**, và lượt đầy đủ đầu tiên sau đó tìm
+ra **36 lỗi**, trong đó có một phép kiểm **chưa bao giờ xanh** trên máy này.
+
+**Một bộ test quá chậm để chạy là một bộ test không ai chạy.**
+
+Tốc độ đến từ hai chỗ, và chỗ thứ nhất lớn hơn:
+
+- **Bỏ `fsync` cho SQLite tạm** (`platform_core/db.py`). `create_all` 44 bảng:
+  **2,16s → 0,05s**. Vì gần như mọi test dựng một CSDL mới, đó là hơn ba giờ.
+  ⛔ Có **hai hàng rào** giữ nó khỏi production, và `test_309` chốt cả hai.
+- **Chạy song song** (`--dist loadfile`), trừ **ba tệp** ghi vào cây kho —
+  chúng chạy nối tiếp ở pha 2. Danh sách ở `tools/test_nhanh.py::TEP_NOI_TIEP`,
+  và `test_309` chốt nó.
+
+### Thêm test mới thì nhớ hai điều
+
+1. Test **ghi vào tệp thật trong kho** phải khai vào `TEP_NOI_TIEP`, và phải
+   khôi phục **đúng từng byte VÀ đúng dấu thời gian** (`write_bytes` + `os.utime`).
+   Thiếu một trong hai thì `gate.py` in *"CÂY ĐÃ ĐỔI TRONG LÚC CHẠY"* và cả lượt
+   chạy thành vô giá trị — đã mất **hai lượt gate ≈ 4 giờ** vì đúng chuyện này.
+2. Test **không được đọc trạng thái máy** (tải GPU, tốc độ CPU, số tiến trình).
+   Tiêm stub cho mọi thứ nó phụ thuộc. Hai phép kiểm đã dính trong một ngày:
+   `test_193` (hạn mức nhịp phụ thuộc tốc độ máy) và `test_250` (đọc tải GPU
+   thật). **Một phép kiểm đọc trạng thái máy không đo thứ nó nói là đang đo —
+   nó đo cái máy.**
+
+---
 
 ### Kiểm tra bằng trình duyệt
 

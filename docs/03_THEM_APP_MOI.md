@@ -238,8 +238,8 @@ Mọi route hiển thị dữ liệu **phải có `Depends(require_login)`**.
 ## 4. Kiểm tra
 
 ```powershell
-python -m pytest tests/test_60_app_registry.py -q
-python -m pytest -q
+python -m pytest tests/test_60_app_registry.py -q   # vong lap ngan
+python tools	est_nhanh.py                          # toan bo, ~4 phut
 ```
 
 `test_60` tự bắt các lỗi hay gặp:

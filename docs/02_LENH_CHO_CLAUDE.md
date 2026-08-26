@@ -13,7 +13,7 @@ Mở Claude Code **ngay tại thư mục chứa mã nguồn** — trên máy ph�
 
 ```
 Đọc docs/QUYET_DINH_NEN_TANG.md, docs/KE_HOACH_TRIEN_KHAI.md và docs/NHAT_KY.md.
-Chạy python -m pytest -q để biết trạng thái hiện tại.
+Chạy python tools	est_nhanh.py để biết trạng thái hiện tại.
 Tóm tắt: đang ở đâu, còn gì dở, việc tiếp theo nên làm là gì.
 ```
 
@@ -46,7 +46,7 @@ hợp đồng app thành thứ được kiểm chứng thật, thay vì chỉ l�
 Chạy nghiệm thu hạ tầng (⚠️ app `demo` đã gỡ 2026-08-25 — dùng một app thật và
 chấp nhận nó tiêu credit, hoặc chạy `pytest tests/test_67 tests/test_68` là bộ
 kiểm cùng chuỗi mà không tốn gì):
-1. python -m pytest -q  → phải xanh hết
+1. python tools\gate.py  → phải xanh hết
 2. python tools/scan_source_secrets.py  → phải 0 finding
 3. chạy uvicorn cục bộ, mở /, xác nhận trang chủ liệt kê đủ app
 4. mở một app bất kỳ, chạy một job, xác nhận có kết quả và có số credit

@@ -128,7 +128,7 @@ là mất tiền thật.
 ```powershell
 cd d:\LTTSTUDIOSAPP
 python -m pip install -r requirements.txt -r requirements-server.txt
-python -m pytest -q                    # phải xanh hết trước khi làm gì tiếp
+python tools	est_nhanh.py             # ~4 phut, phai xanh het truoc khi lam gi tiep
 python -m uvicorn server.run:app --host 127.0.0.1 --port 8100
 ```
 

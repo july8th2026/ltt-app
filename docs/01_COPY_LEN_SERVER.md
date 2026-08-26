@@ -8,7 +8,7 @@ Trên máy bạn:
 
 ```powershell
 cd d:\LTTSTUDIOSAPP
-python -m pytest -q                      # phải xanh hết
+python tools\gate.py                     # ~7 phut, phai xanh het
 python tools\scan_source_secrets.py      # phải 0 finding
 ```
 
@@ -86,7 +86,7 @@ Sửa code ở **thư mục nguồn trên máy phát triển**, không sửa tro
 
 ### Cách A — chép lại thư mục (đơn giản, khuyên dùng)
 
-1. Trên máy phát triển: `python -m pytest -q` phải xanh
+1. Trên máy phát triển: `python tools\gate.py` phải xanh
 2. Chép thư mục sang máy chủ, ghi đè bản cũ ở `C:\Temp\LTTSTUDIOSAPP`
 3. Trên máy chủ chạy lại:
    ```powershell

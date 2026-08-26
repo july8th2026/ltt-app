@@ -198,8 +198,25 @@ def _steps(quick: bool) -> list[Step]:
         # Browser/audit artifacts live under tmp/ and test-results/ by contract;
         # they may contain copied ``tests`` folders and must never be collected
         # as a second copy of the repository test suite.
-        steps.append(Step("pytest", [sys.executable, "-m", "pytest", "-q",
-                                      "--ignore=tmp", "--ignore=test-results"], ROOT))
+        # 🔴 DI QUA `test_nhanh.py`, KHONG goi `pytest` truc tiep nua.
+        #
+        #    Truoc 2026-08-26 buoc nay la mot lenh `pytest` MOT LUONG, mat
+        #    **2 gio**. Do khong phai su bat tien — no doi cach nguoi ta lam
+        #    viec: `pytest` thoi la mot vong lap va thanh mot su kien.
+        #
+        # ⛔ He qua da do duoc: hang muc H40 dong ma CHUA luot `pytest` day du
+        #    nao chay xong, va luot day du dau tien sau do tim ra **36 loi** —
+        #    gom mot phep kiem CHUA BAO GIO XANH tren may nay.
+        #
+        # ⭐ `test_nhanh.py` cho CUNG TAP pass/fail trong 4 phut, chung minh
+        #    bang so chu khong bang tin tuong:
+        #        noi tiep   4096 passed, 26 skipped, 1.534 giay
+        #        song song  4096 passed, 26 skipped,   234 giay
+        #
+        #    Hai pha: song song `--dist loadfile` cho phan lon, roi noi tiep cho
+        #    ba tep ghi vao cay kho (`TEP_NOI_TIEP`). Xem AGENTS.md muc 4b.
+        steps.append(Step("bo test (song song)",
+                          [sys.executable, "tools/test_nhanh.py"], ROOT))
     return steps
 
 
@@ -215,7 +232,17 @@ def _run(step: Step) -> None:
         output = f"khong chay duoc: {exc}"
     step.seconds = time.monotonic() - started
     lines = [line for line in output.splitlines() if line.strip()]
-    step.tail = "\n".join(lines[-4:])
+    # 🔴 GIU 40 DONG, KHONG PHAI 4 — day la mot sua loi QUY TRINH, khong phai
+    #    mot con so tuy chinh.
+    #
+    #    Ngay 26/08 toi dung gate lam CONG CU PHAT HIEN: chay 2 gio, doc 4 dong
+    #    cuoi, thay 3 cai ten trong so 36 loi, sua 3 cai do, roi chay lai 2 gio.
+    #    Nam luot nhu vay ≈ 10 gio — de lay mot thu ma MOT luot da cho het neu
+    #    dau ra khong bi cat.
+    #
+    # ⭐ Bon dong du cho mot buoc tinh (chung in mot dong ket luan). Voi bo test,
+    #    danh sach FAILED moi la thu can doc, va no dai hon 4 dong.
+    step.tail = "\n".join(lines[-40:])
 
 
 def _console_text(value: str, encoding: str | None = None) -> str:
@@ -232,7 +259,7 @@ def _console_text(value: str, encoding: str | None = None) -> str:
 
 
 #: Tên các bước `--quick` KHÔNG chạy. In ra ở dòng kết quả — xem `main`.
-BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "pytest")
+BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "bo test (song song)")
 
 
 def _dau_van_tay_cay() -> str:

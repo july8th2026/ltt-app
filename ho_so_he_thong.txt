@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:506a0f6b8fc4f70265e79019afb41d8f8f2f4b75d7cda579401acd35a93e32b2
+Fingerprint   : sha256:0e00ccc07d6d54824bdcdb94c170a04307ffae238941fb275cd76c2aba3c681d
 Nguồn đã quét : 1170 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2576,7 +2576,7 @@ Phân bố extension: .bat:1, .cfg:1, .css:8, .html:82, .ini:1, .js:11, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1170 file; 11329184 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1170 file; 11337375 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2591,7 +2591,7 @@ ho_so_he_thong.txt -whitespace
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ AGENTS.md
-SHA256=abd40f8189f3e129a7d5abf9867e0c459014acdcc165f9ceddcb03b2166d7a04 BYTES=20603 LINES=393
+SHA256=c557be986d58471537f22885a03c0a707eb0c53764d8ba6410cdfe172c7bfcba BYTES=23201 LINES=438
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quy tắc làm việc trong dự án này
 
@@ -2687,20 +2687,65 @@ theo hướng dẫn trong đó**.
   Đó là nơi ghi logic nghiệp vụ nằm ở đâu, ngưỡng phình của `routes.py`, và
   những việc dùng chung phải gọi `platform_core` chứ không chép lại.
 - Không xoá test đang xanh, trừ khi có quyết định sản phẩm được ghi lại.
-- Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**:
-  ```powershell
-  python tools\gate.py            # pytest + test 3 frontend + 2 scanner
-  python tools\gate.py --quick    # bỏ full pytest, cho vòng lặp ngắn
-  ```
-  `python -m pytest -q` KHÔNG chạy test frontend. Chạy mỗi nó rồi báo "full
-  regression xanh" là bỏ sót 77 test vitest — `tools/gate.py` sinh ra để không
-  ai phải nhớ điều đó. Thêm frontend mới thì khai vào `FRONTENDS`;
-  `test_145` sẽ đỏ nếu quên.
+- Trước khi báo xong, bắt buộc chạy **một lệnh duy nhất**: `python tools\gate.py`.
+  Xem **mục 4b** cho ba lệnh chạy test và lệnh nào dùng khi nào.
 - Ghi **đúng lệnh đã chạy và kết quả thật** vào nhật ký. Phân biệt rõ
   `đã chạy` / `chưa chạy` / `pass` / `fail`.
 - **Không bao giờ tuyên bố hoàn thành dựa trên kế hoạch hay số test thu thập
   được.** Chỉ dựa trên kết quả chạy thật.
 - Thay đổi rủi ro: viết trước cách lùi lại, rồi mới làm.
+
+## 4b. Chạy test — ba lệnh, và **đừng gọi `pytest` trực tiếp**
+
+| Lệnh | Dùng khi | Thời gian |
+|---|---|---|
+| `python tools	est_nhanh.py` | vòng lặp làm việc — **mặc định** | **~4 phút** |
+| `python tools	est_nhanh.py --lf` | ngay sau khi sửa một lỗi | giây → phút |
+| `python tools\gate.py` | **trước khi báo xong** | ~8 phút |
+
+⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
+mới là lý do thật:
+
+1. Nó **không** chạy 77 test frontend, nên "full regression xanh" sẽ là câu nói
+   sai — `gate.py` sinh ra để không ai phải nhớ điều đó.
+2. Nó chạy **một luồng và mất 25 phút**, trong khi `test_nhanh.py` cho **cùng
+   tập pass/fail** trong 4 phút. Đo 2026-08-26:
+
+   ```
+   nối tiếp   4096 passed, 26 skipped   1.534 giây
+   song song  4096 passed, 26 skipped     234 giây
+   ```
+
+⭐ **Vì sao tốc độ ở đây là vấn đề ĐÚNG ĐẮN, không phải tiện nghi.** Trước
+2026-08-26 bộ test mất **2 giờ**, và điều đó đổi cách người ta làm việc: `pytest`
+thôi là một vòng lặp và thành một sự kiện. Hệ quả đo được — hạng mục H40 đóng mà
+**chưa lượt `pytest` đầy đủ nào chạy xong**, và lượt đầy đủ đầu tiên sau đó tìm
+ra **36 lỗi**, trong đó có một phép kiểm **chưa bao giờ xanh** trên máy này.
+
+**Một bộ test quá chậm để chạy là một bộ test không ai chạy.**
+
+Tốc độ đến từ hai chỗ, và chỗ thứ nhất lớn hơn:
+
+- **Bỏ `fsync` cho SQLite tạm** (`platform_core/db.py`). `create_all` 44 bảng:
+  **2,16s → 0,05s**. Vì gần như mọi test dựng một CSDL mới, đó là hơn ba giờ.
+  ⛔ Có **hai hàng rào** giữ nó khỏi production, và `test_309` chốt cả hai.
+- **Chạy song song** (`--dist loadfile`), trừ **ba tệp** ghi vào cây kho —
+  chúng chạy nối tiếp ở pha 2. Danh sách ở `tools/test_nhanh.py::TEP_NOI_TIEP`,
+  và `test_309` chốt nó.
+
+### Thêm test mới thì nhớ hai điều
+
+1. Test **ghi vào tệp thật trong kho** phải khai vào `TEP_NOI_TIEP`, và phải
+   khôi phục **đúng từng byte VÀ đúng dấu thời gian** (`write_bytes` + `os.utime`).
+   Thiếu một trong hai thì `gate.py` in *"CÂY ĐÃ ĐỔI TRONG LÚC CHẠY"* và cả lượt
+   chạy thành vô giá trị — đã mất **hai lượt gate ≈ 4 giờ** vì đúng chuyện này.
+2. Test **không được đọc trạng thái máy** (tải GPU, tốc độ CPU, số tiến trình).
+   Tiêm stub cho mọi thứ nó phụ thuộc. Hai phép kiểm đã dính trong một ngày:
+   `test_193` (hạn mức nhịp phụ thuộc tốc độ máy) và `test_250` (đọc tải GPU
+   thật). **Một phép kiểm đọc trạng thái máy không đo thứ nó nói là đang đo —
+   nó đo cái máy.**
+
+---
 
 ### Kiểm tra bằng trình duyệt
 
@@ -2990,7 +3035,7 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=45c5a50873bb28e0b960c0d621f9ee70885385fb9eeb065e79e35a04703e4cb2 BYTES=30414 LINES=368
+SHA256=0a401b30bacedd2bcd059e1873780aaaabe10cc68228286b5fb75bfdace296c9 BYTES=31198 LINES=382
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3082,13 +3127,27 @@ bảng mã ANSI; một dấu tiếng Việt làm hỏng cả câu lệnh và bá
 **3. Đừng viết Python inline qua PowerShell.** PowerShell nuốt dấu ngoặc kép
 khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 
-**4. Chạy test trước khi báo xong.** Một lệnh, chạy hết:
+**4. Chạy test — ba lệnh, và ĐỪNG gọi `pytest` trực tiếp.**
 ```powershell
-python tools\gate.py            # pytest + 3 bộ test frontend + 4 scanner
-python tools\gate.py --quick    # bỏ full pytest, dùng cho vòng lặp ngắn
+python tools	est_nhanh.py         # vong lap lam viec — MAC DINH  (~4 phut)
+python tools	est_nhanh.py --lf    # ngay sau khi sua mot loi      (giay)
+python tools\gate.py               # TRUOC KHI BAO XONG            (~8 phut)
 ```
-Đừng chỉ chạy `python -m pytest -q` rồi báo xong: nó **không** chạy 77 test
-frontend ở `frontend/*`, nên "full regression xanh" sẽ là một câu nói sai.
+
+⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
+mới là lý do thật:
+
+1. Nó **không** chạy 77 test frontend ở `frontend/*` ⇒ "full regression xanh" là
+   một câu nói sai.
+2. Nó chạy **một luồng, mất 25 phút**, trong khi `test_nhanh.py` cho **cùng tập
+   pass/fail** trong 4 phút *(đo 26/08: 4096 passed / 26 skipped ở cả hai)*.
+
+⭐ Trước 26/08 bộ test mất **2 giờ**, và điều đó đổi cách người ta làm việc:
+`pytest` thôi là một vòng lặp và thành một sự kiện. Hệ quả đo được — H40 đóng mà
+**chưa lượt `pytest` đầy đủ nào chạy xong**, và lượt đầy đủ đầu tiên sau đó tìm
+ra **36 lỗi**, gồm một phép kiểm **chưa bao giờ xanh** trên máy này.
+
+Chi tiết + luật cho test mới: `AGENTS.md` mục **4b**.
 
 **5. Kiểm tra thật bằng trình duyệt sau mỗi thay đổi giao diện.** Test xanh
 không chứng minh trang hiển thị đúng. Việc này đã hai lần bắt được lỗi mà test
@@ -71962,7 +72021,7 @@ crawler. Never place WordPress credentials in this repository or chat logs.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/01_COPY_LEN_SERVER.md
-SHA256=d31b4466f9a706288c0126695938c6b42bd773d18b9c2bc1ea65ea51316e8fe1 BYTES=5756 LINES=169
+SHA256=efebf32ccb236202df0969979d29fe43b104e8e05eebb14f7dbbdd638acf4e13 BYTES=5762 LINES=169
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Chuyển sang máy chủ và cập nhật
 
@@ -71974,7 +72033,7 @@ Trên máy bạn:
 
 ```powershell
 cd d:\LTTSTUDIOSAPP
-python -m pytest -q                      # phải xanh hết
+python tools\gate.py                     # ~7 phut, phai xanh het
 python tools\scan_source_secrets.py      # phải 0 finding
 ```
 
@@ -72052,7 +72111,7 @@ Sửa code ở **thư mục nguồn trên máy phát triển**, không sửa tro
 
 ### Cách A — chép lại thư mục (đơn giản, khuyên dùng)
 
-1. Trên máy phát triển: `python -m pytest -q` phải xanh
+1. Trên máy phát triển: `python tools\gate.py` phải xanh
 2. Chép thư mục sang máy chủ, ghi đè bản cũ ở `C:\Temp\LTTSTUDIOSAPP`
 3. Trên máy chủ chạy lại:
    ```powershell
@@ -72137,7 +72196,7 @@ Chạy `python tools\scan_source_secrets.py` trước khi chia sẻ bất cứ t
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/03_THEM_APP_MOI.md
-SHA256=e26cf56b9f187b69d718a7b7bc05c56622df2a7bdb9f1457a14de3040afc0b01 BYTES=12175 LINES=273
+SHA256=fe88b1a455395f2260ecf8100f7530a36c8deaadafc04179f199c807bea9d46f BYTES=12243 LINES=273
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Thêm một app mới
 
@@ -72379,8 +72438,8 @@ Mọi route hiển thị dữ liệu **phải có `Depends(require_login)`**.
 ## 4. Kiểm tra
 
 ```powershell
-python -m pytest tests/test_60_app_registry.py -q
-python -m pytest -q
+python -m pytest tests/test_60_app_registry.py -q   # vong lap ngan
+python tools	est_nhanh.py                          # toan bo, ~4 phut
 ```
 
 `test_60` tự bắt các lỗi hay gặp:
@@ -151490,7 +151549,7 @@ def test_the_workspace_alias_still_answers(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_145_gate_covers_everything.py
-SHA256=c6311c398c3c36252b6fffa6be3806e6e8a429d47cdc7c7f44994eb292587b15 BYTES=8654 LINES=185
+SHA256=d623e0d17334b8280d92ec01872fd757168e7906b5b4b301150ec1c766a5d68a BYTES=11892 LINES=242
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/gate.py` phải phủ MỌI thứ cần chạy trước khi báo xong.
 
@@ -151536,7 +151595,10 @@ def test_gate_runs_the_scanners_and_pytest():
     # import. Da tim thay mot cai that o POST /upscalevideo/queue (2026-08-06).
     assert "ten chua dinh nghia" in names
     assert "system profile" in names
-    assert "pytest" in names
+    # DOI TEN 2026-08-26: buoc nay khong con goi `pytest` truc tiep. No di
+    # qua `tools/test_nhanh.py` (hai pha: song song + noi tiep cho ba tep
+    # ghi vao cay kho), cung tap pass/fail nhung 4 phut thay vi 2 gio.
+    assert "bo test (song song)" in names
     for frontend in _frontends_on_disk():
         assert f"frontend {frontend}" in names
 
@@ -151545,8 +151607,10 @@ def test_gate_runs_the_scanners_and_pytest():
 #: một chỗ để nới ra mỗi lần thêm bước chậm: mỗi tên ở đây là một thứ mà người
 #: chạy `--quick` sẽ KHÔNG được kiểm, và họ cần biết chính xác đó là gì.
 BUOC_CHAM = {
-    # Bộ test đầy đủ: ~78 phút, không thể nằm trong vòng lặp sửa-chạy.
-    "pytest",
+    # Bộ test đầy đủ. ⭐ Nay chỉ còn **~4 phút** (trước: 2 giờ) nhờ
+    # `tools/test_nhanh.py`. Vẫn để trong danh sách này vì `--quick` là vòng lặp
+    # tính bằng giây, và 4 phút vẫn là một khoảng chờ có cảm nhận được.
+    "bo test (song song)",
     # H36.9: đẻ tiến trình worker thật trên PostgreSQL, ~135 giây. Là bằng chứng
     # duy nhất cho việc webhook không gửi trùng và cảnh báo không nhân đôi khi
     # nhiều tiến trình chạy cùng lúc — nên nó BẮT BUỘC có trong gate đầy đủ,
@@ -151596,6 +151660,58 @@ def test_the_gate_command_is_documented(doc):
     text = (ROOT / doc).read_text(encoding="utf-8")
     assert "tools/gate.py" in text or "tools\\gate.py" in text, (
         f"{doc} chưa nhắc tới tools/gate.py")
+
+
+#: Tài liệu **chỉ dẫn người ta làm việc** — khác tài liệu ghi lịch sử. Chỉ những
+#: tệp này bị soi: một bản audit cũ hay một mục nhật ký được phép nhắc lệnh cũ,
+#: vì nó đang kể một chuyện đã xảy ra chứ không bảo ai làm gì.
+TAI_LIEU_CHI_DAN = (
+    "CLAUDE.md", "AGENTS.md",
+    "docs/00_BAT_DAU_TU_DAY.md", "docs/01_COPY_LEN_SERVER.md",
+    "docs/02_LENH_CHO_CLAUDE.md", "docs/03_THEM_APP_MOI.md",
+)
+
+
+@pytest.mark.parametrize("doc", TAI_LIEU_CHI_DAN)
+def test_khong_tai_lieu_nao_con_bao_chay_pytest_TOAN_BO(doc):
+    """⛔ `python -m pytest -q` cho TOÀN BỘ kho không còn là cách chạy đúng.
+
+    Hai lý do, và lý do thứ hai mới là lý do thật:
+
+    1. nó **không** chạy 77 test frontend ⇒ "full regression xanh" là câu nói sai;
+    2. nó chạy **một luồng, 25 phút**, trong khi `tools/test_nhanh.py` cho **cùng
+       tập pass/fail** trong 4 phút (đo 26/08: 4096 passed / 26 skipped ở cả hai).
+
+    ⭐ Vì sao chốt điều này thay vì chỉ sửa tài liệu một lần: trước 26/08 bộ test
+       mất **2 giờ**, và điều đó đổi cách người ta làm việc — `pytest` thôi là một
+       vòng lặp và thành một sự kiện. Hệ quả đo được: H40 đóng mà **chưa lượt
+       `pytest` đầy đủ nào chạy xong**, và lượt đầu tiên sau đó tìm ra **36 lỗi**.
+
+       Sửa sáu dòng tài liệu chỉ chữa hôm nay. Phép kiểm này chữa ngày mai.
+
+    ⚠️ Lệnh chạy **một tệp** (`pytest tests/test_60_...py`) vẫn đúng và vẫn được
+       khuyến khích cho vòng lặp ngắn — nó không bị chặn ở đây.
+    """
+    import re
+
+    text = (ROOT / doc).read_text(encoding="utf-8")
+    # `pytest` + CHI cac co, roi het dong (khong duong dan tep nao theo sau).
+    #
+    # ⚠️ Da phai sua HAI lan, va ghi lai vi mot banh coc bat hut mot nua thi
+    #    NGUY HIEM HON khong co — no tao cam giac da duoc canh:
+    #      lan 1: `\s+-\w+`  bo sot `--tb=line`      (dau `=`)
+    #      lan 2: them `=`   van bo sot `-p no:cacheprovider`
+    #             (gia tri cua co la mot token KHONG co dau gach)
+    #
+    # ⭐ Cho phep mot token gia tri sau moi co, nhung KHONG chua `/` hay `\` —
+    #    do chinh la thu phan biet "gia tri cua co" voi "duong dan mot tep test".
+    #    Nho vay `pytest tests/test_60_....py -q` van im, dung nhu no nen the.
+    xau = re.compile(
+        r"python -m pytest(?:\s+-{1,2}[-\w=.:]+(?:\s+[\w=.:,]+)?)*\s*$", re.M)
+    pham = [d.strip() for d in text.splitlines() if xau.search(d)]
+    assert not pham, (
+        f"{doc} van bao chay pytest TOAN BO: {pham}. "
+        r"Dung `python tools\test_nhanh.py` (~4 phut) hoac `python tools\gate.py`.")
 
 
 def test_banh_coc_nuot_loi_khong_cho_tang_them():
@@ -224958,7 +225074,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=abf2a543a36fd4a488a9c64111806374a0133aa389fdefa3f1e95ea995d25246 BYTES=16850 LINES=324
+SHA256=412731ecd3c1ff683fec2858dcbd25e732227115aa04c028e5ffdd50ca5e1ad8 BYTES=18347 LINES=351
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -225160,8 +225276,25 @@ def _steps(quick: bool) -> list[Step]:
         # Browser/audit artifacts live under tmp/ and test-results/ by contract;
         # they may contain copied ``tests`` folders and must never be collected
         # as a second copy of the repository test suite.
-        steps.append(Step("pytest", [sys.executable, "-m", "pytest", "-q",
-                                      "--ignore=tmp", "--ignore=test-results"], ROOT))
+        # 🔴 DI QUA `test_nhanh.py`, KHONG goi `pytest` truc tiep nua.
+        #
+        #    Truoc 2026-08-26 buoc nay la mot lenh `pytest` MOT LUONG, mat
+        #    **2 gio**. Do khong phai su bat tien — no doi cach nguoi ta lam
+        #    viec: `pytest` thoi la mot vong lap va thanh mot su kien.
+        #
+        # ⛔ He qua da do duoc: hang muc H40 dong ma CHUA luot `pytest` day du
+        #    nao chay xong, va luot day du dau tien sau do tim ra **36 loi** —
+        #    gom mot phep kiem CHUA BAO GIO XANH tren may nay.
+        #
+        # ⭐ `test_nhanh.py` cho CUNG TAP pass/fail trong 4 phut, chung minh
+        #    bang so chu khong bang tin tuong:
+        #        noi tiep   4096 passed, 26 skipped, 1.534 giay
+        #        song song  4096 passed, 26 skipped,   234 giay
+        #
+        #    Hai pha: song song `--dist loadfile` cho phan lon, roi noi tiep cho
+        #    ba tep ghi vao cay kho (`TEP_NOI_TIEP`). Xem AGENTS.md muc 4b.
+        steps.append(Step("bo test (song song)",
+                          [sys.executable, "tools/test_nhanh.py"], ROOT))
     return steps
 
 
@@ -225177,7 +225310,17 @@ def _run(step: Step) -> None:
         output = f"khong chay duoc: {exc}"
     step.seconds = time.monotonic() - started
     lines = [line for line in output.splitlines() if line.strip()]
-    step.tail = "\n".join(lines[-4:])
+    # 🔴 GIU 40 DONG, KHONG PHAI 4 — day la mot sua loi QUY TRINH, khong phai
+    #    mot con so tuy chinh.
+    #
+    #    Ngay 26/08 toi dung gate lam CONG CU PHAT HIEN: chay 2 gio, doc 4 dong
+    #    cuoi, thay 3 cai ten trong so 36 loi, sua 3 cai do, roi chay lai 2 gio.
+    #    Nam luot nhu vay ≈ 10 gio — de lay mot thu ma MOT luot da cho het neu
+    #    dau ra khong bi cat.
+    #
+    # ⭐ Bon dong du cho mot buoc tinh (chung in mot dong ket luan). Voi bo test,
+    #    danh sach FAILED moi la thu can doc, va no dai hon 4 dong.
+    step.tail = "\n".join(lines[-40:])
 
 
 def _console_text(value: str, encoding: str | None = None) -> str:
@@ -225194,7 +225337,7 @@ def _console_text(value: str, encoding: str | None = None) -> str:
 
 
 #: Tên các bước `--quick` KHÔNG chạy. In ra ở dòng kết quả — xem `main`.
-BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "pytest")
+BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "bo test (song song)")
 
 
 def _dau_van_tay_cay() -> str:

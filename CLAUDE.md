@@ -88,13 +88,27 @@ bảng mã ANSI; một dấu tiếng Việt làm hỏng cả câu lệnh và bá
 **3. Đừng viết Python inline qua PowerShell.** PowerShell nuốt dấu ngoặc kép
 khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 
-**4. Chạy test trước khi báo xong.** Một lệnh, chạy hết:
+**4. Chạy test — ba lệnh, và ĐỪNG gọi `pytest` trực tiếp.**
 ```powershell
-python tools\gate.py            # pytest + 3 bộ test frontend + 4 scanner
-python tools\gate.py --quick    # bỏ full pytest, dùng cho vòng lặp ngắn
+python tools	est_nhanh.py         # vong lap lam viec — MAC DINH  (~4 phut)
+python tools	est_nhanh.py --lf    # ngay sau khi sua mot loi      (giay)
+python tools\gate.py               # TRUOC KHI BAO XONG            (~8 phut)
 ```
-Đừng chỉ chạy `python -m pytest -q` rồi báo xong: nó **không** chạy 77 test
-frontend ở `frontend/*`, nên "full regression xanh" sẽ là một câu nói sai.
+
+⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
+mới là lý do thật:
+
+1. Nó **không** chạy 77 test frontend ở `frontend/*` ⇒ "full regression xanh" là
+   một câu nói sai.
+2. Nó chạy **một luồng, mất 25 phút**, trong khi `test_nhanh.py` cho **cùng tập
+   pass/fail** trong 4 phút *(đo 26/08: 4096 passed / 26 skipped ở cả hai)*.
+
+⭐ Trước 26/08 bộ test mất **2 giờ**, và điều đó đổi cách người ta làm việc:
+`pytest` thôi là một vòng lặp và thành một sự kiện. Hệ quả đo được — H40 đóng mà
+**chưa lượt `pytest` đầy đủ nào chạy xong**, và lượt đầy đủ đầu tiên sau đó tìm
+ra **36 lỗi**, gồm một phép kiểm **chưa bao giờ xanh** trên máy này.
+
+Chi tiết + luật cho test mới: `AGENTS.md` mục **4b**.
 
 **5. Kiểm tra thật bằng trình duyệt sau mỗi thay đổi giao diện.** Test xanh
 không chứng minh trang hiển thị đúng. Việc này đã hai lần bắt được lỗi mà test
