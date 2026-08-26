@@ -38,7 +38,7 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #:
 #: ⛔ Đó chính là cái bẫy quy tắc 6 của `CLAUDE.md` mô tả, và nó đã xảy ra một
 #:    lần với `ltt.css`: sửa xong ở origin mà người dùng vẫn nhận bản cũ 4 tiếng.
-TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js")
+TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js")
 
 
 def _tinh_asset_ver() -> str:

@@ -1,0 +1,46 @@
+{# Ô CHỌN TỆP DÙNG CHUNG — khuôn chuẩn cho MỌI upload hướng khách.
+
+   ⭐ App mới cần upload thì dùng macro này, đừng viết `<input type="file">` trần.
+      Kiểu nằm ở `.ltt-file*` trong `server/static/ltt.css`; phần hiện tên tệp ở
+      `server/static/chon_tep.js`.
+
+   🔴 VÌ SAO CÓ NÓ — ĐO 26/08 BẰNG TRÌNH DUYỆT THẬT.
+      Nút file native cần ~263px. `.im-two` của `/taoanh` chỉ cho 185px, phần
+      thừa 61px biến thành thanh cuộn ngang ở `.im-controls`. Toàn kho có 25 file
+      input mà chỉ 2 luật CSS, cả hai buộc theo trang — nên gần như mọi ô upload
+      đang hiện ra bằng ngôn ngữ của Windows, không phải của AppStudios.
+
+   ⛔ INPUT NATIVE VẪN LÀ INPUT NATIVE. Macro chỉ ẩn nó khỏi mắt (1px, opacity 0)
+      và bọc bằng `<label for>`. Chọn tệp, `accept`, `required`, `multiple`,
+      validate của trình duyệt, `multipart`, và mọi móc JS đọc `input.files` đều
+      KHÔNG đổi. Không JS thì ô vẫn dùng được, chỉ mất phần hiện tên.
+
+   Tham số:
+     id        bắt buộc — `<label for>` cần nó, và đó là thứ giữ liên kết native
+     name      tên trường gửi lên server
+     nhan      nhãn chính, vd "Ảnh nguồn"
+     goi_y     dòng nhỏ, vd "PNG/JPEG/WebP · tối đa 8 MB"
+     accept    chuyển thẳng sang input
+     nhieu     cho chọn nhiều tệp
+     bat_buoc  `required`
+     mo_ta_boi id của phần tử mô tả thêm (`aria-describedby`)
+     icon      ký hiệu trang trí; luôn `aria-hidden`
+#}
+{% macro o_chon_tep(id, name, nhan, goi_y='', accept='', nhieu=false,
+                    bat_buoc=false, mo_ta_boi='', icon='▧') %}
+<label class="ltt-file" for="{{ id }}">
+  <span class="ltt-file-icon" aria-hidden="true">{{ icon }}</span>
+  <span class="ltt-file-title">{{ nhan }}{% if bat_buoc %} <strong aria-hidden="true">*</strong>{% endif %}</span>
+  {% if goi_y %}<span class="ltt-file-hint">{{ goi_y }}</span>{% endif %}
+  <span class="ltt-file-cta" aria-hidden="true">{{ _("Chọn tệp") }}</span>
+  {# `data-trong` là chữ hiện khi CHƯA chọn gì; `chon_tep.js` quay về nó khi
+     người dùng bỏ chọn. Để trống thì ô im lặng, và người dùng không biết ô này
+     đang rỗng hay đang giữ một tệp cũ. #}
+  <span class="ltt-file-name" data-trong="{{ _('Chưa chọn tệp') }}">{{ _("Chưa chọn tệp") }}</span>
+  <input id="{{ id }}" type="file" name="{{ name }}"
+         {% if accept %}accept="{{ accept }}"{% endif %}
+         {% if nhieu %}multiple{% endif %}
+         {% if bat_buoc %}required{% endif %}
+         {% if mo_ta_boi %}aria-describedby="{{ mo_ta_boi }}"{% endif %}>
+</label>
+{% endmacro %}
