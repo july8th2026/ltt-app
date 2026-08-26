@@ -739,7 +739,98 @@ def test_ba_trang_trong_mot_may_dung_CHUNG_macro_danh_tinh():
     assert "may.id" in mac and "may.vmid" not in mac, (
         "dai danh tinh dang hien `vmid` — do la so hieu ben trong Proxmox, "
         "khach khong dung duoc vao viec gi con ta thi lo hinh dang cua cum")
-    assert 'mac.dinh_may(' in _chi_tiet_html(), "trang may khong dung macro chung"
+    # CẢ BA trang trong một máy, không phải một.
+    for ten in ("vps_chi_tiet.html", "vps_cai_dat.html", "vps_console.html"):
+        noi_dung = (TEMPLATES / ten).read_text(encoding="utf-8")
+        assert "mac.dinh_may(" in noi_dung, f"{ten} khong dung macro danh tinh"
+        assert 'import "_vps_mac.html" as mac with context' in noi_dung, (
+            f"{ten} import macro thieu `with context` — moi chuoi ben trong "
+            f"macro se ra tieng Viet tren ban EN, va khong phep kiem `.po` nao "
+            f"bat duoc vi chuoi CO trong catalog va DA dich")
+
+
+# ── 12 · Đợt 7 · Cổng liên trang ──────────────────────────────────────────
+
+def test_NAM_trang_VPS_dung_CHUNG_mot_ngon_ngu_trang_thai():
+    """Không template nào được tự viết chữ trạng thái hay tự chọn màu.
+
+    Năm trang cùng nói về cùng những cái máy. Một trang tự dịch `bi_treo` thành
+    một câu khác là một trang nói một điều khác về máy của khách — và không ai
+    phát hiện ra cho tới khi họ mở hai tab cạnh nhau.
+    """
+    tep = sorted(TEMPLATES.glob("vps*.html"))
+    assert len(tep) >= 5
+
+    # ⚠️ **Không** cấm chuỗi `_("Đang chạy")` xuất hiện trong template. Bản đầu
+    #    của phép kiểm này làm thế và đỏ ngay: bốn ô chỉ số ở màn B dùng đúng
+    #    những chữ đó làm **nhãn cột** — cùng từ, khác việc. Một phép kiểm không
+    #    phân biệt được "nhãn của một cái ô" với "trạng thái của một cái máy" là
+    #    một phép kiểm bắt người ta viết vòng vo để né nó.
+    #
+    # 🔑 Tính chất đo được là: **class badge không bao giờ do template tự gán**.
+    #    Badge chỉ dựng qua macro, và macro lấy class từ `nhan.badge()`.
+    for p in tep:
+        t = re.sub(r"(?s)\{#.*?#\}", " ", p.read_text(encoding="utf-8"))
+        for cls in sorted(set(nhan.BADGE.values())):
+            assert f'"badge {cls}' not in t, (
+                f"{p.name} tu gan class badge {cls!r} — dung "
+                f"`mac.badge_trang_thai()` de bon trang noi cung mot ngon ngu")
+
+    # Và bốn trang hiện trạng thái máy đều phải đi qua macro đó — trực tiếp,
+    # hoặc gián tiếp qua `dinh_may()` (chính nó gọi `badge_trang_thai`).
+    for ten in ("vps.html", "vps_chi_tiet.html", "vps_cai_dat.html",
+                "vps_console.html"):
+        t = (TEMPLATES / ten).read_text(encoding="utf-8")
+        assert "badge_trang_thai(" in t or "mac.dinh_may(" in t, (
+            f"{ten} khong dung badge chung")
+
+
+def test_KHONG_trang_VPS_nao_hua_thu_KHONG_CO():
+    """Danh sách cấm áp cho **cả năm trang**, không chỉ trang bán.
+
+    ⚠️ Bóc chú thích trước khi khẳng định. Đây là lớp lỗi đã lặp **năm lần**
+       trong dự án: khối giải thích *"ảnh tham chiếu có 99.9% uptime"* làm chính
+       phép kiểm cấm-uptime đỏ.
+    """
+    cam = ("99,9", "99.9", "uptime", "Uptime", "SLA", "24/7", "Enterprise",
+           "AES-256", "unlimited", "không giới hạn")
+    for p in sorted(TEMPLATES.glob("vps*.html")):
+        t = re.sub(r"(?s)\{#.*?#\}", " ", p.read_text(encoding="utf-8"))
+        for x in cam:
+            assert x not in t, f"{p.name} hua mot thu ta khong co: {x!r}"
+
+
+def test_KHONG_nut_nao_tro_toi_mot_route_KHONG_TON_TAI():
+    """Một nút dẫn tới 404 là một nút tệ hơn không có nút.
+
+    Quét mọi `action=` và `href=` trỏ vào `route_prefix` trong năm template, so
+    với **bảng route thật** của router — không so với một danh sách gõ tay.
+    """
+    from apps.vps.routes import router
+
+    that = {tuple(re.sub(r"\{[a-z_]+\}", "*", str(getattr(r, "path", "")))
+                  .strip("/").split("/"))
+            for r in router.routes}
+    that.discard(("",))
+
+    # ⚠️ Một đoạn đường là **biểu thức Jinja** thì coi như ký tự đại diện: trang
+    #    máy lặp `[("bat", …), ("tat", …), ("khoi-dong-lai", …)]` và dựng
+    #    `{{ hanh_dong }}` — giá trị chỉ biết được lúc chạy. Điều còn kiểm được,
+    #    và là rủi ro thật, là **một đoạn viết tay gõ sai**.
+    mau = re.compile(r'(?:action|href)="\{\{ app\.route_prefix \}\}([^"]*)"')
+    for p in sorted(TEMPLATES.glob("vps*.html")):
+        t = re.sub(r"(?s)\{#.*?#\}", " ", p.read_text(encoding="utf-8"))
+        for duong in mau.findall(t):
+            doan = tuple("*" if "{{" in x else x
+                         for x in duong.split("#")[0].strip("/").split("/") if x)
+            if not doan:
+                continue        # `route_prefix` tran = trang goc cua khu, luon co
+            khop = [d for d in that
+                    if len(d) == len(doan)
+                    and all(a == "*" or b == "*" or a == b for a, b in zip(d, doan))]
+            assert khop, (
+                f"{p.name}: `route_prefix/{'/'.join(doan)}` khong khop route nao. "
+                f"Route co that: {sorted('/'.join(d) for d in that)}")
 
 
 # ── 10 · Đợt 5 · Hướng dẫn cài Windows ────────────────────────────────────
