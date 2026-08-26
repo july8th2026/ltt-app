@@ -9,6 +9,24 @@ Tài liệu này là **kết quả của Prompt 00** (audit + khoá hợp đồn
 **Prompt 06 §6** (luật cuối). Nó chưa sửa một dòng runtime nào — đúng STOP
 CONDITION của Prompt 00.
 
+> ## ✅ TRẠNG THÁI 2026-08-27 — ĐỢT 1→7 XONG
+>
+> | Đợt | Việc | Commit |
+> |---|---|---|
+> | 1+2 | nền dùng chung + storefront (ảnh 1) | `ffdd498` |
+> | 3 | nhà của khách + tạo máy (ảnh 2) · **D-01 tên máy** | `390a265` |
+> | 4 | trung tâm điều khiển một máy (ảnh 3) | `ad1bc7d` |
+> | 5+6 | cài Windows (ảnh 4) · console (ảnh 5) | `de7f8db` |
+> | 7 | cổng liên trang + hai tài liệu chốt | `9d14101` |
+>
+> **Bằng chứng:** 14 cảnh × 6 bề ngang = **84 tổ hợp → 0 tràn ngang, 0 lỗi
+> console**; **398 phép kiểm khu VPS xanh**; hai bánh cóc i18n đúng mốc.
+> Báo cáo đầy đủ + khoảng trống bằng chứng: `15_FINAL_MVP_REPORT.md`.
+> Luật cho mọi thay đổi về sau: `14_VPS_UI_CONTRACT_FINAL.md`.
+>
+> **Còn lại:** ⏳ **D-02** (một máy thật cho GJ2–GJ5) và ⏳ **deploy** — cả hai
+> là quyết định của chủ sản phẩm. Đợt 8 (deploy) chưa chạy.
+>
 > **Nguồn dữ liệu.** Đọc live code (`apps/vps/*`, `server/templates/vps*.html`,
 > `server/static/ltt.css`), bộ prompt trên Google Drive, 5 ảnh, và **trang đang
 > chạy thật**: `https://app.lttstudios.com/vps` đo bằng Chrome thật
