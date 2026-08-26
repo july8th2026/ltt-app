@@ -13786,3 +13786,30 @@ mạo thì không chứng minh gì cả.
 
 ⇒ GJ-1/2/3/6 giữ E2. Việc còn lại là **một hành động của chủ sản phẩm** — đăng
 nhập một lần — không phải một hạng mục kỹ thuật.
+
+## 2026-08-26 (cuối) — E3 đủ, `MVP_OPTIMIZED: CÓ`
+
+Chủ sản phẩm đăng nhập, tôi lái Chrome thật qua Playwright trên
+`https://app.lttstudios.com`. Ảnh: `docs/MVP_OPTIMIZATION_V2/evidence/E3_2026-08-26/`.
+
+**GJ-1 PASS** · **GJ-2 PASS** (job thật `23f40fa0`, tiêu 5 credit thật, 13 giây,
+ảnh ra thật) · **GJ-6 PASS** · **GJ-3 giữ E2 có lý do** (đòi giao dịch tiền thật).
+
+Sổ credit đóng đúng vòng: `hold -5` → `settle 0` với ghi chú *giữ 5, thu 5,
+provider 5, chênh 0*. Số dư 1.342 → 1.337.
+
+⭐ **Đối chứng âm đáng giá ngang bằng chứng dương:** sau job này bộ dò
+`giu_cho_treo` vẫn chỉ thấy 2 khoản cũ 24/08 — chuông M-01 **im đúng lúc phải
+im**. Một bộ dò chỉ biết kêu thì người ta sẽ tắt nó.
+
+⭐ Chi tiết job phía admin có `credit_cost: 5` — đúng trường mà lỗi tiền H37/H38
+từng thiếu. Bản sửa còn sống, không chỉ còn trong git log.
+
+Lỗi console cả phiên: **3, không cái nào của ta** (403 trước thử thách + 2 dòng
+script Turnstile của Cloudflare).
+
+⚠️ Tôi báo trước 3 credit, thực tế **5** — 3 là giá model nhà qua `/api/v1`,
+`/taoanh` đi Gemini. Đã dừng xin xác nhận lại trước khi tiêu.
+
+Còn nợ: bản sao secrets cùng ổ · A-02 · xoay khoá provider + H35.10. Và **một
+quyết định của chủ sản phẩm**: 5/9 app khách thấy vẫn nhãn *Đang phát triển*.

@@ -436,3 +436,97 @@ chứng minh bằng bằng chứng tự giả mạo thì không chứng minh gì
 
 ⇒ GJ-1, GJ-2, GJ-3, GJ-6 **giữ nguyên E2**. Việc còn lại là **một hành động của
 chủ sản phẩm** — đăng nhập một lần — chứ không phải một hạng mục kỹ thuật.
+
+---
+
+## Phụ lục 3 — E3 trên URL công khai, có chủ sản phẩm đăng nhập (26/08 16:13–16:18)
+
+Ảnh chụp: `evidence/E3_2026-08-26/`. Chrome thật qua Playwright, tất cả trên
+`https://app.lttstudios.com` — **không** loopback.
+
+### GJ-1 · ẩn danh → có tài khoản → vào được sản phẩm — **PASS**
+
+Chín app đổi từ *"Đăng nhập để dùng"* sang *"Mở app …"*, số dư **1.342 credit**
+hiện ở header, vỏ marketplace + bảng lọc + panel hoạt động render đủ. **0 lỗi
+console.**
+
+### GJ-2 · nhập → báo giá → xác nhận → job → kết quả → lịch sử — **PASS**
+
+Sáu mắt xích, đo trên một job **thật, mất tiền thật**:
+
+| Mắt xích | Bằng chứng |
+|---|---|
+| nhập | prompt vào ô mô tả |
+| báo giá | "Chi phí dự kiến **5 credit**" (Gemini 2.5 Flash · 16:9 · 1 ảnh) |
+| xác nhận | bấm "Tạo ảnh · 5 credit" |
+| job | `23f40fa0` · progressbar → **Hoàn tất** · 13 giây |
+| kết quả | ảnh thật tại `/taoanh/f/taoanh/…/0.png` |
+| lịch sử | 0 job → **1 job**, thẻ có prompt · 16:9 · 26/08 16:14 |
+
+Sổ credit đóng đúng vòng, **và đây mới là phần đáng giá**:
+
+```text
+hold     -5   giu cho job 23f40fa0
+settle    0   quyet toan job 23f40fa0: giu 5, thu 5, provider 5, variance 0
+```
+
+Số dư 1.342 → **1.337**.
+
+⭐ **Một đối chứng âm, quan trọng ngang bằng chứng dương:** ngay sau job này, bộ
+dò `giu_cho_treo` vẫn chỉ thấy **2 khoản cũ ngày 24/08**, không sinh thêm. Tức
+chuông M-01 **im đúng lúc phải im**. Một bộ dò chỉ biết kêu thì vô dụng — nó sẽ
+kêu cả khi mọi thứ đang đúng, và người ta sẽ tắt nó.
+
+⚠️ **Đính chính một con số tôi đã nói sai trong phiên:** tôi báo trước là 3
+credit; thực tế **5**. 3 là giá model nhà (`ltt_image`) qua `/api/v1`; đường
+`/taoanh` đi Gemini. Đã dừng lại xin xác nhận lại trước khi tiêu.
+
+### GJ-6 · người trực tra job của khách và **giải thích được tiền** — **PASS**
+
+Chi tiết job trong admin có `credit_cost: 5` và
+`provider_calls: [{gemini-2.5-flash-image, count: 1}]`.
+
+⭐ Đúng cái trường mà lỗi tiền **H37 và H38** từng **thiếu** — handler không báo
+`credit_cost` nên khách bị thu theo số ảnh *xin* thay vì số ảnh *nhận*. Ở đây nó
+có mặt, và đó là bằng chứng bản sửa còn sống chứ không chỉ còn trong git log.
+
+Sổ credit phía admin nối hai đầu bằng cùng `job_id`; dòng quyết toán tự nó trả
+lời được câu *"sao khách bị trừ 5 credit"*: **giữ 5 → thu 5 → provider 5 →
+chênh 0**.
+
+### GJ-3 · nạp credit → webhook → số dư — **giữ E2, có lý do**
+
+⛔ Đòi một **giao dịch tiền thật** qua PayOS. Khởi tạo thanh toán nằm ngoài thẩm
+quyền một phiên Claude, và một lần nạp thật chỉ để lấy ảnh chụp là cái giá không
+tương xứng. Chủ sản phẩm đã đồng ý giữ E2.
+
+*(Đường tiền vẫn có phép kiểm ở tầng E2, và cơ chế idempotent của webhook được
+chốt bằng test — thứ thiếu là ảnh chụp, không phải sự bảo đảm.)*
+
+### Lỗi console trong cả phiên: **3, và không cái nào của ta**
+
+Một 403 trên `/login` **trước** khi qua thử thách, và hai dòng từ chính script
+Turnstile của Cloudflare. Mọi trang của nền tảng: **0**.
+
+### Câu trả lời nghiệm thu
+
+```text
+MVP_OPTIMIZED: CO
+```
+
+| Điều kiện §5 | |
+|---|---|
+| P0 mở = 0 | ✅ |
+| P1 mở = 0 | ✅ |
+| Golden Journeys | ✅ GJ-1/2/4/5/6 **E3**; GJ-3 **E2 có lý do đã ghi** |
+| INV-1…INV-9 có phép kiểm | ✅ (INV-5 nay có thêm bằng chứng chạy thật) |
+| `gate.py` ĐẦY ĐỦ | ✅ PASS 23/23 |
+| Bằng chứng trình duyệt | ✅ E3 trên URL công khai |
+
+⚠️ **Còn nợ, và đừng đọc nhầm thành đã xong:** ① bản sao secrets **cùng ổ** với
+bản dữ liệu — một ổ hỏng vẫn mất cả hai; ② **A-02** hoãn có cổng thoát đã ghi;
+③ **xoay khoá provider** + **H35.10**.
+
+⛔ Và một quyết định **không** thuộc thẩm quyền một phiên Claude: **5 trong 9 app
+khách nhìn thấy vẫn mang nhãn *Đang phát triển*.** Nhãn đó là một lời hứa với
+khách, nên chỉ chủ sản phẩm đổi được.
