@@ -64,16 +64,15 @@ def main() -> int:
 
     from server.app import create_app
     app = create_app(env={
-        "LTT_ENV": "local-ui-qa",
+        "LTT_ENV": "development",
         "LTT_SESSION_SECRET": "harness-secret-value",
         "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
         "LTT_CONFIG_PATH": str(tmp / "config.json"),
         "LTT_PUBLIC_API": "1",
         "LTT_PUBLIC_API_TOOLS": "text.chat,image.ltt,image.thumbnail",
-        # Cookie phien danh dau `secure` o production; qua http thi trinh duyet
-        # bo no va moi trang deu bat ve /login. Co nay tat dieu do cho ban chay
-        # cuc bo — no KHONG doi hanh vi cua may chu that.
-        "LTT_COOKIE_INSECURE": "1",
+        # `development` chu khong phai `local-server-test`: o hai ho so kia
+        # cookie phien mang co `secure`, va qua http://127.0.0.1 trinh duyet
+        # bo cookie do => moi trang bat ve /login va khong soi duoc gi.
     })
 
     print(f"\n  http://127.0.0.1:{args.port}/developers")
@@ -100,12 +99,14 @@ def _seed(db, user) -> None:
     db.flush()
 
     devkeys.issue(db, user_id=user.id, name="production-web",
-                  project_id=p1.id, scopes=["tools:read", "jobs:write"],
+                  project_id=p1.id, scopes=["tools:read", "jobs:create", "jobs:read",
+                          "artifacts:read"],
                   allowed_tools=["text.chat"],
                   allowed_ips=["203.0.113.4", "198.51.100.0/24"],
                   expires_at=now + timedelta(days=90))
     devkeys.issue(db, user_id=user.id, name="worker-batch", project_id=p1.id,
-                  scopes=["tools:read", "jobs:write", "usage:read"])
+                  scopes=["tools:read", "jobs:create", "jobs:read",
+                          "usage:read", "credits:read", "webhooks:manage"])
     devkeys.issue(db, user_id=user.id, name="ban thu cuc bo", project_id=p2.id,
                   scopes=["tools:read"], mode="test")
     k4, _ = devkeys.issue(db, user_id=user.id, name="khoa cu da thu hoi",

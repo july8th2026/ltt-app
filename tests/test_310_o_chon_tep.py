@@ -246,3 +246,38 @@ def test_bon_ban_sao_cua_luat_chip_deu_da_cho_xuong_dong():
         assert m, f"mat luat {ten}"
         assert "flex-wrap:wrap" in m.group(1), (
             f"{ten} quay lai cuon ngang — ten model se bi cat giua chung")
+
+
+def test_tien_ich_an_PHAI_thang_duoc_luat_cua_trang():
+    """⚠️ ĐÃ DÍNH THẬT NGÀY 26/08, và chỉ lộ ra vì đo bằng trình duyệt.
+
+    Sau khi gắn `.ltt-input-tep-an` cho `/taoclipngan`, input vẫn rộng **1425px**.
+    Nguyên nhân: `.clip-drop input{width:100%}` có độ ưu tiên **0,1,1**, đè lên
+    tiện ích **0,1,0**. Tệp CSS không báo gì, phép kiểm tĩnh không báo gì —
+    **chỉ số đo trong trình duyệt mới nói ra**.
+
+    ⭐ Bài học rộng hơn: một tiện ích mà **công việc duy nhất của nó là đè** thì
+       phải thắng chắc chắn, nếu không nó chỉ là một lời đề nghị. Kho này đã học
+       điều đó rồi — `.tv-file-input` dùng `!important` đúng vì lý do này. Đây là
+       theo tiền lệ có sẵn, không phải phát minh.
+
+    ⛔ Đây KHÔNG phải giấy phép rắc `!important`. Đúng một tiện ích, một mục đích.
+    """
+    import re
+
+    css = (GOC / "server" / "static" / "ltt.css").read_text(encoding="utf-8")
+    m = re.search(r"\.ltt-input-tep-an[^{]*\{([^}]*)\}", css)
+    assert m, "mat tien ich .ltt-input-tep-an"
+    than = m.group(1)
+    for k in ("position:absolute!important", "width:1px!important"):
+        assert k in than, (
+            f"tien ich an thieu `{k}` — mot luat `.x input{{width:100%}}` cua bat "
+            f"ky trang nao cung se de duoc no, VA DE MOT CACH IM LANG")
+
+
+def test_khong_con_luat_nao_danh_nhau_voi_tien_ich_an():
+    """`.clip-drop input{width:100%}` chỉ tồn tại để tô màu một input native đang
+    hiện. Khi đã quyết định không hiện nó nữa thì luật đó là mã chết **đang
+    tranh chấp quyền** — gỡ ở gốc, đừng chồng thêm một lớp đè nữa lên trên."""
+    css = (GOC / "server" / "static" / "ltt.css").read_text(encoding="utf-8")
+    assert ".clip-drop input{" not in css
