@@ -13,13 +13,11 @@ prompt `LTT_VPS_MVP_UI_Prompt_Pack_V2` và năm ảnh tham chiếu.
 | **B** Nhà của khách + tạo | `/vps` đã đăng nhập | ✅ PASS | ✅ giữ nguyên | ✅ 6 bề ngang, 5 trạng thái máy |
 | **C** Trung tâm điều khiển | `/vps/{id}` | ✅ PASS | ✅ giữ nguyên | ✅ 6 bề ngang × 5 trạng thái |
 | **D** Cài Windows | `/vps/{id}/cai-dat` | ✅ PASS | ✅ giữ nguyên | ✅ 6 bề ngang × 3 trạng thái |
-| **E** Console | `/vps/{id}/console` | ⚠️ **PASS một phần** | ✅ giữ nguyên | ⚠️ bố cục ✅, **giao thức chưa kiểm** |
+| **E** Console | `/vps/{id}/console` | ✅ PASS | ✅ giữ nguyên | ✅ **kết nối thật tới Proxmox** |
 
-🔴 **Vì sao màn E chỉ PASS một phần, nói thẳng ở đây để không ai trích dẫn
-sai:** bố cục, thanh công cụ, trạng thái ban đầu và bề ngang đều đo được bằng
-Chrome thật. Nhưng **bắt tay RFB, gõ phím, chuột, Ctrl+Alt+Del, ngắt–nối lại**
-thì cần một máy thật trên Proxmox — tức quyết định **D-02**, còn ở chủ sản phẩm.
-Prompt 05 đòi phân biệt E2 với E3/E4, và đây là chỗ phân biệt đó.
+✅ **Khoảng trống bằng chứng của màn E đã lấp 2026-08-27** (D-02 được duyệt).
+Console kết nối thật: badge `Connected`, canvas noVNC render, màn hình **Windows
+Server 2016 Setup** hiện ra, 0 lỗi console, 0 tràn ngang. Xem §3.
 
 ---
 
@@ -64,14 +62,15 @@ Prompt 05 đòi phân biệt E2 với E3/E4, và đây là chỗ phân biệt đ
 | # | Hành trình | Kết quả | Bằng chứng |
 |---|---|---|---|
 | **GJ1** | khám phá → so gói → thấy giá/còn chỗ → đường đăng ký | ✅ PASS | cảnh A (còn chỗ **và** hết chỗ) ở 6 bề ngang |
-| **GJ2** | chọn gói → chọn OS → tóm tắt/credit → POST tạo | ⚠️ **một phần** | biểu mẫu + tóm tắt sống + fail-closed ✅; **POST thật chưa chạy** |
-| **GJ3** | trang máy → cài Windows → console → gỡ đĩa | ⚠️ **một phần** | ba trang liền mạch, cùng danh tính ✅; **cài thật chưa chạy** |
-| **GJ4** | bật/tắt/khởi động lại → console → hạn & băng thông | ⚠️ **một phần** | dải nút theo trạng thái ✅ ở cả 5 trạng thái; **lệnh thật chưa chạy** |
-| **GJ5** | khôi phục → cài lại → xoá, có cảnh báo và xác nhận | ⚠️ **một phần** | ba ô gõ tên + thứ tự ít-thiệt-hại-trước ✅; **chưa thi hành thật** |
+| **GJ2** | chọn gói → chọn OS → tóm tắt/credit → POST tạo | ✅ **PASS** | máy thật `may-nghiem-thu-3`, IP `139.180.139.126`, tên do khách đặt (D-01), trừ đúng 1.490 |
+| **GJ3** | trang máy → cài Windows → console → gỡ đĩa | ✅ **PASS** | 8 bước; sơ đồ ổ đĩa hiện **40.0 GB** — đĩa thật của gói Nhỏ (D-03); console kết nối thật |
+| **GJ4** | bật/tắt/khởi động lại → hạn & băng thông | ✅ **PASS** | Tắt → badge `Stopped`, dải nút đổi thành Bật/Console/Cài; Bật → `Running`, dải nút trở lại |
+| **GJ5** | khôi phục → cài lại → xoá, có cảnh báo và xác nhận | ✅ **PASS** | gõ **sai** tên → từ chối, máy còn nguyên; gõ **đúng** → xoá thật, IP trả về Vultr |
 
-🔴 **Bốn "một phần" đều dừng ở cùng một chỗ, và đó không phải chỗ giao diện:**
-mọi thứ **nhìn thấy được** đã kiểm; mọi thứ **chạy thật** cần một máy thật —
-quyết định **D-02**. Đợt 1→7 cố ý được thiết kế để chạy đủ mà không cần nó.
+⭐ **Đường THẤT BẠI cũng đã chứng minh, và nó tự chữa đúng thiết kế.** Hai máy đầu
+hỏng vì một lỗi hạ tầng (xem §6b): vòng bảo trì **tự hoàn đủ 1.490 credit** cho
+từng máy, nộp job xoá, máy biến mất. Số dư khách về nguyên vẹn mà không ai can
+thiệp. Đó là bảo đảm quan trọng nhất của GJ5 và nó chạy trên dữ liệu thật.
 
 Phần **âm** của GJ2 (hết sức chứa · gói hết chỗ · không đọc được sức chứa) thì
 kiểm được và **đã kiểm**: cảnh `A_storefront_het_suc_chua` cho thấy fail-closed
@@ -153,15 +152,81 @@ trả về: một lát cắt rỗng làm mọi `assert ... not in` **xanh giả*
 
 ---
 
+## 6b. 🔴 Lỗi hạ tầng mà lượt nghiệm thu tìm ra — và ba chỗ cùng nói một câu sai
+
+Máy thật **đầu tiên** vào trạng thái `loi`, khách bị trừ 1.490 credit:
+
+```
+RouterError: VM router tra ma 255:
+WARNING: UNPROTECTED PRIVATE KEY FILE!
+Permissions for 'C:\Users\...\.ssh\ltt_pve' are too open.
+```
+
+Ba dịch vụ chạy bằng **LocalSystem**; khoá SSH nằm trong hồ sơ **người dùng**,
+nơi ACL thừa kế cho cả tài khoản ấy. Từ góc nhìn SYSTEM đó là khoá "hở" ⇒
+OpenSSH từ chối. Xác minh hai chiều: chính khoá đó `ssh` được bằng tài khoản
+người dùng.
+
+⛔ **Lỗi im lặng hoàn toàn:** `/vps` vẫn bán, `/health/ready` vẫn 200, gate vẫn
+xanh. Tín hiệu duy nhất là một khách đã trả tiền.
+
+**Nó là lỗi kiến trúc, không phải lỗi cấu hình.** VPS có hai đường điều khiển:
+Proxmox (HTTP + token, bí mật **trong** `app.env`) và router/cổng vào (SSH + tệp
+khoá, `app.env` chỉ giữ **đường dẫn** ra ngoài). Mọi kỷ luật quyền của nền tảng
+áp lên `secrets\`; khoá SSH là bí mật **duy nhất** sống ngoài đó — nên là bí mật
+duy nhất bộ cài không với tới.
+
+**Ba chỗ cùng khẳng định `secrets\` đã siết, và không chỗ nào thật sự kiểm:**
+
+| # | Chỗ | Sai thế nào |
+|---|---|---|
+| ① | `2-cai-dat.ps1:231` | `/inheritance:r` chỉ bỏ ACE **thừa kế**; `/grant:r` chỉ thay quyền chủ thể **được liệt kê**. Một ACE **tường minh** sống sót — rồi nó in `Ok`. |
+| ② | `4-nghiem-thu.ps1` | chỉ tìm `Users\|Everyone`; một ACE cho **một tài khoản cụ thể** không khớp ⇒ in `Ok 'Quyền secrets\ đã siết'` |
+| ③ | `vps_khoa_dich_vu.ps1` (của chính đợt này) | **mắc lại đúng lỗi đó** ở lần chạy đầu: in "đã siết" rồi thoát `EXITCODE=0` trong khi ACL y nguyên |
+
+⭐ Thứ vạch ra ③ là bước **in lại ACL thật** ở cuối script. Bài học: *một bước bảo
+mật không tự kiểm là một bước sẽ nói dối vào đúng ngày nó thất bại.*
+
+**Và một cái bẫy nữa, lần thứ ba trong dự án:** sửa `app.env` rồi
+`Restart-Service` là **không đủ** — nssm nướng biến môi trường vào đăng ký dịch
+vụ lúc cài. Dự án đã trả giá hai lần, đã viết hẳn `nap_lai_env.ps1` kèm cảnh báo
+dài — và lần chạy đầu của script này vẫn dẫm vào. Triệu chứng: máy vẫn `loi` với
+**nguyên văn** thông báo cũ, trỏ vào đường dẫn **cũ**.
+
+**Đã sửa:** khoá về `secrets\` (bản trong `.ssh` giữ nguyên cho con người) · cả
+ba chỗ dùng **danh sách cho phép** + tự kiểm + `throw` · `tools/vps_kiem_khoa.py`
+kiểm **quyền** và **nối thật** qua **đúng tầng vận chuyển của worker** ·
+`4-nghiem-thu.ps1` gọi nó khi `LTT_VPS=1` · 9 phép kiểm mới (`test_312`).
+
+⚠️ **Một cái giá phải nói ra:** siết `secrets\` xong thì `tools/check_multiproc.py`
+không đọc được `app.env` bằng tài khoản thường, nên bước gate *"bất biến đa tiến
+trình"* (`test_214`) **bị bỏ qua** khi chạy gate không nâng quyền. Nay nó xuống
+thang êm và **nói rõ nguyên nhân**; muốn chạy đủ thì gate phải chạy nâng quyền,
+hoặc đặt `LTT_TEST_DATABASE_URL`.
+
+⭐ Và một lỗi giao diện chỉ máy thật mới lộ: nhật ký in `ip_noi_bo: 10.51.0.51` —
+địa chỉ trong LAN của cụm. Đồ gá không có khoá đó. **Một danh sách CẤM chỉ chặn
+được thứ nó biết tên, và dữ liệu giả chỉ chứa những khoá người viết nghĩ ra.**
+
+---
+
 ## 7. Khoảng trống bằng chứng — nói rõ, không lấp liếm
 
 | Chưa chứng minh được | Vì | Cần gì |
 |---|---|---|
-| Bắt tay RFB, gõ phím, chuột, Ctrl+Alt+Del, ngắt–nối lại | route console mở phiên VNC **thật** trên Proxmox trước khi render | **D-02** |
-| POST tạo/bật/tắt/cài lại/khôi phục/xoá chạy đầu-tới-cuối | cần một máy thật | **D-02** |
-| Hành vi thật của job trong worker | như trên | **D-02** |
-| Mọi thứ đi qua Cloudflare (cache, CSP biên, minify) | cảnh dựng ở loopback | **deploy** — quy tắc 5b |
-| Bản EN **render** của năm trang | mới chốt bằng `.po` + `test_305` | một lượt soi bằng mắt trên `/en/vps` |
+| Cài Windows tới hết và vào bằng RDP | lượt nghiệm thu dừng ở màn hình Setup rồi xoá máy — cài hết mất 15–25 phút và không đổi lại thêm bằng chứng nào về giao diện | một lượt nữa, nếu muốn |
+| Khôi phục ảnh chụp | ảnh chụp đầu tiên chỉ có sau **một tuần**; máy nghiệm thu sống 20 phút | một máy sống qua một tuần |
+| Cài lại (`rebuild`) chạy hết | cùng lý do với cài Windows | — |
+
+✅ **Ba khoảng trống đã lấp 27/08:** console qua Proxmox thật · POST tạo/bật/tắt/
+xoá đầu-tới-cuối · bản EN đã render (quét `<main>`: **0 đoạn còn tiếng Việt**).
+✅ **Cloudflare:** storefront ẩn danh đo trên **URL công khai** sau deploy — CSS
+mới tới ngay, cache-bust bằng hash nội dung làm đúng việc.
+
+⚠️ **Một điều Cloudflare KHÔNG cho làm:** trình duyệt tự động bị chặn ở `/login`
+bằng thử thách bot ("Just a moment…"). Nên các trang **đã đăng nhập** chỉ kiểm
+được qua **loopback**. Không vượt thử thách đó — nó tồn tại đúng để chặn thứ tôi
+đang chạy.
 
 ⚠️ `tools/vps_dung_mau.py` chứng minh **bố cục, tràn ngang, tương phản, reflow,
 và trạng thái nào hiện ra cái gì** — đúng phần mà đọc mã không trả lời được, và

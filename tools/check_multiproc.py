@@ -31,13 +31,31 @@ SUPER = (pathlib.Path(r"C:\LTTPlatform\secrets\postgres-superuser.txt"),
          ROOT / "secrets" / "postgres-superuser.txt")
 
 
+def _doc_neu_duoc(path: pathlib.Path) -> str:
+    """Noi dung tep, hoac chuoi rong neu khong co HOAC khong du quyen.
+
+    🔴 `PermissionError` o day KHONG phai loi — no la dau hieu `secrets\\` da
+       duoc siet dung (chi SYSTEM + Administrators), va cong cu nay chay bang
+       tai khoan thuong.
+
+    ⚠️ Truoc 2026-08-27 ham goi no chi bat `path.exists()`, va `exists()` **nem**
+       `PermissionError` chu khong tra `False`. Nen ngay sau khi siet ACL, buoc
+       gate nay do bang mot stack trace — trong khi no von co san duong du phong
+       (tu dung CSDL test). Mot cong cu doc mot cau hinh TUY CHON phai coi
+       "khong doc duoc" giong "khong co", nhat la khi "khong doc duoc" la trang
+       thai MONG DOI.
+    """
+    try:
+        return path.read_text(encoding="utf-8-sig")
+    except (FileNotFoundError, PermissionError, OSError):
+        return ""
+
+
 def _doc_env(ten: str) -> str:
     """Doc mot bien tu app.env da cai hoac trong kho. Khong in ra gia tri."""
     for path in (pathlib.Path(r"C:\LTTPlatform\secrets\app.env"),
                  ROOT / "secrets" / "app.env"):
-        if not path.exists():
-            continue
-        for line in path.read_text(encoding="utf-8-sig").splitlines():
+        for line in _doc_neu_duoc(path).splitlines():
             if line.strip().startswith(f"{ten}="):
                 return line.split("=", 1)[1].strip().strip('"').strip("'")
     return ""
@@ -45,8 +63,9 @@ def _doc_env(ten: str) -> str:
 
 def _superuser_pw() -> str:
     for path in SUPER:
-        if path.exists():
-            return path.read_text(encoding="utf-8-sig").strip()
+        noi_dung = _doc_neu_duoc(path)
+        if noi_dung:
+            return noi_dung.strip()
     return ""
 
 
@@ -117,7 +136,21 @@ def main() -> int:
         print("BO QUA bo bat bien da tien trinh — " + ly_do)
         print("  test_214 la thu duy nhat chung minh webhook khong gui trung,")
         print("  canh bao khong nhan doi, va so credit khop khi nhieu tien")
-        print("  trinh worker chay cung luc. Chay tay:")
+        print("  trinh worker chay cung luc.")
+        # Tu 2026-08-27, nguyen nhan HAY GAP NHAT tren may chu khong con la
+        # "khong co PostgreSQL" ma la "khong doc duoc secrets\": thu muc do da
+        # duoc siet ve SYSTEM + Administrators, nen mot shell thuong khong lay
+        # duoc `LTT_DATABASE_URL` lan mat khau superuser. Noi thang ra, vi hai
+        # nguyen nhan do doi hai cach xu ly khac han nhau.
+        if not _doc_neu_duoc(pathlib.Path(r"C:\LTTPlatform\secrets\app.env")):
+            print()
+            print("  ⚠️  Tren may CHU: gan nhu chac chan vi khong doc duoc")
+            print("      C:\\LTTPlatform\\secrets\\ (da siet ve SYSTEM +")
+            print("      Administrators tu 27/08). Do KHONG phai loi.")
+            print("      Chay lai gate bang PowerShell Administrator, hoac dat")
+            print("      LTT_TEST_DATABASE_URL truoc khi chay.")
+        print()
+        print("  Chay tay:")
         print("    set LTT_TEST_DATABASE_URL=postgresql+psycopg://.../..._test")
         print("    python -m pytest tests/test_214_multi_process_runtime.py")
         return 0
