@@ -77,7 +77,7 @@ class LuongMo:
         try:
             from platform_core import api_pool
 
-            api_pool.danh_dau_loi(self._db, self._key, ly_do=type(exc).__name__)
+            api_pool.danh_dau_loi(self._db, self._key, message=type(exc).__name__)
         except Exception as e:                                  # noqa: BLE001
             log.info("khong danh dau duoc loi cho khoa: %s", type(e).__name__)
 
@@ -121,7 +121,7 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
         r = ctx.__enter__()
     except httpx.HTTPError as e:
         client.close()
-        api_pool.danh_dau_loi(db, key, ly_do=type(e).__name__)
+        api_pool.danh_dau_loi(db, key, message=type(e).__name__)
         raise KhongMoDuocLuong(f"khong noi duoc toi may B ({type(e).__name__})") from None
 
     if r.status_code == 429:
@@ -132,7 +132,7 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
     if r.status_code >= 400:
         than_loi = _doc_het(r, ctx, client)
         if r.status_code >= 500:
-            api_pool.danh_dau_loi(db, key, ly_do=f"HTTP {r.status_code}")
+            api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")
         raise KhongMoDuocLuong(
             f"may B tra {r.status_code}: {than_loi[:200]}")
 
