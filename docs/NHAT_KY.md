@@ -49,7 +49,28 @@
   **4.155 passed, 2 failed, 26 skipped**; 18/19 bước gate PASS. Hai lỗi còn lại
   là `test_252_vps_giao_dien` và `test_287_vps_bao_tri`, ngoài `ltt_llm`; không
   sửa lan sang VPS theo yêu cầu của chủ sản phẩm.
-- Chưa deploy/canary ở thời điểm ghi mục này; H41.11 vẫn để **ĐANG LÀM**.
+- Commit nguồn `3e6171b`; release sạch dựng từ `git archive` có SHA-256
+  `7C2FA56A014DF14645317421126A7997DE8EAE58C2BADCB68AECC86EBBDF9D2E`, secret
+  scan 0. Deploy máy A backup dữ liệu vào
+  `C:\LTTPlatform\backups\ltt_data_20260827_222157.zip`, migration PASS, ba
+  service và loopback/Cloudflare edge đều `ready`; `app.previous` giữ bản lùi.
+- Hai lượt rotate đầu bị Windows từ chối vì hai worker `multiprocessing` mồ côi
+  còn giữ handle tới `C:\LTTPlatform\app` dù service đã dừng. Xác định bằng
+  Sysinternals Handle, chỉ dừng đúng hai PID có tiến trình cha đã chết, kiểm 0
+  handle rồi deploy lại thành công. Không restart gateway/llama-swap/GPU máy B.
+- Canary production qua Cloudflare dùng khoá test tạm rồi thu hồi: prompt gần
+  90K → 400/1.808ms; schema tools lớn tương đương → 400/1.098ms; request ngắn
+  không khai `max_tokens` → 200/151ms và `test_mode=true`. Hai nhánh 400 chỉ rõ
+  stream/job và không chạm GPU.
+- Sau khi người dùng mất điện/khôi phục IDE: production vẫn `ready`, hash ba file
+  chạy thật khớp source; máy B trả 401 khi probe không token, chứng minh gateway
+  còn sống và auth fail-closed. Không chạy lại benchmark GPU đã PASS.
+- `python tools\gate.py` sau khôi phục → **22/23 bước PASS**; full backend PASS,
+  chỉ `test_214_multi_process_runtime` đỏ 2 ca vì PostgreSQL `ConnectionTimeout`
+  khi chạy đồng thời full suite. Chạy riêng `python tools\check_multiproc.py`
+  ngay sau đó → **7 passed trong 134,62s**, xác nhận không có regression đa tiến
+  trình. H41.11 hoàn tất; lỗi gate cạnh tranh tài nguyên được ghi đúng, không sửa
+  lan khỏi `ltt_llm`.
 
 ## 2026-08-27 — H41.9/Q112: loại hidden queue trước GPU
 
