@@ -18,6 +18,37 @@ DB/mock/provider giả.
 5. Mỗi pha có bằng chứng; không dùng kế hoạch hoặc số test dự kiến làm bằng
    chứng hoàn thành.
 
+## Checkpoint sau benchmark GPU hiện tại
+
+Job warm/combined đã hoàn tất và là số đo hợp lệ cho bước phân tích tiếp theo:
+
+```text
+job_id      = job_01M11M0DQXMFFNNAM6JJ8RBGQ2
+state       = SUCCEEDED
+exit_code   = 0
+build       = llama.cpp 54ee5ee64 (10580)
+GPU         = RTX 3090 24 GB
+KV          = q8_0 / q8_0
+result_dir  = H:\LTT_LLM\benchmarks\qwen-context-20260827-194437
+```
+
+Kết quả warm/combined (`-pg`, 3 repetitions, 128 generation tokens):
+
+| Context | Throughput báo cáo | Độ lệch chuẩn | Trạng thái |
+|---:|---:|---:|---|
+| 90,112 | 872.72 | 1.01 | hợp lệ |
+| 98,304 | 845.45 | 0.24 | hợp lệ |
+| 131,072 | 756.49 | 1.35 | hợp lệ |
+
+Generation-only cùng process: `41.57 tok/s`, độ lệch chuẩn `0.93`.
+Đây là baseline warm-session; không được diễn giải thành p95 API hoặc khả năng
+chạy đồng thời. `parallel`, queue delay, admission delay và fairness vẫn chưa
+được đo trên workload public thật.
+
+**Quyết định tạm thời:** chưa chốt public cap 90K/131K và chưa tăng
+`parallel`. Chuyển sang Q0–Q3 (CPU/DB/mock) trước; sau khi admission plane
+chung và global cap có test xanh mới mở cửa sổ GPU Q4–Q6.
+
 ## Nguyên tắc phân bổ tài nguyên và cửa sổ GPU
 
 Hàng đợi được xem là hai tầng tài nguyên, không phải một FIFO duy nhất:

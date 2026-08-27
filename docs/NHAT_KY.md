@@ -14,6 +14,32 @@
 
 ---
 
+## 2026-08-27 — Hoàn tất benchmark warm/combined Qwen sau khi GPU chạy xong
+
+- Kiểm tra trực tiếp qua Nexus: job
+  `job_01M11M0DQXMFFNNAM6JJ8RBGQ2` **SUCCEEDED**, `exit_code=0`, thời gian
+  `1.602.544 ms`; log và `RESULT_DIR` đọc được từ máy B.
+- Cấu hình thật: llama.cpp `54ee5ee64 (10580)`, RTX 3090 24 GB, model
+  `Qwen3.8-27B-UD-Q4_K_M.gguf`, KV `q8_0/q8_0`, 3 repetitions, 128 token
+  generation, warm/combined `-pg`.
+- Kết quả throughput báo cáo: context 90.112 = `872,72`, 98.304 = `845,45`,
+  131.072 = `756,49`; generation-only = `41,57 tok/s`. Không có lỗi tiến
+  trình; telemetry nằm trong `H:\LTT_LLM\benchmarks\qwen-context-20260827-194437`.
+- Đã cập nhật checkpoint vào plan. Chưa suy ra p95 API, fairness,
+  `parallel>1` hoặc public cap từ benchmark đơn workload; chuyển tiếp Q0–Q3
+  CPU/DB/mock trước khi mở cửa sổ GPU Q4–Q6.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| Nexus `GET /exec/async/{job_id}` | **PASS**, `SUCCEEDED`, exit 0 |
+| Nexus `GET /exec/async/{job_id}/log` | **PASS**, log đầy đủ, `RESULT_DIR` đọc được |
+| Đọc telemetry `gpu.csv` của result dir | **PASS**, tệp tồn tại trên B |
+| `python tools\gate.py --vong-lap` sau cập nhật checkpoint | **FAIL** — 4.144 passed, 6 failed, 26 skipped; cùng nhóm baseline `test_150`, `test_151`, `test_188`, `test_212` |
+
+---
+
 ## 2026-08-27 — Bổ sung plan hàng đợi nhiều API và xen kẽ cửa sổ GPU
 
 - Mở rộng `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` để bao phủ admission plane
