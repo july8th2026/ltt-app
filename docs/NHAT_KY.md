@@ -28,6 +28,9 @@
 - Đã cập nhật checkpoint vào plan. Chưa suy ra p95 API, fairness,
   `parallel>1` hoặc public cap từ benchmark đơn workload; chuyển tiếp Q0–Q3
   CPU/DB/mock trước khi mở cửa sổ GPU Q4–Q6.
+- Ghi thêm H41.9 vào `docs/KE_HOACH_TRIEN_KHAI.md` để liên kết kế hoạch queue
+  nhiều API với backlog nguồn chân lý; chưa đánh dấu hoàn thành vì runtime chưa
+  được sửa.
 
 ### Lệnh và kết quả thật
 
@@ -37,6 +40,8 @@
 | Nexus `GET /exec/async/{job_id}/log` | **PASS**, log đầy đủ, `RESULT_DIR` đọc được |
 | Đọc telemetry `gpu.csv` của result dir | **PASS**, tệp tồn tại trên B |
 | `python tools\gate.py --vong-lap` sau cập nhật checkpoint | **FAIL** — 4.144 passed, 6 failed, 26 skipped; cùng nhóm baseline `test_150`, `test_151`, `test_188`, `test_212` |
+| `python tools\build_system_profile.py` + `--check` | **PASS**, hồ sơ được rebuild và khớp source |
+| `python tools\gate.py --vong-lap` sau H41.9 | **FAIL** — system profile stale trước rebuild và 6 test baseline; không có lỗi static/secret/contract |
 
 ---
 
