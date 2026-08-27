@@ -35,6 +35,7 @@ from platform_core.public_api import limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
+                                             payload_too_large,
                                              service_unavailable)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
@@ -546,6 +547,18 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
             raise service_unavailable(f"The model is busy right now: {e.ly_do}",
                                       retry_after=e.thu_lai_sau_s) from None
+        if getattr(e, "qua_dai", False):
+            # 413 context_length_exceeded: ngữ cảnh vượt trần đầu-vào của máy B.
+            # KHÔNG phải hỏng tạm — client PHẢI nén/bỏ lượt cũ rồi thử lại; retry
+            # nguyên si chỉ tạo bão (đúng cái Codex đã dính: hội thoại/phản hồi
+            # dài → 413 bị dịch nhầm 503 → "im lặng"). Trả 413 để Codex/Claude
+            # tự tóm tắt hội thoại.
+            log.warning("ngu canh qua dai user=%s: %s",
+                        principal.user_id[:8], e.ly_do)
+            raise payload_too_large(
+                "The input exceeds the model's context limit. Drop or summarise "
+                "older turns and retry with a shorter conversation. "
+                f"[{e.ly_do}]") from None
         log.warning("khong mo duoc luong cho user=%s: %s",
                     principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None

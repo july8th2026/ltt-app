@@ -34,10 +34,14 @@ class KhongMoDuocLuong(Exception):
     """Không mở được luồng. Bên gọi dịch sang 502/503 tuỳ `ban`."""
 
     def __init__(self, ly_do: str, *, ban: bool = False,
-                 thu_lai_sau_s: int = 30):
+                 qua_dai: bool = False, thu_lai_sau_s: int = 30):
         super().__init__(ly_do)
         self.ly_do = ly_do
         self.ban = ban
+        #: Đầu vào vượt trần token của máy B (413) — lỗi CLIENT (ngữ cảnh quá
+        #: dài), KHÔNG phải hỏng tạm. Bên gọi phải trả 413 để client NÉN hội
+        #: thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
+        self.qua_dai = qua_dai
         self.thu_lai_sau_s = thu_lai_sau_s
 
 
@@ -131,6 +135,13 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
                                thu_lai_sau_s=_retry_after(r))
     if r.status_code >= 400:
         than_loi = _doc_het(r, ctx, client)
+        if r.status_code == 413:
+            # Đầu vào vượt trần token của máy B (LTT_LLM_MAX_INPUT_TOKENS). Lỗi
+            # CLIENT, không phải hỏng: đánh dấu `qua_dai` để bên gọi trả 413 và
+            # client tự nén hội thoại. Từng bị dịch nhầm sang 503 → Codex retry
+            # → bão, và khách thấy "im lặng" ở phản hồi/hội thoại dài (đo 27/08).
+            raise KhongMoDuocLuong(
+                f"may B tra 413: {than_loi[:200]}", qua_dai=True)
         if r.status_code >= 500:
             api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")
         raise KhongMoDuocLuong(
