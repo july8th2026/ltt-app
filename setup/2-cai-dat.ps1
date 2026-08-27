@@ -228,8 +228,37 @@ Head 'Cau hinh van hanh'
 Ok 'Khong con buoc cau hinh - nen tang doc bien moi truong, khong doc tep'
 
 Head 'Siet quyen thu muc bi mat'
-icacls $secrets /inheritance:r /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" | Out-Null
-Ok 'Chi SYSTEM va Administrators doc duoc secrets\'
+# !!!! DONG NAY TRUOC 2026-08-27 KHONG LAM DUOC DIEU NO IN RA.
+#
+#   icacls $secrets /inheritance:r /grant:r "SYSTEM:..." "Administrators:..."
+#
+# `/inheritance:r` bo cac ACE THUA KE. `/grant:r` thay quyen cua nhung chu the
+# DUOC LIET KE. Khong cai nao dung toi mot ACE TUONG MINH cua chu the khac -
+# no song sot nguyen ven, va bo cai van in 'Ok'.
+#
+# Do duoc 27/08 tren may dang chay: secrets\ co ACE tuong minh cho tai khoan
+# nguoi dung, tuc app.env - noi giu khoa phien, khoa ma hoa token, hash mat khau
+# admin, token Proxmox, khoa Vultr - nam duoi mot ACL yeu hon cau ta vua in ra.
+#
+# Cach dung: LIET KE roi XOA tung chu the ngoai danh sach, roi KIEM LAI. Mot
+# buoc bao mat khong tu kiem la mot buoc se noi doi vao dung ngay no that bai.
+$chuThePhep = @('SYSTEM', 'Administrators', 'TrustedInstaller')
+icacls $secrets /inheritance:r | Out-Null
+foreach ($ace in @((Get-Acl $secrets).Access)) {
+    $day = $ace.IdentityReference.Value
+    if ($chuThePhep -notcontains ($day -split '\\')[-1]) {
+        icacls $secrets /remove:g "$day" | Out-Null
+    }
+}
+icacls $secrets /grant:r "SYSTEM:(OI)(CI)F" "Administrators:(OI)(CI)F" | Out-Null
+Get-ChildItem $secrets -File | ForEach-Object { icacls $_.FullName /reset | Out-Null }
+$conThua = @((Get-Acl $secrets).Access |
+    ForEach-Object { ($_.IdentityReference.Value -split '\\')[-1] } |
+    Where-Object { $chuThePhep -notcontains $_ } | Select-Object -Unique)
+if ($conThua.Count -gt 0) {
+    throw "Khong siet duoc secrets\ - van con chu the: $($conThua -join ', ')"
+}
+Ok 'Chi SYSTEM va Administrators doc duoc secrets\ (da kiem lai)'
 
 Head 'Sinh bi mat'
 $envFile = Join-Path $secrets 'app.env'

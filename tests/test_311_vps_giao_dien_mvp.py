@@ -700,8 +700,17 @@ def test_nhat_ky_KHONG_do_JSON_tho_va_KHONG_lo_chi_tiet_cum():
     from apps.vps.routes import _chi_tiet_doc_duoc
 
     ra = _chi_tiet_doc_duoc({"upid": "UPID:pve:0000A1B2", "vmid": 9001,
+                             "ip_noi_bo": "10.51.0.51",
                              "credit": 1790, "den": "2026-09-19T00:00:00"})
     assert "UPID" not in ra and "9001" not in ra, f"lo chi tiet noi bo: {ra}"
+    # 🔴 `ip_noi_bo` lot qua CA vong kiem bang canh dung san, va chi hien ra o
+    #    luot nghiem thu dau tien voi MAY THAT (27/08): nhat ky in
+    #    `ip_noi_bo: 10.51.0.51` — dia chi trong LAN cua cum.
+    #
+    # ⚠️ Bai hoc chung: mot danh sach CAM chi chan duoc thu no biet ten, va du
+    #    lieu gia chi chua nhung khoa nguoi viet nghi ra. Do la ly do mot luot
+    #    chay that khong the thay the bang mot bo canh dung san.
+    assert "10.51.0.51" not in ra, f"lo dia chi trong LAN cua cum: {ra}"
     assert "1790" in ra, "mat mot chi tiet co nghia voi khach"
     assert "19/09/2026" in ra, (
         "ngay van o dang ISO — dung cho may doc, sai cho mot dong nhat ky")

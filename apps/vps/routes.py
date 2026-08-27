@@ -151,7 +151,18 @@ BUOC_CAI_DAT: tuple[tuple[int, str], ...] = (
 #:   người thực hiện thì hiện ở nhãn sự kiện, tên ảnh chụp thì ở ô Ảnh chụp, và
 #:   `bang_thong_byte` được chụp để dựng **lịch sử về sau** (D-04), không phải để
 #:   đọc trong nhật ký.
-_KHOA_NOI_BO = frozenset({"upid", "vmid", "boi", "anh", "bang_thong_byte"})
+#:
+#: 🔴 `ip_noi_bo` thêm vào 27/08 sau khi thấy nó trên một máy THẬT. Đồ gá không
+#:    có khoá đó, nên nó lọt qua cả vòng kiểm bằng cảnh dựng sẵn và chỉ hiện ra
+#:    ở lượt nghiệm thu đầu tiên với máy thật: nhật ký in
+#:    `ip_noi_bo: 10.51.0.51` — địa chỉ trong LAN của cụm, vô ích với khách và
+#:    là một mảnh hình dạng hạ tầng.
+#:
+#: ⚠️ Bài học chung: một danh sách CẤM chỉ chặn được thứ nó biết tên. Dữ liệu
+#:    giả chỉ chứa những khoá người viết nghĩ ra — nên nó không bao giờ thay
+#:    được một lượt chạy thật.
+_KHOA_NOI_BO = frozenset({"upid", "vmid", "boi", "anh", "bang_thong_byte",
+                          "ip_noi_bo"})
 
 #: Khoá → nhãn người đọc. Khoá không có trong bảng này thì hiện **nguyên khoá**,
 #: cùng lý do với `nhan.trang_thai()`: một mã lạ ít nhất cho ta thứ để tra khi

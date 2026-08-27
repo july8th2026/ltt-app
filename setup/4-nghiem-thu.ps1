@@ -95,9 +95,48 @@ if (Test-Path (Join-Path $secrets 'app.env')) {
             Bad 'Production con bat admin-env; Q29 yeu cau vo hieu duong nay'
         } else { Ok 'Admin-env da vo hieu o production (Q29)' }
     }
-    $acl = (Get-Acl $secrets).Access | Where-Object { $_.IdentityReference -match 'Users|Everyone' }
-    if ($acl) { Warn 'secrets\ con cho Users/Everyone truy cap' } else { Ok 'Quyen secrets\ da siet' }
+    # !!!! PHEP KIEM NAY TRUOC 2026-08-27 DO NHAM THU.
+    #
+    # No chi tim `Users|Everyone`. Mot ACE TUONG MINH cho mot tai khoan nguoi
+    # dung cu the (vd `DESKTOP-XXX\Thang Tuong`) khong khop ca hai, nen no in
+    # `Ok 'Quyen secrets\ da siet'` trong khi ACL van ho. Do duoc 27/08: day la
+    # cho THU BA cung noi mot cau sai, sau `2-cai-dat.ps1` va thong bao cua no.
+    #
+    # Cach dung la DANH SACH CHO PHEP: bat ky chu the nao ngoai danh sach deu la
+    # mot van de, khong can doan truoc ten no.
+    $chuThePhep = @('SYSTEM', 'Administrators', 'TrustedInstaller')
+    $thua = @((Get-Acl $secrets).Access |
+        ForEach-Object { ($_.IdentityReference.Value -split '\\')[-1] } |
+        Where-Object { $chuThePhep -notcontains $_ } | Select-Object -Unique)
+    if ($thua.Count -gt 0) {
+        Bad "secrets\ con cho $($thua -join ', ') truy cap"
+    } else { Ok 'Quyen secrets\ chi con SYSTEM + Administrators' }
 } else { Bad 'THIEU secrets\app.env' }
+
+# ============================================================================
+Head 'Khoa SSH cua dich vu (VPS)'
+# !!!! VI SAO BUOC NAY O DAY.
+#
+# 27/08 mot khach tra 1.490 credit va nhan ve chu "Loi": ba dich vu chay bang
+# LocalSystem, con khoa SSH nam trong ho so nguoi dung noi ACL cho ca tai khoan
+# ay - tu goc nhin SYSTEM do la khoa "ho" va OpenSSH TU CHOI dung no.
+#
+# Loi do IM LANG hoan toan: /vps van ban, /health/ready van 200, gate van xanh.
+# Tin hieu duy nhat la mot khach da tra tien. Nghiem thu la cho phai biet dieu
+# do, khong phai luc co khach.
+$vpsBat = (Test-Path (Join-Path $secrets 'app.env')) -and
+          ((Get-Content (Join-Path $secrets 'app.env') -Raw) -match '(?m)^LTT_VPS=1\s*$')
+if (-not $vpsBat) {
+    Ok 'LTT_VPS tat - bo qua'
+} elseif (-not (Test-Path $venvPy)) {
+    Warn 'Khong thay venv python - bo qua kiem khoa dich vu'
+} else {
+    & $venvPy (Join-Path $Root 'app\tools\vps_kiem_khoa.py') 2>&1 | ForEach-Object {
+        Write-Host "    $_"
+    }
+    if ($LASTEXITCODE -eq 0) { Ok 'Khoa dich vu: quyen dung, noi duoc' }
+    else { Bad "Khoa dich vu co van de (ma $LASTEXITCODE) - xem dong tren" }
+}
 
 Head 'Cau hinh'
 # KIEM data\config.json DA BO 2026-08-25 (Q108): tep do la cau hinh cua app
