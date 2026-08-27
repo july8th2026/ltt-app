@@ -21,13 +21,16 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
 
 ⭐ VÌ SAO CẦN CẢ HAI CỬA, KHÔNG PHẢI MỘT:
 
-     đồng bộ (OpenAI)   khách trỏ SDK vào là chạy; nhưng **Cloudflare cắt ở
-                        100 giây**, nên chỉ hợp prompt vừa phải
-     bất đồng bộ (job)  né được trần 100 giây; nhưng khách phải học hình dạng
+     đồng bộ (OpenAI)   khách trỏ SDK vào là chạy; nhưng **Cloudflare mặc định
+                        cắt ở 125 giây**, nên chỉ hợp prompt vừa phải
+     bất đồng bộ (job)  né được trần 125 giây; nhưng khách phải học hình dạng
                         job của ta
 
-   Ngữ cảnh 64K lấp đầy tốn **~62 giây prefill** (đo 22/08) — vừa lọt trần
-   Cloudflare, nên cửa đồng bộ phủ gần hết nhu cầu. Cửa job là đường lui.
+   Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
+   input 90K để còn biên thời gian cho Cloudflare. Canary thật gần trần ngày
+   27/08: 86.101 token tokenizer / 89.716 token ước lượng, 102,0 giây, còn khoảng
+   23 giây so với timeout mặc định. Bản vision vẫn 64K cho tới khi có benchmark
+   riêng. Cửa job vẫn là đường lui cho tác vụ dài.
 
 ⛔ GIÁ: `credit_cost` ở đây là **TRẦN ƯỚC CAO**, không phải giá cuối. Với LLM,
    số token RA chỉ biết được sau khi sinh xong. Nền tảng giữ chỗ theo trần này rồi
@@ -43,10 +46,10 @@ from platform_core.registry import AppManifest, ToolSpec
 #: Trần token ra mặc định khi khách không khai `max_tokens`. Giữ chỗ theo số này.
 MAX_TOKENS_MAC_DINH = 4096
 
-#: Cửa sổ ngữ cảnh của `qwen38-api`, khớp `-c 65536` trong `llama-swap.yaml`.
+#: Cửa sổ ngữ cảnh của `qwen38-api`, khớp `-c 131072` trong `llama-swap.yaml`.
 #: **Vào và ra dùng chung con số này**, nên nó là ràng buộc thật, không phải
 #: `MAX_TOKENS_TRAN`.
-CUA_SO_NGU_CANH = 65_536
+CUA_SO_NGU_CANH = 131_072
 
 #: Chừa chỗ cho khuôn chat, định nghĩa tool và sai số của phép ước token vào.
 #: `uoc_token_vao` là ƯỚC, không phải phép đếm thật — nên phải có biên.
@@ -57,10 +60,10 @@ LE_NGU_CANH = 2_048
 #:
 #: ⭐ NÂNG 16.384 → 32.768 ngày 24/08 (chủ sản phẩm quyết), và điều làm nó AN
 #:    TOÀN chứ không phải "chắc là được": `llama.cpp` cấp KV cache cho **toàn bộ**
-#:    `-c 65536` ngay lúc nạp model. Nên VRAM **không đổi** dù trần token ra là
+#:    `-c 131072` ngay lúc nạp model. Nên VRAM **không đổi** dù trần token ra là
 #:    16K hay 32K — chiều duy nhất có thể nguy hiểm thì không hề động tới.
-#:    Đây KHÔNG phải một ngoại lệ của luật "chưa đo thì không chạy" (D-032): số
-#:    đo VRAM 19,4 GB đã là số của một cửa sổ 64K đầy.
+#:    Đây KHÔNG phải một ngoại lệ của luật "chưa đo thì không chạy" (D-032):
+#:    benchmark 131K đã cấp toàn bộ KV trên đúng card 24 GB trước khi chốt Q111.
 #:
 #: ⛔ VÀ VÌ SAO PHẢI LÀ ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định,
 #:    và khách gần như **không có cách nào đổi**. Trần 16.384 khiến Claude Code
@@ -72,7 +75,7 @@ def tran_theo_ngu_canh(token_vao_uoc: int) -> int:
     """Trần token ra **thật sự dùng được** cho một lượt, biết ngữ cảnh còn bao nhiêu.
 
     🔴 VÌ SAO KHÔNG DÙNG THẲNG `MAX_TOKENS_TRAN`. Vào và ra chia nhau **cùng một**
-       cửa sổ 65.536. Một lượt có 50.000 token vào mà xin 32.768 token ra thì
+       cửa sổ 131.072. Một lượt có 100.000 token vào mà xin 32.768 token ra thì
        tổng vượt cửa sổ, và thứ hỏng ở đó **không phải một lỗi sạch** — model
        cắt bớt ngữ cảnh hoặc thượng nguồn từ chối, cả hai đều khó truy.
 
@@ -195,7 +198,7 @@ MANIFEST = AppManifest(
             "models": {
                 "ltt_llm": {
                     "id": "qwen38-api",
-                    "description": ("Text only, 64K context. Coding, chat, "
+                    "description": ("Text only, 131K context. Coding, chat, "
                                     "agentic tool use, summarisation."),
                     "stability": "stable",
                 },
@@ -218,7 +221,7 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": ("`ltt_llm` for text (64K context). "
+                    "description": ("`ltt_llm` for text (131K context). "
                                     "`ltt_llm_vision` also reads images."),
                     "example": "ltt_llm",
                 },

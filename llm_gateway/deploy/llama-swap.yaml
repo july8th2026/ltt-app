@@ -13,6 +13,7 @@
 #   ta khai hai ho so va de llama-swap doi giua chung theo ten model client goi.
 #   Chi MOT cai nam trong VRAM tai mot thoi diem.
 #
+#     qwen38-api      131K ngu canh, KV q8_0, KHONG vision  ~20,7 GB
 #     qwen38-ops      200K ngu canh, KV q4_0, KHONG vision   ~23,3 GB
 #     qwen38-vision    64K ngu canh, KV q8_0, CO  vision     ~19,9 GB
 #
@@ -105,14 +106,16 @@ macros:
 
 models:
   # ============================================================ KHACH NGOAI
-  # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare. Chot 2026-08-22.
+  # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare. Chot 2026-08-27.
   #
-  # VI SAO 64K CHU KHONG PHAI 200K - rang buoc la CLOUDFLARE, khong phai VRAM:
-  #   CF cat o 100 giay. Prefill do duoc tren card cung lop la ~1.000 tok/s
-  #   (llama-bench pp512 = 1132). Nen mot prompt lap day cua so:
-  #       50K token  -> ~50 s   sat tran
-  #      100K token  -> ~100 s  524
-  #      200K token  -> ~200 s  524 chac chan
+  # Engine 131K da duoc warm benchmark tren RTX 3090. Public input cap 90K
+  # la bien an toan cho Cloudflare; khong phai gioi han VRAM cua engine.
+  #   CF mac dinh cat o 125 giay (tai lieu chinh thuc, cap nhat 23/07/2026).
+  #   Canary API that ngay 27/08 tren chinh card nay:
+  #     86.101 token that / 89.716 token uoc luong -> 102,0 s
+  #     tra dung sentinel dau-cuoi, VRAM dinh 22.639 MiB, khong OOM
+  #   Vi vay public cap 90K con khoang 23 s cho overhead; 131K chi danh cho
+  #   engine, khong mo het cho public. Phai theo doi p95 truoc khi nang tiep.
   #   Cap phat mot cua so ma khach khong dung noi la ban mot loi hua khong giu duoc.
   #
   # VA: cot "ngu canh" trong moi bang cong dong la CON SO CAP PHAT. Hang 200K cua
@@ -124,7 +127,7 @@ models:
   # Khach dieu khien do sau bang `reasoning_effort` trong tung request.
   qwen38-api:
     name: "Qwen3.8-27B (LTT Studios)"
-    description: "Coding, chat, agent, tom tat. Ngu canh 64K, co tool calling."
+    description: "Coding, chat, agent, tom tat. Engine 131K; input public 90K."
     capabilities:
       in: ["text"]
       out: ["text"]
@@ -132,7 +135,7 @@ models:
       ${BIN}/llama-server.exe
       -m ${GGUF}
       ${CHUNG}
-      -c 65536
+      -c 131072
       --cache-type-k q8_0 --cache-type-v q8_0
       --host 127.0.0.1 --port ${PORT}
     proxy: "http://127.0.0.1:${PORT}"

@@ -21,6 +21,21 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-27
+
+**BREAKING — nâng cửa sổ text Qwen lên 131K, public input cap 90K.**
+
+*Có phá vỡ tương thích không:* request hợp lệ trước đây vẫn chạy; chỉ các client
+đang tự giả định trần 64K cần cập nhật profile lên 90K. Model vision giữ 64K.
+
+*Cái gì đổi:* `qwen38-api` dùng engine `-c 131072`, KV `q8_0/q8_0`, output cap
+`32768`; gateway từ chối input trên `90000` bằng 413. Mốc được xác nhận bằng
+warm/combined benchmark trên RTX 3090 (Nexus job
+`job_01M11M0DQXMFFNNAM6JJ8RBGQ2`).
+
+*Phải làm gì:* cập nhật client profile `model_context_window = 90000`; không gửi
+request full 131K qua public API. Ops LAN và vision không thay đổi.
+
 ---
 
 ## 2026-08-26

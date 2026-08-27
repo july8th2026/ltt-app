@@ -104,7 +104,7 @@ nằm trong `config.toml`:
 model = "ltt_llm"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 65536
+model_context_window = 90000
 ```
 
 Chạy: `codex --profile ltt`
@@ -124,7 +124,7 @@ Error: legacy `profile = "ltt"` config is no longer supported;
 model = "ltt_llm"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 65536
+model_context_window = 90000
 
 [model_providers.ltt]
 name = "LTT Studios"

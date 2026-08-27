@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:f0aa9f309141cd638a20e2014698570f26d7f97ecf2489452010773236d51868
-Nguồn đã quét : 1200 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:92a77e875ac955a9d4a070a2689828a9309a38ace076a83987f7d57ea989e6a3
+Nguồn đã quét : 1201 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -892,7 +892,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (159 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (161 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -936,6 +936,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_LLM_
 - LTT_LLM_BASE_URL
 - LTT_LLM_MAX_
+- LTT_LLM_MAX_INPUT_TOKENS
+- LTT_LLM_MAX_OUTPUT_TOKENS
 - LTT_LLM_MODELS
 - LTT_LLM_NHIP_TIM_S
 - LTT_LLM_PORT
@@ -1359,8 +1361,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1200 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:915, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1201 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:916, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2498,7 +2500,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (108)
+[tools] (109)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2580,6 +2582,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tools/scan_source_secrets.py
 - tools/seed_credit_packages.py
 - tools/server_routes_baseline.json
+- tools/set_api_rate.py
 - tools/silent_except_baseline.json
 - tools/sinh_golden_api.py
 - tools/so_deploy.py
@@ -2617,7 +2620,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1200 file; 11939635 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11950886 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16226,7 +16229,7 @@ def chay(db, params: dict, *, timeout_s: float = 300.0) -> KetQua:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/jobs.py
-SHA256=65096da1e777e7572fa40ebed20f5ae9feebfb75ba74d433ca934966f0fcfc0e BYTES=1601 LINES=44
+SHA256=d7f4de91b656fdb4ec5894d0d76d8477a2eb740079b5dd6f668fe6cd3a88f5be BYTES=1626 LINES=44
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker, cho **cửa bất đồng bộ**. (H38)
@@ -16234,9 +16237,9 @@ jobs.py — handler chạy trong worker, cho **cửa bất đồng bộ**. (H38)
     POST /api/v1/jobs {"tool": "text.chat", ...}  ->  worker  ->  handle()
 
 ⭐ Cửa này có được **miễn phí** nhờ khai `text.chat` trong manifest. Nó là đường
-   lui khi prompt quá dài cho trần 100 giây của Cloudflare: một prompt lấp đầy
-   cửa sổ 64K tốn ~62 giây prefill, còn dư địa, nhưng phiên agent dài hoặc lượt
-   sinh nhiều nghìn token thì có thể vượt.
+   lui khi prompt quá dài cho trần 125 giây mặc định của Cloudflare. Canary API
+   thật gần public cap đã tốn 102 giây; phiên agent dài hoặc lượt sinh nhiều
+   nghìn token vẫn có thể vượt dù engine chịu được cửa sổ 131K.
 
 ⛔ HANDLER KHÔNG TRỪ CREDIT. Nền tảng đã giữ chỗ theo `credit_cost` lúc submit và
    sẽ quyết toán quanh job. Trừ thêm ở đây là thu hai lần.
@@ -16276,7 +16279,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=de84bd971497411e1794c00ad84c2057a81b2346d7ed91d9a769602bb2a9f738 BYTES=13084 LINES=245
+SHA256=89653491ca4e03f2b699cddcf66725f5201040524d084f1683ab72b04cb1ab05 BYTES=13366 LINES=248
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16301,13 +16304,16 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
 
 ⭐ VÌ SAO CẦN CẢ HAI CỬA, KHÔNG PHẢI MỘT:
 
-     đồng bộ (OpenAI)   khách trỏ SDK vào là chạy; nhưng **Cloudflare cắt ở
-                        100 giây**, nên chỉ hợp prompt vừa phải
-     bất đồng bộ (job)  né được trần 100 giây; nhưng khách phải học hình dạng
+     đồng bộ (OpenAI)   khách trỏ SDK vào là chạy; nhưng **Cloudflare mặc định
+                        cắt ở 125 giây**, nên chỉ hợp prompt vừa phải
+     bất đồng bộ (job)  né được trần 125 giây; nhưng khách phải học hình dạng
                         job của ta
 
-   Ngữ cảnh 64K lấp đầy tốn **~62 giây prefill** (đo 22/08) — vừa lọt trần
-   Cloudflare, nên cửa đồng bộ phủ gần hết nhu cầu. Cửa job là đường lui.
+   Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
+   input 90K để còn biên thời gian cho Cloudflare. Canary thật gần trần ngày
+   27/08: 86.101 token tokenizer / 89.716 token ước lượng, 102,0 giây, còn khoảng
+   23 giây so với timeout mặc định. Bản vision vẫn 64K cho tới khi có benchmark
+   riêng. Cửa job vẫn là đường lui cho tác vụ dài.
 
 ⛔ GIÁ: `credit_cost` ở đây là **TRẦN ƯỚC CAO**, không phải giá cuối. Với LLM,
    số token RA chỉ biết được sau khi sinh xong. Nền tảng giữ chỗ theo trần này rồi
@@ -16323,10 +16329,10 @@ from platform_core.registry import AppManifest, ToolSpec
 #: Trần token ra mặc định khi khách không khai `max_tokens`. Giữ chỗ theo số này.
 MAX_TOKENS_MAC_DINH = 4096
 
-#: Cửa sổ ngữ cảnh của `qwen38-api`, khớp `-c 65536` trong `llama-swap.yaml`.
+#: Cửa sổ ngữ cảnh của `qwen38-api`, khớp `-c 131072` trong `llama-swap.yaml`.
 #: **Vào và ra dùng chung con số này**, nên nó là ràng buộc thật, không phải
 #: `MAX_TOKENS_TRAN`.
-CUA_SO_NGU_CANH = 65_536
+CUA_SO_NGU_CANH = 131_072
 
 #: Chừa chỗ cho khuôn chat, định nghĩa tool và sai số của phép ước token vào.
 #: `uoc_token_vao` là ƯỚC, không phải phép đếm thật — nên phải có biên.
@@ -16337,10 +16343,10 @@ LE_NGU_CANH = 2_048
 #:
 #: ⭐ NÂNG 16.384 → 32.768 ngày 24/08 (chủ sản phẩm quyết), và điều làm nó AN
 #:    TOÀN chứ không phải "chắc là được": `llama.cpp` cấp KV cache cho **toàn bộ**
-#:    `-c 65536` ngay lúc nạp model. Nên VRAM **không đổi** dù trần token ra là
+#:    `-c 131072` ngay lúc nạp model. Nên VRAM **không đổi** dù trần token ra là
 #:    16K hay 32K — chiều duy nhất có thể nguy hiểm thì không hề động tới.
-#:    Đây KHÔNG phải một ngoại lệ của luật "chưa đo thì không chạy" (D-032): số
-#:    đo VRAM 19,4 GB đã là số của một cửa sổ 64K đầy.
+#:    Đây KHÔNG phải một ngoại lệ của luật "chưa đo thì không chạy" (D-032):
+#:    benchmark 131K đã cấp toàn bộ KV trên đúng card 24 GB trước khi chốt Q111.
 #:
 #: ⛔ VÀ VÌ SAO PHẢI LÀ ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định,
 #:    và khách gần như **không có cách nào đổi**. Trần 16.384 khiến Claude Code
@@ -16352,7 +16358,7 @@ def tran_theo_ngu_canh(token_vao_uoc: int) -> int:
     """Trần token ra **thật sự dùng được** cho một lượt, biết ngữ cảnh còn bao nhiêu.
 
     🔴 VÌ SAO KHÔNG DÙNG THẲNG `MAX_TOKENS_TRAN`. Vào và ra chia nhau **cùng một**
-       cửa sổ 65.536. Một lượt có 50.000 token vào mà xin 32.768 token ra thì
+       cửa sổ 131.072. Một lượt có 100.000 token vào mà xin 32.768 token ra thì
        tổng vượt cửa sổ, và thứ hỏng ở đó **không phải một lỗi sạch** — model
        cắt bớt ngữ cảnh hoặc thượng nguồn từ chối, cả hai đều khó truy.
 
@@ -16475,7 +16481,7 @@ MANIFEST = AppManifest(
             "models": {
                 "ltt_llm": {
                     "id": "qwen38-api",
-                    "description": ("Text only, 64K context. Coding, chat, "
+                    "description": ("Text only, 131K context. Coding, chat, "
                                     "agentic tool use, summarisation."),
                     "stability": "stable",
                 },
@@ -16498,7 +16504,7 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": ("`ltt_llm` for text (64K context). "
+                    "description": ("`ltt_llm` for text (131K context). "
                                     "`ltt_llm_vision` also reads images."),
                     "example": "ltt_llm",
                 },
@@ -73721,7 +73727,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=a81e1aa27018f5bc694ffcd87aecd4d9e914534d8643d6fd1e3f46981e144e41 BYTES=252805 LINES=3601
+SHA256=c617113b0e6cf843c0edd0e81fcec70d697262293af058589319e4f9800fd66e BYTES=253847 LINES=3603
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77292,6 +77298,8 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | phiên sau — ưu tiên sau benchmark warm |
+| **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
 | **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
@@ -77328,7 +77336,7 @@ bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=c24c9500edd5b75eb02f99e77a58e19570abff4ed56fabbd8e27b628c1e930bb BYTES=110457 LINES=240
+SHA256=929d22e464e68cae9591349885587bcf101d60475939bd3d5929fdfd8af93f30 BYTES=111777 LINES=241
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -77359,7 +77367,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q110; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q111; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -77467,6 +77475,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q108 | App socialbot (FB/TikTok) — đóng băng hay gỡ hẳn (thay Q10) | **GỠ HẲN khỏi kho mã, chốt 2026-08-25.** Xoá `apps/socialbot/`, `core/` (15.046 dòng), `utils/`, `server/services/`, 7 module route (43 route), 10 template, 44 tệp test (~1.017 test) và `tools/doctor.py` phần FB/TikTok. Cờ `LTT_SOCIALBOT_ROUTES` không còn được đọc. | **Vì sao đổi:** Q10 chọn *đóng băng* để khỏi phá ~700 test đang dựa vào `core/`. Lý do đó **đã hết hiệu lực** từ H22 (2026-08-06): `platform_core/` và 18 app còn lại nay import từ `core/` đúng **0 lần** — chỉ `server/` còn bám, và toàn bộ chỗ bám đó chính là mã socialbot. **Đóng băng không phải trạng thái nghỉ, nó là chi phí đang chạy:** ① 43/69 route công khai (62%) phục vụ một sản phẩm không còn bán, mỗi route là một mục phải xét mỗi lần rà bảo mật; ② `data/config.json` — cấu hình của app này — quyết định `/health/ready` của **cả nền tảng**, và sự cố BOM ghi ở `AGENTS.md` mục 5 đi đúng đường đó; ③ ba fixture `autouse` trong `tests/conftest.py` bắt **mọi** test trong kho trả thuế dọn dẹp hộ một engine chúng không dùng; ④ trang chủ chạy `doctor.run()` mỗi lượt tải chỉ để tính một huy hiệu mà chỉ app này khai. **Đo trước khi xoá, không xoá theo cảm tính:** CSDL production có **0** `app_access`, **0** job, **0** `app_projects` mang slug socialbot, và `data/tokens.enc` / `data/tiktok_tokens.enc` **không tồn tại** — không khách nào từng kết nối. **Đổi lại:** bộ test giảm 21,5%; các test đó phủ mã đã không còn, nhưng con số phải nói ra chứ không giấu. **Không phá huỷ:** mã còn nguyên trong lịch sử git; đăng ký Meta App và TikTok app là tài sản ngoài kho, thuộc quyết định của chủ sản phẩm. |
 | Q109 | Ba app còn lại trong đợt dọn: `kichban`, `mediatools`, `demo` | **GỠ HẲN cả ba, chốt 2026-08-25**, ngay sau Q108. Kèm theo: 11 ToolSpec, 3 tệp test riêng, và toàn bộ nhãn palette của chúng trong Agent Canvas. `apps/demo` được thay bằng **app THỬ tổng hợp** sống trong bộ nhớ của test (`tests/conftest.py::app_thu`). | **Vì sao tách khỏi Q108:** lý do khác hẳn. Socialbot gỡ được vì **không ai dùng** (0 job, 0 token). Ba app này thì **có dấu vết dùng thật**, và quyết định vẫn là gỡ — nên lý do phải ghi riêng, không núp bóng Q108. **Cái giá đã đo và đã chấp nhận:** CSDL production có 10 `agent_workflows`; **3** dùng `text.script`, **4** dùng `text.generate` (kichban), **1** dùng `asset.image` (mediatools), cộng **4** `agent_runs` tham chiếu `text.script` ⇒ **4–7 trong 10 workflow đang lưu mất node**. Bốn tool `asset.*` là node **đầu vào** của workflow — gỡ chúng là gỡ đường đưa tệp của khách vào một chuỗi Agent. Chủ sản phẩm được báo con số này trước khi quyết và vẫn quyết gỡ. **`demo` là ca riêng:** nó không phải mặt hàng mà là **khuôn** của bốn bộ test hạ tầng (hàng đợi `test_67`, credit `test_68`, GPU `test_151`, upload `test_173`). Đó là một phụ thuộc ngược — *hợp đồng của nền tảng dựa vào một mặt hàng* — và nó biến `demo` thành thứ không xoá được, đúng cái bẫy đã giữ `core/` sống thêm ba tuần dưới Q10. Cách sửa **không phải** trỏ test sang một app thật khác (chỉ đổi chủ nợ), mà là một app tổng hợp không có thư mục, không route, không lên catalog, không vào bản phát hành. **Không cần sửa `platform_core/`:** `registry.discover` và `jobs.resolve_handler` đều tra tại thời điểm gọi, nên `monkeypatch` là đủ. |
 | Q110 | Phân phối công cụ cắm Public API cho Codex/Claude | **Hỗ trợ đúng ba đường cùng dùng một lõi và cùng kiểm trạng thái thật, chốt 2026-08-26:** ① EXE có GUI; ② ZIP chứa console EXE + BAT tự xin Administrator, không cần Python và không mở GUI; ③ hướng dẫn thủ công. GUI EXE và console EXE là hai binary riêng. Bản phát hành phải mang phiên bản trong tên, SHA-256 trên web và được quét Defender trước khi đưa vào `data/api_dist`. | Bản 1.0 đóng gói bằng Windows GUI subsystem nhưng tài liệu/BAT lại gọi nó như chương trình console; PowerShell không có stdout/exit code đáng tin cậy nên người dùng chỉ thấy “đang cắm” vô hạn. Cùng lúc, GUI tin cờ `da_cam` trong tệp trạng thái thay vì đọc lại file/registry, và không cắm Codex VS Code. Tách binary theo đúng subsystem giải quyết lớp lỗi; giữ một lõi ngăn ba cách cấu hình trôi khỏi nhau. Hướng dẫn tay là đường kiểm toán/khôi phục khi SmartScreen hoặc chính sách máy chặn binary không ký số. |
+| Q111 | Gắn mốc ngữ cảnh Qwen đã đo vào API và engine | **Chốt 2026-08-27:** `qwen38-api` chạy `-c 131072`, KV `q8_0/q8_0`; public API giới hạn `LTT_LLM_MAX_INPUT_TOKENS=90000`, output `32768`, reserve app `2048`. Benchmark warm/combined Nexus `job_01M11M0DQXMFFNNAM6JJ8RBGQ2` trên RTX 3090/build 10580 đo 90.112 → 872,72 tok/s; 98.304 → 845,45; 131.072 → 756,49. Canary gateway thật đo 86.101 token prompt / 89.716 token ước lượng trong 102,0 giây, trả đúng sentinel đầu-cuối; GPU 100%, VRAM đỉnh 22.639 MiB, 69°C, không OOM. Yêu cầu 90.001 bị chặn 413 trong 42,6 ms trước GPU. `qwen38-vision` giữ 65536 cho tới khi đo riêng có mmproj; không mở `parallel>1`. | Trước đó source còn 64K/60K dù đã có bằng chứng 131K, tạo lệch giữa engine, catalog và client. Tách engine window khỏi public input cap để tận dụng chất lượng ngữ cảnh nhưng không hứa request full 131K qua Cloudflare. Timeout Proxy Read mặc định Cloudflare hiện là 125 giây; canary 102 giây còn khoảng 23 giây biên, đủ để giữ 90K nhưng phải theo dõi p95 trước khi nâng tiếp. Số lấy từ benchmark/canary thật và tài liệu chính thức upstream, không tự suy ra từ một lần gọi ngắn. |
 ---
 
 ## 2. Ràng buộc bất biến
@@ -103620,7 +103629,7 @@ def bang_gia() -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/llm/luong_vlm.py
-SHA256=0ac70e2274aa1d1d6b37aa9c99e330d48990beeaf62444c4101ce12d86c3d40f BYTES=7143 LINES=171
+SHA256=8a3a3512f626a2da60d668d07717c9d95bd99af38f4a96decbd1338d13fbe0b6 BYTES=8008 LINES=182
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 luong_vlm.py — mở một luồng SSE tới model nhà, và **chuyển tiếp nguyên xi**. (Q107, C6)
@@ -103658,10 +103667,14 @@ class KhongMoDuocLuong(Exception):
     """Không mở được luồng. Bên gọi dịch sang 502/503 tuỳ `ban`."""
 
     def __init__(self, ly_do: str, *, ban: bool = False,
-                 thu_lai_sau_s: int = 30):
+                 qua_dai: bool = False, thu_lai_sau_s: int = 30):
         super().__init__(ly_do)
         self.ly_do = ly_do
         self.ban = ban
+        #: Đầu vào vượt trần token của máy B (413) — lỗi CLIENT (ngữ cảnh quá
+        #: dài), KHÔNG phải hỏng tạm. Bên gọi phải trả 413 để client NÉN hội
+        #: thoại, KHÔNG được dịch thành 503 (retry vô ích → bão).
+        self.qua_dai = qua_dai
         self.thu_lai_sau_s = thu_lai_sau_s
 
 
@@ -103701,7 +103714,7 @@ class LuongMo:
         try:
             from platform_core import api_pool
 
-            api_pool.danh_dau_loi(self._db, self._key, ly_do=type(exc).__name__)
+            api_pool.danh_dau_loi(self._db, self._key, message=type(exc).__name__)
         except Exception as e:                                  # noqa: BLE001
             log.info("khong danh dau duoc loi cho khoa: %s", type(e).__name__)
 
@@ -103745,7 +103758,7 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
         r = ctx.__enter__()
     except httpx.HTTPError as e:
         client.close()
-        api_pool.danh_dau_loi(db, key, ly_do=type(e).__name__)
+        api_pool.danh_dau_loi(db, key, message=type(e).__name__)
         raise KhongMoDuocLuong(f"khong noi duoc toi may B ({type(e).__name__})") from None
 
     if r.status_code == 429:
@@ -103755,8 +103768,15 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
                                thu_lai_sau_s=_retry_after(r))
     if r.status_code >= 400:
         than_loi = _doc_het(r, ctx, client)
+        if r.status_code == 413:
+            # Đầu vào vượt trần token của máy B (LTT_LLM_MAX_INPUT_TOKENS). Lỗi
+            # CLIENT, không phải hỏng: đánh dấu `qua_dai` để bên gọi trả 413 và
+            # client tự nén hội thoại. Từng bị dịch nhầm sang 503 → Codex retry
+            # → bão, và khách thấy "im lặng" ở phản hồi/hội thoại dài (đo 27/08).
+            raise KhongMoDuocLuong(
+                f"may B tra 413: {than_loi[:200]}", qua_dai=True)
         if r.status_code >= 500:
-            api_pool.danh_dau_loi(db, key, ly_do=f"HTTP {r.status_code}")
+            api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")
         raise KhongMoDuocLuong(
             f"may B tra {r.status_code}: {than_loi[:200]}")
 
@@ -107577,7 +107597,7 @@ def build(prompts_dir, mapping: dict, *, base: str = "base_prompt.txt") -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/providers.py
-SHA256=1fa937d201516cbc2850216652ebb48eb8e14dfc5eaf85901e9cc1e385865f69 BYTES=18534 LINES=359
+SHA256=25db29eea342e1c70e8563a6690e1ed8cf76a13a811b2f6b2d2684433dac35f0 BYTES=18525 LINES=359
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 providers.py — Provider Registry (H8): MỘT chỗ khai mọi nhà cung cấp API mà nền
@@ -107806,7 +107826,7 @@ REGISTRY: dict[str, Provider] = {
                 is_active=True,
                 capabilities={
                     # CHỈ khai thứ ĐÃ ĐO THẬT trên máy B (SO_DO_P2_P6.md).
-                    "context_window": 65_536,
+                    "context_window": 131_072,
                     "vision": False,
                     "tool_calling": True,
                     "license": "Apache-2.0",
@@ -107820,7 +107840,7 @@ REGISTRY: dict[str, Provider] = {
                     # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
                     "canh_bao": [
                         N_("máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi"),
-                        N_("cửa sổ 64K là trần Cloudflare, không phải trần model: prompt lấp đầy tốn ~62 giây prefill"),
+                        N_("engine có cửa sổ 131K; API public giới hạn input 90K để giữ biên Cloudflare"),
                     ],
                 },
             ),
@@ -107840,8 +107860,8 @@ REGISTRY: dict[str, Provider] = {
                 },
             ),
             # `qwen38-ops` (200K) CÓ trong llama-swap nhưng KHÔNG khai ở đây:
-            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ Cloudflare cắt ở 100
-            # giây. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
+            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ vượt timeout 125
+            # giây mặc định. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
         ),
         list_models_path="/v1/models",
         notes=("Cổng VLM trên máy B (:8299, bearer token), tương thích OpenAI. "
@@ -111403,7 +111423,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=c3cb7e4098a394e79ed1aff7d85e03a09375ae7311f558481dae19790137712a BYTES=38573 LINES=839
+SHA256=1881116e067704a4c54fd7fed94b5990c02b7f9479e69e2d79fad04079452564 BYTES=38573 LINES=839
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -111959,7 +111979,7 @@ def codex_profile() -> str:
         '# before it answers.\n'
         'model_reasoning_effort = "low"\n'
         'model_reasoning_summary = "none"\n'
-        "model_context_window = 65536"
+        "model_context_window = 90000"
     )
 
 
@@ -112038,7 +112058,7 @@ def vscode_codex_config(base_url: str) -> str:
         f'model = "{CLI_MODEL}"\n'
         f'model_provider = "ltt"\n'
         f'model_reasoning_effort = "low"\n'
-        f'model_context_window = 65536\n'
+        f'model_context_window = 90000\n'
         f'\n'
         f'[model_providers.ltt]\n'
         f'name = "LTT Studios"\n'
@@ -121950,7 +121970,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=3c78db10211cdf3746646c9756804c5b43bf01161aca718923455bae6e27f72c BYTES=9962 LINES=249
+SHA256=5f5e16d33546832c98dec070b82690e0f940644d68a5b176ff45453710798b4e BYTES=9962 LINES=249
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -122047,7 +122067,7 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
             "# before it answers.\n"
             'model_reasoning_effort = "low"\n'
             'model_reasoning_summary = "none"\n'
-            "model_context_window = 65536\n", encoding="utf-8")
+            "model_context_window = 90000\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra
 
@@ -129395,7 +129415,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=1b1cfdf9c9ccc7b6e56736c471e8b0e0bebd27febd5ffdeb4c895442ade83698 BYTES=38915 LINES=752
+SHA256=ed6973db0927be52d17b5d38fa7102b3be6466ee942daae18fb57584bb3a9db1 BYTES=41833 LINES=805
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -129434,6 +129454,7 @@ from platform_core.public_api import limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
+                                             payload_too_large,
                                              service_unavailable)
 from platform_core.public_api.principal import Principal
 from platform_core.public_api.protocol import (STREAM, PublicOperationContract)
@@ -129784,6 +129805,22 @@ def _thu_mot_cuc(ten: str) -> dict:
     }
 
 
+def _bao_400(detail: str, than: dict):
+    """Ghi lại LÝ DO + HÌNH DẠNG request mỗi khi ta trả 400 — để soi vì sao Codex
+    bị vứt lượt. (Tạm; gỡ khi đã chẩn xong.) KHÔNG log nội dung nhạy cảm, chỉ
+    khoá/kiểu."""
+    tc = than.get("tool_choice")
+    vao = than.get("input")
+    log.warning(
+        "400 /v1/responses: %s | stream=%s model=%r tc=%r input=%s(len=%s) "
+        "tools=%s keys=%s",
+        detail, than.get("stream"), than.get("model"),
+        (tc.get("type") if isinstance(tc, dict) else tc),
+        type(vao).__name__, (len(vao) if isinstance(vao, (list, str)) else "-"),
+        len(than.get("tools") or []), sorted(than.keys()))
+    return invalid_request(detail)
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from apps.ltt_llm import features
@@ -129797,32 +129834,38 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     ten = _giai_ten_model(str(than.get("model") or ""))
     if ten not in features.ALIAS_SANG_ID:
-        raise invalid_request(
+        raise _bao_400(
             f"`model` must be one of {list(features.ALIAS_SANG_ID)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
-            f"sends `model` from its profile — set them to one of these.")
+            f"sends `model` from its profile — set them to one of these.", than)
 
     tin = _tin_nhan(than)
     if not tin:
-        raise invalid_request("the request carries no input to answer")
+        raise _bao_400("the request carries no input to answer", than)
 
-    # 🔴 `tool_choice` CHƯA ĐI QUA ĐƯỢC CHUỖI GỌI, nên phải TỪ CHỐI, không bỏ qua.
+    # 🔴 `tool_choice` — CHỈ TỪ CHỐI Ở ĐƯỜNG KHÔNG-STREAM.
     #
-    #    `features.chay` → `dieu_phoi.goi` nhận `tools` nhưng **không** nhận
-    #    `tool_choice`. Nuốt im lặng một tham số có nghĩa là đúng cái lỗi vừa mất
-    #    cả buổi để tìm: khách khai `{"type": "tool", "name": "x"}` để **ép** model
-    #    gọi một tool, ta bỏ qua, model trả lời bằng chữ — và không ai biết vì sao.
+    #    Đường **không stream** đi qua `features.chay` → `dieu_phoi.goi`, nơi
+    #    **không** nhận `tool_choice`; nuốt im lặng ở đó là để model trả lời bằng
+    #    chữ khi khách **ép** gọi tool — nên phải từ chối, không bỏ qua.
     #
-    # ⭐ `auto` thì bỏ qua được thật, vì nó **đã là** mặc định của thượng nguồn.
+    #    Đường **stream** thì KHÁC: `gui = dict(than)` được chuyển **nguyên xi**
+    #    tới máy B (llama-server, tương thích OpenAI, CÓ hỗ trợ `tool_choice`).
+    #    Từ chối ở đây là bug thật đã chặn Codex: tiện ích Codex **ép** một tool
+    #    (`tool_choice: {"type":"function","name":"..."}`) ở nhiều lượt agentic;
+    #    ta trả 400 → lượt đó chết lặng (model đã chạy trên GPU nhưng bị vứt), và
+    #    khách thấy "GPU dừng mà không có gì xảy ra". (Đo 2026-08-27.)
+    #
+    # ⭐ `auto` bỏ qua được ở cả hai vì nó **đã là** mặc định của thượng nguồn.
     _chon = than.get("tool_choice")
-    if _chon is not None:
+    if _chon is not None and not than.get("stream"):
         _loai = _chon if isinstance(_chon, str) else (_chon or {}).get("type")
         if _loai != "auto":
-            raise invalid_request(
-                f"`tool_choice` {_loai!r} is not supported yet; only \"auto\" "
-                f"(the default) is honoured. Omit the field to let the model "
-                f"decide.")
+            raise _bao_400(
+                f"`tool_choice` {_loai!r} is not supported on non-streaming "
+                f"requests; only \"auto\" (the default) is honoured there. "
+                f"Use streaming, or omit the field.", than)
 
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
@@ -129923,6 +129966,18 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
             raise service_unavailable(f"The model is busy right now: {e.ly_do}",
                                       retry_after=e.thu_lai_sau_s) from None
+        if getattr(e, "qua_dai", False):
+            # 413 context_length_exceeded: ngữ cảnh vượt trần đầu-vào của máy B.
+            # KHÔNG phải hỏng tạm — client PHẢI nén/bỏ lượt cũ rồi thử lại; retry
+            # nguyên si chỉ tạo bão (đúng cái Codex đã dính: hội thoại/phản hồi
+            # dài → 413 bị dịch nhầm 503 → "im lặng"). Trả 413 để Codex/Claude
+            # tự tóm tắt hội thoại.
+            log.warning("ngu canh qua dai user=%s: %s",
+                        principal.user_id[:8], e.ly_do)
+            raise payload_too_large(
+                "The input exceeds the model's context limit. Drop or summarise "
+                "older turns and retry with a shorter conversation. "
+                f"[{e.ly_do}]") from None
         log.warning("khong mo duoc luong cho user=%s: %s",
                     principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
@@ -129943,21 +129998,39 @@ def _phat(mo, *, user_id: str, request_id: str, da_giu: int) -> Iterator[bytes]:
        toán, và phần giữ chỗ nằm lại đó mãi.
     """
     from platform_core.llm.dem_token_luong import DemToken
+    import time as _time
 
     dem = DemToken()
     vo: Optional[BaseException] = None
+    khach_ngat = False
+    _t0 = _time.monotonic()
+    _n_khoi = 0
+    _t_byte_dau: Optional[float] = None
     try:
         for khoi in mo.luong:
+            if _t_byte_dau is None:
+                _t_byte_dau = _time.monotonic() - _t0
+            _n_khoi += 1
             dem.nhin(khoi)
             yield khoi
     except GeneratorExit:
         # Khách bỏ đi. KHÔNG phải lỗi của khoá — đánh dấu lỗi ở đây là đường
         # thẳng tới D-005 (khoá model nhà tự tắt sau 5 lần).
+        khach_ngat = True
         raise
     except BaseException as e:                                  # noqa: BLE001
         vo = e
         raise
     finally:
+        # 🔎 TẠM: soi vì sao Codex im ở phản hồi dài. KHACH-NGAT = client bỏ giữa
+        #    chừng (timeout Codex); XONG = ta gửi hết (Codex nhận đủ mà không hiện).
+        _dt = _time.monotonic() - _t0
+        log.warning(
+            "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
+            "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
+            request_id[-8:], _dt,
+            (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
+            _n_khoi, dem.token_ra)
         _quyet_toan(user_id, request_id, dem, da_giu)
         if vo is not None:
             mo.hong(vo)
@@ -150335,7 +150408,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=3d90f0d0c6941534c09c9fd76166f17ba605c7bacc3c913335ba674a94bb99c5 BYTES=19993 LINES=643
+SHA256=bcfe784c22767836815f20bce7468037ded84005f33cb04fa15ffdf90cce98a4 BYTES=19994 LINES=643
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -150798,7 +150871,7 @@ SHA256=3d90f0d0c6941534c09c9fd76166f17ba605c7bacc3c913335ba674a94bb99c5 BYTES=19
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (64K context). `ltt_llm_vision` also reads images.",
+            "description": "`ltt_llm` for text (131K context). `ltt_llm_vision` also reads images.",
             "examples": [
               "ltt_llm"
             ]
@@ -150865,7 +150938,7 @@ SHA256=3d90f0d0c6941534c09c9fd76166f17ba605c7bacc3c913335ba674a94bb99c5 BYTES=19
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "9d866077c00f7e90"
+      "contract_hash": "44dc637a5e4cc643"
     },
     {
       "name": "text.prompt_package",
@@ -192835,7 +192908,7 @@ def test_them_provider_khong_lam_vo_registry_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_250_llm_gateway.py
-SHA256=f906211863f405c413b3dd2a749f169098d348d16868bfd2e885be80668acd33 BYTES=20006 LINES=447
+SHA256=dd3013e16bf843249f4009a52dd2bd3dcedd8cf9bf870aee2593dc306d261290 BYTES=20408 LINES=456
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_250_llm_gateway — hợp đồng của cổng VLM (H38, P7).
@@ -192862,6 +192935,15 @@ from fastapi.testclient import TestClient
 from llm_gateway.api import create_app
 from llm_gateway.config import Config
 from llm_gateway.trong_tai import TrongTai
+
+
+def test_config_mac_dinh_khoa_public_input_90k(monkeypatch):
+    """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
+    monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
+    monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
+    cfg = Config.from_env()
+    assert cfg.max_input_tokens == 90_000
+    assert cfg.max_output_tokens == 32_768
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
@@ -197515,7 +197597,7 @@ def test_bo_prompt_thieu_truong_thi_TU_CHOI_ngay(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_256_app_ltt_llm.py
-SHA256=d20448d1116fabbb054f8c67e4f048bd2a0ba5cea5237f9588cc08855a750b26 BYTES=12949 LINES=268
+SHA256=93644af9dbd64d849dd130326797ca9ba33a13bd28703c8eea0f67b99784fb95 BYTES=13332 LINES=276
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_256_app_ltt_llm — app `ltt_llm` và hợp đồng công khai của nó. (H38, mảnh E)
@@ -197537,7 +197619,15 @@ from __future__ import annotations
 import pytest
 
 from apps.ltt_llm import features
-from apps.ltt_llm.manifest import MANIFEST, MAX_TOKENS_TRAN
+from apps.ltt_llm.manifest import CUA_SO_NGU_CANH, MANIFEST, MAX_TOKENS_TRAN
+
+
+def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
+    """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký."""
+    assert CUA_SO_NGU_CANH == 131_072
+    models = MANIFEST.tools[0].api_contract["models"]
+    assert "131K" in models["ltt_llm"]["description"]
+    assert "64K" in models["ltt_llm_vision"]["description"]
 
 
 # ── 1. Bản khai ──────────────────────────────────────────────────────────────
@@ -227328,7 +227418,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=c11f1055984a6ab418e858ee066d9ddeed8aef50408bfe1a451e8c4f51b41cb5 BYTES=61077 LINES=1410
+SHA256=dec69c6757b7b9c193ca5c7ff60ea8c41774a939f8bb41c7f3c1c2ed73d58bc8 BYTES=61077 LINES=1410
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -227718,7 +227808,7 @@ def _codex_profile() -> str:
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 65536\n')
+            f'model_context_window = 90000\n')
 
 
 def _codex_config_goc(goc: str) -> str:
@@ -227740,7 +227830,7 @@ def _codex_config_goc(goc: str) -> str:
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 65536\n'
+            f'model_context_window = 90000\n'
             f'\n' + _codex_config(goc))
 
 
@@ -240590,6 +240680,96 @@ SHA256=c79857eff4d0f4d1e9059330c69acc138f9a36f0ddf74e88766ea2af637678bf BYTES=14
     "handler": 0
   }
 }
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/set_api_rate.py
+SHA256=14f079e8ba89610228f8df928df1ebe06f8ca4099b82b0dbd7c5640509447ebe BYTES=4022 LINES=84
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""Nới trần nhịp (rate limit) của Public API qua **chính sách mặc định** trong CSDL.
+
+    python -m tools.set_api_rate --create 6000 --read 12000 --write 12000 --jobs 50
+
+⭐ VÌ SAO QUA CSDL CHỨ KHÔNG QUA BIẾN MÔI TRƯỜNG. `platform_core.public_api.policy
+   .resolve()` đọc **chính sách mặc định** (`ApiPolicy.is_default`) ở **mỗi
+   request**, nên đổi nó có tác dụng **NGAY**, không cần khởi động lại dịch vụ và
+   không phải nướng lại biến môi trường vào NSSM (đường `LTT_PUBLIC_API_CREATE_RPM`
+   chỉ ăn khi cài lại). Đây là cần gạt vận hành, không phải một lần deploy.
+
+⛔ VÌ SAO TRẦN CAO Ở ĐÂY LÀ ĐÚNG, KHÔNG PHẢI LƠ LÀ. Trần `create_rpm=20` mặc định
+   là để chặn LẠM DỤNG một Public API mở cho người lạ. Nhưng model nhà là **một
+   khe** (single-slot) trên máy B: nó tự điều nhịp — bận thì trả 503, không phải
+   nhận vô hạn. Và tiền tính theo **token thật sinh ra**, không theo số request.
+   Nên với client agentic (Codex/Claude Code) của chính chủ, trần 20/phút chỉ
+   biến một lượt làm-việc-thật thành bão retry → 429. Trần cao ở đây chỉ còn là
+   **chốt chặn một vòng lặp chạy loạn**, không phải thước đo tải — tải do khe của
+   B quyết.
+
+⚠️ CHẠY TRÊN MÁY CHỦ, cần `LTT_DATABASE_URL` (nằm trong secrets\app.env):
+       cd D:\LTTSTUDIOSAPP
+       $env:LTT_DATABASE_URL = ...   # nạp từ app.env
+       C:\LTTPlatform\venv\Scripts\python.exe -m tools.set_api_rate --create 6000
+
+   Đảo lại về mặc định 20/120: `--create 20 --read 120 --write 120 --jobs 5`,
+   hoặc xoá hẳn dòng chính sách trong trang admin (khi đó rơi về hằng số config).
+"""
+from __future__ import annotations
+
+import argparse
+
+from platform_core.db import get_session
+from platform_core.public_api import policy
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--create", type=int, default=6000,
+                    help="rpm_create — số lượt TẠO (mỗi stream/job) mỗi phút")
+    ap.add_argument("--read", type=int, default=12000, help="rpm_read")
+    ap.add_argument("--write", type=int, default=12000, help="rpm_write")
+    ap.add_argument("--jobs", type=int, default=50,
+                    help="max_active_jobs — trần đồng thời")
+    ap.add_argument("--name", default="agentic-mac-dinh",
+                    help="tên chính sách (khi tạo mới)")
+    a = ap.parse_args(argv)
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        hien = policy.default_policy(db)
+        if hien is None:
+            row = policy.create_policy(
+                db, name=a.name, is_default=True,
+                description="Tran nhip cao cho client agentic (set_api_rate.py)",
+                rpm_create=a.create, rpm_read=a.read, rpm_write=a.write,
+                max_active_jobs=a.jobs)
+            act = "TAO MOI"
+        else:
+            row = policy.update_policy(
+                db, hien, rpm_create=a.create, rpm_read=a.read,
+                rpm_write=a.write, max_active_jobs=a.jobs)
+            act = "CAP NHAT"
+        db.commit()
+        print(f"[OK] {act} chinh sach mac dinh '{row.name}':")
+        print(f"      rpm_create     = {row.rpm_create}")
+        print(f"      rpm_read       = {row.rpm_read}")
+        print(f"      rpm_write      = {row.rpm_write}")
+        print(f"      max_active_jobs= {row.max_active_jobs}")
+        print("      -> co tac dung NGAY (resolve doc moi request), khong can restart.")
+        return 0
+    except Exception as exc:  # noqa: BLE001
+        db.rollback()
+        print(f"[LOI] khong dat duoc chinh sach: {type(exc).__name__}: {exc}")
+        return 1
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

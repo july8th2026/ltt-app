@@ -459,7 +459,7 @@
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (64K context). `ltt_llm_vision` also reads images.",
+            "description": "`ltt_llm` for text (131K context). `ltt_llm_vision` also reads images.",
             "examples": [
               "ltt_llm"
             ]
@@ -526,7 +526,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "9d866077c00f7e90"
+      "contract_hash": "44dc637a5e4cc643"
     },
     {
       "name": "text.prompt_package",

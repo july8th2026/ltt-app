@@ -25,6 +25,15 @@ from llm_gateway.config import Config
 from llm_gateway.trong_tai import TrongTai
 
 
+def test_config_mac_dinh_khoa_public_input_90k(monkeypatch):
+    """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
+    monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
+    monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
+    cfg = Config.from_env()
+    assert cfg.max_input_tokens == 90_000
+    assert cfg.max_output_tokens == 32_768
+
+
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
 
 class FakeUpstream:

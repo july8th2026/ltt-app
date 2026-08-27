@@ -113,7 +113,32 @@ ChayTrenB "if not exist $envDir mkdir $envDir" | Out-Null
 
 $co = ChayTrenB "if exist $envDir\gateway.env (echo CO) else (echo KHONG)"
 if (($co -join "") -match "CO") {
-    Dat "gateway.env DA CO - giu nguyen (token khong bi doi moi lan deploy)"
+    # Cap van hanh khong phai bi mat: migrate tai cho, giu nguyen token/model.
+    # Khong dung PowerShell remote inline; scp file tam de tranh loi quoting va
+    # dam bao UTF-8 khong BOM tren Windows PowerShell 5.1.
+    $tamEnv = Join-Path $env:TEMP "gateway.env.migrate"
+    & scp.exe -i $Khoa -o BatchMode=yes -q "${User}@${MayB}:C:/ProgramData/LTTLlm/gateway.env" $tamEnv
+    if ($LASTEXITCODE -ne 0) { Loi "scp gateway.env ve de migrate that bai"; exit 1 }
+    $dong = [IO.File]::ReadAllLines($tamEnv)
+    $daInput = $false
+    $daOutput = $false
+    $dong = @($dong | ForEach-Object {
+        if ($_ -match '^LTT_LLM_MAX_INPUT_TOKENS=') {
+            $daInput = $true
+            'LTT_LLM_MAX_INPUT_TOKENS=90000'
+        } elseif ($_ -match '^LTT_LLM_MAX_OUTPUT_TOKENS=') {
+            $daOutput = $true
+            'LTT_LLM_MAX_OUTPUT_TOKENS=32768'
+        } else { $_ }
+    })
+    if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=90000' }
+    if (-not $daOutput) { $dong += 'LTT_LLM_MAX_OUTPUT_TOKENS=32768' }
+    [IO.File]::WriteAllText($tamEnv, ($dong -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
+    & scp.exe -i $Khoa -o BatchMode=yes -q $tamEnv "${User}@${MayB}:C:/ProgramData/LTTLlm/gateway.env"
+    $rc = $LASTEXITCODE
+    Remove-Item $tamEnv -Force -ErrorAction SilentlyContinue
+    if ($rc -ne 0) { Loi "scp gateway.env da migrate that bai"; exit 1 }
+    Dat "gateway.env da migrate cap input 90000, output 32768 (giu token/model)"
 } else {
     # Token sinh mot lan, ngau nhien. No KHONG phai bi mat cua nen tang - no chi
     # bao ve cong VLM tren LAN. Nhung van khong duoc in ra log.
@@ -131,8 +156,8 @@ if (($co -join "") -match "CO") {
         "# Fail-closed (Q92): rong = KHONG mo model nao. Mo bang cach liet ke ten.",
         "LTT_LLM_MODELS=",
         "# Tran do duoc o P5 (SO_DO_P2_P6.md). Doi thi phai do lai.",
-        "LTT_LLM_MAX_INPUT_TOKENS=60000",
-        "LTT_LLM_MAX_OUTPUT_TOKENS=16384",
+        "LTT_LLM_MAX_INPUT_TOKENS=90000",
+        "LTT_LLM_MAX_OUTPUT_TOKENS=32768",
         "LTT_LLM_MAX_IMAGES=4",
         "# Nen do duoc: desktop 1515-1612 MiB, ComfyUI thuong tru 6211-16620 MiB.",
         "LTT_LLM_VRAM_SACH_MB=2500",

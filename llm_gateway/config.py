@@ -52,8 +52,8 @@ class Config:
     models_mo: tuple[str, ...]
 
     # ── Ngân sách — số CHÍNH THỨC điền sau khi P5 đo xong ─────────────────────
-    #: Trần token đầu vào. Mặc định 200.000 = mốc `-c 204800` trừ chỗ cho đầu ra.
-    #: ⚠️ Đây là con số CHỜ ĐO. P5 phải xác nhận và ghi vào DECISIONS.md.
+    #: Trần token đầu vào public API. Engine có cửa sổ 131.072; public giữ 90.000
+    #: để còn biên prefill/Cloudflare. Hồ sơ ops LAN có thể dùng cap riêng.
     max_input_tokens: int
     #: Trần token sinh ra mỗi yêu cầu.
     max_output_tokens: int
@@ -114,7 +114,7 @@ class Config:
             port=_int("LTT_LLM_PORT", 8299),
             token=(os.environ.get("LTT_LLM_TOKEN") or "").strip(),
             models_mo=_danh_sach("LTT_LLM_MODELS"),
-            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 200_000),
+            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 90_000),
             max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 32_768),
             max_images=_int("LTT_LLM_MAX_IMAGES", 4),
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),

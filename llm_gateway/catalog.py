@@ -4,7 +4,7 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
 ⭐ BA HỒ SƠ, MỘT TRỌNG SỐ. Cùng một file GGUF, ba cách khởi động, vì trên card
    24 GB **không thể vừa nạp `mmproj` vừa mở ngữ cảnh 200K**:
 
-     qwen38-api      64K ngữ cảnh, KV q8_0, KHÔNG vision  ~19,0 GB  ← MẶC ĐỊNH
+     qwen38-api      131K ngữ cảnh, KV q8_0, KHÔNG vision ~20,7 GB  ← MẶC ĐỊNH
      qwen38-ops     200K ngữ cảnh, KV q4_0, KHÔNG vision  ~23,3 GB
      qwen38-vision   64K ngữ cảnh, KV q8_0, CÓ  vision    ~19,9 GB
 
@@ -12,7 +12,7 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
    trong VRAM tại một thời điểm**.
 
 ⛔ `qwen38-api` PHỤC VỤ KHÁCH NGOÀI, `qwen38-ops` THÌ KHÔNG. Ràng buộc không phải
-   VRAM mà là **Cloudflare cắt ở 100 giây**. Prefill đo được ~1.000 tok/s ⇒ một
+   VRAM mà là **Cloudflare mặc định cắt ở 125 giây**. Prefill đo được ~1.000 tok/s ⇒ một
    prompt lấp đầy 200K tốn ~200 s ⇒ **524**, dù máy vẫn chạy tốt. Mở `qwen38-ops`
    ra Internet là bán một cửa sổ khách không dùng nổi.
 
@@ -24,9 +24,13 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
    mở khi tên nó nằm trong `LTT_LLM_MODELS`. Thêm một dòng vào đây **không** mở
    thêm gì cả.
 
-⚠️ CÁC CON SỐ `max_context` DƯỚI ĐÂY LÀ MỤC TIÊU CHỜ ĐO, không phải số đã đo.
-   P5 của `docs/VLM_NOI_BO/LO_TRINH_THI_HANH.md` phải xác nhận từng mốc bằng
-   `nvidia-smi` và ghi vào `DECISIONS.md`. Nguồn của mốc 200K: sweep cộng đồng
+✅ `qwen38-api` 131072 đã được xác nhận bằng warm/combined benchmark trên RTX
+   3090 (job Nexus `job_01M11M0DQXMFFNNAM6JJ8RBGQ2`, build 10580, KV q8_0):
+   90.112 → 872,7 tok/s, 98.304 → 845,5 tok/s, 131.072 → 756,5 tok/s.
+   Canary qua gateway thật: 86.101 token prompt / 89.716 token ước lượng chạy
+   102,0 giây, trả đúng sentinel đầu-cuối, VRAM đỉnh 22.639 MiB, không OOM.
+   `qwen38-vision` vẫn giữ 65536 cho tới benchmark có mmproj.
+   Nguồn của mốc 200K: sweep cộng đồng
    trên đúng RTX 3090 (23,3/24,6 GB, 54,2 tok/s) — *"262K exceeded 24 GB at model
    load"*, nên **204800 chứ không phải 262144**.
 """
@@ -53,8 +57,8 @@ HO_SO: tuple[ModelSpec, ...] = (
     ModelSpec(
         ten="qwen38-api",
         co_vision=False,
-        max_context=65_536,
-        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat. Ngu canh 64K.",
+        max_context=131_072,
+        mo_ta="Qwen3.8-27B - coding, chat, agent, tom tat. Ngu canh 131K.",
     ),
     ModelSpec(
         ten="qwen38-ops",

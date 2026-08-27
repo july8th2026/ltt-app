@@ -225,7 +225,7 @@ REGISTRY: dict[str, Provider] = {
                 is_active=True,
                 capabilities={
                     # CHỈ khai thứ ĐÃ ĐO THẬT trên máy B (SO_DO_P2_P6.md).
-                    "context_window": 65_536,
+                    "context_window": 131_072,
                     "vision": False,
                     "tool_calling": True,
                     "license": "Apache-2.0",
@@ -239,7 +239,7 @@ REGISTRY: dict[str, Provider] = {
                     # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
                     "canh_bao": [
                         N_("máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi"),
-                        N_("cửa sổ 64K là trần Cloudflare, không phải trần model: prompt lấp đầy tốn ~62 giây prefill"),
+                        N_("engine có cửa sổ 131K; API public giới hạn input 90K để giữ biên Cloudflare"),
                     ],
                 },
             ),
@@ -259,8 +259,8 @@ REGISTRY: dict[str, Provider] = {
                 },
             ),
             # `qwen38-ops` (200K) CÓ trong llama-swap nhưng KHÔNG khai ở đây:
-            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ Cloudflare cắt ở 100
-            # giây. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
+            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ vượt timeout 125
+            # giây mặc định. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
         ),
         list_models_path="/v1/models",
         notes=("Cổng VLM trên máy B (:8299, bearer token), tương thích OpenAI. "

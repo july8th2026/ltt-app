@@ -11593,3 +11593,6 @@ msgstr "Used, 30 days"
 
 msgid "Đặt hai biến này vào môi trường của ứng dụng, rồi mở lại nó:"
 msgstr "Put these two variables in your application's environment, then reopen it:"
+
+msgid "engine có cửa sổ 131K; API public giới hạn input 90K để giữ biên Cloudflare"
+msgstr "The engine has a 131K context window; the public API limits input to 90K to preserve Cloudflare headroom"

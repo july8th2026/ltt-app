@@ -14,6 +14,57 @@
 
 ---
 
+## 2026-08-27 — Hoàn tất Q111 trên máy B, không reboot máy/GPU
+
+- Gắn benchmark đã hoàn tất vào source: text engine `131072`, public input cap
+  `90000`, output cap `32768`, KV `q8_0/q8_0`; vision giữ `65536` cho tới khi
+  benchmark riêng. Cập nhật manifest, gateway catalog/config, llama-swap,
+  provider catalog, cấu hình Codex/CamCLI/SDK, tài liệu và contract baseline.
+- `deploy.ps1` nay migrate hai cap vận hành trên `gateway.env` hiện có mà giữ
+  nguyên token/model, ghi UTF-8 không BOM; bản cài mới dùng đúng cap Q111.
+- Artifact final Q111 SHA-256
+  `EDECB19AF8FE970BCDC1B1984735EAF9D92EAC205C06260C11262275B3E3C45E`
+  đã chuyển qua Nexus, hash A/B khớp, import PASS; backup runtime trước deploy ở
+  `H:\LTT_LLM\releases\q111-before-20260827-2112`.
+- Chỉ restart hai service `LTTLlamaSwap` và `LTTLlmGateway`, **không reboot máy,
+  không reset GPU**. Runtime trả đúng input `90000`, output `32768`, text context
+  `131072`, vision context `65536`; `/health` và `/v1/models` PASS.
+- Canary ngắn trên model warm: `reasoning_effort=low`, 2,2 giây, nội dung `OK`,
+  `finish_reason=stop`. Canary gần public cap dùng dữ liệu code có cấu trúc:
+  tokenizer thật 86.101 token / gateway ước lượng 89.716 token, 102,003 giây,
+  trả chính xác sentinel ở đầu và cuối ngữ cảnh; GPU 100%, VRAM đỉnh 22.639 MiB,
+  69°C, quạt 93%, 373,14 W, không OOM.
+- Yêu cầu 90.001 token theo bộ ước lượng bị chặn `413` trong 42,6 ms; PID model
+  không đổi và GPU 0% trước/sau, chứng minh chặn trước GPU.
+- Tài liệu Cloudflare chính thức cập nhật 23/07/2026 ghi Proxy Read Timeout mặc
+  định 125 giây, không phải 100 giây như chú thích cũ. 102 giây còn khoảng 23
+  giây biên nên giữ cap 90K; phải theo dõi p95 trước khi nâng tiếp.
+
+### Lệnh và kết quả thật
+
+- `python tools\gate.py --vong-lap` → **PASS 19/19**; bộ `--lf` 236,8 giây.
+- `python tools\test_nhanh.py --noi-tiep -k "test_250 or test_256 or test_275 or test_283 or test_284 or test_290"`
+  → lượt cuối **186 passed, 1 skipped**, 4.053 deselected.
+- `python tools\gate.py` → **FAIL 1/23**: 4.145 passed, 6 failed, 26 skipped;
+  pha nối tiếp 62 passed. Sáu lỗi là đúng nhóm baseline có trước hạng mục:
+  `test_150`, `test_151`, `test_188` và ba ca `test_212 image.upscale`; không có
+  lỗi mới thuộc context/gateway/CLI.
+- Nexus installer: 99 test liên quan PASS; full suite 793 passed, 11 failed do
+  ổ C máy A chỉ còn 2,7% và hàng rào disk-refuse trả 507; release smoke 7/7,
+  ZIP verify 7/7, SHA-256
+  `1B9E709DCF46D724C3037B81C59C80F1650FA0CAFAE3C86DB2C3A29D468255AF`.
+- Nexus service restart cho LTT LLM: **PASS**; config allowlist có backup và
+  agent nhận quyền sau restart riêng. Dừng phát triển Nexus sau bootstrap này.
+- Q111 API canary: **PASS**, kết quả và telemetry ở
+  `H:\LTT_LLM\benchmarks\q111-api-90k-20260827-212957`.
+
+### Tiếp theo
+
+1. Không làm thêm Nexus; chỉ dùng control plane hiện có để chạy/đọc benchmark.
+2. Q111 đã đóng. Hạng mục tiếp theo trong đúng phạm vi `ltt_llm` là H41.9:
+   admission/queue nhiều API, bắt đầu bằng baseline concurrency GPU rồi Q0–Q3
+   CPU/DB/mock; chỉ vào Q4–Q6 GPU sau khi ba hàng rào admission xanh.
+
 ## 2026-08-27 — Hoàn tất benchmark warm/combined Qwen sau khi GPU chạy xong
 
 - Kiểm tra trực tiếp qua Nexus: job

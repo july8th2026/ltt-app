@@ -18,7 +18,15 @@ from __future__ import annotations
 import pytest
 
 from apps.ltt_llm import features
-from apps.ltt_llm.manifest import MANIFEST, MAX_TOKENS_TRAN
+from apps.ltt_llm.manifest import CUA_SO_NGU_CANH, MANIFEST, MAX_TOKENS_TRAN
+
+
+def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
+    """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký."""
+    assert CUA_SO_NGU_CANH == 131_072
+    models = MANIFEST.tools[0].api_contract["models"]
+    assert "131K" in models["ltt_llm"]["description"]
+    assert "64K" in models["ltt_llm_vision"]["description"]
 
 
 # ── 1. Bản khai ──────────────────────────────────────────────────────────────

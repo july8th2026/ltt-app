@@ -4,9 +4,9 @@ jobs.py — handler chạy trong worker, cho **cửa bất đồng bộ**. (H38)
     POST /api/v1/jobs {"tool": "text.chat", ...}  ->  worker  ->  handle()
 
 ⭐ Cửa này có được **miễn phí** nhờ khai `text.chat` trong manifest. Nó là đường
-   lui khi prompt quá dài cho trần 100 giây của Cloudflare: một prompt lấp đầy
-   cửa sổ 64K tốn ~62 giây prefill, còn dư địa, nhưng phiên agent dài hoặc lượt
-   sinh nhiều nghìn token thì có thể vượt.
+   lui khi prompt quá dài cho trần 125 giây mặc định của Cloudflare. Canary API
+   thật gần public cap đã tốn 102 giây; phiên agent dài hoặc lượt sinh nhiều
+   nghìn token vẫn có thể vượt dù engine chịu được cửa sổ 131K.
 
 ⛔ HANDLER KHÔNG TRỪ CREDIT. Nền tảng đã giữ chỗ theo `credit_cost` lúc submit và
    sẽ quyết toán quanh job. Trừ thêm ở đây là thu hai lần.
