@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:92a77e875ac955a9d4a070a2689828a9309a38ace076a83987f7d57ea989e6a3
+Fingerprint   : sha256:aa7160eaf0b185831644409052d0fbbe1531b45c7b5a86f1a8ee8dfd7665299b
 Nguồn đã quét : 1201 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -892,7 +892,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (161 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (162 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -936,6 +936,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_LLM_
 - LTT_LLM_BASE_URL
 - LTT_LLM_MAX_
+- LTT_LLM_MAX_DONG_THOI
 - LTT_LLM_MAX_INPUT_TOKENS
 - LTT_LLM_MAX_OUTPUT_TOKENS
 - LTT_LLM_MODELS
@@ -2620,7 +2621,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11950886 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11952499 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -73727,7 +73728,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=c617113b0e6cf843c0edd0e81fcec70d697262293af058589319e4f9800fd66e BYTES=253847 LINES=3603
+SHA256=e94e833c8b4d16924956a0c06a75d68c647deff507b210fc56ef8347d8dc387d BYTES=253990 LINES=3603
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77298,7 +77299,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | phiên sau — ưu tiên sau benchmark warm |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B, request thứ hai 429 trong 0,05s. Còn admission queue thật Q1–Q6 |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
@@ -77336,7 +77337,7 @@ bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=929d22e464e68cae9591349885587bcf101d60475939bd3d5929fdfd8af93f30 BYTES=111777 LINES=241
+SHA256=345502bfc3a1854d2f6e7880768f0f5f8d3b4a15e89821bfc6700ae0dafcf8ed BYTES=112824 LINES=242
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -77476,6 +77477,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q109 | Ba app còn lại trong đợt dọn: `kichban`, `mediatools`, `demo` | **GỠ HẲN cả ba, chốt 2026-08-25**, ngay sau Q108. Kèm theo: 11 ToolSpec, 3 tệp test riêng, và toàn bộ nhãn palette của chúng trong Agent Canvas. `apps/demo` được thay bằng **app THỬ tổng hợp** sống trong bộ nhớ của test (`tests/conftest.py::app_thu`). | **Vì sao tách khỏi Q108:** lý do khác hẳn. Socialbot gỡ được vì **không ai dùng** (0 job, 0 token). Ba app này thì **có dấu vết dùng thật**, và quyết định vẫn là gỡ — nên lý do phải ghi riêng, không núp bóng Q108. **Cái giá đã đo và đã chấp nhận:** CSDL production có 10 `agent_workflows`; **3** dùng `text.script`, **4** dùng `text.generate` (kichban), **1** dùng `asset.image` (mediatools), cộng **4** `agent_runs` tham chiếu `text.script` ⇒ **4–7 trong 10 workflow đang lưu mất node**. Bốn tool `asset.*` là node **đầu vào** của workflow — gỡ chúng là gỡ đường đưa tệp của khách vào một chuỗi Agent. Chủ sản phẩm được báo con số này trước khi quyết và vẫn quyết gỡ. **`demo` là ca riêng:** nó không phải mặt hàng mà là **khuôn** của bốn bộ test hạ tầng (hàng đợi `test_67`, credit `test_68`, GPU `test_151`, upload `test_173`). Đó là một phụ thuộc ngược — *hợp đồng của nền tảng dựa vào một mặt hàng* — và nó biến `demo` thành thứ không xoá được, đúng cái bẫy đã giữ `core/` sống thêm ba tuần dưới Q10. Cách sửa **không phải** trỏ test sang một app thật khác (chỉ đổi chủ nợ), mà là một app tổng hợp không có thư mục, không route, không lên catalog, không vào bản phát hành. **Không cần sửa `platform_core/`:** `registry.discover` và `jobs.resolve_handler` đều tra tại thời điểm gọi, nên `monkeypatch` là đủ. |
 | Q110 | Phân phối công cụ cắm Public API cho Codex/Claude | **Hỗ trợ đúng ba đường cùng dùng một lõi và cùng kiểm trạng thái thật, chốt 2026-08-26:** ① EXE có GUI; ② ZIP chứa console EXE + BAT tự xin Administrator, không cần Python và không mở GUI; ③ hướng dẫn thủ công. GUI EXE và console EXE là hai binary riêng. Bản phát hành phải mang phiên bản trong tên, SHA-256 trên web và được quét Defender trước khi đưa vào `data/api_dist`. | Bản 1.0 đóng gói bằng Windows GUI subsystem nhưng tài liệu/BAT lại gọi nó như chương trình console; PowerShell không có stdout/exit code đáng tin cậy nên người dùng chỉ thấy “đang cắm” vô hạn. Cùng lúc, GUI tin cờ `da_cam` trong tệp trạng thái thay vì đọc lại file/registry, và không cắm Codex VS Code. Tách binary theo đúng subsystem giải quyết lớp lỗi; giữ một lõi ngăn ba cách cấu hình trôi khỏi nhau. Hướng dẫn tay là đường kiểm toán/khôi phục khi SmartScreen hoặc chính sách máy chặn binary không ký số. |
 | Q111 | Gắn mốc ngữ cảnh Qwen đã đo vào API và engine | **Chốt 2026-08-27:** `qwen38-api` chạy `-c 131072`, KV `q8_0/q8_0`; public API giới hạn `LTT_LLM_MAX_INPUT_TOKENS=90000`, output `32768`, reserve app `2048`. Benchmark warm/combined Nexus `job_01M11M0DQXMFFNNAM6JJ8RBGQ2` trên RTX 3090/build 10580 đo 90.112 → 872,72 tok/s; 98.304 → 845,45; 131.072 → 756,49. Canary gateway thật đo 86.101 token prompt / 89.716 token ước lượng trong 102,0 giây, trả đúng sentinel đầu-cuối; GPU 100%, VRAM đỉnh 22.639 MiB, 69°C, không OOM. Yêu cầu 90.001 bị chặn 413 trong 42,6 ms trước GPU. `qwen38-vision` giữ 65536 cho tới khi đo riêng có mmproj; không mở `parallel>1`. | Trước đó source còn 64K/60K dù đã có bằng chứng 131K, tạo lệch giữa engine, catalog và client. Tách engine window khỏi public input cap để tận dụng chất lượng ngữ cảnh nhưng không hứa request full 131K qua Cloudflare. Timeout Proxy Read mặc định Cloudflare hiện là 125 giây; canary 102 giây còn khoảng 23 giây biên, đủ để giữ 90K nhưng phải theo dõi p95 trước khi nâng tiếp. Số lấy từ benchmark/canary thật và tài liệu chính thức upstream, không tự suy ra từ một lần gọi ngắn. |
+| Q112 | Một GPU `parallel=1` nhận bao nhiêu request đồng thời trước khi có admission queue thật? | **Đúng một request.** `LTT_LLM_MAX_DONG_THOI=1` là mặc định và bộ cài phải migrate env cũ về 1. Request thứ hai nhận `429` + `Retry-After`, không được xếp hàng bên trong llama.cpp. Hàng đợi có chờ chỉ được sống ở admission plane của nền tảng, nơi có `job_id`, trạng thái, giới hạn, fairness, hủy và metrics. | Baseline thật trên B với hai request 23.224 token cách nhau 200 ms: khi gateway cho 2 suất, lượt 1 mất 24,28 giây còn lượt 2 mất 45,73 giây — cả hai 200, chứng minh request thứ hai chờ vô hình khoảng 21,5 giây. Sau khi về 1 suất: lượt 1 vẫn 200, lượt 2 trả 429 trong 0,05 giây, `prompt_tokens=0`; không chạm upstream/GPU. Nới gateway lên 2 không tạo thêm năng lực khi engine vẫn `parallel=1`, nó chỉ chuyển trách nhiệm queue sang tầng không quan sát và không công bằng. |
 ---
 
 ## 2. Ràng buộc bất biến
@@ -150408,7 +150410,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=bcfe784c22767836815f20bce7468037ded84005f33cb04fa15ffdf90cce98a4 BYTES=19994 LINES=643
+SHA256=e83b55e58c9bfc2fa058d14d4b1f6e0d555b3d9a9dd0e7f4ad65be16e12988b1 BYTES=19992 LINES=643
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -192908,7 +192910,7 @@ def test_them_provider_khong_lam_vo_registry_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_250_llm_gateway.py
-SHA256=dd3013e16bf843249f4009a52dd2bd3dcedd8cf9bf870aee2593dc306d261290 BYTES=20408 LINES=456
+SHA256=436af1fd783cff16424385f51e93560243557c36a23c611572719ec2b753cd65 BYTES=20559 LINES=458
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_250_llm_gateway — hợp đồng của cổng VLM (H38, P7).
@@ -192941,9 +192943,11 @@ def test_config_mac_dinh_khoa_public_input_90k(monkeypatch):
     """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
     monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
+    monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
     cfg = Config.from_env()
     assert cfg.max_input_tokens == 90_000
     assert cfg.max_output_tokens == 32_768
+    assert cfg.max_dong_thoi == 1, "parallel=1 thi gateway khong duoc tao hidden queue"
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
@@ -198045,7 +198049,7 @@ def test_vong_bao_tri_co_goi_pheps_tham():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_258_gioi_han_cong.py
-SHA256=a47d88ae3a932d00f8ec0a17fc0e280fbd15e4c7d3b45d28d527ad6c255447fe BYTES=11288 LINES=289
+SHA256=584f936427ba509b77754ac73c069fe5afd88be3663640c9c366c7b98a49bd81 BYTES=11562 LINES=298
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_258_gioi_han_cong — hàng rào đồng thời/tần suất của cổng VLM. (H38, V9)
@@ -198074,6 +198078,15 @@ class Dongho:
 
 
 # ── 1. Đồng thời ────────────────────────────────────────────────────────────
+
+def test_mac_dinh_chi_mot_suat_khop_parallel_1():
+    """Không giao request thứ hai cho hàng đợi vô hình của llama.cpp."""
+    gh = GioiHan(rpm=0)
+    first = gh.cap_suat()[1]
+    second = gh.cap_suat()[1]
+    assert first is not None
+    assert second is None
+
 
 def test_day_thi_tu_choi():
     gh = GioiHan(max_dong_thoi=2, rpm=0)

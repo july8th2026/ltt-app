@@ -122,6 +122,7 @@ if (($co -join "") -match "CO") {
     $dong = [IO.File]::ReadAllLines($tamEnv)
     $daInput = $false
     $daOutput = $false
+    $daDongThoi = $false
     $dong = @($dong | ForEach-Object {
         if ($_ -match '^LTT_LLM_MAX_INPUT_TOKENS=') {
             $daInput = $true
@@ -129,16 +130,20 @@ if (($co -join "") -match "CO") {
         } elseif ($_ -match '^LTT_LLM_MAX_OUTPUT_TOKENS=') {
             $daOutput = $true
             'LTT_LLM_MAX_OUTPUT_TOKENS=32768'
+        } elseif ($_ -match '^LTT_LLM_MAX_DONG_THOI=') {
+            $daDongThoi = $true
+            'LTT_LLM_MAX_DONG_THOI=1'
         } else { $_ }
     })
     if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=90000' }
     if (-not $daOutput) { $dong += 'LTT_LLM_MAX_OUTPUT_TOKENS=32768' }
+    if (-not $daDongThoi) { $dong += 'LTT_LLM_MAX_DONG_THOI=1' }
     [IO.File]::WriteAllText($tamEnv, ($dong -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
     & scp.exe -i $Khoa -o BatchMode=yes -q $tamEnv "${User}@${MayB}:C:/ProgramData/LTTLlm/gateway.env"
     $rc = $LASTEXITCODE
     Remove-Item $tamEnv -Force -ErrorAction SilentlyContinue
     if ($rc -ne 0) { Loi "scp gateway.env da migrate that bai"; exit 1 }
-    Dat "gateway.env da migrate cap input 90000, output 32768 (giu token/model)"
+    Dat "gateway.env da migrate input 90000, output 32768, concurrency 1 (giu token/model)"
 } else {
     # Token sinh mot lan, ngau nhien. No KHONG phai bi mat cua nen tang - no chi
     # bao ve cong VLM tren LAN. Nhung van khong duoc in ra log.
@@ -158,6 +163,7 @@ if (($co -join "") -match "CO") {
         "# Tran do duoc o P5 (SO_DO_P2_P6.md). Doi thi phai do lai.",
         "LTT_LLM_MAX_INPUT_TOKENS=90000",
         "LTT_LLM_MAX_OUTPUT_TOKENS=32768",
+        "LTT_LLM_MAX_DONG_THOI=1",
         "LTT_LLM_MAX_IMAGES=4",
         "# Nen do duoc: desktop 1515-1612 MiB, ComfyUI thuong tru 6211-16620 MiB.",
         "LTT_LLM_VRAM_SACH_MB=2500",

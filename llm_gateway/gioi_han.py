@@ -17,7 +17,8 @@ gioi_han.py — hàng rào của riêng cổng VLM: đồng thời và tần su�
    gì, còn "3 lượt cùng lúc" thì chặn đúng thứ cần chặn.
 
    `render_gateway` đã chốt cùng ý: *"Một GPU = một việc. Đổi số này là mời OOM."*
-   Ở đây nới hơn một chút vì `llama-swap` xếp hàng giúp, nhưng nguyên tắc y hệt.
+    Không mượn hàng đợi ẩn của `llama-swap`/llama.cpp: hàng đợi thật phải có
+    trạng thái, vị trí, fairness và hủy ở admission plane của nền tảng.
 
 ⛔ ĐẦY THÌ TRẢ **429**, KHÔNG PHẢI 503. Bên gọi (`dieu_phoi`) coi 429 là *bận* và
    đi tiếp; coi 5xx là *hỏng* và đánh dấu lỗi cho khoá. Nhầm chỗ này thì khoá model
@@ -77,7 +78,7 @@ class GioiHan:
     `now` tiêm được để test không phải ngủ thật.
     """
 
-    def __init__(self, *, max_dong_thoi: int = 2, rpm: int = 120,
+    def __init__(self, *, max_dong_thoi: int = 1, rpm: int = 120,
                  now: Callable[[], float] = time.monotonic):
         self.max_dong_thoi = max(1, int(max_dong_thoi))
         self.rpm = max(0, int(rpm))          # 0 = tắt chốt tần suất

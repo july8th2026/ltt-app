@@ -91,8 +91,9 @@ class Config:
 
     # ── Hàng rào của riêng cổng (V9) ─────────────────────────────────────────
     #: Số lượt được chạy CÙNG LÚC. `llama-server` chạy `--parallel 1`, nên nhiều
-    #: hơn con số này chỉ thành kết nối treo và một hàng đợi vô hình.
-    #: 2 = một lượt đang chạy, một lượt được phép chờ ngay sau.
+    #: hơn 1 chỉ thành kết nối treo và một hàng đợi vô hình trong llama.cpp.
+    #: Hàng đợi thật phải sống ở admission plane, có trạng thái/fairness/hủy;
+    #: gateway này chỉ cho đúng một lượt chạm vào engine.
     max_dong_thoi: int
     #: Trần lượt mỗi phút. 0 = tắt. Chốt phụ — đồng thời mới là chốt chính.
     rpm: int
@@ -126,7 +127,7 @@ class Config:
                        or "http://127.0.0.1:8188").rstrip("/"),
             vram_sach_mb=_int("LTT_LLM_VRAM_SACH_MB", 2500),
             don_dep_bat=(os.environ.get("LTT_LLM_DON_DEP") or "1").strip() != "0",
-            max_dong_thoi=_int("LTT_LLM_MAX_DONG_THOI", 2),
+            max_dong_thoi=_int("LTT_LLM_MAX_DONG_THOI", 1),
             rpm=_int("LTT_LLM_RPM", 120),
             nhip_tim_giay=_float("LTT_LLM_NHIP_TIM_S", 15.0),
         )

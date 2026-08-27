@@ -14,6 +14,37 @@
 
 ---
 
+## 2026-08-27 — H41.9/Q112: loại hidden queue trước GPU
+
+- Baseline thật trên model warm, hai request cùng 23.224 token cách nhau 200 ms:
+  gateway `max_dong_thoi=2` nhận cả hai, request 1 `200` sau 24,279 giây nhưng
+  request 2 chỉ `200` sau 45,728 giây. Tổng wall 46,483 giây; GPU 100%, VRAM
+  22.641 MiB. Đây là hàng đợi vô hình trong llama.cpp vì engine `--parallel 1`.
+- Đổi mặc định gateway và `gateway.env` installer migration về
+  `LTT_LLM_MAX_DONG_THOI=1`; thêm test khóa. Hàng đợi có chờ phải nằm ở admission
+  plane của nền tảng, không mượn queue không trạng thái của llama.cpp.
+- Deploy đúng ba file runtime/installer lên B với backup
+  `H:\LTT_LLM\releases\q112-before-20260827-214253`; chỉ restart
+  `LTTLlmGateway`, không restart llama-swap/model/GPU.
+- Lặp cùng workload sau vá: request 1 `200` sau 3,257 giây (prefix cache warm),
+  request 2 `429` sau 0,050 giây, `Retry-After: 15`, `prompt_tokens=0`. Health
+  báo `max_dong_thoi=1`, model vẫn trên GPU và cap Q111 không đổi.
+
+### Lệnh và kết quả thật
+
+- `python tools\test_nhanh.py --noi-tiep -k "test_250 or test_258 or test_61_setup_scripts"`
+  → **178 passed, 1 skipped**, 4.062 deselected.
+- GPU baseline trước vá:
+  `H:\LTT_LLM\benchmarks\h419-concurrency-baseline-20260827-213852`.
+- GPU verify sau vá:
+  `H:\LTT_LLM\benchmarks\h419-concurrency-after-q112-20260827-214407`.
+
+### Còn lại của H41.9
+
+Q112 là hàng rào an toàn, **chưa phải hàng đợi sản phẩm**. Tiếp theo triển khai
+Q1–Q3 bằng DB/provider mock: global cap, quota lock, fair scheduler, trạng thái
+và metrics dùng chung cho async/sync/stream; sau khi xanh mới chạy Q4–Q6 GPU.
+
 ## 2026-08-27 — Hoàn tất Q111 trên máy B, không reboot máy/GPU
 
 - Gắn benchmark đã hoàn tất vào source: text engine `131072`, public input cap

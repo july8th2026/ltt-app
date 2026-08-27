@@ -26,6 +26,15 @@ class Dongho:
 
 # ── 1. Đồng thời ────────────────────────────────────────────────────────────
 
+def test_mac_dinh_chi_mot_suat_khop_parallel_1():
+    """Không giao request thứ hai cho hàng đợi vô hình của llama.cpp."""
+    gh = GioiHan(rpm=0)
+    first = gh.cap_suat()[1]
+    second = gh.cap_suat()[1]
+    assert first is not None
+    assert second is None
+
+
 def test_day_thi_tu_choi():
     gh = GioiHan(max_dong_thoi=2, rpm=0)
     a = gh.cap_suat()[1]

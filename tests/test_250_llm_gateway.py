@@ -29,9 +29,11 @@ def test_config_mac_dinh_khoa_public_input_90k(monkeypatch):
     """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
     monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
+    monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
     cfg = Config.from_env()
     assert cfg.max_input_tokens == 90_000
     assert cfg.max_output_tokens == 32_768
+    assert cfg.max_dong_thoi == 1, "parallel=1 thi gateway khong duoc tao hidden queue"
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
