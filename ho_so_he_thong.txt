@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7e114f8e288932803020b36e203314c2c0db32b419781e322683fe6bc71812d7
-Nguồn đã quét : 1199 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:39de58cad786539e8606f250df2e31552443f995b95f70946478b0ef80d393be
+Nguồn đã quét : 1200 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1359,8 +1359,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1199 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:914, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1200 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:915, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2498,7 +2498,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (107)
+[tools] (108)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2582,6 +2582,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tools/server_routes_baseline.json
 - tools/silent_except_baseline.json
 - tools/sinh_golden_api.py
+- tools/so_deploy.py
 - tools/system_profile/__init__.py
 - tools/system_profile/builder.py
 - tools/system_profile_config.json
@@ -2616,7 +2617,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1199 file; 11918705 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1200 file; 11927793 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -148737,7 +148738,7 @@ if ($reached) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/4-nghiem-thu.ps1
-SHA256=60872838f62355018bc0767fccb74b45cd0327c1dba0e341c2fd3de174bbe72f BYTES=7953 LINES=184
+SHA256=28c2e6b8b8d5245422a440510ecda103e4e287a5f9e6adc735b4ef1117388f6b BYTES=9276 LINES=209
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -148898,6 +148899,31 @@ if (Test-Path $venvPy) {
         }
     } else { Bad "Khong nap duoc registry: $out" }
 } else { Bad "Khong co $venvPy" }
+
+Head 'Ban dang chay co dung la ban trong git khong'
+# Cap nhat XOA VA THAY TOAN BO app\, nen cau hoi nay chi co hai dap an: khop
+# het, hoac ai do da deploy de len. Truoc phep so nay, cach duy nhat de tra loi
+# la MO TRANG RA NHIN, va cai do chi nhin duoc nhung trang khong can dang nhap.
+#
+# Do 27/08: 446 tep khop, 1 lech. Tep lech la `apps/vps/routes.py`, va cho lech
+# dung la bo loc giau IP LAN noi bo khoi nhat ky khach xem duoc. Ban sua da
+# commit, chua deploy. Khong trang nao bao gi, `/health/ready` van 200.
+$soSanh = Join-Path $PSScriptRoot '..\tools\so_deploy.py'
+if ((Test-Path $venvPy) -and (Test-Path $soSanh)) {
+    $out = & $venvPy $soSanh 2>&1 | Out-String
+    $dong = ($out -split "`n") | Where-Object { $_.Trim() }
+    $tomTat = $dong | Where-Object { $_ -match '^khop:' } | Select-Object -First 1
+    if ($LASTEXITCODE -eq 0) {
+        Ok "  $tomTat"
+    } elseif ($LASTEXITCODE -eq 2) {
+        Warn '  Khong thay C:\LTTPlatform\app - chua cai?'
+    } else {
+        Bad "  $tomTat"
+        $dong | Where-Object { $_ -match '^\s+(LECH|THIEU|THUA)' } |
+            Select-Object -First 10 | ForEach-Object { Write-Host "    $_" }
+        Write-Host '    Ban dang phuc vu khach KHONG phai ban trong git.' -ForegroundColor Yellow
+    }
+} else { Warn '  Bo qua: khong co venv hoac tools\so_deploy.py' }
 
 Head 'Log gan day'
 $errLog = Join-Path $logs 'service-err.log'
@@ -156442,7 +156468,7 @@ def test_the_workspace_alias_still_answers(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_145_gate_covers_everything.py
-SHA256=2fde161b664cef5a0470c401861c18e7adb0d292776956eb2b9984489263bad5 BYTES=21618 LINES=446
+SHA256=60f62fd9c714fff6516a46e32ba3212881fc39e853984fbc8abeafd317fc1317 BYTES=22133 LINES=455
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/gate.py` phải phủ MỌI thứ cần chạy trước khi báo xong.
 
@@ -156795,30 +156821,39 @@ def test_vong_lap_thay_bo_test_bang_lf_VA_chan_bay_lfnf():
     assert "--lf" in buoc.argv and "--lf-rong-thi-khong-chay" in buoc.argv
 
 
-def test_loc_pha_2_KHONG_bo_qua_khi_khong_doc_duoc_cache(monkeypatch, tmp_path):
-    """Không đọc được cache phải là "chạy hết", không phải "bỏ hết".
+def test_cache_lastfailed_co_BA_trang_thai_khong_phai_hai(monkeypatch, tmp_path):
+    """*Vắng mặt*, *rỗng* và *không đọc được* là ba chuyện khác nhau.
 
-    ⛔ Đây là cùng một lỗi hai lần trong một ngày, ở hai tệp khác nhau: trộn
-       *không biết* với *không cần*. `pathlib.exists()` **ném**
-       `PermissionError` chứ không trả `False` (đã làm đỏ `check_multiproc.py`
-       ngay sau khi siết ACL), và một cache vắng mặt trông **y hệt** một lượt
-       xanh hoàn hảo.
+    ⛔ Gộp chúng lại đã hỏng theo **cả hai chiều** trong cùng một ngày:
 
-       Cả hai lần, cách viết ngắn hơn một dòng đều sai về phía nguy hiểm.
+       · gộp "không đọc được" vào "rỗng" → bộ lọc pha 2 bỏ qua cả ba tệp mãi mãi;
+       · gộp "vắng mặt" vào "không đọc được" → sau **mỗi** lượt gate xanh,
+         `--vong-lap` chạy lại toàn bộ 4143 test (đo 27/08: 3 phút 35) đúng
+         bằng việc nó sinh ra để tránh.
+
+    ⚠️ Và pytest nhầm ở cùng chỗ: `--lfnf=none` chỉ áp khi cache **có mà rỗng**.
+       Cache vắng mặt thì nó coi là "không biết gì về lượt trước" và chạy hết.
+       Nên `test_nhanh` phải tự kết luận, không được nhờ cờ đó.
     """
     import tools.test_nhanh as tn
 
-    monkeypatch.setattr(tn, "GOC", tmp_path)        # không có .pytest_cache
-    assert tn._tep_da_do() is None
+    monkeypatch.setattr(tn, "GOC", tmp_path)
+    assert tn._da_do() is None, "chua tung chay pytest => khong biet"
 
     goc = tmp_path / ".pytest_cache" / "v" / "cache"
     goc.mkdir(parents=True)
+    assert tn._da_do() == (set(), set()), "tep vang mat => luot truoc xanh het"
+
     (goc / "lastfailed").write_text("{}", encoding="utf-8")
-    assert tn._tep_da_do() == set()                 # rỗng ≠ None
+    assert tn._da_do() == (set(), set())
+
+    (goc / "lastfailed").write_text("khong-phai-json", encoding="utf-8")
+    assert tn._da_do() is None, "doc hong => khong biet => phai chay het"
 
     (goc / "lastfailed").write_text(
         '{"tests/test_209_versioning_status.py::a": true}', encoding="utf-8")
-    assert tn._tep_da_do() == {"tests/test_209_versioning_status.py"}
+    assert tn._da_do() == ({"tests/test_209_versioning_status.py::a"},
+                           {"tests/test_209_versioning_status.py"})
 
 
 def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():
@@ -240445,6 +240480,147 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/so_deploy.py
+SHA256=20c8a4bec8bae9605dedf7c73c379adaf9058f945d099c435f97dac72f8c2c11 BYTES=5412 LINES=135
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""So bản ĐANG CHẠY với cây nguồn, từng byte.
+
+    python tools/so_deploy.py            # tóm tắt + liệt kê chỗ lệch
+    python tools/so_deploy.py --het      # liệt kê hết, không cắt
+
+Trả 0 khi khớp hoàn toàn, 1 khi lệch, 2 khi không thấy bản cài.
+
+## ⭐ Vì sao đáng có một công cụ riêng cho việc này
+
+Cập nhật ở kho này **xoá và thay TOÀN BỘ** `C:\\LTTPlatform\\app`. Không có
+cách nào deploy *một phần*, nên câu hỏi "bản đang phục vụ khách có đúng là bản
+tôi vừa sửa không" chỉ có hai đáp án — khớp hết, hoặc ai đó đã deploy đè lên.
+
+Trước công cụ này, cách duy nhất để trả lời là **mở trang ra nhìn**, và cái đó
+chỉ nhìn được những trang không cần đăng nhập. Ngày 27/08 câu hỏi rơi đúng vào
+16 trang **cần đăng nhập** của `/developers`: Cloudflare chặn trình duyệt tự
+động ở `/login` bằng thử thách bot, nên không phiên nào soi được chúng.
+
+So byte trả lời được phần lớn câu hỏi đó mà **không cần đăng nhập gì cả**. Đo
+27/08: `khop: 104 | lech: 0 | thieu: 0 | thua: 0`.
+
+## ⛔ VÀ ĐÂY LÀ THỨ NÓ KHÔNG NÓI
+
+Byte giống nhau **không** chứng minh hành vi giống nhau. Nó không biết gì về:
+
+  · nhánh rẽ theo trạng thái tài khoản, quyền, dữ liệu thật đổ vào;
+  · biến môi trường — `secrets/app.env` không nằm trong `app\\` và **không**
+    được so ở đây (cố ý: công cụ này không đọc bí mật);
+  · migration CSDL đã chạy tới đâu;
+  · thứ Cloudflare phục vụ ở biên — CF có TTL riêng, nên origin đúng mà khách
+    vẫn nhận bản cũ là chuyện **đã xảy ra thật** (xem CLAUDE.md quy tắc 6).
+
+⇒ Nó đóng câu hỏi "origin có phải bản mới không", không đóng câu hỏi "trang có
+   chạy đúng không". Đừng đọc `lech: 0` rộng hơn thế.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import pathlib
+import sys
+
+NGUON = pathlib.Path(__file__).resolve().parent.parent
+DEPLOY = pathlib.Path(r"C:\LTTPlatform\app")
+
+#: (thư mục, mẫu tên tệp). Chỉ những thứ **thay đổi thì người dùng thấy ngay**.
+#: Không quét `.pyc`, không quét `venv\`, không quét `data\` (dữ liệu vận hành
+#: thì LỆCH là đúng — cập nhật không chạm tới nó).
+PHAM_VI = (
+    ("server/templates", "*.html"),
+    ("server/static", "*.css"),
+    ("server/static", "*.js"),
+    ("server/api", "*.py"),
+    ("server/routes", "*.py"),
+    ("apps", "*.py"),
+    ("platform_core", "*.py"),
+)
+
+
+def _bam(p: pathlib.Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()[:12]
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="So ban dang chay voi cay nguon.")
+    ap.add_argument("--het", action="store_true", help="liet ke het, khong cat")
+    ap.add_argument("--deploy", default=str(DEPLOY), help="thu muc ban cai")
+    args = ap.parse_args()
+
+    deploy = pathlib.Path(args.deploy)
+    if not deploy.exists():
+        print(f"KHONG THAY ban cai: {deploy}")
+        print("Day co the la may phat trien — xem CLAUDE.md muc 'dang o may nao'.")
+        return 2
+
+    lech: list[tuple[str, str, str]] = []
+    thieu: list[str] = []
+    thua: list[str] = []
+    khop = 0
+
+    for thu_muc, mau in PHAM_VI:
+        goc = NGUON / thu_muc
+        if not goc.exists():
+            continue
+        for f in sorted(goc.rglob(mau)):
+            if "__pycache__" in f.parts:
+                continue
+            rel = f.relative_to(NGUON)
+            d = deploy / rel
+            if not d.is_file():
+                thieu.append(rel.as_posix())
+                continue
+            if _bam(f) != _bam(d):
+                lech.append((rel.as_posix(), _bam(f), _bam(d)))
+            else:
+                khop += 1
+
+        goc_d = deploy / thu_muc
+        if goc_d.exists():
+            for f in sorted(goc_d.rglob(mau)):
+                if "__pycache__" in f.parts:
+                    continue
+                if not (NGUON / f.relative_to(deploy)).is_file():
+                    thua.append(f.relative_to(deploy).as_posix())
+
+    print(f"khop: {khop} | lech: {len(lech)} | "
+          f"thieu ben deploy: {len(thieu)} | thua ben deploy: {len(thua)}")
+
+    cat = None if args.het else 25
+    for r, a, b in lech[:cat]:
+        print(f"  LECH  {r}  nguon={a} deploy={b}")
+    for r in thieu[:cat]:
+        print(f"  THIEU {r}  (co trong nguon, khong co ben deploy)")
+    for r in thua[:cat]:
+        print(f"  THUA  {r}  (con lai tu mot ban cu?)")
+    if not args.het:
+        du = max(0, len(lech) - 25) + max(0, len(thieu) - 25) + max(0, len(thua) - 25)
+        if du:
+            print(f"  ... va {du} muc nua — chay lai voi `--het` de xem het")
+
+    if lech or thieu or thua:
+        print()
+        print("Ban dang chay KHONG khop cay nguon. Deploy lai bang")
+        print("  powershell -ExecutionPolicy Bypass -File .\\setup\\2-cai-dat.ps1")
+        print("hoac hoi phien khac xem ho co dang sua do khong.")
+        return 1
+
+    print()
+    print("!! `lech: 0` chi noi ORIGIN dung ban moi. No KHONG noi Cloudflare da")
+    print("   phuc vu ban moi (CF co TTL rieng), va KHONG noi trang chay dung.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/system_profile/__init__.py
 SHA256=4b0cf6971ca4b161395b77b71a5cfb369212b462d2fb917d40b805fad02026cb BYTES=194 LINES=5
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -241310,7 +241486,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/test_nhanh.py
-SHA256=a5c6d66f1956e1ec111079416b1d897f5a614b206b63a46e54da0bf2e19a905c BYTES=10654 LINES=234
+SHA256=f086482ab6a8ad006213865217c0e0c01177b1f61d7136e0d3615e8e49934c66 BYTES=12492 LINES=271
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_nhanh.py — chạy toàn bộ pytest song song, KẾT QUẢ Y HỆT lượt nối tiếp.
 
@@ -241417,23 +241593,39 @@ def _ep_utf8() -> None:
             pass
 
 
-def _tep_da_do() -> set[str] | None:
-    """Duong dan tep co it nhat mot test do o luot truoc, theo cache pytest.
+def _da_do() -> tuple[set[str], set[str]] | None:
+    """(test id, duong dan tep) da do o luot truoc. `None` = KHONG BIET.
 
-    ⛔ `None` = KHONG DOC DUOC, va no khac han mot tap RONG.
+    ## Ba trang thai, khong phai hai
 
-       Tap rong nghia la "khong tep nao do" => loc di duoc. `None` nghia la
-       "khong biet" => phai chay HET. Tra `set()` cho ca hai la cach viet ngan
-       hon mot dong va sai ve phia nguy hiem: cache vang mat (may sach, vua
-       `--cache-clear`, thu muc bi siet quyen) se trong Y HET mot luot xanh
-       hoan hao, va che do vong lap se lang le bo qua ca ba tep mai mai.
+    | Tren dia | Nghia | Tra ve |
+    |---|---|---|
+    | tep vang mat | luot truoc XANH HET (pytest tu xoa) | `(set(), set())` |
+    | tep co, doc duoc | dung nhung muc do | tap thuc |
+    | tep co, doc hong | khong biet | `None` |
+
+    ⛔ Gop "vang mat" vao "khong biet" la sai, va no da lam hong che do vong lap
+       theo mot cach rat kho thay: sau MOI luot gate xanh, `--vong-lap` chay lai
+       **toan bo 4143 test** (do 27/08: 3 phut 35) thay vi 15 giay.
+
+       Va no khong phai loi cua ham nay mot minh — `--lfnf=none` cua pytest cung
+       chi ap khi cache CO ma RONG. Cache **vang mat** thi pytest coi la "khong
+       co thong tin luot truoc" va chay het. Hai tang cung nham lan mot cho.
+
+    ⭐ Nen tu day dung ket luan o day, dung nho vao `--lfnf`: khong co gi do thi
+       khong co gi de chay lai, va noi thang ra nhu vay.
     """
     tep = GOC / ".pytest_cache" / "v" / "cache" / "lastfailed"
+    if not tep.parent.exists():
+        return None                      # chua bao gio chay pytest o cay nay
     try:
         muc = json.loads(tep.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return set(), set()              # luot truoc xanh het
     except (OSError, ValueError):
-        return None
-    return {k.split("::", 1)[0].replace("\\", "/") for k in muc}
+        return None                      # doc hong => khong biet => chay het
+    return (set(muc),
+            {k.split("::", 1)[0].replace("\\", "/") for k in muc})
 
 
 def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
@@ -241487,6 +241679,26 @@ def main() -> int:
 
     t_dau = time.monotonic()
 
+    # ── Khong co gi do lan truoc thi khong co gi de chay lai ─────────────────
+    #
+    # 🔴 Ket luan o DAY, khong nho vao `--lfnf=none`. Pytest chi ap co do khi
+    #    cache CO ma RONG; cache **vang mat** (no tu xoa sau mot luot xanh het)
+    #    thi no coi la "khong biet gi ve luot truoc" va chay toan bo.
+    #
+    #    Hau qua do that 27/08: sau moi luot gate xanh, `--vong-lap` chay lai
+    #    4143 test trong 3 phut 35 — dung cai no sinh ra de tranh.
+    #
+    # ⭐ Va noi THANG ra rang khong co gi chay, dung in mot dong "PASS" trong
+    #    nhu mot luot day du. Do la khac biet giua mot che do nhanh va mot che
+    #    do noi doi.
+    if args.lf and args.lf_rong_thi_khong_chay:
+        biet = _da_do()
+        if biet is not None and not biet[0]:
+            print("\n[--lf] KHONG test nao do o luot truoc => khong chay lai gi.")
+            print("       Day KHONG phai mot luot test xanh. Do la mot luot")
+            print("       test RONG. Muon chay that: bo `--lf`.")
+            return 0
+
     if args.noi_tiep:
         ma, _ = _chay(chung, "MOT TIEN TRINH (doi chieu)")
         print(f"\nTONG: {time.monotonic() - t_dau:.0f} giay")
@@ -241515,7 +241727,8 @@ def main() -> int:
         # ⭐ Nen loc bang TAY, theo duong dan, tu chinh cache do. Va IN RA cai
         #    bi bo — mot pha bien mat khong tieng dong la thu da lam hong bao
         #    cao do phu truoc day.
-        do = _tep_da_do()
+        biet = _da_do()
+        do = None if biet is None else biet[1]
         if do is None:
             print("\n[--lf] khong doc duoc cache lastfailed -> chay CA pha 2.")
             do = set(co)

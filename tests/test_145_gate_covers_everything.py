@@ -349,30 +349,39 @@ def test_vong_lap_thay_bo_test_bang_lf_VA_chan_bay_lfnf():
     assert "--lf" in buoc.argv and "--lf-rong-thi-khong-chay" in buoc.argv
 
 
-def test_loc_pha_2_KHONG_bo_qua_khi_khong_doc_duoc_cache(monkeypatch, tmp_path):
-    """Không đọc được cache phải là "chạy hết", không phải "bỏ hết".
+def test_cache_lastfailed_co_BA_trang_thai_khong_phai_hai(monkeypatch, tmp_path):
+    """*Vắng mặt*, *rỗng* và *không đọc được* là ba chuyện khác nhau.
 
-    ⛔ Đây là cùng một lỗi hai lần trong một ngày, ở hai tệp khác nhau: trộn
-       *không biết* với *không cần*. `pathlib.exists()` **ném**
-       `PermissionError` chứ không trả `False` (đã làm đỏ `check_multiproc.py`
-       ngay sau khi siết ACL), và một cache vắng mặt trông **y hệt** một lượt
-       xanh hoàn hảo.
+    ⛔ Gộp chúng lại đã hỏng theo **cả hai chiều** trong cùng một ngày:
 
-       Cả hai lần, cách viết ngắn hơn một dòng đều sai về phía nguy hiểm.
+       · gộp "không đọc được" vào "rỗng" → bộ lọc pha 2 bỏ qua cả ba tệp mãi mãi;
+       · gộp "vắng mặt" vào "không đọc được" → sau **mỗi** lượt gate xanh,
+         `--vong-lap` chạy lại toàn bộ 4143 test (đo 27/08: 3 phút 35) đúng
+         bằng việc nó sinh ra để tránh.
+
+    ⚠️ Và pytest nhầm ở cùng chỗ: `--lfnf=none` chỉ áp khi cache **có mà rỗng**.
+       Cache vắng mặt thì nó coi là "không biết gì về lượt trước" và chạy hết.
+       Nên `test_nhanh` phải tự kết luận, không được nhờ cờ đó.
     """
     import tools.test_nhanh as tn
 
-    monkeypatch.setattr(tn, "GOC", tmp_path)        # không có .pytest_cache
-    assert tn._tep_da_do() is None
+    monkeypatch.setattr(tn, "GOC", tmp_path)
+    assert tn._da_do() is None, "chua tung chay pytest => khong biet"
 
     goc = tmp_path / ".pytest_cache" / "v" / "cache"
     goc.mkdir(parents=True)
+    assert tn._da_do() == (set(), set()), "tep vang mat => luot truoc xanh het"
+
     (goc / "lastfailed").write_text("{}", encoding="utf-8")
-    assert tn._tep_da_do() == set()                 # rỗng ≠ None
+    assert tn._da_do() == (set(), set())
+
+    (goc / "lastfailed").write_text("khong-phai-json", encoding="utf-8")
+    assert tn._da_do() is None, "doc hong => khong biet => phai chay het"
 
     (goc / "lastfailed").write_text(
         '{"tests/test_209_versioning_status.py::a": true}', encoding="utf-8")
-    assert tn._tep_da_do() == {"tests/test_209_versioning_status.py"}
+    assert tn._da_do() == ({"tests/test_209_versioning_status.py::a"},
+                           {"tests/test_209_versioning_status.py"})
 
 
 def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():

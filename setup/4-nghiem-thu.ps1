@@ -158,6 +158,31 @@ if (Test-Path $venvPy) {
     } else { Bad "Khong nap duoc registry: $out" }
 } else { Bad "Khong co $venvPy" }
 
+Head 'Ban dang chay co dung la ban trong git khong'
+# Cap nhat XOA VA THAY TOAN BO app\, nen cau hoi nay chi co hai dap an: khop
+# het, hoac ai do da deploy de len. Truoc phep so nay, cach duy nhat de tra loi
+# la MO TRANG RA NHIN, va cai do chi nhin duoc nhung trang khong can dang nhap.
+#
+# Do 27/08: 446 tep khop, 1 lech. Tep lech la `apps/vps/routes.py`, va cho lech
+# dung la bo loc giau IP LAN noi bo khoi nhat ky khach xem duoc. Ban sua da
+# commit, chua deploy. Khong trang nao bao gi, `/health/ready` van 200.
+$soSanh = Join-Path $PSScriptRoot '..\tools\so_deploy.py'
+if ((Test-Path $venvPy) -and (Test-Path $soSanh)) {
+    $out = & $venvPy $soSanh 2>&1 | Out-String
+    $dong = ($out -split "`n") | Where-Object { $_.Trim() }
+    $tomTat = $dong | Where-Object { $_ -match '^khop:' } | Select-Object -First 1
+    if ($LASTEXITCODE -eq 0) {
+        Ok "  $tomTat"
+    } elseif ($LASTEXITCODE -eq 2) {
+        Warn '  Khong thay C:\LTTPlatform\app - chua cai?'
+    } else {
+        Bad "  $tomTat"
+        $dong | Where-Object { $_ -match '^\s+(LECH|THIEU|THUA)' } |
+            Select-Object -First 10 | ForEach-Object { Write-Host "    $_" }
+        Write-Host '    Ban dang phuc vu khach KHONG phai ban trong git.' -ForegroundColor Yellow
+    }
+} else { Warn '  Bo qua: khong co venv hoac tools\so_deploy.py' }
+
 Head 'Log gan day'
 $errLog = Join-Path $logs 'service-err.log'
 if (Test-Path $errLog) {

@@ -103,23 +103,39 @@ def _ep_utf8() -> None:
             pass
 
 
-def _tep_da_do() -> set[str] | None:
-    """Duong dan tep co it nhat mot test do o luot truoc, theo cache pytest.
+def _da_do() -> tuple[set[str], set[str]] | None:
+    """(test id, duong dan tep) da do o luot truoc. `None` = KHONG BIET.
 
-    ⛔ `None` = KHONG DOC DUOC, va no khac han mot tap RONG.
+    ## Ba trang thai, khong phai hai
 
-       Tap rong nghia la "khong tep nao do" => loc di duoc. `None` nghia la
-       "khong biet" => phai chay HET. Tra `set()` cho ca hai la cach viet ngan
-       hon mot dong va sai ve phia nguy hiem: cache vang mat (may sach, vua
-       `--cache-clear`, thu muc bi siet quyen) se trong Y HET mot luot xanh
-       hoan hao, va che do vong lap se lang le bo qua ca ba tep mai mai.
+    | Tren dia | Nghia | Tra ve |
+    |---|---|---|
+    | tep vang mat | luot truoc XANH HET (pytest tu xoa) | `(set(), set())` |
+    | tep co, doc duoc | dung nhung muc do | tap thuc |
+    | tep co, doc hong | khong biet | `None` |
+
+    ⛔ Gop "vang mat" vao "khong biet" la sai, va no da lam hong che do vong lap
+       theo mot cach rat kho thay: sau MOI luot gate xanh, `--vong-lap` chay lai
+       **toan bo 4143 test** (do 27/08: 3 phut 35) thay vi 15 giay.
+
+       Va no khong phai loi cua ham nay mot minh — `--lfnf=none` cua pytest cung
+       chi ap khi cache CO ma RONG. Cache **vang mat** thi pytest coi la "khong
+       co thong tin luot truoc" va chay het. Hai tang cung nham lan mot cho.
+
+    ⭐ Nen tu day dung ket luan o day, dung nho vao `--lfnf`: khong co gi do thi
+       khong co gi de chay lai, va noi thang ra nhu vay.
     """
     tep = GOC / ".pytest_cache" / "v" / "cache" / "lastfailed"
+    if not tep.parent.exists():
+        return None                      # chua bao gio chay pytest o cay nay
     try:
         muc = json.loads(tep.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return set(), set()              # luot truoc xanh het
     except (OSError, ValueError):
-        return None
-    return {k.split("::", 1)[0].replace("\\", "/") for k in muc}
+        return None                      # doc hong => khong biet => chay het
+    return (set(muc),
+            {k.split("::", 1)[0].replace("\\", "/") for k in muc})
 
 
 def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
@@ -173,6 +189,26 @@ def main() -> int:
 
     t_dau = time.monotonic()
 
+    # ── Khong co gi do lan truoc thi khong co gi de chay lai ─────────────────
+    #
+    # 🔴 Ket luan o DAY, khong nho vao `--lfnf=none`. Pytest chi ap co do khi
+    #    cache CO ma RONG; cache **vang mat** (no tu xoa sau mot luot xanh het)
+    #    thi no coi la "khong biet gi ve luot truoc" va chay toan bo.
+    #
+    #    Hau qua do that 27/08: sau moi luot gate xanh, `--vong-lap` chay lai
+    #    4143 test trong 3 phut 35 — dung cai no sinh ra de tranh.
+    #
+    # ⭐ Va noi THANG ra rang khong co gi chay, dung in mot dong "PASS" trong
+    #    nhu mot luot day du. Do la khac biet giua mot che do nhanh va mot che
+    #    do noi doi.
+    if args.lf and args.lf_rong_thi_khong_chay:
+        biet = _da_do()
+        if biet is not None and not biet[0]:
+            print("\n[--lf] KHONG test nao do o luot truoc => khong chay lai gi.")
+            print("       Day KHONG phai mot luot test xanh. Do la mot luot")
+            print("       test RONG. Muon chay that: bo `--lf`.")
+            return 0
+
     if args.noi_tiep:
         ma, _ = _chay(chung, "MOT TIEN TRINH (doi chieu)")
         print(f"\nTONG: {time.monotonic() - t_dau:.0f} giay")
@@ -201,7 +237,8 @@ def main() -> int:
         # ⭐ Nen loc bang TAY, theo duong dan, tu chinh cache do. Va IN RA cai
         #    bi bo — mot pha bien mat khong tieng dong la thu da lam hong bao
         #    cao do phu truoc day.
-        do = _tep_da_do()
+        biet = _da_do()
+        do = None if biet is None else biet[1]
         if do is None:
             print("\n[--lf] khong doc duoc cache lastfailed -> chay CA pha 2.")
             do = set(co)
