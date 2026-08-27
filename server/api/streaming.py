@@ -408,22 +408,28 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     if not tin:
         raise invalid_request("the request carries no input to answer")
 
-    # 🔴 `tool_choice` CHƯA ĐI QUA ĐƯỢC CHUỖI GỌI, nên phải TỪ CHỐI, không bỏ qua.
+    # 🔴 `tool_choice` — CHỈ TỪ CHỐI Ở ĐƯỜNG KHÔNG-STREAM.
     #
-    #    `features.chay` → `dieu_phoi.goi` nhận `tools` nhưng **không** nhận
-    #    `tool_choice`. Nuốt im lặng một tham số có nghĩa là đúng cái lỗi vừa mất
-    #    cả buổi để tìm: khách khai `{"type": "tool", "name": "x"}` để **ép** model
-    #    gọi một tool, ta bỏ qua, model trả lời bằng chữ — và không ai biết vì sao.
+    #    Đường **không stream** đi qua `features.chay` → `dieu_phoi.goi`, nơi
+    #    **không** nhận `tool_choice`; nuốt im lặng ở đó là để model trả lời bằng
+    #    chữ khi khách **ép** gọi tool — nên phải từ chối, không bỏ qua.
     #
-    # ⭐ `auto` thì bỏ qua được thật, vì nó **đã là** mặc định của thượng nguồn.
+    #    Đường **stream** thì KHÁC: `gui = dict(than)` được chuyển **nguyên xi**
+    #    tới máy B (llama-server, tương thích OpenAI, CÓ hỗ trợ `tool_choice`).
+    #    Từ chối ở đây là bug thật đã chặn Codex: tiện ích Codex **ép** một tool
+    #    (`tool_choice: {"type":"function","name":"..."}`) ở nhiều lượt agentic;
+    #    ta trả 400 → lượt đó chết lặng (model đã chạy trên GPU nhưng bị vứt), và
+    #    khách thấy "GPU dừng mà không có gì xảy ra". (Đo 2026-08-27.)
+    #
+    # ⭐ `auto` bỏ qua được ở cả hai vì nó **đã là** mặc định của thượng nguồn.
     _chon = than.get("tool_choice")
-    if _chon is not None:
+    if _chon is not None and not than.get("stream"):
         _loai = _chon if isinstance(_chon, str) else (_chon or {}).get("type")
         if _loai != "auto":
             raise invalid_request(
-                f"`tool_choice` {_loai!r} is not supported yet; only \"auto\" "
-                f"(the default) is honoured. Omit the field to let the model "
-                f"decide.")
+                f"`tool_choice` {_loai!r} is not supported on non-streaming "
+                f"requests; only \"auto\" (the default) is honoured there. "
+                f"Use streaming, or omit the field.")
 
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
