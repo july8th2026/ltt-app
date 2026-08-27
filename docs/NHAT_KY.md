@@ -27,6 +27,14 @@
 - Audit đầu H41.9 xác nhận giới hạn active job hiện là hai bước đếm rồi insert,
   chưa nguyên tử khi nhiều API gọi đồng thời; sync/stream cũng chưa đi qua cùng
   admission plane với async. Đây là phạm vi Q0/Q1 tiếp theo, không phải Nexus.
+- Chốt Q114 và `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`: durable queue chỉ
+  là bảng `jobs`; sync/stream không tạo job ngầm mà xin cùng execution lease và
+  fail-fast 429. Async kiểm global/resource/account cap dưới khóa transaction
+  trước job+hold; gateway B vẫn là hàng rào cuối, không làm queue.
+- Căn cứ tài liệu PostgreSQL chính thức: `SKIP LOCKED` phù hợp consumer queue
+  nhưng cho view không nhất quán nên không dùng kiểm quota; transaction advisory
+  lock tự nhả ở commit/rollback; Serializable đòi retry toàn transaction nên
+  chưa phải MVP khi nền tảng chưa có transaction retry chung.
 
 ### Lệnh và kết quả thật
 
@@ -35,11 +43,12 @@
 | `git status --short --branch` | tracked sạch trước thay đổi; chỉ có `.codex/` và evidence không thuộc hạng mục, không chạm |
 | `python tools\build_system_profile.py` | **PASS**, sinh lại hồ sơ sau khi thêm quy tắc |
 | `python tools\gate.py --vong-lap` | **PASS 19/19**; `--lf` 192,3 giây, chỉ là bằng chứng vòng lặp |
+| `python tools\gate.py --vong-lap` sau Q114/Q0 | **PASS 19/19**; `--lf` 191,1 giây, chỉ là bằng chứng vòng lặp |
 
 ### Việc tiếp theo
 
-1. Khóa hợp đồng Q0 cho admission chung async/sync/stream và trạng thái queue.
-2. Triển khai Q1 global cap + quota lock nguyên tử bằng CPU/CSDL/mock.
+1. Triển khai Q1 global cap + quota lock nguyên tử bằng CPU/CSDL/mock.
+2. Nối execution lease chung vào async/sync/stream bằng provider mock.
 3. Tiếp tục Q2–Q3 rồi mới mở cửa sổ GPU Q4–Q6; không reboot máy 3090.
 
 ---
