@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:39de58cad786539e8606f250df2e31552443f995b95f70946478b0ef80d393be
+Fingerprint   : sha256:f0aa9f309141cd638a20e2014698570f26d7f97ecf2489452010773236d51868
 Nguồn đã quét : 1200 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2617,7 +2617,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1200 file; 11927793 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1200 file; 11939635 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -203955,7 +203955,7 @@ def test_governance_khai_dung_ten_ham_don():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_283_cam_cli.py
-SHA256=a4b15dadd4e7f6d608d76f43f88c7e23e4065289ae75b0c0359947eea17a2892 BYTES=28886 LINES=642
+SHA256=ab47649df654966d8f8e16e1fc0b0bbbb14180a3aaeba3e25d33c0ed2e8af22b BYTES=31902 LINES=714
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/cam_cli.py` — cắm vào rồi **gỡ ra phải trả đúng nguyên trạng**.
 
@@ -203986,6 +203986,7 @@ import importlib.util
 import json
 import pathlib
 import sys
+import tomllib
 
 import pytest
 
@@ -204600,10 +204601,81 @@ def test_trang_thai_khong_tin_co_da_cam_trong_tep(cc):
     thuc = cc.trang_thai_thuc()
     assert thuc["dang_cam"] is False
 
+
+# ── Cơ chế chống "rác" trong config.toml của khách (2026-08-27) ─────────────
+#
+# ⚠️ KHE HỞ ĐÃ ĐỂ LỌT LỖI: không một test cũ nào **parse** kết quả cắm. Fixture
+#    cũ dùng `[model_providers.cua_toi]` (tên KHÁC), nên ca "khách đã có sẵn
+#    `[model_providers.ltt]`" — đúng ca sinh TOML hỏng (hai bảng trùng) — chưa
+#    bao giờ chạy. `kiem` cũng không bắt được vì nó tự gọi HTTP. Chỉ mở tiện ích
+#    thật mới lộ. Bốn test dưới đóng khe hở đó.
+
+CONFIG_CO_SAN_LTT = """\
+# cua toi, dung xoa
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+
+[model_providers.ltt]
+name = "LTT Studios (toi tu dat)"
+base_url = "https://app.lttstudios.com/api/v1"
+env_key = "LTT_API_KEY"
+wire_api = "responses"
+
+[some_other]
+x = 1
+"""
+
+
+def _viet_cfg(mod, noi_dung: str) -> pathlib.Path:
+    cfg = mod.NHA / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(noi_dung, encoding="utf-8", newline="")
+    return cfg
+
+
+def test_vscode_ket_qua_LA_TOML_HOP_LE_du_khach_da_co_provider_ltt(cc):
+    """Đúng ca đã làm chết Codex 27/08: khách có sẵn `[model_providers.ltt]` +
+    `model`/`model_reasoning_effort` ở gốc. Kết quả PHẢI parse được."""
+    cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+    cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=True)
+    van = cfg.read_text(encoding="utf-8")
+    d = tomllib.loads(van)                       # <-- CHÍNH LÀ phép kiểm còn thiếu
+    assert d["model"] == "ltt_llm"
+    assert d["model_provider"] == "ltt"
+    assert van.count("[model_providers.ltt]") == 1   # KHÔNG nhân đôi provider
+
+
+def test_vscode_go_tra_ve_DUNG_TUNG_BYTE_khi_da_co_provider_ltt(cc):
+    cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+    goc = cfg.read_bytes()
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt, cho_vscode=True)
+    assert cfg.read_bytes() != goc               # đã đổi thật
+    tomllib.loads(cfg.read_text(encoding="utf-8"))   # trạng thái "on" vẫn hợp lệ
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == goc               # gỡ trả về nguyên trạng từng byte
+
+
+def test_profile_KHONG_nhan_doi_provider_ltt_da_co_san(cc):
+    cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+    cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=False)
+    van = cfg.read_text(encoding="utf-8")
+    tomllib.loads(van)                           # vẫn hợp lệ
+    assert van.count("[model_providers.ltt]") == 1
+
+
+def test_cong_kiem_TU_CHOI_ghi_khi_ket_qua_hong(cc):
+    """File đã hỏng sẵn (hai bảng trùng) ⇒ cắm phải TỪ CHỐI, không ghi đè mù."""
+    hong = 'model = "x"\n[a]\nk = 1\n[a]\nk = 2\n'
+    cfg = _viet_cfg(cc, hong)
+    with pytest.raises(cc.CauHinhHong):
+        cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=True)
+    assert cfg.read_text(encoding="utf-8") == hong   # không đụng tới tệp hỏng
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_284_gui_cam_cli.py
-SHA256=70f9ccff7bde7ffc4bc0609017ff84bd3b53b77cc43a28724fb33463f32cf3e1 BYTES=9478 LINES=226
+SHA256=250ddb0171772b90c2c5abdfc26533ae19c61bbd91532fdc1bdd8aee0fae848c BYTES=9739 LINES=230
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """GUI của `cam_cli` — vỏ phải **mỏng**, và bản sao CSS phải **không trôi**.
 
@@ -204805,7 +204877,11 @@ def test_gui_cho_chon_tung_be_mat_va_hien_loi_bridge():
     html = (GOC / "tools" / "gui" / "index.html").read_text(encoding="utf-8")
     for ten in ("codex", "claude_cli", "claude_vscode", "claude_desktop"):
         assert ten in html
-    assert "api().cam(k, luaChon)" in html
+    # Nút "Cắm" đi QUA cầu-nối-guard `coCau()` rồi mới gọi `.cam(k, luaChon)`:
+    # nếu window.pywebview.api trống (bản 1.1.0 thiếu webview/js) thì báo lỗi rõ
+    # thay vì "Cannot read properties of null".
+    assert "coCau()" in html
+    assert "a.cam(k, luaChon)" in html
     assert "catch (e)" in html
     assert "Hoàn tất sau" in html
 
@@ -227252,7 +227328,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=d1ef5b07ac0931e83f487f4a4bbb7c9094997cb2dc9398183bff2ee268b7eec5 BYTES=54906 LINES=1285
+SHA256=c11f1055984a6ab418e858ee066d9ddeed8aef50408bfe1a451e8c4f51b41cb5 BYTES=61077 LINES=1410
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -227319,8 +227395,10 @@ import datetime
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
+import tomllib
 import urllib.error
 import urllib.request
 
@@ -227344,7 +227422,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.1.0"
+PHIEN_BAN = "1.2.0"
 
 MODEL = "ltt_llm"
 
@@ -227666,6 +227744,89 @@ def _codex_config_goc(goc: str) -> str:
             f'\n' + _codex_config(goc))
 
 
+# ── Cơ chế chống "rác" trong config.toml của khách ──────────────────────────
+#
+# config.toml thật trên máy khách có thể **đã có sẵn** `[model_providers.ltt]`
+# (khách tự cấu hình model nhà), có sẵn `model = "..."` ở gốc, chú thích, xuống
+# dòng lẫn lộn. Bản đầu chèn mù ⇒ sinh ra **TOML HỎNG** (hai bảng
+# `[model_providers.ltt]`, hoặc hai khoá `model` ở gốc). Codex không parse nổi ⇒
+# tiện ích chết — và `kiem` KHÔNG bắt được, vì nó tự gọi HTTP chứ không nhờ
+# Codex đọc tệp. (Đã dính đúng lỗi này 2026-08-27.)
+#
+# Bốn cơ chế, khớp bốn cách một tệp khách có thể làm hỏng phép chèn:
+#   1. Cổng kiểm TOML  — parse thử kết quả TRƯỚC khi ghi; hỏng thì KHÔNG ghi.
+#   2. Gỡ-trước        — luôn gỡ khối cũ của ta trước khi chèn ⇒ N lần = 1 lần.
+#   3. Không nhân đôi   — đã có `[model_providers.ltt]` thì không chèn lại bảng.
+#   4. Đặt đúng chỗ     — `model`/`model_provider` ở GỐC phải đứng trước mọi bảng;
+#                          vô hiệu bản cũ của khách theo cách ĐẢO NGƯỢC ĐƯỢC.
+
+#: Tiền tố chú-thích-hoá một dòng của khách, đảo ngược được: `go` bóc đúng tiền
+#: tố này để trả dòng về nguyên trạng từng byte.
+TAG_TAT = "#<<cam_cli tam vo hieu, `go` se khoi phuc>> "
+
+_RE_BANG = re.compile(r"^\s*\[")
+_RE_PROVIDER_LTT = re.compile(r"^\s*\[model_providers\.ltt\]\s*$")
+#: Đúng năm khoá top-level mà khối vscode của ta đặt (xem `_codex_profile`). Nếu
+#: khách đã có bất kỳ khoá nào trong số này ở GỐC thì phải vô hiệu, nếu không
+#: TOML sẽ trùng khoá. Xếp dài-trước để bắt đúng khoá dài hơn.
+_KHOA_GOC_TA_DAT = ("model_reasoning_effort", "model_reasoning_summary",
+                    "model_context_window", "model_provider", "model")
+_RE_MODEL_GOC = re.compile(r"^\s*(" + "|".join(_KHOA_GOC_TA_DAT) + r")\s*=")
+
+
+class CauHinhHong(Exception):
+    """Kết quả ghi ra không phải TOML hợp lệ — từ chối ghi để không làm chết Codex."""
+
+
+def _toml_hop_le(van: str) -> tuple[bool, str]:
+    """Parse thử bằng trình TOML nghiêm ngặt (Codex dùng Rust `toml`, cũng nghiêm)."""
+    try:
+        tomllib.loads(van)
+        return True, ""
+    except tomllib.TOMLDecodeError as exc:
+        return False, str(exc)
+    except Exception as exc:  # noqa: BLE001 - phòng thân, vẫn coi là hỏng
+        return False, f"{type(exc).__name__}: {exc}"
+
+
+def _co_provider_ltt(van: str) -> bool:
+    """Có một bảng `[model_providers.ltt]` (ngoài khối của ta) không?"""
+    return any(_RE_PROVIDER_LTT.match(d) for d in van.splitlines())
+
+
+def _vo_hieu_model_goc(van: str, nl: str) -> str:
+    """Chú-thích-hoá các dòng `model`/`model_provider` ở GỐC (trước bảng đầu tiên).
+
+    Đảo ngược được: **chỉ** thêm tiền tố `TAG_TAT`, không đổi gì khác trên dòng.
+    Không đụng tới dòng nằm trong một bảng `[...]` — đó là thiết lập của khách.
+    """
+    ra = []
+    truoc_bang = True
+    for d in van.split(nl):
+        s = d.lstrip()
+        if truoc_bang and not s.startswith("#") and _RE_BANG.match(d):
+            truoc_bang = False
+        if truoc_bang and not s.startswith("#") and _RE_MODEL_GOC.match(d):
+            ra.append(TAG_TAT + d)
+        else:
+            ra.append(d)
+    return nl.join(ra)
+
+
+def _khoi_phuc_model_goc(van: str) -> str:
+    """Bóc tiền tố `TAG_TAT` ở đầu mỗi dòng ⇒ trả dòng về nguyên trạng."""
+    return re.sub(r"(?m)^" + re.escape(TAG_TAT), "", van)
+
+
+def _chen_khoi_dau(noi_dung: str, van: str, nl: str = "\n") -> str:
+    """Như `_chen_khoi` nhưng đặt khối ở **ĐẦU** tệp — cần cho khoá top-level
+    (TOML: khoá không-bảng phải đứng trước mọi bảng). Bố cục phân cách khớp đúng
+    thứ `_go_khoi` gỡ ra (một xuống dòng ngay sau khối)."""
+    than = nl.join(noi_dung.replace("\r\n", "\n").rstrip("\n").split("\n"))
+    khoi = MOC_MO + nl + than + nl + MOC_DONG
+    return khoi + nl + van if van else khoi + nl
+
+
 def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     ra = []
     thu_muc = NHA / ".codex"
@@ -227675,9 +227836,41 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     _sao_luu(cfg)
     van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
     tt.setdefault("codex", {})["che_do"] = "vscode" if cho_vscode else "profile"
-    noi_dung = _codex_config_goc(goc) if cho_vscode else _codex_config(goc)
-    _ghi_giu_dong(cfg, _chen_khoi(van, noi_dung, crlf))
-    ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
+
+    # (2) Gỡ-trước: bỏ khối cũ của ta + khôi phục mọi dòng đã tag ⇒ idempotent,
+    #     và mọi `[model_providers.ltt]` còn lại chắc chắn là CỦA KHÁCH.
+    van, _ = _go_khoi(van)
+    van = _khoi_phuc_model_goc(van)
+
+    # (3) Không nhân đôi provider.
+    co_prov = _co_provider_ltt(van)
+    bang_prov = "" if co_prov else _codex_config(goc)
+
+    if cho_vscode:
+        # (4) `model`/`model_provider` phải ở GỐC và đứng trước mọi bảng. Vô hiệu
+        #     bản cũ của khách (đảo ngược được) rồi đặt khối của ta ở ĐẦU tệp.
+        van = _vo_hieu_model_goc(van, crlf)
+        than = _codex_profile()
+        if bang_prov:
+            than += "\n" + bang_prov
+        moi = _chen_khoi_dau(than, van, crlf)
+    else:
+        # Chế độ profile chỉ cần bảng provider ở config.toml (nếu chưa có).
+        moi = _chen_khoi(van, bang_prov, crlf) if bang_prov else van
+
+    # (1) Cổng kiểm TOML — KHÔNG BAO GIỜ ghi ra TOML hỏng.
+    ok, loi = _toml_hop_le(moi)
+    if not ok:
+        ok_truoc, _ = _toml_hop_le(van)
+        goi_y = ("" if ok_truoc else
+                 "  ⚠ config.toml cua ban DA hong san TRUOC khi cam — hay don rac o do truoc.\n")
+        raise CauHinhHong(
+            f"Tu choi ghi {cfg}: ket qua khong phai TOML hop le.\n{goi_y}"
+            f"  Chi tiet: {loi}")
+
+    _ghi_giu_dong(cfg, moi)
+    ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen"
+              + (", da co provider san — khong chen lai" if co_prov else "") + ")")
 
     prof = thu_muc / "ltt.config.toml"
     ghi = tt.setdefault("codex", {})
@@ -227708,7 +227901,10 @@ def go_codex(tt: dict) -> list:
         # thái: tệp trạng thái có thể mất, còn tệp thì luôn ở đó.
         van_goc, crlf = _doc_giu_dong(cfg)
         van, thay = _go_khoi(van_goc)
-        if thay:
+        # Khôi phục các dòng `model`/`model_provider` của khách mà chế độ vscode
+        # đã tạm vô hiệu (bóc tiền tố TAG_TAT) ⇒ trả về nguyên trạng từng byte.
+        van = _khoi_phuc_model_goc(van)
+        if van != van_goc:
             _ghi_giu_dong(cfg, van, crlf)
             ra.append(f"  [OK] da go khoi cua ta khoi {cfg}")
         else:
@@ -228210,8 +228406,13 @@ def lenh_cam(a) -> int:
 
     if MUC_CODEX_CLI in muc or MUC_CODEX_VSCODE in muc:
         print("Codex:")
-        for d in cam_codex(a.goc, tt, MUC_CODEX_VSCODE in muc):
-            print(d)
+        try:
+            for d in cam_codex(a.goc, tt, MUC_CODEX_VSCODE in muc):
+                print(d)
+        except CauHinhHong as exc:
+            print(f"  [!!] {exc}")
+            print("  Khong dat khoa, khong doi gi. Sua config.toml roi cam lai.")
+            return 1
         print(f"  [{'OK' if _setx(ENV_KHOA_CODEX, khoa) else '!!'}] "
               f"{ENV_KHOA_CODEX}")
 
@@ -228618,7 +228819,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli_gui.py
-SHA256=973a222c66af91cbb944fb268748f806feeaf0f3f60fb7461f95ca9642ae5c0b BYTES=11315 LINES=263
+SHA256=f8884a72f2106c1f2d227c0c4070e8305de330eca779a4a818df85bebe506f07 BYTES=11414 LINES=264
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli_gui.py - vo GUI cho `cam_cli`. (C15-GUI / U2)
 
@@ -228736,6 +228937,7 @@ class Cau:
 
     def xem(self) -> dict:
         kq = self._chay(self._loi.lenh_xem, _Args())
+        kq["phien_ban"] = getattr(self._loi, "PHIEN_BAN", "?")
         try:
             kq["trang_thai"] = self._loi.trang_thai_thuc()
         except Exception as exc:                              # noqa: BLE001
@@ -228869,7 +229071,7 @@ def main(argv=None) -> int:
         return 1
 
     webview.create_window(
-        "LTT Studios - Cam cong cu viet ma",
+        f"LTT Studios - Cam cong cu viet ma  v{getattr(loi, 'PHIEN_BAN', '?')}",
         str(trang),
         js_api=Cau(loi),
         width=760, height=720, min_size=(680, 600),
@@ -232830,7 +233032,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/dong_goi_exe.py
-SHA256=13f274051102acb431fa4790605bb67c26f7e00cc1987b7f988abf0eed26a4bd BYTES=11086 LINES=280
+SHA256=ed619f82892682bad5c70b5579934dc9f2fc0697063cf59ee30a911b6b2ad6dd BYTES=11778 LINES=289
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """dong_goi_exe.py - dung ban .exe cua GUI, va DO xem no co bi bao virus khong.
 
@@ -232933,6 +233135,15 @@ def dung_pyinstaller() -> pathlib.Path | None:
         "--distpath", str(dich),
         "--workpath", str(RA / "_work_pyi"),
         "--specpath", str(RA / "_spec"),
+        # 🔴 BAT BUOC. pywebview tiem `window.pywebview.api` bang cac tep JS trong
+        #    `webview/js/` (api.js, customize.js, finish.js). PyInstaller thu duoc
+        #    cac DLL WebView2 (binary) nhung KHONG tu lay cac tep .js do, nen ban
+        #    dong bang khong co chung: WebView2 mo trang duoc nhung CAU NOI khong
+        #    bao gio duoc tiem -> `window.pywebview.api` = null -> moi nut nem
+        #    `Cannot read properties of null`. Bug nay chi hien tren ban EXE, khong
+        #    hien khi chay `python cam_cli_gui.py` (co day du webview/js).
+        #    Do that 27/08 tren may co WebView2 149: thieu 3 tep js -> GUI chet cau.
+        "--collect-data", "webview",
         # `tools/gui/` phai di theo: index.html + ltt.css. Thieu no thi .exe chay
         # duoc nhung cua so trang - hong theo kieu kho doan nhat.
         "--add-data", f"{TOOLS / 'gui'}{';'}gui",
@@ -233813,7 +234024,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/index.html
-SHA256=d7ae8db6f3549e336e39d9fe8c2cdbbdb7d838fc82650f94120e84948f1b8bae BYTES=12987 LINES=261
+SHA256=a49e0bc004bef3228fad10cdbb9501d422bd324e40ac50db1ea6545245650609 BYTES=14590 LINES=285
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <!DOCTYPE html>
 <html lang="vi">
@@ -233834,6 +234045,8 @@ body{margin:0;background:var(--surface-canvas);color:var(--fg);font-family:var(-
 .logo{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--brand-primary);
       color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.02em}
 .top h1{margin:0;font-size:15.5px;font-weight:650;letter-spacing:-.01em}
+.pb{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);
+    padding:2px 8px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
       padding:16px 17px;margin-bottom:13px}
 .trangthai{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px}
@@ -233895,6 +234108,7 @@ a:hover{text-decoration:underline}
   <div class="top">
     <div class="logo">LTT</div>
     <h1>Cắm công cụ viết mã vào LTT Studios</h1>
+    <span class="pb" id="pb" title="Phiên bản công cụ đang chạy">v…</span>
   </div>
 
   <div class="card">
@@ -233995,6 +234209,7 @@ async function lamMoi() {
   const a = api(); if (!a) return;
   try {
     const kq = await a.xem();
+    if (kq && kq.phien_ban) $("pb").textContent = "v" + kq.phien_ban;
     ve(kq); datTrangThai(kq.trang_thai);
   } catch (e) {
     $("nhatky").textContent = "[LỖI] Không đọc được trạng thái: " + String(e);
@@ -234031,7 +234246,27 @@ async function chay(ten, fn) {
 
 window.addEventListener("pywebviewready", lamMoi);
 
+// ⛔ Cầu nối GUI↔hệ thống (window.pywebview.api) có thể KHÔNG lên — đã xảy ra
+//    thật 27/08 trên bản EXE thiếu tệp nạp của WebView2 (webview/js). Trước đây
+//    nút ném `Cannot read properties of null` thô, và trạng thái kẹt ở
+//    "Đang đọc…" mãi. Nay: báo rõ đây là lỗi bản dựng + chỉ đường CLI, và khoá
+//    nút để không ai bấm vào một cầu nối chết.
+const CAU_CHET =
+  "[LỖI] Cầu nối GUI↔hệ thống không hoạt động (window.pywebview.api trống).\n" +
+  "Đây là lỗi của bản dựng, KHÔNG phải của bạn — hãy tải bản mới đã sửa, hoặc\n" +
+  "dùng dòng lệnh:  LTTStudios-CamCLI-Console.exe cam --muc codex-vscode";
+function coCau() {
+  const a = api();
+  if (!a) { $("nhatky").textContent = CAU_CHET; khoaNut(true);
+            $("tt").textContent = "Cầu nối không hoạt động"; }
+  return a;
+}
+// Kẹt ở "Đang đọc…" mãi là một màn hình không nói gì. Sau 4 giây không có cầu
+// nối thì nói thẳng, thay vì để người dùng ngồi đoán.
+setTimeout(() => { if (!api()) coCau(); }, 4000);
+
 $("bcam").onclick = () => {
+  const a = coCau(); if (!a) return;
   const k = $("khoa").value.trim();
   if (!k) { $("nhatky").textContent = "Chưa dán khoá."; return; }
   const codex = document.querySelector('input[name="codex"]:checked').value;
@@ -234043,10 +234278,10 @@ $("bcam").onclick = () => {
   if (codex === "none" && !luaChon.claude_cli && !luaChon.claude_vscode && !luaChon.claude_desktop) {
     $("nhatky").textContent = "Chưa chọn hạng mục nào."; return;
   }
-  chay("Đang cắm các hạng mục đã chọn", () => api().cam(k, luaChon));
+  chay("Đang cắm các hạng mục đã chọn", () => a.cam(k, luaChon));
 };
-$("bkiem").onclick = () => chay("Đang gọi thật một lượt", () => api().kiem());
-$("bgo").onclick = () => chay("Đang gỡ", () => api().go());
+$("bkiem").onclick = () => { const a = coCau(); if (!a) return; chay("Đang gọi thật một lượt", () => a.kiem()); };
+$("bgo").onclick = () => { const a = coCau(); if (!a) return; chay("Đang gỡ", () => a.go()); };
 // Chep bang API cua trinh duyet, KHONG them mot ham thu nam vao cau noi.
 // Moi ham them vao cau noi la mot ham ma trong cua so goi duoc - va viec nay
 // khong can Python lam gi ca.
