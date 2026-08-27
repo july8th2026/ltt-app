@@ -385,6 +385,22 @@ def _thu_mot_cuc(ten: str) -> dict:
     }
 
 
+def _bao_400(detail: str, than: dict):
+    """Ghi lại LÝ DO + HÌNH DẠNG request mỗi khi ta trả 400 — để soi vì sao Codex
+    bị vứt lượt. (Tạm; gỡ khi đã chẩn xong.) KHÔNG log nội dung nhạy cảm, chỉ
+    khoá/kiểu."""
+    tc = than.get("tool_choice")
+    vao = than.get("input")
+    log.warning(
+        "400 /v1/responses: %s | stream=%s model=%r tc=%r input=%s(len=%s) "
+        "tools=%s keys=%s",
+        detail, than.get("stream"), than.get("model"),
+        (tc.get("type") if isinstance(tc, dict) else tc),
+        type(vao).__name__, (len(vao) if isinstance(vao, (list, str)) else "-"),
+        len(than.get("tools") or []), sorted(than.keys()))
+    return invalid_request(detail)
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from apps.ltt_llm import features
@@ -398,15 +414,15 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     ten = _giai_ten_model(str(than.get("model") or ""))
     if ten not in features.ALIAS_SANG_ID:
-        raise invalid_request(
+        raise _bao_400(
             f"`model` must be one of {list(features.ALIAS_SANG_ID)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
-            f"sends `model` from its profile — set them to one of these.")
+            f"sends `model` from its profile — set them to one of these.", than)
 
     tin = _tin_nhan(than)
     if not tin:
-        raise invalid_request("the request carries no input to answer")
+        raise _bao_400("the request carries no input to answer", than)
 
     # 🔴 `tool_choice` — CHỈ TỪ CHỐI Ở ĐƯỜNG KHÔNG-STREAM.
     #
@@ -426,10 +442,10 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     if _chon is not None and not than.get("stream"):
         _loai = _chon if isinstance(_chon, str) else (_chon or {}).get("type")
         if _loai != "auto":
-            raise invalid_request(
+            raise _bao_400(
                 f"`tool_choice` {_loai!r} is not supported on non-streaming "
                 f"requests; only \"auto\" (the default) is honoured there. "
-                f"Use streaming, or omit the field.")
+                f"Use streaming, or omit the field.", than)
 
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
