@@ -20,9 +20,9 @@ Ba luật của chế độ đó, và cả ba đều thi hành ở file này:
      trần ước cao; hoá đơn là token đã đo. Không đo được thì **hoàn đủ**.
   3. **Không đẩy vào hàng đợi**, và không chạy quá `SYNC_BILLED_MAX_SECONDS`.
 
-⛔ KHÔNG NỚI TRẦN THỜI GIAN Ở ĐÂY. Cloudflare cắt ở 100 giây bất kể máy B còn đang
-   sinh chữ hay không, và khách nhận một cái 524 không phân biệt được "hỏng" với
-   "xong rồi nhưng mất kết nối". Lượt dài hơn đi cửa job.
+⛔ KHÔNG NỚI TRẦN THỜI GIAN Ở ĐÂY. Cloudflare mặc định cắt ở 125 giây nếu không
+   nhận được byte; ngân sách nội bộ 90 giây giữ biên cho tunnel và quyết toán.
+   Lượt dài hơn đi stream hoặc cửa job.
 """
 from __future__ import annotations
 
@@ -56,28 +56,24 @@ OPERATION_CHAT = "chat.completions"
 TOOL_CHAT = "text.chat"
 
 
-def _tran_max_tokens() -> int:
+def _tran_max_tokens(token_vao_uoc: int = 0) -> int:
     """Trần `max_tokens` mà một lượt ĐỒNG BỘ được phép xin.
 
     🔴 CON SỐ NÀY DẪN RA TỪ SỐ ĐO, KHÔNG PHẢI CHỌN CHO TRÒN:
 
-        ngân sách của chế độ            90 giây   (100s của Cloudflare trừ biên)
-        trừ trường hợp xấu nhất: đổi model   −25 giây   (llama-swap nạp lại GGUF)
-        còn lại để sinh chữ                   65 giây
-        nhân tốc độ đã đo trên máy B     × 63 tok/s   (card sạch, P6 22/08)
-        ------------------------------------------------
-                                          ~4.095 token
+        thời gian = nạp model + hạ tầng + input/prefill + output/decode
+
+        prefill bảo thủ     750 tok/s  (đo 756,49 ở 131K)
+        decode bảo thủ       40 tok/s  (đo 41,57)
+        nạp model + hạ tầng  30 giây
 
     ⛔ Xin nhiều hơn thì **từ chối ngay**, đừng nhận rồi để Cloudflare cắt giữa
        chừng. Ta từ chối bằng một cái 400 nói rõ lý do và chỉ sang cửa job; nó
        cắt bằng một cái 524 không ai đọc được.
     """
-    from apps.ltt_llm.manifest import MAX_TOKENS_TRAN
+    from apps.ltt_llm.features import tran_token_ra_dong_bo
 
-    du_phong_nap_s = 25
-    toc_do_da_do = 63          # tok/s, card sạch — DO_NEN_P0.md / SO_DO_P2_P6.md
-    theo_thoi_gian = (SYNC_BILLED_MAX_SECONDS - du_phong_nap_s) * toc_do_da_do
-    return min(MAX_TOKENS_TRAN, theo_thoi_gian)
+    return tran_token_ra_dong_bo(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
 
 
 def register_chat_routes(api, config, tag: str) -> None:
@@ -140,18 +136,22 @@ def register_chat_routes(api, config, tag: str) -> None:
 
         # Kiểm THAM SỐ trước khi tiền chuyển — cùng câu `jobs.py` đã viết:
         # "a typo must never reach the ledger".
+        if "max_tokens" not in payload:
+            payload["max_tokens"] = features.SYNC_MAX_TOKENS_MAC_DINH
         try:
             sach = features.kiem_tham_so(payload)
         except features.ThamSoSai as e:
             raise invalid_request(str(e)) from None
 
-        tran = _tran_max_tokens()
+        token_vao_uoc = features.uoc_token_vao(sach["messages"], sach.get("tools"))
+        tran = _tran_max_tokens(token_vao_uoc)
         if sach["max_tokens"] > tran:
             raise invalid_request(
-                f"max_tokens must be at most {tran} on this endpoint: a longer "
-                f"generation cannot finish inside the {SYNC_BILLED_MAX_SECONDS}s "
-                f"budget of a synchronous call. Submit it to POST /api/v1/jobs "
-                f"instead, which has no such ceiling.")
+                f"This synchronous request is estimated at {token_vao_uoc} input "
+                f"tokens, leaving room for at most {tran} output tokens inside "
+                f"its {SYNC_BILLED_MAX_SECONDS}s budget. Reduce the prompt or "
+                f"max_tokens, use a streaming endpoint, or submit it to "
+                f"POST /api/v1/jobs.")
 
         request_hash = idempotency.canonical_hash({"tool": TOOL_CHAT, "input": sach})
         record, replay = idempotency.begin(
@@ -187,7 +187,6 @@ def register_chat_routes(api, config, tag: str) -> None:
         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
         #    nay chay sach qua ca bo test roi no o luot goi that dau tien.
         request_id = thanh_toan.ma_luot("ch")
-        token_vao_uoc = features.uoc_token_vao(sach["messages"])
         try:
             da_giu = thanh_toan.giu_cho_luot(
                 db, user_id=principal.user_id, request_id=request_id,

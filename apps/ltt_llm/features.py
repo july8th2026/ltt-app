@@ -48,9 +48,51 @@ MODEL_HOP_LE = tuple(ALIAS_SANG_ID)
 #: phía ước CAO cho tiếng Việt có dấu.
 KY_TU_MOI_TOKEN = 2.5
 
+#: Ngân sách riêng của cửa trả JSON một cục. Cửa stream và cửa job vẫn dùng mặc
+#: định 4.096 / trần 32.768 của manifest; chúng không bị đồng hồ chờ byte đầu.
+SYNC_MAX_TOKENS_MAC_DINH = 1_024
 
-def uoc_token_vao(messages) -> int:
-    """Ước số token đầu vào từ `messages`. **Ước CAO có chủ ý.**
+#: Các số đo Q111 trên đúng RTX 3090/build đang phục vụ. Dùng tốc độ thấp hơn số
+#: đo để admission nghiêng về phía an toàn: prefill chậm nhất đo được là
+#: 756,49 tok/s ở 131K, decode là 41,57 tok/s.
+SYNC_PREFILL_TOKEN_GIAY = 750
+SYNC_DECODE_TOKEN_GIAY = 40
+SYNC_DU_PHONG_NAP_MODEL_GIAY = 25
+SYNC_DU_PHONG_HA_TANG_GIAY = 5
+SYNC_LE_TOKEN_KHUON = 512
+
+
+def uoc_giay_dong_bo(token_vao_uoc: int, max_tokens: int) -> float:
+    """Ước thời gian xấu có kiểm soát cho một lượt trả JSON một cục.
+
+    Prefill và decode là hai pha nối tiếp, nên phải cộng thời gian của cả hai.
+    Chừa riêng 25 giây cho ca llama-swap phải nạp lại model và 5 giây cho tunnel,
+    lập hoá đơn cùng sai số hệ thống. Đây là admission, không phải ETA hiển thị.
+    """
+    vao = max(0, int(token_vao_uoc or 0)) + SYNC_LE_TOKEN_KHUON
+    ra = max(0, int(max_tokens or 0))
+    return (
+        SYNC_DU_PHONG_NAP_MODEL_GIAY
+        + SYNC_DU_PHONG_HA_TANG_GIAY
+        + vao / SYNC_PREFILL_TOKEN_GIAY
+        + ra / SYNC_DECODE_TOKEN_GIAY
+    )
+
+
+def tran_token_ra_dong_bo(token_vao_uoc: int, ngan_sach_giay: int) -> int:
+    """Số token ra tối đa còn vừa ngân sách sau khi tính thời gian prefill."""
+    from apps.ltt_llm.manifest import MAX_TOKENS_TRAN
+
+    giay_co_dinh = SYNC_DU_PHONG_NAP_MODEL_GIAY + SYNC_DU_PHONG_HA_TANG_GIAY
+    vao = max(0, int(token_vao_uoc or 0)) + SYNC_LE_TOKEN_KHUON
+    giay_con = float(ngan_sach_giay) - giay_co_dinh
+    giay_con -= vao / SYNC_PREFILL_TOKEN_GIAY
+    theo_thoi_gian = int(giay_con * SYNC_DECODE_TOKEN_GIAY)
+    return max(0, min(MAX_TOKENS_TRAN, theo_thoi_gian))
+
+
+def uoc_token_vao(messages, tools=None) -> int:
+    """Ước số token đầu vào từ `messages` và schema `tools`. **Ước CAO có chủ ý.**
 
     ⭐ MỘT CHỖ DUY NHẤT. Cả `manifest._cost` (trần của cửa job) lẫn
        `server/api/chat.py` (giữ chỗ của cửa đồng bộ) đều gọi hàm này. Hai cửa
@@ -67,6 +109,12 @@ def uoc_token_vao(messages) -> int:
             for p in noi:
                 if isinstance(p, dict):
                     ky_tu += len(str(p.get("text") or ""))
+    if isinstance(tools, list) and tools:
+        # Tool schema được chèn vào prompt ở mỗi lượt. Codex/Claude agent thường
+        # mang hàng chục schema; bỏ nó làm admission và phần giữ tiền cùng ước
+        # thiếu đúng trên workload quan trọng nhất của API này.
+        import json
+        ky_tu += len(json.dumps(tools, ensure_ascii=False, separators=(",", ":")))
     return int(ky_tu / KY_TU_MOI_TOKEN) + 1
 
 

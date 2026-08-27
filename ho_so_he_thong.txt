@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:aa7160eaf0b185831644409052d0fbbe1531b45c7b5a86f1a8ee8dfd7665299b
+Fingerprint   : sha256:39edf83b176e12eadd0af0852f8192a71da05a85864f08cc8cd6fdd648199d64
 Nguồn đã quét : 1201 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2621,7 +2621,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11952499 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11959654 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16004,7 +16004,7 @@ SHA256=ad2e28719fea02b58ae6995091fc34c90fe5a643b8bf459a216ab5cd86782009 BYTES=89
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/features.py
-SHA256=442ad5e4c4bac770aaeb1d8c884d38fb3635fed4f1c296457534d0bc10eab55f BYTES=9550 LINES=220
+SHA256=a3fc6f29de79565b5d66d832d2526d11cb68d1212dbebc940119ce83baaab584 BYTES=11944 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — quy tắc nghiệp vụ của `ltt_llm`, dùng chung cho CẢ HAI cánh cửa. (H38)
@@ -16056,9 +16056,51 @@ MODEL_HOP_LE = tuple(ALIAS_SANG_ID)
 #: phía ước CAO cho tiếng Việt có dấu.
 KY_TU_MOI_TOKEN = 2.5
 
+#: Ngân sách riêng của cửa trả JSON một cục. Cửa stream và cửa job vẫn dùng mặc
+#: định 4.096 / trần 32.768 của manifest; chúng không bị đồng hồ chờ byte đầu.
+SYNC_MAX_TOKENS_MAC_DINH = 1_024
 
-def uoc_token_vao(messages) -> int:
-    """Ước số token đầu vào từ `messages`. **Ước CAO có chủ ý.**
+#: Các số đo Q111 trên đúng RTX 3090/build đang phục vụ. Dùng tốc độ thấp hơn số
+#: đo để admission nghiêng về phía an toàn: prefill chậm nhất đo được là
+#: 756,49 tok/s ở 131K, decode là 41,57 tok/s.
+SYNC_PREFILL_TOKEN_GIAY = 750
+SYNC_DECODE_TOKEN_GIAY = 40
+SYNC_DU_PHONG_NAP_MODEL_GIAY = 25
+SYNC_DU_PHONG_HA_TANG_GIAY = 5
+SYNC_LE_TOKEN_KHUON = 512
+
+
+def uoc_giay_dong_bo(token_vao_uoc: int, max_tokens: int) -> float:
+    """Ước thời gian xấu có kiểm soát cho một lượt trả JSON một cục.
+
+    Prefill và decode là hai pha nối tiếp, nên phải cộng thời gian của cả hai.
+    Chừa riêng 25 giây cho ca llama-swap phải nạp lại model và 5 giây cho tunnel,
+    lập hoá đơn cùng sai số hệ thống. Đây là admission, không phải ETA hiển thị.
+    """
+    vao = max(0, int(token_vao_uoc or 0)) + SYNC_LE_TOKEN_KHUON
+    ra = max(0, int(max_tokens or 0))
+    return (
+        SYNC_DU_PHONG_NAP_MODEL_GIAY
+        + SYNC_DU_PHONG_HA_TANG_GIAY
+        + vao / SYNC_PREFILL_TOKEN_GIAY
+        + ra / SYNC_DECODE_TOKEN_GIAY
+    )
+
+
+def tran_token_ra_dong_bo(token_vao_uoc: int, ngan_sach_giay: int) -> int:
+    """Số token ra tối đa còn vừa ngân sách sau khi tính thời gian prefill."""
+    from apps.ltt_llm.manifest import MAX_TOKENS_TRAN
+
+    giay_co_dinh = SYNC_DU_PHONG_NAP_MODEL_GIAY + SYNC_DU_PHONG_HA_TANG_GIAY
+    vao = max(0, int(token_vao_uoc or 0)) + SYNC_LE_TOKEN_KHUON
+    giay_con = float(ngan_sach_giay) - giay_co_dinh
+    giay_con -= vao / SYNC_PREFILL_TOKEN_GIAY
+    theo_thoi_gian = int(giay_con * SYNC_DECODE_TOKEN_GIAY)
+    return max(0, min(MAX_TOKENS_TRAN, theo_thoi_gian))
+
+
+def uoc_token_vao(messages, tools=None) -> int:
+    """Ước số token đầu vào từ `messages` và schema `tools`. **Ước CAO có chủ ý.**
 
     ⭐ MỘT CHỖ DUY NHẤT. Cả `manifest._cost` (trần của cửa job) lẫn
        `server/api/chat.py` (giữ chỗ của cửa đồng bộ) đều gọi hàm này. Hai cửa
@@ -16075,6 +16117,12 @@ def uoc_token_vao(messages) -> int:
             for p in noi:
                 if isinstance(p, dict):
                     ky_tu += len(str(p.get("text") or ""))
+    if isinstance(tools, list) and tools:
+        # Tool schema được chèn vào prompt ở mỗi lượt. Codex/Claude agent thường
+        # mang hàng chục schema; bỏ nó làm admission và phần giữ tiền cùng ước
+        # thiếu đúng trên workload quan trọng nhất của API này.
+        import json
+        ky_tu += len(json.dumps(tools, ensure_ascii=False, separators=(",", ":")))
     return int(ky_tu / KY_TU_MOI_TOKEN) + 1
 
 
@@ -16280,7 +16328,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=89653491ca4e03f2b699cddcf66725f5201040524d084f1683ab72b04cb1ab05 BYTES=13366 LINES=248
+SHA256=6f38f8996c0c8eb8c6cd3b88415b6451cbe8c87c5da40a821b9f22e6d476c3cd BYTES=13387 LINES=248
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16383,7 +16431,7 @@ def _cost(params: dict) -> int:
 
     from apps.ltt_llm.features import uoc_token_vao
 
-    token_vao_uoc = uoc_token_vao(params.get("messages"))
+    token_vao_uoc = uoc_token_vao(params.get("messages"), params.get("tools"))
 
     xin_ra = params.get("max_tokens")
     xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH
@@ -73728,7 +73776,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=e94e833c8b4d16924956a0c06a75d68c647deff507b210fc56ef8347d8dc387d BYTES=253990 LINES=3603
+SHA256=f344e9d6a236fb0b8306f63c34168fa38457156a8766b587c04d77c3a6ae71fa BYTES=254536 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77301,6 +77349,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
 | **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B, request thứ hai 429 trong 0,05s. Còn admission queue thật Q1–Q6 |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
+| **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **ĐANG LÀM 2026-08-27:** code + test liên quan xanh 99 pass, 1 skip; `gate --vong-lap` PASS 19/19 sau sinh profile. Còn commit, deploy A và canary public không chạm GPU cho nhánh reject |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
 | **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
@@ -77337,7 +77386,7 @@ bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=345502bfc3a1854d2f6e7880768f0f5f8d3b4a15e89821bfc6700ae0dafcf8ed BYTES=112824 LINES=242
+SHA256=c883e6d5bd8ce4da76fe548bfd819cd668c76036f9d5196c7b06fd7ee0557117 BYTES=114273 LINES=243
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -77471,13 +77520,14 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q103 | Bán VPS (máy chủ ảo Windows) cho khách — đặt ở đâu, chạy trên gì, bán thế nào | **Là một APP (`apps/vps/`), không sửa `platform_core/`.** Hạ tầng: Proxmox VE 9.2 chạy **lồng trong VMware Workstation trên MÁY B** (32 vCPU ảo, 44 GB RAM, `PVE-Data.vmdk` 217 GB trên ổ `H:`), IP LAN `192.168.2.168`, gọi API **chỉ trong LAN** — cổng 8006 không bao giờ ra Internet. **Chốt mười điều (V1–V10, chi tiết ở `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` mục 3, kế hoạch H39):** V1 mở bán trên hiện trạng, chấp nhận nested + máy dùng chung; V2 **không** chống việc máy B tự reboot vì Windows Update — chấp nhận mất máy; V3 khách vào bằng **NAT một IP công cộng + dải cổng** (`14.232.231.35`, IP động, cần DDNS), **chưa bán IP riêng** — *(**MỞ RỘNG bởi Q104 cùng ngày**: khách tự chọn IP Việt Nam / IP Singapore / chỉ-cổng)*; V4 cài Windows **không mua SPLA**; V5 giá neo vào đối thủ VN chứ không neo Vultr; V6 ba gói **89k / 179k / 329k**; V7 bán cho cả khách LTT hiện có lẫn khách VPS phổ thông; V8 hết credit → **treo ngay, xoá sau 7 ngày**; V9 catalog **chỉ Windows Server 2022 + Windows 10/11**, không Linux; V10 backup snapshot tuần giữ 1 bản, đẩy sang ổ khác của máy B. Tiền đi qua **credit + PayOS đã có** — không dựng sổ tiền thứ hai; thu theo chu kỳ 30 ngày **đúng khuôn Q98** (`NexusDevice.paid_until`), vòng thu phí nằm sau `platform_core/leases.py`. Mọi thao tác tạo/xoá/rebuild **bắt buộc qua hàng đợi job** (Cloudflare cắt request ở 100 giây) và phải idempotent theo `job_id`. | **Vì sao là app chứ không phải hệ thống riêng:** hợp đồng app đã có đủ thứ VPS cần — `table_prefix` cho bảng riêng, hàng đợi job cho việc dài, `leases.py` cho việc nền chạy nhiều tiến trình, credit/PayOS cho tiền. Dựng một cái thứ hai là lặp lại đúng thứ Q92 đã tránh cho Public API. **Cái phải nói thẳng, vì nó là điều kiện để hiểu các quyết định trên:** (1) **Trần công suất là ĐĨA, không phải CPU/RAM.** 217 GB trừ template Windows (~45 GB) còn ~155 GB; mà Windows tối thiểu 32 GB/máy (Win 11 là 64 GB) ⇒ cấp thật chỉ được **1–3 máy**. Bán được 6–8 máy **chỉ nhờ linked clone + thin provisioning**, tức **bán chồng đĩa 2,5–3,5 lần** — và khi kho đầy thì **mọi VM cùng hỏng một lượt**, không chỉ máy gây đầy. Vì thế `capacity.py` (đo đĩa mỗi giờ, **chặn bán ở 80 %**) là hạng mục P3 bắt buộc, không phải tuỳ chọn. Trần doanh thu thật của cỗ máy: **~700k–1,1 triệu đ/tháng**. (2) **V2 có giá của nó:** máy B đã reboot thật lúc 01:29 ngày 22/08 (sự kiện `1074`, `MoUsoCoreWorker`) và `.vmx` ghi `cleanShutdown=FALSE` — chọn không chống nghĩa là một đêm Windows Update là mọi khách mất máy tới khi có người bật tay. Trang bán **phải** in "best effort, không cam kết uptime". Việc rẻ nhất còn lại nên làm: bật auto-start của guest trong Proxmox. (3) **V3 giới hạn sản phẩm, không chỉ giới hạn kỹ thuật:** Cloudflare Tunnel chỉ mang HTTP/HTTPS nên RDP/SSH không dùng lại được đường đó; chỉ có **một** IPv4 động và **không có IPv6**. Khách nhận `tên-miền:cổng`, **không host được website/mail/game** — câu này phải in trên trang bán, nếu không thì khách trả tiền rồi mới biết. (4) **V4 là rủi ro pháp lý đã được chủ sản phẩm nhận có ý thức:** cho thuê Windows cho bên thứ ba hợp lệ **chỉ** qua SPLA; Retail/OEM/Volume/EA đều cấm rõ môi trường hosting, và Windows 10/11 desktop thì Microsoft không cấp phép ảo hoá đa khách trên phần cứng dùng chung. Tôi đã nêu rõ trước khi chốt; chủ sản phẩm chọn làm như các nhà VPS giá rẻ VN đang làm. Ghi lại để không tranh luận lại và để biết quyết định đến từ đâu. (5) **V9 làm P1 đắt hơn cần thiết:** chuỗi *web → job → clone → cấp cổng → khách vào được* nên được chứng minh bằng template Ubuntu + `cloud-init` (~30 giây/lượt, tất định) trước khi cắm Windows + sysprep (10–20 phút/lượt, bốn cái bẫy đã biết). Vì thế vẫn dựng **một template Ubuntu dùng nội bộ, `public=False`, không bán** — tốn ~5 GB, tiết kiệm vài ngày, và tách được "lỗi đường ống" khỏi "lỗi template Windows". **Món nợ hợp đồng phát hiện khi khảo sát:** nền tảng chưa có đường cho app khai một **việc nền định kỳ**; Nexus đi vòng bằng cách sống trong `platform_core/`. Làm VPS thì vá đúng chỗ đó thay vì đi vòng lần thứ hai (AGENTS §2.3). **Còn chặn:** đo ổ `H:` (loại ổ/dung lượng/còn trống) và kiểm router VNPT có forward được cả dải cổng không. |
 | Q104 | Mở rộng Q103 sau khi đo lại hạ tầng: đĩa, RAM, và đường vào nhiều vùng | **Ba điều, chốt cùng ngày với Q103 và thay phần liên quan trong đó (V11–V13):** **V11 — nới `PVE-Data.vmdk` 217 GB → ~600 GB** (ổ `H:` còn ~800 GB trống), nới **đĩa hiện có** chứ không thêm đĩa thứ hai. **V12 — đường vào KHÔNG còn là một NAT duy nhất:** khách **tự chọn lúc tạo máy** giữa **IP Việt Nam · IP Singapore · chỉ-cổng**; chuỗi cổng nhiều tầng xây sau, trước mắt **lấy dải IP/cổng đang chạy sẵn làm gốc**. Kéo theo mô hình dữ liệu đổi: bảng **`vps_gateway` nhiều bản ghi** (vùng, IP, dải cổng, endpoint WireGuard) + `vps_port_map` + `vps_ip`, thay cho một dải cổng cứng. **V13 — nới RAM máy ảo Proxmox 44 GB → 64 GB** (`memsize=65536`), lấy 20 GB từ 192 GB của máy B. | **Vì sao đổi, và cái gì thực sự thay đổi:** ba phép đo mới. (1) **`H:` còn ~800 GB trống, nhưng Proxmox KHÔNG thấy chỗ đó** — `PVE-Data.vmdk` là đĩa ảo cố định 217 GB, phải nới thì mới dùng được. Đây là chỗ dễ hiểu nhầm nhất và nó đã suýt làm cả bảng giá sai. (2) **Đo thật đường nhà: upload ~150 Mbps** (40 MB lên hết 1,8–2,3 giây, hai lần) — đủ cho 10–14 khách RDP, nhưng **một** khách tải file lớn là nghẽn cả cụm ⇒ **giới hạn tốc độ mạng mỗi VM thành hạng mục bắt buộc (P4)**, không phải tuỳ chọn. (3) **Đo thật độ trễ: Vultr Singapore = 45 ms từ Hà Nội**, nên khách VN đi *VN → SGP → Hà Nội* chịu **~90 ms khứ hồi thêm** — RDP gõ phím thấy trễ. Vì thế V12 phải là **lựa chọn của khách**, và trang bán phải giải thích, chứ không để khách chọn Singapore vì nghe sang rồi phàn nàn máy lag. **Hệ quả lớn nhất — bỏ được việc bán chồng đĩa:** ở 217 GB, cách duy nhất bán 6–8 máy là **bán chồng đĩa 2,5–3,5 lần**, mà kho đầy thì **mọi VM cùng hỏng một lượt**. Với ~555 GB dùng được (600 trừ template) và RAM 59 GB, hai thứ xấp xỉ cân nhau nên **cấp thật 1:1 được**. `capacity.py` (chặn bán ở 80 %) vẫn giữ, nhưng từ *thứ duy nhất đứng giữa ta và hỏng dữ liệu hàng loạt* hạ xuống thành *lưới an toàn*. Trần công suất mới: **10–14 máy, doanh thu ~2–2,5 triệu đ/tháng**. **Hệ quả thứ hai — V12 xoá bỏ hai vấn đề của V3:** (a) **không cần mở cổng nào trên router VNPT** nữa, vì đường về nhà là **WireGuard do phía nhà chủ động gọi ra** (`PersistentKeepalive`); (b) **vùng sát thương của lạm dụng chuyển ra khỏi đường VNPT ở nhà** — khách spam thì IP gateway vào blacklist, không phải IP nhà. Đổi lại **rủi ro mới**: nhà cung cấp gateway đình chỉ nhanh và tự động ⇒ một khách xấu là **mọi khách offline cùng lúc** ⇒ bắt buộc **chặn cổng ra 25/587 ngay từ đầu** và **dựng sẵn một gateway dự phòng** ở nhà cung cấp khác. **Rủi ro nhận có ý thức ở V11:** nới đĩa hiện có đụng thẳng vào dữ liệu đang chạy (khác với thêm đĩa thứ hai). Điều kiện cửa **đã kiểm ngày 2026-08-22: không có snapshot nào đang mở** (`.vmsd` chỉ còn `snapshot.lastUID`), nên VMware cho nới. Quy trình bắt buộc: tắt sạch từ **bên trong** Proxmox (lần trước `cleanShutdown=FALSE`) → **chép `PVE-System.vmdk` ra trước** → `vmware-vdiskmanager -x` → nới tiếp bên trong. **Bước cuối phụ thuộc kiểu kho CHƯA biết** (LVM-thin cần `pvresize`+`lvextend`; ZFS cần `zpool online -e`) — làm nhầm là hỏng kho, nên xác định kiểu kho là **P0a**. Và: nhiều khách hơn trên **cùng một ổ không RAID** nghĩa là nới đĩa **tăng doanh thu và tăng thiệt hại cùng lúc**. Chi tiết: `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` mục 2, 4; kế hoạch H39. |
 | Q105 | Sửa Q103/Q104 sau khi ĐO THẬT cụm Proxmox: đĩa là tài nguyên chia sẻ, và node đang đầy | **Ba điều, chốt 2026-08-22 sau khi token `vpsapp@pve!ltt` chạy thật.** **V14 — ĐĨA LÀ TÀI NGUYÊN CHIA SẺ, không giữ chỗ cứng cho từng máy.** `disk_gb` của một gói là **hạn mức**, không phải chỗ đã giữ; kho là LVM-thin nên máy chỉ chiếm phần nó ghi thật. Đổi lại phải có **ba cái phanh** (`apps/vps/services/capacity.py`): (1) kho **thực dùng** < 80 %; (2) **bán chồng ≤ 3,0×** dung lượng kho; (3) không đọc được dung lượng ⇒ **ngừng bán**. **RAM thì ngược lại — vẫn là tài nguyên CỨNG**, giữ chỗ thật, kiểm nghiêm. **V15 — giữ template `WIN10-LTSC-GOLD` (9001), xoá `WIN10-GOLD-SYSPREP` (9000).** **V16 — thêm Windows Server 2016 và 2022** vào catalog để đa dạng. | **Vì sao đổi, và cái gì đo được:** `python tools/vps_doctor.py` chạy thật ngày 2026-08-22. **(1) Con số của Q104 sai vì thiếu một dữ kiện lớn:** node **đã có 8 máy của chủ nhà** cam kết **35,9/43,2 GB RAM** và **640 GB đĩa**, mà Q104 tính như thể node trống. Trần thật hiện tại là **0 máy**, không phải 10–14. Sau khi nới RAM lên 64 GB thì còn ~23 GB ⇒ **~5 máy** ở mức 4 GB. **(2) Kho không phải 217 GB mà là 475 GB** (`vmdata`, **LVM-thin**) — `PVE-Data.vmdk` 217 GB chỉ là phần đã cấp phát trên `H:`. Nới bằng `pvresize`+`lvextend`, **không** phải `zpool online -e`. **(3) Lỗi thật trong code, chỉ lộ khi đo cụm thật:** `capacity` bản đầu chỉ cộng phần app tự bán nên vẫn báo *"còn 38 GB, bán tiếp đi"* trên một node đã đầy — tức **bán chỗ của chính chủ nhà**, và khách trả tiền cho một máy không khởi động nổi. Đã sửa: đọc `maxmem`/`maxdisk` của **mọi** VM từ Proxmox, CSDL chỉ bù máy đã bán mà job **chưa kịp tạo VM**. **Vì sao V14 đúng dù nó nghe như nới lỏng an toàn:** node đang ở **640 GB hứa / 173,6 GB dùng thật** — giữ chỗ cứng nghĩa là **lãng phí 3/4 kho** và sản phẩm không bán được máy nào. Nhưng bán chồng **không phanh** là bán vô hạn, và kho đầy thì **mọi VM cùng hỏng một lượt**, không chỉ máy gây đầy. Nên V14 = thin **cộng** ba phanh, không phải thin trần. Trần 3,0× chọn theo số đo: node đang ở 1,49× với 36,5 % thực dùng, nhân đôi mức đó vẫn còn chỗ để phanh 80 % kịp bắt trước. **Hệ quả lên sản phẩm:** trang bán phải nói rõ *"dung lượng đĩa là hạn mức trên kho dùng chung, không phải ổ cứng cấp riêng"* — có test chốt câu đó. **V15 an toàn để làm:** đã kiểm, **không máy nào là linked clone** của 9000 hay 9001 (8 máy đều có đĩa riêng `vm-1xx-disk-0`), nên xoá template không phá gì. **V16 vướng chỗ trống:** kho `local` (chứa ISO) chỉ **20,3 GB, còn 5,9 GB** — không đủ cho cả Server 2016 (~6,5 GB) lẫn 2022 (~5 GB); xoá `Windows10_22H2_x64.iso` (4,56 GB, đi kèm V15) mới đủ chỗ cho một bản. **Việc còn nợ, quan trọng nhất:** cả hai template hiện **KHÔNG có ổ Cloud-Init, không khai `citype`, không bật guest agent** — clone ra vẫn chạy nhưng **tên máy và mật khẩu sẽ không được áp dụng**, hỏng im lặng. P5/P6 vẫn phải làm thật. Chi tiết: `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` mục 0.1; kế hoạch H39. |
-| Q106 | Cửa đồng bộ có thu tiền của `/api/v1` — `POST /api/v1/chat/completions` không có `execution_mode` hợp lệ nào để khai | **Thêm chế độ thứ ba `SYNC_BILLED`, chốt 2026-08-23.** Trả lời trong request, **có thu tiền**, **bắt buộc `Idempotency-Key`**, **KHÔNG có quote**, **KHÔNG đẩy vào hàng đợi**, trần **90 giây**. Giữ chỗ theo trần ước cao trước khi chạm nhà cung cấp, quyết toán theo **số đo thật** đúng một lần. | `SYNC` cấm cả ba thứ mà một lượt chat cần: nó cấm thu tiền, cấm gọi GPU, cấm chạy quá 5 giây — nên `check_mode_rules` **chặn thẳng**, và đó là chốt làm đúng việc. `ASYNC_JOB` thì hợp lệ nhưng bắt mọi khách viết vòng lặp hỏi trạng thái trước khi nhận được câu "hello" đầu tiên; với một API bán ra ngoài để cắm SDK vào, đó là hố ngay bậc cửa. **Không có quote vì giá không biết trước được** — token đầu ra chưa tồn tại lúc ký giá; nên `Idempotency-Key` là thứ **duy nhất** chặn một lần thử lại mua hàng hai lần, và hợp đồng bắt buộc nó. **90 giây là trần 100s của Cloudflare trừ biên**: nới số này không mua thêm thời gian, chỉ đổi một cái 400 sạch của ta lấy một cái 524 mù của Cloudflare. Lượt dài hơn **phải** đi cửa job. Phần **D5** của `protocol.py` (khoá `STREAM` vì rủi ro bán lại sidecar tài khoản tiêu dùng) **vẫn còn hiệu lực cho `chataistudio`**, nhưng **không áp cho `ltt_llm`** — model của nhà, phần cứng của nhà, không có tài khoản của ai ở giữa. Phân tích: `docs/VLM_NOI_BO/CUA_DONG_BO_CHAN_O_DAU.md`. |
-| Q107 | Cắm Codex / Claude Code / Claude Desktop vào API: chế độ `STREAM` có đòi `Idempotency-Key` không, và bỏ đường LAN | **Ba điều, chốt 2026-08-23.** ① **Một cửa duy nhất** — khách và máy nội bộ đi qua `app.lttstudios.com/api/v1`; **bỏ** việc máy khách trỏ thẳng vào cổng VLM `192.168.2.66:8299`, tường lửa máy B thu về **một IP**. ⛔ Cổng VLM **không bỏ** — nó là động cơ, `dieu_phoi` gọi nó cho mọi lượt. ② **Mở chế độ `STREAM`, và nó KHÔNG đòi `Idempotency-Key`**; khách có gửi thì tôn trọng. ③ Thu tiền theo **token đã thật sự sinh ra**: khách ngắt giữa chừng ⇒ thu phần đã sinh; máy B bận trước khi sinh chữ nào ⇒ hoàn đủ + 503; không đọc được `usage` ⇒ hoàn đủ, thu 0. | **Giữ nguyên đòi hỏi khoá = tính năng không tồn tại.** Đo thật 23/08: **không client nào gửi header đó** — Codex không, Claude Code không, SDK OpenAI tự sinh rồi vứt đi vì `_idempotency_header` là `None`. OpenAI và Anthropic cũng không đòi idempotency cho inference; một lần thử lại tốn tiền là chuẩn mực khách đã quen. Hàng rào giữ tiền chuyển sang **thu theo số đã sinh** cộng hai chốt đã có: hạn mức chi tiêu ngày và trần ngân sách của chính khách. **Streaming còn gỡ được trần 100 giây** của Cloudflare — đồng hồ đó đếm thời gian chờ **byte đầu tiên**, nên `SYNC_BILLED` (Q106) phải kẹp `max_tokens ≤ 4.095` còn `STREAM` thì không; ⇒ Q106 lùi về vai trò *gọi ngắn, không streaming*, không bị thay. Tham chiếu `api.nghimmo.com` xác nhận cùng hình dạng: một host, hai base URL, không đòi idempotency. Lộ trình 6 đợt: `docs/VLM_NOI_BO/LO_TRINH_API_CLI.md`. |
+| Q106 | Cửa đồng bộ có thu tiền của `/api/v1` — `POST /api/v1/chat/completions` không có `execution_mode` hợp lệ nào để khai | **Thêm chế độ thứ ba `SYNC_BILLED`, chốt 2026-08-23.** Trả lời trong request, **có thu tiền**, **bắt buộc `Idempotency-Key`**, **KHÔNG có quote**, **KHÔNG đẩy vào hàng đợi**, trần **90 giây**. Giữ chỗ theo trần ước cao trước khi chạm nhà cung cấp, quyết toán theo **số đo thật** đúng một lần. | `SYNC` cấm cả ba thứ mà một lượt chat cần: nó cấm thu tiền, cấm gọi GPU, cấm chạy quá 5 giây — nên `check_mode_rules` **chặn thẳng**, và đó là chốt làm đúng việc. `ASYNC_JOB` thì hợp lệ nhưng bắt mọi khách viết một vòng lặp hỏi trạng thái trước khi nhận được câu "hello" đầu tiên; với một API bán ra ngoài để cắm SDK vào, đó là hố ngay bậc cửa. **Không có quote vì giá không biết trước được** — token đầu ra chưa tồn tại lúc ký giá; nên `Idempotency-Key` là thứ **duy nhất** chặn một lần thử lại mua hàng hai lần, và hợp đồng bắt buộc nó. ~~**90 giây là trần 100s của Cloudflare trừ biên; chỉ cần kẹp output ≤4.095.**~~ **ĐÃ THAY phần admission bởi Q113 ngày 2026-08-27:** Cloudflare hiện mặc định 125s và non-stream phải tính cả input prefill lẫn output decode trong ngân sách nội bộ 90s. Lượt dài hơn đi stream/job. Phần **D5** của `protocol.py` (khoá `STREAM` vì rủi ro bán lại sidecar tài khoản tiêu dùng) **vẫn còn hiệu lực cho `chataistudio`**, nhưng **không áp cho `ltt_llm`** — model của nhà, phần cứng của nhà, không có tài khoản của ai ở giữa. Phân tích: `docs/VLM_NOI_BO/CUA_DONG_BO_CHAN_O_DAU.md`. |
+| Q107 | Cắm Codex / Claude Code / Claude Desktop vào API: chế độ `STREAM` có đòi `Idempotency-Key` không, và bỏ đường LAN | **Ba điều, chốt 2026-08-23.** ① **Một cửa duy nhất** — khách và máy nội bộ đi qua `app.lttstudios.com/api/v1`; **bỏ** việc máy khách trỏ thẳng vào cổng VLM `192.168.2.66:8299`, tường lửa máy B thu về **một IP**. ⛔ Cổng VLM **không bỏ** — nó là động cơ, `dieu_phoi` gọi nó cho mọi lượt. ② **Mở chế độ `STREAM`, và nó KHÔNG đòi `Idempotency-Key`**; khách có gửi thì tôn trọng. ③ Thu tiền theo **token đã thật sự sinh ra**: khách ngắt giữa chừng ⇒ thu phần đã sinh; máy B bận trước khi sinh chữ nào ⇒ hoàn đủ + 503; không đọc được `usage` ⇒ hoàn đủ, thu 0. | **Giữ nguyên đòi hỏi khoá = tính năng không tồn tại.** Đo thật 23/08: **không client nào gửi header đó** — Codex không, Claude Code không, SDK OpenAI tự sinh rồi vứt đi vì `_idempotency_header` là `None`. OpenAI và Anthropic cũng không đòi idempotency cho inference; một lần thử lại tốn tiền là chuẩn mực khách đã quen. Hàng rào giữ tiền chuyển sang **thu theo số đã sinh** cộng hai chốt đã có: hạn mức chi tiêu ngày và trần ngân sách của chính khách. ~~**Streaming gỡ trần 100s, nên non-stream chỉ cần kẹp `max_tokens ≤ 4.095`.**~~ **ĐÃ THAY phần admission bởi Q113 ngày 2026-08-27:** stream vẫn không bị trần non-stream, nhưng non-stream dùng input+output động dưới 90s thay vì một cap output cố định. Tham chiếu `api.nghimmo.com` xác nhận cùng hình dạng: một host, hai base URL, không đòi idempotency. Lộ trình 6 đợt: `docs/VLM_NOI_BO/LO_TRINH_API_CLI.md`. |
 | Q108 | App socialbot (FB/TikTok) — đóng băng hay gỡ hẳn (thay Q10) | **GỠ HẲN khỏi kho mã, chốt 2026-08-25.** Xoá `apps/socialbot/`, `core/` (15.046 dòng), `utils/`, `server/services/`, 7 module route (43 route), 10 template, 44 tệp test (~1.017 test) và `tools/doctor.py` phần FB/TikTok. Cờ `LTT_SOCIALBOT_ROUTES` không còn được đọc. | **Vì sao đổi:** Q10 chọn *đóng băng* để khỏi phá ~700 test đang dựa vào `core/`. Lý do đó **đã hết hiệu lực** từ H22 (2026-08-06): `platform_core/` và 18 app còn lại nay import từ `core/` đúng **0 lần** — chỉ `server/` còn bám, và toàn bộ chỗ bám đó chính là mã socialbot. **Đóng băng không phải trạng thái nghỉ, nó là chi phí đang chạy:** ① 43/69 route công khai (62%) phục vụ một sản phẩm không còn bán, mỗi route là một mục phải xét mỗi lần rà bảo mật; ② `data/config.json` — cấu hình của app này — quyết định `/health/ready` của **cả nền tảng**, và sự cố BOM ghi ở `AGENTS.md` mục 5 đi đúng đường đó; ③ ba fixture `autouse` trong `tests/conftest.py` bắt **mọi** test trong kho trả thuế dọn dẹp hộ một engine chúng không dùng; ④ trang chủ chạy `doctor.run()` mỗi lượt tải chỉ để tính một huy hiệu mà chỉ app này khai. **Đo trước khi xoá, không xoá theo cảm tính:** CSDL production có **0** `app_access`, **0** job, **0** `app_projects` mang slug socialbot, và `data/tokens.enc` / `data/tiktok_tokens.enc` **không tồn tại** — không khách nào từng kết nối. **Đổi lại:** bộ test giảm 21,5%; các test đó phủ mã đã không còn, nhưng con số phải nói ra chứ không giấu. **Không phá huỷ:** mã còn nguyên trong lịch sử git; đăng ký Meta App và TikTok app là tài sản ngoài kho, thuộc quyết định của chủ sản phẩm. |
 | Q109 | Ba app còn lại trong đợt dọn: `kichban`, `mediatools`, `demo` | **GỠ HẲN cả ba, chốt 2026-08-25**, ngay sau Q108. Kèm theo: 11 ToolSpec, 3 tệp test riêng, và toàn bộ nhãn palette của chúng trong Agent Canvas. `apps/demo` được thay bằng **app THỬ tổng hợp** sống trong bộ nhớ của test (`tests/conftest.py::app_thu`). | **Vì sao tách khỏi Q108:** lý do khác hẳn. Socialbot gỡ được vì **không ai dùng** (0 job, 0 token). Ba app này thì **có dấu vết dùng thật**, và quyết định vẫn là gỡ — nên lý do phải ghi riêng, không núp bóng Q108. **Cái giá đã đo và đã chấp nhận:** CSDL production có 10 `agent_workflows`; **3** dùng `text.script`, **4** dùng `text.generate` (kichban), **1** dùng `asset.image` (mediatools), cộng **4** `agent_runs` tham chiếu `text.script` ⇒ **4–7 trong 10 workflow đang lưu mất node**. Bốn tool `asset.*` là node **đầu vào** của workflow — gỡ chúng là gỡ đường đưa tệp của khách vào một chuỗi Agent. Chủ sản phẩm được báo con số này trước khi quyết và vẫn quyết gỡ. **`demo` là ca riêng:** nó không phải mặt hàng mà là **khuôn** của bốn bộ test hạ tầng (hàng đợi `test_67`, credit `test_68`, GPU `test_151`, upload `test_173`). Đó là một phụ thuộc ngược — *hợp đồng của nền tảng dựa vào một mặt hàng* — và nó biến `demo` thành thứ không xoá được, đúng cái bẫy đã giữ `core/` sống thêm ba tuần dưới Q10. Cách sửa **không phải** trỏ test sang một app thật khác (chỉ đổi chủ nợ), mà là một app tổng hợp không có thư mục, không route, không lên catalog, không vào bản phát hành. **Không cần sửa `platform_core/`:** `registry.discover` và `jobs.resolve_handler` đều tra tại thời điểm gọi, nên `monkeypatch` là đủ. |
 | Q110 | Phân phối công cụ cắm Public API cho Codex/Claude | **Hỗ trợ đúng ba đường cùng dùng một lõi và cùng kiểm trạng thái thật, chốt 2026-08-26:** ① EXE có GUI; ② ZIP chứa console EXE + BAT tự xin Administrator, không cần Python và không mở GUI; ③ hướng dẫn thủ công. GUI EXE và console EXE là hai binary riêng. Bản phát hành phải mang phiên bản trong tên, SHA-256 trên web và được quét Defender trước khi đưa vào `data/api_dist`. | Bản 1.0 đóng gói bằng Windows GUI subsystem nhưng tài liệu/BAT lại gọi nó như chương trình console; PowerShell không có stdout/exit code đáng tin cậy nên người dùng chỉ thấy “đang cắm” vô hạn. Cùng lúc, GUI tin cờ `da_cam` trong tệp trạng thái thay vì đọc lại file/registry, và không cắm Codex VS Code. Tách binary theo đúng subsystem giải quyết lớp lỗi; giữ một lõi ngăn ba cách cấu hình trôi khỏi nhau. Hướng dẫn tay là đường kiểm toán/khôi phục khi SmartScreen hoặc chính sách máy chặn binary không ký số. |
 | Q111 | Gắn mốc ngữ cảnh Qwen đã đo vào API và engine | **Chốt 2026-08-27:** `qwen38-api` chạy `-c 131072`, KV `q8_0/q8_0`; public API giới hạn `LTT_LLM_MAX_INPUT_TOKENS=90000`, output `32768`, reserve app `2048`. Benchmark warm/combined Nexus `job_01M11M0DQXMFFNNAM6JJ8RBGQ2` trên RTX 3090/build 10580 đo 90.112 → 872,72 tok/s; 98.304 → 845,45; 131.072 → 756,49. Canary gateway thật đo 86.101 token prompt / 89.716 token ước lượng trong 102,0 giây, trả đúng sentinel đầu-cuối; GPU 100%, VRAM đỉnh 22.639 MiB, 69°C, không OOM. Yêu cầu 90.001 bị chặn 413 trong 42,6 ms trước GPU. `qwen38-vision` giữ 65536 cho tới khi đo riêng có mmproj; không mở `parallel>1`. | Trước đó source còn 64K/60K dù đã có bằng chứng 131K, tạo lệch giữa engine, catalog và client. Tách engine window khỏi public input cap để tận dụng chất lượng ngữ cảnh nhưng không hứa request full 131K qua Cloudflare. Timeout Proxy Read mặc định Cloudflare hiện là 125 giây; canary 102 giây còn khoảng 23 giây biên, đủ để giữ 90K nhưng phải theo dõi p95 trước khi nâng tiếp. Số lấy từ benchmark/canary thật và tài liệu chính thức upstream, không tự suy ra từ một lần gọi ngắn. |
 | Q112 | Một GPU `parallel=1` nhận bao nhiêu request đồng thời trước khi có admission queue thật? | **Đúng một request.** `LTT_LLM_MAX_DONG_THOI=1` là mặc định và bộ cài phải migrate env cũ về 1. Request thứ hai nhận `429` + `Retry-After`, không được xếp hàng bên trong llama.cpp. Hàng đợi có chờ chỉ được sống ở admission plane của nền tảng, nơi có `job_id`, trạng thái, giới hạn, fairness, hủy và metrics. | Baseline thật trên B với hai request 23.224 token cách nhau 200 ms: khi gateway cho 2 suất, lượt 1 mất 24,28 giây còn lượt 2 mất 45,73 giây — cả hai 200, chứng minh request thứ hai chờ vô hình khoảng 21,5 giây. Sau khi về 1 suất: lượt 1 vẫn 200, lượt 2 trả 429 trong 0,05 giây, `prompt_tokens=0`; không chạm upstream/GPU. Nới gateway lên 2 không tạo thêm năng lực khi engine vẫn `parallel=1`, nó chỉ chuyển trách nhiệm queue sang tầng không quan sát và không công bằng. |
+| Q113 | Ngữ cảnh public 90K có đồng nghĩa mọi request đồng bộ được dùng đủ 90K không? | **Không.** Engine vẫn `131072`; stream và async job vẫn được dùng public input cap `90000`. Riêng route trả JSON một cục dùng admission động trong ngân sách `90s`: `25s` dự phòng nạp model + `5s` hạ tầng + `(input_ước+512)/750` prefill + `max_tokens/40` decode. Mặc định output riêng của non-stream là `1024`; request vượt công thức bị `400` trước giữ tiền/GPU và được chỉ sang stream/job. | **Thay phần admission tĩnh của Q106/Q107 từ 2026-08-27; các phần còn lại của hai quyết định đó vẫn hiệu lực.** Canary Q111 gần cap đo `89.716` token ước lượng, chỉ sinh `103` token nhưng đã mất `102,003s`: chỉ kẹp output không bảo vệ được timeout. Throughput thật trên B là prefill thấp nhất `756,49 tok/s`, decode `41,57 tok/s`; lấy `750/40` để nghiêng an toàn. Trần Cloudflare hiện là `125s`, nhưng giữ ngân sách nội bộ `90s` để còn `35s` biên tunnel/524. Hệ quả đo được của công thức: input 0 → tối đa 2.372 output; 20K → 1.306; 40K → 239; gần 90K → 0 ở non-stream. Đây là phân luồng theo mode, không hạ chất lượng/ngữ cảnh của stream hay job. |
 ---
 
 ## 2. Ràng buộc bất biến
@@ -116282,7 +116332,7 @@ def keys_of(db, *, project_id: str) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/protocol.py
-SHA256=f95e861475caaf100745301b09c3606a29f498607ef6438df75813fff1e99c53 BYTES=18429 LINES=343
+SHA256=44c2586212342242ad6d780cd52ac8714396759cef45ae10ec06c3131b46de84 BYTES=18425 LINES=343
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The protocol standard for ``/api/v1``: execution modes and conventions.
 
@@ -116347,7 +116397,7 @@ SYNC_BILLED = "SYNC_BILLED"
 #: buffers, and Codex times out on an idle stream. A non-streaming door is a door
 #: none of them walk through.
 #:
-#: What it buys beyond compatibility: **streaming escapes the 100-second
+#: What it buys beyond compatibility: **streaming escapes the 125-second
 #: ceiling**. Cloudflare's clock measures the wait for the *first byte*, so a
 #: stream that keeps sending has no wall — which is why SYNC_BILLED must cap
 #: ``max_tokens`` and this mode need not.
@@ -116379,7 +116429,7 @@ class ProtocolError(Exception):
 # ── What each mode promises ──────────────────────────────────────────────────
 
 #: A SYNC operation must finish inside this budget. It is deliberately far below
-#: the Cloudflare 100-second ceiling: an operation that needs *most* of a
+#: the Cloudflare 125-second ceiling: an operation that needs *most* of a
 #: request's lifetime is an async job that has not admitted it yet.
 SYNC_MAX_SECONDS = 5
 
@@ -116410,11 +116460,11 @@ STREAM_PHAI_KHAI = (
 
 #: A SYNC_BILLED operation must finish inside this budget.
 #:
-#: 🔴 90 IS NOT A ROUND NUMBER, IT IS A CEILING MINUS A MARGIN. Cloudflare cuts a
-#:    request at **100 seconds** whether or not the GPU is still producing text,
-#:    and the caller sees a 524 with no way to tell "it failed" from "it worked
-#:    and you were disconnected". Ten seconds is the margin for TLS, the tunnel,
-#:    queueing behind another request, and the settlement write.
+#: 🔴 90 IS NOT A ROUND NUMBER, IT IS A CEILING MINUS A MARGIN. Cloudflare's
+#:    default Proxy Read Timeout is **125 seconds** (verified 2026-08-27). The
+#:    caller otherwise sees a 524 with no way to tell "it failed" from "it worked
+#:    and you were disconnected". The 35-second margin covers TLS, tunnel
+#:    variance and settlement; admission separately budgets model load/prefill.
 #:
 #: ⛔ RAISING THIS NUMBER DOES NOT BUY TIME — it only moves where the failure
 #:    happens, from our clean 400 to Cloudflare's opaque 524. The way to serve a
@@ -127917,7 +127967,7 @@ __all__ = ["install_database_resolver", "optional_principal", "require_principal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/chat.py
-SHA256=ce70a4e51767d204d7acf1314205fd37e0252dfa3393ac531407c52c48386acc BYTES=18523 LINES=320
+SHA256=c6a77c88d991cbfacf7113267a4bee8e75c09c3e8dd2478e6db54f45a2d42a66 BYTES=18335 LINES=319
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/chat/completions`` — cửa đồng bộ có thu tiền (Q106, H38 V3).
 
@@ -127941,9 +127991,9 @@ Ba luật của chế độ đó, và cả ba đều thi hành ở file này:
      trần ước cao; hoá đơn là token đã đo. Không đo được thì **hoàn đủ**.
   3. **Không đẩy vào hàng đợi**, và không chạy quá `SYNC_BILLED_MAX_SECONDS`.
 
-⛔ KHÔNG NỚI TRẦN THỜI GIAN Ở ĐÂY. Cloudflare cắt ở 100 giây bất kể máy B còn đang
-   sinh chữ hay không, và khách nhận một cái 524 không phân biệt được "hỏng" với
-   "xong rồi nhưng mất kết nối". Lượt dài hơn đi cửa job.
+⛔ KHÔNG NỚI TRẦN THỜI GIAN Ở ĐÂY. Cloudflare mặc định cắt ở 125 giây nếu không
+   nhận được byte; ngân sách nội bộ 90 giây giữ biên cho tunnel và quyết toán.
+   Lượt dài hơn đi stream hoặc cửa job.
 """
 from __future__ import annotations
 
@@ -127977,28 +128027,24 @@ OPERATION_CHAT = "chat.completions"
 TOOL_CHAT = "text.chat"
 
 
-def _tran_max_tokens() -> int:
+def _tran_max_tokens(token_vao_uoc: int = 0) -> int:
     """Trần `max_tokens` mà một lượt ĐỒNG BỘ được phép xin.
 
     🔴 CON SỐ NÀY DẪN RA TỪ SỐ ĐO, KHÔNG PHẢI CHỌN CHO TRÒN:
 
-        ngân sách của chế độ            90 giây   (100s của Cloudflare trừ biên)
-        trừ trường hợp xấu nhất: đổi model   −25 giây   (llama-swap nạp lại GGUF)
-        còn lại để sinh chữ                   65 giây
-        nhân tốc độ đã đo trên máy B     × 63 tok/s   (card sạch, P6 22/08)
-        ------------------------------------------------
-                                          ~4.095 token
+        thời gian = nạp model + hạ tầng + input/prefill + output/decode
+
+        prefill bảo thủ     750 tok/s  (đo 756,49 ở 131K)
+        decode bảo thủ       40 tok/s  (đo 41,57)
+        nạp model + hạ tầng  30 giây
 
     ⛔ Xin nhiều hơn thì **từ chối ngay**, đừng nhận rồi để Cloudflare cắt giữa
        chừng. Ta từ chối bằng một cái 400 nói rõ lý do và chỉ sang cửa job; nó
        cắt bằng một cái 524 không ai đọc được.
     """
-    from apps.ltt_llm.manifest import MAX_TOKENS_TRAN
+    from apps.ltt_llm.features import tran_token_ra_dong_bo
 
-    du_phong_nap_s = 25
-    toc_do_da_do = 63          # tok/s, card sạch — DO_NEN_P0.md / SO_DO_P2_P6.md
-    theo_thoi_gian = (SYNC_BILLED_MAX_SECONDS - du_phong_nap_s) * toc_do_da_do
-    return min(MAX_TOKENS_TRAN, theo_thoi_gian)
+    return tran_token_ra_dong_bo(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
 
 
 def register_chat_routes(api, config, tag: str) -> None:
@@ -128061,18 +128107,22 @@ def register_chat_routes(api, config, tag: str) -> None:
 
         # Kiểm THAM SỐ trước khi tiền chuyển — cùng câu `jobs.py` đã viết:
         # "a typo must never reach the ledger".
+        if "max_tokens" not in payload:
+            payload["max_tokens"] = features.SYNC_MAX_TOKENS_MAC_DINH
         try:
             sach = features.kiem_tham_so(payload)
         except features.ThamSoSai as e:
             raise invalid_request(str(e)) from None
 
-        tran = _tran_max_tokens()
+        token_vao_uoc = features.uoc_token_vao(sach["messages"], sach.get("tools"))
+        tran = _tran_max_tokens(token_vao_uoc)
         if sach["max_tokens"] > tran:
             raise invalid_request(
-                f"max_tokens must be at most {tran} on this endpoint: a longer "
-                f"generation cannot finish inside the {SYNC_BILLED_MAX_SECONDS}s "
-                f"budget of a synchronous call. Submit it to POST /api/v1/jobs "
-                f"instead, which has no such ceiling.")
+                f"This synchronous request is estimated at {token_vao_uoc} input "
+                f"tokens, leaving room for at most {tran} output tokens inside "
+                f"its {SYNC_BILLED_MAX_SECONDS}s budget. Reduce the prompt or "
+                f"max_tokens, use a streaming endpoint, or submit it to "
+                f"POST /api/v1/jobs.")
 
         request_hash = idempotency.canonical_hash({"tool": TOOL_CHAT, "input": sach})
         record, replay = idempotency.begin(
@@ -128108,7 +128158,6 @@ def register_chat_routes(api, config, tag: str) -> None:
         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
         #    nay chay sach qua ca bo test roi no o luot goi that dau tien.
         request_id = thanh_toan.ma_luot("ch")
-        token_vao_uoc = features.uoc_token_vao(sach["messages"])
         try:
             da_giu = thanh_toan.giu_cho_luot(
                 db, user_id=principal.user_id, request_id=request_id,
@@ -129417,7 +129466,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=ed6973db0927be52d17b5d38fa7102b3be6466ee942daae18fb57584bb3a9db1 BYTES=41833 LINES=805
+SHA256=97186537db02d4f4d62821028fc449fbbaededc3a39fd0b64f27964c88b91a8e BYTES=42335 LINES=814
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -129505,7 +129554,7 @@ def _giai_ten_model(ten: str) -> str:
 
 #: 🔴 NGÂN SÁCH MỞ LUỒNG — 75 giây, và con số này có lý do.
 #:
-#:    Nó nằm **dưới** trần 100 giây của Cloudflare, nên khi máy B chậm quá thì
+#:    Nó nằm **dưới** trần mặc định 125 giây của Cloudflare, nên khi máy B chậm quá thì
 #:    **ta** trả 503 chứ không để Cloudflare trả 524. Một cái 503 của ta client
 #:    đọc được; một cái 524 của Cloudflare thì không phân biệt được "hỏng" với
 #:    "xong rồi nhưng mất kết nối".
@@ -129522,7 +129571,7 @@ def _tran_giay() -> int:
     """Trần thời gian cho đường **không streaming**.
 
     Dùng lại đúng con số của `/chat/completions`: không stream nghĩa là không
-    byte nào chảy cho tới khi xong, nên đồng hồ 100 giây của Cloudflare có hiệu
+    byte nào chảy cho tới khi xong, nên đồng hồ 125 giây của Cloudflare có hiệu
     lực ở cả hai chỗ, và vì cùng một lý do.
     """
     from server.api.chat import SYNC_BILLED_MAX_SECONDS
@@ -129592,7 +129641,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
        ai phat hien cho toi khi khach doi soat.
 
     ⚠️ TRAN THOI GIAN. Khong stream nghia la khong co byte nao chay cho toi khi
-       xong, nen dong ho 100 giay cua Cloudflare **co hieu luc** o day - khac han
+       xong, nen dong ho 125 giay cua Cloudflare **co hieu luc** o day - khac han
        duong streaming. Vi vay `max_tokens` bi kep theo tran cua duong dong bo,
        cung con so ma `/chat/completions` dung, va vi cung mot ly do.
     """
@@ -129606,13 +129655,22 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     if sandbox.is_test(principal.mode):
         return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
 
-    tran = min(_max_tokens(than, features.uoc_token_vao(tin)), _tran_max_tokens())
-    request_id = thanh_toan.ma_luot("ms")
     vao_uoc = features.uoc_token_vao(tin)
+    xin_ra = _max_tokens(than, vao_uoc)
+    if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
+        xin_ra = min(xin_ra, features.SYNC_MAX_TOKENS_MAC_DINH)
+    tran = _tran_max_tokens(vao_uoc)
+    if xin_ra > tran:
+        raise invalid_request(
+            f"This non-streaming request is estimated at {vao_uoc} input tokens, "
+            f"leaving room for at most {tran} output tokens inside its "
+            f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
+            f"stream=true, or submit it to POST /api/v1/jobs.")
+    request_id = thanh_toan.ma_luot("ms")
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=tran)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
         raise insufficient_credit(str(e)) from None
     db.commit()
@@ -129653,7 +129711,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    `sang_openai_messages` là thứ giữ được **vòng gọi tool** — khối
         #    `tool_use` thành `tool_calls`, khối `tool_result` thành các tin
         #    `role="tool"` riêng, đúng thứ tự.
-        sach = {"model": ten, "max_tokens": tran,
+        sach = {"model": ten, "max_tokens": xin_ra,
                 "messages": tool_dich.sang_openai_messages(_tin_that(than))}
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
@@ -129927,7 +129985,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    **trần**, không phải một lượng đặt hàng: kẹp nó xuống chỉ giới hạn câu
     #    trả lời có thể dài tới đâu, và tiền vẫn tính theo token **thật sự sinh
     #    ra** nên khách không trả thêm đồng nào. Còn `chat.py` từ chối là đúng ở
-    #    đó, vì lý do của nó là **thời gian** (trần 100 giây của Cloudflare) —
+    #    đó, vì lý do của nó là **thời gian** (trần 125 giây của Cloudflare) —
     #    kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
     #
     # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc
@@ -198610,7 +198668,7 @@ def test_tep_hong_bao_ro_ten_tep(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_259_cua_dong_bo.py
-SHA256=2ecf4244ad01a6f04331af9fc182c82d41eaa725bcbf67809560818a7328fe80 BYTES=31146 LINES=717
+SHA256=b8a24a84c615e1f962fd73f0acd659a0dadaef116e01071c0daecfccb0033530 BYTES=33407 LINES=779
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_259_cua_dong_bo — `POST /api/v1/chat/completions`, chế độ `SYNC_BILLED`. (Q106, H38 V3)
@@ -198823,34 +198881,38 @@ def test_hop_dong_TU_CHOI_SYNC_BILLED_mien_phi():
 # ── 2. Tiền: giữ TRẦN, thu THẬT ─────────────────────────────────────────────
 
 def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
-    goi = _dat_model(monkeypatch, token_vao=1_000, token_ra=100)
+    goi = _dat_model(monkeypatch, token_vao=10_000, token_ra=100)
     user_id, token = _account()
     truoc = _so_du(user_id)
 
-    r = api.post(DUONG, json=_than(max_tokens=4000), headers=_h(token))
+    r = api.post(DUONG, json=_than(
+        messages=[{"role": "user", "content": "x" * 25_000}],
+        max_tokens=1400), headers=_h(token))
     assert r.status_code == 200, r.text
     b = r.json()
     assert b["object"] == "chat.completion"
     assert b["choices"][0]["message"]["content"] == "chao ban"
-    assert b["usage"]["prompt_tokens"] == 1_000
+    assert b["usage"]["prompt_tokens"] == 10_000
     assert b["usage"]["completion_tokens"] == 100
     assert goi and goi[0]["model"] == "ltt_llm"
 
     thu = b["x_ltt"]["credit_charged"]
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
     assert 0 < thu < b["x_ltt"]["credit_held"], (
-        "sinh 100 token ma thu tron phan da giu cho 4000 token")
+        "sinh 100 token ma thu tron phan da giu cho 1400 token")
 
 
 def test_sinh_it_thi_tra_it_KHONG_tra_tron_tran(api, monkeypatch):
     """🔴 Đây đúng là lỗi tiền im lặng đã tìm ra ở cửa job hôm 23/08."""
     user_id, token = _account()
 
-    _dat_model(monkeypatch, token_vao=1_000, token_ra=20)
-    a = api.post(DUONG, json=_than(max_tokens=4000), headers=_h(token)).json()
+    than = _than(messages=[{"role": "user", "content": "x" * 25_000}],
+                 max_tokens=1400)
+    _dat_model(monkeypatch, token_vao=10_000, token_ra=20)
+    a = api.post(DUONG, json=than, headers=_h(token)).json()
 
-    _dat_model(monkeypatch, token_vao=1_000, token_ra=3_000)
-    b = api.post(DUONG, json=_than(max_tokens=4000), headers=_h(token)).json()
+    _dat_model(monkeypatch, token_vao=10_000, token_ra=1_400)
+    b = api.post(DUONG, json=than, headers=_h(token)).json()
 
     assert a["x_ltt"]["credit_charged"] < b["x_ltt"]["credit_charged"], (
         "hai luot sinh khac han nhau ma cung gia -> dang thu theo tran")
@@ -198964,7 +199026,7 @@ def test_max_tokens_vuot_tran_thoi_gian_thi_TU_CHOI_va_chi_sang_cua_job(api, mon
     _user_id, token = _account()
     from server.api.chat import _tran_max_tokens
 
-    r = api.post(DUONG, json=_than(max_tokens=_tran_max_tokens() + 1),
+    r = api.post(DUONG, json=_than(max_tokens=_tran_max_tokens(1) + 1),
                  headers=_h(token))
     assert r.status_code == 400, r.text
     assert "/api/v1/jobs" in r.text, "tu choi ma khong chi duong khac"
@@ -198975,8 +199037,66 @@ def test_tran_thoi_gian_dan_ra_tu_so_do_va_nam_duoi_tran_Cloudflare():
     from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
     from server.api.chat import _tran_max_tokens
 
-    assert SYNC_BILLED_MAX_SECONDS < 100, "phai nam DUOI tran 100s cua Cloudflare"
-    assert 1_000 < _tran_max_tokens() <= 4_500
+    assert SYNC_BILLED_MAX_SECONDS < 125, "phai nam DUOI tran 125s cua Cloudflare"
+    assert 1_000 < _tran_max_tokens(1) <= 2_500
+
+
+def test_input_cang_lon_thi_tran_output_dong_bo_cang_nho():
+    """Prefill và decode dùng chung đồng hồ; không được chỉ tính output."""
+    from server.api.chat import _tran_max_tokens
+
+    ngan = _tran_max_tokens(100)
+    vua = _tran_max_tokens(20_000)
+    dai = _tran_max_tokens(89_716)  # canary Q111 thật: 102,0 giây dù chỉ ra 103 token
+    assert ngan > vua > dai
+    assert dai == 0, "request gần 90K phải đi stream/job, không được chạm GPU sync"
+
+
+def test_input_gan_90K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    # 2,5 ký tự/token là đúng phép ước đang dùng; 225K ký tự ~90K token.
+    than = _than(messages=[{"role": "user", "content": "x" * 225_000}],
+                 max_tokens=100)
+
+    r = api.post(DUONG, json=than, headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    assert "/api/v1/jobs" in r.text
+    assert "stream" in r.text.lower()
+    assert goi == [], "admission phải từ chối trước khi chạm model/GPU"
+
+
+def test_schema_tools_lon_cung_phai_tinh_vao_prefill(api, monkeypatch):
+    """Agent gửi schema tool trong mỗi request; bỏ nó là ước thiếu input thật."""
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    cong_cu = [{
+        "type": "function",
+        "function": {
+            "name": "tra_cuu",
+            "description": "x" * 225_000,
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }]
+
+    r = api.post(DUONG, json=_than(max_tokens=100, tools=cong_cu),
+                 headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    assert goi == [], "schema tool lớn phải bị admission chặn trước model/GPU"
+
+
+def test_khong_khai_max_tokens_thi_dung_mac_dinh_AN_TOAN_cua_sync(api, monkeypatch):
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    than = _than()
+    than.pop("max_tokens")
+
+    r = api.post(DUONG, json=than, headers=_h(token))
+
+    assert r.status_code == 200, r.text
+    assert goi[0]["max_tokens"] == 1024
 
 
 def test_stream_true_bi_TU_CHOI_ro_rang(api, monkeypatch):
@@ -205014,7 +205134,7 @@ def test_cau_cam_chuyen_lua_chon_thanh_dung_hang_muc(monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_285_messages_khong_stream.py
-SHA256=5ed47057d062771d68881760c794a547964e05136b3c088b6ad6d36e7bd4f6b2 BYTES=12110 LINES=252
+SHA256=fc73c5b466a8dcf2118bfe2e93e95f509fe5f97fa73a0c05f6afe4dbc4066410 BYTES=12281 LINES=255
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`POST /api/v1/messages` phải phục vụ **cả** request không streaming.
 
@@ -205156,14 +205276,17 @@ def test_ma_nguon_KHONG_con_tu_choi_request_khong_stream(st):
 
 
 def test_khong_stream_van_kep_max_tokens(st):
-    """Không stream ⇒ không byte nào chảy cho tới khi xong ⇒ đồng hồ 100 giây của
+    """Không stream ⇒ không byte nào chảy cho tới khi xong ⇒ đồng hồ 125 giây của
     Cloudflare **có hiệu lực**, khác hẳn đường streaming.
 
-    Nên trần phải là trần của đường **đồng bộ**, không phải trần streaming.
+    Nên trần phải nhận cả input ước lượng của đường **đồng bộ**, không phải chỉ
+    kẹp output theo một số cố định.
     """
     ma = pathlib.Path(st.__file__).read_text(encoding="utf-8")
     assert "_tran_max_tokens" in ma, (
         "duong khong-stream phai kep theo tran cua duong dong bo")
+    assert "_tran_max_tokens(vao_uoc)" in ma, (
+        "tran dong bo phai tinh ca thoi gian prefill cua input")
 
 
 # ── `messages` gửi cho model KHÁC danh sách dùng để ước token ─────────────────
@@ -206679,7 +206802,7 @@ def test_than_tra_ve_van_la_500_co_dinh(err):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_292_tien_ket_trong_hold.py
-SHA256=4bd546681db63a206789a0b6897114517d89859670fe3754fb8b1d7c358904bb BYTES=7357 LINES=191
+SHA256=746119b48e81340c135047c79660d5a709b34c8f7529189761e384fa806a20fb BYTES=7360 LINES=191
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Cửa `/messages` **không stream** không được để tiền kẹt trong hold.
 
@@ -206743,7 +206866,7 @@ def moi_truong(monkeypatch):
     da_quyet_toan = []
 
     monkeypatch.setattr(features, "uoc_token_vao", lambda tin: 10)
-    monkeypatch.setattr(chat, "_tran_max_tokens", lambda: 1024)
+    monkeypatch.setattr(chat, "_tran_max_tokens", lambda *_: 1024)
     monkeypatch.setattr(thanh_toan, "ma_luot", lambda tien: "ms:thu")
     monkeypatch.setattr(thanh_toan, "giu_cho_luot",
                         lambda db, **kw: 7)

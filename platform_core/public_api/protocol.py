@@ -61,7 +61,7 @@ SYNC_BILLED = "SYNC_BILLED"
 #: buffers, and Codex times out on an idle stream. A non-streaming door is a door
 #: none of them walk through.
 #:
-#: What it buys beyond compatibility: **streaming escapes the 100-second
+#: What it buys beyond compatibility: **streaming escapes the 125-second
 #: ceiling**. Cloudflare's clock measures the wait for the *first byte*, so a
 #: stream that keeps sending has no wall — which is why SYNC_BILLED must cap
 #: ``max_tokens`` and this mode need not.
@@ -93,7 +93,7 @@ class ProtocolError(Exception):
 # ── What each mode promises ──────────────────────────────────────────────────
 
 #: A SYNC operation must finish inside this budget. It is deliberately far below
-#: the Cloudflare 100-second ceiling: an operation that needs *most* of a
+#: the Cloudflare 125-second ceiling: an operation that needs *most* of a
 #: request's lifetime is an async job that has not admitted it yet.
 SYNC_MAX_SECONDS = 5
 
@@ -124,11 +124,11 @@ STREAM_PHAI_KHAI = (
 
 #: A SYNC_BILLED operation must finish inside this budget.
 #:
-#: 🔴 90 IS NOT A ROUND NUMBER, IT IS A CEILING MINUS A MARGIN. Cloudflare cuts a
-#:    request at **100 seconds** whether or not the GPU is still producing text,
-#:    and the caller sees a 524 with no way to tell "it failed" from "it worked
-#:    and you were disconnected". Ten seconds is the margin for TLS, the tunnel,
-#:    queueing behind another request, and the settlement write.
+#: 🔴 90 IS NOT A ROUND NUMBER, IT IS A CEILING MINUS A MARGIN. Cloudflare's
+#:    default Proxy Read Timeout is **125 seconds** (verified 2026-08-27). The
+#:    caller otherwise sees a 524 with no way to tell "it failed" from "it worked
+#:    and you were disconnected". The 35-second margin covers TLS, tunnel
+#:    variance and settlement; admission separately budgets model load/prefill.
 #:
 #: ⛔ RAISING THIS NUMBER DOES NOT BUY TIME — it only moves where the failure
 #:    happens, from our clean 400 to Cloudflare's opaque 524. The way to serve a

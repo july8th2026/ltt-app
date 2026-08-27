@@ -138,14 +138,17 @@ def test_ma_nguon_KHONG_con_tu_choi_request_khong_stream(st):
 
 
 def test_khong_stream_van_kep_max_tokens(st):
-    """Không stream ⇒ không byte nào chảy cho tới khi xong ⇒ đồng hồ 100 giây của
+    """Không stream ⇒ không byte nào chảy cho tới khi xong ⇒ đồng hồ 125 giây của
     Cloudflare **có hiệu lực**, khác hẳn đường streaming.
 
-    Nên trần phải là trần của đường **đồng bộ**, không phải trần streaming.
+    Nên trần phải nhận cả input ước lượng của đường **đồng bộ**, không phải chỉ
+    kẹp output theo một số cố định.
     """
     ma = pathlib.Path(st.__file__).read_text(encoding="utf-8")
     assert "_tran_max_tokens" in ma, (
         "duong khong-stream phai kep theo tran cua duong dong bo")
+    assert "_tran_max_tokens(vao_uoc)" in ma, (
+        "tran dong bo phai tinh ca thoi gian prefill cua input")
 
 
 # ── `messages` gửi cho model KHÁC danh sách dùng để ước token ─────────────────

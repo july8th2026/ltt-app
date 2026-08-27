@@ -60,7 +60,7 @@ def moi_truong(monkeypatch):
     da_quyet_toan = []
 
     monkeypatch.setattr(features, "uoc_token_vao", lambda tin: 10)
-    monkeypatch.setattr(chat, "_tran_max_tokens", lambda: 1024)
+    monkeypatch.setattr(chat, "_tran_max_tokens", lambda *_: 1024)
     monkeypatch.setattr(thanh_toan, "ma_luot", lambda tien: "ms:thu")
     monkeypatch.setattr(thanh_toan, "giu_cho_luot",
                         lambda db, **kw: 7)

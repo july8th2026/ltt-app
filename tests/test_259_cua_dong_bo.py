@@ -209,34 +209,38 @@ def test_hop_dong_TU_CHOI_SYNC_BILLED_mien_phi():
 # ── 2. Tiền: giữ TRẦN, thu THẬT ─────────────────────────────────────────────
 
 def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
-    goi = _dat_model(monkeypatch, token_vao=1_000, token_ra=100)
+    goi = _dat_model(monkeypatch, token_vao=10_000, token_ra=100)
     user_id, token = _account()
     truoc = _so_du(user_id)
 
-    r = api.post(DUONG, json=_than(max_tokens=4000), headers=_h(token))
+    r = api.post(DUONG, json=_than(
+        messages=[{"role": "user", "content": "x" * 25_000}],
+        max_tokens=1400), headers=_h(token))
     assert r.status_code == 200, r.text
     b = r.json()
     assert b["object"] == "chat.completion"
     assert b["choices"][0]["message"]["content"] == "chao ban"
-    assert b["usage"]["prompt_tokens"] == 1_000
+    assert b["usage"]["prompt_tokens"] == 10_000
     assert b["usage"]["completion_tokens"] == 100
     assert goi and goi[0]["model"] == "ltt_llm"
 
     thu = b["x_ltt"]["credit_charged"]
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
     assert 0 < thu < b["x_ltt"]["credit_held"], (
-        "sinh 100 token ma thu tron phan da giu cho 4000 token")
+        "sinh 100 token ma thu tron phan da giu cho 1400 token")
 
 
 def test_sinh_it_thi_tra_it_KHONG_tra_tron_tran(api, monkeypatch):
     """🔴 Đây đúng là lỗi tiền im lặng đã tìm ra ở cửa job hôm 23/08."""
     user_id, token = _account()
 
-    _dat_model(monkeypatch, token_vao=1_000, token_ra=20)
-    a = api.post(DUONG, json=_than(max_tokens=4000), headers=_h(token)).json()
+    than = _than(messages=[{"role": "user", "content": "x" * 25_000}],
+                 max_tokens=1400)
+    _dat_model(monkeypatch, token_vao=10_000, token_ra=20)
+    a = api.post(DUONG, json=than, headers=_h(token)).json()
 
-    _dat_model(monkeypatch, token_vao=1_000, token_ra=3_000)
-    b = api.post(DUONG, json=_than(max_tokens=4000), headers=_h(token)).json()
+    _dat_model(monkeypatch, token_vao=10_000, token_ra=1_400)
+    b = api.post(DUONG, json=than, headers=_h(token)).json()
 
     assert a["x_ltt"]["credit_charged"] < b["x_ltt"]["credit_charged"], (
         "hai luot sinh khac han nhau ma cung gia -> dang thu theo tran")
@@ -350,7 +354,7 @@ def test_max_tokens_vuot_tran_thoi_gian_thi_TU_CHOI_va_chi_sang_cua_job(api, mon
     _user_id, token = _account()
     from server.api.chat import _tran_max_tokens
 
-    r = api.post(DUONG, json=_than(max_tokens=_tran_max_tokens() + 1),
+    r = api.post(DUONG, json=_than(max_tokens=_tran_max_tokens(1) + 1),
                  headers=_h(token))
     assert r.status_code == 400, r.text
     assert "/api/v1/jobs" in r.text, "tu choi ma khong chi duong khac"
@@ -361,8 +365,66 @@ def test_tran_thoi_gian_dan_ra_tu_so_do_va_nam_duoi_tran_Cloudflare():
     from platform_core.public_api.protocol import SYNC_BILLED_MAX_SECONDS
     from server.api.chat import _tran_max_tokens
 
-    assert SYNC_BILLED_MAX_SECONDS < 100, "phai nam DUOI tran 100s cua Cloudflare"
-    assert 1_000 < _tran_max_tokens() <= 4_500
+    assert SYNC_BILLED_MAX_SECONDS < 125, "phai nam DUOI tran 125s cua Cloudflare"
+    assert 1_000 < _tran_max_tokens(1) <= 2_500
+
+
+def test_input_cang_lon_thi_tran_output_dong_bo_cang_nho():
+    """Prefill và decode dùng chung đồng hồ; không được chỉ tính output."""
+    from server.api.chat import _tran_max_tokens
+
+    ngan = _tran_max_tokens(100)
+    vua = _tran_max_tokens(20_000)
+    dai = _tran_max_tokens(89_716)  # canary Q111 thật: 102,0 giây dù chỉ ra 103 token
+    assert ngan > vua > dai
+    assert dai == 0, "request gần 90K phải đi stream/job, không được chạm GPU sync"
+
+
+def test_input_gan_90K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    # 2,5 ký tự/token là đúng phép ước đang dùng; 225K ký tự ~90K token.
+    than = _than(messages=[{"role": "user", "content": "x" * 225_000}],
+                 max_tokens=100)
+
+    r = api.post(DUONG, json=than, headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    assert "/api/v1/jobs" in r.text
+    assert "stream" in r.text.lower()
+    assert goi == [], "admission phải từ chối trước khi chạm model/GPU"
+
+
+def test_schema_tools_lon_cung_phai_tinh_vao_prefill(api, monkeypatch):
+    """Agent gửi schema tool trong mỗi request; bỏ nó là ước thiếu input thật."""
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    cong_cu = [{
+        "type": "function",
+        "function": {
+            "name": "tra_cuu",
+            "description": "x" * 225_000,
+            "parameters": {"type": "object", "properties": {}},
+        },
+    }]
+
+    r = api.post(DUONG, json=_than(max_tokens=100, tools=cong_cu),
+                 headers=_h(token))
+
+    assert r.status_code == 400, r.text
+    assert goi == [], "schema tool lớn phải bị admission chặn trước model/GPU"
+
+
+def test_khong_khai_max_tokens_thi_dung_mac_dinh_AN_TOAN_cua_sync(api, monkeypatch):
+    goi = _dat_model(monkeypatch)
+    _user_id, token = _account()
+    than = _than()
+    than.pop("max_tokens")
+
+    r = api.post(DUONG, json=than, headers=_h(token))
+
+    assert r.status_code == 200, r.text
+    assert goi[0]["max_tokens"] == 1024
 
 
 def test_stream_true_bi_TU_CHOI_ro_rang(api, monkeypatch):

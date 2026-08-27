@@ -99,7 +99,7 @@ def _cost(params: dict) -> int:
 
     from apps.ltt_llm.features import uoc_token_vao
 
-    token_vao_uoc = uoc_token_vao(params.get("messages"))
+    token_vao_uoc = uoc_token_vao(params.get("messages"), params.get("tools"))
 
     xin_ra = params.get("max_tokens")
     xin_ra = int(xin_ra) if isinstance(xin_ra, (int, float)) else MAX_TOKENS_MAC_DINH

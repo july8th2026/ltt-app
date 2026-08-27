@@ -84,7 +84,7 @@ def _giai_ten_model(ten: str) -> str:
 
 #: 🔴 NGÂN SÁCH MỞ LUỒNG — 75 giây, và con số này có lý do.
 #:
-#:    Nó nằm **dưới** trần 100 giây của Cloudflare, nên khi máy B chậm quá thì
+#:    Nó nằm **dưới** trần mặc định 125 giây của Cloudflare, nên khi máy B chậm quá thì
 #:    **ta** trả 503 chứ không để Cloudflare trả 524. Một cái 503 của ta client
 #:    đọc được; một cái 524 của Cloudflare thì không phân biệt được "hỏng" với
 #:    "xong rồi nhưng mất kết nối".
@@ -101,7 +101,7 @@ def _tran_giay() -> int:
     """Trần thời gian cho đường **không streaming**.
 
     Dùng lại đúng con số của `/chat/completions`: không stream nghĩa là không
-    byte nào chảy cho tới khi xong, nên đồng hồ 100 giây của Cloudflare có hiệu
+    byte nào chảy cho tới khi xong, nên đồng hồ 125 giây của Cloudflare có hiệu
     lực ở cả hai chỗ, và vì cùng một lý do.
     """
     from server.api.chat import SYNC_BILLED_MAX_SECONDS
@@ -171,7 +171,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
        ai phat hien cho toi khi khach doi soat.
 
     ⚠️ TRAN THOI GIAN. Khong stream nghia la khong co byte nao chay cho toi khi
-       xong, nen dong ho 100 giay cua Cloudflare **co hieu luc** o day - khac han
+       xong, nen dong ho 125 giay cua Cloudflare **co hieu luc** o day - khac han
        duong streaming. Vi vay `max_tokens` bi kep theo tran cua duong dong bo,
        cung con so ma `/chat/completions` dung, va vi cung mot ly do.
     """
@@ -185,13 +185,22 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     if sandbox.is_test(principal.mode):
         return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
 
-    tran = min(_max_tokens(than, features.uoc_token_vao(tin)), _tran_max_tokens())
-    request_id = thanh_toan.ma_luot("ms")
     vao_uoc = features.uoc_token_vao(tin)
+    xin_ra = _max_tokens(than, vao_uoc)
+    if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
+        xin_ra = min(xin_ra, features.SYNC_MAX_TOKENS_MAC_DINH)
+    tran = _tran_max_tokens(vao_uoc)
+    if xin_ra > tran:
+        raise invalid_request(
+            f"This non-streaming request is estimated at {vao_uoc} input tokens, "
+            f"leaving room for at most {tran} output tokens inside its "
+            f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
+            f"stream=true, or submit it to POST /api/v1/jobs.")
+    request_id = thanh_toan.ma_luot("ms")
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=tran)
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
         raise insufficient_credit(str(e)) from None
     db.commit()
@@ -232,7 +241,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    `sang_openai_messages` là thứ giữ được **vòng gọi tool** — khối
         #    `tool_use` thành `tool_calls`, khối `tool_result` thành các tin
         #    `role="tool"` riêng, đúng thứ tự.
-        sach = {"model": ten, "max_tokens": tran,
+        sach = {"model": ten, "max_tokens": xin_ra,
                 "messages": tool_dich.sang_openai_messages(_tin_that(than))}
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
@@ -506,7 +515,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    **trần**, không phải một lượng đặt hàng: kẹp nó xuống chỉ giới hạn câu
     #    trả lời có thể dài tới đâu, và tiền vẫn tính theo token **thật sự sinh
     #    ra** nên khách không trả thêm đồng nào. Còn `chat.py` từ chối là đúng ở
-    #    đó, vì lý do của nó là **thời gian** (trần 100 giây của Cloudflare) —
+    #    đó, vì lý do của nó là **thời gian** (trần 125 giây của Cloudflare) —
     #    kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
     #
     # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc

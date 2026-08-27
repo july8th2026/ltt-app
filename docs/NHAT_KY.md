@@ -14,6 +14,43 @@
 
 ---
 
+## 2026-08-27 — H41.11/Q113: admission thời gian tính cả input prefill
+
+- Xác nhận lỗi phạm vi `ltt_llm`: `_tran_max_tokens()` cũ chỉ lấy `90s - 25s`
+  rồi nhân tốc độ output 63 tok/s; nó không tính một giây nào cho input. Canary
+  Q111 thật đã bác công thức đó: 89.716 token ước lượng + 103 token output vẫn
+  mất 102,003 giây.
+- Thêm admission riêng cho non-stream: 25 giây dự phòng nạp model, 5 giây hạ
+  tầng, prefill 750 tok/s, decode 40 tok/s và 512 token biên khuôn. Hai tốc độ
+  đều làm tròn xuống từ benchmark B thật (756,49 và 41,57 tok/s).
+- `chat/completions` và nhánh không-stream của `/messages`/`/responses` nay tính
+  input trước khi giữ tiền/chạm GPU. Vượt 90 giây trả 400 và chỉ rõ stream/job.
+  Mặc định output non-stream đổi 4.096 → 1.024; mặc định stream/job và public
+  input cap 90K **không đổi**.
+- Schema `tools` nay được cộng vào cùng phép ước input của admission và giữ
+  tiền. Test đỏ chứng minh schema ~225K ký tự trước đó vẫn lọt, trả 200 và chạm
+  model; sau vá nó bị chặn trước GPU như một prompt dài tương đương.
+- Trần output non-stream theo input ước lượng: 0 → 2.372; 20K → 1.306; 40K →
+  239; gần 90K → 0. Vì vậy ngữ cảnh dài vẫn được phục vụ qua stream/job, không
+  bị hạ cap toàn cục.
+
+### Lệnh và kết quả thật
+
+- Test viết trước bản sửa: **8 fail**, trong đó request gần 90K còn trả 200 và
+  `_tran_max_tokens` chưa nhận input — đúng lỗi cần bắt.
+- `python tools\test_nhanh.py --noi-tiep -k "test_259 or test_272 or test_285 or test_292"`
+  → **99 passed, 1 skipped**, 4.145 deselected.
+- `python tools\gate.py --vong-lap` → **FAIL 2/19**: 17 bước tĩnh PASS; profile
+  stale do source vừa đổi; nhóm `--lf` còn 6 lỗi baseline ở `test_150`,
+  `test_151`, `test_188`, `test_212 image.upscale`, không thuộc `ltt_llm`.
+- Sau sinh lại hồ sơ, `python tools\gate.py --vong-lap` → **PASS 19/19**; đúng
+  tính chất vòng lặp, kết quả này chưa thay bằng chứng full gate cuối.
+- Lượt `gate --vong-lap` sau chốt schema tools rút cache thành gần-full backend:
+  **4.155 passed, 2 failed, 26 skipped**; 18/19 bước gate PASS. Hai lỗi còn lại
+  là `test_252_vps_giao_dien` và `test_287_vps_bao_tri`, ngoài `ltt_llm`; không
+  sửa lan sang VPS theo yêu cầu của chủ sản phẩm.
+- Chưa deploy/canary ở thời điểm ghi mục này; H41.11 vẫn để **ĐANG LÀM**.
+
 ## 2026-08-27 — H41.9/Q112: loại hidden queue trước GPU
 
 - Baseline thật trên model warm, hai request cùng 23.224 token cách nhau 200 ms:
