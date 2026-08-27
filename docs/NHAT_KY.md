@@ -14,6 +14,36 @@
 
 ---
 
+## 2026-08-28 — Khôi phục H41.9 và khóa quy tắc vận hành liên tục
+
+- Khôi phục đúng checkpoint sau mất điện: H41.11/Q113 đã hoàn thành; tiếp tục
+  H41.9 từ Q0–Q3 CPU/CSDL/mock, không chạy lại benchmark GPU đã có bằng chứng.
+- Thêm `AGENTS.md` mục 0b: khi plan còn bước an toàn, agent tự chuyển tiếp sau
+  checkpoint/test/commit; trong lúc chờ job/GPU phải xen kẽ việc độc lập; lỗi
+  ngoài phạm vi không được kéo lệch mục tiêu.
+- “Không dừng” được chặn rõ: không mở rộng quyền, không bỏ gate, không cho phép
+  hành động phá huỷ và vẫn phải dừng trước lựa chọn sản phẩm/quyền ngoài agent,
+  rủi ro an toàn hoặc blocker trực tiếp không còn đường xử lý an toàn.
+- Audit đầu H41.9 xác nhận giới hạn active job hiện là hai bước đếm rồi insert,
+  chưa nguyên tử khi nhiều API gọi đồng thời; sync/stream cũng chưa đi qua cùng
+  admission plane với async. Đây là phạm vi Q0/Q1 tiếp theo, không phải Nexus.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| `git status --short --branch` | tracked sạch trước thay đổi; chỉ có `.codex/` và evidence không thuộc hạng mục, không chạm |
+| `python tools\build_system_profile.py` | **PASS**, sinh lại hồ sơ sau khi thêm quy tắc |
+| `python tools\gate.py --vong-lap` | **PASS 19/19**; `--lf` 192,3 giây, chỉ là bằng chứng vòng lặp |
+
+### Việc tiếp theo
+
+1. Khóa hợp đồng Q0 cho admission chung async/sync/stream và trạng thái queue.
+2. Triển khai Q1 global cap + quota lock nguyên tử bằng CPU/CSDL/mock.
+3. Tiếp tục Q2–Q3 rồi mới mở cửa sổ GPU Q4–Q6; không reboot máy 3090.
+
+---
+
 ## 2026-08-27 — H41.11/Q113: admission thời gian tính cả input prefill
 
 - Xác nhận lỗi phạm vi `ltt_llm`: `_tran_max_tokens()` cũ chỉ lấy `90s - 25s`

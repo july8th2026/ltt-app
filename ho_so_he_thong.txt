@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:95183c825e185edfc376aaaa3b20fd990fcb6880e7bb1a55416e66853ef51b95
+Fingerprint   : sha256:f8fa636d6b3d6e2225edeaac46ecc709ea62e602979d73918275f71d8e384ee6
 Nguồn đã quét : 1201 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2621,7 +2621,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11959805 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11961610 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -2636,7 +2636,7 @@ ho_so_he_thong.txt -whitespace
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ AGENTS.md
-SHA256=28df2235850671dc1d7f2359b8c1c9e0552cb39592f6d67256b4f1c4f85e1fab BYTES=32007 LINES=589
+SHA256=85ac1fa501b6acfc14a9609f1204680bf046ac2e52c94c680cf4a8c7ce19cc88 BYTES=33682 LINES=611
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quy tắc làm việc trong dự án này
 
@@ -2670,6 +2670,28 @@ tục hạng mục đang dở:
 profile không cần approval cho workspace tin cậy hoặc `Allow always` cho prefix
 hẹp trong UI Codex. Đây là cấu hình host, không phải file repo và agent không
 được giả vờ đã bật nó.
+
+---
+
+## 0b. Vận hành liên tục — không dừng giữa kế hoạch
+
+Khi kế hoạch đang có bước kế tiếp rõ ràng và có thể thực hiện an toàn trong phạm
+vi người dùng đã giao, agent phải **tự chuyển sang bước đó** sau mỗi checkpoint,
+test hoặc commit; không kết thúc bằng câu “chờ người dùng xác nhận”.
+
+1. Khi một job dài đang chạy hoặc đang chờ GPU, tiếp tục hạng mục CPU/CSDL/mock
+   độc lập đã có trong cùng kế hoạch. Khi GPU rảnh, ưu tiên ngay hạng mục GPU kế
+   tiếp đã được duyệt; không để tài nguyên rảnh chỉ vì vừa xong một checkpoint.
+2. Sau mất điện, reset IDE hoặc compaction, khôi phục từ nhật ký/checkpoint mới
+   nhất và đi tiếp; không chạy lại hạng mục đã có bằng chứng hoàn thành.
+3. Lỗi ngoài phạm vi hiện tại mà không chặn mục tiêu phải được ghi nhận rồi bỏ
+   qua; không tự mở nhánh điều tra làm lệch mục tiêu người dùng giao.
+4. “Không dừng” **không** mở rộng quyền, không cho phép bỏ test/gate, không cho
+   phép thay đổi phá huỷ và không thay thế tiêu chí hoàn thành. Chỉ dừng khi thật
+   sự thiếu lựa chọn sản phẩm, quyền/hành động bên ngoài agent không thể tự cấp,
+   có rủi ro an toàn hoặc gặp blocker trực tiếp không còn đường xử lý an toàn.
+5. Khi buộc phải dừng, báo đúng checkpoint, bằng chứng đã có, blocker cụ thể và
+   bước sẽ tiếp tục ngay sau khi blocker được gỡ; không báo chung chung.
 
 ---
 
@@ -73776,7 +73798,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=0c80c316a87637a1a9490f7c254697f7518a834bb5dbc4e9de250147d5c9dd76 BYTES=254687 LINES=3604
+SHA256=63828976ce580369d36c18e4328611fd026ddea439fc5f998e10b1ffc7caa476 BYTES=254817 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77347,7 +77369,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B, request thứ hai 429 trong 0,05s. Còn admission queue thật Q1–Q6 |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B, request thứ hai 429 trong 0,05s. Sau mất điện đã khôi phục checkpoint và bật quy tắc tự chuyển tiếp; đang khóa hợp đồng Q0, rồi Q1–Q3 liên tục trước GPU Q4–Q6 |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |

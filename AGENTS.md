@@ -33,6 +33,28 @@ hẹp trong UI Codex. Đây là cấu hình host, không phải file repo và ag
 
 ---
 
+## 0b. Vận hành liên tục — không dừng giữa kế hoạch
+
+Khi kế hoạch đang có bước kế tiếp rõ ràng và có thể thực hiện an toàn trong phạm
+vi người dùng đã giao, agent phải **tự chuyển sang bước đó** sau mỗi checkpoint,
+test hoặc commit; không kết thúc bằng câu “chờ người dùng xác nhận”.
+
+1. Khi một job dài đang chạy hoặc đang chờ GPU, tiếp tục hạng mục CPU/CSDL/mock
+   độc lập đã có trong cùng kế hoạch. Khi GPU rảnh, ưu tiên ngay hạng mục GPU kế
+   tiếp đã được duyệt; không để tài nguyên rảnh chỉ vì vừa xong một checkpoint.
+2. Sau mất điện, reset IDE hoặc compaction, khôi phục từ nhật ký/checkpoint mới
+   nhất và đi tiếp; không chạy lại hạng mục đã có bằng chứng hoàn thành.
+3. Lỗi ngoài phạm vi hiện tại mà không chặn mục tiêu phải được ghi nhận rồi bỏ
+   qua; không tự mở nhánh điều tra làm lệch mục tiêu người dùng giao.
+4. “Không dừng” **không** mở rộng quyền, không cho phép bỏ test/gate, không cho
+   phép thay đổi phá huỷ và không thay thế tiêu chí hoàn thành. Chỉ dừng khi thật
+   sự thiếu lựa chọn sản phẩm, quyền/hành động bên ngoài agent không thể tự cấp,
+   có rủi ro an toàn hoặc gặp blocker trực tiếp không còn đường xử lý an toàn.
+5. Khi buộc phải dừng, báo đúng checkpoint, bằng chứng đã có, blocker cụ thể và
+   bước sẽ tiếp tục ngay sau khi blocker được gỡ; không báo chung chung.
+
+---
+
 ## 1. Bắt buộc đọc trước khi thay đổi bất cứ thứ gì
 
 Theo đúng thứ tự, không bỏ bước:
