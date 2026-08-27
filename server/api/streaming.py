@@ -566,21 +566,39 @@ def _phat(mo, *, user_id: str, request_id: str, da_giu: int) -> Iterator[bytes]:
        toán, và phần giữ chỗ nằm lại đó mãi.
     """
     from platform_core.llm.dem_token_luong import DemToken
+    import time as _time
 
     dem = DemToken()
     vo: Optional[BaseException] = None
+    khach_ngat = False
+    _t0 = _time.monotonic()
+    _n_khoi = 0
+    _t_byte_dau: Optional[float] = None
     try:
         for khoi in mo.luong:
+            if _t_byte_dau is None:
+                _t_byte_dau = _time.monotonic() - _t0
+            _n_khoi += 1
             dem.nhin(khoi)
             yield khoi
     except GeneratorExit:
         # Khách bỏ đi. KHÔNG phải lỗi của khoá — đánh dấu lỗi ở đây là đường
         # thẳng tới D-005 (khoá model nhà tự tắt sau 5 lần).
+        khach_ngat = True
         raise
     except BaseException as e:                                  # noqa: BLE001
         vo = e
         raise
     finally:
+        # 🔎 TẠM: soi vì sao Codex im ở phản hồi dài. KHACH-NGAT = client bỏ giữa
+        #    chừng (timeout Codex); XONG = ta gửi hết (Codex nhận đủ mà không hiện).
+        _dt = _time.monotonic() - _t0
+        log.warning(
+            "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
+            "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
+            request_id[-8:], _dt,
+            (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
+            _n_khoi, dem.token_ra)
         _quyet_toan(user_id, request_id, dem, da_giu)
         if vo is not None:
             mo.hong(vo)
