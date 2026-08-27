@@ -337,6 +337,28 @@ def trang_an_danh(tmp_path_factory) -> str:
             else:
                 os.environ[k] = v
 
+        # 🔴 Tra lai bien moi truong la CHUA DU.
+        #
+        # `apps/vps/manifest.py` khai `enabled=vps_app.enabled()` — doc co
+        # **luc NAP module**. Fixture nay dat `LTT_VPS=1` roi import
+        # `server.app`, nen manifest bi dong bang voi `enabled=True` cho **ca
+        # tien trinh**. Tra bien moi truong ve khong go duoc cai da dong bang.
+        #
+        # Hau qua do duoc 27/08: `test_287::test_nen_tang_CHI_chay_viec_cua_
+        # app_DANG_BAT` do — no `delenv("LTT_VPS")` roi khang dinh viec bao tri
+        # cua vps khong chay, nhung manifest van bao "dang bat". Phep kiem do
+        # xanh khi chay mot minh, do khi chay sau fixture nay. Tuc **fixture cua
+        # toi lam mot phep kiem an ninh cua nguoi khac thoi do duoc gi**.
+        #
+        # ⚠️ Don sau lung minh. Mot fixture de lai trang thai toan cuc la mot
+        #    fixture bien thu tu chay thanh mot bien an cua ca bo test.
+        import importlib
+
+        import apps.vps
+        import apps.vps.manifest
+        importlib.reload(apps.vps)
+        importlib.reload(apps.vps.manifest)
+
 
 def test_khach_AN_DANH_chi_thay_MOT_bang_gia(trang_an_danh):
     """🔴 Hai bảng giá trên một trang là hai nguồn cho cùng một con số.
