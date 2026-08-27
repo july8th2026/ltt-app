@@ -42,6 +42,7 @@ def submit_with_credit(
     params: dict, dedupe_key: str = "", max_attempts: int = 3,
     correlation_id: str = "", retry_of_id: str = "",
     quoted_credit: int | None = None,
+    admission_resource: str = "", admission_slots: int = 0,
 ) -> Job:
     """Nộp job và giữ chỗ credit trong cùng transaction. KHÔNG commit — caller
     commit (nhờ vậy job + credit cùng thành hoặc cùng bại).
@@ -65,7 +66,9 @@ def submit_with_credit(
 
     job = jobs.submit(db, user_id=user_id, app_slug=app_slug, job_type=job_type,
                       params=params, dedupe_key=dedupe_key, max_attempts=max_attempts,
-                      correlation_id=correlation_id, retry_of_id=retry_of_id)
+                      correlation_id=correlation_id, retry_of_id=retry_of_id,
+                      admission_resource=admission_resource,
+                      admission_slots=admission_slots)
 
     # Chỉ giữ chỗ cho job MỚI. Dedupe trả job cũ → đã giữ rồi → bỏ qua.
     if credit.so_da_giu(db, job.id) == 0 and estimate > 0:

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:795d30c9646be89ae4b5c7444e98d6f17d14cf0f3d8a2210297a71614baf2002
-Nguồn đã quét : 1201 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:4ad88279ca45e879a9154a6f2baf1f74f9b780b3781a57733f6d2ed91ed7aef8
+Nguồn đã quét : 1203 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -761,13 +761,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:636
 
 5. DATA MODEL (58 bảng)
-- agent_runs → AgentRun | platform_core/models.py:406
-- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:491
-- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:473
-- agent_workflows → AgentWorkflow | platform_core/models.py:441
+- agent_runs → AgentRun | platform_core/models.py:415
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:500
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:482
+- agent_workflows → AgentWorkflow | platform_core/models.py:450
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:751
-- api_keys → ApiKey | platform_core/models.py:601
+- api_keys → ApiKey | platform_core/models.py:610
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -778,18 +778,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:802
 - app_access → AppAccess | platform_core/models.py:168
 - app_projects → AppProject | platform_core/models.py:201
-- chat_conversations → ChatConversation | platform_core/models.py:744
-- chat_messages → ChatMessage | platform_core/models.py:764
-- credit_entries → CreditEntry | platform_core/models.py:547
-- credit_packages → CreditPackage | platform_core/models.py:677
+- chat_conversations → ChatConversation | platform_core/models.py:753
+- chat_messages → ChatMessage | platform_core/models.py:773
+- credit_entries → CreditEntry | platform_core/models.py:556
+- credit_packages → CreditPackage | platform_core/models.py:686
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- gpu_leases → GpuLease | platform_core/models.py:785
-- job_events → JobEvent | platform_core/models.py:329
+- gpu_leases → GpuLease | platform_core/models.py:794
+- job_events → JobEvent | platform_core/models.py:338
 - jobs → Job | platform_core/models.py:249
 - nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
 - nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:129
 - nexus_sessions → NexusSession | platform_core/nexus/tables.py:180
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:522
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:531
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -804,15 +804,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:701
+- payment_orders → PaymentOrder | platform_core/models.py:710
 - platform_info → PlatformInfo | platform_core/models.py:46
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:138
-- singleton_leases → SingletonLease | platform_core/models.py:835
-- upload_sessions → UploadSession | platform_core/models.py:373
+- singleton_leases → SingletonLease | platform_core/models.py:844
+- upload_sessions → UploadSession | platform_core/models.py:382
 - users → User | platform_core/models.py:73
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
@@ -820,7 +820,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (55)
+6. ALEMBIC MIGRATIONS (56)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -876,6 +876,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 5b9e2c47a103 ← 7a41f6d29e83 | vps_console_ve.pve_ve: varchar(255) -> TEXT | alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
 - 8c1f4a67b209 ← 5b9e2c47a103 | vps_instance: bon cot do bang thong (H39/G7) | alembic/versions/20260824_2400_vps_bang_thong.py
 - a4d70e93f158 ← 8c1f4a67b209 | vps_instance.sao_luu_luc — lan chup anh gan nhat (H39/G9) | alembic/versions/20260824_2500_vps_sao_luu.py
+- b5e81f2a7c40 ← a4d70e93f158 | H41.9/Q114: snapshot admission resource on durable jobs. | alembic/versions/20260828_1000_job_admission_resource.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -892,7 +893,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (162 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (164 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -984,9 +985,11 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_PUBLIC_API_CORS_ORIGINS
 - LTT_PUBLIC_API_CREATE_RPM
 - LTT_PUBLIC_API_DAILY_CREDIT
+- LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT
 - LTT_PUBLIC_API_MAX_ACTIVE_JOBS
 - LTT_PUBLIC_API_MAX_BODY_BYTES
 - LTT_PUBLIC_API_READ_ONLY
+- LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS
 - LTT_PUBLIC_API_RPM
 - LTT_PUBLIC_API_TOOLS
 - LTT_PUBLIC_API_TRUSTED_PROXIES
@@ -1056,7 +1059,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (279 file pytest + 3 frontend)
+10. QUALITY GATES (280 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1295,6 +1298,7 @@ Test inventory:
 - tests/test_310_o_chon_tep.py
 - tests/test_311_vps_giao_dien_mvp.py
 - tests/test_312_vps_khoa_dich_vu.py
+- tests/test_313_llm_admission.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1362,8 +1366,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1201 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:916, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1203 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:918, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1376,7 +1380,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [README.md] (1)
 - README.md
 
-[alembic] (57)
+[alembic] (58)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1434,6 +1438,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - alembic/versions/20260824_2300_vps_console_ve_pve_ve_text.py
 - alembic/versions/20260824_2400_vps_bang_thong.py
 - alembic/versions/20260824_2500_vps_sao_luu.py
+- alembic/versions/20260828_1000_job_admission_resource.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2203,7 +2208,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (296)
+[tests] (297)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2453,6 +2458,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tests/test_310_o_chon_tep.py
 - tests/test_311_vps_giao_dien_mvp.py
 - tests/test_312_vps_khoa_dich_vu.py
+- tests/test_313_llm_admission.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2621,7 +2627,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1201 file; 11963038 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1203 file; 11978617 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7407,6 +7413,43 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_column("vps_instance", "sao_luu_luc")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260828_1000_job_admission_resource.py
+SHA256=710ee1b49727d56ca1f1fcae360c8355841d173d2a2160d8e6af10e1928b6c8d BYTES=985 LINES=31
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H41.9/Q114: snapshot admission resource on durable jobs.
+
+Revision ID: b5e81f2a7c40
+Revises: a4d70e93f158
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "b5e81f2a7c40"
+down_revision = "a4d70e93f158"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column("jobs", sa.Column(
+        "admission_resource", sa.String(length=96),
+        nullable=False, server_default=""))
+    op.add_column("jobs", sa.Column(
+        "admission_slots", sa.Integer(), nullable=False, server_default="0"))
+    op.create_index("ix_jobs_admission_resource", "jobs", ["admission_resource"])
+    op.create_index(
+        "ix_jobs_admission_queue", "jobs",
+        ["admission_resource", "status", "created_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_jobs_admission_queue", table_name="jobs")
+    op.drop_index("ix_jobs_admission_resource", table_name="jobs")
+    op.drop_column("jobs", "admission_slots")
+    op.drop_column("jobs", "admission_resource")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -16350,7 +16393,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=6f38f8996c0c8eb8c6cd3b88415b6451cbe8c87c5da40a821b9f22e6d476c3cd BYTES=13387 LINES=248
+SHA256=e0381a2a2a28d4dc57b0d35007c42e9547375d7e0d23dd57269df582a033704f BYTES=13630 LINES=251
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16521,6 +16564,9 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="text.chat", job_type="ltt_llm.chat",
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
+        # Cả job, sync và stream cùng tranh đúng một slot của model nhà. Đây là
+        # metadata vận hành, không phải alias công khai và không lộ model id.
+        admission_resource="llm_remote", admission_slots=1,
         params_schema={
             "messages": {"type": "json[]", "required": True},
             "model": {"type": "enum",
@@ -73798,7 +73844,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=572ebf40b9c05eeca22479fb42ab79db8bdcd9bffb238425c6607a6f973783fb BYTES=254849 LINES=3604
+SHA256=4042d8ee7b7d972473d44bcaedcaa4fb593f4b053222b6f40b6f33c04155943e BYTES=254859 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77369,7 +77415,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B, request thứ hai 429 trong 0,05s. Q0 đã khóa bằng Q114 + hợp đồng admission: `jobs` là durable queue duy nhất, sync/stream dùng fail-fast execution lease; đang triển khai Q1 global/resource/account cap nguyên tử |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B. Q0/Q114 đã khóa; Q1a global/resource/account cap + khóa transaction + migration đã xanh CPU/API, test race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo execution lease chung async/sync/stream bằng provider mock |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
@@ -102303,7 +102349,7 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_submit.py
-SHA256=eed4038e730c0d24a6787a0f5aa10e9f48ec74808335c4ad2cf0f05797573d93 BYTES=3912 LINES=73
+SHA256=2454f4952dbf0a9f23301147ff39996679437beda556700812f62a88aafb11bb BYTES=4088 LINES=76
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_submit.py — nộp job KÈM giữ chỗ credit, trong một giao dịch (H3 × H2).
@@ -102349,6 +102395,7 @@ def submit_with_credit(
     params: dict, dedupe_key: str = "", max_attempts: int = 3,
     correlation_id: str = "", retry_of_id: str = "",
     quoted_credit: int | None = None,
+    admission_resource: str = "", admission_slots: int = 0,
 ) -> Job:
     """Nộp job và giữ chỗ credit trong cùng transaction. KHÔNG commit — caller
     commit (nhờ vậy job + credit cùng thành hoặc cùng bại).
@@ -102372,7 +102419,9 @@ def submit_with_credit(
 
     job = jobs.submit(db, user_id=user_id, app_slug=app_slug, job_type=job_type,
                       params=params, dedupe_key=dedupe_key, max_attempts=max_attempts,
-                      correlation_id=correlation_id, retry_of_id=retry_of_id)
+                      correlation_id=correlation_id, retry_of_id=retry_of_id,
+                      admission_resource=admission_resource,
+                      admission_slots=admission_slots)
 
     # Chỉ giữ chỗ cho job MỚI. Dedupe trả job cũ → đã giữ rồi → bỏ qua.
     if credit.so_da_giu(db, job.id) == 0 and estimate > 0:
@@ -102382,7 +102431,7 @@ def submit_with_credit(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/jobs.py
-SHA256=8a52116324d5e42fdfb0b3699c5bc99e5c0cea5eeb821ae35707a47d4b75d3c9 BYTES=12452 LINES=293
+SHA256=f543d75fe2c1b0f31457ac77e04d2359501907d12ceb1997f3ec9a771fd1fadf BYTES=12641 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — hàng đợi job tự quản trên PostgreSQL (H2, Q26).
@@ -102446,7 +102495,8 @@ def _aware(dt: Optional[datetime]) -> Optional[datetime]:
 def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
            params: dict, dedupe_key: str = "", max_attempts: int = 3,
            parent_id: str = "", plan_id: str = "", step_id: str = "",
-           correlation_id: str = "", retry_of_id: str = "") -> Job:
+           correlation_id: str = "", retry_of_id: str = "",
+           admission_resource: str = "", admission_slots: int = 0) -> Job:
     """Tạo một job ở trạng thái `queued`. KHÔNG commit — caller commit cùng credit.
 
     Nếu `dedupe_key` khác rỗng và đã có một job **chưa kết thúc** (queued/running)
@@ -102471,6 +102521,8 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         max_attempts=max_attempts, status=JOB_QUEUED,
         parent_id=parent_id, plan_id=plan_id, step_id=step_id,
         retry_of_id=retry_of_id,
+        admission_resource=str(admission_resource or "")[:96],
+        admission_slots=max(0, int(admission_slots or 0)),
     )
     if correlation_id:
         job.correlation_id = correlation_id[:36]
@@ -104472,7 +104524,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=d4484c86eeb3679a11ebfb1c4ae4bedd292a6762fe96e8e035641b5abcd476e8 BYTES=47687 LINES=871
+SHA256=9419e95569ae63a05eb56aac8e456f9fa7fc9e091c02a80809d0cf261e879d7b BYTES=48263 LINES=880
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -104761,6 +104813,13 @@ class Job(Base):
     max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
     dedupe_key: Mapped[str] = mapped_column(String(128), default="", nullable=False)
 
+    # Tài nguyên admission được chụp lúc submit. Không suy lại từ manifest khi
+    # worker chạy: một deploy đổi manifest không được đổi hàng đang chờ sang
+    # một pool khác. Rỗng giữ tương thích job UI/legacy không qua Public API.
+    admission_resource: Mapped[str] = mapped_column(
+        String(96), default="", nullable=False, index=True)
+    admission_slots: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     # Quan hệ execution Agent. Chuỗi rỗng giữ tương thích toàn bộ job cũ.
     parent_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
                                             index=True)
@@ -104796,6 +104855,8 @@ class Job(Base):
         # ORDER BY created_at. Khi bảng job lớn, quét tuần tự mỗi vòng worker sẽ
         # tốn; index tổng hợp này cho claim đi thẳng vào đúng dòng đến hạn.
         Index("ix_jobs_claim", "status", "next_run_at", "created_at"),
+        Index("ix_jobs_admission_queue", "admission_resource", "status",
+              "created_at"),
     )
 
     def __repr__(self) -> str:      # pragma: no cover
@@ -109641,7 +109702,7 @@ __all__ = ["Unavailable", "check", "reset"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
-SHA256=8ae1c807c4187be094c261db980ed6fccefef1c7f63c12a6954e0943307b7dc6 BYTES=18325 LINES=417
+SHA256=01f9924fb15bd54a814992005b531dbf6b9b0672eb85dc9de211bc0887f51c5a BYTES=18794 LINES=426
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The public tool catalog: what ``/api/v1`` is allowed to offer, and in what shape.
 
@@ -109751,6 +109812,10 @@ class PublicTool:
     #: expect a job id or an answer *before* it writes the integration, rather
     #: than discovering it from the shape of the first response.
     execution_mode: str = ASYNC_JOB
+    #: Operational only; deliberately absent from `to_public_dict`. Routes and
+    #: workers use it to compete for one pool without exposing topology/model.
+    admission_resource: str = ""
+    admission_slots: int = 0
 
     def to_public_dict(self) -> dict:
         body = {
@@ -109944,6 +110009,8 @@ def project_tool(manifest, tool) -> PublicTool:
         str(key): {"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string")}
         for key, value in tool.returns.items()}}
 
+    from platform_core.public_api.limits import resource_class
+
     return PublicTool(
         name=str(contract.get("public_name") or tool.name),
         # The internal description is written for whoever maintains the app and
@@ -109961,6 +110028,9 @@ def project_tool(manifest, tool) -> PublicTool:
         deprecated=str(contract.get("deprecated") or ""),
         aliases=tuple(str(name) for name in (contract.get("aliases") or ())),
         execution_mode=mode_of_tool(contract),
+        admission_resource=str(
+            getattr(tool, "admission_resource", "") or resource_class(manifest)),
+        admission_slots=max(0, int(getattr(tool, "admission_slots", 0) or 0)),
     )
 
 
@@ -110064,7 +110134,7 @@ def require_tool(catalog: list, name: str, principal=None) -> PublicTool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/config.py
-SHA256=0835c0286b45d8864e65543d0c75980b1b3bceb7e36531543db240bd74ecfa9b BYTES=7537 LINES=165
+SHA256=0c7d7f18bb69347e8e5b3b47325fc0c79da6d64c6dc4cc33e08d20a177423d3d BYTES=8158 LINES=177
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Configuration and kill switches for the Public API (Q92).
 
@@ -110101,6 +110171,12 @@ Environment variables (all optional; the defaults are production-safe):
 ``LTT_PUBLIC_API_MAX_ACTIVE_JOBS``
     Queued+running jobs one account may hold at once (default 5). This is the
     backpressure that stops one customer filling the queue everybody waits in.
+``LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT``
+    Total queued Public API jobs across accounts/resources (default 100).
+``LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS``
+    Per-admission-resource queued caps, e.g. ``llm_remote:8,gpu:20``. Empty
+    means the global/account caps still apply but that resource has no tighter
+    queue cap.
 ``LTT_PUBLIC_API_CLASS_CONCURRENCY``
     Per-resource-class ceiling, e.g. ``gpu:2,ffmpeg:4``. Empty = off.
 ``LTT_PUBLIC_API_DAILY_CREDIT``
@@ -110195,6 +110271,8 @@ class PublicApiConfig:
     create_rpm: int = 20
     max_active_jobs: int = 5
     class_concurrency: dict = field(default_factory=dict)
+    global_queue_limit: int = 100
+    resource_queue_limits: dict = field(default_factory=dict)
     daily_credit_limit: int = 0
     auth_failure_limit: int = 20
     auth_failure_window_s: int = 300
@@ -110224,6 +110302,10 @@ def load_public_api_config(env: dict | None = None) -> PublicApiConfig:
         create_rpm=_int(values, "LTT_PUBLIC_API_CREATE_RPM", 20, 0, 100_000),
         max_active_jobs=_int(values, "LTT_PUBLIC_API_MAX_ACTIVE_JOBS", 5, 0, 10_000),
         class_concurrency=_pairs(values, "LTT_PUBLIC_API_CLASS_CONCURRENCY"),
+        global_queue_limit=_int(
+            values, "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT", 100, 0, 1_000_000),
+        resource_queue_limits=_pairs(
+            values, "LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS"),
         daily_credit_limit=_int(values, "LTT_PUBLIC_API_DAILY_CREDIT", 0, 0,
                                 1_000_000_000),
         auth_failure_limit=_int(values, "LTT_PUBLIC_API_AUTH_FAILURES", 20, 0,
@@ -112835,7 +112917,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=487ac7deb758abd20319d6d7c209445132c6aabb50dda8c18f35c86fb15ba759 BYTES=13758 LINES=304
+SHA256=7e3e21197e98bbed6897b1cf8753790322305c88ec4c814f422e732b3cc33150 BYTES=14035 LINES=308
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -113126,6 +113208,8 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         return jobq.submit(
             db, user_id=principal.user_id, app_slug=tool.app_slug,
             job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+            admission_resource=getattr(tool, "admission_resource", "") or "api",
+            admission_slots=getattr(tool, "admission_slots", 0),
         )
     # The quote is a promise: hold exactly what it said. Recomputing here would
     # skip the published price bounds and charge past a number the customer was
@@ -113134,6 +113218,8 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
         quoted_credit=int(quote.get("credit", 0)),
+        admission_resource=getattr(tool, "admission_resource", "") or "api",
+        admission_slots=getattr(tool, "admission_slots", 0),
     )
 
 
@@ -113574,7 +113660,7 @@ __all__ = ["DEVKEY_ACTIVE", "DeveloperKeyError", "current_pepper", "digest_secre
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/limits.py
-SHA256=cd151f655bac6ec8fca9cd5f7cabd5a3508bcf0b453cf0cc03b0d0ddfcc4802a BYTES=14403 LINES=318
+SHA256=4cc1ec1e7a3d4bf83554bc915483e1d0f432570b0c3d8a9fbf57df203ac9a7fd BYTES=18234 LINES=405
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rate, quota, concurrency and capacity limits for the Public API.
 
@@ -113776,7 +113862,8 @@ def enforce_create_rate(*, key_id: str, config, limits=None,
 
 # ── Layer 4: concurrency and capacity (database-backed) ───────────────────────
 
-def active_job_count(db, user_id: str, *, app_slugs=None) -> int:
+def active_job_count(db, user_id: str, *, app_slugs=None,
+                     resource: str = "") -> int:
     from sqlalchemy import func, select
     from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
 
@@ -113785,7 +113872,49 @@ def active_job_count(db, user_id: str, *, app_slugs=None) -> int:
         Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
     if app_slugs:
         statement = statement.where(Job.app_slug.in_(list(app_slugs)))
+    if resource:
+        statement = statement.where(Job.admission_resource == str(resource))
     return int(db.execute(statement).scalar_one())
+
+
+def queued_job_count(db, *, resource: str = "") -> int:
+    """Queued work admitted through the Public API, globally or by resource."""
+    from sqlalchemy import func, select
+    from platform_core.models import JOB_QUEUED, Job
+
+    statement = select(func.count(Job.id)).where(
+        Job.status == JOB_QUEUED,
+        # Empty is a legacy/UI job. Public API submission always snapshots a
+        # resource, so the global Public API cap cannot throttle unrelated UI.
+        Job.admission_resource != "",
+    )
+    if resource:
+        statement = statement.where(Job.admission_resource == str(resource))
+    return int(db.execute(statement).scalar_one())
+
+
+def _lock_job_admission(db, *, user_id: str, resource: str,
+                        global_limit: int, resource_limit: int,
+                        account_limit: int, account_resource_limit: int) -> None:
+    """Serialise quota check + caller's later insert in the same transaction.
+
+    Every caller takes locks in one fixed order. They are transaction locks, so
+    the route's final commit/rollback releases them together with job+credit.
+    SQLite skips this; the PostgreSQL concurrency suite proves the race path.
+    """
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    keys: list[str] = []
+    if global_limit > 0:
+        keys.append("public-api-admission:0:global")
+    if resource and (resource_limit > 0 or account_resource_limit > 0):
+        keys.append(f"public-api-admission:1:resource:{resource}")
+    if account_limit > 0 or account_resource_limit > 0:
+        keys.append(f"public-api-admission:2:account:{user_id}")
+    for key in keys:
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": key})
 
 
 def resource_class(manifest) -> str:
@@ -113813,8 +113942,50 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
     burst into an hours-long backlog that every other customer waits behind,
     and the credit for it is already held.
     """
-    limit = (config.max_active_jobs if limits is None
-             else limits.max_active_jobs)
+    enforce_job_admission(
+        db, principal=principal, config=config, app_slug=app_slug,
+        class_slugs=class_slugs, resource=resource, limits=limits)
+
+
+def enforce_job_admission(db, *, principal, config, app_slug: str = "",
+                          class_slugs=None, resource: str = "api",
+                          limits=None) -> None:
+    """Atomically enforce durable queue/account caps before job+credit insert.
+
+    Caller must insert and commit on this same session. Calling this function
+    and then committing before the insert re-opens the exact race it closes.
+    """
+    limit = (config.max_active_jobs if limits is None else limits.max_active_jobs)
+    classes = (config.class_concurrency if limits is None
+               else limits.class_concurrency)
+    class_limit = classes.get(resource, 0)
+    global_limit = int(getattr(config, "global_queue_limit", 0) or 0)
+    resource_limits = dict(getattr(config, "resource_queue_limits", {}) or {})
+    resource_limit = int(resource_limits.get(resource, 0) or 0)
+
+    _lock_job_admission(
+        db, user_id=principal.user_id, resource=resource,
+        global_limit=global_limit, resource_limit=resource_limit,
+        account_limit=limit, account_resource_limit=class_limit)
+
+    if global_limit > 0:
+        queued = queued_job_count(db)
+        if queued >= global_limit:
+            _bump("queue_limited:global")
+            raise _too_many(
+                "The job queue is full right now.", 30,
+                code=CODE_CONCURRENCY, scope="global_queue",
+                queued_jobs=queued, limit=global_limit)
+
+    if resource_limit > 0:
+        queued = queued_job_count(db, resource=resource)
+        if queued >= resource_limit:
+            _bump(f"queue_limited:{resource}")
+            raise _too_many(
+                f"The {resource} queue is full right now.", 30,
+                code=CODE_CONCURRENCY, scope="resource_queue",
+                resource=resource, queued_jobs=queued, limit=resource_limit)
+
     if limit > 0:
         active = active_job_count(db, principal.user_id)
         if active >= limit:
@@ -113823,11 +113994,13 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
                 "This account already has the maximum number of active jobs.",
                 30, code=CODE_CONCURRENCY, active_jobs=active, limit=limit)
 
-    classes = (config.class_concurrency if limits is None
-               else limits.class_concurrency)
-    class_limit = classes.get(resource, 0)
-    if class_limit > 0 and class_slugs:
-        active = active_job_count(db, principal.user_id, app_slugs=class_slugs)
+    if class_limit > 0:
+        active = active_job_count(
+            db, principal.user_id,
+            resource=resource,
+            # Old rows created before admission metadata still count by app
+            # class during a rolling deploy.
+            app_slugs=class_slugs if not resource else None)
         if active >= class_limit:
             _bump(f"capacity_limited:{resource}")
             raise _too_many(
@@ -119598,7 +119771,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=d4e29b48150ded840b8f6e76a92989460cc21dafdf02f2352efaaff203923e4e BYTES=46090 LINES=896
+SHA256=68b2da5afb121cc23df39ea8b74f3ad1a78a3f38c4cbd2fb07482e31266776e4 BYTES=46607 LINES=904
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -119722,6 +119895,14 @@ class ToolSpec:
     # `description` cũng vậy: mô tả nội bộ hay nêu thẳng tên nhà cung cấp, nên
     # tool public phải viết lại một câu cho khách.
     api_contract: dict = field(default_factory=dict)
+
+    # Tài nguyên thực thi dùng chung mà tool phải giành trước khi chạm provider.
+    # Rỗng = dùng lớp tài nguyên của manifest. Tên do app khai; nền tảng không
+    # suy từ slug/model/host, vì các tên đó đổi độc lập với năng lực thật.
+    admission_resource: str = ""
+    # Số lượt thực thi đồng thời mà tài nguyên trên cho phép. 0 = admission
+    # không cấp execution lease (giữ tương thích tool hiện có).
+    admission_slots: int = 0
 
 
 @dataclass(frozen=True)
@@ -129043,7 +129224,7 @@ def documented_paths() -> frozenset:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/jobs.py
-SHA256=7214ea67f3f82e03378191a82ab850a277f1b24b5fa9c0e1b8d3510b27208819 BYTES=21666 LINES=440
+SHA256=579b2e255f7cb72678e74274364311cf7be857c2f663ce64fbb3ee77ba06f5b6 BYTES=21507 LINES=435
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/quotes`` and ``/api/v1/jobs`` — the chargeable control plane.
 
@@ -129213,12 +129394,7 @@ def register_job_routes(api, config, tag: str) -> None:
     """Attach the chargeable routes directly onto the public sub-application."""
 
     def _resource_of(tool) -> str:
-        from platform_core.registry import discover
-
-        for item in discover():
-            if item.manifest.slug == tool.app_slug:
-                return limits.resource_class(item.manifest)
-        return "api"
+        return str(getattr(tool, "admission_resource", "") or "api")
 
     def _class_slugs(tool) -> list:
         """Apps competing for the same scarce resource as this tool."""
@@ -166437,7 +166613,7 @@ def test_artifact_ids_round_trip_and_reject_garbage():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_184_public_api_limits.py
-SHA256=6f51d58058d75349e552bc566173a7b92bfcecffaac2420534f255fff5ee75da BYTES=16358 LINES=412
+SHA256=1dd118779731f0023af708d753a76c507648a193a5c1431f297f2fe4ec8d3325 BYTES=17911 LINES=449
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 08 — rate, quota, concurrency, capacity.
 
@@ -166764,6 +166940,43 @@ def test_a_capacity_limited_create_never_holds_credit(make_api):
         assert holds == 1
     finally:
         _close(gen)
+
+
+def test_global_public_queue_cap_applies_across_accounts(make_api):
+    api = make_api(LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT="1",
+                   LTT_PUBLIC_API_MAX_ACTIVE_JOBS="0")
+    first_user, first = _account()
+    second_user, second = _account()
+    assert _create_job(api, first, "global-queue-first-01").status_code == 201
+
+    blocked = _create_job(api, second, "global-queue-second-2")
+    assert blocked.status_code == 429
+    assert blocked.json()["scope"] == "global_queue"
+
+    gen, db = _session()
+    try:
+        # Queue refusal happened before the second account's credit hold.
+        assert db.query(CreditEntry).filter(
+            CreditEntry.user_id == first_user,
+            CreditEntry.kind == CREDIT_HOLD).count() == 1
+        assert db.query(CreditEntry).filter(
+            CreditEntry.user_id == second_user,
+            CreditEntry.kind == CREDIT_HOLD).count() == 0
+    finally:
+        _close(gen)
+
+
+def test_resource_queue_cap_is_enforced_on_the_projected_tool_resource(make_api):
+    api = make_api(LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT="20",
+                   LTT_PUBLIC_API_MAX_ACTIVE_JOBS="0",
+                   LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS="api:1")
+    _first_user, first = _account()
+    _second_user, second = _account()
+    assert _create_job(api, first, "resource-queue-first1").status_code == 201
+    blocked = _create_job(api, second, "resource-queue-second")
+    assert blocked.status_code == 429
+    assert blocked.json()["scope"] == "resource_queue"
+    assert blocked.json()["resource"] == "api"
 
 
 # ── Layer 5: daily credit ceiling ─────────────────────────────────────────────
@@ -214040,6 +214253,134 @@ def test_ghi_app_env_KHONG_BOM():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_313_llm_admission.py
+SHA256=f8facc0ad22bd7e3d121fabb40fab61db558f97ed3a75245bf5fdb97392c2b26 BYTES=4179 LINES=122
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Q114/H41.9 — admission cap/metadata không cần GPU thật."""
+from __future__ import annotations
+
+from types import SimpleNamespace
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv(
+        "LTT_DATABASE_URL", f"sqlite:///{(tmp_path / 'admission.db').as_posix()}")
+    import platform_core.db as dbmod
+
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session()
+    session = next(gen)
+    try:
+        yield session
+    finally:
+        session.close()
+        dbmod.reset_engine()
+
+
+def _principal(user_id: str):
+    return SimpleNamespace(user_id=user_id)
+
+
+def test_ltt_llm_khai_resource_remote_mot_slot():
+    from apps.ltt_llm.manifest import MANIFEST
+    from platform_core.public_api.catalog import project_tool
+
+    tool = MANIFEST.tools[0]
+    assert tool.admission_resource == "llm_remote"
+    assert tool.admission_slots == 1
+    projected = project_tool(MANIFEST, tool)
+    assert projected.admission_resource == "llm_remote"
+    assert projected.admission_slots == 1
+    assert "admission_resource" not in projected.to_public_dict()
+
+
+def test_queue_config_co_global_cap_va_resource_cap():
+    from platform_core.public_api.config import load_public_api_config
+
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "7",
+        "LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS": "llm_remote:3,gpu:5",
+    })
+    assert config.global_queue_limit == 7
+    assert config.resource_queue_limits == {"llm_remote": 3, "gpu": 5}
+
+
+def test_job_luu_resource_de_dem_cap_khong_suy_tu_slug(db):
+    from platform_core import jobs
+
+    row = jobs.submit(
+        db, user_id="u1", app_slug="ten-app-khong-quan-trong",
+        job_type="sample.run", params={}, admission_resource="llm_remote",
+        admission_slots=1,
+    )
+    db.commit()
+    assert row.admission_resource == "llm_remote"
+    assert row.admission_slots == 1
+
+
+def test_global_queue_cap_tu_choi_truoc_khi_insert_job_thu_hai(db):
+    from platform_core import jobs
+    from platform_core.public_api import limits
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.errors import ApiError
+
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "1",
+        "LTT_PUBLIC_API_MAX_ACTIVE_JOBS": "0",
+    })
+    limits.enforce_job_admission(
+        db, principal=_principal("u1"), config=config,
+        resource="llm_remote", class_slugs=())
+    jobs.submit(
+        db, user_id="u1", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+
+    with pytest.raises(ApiError) as caught:
+        limits.enforce_job_admission(
+            db, principal=_principal("u2"), config=config,
+            resource="llm_remote", class_slugs=())
+    assert caught.value.status == 429
+    assert caught.value.extra["scope"] == "global_queue"
+    from platform_core.models import Job
+    assert db.query(Job).count() == 1
+
+
+def test_resource_queue_cap_khong_chan_resource_khac(db):
+    from platform_core import jobs
+    from platform_core.public_api import limits
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.errors import ApiError
+
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "20",
+        "LTT_PUBLIC_API_MAX_ACTIVE_JOBS": "0",
+        "LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS": "llm_remote:1",
+    })
+    jobs.submit(
+        db, user_id="u1", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+
+    with pytest.raises(ApiError) as caught:
+        limits.enforce_job_admission(
+            db, principal=_principal("u2"), config=config,
+            resource="llm_remote", class_slugs=())
+    assert caught.value.extra["scope"] == "resource_queue"
+
+    # Một tài nguyên độc lập không bị burst của LLM chặn.
+    limits.enforce_job_admission(
+        db, principal=_principal("u2"), config=config,
+        resource="gpu", class_slugs=())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_33_secret_scanner.py
 SHA256=f8674f560e82c3709e84970aff9edfa6eedf9183db5af6ef6bfafcf2034200c1 BYTES=3611 LINES=104
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -219981,7 +220322,7 @@ def test_rate_limit_theo_cf_ip_khong_khoa_lien(client):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_73_dong_thoi_pg.py
-SHA256=17b926bcaf6984a1807722c8aeedaeec36c8e705d628b45e047bcb812fc7d5c1 BYTES=11910 LINES=329
+SHA256=c3f7862df858296592b8c1c4c7cc8c39a044324ed00d5db3dc2999347921803b BYTES=14022 LINES=389
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 W0.1/W0.2 — kiểm ĐỒNG THỜI trên PostgreSQL thật (SQLite bỏ qua FOR UPDATE và
@@ -220000,6 +220341,7 @@ from __future__ import annotations
 from tests.conftest import bao_dam_user
 import os
 import threading
+from types import SimpleNamespace
 
 import pytest
 
@@ -220083,6 +220425,65 @@ def test_giu_cho_khong_double_spend_dong_thoi(Sess):
         assert credit.so_du(s2, uid) == 0            # không âm, không mất tiền
     finally:
         s2.close()
+
+
+def test_global_queue_cap_dem_va_insert_nguyen_tu(Sess):
+    """Tám request cùng thấy queue trống vẫn chỉ đúng ba request được commit."""
+    from platform_core import jobs
+    from platform_core.public_api import limits
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.errors import ApiError
+
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "3",
+        "LTT_PUBLIC_API_MAX_ACTIVE_JOBS": "0",
+    })
+    n = 8
+    start = threading.Barrier(n)
+    results: list[str] = []
+    guard = threading.Lock()
+
+    def worker(index: int) -> None:
+        ss = Sess()
+        result = ""
+        try:
+            start.wait()
+            limits.enforce_job_admission(
+                ss, principal=SimpleNamespace(user_id=f"queue-user-{index}"),
+                config=config, resource="llm_remote", class_slugs=())
+            jobs.submit(
+                ss, user_id=f"queue-user-{index}", app_slug="sample",
+                job_type="sample.run", params={},
+                admission_resource="llm_remote", admission_slots=1)
+            ss.commit()
+            result = "ok"
+        except ApiError:
+            ss.rollback()
+            result = "full"
+        except Exception as exc:  # noqa: BLE001 - preserve race diagnostics
+            ss.rollback()
+            result = f"err:{type(exc).__name__}:{exc}"
+        finally:
+            ss.close()
+            with guard:
+                results.append(result)
+
+    threads = [threading.Thread(target=worker, args=(index,)) for index in range(n)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert results.count("ok") == 3, results
+    assert results.count("full") == n - 3, results
+    assert not [value for value in results if value.startswith("err:")], results
+
+    check = Sess()
+    try:
+        from platform_core.models import Job
+        assert check.query(Job).filter_by(admission_resource="llm_remote").count() == 3
+    finally:
+        check.close()
 
 
 def test_claim_khong_nhac_trung_hai_worker(Sess):

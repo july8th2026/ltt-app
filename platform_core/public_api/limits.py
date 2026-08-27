@@ -198,7 +198,8 @@ def enforce_create_rate(*, key_id: str, config, limits=None,
 
 # ── Layer 4: concurrency and capacity (database-backed) ───────────────────────
 
-def active_job_count(db, user_id: str, *, app_slugs=None) -> int:
+def active_job_count(db, user_id: str, *, app_slugs=None,
+                     resource: str = "") -> int:
     from sqlalchemy import func, select
     from platform_core.models import JOB_QUEUED, JOB_RUNNING, Job
 
@@ -207,7 +208,49 @@ def active_job_count(db, user_id: str, *, app_slugs=None) -> int:
         Job.status.in_((JOB_QUEUED, JOB_RUNNING)))
     if app_slugs:
         statement = statement.where(Job.app_slug.in_(list(app_slugs)))
+    if resource:
+        statement = statement.where(Job.admission_resource == str(resource))
     return int(db.execute(statement).scalar_one())
+
+
+def queued_job_count(db, *, resource: str = "") -> int:
+    """Queued work admitted through the Public API, globally or by resource."""
+    from sqlalchemy import func, select
+    from platform_core.models import JOB_QUEUED, Job
+
+    statement = select(func.count(Job.id)).where(
+        Job.status == JOB_QUEUED,
+        # Empty is a legacy/UI job. Public API submission always snapshots a
+        # resource, so the global Public API cap cannot throttle unrelated UI.
+        Job.admission_resource != "",
+    )
+    if resource:
+        statement = statement.where(Job.admission_resource == str(resource))
+    return int(db.execute(statement).scalar_one())
+
+
+def _lock_job_admission(db, *, user_id: str, resource: str,
+                        global_limit: int, resource_limit: int,
+                        account_limit: int, account_resource_limit: int) -> None:
+    """Serialise quota check + caller's later insert in the same transaction.
+
+    Every caller takes locks in one fixed order. They are transaction locks, so
+    the route's final commit/rollback releases them together with job+credit.
+    SQLite skips this; the PostgreSQL concurrency suite proves the race path.
+    """
+    if db.bind is None or db.bind.dialect.name != "postgresql":
+        return
+    from sqlalchemy import text
+
+    keys: list[str] = []
+    if global_limit > 0:
+        keys.append("public-api-admission:0:global")
+    if resource and (resource_limit > 0 or account_resource_limit > 0):
+        keys.append(f"public-api-admission:1:resource:{resource}")
+    if account_limit > 0 or account_resource_limit > 0:
+        keys.append(f"public-api-admission:2:account:{user_id}")
+    for key in keys:
+        db.execute(text("SELECT pg_advisory_xact_lock(hashtext(:k))"), {"k": key})
 
 
 def resource_class(manifest) -> str:
@@ -235,8 +278,50 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
     burst into an hours-long backlog that every other customer waits behind,
     and the credit for it is already held.
     """
-    limit = (config.max_active_jobs if limits is None
-             else limits.max_active_jobs)
+    enforce_job_admission(
+        db, principal=principal, config=config, app_slug=app_slug,
+        class_slugs=class_slugs, resource=resource, limits=limits)
+
+
+def enforce_job_admission(db, *, principal, config, app_slug: str = "",
+                          class_slugs=None, resource: str = "api",
+                          limits=None) -> None:
+    """Atomically enforce durable queue/account caps before job+credit insert.
+
+    Caller must insert and commit on this same session. Calling this function
+    and then committing before the insert re-opens the exact race it closes.
+    """
+    limit = (config.max_active_jobs if limits is None else limits.max_active_jobs)
+    classes = (config.class_concurrency if limits is None
+               else limits.class_concurrency)
+    class_limit = classes.get(resource, 0)
+    global_limit = int(getattr(config, "global_queue_limit", 0) or 0)
+    resource_limits = dict(getattr(config, "resource_queue_limits", {}) or {})
+    resource_limit = int(resource_limits.get(resource, 0) or 0)
+
+    _lock_job_admission(
+        db, user_id=principal.user_id, resource=resource,
+        global_limit=global_limit, resource_limit=resource_limit,
+        account_limit=limit, account_resource_limit=class_limit)
+
+    if global_limit > 0:
+        queued = queued_job_count(db)
+        if queued >= global_limit:
+            _bump("queue_limited:global")
+            raise _too_many(
+                "The job queue is full right now.", 30,
+                code=CODE_CONCURRENCY, scope="global_queue",
+                queued_jobs=queued, limit=global_limit)
+
+    if resource_limit > 0:
+        queued = queued_job_count(db, resource=resource)
+        if queued >= resource_limit:
+            _bump(f"queue_limited:{resource}")
+            raise _too_many(
+                f"The {resource} queue is full right now.", 30,
+                code=CODE_CONCURRENCY, scope="resource_queue",
+                resource=resource, queued_jobs=queued, limit=resource_limit)
+
     if limit > 0:
         active = active_job_count(db, principal.user_id)
         if active >= limit:
@@ -245,11 +330,13 @@ def enforce_active_jobs(db, *, principal, config, app_slug: str,
                 "This account already has the maximum number of active jobs.",
                 30, code=CODE_CONCURRENCY, active_jobs=active, limit=limit)
 
-    classes = (config.class_concurrency if limits is None
-               else limits.class_concurrency)
-    class_limit = classes.get(resource, 0)
-    if class_limit > 0 and class_slugs:
-        active = active_job_count(db, principal.user_id, app_slugs=class_slugs)
+    if class_limit > 0:
+        active = active_job_count(
+            db, principal.user_id,
+            resource=resource,
+            # Old rows created before admission metadata still count by app
+            # class during a rolling deploy.
+            app_slugs=class_slugs if not resource else None)
         if active >= class_limit:
             _bump(f"capacity_limited:{resource}")
             raise _too_many(

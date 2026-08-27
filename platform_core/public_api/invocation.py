@@ -287,6 +287,8 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         return jobq.submit(
             db, user_id=principal.user_id, app_slug=tool.app_slug,
             job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+            admission_resource=getattr(tool, "admission_resource", "") or "api",
+            admission_slots=getattr(tool, "admission_slots", 0),
         )
     # The quote is a promise: hold exactly what it said. Recomputing here would
     # skip the published price bounds and charge past a number the customer was
@@ -295,6 +297,8 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
         quoted_credit=int(quote.get("credit", 0)),
+        admission_resource=getattr(tool, "admission_resource", "") or "api",
+        admission_slots=getattr(tool, "admission_slots", 0),
     )
 
 

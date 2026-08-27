@@ -325,6 +325,43 @@ def test_a_capacity_limited_create_never_holds_credit(make_api):
         _close(gen)
 
 
+def test_global_public_queue_cap_applies_across_accounts(make_api):
+    api = make_api(LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT="1",
+                   LTT_PUBLIC_API_MAX_ACTIVE_JOBS="0")
+    first_user, first = _account()
+    second_user, second = _account()
+    assert _create_job(api, first, "global-queue-first-01").status_code == 201
+
+    blocked = _create_job(api, second, "global-queue-second-2")
+    assert blocked.status_code == 429
+    assert blocked.json()["scope"] == "global_queue"
+
+    gen, db = _session()
+    try:
+        # Queue refusal happened before the second account's credit hold.
+        assert db.query(CreditEntry).filter(
+            CreditEntry.user_id == first_user,
+            CreditEntry.kind == CREDIT_HOLD).count() == 1
+        assert db.query(CreditEntry).filter(
+            CreditEntry.user_id == second_user,
+            CreditEntry.kind == CREDIT_HOLD).count() == 0
+    finally:
+        _close(gen)
+
+
+def test_resource_queue_cap_is_enforced_on_the_projected_tool_resource(make_api):
+    api = make_api(LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT="20",
+                   LTT_PUBLIC_API_MAX_ACTIVE_JOBS="0",
+                   LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS="api:1")
+    _first_user, first = _account()
+    _second_user, second = _account()
+    assert _create_job(api, first, "resource-queue-first1").status_code == 201
+    blocked = _create_job(api, second, "resource-queue-second")
+    assert blocked.status_code == 429
+    assert blocked.json()["scope"] == "resource_queue"
+    assert blocked.json()["resource"] == "api"
+
+
 # ── Layer 5: daily credit ceiling ─────────────────────────────────────────────
 
 def test_the_daily_credit_ceiling_stops_spending_before_the_hold(make_api):

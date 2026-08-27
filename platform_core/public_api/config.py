@@ -33,6 +33,12 @@ Environment variables (all optional; the defaults are production-safe):
 ``LTT_PUBLIC_API_MAX_ACTIVE_JOBS``
     Queued+running jobs one account may hold at once (default 5). This is the
     backpressure that stops one customer filling the queue everybody waits in.
+``LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT``
+    Total queued Public API jobs across accounts/resources (default 100).
+``LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS``
+    Per-admission-resource queued caps, e.g. ``llm_remote:8,gpu:20``. Empty
+    means the global/account caps still apply but that resource has no tighter
+    queue cap.
 ``LTT_PUBLIC_API_CLASS_CONCURRENCY``
     Per-resource-class ceiling, e.g. ``gpu:2,ffmpeg:4``. Empty = off.
 ``LTT_PUBLIC_API_DAILY_CREDIT``
@@ -127,6 +133,8 @@ class PublicApiConfig:
     create_rpm: int = 20
     max_active_jobs: int = 5
     class_concurrency: dict = field(default_factory=dict)
+    global_queue_limit: int = 100
+    resource_queue_limits: dict = field(default_factory=dict)
     daily_credit_limit: int = 0
     auth_failure_limit: int = 20
     auth_failure_window_s: int = 300
@@ -156,6 +164,10 @@ def load_public_api_config(env: dict | None = None) -> PublicApiConfig:
         create_rpm=_int(values, "LTT_PUBLIC_API_CREATE_RPM", 20, 0, 100_000),
         max_active_jobs=_int(values, "LTT_PUBLIC_API_MAX_ACTIVE_JOBS", 5, 0, 10_000),
         class_concurrency=_pairs(values, "LTT_PUBLIC_API_CLASS_CONCURRENCY"),
+        global_queue_limit=_int(
+            values, "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT", 100, 0, 1_000_000),
+        resource_queue_limits=_pairs(
+            values, "LTT_PUBLIC_API_RESOURCE_QUEUE_LIMITS"),
         daily_credit_limit=_int(values, "LTT_PUBLIC_API_DAILY_CREDIT", 0, 0,
                                 1_000_000_000),
         auth_failure_limit=_int(values, "LTT_PUBLIC_API_AUTH_FAILURES", 20, 0,

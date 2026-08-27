@@ -166,12 +166,7 @@ def register_job_routes(api, config, tag: str) -> None:
     """Attach the chargeable routes directly onto the public sub-application."""
 
     def _resource_of(tool) -> str:
-        from platform_core.registry import discover
-
-        for item in discover():
-            if item.manifest.slug == tool.app_slug:
-                return limits.resource_class(item.manifest)
-        return "api"
+        return str(getattr(tool, "admission_resource", "") or "api")
 
     def _class_slugs(tool) -> list:
         """Apps competing for the same scarce resource as this tool."""

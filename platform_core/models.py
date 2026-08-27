@@ -285,6 +285,13 @@ class Job(Base):
     max_attempts: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
     dedupe_key: Mapped[str] = mapped_column(String(128), default="", nullable=False)
 
+    # Tài nguyên admission được chụp lúc submit. Không suy lại từ manifest khi
+    # worker chạy: một deploy đổi manifest không được đổi hàng đang chờ sang
+    # một pool khác. Rỗng giữ tương thích job UI/legacy không qua Public API.
+    admission_resource: Mapped[str] = mapped_column(
+        String(96), default="", nullable=False, index=True)
+    admission_slots: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     # Quan hệ execution Agent. Chuỗi rỗng giữ tương thích toàn bộ job cũ.
     parent_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
                                             index=True)
@@ -320,6 +327,8 @@ class Job(Base):
         # ORDER BY created_at. Khi bảng job lớn, quét tuần tự mỗi vòng worker sẽ
         # tốn; index tổng hợp này cho claim đi thẳng vào đúng dòng đến hạn.
         Index("ix_jobs_claim", "status", "next_run_at", "created_at"),
+        Index("ix_jobs_admission_queue", "admission_resource", "status",
+              "created_at"),
     )
 
     def __repr__(self) -> str:      # pragma: no cover

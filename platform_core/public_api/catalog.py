@@ -106,6 +106,10 @@ class PublicTool:
     #: expect a job id or an answer *before* it writes the integration, rather
     #: than discovering it from the shape of the first response.
     execution_mode: str = ASYNC_JOB
+    #: Operational only; deliberately absent from `to_public_dict`. Routes and
+    #: workers use it to compete for one pool without exposing topology/model.
+    admission_resource: str = ""
+    admission_slots: int = 0
 
     def to_public_dict(self) -> dict:
         body = {
@@ -299,6 +303,8 @@ def project_tool(manifest, tool) -> PublicTool:
         str(key): {"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string")}
         for key, value in tool.returns.items()}}
 
+    from platform_core.public_api.limits import resource_class
+
     return PublicTool(
         name=str(contract.get("public_name") or tool.name),
         # The internal description is written for whoever maintains the app and
@@ -316,6 +322,9 @@ def project_tool(manifest, tool) -> PublicTool:
         deprecated=str(contract.get("deprecated") or ""),
         aliases=tuple(str(name) for name in (contract.get("aliases") or ())),
         execution_mode=mode_of_tool(contract),
+        admission_resource=str(
+            getattr(tool, "admission_resource", "") or resource_class(manifest)),
+        admission_slots=max(0, int(getattr(tool, "admission_slots", 0) or 0)),
     )
 
 

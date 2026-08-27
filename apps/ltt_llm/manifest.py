@@ -167,6 +167,9 @@ MANIFEST = AppManifest(
     tools=(ToolSpec(
         name="text.chat", job_type="ltt_llm.chat",
         description=N_('Sinh văn bản từ hội thoại: coding, chat, agent, tóm tắt.'),
+        # Cả job, sync và stream cùng tranh đúng một slot của model nhà. Đây là
+        # metadata vận hành, không phải alias công khai và không lộ model id.
+        admission_resource="llm_remote", admission_slots=1,
         params_schema={
             "messages": {"type": "json[]", "required": True},
             "model": {"type": "enum",

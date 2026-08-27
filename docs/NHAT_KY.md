@@ -35,6 +35,15 @@
   nhưng cho view không nhất quán nên không dùng kiểm quota; transaction advisory
   lock tự nhả ở commit/rollback; Serializable đòi retry toàn transaction nên
   chưa phải MVP khi nền tảng chưa có transaction retry chung.
+- Q1a đã triển khai: tool khai `admission_resource/admission_slots`; job chụp
+  metadata đó lúc submit; config có global/resource queue cap. Admission lấy
+  khóa PostgreSQL theo thứ tự global → resource → account, đếm lại rồi caller
+  insert job+hold trên cùng transaction. Job UI/legacy resource rỗng không bị
+  global Public API cap kéo vào.
+- Thêm migration head `b5e81f2a7c40`, test API chứng minh queue đầy trả 429
+  trước hold credit và resource khác độc lập. Test race 8 request/limit 3 đã có
+  trong `test_73`; máy hiện không cấu hình PostgreSQL scratch nên ca thật được
+  skip, chưa tính là bằng chứng đồng thời.
 
 ### Lệnh và kết quả thật
 
@@ -44,11 +53,15 @@
 | `python tools\build_system_profile.py` | **PASS**, sinh lại hồ sơ sau khi thêm quy tắc |
 | `python tools\gate.py --vong-lap` | **PASS 19/19**; `--lf` 192,3 giây, chỉ là bằng chứng vòng lặp |
 | `python tools\gate.py --vong-lap` sau Q114/Q0 | **PASS 19/19**; `--lf` 191,1 giây, chỉ là bằng chứng vòng lặp |
+| test Q1a (`test_184`, `test_188`, `test_313`, registry) | **PASS 72**, 1 skip |
+| test Q1a tập trung + race PostgreSQL | **PASS 7**, **skip 2** do thiếu scratch PostgreSQL |
+| `python -m alembic heads` | **PASS**, một head `b5e81f2a7c40` |
+| `python tools\gate.py --vong-lap` sau Q1a | **PASS 19/19**; `--lf` 194,9 giây |
 
 ### Việc tiếp theo
 
-1. Triển khai Q1 global cap + quota lock nguyên tử bằng CPU/CSDL/mock.
-2. Nối execution lease chung vào async/sync/stream bằng provider mock.
+1. Nối execution lease chung vào async/sync/stream bằng provider mock.
+2. Chạy race trên PostgreSQL scratch khi biến an toàn được cấp.
 3. Tiếp tục Q2–Q3 rồi mới mở cửa sổ GPU Q4–Q6; không reboot máy 3090.
 
 ---

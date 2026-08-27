@@ -60,7 +60,8 @@ def _aware(dt: Optional[datetime]) -> Optional[datetime]:
 def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
            params: dict, dedupe_key: str = "", max_attempts: int = 3,
            parent_id: str = "", plan_id: str = "", step_id: str = "",
-           correlation_id: str = "", retry_of_id: str = "") -> Job:
+           correlation_id: str = "", retry_of_id: str = "",
+           admission_resource: str = "", admission_slots: int = 0) -> Job:
     """Tạo một job ở trạng thái `queued`. KHÔNG commit — caller commit cùng credit.
 
     Nếu `dedupe_key` khác rỗng và đã có một job **chưa kết thúc** (queued/running)
@@ -85,6 +86,8 @@ def submit(db: DbSession, *, user_id: str, app_slug: str, job_type: str,
         max_attempts=max_attempts, status=JOB_QUEUED,
         parent_id=parent_id, plan_id=plan_id, step_id=step_id,
         retry_of_id=retry_of_id,
+        admission_resource=str(admission_resource or "")[:96],
+        admission_slots=max(0, int(admission_slots or 0)),
     )
     if correlation_id:
         job.correlation_id = correlation_id[:36]

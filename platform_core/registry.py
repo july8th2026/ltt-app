@@ -121,6 +121,14 @@ class ToolSpec:
     # tool public phải viết lại một câu cho khách.
     api_contract: dict = field(default_factory=dict)
 
+    # Tài nguyên thực thi dùng chung mà tool phải giành trước khi chạm provider.
+    # Rỗng = dùng lớp tài nguyên của manifest. Tên do app khai; nền tảng không
+    # suy từ slug/model/host, vì các tên đó đổi độc lập với năng lực thật.
+    admission_resource: str = ""
+    # Số lượt thực thi đồng thời mà tài nguyên trên cho phép. 0 = admission
+    # không cấp execution lease (giữ tương thích tool hiện có).
+    admission_slots: int = 0
+
 
 @dataclass(frozen=True)
 class NavEntry:

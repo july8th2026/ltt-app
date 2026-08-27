@@ -15,6 +15,7 @@ from __future__ import annotations
 from tests.conftest import bao_dam_user
 import os
 import threading
+from types import SimpleNamespace
 
 import pytest
 
@@ -98,6 +99,65 @@ def test_giu_cho_khong_double_spend_dong_thoi(Sess):
         assert credit.so_du(s2, uid) == 0            # không âm, không mất tiền
     finally:
         s2.close()
+
+
+def test_global_queue_cap_dem_va_insert_nguyen_tu(Sess):
+    """Tám request cùng thấy queue trống vẫn chỉ đúng ba request được commit."""
+    from platform_core import jobs
+    from platform_core.public_api import limits
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.errors import ApiError
+
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "3",
+        "LTT_PUBLIC_API_MAX_ACTIVE_JOBS": "0",
+    })
+    n = 8
+    start = threading.Barrier(n)
+    results: list[str] = []
+    guard = threading.Lock()
+
+    def worker(index: int) -> None:
+        ss = Sess()
+        result = ""
+        try:
+            start.wait()
+            limits.enforce_job_admission(
+                ss, principal=SimpleNamespace(user_id=f"queue-user-{index}"),
+                config=config, resource="llm_remote", class_slugs=())
+            jobs.submit(
+                ss, user_id=f"queue-user-{index}", app_slug="sample",
+                job_type="sample.run", params={},
+                admission_resource="llm_remote", admission_slots=1)
+            ss.commit()
+            result = "ok"
+        except ApiError:
+            ss.rollback()
+            result = "full"
+        except Exception as exc:  # noqa: BLE001 - preserve race diagnostics
+            ss.rollback()
+            result = f"err:{type(exc).__name__}:{exc}"
+        finally:
+            ss.close()
+            with guard:
+                results.append(result)
+
+    threads = [threading.Thread(target=worker, args=(index,)) for index in range(n)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert results.count("ok") == 3, results
+    assert results.count("full") == n - 3, results
+    assert not [value for value in results if value.startswith("err:")], results
+
+    check = Sess()
+    try:
+        from platform_core.models import Job
+        assert check.query(Job).filter_by(admission_resource="llm_remote").count() == 3
+    finally:
+        check.close()
 
 
 def test_claim_khong_nhac_trung_hai_worker(Sess):
