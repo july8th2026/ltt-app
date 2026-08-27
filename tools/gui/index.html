@@ -17,6 +17,8 @@ body{margin:0;background:var(--surface-canvas);color:var(--fg);font-family:var(-
 .logo{width:30px;height:30px;border-radius:var(--radius-sm);background:var(--brand-primary);
       color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.02em}
 .top h1{margin:0;font-size:15.5px;font-weight:650;letter-spacing:-.01em}
+.pb{margin-left:auto;font-size:12px;font-weight:600;color:var(--muted);
+    padding:2px 8px;border:1px solid var(--line);border-radius:999px;white-space:nowrap}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
       padding:16px 17px;margin-bottom:13px}
 .trangthai{display:flex;align-items:center;gap:9px;font-weight:600;font-size:14px}
@@ -78,6 +80,7 @@ a:hover{text-decoration:underline}
   <div class="top">
     <div class="logo">LTT</div>
     <h1>Cắm công cụ viết mã vào LTT Studios</h1>
+    <span class="pb" id="pb" title="Phiên bản công cụ đang chạy">v…</span>
   </div>
 
   <div class="card">
@@ -178,6 +181,7 @@ async function lamMoi() {
   const a = api(); if (!a) return;
   try {
     const kq = await a.xem();
+    if (kq && kq.phien_ban) $("pb").textContent = "v" + kq.phien_ban;
     ve(kq); datTrangThai(kq.trang_thai);
   } catch (e) {
     $("nhatky").textContent = "[LỖI] Không đọc được trạng thái: " + String(e);
@@ -214,7 +218,27 @@ async function chay(ten, fn) {
 
 window.addEventListener("pywebviewready", lamMoi);
 
+// ⛔ Cầu nối GUI↔hệ thống (window.pywebview.api) có thể KHÔNG lên — đã xảy ra
+//    thật 27/08 trên bản EXE thiếu tệp nạp của WebView2 (webview/js). Trước đây
+//    nút ném `Cannot read properties of null` thô, và trạng thái kẹt ở
+//    "Đang đọc…" mãi. Nay: báo rõ đây là lỗi bản dựng + chỉ đường CLI, và khoá
+//    nút để không ai bấm vào một cầu nối chết.
+const CAU_CHET =
+  "[LỖI] Cầu nối GUI↔hệ thống không hoạt động (window.pywebview.api trống).\n" +
+  "Đây là lỗi của bản dựng, KHÔNG phải của bạn — hãy tải bản mới đã sửa, hoặc\n" +
+  "dùng dòng lệnh:  LTTStudios-CamCLI-Console.exe cam --muc codex-vscode";
+function coCau() {
+  const a = api();
+  if (!a) { $("nhatky").textContent = CAU_CHET; khoaNut(true);
+            $("tt").textContent = "Cầu nối không hoạt động"; }
+  return a;
+}
+// Kẹt ở "Đang đọc…" mãi là một màn hình không nói gì. Sau 4 giây không có cầu
+// nối thì nói thẳng, thay vì để người dùng ngồi đoán.
+setTimeout(() => { if (!api()) coCau(); }, 4000);
+
 $("bcam").onclick = () => {
+  const a = coCau(); if (!a) return;
   const k = $("khoa").value.trim();
   if (!k) { $("nhatky").textContent = "Chưa dán khoá."; return; }
   const codex = document.querySelector('input[name="codex"]:checked').value;
@@ -226,10 +250,10 @@ $("bcam").onclick = () => {
   if (codex === "none" && !luaChon.claude_cli && !luaChon.claude_vscode && !luaChon.claude_desktop) {
     $("nhatky").textContent = "Chưa chọn hạng mục nào."; return;
   }
-  chay("Đang cắm các hạng mục đã chọn", () => api().cam(k, luaChon));
+  chay("Đang cắm các hạng mục đã chọn", () => a.cam(k, luaChon));
 };
-$("bkiem").onclick = () => chay("Đang gọi thật một lượt", () => api().kiem());
-$("bgo").onclick = () => chay("Đang gỡ", () => api().go());
+$("bkiem").onclick = () => { const a = coCau(); if (!a) return; chay("Đang gọi thật một lượt", () => a.kiem()); };
+$("bgo").onclick = () => { const a = coCau(); if (!a) return; chay("Đang gỡ", () => a.go()); };
 // Chep bang API cua trinh duyet, KHONG them mot ham thu nam vao cau noi.
 // Moi ham them vao cau noi la mot ham ma trong cua so goi duoc - va viec nay
 // khong can Python lam gi ca.

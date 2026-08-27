@@ -198,7 +198,11 @@ def test_gui_cho_chon_tung_be_mat_va_hien_loi_bridge():
     html = (GOC / "tools" / "gui" / "index.html").read_text(encoding="utf-8")
     for ten in ("codex", "claude_cli", "claude_vscode", "claude_desktop"):
         assert ten in html
-    assert "api().cam(k, luaChon)" in html
+    # Nút "Cắm" đi QUA cầu-nối-guard `coCau()` rồi mới gọi `.cam(k, luaChon)`:
+    # nếu window.pywebview.api trống (bản 1.1.0 thiếu webview/js) thì báo lỗi rõ
+    # thay vì "Cannot read properties of null".
+    assert "coCau()" in html
+    assert "a.cam(k, luaChon)" in html
     assert "catch (e)" in html
     assert "Hoàn tất sau" in html
 

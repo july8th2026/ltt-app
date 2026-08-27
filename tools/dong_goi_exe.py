@@ -99,6 +99,15 @@ def dung_pyinstaller() -> pathlib.Path | None:
         "--distpath", str(dich),
         "--workpath", str(RA / "_work_pyi"),
         "--specpath", str(RA / "_spec"),
+        # 🔴 BAT BUOC. pywebview tiem `window.pywebview.api` bang cac tep JS trong
+        #    `webview/js/` (api.js, customize.js, finish.js). PyInstaller thu duoc
+        #    cac DLL WebView2 (binary) nhung KHONG tu lay cac tep .js do, nen ban
+        #    dong bang khong co chung: WebView2 mo trang duoc nhung CAU NOI khong
+        #    bao gio duoc tiem -> `window.pywebview.api` = null -> moi nut nem
+        #    `Cannot read properties of null`. Bug nay chi hien tren ban EXE, khong
+        #    hien khi chay `python cam_cli_gui.py` (co day du webview/js).
+        #    Do that 27/08 tren may co WebView2 149: thieu 3 tep js -> GUI chet cau.
+        "--collect-data", "webview",
         # `tools/gui/` phai di theo: index.html + ltt.css. Thieu no thi .exe chay
         # duoc nhung cua so trang - hong theo kieu kho doan nhat.
         "--add-data", f"{TOOLS / 'gui'}{';'}gui",

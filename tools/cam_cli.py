@@ -63,8 +63,10 @@ import datetime
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
+import tomllib
 import urllib.error
 import urllib.request
 
@@ -88,7 +90,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.1.0"
+PHIEN_BAN = "1.2.0"
 
 MODEL = "ltt_llm"
 
@@ -410,6 +412,89 @@ def _codex_config_goc(goc: str) -> str:
             f'\n' + _codex_config(goc))
 
 
+# ── Cơ chế chống "rác" trong config.toml của khách ──────────────────────────
+#
+# config.toml thật trên máy khách có thể **đã có sẵn** `[model_providers.ltt]`
+# (khách tự cấu hình model nhà), có sẵn `model = "..."` ở gốc, chú thích, xuống
+# dòng lẫn lộn. Bản đầu chèn mù ⇒ sinh ra **TOML HỎNG** (hai bảng
+# `[model_providers.ltt]`, hoặc hai khoá `model` ở gốc). Codex không parse nổi ⇒
+# tiện ích chết — và `kiem` KHÔNG bắt được, vì nó tự gọi HTTP chứ không nhờ
+# Codex đọc tệp. (Đã dính đúng lỗi này 2026-08-27.)
+#
+# Bốn cơ chế, khớp bốn cách một tệp khách có thể làm hỏng phép chèn:
+#   1. Cổng kiểm TOML  — parse thử kết quả TRƯỚC khi ghi; hỏng thì KHÔNG ghi.
+#   2. Gỡ-trước        — luôn gỡ khối cũ của ta trước khi chèn ⇒ N lần = 1 lần.
+#   3. Không nhân đôi   — đã có `[model_providers.ltt]` thì không chèn lại bảng.
+#   4. Đặt đúng chỗ     — `model`/`model_provider` ở GỐC phải đứng trước mọi bảng;
+#                          vô hiệu bản cũ của khách theo cách ĐẢO NGƯỢC ĐƯỢC.
+
+#: Tiền tố chú-thích-hoá một dòng của khách, đảo ngược được: `go` bóc đúng tiền
+#: tố này để trả dòng về nguyên trạng từng byte.
+TAG_TAT = "#<<cam_cli tam vo hieu, `go` se khoi phuc>> "
+
+_RE_BANG = re.compile(r"^\s*\[")
+_RE_PROVIDER_LTT = re.compile(r"^\s*\[model_providers\.ltt\]\s*$")
+#: Đúng năm khoá top-level mà khối vscode của ta đặt (xem `_codex_profile`). Nếu
+#: khách đã có bất kỳ khoá nào trong số này ở GỐC thì phải vô hiệu, nếu không
+#: TOML sẽ trùng khoá. Xếp dài-trước để bắt đúng khoá dài hơn.
+_KHOA_GOC_TA_DAT = ("model_reasoning_effort", "model_reasoning_summary",
+                    "model_context_window", "model_provider", "model")
+_RE_MODEL_GOC = re.compile(r"^\s*(" + "|".join(_KHOA_GOC_TA_DAT) + r")\s*=")
+
+
+class CauHinhHong(Exception):
+    """Kết quả ghi ra không phải TOML hợp lệ — từ chối ghi để không làm chết Codex."""
+
+
+def _toml_hop_le(van: str) -> tuple[bool, str]:
+    """Parse thử bằng trình TOML nghiêm ngặt (Codex dùng Rust `toml`, cũng nghiêm)."""
+    try:
+        tomllib.loads(van)
+        return True, ""
+    except tomllib.TOMLDecodeError as exc:
+        return False, str(exc)
+    except Exception as exc:  # noqa: BLE001 - phòng thân, vẫn coi là hỏng
+        return False, f"{type(exc).__name__}: {exc}"
+
+
+def _co_provider_ltt(van: str) -> bool:
+    """Có một bảng `[model_providers.ltt]` (ngoài khối của ta) không?"""
+    return any(_RE_PROVIDER_LTT.match(d) for d in van.splitlines())
+
+
+def _vo_hieu_model_goc(van: str, nl: str) -> str:
+    """Chú-thích-hoá các dòng `model`/`model_provider` ở GỐC (trước bảng đầu tiên).
+
+    Đảo ngược được: **chỉ** thêm tiền tố `TAG_TAT`, không đổi gì khác trên dòng.
+    Không đụng tới dòng nằm trong một bảng `[...]` — đó là thiết lập của khách.
+    """
+    ra = []
+    truoc_bang = True
+    for d in van.split(nl):
+        s = d.lstrip()
+        if truoc_bang and not s.startswith("#") and _RE_BANG.match(d):
+            truoc_bang = False
+        if truoc_bang and not s.startswith("#") and _RE_MODEL_GOC.match(d):
+            ra.append(TAG_TAT + d)
+        else:
+            ra.append(d)
+    return nl.join(ra)
+
+
+def _khoi_phuc_model_goc(van: str) -> str:
+    """Bóc tiền tố `TAG_TAT` ở đầu mỗi dòng ⇒ trả dòng về nguyên trạng."""
+    return re.sub(r"(?m)^" + re.escape(TAG_TAT), "", van)
+
+
+def _chen_khoi_dau(noi_dung: str, van: str, nl: str = "\n") -> str:
+    """Như `_chen_khoi` nhưng đặt khối ở **ĐẦU** tệp — cần cho khoá top-level
+    (TOML: khoá không-bảng phải đứng trước mọi bảng). Bố cục phân cách khớp đúng
+    thứ `_go_khoi` gỡ ra (một xuống dòng ngay sau khối)."""
+    than = nl.join(noi_dung.replace("\r\n", "\n").rstrip("\n").split("\n"))
+    khoi = MOC_MO + nl + than + nl + MOC_DONG
+    return khoi + nl + van if van else khoi + nl
+
+
 def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     ra = []
     thu_muc = NHA / ".codex"
@@ -419,9 +504,41 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     _sao_luu(cfg)
     van, crlf = _doc_giu_dong(cfg) if cfg.exists() else ("", "\n")
     tt.setdefault("codex", {})["che_do"] = "vscode" if cho_vscode else "profile"
-    noi_dung = _codex_config_goc(goc) if cho_vscode else _codex_config(goc)
-    _ghi_giu_dong(cfg, _chen_khoi(van, noi_dung, crlf))
-    ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen)")
+
+    # (2) Gỡ-trước: bỏ khối cũ của ta + khôi phục mọi dòng đã tag ⇒ idempotent,
+    #     và mọi `[model_providers.ltt]` còn lại chắc chắn là CỦA KHÁCH.
+    van, _ = _go_khoi(van)
+    van = _khoi_phuc_model_goc(van)
+
+    # (3) Không nhân đôi provider.
+    co_prov = _co_provider_ltt(van)
+    bang_prov = "" if co_prov else _codex_config(goc)
+
+    if cho_vscode:
+        # (4) `model`/`model_provider` phải ở GỐC và đứng trước mọi bảng. Vô hiệu
+        #     bản cũ của khách (đảo ngược được) rồi đặt khối của ta ở ĐẦU tệp.
+        van = _vo_hieu_model_goc(van, crlf)
+        than = _codex_profile()
+        if bang_prov:
+            than += "\n" + bang_prov
+        moi = _chen_khoi_dau(than, van, crlf)
+    else:
+        # Chế độ profile chỉ cần bảng provider ở config.toml (nếu chưa có).
+        moi = _chen_khoi(van, bang_prov, crlf) if bang_prov else van
+
+    # (1) Cổng kiểm TOML — KHÔNG BAO GIỜ ghi ra TOML hỏng.
+    ok, loi = _toml_hop_le(moi)
+    if not ok:
+        ok_truoc, _ = _toml_hop_le(van)
+        goi_y = ("" if ok_truoc else
+                 "  ⚠ config.toml cua ban DA hong san TRUOC khi cam — hay don rac o do truoc.\n")
+        raise CauHinhHong(
+            f"Tu choi ghi {cfg}: ket qua khong phai TOML hop le.\n{goi_y}"
+            f"  Chi tiet: {loi}")
+
+    _ghi_giu_dong(cfg, moi)
+    ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen"
+              + (", da co provider san — khong chen lai" if co_prov else "") + ")")
 
     prof = thu_muc / "ltt.config.toml"
     ghi = tt.setdefault("codex", {})
@@ -452,7 +569,10 @@ def go_codex(tt: dict) -> list:
         # thái: tệp trạng thái có thể mất, còn tệp thì luôn ở đó.
         van_goc, crlf = _doc_giu_dong(cfg)
         van, thay = _go_khoi(van_goc)
-        if thay:
+        # Khôi phục các dòng `model`/`model_provider` của khách mà chế độ vscode
+        # đã tạm vô hiệu (bóc tiền tố TAG_TAT) ⇒ trả về nguyên trạng từng byte.
+        van = _khoi_phuc_model_goc(van)
+        if van != van_goc:
             _ghi_giu_dong(cfg, van, crlf)
             ra.append(f"  [OK] da go khoi cua ta khoi {cfg}")
         else:
@@ -954,8 +1074,13 @@ def lenh_cam(a) -> int:
 
     if MUC_CODEX_CLI in muc or MUC_CODEX_VSCODE in muc:
         print("Codex:")
-        for d in cam_codex(a.goc, tt, MUC_CODEX_VSCODE in muc):
-            print(d)
+        try:
+            for d in cam_codex(a.goc, tt, MUC_CODEX_VSCODE in muc):
+                print(d)
+        except CauHinhHong as exc:
+            print(f"  [!!] {exc}")
+            print("  Khong dat khoa, khong doi gi. Sua config.toml roi cam lai.")
+            return 1
         print(f"  [{'OK' if _setx(ENV_KHOA_CODEX, khoa) else '!!'}] "
               f"{ENV_KHOA_CODEX}")
 

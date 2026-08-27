@@ -27,6 +27,7 @@ import importlib.util
 import json
 import pathlib
 import sys
+import tomllib
 
 import pytest
 
@@ -640,3 +641,74 @@ def test_trang_thai_khong_tin_co_da_cam_trong_tep(cc):
     cc._ghi_trang_thai({"da_cam": True, "goc": "https://app.lttstudios.com"})
     thuc = cc.trang_thai_thuc()
     assert thuc["dang_cam"] is False
+
+
+# ── Cơ chế chống "rác" trong config.toml của khách (2026-08-27) ─────────────
+#
+# ⚠️ KHE HỞ ĐÃ ĐỂ LỌT LỖI: không một test cũ nào **parse** kết quả cắm. Fixture
+#    cũ dùng `[model_providers.cua_toi]` (tên KHÁC), nên ca "khách đã có sẵn
+#    `[model_providers.ltt]`" — đúng ca sinh TOML hỏng (hai bảng trùng) — chưa
+#    bao giờ chạy. `kiem` cũng không bắt được vì nó tự gọi HTTP. Chỉ mở tiện ích
+#    thật mới lộ. Bốn test dưới đóng khe hở đó.
+
+CONFIG_CO_SAN_LTT = """\
+# cua toi, dung xoa
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+
+[model_providers.ltt]
+name = "LTT Studios (toi tu dat)"
+base_url = "https://app.lttstudios.com/api/v1"
+env_key = "LTT_API_KEY"
+wire_api = "responses"
+
+[some_other]
+x = 1
+"""
+
+
+def _viet_cfg(mod, noi_dung: str) -> pathlib.Path:
+    cfg = mod.NHA / ".codex" / "config.toml"
+    cfg.parent.mkdir(parents=True, exist_ok=True)
+    cfg.write_text(noi_dung, encoding="utf-8", newline="")
+    return cfg
+
+
+def test_vscode_ket_qua_LA_TOML_HOP_LE_du_khach_da_co_provider_ltt(cc):
+    """Đúng ca đã làm chết Codex 27/08: khách có sẵn `[model_providers.ltt]` +
+    `model`/`model_reasoning_effort` ở gốc. Kết quả PHẢI parse được."""
+    cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+    cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=True)
+    van = cfg.read_text(encoding="utf-8")
+    d = tomllib.loads(van)                       # <-- CHÍNH LÀ phép kiểm còn thiếu
+    assert d["model"] == "ltt_llm"
+    assert d["model_provider"] == "ltt"
+    assert van.count("[model_providers.ltt]") == 1   # KHÔNG nhân đôi provider
+
+
+def test_vscode_go_tra_ve_DUNG_TUNG_BYTE_khi_da_co_provider_ltt(cc):
+    cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+    goc = cfg.read_bytes()
+    tt = {}
+    cc.cam_codex("https://app.lttstudios.com", tt, cho_vscode=True)
+    assert cfg.read_bytes() != goc               # đã đổi thật
+    tomllib.loads(cfg.read_text(encoding="utf-8"))   # trạng thái "on" vẫn hợp lệ
+    cc.go_codex(tt)
+    assert cfg.read_bytes() == goc               # gỡ trả về nguyên trạng từng byte
+
+
+def test_profile_KHONG_nhan_doi_provider_ltt_da_co_san(cc):
+    cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+    cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=False)
+    van = cfg.read_text(encoding="utf-8")
+    tomllib.loads(van)                           # vẫn hợp lệ
+    assert van.count("[model_providers.ltt]") == 1
+
+
+def test_cong_kiem_TU_CHOI_ghi_khi_ket_qua_hong(cc):
+    """File đã hỏng sẵn (hai bảng trùng) ⇒ cắm phải TỪ CHỐI, không ghi đè mù."""
+    hong = 'model = "x"\n[a]\nk = 1\n[a]\nk = 2\n'
+    cfg = _viet_cfg(cc, hong)
+    with pytest.raises(cc.CauHinhHong):
+        cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=True)
+    assert cfg.read_text(encoding="utf-8") == hong   # không đụng tới tệp hỏng

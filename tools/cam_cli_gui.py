@@ -114,6 +114,7 @@ class Cau:
 
     def xem(self) -> dict:
         kq = self._chay(self._loi.lenh_xem, _Args())
+        kq["phien_ban"] = getattr(self._loi, "PHIEN_BAN", "?")
         try:
             kq["trang_thai"] = self._loi.trang_thai_thuc()
         except Exception as exc:                              # noqa: BLE001
@@ -247,7 +248,7 @@ def main(argv=None) -> int:
         return 1
 
     webview.create_window(
-        "LTT Studios - Cam cong cu viet ma",
+        f"LTT Studios - Cam cong cu viet ma  v{getattr(loi, 'PHIEN_BAN', '?')}",
         str(trang),
         js_api=Cau(loi),
         width=760, height=720, min_size=(680, 600),
