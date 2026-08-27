@@ -212,6 +212,7 @@ def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
     """Bang chung cho lop thu ba. Khong co phep kiem nay thi no chi la mot y dinh."""
     mau = GOC / "server" / "templates" / "vps_dieu_khoan.html"
     goc = mau.read_text(encoding="utf-8")
+    goc_mtime = mau.stat().st_mtime_ns
     try:
         mau.write_text(
             goc.replace("{% block noi_dung %}",
@@ -223,6 +224,7 @@ def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
         assert "VANG" in r.stdout
     finally:
         mau.write_text(goc, encoding="utf-8", newline="\n")
+        os.utime(mau, ns=(goc_mtime, goc_mtime))
 
 
 def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac():
@@ -232,8 +234,11 @@ def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac():
     khac — nen no chi nhan muc CUA DUNG MOT LOAI duoc goi ten.
     """
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    moc_tep = GOC / "tools" / "check_dich_thieu.moc"
     goc = po.read_bytes()
-    moc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
+    moc = moc_tep.read_bytes()
+    goc_mtime = po.stat().st_mtime_ns
+    moc_mtime = moc_tep.stat().st_mtime_ns
     try:
         po.write_bytes(goc.rstrip(b"\n") + b'\n\nmsgid "Chuoi thu loai TRONG"\n'
                                            b'msgstr ""\n')
@@ -243,4 +248,6 @@ def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac():
         assert "ngoai loai VANG" in (r.stdout + r.stderr)
     finally:
         po.write_bytes(goc)
-        (GOC / "tools" / "check_dich_thieu.moc").write_bytes(moc)
+        os.utime(po, ns=(goc_mtime, goc_mtime))
+        moc_tep.write_bytes(moc)
+        os.utime(moc_tep, ns=(moc_mtime, moc_mtime))

@@ -5,6 +5,16 @@
     python tools/test_nhanh.py -k credit  # loc theo ten
     python tools/test_nhanh.py -n 8       # chon so worker
 
+## Mot dieu bat ngo ve `--lf`, de biet truoc thay vi doan giua chung
+
+Cache `lastfailed` cua pytest **tich luy**: chay mot tap con thi cac muc cua tep
+khong duoc thu thap van nam nguyen. Sau mot ngay chay nhieu luot le, no phinh ra
+— do 27/08: **123 muc tu 36 tep**, phan lon da xanh tro lai tu lau.
+
+=> Lan `--lf` DAU TIEN sau mot ngay nhu vay khong nhanh: no rut can cai cache do
+   (do that: 3 phut 30). Cac lan sau moi la ~12 giay. Day la hanh vi DUNG, khong
+   phai loi — nhung neu khong biet thi no trong y het "che do nhanh khong nhanh".
+
 ## ⭐ VÌ SAO CÓ TỆP NÀY
 
 Bộ test đầy đủ mất **2 giờ**, và điều đó đổi cách người ta làm việc theo hướng
@@ -44,7 +54,9 @@ nguyên — nhiều tệp ở đây dựa vào điều đó.
 from __future__ import annotations
 
 import argparse
+import json
 import os
+import pathlib
 import subprocess
 import sys
 import time
@@ -91,6 +103,25 @@ def _ep_utf8() -> None:
             pass
 
 
+def _tep_da_do() -> set[str] | None:
+    """Duong dan tep co it nhat mot test do o luot truoc, theo cache pytest.
+
+    ⛔ `None` = KHONG DOC DUOC, va no khac han mot tap RONG.
+
+       Tap rong nghia la "khong tep nao do" => loc di duoc. `None` nghia la
+       "khong biet" => phai chay HET. Tra `set()` cho ca hai la cach viet ngan
+       hon mot dong va sai ve phia nguy hiem: cache vang mat (may sach, vua
+       `--cache-clear`, thu muc bi siet quyen) se trong Y HET mot luot xanh
+       hoan hao, va che do vong lap se lang le bo qua ca ba tep mai mai.
+    """
+    tep = GOC / ".pytest_cache" / "v" / "cache" / "lastfailed"
+    try:
+        muc = json.loads(tep.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    return {k.split("::", 1)[0].replace("\\", "/") for k in muc}
+
+
 def _chay(argv: list[str], nhan: str) -> tuple[int, float]:
     # ASCII, khong phai ky tu ke khung. Da dinh that 26/08: `gate.py` HUNG dau
     # ra nen stdout khong con la console, Python roi ve `cp1252`, va mot dau
@@ -112,6 +143,9 @@ def main() -> int:
                    help="so worker (mac dinh: auto = so nhan CPU)")
     p.add_argument("--lf", action="store_true",
                    help="chi chay nhung test vua do (--last-failed)")
+    p.add_argument("--lf-rong-thi-khong-chay", action="store_true",
+                   help="di kem --lf: khong co test nao do lan truoc thi chay "
+                        "RONG, thay vi chay tat ca")
     p.add_argument("-k", default="", help="loc theo ten test")
     p.add_argument("--noi-tiep", action="store_true",
                    help="chay mot tien trinh — de doi chieu ket qua")
@@ -120,6 +154,20 @@ def main() -> int:
     chung = [sys.executable, "-m", "pytest", "-q", *BO_QUA, *con_lai]
     if args.lf:
         chung.append("--lf")
+        # 🔴 `--lf` MOT MINH KHONG LAM DIEU NGUOI TA TUONG.
+        #
+        #    Tai lieu pytest noi ro: no chay lai nhung test da do lan truoc,
+        #    **hoac TAT CA neu khong cai nao do**. Nen sau mot luot xanh, `--lf`
+        #    la mot lenh chay day du — mat 4,4 phut thay vi vai giay.
+        #
+        #    Do 27/08: `gate.py --vong-lap` (dat ra de xong trong ~20 giay) mat
+        #    4 phut 26, vi lan truoc moi thu deu xanh.
+        #
+        # ⚠️ `--lfnf none` doi hanh vi do: khong co gi do thi chay RONG. Dung cho
+        #    vong lap sua-roi-thu; KHONG dung cho mot luot lay bang chung, vi
+        #    "chay rong" va "chay het roi xanh" in ra gan giong nhau.
+        if args.lf_rong_thi_khong_chay:
+            chung.append("--lfnf=none")
     if args.k:
         chung += ["-k", args.k]
 
@@ -138,6 +186,31 @@ def main() -> int:
     # ── Pha 2: cac tep ghi vao cay kho, noi tiep ─────────────────────────────
     # ⛔ Chay ca khi pha 1 do: bo qua chung se lam bao cao cuoi noi doi ve do phu.
     co = [t for t in TEP_NOI_TIEP if (GOC / t).is_file()]
+    if args.lf and args.lf_rong_thi_khong_chay:
+        # 🔴 `--lf` KHONG loc duoc pha nay, va ly do rat de doc nham.
+        #
+        #    pytest chi ap `--lfnf` khi cache lastfailed RONG HOAN TOAN. O day
+        #    cache thuong co hang tram muc tu cac tep KHAC, nen voi ba tep nay
+        #    pytest ket luan "co failure da biet" roi... khong deselect gi ca va
+        #    chay tron ca ba tep.
+        #
+        #    Do 27/08: pha 1 con 13 giay nho `--lfnf=none`, pha 2 van 54 giay —
+        #    tuc 80% thoi gian cua che do "vong lap" nam o ba tep ma nguoi dang
+        #    sua gan nhu chac chan khong dung toi.
+        #
+        # ⭐ Nen loc bang TAY, theo duong dan, tu chinh cache do. Va IN RA cai
+        #    bi bo — mot pha bien mat khong tieng dong la thu da lam hong bao
+        #    cao do phu truoc day.
+        do = _tep_da_do()
+        if do is None:
+            print("\n[--lf] khong doc duoc cache lastfailed -> chay CA pha 2.")
+            do = set(co)
+        bo = [t for t in co if t not in do]
+        co = [t for t in co if t in do]
+        if bo:
+            ten = ", ".join(pathlib.PurePath(t).name for t in bo)
+            print(f"\n[--lf] bo qua {len(bo)} tep pha 2 (khong tep nao do lan "
+                  f"truoc): {ten}")
     ma2, t2 = (0, 0.0)
     if co:
         ma2, t2 = _chay(chung + co, f"PHA 2 - noi tiep ({len(co)} tep ghi vao cay kho)")

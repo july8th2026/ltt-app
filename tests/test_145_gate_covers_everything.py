@@ -91,14 +91,59 @@ def test_gate_failure_tail_is_safe_on_windows_cp1252_console():
     assert "\\u" in rendered
 
 
-def test_gate_reports_every_step_instead_of_stopping_at_the_first_failure():
+def _buoc_gia(ten: str, hong: bool, nhom: str):
+    """Một `Step` thật, chạy một tiến trình con vài mili-giây."""
+    import sys as _sys
+
+    from tools.gate import ROOT as _ROOT
+    from tools.gate import Step
+
+    ma = "raise SystemExit(1)" if hong else "pass"
+    return Step(ten, [_sys.executable, "-c", ma], _ROOT, nhom=nhom)
+
+
+@pytest.mark.parametrize("tuan_tu", [True, False])
+@pytest.mark.parametrize("hong_o", ["cong", "nang", "tinh-1"])
+def test_gate_reports_every_step_instead_of_stopping_at_the_first_failure(
+        tuan_tu, hong_o):
     """Dừng ở lỗi đầu buộc người sửa chạy lại cả bộ để thấy lỗi thứ hai — với
-    pytest 20 phút thì mỗi vòng mất nửa giờ."""
-    source = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
-    assert "for step in steps:" in source
-    # Không được thoát sớm giữa vòng chạy.
-    run_loop = source.split("for step in steps:", 1)[1].split("print(\"\\n\"", 1)[0]
-    assert "break" not in run_loop and "return" not in run_loop
+    pytest 20 phút thì mỗi vòng mất nửa giờ.
+
+    ⭐ Phép kiểm này CHẠY bộ lập lịch, không đọc mã nguồn của nó.
+
+       Bản trước so chuỗi `"for step in steps:"` rồi soi đoạn văn bản sau nó tìm
+       `break`/`return`. Nó đúng suốt hai tháng vì gate chỉ có một vòng `for`
+       phẳng — và **đỏ ngay lúc bất biến vẫn còn nguyên**, khi vòng đó được thay
+       bằng `ThreadPoolExecutor` ngày 27/08.
+
+       Đó là cái giá của việc đo một bất biến qua **hình dạng mã nguồn**: nó
+       không phân biệt được "đã hỏng" với "đã viết khác". Và nguy hơn theo chiều
+       ngược lại: một bộ lập lịch mới CÓ thoát sớm thật vẫn lọt, miễn là chữ
+       `return` của nó không rơi vào đúng cửa sổ văn bản mà phép kiểm cắt ra.
+    """
+    from tools.gate import _chay_theo_lich
+
+    steps = [_buoc_gia(t, t == hong_o, n) for t, n in
+             (("cong", "cong"), ("nang", "nang"), ("tinh-1", "tinh"),
+              ("tinh-2", "tinh"), ("frontend", "frontend"))]
+    _chay_theo_lich(steps, j=4, tuan_tu=tuan_tu)
+
+    chua_chay = [s.name for s in steps if s.ok is None]
+    assert not chua_chay, f"bo lap lich bo qua {chua_chay} sau khi {hong_o} do"
+    assert [s.name for s in steps if not s.ok] == [hong_o]
+
+
+def test_gate_chay_buoc_cong_TRUOC_moi_thu_khac():
+    """`bien dich duoc` là cổng gác — song song hoá nó là bỏ mất ý nghĩa của nó.
+
+    Một tệp không biên dịch được thì mọi phép đo phía sau đều vô nghĩa: các chốt
+    khác **bỏ qua** tệp không parse được vì chúng đếm xu hướng. Nên bước này phải
+    xong, và phải xong **trước**, chứ không phải xong cùng lúc.
+    """
+    from tools.gate import _steps
+
+    cong = [s.name for s in _steps(quick=False) if s.nhom == "cong"]
+    assert cong == ["bien dich duoc"], cong
 
 
 @pytest.mark.parametrize("doc", ["CLAUDE.md", "AGENTS.md"])
@@ -220,12 +265,32 @@ def test_gate_NOI_RA_khi_cay_doi_trong_luc_chay():
 
     Ket qua ay khong sai luc no do. No tra loi ve QUA KHU, va doc no nhu bang
     chung cho hien tai la cach sinh ra ba vong sua nhung thu khong con hong.
+
+    ⭐ Ban truoc dem so lan chu `_dau_van_tay_cay()` xuat hien trong ma nguon
+       (">= 3"). No do ngay 27/08 khi ham do duoc doi ten — trong khi bat bien
+       van nguyen ven. Day la lan thu HAI trong mot ngay mot phep kiem o tep nay
+       do vi ma duoc **viet lai** chu khong phai vi no **hong**.
+
+       Nen bay gio no chay that: sua mot tep trong cay giua hai anh chup, roi
+       doi hoi gate nhin ra.
     """
+    import os
+    import tempfile
+
+    from tools.gate import _anh_chup_cay
+
     ma = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
-    assert "_dau_van_tay_cay" in ma, "gate khong biet cay co doi hay khong"
     assert "CAY DA DOI TRONG LUC CHAY" in ma
-    assert ma.count("_dau_van_tay_cay()") >= 3, (
-        "phai lay van tay CA hai dau (truoc + sau), khong chi mot dau")
+
+    truoc = _anh_chup_cay()
+    fd, ten = tempfile.mkstemp(suffix=".py", dir=ROOT / "tools")
+    os.close(fd)                    # Windows khong xoa duoc tep dang mo
+    tam = pathlib.Path(ten)
+    try:
+        assert _anh_chup_cay() != truoc, "them mot tep ma anh chup khong doi"
+    finally:
+        tam.unlink()
+    assert _anh_chup_cay() == truoc, "xoa di roi ma anh chup van khac"
 
 
 def test_quick_PHAI_noi_no_khong_chay_gi():
@@ -240,3 +305,142 @@ def test_quick_PHAI_noi_no_khong_chay_gi():
     assert "BO_QUA_KHI_QUICK" in ma
     assert "KHONG chay" in ma, "dong RESULT cua --quick phai ke ten thu bi bo"
     assert "Chua phai bang chung day du" in ma
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  Chế độ `--vong-lap` (2026-08-27)
+#
+#  ⭐ Vì sao nó tồn tại: ngày 27/08 gate đầy đủ được chạy **sáu lần** để *chẩn
+#     đoán*, mỗi lần ~5 phút, và bốn trong sáu lượt đỏ vì một thứ mà một bước
+#     con lẻ trả lời trong nửa giây. Gate là công cụ ra **phán quyết**; dùng nó
+#     để dò là trả 5 phút cho một câu trả lời đã có sẵn.
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_vong_lap_giu_TOAN_BO_nhom_tinh():
+    """Cắt bớt phần rẻ là cắt nhầm chỗ.
+
+    16 chốt tĩnh tốn **7 giây** khi chạy song song, và chính chúng bắt bốn trong
+    sáu lỗi hôm 27/08. Thứ đáng cắt là bộ test đầy đủ (255s), không phải chúng.
+    """
+    from tools.gate import _rut_gon_vong_lap, _steps
+
+    day_du = _steps(quick=False)
+    vong_lap = _rut_gon_vong_lap(list(day_du))
+
+    tinh_day_du = {s.name for s in day_du if s.nhom == "tinh"}
+    tinh_vong_lap = {s.name for s in vong_lap if s.nhom == "tinh"}
+    assert tinh_day_du == tinh_vong_lap
+    assert {s.name for s in vong_lap if s.nhom == "cong"} == {"bien dich duoc"}
+
+
+def test_vong_lap_thay_bo_test_bang_lf_VA_chan_bay_lfnf():
+    """`--lf` một mình **chạy tất cả** khi lượt trước không có gì đỏ.
+
+    Tài liệu pytest nói đúng như vậy, và nó là lý do lượt đo đầu tiên của chế độ
+    này mất **4 phút 26** thay vì ~15 giây. `--lfnf=none` là thứ đổi hành vi đó,
+    nên nó phải nằm trong argv chứ không nằm trong trí nhớ người dùng.
+    """
+    from tools.gate import _rut_gon_vong_lap, _steps
+
+    vong_lap = _rut_gon_vong_lap(_steps(quick=False))
+    ten = {s.name for s in vong_lap}
+    assert "bo test (song song)" not in ten
+    (buoc,) = [s for s in vong_lap if s.name == "bo test --lf"]
+    assert "--lf" in buoc.argv and "--lf-rong-thi-khong-chay" in buoc.argv
+
+
+def test_loc_pha_2_KHONG_bo_qua_khi_khong_doc_duoc_cache(monkeypatch, tmp_path):
+    """Không đọc được cache phải là "chạy hết", không phải "bỏ hết".
+
+    ⛔ Đây là cùng một lỗi hai lần trong một ngày, ở hai tệp khác nhau: trộn
+       *không biết* với *không cần*. `pathlib.exists()` **ném**
+       `PermissionError` chứ không trả `False` (đã làm đỏ `check_multiproc.py`
+       ngay sau khi siết ACL), và một cache vắng mặt trông **y hệt** một lượt
+       xanh hoàn hảo.
+
+       Cả hai lần, cách viết ngắn hơn một dòng đều sai về phía nguy hiểm.
+    """
+    import tools.test_nhanh as tn
+
+    monkeypatch.setattr(tn, "GOC", tmp_path)        # không có .pytest_cache
+    assert tn._tep_da_do() is None
+
+    goc = tmp_path / ".pytest_cache" / "v" / "cache"
+    goc.mkdir(parents=True)
+    (goc / "lastfailed").write_text("{}", encoding="utf-8")
+    assert tn._tep_da_do() == set()                 # rỗng ≠ None
+
+    (goc / "lastfailed").write_text(
+        '{"tests/test_209_versioning_status.py::a": true}', encoding="utf-8")
+    assert tn._tep_da_do() == {"tests/test_209_versioning_status.py"}
+
+
+def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():
+    """`python tools/gate.py > gate.log` phải chạy được, không chỉ gọi tay.
+
+    ⛔ Hứng đầu ra làm stdout thôi là console, Python rơi về `cp1252` trên
+       Windows, và **một** dấu tiếng Việt ném `UnicodeEncodeError`. Nó vỡ ở chỗ
+       ít người nhìn nhất — và vỡ sớm nhất trong CI.
+
+    Ngày 27/08 lỗi này xảy ra hai lần trong một buổi: một emoji trong
+    `check_multiproc.py` (làm ĐỎ một bước gate, với stack trace không liên quan
+    gì tới thứ nó đang kiểm), rồi một chữ "bắn" trong chính dòng giải thích rằng
+    không có gì hỏng.
+
+    ⭐ Chỉ soi dòng `print(` — chú thích và docstring tiếng Việt là cố ý và
+       không bao giờ tới stdout.
+    """
+    nguon = (ROOT / "tools" / "gate.py").read_text(encoding="utf-8")
+    xau = [(i, dong.strip()) for i, dong in enumerate(nguon.splitlines(), 1)
+           if "print(" in dong and any(ord(c) > 127 for c in dong)]
+    assert not xau, f"dong print co ky tu ngoai ASCII: {xau}"
+
+
+def test_canh_bao_cay_doi_phai_KE_TEN_chu_khong_chi_bao_co_doi():
+    """Một cảnh báo không nói được cái gì đổi thì không dùng để làm gì.
+
+    Bản trước in hai chuỗi băm. Ngày 27/08 nó bắn ở **mọi** lượt gate đầy đủ, và
+    nguyên nhân hoá ra là ba chỗ khôi phục trong `test_306` trả lại đúng từng
+    byte nhưng quên `os.utime` — **kích thước y hệt, mtime khác**. Hai chuỗi băm
+    không cách nào nói ra điều đó.
+
+    Và đó là dòng quyết định lượt chạy có tính làm **bằng chứng** hay không, nên
+    một cảnh báo luôn bắn ở đây đắt hơn hẳn một cảnh báo luôn bắn ở chỗ khác.
+    """
+    from tools.gate import _ke_cho_da_doi
+
+    import io
+    import contextlib
+
+    ra = io.StringIO()
+    with contextlib.redirect_stdout(ra):
+        _ke_cho_da_doi({"a.py": (10, 1), "b.py": (10, 1), "c.py": (9, 1)},
+                       {"a.py": (10, 2), "b.py": (11, 1)})
+    out = ra.getvalue()
+    assert "a.py" in out and "chi mtime" in out, "khong phan biet doi mtime"
+    assert "b.py" in out and "10 -> 11 byte" in out, "khong neu doi noi dung"
+    assert "c.py" in out, "khong neu tep bi xoa"
+
+
+def test_ba_tep_ghi_vao_cay_deu_tra_lai_CA_DAU_THOI_GIAN():
+    """Khôi phục đúng nội dung mà sai mtime vẫn làm hỏng dấu vân tay của gate.
+
+    Phép kiểm này **chạy** ba tệp đó rồi so ảnh chụp cây trước/sau, chứ không
+    đọc mã nguồn tìm chữ `os.utime` — vì cách viết đúng có nhiều hình dạng, và
+    thứ ta cần đảm bảo là **kết quả**, không phải cách gõ.
+    """
+    import subprocess
+    import sys
+
+    from tools.gate import _anh_chup_cay
+    from tools.test_nhanh import TEP_NOI_TIEP
+
+    truoc = _anh_chup_cay()
+    subprocess.run([sys.executable, "-m", "pytest", "-q", *TEP_NOI_TIEP],
+                   cwd=ROOT, capture_output=True)
+    sau = _anh_chup_cay()
+
+    doi = {k for k in set(truoc) | set(sau) if truoc.get(k) != sau.get(k)}
+    assert not doi, (
+        f"ba tep pha 2 lam ban cay: {sorted(doi)}. Xem `finally:` cua chung — "
+        f"khoi phuc phai co ca `os.utime`, khong chi noi dung.")

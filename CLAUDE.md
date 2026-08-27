@@ -88,12 +88,24 @@ bảng mã ANSI; một dấu tiếng Việt làm hỏng cả câu lệnh và bá
 **3. Đừng viết Python inline qua PowerShell.** PowerShell nuốt dấu ngoặc kép
 khi truyền cho `.exe`. Ghi ra file `.py` rồi chạy.
 
-**4. Chạy test — ba lệnh, và ĐỪNG gọi `pytest` trực tiếp.**
+**4. Chạy test — ĐỪNG gọi `pytest` trực tiếp, và đừng dùng gate để dò lỗi.**
+
 ```powershell
-python tools	est_nhanh.py         # vong lap lam viec — MAC DINH  (~4 phut)
-python tools	est_nhanh.py --lf    # ngay sau khi sua mot loi      (giay)
-python tools\gate.py               # TRUOC KHI BAO XONG            (~8 phut)
+python tools\gate.py --vong-lap     # sau MOI lan sua              (~15 giay)
+python tools\test_nhanh.py          # muon chay ca bo test         (~4 phut)
+python tools\gate.py                # TRUOC KHI BAO XONG           (~5 phut)
 ```
+
+🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
+
+Ngày 27/08 gate đầy đủ được chạy **sáu lần** chỉ để dò lỗi, mỗi lần ~5 phút.
+Bốn trong sáu lượt đỏ vì một thứ mà một bước con lẻ trả lời trong nửa giây:
+baseline của phiên khác · một emoji trong stdout của một công cụ · hồ sơ hệ
+thống stale · một phép kiểm lệch thứ tự. `--vong-lap` chạy **toàn bộ** nhóm
+kiểm tĩnh (chính là thứ bắt bốn lỗi đó) trong ~15 giây.
+
+⛔ Nhưng `--vong-lap` và `--quick` **không phải bằng chứng** — dòng `RESULT` của
+chúng nói thẳng điều đó. Trước khi báo xong vẫn là `python tools\gate.py`.
 
 ⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
 mới là lý do thật:

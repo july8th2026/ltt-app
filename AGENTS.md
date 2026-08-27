@@ -104,9 +104,33 @@ theo hướng dẫn trong đó**.
 
 | Lệnh | Dùng khi | Thời gian |
 |---|---|---|
-| `python tools	est_nhanh.py` | vòng lặp làm việc — **mặc định** | **~4 phút** |
-| `python tools	est_nhanh.py --lf` | ngay sau khi sửa một lỗi | giây → phút |
-| `python tools\gate.py` | **trước khi báo xong** | ~8 phút |
+| `python tools\gate.py --vong-lap` | sau **mỗi** lần sửa — **mặc định** | **~15 giây** |
+| `python tools\test_nhanh.py` | muốn chạy cả bộ test | ~4 phút |
+| `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
+
+🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
+
+Ngày 27/08 gate đầy đủ được chạy **sáu lần** chỉ để dò lỗi, ~5 phút mỗi lượt.
+Bốn trong sáu lượt đỏ vì một thứ mà một bước con lẻ trả lời trong nửa giây:
+baseline của phiên khác · một emoji trong stdout của một công cụ · hồ sơ hệ
+thống stale · một phép kiểm đo bất biến qua hình dạng mã nguồn. Đó là 20 phút
+trả cho bốn câu trả lời vốn đã có sẵn.
+
+`--vong-lap` giữ **toàn bộ** nhóm kiểm tĩnh — chính là thứ bắt bốn lỗi đó — vì
+song song hoá làm chúng chỉ còn 7 giây. Nó chỉ đổi `bộ test` thành `--lf`.
+
+⚠️ Hai điều phải biết trước khi tin nó:
+
+1. **`--lf` một mình chạy TẤT CẢ** khi lượt trước không có gì đỏ (đúng như tài
+   liệu pytest). `gate.py` thêm `--lfnf=none`, nên đừng gọi `test_nhanh --lf`
+   tay rồi ngạc nhiên vì nó mất 4 phút.
+2. **Cache `lastfailed` tích luỹ.** Sau một ngày chạy nhiều lượt lẻ nó phình ra
+   (đo 27/08: 123 mục từ 36 tệp, phần lớn đã xanh lại). Lượt `--vong-lap` **đầu
+   tiên** sau đó phải rút cạn cache — mất 3 phút 30. Các lượt sau mới là ~15
+   giây. Hành vi đúng, nhưng nếu không biết thì trông y hệt một chế độ hỏng.
+
+⛔ `--vong-lap` và `--quick` **không phải bằng chứng**, và dòng `RESULT` của
+chúng nói thẳng ra như vậy. Trước khi báo xong vẫn là `python tools\gate.py`.
 
 ⛔ **Đừng chạy `python -m pytest` cho toàn bộ kho.** Hai lý do, và lý do thứ hai
 mới là lý do thật:
