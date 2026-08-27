@@ -14,6 +14,186 @@
 
 ---
 
+## 2026-08-27 — Bổ sung plan hàng đợi nhiều API và xen kẽ cửa sổ GPU
+
+- Mở rộng `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` để bao phủ admission plane
+  dùng chung cho async jobs, `/chat/completions` và streaming.
+- Tách rõ track CPU/DB có thể triển khai khi GPU đang bận khỏi track GPU phải
+  chạy trong cửa sổ độc quyền; thêm metadata resource class và chu kỳ G0–G3.
+- Bổ sung các pha Q0–Q6: khóa hợp đồng, global queue cap + quota lock,
+  fair scheduler/retry, quan sát + tải giả, GPU/model admission, concurrency
+  có kiểm soát và canary liên tục.
+- Bổ sung tiêu chí qua/rollback và ma trận test cho queue đầy, race quota,
+  idempotency, crash/ambiguous provider, fairness, slot/KV và reboot.
+- Đây là thay đổi kế hoạch, chưa sửa code runtime và chưa tuyên bố các tiêu chí
+  đã đạt; các hạng mục Q0–Q3 được ưu tiên vì không cần GPU.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| Đọc `QUYET_DINH_NEN_TANG.md`, plan, nhật ký, `ho_so_he_thong.txt` | **PASS** |
+| Cập nhật plan + nhật ký bằng `apply_patch` | **PASS** |
+| `python tools\gate.py --vong-lap` | **FAIL** — 3 ca `tests/test_212_coverage_certification.py` vẫn để job `queued` |
+| `python tools\gate.py` | **FAIL** — 4.144 passed, 6 failed, 26 skipped; 3 ca `test_212`, 2 ca GPU lease/worker (`test_150`, `test_151`) và 1 ca refund (`test_188`); pha nối tiếp 62 passed |
+
+---
+
+## 2026-08-27 — Rà soát hàng đợi nhiều API → GPU/model
+
+- Đọc lại `platform_core/jobs.py`, `job_runner.py`, `gpu_lease.py`,
+  `public_api/limits.py`, `idempotency.py`, `server/api/jobs.py`,
+  `server/api/chat.py` và `platform_core/llm/luong_vlm.py`.
+- Kết luận: queue PostgreSQL/claim/heartbeat/reclaim/idempotency/GPU lease đã
+  có nền tảng đúng; nhưng `/chat/completions` và streaming gọi provider trực
+  tiếp, không đi qua cùng admission/queue với `/api/v1/jobs`.
+- Ghi review chi tiết và test matrix tại
+  `.codex/QUEUE_REVIEW_NHIEU_API.md`. Các khoảng trống P0 gồm global queue
+  depth, race active-limit và LLM admission plane dùng chung; chưa sửa code vì
+  đây là quyết định kiến trúc cần chốt trước khi mở public.
+- Đối chiếu tài liệu chính thức PostgreSQL, llama.cpp và vLLM; không lấy
+  benchmark/community làm bằng chứng thay cho đo hệ thống thật.
+
+---
+
+## 2026-08-27 — Triển khai Nexus async lên A và B
+
+- **P0/P1:** Artifact `LTT-Nexus-Setup.zip` SHA-256 khớp
+  `2200A83A82CA6CB4C49C6B0AE655C33B74374511972ECDB157E5BB5CBC91C81A`.
+  Đã dry-run installer trên B: **all 5 steps ok**; backup install/config được
+  lưu ngoài source tree trên A và B.
+- Đã đồng bộ binary mới lên A và B, giữ nguyên identity/config/allowed roots;
+  `NexusAgent` và `NexusController` đều **RUNNING/Automatic**. OpenSSH trên B
+  đã có sẵn và chỉ dùng làm kênh bootstrap tạm thời, chưa vô hiệu hóa vì P2
+  reboot chưa được phép thực hiện.
+- Kiểm chứng end-to-end qua controller A → B: `POST /exec/async` trả
+  `job_01M11FY4XXWAT8P5RWA6BFZA0F`; `GET status` **SUCCEEDED**, `exit_code=0`,
+  log `async_probe` đọc được.
+- **Chưa làm:** reboot B, benchmark Qwen ladder, đổi cap/API public. Không
+  thực hiện thay đổi production khi chưa có số đo thật.
+
+- **Cập nhật tiếp:** đã reboot B thành công; heartbeat/Nexus tự khởi động và
+  async probe hậu reboot **PASS** (`job_01M11G3WZ7TH8JNWDYZ8R0P6MX`, exit 0).
+  SSH bootstrap đã stop + disable; kiểm tra từ A cho `SSH_PORT_OPEN=False`,
+  Nexus async vẫn hoạt động.
+- Đã bắt đầu benchmark thật mốc 65.536 bằng job async
+  `job_01M11GAA56M7RKQ5Q85WHX2WEB`; GPU đang tải khoảng 99%, VRAM dùng
+  khoảng 20.584 MiB, job vẫn **RUNNING** tại thời điểm ghi mục này. Chưa suy
+  ra throughput hay quyết định cap từ trạng thái trung gian.
+- Job 65.536 đã hoàn tất **SUCCEEDED/exit 0** sau 458,662 ms. Kết quả llama.cpp
+  build `54ee5ee64 (10580)`, RTX 3090 CUDA: prefill `940.54 ± 37.82 tok/s`,
+  decode `41.00 ± 0.25 tok/s`; stderr không có lỗi. GPU sau đó về trạng thái
+  sạch (39°C, 2% load, 1,079 MiB used). Đã nộp tiếp mốc 73.728 với job async
+  `job_01M11H574ABGQ3KMHMQK3C1GJM`, đang **RUNNING**.
+- Mốc 73.728 đã hoàn tất **SUCCEEDED/exit 0** sau 482,565 ms: prefill
+  `974.08 ± 7.39 tok/s`, decode `41.05 ± 0.65 tok/s`. Snapshot GPU sau job:
+  39°C, 38% fan, 1% load, 977 MiB VRAM dùng, 21.36 W. Hai mốc đầu chưa cho
+  thấy decode cliff; tiếp tục ladder nhưng theo dõi GPU trước/trong/sau mỗi job.
+- Screening 81.920 đã được **CANCELLED có chủ ý** ở 83 giây sau khi rà soát
+  phương pháp: `llama-bench` mỗi invocation nạp model/context mới (cold
+  start), không đại diện trực tiếp cho phiên model resident của production.
+  GPU đã về sạch sau huỷ (46°C, 0% load, 979 MiB dùng). Bước P4 tạm dừng để
+  tách benchmark thành cold-start/load-time và warm-session inference; không
+  dùng job huỷ làm số liệu.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| Nexus package build/smoke | **PASS** (đã ghi ở mục trước) |
+| installer `--dry-run` trên B | **PASS**, all 5 steps ok |
+| hash artifact trên B | **PASS**, khớp SHA-256 |
+| async submit/status/log qua A→B | **PASS**, exit code 0 |
+
+### Cách lùi lại
+
+Khôi phục thư mục backup Nexus và `config.yaml` đã tạo trước triển khai, sau
+đó khởi động lại hai service Nexus; không xoá dữ liệu identity/database.
+
+---
+
+## 2026-08-27 — Chuyển tiếp hồ sơ từ Claude sang Codex
+
+- **Mục tiêu:** đọc checkpoint dự án và cấu hình `.claude`, dựng hồ sơ tiếp
+  quản để phiên Codex nối tiếp không mất ngữ cảnh.
+- **Trạng thái:** hoàn thành.
+
+### Đã làm
+
+- Đọc nguồn chân lý, kế hoạch, hai mục nhật ký gần nhất, `AGENTS.md`,
+  `ho_so_he_thong.txt` và toàn bộ file cấu hình hiện có trong `.claude`.
+- Truy vết đúng phiên Claude `5a74e3b4-a8e0-4dbc-a26b-6fe9bb2ddc04` (tiêu đề
+  “Phân tích hệ thống lttstudiosapp”), dừng vì weekly limit lúc 09:54:09;
+  tiếp nhận việc còn dang dở về trần input Qwen3.8 trên máy B.
+- Kiểm tra LTT Nexus chỉ đọc: B `ONLINE`, RTX 3090 24 GB còn khoảng 22,9 GB;
+  `LTT_LLM_MAX_INPUT_TOKENS=60000`, `qwen38-api -c 65536`.
+- Nghiên cứu cộng đồng trong `.codex/qwen38_context_research.md`: 131K có
+  benchmark trên 3090 với Q4/KV q4, 204,8K có sweep nhưng khác build; issue
+  llama.cpp độc lập ghi nhận decode tụt mạnh sau ~80K. Vì bằng chứng xung đột,
+  chưa đổi cấu hình B; đã chốt ladder đo 64K → 73,7K → 98,3K → 131K.
+- Phát hiện hồ sơ hệ thống stale; chạy `python tools\build_system_profile.py`,
+  sau đó kiểm tra `python tools\build_system_profile.py --check` → **PASS**.
+- Tạo `.codex/README.md` làm điểm vào tiếp quản và `.codex/launch.json` là bản
+  sao cấu hình `ltt-dev` từ `.claude/launch.json`.
+- Không sao chép `scheduled_tasks.lock`, `worktrees` hoặc
+  `.claude/settings.local.json`: đó là trạng thái phiên/quyền riêng của Claude,
+  không phải cấu hình dự án Codex.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\build_system_profile.py --check` | **PASS** |
+| `python tools\scan_source_secrets.py` | **PASS**, 0 finding |
+| `python tools\gate.py --vong-lap` | **FAIL**: 4.146 pass, 4 fail, 26 skip; cảnh báo mock `proc.stderr` không iterable trong `tests/test_81_autosubvideo.py` |
+| `python tools\gate.py` | **FAIL**: 4.147 pass, 3 fail, 26 skip, 23 warnings; pha song song 252,40 giây + pha nối tiếp 52,24 giây; các fail ở `tests/test_212_coverage_certification.py` (3 ca image.upscale/test-mode) |
+
+### Quyết định mới
+
+Không phát sinh quyết định kiến trúc/sản phẩm. `.codex/README.md` chỉ ghi lại
+điểm vào và ranh giới tiếp quản; `AGENTS.md` vẫn là hợp đồng làm việc.
+
+### Cách lùi lại
+
+Xóa hai file mới `.codex/README.md`, `.codex/launch.json` và hoàn nguyên mục
+nhật ký này; giữ lại `ho_so_he_thong.txt` nếu cần snapshot mới nhất.
+
+### Còn tồn đọng
+
+- Full gate đã chạy; vẫn fail ở 3 test baseline liên quan `image.upscale`/
+  test-mode, không phải lỗi từ hồ sơ `.codex`. Vòng lặp trước đó còn ghi nhận
+  thêm một ca `public_api_wave2` do cache `lastfailed`; cần phân loại trước khi
+  sửa, không xem đó là lỗi phát sinh từ bàn giao.
+- Các mục mở H41.2–H41.8 và H33/H35/H37 vẫn theo kế hoạch hiện hành.
+- Việc tăng trần máy B còn chờ ladder đo thật và quyết định mốc; không sửa tay
+  `gateway.env` trên B.
+- Theo yêu cầu mới, đã thử benchmark thực tế `llama-bench` với prompt 131072
+  (KV `q8_0`, `-ngl 999`, `-fa on`). Proxy Nexus cắt phản hồi ở 120 giây khi
+  model còn nạp; không có throughput/VRAM hợp lệ. Đã dừng PID benchmark và xác
+  nhận GPU rảnh. Vì vậy **chưa mở public API** và chưa đổi cap production.
+
+### Việc tiếp theo
+
+1. Chọn một hạng mục mở trong `docs/KE_HOACH_TRIEN_KHAI.md` với chủ sản phẩm.
+2. Đọc các file nguồn/test liên quan trước khi thay đổi.
+3. Sau thay đổi giao diện/luồng, kiểm tra bằng Playwright theo `AGENTS.md`.
+
+### Bổ sung Nexus — job benchmark async
+
+- Theo yêu cầu chạy benchmark dài hơn giới hạn proxy, đã bổ sung tại repo
+  `D:\LTT Nexus`: `POST /api/v1/exec/async` trả `job_id`, các endpoint lấy
+  trạng thái/log/huỷ, lưu bản ghi trong SQLite và đánh dấu `INTERRUPTED` các
+  job đang chạy khi Nexus khởi động lại; không tự chạy lại lệnh nguy hiểm.
+- Commit Nexus: `6f16ba7 feat(nexus): add durable async command jobs`.
+- Kiểm thử: Nexus `803 passed`; ruff pass; frozen build smoke `7/7`; package
+  `LTT-Nexus-Setup.zip` được build, giải nén kiểm tra và sinh SHA-256.
+- Chưa deploy/restart máy B. Bước tiếp theo là cài artifact đã kiểm tra, gọi
+  async benchmark qua Nexus và đọc kết quả bằng `job_id` trước khi đổi cap/API.
+- Đã viết kế hoạch triển khai theo pha P0–P8 tại
+  `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md`: Nexus là kênh chính, OpenSSH chỉ
+  bootstrap khi thiếu quyền, bắt buộc kiểm tra reboot trước khi tắt SSH, rồi
+  benchmark ladder và public canary.
+
 ## 2026-08-26 — Chạy trọn bộ prompt MVP Optimization V2, và tìm ra một gốc chung
 
 - **Mục tiêu:** audit toàn hệ thống theo `AppStudios_MVP_Optimization_Prompt_Pack_V2`
