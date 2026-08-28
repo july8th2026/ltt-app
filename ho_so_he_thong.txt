@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:2f893791acac69105e99ab5c11e274df0c865f2563f32703ab5b316eeb6ebf6c
+Fingerprint   : sha256:8aa2ecfd82c0414cb626ba442442c0aed60260e17f0586b5e3e7bd4ed926d8f6
 Nguồn đã quét : 1210 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2639,7 +2639,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1210 file; 12034448 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1210 file; 12034693 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -229148,7 +229148,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/build_release.py
-SHA256=429521fef5200c52872a909e7df8b16224788a78ba3c71675300b4caab00896f BYTES=10485 LINES=273
+SHA256=43c6a0377296192c40ed37d4c57ce5c073f4407697e44c457d2aea7ad06e0198 BYTES=10730 LINES=277
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 build_release.py — produce a deployable release archive (P8).
@@ -229182,6 +229182,10 @@ EXCLUDED_DIRS = {
     ".git", ".pytest_cache", ".venv", "venv", "__pycache__", "build", "dist",
     "data", "secrets", "logs", "profiles", "temp_videos", "temp_videos_test",
     "_recovery", "node_modules", ".claude",
+    # Benchmark captures are evidence, not runtime code.  The RTX canary set
+    # is ~2.8 GB and must never turn a normal code release into a multi-GB
+    # upload; evidence remains under docs/.codex and the benchmark directories.
+    "bench",
     # Snapshot/log tam cua Playwright MCP - khong bao gio thuoc release, va chua
     # nhieu chuoi hex lam trip may quet secret. Chi la rac dieu khien trinh duyet.
     ".playwright-mcp", ".playwright-cli", "tmp", "test-results",
