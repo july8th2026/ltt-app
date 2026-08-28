@@ -129,6 +129,11 @@ class ToolSpec:
     # không cấp execution lease (giữ tương thích tool hiện có).
     admission_slots: int = 0
 
+    # Optional adapter for protocol routes that must execute synchronously.
+    # This is a dotted reference owned by the app; the platform resolves it
+    # without knowing an app slug or importing app code directly.
+    sync_executor: str = ""
+
 
 @dataclass(frozen=True)
 class NavEntry:

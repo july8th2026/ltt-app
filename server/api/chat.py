@@ -37,6 +37,7 @@ from platform_core import credit
 from platform_core.public_api import (idempotency, limits, metrics, policy,
                                       sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
+from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
                                              service_unavailable)
@@ -56,7 +57,7 @@ OPERATION_CHAT = "chat.completions"
 TOOL_CHAT = "text.chat"
 
 
-def _tran_max_tokens(token_vao_uoc: int = 0) -> int:
+def _tran_max_tokens(token_vao_uoc: int = 0, executor=None) -> int:
     """Trần `max_tokens` mà một lượt ĐỒNG BỘ được phép xin.
 
     🔴 CON SỐ NÀY DẪN RA TỪ SỐ ĐO, KHÔNG PHẢI CHỌN CHO TRÒN:
@@ -71,9 +72,8 @@ def _tran_max_tokens(token_vao_uoc: int = 0) -> int:
        chừng. Ta từ chối bằng một cái 400 nói rõ lý do và chỉ sang cửa job; nó
        cắt bằng một cái 524 không ai đọc được.
     """
-    from apps.ltt_llm.features import tran_token_ra_dong_bo
-
-    return tran_token_ra_dong_bo(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
+    executor = executor or for_tool_name(TOOL_CHAT)
+    return executor.sync_output_cap(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
 
 
 def register_chat_routes(api, config, tag: str) -> None:
@@ -91,7 +91,6 @@ def register_chat_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        from apps.ltt_llm import features
         from platform_core.llm import admission, thanh_toan
 
         # ⭐ THÔNG BÁO LỖI LÀ TÀI LIỆU, VÀ LÀ TRANG TÀI LIỆU DUY NHẤT CHẮC CHẮN
@@ -119,6 +118,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó
         # bỏ qua công tắc người vận hành — cửa mới không được là cửa sau.
         tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
+        executor = for_tool(tool)
 
         if payload.pop("stream", False):
             # ⭐ CẬP NHẬT 23/08 (Q107): streaming nay CÓ, chỉ là không ở route
@@ -135,14 +135,14 @@ def register_chat_routes(api, config, tag: str) -> None:
         # Kiểm THAM SỐ trước khi tiền chuyển — cùng câu `jobs.py` đã viết:
         # "a typo must never reach the ledger".
         if "max_tokens" not in payload:
-            payload["max_tokens"] = features.SYNC_MAX_TOKENS_MAC_DINH
+            payload["max_tokens"] = executor.default_max_tokens
         try:
-            sach = features.kiem_tham_so(payload)
-        except features.ThamSoSai as e:
+            sach = executor.validate(payload)
+        except executor.parameter_error as e:
             raise invalid_request(str(e)) from None
 
-        token_vao_uoc = features.uoc_token_vao(sach["messages"], sach.get("tools"))
-        tran = _tran_max_tokens(token_vao_uoc)
+        token_vao_uoc = executor.estimate_input(sach["messages"], sach.get("tools"))
+        tran = _tran_max_tokens(token_vao_uoc, executor)
         if sach["max_tokens"] > tran:
             raise invalid_request(
                 f"This synchronous request is estimated at {token_vao_uoc} input "
@@ -227,20 +227,20 @@ def register_chat_routes(api, config, tag: str) -> None:
         with admission.keep_alive(ticket.id):
             return _finish_chat(
                 db=db, sach=sach, principal=principal, record=record,
-                request_id=request_id, da_giu=da_giu)
+                request_id=request_id, da_giu=da_giu, executor=executor)
 
 
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
-                 da_giu: int) -> JSONResponse:
+                 da_giu: int, executor=None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
-    from apps.ltt_llm import features
     from platform_core.llm import thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
                                             VuotNganSachError)
 
     bat_dau = time.monotonic()
     try:
-        kq = features.chay(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
+        executor = executor or for_tool_name(TOOL_CHAT)
+        kq = executor.run(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()

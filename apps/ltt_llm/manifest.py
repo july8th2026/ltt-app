@@ -169,6 +169,7 @@ MANIFEST = AppManifest(
         # Cả job, sync và stream cùng tranh đúng một slot của model nhà. Đây là
         # metadata vận hành, không phải alias công khai và không lộ model id.
         admission_resource="llm_remote", admission_slots=1,
+        sync_executor="apps.ltt_llm.executor:EXECUTOR",
         params_schema={
             "messages": {"type": "json[]", "required": True},
             "model": {"type": "enum",

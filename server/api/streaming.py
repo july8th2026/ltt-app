@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 
 from platform_core.public_api import limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
+from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
                                              payload_too_large,
@@ -176,20 +177,21 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
        duong streaming. Vi vay `max_tokens` bi kep theo tran cua duong dong bo,
        cung con so ma `/chat/completions` dung, va vi cung mot ly do.
     """
-    from apps.ltt_llm import features
     from platform_core import credit
     from platform_core.llm import admission, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
     from server.api.chat import _tran_max_tokens
 
+    executor = for_tool(tool) if tool is not None else for_tool_name(TOOL_CHAT)
+
     if sandbox.is_test(principal.mode):
         return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
 
-    vao_uoc = features.uoc_token_vao(tin)
+    vao_uoc = executor.estimate_input(tin)
     xin_ra = _max_tokens(than, vao_uoc)
     if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
-        xin_ra = min(xin_ra, features.SYNC_MAX_TOKENS_MAC_DINH)
+        xin_ra = min(xin_ra, executor.default_max_tokens)
     tran = _tran_max_tokens(vao_uoc)
     if xin_ra > tran:
         raise invalid_request(
@@ -260,8 +262,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
             sach["tools"] = cong_cu
-        kq = features.chay(db, sach, timeout_s=float(_tran_giay()))
-    except features.ThamSoSai as e:
+        kq = executor.run(db, sach, timeout_s=float(_tran_giay()))
+    except executor.parameter_error as e:
         # Tham số sai là lỗi của **yêu cầu**, không phải của máy chủ: 400, không
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
@@ -433,19 +435,20 @@ def _bao_400(detail: str, than: dict):
 
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
-    from apps.ltt_llm import features
     from platform_core import credit
     from platform_core.llm import admission, thanh_toan
 
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
+    executor = for_tool(tool)
 
 
     ten = _giai_ten_model(str(than.get("model") or ""))
-    if ten not in features.ALIAS_SANG_ID:
+    aliases = executor.aliases()
+    if ten not in aliases:
         raise _bao_400(
-            f"`model` must be one of {list(features.ALIAS_SANG_ID)}"
+            f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
             f"sends `model` from its profile — set them to one of these.", than)
@@ -480,7 +483,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
     gui = dict(than)
-    gui["model"] = features.ALIAS_SANG_ID[ten]
+    gui["model"] = executor.model_id(ten)
 
 
     # 🔴 KHONG STREAM CUNG PHAI PHUC VU DUOC, va day la mot lo hong THAT.
@@ -522,7 +525,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     if ticket is None:
         db.rollback()
         raise limits.execution_busy(tool.admission_resource)
-    vao_uoc = features.uoc_token_vao(tin)
+    vao_uoc = executor.estimate_input(tin)
     xin_ra = _max_tokens(than, vao_uoc)
 
     # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN. Thiếu dòng này là lỗi thật, tìm
@@ -798,20 +801,19 @@ def _tin_that(than: dict) -> list:
     return ra
 
 
-def _max_tokens(than: dict, token_vao_uoc: int = 0) -> int:
+def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
     """Trần token ra cho lượt này, đã kẹp theo **chỗ còn lại trong ngữ cảnh**.
 
     ⚠️ `token_vao_uoc` mặc định 0 chỉ để không phá lời gọi cũ; đường thật luôn
        truyền số vào. Vào và ra chia nhau cùng một cửa sổ 65.536.
     """
-    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, tran_theo_ngu_canh
-
-    tran = tran_theo_ngu_canh(token_vao_uoc)
+    executor = executor or for_tool_name(TOOL_CHAT)
+    tran = executor.context_output_cap(token_vao_uoc)
     for ten in ("max_tokens", "max_output_tokens"):
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):
             return max(1, min(int(gt), tran))
-    return min(MAX_TOKENS_MAC_DINH, tran)
+    return min(executor.default_max_tokens, tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:

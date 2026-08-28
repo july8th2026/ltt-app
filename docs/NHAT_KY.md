@@ -12,6 +12,52 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-08-29 — H41.4: executor đồng bộ theo hợp đồng app
+
+- Tách phần phụ thuộc app khỏi `server/api`: thêm trường `sync_executor` vào
+  `ToolSpec`/`PublicTool`, resolver generic `platform_core.public_api.executor`
+  tìm tool qua registry, và adapter app-owned `apps/ltt_llm/executor.py`.
+- Ba route `/api/v1/chat/completions`, `/api/v1/messages` và
+  `/api/v1/responses` nay lấy validation, token estimate, alias/model id, trần
+  output và hàm chạy từ executor do manifest khai báo; không còn import trực
+  tiếp `apps.ltt_llm` trong tầng HTTP. Hành vi tiền/admission giữ nguyên.
+- `ho_so_he_thong.txt` đã dựng lại sau thay đổi; không sửa dữ liệu production và
+  không reboot/reset máy B.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\test_nhanh.py --noi-tiep -k "test_259 or test_272 or test_285 or test_313"` | **PASS 116**, 1 skip |
+| `python tools\test_nhanh.py --noi-tiep -k "test_292"` | **PASS 6**, 1 skip |
+| `python tools\gate.py --vong-lap` trước khi dựng profile | **FAIL tạm**: profile stale + 3 test profile; đã xử lý bằng build profile |
+| `python tools\gate.py --vong-lap` sau build profile | **PASS 19/19** |
+| `python tools\scan_source_secrets.py` (trong gate) | **PASS**, 0 finding |
+
+### Trạng thái
+
+Mã nguồn H41.4 đã qua test liên quan và gate vòng lặp. Chưa gọi là phát hành
+cho tới khi full `python tools\gate.py` pass; sau đó deploy release có backup,
+rollback và health check trên service hiện hành.
+
+### Cách lùi lại
+
+Revert commit H41.4 (chỉ các file executor/registry/catalog/API và hồ sơ), sau
+đó chạy lại gate; deploy production dùng `deploy/windows/rollback.ps1` nếu
+release mới không đạt health.
+
+### Còn tồn đọng
+
+- Full gate cuối và deploy production chưa chạy trong checkpoint này.
+- H41.5 vẫn cần thiết kế an toàn cho `upscalevideo` trước khi expose public;
+  không bật cờ mù.
+
+### Việc tiếp theo
+
+1. Chạy full `python tools\gate.py` trên cây đứng yên.
+2. Đóng gói release, backup/rollback và deploy production theo `docs/01_COPY_LEN_SERVER.md`.
+3. Kiểm tra `/health/ready`, `/api/v1/health`, rồi cập nhật checkpoint H41.2/E3.
+
 ## 2026-08-28 — H41.9 Q116: chốt và deploy public cap 65K; chuyển Q6
 
 - Theo điều kiện “81K phải ổn định” (Q115 không đạt), chốt public input cap
