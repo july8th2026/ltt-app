@@ -191,7 +191,25 @@ def test_worker_hoan_job_khi_execution_slot_ban_khong_tinh_attempt(db, monkeypat
     postponed = db.get(Job, job_id)
     assert postponed.status == JOB_QUEUED
     assert postponed.attempts == 0
+    assert postponed.admitted_at is None
     assert ran == []
+
+
+def test_worker_ghi_admitted_at_chi_khi_sap_vao_handler(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.models import JOB_DONE, Job
+
+    row = _submit_worker_job(db)
+    monkeypatch.setattr(
+        runner.jobq, "resolve_handler",
+        lambda _job_type: lambda _params, _ctx: {"ok": True})
+    assert runner._chay_mot_job("worker-admitted") is True
+
+    db.expire_all()
+    done = db.get(Job, row.id)
+    assert done.status == JOB_DONE
+    assert done.admitted_at is not None
+    assert done.admitted_at >= done.created_at
 
 
 def test_fair_claim_khong_de_burst_mot_account_doc_chiem_resource(db):
@@ -339,3 +357,144 @@ def test_reclaim_worker_chet_sau_dispatch_khong_chay_lai_side_effect(db):
     assert jobs.reclaim_orphans(
         db, on_terminal=lambda _db, job: terminal.append(job.id)) == 0
     assert terminal == [row.id], "terminal callback/refund khong duoc lap lai"
+
+
+def test_queue_snapshot_tai_dung_tu_db_sau_restart_khong_can_gpu(db):
+    from platform_core import job_metrics, jobs
+    import platform_core.db as dbmod
+    from platform_core.llm import admission
+
+    now = datetime.now(timezone.utc)
+    running = jobs.submit(
+        db, user_id="u-running", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    running.created_at = now - timedelta(seconds=12)
+    db.commit()
+    claimed = jobs.claim(db, worker_id="w-observe")
+    jobs.mark_admitted(db, claimed, at=now)
+
+    queued = jobs.submit(
+        db, user_id="u-queued", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    queued.created_at = now - timedelta(seconds=25)
+    lease = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id=running.user_id,
+        mode="job", holder_id=running.id, job_id=running.id)
+    stale = admission.acquire(
+        db, resource="stale-resource", slots=1, user_id="u-stale",
+        mode="sync", holder_id="stale-holder")
+    stale.heartbeat_at = now - timedelta(minutes=30)
+    db.commit()
+    assert lease is not None and stale is not None
+
+    before = job_metrics.snapshot(db, now=now)
+    assert before["queue_depth"] == 1
+    assert before["queue_depth_by_resource"] == {"llm_remote": 1}
+    assert before["oldest_queued_age_s_by_resource"]["llm_remote"] >= 25
+    assert before["active_execution_leases_by_resource"] == {"llm_remote": 1}
+    assert before["expired_execution_lease_candidates"] == 1
+    assert before["execution_lease_rows"] == 2
+    assert before["admission_delay_p50_s"] == pytest.approx(12.0, abs=0.01)
+
+    # Mô phỏng restart process: đóng session rồi đọc lại hoàn toàn từ row bền.
+    db.close()
+    dbmod.reset_engine()
+    sessions = dbmod.get_session(); reopened = next(sessions)
+    try:
+        after = job_metrics.snapshot(reopened, now=now)
+        for key in (
+            "queue_depth", "queue_depth_by_resource",
+            "oldest_queued_age_s_by_resource",
+            "active_execution_leases_by_resource", "admission_delay_p50_s",
+        ):
+            assert after[key] == before[key]
+    finally:
+        sessions.close()
+
+
+def test_execution_metric_flush_con_song_sau_reset_process(db):
+    from platform_core.llm import admission
+    from platform_core.public_api import metrics
+
+    metrics.reset()
+    first = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u1", mode="sync",
+        holder_id="h1")
+    assert first is not None
+    assert admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2", mode="stream",
+        holder_id="h2") is None
+    assert admission.release(db, first.id)
+    db.commit()
+    assert metrics.flush(db, process="worker:q3-restart") >= 3
+    db.commit()
+
+    metrics.reset()
+    durable = metrics.aggregate(db, hours=1)["counters"]
+    assert durable[metrics.ADMISSION_ACQUIRED] == 1
+    assert durable[metrics.ADMISSION_REJECTED] == 1
+    assert durable[metrics.ADMISSION_RELEASED] == 1
+
+
+def test_load_harness_chi_dung_db_mock_khong_goi_provider_gpu():
+    from tools.bench_llm_admission import run
+
+    report = run(accounts=3, total_jobs=12, polls=2)
+    assert report["drained"] == 12
+    assert report["queue_depth_end"] == 0
+    assert report["provider_calls"] == 0
+    assert report["gpu_reads"] == 0
+    assert report["submitted_per_s"] > 0 and report["drained_per_s"] > 0
+
+
+def test_queue_cap_rejection_metrics_co_ly_do_va_ben_qua_restart(db):
+    from platform_core import jobs
+    from platform_core.public_api import limits, metrics
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.errors import ApiError
+
+    metrics.reset()
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "1",
+        "LTT_PUBLIC_API_MAX_ACTIVE_JOBS": "0",
+    })
+    jobs.submit(
+        db, user_id="u1", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+    with pytest.raises(ApiError):
+        limits.enforce_job_admission(
+            db, principal=_principal("u2"), config=config,
+            resource="llm_remote", class_slugs=())
+    assert metrics.flush(db, process="web:q3-restart") == 2
+    db.commit()
+
+    metrics.reset()
+    durable = metrics.aggregate(db, hours=1)["counters"]
+    assert durable[metrics.ADMISSION_REJECTED] == 1
+    assert durable["admission_rejected:global_queue"] == 1
+
+
+def test_worker_restart_truoc_provider_khoi_phuc_job_tu_db(db):
+    from platform_core import jobs
+    import platform_core.db as dbmod
+    from platform_core.models import JOB_QUEUED, Job
+
+    row = _submit_worker_job(db)
+    running = jobs.claim(db, worker_id="worker-before-restart")
+    running.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=10)
+    db.commit()
+    job_id = row.id
+
+    db.close()
+    dbmod.reset_engine()
+    sessions = dbmod.get_session(); reopened = next(sessions)
+    try:
+        assert jobs.reclaim_orphans(reopened) == 1
+        reopened.commit()
+        restored = reopened.get(Job, job_id)
+        assert restored.status == JOB_QUEUED
+        assert restored.attempts == 1
+        assert restored.provider_state == ""
+    finally:
+        sessions.close()

@@ -244,6 +244,7 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
                 _tra_ve_hang_doi(job_id, job_type, resource="gpu")
                 return True
 
+            _mark_job_admitted(job_id)
             # 2. Chạy handler NGOÀI transaction claim.
             ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
             return _chay_handler(worker_id, job_id, job_type, params, ctx)
@@ -339,6 +340,15 @@ def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> No
             db.commit()
     log.info("job %s (%s) hoãn %ss: tài nguyên %s đang bận",
              job_id[:8], job_type, GPU_RETRY_DELAY_S, resource)
+
+
+def _mark_job_admitted(job_id: str) -> None:
+    """Commit mốc admission trước handler để crash vẫn để lại queue delay thật."""
+    for db in _one_session():
+        job = db.get(Job, job_id)
+        if job is not None:
+            jobq.mark_admitted(db, job)
+            db.commit()
 
 
 def _tran_thoi_gian(app_slug: str, job_type: str) -> int:

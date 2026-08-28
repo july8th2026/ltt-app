@@ -178,6 +178,25 @@ def heartbeat(db: DbSession, job: Job) -> None:
     db.flush()
 
 
+def mark_admitted(db: DbSession, job: Job, *, at: datetime | None = None) -> None:
+    """Ghi mốc đầu tiên job có đủ tài nguyên để chạy, bền qua restart."""
+    if job.status != JOB_RUNNING or job.admitted_at is not None:
+        return
+    admitted = at or _bay_gio()
+    job.admitted_at = admitted
+    delay_ms = max(0, int((_aware(admitted) - _aware(job.created_at)).total_seconds()
+                          * 1000))
+    attempt = int(job.attempts or 0) + 1
+    job_events.append(
+        db, job, "admitted", visibility=job_events.INTERNAL,
+        details={"attempt": attempt, "resource": job.admission_resource,
+                 "admission_delay_ms": delay_ms},
+        event_key="admitted")
+    from platform_core.public_api import metrics
+    metrics.observe(metrics.LATENCY_ADMISSION, delay_ms)
+    db.flush()
+
+
 def mark_provider_dispatched(db: DbSession, job: Job, provider: str = "") -> None:
     """Ghi bền ngay trước outbound HTTP; crash sau mốc này không retry mù."""
     if job.status != JOB_RUNNING:

@@ -113,6 +113,8 @@ def test_timeline_owner_va_debug_chi_operator(env):
     metrics = client.get("/ops/jobs-metrics")
     assert metrics.status_code == 200
     assert metrics.json()["apps"]["appthu"]["slo"]["state"] == "insufficient_data"
+    assert "api_metrics_24h" in metrics.json()
+    assert "queue_depth_by_resource" in metrics.json()["metrics"]
 
     _login(client, "customer@x.com")
     assert client.get(f"/ops/jobs/{job_id}/events").status_code == 403

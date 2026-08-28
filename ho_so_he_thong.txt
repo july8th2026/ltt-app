@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:60703c85d60f13613b73ae1da7cb236f1c13eea9e6fcc0c81c0cebf4a566be1e
-Nguồn đã quét : 1206 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:ef6bd3504115bb38946ecc7ccda20c4fbef99a135802fc6cb902fc6d9f9d61d5
+Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -575,7 +575,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /jobs → developer_jobs | auth~unspecified | server/routes/developer/su_dung.py:97
 - [platform] GET    /jobs → danh_sach | auth~login | server/routes/jobs.py:129
 - [platform] GET    /jobs/{job_id} → chi_tiet | auth~login | server/routes/jobs.py:183
-- [platform] GET    /jobs/{job_id}/artifacts/{index} → tai_artifact | auth~login | server/routes/jobs.py:408
+- [platform] GET    /jobs/{job_id}/artifacts/{index} → tai_artifact | auth~login | server/routes/jobs.py:410
 - [platform] POST   /jobs/{job_id}/cancel → huy_job | auth~login | server/routes/jobs.py:259
 - [platform] GET    /jobs/{job_id}/progress → tien_do | auth~login | server/routes/jobs.py:198
 - [platform] POST   /jobs/{job_id}/retry → thu_lai_job | auth~login | server/routes/jobs.py:282
@@ -761,13 +761,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:636
 
 5. DATA MODEL (59 bảng)
-- agent_runs → AgentRun | platform_core/models.py:454
-- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:539
-- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:521
-- agent_workflows → AgentWorkflow | platform_core/models.py:489
+- agent_runs → AgentRun | platform_core/models.py:458
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:543
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:525
+- agent_workflows → AgentWorkflow | platform_core/models.py:493
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:751
-- api_keys → ApiKey | platform_core/models.py:649
+- api_keys → ApiKey | platform_core/models.py:653
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -778,19 +778,19 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:802
 - app_access → AppAccess | platform_core/models.py:168
 - app_projects → AppProject | platform_core/models.py:201
-- chat_conversations → ChatConversation | platform_core/models.py:792
-- chat_messages → ChatMessage | platform_core/models.py:812
-- credit_entries → CreditEntry | platform_core/models.py:595
-- credit_packages → CreditPackage | platform_core/models.py:725
+- chat_conversations → ChatConversation | platform_core/models.py:796
+- chat_messages → ChatMessage | platform_core/models.py:816
+- credit_entries → CreditEntry | platform_core/models.py:599
+- credit_packages → CreditPackage | platform_core/models.py:729
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- execution_leases → ExecutionLease | platform_core/models.py:350
-- gpu_leases → GpuLease | platform_core/models.py:833
-- job_events → JobEvent | platform_core/models.py:377
+- execution_leases → ExecutionLease | platform_core/models.py:354
+- gpu_leases → GpuLease | platform_core/models.py:837
+- job_events → JobEvent | platform_core/models.py:381
 - jobs → Job | platform_core/models.py:249
 - nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
 - nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:129
 - nexus_sessions → NexusSession | platform_core/nexus/tables.py:180
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:570
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:574
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -805,15 +805,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:749
+- payment_orders → PaymentOrder | platform_core/models.py:753
 - platform_info → PlatformInfo | platform_core/models.py:46
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:138
-- singleton_leases → SingletonLease | platform_core/models.py:883
-- upload_sessions → UploadSession | platform_core/models.py:421
+- singleton_leases → SingletonLease | platform_core/models.py:887
+- upload_sessions → UploadSession | platform_core/models.py:425
 - users → User | platform_core/models.py:73
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
@@ -821,7 +821,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (58)
+6. ALEMBIC MIGRATIONS (59)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -880,6 +880,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - b5e81f2a7c40 ← a4d70e93f158 | H41.9/Q114: snapshot admission resource on durable jobs. | alembic/versions/20260828_1000_job_admission_resource.py
 - c6f92a3b8d51 ← b5e81f2a7c40 | H41.9/Q114: common execution lease for async, sync and stream. | alembic/versions/20260828_1100_execution_leases.py
 - d70a3c4e9f62 ← c6f92a3b8d51 | H41.9/Q2: durable per-account fair claim cursor. | alembic/versions/20260828_1200_job_fair_claim.py
+- e83b5d7c1a40 ← d70a3c4e9f62 | H41.9/Q3: durable job admission timestamp. | alembic/versions/20260828_1300_job_admitted_at.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1369,8 +1370,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1206 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:921, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1208 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:923, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1383,7 +1384,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [README.md] (1)
 - README.md
 
-[alembic] (60)
+[alembic] (61)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1444,6 +1445,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - alembic/versions/20260828_1000_job_admission_resource.py
 - alembic/versions/20260828_1100_execution_leases.py
 - alembic/versions/20260828_1200_job_fair_claim.py
+- alembic/versions/20260828_1300_job_admitted_at.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2513,7 +2515,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (109)
+[tools] (110)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2524,6 +2526,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - tools/autosub_browser_server.py
 - tools/autosub_gpu_smoke.py
 - tools/autosub_load_benchmark.py
+- tools/bench_llm_admission.py
 - tools/bench_public_api_key.py
 - tools/benchmark_upscale_ai_detail.py
 - tools/bradley_terry.py
@@ -2633,7 +2636,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1206 file; 12012167 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029058 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7549,6 +7552,33 @@ def downgrade() -> None:
     op.drop_column("jobs", "provider_dispatched_at")
     op.drop_column("jobs", "provider_state")
     op.drop_column("jobs", "last_claimed_at")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260828_1300_job_admitted_at.py
+SHA256=f005036751e7985a9a4da26ec8d4bed34f0aae5dda95a2359a78f82fdb9b396b BYTES=441 LINES=21
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H41.9/Q3: durable job admission timestamp.
+
+Revision ID: e83b5d7c1a40
+Revises: d70a3c4e9f62
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "e83b5d7c1a40"
+down_revision = "d70a3c4e9f62"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column(
+        "jobs", sa.Column("admitted_at", sa.DateTime(timezone=True), nullable=True))
+
+
+def downgrade() -> None:
+    op.drop_column("jobs", "admitted_at")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -73949,7 +73979,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=778a49273b0201d88d1bc03288b8b1bd8b123f0599a11ef50a38847898d1f806 BYTES=255068 LINES=3604
+SHA256=62562c471e07389f30b43256fbd98395a002437ba0060f7e0babfe95935b3f04 BYTES=254954 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77520,7 +77550,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q2 đã khóa. Global/resource/account cap nằm trước job+credit; execution lease DB một slot dùng chung async/sync/stream. Q2 thêm fair-share + aging bền vững, marker provider trước POST, gỡ ambiguity khi có phản hồi xác định; 429 không tiêu attempt, 413/OOM terminal rejected, timeout/crash sau dispatch terminal ambiguous và không retry mù. Relevant 121 pass/1 skip; gate vòng lặp 19/19 PASS. Race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo Q3 metrics/mock/restart bằng CPU/DB/mock |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa. Q2 fair-share/aging + không retry mù; Q3 thêm `admitted_at`, queue/lease/provider metrics tái dựng từ DB, counter bền qua flush/restart và load harness 0 GPU. Relevant Q3 131 pass/1 skip; 100-job mock = 679,26 submit/s, 47,90 drain/s, poll p50 0,634ms. Race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo gate chốt Q0–Q3 rồi Q4 GPU window, không reboot/reset máy B |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
@@ -100959,7 +100989,7 @@ def support_payload(db: DbSession, job: Job) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_metrics.py
-SHA256=a5f760fd42a71a5b5800a0031ae2fc95fc17c5d31cf773c130ec80187b7108ad BYTES=6166 LINES=148
+SHA256=0a246ab1aff7dc2faa9957b713f1e1732c5f728f6ffad700c29710c1b6c7f289 BYTES=9227 LINES=204
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Snapshot observability cho hàng đợi job, không phụ thuộc tên app."""
 from __future__ import annotations
@@ -100970,8 +101000,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import job_events
-from platform_core.models import (JOB_DONE, JOB_ERROR, JOB_RUNNING,
-                                  CreditEntry, Job, JobEvent)
+from platform_core.models import (JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
+                                  CreditEntry, ExecutionLease, Job, JobEvent)
 
 
 def _seconds(start, end) -> float | None:
@@ -100994,6 +101024,7 @@ def _percentile(values: list[float], percentile: float) -> float:
 
 def snapshot(db: DbSession, *, now: datetime | None = None,
              days: int = 7, stale_minutes: int = 10,
+             lease_stale_minutes: int = 20,
              app_slug: str = "") -> dict:
     current = now or datetime.now(timezone.utc)
     cutoff = current - timedelta(days=max(1, days))
@@ -101005,6 +101036,9 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
     success = sum(job.status == JOB_DONE for job in finished)
     queue_wait = [value for job in rows
                   if (value := _seconds(job.created_at, job.started_at)) is not None]
+    admission_delay = [value for job in rows
+                       if (value := _seconds(job.created_at, job.admitted_at))
+                       is not None]
     runtime = [value for job in finished
                if (value := _seconds(job.started_at, job.finished_at)) is not None]
     events_stmt = select(
@@ -101033,6 +101067,42 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
             CreditEntry.job_id)).all()
         credit_spent = sum(max(0, -int(delta or 0)) for _job_id, delta in net_rows)
     successful = len(done_ids)
+
+    # Queue hiện tại không bị giới hạn bởi cửa sổ báo cáo: một job chờ tám ngày
+    # vẫn phải hiện trên dashboard hôm nay, nếu không chính job kẹt lâu nhất lại
+    # biến mất khỏi số liệu.
+    queued_stmt = select(Job).where(Job.status == JOB_QUEUED)
+    if app_slug:
+        queued_stmt = queued_stmt.where(Job.app_slug == app_slug[:64])
+    queued_rows = list(db.execute(queued_stmt).scalars().all())
+    queue_depth_by_resource: dict[str, int] = {}
+    oldest_by_resource: dict[str, float] = {}
+    for job in queued_rows:
+        resource = job.admission_resource or "unclassified"
+        queue_depth_by_resource[resource] = queue_depth_by_resource.get(resource, 0) + 1
+        age = _seconds(job.created_at, current) or 0.0
+        oldest_by_resource[resource] = max(oldest_by_resource.get(resource, 0.0), age)
+
+    lease_stmt = select(ExecutionLease)
+    if app_slug:
+        lease_stmt = lease_stmt.join(
+            Job, ExecutionLease.job_id == Job.id).where(
+                Job.app_slug == app_slug[:64])
+    lease_rows = list(db.execute(lease_stmt).scalars().all())
+    active_leases_by_resource: dict[str, int] = {}
+    lease_stale_cutoff = current - timedelta(
+        minutes=max(1, int(lease_stale_minutes)))
+    expired_lease_candidates = 0
+    for lease in lease_rows:
+        heartbeat = lease.heartbeat_at
+        if heartbeat.tzinfo is None:
+            heartbeat = heartbeat.replace(tzinfo=timezone.utc)
+        if heartbeat < lease_stale_cutoff:
+            expired_lease_candidates += 1
+            continue
+        active_leases_by_resource[lease.resource] = (
+            active_leases_by_resource.get(lease.resource, 0) + 1)
+
     return {
         "app_slug": app_slug[:64],
         "window_days": max(1, days),
@@ -101041,10 +101111,26 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
         "success_rate": round(success / total, 4) if total else 1.0,
         "queue_wait_p50_s": _percentile(queue_wait, 0.50),
         "queue_wait_p95_s": _percentile(queue_wait, 0.95),
+        "admission_delay_p50_s": _percentile(admission_delay, 0.50),
+        "admission_delay_p95_s": _percentile(admission_delay, 0.95),
         "runtime_p50_s": _percentile(runtime, 0.50),
         "runtime_p95_s": _percentile(runtime, 0.95),
         "retry_total": int(event_counts.get("retry_scheduled", 0)),
         "refund_total": int(event_counts.get("credit_refunded", 0)),
+        "resource_wait_total": int(event_counts.get("resource_wait", 0)),
+        "provider_dispatched_total": int(event_counts.get("provider_dispatched", 0)),
+        "provider_rejected_total": int(event_counts.get("provider_rejected", 0)),
+        "ambiguous_provider_total": int(event_counts.get("ambiguous_provider", 0)),
+        "queue_depth": len(queued_rows),
+        "queue_depth_by_resource": dict(sorted(queue_depth_by_resource.items())),
+        "oldest_queued_age_s": round(max(oldest_by_resource.values(), default=0.0), 3),
+        "oldest_queued_age_s_by_resource": {
+            key: round(value, 3) for key, value in sorted(oldest_by_resource.items())},
+        "active_execution_leases": sum(active_leases_by_resource.values()),
+        "active_execution_leases_by_resource": dict(
+            sorted(active_leases_by_resource.items())),
+        "execution_lease_rows": len(lease_rows),
+        "expired_execution_lease_candidates": int(expired_lease_candidates),
         "stale_jobs": int(stale),
         "event_write_failures": job_events.event_write_failures(),
         "credit_spent_total": int(credit_spent),
@@ -101113,7 +101199,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=4b395d92a3aa6bed85686d7f57da6e32b6ac6ee29ff13e8df91d5cb08f0da674 BYTES=63911 LINES=1407
+SHA256=19426cad7ebc8e9aaae58bb8bbc6812d72792ba6688b3365d9521e597fcd970d BYTES=64253 LINES=1417
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -101361,6 +101447,7 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
                 _tra_ve_hang_doi(job_id, job_type, resource="gpu")
                 return True
 
+            _mark_job_admitted(job_id)
             # 2. Chạy handler NGOÀI transaction claim.
             ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
             return _chay_handler(worker_id, job_id, job_type, params, ctx)
@@ -101456,6 +101543,15 @@ def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> No
             db.commit()
     log.info("job %s (%s) hoãn %ss: tài nguyên %s đang bận",
              job_id[:8], job_type, GPU_RETRY_DELAY_S, resource)
+
+
+def _mark_job_admitted(job_id: str) -> None:
+    """Commit mốc admission trước handler để crash vẫn để lại queue delay thật."""
+    for db in _one_session():
+        job = db.get(Job, job_id)
+        if job is not None:
+            jobq.mark_admitted(db, job)
+            db.commit()
 
 
 def _tran_thoi_gian(app_slug: str, job_type: str) -> int:
@@ -102608,7 +102704,7 @@ def submit_with_credit(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/jobs.py
-SHA256=8b30bf9d7b5562447a42ee943c2b09064e8fe69074e3bb540d0ce57c23bed90f BYTES=16619 LINES=386
+SHA256=bda1ae0acbc7cf7fd1f5b3e8e7864c5476bc28636122e9be0b919e41f1ff3d25 BYTES=17460 LINES=405
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — hàng đợi job tự quản trên PostgreSQL (H2, Q26).
@@ -102787,6 +102883,25 @@ def claim(db: DbSession, *, worker_id: str,
 def heartbeat(db: DbSession, job: Job) -> None:
     """Đập nhịp — báo cho hệ thống biết worker còn sống với job này."""
     job.heartbeat_at = _bay_gio()
+    db.flush()
+
+
+def mark_admitted(db: DbSession, job: Job, *, at: datetime | None = None) -> None:
+    """Ghi mốc đầu tiên job có đủ tài nguyên để chạy, bền qua restart."""
+    if job.status != JOB_RUNNING or job.admitted_at is not None:
+        return
+    admitted = at or _bay_gio()
+    job.admitted_at = admitted
+    delay_ms = max(0, int((_aware(admitted) - _aware(job.created_at)).total_seconds()
+                          * 1000))
+    attempt = int(job.attempts or 0) + 1
+    job_events.append(
+        db, job, "admitted", visibility=job_events.INTERNAL,
+        details={"attempt": attempt, "resource": job.admission_resource,
+                 "admission_delay_ms": delay_ms},
+        event_key="admitted")
+    from platform_core.public_api import metrics
+    metrics.observe(metrics.LATENCY_ADMISSION, delay_ms)
     db.flush()
 
 
@@ -103185,7 +103300,7 @@ __all__ = ["admission", "cong_vlm"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/llm/admission.py
-SHA256=1a39c457f986e842c7f386b02943e3c130ab02441d05f475aa91b63f97867d1b BYTES=5284 LINES=193
+SHA256=bfddb6865cbdc90896b9fcd4b661f271a7f7dead22a207b043cd144349f97463 BYTES=5717 LINES=201
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Admission lease chung cho mọi đường gọi tài nguyên LLM.
 
@@ -103239,6 +103354,8 @@ def reclaim_expired(
     for lease in expired:
         db.delete(lease)
     if expired:
+        from platform_core.public_api import metrics
+        metrics.increment(metrics.ADMISSION_EXPIRED, len(expired))
         db.flush()
     return len(expired)
 
@@ -103280,10 +103397,14 @@ def acquire(
             with db.begin_nested():
                 db.add(lease)
                 db.flush()
+            from platform_core.public_api import metrics
+            metrics.increment(metrics.ADMISSION_ACQUIRED)
             return lease
         except IntegrityError:
             # Một tiến trình khác thắng đúng slot giữa SELECT và INSERT.
             continue
+    from platform_core.public_api import metrics
+    metrics.increment(metrics.ADMISSION_REJECTED)
     return None
 
 
@@ -103302,6 +103423,8 @@ def release(db: Session, lease_id: str) -> bool:
     if lease is None:
         return False
     db.delete(lease)
+    from platform_core.public_api import metrics
+    metrics.increment(metrics.ADMISSION_RELEASED)
     db.flush()
     return True
 
@@ -105025,7 +105148,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=4ca399cf58153117f8e0878bb98246a6bb324c1e6cb3da413e890c647ff09ce2 BYTES=50518 LINES=919
+SHA256=e598d7faf4175cb3312467d7895d63b9b6baa1f88e1a95f3fe8481c6d8b4e456 BYTES=50819 LINES=923
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -105354,6 +105477,10 @@ class Job(Base):
     # `ambiguous` là lý do terminal, không tạo một hàng đợi/trạng thái song song.
     provider_state: Mapped[str] = mapped_column(String(16), default="", nullable=False)
     provider_dispatched_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    # Mốc đầu tiên job thực sự sở hữu đủ tài nguyên để đi vào handler. Khác
+    # `started_at` (worker claim): resource_wait có thể xảy ra nhiều lần ở giữa.
+    admitted_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
     #: Khi nào `params`/`result`/file của job này hết hạn và đã bị xoá. Hàng vẫn
     #: còn — nó là **bằng chứng** mà bút toán credit trỏ về. Có mốc này thì một
@@ -114204,7 +114331,7 @@ __all__ = ["DEVKEY_ACTIVE", "DeveloperKeyError", "current_pepper", "digest_secre
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/limits.py
-SHA256=65f3cdad365f724db5b95e4b6ed0998e30ec8155db80c1606dad458aabbb2151 BYTES=18631 LINES=414
+SHA256=e9b0c31bade3eb7ef207b01efd4431f9160f5cabc9671435e0ed9daa4ddd657e BYTES=19199 LINES=426
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rate, quota, concurrency and capacity limits for the Public API.
 
@@ -114292,6 +114419,14 @@ def metrics() -> dict:
 
 def _bump(name: str) -> None:
     _counters[name] += 1
+
+
+def _record_admission_rejected(reason: str) -> None:
+    """Đếm cả tổng và lý do trong bộ metrics được xả bền xuống CSDL."""
+    from platform_core.public_api import metrics as durable_metrics
+
+    durable_metrics.increment(durable_metrics.ADMISSION_REJECTED)
+    durable_metrics.increment(f"admission_rejected:{str(reason)[:40]}")
 
 
 def _hit(bucket: str, limit: int, window_s: float) -> tuple[bool, int]:
@@ -114525,6 +114660,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
         queued = queued_job_count(db)
         if queued >= global_limit:
             _bump("queue_limited:global")
+            _record_admission_rejected("global_queue")
             raise _too_many(
                 "The job queue is full right now.", 30,
                 code=CODE_CONCURRENCY, scope="global_queue",
@@ -114534,6 +114670,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
         queued = queued_job_count(db, resource=resource)
         if queued >= resource_limit:
             _bump(f"queue_limited:{resource}")
+            _record_admission_rejected("resource_queue")
             raise _too_many(
                 f"The {resource} queue is full right now.", 30,
                 code=CODE_CONCURRENCY, scope="resource_queue",
@@ -114543,6 +114680,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
         active = active_job_count(db, principal.user_id)
         if active >= limit:
             _bump("concurrency_limited")
+            _record_admission_rejected("account")
             raise _too_many(
                 "This account already has the maximum number of active jobs.",
                 30, code=CODE_CONCURRENCY, active_jobs=active, limit=limit)
@@ -114556,6 +114694,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
             app_slugs=class_slugs if not resource else None)
         if active >= class_limit:
             _bump(f"capacity_limited:{resource}")
+            _record_admission_rejected("account_resource")
             raise _too_many(
                 f"This account already has the maximum number of active "
                 f"{resource} jobs.", 30, code=CODE_CONCURRENCY,
@@ -114792,7 +114931,7 @@ def results_of(job, tool) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/metrics.py
-SHA256=dbbba858633c877714df667bcb117616d0d1255ed77bce751860d9352c3824f0 BYTES=10686 LINES=251
+SHA256=e6afa6ad5e106eb8689ae9f7faa1292811594f781bd4694b1f26ab8f2663c96c BYTES=10889 LINES=256
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """In-process counters for the Public API.
 
@@ -114852,9 +114991,14 @@ JOBS_CREATED = "jobs_created"
 JOBS_CANCELLED = "jobs_cancelled"
 WEBHOOK_DELIVERED = "webhook_delivered"
 WEBHOOK_FAILED = "webhook_failed"
+ADMISSION_ACQUIRED = "admission_acquired"
+ADMISSION_REJECTED = "admission_rejected"
+ADMISSION_RELEASED = "admission_released"
+ADMISSION_EXPIRED = "admission_expired"
 
 LATENCY_REQUEST = "request_ms"
 LATENCY_QUEUE_PICKUP = "queue_pickup_ms"
+LATENCY_ADMISSION = "admission_delay_ms"
 
 
 def increment(name: str, amount: int = 1) -> None:
@@ -136520,7 +136664,7 @@ def version() -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/jobs.py
-SHA256=1d1f04b12f90f6223bd521a8e4f0c20735e1059d8151278d0a79a528a053ac4b BYTES=18121 LINES=437
+SHA256=657f2b41db2cd3557f1032682308d1a6b7995a92a4752d38fc3a0d7dda8618cb BYTES=18257 LINES=439
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — trang job của người dùng: danh sách, chi tiết, tiến độ (H2.3).
@@ -136907,6 +137051,7 @@ def jobs_retention(_request: Request,
 def jobs_metrics(_request: Request, _operator: str = Depends(require_operator)):
     from platform_core import job_metrics
     from platform_core.db import get_session
+    from platform_core.public_api import metrics as api_metrics
     from platform_core.registry import discover
     gen = get_session(); db = next(gen)
     try:
@@ -136922,6 +137067,7 @@ def jobs_metrics(_request: Request, _operator: str = Depends(require_operator)):
                 "slo": job_metrics.evaluate_slo(own, budget),
             }
         return {"metrics": metrics, "alerts": job_metrics.alerts(metrics),
+                "api_metrics_24h": api_metrics.aggregate(db, hours=24),
                 "apps": apps}
     finally:
         try: next(gen)
@@ -159498,7 +159644,7 @@ def test_xoa_file_loi_khong_lam_hong_ca_luot_don(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_155_logging_observability.py
-SHA256=c48d62b759e172214c133b1448124417ec2f5170e8a85b153bd935b54dafe17b BYTES=3808 LINES=101
+SHA256=ef8db50ac84a89b9a4998ed611fde56191a0b53dae1978e74ee4b24c448344b9 BYTES=4016 LINES=104
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H30 — structured process log và lifecycle event tự động cho mọi app."""
 from __future__ import annotations
@@ -159566,9 +159712,13 @@ def test_runner_tu_dong_ghi_execution_lifecycle(db, monkeypatch):
     codes = [row.event_code for row in db.query(JobEvent).filter_by(
         job_id=job.id).order_by(JobEvent.sequence)]
     assert codes == [
-        "submitted", "claimed", "started", "execution_started", "progress",
-        "execution_completed", "completed",
+        "submitted", "claimed", "started", "admitted", "execution_started",
+        "progress", "execution_completed", "completed",
     ]
+    admitted = db.query(JobEvent).filter_by(
+        job_id=job.id, event_code="admitted").one()
+    assert admitted.visibility == "internal"
+    assert admitted.details["admission_delay_ms"] >= 0
     completed = db.query(JobEvent).filter_by(
         job_id=job.id, event_code="execution_completed").one()
     assert completed.visibility == "internal"
@@ -159600,7 +159750,6 @@ def test_process_log_jsonl_redaction_and_age_cleanup(tmp_path, monkeypatch):
     os.utime(old, (stamp, stamp))
     assert cleanup_rotated_logs(logs_dir=str(tmp_path), retention_days=30) == 1
     assert not old.exists()
-
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -214982,7 +215131,7 @@ def test_ghi_app_env_KHONG_BOM():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_313_llm_admission.py
-SHA256=e90c7fc12bc0688009b26a52ae0daf3fa596ffb02576c2f278925a605ad45f15 BYTES=11825 LINES=341
+SHA256=db550f9b6bb751859ca2752769e850204e0bd49182366f1ab8853f4c2fd120ac BYTES=17787 LINES=500
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q114/H41.9 — admission cap/metadata không cần GPU thật."""
 from __future__ import annotations
@@ -215177,7 +215326,25 @@ def test_worker_hoan_job_khi_execution_slot_ban_khong_tinh_attempt(db, monkeypat
     postponed = db.get(Job, job_id)
     assert postponed.status == JOB_QUEUED
     assert postponed.attempts == 0
+    assert postponed.admitted_at is None
     assert ran == []
+
+
+def test_worker_ghi_admitted_at_chi_khi_sap_vao_handler(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.models import JOB_DONE, Job
+
+    row = _submit_worker_job(db)
+    monkeypatch.setattr(
+        runner.jobq, "resolve_handler",
+        lambda _job_type: lambda _params, _ctx: {"ok": True})
+    assert runner._chay_mot_job("worker-admitted") is True
+
+    db.expire_all()
+    done = db.get(Job, row.id)
+    assert done.status == JOB_DONE
+    assert done.admitted_at is not None
+    assert done.admitted_at >= done.created_at
 
 
 def test_fair_claim_khong_de_burst_mot_account_doc_chiem_resource(db):
@@ -215325,6 +215492,147 @@ def test_reclaim_worker_chet_sau_dispatch_khong_chay_lai_side_effect(db):
     assert jobs.reclaim_orphans(
         db, on_terminal=lambda _db, job: terminal.append(job.id)) == 0
     assert terminal == [row.id], "terminal callback/refund khong duoc lap lai"
+
+
+def test_queue_snapshot_tai_dung_tu_db_sau_restart_khong_can_gpu(db):
+    from platform_core import job_metrics, jobs
+    import platform_core.db as dbmod
+    from platform_core.llm import admission
+
+    now = datetime.now(timezone.utc)
+    running = jobs.submit(
+        db, user_id="u-running", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    running.created_at = now - timedelta(seconds=12)
+    db.commit()
+    claimed = jobs.claim(db, worker_id="w-observe")
+    jobs.mark_admitted(db, claimed, at=now)
+
+    queued = jobs.submit(
+        db, user_id="u-queued", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    queued.created_at = now - timedelta(seconds=25)
+    lease = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id=running.user_id,
+        mode="job", holder_id=running.id, job_id=running.id)
+    stale = admission.acquire(
+        db, resource="stale-resource", slots=1, user_id="u-stale",
+        mode="sync", holder_id="stale-holder")
+    stale.heartbeat_at = now - timedelta(minutes=30)
+    db.commit()
+    assert lease is not None and stale is not None
+
+    before = job_metrics.snapshot(db, now=now)
+    assert before["queue_depth"] == 1
+    assert before["queue_depth_by_resource"] == {"llm_remote": 1}
+    assert before["oldest_queued_age_s_by_resource"]["llm_remote"] >= 25
+    assert before["active_execution_leases_by_resource"] == {"llm_remote": 1}
+    assert before["expired_execution_lease_candidates"] == 1
+    assert before["execution_lease_rows"] == 2
+    assert before["admission_delay_p50_s"] == pytest.approx(12.0, abs=0.01)
+
+    # Mô phỏng restart process: đóng session rồi đọc lại hoàn toàn từ row bền.
+    db.close()
+    dbmod.reset_engine()
+    sessions = dbmod.get_session(); reopened = next(sessions)
+    try:
+        after = job_metrics.snapshot(reopened, now=now)
+        for key in (
+            "queue_depth", "queue_depth_by_resource",
+            "oldest_queued_age_s_by_resource",
+            "active_execution_leases_by_resource", "admission_delay_p50_s",
+        ):
+            assert after[key] == before[key]
+    finally:
+        sessions.close()
+
+
+def test_execution_metric_flush_con_song_sau_reset_process(db):
+    from platform_core.llm import admission
+    from platform_core.public_api import metrics
+
+    metrics.reset()
+    first = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u1", mode="sync",
+        holder_id="h1")
+    assert first is not None
+    assert admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2", mode="stream",
+        holder_id="h2") is None
+    assert admission.release(db, first.id)
+    db.commit()
+    assert metrics.flush(db, process="worker:q3-restart") >= 3
+    db.commit()
+
+    metrics.reset()
+    durable = metrics.aggregate(db, hours=1)["counters"]
+    assert durable[metrics.ADMISSION_ACQUIRED] == 1
+    assert durable[metrics.ADMISSION_REJECTED] == 1
+    assert durable[metrics.ADMISSION_RELEASED] == 1
+
+
+def test_load_harness_chi_dung_db_mock_khong_goi_provider_gpu():
+    from tools.bench_llm_admission import run
+
+    report = run(accounts=3, total_jobs=12, polls=2)
+    assert report["drained"] == 12
+    assert report["queue_depth_end"] == 0
+    assert report["provider_calls"] == 0
+    assert report["gpu_reads"] == 0
+    assert report["submitted_per_s"] > 0 and report["drained_per_s"] > 0
+
+
+def test_queue_cap_rejection_metrics_co_ly_do_va_ben_qua_restart(db):
+    from platform_core import jobs
+    from platform_core.public_api import limits, metrics
+    from platform_core.public_api.config import load_public_api_config
+    from platform_core.public_api.errors import ApiError
+
+    metrics.reset()
+    config = load_public_api_config({
+        "LTT_PUBLIC_API_GLOBAL_QUEUE_LIMIT": "1",
+        "LTT_PUBLIC_API_MAX_ACTIVE_JOBS": "0",
+    })
+    jobs.submit(
+        db, user_id="u1", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+    with pytest.raises(ApiError):
+        limits.enforce_job_admission(
+            db, principal=_principal("u2"), config=config,
+            resource="llm_remote", class_slugs=())
+    assert metrics.flush(db, process="web:q3-restart") == 2
+    db.commit()
+
+    metrics.reset()
+    durable = metrics.aggregate(db, hours=1)["counters"]
+    assert durable[metrics.ADMISSION_REJECTED] == 1
+    assert durable["admission_rejected:global_queue"] == 1
+
+
+def test_worker_restart_truoc_provider_khoi_phuc_job_tu_db(db):
+    from platform_core import jobs
+    import platform_core.db as dbmod
+    from platform_core.models import JOB_QUEUED, Job
+
+    row = _submit_worker_job(db)
+    running = jobs.claim(db, worker_id="worker-before-restart")
+    running.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=10)
+    db.commit()
+    job_id = row.id
+
+    db.close()
+    dbmod.reset_engine()
+    sessions = dbmod.get_session(); reopened = next(sessions)
+    try:
+        assert jobs.reclaim_orphans(reopened) == 1
+        reopened.commit()
+        restored = reopened.get(Job, job_id)
+        assert restored.status == JOB_QUEUED
+        assert restored.attempts == 1
+        assert restored.provider_state == ""
+    finally:
+        sessions.close()
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -219542,7 +219850,7 @@ def test_job_that_bai_hoan_credit(db, app_thu):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_69_web_jobs.py
-SHA256=cb69af544b9920f1ee9da7dd7606dd6e09018595a3c84e2dfc57c0b005c705bf BYTES=9464 LINES=235
+SHA256=b753e85f4baff31c8520625225dfc7a2c26b377cfdbca785df6e0e8b3d8887e9 BYTES=9577 LINES=237
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 H2.3 — web submit qua hàng đợi + trang job + cách ly người dùng.
@@ -219659,6 +219967,8 @@ def test_timeline_owner_va_debug_chi_operator(env):
     metrics = client.get("/ops/jobs-metrics")
     assert metrics.status_code == 200
     assert metrics.json()["apps"]["appthu"]["slo"]["state"] == "insufficient_data"
+    assert "api_metrics_24h" in metrics.json()
+    assert "queue_depth_by_resource" in metrics.json()["metrics"]
 
     _login(client, "customer@x.com")
     assert client.get(f"/ops/jobs/{job_id}/events").status_code == 403
@@ -227401,6 +227711,129 @@ def main()->int:
 
 
 if __name__=="__main__":raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/bench_llm_admission.py
+SHA256=966b90f9bcf37b3c95ed4df96eed702a4379c3e26f0baa1f445162ec5acb8d5b BYTES=4396 LINES=117
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""CPU-only load harness cho admission/queue LTT LLM.
+
+Chỉ dùng CSDL SQLite vứt đi và provider giả bằng việc complete job trực tiếp;
+không đọc GPU, không gọi mạng, không đụng dữ liệu production.
+
+    python tools\bench_llm_admission.py --accounts 10 --jobs 1000 --polls 3
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import statistics
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker
+
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from platform_core.db import Base
+
+
+def _rate(count: int, seconds: float) -> float:
+    return round(count / max(seconds, 0.000001), 2)
+
+
+def run(*, accounts: int = 10, total_jobs: int = 1000, polls: int = 3) -> dict:
+    """Chạy tải DB/queue/poll cô lập và trả report JSON-serializable."""
+    from platform_core import job_history, job_metrics, jobs
+    from platform_core.public_api import metrics
+    import platform_core.models  # noqa: F401 - đăng ký toàn bộ bảng
+
+    account_count = max(1, int(accounts))
+    job_count = max(1, int(total_jobs))
+    poll_count = max(0, int(polls))
+    metrics.reset()
+
+    with tempfile.TemporaryDirectory(prefix="ltt-llm-admission-") as temp_dir:
+        path = Path(temp_dir) / "queue.db"
+        engine = sa.create_engine(f"sqlite:///{path.as_posix()}", future=True)
+        Base.metadata.create_all(engine)
+        db = sessionmaker(bind=engine, expire_on_commit=False, future=True)()
+        try:
+            started = time.perf_counter()
+            for index in range(job_count):
+                jobs.submit(
+                    db, user_id=f"bench-account-{index % account_count}",
+                    app_slug="bench", job_type="bench.llm", params={},
+                    admission_resource="llm_remote", admission_slots=1)
+            db.commit()
+            submit_s = time.perf_counter() - started
+
+            poll_samples = []
+            started = time.perf_counter()
+            for _ in range(poll_count):
+                for account in range(account_count):
+                    tick = time.perf_counter()
+                    job_history.list_owned(
+                        db, f"bench-account-{account}", status="queued", limit=50)
+                    poll_samples.append(time.perf_counter() - tick)
+            poll_s = time.perf_counter() - started
+
+            started = time.perf_counter()
+            drained = 0
+            while True:
+                job = jobs.claim(db, worker_id="bench-worker")
+                if job is None:
+                    db.commit()
+                    break
+                jobs.mark_admitted(db, job)
+                jobs.complete(db, job, {"mock": True})
+                db.commit()
+                drained += 1
+            drain_s = time.perf_counter() - started
+            snap = job_metrics.snapshot(db)
+            local_metrics = metrics.snapshot()
+            return {
+                "accounts": account_count,
+                "jobs": job_count,
+                "polls": poll_count * account_count,
+                "submitted_per_s": _rate(job_count, submit_s),
+                "drained_per_s": _rate(drained, drain_s),
+                "poll_p50_ms": round(
+                    statistics.median(poll_samples) * 1000, 3)
+                    if poll_samples else 0.0,
+                "poll_total_s": round(poll_s, 3),
+                "drained": drained,
+                "queue_depth_end": snap["queue_depth"],
+                "admission_delay_p95_s": snap["admission_delay_p95_s"],
+                "metric_observations_in_process": sum(
+                    bucket["count"] for bucket in
+                    local_metrics["latency"].values()),
+                "provider_calls": 0,
+                "gpu_reads": 0,
+            }
+        finally:
+            db.close()
+            engine.dispose()
+            metrics.reset()
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--accounts", type=int, default=10)
+    parser.add_argument("--jobs", type=int, default=1000, dest="total_jobs")
+    parser.add_argument("--polls", type=int, default=3)
+    args = parser.parse_args()
+    print(json.dumps(run(**vars(args)), ensure_ascii=False, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

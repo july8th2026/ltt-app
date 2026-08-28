@@ -1,6 +1,6 @@
 # Hợp đồng admission/queue cho LTT LLM
 
-Trạng thái: Q0–Q2 của H41.9 đã triển khai ngày 2026-08-28 theo Q114. Số đo GPU
+Trạng thái: Q0–Q3 của H41.9 đã triển khai ngày 2026-08-28 theo Q114. Số đo GPU
 Q111/Q112 vẫn là nguồn cho cấu hình `parallel=1`, không chạy lại ở pha
 CPU/CSDL/mock.
 
@@ -134,6 +134,25 @@ ma trận này xanh và full gate không có regression thuộc `ltt_llm`.
   terminal `ambiguous`, không tự phát lại request có thể đã tạo side effect.
 - Callback terminal của orphan chỉ chạy ở lần chuyển `running → error`; refund
   hiện có vẫn idempotent nên reclaim lặp không hoàn tiền/webhook lần hai.
+
+### Kết quả Q3 đã khóa
+
+- Job có `admitted_at` riêng, chỉ ghi ngay trước handler sau khi đủ execution
+  lease/GPU lease; `started_at` vẫn là mốc worker claim. Vì vậy resource-wait
+  không còn làm queue delay thực bị rút ngắn giả tạo.
+- `/ops/jobs-metrics` đọc từ row bền để trả queue depth, oldest queued age và
+  active/expired-candidate execution lease theo resource; đồng thời trả admission
+  p50/p95, resource-wait và provider dispatched/rejected/ambiguous. Mẫu counter
+  24 giờ được cộng từ `api_metric_samples`, không phụ thuộc RAM của một process.
+- Execution lease đếm acquired/rejected/released/expired; queue cap rejection
+  đếm thêm lý do global/resource/account. Flush rồi reset process vẫn đọc lại
+  đúng từ CSDL.
+- `tools/bench_llm_admission.py` chỉ dùng SQLite vứt đi, provider mock và không
+  đọc GPU. Mốc 100 job/5 account: 679,26 submit/s, 47,90 drain/s, poll p50
+  0,634 ms; 0 provider call, 0 GPU read. Đây là baseline control-plane cục bộ,
+  không được diễn giải thành p95 production/PostgreSQL.
+- Test restart đóng engine thật: snapshot vẫn giữ nguyên; orphan pre-dispatch
+  được reclaim về queue, còn orphan post-dispatch giữ terminal ambiguous của Q2.
 
 ## 7. Căn cứ kỹ thuật
 

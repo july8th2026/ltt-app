@@ -7,8 +7,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DbSession
 
 from platform_core import job_events
-from platform_core.models import (JOB_DONE, JOB_ERROR, JOB_RUNNING,
-                                  CreditEntry, Job, JobEvent)
+from platform_core.models import (JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
+                                  CreditEntry, ExecutionLease, Job, JobEvent)
 
 
 def _seconds(start, end) -> float | None:
@@ -31,6 +31,7 @@ def _percentile(values: list[float], percentile: float) -> float:
 
 def snapshot(db: DbSession, *, now: datetime | None = None,
              days: int = 7, stale_minutes: int = 10,
+             lease_stale_minutes: int = 20,
              app_slug: str = "") -> dict:
     current = now or datetime.now(timezone.utc)
     cutoff = current - timedelta(days=max(1, days))
@@ -42,6 +43,9 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
     success = sum(job.status == JOB_DONE for job in finished)
     queue_wait = [value for job in rows
                   if (value := _seconds(job.created_at, job.started_at)) is not None]
+    admission_delay = [value for job in rows
+                       if (value := _seconds(job.created_at, job.admitted_at))
+                       is not None]
     runtime = [value for job in finished
                if (value := _seconds(job.started_at, job.finished_at)) is not None]
     events_stmt = select(
@@ -70,6 +74,42 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
             CreditEntry.job_id)).all()
         credit_spent = sum(max(0, -int(delta or 0)) for _job_id, delta in net_rows)
     successful = len(done_ids)
+
+    # Queue hiện tại không bị giới hạn bởi cửa sổ báo cáo: một job chờ tám ngày
+    # vẫn phải hiện trên dashboard hôm nay, nếu không chính job kẹt lâu nhất lại
+    # biến mất khỏi số liệu.
+    queued_stmt = select(Job).where(Job.status == JOB_QUEUED)
+    if app_slug:
+        queued_stmt = queued_stmt.where(Job.app_slug == app_slug[:64])
+    queued_rows = list(db.execute(queued_stmt).scalars().all())
+    queue_depth_by_resource: dict[str, int] = {}
+    oldest_by_resource: dict[str, float] = {}
+    for job in queued_rows:
+        resource = job.admission_resource or "unclassified"
+        queue_depth_by_resource[resource] = queue_depth_by_resource.get(resource, 0) + 1
+        age = _seconds(job.created_at, current) or 0.0
+        oldest_by_resource[resource] = max(oldest_by_resource.get(resource, 0.0), age)
+
+    lease_stmt = select(ExecutionLease)
+    if app_slug:
+        lease_stmt = lease_stmt.join(
+            Job, ExecutionLease.job_id == Job.id).where(
+                Job.app_slug == app_slug[:64])
+    lease_rows = list(db.execute(lease_stmt).scalars().all())
+    active_leases_by_resource: dict[str, int] = {}
+    lease_stale_cutoff = current - timedelta(
+        minutes=max(1, int(lease_stale_minutes)))
+    expired_lease_candidates = 0
+    for lease in lease_rows:
+        heartbeat = lease.heartbeat_at
+        if heartbeat.tzinfo is None:
+            heartbeat = heartbeat.replace(tzinfo=timezone.utc)
+        if heartbeat < lease_stale_cutoff:
+            expired_lease_candidates += 1
+            continue
+        active_leases_by_resource[lease.resource] = (
+            active_leases_by_resource.get(lease.resource, 0) + 1)
+
     return {
         "app_slug": app_slug[:64],
         "window_days": max(1, days),
@@ -78,10 +118,26 @@ def snapshot(db: DbSession, *, now: datetime | None = None,
         "success_rate": round(success / total, 4) if total else 1.0,
         "queue_wait_p50_s": _percentile(queue_wait, 0.50),
         "queue_wait_p95_s": _percentile(queue_wait, 0.95),
+        "admission_delay_p50_s": _percentile(admission_delay, 0.50),
+        "admission_delay_p95_s": _percentile(admission_delay, 0.95),
         "runtime_p50_s": _percentile(runtime, 0.50),
         "runtime_p95_s": _percentile(runtime, 0.95),
         "retry_total": int(event_counts.get("retry_scheduled", 0)),
         "refund_total": int(event_counts.get("credit_refunded", 0)),
+        "resource_wait_total": int(event_counts.get("resource_wait", 0)),
+        "provider_dispatched_total": int(event_counts.get("provider_dispatched", 0)),
+        "provider_rejected_total": int(event_counts.get("provider_rejected", 0)),
+        "ambiguous_provider_total": int(event_counts.get("ambiguous_provider", 0)),
+        "queue_depth": len(queued_rows),
+        "queue_depth_by_resource": dict(sorted(queue_depth_by_resource.items())),
+        "oldest_queued_age_s": round(max(oldest_by_resource.values(), default=0.0), 3),
+        "oldest_queued_age_s_by_resource": {
+            key: round(value, 3) for key, value in sorted(oldest_by_resource.items())},
+        "active_execution_leases": sum(active_leases_by_resource.values()),
+        "active_execution_leases_by_resource": dict(
+            sorted(active_leases_by_resource.items())),
+        "execution_lease_rows": len(lease_rows),
+        "expired_execution_lease_candidates": int(expired_lease_candidates),
         "stale_jobs": int(stale),
         "event_write_failures": job_events.event_write_failures(),
         "credit_spent_total": int(credit_spent),

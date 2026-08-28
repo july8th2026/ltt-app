@@ -326,6 +326,10 @@ class Job(Base):
     provider_state: Mapped[str] = mapped_column(String(16), default="", nullable=False)
     provider_dispatched_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True)
+    # Mốc đầu tiên job thực sự sở hữu đủ tài nguyên để đi vào handler. Khác
+    # `started_at` (worker claim): resource_wait có thể xảy ra nhiều lần ở giữa.
+    admitted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
     #: Khi nào `params`/`result`/file của job này hết hạn và đã bị xoá. Hàng vẫn
     #: còn — nó là **bằng chứng** mà bút toán credit trỏ về. Có mốc này thì một
     #: `result` rỗng đọc ra là "đã hết hạn", chứ không phải "mất dữ liệu".

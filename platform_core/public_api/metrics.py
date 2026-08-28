@@ -56,9 +56,14 @@ JOBS_CREATED = "jobs_created"
 JOBS_CANCELLED = "jobs_cancelled"
 WEBHOOK_DELIVERED = "webhook_delivered"
 WEBHOOK_FAILED = "webhook_failed"
+ADMISSION_ACQUIRED = "admission_acquired"
+ADMISSION_REJECTED = "admission_rejected"
+ADMISSION_RELEASED = "admission_released"
+ADMISSION_EXPIRED = "admission_expired"
 
 LATENCY_REQUEST = "request_ms"
 LATENCY_QUEUE_PICKUP = "queue_pickup_ms"
+LATENCY_ADMISSION = "admission_delay_ms"
 
 
 def increment(name: str, amount: int = 1) -> None:

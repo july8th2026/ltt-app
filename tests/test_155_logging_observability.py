@@ -64,9 +64,13 @@ def test_runner_tu_dong_ghi_execution_lifecycle(db, monkeypatch):
     codes = [row.event_code for row in db.query(JobEvent).filter_by(
         job_id=job.id).order_by(JobEvent.sequence)]
     assert codes == [
-        "submitted", "claimed", "started", "execution_started", "progress",
-        "execution_completed", "completed",
+        "submitted", "claimed", "started", "admitted", "execution_started",
+        "progress", "execution_completed", "completed",
     ]
+    admitted = db.query(JobEvent).filter_by(
+        job_id=job.id, event_code="admitted").one()
+    assert admitted.visibility == "internal"
+    assert admitted.details["admission_delay_ms"] >= 0
     completed = db.query(JobEvent).filter_by(
         job_id=job.id, event_code="execution_completed").one()
     assert completed.visibility == "internal"
@@ -98,4 +102,3 @@ def test_process_log_jsonl_redaction_and_age_cleanup(tmp_path, monkeypatch):
     os.utime(old, (stamp, stamp))
     assert cleanup_rotated_logs(logs_dir=str(tmp_path), retention_days=30) == 1
     assert not old.exists()
-

@@ -14,6 +14,46 @@
 
 ---
 
+## 2026-08-28 — H41.9 Q3: metrics bền, tải giả và restart không GPU
+
+- Thêm `Job.admitted_at` + migration head `e83b5d7c1a40`; worker chỉ ghi mốc
+  ngay trước handler sau khi đủ execution/GPU lease. Nó tách đúng thời gian
+  claim khỏi thời gian thực sự được admission.
+- Mở rộng snapshot operator bằng queue depth/oldest age, active/expired lease
+  theo resource, admission p50/p95, resource-wait và các mốc provider. Endpoint
+  `/ops/jobs-metrics` trả thêm aggregate 24 giờ từ `api_metric_samples`.
+- Execution admission đếm acquired/rejected/released/expired; queue cap rejection
+  đếm lý do global/resource/account. Test flush → reset process → aggregate DB
+  chứng minh counter không mất sau restart.
+- Thêm `tools/bench_llm_admission.py`: luôn dùng SQLite vứt đi, complete bằng
+  provider mock, không gọi mạng và không đọc GPU. Test đóng/reopen engine thật
+  chứng minh snapshot còn nguyên và orphan pre-dispatch trở về queue.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| test viết trước metrics/restart | **FAIL 2**: chưa có `mark_admitted`, acquire/release chưa phát metric |
+| `python tools\test_nhanh.py --noi-tiep -k "test_151_job_events or test_184_public_api_limits or test_216_worker_pools_and_metrics or test_259_cua_dong_bo or test_272_cua_streaming or test_313_llm_admission or test_69_web_jobs"` | **PASS 131**, 1 skip, 4.141 deselected |
+| `python tools\bench_llm_admission.py --accounts 5 --jobs 100 --polls 2` | **PASS**: 679,26 submit/s; 47,90 drain/s; poll p50 0,634ms; 0 provider/GPU |
+| `python tools\test_nhanh.py --noi-tiep -k "worker_restart_truoc_provider_khoi_phuc_job_tu_db or queue_snapshot_tai_dung_tu_db_sau_restart or execution_metric_flush_con_song_sau_reset_process or queue_cap_rejection_metrics_co_ly_do_va_ben_qua_restart"` | **PASS 4**, 1 skip |
+| `python -m alembic heads` | **PASS**, một head `e83b5d7c1a40` |
+| `python tools\gate.py --vong-lap` lần đầu | **FAIL 1/19**: test lifecycle cũ chưa khai event `admitted`; backend 4.184 pass, 27 skip |
+| test lifecycle sau cập nhật contract | **PASS 1**, 1 skip |
+| `python tools\gate.py --vong-lap` lượt chốt Q3 | **PASS 19/19**; backend `--lf` gần-full 211,1 giây; chưa thay full gate |
+| gate sau tách active lease khỏi expired candidate | **PASS 19/19**; backend `--lf` 213,1 giây |
+
+### Còn tồn đọng và việc tiếp theo
+
+1. Sinh lại hồ sơ, chạy gate vòng lặp và commit Q3; sau đó chạy full gate chốt
+   toàn bộ Q0–Q3 trước cửa sổ GPU.
+2. Race PostgreSQL còn skip vì chưa có scratch `LTT_TEST_DATABASE_URL`; không
+   tính SQLite là bằng chứng chống race.
+3. Q4 dùng GPU/model thật nhưng không reboot/reset máy B; giữ `parallel=1` và
+   chỉ test những đường admission vừa thay đổi.
+
+---
+
 ## 2026-08-28 — H41.9 Q2: fair scheduler và không retry mù sau provider
 
 - Thêm con trỏ `last_claimed_at` bền vững theo job và scheduler fair-share theo

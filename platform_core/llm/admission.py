@@ -50,6 +50,8 @@ def reclaim_expired(
     for lease in expired:
         db.delete(lease)
     if expired:
+        from platform_core.public_api import metrics
+        metrics.increment(metrics.ADMISSION_EXPIRED, len(expired))
         db.flush()
     return len(expired)
 
@@ -91,10 +93,14 @@ def acquire(
             with db.begin_nested():
                 db.add(lease)
                 db.flush()
+            from platform_core.public_api import metrics
+            metrics.increment(metrics.ADMISSION_ACQUIRED)
             return lease
         except IntegrityError:
             # Một tiến trình khác thắng đúng slot giữa SELECT và INSERT.
             continue
+    from platform_core.public_api import metrics
+    metrics.increment(metrics.ADMISSION_REJECTED)
     return None
 
 
@@ -113,6 +119,8 @@ def release(db: Session, lease_id: str) -> bool:
     if lease is None:
         return False
     db.delete(lease)
+    from platform_core.public_api import metrics
+    metrics.increment(metrics.ADMISSION_RELEASED)
     db.flush()
     return True
 

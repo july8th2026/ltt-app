@@ -86,6 +86,14 @@ def _bump(name: str) -> None:
     _counters[name] += 1
 
 
+def _record_admission_rejected(reason: str) -> None:
+    """Đếm cả tổng và lý do trong bộ metrics được xả bền xuống CSDL."""
+    from platform_core.public_api import metrics as durable_metrics
+
+    durable_metrics.increment(durable_metrics.ADMISSION_REJECTED)
+    durable_metrics.increment(f"admission_rejected:{str(reason)[:40]}")
+
+
 def _hit(bucket: str, limit: int, window_s: float) -> tuple[bool, int]:
     """Sliding window. Returns ``(allowed, retry_after_seconds)``.
 
@@ -317,6 +325,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
         queued = queued_job_count(db)
         if queued >= global_limit:
             _bump("queue_limited:global")
+            _record_admission_rejected("global_queue")
             raise _too_many(
                 "The job queue is full right now.", 30,
                 code=CODE_CONCURRENCY, scope="global_queue",
@@ -326,6 +335,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
         queued = queued_job_count(db, resource=resource)
         if queued >= resource_limit:
             _bump(f"queue_limited:{resource}")
+            _record_admission_rejected("resource_queue")
             raise _too_many(
                 f"The {resource} queue is full right now.", 30,
                 code=CODE_CONCURRENCY, scope="resource_queue",
@@ -335,6 +345,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
         active = active_job_count(db, principal.user_id)
         if active >= limit:
             _bump("concurrency_limited")
+            _record_admission_rejected("account")
             raise _too_many(
                 "This account already has the maximum number of active jobs.",
                 30, code=CODE_CONCURRENCY, active_jobs=active, limit=limit)
@@ -348,6 +359,7 @@ def enforce_job_admission(db, *, principal, config, app_slug: str = "",
             app_slugs=class_slugs if not resource else None)
         if active >= class_limit:
             _bump(f"capacity_limited:{resource}")
+            _record_admission_rejected("account_resource")
             raise _too_many(
                 f"This account already has the maximum number of active "
                 f"{resource} jobs.", 30, code=CODE_CONCURRENCY,

@@ -383,6 +383,7 @@ def jobs_retention(_request: Request,
 def jobs_metrics(_request: Request, _operator: str = Depends(require_operator)):
     from platform_core import job_metrics
     from platform_core.db import get_session
+    from platform_core.public_api import metrics as api_metrics
     from platform_core.registry import discover
     gen = get_session(); db = next(gen)
     try:
@@ -398,6 +399,7 @@ def jobs_metrics(_request: Request, _operator: str = Depends(require_operator)):
                 "slo": job_metrics.evaluate_slo(own, budget),
             }
         return {"metrics": metrics, "alerts": job_metrics.alerts(metrics),
+                "api_metrics_24h": api_metrics.aggregate(db, hours=24),
                 "apps": apps}
     finally:
         try: next(gen)
