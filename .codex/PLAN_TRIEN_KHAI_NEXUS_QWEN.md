@@ -186,6 +186,28 @@ Chỉ bắt đầu sau khi Q0–Q3 xanh:
 **Qua khi:** không OOM, không spill CPU ngoài ngưỡng, không decode cliff,
 queue delay đo được, và kết quả lặp lại trong biên đã chốt.
 
+### Q4 checkpoint 2026-08-28 (partial, warm API arms)
+
+Read-only G0 xác nhận B `LTTLlamaSwap`/`LTTLlmGateway` Running/Automatic,
+`MAX_INPUT=90000`, `MAX_OUTPUT=32768`, `MAX_DONG_THOI=1`, RTX 3090 24 GB.
+Không reboot/reset hay restart dịch vụ. Harness được chuyển qua Nexus
+`file.write` với SHA-256 `fb47c155df0347def109987c11ff7b1bc5de9b80a67c45160a701b5371c6df23`;
+mọi arm chạy bằng `POST /exec/async`, một workload GPU tại một thời điểm.
+
+| Arm | Job | Kết quả thật |
+|---|---|---|
+| Pilot ~48K | `job_01M13BM4975BTJPG653DR86TVR` | PASS, 48.230 input, 80,912s, VRAM 22.380 MiB, 66 C; không tính mốc 65K |
+| 65K | `job_01M13C5GSM57S5V2R2K5QTN424` | PASS, 65.578 input + 111 output, 26,319s, VRAM 22.402 MiB, 62 C, 367,93 W |
+| 73K | `job_01M13CVNKAMEF793310BSXKM5N` | PASS, 73.596 input + 153 output, 7,710s, VRAM 22.382 MiB, 57 C, 368,37 W |
+| 81K | `job_01M13CY570JESG42BD09930X0A` | PASS, 81.795 input + 108 output, 16,823s, VRAM 22.382 MiB, 61 C, 363,23 W |
+| near-cap | `job_01M13D94T1C1HFP2231Y38HSMD` | PASS, 88.020 input + 153 output, 15,285s, VRAM 22.382 MiB, 59 C, 363,94 W |
+
+Hai arm bị từ chối trước GPU (ExecutionPolicy và `input_tokens=91685`), một
+arm 73K đầu kết thúc `length` do harness chỉ xin 128 output; đều không đưa vào
+baseline. Sau mỗi arm, G2 ghi GPU về 0% và khoảng 34--38 C; sau near-cap VRAM
+đã về 938 MiB. Q4 chưa đóng: còn thiếu đo queue-delay end-to-end qua admission
+plane và lặp lại thống kê/độ lệch; chưa mở Q5 `parallel>1`.
+
 ## Q5 — thử concurrency GPU có kiểm soát (GPU window)
 
 Chỉ thử `parallel=2` hoặc cao hơn nếu Q4 pass:

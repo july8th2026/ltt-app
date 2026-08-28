@@ -14,6 +14,41 @@
 
 ---
 
+## 2026-08-28 — H41.9 Q4: warm API arms trên RTX 3090 (chưa đóng Q4)
+
+- G0 read-only qua Nexus: B online; `LTTLlamaSwap`/`LTTLlmGateway`
+  Running/Automatic; cap input 90.000, output 32.768, concurrency 1. GPU
+  3090 không có workload trước arm. Không reboot/reset/restart dịch vụ.
+- Chuyển harness ASCII qua `POST /files/write`, SHA-256
+  `fb47c155df0347def109987c11ff7b1bc5de9b80a67c45160a701b5371c6df23`; tất cả
+  arm chạy `POST /exec/async`, đọc status + log + exit code.
+- Warm API arms hợp lệ: 65.578 input (26,319s, VRAM 22.402 MiB, 62 C),
+  73.596 (7,710s, 22.382 MiB, 57 C), 81.795 (16,823s, 22.382 MiB, 61 C),
+  88.020 (15,285s, 22.382 MiB, 59 C). HTTP 200, sentinel PASS, không OOM,
+  không decode cliff quan sát được. Sau mỗi arm GPU về 0%; sau near-cap VRAM
+  về 938 MiB.
+- Pilot ~48K được giữ riêng (80,912s; 22.380 MiB; 66 C), không dùng làm mốc
+  65K. Arm đầu 73K `finish_reason=length` do harness xin 128 output; arm
+  89.9K bị gateway từ chối đúng cap (`91685 > 90000`); cả hai không tính
+  baseline và không chạm GPU ở lần bị từ chối.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| Nexus `POST /files/write` + hash đối chiếu | **PASS**, hash khớp A/B |
+| Nexus `POST/GET /exec/async` + `/log` cho 65K/73K/81K/near-cap | **PASS**, exit 0; log đầy đủ |
+| Nexus `nvidia-smi` G0/G2 | **PASS**, GPU chỉ có một workload; G2 về nền |
+| `python tools\gate.py --vong-lap` sau chỉnh harness | **PASS**, 19/19 (ba lượt; `--lf` 198,3--207,4s) |
+
+### Còn tồn đọng và việc tiếp theo
+
+Q4 chưa đóng: cần đo queue-delay end-to-end qua admission plane của A, lặp lại
+để tính p50/p95 và không mở `parallel>1`. Tiếp tục giữ `parallel=1`, không đổi
+cap/gateway.env và không reboot máy B.
+
+---
+
 ## 2026-08-28 — H41.9 Q3: metrics bền, tải giả và restart không GPU
 
 - Thêm `Job.admitted_at` + migration head `e83b5d7c1a40`; worker chỉ ghi mốc
