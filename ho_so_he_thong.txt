@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:8b199a4b401c31076b4f9dbc9f5f5adacb6c5e3cf84a26828a4768e71f338084
+Fingerprint   : sha256:9c54be56c009e26c017b094052afabe30d82e7ba3b8f06f37f923df4f5cf7398
 Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2636,7 +2636,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029008 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029385 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -73978,7 +73978,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=173eedb4251893bbd791f1083346cf2bf336382b00691d1e60517dd3b7180c0c BYTES=253535 LINES=3604
+SHA256=4cd4d2d57476f6e93d690a363b2d8ecd31e9f52791cf3d380a59fd1ab4142050 BYTES=253912 LINES=3609
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77559,6 +77559,11 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 
 ⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
 link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
+
+**Checkpoint Q115 2026-08-28:** public cap đã triển khai thử ở `81000` qua Nexus,
+nhưng canary 80K đo `88.224` token thật và `120,322s`; ladder 70K/65K lần lượt
+đo `77.197`/`71.714` token và `90,575`/`82,325s`. Vì vậy H41.9 vẫn **ĐANG LÀM**;
+chưa mở `parallel>1` hoặc public rộng cho tới khi chốt cap ổn định bằng lặp warm/cold.
 
 ---
 

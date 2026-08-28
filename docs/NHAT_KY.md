@@ -14,6 +14,45 @@
 
 ---
 
+## 2026-08-28 — Q115 deploy và ladder cap 81K (81K không ổn định)
+
+- Q115 được ghi vào nguồn chân lý: engine `131072`, public cap cấu hình `81000`,
+  output `32768`, `parallel=1`; thêm script artifact ASCII
+  `llm_gateway/deploy/apply_cap_artifact.ps1` có backup/rollback, ghi UTF-8 không
+  BOM và chỉ restart `LTTLlmGateway`.
+- Deploy qua Nexus dùng artifact hash đối chiếu; B giữ nguyên token, service
+  Running, `/health` 200 báo `input_tokens=81000`; không reboot/reset B/3090.
+- Canary dưới cap 80K: job
+  `job_01M142NXHWT4SX7Q0TRA9BZGNG`, HTTP 200/quality PASS, nhưng tokenizer thật
+  `88.224` input, `120,322s`; GPU 100%, VRAM đỉnh `22.486 MiB`, 70°C, fan94%.
+  Điều kiện “81K ổn định” **không đạt**, không đóng Q4.
+- Ladder tiếp theo qua Nexus async, mỗi lần một workload GPU: 70K → `77.197`
+  input, `90,575s`, quality PASS; 65K → `71.714` input, `82,325s`, quality
+  PASS. Cả hai không OOM; GPU đỉnh giữ `22.486 MiB`, tối đa 70°C/fan96%.
+- Sau mỗi arm GPU về 0%; không chạy `parallel>1`, không mở public rộng. Các số
+  này cho thấy estimator 2,5 ký tự/token còn biến thiên theo payload code-like;
+  cap cấu hình 81K chưa thể coi là hard exact-token boundary.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\test_nhanh.py --noi-tiep -k "...Q115 cap..."` | **PASS 4**, 1 skip |
+| `python tools\gate.py --vong-lap` sau Q115 source | **PASS 19/19** |
+| `python tools\gate.py` sau Q115 source + artifact script | **PASS 23/23**, 286,8s |
+| Nexus `file.write` + artifact hashes | **PASS**, script/patch hash đối chiếu |
+| Nexus artifact deploy + service/health | **PASS**, exit 0, health 200 |
+| Nexus async 80K/70K/65K + GPU telemetry | **PASS quality**, ghi nhận time/tokenizer variance ở 80K |
+
+### Còn tồn đọng và việc tiếp theo
+
+Không đóng Q4/Q115 stability gate. Cần chọn cap vận hành thấp hơn dựa trên ladder
+lặp lại (khuyến nghị thử 60K/65K thêm warm+cold), hoặc triển khai exact-token
+preflight/bound bảo thủ; sau đó mới chạy 413 boundary, p50/p95 và queue-delay
+end-to-end. Giữ `parallel=1`, không reboot/reset B.
+
+---
+
 ## 2026-08-28 — H41.9 Q4: warm API arms trên RTX 3090 (chưa đóng Q4)
 
 - G0 read-only qua Nexus: B online; `LTTLlamaSwap`/`LTTLlmGateway`
