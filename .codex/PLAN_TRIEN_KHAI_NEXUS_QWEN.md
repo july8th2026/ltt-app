@@ -219,6 +219,15 @@ cap `81000`; (2) thêm regression code-like + tools schema để payload vượt
 đó lặp warm/cold để tính p50/p95. Không sửa tay `gateway.env`, không mở Q5/public
 trong trạng thái hiện tại.
 
+### Q115 checkpoint sau deploy
+
+Artifact cap `81000` đã chạy trên B, health 200. Canary 80K trả HTTP 200/quality
+PASS nhưng usage thật `88224` input và `120,322s`; 70K trả `77197` input/
+`90,575s`; 65K trả `71714` input/`82,325s`. Đây là bằng chứng 81K chưa ổn định
+đối với payload code-like, nên phải lặp warm/cold ở mốc thấp hơn hoặc thay bộ
+ước bằng exact-token/bound bảo thủ trước khi đóng Q4. Giữ `parallel=1`, chưa mở
+public rộng.
+
 ## Q5 — thử concurrency GPU có kiểm soát (GPU window)
 
 Chỉ thử `parallel=2` hoặc cao hơn nếu Q4 pass:

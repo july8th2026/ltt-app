@@ -3578,6 +3578,11 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 ⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
 link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
 
+**Checkpoint Q115 2026-08-28:** public cap đã triển khai thử ở `81000` qua Nexus,
+nhưng canary 80K đo `88.224` token thật và `120,322s`; ladder 70K/65K lần lượt
+đo `77.197`/`71.714` token và `90,575`/`82,325s`. Vì vậy H41.9 vẫn **ĐANG LÀM**;
+chưa mở `parallel>1` hoặc public rộng cho tới khi chốt cap ổn định bằng lặp warm/cold.
+
 ---
 
 ## H42 — Dev API: ba phương thức cắm Codex/Claude (2026-08-26)
