@@ -45,6 +45,9 @@
 - CPU-only harness chạy xen kẽ khi GPU arm: `160` jobs/8 accounts, drain
   `32,5/s`, admission-delay p95 `4,724s`, poll p50 `0,651ms`, queue cuối `0`,
   `provider_calls=0`, `gpu_reads=0`.
+- CPU/queue soak mở rộng trong SQLite cô lập: `1000` jobs/16 accounts, drain
+  hết (`34,99/s`), queue cuối `0`, admission-delay p95 `27,734s`, poll p50
+  `1,112ms`, `provider_calls=0`, `gpu_reads=0`; không đọc trạng thái máy.
 
 ### Lệnh và kết quả thật
 
@@ -52,6 +55,7 @@
 |---|---|
 | `python tools\test_nhanh.py --noi-tiep -k "...65k..."` | **PASS 4**, 1 skip |
 | `python tools\gate.py --vong-lap` | **PASS 19/19** |
+| `python tools\bench_llm_admission.py --accounts 16 --jobs 1000 --polls 20` | **PASS**, drain 1000/1000, queue cuối 0 |
 | `python tools\gate.py` | **PASS 23/23**, 286,5s |
 | Nexus artifact deploy + health/boundary/canary | **PASS**, exit 0; boundary 413 trước GPU; short/60K/64K quality PASS |
 

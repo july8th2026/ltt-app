@@ -3593,6 +3593,11 @@ canary/queue soak với `parallel=1`, Q5 concurrency DEFER. Q6 arm 60K tiếp th
 trả 200/quality PASS, usage `66189`, `74,212s`, VRAM `22486 MiB`, max `69 C`;
 tiếp tục lấy p50/p95 thay vì chốt SLA từ một arm.
 
+**Q6 CPU soak checkpoint:** SQLite cô lập đã drain `1000/1000` jobs trên 16
+accounts, queue cuối `0`, admission-delay p95 `27,734s`, poll p50 `1,112ms`,
+không provider/GPU read. GPU canary đã có short/60K/64K PASS; còn lặp 65K và
+đo queue-age end-to-end trên canary plane trước khi nghiệm thu Q6.
+
 ---
 
 ## H42 — Dev API: ba phương thức cắm Codex/Claude (2026-08-26)
