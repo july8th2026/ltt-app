@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9c54be56c009e26c017b094052afabe30d82e7ba3b8f06f37f923df4f5cf7398
+Fingerprint   : sha256:174d57d149dcef15df79ea01c18f42097251aa4cfdb90f49391bd20ffe84df50
 Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2636,7 +2636,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029385 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12030644 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16528,7 +16528,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=c02990b3bb13f62d616a2480a2e9a77bfba0177f098e17203e28873aa38fce56 BYTES=13502 LINES=250
+SHA256=d421c9cb216406913b4686f5269d55f65b500023a0f17bf5065c3c2f4aa487fc BYTES=13502 LINES=250
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16559,7 +16559,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
                         job của ta
 
    Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
-   input 81K theo Q115 để còn biên thời gian cho Cloudflare sau biến thiên
+   input 65K theo Q116 để còn biên thời gian cho Cloudflare sau biến thiên
    cold-load. Bản vision vẫn 64K cho tới khi có benchmark riêng. Cửa job vẫn là
    đường lui cho tác vụ dài.
 
@@ -73978,7 +73978,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=4cd4d2d57476f6e93d690a363b2d8ecd31e9f52791cf3d380a59fd1ab4142050 BYTES=253912 LINES=3609
+SHA256=86263ce333f958289dbdda7776dfaadedfdfc950a5c47d30d95798a5f3817d30 BYTES=254565 LINES=3619
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77551,7 +77551,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4 đã chứng minh arm 81K thật PASS trên B; theo Q115 chốt public input `81000`, engine `131072`, output `32768`, `parallel=1`. Còn phải cập nhật/deploy artifact cap 81K, regression code-like/tools, canary 413 trước GPU/credit rồi mới đo p50/p95 và queue-delay end-to-end; chưa mở Q5/public rộng. |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4/Q116 đã deploy artifact cap `65000` lên B, boundary code-like trả 413 trước GPU, canary 64K PASS; engine `131072`, output `32768`, `parallel=1`. Đang chuyển Q6 canary/queue soak (Q5 concurrency DEFER theo Q112); chưa mở public rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
 | **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
@@ -77564,6 +77564,16 @@ link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt n�
 nhưng canary 80K đo `88.224` token thật và `120,322s`; ladder 70K/65K lần lượt
 đo `77.197`/`71.714` token và `90,575`/`82,325s`. Vì vậy H41.9 vẫn **ĐANG LÀM**;
 chưa mở `parallel>1` hoặc public rộng cho tới khi chốt cap ổn định bằng lặp warm/cold.
+
+**Checkpoint Q116 2026-08-28:** theo điều kiện “81K phải ổn định”, cap vận hành
+được hạ xuống `65000`; artifact đã deploy trên B (health 200, service
+Running/Automatic). Boundary code-like trả 413 trong `0,045s`, GPU trước-sau
+`0%/22486 MiB`; canary 64K trả 200/quality PASS, usage `70613`, `92,875s`,
+VRAM `22486 MiB`, max `69 C`. CPU admission harness đồng thời drain 160 jobs,
+`p95=4,724s`, `provider_calls=0`, `gpu_reads=0`. Q4 cap gate qua; chuyển Q6
+canary/queue soak với `parallel=1`, Q5 concurrency DEFER. Q6 arm 60K tiếp theo
+trả 200/quality PASS, usage `66189`, `74,212s`, VRAM `22486 MiB`, max `69 C`;
+tiếp tục lấy p50/p95 thay vì chốt SLA từ một arm.
 
 ---
 
@@ -77593,7 +77603,7 @@ bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=9bf471eee9e33d3a5f1024a9d6ab9c75bf9dace110d54e0685c5c1ae64f049b0 BYTES=116704 LINES=259
+SHA256=35611eaeb21303e49479afe7845be8f8f9f734b867da8b840a96bb0a0e3b72f2 BYTES=117310 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -77624,7 +77634,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q115; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q116; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -77752,6 +77762,15 @@ Lý do: arm thật `81.795` input trên RTX 3090 PASS (16,823s, VRAM 22.382 MiB,
 là hàng rào vận hành bảo thủ để mở bước kế tiếp mà không giả vờ rằng phép ước
 hiện tại là exact tokenizer. Trước public canary vẫn phải có regression
 code-like/tools và chứng minh 413 trước GPU/credit.
+
+### Q116 — Chốt mốc public vận hành sau kiểm tra Q115 (2026-08-28)
+
+Q116 **thay Q115**: public input cap hiệu lực là **`65000` token**. Engine
+`131072`, output `32768`, reserve app `2048`, vision `65536` và `parallel=1`
+giữ nguyên. Q115 đã được triển khai thử nhưng 80K mất `120,322s`; mốc 65K đã
+được chạy trên đúng B bằng Nexus và lặp lại cho kết quả `71.714` token thật,
+`82,325s`, quality PASS. Đây là mốc vận hành đã đo, không phải tuyên bố exact
+tokenizer; request vượt cap vẫn phải bị chặn trước GPU/credit.
 
 ## 2. Ràng buộc bất biến
 
@@ -108419,7 +108438,7 @@ def build(prompts_dir, mapping: dict, *, base: str = "base_prompt.txt") -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/providers.py
-SHA256=393b3611ae46a1fb5857d15d3a7efb55f49dd3a4d7acb4b46fdecce7e8f7b26b BYTES=18525 LINES=359
+SHA256=d38675b24d362906605f1838cfababb19678928c41e8b538befb944e77bc3d61 BYTES=18525 LINES=359
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 providers.py — Provider Registry (H8): MỘT chỗ khai mọi nhà cung cấp API mà nền
@@ -108662,7 +108681,7 @@ REGISTRY: dict[str, Provider] = {
                     # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
                     "canh_bao": [
                         N_("máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi"),
-                        N_("engine có cửa sổ 131K; API public giới hạn input 81K để giữ biên Cloudflare"),
+                        N_("engine có cửa sổ 131K; API public giới hạn input 65K để giữ biên Cloudflare"),
                     ],
                 },
             ),
@@ -112266,7 +112285,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=4b9661e64514539d77f8a3d0289b44b60dffed9a3634aed7ed3ab6fcaddc247a BYTES=38573 LINES=839
+SHA256=1c01d55d0956ec1137577335af3871c6169bbba524f61d0e71b3313422261901 BYTES=38573 LINES=839
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -112822,7 +112841,7 @@ def codex_profile() -> str:
         '# before it answers.\n'
         'model_reasoning_effort = "low"\n'
         'model_reasoning_summary = "none"\n'
-        "model_context_window = 81000"
+        "model_context_window = 65000"
     )
 
 
@@ -112901,7 +112920,7 @@ def vscode_codex_config(base_url: str) -> str:
         f'model = "{CLI_MODEL}"\n'
         f'model_provider = "ltt"\n'
         f'model_reasoning_effort = "low"\n'
-        f'model_context_window = 81000\n'
+        f'model_context_window = 65000\n'
         f'\n'
         f'[model_providers.ltt]\n'
         f'name = "LTT Studios"\n'
@@ -122942,7 +122961,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=00d42e6ce90ec2959602f160cf3ddb950c5e54773c5a5bb87e87620deceb52ce BYTES=9962 LINES=249
+SHA256=30b6b5005c0f2aea7c119a95441952b83ce18b47b97cf971faec381eed52557a BYTES=9962 LINES=249
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -123039,7 +123058,7 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
             "# before it answers.\n"
             'model_reasoning_effort = "low"\n'
             'model_reasoning_summary = "none"\n'
-            "model_context_window = 81000\n", encoding="utf-8")
+            "model_context_window = 65000\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra
 
@@ -193956,7 +193975,7 @@ def test_them_provider_khong_lam_vo_registry_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_250_llm_gateway.py
-SHA256=f1684f2e468eb2c3a5370ba6c287bebf37b6478b07e93c806892901816237082 BYTES=21025 LINES=470
+SHA256=97364a02ad68de1e2fe6f22822fc91e28cfbdb23e7ac6590da8ea28bd5d1cc50 BYTES=21025 LINES=470
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_250_llm_gateway — hợp đồng của cổng VLM (H38, P7).
@@ -193985,23 +194004,23 @@ from llm_gateway.config import Config
 from llm_gateway.trong_tai import TrongTai
 
 
-def test_config_mac_dinh_khoa_public_input_81k(monkeypatch):
+def test_config_mac_dinh_khoa_public_input_65k(monkeypatch):
     """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
     monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
     cfg = Config.from_env()
-    assert cfg.max_input_tokens == 81_000
+    assert cfg.max_input_tokens == 65_000
     assert cfg.max_output_tokens == 32_768
     assert cfg.max_dong_thoi == 1, "parallel=1 thi gateway khong duoc tao hidden queue"
 
 
-def test_public_cap_81k_chan_truoc_thuong_nguon():
-    """Q115: vượt 81K theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
-    c, up = _client(_cfg(max_input_tokens=81_000))
+def test_public_cap_65k_chan_truoc_thuong_nguon():
+    """Q116: vượt 65K theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
+    c, up = _client(_cfg(max_input_tokens=65_000))
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-ops",
-        "messages": [{"role": "user", "content": "x" * 202_500}],
+        "messages": [{"role": "user", "content": "x" * 162_500}],
     })
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
@@ -199710,7 +199729,7 @@ def test_tep_hong_bao_ro_ten_tep(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_259_cua_dong_bo.py
-SHA256=cef9e8ee22a2a6415ed83b8f8e11feaaa9875fbdde2a45c7c0d8babee4f95d4c BYTES=34597 LINES=820
+SHA256=de72018e2fc084008d7eb58d7366911e9dc0e988a7faf44e14c04d0f1e5fc4cc BYTES=34597 LINES=820
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_259_cua_dong_bo — `POST /api/v1/chat/completions`, chế độ `SYNC_BILLED`. (Q106, H38 V3)
@@ -200130,16 +200149,16 @@ def test_input_cang_lon_thi_tran_output_dong_bo_cang_nho():
 
     ngan = _tran_max_tokens(100)
     vua = _tran_max_tokens(20_000)
-    dai = _tran_max_tokens(81_000)  # cap Q115; sync gần cap vẫn dành cho stream/job
+    dai = _tran_max_tokens(65_000)  # cap Q116; sync gần cap vẫn dành cho stream/job
     assert ngan > vua > dai
-    assert dai == 0, "request gần 81K phải đi stream/job, không được chạm GPU sync"
+    assert dai == 0, "request gần 65K phải đi stream/job, không được chạm GPU sync"
 
 
-def test_input_gan_81K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
+def test_input_gan_65K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
     goi = _dat_model(monkeypatch)
     _user_id, token = _account()
-    # 2,5 ký tự/token là phép ước đang dùng; 202.5K ký tự ~81K token + 1.
-    than = _than(messages=[{"role": "user", "content": "x" * 202_500}],
+    # 2,5 ký tự/token là phép ước đang dùng; 162.5K ký tự ~65K token + 1.
+    than = _than(messages=[{"role": "user", "content": "x" * 162_500}],
                  max_tokens=100)
 
     r = api.post(DUONG, json=than, headers=_h(token))
@@ -229389,7 +229408,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=3c333f9b783def8d4266093a87ea85af13ae145eeae54feed63c86680f5c3b8a BYTES=61077 LINES=1410
+SHA256=6e01e311b5d90c1cf6acc4c2bc1a454296d0ddafc1ea8a6eb5fdccd8cef069cb BYTES=61077 LINES=1410
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -229779,7 +229798,7 @@ def _codex_profile() -> str:
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 81000\n')
+            f'model_context_window = 65000\n')
 
 
 def _codex_config_goc(goc: str) -> str:
@@ -229801,7 +229820,7 @@ def _codex_config_goc(goc: str) -> str:
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 81000\n'
+            f'model_context_window = 65000\n'
             f'\n' + _codex_config(goc))
 
 
