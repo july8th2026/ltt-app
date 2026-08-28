@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:8aa2ecfd82c0414cb626ba442442c0aed60260e17f0586b5e3e7bd4ed926d8f6
+Fingerprint   : sha256:b556d9e85f51db5532d2866227ee3ccec4c2461bb89bdb62984a3b54174fc31b
 Nguồn đã quét : 1210 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2639,7 +2639,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1210 file; 12034693 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1210 file; 12034692 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -74032,7 +74032,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=6dc5f404a99deae0895e01ea2604735289b6dc0cfb98bc4f2292252fa846155b BYTES=254830 LINES=3625
+SHA256=192c3d51af49b28675d64730fe1918e9885533197373a2b1de0995667b109760 BYTES=254829 LINES=3625
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77604,7 +77604,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 |---|---|---|
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
-| ✅ **H41.4** | `server/api` không còn biết trực tiếp tên app: executor đồng bộ được khai báo trong `ToolSpec`, project sang catalog và resolver generic; `/messages` `/responses` `/chat/completions` dùng cùng adapter app-owned | đang chờ full gate + deploy |
+| ✅ **H41.4** | `server/api` không còn biết trực tiếp tên app: executor đồng bộ được khai báo trong `ToolSpec`, project sang catalog và resolver generic; `/messages` `/responses` `/chat/completions` dùng cùng adapter app-owned | `60a76bc` + deploy 2026-08-29 |
 | **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4/Q116 đã deploy artifact cap `65000` lên B, boundary code-like trả 413 trước GPU, canary 64K PASS; engine `131072`, output `32768`, `parallel=1`. Đang chuyển Q6 canary/queue soak (Q5 concurrency DEFER theo Q112); chưa mở public rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | ✅ **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case | `1f0e93c` |

@@ -23,6 +23,11 @@
   tiếp `apps.ltt_llm` trong tầng HTTP. Hành vi tiền/admission giữ nguyên.
 - `ho_so_he_thong.txt` đã dựng lại sau thay đổi; không sửa dữ liệu production và
   không reboot/reset máy B.
+- Lượt dựng release đầu tiên phình thành `2.854 MB` vì thư mục benchmark chứa
+  khoảng `2,8 GB` ảnh evidence. Đã thêm `bench` vào danh sách loại trừ của
+  `tools/build_release.py`; release hợp lệ sau đó là `160,1 MB`, `2689` file,
+  SHA-256 `e22c9ef2d2d6ff112cdb872f7721bef0baa6649bb407d9babe567eb606b84c10`,
+  secret scan `0` (commit `c8376cf`).
 
 ### Lệnh và kết quả thật
 
@@ -36,9 +41,9 @@
 
 ### Trạng thái
 
-Mã nguồn H41.4 đã qua test liên quan và gate vòng lặp. Chưa gọi là phát hành
-cho tới khi full `python tools\gate.py` pass; sau đó deploy release có backup,
-rollback và health check trên service hiện hành.
+Mã nguồn H41.4 đã qua full gate và đã phát hành production. Release được backup
+trước khi xoay, giữ ở `C:\LTTPlatform\app.previous`; không migration mới của
+H41.4, nhưng migration admission tồn đọng đã chạy transactional thành công.
 
 ### Cách lùi lại
 
@@ -48,15 +53,26 @@ release mới không đạt health.
 
 ### Còn tồn đọng
 
-- Full gate cuối và deploy production chưa chạy trong checkpoint này.
 - H41.5 vẫn cần thiết kế an toàn cho `upscalevideo` trước khi expose public;
   không bật cờ mù.
 
 ### Việc tiếp theo
 
-1. Chạy full `python tools\gate.py` trên cây đứng yên.
-2. Đóng gói release, backup/rollback và deploy production theo `docs/01_COPY_LEN_SERVER.md`.
-3. Kiểm tra `/health/ready`, `/api/v1/health`, rồi cập nhật checkpoint H41.2/E3.
+1. Ghi nhận full gate cuối sau khi cập nhật hồ sơ dẫn xuất.
+2. Kiểm tra định kỳ `/health/ready`, `/api/v1/health`; rollback bằng
+   `deploy/windows/rollback.ps1` nếu readiness không còn `ready`.
+3. H41.5 vẫn để riêng, chờ hợp đồng duration server-side trước khi public.
+
+### Deploy production — 2026-08-29
+
+| Kiểm tra | Kết quả thật |
+|---|---|
+| `deploy/windows/update.ps1 -SourceZip ...ltt-release-1.0.0.zip` | **EXIT 0**, backup `C:\LTTPlatform\backups\ltt_data_20260829_013547.zip`, giữ `app.previous`, migrations transactional PASS |
+| `/health/ready` | **200**, `status=ready`, `environment=production`, `database=ok` |
+| `/api/v1/health` | **200**, `status=ok`, `api_version=v1` |
+| Services `LTTStudioWeb/Worker/Codex` | **Running / Automatic** |
+| `apps/ltt_llm/executor.py` trên release | hash `B20FF72C8C86320F50880D7ADB5D4DAF9BDD488799481071F9029DC8F0C6EA97` |
+| Máy B / RTX 3090 | **Không reboot/reset**, không chạy canary GPU trong deploy |
 
 ## 2026-08-28 — H41.9 Q116: chốt và deploy public cap 65K; chuyển Q6
 
