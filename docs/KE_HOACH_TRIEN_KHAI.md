@@ -3569,7 +3569,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4 đã chứng minh arm 81K thật PASS trên B; theo Q115 chốt public input `81000`, engine `131072`, output `32768`, `parallel=1`. Còn phải cập nhật/deploy artifact cap 81K, regression code-like/tools, canary 413 trước GPU/credit rồi mới đo p50/p95 và queue-delay end-to-end; chưa mở Q5/public rộng. |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4/Q116 đã deploy artifact cap `65000` lên B, boundary code-like trả 413 trước GPU, canary 64K PASS; engine `131072`, output `32768`, `parallel=1`. Đang chuyển Q6 canary/queue soak (Q5 concurrency DEFER theo Q112); chưa mở public rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
 | **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
@@ -3582,6 +3582,16 @@ link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt n�
 nhưng canary 80K đo `88.224` token thật và `120,322s`; ladder 70K/65K lần lượt
 đo `77.197`/`71.714` token và `90,575`/`82,325s`. Vì vậy H41.9 vẫn **ĐANG LÀM**;
 chưa mở `parallel>1` hoặc public rộng cho tới khi chốt cap ổn định bằng lặp warm/cold.
+
+**Checkpoint Q116 2026-08-28:** theo điều kiện “81K phải ổn định”, cap vận hành
+được hạ xuống `65000`; artifact đã deploy trên B (health 200, service
+Running/Automatic). Boundary code-like trả 413 trong `0,045s`, GPU trước-sau
+`0%/22486 MiB`; canary 64K trả 200/quality PASS, usage `70613`, `92,875s`,
+VRAM `22486 MiB`, max `69 C`. CPU admission harness đồng thời drain 160 jobs,
+`p95=4,724s`, `provider_calls=0`, `gpu_reads=0`. Q4 cap gate qua; chuyển Q6
+canary/queue soak với `parallel=1`, Q5 concurrency DEFER. Q6 arm 60K tiếp theo
+trả 200/quality PASS, usage `66189`, `74,212s`, VRAM `22486 MiB`, max `69 C`;
+tiếp tục lấy p50/p95 thay vì chốt SLA từ một arm.
 
 ---
 

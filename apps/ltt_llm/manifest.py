@@ -27,7 +27,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
                         job của ta
 
    Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
-   input 81K theo Q115 để còn biên thời gian cho Cloudflare sau biến thiên
+   input 65K theo Q116 để còn biên thời gian cho Cloudflare sau biến thiên
    cold-load. Bản vision vẫn 64K cho tới khi có benchmark riêng. Cửa job vẫn là
    đường lui cho tác vụ dài.
 

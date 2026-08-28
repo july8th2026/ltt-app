@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q115; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q116; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -155,6 +155,15 @@ Lý do: arm thật `81.795` input trên RTX 3090 PASS (16,823s, VRAM 22.382 MiB,
 là hàng rào vận hành bảo thủ để mở bước kế tiếp mà không giả vờ rằng phép ước
 hiện tại là exact tokenizer. Trước public canary vẫn phải có regression
 code-like/tools và chứng minh 413 trước GPU/credit.
+
+### Q116 — Chốt mốc public vận hành sau kiểm tra Q115 (2026-08-28)
+
+Q116 **thay Q115**: public input cap hiệu lực là **`65000` token**. Engine
+`131072`, output `32768`, reserve app `2048`, vision `65536` và `parallel=1`
+giữ nguyên. Q115 đã được triển khai thử nhưng 80K mất `120,322s`; mốc 65K đã
+được chạy trên đúng B bằng Nexus và lặp lại cho kết quả `71.714` token thật,
+`82,325s`, quality PASS. Đây là mốc vận hành đã đo, không phải tuyên bố exact
+tokenizer; request vượt cap vẫn phải bị chặn trước GPU/credit.
 
 ## 2. Ràng buộc bất biến
 

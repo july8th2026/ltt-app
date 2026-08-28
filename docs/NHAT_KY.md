@@ -12,6 +12,52 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-08-28 — H41.9 Q116: chốt và deploy public cap 65K; chuyển Q6
+
+- Theo điều kiện “81K phải ổn định” (Q115 không đạt), chốt public input cap
+  `65000`; engine `131072`, output `32768`, `MAX_DONG_THOI=1`. Lịch sử Q115
+  giữ nguyên để truy vết; Q116 là quyết định đang hiệu lực.
+- Artifact patch `q116-gateway.env.patch` được gửi qua Nexus tới B, hash
+  `c61848a1fc66affa924d8f9cfadb3decf59dea90735f7ee3422fcb3553e373b5`.
+  Script deploy có backup/rollback, exit `0`, `ENV_SHA256=
+  F1A84BDB309B607C1EB49F8D59132B85A04BBAC7ADB6DE644E8BA232A6C9F4B9`, backup
+  SHA-256 `7423EBF90E2F6FB6E3A49D1956F3F6C8AE79AF1DCAED6D75555D7E72EFEEDCFE`;
+  không reboot/reset B/3090.
+- Xác minh sau deploy: `CAP=65000 OUTPUT=32768 PARALLEL=1`, service
+  `Running/Automatic`, health authenticated `200`; GPU nền `0%`, `942 MiB`,
+  `34 C`. (Endpoint `/health/ready` không tồn tại trên gateway này, trả 404;
+  không coi đó là lỗi deploy.)
+- Boundary code-like 162.5K ký tự: HTTP `413` trong `0,045s`; GPU trước/sau
+  đều `0%`, `22486 MiB`, `42 C`, chứng minh bị chặn trước GPU.
+- Canary hợp lệ sau deploy qua Nexus async:
+  `job_01M145MGD6MYVJ53CFZ0W3E8WF`, exit `0`, HTTP `200`, quality `PASS`,
+  usage `70613` input, `92,875s`, VRAM đỉnh `22486 MiB`, `69 C`, fan `93%`,
+  power `370,8 W`; GPU về nền sau arm.
+- Q6 soak arm 60K qua Nexus async:
+  `job_01M145VSMYCKVBKGCFF9EXNH5T`, exit `0`, HTTP `200`, quality `PASS`,
+  usage `66189` input, `74,212s`, VRAM đỉnh `22486 MiB`, `69 C`, fan `94%`,
+  power `370,76 W`; GPU về nền sau arm. Arm 64K mất `92,875s` do cold-load,
+  nên tiếp tục đo p50/p95 thay vì coi một arm đơn là SLA.
+- CPU-only harness chạy xen kẽ khi GPU arm: `160` jobs/8 accounts, drain
+  `32,5/s`, admission-delay p95 `4,724s`, poll p50 `0,651ms`, queue cuối `0`,
+  `provider_calls=0`, `gpu_reads=0`.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\test_nhanh.py --noi-tiep -k "...65k..."` | **PASS 4**, 1 skip |
+| `python tools\gate.py --vong-lap` | **PASS 19/19** |
+| `python tools\gate.py` | **PASS 23/23**, 286,5s |
+| Nexus artifact deploy + health/boundary/canary | **PASS**, exit 0; boundary 413 trước GPU; 64K/60K quality PASS |
+
+### Checkpoint tiếp theo
+
+Q4 cap gate đã qua ở mốc 65K. Giữ `parallel=1`; Q5 concurrency DEFER theo
+Q112. Q6 đã có arm 60K PASS và CPU-only xen kẽ; tiếp tục canary/queue soak
+request ngắn, 60K/65K, vượt cap, đo queue depth/age, admission p50/p95,
+retry/credit và GPU telemetry. Không reboot/reset máy B.
+
 ---
 
 ## 2026-08-28 — Q115 deploy và ladder cap 81K (81K không ổn định)

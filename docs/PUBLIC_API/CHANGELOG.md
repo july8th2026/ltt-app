@@ -21,6 +21,19 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-28 — public input cap 65K (Q116)
+
+**BREAKING — hạ trần input public của `ltt_llm` từ 81.000 xuống 65.000 token.**
+
+Arm 81K không ổn định với payload code-like (80K ước lượng thành 88.224 token,
+120,322s). Mốc 65K đã lặp lại trên RTX 3090, quality PASS, khoảng 82,3 giây.
+Engine vẫn giữ context `131072`, output `32768`, `parallel=1`.
+
+*Phải làm gì:* cập nhật client profile `model_context_window = 65000`; request
+trên 65K phải chuyển sang stream/job hoặc bị từ chối trước GPU/credit.
+
+---
+
 ## 2026-08-28 — public input cap 81K
 
 **BREAKING — hạ trần input public của `ltt_llm` từ 90.000 xuống 81.000 token.**

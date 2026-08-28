@@ -93,7 +93,7 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
             "# before it answers.\n"
             'model_reasoning_effort = "low"\n'
             'model_reasoning_summary = "none"\n'
-            "model_context_window = 81000\n", encoding="utf-8")
+            "model_context_window = 65000\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra
 

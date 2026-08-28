@@ -552,7 +552,7 @@ def codex_profile() -> str:
         '# before it answers.\n'
         'model_reasoning_effort = "low"\n'
         'model_reasoning_summary = "none"\n'
-        "model_context_window = 81000"
+        "model_context_window = 65000"
     )
 
 
@@ -631,7 +631,7 @@ def vscode_codex_config(base_url: str) -> str:
         f'model = "{CLI_MODEL}"\n'
         f'model_provider = "ltt"\n'
         f'model_reasoning_effort = "low"\n'
-        f'model_context_window = 81000\n'
+        f'model_context_window = 65000\n'
         f'\n'
         f'[model_providers.ltt]\n'
         f'name = "LTT Studios"\n'

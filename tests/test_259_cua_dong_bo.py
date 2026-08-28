@@ -416,16 +416,16 @@ def test_input_cang_lon_thi_tran_output_dong_bo_cang_nho():
 
     ngan = _tran_max_tokens(100)
     vua = _tran_max_tokens(20_000)
-    dai = _tran_max_tokens(81_000)  # cap Q115; sync gần cap vẫn dành cho stream/job
+    dai = _tran_max_tokens(65_000)  # cap Q116; sync gần cap vẫn dành cho stream/job
     assert ngan > vua > dai
-    assert dai == 0, "request gần 81K phải đi stream/job, không được chạm GPU sync"
+    assert dai == 0, "request gần 65K phải đi stream/job, không được chạm GPU sync"
 
 
-def test_input_gan_81K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
+def test_input_gan_65K_bi_TU_CHOI_truoc_GPU_du_xin_output_nho(api, monkeypatch):
     goi = _dat_model(monkeypatch)
     _user_id, token = _account()
-    # 2,5 ký tự/token là phép ước đang dùng; 202.5K ký tự ~81K token + 1.
-    than = _than(messages=[{"role": "user", "content": "x" * 202_500}],
+    # 2,5 ký tự/token là phép ước đang dùng; 162.5K ký tự ~65K token + 1.
+    than = _than(messages=[{"role": "user", "content": "x" * 162_500}],
                  max_tokens=100)
 
     r = api.post(DUONG, json=than, headers=_h(token))

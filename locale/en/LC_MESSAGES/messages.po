@@ -11594,8 +11594,8 @@ msgstr "Used, 30 days"
 msgid "Đặt hai biến này vào môi trường của ứng dụng, rồi mở lại nó:"
 msgstr "Put these two variables in your application's environment, then reopen it:"
 
-msgid "engine có cửa sổ 131K; API public giới hạn input 81K để giữ biên Cloudflare"
-msgstr "The engine has a 131K context window; the public API limits input to 81K to preserve Cloudflare headroom"
+msgid "engine có cửa sổ 131K; API public giới hạn input 65K để giữ biên Cloudflare"
+msgstr "The engine has a 131K context window; the public API limits input to 65K to preserve Cloudflare headroom"
 
 msgid "Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để chẩn đoán và tự thu hồi tiến trình đã chết."
 msgstr "Temporary execution-slot ownership; only operational identifiers are retained for diagnosis and automatic recovery from dead processes."
