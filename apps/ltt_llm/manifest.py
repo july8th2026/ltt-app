@@ -27,10 +27,9 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
                         job của ta
 
    Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
-   input 90K để còn biên thời gian cho Cloudflare. Canary thật gần trần ngày
-   27/08: 86.101 token tokenizer / 89.716 token ước lượng, 102,0 giây, còn khoảng
-   23 giây so với timeout mặc định. Bản vision vẫn 64K cho tới khi có benchmark
-   riêng. Cửa job vẫn là đường lui cho tác vụ dài.
+   input 81K theo Q115 để còn biên thời gian cho Cloudflare sau biến thiên
+   cold-load. Bản vision vẫn 64K cho tới khi có benchmark riêng. Cửa job vẫn là
+   đường lui cho tác vụ dài.
 
 ⛔ GIÁ: `credit_cost` ở đây là **TRẦN ƯỚC CAO**, không phải giá cuối. Với LLM,
    số token RA chỉ biết được sau khi sinh xong. Nền tảng giữ chỗ theo trần này rồi

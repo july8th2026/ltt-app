@@ -25,15 +25,27 @@ from llm_gateway.config import Config
 from llm_gateway.trong_tai import TrongTai
 
 
-def test_config_mac_dinh_khoa_public_input_90k(monkeypatch):
+def test_config_mac_dinh_khoa_public_input_81k(monkeypatch):
     """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
     monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
     cfg = Config.from_env()
-    assert cfg.max_input_tokens == 90_000
+    assert cfg.max_input_tokens == 81_000
     assert cfg.max_output_tokens == 32_768
     assert cfg.max_dong_thoi == 1, "parallel=1 thi gateway khong duoc tao hidden queue"
+
+
+def test_public_cap_81k_chan_truoc_thuong_nguon():
+    """Q115: vượt 81K theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
+    c, up = _client(_cfg(max_input_tokens=81_000))
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-ops",
+        "messages": [{"role": "user", "content": "x" * 202_500}],
+    })
+    assert r.status_code == 413
+    assert r.json()["detail"]["truong"] == "input_tokens"
+    assert up.goi == []
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────

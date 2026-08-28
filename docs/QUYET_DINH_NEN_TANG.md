@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q114; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q115; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -140,6 +140,21 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 | Q113 | Ngữ cảnh public 90K có đồng nghĩa mọi request đồng bộ được dùng đủ 90K không? | **Không.** Engine vẫn `131072`; stream và async job vẫn được dùng public input cap `90000`. Riêng route trả JSON một cục dùng admission động trong ngân sách `90s`: `25s` dự phòng nạp model + `5s` hạ tầng + `(input_ước+512)/750` prefill + `max_tokens/40` decode. Mặc định output riêng của non-stream là `1024`; request vượt công thức bị `400` trước giữ tiền/GPU và được chỉ sang stream/job. | **Thay phần admission tĩnh của Q106/Q107 từ 2026-08-27; các phần còn lại của hai quyết định đó vẫn hiệu lực.** Canary Q111 gần cap đo `89.716` token ước lượng, chỉ sinh `103` token nhưng đã mất `102,003s`: chỉ kẹp output không bảo vệ được timeout. Throughput thật trên B là prefill thấp nhất `756,49 tok/s`, decode `41,57 tok/s`; lấy `750/40` để nghiêng an toàn. Trần Cloudflare hiện là `125s`, nhưng giữ ngân sách nội bộ `90s` để còn `35s` biên tunnel/524. Hệ quả đo được của công thức: input 0 → tối đa 2.372 output; 20K → 1.306; 40K → 239; gần 90K → 0 ở non-stream. Đây là phân luồng theo mode, không hạ chất lượng/ngữ cảnh của stream hay job. |
 | Q114 | Nhiều cửa API cùng tranh một model/GPU phải xếp hàng ở đâu? | **Một admission plane dùng chung, nhưng chỉ ASYNC_JOB có hàng đợi bền.** `/api/v1/jobs` tiếp tục dùng `jobs` làm nguồn chân lý duy nhất. SYNC_BILLED và STREAM giữ nguyên hợp đồng Q106/Q107 là không tạo job: chúng xin một lease thực thi từ cùng admission plane và trả `429 + Retry-After` trước khi giữ tiền nếu chưa có slot. Tài nguyên do tool khai bằng metadata, không suy từ slug. Gateway máy B vẫn giữ `max_dong_thoi=1` như hàng rào cuối, không làm queue. | Biến sync/stream thành job ngầm sẽ phá hình dạng SDK và tạo queue thứ hai; để chúng gọi thẳng lại cho phép bypass async. Lease thực thi giải đúng giao điểm: cả ba đường phải sở hữu cùng một slot trước provider, nhưng `jobs` vẫn là queue duy nhất có trạng thái/hủy/fairness. Với async, global/resource/account cap phải được kiểm dưới khóa transaction rồi insert job và hold credit trong chính transaction đó; `resource_wait` không tiêu attempt. Nếu worker chết sau khi provider đã nhận mà chưa có kết quả chắc chắn thì đánh dấu `ambiguous_provider`, không tự retry side effect mù. Hợp đồng chi tiết: `docs/VLM_NOI_BO/ADMISSION_QUEUE_LTT_LLM.md`. |
 ---
+
+### Q115 — Public input cap sau benchmark Q4 (2026-08-28)
+
+Q115 **thay phần public-cap của Q111 và Q113**; các quyết định cũ vẫn được giữ
+nguyên để truy được lý do và số đo lịch sử. Engine `qwen38-api` vẫn `131072`, KV
+vẫn `q8_0/q8_0`, vision vẫn `65536`, output public vẫn `32768`, reserve app vẫn
+`2048`, và gateway vẫn `parallel=1`. Public input cap chốt ở **`81000` token**,
+đồng nhất trong gateway, manifest/catalog, client profile và artifact deploy.
+
+Lý do: arm thật `81.795` input trên RTX 3090 PASS (16,823s, VRAM 22.382 MiB,
+61°C), trong khi near-cap cold-load mất `121,288s`; một payload code-like còn
+được gateway ước dưới 90K nhưng tokenizer/model trả `99.142` token. Hạ xuống 81K
+là hàng rào vận hành bảo thủ để mở bước kế tiếp mà không giả vờ rằng phép ước
+hiện tại là exact tokenizer. Trước public canary vẫn phải có regression
+code-like/tools và chứng minh 413 trước GPU/credit.
 
 ## 2. Ràng buộc bất biến
 

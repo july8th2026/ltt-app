@@ -21,6 +21,19 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-28 — public input cap 81K
+
+**BREAKING — hạ trần input public của `ltt_llm` từ 90.000 xuống 81.000 token.**
+
+Q115 chốt mốc 81K sau benchmark warm/cold trên RTX 3090. Engine vẫn giữ context
+`131072`, output `32768`, và `parallel=1`; đây là hàng rào vận hành để giữ biên
+Cloudflare, không phải thay đổi cửa sổ engine.
+
+*Phải làm gì:* cập nhật client profile `model_context_window = 81000`; request
+trên 81K phải chuyển sang stream/job hoặc bị từ chối trước GPU/credit.
+
+---
+
 ## 2026-08-27
 
 **BREAKING — nâng cửa sổ text Qwen lên 131K, public input cap 90K.**

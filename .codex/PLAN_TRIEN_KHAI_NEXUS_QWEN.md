@@ -189,7 +189,7 @@ queue delay đo được, và kết quả lặp lại trong biên đã chốt.
 ### Q4 checkpoint 2026-08-28 (partial, warm API arms)
 
 Read-only G0 xác nhận B `LTTLlamaSwap`/`LTTLlmGateway` Running/Automatic,
-`MAX_INPUT=90000`, `MAX_OUTPUT=32768`, `MAX_DONG_THOI=1`, RTX 3090 24 GB.
+`MAX_INPUT=81000`, `MAX_OUTPUT=32768`, `MAX_DONG_THOI=1`, RTX 3090 24 GB.
 Không reboot/reset hay restart dịch vụ. Harness được chuyển qua Nexus
 `file.write` với SHA-256 `fb47c155df0347def109987c11ff7b1bc5de9b80a67c45160a701b5371c6df23`;
 mọi arm chạy bằng `POST /exec/async`, một workload GPU tại một thời điểm.
@@ -209,19 +209,15 @@ arm 73K đầu kết thúc `length` do harness chỉ xin 128 output; đều khô
 baseline. Sau mỗi arm, G2 ghi GPU về 0% và khoảng 34--38 C; sau near-cap VRAM
 đã về 938 MiB sau arm warm; arm lặp cold-load giữ khoảng 22.482 MiB sau G2.
 Q4 chưa đóng: cold-load biến thiên sát trần Cloudflare cần được admission A
-chặn bằng ngân sách 90s; còn thiếu queue-delay end-to-end và p50/p95 lặp lại;
-chưa mở Q5 `parallel>1`. Phát hiện P0 mới: payload code-like seed2 được gateway
-ước dưới 90K nhưng tokenizer/model trả 99.142 token; endpoint tokenizer chính
-xác chỉ có trên upstream 8281 khi model resident, không có ở gateway 8299. Phải
-thiết kế exact-token preflight hoặc bound bảo thủ trước khi gọi đây là cap cứng
-và trước mọi public canary.
+chặn bằng ngân sách 90s; còn thiếu queue-delay end-to-end và p50/p95 lặp lại.
+Q115 đã chốt public cap 81K để giữ biên vận hành; phát hiện seed2 vẫn được giữ
+làm regression bắt buộc vì phép ước không phải exact tokenizer.
 
-**Q4 exit gate mới (chưa đạt):** (1) sửa gateway B theo artifact từ A để gọi
-exact-token upstream trước `kiem_tra`, hoặc dùng bound bảo thủ đã đo cho payload
-code-like; (2) thêm regression code-like + tools schema; (3) deploy canary và
-chứng minh 413 trước GPU/credit ở A và B; (4) chỉ sau đó lặp warm/cold để tính
-p50/p95. Không sửa tay `gateway.env`, không mở Q5/public trong trạng thái hiện
-tại.
+**Q4 exit gate mới (chưa đạt):** (1) cập nhật gateway B theo artifact từ A với
+cap `81000`; (2) thêm regression code-like + tools schema để payload vượt cap bị
+413 trước GPU/credit; (3) deploy canary và chứng minh 413 ở A và B; (4) chỉ sau
+đó lặp warm/cold để tính p50/p95. Không sửa tay `gateway.env`, không mở Q5/public
+trong trạng thái hiện tại.
 
 ## Q5 — thử concurrency GPU có kiểm soát (GPU window)
 
@@ -243,7 +239,9 @@ chỉ nhanh hơn throughput mà làm hỏng p95, queue fairness hoặc độ ổ
 - Xác minh GPU job chờ đúng queue, CPU-only job vẫn tiến triển, không bypass.
 - Theo dõi 15–30 phút: queue depth, queue age, admission delay, p95, VRAM,
   nhiệt, 429/OOM, retry, credit và log audit.
-- Reboot B sau canary; kiểm tra queue/job terminal và Nexus tự khởi động.
+ - Không reboot/reset máy B trong phiên này; chỉ kiểm tra service/Nexus sống qua
+   health và queue/job terminal. Reboot là một hạng mục riêng, chỉ làm khi chủ
+   sản phẩm yêu cầu rõ ràng.
 
 **Rollback:** tắt canary alias, đưa provider/catalog/cap về artifact trước,
 reload service; không xóa job history hay credit ledger.
@@ -282,9 +280,10 @@ reload service; không xóa job history hay credit ledger.
 **Qua khi:** service ở trạng thái RUNNING, `/health` trả đúng node/version,
 không có secret trong log, audit ghi đủ thao tác.
 
-## P2 — xác minh khả năng sống qua reboot
+## P2 — xác minh khả năng sống qua reboot (DEFERRED)
 
-- Reboot B bằng kênh quản trị được phê duyệt.
+- **Tạm hoãn:** không reboot/reset máy B trong quy trình hiện tại theo yêu cầu
+  vận hành. Chỉ thực hiện khi có yêu cầu riêng và cửa sổ bảo trì được duyệt.
 - Chờ heartbeat từ B về A; kiểm tra service tự khởi động, certificate,
   capability, GPU metrics và cổng cần thiết.
 - Chạy một lệnh async ngắn, đọc `job_id`, status, log và exit code.
@@ -335,7 +334,7 @@ Nếu mốc 131072 đạt, cấu hình ứng viên:
 
 ```text
 engine_context       = 131072
-public_input_cap     = 90000
+public_input_cap     = 81000
 output_hard_cap      = 32768
 context_reserve      = 8192
 dynamic_output       = min(requested, context - actual_input - reserve)
@@ -344,7 +343,8 @@ MTP                  = draft-mtp / n-max 2
 parallel             = 1
 ```
 
-Nếu 90K không ổn định, chọn mốc thấp hơn từ ladder; không ép 90K vì mục tiêu
+Đã chốt 81K theo Q115 sau khi arm 81.795 PASS và near-cap cold-load biến thiên;
+không mở lại 90K khi chưa có bằng chứng mới vì mục tiêu
 đã đặt ra.
 
 Đồng bộ một commit các file engine/gateway/provider catalog/CamCLI/tài liệu và
@@ -372,7 +372,7 @@ Chỉ artifact đã smoke-test và có SHA-256 mới được đưa sang B.
 ## P7 — mở public theo canary
 
 - Mở trước một model alias/canary key, không bật đại trà ngay.
-- Test request ngắn, request 60K, request 80–90K và request vượt cap.
+- Test request ngắn, request 60K, request 80–81K và request vượt cap.
 - Xác nhận vượt cap trả 413; không biến thành 503/retry storm.
 - Theo dõi 15–30 phút: latency, timeout, VRAM, GPU contention, log và credit.
 - Chỉ sau canary pass mới mở allowlist public đầy đủ.
@@ -380,9 +380,10 @@ Chỉ artifact đã smoke-test và có SHA-256 mới được đưa sang B.
 Rollback public: đưa provider catalog/cap về bản trước, reload service và xác
 nhận alias cũ vẫn hoạt động. Giữ artifact và backup trước deploy.
 
-## P8 — nghiệm thu cuối
+## P8 — nghiệm thu cuối (không reboot trong phiên này)
 
-- Reboot B lần cuối sau khi public canary đã pass.
+- Không reboot B; kiểm tra Nexus/service sống bằng health, heartbeat và một async
+  smoke job. Reboot là hạng mục vận hành độc lập, không phải điều kiện Q4–Q6.
 - Kiểm tra Nexus tự lên, async job mới chạy được, job cũ hoàn tất vẫn đọc được.
 - Chạy `python tools\gate.py` lần cuối trên A và ghi kết quả thật vào nhật ký.
 - Cập nhật `QUYET_DINH_NEN_TANG.md`, `KE_HOACH_TRIEN_KHAI.md` và

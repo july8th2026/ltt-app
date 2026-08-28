@@ -108,14 +108,14 @@ models:
   # ============================================================ KHACH NGOAI
   # Ho so MAC DINH, phuc vu khach goi API qua Cloudflare. Chot 2026-08-27.
   #
-  # Engine 131K da duoc warm benchmark tren RTX 3090. Public input cap 90K
-  # la bien an toan cho Cloudflare; khong phai gioi han VRAM cua engine.
+  # Engine 131K da duoc warm benchmark tren RTX 3090. Public input cap 81K
+  # theo Q115 la bien an toan cho Cloudflare; khong phai gioi han VRAM cua engine.
   #   CF mac dinh cat o 125 giay (tai lieu chinh thuc, cap nhat 23/07/2026).
   #   Canary API that ngay 27/08 tren chinh card nay:
   #     86.101 token that / 89.716 token uoc luong -> 102,0 s
   #     tra dung sentinel dau-cuoi, VRAM dinh 22.639 MiB, khong OOM
-  #   Vi vay public cap 90K con khoang 23 s cho overhead; 131K chi danh cho
-  #   engine, khong mo het cho public. Phai theo doi p95 truoc khi nang tiep.
+  #   Vi vay public cap 81K giu them bien cho overhead; 131K chi danh cho
+  #   engine, khong mo het cho public.
   #   Cap phat mot cua so ma khach khong dung noi la ban mot loi hua khong giu duoc.
   #
   # VA: cot "ngu canh" trong moi bang cong dong la CON SO CAP PHAT. Hang 200K cua
@@ -127,7 +127,7 @@ models:
   # Khach dieu khien do sau bang `reasoning_effort` trong tung request.
   qwen38-api:
     name: "Qwen3.8-27B (LTT Studios)"
-    description: "Coding, chat, agent, tom tat. Engine 131K; input public 90K."
+    description: "Coding, chat, agent, tom tat. Engine 131K; input public 81K."
     capabilities:
       in: ["text"]
       out: ["text"]
