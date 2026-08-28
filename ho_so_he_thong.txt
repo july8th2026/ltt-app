@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ad76022cbd482db91ab2f8d4ffd18c28f14c1036bdaa4c43ea127106b02f3aae
+Fingerprint   : sha256:b92eec6a627db9d9a19fd23ff6241213055bbc31640ef404a74c2dcec977e576
 Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2636,7 +2636,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12031021 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12031049 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -73978,7 +73978,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=f1e2fcb10aec948802c5c464636757c394501ce267ba4bb71ea3ffcda02e6027 BYTES=254942 LINES=3625
+SHA256=2e28373b63b6e378ce3867f88d0e08195c1d973bbae0c577937984d0b1674dbe BYTES=254970 LINES=3625
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77578,8 +77578,8 @@ tiếp tục lấy p50/p95 thay vì chốt SLA từ một arm.
 **Q6 CPU soak checkpoint:** SQLite cô lập đã drain `1000/1000` jobs trên 16
 accounts, queue cuối `0`, admission-delay p95 `27,734s`, poll p50 `1,112ms`,
 không provider/GPU read. GPU canary đã có short/60K/64K/65K PASS; arm 65K lặp
-`94,243s` nên cần thêm mẫu để tính p50/p95 và đo queue-age end-to-end trên
-canary plane trước khi nghiệm thu Q6.
+`94,243s` và 60K lặp `73,727s`, p50 quan sát khoảng `74s`, max `94,243s`;
+còn đo queue-age end-to-end trên canary plane trước khi nghiệm thu Q6.
 
 ---
 
