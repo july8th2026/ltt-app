@@ -42,11 +42,11 @@
 | test lifecycle sau cập nhật contract | **PASS 1**, 1 skip |
 | `python tools\gate.py --vong-lap` lượt chốt Q3 | **PASS 19/19**; backend `--lf` gần-full 211,1 giây; chưa thay full gate |
 | gate sau tách active lease khỏi expired candidate | **PASS 19/19**; backend `--lf` 213,1 giây |
+| `python tools\gate.py` full gate sau Q0–Q3 | **PASS 23/23**; backend song song 274,1 giây; frontend 3/3, đa tiến trình 146,4 giây; secret scan 0 |
 
 ### Còn tồn đọng và việc tiếp theo
 
-1. Sinh lại hồ sơ, chạy gate vòng lặp và commit Q3; sau đó chạy full gate chốt
-   toàn bộ Q0–Q3 trước cửa sổ GPU.
+1. Q3 đã chốt; full gate 23/23 PASS. Có thể mở Q4 trong cửa sổ GPU độc quyền.
 2. Race PostgreSQL còn skip vì chưa có scratch `LTT_TEST_DATABASE_URL`; không
    tính SQLite là bằng chứng chống race.
 3. Q4 dùng GPU/model thật nhưng không reboot/reset máy B; giữ `parallel=1` và
