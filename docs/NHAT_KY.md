@@ -74,6 +74,37 @@ release mới không đạt health.
 | `apps/ltt_llm/executor.py` trên release | hash `B20FF72C8C86320F50880D7ADB5D4DAF9BDD488799481071F9029DC8F0C6EA97` |
 | Máy B / RTX 3090 | **Không reboot/reset**, không chạy canary GPU trong deploy |
 
+## 2026-08-29 — H41.9 Q6: tiếp tục canary 60K và CPU soak xen kẽ
+
+- Nexus G0 read-only xác nhận node B điều khiển được: `LTTLlamaSwap` và
+  `LTTLlmGateway` Running/Automatic; GPU nền `1%`, `942 MiB`, `33 C`.
+- Kiểm tra job async control-plane `job_01M15606WS8ZKN414JZCK1B548` kết thúc
+  `SUCCEEDED`, exit `0`, log `Q6_ASYNC_OK` đọc lại đầy đủ.
+- Arm `job_01M1561YN6SAGQYPWERCPM1XSN` **INVALID**, exit `1` sau `1,148 ms`:
+  harness gọi `pwsh` nhưng B chỉ có `powershell.exe`, không chạm GPU và không
+  đưa vào baseline.
+- Arm sửa shell hợp lệ `job_01M1563AH460QD8KMRG3HR46G3`: exit `0`, HTTP `200`,
+  quality `PASS`, usage `66179` input + `93` output, `88,497s`, GPU 100%,
+  VRAM đỉnh `22486 MiB`, `69 C`, fan `91%`, power `369,27 W`; GPU về nền sau arm.
+- CPU-only harness xen kẽ trong cửa sổ GPU: `320/320` drain, queue cuối `0`,
+  admission-delay p95 `7,027s`, poll p50 `0,663ms`, `provider_calls=0`,
+  `gpu_reads=0`.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| Nexus `POST/GET /exec/async` + `/log` (control-plane) | **PASS**, exit 0, log đầy đủ |
+| Nexus async `q4_api_canary.ps1` bằng `pwsh` | **INVALID**, exit 1, không GPU |
+| Nexus async `q4_api_canary.ps1` bằng `powershell.exe -TargetTokens 60000 -Seed 4` | **PASS**, exit 0, quality PASS |
+| `python tools\bench_llm_admission.py --accounts 16 --jobs 320 --polls 10` | **PASS**, drain 320/320, queue 0, provider/GPU reads 0 |
+
+### Trạng thái Q6
+
+Giữ `parallel=1`, chưa mở public rộng. Tập 60K/64K/65K hiện vẫn PASS nhưng
+Q6 chưa đóng: còn cần queue-age end-to-end trên canary plane và p50/p95 đủ
+warm/cold; arm invalid không được tính vào baseline.
+
 ## 2026-08-28 — H41.9 Q116: chốt và deploy public cap 65K; chuyển Q6
 
 - Theo điều kiện “81K phải ổn định” (Q115 không đạt), chốt public input cap
