@@ -12,6 +12,42 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+## 2026-08-29 — H41.9 Q6: public async canary + telemetry 15 phút
+
+- Dùng tài khoản test `autosub-test@lttstudios.com`, cấp tạm 200 credit qua
+  `tools/nghiem_thu_chat_l1.py`; khóa chỉ có `tools:read`, `credits:read`,
+  `jobs:create`, `jobs:read`, và chỉ được gọi `text.chat`.
+- Chạy 7 arm qua Cloudflare: short cold, 60K×2, 65K×2, short tail và một
+  arm vượt cap 70K. Sáu arm hợp lệ trả `201` rồi `succeeded`; arm vượt cap trả
+  `failed` sau `0,313s`, `charged=0` (hold được hoàn).
+- Queue-delay end-to-end của 7 arm: p50 quan sát `1,062s`, p95 `1,861s`;
+  service-time: short cold `19,136s`, short warm `4,611s`, 60K
+  `66,855/88,344s`, 65K `93,965/112,976s`. Không có 429, OOM hay retry.
+- CPU-only soak xen kẽ: `320/320` drain, queue cuối `0`, admission p95
+  `8,093s`, poll p50 `0,665ms`, `provider_calls=0`, `gpu_reads=0`.
+- Nexus telemetry job `job_01M15B0WSR3WRW2TYX66T95Y2D`: `SUCCEEDED`, exit `0`,
+  `450` mẫu/15 phút; GPU max `100%`, VRAM `22.511 MiB`, nhiệt `70 C`, fan
+  `97%`, công suất `369,19 W`, GPU trung bình `16,34%`.
+- Sau khi đo: thu hồi toàn bộ khóa canary (còn sống `0`), hoàn phần ngân sách
+  cấp tạm, số dư tài khoản trở lại `1215`; token/script tạm trên máy A đã xóa.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\\nghiem_thu_chat_l1.py chuan_bi --token-file C:\\tmp\\h41_q6_canary_token.txt` | **PASS**, key jobs:create, credit `1215 → 1415` |
+| Public `/quotes → /jobs → poll` | **PASS**, 7 arm; 6 succeeded, 1 over-cap failed/refund |
+| `python tools\\bench_llm_admission.py --accounts 16 --jobs 320 --polls 10` | **PASS**, drain `320/320`, queue `0` |
+| Nexus `POST/GET /exec/async` + summary `nvidia-smi` | **PASS**, exit `0`, 450 samples |
+| `python tools\\nghiem_thu_chat_l1.py don` | **PASS**, revoked `2` then verified `0` live keys |
+| `python tools\\scan_source_secrets.py` | **PASS**, 0 finding |
+
+### Trạng thái Q6
+
+Đã có bằng chứng end-to-end cho queue-age, credit hold/settle/refund và
+telemetry GPU trên public API. Giữ `parallel=1`, `input cap=65000`; không mở
+concurrency hoặc rollout rộng khi chưa có quyết định sản phẩm mới.
+
 ## 2026-08-29 — H41.4: executor đồng bộ theo hợp đồng app
 
 - Tách phần phụ thuộc app khỏi `server/api`: thêm trường `sync_executor` vào
