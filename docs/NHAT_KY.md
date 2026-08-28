@@ -98,12 +98,18 @@ release mới không đạt health.
 | Nexus async `q4_api_canary.ps1` bằng `pwsh` | **INVALID**, exit 1, không GPU |
 | Nexus async `q4_api_canary.ps1` bằng `powershell.exe -TargetTokens 60000 -Seed 4` | **PASS**, exit 0, quality PASS |
 | `python tools\bench_llm_admission.py --accounts 16 --jobs 320 --polls 10` | **PASS**, drain 320/320, queue 0, provider/GPU reads 0 |
+| `python tools\bench_llm_admission.py --accounts 32 --jobs 2000 --polls 20` | **PASS**, drain 2000/2000, queue 0, admission p95 61,627s, provider/GPU reads 0 |
 
 ### Trạng thái Q6
 
 Giữ `parallel=1`, chưa mở public rộng. Tập 60K/64K/65K hiện vẫn PASS nhưng
 Q6 chưa đóng: còn cần queue-age end-to-end trên canary plane và p50/p95 đủ
 warm/cold; arm invalid không được tính vào baseline.
+
+- CPU-only stress trong SQLite cô lập: `2000` jobs/`32` accounts, `640` lượt
+  poll, drain hết, admission-delay p95 `61,627s`, poll p50 `1,187ms`,
+  `provider_calls=0`, `gpu_reads=0`. Đây là số đo stress queue serial, không
+  phải SLA production và không thay cho queue-age end-to-end của canary public.
 
 ## 2026-08-28 — H41.9 Q116: chốt và deploy public cap 65K; chuyển Q6
 
