@@ -189,6 +189,8 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
     # 1. Nhặt (transaction ngắn, commit ngay để job thành 'running').
     job_id: Optional[str] = None
     job_type = params = None
+    user_id = admission_resource = ""
+    admission_slots = 0
     for db in _one_session():
         job = jobq.claim(db, worker_id=worker_id,
                          capabilities=capabilities)
@@ -196,24 +198,39 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
             db.commit()
             return False
         job_id, job_type, params = job.id, job.job_type, dict(job.params)
+        user_id = job.user_id
+        admission_resource = job.admission_resource or ""
+        admission_slots = int(job.admission_slots or 0)
         db.commit()
 
     log.info("worker %s nhat job %s (%s)", worker_id, job_id[:8], job_type)
 
-    # 1b. Giành GPU nếu loại job này khai cần (H23). Giành TRƯỚC khi chạy
-    # handler, và bằng khoá nguyên tử — không phải "đọc nvidia-smi rồi chọn".
-    need_mb = _vram_can(job_type)
-    with _giu_gpu(worker_id, job_id, job_type, need_mb) as (lease, het_gpu):
-        if het_gpu:
-            # Mọi card đều bận. Trả job về hàng đợi thay vì chạy chung một card
-            # rồi OOM giữa chừng — người dùng chờ thêm một lượt vẫn hơn là mất
-            # cả job. Không tính là một lần thử thất bại.
-            _tra_ve_hang_doi(job_id, job_type)
+    # 1b. Giành slot của tài nguyên từ xa TRƯỚC GPU cục bộ. Nếu máy B đang bận,
+    # không được giữ card trên worker chỉ để ngồi chờ một tài nguyên khác.
+    from platform_core.llm import admission
+    from contextlib import nullcontext
+    execution = (
+        admission.hold_persisted(
+            resource=admission_resource, slots=admission_slots,
+            user_id=user_id, mode="job", holder_id=job_id, job_id=job_id)
+        if admission_resource and admission_slots > 0
+        else nullcontext(True)
+    )
+    with execution as execution_lease:
+        if execution_lease is None:
+            _tra_ve_hang_doi(job_id, job_type, resource=admission_resource)
             return True
 
-        # 2. Chạy handler NGOÀI transaction claim (không giữ khoá suốt lúc chạy).
-        ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
-        return _chay_handler(worker_id, job_id, job_type, params, ctx)
+        # 1c. Giành GPU nếu loại job này khai cần (H23), rồi mới chạy handler.
+        need_mb = _vram_can(job_type)
+        with _giu_gpu(worker_id, job_id, job_type, need_mb) as (lease, het_gpu):
+            if het_gpu:
+                _tra_ve_hang_doi(job_id, job_type, resource="gpu")
+                return True
+
+            # 2. Chạy handler NGOÀI transaction claim.
+            ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
+            return _chay_handler(worker_id, job_id, job_type, params, ctx)
 
 
 def _vram_can(job_type: str) -> int:
@@ -287,7 +304,7 @@ def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
         except StopIteration: pass
 
 
-def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
+def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> None:
     """Đưa job về `queued` để chạy lượt sau, KHÔNG tính là một lần thử hỏng."""
     from platform_core.models import JOB_QUEUED
     from datetime import datetime, timedelta, timezone
@@ -301,11 +318,11 @@ def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
             job_events.append(
                 db, job, "resource_wait", public_message=N_("Đang chờ tài nguyên xử lý."),
                 details={"delay_seconds": GPU_RETRY_DELAY_S,
-                         "status": JOB_QUEUED}, level="warning",
+                         "status": JOB_QUEUED, "resource": resource}, level="warning",
             )
             db.commit()
-    log.info("job %s (%s) hoãn %ss: mọi GPU đang bận",
-             job_id[:8], job_type, GPU_RETRY_DELAY_S)
+    log.info("job %s (%s) hoãn %ss: tài nguyên %s đang bận",
+             job_id[:8], job_type, GPU_RETRY_DELAY_S, resource)
 
 
 def _tran_thoi_gian(app_slug: str, job_type: str) -> int:
@@ -1032,6 +1049,7 @@ def _don_du_lieu_het_han() -> None:
     from platform_core.public_api import (costing, idempotency, metrics,
                                           notifications, outbox, request_log,
                                           security_log)
+    from platform_core.llm import admission
 
     rules = (
         ("nhat ky request API", request_log.purge_expired),
@@ -1041,6 +1059,7 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
+        ("execution lease mo coi", admission.reclaim_expired),
         # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
         # ở lại (bằng chứng), nội dung thì hết hạn — trước đây cả hai chung một
         # số phận là giữ vĩnh viễn, nên kho file phình không trần.

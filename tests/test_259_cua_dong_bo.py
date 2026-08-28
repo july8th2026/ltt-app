@@ -155,6 +155,29 @@ def _dem_job() -> int:
         _close(gen)
 
 
+def _giu_execution_slot() -> str:
+    from platform_core.llm import admission
+    gen, db = _session()
+    try:
+        lease = admission.acquire(
+            db, resource="llm_remote", slots=1, user_id="u-khac",
+            mode="job", holder_id="job-khac")
+        assert lease is not None
+        db.commit()
+        return lease.id
+    finally:
+        _close(gen)
+
+
+def _dem_execution_lease() -> int:
+    from platform_core.models import ExecutionLease
+    gen, db = _session()
+    try:
+        return db.query(ExecutionLease).count()
+    finally:
+        _close(gen)
+
+
 # ── 1. Hợp đồng chế độ ───────────────────────────────────────────────────────
 
 def test_route_khai_dung_SYNC_BILLED():
@@ -228,6 +251,24 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
     assert 0 < thu < b["x_ltt"]["credit_held"], (
         "sinh 100 token ma thu tron phan da giu cho 1400 token")
+    assert _dem_execution_lease() == 0
+
+
+def test_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+    lease_id = _giu_execution_slot()
+    called = _dat_model(monkeypatch)
+    user_id, token = _account()
+    before = _so_du(user_id)
+
+    response = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "concurrency_limited"
+    assert response.headers["Retry-After"]
+    assert called == []
+    assert _so_du(user_id) == before
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
 
 
 def test_sinh_it_thi_tra_it_KHONG_tra_tron_tran(api, monkeypatch):

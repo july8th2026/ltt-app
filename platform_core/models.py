@@ -335,6 +335,33 @@ class Job(Base):
         return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"
 
 
+class ExecutionLease(Base):
+    """Quyền dùng một slot thực thi dùng chung cho job, sync và stream.
+
+    Đây không phải hàng đợi và không chứa payload. Ràng buộc UNIQUE biến việc
+    giành một slot thành thao tác nguyên tử; heartbeat cho phép thu hồi quyền
+    của tiến trình đã chết thay vì khoá tài nguyên vĩnh viễn.
+    """
+
+    __tablename__ = "execution_leases"
+    __table_args__ = (
+        UniqueConstraint("resource", "slot", name="uq_execution_lease_resource_slot"),
+        Index("ix_execution_leases_resource_heartbeat", "resource", "heartbeat_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    resource: Mapped[str] = mapped_column(String(96), nullable=False)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    holder_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
+
+
 class JobEvent(Base):
     """Nhật ký append-only của một job, đã tách nội dung khách và nội bộ.
 

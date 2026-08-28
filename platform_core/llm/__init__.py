@@ -24,4 +24,4 @@ Hiện có:
 """
 from __future__ import annotations
 
-__all__ = ["cong_vlm"]
+__all__ = ["admission", "cong_vlm"]

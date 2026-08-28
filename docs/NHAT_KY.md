@@ -14,6 +14,43 @@
 
 ---
 
+## 2026-08-28 — H41.9 Q1b: một execution lease cho async, sync và stream
+
+- Thêm bảng `execution_leases` và migration head `c6f92a3b8d51`. UNIQUE theo
+  `(resource, slot)` làm thao tác giành slot nguyên tử; heartbeat 60 giây và TTL
+  20 phút thu hồi tiến trình chết. Bảng không chứa payload và không phải queue.
+- Worker async giành execution slot trước GPU cục bộ. Khi slot bận, job trở lại
+  `queued`, ghi event `resource_wait`, chờ 20 giây và **không tăng attempt**.
+- `/chat/completions`, Messages/Responses stream và nhánh không-stream đều tranh
+  đúng slot `llm_remote`. Hết slot trả 429 `concurrency_limited` + `Retry-After`
+  trước credit/model. Lease được nhả ở thành công, lỗi, huỷ client và kết thúc
+  stream; TTL là hàng rào cuối khi tiến trình chết đột ngột.
+- Khai retention vận hành cho lease, nối quét lease mồ côi vào worker và thêm
+  ràng buộc UNIQUE mới vào restore drill. Bổ sung bản dịch EN cho mô tả retention.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| test viết trước cho lease | **FAIL 2** vì chưa có `platform_core.llm.admission` |
+| test worker viết trước | **FAIL 1**: job vẫn chạy đến `done` khi slot bận |
+| test API viết trước | **FAIL 2**: sync và stream còn trả 200 khi slot bận |
+| `python tools\test_nhanh.py --noi-tiep -k "test_151_worker_gpu or test_211_data_governance or test_259_cua_dong_bo or test_272_cua_streaming or test_285_messages_khong_stream or test_292_tien_ket_trong_hold or test_313_llm_admission"` | **PASS 129**, 1 skip |
+| `python -m alembic heads` | **PASS**, một head `c6f92a3b8d51` |
+| gate vòng lặp lần đầu | **FAIL 7 test**: retention, restore drill và chữ ký test tiền cũ; đã sửa đúng hợp đồng |
+| gate vòng lặp lần hai | **FAIL 1 test dịch EN**; backend 4.169 pass, 27 skip |
+| `python tools\i18n.py bien-dich` | **PASS** |
+| `python tools\gate.py --vong-lap` lượt chốt Q1b | **PASS 19/19**; backend cache được rút gần-full trong 200,2 giây, chưa thay bằng chứng full gate cuối |
+
+### Còn tồn đọng và việc tiếp theo
+
+1. Test race PostgreSQL cần `LTT_TEST_DATABASE_URL` trỏ vào scratch an toàn;
+   hiện skip có chủ ý, không tính là bằng chứng đồng thời.
+2. Tiếp tục Q2 fairness/retry/ambiguous-provider bằng CPU/DB/mock; chưa chạy GPU.
+3. Sau Q2–Q3 mới vào Q4–Q6 trong cửa sổ GPU độc quyền, không reboot máy 3090.
+
+---
+
 ## 2026-08-28 — Khôi phục H41.9 và khóa quy tắc vận hành liên tục
 
 - Khôi phục đúng checkpoint sau mất điện: H41.11/Q113 đã hoàn thành; tiếp tục

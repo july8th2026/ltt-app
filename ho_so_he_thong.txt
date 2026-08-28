@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4ad88279ca45e879a9154a6f2baf1f74f9b780b3781a57733f6d2ed91ed7aef8
-Nguồn đã quét : 1203 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:569ca4fc3408b37978f33c368e14fce06ea76fbaa946bf9f434d3586bdc1da6b
+Nguồn đã quét : 1205 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -760,14 +760,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:470
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:636
 
-5. DATA MODEL (58 bảng)
-- agent_runs → AgentRun | platform_core/models.py:415
-- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:500
-- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:482
-- agent_workflows → AgentWorkflow | platform_core/models.py:450
+5. DATA MODEL (59 bảng)
+- agent_runs → AgentRun | platform_core/models.py:442
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:527
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:509
+- agent_workflows → AgentWorkflow | platform_core/models.py:477
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:751
-- api_keys → ApiKey | platform_core/models.py:610
+- api_keys → ApiKey | platform_core/models.py:637
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -778,18 +778,19 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:802
 - app_access → AppAccess | platform_core/models.py:168
 - app_projects → AppProject | platform_core/models.py:201
-- chat_conversations → ChatConversation | platform_core/models.py:753
-- chat_messages → ChatMessage | platform_core/models.py:773
-- credit_entries → CreditEntry | platform_core/models.py:556
-- credit_packages → CreditPackage | platform_core/models.py:686
+- chat_conversations → ChatConversation | platform_core/models.py:780
+- chat_messages → ChatMessage | platform_core/models.py:800
+- credit_entries → CreditEntry | platform_core/models.py:583
+- credit_packages → CreditPackage | platform_core/models.py:713
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- gpu_leases → GpuLease | platform_core/models.py:794
-- job_events → JobEvent | platform_core/models.py:338
+- execution_leases → ExecutionLease | platform_core/models.py:338
+- gpu_leases → GpuLease | platform_core/models.py:821
+- job_events → JobEvent | platform_core/models.py:365
 - jobs → Job | platform_core/models.py:249
 - nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
 - nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:129
 - nexus_sessions → NexusSession | platform_core/nexus/tables.py:180
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:531
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:558
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -804,15 +805,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:710
+- payment_orders → PaymentOrder | platform_core/models.py:737
 - platform_info → PlatformInfo | platform_core/models.py:46
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:138
-- singleton_leases → SingletonLease | platform_core/models.py:844
-- upload_sessions → UploadSession | platform_core/models.py:382
+- singleton_leases → SingletonLease | platform_core/models.py:871
+- upload_sessions → UploadSession | platform_core/models.py:409
 - users → User | platform_core/models.py:73
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
@@ -820,7 +821,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (56)
+6. ALEMBIC MIGRATIONS (57)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -877,6 +878,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - 8c1f4a67b209 ← 5b9e2c47a103 | vps_instance: bon cot do bang thong (H39/G7) | alembic/versions/20260824_2400_vps_bang_thong.py
 - a4d70e93f158 ← 8c1f4a67b209 | vps_instance.sao_luu_luc — lan chup anh gan nhat (H39/G9) | alembic/versions/20260824_2500_vps_sao_luu.py
 - b5e81f2a7c40 ← a4d70e93f158 | H41.9/Q114: snapshot admission resource on durable jobs. | alembic/versions/20260828_1000_job_admission_resource.py
+- c6f92a3b8d51 ← b5e81f2a7c40 | H41.9/Q114: common execution lease for async, sync and stream. | alembic/versions/20260828_1100_execution_leases.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1366,8 +1368,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1203 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:918, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1205 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:920, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1380,7 +1382,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [README.md] (1)
 - README.md
 
-[alembic] (58)
+[alembic] (59)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1439,6 +1441,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - alembic/versions/20260824_2400_vps_bang_thong.py
 - alembic/versions/20260824_2500_vps_sao_luu.py
 - alembic/versions/20260828_1000_job_admission_resource.py
+- alembic/versions/20260828_1100_execution_leases.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -1918,7 +1921,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (118)
+[platform_core] (119)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -1962,6 +1965,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - platform_core/jobs.py
 - platform_core/leases.py
 - platform_core/llm/__init__.py
+- platform_core/llm/admission.py
 - platform_core/llm/cong_vlm.py
 - platform_core/llm/dem_token_luong.py
 - platform_core/llm/dieu_phoi.py
@@ -2627,7 +2631,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1203 file; 11978617 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1205 file; 11994720 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7450,6 +7454,60 @@ def downgrade() -> None:
     op.drop_index("ix_jobs_admission_resource", table_name="jobs")
     op.drop_column("jobs", "admission_slots")
     op.drop_column("jobs", "admission_resource")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260828_1100_execution_leases.py
+SHA256=17a46d9cf22da29c74f464e5909cc102289ecc7b7908bc9e0d0a1dc278328a04 BYTES=1946 LINES=48
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H41.9/Q114: common execution lease for async, sync and stream.
+
+Revision ID: c6f92a3b8d51
+Revises: b5e81f2a7c40
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "c6f92a3b8d51"
+down_revision = "b5e81f2a7c40"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "execution_leases",
+        sa.Column("id", sa.String(length=36), nullable=False),
+        sa.Column("resource", sa.String(length=96), nullable=False),
+        sa.Column("slot", sa.Integer(), nullable=False),
+        sa.Column("user_id", sa.String(length=36), nullable=False),
+        sa.Column("mode", sa.String(length=16), nullable=False),
+        sa.Column("holder_id", sa.String(length=128), nullable=False),
+        sa.Column("job_id", sa.String(length=36), nullable=False, server_default=""),
+        sa.Column("acquired_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("heartbeat_at", sa.DateTime(timezone=True), nullable=False),
+        sa.PrimaryKeyConstraint("id"),
+        sa.UniqueConstraint(
+            "resource", "slot", name="uq_execution_lease_resource_slot"),
+    )
+    op.create_index(
+        "ix_execution_leases_resource_heartbeat", "execution_leases",
+        ["resource", "heartbeat_at"])
+    op.create_index(
+        "ix_execution_leases_heartbeat_at", "execution_leases", ["heartbeat_at"])
+    op.create_index(
+        "ix_execution_leases_user_id", "execution_leases", ["user_id"])
+    op.create_index(
+        "ix_execution_leases_job_id", "execution_leases", ["job_id"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_execution_leases_job_id", table_name="execution_leases")
+    op.drop_index("ix_execution_leases_user_id", table_name="execution_leases")
+    op.drop_index("ix_execution_leases_heartbeat_at", table_name="execution_leases")
+    op.drop_index(
+        "ix_execution_leases_resource_heartbeat", table_name="execution_leases")
+    op.drop_table("execution_leases")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -73844,7 +73902,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=4042d8ee7b7d972473d44bcaedcaa4fb593f4b053222b6f40b6f33c04155943e BYTES=254859 LINES=3604
+SHA256=bc5cacac077d47b87cd9d0636e240eba7e33f0257d0289403030c9884b580d29 BYTES=254940 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77415,7 +77473,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** baseline GPU xác nhận hidden queue 24,28s/45,73s; Q112 đã khóa gateway 1 suất và deploy B. Q0/Q114 đã khóa; Q1a global/resource/account cap + khóa transaction + migration đã xanh CPU/API, test race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo execution lease chung async/sync/stream bằng provider mock |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0/Q114 + Q1a/Q1b đã khóa. Global/resource/account cap nằm trước job+credit; execution lease DB một slot dùng chung async/sync/stream, heartbeat/TTL, async `resource_wait` không tăng attempt, sync/stream 429 trước credit/model. Relevant 129 pass/1 skip; gate vòng lặp 19/19. Race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo Q2 fairness/retry/ambiguous-provider bằng CPU/DB/mock |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
@@ -101008,7 +101066,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=6c61100a146e0db07047c6d6523701111223d2620dd56900fcbc31c25ae6fa3c BYTES=60712 LINES=1335
+SHA256=3044fccd219f6a51d0d1a14cedecbeec84940d1a9f95165e36a3417636dd375e BYTES=61464 LINES=1354
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -101201,6 +101259,8 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
     # 1. Nhặt (transaction ngắn, commit ngay để job thành 'running').
     job_id: Optional[str] = None
     job_type = params = None
+    user_id = admission_resource = ""
+    admission_slots = 0
     for db in _one_session():
         job = jobq.claim(db, worker_id=worker_id,
                          capabilities=capabilities)
@@ -101208,24 +101268,39 @@ def _chay_mot_job(worker_id: str, *, capabilities=None) -> bool:
             db.commit()
             return False
         job_id, job_type, params = job.id, job.job_type, dict(job.params)
+        user_id = job.user_id
+        admission_resource = job.admission_resource or ""
+        admission_slots = int(job.admission_slots or 0)
         db.commit()
 
     log.info("worker %s nhat job %s (%s)", worker_id, job_id[:8], job_type)
 
-    # 1b. Giành GPU nếu loại job này khai cần (H23). Giành TRƯỚC khi chạy
-    # handler, và bằng khoá nguyên tử — không phải "đọc nvidia-smi rồi chọn".
-    need_mb = _vram_can(job_type)
-    with _giu_gpu(worker_id, job_id, job_type, need_mb) as (lease, het_gpu):
-        if het_gpu:
-            # Mọi card đều bận. Trả job về hàng đợi thay vì chạy chung một card
-            # rồi OOM giữa chừng — người dùng chờ thêm một lượt vẫn hơn là mất
-            # cả job. Không tính là một lần thử thất bại.
-            _tra_ve_hang_doi(job_id, job_type)
+    # 1b. Giành slot của tài nguyên từ xa TRƯỚC GPU cục bộ. Nếu máy B đang bận,
+    # không được giữ card trên worker chỉ để ngồi chờ một tài nguyên khác.
+    from platform_core.llm import admission
+    from contextlib import nullcontext
+    execution = (
+        admission.hold_persisted(
+            resource=admission_resource, slots=admission_slots,
+            user_id=user_id, mode="job", holder_id=job_id, job_id=job_id)
+        if admission_resource and admission_slots > 0
+        else nullcontext(True)
+    )
+    with execution as execution_lease:
+        if execution_lease is None:
+            _tra_ve_hang_doi(job_id, job_type, resource=admission_resource)
             return True
 
-        # 2. Chạy handler NGOÀI transaction claim (không giữ khoá suốt lúc chạy).
-        ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
-        return _chay_handler(worker_id, job_id, job_type, params, ctx)
+        # 1c. Giành GPU nếu loại job này khai cần (H23), rồi mới chạy handler.
+        need_mb = _vram_can(job_type)
+        with _giu_gpu(worker_id, job_id, job_type, need_mb) as (lease, het_gpu):
+            if het_gpu:
+                _tra_ve_hang_doi(job_id, job_type, resource="gpu")
+                return True
+
+            # 2. Chạy handler NGOÀI transaction claim.
+            ctx = JobContext(job_id, gpu_uuid=(lease.gpu_uuid if lease else ""))
+            return _chay_handler(worker_id, job_id, job_type, params, ctx)
 
 
 def _vram_can(job_type: str) -> int:
@@ -101299,7 +101374,7 @@ def _giu_gpu(worker_id: str, job_id: str, job_type: str, need_mb: int):
         except StopIteration: pass
 
 
-def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
+def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> None:
     """Đưa job về `queued` để chạy lượt sau, KHÔNG tính là một lần thử hỏng."""
     from platform_core.models import JOB_QUEUED
     from datetime import datetime, timedelta, timezone
@@ -101313,11 +101388,11 @@ def _tra_ve_hang_doi(job_id: str, job_type: str) -> None:
             job_events.append(
                 db, job, "resource_wait", public_message=N_("Đang chờ tài nguyên xử lý."),
                 details={"delay_seconds": GPU_RETRY_DELAY_S,
-                         "status": JOB_QUEUED}, level="warning",
+                         "status": JOB_QUEUED, "resource": resource}, level="warning",
             )
             db.commit()
-    log.info("job %s (%s) hoãn %ss: mọi GPU đang bận",
-             job_id[:8], job_type, GPU_RETRY_DELAY_S)
+    log.info("job %s (%s) hoãn %ss: tài nguyên %s đang bận",
+             job_id[:8], job_type, GPU_RETRY_DELAY_S, resource)
 
 
 def _tran_thoi_gian(app_slug: str, job_type: str) -> int:
@@ -102044,6 +102119,7 @@ def _don_du_lieu_het_han() -> None:
     from platform_core.public_api import (costing, idempotency, metrics,
                                           notifications, outbox, request_log,
                                           security_log)
+    from platform_core.llm import admission
 
     rules = (
         ("nhat ky request API", request_log.purge_expired),
@@ -102053,6 +102129,7 @@ def _don_du_lieu_het_han() -> None:
         ("ban ghi webhook da gui", outbox.purge_expired),
         ("ban ghi idempotency", idempotency.purge_expired),
         ("mau metrics", metrics.purge_expired),
+        ("execution lease mo coi", admission.reclaim_expired),
         # Nội dung của job: file sinh ra + prompt + payload kết quả. Hàng `jobs`
         # ở lại (bằng chứng), nội dung thì hết hạn — trước đây cả hai chung một
         # số phận là giữ vĩnh viễn, nên kho file phình không trần.
@@ -102885,7 +102962,7 @@ __all__ = ["DEFAULT_TTL", "MAINTENANCE", "WEB", "acquire", "current_holder",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/llm/__init__.py
-SHA256=60216760ee9bfc8625a24b6280ae694c2f5d743d7857eee118da983f00c75fde BYTES=1211 LINES=27
+SHA256=77a314ba23bbfdda0f3545f23fb4b00821578e4a1bf53fdb875104fd31a06bd8 BYTES=1224 LINES=27
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 llm — năng lực GỌI MODEL NGÔN NGỮ dùng chung cho mọi app. (H38)
@@ -102913,7 +102990,206 @@ Hiện có:
 """
 from __future__ import annotations
 
-__all__ = ["cong_vlm"]
+__all__ = ["admission", "cong_vlm"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/llm/admission.py
+SHA256=1a39c457f986e842c7f386b02943e3c130ab02441d05f475aa91b63f97867d1b BYTES=5284 LINES=193
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Admission lease chung cho mọi đường gọi tài nguyên LLM.
+
+Lease chỉ trả lời "ai được chạy bây giờ"; durable queue vẫn chỉ là ``jobs``.
+Caller giữ quyền commit/rollback để có thể gắn acquire vào transaction nghiệp
+vụ của chính nó.
+"""
+from __future__ import annotations
+
+from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
+import logging
+import threading
+from typing import Iterator
+
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from platform_core.db import get_session
+from platform_core.models import ExecutionLease
+
+
+ORPHAN_TIMEOUT = timedelta(minutes=20)
+HEARTBEAT_SECONDS = 60.0
+log = logging.getLogger(__name__)
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _aware(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
+
+
+def reclaim_expired(
+    db: Session,
+    *,
+    resource: str = "",
+    timeout: timedelta = ORPHAN_TIMEOUT,
+) -> int:
+    """Xoá lease mồ côi trong transaction hiện tại và trả số dòng đã xoá."""
+    cutoff = _now() - timeout
+    query = db.query(ExecutionLease)
+    if resource:
+        query = query.filter(ExecutionLease.resource == resource)
+    leases = query.all()
+    expired = [lease for lease in leases if _aware(lease.heartbeat_at) < cutoff]
+    for lease in expired:
+        db.delete(lease)
+    if expired:
+        db.flush()
+    return len(expired)
+
+
+def acquire(
+    db: Session,
+    *,
+    resource: str,
+    slots: int,
+    user_id: str,
+    mode: str,
+    holder_id: str,
+    job_id: str = "",
+    timeout: timedelta = ORPHAN_TIMEOUT,
+) -> ExecutionLease | None:
+    """Giành một slot; ``None`` nghĩa là toàn bộ slot còn sống đang bận."""
+    resource = resource.strip()
+    if not resource or slots <= 0:
+        return None
+
+    reclaim_expired(db, resource=resource, timeout=timeout)
+    taken = {
+        row[0]
+        for row in db.query(ExecutionLease.slot).filter(
+            ExecutionLease.resource == resource).all()
+    }
+    for slot in range(slots):
+        if slot in taken:
+            continue
+        lease = ExecutionLease(
+            resource=resource,
+            slot=slot,
+            user_id=user_id,
+            mode=mode,
+            holder_id=holder_id,
+            job_id=job_id,
+        )
+        try:
+            with db.begin_nested():
+                db.add(lease)
+                db.flush()
+            return lease
+        except IntegrityError:
+            # Một tiến trình khác thắng đúng slot giữa SELECT và INSERT.
+            continue
+    return None
+
+
+def heartbeat(db: Session, lease_id: str) -> bool:
+    lease = db.get(ExecutionLease, lease_id)
+    if lease is None:
+        return False
+    lease.heartbeat_at = _now()
+    db.flush()
+    return True
+
+
+def release(db: Session, lease_id: str) -> bool:
+    """Nhả lease idempotent; caller quyết định thời điểm commit."""
+    lease = db.get(ExecutionLease, lease_id)
+    if lease is None:
+        return False
+    db.delete(lease)
+    db.flush()
+    return True
+
+
+def _with_fresh_session(action, lease_id: str) -> bool:  # noqa: ANN001
+    sessions = get_session()
+    db = next(sessions)
+    try:
+        changed = action(db, lease_id)
+        db.commit()
+        return changed
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        sessions.close()
+
+
+def heartbeat_by_id(lease_id: str) -> bool:
+    return _with_fresh_session(heartbeat, lease_id)
+
+
+def release_by_id(lease_id: str) -> bool:
+    return _with_fresh_session(release, lease_id)
+
+
+@contextmanager
+def keep_alive(lease_id: str) -> Iterator[None]:
+    """Đập nhịp một lease đã commit và nhả idempotent khi khối kết thúc."""
+    stop = threading.Event()
+
+    def _pulse() -> None:
+        while not stop.wait(HEARTBEAT_SECONDS):
+            try:
+                heartbeat_by_id(lease_id)
+            except Exception:  # noqa: BLE001 - TTL remains the fallback
+                log.exception("khong dap nhip duoc execution lease %s", lease_id)
+
+    pulse = threading.Thread(
+        target=_pulse, name=f"execution-hb-{lease_id[:8]}", daemon=True)
+    pulse.start()
+    try:
+        yield
+    finally:
+        stop.set()
+        pulse.join(timeout=5)
+        try:
+            release_by_id(lease_id)
+        except Exception:  # noqa: BLE001 - orphan timeout is the final guard
+            log.exception("khong nha duoc execution lease %s", lease_id)
+
+
+@contextmanager
+def hold_persisted(
+    *,
+    resource: str,
+    slots: int,
+    user_id: str,
+    mode: str,
+    holder_id: str,
+    job_id: str = "",
+) -> Iterator[ExecutionLease | None]:
+    """Giữ lease đã commit trong suốt khối và luôn nhả khi rời khối."""
+    sessions = get_session()
+    db = next(sessions)
+    lease: ExecutionLease | None = None
+    try:
+        lease = acquire(
+            db, resource=resource, slots=slots, user_id=user_id, mode=mode,
+            holder_id=holder_id, job_id=job_id)
+        db.commit()
+        if lease is None:
+            yield None
+        else:
+            with keep_alive(lease.id):
+                yield lease
+    finally:
+        sessions.close()
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -104524,7 +104800,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=9419e95569ae63a05eb56aac8e456f9fa7fc9e091c02a80809d0cf261e879d7b BYTES=48263 LINES=880
+SHA256=db105c35bc296b83d412fb8e1e71468e8df5ad40f5b29c5cc8d94bd593698fb7 BYTES=49660 LINES=907
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -104861,6 +105137,33 @@ class Job(Base):
 
     def __repr__(self) -> str:      # pragma: no cover
         return f"<Job {self.id[:8]} {self.job_type} {self.status} {self.progress}%>"
+
+
+class ExecutionLease(Base):
+    """Quyền dùng một slot thực thi dùng chung cho job, sync và stream.
+
+    Đây không phải hàng đợi và không chứa payload. Ràng buộc UNIQUE biến việc
+    giành một slot thành thao tác nguyên tử; heartbeat cho phép thu hồi quyền
+    của tiến trình đã chết thay vì khoá tài nguyên vĩnh viễn.
+    """
+
+    __tablename__ = "execution_leases"
+    __table_args__ = (
+        UniqueConstraint("resource", "slot", name="uq_execution_lease_resource_slot"),
+        Index("ix_execution_leases_resource_heartbeat", "resource", "heartbeat_at"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    resource: Mapped[str] = mapped_column(String(96), nullable=False)
+    slot: Mapped[int] = mapped_column(Integer, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    mode: Mapped[str] = mapped_column(String(16), nullable=False)
+    holder_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False)
+    heartbeat_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_bay_gio, nullable=False, index=True)
 
 
 class JobEvent(Base):
@@ -112425,7 +112728,7 @@ def be_mat_cam(base_url: str) -> tuple:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=9ae16f9fcf8f77d64bdba4a2abbdd360f6105a720c61db902a309045a19e3241 BYTES=18951 LINES=310
+SHA256=819ca99b3d383e651154d3c2b67f873e5af85e579c126c9ed8c67ad410cc9ff4 BYTES=19257 LINES=314
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -112566,6 +112869,10 @@ STORES: tuple = (
     Store("job_events", OPERATIONAL, 365, N_("chủ tài khoản (dòng customer)"),
           N_("Dòng thời gian một job. Dòng nội bộ chỉ giữ 30 ngày."),
           "job_events.purge_expired (worker)"),
+    Store("execution_leases", OPERATIONAL, 1, N_("vận hành"),
+          N_("Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để "
+             "chẩn đoán và tự thu hồi tiến trình đã chết."),
+          "admission.reclaim_expired (admission + worker)"),
     Store("api_notifications", OPERATIONAL, 90, N_("chủ tài khoản"),
           N_("Cảnh báo đã đọc rồi thì hết giá trị."),
           "notifications.purge_expired (worker)"),
@@ -113660,7 +113967,7 @@ __all__ = ["DEVKEY_ACTIVE", "DeveloperKeyError", "current_pepper", "digest_secre
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/limits.py
-SHA256=4cc1ec1e7a3d4bf83554bc915483e1d0f432570b0c3d8a9fbf57df203ac9a7fd BYTES=18234 LINES=405
+SHA256=65f3cdad365f724db5b95e4b6ed0998e30ec8155db80c1606dad458aabbb2151 BYTES=18631 LINES=414
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rate, quota, concurrency and capacity limits for the Public API.
 
@@ -113789,6 +114096,15 @@ def _too_many(detail: str, retry_after: int, code: str = CODE_RATE_LIMITED,
               **extra) -> ApiError:
     return ApiError(429, code, detail, extra={"retry_after": int(retry_after),
                                               **extra})
+
+
+def execution_busy(resource: str, *, retry_after: int = 15) -> ApiError:
+    """429 chung khi sync/stream không giành được slot thực thi."""
+    _bump("concurrency_limited")
+    return _too_many(
+        "The requested execution resource is busy. Retry later or submit an "
+        "asynchronous job.", retry_after, code=CODE_CONCURRENCY,
+        scope="execution", resource=str(resource))
 
 
 # ── Layer 1: authentication failures ──────────────────────────────────────────
@@ -128171,7 +128487,7 @@ __all__ = ["install_database_resolver", "optional_principal", "require_principal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/chat.py
-SHA256=c6a77c88d991cbfacf7113267a4bee8e75c09c3e8dd2478e6db54f45a2d42a66 BYTES=18335 LINES=319
+SHA256=9007c41f7cbd5f9f8b142d36bdf5f8557cab4e7b5a29c1293ba08d80dfb68d66 BYTES=17386 LINES=315
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/chat/completions`` — cửa đồng bộ có thu tiền (Q106, H38 V3).
 
@@ -128267,9 +128583,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         db: Session = Depends(get_db),
     ) -> JSONResponse:
         from apps.ltt_llm import features
-        from platform_core.llm import thanh_toan
-        from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
-                                                VuotNganSachError)
+        from platform_core.llm import admission, thanh_toan
 
         # ⭐ THÔNG BÁO LỖI LÀ TÀI LIỆU, VÀ LÀ TRANG TÀI LIỆU DUY NHẤT CHẮC CHẮN
         #    ĐƯỢC ĐỌC. Đo thật 23/08 với `openai` 2.30.0: một lượt gọi đúng theo
@@ -128362,6 +128676,12 @@ def register_chat_routes(api, config, tag: str) -> None:
         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
         #    nay chay sach qua ca bo test roi no o luot goi that dau tien.
         request_id = thanh_toan.ma_luot("ch")
+        ticket = admission.acquire(
+            db, resource=tool.admission_resource, slots=tool.admission_slots,
+            user_id=principal.user_id, mode="sync", holder_id=record.id)
+        if ticket is None:
+            db.rollback()
+            raise limits.execution_busy(tool.admission_resource)
         try:
             da_giu = thanh_toan.giu_cho_luot(
                 db, user_id=principal.user_id, request_id=request_id,
@@ -128375,6 +128695,7 @@ def register_chat_routes(api, config, tag: str) -> None:
             metrics.increment(metrics.CREDIT_EXHAUSTED)
             log.info("khach het credit tai chat/completions: user=%s",
                      principal.user_id[:8])
+            db.rollback()
             raise insufficient_credit(str(e)) from None
 
         # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI GỌI MODEL. Ba thứ hỏng nếu không:
@@ -128394,67 +128715,58 @@ def register_chat_routes(api, config, tag: str) -> None:
         # ⛔ Từ dòng này trở xuống, **mọi đường ra phải tự chốt giao dịch của nó.**
         #    Không còn một giao dịch bao trùm nào để dựa vào nữa.
         db.commit()
+        with admission.keep_alive(ticket.id):
+            return _finish_chat(
+                db=db, sach=sach, principal=principal, record=record,
+                request_id=request_id, da_giu=da_giu)
 
-        bat_dau = time.monotonic()
-        try:
-            kq = features.chay(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
-        except BanError as e:
-            # ⛔ BẬN ≠ HỎNG (D-005). Hoàn đủ, trả 429, và **không** để bên gọi
-            #    hiểu thành lỗi provider.
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            raise service_unavailable(
-                f"The model is busy right now: {e}", retry_after=30) from None
-        except VuotNganSachError as e:
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            raise invalid_request(str(e)) from None
-        except (CongVlmError, Exception) as e:              # noqa: BLE001
-            # 🔴 HOÀN TRƯỚC, NÉM SAU. Handler lỗi của sub-app sẽ dựng phản hồi,
-            #    nhưng nếu ta để ngoại lệ bay lên mà chưa hoàn thì `get_db` cuộn
-            #    ngược giao dịch — và phần giữ chỗ biến mất cùng nó. Nghe có vẻ
-            #    an toàn, nhưng nó cũng cuộn mất **bản ghi idempotency**, nên
-            #    lần thử lại sẽ giữ chỗ và chạy lại từ đầu.
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            log.warning("chat.completions that bai user=%s: %s",
-                        principal.user_id[:8], e)
-            raise service_unavailable(
-                "The model could not serve this request.") from None
-        except BaseException:
-            # ⚠️ Nhánh trên bắt `Exception`, và điều đó **nghe như** đã bắt hết.
-            #    Nhưng `asyncio.CancelledError` KHÔNG kế thừa `Exception` — mà
-            #    đó lại là ca hay xảy ra nhất ở một cửa đồng bộ: khách bỏ đi
-            #    giữa chừng. Khi ấy phần giữ chỗ nằm lại và không ai quét, vì
-            #    đường này không tạo `Job`.
-            #
-            #    Cùng một lỗ đã làm mất tiền thật ở `/messages` ngày 25/08; ở đây
-            #    nó hẹp hơn nên chưa nổ, không phải vì nó không có.
-            #
-            # ⛔ KHÔNG đổi thành `service_unavailable`: huỷ là huỷ, nuốt nó đi là
-            #    nói dối vòng đời của request. Hoàn tiền rồi ném tiếp nguyên trạng.
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            raise
 
-        thu = thanh_toan.quyet_toan_hoac_hoan(
-            db, user_id=principal.user_id, request_id=request_id,
-            su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
-                           token_vao_cache=kq.token_vao_cache,
-                           dang_tin=kq.do_duoc))
+def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
+                 da_giu: int) -> JSONResponse:
+    """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
+    from apps.ltt_llm import features
+    from platform_core.llm import thanh_toan
+    from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
+                                            VuotNganSachError)
 
-        tra_ve = _dang_openai(sach, noi_dung=kq.noi_dung, token_vao=kq.token_vao,
-                              token_ra=kq.token_ra, thu_credit=thu.thu_credit,
-                              da_do_duoc=thu.da_do_duoc,
-                              token_vao_cache=kq.token_vao_cache,
-                              finish_reason=kq.finish_reason,
-                              tool_calls=list(kq.tool_calls),
-                              da_giu=da_giu,
-                              giay=round(time.monotonic() - bat_dau, 2))
-        idempotency.complete(db, record, response=tra_ve)
+    bat_dau = time.monotonic()
+    try:
+        kq = features.chay(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
+    except BanError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        metrics.increment("chat:completions")
-        return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
+        raise service_unavailable(
+            f"The model is busy right now: {e}", retry_after=30) from None
+    except VuotNganSachError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise invalid_request(str(e)) from None
+    except (CongVlmError, Exception) as e:                  # noqa: BLE001
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        log.warning("chat.completions that bai user=%s: %s",
+                    principal.user_id[:8], e)
+        raise service_unavailable("The model could not serve this request.") from None
+    except BaseException:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise
+
+    thu = thanh_toan.quyet_toan_hoac_hoan(
+        db, user_id=principal.user_id, request_id=request_id,
+        su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                       token_vao_cache=kq.token_vao_cache,
+                       dang_tin=kq.do_duoc))
+    tra_ve = _dang_openai(
+        sach, noi_dung=kq.noi_dung, token_vao=kq.token_vao,
+        token_ra=kq.token_ra, thu_credit=thu.thu_credit,
+        da_do_duoc=thu.da_do_duoc, token_vao_cache=kq.token_vao_cache,
+        finish_reason=kq.finish_reason, tool_calls=list(kq.tool_calls),
+        da_giu=da_giu, giay=round(time.monotonic() - bat_dau, 2))
+    idempotency.complete(db, record, response=tra_ve)
+    db.commit()
+    metrics.increment("chat:completions")
+    return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
 
 
 def _dang_openai(sach: dict, *, noi_dung: str, token_vao: int, token_ra: int,
@@ -129665,7 +129977,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=97186537db02d4f4d62821028fc449fbbaededc3a39fd0b64f27964c88b91a8e BYTES=42335 LINES=814
+SHA256=a21646930b69c00fb1eba947718496f0a083bec3f75c6e4c9f454e154a16f5f9 BYTES=43656 LINES=848
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -129697,6 +130009,7 @@ import logging
 from typing import Iterator, Optional
 
 from fastapi import Body, Depends, Request
+from starlette.background import BackgroundTask
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -129830,7 +130143,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
 
 
 def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
-             principal: Principal, db: Session, config) -> JSONResponse:
+             principal: Principal, db: Session, config, tool=None) -> JSONResponse:
     """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
     Anthropic Messages.
 
@@ -129846,7 +130159,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     """
     from apps.ltt_llm import features
     from platform_core import credit
-    from platform_core.llm import thanh_toan
+    from platform_core.llm import admission, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
     from server.api.chat import _tran_max_tokens
@@ -129866,11 +130179,24 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
             f"stream=true, or submit it to POST /api/v1/jobs.")
     request_id = thanh_toan.ma_luot("ms")
+    ticket = None
+    if tool is not None and tool.admission_resource and tool.admission_slots > 0:
+        ticket = admission.acquire(
+            db, resource=tool.admission_resource, slots=tool.admission_slots,
+            user_id=principal.user_id, mode="sync", holder_id=request_id)
+    if tool is not None and tool.admission_resource and ticket is None:
+        db.rollback()
+        raise limits.execution_busy(tool.admission_resource)
+
+    def _release_ticket() -> None:
+        if ticket is not None:
+            admission.release_by_id(ticket.id)
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
             token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
+        db.rollback()
         raise insufficient_credit(str(e)) from None
     db.commit()
 
@@ -129921,16 +130247,19 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         raise invalid_request(str(e)) from None
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
         raise service_unavailable(f"The model is busy right now: {e}",
                                   retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
     except (VuotNganSachError, CongVlmError) as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
         raise service_unavailable("The model could not serve this request.") from None
     except BaseException:
@@ -129948,6 +130277,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    thừa `Exception`. Đó chính là ca hay xảy ra nhất ở một cửa đồng bộ.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         raise
 
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
@@ -129969,8 +130299,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         db.rollback()
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         raise
     db.commit()
+    _release_ticket()
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
                         status_code=200, headers=_NO_STORE)
@@ -130084,11 +130416,11 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from apps.ltt_llm import features
     from platform_core import credit
-    from platform_core.llm import thanh_toan
+    from platform_core.llm import admission, thanh_toan
 
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
-    require_tool(build_catalog(config), TOOL_CHAT, principal)
+    tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
 
 
     ten = _giai_ten_model(str(than.get("model") or ""))
@@ -130148,7 +130480,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    khong dung duoc, va trieu chung ma khach nhin thay ("model khong kha
     #    dung") **khong he chi ve phia nguyen nhan**.
     if not than.get("stream"):
-        return _mot_cuc(duong, than, tin, ten, principal, db, config)
+        return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
@@ -130165,6 +130497,12 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # ⛔ KHONG tu ghep chuoi o day: `credit_entries.job_id` la VARCHAR(36) va
     #    PostgreSQL ep do dai trong khi SQLite thi khong. Xem `thanh_toan.ma_luot`.
     request_id = thanh_toan.ma_luot("st")
+    ticket = admission.acquire(
+        db, resource=tool.admission_resource, slots=tool.admission_slots,
+        user_id=principal.user_id, mode="stream", holder_id=request_id)
+    if ticket is None:
+        db.rollback()
+        raise limits.execution_busy(tool.admission_resource)
     vao_uoc = features.uoc_token_vao(tin)
     xin_ra = _max_tokens(than, vao_uoc)
 
@@ -130206,6 +130544,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         # ⭐ Đếm nó — xem ghi chú cùng chỗ ở `chat.py`.
         metrics.increment(metrics.CREDIT_EXHAUSTED)
         log.info("khach het credit tai %s: user=%s", duong, principal.user_id[:8])
+        db.rollback()
         raise insufficient_credit(str(e)) from None
 
     # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHẠM MODEL. Cùng bài học đã học ở
@@ -130221,6 +130560,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         mo = luong_vlm.mo(db, duong=duong, than=gui, timeout_s=MO_LUONG_GIAY)
     except luong_vlm.KhongMoDuocLuong as e:
         _hoan(principal.user_id, request_id)
+        admission.release_by_id(ticket.id)
         if e.ban:
             # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
             raise service_unavailable(f"The model is busy right now: {e.ly_do}",
@@ -130240,15 +130580,21 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         log.warning("khong mo duoc luong cho user=%s: %s",
                     principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
+    except BaseException:
+        _hoan(principal.user_id, request_id)
+        admission.release_by_id(ticket.id)
+        raise
 
     metrics.increment("chat:stream")
     return StreamingResponse(
         _phat(mo, user_id=principal.user_id, request_id=request_id,
-              da_giu=da_giu),
-        media_type=mo.content_type, headers=_SSE)
+              da_giu=da_giu, lease_id=ticket.id),
+        media_type=mo.content_type, headers=_SSE,
+        background=BackgroundTask(admission.release_by_id, ticket.id))
 
 
-def _phat(mo, *, user_id: str, request_id: str, da_giu: int) -> Iterator[bytes]:
+def _phat(mo, *, user_id: str, request_id: str, da_giu: int,
+          lease_id: str = "") -> Iterator[bytes]:
     """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
 
     ⛔ `finally` chứ không phải "sau vòng lặp". Khách đóng kết nối thì Starlette
@@ -130265,36 +130611,36 @@ def _phat(mo, *, user_id: str, request_id: str, da_giu: int) -> Iterator[bytes]:
     _t0 = _time.monotonic()
     _n_khoi = 0
     _t_byte_dau: Optional[float] = None
-    try:
-        for khoi in mo.luong:
-            if _t_byte_dau is None:
-                _t_byte_dau = _time.monotonic() - _t0
-            _n_khoi += 1
-            dem.nhin(khoi)
-            yield khoi
-    except GeneratorExit:
-        # Khách bỏ đi. KHÔNG phải lỗi của khoá — đánh dấu lỗi ở đây là đường
-        # thẳng tới D-005 (khoá model nhà tự tắt sau 5 lần).
-        khach_ngat = True
-        raise
-    except BaseException as e:                                  # noqa: BLE001
-        vo = e
-        raise
-    finally:
-        # 🔎 TẠM: soi vì sao Codex im ở phản hồi dài. KHACH-NGAT = client bỏ giữa
-        #    chừng (timeout Codex); XONG = ta gửi hết (Codex nhận đủ mà không hiện).
-        _dt = _time.monotonic() - _t0
-        log.warning(
-            "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
-            "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
-            request_id[-8:], _dt,
-            (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
-            _n_khoi, dem.token_ra)
-        _quyet_toan(user_id, request_id, dem, da_giu)
-        if vo is not None:
-            mo.hong(vo)
-        else:
-            mo.xong(tokens=dem.token_ra)
+    from contextlib import nullcontext
+    from platform_core.llm import admission
+    keeper = admission.keep_alive(lease_id) if lease_id else nullcontext()
+    with keeper:
+        try:
+            for khoi in mo.luong:
+                if _t_byte_dau is None:
+                    _t_byte_dau = _time.monotonic() - _t0
+                _n_khoi += 1
+                dem.nhin(khoi)
+                yield khoi
+        except GeneratorExit:
+            khach_ngat = True
+            raise
+        except BaseException as e:                              # noqa: BLE001
+            vo = e
+            raise
+        finally:
+            _dt = _time.monotonic() - _t0
+            log.warning(
+                "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
+                "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
+                request_id[-8:], _dt,
+                (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
+                _n_khoi, dem.token_ra)
+            _quyet_toan(user_id, request_id, dem, da_giu)
+            if vo is not None:
+                mo.hong(vo)
+            else:
+                mo.xong(tokens=dem.token_ra)
 
 
 def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int) -> None:
@@ -198904,7 +199250,7 @@ def test_tep_hong_bao_ro_ten_tep(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_259_cua_dong_bo.py
-SHA256=b8a24a84c615e1f962fd73f0acd659a0dadaef116e01071c0daecfccb0033530 BYTES=33407 LINES=779
+SHA256=a4379d3f92705bc157ba3e99a6c01a8727490731ce785ae7b01c11de235eb373 BYTES=34601 LINES=820
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_259_cua_dong_bo — `POST /api/v1/chat/completions`, chế độ `SYNC_BILLED`. (Q106, H38 V3)
@@ -199063,6 +199409,29 @@ def _dem_job() -> int:
         _close(gen)
 
 
+def _giu_execution_slot() -> str:
+    from platform_core.llm import admission
+    gen, db = _session()
+    try:
+        lease = admission.acquire(
+            db, resource="llm_remote", slots=1, user_id="u-khac",
+            mode="job", holder_id="job-khac")
+        assert lease is not None
+        db.commit()
+        return lease.id
+    finally:
+        _close(gen)
+
+
+def _dem_execution_lease() -> int:
+    from platform_core.models import ExecutionLease
+    gen, db = _session()
+    try:
+        return db.query(ExecutionLease).count()
+    finally:
+        _close(gen)
+
+
 # ── 1. Hợp đồng chế độ ───────────────────────────────────────────────────────
 
 def test_route_khai_dung_SYNC_BILLED():
@@ -199136,6 +199505,24 @@ def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
     assert thu == truoc - _so_du(user_id), "hoa don khong khop so du"
     assert 0 < thu < b["x_ltt"]["credit_held"], (
         "sinh 100 token ma thu tron phan da giu cho 1400 token")
+    assert _dem_execution_lease() == 0
+
+
+def test_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+    lease_id = _giu_execution_slot()
+    called = _dat_model(monkeypatch)
+    user_id, token = _account()
+    before = _so_du(user_id)
+
+    response = api.post(DUONG, json=_than(), headers=_h(token))
+
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "concurrency_limited"
+    assert response.headers["Retry-After"]
+    assert called == []
+    assert _so_du(user_id) == before
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
 
 
 def test_sinh_it_thi_tra_it_KHONG_tra_tron_tran(api, monkeypatch):
@@ -201603,7 +201990,7 @@ def test_luong_no_thi_loi_NOI_LEN_va_so_dem_van_con():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_272_cua_streaming.py
-SHA256=5d57f20745701d2f6dd5f6ddc029290dd29af1f240cde256898a7bdade680a4c BYTES=17916 LINES=446
+SHA256=5afb77db61c5b176693f4bb49e2deaf01201fe5341a4425bc3d5a50d9a78ebaf BYTES=19786 LINES=507
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_272_cua_streaming — `POST /api/v1/messages` và `/responses`. (Q107, Đợt 4)
@@ -201774,6 +202161,29 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
     return da_goi
 
 
+def _giu_execution_slot() -> str:
+    from platform_core.llm import admission
+    gen, db = _session()
+    try:
+        lease = admission.acquire(
+            db, resource="llm_remote", slots=1, user_id="u-khac",
+            mode="job", holder_id="job-khac")
+        assert lease is not None
+        db.commit()
+        return lease.id
+    finally:
+        _close(gen)
+
+
+def _dem_execution_lease() -> int:
+    from platform_core.models import ExecutionLease
+    gen, db = _session()
+    try:
+        return db.query(ExecutionLease).count()
+    finally:
+        _close(gen)
+
+
 # ── 1. Hợp đồng ─────────────────────────────────────────────────────────────
 
 def test_hai_route_khai_dung_STREAM():
@@ -201800,6 +202210,7 @@ def test_KHONG_doi_idempotency_key(api, monkeypatch):
     r = api.post(MSG, json=_than(), headers=_h(token))
     assert r.status_code == 200, r.text
     assert goi, "khong goi toi model"
+    assert _dem_execution_lease() == 0
 
 
 # ── 3. Tiền: giữ TRẦN, thu THẬT ─────────────────────────────────────────────
@@ -201817,6 +202228,43 @@ def test_thu_theo_TOKEN_DA_SINH_khong_theo_tran(api, monkeypatch):
     api.post(MSG, json=_than(max_tokens=8000), headers=_h(token)).read()
     thu2 = truoc2 - _so_du(user_id)
     assert thu2 > thu, "hai luot sinh khac han nhau ma cung gia -> thu theo tran"
+
+
+def test_stream_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+    lease_id = _giu_execution_slot()
+    called = _dat_luong(monkeypatch)
+    user_id, token = _account()
+    before = _so_du(user_id)
+
+    response = api.post(MSG, json=_than(), headers=_h(token))
+
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "concurrency_limited"
+    assert response.headers["Retry-After"]
+    assert called == []
+    assert _so_du(user_id) == before
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
+
+
+def test_nonstream_execution_slot_cung_bi_chan_truoc_model(api, monkeypatch):
+    lease_id = _giu_execution_slot()
+    from apps.ltt_llm import features
+    called = []
+    monkeypatch.setattr(
+        features, "chay",
+        lambda *_args, **_kwargs: called.append(True))
+    user_id, token = _account()
+    before = _so_du(user_id)
+
+    response = api.post(MSG, json=_than(stream=False), headers=_h(token))
+
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "concurrency_limited"
+    assert called == []
+    assert _so_du(user_id) == before
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
 
 
 def test_CAT_GIUA_CHUNG_van_thu_dung_phan_da_sinh(api, monkeypatch):
@@ -214254,12 +214702,13 @@ def test_ghi_app_env_KHONG_BOM():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_313_llm_admission.py
-SHA256=f8facc0ad22bd7e3d121fabb40fab61db558f97ed3a75245bf5fdb97392c2b26 BYTES=4179 LINES=122
+SHA256=3e422bcb3c631e70c017aa972d41db6ac1c04929dca564400c773662be7b6d85 BYTES=6614 LINES=194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q114/H41.9 — admission cap/metadata không cần GPU thật."""
 from __future__ import annotations
 
 from types import SimpleNamespace
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -214378,6 +214827,77 @@ def test_resource_queue_cap_khong_chan_resource_khac(db):
     limits.enforce_job_admission(
         db, principal=_principal("u2"), config=config,
         resource="gpu", class_slugs=())
+
+
+def test_execution_lease_mot_slot_gianh_nguyen_tu_va_nha_idempotent(db):
+    from platform_core.llm import admission
+
+    first = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u1",
+        mode="sync", holder_id="request-1")
+    assert first is not None
+    db.commit()
+
+    assert admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2",
+        mode="stream", holder_id="request-2") is None
+    db.rollback()
+
+    admission.release(db, first.id)
+    db.commit()
+    second = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2",
+        mode="stream", holder_id="request-2")
+    assert second is not None and second.slot == 0
+
+
+def test_execution_lease_het_han_tu_duoc_thu_hoi(db):
+    from platform_core.llm import admission
+
+    old = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u1",
+        mode="job", holder_id="job-1")
+    assert old is not None
+    old.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=30)
+    db.commit()
+
+    replacement = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2",
+        mode="sync", holder_id="request-2",
+        timeout=timedelta(minutes=20))
+    assert replacement is not None
+    assert replacement.id != old.id
+
+
+def test_worker_hoan_job_khi_execution_slot_ban_khong_tinh_attempt(db, monkeypatch):
+    from platform_core import jobs
+    from platform_core.llm import admission
+    import platform_core.job_runner as runner
+    from platform_core.models import JOB_QUEUED, Job
+    from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+
+    blocker = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u-khac",
+        mode="sync", holder_id="request-khac")
+    assert blocker is not None
+    job = jobs.submit(
+        db, user_id="u1", app_slug=APP_THU_SLUG, job_type=APP_THU_JOB,
+        params={"text": "xin chao"}, admission_resource="llm_remote",
+        admission_slots=1)
+    job_id = job.id
+    db.commit()
+
+    ran = []
+    monkeypatch.setattr(
+        runner.jobq, "resolve_handler",
+        lambda _job_type: lambda _params, _ctx: ran.append(True) or {"ok": True})
+    assert runner._chay_mot_job("worker-1") is True
+
+    db.expire_all()
+    postponed = db.get(Job, job_id)
+    assert postponed.status == JOB_QUEUED
+    assert postponed.attempts == 0
+    assert ran == []
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -240571,7 +241091,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/restore_drill_schema.py
-SHA256=c4966bf97e188000c7a2f69940366146b21d7fd140dcfd3cb2dfb9a1ed930b29 BYTES=11068 LINES=218
+SHA256=dfcc575722b8852af00cae5f75e939937c3ecc7d4590df719c647e51a8aef51a BYTES=11124 LINES=219
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 restore_drill_schema.py - dien tap khoi phuc tren LUOC DO THAT (H19.8).
@@ -240694,6 +241214,7 @@ def main() -> int:
         # `test_155` doi chieu voi luoc do that, nen them mot UNIQUE moi ma
         # quen dua vao day se bao do ngay - khong doi toi luc khoi phuc that.
         for ten in ("uq_gpu_lease_host_uuid",
+                    "uq_execution_lease_resource_slot",
                     "uq_job_events_job_sequence",
                     "uq_job_events_job_event_key",
                     "uq_ommi_scene_version",

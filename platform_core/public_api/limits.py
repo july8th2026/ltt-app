@@ -127,6 +127,15 @@ def _too_many(detail: str, retry_after: int, code: str = CODE_RATE_LIMITED,
                                               **extra})
 
 
+def execution_busy(resource: str, *, retry_after: int = 15) -> ApiError:
+    """429 chung khi sync/stream không giành được slot thực thi."""
+    _bump("concurrency_limited")
+    return _too_many(
+        "The requested execution resource is busy. Retry later or submit an "
+        "asynchronous job.", retry_after, code=CODE_CONCURRENCY,
+        scope="execution", resource=str(resource))
+
+
 # ── Layer 1: authentication failures ──────────────────────────────────────────
 
 def note_auth_failure(*, client_ip: str, key_id: str, config) -> None:

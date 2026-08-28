@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -120,3 +121,74 @@ def test_resource_queue_cap_khong_chan_resource_khac(db):
     limits.enforce_job_admission(
         db, principal=_principal("u2"), config=config,
         resource="gpu", class_slugs=())
+
+
+def test_execution_lease_mot_slot_gianh_nguyen_tu_va_nha_idempotent(db):
+    from platform_core.llm import admission
+
+    first = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u1",
+        mode="sync", holder_id="request-1")
+    assert first is not None
+    db.commit()
+
+    assert admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2",
+        mode="stream", holder_id="request-2") is None
+    db.rollback()
+
+    admission.release(db, first.id)
+    db.commit()
+    second = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2",
+        mode="stream", holder_id="request-2")
+    assert second is not None and second.slot == 0
+
+
+def test_execution_lease_het_han_tu_duoc_thu_hoi(db):
+    from platform_core.llm import admission
+
+    old = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u1",
+        mode="job", holder_id="job-1")
+    assert old is not None
+    old.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=30)
+    db.commit()
+
+    replacement = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u2",
+        mode="sync", holder_id="request-2",
+        timeout=timedelta(minutes=20))
+    assert replacement is not None
+    assert replacement.id != old.id
+
+
+def test_worker_hoan_job_khi_execution_slot_ban_khong_tinh_attempt(db, monkeypatch):
+    from platform_core import jobs
+    from platform_core.llm import admission
+    import platform_core.job_runner as runner
+    from platform_core.models import JOB_QUEUED, Job
+    from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+
+    blocker = admission.acquire(
+        db, resource="llm_remote", slots=1, user_id="u-khac",
+        mode="sync", holder_id="request-khac")
+    assert blocker is not None
+    job = jobs.submit(
+        db, user_id="u1", app_slug=APP_THU_SLUG, job_type=APP_THU_JOB,
+        params={"text": "xin chao"}, admission_resource="llm_remote",
+        admission_slots=1)
+    job_id = job.id
+    db.commit()
+
+    ran = []
+    monkeypatch.setattr(
+        runner.jobq, "resolve_handler",
+        lambda _job_type: lambda _params, _ctx: ran.append(True) or {"ok": True})
+    assert runner._chay_mot_job("worker-1") is True
+
+    db.expire_all()
+    postponed = db.get(Job, job_id)
+    assert postponed.status == JOB_QUEUED
+    assert postponed.attempts == 0
+    assert ran == []

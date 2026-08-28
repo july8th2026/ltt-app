@@ -28,6 +28,7 @@ import logging
 from typing import Iterator, Optional
 
 from fastapi import Body, Depends, Request
+from starlette.background import BackgroundTask
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy.orm import Session
 
@@ -161,7 +162,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
 
 
 def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
-             principal: Principal, db: Session, config) -> JSONResponse:
+             principal: Principal, db: Session, config, tool=None) -> JSONResponse:
     """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
     Anthropic Messages.
 
@@ -177,7 +178,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     """
     from apps.ltt_llm import features
     from platform_core import credit
-    from platform_core.llm import thanh_toan
+    from platform_core.llm import admission, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
     from server.api.chat import _tran_max_tokens
@@ -197,11 +198,24 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
             f"{_tran_giay()}s budget. Reduce the prompt or max_tokens, set "
             f"stream=true, or submit it to POST /api/v1/jobs.")
     request_id = thanh_toan.ma_luot("ms")
+    ticket = None
+    if tool is not None and tool.admission_resource and tool.admission_slots > 0:
+        ticket = admission.acquire(
+            db, resource=tool.admission_resource, slots=tool.admission_slots,
+            user_id=principal.user_id, mode="sync", holder_id=request_id)
+    if tool is not None and tool.admission_resource and ticket is None:
+        db.rollback()
+        raise limits.execution_busy(tool.admission_resource)
+
+    def _release_ticket() -> None:
+        if ticket is not None:
+            admission.release_by_id(ticket.id)
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
             token_vao_uoc=vao_uoc, max_tokens=xin_ra)
     except credit.ThieuCreditError as e:
+        db.rollback()
         raise insufficient_credit(str(e)) from None
     db.commit()
 
@@ -252,16 +266,19 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         raise invalid_request(str(e)) from None
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
         raise service_unavailable(f"The model is busy right now: {e}",
                                   retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
     except (VuotNganSachError, CongVlmError) as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         log.warning("mot cuc that bai user=%s: %s", principal.user_id[:8], e)
         raise service_unavailable("The model could not serve this request.") from None
     except BaseException:
@@ -279,6 +296,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         #    thừa `Exception`. Đó chính là ca hay xảy ra nhất ở một cửa đồng bộ.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         raise
 
     # `quyet_toan_hoac_hoan` nhan chinh doi tuong `SuDung` do cong tra ve - dung
@@ -300,8 +318,10 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         db.rollback()
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        _release_ticket()
         raise
     db.commit()
+    _release_ticket()
     metrics.increment("chat:mot_cuc")
     return JSONResponse(_dang_anthropic(kq, ten, request_id),
                         status_code=200, headers=_NO_STORE)
@@ -415,11 +435,11 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from apps.ltt_llm import features
     from platform_core import credit
-    from platform_core.llm import thanh_toan
+    from platform_core.llm import admission, thanh_toan
 
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
-    require_tool(build_catalog(config), TOOL_CHAT, principal)
+    tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
 
 
     ten = _giai_ten_model(str(than.get("model") or ""))
@@ -479,7 +499,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    khong dung duoc, va trieu chung ma khach nhin thay ("model khong kha
     #    dung") **khong he chi ve phia nguyen nhan**.
     if not than.get("stream"):
-        return _mot_cuc(duong, than, tin, ten, principal, db, config)
+        return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
@@ -496,6 +516,12 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # ⛔ KHONG tu ghep chuoi o day: `credit_entries.job_id` la VARCHAR(36) va
     #    PostgreSQL ep do dai trong khi SQLite thi khong. Xem `thanh_toan.ma_luot`.
     request_id = thanh_toan.ma_luot("st")
+    ticket = admission.acquire(
+        db, resource=tool.admission_resource, slots=tool.admission_slots,
+        user_id=principal.user_id, mode="stream", holder_id=request_id)
+    if ticket is None:
+        db.rollback()
+        raise limits.execution_busy(tool.admission_resource)
     vao_uoc = features.uoc_token_vao(tin)
     xin_ra = _max_tokens(than, vao_uoc)
 
@@ -537,6 +563,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         # ⭐ Đếm nó — xem ghi chú cùng chỗ ở `chat.py`.
         metrics.increment(metrics.CREDIT_EXHAUSTED)
         log.info("khach het credit tai %s: user=%s", duong, principal.user_id[:8])
+        db.rollback()
         raise insufficient_credit(str(e)) from None
 
     # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHẠM MODEL. Cùng bài học đã học ở
@@ -552,6 +579,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         mo = luong_vlm.mo(db, duong=duong, than=gui, timeout_s=MO_LUONG_GIAY)
     except luong_vlm.KhongMoDuocLuong as e:
         _hoan(principal.user_id, request_id)
+        admission.release_by_id(ticket.id)
         if e.ban:
             # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
             raise service_unavailable(f"The model is busy right now: {e.ly_do}",
@@ -571,15 +599,21 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         log.warning("khong mo duoc luong cho user=%s: %s",
                     principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
+    except BaseException:
+        _hoan(principal.user_id, request_id)
+        admission.release_by_id(ticket.id)
+        raise
 
     metrics.increment("chat:stream")
     return StreamingResponse(
         _phat(mo, user_id=principal.user_id, request_id=request_id,
-              da_giu=da_giu),
-        media_type=mo.content_type, headers=_SSE)
+              da_giu=da_giu, lease_id=ticket.id),
+        media_type=mo.content_type, headers=_SSE,
+        background=BackgroundTask(admission.release_by_id, ticket.id))
 
 
-def _phat(mo, *, user_id: str, request_id: str, da_giu: int) -> Iterator[bytes]:
+def _phat(mo, *, user_id: str, request_id: str, da_giu: int,
+          lease_id: str = "") -> Iterator[bytes]:
     """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
 
     ⛔ `finally` chứ không phải "sau vòng lặp". Khách đóng kết nối thì Starlette
@@ -596,36 +630,36 @@ def _phat(mo, *, user_id: str, request_id: str, da_giu: int) -> Iterator[bytes]:
     _t0 = _time.monotonic()
     _n_khoi = 0
     _t_byte_dau: Optional[float] = None
-    try:
-        for khoi in mo.luong:
-            if _t_byte_dau is None:
-                _t_byte_dau = _time.monotonic() - _t0
-            _n_khoi += 1
-            dem.nhin(khoi)
-            yield khoi
-    except GeneratorExit:
-        # Khách bỏ đi. KHÔNG phải lỗi của khoá — đánh dấu lỗi ở đây là đường
-        # thẳng tới D-005 (khoá model nhà tự tắt sau 5 lần).
-        khach_ngat = True
-        raise
-    except BaseException as e:                                  # noqa: BLE001
-        vo = e
-        raise
-    finally:
-        # 🔎 TẠM: soi vì sao Codex im ở phản hồi dài. KHACH-NGAT = client bỏ giữa
-        #    chừng (timeout Codex); XONG = ta gửi hết (Codex nhận đủ mà không hiện).
-        _dt = _time.monotonic() - _t0
-        log.warning(
-            "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
-            "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
-            request_id[-8:], _dt,
-            (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
-            _n_khoi, dem.token_ra)
-        _quyet_toan(user_id, request_id, dem, da_giu)
-        if vo is not None:
-            mo.hong(vo)
-        else:
-            mo.xong(tokens=dem.token_ra)
+    from contextlib import nullcontext
+    from platform_core.llm import admission
+    keeper = admission.keep_alive(lease_id) if lease_id else nullcontext()
+    with keeper:
+        try:
+            for khoi in mo.luong:
+                if _t_byte_dau is None:
+                    _t_byte_dau = _time.monotonic() - _t0
+                _n_khoi += 1
+                dem.nhin(khoi)
+                yield khoi
+        except GeneratorExit:
+            khach_ngat = True
+            raise
+        except BaseException as e:                              # noqa: BLE001
+            vo = e
+            raise
+        finally:
+            _dt = _time.monotonic() - _t0
+            log.warning(
+                "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
+                "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
+                request_id[-8:], _dt,
+                (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
+                _n_khoi, dem.token_ra)
+            _quyet_toan(user_id, request_id, dem, da_giu)
+            if vo is not None:
+                mo.hong(vo)
+            else:
+                mo.xong(tokens=dem.token_ra)
 
 
 def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int) -> None:

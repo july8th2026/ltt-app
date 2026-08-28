@@ -137,6 +137,10 @@ STORES: tuple = (
     Store("job_events", OPERATIONAL, 365, N_("chủ tài khoản (dòng customer)"),
           N_("Dòng thời gian một job. Dòng nội bộ chỉ giữ 30 ngày."),
           "job_events.purge_expired (worker)"),
+    Store("execution_leases", OPERATIONAL, 1, N_("vận hành"),
+          N_("Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để "
+             "chẩn đoán và tự thu hồi tiến trình đã chết."),
+          "admission.reclaim_expired (admission + worker)"),
     Store("api_notifications", OPERATIONAL, 90, N_("chủ tài khoản"),
           N_("Cảnh báo đã đọc rồi thì hết giá trị."),
           "notifications.purge_expired (worker)"),

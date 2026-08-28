@@ -167,6 +167,29 @@ def _dat_luong(monkeypatch, khoi=None, *, nem=None, ban=False):
     return da_goi
 
 
+def _giu_execution_slot() -> str:
+    from platform_core.llm import admission
+    gen, db = _session()
+    try:
+        lease = admission.acquire(
+            db, resource="llm_remote", slots=1, user_id="u-khac",
+            mode="job", holder_id="job-khac")
+        assert lease is not None
+        db.commit()
+        return lease.id
+    finally:
+        _close(gen)
+
+
+def _dem_execution_lease() -> int:
+    from platform_core.models import ExecutionLease
+    gen, db = _session()
+    try:
+        return db.query(ExecutionLease).count()
+    finally:
+        _close(gen)
+
+
 # ── 1. Hợp đồng ─────────────────────────────────────────────────────────────
 
 def test_hai_route_khai_dung_STREAM():
@@ -193,6 +216,7 @@ def test_KHONG_doi_idempotency_key(api, monkeypatch):
     r = api.post(MSG, json=_than(), headers=_h(token))
     assert r.status_code == 200, r.text
     assert goi, "khong goi toi model"
+    assert _dem_execution_lease() == 0
 
 
 # ── 3. Tiền: giữ TRẦN, thu THẬT ─────────────────────────────────────────────
@@ -210,6 +234,43 @@ def test_thu_theo_TOKEN_DA_SINH_khong_theo_tran(api, monkeypatch):
     api.post(MSG, json=_than(max_tokens=8000), headers=_h(token)).read()
     thu2 = truoc2 - _so_du(user_id)
     assert thu2 > thu, "hai luot sinh khac han nhau ma cung gia -> thu theo tran"
+
+
+def test_stream_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
+    lease_id = _giu_execution_slot()
+    called = _dat_luong(monkeypatch)
+    user_id, token = _account()
+    before = _so_du(user_id)
+
+    response = api.post(MSG, json=_than(), headers=_h(token))
+
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "concurrency_limited"
+    assert response.headers["Retry-After"]
+    assert called == []
+    assert _so_du(user_id) == before
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
+
+
+def test_nonstream_execution_slot_cung_bi_chan_truoc_model(api, monkeypatch):
+    lease_id = _giu_execution_slot()
+    from apps.ltt_llm import features
+    called = []
+    monkeypatch.setattr(
+        features, "chay",
+        lambda *_args, **_kwargs: called.append(True))
+    user_id, token = _account()
+    before = _so_du(user_id)
+
+    response = api.post(MSG, json=_than(stream=False), headers=_h(token))
+
+    assert response.status_code == 429, response.text
+    assert response.json()["code"] == "concurrency_limited"
+    assert called == []
+    assert _so_du(user_id) == before
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
 
 
 def test_CAT_GIUA_CHUNG_van_thu_dung_phan_da_sinh(api, monkeypatch):

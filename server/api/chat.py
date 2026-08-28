@@ -92,9 +92,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         db: Session = Depends(get_db),
     ) -> JSONResponse:
         from apps.ltt_llm import features
-        from platform_core.llm import thanh_toan
-        from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
-                                                VuotNganSachError)
+        from platform_core.llm import admission, thanh_toan
 
         # ⭐ THÔNG BÁO LỖI LÀ TÀI LIỆU, VÀ LÀ TRANG TÀI LIỆU DUY NHẤT CHẮC CHẮN
         #    ĐƯỢC ĐỌC. Đo thật 23/08 với `openai` 2.30.0: một lượt gọi đúng theo
@@ -187,6 +185,12 @@ def register_chat_routes(api, config, tag: str) -> None:
         #    cua `credit_entries.job_id`. PostgreSQL ep, SQLite khong — nen loi
         #    nay chay sach qua ca bo test roi no o luot goi that dau tien.
         request_id = thanh_toan.ma_luot("ch")
+        ticket = admission.acquire(
+            db, resource=tool.admission_resource, slots=tool.admission_slots,
+            user_id=principal.user_id, mode="sync", holder_id=record.id)
+        if ticket is None:
+            db.rollback()
+            raise limits.execution_busy(tool.admission_resource)
         try:
             da_giu = thanh_toan.giu_cho_luot(
                 db, user_id=principal.user_id, request_id=request_id,
@@ -200,6 +204,7 @@ def register_chat_routes(api, config, tag: str) -> None:
             metrics.increment(metrics.CREDIT_EXHAUSTED)
             log.info("khach het credit tai chat/completions: user=%s",
                      principal.user_id[:8])
+            db.rollback()
             raise insufficient_credit(str(e)) from None
 
         # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI GỌI MODEL. Ba thứ hỏng nếu không:
@@ -219,67 +224,58 @@ def register_chat_routes(api, config, tag: str) -> None:
         # ⛔ Từ dòng này trở xuống, **mọi đường ra phải tự chốt giao dịch của nó.**
         #    Không còn một giao dịch bao trùm nào để dựa vào nữa.
         db.commit()
+        with admission.keep_alive(ticket.id):
+            return _finish_chat(
+                db=db, sach=sach, principal=principal, record=record,
+                request_id=request_id, da_giu=da_giu)
 
-        bat_dau = time.monotonic()
-        try:
-            kq = features.chay(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
-        except BanError as e:
-            # ⛔ BẬN ≠ HỎNG (D-005). Hoàn đủ, trả 429, và **không** để bên gọi
-            #    hiểu thành lỗi provider.
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            raise service_unavailable(
-                f"The model is busy right now: {e}", retry_after=30) from None
-        except VuotNganSachError as e:
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            raise invalid_request(str(e)) from None
-        except (CongVlmError, Exception) as e:              # noqa: BLE001
-            # 🔴 HOÀN TRƯỚC, NÉM SAU. Handler lỗi của sub-app sẽ dựng phản hồi,
-            #    nhưng nếu ta để ngoại lệ bay lên mà chưa hoàn thì `get_db` cuộn
-            #    ngược giao dịch — và phần giữ chỗ biến mất cùng nó. Nghe có vẻ
-            #    an toàn, nhưng nó cũng cuộn mất **bản ghi idempotency**, nên
-            #    lần thử lại sẽ giữ chỗ và chạy lại từ đầu.
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            log.warning("chat.completions that bai user=%s: %s",
-                        principal.user_id[:8], e)
-            raise service_unavailable(
-                "The model could not serve this request.") from None
-        except BaseException:
-            # ⚠️ Nhánh trên bắt `Exception`, và điều đó **nghe như** đã bắt hết.
-            #    Nhưng `asyncio.CancelledError` KHÔNG kế thừa `Exception` — mà
-            #    đó lại là ca hay xảy ra nhất ở một cửa đồng bộ: khách bỏ đi
-            #    giữa chừng. Khi ấy phần giữ chỗ nằm lại và không ai quét, vì
-            #    đường này không tạo `Job`.
-            #
-            #    Cùng một lỗ đã làm mất tiền thật ở `/messages` ngày 25/08; ở đây
-            #    nó hẹp hơn nên chưa nổ, không phải vì nó không có.
-            #
-            # ⛔ KHÔNG đổi thành `service_unavailable`: huỷ là huỷ, nuốt nó đi là
-            #    nói dối vòng đời của request. Hoàn tiền rồi ném tiếp nguyên trạng.
-            thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
-            db.commit()
-            raise
 
-        thu = thanh_toan.quyet_toan_hoac_hoan(
-            db, user_id=principal.user_id, request_id=request_id,
-            su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
-                           token_vao_cache=kq.token_vao_cache,
-                           dang_tin=kq.do_duoc))
+def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
+                 da_giu: int) -> JSONResponse:
+    """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
+    from apps.ltt_llm import features
+    from platform_core.llm import thanh_toan
+    from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
+                                            VuotNganSachError)
 
-        tra_ve = _dang_openai(sach, noi_dung=kq.noi_dung, token_vao=kq.token_vao,
-                              token_ra=kq.token_ra, thu_credit=thu.thu_credit,
-                              da_do_duoc=thu.da_do_duoc,
-                              token_vao_cache=kq.token_vao_cache,
-                              finish_reason=kq.finish_reason,
-                              tool_calls=list(kq.tool_calls),
-                              da_giu=da_giu,
-                              giay=round(time.monotonic() - bat_dau, 2))
-        idempotency.complete(db, record, response=tra_ve)
+    bat_dau = time.monotonic()
+    try:
+        kq = features.chay(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
+    except BanError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
-        metrics.increment("chat:completions")
-        return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
+        raise service_unavailable(
+            f"The model is busy right now: {e}", retry_after=30) from None
+    except VuotNganSachError as e:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise invalid_request(str(e)) from None
+    except (CongVlmError, Exception) as e:                  # noqa: BLE001
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        log.warning("chat.completions that bai user=%s: %s",
+                    principal.user_id[:8], e)
+        raise service_unavailable("The model could not serve this request.") from None
+    except BaseException:
+        thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
+        db.commit()
+        raise
+
+    thu = thanh_toan.quyet_toan_hoac_hoan(
+        db, user_id=principal.user_id, request_id=request_id,
+        su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
+                       token_vao_cache=kq.token_vao_cache,
+                       dang_tin=kq.do_duoc))
+    tra_ve = _dang_openai(
+        sach, noi_dung=kq.noi_dung, token_vao=kq.token_vao,
+        token_ra=kq.token_ra, thu_credit=thu.thu_credit,
+        da_do_duoc=thu.da_do_duoc, token_vao_cache=kq.token_vao_cache,
+        finish_reason=kq.finish_reason, tool_calls=list(kq.tool_calls),
+        da_giu=da_giu, giay=round(time.monotonic() - bat_dau, 2))
+    idempotency.complete(db, record, response=tra_ve)
+    db.commit()
+    metrics.increment("chat:completions")
+    return JSONResponse(tra_ve, status_code=200, headers=_NO_STORE)
 
 
 def _dang_openai(sach: dict, *, noi_dung: str, token_vao: int, token_ra: int,
