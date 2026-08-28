@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:cd962f2361294b0a6cd60110784f4e4d95b9ce31859c427613f749961493de64
+Fingerprint   : sha256:b713dda8013a17b06f3f65b62d5162b0b4953578020549c685f32d98d2da6186
 Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2636,7 +2636,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12028995 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029063 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -73979,7 +73979,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=e091c8d469dc7b0837b0ae8c1dd974120e9aa0f9d8705bb8ff19373dcbf33c28 BYTES=254891 LINES=3604
+SHA256=8b6b418499c586711c03df2761e6e62e1be07f77bfebc3d35f340a56cc00c7ac BYTES=254959 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77550,7 +77550,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4 warm API arms 65K/73K/81K/near-cap đã PASS trên B, một workload GPU/lần, không reboot/reset; telemetry và job IDs đã ghi trong plan. Pilot/harness rejection không tính baseline. Còn thiếu queue-delay end-to-end, lặp lại/p95 và kiểm tra admission plane qua A trước Q5; giữ `parallel=1`. |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4 warm API arms 65K/73K/81K/near-cap PASS trên B, một workload GPU/lần, không reboot/reset. Seed2 phát hiện P0: gateway estimate lọt prompt code-like 99.142 token qua cap 90K, 124,599s; exact tokenizer chỉ có upstream 8281 khi resident. Còn thiếu exact-token preflight/bound bảo thủ, queue-delay end-to-end và p50/p95; không mở Q5/public, giữ `parallel=1`. |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |

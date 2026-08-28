@@ -32,6 +32,12 @@
   admission-delay p95 4,59s, poll p50 0,647ms, queue cuối 0, provider/GPU reads
   0. G2 sau các arm đều 0% GPU; warm near-cap về 938 MiB, cold repeat giữ
   22.482 MiB với `llama-server.exe` resident.
+- Seed2 đổi nội dung để tránh prefix cache nhưng lộ P0: gateway trả HTTP 200
+  với usage thật 99.142 input (124,599s) dù cap env 90.000; GPU 70 C/fan96%,
+  371,07 W. Probe sau đó xác nhận tokenizer chính xác ở upstream 8281 chỉ sống
+  khi model resident; gateway 8299 không expose route này. Không coi cap 90K
+  là hard boundary cho code-like prompt cho tới khi có exact-token preflight
+  hoặc bound bảo thủ hơn.
 - Pilot ~48K được giữ riêng (80,912s; 22.380 MiB; 66 C), không dùng làm mốc
   65K. Arm đầu 73K `finish_reason=length` do harness xin 128 output; arm
   89.9K bị gateway từ chối đúng cap (`91685 > 90000`); cả hai không tính
@@ -42,17 +48,18 @@
 | Lệnh | Kết quả |
 |---|---|
 | Nexus `POST /files/write` + hash đối chiếu | **PASS**, hash khớp A/B |
-| Nexus `POST/GET /exec/async` + `/log` cho 65K/73K/81K/near-cap | **PASS**, exit 0; log đầy đủ |
+| Nexus `POST/GET /exec/async` + `/log` cho 65K/73K/81K/near-cap + seed2 | **PASS**, exit 0; log đầy đủ, seed2 ghi nhận P0 cap finding |
 | Nexus `nvidia-smi` G0/G2 | **PASS**, GPU chỉ có một workload; G2 về nền/resident đúng gateway |
 | `python tools\bench_llm_admission.py --accounts 8 --jobs 160 --polls 10` | **PASS**, 0 GPU/provider reads; admission p95 4,59s |
 | `python tools\gate.py --vong-lap` sau chỉnh harness | **PASS**, 19/19 (ba lượt; `--lf` 198,3--207,4s) |
 
 ### Còn tồn đọng và việc tiếp theo
 
-Q4 chưa đóng: cold-load có thể kéo request gần 90K lên 121s, vì vậy phải chứng
-minh admission plane A chặn non-stream trước 90s và đo queue-delay end-to-end;
-lặp lại để tính p50/p95, không mở `parallel>1`. Tiếp tục giữ `parallel=1`, không
-đổi cap/gateway.env và không reboot máy B.
+Q4 chưa đóng: cold-load có thể kéo request gần 90K lên 121s; seed2 còn vượt
+hard cap theo tokenizer thật. Phải bổ sung exact-token preflight/bound bảo thủ
+ở gateway rồi chứng minh admission plane A chặn non-stream trước 90s, sau đó
+mới đo queue-delay p50/p95. Không mở `parallel>1`, không đổi cap/gateway.env và
+không reboot máy B.
 
 ---
 

@@ -202,6 +202,7 @@ mọi arm chạy bằng `POST /exec/async`, một workload GPU tại một thờ
 | 81K | `job_01M13CY570JESG42BD09930X0A` | PASS, 81.795 input + 108 output, 16,823s, VRAM 22.382 MiB, 61 C, 363,23 W |
 | near-cap | `job_01M13D94T1C1HFP2231Y38HSMD` | PASS, 88.020 input + 153 output, 15,285s, VRAM 22.382 MiB, 59 C, 363,94 W |
 | near-cap repeat (cold-load) | `job_01M13G4JG2JMA9XSYWDZDRWS0Y` | PASS, 88.020 input + 153 output, 121,288s, VRAM 22.482 MiB, 70 C, 371,25 W; tách khỏi warm baseline |
+| near-cap seeded (cap finding) | `job_01M13GZ7S21TDJWXSZQZW0JD4D` | HTTP 200 nhưng usage 99.142 input, 124,599s, VRAM 22.482 MiB, 70 C; gateway estimate lọt dưới cap 90K |
 
 Hai arm bị từ chối trước GPU (ExecutionPolicy và `input_tokens=91685`), một
 arm 73K đầu kết thúc `length` do harness chỉ xin 128 output; đều không đưa vào
@@ -209,7 +210,11 @@ baseline. Sau mỗi arm, G2 ghi GPU về 0% và khoảng 34--38 C; sau near-cap 
 đã về 938 MiB sau arm warm; arm lặp cold-load giữ khoảng 22.482 MiB sau G2.
 Q4 chưa đóng: cold-load biến thiên sát trần Cloudflare cần được admission A
 chặn bằng ngân sách 90s; còn thiếu queue-delay end-to-end và p50/p95 lặp lại;
-chưa mở Q5 `parallel>1`.
+chưa mở Q5 `parallel>1`. Phát hiện P0 mới: payload code-like seed2 được gateway
+ước dưới 90K nhưng tokenizer/model trả 99.142 token; endpoint tokenizer chính
+xác chỉ có trên upstream 8281 khi model resident, không có ở gateway 8299. Phải
+thiết kế exact-token preflight hoặc bound bảo thủ trước khi gọi đây là cap cứng
+và trước mọi public canary.
 
 ## Q5 — thử concurrency GPU có kiểm soát (GPU window)
 
