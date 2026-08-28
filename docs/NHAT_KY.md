@@ -14,6 +14,43 @@
 
 ---
 
+## 2026-08-28 — H41.9 Q2: fair scheduler và không retry mù sau provider
+
+- Thêm con trỏ `last_claimed_at` bền vững theo job và scheduler fair-share theo
+  account/resource: account chưa được phục vụ đi trước, FIFO giữ nguyên trong
+  account, job chờ quá 5 phút được aging để không đói. Credit không tham gia
+  xếp thứ tự.
+- Thêm `provider_state`/`provider_dispatched_at` và migration head
+  `d70a3c4e9f62`. Worker commit marker ngay trước outbound HTTP; phản hồi xác
+  định chuyển marker sang `rejected` trước khi fallback để không gắn nhầm lỗi
+  cấu hình provider sau thành kết quả mơ hồ.
+- 429/resource-busy trả job về queue, có backoff và không tăng attempt; 413/OOM
+  kết thúc `rejected`; mất kết nối sau POST hoặc worker chết sau dispatch kết
+  thúc `ambiguous`, hoàn hold theo đường idempotent hiện có và tuyệt đối không
+  tự phát lại side effect có thể đã xảy ra.
+- Mở rộng mock tại cổng máy B để bắt timeout POST và OOM có cấu trúc. Reclaim
+  lặp lại không gọi terminal callback/refund lần hai.
+
+### Lệnh và kết quả thật
+
+| Lệnh | Kết quả |
+|---|---|
+| test viết trước Q2 | fairness **FAIL 1**; retry/provider **FAIL 5**, đúng phần runtime chưa có |
+| `python tools\test_nhanh.py --noi-tiep -k "test_67_hang_doi_job or test_151_worker_gpu or test_206_policy_engine or test_251_cong_vlm or test_255_dieu_phoi or test_313_llm_admission"` | **PASS 121**, 1 skip, 4.146 deselected |
+| `python tools\i18n.py bien-dich` + `python tools\check_i18n.py` | **PASS**, baseline chuỗi chưa bọc giữ 772 |
+| `python tools\gate.py --vong-lap` lần đầu | backend **PASS**; 18/19 bước, chỉ fail chuỗi worker mới chưa bọc dịch; đã sửa đúng nguồn |
+| `python tools\gate.py --vong-lap` hai lượt chốt Q2 | **PASS 19/19** cả hai; backend `--lf` vẫn chạy gần-full 205,9 và 207,3 giây; chưa thay bằng chứng full gate cuối |
+
+### Còn tồn đọng và việc tiếp theo
+
+1. Q3: metrics queue depth/oldest age/admission delay/rejection và kiểm restart
+   bằng row bền, tiếp tục CPU/CSDL/mock.
+2. Race PostgreSQL vẫn chờ scratch `LTT_TEST_DATABASE_URL`; ca test có chủ ý
+   skip, không được tính là bằng chứng đồng thời.
+3. Chỉ sau Q3 + full gate mới chạy Q4–Q6 GPU; không reboot/reset máy B/3090.
+
+---
+
 ## 2026-08-28 — H41.9 Q1b: một execution lease cho async, sync và stream
 
 - Thêm bảng `execution_leases` và migration head `c6f92a3b8d51`. UNIQUE theo

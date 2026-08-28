@@ -113,6 +113,23 @@ def test_provider_dau_tien_chay_thi_khong_thu_cai_sau(monkeypatch):
     assert gl.loi == []
 
 
+def test_on_dispatch_chi_goi_ngay_truoc_http_that(monkeypatch):
+    gl = GiaLap().cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl, {})
+    dispatched = []
+    DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"],
+           on_dispatch=lambda provider: dispatched.append(provider))
+    assert dispatched == ["ltt_llm"]
+
+    gl2 = GiaLap(cho_key=()).cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl2, {})
+    dispatched.clear()
+    with pytest.raises(DP.KhongCoProviderNao):
+        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"],
+               on_dispatch=lambda provider: dispatched.append(provider))
+    assert dispatched == [], "thieu key ma lai ghi provider da nhan request"
+
+
 # ── 2. Bận: đi tiếp, KHÔNG đánh dấu lỗi ──────────────────────────────────────
 
 def test_ban_thi_di_tiep_va_KHONG_danh_dau_loi(monkeypatch):
@@ -139,9 +156,17 @@ def test_moi_provider_deu_ban_thi_KhongCoProviderNao(monkeypatch):
 def test_loi_that_thi_danh_dau_loi_roi_moi_di_tiep(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": CongVlmError("502")})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
+    states = []
+    kq = DP.goi(
+        None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"],
+        on_dispatch=lambda provider: states.append((provider, "dispatched")),
+        on_rejected=lambda provider: states.append((provider, "rejected")))
     assert kq.noi_dung == "tu gemini"
     assert gl.loi == ["ltt_llm"], "hong that thi PHAI danh dau"
+    assert states == [
+        ("ltt_llm", "dispatched"), ("ltt_llm", "rejected"),
+        ("gemini", "dispatched"),
+    ], "phan hoi xac dinh phai go ambiguity truoc khi fallback"
 
 
 # ── 4. Vượt ngân sách: ném ngay, KHÔNG cascade ───────────────────────────────

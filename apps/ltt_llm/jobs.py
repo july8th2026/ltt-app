@@ -29,7 +29,10 @@ def handle(params: dict, ctx=None) -> dict:
     gen = get_session()
     db = next(gen)
     try:
-        kq = features.chay(db, params)
+        kq = features.chay(
+            db, params,
+            on_dispatch=(ctx.provider_dispatched if ctx is not None else None),
+            on_rejected=(ctx.provider_rejected if ctx is not None else None))
     finally:
         try:
             next(gen)

@@ -18,7 +18,8 @@ from __future__ import annotations
 
 import pytest
 
-from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
+from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
+                                        CongVlm, CongVlmError, ProviderOomError,
                                         SuDung, VuotNganSachError, doc_su_dung)
 
 
@@ -80,6 +81,22 @@ def test_404_model_chua_mo_thi_la_CongVlmError():
     c = CongVlm(goi=_goi_gia(404))
     with pytest.raises(CongVlmError):
         c.chat(model="khong-co", messages=[])
+
+
+def test_mat_ket_noi_trong_post_la_ambiguous_khong_duoc_retry_mu():
+    def mat_mang(_method, _path, *, json=None, timeout=None):
+        raise TimeoutError("khong biet provider da nhan body hay chua")
+
+    c = CongVlm(goi=mat_mang)
+    with pytest.raises(AmbiguousProviderError):
+        c.chat(model="qwen38-api", messages=[])
+
+
+def test_502_bao_oom_la_loi_terminal_co_cau_truc():
+    c = CongVlm(goi=_goi_gia(
+        502, {"error": {"message": "CUDA out of memory while allocating"}}))
+    with pytest.raises(ProviderOomError):
+        c.chat(model="qwen38-api", messages=[])
 
 
 def test_thieu_ten_model_bi_chan_truoc_khi_ra_mang():

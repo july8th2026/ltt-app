@@ -53,11 +53,11 @@ was specific to the two rate layers.
 What is deliberately absent
 ---------------------------
 
-**Priority classes.** The brief asks for them "only if the scheduler supports
-it". ``jobs.claim()`` takes work strictly FIFO by ``created_at``; there is no
-priority column on ``Job`` and nothing reads one. A ``priority`` field that no
-scheduler consults would be a promise the platform cannot keep — visible in the
-admin UI, and wrong. It belongs with a scheduler change, not here.
+**Paid priority classes.** ``jobs.claim()`` now provides fair-share by account,
+stable FIFO inside an account and aging for old work. That is operational
+fairness, not a commercial priority tier: there is still no priority column on
+``Job`` and price/credit never appears in the ordering. Adding a policy field
+would therefore promise a paid queue jump the product has not decided to sell.
 """
 from __future__ import annotations
 

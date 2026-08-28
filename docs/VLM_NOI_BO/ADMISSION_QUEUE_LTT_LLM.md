@@ -1,8 +1,8 @@
 # Hợp đồng admission/queue cho LTT LLM
 
-Trạng thái: Q0 của H41.9, chốt ngày 2026-08-28 theo Q114. Tài liệu này khóa
-hành vi trước khi sửa runtime; số đo GPU Q111/Q112 vẫn là nguồn cho cấu hình
-`parallel=1`, không chạy lại ở pha CPU/CSDL/mock.
+Trạng thái: Q0–Q2 của H41.9 đã triển khai ngày 2026-08-28 theo Q114. Số đo GPU
+Q111/Q112 vẫn là nguồn cho cấu hình `parallel=1`, không chạy lại ở pha
+CPU/CSDL/mock.
 
 ## 1. Một admission plane, không dựng queue thứ hai
 
@@ -120,6 +120,20 @@ admission-delay. Số phải tồn tại qua process restart bằng mẫu CSDL h
 Q0–Q3 chỉ dùng SQLite cho logic, PostgreSQL scratch cho race và provider mock
 cho lỗi. Không đọc trạng thái GPU thật trong unit test. Q4 chỉ bắt đầu sau khi
 ma trận này xanh và full gate không có regression thuộc `ltt_llm`.
+
+### Kết quả Q2 đã khóa
+
+- Scheduler giữ FIFO ổn định trong account, luân phiên theo mốc claim bền vững
+  của account/resource và đẩy job chờ quá 5 phút lên trước để chống starvation.
+  Giá/credit tuyệt đối không tham gia phép xếp thứ tự.
+- `provider_state` ghi bền `dispatched → completed|rejected|ambiguous`. Marker
+  được commit ngay trước outbound HTTP; phản hồi xác định gỡ ambiguity trước
+  khi fallback provider khác.
+- 429/resource-busy trở về `queued`, có backoff và không tăng attempt. 413/OOM
+  là terminal `rejected`. Mất kết nối sau POST hoặc worker chết sau dispatch là
+  terminal `ambiguous`, không tự phát lại request có thể đã tạo side effect.
+- Callback terminal của orphan chỉ chạy ở lần chuyển `running → error`; refund
+  hiện có vẫn idempotent nên reclaim lặp không hoàn tiền/webhook lần hai.
 
 ## 7. Căn cứ kỹ thuật
 

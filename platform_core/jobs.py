@@ -24,8 +24,8 @@ import importlib
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session as DbSession
+from sqlalchemy import case, func, select
+from sqlalchemy.orm import Session as DbSession, aliased
 
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
                                   Job)
@@ -38,6 +38,13 @@ ORPHAN_TIMEOUT = timedelta(minutes=5)
 # Giãn cách retry: lần thử thứ n chờ base * 2^(n-1) giây, chặn trên.
 _RETRY_BASE_S = 10
 _RETRY_MAX_S = 600
+
+# Job/account đã chờ tới mốc này được đưa lên trước account mới để không đói.
+FAIR_AGING = timedelta(minutes=5)
+PROVIDER_DISPATCHED = "dispatched"
+PROVIDER_REJECTED = "rejected"
+PROVIDER_AMBIGUOUS = "ambiguous"
+PROVIDER_COMPLETED = "completed"
 
 
 class JobError(Exception):
@@ -123,9 +130,22 @@ def claim(db: DbSession, *, worker_id: str,
         if not eligible:
             return None
         stmt = stmt.where(Job.app_slug.in_(eligible))
+    peer = aliased(Job)
+    last_account_claim = (
+        select(func.max(peer.last_claimed_at))
+        .where(peer.user_id == Job.user_id,
+               peer.admission_resource == Job.admission_resource)
+        .correlate(Job)
+        .scalar_subquery()
+    )
+    aged_first = case((Job.created_at <= now - FAIR_AGING, 0), else_=1)
+    never_served_first = case((last_account_claim.is_(None), 0), else_=1)
     row = db.execute(
         stmt
-        .order_by(Job.created_at)
+        # Aging trước, rồi fair-share theo account, cuối cùng FIFO ổn định trong
+        # account. Không có giá tiền trong phép xếp thứ tự này.
+        .order_by(aged_first, never_served_first, last_account_claim,
+                  Job.created_at, Job.id)
         .limit(1)
         .with_for_update(skip_locked=True)
     ).scalars().first()
@@ -136,6 +156,7 @@ def claim(db: DbSession, *, worker_id: str,
     row.worker_id = worker_id
     row.started_at = row.started_at or now
     row.heartbeat_at = now
+    row.last_claimed_at = now
     attempt = int(row.attempts or 0) + 1
     job_events.append(
         db, row, "claimed", visibility=job_events.INTERNAL,
@@ -157,6 +178,65 @@ def heartbeat(db: DbSession, job: Job) -> None:
     db.flush()
 
 
+def mark_provider_dispatched(db: DbSession, job: Job, provider: str = "") -> None:
+    """Ghi bền ngay trước outbound HTTP; crash sau mốc này không retry mù."""
+    if job.status != JOB_RUNNING:
+        return
+    job.provider_state = PROVIDER_DISPATCHED
+    job.provider_dispatched_at = _bay_gio()
+    attempt = int(job.attempts or 0) + 1
+    job_events.append(
+        db, job, "provider_dispatched", visibility=job_events.INTERNAL,
+        details={"attempt": attempt, "provider": str(provider)[:64]},
+        event_key=f"provider-dispatched:{attempt}")
+    db.flush()
+
+
+def mark_provider_rejected(db: DbSession, job: Job, provider: str = "") -> None:
+    """Đã nhận phản hồi xác định; lần dispatch này không còn ambiguous."""
+    if job.status != JOB_RUNNING:
+        return
+    job.provider_state = PROVIDER_REJECTED
+    attempt = int(job.attempts or 0) + 1
+    job_events.append(
+        db, job, "provider_rejected", visibility=job_events.INTERNAL,
+        details={"attempt": attempt, "provider": str(provider)[:64]},
+        event_key=f"provider-rejected:{attempt}:{str(provider)[:32]}")
+    db.flush()
+
+
+def defer_resource(db: DbSession, job: Job, *, retry_after: float = 20,
+                   resource: str = "") -> None:
+    """Từ chối xác định trước provider: về queue, không tiêu attempt."""
+    delay = max(1, min(_RETRY_MAX_S, int(retry_after or 20)))
+    job.status = JOB_QUEUED
+    job.worker_id = ""
+    job.provider_state = PROVIDER_REJECTED
+    job.next_run_at = _bay_gio() + timedelta(seconds=delay)
+    job_events.append(
+        db, job, "resource_wait", public_message=N_("Đang chờ tài nguyên xử lý."),
+        details={"delay_seconds": delay, "status": JOB_QUEUED,
+                 "resource": str(resource)}, level="warning")
+    db.flush()
+
+
+def mark_ambiguous(db: DbSession, job: Job, error: str) -> None:
+    """Provider có thể đã nhận: terminal có lý do, tuyệt đối không auto-retry."""
+    job.attempts += 1
+    job.status = JOB_ERROR
+    job.provider_state = PROVIDER_AMBIGUOUS
+    job.worker_id = ""
+    job.finished_at = _bay_gio()
+    job.error = job_events.sanitize_text(error, limit=5000)
+    job_events.append(
+        db, job, "ambiguous_provider",
+        public_message=N_(
+            "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."),
+        details={"attempt": job.attempts, "status": JOB_ERROR},
+        level="error", event_key="ambiguous-provider")
+    db.flush()
+
+
 def set_progress(db: DbSession, job: Job, percent: int, message: str = "") -> None:
     job.progress = max(0, min(100, int(percent)))
     if message:
@@ -175,6 +255,8 @@ def complete(db: DbSession, job: Job, result: dict) -> None:
     job.result = result
     job.progress = 100
     job.finished_at = _bay_gio()
+    if job.provider_state == PROVIDER_DISPATCHED:
+        job.provider_state = PROVIDER_COMPLETED
     job_events.append(
         db, job, "completed", public_message=N_("Đã hoàn tất."),
         details={"status": JOB_DONE}, event_key="completed",
@@ -243,7 +325,8 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
     db.flush()
 
 
-def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> int:
+def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT,
+                    on_terminal=None) -> int:
     """Trả về hàng đợi các job `running` mà worker đã chết (lâu không đập nhịp).
 
     Tính một lần thử đã tiêu (attempts += 1): một job làm treo worker không
@@ -269,7 +352,14 @@ def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> in
             level="warning", details={"worker_id": job.worker_id},
             event_key=f"orphan:{int(job.attempts or 0) + 1}",
         )
-        fail(db, job, "Worker mất kết nối giữa chừng (job mồ côi, nhặt lại).")
+        if job.provider_state == PROVIDER_DISPATCHED:
+            mark_ambiguous(
+                db, job,
+                N_("Worker mất kết nối sau khi đã gửi yêu cầu tới nhà cung cấp."))
+        else:
+            fail(db, job, "Worker mất kết nối giữa chừng (job mồ côi, nhặt lại).")
+        if job.status == JOB_ERROR and on_terminal is not None:
+            on_terminal(db, job)
     db.flush()
     return n
 

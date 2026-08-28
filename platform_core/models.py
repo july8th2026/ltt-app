@@ -316,6 +316,16 @@ class Job(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Lượt claim gần nhất dùng làm con trỏ fairness bền vững theo account/resource.
+    # Khác `started_at`: retry/resource_wait phải cập nhật mỗi lượt để một tenant
+    # burst không liên tục đứng đầu hàng.
+    last_claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    # Substate của lần gọi provider. Job vẫn giữ state machine công khai hiện có;
+    # `ambiguous` là lý do terminal, không tạo một hàng đợi/trạng thái song song.
+    provider_state: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    provider_dispatched_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
     #: Khi nào `params`/`result`/file của job này hết hạn và đã bị xoá. Hàng vẫn
     #: còn — nó là **bằng chứng** mà bút toán credit trỏ về. Có mốc này thì một
     #: `result` rỗng đọc ra là "đã hết hạn", chứ không phải "mất dữ liệu".
@@ -329,6 +339,8 @@ class Job(Base):
         Index("ix_jobs_claim", "status", "next_run_at", "created_at"),
         Index("ix_jobs_admission_queue", "admission_resource", "status",
               "created_at"),
+        Index("ix_jobs_fairness", "admission_resource", "user_id",
+              "last_claimed_at"),
     )
 
     def __repr__(self) -> str:      # pragma: no cover

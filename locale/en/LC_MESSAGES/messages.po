@@ -11599,3 +11599,9 @@ msgstr "The engine has a 131K context window; the public API limits input to 90K
 
 msgid "Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để chẩn đoán và tự thu hồi tiến trình đã chết."
 msgstr "Temporary execution-slot ownership; only operational identifiers are retained for diagnosis and automatic recovery from dead processes."
+
+msgid "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."
+msgstr "The provider result could not be determined; automatic retries have been stopped."
+
+msgid "Worker mất kết nối sau khi đã gửi yêu cầu tới nhà cung cấp."
+msgstr "The worker disconnected after sending the request to the provider."

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:569ca4fc3408b37978f33c368e14fce06ea76fbaa946bf9f434d3586bdc1da6b
-Nguồn đã quét : 1205 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:60703c85d60f13613b73ae1da7cb236f1c13eea9e6fcc0c81c0cebf4a566be1e
+Nguồn đã quét : 1206 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -761,13 +761,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:636
 
 5. DATA MODEL (59 bảng)
-- agent_runs → AgentRun | platform_core/models.py:442
-- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:527
-- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:509
-- agent_workflows → AgentWorkflow | platform_core/models.py:477
+- agent_runs → AgentRun | platform_core/models.py:454
+- agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:539
+- agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:521
+- agent_workflows → AgentWorkflow | platform_core/models.py:489
 - api_budgets → ApiBudget | platform_core/public_api/tables.py:296
 - api_cost_observations → ApiCostObservation | platform_core/public_api/tables.py:751
-- api_keys → ApiKey | platform_core/models.py:637
+- api_keys → ApiKey | platform_core/models.py:649
 - api_kill_switches → ApiKillSwitch | platform_core/public_api/tables.py:615
 - api_metric_samples → ApiMetricSample | platform_core/public_api/tables.py:384
 - api_notifications → ApiNotification | platform_core/public_api/tables.py:339
@@ -778,19 +778,19 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - api_security_events → ApiSecurityEvent | platform_core/public_api/tables.py:802
 - app_access → AppAccess | platform_core/models.py:168
 - app_projects → AppProject | platform_core/models.py:201
-- chat_conversations → ChatConversation | platform_core/models.py:780
-- chat_messages → ChatMessage | platform_core/models.py:800
-- credit_entries → CreditEntry | platform_core/models.py:583
-- credit_packages → CreditPackage | platform_core/models.py:713
+- chat_conversations → ChatConversation | platform_core/models.py:792
+- chat_messages → ChatMessage | platform_core/models.py:812
+- credit_entries → CreditEntry | platform_core/models.py:595
+- credit_packages → CreditPackage | platform_core/models.py:725
 - developer_api_keys → DeveloperApiKey | platform_core/public_api/tables.py:107
-- execution_leases → ExecutionLease | platform_core/models.py:338
-- gpu_leases → GpuLease | platform_core/models.py:821
-- job_events → JobEvent | platform_core/models.py:365
+- execution_leases → ExecutionLease | platform_core/models.py:350
+- gpu_leases → GpuLease | platform_core/models.py:833
+- job_events → JobEvent | platform_core/models.py:377
 - jobs → Job | platform_core/models.py:249
 - nexus_devices → NexusDevice | platform_core/nexus/tables.py:58
 - nexus_enrollments → NexusEnrollment | platform_core/nexus/tables.py:129
 - nexus_sessions → NexusSession | platform_core/nexus/tables.py:180
-- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:558
+- nhat_ky_admin → NhatKyAdmin | platform_core/models.py:570
 - ommi_collection → OmmiCollection | apps/prompt_ai_ommi/tables.py:137
 - ommi_collection_item → OmmiCollectionItem | apps/prompt_ai_ommi/tables.py:152
 - ommi_meta_prompt → OmmiMetaPrompt | apps/prompt_ai_ommi/tables.py:183
@@ -805,15 +805,15 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - ommi_storyboard → OmmiStoryboard | apps/prompt_ai_ommi/tables.py:301
 - ommi_style → OmmiStyle | apps/prompt_ai_ommi/tables.py:271
 - ommi_tag → OmmiTag | apps/prompt_ai_ommi/tables.py:108
-- payment_orders → PaymentOrder | platform_core/models.py:737
+- payment_orders → PaymentOrder | platform_core/models.py:749
 - platform_info → PlatformInfo | platform_core/models.py:46
 - public_api_idempotency → ApiIdempotencyRecord | platform_core/public_api/tables.py:200
 - public_api_requests → ApiRequestLog | platform_core/public_api/tables.py:248
 - public_api_webhook_deliveries → WebhookDelivery | platform_core/public_api/tables.py:477
 - public_api_webhooks → WebhookSubscription | platform_core/public_api/tables.py:436
 - sessions → Session | platform_core/models.py:138
-- singleton_leases → SingletonLease | platform_core/models.py:871
-- upload_sessions → UploadSession | platform_core/models.py:409
+- singleton_leases → SingletonLease | platform_core/models.py:883
+- upload_sessions → UploadSession | platform_core/models.py:421
 - users → User | platform_core/models.py:73
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
@@ -821,7 +821,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (57)
+6. ALEMBIC MIGRATIONS (58)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -879,6 +879,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - a4d70e93f158 ← 8c1f4a67b209 | vps_instance.sao_luu_luc — lan chup anh gan nhat (H39/G9) | alembic/versions/20260824_2500_vps_sao_luu.py
 - b5e81f2a7c40 ← a4d70e93f158 | H41.9/Q114: snapshot admission resource on durable jobs. | alembic/versions/20260828_1000_job_admission_resource.py
 - c6f92a3b8d51 ← b5e81f2a7c40 | H41.9/Q114: common execution lease for async, sync and stream. | alembic/versions/20260828_1100_execution_leases.py
+- d70a3c4e9f62 ← c6f92a3b8d51 | H41.9/Q2: durable per-account fair claim cursor. | alembic/versions/20260828_1200_job_fair_claim.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1368,8 +1369,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1205 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:920, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1206 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:921, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1382,7 +1383,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [README.md] (1)
 - README.md
 
-[alembic] (59)
+[alembic] (60)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1442,6 +1443,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - alembic/versions/20260824_2500_vps_sao_luu.py
 - alembic/versions/20260828_1000_job_admission_resource.py
 - alembic/versions/20260828_1100_execution_leases.py
+- alembic/versions/20260828_1200_job_fair_claim.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2631,7 +2633,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1205 file; 11994720 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1206 file; 12012167 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7508,6 +7510,45 @@ def downgrade() -> None:
     op.drop_index(
         "ix_execution_leases_resource_heartbeat", table_name="execution_leases")
     op.drop_table("execution_leases")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260828_1200_job_fair_claim.py
+SHA256=c7771ce72621d9f0945d9369bc86db4ec194d3823386645008fd409591480042 BYTES=1017 LINES=33
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H41.9/Q2: durable per-account fair claim cursor.
+
+Revision ID: d70a3c4e9f62
+Revises: c6f92a3b8d51
+"""
+from alembic import op
+import sqlalchemy as sa
+
+revision = "d70a3c4e9f62"
+down_revision = "c6f92a3b8d51"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column(
+        "jobs", sa.Column("last_claimed_at", sa.DateTime(timezone=True), nullable=True))
+    op.add_column(
+        "jobs", sa.Column("provider_state", sa.String(length=16),
+                          nullable=False, server_default=""))
+    op.add_column(
+        "jobs", sa.Column("provider_dispatched_at", sa.DateTime(timezone=True),
+                          nullable=True))
+    op.create_index(
+        "ix_jobs_fairness", "jobs",
+        ["admission_resource", "user_id", "last_claimed_at"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_jobs_fairness", table_name="jobs")
+    op.drop_column("jobs", "provider_dispatched_at")
+    op.drop_column("jobs", "provider_state")
+    op.drop_column("jobs", "last_claimed_at")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -16127,7 +16168,7 @@ SHA256=ad2e28719fea02b58ae6995091fc34c90fe5a643b8bf459a216ab5cd86782009 BYTES=89
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/features.py
-SHA256=a3fc6f29de79565b5d66d832d2526d11cb68d1212dbebc940119ce83baaab584 BYTES=11944 LINES=268
+SHA256=3a181a27db726056a7288edc11202ce7811f1aadd2fa1dd842a864a0be4cedc5 BYTES=12055 LINES=271
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — quy tắc nghiệp vụ của `ltt_llm`, dùng chung cho CẢ HAI cánh cửa. (H38)
@@ -16366,7 +16407,8 @@ def kiem_tham_so(params: dict) -> dict:
     return sach
 
 
-def chay(db, params: dict, *, timeout_s: float = 300.0) -> KetQua:
+def chay(db, params: dict, *, timeout_s: float = 300.0,
+         on_dispatch=None, on_rejected=None) -> KetQua:
     """Chạy một lượt. Ném `ThamSoSai`, `BanError`, `VuotNganSachError`, `CongVlmError`.
 
     ⛔ KHÔNG tự trừ credit ở đây. Tiền do **cửa** lo:
@@ -16388,6 +16430,8 @@ def chay(db, params: dict, *, timeout_s: float = 300.0) -> KetQua:
         temperature=sach.get("temperature"),
         reasoning_effort=sach.get("reasoning_effort"),
         timeout_s=timeout_s,
+        on_dispatch=on_dispatch,
+        on_rejected=on_rejected,
     )
     su = kq.su_dung
     return KetQua(
@@ -16401,7 +16445,7 @@ def chay(db, params: dict, *, timeout_s: float = 300.0) -> KetQua:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/jobs.py
-SHA256=d7f4de91b656fdb4ec5894d0d76d8477a2eb740079b5dd6f668fe6cd3a88f5be BYTES=1626 LINES=44
+SHA256=1bf6dc6f3009b7efa04a1ed3ce89c297e249ceffa271f0fa00ad1a0d1409b6ac BYTES=1797 LINES=47
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker, cho **cửa bất đồng bộ**. (H38)
@@ -16434,7 +16478,10 @@ def handle(params: dict, ctx=None) -> dict:
     gen = get_session()
     db = next(gen)
     try:
-        kq = features.chay(db, params)
+        kq = features.chay(
+            db, params,
+            on_dispatch=(ctx.provider_dispatched if ctx is not None else None),
+            on_rejected=(ctx.provider_rejected if ctx is not None else None))
     finally:
         try:
             next(gen)
@@ -73902,7 +73949,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=bc5cacac077d47b87cd9d0636e240eba7e33f0257d0289403030c9884b580d29 BYTES=254940 LINES=3604
+SHA256=778a49273b0201d88d1bc03288b8b1bd8b123f0599a11ef50a38847898d1f806 BYTES=255068 LINES=3604
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77473,7 +77520,7 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
-| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0/Q114 + Q1a/Q1b đã khóa. Global/resource/account cap nằm trước job+credit; execution lease DB một slot dùng chung async/sync/stream, heartbeat/TTL, async `resource_wait` không tăng attempt, sync/stream 429 trước credit/model. Relevant 129 pass/1 skip; gate vòng lặp 19/19. Race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo Q2 fairness/retry/ambiguous-provider bằng CPU/DB/mock |
+| **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q2 đã khóa. Global/resource/account cap nằm trước job+credit; execution lease DB một slot dùng chung async/sync/stream. Q2 thêm fair-share + aging bền vững, marker provider trước POST, gỡ ambiguity khi có phản hồi xác định; 429 không tiêu attempt, 413/OOM terminal rejected, timeout/crash sau dispatch terminal ambiguous và không retry mù. Relevant 121 pass/1 skip; gate vòng lặp 19/19 PASS. Race PostgreSQL đã viết nhưng scratch chưa cấu hình. Tiếp theo Q3 metrics/mock/restart bằng CPU/DB/mock |
 | **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
 | **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
@@ -101066,7 +101113,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=3044fccd219f6a51d0d1a14cedecbeec84940d1a9f95165e36a3417636dd375e BYTES=61464 LINES=1354
+SHA256=4b395d92a3aa6bed85686d7f57da6e32b6ac6ee29ff13e8df91d5cb08f0da674 BYTES=63911 LINES=1407
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -101184,6 +101231,22 @@ class JobContext:
                 if job.status == JOB_CANCELLED:
                     raise JobCancelled()
                 jobq.set_progress(db, job, percent, message)
+                db.commit()
+
+    def provider_dispatched(self, provider: str = "") -> None:
+        """Ghi bền ngay trước outbound HTTP để crash không retry side effect mù."""
+        for db in _one_session():
+            job = db.get(Job, self.job_id)
+            if job is not None:
+                jobq.mark_provider_dispatched(db, job, provider)
+                db.commit()
+
+    def provider_rejected(self, provider: str = "") -> None:
+        """Gỡ ambiguity khi provider đã trả phản hồi xác định trước fallback."""
+        for db in _one_session():
+            job = db.get(Job, self.job_id)
+            if job is not None:
+                jobq.mark_provider_rejected(db, job, provider)
                 db.commit()
 
     def event(self, event_code: str, message: str = "", *, details: dict | None = None,
@@ -101539,7 +101602,19 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                         db.commit()
                         log.info("job %s da huy cooperative", job_id[:8])
                         return True
-                    jobq.fail(db, job, safe_error)
+                    kind, retry_after = _provider_failure_kind(
+                        exc, provider_state=job.provider_state)
+                    if kind == "resource_wait":
+                        jobq.defer_resource(
+                            db, job, retry_after=retry_after,
+                            resource=job.admission_resource)
+                    elif kind == "rejected":
+                        job.provider_state = jobq.PROVIDER_REJECTED
+                        jobq.fail(db, job, safe_error, retry=False)
+                    elif kind == "ambiguous":
+                        jobq.mark_ambiguous(db, job, safe_error)
+                    else:
+                        jobq.fail(db, job, safe_error)
                     if job.status == JOB_ERROR:
                         _hoan_credit(db, job)
                         _enqueue_webhooks(db, job)
@@ -101573,6 +101648,31 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                 db.commit()
         log.info("job %s xong", job_id[:8])
         return True
+
+
+def _provider_failure_kind(exc: Exception, *, provider_state: str) -> tuple[str, int]:
+    """Phân loại có cấu trúc; lỗi không rõ sau dispatch luôn fail-safe."""
+    from platform_core.llm.cong_vlm import (
+        AmbiguousProviderError, BanError, ProviderOomError, VuotNganSachError)
+    from platform_core.llm.dieu_phoi import KhongCoProviderNao
+
+    if isinstance(exc, BanError):
+        return "resource_wait", max(1, int(exc.retry_after_s or 20))
+    if isinstance(exc, KhongCoProviderNao) and exc.busy_only:
+        return "resource_wait", 20
+    if isinstance(exc, (VuotNganSachError, ProviderOomError)):
+        return "rejected", 0
+    if (isinstance(exc, AmbiguousProviderError)
+            or provider_state == jobq.PROVIDER_DISPATCHED):
+        return "ambiguous", 0
+    return "retry", 0
+
+
+def _orphan_terminal(db, job) -> None:
+    """Orphan đã terminal phải trả hold/webhook đúng một lần."""
+    if job.status == JOB_ERROR:
+        _hoan_credit(db, job)
+        _enqueue_webhooks(db, job)
 
 
 def _duration_ms(started: float) -> int:
@@ -102403,7 +102503,7 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                 _xa_metrics()
                 next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
             for db in _one_session():
-                n = jobq.reclaim_orphans(db)
+                n = jobq.reclaim_orphans(db, on_terminal=_orphan_terminal)
                 db.commit()
                 if n:
                     log.warning("nhat lai %d job mo coi", n)
@@ -102508,7 +102608,7 @@ def submit_with_credit(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/jobs.py
-SHA256=f543d75fe2c1b0f31457ac77e04d2359501907d12ceb1997f3ec9a771fd1fadf BYTES=12641 LINES=296
+SHA256=8b30bf9d7b5562447a42ee943c2b09064e8fe69074e3bb540d0ce57c23bed90f BYTES=16619 LINES=386
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — hàng đợi job tự quản trên PostgreSQL (H2, Q26).
@@ -102536,8 +102636,8 @@ import importlib
 from datetime import datetime, timedelta, timezone
 from typing import Callable, Optional
 
-from sqlalchemy import select
-from sqlalchemy.orm import Session as DbSession
+from sqlalchemy import case, func, select
+from sqlalchemy.orm import Session as DbSession, aliased
 
 from platform_core.models import (JOB_CANCELLED, JOB_DONE, JOB_ERROR, JOB_QUEUED, JOB_RUNNING,
                                   Job)
@@ -102550,6 +102650,13 @@ ORPHAN_TIMEOUT = timedelta(minutes=5)
 # Giãn cách retry: lần thử thứ n chờ base * 2^(n-1) giây, chặn trên.
 _RETRY_BASE_S = 10
 _RETRY_MAX_S = 600
+
+# Job/account đã chờ tới mốc này được đưa lên trước account mới để không đói.
+FAIR_AGING = timedelta(minutes=5)
+PROVIDER_DISPATCHED = "dispatched"
+PROVIDER_REJECTED = "rejected"
+PROVIDER_AMBIGUOUS = "ambiguous"
+PROVIDER_COMPLETED = "completed"
 
 
 class JobError(Exception):
@@ -102635,9 +102742,22 @@ def claim(db: DbSession, *, worker_id: str,
         if not eligible:
             return None
         stmt = stmt.where(Job.app_slug.in_(eligible))
+    peer = aliased(Job)
+    last_account_claim = (
+        select(func.max(peer.last_claimed_at))
+        .where(peer.user_id == Job.user_id,
+               peer.admission_resource == Job.admission_resource)
+        .correlate(Job)
+        .scalar_subquery()
+    )
+    aged_first = case((Job.created_at <= now - FAIR_AGING, 0), else_=1)
+    never_served_first = case((last_account_claim.is_(None), 0), else_=1)
     row = db.execute(
         stmt
-        .order_by(Job.created_at)
+        # Aging trước, rồi fair-share theo account, cuối cùng FIFO ổn định trong
+        # account. Không có giá tiền trong phép xếp thứ tự này.
+        .order_by(aged_first, never_served_first, last_account_claim,
+                  Job.created_at, Job.id)
         .limit(1)
         .with_for_update(skip_locked=True)
     ).scalars().first()
@@ -102648,6 +102768,7 @@ def claim(db: DbSession, *, worker_id: str,
     row.worker_id = worker_id
     row.started_at = row.started_at or now
     row.heartbeat_at = now
+    row.last_claimed_at = now
     attempt = int(row.attempts or 0) + 1
     job_events.append(
         db, row, "claimed", visibility=job_events.INTERNAL,
@@ -102669,6 +102790,65 @@ def heartbeat(db: DbSession, job: Job) -> None:
     db.flush()
 
 
+def mark_provider_dispatched(db: DbSession, job: Job, provider: str = "") -> None:
+    """Ghi bền ngay trước outbound HTTP; crash sau mốc này không retry mù."""
+    if job.status != JOB_RUNNING:
+        return
+    job.provider_state = PROVIDER_DISPATCHED
+    job.provider_dispatched_at = _bay_gio()
+    attempt = int(job.attempts or 0) + 1
+    job_events.append(
+        db, job, "provider_dispatched", visibility=job_events.INTERNAL,
+        details={"attempt": attempt, "provider": str(provider)[:64]},
+        event_key=f"provider-dispatched:{attempt}")
+    db.flush()
+
+
+def mark_provider_rejected(db: DbSession, job: Job, provider: str = "") -> None:
+    """Đã nhận phản hồi xác định; lần dispatch này không còn ambiguous."""
+    if job.status != JOB_RUNNING:
+        return
+    job.provider_state = PROVIDER_REJECTED
+    attempt = int(job.attempts or 0) + 1
+    job_events.append(
+        db, job, "provider_rejected", visibility=job_events.INTERNAL,
+        details={"attempt": attempt, "provider": str(provider)[:64]},
+        event_key=f"provider-rejected:{attempt}:{str(provider)[:32]}")
+    db.flush()
+
+
+def defer_resource(db: DbSession, job: Job, *, retry_after: float = 20,
+                   resource: str = "") -> None:
+    """Từ chối xác định trước provider: về queue, không tiêu attempt."""
+    delay = max(1, min(_RETRY_MAX_S, int(retry_after or 20)))
+    job.status = JOB_QUEUED
+    job.worker_id = ""
+    job.provider_state = PROVIDER_REJECTED
+    job.next_run_at = _bay_gio() + timedelta(seconds=delay)
+    job_events.append(
+        db, job, "resource_wait", public_message=N_("Đang chờ tài nguyên xử lý."),
+        details={"delay_seconds": delay, "status": JOB_QUEUED,
+                 "resource": str(resource)}, level="warning")
+    db.flush()
+
+
+def mark_ambiguous(db: DbSession, job: Job, error: str) -> None:
+    """Provider có thể đã nhận: terminal có lý do, tuyệt đối không auto-retry."""
+    job.attempts += 1
+    job.status = JOB_ERROR
+    job.provider_state = PROVIDER_AMBIGUOUS
+    job.worker_id = ""
+    job.finished_at = _bay_gio()
+    job.error = job_events.sanitize_text(error, limit=5000)
+    job_events.append(
+        db, job, "ambiguous_provider",
+        public_message=N_(
+            "Không thể xác định kết quả từ nhà cung cấp; hệ thống đã dừng tự thử lại."),
+        details={"attempt": job.attempts, "status": JOB_ERROR},
+        level="error", event_key="ambiguous-provider")
+    db.flush()
+
+
 def set_progress(db: DbSession, job: Job, percent: int, message: str = "") -> None:
     job.progress = max(0, min(100, int(percent)))
     if message:
@@ -102687,6 +102867,8 @@ def complete(db: DbSession, job: Job, result: dict) -> None:
     job.result = result
     job.progress = 100
     job.finished_at = _bay_gio()
+    if job.provider_state == PROVIDER_DISPATCHED:
+        job.provider_state = PROVIDER_COMPLETED
     job_events.append(
         db, job, "completed", public_message=N_("Đã hoàn tất."),
         details={"status": JOB_DONE}, event_key="completed",
@@ -102755,7 +102937,8 @@ def fail(db: DbSession, job: Job, error: str, *, retry: bool = True) -> None:
     db.flush()
 
 
-def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> int:
+def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT,
+                    on_terminal=None) -> int:
     """Trả về hàng đợi các job `running` mà worker đã chết (lâu không đập nhịp).
 
     Tính một lần thử đã tiêu (attempts += 1): một job làm treo worker không
@@ -102781,7 +102964,14 @@ def reclaim_orphans(db: DbSession, *, timeout: timedelta = ORPHAN_TIMEOUT) -> in
             level="warning", details={"worker_id": job.worker_id},
             event_key=f"orphan:{int(job.attempts or 0) + 1}",
         )
-        fail(db, job, "Worker mất kết nối giữa chừng (job mồ côi, nhặt lại).")
+        if job.provider_state == PROVIDER_DISPATCHED:
+            mark_ambiguous(
+                db, job,
+                N_("Worker mất kết nối sau khi đã gửi yêu cầu tới nhà cung cấp."))
+        else:
+            fail(db, job, "Worker mất kết nối giữa chừng (job mồ côi, nhặt lại).")
+        if job.status == JOB_ERROR and on_terminal is not None:
+            on_terminal(db, job)
     db.flush()
     return n
 
@@ -103194,7 +103384,7 @@ def hold_persisted(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/llm/cong_vlm.py
-SHA256=f37faf7f0bbcc982422c3eb38b9fee684245c500969f7f6db2dc12bcae74f06e BYTES=11094 LINES=253
+SHA256=177a981e3ce6c9941d62d85af213c769cb12f5b5a6c36b349fc239ba82fd1c6d BYTES=11859 LINES=269
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 cong_vlm.py — client phía MÁY A gọi cổng VLM trên máy B. (H38)
@@ -103238,6 +103428,14 @@ ETA_KHONG_BIET = None
 
 class CongVlmError(Exception):
     """Cổng VLM hỏng thật. Bên gọi ĐƯỢC quyền tính đây là lỗi provider."""
+
+
+class AmbiguousProviderError(CongVlmError):
+    """Outbound POST đã bắt đầu nhưng không nhận được kết quả xác định."""
+
+
+class ProviderOomError(CongVlmError):
+    """Provider xác định không đủ bộ nhớ; retry nguyên request sẽ hỏng lại."""
 
 
 class BanError(Exception):
@@ -103420,6 +103618,11 @@ class CongVlm:
             raise VuotNganSachError("yeu cau vuot tran cua cong", chi_tiet=ct)
         if ma == 404:
             raise CongVlmError(f"model '{model}' khong co hoac chua duoc mo")
+        noi_dung_loi = str(than or "").lower()
+        if ma in (500, 502, 503, 507) and any(
+                marker in noi_dung_loi for marker in
+                ("out of memory", "cuda oom", "cuda_error_out_of_memory", "oom")):
+            raise ProviderOomError("provider khong du bo nho cho request")
         if ma != 200:
             raise CongVlmError(f"/v1/chat/completions tra {ma}")
 
@@ -103432,6 +103635,9 @@ class CongVlm:
         except BanError:
             raise
         except Exception as e:                       # pragma: no cover
+            if str(method).upper() == "POST":
+                raise AmbiguousProviderError(
+                    f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
             raise CongVlmError(f"loi mang: {type(e).__name__}") from None
 
 
@@ -103639,7 +103845,7 @@ def dem_qua(luong: Iterator[bytes], dem: DemToken) -> Iterator[bytes]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/llm/dieu_phoi.py
-SHA256=7b4fd2d2b18cb4ca2422584a2ab74ef8457a86d4e43c4ba2e7c0d3d88cd76b4b BYTES=9954 LINES=218
+SHA256=ea4b069fe40bc69827f6289c583e0e3cbb20aa8b26d6dc9e6054da2c9d7e1472 BYTES=10923 LINES=237
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 dieu_phoi.py — MỘT đường gọi model ngôn ngữ cho toàn nền tảng. (H38)
@@ -103679,8 +103885,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional, Sequence
 
-from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
-                                        KetQuaChat, SuDung, VuotNganSachError)
+from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
+                                        CongVlm, CongVlmError, KetQuaChat,
+                                        ProviderOomError, SuDung,
+                                        VuotNganSachError)
 
 log = logging.getLogger(__name__)
 
@@ -103702,6 +103910,8 @@ class KhongCoProviderNao(RuntimeError):
     def __init__(self, chi_tiet: Sequence[str]):
         super().__init__("khong provider nao phuc vu duoc: " + "; ".join(chi_tiet))
         self.chi_tiet = list(chi_tiet)
+        self.busy_only = bool(self.chi_tiet) and all(
+            item.rstrip().endswith(": ban") for item in self.chi_tiet)
 
 
 def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) -> KetQuaChat:
@@ -103713,7 +103923,8 @@ def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) ->
             r = httpx.request(method, base_url.rstrip("/") + path, json=json,
                               headers=headers, timeout=timeout or timeout_s)
         except httpx.HTTPError as e:
-            return 599, {"loi": f"{type(e).__name__}"}
+            raise AmbiguousProviderError(
+                f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
         try:
             return r.status_code, r.json()
         except ValueError:
@@ -103746,7 +103957,8 @@ def _goi_gemini(model: str, credential: str, messages: list,
             f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
             headers={"x-goog-api-key": credential}, json=than, timeout=timeout_s)
     except httpx.HTTPError as e:
-        raise CongVlmError(f"gemini loi mang: {type(e).__name__}") from None
+        raise AmbiguousProviderError(
+            f"gemini mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
 
     if r.status_code == 429:
         # Gemini cung dung 429 cho "qua nhieu yeu cau". Cung mot luat: khong phai loi.
@@ -103777,7 +103989,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         tools: Optional[list] = None, max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[str] = None,
-        timeout_s: float = 120.0) -> KetQuaChat:
+        timeout_s: float = 120.0, on_dispatch=None,
+        on_rejected=None) -> KetQuaChat:
     """Gọi model theo **thứ tự provider bên gọi khai**, bỏ qua provider đang bận.
 
     ⭐ `model_theo_provider` — vì **mỗi provider có id model riêng**. Model nhà tên
@@ -103824,6 +104037,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             or (getattr(prov, "base_url", "") or "").strip()
         try:
             if pid in PROVIDER_GEMINI:
+                if on_dispatch is not None:
+                    on_dispatch(pid)
                 kq = _goi_gemini(ten_model, credential, messages, max_tokens, timeout_s)
             elif pid in PROVIDER_OPENAI:
                 than = {"model": ten_model, "messages": messages, "tools": tools,
@@ -103834,6 +104049,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                     # cho khoá — đây là **thiếu cấu hình**, không phải provider hỏng.
                     ly_do.append(f"{pid}: thieu base_url (ca o khoa lan o registry)")
                     continue
+                if on_dispatch is not None:
+                    on_dispatch(pid)
                 kq = _goi_openai(base, credential,
                                  {k: v for k, v in than.items() if v is not None},
                                  timeout_s)
@@ -103841,6 +104058,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                 ly_do.append(f"{pid}: chua biet giao thuc cua provider nay")
                 continue
         except BanError as e:
+            if on_rejected is not None:
+                on_rejected(pid)
             # ⛔ KHÔNG `danh_dau_loi`. Bận không phải hỏng — xem đầu tệp.
             log.info("provider %s dang ban, di tiep: %s", pid, e)
             ly_do.append(f"{pid}: ban")
@@ -103848,7 +104067,13 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         except VuotNganSachError:
             # ⛔ KHÔNG cascade. Quá to ở đây thì quá to ở mọi nơi.
             raise
+        except (AmbiguousProviderError, ProviderOomError):
+            # Không cascade: timeout sau POST có thể đã tạo side effect; OOM
+            # nguyên request sẽ lặp lại y hệt ở sản phẩm không cho fallback.
+            raise
         except CongVlmError as e:
+            if on_rejected is not None:
+                on_rejected(pid)
             api_pool.danh_dau_loi(db, key)
             ly_do.append(f"{pid}: loi ({e})")
             continue
@@ -104800,7 +105025,7 @@ def run_with_progress(cmd: list, *, total_duration: float = 0.0,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/models.py
-SHA256=db105c35bc296b83d412fb8e1e71468e8df5ad40f5b29c5cc8d94bd593698fb7 BYTES=49660 LINES=907
+SHA256=4ca399cf58153117f8e0878bb98246a6bb324c1e6cb3da413e890c647ff09ce2 BYTES=50518 LINES=919
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 models.py — lược đồ CSDL của nền tảng.
@@ -105120,6 +105345,16 @@ class Job(Base):
     started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Lượt claim gần nhất dùng làm con trỏ fairness bền vững theo account/resource.
+    # Khác `started_at`: retry/resource_wait phải cập nhật mỗi lượt để một tenant
+    # burst không liên tục đứng đầu hàng.
+    last_claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    # Substate của lần gọi provider. Job vẫn giữ state machine công khai hiện có;
+    # `ambiguous` là lý do terminal, không tạo một hàng đợi/trạng thái song song.
+    provider_state: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    provider_dispatched_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
     #: Khi nào `params`/`result`/file của job này hết hạn và đã bị xoá. Hàng vẫn
     #: còn — nó là **bằng chứng** mà bút toán credit trỏ về. Có mốc này thì một
     #: `result` rỗng đọc ra là "đã hết hạn", chứ không phải "mất dữ liệu".
@@ -105133,6 +105368,8 @@ class Job(Base):
         Index("ix_jobs_claim", "status", "next_run_at", "created_at"),
         Index("ix_jobs_admission_queue", "admission_resource", "status",
               "created_at"),
+        Index("ix_jobs_fairness", "admission_resource", "user_id",
+              "last_claimed_at"),
     )
 
     def __repr__(self) -> str:      # pragma: no cover
@@ -115666,7 +115903,7 @@ def _positive_int(name: str, value, default: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/policy.py
-SHA256=f133b1467c639d3df4b7356562a4b4e5d6211b1bf35e5d7cfc57b4e07aedd0b8 BYTES=21071 LINES=528
+SHA256=7e4ff523659e7a9d1b702014a50650dc374d86f8af1e16143f651c7bebaa791d BYTES=21072 LINES=528
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Who may call how much, and the switch that stops everything.
 
@@ -115723,11 +115960,11 @@ was specific to the two rate layers.
 What is deliberately absent
 ---------------------------
 
-**Priority classes.** The brief asks for them "only if the scheduler supports
-it". ``jobs.claim()`` takes work strictly FIFO by ``created_at``; there is no
-priority column on ``Job`` and nothing reads one. A ``priority`` field that no
-scheduler consults would be a promise the platform cannot keep — visible in the
-admin UI, and wrong. It belongs with a scheduler change, not here.
+**Paid priority classes.** ``jobs.claim()`` now provides fair-share by account,
+stable FIFO inside an account and aging for old work. That is operational
+fairness, not a commercial priority tier: there is still no priority column on
+``Job`` and price/credit never appears in the ordering. Adding a policy field
+would therefore promise a paid queue jump the product has not decided to sell.
 """
 from __future__ import annotations
 
@@ -177274,7 +177511,7 @@ def test_the_margin_page_labels_its_cost_as_an_estimate(console):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_206_policy_engine.py
-SHA256=681155b0173665698e7c9e9903d2b6607d421267e17ebc32baf28e500c95d3f1 BYTES=35437 LINES=940
+SHA256=60bb32c84cf1487f19c368ff3b15514d783359e7af4c85b99dd8eb6da6e521d2 BYTES=35509 LINES=941
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-14 — the policy engine: how much, and the switch that says not now.
 
@@ -178128,12 +178365,12 @@ def test_a_job_is_refused_before_the_hold_when_capacity_is_gone(portal,
 
 # ── What is deliberately absent ──────────────────────────────────────────────
 
-def test_no_priority_field_is_offered_because_nothing_schedules_it():
+def test_no_paid_priority_field_is_offered_by_fair_scheduler():
     """The brief allows priority classes "only if the scheduler supports it".
 
-    `jobs.claim()` takes work strictly FIFO by `created_at`. A priority field
-    that no scheduler consults would be a promise the platform cannot keep,
-    visible in the admin UI and wrong.
+    `jobs.claim()` now schedules fair-share + aging, but deliberately has no
+    paid priority class. Fairness is operational safety, not a product promise
+    that a richer account may jump the queue.
     """
     import inspect
 
@@ -178142,8 +178379,9 @@ def test_no_priority_field_is_offered_because_nothing_schedules_it():
 
     assert not hasattr(Job, "priority")
     assert "priority" not in policy.LIMIT_FIELDS
-    source = inspect.getsource(jobq)
-    assert "order_by(Job.created_at)" in source
+    source = inspect.getsource(jobq.claim)
+    assert "FAIR_AGING" in source and "last_account_claim" in source
+    assert "credit" not in source.lower()
 
 
 # ── Upload ceiling ───────────────────────────────────────────────────────────
@@ -194342,7 +194580,7 @@ def test_khong_con_muc_fuzzy_nao_dang_ngo():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_251_cong_vlm.py
-SHA256=65c6a02dddb040615f180ab3fd1d331886fb8f5962ee7fc987c767e80fb2b7af BYTES=8814 LINES=210
+SHA256=629ceca2b57889dc0c29d4dfd6c2ebb733006360a9559f807a8fe28c4bbaad39 BYTES=9478 LINES=227
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_251_cong_vlm — client máy A gọi cổng VLM máy B. (H38)
@@ -194364,7 +194602,8 @@ from __future__ import annotations
 
 import pytest
 
-from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
+from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
+                                        CongVlm, CongVlmError, ProviderOomError,
                                         SuDung, VuotNganSachError, doc_su_dung)
 
 
@@ -194426,6 +194665,22 @@ def test_404_model_chua_mo_thi_la_CongVlmError():
     c = CongVlm(goi=_goi_gia(404))
     with pytest.raises(CongVlmError):
         c.chat(model="khong-co", messages=[])
+
+
+def test_mat_ket_noi_trong_post_la_ambiguous_khong_duoc_retry_mu():
+    def mat_mang(_method, _path, *, json=None, timeout=None):
+        raise TimeoutError("khong biet provider da nhan body hay chua")
+
+    c = CongVlm(goi=mat_mang)
+    with pytest.raises(AmbiguousProviderError):
+        c.chat(model="qwen38-api", messages=[])
+
+
+def test_502_bao_oom_la_loi_terminal_co_cau_truc():
+    c = CongVlm(goi=_goi_gia(
+        502, {"error": {"message": "CUDA out of memory while allocating"}}))
+    with pytest.raises(ProviderOomError):
+        c.chat(model="qwen38-api", messages=[])
 
 
 def test_thieu_ten_model_bi_chan_truoc_khi_ra_mang():
@@ -197715,7 +197970,7 @@ def test_card_sach_san_thi_KHONG_can_hoi_queue():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_255_dieu_phoi.py
-SHA256=992be0bd1d3068b66a00740e4087b66f75760c38d4156f8b5db2b61fa75a7969 BYTES=13419 LINES=280
+SHA256=a1c900374cfc8a3b98fe1b95ebce42d19c54beaca661127bbff33f388d124872 BYTES=14474 LINES=305
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_255_dieu_phoi — MỘT đường gọi model cho toàn nền tảng. (H38)
@@ -197832,6 +198087,23 @@ def test_provider_dau_tien_chay_thi_khong_thu_cai_sau(monkeypatch):
     assert gl.loi == []
 
 
+def test_on_dispatch_chi_goi_ngay_truoc_http_that(monkeypatch):
+    gl = GiaLap().cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl, {})
+    dispatched = []
+    DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"],
+           on_dispatch=lambda provider: dispatched.append(provider))
+    assert dispatched == ["ltt_llm"]
+
+    gl2 = GiaLap(cho_key=()).cai(monkeypatch)
+    _dat_hanh_vi(monkeypatch, gl2, {})
+    dispatched.clear()
+    with pytest.raises(DP.KhongCoProviderNao):
+        DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm"],
+               on_dispatch=lambda provider: dispatched.append(provider))
+    assert dispatched == [], "thieu key ma lai ghi provider da nhan request"
+
+
 # ── 2. Bận: đi tiếp, KHÔNG đánh dấu lỗi ──────────────────────────────────────
 
 def test_ban_thi_di_tiep_va_KHONG_danh_dau_loi(monkeypatch):
@@ -197858,9 +198130,17 @@ def test_moi_provider_deu_ban_thi_KhongCoProviderNao(monkeypatch):
 def test_loi_that_thi_danh_dau_loi_roi_moi_di_tiep(monkeypatch):
     gl = GiaLap().cai(monkeypatch)
     _dat_hanh_vi(monkeypatch, gl, {"ltt_llm": CongVlmError("502")})
-    kq = DP.goi(None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"])
+    states = []
+    kq = DP.goi(
+        None, messages=TIN, thu_tu_provider=["ltt_llm", "gemini"],
+        on_dispatch=lambda provider: states.append((provider, "dispatched")),
+        on_rejected=lambda provider: states.append((provider, "rejected")))
     assert kq.noi_dung == "tu gemini"
     assert gl.loi == ["ltt_llm"], "hong that thi PHAI danh dau"
+    assert states == [
+        ("ltt_llm", "dispatched"), ("ltt_llm", "rejected"),
+        ("gemini", "dispatched"),
+    ], "phan hoi xac dinh phai go ambiguity truoc khi fallback"
 
 
 # ── 4. Vượt ngân sách: ném ngay, KHÔNG cascade ───────────────────────────────
@@ -214702,7 +214982,7 @@ def test_ghi_app_env_KHONG_BOM():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_313_llm_admission.py
-SHA256=3e422bcb3c631e70c017aa972d41db6ac1c04929dca564400c773662be7b6d85 BYTES=6614 LINES=194
+SHA256=e90c7fc12bc0688009b26a52ae0daf3fa596ffb02576c2f278925a605ad45f15 BYTES=11825 LINES=341
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q114/H41.9 — admission cap/metadata không cần GPU thật."""
 from __future__ import annotations
@@ -214898,6 +215178,153 @@ def test_worker_hoan_job_khi_execution_slot_ban_khong_tinh_attempt(db, monkeypat
     assert postponed.status == JOB_QUEUED
     assert postponed.attempts == 0
     assert ran == []
+
+
+def test_fair_claim_khong_de_burst_mot_account_doc_chiem_resource(db):
+    from platform_core import jobs
+
+    def submit(user_id: str):
+        row = jobs.submit(
+            db, user_id=user_id, app_slug="a", job_type="a.run", params={},
+            admission_resource="llm_remote", admission_slots=1)
+        db.commit()
+        return row
+
+    a1, a2, _a3 = submit("account-a"), submit("account-a"), submit("account-a")
+    b1 = submit("account-b")
+
+    first = jobs.claim(db, worker_id="w1")
+    assert first.id == a1.id
+    jobs.complete(db, first, {"ok": True})
+    db.commit()
+
+    second = jobs.claim(db, worker_id="w1")
+    assert second.id == b1.id, "burst account A da doc chiem luot thu hai"
+    jobs.complete(db, second, {"ok": True})
+    db.commit()
+
+    third = jobs.claim(db, worker_id="w1")
+    assert third.id == a2.id, "FIFO trong chinh account A bi dao"
+
+
+def test_aging_uu_tien_account_da_cho_qua_lau_truoc_account_moi(db):
+    from platform_core import jobs
+
+    old = datetime.now(timezone.utc) - timedelta(hours=1)
+    a1 = jobs.submit(
+        db, user_id="account-a", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    a2 = jobs.submit(
+        db, user_id="account-a", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    a1.created_at = old
+    a2.created_at = old + timedelta(seconds=1)
+    db.commit()
+
+    served = jobs.claim(db, worker_id="w1")
+    assert served.id == a1.id
+    jobs.complete(db, served, {"ok": True})
+    db.commit()
+
+    newcomer = jobs.submit(
+        db, user_id="account-b", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+    selected = jobs.claim(db, worker_id="w1")
+    assert selected.id == a2.id, (
+        f"job da aging bi account moi vuot: selected={selected.id}, new={newcomer.id}")
+
+
+def _submit_worker_job(db, *, max_attempts: int = 3):
+    from platform_core import jobs
+    from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+    row = jobs.submit(
+        db, user_id="u1", app_slug=APP_THU_SLUG, job_type=APP_THU_JOB,
+        params={"text": "xin chao"}, max_attempts=max_attempts,
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+    return row
+
+
+def test_timeout_sau_provider_dispatch_thanh_ambiguous_khong_retry(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.models import JOB_ERROR, Job
+
+    def timed_out(_params, ctx):
+        ctx.provider_dispatched()
+        raise TimeoutError("mat ket noi sau khi gui request")
+
+    monkeypatch.setattr(runner.jobq, "resolve_handler", lambda _jt: timed_out)
+    job_id = _submit_worker_job(db).id
+    runner._chay_mot_job("w1")
+
+    db.expire_all()
+    row = db.get(Job, job_id)
+    assert row.status == JOB_ERROR
+    assert row.provider_state == "ambiguous"
+    assert row.attempts == 1
+
+
+def test_429_sau_dispatch_chi_resource_wait_khong_ton_attempt(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.llm.cong_vlm import BanError
+    from platform_core.models import JOB_QUEUED, Job
+
+    def busy(_params, ctx):
+        ctx.provider_dispatched()
+        raise BanError("gateway busy", retry_after_s=17)
+
+    monkeypatch.setattr(runner.jobq, "resolve_handler", lambda _jt: busy)
+    job_id = _submit_worker_job(db).id
+    runner._chay_mot_job("w1")
+
+    db.expire_all()
+    row = db.get(Job, job_id)
+    assert row.status == JOB_QUEUED
+    assert row.provider_state == "rejected"
+    assert row.attempts == 0
+
+
+def test_413_va_oom_sau_dispatch_la_terminal_khong_retry(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.llm.cong_vlm import ProviderOomError, VuotNganSachError
+    from platform_core.models import JOB_ERROR, Job
+
+    for error in (VuotNganSachError("qua ngu canh"), ProviderOomError("oom")):
+        def rejected(_params, ctx, failure=error):
+            ctx.provider_dispatched()
+            raise failure
+
+        monkeypatch.setattr(runner.jobq, "resolve_handler", lambda _jt: rejected)
+        job_id = _submit_worker_job(db).id
+        runner._chay_mot_job("w1")
+        db.expire_all()
+        row = db.get(Job, job_id)
+        assert row.status == JOB_ERROR
+        assert row.provider_state == "rejected"
+        assert row.attempts == 1
+
+
+def test_reclaim_worker_chet_sau_dispatch_khong_chay_lai_side_effect(db):
+    from platform_core import jobs
+    from platform_core.models import JOB_ERROR
+
+    row = _submit_worker_job(db)
+    claimed = jobs.claim(db, worker_id="w-dead")
+    jobs.mark_provider_dispatched(db, claimed)
+    claimed.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=10)
+    db.commit()
+
+    terminal = []
+    assert jobs.reclaim_orphans(
+        db, on_terminal=lambda _db, job: terminal.append(job.id)) == 1
+    db.commit()
+    assert row.status == JOB_ERROR
+    assert row.provider_state == "ambiguous"
+    assert row.attempts == 1
+    assert jobs.reclaim_orphans(
+        db, on_terminal=lambda _db, job: terminal.append(job.id)) == 0
+    assert terminal == [row.id], "terminal callback/refund khong duoc lap lai"
 
 @@@LTT_PROFILE_FILE_END@@@
 

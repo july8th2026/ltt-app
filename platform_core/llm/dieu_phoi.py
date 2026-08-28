@@ -36,8 +36,10 @@ from __future__ import annotations
 import logging
 from typing import Any, Optional, Sequence
 
-from platform_core.llm.cong_vlm import (BanError, CongVlm, CongVlmError,
-                                        KetQuaChat, SuDung, VuotNganSachError)
+from platform_core.llm.cong_vlm import (AmbiguousProviderError, BanError,
+                                        CongVlm, CongVlmError, KetQuaChat,
+                                        ProviderOomError, SuDung,
+                                        VuotNganSachError)
 
 log = logging.getLogger(__name__)
 
@@ -59,6 +61,8 @@ class KhongCoProviderNao(RuntimeError):
     def __init__(self, chi_tiet: Sequence[str]):
         super().__init__("khong provider nao phuc vu duoc: " + "; ".join(chi_tiet))
         self.chi_tiet = list(chi_tiet)
+        self.busy_only = bool(self.chi_tiet) and all(
+            item.rstrip().endswith(": ban") for item in self.chi_tiet)
 
 
 def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) -> KetQuaChat:
@@ -70,7 +74,8 @@ def _goi_openai(base_url: str, credential: str, than: dict, timeout_s: float) ->
             r = httpx.request(method, base_url.rstrip("/") + path, json=json,
                               headers=headers, timeout=timeout or timeout_s)
         except httpx.HTTPError as e:
-            return 599, {"loi": f"{type(e).__name__}"}
+            raise AmbiguousProviderError(
+                f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
         try:
             return r.status_code, r.json()
         except ValueError:
@@ -103,7 +108,8 @@ def _goi_gemini(model: str, credential: str, messages: list,
             f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
             headers={"x-goog-api-key": credential}, json=than, timeout=timeout_s)
     except httpx.HTTPError as e:
-        raise CongVlmError(f"gemini loi mang: {type(e).__name__}") from None
+        raise AmbiguousProviderError(
+            f"gemini mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
 
     if r.status_code == 429:
         # Gemini cung dung 429 cho "qua nhieu yeu cau". Cung mot luat: khong phai loi.
@@ -134,7 +140,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         tools: Optional[list] = None, max_tokens: Optional[int] = None,
         temperature: Optional[float] = None,
         reasoning_effort: Optional[str] = None,
-        timeout_s: float = 120.0) -> KetQuaChat:
+        timeout_s: float = 120.0, on_dispatch=None,
+        on_rejected=None) -> KetQuaChat:
     """Gọi model theo **thứ tự provider bên gọi khai**, bỏ qua provider đang bận.
 
     ⭐ `model_theo_provider` — vì **mỗi provider có id model riêng**. Model nhà tên
@@ -181,6 +188,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
             or (getattr(prov, "base_url", "") or "").strip()
         try:
             if pid in PROVIDER_GEMINI:
+                if on_dispatch is not None:
+                    on_dispatch(pid)
                 kq = _goi_gemini(ten_model, credential, messages, max_tokens, timeout_s)
             elif pid in PROVIDER_OPENAI:
                 than = {"model": ten_model, "messages": messages, "tools": tools,
@@ -191,6 +200,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                     # cho khoá — đây là **thiếu cấu hình**, không phải provider hỏng.
                     ly_do.append(f"{pid}: thieu base_url (ca o khoa lan o registry)")
                     continue
+                if on_dispatch is not None:
+                    on_dispatch(pid)
                 kq = _goi_openai(base, credential,
                                  {k: v for k, v in than.items() if v is not None},
                                  timeout_s)
@@ -198,6 +209,8 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
                 ly_do.append(f"{pid}: chua biet giao thuc cua provider nay")
                 continue
         except BanError as e:
+            if on_rejected is not None:
+                on_rejected(pid)
             # ⛔ KHÔNG `danh_dau_loi`. Bận không phải hỏng — xem đầu tệp.
             log.info("provider %s dang ban, di tiep: %s", pid, e)
             ly_do.append(f"{pid}: ban")
@@ -205,7 +218,13 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         except VuotNganSachError:
             # ⛔ KHÔNG cascade. Quá to ở đây thì quá to ở mọi nơi.
             raise
+        except (AmbiguousProviderError, ProviderOomError):
+            # Không cascade: timeout sau POST có thể đã tạo side effect; OOM
+            # nguyên request sẽ lặp lại y hệt ở sản phẩm không cho fallback.
+            raise
         except CongVlmError as e:
+            if on_rejected is not None:
+                on_rejected(pid)
             api_pool.danh_dau_loi(db, key)
             ly_do.append(f"{pid}: loi ({e})")
             continue

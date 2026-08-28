@@ -42,6 +42,14 @@ class CongVlmError(Exception):
     """Cổng VLM hỏng thật. Bên gọi ĐƯỢC quyền tính đây là lỗi provider."""
 
 
+class AmbiguousProviderError(CongVlmError):
+    """Outbound POST đã bắt đầu nhưng không nhận được kết quả xác định."""
+
+
+class ProviderOomError(CongVlmError):
+    """Provider xác định không đủ bộ nhớ; retry nguyên request sẽ hỏng lại."""
+
+
 class BanError(Exception):
     """Máy B đang bận. **KHÔNG PHẢI LỖI** — đừng đánh dấu lỗi cho key."""
 
@@ -222,6 +230,11 @@ class CongVlm:
             raise VuotNganSachError("yeu cau vuot tran cua cong", chi_tiet=ct)
         if ma == 404:
             raise CongVlmError(f"model '{model}' khong co hoac chua duoc mo")
+        noi_dung_loi = str(than or "").lower()
+        if ma in (500, 502, 503, 507) and any(
+                marker in noi_dung_loi for marker in
+                ("out of memory", "cuda oom", "cuda_error_out_of_memory", "oom")):
+            raise ProviderOomError("provider khong du bo nho cho request")
         if ma != 200:
             raise CongVlmError(f"/v1/chat/completions tra {ma}")
 
@@ -234,6 +247,9 @@ class CongVlm:
         except BanError:
             raise
         except Exception as e:                       # pragma: no cover
+            if str(method).upper() == "POST":
+                raise AmbiguousProviderError(
+                    f"mat ket noi sau khi bat dau gui: {type(e).__name__}") from None
             raise CongVlmError(f"loi mang: {type(e).__name__}") from None
 
 

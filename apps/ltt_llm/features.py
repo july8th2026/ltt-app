@@ -235,7 +235,8 @@ def kiem_tham_so(params: dict) -> dict:
     return sach
 
 
-def chay(db, params: dict, *, timeout_s: float = 300.0) -> KetQua:
+def chay(db, params: dict, *, timeout_s: float = 300.0,
+         on_dispatch=None, on_rejected=None) -> KetQua:
     """Chạy một lượt. Ném `ThamSoSai`, `BanError`, `VuotNganSachError`, `CongVlmError`.
 
     ⛔ KHÔNG tự trừ credit ở đây. Tiền do **cửa** lo:
@@ -257,6 +258,8 @@ def chay(db, params: dict, *, timeout_s: float = 300.0) -> KetQua:
         temperature=sach.get("temperature"),
         reasoning_effort=sach.get("reasoning_effort"),
         timeout_s=timeout_s,
+        on_dispatch=on_dispatch,
+        on_rejected=on_rejected,
     )
     su = kq.su_dung
     return KetQua(

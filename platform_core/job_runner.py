@@ -116,6 +116,22 @@ class JobContext:
                 jobq.set_progress(db, job, percent, message)
                 db.commit()
 
+    def provider_dispatched(self, provider: str = "") -> None:
+        """Ghi bền ngay trước outbound HTTP để crash không retry side effect mù."""
+        for db in _one_session():
+            job = db.get(Job, self.job_id)
+            if job is not None:
+                jobq.mark_provider_dispatched(db, job, provider)
+                db.commit()
+
+    def provider_rejected(self, provider: str = "") -> None:
+        """Gỡ ambiguity khi provider đã trả phản hồi xác định trước fallback."""
+        for db in _one_session():
+            job = db.get(Job, self.job_id)
+            if job is not None:
+                jobq.mark_provider_rejected(db, job, provider)
+                db.commit()
+
     def event(self, event_code: str, message: str = "", *, details: dict | None = None,
               level: str = "info", visibility: str = job_events.INTERNAL,
               event_key: str | None = None) -> bool:
@@ -469,7 +485,19 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                         db.commit()
                         log.info("job %s da huy cooperative", job_id[:8])
                         return True
-                    jobq.fail(db, job, safe_error)
+                    kind, retry_after = _provider_failure_kind(
+                        exc, provider_state=job.provider_state)
+                    if kind == "resource_wait":
+                        jobq.defer_resource(
+                            db, job, retry_after=retry_after,
+                            resource=job.admission_resource)
+                    elif kind == "rejected":
+                        job.provider_state = jobq.PROVIDER_REJECTED
+                        jobq.fail(db, job, safe_error, retry=False)
+                    elif kind == "ambiguous":
+                        jobq.mark_ambiguous(db, job, safe_error)
+                    else:
+                        jobq.fail(db, job, safe_error)
                     if job.status == JOB_ERROR:
                         _hoan_credit(db, job)
                         _enqueue_webhooks(db, job)
@@ -503,6 +531,31 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                 db.commit()
         log.info("job %s xong", job_id[:8])
         return True
+
+
+def _provider_failure_kind(exc: Exception, *, provider_state: str) -> tuple[str, int]:
+    """Phân loại có cấu trúc; lỗi không rõ sau dispatch luôn fail-safe."""
+    from platform_core.llm.cong_vlm import (
+        AmbiguousProviderError, BanError, ProviderOomError, VuotNganSachError)
+    from platform_core.llm.dieu_phoi import KhongCoProviderNao
+
+    if isinstance(exc, BanError):
+        return "resource_wait", max(1, int(exc.retry_after_s or 20))
+    if isinstance(exc, KhongCoProviderNao) and exc.busy_only:
+        return "resource_wait", 20
+    if isinstance(exc, (VuotNganSachError, ProviderOomError)):
+        return "rejected", 0
+    if (isinstance(exc, AmbiguousProviderError)
+            or provider_state == jobq.PROVIDER_DISPATCHED):
+        return "ambiguous", 0
+    return "retry", 0
+
+
+def _orphan_terminal(db, job) -> None:
+    """Orphan đã terminal phải trả hold/webhook đúng một lần."""
+    if job.status == JOB_ERROR:
+        _hoan_credit(db, job)
+        _enqueue_webhooks(db, job)
 
 
 def _duration_ms(started: float) -> int:
@@ -1333,7 +1386,7 @@ def run_forever(worker_id: str, *, stop=None, maintenance: bool = True,
                 _xa_metrics()
                 next_metrics_flush = time.monotonic() + METRICS_FLUSH_INTERVAL_S
             for db in _one_session():
-                n = jobq.reclaim_orphans(db)
+                n = jobq.reclaim_orphans(db, on_terminal=_orphan_terminal)
                 db.commit()
                 if n:
                     log.warning("nhat lai %d job mo coi", n)

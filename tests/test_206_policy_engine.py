@@ -850,12 +850,12 @@ def test_a_job_is_refused_before_the_hold_when_capacity_is_gone(portal,
 
 # ── What is deliberately absent ──────────────────────────────────────────────
 
-def test_no_priority_field_is_offered_because_nothing_schedules_it():
+def test_no_paid_priority_field_is_offered_by_fair_scheduler():
     """The brief allows priority classes "only if the scheduler supports it".
 
-    `jobs.claim()` takes work strictly FIFO by `created_at`. A priority field
-    that no scheduler consults would be a promise the platform cannot keep,
-    visible in the admin UI and wrong.
+    `jobs.claim()` now schedules fair-share + aging, but deliberately has no
+    paid priority class. Fairness is operational safety, not a product promise
+    that a richer account may jump the queue.
     """
     import inspect
 
@@ -864,8 +864,9 @@ def test_no_priority_field_is_offered_because_nothing_schedules_it():
 
     assert not hasattr(Job, "priority")
     assert "priority" not in policy.LIMIT_FIELDS
-    source = inspect.getsource(jobq)
-    assert "order_by(Job.created_at)" in source
+    source = inspect.getsource(jobq.claim)
+    assert "FAIR_AGING" in source and "last_account_claim" in source
+    assert "credit" not in source.lower()
 
 
 # ── Upload ceiling ───────────────────────────────────────────────────────────

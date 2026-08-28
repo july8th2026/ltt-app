@@ -192,3 +192,150 @@ def test_worker_hoan_job_khi_execution_slot_ban_khong_tinh_attempt(db, monkeypat
     assert postponed.status == JOB_QUEUED
     assert postponed.attempts == 0
     assert ran == []
+
+
+def test_fair_claim_khong_de_burst_mot_account_doc_chiem_resource(db):
+    from platform_core import jobs
+
+    def submit(user_id: str):
+        row = jobs.submit(
+            db, user_id=user_id, app_slug="a", job_type="a.run", params={},
+            admission_resource="llm_remote", admission_slots=1)
+        db.commit()
+        return row
+
+    a1, a2, _a3 = submit("account-a"), submit("account-a"), submit("account-a")
+    b1 = submit("account-b")
+
+    first = jobs.claim(db, worker_id="w1")
+    assert first.id == a1.id
+    jobs.complete(db, first, {"ok": True})
+    db.commit()
+
+    second = jobs.claim(db, worker_id="w1")
+    assert second.id == b1.id, "burst account A da doc chiem luot thu hai"
+    jobs.complete(db, second, {"ok": True})
+    db.commit()
+
+    third = jobs.claim(db, worker_id="w1")
+    assert third.id == a2.id, "FIFO trong chinh account A bi dao"
+
+
+def test_aging_uu_tien_account_da_cho_qua_lau_truoc_account_moi(db):
+    from platform_core import jobs
+
+    old = datetime.now(timezone.utc) - timedelta(hours=1)
+    a1 = jobs.submit(
+        db, user_id="account-a", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    a2 = jobs.submit(
+        db, user_id="account-a", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    a1.created_at = old
+    a2.created_at = old + timedelta(seconds=1)
+    db.commit()
+
+    served = jobs.claim(db, worker_id="w1")
+    assert served.id == a1.id
+    jobs.complete(db, served, {"ok": True})
+    db.commit()
+
+    newcomer = jobs.submit(
+        db, user_id="account-b", app_slug="a", job_type="a.run", params={},
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+    selected = jobs.claim(db, worker_id="w1")
+    assert selected.id == a2.id, (
+        f"job da aging bi account moi vuot: selected={selected.id}, new={newcomer.id}")
+
+
+def _submit_worker_job(db, *, max_attempts: int = 3):
+    from platform_core import jobs
+    from tests.conftest import APP_THU_JOB, APP_THU_SLUG
+    row = jobs.submit(
+        db, user_id="u1", app_slug=APP_THU_SLUG, job_type=APP_THU_JOB,
+        params={"text": "xin chao"}, max_attempts=max_attempts,
+        admission_resource="llm_remote", admission_slots=1)
+    db.commit()
+    return row
+
+
+def test_timeout_sau_provider_dispatch_thanh_ambiguous_khong_retry(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.models import JOB_ERROR, Job
+
+    def timed_out(_params, ctx):
+        ctx.provider_dispatched()
+        raise TimeoutError("mat ket noi sau khi gui request")
+
+    monkeypatch.setattr(runner.jobq, "resolve_handler", lambda _jt: timed_out)
+    job_id = _submit_worker_job(db).id
+    runner._chay_mot_job("w1")
+
+    db.expire_all()
+    row = db.get(Job, job_id)
+    assert row.status == JOB_ERROR
+    assert row.provider_state == "ambiguous"
+    assert row.attempts == 1
+
+
+def test_429_sau_dispatch_chi_resource_wait_khong_ton_attempt(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.llm.cong_vlm import BanError
+    from platform_core.models import JOB_QUEUED, Job
+
+    def busy(_params, ctx):
+        ctx.provider_dispatched()
+        raise BanError("gateway busy", retry_after_s=17)
+
+    monkeypatch.setattr(runner.jobq, "resolve_handler", lambda _jt: busy)
+    job_id = _submit_worker_job(db).id
+    runner._chay_mot_job("w1")
+
+    db.expire_all()
+    row = db.get(Job, job_id)
+    assert row.status == JOB_QUEUED
+    assert row.provider_state == "rejected"
+    assert row.attempts == 0
+
+
+def test_413_va_oom_sau_dispatch_la_terminal_khong_retry(db, monkeypatch):
+    import platform_core.job_runner as runner
+    from platform_core.llm.cong_vlm import ProviderOomError, VuotNganSachError
+    from platform_core.models import JOB_ERROR, Job
+
+    for error in (VuotNganSachError("qua ngu canh"), ProviderOomError("oom")):
+        def rejected(_params, ctx, failure=error):
+            ctx.provider_dispatched()
+            raise failure
+
+        monkeypatch.setattr(runner.jobq, "resolve_handler", lambda _jt: rejected)
+        job_id = _submit_worker_job(db).id
+        runner._chay_mot_job("w1")
+        db.expire_all()
+        row = db.get(Job, job_id)
+        assert row.status == JOB_ERROR
+        assert row.provider_state == "rejected"
+        assert row.attempts == 1
+
+
+def test_reclaim_worker_chet_sau_dispatch_khong_chay_lai_side_effect(db):
+    from platform_core import jobs
+    from platform_core.models import JOB_ERROR
+
+    row = _submit_worker_job(db)
+    claimed = jobs.claim(db, worker_id="w-dead")
+    jobs.mark_provider_dispatched(db, claimed)
+    claimed.heartbeat_at = datetime.now(timezone.utc) - timedelta(minutes=10)
+    db.commit()
+
+    terminal = []
+    assert jobs.reclaim_orphans(
+        db, on_terminal=lambda _db, job: terminal.append(job.id)) == 1
+    db.commit()
+    assert row.status == JOB_ERROR
+    assert row.provider_state == "ambiguous"
+    assert row.attempts == 1
+    assert jobs.reclaim_orphans(
+        db, on_terminal=lambda _db, job: terminal.append(job.id)) == 0
+    assert terminal == [row.id], "terminal callback/refund khong duoc lap lai"
