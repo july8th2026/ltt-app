@@ -47,6 +47,11 @@
   usage `71720` input, `94,243s`, VRAM đỉnh `22486 MiB`, `69 C`, fan `94%`,
   power `369,01 W`; vẫn dưới trần Cloudflare 125s nhưng vượt ngân sách nội bộ
   90s. Giữ cap 65K theo Q116, tiếp tục lấy p50/p95 cold/warm trước khi chốt SLA.
+- Q6 lặp 60K lần hai qua Nexus async:
+  `job_01M14MRS0H7BSKCFP59BTX97XS`, exit `0`, HTTP `200`, quality `PASS`,
+  usage `66192` input, `73,727s`, VRAM đỉnh `22486 MiB`, `69 C`, fan `91%`,
+  power `368,89 W`. Tập short/60K/64K/65K có p50 quan sát khoảng `74s`, max
+  `94,243s`, đều dưới trần 125s; giữ follow-up tối ưu cold-load 90s.
 - CPU-only harness chạy xen kẽ khi GPU arm: `160` jobs/8 accounts, drain
   `32,5/s`, admission-delay p95 `4,724s`, poll p50 `0,651ms`, queue cuối `0`,
   `provider_calls=0`, `gpu_reads=0`.
@@ -56,6 +61,9 @@
 - CPU soak xen kẽ arm 65K: `320` jobs/16 accounts, drain `320/320`
   (`36,86/s`), queue cuối `0`, admission-delay p95 `8,397s`, poll p50
   `0,667ms`, `provider_calls=0`, `gpu_reads=0`.
+- CPU soak xen kẽ arm 60K lần hai: `320/320` jobs, drain `31,14/s`,
+  admission-delay p95 `10,031s`, poll p50 `0,666ms`, queue cuối `0`,
+  `provider_calls=0`, `gpu_reads=0`.
 
 ### Lệnh và kết quả thật
 

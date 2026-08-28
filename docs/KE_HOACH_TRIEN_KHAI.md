@@ -3596,8 +3596,8 @@ tiếp tục lấy p50/p95 thay vì chốt SLA từ một arm.
 **Q6 CPU soak checkpoint:** SQLite cô lập đã drain `1000/1000` jobs trên 16
 accounts, queue cuối `0`, admission-delay p95 `27,734s`, poll p50 `1,112ms`,
 không provider/GPU read. GPU canary đã có short/60K/64K/65K PASS; arm 65K lặp
-`94,243s` nên cần thêm mẫu để tính p50/p95 và đo queue-age end-to-end trên
-canary plane trước khi nghiệm thu Q6.
+`94,243s` và 60K lặp `73,727s`, p50 quan sát khoảng `74s`, max `94,243s`;
+còn đo queue-age end-to-end trên canary plane trước khi nghiệm thu Q6.
 
 ---
 
