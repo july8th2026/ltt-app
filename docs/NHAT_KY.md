@@ -56,10 +56,10 @@
 ### Còn tồn đọng và việc tiếp theo
 
 Q4 chưa đóng: cold-load có thể kéo request gần 90K lên 121s; seed2 còn vượt
-hard cap theo tokenizer thật. Phải bổ sung exact-token preflight/bound bảo thủ
-ở gateway rồi chứng minh admission plane A chặn non-stream trước 90s, sau đó
-mới đo queue-delay p50/p95. Không mở `parallel>1`, không đổi cap/gateway.env và
-không reboot máy B.
+hard cap theo tokenizer thật. Exit gate kế tiếp là artifact sửa gateway B
+(exact-token upstream hoặc bound bảo thủ), regression code-like/tools, canary
+413 trước GPU/credit rồi mới lặp p50/p95 và queue-delay end-to-end. Không mở
+`parallel>1`, không đổi cap/gateway.env và không reboot máy B.
 
 ---
 

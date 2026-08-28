@@ -216,6 +216,13 @@ xác chỉ có trên upstream 8281 khi model resident, không có ở gateway 82
 thiết kế exact-token preflight hoặc bound bảo thủ trước khi gọi đây là cap cứng
 và trước mọi public canary.
 
+**Q4 exit gate mới (chưa đạt):** (1) sửa gateway B theo artifact từ A để gọi
+exact-token upstream trước `kiem_tra`, hoặc dùng bound bảo thủ đã đo cho payload
+code-like; (2) thêm regression code-like + tools schema; (3) deploy canary và
+chứng minh 413 trước GPU/credit ở A và B; (4) chỉ sau đó lặp warm/cold để tính
+p50/p95. Không sửa tay `gateway.env`, không mở Q5/public trong trạng thái hiện
+tại.
+
 ## Q5 — thử concurrency GPU có kiểm soát (GPU window)
 
 Chỉ thử `parallel=2` hoặc cao hơn nếu Q4 pass:
