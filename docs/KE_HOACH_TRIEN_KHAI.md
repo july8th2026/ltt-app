@@ -3556,6 +3556,9 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | ✅ | Bánh cóc **kích thước route `server/`** (3 tệp baseline) | `f625199` |
 | ✅ | Bánh cóc **chuông chưa treo** + `test_308` | `f625199` |
 | ✅ | Sửa mâu thuẫn `CLAUDE.md` về `LTT_PUBLIC_API_TOOLS` | `3d804ee` |
+| ✅ | **H41.1/O-01** lịch sao lưu + diễn tập phục hồi; `DATA_RECOVERY_GATE: PASS` | `5a258e8` |
+| ✅ | **H41.10** mốc context engine/public/output + canary 413 trước GPU | `6388394` |
+| ✅ | **H41.11** admission thời gian non-stream theo input+output + canary biên | `3e6171b` |
 
 **Gate: 19 → 21 bước.**
 
@@ -3563,13 +3566,10 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 
 | ID | Việc | Ai làm |
 |---|---|---|
-| **H41.1** | Bật lịch sao lưu: `5-lich-backup.ps1` + `backup.ps1 -IncludeSecrets` + **một lần diễn tập khôi phục**. Bản mới nhất là 2026-08-17; scheduled task **không tồn tại**; thư mục sao lưu bí mật **chưa từng có** | chủ sản phẩm (cần Administrator) — **đã chọn để cuối** |
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
 | **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4 warm API arms 65K/73K/81K/near-cap PASS trên B, một workload GPU/lần, không reboot/reset. Seed2 phát hiện P0: gateway estimate lọt prompt code-like 99.142 token qua cap 90K, 124,599s; exact tokenizer chỉ có upstream 8281 khi resident. Còn thiếu exact-token preflight/bound bảo thủ, queue-delay end-to-end và p50/p95; không mở Q5/public, giữ `parallel=1`. |
-| **H41.10** | **Gắn mốc context đã benchmark:** cập nhật manifest/catalog/gateway/llama-swap/client profile thành engine `131072`, public input `90000`, output `32768`; giữ vision `65536`; thêm test khóa; đóng gói artifact, deploy qua Nexus, restart service, kiểm `/health`, `/v1/models`, 413 boundary và rollback về artifact trước nếu canary lỗi | **✅ XONG 2026-08-27, không reboot máy:** artifact final hash khớp A/B, import/deploy/service/health/models PASS; canary gần cap 86.101 token thật chạy 102,0 giây, sentinel PASS, VRAM 22.639 MiB; 90.001 trả 413 trước GPU trong 42,6 ms |
-| **H41.11** | **Admission thời gian theo input+output cho non-stream `ltt_llm`:** giữ stream/job 90K; dùng throughput Q111 để từ chối trước tiền/GPU nếu prefill+decode+nạp model vượt 90s; tính cả schema tools; mặc định non-stream 1.024; cập nhật Q113/test/profile rồi deploy nền tảng và canary boundary | **✅ XONG 2026-08-27:** commit `3e6171b`, deploy A/migration/health/edge PASS; canary Cloudflare prompt gần 90K và tools lớn đều 400 trước GPU, request ngắn mặc định 200 test-mode. Relevant 99 pass/1 skip; full gate 22/23, bước multiproc timeout khi tranh PostgreSQL nhưng chạy riêng 7/7 PASS. Không restart máy B/GPU |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
 | **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
