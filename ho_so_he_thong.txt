@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b92eec6a627db9d9a19fd23ff6241213055bbc31640ef404a74c2dcec977e576
-Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:2f893791acac69105e99ab5c11e274df0c865f2563f32703ab5b316eeb6ebf6c
+Nguồn đã quét : 1210 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -158,6 +158,7 @@ Các lớp chính:
       outputs: content:text, tool_calls:json[], usage:json
   File map:
     - apps/ltt_llm/__init__.py
+    - apps/ltt_llm/executor.py
     - apps/ltt_llm/features.py
     - apps/ltt_llm/jobs.py
     - apps/ltt_llm/manifest.py
@@ -1370,8 +1371,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1208 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:923, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1210 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:925, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1450,7 +1451,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (224)
+[apps] (225)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1507,6 +1508,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - apps/chataistudio/templates/chataistudio.html
 - apps/chataistudio/templates/chataistudio_admin.html
 - apps/ltt_llm/__init__.py
+- apps/ltt_llm/executor.py
 - apps/ltt_llm/features.py
 - apps/ltt_llm/jobs.py
 - apps/ltt_llm/manifest.py
@@ -1925,7 +1927,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (119)
+[platform_core] (120)
 - platform_core/__init__.py
 - platform_core/agent/__init__.py
 - platform_core/agent/budget.py
@@ -2010,6 +2012,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - platform_core/public_api/error_registry.py
 - platform_core/public_api/errors.py
 - platform_core/public_api/examples.py
+- platform_core/public_api/executor.py
 - platform_core/public_api/governance.py
 - platform_core/public_api/idempotency.py
 - platform_core/public_api/invocation.py
@@ -2636,7 +2639,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12031049 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1210 file; 12034448 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16197,6 +16200,56 @@ SHA256=ad2e28719fea02b58ae6995091fc34c90fe5a643b8bf459a216ab5cd86782009 BYTES=89
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/executor.py
+SHA256=b20ff72c8c86320f50880d7adb5d4daf9bdd488799481071f9029dc8f0c6ea97 BYTES=1460 LINES=44
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Synchronous protocol adapter for the LTT LLM app.
+
+The HTTP layer only knows this narrow contract through the app manifest.  The
+business rules remain in ``features.py``; this module is the app-owned bridge.
+"""
+from __future__ import annotations
+
+from apps.ltt_llm import features
+
+
+class _Executor:
+    default_max_tokens = features.SYNC_MAX_TOKENS_MAC_DINH
+    parameter_error = features.ThamSoSai
+
+    def aliases(self):
+        return dict(features.ALIAS_SANG_ID)
+
+    def validate(self, params):
+        return features.kiem_tham_so(params)
+
+    def estimate_input(self, messages, tools=None):
+        return (features.uoc_token_vao(messages) if tools is None
+                else features.uoc_token_vao(messages, tools))
+
+    def sync_output_cap(self, token_input, budget_seconds):
+        return features.tran_token_ra_dong_bo(token_input, budget_seconds)
+
+    def context_output_cap(self, token_input):
+        from apps.ltt_llm.manifest import tran_theo_ngu_canh
+        return tran_theo_ngu_canh(token_input)
+
+    def run(self, db, params, *, timeout_s, on_dispatch=None, on_rejected=None):
+        kwargs = {"timeout_s": timeout_s}
+        if on_dispatch is not None:
+            kwargs["on_dispatch"] = on_dispatch
+        if on_rejected is not None:
+            kwargs["on_rejected"] = on_rejected
+        return features.chay(db, params, **kwargs)
+
+    def model_id(self, alias):
+        return self.aliases()[alias]
+
+
+EXECUTOR = _Executor()
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/features.py
 SHA256=3a181a27db726056a7288edc11202ce7811f1aadd2fa1dd842a864a0be4cedc5 BYTES=12055 LINES=271
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -16528,7 +16581,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=d421c9cb216406913b4686f5269d55f65b500023a0f17bf5065c3c2f4aa487fc BYTES=13502 LINES=250
+SHA256=b44bbca059914cd175061cba11e5706b7278532ebda245f69ece7fcd47515ce6 BYTES=13558 LINES=251
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16701,6 +16754,7 @@ MANIFEST = AppManifest(
         # Cả job, sync và stream cùng tranh đúng một slot của model nhà. Đây là
         # metadata vận hành, không phải alias công khai và không lộ model id.
         admission_resource="llm_remote", admission_slots=1,
+        sync_executor="apps.ltt_llm.executor:EXECUTOR",
         params_schema={
             "messages": {"type": "json[]", "required": True},
             "model": {"type": "enum",
@@ -73978,7 +74032,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=2e28373b63b6e378ce3867f88d0e08195c1d973bbae0c577937984d0b1674dbe BYTES=254970 LINES=3625
+SHA256=6dc5f404a99deae0895e01ea2604735289b6dc0cfb98bc4f2292252fa846155b BYTES=254830 LINES=3625
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77550,10 +77604,10 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 |---|---|---|
 | **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
-| **H41.4** | `server/api` thôi biết tên `apps.ltt_llm` (5 chỗ). Cần khái niệm **executor đồng bộ** trong hợp đồng app — ba route `/messages` `/responses` `/chat/completions` không đi qua hàng đợi job được | phiên sau |
+| ✅ **H41.4** | `server/api` không còn biết trực tiếp tên app: executor đồng bộ được khai báo trong `ToolSpec`, project sang catalog và resolver generic; `/messages` `/responses` `/chat/completions` dùng cùng adapter app-owned | đang chờ full gate + deploy |
 | **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐANG LÀM:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**. Q4/Q116 đã deploy artifact cap `65000` lên B, boundary code-like trả 413 trước GPU, canary 64K PASS; engine `131072`, output `32768`, `parallel=1`. Đang chuyển Q6 canary/queue soak (Q5 concurrency DEFER theo Q112); chưa mở public rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
-| **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case. Bằng chứng không nằm ở số dòng: nó sửa cùng `public_api/tables`(7), `invocation`(5), `examples`(5) ⇒ nghiệp vụ đang sống trong tầng vận chuyển | phiên sau |
+| ✅ **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case | `1f0e93c` |
 | **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
 | **H41.8** | Cân nhắc đổi mặc định `AppManifest.public` thành `False` — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **chủ sản phẩm** |
 
@@ -110413,7 +110467,7 @@ __all__ = ["Unavailable", "check", "reset"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
-SHA256=01f9924fb15bd54a814992005b531dbf6b9b0672eb85dc9de211bc0887f51c5a BYTES=18794 LINES=426
+SHA256=12cac3681c027cd87ae559558c06af1eca1626c850e62a4c7cdf48d848233b84 BYTES=18890 LINES=428
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The public tool catalog: what ``/api/v1`` is allowed to offer, and in what shape.
 
@@ -110527,6 +110581,7 @@ class PublicTool:
     #: workers use it to compete for one pool without exposing topology/model.
     admission_resource: str = ""
     admission_slots: int = 0
+    sync_executor: str = ""
 
     def to_public_dict(self) -> dict:
         body = {
@@ -110742,6 +110797,7 @@ def project_tool(manifest, tool) -> PublicTool:
         admission_resource=str(
             getattr(tool, "admission_resource", "") or resource_class(manifest)),
         admission_slots=max(0, int(getattr(tool, "admission_slots", 0) or 0)),
+        sync_executor=str(getattr(tool, "sync_executor", "") or ""),
     )
 
 
@@ -113132,6 +113188,48 @@ def be_mat_cam(base_url: str) -> tuple:
          "buoc": (("curl", None, curl_chat()),),
          "chay": None},
     )
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/executor.py
+SHA256=699d35d34dbd4b48827791345e64604c8e4ee0c2eaf3af280a8b7b5d941d7319 BYTES=1442 LINES=36
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Resolve app-owned synchronous executors through the registry contract.
+
+Protocol routes need a small app-specific surface for validation, model alias
+resolution, token budgeting and execution.  Keeping the reference in the
+tool manifest prevents ``server/api`` from importing a particular app and
+lets another app expose the same protocols without editing the platform.
+"""
+from __future__ import annotations
+
+import importlib
+
+
+def _load(reference: str):
+    module_name, separator, attribute = str(reference or "").partition(":")
+    if not separator or not module_name or not attribute:
+        raise RuntimeError("sync executor reference must be module:attribute")
+    return getattr(importlib.import_module(module_name), attribute)
+
+
+def for_tool(tool):
+    """Load the executor declared by a ``ToolSpec`` or ``PublicTool``."""
+    reference = getattr(tool, "sync_executor", "")
+    if not reference:
+        raise RuntimeError(f"tool {getattr(tool, 'name', '')!r} has no sync executor")
+    return _load(reference)
+
+
+def for_tool_name(name: str):
+    """Find a tool by its declared name, without hardcoding any app."""
+    from platform_core.registry import discover
+
+    matches = [spec for loaded in discover() for spec in loaded.manifest.tools
+               if spec.name == name]
+    if len(matches) != 1:
+        raise RuntimeError(f"expected one sync tool named {name!r}, found {len(matches)}")
+    return for_tool(matches[0])
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -120512,7 +120610,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=68b2da5afb121cc23df39ea8b74f3ad1a78a3f38c4cbd2fb07482e31266776e4 BYTES=46607 LINES=904
+SHA256=4ee898cf040e41df9bb3a08067d6ed5cbb654bea800de3ddddf95eee793b9a82 BYTES=46854 LINES=909
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -120644,6 +120742,11 @@ class ToolSpec:
     # Số lượt thực thi đồng thời mà tài nguyên trên cho phép. 0 = admission
     # không cấp execution lease (giữ tương thích tool hiện có).
     admission_slots: int = 0
+
+    # Optional adapter for protocol routes that must execute synchronously.
+    # This is a dotted reference owned by the app; the platform resolves it
+    # without knowing an app slug or importing app code directly.
+    sync_executor: str = ""
 
 
 @dataclass(frozen=True)
@@ -128912,7 +129015,7 @@ __all__ = ["install_database_resolver", "optional_principal", "require_principal
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/chat.py
-SHA256=9007c41f7cbd5f9f8b142d36bdf5f8557cab4e7b5a29c1293ba08d80dfb68d66 BYTES=17386 LINES=315
+SHA256=9025eec00331c3f90a7116715e1d3ff7e42ad512ca453efbb48596b171e8a942 BYTES=17515 LINES=315
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/chat/completions`` — cửa đồng bộ có thu tiền (Q106, H38 V3).
 
@@ -128953,6 +129056,7 @@ from platform_core import credit
 from platform_core.public_api import (idempotency, limits, metrics, policy,
                                       sandbox)
 from platform_core.public_api.catalog import build_catalog, require_tool
+from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
                                              service_unavailable)
@@ -128972,7 +129076,7 @@ OPERATION_CHAT = "chat.completions"
 TOOL_CHAT = "text.chat"
 
 
-def _tran_max_tokens(token_vao_uoc: int = 0) -> int:
+def _tran_max_tokens(token_vao_uoc: int = 0, executor=None) -> int:
     """Trần `max_tokens` mà một lượt ĐỒNG BỘ được phép xin.
 
     🔴 CON SỐ NÀY DẪN RA TỪ SỐ ĐO, KHÔNG PHẢI CHỌN CHO TRÒN:
@@ -128987,9 +129091,8 @@ def _tran_max_tokens(token_vao_uoc: int = 0) -> int:
        chừng. Ta từ chối bằng một cái 400 nói rõ lý do và chỉ sang cửa job; nó
        cắt bằng một cái 524 không ai đọc được.
     """
-    from apps.ltt_llm.features import tran_token_ra_dong_bo
-
-    return tran_token_ra_dong_bo(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
+    executor = executor or for_tool_name(TOOL_CHAT)
+    return executor.sync_output_cap(token_vao_uoc, SYNC_BILLED_MAX_SECONDS)
 
 
 def register_chat_routes(api, config, tag: str) -> None:
@@ -129007,7 +129110,6 @@ def register_chat_routes(api, config, tag: str) -> None:
         principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
         db: Session = Depends(get_db),
     ) -> JSONResponse:
-        from apps.ltt_llm import features
         from platform_core.llm import admission, thanh_toan
 
         # ⭐ THÔNG BÁO LỖI LÀ TÀI LIỆU, VÀ LÀ TRANG TÀI LIỆU DUY NHẤT CHẮC CHẮN
@@ -129035,6 +129137,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó
         # bỏ qua công tắc người vận hành — cửa mới không được là cửa sau.
         tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
+        executor = for_tool(tool)
 
         if payload.pop("stream", False):
             # ⭐ CẬP NHẬT 23/08 (Q107): streaming nay CÓ, chỉ là không ở route
@@ -129051,14 +129154,14 @@ def register_chat_routes(api, config, tag: str) -> None:
         # Kiểm THAM SỐ trước khi tiền chuyển — cùng câu `jobs.py` đã viết:
         # "a typo must never reach the ledger".
         if "max_tokens" not in payload:
-            payload["max_tokens"] = features.SYNC_MAX_TOKENS_MAC_DINH
+            payload["max_tokens"] = executor.default_max_tokens
         try:
-            sach = features.kiem_tham_so(payload)
-        except features.ThamSoSai as e:
+            sach = executor.validate(payload)
+        except executor.parameter_error as e:
             raise invalid_request(str(e)) from None
 
-        token_vao_uoc = features.uoc_token_vao(sach["messages"], sach.get("tools"))
-        tran = _tran_max_tokens(token_vao_uoc)
+        token_vao_uoc = executor.estimate_input(sach["messages"], sach.get("tools"))
+        tran = _tran_max_tokens(token_vao_uoc, executor)
         if sach["max_tokens"] > tran:
             raise invalid_request(
                 f"This synchronous request is estimated at {token_vao_uoc} input "
@@ -129143,20 +129246,20 @@ def register_chat_routes(api, config, tag: str) -> None:
         with admission.keep_alive(ticket.id):
             return _finish_chat(
                 db=db, sach=sach, principal=principal, record=record,
-                request_id=request_id, da_giu=da_giu)
+                request_id=request_id, da_giu=da_giu, executor=executor)
 
 
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
-                 da_giu: int) -> JSONResponse:
+                 da_giu: int, executor=None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
-    from apps.ltt_llm import features
     from platform_core.llm import thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError, SuDung,
                                             VuotNganSachError)
 
     bat_dau = time.monotonic()
     try:
-        kq = features.chay(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
+        executor = executor or for_tool_name(TOOL_CHAT)
+        kq = executor.run(db, sach, timeout_s=float(SYNC_BILLED_MAX_SECONDS))
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
@@ -130402,7 +130505,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=a21646930b69c00fb1eba947718496f0a083bec3f75c6e4c9f454e154a16f5f9 BYTES=43656 LINES=848
+SHA256=adf6da83151298cefb85861baafc23d386606072078c2a25c48647cdc6da3d9d BYTES=43765 LINES=850
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -130440,6 +130543,7 @@ from sqlalchemy.orm import Session
 
 from platform_core.public_api import limits, metrics, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
+from platform_core.public_api.executor import for_tool, for_tool_name
 from platform_core.public_api.errors import (insufficient_credit,
                                              invalid_request,
                                              payload_too_large,
@@ -130582,20 +130686,21 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
        duong streaming. Vi vay `max_tokens` bi kep theo tran cua duong dong bo,
        cung con so ma `/chat/completions` dung, va vi cung mot ly do.
     """
-    from apps.ltt_llm import features
     from platform_core import credit
     from platform_core.llm import admission, thanh_toan
     from platform_core.llm.cong_vlm import (BanError, CongVlmError,
                                             SuDung, VuotNganSachError)
     from server.api.chat import _tran_max_tokens
 
+    executor = for_tool(tool) if tool is not None else for_tool_name(TOOL_CHAT)
+
     if sandbox.is_test(principal.mode):
         return JSONResponse(_thu_mot_cuc(ten), status_code=200, headers=_NO_STORE)
 
-    vao_uoc = features.uoc_token_vao(tin)
+    vao_uoc = executor.estimate_input(tin)
     xin_ra = _max_tokens(than, vao_uoc)
     if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
-        xin_ra = min(xin_ra, features.SYNC_MAX_TOKENS_MAC_DINH)
+        xin_ra = min(xin_ra, executor.default_max_tokens)
     tran = _tran_max_tokens(vao_uoc)
     if xin_ra > tran:
         raise invalid_request(
@@ -130666,8 +130771,8 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         cong_cu = tool_dich.sang_openai_tools(than.get("tools"))
         if cong_cu:
             sach["tools"] = cong_cu
-        kq = features.chay(db, sach, timeout_s=float(_tran_giay()))
-    except features.ThamSoSai as e:
+        kq = executor.run(db, sach, timeout_s=float(_tran_giay()))
+    except executor.parameter_error as e:
         # Tham số sai là lỗi của **yêu cầu**, không phải của máy chủ: 400, không
         # phải 500. Hoàn tiền trước, vì hold đã đặt rồi.
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
@@ -130839,19 +130944,20 @@ def _bao_400(detail: str, than: dict):
 
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
-    from apps.ltt_llm import features
     from platform_core import credit
     from platform_core.llm import admission, thanh_toan
 
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
+    executor = for_tool(tool)
 
 
     ten = _giai_ten_model(str(than.get("model") or ""))
-    if ten not in features.ALIAS_SANG_ID:
+    aliases = executor.aliases()
+    if ten not in aliases:
         raise _bao_400(
-            f"`model` must be one of {list(features.ALIAS_SANG_ID)}"
+            f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
             f"sends `model` from its profile — set them to one of these.", than)
@@ -130886,7 +130992,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
     # giờ nhìn thấy `qwen38-*`, và mã của khách không ghim vào nó (test_212).
     gui = dict(than)
-    gui["model"] = features.ALIAS_SANG_ID[ten]
+    gui["model"] = executor.model_id(ten)
 
 
     # 🔴 KHONG STREAM CUNG PHAI PHUC VU DUOC, va day la mot lo hong THAT.
@@ -130928,7 +131034,7 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     if ticket is None:
         db.rollback()
         raise limits.execution_busy(tool.admission_resource)
-    vao_uoc = features.uoc_token_vao(tin)
+    vao_uoc = executor.estimate_input(tin)
     xin_ra = _max_tokens(than, vao_uoc)
 
     # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN. Thiếu dòng này là lỗi thật, tìm
@@ -131204,20 +131310,19 @@ def _tin_that(than: dict) -> list:
     return ra
 
 
-def _max_tokens(than: dict, token_vao_uoc: int = 0) -> int:
+def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
     """Trần token ra cho lượt này, đã kẹp theo **chỗ còn lại trong ngữ cảnh**.
 
     ⚠️ `token_vao_uoc` mặc định 0 chỉ để không phá lời gọi cũ; đường thật luôn
        truyền số vào. Vào và ra chia nhau cùng một cửa sổ 65.536.
     """
-    from apps.ltt_llm.manifest import MAX_TOKENS_MAC_DINH, tran_theo_ngu_canh
-
-    tran = tran_theo_ngu_canh(token_vao_uoc)
+    executor = executor or for_tool_name(TOOL_CHAT)
+    tran = executor.context_output_cap(token_vao_uoc)
     for ten in ("max_tokens", "max_output_tokens"):
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):
             return max(1, min(int(gt), tran))
-    return min(MAX_TOKENS_MAC_DINH, tran)
+    return min(executor.default_max_tokens, tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:
