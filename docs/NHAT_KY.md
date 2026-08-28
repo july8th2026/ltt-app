@@ -42,12 +42,20 @@
   `job_01M146GP19SXFPFJ7YB96NPCK2`, exit `0`, HTTP `200`, quality `PASS`,
   usage `8809` input, `11,383s`, VRAM đỉnh `22488 MiB`, `57 C`, fan `56%`,
   power `369,1 W`; GPU về nền sau arm.
+- Q6 lặp 65K qua Nexus async:
+  `job_01M14K6HZHSXDC1KYKDJP9T9K1`, exit `0`, HTTP `200`, quality `PASS`,
+  usage `71720` input, `94,243s`, VRAM đỉnh `22486 MiB`, `69 C`, fan `94%`,
+  power `369,01 W`; vẫn dưới trần Cloudflare 125s nhưng vượt ngân sách nội bộ
+  90s. Giữ cap 65K theo Q116, tiếp tục lấy p50/p95 cold/warm trước khi chốt SLA.
 - CPU-only harness chạy xen kẽ khi GPU arm: `160` jobs/8 accounts, drain
   `32,5/s`, admission-delay p95 `4,724s`, poll p50 `0,651ms`, queue cuối `0`,
   `provider_calls=0`, `gpu_reads=0`.
 - CPU/queue soak mở rộng trong SQLite cô lập: `1000` jobs/16 accounts, drain
   hết (`34,99/s`), queue cuối `0`, admission-delay p95 `27,734s`, poll p50
   `1,112ms`, `provider_calls=0`, `gpu_reads=0`; không đọc trạng thái máy.
+- CPU soak xen kẽ arm 65K: `320` jobs/16 accounts, drain `320/320`
+  (`36,86/s`), queue cuối `0`, admission-delay p95 `8,397s`, poll p50
+  `0,667ms`, `provider_calls=0`, `gpu_reads=0`.
 
 ### Lệnh và kết quả thật
 
@@ -56,13 +64,14 @@
 | `python tools\test_nhanh.py --noi-tiep -k "...65k..."` | **PASS 4**, 1 skip |
 | `python tools\gate.py --vong-lap` | **PASS 19/19** |
 | `python tools\bench_llm_admission.py --accounts 16 --jobs 1000 --polls 20` | **PASS**, drain 1000/1000, queue cuối 0 |
+| `python tools\bench_llm_admission.py --accounts 16 --jobs 320 --polls 10` | **PASS**, drain 320/320, queue cuối 0 |
 | `python tools\gate.py` | **PASS 23/23**, 286,5s |
 | Nexus artifact deploy + health/boundary/canary | **PASS**, exit 0; boundary 413 trước GPU; short/60K/64K quality PASS |
 
 ### Checkpoint tiếp theo
 
 Q4 cap gate đã qua ở mốc 65K. Giữ `parallel=1`; Q5 concurrency DEFER theo
-Q112. Q6 đã có arm 60K PASS và CPU-only xen kẽ; tiếp tục canary/queue soak
+Q112. Q6 đã có arm 60K/65K PASS và CPU-only xen kẽ; tiếp tục canary/queue soak
 request ngắn, 60K/65K, vượt cap, đo queue depth/age, admission p50/p95,
 retry/credit và GPU telemetry. Không reboot/reset máy B.
 
