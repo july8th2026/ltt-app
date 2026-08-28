@@ -38,6 +38,10 @@
   usage `66189` input, `74,212s`, VRAM đỉnh `22486 MiB`, `69 C`, fan `94%`,
   power `370,76 W`; GPU về nền sau arm. Arm 64K mất `92,875s` do cold-load,
   nên tiếp tục đo p50/p95 thay vì coi một arm đơn là SLA.
+- Q6 short arm qua Nexus async:
+  `job_01M146GP19SXFPFJ7YB96NPCK2`, exit `0`, HTTP `200`, quality `PASS`,
+  usage `8809` input, `11,383s`, VRAM đỉnh `22488 MiB`, `57 C`, fan `56%`,
+  power `369,1 W`; GPU về nền sau arm.
 - CPU-only harness chạy xen kẽ khi GPU arm: `160` jobs/8 accounts, drain
   `32,5/s`, admission-delay p95 `4,724s`, poll p50 `0,651ms`, queue cuối `0`,
   `provider_calls=0`, `gpu_reads=0`.
@@ -49,7 +53,7 @@
 | `python tools\test_nhanh.py --noi-tiep -k "...65k..."` | **PASS 4**, 1 skip |
 | `python tools\gate.py --vong-lap` | **PASS 19/19** |
 | `python tools\gate.py` | **PASS 23/23**, 286,5s |
-| Nexus artifact deploy + health/boundary/canary | **PASS**, exit 0; boundary 413 trước GPU; 64K/60K quality PASS |
+| Nexus artifact deploy + health/boundary/canary | **PASS**, exit 0; boundary 413 trước GPU; short/60K/64K quality PASS |
 
 ### Checkpoint tiếp theo
 
