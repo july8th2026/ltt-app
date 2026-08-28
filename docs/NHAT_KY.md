@@ -38,6 +38,7 @@
 | `python tools\gate.py --vong-lap` trước khi dựng profile | **FAIL tạm**: profile stale + 3 test profile; đã xử lý bằng build profile |
 | `python tools\gate.py --vong-lap` sau build profile | **PASS 19/19** |
 | `python tools\scan_source_secrets.py` (trong gate) | **PASS**, 0 finding |
+| `python tools\gate.py` sau checkpoint Q6 và cập nhật hồ sơ | **PASS 23/23** |
 
 ### Trạng thái
 
@@ -58,10 +59,9 @@ release mới không đạt health.
 
 ### Việc tiếp theo
 
-1. Ghi nhận full gate cuối sau khi cập nhật hồ sơ dẫn xuất.
-2. Kiểm tra định kỳ `/health/ready`, `/api/v1/health`; rollback bằng
+1. Kiểm tra định kỳ `/health/ready`, `/api/v1/health`; rollback bằng
    `deploy/windows/rollback.ps1` nếu readiness không còn `ready`.
-3. H41.5 vẫn để riêng, chờ hợp đồng duration server-side trước khi public.
+2. H41.5 vẫn để riêng, chờ hợp đồng duration server-side trước khi public.
 
 ### Deploy production — 2026-08-29
 
