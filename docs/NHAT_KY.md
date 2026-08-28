@@ -25,8 +25,13 @@
 - Warm API arms hợp lệ: 65.578 input (26,319s, VRAM 22.402 MiB, 62 C),
   73.596 (7,710s, 22.382 MiB, 57 C), 81.795 (16,823s, 22.382 MiB, 61 C),
   88.020 (15,285s, 22.382 MiB, 59 C). HTTP 200, sentinel PASS, không OOM,
-  không decode cliff quan sát được. Sau mỗi arm GPU về 0%; sau near-cap VRAM
-  về 938 MiB.
+  không decode cliff quan sát được. Arm lặp near-cap cùng payload PASS nhưng
+  mất 121,288s khi cold-load (VRAM 22.482 MiB, 70 C, fan 97%, 371,25 W), nên
+  tách khỏi warm baseline và củng cố hàng rào admission 90s.
+- CPU load harness sau arm: 160 jobs/8 account, drain 33,83/s, submit 720,42/s,
+  admission-delay p95 4,59s, poll p50 0,647ms, queue cuối 0, provider/GPU reads
+  0. G2 sau các arm đều 0% GPU; warm near-cap về 938 MiB, cold repeat giữ
+  22.482 MiB với `llama-server.exe` resident.
 - Pilot ~48K được giữ riêng (80,912s; 22.380 MiB; 66 C), không dùng làm mốc
   65K. Arm đầu 73K `finish_reason=length` do harness xin 128 output; arm
   89.9K bị gateway từ chối đúng cap (`91685 > 90000`); cả hai không tính
@@ -38,14 +43,16 @@
 |---|---|
 | Nexus `POST /files/write` + hash đối chiếu | **PASS**, hash khớp A/B |
 | Nexus `POST/GET /exec/async` + `/log` cho 65K/73K/81K/near-cap | **PASS**, exit 0; log đầy đủ |
-| Nexus `nvidia-smi` G0/G2 | **PASS**, GPU chỉ có một workload; G2 về nền |
+| Nexus `nvidia-smi` G0/G2 | **PASS**, GPU chỉ có một workload; G2 về nền/resident đúng gateway |
+| `python tools\bench_llm_admission.py --accounts 8 --jobs 160 --polls 10` | **PASS**, 0 GPU/provider reads; admission p95 4,59s |
 | `python tools\gate.py --vong-lap` sau chỉnh harness | **PASS**, 19/19 (ba lượt; `--lf` 198,3--207,4s) |
 
 ### Còn tồn đọng và việc tiếp theo
 
-Q4 chưa đóng: cần đo queue-delay end-to-end qua admission plane của A, lặp lại
-để tính p50/p95 và không mở `parallel>1`. Tiếp tục giữ `parallel=1`, không đổi
-cap/gateway.env và không reboot máy B.
+Q4 chưa đóng: cold-load có thể kéo request gần 90K lên 121s, vì vậy phải chứng
+minh admission plane A chặn non-stream trước 90s và đo queue-delay end-to-end;
+lặp lại để tính p50/p95, không mở `parallel>1`. Tiếp tục giữ `parallel=1`, không
+đổi cap/gateway.env và không reboot máy B.
 
 ---
 

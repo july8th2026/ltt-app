@@ -201,12 +201,15 @@ mọi arm chạy bằng `POST /exec/async`, một workload GPU tại một thờ
 | 73K | `job_01M13CVNKAMEF793310BSXKM5N` | PASS, 73.596 input + 153 output, 7,710s, VRAM 22.382 MiB, 57 C, 368,37 W |
 | 81K | `job_01M13CY570JESG42BD09930X0A` | PASS, 81.795 input + 108 output, 16,823s, VRAM 22.382 MiB, 61 C, 363,23 W |
 | near-cap | `job_01M13D94T1C1HFP2231Y38HSMD` | PASS, 88.020 input + 153 output, 15,285s, VRAM 22.382 MiB, 59 C, 363,94 W |
+| near-cap repeat (cold-load) | `job_01M13G4JG2JMA9XSYWDZDRWS0Y` | PASS, 88.020 input + 153 output, 121,288s, VRAM 22.482 MiB, 70 C, 371,25 W; tách khỏi warm baseline |
 
 Hai arm bị từ chối trước GPU (ExecutionPolicy và `input_tokens=91685`), một
 arm 73K đầu kết thúc `length` do harness chỉ xin 128 output; đều không đưa vào
 baseline. Sau mỗi arm, G2 ghi GPU về 0% và khoảng 34--38 C; sau near-cap VRAM
-đã về 938 MiB. Q4 chưa đóng: còn thiếu đo queue-delay end-to-end qua admission
-plane và lặp lại thống kê/độ lệch; chưa mở Q5 `parallel>1`.
+đã về 938 MiB sau arm warm; arm lặp cold-load giữ khoảng 22.482 MiB sau G2.
+Q4 chưa đóng: cold-load biến thiên sát trần Cloudflare cần được admission A
+chặn bằng ngân sách 90s; còn thiếu queue-delay end-to-end và p50/p95 lặp lại;
+chưa mở Q5 `parallel>1`.
 
 ## Q5 — thử concurrency GPU có kiểm soát (GPU window)
 
