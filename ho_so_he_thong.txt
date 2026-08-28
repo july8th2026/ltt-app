@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:706de7f1407d4c61427d3c368f233607c67282b1b64c58e847f6e9c44363fef0
+Fingerprint   : sha256:8b199a4b401c31076b4f9dbc9f5f5adacb6c5e3cf84a26828a4768e71f338084
 Nguồn đã quét : 1208 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2636,7 +2636,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:85, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029010 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1208 file; 12029008 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -77588,7 +77588,7 @@ bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=054fc5bf7416ee485f3002c81da43970deb25d4afbbdaeaab5cc9707159f90a6 BYTES=116706 LINES=259
+SHA256=9bf471eee9e33d3a5f1024a9d6ab9c75bf9dace110d54e0685c5c1ae64f049b0 BYTES=116704 LINES=259
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
