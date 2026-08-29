@@ -63,7 +63,37 @@ FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
 #:              tổng thời gian ngắn nhất khi mọi thứ khác nấp được vào bóng nó.
 #:   tinh     — mỗi bước vài giây, độc lập nhau hoàn toàn.
 #:   frontend — `npm test` ở ba thư mục; độc lập với nhau và với mọi thứ khác.
-NHOM = ("cong", "nang", "tinh", "frontend")
+#:   sau_test — ĐỌC một tệp mà `bo test` GHI. Phải chạy SAU khi bộ test xong.
+#:              Xem `TEP_KHONG_DUOC_DOC_SONG_SONG` bên dưới.
+NHOM = ("cong", "nang", "tinh", "frontend", "sau_test")
+
+#: 🔴 BA TỆP MÀ BỘ TEST GHI VÀO CÂY, và bước gate nào đọc chúng.
+#:
+#:    `tools/test_nhanh.py::TEP_NOI_TIEP` bắt ba tệp test này chạy **nối tiếp
+#:    với nhau**, nên chúng không giẫm lên nhau. Nhưng hàng rào đó chắn **sai
+#:    hướng**: nó không nói gì về nhóm kiểm TĨNH của chính lượt gate đó, mà
+#:    nhóm ấy chạy **song song** với `bo test` và **đọc đúng ba tệp ấy**.
+#:
+#: ⛔ Hệ quả đo được ngày 2026-08-29: `test_209` / `test_210` / `test_306` đỏ
+#:    với `OSError: [Errno 22] Invalid argument` ngay tại `read_text()` hoặc
+#:    `write_text()`. Trên Windows, hai tiến trình chạm một tệp cùng lúc cho
+#:    đúng mã lỗi đó.
+#:
+#:    Hai phiên đã mất **gần trọn một ngày** cho chuyện này và lần lượt đổ cho:
+#:    `__pycache__` cũ · một tiến trình thứ hai · một tệp ghi thứ tư chưa tìm
+#:    ra · rác fixture ngẫu nhiên. **Không cái nào đúng.** Công cụ đo tự nhiễu
+#:    vào phép đo của nó.
+#:
+#: ⭐ Docstring của `_chay_theo_lich` từng khẳng định điều kiện an toàn là "mọi
+#:    bước đều CHỈ ĐỌC, nên không bước nào chạm cây — và nó đã được kiểm chứ
+#:    không giả định". Câu đó đúng **một nửa**: nhóm tĩnh đúng là chỉ đọc, còn
+#:    `bo test` thì GHI. Nửa được kiểm là nửa không hỏng.
+TEP_KHONG_DUOC_DOC_SONG_SONG = {
+    "docs/PUBLIC_API/CONTRACT_BASELINE.json": "tests/test_209_versioning_status.py",
+    "locale/en/LC_MESSAGES/messages.po": "tests/test_306_banh_coc_bo_qua_va_dich.py",
+    "sdk/typescript/ltt-public-api.ts": "tests/test_210_sdk_ecosystem.py",
+    "server/templates/vps_dieu_khoan.html": "tests/test_306_banh_coc_bo_qua_va_dich.py",
+}
 
 
 class Step:
@@ -172,7 +202,8 @@ def _steps(quick: bool) -> list[Step]:
         #    fuzzy khong bao gio toi mat nguoi dung — no chi TRONG NHU da xong
         #    khi doc tep `.po`.
         Step("dich thieu ban EN",
-             [sys.executable, "tools/check_dich_thieu.py"], ROOT),
+             [sys.executable, "tools/check_dich_thieu.py"], ROOT,
+             nhom="sau_test"),
         # Hồ sơ là bản đồ để AI/người mới hiểu code. Nếu không khóa freshness,
         # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
         Step("system profile", [sys.executable, "tools/build_system_profile.py",
@@ -182,7 +213,7 @@ def _steps(quick: bool) -> list[Step]:
         # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy
         # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
         Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
-             ROOT),
+             ROOT, nhom="sau_test"),
         # 🔴 ANH CHUP HOP DONG VANG — do 25/08, va no da do TREN NHANH mot ngay
         #    ma khong ai thay.
         #
@@ -218,7 +249,8 @@ def _steps(quick: bool) -> list[Step]:
         # EXT-18: SDK thiếu một route không bao giờ báo lỗi — nó chỉ để người
         # dùng tự viết lấy, rồi họ viết sai retry hoặc quên Idempotency-Key.
         Step("SDK khop hop dong",
-             [sys.executable, "tools/check_sdk_contract.py"], ROOT),
+             [sys.executable, "tools/check_sdk_contract.py"], ROOT,
+             nhom="sau_test"),
         # …và collection Postman phải được SINH lại, không sửa tay: một bản sao
         # thứ hai của hợp đồng luôn là bản trôi dạt.
         # Ban sao `ltt.css` canh GUI khong duoc troi khoi ban goc: mot ban
@@ -227,7 +259,7 @@ def _steps(quick: bool) -> list[Step]:
         Step("tai san GUI", [sys.executable, "tools/dong_goi_gui.py", "--kiem"],
              ROOT),
         Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
-             ROOT),
+             ROOT, nhom="sau_test"),
     ]
     if not quick:
         # H36.9: bo bat bien DA TIEN TRINH. Ba loi P0 cua ban audit 2026-08-15
@@ -427,6 +459,7 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
 
     nang = [s for s in steps if s.nhom == "nang"]
     nhe = [s for s in steps if s.nhom in ("tinh", "frontend")]
+    sau = [s for s in steps if s.nhom == "sau_test"]
 
     # `len(nang) + j` luồng: mỗi việc nặng một luồng riêng, phần còn lại chia `j`.
     with ThreadPoolExecutor(max_workers=len(nang) + max(1, j)) as ex:
@@ -434,6 +467,22 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
         cho += [ex.submit(chay_va_in, s) for s in nhe]
         for f in cho:
             f.result()
+
+    # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
+    #
+    #    Bốn bước này đọc tệp mà bộ test ghi rồi khôi phục
+    #    (`TEP_KHONG_DUOC_DOC_SONG_SONG`). Đọc chúng giữa lúc bị ghi cho
+    #    `OSError: [Errno 22]` trên Windows, hoặc — tệ hơn vì im lặng — đọc
+    #    trúng **bản đã bị tiêm** và báo một vi phạm hợp đồng không có thật.
+    #
+    # ⭐ Cái giá là thật và đã đo: bốn bước này (~11 giây cộng lại) trước đây
+    #    nấp trong bóng của `bo test` nên **miễn phí**; nay chúng cộng thẳng vào
+    #    tổng. Đổi ~11 giây lấy việc mọi lượt gate nói về **cùng một cây** là
+    #    một đổi chác dễ — một dòng RESULT không tin được thì nhanh cũng vô ích.
+    if sau:
+        with ThreadPoolExecutor(max_workers=max(1, j)) as ex:
+            for f in [ex.submit(chay_va_in, s) for s in sau]:
+                f.result()
 
 
 def _console_text(value: str, encoding: str | None = None) -> str:
