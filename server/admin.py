@@ -24,7 +24,7 @@ import json
 from urllib.parse import quote_plus
 import logging
 
-from markupsafe import escape
+from markupsafe import Markup, escape
 from sqladmin import Admin, BaseView, ModelView, expose
 from sqladmin.authentication import AuthenticationBackend
 from sqladmin.authentication import login_required as _login_required
@@ -495,14 +495,48 @@ class AppAccessAdmin(ModelView, model=AppAccess):
 
 
 class JobAdmin(ModelView, model=Job):
+    """Bảng job — đích của Golden Journey 3 (điều tra việc chạy hỏng).
+
+    🔴 ĐO TRÊN PRODUCTION 29/08. Hàng đợi chú ý ở `/admin/` báo "4 việc chạy
+       hỏng" và dẫn tới đây. Trang này khi đó hiện:
+
+         · `user_id` là **UUID trần, không bấm được** — muốn biết đó là ai phải
+           chép nó sang một trang khác;
+         · **không có cột lỗi nào cả** — `Job.error` tồn tại trong model nhưng
+           không nằm trong `column_list`.
+
+       Nên người vận hành đi hết hàng đợi rồi vẫn không biết **vì sao hỏng** và
+       **của ai**. Đó là một ngõ cụt, và nó nằm ở đúng bước cuối của GJ3.
+
+    ⭐ Hợp đồng P1 nói mỗi mục chú ý phải mở trang **giải quyết được** nó. Một
+       bảng chỉ nói "error" thì chưa giải quyết được gì.
+    """
+
     name = "Job"
     name_plural = "Job"
     icon = "fa-solid fa-list-check"
     column_list = [Job.created_at, Job.user_id, Job.app_slug, Job.job_type,
-                   Job.status, Job.progress, Job.attempts]
+                   Job.status, Job.error, Job.attempts]
+    column_labels = {Job.error: "Lỗi"}
     column_searchable_list = [Job.user_id, Job.app_slug, Job.status, Job.job_type]
     column_sortable_list = [Job.created_at, Job.status]
     column_default_sort = [(Job.created_at, True)]
+    # `progress` rời khỏi danh sách để nhường chỗ cho `error`: một job đã hỏng
+    # thì phần trăm tiến độ của nó không dẫn tới hành động nào, còn thông báo
+    # lỗi thì có. Cả hai vẫn còn ở trang chi tiết.
+    column_details_exclude_list = []
+    column_formatters = {
+        # `user_id` thành liên kết sang Hồ sơ 360. Đây là chỗ luồng copy-UUID
+        # cuối cùng còn sót lại sau đợt `admin_mvp_v3`.
+        Job.user_id: lambda m, a: Markup(
+            f'<a href="/admin/nguoi-dung?q={escape(m.user_id)}">'
+            f'{escape(m.user_id[:8])}…</a>') if m.user_id else "",
+        # Lỗi cắt ngắn ở danh sách; bản đầy đủ ở trang chi tiết. Không cắt thì
+        # một traceback dài đẩy bảng rộng ra và che mọi cột khác.
+        Job.error: lambda m, a: Markup(
+            f'<span title="{escape(m.error)}">{escape(m.error[:70])}'
+            f'{"…" if len(m.error) > 70 else ""}</span>') if m.error else "",
+    }
     # Worker quản job; admin chỉ xem (sửa tay dễ làm sai kế toán credit).
     can_create = False
     can_edit = False
