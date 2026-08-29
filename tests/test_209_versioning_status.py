@@ -443,28 +443,34 @@ def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test():
         BASELINE.write_text(saved, encoding="utf-8", newline="")
 
 
-def test_ban_chuan_dung_bang_ban_commit_thi_khong_canh_bao_thua():
-    """Mot thay doi hop dong THAT khong duoc bi gan nhan "rac test".
+def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit():
+    """Mot thay doi ma THAT khong duoc gan nhan "rac test".
 
-    ⚠️ Phep kiem nay co MOT TIEN DE: ban chuan trong cay phai dang bang ban da
-       commit. Tien de do KHONG luon dung — co luc ai do dang sua hop dong that,
-       hoac mot luot test truoc do de lai rac. Khang dinh mu khi tien de sai la
-       tao ra mot phep kiem do vi ly do khong lien quan gi toi thu no do.
+    Hai canh cua cung mot nhanh, va ca hai deu quan trong:
 
-       Nen o day: tien de sai thi BO QUA va noi ro vi sao, khong bao do.
-       (Chinh toi da viet sai lan dau va no do ngay lan chay dau tien.)
+      · ban chuan KHAC ban commit  -> canh bao (phep kiem tren);
+      · ban chuan DUNG BANG ban commit -> im lang, vi luc do loi that su nam o
+        ma chu khong o tep. Mot canh bao noi sai cho con te hon khong canh bao.
+
+    ⚠️ Ban dau toi viet phep kiem nay KHANG DINH MU rang ban chuan trong cay
+       dang bang ban commit, roi khi tien de sai thi `pytest.skip`. Ca hai deu
+       hong: khang dinh mu thi do vi mot ly do khong lien quan, con bo qua thi
+       "mot test bi bo qua la mot test KHONG canh gi ca" (`check_bo_qua.py`).
+
+       Cach dung la TU TAO tien de roi hoan nguyen — dung khuon ma moi phep
+       kiem khac trong tep nay da dung.
     """
-    import subprocess
-
+    saved = BASELINE.read_text(encoding="utf-8")
     commit = subprocess.run(
         ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=15)
-    if commit.returncode != 0:
-        pytest.skip("khong doc duoc ban commit cua ban chuan")
-    if commit.stdout != BASELINE.read_text(encoding="utf-8"):
-        pytest.skip("ban chuan trong cay dang khac ban commit — tien de cua "
-                    "phep kiem nay khong con dung")
-
-    result = _checker()
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "KHAC ban da commit" not in result.stdout
+    # Khong co git thi dung ban tren dia: o mot cay lanh manh hai thu bang nhau,
+    # va neu khong bang thi phep kiem do la dung — cay dang hong that.
+    nhu_da_commit = commit.stdout if commit.returncode == 0 else saved
+    try:
+        BASELINE.write_text(nhu_da_commit, encoding="utf-8", newline="")
+        result = _checker()
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "KHAC ban da commit" not in result.stdout
+    finally:
+        BASELINE.write_text(saved, encoding="utf-8", newline="")
