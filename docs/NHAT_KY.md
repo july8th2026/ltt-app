@@ -16,6 +16,111 @@
 
 
 
+## 2026-08-29 — DEPLOY đợt 2 + MỞ BÁN `video.subtitle` và `video.upscale`
+
+- **Trạng thái:** `EXITCODE=0`, 15:56:53 → 15:58:33. `so_deploy`: **khớp 499 ·
+  lệch 0 · thiếu 0 · thừa 0**. Bốn dịch vụ Running.
+- **Phát hành:** `1193f40` — gộp việc của **hai phiên**: khu quản trị sang Jinja
+  + ô tìm liên thực thể (`d129f8e`), và làn scheduler + hai tool video
+  (`7850ea5`, `fc26bbd`).
+
+### Thứ tự đã chạy, và vì sao thứ tự đó bắt buộc
+
+```
+1. cong_tac_tool_api.ps1 -Tool video.subtitle -Bat
+2. cong_tac_tool_api.ps1 -Tool video.upscale  -Bat
+3. nap_lai_env.ps1
+4. deploy_nang_quyen.ps1  ->  2-cai-dat.ps1
+```
+
+🔴 Cờ **trước**, deploy **sau**. `nssm` nướng biến môi trường vào đăng ký dịch vụ
+**lúc cài**; sửa `app.env` rồi `Restart-Service` là **không ăn gì** — không lỗi
+nào báo, tính năng chỉ đơn giản không bật. Đã dính hai lần trong dự án này.
+
+`LTT_PUBLIC_API_TOOLS`: `text.chat, image.ltt` → **`text.chat, image.ltt,
+video.subtitle, video.upscale`**.
+
+⚠️ **Quyết định mở bán là của chủ sản phẩm, và tôi lấy xác nhận trực tiếp.**
+Phiên `lttstudiosapp-80` báo lại rằng chủ sản phẩm đã nói "mở luôn", nhưng lệnh
+nâng quyền của **phiên đó** bị cổng harness chặn. Nhờ phiên khác chạy hộ chính
+là mượn quyền để đi vòng qua ranh giới của mình, nên phiên đó **từ chối chuyển
+lời thành chỉ thị** — và tôi hỏi lại chủ sản phẩm bằng một câu hỏi hai lựa chọn.
+Hai đường xác nhận độc lập cùng chỉ một hướng.
+
+### Bằng chứng trên URL CÔNG KHAI, có đối chứng
+
+⭐ `/api/v1/tools` đòi khoá nên không dùng làm bằng chứng được. Thứ dùng được là
+`/api/v1/openapi.json` — công khai, và **sinh từ registry đã lọc theo cờ**:
+
+```
+MO   : text.chat, image.ltt, video.subtitle, video.upscale
+DONG : khong tool dong nao xuat hien
+       (image.thumbnail, image.upscale, video.merge, asset.probe, text.script)
+```
+
+Dòng thứ hai mới là dòng làm dòng thứ nhất có nghĩa. Không có đối chứng đó thì
+"bốn tool có trong spec" cũng đúng với một spec liệt kê **mọi** tool.
+
+Cùng khuôn cho route quản trị mới: `/admin/tim` · `/admin/khach-hang` ·
+`/admin/api-tong-quan` · `/admin/api-khoa` đều **303** (sống, đòi đăng nhập),
+còn `/admin/khong-co-that-dau` **404**.
+
+CSS: `ASSET_VER` khớp hai đầu (`0786de92`), `cf-cache-status: MISS`, 222.646
+byte. Cái bẫy lịch sử (Cloudflare phục vụ CSS cũ) không tái diễn.
+
+`/health/ready` = `ready / production / database ok`; `/api/v1/health` = `ok`.
+Không có migration mới ⇒ đường lùi là `C:/LTTPlatform/app.previous`, không phải
+hoàn CSDL.
+
+### 🔴 Cái giá thật của ngày hôm nay: SÁU lượt gate hỏng vì tranh chấp cây
+
+Deploy này lẽ ra xong sớm hơn nhiều giờ. Sáu lượt gate đầy đủ bị bỏ đi, và
+**không lượt nào hỏng vì mã sai**:
+
+| Nguyên nhân | Triệu chứng |
+|---|---|
+| `__pycache__` tích lại | 3 test `image.upscale` đỏ, dọn cache là xanh |
+| Mặt phẳng claim GPU **toàn máy** | `6000 − 7168 = −1168` trên một card **giả** |
+| Thứ tự import (`test_287`) | `delenv` không tháo được cờ đã chốt lúc nạp module |
+| **Một phiên chạy `gate.py` dưới dạng tác vụ NỀN tách rời** | cây bị ghi trong lúc phiên kia đang đo |
+
+⭐ Cái thứ tư là cái đắt nhất, và nó **ẩn với chính người tạo ra nó**: một lượt
+`gate.py` vượt timeout bị đẩy sang chạy nền, rồi **tiếp tục chạy cả bộ test trên
+cây chính** trong khi phiên đó làm việc khác. Nó chạy `test_209`, tức nó **ghi**
+`CONTRACT_BASELINE.json`. Cả hai phiên `git checkout` ba tệp "rác fixture"
+**năm lần** trong ngày mà không ai hỏi *ai đang ghi*.
+
+⛔ Bài học không phải "đừng chạy nền" mà là: **một tác vụ nền chạm cây kho là một
+tiến trình ghi, và nó phải được khai báo như một tiến trình ghi.** Dòng
+`CAY DA DOI TRONG LUC CHAY` của gate đã nói đúng ngay từ lượt đầu; chúng tôi đọc
+nó như nhiễu.
+
+### Một lỗ hổng thật của cổng chất lượng, chưa vá
+
+`tools/test_nhanh.py:TEP_NOI_TIEP` liệt kê **ba** tệp "ghi vào cây kho" để chạy
+nối tiếp. Thí nghiệm có đối chứng: chạy pha 1 với **cả ba** bị `--deselect`
+(4.378 passed) vẫn làm bẩn `CONTRACT_BASELINE.json`.
+
+⚠️ Phần lớn khả năng là do tác vụ nền nói trên. Nhưng **chưa loại trừ được** khả
+năng có một đường ghi thứ tư không đi qua `check_api_compat`. Cần một lượt đo
+trên cây chắc chắn không có tiến trình thứ hai. Ghi lại đây để lượt sau đo,
+không kết luận sớm.
+
+### Còn nợ, có chủ ý
+
+⛔ **`image.upscale` vẫn còn lỗi làn và vẫn đang mở cho khách.** Bản vá đã viết
+nhưng **chưa qua gate**, nên phiên kia cất ra tệp patch ngoài cây thay vì để nó
+đi ké lượt phát hành này. Nó **không** phải lỗi tính tiền — khách trả đúng số
+credit; nó là lỗi **xếp lịch**: job `fast` giữ chỗ 12.000 MB thay vì ~2.000, nên
+nó chặn job khác và tự bị hoãn khi card không đủ trống. Trên máy ba hộ dùng
+chung GPU, triệu chứng là "chậm không rõ vì sao" — loại khiếu nại khó lần nhất.
+
+⚠️ Giao diện admin **đã đăng nhập** vẫn chưa soi được trên URL công khai:
+Cloudflare chặn trình duyệt tự động ở `/login`. Đã soi đầy đủ trên bản dựng
+giống hệt ở 1440px và 375px.
+
+---
+
 ## 2026-08-29 — Admin MVP V3 đóng nốt 5 mục hoãn: 12 trang API sang Jinja
 
 - **Hạng mục:** `24_DEFERRED_POST_MVP.md` mục **A · B · D · G · J** — xong.
