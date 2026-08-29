@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ce80508aa7ba1239d825d662213813ea5b89c4dd34c61fd9143bee13dcd68a73
+Fingerprint   : sha256:678786fc3cb91f17117b93326831337a574d48de8c2356324f320e888fc5c246
 Nguồn đã quét : 1231 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -408,15 +408,6 @@ Các lớp chính:
     - apps/upscalevideo/service.py
     - apps/upscalevideo/telemetry.py
     - apps/upscalevideo/templates/upscalevideo.html
-    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.bin
-    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.param
-    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.bin
-    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.param
-    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.bin
-    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.param
-    - apps/upscalevideo/vendor/engine/realesrgan-ncnn-vulkan.exe
-    - apps/upscalevideo/vendor/engine/vcomp140.dll
-    - apps/upscalevideo/vendor/engine/vcomp140d.dll
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
@@ -2670,7 +2661,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1231 file; 12277488 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1231 file; 12278244 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -248196,7 +248187,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/so_deploy.py
-SHA256=20c8a4bec8bae9605dedf7c73c379adaf9058f945d099c435f97dac72f8c2c11 BYTES=5412 LINES=135
+SHA256=851cff7387548dd504bdbcb33637c9463b66a25e5ecdb0083ae51db6c97d35b3 BYTES=6168 LINES=148
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """So bản ĐANG CHẠY với cây nguồn, từng byte.
 
@@ -248250,8 +248241,21 @@ PHAM_VI = (
     ("server/templates", "*.html"),
     ("server/static", "*.css"),
     ("server/static", "*.js"),
-    ("server/api", "*.py"),
-    ("server/routes", "*.py"),
+    # CU: ("server/api", "*.py") + ("server/routes", "*.py").
+    #
+    # 🔴 Hai dong do de lai mot DIEM MU ngay trong cong cu an toan truoc deploy:
+    #    `server/*.py` o CAP TREN CUNG khong duoc quet. Do la
+    #    `admin.py` (5.000+ dong), `admin_api.py`, `app.py`, `templating.py`,
+    #    `nexus_download.py` — tuc ca khu admin va vo ung dung.
+    #
+    # ⛔ Do 2026-08-29: `server/admin.py` LECH giua nguon va ban dang chay, va
+    #    `so_deploy` bao "khop 452 | lech 9" ma khong he nhac toi no. Mot cong
+    #    cu bao "toi da so xong" trong khi bo qua mot nua `server/` thi te hon
+    #    khong co cong cu: nguoi ta tin no.
+    #
+    # `rglob` tu `server` da bao ham `server/api` va `server/routes`, nen mot
+    # dong thay duoc ca hai — va khong bo sot phan con lai.
+    ("server", "*.py"),
     ("apps", "*.py"),
     ("platform_core", "*.py"),
 )
