@@ -100,8 +100,48 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
 #    `st_mtime`, nen mot lan ghi-lai-y-het van lam no keu. Mot lan
 #    gate 2 gio nua bi vo hieu vi dung mot dong nay.
 
+#: Nhung chuoi ma ba test duoi day TU TIEM vao tep that. Neu mot trong so
+#: chung CO SAN luc test bat dau thi tep dang mang rac cua mot luot truoc.
+_DAU_TIEM = ("Chuoi thu banh coc", "khong_co_that.html")
+
+
+def _bat_buoc_khong_con_rac(tep) -> None:
+    r"""Tep phai SACH truoc khi test tiem vao no — neu khong, do NGAY va noi ro.
+
+    🔴 DAY MOI LA CHO RO RI, va no khong phai `read_text()` nam ngoai `try`.
+
+       Doc TRUOC `try` la DUNG: khong duoc buoc vao `try` khi chua cam mot ban
+       sao tot. Neu `read_text()` nem thi cung chua ghi gi, nen khong co gi phai
+       khoi phuc — `finally` khong chay cung khong sao.
+
+       Lo that la vong doi HAI luot:
+
+         luot 1: ghi ban tiem -> tien trinh BI GIET -> `finally` khong chay
+                 => tep o lai trong cay, dang BAN
+         luot 2: `goc = read_text()` doc dung ban BAN do
+                 -> `finally` "khoi phuc" ve chinh ban ban ay
+                 => rac thanh vinh vien, va moi luot sau deu tai xac nhan no
+
+    ⇒ Ngay 2026-08-29 hai phien `git checkout` ba tep nay **nam lan** va khong
+      ai hoi "ai ghi?". Moi lan chi don trieu chung; vong doi tren van nguyen.
+
+    ⭐ Chot bang DAU TIEM chu khong bang `git diff`: mot phep so voi HEAD se bao
+       do ca khi ai do dang sua tep do that su — no bien mot hang rao thanh mot
+       thu phai tat.
+    """
+    text = tep.read_text(encoding="utf-8", errors="replace")
+    con = [d for d in _DAU_TIEM if d in text]
+    if con:
+        raise AssertionError(
+            f"{tep.name} con dau tiem cua mot luot test truoc: {con}. "
+            f"Mot luot bi giet giua chung da de lai no, va neu chay tiep thi "
+            f"ban 'khoi phuc' se dong bang chinh ban rac nay. "
+            f"Chay: git checkout -- {tep.relative_to(GOC).as_posix()}")
+
+
 def test_chuoi_MOI_chua_dich_lam_do():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    _bat_buoc_khong_con_rac(po)
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
@@ -124,6 +164,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
     Mot moc dem SO LUONG se noi PASS. Moc dem TAP HOP phai noi FAIL.
     """
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    _bat_buoc_khong_con_rac(po)
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
@@ -151,6 +192,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
 def test_accept_TU_CHOI_khi_con_muc_moi():
     """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no."""
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    _bat_buoc_khong_con_rac(po)
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
@@ -211,6 +253,7 @@ def test_dem_ca_ba_lop():
 def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
     """Bang chung cho lop thu ba. Khong co phep kiem nay thi no chi la mot y dinh."""
     mau = GOC / "server" / "templates" / "vps_dieu_khoan.html"
+    _bat_buoc_khong_con_rac(mau)
     goc = mau.read_text(encoding="utf-8")
     goc_mtime = mau.stat().st_mtime_ns
     try:
