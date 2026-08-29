@@ -74,7 +74,10 @@ MANIFEST = AppManifest(
             "preserve_audio": {"type": "bool", "default": True},
             "stabilize": {"type": "bool", "default": False},
             "smooth_motion": {"type": "bool", "default": False},
-            "duration_s": {"type": "number", "min": 0},
+            # Máy chủ đo từ chính tệp đã tải lên; số người gọi khai không chạm
+            # vào giá (Q84, H35.10a).
+            "duration_s": {"type": "number", "min": 0,
+                           "measured_from": "video_key"},
         },
         returns={"video_key": "video"},
         verifiable=("technical",),

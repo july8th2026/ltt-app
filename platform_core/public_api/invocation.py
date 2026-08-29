@@ -173,6 +173,70 @@ def build_job_params(tool, clean_input: dict, *, media_values=None) -> dict:
     return params
 
 
+def measured_params(tool) -> dict:
+    """``param -> tham số media mà nó được đo ra``, theo bản khai của app.
+
+    Nền tảng chỉ đọc bản khai; nó không biết app nào cần đo cái gì. Cùng khuôn
+    với `sync_executor` của H41.4: app khai, nền tảng giải quyết chung.
+    """
+    from platform_core.registry import discover
+
+    # Đọc schema NỘI BỘ, không phải `input_schema` công khai: route truyền vào
+    # `PublicTool` (bản chiếu catalog), và bản chiếu đó cố ý không mang theo
+    # `measured_from` — đó là chuyện nội bộ giữa app và nền tảng, không phải
+    # thứ khách khai. `media_params()` ngay trên cũng đọc cùng nguồn này.
+    schema = (tool.params_schema if hasattr(tool, "params_schema")
+              else _internal_schema(tool, discover()))
+    return {name: str(spec["measured_from"])
+            for name, spec in (schema or {}).items()
+            if isinstance(spec, dict) and spec.get("measured_from")}
+
+
+def apply_server_measurements(tool, params: dict, *, sessions: dict,
+                              storage=None) -> dict:
+    """Thay mọi tham số app khai `measured_from` bằng số MÁY CHỦ đo được.
+
+    Gọi **trước** `price()`, ở cả `/quotes` lẫn `/jobs`. Hai route dùng chung
+    hàm này và cùng đọc `staging_key`, nên chúng không thể lệch nhau — đó là
+    điều làm một báo giá đã ký giữ được lời hứa (Q84).
+
+    ⭐ Vì sao không dùng `media.duration_seconds()`: hàm đó nuốt lỗi thành
+    ``0.0`` **có chủ ý**, và ở worker thế là đúng. Ở đây `0.0` nghĩa là giữ chỗ
+    0 credit — khách được làm miễn phí, và không dòng nào chỉ ra vì sao. Đường
+    tính tiền phải **báo**, không được đoán.
+    """
+    from platform_core import media, storage as storage_mod
+
+    can_do = measured_params(tool)
+    if not can_do:
+        return params
+
+    kho = storage if storage is not None else storage_mod.get_storage()
+    for name, nguon in can_do.items():
+        session = (sessions or {}).get(nguon)
+        if session is None:
+            # Không có gì để đo mà vẫn tính được giá chính là cái lỗ đang bịt.
+            raise _field_error(nguon, "this input requires an upload id.")
+        key = getattr(session, "staging_key", "")
+        # Đường dẫn trước: rẻ nhất, không qua mạng. R2 trả None ở đây và ta đi
+        # tiếp sang presigned URL — ffprobe đọc bằng range request, không tải
+        # cả tệp về.
+        src = kho.local_path(key) or kho.try_url_for(key)
+        if not src:
+            raise invalid_request(
+                "This upload cannot be measured right now; try again shortly.")
+        try:
+            do_duoc = float((media.probe(src) or {}).get("duration") or 0.0)
+        except Exception as exc:  # noqa: BLE001 - mọi lỗi đo đều là lỗi giá
+            raise _field_error(
+                nguon, "this file could not be read as media.") from exc
+        if do_duoc <= 0:
+            # Đúng kiểu, sai tiền: một tệp hỏng vẫn cho `duration: 0`.
+            raise _field_error(nguon, "this file has no measurable duration.")
+        params[name] = do_duoc
+    return params
+
+
 def promote_media(db, storage, *, job, sessions: dict) -> list:
     """Move confirmed uploads to their durable keys, after the hold exists.
 

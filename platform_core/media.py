@@ -78,10 +78,21 @@ def has_ffmpeg() -> bool:
 
 # ── P5: đọc metadata video (đo duration để GIỮ CHỖ credit) ────────────────────
 
+def is_remote_source(src: str) -> bool:
+    """`src` là URL ffprobe tự đọc được, hay một đường dẫn trên đĩa?
+
+    Tách ra thành hàm riêng vì phép phân biệt này quyết định một thứ tốn kém:
+    với R2, nguồn LÀ một presigned URL và ffprobe chỉ tải vài khối đầu bằng
+    range request. Vòng qua nó bằng cách tải cả tệp về là đúng thứ H10 sinh ra
+    để tránh — một video 2 GB đi qua tunnel chỉ để đọc một con số.
+    """
+    return str(src or "").lower().startswith(("http://", "https://"))
+
+
 def probe(path: str) -> dict:
-    """Metadata video qua ffprobe (đồng bộ).
+    """Metadata video qua ffprobe (đồng bộ). Nhận đường dẫn HOẶC URL http(s).
     Trả {duration, width, height, codec, fps, audio_codec, file_size_mb, bitrate_kbps}."""
-    if not os.path.isfile(path):
+    if not is_remote_source(path) and not os.path.isfile(path):
         raise FileNotFoundError(f"Không có file video: {path}")
     cmd = [ffprobe_bin(), "-v", "quiet", "-print_format", "json",
            "-show_format", "-show_streams", path]

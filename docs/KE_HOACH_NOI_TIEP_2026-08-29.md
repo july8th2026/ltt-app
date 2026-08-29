@@ -175,7 +175,16 @@ Làm trước để mọi phép đo sau đó có mốc sạch. Chi tiết ở §
 **Nghiệm thu:** `git status` sạch phần tracked · `gate.py` **PASS** trên cây
 đứng yên · nhật ký ghi số thật.
 
-### Đợt 1 — H35.10a: đo thời lượng phía máy chủ *(nút thắt, rủi ro thấp)*
+### ✅ Đợt 1 — H35.10a: đo thời lượng phía máy chủ — **XONG 2026-08-29**
+
+`python tools/gate.py` → **PASS 23/23** trên cây đứng yên. `test_325` 20 phép
+kiểm, bánh cóc đã kiểm **có răng**. Chi tiết ở mục `2026-08-29 — H35.10a` của
+`NHAT_KY.md`. ⇒ **Đợt 2 hết chặn.**
+
+⚠️ Đọc kỹ giới hạn trước khi tưởng Q84 đã đóng: H35.10a làm quote **đúng**, chưa
+làm nó **không thể sai** — `_dam_bao_giu_cho` vẫn nâng giữ chỗ. Đó là H35.10b.
+
+<details><summary>Kế hoạch gốc của Đợt 1 (giữ để truy vết)</summary>
 
 **Làm gì.** Ở cả `POST /quotes` và `POST /jobs` (`server/api/jobs.py:216` và
 `:281`), đặt `params["duration_s"]` bằng số đo thật **trước** khi gọi
@@ -195,9 +204,12 @@ Làm trước để mọi phép đo sau đó có mốc sạch. Chi tiết ở §
 
 **Đường lùi:** revert đúng một commit; không migration, không chạm sổ tiền.
 
-### Đợt 2 — H41.5 + H35.10: mở hai bề mặt *(phụ thuộc Đợt 1)*
+</details>
 
-Chỉ bắt đầu khi Đợt 1 xanh và đã deploy.
+### Đợt 2 — H41.5 + H35.10: mở hai bề mặt *(Đợt 1 đã xanh — hết chặn)*
+
+⏳ **Cần chủ sản phẩm gật trước**, vì đợt này chạm hai ranh giới: nó **mở bề mặt
+công khai** cho khách trả tiền, và bước bật cờ + deploy nằm ngoài quyền phiên.
 
 1. **H41.5** — khai bề mặt công khai `upscalevideo`, gỡ cạnh cross-product ở
    `apps/taovideo/routes.py:548,577`.

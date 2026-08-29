@@ -62,6 +62,10 @@ TOOL_PARAM_TYPES = frozenset({
     "string", "int", "number", "bool", "enum", "model_ref",
     "text", "image", "image[]", "video", "video[]", "audio", "json", "json[]",
 })
+#: Kiểu media mà ffprobe đọc được thời lượng. `image` không nằm đây — một tấm
+#: ảnh không có thời lượng, và khai như thế là một lỗi hợp đồng chứ không phải
+#: một phép đo trả 0.
+MEASURABLE_TYPES = frozenset({"video", "audio"})
 TOOL_PORT_TYPES = frozenset({
     "text", "image", "image[]", "video", "video[]", "audio", "json", "json[]",
     "model_ref",
@@ -379,6 +383,22 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
             if not schema.get("field"):
                 raise RegistryError(
                     f"[{manifest.slug}] tool {tool.name!r} depends_on thiếu field")
+        measured_from = schema.get("measured_from")
+        if measured_from is not None:
+            # `measured_from` nghĩa là: "máy chủ đo tham số này từ media kia,
+            # đừng tin con số người gọi khai". Nó tồn tại vì giá phụ thuộc nó
+            # (Q84) — nên một bản khai sai phải chặn lúc NẠP, không phải lúc
+            # tính tiền.
+            if kind not in ("number", "int"):
+                raise RegistryError(
+                    f"[{manifest.slug}] tool {tool.name!r} measured_from chỉ dùng "
+                    f"cho tham số số, không phải {kind!r}")
+            nguon = tool.params_schema.get(str(measured_from))
+            if not isinstance(nguon, dict) or nguon.get("type") not in MEASURABLE_TYPES:
+                raise RegistryError(
+                    f"[{manifest.slug}] tool {tool.name!r} measured_from phải trỏ "
+                    f"tới một tham số đo được ({'/'.join(sorted(MEASURABLE_TYPES))}): "
+                    f"{measured_from!r}")
         if kind == "enum" and not any(
                 key in schema for key in ("values", "source", "depends_on")):
             raise RegistryError(

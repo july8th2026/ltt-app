@@ -16,6 +16,133 @@
 
 
 
+## 2026-08-29 — H35.10a: giá thôi tin con số khách khai
+
+- **Mục tiêu:** Đợt 1 của `KE_HOACH_NOI_TIEP_2026-08-29.md` — đo thời lượng phía
+  máy chủ lúc báo giá.
+- **Hạng mục:** H35.10a — hoàn thành. **Trạng thái:** xong, gate đầy đủ PASS.
+
+### Vì sao việc này đáng làm trước
+
+`video.upscale` và `video.subtitle` tính giá theo `duration_s` **do người gọi
+khai**, còn worker đo lại thật rồi *nâng giữ chỗ*. Với giao diện thì ổn — có
+người chọn một tệp họ nhìn thấy. Với máy gọi máy thì nó phá lời hứa của một báo
+giá đã ký: đúng hình dạng sự cố Seedance **giữ 29 thu 78** (Q84). Chẩn đoán đã
+nằm sẵn trong `apps/upscalevideo/manifest.py` từ lâu; cái thiếu là người làm.
+
+Và nó là **nút thắt**: một việc rủi ro thấp mở khoá cả H41.5 lẫn H35.10.
+
+### Đã làm
+
+App **khai**, nền tảng **giải quyết chung** — đúng khuôn H41.4 vừa lập với
+`sync_executor`, để `server/api` không phải biết tên app nào cần đo cái gì:
+
+```python
+"duration_s": {"type": "number", "min": 0, "measured_from": "video_key"}
+```
+
+- `registry`: khai sai thì **app không nạp được** (`measured_from` phải trỏ tới
+  tham số `video`/`audio`, và chỗ nhận phải là kiểu số). Fail-closed ở lúc nạp,
+  không phải lúc tính tiền.
+- `invocation.apply_server_measurements()`: cả `/quotes` lẫn `/jobs` gọi **cùng
+  một hàm** trên **cùng `staging_key`**, nên hai route không thể lệch nhau.
+- `media.probe()` nay nhận **URL http(s)**, không chỉ đường dẫn. Với R2 nguồn
+  *là* presigned URL và ffprobe đọc bằng range request — không tải cả tệp về.
+- `Storage.local_path()`: cùng khuôn `url_for()` (backend đối tượng trả `None`).
+  Có nó thì kho cục bộ đo thẳng trên đĩa, không phải sao chép qua `open()`.
+
+⭐ **Chỗ dễ làm sai nhất, và là lý do không dùng `media.duration_seconds()`:**
+hàm đó nuốt lỗi thành `0.0` **có chủ ý**, và ở worker thế là đúng. Ở đường tính
+tiền `0.0` nghĩa là **giữ chỗ 0 credit** — khách được làm miễn phí, không dòng
+nào chỉ ra vì sao. Nên ở đây mọi lỗi đo đều **báo**, và `duration <= 0` cũng bị
+từ chối: một tệp hỏng vẫn trả `duration: 0`, đúng kiểu mà sai tiền.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\test_nhanh.py --noi-tiep -k test_325` | **PASS 20** |
+| Gỡ tạm phép đo ở `create_job` rồi chạy lại | **ĐỎ đúng chỗ** — `create_job: dinh gia ma khong do thoi luong` |
+| `python tools\gate.py` trên cây đứng yên | **RESULT: PASS 23/23** |
+
+`test_325` có 20 phép kiểm: hợp đồng `measured_from`, R2 đo qua presigned URL
+(**đếm lời gọi** để chứng minh `open()` không hề được gọi), số khách khai bị thay
+(thiếu · thừa · âm · chữ · `1e9`), không đo được thì báo lỗi, và một **bất biến
+nguồn** bằng AST: mọi route có `price()` đều phải gọi `apply_server_measurements`
+và gọi **trước**. Bất biến đó bắt đúng lỗi thật ở đây — *quên một trong hai
+route* — và nó đã được kiểm là **có răng**.
+
+### Ba thứ tìm được trên đường
+
+⭐ **Lỗi thật do test bắt, không phải do đọc mã:** route truyền vào `PublicTool`
+(bản chiếu catalog), **không** phải `ToolSpec` — nên `tool.params_schema` ném
+`AttributeError`. Bản chiếu cố ý không mang `measured_from`: đó là chuyện nội bộ
+giữa app và nền tảng, không phải thứ khách khai. Sửa bằng cách đọc
+`_internal_schema()`, đúng nguồn mà `media_params()` ngay trên đã dùng.
+
+⚠️ **Ghi một tệp bằng Python "text mode" làm hỏng cả tệp dù chỉ đổi 4 dòng.** Hai
+manifest ra diff **72/68 dòng**; bỏ khoảng trắng thì còn **6**. Đã khôi phục và
+thay bằng phép thay ở mức **byte** (`read_bytes`/`write_bytes`). Đây là họ hàng
+gần của quy tắc 3 trong `CLAUDE.md`, ở dạng ghi thay vì dạng escape.
+
+⭐ **Và một cảnh báo SAI của chính tôi, đáng ghi vì cách bác bỏ mới là thứ dùng
+lại được:** `storage.py` ra diff `88/72` làm tôi tưởng cũng hỏng như trên. Không
+phải — số dòng có khoảng trắng cuối **bằng nhau ở cả hai bản (7 và 7)**, và
+`diff` sau khi cắt khoảng trắng cuối cho ra **đúng hai khối tôi thêm**. numstat
+lớn chỉ là thuật toán diff chọn cách biểu diễn khác. ⇒ Đừng đọc `--ignore-all-space`
+lệch nhiều thành "hỏng"; đối chiếu **nội dung** rồi hãy kết luận.
+
+### Bánh cóc i18n: đã nâng mốc +2, và vì sao
+
+Hai thông điệp `RegistryError` mới làm `check_i18n` đỏ (33 → 35 ở
+`registry.py`). Đã chạy `--chot`; mốc đổi **đúng +2, chỉ ở một tệp**, thấy được
+trong diff.
+
+Căn cứ: đó là lỗi **hợp đồng lúc nạp app**, đọc bởi lập trình viên, không render
+cho khách — cùng loại với 33 thông điệp `RegistryError` đã có sẵn trong chính
+tệp đó, cũng không bọc. Bọc `_()` sẽ đẩy chuỗi của lập trình viên vào danh mục
+người dịch — đúng thứ mà chú thích miễn trừ `notes=` trong `check_i18n.py` đã
+cảnh báo. **Không** mở rộng miễn trừ cho cả lớp `RegistryError`: làm thế mới là
+nới bánh cóc, và nó sẽ giấu 33 chuỗi cùng mọi chuỗi sau này.
+
+### Hai phiên cùng cây
+
+⭐ **Ba lượt gate đỏ trong buổi, không lượt nào là hồi quy** — cả ba là rác
+fixture của lượt test bị ngắt khi hai phiên cùng chạy:
+`CONTRACT_BASELINE.json` (`execution_mode: ASYNC_JOB → SYNC`), và
+`sdk/python/ltt_public_api.py` (một chú thích `@covers-not` bị **cắt cụt giữa
+câu**). Cách phân biệt rác với hợp đồng đổi thật, dùng được lần sau: **diff phần
+mã có chạm khái niệm đó không.** Ở đây `git diff` phần mã của tôi có **0** dòng
+chạm `execution_mode` ⇒ rác. Có kèm thay đổi mã ⇒ thật, và chỉ lúc đó `--accept`
+mới đúng chỗ.
+
+Một bước bánh cóc đỏ vì commit của phiên kia. Tôi **không khai hộ** — đó là phán
+đoán về test của họ; họ sửa bằng cách **tự tạo tiền đề rồi hoàn nguyên**, bỏ hẳn
+hai `pytest.skip`, không dùng `--accept` (`938dca7`).
+
+### Cách lùi lại
+
+Revert commit này. Không migration, **không chạm `platform_core/credit.py`**,
+không đổi giá của bất kỳ tool nào đang mở — `video.upscale`/`video.subtitle` vẫn
+**chưa** `api_exposed`, nên đường tiền đang chạy không đổi hành vi.
+
+### Còn tồn đọng
+
+**H35.10a làm quote *đúng*; nó KHÔNG làm quote *không thể sai*.**
+`_dam_bao_giu_cho` vẫn còn đó và vẫn nâng giữ chỗ nếu worker tính ra số khác
+(trim, preview, hay bất kỳ khác biệt nào giữa "thời lượng tệp" và `eff_dur`).
+Dựa vào *"hai số này chắc bằng nhau"* **chính là** kiểu lập luận đã đẻ ra Q84.
+Muốn Q84 thành bảo đảm cấu trúc thì phải có **H35.10b** — trần cứng ở tầng
+credit, làm riêng một phiên (Đợt 3).
+
+### Việc tiếp theo
+
+1. **Đợt 2** — H41.5 + H35.10, nay đã hết chặn. ⚠️ Mở tool phải chạy
+   `setup\cong_tac_tool_api.ps1` **rồi mới** deploy, và phải cập nhật
+   `APP_API_COVERAGE_FINAL.md` (`test_212` đọc bảng đó như dữ liệu).
+2. **Đợt 3** — H35.10b, phiên riêng, đường lùi viết trước.
+
+
 ## 2026-08-29 — Đóng hồ sơ Codex, dựng kế hoạch nối tiếp
 
 - **Mục tiêu:** tiếp quản việc từ Codex (hết quota giữa chừng), chặn Codex chạy

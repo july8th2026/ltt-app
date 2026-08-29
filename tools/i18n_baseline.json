@@ -86,7 +86,7 @@
     "platform_core/models.py": 2,
     "platform_core/nexus/versions.py": 1,
     "platform_core/prompt_fragments.py": 3,
-    "platform_core/registry.py": 33,
+    "platform_core/registry.py": 35,
     "platform_core/runtime_paths.py": 1,
     "platform_core/storage.py": 9,
     "platform_core/tokens.py": 1,
@@ -115,5 +115,5 @@
     "server/templating.py": 6,
     "server/usage_rate_limit.py": 1
   },
-  "tong": 772
+  "tong": 774
 }

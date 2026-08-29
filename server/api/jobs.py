@@ -211,6 +211,13 @@ def register_job_routes(api, config, tag: str) -> None:
         params = invocation.build_job_params(
             tool, clean, media_values={name: f"upload:{session.id}"
                                        for name, session in sessions.items()})
+        # Anything the app declared `measured_from` is measured here, from the
+        # staged upload, before a price exists. A caller-declared duration must
+        # never reach the ledger: that is what let a quote of 29 settle at 78
+        # (Q84). Both routes call this with the same staging key, so they cannot
+        # disagree (H35.10a).
+        params = invocation.apply_server_measurements(
+            tool, params, sessions=sessions)
         # The app computes the price; the published regime bounds it and
         # names itself on the quote. Two facts written at the same instant is
         # what makes a charge reconcilable months later (EXT-15).
@@ -276,6 +283,8 @@ def register_job_routes(api, config, tag: str) -> None:
         params = invocation.build_job_params(
             tool, clean, media_values={name: f"upload:{session.id}"
                                        for name, session in sessions.items()})
+        params = invocation.apply_server_measurements(
+            tool, params, sessions=sessions)
         cost = pricing.apply_bounds(
             invocation.price(tool, params),
             pricing.active_for(db, tool=tool.name))

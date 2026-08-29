@@ -113,6 +113,18 @@ class Storage:
         None → app nhận multipart qua route như cũ (chỉ hợp file nhỏ)."""
         return None
 
+    def local_path(self, key: str) -> Optional[str]:
+        """Đường dẫn trên đĩa của `key`, hoặc None nếu backend không có đĩa.
+
+        Cùng khuôn với `url_for()`: backend đối tượng (R2) trả None vì file
+        không nằm trên máy này. Dùng cho công cụ NGOÀI tiến trình cần đọc file
+        tại chỗ — ffprobe là ca thật — mà không phải sao chép qua `open()`.
+
+        ⛔ Không dùng nó để đọc/ghi nội dung: đó là việc của `open()`/`put()`,
+        và chỉ hai hàm đó mới đúng với mọi backend.
+        """
+        return None
+
     # ── Hai hàm dưới đây tồn tại để app KHÔNG phải tự bọc try/except ─────────
     #
     # Trước 2026-08-06, 14 chỗ gọi trong repo đều bọc `url_for`/`put_url` bằng
@@ -242,6 +254,10 @@ class LocalStorage(Storage):
 
     def size(self, key: str) -> int:
         return self._path(key).stat().st_size
+
+    def local_path(self, key: str) -> Optional[str]:
+        path = self._path(key)
+        return str(path) if path.exists() else None
 
     def promote(self, staging_key: str, final_key: str,
                 content_type: str = "application/octet-stream") -> StoredFile:

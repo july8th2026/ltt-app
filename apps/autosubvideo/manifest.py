@@ -61,7 +61,10 @@ MANIFEST = AppManifest(
             "quality": {"type": "enum", "values": ["draft", "standard", "high"], "default": "standard"},
             "output_format": {"type": "enum", "values": ["mp4", "mkv", "webm"], "default": "mp4"},
             "export_srt": {"type": "bool", "default": True},
-            "duration_s": {"type": "number", "min": 0},
+            # Máy chủ đo từ chính tệp đã tải lên; số người gọi khai không chạm
+            # vào giá (Q84, H35.10a).
+            "duration_s": {"type": "number", "min": 0,
+                           "measured_from": "video_key"},
         },
         returns={"video_key": "video", "srt_key": "text", "ass_key": "text"},
         verifiable=("technical",),
