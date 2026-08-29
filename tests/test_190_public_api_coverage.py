@@ -37,7 +37,7 @@ DISPOSITION_DOC = (Path(__file__).parent.parent / "docs" / "PUBLIC_API" /
 DISPOSITION = {
     "thumbnail": (EXPOSE_V1, ("image.thumbnail",)),
     "taoanh": (EXPOSE_V1, ("image.generate",)),
-    "upscalevideo": (EXPOSE_V1, ("image.upscale",)),
+    "upscalevideo": (EXPOSE_V1, ("image.upscale", "video.upscale")),
     "prompt_ai_ommi": (EXPOSE_V1, ("text.prompt_package", "story.storyboard")),
     # The in-house image model (H37/Q102). EXPOSE_V1 means the contract is
     # published-shaped, not that customers can call it: the operator switch
@@ -63,10 +63,20 @@ DISPOSITION = {
     #    nay va noi ro hop dong la gi.
     "vps": (DEFER, ()),
 
-    # Priced from a caller-declared duration, with a run-time hold top-up: one
-    # root cause, three tools (waves 2 and 3).
+    # CU: "Priced from a caller-declared duration, with a run-time hold top-up:
+    # one root cause, three tools (waves 2 and 3)."
+    #
+    # Cai goc do da bi go 2026-08-29 (H35.10a+b): may chu DO thoi luong luc bao
+    # gia, va giu cho cua job den tu API bi NIEM PHONG o con so da ky. Nen hai
+    # trong ba tool da mo.
+    #
+    # ⛔ Ba app con lai KHONG con chung mot ly do nua, va gop chung lai la cach
+    #    nhanh nhat de ai do mo nham o luot sau:
+    #    - `taovideo`  — tap gia tri hop le doi theo model (khong lien quan gi
+    #                    toi thoi luong);
+    #    - `taoclipngan` — con thieu tran dong thoi GPU (H35.10c).
     "taovideo": (MIGRATE, ()),
-    "autosubvideo": (MIGRATE, ()),
+    "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 
     # No Job at all: credit is held against a message id, streamed through a

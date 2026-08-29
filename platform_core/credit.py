@@ -268,6 +268,22 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
         raise ValueError("so credit giu cho khong the am")
     if amount == 0:
         return
+    if _giu_cho_da_niem_phong(db, job_id):
+        # H35.10b — trần cứng cho job đến từ `/api/v1`.
+        #
+        # Giữ chỗ đầu tiên của một job API LÀ con số trên báo giá đã ký. Nâng nó
+        # lên sau đó nghĩa là khách trả nhiều hơn thứ họ bấm đồng ý — đúng Q84,
+        # sự cố Seedance giữ 29 thu 78.
+        #
+        # ⭐ Hấp thụ chứ KHÔNG làm hỏng job: phần chênh là variance nội bộ của
+        #    nền tảng, đúng như `quyet_toan` vốn đã hấp thụ khi provider đắt hơn
+        #    báo giá. Ném lỗi ở đây sẽ giết job của khách vì một khác biệt làm
+        #    tròn một credit — tệ hơn hẳn thứ nó định bảo vệ.
+        #
+        # ⛔ Đây KHÔNG phải nuốt lỗi lặng lẽ: nó ghi một `job_event` nội bộ, nên
+        #    người trực đọc lại được vì sao giữ chỗ không nhúc nhích.
+        _ghi_nhat_ky_tran(db, job_id, amount)
+        return
     # Khoá TRƯỚC khi đọc số dư: từ đây tới hết transaction, chỉ request này được
     # giữ chỗ cho user này → check-then-write trở thành nguyên tử, hết double-spend.
     _khoa_so_du_user(db, user_id)
@@ -288,6 +304,48 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
             db, job, "credit_held", visibility=job_events.INTERNAL,
             details={"credit": int(amount)}, event_key="credit-held",
         )
+
+
+#: Khoá nền tảng gắn vào `params` của job đến từ `/api/v1`.
+#: Chép giá trị thay vì import `public_api.invocation` — `credit.py` là tầng
+#: dưới, và một vòng import ở đường tiền là thứ không đáng đổi lấy một chữ.
+_KHOA_META_API = "_api"
+
+
+def _giu_cho_da_niem_phong(db: DbSession, job_id: str) -> bool:
+    """Job này đã có giữ chỗ, VÀ nó đến từ API công khai?
+
+    Hai điều kiện, và cả hai đều cần:
+
+    - **đã có giữ chỗ** — lần giữ ĐẦU của một job API chính là con số trên báo
+      giá; chặn nó thì không job API nào chạy được;
+    - **đến từ API** — đường giao diện web thì việc nâng giữ chỗ là đúng: có
+      người ngồi đó, họ chọn tệp họ nhìn thấy, và họ được hỏi lại. Máy gọi máy
+      thì không có ai để hỏi, nên lời hứa phải là lời hứa (Q84).
+    """
+    if not job_id:
+        return False
+    from platform_core.models import Job
+
+    job = db.get(Job, job_id)
+    if job is None or _KHOA_META_API not in (job.params or {}):
+        return False
+    return so_da_giu(db, job_id) > 0
+
+
+def _ghi_nhat_ky_tran(db: DbSession, job_id: str, xin_them: int) -> None:
+    """Ghi lại lần nâng giữ chỗ BỊ TỪ CHỐI, để người trực đọc lại được."""
+    from platform_core import job_events
+    from platform_core.models import Job
+
+    job = db.get(Job, job_id)
+    if job is None:
+        return
+    job_events.append(
+        db, job, "credit_hold_capped", visibility=job_events.INTERNAL,
+        details={"requested": int(xin_them), "held": int(so_da_giu(db, job_id))},
+        event_key="credit-hold-capped",
+    )
 
 
 def _da_ket_so(db: DbSession, job_id: str) -> bool:

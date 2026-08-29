@@ -76,10 +76,14 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # `text.chat` (H38/Q106) vao danh sach dong bang ngay 24/08. Cung mot canh
     # bao nhu `image.ltt` o tren: co mat o day nghia la HOP DONG da dong bang,
     # KHONG phai khach goi duoc — ba cong fail-closed cua Q92 van dung rieng.
+    # `video.subtitle` + `video.upscale` vao danh sach dong bang 29/08 (H35.10).
+    # Canh bao cu van dung nguyen van cho ca hai: co mat o day nghia la HOP DONG
+    # da dong bang, KHONG phai khach goi duoc.
     assert published == exposed == ["image.generate", "image.ltt",
                                     "image.thumbnail", "image.upscale",
                                     "story.storyboard", "text.chat",
-                                    "text.prompt_package"]
+                                    "text.prompt_package", "video.subtitle",
+                                    "video.upscale"]
 
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in

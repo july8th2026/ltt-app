@@ -638,6 +638,238 @@
         "jobs:create"
       ],
       "contract_hash": "c55834222a3c4a0c"
+    },
+    {
+      "name": "video.subtitle",
+      "capability": "video",
+      "description": "Burn a transcript you already have into a video as styled subtitles. Costs 5 credits per minute at standard quality; draft costs 0.6x and high costs 1.5x. The duration is measured from the file you upload, not from anything you send.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "string",
+            "description": "The video to subtitle, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+            "examples": [
+              "upl_from_POST_/api/v1/uploads"
+            ]
+          },
+          "transcript": {
+            "type": "array",
+            "description": "The words to burn in, as a list of segments with `start`, `end` and `text`. This tool does not transcribe for you.",
+            "examples": [
+              [
+                {
+                  "start": 0.0,
+                  "end": 1.8,
+                  "text": "Xin chao"
+                }
+              ]
+            ]
+          },
+          "style_id": {
+            "type": "string",
+            "enum": [
+              "default",
+              "tiktok_bold",
+              "reels_clean",
+              "cinematic",
+              "meme_punch",
+              "kids_color",
+              "punchline",
+              "word_emphasis"
+            ],
+            "default": "default",
+            "description": "Look of the subtitles: font, colour and outline. Does not change the price.",
+            "examples": [
+              "default"
+            ]
+          },
+          "segment_mode": {
+            "type": "string",
+            "enum": [
+              "sentence",
+              "phrase",
+              "short_form",
+              "punchline",
+              "word_emphasis"
+            ],
+            "default": "sentence",
+            "description": "How the transcript is cut into on-screen lines — whole sentences, shorter phrases, or one emphasised word at a time.",
+            "examples": [
+              "sentence"
+            ]
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "standard",
+              "high"
+            ],
+            "default": "standard",
+            "description": "Encoding quality of the finished video. `draft` costs 0.6 times the standard price and `high` costs 1.5 times.",
+            "examples": [
+              "standard"
+            ]
+          },
+          "output_format": {
+            "type": "string",
+            "enum": [
+              "mp4",
+              "mkv",
+              "webm"
+            ],
+            "default": "mp4",
+            "description": "Container of the finished video file.",
+            "examples": [
+              "mp4"
+            ]
+          },
+          "export_srt": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also return the subtitles as a separate .srt file alongside the video.",
+            "examples": [
+              true
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "transcript",
+          "video_key"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "artifact"
+          },
+          "srt_key": {
+            "type": "string"
+          },
+          "ass_key": {
+            "type": "string"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "2e6e7bfda482d0ec"
+    },
+    {
+      "name": "video.upscale",
+      "capability": "video",
+      "description": "Upscale a video to 1080p, 1440p or 4K. Costs 30 credits per minute at 1080p on the fast preset; 1440p costs 1.8x, 4K costs 4x, and the quality preset costs 2.5x. The duration is measured from the file you upload, not from anything you send.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "string",
+            "description": "The video to enlarge, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+            "examples": [
+              "upl_from_POST_/api/v1/uploads"
+            ]
+          },
+          "preset": {
+            "type": "string",
+            "enum": [
+              "fast",
+              "quality"
+            ],
+            "default": "fast",
+            "description": "How hard to work on the result. `quality` costs 2.5 times as much as `fast` and takes longer.",
+            "examples": [
+              "fast"
+            ]
+          },
+          "target_height": {
+            "type": "integer",
+            "enum": [
+              1080,
+              1440,
+              2160
+            ],
+            "default": 1080,
+            "description": "Height of the finished video in pixels. 1440 costs 1.8 times the 1080 price and 2160 costs 4 times.",
+            "examples": [
+              1080
+            ]
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "h264",
+              "hevc"
+            ],
+            "default": "h264",
+            "description": "Video codec of the finished file. `hevc` makes a smaller file that fewer players open.",
+            "examples": [
+              "h264"
+            ]
+          },
+          "preview": {
+            "type": "boolean",
+            "default": false,
+            "description": "Render only the first 8 seconds, and charge only for them. Use it to check the settings before paying for the whole video.",
+            "examples": [
+              false
+            ]
+          },
+          "preserve_fps": {
+            "type": "boolean",
+            "default": true,
+            "description": "Keep the original frame rate instead of letting the encoder choose one.",
+            "examples": [
+              true
+            ]
+          },
+          "preserve_audio": {
+            "type": "boolean",
+            "default": true,
+            "description": "Copy the original audio track across.",
+            "examples": [
+              true
+            ]
+          },
+          "stabilize": {
+            "type": "boolean",
+            "default": false,
+            "description": "Reduce camera shake. Costs 1.2 times the price without it.",
+            "examples": [
+              false
+            ]
+          },
+          "smooth_motion": {
+            "type": "boolean",
+            "default": false,
+            "description": "Interpolate frames for smoother motion. Costs 2.2 times the price without it, and combines with `stabilize`.",
+            "examples": [
+              false
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "video_key"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "artifact"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "91f9b8aece786b60"
     }
   ]
 }

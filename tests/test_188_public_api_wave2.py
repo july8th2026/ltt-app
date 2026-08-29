@@ -71,24 +71,36 @@ def test_the_gpu_tool_is_recognised_as_a_scarce_resource():
 
 # ── The two deferrals, each with its reason ──────────────────────────────────
 
-def test_video_upscale_stays_closed_because_its_hold_can_grow():
-    """Its price depends on a duration the caller declares, and the worker tops
-    the hold up once it measures the real one — fine for a person choosing a
-    file, not for a signed machine quote (Q84)."""
+def test_video_upscale_is_open_and_never_asks_the_caller_for_the_duration():
+    """H35.10 — mở 2026-08-29. CŨ: nó đóng vì giữ chỗ có thể phình.
+
+    ⭐ Phép kiểm cũ chốt `api_exposed is False` — tức nó chốt **quyết định**, và
+       một quyết định thì đổi được. Cái đáng chốt là **lời hứa**: giá không bao
+       giờ được tính từ một con số người gọi khai.
+
+    Hai điều kiện làm lời hứa đó thành thật, và cả hai đều kiểm ở đây:
+    máy chủ **đo** thời lượng (H35.10a), và giữ chỗ của job API bị **niêm
+    phong** ở con số đã ký (H35.10b, chốt riêng ở `test_326`).
+    """
     tool = next(spec for item in discover()
                 if item.manifest.slug == "upscalevideo"
                 for spec in item.manifest.tools if spec.name == "video.upscale")
-    assert tool.api_exposed is False
-    assert "image.upscale" in [entry.name for entry in build_catalog(_config())]
-    assert "video.upscale" not in [entry.name for entry in build_catalog(_config())]
+    assert tool.api_exposed is True
+    ten = [entry.name for entry in build_catalog(_config())]
+    assert "image.upscale" in ten and "video.upscale" in ten
 
-    # The behaviour that makes it unsafe to publish today still exists, so the
-    # deferral is real rather than a stale note.
-    from apps.upscalevideo import jobs as upscale_jobs
+    # (a) `duration_s` do MAY CHU do, va khach khong gui duoc no.
+    assert tool.params_schema["duration_s"]["measured_from"] == "video_key"
+    assert "duration_s" in (tool.api_contract.get("hidden") or ())
+    cong_khai = next(e for e in build_catalog(_config())
+                     if e.name == "video.upscale")
+    assert "duration_s" not in cong_khai.input_schema["properties"], (
+        "khach van gui duoc thoi luong — tang public dang cai voi so do that")
 
-    assert hasattr(upscale_jobs, "_dam_bao_giu_cho")
-    source = Path("apps/upscalevideo/jobs.py").read_text(encoding="utf-8")
-    assert "credit.giu_cho(db, user_id, need - held, job_id)" in source
+    # (b) Tran giu cho van con o tang credit. Go no di thi loi hua vo hieu, va
+    #     phep kiem nay phai do truoc khi ai do phat hien bang hoa don.
+    tran = Path("platform_core/credit.py").read_text(encoding="utf-8")
+    assert "_giu_cho_da_niem_phong" in tran
 
 
 def test_video_generate_stays_closed_because_its_options_depend_on_the_model():

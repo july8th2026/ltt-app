@@ -81,6 +81,85 @@ MANIFEST = AppManifest(
         },
         returns={"video_key": "video"},
         verifiable=("technical",),
+
+        # ── Public API (H35.10, mở 2026-08-29) ───────────────────────────────
+        # Trước 2026-08-29 tool này CỐ Ý đóng, và lý do vẫn đáng đọc: giá phụ
+        # thuộc `duration_s` do người gọi khai, còn worker nâng giữ chỗ khi đo
+        # được số thật — với máy gọi máy thì đó là phá lời hứa của một báo giá
+        # đã ký (Q84, sự cố Seedance giữ 29 thu 78).
+        #
+        # H35.10a đóng đúng lỗ đó: `duration_s` khai `measured_from` ở trên, nên
+        # máy chủ đo từ chính tệp đã tải lên TRƯỚC khi tính giá, và tham số này
+        # nằm trong `hidden` — khách không gửi nó được nữa.
+        #
+        # ⚠️ Còn nợ H35.10b: `_dam_bao_giu_cho` vẫn nâng giữ chỗ nếu worker tính
+        #    ra số khác. Quote nay ĐÚNG, chưa phải KHÔNG THỂ SAI.
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Upscale a video to 1080p, 1440p or 4K. Costs 30 "
+                            "credits per minute at 1080p on the fast preset; "
+                            "1440p costs 1.8x, 4K costs 4x, and the quality "
+                            "preset costs 2.5x. The duration is measured from "
+                            "the file you upload, not from anything you send."),
+            # Khách không khai thời lượng: máy chủ đo. Ẩn nó đi là phần thi hành
+            # của lời hứa đó — một tham số vẫn gửi được là một tham số vẫn cãi
+            # được với con số thật.
+            "hidden": ("duration_s",),
+            "params": {
+                "video_key": {
+                    "description": ("The video to enlarge, given as the id of "
+                                    "an upload you confirmed or of an artifact "
+                                    "from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "preset": {
+                    "description": ("How hard to work on the result. `quality` "
+                                    "costs 2.5 times as much as `fast` and "
+                                    "takes longer."),
+                    "example": "fast",
+                },
+                "target_height": {
+                    "description": ("Height of the finished video in pixels. "
+                                    "1440 costs 1.8 times the 1080 price and "
+                                    "2160 costs 4 times."),
+                    "example": 1080,
+                },
+                "codec": {
+                    "description": ("Video codec of the finished file. `hevc` "
+                                    "makes a smaller file that fewer players "
+                                    "open."),
+                    "example": "h264",
+                },
+                "preview": {
+                    "description": ("Render only the first 8 seconds, and "
+                                    "charge only for them. Use it to check the "
+                                    "settings before paying for the whole "
+                                    "video."),
+                    "example": False,
+                },
+                "preserve_fps": {
+                    "description": ("Keep the original frame rate instead of "
+                                    "letting the encoder choose one."),
+                    "example": True,
+                },
+                "preserve_audio": {
+                    "description": "Copy the original audio track across.",
+                    "example": True,
+                },
+                "stabilize": {
+                    "description": ("Reduce camera shake. Costs 1.2 times the "
+                                    "price without it."),
+                    "example": False,
+                },
+                "smooth_motion": {
+                    "description": ("Interpolate frames for smoother motion. "
+                                    "Costs 2.2 times the price without it, and "
+                                    "combines with `stabilize`."),
+                    "example": False,
+                },
+            },
+        },
     ), ToolSpec(
         name="image.upscale", job_type="upscalevideo.render",
         description=N_('Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ.'),

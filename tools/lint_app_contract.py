@@ -16,6 +16,7 @@ Khong thay the review cua nguoi/agent - chi bat cac loi co hoc re tien, som.
 """
 from __future__ import annotations
 
+import ast
 import pathlib
 import re
 import sys
@@ -87,6 +88,85 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
     },
 }
+
+
+def _be_mat_app_tu_khai(goc: pathlib.Path, slug: str) -> set | None:
+    """`BE_MAT_CONG_KHAI` mà chính app khai trong `__init__.py`, hoặc None.
+
+    Đọc bằng AST chứ không import: linter chạy trên cây nguồn, và import một app
+    kéo theo cả phụ thuộc của nó.
+    """
+    p = goc / slug / "__init__.py"
+    if not p.exists():
+        return None
+    try:
+        cay = ast.parse(_read(p))
+    except SyntaxError:
+        return None
+    for node in cay.body:
+        # Nhan ca `X = ...` lan `X: kieu = ...` — mot ban khai co chu thich kieu
+        # van la mot ban khai, va bo sot no thi hang rao im lang.
+        if isinstance(node, ast.Assign):
+            dich = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            dich = [node.target]
+        else:
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == "BE_MAT_CONG_KHAI"
+                   for t in dich):
+            continue
+        if node.value is None:
+            return None
+        try:
+            gia_tri = ast.literal_eval(node.value)
+        except (ValueError, TypeError, SyntaxError):
+            # Ban khai phai la LITERAL. Boc `frozenset(...)`/`set(...)` quanh no
+            # lam cho doc-khong-import het doc duoc — noi thanh cau thay vi tra
+            # None, vi None o day co nghia la "chua khai gi ca".
+            return set()
+        try:
+            return {tuple(x) for x in gia_tri}
+        except TypeError:
+            return set()
+    return None
+
+
+def _doi_chieu_ban_khai(goc: pathlib.Path) -> list:
+    """Bản khai của app và allowlist của linter phải khớp NHAU, cả hai chiều.
+
+    ⭐ Vì sao cần cả hai chiều, không chỉ "app khai gì thì cho phép nấy": nếu chỉ
+       đọc bản khai thì một app tự mở rộng bề mặt của mình là đủ để app khác
+       thò tay vào sâu hơn — hàng rào tự tháo chính nó. Còn nếu chỉ đọc
+       allowlist thì app không biết mình đang gánh hợp đồng của ai (đúng lỗ
+       H41.5 bịt). Hai bản khai, phải khớp, và lệch là ĐỎ.
+    """
+    findings = []
+    duoc_goi = {bi_goi for _, bi_goi in APP_DUOC_DUNG_APP}
+    for bi_goi in sorted(duoc_goi):
+        if not (goc / bi_goi).is_dir():
+            # App khong co trong cay dang quet. Xay ra that voi cay tong hop cua
+            # test, va o do doi mot ban khai la doi mot thu khong the ton tai.
+            continue
+        khai = _be_mat_app_tu_khai(goc, bi_goi)
+        gom = set()
+        for (_, dich), cho_phep in APP_DUOC_DUNG_APP.items():
+            if dich == bi_goi:
+                gom |= set(cho_phep)
+        if khai is None:
+            findings.append(Finding(
+                bi_goi, "ERROR",
+                "app nay duoc app khac goi sang nhung KHONG tu khai be mat. "
+                f"Them `BE_MAT_CONG_KHAI` vao apps/{bi_goi}/__init__.py voi "
+                f"dung: {sorted(gom)}"))
+            continue
+        if khai != gom:
+            findings.append(Finding(
+                bi_goi, "ERROR",
+                f"ban khai cua app lech voi `APP_DUOC_DUNG_APP`. "
+                f"App khai {sorted(khai)}; linter cho phep {sorted(gom)}. "
+                "Sua CA HAI hoac khong sua ben nao."))
+    return findings
+
 
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
@@ -257,6 +337,7 @@ def lint() -> list:
                     app, "WARN",
                     f"{handlers} handler nhung khong co services/ hay "
                     f"features.py - logic nghiep vu dang nam trong route?"))
+    findings.extend(_doi_chieu_ban_khai(APPS))
     return findings
 
 

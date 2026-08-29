@@ -95,15 +95,18 @@ def test_only_the_logical_tools_are_exposed_not_the_app_surface():
 # ── The deferrals, with the measurement behind them ─────────────────────────
 
 @pytest.mark.parametrize("slug,tool_name", [
-    ("autosubvideo", "video.subtitle"),
     ("taoclipngan", "video.short_clips"),
 ])
 def test_duration_priced_tools_stay_closed(slug, tool_name):
-    """One root cause, three tools: the hold is topped up at run time.
+    """Con lai DUNG MOT tool, va ly do da doi.
 
-    Their quote is computed from a `duration_s` the caller declares, and the
-    worker raises the hold once it measures the real duration. A person picking
-    a file on a page can live with that; a signed machine quote cannot (Q84).
+    ⚠️ CŨ: ba tool cùng đóng vì giữ chỗ bị nâng lúc chạy. Hai trong ba
+       (`video.subtitle`, `video.upscale`) **đã mở 2026-08-29** sau H35.10a+b —
+       máy chủ đo thời lượng, và giữ chỗ của job API bị niêm phong.
+
+    `video.short_clips` **không** mở theo, và lý do khác hẳn: nó còn thiếu một
+    **trần đồng thời GPU** (H35.10c). Gộp nó vào cùng một lời giải thích với hai
+    tool kia là cách nhanh nhất để ai đó mở nhầm nó cùng lượt sau.
     """
     app = next(item for item in discover() if item.manifest.slug == slug)
     tool = next(spec for spec in app.manifest.tools if spec.name == tool_name)
@@ -115,6 +118,20 @@ def test_duration_priced_tools_stay_closed(slug, tool_name):
     assert "credit.giu_cho(db, user_id, need - held, job_id)" in source
 
 
+@pytest.mark.parametrize("slug,tool_name", [
+    ("autosubvideo", "video.subtitle"),
+    ("upscalevideo", "video.upscale"),
+])
+def test_duration_priced_tools_that_opened_never_take_the_duration_from_the_caller(
+        slug, tool_name):
+    """Hai tool mo duoc la vi con so tinh tien khong con den tu nguoi goi."""
+    app = next(item for item in discover() if item.manifest.slug == slug)
+    tool = next(spec for spec in app.manifest.tools if spec.name == tool_name)
+    assert tool.api_exposed is True
+    assert tool.params_schema["duration_s"]["measured_from"] == "video_key"
+    assert "duration_s" in (tool.api_contract.get("hidden") or ())
+
+
 def test_the_free_platform_funded_jobs_are_not_public():
     """Q50: transcribe/diarize/translate are 0-credit and platform-funded."""
     app = next(item for item in discover()
@@ -123,8 +140,21 @@ def test_the_free_platform_funded_jobs_are_not_public():
 
     for operation in ("transcribe", "diarize", "translate"):
         assert _cost({"operation": operation}) == 0
-    # None of them is reachable: the app exposes no tool at all on the API.
-    assert not any(tool.api_exposed for tool in app.manifest.tools)
+
+    # ⚠️ CŨ: `assert not any(tool.api_exposed ...)` — "app không mở tool nào".
+    #    Câu đó đúng cho tới 2026-08-29 rồi thành sai khi `video.subtitle` mở,
+    #    và nó **chưa bao giờ** là điều Q50 hứa. Q50 hứa ba operation miễn phí
+    #    KHÔNG VỚI TỚI ĐƯỢC từ ngoài — một app mở tool khác vẫn giữ được lời hứa
+    #    đó, miễn là không tool nào cho người gọi chọn `operation`.
+    for tool in app.manifest.tools:
+        if not tool.api_exposed:
+            continue
+        assert "operation" not in tool.params_schema, (
+            f"{tool.name} cho nguoi goi chon `operation` — duong toi job mien phi")
+        an = set(tool.api_contract.get("hidden") or ())
+        assert "operation" not in an, (
+            f"{tool.name} an `operation` thay vi khong co no: tham so an VAN "
+            "duoc nen tang dien gia tri mac dinh vao, nen day khong phai mot rao")
 
 
 # ── End to end ──────────────────────────────────────────────────────────────

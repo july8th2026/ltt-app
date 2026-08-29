@@ -39,7 +39,7 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `upscalevideo` | EXPOSE_V1 | — | ASYNC_JOB | Giá phẳng theo preset; đường GPU thật, có hàng đợi và trần đồng thời. |
 | `prompt_ai_ommi` | EXPOSE_V1 | — | ASYNC_JOB | Giá theo `scene_count`; kết quả là dữ liệu nên trả thẳng trong `result`. |
 | `taovideo` | MIGRATE_CAPABILITY_THEN_EXPOSE | `upscalevideo` (đã có hợp đồng video ổn định) | ASYNC_JOB | Tập giá trị hợp lệ của `resolution/duration/aspect_ratio` đổi theo model, publish hợp nhất sẽ để khách trả tiền cho tổ hợp provider từ chối. |
-| `autosubvideo` | MIGRATE_CAPABILITY_THEN_EXPOSE | `upscalevideo` (cùng đường media đã chốt giá) | ASYNC_JOB | Giá theo `duration_s` do client khai và worker nâng hold khi đo thật — phá lời hứa của một quote đã ký (Q84). |
+| `autosubvideo` | EXPOSE_V1 | — | ASYNC_JOB | ~~Giá theo `duration_s` do client khai và worker nâng hold khi đo thật — phá lời hứa của một quote đã ký (Q84).~~ **MỞ 2026-08-29 (H35.10a+b).** Hai việc, không một: (a) máy chủ **đo** thời lượng từ chính tệp đã tải lên trước khi tính giá (`measured_from` trong manifest), nên `duration_s` vào `hidden` và khách không gửi nó được nữa; (b) giữ chỗ của job đến từ API bị **niêm phong** ở con số đã ký — worker đòi nâng thì nền tảng **hấp thụ** phần chênh, không thu thêm và cũng không giết job. Chỉ (a) là chưa đủ: worker chạy ffprobe riêng và `math.ceil` có thể lệch một credit. |
 | `taoclipngan` | MIGRATE_CAPABILITY_THEN_EXPOSE | `upscalevideo` (đã có trần GPU và huỷ-hoàn) | ASYNC_JOB | Cùng nguyên nhân nâng hold, cộng thêm GPU nên trần đồng thời phải chốt trước. |
 | `chataistudio` | DEFER | — | không có hợp đồng job | Không sinh Job: credit giữ theo id tin nhắn và chạy streaming qua sidecar, nên toàn bộ hợp đồng quote/settle không áp được. |
 | `agent` | DEFER | — | không có hợp đồng job | Là runtime điều phối chứ không phải một tool; mở nó là mở cả một cơ chế chạy. |
@@ -63,9 +63,9 @@ Agent. `kichban` (gỡ 2026-08-25, Q109) từng là bằng chứng sống của 
 | `story.storyboard` | prompt_ai_ommi | **EXPOSE_V1** | Cùng hợp đồng, khác đầu ra; tách làm hai operation logic thay vì một cờ. |
 | `image.batch_generate` | taoanh | ĐÓNG | Trùng năng lực với `image.generate` vì tham số `count` đã làm được việc đó. |
 | `video.generate` | taovideo | ĐÓNG | Tập tuỳ chọn hợp lệ đổi theo model, chưa publish được một hợp đồng đúng. |
-| `video.subtitle` | autosubvideo | ĐÓNG | Giá theo thời lượng khách khai, worker nâng hold nên quote đã ký không giữ được. |
+| `video.subtitle` | autosubvideo | **EXPOSE_V1 — MỞ 29/08** | ~~Giá theo thời lượng khách khai, worker nâng hold nên quote đã ký không giữ được.~~ Máy chủ đo thời lượng lúc báo giá và giữ chỗ bị niêm phong ở con số đã ký (H35.10a+b). Khách phải tự mang transcript tới — tool này **không** phiên âm hộ, và mô tả công khai nói thẳng điều đó. `duration_s` ẩn vì khách không khai nó nữa. |
 | `video.short_clips` | taoclipngan | ĐÓNG | Cùng vấn đề nâng hold, thêm ràng buộc GPU chưa chốt được trần đồng thời. |
-| `video.upscale` | upscalevideo | ĐÓNG | Video dài vượt trần 100 giây của Cloudflare, cần hợp đồng chạy khác. |
+| `video.upscale` | upscalevideo | **EXPOSE_V1 — MỞ 29/08** | ~~Video dài vượt trần 100 giây của Cloudflare, cần hợp đồng chạy khác.~~ ⚠️ Lý do cũ **nói sai vấn đề**: trần 100 giây của Cloudflare áp cho một request đồng bộ, còn tool này là `ASYNC_JOB` — khách nộp job rồi hỏi lại, đúng thứ hợp đồng job sinh ra để làm. Vấn đề thật là Q84 (giá theo `duration_s` khách khai + worker nâng hold), và nó đã đóng bằng H35.10a+b. `duration_s` ẩn; `preview` cho khách thử 8 giây đầu trước khi trả tiền cho cả video. |
 
 ## 3. 6/6 alias model
 

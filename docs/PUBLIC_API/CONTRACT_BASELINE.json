@@ -372,6 +372,26 @@
       "required_scopes": [
         "jobs:create"
       ]
+    },
+    "video.subtitle": {
+      "aliases": [],
+      "contract_hash": "2e6e7bfda482d0ec",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
+    "video.upscale": {
+      "aliases": [],
+      "contract_hash": "91f9b8aece786b60",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
     }
   },
   "webhook": {

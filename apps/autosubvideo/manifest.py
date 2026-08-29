@@ -55,7 +55,11 @@ MANIFEST = AppManifest(
         description=N_('Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg.'),
         params_schema={
             "video_key": {"type": "video", "required": True},
-            "transcript": {"type": "json", "required": True},
+            # `json[]` chu khong phai `json`: handler doc `params["transcript"]`
+            # nhu MOT DANH SACH doan (`jobs.py`). Ban khai cu ghi `json`, va tang
+            # public chieu no thanh `object` — nen mot khach gui dung hinh dang
+            # ma worker can se an 400. Khong ai thay vi tool nay chua tung mo.
+            "transcript": {"type": "json[]", "required": True},
             "style_id": {"type": "enum", "values": ["default", "tiktok_bold", "reels_clean", "cinematic", "meme_punch", "kids_color", "punchline", "word_emphasis"], "default": "default"},
             "segment_mode": {"type": "enum", "values": ["sentence", "phrase", "short_form", "punchline", "word_emphasis"], "default": "sentence"},
             "quality": {"type": "enum", "values": ["draft", "standard", "high"], "default": "standard"},
@@ -68,6 +72,62 @@ MANIFEST = AppManifest(
         },
         returns={"video_key": "video", "srt_key": "text", "ass_key": "text"},
         verifiable=("technical",),
+
+        # ── Public API (H35.10, mở 2026-08-29) ───────────────────────────────
+        # Mở được nhờ H35.10a: `duration_s` khai `measured_from` ở trên, nên máy
+        # chủ đo từ chính tệp đã tải lên TRƯỚC khi tính giá. Trước đó giá tin
+        # con số người gọi khai, và với máy gọi máy thì đó là phá lời hứa của
+        # một báo giá đã ký (Q84).
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Burn a transcript you already have into a video "
+                            "as styled subtitles. Costs 5 credits per minute "
+                            "at standard quality; draft costs 0.6x and high "
+                            "costs 1.5x. The duration is measured from the "
+                            "file you upload, not from anything you send."),
+            "hidden": ("duration_s",),
+            "params": {
+                "video_key": {
+                    "description": ("The video to subtitle, given as the id of "
+                                    "an upload you confirmed or of an artifact "
+                                    "from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "transcript": {
+                    "description": ("The words to burn in, as a list of "
+                                    "segments with `start`, `end` and `text`. "
+                                    "This tool does not transcribe for you."),
+                    "example": [{"start": 0.0, "end": 1.8, "text": "Xin chao"}],
+                },
+                "style_id": {
+                    "description": ("Look of the subtitles: font, colour and "
+                                    "outline. Does not change the price."),
+                    "example": "default",
+                },
+                "segment_mode": {
+                    "description": ("How the transcript is cut into on-screen "
+                                    "lines — whole sentences, shorter phrases, "
+                                    "or one emphasised word at a time."),
+                    "example": "sentence",
+                },
+                "quality": {
+                    "description": ("Encoding quality of the finished video. "
+                                    "`draft` costs 0.6 times the standard "
+                                    "price and `high` costs 1.5 times."),
+                    "example": "standard",
+                },
+                "output_format": {
+                    "description": "Container of the finished video file.",
+                    "example": "mp4",
+                },
+                "export_srt": {
+                    "description": ("Also return the subtitles as a separate "
+                                    ".srt file alongside the video."),
+                    "example": True,
+                },
+            },
+        },
     ),),
 
     enabled=True,

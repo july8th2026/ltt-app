@@ -21,6 +21,38 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-29 — hai tool video mở ra `/api/v1` (H35.10)
+
+**ADDED — `video.upscale` và `video.subtitle`.** Client không hỏi tới thì không
+thấy gì đổi; không có thay đổi nào phá vỡ tương thích.
+
+- `video.upscale` — nâng video lên 1080p/1440p/4K. 30 credit mỗi phút ở 1080p
+  preset `fast`; 1440p ×1,8, 4K ×4, preset `quality` ×2,5, `stabilize` ×1,2,
+  `smooth_motion` ×2,2. `preview` render 8 giây đầu và **chỉ thu tiền 8 giây
+  đó** — dùng nó để thử cấu hình trước khi trả cho cả video.
+- `video.subtitle` — khắc transcript **bạn đã có** vào video. 5 credit mỗi phút
+  ở `standard`; `draft` ×0,6, `high` ×1,5. ⚠️ Tool này **không phiên âm hộ**;
+  bạn phải gửi transcript.
+
+⭐ **`duration_s` không còn là tham số của bạn.** Trước đây hai tool này đóng
+đúng vì lý do đó: giá phụ thuộc thời lượng **do người gọi khai**, còn worker đo
+lại thật rồi nâng giữ chỗ — nghĩa là một báo giá đã ký vẫn có thể quyết toán
+cao hơn (Q84). Nay máy chủ **đo** thời lượng từ chính tệp bạn tải lên, trước khi
+tính giá.
+
+*Phải làm gì:* **đừng gửi `duration_s`** — nó đã bị ẩn khỏi hợp đồng và sẽ bị từ
+chối. Lấy giá từ `POST /quotes` như mọi tool khác. Nếu tệp không đọc được thời
+lượng, `/quotes` trả `400` thay vì đoán một con số.
+
+⭐ Và một bảo đảm mới, áp cho **mọi** tool: giữ chỗ của một job đến từ `/api/v1`
+nay **niêm phong** ở con số trên báo giá. Nếu worker tính ra giá cao hơn, phần
+chênh là variance nội bộ của nền tảng — bạn không bị thu thêm, và job của bạn
+**không** bị huỷ vì chênh lệch đó.
+
+`video.short_clips` **vẫn đóng**: nó còn cần một trần đồng thời GPU (H35.10c).
+
+---
+
 ## 2026-08-28 — public input cap 65K (Q116)
 
 **BREAKING — hạ trần input public của `ltt_llm` từ 81.000 xuống 65.000 token.**

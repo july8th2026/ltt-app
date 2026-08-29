@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:bcf3afcc966844632168df9e9060a547aaed557ee4c99960149e1a4c38810d11
-Nguồn đã quét : 1230 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:ce80508aa7ba1239d825d662213813ea5b89c4dd34c61fd9143bee13dcd68a73
+Nguồn đã quét : 1231 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -99,7 +99,7 @@ Các lớp chính:
   gpu_vram_mb=autosubvideo.diarize:2000, autosubvideo.transcribe:6000
   Agent tools (1):
     - video.subtitle → autosubvideo.render | customer_visible=True
-      inputs: video_key:video, transcript:json, style_id:enum, segment_mode:enum, quality:enum, output_format:enum, export_srt:bool, duration_s:number
+      inputs: video_key:video, transcript:json[], style_id:enum, segment_mode:enum, quality:enum, output_format:enum, export_srt:bool, duration_s:number
       outputs: video_key:video, srt_key:text, ass_key:text
   File map:
     - apps/autosubvideo/__init__.py
@@ -1064,7 +1064,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (289 file pytest + 3 frontend)
+10. QUALITY GATES (290 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1313,6 +1313,7 @@ Test inventory:
 - tests/test_323_admin_api_lien_ket.py
 - tests/test_324_admin_job_gj3.py
 - tests/test_325_do_thoi_luong_may_chu.py
+- tests/test_326_tran_giu_cho_job_api.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1380,8 +1381,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1230 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:939, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1231 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:940, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2239,7 +2240,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (306)
+[tests] (307)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2499,6 +2500,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - tests/test_323_admin_api_lien_ket.py
 - tests/test_324_admin_job_gj3.py
 - tests/test_325_do_thoi_luong_may_chu.py
+- tests/test_326_tran_giu_cho_job_api.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2668,7 +2670,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1230 file; 12241345 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1231 file; 12277488 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -11621,7 +11623,7 @@ def _handle_render(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/autosubvideo/manifest.py
-SHA256=ba2bddfa7b16c4d19e361cbf6c24adf2164fed873719cbbdfa86212e50947282 BYTES=4087 LINES=79
+SHA256=a5046e1c29d757f6ea1b4dc5794697bc52dac7b4b33b859bdeef801ab730440d BYTES=7549 LINES=139
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `autosubvideo` — Khắc phụ đề vào video (di trú từ BOT GEMINI `auto_sub_video`,
@@ -11680,7 +11682,11 @@ MANIFEST = AppManifest(
         description=N_('Khắc transcript có sẵn vào video bằng preset phụ đề và FFmpeg.'),
         params_schema={
             "video_key": {"type": "video", "required": True},
-            "transcript": {"type": "json", "required": True},
+            # `json[]` chu khong phai `json`: handler doc `params["transcript"]`
+            # nhu MOT DANH SACH doan (`jobs.py`). Ban khai cu ghi `json`, va tang
+            # public chieu no thanh `object` — nen mot khach gui dung hinh dang
+            # ma worker can se an 400. Khong ai thay vi tool nay chua tung mo.
+            "transcript": {"type": "json[]", "required": True},
             "style_id": {"type": "enum", "values": ["default", "tiktok_bold", "reels_clean", "cinematic", "meme_punch", "kids_color", "punchline", "word_emphasis"], "default": "default"},
             "segment_mode": {"type": "enum", "values": ["sentence", "phrase", "short_form", "punchline", "word_emphasis"], "default": "sentence"},
             "quality": {"type": "enum", "values": ["draft", "standard", "high"], "default": "standard"},
@@ -11693,6 +11699,62 @@ MANIFEST = AppManifest(
         },
         returns={"video_key": "video", "srt_key": "text", "ass_key": "text"},
         verifiable=("technical",),
+
+        # ── Public API (H35.10, mở 2026-08-29) ───────────────────────────────
+        # Mở được nhờ H35.10a: `duration_s` khai `measured_from` ở trên, nên máy
+        # chủ đo từ chính tệp đã tải lên TRƯỚC khi tính giá. Trước đó giá tin
+        # con số người gọi khai, và với máy gọi máy thì đó là phá lời hứa của
+        # một báo giá đã ký (Q84).
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Burn a transcript you already have into a video "
+                            "as styled subtitles. Costs 5 credits per minute "
+                            "at standard quality; draft costs 0.6x and high "
+                            "costs 1.5x. The duration is measured from the "
+                            "file you upload, not from anything you send."),
+            "hidden": ("duration_s",),
+            "params": {
+                "video_key": {
+                    "description": ("The video to subtitle, given as the id of "
+                                    "an upload you confirmed or of an artifact "
+                                    "from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "transcript": {
+                    "description": ("The words to burn in, as a list of "
+                                    "segments with `start`, `end` and `text`. "
+                                    "This tool does not transcribe for you."),
+                    "example": [{"start": 0.0, "end": 1.8, "text": "Xin chao"}],
+                },
+                "style_id": {
+                    "description": ("Look of the subtitles: font, colour and "
+                                    "outline. Does not change the price."),
+                    "example": "default",
+                },
+                "segment_mode": {
+                    "description": ("How the transcript is cut into on-screen "
+                                    "lines — whole sentences, shorter phrases, "
+                                    "or one emphasised word at a time."),
+                    "example": "sentence",
+                },
+                "quality": {
+                    "description": ("Encoding quality of the finished video. "
+                                    "`draft` costs 0.6 times the standard "
+                                    "price and `high` costs 1.5 times."),
+                    "example": "standard",
+                },
+                "output_format": {
+                    "description": "Container of the finished video file.",
+                    "example": "mp4",
+                },
+                "export_srt": {
+                    "description": ("Also return the subtitles as a separate "
+                                    ".srt file alongside the video."),
+                    "example": True,
+                },
+            },
+        },
     ),),
 
     enabled=True,
@@ -30491,9 +30553,45 @@ SHA256=e8c46fb565cdfc5cfef7f069e0616946018c13a191413b5152153d535b4583f9 BYTES=10
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/upscalevideo/__init__.py
-SHA256=cd9d0d5f56712ed0205dbc6c6319c81c92dc9a455845da1618b2c58a2c00e5fd BYTES=99 LINES=1
+SHA256=c3f85c8d00d1b979a10a938cf5633450cf341fe128032e618c4596f3e741ec21 BYTES=1834 LINES=37
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""App upscalevideo — di tru tu video_upscale (BOT GEMINI). Nang video x4 (Real-ESRGAN NCNN)."""
+"""App upscalevideo — di tru tu video_upscale (BOT GEMINI). Nang video x4 (Real-ESRGAN NCNN).
+
+BE MAT CONG KHAI CUA APP NAY (H41.5)
+====================================
+
+App nay la **app duy nhat trong kho** duoc mot app khac goi sang: `taovideo`
+dieu phoi "nang cap mot video vua tao" ngay tren trang khach vua bam nut.
+
+⛔ Canh do KHONG bi cat, va do la mot quyet dinh chu khong phai mot khoan no:
+   cat no nghia la doi viec dieu phoi di dau do, va khong cho nao tot hon cho
+   hien tai. Bao gia phai la bao gia THAT cua app nay, khong phai mot ban sao
+   se troi.
+
+⭐ Cai da thieu truoc 2026-08-29 khong phai hang rao — `tools/lint_app_contract.py`
+   da chot dung hai ten nay tu A-04. Cai thieu la app **tu noi ra** dau la be
+   mat cua no. Khi hieu biet do chi song trong `tools/`, doi ten mot ham o day
+   la mot thay doi trong lang: linter bat CHO GOI, con app nay khong he biet
+   minh vua pha hop dong cua ai.
+
+`BE_MAT_CONG_KHAI` duoi day la ban khai do. `lint_app_contract.py` doc no va
+doi chieu hai chieu voi `APP_DUOC_DUNG_APP` — lech mot ten la gate DO.
+
+⚠️ Them mot dong vao day la MOT QUYET DINH KIEN TRUC, khong phai mot tien nghi:
+   moi ten o day la mot thu app khac duoc phep dua vao, va tu do khong doi duoc
+   nua neu khong sua ca hai ben.
+"""
+
+#: `(module, ten)` — nhung thu app KHAC duoc phep goi. Moi dong mot use case.
+#:
+#: Co y de la TUPLE LITERAL, khong boc `frozenset(...)`: linter doc ban khai nay
+#: bang `ast.literal_eval` tren cay nguon, khong import app (import mot app keo
+#: theo ca phu thuoc cua no). Mot loi goi ham thi literal_eval khong doc duoc,
+#: va hang rao se im lang tuong nhu app chua khai gi.
+BE_MAT_CONG_KHAI = (
+    ("apps.upscalevideo", "cost"),                        # bao gia nang cap
+    ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
+)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -31465,7 +31563,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/upscalevideo/manifest.py
-SHA256=c301ce51d3c322b834549e2ab88e341e417275633fda382634aea4c92e41a850 BYTES=7032 LINES=136
+SHA256=b457161181a20c553ee7a247d52b008db3f46a928aaa7a158e8a582d2a0ca5cf BYTES=11473 LINES=215
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `upscalevideo` — Nâng cấp video (Real-ESRGAN NCNN ×4), di trú từ BOT GEMINI
@@ -31550,6 +31648,85 @@ MANIFEST = AppManifest(
         },
         returns={"video_key": "video"},
         verifiable=("technical",),
+
+        # ── Public API (H35.10, mở 2026-08-29) ───────────────────────────────
+        # Trước 2026-08-29 tool này CỐ Ý đóng, và lý do vẫn đáng đọc: giá phụ
+        # thuộc `duration_s` do người gọi khai, còn worker nâng giữ chỗ khi đo
+        # được số thật — với máy gọi máy thì đó là phá lời hứa của một báo giá
+        # đã ký (Q84, sự cố Seedance giữ 29 thu 78).
+        #
+        # H35.10a đóng đúng lỗ đó: `duration_s` khai `measured_from` ở trên, nên
+        # máy chủ đo từ chính tệp đã tải lên TRƯỚC khi tính giá, và tham số này
+        # nằm trong `hidden` — khách không gửi nó được nữa.
+        #
+        # ⚠️ Còn nợ H35.10b: `_dam_bao_giu_cho` vẫn nâng giữ chỗ nếu worker tính
+        #    ra số khác. Quote nay ĐÚNG, chưa phải KHÔNG THỂ SAI.
+        api_exposed=True,
+        api_contract={
+            "scopes": ("jobs:create",),
+            "description": ("Upscale a video to 1080p, 1440p or 4K. Costs 30 "
+                            "credits per minute at 1080p on the fast preset; "
+                            "1440p costs 1.8x, 4K costs 4x, and the quality "
+                            "preset costs 2.5x. The duration is measured from "
+                            "the file you upload, not from anything you send."),
+            # Khách không khai thời lượng: máy chủ đo. Ẩn nó đi là phần thi hành
+            # của lời hứa đó — một tham số vẫn gửi được là một tham số vẫn cãi
+            # được với con số thật.
+            "hidden": ("duration_s",),
+            "params": {
+                "video_key": {
+                    "description": ("The video to enlarge, given as the id of "
+                                    "an upload you confirmed or of an artifact "
+                                    "from an earlier job."),
+                    "example": "upl_from_POST_/api/v1/uploads",
+                },
+                "preset": {
+                    "description": ("How hard to work on the result. `quality` "
+                                    "costs 2.5 times as much as `fast` and "
+                                    "takes longer."),
+                    "example": "fast",
+                },
+                "target_height": {
+                    "description": ("Height of the finished video in pixels. "
+                                    "1440 costs 1.8 times the 1080 price and "
+                                    "2160 costs 4 times."),
+                    "example": 1080,
+                },
+                "codec": {
+                    "description": ("Video codec of the finished file. `hevc` "
+                                    "makes a smaller file that fewer players "
+                                    "open."),
+                    "example": "h264",
+                },
+                "preview": {
+                    "description": ("Render only the first 8 seconds, and "
+                                    "charge only for them. Use it to check the "
+                                    "settings before paying for the whole "
+                                    "video."),
+                    "example": False,
+                },
+                "preserve_fps": {
+                    "description": ("Keep the original frame rate instead of "
+                                    "letting the encoder choose one."),
+                    "example": True,
+                },
+                "preserve_audio": {
+                    "description": "Copy the original audio track across.",
+                    "example": True,
+                },
+                "stabilize": {
+                    "description": ("Reduce camera shake. Costs 1.2 times the "
+                                    "price without it."),
+                    "example": False,
+                },
+                "smooth_motion": {
+                    "description": ("Interpolate frames for smoother motion. "
+                                    "Costs 2.2 times the price without it, and "
+                                    "combines with `stabilize`."),
+                    "example": False,
+                },
+            },
+        },
     ), ToolSpec(
         name="image.upscale", job_type="upscalevideo.render",
         description=N_('Nâng chi tiết ảnh ×4 bằng Real-ESRGAN trên GPU cục bộ.'),
@@ -97808,7 +97985,7 @@ def tong_credits(credits_base: int, bonus_percent: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/credit.py
-SHA256=64a256fef3411abf1184d3d7133ae33d05f5a15155b1d6343014b74a55a9bb72 BYTES=26057 LINES=560
+SHA256=56309ca0b960d638c794c17e1e7fb98e6924400a95a22b45507f5824eb009b14 BYTES=28843 LINES=618
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 credit.py — sổ credit (H3). Phần ít code nhất, ít được phép sai nhất.
@@ -98080,6 +98257,22 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
         raise ValueError("so credit giu cho khong the am")
     if amount == 0:
         return
+    if _giu_cho_da_niem_phong(db, job_id):
+        # H35.10b — trần cứng cho job đến từ `/api/v1`.
+        #
+        # Giữ chỗ đầu tiên của một job API LÀ con số trên báo giá đã ký. Nâng nó
+        # lên sau đó nghĩa là khách trả nhiều hơn thứ họ bấm đồng ý — đúng Q84,
+        # sự cố Seedance giữ 29 thu 78.
+        #
+        # ⭐ Hấp thụ chứ KHÔNG làm hỏng job: phần chênh là variance nội bộ của
+        #    nền tảng, đúng như `quyet_toan` vốn đã hấp thụ khi provider đắt hơn
+        #    báo giá. Ném lỗi ở đây sẽ giết job của khách vì một khác biệt làm
+        #    tròn một credit — tệ hơn hẳn thứ nó định bảo vệ.
+        #
+        # ⛔ Đây KHÔNG phải nuốt lỗi lặng lẽ: nó ghi một `job_event` nội bộ, nên
+        #    người trực đọc lại được vì sao giữ chỗ không nhúc nhích.
+        _ghi_nhat_ky_tran(db, job_id, amount)
+        return
     # Khoá TRƯỚC khi đọc số dư: từ đây tới hết transaction, chỉ request này được
     # giữ chỗ cho user này → check-then-write trở thành nguyên tử, hết double-spend.
     _khoa_so_du_user(db, user_id)
@@ -98100,6 +98293,48 @@ def giu_cho(db: DbSession, user_id: str, amount: int, job_id: str) -> None:
             db, job, "credit_held", visibility=job_events.INTERNAL,
             details={"credit": int(amount)}, event_key="credit-held",
         )
+
+
+#: Khoá nền tảng gắn vào `params` của job đến từ `/api/v1`.
+#: Chép giá trị thay vì import `public_api.invocation` — `credit.py` là tầng
+#: dưới, và một vòng import ở đường tiền là thứ không đáng đổi lấy một chữ.
+_KHOA_META_API = "_api"
+
+
+def _giu_cho_da_niem_phong(db: DbSession, job_id: str) -> bool:
+    """Job này đã có giữ chỗ, VÀ nó đến từ API công khai?
+
+    Hai điều kiện, và cả hai đều cần:
+
+    - **đã có giữ chỗ** — lần giữ ĐẦU của một job API chính là con số trên báo
+      giá; chặn nó thì không job API nào chạy được;
+    - **đến từ API** — đường giao diện web thì việc nâng giữ chỗ là đúng: có
+      người ngồi đó, họ chọn tệp họ nhìn thấy, và họ được hỏi lại. Máy gọi máy
+      thì không có ai để hỏi, nên lời hứa phải là lời hứa (Q84).
+    """
+    if not job_id:
+        return False
+    from platform_core.models import Job
+
+    job = db.get(Job, job_id)
+    if job is None or _KHOA_META_API not in (job.params or {}):
+        return False
+    return so_da_giu(db, job_id) > 0
+
+
+def _ghi_nhat_ky_tran(db: DbSession, job_id: str, xin_them: int) -> None:
+    """Ghi lại lần nâng giữ chỗ BỊ TỪ CHỐI, để người trực đọc lại được."""
+    from platform_core import job_events
+    from platform_core.models import Job
+
+    job = db.get(Job, job_id)
+    if job is None:
+        return
+    job_events.append(
+        db, job, "credit_hold_capped", visibility=job_events.INTERNAL,
+        details={"requested": int(xin_them), "held": int(so_da_giu(db, job_id))},
+        event_key="credit-hold-capped",
+    )
 
 
 def _da_ket_so(db: DbSession, job_id: str) -> bool:
@@ -125553,7 +125788,7 @@ class AccessControlMiddleware(BaseHTTPMiddleware):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin.py
-SHA256=34cf312ec7a23b5f7c8daf1b8ca2db92cdf7d850c5117afd1662a533edfc7d88 BYTES=89074 LINES=1650
+SHA256=75cac27f0315be2fb78072e153a7099610690784fcab3cb158454fd47fb37949 BYTES=89897 LINES=1622
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 server/admin.py — trang quản trị (H3-admin, Q15) dựng bằng sqladmin.
@@ -125671,11 +125906,12 @@ class AdminAuth(AuthenticationBackend):
 #    Bố cục đã đóng băng ở `docs/admin_mvp_v3/03_IA_FREEZE.md`; hợp đồng thêm
 #    trang ở `docs/admin_mvp_v3/04_EXTENSION_CONTRACT.md`.
 #
-# ⚠️ Khoá `active` cũ ("chitiet", "revenue", "goi", ...) vẫn được nhận qua
-#    `_KHOA_CU` bên dưới, nên 29 chỗ gọi `_admin_shell` không phải sửa trong
-#    cùng một lô với việc đổi vỏ. Đổi vỏ và đổi thân là hai rủi ro khác nhau;
-#    trộn chúng vào một lô là cách làm cho một lần đỏ không chỉ ra được nguyên
-#    nhân nào.
+# ⭐ Bảng cầu tạm `_KHOA_CU` ĐÃ GỠ (29/08). Nó từng dịch khoá `active` cũ
+#    ("chitiet", "revenue", "goi", ...) sang khoá của `SECTIONS`, để đổi vỏ mà
+#    không phải sửa 29 chỗ gọi trong cùng một lô — đổi vỏ và đổi thân là hai rủi
+#    ro khác nhau, và trộn chúng thì một lần đỏ không chỉ ra được nguyên nhân
+#    nào. Nay mọi chỗ gọi khai thẳng khoá của `SECTIONS`, nên cây cầu không còn
+#    ai đi và một khoá lạ trở thành lỗi nhìn thấy được thay vì im lặng đi qua.
 
 _PROVCOL = {"gemini": ("#4285F4", "G"), "apiai": ("#16a34a", "AI"),
             "cheapkeyai": ("#0ea5e9", "CK"), "byteplus": ("#7c3aed", "BP"),
@@ -125696,34 +125932,6 @@ def _asset_ver() -> str:
         return "0"
 
 
-#: Khoá `active` cũ → khoá trong `server/routes/admin/_chung.py:SECTIONS`.
-#:
-#: Bảng này tồn tại để đổi VỎ mà không phải sửa 29 chỗ gọi trong cùng một lô.
-#: Nó là cầu tạm: khi trang cuối cùng chuyển sang khoá mới thì xoá bảng này và
-#: xoá luôn nhánh tra cứu ở `_admin_shell`. Đừng thêm dòng mới vào đây — trang
-#: mới khai thẳng khoá mới.
-_KHOA_CU = {
-    "chitiet": "ho_so_360",
-    "apikeys": "van_hanh",
-    "revenue": "tai_chinh",
-    "goi": "goi_nap",
-    "don": "don_hang",
-    "grant": "cap_credit",
-    "api_overview": "api_overview",
-    "api_accounts": "api_access",
-    "api_keys": "api_khoa",
-    "api_tools": "api_governance",
-    "api_policy": "api_policy",
-    "api_kill": "api_kill",
-    "api_pricing": "api_economics",
-    "api_margin": "api_margin",
-    "api_requests": "api_ops",
-    "api_jobs": "api_job",
-    "api_security": "api_security",
-    "api_trace": "api_trace",
-}
-
-
 def _admin_shell(title: str, active: str, body: str, **thug) -> str:
     """Dựng một trang quản trị hoàn chỉnh.
 
@@ -125737,9 +125945,8 @@ def _admin_shell(title: str, active: str, body: str, **thug) -> str:
     from server.routes.admin._chung import dieu_huong
     from server.templating import templates
 
-    khoa = _KHOA_CU.get(active, active)
     try:
-        nav = dieu_huong(khoa)
+        nav = dieu_huong(active)
     except KeyError:
         # Khoá lạ (trang mới quên khai ở `SECTIONS`). Vẫn render được trang —
         # mất trạng thái sáng của thanh bên thì khó chịu, còn ném 500 vào mặt
@@ -125967,7 +126174,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
             f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th style="text-align:right">Thao tác</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Provider Credentials", "apikeys", body))
+        return HTMLResponse(_admin_shell("Provider Credentials", "van_hanh", body))
 
 
 class UserAdmin(ModelView, model=User):
@@ -126232,7 +126439,7 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
     <input class="inp" name="note" placeholder="khuyến mãi / bồi thường"></div>
   <button class="btn" type="submit">Cấp credit</button>
 </form></div></div>"""
-        return HTMLResponse(_admin_shell("Cấp credit", "grant", body), status_code=status)
+        return HTMLResponse(_admin_shell("Cấp credit", "cap_credit", body), status_code=status)
 
 
 class NhatKyAdminView(ModelView, model=NhatKyAdmin):
@@ -126393,7 +126600,7 @@ function apDung() {{
 document.getElementById('prov').addEventListener('change', apDung);
 apDung();
 </script>"""
-        return HTMLResponse(_admin_shell("Thêm API key", "apikeys", body), status_code=status)
+        return HTMLResponse(_admin_shell("Thêm API key", "provider_them", body), status_code=status)
 
 
 class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
@@ -126509,7 +126716,7 @@ class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
                              escape(key.provider), escape(", ".join(phuc_vu)))
             token = issue_csrf_token(request)
             body = _sua_key_html(key, boxes, goi_y, token, msg)
-            return HTMLResponse(_admin_shell("Sua API key", "apikeys", body),
+            return HTMLResponse(_admin_shell("Sua API key", "provider_sua", body),
                                 status_code=status)
         finally:
             try:
@@ -126588,7 +126795,7 @@ class ApiKeyActionView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
 <div class="ui-card"><p style="margin:0 0 8px">{badge}</p>
 <p class="muted mono" style="margin:0;font-size:12.5px;word-break:break-word">{escape(str(detail))}</p></div></div>"""
-        return HTMLResponse(_admin_shell("Test key", "apikeys", body))
+        return HTMLResponse(_admin_shell("Test key", "provider_test", body))
 
     @expose("/api-key-action", methods=["POST"])
     async def action(self, request: Request):
@@ -126677,7 +126884,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="tablewrap"><table class="ui-table"><thead><tr>
 <th>Provider</th><th>Auth</th><th>Category</th><th>Models (registry)</th><th>Kiểu</th><th>Sống</th></tr></thead>
 <tbody>{rows}</tbody></table></div></div>"""
-        return HTMLResponse(_admin_shell("Models", "apikeys", body))
+        return HTMLResponse(_admin_shell("Models", "models", body))
 
     @expose("/api-models-refresh", methods=["GET"])
     async def refresh(self, request: Request):
@@ -126711,7 +126918,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="pagehead"><div><h1>Model sống — {escape(prov_id)}</h1><p>{note}</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Models</a></div></div>
 <div class="ui-card" style="line-height:2.2">{chips}</div></div>"""
-        return HTMLResponse(_admin_shell("Model sống", "apikeys", body))
+        return HTMLResponse(_admin_shell("Model sống", "models", body))
 
 
 def _probe_key(prov, credential: str):
@@ -126838,7 +127045,7 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<th>Lúc</th><th>Hành động</th><th>Đối tượng</th><th>Ai làm</th>'
                 f'</tr></thead><tbody>{rows_tien or "<tr><td colspan=4 class=muted style=padding:20px;text-align:center>Chưa có thao tác tiền nào của admin.</td></tr>"}'
                 f'</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Tổng quan tài chính", "revenue", body))
+        return HTMLResponse(_admin_shell("Tổng quan tài chính", "tai_chinh", body))
 
 
 class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
@@ -126925,7 +127132,7 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có gói. Thêm ở trên.</td></tr>"}'
                 f'</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Gói nạp", "goi", body), status_code=status)
+        return HTMLResponse(_admin_shell("Gói nạp", "goi_nap", body), status_code=status)
 
     @expose("/goi/action", methods=["POST"])
     async def package_action(self, request: Request):
@@ -127034,7 +127241,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có đơn.</td></tr>"}'
                 f'</tbody></table></div></div>')
         return HTMLResponse(_admin_shell(
-            "Đơn hàng", "don", body,
+            "Đơn hàng", "don_hang", body,
             thanh_cong=request.query_params.get("ok") or "",
             loi=request.query_params.get("loi") or ""))
 
@@ -127209,7 +127416,7 @@ def setup_admin(app, *, session_secret: str) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin_api.py
-SHA256=725dc4a85fa6a6a2fc56f844b718e72963d9e79f7cadb96e2ed66dc1911b293b BYTES=103971 LINES=1991
+SHA256=5a171f5ccac4538c839de785f19bd11d4c4b78daa8a1e396dbb38d39dfa9857a BYTES=103968 LINES=1991
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """server/admin_api.py — khu quản trị dành riêng cho API platform (EXT-13).
 
@@ -127572,7 +127779,7 @@ class ApiAccountsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Credit đã giữ (7 ngày)</th><th>Khoá mới nhất</th><th></th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'
             f'{_pager(page, base)}</div>')
-        return HTMLResponse(_admin_shell("API — Tài khoản", "api_accounts",
+        return HTMLResponse(_admin_shell("API — Tài khoản", "api_access",
                                          body))
 
     async def _detail(self, request: Request, user_id: str):
@@ -127670,7 +127877,7 @@ class ApiAccountsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th>'
             f'<th>Correlation ID</th></tr></thead><tbody>{requests}</tbody>'
             f'</table></div></section></div>')
-        return HTMLResponse(_admin_shell(user.email, "api_accounts", body))
+        return HTMLResponse(_admin_shell(user.email, "api_access", body))
 
 
 class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
@@ -127751,7 +127958,7 @@ class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Môi trường</th><th>Trạng thái</th><th>Dùng lần cuối</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'
             f'{_pager(page, base)}</div>')
-        return HTMLResponse(_admin_shell("API — Khoá", "api_keys", body))
+        return HTMLResponse(_admin_shell("API — Khoá", "api_khoa", body))
 
     async def _detail(self, request: Request, key_id: str):
         from server.auth.csrf import issue_csrf_token
@@ -127864,7 +128071,7 @@ class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
             f'<table class="ui-table"><thead><tr><th>Lúc</th><th>Route</th>'
             f'<th>HTTP</th><th>Mã</th></tr></thead><tbody>{recent}</tbody>'
             f'</table></div></section></div>')
-        return HTMLResponse(_admin_shell(snapshot["key_id"], "api_keys", body))
+        return HTMLResponse(_admin_shell(snapshot["key_id"], "api_khoa", body))
 
     @expose("/api-khoa-action", methods=["POST"])
     async def action(self, request: Request):
@@ -127987,7 +128194,7 @@ class ApiToolsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Tên công khai</th><th>App</th><th>Chế độ chạy</th>'
             f'<th>Phơi bày</th><th>Lời gọi</th><th>Hỏng</th></tr></thead>'
             f'<tbody>{rows}</tbody></table></div></section></div>')
-        return HTMLResponse(_admin_shell("API — Công cụ", "api_tools", body))
+        return HTMLResponse(_admin_shell("API — Công cụ", "api_governance", body))
 
 
 def _error_note(request: Request) -> str:
@@ -128489,7 +128696,7 @@ class ApiPricingView(_AnTrongMenuSqlAdmin, BaseView):
             f'<button class="btn btn-primary sm">Tạo bản nháp</button></p>'
             f'<p class="muted">Bản nháp chưa có hiệu lực. Phải bấm Phát hành, '
             f'và cả hai thao tác đều ghi nhật ký.</p></form></section></div>')
-        return HTMLResponse(_admin_shell("API - Gia", "api_pricing", body))
+        return HTMLResponse(_admin_shell("API - Gia", "api_economics", body))
 
     @expose("/api-gia-action", methods=["POST"])
     async def action(self, request: Request):
@@ -128748,7 +128955,7 @@ class ApiRequestsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>HTTP</th><th>Mã</th><th>ms</th><th>Credit</th></tr></thead>'
             f'<tbody>{rows}</tbody></table></div>'
             f'{_pager(page, base)}</div>')
-        return HTMLResponse(_admin_shell("API - Request", "api_requests", body))
+        return HTMLResponse(_admin_shell("API - Request", "api_ops", body))
 
 
 class ApiJobsView(_AnTrongMenuSqlAdmin, BaseView):
@@ -128845,7 +129052,7 @@ class ApiJobsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Trạng thái</th><th>Tài khoản</th><th>Sự kiện</th>'
             f'<th>Lần</th><th>HTTP cuối</th><th>Lúc</th></tr></thead>'
             f'<tbody>{hooks}</tbody></table></div></section></div>')
-        return HTMLResponse(_admin_shell("API - Job", "api_jobs", body))
+        return HTMLResponse(_admin_shell("API - Job", "api_job", body))
 
 
 class ApiSecurityView(_AnTrongMenuSqlAdmin, BaseView):
@@ -153840,7 +154047,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=e83b55e58c9bfc2fa058d14d4b1f6e0d555b3d9a9dd0e7f4ad65be16e12988b1 BYTES=19992 LINES=643
+SHA256=cd0a95e82411475ce7154d41baadc41f2614018f82de500045113a1822f17eb3 BYTES=27499 LINES=875
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -154482,6 +154689,238 @@ SHA256=e83b55e58c9bfc2fa058d14d4b1f6e0d555b3d9a9dd0e7f4ad65be16e12988b1 BYTES=19
         "jobs:create"
       ],
       "contract_hash": "c55834222a3c4a0c"
+    },
+    {
+      "name": "video.subtitle",
+      "capability": "video",
+      "description": "Burn a transcript you already have into a video as styled subtitles. Costs 5 credits per minute at standard quality; draft costs 0.6x and high costs 1.5x. The duration is measured from the file you upload, not from anything you send.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "string",
+            "description": "The video to subtitle, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+            "examples": [
+              "upl_from_POST_/api/v1/uploads"
+            ]
+          },
+          "transcript": {
+            "type": "array",
+            "description": "The words to burn in, as a list of segments with `start`, `end` and `text`. This tool does not transcribe for you.",
+            "examples": [
+              [
+                {
+                  "start": 0.0,
+                  "end": 1.8,
+                  "text": "Xin chao"
+                }
+              ]
+            ]
+          },
+          "style_id": {
+            "type": "string",
+            "enum": [
+              "default",
+              "tiktok_bold",
+              "reels_clean",
+              "cinematic",
+              "meme_punch",
+              "kids_color",
+              "punchline",
+              "word_emphasis"
+            ],
+            "default": "default",
+            "description": "Look of the subtitles: font, colour and outline. Does not change the price.",
+            "examples": [
+              "default"
+            ]
+          },
+          "segment_mode": {
+            "type": "string",
+            "enum": [
+              "sentence",
+              "phrase",
+              "short_form",
+              "punchline",
+              "word_emphasis"
+            ],
+            "default": "sentence",
+            "description": "How the transcript is cut into on-screen lines — whole sentences, shorter phrases, or one emphasised word at a time.",
+            "examples": [
+              "sentence"
+            ]
+          },
+          "quality": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "standard",
+              "high"
+            ],
+            "default": "standard",
+            "description": "Encoding quality of the finished video. `draft` costs 0.6 times the standard price and `high` costs 1.5 times.",
+            "examples": [
+              "standard"
+            ]
+          },
+          "output_format": {
+            "type": "string",
+            "enum": [
+              "mp4",
+              "mkv",
+              "webm"
+            ],
+            "default": "mp4",
+            "description": "Container of the finished video file.",
+            "examples": [
+              "mp4"
+            ]
+          },
+          "export_srt": {
+            "type": "boolean",
+            "default": true,
+            "description": "Also return the subtitles as a separate .srt file alongside the video.",
+            "examples": [
+              true
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "transcript",
+          "video_key"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "artifact"
+          },
+          "srt_key": {
+            "type": "string"
+          },
+          "ass_key": {
+            "type": "string"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "2e6e7bfda482d0ec"
+    },
+    {
+      "name": "video.upscale",
+      "capability": "video",
+      "description": "Upscale a video to 1080p, 1440p or 4K. Costs 30 credits per minute at 1080p on the fast preset; 1440p costs 1.8x, 4K costs 4x, and the quality preset costs 2.5x. The duration is measured from the file you upload, not from anything you send.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "string",
+            "description": "The video to enlarge, given as the id of an upload you confirmed or of an artifact from an earlier job.",
+            "examples": [
+              "upl_from_POST_/api/v1/uploads"
+            ]
+          },
+          "preset": {
+            "type": "string",
+            "enum": [
+              "fast",
+              "quality"
+            ],
+            "default": "fast",
+            "description": "How hard to work on the result. `quality` costs 2.5 times as much as `fast` and takes longer.",
+            "examples": [
+              "fast"
+            ]
+          },
+          "target_height": {
+            "type": "integer",
+            "enum": [
+              1080,
+              1440,
+              2160
+            ],
+            "default": 1080,
+            "description": "Height of the finished video in pixels. 1440 costs 1.8 times the 1080 price and 2160 costs 4 times.",
+            "examples": [
+              1080
+            ]
+          },
+          "codec": {
+            "type": "string",
+            "enum": [
+              "h264",
+              "hevc"
+            ],
+            "default": "h264",
+            "description": "Video codec of the finished file. `hevc` makes a smaller file that fewer players open.",
+            "examples": [
+              "h264"
+            ]
+          },
+          "preview": {
+            "type": "boolean",
+            "default": false,
+            "description": "Render only the first 8 seconds, and charge only for them. Use it to check the settings before paying for the whole video.",
+            "examples": [
+              false
+            ]
+          },
+          "preserve_fps": {
+            "type": "boolean",
+            "default": true,
+            "description": "Keep the original frame rate instead of letting the encoder choose one.",
+            "examples": [
+              true
+            ]
+          },
+          "preserve_audio": {
+            "type": "boolean",
+            "default": true,
+            "description": "Copy the original audio track across.",
+            "examples": [
+              true
+            ]
+          },
+          "stabilize": {
+            "type": "boolean",
+            "default": false,
+            "description": "Reduce camera shake. Costs 1.2 times the price without it.",
+            "examples": [
+              false
+            ]
+          },
+          "smooth_motion": {
+            "type": "boolean",
+            "default": false,
+            "description": "Interpolate frames for smoother motion. Costs 2.2 times the price without it, and combines with `stabilize`.",
+            "examples": [
+              false
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "video_key"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "artifact"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "91f9b8aece786b60"
     }
   ]
 }
@@ -171679,7 +172118,7 @@ def test_no_ui_route_became_public(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_188_public_api_wave2.py
-SHA256=713c96ace2ce465088a2815e2cbd327258664c5486771d51cf5f805b019d29f7 BYTES=14342 LINES=354
+SHA256=60d80848de8e7a9542872e35879874a1ed26b410c737e9f63386e466a85eebcb BYTES=15089 LINES=366
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 12 — wave 2: the GPU workload, and two deliberate deferrals.
 
@@ -171754,24 +172193,36 @@ def test_the_gpu_tool_is_recognised_as_a_scarce_resource():
 
 # ── The two deferrals, each with its reason ──────────────────────────────────
 
-def test_video_upscale_stays_closed_because_its_hold_can_grow():
-    """Its price depends on a duration the caller declares, and the worker tops
-    the hold up once it measures the real one — fine for a person choosing a
-    file, not for a signed machine quote (Q84)."""
+def test_video_upscale_is_open_and_never_asks_the_caller_for_the_duration():
+    """H35.10 — mở 2026-08-29. CŨ: nó đóng vì giữ chỗ có thể phình.
+
+    ⭐ Phép kiểm cũ chốt `api_exposed is False` — tức nó chốt **quyết định**, và
+       một quyết định thì đổi được. Cái đáng chốt là **lời hứa**: giá không bao
+       giờ được tính từ một con số người gọi khai.
+
+    Hai điều kiện làm lời hứa đó thành thật, và cả hai đều kiểm ở đây:
+    máy chủ **đo** thời lượng (H35.10a), và giữ chỗ của job API bị **niêm
+    phong** ở con số đã ký (H35.10b, chốt riêng ở `test_326`).
+    """
     tool = next(spec for item in discover()
                 if item.manifest.slug == "upscalevideo"
                 for spec in item.manifest.tools if spec.name == "video.upscale")
-    assert tool.api_exposed is False
-    assert "image.upscale" in [entry.name for entry in build_catalog(_config())]
-    assert "video.upscale" not in [entry.name for entry in build_catalog(_config())]
+    assert tool.api_exposed is True
+    ten = [entry.name for entry in build_catalog(_config())]
+    assert "image.upscale" in ten and "video.upscale" in ten
 
-    # The behaviour that makes it unsafe to publish today still exists, so the
-    # deferral is real rather than a stale note.
-    from apps.upscalevideo import jobs as upscale_jobs
+    # (a) `duration_s` do MAY CHU do, va khach khong gui duoc no.
+    assert tool.params_schema["duration_s"]["measured_from"] == "video_key"
+    assert "duration_s" in (tool.api_contract.get("hidden") or ())
+    cong_khai = next(e for e in build_catalog(_config())
+                     if e.name == "video.upscale")
+    assert "duration_s" not in cong_khai.input_schema["properties"], (
+        "khach van gui duoc thoi luong — tang public dang cai voi so do that")
 
-    assert hasattr(upscale_jobs, "_dam_bao_giu_cho")
-    source = Path("apps/upscalevideo/jobs.py").read_text(encoding="utf-8")
-    assert "credit.giu_cho(db, user_id, need - held, job_id)" in source
+    # (b) Tran giu cho van con o tang credit. Go no di thi loi hua vo hieu, va
+    #     phep kiem nay phai do truoc khi ai do phat hien bang hoa don.
+    tran = Path("platform_core/credit.py").read_text(encoding="utf-8")
+    assert "_giu_cho_da_niem_phong" in tran
 
 
 def test_video_generate_stays_closed_because_its_options_depend_on_the_model():
@@ -172039,7 +172490,7 @@ def test_a_retry_of_the_same_request_does_not_charge_twice(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_189_public_api_wave3.py
-SHA256=f99277844a69a50e28a89d542a867d0391e76e06d13fb26ddef2e9cff5a37d3f BYTES=15362 LINES=370
+SHA256=5f708db71785c19585a0e1f64db5eec2893504a315bddaad9a21f6434c411aa8 BYTES=17073 LINES=400
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 13 — wave 3: logical operations whose product is data.
 
@@ -172138,15 +172589,18 @@ def test_only_the_logical_tools_are_exposed_not_the_app_surface():
 # ── The deferrals, with the measurement behind them ─────────────────────────
 
 @pytest.mark.parametrize("slug,tool_name", [
-    ("autosubvideo", "video.subtitle"),
     ("taoclipngan", "video.short_clips"),
 ])
 def test_duration_priced_tools_stay_closed(slug, tool_name):
-    """One root cause, three tools: the hold is topped up at run time.
+    """Con lai DUNG MOT tool, va ly do da doi.
 
-    Their quote is computed from a `duration_s` the caller declares, and the
-    worker raises the hold once it measures the real duration. A person picking
-    a file on a page can live with that; a signed machine quote cannot (Q84).
+    ⚠️ CŨ: ba tool cùng đóng vì giữ chỗ bị nâng lúc chạy. Hai trong ba
+       (`video.subtitle`, `video.upscale`) **đã mở 2026-08-29** sau H35.10a+b —
+       máy chủ đo thời lượng, và giữ chỗ của job API bị niêm phong.
+
+    `video.short_clips` **không** mở theo, và lý do khác hẳn: nó còn thiếu một
+    **trần đồng thời GPU** (H35.10c). Gộp nó vào cùng một lời giải thích với hai
+    tool kia là cách nhanh nhất để ai đó mở nhầm nó cùng lượt sau.
     """
     app = next(item for item in discover() if item.manifest.slug == slug)
     tool = next(spec for spec in app.manifest.tools if spec.name == tool_name)
@@ -172158,6 +172612,20 @@ def test_duration_priced_tools_stay_closed(slug, tool_name):
     assert "credit.giu_cho(db, user_id, need - held, job_id)" in source
 
 
+@pytest.mark.parametrize("slug,tool_name", [
+    ("autosubvideo", "video.subtitle"),
+    ("upscalevideo", "video.upscale"),
+])
+def test_duration_priced_tools_that_opened_never_take_the_duration_from_the_caller(
+        slug, tool_name):
+    """Hai tool mo duoc la vi con so tinh tien khong con den tu nguoi goi."""
+    app = next(item for item in discover() if item.manifest.slug == slug)
+    tool = next(spec for spec in app.manifest.tools if spec.name == tool_name)
+    assert tool.api_exposed is True
+    assert tool.params_schema["duration_s"]["measured_from"] == "video_key"
+    assert "duration_s" in (tool.api_contract.get("hidden") or ())
+
+
 def test_the_free_platform_funded_jobs_are_not_public():
     """Q50: transcribe/diarize/translate are 0-credit and platform-funded."""
     app = next(item for item in discover()
@@ -172166,8 +172634,21 @@ def test_the_free_platform_funded_jobs_are_not_public():
 
     for operation in ("transcribe", "diarize", "translate"):
         assert _cost({"operation": operation}) == 0
-    # None of them is reachable: the app exposes no tool at all on the API.
-    assert not any(tool.api_exposed for tool in app.manifest.tools)
+
+    # ⚠️ CŨ: `assert not any(tool.api_exposed ...)` — "app không mở tool nào".
+    #    Câu đó đúng cho tới 2026-08-29 rồi thành sai khi `video.subtitle` mở,
+    #    và nó **chưa bao giờ** là điều Q50 hứa. Q50 hứa ba operation miễn phí
+    #    KHÔNG VỚI TỚI ĐƯỢC từ ngoài — một app mở tool khác vẫn giữ được lời hứa
+    #    đó, miễn là không tool nào cho người gọi chọn `operation`.
+    for tool in app.manifest.tools:
+        if not tool.api_exposed:
+            continue
+        assert "operation" not in tool.params_schema, (
+            f"{tool.name} cho nguoi goi chon `operation` — duong toi job mien phi")
+        an = set(tool.api_contract.get("hidden") or ())
+        assert "operation" not in an, (
+            f"{tool.name} an `operation` thay vi khong co no: tham so an VAN "
+            "duoc nen tang dien gia tri mac dinh vao, nen day khong phai mot rao")
 
 
 # ── End to end ──────────────────────────────────────────────────────────────
@@ -172415,7 +172896,7 @@ def test_cancelling_a_data_job_refunds(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_190_public_api_coverage.py
-SHA256=add8dddb76e8689a1d843c8c6627fa68a272e4c6053fc68a6b1e8dd395c58af0 BYTES=7423 LINES=174
+SHA256=c7b5e65a95fd716500312a35d3c13d739bf4388bf46ced013f5cc611b33b6f7f BYTES=8168 LINES=184
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 14 — every app has a decision, and the code agrees with it.
 
@@ -172456,7 +172937,7 @@ DISPOSITION_DOC = (Path(__file__).parent.parent / "docs" / "PUBLIC_API" /
 DISPOSITION = {
     "thumbnail": (EXPOSE_V1, ("image.thumbnail",)),
     "taoanh": (EXPOSE_V1, ("image.generate",)),
-    "upscalevideo": (EXPOSE_V1, ("image.upscale",)),
+    "upscalevideo": (EXPOSE_V1, ("image.upscale", "video.upscale")),
     "prompt_ai_ommi": (EXPOSE_V1, ("text.prompt_package", "story.storyboard")),
     # The in-house image model (H37/Q102). EXPOSE_V1 means the contract is
     # published-shaped, not that customers can call it: the operator switch
@@ -172482,10 +172963,20 @@ DISPOSITION = {
     #    nay va noi ro hop dong la gi.
     "vps": (DEFER, ()),
 
-    # Priced from a caller-declared duration, with a run-time hold top-up: one
-    # root cause, three tools (waves 2 and 3).
+    # CU: "Priced from a caller-declared duration, with a run-time hold top-up:
+    # one root cause, three tools (waves 2 and 3)."
+    #
+    # Cai goc do da bi go 2026-08-29 (H35.10a+b): may chu DO thoi luong luc bao
+    # gia, va giu cho cua job den tu API bi NIEM PHONG o con so da ky. Nen hai
+    # trong ba tool da mo.
+    #
+    # ⛔ Ba app con lai KHONG con chung mot ly do nua, va gop chung lai la cach
+    #    nhanh nhat de ai do mo nham o luot sau:
+    #    - `taovideo`  — tap gia tri hop le doi theo model (khong lien quan gi
+    #                    toi thoi luong);
+    #    - `taoclipngan` — con thieu tran dong thoi GPU (H35.10c).
     "taovideo": (MIGRATE, ()),
-    "autosubvideo": (MIGRATE, ()),
+    "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 
     # No Job at all: credit is held against a message id, streamed through a
@@ -173514,7 +174005,7 @@ def test_the_new_tables_survive_a_backup_and_restore(api, tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_193_public_api_release.py
-SHA256=8597468fe0647c26fc80177618c2897468d79789fc1922c1df292594a52bba4d BYTES=20103 LINES=491
+SHA256=caeb47cf3e6e8fe47710038c84d0c0d4c14092727aba8f997120d943b61fd692 BYTES=20878 LINES=495
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 17 — the release gate: canary, load, failure recovery.
 
@@ -173594,10 +174085,14 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # `text.chat` (H38/Q106) vao danh sach dong bang ngay 24/08. Cung mot canh
     # bao nhu `image.ltt` o tren: co mat o day nghia la HOP DONG da dong bang,
     # KHONG phai khach goi duoc — ba cong fail-closed cua Q92 van dung rieng.
+    # `video.subtitle` + `video.upscale` vao danh sach dong bang 29/08 (H35.10).
+    # Canh bao cu van dung nguyen van cho ca hai: co mat o day nghia la HOP DONG
+    # da dong bang, KHONG phai khach goi duoc.
     assert published == exposed == ["image.generate", "image.ltt",
                                     "image.thumbnail", "image.upscale",
                                     "story.storyboard", "text.chat",
-                                    "text.prompt_package"]
+                                    "text.prompt_package", "video.subtitle",
+                                    "video.upscale"]
 
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in
@@ -218223,7 +218718,7 @@ def test_worker_restart_truoc_provider_khoi_phuc_job_tu_db(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_317_admin_nav_contract.py
-SHA256=bb92a1b2b62ab7b47892372e75323a24055b77a01db0614d147e2ac7b104b4c9 BYTES=7046 LINES=174
+SHA256=1723028ad4c814c19ab212687b1430e6505128bd5d52e24eae01439a407e0891 BYTES=8603 LINES=209
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hop dong dieu huong khu quan tri — chot bang test, khong bang loi khuyen.
 
@@ -218399,6 +218894,41 @@ def test_giao_dien_quan_tri_khong_chua_noi_dung_khong_co_authority():
             if mau.lower() in noi_dung.lower():
                 vi_pham.append(f"{p.relative_to(GOC)}: {mau!r} — {ly_do}")
     assert not vi_pham, "\n".join(vi_pham)
+
+
+def test_moi_cho_goi_vo_deu_dung_khoa_da_khai():
+    """Khoa `active` truyen cho `_admin_shell` phai co trong `SECTIONS`.
+
+    ⭐ Bang cau tam `_KHOA_CU` da go 29/08. Truoc do no dich khoa cu sang khoa
+       moi, nen mot khoa go nham van "chay duoc" — chi la thanh ben khong sang
+       gi ca, va nguoi dang xu su co khong biet minh dang dung o dau.
+
+    Nay khong con cau, phep kiem nay la thu giu cho no khong quay lai: mot khoa
+    la bi bat o CONG, khong phai luc chay.
+    """
+    import re
+
+    khoa = {k for k, _, _ in _chung.SECTIONS}
+    xau = []
+    for ten in ("server/admin.py", "server/admin_api.py"):
+        src = (GOC / ten).read_text(encoding="utf-8")
+        for m in re.finditer(
+                r'_admin_shell\((?:[^,()]|\([^()]*\))*,\s*"([a-z_]+)"', src):
+            if m.group(1) not in khoa:
+                xau.append(f"{ten}: {m.group(1)!r}")
+    assert not xau, xau
+
+
+def test_bang_cau_tam_khong_quay_lai():
+    """`_KHOA_CU` la mot mon no CO CHU DICH, va no da tra.
+
+    De lai mot bang dich khoa nghia la them mot trang moi co the dung ten cu ma
+    khong ai biet — dung kieu troi dat ma bang do sinh ra de tranh.
+    """
+    src = (GOC / "server/admin.py").read_text(encoding="utf-8")
+    ma = [d for d in src.splitlines()
+          if "_KHOA_CU" in d and not d.lstrip().startswith("#")]
+    assert not ma, ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -220011,6 +220541,179 @@ def test_probe_nhan_url_chu_khong_doi_tep_co_that(monkeypatch):
 
     assert media.probe("https://r2.example/a.mp4?sig=x")["duration"] == 12.5
     assert "https://r2.example/a.mp4?sig=x" in goi["cmd"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_326_tran_giu_cho_job_api.py
+SHA256=52ca2527cb7f714b717398603717556420410f1cc5f8a4ef5508df043198cda4 BYTES=6505 LINES=167
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H35.10b — bao gia da ky cua khach API la mot TRAN, khong phai mot uoc luong.
+
+`quyet_toan` von da khong bao gio thu qua `held`. Nen lo hong that KHONG nam o
+luc quyet toan — no nam o cho worker **nang** `held` len giua chung
+(`_dam_bao_giu_cho`). Nang xong thi quyet toan thu dung so moi, va khach tra
+nhieu hon con so ho bam dong y. Do la Q84, su co Seedance giu 29 thu 78.
+
+H35.10a lam bao gia DUNG (may chu do thoi luong). No khong lam bao gia KHONG
+THE SAI: worker chay ffprobe cua rieng no, va `math.ceil` trong cong thuc gia
+co the lech mot credit chi vi mot khac biet lam tron. Mot credit thi nho; mot
+loi hua khong giu duoc thi khong.
+
+⭐ Bat bien o day co MOT nua de bi bo sot, va no quan trong ngang nua kia:
+   duong GIAO DIEN WEB van phai nang giu cho duoc. O do co nguoi ngoi, ho chon
+   tep ho nhin thay, va ho duoc hoi lai. Chan ca hai duong la sua dung mot nua
+   va pha mot nua.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core import credit
+from platform_core.models import Job
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'tran.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); session = next(gen)
+    try:
+        yield session
+    finally:
+        session.close()
+        dbmod.reset_engine()
+
+
+@pytest.fixture()
+def bao_dam_user():
+    from tests.conftest import bao_dam_user as goc
+    return goc
+
+
+def _job(db, user_id: str, *, tu_api: bool) -> Job:
+    params: dict = {"video_key": "k"}
+    if tu_api:
+        params["_api"] = {"tool": "video.upscale", "key_id": "key_1"}
+    job = Job(user_id=user_id, app_slug="upscalevideo",
+              job_type="upscalevideo.render", params=params, status="queued")
+    db.add(job)
+    db.flush()
+    return job
+
+
+# ── Nua thu nhat: job API — tran cung ────────────────────────────────────────
+
+def test_job_API_khong_the_bi_nang_giu_cho_qua_bao_gia(db, bao_dam_user):
+    bao_dam_user(db, "u_api")
+    credit.cap_tay(db, "u_api", 500, by="test")
+    job = _job(db, "u_api", tu_api=True)
+
+    credit.giu_cho(db, "u_api", 30, job.id)          # bao gia da ky
+    assert credit.so_da_giu(db, job.id) == 30
+
+    credit.giu_cho(db, "u_api", 1, job.id)           # worker doi nang them
+    assert credit.so_da_giu(db, job.id) == 30, "bao gia da ky bi vuot"
+
+
+def test_tran_khong_lam_hong_job_cua_khach(db, bao_dam_user):
+    """Hap thu chenh lech, KHONG nem loi.
+
+    Nem o day se giet job vi mot khac biet lam tron mot credit — te hon han thu
+    no dinh bao ve. Cung logic ma `quyet_toan` da dung khi provider dat hon bao
+    gia: phan vuot la variance noi bo cua nen tang.
+    """
+    bao_dam_user(db, "u_api2")
+    credit.cap_tay(db, "u_api2", 500, by="test")
+    job = _job(db, "u_api2", tu_api=True)
+    credit.giu_cho(db, "u_api2", 30, job.id)
+
+    credit.giu_cho(db, "u_api2", 999, job.id)        # khong duoc nem
+    assert credit.so_da_giu(db, job.id) == 30
+
+
+def test_khach_khong_bi_thu_qua_so_da_ky_khi_quyet_toan(db, bao_dam_user):
+    """Bat bien tan cung — do bang SO DU, khong bang so trung gian."""
+    bao_dam_user(db, "u_api3")
+    credit.cap_tay(db, "u_api3", 100, by="test")
+    job = _job(db, "u_api3", tu_api=True)
+
+    credit.giu_cho(db, "u_api3", 30, job.id)
+    credit.giu_cho(db, "u_api3", 12, job.id)         # worker do ra 42
+    credit.quyet_toan(db, "u_api3", job.id, 42)
+
+    assert credit.so_du(db, "u_api3") == 70, "khach tra qua con so da bam dong y"
+
+
+def test_lan_giu_DAU_TIEN_cua_job_API_van_phai_chay(db, bao_dam_user):
+    """Chan ca lan dau thi khong job API nao chay duoc — kiem huong nguoc lai."""
+    bao_dam_user(db, "u_api4")
+    credit.cap_tay(db, "u_api4", 50, by="test")
+    job = _job(db, "u_api4", tu_api=True)
+
+    credit.giu_cho(db, "u_api4", 25, job.id)
+    assert credit.so_da_giu(db, job.id) == 25
+    assert credit.so_du(db, "u_api4") == 25
+
+
+# ── Nua thu hai: duong web — van nang duoc, va do la co y ────────────────────
+
+def test_duong_WEB_van_nang_giu_cho_duoc(db, bao_dam_user):
+    """Nua de bi bo sot. Co nguoi ngoi do, ho duoc hoi lai — nang la dung."""
+    bao_dam_user(db, "u_web")
+    credit.cap_tay(db, "u_web", 500, by="test")
+    job = _job(db, "u_web", tu_api=False)
+
+    credit.giu_cho(db, "u_web", 30, job.id)
+    credit.giu_cho(db, "u_web", 12, job.id)
+    assert credit.so_da_giu(db, job.id) == 42
+
+
+def test_job_khong_co_hang_trong_bang_thi_khong_bi_chan(db, bao_dam_user):
+    """Giu cho chay trong cung transaction voi `jobs.submit`.
+
+    Co duong goi giu cho TRUOC khi hang job nhin thay duoc. Coi "khong tim thay
+    job" la "da niem phong" se chan dung duong do.
+    """
+    bao_dam_user(db, "u_mo_coi")
+    credit.cap_tay(db, "u_mo_coi", 100, by="test")
+    credit.giu_cho(db, "u_mo_coi", 10, "job-khong-co-that")
+    assert credit.so_da_giu(db, "job-khong-co-that") == 10
+
+
+# ── Dau vet: nguoi truc phai doc lai duoc vi sao giu cho khong nhuc nhich ────
+
+def test_lan_bi_chan_de_lai_dau_vet_noi_bo(db, bao_dam_user):
+    """Mot chinh sach im lang la mot chinh sach khong ai go roi duoc luc 2 gio sang."""
+    from platform_core.models import JobEvent
+
+    bao_dam_user(db, "u_vet")
+    credit.cap_tay(db, "u_vet", 500, by="test")
+    job = _job(db, "u_vet", tu_api=True)
+    credit.giu_cho(db, "u_vet", 30, job.id)
+    credit.giu_cho(db, "u_vet", 7, job.id)
+
+    su_kien = db.query(JobEvent).filter_by(job_id=job.id).all()
+    loai = [e.event_code for e in su_kien]
+    assert "credit_hold_capped" in loai, loai
+    vet = next(e for e in su_kien if e.event_code == "credit_hold_capped")
+    # So bi tu choi phai co trong dau vet: biet "da chan" ma khong biet "chan
+    # bao nhieu" thi khong doi chieu duoc voi hoa don cua khach.
+    assert vet.details.get("requested") == 7, vet.details
+    assert vet.details.get("held") == 30, vet.details
+
+
+@pytest.mark.parametrize("xin", [1, 5, 999])
+def test_moi_muc_xin_them_deu_bi_chan_nhu_nhau(db, bao_dam_user, xin):
+    bao_dam_user(db, "u_nhieu")
+    credit.cap_tay(db, "u_nhieu", 5000, by="test")
+    job = _job(db, "u_nhieu", tu_api=True)
+    credit.giu_cho(db, "u_nhieu", 30, job.id)
+    credit.giu_cho(db, "u_nhieu", xin, job.id)
+    assert credit.so_da_giu(db, job.id) == 30
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -244006,7 +244709,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=a2f2997b5eed2a3cfe06d34841575c243656bd08d02b6cc44b4d90eb43ceb5aa BYTES=13721 LINES=280
+SHA256=5bd71769dd6e1d2cb24291b4cc0582da4df111fcd308dedb86ffc8cfe8112e71 BYTES=17073 LINES=361
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -244026,6 +244729,7 @@ Khong thay the review cua nguoi/agent - chi bat cac loi co hoc re tien, som.
 """
 from __future__ import annotations
 
+import ast
 import pathlib
 import re
 import sys
@@ -244097,6 +244801,85 @@ APP_DUOC_DUNG_APP: dict = {
         ("apps.upscalevideo.service", "submit_upscale_job"),  # nop job nang cap
     },
 }
+
+
+def _be_mat_app_tu_khai(goc: pathlib.Path, slug: str) -> set | None:
+    """`BE_MAT_CONG_KHAI` mà chính app khai trong `__init__.py`, hoặc None.
+
+    Đọc bằng AST chứ không import: linter chạy trên cây nguồn, và import một app
+    kéo theo cả phụ thuộc của nó.
+    """
+    p = goc / slug / "__init__.py"
+    if not p.exists():
+        return None
+    try:
+        cay = ast.parse(_read(p))
+    except SyntaxError:
+        return None
+    for node in cay.body:
+        # Nhan ca `X = ...` lan `X: kieu = ...` — mot ban khai co chu thich kieu
+        # van la mot ban khai, va bo sot no thi hang rao im lang.
+        if isinstance(node, ast.Assign):
+            dich = node.targets
+        elif isinstance(node, ast.AnnAssign):
+            dich = [node.target]
+        else:
+            continue
+        if not any(isinstance(t, ast.Name) and t.id == "BE_MAT_CONG_KHAI"
+                   for t in dich):
+            continue
+        if node.value is None:
+            return None
+        try:
+            gia_tri = ast.literal_eval(node.value)
+        except (ValueError, TypeError, SyntaxError):
+            # Ban khai phai la LITERAL. Boc `frozenset(...)`/`set(...)` quanh no
+            # lam cho doc-khong-import het doc duoc — noi thanh cau thay vi tra
+            # None, vi None o day co nghia la "chua khai gi ca".
+            return set()
+        try:
+            return {tuple(x) for x in gia_tri}
+        except TypeError:
+            return set()
+    return None
+
+
+def _doi_chieu_ban_khai(goc: pathlib.Path) -> list:
+    """Bản khai của app và allowlist của linter phải khớp NHAU, cả hai chiều.
+
+    ⭐ Vì sao cần cả hai chiều, không chỉ "app khai gì thì cho phép nấy": nếu chỉ
+       đọc bản khai thì một app tự mở rộng bề mặt của mình là đủ để app khác
+       thò tay vào sâu hơn — hàng rào tự tháo chính nó. Còn nếu chỉ đọc
+       allowlist thì app không biết mình đang gánh hợp đồng của ai (đúng lỗ
+       H41.5 bịt). Hai bản khai, phải khớp, và lệch là ĐỎ.
+    """
+    findings = []
+    duoc_goi = {bi_goi for _, bi_goi in APP_DUOC_DUNG_APP}
+    for bi_goi in sorted(duoc_goi):
+        if not (goc / bi_goi).is_dir():
+            # App khong co trong cay dang quet. Xay ra that voi cay tong hop cua
+            # test, va o do doi mot ban khai la doi mot thu khong the ton tai.
+            continue
+        khai = _be_mat_app_tu_khai(goc, bi_goi)
+        gom = set()
+        for (_, dich), cho_phep in APP_DUOC_DUNG_APP.items():
+            if dich == bi_goi:
+                gom |= set(cho_phep)
+        if khai is None:
+            findings.append(Finding(
+                bi_goi, "ERROR",
+                "app nay duoc app khac goi sang nhung KHONG tu khai be mat. "
+                f"Them `BE_MAT_CONG_KHAI` vao apps/{bi_goi}/__init__.py voi "
+                f"dung: {sorted(gom)}"))
+            continue
+        if khai != gom:
+            findings.append(Finding(
+                bi_goi, "ERROR",
+                f"ban khai cua app lech voi `APP_DUOC_DUNG_APP`. "
+                f"App khai {sorted(khai)}; linter cho phep {sorted(gom)}. "
+                "Sua CA HAI hoac khong sua ben nao."))
+    return findings
+
 
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
@@ -244267,6 +245050,7 @@ def lint() -> list:
                     app, "WARN",
                     f"{handlers} handler nhung khong co services/ hay "
                     f"features.py - logic nghiep vu dang nam trong route?"))
+    findings.extend(_doi_chieu_ban_khai(APPS))
     return findings
 
 

@@ -631,6 +631,52 @@ Output: `prompt_package` (object), `master_prompt` (string)
 
 Contract hash: `c55834222a3c4a0c`
 
+### `video.subtitle`
+
+Burn a transcript you already have into a video as styled subtitles. Costs 5 credits per minute at standard quality; draft costs 0.6x and high costs 1.5x. The duration is measured from the file you upload, not from anything you send.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `video_key` — string, **required**, The video to subtitle, given as the id of an upload you confirmed or of an artifact from an earlier job.
+- `transcript` — array, **required**, The words to burn in, as a list of segments with `start`, `end` and `text`. This tool does not transcribe for you.
+- `style_id` — string, one of `default`, `tiktok_bold`, `reels_clean`, `cinematic`, `meme_punch`, `kids_color`, `punchline`, `word_emphasis`, default default, Look of the subtitles: font, colour and outline. Does not change the price.
+- `segment_mode` — string, one of `sentence`, `phrase`, `short_form`, `punchline`, `word_emphasis`, default sentence, How the transcript is cut into on-screen lines — whole sentences, shorter phrases, or one emphasised word at a time.
+- `quality` — string, one of `draft`, `standard`, `high`, default standard, Encoding quality of the finished video. `draft` costs 0.6 times the standard price and `high` costs 1.5 times.
+- `output_format` — string, one of `mp4`, `mkv`, `webm`, default mp4, Container of the finished video file.
+- `export_srt` — boolean, default True, Also return the subtitles as a separate .srt file alongside the video.
+
+Output: `video_key` (artifact), `srt_key` (string), `ass_key` (string)
+
+Contract hash: `2e6e7bfda482d0ec`
+
+### `video.upscale`
+
+Upscale a video to 1080p, 1440p or 4K. Costs 30 credits per minute at 1080p on the fast preset; 1440p costs 1.8x, 4K costs 4x, and the quality preset costs 2.5x. The duration is measured from the file you upload, not from anything you send.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `video_key` — string, **required**, The video to enlarge, given as the id of an upload you confirmed or of an artifact from an earlier job.
+- `preset` — string, one of `fast`, `quality`, default fast, How hard to work on the result. `quality` costs 2.5 times as much as `fast` and takes longer.
+- `target_height` — integer, one of `1080`, `1440`, `2160`, default 1080, Height of the finished video in pixels. 1440 costs 1.8 times the 1080 price and 2160 costs 4 times.
+- `codec` — string, one of `h264`, `hevc`, default h264, Video codec of the finished file. `hevc` makes a smaller file that fewer players open.
+- `preview` — boolean, default False, Render only the first 8 seconds, and charge only for them. Use it to check the settings before paying for the whole video.
+- `preserve_fps` — boolean, default True, Keep the original frame rate instead of letting the encoder choose one.
+- `preserve_audio` — boolean, default True, Copy the original audio track across.
+- `stabilize` — boolean, default False, Reduce camera shake. Costs 1.2 times the price without it.
+- `smooth_motion` — boolean, default False, Interpolate frames for smoother motion. Costs 2.2 times the price without it, and combines with `stabilize`.
+
+Output: `video_key` (artifact)
+
+Contract hash: `91f9b8aece786b60`
+
 ### Models
 
 Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: price depends on the whole input, so a number printed against a model would be wrong often enough to matter.
