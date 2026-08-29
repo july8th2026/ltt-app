@@ -81,7 +81,28 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_ROOT       = Path(r"C:\ProgramData\gpu_claims")
+#: Thư mục claim dùng chung cho MỌI hộ trên máy. Mặc định là đường thật trên
+#: máy B; `LTT_GPU_CLAIMS_DIR` chỉ để **test** trỏ nó sang một thư mục tạm.
+#:
+#: 🔴 VÌ SAO CẦN BIẾN MÔI TRƯỜNG, đo được 2026-08-29. Bộ test đã được cắt khỏi
+#:    mặt phẳng này bằng `monkeypatch` (`gpu_khong_claim_toan_may`), nhưng
+#:    `monkeypatch` chỉ tác dụng **trong tiến trình cha**. `test_151` đẻ tiến
+#:    trình worker THẬT, và worker con nạp lại module này rồi **ghi claim thật**
+#:    vào `C:\ProgramData` — đếm được **16 tệp** `job:"ja"/"jb"/"jx"` sau một
+#:    lượt. Chúng tự lành khi PID chết, nên là nhiễu chứ không phải hỏng; nhưng
+#:    đó là bộ test của ta ghi vào không gian điều phối **dùng chung với hộ
+#:    khác** trên cùng máy.
+#:
+#: ⭐ Tiến trình con **thừa kế môi trường**, nên một biến env bịt được cả chiều
+#:    ĐỌC lẫn chiều GHI, ở cả tiến trình cha lẫn con — thứ mà `monkeypatch`
+#:    không làm được.
+#:
+#: ⛔ KHÔNG đọc biến này ở production: `deploy/` và `setup/` không đặt nó, nên
+#:    mặc định vẫn là đường thật. Đặt nhầm nó ở production nghĩa là nền tảng
+#:    không còn thấy claim của hộ khác — và đó đúng là thứ cả cơ chế này sinh ra
+#:    để tránh.
+_ROOT       = Path(os.environ.get("LTT_GPU_CLAIMS_DIR")
+                   or r"C:\ProgramData\gpu_claims")
 _CLAIM_DIR  = _ROOT / "claims"
 _POLICY     = _ROOT / "policy.json"
 
