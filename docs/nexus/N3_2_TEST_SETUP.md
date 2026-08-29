@@ -205,7 +205,7 @@ mục tạm.
 ```powershell
 Remove-NetNatStaticMapping -NatName PVEGW -StaticMappingID <id>   # xem: Get-NetNatStaticMapping
 Remove-NetFirewallRule -Name ssh-testvm
-# Va go khoa thu khoi C:\ProgramData\sshdministrators_authorized_keys
+# Va go khoa thu khoi C:\ProgramData\ssh\administrators_authorized_keys
 ```
 
 Giữ hay gỡ `sshd` trên VPS là tuỳ bạn — nhưng nếu giữ thì **nên giữ**, vì SSH

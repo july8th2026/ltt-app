@@ -147,6 +147,17 @@ def _steps(quick: bool) -> list[Step]:
         #    MOI — bo qua tro thanh mot thu duoc khai bao, khong phai mot thu
         #    xay ra.
         Step("bo qua im lang", [sys.executable, "tools/check_bo_qua.py"], ROOT),
+        # Ky tu dieu khien vo hinh trong tai lieu. `test_61` da quet dai nay tu
+        # lau va van quet — buoc nay KHONG thay no, no bit hai lo khac:
+        #   - pham vi: `test_61` dung `glob("*.md")` KHONG de quy, nen no phu 43
+        #     tep o `docs/` cap tren cung va bo qua moi thu muc con. Buoc nay
+        #     quet 623 tep van ban git dang theo doi — va no tim ra ngay mot BEL
+        #     song tu 2026-08-20 trong `docs/nexus/`, lam duong dan trong tai
+        #     lieu chi sai suot chin ngay;
+        #   - thoi diem: `test_61` chay o pha test; buoc nay chay trong
+        #     `--vong-lap` (~15 giay), tuc bat truoc khi thiet hai kip lan ra.
+        Step("ky tu dieu khien", [sys.executable,
+                                  "tools/check_ky_tu_dieu_khien.py"], ROOT),
         # H24: banh coc chong THEM chuoi chua boc _(). Con ~2.310 chuoi chua dich;
         # cam tuyet doi thi chan moi viec khac, nen chi cam TANG. Khong co buoc
         # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh

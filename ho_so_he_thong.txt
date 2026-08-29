@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c2cc84b28cc8fcc5e9d0b961d3a5590783b5ed730b6e75a62a75dd4ae00946b6
-Nguồn đã quét : 1250 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:9a1b1a616e3d056dd49bb128b993b4be7b80c11e50e57e02d80c7b21c4983175
+Nguồn đã quét : 1251 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1383,8 +1383,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1250 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:943, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1251 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:944, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2570,7 +2570,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (110)
+[tools] (111)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2605,6 +2605,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tools/check_dich_thieu.py
 - tools/check_fuzzy_dich.py
 - tools/check_i18n.py
+- tools/check_ky_tu_dieu_khien.py
 - tools/check_multiproc.py
 - tools/check_sdk_contract.py
 - tools/check_server_routes.py
@@ -2691,7 +2692,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1250 file; 12347765 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1251 file; 12353536 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -239914,6 +239915,150 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_ky_tu_dieu_khien.py
+SHA256=71c094ce7d4009a739b35773879f0c9f189efa3b9193f7914c7f5c6229bb1959 BYTES=4976 LINES=138
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""Bat ky tu dieu khien vo hinh trong tai lieu — SOM, truoc khi no vao commit.
+
+VI SAO CAN, VA VI SAO `test_61` CHUA DU
+=======================================
+
+`test_61::test_doc_has_no_invisible_control_characters` da quet dung dai ky tu
+nay tu lau. No van o nguyen do va van dang canh — dung go no. Cai thieu la HAI
+thu khac:
+
+1. **Pham vi.** `test_61` dung `DOC_DIR.glob("*.md")` — KHONG de quy. No phu 43
+   tep o `docs/` cap tren cung, va bo qua `docs/admin_mvp_v3/`, `docs/PUBLIC_API/`,
+   `docs/nexus/`, `docs/VLM_NOI_BO/`, `CLAUDE.md`, `AGENTS.md`... Mot tai lieu
+   hong trong thu muc con di qua ma khong ai thay.
+
+2. **Thoi diem.** No chay o pha test, tuc vai phut sau khi tep da hong — va
+   ngay 2026-08-29 no bat dung BA lan trong mot ngay, moi lan sau khi thiet hai
+   da xay ra. Buoc gate chay trong `--vong-lap` (~15 giay) bat som hon nhieu.
+
+NGUON GOC — ba lan trong mot ngay, cung mot co che
+==================================================
+
+Viet duong dan Windows trong mot chuoi Python KHONG phai raw-string:
+
+    "C:\\LTTPlatform\\app.previous"   ->  `\a` = BEL (0x07)
+
+`\app.previous` bi Python doc thanh escape. Mat thuong khong thay gi. Ba lan
+deu la `\a`, nhung dai nay con nhieu bay khac va kho nay dung DUNG nhung chuoi
+do trong tai lieu:
+
+    \b -> `\backup`    \f -> `\files`    \v -> `\venv`
+
+`\venv` va `\backup` xuat hien khap tai lieu cua kho nay, nen chan mot minh
+`\x07` la chan dung cai vua no chu khong phai cai lop.
+
+⛔ CACH DUNG DE TRANH, khong phai cach de "sua sau": ghi ra tep `.py` roi chay
+   (quy tac 3 cua CLAUDE.md), va dung raw-string `r"..."` cho MOI duong dan
+   Windows. Neu phai ghi tep bang Python thi dung `read_bytes`/`write_bytes` —
+   che do van ban con dien giai ca ket thuc dong.
+
+Chay:
+    python tools/check_ky_tu_dieu_khien.py
+"""
+from __future__ import annotations
+
+import pathlib
+import subprocess
+import sys
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+#: Duoi tep duoc quet. Chi tai lieu va cau hinh dang van ban — ma nguon da co
+#: `check_bien_dich` va linter rieng, va mot ky tu dieu khien trong ma se lam
+#: Python vo ngay chu khong nam im.
+DUOI = (".md", ".txt")
+
+#: Cho phep dung ba ky tu nay. Giong het `test_61` — hai tang phai noi cung mot
+#: dinh nghia, neu khong thi mot tang xanh mot tang do va khong ai biet tin cai
+#: nao.
+CHO_PHEP = "\n\r\t"
+
+#: Tep sinh tu dong hoac chua du lieu do, khong phai tai lieu nguoi viet.
+BO_QUA = (
+    "ho_so_he_thong.txt",          # ban do sinh tu nguon
+    "locale/",                     # catalog dich
+    "node_modules/",
+)
+
+
+def _tep_can_quet() -> list[pathlib.Path]:
+    """Moi tep van ban ma GIT dang theo doi.
+
+    Dung `git ls-files` chu khong `rglob`: no tu loai `node_modules/`, `vendor/`
+    va moi thu trong `.gitignore` ma khong phai bao tri mot danh sach loai tru
+    thu hai — mot danh sach nhu the se lech khoi `.gitignore` trong vong mot
+    thang.
+    """
+    ra = subprocess.run(["git", "ls-files", "-z"], cwd=ROOT,
+                        capture_output=True, timeout=60)
+    if ra.returncode != 0:
+        print("Khong chay duoc `git ls-files` — bo qua buoc nay.")
+        return []
+    tep = []
+    for ten in ra.stdout.decode("utf-8", "replace").split("\0"):
+        if not ten or not ten.endswith(DUOI):
+            continue
+        if any(bo in ten for bo in BO_QUA):
+            continue
+        tep.append(ROOT / ten)
+    return tep
+
+
+def _dong_cot(text: str, vi_tri: int) -> tuple[int, int]:
+    dau = text.rfind("\n", 0, vi_tri) + 1
+    return text.count("\n", 0, vi_tri) + 1, vi_tri - dau + 1
+
+
+def quet(tep: pathlib.Path) -> list[tuple[int, int, str]]:
+    try:
+        text = tep.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    ra = []
+    for i, c in enumerate(text):
+        n = ord(c)
+        if (n < 32 and c not in CHO_PHEP) or n == 0x7F:
+            dong, cot = _dong_cot(text, i)
+            ra.append((dong, cot, f"0x{n:02x}"))
+    return ra
+
+
+def main() -> int:
+    tep = _tep_can_quet()
+    loi = []
+    for f in tep:
+        for dong, cot, ma in quet(f):
+            loi.append((f.relative_to(ROOT).as_posix(), dong, cot, ma))
+
+    if loi:
+        print(f"KY TU DIEU KHIEN trong {len({x[0] for x in loi})} tep:")
+        for ten, dong, cot, ma in loi[:20]:
+            print(f"  {ten}:{dong}:{cot}  {ma}")
+        if len(loi) > 20:
+            print(f"  ... va {len(loi) - 20} cho nua")
+        print()
+        print("Gan nhu chac chan la duong dan Windows trong chuoi Python KHONG")
+        print("raw: `\\app.previous` -> BEL, `\\venv` -> VT, `\\backup` -> BS.")
+        print("Sua bang raw-string r\"...\" va ghi ra tep .py roi chay")
+        print("(quy tac 3 cua CLAUDE.md), khong phai bang cach xoa ky tu.")
+        print("RESULT: FAIL")
+        return 1
+
+    print(f"Ky tu dieu khien: 0 trong {len(tep)} tep van ban duoc git theo doi.")
+    print("RESULT: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_multiproc.py
 SHA256=d640b4bb28aaf3518f7a5049a1bfe23543c533018aab6a5d0994fcf2de18d8c8 BYTES=8039 LINES=179
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -242314,7 +242459,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=b354ce5a9f8b47ed8f79404a103845a548d52c6b60d1833078819ba365107068 BYTES=31074 LINES=589
+SHA256=ea12ce549ea27d97e15bf4693d9168b41939b7e9e663f85f0fe9b30666bccd0f BYTES=31869 LINES=600
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -242465,6 +242610,17 @@ def _steps(quick: bool) -> list[Step]:
         #    MOI — bo qua tro thanh mot thu duoc khai bao, khong phai mot thu
         #    xay ra.
         Step("bo qua im lang", [sys.executable, "tools/check_bo_qua.py"], ROOT),
+        # Ky tu dieu khien vo hinh trong tai lieu. `test_61` da quet dai nay tu
+        # lau va van quet — buoc nay KHONG thay no, no bit hai lo khac:
+        #   - pham vi: `test_61` dung `glob("*.md")` KHONG de quy, nen no phu 43
+        #     tep o `docs/` cap tren cung va bo qua moi thu muc con. Buoc nay
+        #     quet 623 tep van ban git dang theo doi — va no tim ra ngay mot BEL
+        #     song tu 2026-08-20 trong `docs/nexus/`, lam duong dan trong tai
+        #     lieu chi sai suot chin ngay;
+        #   - thoi diem: `test_61` chay o pha test; buoc nay chay trong
+        #     `--vong-lap` (~15 giay), tuc bat truoc khi thiet hai kip lan ra.
+        Step("ky tu dieu khien", [sys.executable,
+                                  "tools/check_ky_tu_dieu_khien.py"], ROOT),
         # H24: banh coc chong THEM chuoi chua boc _(). Con ~2.310 chuoi chua dich;
         # cam tuyet doi thi chan moi viec khac, nen chi cam TANG. Khong co buoc
         # nay thi cong dich muc dan — dung nhu "Marketplace"/"My Apps" tieng Anh

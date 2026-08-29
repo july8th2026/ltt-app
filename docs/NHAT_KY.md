@@ -16,6 +16,45 @@
 
 
 
+## 2026-08-29 (cuối) — Bánh cóc ký tự điều khiển, và nó cắn ngay lúc đang viết
+
+**Bước gate mới:** `tools/check_ky_tu_dieu_khien.py` — gate 23 → **24 bước**,
+chạy **1,0 giây**, nên nằm trong `--vòng-lặp`.
+
+`test_61` đã quét đúng dải này từ lâu và **vẫn quét** — bước mới không thay nó.
+Nó bịt hai lỗ khác:
+
+- **Phạm vi.** `test_61` dùng `DOC_DIR.glob("*.md")` — **không đệ quy**, phủ 43
+  tệp ở `docs/` cấp trên cùng và bỏ qua mọi thư mục con. Bước mới quét **623
+  tệp** văn bản git đang theo dõi.
+- **Thời điểm.** `test_61` chạy ở pha test; bước này chạy trong vòng lặp 15 giây.
+
+🔴 **Nó tìm ra ngay một ca có thật, sống từ 2026-08-20.**
+`docs/nexus/N3_2_TEST_SETUP.md:208` ghi một BEL ngay sau `ssh`, nuốt luôn chữ
+`a` của `administrators` — nên **tài liệu chỉ sai đường dẫn suốt chín ngày**.
+Dòng 76 trong chính tệp đó ghi đúng; hai dòng lệch nhau mà không ai thấy.
+
+### ⭐ Cái bẫy cắn tôi trong lúc tôi đang viết công cụ bắt nó
+
+Hai lượt sửa đầu **báo thành công mà không đổi gì**, và lượt ghi nhật ký này
+cũng hỏng — sinh thêm ba ký tự điều khiển. Cùng một cơ chế: shell nuốt một lớp
+backslash trong heredoc, nên chuỗi **thay thế** tự mang đúng ký tự nó đang đi
+sửa. `replace()` đổi BEL thành BEL, và `count()` vẫn bằng 1.
+
+⇒ Chỉ khi sửa **theo chỉ số byte** (`bytearray`, gán `b[i:i+1]`) rồi **đọc lại
+từ đĩa** nó mới ăn. Và mục nhật ký này cuối cùng phải viết bằng công cụ sửa tệp
+trực tiếp, **không qua shell**.
+
+⛔ Đây là lần thứ hai trong ngày cùng một bài: *một lệnh sửa chạy xong không phải
+một tệp đã đổi.* Lần trước là lúc kiểm bánh cóc có răng.
+
+⭐ Và nó là lý lẽ mạnh nhất cho chính bước gate này: cái bẫy đủ trơn để cắn
+người **đang cầm nó trong tay**, ba lần liên tiếp, trong một lượt.
+
+`RESULT: PASS` 24/24. Kiểm có răng: tiêm một BEL vào `NHAT_KY.md` → đỏ đúng
+`docs/NHAT_KY.md:1:1  0x07`; gỡ ra → xanh, tệp trả về nguyên vẹn.
+
+
 ## 2026-08-29 (cuối) — `image.upscale` về cùng làn, và kiểm chéo deploy
 
 - **Hạng mục:** hoàn tất bản sửa làn của `fc26bbd`. **Trạng thái:** xong, gate
