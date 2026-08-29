@@ -23,6 +23,16 @@ from platform_core.db import Base
 from platform_core.models import GpuLease
 
 
+@pytest.fixture(autouse=True)
+def _cach_ly_claim_gpu(gpu_khong_claim_toan_may):
+    """Autouse trong PHAM VI TEP NAY: cat khoi claim GPU toan may.
+
+    Xem `tests/conftest.py` cuoi tep de biet vi sao. Tom tat: mot claim THAT
+    tren GPU 0 cua ho khac bi tru vao card GIA cung index 0, nen phep kiem do
+    hay xanh tuy theo luc do ai dang dung GPU — chu khong theo ma.
+    """
+
+
 def _gpu(i, uuid, free_mb=16000, total_mb=16311, util=0):
     return gpu_mod.GpuInfo(index=i, name="Card giả", uuid=uuid,
                            total_mb=total_mb, free_mb=free_mb, util_pct=util)

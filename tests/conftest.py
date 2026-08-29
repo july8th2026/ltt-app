@@ -214,3 +214,39 @@ def bao_dam_user(db, user_id: str):
                     password_hash="x", is_verified=True))
         db.flush()
     return user_id
+
+
+# ── Cắt test khỏi mặt phẳng claim GPU TOÀN MÁY ───────────────────────────────
+#
+# `platform_core/gpu_claims.py` đọc/ghi `C:\ProgramData\gpu_claims\claims\` —
+# một thư mục dùng chung cho **mọi hộ trên máy**, không chỉ nền tảng này. Máy B
+# có ba hộ dùng chung GPU (dự án video ở `E:\LTT AI`, LLM ở `H:\LTT_LLM`, và ta),
+# nên thư mục đó gần như luôn có thứ gì đó trong nó.
+#
+# 🔴 VÌ SAO NÓ CHẢY VÀO TEST, đo được 2026-08-29. `gpu_lease.acquire()` trừ
+#    `reserved_mb_by_gpu()` theo **chỉ số card**. Test dựng card GIẢ cũng mang
+#    index 0, nên một claim THẬT trên GPU 0 bị trừ vào card giả:
+#
+#      test_chua_lai_headroom: card giả free_mb=6000, đòi acquire(4976)
+#        bình thường : 6000        >= 4976 + 1024  ->  vừa đủ, XANH
+#        khi có claim: 6000 - 7168 = -1168         ->  từ chối,  ĐỎ
+#
+# ⚠️ Và nó chỉ chảy khi claim còn MỚI (trong `_CUA_SO_NAP_MODEL_S` = 90 giây),
+#    nên nó **không đỏ đều — nó đỏ tuỳ lúc**. Hai phiên chạy cách nhau vài phút
+#    ra hai kết quả khác nhau, và cả hai đều đi tìm nguyên nhân ở chỗ khác
+#    (`__pycache__`, "test tự chập chờn"). Một phép kiểm phụ thuộc việc ai đang
+#    dựng video là một phép kiểm phụ thuộc môi trường đội lốt phép kiểm chức năng.
+#
+# ⭐ `_claims()` tự khai rằng trả `None` nghĩa là "chạy đúng như cũ", nên đây là
+#    chốt cô lập có sẵn trong thiết kế, không phải một lỗ khoét thêm cho test.
+#    Nó cũng chặn luôn chiều NGƯỢC LẠI: bộ test từng ghi claim thật vào
+#    `C:\ProgramData` và để lại rác (đã thấy một tệp `job:"jx"` mồ côi).
+#
+# ⛔ KHÔNG đặt `autouse` ở đây — xem đầu tệp. Tệp test của miền GPU tự bọc nó
+#    bằng một fixture `autouse` trong PHẠM VI TỆP, đúng như hướng dẫn đó nói.
+@pytest.fixture()
+def gpu_khong_claim_toan_may(monkeypatch):
+    """Cho `gpu_lease` chạy như thể máy không có mặt phẳng claim dùng chung."""
+    from platform_core import gpu_lease
+
+    monkeypatch.setattr(gpu_lease, "_claims", lambda: None)

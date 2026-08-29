@@ -65,6 +65,16 @@ RECEIVER = "https://receiver.example.com/certify"
 
 # ── The document, read as data ───────────────────────────────────────────────
 
+@pytest.fixture(autouse=True)
+def _cach_ly_claim_gpu(gpu_khong_claim_toan_may):
+    """Autouse trong PHAM VI TEP NAY: cat khoi claim GPU toan may.
+
+    Xem `tests/conftest.py` cuoi tep de biet vi sao. Tom tat: mot claim THAT
+    tren GPU 0 cua ho khac bi tru vao card GIA cung index 0, nen phep kiem do
+    hay xanh tuy theo luc do ai dang dung GPU — chu khong theo ma.
+    """
+
+
 def _rows(section: str) -> list[list[str]]:
     """Every table row under a heading, as trimmed cells.
 

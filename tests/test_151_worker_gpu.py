@@ -19,6 +19,16 @@ import pytest
 from platform_core import gpu as gpu_mod
 
 
+@pytest.fixture(autouse=True)
+def _cach_ly_claim_gpu(gpu_khong_claim_toan_may):
+    """Autouse trong PHAM VI TEP NAY: cat khoi claim GPU toan may.
+
+    Xem `tests/conftest.py` cuoi tep de biet vi sao. Tom tat: mot claim THAT
+    tren GPU 0 cua ho khac bi tru vao card GIA cung index 0, nen phep kiem do
+    hay xanh tuy theo luc do ai dang dung GPU — chu khong theo ma.
+    """
+
+
 @pytest.fixture()
 def db(tmp_path, monkeypatch):
     url = f"sqlite:///{(tmp_path / 'j.db').as_posix()}"
