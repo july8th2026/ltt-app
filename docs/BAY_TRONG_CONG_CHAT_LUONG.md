@@ -443,6 +443,74 @@ Ba tệp quen mặt ⇒ là bộ test. Có tệp lạ ⇒ mới là Bẫy 5 th�
 
 ---
 
+## Bẫy 16 — Trạng thái NGOÀI phép kiểm rò VÀO phép kiểm
+
+Ngày 2026-08-29, hai phiên làm song song gặp **ba** lượt gate đỏ mà không lượt
+nào là lỗi mã. Ba nguyên nhân khác nhau, **một** hình dạng:
+
+| # | Trạng thái rò vào | Triệu chứng |
+|---|---|---|
+| 1 | `__pycache__` cũ hơn nguồn (157 thư mục) | vài test đỏ, dọn xong xanh ngay |
+| 2 | `C:\ProgramData\gpu_claims\` — claim GPU **toàn máy**, dùng chung với hộ dựng video | 6 test đỏ **tuỳ lúc** |
+| 3 | Thứ tự import: `enabled` chốt lúc **nạp module**, nên `delenv` không tháo được gì | 1 test đỏ, chạy riêng thì xanh |
+
+⭐ **Cả ba đều mất nhiều giờ, và luôn theo cùng một cách: người ta đi sửa mã.**
+Cả hai phiên đều làm thế, theo hai hướng ngược nhau, và đều sai.
+
+### Vì sao nó khó hơn một lỗi bình thường
+
+Loại này **không đỏ đều**. Ca số 2 chỉ chảy khi claim còn trong cửa sổ 90 giây
+(`_CUA_SO_NAP_MODEL_S`), nên hai phiên chạy cách nhau vài phút ra hai kết quả
+trái ngược — và mỗi bên đều có "bằng chứng" cho kết luận sai của mình.
+
+⛔ **Hệ quả: một lượt xanh cũng không chứng minh gì**, nếu nó tình cờ rơi vào
+lúc trạng thái ngoài đang sạch. Tôi suýt dùng một lượt "84 passed" làm bằng
+chứng; đọc lại thư mục claim thì hộ kia **đã nhả GPU trước khi tôi chạy**.
+
+### Cách phân xử, rẻ hơn nhiều so với đọc mã
+
+**1. Dựng một `git worktree` sạch tại `HEAD` rồi chạy ở đó.** Nó trả lời "lỗi
+này có thật không" trong một phút.
+
+```bash
+git worktree add %TEMP%\sach HEAD
+```
+
+⚠️ Nhưng nhớ hai điều, cả hai đều đã trả giá:
+- worktree thiếu `node_modules` và `vendor/` (Git loại trừ) ⇒ frontend và
+  `test_82` đỏ **vì thiếu phụ thuộc**, không phải vì mã;
+- worktree **cũng tích `__pycache__`** sau vài lượt chạy. *Một cây không có
+  diff không phải một cây sạch.*
+
+**2. Với trạng thái toàn máy, đừng chờ nó sạch — hãy TỰ TẠO nó rồi đo.** Đặt
+một claim 7.168 MB với PID còn sống, rồi bật/tắt phép cô lập:
+
+```
+có fixture cô lập : 26 passed
+tắt fixture       : test_chua_lai_headroom  ĐỎ
+```
+
+Đó là bằng chứng; "chạy lại tới khi xanh" thì không.
+
+**3. `git stash` KHÔNG cất tệp chưa theo dõi.** Một lượt "đối chứng không có
+thay đổi của tôi" vẫn còn tệp test mới nằm đó sẽ ra 17 đỏ vô nghĩa. Cùng lớp
+lỗi: nhầm *"đã bỏ phần tôi thêm"* với *"trở về trạng thái gốc"*.
+
+### Cách sửa gốc
+
+Cắt phép kiểm khỏi trạng thái ngoài, **đừng** đi làm cho trạng thái ngoài sạch:
+
+- ca 2: `tests/conftest.py::gpu_khong_claim_toan_may` (không `autouse` — tệp
+  test của miền tự bọc bằng `autouse` trong phạm vi tệp);
+- ca 3: dùng `_Item` giả thay vì gọi `registry.viec_bao_tri()` thật.
+
+⚠️ **Còn hở, đã biết:** `monkeypatch` chỉ tác dụng trong **tiến trình cha**. Test
+nào đẻ tiến trình worker thật (`test_151`) thì worker con vẫn đọc/ghi trạng
+thái toàn máy. Bịt đúng là cho đường dẫn đọc một **biến môi trường** — tiến
+trình con thừa kế env.
+
+---
+
 ## Cái gì canh cái gì, sau ngày 25/08
 
 | Bước gate | Chặn | Mốc |

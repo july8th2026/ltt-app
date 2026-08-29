@@ -16,6 +16,223 @@
 
 
 
+## 2026-08-29 — Admin MVP V3 đóng nốt 5 mục hoãn: 12 trang API sang Jinja
+
+- **Hạng mục:** `24_DEFERRED_POST_MVP.md` mục **A · B · D · G · J** — xong.
+  **Trạng thái:** commit `d129f8e`, gate đầy đủ **PASS 23/23** (4.376 passed);
+  ⏳ **chưa deploy** — lượt deploy đang chờ là `8484bfa`, mục này đi lượt sau.
+
+### Đã làm
+
+**A** — 12 thân trang API từ f-string sang Jinja. `server/admin_api.py`
+**1.894 → 846 dòng**; 14 template mới + `_macro_api.html`; tám hàm/hằng sinh HTML
+bằng chuỗi (`_stat`, `_pager`, `_mode_chip`, `_key_badge`, `_error_note`,
+`_reason_form`, `_TILES`, `_COLS`) và `_trace_body` gỡ hẳn.
+
+⭐ Mục này từng bị **chính tôi** hoãn với lý do "giữ diff nhỏ nhất". Mở lại
+không phải vì đổi ý: điều kiện mở lại ghi sẵn là *"khi có người sửa cùng lúc
+≥ 2 trang trong đó"*, và lô C5–C8 đã sửa **mười hai**. Điều kiện chạm từ trước
+khi mục được viết.
+
+**B** — ô tìm liên thực thể (`/admin/tim`). Mục này bị chặn bởi *"không có
+read-model tìm liên thực thể"*, kèm luật ⛔ *"không làm ô nhận cả đơn hàng/log
+rồi trả rỗng"*. `admin_console.tim_lien_thuc_the()` nay là read-model đó: năm
+loại, mỗi loại chỉ ra được một bảng thật. `test_328` đọc **cả nhãn lẫn nguồn** và
+đỏ nếu chúng lệch — luật đó nay là một phép kiểm, không phải một dòng văn xuôi.
+
+**D** — nút thu gọn thanh bên (236 → 64px). Trạng thái đặt trên
+`<html data-adm-side>` bởi một `<script>` trong `<head>`, **trước** khi vẽ: đọc
+`localStorage` ở cuối `<body>` thì trình duyệt đã vẽ thanh bên rộng rồi mới thu
+lại — một cú giật ở **mọi** lần tải trang, khó chịu hơn hẳn cái tiện nó mang lại.
+
+**G** — gỡ cầu tạm `_KHOA_CU`. Món nợ này trả được vì có **hạn trả ghi sẵn**;
+một cầu tạm không có dòng "gỡ khi X" thì X không bao giờ tới.
+
+**J** — `overview()["jobs"]` dùng cùng bộ lọc `_api` mà `jobs_page()` vẫn dùng.
+Trước đó một bảng điều khiển API báo con số gồm cả việc của giao diện web, và
+bấm vào thì rơi vào một danh sách **nhỏ hơn** con số vừa bấm.
+
+### Ba thứ đã trả giá để học
+
+🔴 **`x.keys` trong Jinja lấy METHOD, không lấy giá trị.** Jinja giải bằng
+`getattr` trước `getitem`; `accounts_page()` và `account_detail()` đều trả dict
+có khoá `keys`. Trang Tổng quan in `<built-in method keys of dict>` ở ô "Khoá
+live đang chạy"; trang chi tiết tài khoản gọi `|length` lên một method → **500**.
+Không phép kiểm chức năng nào thấy — cả ba trang vẫn trả 200 hoặc vẫn "có nội
+dung". Chốt: `test_323::test_khong_trang_nao_ro_ri_phuong_thuc_cua_dict`.
+
+⭐ **Bánh cóc chỉ bảo vệ được thứ nó nhìn thấy.** Sổ nội dung cấm (`test_317`)
+chỉ quét `server/templates/admin/`, nên chữ trong f-string ở `admin_api.py` là
+chữ **vô hình**. Lần chuyển đổi làm lộ ngay hai lỗi đã sống nhiều tháng: *"con số
+đã **đối soát**"* hứa một luồng đối soát **ngân hàng** không tồn tại (→ "quyết
+toán", đúng tên bước thật trong sổ credit), và *"**Địa chỉ**"* làm tiêu đề cột IP
+trong khi nền tảng không có trường địa chỉ của khách (→ "IP"). Đây là một lý do
+**kỹ thuật** để dựng HTML bằng template, độc lập với mọi lý do thẩm mỹ.
+
+⚠️ **Độ đặc hiệu (0,8,1).** Luật reset trong `_kieu_chung.html` là
+`input:not([type=checkbox]):not([type=radio])…` — **tám** `:not()`, mỗi cái mang
+trọng số một bộ chọn thuộc tính. Nên `.job-filters input{width:auto}` (0,1,1)
+**thua**, còn `.job-filters select` **thắng** (reset của `select` chỉ là (0,0,1)).
+Đo bằng trình duyệt: hai `<select>` về đúng một hàng, ô tìm vẫn chiếm trọn một
+dòng — cùng một khối CSS, hai kết quả, và đọc bằng mắt sẽ không thấy vì sao. Phải
+`!important`, và phải khoá trong `@media(min-width:641px)`: `!important` thắng
+**bất kể** truy vấn phương tiện, để ngoài thì nó đè luôn `width:100%` của khối
+`max-width:640px` — một bản sửa cho màn hình rộng làm hỏng màn hình hẹp.
+
+### Một lỗi 500 thật bị bắt trong lúc làm
+
+`payment_orders.order_code` là `BigInteger`. Chuỗi `"9"×40` vẫn qua `.isdigit()`,
+và `int()` **thành công** vì Python có số lớn — nhưng cột thì không: SQLite ném
+`OverflowError`, PostgreSQL ném `NumericValueOutOfRange`. Tức gõ nhầm một chuỗi
+số dài vào ô tìm làm **đổ trang**. Nay chặn ở `_TRAN_BIGINT` trước khi chạm CSDL.
+
+### Một bánh cóc bắt đúng thứ nó không mang tên
+
+`tools/check_i18n.py` đỏ khi read-model của tôi trả sẵn nhãn tiếng Việt
+(774 → 784). ⛔ Cách sai là bọc `_()` cho hết để nó im — nó sẽ **xanh mà sai
+hướng**, vì nhãn vẫn nằm trong `platform_core`. Bánh cóc đó mang tên i18n, nhưng
+thứ nó thật sự chặn là **tầng trình bày rò xuống tầng dữ liệu**. Read-model nay
+trả trường thô (`vai`, `xac_thuc`, `credit`, `http`); template có một macro gom
+mọi cách diễn đạt.
+
+⚠️ Và cái bẫy kèm theo: bản đầu của phép kiểm cho luật này **tự đỏ vì chính
+docstring giải thích vì sao nhãn bị cấm**. Phải đọc bằng `ast` và bỏ docstring.
+Một phép kiểm cấm một chữ mà cũng cấm luôn việc *giải thích* chữ đó là một phép
+kiểm không thể thoả mãn.
+
+### Cố ý KHÔNG làm
+
+**Mục H** (`doi_tuong_loai`) — giữ hoãn. Sửa đúng là một migration Alembic trên
+CSDL đang phục vụ khách trả tiền, trong khi nhu cầu ("lọc nhật ký theo thực thể ở
+quy mô lớn") **chưa xảy ra** và `ho_so_khach()` vẫn tra cả id lẫn email nên không
+dấu vết nào đang bị mất. Chạy migration cho một nhu cầu giả định thì rủi ro là
+thật còn lợi ích là tưởng tượng. Đây là một mục **được quyết định giữ hoãn**,
+không phải một mục bị bỏ sót.
+
+### Còn nợ
+
+⚠️ `tests/test_287_vps_bao_tri.py:241` sẽ còn đỏ ngẫu nhiên. Nửa sau của test đã
+tự bảo vệ bằng manifest giả — chính chú thích của nó nói *"`enabled` đọc cờ lúc
+NẠP module… phụ thuộc thứ tự import"* — nhưng **nửa đầu** vẫn gọi
+`registry.viec_bao_tri()` thật sau `delenv`. Cùng cái bẫy, cùng tệp, khác nửa.
+Vùng VPS, để chủ vùng sửa.
+
+### Kiểm tra
+
+`python tools\gate.py` → **RESULT: PASS (23/23)**, 4.376 passed / 27 skipped,
+cây đứng yên suốt lượt (không có dòng `CAY DA DOI`). Kiểm bằng trình duyệt ở
+**1440px** và **375px**: 12 trang API render, nút thu gọn 236→64 và nhớ qua điều
+hướng, bốn trạng thái của ô tìm (rỗng · không có · tiền tố quá ngắn · nhiều kết
+quả), và đường "một kết quả thì đi thẳng" (303).
+
+---
+
+## 2026-08-29 — Đợt 2: mở hai tool video, và ba lần "đỏ mà không phải lỗi mã"
+
+- **Hạng mục:** H41.5 · H35.10 · H35.10b — hoàn thành. **Trạng thái:** mã xong,
+  gate đầy đủ **PASS 23/23**; ⏳ **chưa deploy** (chặn ở quyền quản trị).
+
+### Đã làm
+
+**H41.5** — cạnh cross-product duy nhất của kho. Nửa *lint* đã có từ A-04; nửa
+thiếu là **app tự nói ra bề mặt của nó**. Khi hiểu biết đó chỉ sống trong
+`tools/`, đổi tên một hàm là thay đổi trong lặng: linter bắt *chỗ gọi*, còn app
+không biết mình vừa phá hợp đồng của ai. Nay `apps/upscalevideo/__init__.py`
+khai `BE_MAT_CONG_KHAI`, linter đối chiếu **hai chiều**.
+
+⛔ Vì sao hai chiều: chỉ đọc bản khai thì app tự mở rộng bề mặt của mình là đủ
+để app khác thò tay sâu hơn — hàng rào tự tháo chính nó.
+
+**H35.10b** — trần cứng cho giữ chỗ của job đến từ API. `quyet_toan` vốn không
+bao giờ thu quá `held`, nên lỗ thật nằm ở chỗ worker **nâng** `held` giữa chừng.
+Nay giữ chỗ đầu tiên của job API bị **niêm phong**; worker đòi nâng thì nền tảng
+**hấp thụ** — không ném, vì ném sẽ giết job của khách vì một khác biệt làm tròn
+một credit, tệ hơn hẳn thứ nó định bảo vệ. Đường web vẫn nâng được, và đó là
+chủ ý: ở đó có người ngồi và họ được hỏi lại.
+
+⚠️ **H35.10a một mình KHÔNG đủ để mở hai tool, và kế hoạch đã nói đúng (a+b).**
+Worker chạy ffprobe riêng, `math.ceil` lệch một credit là quote đã ký bị vượt.
+
+**Làn scheduler** — `gpu_vram_mb` khoá theo `job_type`, nên `job_type` không phải
+chi tiết nội bộ: nó là số VRAM scheduler giữ chỗ. Đường web chọn làn theo preset
+từ lâu; đường API dùng thẳng `tool.job_type`, tức **mọi job từ API xin 12.000 MB
+kể cả `preset=fast`** (fast đo thật 848 MB). Nay `ToolSpec` khai
+`job_type_by` + `job_type_lanes`.
+
+⭐ Khai bằng **dữ liệu chứ không phải hàm** — khác `sync_executor` của H41.4 và
+khác có chủ ý. Bảng ánh xạ thì registry **kiểm được lúc nạp** và **đọc được từ
+ngoài** (linter, hồ sơ). Một hàm thì không kiểm được gì cho tới khi nó chạy, và
+chỗ nó chạy là chỗ tiêu tiền của khách.
+
+⚠️ Đây **không phải** lỗi tính tiền — khách trả đúng số credit. Là lỗi **xếp
+lịch**: job `fast` giữ 12.000 MB nên chặn job khác rồi tự bị hoãn. Triệu chứng
+tới tay khách là *"chậm không rõ vì sao"*.
+
+### Lỗi tìm được trên đường
+
+⭐ `autosubvideo` khai `transcript` kiểu `json` (tầng public chiếu thành
+`object`) nhưng handler đọc nó như **một danh sách** — khách gửi đúng hình dạng
+worker cần sẽ ăn 400. Không ai thấy vì tool chưa từng mở.
+
+🔴 **`so_deploy.py` — công cụ an toàn trước mỗi deploy — bỏ sót `server/*.py` ở
+cấp trên cùng.** `PHAM_VI` chỉ liệt kê `server/api` và `server/routes`, nên
+`admin.py`, `admin_api.py`, `app.py`, `templating.py` **chưa bao giờ được so**.
+Đo thật: `server/admin.py` lệch giữa nguồn và bản đang chạy mà công cụ vẫn báo
+*"khớp 452 · lệch 9"*. Sau khi sửa: **471 · 11**.
+
+⛔ Nguy hiểm hơn một thiếu sót thường vì nhật ký gọi `so_deploy` là **bước cố
+định** trước mỗi deploy: một công cụ báo "tôi đã so xong" trong khi bỏ qua một
+nửa `server/` thì tệ hơn không có công cụ — người ta tin nó và thôi tự kiểm.
+
+### ⭐ Ba lần "đỏ mà không phải lỗi mã" trong một ngày
+
+Đủ để thành một dạng, không phải ba sự việc. Chi tiết ở
+`docs/BAY_TRONG_CONG_CHAT_LUONG.md` mục 7.
+
+1. **`__pycache__` cũ** — 157 thư mục; dọn xong gate xanh ngay.
+2. **Mặt phẳng claim GPU toàn máy** — `C:\ProgramData\gpu_claims\`, dùng chung
+   với hộ dựng video. `gpu_lease` trừ VRAM **theo chỉ số card**, nên claim thật
+   trên GPU 0 chảy vào card **giả** cùng index 0. Và nó chỉ chảy trong cửa sổ 90
+   giây ⇒ **đỏ tuỳ lúc**.
+3. **Thứ tự import ở `test_287`** (phiên kia tìm ra) — `enabled` chốt lúc nạp
+   module, nên `delenv` không tháo được gì nếu một test khác đã nạp trước.
+
+⚠️ **Tôi chẩn đoán nhầm số 2 thành số 1**, và suýt nhầm lần thứ hai: lượt "84
+passed" tôi định dùng làm bằng chứng thì hộ kia **đã nhả GPU trước khi tôi
+chạy**. Làm lại có kiểm soát — tự đặt claim 7.168 MB với PID còn sống:
+**có** fixture → 26 pass; **tắt** fixture → đỏ đúng test đó.
+
+⭐ Và một cái bẫy nữa cùng họ: lần kiểm-có-răng **đầu tiên** báo "13 passed" làm
+tôi tưởng bánh cóc không có răng. Sai — phép thay chuỗi của tôi không khớp, tệp
+**chưa hề đổi**. *Một lệnh sửa chạy xong không phải một tệp đã đổi.*
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python tools\gate.py` (phiên kia chạy, cây đứng yên, phủ cả hai bộ) | **PASS 23/23** — 4.376 passed, 27 skipped |
+| `test_327` + `325` + `326` + `188` + `190` + `193` + `212` + `85` | **142 passed** |
+| Kiểm có răng: gỡ `job_type_by` · gỡ bản khai bề mặt · gỡ fixture claim | **đỏ đúng chỗ** cả ba |
+| `check_dich_thieu` sau khi thêm tay 4 bản dịch | **PASS**, mốc 344 → 343 |
+
+Bốn thông điệp lỗi mới thêm tay vào `.po` (**+12 dòng, 0 xoá**), không chạy
+`i18n.py trich`. Mốc hạ bằng **dịch**, không bằng trích lại.
+
+### Còn tồn đọng
+
+- ⏳ **Deploy** — gói đã dựng và kiểm, nhưng phiên không có quyền quản trị và
+  lối `-Verb RunAs` bị cổng harness chặn. Chủ sản phẩm phải tự chạy.
+- ⚠️ **`image.upscale` có cùng lỗi làn và ĐANG MỞ cho khách.** Sửa là bốn dòng y
+  hệt, nhưng nó đổi cách xếp lịch của một tool đang phục vụ ⇒ cần chủ sản phẩm.
+- **`test_151` vẫn ghi claim thật vào `C:\ProgramData`** — `monkeypatch` chỉ tác
+  dụng trong tiến trình cha, worker con thì không. Tự lành (PID chết →
+  `active()` dọn) nên là nhiễu, không phải hỏng. Sửa đúng là cho
+  `gpu_claims._ROOT` đọc một biến môi trường.
+- **`test_287` nửa đầu** vẫn gọi `registry.viec_bao_tri()` thật sau `delenv` —
+  sẽ lại đỏ ngẫu nhiên. Nửa sau đã dùng `_Item` giả; sửa là cho nửa đầu dùng
+  cùng khuôn.
+
+
 ## 2026-08-29 — H35.10a: giá thôi tin con số khách khai
 
 - **Mục tiêu:** Đợt 1 của `KE_HOACH_NOI_TIEP_2026-08-29.md` — đo thời lượng phía
