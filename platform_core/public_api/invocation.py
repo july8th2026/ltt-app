@@ -338,7 +338,12 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     # `jobs.submit` directly still cannot open a second job for one quote.
     from platform_core.job_submit import dedupe_key_for
 
-    dedupe = dedupe_key_for(tool.job_type, {
+    # Làn scheduler do app khai, không phải `tool.job_type` cứng. Làn quyết định
+    # VRAM mà scheduler giữ chỗ, nên dùng làn mặc định cho mọi lượt gọi là giữ
+    # thừa GPU của khách khác — xem `ToolSpec.lane_for`.
+    lane = _lane_for(tool, job_params)
+
+    dedupe = dedupe_key_for(lane, {
         "intent": meta["quote_intent"], "key_id": principal.key_id})
 
     if is_test(getattr(principal, "mode", "live")):
@@ -350,7 +355,7 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
 
         return jobq.submit(
             db, user_id=principal.user_id, app_slug=tool.app_slug,
-            job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+            job_type=lane, params=job_params, dedupe_key=dedupe,
             admission_resource=getattr(tool, "admission_resource", "") or "api",
             admission_slots=getattr(tool, "admission_slots", 0),
         )
@@ -359,11 +364,34 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     # shown (EXT-15).
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
-        job_type=tool.job_type, params=job_params, dedupe_key=dedupe,
+        job_type=lane, params=job_params, dedupe_key=dedupe,
         quoted_credit=int(quote.get("credit", 0)),
         admission_resource=getattr(tool, "admission_resource", "") or "api",
         admission_slots=getattr(tool, "admission_slots", 0),
     )
+
+
+
+def _lane_for(tool, params: dict) -> str:
+    """Làn scheduler cho lượt gọi này, theo bản khai của app.
+
+    `tool` ở đây có thể là `PublicTool` (bản chiếu catalog) — bản chiếu **không**
+    mang bảng làn, vì đó là chuyện nội bộ giữa app và scheduler chứ không phải
+    thứ khách khai. Nên tra về `ToolSpec` thật, đúng khuôn `measured_params`.
+    """
+    if hasattr(tool, "lane_for"):
+        return tool.lane_for(params)
+    from platform_core.registry import discover
+
+    for loaded in discover():
+        if loaded.error or loaded.manifest.slug != tool.app_slug:
+            continue
+        for spec in loaded.manifest.tools:
+            if spec.job_type == tool.job_type and (
+                    spec.name == tool.name
+                    or (spec.api_contract or {}).get("public_name") == tool.name):
+                return spec.lane_for(params)
+    return tool.job_type
 
 
 def api_meta(job) -> dict:

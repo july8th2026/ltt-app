@@ -11605,3 +11605,15 @@ msgstr "The provider result could not be determined; automatic retries have been
 
 msgid "Worker mất kết nối sau khi đã gửi yêu cầu tới nhà cung cấp."
 msgstr "The worker disconnected after sending the request to the provider."
+
+msgid "[{slug}] tool {tool!r} khai nửa vời: `job_type_by` và `job_type_lanes` phải đi cùng nhau"
+msgstr "[{slug}] tool {tool!r} declares half a lane table: `job_type_by` and `job_type_lanes` must be given together"
+
+msgid "[{slug}] tool {tool!r} job_type_by trỏ tới tham số không tồn tại: {param!r}"
+msgstr "[{slug}] tool {tool!r} job_type_by points at a parameter that does not exist: {param!r}"
+
+msgid "[{slug}] tool {tool!r} làn {lane!r} không thuộc job_types của app"
+msgstr "[{slug}] tool {tool!r} lane {lane!r} is not one of the app's job_types"
+
+msgid "[{slug}] tool {tool!r} job_type_lanes thiếu giá trị: {thieu}"
+msgstr "[{slug}] tool {tool!r} job_type_lanes is missing value(s): {thieu}"

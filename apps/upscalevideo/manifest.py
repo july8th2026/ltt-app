@@ -82,6 +82,23 @@ MANIFEST = AppManifest(
         returns={"video_key": "video"},
         verifiable=("technical",),
 
+        # ── Làn scheduler theo preset ────────────────────────────────────────
+        #
+        # `job_type` ở trên (`upscalevideo.render`) là làn CŨ, giữ lại cho job
+        # đã nằm trong hàng đợi. Đường web đã chọn làn theo preset từ lâu
+        # (`service.job_type_for_preset`); đường API thì không, nên **mọi** job
+        # từ API xin 12.000 MB kể cả `preset=fast` — trong khi fast đo thật ăn
+        # 848 MB (H32.6 trên RTX 5060 Ti).
+        #
+        # 🔴 Hệ quả đo được 2026-08-29: trên máy có ba hộ dùng chung GPU, một
+        #    job fast từ API **không vừa** chỗ trống còn lại và nằm chờ, dù nó
+        #    chỉ cần một phần sáu chỗ nó đang xin. Khách đã bị giữ credit.
+        job_type_by="preset",
+        job_type_lanes={
+            "fast": "upscalevideo.render.fast",
+            "quality": "upscalevideo.render.quality",
+        },
+
         # ── Public API (H35.10, mở 2026-08-29) ───────────────────────────────
         # Trước 2026-08-29 tool này CỐ Ý đóng, và lý do vẫn đáng đọc: giá phụ
         # thuộc `duration_s` do người gọi khai, còn worker nâng giữ chỗ khi đo

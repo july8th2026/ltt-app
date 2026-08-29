@@ -138,6 +138,45 @@ class ToolSpec:
     # without knowing an app slug or importing app code directly.
     sync_executor: str = ""
 
+    # ── Làn scheduler theo tham số ──────────────────────────────────────────
+    #
+    # `job_type` ở trên là làn MẶC ĐỊNH. Một app có thể có nhiều làn cho cùng
+    # một tool khi chi phí máy khác nhau hẳn theo một tham số công khai — làn
+    # quyết định VRAM mà scheduler giữ chỗ (`gpu_vram_mb`), nên chọn sai làn là
+    # giữ thừa GPU chứ không phải một chi tiết nội bộ.
+    #
+    # 🔴 VÌ SAO NÓ TỒN TẠI, đo được 2026-08-29. `apps/upscalevideo` khai ba làn
+    #    (`render` 12.000 MB, `render.fast` 2.000, `render.quality` 12.000) và
+    #    đường WEB chọn đúng làn theo preset. Đường API thì dùng thẳng
+    #    `tool.job_type` — tức **mọi** job từ API xin 12.000 MB kể cả
+    #    `preset=fast`, trong khi fast đo thật chỉ ăn 848 MB. Trên một máy có ba
+    #    hộ dùng chung GPU, đó là khách trả tiền rồi nằm chờ một chỗ trống mà
+    #    job của họ không hề cần.
+    #
+    # ⭐ KHAI BẰNG DỮ LIỆU chứ không phải một hàm, khác `sync_executor` ở trên
+    #    và khác có chủ ý: một bảng ánh xạ thì registry **kiểm được lúc nạp**
+    #    (tham số có thật không, làn có trong `job_types` không, đã phủ hết giá
+    #    trị enum chưa). Một hàm thì không kiểm được gì cho tới khi nó chạy —
+    #    và chỗ nó chạy là chỗ tiêu tiền của khách.
+    #
+    #: Tên tham số quyết định làn. Rỗng = luôn dùng `job_type`.
+    job_type_by: str = ""
+    #: `giá trị tham số -> job_type`. Phải phủ HẾT giá trị enum của tham số đó.
+    job_type_lanes: dict = field(default_factory=dict)
+
+    def lane_for(self, params: dict) -> str:
+        """`job_type` thật cho một lượt gọi, theo tham số app đã khai.
+
+        Không khai gì thì trả `job_type` — hành vi cũ, không đổi.
+        """
+        if not self.job_type_by:
+            return self.job_type
+        gia_tri = (params or {}).get(self.job_type_by)
+        if gia_tri is None:
+            spec = (self.params_schema or {}).get(self.job_type_by) or {}
+            gia_tri = spec.get("default")
+        return (self.job_type_lanes or {}).get(gia_tri, self.job_type)
+
 
 @dataclass(frozen=True)
 class NavEntry:
@@ -404,6 +443,8 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
             raise RegistryError(
                 f"[{manifest.slug}] tool {tool.name!r} enum thiếu nguồn giá trị")
 
+    _validate_lanes(manifest, tool)
+
     for output, port_type in tool.returns.items():
         if not isinstance(output, str) or not output or port_type not in TOOL_PORT_TYPES:
             raise RegistryError(
@@ -411,6 +452,45 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
                 f"{output!r}={port_type!r}")
 
     _validate_api_contract(manifest, tool)
+
+
+def _validate_lanes(manifest: AppManifest, tool: ToolSpec) -> None:
+    """Bảng làn phải khai đủ và trỏ vào thứ có thật — kiểm lúc NẠP.
+
+    Đây là chỗ khai bằng dữ liệu trả công: mọi cách khai sai đều bắt được trước
+    khi một job nào chạy, thay vì lộ ra dưới dạng "khách chờ mãi không tới lượt".
+    """
+    if not tool.job_type_by and not tool.job_type_lanes:
+        return
+    if not (tool.job_type_by and tool.job_type_lanes):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} khai nửa vời: `job_type_by` và "
+            "`job_type_lanes` phải đi cùng nhau").format(
+                slug=manifest.slug, tool=tool.name))
+
+    spec = (tool.params_schema or {}).get(tool.job_type_by)
+    if not isinstance(spec, dict):
+        raise RegistryError(_t(
+            "[{slug}] tool {tool!r} job_type_by trỏ tới tham số không tồn tại: "
+            "{param!r}").format(slug=manifest.slug, tool=tool.name,
+                                param=tool.job_type_by))
+
+    for gia_tri, lane in tool.job_type_lanes.items():
+        if lane not in manifest.job_types:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} làn {lane!r} không thuộc job_types của "
+                "app").format(slug=manifest.slug, tool=tool.name, lane=lane))
+
+    # Phủ HẾT giá trị enum. Thiếu một giá trị thì nó rơi âm thầm về làn mặc
+    # định — đúng cái lỗi việc này sinh ra để sửa, chỉ khác là nay nó nấp trong
+    # một bảng trông như đã đầy đủ.
+    values = spec.get("values")
+    if values:
+        thieu = [v for v in values if v not in tool.job_type_lanes]
+        if thieu:
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} job_type_lanes thiếu giá trị: {thieu}"
+            ).format(slug=manifest.slug, tool=tool.name, thieu=thieu))
 
 
 def _validate_api_contract(manifest: AppManifest, tool: ToolSpec) -> None:

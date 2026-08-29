@@ -335,7 +335,6 @@ VANG	[{slug}] tool {tool!r} params[{param!r}].only_when trỏ vào tham số đa
 VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] có giá trị không nằm trong enum: {la}
 VANG	[{slug}] tool {tool!r} params[{param!r}].only_when[{k!r}] phải là danh sách không rỗng
 VANG	chữ tiếng Việt CÓ DẤU vẽ trong ảnh bị sai dấu
-VANG	cửa sổ 64K là trần Cloudflare, không phải trần model: prompt lấp đầy tốn ~62 giây prefill
 VANG	model
 VANG	máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi
 VANG	nạp thêm bộ chiếu ảnh nên tốn hơn ~1,1 GB VRAM so với bản không ảnh
