@@ -697,10 +697,14 @@ def _quet_giu_cho_treo() -> int:
        Trong hai lần đó **chỉ một** được người ghi lại — tỉ lệ phát hiện thủ
        công 1/2.
 
-    ⛔ CHỈ BÁO, KHÔNG TỰ HOÀN. Tự ghi bút toán bù là một quyết định tiền, và
-       quyết định tiền thuộc về chủ sản phẩm (D-04/D-07). Bước này chỉ làm cho
-       một thứ vô hình trở thành một thứ có tên — mà đó đã là khác biệt giữa
-       1/2 và 2/2.
+    ⛔ ~~CHỈ BÁO, KHÔNG TỰ HOÀN.~~ **Sửa 2026-08-29 (H41.3).** Câu cũ đúng cho
+       tới khi chủ sản phẩm quyết; họ đã quyết là **có tự hoàn**. Bước này vẫn
+       chỉ **báo**, nhưng nay có `_tu_hoan_giu_cho_treo()` chạy ngay sau nó.
+
+    ⭐ Hai bước tách rời, và đó là chủ ý: chuông kêu ở **6 giờ**, tự hoàn ở
+       **24 giờ**. Người trực thấy trước và còn 18 tiếng để bác bỏ một báo động
+       giả. Gộp hai ngưỡng làm một nghĩa là máy hoàn trước khi ai kịp nhìn — mà
+       sổ này **chỉ ghi thêm**, nên trả nhầm không xoá được, chỉ bù được.
 
     ⭐ Nằm trong `_mot_luot_bao_tri` chứ không phải trong vòng job: cả khối đó
        chạy dưới lease `bao_tri`, nên việc này chạy **đúng một lần trên toàn
@@ -746,6 +750,28 @@ def _quet_giu_cho_treo() -> int:
                     notifications.send_email_for(db, row)
                     tong += 1
         db.commit()
+    return tong
+
+
+def _tu_hoan_giu_cho_treo() -> int:
+    """Hoàn những khoản treo quá `TU_HOAN_SAU`. Trả về số khoản đã hoàn.
+
+    Tách khỏi `_quet_giu_cho_treo` chứ không gộp: hai bước có **hai ngưỡng khác
+    nhau** (6 giờ để báo, 24 giờ để hoàn), và gộp chúng sẽ làm ngưỡng dài biến
+    mất trong lần ai đó dọn mã.
+
+    ⭐ Cũng nằm trong `_mot_luot_bao_tri` nên chạy dưới lease `bao_tri` — đúng
+       một lần trên toàn cụm. `credit.hoan()` vốn idempotent theo job, nên kể cả
+       lease hỏng thì tiền vẫn không trả hai lần; nhưng log sẽ nhân N, và một
+       dòng log tiền nhân đôi là thứ làm người trực mất buổi tối để đối chiếu.
+    """
+    from platform_core import credit
+
+    tong = 0
+    for db in _one_session():
+        da_hoan = credit.tu_hoan_treo(db)
+        db.commit()
+        tong = len(da_hoan)
     return tong
 
 
@@ -1396,6 +1422,13 @@ def _mot_luot_bao_tri(moc: dict) -> None:
             # Một hộp thư hỏng hay một truy vấn chậm không được làm dừng việc
             # dọn dữ liệu và giao webhook ở trên.
             log.exception("quet giu cho treo that bai")
+        # H41.3 — tự hoàn, NGƯỠNG DÀI HƠN (24h so với 6h ở trên). `try` riêng:
+        # một lỗi ở đường tiền không được nuốt mất phần báo động vừa chạy xong,
+        # và ngược lại.
+        try:
+            _tu_hoan_giu_cho_treo()
+        except Exception:                        # noqa: BLE001
+            log.exception("tu hoan giu cho treo that bai")
         moc["hold_scan"] = time.monotonic() + HOLD_SCAN_INTERVAL_S
 
     # ⭐ Đếm card. Không phải một phép kiểm sức khoẻ — máy vẫn khoẻ khi thiếu

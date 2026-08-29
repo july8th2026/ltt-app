@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:76c6dc5df9dc7d694f6671f65d4bce834469bd28219c7b88e1cd52958c5b5fe2
-Nguồn đã quét : 1253 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:492096158392b67f4b2d781688f5400dc10ec93896a8377fd442ed2a68d627ef
+Nguồn đã quét : 1254 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1066,7 +1066,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (294 file pytest + 3 frontend)
+10. QUALITY GATES (295 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1320,6 +1320,7 @@ Test inventory:
 - tests/test_328_tim_lien_thuc_the.py
 - tests/test_329_chot_so_gpu.py
 - tests/test_330_claim_gpu_theo_bien_moi_truong.py
+- tests/test_331_tu_hoan_giu_cho_treo.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1387,8 +1388,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1253 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:946, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1254 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:947, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2263,7 +2264,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (311)
+[tests] (312)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2528,6 +2529,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_328_tim_lien_thuc_the.py
 - tests/test_329_chot_so_gpu.py
 - tests/test_330_claim_gpu_theo_bien_moi_truong.py
+- tests/test_331_tu_hoan_giu_cho_treo.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2698,7 +2700,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1253 file; 12380923 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1254 file; 12394166 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -74304,7 +74306,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=2438876733454e863169bfb8a4c7d280e1fcd337160e13a76b743c417edb8e4b BYTES=259125 LINES=3668
+SHA256=3833fbbe8ea6fe862581ad344b20b8bd6cf135324a53f624b3b63d5ca150976e BYTES=259929 LINES=3668
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77914,8 +77916,8 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 | ✅ **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `docs/_luutru/codex_2026-08-27/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` *(dời khỏi `.codex/` ngày 2026-08-29 khi đóng hồ sơ Codex)* | **ĐÃ NGHIỆM THU Q6 2026-08-29:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**; cap `65000`, engine `131072`, output `32768`, `parallel=1` đã deploy. Public async canary 7 arm có queue-age p50 `1,062s`, p95 `1,861s`; GPU telemetry 450 mẫu/15 phút, CPU soak `320/320`; over-cap hold được hoàn. Giữ `parallel=1`, chưa rollout rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | ✅ **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case | `1f0e93c` |
-| **H41.7** | **Bề mặt MVP**: **6/10** app khách ẩn danh thấy mang nhãn *Đang phát triển*. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn. ⚠️ **Sửa 2026-08-29:** con số cũ "5/8" là số của **máy dev** — máy dev thiếu cờ `LTT_VPS`/`LTT_NEXUS` nên đếm hụt hai app. Đo lại trên `https://app.lttstudios.com` (ẩn danh, HTTP 200): 10 thẻ app, 6 nhãn *Đang phát triển* — `agent` `autosubvideo` `chataistudio` `taoanh` `taoclipngan` `vps`; 4 mục `released` — `nexus` `prompt_ai_ommi` `taovideo` `upscalevideo`. Số dùng để quyết phải là số của production | **chủ sản phẩm** |
-| **H41.8** | Cân nhắc đổi mặc định `AppManifest.public` thành `False` — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **chủ sản phẩm** |
+| ✅ **H41.7** | **Bề mặt MVP**: **6/10** app khách ẩn danh thấy mang nhãn *Đang phát triển*. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn. ⚠️ **Sửa 2026-08-29:** con số cũ "5/8" là số của **máy dev** — máy dev thiếu cờ `LTT_VPS`/`LTT_NEXUS` nên đếm hụt hai app. Đo lại trên `https://app.lttstudios.com` (ẩn danh, HTTP 200): 10 thẻ app, 6 nhãn *Đang phát triển* — `agent` `autosubvideo` `chataistudio` `taoanh` `taoclipngan` `vps`; 4 mục `released` — `nexus` `prompt_ai_ommi` `taovideo` `upscalevideo`. Số dùng để quyết phải là số của production  | **DA QUYET 2026-08-29: GIU NGUYEN ca 10.** Khach van thay ca 6 app mang nhan *Dang phat trien*, va nhan do it nhat la TRUNG THUC. ⚠️ Day la quyet dinh CHAP NHAN mot cua hang nua hoan thien, khong phai mot viec chua lam — doi lai la moi app dang co nguoi dung that deu giu duoc duong vao. Dung mo lai nhu mot phat hien moi. |
+| ✅ **H41.8** | ~~Cân nhắc đổi mặc định `AppManifest.public` thành `False`~~ — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **ĐÃ QUYẾT 2026-08-29: GIỮ `True`.** ⚠️ Đây là quyết định **chấp nhận rủi ro đã biết**, không phải "chưa xét": app thứ 15 viết ra mà quên khai vẫn sẽ **tự lên catalog công khai**. Ai gặp lại chuyện đó thì đây là câu trả lời, đừng mở lại như một phát hiện mới. Muốn lật thì phải có lý do mới, và phải rà 14 manifest hiện có trong cùng lô — quên một cái là một app **biến mất** khỏi cửa hàng. |
 
 ⛔ ~~**H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
 link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.~~
@@ -98219,7 +98221,7 @@ def tong_credits(credits_base: int, bonus_percent: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/credit.py
-SHA256=56309ca0b960d638c794c17e1e7fb98e6924400a95a22b45507f5824eb009b14 BYTES=28843 LINES=618
+SHA256=4b33d17941c425a1c77bff170d5b00d88b67165671c0fee8de8740de6dbe15f3 BYTES=32330 LINES=678
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 credit.py — sổ credit (H3). Phần ít code nhất, ít được phép sai nhất.
@@ -98839,6 +98841,66 @@ def giu_cho_treo(db: DbSession, *, treo_sau: timedelta = TREO_SAU,
         if len(ra) >= tran:
             break
     return ra
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# H41.3 — TỰ HOÀN khoản treo, để INV-5 từ *quan sát* thành *bảo đảm*
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# `giu_cho_treo()` ở trên **chỉ báo**. Từ 2026-08-26 nó kêu chuông đúng, gửi
+# email đúng, và hai khoản treo ngày 24/08 vẫn nằm nguyên đó — vì báo không phải
+# hoàn. Một cái chuông mà mỗi lần kêu đều cần một người xử tay là một cái chuông
+# rồi sẽ có người tắt.
+#
+# ⛔ VÌ SAO NGƯỠNG TỰ HOÀN PHẢI DÀI HƠN NGƯỠNG BÁO, KHÔNG ĐƯỢC BẰNG.
+#
+#    Chuông kêu ở `TREO_SAU` (6 giờ). Nếu tự hoàn cũng ở 6 giờ thì máy hoàn
+#    **trước khi có ai kịp nhìn**, và một chẩn đoán sai biến thành tiền đã trả —
+#    mà sổ này **chỉ ghi thêm**, nên "trả nhầm" không xoá được, chỉ bù được.
+#    Khoảng cách 6h → 24h là 18 tiếng để người trực bác bỏ một báo động giả.
+TU_HOAN_SAU = timedelta(hours=24)
+
+#: Trần mỗi lượt. Một lỗi khiến hàng nghìn khoản bị coi là treo thì trần biến nó
+#: thành **một sự cố nhỏ nhìn thấy được** thay vì một lần hoàn hàng loạt.
+TU_HOAN_TRAN = 20
+
+
+def tu_hoan_treo(db: DbSession, *, tu_hoan_sau: timedelta = TU_HOAN_SAU,
+                 now: datetime | None = None,
+                 tran: int = TU_HOAN_TRAN) -> list[GiuChoTreo]:
+    """Hoàn những khoản giữ chỗ đã treo quá `tu_hoan_sau`. Trả về cái đã hoàn.
+
+    Gọi **dưới lease** (`_mot_luot_bao_tri`). Caller commit.
+
+    ⭐ Không đổi schema, và đó là chủ ý. Kế hoạch đề xuất một cột
+       `hold_expires_at`, nhưng `giu_cho_treo()` đã tính đủ từ `created_at`;
+       thêm cột nghĩa là **migration + backfill trên bảng tiền đang sống** để
+       đổi lấy đúng con số đã có.
+
+    ⛔ CHỈ hoàn khoản CÓ `job_id`. Khoản `ly_do="khong_co_khoa"` không có đường
+       kết sổ nào — `hoan()` tra theo `job_id` — nên tự động hoá nó nghĩa là
+       **đoán tiền thuộc về ai**. Đó là thứ không được đoán; để người xử.
+    """
+    treo = giu_cho_treo(db, treo_sau=tu_hoan_sau, now=now, tran=tran * 5)
+    lam = [t for t in treo if t.job_id]
+
+    da_hoan: list[GiuChoTreo] = []
+    for muc in lam:
+        if len(da_hoan) >= tran:
+            # Nói ra, không cắt im lặng: một trần âm thầm đọc như "đã xong hết".
+            log.warning(
+                "TU HOAN TREO: cham tran %d moi luot, con %d khoan cho luot sau",
+                tran, len(lam) - len(da_hoan))
+            break
+        # `hoan()` idempotent theo job va tu khoa ket so, nen mot lan chay hai
+        # tien trinh (neu lease hong) van khong tra hai lan.
+        hoan(db, muc.user_id, muc.job_id)
+        da_hoan.append(muc)
+
+    if da_hoan:
+        log.warning("TU HOAN TREO: da hoan %d khoan, tong %d credit",
+                    len(da_hoan), sum(m.credit for m in da_hoan))
+    return da_hoan
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -102110,7 +102172,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=2778043dd488b2dabe7d74b533aff6ae688f2e35de730b48b1ff29cb12bf2ffd BYTES=70776 LINES=1513
+SHA256=2d8ef81427300b9dc11a695cf5f28a8d071bf4297249e8b4a1e5a89eb1c2c0bd BYTES=72543 LINES=1546
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -102811,10 +102873,14 @@ def _quet_giu_cho_treo() -> int:
        Trong hai lần đó **chỉ một** được người ghi lại — tỉ lệ phát hiện thủ
        công 1/2.
 
-    ⛔ CHỈ BÁO, KHÔNG TỰ HOÀN. Tự ghi bút toán bù là một quyết định tiền, và
-       quyết định tiền thuộc về chủ sản phẩm (D-04/D-07). Bước này chỉ làm cho
-       một thứ vô hình trở thành một thứ có tên — mà đó đã là khác biệt giữa
-       1/2 và 2/2.
+    ⛔ ~~CHỈ BÁO, KHÔNG TỰ HOÀN.~~ **Sửa 2026-08-29 (H41.3).** Câu cũ đúng cho
+       tới khi chủ sản phẩm quyết; họ đã quyết là **có tự hoàn**. Bước này vẫn
+       chỉ **báo**, nhưng nay có `_tu_hoan_giu_cho_treo()` chạy ngay sau nó.
+
+    ⭐ Hai bước tách rời, và đó là chủ ý: chuông kêu ở **6 giờ**, tự hoàn ở
+       **24 giờ**. Người trực thấy trước và còn 18 tiếng để bác bỏ một báo động
+       giả. Gộp hai ngưỡng làm một nghĩa là máy hoàn trước khi ai kịp nhìn — mà
+       sổ này **chỉ ghi thêm**, nên trả nhầm không xoá được, chỉ bù được.
 
     ⭐ Nằm trong `_mot_luot_bao_tri` chứ không phải trong vòng job: cả khối đó
        chạy dưới lease `bao_tri`, nên việc này chạy **đúng một lần trên toàn
@@ -102860,6 +102926,28 @@ def _quet_giu_cho_treo() -> int:
                     notifications.send_email_for(db, row)
                     tong += 1
         db.commit()
+    return tong
+
+
+def _tu_hoan_giu_cho_treo() -> int:
+    """Hoàn những khoản treo quá `TU_HOAN_SAU`. Trả về số khoản đã hoàn.
+
+    Tách khỏi `_quet_giu_cho_treo` chứ không gộp: hai bước có **hai ngưỡng khác
+    nhau** (6 giờ để báo, 24 giờ để hoàn), và gộp chúng sẽ làm ngưỡng dài biến
+    mất trong lần ai đó dọn mã.
+
+    ⭐ Cũng nằm trong `_mot_luot_bao_tri` nên chạy dưới lease `bao_tri` — đúng
+       một lần trên toàn cụm. `credit.hoan()` vốn idempotent theo job, nên kể cả
+       lease hỏng thì tiền vẫn không trả hai lần; nhưng log sẽ nhân N, và một
+       dòng log tiền nhân đôi là thứ làm người trực mất buổi tối để đối chiếu.
+    """
+    from platform_core import credit
+
+    tong = 0
+    for db in _one_session():
+        da_hoan = credit.tu_hoan_treo(db)
+        db.commit()
+        tong = len(da_hoan)
     return tong
 
 
@@ -103510,6 +103598,13 @@ def _mot_luot_bao_tri(moc: dict) -> None:
             # Một hộp thư hỏng hay một truy vấn chậm không được làm dừng việc
             # dọn dữ liệu và giao webhook ở trên.
             log.exception("quet giu cho treo that bai")
+        # H41.3 — tự hoàn, NGƯỠNG DÀI HƠN (24h so với 6h ở trên). `try` riêng:
+        # một lỗi ở đường tiền không được nuốt mất phần báo động vừa chạy xong,
+        # và ngược lại.
+        try:
+            _tu_hoan_giu_cho_treo()
+        except Exception:                        # noqa: BLE001
+            log.exception("tu hoan giu cho treo that bai")
         moc["hold_scan"] = time.monotonic() + HOLD_SCAN_INTERVAL_S
 
     # ⭐ Đếm card. Không phải một phép kiểm sức khoẻ — máy vẫn khoẻ khi thiếu
@@ -223002,6 +223097,209 @@ def test_deploy_va_setup_KHONG_dat_bien_nay():
                 except OSError:
                     pass
     assert xau == [], f"bien chi-danh-cho-test bi dat o duong trien khai: {xau}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_331_tu_hoan_giu_cho_treo.py
+SHA256=f3ed4b5125a84467d7a543567818d882169877e23c817cb82ea01e7655223dfb BYTES=7185 LINES=197
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""H41.3 — INV-5 tu *quan sat* thanh *bao dam*: khoan treo duoc TU HOAN.
+
+Tu 2026-08-26 nen tang DA BIET khoan nao treo: `giu_cho_treo()` do dung, chuong
+keu dung, email toi dung nguoi. Va hai khoan treo ngay 24/08 **van nam nguyen o
+do** — vi bao khong phai hoan. Mot cai chuong ma moi lan keu deu can mot nguoi
+xu tay la mot cai chuong roi se co nguoi tat.
+
+⛔ NUA DE MAT CUA PHEP KIEM NAY la chieu KHONG DUOC HOAN. Mot ham "tu hoan" ma
+   hoan qua tay thi te hon han khong co no: so credit CHI GHI THEM, nen mot lan
+   tra nham khong xoa duoc — chi bu duoc. Nen quá nửa số phép kiểm dưới đây do
+   nhung truong hop **phai giu nguyen tien**.
+"""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+import pytest
+
+from platform_core import credit
+from platform_core.models import Job
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'hoan.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); session = next(gen)
+    try:
+        yield session
+    finally:
+        session.close()
+        dbmod.reset_engine()
+
+
+def _user(db, uid: str, nap: int = 100):
+    from tests.conftest import bao_dam_user
+    bao_dam_user(db, uid)
+    credit.cap_tay(db, uid, nap, by="test")
+    return uid
+
+
+def _job(db, uid: str, *, status: str = "failed") -> Job:
+    job = Job(user_id=uid, app_slug="thumbnail", job_type="thumbnail.render",
+              params={}, status=status)
+    db.add(job)
+    db.flush()
+    return job
+
+
+def _lui(db, job_id: str, gio: float) -> None:
+    """Day but toan `hold` lui ve qua khu, de khong phai cho that."""
+    from platform_core.models import CreditEntry
+    from sqlalchemy import select
+
+    luc = datetime.now(timezone.utc) - timedelta(hours=gio)
+    for e in db.execute(select(CreditEntry).where(
+            CreditEntry.job_id == job_id)).scalars().all():
+        e.created_at = luc
+    db.flush()
+
+
+# ── Chieu CO hoan ───────────────────────────────────────────────────────────
+
+def test_khoan_treo_qua_han_duoc_hoan_va_khach_lay_lai_du_tien(db):
+    uid = _user(db, "u_hoan")
+    job = _job(db, uid)
+    credit.giu_cho(db, uid, 30, job.id)
+    _lui(db, job.id, 30)
+    assert credit.so_du(db, uid) == 70
+
+    da = credit.tu_hoan_treo(db)
+
+    assert [m.job_id for m in da] == [job.id]
+    assert credit.so_du(db, uid) == 100, "khach chua lay lai du tien"
+
+
+def test_hoan_hai_lan_khong_tra_hai_lan(db):
+    """`hoan()` idempotent theo job — chot lai o day vi day la duong TIEN.
+
+    Neu lease `bao_tri` hong thi N tien trinh cung chay ham nay. Tien khong duoc
+    sai vi mot loi dieu phoi.
+    """
+    uid = _user(db, "u_hai_lan")
+    job = _job(db, uid)
+    credit.giu_cho(db, uid, 25, job.id)
+    _lui(db, job.id, 30)
+
+    credit.tu_hoan_treo(db)
+    credit.tu_hoan_treo(db)
+
+    assert credit.so_du(db, uid) == 100
+
+
+# ── Chieu KHONG duoc hoan — nua de mat ──────────────────────────────────────
+
+def test_chua_du_han_thi_KHONG_hoan(db):
+    """Chuong keu o 6 gio; tu hoan o 24. Khoang giua la cho nguoi truc bac bo."""
+    uid = _user(db, "u_som")
+    job = _job(db, uid)
+    credit.giu_cho(db, uid, 40, job.id)
+    _lui(db, job.id, 8)                     # da qua nguong BAO, chua qua nguong HOAN
+
+    assert credit.giu_cho_treo(db) != [], "khoan nay phai duoc BAO o moc 8 gio"
+    assert credit.tu_hoan_treo(db) == [], "nhung KHONG duoc hoan o moc 8 gio"
+    assert credit.so_du(db, uid) == 60
+
+
+def test_khoan_KHONG_CO_KHOA_thi_khong_bao_gio_tu_hoan(db):
+    """`job_id` rong => `hoan()` khong tra duoc => tu dong hoa la DOAN tien cua ai.
+
+    Day chinh la hinh dang cua hai khoan treo that ngay 24/08 tren production.
+    Chung phai duoc BAO, va phai de NGUOI xu.
+    """
+    uid = _user(db, "u_khong_khoa")
+    credit.giu_cho(db, uid, 15, "")
+
+    treo = credit.giu_cho_treo(db)
+    assert any(t.ly_do == "khong_co_khoa" for t in treo), "phai duoc BAO"
+    assert credit.tu_hoan_treo(db) == [], "khong duoc tu hoan khoan khong co khoa"
+    assert credit.so_du(db, uid) == 85
+
+
+def test_job_con_SONG_thi_khong_hoan(db):
+    """Hang doi tac 30 tieng khong phai tien treo — no chi dang cho."""
+    for trang_thai in ("queued", "running"):
+        uid = _user(db, f"u_song_{trang_thai}")
+        job = _job(db, uid, status=trang_thai)
+        credit.giu_cho(db, uid, 20, job.id)
+        _lui(db, job.id, 30)
+
+        assert credit.tu_hoan_treo(db) == [], f"job {trang_thai} bi hoan nham"
+        assert credit.so_du(db, uid) == 80
+
+
+def test_da_quyet_toan_roi_thi_khong_hoan(db):
+    uid = _user(db, "u_da_ket")
+    job = _job(db, uid)
+    credit.giu_cho(db, uid, 30, job.id)
+    credit.quyet_toan(db, uid, job.id, 30)
+    _lui(db, job.id, 40)
+
+    assert credit.tu_hoan_treo(db) == []
+    assert credit.so_du(db, uid) == 70, "khoan da thu roi bi tra lai"
+
+
+# ── Tran moi luot ───────────────────────────────────────────────────────────
+
+def test_tran_moi_luot_gioi_han_so_khoan_hoan(db):
+    """Mot loi khien hang nghin khoan bi coi la treo phai thanh mot su co NHO."""
+    uid = _user(db, "u_tran", nap=1000)
+    for _ in range(5):
+        job = _job(db, uid)
+        credit.giu_cho(db, uid, 10, job.id)
+        _lui(db, job.id, 30)
+
+    da = credit.tu_hoan_treo(db, tran=2)
+    assert len(da) == 2, f"tran khong duoc ton trong: hoan {len(da)} khoan"
+
+
+def test_cham_tran_thi_NOI_RA_chu_khong_cat_im_lang(db, caplog):
+    """Mot tran am tham doc nhu 'da xong het'."""
+    import logging
+
+    uid = _user(db, "u_noi", nap=1000)
+    for _ in range(4):
+        job = _job(db, uid)
+        credit.giu_cho(db, uid, 10, job.id)
+        _lui(db, job.id, 30)
+
+    with caplog.at_level(logging.WARNING):
+        credit.tu_hoan_treo(db, tran=2)
+
+    assert any("cham tran" in r.message.lower() or "cham tran" in r.getMessage().lower()
+               for r in caplog.records), "cham tran ma khong co dong log nao"
+
+
+# ── Vong bao tri ────────────────────────────────────────────────────────────
+
+def test_vong_bao_tri_co_goi_tu_hoan():
+    """Mot ham khong ai goi la mot ham khong chay — bay 13 cua cong chat luong."""
+    import inspect
+
+    from platform_core import job_runner
+
+    than = inspect.getsource(job_runner._mot_luot_bao_tri)
+    assert "_tu_hoan_giu_cho_treo" in than, (
+        "tu hoan khong duoc goi trong vong bao tri => no khong bao gio chay")
+
+
+def test_hai_nguong_KHAC_nhau_va_hoan_LAU_hon_bao():
+    """Bang nhau la may hoan truoc khi ai kip nhin."""
+    assert credit.TU_HOAN_SAU > credit.TREO_SAU, (
+        f"tu hoan {credit.TU_HOAN_SAU} phai DAI HON nguong bao {credit.TREO_SAU}")
 
 @@@LTT_PROFILE_FILE_END@@@
 

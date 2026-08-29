@@ -616,3 +616,63 @@ def giu_cho_treo(db: DbSession, *, treo_sau: timedelta = TREO_SAU,
         if len(ra) >= tran:
             break
     return ra
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# H41.3 — TỰ HOÀN khoản treo, để INV-5 từ *quan sát* thành *bảo đảm*
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# `giu_cho_treo()` ở trên **chỉ báo**. Từ 2026-08-26 nó kêu chuông đúng, gửi
+# email đúng, và hai khoản treo ngày 24/08 vẫn nằm nguyên đó — vì báo không phải
+# hoàn. Một cái chuông mà mỗi lần kêu đều cần một người xử tay là một cái chuông
+# rồi sẽ có người tắt.
+#
+# ⛔ VÌ SAO NGƯỠNG TỰ HOÀN PHẢI DÀI HƠN NGƯỠNG BÁO, KHÔNG ĐƯỢC BẰNG.
+#
+#    Chuông kêu ở `TREO_SAU` (6 giờ). Nếu tự hoàn cũng ở 6 giờ thì máy hoàn
+#    **trước khi có ai kịp nhìn**, và một chẩn đoán sai biến thành tiền đã trả —
+#    mà sổ này **chỉ ghi thêm**, nên "trả nhầm" không xoá được, chỉ bù được.
+#    Khoảng cách 6h → 24h là 18 tiếng để người trực bác bỏ một báo động giả.
+TU_HOAN_SAU = timedelta(hours=24)
+
+#: Trần mỗi lượt. Một lỗi khiến hàng nghìn khoản bị coi là treo thì trần biến nó
+#: thành **một sự cố nhỏ nhìn thấy được** thay vì một lần hoàn hàng loạt.
+TU_HOAN_TRAN = 20
+
+
+def tu_hoan_treo(db: DbSession, *, tu_hoan_sau: timedelta = TU_HOAN_SAU,
+                 now: datetime | None = None,
+                 tran: int = TU_HOAN_TRAN) -> list[GiuChoTreo]:
+    """Hoàn những khoản giữ chỗ đã treo quá `tu_hoan_sau`. Trả về cái đã hoàn.
+
+    Gọi **dưới lease** (`_mot_luot_bao_tri`). Caller commit.
+
+    ⭐ Không đổi schema, và đó là chủ ý. Kế hoạch đề xuất một cột
+       `hold_expires_at`, nhưng `giu_cho_treo()` đã tính đủ từ `created_at`;
+       thêm cột nghĩa là **migration + backfill trên bảng tiền đang sống** để
+       đổi lấy đúng con số đã có.
+
+    ⛔ CHỈ hoàn khoản CÓ `job_id`. Khoản `ly_do="khong_co_khoa"` không có đường
+       kết sổ nào — `hoan()` tra theo `job_id` — nên tự động hoá nó nghĩa là
+       **đoán tiền thuộc về ai**. Đó là thứ không được đoán; để người xử.
+    """
+    treo = giu_cho_treo(db, treo_sau=tu_hoan_sau, now=now, tran=tran * 5)
+    lam = [t for t in treo if t.job_id]
+
+    da_hoan: list[GiuChoTreo] = []
+    for muc in lam:
+        if len(da_hoan) >= tran:
+            # Nói ra, không cắt im lặng: một trần âm thầm đọc như "đã xong hết".
+            log.warning(
+                "TU HOAN TREO: cham tran %d moi luot, con %d khoan cho luot sau",
+                tran, len(lam) - len(da_hoan))
+            break
+        # `hoan()` idempotent theo job va tu khoa ket so, nen mot lan chay hai
+        # tien trinh (neu lease hong) van khong tra hai lan.
+        hoan(db, muc.user_id, muc.job_id)
+        da_hoan.append(muc)
+
+    if da_hoan:
+        log.warning("TU HOAN TREO: da hoan %d khoan, tong %d credit",
+                    len(da_hoan), sum(m.credit for m in da_hoan))
+    return da_hoan
