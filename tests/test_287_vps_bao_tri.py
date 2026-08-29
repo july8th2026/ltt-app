@@ -12,11 +12,14 @@ Nên ở đây kiểm ba tầng, và tầng thứ ba là tầng đã để lọt
 """
 from __future__ import annotations
 
+import pathlib
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
 from apps.vps import bao_tri
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
 
 
 class _ClientGia:
@@ -232,16 +235,50 @@ def test_manifest_CO_khai_viec_dinh_ky():
     assert 60 <= MANIFEST.bao_tri_moi_giay <= 24 * 3600
 
 
+def test_app_tat_co_thi_KHONG_co_viec_bao_tri_nao(tmp_path):
+    """Nua thu nhat: `apps/vps` co that su tat theo co `LTT_VPS` khong.
+
+    🔴 CHAY TRONG TIEN TRINH RIENG, va do la ca noi dung cua phep kiem nay.
+
+    `AppManifest.enabled` doc bien moi truong luc **NAP MODULE**. Ban truoc goi
+    `monkeypatch.delenv("LTT_VPS")` roi goi thang `registry.viec_bao_tri()` —
+    nhung neu mot test khac trong cung worker xdist da nap `apps/vps/manifest.py`
+    khi co con dat, thi `MANIFEST.enabled` **da chot la True** va `delenv` khong
+    thao duoc gi.
+
+    Hau qua do duoc 29/08: gate do dung phep kiem nay mot luot, xanh luot sau,
+    va khong tai hien duoc khi chay rieng hay chay cung sau tep VPS khac. No
+    chan mot lan deploy. Cung lop loi voi hai lan khac cung ngay —
+    `__pycache__` va mat phang claim GPU toan may (xem `BAY_TRONG_CONG_CHAT_LUONG.md`
+    Bay 16): **trang thai NGOAI phep kiem ro VAO phep kiem**.
+
+    ⛔ Dung sua bang `importlib.reload`: no de lai mot module da doi cho moi test
+       chay sau, tuc doi mot ro ri lay mot ro ri khac.
+    """
+    import json
+    import os
+    import subprocess
+    import sys
+
+    # Mot dong, noi bang dau cham phay — de khong phai nhung ky tu xuong dong
+    # vao mot chuoi Python nam trong mot tep Python.
+    ma = ("import json; from platform_core import registry; "
+          "print(json.dumps([s for s, _, _ in registry.viec_bao_tri()]))")
+    moi_truong = {k: v for k, v in os.environ.items() if k != "LTT_VPS"}
+    r = subprocess.run([sys.executable, "-c", ma], capture_output=True,
+                       text=True, cwd=str(GOC), env=moi_truong, timeout=180)
+    assert r.returncode == 0, r.stderr[-2000:]
+    assert "vps" not in json.loads(r.stdout.strip().splitlines()[-1]), r.stdout
+
+
 def test_nen_tang_CHI_chay_viec_cua_app_DANG_BAT(monkeypatch):
-    """App tắt cờ mà việc nền vẫn chạy là app tắt một nửa — và nửa còn chạy là
-    nửa động vào tiền và dữ liệu của khách."""
+    """Nua thu hai: nen tang co LOC theo `enabled` khong.
+
+    Kiem thang ham loc bang manifest gia — khong phu thuoc thu tu import cua ca
+    bo test. Nua thu nhat o phep kiem tren.
+    """
     from platform_core import registry
 
-    monkeypatch.delenv("LTT_VPS", raising=False)
-    assert not any(s == "vps" for s, _, _ in registry.viec_bao_tri())
-
-    monkeypatch.setenv("LTT_VPS", "1")
-    registry.discover.cache_clear() if hasattr(registry.discover, "cache_clear") else None
     # `enabled` đọc cờ lúc NẠP module, nên ở đây kiểm thẳng hàm lọc thay vì
     # nạp lại toàn bộ app — cái sau phụ thuộc thứ tự import của cả bộ test.
     from platform_core.registry import AppManifest
