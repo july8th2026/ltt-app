@@ -16,6 +16,66 @@
 
 
 
+## 2026-08-29 — ĐÓNG DỰ ÁN. Đọc mục này trước nếu bạn là phiên tiếp theo
+
+**29 commit, hai phiên làm song song, ba lượt deploy `EXITCODE=0`.**
+Gate cuối: **PASS 24/24** — và đó là lượt đầu tiên trong ngày chạy trên một gate
+**không tự nhiễu** (xem mục ngay dưới).
+
+### Đang sống trên production
+
+| | |
+|---|---|
+| `/api/v1` | **4 tool bán thật**: `text.chat` · `image.ltt` · `video.subtitle` · `video.upscale` |
+| Khu quản trị | 12 trang API sang Jinja · ô tìm liên thực thể · nút thu gọn · gỡ cầu tạm `_KHOA_CU` |
+| Đường tiền | **tự hoàn** khoản giữ chỗ treo (H41.3) · giữ chỗ job API bị **niêm phong** (H35.10b) |
+| GPU | làn scheduler theo preset — job `fast` xin 2.000 MB thay vì 12.000 · chuông báo thiếu card (G5, `LTT_GPU_MONG_DOI=2`) |
+| Mã nguồn | đã push `origin/admin-mvp-v3` (kho riêng tư, 0 tệp cấm trong lịch sử) |
+
+⚠️ **Một việc sẽ tự xảy ra ở lượt bảo trì đầu tiên:** hai khoản treo ngày 24/08
+(`ms:de4cc565…`, `ms:84e9b141…`) **sẽ được tự hoàn**. Tiền thật chuyển động,
+đúng mục đích H41.3 — đừng đọc thành sự cố.
+
+### Cố ý để mở — KHÔNG phải bỏ sót
+
+| | Lý do |
+|---|---|
+| **Mục H** (nhật ký admin) | sửa đúng là migration Alembic trên CSDL đang phục vụ khách, cho nhu cầu **chưa xảy ra**; đã kiểm 29/08 là không mất dấu vết nào |
+| **H41.7 / H41.8** | chủ sản phẩm **đã quyết**: giữ 10 app, giữ `public=True`. ⚠️ Rủi ro đã chấp nhận: app thứ 15 quên khai vẫn **tự lên catalog công khai** |
+| **L5** xoay khoá provider | nhập giá trị khoá là việc không làm hộ; đã chuẩn bị hết, chừa chỗ điền |
+| **L4** tường lửa máy B | đổi thiết lập bảo mật trên máy ở xa mà đường vào đi qua chính lớp mạng đó |
+| **43 ô** H33/H31/H15/H13 | tồn đọng dài hạn thật, đã rà từng ô vào mã (V4) |
+| Remote `backup` | trỏ `D:/LTTBackups/LTTSTUDIOSAPP.git` — **kho không tồn tại**; dựng nó chạm bố trí sao lưu Q28 |
+
+### 🔴 Bài học đắt nhất, và nó không phải một hạng mục
+
+**Năm lượt gate đỏ, không lượt nào là lỗi mã.** Gốc: `gate.py` chạy nhóm kiểm
+tĩnh **song song** với bộ test, và bốn checker đọc đúng ba tệp mà ba test ghi.
+
+Hai phiên mất gần trọn một ngày, lần lượt đổ cho `__pycache__` · phiên kia ·
+một tệp ghi thứ tư · rác ngẫu nhiên. **Công cụ đo tự nhiễu vào phép đo của nó.**
+
+⭐ Ba câu dùng lại được:
+
+1. **Hỏi *"cái gì khác đang chạy lúc phép đo chạy?"* trước khi hỏi *"ai đang
+   phá tôi?"*.** Cả hai phiên có đủ dữ liệu từ sớm; thiếu là câu hỏi này.
+2. **Tranh chấp cây sinh ra đỏ giả, không sinh ra xanh giả** — một `PASS` khó
+   làm giả hơn một `FAIL`. Gặp đỏ thì nghi môi trường **trước**.
+3. **Một lệnh sửa chạy xong không phải một tệp đã đổi**, và **một cây không có
+   diff không phải một cây sạch**. Cả hai đều đã làm hỏng một kết luận trong ngày.
+
+⛔ Và một dạng lỗi lặp **bốn lần**: tài liệu trạng thái nói sai về mã thật.
+Ba lần sai về phía **nguy hiểm** (báo đóng trong khi đang mở → sửa mã sống như
+mã chết), một lần sai về phía **an toàn** (báo còn việc trong khi đã xong →
+suýt viết lại `gpu_lease.py` lần hai). Cách chữa duy nhất đã dùng được: **kiểm
+từng dòng vào mã thật, rồi cập nhật kèm bằng chứng — không gạch đi.**
+
+### Bắt đầu từ đâu
+
+`docs/KE_HOACH_NOI_TIEP_2026-08-29.md` còn đúng; các đợt đã xong được đánh dấu.
+Bẫy của chính cổng chất lượng: `docs/BAY_TRONG_CONG_CHAT_LUONG.md` **Bẫy 16**.
+
+
 ## 2026-08-29 (chốt phiên) — H41.3 tự hoàn, DEPLOY, và ba quyết định đã đóng
 
 - **Trạng thái:** `EXITCODE=0`. `so_deploy`: **khớp 499 · lệch 0**. Bốn dịch vụ
