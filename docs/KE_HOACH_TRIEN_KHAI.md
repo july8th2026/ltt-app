@@ -436,8 +436,12 @@ tiền API vào.
 - [x] Hai người dùng: A không đọc được job B (test tầng route)
 - [x] Kiểm tra thật bằng browser (Playwright), console 0 lỗi
 - [ ] Hỏng có chủ ý: giết worker giữa chừng → nhặt lại (đã có reclaim_orphans +
-      test; nghiệm thu bằng cách giết process khi có job dài — để khi có tool
-      chạy lâu thật, demo quá nhanh để giết giữa chừng)
+      test — `test_67`, `test_150`, `test_313`).
+      ⚠️ **Sửa 2026-08-29: lý do hoãn đã hết hiệu lực.** Câu cũ ghi *"để khi có
+      tool chạy lâu thật, demo quá nhanh để giết giữa chừng"* — `apps/demo` đã
+      gỡ (Q109), và nay **có** tool chạy lâu thật: `video.upscale` (job GPU
+      hàng phút) và `text.chat` (đo thật 119 giây). Việc này nay **làm được**;
+      nó đang chờ người làm, không chờ điều kiện.
 - [ ] Tắt CSDL → giao diện báo lỗi rõ (dời cùng H3-admin/observability)
 
 **Trạng thái:** chuỗi chính đã nghiệm thu thật. Hai mục còn lại cần tình huống
@@ -2430,7 +2434,13 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
     **Còn nợ đúng một việc:** *xoay* khoá provider. Đó là hành động của chủ sản
     phẩm — phải lấy credential mới từ từng nhà cung cấp, và xoay sai thì job của
     khách chết. Không phải việc agent tự làm.
-- [ ] H35.10 Mở tool video. **Câu "chờ MỘT thay đổi, sửa một chỗ mở được cả ba"
+- [x] H35.10 ✅ **XONG 2026-08-29** — `video.upscale` và `video.subtitle` **đang
+  bán thật** trên `/api/v1` (deploy 15:58, kiểm trên `openapi.json` công khai
+  kèm đối chứng âm). `video.short_clips` **vẫn đóng** — chờ H35.10c.
+  ⭐ Và kế hoạch đã nói **đúng**: mở được là nhờ **a+b**, không phải chỉ a.
+  Chỉ có a thì worker vẫn chạy ffprobe riêng và `math.ceil` lệch một credit là
+  quote đã ký bị vượt.
+  Mở tool video. **Câu "chờ MỘT thay đổi, sửa một chỗ mở được cả ba"
   ở bản trước là SAI** — điều tra mã thật ngày 2026-08-17 cho thấy là **ba việc
   con**, và nó chỉ mở được **hai** tool chứ không phải ba. Giữ lại câu sai này
   để nhớ kiểu lỗi: ước lượng viết lúc chưa đọc `_dam_bao_giu_cho`.
@@ -2448,7 +2458,9 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
   build_job_params() -> price(tool, params) -> credit_for() -> _cost(params["duration_s"])
   ```
 
-  - [ ] **H35.10a — đo thời lượng phía máy chủ lúc báo giá.** File đã ở
+  - [x] **H35.10a — ✅ XONG 2026-08-29** (`bf6cd84`). App khai `measured_from`,
+    nền tảng giải quyết chung; `duration_s` vào `hidden` nên khách không gửi
+    được nữa. `test_325`, 20 phép kiểm. **đo thời lượng phía máy chủ lúc báo giá.** File đã ở
     `staging/` từ lúc upload (Q85) và đã qua kiểm magic-byte, nên đo được ngay:
     R2 thì `storage.try_url_for()` cho ffprobe đọc thẳng URL (không tải cả
     2 GB về), local thì `storage.open()`. Đặt `params["duration_s"]` bằng số đo
@@ -2456,7 +2468,11 @@ Quyết định nền: **Q92**. Nhật ký thật: mục `2026-08-15 — H35` tr
     `create_job` đã có sẵn phép so `price_changed`. Dùng
     `platform_core.media.duration_seconds`, **không** viết lại ffprobe.
     *Rủi ro thấp: không chạm sổ credit.*
-  - [ ] **H35.10b — trần cứng cho việc nâng giữ chỗ của job đến từ API.**
+  - [x] **H35.10b — ✅ XONG 2026-08-29** (`7850ea5`). Giữ chỗ đầu tiên của job
+    API bị **niêm phong**; worker đòi nâng thì nền tảng **hấp thụ** chứ không
+    ném — ném sẽ giết job của khách vì một khác biệt làm tròn một credit.
+    Đường web vẫn nâng được, và đó là chủ ý. `test_326`, 10 phép kiểm.
+    **trần cứng cho việc nâng giữ chỗ của job đến từ API.**
     H35.10a làm quote **đúng**, không làm nó **không thể sai**:
     `_dam_bao_giu_cho` vẫn còn đó và vẫn nâng nếu worker tính ra số khác (trim,
     preview, hay bất kỳ khác biệt nào giữa "thời lượng file" và `eff_dur`).
@@ -2562,28 +2578,38 @@ Ba điều phải biết trước khi đụng vào:
   **Tái lập byte-identical** đã chứng minh. Thời gian ∝ số token (D-019).
   Hai lỗi thật đã bắt và sửa: `/history` có bản ghi ≠ job đã xong (D-018) · prefix
   đụng thư mục dự án video.
-- [ ] G4 Quét cấu hình CHẤT LƯỢNG: precision · base↔dev · số bước 30–90 · sampler.
-  Chọn bằng **so mù ≥ 50 cặp có cặp bẫy**; thời gian chỉ là trần khả thi
-- [ ] G5 Edit + reference: `edit` · `subject` · `structure`, **1–2 ảnh tham chiếu**
+- [x] G4 **ĐÓNG 2026-08-24 (D-054)** — giữ **50 bước**, và đó là câu trả lời cuối
+  chứ không phải "chưa đủ bằng chứng". 60 cặp: 50 bước **33–18**, điểm 0,625,
+  KTC [0,507; 0,744] không chứa 0,5. ⚠️ Nhưng khác biệt **nhỏ hơn khác biệt
+  giữa hai seed** — đừng đọc thành "36 bước tệ rõ"
+- [x] G5 **ĐÓNG 2026-08-24 (D-053)** — `edit` và `subject` ở `ref_mp=4.0` đã đo
+  và đã mở; trần token 7.506 → **11.412**, đo thật **20,1 GB · 239 s**
 - [ ] G5b Chuỗi nâng chất: SeedVR2/upscale · VLM tự loại · nhiều seed. Nhánh nào
   không chứng minh được tác dụng thì **bỏ hẳn**
-- [ ] **G6b ĐỐI CHỨNG TRẦN ⛔ — cổng quyết định.** So mù với **Gemini 3 Pro Image**
-  (thứ đang bán) + **Klein 9B** (trần trọng số mở, chỉ để đo) + GPT Image 2 nếu có
-  key. Thua ở mọi loại ⇒ **DỪNG, không mở bán**
+- [⛔] ~~**G6b ĐỐI CHỨNG TRẦN — cổng quyết định.**~~ **HUỶ 2026-08-24 (D-046)** —
+  bỏ hẳn đối chứng ngoài; từ đây chỉ đo **HiDream đấu HiDream, một lô một biến**.
+  Kết quả lô 23/08 đã đủ để quyết: Gemini **14–4** ở phần có nghĩa (D-045). Chạy
+  thêm lô đối chứng chỉ tốn tiền API mà không đổi được lựa chọn nào
 - [x] G6 Cổng render `render_gateway/` + `test_245` — **9,55/10**, 53 test xanh trên
   máy A không cần GPU. Mọi hợp đồng đọc từ mã ComfyUI kèm số dòng. Phát hiện quan
   trọng: `progress`/`executing` chỉ gửi tới client đã gửi prompt ⇒ **bỏ websocket**,
   ETA việc lạ suy từ trung vị thời lượng (D-012). Template `t2i` còn là **DRAFT**,
   G3 phải xác minh bằng cách chạy thật
-- [ ] G7 Deploy sang B: venv riêng, 2 service NSSM, tường lửa, ghim commit ComfyUI
-  — **phần máy A đã xong**: `render_gateway/deploy/{deploy,cai_dat_dich_vu,kiem_tra}.ps1`
-  (thuần ASCII, không BOM, so hash hai bên, token sinh trên B). Còn lại phải chạy
-  thật lên máy B + khởi động lại máy đó + gọi thử từ một máy thứ ba trong LAN
-- [ ] G8 Nối nền tảng: provider `ltt_image` + `platform_core/image_gen/` + `test_246`.
-  **KHÔNG cascade ngầm** — khách tự chọn đám mây
-- [ ] G9 Độ bền: 100 ảnh 4 MP · **nhiệt và tiết lưu** · tranh chấp với video
-- [ ] G10 Mở cho khách — gate.py toàn xanh + kiểm trên URL công khai thật; giao diện
-  **đường 2** (khách luôn biết ảnh do model nào sinh)
+- [x] G7 **XONG 2026-08-24** — `render_gateway/` chạy thật trên B như dịch vụ.
+  ⚠️ `deploy/deploy.ps1` từng có **hai lỗi khiến nó chưa từng deploy thành công
+  lần nào** (đích sai một cấp + `Join-Path` giải ổ đĩa của máy A); đã sửa, nay
+  **29/29 khớp hash**
+- [x] G8 **XONG** — `platform_core/image_gen/` (`cong_render.py` · `dich_gemini.py`
+  · `dieu_phoi.py`) và `ltt_image` trong `platform_core/providers.py`.
+  ⚠️ Số hiệu `test_246` trong dòng gốc **sai**: `tests/test_246_*` là test Nexus
+  metrics, không liên quan. Phần kiểm của cổng render nằm ở `test_245`
+- [x] G9 **ĐÓNG 2026-08-24 (D-056)** — **100/100 lượt, 0 hỏng**; VRAM dao động
+  163 MB (0,9 %), nhiệt 69–74 °C, **không trôi gì** qua hơn ba giờ.
+  ⭐ Kèm một đính chính: cảnh báo "VRAM 97,5 %" **đã lỗi thời**, đừng lên kế
+  hoạch quanh nó
+- [x] G10 **XONG** — `image.ltt` đang **bán thật** trên `/api/v1`; kiểm ngày
+  2026-08-29 trên `openapi.json` **công khai** (đối chứng âm: không tool đóng
+  nào lọt). Giá ở `apps/anhnoibo/gia.py`, công bố ở `/gia-api`
 - [ ] G11 Giám sát chất lượng thường trực (lấy mẫu hằng tháng, chấm mù lại)
 - [ ] G12 *(tuỳ chọn)* Gộp đường Gemini của `taoanh`/`thumbnail` vào adapter chung
 
@@ -3423,10 +3449,18 @@ thay Q10) và **Q109** (kichban · mediatools · demo).
 **Kết quả:** danh mục app **19 → 14**; bộ test **4.727 → 4.093**; bánh cóc hạ được
 ba mốc (chuỗi chưa bọc `_()` 1.413→816, nuốt lỗi lặng lẽ 90→74, test trùng số 24→22).
 
-- [ ] **H40.5 — deploy** ⏳ chờ chủ sản phẩm. Production vẫn chạy bản đủ 19 app.
-      Điểm lùi trước cả đợt: **`ec6a00c`**.
-- [ ] **H40.6 — kiểm trên trình duyệt thật** ⏳ chưa làm. Quy tắc 5b đòi kiểm trên
-      **URL công khai**, mà URL đó chưa mang bản này — nên phải làm **sau** H40.5.
+- [x] **H40.5 — deploy** ✅ **XONG** — ~~"Production vẫn chạy bản đủ 19 app"~~.
+      Đo 2026-08-29: `C:\LTTPlatform\app\apps\` có **15** thư mục, **bằng đúng**
+      cây nguồn; `socialbot` · `demo` · `kichban` · `mediatools` **không còn** ở
+      cả hai bên. Điểm lùi trước cả đợt vẫn là **`ec6a00c`**.
+- [x] **H40.6 — kiểm trên trình duyệt thật** ✅ **XONG** — quy tắc 5b đòi kiểm
+      trên **URL công khai**, và đây là số đo trên đúng URL đó (2026-08-29):
+
+      /socialbot 404 · /demo 404 · /kichban 404 · /mediatools 404
+
+      ⭐ Bốn dòng này là **đối chứng dương của việc gỡ**: một app đã gỡ mà route
+      còn trả 200 hay 303 thì nó chưa gỡ xong. `404` là thứ duy nhất chứng minh
+      được, và nó phải đo trên URL công khai chứ không phải loopback.
 
 ### 🔴 H40.7 — `gate.py` đầy đủ: **CHƯA CHẠY XONG LẦN NÀO**
 
