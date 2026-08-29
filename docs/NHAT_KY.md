@@ -174,12 +174,32 @@ không kết luận sớm.
 
 ### Còn nợ, có chủ ý
 
-⛔ **`image.upscale` vẫn còn lỗi làn và vẫn đang mở cho khách.** Bản vá đã viết
-nhưng **chưa qua gate**, nên phiên kia cất ra tệp patch ngoài cây thay vì để nó
-đi ké lượt phát hành này. Nó **không** phải lỗi tính tiền — khách trả đúng số
-credit; nó là lỗi **xếp lịch**: job `fast` giữ chỗ 12.000 MB thay vì ~2.000, nên
-nó chặn job khác và tự bị hoãn khi card không đủ trống. Trên máy ba hộ dùng
-chung GPU, triệu chứng là "chậm không rõ vì sao" — loại khiếu nại khó lần nhất.
+⛔ ~~**`image.upscale` vẫn còn lỗi làn và vẫn đang mở cho khách.**~~
+🔴 **SỬA 2026-08-29 (cuối ngày) — câu trên SAI, và sai về phía nguy hiểm.**
+`image.upscale` **chưa bao giờ mở**. Đo trên spec công khai: `LTT_PUBLIC_API_TOOLS`
+= `text.chat, image.ltt, video.subtitle, video.upscale` — **không có nó**.
+
+⚠️ Tôi đọc `api_exposed=True` trong manifest thành "đang bán". Đó mới là **điều
+kiện MỘT** của Q92; điều kiện hai là allowlist của deployment, và nó đóng. Đúng
+cái bẫy `CLAUDE.md` đã phải sửa **hai lần trong tháng này** (hàng Public API và
+hàng VPS) — cả hai lần cùng một nhầm lẫn: **cờ của app** đọc thành **cờ của
+deployment**.
+
+⛔ Và chỗ đáng ghi nhất: **bằng chứng bác bỏ nằm trong chính phép kiểm tôi đã
+chạy.** Lúc kiểm chéo deploy tôi liệt `image.upscale` vào danh sách "tool đóng"
+và báo *"0 tool đóng lọt vào spec"* như một thành công — cùng một phiên, cách
+nhau vài phút, tôi vừa chứng minh nó đóng vừa viết rằng nó mở. Có dữ liệu không
+đủ; phải **đối chiếu dữ liệu với điều mình đang khẳng định**.
+
+**Trạng thái đúng:** lỗi làn của `image.upscale` là **tiềm ẩn**, không phải đang
+chạy — đường web đã chọn làn theo preset từ lâu (`service.job_type_for_preset`),
+và không khách nào gọi được nó qua `/api/v1`. Bản vá vẫn đúng và vẫn nên có: nó
+khoá cái bẫy **trước khi** ai đó bật cờ. Nhưng nó **không khẩn cấp**, và một
+lượt phát hành đã được dựng quanh chữ "đang thu tiền" mà chữ đó không đúng.
+
+Bản chất lỗi thì không đổi: **không** phải lỗi tính tiền — khách trả đúng số
+credit; là lỗi **xếp lịch**: job `fast` giữ chỗ 12.000 MB thay vì ~2.000, nên nó
+chặn job khác và tự bị hoãn khi card không đủ trống.
 
 ⚠️ Giao diện admin **đã đăng nhập** vẫn chưa soi được trên URL công khai:
 Cloudflare chặn trình duyệt tự động ở `/login`. Đã soi đầy đủ trên bản dựng
