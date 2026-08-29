@@ -169,32 +169,75 @@ giữ thường trú và chỉ bị đuổi khi có job ảnh.
 
 ---
 
-## 4. GPU máy A — vẫn còn việc, chỉ không phải cho ảnh
+## 4. GPU máy A — ✅ **G1–G4 ĐÃ XONG TỪ TRƯỚC**, G5 xong 2026-08-29
 
-D-057 dừng việc **sinh ảnh** trên máy A. Nhưng `taoclipngan` (whisper + YOLO) và
-`upscalevideo` **đã** dùng GPU ở đó, và **card thứ hai đang nằm không**.
+🔴 **Bảng dưới đây trước 29/08 là bảng CŨ, và nó suýt gây ra một thiệt hại thật.**
+Nó liệt bốn chỗ "hỏng ngầm… tất cả còn nguyên". Rà từng dòng vào mã thật ngày
+29/08 cho thấy **ba trong bốn đã được sửa**, và mục G4 — *"không có cơ chế giữ
+chỗ GPU nào"* — mô tả một thứ **đã tồn tại đầy đủ**.
 
-H23 (bộ nhớ dự án) đã chỉ ra bốn chỗ **hỏng ngầm** khi có 2 GPU, tất cả còn nguyên:
+⛔ Nếu tin bảng thay vì đọc mã, việc tiếp theo sẽ là **viết một cơ chế giữ chỗ
+GPU thứ hai** trên một máy đã có ba hộ tranh nhau card. Đó tệ hơn hẳn một buổi
+mất công.
 
-| # | Chỗ | Hỏng thế nào |
+| # | Kế hoạch nói | Mã thật (đo 29/08) |
 |---|---|---|
-| **G1** | `apps/upscalevideo/autotune.py` | `splitlines()[0]` ⇒ **chỉ thấy GPU 0**; `_TOTAL_MB_FALLBACK` viết cứng 16311 |
-| **G2** | `apps/autosubvideo/whisperx_runner.py` | `device="cuda"` ⇒ **luôn `cuda:0`** |
-| **G3** | `job_worker.py` | một tiến trình ⇒ một job một lúc ⇒ **GPU 2 nằm không** |
-| **G4** | — | **không có cơ chế giữ chỗ GPU nào** |
+| **G1** | `autotune.py` dùng `splitlines()[0]` ⇒ chỉ thấy GPU 0 | ✅ **đã sửa** — `query_vram(gpu_uuid)` tra đúng card qua `list_gpus()`; `_TOTAL_MB_FALLBACK` nay chỉ là đường lùi khi không đọc được card nào |
+| **G2** | `whisperx_runner.py` `device="cuda"` ⇒ luôn `cuda:0` | ✅ **đã sửa** — `transcription.py` truyền `env=_env_ghim_gpu(gpu_uuid)` → `gpu.env_for()` đặt `CUDA_VISIBLE_DEVICES`. `device="cuda"` trong runner nay **đúng**: tiến trình con chỉ thấy một card. Ghim bằng biến môi trường chứ không `torch.cuda.set_device`, vì việc nặng chạy trong tiến trình con mà ta không sửa được mã bên trong |
+| **G3** | một tiến trình ⇒ một job một lúc ⇒ GPU 2 nằm không | ✅ **đã có** — `LTT_WORKER_POOLS` (`job_worker.py`, H36) |
+| **G4** | *"không có cơ chế giữ chỗ GPU nào"* | ✅ **đã có** — `platform_core/gpu_lease.py`: `acquire` / `busy_uuids` / `reclaim_orphans` / heartbeat, xung đột bắt bằng `IntegrityError`. Đúng khuôn `claim → đập nhịp → reclaim` mà chính mục này mô tả |
+| **G5** | chốt `nvidia-smi -L` phải thấy 2 GPU | ✅ **XONG 29/08** — xem dưới |
 
-🔴 **Điểm thiết kế, đừng phát minh lại:** *đọc "VRAM còn trống" thôi là SAI* — hai
-worker cùng thấy trống, cùng nhận GPU 0, cùng OOM. Phải **giữ chỗ nguyên tử trong
-CSDL** theo khuôn `claim → đập nhịp → reclaim_orphans` của hàng đợi job. **Giữ chỗ
-trước, chạy song song sau.**
+### G5 — đếm card trong vòng bảo trì
 
-| # | Việc | Đạt khi |
-|---|---|---|
-| **G5** | Chốt `nvidia-smi -L` **phải thấy 2 GPU**, chạy trong vòng bảo trì | liên kết driver card 2 mong manh (`oem3.inf` không liệt kê nó) — mất nó là mất nửa năng lực, **im lặng** |
-| **G6** | Làm G4 (giữ chỗ nguyên tử) rồi G1/G2 | hai app trên dùng được cả hai card |
+**Vì sao nó cần tồn tại.** Liên kết driver của card thứ hai mong manh
+(`oem3.inf` không liệt kê nó). Khi nó rụng thì **không có gì hỏng**: job vẫn
+chạy, chỉ là tất cả dồn vào một card. Năng lực giảm một nửa và mọi tín hiệu vẫn
+xanh — không ngoại lệ, không job đỏ, không cảnh báo. Cách duy nhất để biết là đi
+**đếm card**, đúng thứ không ai làm vào một ngày bình thường.
 
-⚠️ Mục này **không chặn** H37 và H38. Nó là năng lực đang bỏ không, không phải một
-sự cố.
+⭐ Đây là một lỗi **im lặng**, và lỗi im lặng chỉ bắt được bằng một phép đếm chủ
+động. Không phải một phép kiểm sức khoẻ — máy **vẫn khoẻ** khi thiếu card, và đó
+mới chính là vấn đề.
+
+**Đã làm:**
+- `job_runner._quet_so_gpu()`, gọi trong `_mot_luot_bao_tri` ⇒ chạy dưới lease
+  `bao_tri`, tức **đúng một lần trên toàn cụm**. Đặt trong vòng job thì mỗi
+  worker gửi một thư về cùng một card (đúng lớp lỗi H36 đã sửa).
+- Kind mới `notifications.GPU_MISSING`, nghỉ **1 ngày**.
+- Khoá khử trùng lặp mang **con số**: `gpu:1/2` và `gpu:0/2` là **hai** sự việc.
+  Nếu khoá chỉ là `gpu` thì card thứ hai rụng sẽ im suốt chu kỳ nghỉ, chỉ vì
+  card thứ nhất vừa được báo — đúng lúc tệ nhất.
+- **Không** vào `EMAIL_KINDS`. Nó là *fact* chứ không phải ước lượng, nhưng một
+  card rụng lúc 03:00 không cần đánh thức ai lúc 03:00 — nó cần **được thấy vào
+  buổi sáng**. Thứ làm lỗi này vô hình chưa bao giờ là giờ gửi thư; là việc
+  **không ai đếm card cả**.
+- Thân thư nói rõ **không có job nào hỏng vì việc này** và chỉ ra `nvidia-smi -L`.
+  Người đọc sẽ đi tìm job đỏ và không thấy cái nào; không nói trước thì cảnh báo
+  bị đọc thành báo động giả.
+
+🔴 **Số card kỳ vọng KHÔNG tự suy được.** Khai ở `LTT_GPU_MONG_DOI`; **không
+khai = tắt phép kiểm**. Hai cách "thông minh" đều sai và đều hỏng im lặng:
+
+| Cách | Hỏng thế nào |
+|---|---|
+| đọc số card lúc khởi động | máy khởi động lại khi card **đã** rụng sẽ chốt mức thấp đó thành "bình thường", cảnh báo im vĩnh viễn |
+| nhớ mức cao nhất từng thấy | một lần cắm thử card thứ ba làm máy báo thiếu **mãi mãi** |
+
+⇒ Nó là một **tuyên bố về phần cứng**, nên phải do người khai. Khai sai kiểu thì
+tắt **và ghi log** — im lặng ở đây đúng là lỗi mà phép kiểm này sinh ra để chặn.
+
+⚠️ **Còn một bước để nó thật sự chạy:** thêm `LTT_GPU_MONG_DOI=2` vào
+`C:\LTTPlatform\secrets\app.env` rồi `setup\nap_lai_env.ps1`. Chưa làm thì mã đã
+có nhưng phép kiểm **đang tắt** — và dòng này tồn tại để không ai đọc "G5 xong"
+thành "máy đang được canh".
+
+Chốt: `tests/test_329_chot_so_gpu.py` (13 phép kiểm). Kiểm-có-răng: tháo khoá
+khử trùng lặp, tháo câu "không có job nào hỏng", và bắt nó báo cả khi đủ card —
+cả ba đều làm **đúng** test tương ứng đỏ.
+
+⚠️ Mục này **không chặn** H37 và H38. Nó là năng lực đang bỏ không, không phải
+một sự cố.
 
 ---
 
@@ -407,8 +450,11 @@ V1..V4 trọng tài VRAM  ✅ XONG (D-058)
         ↓
 P1 deploy (chủ sản phẩm)  →  A1..A4 nghiệm thu ảnh thật
         ↓
-G5..G6 (GPU máy A)  ·  L1..L5 (H38)
+G1..G5 (GPU máy A)  ✅ XONG (29/08)  ·  L1..L5 (H38)  ← còn lại
 ```
 
-**P3 (WAF)** làm được bất cứ lúc nào và nên làm sớm — nó rẻ và nó đang chặn khách
-dùng thư viện chuẩn.
+**P3 (WAF)** làm được bất cứ lúc nào, nhưng **không còn gấp**. ⚠️ Dòng cũ ở đây
+viết *"nó đang chặn khách dùng thư viện chuẩn"* — câu đó mâu thuẫn với chính §1
+của tài liệu này, nơi số đo cho thấy **chỉ `urllib` mặc định** bị 403 còn
+`requests`/`openai`/`anthropic`/`curl`/`node-fetch`/PowerShell đều lọt. Nguyên nhân
+thật là **ví dụ của chính ta** thiếu `User-Agent`, và nó **đã sửa** (`test_281`).

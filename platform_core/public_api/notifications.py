@@ -48,10 +48,21 @@ MARGIN_NEGATIVE = "margin.negative"
 #:    ledger is append-only. That difference is why it earns an email below and
 #:    the margin alert does not.
 HOLD_STRANDED = "hold.stranded"
+#: The third operator-addressed kind: the machine is showing fewer GPUs than it
+#: is configured to have. Unlike the two above this is not about money at all —
+#: it is about **capacity that vanished without an error**.
+#:
+#: 🔴 Why it needs an alert at all. The driver binding for the second card on
+#:    this host is fragile (`oem3.inf` does not list it). When it drops, nothing
+#:    fails: jobs still run, they just all queue onto one card. Throughput
+#:    halves and every single signal stays green — no exception, no failed job,
+#:    no alert. The only way to notice is to go and count the cards, which is
+#:    exactly the thing nobody does on a good day.
+GPU_MISSING = "gpu.missing"
 
 KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
          QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED,
-         MARGIN_NEGATIVE, HOLD_STRANDED)
+         MARGIN_NEGATIVE, HOLD_STRANDED, GPU_MISSING)
 
 #: How long the same subject stays quiet after being raised. Long enough that a
 #: customer is not paged by a condition they have already seen; short enough
@@ -75,6 +86,11 @@ COOLDOWN = {
     # already queued for a compensating entry, short enough that one forgotten
     # in a busy week comes back.
     HOLD_STRANDED: timedelta(days=7),
+    # A card that fell off the bus stays off until somebody reseats it or
+    # reboots. Daily keeps it in view; the dedupe subject carries the COUNT, so
+    # going from 1/2 to 0/2 raises immediately instead of waiting out a
+    # cooldown opened by the first card.
+    GPU_MISSING: timedelta(days=1),
 }
 DEFAULT_COOLDOWN = timedelta(days=1)
 
@@ -93,6 +109,12 @@ EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
 # built from configured rates, and an estimate has no business interrupting
 # anybody at night — it belongs on the page an operator visits to decide about
 # pricing, next to the words saying what it is.
+#
+# `GPU_MISSING` is absent too, but for a different reason than the margin one.
+# It is a fact, not an estimate — yet a card that disappeared at 03:00 does not
+# need waking anybody at 03:00. It needs to be **seen in the morning**, and the
+# page is that channel. What made this failure invisible was never the delivery
+# hour; it was that nobody was counting cards at all.
 
 RETENTION_DAYS = 90
 

@@ -672,6 +672,21 @@ ALERT_SCAN_INTERVAL_S = 15 * 60
 #: một lần chỉ là hỏi đi hỏi lại cùng một câu hỏi mà câu trả lời không thể đổi.
 HOLD_SCAN_INTERVAL_S = 60 * 60
 
+#: Nhịp đếm card. Thưa, vì một card rơi khỏi bus thì nó rơi luôn cho tới khi có
+#: người cắm lại — hỏi mỗi phút không làm câu trả lời tới sớm hơn, chỉ làm
+#: `nvidia-smi` bị gọi 60 lần thừa mỗi giờ trên một máy đang chạy job nặng.
+GPU_COUNT_INTERVAL_S = 30 * 60
+
+#: Số card máy này PHẢI có. Không đặt = tắt phép kiểm.
+#:
+#: ⛔ Không tự suy con số này. Hai cách "thông minh" đều sai:
+#:    · đọc số card lúc khởi động ⇒ máy khởi động lại khi card đã rụng sẽ chốt
+#:      mức thấp đó thành "bình thường", và cảnh báo im vĩnh viễn;
+#:    · nhớ mức cao nhất từng thấy ⇒ một lần cắm thử card thứ ba làm máy báo
+#:      thiếu mãi mãi.
+#:    Con số này là một **tuyên bố về phần cứng**, nên nó phải do người khai.
+GPU_MONG_DOI_ENV = "LTT_GPU_MONG_DOI"
+
 
 def _quet_giu_cho_treo() -> int:
     """Tìm tiền của khách đang bị giữ mà không ai còn kết sổ được, rồi BÁO.
@@ -1251,6 +1266,76 @@ def _bao_tri_cac_app(moc: dict) -> None:
             log.exception("viec bao tri cua app %s that bai", slug)
 
 
+def _so_gpu_mong_doi() -> int:
+    """Số card khai ở `LTT_GPU_MONG_DOI`. 0 = không khai = tắt phép kiểm."""
+    raw = (os.environ.get(GPU_MONG_DOI_ENV) or "").strip()
+    if not raw:
+        return 0
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        # Khai sai còn tệ hơn không khai: người vận hành tưởng mình đã bật.
+        log.warning("%s=%r khong phai so — bo qua phep kiem so GPU",
+                    GPU_MONG_DOI_ENV, raw)
+        return 0
+
+
+def _quet_so_gpu() -> int:
+    """Đếm card và báo động khi thiếu. Trả số card thấy được.
+
+    🔴 VÌ SAO VIỆC NÀY CẦN TỒN TẠI. Liên kết driver của card thứ hai trên máy
+       này mong manh (`oem3.inf` không liệt kê nó). Khi nó rụng thì **không có
+       gì hỏng**: job vẫn chạy, chỉ là tất cả dồn vào một card. Năng lực giảm
+       một nửa và mọi tín hiệu vẫn xanh — không ngoại lệ, không job đỏ, không
+       cảnh báo. Cách duy nhất để biết là đi đếm card, đúng thứ không ai làm
+       vào một ngày bình thường.
+
+    ⭐ Nằm trong `_mot_luot_bao_tri` nên nó chạy dưới lease `bao_tri`, tức
+       **đúng một lần trên toàn cụm**. Đặt trong vòng job thì mỗi tiến trình
+       worker báo một lần về cùng một card.
+
+    ⛔ CHỈ BÁO, KHÔNG TỰ SỬA. Cắm lại card hay nạp lại driver là việc chạm phần
+       cứng của một máy đang phục vụ khách.
+    """
+    from platform_core import gpu as gpu_mod
+    from platform_core.models import User
+    from platform_core.public_api import notifications
+
+    mong_doi = _so_gpu_mong_doi()
+    if mong_doi <= 0:
+        return -1                                # không khai ⇒ không kiểm
+
+    thay = len(gpu_mod.list_gpus())
+    if thay >= mong_doi:
+        return thay
+
+    # Log trước, gửi sau: hộp thư hỏng thì con số vẫn còn dấu vết.
+    log.warning("THIEU GPU: thay %d card, khai %d o %s. Nang luc dang giam ma "
+                "khong co gi bao loi.", thay, mong_doi, GPU_MONG_DOI_ENV)
+
+    for db in _one_session():
+        nguoi_truc = db.execute(select(User).where(
+            User.role == "admin", User.is_active.is_(True))).scalars().all()
+        for ai in nguoi_truc:
+            notifications.raise_alert(
+                db, user_id=ai.id, kind=notifications.GPU_MISSING,
+                # Khoá khử trùng lặp mang chính CON SỐ: 1/2 và 0/2 là hai sự
+                # việc khác nhau, và card thứ hai rụng không được im lặng chỉ
+                # vì card thứ nhất vừa được báo hôm qua.
+                subject=f"gpu:{thay}/{mong_doi}",
+                title=_t("Máy chủ đang thiếu GPU"),
+                body=_t(
+                    "Đếm được {thay} card, cấu hình khai {mong_doi} "
+                    "({bien}). Không có job nào hỏng vì việc này — chúng chỉ "
+                    "dồn hết vào số card còn lại, nên thông lượng giảm mà mọi "
+                    "tín hiệu khác vẫn xanh. Kiểm `nvidia-smi -L` trên máy; "
+                    "nếu card không hiện thì đó là liên kết driver, không phải "
+                    "phần mềm nền tảng."
+                ).format(thay=thay, mong_doi=mong_doi, bien=GPU_MONG_DOI_ENV))
+        db.commit()
+    return thay
+
+
 def _mot_luot_bao_tri(moc: dict) -> None:
     """Chạy những việc nền đã đến hạn. `moc` giữ mốc thời gian giữa các lượt."""
     if time.monotonic() >= moc["event_purge"]:
@@ -1312,6 +1397,17 @@ def _mot_luot_bao_tri(moc: dict) -> None:
             # dọn dữ liệu và giao webhook ở trên.
             log.exception("quet giu cho treo that bai")
         moc["hold_scan"] = time.monotonic() + HOLD_SCAN_INTERVAL_S
+
+    # ⭐ Đếm card. Không phải một phép kiểm sức khoẻ — máy vẫn khoẻ khi thiếu
+    #    card, đó mới là vấn đề. Xem docstring của `_quet_so_gpu`.
+    if time.monotonic() >= moc.get("gpu_count", 0.0):
+        try:
+            _quet_so_gpu()
+        except Exception:                        # noqa: BLE001
+            # `nvidia-smi` treo hay CSDL chậm không được làm dừng việc dọn dữ
+            # liệu và giao webhook ở trên.
+            log.exception("quet so gpu that bai")
+        moc["gpu_count"] = time.monotonic() + GPU_COUNT_INTERVAL_S
 
 
 def _vong_bao_tri(stop) -> None:

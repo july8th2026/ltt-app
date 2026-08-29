@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9a1b1a616e3d056dd49bb128b993b4be7b80c11e50e57e02d80c7b21c4983175
-Nguồn đã quét : 1251 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:6e5af48c210549bfb2b98f4c70731ab4c944b90f253cd1f41aab12eef6eed0ad
+Nguồn đã quét : 1253 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -898,7 +898,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (164 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (166 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -935,6 +935,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_FFMPEG
 - LTT_FFPROBE
 - LTT_FILE_LOGGING
+- LTT_GPU_CLAIMS_DIR
+- LTT_GPU_MONG_DOI
 - LTT_HF_TOKEN
 - LTT_HO_DUNG_CARD
 - LTT_I18N_BAT_BUOC
@@ -1064,7 +1066,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (292 file pytest + 3 frontend)
+10. QUALITY GATES (294 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1316,6 +1318,8 @@ Test inventory:
 - tests/test_326_tran_giu_cho_job_api.py
 - tests/test_327_lan_scheduler_theo_tham_so.py
 - tests/test_328_tim_lien_thuc_the.py
+- tests/test_329_chot_so_gpu.py
+- tests/test_330_claim_gpu_theo_bien_moi_truong.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1383,8 +1387,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1251 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:944, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1253 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:946, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2259,7 +2263,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (309)
+[tests] (311)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2522,6 +2526,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_326_tran_giu_cho_job_api.py
 - tests/test_327_lan_scheduler_theo_tham_so.py
 - tests/test_328_tim_lien_thuc_the.py
+- tests/test_329_chot_so_gpu.py
+- tests/test_330_claim_gpu_theo_bien_moi_truong.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2692,7 +2698,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1251 file; 12353536 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1253 file; 12378231 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -99557,7 +99563,7 @@ def env_for(uuid: str, base: dict | None = None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/gpu_claims.py
-SHA256=6daf83757354a2e29938734ab370e1afc522af24c49df14594146cd0a594ae93 BYTES=14971 LINES=340
+SHA256=94438e6540c806e90bbaded26e5e9eb74141237833a8f025578ef113d469749e BYTES=16485 LINES=361
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gpu_claims.py — MẶT PHẲNG CHUNG CẤP MÁY cho việc giữ chỗ GPU.
@@ -99642,7 +99648,28 @@ from pathlib import Path
 
 log = logging.getLogger(__name__)
 
-_ROOT       = Path(r"C:\ProgramData\gpu_claims")
+#: Thư mục claim dùng chung cho MỌI hộ trên máy. Mặc định là đường thật trên
+#: máy B; `LTT_GPU_CLAIMS_DIR` chỉ để **test** trỏ nó sang một thư mục tạm.
+#:
+#: 🔴 VÌ SAO CẦN BIẾN MÔI TRƯỜNG, đo được 2026-08-29. Bộ test đã được cắt khỏi
+#:    mặt phẳng này bằng `monkeypatch` (`gpu_khong_claim_toan_may`), nhưng
+#:    `monkeypatch` chỉ tác dụng **trong tiến trình cha**. `test_151` đẻ tiến
+#:    trình worker THẬT, và worker con nạp lại module này rồi **ghi claim thật**
+#:    vào `C:\ProgramData` — đếm được **16 tệp** `job:"ja"/"jb"/"jx"` sau một
+#:    lượt. Chúng tự lành khi PID chết, nên là nhiễu chứ không phải hỏng; nhưng
+#:    đó là bộ test của ta ghi vào không gian điều phối **dùng chung với hộ
+#:    khác** trên cùng máy.
+#:
+#: ⭐ Tiến trình con **thừa kế môi trường**, nên một biến env bịt được cả chiều
+#:    ĐỌC lẫn chiều GHI, ở cả tiến trình cha lẫn con — thứ mà `monkeypatch`
+#:    không làm được.
+#:
+#: ⛔ KHÔNG đọc biến này ở production: `deploy/` và `setup/` không đặt nó, nên
+#:    mặc định vẫn là đường thật. Đặt nhầm nó ở production nghĩa là nền tảng
+#:    không còn thấy claim của hộ khác — và đó đúng là thứ cả cơ chế này sinh ra
+#:    để tránh.
+_ROOT       = Path(os.environ.get("LTT_GPU_CLAIMS_DIR")
+                   or r"C:\ProgramData\gpu_claims")
 _CLAIM_DIR  = _ROOT / "claims"
 _POLICY     = _ROOT / "policy.json"
 
@@ -102049,7 +102076,7 @@ def alerts(metrics: dict) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/job_runner.py
-SHA256=19426cad7ebc8e9aaae58bb8bbc6812d72792ba6688b3365d9521e597fcd970d BYTES=64253 LINES=1417
+SHA256=2778043dd488b2dabe7d74b533aff6ae688f2e35de730b48b1ff29cb12bf2ffd BYTES=70776 LINES=1513
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 job_runner.py — vòng chạy của worker (H2, Q26).
@@ -102725,6 +102752,21 @@ ALERT_SCAN_INTERVAL_S = 15 * 60
 #: một lần chỉ là hỏi đi hỏi lại cùng một câu hỏi mà câu trả lời không thể đổi.
 HOLD_SCAN_INTERVAL_S = 60 * 60
 
+#: Nhịp đếm card. Thưa, vì một card rơi khỏi bus thì nó rơi luôn cho tới khi có
+#: người cắm lại — hỏi mỗi phút không làm câu trả lời tới sớm hơn, chỉ làm
+#: `nvidia-smi` bị gọi 60 lần thừa mỗi giờ trên một máy đang chạy job nặng.
+GPU_COUNT_INTERVAL_S = 30 * 60
+
+#: Số card máy này PHẢI có. Không đặt = tắt phép kiểm.
+#:
+#: ⛔ Không tự suy con số này. Hai cách "thông minh" đều sai:
+#:    · đọc số card lúc khởi động ⇒ máy khởi động lại khi card đã rụng sẽ chốt
+#:      mức thấp đó thành "bình thường", và cảnh báo im vĩnh viễn;
+#:    · nhớ mức cao nhất từng thấy ⇒ một lần cắm thử card thứ ba làm máy báo
+#:      thiếu mãi mãi.
+#:    Con số này là một **tuyên bố về phần cứng**, nên nó phải do người khai.
+GPU_MONG_DOI_ENV = "LTT_GPU_MONG_DOI"
+
 
 def _quet_giu_cho_treo() -> int:
     """Tìm tiền của khách đang bị giữ mà không ai còn kết sổ được, rồi BÁO.
@@ -103304,6 +103346,76 @@ def _bao_tri_cac_app(moc: dict) -> None:
             log.exception("viec bao tri cua app %s that bai", slug)
 
 
+def _so_gpu_mong_doi() -> int:
+    """Số card khai ở `LTT_GPU_MONG_DOI`. 0 = không khai = tắt phép kiểm."""
+    raw = (os.environ.get(GPU_MONG_DOI_ENV) or "").strip()
+    if not raw:
+        return 0
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        # Khai sai còn tệ hơn không khai: người vận hành tưởng mình đã bật.
+        log.warning("%s=%r khong phai so — bo qua phep kiem so GPU",
+                    GPU_MONG_DOI_ENV, raw)
+        return 0
+
+
+def _quet_so_gpu() -> int:
+    """Đếm card và báo động khi thiếu. Trả số card thấy được.
+
+    🔴 VÌ SAO VIỆC NÀY CẦN TỒN TẠI. Liên kết driver của card thứ hai trên máy
+       này mong manh (`oem3.inf` không liệt kê nó). Khi nó rụng thì **không có
+       gì hỏng**: job vẫn chạy, chỉ là tất cả dồn vào một card. Năng lực giảm
+       một nửa và mọi tín hiệu vẫn xanh — không ngoại lệ, không job đỏ, không
+       cảnh báo. Cách duy nhất để biết là đi đếm card, đúng thứ không ai làm
+       vào một ngày bình thường.
+
+    ⭐ Nằm trong `_mot_luot_bao_tri` nên nó chạy dưới lease `bao_tri`, tức
+       **đúng một lần trên toàn cụm**. Đặt trong vòng job thì mỗi tiến trình
+       worker báo một lần về cùng một card.
+
+    ⛔ CHỈ BÁO, KHÔNG TỰ SỬA. Cắm lại card hay nạp lại driver là việc chạm phần
+       cứng của một máy đang phục vụ khách.
+    """
+    from platform_core import gpu as gpu_mod
+    from platform_core.models import User
+    from platform_core.public_api import notifications
+
+    mong_doi = _so_gpu_mong_doi()
+    if mong_doi <= 0:
+        return -1                                # không khai ⇒ không kiểm
+
+    thay = len(gpu_mod.list_gpus())
+    if thay >= mong_doi:
+        return thay
+
+    # Log trước, gửi sau: hộp thư hỏng thì con số vẫn còn dấu vết.
+    log.warning("THIEU GPU: thay %d card, khai %d o %s. Nang luc dang giam ma "
+                "khong co gi bao loi.", thay, mong_doi, GPU_MONG_DOI_ENV)
+
+    for db in _one_session():
+        nguoi_truc = db.execute(select(User).where(
+            User.role == "admin", User.is_active.is_(True))).scalars().all()
+        for ai in nguoi_truc:
+            notifications.raise_alert(
+                db, user_id=ai.id, kind=notifications.GPU_MISSING,
+                # Khoá khử trùng lặp mang chính CON SỐ: 1/2 và 0/2 là hai sự
+                # việc khác nhau, và card thứ hai rụng không được im lặng chỉ
+                # vì card thứ nhất vừa được báo hôm qua.
+                subject=f"gpu:{thay}/{mong_doi}",
+                title=_t("Máy chủ đang thiếu GPU"),
+                body=_t(
+                    "Đếm được {thay} card, cấu hình khai {mong_doi} "
+                    "({bien}). Không có job nào hỏng vì việc này — chúng chỉ "
+                    "dồn hết vào số card còn lại, nên thông lượng giảm mà mọi "
+                    "tín hiệu khác vẫn xanh. Kiểm `nvidia-smi -L` trên máy; "
+                    "nếu card không hiện thì đó là liên kết driver, không phải "
+                    "phần mềm nền tảng."
+                ).format(thay=thay, mong_doi=mong_doi, bien=GPU_MONG_DOI_ENV))
+        db.commit()
+    return thay
+
+
 def _mot_luot_bao_tri(moc: dict) -> None:
     """Chạy những việc nền đã đến hạn. `moc` giữ mốc thời gian giữa các lượt."""
     if time.monotonic() >= moc["event_purge"]:
@@ -103365,6 +103477,17 @@ def _mot_luot_bao_tri(moc: dict) -> None:
             # dọn dữ liệu và giao webhook ở trên.
             log.exception("quet giu cho treo that bai")
         moc["hold_scan"] = time.monotonic() + HOLD_SCAN_INTERVAL_S
+
+    # ⭐ Đếm card. Không phải một phép kiểm sức khoẻ — máy vẫn khoẻ khi thiếu
+    #    card, đó mới là vấn đề. Xem docstring của `_quet_so_gpu`.
+    if time.monotonic() >= moc.get("gpu_count", 0.0):
+        try:
+            _quet_so_gpu()
+        except Exception:                        # noqa: BLE001
+            # `nvidia-smi` treo hay CSDL chậm không được làm dừng việc dọn dữ
+            # liệu và giao webhook ở trên.
+            log.exception("quet so gpu that bai")
+        moc["gpu_count"] = time.monotonic() + GPU_COUNT_INTERVAL_S
 
 
 def _vong_bao_tri(stop) -> None:
@@ -116199,7 +116322,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS, now=None) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/notifications.py
-SHA256=d759c1ac371dc610abaf8d64e50c1054cc3ad1c2ee9c19056c55bb38d62e0b55 BYTES=10374 LINES=237
+SHA256=0c4a09df2bdcefa1c18d327afb879ac120a9601916f8ef6a975141f22e1b9003 BYTES=12026 LINES=259
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Alerts a developer sees, with the deduplication that keeps them worth seeing.
 
@@ -116251,10 +116374,21 @@ MARGIN_NEGATIVE = "margin.negative"
 #:    ledger is append-only. That difference is why it earns an email below and
 #:    the margin alert does not.
 HOLD_STRANDED = "hold.stranded"
+#: The third operator-addressed kind: the machine is showing fewer GPUs than it
+#: is configured to have. Unlike the two above this is not about money at all —
+#: it is about **capacity that vanished without an error**.
+#:
+#: 🔴 Why it needs an alert at all. The driver binding for the second card on
+#:    this host is fragile (`oem3.inf` does not list it). When it drops, nothing
+#:    fails: jobs still run, they just all queue onto one card. Throughput
+#:    halves and every single signal stays green — no exception, no failed job,
+#:    no alert. The only way to notice is to go and count the cards, which is
+#:    exactly the thing nobody does on a good day.
+GPU_MISSING = "gpu.missing"
 
 KINDS = (LOW_CREDIT, BUDGET_THRESHOLD, BUDGET_EXCEEDED, QUOTA_NEAR,
          QUOTA_EXCEEDED, KEY_EXPIRING, WEBHOOK_FAILING, PROJECT_SUSPENDED,
-         MARGIN_NEGATIVE, HOLD_STRANDED)
+         MARGIN_NEGATIVE, HOLD_STRANDED, GPU_MISSING)
 
 #: How long the same subject stays quiet after being raised. Long enough that a
 #: customer is not paged by a condition they have already seen; short enough
@@ -116278,6 +116412,11 @@ COOLDOWN = {
     # already queued for a compensating entry, short enough that one forgotten
     # in a busy week comes back.
     HOLD_STRANDED: timedelta(days=7),
+    # A card that fell off the bus stays off until somebody reseats it or
+    # reboots. Daily keeps it in view; the dedupe subject carries the COUNT, so
+    # going from 1/2 to 0/2 raises immediately instead of waiting out a
+    # cooldown opened by the first card.
+    GPU_MISSING: timedelta(days=1),
 }
 DEFAULT_COOLDOWN = timedelta(days=1)
 
@@ -116296,6 +116435,12 @@ EMAIL_KINDS = frozenset({LOW_CREDIT, BUDGET_EXCEEDED, QUOTA_EXCEEDED,
 # built from configured rates, and an estimate has no business interrupting
 # anybody at night — it belongs on the page an operator visits to decide about
 # pricing, next to the words saying what it is.
+#
+# `GPU_MISSING` is absent too, but for a different reason than the margin one.
+# It is a fact, not an estimate — yet a card that disappeared at 03:00 does not
+# need waking anybody at 03:00. It needs to be **seen in the morning**, and the
+# page is that channel. What made this failure invisible was never the delivery
+# hour; it was that nobody was counting cards at all.
 
 RETENTION_DAYS = 90
 
@@ -216773,7 +216918,7 @@ def test_po_khong_co_msgid_trung():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_306_banh_coc_bo_qua_va_dich.py
-SHA256=27feef3906326951ce6f301f8e7b9ffebb45e1ce60b2d0ee1bfaa797e26e76ea BYTES=11581 LINES=253
+SHA256=ef7d86fc422987abfd767d59d68cd053fd85ef15ffd64c928064743fa214674e BYTES=13496 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hai banh coc them ngay 25/08/2026 — va bang chung rang chung CHAN THAT.
 
@@ -216877,8 +217022,48 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
 #    `st_mtime`, nen mot lan ghi-lai-y-het van lam no keu. Mot lan
 #    gate 2 gio nua bi vo hieu vi dung mot dong nay.
 
+#: Nhung chuoi ma ba test duoi day TU TIEM vao tep that. Neu mot trong so
+#: chung CO SAN luc test bat dau thi tep dang mang rac cua mot luot truoc.
+_DAU_TIEM = ("Chuoi thu banh coc", "khong_co_that.html")
+
+
+def _bat_buoc_khong_con_rac(tep) -> None:
+    r"""Tep phai SACH truoc khi test tiem vao no — neu khong, do NGAY va noi ro.
+
+    🔴 DAY MOI LA CHO RO RI, va no khong phai `read_text()` nam ngoai `try`.
+
+       Doc TRUOC `try` la DUNG: khong duoc buoc vao `try` khi chua cam mot ban
+       sao tot. Neu `read_text()` nem thi cung chua ghi gi, nen khong co gi phai
+       khoi phuc — `finally` khong chay cung khong sao.
+
+       Lo that la vong doi HAI luot:
+
+         luot 1: ghi ban tiem -> tien trinh BI GIET -> `finally` khong chay
+                 => tep o lai trong cay, dang BAN
+         luot 2: `goc = read_text()` doc dung ban BAN do
+                 -> `finally` "khoi phuc" ve chinh ban ban ay
+                 => rac thanh vinh vien, va moi luot sau deu tai xac nhan no
+
+    ⇒ Ngay 2026-08-29 hai phien `git checkout` ba tep nay **nam lan** va khong
+      ai hoi "ai ghi?". Moi lan chi don trieu chung; vong doi tren van nguyen.
+
+    ⭐ Chot bang DAU TIEM chu khong bang `git diff`: mot phep so voi HEAD se bao
+       do ca khi ai do dang sua tep do that su — no bien mot hang rao thanh mot
+       thu phai tat.
+    """
+    text = tep.read_text(encoding="utf-8", errors="replace")
+    con = [d for d in _DAU_TIEM if d in text]
+    if con:
+        raise AssertionError(
+            f"{tep.name} con dau tiem cua mot luot test truoc: {con}. "
+            f"Mot luot bi giet giua chung da de lai no, va neu chay tiep thi "
+            f"ban 'khoi phuc' se dong bang chinh ban rac nay. "
+            f"Chay: git checkout -- {tep.relative_to(GOC).as_posix()}")
+
+
 def test_chuoi_MOI_chua_dich_lam_do():
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    _bat_buoc_khong_con_rac(po)
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
@@ -216901,6 +217086,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
     Mot moc dem SO LUONG se noi PASS. Moc dem TAP HOP phai noi FAIL.
     """
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    _bat_buoc_khong_con_rac(po)
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
@@ -216928,6 +217114,7 @@ def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
 def test_accept_TU_CHOI_khi_con_muc_moi():
     """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no."""
     po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    _bat_buoc_khong_con_rac(po)
     goc = po.read_text(encoding="utf-8")
     goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
     goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
@@ -216988,6 +217175,7 @@ def test_dem_ca_ba_lop():
 def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
     """Bang chung cho lop thu ba. Khong co phep kiem nay thi no chi la mot y dinh."""
     mau = GOC / "server" / "templates" / "vps_dieu_khoan.html"
+    _bat_buoc_khong_con_rac(mau)
     goc = mau.read_text(encoding="utf-8")
     goc_mtime = mau.stat().st_mtime_ns
     try:
@@ -222431,6 +222619,355 @@ def test_khong_tim_theo_nua_bi_mat_cua_khoa(app):
     than = nguon[nguon.index("def tim_lien_thuc_the("):]
     for cam in ("secret_hash", "token_hash", "credential_enc", "password_hash"):
         assert cam not in than, cam
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_329_chot_so_gpu.py
+SHA256=af30b753f027d844555a6044a4b89542a3ea3292146cd214d3c8c0b48add3c91 BYTES=7871 LINES=210
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""G5 — chot so GPU trong vong bao tri (`KE_HOACH_TIEP_2026-08-24.md` §4).
+
+## Vi sao viec nay ton tai
+
+Lien ket driver cua card thu hai tren may nay **mong manh** (`oem3.inf` khong
+liet ke no). Khi no rung thi **khong co gi hong**: job van chay, chi la tat ca
+don vao mot card. Nang luc giam mot nua va moi tin hieu van xanh — khong ngoai
+le, khong job do, khong canh bao.
+
+⇒ Day la mot loi **im lang**, va mot loi im lang chi bat duoc bang mot phep dem
+chu dong. Do la toan bo noi dung cua G5.
+
+## Cai bay tep nay canh
+
+Con so "may nay phai co may card" **khong tu suy duoc**. Hai cach "thong minh"
+deu sai, va ca hai deu hong IM LANG:
+
+  · doc so card luc khoi dong  -> may khoi dong lai khi card DA rung se chot
+                                  muc thap do thanh "binh thuong" vinh vien;
+  · nho muc cao nhat tung thay -> mot lan cam thu card thu ba lam may bao thieu
+                                  mai mai.
+
+Nen no la mot **tuyen bo ve phan cung** do nguoi khai, va khong khai = tat.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+@pytest.fixture()
+def jr(monkeypatch):
+    import platform_core.job_runner as m
+    monkeypatch.delenv(m.GPU_MONG_DOI_ENV, raising=False)
+    return m
+
+
+class _Gpu:
+    def __init__(self, i): self.index, self.uuid = i, f"GPU-{i}"
+
+
+def _gia_lap(monkeypatch, jr, *, so_card: int):
+    from platform_core import gpu as gpu_mod
+    monkeypatch.setattr(gpu_mod, "list_gpus",
+                        lambda: [_Gpu(i) for i in range(so_card)])
+
+
+# ── Doc cau hinh ─────────────────────────────────────────────────────────────
+
+def test_khong_khai_thi_TAT_han_phep_kiem(jr, monkeypatch):
+    """Mot canh bao ban tren may chua bao gio co card thu hai la mot canh bao bi
+    tat tieng — va mot canh bao bi tat tieng te hon khong co canh bao."""
+    _gia_lap(monkeypatch, jr, so_card=1)
+    assert jr._so_gpu_mong_doi() == 0
+    assert jr._quet_so_gpu() == -1, "khong khai ma van quet"
+
+
+def test_khai_sai_kieu_thi_TAT_va_NOI_RA(jr, monkeypatch, caplog):
+    """🔴 Khai sai te hon khong khai: nguoi van hanh tuong minh da bat.
+
+    Nen no phai tat (an toan) NHUNG phai de lai mot dong log — im lang o day la
+    dung cai loi ma ca phep kiem nay sinh ra de chan.
+    """
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, "hai")
+    with caplog.at_level("WARNING"):
+        assert jr._so_gpu_mong_doi() == 0
+    # `caplog.text` la ban DA dinh dang — `r.message` chua chac co, va `% r.args`
+    # thi no vao dung cai bay dinh dang cua chinh no.
+    assert jr.GPU_MONG_DOI_ENV in caplog.text, caplog.text
+
+
+@pytest.mark.parametrize("gia_tri,mong", [("2", 2), ("1", 1), ("0", 0), ("-3", 0)])
+def test_doc_duoc_so_hop_le(jr, monkeypatch, gia_tri, mong):
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, gia_tri)
+    assert jr._so_gpu_mong_doi() == mong
+
+
+# ── Dem va bao dong ──────────────────────────────────────────────────────────
+
+def test_du_card_thi_KHONG_bao(jr, monkeypatch):
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, "2")
+    _gia_lap(monkeypatch, jr, so_card=2)
+    goi = []
+    _chan_alert(monkeypatch, goi)
+    assert jr._quet_so_gpu() == 2
+    assert goi == [], "du card ma van bao"
+
+
+def test_thua_card_cung_KHONG_bao(jr, monkeypatch):
+    """Cam them card la tin tot. Bao dong vi tin tot la cach nguoi ta hoc cach
+    bo qua canh bao."""
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, "2")
+    _gia_lap(monkeypatch, jr, so_card=3)
+    goi = []
+    _chan_alert(monkeypatch, goi)
+    assert jr._quet_so_gpu() == 3
+    assert goi == []
+
+
+def test_thieu_card_thi_BAO(jr, monkeypatch, caplog):
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, "2")
+    _gia_lap(monkeypatch, jr, so_card=1)
+    goi = []
+    _chan_alert(monkeypatch, goi)
+    with caplog.at_level("WARNING"):
+        assert jr._quet_so_gpu() == 1
+    assert goi, "thieu card ma khong bao"
+    from platform_core.public_api import notifications
+    assert all(g["kind"] == notifications.GPU_MISSING for g in goi)
+    # Log phai co truoc thu, de hop thu hong thi con so van con dau vet.
+    assert "THIEU GPU" in caplog.text
+
+
+def test_khoa_khu_trung_lap_mang_CON_SO(jr, monkeypatch):
+    """🔴 1/2 va 0/2 la HAI su viec khac nhau.
+
+    Neu khoa chi la "gpu" thi card thu hai rung se bi im lang suot ca chu ky
+    nghi (mot ngay), chi vi card thu nhat vua duoc bao. Dung luc te nhat: may
+    dang mat card lien tiep.
+    """
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, "2")
+    goi = []
+    _chan_alert(monkeypatch, goi)
+
+    _gia_lap(monkeypatch, jr, so_card=1)
+    jr._quet_so_gpu()
+    _gia_lap(monkeypatch, jr, so_card=0)
+    jr._quet_so_gpu()
+
+    khoa = {g["subject"] for g in goi}
+    assert khoa == {"gpu:1/2", "gpu:0/2"}, khoa
+
+
+# ── Noi dung canh bao ────────────────────────────────────────────────────────
+
+def test_than_canh_bao_NOI_RO_no_khong_lam_job_hong(jr, monkeypatch):
+    """⭐ Nguoi doc canh bao nay se di tim job do, va se khong thay cai nao.
+
+    Than thu phai chan viec do lai: van de la thong luong, khong phai loi. Mot
+    canh bao khong noi ro dieu do se bi doc thanh bao dong gia.
+    """
+    monkeypatch.setenv(jr.GPU_MONG_DOI_ENV, "2")
+    _gia_lap(monkeypatch, jr, so_card=1)
+    goi = []
+    _chan_alert(monkeypatch, goi)
+    jr._quet_so_gpu()
+    than = goi[0]["body"]
+    assert "không có job nào hỏng" in than.lower() or "khong co job nao hong" in than.lower()
+    assert "nvidia-smi -L" in than, "phai chi ra lenh de nguoi truc tu kiem"
+
+
+# ── Noi dat: PHAI nam duoi lease bao tri ─────────────────────────────────────
+
+def test_goi_trong_vong_bao_tri_chu_khong_trong_vong_job():
+    """🔴 `_mot_luot_bao_tri` chay duoi lease `bao_tri` ⇒ DUNG MOT LAN tren toan
+    cum. Vong job chay o MOI tien trinh worker.
+
+    Dat nham cho thi moi worker gui mot thu ve cung mot card — dung lop loi ma
+    H36 sinh ra de sua (webhook trung, canh bao trung, don rac chay N lan).
+    """
+    import inspect
+
+    from platform_core import job_runner
+
+    than = inspect.getsource(job_runner._mot_luot_bao_tri)
+    assert "_quet_so_gpu()" in than
+
+    vong = inspect.getsource(job_runner._chay_mot_job)
+    assert "_quet_so_gpu" not in vong
+
+
+def test_loi_khi_dem_KHONG_lam_dung_viec_khac():
+    """`nvidia-smi` treo khong duoc lam dung viec don du lieu va giao webhook."""
+    import inspect
+
+    from platform_core import job_runner
+
+    than = inspect.getsource(job_runner._mot_luot_bao_tri)
+    i = than.index("_quet_so_gpu()")
+    quanh = than[max(0, i - 200):i + 200]
+    assert "try:" in quanh and "except" in quanh
+
+
+def _chan_alert(monkeypatch, goi: list) -> None:
+    """Bat moi `raise_alert` lai thay vi cham CSDL."""
+    from platform_core.public_api import notifications
+
+    def gia(db, *, user_id, kind, subject="", title="", body="", now=None):
+        goi.append({"user_id": user_id, "kind": kind, "subject": subject,
+                    "title": title, "body": body})
+        return object()
+
+    monkeypatch.setattr(notifications, "raise_alert", gia)
+
+    # Khong cham CSDL that: phep kiem nay noi ve phep DEM va noi dung canh bao,
+    # khong noi ve tang luu tru.
+    import platform_core.job_runner as jr_mod
+
+    class _Db:
+        def execute(self, *a, **kw):
+            class _Kq:
+                def scalars(self_inner): return self_inner
+                def all(self_inner): return [_Admin()]
+            return _Kq()
+
+        def commit(self): pass
+
+    class _Admin:
+        id = "admin-1"
+
+    monkeypatch.setattr(jr_mod, "_one_session", lambda: iter([_Db()]))
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_330_claim_gpu_theo_bien_moi_truong.py
+SHA256=9cdc480a5686719f84b7f3f0328840f880154c691a559b62f4093578229914cd BYTES=5220 LINES=127
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Bo test khong duoc ghi vao mat phang claim GPU TOAN MAY.
+
+`platform_core/gpu_claims.py` doc/ghi `C:\\ProgramData\\gpu_claims\\claims\\` —
+mot thu muc dung chung cho MOI HO tren may, khong rieng nen tang nay. May B co
+ba ho dung chung GPU (du an video o `E:\\LTT AI`, LLM o `H:\\LTT_LLM`, va ta).
+
+🔴 VI SAO `monkeypatch` KHONG DU, do duoc 2026-08-29.
+
+   Bo test da duoc cat khoi mat phang nay bang `gpu_khong_claim_toan_may`
+   (`tests/conftest.py`). Nhung `monkeypatch` chi tac dung TRONG TIEN TRINH
+   CHA. `test_151` de tien trinh worker THAT, va worker con nap lai module roi
+   GHI claim that vao `C:\\ProgramData` — dem duoc **16 tep** mang job id cua
+   chinh bo test (`ja`, `jb`, `jx`, `job-khac`) sau mot luot.
+
+   Chung tu lanh khi PID chet (`active()` don mo coi), nen day la NHIEU chu
+   khong phai hong. Nhung no la bo test cua ta ghi vao khong gian dieu phoi cua
+   ho khac, va no lam nhieu chinh phep do cua ta: mot claim that tren GPU 0 bi
+   tru vao card GIA cung index 0.
+
+⭐ Tien trinh con THUA KE moi truong, nen mot bien env bit duoc ca chieu DOC lan
+   chieu GHI, o ca cha lan con — thu ma `monkeypatch` khong lam duoc.
+"""
+from __future__ import annotations
+
+import json
+import os
+import pathlib
+import subprocess
+import sys
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+
+#: Chay trong tien trinh CON. Khong dung f-string long nhau cho de doc.
+_MA_CON = """
+import sys
+sys.path.insert(0, {goc!r})
+from platform_core import gpu_claims as g
+import json
+print(json.dumps({{
+    "root": str(g._ROOT),
+    "token": bool(g.publish("lttplatform", 0, 1234, job="kiem_bien_env")),
+}}))
+"""
+
+
+def _chay_con(claims_dir: pathlib.Path | None) -> dict:
+    """Chay `_MA_CON` trong mot tien trinh RIENG, tra ve JSON no in ra.
+
+    ⚠️ Truyen ma qua `-c` chu khong ghi mot tep vao `tmp_path`: duong `tmp_path`
+       cua pytest vua SAU vua co DAU CACH
+       (`...\\pytest-of-Thang Tuong\\pytest-NNNN\\ten_test_rat_dai\\`), va ban
+       dau cua phep kiem nay TREO 120 giay o do trong khi cung doan ma chay
+       xong trong 1,9 giay khi goi thang. Khong dao sau nguyen nhan: duong ngan
+       vua bo duoc bien do vua lam phep kiem doc de hon.
+    """
+    env = {k: v for k, v in os.environ.items() if k != "LTT_GPU_CLAIMS_DIR"}
+    if claims_dir is not None:
+        env["LTT_GPU_CLAIMS_DIR"] = str(claims_dir)
+    r = subprocess.run([sys.executable, "-c", _MA_CON.format(goc=str(GOC))],
+                       capture_output=True, text=True, env=env,
+                       timeout=120, cwd=str(GOC))
+    assert r.returncode == 0, r.stdout + r.stderr
+    return json.loads(r.stdout.strip().splitlines()[-1])
+
+
+def test_tien_trinh_CON_ghi_vao_thu_muc_tam_chu_khong_vao_ProgramData():
+    """Bat bien chinh: worker con phai theo bien env, khong theo duong cung."""
+    import tempfile
+
+    tmp_path = pathlib.Path(tempfile.mkdtemp(prefix="clm_"))
+    ra = _chay_con(tmp_path / "gpu_claims")
+
+    assert ra["token"] is True, "tien trinh con khong publish duoc claim"
+    assert str(tmp_path) in ra["root"], (
+        f"tien trinh con van dung {ra['root']} — bien env khong toi duoc no")
+
+    sinh = list((tmp_path / "gpu_claims" / "claims").glob("*.json"))
+    assert len(sinh) == 1, f"mong doi 1 claim trong thu muc tam, thay {len(sinh)}"
+
+    that = pathlib.Path(r"C:\ProgramData\gpu_claims\claims")
+    if that.is_dir():
+        ro_ri = [f.name for f in that.glob("*.json")
+                 if b"kiem_bien_env" in f.read_bytes()]
+        assert ro_ri == [], f"claim cua test RO RI ra thu muc dung chung: {ro_ri}"
+
+
+def test_khong_dat_bien_thi_van_la_duong_THAT():
+    """Chieu nguoc lai, va no quan trong ngang chieu tren.
+
+    ⛔ Dat bien nay o production nghia la nen tang khong con thay claim cua ho
+       khac — dung thu ma ca co che nay sinh ra de tranh. Nen mac dinh PHAI la
+       duong that, va phep kiem nay chot dieu do.
+    """
+    ra = _chay_con(None)
+
+    assert ra["root"].replace("/", "\\").lower().endswith(
+        r"programdata\gpu_claims"), (
+        f"mac dinh phai la duong that, thay {ra['root']}")
+
+    # Don claim vua sinh ra o duong that — chinh phep kiem nay cung khong duoc
+    # de lai rac trong khong gian dung chung.
+    that = pathlib.Path(r"C:\ProgramData\gpu_claims\claims")
+    if that.is_dir():
+        for f in that.glob("*.json"):
+            try:
+                if b"kiem_bien_env" in f.read_bytes():
+                    f.unlink()
+            except OSError:
+                pass
+
+
+def test_deploy_va_setup_KHONG_dat_bien_nay():
+    """Banh coc: bien nay la do dung cua test, khong duoc lot vao production."""
+    xau = []
+    for thu_muc in ("deploy", "setup"):
+        goc = GOC / thu_muc
+        if not goc.is_dir():
+            continue
+        for f in goc.rglob("*"):
+            if f.is_file() and f.suffix.lower() in (".ps1", ".py", ".env", ".json"):
+                try:
+                    if "LTT_GPU_CLAIMS_DIR" in f.read_text(encoding="utf-8",
+                                                           errors="replace"):
+                        xau.append(f.relative_to(GOC).as_posix())
+                except OSError:
+                    pass
+    assert xau == [], f"bien chi-danh-cho-test bi dat o duong trien khai: {xau}"
 
 @@@LTT_PROFILE_FILE_END@@@
 

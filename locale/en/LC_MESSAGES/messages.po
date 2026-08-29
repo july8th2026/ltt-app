@@ -11617,3 +11617,11 @@ msgstr "[{slug}] tool {tool!r} lane {lane!r} is not one of the app's job_types"
 
 msgid "[{slug}] tool {tool!r} job_type_lanes thiếu giá trị: {thieu}"
 msgstr "[{slug}] tool {tool!r} job_type_lanes is missing value(s): {thieu}"
+
+#: platform_core/job_runner.py
+msgid "Máy chủ đang thiếu GPU"
+msgstr "The server is missing a GPU"
+
+#: platform_core/job_runner.py
+msgid "Đếm được {thay} card, cấu hình khai {mong_doi} ({bien}). Không có job nào hỏng vì việc này — chúng chỉ dồn hết vào số card còn lại, nên thông lượng giảm mà mọi tín hiệu khác vẫn xanh. Kiểm `nvidia-smi -L` trên máy; nếu card không hiện thì đó là liên kết driver, không phải phần mềm nền tảng."
+msgstr "Counted {thay} card(s); the configuration declares {mong_doi} ({bien}). No job has failed because of this — they simply all queue onto the cards that remain, so throughput drops while every other signal stays green. Check `nvidia-smi -L` on the host; if the card does not appear, that is a driver binding, not platform software."
