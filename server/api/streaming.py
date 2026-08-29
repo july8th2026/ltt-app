@@ -98,6 +98,23 @@ def _giai_ten_model(ten: str) -> str:
 #:    (giữ model thường trú), không bằng đồng hồ này.
 MO_LUONG_GIAY = 75.0
 
+#: Token ra mặc định của **cửa stream**, khi khách không tự khai giới hạn.
+#:
+#: ⚠️ ĐỪNG dùng `SYNC_MAX_TOKENS_MAC_DINH` (1.024) ở đây. Số đó của cửa trả một
+#:    cục, nhỏ có chủ ý vì trần 100 giây của Cloudflare. Cửa stream không bị
+#:    đồng hồ đó, và dùng nhầm số ấy chính là lỗi "hỏi dài thì im lặng".
+#:
+#: ⭐ VÌ SAO 8.192 CHỨ KHÔNG PHẢI 4.096 HAY 32.768:
+#:    * Nó phải đủ cho **việc thật**: một tệp mã ~300 dòng hay một bài dài rơi
+#:      vào khoảng 4.000–8.000 token. 4.096 (số manifest hứa) vẫn cắt cụt các
+#:      lượt agentic viết tệp — tức vẫn còn đúng triệu chứng cũ, chỉ hiếm hơn.
+#:    * Nó KHÔNG nên bằng trần 32.768: credit được **giữ trước** theo con số này
+#:      rồi mới hoàn về token thật dùng, nên đặt kịch trần bắt khách phải có sẵn
+#:      số dư gấp bốn lần nhu cầu thật, và một ví mỏng sẽ bị từ chối oan.
+#:    * Khách cần dài hơn thì **tự khai** `max_output_tokens` tới 32.768 — nhánh
+#:      trên của hàm này tôn trọng ngay, đã đo: khai 3.000 thì nhận đủ 3.000.
+MAC_DINH_TOKEN_RA_STREAM = 8_192
+
 
 def _tran_giay() -> int:
     """Trần thời gian cho đường **không streaming**.
@@ -550,12 +567,27 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc
     #    `max_output_tokens`, hai cửa kia đọc `max_tokens`. Ghi nhầm tên là thêm
     #    một trường lạ mà thượng nguồn bỏ qua — tức lại gửi đi con số thô.
+    #
+    # 🔴 VÀ KHI KHÁCH KHÔNG KHAI GÌ THÌ TÊN TRƯỜNG PHẢI THEO **CỬA**, KHÔNG ĐƯỢC
+    #    MẶC ĐỊNH `max_tokens`.
+    #
+    #    Bản trước rơi vào `else` là ghi `max_tokens` cho **mọi** cửa. Với
+    #    `/v1/responses` thì thượng nguồn **không đọc** tên đó — nó chỉ đọc
+    #    `max_output_tokens` — nên con số của ta bị bỏ qua và llama-server dùng
+    #    mặc định của chính nó: **1024**.
+    #
+    # ⛔ ĐO ĐƯỢC 29/08, VÀ ĐÂY LÀ GỐC CỦA "HỎI DÀI THÌ IM LẶNG": một yêu cầu
+    #    KHÔNG kèm giới hạn trả về đúng `output_tokens=1024`, `status=completed`,
+    #    sau ~22 giây — tức câu trả lời **bị cắt cụt giữa chừng** chứ không phải
+    #    mất kết nối. Codex không tự khai `max_output_tokens` nên lượt nào của nó
+    #    cũng dính. Câu ngắn (<1024 token) thì không ai thấy gì bất thường.
+    _ten_tran = "max_output_tokens" if duong.endswith("/responses") else "max_tokens"
     for _ten in ("max_tokens", "max_output_tokens"):
         if _ten in gui:
             gui[_ten] = xin_ra
             break
     else:
-        gui["max_tokens"] = xin_ra
+        gui[_ten_tran] = xin_ra
     try:
         da_giu = thanh_toan.giu_cho_luot(
             db, user_id=principal.user_id, request_id=request_id,
@@ -813,7 +845,24 @@ def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
         gt = than.get(ten)
         if isinstance(gt, (int, float)) and not isinstance(gt, bool):
             return max(1, min(int(gt), tran))
-    return min(executor.default_max_tokens, tran)
+    # 🔴 MẶC ĐỊNH CỦA CỬA STREAM, KHÔNG PHẢI CỦA CỬA ĐỒNG BỘ.
+    #
+    #    `executor.default_max_tokens` là `SYNC_MAX_TOKENS_MAC_DINH = 1024` —
+    #    con số **cố ý nhỏ** cho cửa trả một cục, vì cửa đó bị trần 100 giây của
+    #    Cloudflare. Cửa stream không có ràng buộc đó, và chú thích ngay tại
+    #    `features.py` đã ghi rõ: *"Cửa stream và cửa job vẫn dùng mặc định
+    #    4.096 / trần 32.768 của manifest"*. Mã thì lại lấy 1.024.
+    #
+    # ⛔ ĐO ĐƯỢC 30/08 — ĐÂY LÀ GỐC CỦA "HỎI DÀI THÌ IM LẶNG": một lượt KHÔNG
+    #    khai giới hạn trả về đúng `output_tokens=1024`, `status=completed`, sau
+    #    ~22 giây; tức câu trả lời **bị cắt cụt** chứ không phải mất kết nối.
+    #    Codex không tự khai `max_output_tokens` nên lượt nào của nó cũng dính;
+    #    câu ngắn (<1024 token) thì không ai thấy gì bất thường.
+    #
+    # ⭐ VÌ SAO ĐỂ RỘNG LÀ AN TOÀN: credit **giữ trước rồi hoàn** về đúng số token
+    #    thật sinh ra (`_quyet_toan`), và model tự dừng khi trả lời xong. Nên số
+    #    này chỉ quyết định *chỗ để thở*, không quyết định tiền khách trả.
+    return min(MAC_DINH_TOKEN_RA_STREAM, tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:
