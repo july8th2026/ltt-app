@@ -50,8 +50,21 @@ PHAM_VI = (
     ("server/templates", "*.html"),
     ("server/static", "*.css"),
     ("server/static", "*.js"),
-    ("server/api", "*.py"),
-    ("server/routes", "*.py"),
+    # CU: ("server/api", "*.py") + ("server/routes", "*.py").
+    #
+    # 🔴 Hai dong do de lai mot DIEM MU ngay trong cong cu an toan truoc deploy:
+    #    `server/*.py` o CAP TREN CUNG khong duoc quet. Do la
+    #    `admin.py` (5.000+ dong), `admin_api.py`, `app.py`, `templating.py`,
+    #    `nexus_download.py` — tuc ca khu admin va vo ung dung.
+    #
+    # ⛔ Do 2026-08-29: `server/admin.py` LECH giua nguon va ban dang chay, va
+    #    `so_deploy` bao "khop 452 | lech 9" ma khong he nhac toi no. Mot cong
+    #    cu bao "toi da so xong" trong khi bo qua mot nua `server/` thi te hon
+    #    khong co cong cu: nguoi ta tin no.
+    #
+    # `rglob` tu `server` da bao ham `server/api` va `server/routes`, nen mot
+    # dong thay duoc ca hai — va khong bo sot phan con lai.
+    ("server", "*.py"),
     ("apps", "*.py"),
     ("platform_core", "*.py"),
 )
