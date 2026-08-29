@@ -16,6 +16,90 @@
 
 
 
+## 2026-08-29 — Đóng hồ sơ Codex, dựng kế hoạch nối tiếp
+
+- **Mục tiêu:** tiếp quản việc từ Codex (hết quota giữa chừng), chặn Codex chạy
+  tiếp, và viết danh sách hạng mục còn lại có thứ tự.
+- **Trạng thái:** xong phần tiếp quản + kế hoạch. Không sửa mã sản phẩm.
+
+### Đã làm
+
+`.codex/` đóng lại: nội dung dời sang `docs/_luutru/codex_2026-08-27/`, để lại
+đúng một tệp `.codex/README.md` là lời nhắn **dừng** — vì đó chính là điểm vào
+Codex đọc đầu tiên.
+
+⭐ **Không xoá hẳn dù chủ sản phẩm cho phép.** Ba thứ trong đó là **bằng chứng
+đo**, không phải bản nháp: bảng arm Q4/Q115/Q116 có `job_id` thật + VRAM + nhiệt
++ công suất ở mức chi tiết không có ở chỗ nào khác; bốn harness `.ps1` đã chạy
+thật trên máy B qua Nexus (một tệp có SHA-256 ghi trong nhật ký); và bản rà soát
+đẻ ra Q0–Q6. `KE_HOACH_TRIEN_KHAI.md` còn **trỏ vào** tệp plan đó. Xoá tài liệu
+thì được; xoá số đo thì không — số đo không dựng lại được bằng cách viết lại
+tài liệu.
+
+**Kết luận quan trọng nhất của lượt tiếp quản:** plan Nexus + Qwen của Codex
+**đã đóng, không dở dang** — Q0–Q4 và Q6 nghiệm thu 2026-08-29; Q5 và P2 là hoãn
+**có chủ ý** chờ chủ sản phẩm. Nếu đọc nhầm thành "đang dở" thì phiên sau sẽ đi
+chạy lại một loạt phép đo GPU đã có bằng chứng.
+
+Kế hoạch nối tiếp: `docs/KE_HOACH_NOI_TIEP_2026-08-29.md` — 4 đợt, mỗi đợt có
+tiêu chí nghiệm thu và đường lùi riêng.
+
+⭐ **Thứ tìm được khi rà, không thấy nếu chỉ đọc danh sách phẳng:** H41.5 và
+H35.10 **chung một nút thắt** là **H35.10a** — đo thời lượng phía máy chủ lúc báo
+giá. Giá `video.upscale` phụ thuộc `duration_s` **do người gọi khai**, worker nâng
+giữ chỗ khi đo được số thật; với giao diện thì ổn, với máy-gọi-máy thì nó phá lời
+hứa của một báo giá đã ký (Q84, sự cố Seedance *giữ 29 thu 78*). Một việc rủi ro
+thấp (không chạm sổ credit) mở khoá hai việc. Công cụ đã có sẵn:
+`platform_core.media.duration_seconds` và `storage.try_url_for()` — ffprobe đọc
+thẳng presigned URL, không tải cả 2 GB về.
+
+### Ba chỗ kế hoạch lệch sự thật, đã sửa
+
+| Chỗ | Trước | Sau |
+|---|---|---|
+| H41.2 | ghi "treo" | nhật ký 26/08 đã có E3 thật cho GJ-1/2/6; GJ-3 **cố ý** giữ E2 (đòi giao dịch tiền thật) |
+| H41.7 | "5/8 app" | **6/10** — số cũ là của **máy dev**, thiếu cờ `LTT_VPS`/`LTT_NEXUS` nên đếm hụt hai app |
+| chốt ⛔ dưới bảng | "phải chờ deploy, production chạy `ec6a00c`" | đã qua; production nay chạy `7bf6ba3` |
+
+H41.7 đo lại trên `https://app.lttstudios.com` (ẩn danh, HTTP 200): **10 thẻ app,
+6 nhãn *Đang phát triển***. Số dùng để quyết phải là số của production, không
+phải số máy dev — đây đúng là loại lỗi mà quy tắc 5b của `CLAUDE.md` nói tới,
+lần này ở dạng *đếm* chứ không phải dạng *hiển thị*.
+
+### Việc vệ sinh
+
+`docs/PUBLIC_API/CONTRACT_BASELINE.json` lại bẩn rác fixture `test_209`
+(`ghost_field`) — **lần thứ hai trong ba ngày**. Trả về bản commit bằng
+`git checkout`. ⛔ Không chạy `check_api_compat.py --accept`: lệnh đó ghi lại
+baseline theo mã hiện tại, nên nếu có một thay đổi phá vỡ tương thích **thật**
+thì nó vừa bị nuốt mất. Dấu hiệu nhận ra rác fixture: tên `ghost_*`, mã lỗi HTTP
+418 — không ai viết một mã lỗi tên như thế vào hợp đồng thật.
+
+⭐ Tái diễn hai lần ⇒ đáng cho `test_209` dọn sau mình; fixture đang ghi vào một
+tệp **trong cây** mà không hoàn nguyên khi lượt chạy bị ngắt.
+
+### Hai phiên cùng cây
+
+Phiên `lttstudiosapp-7b` đang sửa khu admin. Chốt ranh giới file trước khi làm
+gì: khu admin của họ, `.codex/` + kế hoạch nối tiếp của tôi; hai tệp chung
+(`NHAT_KY.md`, `KE_HOACH_TRIEN_KHAI.md`) sửa bằng **Edit chứ không Write**.
+
+⚠️ Lượt `gate.py --vong-lap` 09:34 ra `FAIL` 10 test — **không phải bằng chứng**:
+gate tự báo `CAY DA DOI TRONG LUC CHAY`, và 10 test đỏ đúng nhóm hay tranh tài
+nguyên (`test_150`/`test_151` GPU lease, `test_263` apikeys, `test_145` dấu thời
+gian ba tệp ghi vào cây). Phiên kia xác nhận họ cũng đang chạy gate cùng lúc và
+`test_nhanh.py` chạy riêng thì **PASS** (4.262 passed / 26 skipped). Phán quyết
+thật để lại cho lượt gate trên cây đứng yên.
+
+### Còn tồn đọng
+
+Năm câu hỏi chờ chủ sản phẩm, xếp theo mức chặn: **H41.7 + H41.8** (bề mặt MVP
+công khai — H41.8 là gốc, H41.7 là hiện tượng) · **đồng ý làm H35.10a chứ?** ·
+**H41.3** (nâng INV-5 từ *quan sát* lên *bảo đảm*) · **Mục J** (thu hẹp
+`overview()["jobs"]`) · **push `admin-mvp-v3`** (đang đi trước `origin/master`
+**59 commit**, chưa push — rủi ro mất việc, không phải rủi ro mã).
+
+
 ## 2026-08-29 — Soi admin trên production, tìm được một lỗi chỉ dữ liệu thật mới lộ
 
 Chủ sản phẩm đăng nhập bằng Playwright (Playwright **tự vượt** thử thách

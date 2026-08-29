@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0f41607b21ca2ceb2549fd63874e1abb787cd45067ed0782e145cda51e6bace6
-Nguồn đã quét : 1228 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:fc8e05fdd90d2f339b33a0f4b2ecee82ed77ff0aa296a45cdf9f5d84018a7cc9
+Nguồn đã quét : 1229 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1064,7 +1064,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (287 file pytest + 3 frontend)
+10. QUALITY GATES (288 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1311,6 +1311,7 @@ Test inventory:
 - tests/test_321_admin_tong_quan.py
 - tests/test_322_admin_cong_an_toan.py
 - tests/test_323_admin_api_lien_ket.py
+- tests/test_324_admin_job_gj3.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1378,8 +1379,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1228 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:937, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1229 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:938, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2237,7 +2238,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (304)
+[tests] (305)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2495,6 +2496,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - tests/test_321_admin_tong_quan.py
 - tests/test_322_admin_cong_an_toan.py
 - tests/test_323_admin_api_lien_ket.py
+- tests/test_324_admin_job_gj3.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2664,7 +2666,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:91, .ini:1, .js:14, .json:39
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1228 file; 12206856 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1229 file; 12213697 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -74057,7 +74059,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=e1972f47d19dd96c18c8657d2f966b51b6c7bc8efde16c493bfb1b14d780d58b BYTES=254868 LINES=3625
+SHA256=721c08b09f78e421c4cae6745ff1f584bdb9bac4f9e40e09a60068c7f1e8827a BYTES=256433 LINES=3634
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -77627,17 +77629,26 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 
 | ID | Việc | Ai làm |
 |---|---|---|
-| **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
+| ✅ **H41.2** | E3 cho các trang Golden Journey. **Sửa 2026-08-29:** hàng này ghi "treo" trong khi nhật ký 2026-08-26 đã có E3 thật — GJ-1/GJ-2/GJ-6 **PASS** trên `https://app.lttstudios.com` (job thật `23f40fa0`, tiêu 5 credit thật). Nhật ký thắng kế hoạch (`NHAT_KY.md` đầu file) | **GJ-3 cố ý giữ E2**: nghiệm thu nó đòi một giao dịch tiền thật, không phải một hạng mục kỹ thuật |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | ✅ **H41.4** | `server/api` không còn biết trực tiếp tên app: executor đồng bộ được khai báo trong `ToolSpec`, project sang catalog và resolver generic; `/messages` `/responses` `/chat/completions` dùng cùng adapter app-owned | `60a76bc` + deploy 2026-08-29 |
-| ✅ **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐÃ NGHIỆM THU Q6 2026-08-29:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**; cap `65000`, engine `131072`, output `32768`, `parallel=1` đã deploy. Public async canary 7 arm có queue-age p50 `1,062s`, p95 `1,861s`; GPU telemetry 450 mẫu/15 phút, CPU soak `320/320`; over-cap hold được hoàn. Giữ `parallel=1`, chưa rollout rộng. |
+| ✅ **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `docs/_luutru/codex_2026-08-27/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` *(dời khỏi `.codex/` ngày 2026-08-29 khi đóng hồ sơ Codex)* | **ĐÃ NGHIỆM THU Q6 2026-08-29:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**; cap `65000`, engine `131072`, output `32768`, `parallel=1` đã deploy. Public async canary 7 arm có queue-age p50 `1,062s`, p95 `1,861s`; GPU telemetry 450 mẫu/15 phút, CPU soak `320/320`; over-cap hold được hoàn. Giữ `parallel=1`, chưa rollout rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | ✅ **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case | `1f0e93c` |
-| **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
+| **H41.7** | **Bề mặt MVP**: **6/10** app khách ẩn danh thấy mang nhãn *Đang phát triển*. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn. ⚠️ **Sửa 2026-08-29:** con số cũ "5/8" là số của **máy dev** — máy dev thiếu cờ `LTT_VPS`/`LTT_NEXUS` nên đếm hụt hai app. Đo lại trên `https://app.lttstudios.com` (ẩn danh, HTTP 200): 10 thẻ app, 6 nhãn *Đang phát triển* — `agent` `autosubvideo` `chataistudio` `taoanh` `taoclipngan` `vps`; 4 mục `released` — `nexus` `prompt_ai_ommi` `taovideo` `upscalevideo`. Số dùng để quyết phải là số của production | **chủ sản phẩm** |
 | **H41.8** | Cân nhắc đổi mặc định `AppManifest.public` thành `False` — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **chủ sản phẩm** |
 
-⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
-link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
+⛔ ~~**H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
+link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.~~
+**ĐÃ QUA 2026-08-29.** Giữ câu cũ để truy vết. Production nay chạy `7bf6ba3`
+(deploy 2026-08-29, `so_deploy` khớp 461 · lệch 0), link 404 `/ltt-llm` đã hết,
+và E3 đã lấy được — xem hàng H41.2 ở trên.
+
+📌 **Thứ tự làm các hàng còn treo, kèm đường phụ thuộc và tiêu chí nghiệm thu
+từng đợt: `docs/KE_HOACH_NOI_TIEP_2026-08-29.md`.** Điểm mấu chốt của tài liệu đó,
+không thấy được nếu chỉ đọc bảng phẳng này: **H41.5 và H35.10 có chung một nút
+thắt là H35.10a** (đo thời lượng phía máy chủ lúc báo giá) — làm một việc rủi ro
+thấp thì mở khoá cả hai.
 
 **Checkpoint Q115 2026-08-28:** public cap đã triển khai thử ở `81000` qua Nexus,
 nhưng canary 80K đo `88.224` token thật và `120,322s`; ladder 70K/65K lần lượt
@@ -125423,7 +125434,7 @@ class AccessControlMiddleware(BaseHTTPMiddleware):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/admin.py
-SHA256=4c64ade6ddb67dff72e8083bbca0586dec5fd4f83230bd832b48e92bea5d91e2 BYTES=88666 LINES=1616
+SHA256=34cf312ec7a23b5f7c8daf1b8ca2db92cdf7d850c5117afd1662a533edfc7d88 BYTES=89074 LINES=1650
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 server/admin.py — trang quản trị (H3-admin, Q15) dựng bằng sqladmin.
@@ -125451,7 +125462,7 @@ import json
 from urllib.parse import quote_plus
 import logging
 
-from markupsafe import escape
+from markupsafe import Markup, escape
 from sqladmin import Admin, BaseView, ModelView, expose
 from sqladmin.authentication import AuthenticationBackend
 from sqladmin.authentication import login_required as _login_required
@@ -125922,14 +125933,48 @@ class AppAccessAdmin(ModelView, model=AppAccess):
 
 
 class JobAdmin(ModelView, model=Job):
+    """Bảng job — đích của Golden Journey 3 (điều tra việc chạy hỏng).
+
+    🔴 ĐO TRÊN PRODUCTION 29/08. Hàng đợi chú ý ở `/admin/` báo "4 việc chạy
+       hỏng" và dẫn tới đây. Trang này khi đó hiện:
+
+         · `user_id` là **UUID trần, không bấm được** — muốn biết đó là ai phải
+           chép nó sang một trang khác;
+         · **không có cột lỗi nào cả** — `Job.error` tồn tại trong model nhưng
+           không nằm trong `column_list`.
+
+       Nên người vận hành đi hết hàng đợi rồi vẫn không biết **vì sao hỏng** và
+       **của ai**. Đó là một ngõ cụt, và nó nằm ở đúng bước cuối của GJ3.
+
+    ⭐ Hợp đồng P1 nói mỗi mục chú ý phải mở trang **giải quyết được** nó. Một
+       bảng chỉ nói "error" thì chưa giải quyết được gì.
+    """
+
     name = "Job"
     name_plural = "Job"
     icon = "fa-solid fa-list-check"
     column_list = [Job.created_at, Job.user_id, Job.app_slug, Job.job_type,
-                   Job.status, Job.progress, Job.attempts]
+                   Job.status, Job.error, Job.attempts]
+    column_labels = {Job.error: "Lỗi"}
     column_searchable_list = [Job.user_id, Job.app_slug, Job.status, Job.job_type]
     column_sortable_list = [Job.created_at, Job.status]
     column_default_sort = [(Job.created_at, True)]
+    # `progress` rời khỏi danh sách để nhường chỗ cho `error`: một job đã hỏng
+    # thì phần trăm tiến độ của nó không dẫn tới hành động nào, còn thông báo
+    # lỗi thì có. Cả hai vẫn còn ở trang chi tiết.
+    column_details_exclude_list = []
+    column_formatters = {
+        # `user_id` thành liên kết sang Hồ sơ 360. Đây là chỗ luồng copy-UUID
+        # cuối cùng còn sót lại sau đợt `admin_mvp_v3`.
+        Job.user_id: lambda m, a: Markup(
+            f'<a href="/admin/nguoi-dung?q={escape(m.user_id)}">'
+            f'{escape(m.user_id[:8])}…</a>') if m.user_id else "",
+        # Lỗi cắt ngắn ở danh sách; bản đầy đủ ở trang chi tiết. Không cắt thì
+        # một traceback dài đẩy bảng rộng ra và che mọi cột khác.
+        Job.error: lambda m, a: Markup(
+            f'<span title="{escape(m.error)}">{escape(m.error[:70])}'
+            f'{"…" if len(m.error) > 70 else ""}</span>') if m.error else "",
+    }
     # Worker quản job; admin chỉ xem (sửa tay dễ làm sai kế toán credit).
     can_create = False
     can_edit = False
@@ -219287,6 +219332,138 @@ def test_provider_credential_hong_dan_sang_operations(api):
     than = _than(api, "/admin/apikeys")
     assert "k-hong" in than
     assert "/admin/api-request?status=failed" in than
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_324_admin_job_gj3.py
+SHA256=becbb3702d371a9546ec2fc6f4d2be7b46f6712dd6f59ef1f47b963c6ec3e11e BYTES=4868 LINES=126
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""GJ3 — dieu tra viec chay hong (`05_PAGE_CONTRACT_MATRIX.md` P1 + P10).
+
+## Van de duoc sua, do tren PRODUCTION 29/08
+
+Hang doi chu y o `/admin/` bao "4 viec chay hong" va dan toi `/admin/job/list`.
+Trang do khi ay hien:
+
+  · `user_id` la **UUID tran, khong bam duoc** — muon biet do la ai phai chep no
+    sang mot trang khac;
+  · **khong co cot loi nao ca** — `Job.error` ton tai trong model nhung khong
+    nam trong `column_list`.
+
+Nguoi van hanh di het hang doi roi van khong biet **vi sao hong** va **cua ai**.
+Hop dong P1 noi moi muc chu y phai mo trang **giai quyet duoc** no; mot bang chi
+noi "error" thi chua giai quyet duoc gi.
+
+⛔ Khong phep kiem nao truoc do bat duoc, vi trang van tra 200 va van co du lieu.
+   "Ngo cut" khong phai mot loi HTTP.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+
+@pytest.fixture()
+def gj3(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'gj3.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-secret-gj3")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from platform_core.models import Job
+    from platform_core.users import tao_nguoi_dung
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="sep@example.com", password="matkhau-tot-12",
+                       role="admin", is_verified=True)
+        u = tao_nguoi_dung(db, email="khach@example.com",
+                           password="matkhau-tot-12", role="user",
+                           is_verified=True)
+        db.add(Job(user_id=u.id, app_slug="ltt_llm", job_type="ltt_llm.chat",
+                   status="error",
+                   error="ProviderTimeout: may B khong tra loi sau 120s"))
+        db.commit()
+        uid = u.id
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver")
+    tok = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/login").text)
+    r = client.post("/login", data={"username": "sep@example.com",
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": tok.group(1)},
+                    follow_redirects=False)
+    assert r.status_code == 303
+    client.uid = uid
+    try:
+        yield client
+    finally:
+        dbmod.reset_engine()
+
+
+def test_bang_job_noi_VI_SAO_hong(gj3):
+    """Truoc dot nay bang chi noi "error" va dung o do."""
+    body = gj3.get("/admin/job/list").text
+    assert "ProviderTimeout" in body, "khong thay thong bao loi tren bang"
+
+
+def test_bang_job_dan_sang_khach_khong_bat_chep_uuid(gj3):
+    body = gj3.get("/admin/job/list").text
+    assert f'/admin/nguoi-dung?q={gj3.uid}' in body
+
+
+def test_gj3_di_het_duong_tu_hang_doi_toi_khach(gj3):
+    """Tong quan -> "Viec chay hong" -> bang job -> ho so khach.
+
+    Di THAT tung buoc, khong chi kiem tung trang mo duoc.
+    """
+    tq = gj3.get("/admin/").text
+    assert "Việc chạy hỏng" in tq
+    dich = re.search(r'href="(/admin/job/list[^"]*)"', tq)
+    assert dich, "muc hang doi khong tro di dau"
+
+    bang = gj3.get(dich.group(1))
+    assert bang.status_code == 200
+    assert "ProviderTimeout" in bang.text
+
+    ho_so = re.search(r'href="(/admin/nguoi-dung\?q=[^"]+)"', bang.text)
+    assert ho_so, "tu bang job khong sang duoc ho so khach"
+    r = gj3.get(ho_so.group(1).replace("&amp;", "&"))
+    assert r.status_code == 200
+    assert "khach@example.com" in r.text
+
+
+def test_loi_dai_bi_cat_o_danh_sach_nhung_giu_du_o_title(gj3):
+    """Mot traceback dai khong duoc day bang rong ra che moi cot khac."""
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+    dai = "X" * 400
+    gen = dbmod.get_session(); db = next(gen)
+    try:
+        db.add(Job(user_id=gj3.uid, app_slug="a", job_type="b",
+                   status="error", error=dai))
+        db.commit()
+    finally:
+        try: next(gen)
+        except StopIteration: pass
+    body = gj3.get("/admin/job/list").text
+    # Phan NHIN THAY bi cat; ban day du van o `title` de re chuot doc duoc —
+    # cung khuon voi `.adm-id-cat` o bang khach hang.
+    assert f'title="{dai}"' in body, "ban day du phai giu o title"
+    nhin_thay = body.split(f'title="{dai}"')[1][:200]
+    assert "…" in nhin_thay, "o bang phai co dau cat"
+    assert "X" * 71 not in nhin_thay, "phan nhin thay khong duoc qua 70 ky tu"
 
 @@@LTT_PROFILE_FILE_END@@@
 

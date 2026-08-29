@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "ltt-dev",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "uvicorn", "server.app:create_app", "--factory", "--port", "8123"],
+      "port": 8123
+    }
+  ]
+}

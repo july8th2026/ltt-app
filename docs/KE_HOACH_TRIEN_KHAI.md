@@ -3566,17 +3566,26 @@ một lần, và nó bịt **lớp lỗi** thay vì từng ca.
 
 | ID | Việc | Ai làm |
 |---|---|---|
-| **H41.2** | E3 cho 4 trang Golden Journey còn lại. Phải lấy **sau deploy** — production đang chạy `ec6a00c` | phiên sau |
+| ✅ **H41.2** | E3 cho các trang Golden Journey. **Sửa 2026-08-29:** hàng này ghi "treo" trong khi nhật ký 2026-08-26 đã có E3 thật — GJ-1/GJ-2/GJ-6 **PASS** trên `https://app.lttstudios.com` (job thật `23f40fa0`, tiêu 5 credit thật). Nhật ký thắng kế hoạch (`NHAT_KY.md` đầu file) | **GJ-3 cố ý giữ E2**: nghiệm thu nó đòi một giao dịch tiền thật, không phải một hạng mục kỹ thuật |
 | **H41.3** | `hold_expires_at` + tự hoàn ⇒ INV-5 từ *quan sát* thành *bảo đảm*. Đụng schema + đường tiền | cần quyết định |
 | ✅ **H41.4** | `server/api` không còn biết trực tiếp tên app: executor đồng bộ được khai báo trong `ToolSpec`, project sang catalog và resolver generic; `/messages` `/responses` `/chat/completions` dùng cùng adapter app-owned | `60a76bc` + deploy 2026-08-29 |
-| ✅ **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `.codex/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` | **ĐÃ NGHIỆM THU Q6 2026-08-29:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**; cap `65000`, engine `131072`, output `32768`, `parallel=1` đã deploy. Public async canary 7 arm có queue-age p50 `1,062s`, p95 `1,861s`; GPU telemetry 450 mẫu/15 phút, CPU soak `320/320`; over-cap hold được hoàn. Giữ `parallel=1`, chưa rollout rộng. |
+| ✅ **H41.9** | **Admission/queue nhiều API → GPU**: gom async, sync và streaming vào một admission plane; thêm global queue cap, quota-lock chống race, fair scheduler, retry/ambiguous-provider, queue metrics; Q0–Q3 chạy CPU/DB/mock, Q4–Q6 chạy trong cửa sổ GPU độc quyền. Plan chi tiết tại `docs/_luutru/codex_2026-08-27/PLAN_TRIEN_KHAI_NEXUS_QWEN.md` *(dời khỏi `.codex/` ngày 2026-08-29 khi đóng hồ sơ Codex)* | **ĐÃ NGHIỆM THU Q6 2026-08-29:** Q0–Q3 CPU/DB/mock đã khóa; full gate **23/23 PASS**; cap `65000`, engine `131072`, output `32768`, `parallel=1` đã deploy. Public async canary 7 arm có queue-age p50 `1,062s`, p95 `1,861s`; GPU telemetry 450 mẫu/15 phút, CPU soak `320/320`; over-cap hold được hoàn. Giữ `parallel=1`, chưa rollout rộng. |
 | **H41.5** | Khai bề mặt công khai của `upscalevideo` — cạnh cross-product **duy nhất** của cả kho (`taovideo/routes.py:548,577`) | phiên sau |
 | ✅ **H41.6** | Chẻ `server/routes/developer.py` (1.521 dòng / 32 handler) theo use case | `1f0e93c` |
-| **H41.7** | **Bề mặt MVP**: 5/8 app khách ẩn danh thấy vẫn là `lifecycle="development"`. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn | **chủ sản phẩm** |
+| **H41.7** | **Bề mặt MVP**: **6/10** app khách ẩn danh thấy mang nhãn *Đang phát triển*. Bề mặt hôm nay là **mặc định manifest cộng lại**, không do ai chọn. ⚠️ **Sửa 2026-08-29:** con số cũ "5/8" là số của **máy dev** — máy dev thiếu cờ `LTT_VPS`/`LTT_NEXUS` nên đếm hụt hai app. Đo lại trên `https://app.lttstudios.com` (ẩn danh, HTTP 200): 10 thẻ app, 6 nhãn *Đang phát triển* — `agent` `autosubvideo` `chataistudio` `taoanh` `taoclipngan` `vps`; 4 mục `released` — `nexus` `prompt_ai_ommi` `taovideo` `upscalevideo`. Số dùng để quyết phải là số của production | **chủ sản phẩm** |
 | **H41.8** | Cân nhắc đổi mặc định `AppManifest.public` thành `False` — gốc của H41.7: viết một app mới mà không khai gì thì nó **tự lên catalog công khai** | **chủ sản phẩm** |
 
-⛔ **H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
-link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.
+⛔ ~~**H41.2 và mọi phép đo E3 phải chờ deploy.** Production đang chạy `ec6a00c`;
+link 404 `/ltt-llm` **vẫn còn ở đó**, và mọi bản vá của đợt này chưa có.~~
+**ĐÃ QUA 2026-08-29.** Giữ câu cũ để truy vết. Production nay chạy `7bf6ba3`
+(deploy 2026-08-29, `so_deploy` khớp 461 · lệch 0), link 404 `/ltt-llm` đã hết,
+và E3 đã lấy được — xem hàng H41.2 ở trên.
+
+📌 **Thứ tự làm các hàng còn treo, kèm đường phụ thuộc và tiêu chí nghiệm thu
+từng đợt: `docs/KE_HOACH_NOI_TIEP_2026-08-29.md`.** Điểm mấu chốt của tài liệu đó,
+không thấy được nếu chỉ đọc bảng phẳng này: **H41.5 và H35.10 có chung một nút
+thắt là H35.10a** (đo thời lượng phía máy chủ lúc báo giá) — làm một việc rủi ro
+thấp thì mở khoá cả hai.
 
 **Checkpoint Q115 2026-08-28:** public cap đã triển khai thử ở `81000` qua Nexus,
 nhưng canary 80K đo `88.224` token thật và `120,322s`; ladder 70K/65K lần lượt
