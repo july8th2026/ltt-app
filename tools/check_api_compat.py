@@ -124,7 +124,54 @@ def main() -> int:
         "docs/PUBLIC_API/CHANGELOG.md, roi chay:\n"
         "    python tools/check_api_compat.py --accept\n"
         "Lan ghi lai do se hien trong diff — dung cho no phai hien ra.")
+    _canh_bao_ban_chuan_ban()
     return 1
+
+
+def _canh_bao_ban_chuan_ban() -> None:
+    """Noi ro khi ban chuan trong cay KHAC ban da commit.
+
+    ## Vi sao dong nay ton tai
+
+    `tests/test_209_versioning_status.py` phai ghi vao CHINH tep nay de kiem
+    duong day that cua `--accept`. No co `try/finally` de hoan nguyen — nhung
+    `finally` KHONG chay khi tien trinh bi giet (gate qua gio, Ctrl-C, worker
+    chet). Mot luot chay bi ngat de lai tep ban, va lan chay sau do vi mot ly do
+    khong lien quan gi toi viec dang lam:
+
+        [BREAKING] version: api_version changed v0 -> v1
+
+    Ngay 29/08 dieu do xay ra HAI LAN trong mot buoi sang, cho HAI phien khac
+    nhau, va ca hai deu mat thoi gian truy nguoc. Thong bao tren khong sai — no
+    chi khong noi ra kha nang de xay ra nhat.
+
+    ⛔ Ham nay KHONG tu sua tep va KHONG lam diu ket qua: gate van do. No chi
+       them mot cau de nguoi doc biet cho ma nhin.
+    """
+    import subprocess
+
+    try:
+        commit = subprocess.run(
+            ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
+            cwd=ROOT, capture_output=True, text=True, encoding="utf-8",
+            timeout=15)
+    except (OSError, subprocess.SubprocessError):
+        return                      # khong co git thi thoi, dung phan doan
+    if commit.returncode != 0:
+        return
+    if commit.stdout == BASELINE.read_text(encoding="utf-8"):
+        return                      # ban chuan dung bang ban commit -> that su la thay doi ma
+
+    print(
+        "\n⚠️  Ban chuan trong cay KHAC ban da commit.\n"
+        "    Neu ban khong co y sua no, day rat co the la RAC cua mot luot test\n"
+        "    bi ngat: `test_209` ghi vao chinh tep nay va chi hoan nguyen o\n"
+        "    `finally` — thu do khong chay khi tien trinh bi giet.\n"
+        "    Dau hieu nhan ra: ten co tien to `ghost_` hoac HTTP 418.\n"
+        "    Kiem bang:  git diff docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
+        "    Neu la rac:  git checkout -- docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
+        "⛔  DUNG chay `--accept` de cho qua: no ghi lai ban chuan theo ma hien\n"
+        "    tai, nen mot thay doi pha vo tuong thich THAT se bi nuot mat.")
 
 
 if __name__ == "__main__":

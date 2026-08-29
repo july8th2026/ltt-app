@@ -410,3 +410,61 @@ def test_the_webhook_payload_version_is_declared_next_to_the_payload():
         job_id="j1", tool=TOOL, status="succeeded")
     assert set(payload["data"]) == set(webhooks.PAYLOAD_FIELDS)
     assert webhooks.PAYLOAD_VERSION == 1
+
+
+def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test():
+    """Ngay 29/08 cai bay nay cắn HAI phien khac nhau trong mot buoi sang.
+
+    Chinh cac phep kiem trong tep nay phai ghi vao `CONTRACT_BASELINE.json` de
+    kiem duong day that cua `--accept`. Chung co `try/finally` de hoan nguyen —
+    nhung `finally` KHONG chay khi tien trinh bi giet (gate qua gio, Ctrl-C,
+    worker chet). Mot luot bi ngat de lai tep ban, va lan chay sau do vi:
+
+        [BREAKING] version: api_version changed v0 -> v1
+
+    Thong bao do khong sai. No chi khong noi ra kha nang de xay ra nhat, nen ca
+    hai phien deu di truy nguoc mot "su co hop dong API" khong ton tai.
+
+    ⛔ Phep kiem nay chot rang canh bao KHONG lam diu ket qua: gate van tra 1.
+    """
+    saved = BASELINE.read_text(encoding="utf-8")
+    try:
+        body = json.loads(saved)
+        body["api_version"] = "v0"
+        BASELINE.write_text(
+            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n", encoding="utf-8", newline="")
+        result = _checker()
+        assert result.returncode == 1, "canh bao khong duoc lam diu gate"
+        assert "KHAC ban da commit" in result.stdout
+        assert "git checkout" in result.stdout
+        assert "DUNG chay `--accept`" in result.stdout
+    finally:
+        BASELINE.write_text(saved, encoding="utf-8", newline="")
+
+
+def test_ban_chuan_dung_bang_ban_commit_thi_khong_canh_bao_thua():
+    """Mot thay doi hop dong THAT khong duoc bi gan nhan "rac test".
+
+    ⚠️ Phep kiem nay co MOT TIEN DE: ban chuan trong cay phai dang bang ban da
+       commit. Tien de do KHONG luon dung — co luc ai do dang sua hop dong that,
+       hoac mot luot test truoc do de lai rac. Khang dinh mu khi tien de sai la
+       tao ra mot phep kiem do vi ly do khong lien quan gi toi thu no do.
+
+       Nen o day: tien de sai thi BO QUA va noi ro vi sao, khong bao do.
+       (Chinh toi da viet sai lan dau va no do ngay lan chay dau tien.)
+    """
+    import subprocess
+
+    commit = subprocess.run(
+        ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=15)
+    if commit.returncode != 0:
+        pytest.skip("khong doc duoc ban commit cua ban chuan")
+    if commit.stdout != BASELINE.read_text(encoding="utf-8"):
+        pytest.skip("ban chuan trong cay dang khac ban commit — tien de cua "
+                    "phep kiem nay khong con dung")
+
+    result = _checker()
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "KHAC ban da commit" not in result.stdout
