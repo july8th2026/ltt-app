@@ -172,6 +172,16 @@ def _act(client, key_id: str, op: str, *, reason: str, confirm: bool = False):
 PAGES = ("/admin/api-tong-quan", "/admin/api-tai-khoan", "/admin/api-khoa",
          "/admin/api-cong-cu")
 
+#: Every GET page in the API admin domain. Used by the navigation test to prove
+#: the `admin_mvp_v3` sidebar restructure removed no route: twelve sidebar
+#: siblings became one parent with five children plus tabs, and a URL that fell
+#: out of the sidebar is still a URL somebody bookmarked.
+ALL_API_PAGES = ("/admin/api-tong-quan", "/admin/api-tai-khoan", "/admin/api-khoa",
+                 "/admin/api-cong-cu", "/admin/api-chinh-sach",
+                 "/admin/api-kill-switch", "/admin/api-gia", "/admin/api-margin",
+                 "/admin/api-request", "/admin/api-job", "/admin/api-bao-mat",
+                 "/admin/api-trace")
+
 
 # ── Non-admin is blocked ─────────────────────────────────────────────────────
 
@@ -647,12 +657,54 @@ def test_an_unknown_key_or_account_answers_404(console):
 
 
 def test_the_admin_navigation_links_the_api_section(console):
+    """Every API admin page stays reachable after the sidebar was restructured.
+
+    Before `admin_mvp_v3`, all twelve API pages sat as siblings in the admin
+    sidebar and this test asserted every one of them appeared as an ``href`` on
+    the overview. They are now one parent ("API Platform") with five children
+    and a third level of tabs, so the flat assertion no longer describes the
+    navigation. The promise that mattered is unchanged and is asserted harder
+    here: no route was removed, and nothing is more than two hops away.
+
+    Contract: ``docs/admin_mvp_v3/03_IA_FREEZE.md`` §4 — zero routes deleted,
+    zero URLs renamed, zero redirects.
+    """
     _make_user(ADMIN_EMAIL, role="admin")
     _login(console, ADMIN_EMAIL)
-    page = console.get("/admin/api-tong-quan").text
-    for path in PAGES:
-        assert f'href="{path}"' in page, path
-    assert 'aria-current="page"' in page
+
+    # 1. No route was lost. This is the invariant a bookmark depends on, and
+    #    the flat version of this test never actually checked it.
+    for path in ALL_API_PAGES:
+        assert console.get(path).status_code == 200, path
+
+    # 2. Every page is reachable from the overview in at most two hops.
+    #
+    #    `/admin/api-trace` is excluded on purpose, and the exclusion is the
+    #    contract rather than a gap: a trace is a trace OF something, so it is
+    #    only ever linked from a request/job/security row as
+    #    `/admin/api-trace?q=<id>` (see `server/admin_api.py`). With no traffic
+    #    in the database there is no row to open, and putting it in the sidebar
+    #    to satisfy this test would be putting a page there that answers "trace
+    #    of what?" with an empty form — the exact defect
+    #    `test_a_customer_link_from_the_key_page_lands_on_a_real_profile` was
+    #    written for. Contract: `03_IA_FREEZE.md` §3b, row `api_trace` = CTX.
+    navigational = [p for p in ALL_API_PAGES if p != "/admin/api-trace"]
+    overview = console.get("/admin/api-tong-quan").text
+    hop1 = {p for p in navigational if f'href="{p}"' in overview}
+    assert hop1, "the overview links nowhere"
+    reachable = set(hop1)
+    for path in hop1:
+        page = console.get(path).text
+        reachable |= {p for p in navigational if f'href="{p}"' in page}
+    assert reachable >= set(navigational), sorted(set(navigational) - reachable)
+
+    # 2b. The contextual page survives being opened with an id that no longer
+    #     exists — an operator following a link out of an old support message
+    #     gets an answer, not a 500.
+    assert console.get("/admin/api-trace?q=req_khong-ton-tai").status_code == 200
+
+    # 3. Exactly one "you are here" per page — the innermost level owns it.
+    assert overview.count('aria-current="page"') == 1
 
 
 # ── The rules, without an HTTP app ───────────────────────────────────────────

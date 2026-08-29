@@ -61,7 +61,12 @@ def test_sqladmin_uses_shared_carbon_red_tokens(admin_client):
     response = admin_client.get("/admin/user/list")
     assert response.status_code == 200
     body = response.text
-    assert 'href="/static/ltt.css"' in body
+    # ⭐ `?v=` la BAT BUOC, khong phai tuy chon — va truoc `admin_mvp_v3` dong
+    #    nay chot dung truong hop SAI. Trang SQLAdmin nap `ltt.css` khong kem
+    #    phien ban, nen sau moi lan doi CSS no phuc vu ban cu tu Cloudflare toi
+    #    het TTL, trong khi trang tu viet da doi (CLAUDE.md quy tac 6). Loi nay
+    #    da tung lam production hien chip thanh radio tho.
+    assert 'href="/static/ltt.css?v=' in body
     assert "--tblr-primary:#ef3731" in body
     assert 'aria-label="Điều hướng quản trị nhanh"' in body
     assert 'id="sqladmin-content"' in body

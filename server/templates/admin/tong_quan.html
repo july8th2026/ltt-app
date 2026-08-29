@@ -1,0 +1,97 @@
+{# Tổng quan quản trị — câu hỏi duy nhất: "việc gì cần tôi ngay bây giờ?"
+
+   Hợp đồng: `docs/admin_mvp_v3/05_PAGE_CONTRACT_MATRIX.md` P1.
+
+   🔴 KHÔNG CÓ ẢNH THAM CHIẾU CHO TRANG NÀY. Tệp ảnh của nó trong bộ mockup là
+      34 byte chứa `{"detail":"Internal Server Error"}` — hỏng lúc sinh. Ngôn ngữ
+      thị giác ở đây suy từ 9 ảnh còn lại (`06_VISUAL_REFERENCE_CONTRACT.md` §1):
+      danh sách ưu tiên xử lý có chấm màu + nhãn mức + đích, dòng thời gian hoạt
+      động, lưới thẻ điều hướng.
+
+   ⛔ Không có: uptime · SLA · % độ tin cậy · biểu đồ xu hướng · "so với hôm qua"
+      · số worker · queue depth · chuông thông báo. Không read-model nào của nền
+      tảng trả về chúng.
+
+   ⭐ Luật cứng của P1: MỌI mục trong hàng đợi phải mở đúng trang xử lý được nó,
+      kèm bộ lọc đã đặt sẵn. Một hàng đợi mà bấm vào lại ra một trang phải tự lọc
+      tiếp là một danh sách thông báo, không phải một hàng đợi. #}
+
+<div class="adm-content">
+
+  <div class="adm-luoi-rail">
+    <div>
+      <section class="card">
+        <header class="adm-khoi-dau"><h2>Cần xử lý</h2></header>
+
+        {% if hang_doi is none %}
+          <div class="alert alert-warn" role="status">
+            Không đọc được cơ sở dữ liệu, nên trang này không biết có việc gì cần
+            xử hay không. Đây <strong>không</strong> phải là "không có việc gì".
+          </div>
+        {% elif hang_doi %}
+          <ul class="adm-hangdoi">
+            {# Nhãn sống ở ĐÂY, không ở read-model: một read-model mang chuỗi
+               hiển thị thì chuỗi đó nằm ngoài tầm với của bộ dịch. #}
+            {% set NHAN = {
+              'viec_hong': ('Việc chạy hỏng', 'Job ở trạng thái error.'),
+              'don_cho': ('Đơn nạp đang chờ', 'Chưa nhận được xác nhận từ cổng thanh toán.'),
+              'tk_vo_hieu': ('Tài khoản bị vô hiệu hoá', 'Khách không đăng nhập được.')} %}
+            {% for m in hang_doi %}
+            <li>
+              <a href="{{ m.dich }}">
+                <span class="dev-tt {{ m.muc }}">{{ m.so }}</span>
+                <span>
+                  <strong>{{ NHAN[m.ma][0] }}</strong>
+                  <small>{{ NHAN[m.ma][1] }}</small>
+                </span>
+                <span class="adm-hangdoi-mo" aria-hidden="true">→</span>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="dev-trong">
+            <p><strong>Không có việc nào đang chờ.</strong></p>
+            <p>Không job nào lỗi, không đơn nạp nào treo, không tài khoản nào bị
+               vô hiệu hoá.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="card adm-mien-khoi">
+        <header class="adm-khoi-dau"><h2>Khu vực</h2></header>
+        <div class="adm-mien-luoi">
+          {% for m in mien %}
+          <a class="adm-mien" href="{{ m[0] }}">
+            <b>{{ m[1] }}</b><span>{{ m[2] }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+
+    {# Dòng thời gian hoạt động admin — lấy hình từ ảnh 07 (Governance).
+       Đây là dữ liệu THẬT: bảng `nhat_ky_admin`. #}
+    <aside class="adm-rail" aria-labelledby="rail-hoatdong">
+      <h2 id="rail-hoatdong" class="adm-rail-tieu-de">Admin vừa làm gì</h2>
+      {% if nhat_ky is none %}
+        <p class="adm-rail-rong">Không đọc được nhật ký.</p>
+      {% elif nhat_ky %}
+        <ul class="adm-dongthoigian">
+          {% for n in nhat_ky %}
+          <li>
+            <span class="tnum">{{ n.created_at.strftime('%d/%m %H:%M') if n.created_at else '—' }}</span>
+            <div>
+              <strong>{{ n.hanh_dong }}</strong>
+              <small>{{ n.admin_email }}{% if n.doi_tuong %} · {{ n.doi_tuong[:28] }}{% endif %}</small>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="adm-rail-rong"><a href="/admin/nhat-ky-admin/list">Nhật ký đầy đủ →</a></p>
+      {% else %}
+        <p class="adm-rail-rong">Chưa có thao tác admin nào được ghi.</p>
+      {% endif %}
+    </aside>
+  </div>
+</div>

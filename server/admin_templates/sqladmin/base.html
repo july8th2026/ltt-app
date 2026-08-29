@@ -15,7 +15,11 @@
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/select2.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/flatpickr.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('admin:statics', path='css/main.css') }}">
-  <link rel="stylesheet" href="/static/ltt.css">
+  {# Cache-bust BAT BUOC. Truoc day dong nay khong co `?v=`, nen sau moi
+     lan doi `ltt.css` cac trang SQLAdmin phuc vu ban CSS CU tu Cloudflare
+     toi het TTL — trong khi trang tu viet da doi (CLAUDE.md quy tac 6).
+     `asset_ver` duoc bom vao env cua goi o `server/admin.py:setup_admin`. #}
+  <link rel="stylesheet" href="/static/ltt.css?v={{ asset_ver }}">
   {% if admin.favicon_url %}
   <link rel="icon" href="{{ admin.favicon_url }}">
   {% endif %}
@@ -52,10 +56,10 @@
   <a class="skip-link" href="#sqladmin-content">Bỏ qua điều hướng</a>
   <nav class="ltt-adminbar" aria-label="Điều hướng quản trị nhanh">
     <span class="brand"><span class="mark">LTT</span><span>LTT · Quản trị</span></span>
-    <a href="/admin/apikeys">APIKEYS</a>
-    <a href="/admin/user/list">Người dùng</a>
-    <a href="/admin/credit-entry/list">Sổ credit</a>
-    <a href="/admin/job/list">Job</a>
+    {# Dieu huong lay tu MOT nguon: `server/routes/admin/_chung.py`.
+       Truoc day day la nam the <a> viet tay — danh sach thu BA cho cung
+       mot cay, va la danh sach khong ai dong bo khi them trang. #}
+    {% for m in adm_nav %}<a href="{{ m.href }}">{{ m.nhan }}</a>{% endfor %}
     <a class="ltt-back" href="/">Về nền tảng</a>
   </nav>
   <main id="sqladmin-content">

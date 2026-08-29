@@ -289,9 +289,18 @@ def test_trang_chi_tiet_gom_du_bon_thu_ve_mot_nguoi(env):
     html = env.get("/admin/nguoi-dung?q=nv1@x.com").text
     assert "777" in html, "khong hien so du"
     assert "nv1@x.com" in html
-    for muc in ("Số dư", "bút toán credit", "việc gần nhất", "đơn nạp gần nhất",
-                "Phiên đang mở"):
+    # ⭐ Dot `admin_mvp_v3` mo rong trang nay tu NAM khoi len TAM va doi nhan cho
+    #    ro nghia hon ("15 but toan credit gan nhat" -> "Bien dong credit").
+    #    Loi hua thi khong doi, va o day no duoc chot NHIEU hon ban cu: ba khoi
+    #    moi la quyen app, dau vet admin, va bang phien — truoc day phien chi la
+    #    mot con dem, nen "thu hoi phien cua khach nay" van phai sang bang tho va
+    #    loc bang UUID.
+    for muc in ("Số dư", "Biến động credit", "Việc đã chạy", "Đơn nạp",
+                "Phiên đăng nhập", "Quyền app",
+                "Admin đã làm gì với tài khoản này"):
         assert muc in html, f"thieu muc {muc!r}"
+    # Va khong con luong copy UUID: moi don deu bam duoc sang trang don.
+    assert "/admin/don" in html
 
 
 def test_trang_chi_tiet_tim_duoc_bang_UUID(env):

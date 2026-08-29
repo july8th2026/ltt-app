@@ -1,0 +1,32 @@
+{# He thong — chi su that doc duoc. Hop dong P10.
+
+   ⛔ KHONG dung mot bo observability o day. Anh mockup ve uptime 30 ngay, P95
+      tung dich vu, Redis, Object Storage, "Worker 32/32", queue depth va lich
+      bao tri — nen tang khong co nguon cho mot cai nao trong so do. #}
+<div class="adm-content">
+  <div class="adm-luoi-360">
+
+    <section class="card">
+      <header class="adm-khoi-dau"><h2>Nền tảng</h2></header>
+      {% if thong_tin %}
+      <dl class="dev-han-muc">
+        <div><dt>Phiên bản</dt><dd>{{ thong_tin.app_version or '—' }}</dd></div>
+        <div><dt>Cài đặt lúc</dt>
+          <dd class="tnum">{{ thong_tin.installed_at.strftime('%d/%m/%Y %H:%M') if thong_tin.installed_at else '—' }}</dd></div>
+        {% if thong_tin.note %}<div><dt>Ghi chú</dt><dd>{{ thong_tin.note }}</dd></div>{% endif %}
+      </dl>
+      {% else %}
+      <p class="dev-trong">Chưa có bản ghi thông tin nền tảng.</p>
+      {% endif %}
+    </section>
+
+    <section class="card">
+      <header class="adm-khoi-dau"><h2>Tình trạng dịch vụ</h2></header>
+      {# `/status` la trang co authority rieng cua no. Chep lai noi dung o day la
+         tao mot ban thu hai se troi khoi ban goc. #}
+      <p class="adm-dan">Trang tình trạng của nền tảng có nguồn dữ liệu riêng và
+        là nơi duy nhất công bố tình trạng dịch vụ.</p>
+      <p><a class="btn ghost" href="/status">Mở trang tình trạng →</a></p>
+    </section>
+  </div>
+</div>

@@ -36,6 +36,9 @@ import logging
 
 from markupsafe import escape
 from sqladmin import BaseView, expose
+
+from server.routes.admin._chung import (
+    AnTrongMenuSqlAdmin as _AnTrongMenuSqlAdmin)
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
@@ -91,13 +94,35 @@ _COLS = ('<div class="grid" style="grid-template-columns:'
          'repeat(auto-fit,minmax(320px,1fr))">')
 
 
-def _stat(label: str, value, hint: str = "", colour: str = "") -> str:
+def _stat(label: str, value, hint: str = "", colour: str = "",
+          href: str = "") -> str:
+    """Một ô chỉ số. `href` biến nó thành đường đi, không chỉ là một con số.
+
+    ⭐ VÌ SAO THÊM `href`. Trang tổng quan báo "Job hỏng: 7" rồi dừng ở đó — người
+       vận hành đọc được là có chuyện, nhưng không đi tiếp được đâu. Đó là một
+       **ngõ cụt**, và nó phá Golden Journey 4 ngay ở bước đầu: hợp đồng P1 và P6
+       đòi mỗi con số báo hỏng phải mở đúng trang xử lý được nó, **kèm bộ lọc đã
+       đặt sẵn**. Một ô chỉ số mà bấm vào ra một danh sách chưa lọc thì người ta
+       vẫn phải tự lọc lại, tức nó chỉ dời việc đi chỗ khác.
+    """
     style = f';color:{colour}' if colour else ""
     note = (f'<div class="dim" style="font-size:11px">{escape(hint)}</div>'
             if hint else "")
-    return (f'<div class="ui-card"><div class="dim">{escape(label)}</div>'
+    than = (f'<div class="dim">{escape(label)}</div>'
             f'<div class="tnum" style="font-size:24px;font-weight:700{style}">'
-            f'{escape(str(value))}</div>{note}</div>')
+            f'{escape(str(value))}</div>{note}')
+    if href:
+        return f'<a class="ui-card adm-o-link" href="{href}">{than}</a>'
+    return f'<div class="ui-card">{than}</div>'
+
+
+def _cua_so(hours: int) -> str:
+    """Đuôi `?hours=` để đích giữ nguyên cửa sổ thời gian người ta đang xem.
+
+    Bỏ nó đi thì bấm từ ô "7 ngày" sẽ rơi vào một danh sách 24 giờ, và con số
+    không khớp với con số vừa bấm — đúng kiểu làm người ta mất lòng tin vào cả
+    trang."""
+    return f"hours={int(hours)}"
 
 
 def _pager(page, base: str) -> str:
@@ -128,7 +153,7 @@ def _key_badge(status: str) -> str:
     return f'<span class="badge {cls}"><span class="dot"></span>{escape(status)}</span>'
 
 
-class ApiOverviewView(BaseView):
+class ApiOverviewView(_AnTrongMenuSqlAdmin, BaseView):
     """Con số đầu tiên một người vận hành nhìn vào."""
 
     name = "API — Tổng quan"
@@ -154,22 +179,35 @@ class ApiOverviewView(BaseView):
         hooks = data["webhooks"]
         failed = data["requests_failed"]
 
+        cs = _cua_so(hours)
         cards = "".join([
-            _stat("Tài khoản có khoá", data["accounts_with_keys"]),
+            _stat("Tài khoản có khoá", data["accounts_with_keys"],
+                  href="/admin/api-tai-khoan"),
             _stat("Khoá live đang chạy", keys["live"],
-                  f'{keys["test"]} test · {keys["revoked"]} đã thu hồi'),
-            _stat("Project đang hoạt động", data["projects_active"]),
+                  f'{keys["test"]} test · {keys["revoked"]} đã thu hồi',
+                  href="/admin/api-khoa"),
+            _stat("Project đang hoạt động", data["projects_active"],
+                  href="/admin/api-tai-khoan"),
             _stat("Credit khách đã trả", credit["net_charged"],
-                  f'giữ {credit["held"]} · hoàn {credit["refunded"]}'),
-            _stat("Job xong", data["jobs"]["succeeded"], colour=_OK),
-            _stat("Job hỏng", data["jobs"]["failed"],
-                  colour=_ERR if data["jobs"]["failed"] else ""),
+                  f'giữ {credit["held"]} · hoàn {credit["refunded"]}',
+                  href=f"/admin/api-margin?{cs}"),
+            # ⚠️ Hai ô này đếm job TOÀN NỀN TẢNG, không riêng job của API:
+            #    `overview()` không lọc theo `_api`. Nên nhãn phải nói đúng phạm
+            #    vi, và đích phải là bảng job của nền tảng — trỏ sang
+            #    `/admin/api-job` sẽ ra một danh sách nhỏ hơn con số vừa bấm.
+            _stat("Job xong", data["jobs"]["succeeded"], "toàn nền tảng",
+                  colour=_OK, href="/admin/job/list?search=done"),
+            _stat("Job hỏng", data["jobs"]["failed"], "toàn nền tảng",
+                  colour=_ERR if data["jobs"]["failed"] else "",
+                  href="/admin/job/list?search=error"),
             _stat("Lời gọi hỏng", failed,
                   "trong số đã ghi nhật ký",
-                  colour=_ERR if failed else ""),
+                  colour=_ERR if failed else "",
+                  href=f"/admin/api-request?status=failed&{cs}"),
             _stat("Webhook chết", hooks["dead"],
                   f'{hooks["pending"]} đang chờ · {hooks["subscriptions"]} đăng ký',
-                  colour=_ERR if hooks["dead"] else ""),
+                  colour=_ERR if hooks["dead"] else "",
+                  href=f"/admin/api-job?{cs}"),
         ])
 
         dem = do["counters"]
@@ -178,14 +216,19 @@ class ApiOverviewView(BaseView):
         cho_hang_doi = do["latency"].get("queue_pickup_ms", {})
         van_hanh = "".join([
             _stat("Lỗi 5xx", loi_5xx, "nền tảng, không phải khách",
-                  colour=_ERR if loi_5xx else ""),
+                  colour=_ERR if loi_5xx else "",
+                  href=f"/admin/api-request?status=failed&{cs}"),
             _stat("Xác thực hỏng", xac_thuc_hong, "khoá sai hoặc đã thu hồi",
-                  colour=_ERR if xac_thuc_hong else ""),
-            _stat("Bị chặn nhịp", dem.get("rate_limited", 0)),
-            _stat("Bị công tắc chặn", dem.get("kill_switch_refused", 0)),
+                  colour=_ERR if xac_thuc_hong else "",
+                  href=f"/admin/api-bao-mat?{cs}"),
+            _stat("Bị chặn nhịp", dem.get("rate_limited", 0),
+                  href=f"/admin/api-bao-mat?{cs}"),
+            _stat("Bị công tắc chặn", dem.get("kill_switch_refused", 0),
+                  href="/admin/api-kill-switch"),
             _stat("Hết chỗ tài nguyên", dem.get("capacity_refused", 0)),
             _stat("Webhook gửi hỏng", dem.get("webhook_failed", 0),
-                  colour=_ERR if dem.get("webhook_failed") else ""),
+                  colour=_ERR if dem.get("webhook_failed") else "",
+                  href=f"/admin/api-job?{cs}"),
             _stat("Chờ vào hàng đợi",
                   f'{cho_hang_doi.get("avg_ms", 0)} ms',
                   f'cao nhất {cho_hang_doi.get("max_ms", 0)} ms'),
@@ -203,7 +246,9 @@ class ApiOverviewView(BaseView):
         ])
 
         codes = "".join(
-            f'<tr><td class="mono">{escape(code)}</td>'
+            f'<tr><td class="mono">'
+            f'<a href="/admin/api-request?code={escape(code)}&{cs}">'
+            f'{escape(code)}</a></td>'
             f'<td class="tnum">{count}</td></tr>'
             for code, count in data["failures_by_code"])
         codes = codes or ('<tr><td colspan="2" class="muted">Không có lời gọi '
@@ -213,7 +258,13 @@ class ApiOverviewView(BaseView):
         for row in by_tool:
             total = row["done"] + row["error"] + row["other"]
             colour = _ERR if row["error"] else _OK
-            tools += (f'<tr><td class="mono">{escape(row["job_type"])}</td>'
+            # ⚠️ `jobs_by_tool` gom theo `Job.job_type`; `jobs_page(tool=)` lọc
+            #    theo TÊN TOOL API trong `params._api.tool`. Hai định danh khác
+            #    nhau, nên `?tool=<job_type>` sẽ luôn ra danh sách rỗng. Đích
+            #    đúng là bảng job của nền tảng, nơi `job_type` là cột tìm được.
+            _t = escape(row["job_type"])
+            tools += (f'<tr><td class="mono">'
+                      f'<a href="/admin/job/list?search={_t}">{_t}</a></td>'
                       f'<td class="tnum">{total}</td>'
                       f'<td class="tnum" style="color:{colour}">{row["error"]}'
                       f'</td></tr>')
@@ -227,7 +278,6 @@ class ApiOverviewView(BaseView):
                              (720, "30 ngày")))
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span></div>'
             f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Tổng quan</h1>'
             f'<p>Số liệu {escape(str(hours))} giờ gần nhất. Nhật ký request chỉ '
@@ -255,7 +305,7 @@ class ApiOverviewView(BaseView):
                                          body))
 
 
-class ApiAccountsView(BaseView):
+class ApiAccountsView(_AnTrongMenuSqlAdmin, BaseView):
     """Ai đang dùng API, và một trang gom mọi thứ về một người trong số họ."""
 
     name = "API — Tài khoản"
@@ -297,7 +347,6 @@ class ApiAccountsView(BaseView):
 
         base = f'/admin/api-tai-khoan?q={escape(query)}'
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span></div>'
             f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Tài khoản</h1>'
             f'<p>Chỉ những tài khoản đã cấp ít nhất một khoá API. Danh sách '
@@ -375,8 +424,7 @@ class ApiAccountsView(BaseView):
         ])
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>{escape(user.email)}</h1>'
             f'<p class="mono muted">{escape(user.id)}</p></div>'
             f'<div class="actions">'
@@ -412,7 +460,7 @@ class ApiAccountsView(BaseView):
         return HTMLResponse(_admin_shell(user.email, "api_accounts", body))
 
 
-class ApiKeysAdminView(BaseView):
+class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
     """Mọi credential của khách, và hai thao tác một người vận hành cần."""
 
     name = "API — Khoá"
@@ -474,8 +522,7 @@ class ApiKeysAdminView(BaseView):
         base = (f'/admin/api-khoa?q={escape(query)}&status={escape(status)}'
                 f'&mode={escape(mode)}')
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Khoá</h1>'
             f'<p>Máy chủ chỉ giữ dấu vân tay một chiều của khoá, nên không có '
             f'đường nào xem lại được chuỗi bí mật — kể cả từ đây. Khách mất '
@@ -483,7 +530,7 @@ class ApiKeysAdminView(BaseView):
             f'<form method="get" class="job-filters">'
             f'<input name="q" value="{escape(query)}" '
             f'placeholder="email, mã khoá hoặc tên…">'
-            f'<select name="status">{status_options}</select>'
+            f'<select name="status" aria-label="Lọc theo kết quả">{status_options}</select>'
             f'<select name="mode">{mode_options}</select>'
             f'<button class="btn ghost sm">Lọc</button></form>'
             f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
@@ -577,8 +624,7 @@ class ApiKeysAdminView(BaseView):
             return " ".join(f'<code>{escape(v)}</code>' for v in values) or "—"
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1 class="mono">{escape(snapshot["key_id"])}</h1>'
             f'<p>{escape(snapshot["name"] or "không đặt tên")} · '
             f'<a href="/admin/api-tai-khoan?user={escape(snapshot["user_id"])}">'
@@ -650,7 +696,7 @@ class ApiKeysAdminView(BaseView):
         return RedirectResponse(back, status_code=303)
 
 
-class ApiToolsView(BaseView):
+class ApiToolsView(_AnTrongMenuSqlAdmin, BaseView):
     """Tool nào đang mở, mở theo luật nào, và nó đang chạy ra sao."""
 
     name = "API — Công cụ"
@@ -679,12 +725,29 @@ class ApiToolsView(BaseView):
             colour = _ERR if row["failed"] else ""
             failed = (f'<span style="color:{colour}">{row["failed"]}</span>'
                       if colour else str(row["failed"]))
-            rows += (f'<tr><td class="mono">{escape(row["name"])} {dep}</td>'
+            # ⭐ Trước đợt này trang Governance KHÔNG có một liên kết nào — cả ba
+            #    trang (Công cụ, Chính sách, Kill switch) đều là ngõ cụt. Hợp
+            #    đồng P7 đòi từ một tool đi được sang giá của nó và sang lời gọi
+            #    thật của nó.
+            #
+            #    ⚠️ Ở đây `row["name"]` LÀ tên tool API (`image.ltt`), nên
+            #       `?tool=` khớp đúng với `jobs_page`. Khác với bảng "job theo
+            #       loại" ở trang Tổng quan, nơi khoá là `Job.job_type` — dùng
+            #       nhầm định danh ở đó sẽ ra một danh sách rỗng trả 200.
+            _n = escape(row["name"])
+            rows += (f'<tr><td class="mono">'
+                     f'<a href="/admin/api-gia?tool={_n}">{_n}</a> {dep}</td>'
                      f'<td>{escape(row["app"])}</td>'
                      f'<td class="mono muted">{escape(row["execution_mode"])}'
                      f'</td><td>{state}</td>'
-                     f'<td class="tnum">{row["calls"]}</td>'
-                     f'<td class="tnum">{failed}</td></tr>')
+                     f'<td class="tnum">'
+                     + (f'<a href="/admin/api-job?tool={_n}&hours={hours}">'
+                        f'{row["calls"]}</a>' if row["calls"] else "0")
+                     + '</td><td class="tnum">'
+                     + (f'<a href="/admin/api-request?q={_n}&status=failed'
+                        f'&hours={hours}" style="color:{_ERR}">{row["failed"]}'
+                        f'</a>' if row["failed"] else failed)
+                     + '</td></tr>')
         rows = rows or ('<tr><td colspan="6" class="muted" '
                         'style="padding:26px;text-align:center">'
                         'Chưa app nào khai tool ra API công khai.</td></tr>')
@@ -694,8 +757,7 @@ class ApiToolsView(BaseView):
                              for name in exposed) or "<em>rỗng</em>"
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Công cụ</h1>'
             f'<p>Hai điều kiện phải cùng đúng thì một tool mới gọi được: app '
             f'khai <code>api_exposed</code>, <b>và</b> deployment liệt kê nó '
@@ -744,7 +806,7 @@ def _reason_form(action: str, token: str, op: str, label: str, *,
             f'<button class="{cls}">{escape(label)}</button></form>')
 
 
-class ApiPolicyView(BaseView):
+class ApiPolicyView(_AnTrongMenuSqlAdmin, BaseView):
     """Hạn mức: ai được gọi bao nhiêu, và con số đó đến từ đâu."""
 
     name = "API - Chinh sach"
@@ -776,10 +838,22 @@ class ApiPolicyView(BaseView):
         rows_html = ""
         for item in data:
             row = item["policy"]
-            targets = " ".join(
-                f'<code>{escape(a.scope)}:{escape(a.subject_id[:8])}</code>'
-                for a in item["assignments"]) or (
-                    '<span class="muted">chưa gán</span>')
+            # Cột "gán cho" từng là `scope:8-ky-tu-dau-cua-UUID` dạng chữ trần.
+            # Trong lúc điều tra "vì sao khách này bị chặn nhịp", tám ký tự đó
+            # không nói lên ai và phải chép sang trang khác — đúng luồng mà hợp
+            # đồng P7 (và GJ1) nói phải hết.
+            def _gan(a) -> str:
+                dich = {"user": "/admin/nguoi-dung?q=",
+                        "key": "/admin/api-khoa?key=",
+                        "project": "/admin/api-tai-khoan?user="}.get(a.scope)
+                nhan = f'{escape(a.scope)}:{escape(a.subject_id[:8])}'
+                if not dich:
+                    return f'<code>{nhan}</code>'
+                return (f'<a href="{dich}{escape(a.subject_id)}">'
+                        f'<code>{nhan}</code></a>')
+
+            targets = " ".join(_gan(a) for a in item["assignments"]) or (
+                '<span class="muted">chưa gán</span>')
             default = ('<span class="chip i">mặc định</span>'
                        if row.is_default else "")
             rows_html += (
@@ -815,8 +889,7 @@ class ApiPolicyView(BaseView):
             f'{escape(item["policy"].name)}</option>' for item in data)
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Chính sách</h1>'
             f'<p>Chuỗi ưu tiên: <code>global → tier → user → project → '
             f'credential → tool</code>. Ô trống nghĩa là <b>kế thừa</b> bước '
@@ -850,7 +923,7 @@ class ApiPolicyView(BaseView):
             f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
             f'<input type="hidden" name="op" value="assign">'
             f'<p><select name="policy_id">{choices}</select> '
-            f'<select name="scope"><option value="user">user</option>'
+            f'<select name="scope" aria-label="Phạm vi công tắc"><option value="user">user</option>'
             f'<option value="project">project</option>'
             f'<option value="key">key</option></select> '
             f'<input name="subject_id" placeholder="id của đối tượng" required> '
@@ -923,7 +996,7 @@ def _apply_policy_op(db, op: str, form) -> str:
     raise KeyError(op)
 
 
-class ApiKillSwitchView(BaseView):
+class ApiKillSwitchView(_AnTrongMenuSqlAdmin, BaseView):
     """Công tắc sự cố: tắt cái gì, vì sao, và tới bao giờ."""
 
     name = "API - Kill switch"
@@ -945,9 +1018,23 @@ class ApiKillSwitchView(BaseView):
 
         rows_html = ""
         for row in rows:
+            # Một công tắc phạm vi `tool` chặn ĐÚNG một tool. Trong lúc xử sự
+            # cố, câu ngay sau "cái gì đang bị chặn" là "nó đang ảnh hưởng ai" —
+            # nên `subject` phải dẫn sang chính tool đó, không phải là chữ trần.
+            _dich = {
+                "tool": "/admin/api-job?tool=",
+                "user": "/admin/nguoi-dung?q=",
+                "key": "/admin/api-khoa?key=",
+            }.get(row.scope)
+            o_subject = (
+                f'<td class="mono">'
+                f'<a href="{_dich}{escape(row.subject)}">'
+                f'{escape(row.subject)}</a></td>'
+                if row.subject and _dich
+                else f'<td class="mono">{escape(row.subject or "—")}</td>')
             rows_html += (
                 f'<tr><td><code>{escape(row.scope)}</code></td>'
-                f'<td class="mono">{escape(row.subject or "—")}</td>'
+                f'{o_subject}'
                 f'<td>{escape(row.reason)}</td>'
                 f'<td class="muted">{escape(row.created_by or "—")}</td>'
                 f'<td class="muted">{_when(row.created_at)}</td>'
@@ -962,8 +1049,7 @@ class ApiKillSwitchView(BaseView):
         options = "".join(f'<option value="{scope}">{scope}</option>'
                           for scope in KILL_SCOPES)
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Kill switch</h1>'
             f'<p>Công tắc <b>không phải</b> hạn mức đặt về 0. Hạn mức là chính '
             f'sách thường trực; công tắc là công cụ xử lý sự cố — có người bật, '
@@ -978,7 +1064,7 @@ class ApiKillSwitchView(BaseView):
             f'<form method="post" action="/admin/api-kill-switch-action">'
             f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
             f'<input type="hidden" name="op" value="engage">'
-            f'<p><select name="scope">{options}</select> '
+            f'<p><select name="scope" aria-label="Phạm vi công tắc">{options}</select> '
             f'<input name="subject" size="46" placeholder="đối tượng (bỏ trống '
             f'với global_writes / maintenance)"></p>'
             f'<p><input name="reason" size="60" required '
@@ -1054,7 +1140,7 @@ class ApiKillSwitchView(BaseView):
         return RedirectResponse(back, status_code=303)
 
 
-class ApiPricingView(BaseView):
+class ApiPricingView(_AnTrongMenuSqlAdmin, BaseView):
     """Giá hiện tại, giá sắp tới, giá đã qua — và một chỗ thử không tốn tiền."""
 
     name = "API - Gia"
@@ -1145,8 +1231,7 @@ class ApiPricingView(BaseView):
                    f'. Không sinh báo giá, không trừ credit.</p>')
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Giá</h1>'
             f'<p>Phiên bản giá <b>không</b> tính giá. Giá vẫn do '
             f'<code>credit_cost()</code> của app tính; phiên bản ghi lại chế độ '
@@ -1281,7 +1366,7 @@ def _example_input(tool) -> dict:
         return {}
 
 
-class ApiMarginView(BaseView):
+class ApiMarginView(_AnTrongMenuSqlAdmin, BaseView):
     """Doanh thu từ sổ credit, chi phí là ước lượng — và nói rõ điều đó."""
 
     name = "API - Margin"
@@ -1344,8 +1429,7 @@ class ApiMarginView(BaseView):
             for h, label in ((24, "24 giờ"), (168, "7 ngày"), (720, "30 ngày")))
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Margin</h1>'
             f'<p><b>Doanh thu</b> lấy từ sổ credit: đó là số khách thật sự bị '
             f'tính, và là chân lý thanh toán. <b>Chi phí</b> ở đây là '
@@ -1364,7 +1448,7 @@ class ApiMarginView(BaseView):
         return HTMLResponse(_admin_shell("API - Margin", "api_margin", body))
 
 
-class ApiRequestsView(BaseView):
+class ApiRequestsView(_AnTrongMenuSqlAdmin, BaseView):
     """Lời gọi đã ghi, của mọi tài khoản."""
 
     name = "API - Request"
@@ -1393,15 +1477,32 @@ class ApiRequestsView(BaseView):
             row = item["row"]
             colour = _ERR if row.status >= 400 else ""
             style = f' style="color:{colour}"' if colour else ""
+            # Cột tài khoản từng là chữ trần: người điều tra đọc được email rồi
+            # phải tự chép sang một trang khác. Hợp đồng P8 đòi một request dẫn
+            # được sang ngữ cảnh của khách và của khoá.
+            o_khach = (
+                f'<td><a href="/admin/nguoi-dung?q={escape(row.user_id)}">'
+                f'{escape(item["email"])}</a> '
+                f'<a class="muted" style="font-size:11px" '
+                f'href="/admin/api-tai-khoan?user={escape(row.user_id)}">'
+                f'(API)</a></td>'
+                if item["email"] else '<td class="muted">—</td>')
+            # Mã lỗi lọc chính danh sách này: "còn bao nhiêu lời gọi nữa hỏng
+            # cùng kiểu" là câu hỏi ngay sau khi thấy một mã lạ.
+            o_ma = (
+                f'<td class="mono muted">'
+                f'<a href="/admin/api-request?code={escape(row.code)}'
+                f'&hours={hours}">{escape(row.code)}</a></td>'
+                if row.code else '<td class="mono muted"></td>')
             rows += (
                 f'<tr><td class="muted">{_when(row.created_at)}</td>'
                 f'<td class="mono">'
                 f'<a href="/admin/api-trace?q={escape(row.request_id)}">'
                 f'{escape(row.request_id[:12])}</a></td>'
-                f'<td>{escape(item["email"] or "—")}</td>'
+                f'{o_khach}'
                 f'<td class="mono">{escape(row.method)} {escape(row.route)}</td>'
                 f'<td class="tnum"{style}>{row.status}</td>'
-                f'<td class="mono muted">{escape(row.code or "")}</td>'
+                f'{o_ma}'
                 f'<td class="tnum">{row.latency_ms}</td>'
                 f'<td class="tnum">{row.credit_delta}</td></tr>')
         rows = rows or ('<tr><td colspan="8" class="muted" '
@@ -1411,8 +1512,7 @@ class ApiRequestsView(BaseView):
         base = (f'/admin/api-request?q={escape(query)}&status={escape(status)}'
                 f'&code={escape(code)}&hours={hours}')
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Request</h1>'
             f'<p>Nhật ký này chỉ ghi <b>lời gọi hỏng</b> và <b>lời gọi ghi dữ '
             f'liệu</b> (EXT-09) — một quyết định về thông lượng, không phải '
@@ -1421,14 +1521,14 @@ class ApiRequestsView(BaseView):
             f'<form method="get" class="job-filters">'
             f'<input name="q" value="{escape(query)}" '
             f'placeholder="correlation id, khoá, route, tool…">'
-            f'<select name="status">'
+            f'<select name="status" aria-label="Lọc theo kết quả">'
             f'<option value="">mọi kết quả</option>'
             f'<option value="failed"{" selected" if status == "failed" else ""}>'
             f'chỉ hỏng</option>'
             f'<option value="ok"{" selected" if status == "ok" else ""}>'
             f'chỉ thành công</option></select>'
             f'<input name="code" value="{escape(code)}" placeholder="mã lỗi">'
-            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<input name="hours" value="{hours}" style="width:90px" aria-label="Số giờ gần nhất">'
             f'<button class="btn ghost sm">Lọc</button></form>'
             f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
             f'<th>Lúc</th><th>Correlation</th><th>Tài khoản</th><th>Route</th>'
@@ -1438,7 +1538,7 @@ class ApiRequestsView(BaseView):
         return HTMLResponse(_admin_shell("API - Request", "api_requests", body))
 
 
-class ApiJobsView(BaseView):
+class ApiJobsView(_AnTrongMenuSqlAdmin, BaseView):
     """Job của khu API, kèm ba con số trang khách không bao giờ thấy."""
 
     name = "API - Job"
@@ -1472,9 +1572,16 @@ class ApiJobsView(BaseView):
                 f'<tr><td class="mono">'
                 f'<a href="/admin/api-trace?q={escape(job.id)}">'
                 f'{escape(job.id[:12])}</a></td>'
-                f'<td>{escape(item["email"] or "—")}</td>'
-                f'<td class="mono">{escape(item["tool"] or "—")}</td>'
-                f'<td>{escape(job.status)}</td>'
+                # Cùng lý do như bảng request: một job hỏng phải dẫn được sang
+                # khách và sang tool, chứ không dừng ở hai dòng chữ trần.
+                + (f'<td><a href="/admin/nguoi-dung?q={escape(job.user_id)}">'
+                   f'{escape(item["email"])}</a></td>'
+                   if item["email"] else '<td class="muted">—</td>')
+                + (f'<td class="mono">'
+                   f'<a href="/admin/api-job?tool={escape(item["tool"])}'
+                   f'&hours={hours}">{escape(item["tool"])}</a></td>'
+                   if item["tool"] else '<td class="muted">—</td>')
+                + f'<td>{escape(job.status)}</td>'
                 f'<td class="tnum">{ms(item["queue_delay_ms"])}</td>'
                 f'<td class="tnum">{ms(item["run_ms"])}</td>'
                 f'<td class="mono muted">{escape(job.worker_id or "—")}</td>'
@@ -1500,8 +1607,7 @@ class ApiJobsView(BaseView):
         base = (f'/admin/api-job?status={escape(status)}&tool={escape(tool)}'
                 f'&hours={hours}')
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Job</h1>'
             f'<p><b>Chờ hàng đợi</b> tách "chúng ta chậm" khỏi "hàng đợi đầy" — '
             f'ngã rẽ đầu tiên của gần như mọi khiếu nại về độ trễ. Ba cột '
@@ -1511,7 +1617,7 @@ class ApiJobsView(BaseView):
             f'<input name="status" value="{escape(status)}" '
             f'placeholder="trạng thái"> '
             f'<input name="tool" value="{escape(tool)}" placeholder="tool"> '
-            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<input name="hours" value="{hours}" style="width:90px" aria-label="Số giờ gần nhất">'
             f'<button class="btn ghost sm">Lọc</button></form>'
             f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
             f'<th>Job</th><th>Tài khoản</th><th>Tool</th><th>Trạng thái</th>'
@@ -1529,7 +1635,7 @@ class ApiJobsView(BaseView):
         return HTMLResponse(_admin_shell("API - Job", "api_jobs", body))
 
 
-class ApiSecurityView(BaseView):
+class ApiSecurityView(_AnTrongMenuSqlAdmin, BaseView):
     """Những lần bị từ chối trước khi kịp thành một request."""
 
     name = "API - Bao mat"
@@ -1625,8 +1731,7 @@ class ApiSecurityView(BaseView):
             for h, label in ((1, "1 giờ"), (24, "24 giờ"), (168, "7 ngày")))
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Bảo mật</h1>'
             f'<p>Những lần bị từ chối <b>trước khi</b> kịp thành một request có '
             f'chủ. Trước EXT-16 chúng chỉ vào file log, nên "có ai đang dò khoá "'
@@ -1659,7 +1764,7 @@ class ApiSecurityView(BaseView):
             + f'</tbody></table></div></section></div>'
             f'<form method="get" class="job-filters">'
             f'<select name="kind">{kinds}</select>'
-            f'<input name="hours" value="{hours}" style="width:90px">'
+            f'<input name="hours" value="{hours}" style="width:90px" aria-label="Số giờ gần nhất">'
             f'<button class="btn ghost sm">Lọc</button></form>'
             f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
             f'<th>Lúc</th><th>Loại</th><th>Địa chỉ</th><th>Khoá đã thử</th>'
@@ -1668,7 +1773,7 @@ class ApiSecurityView(BaseView):
         return HTMLResponse(_admin_shell("API - Bao mat", "api_security", body))
 
 
-class ApiTraceView(BaseView):
+class ApiTraceView(_AnTrongMenuSqlAdmin, BaseView):
     """Một lời gọi, từ đầu đến cuối, từ bất kỳ mẩu định danh nào."""
 
     name = "API - Truy vet"
@@ -1686,8 +1791,7 @@ class ApiTraceView(BaseView):
             _close(gen)
 
         body = (
-            f'<div class="adm-top"><span class="eyebrow">API platform</span>'
-            f'</div><div class="adm-content"><div class="pagehead"><div>'
+            f'<div class="adm-content"><div class="pagehead"><div>'
             f'<h1>API — Truy vết</h1>'
             f'<p>Dán vào đây bất kỳ thứ gì khách đưa: correlation id, job id, '
             f'mã khoá, id project, email — hoặc một địa chỉ IP. Tất cả dẫn về '
@@ -1876,22 +1980,12 @@ VIEWS = (ApiOverviewView, ApiAccountsView, ApiKeysAdminView, ApiToolsView,
          ApiPolicyView, ApiKillSwitchView, ApiPricingView, ApiMarginView,
          ApiRequestsView, ApiJobsView, ApiSecurityView, ApiTraceView)
 
-#: Mục điều hướng cho vỏ quản trị, chèn vào `_ADM_NAV`.
-#: Hai chữ cái là thứ người ta nhận ra trước khi đọc nhãn, nên chúng phải khác
-#: nhau: "AK" đã là APIKEYS (khoá của NỀN TẢNG) — dùng lại nó cho khoá của
-#: KHÁCH là đúng hai thứ dễ nhầm nhất lại trông giống nhau nhất.
-NAV = (
-    ("__grp__", "", "API platform", ""),
-    ("/admin/api-tong-quan", "AT", "API — Tổng quan", "api_overview"),
-    ("/admin/api-tai-khoan", "TK", "API — Tài khoản", "api_accounts"),
-    ("/admin/api-khoa", "KH", "API — Khoá", "api_keys"),
-    ("/admin/api-cong-cu", "CC", "API — Công cụ", "api_tools"),
-    ("/admin/api-chinh-sach", "CS", "API — Chính sách", "api_policy"),
-    ("/admin/api-kill-switch", "KS", "API — Kill switch", "api_kill"),
-    ("/admin/api-gia", "GI", "API — Giá", "api_pricing"),
-    ("/admin/api-margin", "MG", "API — Margin", "api_margin"),
-    ("/admin/api-request", "RQ", "API — Request", "api_requests"),
-    ("/admin/api-job", "AJ", "API — Job", "api_jobs"),
-    ("/admin/api-bao-mat", "BM", "API — Bảo mật", "api_security"),
-    ("/admin/api-trace", "TV", "API — Truy vết", "api_trace"),
-)
+# 🔴 `NAV` ĐÃ BỊ GỠ. Mười hai mục "API — ..." từng được chèn thẳng vào
+# `server/admin.py:_ADM_NAV`, tức MỘT miền chiếm 48% thanh bên quản trị và người
+# xử sự cố phải tự đoán trong mười hai mục cùng tiền tố cái nào chứa câu trả
+# lời. Chúng nay là MỘT mục cha "API Platform" với năm mục con
+# (Overview/Access/Governance/Operations/Economics) — không route nào bị xoá,
+# không URL nào đổi.
+#
+# Nguồn điều hướng duy nhất: `server/routes/admin/_chung.py`.
+# Bố cục đã đóng băng: `docs/admin_mvp_v3/03_IA_FREEZE.md` §3b.

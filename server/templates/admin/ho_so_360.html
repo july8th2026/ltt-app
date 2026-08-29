@@ -1,0 +1,274 @@
+{# Hồ sơ khách hàng 360 — trang trung tâm của Golden Journey 1.
+
+   Hợp đồng: `docs/admin_mvp_v3/05_PAGE_CONTRACT_MATRIX.md` P3.
+
+   ⛔ KHÔNG có: ngày sinh · số điện thoại · địa chỉ · quốc gia · KYC · ghi chú hỗ
+      trợ · gói dịch vụ / gia hạn · ảnh đại diện · success rate · rate limit · vị
+      trí địa lý của phiên. Ảnh mockup có cả mười một, và bảng `users` không có
+      MỘT trường nào trong số đó. `test_317` grep tệp này.
+
+   ⭐ Hành động nguy hiểm KHÔNG dồn vào một thanh nút ở đầu trang như ảnh vẽ.
+      Chúng ở cuối, tách theo mức nguy hiểm, mỗi cái kèm hệ quả viết bằng chữ.
+      Bốn nút đỏ cạnh nhau ở đầu trang là bốn cách bấm nhầm. #}
+
+<div class="adm-content">
+
+{% if not ho_so %}
+  <div class="dev-trong">
+    {% if tim %}
+      <p><strong>Không tìm thấy tài khoản <code>{{ tim }}</code>.</strong></p>
+      <p>Tra bằng email đầy đủ hoặc User ID. Nếu không chắc, mở
+         <a href="/admin/khach-hang">danh sách khách hàng</a> và lọc.</p>
+    {% else %}
+      <p><strong>Gõ email hoặc User ID để xem hồ sơ.</strong></p>
+      <p>Ô tìm ở thanh trên cũng dẫn tới đây.</p>
+      <p><a class="btn ghost" href="/admin/khach-hang">Mở danh sách khách hàng</a></p>
+    {% endif %}
+  </div>
+{% else %}
+
+  {% set u = ho_so.user %}
+
+  {# ── Dải nhận dạng ─────────────────────────────────────────────────── #}
+  <div class="card adm-nhandang">
+    <div>
+      <span class="eyebrow">Tài khoản</span>
+      <strong>{{ u.email }}</strong>
+      <span class="dev-id">{{ u.id }}</span>
+    </div>
+    <div>
+      <span class="eyebrow">Trạng thái</span>
+      {% if not u.is_active %}<span class="dev-tt loi">Đã vô hiệu hoá</span>
+      {% elif not u.is_verified %}<span class="dev-tt canh">Chưa xác thực email</span>
+      {% else %}<span class="dev-tt ok">Hoạt động</span>{% endif %}
+    </div>
+    <div>
+      <span class="eyebrow">Vai trò</span>
+      <strong>{{ u.role or 'user' }}</strong>
+    </div>
+    <div>
+      <span class="eyebrow">Số dư</span>
+      <strong class="tnum">{{ "{:,}".format(ho_so.so_du) }} credit</strong>
+    </div>
+    <div>
+      <span class="eyebrow">Đăng nhập cuối</span>
+      <strong class="tnum">{{ u.last_login_at.strftime('%d/%m/%Y %H:%M') if u.last_login_at else 'chưa bao giờ' }}</strong>
+    </div>
+  </div>
+
+  <div class="adm-luoi-360">
+
+    {# ── Sổ credit ──────────────────────────────────────────────────── #}
+    <section class="card">
+      <header class="adm-khoi-dau">
+        <h2>Biến động credit</h2>
+        <a href="/admin/credit-entry/list">Sổ đầy đủ →</a>
+      </header>
+      {% if ho_so.but_toan %}
+      <div class="dev-bang">
+        <table class="table">
+          <thead><tr><th>Lúc</th><th>Loại</th><th class="tnum">Δ</th><th>Ghi chú</th></tr></thead>
+          <tbody>
+            {% for b in ho_so.but_toan %}
+            <tr>
+              <td class="tnum">{{ b.created_at.strftime('%d/%m %H:%M') if b.created_at else '—' }}</td>
+              <td>{{ b.kind }}</td>
+              <td class="tnum">{{ '{:+,}'.format(b.delta) }}</td>
+              <td>{{ (b.note or '')[:70] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="dev-trong">Chưa có bút toán nào.</p>
+      {% endif %}
+    </section>
+
+    {# ── Đơn nạp ────────────────────────────────────────────────────── #}
+    <section class="card">
+      <header class="adm-khoi-dau">
+        <h2>Đơn nạp</h2>
+        <a href="/admin/don">Tất cả đơn →</a>
+      </header>
+      {% if ho_so.don %}
+      <div class="dev-bang">
+        <table class="table">
+          <thead><tr><th>Mã đơn</th><th class="tnum">Tiền</th><th class="tnum">Credit</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
+          <tbody>
+            {% for d in ho_so.don %}
+            <tr>
+              <td class="tnum"><a href="/admin/don?q={{ d.order_code }}">{{ d.order_code }}</a></td>
+              {# Hai don vi, hai cot. Khong tron. #}
+              <td class="tnum">{{ "{:,}".format(d.price_vnd) }} đ</td>
+              <td class="tnum">{{ "{:,}".format(d.credits) }} credit</td>
+              <td>
+                {% if d.status == 'paid' %}<span class="dev-tt ok">Đã trả</span>
+                {% elif d.status == 'pending' %}<span class="dev-tt canh">Đang chờ</span>
+                {% else %}<span class="dev-tt tat">{{ d.status }}</span>{% endif %}
+              </td>
+              <td class="tnum">{{ d.created_at.strftime('%d/%m %H:%M') if d.created_at else '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="dev-trong">Khách chưa nạp lần nào.</p>
+      {% endif %}
+    </section>
+
+    {# ── Việc đã chạy ───────────────────────────────────────────────── #}
+    <section class="card">
+      <header class="adm-khoi-dau">
+        <h2>Việc đã chạy</h2>
+        <a href="/admin/job/list">Tất cả job →</a>
+      </header>
+      {% if ho_so.viec %}
+        {% if ho_so.viec_hong %}
+        <p><span class="dev-tt loi">{{ ho_so.viec_hong }}</span> việc hỏng trong {{ ho_so.viec|length }} việc gần nhất.</p>
+        {% endif %}
+        <div class="dev-bang">
+          <table class="table">
+            <thead><tr><th>Lúc</th><th>App</th><th>Loại</th><th>Trạng thái</th></tr></thead>
+            <tbody>
+              {% for j in ho_so.viec %}
+              <tr>
+                <td class="tnum">{{ j.created_at.strftime('%d/%m %H:%M') if j.created_at else '—' }}</td>
+                <td>{{ j.app_slug or '—' }}</td>
+                <td>{{ j.job_type or '—' }}</td>
+                <td>
+                  {% if j.status == 'error' %}<span class="dev-tt loi">lỗi</span>
+                  {% elif j.status == 'done' %}<span class="dev-tt ok">xong</span>
+                  {% else %}<span class="dev-tt canh">{{ j.status }}</span>{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+      <p class="dev-trong">Khách chưa chạy việc nào.</p>
+      {% endif %}
+    </section>
+
+    {# ── Quyền app ──────────────────────────────────────────────────── #}
+    <section class="card">
+      <header class="adm-khoi-dau"><h2>Quyền app</h2></header>
+      {% if ho_so.quyen %}
+      <dl class="dev-han-muc">
+        {% for q in ho_so.quyen %}
+        <div><dt>{{ q.app_slug }}</dt><dd>{{ q.level }}</dd></div>
+        {% endfor %}
+      </dl>
+      {% else %}
+      <p class="dev-trong">Không có quyền riêng nào — khách dùng quyền mặc định.</p>
+      {% endif %}
+    </section>
+
+    {# ── Dấu vết admin ──────────────────────────────────────────────── #}
+    <section class="card">
+      <header class="adm-khoi-dau">
+        <h2>Admin đã làm gì với tài khoản này</h2>
+        <a href="/admin/nhat-ky-admin/list">Nhật ký đầy đủ →</a>
+      </header>
+      {% if ho_so.nhat_ky %}
+      <ul class="adm-dongthoigian">
+        {% for n in ho_so.nhat_ky %}
+        <li>
+          <span class="tnum">{{ n.created_at.strftime('%d/%m/%Y %H:%M') if n.created_at else '—' }}</span>
+          <div><strong>{{ n.hanh_dong }}</strong>
+            <small>{{ n.admin_email }}{% if n.chi_tiet %} · {{ n.chi_tiet[:90] }}{% endif %}</small>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="dev-trong">Chưa admin nào thao tác lên tài khoản này.</p>
+      {% endif %}
+    </section>
+
+    {# ── Phiên đang mở ──────────────────────────────────────────────── #}
+    <section class="card">
+      <header class="adm-khoi-dau">
+        <h2>Phiên đăng nhập</h2>
+        <a href="/admin/session/list">Bảng thô →</a>
+      </header>
+      {% if ho_so.phien %}
+      <div class="dev-bang">
+        <table class="table">
+          {# ⛔ KHONG hien `DbSession.id`: no CHINH LA token cookie phien (dung
+             lam khoa chinh). Render no ra day la ai xem/chup man hinh trang nay
+             deu lay duoc token song. Chi hien thong tin nhan dang an toan.
+
+             Cung khong hien "vi tri dia ly" nhu anh mockup — nen tang khong tra
+             cuu IP ra dia diem, va bia ra mot thanh pho la mot du lieu sai o mot
+             trang dung de dieu tra. #}
+          <thead><tr><th>Tạo lúc</th><th>Hết hạn</th><th>IP</th><th>Trình duyệt</th></tr></thead>
+          <tbody>
+            {% for p in ho_so.phien %}
+            <tr>
+              <td class="tnum">{{ p.created_at.strftime('%d/%m %H:%M') if p.created_at else '—' }}</td>
+              <td class="tnum">{{ p.expires_at.strftime('%d/%m %H:%M') if p.expires_at else '—' }}</td>
+              <td class="tnum">{{ p.ip or '—' }}</td>
+              <td>{{ (p.user_agent or '—')[:60] }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="dev-trong">Không có phiên nào đang mở.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  {# ── Hành động ───────────────────────────────────────────────────────
+     Tách hai khối theo mức nguy hiểm. Ảnh mockup vẽ bốn nút cạnh nhau ở đầu
+     trang — "Cộng credit", "Xem đơn hàng", "Thu hồi phiên", "Khoá tài khoản" —
+     tức một thao tác đọc đứng ngay cạnh một thao tác chặn đăng nhập, cùng kích
+     thước, cùng hàng. Đó là bốn cách bấm nhầm. #}
+  <section class="adm-hanhdong">
+    <div class="card">
+      <header class="adm-khoi-dau"><h2>Thao tác thường</h2></header>
+      <p class="adm-dan">Không đổi tiền, không chặn truy cập.</p>
+      <div class="actions">
+        <a class="btn ghost" href="/admin/don">Xem đơn hàng</a>
+        <a class="btn ghost" href="/admin/job/list">Xem job</a>
+        <a class="btn ghost" href="/admin/user/edit/{{ u.id }}">Sửa tài khoản (bảng thô)</a>
+      </div>
+    </div>
+
+    <div class="card adm-nguyhiem">
+      <header class="adm-khoi-dau"><h2>Thao tác nguy hiểm</h2></header>
+      <p class="adm-dan">Hai việc dưới đây có hậu quả thấy được ngay với khách,
+        và đều được ghi vào nhật ký admin.</p>
+
+      <form method="post" action="/admin/nguoi-dung/thu-hoi-phien" class="adm-form-nguyhiem">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="user_id" value="{{ u.id }}">
+        <div>
+          <strong>Thu hồi tất cả phiên đăng nhập</strong>
+          <small>{{ ho_so.phien|length }} phiên đang mở. Khách bị đăng xuất khỏi
+            mọi thiết bị ngay lập tức và phải đăng nhập lại. Không hoàn tác được.</small>
+        </div>
+        <button class="btn btn-danger" type="submit"
+                {% if not ho_so.phien %}disabled{% endif %}
+                onclick="return confirm('Thu hồi tất cả phiên của {{ u.email }}? Khách sẽ bị đăng xuất khỏi mọi thiết bị.')">
+          Thu hồi phiên
+        </button>
+      </form>
+
+      <div class="adm-form-nguyhiem">
+        <div>
+          <strong>Cấp hoặc thu credit</strong>
+          <small>Ghi một bút toán mới vào sổ append-only — không sửa lịch sử.
+            Trang cấp credit mở sẵn với khách này.</small>
+        </div>
+        <a class="btn btn-danger" href="/admin/grant-credit?user={{ u.id }}">Cấp credit</a>
+      </div>
+    </div>
+  </section>
+
+{% endif %}
+</div>

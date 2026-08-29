@@ -1,0 +1,174 @@
+{# Vỏ DUY NHẤT của khu quản trị.
+
+   Trước đợt này vỏ được nối bằng f-string trong `server/admin.py:_admin_shell`.
+   Hai tệp admin cộng lại là 173 KB HTML dựng bằng chuỗi Python: không test được
+   markup, không tái dùng được, và mỗi trang tự dựng lại đầu trang bằng tay.
+
+   ⛔ ĐÂY LÀ VỎ ĐỘC LẬP, KHÔNG `extends "base.html"`. Đó là một quyết định, không
+      phải một thiếu sót:
+        · khu quản trị là app-shell tràn viền (thanh bên cao hết màn hình), còn
+          `base.html` thêm header nền tảng + `.page` có bề rộng giới hạn;
+        · `_admin_shell` cũ vốn đã tự phát `<!doctype html>`;
+        · trang SQLAdmin không đi qua `base.html` được, nên nếu vỏ tự viết đi
+          qua thì HAI nửa khu quản trị lại lệch nhau thêm một tầng nữa.
+
+   ⭐ Nhưng KIỂU thì dùng chung: `.dev-*` trong `ltt.css` đã có sẵn bảng, badge,
+      trạng thái rỗng, dải lọc, trường form — và cả hai nhóm lớp đọc CÙNG một bộ
+      token (`ltt.css:6-33` khai alias `--bg → --surface-canvas`, ...). Không có
+      token mới nào trong đợt này.
+
+   Hợp đồng: `docs/admin_mvp_v3/04_EXTENSION_CONTRACT.md`,
+             `docs/admin_mvp_v3/06_VISUAL_REFERENCE_CONTRACT.md`. #}
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+{# Cache-bust bắt buộc: static đi qua Cloudflare có TTL, đổi file mà URL không
+   đổi thì người dùng nhận bản cũ tới khi hết TTL (CLAUDE.md quy tắc 6). #}
+<link rel="stylesheet" href="/static/ltt.css?v={{ asset_ver }}">
+{# ⛔ DÒNG NÀY LÀ MỘT SỬA LỖI, KHÔNG PHẢI MỘT SỞ THÍCH.
+
+   `ltt.css` KHÔNG có `.btn-danger`, `.btn-sm`, `.btn-ghost` hay `.table` — kiểu
+   của chúng nằm ở `_kieu_chung.html`, và `base.html` / `base_public.html` đều
+   include nó. Vỏ quản trị là vỏ độc lập nên nó KHÔNG đi qua `base.html`, tức nó
+   thiếu đúng bộ nguyên tố đó.
+
+   Chính khối chú thích đầu `_kieu_chung.html` ghi lại lần trước chuyện này xảy
+   ra: các trang công khai render `class="card"` và `class="table"` mà không một
+   luật CSS nào khớp — thẻ không tách khỏi nhau, bảng chỉ là mấy cột chữ trôi
+   nổi. Đây là cùng một cái bẫy, ở một vỏ khác. #}
+{% include "_kieu_chung.html" %}
+<title>{{ title }} — Quản trị</title>
+</head>
+<body>
+<a class="skip-link" href="#admin-content">Bỏ qua điều hướng</a>
+
+<div class="adm">
+
+  <aside class="adm-side" aria-label="Điều hướng quản trị">
+    <div class="adm-brand">
+      <div class="mark">LTT</div>
+      <div><b>LTT AI Studio</b><small>quản trị</small></div>
+    </div>
+
+    <nav class="adm-nav" aria-label="Các khu vực quản trị">
+      {% for m in nav.thanh_ben %}
+        {# `aria-current` chỉ được có ĐÚNG MỘT trên cả trang. Khi trang có dải
+           mục con thì dải ĐÓ mang `page` (nó là cấp trong cùng, sát trang
+           thật), còn thanh bên chỉ nói "nhánh này đang mở" bằng `true`. #}
+        <a href="{{ m.href }}"{% if m.active %} class="on"
+           aria-current="{{ 'true' if nav.co_tab_hoac_con else 'page' }}"{% endif %}>
+          <span class="ic" aria-hidden="true">{{ m.nhan[:2] }}</span>{{ m.nhan }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    <div class="adm-sidefoot">
+      <span class="status-live"></span>Hệ thống vận hành
+    </div>
+  </aside>
+
+  <main class="adm-main" id="admin-content">
+
+    <header class="adm-mobilebar">
+      <a class="adm-mobilebrand" href="/admin/">
+        <span class="mark">LTT</span><span>Quản trị</span>
+      </a>
+      <details class="adm-mobilemenu">
+        <summary aria-label="Mở điều hướng">Menu</summary>
+        <nav aria-label="Điều hướng mobile">
+          {% for m in nav.thanh_ben %}
+            <a href="{{ m.href }}"{% if m.active %} class="on"{% endif %}>{{ m.nhan }}</a>
+          {% endfor %}
+        </nav>
+      </details>
+    </header>
+
+    {# ── Thanh trên ────────────────────────────────────────────────────────
+       Ảnh mockup vẽ một ô "Tìm người dùng, đơn hàng, log…". KHÔNG có backend
+       nào cho tìm kiếm liên thực thể, nên ô đó sẽ là một lời hứa rỗng. Ở đây
+       nó là ô tìm KHÁCH HÀNG, và nhãn nói đúng như vậy — authority là
+       `credit.tim_theo_email` + `db.get(User, id)`, đã dùng ở
+       `/admin/nguoi-dung`. Omnibox liên thực thể: 24_DEFERRED_POST_MVP.
+
+       Cũng vì thế thanh này KHÔNG có chip môi trường "Production" và KHÔNG có
+       chuông thông báo có số: nền tảng không có nhiều môi trường, và không có
+       hàng đợi thông báo cho admin. Xem 06b_SO_DANG_KY_NOI_DUNG_CAM. #}
+    <div class="adm-top">
+      <form class="adm-timkiem" method="get" action="/admin/nguoi-dung" role="search">
+        <label class="sr-only" for="adm-q">Tìm khách hàng theo email hoặc User ID</label>
+        <input id="adm-q" name="q" type="search" value="{{ q_khach or '' }}"
+               placeholder="Tìm khách hàng — email hoặc User ID">
+        <button class="btn btn-sm" type="submit">Tìm</button>
+      </form>
+      <div class="adm-top-phai">
+        <a class="btn ghost btn-sm" href="/">Về nền tảng</a>
+      </div>
+    </div>
+
+    {# ── Khung ngữ cảnh ───────────────────────────────────────────────────
+       Mẩu bánh mì + dải mục con + dải tab. Khối này đứng NGOÀI thân trang, vì
+       thân của các trang chưa chuyển sang template vẫn tự mang
+       `<div class="adm-content">` của chúng — và chúng không mang cùng một hình
+       dạng (một số bắt đầu bằng `</div><div class="adm-content">`), nên bóc vỏ
+       của chúng bằng chuỗi là một phép đoán, không phải một phép biến đổi.
+
+       `.adm-chrome + .adm-content{padding-top:0}` trong `ltt.css` gộp hai khối
+       lại thành một nhịp dọc. #}
+    {% if nav.banh_mi or nav.muc_con or nav.tab or tieu_de or canh_bao or loi or thanh_cong %}
+    <div class="adm-content adm-chrome">
+
+      {% if nav.banh_mi %}
+      <nav class="adm-banhmi" aria-label="Đường dẫn">
+        {% for b in nav.banh_mi %}<a href="{{ b.href }}">{{ b.nhan }}</a><span aria-hidden="true">/</span>{% endfor %}
+        <span>{{ nav.nhan_trang }}</span>
+      </nav>
+      {% endif %}
+
+      {# Đầu trang chỉ do vỏ dựng khi trang ĐÃ chuyển sang template và tự khai
+         `tieu_de`. Trang chưa chuyển vẫn tự dựng `.pagehead` trong thân của nó;
+         dựng thêm một cái nữa ở đây là hai H1 trên một trang. #}
+      {% if tieu_de %}
+      <div class="adm-dau">
+        <div>
+          <h1 class="adm-h1">{{ tieu_de }}</h1>
+          {% if mo_ta %}<p class="adm-dan">{{ mo_ta }}</p>{% endif %}
+        </div>
+        {% if hanh_dong %}<div class="adm-dau-nut">{{ hanh_dong|safe }}</div>{% endif %}
+      </div>
+      {% endif %}
+
+      {% if nav.muc_con %}
+      <nav class="dev-sub" aria-label="Mục con của {{ nav.nhan_trang }}">
+        <ul>
+          {% for s in nav.muc_con %}
+          <li><a href="{{ s.href }}"{% if s.active %} class="active"
+                 aria-current="{{ 'true' if nav.tab else 'page' }}"{% endif %}>{{ s.nhan }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      {% if nav.tab %}
+      <nav class="dev-sub adm-tab" aria-label="Trang trong {{ nav.nhan_trang }}">
+        <ul>
+          {% for t in nav.tab %}
+          <li><a href="{{ t.href }}"{% if t.active %} class="active" aria-current="page"{% endif %}>{{ t.nhan }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% endif %}
+
+      {% if canh_bao %}<div class="alert alert-warn" role="status">{{ canh_bao|safe }}</div>{% endif %}
+      {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
+      {% if thanh_cong %}<div class="alert alert-ok" role="status">{{ thanh_cong }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    {{ than|safe }}
+  </main>
+</div>
+</body>
+</html>

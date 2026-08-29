@@ -241,7 +241,14 @@ def test_apikeys_console_render(client):
     assert "AIzaCONSOLE4321" not in r.text          # KHÔNG lộ secret thô
     assert "...4321" in r.text                       # preview
     assert "/static/ltt.css" in r.text               # dùng design system
-    assert "APIKEYS" in r.text and "g-console" in r.text
+    # ⭐ Nhan doi tu "APIKEYS" thanh "Provider Credentials" trong dot
+    #    `admin_mvp_v3` (`03_IA_FREEZE.md` A-04). Ly do khong phai tham my: o day
+    #    co BA thu mang chu "key" — credential cua NEN TANG (trang nay), bang tho
+    #    cua no (`/admin/api-key/list`), va khoa API cua KHACH
+    #    (`/admin/api-khoa`). Ngay 23/08 chu du an vao nham trang vi hai muc menu
+    #    tung cung ten. Nen phep kiem doi hoi trang tu tach minh khoi hai cai kia.
+    assert "Provider Credentials" in r.text and "g-console" in r.text
+    assert "/admin/api-khoa" in r.text, "phai tro ro khoa cua KHACH o dau"
     # Lọc category video → key (image,chat) không hiện.
     rv = client.get("/admin/apikeys?cat=video")
     assert rv.status_code == 200 and "...4321" not in rv.text

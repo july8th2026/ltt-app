@@ -12,6 +12,162 @@
 > Nhật ký của giai đoạn desktop → web (2026-07-29 đến 2026-07-30) nằm ở
 > `_luutru/PROJECT_MEMORY.md`. Vẫn đáng đọc: nó ghi từng lỗi thật và cách sửa.
 
+
+
+
+
+## 2026-08-29 — Soi admin trên production, tìm được một lỗi chỉ dữ liệu thật mới lộ
+
+Chủ sản phẩm đăng nhập bằng Playwright (Playwright **tự vượt** thử thách
+Cloudflare; khung Browser thì bị chặn 403 — khác biệt thật giữa hai công cụ, ghi
+lại để lần sau khỏi dò). Toàn bộ phần soi là **chỉ đọc**.
+
+**31/31 trang admin trả 200** trên production, 0 lỗi console, thanh bên 6 mục.
+Dữ liệu thật: 24 khách, 8 provider key, 200.000đ đã thu, nhật ký admin thật.
+
+Deep-link khớp **chính xác** con số: "5 đơn chờ" → đúng 5 dòng (không lọc: 9);
+"10 tài khoản vô hiệu" → đúng 10 (không lọc: 24), tất cả đều vô hiệu.
+
+Bất biến an toàn trên 7 trang có dữ liệu thật: **không rò** `credential_enc`,
+`password_hash`, khoá thô; sổ credit không có nút ghi; kill switch vẫn là **form
+có `reason` required**, không phải toggle.
+
+### 🔴 Lỗi tìm được — và vì sao không phép kiểm nào bắt được
+
+Bảng khách hàng ở khung 1440px cần **867px** nhưng chỉ có **791px** (rail 320px).
+Thứ bị đẩy ra ngoài là **nút hành động chính**: "Mở hồ sơ 360".
+
+- **Quét tự động không bắt**: bảng cuộn *trong khung của nó* nên `body.scrollWidth`
+  vẫn đúng. Phép kiểm tôi viết đo tràn body, không đo "hành động chính có nhìn
+  thấy không".
+- **CSDL nháp không bắt**: hai dòng email ngắn thì bảng vừa thoải mái.
+
+**Lần sửa thứ nhất SAI** — cắt bớt User ID; CSS áp đúng nhưng bảng vẫn cần 867px,
+vì cột đầu rộng do **email** chứ không do UUID. Đo lại từng cột mới thấy.
+
+**Lần sửa thứ hai đúng** — nâng ngưỡng gập rail **1280 → 1500px**. Ở 1440px bảng
+được 1129px, cần 1127px.
+
+Ba lượt deploy trong buổi, cả ba `EXITCODE=0`, `so_deploy` lệch 0/461. Gate đầy
+đủ **PASS**. Chi tiết: `docs/admin_mvp_v3/25_DEPLOY_VA_KIEM_URL_CONG_KHAI.md`.
+
+⚠️ Cũng trong buổi, **hai lần liên tiếp**: một ký tự BEL (0x07) lọt vào tệp này.
+Nguyên nhân là viết đường dẫn Windows trong một heredoc Python không phải chuỗi
+raw — Python đọc `\a` của `\app.previous` thành ký tự BEL. `test_61` bắt được cả
+hai lần.
+
+⭐ Cách tránh: **ghi ra tệp `.py` rồi chạy**, và dùng chuỗi raw (`r"..."`) cho mọi
+đường dẫn Windows. Đúng quy tắc 3 của CLAUDE.md, và lý do thứ hai để tuân nó.
+
+
+## 2026-08-29 — DEPLOY Admin MVP V3 lên production
+
+`EXITCODE=0`, 08:20:36 → 08:21:37. `tools/so_deploy.py`: **khớp 461 · lệch 0**.
+Hai dịch vụ Running, `/health/ready` = `ready / production / database ok`.
+
+**Trước khi chạy** (bảng đầy đủ ở `docs/admin_mvp_v3/25_DEPLOY_VA_KIEM_URL_CONG_KHAI.md`):
+gate PASS 23/23 · 9 phiên khác đều offline · migration **59 = 59** (không có
+migration mới) · `so_deploy` cho thấy độ lệch **đúng bằng** việc của đợt này,
+không cuốn theo phần đang dở của ai.
+
+⭐ `so_deploy.py` nên là bước cố định trước mỗi deploy: deploy ở kho này **xoá và
+thay TOÀN BỘ** `app\`, nên nếu độ lệch chứa việc của phiên khác thì ta vừa phát
+hành hộ họ.
+
+**Kiểm trên URL công khai** — cái bẫy lịch sử (CF phục vụ CSS cũ) **đã đóng**:
+`ASSET_VER` khớp hai đầu (`8aae308b`), `cf-cache-status: MISS`, 8/8 lớp CSS mới
+có trong bản CF phục vụ. Chênh 203KB/217KB là **minify của CF**, không phải bản
+cũ. HTML `no-store` + `DYNAMIC` nên tới người dùng ngay.
+
+Route mới sống thật, chứng minh bằng **đối chứng**: `/admin/khach-hang`,
+`/admin/he-thong`, `/admin/nang-cao` trả 303 → login, còn `/admin/khong-co-that-dau`
+trả **404**. Không có dòng đối chứng đó thì ba dòng trên không chứng minh gì.
+
+⚠️ **Còn hở nửa hạng mục:** giao diện admin **đã đăng nhập** chưa soi được trên
+URL công khai. Cloudflare chặn trình duyệt tự động ở `/login` (403 + thử thách
+bot); giải CAPTCHA và nhập mật khẩu là hai việc Claude không làm. Chrome extension
+chưa kết nối. Rủi ro còn lại là rủi ro **dữ liệu**, không phải rủi ro mã — 30
+trang đã soi ở 6 viewport trên bản dựng giống hệt.
+
+Đường lùi: `C:\LTTPlatform\app.previous`, không có migration phải hoàn.
+
+
+## 2026-08-29 — Admin MVP V3 đợt hoàn thiện: khu API hết ngõ cụt
+
+Nối tiếp mục dưới. Rà lại hợp đồng P6–P9 theo **năng lực vận hành** thay vì
+markup, tìm ra một lớp khiếm khuyết khác: **năm ngõ cụt**.
+
+| Trang | Liên kết đi ra, trước | Sau |
+|---|---|---|
+| API — Tổng quan | 0 | **13 ô chỉ số bấm được** |
+| API — Công cụ / Chính sách / Kill switch | 0 · 0 · 0 | có đường đi |
+| Provider Credentials → Operations | 0 | có |
+
+Người vận hành đọc "Job hỏng: 7" rồi hết đường đi — GJ4 vỡ ngay bước đầu. Nay mọi
+liên kết **mang bộ lọc đặt sẵn** (mã lỗi · trạng thái · tool · cửa sổ thời gian),
+và 32/32 đích kiểm mở được.
+
+**Hai liên kết SAI tự bắt được** — cả hai trả 200 với danh sách rỗng/lệch:
+- `jobs_by_tool()` gom theo `Job.job_type` (`render`) còn `jobs_page(tool=)` lọc
+  theo tên tool API (`image.ltt`) — hai định danh khác nhau cùng tên "tool";
+- `overview()["jobs"]` đếm job **toàn nền tảng** trong một bảng điều khiển API.
+  Sửa bằng cách **nói ra** (nhãn "toàn nền tảng" + đích đúng phạm vi), không đổi
+  read-model.
+
+**Cũng xong:** sắp xếp cột danh sách khách (danh sách trắng, giữ bộ lọc; số dư cố
+ý không sắp được) · rà bàn phím/trình đọc màn hình bằng máy trên 13 trang, sửa 3
+ô nhập thiếu nhãn.
+
+`python tools\gate.py`: **RESULT: PASS** 23/23.
+
+⚠️ Trong lúc làm, `docs/PUBLIC_API/CONTRACT_BASELINE.json` bị bẩn bởi **rác
+fixture** của `test_209` (`api_version: v0` + mã lỗi `ghost_code` HTTP 418) — một
+lượt test bị ngắt để lại. Đã `git checkout` về bản commit. **Đừng chạy
+`check_api_compat.py --accept` để cho qua** — nó nuốt mất một thay đổi phá vỡ
+tương thích thật nếu có. Ghi ở `docs/admin_mvp_v3/09_LO_C5_C8.md` §6.
+
+
+## 2026-08-29 — Admin Control Plane MVP V3 (nhánh `admin-mvp-v3`)
+
+Bố cục lại toàn bộ khu `/admin` theo bộ prompt V3 Final. **Không route nào bị
+xoá, không URL nào đổi, không redirect nào thêm.**
+
+| | Trước | Sau |
+|---|---|---|
+| Mục thanh bên (trang tự viết) | 25 phẳng | **6** mục cha + subnav + tab |
+| Mục thanh bên (SQLAdmin) | 31 | **8** bảng thô |
+| Nguồn khai điều hướng | **4** | **1** (`server/routes/admin/_chung.py`) |
+| Mục "API — …" ngang cấp | 12 (48% thanh bên) | 1 cha + 5 con |
+| Trang hành động ở primary nav | 2 | 0 |
+| CSRF trên thao tác ghi | 11/11 | **12/12** |
+| Nhật ký admin trên thao tác ghi | **5/11** | **12/12** |
+| Tràn ngang (35 trang × 6 viewport) | 1 trang tràn | **0/210** |
+
+**Trang mới:** `/admin/` (Tổng quan có hàng đợi chú ý — GJ6 trước đây không có
+điểm bắt đầu), `/admin/khach-hang`, `/admin/he-thong`, `/admin/nang-cao`.
+
+**Sửa lỗi tìm được trên đường:**
+- vỏ SQLAdmin nạp `ltt.css` **không cache-bust** → sau mỗi lần đổi CSS nó phục vụ
+  bản cũ tới hết TTL Cloudflare (CLAUDE.md quy tắc 6);
+- thu hồi phiên của một khách chỉ làm được bằng cách xoá dòng trong bảng thô, và
+  **không để lại dấu vết admin nào**;
+- mark-paid (thao tác TIỀN) không có dòng nào trong nhật ký admin;
+- một `<input size=…>` đẩy **cả trang** cuộn ngang ở khung 390px.
+
+**Bốn test đã sửa** (`test_205`, `test_124`, `test_70`, `test_163`) — cả bốn từng
+assert nhãn/bố cục chứ không assert lời hứa; bản mới chốt **nhiều hơn** bản cũ.
+`test_124` từng chốt **đúng trường hợp sai** (`ltt.css` không có `?v=`).
+
+**Sáu test mới:** `test_317` … `test_322` (nav contract · khách hàng · hồ sơ 360 ·
+đơn & sổ credit · tổng quan · cổng an toàn).
+
+⚠️ **Chưa deploy, và chưa kiểm trên `https://app.lttstudios.com`.** Đợt này đổi
+`ltt.css`, nên bước đó là bắt buộc sau deploy (CLAUDE.md 5b).
+
+Tài liệu: `docs/admin_mvp_v3/` — `20_FINAL_MVP_REPORT.md` là điểm vào.
+Trạng thái: **MVP PASS WITH NON-BLOCKING DEFERRED**.
+
+
 ## 2026-08-29 — H41.9 Q6: public async canary + telemetry 15 phút
 
 - Dùng tài khoản test `autosub-test@lttstudios.com`, cấp tạm 200 credit qua

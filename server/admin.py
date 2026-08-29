@@ -27,6 +27,10 @@ import logging
 from markupsafe import escape
 from sqladmin import Admin, BaseView, ModelView, expose
 from sqladmin.authentication import AuthenticationBackend
+from sqladmin.authentication import login_required as _login_required
+
+from server.routes.admin._chung import (
+    AnTrongMenuSqlAdmin as _AnTrongMenuSqlAdmin)
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, RedirectResponse
 
@@ -97,31 +101,24 @@ class AdminAuth(AuthenticationBackend):
         return RedirectResponse("/login", status_code=303)
 
 
-# ── Vỏ quản trị DARK dùng chung (UX-1) — thay các trang trắng tự viết ─────────
-from server.admin_api import NAV as _NAV_API
-
-_ADM_NAV = [
-    ("/", "LT", "Trang chủ", "home"),
-    ("__grp__", "", "Quản trị", ""),
-    ("/admin/user/list", "ND", "Người dùng", "user"),
-    ("/admin/nguoi-dung", "CT", "Chi tiết người dùng", "chitiet"),
-    ("/admin/credit-entry/list", "CR", "Sổ credit", "credit"),
-    ("/admin/grant-credit", "+C", "Cấp credit", "grant"),
-    ("/admin/apikeys", "AK", "APIKEYS", "apikeys"),
-    ("/admin/job/list", "JB", "Job", "job"),
-    ("/admin/session/list", "SS", "Phiên", "session"),
-    ("/admin/nhat-ky-admin/list", "NK", "Nhật ký admin", "nhatky"),
-    # Khu API tự khai mục điều hướng của nó (`server/admin_api.NAV`) — chép lại
-    # ở đây là tạo bản thứ hai của cùng một danh sách, và bản thứ hai luôn là
-    # bản bị quên khi thêm trang.
-    *_NAV_API,
-    ("__grp__", "", "Thanh toán", ""),
-    ("/admin/doanh-thu", "DT", "Doanh thu", "revenue"),
-    ("/admin/goi", "GN", "Gói nạp", "goi"),
-    ("/admin/don", "DH", "Đơn hàng", "don"),
-    ("__grp__", "", "Hệ thống", ""),
-    ("/status", "HT", "Tình trạng", "status"),
-]
+# ── Vỏ quản trị dùng chung ───────────────────────────────────────────────────
+#
+# 🔴 `_ADM_NAV` ĐÃ BỊ GỠ. Nó là một trong BA danh sách điều hướng từng sống song
+#    song cho cùng một cây (hai cái kia: `server/admin_api.NAV` và năm thẻ <a>
+#    viết tay trong `server/admin_templates/sqladmin/base.html`). Ba danh sách
+#    cho một cây nghĩa là hai trong ba luôn là bản bị quên khi thêm trang — và
+#    trang SQLAdmin thật sự đã có bộ điều hướng khác hẳn 25 mục của trang tự
+#    viết.
+#
+#    Nguồn duy nhất bây giờ: `server/routes/admin/_chung.py`.
+#    Bố cục đã đóng băng ở `docs/admin_mvp_v3/03_IA_FREEZE.md`; hợp đồng thêm
+#    trang ở `docs/admin_mvp_v3/04_EXTENSION_CONTRACT.md`.
+#
+# ⚠️ Khoá `active` cũ ("chitiet", "revenue", "goi", ...) vẫn được nhận qua
+#    `_KHOA_CU` bên dưới, nên 29 chỗ gọi `_admin_shell` không phải sửa trong
+#    cùng một lô với việc đổi vỏ. Đổi vỏ và đổi thân là hai rủi ro khác nhau;
+#    trộn chúng vào một lô là cách làm cho một lần đỏ không chỉ ra được nguyên
+#    nhân nào.
 
 _PROVCOL = {"gemini": ("#4285F4", "G"), "apiai": ("#16a34a", "AI"),
             "cheapkeyai": ("#0ea5e9", "CK"), "byteplus": ("#7c3aed", "BP"),
@@ -142,36 +139,59 @@ def _asset_ver() -> str:
         return "0"
 
 
-def _admin_shell(title: str, active: str, body: str) -> str:
-    nav = ""
-    mobile_nav = ""
-    for href, ic, label, key in _ADM_NAV:
-        if href == "__grp__":
-            nav += f'<div class="grp">{escape(label)}</div>'
-        else:
-            cls = "on" if key == active else ""
-            current = ' aria-current="page"' if key == active else ""
-            nav += (f'<a class="{cls}" href="{href}"{current}><span class="ic">{ic}</span> '
-                    f'{escape(label)}</a>')
-            mobile_nav += (f'<a class="{cls}" href="{href}"{current}>'
-                           f'{escape(label)}</a>')
-    return (f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
-            f'<meta name="viewport" content="width=device-width, initial-scale=1">'
-            f'<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">'
-            f'<link rel="stylesheet" href="/static/ltt.css?v={_asset_ver()}">'
-            f'<title>{escape(title)} — Quản trị</title></head><body>'
-            f'<a class="skip-link" href="#admin-content">Bỏ qua điều hướng</a>'
-            f'<div class="adm"><aside class="adm-side" aria-label="Điều hướng quản trị">'
-            f'<div class="adm-brand"><div class="mark">LTT</div>'
-            f'<div><b>LTT AI Studio</b><small>quản trị</small></div></div>'
-            f'<nav class="adm-nav" aria-label="Các khu vực quản trị">{nav}</nav>'
-            f'<div class="adm-sidefoot"><span class="status-live"></span>Hệ thống vận hành</div></aside>'
-            f'<main class="adm-main" id="admin-content">'
-            f'<header class="adm-mobilebar"><a class="adm-mobilebrand" href="/admin/">'
-            f'<span class="mark">LTT</span><span>Quản trị</span></a>'
-            f'<details class="adm-mobilemenu"><summary aria-label="Mở điều hướng">Menu</summary>'
-            f'<nav aria-label="Điều hướng mobile">{mobile_nav}</nav></details></header>'
-            f'{body}</main></div></body></html>')
+#: Khoá `active` cũ → khoá trong `server/routes/admin/_chung.py:SECTIONS`.
+#:
+#: Bảng này tồn tại để đổi VỎ mà không phải sửa 29 chỗ gọi trong cùng một lô.
+#: Nó là cầu tạm: khi trang cuối cùng chuyển sang khoá mới thì xoá bảng này và
+#: xoá luôn nhánh tra cứu ở `_admin_shell`. Đừng thêm dòng mới vào đây — trang
+#: mới khai thẳng khoá mới.
+_KHOA_CU = {
+    "chitiet": "ho_so_360",
+    "apikeys": "van_hanh",
+    "revenue": "tai_chinh",
+    "goi": "goi_nap",
+    "don": "don_hang",
+    "grant": "cap_credit",
+    "api_overview": "api_overview",
+    "api_accounts": "api_access",
+    "api_keys": "api_khoa",
+    "api_tools": "api_governance",
+    "api_policy": "api_policy",
+    "api_kill": "api_kill",
+    "api_pricing": "api_economics",
+    "api_margin": "api_margin",
+    "api_requests": "api_ops",
+    "api_jobs": "api_job",
+    "api_security": "api_security",
+    "api_trace": "api_trace",
+}
+
+
+def _admin_shell(title: str, active: str, body: str, **thug) -> str:
+    """Dựng một trang quản trị hoàn chỉnh.
+
+    Chữ ký ba tham số đầu giữ NGUYÊN như bản f-string cũ, nên mọi chỗ gọi hiện
+    có chạy tiếp không sửa. Trang đã chuyển sang template truyền thêm `tieu_de`,
+    `mo_ta`, `hanh_dong`, `canh_bao`, `loi`, `thanh_cong`, `q_khach`.
+
+    Vỏ nằm ở `server/templates/admin/_vo.html`; điều hướng ở
+    `server/routes/admin/_chung.py`. Không dựng vỏ thứ hai ở bất kỳ đâu.
+    """
+    from server.routes.admin._chung import dieu_huong
+    from server.templating import templates
+
+    khoa = _KHOA_CU.get(active, active)
+    try:
+        nav = dieu_huong(khoa)
+    except KeyError:
+        # Khoá lạ (trang mới quên khai ở `SECTIONS`). Vẫn render được trang —
+        # mất trạng thái sáng của thanh bên thì khó chịu, còn ném 500 vào mặt
+        # người đang xử sự cố thì tệ hơn nhiều. `test_310` bắt trường hợp này ở
+        # cổng, chứ không phải lúc chạy.
+        nav = dieu_huong("tong_quan")
+
+    return templates.env.get_template("admin/_vo.html").render(
+        title=title, than=body, nav=nav, asset_ver=_asset_ver(), **thug)
 
 
 def _prov_dot(provider: str) -> str:
@@ -201,98 +221,98 @@ def _health_bar(h: int) -> str:
             f'<span class="tnum muted" style="font-size:11px">{h}</span>')
 
 
-class ChiTietNguoiDungView(BaseView):
-    """Trang gom mọi thứ về MỘT người dùng (F-04, audit 2026-08-07).
+class ChiTietNguoiDungView(_AnTrongMenuSqlAdmin, BaseView):
+    """Hồ sơ khách hàng 360 — trang trung tâm của Golden Journey 1.
 
-    Trước đây muốn biết một người đang thế nào phải mở 4 trang và tự nối chúng
-    bằng một UUID copy tay: số dư ở Sổ credit, job ở trang Job, đơn ở trang Đơn
-    hàng, phiên ở trang Phiên. Trang này trả lời câu đó ở một chỗ.
+    Trang này đã tồn tại từ audit 2026-08-07 (F-04) với đúng lý do của nó: muốn
+    biết một người đang thế nào phải mở bốn trang và tự nối chúng bằng một UUID
+    chép tay. Đợt `admin_mvp_v3` mở rộng nó thành tám khối, thêm phiên đăng nhập,
+    quyền app, dấu vết admin, và **hành động tách theo mức nguy hiểm**.
+
+    Truy vấn chuyển sang `platform_core/admin_console.ho_so_khach()`: trang danh
+    sách cần đúng bộ truy vấn đó cộng thêm, và hai bản của cùng một định nghĩa
+    "một khách hàng đang thế nào" là hai bản sẽ trôi khỏi nhau.
+
+    Hợp đồng: `docs/admin_mvp_v3/05_PAGE_CONTRACT_MATRIX.md` P3.
     """
 
-    name = "Chi tiết người dùng"
+    name = "Hồ sơ 360"
     icon = "fa-solid fa-id-card"
 
     @expose("/nguoi-dung", methods=["GET"])
     async def chi_tiet(self, request: Request):
-        from platform_core import credit
-        from platform_core.models import CreditEntry, Job, PaymentOrder
-        from platform_core.models import Session as PhienDb
+        from server.auth.csrf import issue_csrf_token
+        from server.templating import templates
+        from platform_core import admin_console
 
-        khoa = (request.query_params.get("q") or "").strip()
-        body_tim = f"""<div class="ui-card" style="max-width:620px">
-<form method="get"><div class="field"><label>Email hoặc User ID</label>
-<input class="inp" name="q" value="{escape(khoa)}" placeholder="nhanvien@congty.com" autofocus></div>
-<button class="btn" type="submit">Xem</button></form></div>"""
+        tim = (request.query_params.get("q") or "").strip()
+        ho_so = None
+        if tim:
+            gen = get_session(); db = next(gen)
+            try:
+                ho_so = admin_console.ho_so_khach(db, khoa=tim)
+            finally:
+                try: next(gen)
+                except StopIteration: pass
 
-        if not khoa:
-            return HTMLResponse(_admin_shell(
-                "Chi tiết người dùng", "chitiet",
-                f'<div class="adm-content"><div class="pagehead"><div>'
-                f'<h1>Chi tiết người dùng</h1><p>Gõ email (hoặc User ID) để xem '
-                f'số dư, việc đã chạy, đơn nạp và phiên đang mở ở một chỗ.</p>'
-                f'</div></div>{body_tim}</div>'))
+        than = templates.env.get_template("admin/ho_so_360.html").render(
+            ho_so=ho_so, tim=tim, csrf_token=issue_csrf_token(request))
+
+        tieu_de = ho_so["user"].email if ho_so else "Hồ sơ khách hàng"
+        return HTMLResponse(
+            _admin_shell(tieu_de, "ho_so_360", than,
+                         tieu_de=tieu_de,
+                         mo_ta=("Toàn cảnh một khách và những thao tác an toàn "
+                                "có thể làm với họ."),
+                         q_khach=tim,
+                         thanh_cong=request.query_params.get("ok") or "",
+                         loi=request.query_params.get("loi") or ""),
+            status_code=200 if (ho_so or not tim) else 404)
+
+    @expose("/nguoi-dung/thu-hoi-phien", methods=["POST"])
+    async def thu_hoi_phien(self, request: Request):
+        """Thu hồi MỌI phiên đăng nhập của một khách.
+
+        Trước đợt này thao tác an ninh đó chỉ làm được bằng cách vào bảng thô
+        `/admin/session/list`, lọc bằng UUID, rồi bấm "xoá dòng" từng dòng một —
+        tức một thao tác an ninh thực hiện bằng nút xoá của một bảng dữ liệu, và
+        không để lại dấu vết admin nào.
+
+        Ở đây nó có CSRF, có xác nhận, và **có ghi nhật ký** — vì "ai đăng xuất
+        khách này, lúc nào" là câu đầu tiên bộ phận hỗ trợ sẽ hỏi.
+        """
+        from server.auth.csrf import verify_csrf_token
+        from platform_core.users import thu_hoi_moi_phien
+
+        form = await request.form()
+        if not verify_csrf_token(request, (form.get("csrf_token") or "")):
+            return HTMLResponse("CSRF", status_code=400)
+        uid = (form.get("user_id") or "").strip()
+        if not uid:
+            return RedirectResponse("/admin/nguoi-dung", status_code=303)
 
         gen = get_session(); db = next(gen)
         try:
-            u = credit.tim_theo_email(db, khoa) or db.get(User, khoa)
+            u = db.get(User, uid)
             if u is None:
-                return HTMLResponse(_admin_shell(
-                    "Chi tiết người dùng", "chitiet",
-                    f'<div class="adm-content"><div class="pagehead"><div>'
-                    f'<h1>Chi tiết người dùng</h1></div></div>{body_tim}'
-                    f'<div class="alert alert-warn" style="max-width:620px">'
-                    f'Không tìm thấy tài khoản <code>{escape(khoa)}</code>.</div></div>'),
-                    status_code=404)
-
-            so_du = credit.so_du(db, u.id)
-            jobs = db.query(Job).filter(Job.user_id == u.id)                     .order_by(Job.created_at.desc()).limit(20).all()
-            dons = db.query(PaymentOrder).filter(PaymentOrder.user_id == u.id)                     .order_by(PaymentOrder.created_at.desc()).limit(10).all()
-            phien = db.query(PhienDb).filter(PhienDb.user_id == u.id).count()
-            but = db.query(CreditEntry).filter(CreditEntry.user_id == u.id)                    .order_by(CreditEntry.created_at.desc()).limit(15).all()
-
-            def _bang(tieu_de, dong_html, rong="Chưa có."):
-                return (f'<div class="ui-card"><p class="eyebrow">{tieu_de}</p>'
-                        f'{dong_html or f"<p class=dim>{rong}</p>"}</div>')
-
-            job_html = "".join(
-                f'<div class="billing-line"><span class="dim">'
-                f'{escape(j.app_slug or "")} · {escape(j.job_type or "")}</span>'
-                f'<span><span class="mono" style="font-size:12px">{escape(j.status)}</span>'
-                f'</span></div>' for j in jobs)
-            don_html = "".join(
-                f'<div class="billing-line"><span class="dim">#{d.order_code} · '
-                f'{d.price_vnd:,}đ</span><span>{escape(d.status)}</span></div>'
-                for d in dons)
-            but_html = "".join(
-                f'<div class="billing-line"><span class="dim">{escape(b.kind)} · '
-                f'{escape((b.note or "")[:60])}</span>'
-                f'<strong>{b.delta:+d}</strong></div>' for b in but)
-
-            body = f"""<div class="adm-content">
-<div class="pagehead"><div><h1>{escape(u.email)}</h1>
-<p><span class="mono">{escape(u.id)}</span></p></div>
-<div class="actions"><a class="btn" href="/admin/grant-credit">Cấp credit</a></div></div>
-{body_tim}
-<div class="ui-card"><p class="eyebrow">Tổng quan</p>
-<div class="billing-line"><span class="dim">Số dư</span><strong class="tnum">{so_du:,} credit</strong></div>
-<div class="billing-line"><span class="dim">Vai trò</span><span>{escape(u.role or "user")}</span></div>
-<div class="billing-line"><span class="dim">Đang hoạt động</span><span>{"có" if u.is_active else "KHÔNG"}</span></div>
-<div class="billing-line"><span class="dim">Đã xác thực email</span><span>{"có" if u.is_verified else "chưa"}</span></div>
-<div class="billing-line"><span class="dim">Phiên đang mở</span><span>{phien}</span></div>
-</div>
-{_bang("15 bút toán credit gần nhất", but_html)}
-{_bang("20 việc gần nhất", job_html, "Chưa chạy việc nào.")}
-{_bang("10 đơn nạp gần nhất", don_html, "Chưa có đơn nạp nào.")}
-</div>"""
-            return HTMLResponse(_admin_shell(f"Chi tiết {u.email}", "chitiet", body))
+                return RedirectResponse("/admin/nguoi-dung", status_code=303)
+            so = thu_hoi_moi_phien(db, uid)
+            ghi_nhat_ky(db, request, "thu_hoi_phien", uid,
+                        f"{so} phien cua {u.email}")
+            db.commit()
+            email = u.email
         finally:
-            try:
-                next(gen)
-            except StopIteration:
-                pass
+            try: next(gen)
+            except StopIteration: pass
+
+        from urllib.parse import quote
+        return RedirectResponse(
+            f"/admin/nguoi-dung?q={quote(uid)}&ok="
+            f"{quote(f'Da thu hoi {so} phien cua {email}.')}",
+            status_code=303)
 
 
-class ApiKeysConsole(BaseView):
+class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
     """Console APIKEYS custom dark (UX-1) — bề mặt chính quản khoá API."""
 
     name = "APIKEYS"
@@ -344,8 +364,20 @@ class ApiKeysConsole(BaseView):
                 f'<td>{escape(k.name or "")}</td>'
                 f'<td class="mono muted">{escape(k.key_preview or "")}</td>'
                 f'<td>{_cat_chips(k.categories)}</td>'
-                f'<td>{_status_badge(k)}</td>'
-                f'<td>{_health_bar(k.health_score)}</td>'
+                # ⭐ Khoá đang lỗi thì trạng thái phải dẫn đi đâu đó.
+                #    Hợp đồng P9 đòi "provider/khoá lỗi → API Operations / ngữ
+                #    cảnh Job", và trước đợt này trang này không có MỘT liên kết
+                #    nào sang khu Operations: người vận hành thấy một khoá ở
+                #    trạng thái `error`, đọc `last_error`, rồi hết đường đi.
+                #    Đích là danh sách lời gọi hỏng, vì đó là nơi thấy được lỗi
+                #    của provider đã tới tay khách như thế nào.
+                + (f'<td>{_status_badge(k)}<br>'
+                   f'<a class="muted" style="font-size:11px" '
+                   f'href="/admin/api-request?status=failed">lời gọi hỏng →</a>'
+                   f'</td>'
+                   if (k.status in ("error", "exhausted") or not k.enabled)
+                   else f'<td>{_status_badge(k)}</td>')
+                + f'<td>{_health_bar(k.health_score)}</td>'
                 f'<td class="tnum">{k.priority}</td>'
                 f'<td class="tnum muted" style="font-size:12px">{_rpm}{cap}/min<br>{k.total_tokens} tok</td>'
                 f'<td><div class="rowactions">'
@@ -358,12 +390,19 @@ class ApiKeysConsole(BaseView):
 
         active_cnt = sum(1 for k in keys if k.enabled and k.status == "active")
         body = (
-            f'<div class="adm-top"><span class="eyebrow">Nguồn API của nền tảng</span>'
-            f'<span class="pill"><span class="dot" style="background:var(--ok);width:7px;'
-            f'height:7px;border-radius:50%"></span> {active_cnt}/{len(keys)} key hoạt động</span></div>'
-            f'<div class="adm-content"><div class="pagehead"><div><h1>APIKEYS</h1>'
-            f'<p>Kho khoá API tập trung — app xin khoá theo provider &amp; loại. '
-            f'Credential luôn mã hoá; chỉ hiện 4 số cuối.</p></div>'
+            # Dải `.adm-top` thứ hai đã bị gỡ: vỏ chung đã có một thanh trên
+            # thật (ô tìm khách hàng), và hai thanh dính cùng lớp chồng lên nhau
+            # khi cuộn. Con số "N/M key hoạt động" là thông tin thật nên nó về
+            # đúng chỗ của nó — đầu trang.
+            f'<div class="adm-content"><div class="pagehead"><div>'
+            f'<h1>Provider Credentials</h1>'
+            f'<p>Kho khoá API của <strong>nền tảng</strong> — app xin khoá theo '
+            f'provider &amp; loại. Credential luôn mã hoá; chỉ hiện 4 số cuối. '
+            f'Đây <em>không</em> phải khoá API của khách: khoá của khách ở '
+            f'<a href="/admin/api-khoa">API Platform → Access</a>.</p>'
+            f'<p><span class="pill"><span class="dot" style="background:var(--ok);'
+            f'width:7px;height:7px;border-radius:50%"></span> '
+            f'{active_cnt}/{len(keys)} key hoạt động</span></p></div>'
             f'<div class="actions"><a class="btn ghost" href="/admin/api-models">🧩 Models</a>'
             f'<a class="btn" href="/admin/api-key-them">＋ Thêm key</a></div></div>'
             f'<div class="tabs">{tabs}</div>'
@@ -371,7 +410,7 @@ class ApiKeysConsole(BaseView):
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
             f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th style="text-align:right">Thao tác</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("APIKEYS", "apikeys", body))
+        return HTMLResponse(_admin_shell("Provider Credentials", "apikeys", body))
 
 
 class UserAdmin(ModelView, model=User):
@@ -501,7 +540,7 @@ class PlatformInfoAdmin(ModelView, model=PlatformInfo):
     can_delete = False
 
 
-class GrantCreditView(BaseView):
+class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
     """Cấp/điều chỉnh credit tay — ghi MỘT bút toán `grant` (append-only)."""
 
     name = "Cấp credit"
@@ -661,7 +700,7 @@ class ApiKeyAdmin(ModelView, model=ApiKey):
     can_delete = True
 
 
-class AddApiKeyView(BaseView):
+class AddApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
     """Thêm API key — nhập credential THÔ, view mã hoá trước khi lưu (H8)."""
 
     name = "Thêm API key"
@@ -695,6 +734,9 @@ class AddApiKeyView(BaseView):
                         default_model=(form.get("default_model") or ""),
                         priority=int(form.get("priority") or 100),
                     )
+                    ghi_nhat_ky(db, request, "them_provider_credential",
+                                (form.get("provider") or ""),
+                                f"ten={(form.get('name') or '')[:60]}")
                     db.commit()
                     msg = '<p style="color:#1a7f37;">Đã thêm API key.</p>'
                 except Exception as e:
@@ -763,7 +805,7 @@ apDung();
         return HTMLResponse(_admin_shell("Thêm API key", "apikeys", body), status_code=status)
 
 
-class SuaApiKeyView(BaseView):
+class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
     """Sửa một API key — **giữ nguyên id và toàn bộ lịch sử**.
 
     ⛔ VÌ SAO TRANG NÀY TỒN TẠI (sự cố 2026-08-23).
@@ -827,6 +869,12 @@ class SuaApiKeyView(BaseView):
                     xoay = (form.get("credential") or "").strip()
                     if xoay:
                         api_keys.dat_credential(db, key, xoay)
+                    # ⛔ Ghi lai VIEC co xoay credential hay khong, khong bao gio
+                    #    ghi gia tri. "Khoa nay bi xoay luc nao" la cau phai tra
+                    #    duoc; "khoa nay la gi" thi khong.
+                    ghi_nhat_ky(db, request, "sua_provider_credential", key.id,
+                                f"{key.provider}"
+                                + (" | credential DA XOAY" if xoay else ""))
                     db.commit()
                     them = " - credential DA XOAY." if xoay else "."
                     msg = ('<p style="color:#1a7f37;">Da luu. Id va lich su giu '
@@ -916,7 +964,7 @@ font-size:12.5px;cursor:pointer;color:var(--muted)}}.catpick input{{accent-color
         dm=escape(key.default_model or ""), pri=int(key.priority))
 
 
-class ApiKeyActionView(BaseView):
+class ApiKeyActionView(_AnTrongMenuSqlAdmin, BaseView):
     """Hành động trên một key: test (probe sống) / bật / tắt / reset cooldown."""
 
     name = "Tác vụ key"
@@ -997,6 +1045,8 @@ class ApiKeyActionView(BaseView):
                     return RedirectResponse(
                         "/admin/apikeys?loi=" + quote_plus(f"Lam moi model that bai: {e}"),
                         status_code=303)
+            ghi_nhat_ky(db, request, f"provider_key_{op or 'khong_ro'}", key.id,
+                        f"{key.provider}")
             db.commit()
         finally:
             try: next(gen)
@@ -1004,7 +1054,7 @@ class ApiKeyActionView(BaseView):
         return RedirectResponse("/admin/apikeys", status_code=303)
 
 
-class ModelsView(BaseView):
+class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
     """Danh sách Provider + Model (registry, chỉ đọc) — H8."""
 
     name = "Models"
@@ -1115,7 +1165,7 @@ def _order_badge(status: str) -> str:
     return f'<span class="badge {cls}"><span class="dot"></span>{escape(lbl)}</span>'
 
 
-class RevenueView(BaseView):
+class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
     """Bảng doanh thu (H9) — tổng VND đã thu, credit đã bán, số đơn."""
 
     name = "Doanh thu"
@@ -1123,19 +1173,44 @@ class RevenueView(BaseView):
 
     @expose("/doanh-thu", methods=["GET"])
     async def revenue(self, request: Request):
-        from platform_core import billing
+        from platform_core import admin_console, billing
         gen = get_session(); db = next(gen)
         try:
             dt = billing.doanh_thu(db)
             gan_day = billing.liet_ke_don(db, status="paid", limit=10)
-            rows = ""
-            for o in gan_day:
-                rows += (f'<tr><td class="mono">{o.order_code}</td>'
-                         f'<td class="mono muted">{escape(o.user_id[:8])}</td>'
-                         f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
-                         f'<td class="tnum">{o.credits:,}</td>'
-                         f'<td class="muted" style="font-size:12px">{o.paid_at:%Y-%m-%d %H:%M}</td></tr>'
-                         if o.paid_at else "")
+            # Hợp đồng P4: trang này phải trả lời "đơn nào cần xử", không chỉ
+            # "đã thu bao nhiêu". Trước đợt này nó có ba ô số và một bảng đơn ĐÃ
+            # trả — tức thứ duy nhất còn cần làm gì đó thì không có mặt.
+            cho_xu = billing.liet_ke_don(db, status="pending", limit=10)
+            tien_gan_day = db.query(NhatKyAdmin).filter(
+                NhatKyAdmin.hanh_dong.in_(
+                    ("cap_credit", "xac_nhan_don_da_tra"))).order_by(
+                NhatKyAdmin.created_at.desc()).limit(8).all()
+            email_cua = admin_console.emails_cua(
+                db, [o.user_id for o in gan_day] + [o.user_id for o in cho_xu])
+
+            def _dong(o, cot_cuoi):
+                _e = email_cua.get(o.user_id) or o.user_id
+                return (f'<tr><td class="mono">'
+                        f'<a href="/admin/don?q={o.order_code}">{o.order_code}</a></td>'
+                        f'<td><a href="/admin/nguoi-dung?q={escape(o.user_id)}">'
+                        f'{escape(_e)}</a></td>'
+                        f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
+                        f'<td class="tnum">{o.credits:,} credit</td>'
+                        f'<td class="muted" style="font-size:12px">{cot_cuoi}</td></tr>')
+
+            rows = "".join(_dong(o, f"{o.paid_at:%d/%m %H:%M}")
+                           for o in gan_day if o.paid_at)
+            rows_cho = "".join(_dong(o, f"{o.created_at:%d/%m %H:%M}")
+                               for o in cho_xu)
+            rows_tien = "".join(
+                f'<tr><td class="muted" style="font-size:12px">'
+                f'{n.created_at:%d/%m %H:%M}</td>'
+                f'<td>{escape(n.hanh_dong)}</td>'
+                f'<td class="mono muted" style="font-size:12px">'
+                f'{escape((n.doi_tuong or "")[:40])}</td>'
+                f'<td class="muted" style="font-size:12px">'
+                f'{escape(n.admin_email)}</td></tr>' for n in tien_gan_day)
         finally:
             try: next(gen)
             except StopIteration: pass
@@ -1147,19 +1222,35 @@ class RevenueView(BaseView):
             f'<div style="font-size:26px;font-weight:700">{dt["credits"]:,}</div></div>'
             f'<div class="ui-card"><div class="dim">Đơn đã trả</div>'
             f'<div style="font-size:26px;font-weight:700">{dt["orders"]:,}</div></div></div>')
-        body = (f'<div class="adm-content"><div class="pagehead"><div><h1>Doanh thu</h1>'
-                f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3).</p></div>'
+        body = (f'<div class="adm-content"><div class="pagehead"><div>'
+                f'<h1>Tổng quan tài chính</h1>'
+                f'<p>Chỉ tính đơn đã trả (đi qua sổ credit H3). Tiền hiện bằng đ, '
+                f'credit hiện bằng credit — hai đơn vị, không trộn.</p></div>'
                 f'<div class="actions"><a class="btn ghost" href="/admin/goi">💠 Gói nạp</a>'
                 f'<a class="btn ghost" href="/admin/don">🧾 Đơn hàng</a></div></div>'
-                f'{cards}<h2 style="margin:22px 0 10px">Đơn đã trả gần đây</h2>'
+                f'{cards}'
+                f'<h2 style="margin:22px 0 10px">Đơn cần xử lý</h2>'
+                f'<p class="adm-dan">Đơn đang chờ cổng thanh toán xác nhận. Xác '
+                f'nhận tay là đường dự phòng khi webhook không tới — thao tác đó '
+                f'ở <a href="/admin/don?st=pending">trang Đơn hàng</a>.</p>'
                 f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
-                f'<th>Mã đơn</th><th>User</th><th>Tiền</th><th>Credit</th><th>Trả lúc</th>'
+                f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Tạo lúc</th>'
+                f'</tr></thead><tbody>{rows_cho or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Không có đơn nào đang chờ.</td></tr>"}'
+                f'</tbody></table></div>'
+                f'<h2 style="margin:22px 0 10px">Đơn đã trả gần đây</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Mã đơn</th><th>Khách</th><th>Tiền</th><th>Credit</th><th>Trả lúc</th>'
                 f'</tr></thead><tbody>{rows or "<tr><td colspan=5 class=muted style=padding:20px;text-align:center>Chưa có đơn nào.</td></tr>"}'
+                f'</tbody></table></div>'
+                f'<h2 style="margin:22px 0 10px">Hành động tiền của admin gần đây</h2>'
+                f'<div class="tablewrap"><table class="ui-table"><thead><tr>'
+                f'<th>Lúc</th><th>Hành động</th><th>Đối tượng</th><th>Ai làm</th>'
+                f'</tr></thead><tbody>{rows_tien or "<tr><td colspan=4 class=muted style=padding:20px;text-align:center>Chưa có thao tác tiền nào của admin.</td></tr>"}'
                 f'</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Doanh thu", "revenue", body))
+        return HTMLResponse(_admin_shell("Tổng quan tài chính", "revenue", body))
 
 
-class PackagesView(BaseView):
+class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
     """Quản lý gói nạp (H9): thêm/sửa/bật-tắt/xoá. Giá/credit/bonus admin tự đặt."""
 
     name = "Gói nạp"
@@ -1189,7 +1280,12 @@ class PackagesView(BaseView):
                     base = billing_math.credits_base_tu_vnd(price)
                     pkg = CreditPackage(name=name or f"Gói {price:,}đ", price_vnd=price,
                                         credits_base=base, bonus_percent=bonus, sort_order=order)
-                    db.add(pkg); db.commit()
+                    db.add(pkg)
+                    db.flush()
+                    ghi_nhat_ky(db, request, "them_goi_nap", pkg.id,
+                                f"{pkg.name} | {price} d | {base} credit "
+                                f"| bonus {bonus}%")
+                    db.commit()
                     msg = f'<div class="alert alert-ok">Đã thêm gói {escape(pkg.name)}.</div>'
                 except Exception as e:  # noqa: BLE001
                     db.rollback()
@@ -1254,7 +1350,11 @@ class PackagesView(BaseView):
             if p is not None:
                 if op == "toggle":
                     p.active = not p.active
+                    ghi_nhat_ky(db, request, "goi_nap_bat_tat", p.id,
+                                f"{p.name} -> {'bat' if p.active else 'tat'}")
                 elif op == "delete":
+                    ghi_nhat_ky(db, request, "xoa_goi_nap", p.id,
+                                f"{p.name} | {p.price_vnd} d")
                     db.delete(p)
                 db.commit()
         finally:
@@ -1263,7 +1363,7 @@ class PackagesView(BaseView):
         return RedirectResponse("/admin/goi", status_code=303)
 
 
-class OrdersView(BaseView):
+class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
     """Đơn hàng nạp (H9): lọc theo trạng thái + xác nhận trả tay (dự phòng)."""
 
     name = "Đơn hàng"
@@ -1271,33 +1371,59 @@ class OrdersView(BaseView):
 
     @expose("/don", methods=["GET"])
     async def orders(self, request: Request):
-        from platform_core import billing
+        from platform_core import admin_console, billing
         from server.auth.csrf import issue_csrf_token
         st = request.query_params.get("st", "all")
+        tim = (request.query_params.get("q") or "").strip()
         gen = get_session(); db = next(gen)
         try:
             allrows = billing.liet_ke_don(db, limit=300)
+            # Bảng đơn chỉ giữ `user_id`. Hiện tám ký tự đầu của một UUID là
+            # buộc người vận hành chép nó sang một trang khác để biết đó là ai —
+            # đúng luồng copy-UUID mà Golden Journey 1/2 nói phải hết.
+            email_cua = admin_console.emails_cua(db, [o.user_id for o in allrows])
             token = issue_csrf_token(request)
             cnt = {"all": len(allrows)}
             for s in ("pending", "paid", "expired", "cancelled", "failed"):
                 cnt[s] = sum(1 for o in allrows if o.status == s)
             shown = allrows if st == "all" else [o for o in allrows if o.status == st]
+            if tim:
+                shown = [o for o in shown
+                         if tim in str(o.order_code)
+                         or tim.lower() in (email_cua.get(o.user_id) or "").lower()
+                         or tim == o.user_id]
             rows = ""
             for o in shown:
                 markpaid = ""
                 if o.status == "pending":
+                    # Xác nhận tường minh: đây là thao tác TIỀN, và nó cộng
+                    # credit thật cho khách. Idempotent nên bấm hai lần không
+                    # cộng đôi — nhưng "không hỏng" khác với "cố ý".
+                    xn = (f"Xác nhận đơn #{o.order_code} ĐÃ ĐƯỢC TRẢ? "
+                          f"Khách sẽ được cộng {o.credits:,} credit.")
                     markpaid = (f'<form method="post" action="/admin/don/action" style="display:inline">'
                                 f'<input type="hidden" name="csrf_token" value="{escape(token)}">'
                                 f'<input type="hidden" name="order_code" value="{o.order_code}">'
-                                f'<button class="btn ghost sm">Đã trả</button></form>')
+                                f'<button class="btn ghost sm" '
+                                f'onclick="return confirm({escape(repr(xn))})">'
+                                f'Xác nhận đã trả</button></form>')
+                # Email có liên kết thay vì tám ký tự đầu của UUID: cột cũ không
+                # bấm được và không nói lên ai, nên muốn biết đó là ai phải chép
+                # UUID sang một trang khác.
+                _email = email_cua.get(o.user_id) or o.user_id
                 rows += (f'<tr><td class="mono">{o.order_code}</td>'
-                         f'<td class="mono muted">{escape(o.user_id[:8])}</td>'
+                         f'<td><a href="/admin/nguoi-dung?q={escape(o.user_id)}">'
+                         f'{escape(_email)}</a></td>'
                          f'<td class="tnum">{_vnd(o.price_vnd)}</td>'
                          f'<td class="tnum">{o.credits:,}{(" +%d%%" % o.bonus_percent) if o.bonus_percent else ""}</td>'
                          f'<td>{_order_badge(o.status)}</td>'
                          f'<td class="muted" style="font-size:12px">{escape(o.gateway or "-")}</td>'
                          f'<td class="muted" style="font-size:12px">{o.created_at:%m-%d %H:%M}</td>'
-                         f'<td><div class="rowactions">{markpaid}</div></td></tr>')
+                         f'<td><div class="rowactions">{markpaid}'
+                         + (f'<a class="btn ghost sm" href="/admin/credit-entry/list'
+                            f'?search={escape(o.user_id)}">Sổ credit</a>'
+                            if o.credited else '')
+                         + f'</div></td></tr>')
         finally:
             try: next(gen)
             except StopIteration: pass
@@ -1316,7 +1442,10 @@ class OrdersView(BaseView):
                 f'<th>Cổng</th><th>Tạo lúc</th><th style="text-align:right">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có đơn.</td></tr>"}'
                 f'</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Đơn hàng", "don", body))
+        return HTMLResponse(_admin_shell(
+            "Đơn hàng", "don", body,
+            thanh_cong=request.query_params.get("ok") or "",
+            loi=request.query_params.get("loi") or ""))
 
     @expose("/don/action", methods=["POST"])
     async def order_action(self, request: Request):
@@ -1331,12 +1460,96 @@ class OrdersView(BaseView):
             return RedirectResponse("/admin/don", status_code=303)
         gen = get_session(); db = next(gen)
         try:
-            billing.ghi_nhan_tra(db, code, by="admin")   # idempotent
+            truoc = billing.lay_don_theo_code(db, code)
+            da_cong_roi = bool(truoc and truoc.credited)
+            don = billing.ghi_nhan_tra(db, code, by="admin")   # idempotent
+            if don is None:
+                tin = f"loi=Khong tim thay don #{code}."
+            elif da_cong_roi:
+                # Idempotent nên lần bấm thứ hai KHÔNG cộng đôi. Nhưng im lặng
+                # chuyển hướng thì người bấm không biết là mình vừa không làm gì
+                # — và lần sau họ sẽ bấm tiếp.
+                tin = (f"ok=Don %23{code} da duoc cong credit tu truoc. "
+                       f"Khong cong lan hai.")
+            else:
+                # ⭐ Nhật ký admin cho mark-paid. Trước đợt này thao tác TIỀN này
+                #    chỉ để lại dấu vết trong `order.note` ("xac nhan boi admin")
+                #    và trong bút toán credit — không có dòng nào trong nhật ký
+                #    admin, nên câu "ai xác nhận đơn này, lúc nào" không tra được
+                #    ở nơi người ta sẽ đi tìm. Xem `01_LIVE_EVIDENCE.md` E-03.
+                ghi_nhat_ky(db, request, "xac_nhan_don_da_tra", str(code),
+                            f"{don.credits} credit cho {don.user_id}")
+                tin = (f"ok=Da xac nhan don %23{code}. "
+                       f"Cong {don.credits:,} credit cho khach.")
             db.commit()
         finally:
             try: next(gen)
             except StopIteration: pass
-        return RedirectResponse("/admin/don", status_code=303)
+        from urllib.parse import quote
+        khoa, gt = tin.split("=", 1)
+        return RedirectResponse(f"/admin/don?{khoa}={quote(gt)}", status_code=303)
+
+
+class _AdminLTT(Admin):
+    """SQLAdmin có trang chủ `/admin/` của riêng nền tảng.
+
+    `/admin/` đã có chủ: gói đăng ký `Route("/", endpoint=self.index)` và
+    `index` render `sqladmin/index.html`. Docstring của chính gói ghi
+    *"Index route which can be overridden to create dashboards."* — nên đây là
+    điểm mở rộng chính thức, không phải một mẹo.
+
+    Hai phương án còn lại đều tệ hơn và đã bị loại ở
+    `docs/admin_mvp_v3/04_EXTENSION_CONTRACT.md` §4: ghi đè
+    `sqladmin/index.html` khiến Tổng quan thành trang DUY NHẤT đội vỏ Tabler;
+    còn đặt trang ở `/admin/tong-quan` rồi chuyển hướng `/admin/` thì thêm một
+    redirect mà ma trận tương thích đã chốt là 0.
+
+    ⚠️ Đây mới là bản TỐI THIỂU của lô C0: nó chỉ điều hướng, không có một chỉ
+    số nào. Hàng đợi chú ý là hợp đồng P1 và thuộc lô C10 — làm nó bây giờ là
+    dựng chín liên kết sâu tới chín trang chưa chuyển xong.
+    """
+
+    @_login_required
+    async def index(self, request: Request):
+        from platform_core import admin_console
+        from server.templating import templates
+
+        gen = get_session(); db = next(gen)
+        try:
+            hang_doi = admin_console.hang_doi_chu_y(db)
+            nhat_ky = db.query(NhatKyAdmin).order_by(
+                NhatKyAdmin.created_at.desc()).limit(8).all()
+        except Exception as exc:
+            # ⭐ Một nguồn đọc không được thì ô đó nói "không lấy được" — KHÔNG
+            #    hiện 0. Số 0 ở một ô chú ý nghĩa là "mọi thứ ổn", và nói điều đó
+            #    trong khi thật ra ta không biết là kiểu nói dối bằng số mà
+            #    `05_PAGE_CONTRACT_MATRIX.md` Phần IV cấm.
+            #    Nhưng "không làm sập trang" khác với "nuốt luôn lý do": trang
+            #    vẫn mở được, còn lý do đi vào log để còn sửa được.
+            _log.warning("Tong quan admin: khong doc duoc hang doi chu y: %s", exc)
+            hang_doi, nhat_ky = None, None
+        finally:
+            try: next(gen)
+            except StopIteration: pass
+
+        than = templates.env.get_template("admin/tong_quan.html").render(
+            hang_doi=hang_doi, nhat_ky=nhat_ky, mien=_MIEN_TONG_QUAN)
+        return HTMLResponse(_admin_shell(
+            "Tổng quan", "tong_quan", than,
+            tieu_de="Tổng quan",
+            mo_ta="Việc gì cần bạn ngay bây giờ, và mở ở đâu để xử."))
+
+
+#: Sáu miền của trang quản trị — đích, nhãn, một câu nói nó trả lời việc gì.
+#: Cố ý KHÔNG có con số nào: hàng đợi chú ý là hợp đồng P1 (lô C10), và một ô
+#: chỉ số không có read-model đứng sau là đúng thứ `06b` cấm.
+_MIEN_TONG_QUAN = (
+    ("/admin/nguoi-dung", "Khách hàng", "Tra cứu một khách và toàn cảnh của họ."),
+    ("/admin/doanh-thu", "Tài chính", "Đơn nạp, sổ credit, gói nạp."),
+    ("/admin/api-tong-quan", "API Platform", "Truy cập, quản trị, vận hành, giá."),
+    ("/admin/apikeys", "Vận hành", "Provider credentials, model, job."),
+    ("/admin/nhat-ky-admin/list", "Hệ thống", "Nhật ký admin và tình trạng."),
+)
 
 
 def setup_admin(app, *, session_secret: str) -> bool:
@@ -1354,13 +1567,22 @@ def setup_admin(app, *, session_secret: str) -> bool:
 
     import os as _os
     _adm_tpl = _os.path.join(_os.path.dirname(__file__), "admin_templates")
-    admin = Admin(
+    admin = _AdminLTT(
         app,
         engine,
         title="LTT AI Studio — Quản trị",
         authentication_backend=AdminAuth(secret_key=session_secret),
         templates_dir=_adm_tpl,   # override sqladmin/base.html -> theme dark (UX-1)
     )
+    # Trang SQLAdmin dựng bằng Jinja env RIÊNG của gói, nên nó không thấy
+    # `asset_ver` của nền tảng lẫn cây điều hướng của ta. Bơm hai thứ đó vào đây
+    # là cách duy nhất để nửa SQLAdmin và nửa trang tự viết dùng CÙNG một nguồn
+    # điều hướng — trước đợt này nửa SQLAdmin có năm thẻ <a> viết tay riêng, và
+    # nó nạp `ltt.css` KHÔNG kèm `?v=`, tức sau mỗi lần đổi CSS nó phục vụ bản
+    # cũ tới hết TTL của Cloudflare (CLAUDE.md quy tắc 6).
+    from server.routes.admin._chung import dieu_huong as _dh
+    admin.templates.env.globals["asset_ver"] = _asset_ver()
+    admin.templates.env.globals["adm_nav"] = _dh("tong_quan")["thanh_ben"]
     admin.add_view(UserAdmin)
     admin.add_view(CreditEntryAdmin)
     admin.add_view(GrantCreditView)
@@ -1381,6 +1603,12 @@ def setup_admin(app, *, session_secret: str) -> bool:
     from server.admin_api import VIEWS as _API_VIEWS
 
     for _view in _API_VIEWS:
+        admin.add_view(_view)
+    # Miền mới tự khai view của nó ở `server/routes/admin/<mien>.py` và gom vào
+    # `server.routes.admin.VIEWS`. Thêm một trang KHÔNG phải sửa chỗ này.
+    from server.routes.admin import VIEWS as _MIEN_VIEWS
+
+    for _view in _MIEN_VIEWS:
         admin.add_view(_view)
     admin.add_view(RevenueView)
     admin.add_view(PackagesView)

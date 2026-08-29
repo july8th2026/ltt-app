@@ -1,0 +1,171 @@
+{# Danh sách khách hàng — cửa vào của Golden Journey 1 (hỗ trợ khách).
+
+   Hợp đồng: `docs/admin_mvp_v3/05_PAGE_CONTRACT_MATRIX.md` P2.
+
+   ⛔ Trang này KHÔNG có: gói dịch vụ · ảnh đại diện · số điện thoại · quốc gia ·
+      KYC · ticket hỗ trợ · "% so với tháng qua". Ảnh mockup có cả bảy, và không
+      cái nào có nguồn dữ liệu. Bảy dòng tương ứng nằm trong
+      `06b_SO_DANG_KY_NOI_DUNG_CAM.md` và `test_317` grep tệp này.
+
+   ⛔ Và KHÔNG có mutation nào trong bảng. Đổi vai trò, vô hiệu hoá, cấp credit
+      đều là hành động trên MỘT khách — chúng sống trong Hồ sơ 360, nơi người
+      thao tác nhìn thấy đối tượng mình đang tác động. Một nút đỏ trên một dòng
+      bảng dài là cách bấm nhầm hàng. #}
+
+<div class="adm-content">
+
+  <div class="adm-luoi-rail">
+    <div>
+      <form class="dev-loc" method="get" action="/admin/khach-hang" role="search">
+        <label>
+          <span>Tìm</span>
+          <input name="q" value="{{ tim }}" placeholder="email, User ID hoặc tên hiển thị">
+        </label>
+        <label>
+          <span>Trạng thái</span>
+          <select name="trang_thai">
+            <option value="">Tất cả</option>
+            <option value="hoat_dong" {{ 'selected' if trang_thai == 'hoat_dong' }}>Đang hoạt động</option>
+            <option value="vo_hieu" {{ 'selected' if trang_thai == 'vo_hieu' }}>Bị vô hiệu hoá</option>
+          </select>
+        </label>
+        <label>
+          <span>Xác thực email</span>
+          <select name="xac_thuc">
+            <option value="">Tất cả</option>
+            <option value="roi" {{ 'selected' if xac_thuc == 'roi' }}>Đã xác thực</option>
+            <option value="chua" {{ 'selected' if xac_thuc == 'chua' }}>Chưa xác thực</option>
+          </select>
+        </label>
+        <button class="btn" type="submit">Lọc</button>
+        {% if tim or trang_thai or xac_thuc %}
+        <a class="btn ghost" href="/admin/khach-hang">Bỏ lọc</a>
+        {% endif %}
+      </form>
+
+      {% if dong %}
+      <div class="dev-bang">
+        <table class="table">
+          <caption class="sr-only">Danh sách khách hàng</caption>
+          <thead>
+            <tr>
+              {# Chỉ những cột SẮP ĐƯỢC mới có liên kết. Một mũi tên trên mọi
+                 cột rồi ba trong số đó không làm gì là một lời hứa rỗng.
+                 "Số dư" cố ý KHÔNG sắp được — nó là tổng của sổ append-only,
+                 nên sắp theo nó là một lượt quét toàn bảng `credit_entries`
+                 cho mỗi lần đổi trang. Xem `SAP_XEP` trong
+                 `platform_core/admin_console.py`. #}
+              <th scope="col" {{ 'aria-sort=ascending' if sap_xep == 'email' }}>
+                <a href="{{ lien_ket_sap('email') }}">Khách hàng
+                  {{ '▲' if sap_xep == 'email' }}</a>
+              </th>
+              <th scope="col" class="tnum">Số dư</th>
+              <th scope="col">Vai trò</th>
+              <th scope="col">Trạng thái</th>
+              <th scope="col" {{ 'aria-sort=descending' if sap_xep == 'moi' }}
+                  {{ 'aria-sort=ascending' if sap_xep == 'cu' }}>
+                <a href="{{ lien_ket_sap('cu' if sap_xep == 'moi' else 'moi') }}">Tạo lúc
+                  {{ '▼' if sap_xep == 'moi' }}{{ '▲' if sap_xep == 'cu' }}</a>
+              </th>
+              <th scope="col" {{ 'aria-sort=descending' if sap_xep == 'dang_nhap' }}>
+                <a href="{{ lien_ket_sap('dang_nhap') }}">Đăng nhập cuối
+                  {{ '▼' if sap_xep == 'dang_nhap' }}</a>
+              </th>
+              <th scope="col"><span class="sr-only">Thao tác</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in dong %}
+            <tr>
+              <td>
+                <a href="/admin/nguoi-dung?q={{ d.user.id }}"><strong>{{ d.user.email }}</strong></a>
+                {# ⭐ User ID cắt bớt, giá trị đầy đủ ở `title`.
+                   Đo trên production 29/08 ở khung 1440px: hiện đủ 36 ký tự UUID
+                   làm cột đầu rộng 218px, bảng cần 867px trong khung 791px — và
+                   thứ bị đẩy ra ngoài là **nút hành động chính** của trang. Không
+                   phải tràn body (bảng cuộn trong khung của nó), nên phép quét
+                   tự động không bắt; chỉ nhìn mới thấy.
+                   ID vẫn đọc được đủ khi rê chuột, và vẫn chọn-chép được. #}
+                <br><span class="dev-id adm-id-cat" title="{{ d.user.id }}">{{ d.user.id }}</span>
+              </td>
+              {# Đơn vị là CREDIT. `PaymentOrder` tách `price_vnd` khỏi `credits`
+                 (1 credit = 100 đ) — ảnh mockup ghi số dư kèm "đ", và bê nguyên
+                 nhãn đó vào là sai số hiển thị 100 lần. #}
+              <td class="tnum">{{ "{:,}".format(d.so_du) }} credit</td>
+              <td>{{ d.user.role or 'user' }}</td>
+              <td>
+                {% if not d.user.is_active %}
+                  <span class="dev-tt loi">Vô hiệu hoá</span>
+                {% elif not d.user.is_verified %}
+                  <span class="dev-tt canh">Chưa xác thực</span>
+                {% else %}
+                  <span class="dev-tt ok">Hoạt động</span>
+                {% endif %}
+              </td>
+              <td class="tnum">{{ d.user.created_at.strftime('%d/%m/%Y') if d.user.created_at else '—' }}</td>
+              <td class="tnum">{{ d.user.last_login_at.strftime('%d/%m/%Y %H:%M') if d.user.last_login_at else 'chưa bao giờ' }}</td>
+              <td><a class="btn btn-sm ghost" href="/admin/nguoi-dung?q={{ d.user.id }}">Mở hồ sơ 360</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="adm-phantrang">
+        <span>{{ offset + 1 }}–{{ offset + dong|length }} trong {{ "{:,}".format(tong) }}</span>
+        {% if offset > 0 %}
+        <a class="btn btn-sm ghost" href="{{ lien_ket_trang(offset - limit) }}">← Trước</a>
+        {% endif %}
+        {% if offset + limit < tong %}
+        <a class="btn btn-sm ghost" href="{{ lien_ket_trang(offset + limit) }}">Sau →</a>
+        {% endif %}
+      </div>
+
+      {% else %}
+      <div class="dev-trong">
+        {% if tim or trang_thai or xac_thuc %}
+          <p><strong>Không có khách nào khớp bộ lọc.</strong></p>
+          <p>Thử bỏ bớt điều kiện, hoặc tìm bằng đúng email/User ID.</p>
+          <p><a class="btn ghost" href="/admin/khach-hang">Bỏ lọc</a></p>
+        {% else %}
+          <p><strong>Chưa có khách hàng nào.</strong></p>
+          <p>Danh sách này đầy lên khi có người đăng ký tài khoản.</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {# Rail chú ý. BA tín hiệu, và cả ba đếm được từ bảng thật.
+       Ảnh mockup có bốn ô: "Tài khoản bị khoá", "Nợ quá hạn", "Sắp hết hạn gói",
+       "Yêu cầu hỗ trợ mở" — chỉ ô đầu có thật. Nền tảng trả TRƯỚC bằng credit
+       nên không có công nợ; không bán thuê bao nên không có hạn gói; không có hệ
+       ticket nên không có yêu cầu hỗ trợ. #}
+    <aside class="adm-rail" aria-labelledby="rail-chu-y">
+      <h2 id="rail-chu-y" class="adm-rail-tieu-de">Cần chú ý</h2>
+      {% if chu_y.vo_hieu or chu_y.chua_xac_thuc or chu_y.so_du_am %}
+      <ul class="adm-rail-ds">
+        {% if chu_y.vo_hieu %}
+        <li><a href="/admin/khach-hang?trang_thai=vo_hieu">
+          <span class="dev-tt loi">{{ chu_y.vo_hieu }}</span>
+          <span><strong>Tài khoản bị vô hiệu hoá</strong><small>Khách không đăng nhập được.</small></span>
+        </a></li>
+        {% endif %}
+        {% if chu_y.chua_xac_thuc %}
+        <li><a href="/admin/khach-hang?xac_thuc=chua">
+          <span class="dev-tt canh">{{ chu_y.chua_xac_thuc }}</span>
+          <span><strong>Chưa xác thực email</strong><small>Đăng ký xong nhưng chưa bấm liên kết.</small></span>
+        </a></li>
+        {% endif %}
+        {% if chu_y.so_du_am %}
+        <li><a href="/admin/credit-entry/list">
+          <span class="dev-tt loi">{{ chu_y.so_du_am }}</span>
+          <span><strong>Số dư âm</strong><small>Quyết toán lớn hơn phần đã giữ chỗ.</small></span>
+        </a></li>
+        {% endif %}
+      </ul>
+      {% else %}
+      <p class="adm-rail-rong">Không có gì cần chú ý.</p>
+      {% endif %}
+    </aside>
+  </div>
+</div>

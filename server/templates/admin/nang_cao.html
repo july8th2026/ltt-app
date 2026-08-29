@@ -1,0 +1,32 @@
+{# Muc luc khu du lieu tho. Hop dong P10.
+
+   Thanh ben cua SQLAdmin liet ke ten bang va khong gi khac. Trang nay noi moi
+   bang dung de lam gi, va cai gi KHONG nen lam o do — vi ca nam bang deu sua/xoa
+   duoc, va ba trong so do la du lieu tien hoac an ninh. #}
+<div class="adm-content">
+  <div class="alert alert-warn" role="status">
+    <strong>Đây là dữ liệu thô.</strong>
+    Mỗi bảng dưới đây đều có một trang nghiệp vụ tương ứng an toàn hơn — trang đó
+    kiểm tra dữ liệu vào, hỏi lại trước khi làm việc nguy hiểm, và ghi nhật ký.
+    Bảng thô không làm cả ba. Dùng nó để tra cứu và sửa chữa, không phải để làm
+    việc hằng ngày.
+  </div>
+
+  <div class="adm-mien-luoi">
+    {% for href, ten, mo_ta in bang_tho %}
+    <a class="adm-mien" href="{{ href }}"><b>{{ ten }}</b><span>{{ mo_ta }}</span></a>
+    {% endfor %}
+  </div>
+
+  <section class="card adm-mien-khoi">
+    <header class="adm-khoi-dau"><h2>Ba bảng không nằm ở đây</h2></header>
+    <p class="adm-dan">Sổ credit, Job và Nhật ký admin cũng là bảng SQLAdmin,
+      nhưng chúng là workflow chính chứ không phải dữ liệu thô — nên chúng nằm
+      thẳng trong thanh điều hướng của miền tương ứng.</p>
+    <div class="actions">
+      <a class="btn ghost" href="/admin/credit-entry/list">Sổ credit</a>
+      <a class="btn ghost" href="/admin/job/list">Job</a>
+      <a class="btn ghost" href="/admin/nhat-ky-admin/list">Nhật ký admin</a>
+    </div>
+  </section>
+</div>
