@@ -41,13 +41,23 @@
    nổi. Đây là cùng một cái bẫy, ở một vỏ khác. #}
 {% include "_kieu_chung.html" %}
 <title>{{ title }} — Quản trị</title>
+{# ⭐ Đặt trạng thái thanh bên TRƯỚC khi vẽ, không phải sau. Đọc localStorage ở
+   cuối `<body>` thì trình duyệt đã vẽ xong thanh bên rộng rồi mới thu lại —
+   người dùng thấy một cú giật ở MỌI lần tải trang, và cú giật đó khó chịu hơn
+   hẳn cái tiện mà nút này mang lại.
+
+   ⚠️ Bọc try/catch: `localStorage` **ném** chứ không trả rỗng khi trình duyệt
+      chặn site data (chế độ riêng tư nghiêm ngặt, thiết lập doanh nghiệp). Một
+      ngoại lệ ở đây làm hỏng cả `<head>`. #}
+<script>try{if(localStorage.getItem("adm-side")==="hep")
+document.documentElement.setAttribute("data-adm-side","hep")}catch(e){}</script>
 </head>
 <body>
 <a class="skip-link" href="#admin-content">Bỏ qua điều hướng</a>
 
 <div class="adm">
 
-  <aside class="adm-side" aria-label="Điều hướng quản trị">
+  <aside class="adm-side" id="adm-side" aria-label="Điều hướng quản trị">
     <div class="adm-brand">
       <div class="mark">LTT</div>
       <div><b>LTT AI Studio</b><small>quản trị</small></div>
@@ -65,8 +75,21 @@
       {% endfor %}
     </nav>
 
+    {# ── Nút thu gọn ──────────────────────────────────────────────────────
+       ⚠️ Nó KHÔNG có mặt dưới 820px, và đó là chủ ý: ở đó `.adm-side` vốn đã
+          `display:none` và điều hướng đi qua `<details>` ở thanh mobile. Một
+          nút thu gọn cho một thanh bên không tồn tại là một nút chết.
+
+       Nhãn đổi theo trạng thái nên `aria-expanded` một mình là đủ cho trình đọc
+       màn hình; `aria-controls` trỏ về chính thanh bên. #}
+    <button type="button" class="adm-thugon" id="adm-thugon"
+            aria-controls="adm-side" aria-expanded="true">
+      <span class="mui" aria-hidden="true">«</span>
+      <span class="chu">Thu gọn</span>
+    </button>
+
     <div class="adm-sidefoot">
-      <span class="status-live"></span>Hệ thống vận hành
+      <span class="status-live"></span><span class="chu">Hệ thống vận hành</span>
     </div>
   </aside>
 
@@ -87,20 +110,25 @@
     </header>
 
     {# ── Thanh trên ────────────────────────────────────────────────────────
-       Ảnh mockup vẽ một ô "Tìm người dùng, đơn hàng, log…". KHÔNG có backend
-       nào cho tìm kiếm liên thực thể, nên ô đó sẽ là một lời hứa rỗng. Ở đây
-       nó là ô tìm KHÁCH HÀNG, và nhãn nói đúng như vậy — authority là
-       `credit.tim_theo_email` + `db.get(User, id)`, đã dùng ở
-       `/admin/nguoi-dung`. Omnibox liên thực thể: 24_DEFERRED_POST_MVP.
+       Ảnh mockup vẽ một ô "Tìm người dùng, đơn hàng, log…". Suốt đợt MVP ô này
+       CHỈ tìm khách hàng, vì không có read-model nào tra liên thực thể — và
+       `24_DEFERRED_POST_MVP` mục B cấm rõ việc nhận thêm loại rồi trả rỗng.
+
+       ⭐ Từ 29/08 điều kiện mở lại đã đạt: `admin_console.tim_lien_thuc_the()`
+          tra NĂM loại, mỗi loại chỉ ra được một bảng thật. Nhãn dưới đây liệt
+          kê đúng năm thứ đó — không hơn một loại nào.
+
+       ⛔ Nếu có ai thêm loại thứ sáu vào nhãn thì phải thêm một bảng vào
+          read-model trước. Nhãn là lời hứa; read-model là thứ giữ lời.
 
        Cũng vì thế thanh này KHÔNG có chip môi trường "Production" và KHÔNG có
        chuông thông báo có số: nền tảng không có nhiều môi trường, và không có
        hàng đợi thông báo cho admin. Xem 06b_SO_DANG_KY_NOI_DUNG_CAM. #}
     <div class="adm-top">
-      <form class="adm-timkiem" method="get" action="/admin/nguoi-dung" role="search">
-        <label class="sr-only" for="adm-q">Tìm khách hàng theo email hoặc User ID</label>
+      <form class="adm-timkiem" method="get" action="/admin/tim" role="search">
+        <label class="sr-only" for="adm-q">Tìm khách, đơn nạp, job, lời gọi API hoặc khoá</label>
         <input id="adm-q" name="q" type="search" value="{{ q_khach or '' }}"
-               placeholder="Tìm khách hàng — email hoặc User ID">
+               placeholder="Tìm — email · User ID · mã đơn · job id · correlation id · mã khoá">
         <button class="btn btn-sm" type="submit">Tìm</button>
       </form>
       <div class="adm-top-phai">
@@ -170,5 +198,32 @@
     {{ than|safe }}
   </main>
 </div>
+
+{# Nút thu gọn: chỉ đổi một thuộc tính trên `<html>` và ghi lại lựa chọn. Toàn bộ
+   hình dạng nằm ở `ltt.css` dưới `[data-adm-side="hep"]` — không có style nào
+   đặt bằng JS, nên tắt JS thì thanh bên đơn giản là luôn rộng. #}
+<script>
+(function(){
+  var nut = document.getElementById("adm-thugon");
+  if (!nut) return;
+  var goc = document.documentElement;
+  function ve(){
+    var hep = goc.getAttribute("data-adm-side") === "hep";
+    nut.setAttribute("aria-expanded", hep ? "false" : "true");
+    nut.querySelector(".mui").textContent = hep ? "»" : "«";
+    nut.querySelector(".chu").textContent = hep ? "Mở rộng" : "Thu gọn";
+    // Khi thu gọn thì chữ bị ẩn, nên nút phải tự mang nhãn.
+    nut.setAttribute("aria-label", hep ? "Mở rộng thanh bên" : "Thu gọn thanh bên");
+  }
+  nut.addEventListener("click", function(){
+    var hep = goc.getAttribute("data-adm-side") === "hep";
+    if (hep) goc.removeAttribute("data-adm-side");
+    else goc.setAttribute("data-adm-side", "hep");
+    try { localStorage.setItem("adm-side", hep ? "rong" : "hep"); } catch (e) {}
+    ve();
+  });
+  ve();
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,63 @@
+{# API Platform — Margin. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P6 (Economics).
+
+   ⭐ Trang nay ton tai de noi mot cau: DOANH THU la su that, CHI PHI la uoc
+      luong. Tron hai thu do trong mot bang la cach mot nguoi doi gia ban dua
+      tren mot con so khong ai ky. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Margin</h1>
+    <p><b>Doanh thu</b> lấy từ sổ credit: đó là số khách thật sự bị tính, và là
+      chân lý thanh toán. <b>Chi phí</b> ở đây là <b>ƯỚC LƯỢNG</b>: nền tảng đo
+      được thời lượng và số byte, nhưng giá tiền của một giây GPU hay một byte
+      lưu trữ là con số hợp đồng do người vận hành nhập. Đừng đổi giá bán chỉ
+      dựa vào trang này — hãy đối chiếu hoá đơn thật trước.</p>
+  </div></div>
+
+  <div class="tabs">
+    {% for h, nhan in cua_so_chon %}
+    <a class="{{ 'on' if hours == h }}" href="/admin/api-margin?hours={{ h }}">{{ nhan }}</a>
+    {% endfor %}
+  </div>
+
+  {{ m.mo_luoi_o() }}
+    {{ m.o_chi_so("Doanh thu (credit)", window.revenue_credit,
+                  "từ sổ credit — con số đã quyết toán") }}
+    {{ m.o_chi_so("Chi phí ước tính", tien(window.cost_micros),
+                  "%s quan sát"|format(window.observations)) }}
+    {{ m.o_chi_so("Chênh lệch ước tính", tien(window.margin_micros),
+                  "ước lượng, không phải kế toán",
+                  mau=(ERR if window.is_negative else OK)) }}
+  </div>
+
+  {% if don_gia %}
+  <p>Đơn giá đang cấu hình:
+    {% for loai, gt in don_gia %}<code>{{ loai }}={{ gt }}µ</code> {% endfor %}.
+    Đây là con số <b>giả định</b> do người vận hành nhập, không phải hoá đơn.</p>
+  {% else %}
+  {# Chi phi bang 0 la mot KHANG DINH. Khi chua co don gia thi nen tang khong co
+     quyen khang dinh dieu do, nen no khong ghi quan sat nao ca. #}
+  <p class="muted">Chưa cấu hình đơn giá nào ({{ bien_moi_truong }}), nên nền
+    tảng không ghi quan sát chi phí. Cố ý: một chi phí bằng 0 là một khẳng định,
+    và khi chưa có đơn giá thì nền tảng không có quyền khẳng định điều đó.</p>
+  {% endif %}
+
+  <section>
+    <h2 style="margin:22px 0 10px">Chi phí ước tính theo công cụ</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Công cụ</th><th>Chi phí ước tính</th><th>Số quan sát</th></tr></thead>
+      <tbody>
+        {% for r in by_tool %}
+        <tr>
+          <td class="mono">{{ r.tool }}</td>
+          <td class="tnum">{{ tien(r.cost_micros) }}</td>
+          <td class="tnum">{{ r.observations }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">Chưa có quan sát chi phí nào trong khoảng này.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>

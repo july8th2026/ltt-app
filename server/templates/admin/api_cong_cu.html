@@ -1,0 +1,70 @@
+{# API Platform — Cong cu (Governance). Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P7.
+
+   ⛔ Trang nay KHONG duoc hua mot nut bat/tat tool. Bat/tat ngay tai cho la
+      EXT-14 va chua co — mot nut khong lam gi te hon khong co nut. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Công cụ</h1>
+    <p>Hai điều kiện phải cùng đúng thì một tool mới gọi được: app khai
+      <code>api_exposed</code>, <b>và</b> deployment liệt kê nó trong
+      <code>LTT_PUBLIC_API_TOOLS</code>. Mặc định là đóng.</p>
+  </div></div>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Allowlist của deployment này</h2>
+    <p>
+      {%- for ten in mo_san %}<code>{{ ten }}</code> {% else %}<em>rỗng</em>{% endfor -%}
+    </p>
+    <p class="muted">Sửa ở <code>secrets/app.env</code> rồi khởi động lại dịch vụ.
+      Bật/tắt ngay tại chỗ (kill switch) là việc của EXT-14, chưa có ở đây — nên
+      trang này không hứa cái nút đó.</p>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Tool ({{ hours }} giờ gần nhất)</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr>
+        <th>Tên công khai</th><th>App</th><th>Chế độ chạy</th>
+        <th>Phơi bày</th><th>Lời gọi</th><th>Hỏng</th>
+      </tr></thead>
+      <tbody>
+        {% for r in tools %}
+        {# ⭐ Truoc dot nay ca ba trang Governance deu la NGO CUT. Hop dong P7 doi
+           tu mot tool di duoc sang gia cua no va sang loi goi that cua no.
+
+           ⚠️ O day `r.name` LA ten tool API (`image.ltt`), nen `?tool=` khop dung
+              voi `jobs_page`. Khac voi bang "job theo loai" o trang Tong quan,
+              noi khoa la `Job.job_type` — dung nham dinh danh o do se ra mot
+              danh sach RONG tra 200. #}
+        <tr>
+          <td class="mono">
+            <a href="/admin/api-gia?tool={{ r.name }}">{{ r.name }}</a>
+            {%- if r.deprecated %} <span class="chip v">{{ r.deprecated }}</span>{% endif %}
+          </td>
+          <td>{{ r.app }}</td>
+          <td class="mono muted">{{ r.execution_mode }}</td>
+          <td>
+            {% if r.published %}
+            <span class="badge b-ok"><span class="dot"></span>đang mở</span>
+            {% else %}
+            <span class="badge b-grey"><span class="dot"></span>app khai nhưng deployment chưa mở</span>
+            {% endif %}
+          </td>
+          <td class="tnum">
+            {%- if r.calls %}<a href="/admin/api-job?tool={{ r.name }}&hours={{ hours }}">{{ r.calls }}</a>
+            {%- else %}0{% endif -%}
+          </td>
+          <td class="tnum">
+            {%- if r.failed %}<a href="/admin/api-request?q={{ r.name }}&status=failed&hours={{ hours }}" style="color:{{ ERR }}">{{ r.failed }}</a>
+            {%- else %}0{% endif -%}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="muted" style="padding:26px;text-align:center">Chưa app nào khai tool ra API công khai.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>

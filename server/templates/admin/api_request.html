@@ -1,0 +1,68 @@
+{# API Platform — Request. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P8.
+
+   ⛔ Chi dung metadata log THAT SU dang luu. KHONG them cot payload, khong them
+      nut "Xem payload", khong dung lai body de export cURL — nen tang co y
+      KHONG luu raw request/response (`public_api/tables.py:248-256`), va them
+      cho de chieu mockup la bien mot bang go loi thanh mot ban sao noi dung cua
+      khach voi mot cai ten than thien hon. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Request</h1>
+    <p>Nhật ký này chỉ ghi <b>lời gọi hỏng</b> và <b>lời gọi ghi dữ liệu</b>
+      (EXT-09) — một quyết định về thông lượng, không phải thiếu sót. Mọi con số
+      ở đây là con số trên phần đã ghi.</p>
+  </div></div>
+
+  <form method="get" class="job-filters">
+    <input name="q" value="{{ query }}" placeholder="correlation id, khoá, route, tool…"
+           aria-label="Tìm theo correlation id, khoá, route hoặc tool">
+    <select name="status" aria-label="Lọc theo kết quả">
+      <option value="">mọi kết quả</option>
+      <option value="failed" {{ 'selected' if status == 'failed' }}>chỉ hỏng</option>
+      <option value="ok" {{ 'selected' if status == 'ok' }}>chỉ thành công</option>
+    </select>
+    <input name="code" value="{{ code }}" placeholder="mã lỗi" aria-label="Lọc theo mã lỗi">
+    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <button class="btn ghost sm">Lọc</button>
+  </form>
+
+  <div class="tablewrap"><table class="ui-table">
+    <thead><tr>
+      <th>Lúc</th><th>Correlation</th><th>Tài khoản</th><th>Route</th>
+      <th>HTTP</th><th>Mã</th><th>ms</th><th>Credit</th>
+    </tr></thead>
+    <tbody>
+      {% for it in page.rows %}
+      {% set r = it.row %}
+      <tr>
+        <td class="muted">{{ luc(r.created_at) }}</td>
+        <td class="mono"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
+        {# Cot tai khoan tung la chu tran: nguoi dieu tra doc duoc email roi phai
+           tu chep sang mot trang khac. Hop dong P8 doi mot request dan duoc sang
+           ngu canh cua khach VA cua khoa. #}
+        {% if it.email %}
+        <td>
+          <a href="/admin/nguoi-dung?q={{ r.user_id }}">{{ it.email }}</a>
+          <a class="muted" style="font-size:11px" href="/admin/api-tai-khoan?user={{ r.user_id }}">(API)</a>
+        </td>
+        {% else %}<td class="muted">—</td>{% endif %}
+        <td class="mono">{{ r.method }} {{ r.route }}</td>
+        <td class="tnum" {% if r.status >= 400 %}style="color:{{ ERR }}"{% endif %}>{{ r.status }}</td>
+        {# Ma loi loc chinh danh sach nay: "con bao nhieu loi goi nua hong cung
+           kieu" la cau hoi ngay sau khi thay mot ma la. #}
+        <td class="mono muted">
+          {%- if r.code %}<a href="/admin/api-request?code={{ r.code }}&hours={{ hours }}">{{ r.code }}</a>{% endif -%}
+        </td>
+        <td class="tnum">{{ r.latency_ms }}</td>
+        <td class="tnum">{{ r.credit_delta }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="muted" style="padding:26px;text-align:center">Không có lời gọi nào khớp.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+
+  {{ m.phan_trang(page, base) }}
+</div>

@@ -1,0 +1,133 @@
+{# API Platform — Tổng quan. Hợp đồng: `05_PAGE_CONTRACT_MATRIX.md` P6.
+
+   ⛔ Chỉ số ở đây CHỈ được lấy từ các khoá `admin_console.overview()` trả về.
+      Không có tổng số request, không có error rate, không có uptime, không có
+      P95 — nền tảng chỉ ghi nhật ký lời gọi HỎNG và lời gọi GHI dữ liệu
+      (`admin_console.py:143–145`), nên bốn thứ đó không tồn tại để mà hiện.
+      Ảnh mockup có cả bốn. Xem `06b_SO_DANG_KY_NOI_DUNG_CAM.md`.
+
+   ⭐ Mỗi ô báo hỏng phải mở đúng trang xử lý được nó, KÈM bộ lọc đặt sẵn, và
+      mang theo cửa sổ thời gian đang xem. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Tổng quan</h1>
+    <p>Số liệu {{ hours }} giờ gần nhất. Nhật ký request chỉ ghi <b>lời gọi
+      hỏng</b> và <b>lời gọi ghi dữ liệu</b> (EXT-09), nên "lời gọi hỏng" là số
+      tuyệt đối chứ không phải tỉ lệ trên toàn bộ traffic.</p>
+  </div></div>
+
+  <div class="tabs">
+    {% for h, nhan in cua_so_chon %}
+    <a class="{{ 'on' if hours == h }}" href="/admin/api-tong-quan?hours={{ h }}">{{ nhan }}</a>
+    {% endfor %}
+  </div>
+
+  {{ m.mo_luoi_o() }}
+    {{ m.o_chi_so("Tài khoản có khoá", data.accounts_with_keys,
+                  href="/admin/api-tai-khoan") }}
+    {{ m.o_chi_so("Khoá live đang chạy", data["keys"].live,
+                  "%s test · %s đã thu hồi"|format(data["keys"].test, data["keys"].revoked),
+                  href="/admin/api-khoa") }}
+    {{ m.o_chi_so("Project đang hoạt động", data.projects_active,
+                  href="/admin/api-tai-khoan") }}
+    {{ m.o_chi_so("Credit khách đã trả", data.credit.net_charged,
+                  "giữ %s · hoàn %s"|format(data.credit.held, data.credit.refunded),
+                  href="/admin/api-margin?" ~ cs) }}
+    {# ⭐ Hai ô này đếm ĐÚNG job của API (`24_DEFERRED` §J). Trước 29/08
+       `overview()` không lọc `_api`, nên một bảng điều khiển API báo con số gồm
+       cả việc của giao diện web — và bấm vào thì rơi vào một danh sách NHỎ HƠN
+       con số vừa bấm. #}
+    {{ m.o_chi_so("Job API xong", data.jobs.succeeded, mau=OK,
+                  href="/admin/api-job?status=done&" ~ cs) }}
+    {{ m.o_chi_so("Job API hỏng", data.jobs.failed,
+                  mau=(ERR if data.jobs.failed else ""),
+                  href="/admin/api-job?status=error&" ~ cs) }}
+    {{ m.o_chi_so("Lời gọi hỏng", data.requests_failed, "trong số đã ghi nhật ký",
+                  mau=(ERR if data.requests_failed else ""),
+                  href="/admin/api-request?status=failed&" ~ cs) }}
+    {{ m.o_chi_so("Webhook chết", data.webhooks.dead,
+                  "%s đang chờ · %s đăng ký"|format(data.webhooks.pending, data.webhooks.subscriptions),
+                  mau=(ERR if data.webhooks.dead else ""),
+                  href="/admin/api-job?" ~ cs) }}
+  </div>
+
+  {{ m.mo_luoi_cot() }}
+    <section>
+      <h2 style="margin:22px 0 10px">Vận hành</h2>
+      <p class="muted" style="margin:0 0 10px">Cộng từ mọi tiến trình web và
+        worker. Bộ đếm sống trong tiến trình và được xả xuống CSDL mỗi phút, nên
+        số ở đây tồn tại qua khởi động lại.</p>
+      {{ m.mo_luoi_o() }}
+        {{ m.o_chi_so("Lỗi 5xx", dem.responses_5xx, "nền tảng, không phải khách",
+                      mau=(ERR if dem.responses_5xx else ""),
+                      href="/admin/api-request?status=failed&" ~ cs) }}
+        {{ m.o_chi_so("Xác thực hỏng", dem.auth_failure, "khoá sai hoặc đã thu hồi",
+                      mau=(ERR if dem.auth_failure else ""),
+                      href="/admin/api-bao-mat?" ~ cs) }}
+        {{ m.o_chi_so("Bị chặn nhịp", dem.rate_limited,
+                      href="/admin/api-bao-mat?" ~ cs) }}
+        {{ m.o_chi_so("Bị công tắc chặn", dem.kill_switch_refused,
+                      href="/admin/api-kill-switch") }}
+        {{ m.o_chi_so("Hết chỗ tài nguyên", dem.capacity_refused) }}
+        {{ m.o_chi_so("Webhook gửi hỏng", dem.webhook_failed,
+                      mau=(ERR if dem.webhook_failed else ""),
+                      href="/admin/api-job?" ~ cs) }}
+        {{ m.o_chi_so("Chờ vào hàng đợi", "%s ms"|format(cho_hang_doi.avg_ms),
+                      "cao nhất %s ms"|format(cho_hang_doi.max_ms)) }}
+        {{ m.o_chi_so("Tiến trình đã gộp", do.processes,
+                      "bảo trì: " ~ (ai_bao_tri or "chưa ai giữ")) }}
+        {# Ràng buộc này trước đây chỉ nằm trong docstring của `limits.py`, nên
+           người mở tiến trình web thứ hai sẽ không bao giờ đọc tới nó. Bộ đếm
+           nhịp sống TRONG tiến trình: hai tiến trình web nghĩa là mỗi khách
+           được gấp đôi hạn mức, im lặng. #}
+        {{ m.o_chi_so("Tiến trình web", do.web_processes,
+                      ("phải là 1 — trần nhịp đếm trong tiến trình"
+                       if do.web_processes > 1
+                       else "worker: %s"|format(do.worker_processes)),
+                      mau=(ERR if do.web_processes > 1 else "")) }}
+      </div>
+    </section>
+
+    <section>
+      <h2 style="margin:22px 0 10px">Mã lỗi hay gặp</h2>
+      <div class="tablewrap"><table class="ui-table">
+        <thead><tr><th>Mã</th><th>Số lần</th></tr></thead>
+        <tbody>
+          {% for ma, so in data.failures_by_code %}
+          <tr>
+            <td class="mono"><a href="/admin/api-request?code={{ ma }}&{{ cs }}">{{ ma }}</a></td>
+            <td class="tnum">{{ so }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="2" class="muted">Không có lời gọi nào hỏng trong khoảng này.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2 style="margin:22px 0 10px">Job theo loại</h2>
+      {# ⚠️ Bảng NÀY gom theo `Job.job_type` (toàn nền tảng), khác hai ô "Job
+         API" ở trên. `jobs_page(tool=)` lọc theo TÊN TOOL API trong
+         `params._api.tool` — hai định danh khác nhau, nên `?tool=<job_type>` sẽ
+         luôn ra danh sách rỗng. Đích đúng là bảng job của nền tảng, nơi
+         `job_type` là cột tìm được. #}
+      <div class="tablewrap"><table class="ui-table">
+        <thead><tr><th>Loại job</th><th>Tổng</th><th>Hỏng</th></tr></thead>
+        <tbody>
+          {% for r in by_tool %}
+          <tr>
+            <td class="mono"><a href="/admin/job/list?search={{ r.job_type }}">{{ r.job_type }}</a></td>
+            <td class="tnum">{{ r.done + r.error + r.other }}</td>
+            <td class="tnum" style="color:{{ ERR if r.error else OK }}">{{ r.error }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="muted">Chưa có job nào trong khoảng này.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+  </div>
+</div>

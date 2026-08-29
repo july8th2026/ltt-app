@@ -1,0 +1,55 @@
+{# API Platform — Khoa cua khach (danh sach). Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P6.
+
+   ⛔ May chu chi giu DAU VAN TAY mot chieu cua khoa. Khong co duong nao xem lai
+      chuoi bi mat — ke ca tu day, ke ca cho admin. Dung them mot nut "xem khoa";
+      no khong the ton tai. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Khoá</h1>
+    <p>Máy chủ chỉ giữ dấu vân tay một chiều của khoá, nên không có đường nào xem
+      lại được chuỗi bí mật — kể cả từ đây. Khách mất khoá thì tạo khoá mới.</p>
+  </div></div>
+
+  <form method="get" class="job-filters">
+    <input name="q" value="{{ q }}" placeholder="email, mã khoá hoặc tên…" aria-label="Tìm khoá">
+    <select name="status" aria-label="Lọc theo trạng thái">
+      {% for gt, nhan in (("", "Mọi trạng thái"), ("active", "Đang chạy"),
+                          ("disabled", "Đã tắt"), ("revoked", "Đã thu hồi"),
+                          ("expired", "Hết hạn")) %}
+      <option value="{{ gt }}"{{ " selected" if gt == status }}>{{ nhan }}</option>
+      {% endfor %}
+    </select>
+    <select name="mode" aria-label="Lọc theo môi trường">
+      {% for gt, nhan in (("", "Cả hai môi trường"), ("live", "Live"), ("test", "Test")) %}
+      <option value="{{ gt }}"{{ " selected" if gt == mode }}>{{ nhan }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn ghost sm">Lọc</button>
+  </form>
+
+  <div class="tablewrap"><table class="ui-table">
+    <thead><tr>
+      <th>Mã khoá</th><th>Tên</th><th>Chủ</th><th>Project</th>
+      <th>Môi trường</th><th>Trạng thái</th><th>Dùng lần cuối</th>
+    </tr></thead>
+    <tbody>
+      {% for r in page.rows %}
+      <tr>
+        <td class="mono"><a href="/admin/api-khoa?key={{ r.key.key_id }}">{{ r.key.key_id[:12] }}…</a></td>
+        <td>{{ r.key.name or "—" }}</td>
+        <td><a href="/admin/api-tai-khoan?user={{ r.user.id }}">{{ r.user.email }}</a></td>
+        <td>{{ r.project.name if r.project else "—" }}</td>
+        <td>{{ m.chip_mode(r.key.mode|default("live", true)) }}</td>
+        <td>{{ m.nhan_khoa(r.status) }}</td>
+        <td class="muted">{{ luc(r.key.last_used_at) }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7" class="muted" style="padding:26px;text-align:center">Không có khoá nào khớp bộ lọc.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+
+  {{ m.phan_trang(page, base) }}
+</div>

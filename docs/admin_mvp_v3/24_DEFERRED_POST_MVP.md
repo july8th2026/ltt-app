@@ -5,44 +5,101 @@ Danh sách này là một phần của kết quả, không phải phần thiếu
 
 ---
 
-## A. Chuyển thân bốn miền API sang Jinja (C5–C8)
+## A. Chuyển thân 12 trang API sang Jinja (C5–C8)
 
-**Trạng thái:** hoãn · ưu tiên **thấp hơn trước**
+**Trạng thái:** ✅ **XONG 2026-08-29** — `server/admin_api.py` **1.894 → 846 dòng**.
 
-⭐ Cập nhật sau lô C5–C8 (`09_LO_C5_C8.md`): giá trị vận hành của khu API — hết
-năm ngõ cụt, 13 ô chỉ số bấm được, mọi liên kết mang bộ lọc đặt sẵn — **đã lấy
-được mà không cần viết lại thân**. Nên lý do hoãn nay mạnh hơn lúc đầu.
+⭐ **Điều kiện mở lại đã tự chạm, và nó chạm từ trước khi mục này được viết.**
+Bản hoãn ghi: *"mở lại khi… có người sửa cùng lúc ≥ 2 trang trong đó"*. Lô C5–C8
+sửa **mười hai** trang — thêm liên kết sâu, thêm bộ lọc đặt sẵn, sửa nhãn. Nên
+câu "giữ diff nhỏ nhất" không còn đúng với thực tế: diff đã không nhỏ.
 
-`server/admin_api.py` còn ~1.880 dòng HTML dựng bằng f-string cho 16 trang API.
+**Đã làm gì.** Mười hai thân trang thành mười bốn template dưới
+`server/templates/admin/`, cộng `_macro_api.html` giữ tám thứ dùng chung. Tám
+hàm/hằng sinh HTML bằng chuỗi (`_stat`, `_pager`, `_mode_chip`, `_key_badge`,
+`_error_note`, `_reason_form`, `_TILES`, `_COLS`) và `_trace_body` đã **gỡ hẳn**
+— để lại là để dành sẵn một đường quay về nối chuỗi.
 
-**Vì sao hoãn, không phải bỏ quên.** Hợp đồng P6–P8 đòi ba thứ, và **cả ba đã
-đạt** sau C0:
-- IA đúng: 12 mục ngang cấp → 1 mục cha + 5 mục con + tab cấp ba, 0 route mất;
-- không nội dung bịa: các trang này vốn đã trung thực (chính `admin_console.py`
-  ghi rõ nhật ký chỉ lưu lời gọi hỏng, nên trang không hứa "tổng request");
-- giữ ngữ nghĩa kill switch: form có ô lý do bắt buộc, không thành toggle.
+🔴 **Cái giá phải trả, đo được, và đã trả:** một bẫy Jinja làm sai **ba** trang
+mà **không** trang nào trả khác 200.
 
-Viết lại thân là **polish trình bày**. Prompt 00 §5: giữ diff nhỏ nhất đáp ứng
-hợp đồng.
+`x.keys` được Jinja giải bằng `getattr` **trước** rồi mới `getitem`. Cả
+`accounts_page()` lẫn `account_detail()` đều trả dict có khoá `keys`, nên
+`x.keys` cho ra `<built-in method keys of dict>`. Trang tổng quan in một chuỗi
+rác ở ô "Khoá live đang chạy"; trang chi tiết tài khoản thì `|length` trên method
+→ **500**. Không phép kiểm chức năng nào thấy điều đó.
 
-**Mở lại khi:** một trang API cần khối UI mới mà f-string không dựng nổi, hoặc
-khi có người sửa cùng lúc ≥ 2 trang trong đó.
+⇒ Đã chốt bằng `test_323::test_khong_trang_nao_ro_ri_phuong_thuc_cua_dict` (12
+trang) + `test_moi_trang_api_render_duoc`. Cùng bẫy áp cho `items`, `values`,
+`get`, `copy`, `pop`.
+
+⭐ Và bánh cóc **nội dung cấm** bắt thêm hai chữ **có sẵn từ bản f-string**, chỉ
+lộ ra khi thân trang thành template (bộ quét chỉ soi `server/templates/admin`):
+- *"con số đã **đối soát**"* ở trang Margin — hứa một luồng đối soát **ngân
+  hàng** không tồn tại. Sửa thành "đã **quyết toán**", đúng tên bước thật trong
+  sổ credit.
+- *"**Địa chỉ**"* làm tiêu đề cột IP ở hai trang — chữ này bị cấm vì nền tảng
+  không có trường địa chỉ của khách. Đổi thành **"IP"**: vừa hết mơ hồ, vừa
+  không chạm hàng rào.
+
+⚠️ Đây là một lập luận **cho** việc chuyển sang template, không phải chống: hai
+lỗi chữ đó sống trong `admin_api.py` suốt thời gian nó là f-string vì **không bộ
+quét nào soi tới mã Python**.
 
 ---
 
 ## B. Ô tìm liên thực thể (omnibox)
 
-**Trạng thái:** hoãn · cần backend
+**Trạng thái:** ✅ **XONG 2026-08-29** — `admin_console.tim_lien_thuc_the()` +
+`/admin/tim`.
 
-Ảnh mockup vẽ ô "Tìm người dùng, đơn hàng, log…". Không có backend nào tìm liên
-thực thể. Ô hiện tại nói **đúng phạm vi của nó**: *"Tìm khách hàng — email hoặc
-User ID"*.
+⭐ **Mục này được mở đúng bằng điều kiện chính nó đặt ra.** Bản hoãn viết: *"mở
+lại khi có một read-model tìm kiếm hợp nhất (khách + đơn + request id + job id)
+trả về kết quả có phân loại"*. Đó chính là thứ được viết, nên đây không phải một
+lần đổi ý — nó là điều kiện đã đạt.
 
-⛔ Không làm ô nhận cả đơn hàng/log rồi trả rỗng. Một ô hứa nhiều hơn nó làm được
-là một lỗi vận hành, không phải một thiếu sót thẩm mỹ.
+**Năm loại, mỗi loại chỉ ra được một bảng thật:**
 
-**Mở lại khi:** có một read-model tìm kiếm hợp nhất (khách + đơn + request id +
-job id) trả về kết quả có phân loại.
+| Loại | Bảng | Tra bằng |
+|---|---|---|
+| Khách hàng | `users` | email chứa · User ID chính xác |
+| Đơn nạp | `payment_orders` | `order_code` (số) |
+| Job | `jobs` | id hoặc **tiền tố** |
+| Lời gọi API | `public_api_requests` | `request_id` hoặc tiền tố |
+| Khoá của khách | `developer_api_keys` | `key_id` hoặc tiền tố |
+
+Nhãn của ô liệt kê **đúng** năm thứ đó. `test_327::test_nhan_o_tim_va_read_model_khong_tach_nhau`
+đọc cả nhãn lẫn nguồn read-model và bắt lỗi nếu chúng lệch — tức luật *"không
+hứa nhiều hơn nó làm được"* nay là một phép kiểm, không phải một dòng văn xuôi.
+
+⭐ **Tiền tố job/request/khoá được cho phép có lý do:** UUID hiện ra dưới dạng
+**cắt** ở khắp khu quản trị (`job.id[:12]`), nên thứ người ta chép được từ màn
+hình là một tiền tố. Bắt họ tìm bằng chuỗi đầy đủ là bắt họ tìm bằng thứ giao
+diện không cho.
+
+⛔ **Không có tìm toàn văn**, và đó là một chốt: không `LIKE %q%` trên
+`jobs.params`, không tra `nhat_ky_admin.chi_tiet`. Cả hai là quét toàn bảng trên
+bảng lớn nhất hệ thống, và người gõ vào ô này **đang có sự cố** — một truy vấn
+30 giây ở đúng lúc đó tệ hơn là không có ô tìm. `test_khong_tim_toan_van` đọc
+chính nguồn, vì ràng buộc hiệu năng **không lộ ra ở hành vi** cho tới khi bảng
+đủ lớn.
+
+🔴 **Một lỗi 500 thật đã bị bắt trong lúc làm.** `payment_orders.order_code` là
+`BigInteger`. Chuỗi `"9"×40` vẫn qua `.isdigit()`, và `int()` **thành công** vì
+Python có số lớn — nhưng cột thì không: SQLite ném `OverflowError`, PostgreSQL
+ném `NumericValueOutOfRange`. Tức gõ nhầm một chuỗi số dài vào ô tìm làm đổ
+trang. Nay chặn ở `_TRAN_BIGINT` **trước khi** chạm CSDL;
+`test_so_qua_lon_khong_lam_do_trang` giữ nó.
+
+⭐ Một kết quả duy nhất thì **đi thẳng** (303) tới thực thể đó. Bắt người đang xử
+sự cố bấm thêm một lần vào một danh sách có đúng một dòng là một bước thừa ở
+đúng lúc họ không có thời gian.
+
+⚠️ Đã dựng lớp CSS **riêng** (`.adm-timkq`) thay vì dùng lại `.adm-hangdoi`: hàng
+đợi chú ý là lưới **ba** cột cho một cấu trúc ba mảnh, dòng kết quả tìm chỉ có
+hai — đo bằng trình duyệt thấy cột thứ ba nhận phần còn lại và chữ tràn ra ngoài
+thẻ. Kèm `minmax(0,1fr)` + `overflow-wrap` để một email 45 ký tự không làm vỡ bố
+cục.
 
 ---
 
@@ -68,10 +125,26 @@ thì phải có cột tổng được duy trì hoặc một view, không phải 
 
 ## D. Nút thu gọn thanh bên
 
-**Trạng thái:** hoãn
+**Trạng thái:** ✅ **XONG 2026-08-29** — 236px → 64px, nhớ bằng `localStorage`.
 
-Ảnh mockup có "« Thu gọn" ở đáy thanh bên. Nó thêm một trạng thái phải nhớ
-(localStorage) và một biến thể bố cục phải kiểm ở cả 6 viewport. Không thuộc MVP.
+Bản hoãn lo hai thứ, và cả hai đã được xử chứ không bị bỏ qua:
+
+1. **"một trạng thái phải nhớ".** Trạng thái đặt trên `<html data-adm-side>`
+   bởi một `<script>` trong `<head>` — **trước** khi vẽ. Đọc `localStorage` ở
+   cuối `<body>` thì trình duyệt đã vẽ thanh bên rộng rồi mới thu lại: một cú
+   giật ở **mọi** lần tải trang, khó chịu hơn hẳn cái tiện mà nút này mang lại.
+   `test_trang_thai_thanh_ben_dat_truoc_khi_ve` chốt vị trí đó.
+   ⚠️ Cả hai lần chạm `localStorage` đều bọc `try/catch`: nó **ném** chứ không
+   trả rỗng khi trình duyệt chặn site data, và một ngoại lệ trong `<head>` làm
+   hỏng cả vỏ.
+
+2. **"một biến thể bố cục phải kiểm ở cả 6 viewport".** Không có biến thể thứ
+   ba: dưới 820px `.adm-side` vốn đã `display:none`, nên nút cũng
+   `display:none` ở đó. Đo bằng trình duyệt 375px — nút biến mất, điều hướng
+   vẫn đi qua `<details>` của thanh mobile.
+
+Toàn bộ hình dạng ở `ltt.css` dưới `[data-adm-side="hep"]`; JS chỉ đổi một
+thuộc tính. Tắt JS thì thanh bên đơn giản là luôn rộng, không vỡ.
 
 ---
 
@@ -132,27 +205,41 @@ thứ tự DOM vì không có `tabindex` dương).
 
 ## G. Bảng `_KHOA_CU` — cầu tạm phải gỡ
 
-**Trạng thái:** nợ có chủ ý · gỡ khi C5–C8 xong
+**Trạng thái:** ✅ **ĐÃ GỠ 2026-08-29.**
 
-`server/admin.py:_KHOA_CU` dịch khoá `active` cũ (`"revenue"`, `"chitiet"`,
-`"api_pricing"`, …) sang khoá mới của `SECTIONS`. Nó tồn tại để đổi vỏ mà không
-phải sửa 29 chỗ gọi trong cùng một lô.
+Nó dịch khoá `active` cũ (`"revenue"`, `"chitiet"`, `"api_pricing"`, …) sang khoá
+mới của `SECTIONS`, để đổi vỏ mà không phải sửa 29 chỗ gọi trong cùng một lô.
+Mọi chỗ gọi nay khai thẳng khoá mới.
 
-**Gỡ khi:** trang cuối cùng chuyển sang khoá mới. Đừng thêm dòng vào nó — trang
-mới khai thẳng khoá mới ở `SECTIONS`.
+`test_317::test_bang_cau_tam_khong_quay_lai` giữ nó không quay lại: nó đọc chính
+`server/admin.py` và bắt lỗi nếu `_KHOA_CU` xuất hiện lại ngoài dòng chú thích.
+
+⛔ **Món nợ này trả được vì có hạn trả ghi sẵn.** Một cầu tạm không có dòng "gỡ
+khi X" thì X không bao giờ tới.
 
 ---
 
 ## H. Nhật ký admin: tra theo đối tượng còn lỏng
 
-**Trạng thái:** đã ghi nhận
+**Trạng thái:** hoãn — **cố ý giữ hoãn ngày 29/08**, dù lượt này làm hết A/D/G/J.
 
 `NhatKyAdmin.doi_tuong` là chuỗi tự do, nên các đường ghi khác nhau dùng khác
 nhau — chỗ ghi `user_id`, chỗ ghi `email`, chỗ ghi `order_code`.
 `admin_console.ho_so_khach()` phải tra **cả hai** (id và email) để không bỏ sót
-một nửa dấu vết.
+một nửa dấu vết. Đã kiểm 29/08: nó vẫn tra cả hai, nên **không có dấu vết nào
+đang bị mất**.
 
-**Mở lại khi:** cần lọc nhật ký theo thực thể ở quy mô lớn. Khi đó thêm cột
+🔴 **Vì sao không làm nốt trong lượt này.** Sửa đúng là thêm cột
+`doi_tuong_loai`, tức một **migration Alembic trên CSDL đang phục vụ khách trả
+tiền**. Cái giá đó chỉ đáng trả khi có nhu cầu thật — và nhu cầu ("lọc nhật ký
+theo thực thể ở quy mô lớn") **chưa xảy ra**. Bảng nhật ký hiện đủ nhỏ để tra
+bằng hai điều kiện `OR`.
+
+Chạy một migration cho một nhu cầu giả định thì rủi ro là thật còn lợi ích là
+tưởng tượng. Đây là một mục **được quyết định giữ hoãn**, không phải một mục bị
+bỏ sót.
+
+**Mở lại khi:** thật sự cần lọc theo thực thể ở quy mô lớn. Khi đó thêm cột
 `doi_tuong_loai` chứ đừng viết lại chuỗi cũ.
 
 ---
@@ -174,17 +261,17 @@ thật, và nếu nó vẽ khác thì ảnh sai chứ không phải trang sai.
 
 ## J. Thu hẹp `overview()["jobs"]` về đúng job của API
 
-**Trạng thái:** đề xuất · cần chủ sản phẩm chốt
+**Trạng thái:** ✅ **XONG 2026-08-29.**
 
-`platform_core/public_api/admin_console.overview()` đếm job **toàn nền tảng** —
-không lọc `_api` — trong khi mọi số khác trên cùng bảng điều khiển (khoá,
-project, request, credit) đều là của API. Hai phạm vi trong một trang.
+`overview()` nay dùng **cùng** bộ lọc `_api` mà `jobs_page()` vẫn dùng
+(`Job.params[(API_META_KEY,"tool")] IS NOT NULL`), nên con số và đích **khớp
+nhau**. Nhãn phụ "toàn nền tảng" đã gỡ; đích của hai ô job trỏ về
+`/admin/api-job` chứ không còn trỏ ra bảng job của nền tảng.
 
-Lô C5–C8 xử lý bằng cách **nói ra**: ô ghi nhãn phụ "toàn nền tảng" và dẫn sang
-bảng job của nền tảng. Trung thực, nhưng vẫn hơi lạ trên một trang tên là
-"API — Tổng quan".
+Xử tạm thời trước đó là **nói ra** — trung thực, nhưng vẫn là một bảng điều
+khiển API báo một con số không phải của API, và bấm vào thì rơi vào một danh
+sách **nhỏ hơn** con số vừa bấm.
 
-**Sửa đúng** là thêm điều kiện `params._api.tool IS NOT NULL` vào hai truy vấn
-job trong `overview()`. Nó đổi một read-model đang có test, và nó đổi ý nghĩa
-của một con số chủ sản phẩm có thể đang theo dõi — nên nó là một quyết định, không
-phải một lần sửa lỗi.
+`test_323::test_o_job_dem_dung_job_cua_API_va_dich_khop_con_so` chốt bằng **số**
+chứ không bằng nhãn: fixture dựng đúng một job API `error`, ô phải hiện `1`, và
+đích phải ra đúng một dòng.

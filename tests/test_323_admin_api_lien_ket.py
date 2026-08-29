@@ -188,14 +188,36 @@ def test_khong_dung_nham_dinh_danh_tool(api):
     assert "/admin/job/list?search=render" in khoi
 
 
-def test_o_job_noi_ro_pham_vi_la_toan_nen_tang(api):
-    """`overview()["jobs"]` dem job toan nen tang (khong loc `_api`).
+def test_o_job_dem_dung_job_cua_API_va_dich_khop_con_so(api):
+    """§J (`24_DEFERRED`) — lam 29/08.
 
-    Neu nhan khong noi dieu do thi con so tren mot bang dieu khien API se bi doc
-    thanh "job cua API", va no khong phai.
+    Truoc do `overview()["jobs"]` dem **moi** job tren nen tang, khong loc
+    `_api`. Nen mot bang dieu khien API bao con so gom ca viec cua giao dien
+    web, va bam vao thi roi vao mot danh sach API-only NHO HON con so vua bam.
+
+    Xu tam thoi hoi 29/08 la **noi ra** (nhan phu "toan nen tang" + dich la bang
+    job cua nen tang). Trung thuc, nhung van la mot bang dieu khien API bao mot
+    con so khong phai cua API.
+
+    Nay `overview()` dung cung mot bo loc `_api` ma `jobs_page()` van dung, nen
+    con so va dich **khop nhau**. Phep kiem chot dung dieu do bang SO, khong
+    bang nhan.
     """
+    import re
+
     than = _than(api, "/admin/api-tong-quan")
-    assert "toàn nền tảng" in than
+    assert "toàn nền tảng" not in than, "pham vi da thu hep, nhan cu phai bien mat"
+
+    # Fixture co dung MOT job API o trang thai error. Job cua giao dien web
+    # khong duoc dem vao o nay.
+    khoi = than[than.index("Job API hỏng"):][:400]
+    so = re.search(r'font-weight:700[^>]*>(\d+)<', khoi)
+    assert so and so.group(1) == "1", khoi[:200]
+
+    # Va dich phai ra dung mot dong.
+    dich = _than(api, "/admin/api-job?status=error&hours=24")
+    assert dich.count("/admin/api-trace?q=") == 1
+
 
 
 # ── Het luong copy UUID ──────────────────────────────────────────────────────
@@ -232,3 +254,42 @@ def test_provider_credential_hong_dan_sang_operations(api):
     than = _than(api, "/admin/apikeys")
     assert "k-hong" in than
     assert "/admin/api-request?status=failed" in than
+
+
+# ── Bay Jinja: `x.keys` lay METHOD, khong lay gia tri ────────────────────────
+
+TRANG_API = (
+    "/admin/api-tong-quan", "/admin/api-tai-khoan", "/admin/api-khoa",
+    "/admin/api-cong-cu", "/admin/api-chinh-sach", "/admin/api-kill-switch",
+    "/admin/api-gia", "/admin/api-margin", "/admin/api-request",
+    "/admin/api-job", "/admin/api-bao-mat", "/admin/api-trace",
+)
+
+
+@pytest.mark.parametrize("trang", TRANG_API)
+def test_khong_trang_nao_ro_ri_phuong_thuc_cua_dict(api, trang):
+    """🔴 Bay nay da that su xay ra khi 12 than trang chuyen sang Jinja (29/08).
+
+    Jinja giai `x.keys` bang `getattr` TRUOC roi moi `getitem`. Voi mot dict co
+    khoa `keys` — `accounts_page()` va `account_detail()` deu co — `x.keys` tra
+    ve `<built-in method keys of dict>`, KHONG phai con so.
+
+    Vi sao no can mot phep kiem rieng: trang van tra **200**. O chi so hien mot
+    chuoi rac thay vi mot con so, va khong test chuc nang nao thay. Cai hong duy
+    nhat de bat duoc la chinh chuoi rac do.
+
+    Cung ap cho `items`, `values`, `get`, `copy`, `pop`.
+    """
+    than = _than(api, trang)
+    for dau in ("built-in method", "bound method", "<function "):
+        assert dau not in than, f"{trang} ro ri {dau}"
+
+
+@pytest.mark.parametrize("trang", TRANG_API)
+def test_moi_trang_api_render_duoc(api, trang):
+    """Mot template hong tra 500, va sweep lien ket chi di qua trang co lien ket
+    tro toi. Phep kiem nay cham TUNG trang, ke ca trang khong ai tro toi."""
+    r = api.get(trang)
+    assert r.status_code == 200, (trang, r.status_code)
+    # `<h1>` la dau hieu than trang da render, khong phai chi co vo.
+    assert "<h1" in _than(api, trang), f"{trang} chi co vo"

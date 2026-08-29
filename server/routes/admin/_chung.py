@@ -39,6 +39,10 @@ SECTIONS = (
     # ── Khách hàng ───────────────────────────────────────────────────────────
     ("khach_hang",     "/admin/khach-hang",         "Khách hàng"),
     ("ho_so_360",      "/admin/nguoi-dung",         "Hồ sơ 360"),
+    # Cửa vào, không phải nơi chốn — ô tìm ở thanh trên dẫn tới đây, nên nó
+    # KHÔNG lên thanh bên. Vẫn phải có dòng ở đây, nếu không mở `/admin/tim`
+    # sẽ không mục nào sáng.
+    ("tim_kiem",       "/admin/tim",                "Tìm"),
 
     # ── Tài chính ────────────────────────────────────────────────────────────
     ("tai_chinh",      "/admin/doanh-thu",          "Tài chính"),
@@ -105,6 +109,7 @@ NHOM_NAV = (
 CHA_CUA = {
     # Khách hàng
     "ho_so_360": "khach_hang",
+    "tim_kiem": "khach_hang",
     # Tài chính
     "don_hang": "tai_chinh",
     "so_credit": "tai_chinh",

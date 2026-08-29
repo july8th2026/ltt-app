@@ -12,9 +12,11 @@ from __future__ import annotations
 
 from server.routes.admin import he_thong as _he_thong
 from server.routes.admin import khach_hang as _khach_hang
+from server.routes.admin import tim_kiem as _tim_kiem
 
 VIEWS = (
     *_khach_hang.VIEWS,
+    *_tim_kiem.VIEWS,
     *_he_thong.VIEWS,
 )
 

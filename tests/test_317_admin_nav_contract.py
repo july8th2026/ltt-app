@@ -207,3 +207,65 @@ def test_bang_cau_tam_khong_quay_lai():
     ma = [d for d in src.splitlines()
           if "_KHOA_CU" in d and not d.lstrip().startswith("#")]
     assert not ma, ma
+
+
+# ── Nut thu gon thanh ben (24_DEFERRED §D, lam 29/08) ────────────────────────
+
+def _vo() -> str:
+    return (GOC / "server/templates/admin/_vo.html").read_text(encoding="utf-8")
+
+
+def _css() -> str:
+    return (GOC / "server/static/ltt.css").read_text(encoding="utf-8")
+
+
+def test_trang_thai_thanh_ben_dat_truoc_khi_ve():
+    """🔴 Doc `localStorage` o cuoi `<body>` thi trinh duyet DA ve thanh ben rong
+    roi moi thu lai — mot cu giat o MOI lan tai trang.
+
+    Phep kiem chot doan script nam trong `<head>`, truoc `<body>`. No la ly do
+    duy nhat de chap nhan mot the <script> inline o day.
+    """
+    vo = _vo()
+    i = vo.index('localStorage.getItem("adm-side")')
+    # Neo vao `</head>`, khong vao `<body>`: chuoi "<body>" cung xuat hien trong
+    # chinh khoi chu thich giai thich vi sao doan nay o `<head>`.
+    assert i < vo.index("</head>"), "doan khoi phuc phai nam trong <head>"
+
+
+def test_doc_localstorage_luon_boc_try():
+    """`localStorage` **nem** chu khong tra rong khi trinh duyet chan site data
+    (rieng tu nghiem ngat, thiet lap doanh nghiep). Mot ngoai le o `<head>` lam
+    hong ca vo."""
+    vo = _vo()
+    for moc in ('localStorage.getItem("adm-side")',
+                'localStorage.setItem("adm-side"'):
+        i = vo.index(moc)
+        truoc = vo[max(0, i - 200):i]
+        assert "try" in truoc, moc
+
+
+def test_nut_thu_gon_bien_mat_duoi_820px():
+    """Duoi 820px `.adm-side` da `display:none` va dieu huong di qua <details> o
+    thanh mobile. Mot nut thu gon cho mot thanh ben khong ton tai la nut chet —
+    va no se la bien the bo cuc thu ba phai kiem o moi viewport."""
+    css = _css()
+    khoi = css[css.index("@media(max-width:820px)"):]
+    assert ".adm-side,.adm-thugon{display:none}" in khoi[:400], khoi[:400]
+
+
+def test_khong_style_nao_dat_bang_js():
+    """Toan bo hinh dang o `ltt.css` duoi `[data-adm-side="hep"]`. JS chi doi mot
+    thuoc tinh — nen tat JS thi thanh ben don gian la luon rong, khong vo."""
+    vo = _vo()
+    assert ".style" not in vo, "vo khong duoc dat style bang JS"
+    assert '[data-adm-side="hep"]' in _css()
+
+
+def test_nut_thu_gon_luon_co_nhan():
+    """Khi thu gon thi chu bi an, nen nut phai tu mang `aria-label`; con
+    `aria-expanded` phai doi theo trang thai chu khong dung im mot gia tri."""
+    vo = _vo()
+    assert 'aria-expanded' in vo
+    assert 'setAttribute("aria-expanded"' in vo
+    assert 'setAttribute("aria-label"' in vo

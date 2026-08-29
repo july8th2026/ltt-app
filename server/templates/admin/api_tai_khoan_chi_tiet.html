@@ -1,0 +1,127 @@
+{# API Platform — Tai khoan, mot nguoi. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P6.
+
+   ⚠️ "Ngan sach" o day la thu KHACH TU DAT, khong phai han muc cua nen tang.
+      Han muc o `/admin/api-chinh-sach`. Hai thu cung mang chu "gioi han" va do
+      da mot lan bi doc nham. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead">
+    <div>
+      <h1>{{ user.email }}</h1>
+      <p class="mono muted">{{ user.id }}</p>
+    </div>
+    <div class="actions">
+      {# 🔴 `q`, KHONG phai `id`: trang chi tiet nguoi dung nhan "email hoac user
+         id" qua dung MOT tham so. Dat sai ten thi nut van mo ra mot trang 200 —
+         chi la trang tim kiem RONG, nen hong ma khong ai thay hong. #}
+      <a class="btn ghost" href="/admin/nguoi-dung?q={{ user.id }}">Hồ sơ đầy đủ</a>
+      <a class="btn ghost" href="/admin/api-tai-khoan">← Danh sách</a>
+    </div>
+  </div>
+
+  {{ m.mo_luoi_o() }}
+    {{ m.o_chi_so("Số dư", data.balance) }}
+    {{ m.o_chi_so("Khoá", data["keys"]|length) }}
+    {{ m.o_chi_so("Project", data.projects|length) }}
+    {{ m.o_chi_so("Lời gọi hỏng (7 ngày)", data.failures_in_window,
+                  mau=(ERR if data.failures_in_window else ""),
+                  href="/admin/api-request?q=" ~ user.email ~ "&status=failed") }}
+  </div>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Project</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Tên</th><th>Slug</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
+      <tbody>
+        {% for p in data.projects %}
+        <tr>
+          <td>{{ p.name }}</td>
+          <td class="mono">{{ p.slug }}</td>
+          <td>{{ p.status }}</td>
+          <td class="muted">{{ luc(p.created_at) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">Chưa có project.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Khoá</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Mã khoá</th><th>Tên</th><th>Môi trường</th><th>Trạng thái</th><th>Dùng lần cuối</th></tr></thead>
+      <tbody>
+        {% for k in data["keys"] %}
+        <tr>
+          <td class="mono"><a href="/admin/api-khoa?key={{ k.key_id }}">{{ k.key_id[:12] }}…</a></td>
+          <td>{{ k.name or "—" }}</td>
+          <td>{{ m.chip_mode(k.mode|default("live", true)) }}</td>
+          <td>{{ m.nhan_khoa(k.status()) }}</td>
+          <td class="muted">{{ luc(k.last_used_at) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">Chưa có khoá.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Ngân sách khách tự đặt</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Phạm vi</th><th>Mức</th><th>Chu kỳ</th><th>Kiểu</th></tr></thead>
+      <tbody>
+        {% for b in data.budgets %}
+        <tr>
+          <td>{{ b.scope }}</td>
+          <td class="tnum">{{ b.amount }}</td>
+          <td>{{ b.period }}</td>
+          <td>{{ "cứng" if b.hard_cap else "mềm" }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="muted">Khách chưa đặt ngân sách nào.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Webhook</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>URL</th><th>Trạng thái</th><th>Tạo lúc</th></tr></thead>
+      <tbody>
+        {% for s in data.subscriptions %}
+        <tr>
+          <td class="mono">{{ s.url }}</td>
+          <td>{{ "bật" if s.enabled else "tắt" }}</td>
+          <td class="muted">{{ luc(s.created_at) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="3" class="muted">Không có webhook.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">20 lời gọi gần nhất được ghi</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th><th>Correlation ID</th></tr></thead>
+      <tbody>
+        {% for r in data.recent_requests %}
+        <tr>
+          <td class="muted">{{ luc(r.created_at) }}</td>
+          <td class="mono">{{ r.method }} {{ r.route }}</td>
+          <td class="tnum">{{ r.status }}</td>
+          <td class="mono muted">{{ r.code or "" }}</td>
+          <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">Chưa có lời gọi nào được ghi.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+</div>

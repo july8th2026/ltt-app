@@ -271,3 +271,143 @@ def emails_cua(db, user_ids) -> dict[str, str]:
         return {}
     return {uid: email for uid, email in
             db.execute(select(User.id, User.email).where(User.id.in_(ids))).all()}
+
+
+# ── Tìm liên thực thể (omnibox) ──────────────────────────────────────────────
+#
+# 🔴 CÁI GÌ CHẶN Ô NÀY SUỐT ĐỢT MVP, và vì sao nó được mở bây giờ.
+#
+# Ảnh mockup vẽ một ô "Tìm người dùng, đơn hàng, log…". `24_DEFERRED_POST_MVP`
+# mục B chặn nó với đúng một lý do — **không có read-model nào tìm liên thực
+# thể** — và một luật: *"Không làm ô nhận cả đơn hàng/log rồi trả rỗng. Một ô
+# hứa nhiều hơn nó làm được là một lỗi vận hành, không phải một thiếu sót thẩm
+# mỹ."* Điều kiện mở lại ghi sẵn: *"có một read-model tìm kiếm hợp nhất (khách +
+# đơn + request id + job id) trả về kết quả có phân loại."*
+#
+# Hàm này LÀ read-model đó. Nên ô tìm được nới đúng bằng thứ hàm này trả về,
+# không hơn một loại nào.
+#
+# ⛔ NĂM loại, và mỗi loại phải chỉ ra được một bảng thật:
+#      khách    `users`                    (email chính xác · id · email chứa)
+#      đơn      `payment_orders`           (`order_code`, số nguyên)
+#      job      `jobs`                     (id đầy đủ hoặc tiền tố)
+#      request  `public_api_requests`      (`request_id` — thứ khách dán vào)
+#      khoá     `developer_api_keys`       (`key_id` — nửa CÔNG KHAI)
+#    Thêm loại thứ sáu thì phải thêm một bảng, không phải thêm một nhánh `elif`
+#    trả rỗng.
+#
+# ⚠️ KHÔNG có tìm toàn văn. Không `LIKE %q%` trên `jobs.params`, không tìm trong
+#    `nhat_ky_admin.chi_tiet`. Cả hai đều là quét toàn bảng trên bảng lớn nhất
+#    hệ thống, và người vận hành gõ vào ô này là đang có sự cố — một truy vấn
+#    30 giây ở đúng lúc đó tệ hơn là không có ô tìm.
+#
+# ⭐ Tiền tố job được cho phép vì UUID **hiện ra dưới dạng cắt** ở khắp khu quản
+#    trị (`job.id[:12]`), nên thứ người ta chép được từ màn hình là một tiền tố.
+#    Bắt họ tìm bằng chuỗi đầy đủ là bắt họ tìm bằng thứ giao diện không cho.
+
+#: Trần mỗi loại. Ô tìm là đường ĐI TỚI một thực thể, không phải trang báo cáo —
+#: ai cần 200 dòng thì dùng trang danh sách có bộ lọc và phân trang.
+TIM_MOI_LOAI = 8
+
+#: Trần của cột `BigInteger` (signed 64-bit). Xem chú thích ở nhánh đơn hàng.
+_TRAN_BIGINT = 2 ** 63 - 1
+
+#: Tiền tố ngắn hơn ngần này thì không tra job/request: `LIKE 'a%'` trên bảng
+#: job là quét gần như toàn bảng, và nó không thu hẹp được gì cho người tìm.
+TIM_TIEN_TO_TOI_THIEU = 6
+
+
+def tim_lien_thuc_the(db, q: str, *, moi_loai: int = TIM_MOI_LOAI) -> dict:
+    """Tìm một chuỗi trên năm loại thực thể; trả kết quả ĐÃ phân loại.
+
+    Trả ``{"q", "nhom": [...], "tong": n}``. Mỗi nhóm có ``loai`` và ``dong``;
+    mỗi dòng có ``nhan`` (định danh) + ``href`` + các **trường thô** của loại đó.
+
+    ⛔ KHÔNG trả nhãn tiếng Việt. Tệp này là read-model — nó trả *dữ liệu*, và
+       template quyết chữ. Bản đầu (29/08) trả sẵn ``"Khách hàng"``,
+       ``"đã xác thực"``… và `tools/check_i18n.py` bắt đúng: 10 chuỗi hiện ra
+       cho người dùng nằm trong `platform_core`. Bánh cóc đó nói về i18n, nhưng
+       thứ nó thật sự chặn là **tầng trình bày rò xuống tầng dữ liệu** — và ở
+       đây nó đúng cả hai nghĩa.
+    """
+    from platform_core.public_api.tables import (ApiRequestLog,
+                                                 DeveloperApiKey)
+
+    q = (q or "").strip()
+    nhom: list[dict] = []
+    if not q:
+        return {"q": q, "nhom": nhom, "tong": 0}
+
+    n = max(1, min(moi_loai, 50))
+    du_dai = len(q) >= TIM_TIEN_TO_TOI_THIEU
+
+    def _them(loai: str, dong: list[dict]) -> None:
+        if dong:
+            nhom.append({"loai": loai, "dong": dong})
+
+    # ── Khách hàng ───────────────────────────────────────────────────────────
+    thap = q.lower()
+    users = db.execute(
+        select(User).where(or_(func.lower(User.email).like(f"%{thap}%"),
+                               User.id == q))
+        .order_by(User.created_at.desc()).limit(n)).scalars().all()
+    _them("khach", [
+        {"nhan": u.email, "href": f"/admin/nguoi-dung?q={u.id}",
+         "vai": u.role, "xac_thuc": bool(u.is_verified),
+         "hoat_dong": bool(u.is_active)} for u in users])
+
+    # ── Đơn hàng ─────────────────────────────────────────────────────────────
+    if q.isdigit():
+        # ⚠️ `int("9"*40)` **thành công** — Python có số lớn. Cột BigInteger thì
+        #    không: SQLite ném `OverflowError`, PostgreSQL ném
+        #    `NumericValueOutOfRange`, và cả hai thành HTTP 500 phát ra từ một ô
+        #    tìm. Chặn ở đây, trước khi chạm CSDL.
+        ma = int(q)
+        if ma <= _TRAN_BIGINT:
+            don = db.execute(select(PaymentOrder)
+                             .where(PaymentOrder.order_code == ma)
+                             .limit(n)).scalars().all()
+            _them("don", [
+                {"nhan": f"#{d.order_code}",
+                 "href": f"/admin/don?q={d.order_code}",
+                 "credit": d.credits, "vnd": d.price_vnd,
+                 "trang_thai": d.status, "da_cong": bool(d.credited)}
+                for d in don])
+
+    # ── Job ──────────────────────────────────────────────────────────────────
+    if du_dai:
+        viec = db.execute(
+            select(Job).where(or_(Job.id == q, Job.id.like(f"{q}%")))
+            .order_by(Job.created_at.desc()).limit(n)).scalars().all()
+        _them("job", [
+            {"nhan": j.id[:16], "href": f"/admin/api-trace?q={j.id}",
+             "loai_job": j.job_type, "trang_thai": j.status} for j in viec])
+
+    # ── Lời gọi API ──────────────────────────────────────────────────────────
+    if du_dai:
+        goi = db.execute(
+            select(ApiRequestLog)
+            .where(or_(ApiRequestLog.request_id == q,
+                       ApiRequestLog.request_id.like(f"{q}%")))
+            .order_by(ApiRequestLog.created_at.desc()).limit(n)).scalars().all()
+        _them("request", [
+            {"nhan": r.request_id[:16],
+             "href": f"/admin/api-trace?q={r.request_id}",
+             "method": r.method, "route": r.route, "http": r.status,
+             "ma": r.code or ""} for r in goi])
+
+    # ── Khoá của khách ───────────────────────────────────────────────────────
+    # ⛔ Chỉ `key_id` — nửa CÔNG KHAI. Nửa bí mật chỉ tồn tại dưới dạng dấu vân
+    #    tay một chiều, nên không có gì để mà tìm, kể cả nếu ai đó muốn.
+    if du_dai:
+        khoa = db.execute(
+            select(DeveloperApiKey)
+            .where(or_(DeveloperApiKey.key_id == q,
+                       DeveloperApiKey.key_id.like(f"{q}%")))
+            .limit(n)).scalars().all()
+        _them("khoa", [
+            {"nhan": k.key_id[:16], "href": f"/admin/api-khoa?key={k.key_id}",
+             "ten": k.name or "", "trang_thai": k.status()} for k in khoa])
+
+    return {"q": q, "nhom": nhom,
+            "tong": sum(len(g["dong"]) for g in nhom)}

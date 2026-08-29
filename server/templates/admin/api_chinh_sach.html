@@ -1,0 +1,126 @@
+{# API Platform — Chinh sach (han muc). Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P7.
+
+   🔴 O TRONG nghia la KE THUA buoc truoc, khong phai 0. `0` la mot han muc that
+      (nhip 0 = tu choi tat ca). Dung "don dep" bang cach dien 0 vao o trong. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Chính sách</h1>
+    <p>Chuỗi ưu tiên: <code>global → tier → user → project → credential → tool</code>.
+      Ô trống nghĩa là <b>kế thừa</b> bước trước, không phải 0 — 0 là một hạn mức
+      thật (nhịp 0 = từ chối tất cả).</p>
+  </div></div>
+
+  {{ m.loi_sau_chuyen_huong(loi) }}
+
+  <section>
+    <h2 style="margin:22px 0 10px">Mức nền đang áp dụng</h2>
+    {# Muc nen khi KHONG co ai cu the: do la con so moi tai khoan nhan duoc, va
+       la thu dau tien nguoi van hanh can thay. #}
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Hạn mức</th><th>Giá trị</th><th>Đến từ</th></tr></thead>
+      <tbody>
+        {% for f in truong %}
+        <tr>
+          <td class="mono">{{ f }}</td>
+          <td class="tnum">{{ nen[f] }}</td>
+          <td class="muted">{{ nen.sources.get(f, "") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Chính sách</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr>
+        <th>Tên</th><th>rpm read</th><th>rpm write</th><th>rpm create</th>
+        <th>job đồng thời</th><th>credit/ngày</th><th>Đã gán</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for it in data %}
+        {% set p = it.policy %}
+        <tr>
+          <td>
+            <b>{{ p.name }}</b>
+            {%- if p.is_default %} <span class="chip i">mặc định</span>{% endif %}<br>
+            <span class="muted">{{ p.description or "" }}</span>
+          </td>
+          {% for f in ("rpm_read", "rpm_write", "rpm_create", "max_active_jobs", "daily_credit") %}
+          {% set v = p[f] %}
+          <td>{% if v is none %}<span class="muted">kế thừa</span>{% else %}<span class="tnum">{{ v }}</span>{% endif %}</td>
+          {% endfor %}
+          {# ⭐ Cot "gan cho" tung la `scope:8-ky-tu-dau-cua-UUID` dang chu tran.
+             Trong luc dieu tra "vi sao khach nay bi chan nhip", tam ky tu do
+             khong noi len AI va phai chep sang trang khac — dung luong ma hop
+             dong P7 (va GJ1) noi phai het. #}
+          <td>
+            {%- for a in it.assignments -%}
+            {%- set dich = {"user": "/admin/nguoi-dung?q=",
+                            "key": "/admin/api-khoa?key=",
+                            "project": "/admin/api-tai-khoan?user="}.get(a.scope) -%}
+            {%- if dich -%}
+            <a href="{{ dich }}{{ a.subject_id }}"><code>{{ a.scope }}:{{ a.subject_id[:8] }}</code></a>
+            {%- else -%}
+            <code>{{ a.scope }}:{{ a.subject_id[:8] }}</code>
+            {%- endif %} {% endfor -%}
+            {%- if not it.assignments %}<span class="muted">chưa gán</span>{% endif -%}
+          </td>
+          <td>{{ m.nut_kem_ly_do("/admin/api-chinh-sach-action", token, "delete",
+                                 "Xoá", min_reason, nguy_hiem=True,
+                                 them={"policy_id": p.id}) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="muted" style="padding:26px;text-align:center">Chưa có chính sách nào — mọi tài khoản dùng mức nền của deployment.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Tạo chính sách</h2>
+    <form method="post" action="/admin/api-chinh-sach-action">
+      <input type="hidden" name="csrf_token" value="{{ token }}">
+      <input type="hidden" name="op" value="create">
+      <p>
+        <input name="name" placeholder="tên (vd: pro)" required>
+        <input name="description" placeholder="mô tả" size="40">
+        <label><input type="checkbox" name="is_default" value="1"> dùng làm tier mặc định</label>
+      </p>
+      <p>
+        {%- for f in truong %}
+        <label style="display:inline-block;margin:0 12px 8px 0">{{ f }}<br>
+          <input name="{{ f }}" inputmode="numeric" placeholder="kế thừa" style="width:130px"></label>
+        {%- endfor %}
+      </p>
+      <p>
+        <input name="reason" size="46" required minlength="{{ min_reason }}"
+               placeholder="Lý do (bắt buộc, ≥ {{ min_reason }} ký tự)">
+        <button class="btn btn-primary sm">Tạo</button>
+      </p>
+    </form>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Gán chính sách</h2>
+    <form method="post" action="/admin/api-chinh-sach-action">
+      <input type="hidden" name="csrf_token" value="{{ token }}">
+      <input type="hidden" name="op" value="assign">
+      <p>
+        <select name="policy_id" aria-label="Chính sách">
+          {% for it in data %}<option value="{{ it.policy.id }}">{{ it.policy.name }}</option>{% endfor %}
+        </select>
+        <select name="scope" aria-label="Phạm vi công tắc">
+          <option value="user">user</option>
+          <option value="project">project</option>
+          <option value="key">key</option>
+        </select>
+        <input name="subject_id" placeholder="id của đối tượng" required>
+        <input name="reason" required minlength="{{ min_reason }}" placeholder="Lý do (≥ {{ min_reason }})">
+        <button class="btn sm">Gán</button>
+      </p>
+    </form>
+  </section>
+</div>

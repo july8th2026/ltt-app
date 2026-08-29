@@ -1,0 +1,85 @@
+{# Macro dùng chung của khu API Platform.
+
+   Đây là nơi bảy hàm sinh HTML trong `server/admin_api.py` chuyển tới. Chúng
+   từng là `_stat`, `_pager`, `_mode_chip`, `_key_badge`, `_error_note`,
+   `_reason_form` và hai hằng `_TILES`/`_COLS` — tức HTML nối bằng chuỗi Python,
+   không test được markup và không tái dùng được ngoài tệp đó.
+
+   ⭐ Giữ NGUYÊN lớp CSS và cấu trúc thẻ của bản f-string. Đây là một lần chuyển
+      chỗ, không phải một lần thiết kế lại: trộn hai việc vào một lô thì khi đỏ
+      không biết vì cái nào.
+
+   Hợp đồng: `docs/admin_mvp_v3/21_ADMIN_UI_CONTRACT.md`. #}
+
+{# ── Ô chỉ số ────────────────────────────────────────────────────────────────
+   `href` biến ô thành đường đi. Trang tổng quan từng báo "Job hỏng: 7" rồi dừng
+   ở đó — người vận hành đọc được là có chuyện nhưng không đi tiếp được đâu.
+   Xem `09_LO_C5_C8.md`. #}
+{% macro o_chi_so(nhan, gia_tri, goi_y="", mau="", href="") %}
+  {%- set than %}
+    <div class="dim">{{ nhan }}</div>
+    <div class="tnum" style="font-size:24px;font-weight:700{% if mau %};color:{{ mau }}{% endif %}">{{ gia_tri }}</div>
+    {%- if goi_y %}<div class="dim" style="font-size:11px">{{ goi_y }}</div>{% endif -%}
+  {% endset -%}
+  {%- if href -%}
+    <a class="ui-card adm-o-link" href="{{ href }}">{{ than }}</a>
+  {%- else -%}
+    <div class="ui-card">{{ than }}</div>
+  {%- endif -%}
+{% endmacro %}
+
+{% macro mo_luoi_o() %}<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px">{% endmacro %}
+{% macro mo_luoi_cot() %}<div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(320px,1fr))">{% endmacro %}
+
+{# ── Phân trang ──────────────────────────────────────────────────────────────
+   Tổng số là con số quyết định hành động: "12 khoá" và "50 khoá đầu của 4.000"
+   dẫn tới hai việc khác nhau. #}
+{% macro phan_trang(page, base) %}
+  {%- if page.total <= page.limit -%}
+    <p class="muted">{{ page.total }} dòng.</p>
+  {%- else -%}
+    {%- set noi = "&" if "?" in base else "?" -%}
+    <div class="rowactions" style="margin-top:12px">
+      {%- if page.offset %}<a class="btn ghost sm" href="{{ base }}{{ noi }}offset={{ page.prev_offset }}">← Trước</a>{% endif -%}
+      {%- if page.has_more %}<a class="btn ghost sm" href="{{ base }}{{ noi }}offset={{ page.next_offset }}">Sau →</a>{% endif -%}
+      <span class="muted">{{ (page.offset + 1) if page.rows else 0 }}–{{ page.offset + page.rows|length }} / {{ page.total }}</span>
+    </div>
+  {%- endif -%}
+{% endmacro %}
+
+{# ── Nhãn trạng thái ────────────────────────────────────────────────────────
+   ⚠️ Khoá của KHÁCH (`chip`) và trạng thái khoá (`badge`) là hai thứ khác nhau
+      và cố ý trông khác nhau — ở khu này có ba khái niệm cùng mang chữ "key",
+      và đó đã là một sự cố thật (xem `02_DEEP_AUDIT.md` A-04). #}
+{% macro chip_mode(mode) %}
+  {%- if mode|string == "test" -%}<span class="chip v">Test</span>
+  {%- else -%}<span class="chip m">Live</span>{%- endif -%}
+{% endmacro %}
+
+{% macro nhan_khoa(trang_thai) %}
+  {%- set cls = {"active": "b-ok", "disabled": "b-grey",
+                 "revoked": "b-err", "expired": "b-warn"}.get(trang_thai, "b-grey") -%}
+  <span class="badge {{ cls }}"><span class="dot"></span>{{ trang_thai }}</span>
+{% endmacro %}
+
+{% macro loi_sau_chuyen_huong(thong_bao) %}
+  {%- if thong_bao -%}
+    <p class="badge b-err" style="display:block;padding:10px">{{ thong_bao }}</p>
+  {%- endif -%}
+{% endmacro %}
+
+{# ── Nút thao tác LUÔN kèm ô lý do ──────────────────────────────────────────
+   🔴 Đừng thay macro này bằng một nút trần, và đừng thay ô lý do bằng một
+      toggle. `platform_core/public_api/policy.py` bắt `reason` không rỗng ở tầng
+      SERVICE — một nút không có ô lý do sẽ **luôn thất bại**, và ảnh mockup vẽ
+      đúng như vậy. Xem `06_VISUAL_REFERENCE_CONTRACT.md` §3e. #}
+{% macro nut_kem_ly_do(action, token, op, nhan, min_reason, nguy_hiem=False, them={}) %}
+<form method="post" action="{{ action }}" style="display:flex;gap:6px;align-items:center">
+  <input type="hidden" name="csrf_token" value="{{ token }}">
+  <input type="hidden" name="op" value="{{ op }}">
+  {%- for ten, gt in them.items() %}<input type="hidden" name="{{ ten }}" value="{{ gt }}">{% endfor %}
+  <input name="reason" required minlength="{{ min_reason }}"
+         placeholder="Lý do (≥ {{ min_reason }})" aria-label="Lý do cho thao tác {{ nhan }}">
+  <button class="btn {{ 'btn-danger ' if nguy_hiem }}sm">{{ nhan }}</button>
+</form>
+{% endmacro %}

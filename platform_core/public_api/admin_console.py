@@ -149,10 +149,19 @@ def overview(db, *, hours: int = 24) -> dict:
         .group_by(ApiRequestLog.code)
         .order_by(func.count().desc()).limit(8)).all()
 
+    # ⭐ API jobs only. Until 2026-08-29 these two counted **every** job on the
+    #    platform, `_api` block or not — so an API dashboard reported a number
+    #    that included the web UI's work, and clicking it landed on an API-only
+    #    list that was smaller than the figure just clicked.
+    #
+    #    Same filter `jobs_page()` has used all along; the two now agree.
+    from platform_core.public_api.invocation import API_META_KEY
+
+    la_api = Job.params[(API_META_KEY, "tool")].as_string().is_not(None)
     jobs_done = db.execute(select(func.count()).select_from(Job).where(
-        Job.created_at >= since, Job.status == JOB_DONE)).scalar_one()
+        Job.created_at >= since, Job.status == JOB_DONE, la_api)).scalar_one()
     jobs_failed = db.execute(select(func.count()).select_from(Job).where(
-        Job.created_at >= since, Job.status == JOB_ERROR)).scalar_one()
+        Job.created_at >= since, Job.status == JOB_ERROR, la_api)).scalar_one()
 
     held = db.execute(select(func.coalesce(func.sum(CreditEntry.delta), 0))
                       .where(CreditEntry.created_at >= since,

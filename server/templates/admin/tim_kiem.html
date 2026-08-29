@@ -1,0 +1,80 @@
+{# Ket qua tim lien thuc the. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P2.
+
+   ⭐ Trang nay noi ro no tim duoc GI. Mot o tim khong noi pham vi cua no thi mot
+      lan tra rong doc nhu "khong ton tai" — trong khi that ra la "khong tra
+      loai do". Do la dung cai bay ma `24_DEFERRED` muc B canh.
+
+   ⛔ NHAN NAM O DAY, khong o read-model. `admin_console.tim_lien_thuc_the()` tra
+      truong THO (`vai`, `xac_thuc`, `credit`, `http`…); tep nay quyet chu. Ban
+      dau lam nguoc lai va `tools/check_i18n.py` bat ngay: muoi chuoi hien ra cho
+      nguoi dung nam trong `platform_core`. #}
+
+{% set NHAN = {"khach": "Khách hàng", "don": "Đơn nạp credit", "job": "Job",
+               "request": "Lời gọi API", "khoa": "Khoá của khách"} %}
+
+{# Dong phu cua moi loai. Gom vao mot cho de them mot loai la sua MOT macro. #}
+{% macro phu(loai, d) %}
+  {%- if loai == "khach" -%}
+    {{ d.vai }} · {{ "đã xác thực" if d.xac_thuc else "chưa xác thực" }}
+    {{- " · đã vô hiệu" if not d.hoat_dong }}
+  {%- elif loai == "don" -%}
+    {{ d.credit }} credit · {{ "{:,}".format(d.vnd) }}đ ·
+    {{ "đã cộng" if d.da_cong else d.trang_thai }}
+  {%- elif loai == "job" -%}
+    {{ d.loai_job }} · {{ d.trang_thai }}
+  {%- elif loai == "request" -%}
+    {{ d.method }} {{ d.route }} · HTTP {{ d.http }}{{ " · " ~ d.ma if d.ma }}
+  {%- elif loai == "khoa" -%}
+    {{ d.ten or "không đặt tên" }} · {{ d.trang_thai }}
+  {%- endif -%}
+{% endmacro %}
+
+{% if not q %}
+<div class="ui-card" style="padding:26px">
+  <p class="muted" style="margin:0">Gõ vào ô ở thanh trên để tìm.</p>
+</div>
+
+{% elif tong == 0 %}
+<div class="ui-card" style="padding:26px">
+  <p style="margin:0 0 10px">Không có gì khớp <b class="mono">{{ q }}</b>.</p>
+  {# Khong dung o day mot cau "khong tim thay" tran. Nguoi dang xu su co can
+     biet HO VUA TIM O DAU, de con biet cho tiep theo phai tim o dau. #}
+  <p class="muted" style="margin:0">Ô này tra <b>năm</b> loại: email hoặc User
+    ID của khách · mã đơn nạp (số) · job id · correlation id của lời gọi API ·
+    mã khoá của khách. Nó <b>không</b> tìm toàn văn trong nội dung job hay trong
+    nhật ký admin.</p>
+  {% if q|length < toi_thieu %}
+  <p class="muted" style="margin:8px 0 0">⚠️ Chuỗi ngắn hơn {{ toi_thieu }} ký tự
+    nên job, lời gọi và khoá <b>không</b> được tra theo tiền tố — một tiền tố
+    quá ngắn quét gần như toàn bảng mà không thu hẹp được gì.</p>
+  {% endif %}
+</div>
+
+{% else %}
+<p class="muted">{{ tong }} kết quả cho <b class="mono">{{ q }}</b>.</p>
+
+{# Xep DOC, khong phai luoi nhieu cot: mot dong ket qua mang email dai hoac UUID,
+   va mot the 260px lam chung xuong dong giua chung. #}
+<div class="adm-timkq">
+  {% for g in nhom %}
+  <section class="ui-card adm-timkq-nhom">
+    <h2>{{ NHAN.get(g.loai, g.loai) }}
+      <span class="muted" style="font-weight:400">({{ g.dong|length }})</span></h2>
+    <div class="adm-timkq-ds">
+      {% for d in g.dong %}
+      <a href="{{ d.href }}">
+        <span class="chinh mono">{{ d.nhan }}</span>
+        <span class="phu">{{ phu(g.loai, d) }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% if g.dong|length >= moi_loai %}
+    {# Cat bot ma khong noi ra thi doc y het nhu "chi co bay nhieu". #}
+    <p class="muted adm-timkq-cat">
+      Đã cắt ở {{ moi_loai }} dòng — dùng trang danh sách của loại này nếu cần xem hết.
+    </p>
+    {% endif %}
+  </section>
+  {% endfor %}
+</div>
+{% endif %}

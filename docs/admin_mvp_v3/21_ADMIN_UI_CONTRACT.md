@@ -143,3 +143,73 @@ sau, mỗi việc kèm hệ quả viết bằng chữ.
 
 ⛔ **Không** đặt mutation trong bảng danh sách. Thao tác lên một đối tượng sống ở
 trang của đối tượng đó, nơi người thao tác nhìn thấy mình đang tác động vào ai.
+
+---
+
+## 8. Ba cái bẫy đã trả giá — không phải lời khuyên phong cách
+
+Ba thứ dưới đây đều **trả 200** và **không** làm đỏ test chức năng nào. Chúng chỉ
+lộ ra khi có người mở trình duyệt hoặc khi có một phép kiểm được viết riêng cho
+chúng. Thêm trang mới thì đọc lại mục này trước.
+
+### 8a. `x.keys` trong Jinja lấy **method**, không lấy giá trị
+
+Jinja giải `x.keys` bằng `getattr` **trước** rồi mới `getitem`. Với một dict có
+khoá trùng tên phương thức — `keys`, `items`, `values`, `get`, `copy`, `pop` —
+bạn nhận về `<built-in method …>`.
+
+Đã xảy ra thật (29/08): `accounts_page()` và `account_detail()` đều trả dict có
+khoá `keys`. Trang Tổng quan in chuỗi rác ở ô "Khoá live đang chạy"; trang chi
+tiết tài khoản gọi `|length` trên một method → **500**.
+
+⇒ Read-model trả dict thì trong template viết `data["keys"]`. Chốt:
+`test_323::test_khong_trang_nao_ro_ri_phuong_thuc_cua_dict`.
+
+### 8b. Bánh cóc nội dung cấm **chỉ soi template**, không soi mã Python
+
+`test_317` grep `server/templates/admin`. Nên chữ nằm trong f-string ở
+`server/admin_api.py` **vô hình** với nó — hai lỗi chữ sống ở đó nhiều tháng và
+chỉ lộ khi thân trang chuyển sang template ("đối soát" hứa một luồng đối soát
+ngân hàng không có; "Địa chỉ" làm tiêu đề cột IP trong khi nền tảng không có
+trường địa chỉ).
+
+⇒ Đây là một lý do **kỹ thuật** để dựng HTML bằng template chứ không bằng chuỗi:
+bánh cóc chỉ bảo vệ được thứ nó nhìn thấy.
+
+### 8c. Reset `input` trong `_kieu_chung.html` có độ đặc hiệu **(0,8,1)**
+
+```css
+input:not([type=checkbox]):not([type=radio])… { width:100%; }
+```
+
+**Tám** `:not()`, mỗi cái mang trọng số của một bộ chọn thuộc tính. Nên
+`.job-filters input{width:auto}` — (0,1,1) — **thua**, trong khi
+`.job-filters select` **thắng** (reset của `select` chỉ là (0,0,1)).
+
+Đo bằng trình duyệt 29/08 trên `/admin/api-khoa`: hai `<select>` về đúng một
+hàng, ô tìm vẫn chiếm trọn một dòng. Cùng một khối CSS, hai kết quả khác nhau —
+đọc bằng mắt sẽ không bao giờ thấy vì sao.
+
+⇒ Cần `!important`, và nó **phải** nằm trong `@media(min-width:641px)`:
+`!important` thắng bất kể truy vấn phương tiện, để ngoài thì nó đè luôn
+`width:100%` của khối `max-width:640px` — một bản sửa cho màn hình rộng làm hỏng
+màn hình hẹp.
+
+### 8d. Read-model trả **dữ liệu**, template quyết **chữ**
+
+`platform_core/admin_console.tim_lien_thuc_the()` bản đầu (29/08) trả sẵn nhãn:
+`"Khách hàng"`, `"đã xác thực"`, `"không đặt tên"`… `tools/check_i18n.py` đỏ
+ngay — **10 chuỗi hiện ra cho người dùng** vừa vào `platform_core` (774 → 784).
+
+⛔ Cách sai là bọc `_()` cho hết để bánh cóc im. Bánh cóc đó mang tên i18n,
+nhưng thứ nó thật sự chặn là **tầng trình bày rò xuống tầng dữ liệu** — và một
+`_()` trong read-model không sửa điều đó, nó chỉ hợp thức hoá.
+
+⇒ Read-model trả trường thô (`vai`, `xac_thuc`, `credit`, `vnd`, `http`, `ma`);
+template có một `{% macro phu(loai, d) %}` gom mọi cách diễn đạt về một chỗ.
+Thêm một loại là sửa **một** macro.
+
+⚠️ Và khi viết phép kiểm cho chính luật này: đọc bằng `ast`, đừng `in`. Bản đầu
+của phép kiểm tự đỏ vì **docstring giải thích vì sao nhãn bị cấm** có nhắc đúng
+nhãn đó. Một phép kiểm cấm một chữ mà cấm luôn việc *giải thích* chữ đó là một
+phép kiểm không thể thoả mãn.

@@ -1,0 +1,42 @@
+{# API Platform — Tai khoan (danh sach). Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P6.
+
+   ⚠️ Trang nay CHI liet ke tai khoan da cap it nhat mot khoa API. Danh sach
+      nguoi dung day du o `/admin/nguoi-dung` — dung "sua" bang cach noi rong
+      truy van o day, vi hai trang tra loi hai cau hoi khac nhau. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Tài khoản</h1>
+    <p>Chỉ những tài khoản đã cấp ít nhất một khoá API. Danh sách người dùng đầy
+      đủ ở trang Người dùng.</p>
+  </div></div>
+
+  <form method="get" class="job-filters">
+    <input name="q" value="{{ q }}" placeholder="email…" aria-label="Tìm theo email">
+    <button class="btn ghost sm">Tìm</button>
+  </form>
+
+  <div class="tablewrap"><table class="ui-table">
+    <thead><tr>
+      <th>Tài khoản</th><th>Khoá</th><th>Project</th>
+      <th>Credit đã giữ (7 ngày)</th><th>Khoá mới nhất</th><th></th>
+    </tr></thead>
+    <tbody>
+      {% for r in page.rows %}
+      <tr>
+        <td><a href="/admin/api-tai-khoan?user={{ r.user.id }}">{{ r.user.email }}</a></td>
+        <td class="tnum">{{ r["keys"] }}</td>
+        <td class="tnum">{{ r.projects }}</td>
+        <td class="tnum">{{ r.held_in_window }}</td>
+        <td class="muted">{{ luc(r.newest_key_at) }}</td>
+        <td><a class="btn ghost sm" href="/admin/api-khoa?q={{ r.user.email }}">Khoá</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted" style="padding:26px;text-align:center">Chưa có tài khoản nào cấp khoá API.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+
+  {{ m.phan_trang(page, base) }}
+</div>

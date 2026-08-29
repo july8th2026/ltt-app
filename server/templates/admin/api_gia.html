@@ -1,0 +1,129 @@
+{# API Platform — Gia. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P7 (Economics).
+
+   🔴 Phien ban gia KHONG tinh gia. Gia van do `credit_cost()` cua app tinh;
+      phien ban ghi lai che do nao dang co hieu luc (san/tran/lam tron) roi duoc
+      dong dau len bao gia va job.
+
+   ⛔ Phat hanh ban moi la THEM DONG va dong cua so ban cu — khong sua so cua ban
+      cu. Do la ly do khong co duong nao doi gia HOI TO, va do la co y. #}
+{% import "admin/_macro_api.html" as m %}
+
+{# Mot dong phien ban, dung o ca ba bang. `thao_tac` tat o bang Lich su: mot ban
+   da nghi khong con nut nao hop le. #}
+{% macro dong(v, thao_tac) %}
+<tr>
+  <td>
+    <b>{{ v.label }}</b>{% if v.model %} · {{ v.model }}{% endif %}<br>
+    <span class="muted">{{ v.formula_ref or "" }}</span>
+  </td>
+  <td>{{ v.status }}</td>
+  <td class="muted">{{ luc(v.effective_from) }} → {{ luc(v.effective_until) }}</td>
+  <td class="tnum">{{ v.min_credit if v.min_credit is not none else "—" }} /
+    {{ v.max_credit if v.max_credit is not none else "—" }}</td>
+  <td class="tnum">{% if v.rounding %}{{ v.rounding }} ({{ v.rounding_mode }}){% else %}—{% endif %}</td>
+  <td class="muted">{{ v.published_by or "—" }}</td>
+  <td>
+    {%- if thao_tac -%}
+      {%- if v.status == NHAP %}{{ m.nut_kem_ly_do("/admin/api-gia-action", token,
+            "publish", "Phát hành", min_reason, them={"version_id": v.id}) }}{% endif -%}
+      {%- if v.status in (DANG, LEN_LICH) %}{{ m.nut_kem_ly_do("/admin/api-gia-action", token,
+            "retire", "Ngừng", min_reason, nguy_hiem=True, them={"version_id": v.id}) }}{% endif -%}
+    {%- endif -%}
+  </td>
+</tr>
+{% endmacro %}
+
+{% macro dau_bang() %}
+<thead><tr>
+  <th>Nhãn</th><th>Trạng thái</th><th>Cửa sổ</th><th>Sàn / trần</th>
+  <th>Làm tròn</th><th>Ai phát hành</th><th></th>
+</tr></thead>
+{% endmacro %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Giá</h1>
+    <p>Phiên bản giá <b>không</b> tính giá. Giá vẫn do <code>credit_cost()</code>
+      của app tính; phiên bản ghi lại chế độ nào đang có hiệu lực, kèm
+      sàn/trần/làm tròn, rồi được đóng dấu lên báo giá và job. Phát hành bản mới
+      là <b>thêm dòng</b> và đóng cửa sổ bản cũ — không sửa số của bản cũ, nên
+      không có đường nào đổi giá hồi tố.</p>
+  </div></div>
+
+  {{ m.loi_sau_chuyen_huong(loi) }}
+
+  <div class="tabs">
+    {% for it in catalog %}
+    <a class="{{ 'on' if tool and it.name == tool.name }}" href="/admin/api-gia?tool={{ it.name }}">{{ it.name }}</a>
+    {% else %}
+    <span class="muted">Chưa mở công cụ nào.</span>
+    {% endfor %}
+  </div>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Đang áp dụng</h2>
+    <div class="tablewrap"><table class="ui-table">{{ dau_bang() }}<tbody>
+      {% if line is none %}
+      <tr><td colspan="7" class="muted">Chưa có công cụ nào được mở.</td></tr>
+      {% elif line.current %}
+      {{ dong(line.current, True) }}
+      {% else %}
+      <tr><td colspan="7" class="muted">Chưa phát hành phiên bản nào — giá vẫn do
+        app tính, và quote mang nhãn "unversioned".</td></tr>
+      {% endif %}
+    </tbody></table></div>
+    {% if preview %}
+    <p>Cùng công thức mà báo giá thật dùng, với đầu vào ví dụ:
+      <b class="tnum">{{ preview.credit }}</b> credit{% if preview.bounded %}
+      (app tính {{ preview.raw_credit }}, bị chặn bởi {{ preview.pricing_version }}){% endif %}.
+      Không sinh báo giá, không trừ credit.</p>
+    {% endif %}
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Sắp tới</h2>
+    <div class="tablewrap"><table class="ui-table">{{ dau_bang() }}<tbody>
+      {% for v in (line.upcoming if line else []) %}{{ dong(v, True) }}
+      {% else %}<tr><td colspan="7" class="muted">Không có gì đang chờ.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Lịch sử</h2>
+    <div class="tablewrap"><table class="ui-table">{{ dau_bang() }}<tbody>
+      {% for v in (line.history if line else []) %}{{ dong(v, False) }}
+      {% else %}<tr><td colspan="7" class="muted">Chưa có lịch sử.</td></tr>{% endfor %}
+    </tbody></table></div>
+  </section>
+
+  <section>
+    <h2 style="margin:22px 0 10px">Tạo phiên bản</h2>
+    <form method="post" action="/admin/api-gia-action">
+      <input type="hidden" name="csrf_token" value="{{ token }}">
+      <input type="hidden" name="op" value="create">
+      <input type="hidden" name="tool" value="{{ tool.name if tool else '' }}">
+      <p>
+        <input name="label" placeholder="nhãn (vd 2026-09-a)" required>
+        <input name="model" placeholder="model (bỏ trống = mọi model)">
+        <input name="min_credit" inputmode="numeric" placeholder="sàn" style="width:110px">
+        <input name="max_credit" inputmode="numeric" placeholder="trần" style="width:110px">
+        <input name="rounding" inputmode="numeric" placeholder="làm tròn" style="width:130px">
+        <select name="rounding_mode" aria-label="Kiểu làm tròn">
+          {% for md in che_do_tron %}<option value="{{ md }}">{{ md }}</option>{% endfor %}
+        </select>
+      </p>
+      <p>
+        <input name="starts_in_hours" inputmode="numeric" style="width:190px"
+               placeholder="bắt đầu sau (giờ, trống = ngay)">
+        <input name="notes" size="40" placeholder="ghi chú">
+      </p>
+      <p>
+        <input name="reason" size="50" required minlength="{{ min_reason }}"
+               placeholder="Lý do (bắt buộc, ≥ {{ min_reason }} ký tự)">
+        <button class="btn btn-primary sm">Tạo bản nháp</button>
+      </p>
+      <p class="muted">Bản nháp chưa có hiệu lực. Phải bấm Phát hành, và cả hai
+        thao tác đều ghi nhật ký.</p>
+    </form>
+  </section>
+</div>

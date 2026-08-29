@@ -98,7 +98,18 @@ def test_kill_switch_van_doi_ly_do_o_tang_service():
     # Va form o admin phai co o ly do bat buoc.
     than = POST["/api-kill-switch-action"]
     assert "reason" in than
-    assert 'name="reason"' in ADMIN_API
+
+    # ⚠️ Tu 29/08 markup nam o TEMPLATE, khong con o `admin_api.py` — thanh 12
+    #    trang API da chuyen sang Jinja. Phep kiem theo markup ve dung cho no
+    #    o, va chat hon ban cu: khong chi doi o ton tai ma doi no BAT BUOC.
+    vo = (GOC / "server/templates/admin/api_kill_switch.html").read_text(
+        encoding="utf-8")
+    assert 'name="reason"' in vo
+    assert "required" in vo and "minlength" in vo
+    # 🔴 Va no phai la mot FORM co o xac nhan, khong phai mot toggle. Anh mockup
+    #    ve toggle; lam theo anh thi thao tac LUON that bai o tang service.
+    assert 'name="confirm"' in vo
+    assert "<input type=\"checkbox\"" in vo
 
 
 def test_khong_secret_nao_bi_render():

@@ -1,0 +1,140 @@
+{# API Platform — Bao mat. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P9.
+
+   ⭐ O day chi luu **nua cong khai** cua khoa. Nua bi mat khong ton tai o dau de
+      ma hien — dung "sua" bang cach di tim no. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Bảo mật</h1>
+    <p>Những lần bị từ chối <b>trước khi</b> kịp thành một request có chủ. Trước
+      EXT-16 chúng chỉ vào file log, nên "có ai đang dò khoá không" và "khoá đã
+      thu hồi còn bị dùng không" không hỏi được bằng dữ liệu. Ở đây chỉ lưu
+      <b>nửa công khai</b> của khoá — nửa bí mật không tồn tại ở đâu để mà hiện.</p>
+  </div></div>
+
+  <div class="tabs">
+    {% for h, nhan in ((1, "1 giờ"), (24, "24 giờ"), (168, "7 ngày")) %}
+    <a class="{{ 'on' if hours == h }}" href="/admin/api-bao-mat?hours={{ h }}">{{ nhan }}</a>
+    {% endfor %}
+  </div>
+
+  {{ m.mo_luoi_o() }}
+    {{ m.o_chi_so("Lần bị từ chối", data.total, mau=(ERR if data.total else "")) }}
+    {{ m.o_chi_so("Khoá đã thu hồi bị dùng", data.revoked_in_use,
+                  "thường là một bản triển khai chưa ai cập nhật",
+                  mau=(ERR if data.revoked_in_use else "")) }}
+    {{ m.o_chi_so("Khoá lạ", data.by_kind.get(UNKNOWN_KEY, 0),
+                  "nhiều + từ một IP = đang dò") }}
+    {{ m.o_chi_so("Bị bóp vì dò nhiều", data.by_kind.get(THROTTLED, 0)) }}
+  </div>
+
+  {{ m.mo_luoi_cot() }}
+    <section>
+      <h2 style="margin:22px 0 10px">Dấu hiệu bất thường</h2>
+      {# 🔴 Mot khoa bi LO van goi dung scope va dung nhip, nen no khong cham vao
+         bat ky hang rao nao — cho toi khi het tien. Ba cau hoi duoi day nhin vao
+         THOI QUEN thay vi vao luat; do la ly do chung ton tai. #}
+      <p class="muted">Một khoá bị lộ vẫn gọi đúng scope và đúng nhịp, nên nó
+        không chạm vào bất kỳ hàng rào nào — cho tới khi hết tiền. Ba câu hỏi này
+        nhìn vào <b>thói quen</b> thay vì vào luật.</p>
+      <div class="tablewrap"><table class="ui-table">
+        <thead><tr><th>Dấu hiệu</th><th>Đối tượng</th><th>Số</th><th>Nghĩa là gì</th></tr></thead>
+        <tbody>
+          {% for r in bat_thuong.khoa_thu_hoi %}
+          <tr>
+            <td><span class="chip danger">Khoá đã thu hồi</span></td>
+            <td class="mono">{{ r.key_id[:16] }}</td>
+            <td class="tnum">{{ r.lan }}</td>
+            <td class="muted">vẫn bị gọi từ {{ r.so_ip }} IP — thứ đang giữ
+              khoá không phải hệ thống vừa được cập nhật</td>
+          </tr>
+          {% endfor %}
+          {% for r in bat_thuong.chi_tieu_vot %}
+          <tr>
+            <td><span class="chip warn">Chi tiêu vọt</span></td>
+            <td class="mono">{{ r.user_id[:16] }}</td>
+            <td class="tnum">{{ r.tieu }}</td>
+            <td class="muted">{{ ("gấp %s×"|format(r.gap)) if r.gap else "tài khoản mới" }}
+              mức thường ngày ({{ r.thuong_ngay }}/ngày)</td>
+          </tr>
+          {% endfor %}
+          {% for r in bat_thuong.scope_bi_tu_choi %}
+          <tr>
+            <td><span class="chip warn">Thiếu quyền</span></td>
+            <td class="mono">{{ r.key_id[:16] }}</td>
+            <td class="tnum">{{ r.lan }}</td>
+            <td class="muted">trên {{ r.so_route }} route — cấu hình thiếu scope,
+              hoặc đang dò xem với tới đâu</td>
+          </tr>
+          {% endfor %}
+          {% if not (bat_thuong.khoa_thu_hoi or bat_thuong.chi_tieu_vot
+                     or bat_thuong.scope_bi_tu_choi) %}
+          <tr><td colspan="4" class="muted">Không có dấu hiệu bất thường nào trong khoảng này.</td></tr>
+          {% endif %}
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2 style="margin:22px 0 10px">IP ồn nhất</h2>
+      {# ⭐ Cung mot TONG SO, hai viec khac nhau — day la ly do bang nay ton tai
+         canh o "Lan bi tu choi" chu khong thay the no. #}
+      <p class="muted">Một IP hỏng 400 lần là một con bot; 400 IP hỏng mỗi cái một
+        lần là một bản phát hành lỗi. Cùng một tổng số, hai việc khác nhau.</p>
+      <div class="tablewrap"><table class="ui-table">
+        <thead><tr><th>IP</th><th>Số lần</th></tr></thead>
+        <tbody>
+          {% for ip, so in data.top_ips %}
+          <tr><td class="mono">{{ ip }}</td><td class="tnum">{{ so }}</td></tr>
+          {% else %}
+          <tr><td colspan="2" class="muted">Không có.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+
+    <section>
+      <h2 style="margin:22px 0 10px">Theo loại</h2>
+      <div class="tablewrap"><table class="ui-table">
+        <thead><tr><th>Loại</th><th>Số lần</th></tr></thead>
+        <tbody>
+          {% for k, v in data.by_kind|dictsort %}
+          <tr><td><code>{{ k }}</code></td><td class="tnum">{{ v }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <form method="get" class="job-filters">
+    <select name="kind" aria-label="Lọc theo loại sự kiện">
+      {% for k in loai_chon %}
+      <option value="{{ k }}"{{ " selected" if k == kind }}>{{ k }}</option>
+      {% endfor %}
+    </select>
+    <input name="hours" value="{{ hours }}" style="width:90px" aria-label="Số giờ gần nhất">
+    <button class="btn ghost sm">Lọc</button>
+  </form>
+
+  <div class="tablewrap"><table class="ui-table">
+    <thead><tr>
+      <th>Lúc</th><th>Loại</th><th>IP</th><th>Khoá đã thử</th>
+      <th>Route</th><th>Correlation</th>
+    </tr></thead>
+    <tbody>
+      {% for r in rows %}
+      <tr>
+        <td class="muted">{{ luc(r.created_at) }}</td>
+        <td><code>{{ r.kind }}</code></td>
+        <td class="mono">{{ r.ip or "—" }}</td>
+        <td class="mono">{{ r.key_id or "—" }}</td>
+        <td class="mono muted">{{ r.route or "" }}</td>
+        <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted" style="padding:26px;text-align:center">Không có sự kiện nào. Đó là trạng thái bình thường.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>

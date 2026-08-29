@@ -1,0 +1,159 @@
+{# API Platform — Truy vet mot loi goi. Hop dong: `05_PAGE_CONTRACT_MATRIX.md` P8.
+
+   ⭐ Day la trang DUY NHAT hien ca su kien NOI BO cua job va loi THO. Trang cua
+      khach chi thay dong `customer` va mot ban loi da lam sach (Q76). Do la toan
+      bo ly do co mot trang truy vet rieng cho nguoi van hanh — dung "thong nhat"
+      hai trang lam mot. #}
+{% import "admin/_macro_api.html" as m %}
+
+<div class="adm-content">
+  <div class="pagehead"><div>
+    <h1>API — Truy vết</h1>
+    <p>Dán vào đây bất kỳ thứ gì khách đưa: correlation id, job id, mã khoá, id
+      project, email — hoặc một IP. Tất cả dẫn về <b>một</b> dòng thời gian.</p>
+  </div></div>
+
+  <form method="get" class="job-filters">
+    <input name="q" value="{{ q }}" size="46"
+           placeholder="correlation id / job / khoá / project / email / IP"
+           aria-label="Định danh cần tra">
+    <button class="btn sm">Tra</button>
+    {%- if found.found %}
+    <a class="btn ghost sm" href="/admin/api-trace-export?q={{ q }}">Xuất JSON</a>
+    {%- endif %}
+  </form>
+
+  {% if not q %}
+  {# Chua tra gi thi khong hien gi — mot bang rong o day doc nhu "khong tim thay". #}
+  {% elif not found.found %}
+  <p class="muted" style="padding:26px">Không tìm thấy gì khớp. Correlation id chỉ
+    được lưu cho lời gọi hỏng và lời gọi ghi dữ liệu (EXT-09).</p>
+  {% else %}
+  <p class="muted">Khớp theo <code>{{ found.matched_by }}</code>.</p>
+
+  {% if found.user or found.project or found.key %}
+  <section>
+    <h2 style="margin:22px 0 10px">Ai</h2>
+    <div class="tablewrap"><table class="ui-table"><tbody>
+      {% if found.user %}
+      <tr><th>Tài khoản</th><td><a href="/admin/api-tai-khoan?user={{ found.user.id }}">{{ found.user.email }}</a></td></tr>
+      {% endif %}
+      {% if found.project %}
+      <tr><th>Project</th><td>{{ found.project.name }}</td></tr>
+      {% endif %}
+      {% if found.key %}
+      <tr><th>Khoá</th><td>
+        <a href="/admin/api-khoa?key={{ found.key.key_id }}"><code>{{ found.key.key_id[:16] }}</code></a>
+        {{ m.chip_mode(found.key.mode|default("live", true)) }}</td></tr>
+      {% endif %}
+    </tbody></table></div>
+  </section>
+  {% endif %}
+
+  {% set j = found.job %}
+  {% if found.request or j or found.credit or found.webhooks %}
+  <section>
+    <h2 style="margin:22px 0 10px">Dòng thời gian</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Bước</th><th></th><th></th><th>Lúc</th></tr></thead>
+      <tbody>
+        {% if found.request %}
+        {% set r = found.request %}
+        <tr><td>1. Request</td><td class="mono">{{ r.method }} {{ r.route }}</td>
+          <td class="tnum">{{ r.status }}</td><td class="muted">{{ luc(r.created_at) }}</td></tr>
+        {% endif %}
+        {% if j %}
+        <tr><td>2. Job</td><td class="mono">{{ j.id[:16] }}</td>
+          <td>{{ j.status }}</td><td class="muted">{{ luc(j.created_at) }}</td></tr>
+        <tr><td>3. Chờ hàng đợi</td><td class="tnum">{{ ms(found.queue_delay_ms) }}</td>
+          <td class="mono muted">{{ j.worker_id or "—" }}</td>
+          <td class="muted">{{ luc(j.started_at) }}</td></tr>
+        <tr><td>4. Chạy</td><td class="tnum">{{ ms(found.run_ms) }}</td>
+          <td>{{ j.status }}</td><td class="muted">{{ luc(j.finished_at) }}</td></tr>
+        {% endif %}
+        {% for e in found.credit %}
+        <tr><td>5. Sổ credit</td><td>{{ e.kind }}</td>
+          <td class="tnum">{{ "%+d"|format(e.delta) }}</td>
+          <td class="muted">{{ luc(e.created_at) }}</td></tr>
+        {% endfor %}
+        {% for h in found.webhooks %}
+        <tr><td>6. Webhook</td><td class="mono">{{ h.event_type }}</td>
+          <td>{{ h.status }} ({{ h.attempts }})</td>
+          <td class="muted">{{ luc(h.created_at) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% endif %}
+
+  {% if j %}
+  <section>
+    <h2 style="margin:22px 0 10px">Sự kiện job (gồm cả nội bộ)</h2>
+    <p class="muted">Trang của khách chỉ hiện dòng <i>khách</i>. Chỗ này hiện cả
+      hai — đó là toàn bộ lý do có một trang truy vết cho người vận hành.</p>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>#</th><th>Mã</th><th>Mức</th><th>Ai thấy</th><th>Chi tiết</th></tr></thead>
+      <tbody>
+        {% for e in found.events %}
+        <tr>
+          <td class="tnum">{{ e.sequence }}</td>
+          <td class="mono">{{ e.event_code }}</td>
+          <td>{{ e.level }}</td>
+          <td>{{ "khách" if e.visibility == "customer" else "nội bộ" }}</td>
+          <td class="muted">{{ ((e.details or "")|string)[:160] }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="muted">Không có sự kiện.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% if j.error %}
+  <section>
+    <h2 style="margin:22px 0 10px">Lỗi thô</h2>
+    <p class="muted">Khách được xem một bản đã làm sạch (Q76). Bản gốc ở đây.</p>
+    <pre class="mono" style="white-space:pre-wrap">{{ j.error[:2000] }}</pre>
+  </section>
+  {% endif %}
+  {% endif %}
+
+  {% if found.requests %}
+  <section>
+    <h2 style="margin:22px 0 10px">Lời gọi gần đây</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th><th>Correlation</th></tr></thead>
+      <tbody>
+        {% for r in found.requests %}
+        <tr>
+          <td class="muted">{{ luc(r.created_at) }}</td>
+          <td class="mono">{{ r.method }} {{ r.route }}</td>
+          <td class="tnum">{{ r.status }}</td>
+          <td class="mono muted">{{ r.code or "" }}</td>
+          <td class="mono muted"><a href="/admin/api-trace?q={{ r.request_id }}">{{ r.request_id[:12] }}</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% endif %}
+
+  {% if found.security %}
+  <section>
+    <h2 style="margin:22px 0 10px">Sự kiện bảo mật</h2>
+    <div class="tablewrap"><table class="ui-table">
+      <thead><tr><th>Lúc</th><th>Loại</th><th>IP</th><th>Khoá</th></tr></thead>
+      <tbody>
+        {% for r in found.security %}
+        <tr>
+          <td class="muted">{{ luc(r.created_at) }}</td>
+          <td><code>{{ r.kind }}</code></td>
+          <td class="mono">{{ r.ip or "—" }}</td>
+          <td class="mono">{{ r.key_id or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+  </section>
+  {% endif %}
+  {% endif %}
+</div>
