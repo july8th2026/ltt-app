@@ -144,8 +144,20 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
                 f"may B tra 413: {than_loi[:200]}", qua_dai=True)
         if r.status_code >= 500:
             api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")
+            # 🔴 GHI ĐỦ LÝ DO THƯỢNG NGUỒN, ĐỪNG CẮT Ở 200.
+            #
+            #    Lỗi 5xx của máy B mang câu quan trọng nhất **ở cuối**: llama.cpp
+            #    trả `Failed to parse tool call arguments as JSON: ... parse
+            #    error at line 1, column NNNN ... last read: '<đoạn gây vỡ>'`.
+            #    Cắt 200 ký tự là mất đúng cột lỗi và đoạn văn bản gây vỡ — thứ
+            #    duy nhất chỉ ra bug nằm ở parser tool-call chứ không ở ta.
+            #
+            # ⛔ Đo 29/08: 70 lượt hỏng vì đúng lỗi đó, và mất nhiều giờ mới
+            #    thấy được vì thông điệp đã bị cắt trước khi tới nhật ký.
+            log.warning("may B tra %s (day du): %s", r.status_code,
+                        than_loi[:4000])
         raise KhongMoDuocLuong(
-            f"may B tra {r.status_code}: {than_loi[:200]}")
+            f"may B tra {r.status_code}: {than_loi[:600]}")
 
     def _di() -> Iterator[bytes]:
         try:
