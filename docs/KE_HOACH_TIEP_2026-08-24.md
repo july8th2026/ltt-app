@@ -9,7 +9,49 @@ chúng **chặn** phần còn lại — nên chúng ở trên cùng.
 
 ---
 
-## 0. Trạng thái lúc chốt
+## 0. Trạng thái
+
+### 0a. ✅ Chốt cuối **2026-08-29** — còn lại gì, và ai làm được
+
+⚠️ Bảng §0b bên dưới là **ảnh chụp lúc 24/08**, giữ để đọc lịch sử. Trạng thái
+đang đúng là bảng này.
+
+| Hạng mục | Trạng thái | Ai |
+|---|---|---|
+| **V1–V4** trọng tài VRAM | ✅ xong (D-058) | — |
+| **P1** deploy | ✅ xong | — |
+| **A1–A4** nghiệm thu ảnh thật | ✅ xong, H37 đóng | — |
+| **G1–G5** GPU máy A | ✅ **xong 29/08** — G1–G4 đã có từ trước, G5 làm 29/08 và **đã bật** | — |
+| **P3** luật WAF | ⏸️ hạ xuống *"nên có"*; nguyên nhân thật đã sửa (`test_281`) | ai cũng được |
+| **L1a · L2a** | ✅ xong 24/08 | — |
+| **L1b** nửa GUI | ⛔ **không tự động hoá được** — `/login` sau thử thách bot Cloudflare | **người thật** |
+| **L2b** Claude Desktop | ⛔ cần quyền điều khiển máy, **và** ô "Gateway API key" không được điền hộ | **chủ sản phẩm** |
+| **L3** điều khoản API | 🔴 nội dung là quyết định kinh doanh | **chủ sản phẩm** |
+| **L4** thu tường lửa máy B | 🔴 xem dưới | **người ngồi trước máy B** |
+| **L5** xoay khoá provider | 🔴 xem dưới | **người thật** |
+| **C15** công cụ tự cắm CLI | ⏳ chưa làm — *"việc đáng làm nhất còn lại"* | làm được |
+| **N1–N6** nợ kỹ thuật | ⏸️ trả khi đi ngang qua | — |
+
+🔴 **L4 và L5 KHÔNG phải "chưa kịp làm" — chúng là hai việc cố ý không giao cho
+tác nhân tự động.**
+
+**L5.** Xoay khoá nghĩa là tạo khoá mới ở phía nhà cung cấp rồi **nhập giá trị
+khoá** vào cấu hình. Giá trị bí mật không được đi qua dòng lệnh — nó vào lịch sử
+shell, vào log, vào bản ghi phiên — và không được điền hộ. Mọi phần còn lại
+chuẩn bị được; chừa đúng chỗ điền.
+⇒ Chính vì thế `setup/dat_bien_env.ps1` **từ chối** mọi tên trông như bí mật.
+
+**L4.** Đổi tường lửa trên một máy **ở xa** mà đường vào đi qua chính lớp mạng
+đang sửa. Sai một luật là mất đường vào một máy đang phục vụ `image.ltt` và
+`text.chat` — loại sai **không lùi được từ xa**.
+
+**Mục H** (`24_DEFERRED_POST_MVP.md`) vẫn **cố ý hoãn**: sửa đúng là một migration
+Alembic trên CSDL đang phục vụ khách trả tiền, cho một nhu cầu **chưa xảy ra**;
+đã đo 29/08 rằng không dấu vết nào đang bị mất.
+
+---
+
+### 0b. Trạng thái lúc chốt (24/08 — ảnh chụp lịch sử)
 
 | | |
 |---|---|
@@ -227,10 +269,26 @@ khai = tắt phép kiểm**. Hai cách "thông minh" đều sai và đều hỏn
 ⇒ Nó là một **tuyên bố về phần cứng**, nên phải do người khai. Khai sai kiểu thì
 tắt **và ghi log** — im lặng ở đây đúng là lỗi mà phép kiểm này sinh ra để chặn.
 
-⚠️ **Còn một bước để nó thật sự chạy:** thêm `LTT_GPU_MONG_DOI=2` vào
-`C:\LTTPlatform\secrets\app.env` rồi `setup\nap_lai_env.ps1`. Chưa làm thì mã đã
-có nhưng phép kiểm **đang tắt** — và dòng này tồn tại để không ai đọc "G5 xong"
-thành "máy đang được canh".
+✅ **ĐÃ BẬT trên production 29/08 lúc 17:19**, chủ sản phẩm cho phép trực tiếp.
+
+```
+TRUOC = (khong co dong LTT_GPU_MONG_DOI)
+SAU   = LTT_GPU_MONG_DOI=2          65 -> 66 bien
+nap_lai_env: 3 dich vu nhan ENV moi, ca ba Running      EXITCODE=0
+```
+
+⭐ **Bằng chứng KHÔNG phải dòng "Running".** Chính `nap_lai_env.ps1` dặn *"kiểm
+lại bằng một thứ thật, không tin trạng thái dịch vụ"*. Thứ thật là môi trường
+**đăng ký của dịch vụ** — thứ tiến trình worker thực sự nhận:
+
+```
+HKLM\SYSTEM\CurrentControlSet\Services\LTTStudioWorker\Parameters
+  AppEnvironmentExtra  ->  LTT_GPU_MONG_DOI=2
+```
+
+⚠️ Dòng ở đây trước 17:19 viết *"còn một bước để nó thật sự chạy"*. Giữ nguyên
+sau khi đã bật thì nó thành **đúng lớp lỗi `image.upscale`**, chỉ ngược hướng:
+báo tắt trong khi đang bật.
 
 Chốt: `tests/test_329_chot_so_gpu.py` (13 phép kiểm). Kiểm-có-răng: tháo khoá
 khử trùng lặp, tháo câu "không có job nào hỏng", và bắt nó báo cả khi đủ card —
@@ -426,6 +484,70 @@ ngay sau khi đo xong.
 | **N3** | `test_221` trên một bucket R2 vứt đi | Chặn bởi một quyết định hạ tầng, không bởi code. |
 | **N4** | G5b (chuỗi nâng chất ảnh: upscale/restore + VLM tự loại) | Chỉ làm khi có khách và có phàn nàn cụ thể. |
 | **N5** | G11 (giám sát chất lượng ảnh thường trực) | Sau khi có khách thật. |
+| **N6** | 🔴 Gate chạy **kiểm tĩnh song song với bộ test**, nên checker đọc đúng tệp mà test đang ghi | **Đã tìm ra 29/08**, chưa sửa. Xem dưới. |
+
+### N6 — 🔴 **ĐÃ TÌM RA**: gate chạy kiểm tĩnh SONG SONG với chính bộ test
+
+Ngày 29/08 có **năm** lần ba tệp `CONTRACT_BASELINE.json` · `messages.po` ·
+`vps_dieu_khoan.html` bị bẩn giữa các lượt gate, kèm `OSError: [Errno 22]
+Invalid argument`. Hai phiên `git checkout` chúng đi mà không ai hỏi *ai đang ghi*.
+
+**Nguyên nhân, đo được:**
+
+`tools/gate.py:_chay_theo_lich` dùng `ThreadPoolExecutor` và nộp **cùng lúc** cả
+bước nặng (`bo test`) lẫn toàn bộ nhóm kiểm tĩnh. Nghĩa là các checker **đang
+đọc** đúng những tệp mà pha 2 của bộ test **đang ghi**:
+
+| Tệp | Test ghi nó (pha 2) | Kiểm tĩnh đọc nó (song song) |
+|---|---|---|
+| `docs/PUBLIC_API/CONTRACT_BASELINE.json` | `test_209` | `check_api_compat.py` → *hop dong API* |
+| `sdk/typescript/ltt-public-api.ts` | `test_210` | `check_sdk_contract.py` → *SDK khop hop dong* |
+| `locale/en/LC_MESSAGES/messages.po` | `test_306` | `check_dich_thieu.py`, `check_fuzzy_dich.py` → *dich thieu ban EN*, *chuoi chua dich* |
+
+**Ba trên ba.** Đó không phải trùng hợp.
+
+⇒ `TEP_NOI_TIEP` bảo vệ ba tệp đó khỏi **các test khác**, nhưng **không** khỏi
+chính **nhóm kiểm tĩnh của cùng lượt gate**. Hàng rào có thật, chỉ là nó chắn
+sai hướng.
+
+**Bằng chứng, ba lớp:**
+
+1. Chạy riêng, nối tiếp: `test_209` **4/4 lần xanh**, cây sạch sau mỗi lượt.
+2. Đo có đối chứng trên cây một tiến trình — chụp `sha256` từng tệp git theo dõi
+   trước/sau (không dùng `git status`: một tệp bị ghi rồi khôi phục đúng y
+   nguyên thì `git status` **không thấy**, mà đó lại chính là thứ cần biết):
+
+   | Lượt | Lệnh | Kết quả |
+   |---|---|---|
+   | 1 | pha 1, `--deselect` cả ba tệp | 250 s — **0 tệp đổi** |
+   | 2 | *đối chứng âm:* chạy **tất cả**, không deselect | 258 s — **0 tệp đổi** |
+
+   ⇒ Bộ test **một mình** không làm bẩn cây, kể cả khi chạy cả ba tệp đó.
+3. Trong **gate**, cùng cây một tiến trình: `test_209` đỏ với `Errno 22` ngay
+   trên `CONTRACT_BASELINE.json`.
+
+Ba lớp đó chỉ cùng đúng khi thứ ghi đè không phải bộ test và không phải phiên
+thứ hai — mà là **chính gate**.
+
+⭐ Nó cũng giải thích `Errno 22` mà phiên kia gặp **ở lệnh ghi khi chỉ có một
+tiến trình**: trên Windows, hai tiến trình chạm một tệp cùng lúc cho đúng mã lỗi
+đó. "Một tiến trình" tính theo *phiên làm việc*, nhưng gate tự nó là **nhiều
+luồng**.
+
+**Cách sửa — chưa làm, thuộc `tools/gate.py`:** không cho nhóm kiểm tĩnh chạy
+chồng lên bước `bo test`, hoặc hẹp hơn: chỉ tách bốn checker đọc ba tệp trên.
+Nó là một đánh đổi thời gian thật (nhóm tĩnh hiện "miễn phí" vì núp sau bộ test),
+nên nó là một quyết định chứ không phải một lần sửa lỗi.
+
+⚠️ **Cho tới khi sửa:** một lượt gate đỏ ở `test_209`/`test_210`/`test_306` kèm
+`Errno 22` là **đỏ giả**. Chạy lại. Đừng đi sửa mã, và đừng đổ cho phiên khác —
+hai ta đã làm cả hai suốt ngày 29/08.
+
+⛔ Và một điều học được từ chính phép đo: kịch bản đo có `git checkout -- .` để
+trả cây về sạch giữa hai lượt — **và nó xoá mất phần sửa tài liệu chưa commit của
+tôi**. Một kịch bản đi tìm *"ai ghi vào cây"* mà **bản thân nó ghi vào cây**.
+⇒ Commit hoặc stash trước khi chạy bất cứ thứ gì có `git checkout`, `git clean`
+hay `git reset` — kể cả khi thứ đó là công cụ đo của chính mình.
 
 ---
 

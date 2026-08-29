@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:492096158392b67f4b2d781688f5400dc10ec93896a8377fd442ed2a68d627ef
-Nguồn đã quét : 1254 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:6748161d62e702031341de84f6d64a5a5676f0d1ddfa789da4b4aa7854af24ca
+Nguồn đã quét : 1257 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -898,7 +898,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (166 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (168 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -935,6 +935,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_FFMPEG
 - LTT_FFPROBE
 - LTT_FILE_LOGGING
+- LTT_GPU
 - LTT_GPU_CLAIMS_DIR
 - LTT_GPU_MONG_DOI
 - LTT_HF_TOKEN
@@ -961,6 +962,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_MODELARK_ACCESS_KEY
 - LTT_MODELARK_REGION
 - LTT_MODELARK_SECRET_KEY
+- LTT_MOI
 - LTT_NEW_ADMIN_PASSWORD
 - LTT_NEXUS
 - LTT_NEXUS_AGENT_ALLOW_PLAINTEXT_KEY
@@ -1066,7 +1068,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (295 file pytest + 3 frontend)
+10. QUALITY GATES (297 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1321,6 +1323,8 @@ Test inventory:
 - tests/test_329_chot_so_gpu.py
 - tests/test_330_claim_gpu_theo_bien_moi_truong.py
 - tests/test_331_tu_hoan_giu_cho_treo.py
+- tests/test_332_gate_khong_tu_nhieu.py
+- tests/test_333_dat_bien_env.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1388,8 +1392,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1254 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:23, .py:947, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1257 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:24, .py:949, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2253,18 +2257,19 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (9)
+[setup] (10)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 - setup/cong_tac_tool_api.ps1
+- setup/dat_bien_env.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (312)
+[tests] (314)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2530,6 +2535,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_329_chot_so_gpu.py
 - tests/test_330_claim_gpu_theo_bien_moi_truong.py
 - tests/test_331_tu_hoan_giu_cho_treo.py
+- tests/test_332_gate_khong_tu_nhieu.py
+- tests/test_333_dat_bien_env.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2700,7 +2707,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1254 file; 12394166 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1257 file; 12417869 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -154041,6 +154048,159 @@ Write-Host "  powershell -ExecutionPolicy Bypass -File .\setup\nap_lai_env.ps1"
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/dat_bien_env.ps1
+SHA256=7b5a679ac7077d745603db10263089b0a1cdc11fe360d50e48a5ea4c95add128 BYTES=6138 LINES=147
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+# dat_bien_env.ps1 - dat MOT bien trong secrets\app.env, an toan.
+#
+#     powershell -ExecutionPolicy Bypass -File .\setup\dat_bien_env.ps1 -Ten LTT_GPU_MONG_DOI -Gia_tri 2
+#     powershell -ExecutionPolicy Bypass -File .\setup\dat_bien_env.ps1 -Ten LTT_GPU_MONG_DOI -Xoa
+#     powershell -ExecutionPolicy Bypass -File .\setup\dat_bien_env.ps1 -Ten LTT_GPU_MONG_DOI   # chi xem
+#
+# Tep nay THUAN ASCII (quy tac 2 cua CLAUDE.md).
+#
+# !! VI SAO CAN MOT SCRIPT CHO MOT DONG TEXT.
+#
+#    `setup\cong_tac_tool_api.ps1` da tra gia de hoc ba cach hong, va ca ba deu
+#    IM LANG. Nhung no chi che DUNG MOT bien (`LTT_PUBLIC_API_TOOLS`) - ba cach
+#    hong do ap cho MOI bien:
+#
+#      1. Trinh soan thao chen BOM  -> `json.load()` vo o cho khac,
+#         `/health/ready` tra 503 trong khi dich vu van chay.
+#         Loi nay DA THUC SU LAM SAP PRODUCTION o du an nay.
+#      2. Go de len mot dong khac   -> mat mot bien dang phuc vu, khong ai biet
+#         cho toi khi co nguoi goi.
+#      3. Sua xong roi restart      -> KHONG AN GI. nssm nuong bien moi truong
+#         vao dang ky dich vu luc CAI (`AppEnvironmentExtra`); tien trinh doc
+#         `os.environ`, khong doc lai app.env. Phai chay `nap_lai_env.ps1`.
+#
+#    Ngay 29/08 phai dat `LTT_GPU_MONG_DOI` va khong co cong cu nao - phai viet
+#    mot script MOT LAN trong thu muc tam. Lan sau se lai nhu vay. Tep nay la de
+#    khong con lan sau.
+#
+# !! KHONG IN GIA TRI CUA BIEN KHAC. Script chi doc/ghi dung mot dong va chi in
+#    dong do. `-Xem` in ten bien co mat, KHONG in gia tri nao.
+#
+# !! KHONG DAT BI MAT BANG SCRIPT NAY. Khoa, token, mat khau khong duoc di qua
+#    dong lenh: chung vao lich su shell, vao log, vao ban ghi tien trinh. Script
+#    TU CHOI cac ten trong tu bi mat ben duoi. Bi mat thi sua tep truc tiep tren
+#    may chu, boi nguoi.
+
+[CmdletBinding()]
+param(
+    [string]$Ten,
+    [string]$Gia_tri,
+    [switch]$Xoa,
+    [switch]$Xem,
+    [string]$EnvFile = 'C:\LTTPlatform\secrets\app.env'
+)
+
+$ErrorActionPreference = 'Stop'
+
+# Ten trong nay khong duoc dat qua dong lenh. Khop khong phan biet hoa thuong,
+# va khop theo MANH de `..._KEY_2` hay `MY_SECRET_X` cung dinh.
+$TU_BI_MAT = @('SECRET', 'TOKEN', 'PASSWORD', 'PASSWD', 'PEPPER', 'CREDENTIAL',
+               'PRIVATE', 'APIKEY', 'API_KEY', 'DSN')
+
+function Doc-Env([string]$duong) {
+    if (-not (Test-Path -LiteralPath $duong)) {
+        Write-Host "Khong thay $duong" -ForegroundColor Red; exit 1
+    }
+    $bytes = [IO.File]::ReadAllBytes($duong)
+    # (1) BOM: DUNG LAI. Khong tu sua mot tep bi mat.
+    if ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) {
+        Write-Host "app.env dang co BOM - DUNG LAI. Khong tu sua tep bi mat." -ForegroundColor Red
+        exit 2
+    }
+    return $bytes
+}
+
+$bytes = Doc-Env $EnvFile
+$txt = [Text.Encoding]::UTF8.GetString($bytes)
+# Giu nguyen kieu xuong dong cua tep, khong ap kieu cua may dang chay.
+$nl  = if ($txt -match "`r`n") { "`r`n" } else { "`n" }
+$dong = [Collections.ArrayList]@($txt -split "`r?`n")
+
+if ($Xem -or -not $Ten) {
+    # Chi in TEN, khong in gia tri.
+    $ten_co = @()
+    foreach ($d in $dong) {
+        if ($d -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=') { $ten_co += $Matches[1] }
+    }
+    Write-Host "Co $($ten_co.Count) bien (khong in gia tri):"
+    $ten_co | Sort-Object | ForEach-Object { Write-Host "  $_" }
+    exit 0
+}
+
+if ($Ten -notmatch '^[A-Za-z_][A-Za-z0-9_]*$') {
+    Write-Host "Ten bien khong hop le: $Ten" -ForegroundColor Red; exit 3
+}
+foreach ($tu in $TU_BI_MAT) {
+    if ($Ten.ToUpper().Contains($tu)) {
+        Write-Host "TU CHOI: '$Ten' trong nhu mot bi mat ('$tu')." -ForegroundColor Red
+        Write-Host "Bi mat khong duoc di qua dong lenh - no vao lich su shell va vao log."
+        Write-Host "Sua tep truc tiep tren may chu, boi nguoi."
+        exit 4
+    }
+}
+if (-not $Xoa -and -not $PSBoundParameters.ContainsKey('Gia_tri')) {
+    Write-Host "Thieu -Gia_tri (hoac -Xoa)." -ForegroundColor Red; exit 3
+}
+if ($Gia_tri -match "[`r`n]") {
+    Write-Host "Gia tri khong duoc chua ky tu xuong dong." -ForegroundColor Red; exit 3
+}
+
+# (2) Khop DUNG khoa bang bo chon neo dau dong, khong `StartsWith`:
+#     `LTT_GPU` khong duoc khop `LTT_GPU_MONG_DOI`.
+$i = -1
+for ($k = 0; $k -lt $dong.Count; $k++) {
+    if ($dong[$k] -match "^\s*$([regex]::Escape($Ten))\s*=") { $i = $k; break }
+}
+
+if ($Xoa) {
+    if ($i -lt 0) { Write-Host "  $Ten von khong co - khong doi gi."; exit 0 }
+    Write-Host "  bo dong: $Ten"
+    $dong.RemoveAt($i)
+} else {
+    $moi = "$Ten=$Gia_tri"
+    if ($i -ge 0) {
+        if ($dong[$i] -eq $moi) { Write-Host "  $Ten da dung gia tri - khong doi gi."; exit 0 }
+        $dong[$i] = $moi
+    } else {
+        while ($dong.Count -gt 0 -and $dong[$dong.Count - 1] -eq '') { $dong.RemoveAt($dong.Count - 1) }
+        [void]$dong.Add($moi)
+        [void]$dong.Add('')
+    }
+    Write-Host "  moi: $moi" -ForegroundColor Green
+}
+
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$bak = "$EnvFile.truoc-$stamp"
+[IO.File]::WriteAllBytes($bak, $bytes)
+Write-Host "  sao luu: $bak"
+
+# !! UTF8Encoding($false) = KHONG BOM. `Out-File`/`Set-Content -Encoding utf8`
+#    tren PowerShell 5.1 chen BOM - quy tac 1 cua CLAUDE.md.
+[IO.File]::WriteAllText($EnvFile, ($dong -join $nl), (New-Object Text.UTF8Encoding($false)))
+
+# Doc LAI tu dia va dem. Kiem ket qua, khong kiem bien vua gan - mot cau hoi
+# khong bao gio sai duoc thi khong phai mot chot chan.
+$lai = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($EnvFile))
+$dem = ([regex]::Matches($lai, "(?m)^\s*$([regex]::Escape($Ten))\s*=")).Count
+$mong = if ($Xoa) { 0 } else { 1 }
+if ($dem -ne $mong) {
+    Write-Host "HONG: so dong mang '$Ten' la $dem, mong doi $mong." -ForegroundColor Red
+    Write-Host "Ban truoc con o: $bak"
+    exit 5
+}
+
+Write-Host ""
+Write-Host "CHUA CO TAC DUNG. nssm nuong bien moi truong luc cai, nen phai nap lai:" -ForegroundColor Yellow
+Write-Host "  powershell -ExecutionPolicy Bypass -File .\setup\nap_lai_env.ps1"
+exit 0
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/deploy_nang_quyen.ps1
 SHA256=3a6ef1a5dc77ef3b807e333e950db04dfc42733ba4154ab2fc06d0fe995c4464 BYTES=3217 LINES=80
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -223303,6 +223463,371 @@ def test_hai_nguong_KHAC_nhau_va_hoan_LAU_hon_bao():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_332_gate_khong_tu_nhieu.py
+SHA256=82e91116a7523320c1b1a93ac37cc65bb82b2ed46f58f188b680d19ff68fc27e BYTES=6056 LINES=149
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Cong chat luong khong duoc TU NHIEU vao phep do cua chinh no.
+
+🔴 SU VIEC, 2026-08-29. `tools/gate.py::_chay_theo_lich` nop cung luc `bo test`
+va toan bo nhom kiem TINH. Ba tep duoi day bi mot test GHI (roi khoi phuc) trong
+khi mot buoc gate khac dang DOC chung:
+
+    docs/PUBLIC_API/CONTRACT_BASELINE.json   <- test_209    -> check_api_compat
+    locale/en/LC_MESSAGES/messages.po        <- test_306    -> check_dich_thieu
+    sdk/typescript/ltt-public-api.ts         <- test_210    -> check_sdk_contract
+    server/templates/vps_dieu_khoan.html     <- test_306    -> (khong buoc nao)
+
+Ba tren ba. Do khong phai trung hop.
+
+⛔ Hai phien mat gan tron mot ngay va lan luot do cho: `__pycache__` cu · mot
+   tien trinh thu hai · mot tep ghi thu tu chua tim ra · rac fixture ngau nhien.
+   KHONG cai nao dung. Cong cu do tu nhieu vao phep do cua no.
+
+⭐ `TEP_NOI_TIEP` cua `test_nhanh.py` bat ba tep test do chay noi tiep VOI NHAU,
+   nen chung khong giam len nhau. Hang rao co that — no chan SAI HUONG: no khong
+   noi gi ve nhom kiem tinh cua chinh luot gate do.
+
+Phep kiem nay chot huong con lai: mot buoc gate DOC mot tep trong danh sach thi
+phai o nhom `sau_test`.
+"""
+from __future__ import annotations
+
+import pathlib
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+
+
+def _gate():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "gate_mod", GOC / "tools" / "gate.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _cong_cu_cua(step) -> str:
+    """Duong tep cong cu ma mot `Step` chay, hoac chuoi rong."""
+    for phan in step.argv:
+        if isinstance(phan, str) and phan.startswith("tools/"):
+            return phan
+    return ""
+
+
+# ── 1. Danh sach tep phai khop THUC TE ──────────────────────────────────────
+
+def test_moi_tep_trong_danh_sach_deu_co_that_va_test_ghi_no_cung_co_that():
+    """Mot danh sach tro vao tep khong ton tai la mot hang rao chan khong khi."""
+    gate = _gate()
+    thieu = []
+    for tep, test in gate.TEP_KHONG_DUOC_DOC_SONG_SONG.items():
+        if not (GOC / tep).is_file():
+            thieu.append(tep)
+        if not (GOC / test).is_file():
+            thieu.append(test)
+    assert thieu == [], f"danh sach tro vao thu khong co that: {thieu}"
+
+
+def test_test_duoc_khai_THAT_SU_ghi_vao_tep_do():
+    """Chot nguon: test duoc khai phai that su nhac toi tep no ghi.
+
+    Neu mot test thoi ghi tep do thi muc nay thanh thua, va mot danh sach thua
+    la mot danh sach roi se sai.
+    """
+    gate = _gate()
+    lech = []
+    for tep, test in gate.TEP_KHONG_DUOC_DOC_SONG_SONG.items():
+        than = (GOC / test).read_text(encoding="utf-8", errors="replace")
+        ten = pathlib.PurePosixPath(tep).name
+        if ten not in than:
+            lech.append(f"{test} khong nhac toi {ten}")
+    assert lech == [], lech
+
+
+# ── 2. Bat bien chinh ───────────────────────────────────────────────────────
+
+def test_buoc_nao_DOC_tep_bi_ghi_thi_phai_chay_SAU_bo_test():
+    """Day la phep kiem lam ca tep nay dang ton tai.
+
+    Mot checker moi doc `messages.po` roi de o nhom `tinh` se tai tao dung loi
+    da mat mot ngay — va no se tai tao duoi dang "gate do ngau nhien", tuc dang
+    kho lan nhat.
+    """
+    gate = _gate()
+    ten_tep = {pathlib.PurePosixPath(t).name
+               for t in gate.TEP_KHONG_DUOC_DOC_SONG_SONG}
+
+    xau = []
+    for step in gate._steps(quick=False):
+        if step.nhom == "nang":
+            # `bo test` la BEN GHI, khong phai ben doc xung dot. No nhac ba tep
+            # do vi `TEP_NOI_TIEP` liet ke chung — va chinh no lo viec cac test
+            # trong no khong giam len nhau. Doi hoi no o `sau_test` la doi no
+            # chay sau chinh no.
+            continue
+        cong_cu = _cong_cu_cua(step)
+        if not cong_cu or not (GOC / cong_cu).is_file():
+            continue
+        than = (GOC / cong_cu).read_text(encoding="utf-8", errors="replace")
+        cham = sorted(t for t in ten_tep if t in than)
+        if cham and step.nhom != "sau_test":
+            xau.append(f"{step.name!r} ({cong_cu}) doc {cham} nhung o nhom "
+                       f"{step.nhom!r}, phai la 'sau_test'")
+    assert xau == [], "\n".join(xau)
+
+
+def test_nhom_sau_test_KHONG_chay_song_song_voi_bo_test():
+    """Chot o tang lich chay, khong chi o tang nhan.
+
+    Nhan `sau_test` chi co nghia neu bo dieu phoi that su hoan chung lai. Phep
+    kiem tren chot cai nhan; phep kiem nay chot cai lich.
+    """
+    import inspect
+
+    gate = _gate()
+    than = inspect.getsource(gate._chay_theo_lich)
+
+    # Khoi song song nop `nang` + `nhe`; `sau` phai nam NGOAI khoi do.
+    truoc, _, sau_khoi = than.partition("if sau:")
+    assert sau_khoi, "khong con nhanh chay rieng cho nhom `sau_test`"
+    assert "sau_test" not in truoc.split("with ThreadPoolExecutor")[-1], (
+        "nhom `sau_test` bi nop vao cung khoi song song voi `bo test`")
+
+
+def test_bon_buoc_da_biet_deu_o_nhom_sau_test():
+    """Banh coc cu the: bon buoc nay da tung gay do gia, khong duoc quay lai."""
+    gate = _gate()
+    nhom = {s.name: s.nhom for s in gate._steps(quick=False)}
+    for ten in ("hop dong API", "dich thieu ban EN", "SDK khop hop dong",
+                "postman"):
+        assert nhom.get(ten) == "sau_test", (
+            f"{ten!r} dang o nhom {nhom.get(ten)!r}")
+
+
+# ── 3. Khong lam hong nhung thu khac ────────────────────────────────────────
+
+@pytest.mark.parametrize("ten", ["bien dich duoc", "bo test (song song)"])
+def test_khong_doi_nhom_cua_hai_buoc_neo(ten):
+    """`cong` van chay mot minh truoc; `bo test` van la viec nang chay truoc."""
+    gate = _gate()
+    nhom = {s.name: s.nhom for s in gate._steps(quick=False)}
+    assert nhom[ten] in ("cong", "nang"), f"{ten} -> {nhom[ten]}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_333_dat_bien_env.py
+SHA256=e924ef0ec6608fd0332ffd9f83a5de91c347bdac7d51f54b0161d1da6332ea78 BYTES=8343 LINES=204
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""`setup/dat_bien_env.ps1` — dat MOT bien trong app.env, an toan.
+
+## Vi sao cong cu nay ton tai
+
+`setup/cong_tac_tool_api.ps1` da tra gia de hoc **ba cach hong im lang** khi sua
+`app.env` bang tay. Nhung no chi che **dung mot** bien
+(`LTT_PUBLIC_API_TOOLS`) — trong khi ba cach hong do ap cho **moi** bien:
+
+  1. BOM  -> `json.load()` vo o cho khac, `/health/ready` tra 503 trong khi dich
+     vu van chay. Loi nay DA THUC SU LAM SAP PRODUCTION o du an nay.
+  2. Go de len mot dong khac -> mat mot bien dang phuc vu, khong ai biet.
+  3. Sua xong roi restart    -> KHONG AN GI (nssm nuong env luc CAI).
+
+Ngay 29/08 phai dat `LTT_GPU_MONG_DOI` va khong co cong cu nao, nen phai viet
+mot script MOT LAN trong thu muc tam. Tep nay va script kem theo la de khong con
+lan sau.
+
+## Cai bay tep nay canh
+
+⛔ **Bi mat khong duoc di qua dong lenh** — no vao lich su shell, vao log, vao
+ban ghi tien trinh. Script TU CHOI cac ten trong nhu bi mat, va phep kiem duoi
+day chot dieu do. Mot cong cu tien tay khien nguoi ta dat `LTT_..._SECRET` bang
+mot dong lenh la mot cong cu lam ro ri de hon.
+"""
+from __future__ import annotations
+
+import pathlib
+import shutil
+import subprocess
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+SCRIPT = GOC / "setup" / "dat_bien_env.ps1"
+
+MAU = "LTT_ENV=production\nLTT_GPU=cu\nLTT_PUBLIC_API_TOOLS=text.chat\n"
+
+
+def _chay(env_file: pathlib.Path, *args: str):
+    return subprocess.run(
+        ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass",
+         "-File", str(SCRIPT), "-EnvFile", str(env_file), *args],
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        timeout=120)
+
+
+@pytest.fixture()
+def envfile(tmp_path):
+    p = tmp_path / "app.env"
+    p.write_bytes(MAU.encode("utf-8"))
+    return p
+
+
+def test_script_co_that_va_thuan_ascii():
+    b = SCRIPT.read_bytes()
+    assert b[:3] != b"\xef\xbb\xbf", "script setup khong duoc co BOM"
+    assert all(x < 128 for x in b), "tep .ps1 phai thuan ASCII (CLAUDE.md quy tac 2)"
+
+
+# ── Duong thanh cong ────────────────────────────────────────────────────────
+
+def test_them_bien_moi(envfile):
+    r = _chay(envfile, "-Ten", "LTT_GPU_MONG_DOI", "-Gia_tri", "2")
+    assert r.returncode == 0, r.stdout + r.stderr
+    txt = envfile.read_text(encoding="utf-8")
+    assert "LTT_GPU_MONG_DOI=2" in txt
+    # Cac bien cu con nguyen — day la cach hong so 2.
+    for cu in ("LTT_ENV=production", "LTT_GPU=cu",
+               "LTT_PUBLIC_API_TOOLS=text.chat"):
+        assert cu in txt, cu
+
+
+def test_ghi_de_bien_da_co(envfile):
+    assert _chay(envfile, "-Ten", "LTT_GPU", "-Gia_tri", "moi").returncode == 0
+    txt = envfile.read_text(encoding="utf-8")
+    assert "LTT_GPU=moi" in txt and "LTT_GPU=cu" not in txt
+    # Dung MOT dong, khong sinh dong thu hai.
+    assert sum(1 for d in txt.splitlines() if d.startswith("LTT_GPU=")) == 1
+
+
+def test_tien_to_KHONG_khop_nham_bien_dai_hon(tmp_path):
+    """🔴 `LTT_GPU` khong duoc khop `LTT_GPU_MONG_DOI`.
+
+    Day la cach hong so 2 o dang tinh vi nhat: `StartsWith` se go de len mot bien
+    KHAC ma ten no chi tinh co bat dau giong nhau. Script dung bo chon neo dau
+    dong (`^\\s*TEN\\s*=`).
+
+    ⚠️ THU TU DONG LA MOT PHAN CUA PHEP KIEM, khong phai chi tiet ngau nhien.
+       Ban dau phep kiem nay dat `LTT_GPU_MONG_DOI` SAU `LTT_GPU`, va no **xanh
+       ca khi thay bo chon bang `StartsWith`** — vi vong quet tu tren xuong gap
+       `LTT_GPU=` truoc. Kiem-co-rang bat duoc dieu do: mot phep kiem trong nhu
+       dung ma khong chung minh gi. Nay bien DAI hon dung TRUOC.
+    """
+    p = tmp_path / "app.env"
+    p.write_bytes(b"LTT_GPU_MONG_DOI=2\nLTT_GPU=cu\n")
+    assert _chay(p, "-Ten", "LTT_GPU", "-Gia_tri", "moi").returncode == 0
+    txt = p.read_text(encoding="utf-8")
+    assert "LTT_GPU=moi" in txt
+    assert "LTT_GPU_MONG_DOI=2" in txt, "bien dai hon bi go de"
+
+
+def test_xoa_bien(envfile):
+    assert _chay(envfile, "-Ten", "LTT_GPU", "-Xoa").returncode == 0
+    txt = envfile.read_text(encoding="utf-8")
+    assert "LTT_GPU=" not in txt
+    assert "LTT_ENV=production" in txt
+
+
+def test_dat_lai_dung_gia_tri_thi_KHONG_doi_gi(envfile):
+    truoc = envfile.read_bytes()
+    r = _chay(envfile, "-Ten", "LTT_GPU", "-Gia_tri", "cu")
+    assert r.returncode == 0
+    assert envfile.read_bytes() == truoc, "ghi lai y nguyen van tao mot ban sao luu thua"
+
+
+def test_ghi_KHONG_BOM(envfile):
+    """🔴 Quy tac 1 cua CLAUDE.md. `Out-File -Encoding utf8` tren PowerShell 5.1
+    chen BOM, `json.load()` vo, `/health/ready` tra 503 trong khi dich vu van
+    chay — va loi nay DA lam sap production o du an nay."""
+    _chay(envfile, "-Ten", "LTT_MOI", "-Gia_tri", "1")
+    assert envfile.read_bytes()[:3] != b"\xef\xbb\xbf"
+
+
+def test_giu_nguyen_kieu_xuong_dong_CRLF(tmp_path):
+    """Doi LF thanh CRLF tren ca tep la mot diff gia lam an mat thay doi that."""
+    p = tmp_path / "app.env"
+    p.write_bytes(MAU.replace("\n", "\r\n").encode("utf-8"))
+    _chay(p, "-Ten", "LTT_MOI", "-Gia_tri", "1")
+    b = p.read_bytes()
+    assert b.count(b"\r\n") >= 3
+    assert b.replace(b"\r\n", b"").count(b"\n") == 0, "tron hai kieu xuong dong"
+
+
+def test_sao_luu_truoc_khi_ghi(envfile):
+    _chay(envfile, "-Ten", "LTT_MOI", "-Gia_tri", "1")
+    ban_sao = list(envfile.parent.glob("app.env.truoc-*"))
+    assert ban_sao, "khong sao luu truoc khi ghi"
+    assert ban_sao[0].read_bytes() == MAU.encode("utf-8")
+
+
+# ── Duong TU CHOI ───────────────────────────────────────────────────────────
+
+def test_BOM_thi_DUNG_LAI_chu_khong_tu_sua(tmp_path):
+    """⛔ Mot tep bi mat dang hong thi khong tu sua — bao roi dung."""
+    p = tmp_path / "app.env"
+    p.write_bytes(b"\xef\xbb\xbf" + MAU.encode("utf-8"))
+    truoc = p.read_bytes()
+    r = _chay(p, "-Ten", "LTT_MOI", "-Gia_tri", "1")
+    assert r.returncode == 2, r.stdout
+    assert "BOM" in r.stdout
+    assert p.read_bytes() == truoc, "da cham vao mot tep bi mat dang hong"
+
+
+@pytest.mark.parametrize("ten", [
+    "LTT_SESSION_SECRET", "LTT_API_KEY_PEPPER", "MY_TOKEN", "DB_PASSWORD",
+    "LTT_TOKEN_ENCRYPTION_KEY", "LTT_SENTRY_DSN",
+])
+def test_TU_CHOI_ten_trong_nhu_bi_mat(envfile, ten):
+    """⛔ Bi mat khong di qua dong lenh: no vao lich su shell, vao log, vao ban
+    ghi tien trinh.
+
+    ⭐ Mot cong cu tien tay khien nguoi ta dat `..._SECRET` bang mot dong lenh la
+       mot cong cu lam ro ri DE HON. Nen tien loi phai dung lai o day.
+    """
+    truoc = envfile.read_bytes()
+    r = _chay(envfile, "-Ten", ten, "-Gia_tri", "gi-do")
+    assert r.returncode == 4, r.stdout + r.stderr
+    assert envfile.read_bytes() == truoc
+
+
+def test_ten_khong_hop_le_bi_tu_choi(envfile):
+    r = _chay(envfile, "-Ten", "co dau cach", "-Gia_tri", "1")
+    assert r.returncode == 3, r.stdout
+
+
+def test_thieu_gia_tri_bi_tu_choi(envfile):
+    r = _chay(envfile, "-Ten", "LTT_MOI")
+    assert r.returncode == 3, r.stdout
+
+
+# ── Xem: khong duoc in GIA TRI ──────────────────────────────────────────────
+
+def test_xem_chi_in_TEN_khong_in_gia_tri(envfile):
+    """⛔ Mot cong cu van hanh in gia tri bien la mot cong cu ro ri bi mat vao
+    log, vao anh chup man hinh, vao ban ghi phien."""
+    r = _chay(envfile, "-Xem")
+    assert r.returncode == 0, r.stdout
+    assert "LTT_PUBLIC_API_TOOLS" in r.stdout
+    assert "text.chat" not in r.stdout, "da in GIA TRI cua bien"
+    assert "production" not in r.stdout
+
+
+# ── Nhac nap lai env ────────────────────────────────────────────────────────
+
+def test_LUON_nhac_nap_lai_env(envfile):
+    """🔴 Cach hong so 3: sua app.env roi `Restart-Service` la KHONG AN GI.
+
+    nssm nuong bien moi truong vao dang ky dich vu luc CAI. Da dinh hai lan
+    trong du an nay, trieu chung giong het nhau ca hai lan: cau hinh dung, dich
+    vu chay, tinh nang khong bat.
+    """
+    r = _chay(envfile, "-Ten", "LTT_MOI", "-Gia_tri", "1")
+    assert "nap_lai_env.ps1" in r.stdout
+    assert "CHUA CO TAC DUNG" in r.stdout
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_33_secret_scanner.py
 SHA256=f8674f560e82c3709e84970aff9edfa6eedf9183db5af6ef6bfafcf2034200c1 BYTES=3611 LINES=104
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -243328,7 +243853,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=ea12ce549ea27d97e15bf4693d9168b41939b7e9e663f85f0fe9b30666bccd0f BYTES=31869 LINES=600
+SHA256=0e0470083facbaef87e478d8dc6dbcf43742e77bff3b39c1791790ddb999170a BYTES=35035 LINES=649
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -243395,7 +243920,37 @@ FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
 #:              tổng thời gian ngắn nhất khi mọi thứ khác nấp được vào bóng nó.
 #:   tinh     — mỗi bước vài giây, độc lập nhau hoàn toàn.
 #:   frontend — `npm test` ở ba thư mục; độc lập với nhau và với mọi thứ khác.
-NHOM = ("cong", "nang", "tinh", "frontend")
+#:   sau_test — ĐỌC một tệp mà `bo test` GHI. Phải chạy SAU khi bộ test xong.
+#:              Xem `TEP_KHONG_DUOC_DOC_SONG_SONG` bên dưới.
+NHOM = ("cong", "nang", "tinh", "frontend", "sau_test")
+
+#: 🔴 BA TỆP MÀ BỘ TEST GHI VÀO CÂY, và bước gate nào đọc chúng.
+#:
+#:    `tools/test_nhanh.py::TEP_NOI_TIEP` bắt ba tệp test này chạy **nối tiếp
+#:    với nhau**, nên chúng không giẫm lên nhau. Nhưng hàng rào đó chắn **sai
+#:    hướng**: nó không nói gì về nhóm kiểm TĨNH của chính lượt gate đó, mà
+#:    nhóm ấy chạy **song song** với `bo test` và **đọc đúng ba tệp ấy**.
+#:
+#: ⛔ Hệ quả đo được ngày 2026-08-29: `test_209` / `test_210` / `test_306` đỏ
+#:    với `OSError: [Errno 22] Invalid argument` ngay tại `read_text()` hoặc
+#:    `write_text()`. Trên Windows, hai tiến trình chạm một tệp cùng lúc cho
+#:    đúng mã lỗi đó.
+#:
+#:    Hai phiên đã mất **gần trọn một ngày** cho chuyện này và lần lượt đổ cho:
+#:    `__pycache__` cũ · một tiến trình thứ hai · một tệp ghi thứ tư chưa tìm
+#:    ra · rác fixture ngẫu nhiên. **Không cái nào đúng.** Công cụ đo tự nhiễu
+#:    vào phép đo của nó.
+#:
+#: ⭐ Docstring của `_chay_theo_lich` từng khẳng định điều kiện an toàn là "mọi
+#:    bước đều CHỈ ĐỌC, nên không bước nào chạm cây — và nó đã được kiểm chứ
+#:    không giả định". Câu đó đúng **một nửa**: nhóm tĩnh đúng là chỉ đọc, còn
+#:    `bo test` thì GHI. Nửa được kiểm là nửa không hỏng.
+TEP_KHONG_DUOC_DOC_SONG_SONG = {
+    "docs/PUBLIC_API/CONTRACT_BASELINE.json": "tests/test_209_versioning_status.py",
+    "locale/en/LC_MESSAGES/messages.po": "tests/test_306_banh_coc_bo_qua_va_dich.py",
+    "sdk/typescript/ltt-public-api.ts": "tests/test_210_sdk_ecosystem.py",
+    "server/templates/vps_dieu_khoan.html": "tests/test_306_banh_coc_bo_qua_va_dich.py",
+}
 
 
 class Step:
@@ -243504,7 +244059,8 @@ def _steps(quick: bool) -> list[Step]:
         #    fuzzy khong bao gio toi mat nguoi dung — no chi TRONG NHU da xong
         #    khi doc tep `.po`.
         Step("dich thieu ban EN",
-             [sys.executable, "tools/check_dich_thieu.py"], ROOT),
+             [sys.executable, "tools/check_dich_thieu.py"], ROOT,
+             nhom="sau_test"),
         # Hồ sơ là bản đồ để AI/người mới hiểu code. Nếu không khóa freshness,
         # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
         Step("system profile", [sys.executable, "tools/build_system_profile.py",
@@ -243514,7 +244070,7 @@ def _steps(quick: bool) -> list[Step]:
         # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy
         # `--accept`, và lần ghi lại đó hiện trong diff cho người review thấy.
         Step("hop dong API", [sys.executable, "tools/check_api_compat.py"],
-             ROOT),
+             ROOT, nhom="sau_test"),
         # 🔴 ANH CHUP HOP DONG VANG — do 25/08, va no da do TREN NHANH mot ngay
         #    ma khong ai thay.
         #
@@ -243550,7 +244106,8 @@ def _steps(quick: bool) -> list[Step]:
         # EXT-18: SDK thiếu một route không bao giờ báo lỗi — nó chỉ để người
         # dùng tự viết lấy, rồi họ viết sai retry hoặc quên Idempotency-Key.
         Step("SDK khop hop dong",
-             [sys.executable, "tools/check_sdk_contract.py"], ROOT),
+             [sys.executable, "tools/check_sdk_contract.py"], ROOT,
+             nhom="sau_test"),
         # …và collection Postman phải được SINH lại, không sửa tay: một bản sao
         # thứ hai của hợp đồng luôn là bản trôi dạt.
         # Ban sao `ltt.css` canh GUI khong duoc troi khoi ban goc: mot ban
@@ -243559,7 +244116,7 @@ def _steps(quick: bool) -> list[Step]:
         Step("tai san GUI", [sys.executable, "tools/dong_goi_gui.py", "--kiem"],
              ROOT),
         Step("postman", [sys.executable, "tools/build_postman.py", "--check"],
-             ROOT),
+             ROOT, nhom="sau_test"),
     ]
     if not quick:
         # H36.9: bo bat bien DA TIEN TRINH. Ba loi P0 cua ban audit 2026-08-15
@@ -243759,6 +244316,7 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
 
     nang = [s for s in steps if s.nhom == "nang"]
     nhe = [s for s in steps if s.nhom in ("tinh", "frontend")]
+    sau = [s for s in steps if s.nhom == "sau_test"]
 
     # `len(nang) + j` luồng: mỗi việc nặng một luồng riêng, phần còn lại chia `j`.
     with ThreadPoolExecutor(max_workers=len(nang) + max(1, j)) as ex:
@@ -243766,6 +244324,22 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
         cho += [ex.submit(chay_va_in, s) for s in nhe]
         for f in cho:
             f.result()
+
+    # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
+    #
+    #    Bốn bước này đọc tệp mà bộ test ghi rồi khôi phục
+    #    (`TEP_KHONG_DUOC_DOC_SONG_SONG`). Đọc chúng giữa lúc bị ghi cho
+    #    `OSError: [Errno 22]` trên Windows, hoặc — tệ hơn vì im lặng — đọc
+    #    trúng **bản đã bị tiêm** và báo một vi phạm hợp đồng không có thật.
+    #
+    # ⭐ Cái giá là thật và đã đo: bốn bước này (~11 giây cộng lại) trước đây
+    #    nấp trong bóng của `bo test` nên **miễn phí**; nay chúng cộng thẳng vào
+    #    tổng. Đổi ~11 giây lấy việc mọi lượt gate nói về **cùng một cây** là
+    #    một đổi chác dễ — một dòng RESULT không tin được thì nhanh cũng vô ích.
+    if sau:
+        with ThreadPoolExecutor(max_workers=max(1, j)) as ex:
+            for f in [ex.submit(chay_va_in, s) for s in sau]:
+                f.result()
 
 
 def _console_text(value: str, encoding: str | None = None) -> str:
