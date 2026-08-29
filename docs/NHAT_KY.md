@@ -16,6 +16,72 @@
 
 
 
+## 2026-08-29 (cuối) — `image.upscale` về cùng làn, và kiểm chéo deploy
+
+- **Hạng mục:** hoàn tất bản sửa làn của `fc26bbd`. **Trạng thái:** xong, gate
+  **PASS 23/23**, commit `8a71224`. ⏳ chưa deploy — đi lượt sau.
+
+### Kiểm chéo deploy, độc lập với báo cáo của phiên kia
+
+| Kiểm | Kết quả |
+|---|---|
+| `so_deploy` | khớp **499** · lệch **0** |
+| `/health/ready` | `ready / production / database ok` |
+| `/api/v1/openapi.json` (khách **ẩn danh**) | mở đúng 4: `text.chat` `image.ltt` `video.subtitle` `video.upscale` |
+| tool đóng lọt vào spec | **0** — kiểm 6 tên |
+
+⭐ **Cách lấy bằng chứng này đúng hơn cách tôi định làm, và đáng chép lại.** Tôi
+định gọi `/api/v1/tools` — nhưng nó **đòi khoá**, nên nó chỉ chứng minh được
+*"khoá của tôi thấy gì"*. `openapi.json` thì công khai và sinh từ registry **đã
+lọc theo cờ**, nên nó nói về thứ **khách ẩn danh** thấy.
+
+⛔ Và dòng **"0 tool đóng lọt"** mới làm dòng "4 tool mở" có nghĩa: không có đối
+chứng âm thì *"bốn tool có trong spec"* cũng đúng với một spec liệt kê **mọi**
+tool.
+
+### Vì sao `image.upscale` không thể để tới lượt sau
+
+Nó có **cùng** lỗi làn, và khác `video.upscale` ở một điểm: nó **đã mở và đang
+thu tiền từ lâu**. Sau khi `video.upscale` mở, hai tool **anh em nằm cạnh nhau
+trong CÙNG một manifest chạy hai hành vi khác nhau** — `video` xin 2.000 MB,
+`image` vẫn xin 12.000. Mắt gặp qua chỗ lệch đó; `test_hai_tool_ANH_EM_...`
+thì không.
+
+⚠️ Vì sao nó **tách** khỏi `fc26bbd` chứ không nằm cùng: lúc đó bản vá chưa qua
+gate, và phiên kia đang cần cây để deploy. Đưa một thay đổi **không có bằng
+chứng** vào một lượt phát hành là đổi một rủi ro nhỏ lấy một rủi ro lớn hơn.
+
+### 🔴 Tôi là tiến trình ghi ẩn, và tôi quên mất
+
+Một lượt `gate.py` của tôi vượt timeout 600 giây và bị đẩy sang **chạy nền tách
+rời** (`bgey39072`). Nó tiếp tục chạy **cả bộ test trên cây chính** trong khi
+tôi làm việc khác — kể cả lúc phiên kia đang chạy gate. Nó có chạy `test_209`.
+
+⇒ Đó gần như chắc chắn là nguồn của vài lượt `CAY DA DOI TRONG LUC CHAY`, của
+`OSError: Invalid argument` (hai tiến trình cùng ghi một tệp), và của mấy lần
+`CONTRACT_BASELINE` bẩn mà **tôi đã `git checkout` bốn lần** — dọn đúng rác do
+chính mình, rồi đi tìm nguyên nhân ở chỗ khác.
+
+⭐ Bài học **không phải** "đừng chạy nền" mà là: **một tác vụ nền chạm cây kho
+LÀ một tiến trình ghi, và phải được khai như một tiến trình ghi.** Nghĩ theo
+hướng *khai báo* dùng lại được; nghĩ theo hướng *cấm* thì không.
+
+⚠️ **Chưa kết luận, cần đo:** `TEP_NOI_TIEP` có thể còn thiếu một tệp ghi. Thí
+nghiệm của phiên kia chạy khi `bgey39072` có thể còn sống, nên nó **không loại
+trừ được** đường ghi thứ tư. Cố ý **không** đóng nó thành *"đã giải thích bằng
+tác vụ nền của phiên kia"* — đó đúng loại kết luận vội mà cả hai phiên mắc suốt
+ngày. Cần một lượt đo trên cây chắc chắn một tiến trình.
+
+### Còn tồn đọng
+
+- **`git checkout` là dọn triệu chứng.** Phiên kia tìm ra cơ chế: `test_306` nổ
+  ngay tại `read_text()` — **trước cả khối `try`** — nên `finally` không bao giờ
+  chạy. Sửa đúng là đưa `read_text()` vào trong `try`.
+- Đáng một bánh cóc chặn **ghi tệp bằng Python inline qua heredoc**: `test_61`
+  bắt được hậu quả `\a` → BEL, nhưng nó bắt **sau khi** tệp đã hỏng. Dính ba lần
+  trong một ngày, hai phiên.
+
+
 ## 2026-08-29 — DEPLOY đợt 2 + MỞ BÁN `video.subtitle` và `video.upscale`
 
 - **Trạng thái:** `EXITCODE=0`, 15:56:53 → 15:58:33. `so_deploy`: **khớp 499 ·
