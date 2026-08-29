@@ -19,6 +19,55 @@ from server.api.auth import require_scope
 
 _NO_STORE = {"Cache-Control": "no-store"}
 
+#: Cửa sổ ngữ cảnh **CÔNG BỐ** cho client agentic, khi model không tự khai.
+#:
+#: ⚠️ Đây phải là con số **NHỎ HƠN trần đầu-vào thật của thượng nguồn**, không
+#:    phải cửa sổ lý thuyết của model. Máy B nạp `qwen38-api` với `-c 131072`
+#:    nhưng cổng của nó chặn ở `LTT_LLM_MAX_INPUT_TOKENS` (65.000 lúc đo 29/08).
+#:    Công bố 131072 thì Codex nén quá muộn và đâm thẳng vào 413 của B.
+#:
+#: ⭐ Đổi trần bên B thì đổi luôn số này — chúng là **một** phép hứa, kể ở hai nơi.
+CUA_SO_CONG_BO_MAC_DINH = 60_000
+
+#: Trần token ra, khớp `MAX_TOKENS_TRAN` của app `ltt_llm`.
+TOKEN_RA_TOI_DA = 32_768
+
+#: Mức suy luận Codex được phép chọn, khớp enum `reasoning_effort` của app.
+_MUC_SUY_LUAN = ({"effort": "low", "description": "Fast, light reasoning"},
+                 {"effort": "medium", "description": "Balanced"},
+                 {"effort": "xhigh", "description": "Deepest reasoning"})
+
+
+def _dang_codex(model) -> dict:
+    """Một model alias, viết theo **đúng khuôn `codex_models_manager` đọc được**.
+
+    Tên trường lấy từ chính `~/.codex/models_cache.json` của Codex chứ không
+    đoán: `slug`, `context_window`, `max_context_window`, `shell_type`,
+    `apply_patch_tool_type`, `input_modalities`. Thiếu `slug` là Codex bỏ cả
+    mục; sai `context_window` là nó nén sai lúc.
+    """
+    rang_buoc = dict(getattr(model, "constraints", None) or {})
+    cua_so = int(rang_buoc.get("context_window") or CUA_SO_CONG_BO_MAC_DINH)
+    doc_anh = bool(rang_buoc.get("reads_images")
+                   or "vision" in str(model.name).lower())
+    return {
+        "slug": model.name,
+        "display_name": model.name,
+        "description": model.description,
+        "context_window": cua_so,
+        "max_context_window": cua_so,
+        "max_output_tokens": int(rang_buoc.get("max_output_tokens")
+                                 or TOKEN_RA_TOI_DA),
+        "default_reasoning_level": "medium",
+        "supported_reasoning_levels": [dict(m) for m in _MUC_SUY_LUAN],
+        "shell_type": "unified_exec",
+        "apply_patch_tool_type": "freeform",
+        "input_modalities": ["text", "image"] if doc_anh else ["text"],
+        "visibility": "list",
+        "supported_in_api": True,
+        "priority": 1,
+    }
+
 
 def register_tool_routes(api, config, tag: str) -> None:
     """Attach the catalog routes straight onto the public sub-application.
@@ -85,6 +134,19 @@ def register_tool_routes(api, config, tag: str) -> None:
         # commercial information, and V2 already decided the tool list lives
         # behind a key.
         body["capabilities"] = capabilities_of(catalog)
+        # 🔴 `models` LÀ CHO CODEX ĐỌC, KHÔNG PHẢI MỘT BẢN SAO CHO ĐẸP.
+        #
+        #    Codex (`codex_models_manager`) gọi `{base_url}/models` và **đòi**
+        #    khoá gốc tên `models`. Thấy `items` nó bỏ qua toàn bộ, in
+        #    *"failed to refresh available models: missing field `models`"* rồi
+        #    *"Model metadata for `ltt_llm` not found. Defaulting to fallback
+        #    metadata"* — và **fallback của nó là `context_window` 272.000**.
+        #
+        # ⛔ HẬU QUẢ ĐO ĐƯỢC 29/08, và nó chính là lỗi "hội thoại dài thì im":
+        #    Codex tưởng còn 272K nên **không nén hội thoại**, gửi ngữ cảnh vượt
+        #    trần đầu-vào thật của máy B → B trả 413 → khách thấy im lặng. Con số
+        #    ta công bố ở đây là thứ DUY NHẤT dạy Codex nén đúng lúc.
+        body["models"] = [_dang_codex(model) for model in window]
         return JSONResponse(body, headers=_NO_STORE)
 
     @router.get("/models/{model_name}", tags=[tag],
