@@ -63,7 +63,21 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 
-DEFAULT_MAX_BODY_BYTES = 256 * 1024
+#: 🔴 NÂNG 256 KB → 1 MiB ngày 30/08, và lý do là một lỗi đã xảy ra.
+#:
+#:    256 KB được chọn cho "thân JSON của control plane" — đúng cho `/jobs`,
+#:    `/quotes`, `/keys`. Nhưng `/v1/responses` và `/v1/messages` mang **cả hội
+#:    thoại**, và một lượt agentic 96.000 token ở dạng JSON ≈ 433 KB. Trần 256 KB
+#:    chặn nó ở khoảng 64.000 token — gần bằng 65.000 nên suốt một buổi ta tưởng
+#:    đang chạm trần token của máy B, trong khi thủ phạm là trần **byte** của ta.
+#:
+#: ⛔ Hai trần không liên quan gì nhau mà cái nhỏ hơn luôn thắng, và thông điệp
+#:    lỗi khi ấy không nói nó là cái nào. Nay lỗi có `limit_name` (`server/api/
+#:    deps.py`), và `tests/test_312` so trần này với `ngan_sach.BODY_BYTES_TOI_THIEU`
+#:    nên lệch là đỏ chứ không phải là một buổi đi truy.
+#:
+#: ⭐ Vẫn cách trần 100 MB của Cloudflare rất xa, nên đây không phải lời hứa suông.
+DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 MIN_MAX_BODY_BYTES = 1024
 # Cloudflare Free/Pro rejects a larger body before the origin sees it, so a
 # higher value here would only be a lie told to the caller.

@@ -44,13 +44,18 @@ MODEL_MAC_DINH = "ltt_llm"
 MODEL_HOP_LE = tuple(ALIAS_SANG_ID)
 
 
-#: Tỉ lệ ước ký-tự-sang-token, cùng số với `llm_gateway/ngan_sach.py`. Nghiêng về
-#: phía ước CAO cho tiếng Việt có dấu.
-KY_TU_MOI_TOKEN = 2.5
+#: ⛔ BÍ DANH, không phải định nghĩa — nguồn chân lý ở `ngan_sach.py`.
+from apps.ltt_llm.ngan_sach import KY_TU_MOI_TOKEN
 
-#: Ngân sách riêng của cửa trả JSON một cục. Cửa stream và cửa job vẫn dùng mặc
-#: định 4.096 / trần 32.768 của manifest; chúng không bị đồng hồ chờ byte đầu.
-SYNC_MAX_TOKENS_MAC_DINH = 1_024
+#: ⛔ BÍ DANH của `ngan_sach.mac_dinh_cho("sync")`.
+#:
+#:    Trước 30/08 đây là một hằng gõ tay `1_024`, và `_max_tokens()` của cửa
+#:    **stream** lấy nhầm nó qua `executor.default_max_tokens` — mọi câu trả lời
+#:    dài đều cụt ở đúng 1.024 token, không lỗi, không cảnh báo. Nay mỗi cửa
+#:    phải **gọi tên cửa của mình**, nên nhầm lẫn đó không dựng lại được.
+from apps.ltt_llm.ngan_sach import mac_dinh_cho as _mac_dinh_cho
+
+SYNC_MAX_TOKENS_MAC_DINH = _mac_dinh_cho("sync")
 
 #: Các số đo Q111 trên đúng RTX 3090/build đang phục vụ. Dùng tốc độ thấp hơn số
 #: đo để admission nghiêng về phía an toàn: prefill chậm nhất đo được là

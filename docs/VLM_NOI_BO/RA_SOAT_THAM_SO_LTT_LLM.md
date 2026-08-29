@@ -178,3 +178,42 @@ nửa đêm.
 | `/v1/models` sai khuôn Codex đọc | thêm khối `models` |
 
 **Còn mở:** nguồn thứ ba đặt `LTT_LLM_MAX_INPUT_TOKENS=65000` trên máy B.
+
+---
+
+## 6. ĐÃ THI HÀNH — 30/08
+
+| Bước | Việc | Kết quả |
+|---|---|---|
+| 1 | `apps/ltt_llm/ngan_sach.py` — nguồn chân lý, **3 số gõ tay**, còn lại dẫn xuất | ✅ |
+| 2 | `manifest.py` / `features.py` chuyển thành **bí danh**, không định nghĩa lại | ✅ |
+| 3 | Bỏ `executor.default_max_tokens`; mọi bên gọi phải **nêu cửa** (`mac_dinh_cho`) | ✅ |
+| 4 | Lỗi 413 **xưng tên trần** (`limit_name`, `limit_value`, `observed`) | ✅ |
+| 5 | `KY_TU_MOI_TOKEN` một nơi; test đối chiếu hai kho | ✅ |
+| 6 | `DONG_THOI_MAY_B` khai ra để trần đồng thời của ta biết trần của B | ✅ |
+| — | `tests/test_312_ngan_sach_ltt_llm.py` — **18 phép kiểm tự đối chiếu** | ✅ |
+
+### Ba lệch THẬT mà bộ kiểm mới bắt được ngay khi vừa viết xong
+
+1. **Nền tảng cho 262.144 byte, app cần 433.152** → `DEFAULT_MAX_BODY_BYTES`
+   nâng 256 KB → **1 MiB**. Đây đúng là trần đã chặn hội thoại dài ở ~64.000
+   token trong khi ta tưởng đang chạm trần của máy B.
+2. **`llm_gateway` mặc định 65.000, ngân sách tính 96.256** → sửa về 96.256.
+   Chính con số 65.000 này là thứ máy B đang thực thi.
+3. **Cửa job suýt bị đổi 4.096 → 8.192** — bộ kiểm hợp đồng vàng chặn lại. Con số
+   cửa job là `default` **in trong hợp đồng công khai**, đổi nó là đổi thứ khách
+   nhìn thấy; cửa job chưa từng dính lỗi nên không có lý do đổi.
+
+### Giá trị sau khi dọn
+
+| | Trước | Sau |
+|---|---|---|
+| Cửa sổ model | 131.072 (chỉ ta tin) | 131.072 (**đo**, và mọi trần dẫn xuất từ nó) |
+| Trần vào | 65.000 gõ tay | **96.256** = 131.072 − 32.768 − 2.048 |
+| Trần body | 256 KB, không liên quan token | **1 MiB**, đủ chứa trần vào, có test buộc |
+| Token ra mặc định | 1.024 / 4.096 / 8.192 lẫn lộn | `sync 1.024` · `stream 8.192` · `job 4.096`, **gọi theo tên cửa** |
+| Công bố cho client | 60.000 gõ tay | **88.555** = trần vào × 0,92 |
+
+⚠️ **Còn lại một việc trên máy B**: nó vẫn *thực thi* 65.000 dù mã lẫn registry
+đều đã đúng. Nay `TestDoiChieuMayB` sẽ **đỏ** khi chạy có `LTT_LLM_TOKEN` — tức
+lệch này không còn ẩn được nữa.

@@ -9,7 +9,7 @@
 | `LTT_PUBLIC_API` | `0` (**tắt**) | `1` mới mount `/api/v1`. Tắt = router không tồn tại, bề mặt route y hệt trước khi có Public API. |
 | `LTT_PUBLIC_API_READ_ONLY` | `0` | `1` = **công tắc khẩn cấp**: đọc vẫn chạy, mọi `POST/PUT/PATCH/DELETE` trả 503 `read_only`. Không đụng UI, không đụng worker, không đụng job đang chạy. |
 | `LTT_PUBLIC_API_TOOLS` | rỗng | Allowlist tên tool được phép ra API (`image.thumbnail,video.generate`). Rỗng = **không tool nào**. Prompt 05 chồng thêm catalog policy; đây là công tắc ngoài cùng để operator tắt nhanh một tool. |
-| `LTT_PUBLIC_API_MAX_BODY_BYTES` | `262144` (256 KiB) | Trần body cho route control-plane JSON. Kẹp trong [1 KiB, 100 MiB] — trên 100 MB thì Cloudflare đã chặn trước khi tới máy chủ nên hứa cao hơn là nói dối. |
+| `LTT_PUBLIC_API_MAX_BODY_BYTES` | `1048576` (1 MiB) | Trần body cho route control-plane JSON. Kẹp trong [1 KiB, 100 MiB] — trên 100 MB thì Cloudflare đã chặn trước khi tới máy chủ nên hứa cao hơn là nói dối. |
 | `LTT_PUBLIC_API_TRUSTED_PROXIES` | `127.0.0.1,::1` | Peer nào được phép nói `CF-Connecting-IP`. Rỗng = không tin header nào, dùng IP socket. |
 
 Đặt trong `secrets/app.env` trên máy chủ. **Không** có biến nào chứa host: đường

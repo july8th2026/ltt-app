@@ -9,8 +9,18 @@ from apps.ltt_llm import features
 
 
 class _Executor:
-    default_max_tokens = features.SYNC_MAX_TOKENS_MAC_DINH
+    #: ⛔ `default_max_tokens` KHÔNG còn tồn tại — nó là gốc của lỗi 30/08.
+    #:
+    #:    Một tên chung chung khiến cửa **stream** lấy ngân sách 1.024 của cửa
+    #:    **đồng bộ** mà không ai phải nói mình đang ở cửa nào; mọi câu trả lời
+    #:    dài cụt ở đúng 1.024 token, im lặng. Nay bên gọi **bắt buộc nêu cửa**.
     parameter_error = features.ThamSoSai
+
+    @staticmethod
+    def mac_dinh_cho(cua: str) -> int:
+        """Token ra mặc định của một cửa: `"sync"`, `"stream"` hoặc `"job"`."""
+        from apps.ltt_llm.ngan_sach import mac_dinh_cho
+        return mac_dinh_cho(cua)
 
     def aliases(self):
         return dict(features.ALIAS_SANG_ID)

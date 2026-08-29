@@ -42,47 +42,20 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, ToolSpec
 
-#: Trần token ra mặc định khi khách không khai `max_tokens`. Giữ chỗ theo số này.
-MAX_TOKENS_MAC_DINH = 4096
-
-#: Cửa sổ ngữ cảnh của `qwen38-api`, khớp `-c 131072` trong `llama-swap.yaml`.
-#: **Vào và ra dùng chung con số này**, nên nó là ràng buộc thật, không phải
-#: `MAX_TOKENS_TRAN`.
-CUA_SO_NGU_CANH = 131_072
-
-#: Chừa chỗ cho khuôn chat, định nghĩa tool và sai số của phép ước token vào.
-#: `uoc_token_vao` là ƯỚC, không phải phép đếm thật — nên phải có biên.
-LE_NGU_CANH = 2_048
-
-#: Trần cứng của app. Cổng VLM còn một trần riêng của nó (`LTT_LLM_MAX_*`);
-#: cái nào chặt hơn thì cái đó thắng — đúng tinh thần "hai chốt độc lập".
+#: ⛔ CÁC HẰNG DƯỚI ĐÂY LÀ **BÍ DANH**, KHÔNG PHẢI ĐỊNH NGHĨA.
 #:
-#: ⭐ NÂNG 16.384 → 32.768 ngày 24/08 (chủ sản phẩm quyết), và điều làm nó AN
-#:    TOÀN chứ không phải "chắc là được": `llama.cpp` cấp KV cache cho **toàn bộ**
-#:    `-c 131072` ngay lúc nạp model. Nên VRAM **không đổi** dù trần token ra là
-#:    16K hay 32K — chiều duy nhất có thể nguy hiểm thì không hề động tới.
-#:    Đây KHÔNG phải một ngoại lệ của luật "chưa đo thì không chạy" (D-032):
-#:    benchmark 131K đã cấp toàn bộ KV trên đúng card 24 GB trước khi chốt Q111.
-#:
-#: ⛔ VÀ VÌ SAO PHẢI LÀ ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định,
-#:    và khách gần như **không có cách nào đổi**. Trần 16.384 khiến Claude Code
-#:    hoàn toàn không dùng được — phát hiện 24/08 khi cắm thật (H38/L2).
-MAX_TOKENS_TRAN = 32_768
+#:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`. Giữ tên cũ ở đây để mã đang
+#:    gọi không phải sửa, nhưng **đừng gán số vào chúng nữa** — gán ở đây là
+#:    dựng lại đúng cái chồng chéo mà `ngan_sach.py` sinh ra để dẹp.
+from apps.ltt_llm.ngan_sach import (CUA_SO_MODEL as CUA_SO_NGU_CANH,
+                                    LE as LE_NGU_CANH,
+                                    TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
+                                    mac_dinh_cho, tran_theo_ngu_canh)
+
+#: Token ra mặc định của **cửa job** (manifest phục vụ đường job).
+MAX_TOKENS_MAC_DINH = mac_dinh_cho("job")
 
 
-def tran_theo_ngu_canh(token_vao_uoc: int) -> int:
-    """Trần token ra **thật sự dùng được** cho một lượt, biết ngữ cảnh còn bao nhiêu.
-
-    🔴 VÌ SAO KHÔNG DÙNG THẲNG `MAX_TOKENS_TRAN`. Vào và ra chia nhau **cùng một**
-       cửa sổ 131.072. Một lượt có 100.000 token vào mà xin 32.768 token ra thì
-       tổng vượt cửa sổ, và thứ hỏng ở đó **không phải một lỗi sạch** — model
-       cắt bớt ngữ cảnh hoặc thượng nguồn từ chối, cả hai đều khó truy.
-
-    ⛔ Trả về ít nhất 1: một lượt không còn chỗ để trả lời thì phải hỏng ở chốt
-       token VÀO với thông điệp đúng, chứ không phải biến thành `max_tokens=0`.
-    """
-    con_lai = CUA_SO_NGU_CANH - int(token_vao_uoc or 0) - LE_NGU_CANH
-    return max(1, min(MAX_TOKENS_TRAN, con_lai))
 
 
 def _cost(params: dict) -> int:

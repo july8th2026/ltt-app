@@ -45,6 +45,7 @@ from platform_core.public_api.scopes import SCOPE_JOBS_CREATE
 from server.api import tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
+from apps.ltt_llm import ngan_sach
 
 log = logging.getLogger("server.api.streaming")
 
@@ -98,22 +99,12 @@ def _giai_ten_model(ten: str) -> str:
 #:    (giữ model thường trú), không bằng đồng hồ này.
 MO_LUONG_GIAY = 75.0
 
-#: Token ra mặc định của **cửa stream**, khi khách không tự khai giới hạn.
+#: ⛔ TOKEN RA MẶC ĐỊNH KHÔNG CÒN Ở ĐÂY.
 #:
-#: ⚠️ ĐỪNG dùng `SYNC_MAX_TOKENS_MAC_DINH` (1.024) ở đây. Số đó của cửa trả một
-#:    cục, nhỏ có chủ ý vì trần 100 giây của Cloudflare. Cửa stream không bị
-#:    đồng hồ đó, và dùng nhầm số ấy chính là lỗi "hỏi dài thì im lặng".
-#:
-#: ⭐ VÌ SAO 8.192 CHỨ KHÔNG PHẢI 4.096 HAY 32.768:
-#:    * Nó phải đủ cho **việc thật**: một tệp mã ~300 dòng hay một bài dài rơi
-#:      vào khoảng 4.000–8.000 token. 4.096 (số manifest hứa) vẫn cắt cụt các
-#:      lượt agentic viết tệp — tức vẫn còn đúng triệu chứng cũ, chỉ hiếm hơn.
-#:    * Nó KHÔNG nên bằng trần 32.768: credit được **giữ trước** theo con số này
-#:      rồi mới hoàn về token thật dùng, nên đặt kịch trần bắt khách phải có sẵn
-#:      số dư gấp bốn lần nhu cầu thật, và một ví mỏng sẽ bị từ chối oan.
-#:    * Khách cần dài hơn thì **tự khai** `max_output_tokens` tới 32.768 — nhánh
-#:      trên của hàm này tôn trọng ngay, đã đo: khai 3.000 thì nhận đủ 3.000.
-MAC_DINH_TOKEN_RA_STREAM = 8_192
+#:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`; gọi `mac_dinh_cho("stream")`.
+#:    Trước 30/08 con số này nằm rải ba nơi với ba giá trị (4.096 / 1.024 / 8.192)
+#:    và cửa stream lấy nhầm 1.024 của cửa đồng bộ — mọi câu trả lời dài cụt ở
+#:    đúng 1.024 token, im lặng. Xem `docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md`.
 
 
 def _tran_giay() -> int:
@@ -208,7 +199,7 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     vao_uoc = executor.estimate_input(tin)
     xin_ra = _max_tokens(than, vao_uoc)
     if not any(ten in than for ten in ("max_tokens", "max_output_tokens")):
-        xin_ra = min(xin_ra, executor.default_max_tokens)
+        xin_ra = min(xin_ra, executor.mac_dinh_cho("sync"))
     tran = _tran_max_tokens(vao_uoc)
     if xin_ra > tran:
         raise invalid_request(
@@ -630,7 +621,9 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             raise payload_too_large(
                 "The input exceeds the model's context limit. Drop or summarise "
                 "older turns and retry with a shorter conversation. "
-                f"[{e.ly_do}]") from None
+                f"[{e.ly_do}]",
+                limit_name="input_tokens",
+                limit_value=ngan_sach.TOKEN_VAO_TRAN) from None
         log.warning("khong mo duoc luong cho user=%s: %s",
                     principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
@@ -862,7 +855,8 @@ def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
     # ⭐ VÌ SAO ĐỂ RỘNG LÀ AN TOÀN: credit **giữ trước rồi hoàn** về đúng số token
     #    thật sinh ra (`_quyet_toan`), và model tự dừng khi trả lời xong. Nên số
     #    này chỉ quyết định *chỗ để thở*, không quyết định tiền khách trả.
-    return min(MAC_DINH_TOKEN_RA_STREAM, tran)
+    from apps.ltt_llm.ngan_sach import mac_dinh_cho
+    return min(mac_dinh_cho("stream"), tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:

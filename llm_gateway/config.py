@@ -115,7 +115,13 @@ class Config:
             port=_int("LTT_LLM_PORT", 8299),
             token=(os.environ.get("LTT_LLM_TOKEN") or "").strip(),
             models_mo=_danh_sach("LTT_LLM_MODELS"),
-            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 65_000),
+            # 🔴 NGUỒN CHÂN LÝ là `apps/ltt_llm/ngan_sach.py::TOKEN_VAO_TRAN`
+            #    (= CUA_SO_MODEL − TOKEN_RA_TRAN − LE = 131072 − 32768 − 2048).
+            #    Kho này deploy sang máy B nên **không import được** từ đó; số ở
+            #    đây là bản sao, và `tests/test_312` đỏ ngay khi hai bên lệch.
+            #    ⛔ 65.000 cũ là con số gõ tay không dẫn xuất từ đâu, và nó đã
+            #       khiến ta phí 25% cửa sổ model suốt nhiều ngày.
+            max_input_tokens=_int("LTT_LLM_MAX_INPUT_TOKENS", 96_256),
             max_output_tokens=_int("LTT_LLM_MAX_OUTPUT_TOKENS", 32_768),
             max_images=_int("LTT_LLM_MAX_IMAGES", 4),
             max_image_bytes=_int("LTT_LLM_MAX_IMAGE_BYTES", 12 * 1024 * 1024),

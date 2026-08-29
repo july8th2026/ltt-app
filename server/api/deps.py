@@ -97,8 +97,15 @@ def enforce_body_limit(request, config: PublicApiConfig) -> None:
     except (TypeError, ValueError) as exc:
         raise errors.invalid_request("Content-Length is not a number.") from exc
     if declared > config.max_body_bytes:
+        # 🔴 XƯNG TÊN TRẦN. Bốn trần khác nhau cùng có thể chặn một request
+        #    (body-bytes, token vào, token ra, cửa sổ ngữ cảnh) và tất cả đều trả
+        #    413. Không nói rõ trần nào thì bên gọi — và cả người sửa lỗi — phải
+        #    đoán; ngày 30/08 việc đoán đó tốn nhiều lượt đo mới ra.
         raise errors.payload_too_large(
             "Request body exceeds the limit for this endpoint.",
+            limit_name="body_bytes",
+            limit_value=config.max_body_bytes,
+            observed=declared,
             limit_bytes=config.max_body_bytes)
 
 

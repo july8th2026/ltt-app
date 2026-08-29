@@ -135,7 +135,7 @@ def register_chat_routes(api, config, tag: str) -> None:
         # Kiểm THAM SỐ trước khi tiền chuyển — cùng câu `jobs.py` đã viết:
         # "a typo must never reach the ledger".
         if "max_tokens" not in payload:
-            payload["max_tokens"] = executor.default_max_tokens
+            payload["max_tokens"] = executor.mac_dinh_cho("sync")
         try:
             sach = executor.validate(payload)
         except executor.parameter_error as e:

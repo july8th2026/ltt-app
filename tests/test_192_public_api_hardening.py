@@ -192,8 +192,14 @@ def test_mass_assignment_is_impossible_on_every_write(api):
 def test_resource_consumption_is_bounded(api):
     """API4: body size, page size and concurrent work all have ceilings."""
     _user_id, token = _account()
+    # ⛔ ĐỪNG gõ cứng kích thước ở đây. Trần body là một con số **cấu hình**;
+    #    gõ lại nó trong test là dựng thêm một bản sao nữa của đúng cái chồng
+    #    chéo đang dọn — và ngày 30/08 nâng trần 256 KB → 1 MiB đã làm test này
+    #    đỏ vì lý do đó chứ không phải vì hệ hỏng.
+    from platform_core.public_api.config import load_public_api_config
+    _tran = load_public_api_config().max_body_bytes
     oversized = api.post(f"{API_V1_PREFIX}/quotes",
-                         content=b"x" * (300 * 1024),
+                         content=b"x" * (_tran + 1024),
                          headers={**_auth(token), "Content-Type": "application/json"})
     assert oversized.status_code == 413
 
