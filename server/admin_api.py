@@ -359,7 +359,7 @@ class ApiAccountsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Credit đã giữ (7 ngày)</th><th>Khoá mới nhất</th><th></th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'
             f'{_pager(page, base)}</div>')
-        return HTMLResponse(_admin_shell("API — Tài khoản", "api_accounts",
+        return HTMLResponse(_admin_shell("API — Tài khoản", "api_access",
                                          body))
 
     async def _detail(self, request: Request, user_id: str):
@@ -457,7 +457,7 @@ class ApiAccountsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Lúc</th><th>Route</th><th>HTTP</th><th>Mã</th>'
             f'<th>Correlation ID</th></tr></thead><tbody>{requests}</tbody>'
             f'</table></div></section></div>')
-        return HTMLResponse(_admin_shell(user.email, "api_accounts", body))
+        return HTMLResponse(_admin_shell(user.email, "api_access", body))
 
 
 class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
@@ -538,7 +538,7 @@ class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Môi trường</th><th>Trạng thái</th><th>Dùng lần cuối</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div>'
             f'{_pager(page, base)}</div>')
-        return HTMLResponse(_admin_shell("API — Khoá", "api_keys", body))
+        return HTMLResponse(_admin_shell("API — Khoá", "api_khoa", body))
 
     async def _detail(self, request: Request, key_id: str):
         from server.auth.csrf import issue_csrf_token
@@ -651,7 +651,7 @@ class ApiKeysAdminView(_AnTrongMenuSqlAdmin, BaseView):
             f'<table class="ui-table"><thead><tr><th>Lúc</th><th>Route</th>'
             f'<th>HTTP</th><th>Mã</th></tr></thead><tbody>{recent}</tbody>'
             f'</table></div></section></div>')
-        return HTMLResponse(_admin_shell(snapshot["key_id"], "api_keys", body))
+        return HTMLResponse(_admin_shell(snapshot["key_id"], "api_khoa", body))
 
     @expose("/api-khoa-action", methods=["POST"])
     async def action(self, request: Request):
@@ -774,7 +774,7 @@ class ApiToolsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Tên công khai</th><th>App</th><th>Chế độ chạy</th>'
             f'<th>Phơi bày</th><th>Lời gọi</th><th>Hỏng</th></tr></thead>'
             f'<tbody>{rows}</tbody></table></div></section></div>')
-        return HTMLResponse(_admin_shell("API — Công cụ", "api_tools", body))
+        return HTMLResponse(_admin_shell("API — Công cụ", "api_governance", body))
 
 
 def _error_note(request: Request) -> str:
@@ -1276,7 +1276,7 @@ class ApiPricingView(_AnTrongMenuSqlAdmin, BaseView):
             f'<button class="btn btn-primary sm">Tạo bản nháp</button></p>'
             f'<p class="muted">Bản nháp chưa có hiệu lực. Phải bấm Phát hành, '
             f'và cả hai thao tác đều ghi nhật ký.</p></form></section></div>')
-        return HTMLResponse(_admin_shell("API - Gia", "api_pricing", body))
+        return HTMLResponse(_admin_shell("API - Gia", "api_economics", body))
 
     @expose("/api-gia-action", methods=["POST"])
     async def action(self, request: Request):
@@ -1535,7 +1535,7 @@ class ApiRequestsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>HTTP</th><th>Mã</th><th>ms</th><th>Credit</th></tr></thead>'
             f'<tbody>{rows}</tbody></table></div>'
             f'{_pager(page, base)}</div>')
-        return HTMLResponse(_admin_shell("API - Request", "api_requests", body))
+        return HTMLResponse(_admin_shell("API - Request", "api_ops", body))
 
 
 class ApiJobsView(_AnTrongMenuSqlAdmin, BaseView):
@@ -1632,7 +1632,7 @@ class ApiJobsView(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Trạng thái</th><th>Tài khoản</th><th>Sự kiện</th>'
             f'<th>Lần</th><th>HTTP cuối</th><th>Lúc</th></tr></thead>'
             f'<tbody>{hooks}</tbody></table></div></section></div>')
-        return HTMLResponse(_admin_shell("API - Job", "api_jobs", body))
+        return HTMLResponse(_admin_shell("API - Job", "api_job", body))
 
 
 class ApiSecurityView(_AnTrongMenuSqlAdmin, BaseView):

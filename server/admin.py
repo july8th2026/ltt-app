@@ -114,11 +114,12 @@ class AdminAuth(AuthenticationBackend):
 #    Bố cục đã đóng băng ở `docs/admin_mvp_v3/03_IA_FREEZE.md`; hợp đồng thêm
 #    trang ở `docs/admin_mvp_v3/04_EXTENSION_CONTRACT.md`.
 #
-# ⚠️ Khoá `active` cũ ("chitiet", "revenue", "goi", ...) vẫn được nhận qua
-#    `_KHOA_CU` bên dưới, nên 29 chỗ gọi `_admin_shell` không phải sửa trong
-#    cùng một lô với việc đổi vỏ. Đổi vỏ và đổi thân là hai rủi ro khác nhau;
-#    trộn chúng vào một lô là cách làm cho một lần đỏ không chỉ ra được nguyên
-#    nhân nào.
+# ⭐ Bảng cầu tạm `_KHOA_CU` ĐÃ GỠ (29/08). Nó từng dịch khoá `active` cũ
+#    ("chitiet", "revenue", "goi", ...) sang khoá của `SECTIONS`, để đổi vỏ mà
+#    không phải sửa 29 chỗ gọi trong cùng một lô — đổi vỏ và đổi thân là hai rủi
+#    ro khác nhau, và trộn chúng thì một lần đỏ không chỉ ra được nguyên nhân
+#    nào. Nay mọi chỗ gọi khai thẳng khoá của `SECTIONS`, nên cây cầu không còn
+#    ai đi và một khoá lạ trở thành lỗi nhìn thấy được thay vì im lặng đi qua.
 
 _PROVCOL = {"gemini": ("#4285F4", "G"), "apiai": ("#16a34a", "AI"),
             "cheapkeyai": ("#0ea5e9", "CK"), "byteplus": ("#7c3aed", "BP"),
@@ -139,34 +140,6 @@ def _asset_ver() -> str:
         return "0"
 
 
-#: Khoá `active` cũ → khoá trong `server/routes/admin/_chung.py:SECTIONS`.
-#:
-#: Bảng này tồn tại để đổi VỎ mà không phải sửa 29 chỗ gọi trong cùng một lô.
-#: Nó là cầu tạm: khi trang cuối cùng chuyển sang khoá mới thì xoá bảng này và
-#: xoá luôn nhánh tra cứu ở `_admin_shell`. Đừng thêm dòng mới vào đây — trang
-#: mới khai thẳng khoá mới.
-_KHOA_CU = {
-    "chitiet": "ho_so_360",
-    "apikeys": "van_hanh",
-    "revenue": "tai_chinh",
-    "goi": "goi_nap",
-    "don": "don_hang",
-    "grant": "cap_credit",
-    "api_overview": "api_overview",
-    "api_accounts": "api_access",
-    "api_keys": "api_khoa",
-    "api_tools": "api_governance",
-    "api_policy": "api_policy",
-    "api_kill": "api_kill",
-    "api_pricing": "api_economics",
-    "api_margin": "api_margin",
-    "api_requests": "api_ops",
-    "api_jobs": "api_job",
-    "api_security": "api_security",
-    "api_trace": "api_trace",
-}
-
-
 def _admin_shell(title: str, active: str, body: str, **thug) -> str:
     """Dựng một trang quản trị hoàn chỉnh.
 
@@ -180,9 +153,8 @@ def _admin_shell(title: str, active: str, body: str, **thug) -> str:
     from server.routes.admin._chung import dieu_huong
     from server.templating import templates
 
-    khoa = _KHOA_CU.get(active, active)
     try:
-        nav = dieu_huong(khoa)
+        nav = dieu_huong(active)
     except KeyError:
         # Khoá lạ (trang mới quên khai ở `SECTIONS`). Vẫn render được trang —
         # mất trạng thái sáng của thanh bên thì khó chịu, còn ném 500 vào mặt
@@ -410,7 +382,7 @@ class ApiKeysConsole(_AnTrongMenuSqlAdmin, BaseView):
             f'<th>Provider</th><th>Tên</th><th>Preview</th><th>Loại</th><th>Trạng thái</th>'
             f'<th>Health</th><th>Ưu tiên</th><th>Tải</th><th style="text-align:right">Thao tác</th>'
             f'</tr></thead><tbody>{rows}</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Provider Credentials", "apikeys", body))
+        return HTMLResponse(_admin_shell("Provider Credentials", "van_hanh", body))
 
 
 class UserAdmin(ModelView, model=User):
@@ -675,7 +647,7 @@ class GrantCreditView(_AnTrongMenuSqlAdmin, BaseView):
     <input class="inp" name="note" placeholder="khuyến mãi / bồi thường"></div>
   <button class="btn" type="submit">Cấp credit</button>
 </form></div></div>"""
-        return HTMLResponse(_admin_shell("Cấp credit", "grant", body), status_code=status)
+        return HTMLResponse(_admin_shell("Cấp credit", "cap_credit", body), status_code=status)
 
 
 class NhatKyAdminView(ModelView, model=NhatKyAdmin):
@@ -836,7 +808,7 @@ function apDung() {{
 document.getElementById('prov').addEventListener('change', apDung);
 apDung();
 </script>"""
-        return HTMLResponse(_admin_shell("Thêm API key", "apikeys", body), status_code=status)
+        return HTMLResponse(_admin_shell("Thêm API key", "provider_them", body), status_code=status)
 
 
 class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
@@ -952,7 +924,7 @@ class SuaApiKeyView(_AnTrongMenuSqlAdmin, BaseView):
                              escape(key.provider), escape(", ".join(phuc_vu)))
             token = issue_csrf_token(request)
             body = _sua_key_html(key, boxes, goi_y, token, msg)
-            return HTMLResponse(_admin_shell("Sua API key", "apikeys", body),
+            return HTMLResponse(_admin_shell("Sua API key", "provider_sua", body),
                                 status_code=status)
         finally:
             try:
@@ -1031,7 +1003,7 @@ class ApiKeyActionView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="actions"><a class="btn ghost" href="/admin/apikeys">&larr; APIKEYS</a></div></div>
 <div class="ui-card"><p style="margin:0 0 8px">{badge}</p>
 <p class="muted mono" style="margin:0;font-size:12.5px;word-break:break-word">{escape(str(detail))}</p></div></div>"""
-        return HTMLResponse(_admin_shell("Test key", "apikeys", body))
+        return HTMLResponse(_admin_shell("Test key", "provider_test", body))
 
     @expose("/api-key-action", methods=["POST"])
     async def action(self, request: Request):
@@ -1120,7 +1092,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="tablewrap"><table class="ui-table"><thead><tr>
 <th>Provider</th><th>Auth</th><th>Category</th><th>Models (registry)</th><th>Kiểu</th><th>Sống</th></tr></thead>
 <tbody>{rows}</tbody></table></div></div>"""
-        return HTMLResponse(_admin_shell("Models", "apikeys", body))
+        return HTMLResponse(_admin_shell("Models", "models", body))
 
     @expose("/api-models-refresh", methods=["GET"])
     async def refresh(self, request: Request):
@@ -1154,7 +1126,7 @@ class ModelsView(_AnTrongMenuSqlAdmin, BaseView):
 <div class="pagehead"><div><h1>Model sống — {escape(prov_id)}</h1><p>{note}</p></div>
 <div class="actions"><a class="btn ghost" href="/admin/api-models">&larr; Models</a></div></div>
 <div class="ui-card" style="line-height:2.2">{chips}</div></div>"""
-        return HTMLResponse(_admin_shell("Model sống", "apikeys", body))
+        return HTMLResponse(_admin_shell("Model sống", "models", body))
 
 
 def _probe_key(prov, credential: str):
@@ -1281,7 +1253,7 @@ class RevenueView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<th>Lúc</th><th>Hành động</th><th>Đối tượng</th><th>Ai làm</th>'
                 f'</tr></thead><tbody>{rows_tien or "<tr><td colspan=4 class=muted style=padding:20px;text-align:center>Chưa có thao tác tiền nào của admin.</td></tr>"}'
                 f'</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Tổng quan tài chính", "revenue", body))
+        return HTMLResponse(_admin_shell("Tổng quan tài chính", "tai_chinh", body))
 
 
 class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
@@ -1368,7 +1340,7 @@ class PackagesView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<th>Trạng thái</th><th style="text-align:right">Thao tác</th></tr></thead>'
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có gói. Thêm ở trên.</td></tr>"}'
                 f'</tbody></table></div></div>')
-        return HTMLResponse(_admin_shell("Gói nạp", "goi", body), status_code=status)
+        return HTMLResponse(_admin_shell("Gói nạp", "goi_nap", body), status_code=status)
 
     @expose("/goi/action", methods=["POST"])
     async def package_action(self, request: Request):
@@ -1477,7 +1449,7 @@ class OrdersView(_AnTrongMenuSqlAdmin, BaseView):
                 f'<tbody>{rows or "<tr><td colspan=8 class=muted style=padding:22px;text-align:center>Chưa có đơn.</td></tr>"}'
                 f'</tbody></table></div></div>')
         return HTMLResponse(_admin_shell(
-            "Đơn hàng", "don", body,
+            "Đơn hàng", "don_hang", body,
             thanh_cong=request.query_params.get("ok") or "",
             loi=request.query_params.get("loi") or ""))
 

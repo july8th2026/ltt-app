@@ -172,3 +172,38 @@ def test_giao_dien_quan_tri_khong_chua_noi_dung_khong_co_authority():
             if mau.lower() in noi_dung.lower():
                 vi_pham.append(f"{p.relative_to(GOC)}: {mau!r} — {ly_do}")
     assert not vi_pham, "\n".join(vi_pham)
+
+
+def test_moi_cho_goi_vo_deu_dung_khoa_da_khai():
+    """Khoa `active` truyen cho `_admin_shell` phai co trong `SECTIONS`.
+
+    ⭐ Bang cau tam `_KHOA_CU` da go 29/08. Truoc do no dich khoa cu sang khoa
+       moi, nen mot khoa go nham van "chay duoc" — chi la thanh ben khong sang
+       gi ca, va nguoi dang xu su co khong biet minh dang dung o dau.
+
+    Nay khong con cau, phep kiem nay la thu giu cho no khong quay lai: mot khoa
+    la bi bat o CONG, khong phai luc chay.
+    """
+    import re
+
+    khoa = {k for k, _, _ in _chung.SECTIONS}
+    xau = []
+    for ten in ("server/admin.py", "server/admin_api.py"):
+        src = (GOC / ten).read_text(encoding="utf-8")
+        for m in re.finditer(
+                r'_admin_shell\((?:[^,()]|\([^()]*\))*,\s*"([a-z_]+)"', src):
+            if m.group(1) not in khoa:
+                xau.append(f"{ten}: {m.group(1)!r}")
+    assert not xau, xau
+
+
+def test_bang_cau_tam_khong_quay_lai():
+    """`_KHOA_CU` la mot mon no CO CHU DICH, va no da tra.
+
+    De lai mot bang dich khoa nghia la them mot trang moi co the dung ten cu ma
+    khong ai biet — dung kieu troi dat ma bang do sinh ra de tranh.
+    """
+    src = (GOC / "server/admin.py").read_text(encoding="utf-8")
+    ma = [d for d in src.splitlines()
+          if "_KHOA_CU" in d and not d.lstrip().startswith("#")]
+    assert not ma, ma
