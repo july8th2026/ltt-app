@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:a9f4fef0858cf1708b9d2f308bd0a17aec129e299166b2580869a48139d57592
+Fingerprint   : sha256:c2cc84b28cc8fcc5e9d0b961d3a5590783b5ed730b6e75a62a75dd4ae00946b6
 Nguồn đã quét : 1250 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2691,7 +2691,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1250 file; 12345674 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1250 file; 12347765 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -31584,7 +31584,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/upscalevideo/manifest.py
-SHA256=0a4fb640a818017ef6bb21beeded693e590460a88923a2d38d90199fe3de4501 BYTES=12541 LINES=232
+SHA256=4380a15dd25a88bf816741f3457041e02ab7ef6ae267c8e67ddb2eaf0e89712d BYTES=13443 LINES=247
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `upscalevideo` — Nâng cấp video (Real-ESRGAN NCNN ×4), di trú từ BOT GEMINI
@@ -31772,6 +31772,21 @@ MANIFEST = AppManifest(
             "image_key": {"type": "image", "required": True},
             "preset": {"type": "enum", "values": ["fast", "quality"], "default": "fast"},
         }, returns={"image_key": "image"}, verifiable=("technical", "vlm_judge"),
+
+        # Cùng bảng làn với `video.upscale` ở trên, và vì cùng một lý do. Tool
+        # này ĐANG MỞ cho khách từ trước, nên nó đã chạy một thời gian với làn
+        # cũ: mọi job `image.upscale` giữ chỗ 12.000 MB, kể cả `preset=fast` vốn
+        # chỉ ăn ~848 MB.
+        #
+        # ⚠️ Không phải lỗi tính tiền — khách trả đúng số credit. Là lỗi xếp
+        #    lịch: job giữ thừa GPU nên chặn job khác và tự bị hoãn khi card
+        #    không đủ trống. Trên máy ba hộ dùng chung GPU, triệu chứng tới tay
+        #    khách là "chậm không rõ vì sao" — loại khiếu nại khó lần nhất.
+        job_type_by="preset",
+        job_type_lanes={
+            "fast": "upscalevideo.render.fast",
+            "quality": "upscalevideo.render.quality",
+        },
 
         # ── Public API (Q92, wave 2) ─────────────────────────────────────────
         # This is the GPU workload wave 2 opens. Its price is a flat 2/4 credits
@@ -221964,7 +221979,7 @@ def test_moi_muc_xin_them_deu_bi_chan_nhu_nhau(db, bao_dam_user, xin):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_327_lan_scheduler_theo_tham_so.py
-SHA256=f22b0b061b6c65704e86f91e16cd409f8c8ef30cd55b30b34fd547b791e43e02 BYTES=6448 LINES=152
+SHA256=d3bed48a93019eb9d51060623df486f4f9a85dee23030332d341fb1e3e5d650c BYTES=7637 LINES=178
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Lan scheduler theo tham so — job tu API khong duoc giu thua VRAM.
 
@@ -222108,6 +222123,32 @@ def test_duong_web_va_duong_api_chon_CUNG_mot_lan():
                 for t in i.manifest.tools if t.name == "video.upscale")
     for preset in ("fast", "quality"):
         assert tool.lane_for({"preset": preset}) == job_type_for_preset(preset), preset
+
+
+def test_hai_tool_ANH_EM_khong_duoc_chay_hai_hanh_vi_khac_nhau():
+    """`video.upscale` va `image.upscale` dung chung handler va chung bang VRAM.
+
+    ⚠️ Chung da tung lech nhau **trong luc ca hai cung mo cho khach**: ngay
+       29/08 ban sua lan len production cho `video.upscale` truoc, con
+       `image.upscale` — tool mo TU LAU va dang thu tien — van giu lan cu.
+
+    Hai tool cung ho ma xep lich khac nhau la thu khong ai doc ra tu ma: chung
+    o canh nhau trong CUNG mot manifest, nen mat gap qua cho lech do.
+    """
+    man = next(i.manifest for i in discover()
+               if not i.error and i.manifest.slug == "upscalevideo")
+    tools = {t.name: t for t in man.tools}
+
+    for preset in ("fast", "quality"):
+        v = tools["video.upscale"].lane_for({"preset": preset})
+        i = tools["image.upscale"].lane_for({"preset": preset})
+        assert v == i, f"{preset}: video->{v} nhung image->{i}"
+
+    # Va mac dinh cua CA HAI phai la lan nhe.
+    for ten in ("video.upscale", "image.upscale"):
+        lane = tools[ten].lane_for({})
+        assert man.vram_for(lane) == 2000, (
+            f"{ten} mac dinh xin {man.vram_for(lane)}MB — do that la 848MB")
 
 
 def test_moi_lan_deu_co_handler_that():

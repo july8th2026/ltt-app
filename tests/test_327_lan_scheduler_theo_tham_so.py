@@ -142,6 +142,32 @@ def test_duong_web_va_duong_api_chon_CUNG_mot_lan():
         assert tool.lane_for({"preset": preset}) == job_type_for_preset(preset), preset
 
 
+def test_hai_tool_ANH_EM_khong_duoc_chay_hai_hanh_vi_khac_nhau():
+    """`video.upscale` va `image.upscale` dung chung handler va chung bang VRAM.
+
+    ⚠️ Chung da tung lech nhau **trong luc ca hai cung mo cho khach**: ngay
+       29/08 ban sua lan len production cho `video.upscale` truoc, con
+       `image.upscale` — tool mo TU LAU va dang thu tien — van giu lan cu.
+
+    Hai tool cung ho ma xep lich khac nhau la thu khong ai doc ra tu ma: chung
+    o canh nhau trong CUNG mot manifest, nen mat gap qua cho lech do.
+    """
+    man = next(i.manifest for i in discover()
+               if not i.error and i.manifest.slug == "upscalevideo")
+    tools = {t.name: t for t in man.tools}
+
+    for preset in ("fast", "quality"):
+        v = tools["video.upscale"].lane_for({"preset": preset})
+        i = tools["image.upscale"].lane_for({"preset": preset})
+        assert v == i, f"{preset}: video->{v} nhung image->{i}"
+
+    # Va mac dinh cua CA HAI phai la lan nhe.
+    for ten in ("video.upscale", "image.upscale"):
+        lane = tools[ten].lane_for({})
+        assert man.vram_for(lane) == 2000, (
+            f"{ten} mac dinh xin {man.vram_for(lane)}MB — do that la 848MB")
+
+
 def test_moi_lan_deu_co_handler_that():
     """Mot lan khong ai nhan thi job chet o worker, khong phai o gate."""
     from platform_core.jobs import resolve_handler

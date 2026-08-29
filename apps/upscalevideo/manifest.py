@@ -185,6 +185,21 @@ MANIFEST = AppManifest(
             "preset": {"type": "enum", "values": ["fast", "quality"], "default": "fast"},
         }, returns={"image_key": "image"}, verifiable=("technical", "vlm_judge"),
 
+        # Cùng bảng làn với `video.upscale` ở trên, và vì cùng một lý do. Tool
+        # này ĐANG MỞ cho khách từ trước, nên nó đã chạy một thời gian với làn
+        # cũ: mọi job `image.upscale` giữ chỗ 12.000 MB, kể cả `preset=fast` vốn
+        # chỉ ăn ~848 MB.
+        #
+        # ⚠️ Không phải lỗi tính tiền — khách trả đúng số credit. Là lỗi xếp
+        #    lịch: job giữ thừa GPU nên chặn job khác và tự bị hoãn khi card
+        #    không đủ trống. Trên máy ba hộ dùng chung GPU, triệu chứng tới tay
+        #    khách là "chậm không rõ vì sao" — loại khiếu nại khó lần nhất.
+        job_type_by="preset",
+        job_type_lanes={
+            "fast": "upscalevideo.render.fast",
+            "quality": "upscalevideo.render.quality",
+        },
+
         # ── Public API (Q92, wave 2) ─────────────────────────────────────────
         # This is the GPU workload wave 2 opens. Its price is a flat 2/4 credits
         # by preset, decided before the job starts, so a signed quote stays true
