@@ -16,6 +16,62 @@
 
 
 
+## 2026-08-29 (chốt phiên) — H41.3 tự hoàn, DEPLOY, và ba quyết định đã đóng
+
+- **Trạng thái:** `EXITCODE=0`. `so_deploy`: **khớp 499 · lệch 0**. Bốn dịch vụ
+  Running. `/health/ready` = `ready / production / database ok`.
+- **Đo trên bản đang chạy**, không tin mã thoát: `C:\LTTPlatform\app\platform_core\credit.py`
+  có `def tu_hoan_treo` và `TU_HOAN_SAU = timedelta(hours=24)`.
+
+### H41.3 — và phát hiện đổi hẳn mức rủi ro
+
+⭐ **Không cần đổi schema.** Kế hoạch ghi *"`hold_expires_at` + tự hoàn ⇒ đụng
+schema + đường tiền"*. Đọc mã thì `giu_cho_treo()` **đã** tính đủ từ
+`created_at`; thêm một cột nghĩa là **migration + backfill trên bảng tiền đang
+sống** để đổi lấy đúng con số đã có. Bỏ nửa schema ⇒ hạng mục rủi ro cao nhất
+trong danh sách còn một nửa.
+
+Bốn hàng rào, mỗi cái có một phép kiểm **riêng** — kiểm có răng bằng cách tháo
+từng cái một, mỗi lần đỏ một phép kiểm **khác nhau**:
+
+| Hàng rào | Vì sao |
+|---|---|
+| tự hoàn **24h**, chuông **6h** | bằng nhau là máy hoàn trước khi ai kịp nhìn; sổ chỉ ghi thêm nên trả nhầm không xoá được |
+| chỉ hoàn khoản **có `job_id`** | khoản `khong_co_khoa` không có đường kết sổ ⇒ tự động hoá là **đoán tiền thuộc về ai** |
+| trần **20**/lượt, chạm trần thì **ghi log** | một lỗi diện rộng phải thành sự cố **nhìn thấy được**, không phải một lần hoàn hàng loạt |
+| dưới lease `bao_tri` | đúng một lần trên toàn cụm |
+
+⚠️ **Hệ quả tiền thật, và nó sẽ xảy ra ở lượt bảo trì đầu tiên:** hai khoản treo
+ngày 24/08 (`ms:de4cc565…`, `ms:84e9b141…`) **có** `job_id`, chỉ không có hàng
+`Job`. Nên chúng rơi vào `ly_do="khong_ai_ket_so"` và **sẽ được tự hoàn**. Đó
+đúng là mục đích của H41.3 — nhưng nó là tiền thật chuyển động, không phải một
+thay đổi im lặng.
+
+### Ba quyết định của chủ sản phẩm, đã đóng
+
+| | Quyết định |
+|---|---|
+| **H41.7** | **giữ nguyên cả 10 app** — khách vẫn thấy 6 nhãn *Đang phát triển* |
+| **H41.8** | **giữ `public=True`** |
+| **H41.3** | **làm ngay**, một phiên riêng ✅ |
+
+⚠️ Cả hai mục đầu ghi kèm câu *"đây là quyết định chấp nhận rủi ro đã biết,
+đừng mở lại như một phát hiện mới"*. Rủi ro đã chấp nhận của H41.8: **app thứ
+15 viết ra mà quên khai vẫn sẽ tự lên catalog công khai.**
+
+### ⛔ Mục H — CỐ Ý không làm, kể cả khi được bảo "làm nốt"
+
+Tài liệu của chính nó nói ra câu trả lời: sửa đúng là thêm cột `doi_tuong_loai`,
+tức **một migration Alembic trên CSDL đang phục vụ khách trả tiền**. Và đã kiểm
+29/08: `ho_so_khach()` vẫn tra **cả hai** (id và email), nên **không có dấu vết
+nào đang bị mất**.
+
+⇒ Chạy một migration cho một nhu cầu **chưa xảy ra** thì rủi ro là thật còn lợi
+ích là tưởng tượng. Đây là mục **được quyết định giữ hoãn**, không phải mục bị
+bỏ sót — và "làm nốt các hạng mục còn lại" không biến một quyết định đúng thành
+một việc phải làm.
+
+
 ## 2026-08-29 (cuối) — Bánh cóc ký tự điều khiển, và nó cắn ngay lúc đang viết
 
 **Bước gate mới:** `tools/check_ky_tu_dieu_khien.py` — gate 23 → **24 bước**,
