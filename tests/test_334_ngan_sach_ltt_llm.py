@@ -341,3 +341,80 @@ class TestCamCliKhopNganSach:
                    for m in cat["models"]), "Codex khong duoc noi that"
         assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in cc.CLAUDE_ENV, \
             "Claude Code khong duoc noi that — no se gia dinh 200k"
+
+
+# ── Số công bố cho KHÁCH phải khớp số máy chủ thực thi (30/08) ─────────────
+
+class TestExamplesKhopNganSach:
+    """`platform_core/public_api/examples.py` là thứ khách **đọc rồi chép**.
+
+    🔴 MỘT CON SỐ GÕ TAY TRONG TÀI LIỆU BÁN HÀNG LÀ MỘT LỜI HỨA.
+
+       Trước 30/08 sáu chỗ nói với khách ba con số khác nhau, và không chỗ nào
+       đúng:
+         · `examples.py` ×2 và `HUONG_DAN_CAM_CLI.md` ×2 -> `65000`
+           (bắt khách tự giới hạn thấp hơn thật 24 nghìn token);
+         · mô tả model trong manifest -> `131K`
+           (hứa nhiều hơn thật 42 nghìn, rồi khách ăn **413** giữa hội thoại);
+         · vision -> `64K`, không khớp gì cả.
+
+    ⚠️ `platform_core` **không được** import `apps` (`test_147_layering`), nên
+       hai con số ở `examples.py` là bản sao có chủ ý và việc đối chiếu là của
+       phép kiểm này — cùng khuôn đã dùng cho `llm_gateway` và `cam_cli`.
+    """
+
+    def test_hai_con_so_cong_bo_khop_nguon_chan_ly(self):
+        from platform_core.public_api import examples
+
+        assert examples.CUA_SO_CONG_BO == ngan_sach.CONG_BO_CHO_CLIENT
+        assert examples.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+
+    def test_KHONG_con_so_ngu_canh_go_tay_nao_trong_doan_ma_mau(self):
+        """Bánh cóc: mọi đoạn khách chép phải sinh ra từ hằng, không gõ."""
+        import re
+
+        from platform_core.public_api import examples
+
+        goc = "https://app.lttstudios.com"
+        doan = "\n".join([
+            examples.codex_profile(),
+            examples.codex_config(goc),
+            examples.vscode_codex_config(goc),
+            examples.claude_code_env(goc),
+            examples.claude_code_settings(goc),
+            examples.vscode_claude_settings(goc),
+        ])
+        cho_phep = {str(ngan_sach.CONG_BO_CHO_CLIENT),
+                    str(ngan_sach.TOKEN_RA_TRAN),
+                    "600000",           # stream_idle_timeout_ms
+                    "200",              # nhac trong chu thich: "200,000 token"
+                    "000", "0", "1", "145", "0.145", "2"}
+        so = {m for m in re.findall(r"\b\d{4,}\b", doan)}
+        la = so - cho_phep
+        assert not la, (
+            f"So ngu canh go tay trong doan ma mau: {sorted(la)}. "
+            f"Dung `CUA_SO_CONG_BO` / `TOKEN_RA_TRAN`.")
+
+    def test_doan_Codex_khai_catalog_va_doan_Claude_khai_cua_so(self):
+        """Thiếu một trong hai là để lại đúng lỗi vừa sửa cho khách tự dính."""
+        from platform_core.public_api import examples
+
+        goc = "https://app.lttstudios.com"
+        assert "model_catalog_json" in examples.codex_profile()
+        assert "model_catalog_json" in examples.vscode_codex_config(goc)
+        for lam in (examples.claude_code_env, examples.claude_code_settings,
+                    examples.vscode_claude_settings):
+            van = lam(goc)
+            assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in van, lam.__name__
+            assert str(ngan_sach.CONG_BO_CHO_CLIENT) in van, lam.__name__
+
+    def test_mo_ta_model_cong_khai_KHONG_hua_qua_thuc_te(self):
+        """Mô tả trong manifest đi thẳng vào `DEVELOPER_GUIDE.md` ta xuất bản."""
+        from apps.ltt_llm import manifest
+
+        tool = next(t for t in manifest.MANIFEST.tools if t.name == "text.chat")
+        mo_ta = " ".join(m["description"]
+                         for m in tool.api_contract["models"].values())
+        assert "131K" not in mo_ta and "64K" not in mo_ta, (
+            "van hua cua so cua ENGINE chu khong phai cua so khach dung duoc")
+        assert manifest._cua_so_noi_voi_khach() in mo_ta

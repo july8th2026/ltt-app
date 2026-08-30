@@ -42,13 +42,34 @@ thử thật, và nó không hiển nhiên từ tài liệu của nhà nào cả
 
 ### 1.1 Tool EXE — có giao diện
 
-Tải `LTTStudios-CamCLI-Setup-1.1.0.exe`, cài không cần Administrator, rồi chọn
-từng bề mặt ngay trong cửa sổ. Bản 1.1 không tin cờ trạng thái do chính nó ghi:
-sau mỗi lần cắm, nó đọc lại file + registry và chỉ tô xanh thứ thật sự có mặt.
+Tải bản mới nhất ở **<https://app.lttstudios.com/tai/cong-cu-cam>** — đường dẫn
+**cố định**, luôn trả bản mới nhất, và SHA-256 công bố ngay cạnh nút tải được
+tính từ chính tệp đang phục vụ. Cài không cần Administrator, rồi chọn từng bề
+mặt ngay trong cửa sổ. Công cụ không tin cờ trạng thái do chính nó ghi: sau mỗi
+lần cắm nó đọc lại file + registry và chỉ tô xanh thứ **thật sự** có mặt.
+
+🔴 **Một ngoại lệ về quyền — và nó là lý do một mục hay báo hỏng.**
+
+Mục **Claude Desktop** ghi vào `HKCU\SOFTWARE\Policies\Claude`, tức nhánh Group
+Policy. ACL đo trên máy thật:
+
+```
+DESKTOP-…\<ban>          Allow  ReadKey        <- chi DOC
+BUILTIN\Administrators   Allow  FullControl    <- ghi duoc
+```
+
+⇒ Với riêng mục đó phải mở công cụ bằng lối tắt **"(Administrator — chỉ cần cho
+Claude Desktop)"** trong Start Menu. **Bốn mục còn lại không cần quyền quản
+trị** — đừng chạy cả công cụ bằng admin nếu không cần.
+
+Từ **1.3.0** công cụ hỏi quyền **trước khi ghi**, và nếu thiếu thì nói thẳng lý
+do (`WinError 5: Access is denied`) rồi **không ghi gì cả**. Bản trước đó thất
+bại bảy lần liên tiếp và in ra những dòng trông y hệt dòng thành công.
 
 ### 1.2 ZIP + BAT — không GUI, chạy Administrator
 
-Tải `LTTStudios-CamCLI-BAT-1.1.0.zip`, giải nén **toàn bộ**, rồi bấm
+Tải ở **<https://app.lttstudios.com/tai/cong-cu-cam-bat>**, giải nén
+**toàn bộ**, rồi bấm
 `cam_cli_admin.bat`. Launcher tự xin UAC, che khoá khi nhập và cho chọn riêng:
 `codex-cli`, `codex-vscode`, `claude-cli`, `claude-vscode`, `claude-desktop`.
 
@@ -104,10 +125,35 @@ nằm trong `config.toml`:
 model = "ltt_llm"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 65000
+model_context_window = 88555
+model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 ```
 
 Chạy: `codex --profile ltt`
+
+🔴 **`model_catalog_json` không phải tuỳ chọn.**
+
+Thiếu nó, Codex cảnh báo *"Model metadata for `ltt_llm` not found"* rồi rơi vào
+đường `compact_model_fallback`: nó **mượn tên một model của OpenAI** cho các lượt
+phụ (đặt tên phiên, nén hội thoại). Cổng của chúng tôi từ chối tên lạ theo thiết
+kế fail-closed, nên bạn thấy hội thoại dài **im lặng** mà không có lỗi rõ ràng.
+
+Đo được 30/08, cùng một phiên, chỉ khác việc có khai catalog hay không:
+
+| | cảnh báo metadata | `model_context_window` của phiên |
+|---|---|---|
+| không catalog | **có** | 84.127 |
+| có catalog | **không** | **79.699** = 88.555 × 90 % |
+
+79.699 đúng bằng con số **chúng tôi** khai, tức Codex đã đọc tệp và thôi phải
+đoán. Số lượt 400 sau đó về **0**.
+
+Tệp catalog do công cụ `cam` ghi ra; nếu cấu hình tay thì lấy mẫu ở
+**<https://app.lttstudios.com/huong-dan/cong-cu>**.
+
+⚠️ **Khai đường dẫn tới một tệp KHÔNG tồn tại thì Codex `failed to parse
+model_catalog_json` rồi TỪ CHỐI KHỞI ĐỘNG** — bạn biến một cảnh báo vô hại thành
+một lỗi chặn đường. Có tệp rồi mới khai.
 
 ### 2.2 Tiện ích Codex (VS Code) — bắt buộc dạng **GỐC**
 
@@ -124,7 +170,8 @@ Error: legacy `profile = "ltt"` config is no longer supported;
 model = "ltt_llm"
 model_provider = "ltt"
 model_reasoning_effort = "low"
-model_context_window = 65000
+model_context_window = 88555
+model_catalog_json = 'C:\Users\<ban>\.codex\ltt_model_catalog.json'
 
 [model_providers.ltt]
 name = "LTT Studios"
@@ -144,10 +191,32 @@ setx ANTHROPIC_BASE_URL "https://app.lttstudios.com/api"    # /api, KHONG /api/v
 setx ANTHROPIC_AUTH_TOKEN "<khoa ltt_sk_... cua ban>"
 setx ANTHROPIC_MODEL "ltt_llm"
 setx ANTHROPIC_DEFAULT_HAIKU_MODEL "ltt_llm"
+setx CLAUDE_CODE_MAX_CONTEXT_TOKENS "88555"
+setx CLAUDE_CODE_MAX_OUTPUT_TOKENS "32768"
 ```
 
 ⛔ **Hai địa chỉ lệch nhau bốn ký tự.** Codex khai `…/api/v1`, Claude khai
 `…/api`. Đổi chỗ là nhận 404 mà không có manh mối nào khác.
+
+🔴 **Hai dòng cuối không phải tinh chỉnh — thiếu chúng là bạn mất tiền.**
+
+Claude Code không biết `ltt_llm`, nên nó **giả định cửa sổ 200.000 token** và
+nói thẳng ra điều đó:
+
+```
+"ltt_llm" is not a model this version of Claude Code recognizes, so
+auto-compact will keep this session within 200k tokens (the context
+window it assumes).
+```
+
+Trần đầu vào thật là **96.256**. Với giả định 200k, auto-compact **không bao giờ
+nén kịp**: hội thoại vượt trần từ lâu mà client vẫn tưởng còn nửa đường, và bạn
+ăn **413** giữa chừng. A/B đo 30/08: đặt `CLAUDE_CODE_MAX_CONTEXT_TOKENS` thì
+cảnh báo trên biến mất.
+
+⚠️ Đừng dùng `modelOverrides` cho việc này. Đọc mô tả trong chính binary của
+Claude Code: nó là **ánh xạ tên model**, cửa sổ vẫn lấy theo model ID của
+Anthropic. Nó không giải bài này.
 
 ### 2.4 Tiện ích Claude Code (VS Code) — `settings.json` cấp **người dùng**
 
@@ -161,10 +230,17 @@ Tiện ích **không đọc biến môi trường** như CLI (lỗi đã biết 
   "claudeCode.disableLoginPrompt": true,
   "claudeCode.environmentVariables": [
     {"name": "ANTHROPIC_BASE_URL", "value": "https://app.lttstudios.com/api"},
-    {"name": "ANTHROPIC_MODEL", "value": "ltt_llm"}
+    {"name": "ANTHROPIC_MODEL", "value": "ltt_llm"},
+    {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "ltt_llm"},
+    {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "88555"},
+    {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "32768"}
   ]
 }
 ```
+
+🔴 Hai dòng `CLAUDE_CODE_MAX_*` là **bắt buộc**, vì đúng lý do đã ghi ở §2.3:
+thiếu chúng thì tiện ích giả định cửa sổ 200.000, không nén kịp, và bạn ăn 413
+giữa hội thoại.
 
 ⛔ **Phải là settings cấp NGƯỜI DÙNG.** `claudeCode.environmentVariables` khai
 `scope: "machine"`; đặt trong `.vscode/settings.json` của một dự án thì VS Code
@@ -286,6 +362,61 @@ dễ kết luận nhầm rằng bản sửa không ăn thua.
 
 Vẫn điền tay được nếu muốn: `Help → Troubleshooting → Enable Developer Mode`, rồi
 `Developer → Configure Third-Party Inference…`
+
+---
+
+## 2.6 Gỡ ra — trả máy về nguyên trạng
+
+Đây là mục **hay bị bỏ qua nhất**, và bỏ qua nó thì ngày bạn muốn quay về tài
+khoản ChatGPT/Anthropic của mình sẽ rất khó chịu.
+
+### Bằng công cụ
+
+```text
+LTTStudios-CamCLI-Console.exe go          # go ra
+LTTStudios-CamCLI-Console.exe go --sach   # go, va xoa luon cac ban sao luu
+```
+
+Hoặc bấm **"Gỡ ra"** trong cửa sổ công cụ.
+
+⭐ **Nút gỡ KHÔNG cần khoá API và KHÔNG cần lần cắm trước.** Đó là chủ ý: lúc bạn
+bấm gỡ chính là lúc bạn thôi dùng dịch vụ — bạn không còn cầm khoá nữa, và bắt
+bạn dán lại khoá để gỡ là vô lý. Công cụ nhận diện cấu hình của chúng tôi bằng
+**dấu vân tay trên máy**, không phải bằng một sổ ghi có thể mất khi bạn cài lại
+máy, đổi tài khoản Windows hay đồng bộ thư mục nhà.
+
+⭐ Gỡ xong nó **tự quét lại** và in ra còn sót gì. Sạch thì nó nói
+`[OK] Da quet lai: khong con dau vet nao`. Công cụ không đánh dấu xanh giả.
+
+### Nếu gỡ tay — **năm** nơi, không phải một
+
+| # | Nơi | Xoá gì |
+|---|---|---|
+| 1 | `~/.codex/config.toml` | khối giữa `# >>> LTT Studios …` và `# <<< LTT Studios <<<`, **và** bảng `[model_providers.ltt]` nếu nó nằm ngoài khối đó |
+| 2 | `~/.codex/` | xoá tệp `ltt.config.toml` và `ltt_model_catalog.json` |
+| 3 | biến môi trường cấp người dùng | `ANTHROPIC_BASE_URL`, `ANTHROPIC_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_MAX_CONTEXT_TOKENS`, `CLAUDE_CODE_MAX_OUTPUT_TOKENS`, `ANTHROPIC_AUTH_TOKEN`, `LTT_API_KEY` |
+| 4 | `~/.claude/settings.json` và `%APPDATA%\Code\User\settings.json` | các khoá `ANTHROPIC_*` và các mục `claudeCode.environmentVariables` trỏ về `app.lttstudios.com` |
+| 5 | `HKCU\SOFTWARE\Policies\Claude` | cả khoá — **cần quyền quản trị** |
+
+⛔ **Chỗ số 1 là chỗ đã thực sự làm khách hỏng.** Bảng `[model_providers.ltt]`
+có thể nằm **ngoài** cặp dấu mốc, nên một lần gỡ chỉ bóc phần trong mốc sẽ để
+lại nó — kèm `env_key = "LTT_API_KEY"` trỏ vào một khoá đã chết. Bản 1.3.0 cắt
+cả hai.
+
+*(Nhưng nếu bảng đó do **bạn** tự khai thì công cụ giữ nguyên: nó chỉ cắt khi
+mọi cặp khoá/giá trị khớp đúng bản công cụ sinh ra. "Xoá những gì trông giống
+của ta" và "xoá đúng những gì ta đã thêm" là hai việc khác nhau.)*
+
+⚠️ **`setx` không xoá được biến.** Dùng
+`REG delete "HKCU\Environment" /v TEN /f` rồi **đăng xuất và đăng nhập lại
+Windows**. Mở lại VS Code là **không đủ**: Explorer đang chạy vẫn trao môi
+trường **cũ** cho mọi thứ bạn mở từ Start Menu.
+
+### Các tệp `*.truoc-ltt`
+
+Công cụ sao lưu **bản đầu tiên** của mỗi tệp nó chạm vào, đặt tên
+`<ten>.truoc-ltt`. Đó là **cấu hình của bạn**, không phải của chúng tôi, nên
+`go` **không tự xoá**. Muốn xoá luôn thì `go --sach`.
 
 ---
 

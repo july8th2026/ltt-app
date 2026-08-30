@@ -517,6 +517,30 @@ CLI_MODEL = "ltt_llm"
 #: company's product name.
 DESKTOP_MODEL = "ltt-llm-claude-compat"
 
+#: Cửa sổ ngữ cảnh ta **công bố cho client**, và trần token ra.
+#:
+#: 🔴 ĐÂY LÀ BẢN SAO CÓ CHỦ Ý, KHÔNG PHẢI MỘT ĐỊNH NGHĨA THỨ HAI.
+#:
+#:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`. Nhưng `platform_core`
+#:    **không được** import `apps` — nền tảng không phụ thuộc app, và
+#:    `test_147_layering` chốt điều đó. Nên hai con số này gõ lại ở đây, và việc
+#:    đối chiếu là của TEST (`test_334::TestExamplesKhopNganSach`), đúng khuôn
+#:    đã dùng cho `llm_gateway/config.py` và `tools/cam_cli.py`.
+#:
+#: ⛔ TRƯỚC 30/08 CHỖ NÀY GHI `65000`, VÀ TRANG CÔNG KHAI GHI `131K`. Cả hai đều
+#:    sai và chúng mâu thuẫn nhau: `65000` bắt khách tự giới hạn thấp hơn thật
+#:    26 nghìn token, còn `131K` hứa nhiều hơn thật 42 nghìn rồi để họ ăn **413**
+#:    giữa hội thoại. Một con số gõ tay trong tài liệu bán hàng là một lời hứa.
+CUA_SO_CONG_BO = 88_555
+TOKEN_RA_TRAN = 32_768
+
+#: Tệp catalog model cho Codex — đường dẫn công cụ `cam` ghi ra.
+#:
+#: ⭐ Thiếu nó thì Codex **không có metadata** cho `ltt_llm`, rơi vào đường
+#:    `compact_model_fallback` và mượn tên một model OpenAI cho lượt phụ; cổng
+#:    của ta từ chối (fail-closed) và khách thấy "im lặng" ở hội thoại dài.
+TEP_CATALOG_CODEX = r"%USERPROFILE%\.codex\ltt_model_catalog.json"
+
 
 def _goc(base_url: str) -> str:
     return (base_url or "https://app.lttstudios.com").rstrip("/")
@@ -552,7 +576,11 @@ def codex_profile() -> str:
         '# before it answers.\n'
         'model_reasoning_effort = "low"\n'
         'model_reasoning_summary = "none"\n'
-        "model_context_window = 65000"
+        f"model_context_window = {CUA_SO_CONG_BO}\n"
+        "# Declare the model so Codex stops guessing. Without this it warns\n"
+        "# `Model metadata for ltt_llm not found`, then substitutes an OpenAI\n"
+        "# model name on its own internal calls — which our gate rejects.\n"
+        f"model_catalog_json = '{TEP_CATALOG_CODEX}'"
     )
 
 
@@ -562,7 +590,11 @@ def claude_code_env(base_url: str) -> str:
         f'$env:ANTHROPIC_BASE_URL = "{_goc(base_url)}/api"   # NO /v1 — the client adds it\n'
         f'$env:ANTHROPIC_AUTH_TOKEN = $env:{ENV_API_KEY}\n'
         f'$env:ANTHROPIC_MODEL = "{CLI_MODEL}"\n'
-        f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work'
+        f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work\n'
+        f'# Claude Code does not know `{CLI_MODEL}`, so it ASSUMES a 200,000\n'
+        f'# token window: it never compacts in time and you hit 413 mid-chat.\n'
+        f'$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "{CUA_SO_CONG_BO}"\n'
+        f'$env:CLAUDE_CODE_MAX_OUTPUT_TOKENS = "{TOKEN_RA_TRAN}"'
     )
 
 
@@ -574,6 +606,10 @@ def claude_code_settings(base_url: str) -> str:
             "ANTHROPIC_AUTH_TOKEN": "<your ltt_sk_… key>",
             "ANTHROPIC_MODEL": CLI_MODEL,
             "ANTHROPIC_DEFAULT_HAIKU_MODEL": CLI_MODEL,
+            # Without these two Claude Code assumes a 200,000-token window,
+            # never compacts in time, and you hit 413 mid-conversation.
+            "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_CONG_BO),
+            "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
         }
     })
 
@@ -601,7 +637,9 @@ def vscode_claude_settings(base_url: str) -> str:
         '  "claudeCode.environmentVariables": [\n'
         '    {"name": "ANTHROPIC_BASE_URL", "value": "' + base_url + '/api"},\n'
         f'    {{"name": "ANTHROPIC_MODEL", "value": "{CLI_MODEL}"}},\n'
-        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}}\n'
+        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}},\n'
+        f'    {{"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "{CUA_SO_CONG_BO}"}},\n'
+        f'    {{"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "{TOKEN_RA_TRAN}"}}\n'
         "  ]\n"
         "}"
     )
@@ -631,7 +669,8 @@ def vscode_codex_config(base_url: str) -> str:
         f'model = "{CLI_MODEL}"\n'
         f'model_provider = "ltt"\n'
         f'model_reasoning_effort = "low"\n'
-        f'model_context_window = 65000\n'
+        f'model_context_window = {CUA_SO_CONG_BO}\n'
+        f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
         f'\n'
         f'[model_providers.ltt]\n'
         f'name = "LTT Studios"\n'

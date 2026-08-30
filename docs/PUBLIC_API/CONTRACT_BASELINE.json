@@ -352,7 +352,7 @@
     },
     "text.chat": {
       "aliases": [],
-      "contract_hash": "44dc637a5e4cc643",
+      "contract_hash": "0f21e0c6522a0ac8",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [

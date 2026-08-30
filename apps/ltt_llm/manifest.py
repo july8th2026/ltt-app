@@ -47,13 +47,35 @@ from platform_core.registry import AppManifest, ToolSpec
 #:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`. Giữ tên cũ ở đây để mã đang
 #:    gọi không phải sửa, nhưng **đừng gán số vào chúng nữa** — gán ở đây là
 #:    dựng lại đúng cái chồng chéo mà `ngan_sach.py` sinh ra để dẹp.
-from apps.ltt_llm.ngan_sach import (CUA_SO_MODEL as CUA_SO_NGU_CANH,
+from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
+                                    CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
                                     mac_dinh_cho, tran_theo_ngu_canh)
 
 #: Token ra mặc định của **cửa job** (manifest phục vụ đường job).
 MAX_TOKENS_MAC_DINH = mac_dinh_cho("job")
+
+
+def _cua_so_noi_voi_khach() -> str:
+    """Con số ngữ cảnh **đúng với thứ khách thật sự nhét vào được**.
+
+    🔴 TRƯỚC 30/08 CHỖ NÀY GÕ TAY "131K", VÀ ĐÓ LÀ MỘT LỜI HỨA SAI.
+
+       131.072 là cửa sổ của **engine**. Trần đầu vào của Public API là
+       `TOKEN_VAO_TRAN` (96.256, vì phải chừa chỗ cho câu trả lời dài nhất và
+       cho sai số của phép ước), còn con số ta **công bố** cho client là
+       `CONG_BO_CHO_CLIENT` (88.555, chừa thêm 8 %).
+
+       Khách đọc "131K", nhét 120K token vào, và ăn **413**. Không có gì trên
+       trang nói cho họ biết vì sao — đúng lớp lỗi "hai nơi nói hai con số" mà
+       `ngan_sach.py` sinh ra để dẹp, chỉ là lần này nó rò ra tới **khách hàng**.
+
+    ⛔ Đừng gõ lại số ở đây. `DEVELOPER_GUIDE.md` **sinh ra** từ manifest này
+       (`tools/build_public_api_docs.py`), nên một con số gõ tay ở đây sẽ tự
+       nhân bản sang tài liệu ta xuất bản.
+    """
+    return f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
 
 
 
@@ -174,14 +196,17 @@ MANIFEST = AppManifest(
             "models": {
                 "ltt_llm": {
                     "id": "qwen38-api",
-                    "description": ("Text only, 131K context. Coding, chat, "
-                                    "agentic tool use, summarisation."),
+                    "description": (f"Text only, {_cua_so_noi_voi_khach()} usable "
+                                    f"input context. Coding, chat, agentic tool "
+                                    f"use, summarisation."),
                     "stability": "stable",
                 },
                 "ltt_llm_vision": {
                     "id": "qwen38-vision",
-                    "description": ("Same model plus image reading. 64K context. "
-                                    "Send images as OpenAI image_url parts."),
+                    "description": (f"Same model plus image reading, same "
+                                    f"{_cua_so_noi_voi_khach()} usable input "
+                                    f"context. Send images as OpenAI image_url "
+                                    f"parts."),
                     "stability": "stable",
                 },
             },
@@ -197,8 +222,10 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": ("`ltt_llm` for text (131K context). "
-                                    "`ltt_llm_vision` also reads images."),
+                    "description": (f"`ltt_llm` for text "
+                                    f"({_cua_so_noi_voi_khach()} usable input "
+                                    f"context). `ltt_llm_vision` also reads "
+                                    f"images."),
                     "example": "ltt_llm",
                 },
                 "max_tokens": {

@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:8e2b6ff64e562e63936aace7852cf6fcb5a1ebc58e33935c034d3dda81ffe121
+Fingerprint   : sha256:48ee0c50a81143821b58a55ccd08597f708466957f12ed1db45c3276f55fa58b
 Nguồn đã quét : 1259 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2713,7 +2713,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12513601 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12521469 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16733,7 +16733,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=d4f826067d95fe86582ba2ac90995a2c3b9d2f6ae235af40cb35ed4b4173735d BYTES=11998 LINES=224
+SHA256=73f41a984393ff96a7d5e872828add12f63cc0891400be4c368a8751745587a1 BYTES=13274 LINES=251
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -16784,13 +16784,35 @@ from platform_core.registry import AppManifest, ToolSpec
 #:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`. Giữ tên cũ ở đây để mã đang
 #:    gọi không phải sửa, nhưng **đừng gán số vào chúng nữa** — gán ở đây là
 #:    dựng lại đúng cái chồng chéo mà `ngan_sach.py` sinh ra để dẹp.
-from apps.ltt_llm.ngan_sach import (CUA_SO_MODEL as CUA_SO_NGU_CANH,
+from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
+                                    CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
                                     mac_dinh_cho, tran_theo_ngu_canh)
 
 #: Token ra mặc định của **cửa job** (manifest phục vụ đường job).
 MAX_TOKENS_MAC_DINH = mac_dinh_cho("job")
+
+
+def _cua_so_noi_voi_khach() -> str:
+    """Con số ngữ cảnh **đúng với thứ khách thật sự nhét vào được**.
+
+    🔴 TRƯỚC 30/08 CHỖ NÀY GÕ TAY "131K", VÀ ĐÓ LÀ MỘT LỜI HỨA SAI.
+
+       131.072 là cửa sổ của **engine**. Trần đầu vào của Public API là
+       `TOKEN_VAO_TRAN` (96.256, vì phải chừa chỗ cho câu trả lời dài nhất và
+       cho sai số của phép ước), còn con số ta **công bố** cho client là
+       `CONG_BO_CHO_CLIENT` (88.555, chừa thêm 8 %).
+
+       Khách đọc "131K", nhét 120K token vào, và ăn **413**. Không có gì trên
+       trang nói cho họ biết vì sao — đúng lớp lỗi "hai nơi nói hai con số" mà
+       `ngan_sach.py` sinh ra để dẹp, chỉ là lần này nó rò ra tới **khách hàng**.
+
+    ⛔ Đừng gõ lại số ở đây. `DEVELOPER_GUIDE.md` **sinh ra** từ manifest này
+       (`tools/build_public_api_docs.py`), nên một con số gõ tay ở đây sẽ tự
+       nhân bản sang tài liệu ta xuất bản.
+    """
+    return f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
 
 
 
@@ -16911,14 +16933,17 @@ MANIFEST = AppManifest(
             "models": {
                 "ltt_llm": {
                     "id": "qwen38-api",
-                    "description": ("Text only, 131K context. Coding, chat, "
-                                    "agentic tool use, summarisation."),
+                    "description": (f"Text only, {_cua_so_noi_voi_khach()} usable "
+                                    f"input context. Coding, chat, agentic tool "
+                                    f"use, summarisation."),
                     "stability": "stable",
                 },
                 "ltt_llm_vision": {
                     "id": "qwen38-vision",
-                    "description": ("Same model plus image reading. 64K context. "
-                                    "Send images as OpenAI image_url parts."),
+                    "description": (f"Same model plus image reading, same "
+                                    f"{_cua_so_noi_voi_khach()} usable input "
+                                    f"context. Send images as OpenAI image_url "
+                                    f"parts."),
                     "stability": "stable",
                 },
             },
@@ -16934,8 +16959,10 @@ MANIFEST = AppManifest(
                     "example": [{"role": "user", "content": "Explain HTTP 429."}],
                 },
                 "model": {
-                    "description": ("`ltt_llm` for text (131K context). "
-                                    "`ltt_llm_vision` also reads images."),
+                    "description": (f"`ltt_llm` for text "
+                                    f"({_cua_so_noi_voi_khach()} usable input "
+                                    f"context). `ltt_llm_vision` also reads "
+                                    f"images."),
                     "example": "ltt_llm",
                 },
                 "max_tokens": {
@@ -113633,7 +113660,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=1c01d55d0956ec1137577335af3871c6169bbba524f61d0e71b3313422261901 BYTES=38573 LINES=839
+SHA256=4bda823b592b1df895f059b80e26e079d19db61502615751e3e8edc2a8f4e988 BYTES=41181 LINES=878
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -114154,6 +114181,30 @@ CLI_MODEL = "ltt_llm"
 #: company's product name.
 DESKTOP_MODEL = "ltt-llm-claude-compat"
 
+#: Cửa sổ ngữ cảnh ta **công bố cho client**, và trần token ra.
+#:
+#: 🔴 ĐÂY LÀ BẢN SAO CÓ CHỦ Ý, KHÔNG PHẢI MỘT ĐỊNH NGHĨA THỨ HAI.
+#:
+#:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`. Nhưng `platform_core`
+#:    **không được** import `apps` — nền tảng không phụ thuộc app, và
+#:    `test_147_layering` chốt điều đó. Nên hai con số này gõ lại ở đây, và việc
+#:    đối chiếu là của TEST (`test_334::TestExamplesKhopNganSach`), đúng khuôn
+#:    đã dùng cho `llm_gateway/config.py` và `tools/cam_cli.py`.
+#:
+#: ⛔ TRƯỚC 30/08 CHỖ NÀY GHI `65000`, VÀ TRANG CÔNG KHAI GHI `131K`. Cả hai đều
+#:    sai và chúng mâu thuẫn nhau: `65000` bắt khách tự giới hạn thấp hơn thật
+#:    26 nghìn token, còn `131K` hứa nhiều hơn thật 42 nghìn rồi để họ ăn **413**
+#:    giữa hội thoại. Một con số gõ tay trong tài liệu bán hàng là một lời hứa.
+CUA_SO_CONG_BO = 88_555
+TOKEN_RA_TRAN = 32_768
+
+#: Tệp catalog model cho Codex — đường dẫn công cụ `cam` ghi ra.
+#:
+#: ⭐ Thiếu nó thì Codex **không có metadata** cho `ltt_llm`, rơi vào đường
+#:    `compact_model_fallback` và mượn tên một model OpenAI cho lượt phụ; cổng
+#:    của ta từ chối (fail-closed) và khách thấy "im lặng" ở hội thoại dài.
+TEP_CATALOG_CODEX = r"%USERPROFILE%\.codex\ltt_model_catalog.json"
+
 
 def _goc(base_url: str) -> str:
     return (base_url or "https://app.lttstudios.com").rstrip("/")
@@ -114189,7 +114240,11 @@ def codex_profile() -> str:
         '# before it answers.\n'
         'model_reasoning_effort = "low"\n'
         'model_reasoning_summary = "none"\n'
-        "model_context_window = 65000"
+        f"model_context_window = {CUA_SO_CONG_BO}\n"
+        "# Declare the model so Codex stops guessing. Without this it warns\n"
+        "# `Model metadata for ltt_llm not found`, then substitutes an OpenAI\n"
+        "# model name on its own internal calls — which our gate rejects.\n"
+        f"model_catalog_json = '{TEP_CATALOG_CODEX}'"
     )
 
 
@@ -114199,7 +114254,11 @@ def claude_code_env(base_url: str) -> str:
         f'$env:ANTHROPIC_BASE_URL = "{_goc(base_url)}/api"   # NO /v1 — the client adds it\n'
         f'$env:ANTHROPIC_AUTH_TOKEN = $env:{ENV_API_KEY}\n'
         f'$env:ANTHROPIC_MODEL = "{CLI_MODEL}"\n'
-        f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work'
+        f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work\n'
+        f'# Claude Code does not know `{CLI_MODEL}`, so it ASSUMES a 200,000\n'
+        f'# token window: it never compacts in time and you hit 413 mid-chat.\n'
+        f'$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "{CUA_SO_CONG_BO}"\n'
+        f'$env:CLAUDE_CODE_MAX_OUTPUT_TOKENS = "{TOKEN_RA_TRAN}"'
     )
 
 
@@ -114211,6 +114270,10 @@ def claude_code_settings(base_url: str) -> str:
             "ANTHROPIC_AUTH_TOKEN": "<your ltt_sk_… key>",
             "ANTHROPIC_MODEL": CLI_MODEL,
             "ANTHROPIC_DEFAULT_HAIKU_MODEL": CLI_MODEL,
+            # Without these two Claude Code assumes a 200,000-token window,
+            # never compacts in time, and you hit 413 mid-conversation.
+            "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_CONG_BO),
+            "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
         }
     })
 
@@ -114238,7 +114301,9 @@ def vscode_claude_settings(base_url: str) -> str:
         '  "claudeCode.environmentVariables": [\n'
         '    {"name": "ANTHROPIC_BASE_URL", "value": "' + base_url + '/api"},\n'
         f'    {{"name": "ANTHROPIC_MODEL", "value": "{CLI_MODEL}"}},\n'
-        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}}\n'
+        f'    {{"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": "{CLI_MODEL}"}},\n'
+        f'    {{"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS", "value": "{CUA_SO_CONG_BO}"}},\n'
+        f'    {{"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS", "value": "{TOKEN_RA_TRAN}"}}\n'
         "  ]\n"
         "}"
     )
@@ -114268,7 +114333,8 @@ def vscode_codex_config(base_url: str) -> str:
         f'model = "{CLI_MODEL}"\n'
         f'model_provider = "ltt"\n'
         f'model_reasoning_effort = "low"\n'
-        f'model_context_window = 65000\n'
+        f'model_context_window = {CUA_SO_CONG_BO}\n'
+        f"model_catalog_json = '{TEP_CATALOG_CODEX}'\n"
         f'\n'
         f'[model_providers.ltt]\n'
         f'name = "LTT Studios"\n'
@@ -155935,7 +156001,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=cd0a95e82411475ce7154d41baadc41f2614018f82de500045113a1822f17eb3 BYTES=27499 LINES=875
+SHA256=89439c6ec93b154efe79a0582271bd84e6951f572ecc824a8fe45ee0f947376b BYTES=26636 LINES=875
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -156398,7 +156464,7 @@ SHA256=cd0a95e82411475ce7154d41baadc41f2614018f82de500045113a1822f17eb3 BYTES=27
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (131K context). `ltt_llm_vision` also reads images.",
+            "description": "`ltt_llm` for text (89K usable input context). `ltt_llm_vision` also reads images.",
             "examples": [
               "ltt_llm"
             ]
@@ -156465,7 +156531,7 @@ SHA256=cd0a95e82411475ce7154d41baadc41f2614018f82de500045113a1822f17eb3 BYTES=27
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "44dc637a5e4cc643"
+      "contract_hash": "0f21e0c6522a0ac8"
     },
     {
       "name": "text.prompt_package",
@@ -203734,7 +203800,7 @@ def test_bo_prompt_thieu_truong_thi_TU_CHOI_ngay(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_256_app_ltt_llm.py
-SHA256=93644af9dbd64d849dd130326797ca9ba33a13bd28703c8eea0f67b99784fb95 BYTES=13332 LINES=276
+SHA256=5ca1566edbad7b1eb11383a340f49aaedeb0048022a3c21c8e13d041e94f70a0 BYTES=14409 LINES=297
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_256_app_ltt_llm — app `ltt_llm` và hợp đồng công khai của nó. (H38, mảnh E)
@@ -203760,11 +203826,32 @@ from apps.ltt_llm.manifest import CUA_SO_NGU_CANH, MANIFEST, MAX_TOKENS_TRAN
 
 
 def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
-    """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký."""
+    """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký.
+
+    🔴 NHƯNG MÔ TẢ CÔNG KHAI KHÔNG ĐƯỢC NÓI CON SỐ NÀY (sửa 30/08).
+
+       131.072 là cửa sổ của **engine**. Thứ khách thật sự nhét vào được là
+       `CONG_BO_CHO_CLIENT` (88.555) — thấp hơn vì phải chừa chỗ cho câu trả lời
+       dài nhất và cho sai số của phép ước token.
+
+       Bản cũ của phép kiểm này **bắt buộc** mô tả phải chứa `"131K"`, tức nó
+       canh cho đúng lời hứa sai: khách đọc 131K, nhét 120K token, ăn **413**.
+       Và `"64K"` cho bản vision thì không khớp con số nào cả.
+
+    ⇒ Hằng vẫn phải bằng mốc đã đo; mô tả thì phải nói con số **khách dùng
+      được**, và phải **sinh ra** từ hằng chứ không gõ tay.
+    """
+    from apps.ltt_llm.ngan_sach import CONG_BO_CHO_CLIENT
+
     assert CUA_SO_NGU_CANH == 131_072
     models = MANIFEST.tools[0].api_contract["models"]
-    assert "131K" in models["ltt_llm"]["description"]
-    assert "64K" in models["ltt_llm_vision"]["description"]
+    cua_so = f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
+    for ten in ("ltt_llm", "ltt_llm_vision"):
+        mo_ta = models[ten]["description"]
+        assert cua_so in mo_ta, (ten, mo_ta)
+        assert "131K" not in mo_ta, (
+            f"`{ten}` van hua cua so cua ENGINE chu khong phai cua so khach "
+            f"dung duoc: {mo_ta}")
 
 
 # ── 1. Bản khai ──────────────────────────────────────────────────────────────
@@ -224663,7 +224750,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=383d53a25d7b4e699b6c9a0998589709e073fea91bcf18aab5d5848b3b2837d6 BYTES=17047 LINES=343
+SHA256=9663a2a0a71bdd771a337dfb39b2737e8bb9b34cd778584663e759941809ec9f BYTES=20817 LINES=420
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -225008,6 +225095,83 @@ class TestCamCliKhopNganSach:
                    for m in cat["models"]), "Codex khong duoc noi that"
         assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in cc.CLAUDE_ENV, \
             "Claude Code khong duoc noi that — no se gia dinh 200k"
+
+
+# ── Số công bố cho KHÁCH phải khớp số máy chủ thực thi (30/08) ─────────────
+
+class TestExamplesKhopNganSach:
+    """`platform_core/public_api/examples.py` là thứ khách **đọc rồi chép**.
+
+    🔴 MỘT CON SỐ GÕ TAY TRONG TÀI LIỆU BÁN HÀNG LÀ MỘT LỜI HỨA.
+
+       Trước 30/08 sáu chỗ nói với khách ba con số khác nhau, và không chỗ nào
+       đúng:
+         · `examples.py` ×2 và `HUONG_DAN_CAM_CLI.md` ×2 -> `65000`
+           (bắt khách tự giới hạn thấp hơn thật 24 nghìn token);
+         · mô tả model trong manifest -> `131K`
+           (hứa nhiều hơn thật 42 nghìn, rồi khách ăn **413** giữa hội thoại);
+         · vision -> `64K`, không khớp gì cả.
+
+    ⚠️ `platform_core` **không được** import `apps` (`test_147_layering`), nên
+       hai con số ở `examples.py` là bản sao có chủ ý và việc đối chiếu là của
+       phép kiểm này — cùng khuôn đã dùng cho `llm_gateway` và `cam_cli`.
+    """
+
+    def test_hai_con_so_cong_bo_khop_nguon_chan_ly(self):
+        from platform_core.public_api import examples
+
+        assert examples.CUA_SO_CONG_BO == ngan_sach.CONG_BO_CHO_CLIENT
+        assert examples.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+
+    def test_KHONG_con_so_ngu_canh_go_tay_nao_trong_doan_ma_mau(self):
+        """Bánh cóc: mọi đoạn khách chép phải sinh ra từ hằng, không gõ."""
+        import re
+
+        from platform_core.public_api import examples
+
+        goc = "https://app.lttstudios.com"
+        doan = "\n".join([
+            examples.codex_profile(),
+            examples.codex_config(goc),
+            examples.vscode_codex_config(goc),
+            examples.claude_code_env(goc),
+            examples.claude_code_settings(goc),
+            examples.vscode_claude_settings(goc),
+        ])
+        cho_phep = {str(ngan_sach.CONG_BO_CHO_CLIENT),
+                    str(ngan_sach.TOKEN_RA_TRAN),
+                    "600000",           # stream_idle_timeout_ms
+                    "200",              # nhac trong chu thich: "200,000 token"
+                    "000", "0", "1", "145", "0.145", "2"}
+        so = {m for m in re.findall(r"\b\d{4,}\b", doan)}
+        la = so - cho_phep
+        assert not la, (
+            f"So ngu canh go tay trong doan ma mau: {sorted(la)}. "
+            f"Dung `CUA_SO_CONG_BO` / `TOKEN_RA_TRAN`.")
+
+    def test_doan_Codex_khai_catalog_va_doan_Claude_khai_cua_so(self):
+        """Thiếu một trong hai là để lại đúng lỗi vừa sửa cho khách tự dính."""
+        from platform_core.public_api import examples
+
+        goc = "https://app.lttstudios.com"
+        assert "model_catalog_json" in examples.codex_profile()
+        assert "model_catalog_json" in examples.vscode_codex_config(goc)
+        for lam in (examples.claude_code_env, examples.claude_code_settings,
+                    examples.vscode_claude_settings):
+            van = lam(goc)
+            assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in van, lam.__name__
+            assert str(ngan_sach.CONG_BO_CHO_CLIENT) in van, lam.__name__
+
+    def test_mo_ta_model_cong_khai_KHONG_hua_qua_thuc_te(self):
+        """Mô tả trong manifest đi thẳng vào `DEVELOPER_GUIDE.md` ta xuất bản."""
+        from apps.ltt_llm import manifest
+
+        tool = next(t for t in manifest.MANIFEST.tools if t.name == "text.chat")
+        mo_ta = " ".join(m["description"]
+                         for m in tool.api_contract["models"].values())
+        assert "131K" not in mo_ta and "64K" not in mo_ta, (
+            "van hua cua so cua ENGINE chu khong phai cua so khach dung duoc")
+        assert manifest._cua_so_noi_voi_khach() in mo_ta
 
 @@@LTT_PROFILE_FILE_END@@@
 

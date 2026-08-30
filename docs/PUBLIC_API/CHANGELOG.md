@@ -21,6 +21,53 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-30 — cửa sổ ngữ cảnh công bố: sửa một con số nói sai
+
+**FIXED — mô tả model `ltt_llm` / `ltt_llm_vision` nói `131K` / `64K`, nay nói
+`89K`.** Không có gì trong hành vi máy chủ đổi; thứ đổi là **con số chúng tôi
+nói với bạn**, và con số cũ sai theo hướng gây hại.
+
+*Cái gì đổi:* `contract_hash` của `text.chat` chuyển từ `44dc637a5e4cc643` sang
+`0f21e0c6522a0ac8`. Chỉ phần **mô tả** đổi — không tham số nào thêm, bớt hay đổi
+kiểu; không mã lỗi nào đổi; giá không đổi.
+
+*Có phá vỡ tương thích không:* **Không.** Nếu bạn ghim `contract_hash` để phát
+hiện thay đổi hợp đồng thì bạn sẽ thấy nó chuyển — đó chính là việc của nó. Mã
+đang chạy không phải sửa một dòng nào.
+
+*Phải làm gì:* **Nếu bạn đang lấy giới hạn ngữ cảnh từ mô tả model, hãy đọc lại
+con số.**
+
+### Vì sao con số cũ sai, và sai theo hướng nào
+
+`131.072` là cửa sổ của **engine**. Trần đầu vào mà `/api/v1` thực thi là
+**96.256** — thấp hơn, vì phải chừa chỗ cho câu trả lời dài nhất (32.768) và cho
+sai số của phép **ước** token. Con số chúng tôi công bố cho client còn thấp hơn
+nữa, **88.555**, chừa thêm 8 %.
+
+⛔ Nên "131K context" là một **lời hứa vượt quá thực tế 42 nghìn token**. Khách
+đọc nó, nhét 120K token vào, và ăn **413** giữa hội thoại — không có gì trên
+trang nói cho họ biết vì sao. Còn `64K` cho `ltt_llm_vision` thì không khớp con
+số nào cả; nó chưa bao giờ đúng.
+
+⭐ Cùng lúc, năm chỗ khác trong tài liệu nói `model_context_window = 65000` —
+tức bắt bạn **tự giới hạn thấp hơn thật 24 nghìn token**. Tất cả nay sinh ra từ
+một nguồn duy nhất (`apps/ltt_llm/ngan_sach.py`), và có phép kiểm đối chiếu; một
+con số gõ tay ở tài liệu bán hàng là một lời hứa, nên nó không được phép tồn tại
+ở chỗ thứ hai.
+
+### Hai thiết lập client **nên thêm** (không bắt buộc, nhưng bạn sẽ muốn)
+
+Cả hai client phổ biến đều **đoán sai** cửa sổ của chúng tôi nếu bạn không khai:
+
+| Client | Khai gì | Không khai thì sao |
+|---|---|---|
+| **Codex** | `model_catalog_json` trỏ tới tệp catalog | Codex cảnh báo *"Model metadata for `ltt_llm` not found"*, rồi mượn **tên một model OpenAI** cho các lượt phụ; cổng của chúng tôi từ chối tên lạ (fail-closed) và bạn thấy hội thoại dài **im lặng** |
+| **Claude Code** | `CLAUDE_CODE_MAX_CONTEXT_TOKENS=88555` | Claude Code giả định **200.000** token, nên auto-compact **không bao giờ nén kịp** và bạn ăn 413 giữa chừng |
+
+Chi tiết và đoạn cấu hình đầy đủ ở `HUONG_DAN_CAM_CLI.md` §2.1–§2.4, hoặc dùng
+công cụ cắm 1.3.0 — nó đặt sẵn cả hai.
+
 ## 2026-08-29 — hai tool video mở ra `/api/v1` (H35.10)
 
 **ADDED — `video.upscale` và `video.subtitle`.** Client không hỏi tới thì không

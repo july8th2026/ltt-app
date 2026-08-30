@@ -22,11 +22,32 @@ from apps.ltt_llm.manifest import CUA_SO_NGU_CANH, MANIFEST, MAX_TOKENS_TRAN
 
 
 def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
-    """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký."""
+    """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký.
+
+    🔴 NHƯNG MÔ TẢ CÔNG KHAI KHÔNG ĐƯỢC NÓI CON SỐ NÀY (sửa 30/08).
+
+       131.072 là cửa sổ của **engine**. Thứ khách thật sự nhét vào được là
+       `CONG_BO_CHO_CLIENT` (88.555) — thấp hơn vì phải chừa chỗ cho câu trả lời
+       dài nhất và cho sai số của phép ước token.
+
+       Bản cũ của phép kiểm này **bắt buộc** mô tả phải chứa `"131K"`, tức nó
+       canh cho đúng lời hứa sai: khách đọc 131K, nhét 120K token, ăn **413**.
+       Và `"64K"` cho bản vision thì không khớp con số nào cả.
+
+    ⇒ Hằng vẫn phải bằng mốc đã đo; mô tả thì phải nói con số **khách dùng
+      được**, và phải **sinh ra** từ hằng chứ không gõ tay.
+    """
+    from apps.ltt_llm.ngan_sach import CONG_BO_CHO_CLIENT
+
     assert CUA_SO_NGU_CANH == 131_072
     models = MANIFEST.tools[0].api_contract["models"]
-    assert "131K" in models["ltt_llm"]["description"]
-    assert "64K" in models["ltt_llm_vision"]["description"]
+    cua_so = f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
+    for ten in ("ltt_llm", "ltt_llm_vision"):
+        mo_ta = models[ten]["description"]
+        assert cua_so in mo_ta, (ten, mo_ta)
+        assert "131K" not in mo_ta, (
+            f"`{ten}` van hua cua so cua ENGINE chu khong phai cua so khach "
+            f"dung duoc: {mo_ta}")
 
 
 # ── 1. Bản khai ──────────────────────────────────────────────────────────────
