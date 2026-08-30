@@ -323,3 +323,46 @@ tests/test_312: 21/21 PASS, 0 skip   (chay voi may B that)
 
 ⭐ Và sau mỗi lần đổi: `pytest tests/test_312_ngan_sach_ltt_llm.py` **có
 `LTT_LLM_TOKEN`** — nó là thứ duy nhất bắt được ba tầng nói ba số khác nhau.
+
+---
+
+## 9. NÂNG llama.cpp + NHÓM 3 (30/08)
+
+### 9.1 llama.cpp `b10580` → `b10689`
+
+| | |
+|---|---|
+| Trước | `0.2.0-dev (build 10580, commit 54ee5ee64)` — tải 22/08 |
+| Sau | `0.3.0-dev (build 10689, commit 57291f264)` — 30/08, **cách 109 bản** |
+| Gói | `llama-b10689-bin-win-cuda-13.3-x64.zip` (140 MB), khớp CUDA 13.3 của B |
+| Đường lùi | `H:\LTT_LLM\bin\llamacpp.b10580` (bản sao đầy đủ) |
+
+**Cách làm — chép ĐÈ, không xoá rồi chép.** Thư mục `llamacpp` còn giữ các DLL
+cudart nạp từ gói riêng; xoá cả thư mục là mất chúng và llama-server không khởi
+động được. Chép đè giữ lại mọi tệp gói mới không có.
+
+**Thứ tự bắt buộc:** dừng `LTTLlmGateway` **rồi** `LTTLlamaSwap` → chép đè →
+kiểm `--version` **trước khi** bật lại → bật `LTTLlamaSwap` rồi `LTTLlmGateway`.
+
+⚠️ `llama-server.exe --version` in ra **stderr**, nên PowerShell báo `exit=1` dù
+   chạy đúng. Đừng đọc mã thoát đó thành hỏng.
+
+### 9.2 Nhóm 3 — tự thử lại một lần khi parser tool-call vỡ
+
+Bug thượng nguồn **vẫn còn mở** (#27733, #20260, #18353): parser `peg-native` vỡ
+khi phân tích lượt có tool call, **vứt toàn bộ kết quả đã sinh**. Nâng bản là để
+giảm xác suất, không phải để chắc chắn hết.
+
+`luong_vlm.mo()` nay thử lại **đúng một lần** khi thân lỗi 5xx khớp một trong ba
+dấu hiệu **lấy từ thông điệp thật của máy B**:
+
+```
+"failed to parse tool call"  |  "peg-native"  |  "failed to parse input at pos"
+```
+
+⛔ **Bộ nhận diện phải hẹp.** Thử lại một sự cố hạ tầng thật (hết VRAM, model
+   chết, cấu hình sai) chỉ đốt thêm một lượt GPU rồi hỏng y hệt, **và giấu mất
+   triệu chứng**. Test chốt cả hai chiều: bắt đúng 3 dạng, không bắt nhầm 5 lỗi thật.
+
+⛔ **Đúng một lần.** `_da_thu_lai` chặn vòng lặp; lần hai vẫn vỡ thì ghi nhật ký
+   và trả lỗi như cũ, để **tần suất thật không bị giấu**.
