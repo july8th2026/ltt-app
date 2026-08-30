@@ -231,3 +231,36 @@ class TestDoiChieuKhoMayB:
                           "llm_gateway/config.py")
         assert b == ngan_sach.TOKEN_VAO_TRAN, (
             f"ma may B mac dinh {b} nhung ta tinh {ngan_sach.TOKEN_VAO_TRAN}")
+
+
+class TestThuLaiKhiParserVo:
+    """Nhóm 3: tự thử lại **một lần** khi parser tool-call của llama.cpp vỡ.
+
+    ⛔ Bug thượng nguồn còn mở (ggml-org/llama.cpp#27733, #20260): model sinh
+       XONG một lượt hợp lệ rồi phát thừa một mẩu, parser hỏng ở phần đuôi và
+       **vứt toàn bộ kết quả**. Khách chỉ thấy "chạy xong rồi không có gì".
+
+    ⭐ Thử lại là hợp lệ vì lỗi **ngẫu nhiên theo lần sinh**, không phải lỗi của
+       yêu cầu — nhưng bộ nhận diện phải HẸP, nếu không ta sẽ đốt thêm một lượt
+       GPU cho mọi sự cố hạ tầng thật rồi vẫn hỏng y hệt.
+    """
+
+    def test_nhan_ra_dung_ba_dang_loi_parser(self):
+        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
+        assert f('{"error":{"message":"Failed to parse tool call arguments as '
+                 'JSON: [json.exception.parse_error.101] at column 3040"}}')
+        assert f("common_chat_peg_parse: unparsed peg-native output: <think>")
+        assert f("Failed to parse input at pos 12")
+
+    def test_KHONG_bat_nham_loi_ha_tang_that(self):
+        """Thử lại một lỗi thật chỉ đốt GPU thêm một lượt rồi hỏng y hệt."""
+        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
+        for that in ("CUDA out of memory", "model not found",
+                     "connection refused", "", "internal server error"):
+            assert not f(that), f"bat nham: {that!r}"
+
+    def test_mo_co_tham_so_chan_thu_lai_vo_han(self):
+        """`_da_thu_lai` là thứ giữ cho nó đúng MỘT lần, không thành vòng lặp."""
+        import inspect
+        from platform_core.llm import luong_vlm
+        assert "_da_thu_lai" in inspect.signature(luong_vlm.mo).parameters

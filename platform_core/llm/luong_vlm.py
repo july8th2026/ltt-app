@@ -86,7 +86,29 @@ class LuongMo:
             log.info("khong danh dau duoc loi cho khoa: %s", type(e).__name__)
 
 
-def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
+#: Dấu hiệu của **đúng một lớp lỗi**: parser tool-call của llama.cpp vỡ.
+#:
+#: ⛔ PHẢI HẸP. Thử lại một lỗi thật của hạ tầng (hết VRAM, model chết, cấu hình
+#:    sai) chỉ đốt GPU thêm một lượt rồi hỏng y hệt, và giấu mất triệu chứng.
+#:    Ba chuỗi này lấy từ thông điệp THẬT máy B trả về (đo 29-30/08), không đoán:
+#:      "Failed to parse tool call arguments as JSON: [json.exception.parse_error.101]"
+#:      "unparsed peg-native output"
+#:      "Failed to parse input at pos"
+_DAU_HIEU_PARSER = (
+    "failed to parse tool call",
+    "peg-native",
+    "failed to parse input at pos",
+)
+
+
+def _loi_parser_tool_call(than_loi: str) -> bool:
+    """Thân lỗi có phải do parser tool-call vỡ không (chứ không phải hỏng thật)."""
+    thap = (than_loi or "").lower()
+    return any(d in thap for d in _DAU_HIEU_PARSER)
+
+
+def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
+       _da_thu_lai: bool = False) -> LuongMo:
     """Mở luồng tới model nhà. `duong` là `/v1/messages` hoặc `/v1/responses`.
 
     ⚠️ **Chưa đọc byte nào khi hàm này trả về.** Nó chỉ chắc rằng thượng nguồn đã
@@ -143,6 +165,32 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0) -> LuongMo:
             raise KhongMoDuocLuong(
                 f"may B tra 413: {than_loi[:200]}", qua_dai=True)
         if r.status_code >= 500:
+            if _loi_parser_tool_call(than_loi):
+                # 🔴 BUG THƯỢNG NGUỒN, KHÔNG PHẢI HỎNG MÁY — VÀ NÓ NGẪU NHIÊN.
+                #
+                #    llama.cpp (`peg-native`) thỉnh thoảng vỡ khi phân tích lượt
+                #    có tool call: model sinh XONG một lượt hợp lệ rồi phát thừa
+                #    một mẩu (`<think>`, dấu nháy trong here-string...), parser
+                #    hỏng ở phần đuôi và **vứt toàn bộ kết quả đã sinh**.
+                #    Upstream đang mở: ggml-org/llama.cpp#27733, #20260, #18353.
+                #
+                # ⭐ VÌ SAO THỬ LẠI LÀ ĐÚNG CHỨ KHÔNG PHẢI CHE LỖI: đây là lỗi
+                #    **ngẫu nhiên theo lần sinh**, không phải lỗi của yêu cầu.
+                #    Cùng một request chạy lại thường qua. Khách không mất tiền
+                #    cho lượt hỏng (phần giữ chỗ được hoàn), nên thử lại là công
+                #    bằng — còn KHÔNG thử lại thì khách chỉ thấy "chạy xong rồi
+                #    không có gì", đúng triệu chứng đã đo 29-30/08.
+                #
+                # ⛔ ĐÚNG MỘT LẦN. Hai lần là bắt đầu đốt GPU cho một lỗi ta
+                #    không sửa được, và giấu mất tần suất thật khỏi nhật ký.
+                if not _da_thu_lai:
+                    log.warning(
+                        "may B vo o parser tool-call, thu lai MOT lan: %s",
+                        than_loi[:300])
+                    return mo(db, duong=duong, than=than, timeout_s=timeout_s,
+                              _da_thu_lai=True)
+                log.warning("thu lai roi van vo o parser tool-call: %s",
+                            than_loi[:300])
             api_pool.danh_dau_loi(db, key, message=f"HTTP {r.status_code}")
             # 🔴 GHI ĐỦ LÝ DO THƯỢNG NGUỒN, ĐỪNG CẮT Ở 200.
             #
