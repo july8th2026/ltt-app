@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fe1f6308c1a743d8e2680d67fbe1f8a49d084683f6e87c9b8860d1e9c47ec571
-Nguồn đã quét : 1261 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:13516bfdeb2c97c8fb5a4410572fd8229d47b2cf5d65fc9b839b378498e1af08
+Nguồn đã quét : 1262 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1398,8 +1398,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1261 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:24, .py:953, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1262 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:25, .py:953, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1859,10 +1859,11 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - cutclipshort/types/render.py
 - cutclipshort/types/semantic.py
 
-[deploy] (11)
+[deploy] (12)
 - deploy/windows/5-lich-backup.ps1
 - deploy/windows/backup.ps1
 - deploy/windows/bootstrap-server2016.ps1
+- deploy/windows/install-vieneu-sidecar.ps1
 - deploy/windows/install-whisperx-sidecar.ps1
 - deploy/windows/install.ps1
 - deploy/windows/restore.ps1
@@ -2717,7 +2718,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1261 file; 12563527 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1262 file; 12578565 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -73309,6 +73310,167 @@ Write-Host '  Send the IP + username to continue the deployment.' -ForegroundCol
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/install-vieneu-sidecar.ps1
+SHA256=15d8ad6d21f6b8a0eefe467c26b8b7ae1662b2229231e41a15421f85c7a5a6ba BYTES=7020 LINES=155
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Install VieNeu-TTS v3 Turbo into an isolated CUDA venv (LTT VOICE sidecar).
+
+.DESCRIPTION
+    vieneu 3.3.0 pins transformers==4.57.6 and the GPU path pins torch==2.8.0+cu128.
+    The platform venv uses a newer Blackwell torch build, so installing vieneu
+    in-place would downgrade it and break every other GPU app. Same rule that
+    created whisperx-venv; this is the second instance.
+
+    Idempotent BY VERSION, not by "already exists": rollback.ps1 restores app\
+    but never touches this venv, so an installer that skips when the directory is
+    present would leave a venv that does not match the restored code.
+
+    Prints the venv python path on stdout so 2-cai-dat.ps1 can capture it.
+
+.NOTES
+    Pure ASCII (CLAUDE.md rule 2). PowerShell 5.1 reads .ps1 without BOM as ANSI.
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$ReleaseDir = '',
+    [string]$PythonExe = 'python',
+    [switch]$SkipWarmCache
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $ReleaseDir) { $ReleaseDir = Join-Path $Root 'app' }
+
+$venv    = Join-Path $Root 'vieneu-venv'
+$python  = Join-Path $venv 'Scripts\python.exe'
+$hfCache = Join-Path $Root 'hf-cache'
+
+# Ghim chinh xac. Doi so o day = doi ban va = phai chay lai cong chat luong V10.
+$TORCH_VER        = '2.8.0'
+$TRANSFORMERS_VER = '4.57.6'
+$VIENEU_VER       = '3.3.0'
+$PERTH_VER        = '1.0.1'          # resemble-perth
+$CU_INDEX         = 'https://download.pytorch.org/whl/cu128'
+
+# Model repo + revision. GHIM REVISION, khong lay `main`: v3 full sap ra va se
+# doi hanh vi ma khong doi ten repo.
+$MODEL_REPO = 'pnnbao-ump/VieNeu-TTS-v3-Turbo'
+$MODEL_REV  = '2da0efab622a1722125991736524f080b751ef5b'
+
+function Write-Step($m) { Write-Host "  [..] $m" -ForegroundColor Cyan }
+function Write-Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
+
+# 🔴 VI SAO CAN HAM NAY, VA VI SAO `2>$null` KHONG DU.
+#
+#    Voi `$ErrorActionPreference = 'Stop'`, mot exe NGOAI ghi ra stderr se thanh
+#    NativeCommandError va KET THUC script — ke ca khi ta chi dang HOI mot cau
+#    ("da co torch chua?") va mot cau tra loi "chua" la hoan toan binh thuong.
+#    `2>$null` chuyen huong stream nhung KHONG go bo hanh vi cua preference.
+#
+#    Do dung lop loi da lam `install-whisperx-sidecar.ps1` nem loi ngay 2026-08-05
+#    va bi `2-cai-dat.ps1` phai boc lai trong try/catch de bo qua. Sua o day thay
+#    vi boc lai: mot phep DO khong duoc phep giet quy trinh cai.
+function Test-Py {
+    param([string]$Code)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $python -c $Code *> $null
+        return ($LASTEXITCODE -eq 0)
+    } finally {
+        $ErrorActionPreference = $truoc
+    }
+}
+
+# ---------------------------------------------------------------- venv --------
+if (-not (Test-Path $python)) {
+    Write-Step 'Tao vieneu-venv'
+    & $PythonExe -m venv $venv
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to create vieneu venv' }
+    & $python -m pip install --upgrade pip --quiet
+}
+
+# ------------------------------------------------------- torch (cu128) -------
+# Kiem THEO PHIEN BAN va CUDA, khong chi kiem "co torch khong".
+& $python -c "import torch,sys; sys.exit(0 if torch.__version__.startswith('$TORCH_VER') and torch.cuda.is_available() else 1)" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Step "Cai torch $TORCH_VER + cu128 (tai ve lon, cho vai phut)"
+    & $python -m pip install "torch==$TORCH_VER" "torchaudio==$TORCH_VER" --index-url $CU_INDEX --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to install CUDA torch for vieneu' }
+}
+Write-Ok "torch $TORCH_VER"
+
+# ------------------------------------------------------- transformers --------
+& $python -c "import importlib.metadata as m,sys; sys.exit(0 if m.version('transformers')=='$TRANSFORMERS_VER' else 1)" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Step "Cai transformers $TRANSFORMERS_VER (ban upstream ghim cho GPU SDK)"
+    & $python -m pip install "transformers==$TRANSFORMERS_VER" --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to install transformers' }
+}
+Write-Ok "transformers $TRANSFORMERS_VER"
+
+# ------------------------------------------------------------- vieneu --------
+& $python -c "import importlib.metadata as m,sys; sys.exit(0 if m.version('vieneu')=='$VIENEU_VER' else 1)" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Step "Cai vieneu $VIENEU_VER"
+    & $python -m pip install "vieneu==$VIENEU_VER" --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to install vieneu' }
+}
+Write-Ok "vieneu $VIENEU_VER"
+
+# --------------------------------------------------------- WATERMARK ---------
+# Xem chu thich dai trong requirements-vieneu.txt. Day la mot BAN VA cho upstream
+# issue #191: goi `perth` tren PyPI la mot thu vien threading, khong phai
+# watermarker. Ca hai goi cung chiem ten module `perth` nen PHAI go truoc.
+& $python -c "import perth,sys; sys.exit(0 if hasattr(perth,'PerthImplicitWatermarker') else 1)" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Step 'Va watermark: go `perth` (goi SAI), cai `resemble-perth`'
+    & $python -m pip uninstall -y perth --quiet 2>$null | Out-Null
+    & $python -m pip install "resemble-perth==$PERTH_VER" --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to install resemble-perth' }
+}
+
+# ----------------------------------------------------- may chu sidecar -------
+& $python -c "import fastapi,uvicorn" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Step 'Cai fastapi + uvicorn cho sidecar'
+    & $python -m pip install "fastapi>=0.141.1,<1.0" "uvicorn[standard]>=0.52.0,<1.0" --quiet
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to install sidecar server deps' }
+}
+
+# ------------------------------------------------------- lam am cache --------
+# Tai truoc ~320 MB trong so. Khong lam thi lan khoi dong dau tien cua dich vu
+# phai tai mang, va no im lang trong vai phut trong nhu treo.
+if (-not $SkipWarmCache) {
+    if (-not (Test-Path $hfCache)) { New-Item -ItemType Directory -Path $hfCache -Force | Out-Null }
+    $warm = Join-Path $ReleaseDir 'voice_sidecar\lam_am_cache.py'
+    if (Test-Path $warm) {
+        Write-Step 'Lam am cache HuggingFace (~320 MB)'
+        $env:HF_HOME = $hfCache
+        & $python $warm --repo $MODEL_REPO --revision $MODEL_REV
+        if ($LASTEXITCODE -ne 0) { throw 'Failed to warm the HuggingFace cache' }
+        Write-Ok 'Cache HF san sang'
+    } else {
+        Write-Host "  [SKIP] khong thay $warm" -ForegroundColor Yellow
+    }
+}
+
+# ----------------------------------------------------------- nghiem thu ------
+& $python -c "import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)"
+if ($LASTEXITCODE -ne 0) { throw 'vieneu sidecar cannot access CUDA' }
+
+& $python -c "import perth,sys; sys.exit(0 if hasattr(perth,'PerthImplicitWatermarker') else 1)"
+if ($LASTEXITCODE -ne 0) { throw 'Watermarker missing: `perth` is still the wrong package (upstream issue 191)' }
+
+& $python -c "import vieneu,sys" 2>$null
+if ($LASTEXITCODE -ne 0) { throw 'Cannot import vieneu' }
+
+Write-Output $python
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/install-whisperx-sidecar.ps1
 SHA256=43cf3f77945ddc25ad043dcf368ec74a24bd36932966870a8d87cffc523ebc91 BYTES=1853 LINES=45
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -78407,7 +78569,7 @@ bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/QUYET_DINH_NEN_TANG.md
-SHA256=35611eaeb21303e49479afe7845be8f8f9f734b867da8b840a96bb0a0e3b72f2 BYTES=117310 LINES=268
+SHA256=e20ae9b0ef4dde2162701736579a9659867070415cc317f2c83c29adbd9b0623 BYTES=125328 LINES=382
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quyết định nền tảng — chốt ngày 2026-07-31
 
@@ -78575,6 +78737,120 @@ giữ nguyên. Q115 đã được triển khai thử nhưng 80K mất `120,322s`
 được chạy trên đúng B bằng Nexus và lặp lại cho kết quả `71.714` token thật,
 `82,325s`, quality PASS. Đây là mốc vận hành đã đo, không phải tuyên bố exact
 tokenizer; request vượt cap vẫn phải bị chặn trước GPU/credit.
+
+### Q117 — LTT VOICE (VieNeu-TTS) đặt ở đâu trong kiến trúc (2026-08-30)
+
+**Một app `apps/ltt_voice/` + một sidecar `voice_sidecar/` nghe `127.0.0.1:8120`.
+KHÔNG phải một provider, KHÔNG dùng `api_pool`, KHÔNG sửa `platform_core/` hay
+`server/`.** Engine chạy **trên máy A**, trong venv cách ly
+`C:\LTTPlatform\vieneu-venv`, dưới dịch vụ NSSM thứ tư `LTTStudioVoice`.
+
+**Vì sao không phải provider như Q102 làm với `ltt_image`.** Q102 đúng cho **máy
+B**: ở đó model là một dịch vụ HTTP ở máy khác, có token phải cất, phải xoay, và
+có thể chết độc lập — đúng việc của `api_pool`. Ở đây engine chạy **cùng máy, sau
+loopback**: không có khoá để xoay, không có hạn mức nhà cung cấp để đo, không có
+cooldown để áp. Đăng ký nó làm provider sẽ buộc phải mở rộng enum hạng mục khoá
+API (`platform_core/models.py` chỉ có `model_control · chat · image · video`) —
+tức **sửa nền tảng cho một năng lực không dùng tới**. Token sidecar đi đúng đường
+`LTT_CODEX_SIDECAR_TOKEN` đã chạy thật: một biến trong `app.env`, sinh lúc cài,
+giữ nguyên khi cài lại.
+
+**Vì sao vẫn phải là một app chứ không chỉ một sidecar.** Voice Profile là **dữ
+liệu nghiệp vụ có chủ sở hữu, có vòng đời, có consent** — provider không sở hữu
+bảng. Hợp đồng app đã chừa sẵn `table_prefix` cho đúng việc này (tiền lệ
+`apps/vps/`, năm bảng).
+
+**Vì sao venv cách ly là bắt buộc, không phải sở thích.** `vieneu==3.3.0` ghim
+`transformers==4.57.6` và đường GPU ghim `torch==2.8.0+cu128`. Đây **đúng cùng
+lý do** đã sinh ra `whisperx-venv` — tệp `requirements-whisperx.txt` viết thẳng:
+*"must never downgrade the platform's Blackwell/CUDA torch environment
+in-place."* Cùng luật, thực thể thứ hai.
+
+**Cái giá đã biết trước:** dịch vụ thứ tư có `AppDirectory` trỏ vào `app\` nên nó
+**giữ handle** trên thư mục đó. `update.ps1` hôm nay dừng đúng ba dịch vụ rồi
+`Move-Item app app.previous` — quên dịch vụ thứ tư thì bản cập nhật **gãy ở giữa**,
+hoặc tệ hơn là dịch vụ chạy tiếp bằng mã cũ trong im lặng. Phải sửa cùng một lần:
+`update.ps1` · `rollback.ps1` · `nap_lai_env.ps1` (đang ghi "ba dich vu") ·
+`4-nghiem-thu.ps1`.
+
+### Q118 — LTT VOICE chạy GPU hay CPU (2026-08-30)
+
+**GPU-first: một dịch vụ ẤM duy nhất, backend PyTorch, ghim một card bằng
+`CUDA_VISIBLE_DEVICES`.** Nó phục vụ cả ba loại việc — câu ngắn, streaming, batch
+long-form. Làn CPU/ONNX giữ lại **sau một cờ**, làm đường dự phòng khi card bận
+hoặc OOM, **không** làm mặc định.
+
+Bốn bằng chứng, đọc từ mã nguồn upstream `pnnbao97/VieNeu-TTS@36c4b50` ngày 30/08:
+
+1. **Trọng số nhỏ.** Đường PyTorch chỉ cần `update/model.safetensors` 248 MB +
+   `denoiser.onnx` 42,7 MB + `speaker_encoder.onnx` 28,3 MB ≈ **320 MB** — không
+   phải cả kho 1.678 MB. Trên card 16 GB nó sống chung được với `autosubvideo`
+   (6 GB) và nhiều khả năng cả `upscalevideo` quality (12 GB); con số VRAM thật
+   phải đo và ghi vào `gpu_vram_mb`.
+2. **Đường batch GPU được thiết kế cho Windows.**
+   `src/vieneu/v3_turbo_serve/cudagraph.py` nói thẳng: *"Unlike `torch.compile`,
+   `torch.cuda.CUDAGraph` needs no compiler toolchain, so it works on Windows +
+   CUDA."* Đây là rủi ro lớn nhất của một kế hoạch GPU-first trên Windows, và
+   upstream đã xử lý.
+3. **`gpu.py` đọc `memory.free` sống** từ `nvidia-smi` mỗi lần, nên một model
+   thường trú **tự động** hiện ra thành phần trống ít đi và `gpu_lease` đã tính
+   đúng. Không cần cơ chế mới, không sửa `platform_core`.
+4. 🔴 **Streaming KHÔNG bị backend chặn** — điều này sửa một khẳng định sai của
+   bản kế hoạch trước. `src/vieneu/v3turbo.py::infer_stream` ghi:
+   *"both the PyTorch and ONNX engines expose infer_stream"*, và cả hai engine
+   đều có hàm đó thật. Câu khuyên `backend="onnx"` trong README là **khuyến nghị
+   hiệu năng** (TTFA thấp hơn với câu ngắn), không phải giới hạn năng lực.
+   ⛔ Bài học: một câu văn xuôi trong README cũng là metadata. Năng lực đọc từ
+   **mã**, rồi **đo lúc chạy** — đúng thứ pack V2 đã cảnh báo ở một tầng khác
+   (`config.yaml` khai `supports_streaming: false` trong khi mã có streaming).
+
+**Chặn đồng thời bằng ba tầng, cả ba đều cần:** làn `voice:1` trong
+`LTT_WORKER_POOLS` · `admission_resource="vieneu_gpu"` + `admission_slots=1` để
+cả ba cửa job/sync/stream giành cùng một slot (Q114) · sidecar trả **429 +
+`Retry-After`, không bao giờ 5xx** làm hàng rào cuối (D-005: máy A coi 5xx là
+*hỏng*).
+
+⚠️ Bẫy phải biết trước khi khai `requires=("voice",)`: `platform_core/jobs.py`
+lọc bằng `set(manifest.requires).issubset(capabilities)`. Production đã đặt
+`LTT_WORKER_POOLS` mà **không** có làn `voice` thì job nằm `queued` **mãi mãi** —
+không lỗi, không cảnh báo, `/health/ready` vẫn 200.
+
+### Q119 — Hai trần chất lượng của LTT VOICE, và vì sao chúng không phải nút vặn của khách (2026-08-30)
+
+**① Tham số sinh mẫu (`temperature`, `top_k`, `top_p`, `repetition_penalty`,
+`repetition_window`) là HẰNG SỐ phía máy chủ.** Không ra hợp đồng công khai
+(`hidden` trong `api_contract`), không lên giao diện. Đổi chúng phải qua cổng
+chất lượng như đổi model.
+
+Hai lý do độc lập, cả hai có bằng chứng:
+- `src/vieneu/v3_turbo_serve/engine.py` giữ `self._graphs = {}` khoá theo
+  **`(B, temperature, top_k, top_p)`**. Mỗi tổ hợp mới = một CUDA graph mới + một
+  bộ đệm tĩnh + ba lượt warmup. Cho khách chỉnh ba tham số đó là mời họ làm nổ
+  cache graph trên card của ta.
+- `temperature` cao làm **lệch tông giữa các đoạn** — chính là upstream issue
+  #173.
+
+**② Trần ký tự cho MỘT lượt sinh đặt sâu dưới 3.000, khởi điểm 1.500.** Dài hơn
+thì đi đường long-form nhiều lượt sinh, mỗi lượt cùng một `speaker_emb`/
+`ref_codes`, ghép bằng ffmpeg.
+
+Con số 3.000 không phải ước lượng: upstream issue #168, người thử báo ngày
+06/07 **sau khi tác giả đã sửa drift**: *"lỗi sẽ xuất hiện nhiều khi xử lý text
+dài khoảng 3.000 ký tự trở lên. Giọng Xuân Vĩnh sẽ dễ bị đổi giọng khác (chuyển
+sang giọng như miền Trung). Các giọng khác đôi lúc đọc sang tiếng khác như
+Thái... chỉ một đoạn rồi quay lại Việt."*
+
+⛔ **Đây là trần CHẤT LƯỢNG, không phải trần hiệu năng.** Đừng nới nó cho tiện;
+nới là đổi thứ khách nghe được, nên phải qua cổng đo.
+
+**③ Watermark: một bản vá bắt buộc, không phải một phụ thuộc tuỳ chọn.** `vieneu`
+khai `perth>=0.2.0`, nhưng gói tên `perth` trên PyPI là *"Wrapper for
+`threading.local`"* — không liên quan âm thanh. Watermarker thật là
+`resemble-perth`. `base.py::_init_watermarker` bắt cả `AttributeError` rồi đặt
+`self.watermarker = None`, nên lỗi bị **nuốt im lặng** và mọi lượt sinh đều không
+có watermark trong khi mặc định `apply_watermark=True` (upstream #191).
+⇒ Bộ cài **gỡ `perth`, cài `resemble-perth`**; sidecar **từ chối khởi động** nếu
+`watermarker is None`. Không đi tiếp trong im lặng như upstream.
 
 ## 2. Ràng buộc bất biến
 
