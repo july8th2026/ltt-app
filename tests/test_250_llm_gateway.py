@@ -25,19 +25,33 @@ from llm_gateway.config import Config
 from llm_gateway.trong_tai import TrongTai
 
 
-def test_config_mac_dinh_khoa_public_input_65k(monkeypatch):
-    """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ."""
+def test_config_mac_dinh_khoa_public_input_KHOP_NGAN_SACH(monkeypatch):
+    """Cap public phải sống trong source, không phụ thuộc một gateway.env cũ.
+
+    ⭐ VÀ PHẢI **KHỚP** `apps/ltt_llm/ngan_sach.py`, không phải là một con số gõ
+       tay thứ hai. Nền tảng (máy A) từ chối ở `TOKEN_VAO_TRAN`; cổng (máy B)
+       từ chối ở `max_input_tokens`. Hai con số lệch nhau thì một trong hai
+       tầng trở thành trần ẩn — đúng lớp lỗi mà cả đợt dọn 29-30/08 nhắm vào.
+
+    ⚠️ `llm_gateway` **không** import `apps.ltt_llm` (nó chạy trên máy B, không
+       có cây nền tảng). Việc đối chiếu là của TEST, không phải của mã chạy.
+    """
+    from apps.ltt_llm import ngan_sach
+
     monkeypatch.delenv("LTT_LLM_MAX_INPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_OUTPUT_TOKENS", raising=False)
     monkeypatch.delenv("LTT_LLM_MAX_DONG_THOI", raising=False)
     cfg = Config.from_env()
-    assert cfg.max_input_tokens == 65_000
-    assert cfg.max_output_tokens == 32_768
-    assert cfg.max_dong_thoi == 1, "parallel=1 thi gateway khong duoc tao hidden queue"
+    assert cfg.max_input_tokens == ngan_sach.TOKEN_VAO_TRAN, (
+        f"cong (may B) chan o {cfg.max_input_tokens}, nen tang chan o "
+        f"{ngan_sach.TOKEN_VAO_TRAN} — mot trong hai la tran an.")
+    assert cfg.max_output_tokens == ngan_sach.TOKEN_RA_TRAN
+    assert cfg.max_dong_thoi == ngan_sach.DONG_THOI_MAY_B, (
+        "parallel=1 thi gateway khong duoc tao hidden queue")
 
 
-def test_public_cap_65k_chan_truoc_thuong_nguon():
-    """Q116: vượt 65K theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
+def test_public_cap_chan_TRUOC_thuong_nguon():
+    """Q116: vượt trần theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
     c, up = _client(_cfg(max_input_tokens=65_000))
     r = c.post("/v1/chat/completions", json={
         "model": "qwen38-ops",

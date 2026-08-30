@@ -117,6 +117,9 @@ MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
 
 #: Dau moc hai dau. Moi thu giua chung la cua ta; moi thu ngoai chung la cua
 #: khach va KHONG duoc dung toi.
+#: Cua so ngu canh cong bo cho client, khop `ngan_sach.CONG_BO_CHO_CLIENT`.
+CUA_SO_NGU_CANH = 88555
+
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
 
@@ -381,12 +384,79 @@ def _codex_config(goc: str) -> str:
             f'stream_idle_timeout_ms = 600000\n')
 
 
+#: Tep catalog model ta tu khai cho Codex.
+#:
+#: 🔴 VI SAO CAN NO. Codex khong doc duoc metadata model tu `/v1/models` cua ta
+#:    (no doi mot khuon rieng va tu choi im lang), nen no dung METADATA DU PHONG:
+#:    cua so ngu canh 272.000, va khi nen hoi thoai thi lui ve mot model OpenAI
+#:    co san trong danh sach cua no. Do duoc 30/08: mot luot phu gui
+#:    `model="gpt-5.6-luna"` toi cong cua ta va an 400 (fail-closed tu choi dung).
+#:
+#: ⭐ `model_catalog_json` la duong CHINH THUC cua Codex de khai model. Dat no
+#:    thi canh bao *"Model metadata for `ltt_llm` not found"* bien mat, Codex
+#:    biet dung cua so ngu canh that va khong con lui ve model cua hang khac.
+#:
+#: ⛔ VI SAO KHONG DUNG "TUYEN TUONG THICH" NHU CLAUDE DESKTOP. Tuyen do dung mot
+#:    ten TA TU DAT (`ltt-llm-claude-compat`) chi de lot bo loc phia client.
+#:    Anh xa `gpt-5.6-luna` -> `ltt_llm` thi nguoc lai: nhan TEN SAN PHAM THAT
+#:    cua hang khac roi am tham tra model nha. Do la noi doi voi khach, khong
+#:    phai tuong thich.
+TEP_CATALOG = NHA / ".codex" / "ltt_model_catalog.json"
+
+
+def _catalog_codex() -> str:
+    """Catalog model theo dung khuon `codex_models_manager` doc duoc.
+
+    ⚠️ Ba cho da lam Codex tu choi tep, tim ra bang cach lap 30/08:
+       * `web_search_tool_type: null`  -> truong nay KHONG nhan null; bo han.
+       * `effective_context_window_percent: 0.9` -> doi **i64**, phai la `90`.
+       * moi truong `null` khac deu an toan hon khi BO HAN de serde dung mac dinh.
+    """
+    import json
+
+    def mot(slug: str, doc_anh: bool = False) -> dict:
+        return {
+            "slug": slug, "display_name": slug,
+            "description": f"{slug} (LTT Studios)",
+            "default_reasoning_level": "medium",
+            "supported_reasoning_levels": [
+                {"effort": "low", "description": "Fast"},
+                {"effort": "medium", "description": "Balanced"},
+                {"effort": "xhigh", "description": "Deepest"}],
+            "shell_type": "unified_exec", "visibility": "list",
+            "supported_in_api": True, "priority": 1,
+            "additional_speed_tiers": [], "service_tiers": [],
+            "base_instructions": "",
+            "include_skills_usage_instructions": False,
+            "include_plugin_usage_instructions": False,
+            "include_apps_usage_instructions": False,
+            "supports_reasoning_summary_parameter": False,
+            "default_reasoning_summary": "none", "support_verbosity": False,
+            "apply_patch_tool_type": "freeform",
+            "truncation_policy": {"mode": "tokens", "limit": CUA_SO_NGU_CANH},
+            "supports_parallel_tool_calls": False,
+            "supports_image_detail_original": False,
+            "context_window": CUA_SO_NGU_CANH,
+            "max_context_window": CUA_SO_NGU_CANH,
+            "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
+            "effective_context_window_percent": 90,
+            "experimental_supported_tools": [],
+            "input_modalities": ["text", "image"] if doc_anh else ["text"],
+            "supports_search_tool": False, "use_responses_lite": False,
+            "node_repl_auto_review_required": False, "node_repl_disabled": False,
+        }
+
+    return json.dumps({"models": [mot("ltt_llm"), mot("ltt_llm_vision", True)]},
+                      indent=1)
+
+
 def _codex_profile() -> str:
     return (f'model = "{MODEL}"\n'
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 88555\n')
+            f'model_context_window = {CUA_SO_NGU_CANH}\n'
+            f"model_catalog_json = '{TEP_CATALOG}'\n")
 
 
 def _codex_config_goc(goc: str) -> str:
@@ -558,6 +628,15 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     _sao_luu(prof)
     prof.write_text(_codex_profile(), encoding="utf-8", newline="\n")
     ra.append(f"  [OK] {prof}")
+
+    # ⛔ PHAI GHI CATALOG, khong chi khai duong dan toi no. Khai mot tep khong
+    #    ton tai thi Codex bao `failed to parse model_catalog_json` va **tu choi
+    #    khoi dong**, tuc ta bien mot canh bao vo hai thanh mot loi chan duong.
+    if "ta_tao_catalog" not in ghi:                  # cung luat "ban dau tien"
+        ghi["ta_tao_catalog"] = not TEP_CATALOG.exists()
+    _sao_luu(TEP_CATALOG)
+    TEP_CATALOG.write_text(_catalog_codex(), encoding="utf-8", newline="\n")
+    ra.append(f"  [OK] {TEP_CATALOG}  (catalog model cho Codex)")
     return ra
 
 
@@ -592,6 +671,21 @@ def go_codex(tt: dict) -> list:
                 ra.append(f"  [OK] da tra {prof} ve ban truoc khi cam")
             else:
                 ra.append(f"  [!!] GIU {prof} - co tu truoc, khong co ban sao luu")
+
+    # Catalog model: cung duong xu ly voi `ltt.config.toml` o tren. Bo qua no o
+    # `go` thi ta de lai mot tep rac ta tu tao - dung loai rac ma test
+    # `test_cam_roi_go_tra_ve_DUNG_TUNG_BYTE` sinh ra de bat.
+    if TEP_CATALOG.exists():
+        if tt.get("codex", {}).get("ta_tao_catalog"):
+            TEP_CATALOG.unlink()
+            ra.append(f"  [OK] da xoa {TEP_CATALOG} (ta tao no)")
+        else:
+            bs = TEP_CATALOG.with_suffix(TEP_CATALOG.suffix + ".truoc-ltt")
+            if bs.exists():
+                TEP_CATALOG.write_bytes(bs.read_bytes())
+                ra.append(f"  [OK] da tra {TEP_CATALOG} ve ban truoc khi cam")
+            else:
+                ra.append(f"  [!!] GIU {TEP_CATALOG} - co tu truoc, khong sao luu")
     return ra
 
 

@@ -47,6 +47,11 @@ def _nap(nha: pathlib.Path):
     spec.loader.exec_module(mod)
     mod.NHA = nha
     mod.TEP_TRANG_THAI = nha / ".ltt" / "cam_cli_trang_thai.json"
+    # !! MOI hang sinh tu `NHA` phai duoc tro lai, khong chi tep trang thai.
+    #    Bo sot `TEP_CATALOG` mot lan roi: test van XANH, vi no ghi vao thu muc
+    #    nha THAT cua nguoi dang chay test. Xanh vi ly do sai.
+    mod.TEP_CATALOG = nha / ".codex" / "ltt_model_catalog.json"
+    mod.TEP_NHAT_KY = nha / "log" / "cam-cli.log"
     return mod
 
 
@@ -712,3 +717,78 @@ def test_cong_kiem_TU_CHOI_ghi_khi_ket_qua_hong(cc):
     with pytest.raises(cc.CauHinhHong):
         cc.cam_codex("https://app.lttstudios.com", {}, cho_vscode=True)
     assert cfg.read_text(encoding="utf-8") == hong   # không đụng tới tệp hỏng
+
+
+# ── Catalog model cho Codex (30/08) ────────────────────────────────────────
+
+def test_ho_so_codex_khai_catalog_va_cam_GHI_ra_tep(cc, tmp_path):
+    """Khai `model_catalog_json` mà không ghi tệp là biến cảnh báo thành lỗi chặn.
+
+    ⛔ Codex `failed to parse model_catalog_json` rồi **từ chối khởi động** nếu
+       đường dẫn trỏ vào tệp không tồn tại. Nên hai việc này phải đi liền nhau.
+    """
+    assert "model_catalog_json" in cc._codex_profile()
+    cc.cam_codex("https://x", {}, cho_vscode=True)
+    assert cc.TEP_CATALOG.exists(), "cam xong ma khong ghi catalog"
+
+
+def test_catalog_dung_khuon_Codex_chap_nhan(cc):
+    """Ba chỗ từng làm Codex từ chối tệp — tìm ra bằng cách lặp thật 30/08."""
+    import json
+    d = json.loads(cc._catalog_codex())
+    assert [m["slug"] for m in d["models"]] == ["ltt_llm", "ltt_llm_vision"]
+    for m in d["models"]:
+        # `web_search_tool_type: null` bi tu choi -> phai BO HAN, khong phai null
+        assert "web_search_tool_type" not in m
+        # doi i64, `0.9` lam Codex tu choi ca tep
+        assert isinstance(m["effective_context_window_percent"], int)
+        # khong duoc con truong null nao
+        assert not [k for k, v in m.items() if v is None]
+        assert m["context_window"] == cc.CUA_SO_NGU_CANH
+
+
+def test_go_ra_xoa_catalog_DA_TAO_nhung_giu_catalog_co_tu_truoc(cc):
+    """Cung ca kho nhu `ltt.config.toml`: xoa dung thu ta them, khong hon."""
+    tt = {}
+    cc.cam_codex("https://x", tt, cho_vscode=True)
+    assert cc.TEP_CATALOG.exists() and tt["codex"]["ta_tao_catalog"] is True
+    cc.go_codex(tt)
+    assert not cc.TEP_CATALOG.exists(), "go ra de lai rac ta tu tao"
+
+    # Nguoc lai: khach da co san mot tep cung ten -> `go` phai TRA VE ban cu.
+    cc.TEP_CATALOG.write_text("{\"cua khach\": 1}", encoding="utf-8")
+    tt2 = {}
+    cc.cam_codex("https://x", tt2, cho_vscode=True)
+    assert tt2["codex"]["ta_tao_catalog"] is False
+    cc.go_codex(tt2)
+    assert cc.TEP_CATALOG.read_text(encoding="utf-8") == "{\"cua khach\": 1}"
+
+
+def test_cam_HAI_LAN_roi_go_van_don_sach_catalog(cc):
+    """Bay da tung dinh o `ltt.config.toml`: tinh lai co-tao-khong o lan hai."""
+    tt = {}
+    cc.cam_codex("https://x", tt, cho_vscode=True)
+    cc.cam_codex("https://x", tt, cho_vscode=True)
+    cc.go_codex(tt)
+    assert not cc.TEP_CATALOG.exists()
+
+
+def test_KHONG_hang_duong_dan_nao_con_tro_ra_NGOAI_thu_muc_tam(cc, tmp_path):
+    """Banh coc cho chinh bo test nay.
+
+    ⛔ Them mot hang `TEP_... = NHA / ...` ma quen tro lai trong `_nap` thi test
+       van xanh — vi no ghi vao thu muc THAT cua nguoi chay test. Da dinh dung
+       hai lan (30/08): `TEP_CATALOG` ghi vao `~/.codex`, `TEP_NHAT_KY` ghi vao
+       `%LOCALAPPDATA%`. Ca hai deu khong lam test do. Phep kiem nay bat lan sau.
+
+    ⚠️ Khong kiem "co nam trong thu muc nha khong" — tren Windows `tmp_path`
+       CHINH NO nam duoi thu muc nha, nen phep kiem do luon do.
+    """
+    import pathlib as _pl
+    tam = tmp_path.resolve()
+    sot = [ten for ten, gt in vars(cc).items()
+           if isinstance(gt, _pl.Path) and ten.isupper()
+           and tam not in gt.resolve().parents and gt.resolve() != tam]
+    assert not sot, (
+        f"Cac hang nay tro RA NGOAI thu muc tam: {sot}. "
+        f"Tro chung vao tmp trong `_nap()`.")
