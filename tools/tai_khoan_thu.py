@@ -118,10 +118,22 @@ def main(argv=None) -> int:
             print("=" * 62)
 
         # ── số dư: nói ra, không tự sửa ──────────────────────────────────────
+        #
+        # ⛔ BẮT HẸP, KHÔNG BẮT `Exception`. Đây là chỗ **báo một con số**, và bắt
+        #    rộng ở đó biến một lỗi lập trình thật (đổi chữ ký `so_du`, sai kiểu
+        #    `user_id`) thành dòng chữ "không đọc được số dư" — một câu trả lời
+        #    trông như đã xử lý xong, và người đọc sẽ đi tìm ở phía CSDL.
+        #
+        #    Thứ thật sự có thể hỏng ở đây mà **không phải lỗi của bước này** chỉ
+        #    có hai: CSDL trục trặc, hoặc module credit chưa có mặt. Bắt đúng hai
+        #    thứ đó; mọi thứ khác phải nổ ra.
+        from sqlalchemy.exc import SQLAlchemyError
         try:
             from platform_core import credit
             so_du = credit.so_du(db, u.id)
-        except Exception:  # noqa: BLE001 - khong doc duoc so du khong phai loi cua buoc nay
+        except (ImportError, SQLAlchemyError) as e:
+            print(f"  (khong doc duoc so du: {type(e).__name__}: {e})",
+                  file=sys.stderr)
             so_du = None
 
         if so_du is not None:

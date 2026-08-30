@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e802ae154d9d21697fbaf13610663f98255a252684720937726b4af044f7e725
+Fingerprint   : sha256:943a1258a4b7f4fc7f0673940a5fb6f657b6da840cc55f40d1d9ab65fe536dad
 Nguồn đã quét : 1289 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2798,7 +2798,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1289 file; 12815016 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1289 file; 12815769 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -136103,7 +136103,7 @@ def register_tool_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/uploads.py
-SHA256=467243760b47087bbbb9db855e18718669c354f69b756037d3714e1f42706492 BYTES=17166 LINES=364
+SHA256=5bd9f9249009b4024a493194678199e08ca6f2b1f0335d971da05e276fc03bef BYTES=17106 LINES=365
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/uploads`` and ``/api/v1/artifacts`` — media in and media out.
 
@@ -136134,7 +136134,8 @@ from platform_core import upload_sessions
 from platform_core.models import Job, UPLOAD_READY
 from platform_core.public_api import media, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
-from platform_core.public_api.errors import invalid_request, not_found
+from platform_core.public_api.errors import (ApiError, invalid_request,
+                                             not_found)
 from platform_core.public_api.principal import Principal, ensure_owner
 from platform_core.public_api.scopes import (SCOPE_ARTIFACTS_READ,
                                              SCOPE_UPLOADS_WRITE)
@@ -136371,7 +136372,7 @@ def _giai_artifact(db, principal: Principal, param: str, value: str):
 
     try:
         job_id, field, index = media.parse_artifact_id(value)
-    except Exception:                                            # noqa: BLE001
+    except ApiError:
         raise invalid_request(f"{param}: unknown media id.", field=param) from None
 
     job = db.execute(select(Job).where(Job.id == job_id)).scalar_one_or_none()
@@ -136392,7 +136393,7 @@ def _giai_artifact(db, principal: Principal, param: str, value: str):
         raise invalid_request(f"{param}: unknown media id.", field=param)
     try:
         khoa = media.storage_key_for(job, field, index, tool=tool_sinh)
-    except Exception:                                            # noqa: BLE001
+    except ApiError:
         raise invalid_request(f"{param}: unknown media id.", field=param) from None
 
     return ThamChieuArtifact(staging_key=khoa,
@@ -260839,7 +260840,7 @@ SHA256=b3b3695400ca1cd21ee34975095a6d318139f67d36494bdd50fdb884c9c89cd5 BYTES=15
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/tai_khoan_thu.py
-SHA256=e3360355f4c9eb775d4b1c0bdb492c681179d3cb49d802e76e13a105ed8b784a BYTES=6589 LINES=145
+SHA256=7aa9a992b022624edadf3ed5808b01e3fd860565cc95cf81da82c204117010fd BYTES=7402 LINES=157
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tai_khoan_thu.py — tìm hoặc tạo một tài khoản THỬ để kiểm giao diện thật.
@@ -260961,10 +260962,22 @@ def main(argv=None) -> int:
             print("=" * 62)
 
         # ── số dư: nói ra, không tự sửa ──────────────────────────────────────
+        #
+        # ⛔ BẮT HẸP, KHÔNG BẮT `Exception`. Đây là chỗ **báo một con số**, và bắt
+        #    rộng ở đó biến một lỗi lập trình thật (đổi chữ ký `so_du`, sai kiểu
+        #    `user_id`) thành dòng chữ "không đọc được số dư" — một câu trả lời
+        #    trông như đã xử lý xong, và người đọc sẽ đi tìm ở phía CSDL.
+        #
+        #    Thứ thật sự có thể hỏng ở đây mà **không phải lỗi của bước này** chỉ
+        #    có hai: CSDL trục trặc, hoặc module credit chưa có mặt. Bắt đúng hai
+        #    thứ đó; mọi thứ khác phải nổ ra.
+        from sqlalchemy.exc import SQLAlchemyError
         try:
             from platform_core import credit
             so_du = credit.so_du(db, u.id)
-        except Exception:  # noqa: BLE001 - khong doc duoc so du khong phai loi cua buoc nay
+        except (ImportError, SQLAlchemyError) as e:
+            print(f"  (khong doc duoc so du: {type(e).__name__}: {e})",
+                  file=sys.stderr)
             so_du = None
 
         if so_du is not None:
