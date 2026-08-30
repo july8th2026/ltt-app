@@ -264,3 +264,62 @@ chứ không bỏ qua, nên lệch kiểu này **không thể ẩn được nữ
 ⚠️ **Ghi cho phiên sau:** sửa trần token trên máy B thì sửa ở
 `C:\ProgramData\LTTLlm\gateway.env` rồi `Restart-Service LTTLlmGateway`. Sửa
 NSSM env hay env máy đều **vô tác dụng** — tệp ghi đè lên chúng.
+
+---
+
+## 8. DỌN TẦNG VẬN HÀNH — cả hai máy (30/08)
+
+Sau khi dọn tầng **mã**, tầng **vận hành** vẫn còn chồng chéo: cùng một biến khai
+ở nhiều nơi, và chỉ một nơi có tác dụng.
+
+### 8.1 Máy B — `gateway.env` là NGUỒN DUY NHẤT
+
+| Nơi khai `LTT_LLM_*` | Có tác dụng? |
+|---|---|
+| `C:\ProgramData\LTTLlm\gateway.env` | ✅ **thắng tất cả** — `main.py::nap_env()` ghi đè `os.environ` |
+| NSSM `AppEnvironmentExtra` (12 biến) | ❌ bản sao câm; vẫn ghi 90000 mà không ai đọc |
+| Env cấp máy | ❌ bị tệp ghi đè |
+
+⚠️ **`gateway.env` do `deploy.ps1` SINH RA** (dòng đầu tệp ghi rõ *"KHÔNG sửa
+tay"*). Sửa tay mà không sửa nguồn sinh thì **lần deploy sau mất trắng** — chính
+xác cái bẫy đã suýt dính: bản vá 65000 → 96256 nằm trong tệp, còn `deploy.ps1`
+vẫn ghi 65000 ở **ba** chỗ. Đã sửa cả ba (`c0c9c0f`).
+
+**Còn phải làm (cần một lệnh trên máy B):** rút NSSM env xuống còn đúng hai mục
+— `PYTHONPATH` (yêu cầu chạy, không phải cấu hình) và `LTT_LLM_ENV_FILE` (con
+trỏ). Bản sao lưu 12 biến cũ đã có ở
+`C:\ProgramData\LTTLlm\nssm-env.truoc-don-<thời-điểm>.txt`.
+
+### 8.2 Máy A — mặc định trong mã là nguồn duy nhất
+
+`LTT_PUBLIC_API_MAX_BODY_BYTES` cấp máy **đã gỡ**. Trần body nay chỉ đến từ
+`DEFAULT_MAX_BODY_BYTES = 1 MiB` trong mã, và `test_312` buộc nó ≥
+`ngan_sach.BODY_BYTES_TOI_THIEU`.
+
+⛔ **Một hồi quy tự gây ra, và bài học từ nó:** gỡ biến môi trường **trước khi**
+   deploy mã mới làm production tụt về 256 KB trong vài phút — biến đó đang *bù*
+   cho mã cũ. Thứ tự đúng là **deploy mã trước, gỡ biến bù sau**.
+
+### 8.3 Trạng thái sau khi dọn — đo trên hệ đang chạy
+
+```
+than 600 KB -> 413  limit_name=input_tokens  limit_value=96256
+```
+Trước đây cùng request này bị chặn ở tầng **byte** với thông điệp không nói tầng
+nào; nay nó qua tầng byte và dừng ở đúng tầng **token**, có xưng tên.
+
+```
+tests/test_312: 21/21 PASS, 0 skip   (chay voi may B that)
+```
+
+### 8.4 Luật cho phiên sau
+
+| Muốn đổi | Sửa ở đâu | Đừng sửa ở đâu |
+|---|---|---|
+| Trần token của B | `llm_gateway/deploy/deploy.ps1` **rồi deploy** | NSSM env, env máy, sửa tay `gateway.env` |
+| Cửa sổ model / trần vào-ra | `apps/ltt_llm/ngan_sach.py` (3 số gõ tay) | bất kỳ nơi nào khác — chúng là bí danh |
+| Trần body của nền tảng | `DEFAULT_MAX_BODY_BYTES` | biến môi trường (chỉ dùng khi cần đè tạm) |
+| Token ra mặc định | `TOKEN_RA_MAC_DINH` theo **tên cửa** | đừng thêm một "mặc định chung" nào nữa |
+
+⭐ Và sau mỗi lần đổi: `pytest tests/test_312_ngan_sach_ltt_llm.py` **có
+`LTT_LLM_TOKEN`** — nó là thứ duy nhất bắt được ba tầng nói ba số khác nhau.
