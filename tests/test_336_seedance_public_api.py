@@ -77,8 +77,8 @@ def test_to_hop_SAI_theo_model_bi_tu_choi():
     with pytest.raises(ApiError) as e:
         invocation.validate_public_input(_tool(), {
             "prompt": "x", "model": "seedance-2.0-mini", "resolution": "4k"})
-    # ⛔  chi la "400 invalid_request" — thong diep that o
-    #    . Doc nham cho lam phep kiem do trong khi ma DA dung.
+    # ⛔ `str(ApiError)` chi la "400 invalid_request" — thong diep that nam o
+    #    `.detail`. Doc nham cho lam phep kiem do trong khi MA DA DUNG.
     tin = str(getattr(e.value, "detail", "")).lower()
     assert "seedance-2.0-mini" in tin and "4k" in tin
     assert "480p" in tin, "loi phai NOI RA gia tri nao duoc chap nhan"
@@ -115,10 +115,43 @@ def test_kiem_chay_TRUOC_price():
 
 # ── 3. Tham chiếu chưa chứng minh ownership thì HOÃN, không mở ──────────────
 
-def test_bon_duong_tham_chieu_chua_an_toan_duoc_HOAN_CO_GHI():
-    """Hoãn ≠ bỏ qua kiểm. Một ref mở mà chưa kiểm ownership là đường để khách
-    A đọc tệp của khách B."""
+def test_chi_con_refs_hoan_va_hai_tool_DANG_THU_TIEN_khong_doi():
+    """Phép kiểm này TỪNG chốt "cả bốn tham chiếu đều hoãn", và việc đổi nó là
+    có chủ ý — nhưng lý do cũ **vẫn đúng nguyên**, chỉ áp cho ít thứ hơn.
+
+    ⛔ Lý do cũ: *"một ref mở mà chưa kiểm ownership là đường để khách A đọc tệp
+       của khách B."* Không dòng nào của câu đó sai. Cái đổi là **bằng chứng đã
+       có**: mọi id nay đi qua `resolve_upload_reference`, đòi đủ hai cổng — và
+       một **mảng** cũng đi qua đúng hàm đó, từng phần tử một.
+
+    ⭐ `refs` ở lại, và lý do khác hẳn ba cái kia: nó là `json`, **không phải
+       kiểu media**. Không cổng nào kiểm nó được vì không ai biết trong đó có gì.
+
+    🔴 VÀ NỬA THỨ HAI MỚI LÀ CHỖ DỄ TRƯỢT. Bản vá mở khoá `image[]` ở **tầng
+       nền tảng**, nên nó có thể vô tình mở luôn `image_keys` cho `image.ltt` và
+       `image.generate` — hai tool **đang thu tiền thật**. Mở một tham số trên
+       một tool đang phục vụ là **quyết định sản phẩm**, không phải hệ quả tự
+       động của một bản vá hạ tầng.
+
+       Nên phép kiểm này canh **cả hai chiều**: ba ref của Seedance phải mở, và
+       hai tool kia phải **không đổi một chữ**.
+    """
+    from platform_core.public_api.catalog import build_catalog
+    from platform_core.public_api.config import load_public_api_config
+
     thuoc_tinh = set(_tool().to_public_dict()["input_schema"]["properties"])
-    for hoan in ("image_keys", "video_key", "audio_key", "refs"):
-        assert hoan not in thuoc_tinh, f"{hoan} lot ra hop dong cong khai"
-    assert "prompt" in thuoc_tinh and "model" in thuoc_tinh
+    for da_mo in ("image_key", "image_keys", "video_key", "audio_key"):
+        assert da_mo in thuoc_tinh, f"{da_mo} phai co trong hop dong cong khai"
+    assert "refs" not in thuoc_tinh, (
+        "`refs` la `json`, khong cong nao kiem duoc — mo no la mo mot truong tu "
+        "do di thang toi nha cung cap")
+
+    # Nua thu hai: hai tool DANG THU TIEN khong duoc doi vi mot ban va ha tang.
+    for ten in ("image.ltt", "image.generate"):
+        cfg = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                      "LTT_PUBLIC_API_TOOLS": ten})
+        t = next(x for x in build_catalog(cfg) if x.name == ten)
+        assert "image_keys" not in t.to_public_dict()["input_schema"]["properties"], (
+            f"{ten} DANG THU TIEN THAT ma `image_keys` vua lot ra hop dong cong "
+            f"khai. Nen tang do duoc khong co nghia la duoc mo — do la quyet "
+            f"dinh cua chu san pham.")

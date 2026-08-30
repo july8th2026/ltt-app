@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:943a1258a4b7f4fc7f0673940a5fb6f657b6da840cc55f40d1d9ab65fe536dad
+Fingerprint   : sha256:f5fb25d06ea5628e864bee63682fae116790cac77df909afb70fb447307c307e
 Nguồn đã quét : 1289 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2798,7 +2798,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1289 file; 12815769 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1289 file; 12817914 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -229792,7 +229792,7 @@ class TestBaCuaPhaiCONG_KHAI:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_336_seedance_public_api.py
-SHA256=80039b8c3cc2582656e3940c9659108fe7be361a3cd438ab5a0e878154f246ff BYTES=5517 LINES=124
+SHA256=6b712dceeb3ace9cc22f07e77c83f93bd1ee3b799e1436594f6ce4c63d34f427 BYTES=7662 LINES=157
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_336 — `video.generate` (Seedance) ra Public API. (API Expansion V2, Phase 03)
 
@@ -229873,8 +229873,8 @@ def test_to_hop_SAI_theo_model_bi_tu_choi():
     with pytest.raises(ApiError) as e:
         invocation.validate_public_input(_tool(), {
             "prompt": "x", "model": "seedance-2.0-mini", "resolution": "4k"})
-    # ⛔  chi la "400 invalid_request" — thong diep that o
-    #    . Doc nham cho lam phep kiem do trong khi ma DA dung.
+    # ⛔ `str(ApiError)` chi la "400 invalid_request" — thong diep that nam o
+    #    `.detail`. Doc nham cho lam phep kiem do trong khi MA DA DUNG.
     tin = str(getattr(e.value, "detail", "")).lower()
     assert "seedance-2.0-mini" in tin and "4k" in tin
     assert "480p" in tin, "loi phai NOI RA gia tri nao duoc chap nhan"
@@ -229911,13 +229911,46 @@ def test_kiem_chay_TRUOC_price():
 
 # ── 3. Tham chiếu chưa chứng minh ownership thì HOÃN, không mở ──────────────
 
-def test_bon_duong_tham_chieu_chua_an_toan_duoc_HOAN_CO_GHI():
-    """Hoãn ≠ bỏ qua kiểm. Một ref mở mà chưa kiểm ownership là đường để khách
-    A đọc tệp của khách B."""
+def test_chi_con_refs_hoan_va_hai_tool_DANG_THU_TIEN_khong_doi():
+    """Phép kiểm này TỪNG chốt "cả bốn tham chiếu đều hoãn", và việc đổi nó là
+    có chủ ý — nhưng lý do cũ **vẫn đúng nguyên**, chỉ áp cho ít thứ hơn.
+
+    ⛔ Lý do cũ: *"một ref mở mà chưa kiểm ownership là đường để khách A đọc tệp
+       của khách B."* Không dòng nào của câu đó sai. Cái đổi là **bằng chứng đã
+       có**: mọi id nay đi qua `resolve_upload_reference`, đòi đủ hai cổng — và
+       một **mảng** cũng đi qua đúng hàm đó, từng phần tử một.
+
+    ⭐ `refs` ở lại, và lý do khác hẳn ba cái kia: nó là `json`, **không phải
+       kiểu media**. Không cổng nào kiểm nó được vì không ai biết trong đó có gì.
+
+    🔴 VÀ NỬA THỨ HAI MỚI LÀ CHỖ DỄ TRƯỢT. Bản vá mở khoá `image[]` ở **tầng
+       nền tảng**, nên nó có thể vô tình mở luôn `image_keys` cho `image.ltt` và
+       `image.generate` — hai tool **đang thu tiền thật**. Mở một tham số trên
+       một tool đang phục vụ là **quyết định sản phẩm**, không phải hệ quả tự
+       động của một bản vá hạ tầng.
+
+       Nên phép kiểm này canh **cả hai chiều**: ba ref của Seedance phải mở, và
+       hai tool kia phải **không đổi một chữ**.
+    """
+    from platform_core.public_api.catalog import build_catalog
+    from platform_core.public_api.config import load_public_api_config
+
     thuoc_tinh = set(_tool().to_public_dict()["input_schema"]["properties"])
-    for hoan in ("image_keys", "video_key", "audio_key", "refs"):
-        assert hoan not in thuoc_tinh, f"{hoan} lot ra hop dong cong khai"
-    assert "prompt" in thuoc_tinh and "model" in thuoc_tinh
+    for da_mo in ("image_key", "image_keys", "video_key", "audio_key"):
+        assert da_mo in thuoc_tinh, f"{da_mo} phai co trong hop dong cong khai"
+    assert "refs" not in thuoc_tinh, (
+        "`refs` la `json`, khong cong nao kiem duoc — mo no la mo mot truong tu "
+        "do di thang toi nha cung cap")
+
+    # Nua thu hai: hai tool DANG THU TIEN khong duoc doi vi mot ban va ha tang.
+    for ten in ("image.ltt", "image.generate"):
+        cfg = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                      "LTT_PUBLIC_API_TOOLS": ten})
+        t = next(x for x in build_catalog(cfg) if x.name == ten)
+        assert "image_keys" not in t.to_public_dict()["input_schema"]["properties"], (
+            f"{ten} DANG THU TIEN THAT ma `image_keys` vua lot ra hop dong cong "
+            f"khai. Nen tang do duoc khong co nghia la duoc mo — do la quyet "
+            f"dinh cua chu san pham.")
 
 @@@LTT_PROFILE_FILE_END@@@
 
