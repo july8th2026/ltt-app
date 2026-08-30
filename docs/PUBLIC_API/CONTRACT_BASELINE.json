@@ -385,7 +385,7 @@
     },
     "video.generate": {
       "aliases": [],
-      "contract_hash": "a7a770beb8d86786",
+      "contract_hash": "d7369f2dffe776c5",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [

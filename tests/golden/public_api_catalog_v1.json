@@ -834,6 +834,21 @@
             "examples": [
               "up_..."
             ]
+          },
+          "image_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Upload or artifact ids."
+          },
+          "video_key": {
+            "type": "string",
+            "description": "Upload or artifact id."
+          },
+          "audio_key": {
+            "type": "string",
+            "description": "Upload or artifact id."
           }
         },
         "additionalProperties": false,
@@ -852,7 +867,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "a7a770beb8d86786"
+      "contract_hash": "d7369f2dffe776c5"
     },
     {
       "name": "video.subtitle",

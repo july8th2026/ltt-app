@@ -33,11 +33,15 @@ def test_artifact_KHONG_bi_doi_cho_nhu_upload():
 
     from platform_core.public_api import invocation
 
-    ma = inspect.getsource(invocation.promote_media)
+    # ⚠️ Doc `_mot_media`, khong doc `promote_media`: logic dời/tham chieu nam o
+    #    do tu khi them nhanh MANG. Ban dau phep kiem nay doc `promote_media` va
+    #    do — khong phai vi mat bat bien, ma vi no chot TEN HAM thay vi tinh
+    #    chat. Cung bai hoc da rut o banh coc kieu xuong dong.
+    ma = inspect.getsource(invocation._mot_media)
     assert "ThamChieuArtifact" in ma, (
-        "promote_media khong phan biet artifact voi upload — no se DOI tep cua "
+        "duong promote khong phan biet artifact voi upload — no se DOI tep cua "
         "job truoc di, va lan tai sau se 404")
-    # Va no phai `continue` TRUOC khi cham `upload_sessions.promote`.
+    # Va no phai tra ve TRUOC khi cham `upload_sessions.promote`.
     assert ma.index("ThamChieuArtifact") < ma.index("upload_sessions.promote")
 
 
@@ -125,3 +129,70 @@ def test_do_thoi_luong_CHAY_DUOC_tren_artifact_noi_chuoi(monkeypatch):
 
     assert ra["duration_s"] == 12.5, (
         "khong do duoc thoi luong tu artifact -> Recipe A chet o buoc tinh tien")
+
+
+# ── Nhiều tệp cho một tham số (30/08, bậc 1 của đề xuất §17) ───────────────
+
+def test_mang_KHONG_duoc_la_duong_vong_qua_kiem_quyen():
+    """🔴 Bất biến quan trọng nhất của việc mở tham số dạng mảng.
+
+    Một tham số đơn đi qua `resolve_upload_reference`, và hàm đó đòi đủ hai
+    cổng. Nếu nhánh mảng gọi thẳng vào kho hoặc bỏ qua hàm đó, thì **mảng trở
+    thành đường vòng**: khách gửi một danh sách và lấy được tệp của người khác.
+
+    ⇒ Mỗi phần tử phải đi qua **đúng** hàm đó, không có nhánh riêng.
+    """
+    import inspect
+
+    from server.api import jobs
+
+    ma = inspect.getsource(jobs)
+    dau = ma.index("def _media_sessions")
+    than = ma[dau:ma.index("@api.post", dau)]
+    # Dem CHO GOI, khong dem lan nhac ten (docstring cung nhac no).
+    goi = [d for d in than.splitlines() if "resolve_upload_reference(" in d]
+    assert len(goi) == 2, (
+        f"phai co dung hai cho goi — mot cho tham so don, mot cho phan tu cua "
+        f"mang. Dang thay {len(goi)}: {goi}")
+    assert "TRAN_MEDIA_MOT_THAM_SO" in than, "thieu tran so luong"
+
+
+def test_mang_co_TRAN_so_luong():
+    """⛔ Mỗi phần tử là một lượt tra CSDL chạy **trước** khi có tiền.
+
+    Không có trần thì một danh sách nghìn id là cách bắt máy chủ làm việc miễn
+    phí — và nó không hiện ra như một cuộc tấn công, nó hiện ra như một request
+    chậm.
+    """
+    from platform_core.public_api import invocation
+
+    assert 1 <= invocation.TRAN_MEDIA_MOT_THAM_SO <= 32, (
+        "tran phai co that va phai chat; nang duoc luc nao cung duoc, ha thi kho")
+
+
+def test_moi_tep_trong_mang_co_KHOA_RIENG_khi_promote():
+    """Hai tệp cùng một tham số không được ghi đè lên nhau.
+
+    Bản đầu dùng `{param}{suffix}` cho mọi phần tử — tức tệp thứ hai đè tệp thứ
+    nhất, và khách trả tiền cho một job dùng sai ảnh mà không có gì báo.
+    """
+    import inspect
+
+    from platform_core.public_api import invocation
+
+    ma = inspect.getsource(invocation.promote_media)
+    assert 'f"{param}_{i}"' in ma, (
+        "moi phan tu phai co khoa rieng, neu khong tep sau de len tep truoc")
+
+
+def test_refs_VAN_HOAN_va_ly_do_khac_han_ba_cai_kia():
+    """`refs` là `json`, không phải kiểu media — không cổng nào kiểm nó được."""
+    from platform_core.registry import discover
+
+    tool = next(t for m in discover() if not m.error
+                and m.manifest.slug == "taovideo"
+                for t in m.manifest.tools if t.name == "video.generate")
+    an = tuple(tool.api_contract.get("hidden") or ())
+    assert an == ("refs",), f"chi `refs` con hoan, dang thay: {an}"
+    assert tool.params_schema["refs"]["type"] == "json", (
+        "neu `refs` thanh kieu media thi ly do hoan khong con dung nua")

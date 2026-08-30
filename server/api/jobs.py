@@ -187,11 +187,46 @@ def register_job_routes(api, config, tag: str) -> None:
         return None
 
     def _media_sessions(db, principal, tool, clean: dict) -> dict:
-        """Validate every media reference the caller passed, before any money."""
+        """Validate every media reference the caller passed, before any money.
+
+        🔴 NHIEU TEP CHO MOT THAM SO — mo 30/08, va truoc do no chan BA tool
+           cung luc, khong rieng mot cai:
+
+               image.ltt        image_keys  (an)
+               image.generate   image_keys  (an)
+               video.generate   image_keys  (an)
+
+           Bang phu song ghi hai lan cung mot ly do: *"an vi tang API chi giai
+           duoc MOT tep cho mot tham so"*. Do la mot cau ve **nen tang**, khong
+           phai ve app — nen sua o day mo khoa ca ba.
+
+        ⛔ Moi phan tu di qua DUNG mot duong voi mot tham so don: cung
+           `resolve_upload_reference`, cung hai cong (chu so huu + danh sach
+           trang). Mot mang KHONG duoc la duong vong qua phep kiem quyen.
+        """
         wanted = invocation.media_params(tool)
-        return {name: resolve_upload_reference(db, principal, tool, name,
-                                               clean[name])
-                for name in wanted if name in clean}
+        ra: dict = {}
+        for name, kieu in wanted.items():
+            if name not in clean:
+                continue
+            gia_tri = clean[name]
+            if not str(kieu).endswith("[]"):
+                ra[name] = resolve_upload_reference(db, principal, tool, name,
+                                                    gia_tri)
+                continue
+            if not isinstance(gia_tri, list):
+                raise invalid_request(f"{name}: must be a list of media ids.",
+                                      field=name)
+            # ⛔ Tran so luong. Moi phan tu la mot luot tra CSDL chay TRUOC khi
+            #    co bat ky khoan tien nao — mot danh sach nghin id la mot cach
+            #    bat may chu lam viec mien phi.
+            if len(gia_tri) > invocation.TRAN_MEDIA_MOT_THAM_SO:
+                raise invalid_request(
+                    f"{name}: at most "
+                    f"{invocation.TRAN_MEDIA_MOT_THAM_SO} items.", field=name)
+            ra[name] = [resolve_upload_reference(db, principal, tool, name, v)
+                        for v in gia_tri]
+        return ra
 
     @api.post("/quotes", tags=[tag], summary="Price a tool call before running it",
               description=("Returns a signed quote bound to this account, tool "

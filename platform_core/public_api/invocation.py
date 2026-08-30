@@ -27,6 +27,17 @@ from platform_core.public_api.errors import invalid_request
 # used to sit here said "Prompt 07's job", and this is that job.
 _MEDIA_TYPES = {"image", "image[]", "video", "video[]", "audio"}
 
+#: Tran so tep cho MOT tham so dang mang.
+#:
+#: ⛔ Khong phai con so tuy y: moi phan tu la mot luot tra CSDL chay TRUOC khi co
+#:    bat ky khoan tien nao. Khong co tran thi mot danh sach nghin id la mot cach
+#:    bat may chu lam viec mien phi — va no khong hien ra nhu mot cuoc tan cong,
+#:    no hien ra nhu mot request cham.
+#: ⭐ 8 vi day la muc moi tool that su dung: Seedance nhan toi da vai anh tham
+#:    chieu, `image.generate` toi da 4 anh ra. Nang duoc bat cu luc nao, ha thi
+#:    kho — nen bat dau chat.
+TRAN_MEDIA_MOT_THAM_SO = 8
+
 
 @dataclass(frozen=True)
 class ThamChieuArtifact:
@@ -333,21 +344,36 @@ def promote_media(db, storage, *, job, sessions: dict) -> list:
     promotions: list = []
     params = dict(job.params or {})
     for param, session in sessions.items():
-        # ⛔ Artifact chi THAM CHIEU, khong dời. Doi no di la lay mat ket qua
-        #    cua job truoc: khach van cam id do, va lan tai sau se 404.
-        if isinstance(session, ThamChieuArtifact):
-            params[param] = session.staging_key
+        # Mot tham so dang MANG: nhieu tep, moi tep mot khoa. Thu tu giu nguyen
+        # thu tu khach gui — voi anh tham chieu, thu tu la ngu nghia.
+        if isinstance(session, list):
+            khoa_ra = []
+            for i, mot in enumerate(session):
+                khoa_ra.append(_mot_media(db, storage, job, f"{param}_{i}",
+                                          mot, promotions))
+            params[param] = khoa_ra
             continue
-        suffix = _suffix(session.filename)
-        final_key = f"{job.app_slug}/{job.user_id}/{job.id}/{param}{suffix}"
-        key = upload_sessions.promote(db, storage, session, job=job,
-                                      final_key=final_key)
-        promotions.append((session.staging_key, final_key, session.content_type))
-        params[param] = key
+        params[param] = _mot_media(db, storage, job, param, session, promotions)
     job.params = params
     flag_modified(job, "params")
     db.flush()
     return promotions
+
+
+def _mot_media(db, storage, job, ten_khoa: str, session, promotions: list) -> str:
+    """Mot tham chieu media -> khoa luu tru cuoi, ghi lai de bu neu can."""
+    from platform_core import upload_sessions
+
+    # ⛔ Artifact chi THAM CHIEU, khong dời. Doi no di la lay mat ket qua cua job
+    #    truoc: khach van cam id do, va lan tai sau se 404.
+    if isinstance(session, ThamChieuArtifact):
+        return session.staging_key
+    suffix = _suffix(session.filename)
+    final_key = f"{job.app_slug}/{job.user_id}/{job.id}/{ten_khoa}{suffix}"
+    key = upload_sessions.promote(db, storage, session, job=job,
+                                  final_key=final_key)
+    promotions.append((session.staging_key, final_key, session.content_type))
+    return key
 
 
 def _suffix(filename: str) -> str:

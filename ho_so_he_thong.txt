@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:48a69aa1f36c13b3444874d91e130fe89bf2f37c7c39c081f8c79cd404d0ec81
-Nguồn đã quét : 1287 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:e802ae154d9d21697fbaf13610663f98255a252684720937726b4af044f7e725
+Nguồn đã quét : 1289 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1451,8 +1451,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1287 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:26, .py:974, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1289 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:27, .py:975, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2336,7 +2336,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (11)
+[setup] (12)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2347,6 +2347,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - setup/dat_bien_env.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
+- setup/tai_khoan_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
 [tests] (319)
@@ -2670,7 +2671,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (115)
+[tools] (116)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2765,6 +2766,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tools/system_profile/__init__.py
 - tools/system_profile/builder.py
 - tools/system_profile_config.json
+- tools/tai_khoan_thu.py
 - tools/tail_audit.py
 - tools/test_agent_p3_postgres.ps1
 - tools/test_nhanh.py
@@ -2796,7 +2798,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1287 file; 12798117 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1289 file; 12815016 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -30756,7 +30758,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/taovideo/manifest.py
-SHA256=497d14074efdeac0928f3fd8e710aad2da92044cd27ab4e5c392d3bb402d0430 BYTES=10646 LINES=213
+SHA256=4f45b20ba03631eb88304ea27fc77c12d9c11babf622e23ddc7872bbd8e66d6f BYTES=11133 LINES=223
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `taovideo` — Tạo video AI (BytePlus ModelArk / Seedance 2.0). Di trú từ BOT
@@ -30839,11 +30841,21 @@ def _hop_dong_api() -> dict:
             "duration": _hop("durations"),
             "aspect_ratio": _hop("aspects"),
         },
-        # ⛔ HOÃN CÓ GHI, không phải bỏ qua kiểm. Bốn đường tham chiếu dưới đây
-        #    chưa chứng minh được ownership + vòng đời qua `upload_sessions` ở
-        #    đường API, và một tham chiếu mở mà chưa kiểm ownership là đường để
-        #    khách A đọc tệp của khách B. Mở từng cái khi có bằng chứng.
-        "hidden": ("image_keys", "video_key", "audio_key", "refs"),
+        # ⭐ BA TRONG BON DUONG THAM CHIEU DA MO (30/08, bac 2 cua de xuat §17).
+        #
+        #    Bang chung ownership la CHUNG cho ca ba, va no khong phai loi hua —
+        #    no la duong ma: moi id di qua `resolve_upload_reference`, va ham do
+        #    doi DU hai cong:
+        #      · upload  -> `user_id` + `app_slug` cua chinh tool dang goi;
+        #      · artifact-> `job.user_id` + danh sach trang hop dong dau ra.
+        #    Mot mang KHONG duoc la duong vong: `_media_sessions` giai TUNG phan
+        #    tu qua dung ham do, kem tran `TRAN_MEDIA_MOT_THAM_SO`.
+        #
+        # ⛔ `refs` VAN HOAN, va ly do khac han ba cai kia: no la `json`, khong
+        #    phai kieu media. Khong co cong nao kiem no, vi khong ai biet trong
+        #    do co gi. Mo `refs` la mo mot truong tu do di thang toi nha cung
+        #    cap — do la mot hop dong khac, khong phai mot bac tiep theo.
+        "hidden": ("refs",),
         # ⭐ MO TA CHO TUNG THAM SO — `test_198` doi, va no doi dung.
         #
         #    Mot tham so cong khai khong co mo ta la mot tham so khach phai
@@ -118443,7 +118455,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=7ca596ff6be49e2a19cddca11b880356b1cdde644e185ef3e2fa3f6a5fdb69d3 BYTES=22015 LINES=487
+SHA256=0e1ae21b3fcebaf1f5f1cd60e7952299488c856ca437c88cd54490665b86b5e4 BYTES=23234 LINES=513
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -118473,6 +118485,17 @@ from platform_core.public_api.errors import invalid_request
 # The artifact half landed 30/08 (API Expansion V2, Phase 07) — the comment that
 # used to sit here said "Prompt 07's job", and this is that job.
 _MEDIA_TYPES = {"image", "image[]", "video", "video[]", "audio"}
+
+#: Tran so tep cho MOT tham so dang mang.
+#:
+#: ⛔ Khong phai con so tuy y: moi phan tu la mot luot tra CSDL chay TRUOC khi co
+#:    bat ky khoan tien nao. Khong co tran thi mot danh sach nghin id la mot cach
+#:    bat may chu lam viec mien phi — va no khong hien ra nhu mot cuoc tan cong,
+#:    no hien ra nhu mot request cham.
+#: ⭐ 8 vi day la muc moi tool that su dung: Seedance nhan toi da vai anh tham
+#:    chieu, `image.generate` toi da 4 anh ra. Nang duoc bat cu luc nao, ha thi
+#:    kho — nen bat dau chat.
+TRAN_MEDIA_MOT_THAM_SO = 8
 
 
 @dataclass(frozen=True)
@@ -118780,21 +118803,36 @@ def promote_media(db, storage, *, job, sessions: dict) -> list:
     promotions: list = []
     params = dict(job.params or {})
     for param, session in sessions.items():
-        # ⛔ Artifact chi THAM CHIEU, khong dời. Doi no di la lay mat ket qua
-        #    cua job truoc: khach van cam id do, va lan tai sau se 404.
-        if isinstance(session, ThamChieuArtifact):
-            params[param] = session.staging_key
+        # Mot tham so dang MANG: nhieu tep, moi tep mot khoa. Thu tu giu nguyen
+        # thu tu khach gui — voi anh tham chieu, thu tu la ngu nghia.
+        if isinstance(session, list):
+            khoa_ra = []
+            for i, mot in enumerate(session):
+                khoa_ra.append(_mot_media(db, storage, job, f"{param}_{i}",
+                                          mot, promotions))
+            params[param] = khoa_ra
             continue
-        suffix = _suffix(session.filename)
-        final_key = f"{job.app_slug}/{job.user_id}/{job.id}/{param}{suffix}"
-        key = upload_sessions.promote(db, storage, session, job=job,
-                                      final_key=final_key)
-        promotions.append((session.staging_key, final_key, session.content_type))
-        params[param] = key
+        params[param] = _mot_media(db, storage, job, param, session, promotions)
     job.params = params
     flag_modified(job, "params")
     db.flush()
     return promotions
+
+
+def _mot_media(db, storage, job, ten_khoa: str, session, promotions: list) -> str:
+    """Mot tham chieu media -> khoa luu tru cuoi, ghi lai de bu neu can."""
+    from platform_core import upload_sessions
+
+    # ⛔ Artifact chi THAM CHIEU, khong dời. Doi no di la lay mat ket qua cua job
+    #    truoc: khach van cam id do, va lan tai sau se 404.
+    if isinstance(session, ThamChieuArtifact):
+        return session.staging_key
+    suffix = _suffix(session.filename)
+    final_key = f"{job.app_slug}/{job.user_id}/{job.id}/{ten_khoa}{suffix}"
+    key = upload_sessions.promote(db, storage, session, job=job,
+                                  final_key=final_key)
+    promotions.append((session.staging_key, final_key, session.content_type))
+    return key
 
 
 def _suffix(filename: str) -> str:
@@ -134301,7 +134339,7 @@ def documented_paths() -> frozenset:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/jobs.py
-SHA256=b435c2354ad28f8fa079565255425f38900372c224193612bd2950c51a4cebd3 BYTES=22069 LINES=444
+SHA256=9aafa7df21ee89254ae66adc66a958d2f6439b1ccd32db68fc1f557bcca1e990 BYTES=23752 LINES=479
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/quotes`` and ``/api/v1/jobs`` — the chargeable control plane.
 
@@ -134492,11 +134530,46 @@ def register_job_routes(api, config, tag: str) -> None:
         return None
 
     def _media_sessions(db, principal, tool, clean: dict) -> dict:
-        """Validate every media reference the caller passed, before any money."""
+        """Validate every media reference the caller passed, before any money.
+
+        🔴 NHIEU TEP CHO MOT THAM SO — mo 30/08, va truoc do no chan BA tool
+           cung luc, khong rieng mot cai:
+
+               image.ltt        image_keys  (an)
+               image.generate   image_keys  (an)
+               video.generate   image_keys  (an)
+
+           Bang phu song ghi hai lan cung mot ly do: *"an vi tang API chi giai
+           duoc MOT tep cho mot tham so"*. Do la mot cau ve **nen tang**, khong
+           phai ve app — nen sua o day mo khoa ca ba.
+
+        ⛔ Moi phan tu di qua DUNG mot duong voi mot tham so don: cung
+           `resolve_upload_reference`, cung hai cong (chu so huu + danh sach
+           trang). Mot mang KHONG duoc la duong vong qua phep kiem quyen.
+        """
         wanted = invocation.media_params(tool)
-        return {name: resolve_upload_reference(db, principal, tool, name,
-                                               clean[name])
-                for name in wanted if name in clean}
+        ra: dict = {}
+        for name, kieu in wanted.items():
+            if name not in clean:
+                continue
+            gia_tri = clean[name]
+            if not str(kieu).endswith("[]"):
+                ra[name] = resolve_upload_reference(db, principal, tool, name,
+                                                    gia_tri)
+                continue
+            if not isinstance(gia_tri, list):
+                raise invalid_request(f"{name}: must be a list of media ids.",
+                                      field=name)
+            # ⛔ Tran so luong. Moi phan tu la mot luot tra CSDL chay TRUOC khi
+            #    co bat ky khoan tien nao — mot danh sach nghin id la mot cach
+            #    bat may chu lam viec mien phi.
+            if len(gia_tri) > invocation.TRAN_MEDIA_MOT_THAM_SO:
+                raise invalid_request(
+                    f"{name}: at most "
+                    f"{invocation.TRAN_MEDIA_MOT_THAM_SO} items.", field=name)
+            ra[name] = [resolve_upload_reference(db, principal, tool, name, v)
+                        for v in gia_tri]
+        return ra
 
     @api.post("/quotes", tags=[tag], summary="Price a tool call before running it",
               description=("Returns a signed quote bound to this account, tool "
@@ -158744,6 +158817,96 @@ Write-Host '  curl.exe -s https://app.lttstudios.com/api/v1/health'
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/tai_khoan_thu.ps1
+SHA256=9af928291a049a8592fd7231dae44fc61c929e240ed01942c3dc8c4477e208d4 BYTES=3205 LINES=84
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run tools/tai_khoan_thu.py with production's environment loaded.
+
+.DESCRIPTION
+    `secrets\app.env` is ACL-locked (only the service account and Administrators
+    can read it), which is correct. But that also means a maintenance tool run by
+    hand cannot see LTT_DATABASE_URL, so it cannot reach the database at all.
+
+    This script is the narrow bridge: read app.env, put it in THIS process only,
+    run one specific tool, exit. It never writes app.env, never touches a service,
+    and never prints a value from it.
+
+    WHY NARROW ON PURPOSE. A general "run any command with the production
+    environment" helper is a much more useful tool -- and that is exactly why it
+    should not exist casually: it turns every future shell into one that can read
+    the token encryption key. This one names its tool in the code.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\tai_khoan_thu.ps1 -LietKe
+    powershell -ExecutionPolicy Bypass -File .\setup\tai_khoan_thu.ps1 -DatLaiMatKhau
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root  = 'C:\LTTPlatform',
+    [string]$Repo  = '',
+    [string]$Email = '',
+    [switch]$DatLaiMatKhau,
+    [switch]$LietKe
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\tai_khoan_thu.py'
+
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    throw "Can quyen Administrator de doc $envFile (ACL cua no la dung, dung noi long)."
+}
+
+# utf-8-sig: nuot BOM neu ai do soan tep bang cong cu chen BOM. Quy tac 1 noi dung
+# GHI BOM; doc thi phai chiu duoc.
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    $ten = $d.Substring(0, $i).Trim()
+    $gt  = $d.Substring($i + 1)
+    if ($ten) {
+        # KHONG in gia tri nao: tep nay giu khoa ma hoa token va mat khau CSDL.
+        Set-Item -Path "Env:$ten" -Value $gt
+        $so++
+    }
+}
+Write-Host "  [OK] Nap $so bien tu app.env vao tien trinh nay (khong in gia tri)" -ForegroundColor Green
+
+# !! CANH BAO CHO NGUOI CHAY: cong cu nay IN MAT KHAU ra man hinh mot lan.
+#
+#    Dung chuyen huong toan bo (`*> file.log`) khi chay no. Ngay 2026-08-30 toi
+#    da lam dung the va mat khau nam trong `C:\LTTPlatform\logs\` cho toi khi
+#    xoa tay. Mot bi mat trong thu muc log la mot bi mat trong moi ban sao luu.
+#
+#    Muon giu ban ghi thi chuyen huong RIENG stderr (`2> file.log`) va doc mat
+#    khau tren man hinh.
+$doiSo = @()
+if ($Email)         { $doiSo += @('--email', $Email) }
+if ($DatLaiMatKhau) { $doiSo += '--dat-lai-mat-khau' }
+if ($LietKe)        { $doiSo += '--liet-ke' }
+
+& $venvPy $tool @doiSo
+exit $LASTEXITCODE
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/vps_khoa_dich_vu.ps1
 SHA256=a2cd48d0fb1485943a11c4c392351fe8e7096974959ad066cedb6f7f05c7e41c BYTES=9646 LINES=221
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -159888,7 +160051,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=3676dba6baff3f21e2845971efcf6d5ad3d2862b4ebf18f04d1153a0beb2190b BYTES=33329 LINES=1090
+SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33759 LINES=1105
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -160726,6 +160889,21 @@ SHA256=3676dba6baff3f21e2845971efcf6d5ad3d2862b4ebf18f04d1153a0beb2190b BYTES=33
             "examples": [
               "up_..."
             ]
+          },
+          "image_keys": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Upload or artifact ids."
+          },
+          "video_key": {
+            "type": "string",
+            "description": "Upload or artifact id."
+          },
+          "audio_key": {
+            "type": "string",
+            "description": "Upload or artifact id."
           }
         },
         "additionalProperties": false,
@@ -160744,7 +160922,7 @@ SHA256=3676dba6baff3f21e2845971efcf6d5ad3d2862b4ebf18f04d1153a0beb2190b BYTES=33
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "a7a770beb8d86786"
+      "contract_hash": "d7369f2dffe776c5"
     },
     {
       "name": "video.subtitle",
@@ -230349,7 +230527,7 @@ def test_check_i18n_van_dem_hai_tep_co_thong_diep_nguoi_dung():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_339_noi_chuoi_artifact.py
-SHA256=444c0cab86ca04de041fcc50db5879aaf6da27002573c8970c07926de4394a1c BYTES=5543 LINES=127
+SHA256=124bee019c24734f5220341f2724e1cdc165f26a134703701c660166c3d77fe8 BYTES=8829 LINES=198
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_337 — artifact của job trước làm ĐẦU VÀO của job sau. (V2, Phase 07)
 
@@ -230386,11 +230564,15 @@ def test_artifact_KHONG_bi_doi_cho_nhu_upload():
 
     from platform_core.public_api import invocation
 
-    ma = inspect.getsource(invocation.promote_media)
+    # ⚠️ Doc `_mot_media`, khong doc `promote_media`: logic dời/tham chieu nam o
+    #    do tu khi them nhanh MANG. Ban dau phep kiem nay doc `promote_media` va
+    #    do — khong phai vi mat bat bien, ma vi no chot TEN HAM thay vi tinh
+    #    chat. Cung bai hoc da rut o banh coc kieu xuong dong.
+    ma = inspect.getsource(invocation._mot_media)
     assert "ThamChieuArtifact" in ma, (
-        "promote_media khong phan biet artifact voi upload — no se DOI tep cua "
+        "duong promote khong phan biet artifact voi upload — no se DOI tep cua "
         "job truoc di, va lan tai sau se 404")
-    # Va no phai `continue` TRUOC khi cham `upload_sessions.promote`.
+    # Va no phai tra ve TRUOC khi cham `upload_sessions.promote`.
     assert ma.index("ThamChieuArtifact") < ma.index("upload_sessions.promote")
 
 
@@ -230478,6 +230660,73 @@ def test_do_thoi_luong_CHAY_DUOC_tren_artifact_noi_chuoi(monkeypatch):
 
     assert ra["duration_s"] == 12.5, (
         "khong do duoc thoi luong tu artifact -> Recipe A chet o buoc tinh tien")
+
+
+# ── Nhiều tệp cho một tham số (30/08, bậc 1 của đề xuất §17) ───────────────
+
+def test_mang_KHONG_duoc_la_duong_vong_qua_kiem_quyen():
+    """🔴 Bất biến quan trọng nhất của việc mở tham số dạng mảng.
+
+    Một tham số đơn đi qua `resolve_upload_reference`, và hàm đó đòi đủ hai
+    cổng. Nếu nhánh mảng gọi thẳng vào kho hoặc bỏ qua hàm đó, thì **mảng trở
+    thành đường vòng**: khách gửi một danh sách và lấy được tệp của người khác.
+
+    ⇒ Mỗi phần tử phải đi qua **đúng** hàm đó, không có nhánh riêng.
+    """
+    import inspect
+
+    from server.api import jobs
+
+    ma = inspect.getsource(jobs)
+    dau = ma.index("def _media_sessions")
+    than = ma[dau:ma.index("@api.post", dau)]
+    # Dem CHO GOI, khong dem lan nhac ten (docstring cung nhac no).
+    goi = [d for d in than.splitlines() if "resolve_upload_reference(" in d]
+    assert len(goi) == 2, (
+        f"phai co dung hai cho goi — mot cho tham so don, mot cho phan tu cua "
+        f"mang. Dang thay {len(goi)}: {goi}")
+    assert "TRAN_MEDIA_MOT_THAM_SO" in than, "thieu tran so luong"
+
+
+def test_mang_co_TRAN_so_luong():
+    """⛔ Mỗi phần tử là một lượt tra CSDL chạy **trước** khi có tiền.
+
+    Không có trần thì một danh sách nghìn id là cách bắt máy chủ làm việc miễn
+    phí — và nó không hiện ra như một cuộc tấn công, nó hiện ra như một request
+    chậm.
+    """
+    from platform_core.public_api import invocation
+
+    assert 1 <= invocation.TRAN_MEDIA_MOT_THAM_SO <= 32, (
+        "tran phai co that va phai chat; nang duoc luc nao cung duoc, ha thi kho")
+
+
+def test_moi_tep_trong_mang_co_KHOA_RIENG_khi_promote():
+    """Hai tệp cùng một tham số không được ghi đè lên nhau.
+
+    Bản đầu dùng `{param}{suffix}` cho mọi phần tử — tức tệp thứ hai đè tệp thứ
+    nhất, và khách trả tiền cho một job dùng sai ảnh mà không có gì báo.
+    """
+    import inspect
+
+    from platform_core.public_api import invocation
+
+    ma = inspect.getsource(invocation.promote_media)
+    assert 'f"{param}_{i}"' in ma, (
+        "moi phan tu phai co khoa rieng, neu khong tep sau de len tep truoc")
+
+
+def test_refs_VAN_HOAN_va_ly_do_khac_han_ba_cai_kia():
+    """`refs` là `json`, không phải kiểu media — không cổng nào kiểm nó được."""
+    from platform_core.registry import discover
+
+    tool = next(t for m in discover() if not m.error
+                and m.manifest.slug == "taovideo"
+                for t in m.manifest.tools if t.name == "video.generate")
+    an = tuple(tool.api_contract.get("hidden") or ())
+    assert an == ("refs",), f"chi `refs` con hoan, dang thay: {an}"
+    assert tool.params_schema["refs"]["type"] == "json", (
+        "neu `refs` thanh kieu media thi ly do hoan khong con dung nua")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -260586,6 +260835,157 @@ SHA256=b3b3695400ca1cd21ee34975095a6d318139f67d36494bdd50fdb884c9c89cd5 BYTES=15
     "venv"
   ]
 }
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/tai_khoan_thu.py
+SHA256=e3360355f4c9eb775d4b1c0bdb492c681179d3cb49d802e76e13a105ed8b784a BYTES=6589 LINES=145
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+tai_khoan_thu.py — tìm hoặc tạo một tài khoản THỬ để kiểm giao diện thật.
+
+    C:\\LTTPlatform\\venv\\Scripts\\python.exe tools\\tai_khoan_thu.py
+    ... --email thu.gionoi@lttstudios.local --dat-lai-mat-khau
+
+Chạy qua `setup\\tai_khoan_thu.ps1` để có sẵn biến môi trường của production.
+
+⭐ VÌ SAO CẦN MỘT CÔNG CỤ, KHÔNG PHẢI MỘT LẦN GÕ TAY
+
+   `CLAUDE.md` quy tắc 5 bắt kiểm giao diện bằng trình duyệt thật sau mỗi thay
+   đổi, và quy tắc 5b bắt kiểm trên **URL công khai**. Cả hai đòi một phiên đăng
+   nhập. Không có đường tạo tài khoản thử thì phép kiểm đó hoặc bị bỏ, hoặc phải
+   mượn tài khoản thật của khách — và mượn tài khoản khách để thử một tính năng
+   mới là cách nhanh nhất để một lượt thử thành một dòng trong lịch sử của họ.
+
+⛔ BA ĐIỀU CÔNG CỤ NÀY KHÔNG LÀM, VÀ CHÚNG LÀ CÓ CHỦ Ý:
+
+   1. **Không cấp credit.** Nạp credit là một bút toán trong sổ tiền, và sổ tiền
+      chỉ ghi thêm — không xoá được. Một tài khoản thử có credit tự cấp sẽ nằm
+      trong mọi báo cáo doanh thu về sau như một khoản không ai giải thích được.
+      Muốn chạy job trả phí thì **chủ sản phẩm nạp**, qua đúng đường đã có.
+
+   2. **Không đặt `role=admin`.** Mục đích là kiểm **bề mặt khách hàng**. Một tài
+      khoản admin nhìn thấy thứ khách không thấy, nên nó chứng minh sai thứ.
+
+   3. **Không in mật khẩu ra log.** Nó chỉ hiện trên màn hình đúng một lần.
+
+⚠️ Tên miền mặc định là `.local` — không phải một hộp thư có thật. Đó là chủ ý:
+   tài khoản thử không được nhận thư thật, và một địa chỉ không tồn tại làm cho
+   điều đó chắc chắn thay vì trông chờ vào việc không ai bấm gửi.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import secrets
+import string
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+#: Nhận ra tài khoản thử bằng ĐUÔI EMAIL, không bằng một danh sách gõ tay. Danh
+#: sách thì trôi; một quy ước thì tự khai.
+DUOI_THU = ".local"
+EMAIL_MAC_DINH = "thu.giongnoi@lttstudios.local"
+
+
+def _mat_khau_manh(n: int = 20) -> str:
+    bang = string.ascii_letters + string.digits
+    return "".join(secrets.choice(bang) for _ in range(n))
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", default=EMAIL_MAC_DINH)
+    ap.add_argument("--ten", default="Tai khoan thu (LTT VOICE)")
+    ap.add_argument("--dat-lai-mat-khau", action="store_true",
+                    help="Tai khoan da co thi dat lai mat khau va thu hoi phien cu.")
+    ap.add_argument("--liet-ke", action="store_true",
+                    help="Chi liet ke tai khoan thu dang co, khong tao gi.")
+    a = ap.parse_args(argv)
+
+    from sqlalchemy import select
+
+    from platform_core import users
+    from platform_core.db import get_session
+    from platform_core.models import User
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        # ── liệt kê ──────────────────────────────────────────────────────────
+        # Chỉ lọc theo đuôi thử: KHÔNG liệt kê tài khoản khách thật. Một công cụ
+        # tiện tay in ra toàn bộ email khách là một công cụ rò rỉ.
+        co = list(db.execute(
+            select(User).where(User.email.like(f"%{DUOI_THU}"))
+        ).scalars())
+        print(f"Tai khoan thu dang co ({len(co)}):")
+        for u in co:
+            print(f"  {u.email:44} role={u.role:6} verified={u.is_verified} "
+                  f"active={getattr(u, 'is_active', '?')}")
+        if a.liet_ke:
+            return 0
+
+        if not a.email.endswith(DUOI_THU):
+            print(f"\nTU CHOI: email thu phai ket thuc bang '{DUOI_THU}'.\n"
+                  "Do la thu giu cho mot tai khoan thu khong bao gio bi nham voi\n"
+                  "tai khoan khach, va giu cho no khong nhan duoc thu that.",
+                  file=sys.stderr)
+            return 2
+
+        u = users.tim_theo_email(db, a.email)
+        mk = None
+
+        if u is None:
+            mk = _mat_khau_manh()
+            u = users.tao_nguoi_dung(
+                db, email=a.email, password=mk, display_name=a.ten,
+                role="user",          # KHONG admin: can kiem be mat KHACH HANG
+                is_verified=True,     # bo qua buoc gui thu — .local khong co that
+                registration_ip="127.0.0.1")
+            db.commit()
+            print(f"\nDA TAO: {u.email}")
+        elif a.dat_lai_mat_khau:
+            mk = _mat_khau_manh()
+            users.doi_mat_khau(db, u, mk)
+            users.thu_hoi_moi_phien(db, u.id)
+            db.commit()
+            print(f"\nDA DAT LAI MAT KHAU: {u.email} (moi phien cu da bi thu hoi)")
+        else:
+            print(f"\nDA CO: {u.email} — them `--dat-lai-mat-khau` neu can mat khau moi.")
+
+        if mk:
+            print("\n" + "=" * 62)
+            print("  MAT KHAU (hien DUNG MOT LAN, khong ghi xuong dau ca):")
+            print(f"    {mk}")
+            print("=" * 62)
+
+        # ── số dư: nói ra, không tự sửa ──────────────────────────────────────
+        try:
+            from platform_core import credit
+            so_du = credit.so_du(db, u.id)
+        except Exception:  # noqa: BLE001 - khong doc duoc so du khong phai loi cua buoc nay
+            so_du = None
+
+        if so_du is not None:
+            print(f"\nSo du: {so_du} credit")
+            if so_du <= 0:
+                print("  ⚠️  Tai khoan nay KHONG chay duoc job tra phi.")
+                print("      Cong cu nay CO Y khong nap credit: nap credit la mot but")
+                print("      toan trong so tien, va so tien chi ghi them. Mot khoan tu")
+                print("      cap se nam trong moi bao cao doanh thu ve sau nhu mot muc")
+                print("      khong ai giai thich duoc.")
+                print("      Muon chay job tra phi: chu san pham nap qua duong da co.")
+        return 0
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

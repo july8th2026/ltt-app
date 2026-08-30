@@ -79,11 +79,21 @@ def _hop_dong_api() -> dict:
             "duration": _hop("durations"),
             "aspect_ratio": _hop("aspects"),
         },
-        # ⛔ HOÃN CÓ GHI, không phải bỏ qua kiểm. Bốn đường tham chiếu dưới đây
-        #    chưa chứng minh được ownership + vòng đời qua `upload_sessions` ở
-        #    đường API, và một tham chiếu mở mà chưa kiểm ownership là đường để
-        #    khách A đọc tệp của khách B. Mở từng cái khi có bằng chứng.
-        "hidden": ("image_keys", "video_key", "audio_key", "refs"),
+        # ⭐ BA TRONG BON DUONG THAM CHIEU DA MO (30/08, bac 2 cua de xuat §17).
+        #
+        #    Bang chung ownership la CHUNG cho ca ba, va no khong phai loi hua —
+        #    no la duong ma: moi id di qua `resolve_upload_reference`, va ham do
+        #    doi DU hai cong:
+        #      · upload  -> `user_id` + `app_slug` cua chinh tool dang goi;
+        #      · artifact-> `job.user_id` + danh sach trang hop dong dau ra.
+        #    Mot mang KHONG duoc la duong vong: `_media_sessions` giai TUNG phan
+        #    tu qua dung ham do, kem tran `TRAN_MEDIA_MOT_THAM_SO`.
+        #
+        # ⛔ `refs` VAN HOAN, va ly do khac han ba cai kia: no la `json`, khong
+        #    phai kieu media. Khong co cong nao kiem no, vi khong ai biet trong
+        #    do co gi. Mo `refs` la mo mot truong tu do di thang toi nha cung
+        #    cap — do la mot hop dong khac, khong phai mot bac tiep theo.
+        "hidden": ("refs",),
         # ⭐ MO TA CHO TUNG THAM SO — `test_198` doi, va no doi dung.
         #
         #    Mot tham so cong khai khong co mo ta la mot tham so khach phai

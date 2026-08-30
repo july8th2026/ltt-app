@@ -21,6 +21,48 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-30 (b) — nhiều tệp cho một tham số, và ba tham chiếu Seedance mở
+
+**ADDED — tham số media dạng mảng, và `video.generate` nhận thêm ba đường tham
+chiếu.** Client không hỏi tới thì không thấy gì đổi; không phá vỡ tương thích.
+
+### Nhiều tệp cho một tham số
+
+Trước đây tầng API chỉ giải được **một** tệp cho một tham số. Đó là một giới hạn
+của **nền tảng**, không của app — nó khoá `image_keys` ở **ba** tool cùng lúc.
+
+Nay một tham số dạng mảng nhận tối đa **8** id:
+
+```json
+{"tool": "video.generate",
+ "input": {"prompt": "...", "image_keys": ["up_a", "job_x.image_keys.0"]}}
+```
+
+Mỗi phần tử có thể là **upload id hoặc artifact id**, trộn được.
+
+⛔ **Mảng không phải đường vòng qua kiểm quyền.** Mỗi phần tử đi qua **đúng**
+đường mà một tham số đơn đi: cùng hàm giải, cùng hai cổng (chủ sở hữu + danh
+sách trắng hợp đồng đầu ra). Có test chốt đúng điều đó.
+
+⚠️ **Trần 8 là có chủ ý.** Mỗi phần tử là một lượt tra CSDL chạy **trước** khi có
+bất kỳ khoản tiền nào; không có trần thì một danh sách nghìn id là cách bắt máy
+chủ làm việc miễn phí — và nó không hiện ra như một cuộc tấn công, nó hiện ra
+như một request chậm.
+
+### `video.generate` mở ba tham chiếu
+
+`image_keys` · `video_key` · `audio_key` — trước đó hoãn vì chưa chứng minh được
+ownership. Bằng chứng nay **là đường mã**, không phải lời hứa: mọi id đi qua
+`resolve_upload_reference`, và hàm đó đòi đủ hai cổng.
+
+⛔ **`refs` vẫn hoãn, và lý do khác hẳn ba cái kia.** Nó là `json`, không phải
+kiểu media — không cổng nào kiểm nó được, vì không ai biết trong đó có gì. Mở
+`refs` là mở một trường tự do đi thẳng tới nhà cung cấp; đó là một hợp đồng khác,
+không phải một bậc tiếp theo.
+
+*Phải làm gì:* không gì cả. Nếu bạn từng phải tải một artifact về rồi tải lên lại
+để dùng nó ở tool sau, giờ không cần nữa.
+
 ## 2026-08-30 — `speech.ltt`: giọng nói tiếng Việt, có hợp đồng công khai
 
 ### ADDED

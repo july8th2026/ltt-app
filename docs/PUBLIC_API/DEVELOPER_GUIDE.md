@@ -670,10 +670,13 @@ Input:
 - `visual_style` — string, one of ``, `realistic`, `cinematic`, `anime`, `product`, default , Overall look. Empty means the model follows the prompt alone.
 - `seed` — number, min 0, max 2147483647, Repeat a previous result. The same seed with the same input gives the same video; omit it for a new one each time.
 - `image_key` — string, Upload id of one reference image to guide the first frame. Optional.
+- `image_keys` — array, Upload or artifact ids.
+- `video_key` — string, Upload or artifact id.
+- `audio_key` — string, Upload or artifact id.
 
 Output: `video_key` (artifact)
 
-Contract hash: `a7a770beb8d86786`
+Contract hash: `d7369f2dffe776c5`
 
 ### `video.subtitle`
 
