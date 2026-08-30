@@ -418,3 +418,47 @@ class TestExamplesKhopNganSach:
         assert "131K" not in mo_ta and "64K" not in mo_ta, (
             "van hua cua so cua ENGINE chu khong phai cua so khach dung duoc")
         assert manifest._cua_so_noi_voi_khach() in mo_ta
+
+
+class TestTaiLieuKhopMayChuThat:
+    """Tài liệu công khai phải khớp thứ máy chủ **thật sự làm**.
+
+    🔴 MỘT MỤC TRONG `CHAT_DIFFERENCES` GHI "No streaming yet" TỪ 24/08 TỚI
+       30/08 — trong khi streaming đã sống trên hai cửa suốt thời gian đó, và
+       chính máy chủ trả về câu chỉ sang hai cửa ấy khi khách gửi
+       `stream: true` vào cửa đồng bộ.
+
+       Tức tài liệu **mâu thuẫn với thông điệp lỗi của chính hệ thống**. Khách
+       đọc "chưa có streaming" thì không thử, và không bao giờ tìm ra hai cửa
+       họ cần để cắm Codex hay Claude Code — đúng thứ ta đang bán.
+    """
+
+    def test_KHONG_con_cau_noi_chua_co_streaming(self):
+        from platform_core.public_api import examples
+
+        van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES).lower()
+        assert "no streaming yet" not in van
+        for cua in ("/api/v1/messages", "/api/v1/responses"):
+            assert cua in van or cua.replace("/api", "") in van, cua
+
+    def test_ba_cua_deu_duoc_ke_ten(self):
+        from platform_core.public_api import examples
+
+        van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES)
+        for cua in ("/api/v1/jobs", "/api/v1/chat/completions",
+                    "/api/v1/messages", "/api/v1/responses"):
+            assert cua in van, f"tai lieu khong nhac cua {cua}"
+
+    def test_thong_diep_400_cua_may_chu_chi_dung_hai_cua_kia(self):
+        """Nguồn của câu chỉ đường phải là **một**, và nó ở máy chủ.
+
+        Nếu ai đó đổi thông điệp 400 mà quên tài liệu, phép kiểm này đỏ.
+        """
+        import inspect
+
+        from server.api import chat as api_chat
+
+        ma = inspect.getsource(api_chat)
+        assert "/api/v1/messages" in ma and "/api/v1/responses" in ma, (
+            "cua dong bo khong con chi sang hai cua stream — tai lieu va may "
+            "chu se lech nhau nhu da lech tu 24/08 toi 30/08")

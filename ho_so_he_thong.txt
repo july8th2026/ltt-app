@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:48ee0c50a81143821b58a55ccd08597f708466957f12ed1db45c3276f55fa58b
+Fingerprint   : sha256:dc5cbb1d94b0835cb318ca128b928da7cff9667e26863e9c867e56534b138038
 Nguồn đã quét : 1259 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -2713,7 +2713,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12521469 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12526449 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3345,7 +3345,7 @@ lần sửa sau chỉ sửa một bản, đúng cái bệnh mục này sinh ra �
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=2fa4831047ef4bcba1962e9fdff6b7f722cd983b1de50c23d518056d34bc5497 BYTES=33586 LINES=394
+SHA256=db33f9bfa0758399ca588fc8210b1bcac2f0ded3d8b8b461c5a444410e3cb2dc BYTES=34854 LINES=423
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3662,9 +3662,38 @@ khách trả tiền.
 ⭐ Và tool đã mở **không phải** `image.thumbnail` như kế hoạch từng ghi — thứ tự
 mở cửa đã đổi trên thực tế mà kế hoạch không theo kịp.
 
-**Trạng thái đúng:** khu API bật, **hai tool mở** (`text.chat`, `image.ltt`),
-fail-closed của Q92 vẫn đúng việc với mọi tool còn lại. Năm điều kiện §11 đã
-đóng; còn nợ: **xoay khoá provider** và **H35.10** (tool video).
+🔴 **SỬA LẦN HAI 2026-08-30 — LẠI LỆCH, LẠI VỀ PHÍA NGUY HIỂM.**
+
+Đoạn trên (bản 26/08) ghi *"hai tool mở"* và *"còn nợ H35.10 (tool video)"*.
+Hỏi thẳng API đang chạy ngày 30/08 — `GET /api/v1/tools`, khoá thật, qua
+Cloudflare — nó trả về **bốn**:
+
+```
+image.ltt        ASYNC_JOB
+text.chat        ASYNC_JOB
+video.subtitle   ASYNC_JOB   <- mo 29/08
+video.upscale    ASYNC_JOB   <- mo 29/08
+```
+
+Tức **H35.10 đã đóng** và hai tool video đã bán, trong khi hàng này vẫn ghi là
+nợ. `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` **đã đúng** cả bốn từ 29/08 —
+chỉ tệp này trôi.
+
+⛔ Đây là **lần thứ hai** cùng một hàng nói sai theo cùng một hướng. Bài học
+không phải "nhớ cập nhật", mà là: **đừng đọc con số ở đây, hỏi máy chủ.** Một
+lệnh, mười giây, và nó không bao giờ trôi:
+
+```powershell
+Invoke-RestMethod https://app.lttstudios.com/api/v1/tools -Headers @{Authorization="Bearer $env:LTT_API_KEY"; "User-Agent"="ltt/1.0"} | ForEach-Object items | Select-Object name, execution_mode
+```
+
+⚠️ Và nhớ `User-Agent`: thiếu nó Cloudflare trả **403 error code 1010**, trông
+y như khoá sai.
+
+**Trạng thái đúng (đo 30/08):** khu API bật, **bốn tool mở** — `text.chat`,
+`image.ltt`, `video.upscale`, `video.subtitle`. Fail-closed của Q92 vẫn đúng
+việc với mọi tool còn lại. Năm điều kiện §11 đã đóng; còn nợ: **xoay khoá
+provider**.
 
 **H37 (bắt đầu 2026-08-21, Q102)** — model tạo ảnh chạy trên **máy B**
 (`MAY-B` 192.168.2.66, RTX 3090 24 GB, RAM 192 GB). Nó là **một provider**
@@ -113660,7 +113689,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=4bda823b592b1df895f059b80e26e079d19db61502615751e3e8edc2a8f4e988 BYTES=41181 LINES=878
+SHA256=443130fc8e23bb77c8aec6206455622f9e433f31feb1f24a0b58f0d1e1060d33 BYTES=42841 LINES=900
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -114130,10 +114159,32 @@ CHAT_DIFFERENCES = (
      "400 naming the number, rather than cut off half-written. For longer "
      "generations submit the same work to POST /api/v1/jobs, which has no such "
      "ceiling."),
-    ("No streaming yet",
-     '"stream": true is refused with 400. Accepting it and answering without '
-     "a stream would break the SDK somewhere much harder to trace, so the "
-     "server says so plainly."),
+    # 🔴 MỤC NÀY TỪNG GHI "No streaming yet", VÀ NÓ ĐÃ SAI TỪ 24/08.
+    #
+    #    Streaming sống trên hai cửa khác từ hôm đó, và chính máy chủ trả về câu
+    #    chỉ đúng hai cửa ấy khi bạn gửi `stream: true` vào cửa này. Nghĩa là
+    #    **tài liệu mâu thuẫn với thông điệp lỗi của chính hệ thống** — khách
+    #    đọc "chưa có streaming" thì không thử, và không bao giờ tìm ra hai cửa
+    #    họ cần để cắm Codex hay Claude Code.
+    #
+    # ⭐ Đo lại qua Cloudflare 30/08, cả ba cửa cùng một khoá:
+    #      /v1/chat/completions            200 application/json
+    #      /v1/chat/completions stream     400 (chỉ sang hai cửa dưới)
+    #      /v1/messages         stream     200 text/event-stream, 66 khối SSE
+    #      /v1/responses        stream     200 text/event-stream, 63 khối SSE
+    ("Streaming lives on two other doors, not this one",
+     '"stream": true here is refused with 400 — and the 400 names where to go: '
+     "POST /api/v1/messages (Anthropic Messages shape, what Claude Code "
+     "speaks) or POST /api/v1/responses (OpenAI Responses shape, what Codex "
+     "speaks). Both return text/event-stream. This door stays single-JSON on "
+     "purpose: answering a stream request without a stream would break the SDK "
+     "somewhere much harder to trace."),
+    ("Three doors, and you pick by what your client speaks",
+     "POST /api/v1/jobs — asynchronous, has a quote, no max_tokens ceiling; "
+     "use it for long generations. POST /api/v1/chat/completions — one round "
+     "trip, one JSON answer, priced after the fact. POST /api/v1/messages and "
+     "POST /api/v1/responses — streaming, and these are the two a coding CLI "
+     "plugs into. Same model, same key, same ledger behind all of them."),
     ("Busy is 503, not 429",
      "503 means the machine cannot serve right now — you are NOT charged, and "
      "Retry-After says when to come back. 429 means something else entirely: "
@@ -224750,7 +224801,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=9663a2a0a71bdd771a337dfb39b2737e8bb9b34cd778584663e759941809ec9f BYTES=20817 LINES=420
+SHA256=e27c5eecdea76ebbadcf3a0f97798689f85db71daba69553a1de1ba092c4677e BYTES=22869 LINES=464
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -225172,6 +225223,50 @@ class TestExamplesKhopNganSach:
         assert "131K" not in mo_ta and "64K" not in mo_ta, (
             "van hua cua so cua ENGINE chu khong phai cua so khach dung duoc")
         assert manifest._cua_so_noi_voi_khach() in mo_ta
+
+
+class TestTaiLieuKhopMayChuThat:
+    """Tài liệu công khai phải khớp thứ máy chủ **thật sự làm**.
+
+    🔴 MỘT MỤC TRONG `CHAT_DIFFERENCES` GHI "No streaming yet" TỪ 24/08 TỚI
+       30/08 — trong khi streaming đã sống trên hai cửa suốt thời gian đó, và
+       chính máy chủ trả về câu chỉ sang hai cửa ấy khi khách gửi
+       `stream: true` vào cửa đồng bộ.
+
+       Tức tài liệu **mâu thuẫn với thông điệp lỗi của chính hệ thống**. Khách
+       đọc "chưa có streaming" thì không thử, và không bao giờ tìm ra hai cửa
+       họ cần để cắm Codex hay Claude Code — đúng thứ ta đang bán.
+    """
+
+    def test_KHONG_con_cau_noi_chua_co_streaming(self):
+        from platform_core.public_api import examples
+
+        van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES).lower()
+        assert "no streaming yet" not in van
+        for cua in ("/api/v1/messages", "/api/v1/responses"):
+            assert cua in van or cua.replace("/api", "") in van, cua
+
+    def test_ba_cua_deu_duoc_ke_ten(self):
+        from platform_core.public_api import examples
+
+        van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES)
+        for cua in ("/api/v1/jobs", "/api/v1/chat/completions",
+                    "/api/v1/messages", "/api/v1/responses"):
+            assert cua in van, f"tai lieu khong nhac cua {cua}"
+
+    def test_thong_diep_400_cua_may_chu_chi_dung_hai_cua_kia(self):
+        """Nguồn của câu chỉ đường phải là **một**, và nó ở máy chủ.
+
+        Nếu ai đó đổi thông điệp 400 mà quên tài liệu, phép kiểm này đỏ.
+        """
+        import inspect
+
+        from server.api import chat as api_chat
+
+        ma = inspect.getsource(api_chat)
+        assert "/api/v1/messages" in ma and "/api/v1/responses" in ma, (
+            "cua dong bo khong con chi sang hai cua stream — tai lieu va may "
+            "chu se lech nhau nhu da lech tu 24/08 toi 30/08")
 
 @@@LTT_PROFILE_FILE_END@@@
 

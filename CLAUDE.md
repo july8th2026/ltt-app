@@ -313,9 +313,38 @@ khách trả tiền.
 ⭐ Và tool đã mở **không phải** `image.thumbnail` như kế hoạch từng ghi — thứ tự
 mở cửa đã đổi trên thực tế mà kế hoạch không theo kịp.
 
-**Trạng thái đúng:** khu API bật, **hai tool mở** (`text.chat`, `image.ltt`),
-fail-closed của Q92 vẫn đúng việc với mọi tool còn lại. Năm điều kiện §11 đã
-đóng; còn nợ: **xoay khoá provider** và **H35.10** (tool video).
+🔴 **SỬA LẦN HAI 2026-08-30 — LẠI LỆCH, LẠI VỀ PHÍA NGUY HIỂM.**
+
+Đoạn trên (bản 26/08) ghi *"hai tool mở"* và *"còn nợ H35.10 (tool video)"*.
+Hỏi thẳng API đang chạy ngày 30/08 — `GET /api/v1/tools`, khoá thật, qua
+Cloudflare — nó trả về **bốn**:
+
+```
+image.ltt        ASYNC_JOB
+text.chat        ASYNC_JOB
+video.subtitle   ASYNC_JOB   <- mo 29/08
+video.upscale    ASYNC_JOB   <- mo 29/08
+```
+
+Tức **H35.10 đã đóng** và hai tool video đã bán, trong khi hàng này vẫn ghi là
+nợ. `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` **đã đúng** cả bốn từ 29/08 —
+chỉ tệp này trôi.
+
+⛔ Đây là **lần thứ hai** cùng một hàng nói sai theo cùng một hướng. Bài học
+không phải "nhớ cập nhật", mà là: **đừng đọc con số ở đây, hỏi máy chủ.** Một
+lệnh, mười giây, và nó không bao giờ trôi:
+
+```powershell
+Invoke-RestMethod https://app.lttstudios.com/api/v1/tools -Headers @{Authorization="Bearer $env:LTT_API_KEY"; "User-Agent"="ltt/1.0"} | ForEach-Object items | Select-Object name, execution_mode
+```
+
+⚠️ Và nhớ `User-Agent`: thiếu nó Cloudflare trả **403 error code 1010**, trông
+y như khoá sai.
+
+**Trạng thái đúng (đo 30/08):** khu API bật, **bốn tool mở** — `text.chat`,
+`image.ltt`, `video.upscale`, `video.subtitle`. Fail-closed của Q92 vẫn đúng
+việc với mọi tool còn lại. Năm điều kiện §11 đã đóng; còn nợ: **xoay khoá
+provider**.
 
 **H37 (bắt đầu 2026-08-21, Q102)** — model tạo ảnh chạy trên **máy B**
 (`MAY-B` 192.168.2.66, RTX 3090 24 GB, RAM 192 GB). Nó là **một provider**

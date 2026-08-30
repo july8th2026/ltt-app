@@ -466,10 +466,32 @@ CHAT_DIFFERENCES = (
      "400 naming the number, rather than cut off half-written. For longer "
      "generations submit the same work to POST /api/v1/jobs, which has no such "
      "ceiling."),
-    ("No streaming yet",
-     '"stream": true is refused with 400. Accepting it and answering without '
-     "a stream would break the SDK somewhere much harder to trace, so the "
-     "server says so plainly."),
+    # 🔴 MỤC NÀY TỪNG GHI "No streaming yet", VÀ NÓ ĐÃ SAI TỪ 24/08.
+    #
+    #    Streaming sống trên hai cửa khác từ hôm đó, và chính máy chủ trả về câu
+    #    chỉ đúng hai cửa ấy khi bạn gửi `stream: true` vào cửa này. Nghĩa là
+    #    **tài liệu mâu thuẫn với thông điệp lỗi của chính hệ thống** — khách
+    #    đọc "chưa có streaming" thì không thử, và không bao giờ tìm ra hai cửa
+    #    họ cần để cắm Codex hay Claude Code.
+    #
+    # ⭐ Đo lại qua Cloudflare 30/08, cả ba cửa cùng một khoá:
+    #      /v1/chat/completions            200 application/json
+    #      /v1/chat/completions stream     400 (chỉ sang hai cửa dưới)
+    #      /v1/messages         stream     200 text/event-stream, 66 khối SSE
+    #      /v1/responses        stream     200 text/event-stream, 63 khối SSE
+    ("Streaming lives on two other doors, not this one",
+     '"stream": true here is refused with 400 — and the 400 names where to go: '
+     "POST /api/v1/messages (Anthropic Messages shape, what Claude Code "
+     "speaks) or POST /api/v1/responses (OpenAI Responses shape, what Codex "
+     "speaks). Both return text/event-stream. This door stays single-JSON on "
+     "purpose: answering a stream request without a stream would break the SDK "
+     "somewhere much harder to trace."),
+    ("Three doors, and you pick by what your client speaks",
+     "POST /api/v1/jobs — asynchronous, has a quote, no max_tokens ceiling; "
+     "use it for long generations. POST /api/v1/chat/completions — one round "
+     "trip, one JSON answer, priced after the fact. POST /api/v1/messages and "
+     "POST /api/v1/responses — streaming, and these are the two a coding CLI "
+     "plugs into. Same model, same key, same ledger behind all of them."),
     ("Busy is 503, not 429",
      "503 means the machine cannot serve right now — you are NOT charged, and "
      "Retry-After says when to come back. 429 means something else entirely: "
