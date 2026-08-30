@@ -15,10 +15,12 @@ Two properties are worth stating out loud because they are easy to lose:
 """
 from __future__ import annotations
 
+import re
 from pathlib import PurePath
 
 from fastapi import Body, Depends, File, Path, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from platform_core import upload_sessions
@@ -247,14 +249,104 @@ def _owned_artifact(db, principal: Principal, artifact_id: str, config):
     return job, field, index, tool
 
 
+#: Hinh dang cua mot artifact id: `<job_id>.<field>.<index>`. Doi day du de mot
+#: upload id (khong co dau cham) khong bao gio di nham nhanh.
+_MAU_ARTIFACT = re.compile(r"[^.]+\.[A-Za-z_][A-Za-z0-9_]*\.\d+")
+
+
+def _giai_artifact(db, principal: Principal, param: str, value: str):
+    """Ket qua cua mot job TRUOC -> mot tham chieu, KHONG phai mot ban sao.
+
+    ⛔ Moi loi o day tra CUNG MOT 400. Mot artifact cua tai khoan khac va mot id
+       bia phai khong phan biet duoc — neu khac nhau, no thanh mot cong do id.
+    """
+    from platform_core.public_api.invocation import ThamChieuArtifact
+
+    try:
+        job_id, field, index = media.parse_artifact_id(value)
+    except Exception:                                            # noqa: BLE001
+        raise invalid_request(f"{param}: unknown media id.", field=param) from None
+
+    job = db.execute(select(Job).where(Job.id == job_id)).scalar_one_or_none()
+    # `user_id` la cong THU NHAT. Khong co no thi bat ky ai doan duoc mot job id
+    # deu doc duoc ket qua cua nguoi khac.
+    if job is None or str(job.user_id) != str(principal.user_id):
+        raise invalid_request(f"{param}: unknown media id.", field=param)
+
+    # Cong THU HAI: danh sach trang cua hop dong dau ra cua chinh tool DA SINH
+    # ra artifact do — khong phai tool dang goi.
+    tool_sinh = _tool_cua_job(job)
+    if tool_sinh is None:
+        # 🔴 KHONG DUOC DI TIEP. `storage_key_for(..., tool=None)` **bo qua**
+        #    danh sach trang, nen mot job ma ta khong tim lai duoc ToolSpec se
+        #    bien moi thu handler de trong `result` — ban nhap, tep trung gian,
+        #    dump go loi — thanh dau vao goi duoc. Khong tim thay tool thi tu
+        #    choi, dung doan.
+        raise invalid_request(f"{param}: unknown media id.", field=param)
+    try:
+        khoa = media.storage_key_for(job, field, index, tool=tool_sinh)
+    except Exception:                                            # noqa: BLE001
+        raise invalid_request(f"{param}: unknown media id.", field=param) from None
+
+    return ThamChieuArtifact(staging_key=khoa,
+                             filename=PurePath(khoa).name,
+                             content_type="")
+
+
+def _tool_cua_job(job):
+    """ToolSpec da sinh ra job nay, hoac `None` neu khong tim duoc.
+
+    ⚠️ `None` lam `storage_key_for` BO qua danh sach trang, nen o day thieu tool
+       la phai TU CHOI, khong duoc di tiep. Bên goi chiu trach nhiem do.
+    """
+    from platform_core.registry import discover
+
+    for muc in discover():
+        if muc.error or muc.manifest.slug != job.app_slug:
+            continue
+        for t in muc.manifest.tools:
+            if t.job_type == job.job_type:
+                return t
+    return None
+
+
 def resolve_upload_reference(db, principal: Principal, tool, param: str,
                              value: str):
-    """Turn a public upload id into a session ready to be promoted.
+    """Turn a public media id into something the job path can use.
 
-    Called from the job-submit path. Everything a caller could try to smuggle in
-    here — another account's upload, an upload made for a different app, a raw
-    storage key, a ticket used twice — ends as the same 400.
+    Accepts **two** shapes, and that is the whole of API composability:
+
+      * an **upload id** — a file the caller sent us; returns an `UploadSession`
+        ready to be promoted (moved) into the new job;
+      * an **artifact id** (`<job>.<field>.<index>`) — the output of an earlier
+        job of the same account; returns a `ThamChieuArtifact`, which is
+        **referenced, never moved**.
+
+    🔴 VI SAO PHAI CO NUA THU HAI. Truoc 30/08 chi co upload, va chu thich o
+       `invocation.py` ghi thang rang giai artifact la *"Prompt 07's job"*. He
+       qua thuc te: **khong noi chuoi duoc**. Muon dua video vua sinh sang
+       `video.upscale` thi khach phai TAI VE roi TAI LEN LAI — mot tep hang tram
+       MB di ra roi di vao, qua Cloudflare, chi de o lai dung cho no dang nam.
+
+    ⛔ VA NUA THU HAI NAY NOI LONG MOT RANG BUOC, nen phai noi ro dieu do.
+       Upload bi khoa theo `app_slug`: mot ve tai len tao cho app A khong dung
+       duoc o app B, de mot ve bi lo khong mo duoc ca nen tang. Artifact **co y**
+       khong bi khoa nhu vay — day dung la muc dich: ket qua cua `taovideo` phai
+       dua duoc sang `upscalevideo`.
+
+       Hai cong con lai **khong** noi long, va chung moi la thu giu an toan:
+         · **chu so huu** — job sinh ra artifact phai thuoc chinh principal nay;
+         · **danh sach trang cua hop dong dau ra** — `media.storage_key_for(...,
+           tool=...)`: mot tep trung gian handler tinh co de lai trong `result`
+           khong duoc thanh dau vao goi duoc chi vi ai do doan ra id.
+
+    Moi thu mot ke goi co the thu tuon vao day — upload cua tai khoan khac, ve
+    dung hai lan, khoa luu tru tho, artifact cua nguoi khac, mot id bia — deu ra
+    cung mot 400.
     """
+    if _MAU_ARTIFACT.fullmatch(str(value or "")):
+        return _giai_artifact(db, principal, param, value)
+
     from platform_core.models import UploadSession
     from sqlalchemy import select
 

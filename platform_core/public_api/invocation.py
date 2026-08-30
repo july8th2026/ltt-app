@@ -18,12 +18,37 @@ database (Q26). Whatever the crash, either both rows are there or neither is.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from platform_core.public_api.errors import invalid_request
 
-# Media parameters take an upload/artifact id. Resolving one to a storage key is
-# Prompt 07's job; until then a tool that needs media simply cannot be called,
-# which is better than inventing a half-contract now.
+# Media parameters take an upload id **or an artifact id from an earlier job**.
+# The artifact half landed 30/08 (API Expansion V2, Phase 07) — the comment that
+# used to sit here said "Prompt 07's job", and this is that job.
 _MEDIA_TYPES = {"image", "image[]", "video", "video[]", "audio"}
+
+
+@dataclass(frozen=True)
+class ThamChieuArtifact:
+    """Ket qua cua mot job TRUOC, dung lam dau vao cho job sau.
+
+    🔴 VI SAO NO KHONG PHAI MOT `UploadSession`, VA VI SAO KHAC BIET DO QUAN
+       TRONG: mot upload duoc **tieu thu** — `promote_media` DOI no sang khoa
+       ben vung cua job moi, va ve cho cu khong con gi. Lam the voi mot artifact
+       la **lay mat ket qua cua job truoc**: khach van co id do, van co the tai
+       no, va lan tai sau se 404.
+
+    ⇒ Artifact chi duoc **tham chieu**. Tep khong di dau ca.
+
+    ⛔ Va no van phai qua du hai cong: chu so huu (`job.user_id`) va danh sach
+       trang cua hop dong dau ra (`media.storage_key_for(..., tool=...)`) — mot
+       tep trung gian ma handler tinh co de lai trong `result` khong duoc thanh
+       dau vao goi duoc chi vi ai do doan ra id.
+    """
+
+    staging_key: str
+    filename: str = ""
+    content_type: str = ""
 
 # Internal params the platform adds for its own bookkeeping. The prefix keeps
 # them out of the public contract and makes them greppable.
@@ -308,6 +333,11 @@ def promote_media(db, storage, *, job, sessions: dict) -> list:
     promotions: list = []
     params = dict(job.params or {})
     for param, session in sessions.items():
+        # ⛔ Artifact chi THAM CHIEU, khong dời. Doi no di la lay mat ket qua
+        #    cua job truoc: khach van cam id do, va lan tai sau se 404.
+        if isinstance(session, ThamChieuArtifact):
+            params[param] = session.staging_key
+            continue
         suffix = _suffix(session.filename)
         final_key = f"{job.app_slug}/{job.user_id}/{job.id}/{param}{suffix}"
         key = upload_sessions.promote(db, storage, session, job=job,
