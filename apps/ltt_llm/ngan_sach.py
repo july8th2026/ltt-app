@@ -98,7 +98,25 @@ CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                    # 88_555
 #:    thật và một ví mỏng bị từ chối oan.
 TOKEN_RA_MAC_DINH = {
     "sync": 1_024,
-    "stream": 8_192,
+    # 🔴 KỊCH TRẦN, CÓ CHỦ Ý — và con số 8.192 trước đó là một lỗi ĐO ĐƯỢC.
+    #
+    #    Lần đầu tôi đặt 8.192 với lý do "đặt kịch trần bắt khách phải có số dư
+    #    gấp bốn lần nhu cầu thật". **Lý do đó sai, và phép đo bác bỏ nó**: giá
+    #    ra là 400 credit/1M token, nên giữ trước cho 32.768 token chỉ là
+    #    **13,1 credit** — 1% số dư của một tài khoản thường. Không có "ví mỏng
+    #    bị từ chối oan" nào cả.
+    #
+    # ⛔ CÁI GIÁ CỦA VIỆC ĐẶT THẤP THÌ ĐO ĐƯỢC VÀ ĐẮT: 30/08, một lượt Codex viết
+    #    ba tệp Python dừng ở **đúng 8.192 token** (`STREAM XONG … token_ra=8192`,
+    #    138 giây). Phản hồi cụt ⇒ Codex không dùng được ⇒ **không tệp nào được
+    #    tạo**, và khách chỉ thấy "chạy 2 phút rồi không có gì". Đúng lớp lỗi của
+    #    trần 1.024 cũ, chỉ dịch lên một nấc.
+    #
+    # ⭐ NÊN LUẬT LÀ: cửa stream KHÔNG có trần ẩn nào dưới trần đã công bố. Model
+    #    tự dừng khi trả lời xong; credit giữ trước rồi **hoàn** về token thật
+    #    sinh ra; và `tran_theo_ngu_canh()` vẫn tự siết theo ngữ cảnh còn lại.
+    #    Bất kỳ số nào nhỏ hơn `TOKEN_RA_TRAN` đều chỉ là một chỗ để cụt lần sau.
+    "stream": TOKEN_RA_TRAN,
     # ⛔ 4.096 CHỨ KHÔNG PHẢI 8.192, và đây là một ràng buộc chứ không phải quên
     #    đồng bộ: con số của cửa job là **giá trị `default` in trong hợp đồng công
     #    khai** (`input_schema.properties.max_tokens.default`) mà khách đọc được

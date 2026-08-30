@@ -73,10 +73,21 @@ class TestMacDinhTheoCua:
         for cua in ngan_sach.CAC_CUA:
             assert ngan_sach.mac_dinh_cho(cua) <= ngan_sach.TOKEN_RA_TRAN
 
-    def test_mac_dinh_stream_khong_kich_tran(self):
-        """Kịch trần bắt khách có sẵn số dư gấp nhiều lần nhu cầu thật (giữ trước
-        rồi mới hoàn), và một ví mỏng sẽ bị từ chối oan."""
-        assert ngan_sach.mac_dinh_cho("stream") < ngan_sach.TOKEN_RA_TRAN
+    def test_cua_stream_KHONG_co_tran_an_duoi_tran_cong_bo(self):
+        """Cửa stream phải mặc định **kịch trần**, không có trần ẩn nào thấp hơn.
+
+        ⛔ Phép kiểm này thay cho một phép kiểm cũ đòi điều NGƯỢC LẠI
+           (`stream < TOKEN_RA_TRAN`), viết theo lý do *"kịch trần bắt khách có
+           số dư gấp nhiều lần nhu cầu"*. **Phép đo bác bỏ lý do đó**: giá ra 400
+           credit/1M token ⇒ giữ trước cho 32.768 token chỉ **13,1 credit**, tức
+           1% số dư một tài khoản thường.
+
+        ⛔ Còn cái giá của việc đặt thấp thì đo được và đắt: 30/08 một lượt Codex
+           viết ba tệp dừng ở **đúng 8.192 token** ⇒ phản hồi cụt ⇒ Codex vứt ⇒
+           **không tệp nào được tạo**. Bất kỳ số nào dưới trần đều chỉ là chỗ để
+           cụt lần sau.
+        """
+        assert ngan_sach.mac_dinh_cho("stream") == ngan_sach.TOKEN_RA_TRAN
 
 
 class TestKhongConChongCheo:
