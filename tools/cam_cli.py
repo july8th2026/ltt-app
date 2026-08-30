@@ -386,7 +386,7 @@ def _codex_profile() -> str:
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 60000\n')
+            f'model_context_window = 88555\n')
 
 
 def _codex_config_goc(goc: str) -> str:
@@ -408,7 +408,7 @@ def _codex_config_goc(goc: str) -> str:
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 60000\n'
+            f'model_context_window = 88555\n'
             f'\n' + _codex_config(goc))
 
 
