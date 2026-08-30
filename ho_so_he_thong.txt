@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:dc5cbb1d94b0835cb318ca128b928da7cff9667e26863e9c867e56534b138038
+Fingerprint   : sha256:00b86852adbbd436dc628a8370c18975ec5b19acdc52d8454c998d696a850bb6
 Nguồn đã quét : 1259 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -572,8 +572,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
 - [platform] GET    /health/ready → ready | auth~unspecified | server/routes/health.py:24
 - [platform] GET    /health/version → version | auth~unspecified | server/routes/health.py:92
-- [platform] GET    /huong-dan → trang_huong_dan | auth~unspecified | server/routes/tai_lieu_api.py:174
-- [platform] GET    /huong-dan/cong-cu → trang_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:191
+- [platform] GET    /huong-dan → trang_huong_dan | auth~unspecified | server/routes/tai_lieu_api.py:176
+- [platform] GET    /huong-dan/cong-cu → trang_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:193
 - [platform] GET    /jobs → developer_jobs | auth~unspecified | server/routes/developer/su_dung.py:97
 - [platform] GET    /jobs → danh_sach | auth~login | server/routes/jobs.py:129
 - [platform] GET    /jobs/{job_id} → chi_tiet | auth~login | server/routes/jobs.py:183
@@ -620,9 +620,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /settings → developer_settings | auth~unspecified | server/routes/developer/khoa_du_an.py:46
 - [platform] GET    /status → status_page | auth~admin | server/routes/status.py:61
 - [platform] GET    /status/api → public_api_status | auth~unspecified | server/routes/status.py:30
-- [platform] GET    /tai/cong-cu-cam → tai_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:206
-- [platform] GET    /tai/cong-cu-cam-bat → tai_cong_cu_bat | auth~unspecified | server/routes/tai_lieu_api.py:225
-- [platform] GET    /tai/{ten} → tai_goi | auth~unspecified | server/routes/tai_lieu_api.py:237
+- [platform] GET    /tai/cong-cu-cam → tai_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:208
+- [platform] GET    /tai/cong-cu-cam-bat → tai_cong_cu_bat | auth~unspecified | server/routes/tai_lieu_api.py:227
+- [platform] GET    /tai/{ten} → tai_goi | auth~unspecified | server/routes/tai_lieu_api.py:239
 - [platform] GET    /tools → developer_tools | auth~unspecified | server/routes/developer/cong_cu.py:31
 - [platform] GET    /tools/{tool_name} → developer_tool_detail | auth~unspecified | server/routes/developer/cong_cu.py:62
 - [platform] GET    /usage → developer_usage | auth~unspecified | server/routes/developer/su_dung.py:104
@@ -899,7 +899,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (170 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (171 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1017,6 +1017,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_R2_SECRET_ACCESS_KEY
 - LTT_RENDER_BASE_URL
 - LTT_RENDER_TOKEN
+- LTT_SDK_DIR
 - LTT_SECRETS_DIR
 - LTT_SENTRY_DSN
 - LTT_SENTRY_TRACES_SAMPLE_RATE
@@ -2713,7 +2714,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12526449 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12536491 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3345,7 +3346,7 @@ lần sửa sau chỉ sửa một bản, đúng cái bệnh mục này sinh ra �
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=db33f9bfa0758399ca588fc8210b1bcac2f0ded3d8b8b461c5a444410e3cb2dc BYTES=34854 LINES=423
+SHA256=5e70473d997f426b867fda1b1b1085b7d74cc579277e910ae9266744860194b6 BYTES=37201 LINES=459
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3687,8 +3688,44 @@ lệnh, mười giây, và nó không bao giờ trôi:
 Invoke-RestMethod https://app.lttstudios.com/api/v1/tools -Headers @{Authorization="Bearer $env:LTT_API_KEY"; "User-Agent"="ltt/1.0"} | ForEach-Object items | Select-Object name, execution_mode
 ```
 
-⚠️ Và nhớ `User-Agent`: thiếu nó Cloudflare trả **403 error code 1010**, trông
-y như khoá sai.
+⚠️ **Nhớ đặt `User-Agent` khi gọi bằng `urllib`** — nếu không Cloudflare trả
+**403 `error code: 1010`**, trông y như khoá sai.
+
+⭐ Nhưng nói cho đúng, vì bản đầu của cảnh báo này **không tái hiện được** và
+một phiên khác đã bắt được điều đó: thứ bị chặn **không phải "thiếu UA"** mà là
+**đúng chuỗi `Python-urllib/…` viết hoa chữ P** — tức chuỗi urllib tự điền. Đo
+30/08, cùng khoá, cùng đường:
+
+```
+UA khong dat  (urllib tu dien "Python-urllib/3.13")  -> 403 CLOUDFLARE
+UA "Python-urllib/3.13"  (dat tay, HOA chu P)        -> 403 CLOUDFLARE
+UA "Python-urllib/2.7"   (phien ban khac)            -> 403 CLOUDFLARE
+UA "python-urllib/3.13"  (thuong p)                  -> 200
+UA "PYTHON-URLLIB/3.13"  (in hoa het)                -> 200
+UA "Python-Requests/2.0" (client Python khac)        -> 200
+UA ""  (chuoi RONG)                                  -> 200
+UA "curl/8.0"                                        -> 200
+```
+
+⇒ Luật khớp **tiền tố chuỗi `Python-urllib/`, PHÂN BIỆT HOA-THƯỜNG**. Ba dòng
+giữa loại đúng ba cách đọc sai: không phải "thiếu UA" (chuỗi rỗng qua), không
+phải một phiên bản cụ thể (`2.7` cũng chặn), không phải mọi client Python
+(`Python-Requests/` qua).
+
+Đó cũng là lý do hai phiên đo ra kết quả trái ngược **trong cùng một ngày** và
+cả hai đều đúng: một bên gõ `python-urllib` chữ thường, tức đo một chuỗi khác.
+
+🔴 **Và đây không chỉ là bẫy cho ta — nó là một lỗ ở phía khách.** `urllib` là
+thư viện chuẩn; ai viết mười dòng Python để thử API sẽ dùng nó, rồi nhận **403
+của Cloudflare chứ không phải của ta**: không `request_id`, không dòng nào trong
+`public_api_requests`, không tra được bằng `/admin/api-trace`. Nhìn y hệt khoá
+sai, nên khách đi tạo khoá mới rồi vẫn 403 — **và ta không thấy gì cả.**
+`KE_HOACH_TIEP` §1 hạ P3 xuống "nên có" vì đã sửa **ví dụ của ta**; việc đó cứu
+người **chép ví dụ**, không cứu người **tự viết**.
+
+⛔ Bài học chung, không riêng chỗ này: **một cảnh báo không tái hiện được sẽ bị
+phiên sau bỏ qua — và kéo theo cả những cảnh báo đúng nằm cạnh nó.** Nên viết
+lệnh tái hiện, đừng viết kết luận.
 
 **Trạng thái đúng (đo 30/08):** khu API bật, **bốn tool mở** — `text.chat`,
 `image.ltt`, `video.upscale`, `video.subtitle`. Fail-closed của Q92 vẫn đúng
@@ -113689,7 +113726,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=443130fc8e23bb77c8aec6206455622f9e433f31feb1f24a0b58f0d1e1060d33 BYTES=42841 LINES=900
+SHA256=6938f28817716b0851282b719405adbbe024c21699855d6c3384f669a0eb9ba3 BYTES=44495 LINES=930
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -114248,6 +114285,36 @@ DESKTOP_MODEL = "ltt-llm-claude-compat"
 #:    giữa hội thoại. Một con số gõ tay trong tài liệu bán hàng là một lời hứa.
 CUA_SO_CONG_BO = 88_555
 TOKEN_RA_TRAN = 32_768
+
+#: Ba cửa của `text.chat`, và **cửa nào cho việc gì**.
+#:
+#: 🔴 VÌ SAO NÓ PHẢI CÔNG KHAI. Cho tới 30/08 thông tin này chỉ nằm trong
+#:    `CHAT_DIFFERENCES`, mà `CHAT_DIFFERENCES` chỉ hiện ở
+#:    `/developers/quickstart` — **303 về `/login`** với khách ẩn danh.
+#:
+#:    Tức thứ trả lời câu *"tôi cắm được Codex/Claude Code vào đây không?"* —
+#:    câu quyết định người ta có mua hay không — nằm sau cổng đăng ký. Đúng thứ
+#:    tự sự của `server/routes/tai_lieu_api.py` sinh ra để sửa, chỉ là lần đó
+#:    chưa áp cho mục này.
+#:
+#: ⛔ Và nó không mâu thuẫn với luật "/developers/* sau đăng nhập": danh mục,
+#:    khoá và playground gắn với **một tài khoản**; còn "có ba cửa, cửa nào
+#:    stream" là một **sự thật về sản phẩm**.
+BA_CUA = (
+    ("POST /api/v1/jobs", "asynchronous",
+     "Has a quote before the work runs, and no max_tokens ceiling. Use it for "
+     "long generations and when you want the price agreed up front."),
+    ("POST /api/v1/chat/completions", "one JSON answer",
+     "OpenAI Chat Completions shape. One round trip, priced after the fact "
+     "against what the model actually produced. `stream: true` is refused "
+     "here — the 400 points you at the two doors below."),
+    ("POST /api/v1/messages", "streaming",
+     "Anthropic Messages shape. This is what Claude Code speaks; returns "
+     "text/event-stream."),
+    ("POST /api/v1/responses", "streaming",
+     "OpenAI Responses shape. This is what Codex speaks; returns "
+     "text/event-stream."),
+)
 
 #: Tệp catalog model cho Codex — đường dẫn công cụ `cam` ghi ra.
 #:
@@ -139596,7 +139663,7 @@ def _tom_tat_nexus() -> dict | None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/tai_lieu_api.py
-SHA256=db10989e0798a168245dc936811e2a5a0b45cd1dacddd91c0bb73f0fe35f5109 BYTES=10822 LINES=246
+SHA256=5db3527c92bf7942d065c901ccc9ead07b6bd4b6c63fd068aadd38e7019d7581 BYTES=10937 LINES=248
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Tài liệu API **công khai** + đường tải công cụ và SDK.
 
@@ -139767,6 +139834,8 @@ def _boi_canh_cam(request: Request) -> dict:
         "model": examples.CLI_MODEL,
         "model_desktop": examples.DESKTOP_MODEL,
         "env_key": examples.ENV_API_KEY,
+        # Ba cua cua `text.chat`. CONG KHAI co chu y — xem `examples.BA_CUA`.
+        "ba_cua": examples.BA_CUA,
     }
 
 
@@ -149329,7 +149398,7 @@ SHA256=6755102e1a78b495bbe6024bb5438274ce33a83439bc7eb4c45c56dc201730eb BYTES=15
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/huong_dan.html
-SHA256=fa060c6d3d912047c0ea241280c221f6afd365adf13d0d71f6b8cb61703b2ff9 BYTES=7024 LINES=114
+SHA256=8bbe629ff20647a4bb1631b7851dafa4f7f44fa73f54db4fc8281d144235b33d BYTES=8521 LINES=141
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Hướng dẫn cắm API") }} · LTT AI Studio{% endblock %}
@@ -149384,6 +149453,33 @@ SHA256=fa060c6d3d912047c0ea241280c221f6afd365adf13d0d71f6b8cb61703b2ff9 BYTES=70
   <h2 style="margin-top:0;">{{ _("Gọi thử bằng cURL") }}</h2>
   <p class="muted">{{ _("Thay") }} <code>$LTT_API_KEY</code> {{ _("bằng khoá của bạn.") }}</p>
   <pre style="overflow-x:auto;"><code>{{ curl_chat }}</code></pre>
+</div>
+
+{# 🔴 MỤC NÀY CŨNG SINH RA VÌ MỘT SỐ ĐO, cùng lý do với mục "Tạo ảnh" bên dưới.
+
+   Cho tới 30/08, thông tin "có ba cửa, hai trong đó stream" chỉ nằm ở
+   `/developers/quickstart` — **303 về /login** với khách ẩn danh. Tức câu trả
+   lời cho *"tôi cắm được Codex/Claude Code vào đây không?"* nằm sau cổng đăng
+   ký, trong khi nó chính là câu quyết định người ta có mua hay không.
+
+   ⚠️ Và tài liệu công khai khi đó còn nói **"No streaming yet"** — sai từ 24/08,
+      trong khi chính máy chủ trả 400 chỉ sang hai cửa stream. #}
+<div class="card" id="ba-cua">
+  <h2 style="margin-top:0;">{{ _("Ba cửa — chọn theo thứ client của bạn nói") }}</h2>
+  <p>{{ _("Cùng một model, cùng một khoá, cùng một sổ tiền. Khác nhau ở hình dạng request và ở chỗ có stream hay không.") }}</p>
+  <table class="table">
+    <thead><tr>
+      <th scope="col">{{ _("Cửa") }}</th>
+      <th scope="col">{{ _("Kiểu") }}</th>
+      <th scope="col">{{ _("Khi nào dùng") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for duong, kieu, khi_nao in ba_cua %}
+      <tr><td><code>{{ duong }}</code></td><td>{{ kieu }}</td><td>{{ khi_nao }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Cắm Codex hay Claude Code thì bạn dùng hai cửa stream — công cụ ở trên đặt sẵn đúng cửa cho từng bề mặt.") }}</p>
 </div>
 
 {# 🔴 MỤC NÀY SINH RA VÌ MỘT SỐ ĐO. Trang này — trang công khai DUY NHẤT nói về
@@ -185512,7 +185608,7 @@ def test_KHONG_test_nao_duoc_GHI_vao_ban_chuan_that():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_210_sdk_ecosystem.py
-SHA256=5c652b6c096c5517666e6f2aad4a21b1b3375c0fcee88ee4a86cc736b664704d BYTES=14147 LINES=352
+SHA256=c279fa5f05933c42942534bd163afb341a8e58608e3bfc7eefa6fc009462e5bd BYTES=15668 LINES=389
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-18 — SDKs, Postman, OpenAPI, and the promise that none of them is required.
 
@@ -185533,6 +185629,7 @@ from __future__ import annotations
 import json
 import pathlib
 import re
+import os
 import subprocess
 import sys
 import time
@@ -185715,41 +185812,77 @@ def test_the_generic_client_gets_the_same_answer_on_a_replayed_key(portal):
 
 def test_every_route_is_covered_or_deliberately_skipped():
     """Run the real checker, not a copy of its logic."""
-    result = subprocess.run(
-        [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    result = _chay_cong()
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_a_missing_declaration_is_caught():
+def _sdk_ban_sao(tmp_path, doi_ts=None, doi_py=None) -> pathlib.Path:
+    """Ban sao cua ca hai SDK, da ap phep doi. **KHONG cham tep that.**
+
+    VI SAO PHAI CO. Truoc 30/08 hai phep kiem duoi sua THANG
+    `sdk/typescript/ltt-public-api.ts` va `sdk/python/ltt_public_api.py` roi tra
+    ve trong `finally`. Hong theo hai duong, ca hai da xay ra that:
+
+      (1) Tien trinh bi giet giua chung (`gate.py | head` -> SIGPIPE) thi tep o
+          lai THIEU mot dong `@covers`, va lan chay sau bao "SDK khong khop hop
+          dong" — dung ngu phap, sai nguyen nhan. Do that 30/08:
+          `ltt-public-api.ts` mat dong `// @covers GET /models` va gate do vi
+          mot loi khong ton tai. Do la lan THU HAI trong mot ngay; `test_209`
+          dinh y het buoi sang cung hom do.
+      (2) `gate.py` chay `check_sdk_contract.py` SONG SONG voi bo test, nen cong
+          co the doc tep dung luc test dang sua => gate do NGAU NHIEN.
+    """
+    goc = tmp_path / "sdk"
+    for con in ("python", "typescript"):
+        (goc / con).mkdir(parents=True, exist_ok=True)
+    ts = TS_SDK.read_text(encoding="utf-8")
+    py = PY_SDK.read_text(encoding="utf-8")
+    (goc / "typescript" / TS_SDK.name).write_text(
+        doi_ts(ts) if doi_ts else ts, encoding="utf-8", newline="")
+    (goc / "python" / PY_SDK.name).write_text(
+        doi_py(py) if doi_py else py, encoding="utf-8", newline="")
+    return goc
+
+
+def _chay_cong(goc_sdk=None) -> subprocess.CompletedProcess:
+    env = dict(os.environ)
+    if goc_sdk is not None:
+        env["LTT_SDK_DIR"] = str(goc_sdk)
+    return subprocess.run(
+        [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        env=env)
+
+
+def test_a_missing_declaration_is_caught(tmp_path):
     """A checker that passes everything is worse than no checker."""
-    saved = TS_SDK.read_text(encoding="utf-8")
-    try:
-        TS_SDK.write_text(saved.replace("  // @covers GET /models\n", "", 1),
-                          encoding="utf-8", newline="")
-        result = subprocess.run(
-            [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
-            capture_output=True, text=True, encoding="utf-8", errors="replace")
-        assert result.returncode == 1
-        assert "GET /models" in result.stdout
-    finally:
-        TS_SDK.write_text(saved, encoding="utf-8", newline="")
+    goc = _sdk_ban_sao(
+        tmp_path,
+        doi_ts=lambda t: t.replace("  // @covers GET /models" + chr(10), "", 1))
+    result = _chay_cong(goc)
+    assert result.returncode == 1
+    assert "GET /models" in result.stdout
 
 
-def test_a_skip_must_give_a_reason():
-    saved = PY_SDK.read_text(encoding="utf-8")
-    try:
-        text = saved.replace(
-            "# @covers-not GET /openapi.json — machine-readable spec, not a call your code",
-            "# @covers-not GET /openapi.json", 1)
-        PY_SDK.write_text(text, encoding="utf-8", newline="")
-        result = subprocess.run(
-            [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
-            capture_output=True, text=True, encoding="utf-8", errors="replace")
-        assert result.returncode == 1
-        assert "ly do" in result.stdout
-    finally:
-        PY_SDK.write_text(saved, encoding="utf-8", newline="")
+def test_a_skip_must_give_a_reason(tmp_path):
+    thieu_ly_do = "# @covers-not GET /openapi.json"
+    goc = _sdk_ban_sao(tmp_path, doi_py=lambda t: t.replace(
+        thieu_ly_do + " \u2014 machine-readable spec, not a call your code",
+        thieu_ly_do, 1))
+    result = _chay_cong(goc)
+    assert result.returncode == 1
+    assert "ly do" in result.stdout
+
+
+def test_KHONG_test_nao_duoc_GHI_vao_SDK_that():
+    """Banh coc — giu cho gate thoi do ngau nhien (cung luat voi `test_209`)."""
+    van = pathlib.Path(__file__).read_text(encoding="utf-8")
+    xau = [d for d in van.splitlines()
+           if ("TS_SDK." + "write_text") in d or ("PY_SDK." + "write_text") in d]
+    assert not xau, (
+        "Cac dong sau ghi vao SDK THAT:" + chr(10) + "  "
+        + (chr(10) + "  ").join(xau)
+        + chr(10) + "Dung `_sdk_ban_sao(tmp_path, ...)` roi `_chay_cong(goc)`.")
 
 
 def test_both_sdks_cover_the_same_surface():
@@ -224801,7 +224934,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=e27c5eecdea76ebbadcf3a0f97798689f85db71daba69553a1de1ba092c4677e BYTES=22869 LINES=464
+SHA256=9b6b86a94c5d56dfea44c8d4798dd4bc97e19a9f82a06d5cb0f6562cad463d24 BYTES=24806 LINES=503
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -224822,6 +224955,7 @@ chạy 65.000) mà **không phép kiểm nào phát hiện**.
 from __future__ import annotations
 
 import os
+import pathlib
 
 import pytest
 
@@ -225267,6 +225401,44 @@ class TestTaiLieuKhopMayChuThat:
         assert "/api/v1/messages" in ma and "/api/v1/responses" in ma, (
             "cua dong bo khong con chi sang hai cua stream — tai lieu va may "
             "chu se lech nhau nhu da lech tu 24/08 toi 30/08")
+
+
+class TestBaCuaPhaiCONG_KHAI:
+    """Thứ quyết định người ta có mua hay không thì không được nằm sau đăng nhập.
+
+    🔴 Tới 30/08, "có ba cửa, hai trong đó stream" chỉ hiện ở
+       `/developers/quickstart` — **303 về `/login`** với khách ẩn danh. Tức câu
+       trả lời cho *"tôi cắm được Codex/Claude Code vào đây không?"* nằm sau
+       cổng đăng ký. Đúng thứ `server/routes/tai_lieu_api.py` sinh ra để sửa,
+       chỉ là lần đó chưa áp cho mục này.
+    """
+
+    def test_ba_cua_co_du_bon_duong_va_danh_dau_cua_nao_stream(self):
+        from platform_core.public_api import examples
+
+        duong = {d for d, _, _ in examples.BA_CUA}
+        assert duong == {"POST /api/v1/jobs", "POST /api/v1/chat/completions",
+                         "POST /api/v1/messages", "POST /api/v1/responses"}
+        stream = {d for d, kieu, _ in examples.BA_CUA if kieu == "streaming"}
+        assert stream == {"POST /api/v1/messages", "POST /api/v1/responses"}
+
+    def test_trang_CONG_KHAI_render_duoc_ba_cua(self):
+        """Bánh cóc: khai biến mà quên đưa vào ngữ cảnh là bảng rỗng, im lặng."""
+        from server.routes import tai_lieu_api
+
+        ma = (pathlib.Path(tai_lieu_api.__file__)).read_text(encoding="utf-8")
+        assert '"ba_cua": examples.BA_CUA' in ma
+        mau = pathlib.Path("server/templates/huong_dan.html").read_text(
+            encoding="utf-8")
+        assert "ba_cua" in mau, "trang cong khai khong render ba cua"
+
+    def test_BA_CUA_khop_CHAT_DIFFERENCES(self):
+        """Hai chỗ nói cùng một sự thật thì phải khớp, nếu không lại lệch."""
+        from platform_core.public_api import examples
+
+        van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES)
+        for d, _, _ in examples.BA_CUA:
+            assert d.removeprefix("POST ") in van, d
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -243709,7 +243881,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_sdk_contract.py
-SHA256=e01a3d4356bdd9d26ae1d23a7c737b2ca39452fe21f51fe8690b176104df6363 BYTES=3959 LINES=107
+SHA256=e0d40e0f93e06125ffb88fc8f04e388cdf2848b711743ea7cb3eba5640b866f3 BYTES=4930 LINES=124
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Moi route cong khai phai duoc SDK phu — hoac duoc khai la CO Y khong phu.
 
@@ -243741,9 +243913,26 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+#: ⭐ SEAM CHO TEST — va do la SUA LOI, khong phai tien nghi.
+#:
+#:    `test_210` phai chay CHINH cong nay (mot cong chi kiem qua thu vien la mot
+#:    cong khong ai kiem day dien). De lam vay no sua THANG hai tep SDK roi tra
+#:    ve trong `finally`. Hong theo hai duong, ca hai da xay ra:
+#:
+#:    ① Tien trinh bi giet giua chung (gate qua gio, Ctrl-C, `| head` -> SIGPIPE)
+#:      thi tep o lai **thieu mot dong `@covers`** — va lan chay sau bao
+#:      "SDK khong khop hop dong", mot thong bao dung ngu phap nhung sai nguyen
+#:      nhan. Da can that 30/08: `sdk/typescript/ltt-public-api.ts` mat dong
+#:      `// @covers GET /models` va gate do vi mot loi khong ton tai.
+#:    ② `gate.py` chay cong nay SONG SONG voi bo test ⇒ do NGAU NHIEN.
+#:
+#: ⛔ Bien nay CHI de test dung. Ma chay that khong bao gio dat no.
+_THU_MUC_THU = __import__("os").environ.get("LTT_SDK_DIR")
+_GOC_SDK = pathlib.Path(_THU_MUC_THU) if _THU_MUC_THU else ROOT / "sdk"
+
 SDKS = {
-    "python": ROOT / "sdk" / "python" / "ltt_public_api.py",
-    "typescript": ROOT / "sdk" / "typescript" / "ltt-public-api.ts",
+    "python": _GOC_SDK / "python" / "ltt_public_api.py",
+    "typescript": _GOC_SDK / "typescript" / "ltt-public-api.ts",
 }
 
 _COVERS = re.compile(r"@covers\s+([A-Z]+)\s+(\S+)")

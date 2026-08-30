@@ -11625,3 +11625,15 @@ msgstr "The server is missing a GPU"
 #: platform_core/job_runner.py
 msgid "Đếm được {thay} card, cấu hình khai {mong_doi} ({bien}). Không có job nào hỏng vì việc này — chúng chỉ dồn hết vào số card còn lại, nên thông lượng giảm mà mọi tín hiệu khác vẫn xanh. Kiểm `nvidia-smi -L` trên máy; nếu card không hiện thì đó là liên kết driver, không phải phần mềm nền tảng."
 msgstr "Counted {thay} card(s); the configuration declares {mong_doi} ({bien}). No job has failed because of this — they simply all queue onto the cards that remain, so throughput drops while every other signal stays green. Check `nvidia-smi -L` on the host; if the card does not appear, that is a driver binding, not platform software."
+
+msgid "Ba cửa — chọn theo thứ client của bạn nói"
+msgstr "Three doors — pick the one your client speaks"
+
+msgid "Cùng một model, cùng một khoá, cùng một sổ tiền. Khác nhau ở hình dạng request và ở chỗ có stream hay không."
+msgstr "Same model, same key, same ledger. They differ in the request shape, and in whether they stream."
+
+msgid "Cắm Codex hay Claude Code thì bạn dùng hai cửa stream — công cụ ở trên đặt sẵn đúng cửa cho từng bề mặt."
+msgstr "Plugging in Codex or Claude Code means the two streaming doors — the tool above sets the right one for each surface."
+
+msgid "Cửa"
+msgstr "Door"

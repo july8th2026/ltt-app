@@ -17,6 +17,7 @@ chạy 65.000) mà **không phép kiểm nào phát hiện**.
 from __future__ import annotations
 
 import os
+import pathlib
 
 import pytest
 
@@ -462,3 +463,41 @@ class TestTaiLieuKhopMayChuThat:
         assert "/api/v1/messages" in ma and "/api/v1/responses" in ma, (
             "cua dong bo khong con chi sang hai cua stream — tai lieu va may "
             "chu se lech nhau nhu da lech tu 24/08 toi 30/08")
+
+
+class TestBaCuaPhaiCONG_KHAI:
+    """Thứ quyết định người ta có mua hay không thì không được nằm sau đăng nhập.
+
+    🔴 Tới 30/08, "có ba cửa, hai trong đó stream" chỉ hiện ở
+       `/developers/quickstart` — **303 về `/login`** với khách ẩn danh. Tức câu
+       trả lời cho *"tôi cắm được Codex/Claude Code vào đây không?"* nằm sau
+       cổng đăng ký. Đúng thứ `server/routes/tai_lieu_api.py` sinh ra để sửa,
+       chỉ là lần đó chưa áp cho mục này.
+    """
+
+    def test_ba_cua_co_du_bon_duong_va_danh_dau_cua_nao_stream(self):
+        from platform_core.public_api import examples
+
+        duong = {d for d, _, _ in examples.BA_CUA}
+        assert duong == {"POST /api/v1/jobs", "POST /api/v1/chat/completions",
+                         "POST /api/v1/messages", "POST /api/v1/responses"}
+        stream = {d for d, kieu, _ in examples.BA_CUA if kieu == "streaming"}
+        assert stream == {"POST /api/v1/messages", "POST /api/v1/responses"}
+
+    def test_trang_CONG_KHAI_render_duoc_ba_cua(self):
+        """Bánh cóc: khai biến mà quên đưa vào ngữ cảnh là bảng rỗng, im lặng."""
+        from server.routes import tai_lieu_api
+
+        ma = (pathlib.Path(tai_lieu_api.__file__)).read_text(encoding="utf-8")
+        assert '"ba_cua": examples.BA_CUA' in ma
+        mau = pathlib.Path("server/templates/huong_dan.html").read_text(
+            encoding="utf-8")
+        assert "ba_cua" in mau, "trang cong khai khong render ba cua"
+
+    def test_BA_CUA_khop_CHAT_DIFFERENCES(self):
+        """Hai chỗ nói cùng một sự thật thì phải khớp, nếu không lại lệch."""
+        from platform_core.public_api import examples
+
+        van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES)
+        for d, _, _ in examples.BA_CUA:
+            assert d.removeprefix("POST ") in van, d

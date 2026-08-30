@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import pathlib
 import re
+import os
 import subprocess
 import sys
 import time
@@ -199,41 +200,77 @@ def test_the_generic_client_gets_the_same_answer_on_a_replayed_key(portal):
 
 def test_every_route_is_covered_or_deliberately_skipped():
     """Run the real checker, not a copy of its logic."""
-    result = subprocess.run(
-        [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
+    result = _chay_cong()
     assert result.returncode == 0, result.stdout + result.stderr
 
 
-def test_a_missing_declaration_is_caught():
+def _sdk_ban_sao(tmp_path, doi_ts=None, doi_py=None) -> pathlib.Path:
+    """Ban sao cua ca hai SDK, da ap phep doi. **KHONG cham tep that.**
+
+    VI SAO PHAI CO. Truoc 30/08 hai phep kiem duoi sua THANG
+    `sdk/typescript/ltt-public-api.ts` va `sdk/python/ltt_public_api.py` roi tra
+    ve trong `finally`. Hong theo hai duong, ca hai da xay ra that:
+
+      (1) Tien trinh bi giet giua chung (`gate.py | head` -> SIGPIPE) thi tep o
+          lai THIEU mot dong `@covers`, va lan chay sau bao "SDK khong khop hop
+          dong" — dung ngu phap, sai nguyen nhan. Do that 30/08:
+          `ltt-public-api.ts` mat dong `// @covers GET /models` va gate do vi
+          mot loi khong ton tai. Do la lan THU HAI trong mot ngay; `test_209`
+          dinh y het buoi sang cung hom do.
+      (2) `gate.py` chay `check_sdk_contract.py` SONG SONG voi bo test, nen cong
+          co the doc tep dung luc test dang sua => gate do NGAU NHIEN.
+    """
+    goc = tmp_path / "sdk"
+    for con in ("python", "typescript"):
+        (goc / con).mkdir(parents=True, exist_ok=True)
+    ts = TS_SDK.read_text(encoding="utf-8")
+    py = PY_SDK.read_text(encoding="utf-8")
+    (goc / "typescript" / TS_SDK.name).write_text(
+        doi_ts(ts) if doi_ts else ts, encoding="utf-8", newline="")
+    (goc / "python" / PY_SDK.name).write_text(
+        doi_py(py) if doi_py else py, encoding="utf-8", newline="")
+    return goc
+
+
+def _chay_cong(goc_sdk=None) -> subprocess.CompletedProcess:
+    env = dict(os.environ)
+    if goc_sdk is not None:
+        env["LTT_SDK_DIR"] = str(goc_sdk)
+    return subprocess.run(
+        [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        env=env)
+
+
+def test_a_missing_declaration_is_caught(tmp_path):
     """A checker that passes everything is worse than no checker."""
-    saved = TS_SDK.read_text(encoding="utf-8")
-    try:
-        TS_SDK.write_text(saved.replace("  // @covers GET /models\n", "", 1),
-                          encoding="utf-8", newline="")
-        result = subprocess.run(
-            [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
-            capture_output=True, text=True, encoding="utf-8", errors="replace")
-        assert result.returncode == 1
-        assert "GET /models" in result.stdout
-    finally:
-        TS_SDK.write_text(saved, encoding="utf-8", newline="")
+    goc = _sdk_ban_sao(
+        tmp_path,
+        doi_ts=lambda t: t.replace("  // @covers GET /models" + chr(10), "", 1))
+    result = _chay_cong(goc)
+    assert result.returncode == 1
+    assert "GET /models" in result.stdout
 
 
-def test_a_skip_must_give_a_reason():
-    saved = PY_SDK.read_text(encoding="utf-8")
-    try:
-        text = saved.replace(
-            "# @covers-not GET /openapi.json — machine-readable spec, not a call your code",
-            "# @covers-not GET /openapi.json", 1)
-        PY_SDK.write_text(text, encoding="utf-8", newline="")
-        result = subprocess.run(
-            [sys.executable, "tools/check_sdk_contract.py"], cwd=ROOT,
-            capture_output=True, text=True, encoding="utf-8", errors="replace")
-        assert result.returncode == 1
-        assert "ly do" in result.stdout
-    finally:
-        PY_SDK.write_text(saved, encoding="utf-8", newline="")
+def test_a_skip_must_give_a_reason(tmp_path):
+    thieu_ly_do = "# @covers-not GET /openapi.json"
+    goc = _sdk_ban_sao(tmp_path, doi_py=lambda t: t.replace(
+        thieu_ly_do + " \u2014 machine-readable spec, not a call your code",
+        thieu_ly_do, 1))
+    result = _chay_cong(goc)
+    assert result.returncode == 1
+    assert "ly do" in result.stdout
+
+
+def test_KHONG_test_nao_duoc_GHI_vao_SDK_that():
+    """Banh coc — giu cho gate thoi do ngau nhien (cung luat voi `test_209`)."""
+    van = pathlib.Path(__file__).read_text(encoding="utf-8")
+    xau = [d for d in van.splitlines()
+           if ("TS_SDK." + "write_text") in d or ("PY_SDK." + "write_text") in d]
+    assert not xau, (
+        "Cac dong sau ghi vao SDK THAT:" + chr(10) + "  "
+        + (chr(10) + "  ").join(xau)
+        + chr(10) + "Dung `_sdk_ban_sao(tmp_path, ...)` roi `_chay_cong(goc)`.")
 
 
 def test_both_sdks_cover_the_same_surface():

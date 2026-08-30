@@ -28,9 +28,26 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+#: ⭐ SEAM CHO TEST — va do la SUA LOI, khong phai tien nghi.
+#:
+#:    `test_210` phai chay CHINH cong nay (mot cong chi kiem qua thu vien la mot
+#:    cong khong ai kiem day dien). De lam vay no sua THANG hai tep SDK roi tra
+#:    ve trong `finally`. Hong theo hai duong, ca hai da xay ra:
+#:
+#:    ① Tien trinh bi giet giua chung (gate qua gio, Ctrl-C, `| head` -> SIGPIPE)
+#:      thi tep o lai **thieu mot dong `@covers`** — va lan chay sau bao
+#:      "SDK khong khop hop dong", mot thong bao dung ngu phap nhung sai nguyen
+#:      nhan. Da can that 30/08: `sdk/typescript/ltt-public-api.ts` mat dong
+#:      `// @covers GET /models` va gate do vi mot loi khong ton tai.
+#:    ② `gate.py` chay cong nay SONG SONG voi bo test ⇒ do NGAU NHIEN.
+#:
+#: ⛔ Bien nay CHI de test dung. Ma chay that khong bao gio dat no.
+_THU_MUC_THU = __import__("os").environ.get("LTT_SDK_DIR")
+_GOC_SDK = pathlib.Path(_THU_MUC_THU) if _THU_MUC_THU else ROOT / "sdk"
+
 SDKS = {
-    "python": ROOT / "sdk" / "python" / "ltt_public_api.py",
-    "typescript": ROOT / "sdk" / "typescript" / "ltt-public-api.ts",
+    "python": _GOC_SDK / "python" / "ltt_public_api.py",
+    "typescript": _GOC_SDK / "typescript" / "ltt-public-api.ts",
 }
 
 _COVERS = re.compile(r"@covers\s+([A-Z]+)\s+(\S+)")

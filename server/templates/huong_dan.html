@@ -53,6 +53,33 @@
   <pre style="overflow-x:auto;"><code>{{ curl_chat }}</code></pre>
 </div>
 
+{# 🔴 MỤC NÀY CŨNG SINH RA VÌ MỘT SỐ ĐO, cùng lý do với mục "Tạo ảnh" bên dưới.
+
+   Cho tới 30/08, thông tin "có ba cửa, hai trong đó stream" chỉ nằm ở
+   `/developers/quickstart` — **303 về /login** với khách ẩn danh. Tức câu trả
+   lời cho *"tôi cắm được Codex/Claude Code vào đây không?"* nằm sau cổng đăng
+   ký, trong khi nó chính là câu quyết định người ta có mua hay không.
+
+   ⚠️ Và tài liệu công khai khi đó còn nói **"No streaming yet"** — sai từ 24/08,
+      trong khi chính máy chủ trả 400 chỉ sang hai cửa stream. #}
+<div class="card" id="ba-cua">
+  <h2 style="margin-top:0;">{{ _("Ba cửa — chọn theo thứ client của bạn nói") }}</h2>
+  <p>{{ _("Cùng một model, cùng một khoá, cùng một sổ tiền. Khác nhau ở hình dạng request và ở chỗ có stream hay không.") }}</p>
+  <table class="table">
+    <thead><tr>
+      <th scope="col">{{ _("Cửa") }}</th>
+      <th scope="col">{{ _("Kiểu") }}</th>
+      <th scope="col">{{ _("Khi nào dùng") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for duong, kieu, khi_nao in ba_cua %}
+      <tr><td><code>{{ duong }}</code></td><td>{{ kieu }}</td><td>{{ khi_nao }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Cắm Codex hay Claude Code thì bạn dùng hai cửa stream — công cụ ở trên đặt sẵn đúng cửa cho từng bề mặt.") }}</p>
+</div>
+
 {# 🔴 MỤC NÀY SINH RA VÌ MỘT SỐ ĐO. Trang này — trang công khai DUY NHẤT nói về
    tích hợp — nhắc `ltt_llm` 16 lần và `image.ltt` **0 lần**. Ta bán hai thứ và
    giới thiệu một; người chưa đăng ký thấy giá ảnh ở /gia-api rồi hết đường.

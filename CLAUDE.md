@@ -338,8 +338,44 @@ lệnh, mười giây, và nó không bao giờ trôi:
 Invoke-RestMethod https://app.lttstudios.com/api/v1/tools -Headers @{Authorization="Bearer $env:LTT_API_KEY"; "User-Agent"="ltt/1.0"} | ForEach-Object items | Select-Object name, execution_mode
 ```
 
-⚠️ Và nhớ `User-Agent`: thiếu nó Cloudflare trả **403 error code 1010**, trông
-y như khoá sai.
+⚠️ **Nhớ đặt `User-Agent` khi gọi bằng `urllib`** — nếu không Cloudflare trả
+**403 `error code: 1010`**, trông y như khoá sai.
+
+⭐ Nhưng nói cho đúng, vì bản đầu của cảnh báo này **không tái hiện được** và
+một phiên khác đã bắt được điều đó: thứ bị chặn **không phải "thiếu UA"** mà là
+**đúng chuỗi `Python-urllib/…` viết hoa chữ P** — tức chuỗi urllib tự điền. Đo
+30/08, cùng khoá, cùng đường:
+
+```
+UA khong dat  (urllib tu dien "Python-urllib/3.13")  -> 403 CLOUDFLARE
+UA "Python-urllib/3.13"  (dat tay, HOA chu P)        -> 403 CLOUDFLARE
+UA "Python-urllib/2.7"   (phien ban khac)            -> 403 CLOUDFLARE
+UA "python-urllib/3.13"  (thuong p)                  -> 200
+UA "PYTHON-URLLIB/3.13"  (in hoa het)                -> 200
+UA "Python-Requests/2.0" (client Python khac)        -> 200
+UA ""  (chuoi RONG)                                  -> 200
+UA "curl/8.0"                                        -> 200
+```
+
+⇒ Luật khớp **tiền tố chuỗi `Python-urllib/`, PHÂN BIỆT HOA-THƯỜNG**. Ba dòng
+giữa loại đúng ba cách đọc sai: không phải "thiếu UA" (chuỗi rỗng qua), không
+phải một phiên bản cụ thể (`2.7` cũng chặn), không phải mọi client Python
+(`Python-Requests/` qua).
+
+Đó cũng là lý do hai phiên đo ra kết quả trái ngược **trong cùng một ngày** và
+cả hai đều đúng: một bên gõ `python-urllib` chữ thường, tức đo một chuỗi khác.
+
+🔴 **Và đây không chỉ là bẫy cho ta — nó là một lỗ ở phía khách.** `urllib` là
+thư viện chuẩn; ai viết mười dòng Python để thử API sẽ dùng nó, rồi nhận **403
+của Cloudflare chứ không phải của ta**: không `request_id`, không dòng nào trong
+`public_api_requests`, không tra được bằng `/admin/api-trace`. Nhìn y hệt khoá
+sai, nên khách đi tạo khoá mới rồi vẫn 403 — **và ta không thấy gì cả.**
+`KE_HOACH_TIEP` §1 hạ P3 xuống "nên có" vì đã sửa **ví dụ của ta**; việc đó cứu
+người **chép ví dụ**, không cứu người **tự viết**.
+
+⛔ Bài học chung, không riêng chỗ này: **một cảnh báo không tái hiện được sẽ bị
+phiên sau bỏ qua — và kéo theo cả những cảnh báo đúng nằm cạnh nó.** Nên viết
+lệnh tái hiện, đừng viết kết luận.
 
 **Trạng thái đúng (đo 30/08):** khu API bật, **bốn tool mở** — `text.chat`,
 `image.ltt`, `video.upscale`, `video.subtitle`. Fail-closed của Q92 vẫn đúng

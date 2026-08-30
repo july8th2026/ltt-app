@@ -167,6 +167,8 @@ def _boi_canh_cam(request: Request) -> dict:
         "model": examples.CLI_MODEL,
         "model_desktop": examples.DESKTOP_MODEL,
         "env_key": examples.ENV_API_KEY,
+        # Ba cua cua `text.chat`. CONG KHAI co chu y — xem `examples.BA_CUA`.
+        "ba_cua": examples.BA_CUA,
     }
 
 

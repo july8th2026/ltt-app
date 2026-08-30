@@ -556,6 +556,36 @@ DESKTOP_MODEL = "ltt-llm-claude-compat"
 CUA_SO_CONG_BO = 88_555
 TOKEN_RA_TRAN = 32_768
 
+#: Ba cửa của `text.chat`, và **cửa nào cho việc gì**.
+#:
+#: 🔴 VÌ SAO NÓ PHẢI CÔNG KHAI. Cho tới 30/08 thông tin này chỉ nằm trong
+#:    `CHAT_DIFFERENCES`, mà `CHAT_DIFFERENCES` chỉ hiện ở
+#:    `/developers/quickstart` — **303 về `/login`** với khách ẩn danh.
+#:
+#:    Tức thứ trả lời câu *"tôi cắm được Codex/Claude Code vào đây không?"* —
+#:    câu quyết định người ta có mua hay không — nằm sau cổng đăng ký. Đúng thứ
+#:    tự sự của `server/routes/tai_lieu_api.py` sinh ra để sửa, chỉ là lần đó
+#:    chưa áp cho mục này.
+#:
+#: ⛔ Và nó không mâu thuẫn với luật "/developers/* sau đăng nhập": danh mục,
+#:    khoá và playground gắn với **một tài khoản**; còn "có ba cửa, cửa nào
+#:    stream" là một **sự thật về sản phẩm**.
+BA_CUA = (
+    ("POST /api/v1/jobs", "asynchronous",
+     "Has a quote before the work runs, and no max_tokens ceiling. Use it for "
+     "long generations and when you want the price agreed up front."),
+    ("POST /api/v1/chat/completions", "one JSON answer",
+     "OpenAI Chat Completions shape. One round trip, priced after the fact "
+     "against what the model actually produced. `stream: true` is refused "
+     "here — the 400 points you at the two doors below."),
+    ("POST /api/v1/messages", "streaming",
+     "Anthropic Messages shape. This is what Claude Code speaks; returns "
+     "text/event-stream."),
+    ("POST /api/v1/responses", "streaming",
+     "OpenAI Responses shape. This is what Codex speaks; returns "
+     "text/event-stream."),
+)
+
 #: Tệp catalog model cho Codex — đường dẫn công cụ `cam` ghi ra.
 #:
 #: ⭐ Thiếu nó thì Codex **không có metadata** cho `ltt_llm`, rơi vào đường
