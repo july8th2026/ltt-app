@@ -183,3 +183,46 @@ def test_cong_cu_don_xac_KHONG_dung_toi_production():
         assert dieu_kien in ma.lower(), f"thieu dieu kien: {dieu_kien}"
     # Mac dinh la CHI XEM. Mot cong cu giet tien trinh khong duoc mac dinh giet.
     assert '"--giet"' in ma and "action=\"store_true\"" in ma
+
+
+# ── Bánh cóc kiểu xuống dòng (30/08) ──────────────────────────────────────
+
+def test_banh_coc_kieu_xuong_dong_NAM_TRONG_gate():
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "check_xuong_dong.py" in ma, "banh coc khong ai chay la mot chu thich"
+
+
+def test_luat_la_KHOP_HEAD_chu_khong_phai_ep_LF():
+    """🔴 Chỗ này đã **suýt** sai, và cái suýt đó mới là bài học.
+
+    Khi dọn 25 tệp bị lật CRLF, một lượt *"trả mọi tệp về LF"* đã suýt đổi hai
+    tệp **vốn LÀ CRLF trong git**:
+
+        docs/PUBLIC_API/DEVELOPER_GUIDE.md   721 CRLF  (công cụ sinh ra)
+        tools/i18n_baseline.json             118 CRLF
+
+    Ép chúng về LF là đổi thứ không nên đổi, và lần sau công cụ sinh ra chúng
+    lại đổi ngược — một vòng lặp không ai thắng.
+
+    ⇒ Luật đúng: **khớp đúng thứ git đang giữ cho từng tệp**. Và cách rẻ nhất
+      để biết không phải là nhớ một quy ước, mà là **hỏi git**.
+    """
+    ma = (GOC / "tools" / "check_xuong_dong.py").read_text(encoding="utf-8")
+    assert "HEAD:" in ma, "phai hoi git ban o HEAD, khong duoc gia dinh mot kieu"
+    assert "DUNG ep moi tep ve LF" in ma, (
+        "thong diep loi phai canh bao chinh cai bay da suyt dinh")
+
+
+def test_bo_qua_tep_nhi_phan_va_tep_MOI():
+    """Đếm CRLF trong `.mo` là vô nghĩa; tệp mới thì chưa có chuẩn để so."""
+    ma = (GOC / "tools" / "check_xuong_dong.py").read_text(encoding="utf-8")
+    assert ".mo" in ma and "NHI_PHAN" in ma
+    # Tep moi (`??`) va tep da xoa (`D`) deu phai bi bo qua.
+    assert '"?" in trang_thai' in ma and '"D" in trang_thai' in ma
+
+
+def test_no_SO_KIEU_chu_khong_so_SO_LUONG():
+    """Thêm dòng thật làm cả hai con số tăng — đếm số lượng sẽ báo động giả."""
+    ma = (GOC / "tools" / "check_xuong_dong.py").read_text(encoding="utf-8")
+    assert "thuan_cu != thuan_moi" in ma, (
+        "phai so KIEU (LF/CRLF/tron), khong duoc so so luong CRLF")

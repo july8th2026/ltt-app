@@ -143,6 +143,18 @@ def _steps(quick: bool) -> list[Step]:
              ROOT, nhom="cong"),
         Step("secret scan", [sys.executable, "tools/scan_source_secrets.py"], ROOT),
         Step("app contract lint", [sys.executable, "tools/lint_app_contract.py"], ROOT),
+        # 🔴 Mot tep bi ghi lai TOAN BO thi `git diff` khong doc duoc nua.
+        #    Do that: 26/08 mot tep .po lech 10.465 dong; 30/08 **25 tep**
+        #    cung luc — 5.356 dong nhieu che 266 dong that.
+        # ⛔ Va luat KHONG phai "moi tep dung LF": hai tep von LA CRLF
+        #    trong git (DEVELOPER_GUIDE.md do cong cu sinh). Nen no hoi
+        #    git tung tep, khong nho mot quy uoc.
+        # ⭐ `sau_test` chu KHONG phai `tinh`, va do khong chi la de qua banh
+        #    coc `test_332`: chay SAU bo test la chay dung luc — no bat duoc ca
+        #    truong hop mot TEST lat kieu xuong dong cua mot tep. Do dung la
+        #    thu da xay ra 26/08 voi `messages.po`.
+        Step("kieu xuong dong", [sys.executable, "tools/check_xuong_dong.py"],
+             ROOT, nhom="sau_test"),
         # 🔴 Banh coc kich thuoc cho `server/routes/`. Hop dong app thi hanh tran
         #    900 dong / 30 handler cho `apps/` — con `server/` KHONG co nguong
         #    nao, va ba tep lon nhat kho deu nam o do. `developer.py` vuot CA HAI
