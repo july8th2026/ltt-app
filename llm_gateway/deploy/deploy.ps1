@@ -126,7 +126,7 @@ if (($co -join "") -match "CO") {
     $dong = @($dong | ForEach-Object {
         if ($_ -match '^LTT_LLM_MAX_INPUT_TOKENS=') {
             $daInput = $true
-            'LTT_LLM_MAX_INPUT_TOKENS=65000'
+            'LTT_LLM_MAX_INPUT_TOKENS=96256'
         } elseif ($_ -match '^LTT_LLM_MAX_OUTPUT_TOKENS=') {
             $daOutput = $true
             'LTT_LLM_MAX_OUTPUT_TOKENS=32768'
@@ -135,7 +135,7 @@ if (($co -join "") -match "CO") {
             'LTT_LLM_MAX_DONG_THOI=1'
         } else { $_ }
     })
-    if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=65000' }
+    if (-not $daInput) { $dong += 'LTT_LLM_MAX_INPUT_TOKENS=96256' }
     if (-not $daOutput) { $dong += 'LTT_LLM_MAX_OUTPUT_TOKENS=32768' }
     if (-not $daDongThoi) { $dong += 'LTT_LLM_MAX_DONG_THOI=1' }
     [IO.File]::WriteAllText($tamEnv, ($dong -join "`n") + "`n", (New-Object Text.UTF8Encoding($false)))
@@ -143,7 +143,7 @@ if (($co -join "") -match "CO") {
     $rc = $LASTEXITCODE
     Remove-Item $tamEnv -Force -ErrorAction SilentlyContinue
     if ($rc -ne 0) { Loi "scp gateway.env da migrate that bai"; exit 1 }
-    Dat "gateway.env da migrate input 65000, output 32768, concurrency 1 (giu token/model)"
+    Dat "gateway.env da migrate input 96256, output 32768, concurrency 1 (giu token/model)"
 } else {
     # Token sinh mot lan, ngau nhien. No KHONG phai bi mat cua nen tang - no chi
     # bao ve cong VLM tren LAN. Nhung van khong duoc in ra log.
@@ -161,7 +161,7 @@ if (($co -join "") -match "CO") {
         "# Fail-closed (Q92): rong = KHONG mo model nao. Mo bang cach liet ke ten.",
         "LTT_LLM_MODELS=",
         "# Tran do duoc o P5 (SO_DO_P2_P6.md). Doi thi phai do lai.",
-        "LTT_LLM_MAX_INPUT_TOKENS=65000",
+        "LTT_LLM_MAX_INPUT_TOKENS=96256",
         "LTT_LLM_MAX_OUTPUT_TOKENS=32768",
         "LTT_LLM_MAX_DONG_THOI=1",
         "LTT_LLM_MAX_IMAGES=4",
