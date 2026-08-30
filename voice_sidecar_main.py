@@ -1,4 +1,4 @@
-"""
+r"""
 voice_sidecar_main.py — diem chay dich vu SIDECAR (NSSM: LTTStudioVoice).
 
     C:\LTTPlatform\vieneu-venv\Scripts\python.exe voice_sidecar_main.py
