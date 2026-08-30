@@ -366,3 +366,98 @@ dấu hiệu **lấy từ thông điệp thật của máy B**:
 
 ⛔ **Đúng một lần.** `_da_thu_lai` chặn vòng lặp; lần hai vẫn vỡ thì ghi nhật ký
    và trả lỗi như cũ, để **tần suất thật không bị giấu**.
+
+---
+
+## 10. `gpt-5.6-luna` — ta chưa từng khai tên đó (30/08)
+
+### 10.1 Triệu chứng và cái bẫy chẩn đoán
+
+Nền tảng trả **400** cho những lượt mang `model='gpt-5.6-luna'`. Tên đó **không
+tồn tại ở chỗ ta**, không có trong `aliases()`, không có trong
+`TUYEN_TUONG_THICH`, không có trong cấu hình nào của khách.
+
+⛔ **Cái bẫy:** đọc "Codex gửi sai tên" rồi kết luận "thì nhận thêm tên đó cho
+xong". Đó là chữa triệu chứng, và chữa sai hướng — xem §10.3.
+
+Hình dạng request (nhật ký `_bao_400`) nói ngay đây **không phải lượt chat**:
+
+```
+stream=True  model='gpt-5.6-luna'  tc='auto'  input=list(len=5)  tools=0
+keys=[client_metadata, include, input, model, parallel_tool_calls,
+      prompt_cache_key, reasoning, store, stream, text, tool_choice]
+```
+
+`tools=0` và 5 mẩu đầu vào ⇒ một **lượt phụ** Codex bắn lúc mở phiên. Lượt chat
+chính ngay sau đó **vẫn chạy tốt**. Nên triệu chứng khách thấy không phải "chat
+hỏng" mà là những thứ vụn: phiên không được đặt tên, và nén hội thoại trượt.
+
+### 10.2 Gốc — Codex không có metadata cho `ltt_llm`
+
+Codex in cảnh báo `Model metadata for ltt_llm not found`, rồi đường
+`compact_model_fallback` của nó **mượn tên một model OpenAI** cho lượt phụ.
+
+**Bằng chứng đo được**, không phải suy luận — cùng một phiên, chỉ khác việc có
+khai catalog hay không:
+
+| | cảnh báo metadata | `model_context_window` của phiên |
+|---|---|---|
+| trước (không catalog) | **có** | 84.127 |
+| sau (có catalog) | **không** | **79.699** |
+
+79.699 = `88.555 × 90 %` — đúng hai con số **ta** khai trong catalog
+(`context_window` và `effective_context_window_percent`). Tức Codex đã đọc tệp
+của ta và thôi phải đoán. Từ lúc khai: **0 lượt 400** (trước đó 29/08 23:30 và
+30/08 11:57).
+
+### 10.3 Vì sao KHÔNG thêm tuyến tương thích cho tên đó
+
+Đây là câu hỏi đã đặt ra, và câu trả lời là **không**, có lý do:
+
+`TUYEN_TUONG_THICH` hiện có đúng một mục — `ltt-llm-claude-compat` — và đó là
+tên **ta tự đặt**. Chú thích của chính nó ghi: *"ta qua được cổng mà **không**
+mượn tên sản phẩm của hãng khác"*.
+
+Ánh xạ `gpt-5.6-luna → ltt_llm` làm **đúng điều ngược lại**: nhận một tên sản
+phẩm thật của OpenAI rồi lặng lẽ phục vụ Qwen. Ba hệ quả:
+
+1. **Mượn tên hãng khác** — chính thứ khuôn hiện tại cố ý tránh.
+2. **Giấu cấu hình sai.** Máy khách thiếu catalog sẽ chạy "êm" mãi mãi, và ta
+   không bao giờ biết máy nào đang thiếu.
+3. **Không bao giờ đóng lại được.** Danh sách tên hãng cần nhận sẽ dài ra theo
+   mỗi bản Codex, vì ta đang đuổi theo một giá trị nội bộ của họ.
+
+⇒ Ta **vẫn từ chối**, nhưng lời từ chối nay **chỉ đúng chỗ sửa**:
+`_goi_y_ten_la()` nhận ra tên bắt đầu bằng `gpt-`/`claude-`/`gemini-`/… và thêm
+câu chỉ dẫn khai `model_catalog_json`. Có **bánh cóc** chốt rằng không mục nào
+của `TUYEN_TUONG_THICH` được bắt đầu bằng tên hãng.
+
+### 10.4 Cách làm đúng — `model_catalog_json`
+
+Khoá cấu hình **chính thức** của Codex để khai model ngoài. `tools/cam_cli.py`
+nay ghi `~/.codex/ltt_model_catalog.json` và khai đường dẫn tới nó.
+
+⚠️ **Ba thứ Codex TỪ CHỐI**, tìm ra bằng cách lặp thật chứ không có trong tài liệu:
+
+| Sai | Đúng |
+|---|---|
+| `"web_search_tool_type": null` | **bỏ hẳn trường đó** — nó không nhận `null` |
+| `"effective_context_window_percent": 0.9` | `90` — trường đòi **i64** |
+| khai đường dẫn tới tệp **chưa tồn tại** | phải **ghi tệp** — nếu không Codex `failed to parse model_catalog_json` rồi **từ chối khởi động** |
+
+Mục cuối là thứ nguy hiểm nhất: nó biến một **cảnh báo vô hại** thành một **lỗi
+chặn đường**. Nên `cam` ghi tệp, và `go` dọn nó theo đúng luật *"xoá đúng thứ ta
+đã thêm"* — xoá nếu ta tạo, trả về bản sao lưu nếu khách đã có sẵn.
+
+### 10.5 Dọn theo — test từng ghi ra ngoài thư mục tạm
+
+`TEP_CATALOG` và `TEP_NHAT_KY` được tính từ `NHA` **lúc nạp module**, mà fixture
+chỉ tro lại `NHA`. Hệ quả: test ghi vào `~/.codex` và `%LOCALAPPDATA%` **thật**
+của người đang chạy test — và **không test nào đỏ**. Xanh vì lý do sai.
+
+Đã tro lại cả hai, và thêm bánh cóc
+`test_KHONG_hang_duong_dan_nao_con_tro_ra_NGOAI_thu_muc_tam` để lần sau có hằng
+mới thì nó đỏ ngay.
+
+⚠️ Bánh cóc đó **không** kiểm "có nằm trong thư mục nhà không" — trên Windows
+`tmp_path` chính nó nằm dưới thư mục nhà, nên phép kiểm đó luôn đỏ.

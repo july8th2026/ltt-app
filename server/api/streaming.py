@@ -441,6 +441,41 @@ def _bao_400(detail: str, than: dict):
     return invalid_request(detail)
 
 
+#: Tiền tố của tên model **do chính client bịa ra** khi nó không biết model của
+#: ta. Đây KHÔNG phải danh sách hãng — nó là danh sách **triệu chứng**.
+_TIEN_TO_TEN_HANG = ("gpt-", "o1", "o3", "o4", "claude-", "gemini-", "grok-")
+
+
+def _goi_y_ten_la(ten: str) -> str:
+    """Thêm chỉ dẫn khi tên model là **tên sản phẩm của hãng khác**.
+
+    🔴 VÌ SAO ĐÁNG MỘT HÀM RIÊNG. Ngày 29-30/08 mất nhiều giờ mới hiểu vì sao
+       Codex gửi `model='gpt-5.6-luna'` — một tên không tồn tại ở chỗ ta. Gốc:
+       Codex **không có metadata** cho `ltt_llm`, nên nó rơi vào đường
+       `compact_model_fallback` và mượn tên một model OpenAI cho lượt phụ.
+       Bằng chứng: khai `model_catalog_json` xong thì `model_context_window`
+       của phiên đổi từ 84.127 sang **79.699 = 88.555 × 90 %** — đúng hai con
+       số ta khai — và 400 hết hẳn.
+
+    ⛔ VÀ VÌ SAO KHÔNG ÁNH XẠ TÊN ĐÓ VỀ `ltt_llm`. Nhận `gpt-5.6-luna` rồi lặng
+       lẽ phục vụ Qwen là **mượn tên sản phẩm của hãng khác** — đúng thứ mà
+       `TUYEN_TUONG_THICH` cố ý không làm (tên ở đó là tên TA tự đặt). Nó cũng
+       giấu mất cấu hình sai: khách tưởng đang chạy đúng, còn ta thì không bao
+       giờ biết máy nào khai thiếu catalog.
+
+    ⇒ Nên ta **vẫn từ chối**, chỉ nói thẳng cách sửa.
+    """
+    thap = (ten or "").lower()
+    if not any(thap.startswith(t) for t in _TIEN_TO_TEN_HANG):
+        return ""
+    return (
+        f" NOTE: `{ten}` is another vendor's product name — your client "
+        f"substituted it because it has no metadata for our model. Fix the "
+        f"client, not the request: for Codex declare `model_catalog_json` in "
+        f"~/.codex/config.toml (the `cam` command of our CLI tool does this "
+        f"for you). We do not alias other vendors' model names.")
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from platform_core import credit
@@ -459,7 +494,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
-            f"sends `model` from its profile — set them to one of these.", than)
+            f"sends `model` from its profile — set them to one of these."
+            + _goi_y_ten_la(ten), than)
 
     tin = _tin_nhan(than)
     if not tin:

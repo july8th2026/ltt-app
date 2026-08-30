@@ -264,3 +264,34 @@ class TestThuLaiKhiParserVo:
         import inspect
         from platform_core.llm import luong_vlm
         assert "_da_thu_lai" in inspect.signature(luong_vlm.mo).parameters
+
+
+# ── Tên model lạ: từ chối, nhưng chỉ đúng chỗ sửa (30/08) ──────────────────
+
+class TestTenModelCuaHangKhac:
+    """Codex bịa `gpt-5.6-luna` khi nó thiếu metadata cho `ltt_llm`.
+
+    ⛔ Ta **không** ánh xạ tên đó về `ltt_llm`. Nhận tên sản phẩm của hãng khác
+       rồi lặng lẽ phục vụ Qwen là mượn tên hãng — và giấu mất cấu hình sai.
+    """
+
+    def test_ten_hang_khac_duoc_chi_dung_cho_sua(self):
+        from server.api.streaming import _goi_y_ten_la
+        for ten in ("gpt-5.6-luna", "GPT-4o", "claude-sonnet-5", "gemini-3-pro"):
+            g = _goi_y_ten_la(ten)
+            assert "model_catalog_json" in g, ten
+            assert "do not alias" in g, ten
+
+    def test_ten_la_KHONG_phai_ten_hang_thi_khong_them_gi(self):
+        from server.api.streaming import _goi_y_ten_la
+        assert _goi_y_ten_la("mo-hinh-cua-toi") == ""
+        assert _goi_y_ten_la("") == ""
+
+    def test_KHONG_co_tuyen_tuong_thich_nao_muon_ten_hang(self):
+        """Bánh cóc: thêm alias `gpt-…`/`claude-3…` vào là gate đỏ."""
+        from server.api.streaming import TUYEN_TUONG_THICH, _TIEN_TO_TEN_HANG
+        for ten in TUYEN_TUONG_THICH:
+            assert not any(ten.lower().startswith(t) for t in _TIEN_TO_TEN_HANG), (
+                f"`{ten}` bat dau bang ten hang khac. Tuyen tuong thich phai "
+                f"dung ten TA tu dat (vd `ltt-llm-claude-compat`), khong phai "
+                f"ten san pham that cua ho.")
