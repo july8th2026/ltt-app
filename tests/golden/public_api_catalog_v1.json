@@ -640,6 +640,167 @@
       "contract_hash": "c55834222a3c4a0c"
     },
     {
+      "name": "video.generate",
+      "capability": "video",
+      "description": "Generate video from a text prompt, optionally guided by reference media. Valid resolution, duration and aspect ratio depend on the model — see each model's `constraints` in GET /api/v1/models.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "maxLength": 10000,
+            "description": "What the video should show. Write it in any language; longer and more specific prompts give steadier results than short ones.",
+            "examples": [
+              "A calico cat stretching on a sunlit windowsill"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "seedance-2.0",
+              "seedance-2.0-fast",
+              "seedance-2.0-mini"
+            ],
+            "description": "Which model renders the video. Each one accepts a different set of resolutions and durations — see GET /api/v1/models.",
+            "examples": [
+              "seedance-2.0-mini"
+            ]
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "480p",
+              "720p",
+              "1080p",
+              "4k"
+            ],
+            "description": "Output resolution. Valid values depend on the model — read `constraints.resolutions` for the model you picked. Higher costs more.",
+            "examples": [
+              "720p"
+            ]
+          },
+          "duration": {
+            "type": "integer",
+            "enum": [
+              4,
+              5,
+              6,
+              8,
+              10,
+              12,
+              15
+            ],
+            "description": "Video length in **seconds**, not frames. Valid values depend on the model — read `constraints.durations`. Price scales with it.",
+            "examples": [
+              5
+            ]
+          },
+          "aspect_ratio": {
+            "type": "string",
+            "enum": [
+              "16:9",
+              "9:16",
+              "1:1",
+              "4:3",
+              "3:4",
+              "21:9"
+            ],
+            "description": "Frame shape. Valid values depend on the model — read `constraints.aspect_ratios`.",
+            "examples": [
+              "16:9"
+            ]
+          },
+          "generate_audio": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the model also generates a soundtrack. Leave it on unless you are supplying your own.",
+            "examples": [
+              true
+            ]
+          },
+          "camera": {
+            "type": "string",
+            "enum": [
+              "",
+              "static",
+              "dolly_in",
+              "tracking",
+              "orbit",
+              "aerial",
+              "handheld"
+            ],
+            "default": "",
+            "description": "Camera movement. Empty means the model decides.",
+            "examples": [
+              "dolly_in"
+            ]
+          },
+          "motion": {
+            "type": "string",
+            "enum": [
+              "",
+              "subtle",
+              "dynamic",
+              "cinematic"
+            ],
+            "default": "",
+            "description": "How much the subject moves. Empty means default.",
+            "examples": [
+              "subtle"
+            ]
+          },
+          "visual_style": {
+            "type": "string",
+            "enum": [
+              "",
+              "realistic",
+              "cinematic",
+              "anime",
+              "product"
+            ],
+            "default": "",
+            "description": "Overall look. Empty means the model follows the prompt alone.",
+            "examples": [
+              "cinematic"
+            ]
+          },
+          "seed": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2147483647,
+            "description": "Repeat a previous result. The same seed with the same input gives the same video; omit it for a new one each time.",
+            "examples": [
+              12345
+            ]
+          },
+          "image_key": {
+            "type": "string",
+            "description": "Upload id of one reference image to guide the first frame. Optional.",
+            "examples": [
+              "up_..."
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "prompt"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "artifact"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "a7a770beb8d86786"
+    },
+    {
       "name": "video.subtitle",
       "capability": "video",
       "description": "Burn a transcript you already have into a video as styled subtitles. Costs 5 credits per minute at standard quality; draft costs 0.6x and high costs 1.5x. The duration is measured from the file you upload, not from anything you send.",

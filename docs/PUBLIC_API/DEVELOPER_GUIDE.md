@@ -631,6 +631,32 @@ Output: `prompt_package` (object), `master_prompt` (string)
 
 Contract hash: `c55834222a3c4a0c`
 
+### `video.generate`
+
+Generate video from a text prompt, optionally guided by reference media. Valid resolution, duration and aspect ratio depend on the model — see each model's `constraints` in GET /api/v1/models.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `prompt` — string, **required**, max length 10000, What the video should show. Write it in any language; longer and more specific prompts give steadier results than short ones.
+- `model` — string, one of `seedance-2.0`, `seedance-2.0-fast`, `seedance-2.0-mini`, Which model renders the video. Each one accepts a different set of resolutions and durations — see GET /api/v1/models.
+- `resolution` — string, one of `480p`, `720p`, `1080p`, `4k`, Output resolution. Valid values depend on the model — read `constraints.resolutions` for the model you picked. Higher costs more.
+- `duration` — integer, one of `4`, `5`, `6`, `8`, `10`, `12`, `15`, Video length in **seconds**, not frames. Valid values depend on the model — read `constraints.durations`. Price scales with it.
+- `aspect_ratio` — string, one of `16:9`, `9:16`, `1:1`, `4:3`, `3:4`, `21:9`, Frame shape. Valid values depend on the model — read `constraints.aspect_ratios`.
+- `generate_audio` — boolean, default True, Whether the model also generates a soundtrack. Leave it on unless you are supplying your own.
+- `camera` — string, one of ``, `static`, `dolly_in`, `tracking`, `orbit`, `aerial`, `handheld`, default , Camera movement. Empty means the model decides.
+- `motion` — string, one of ``, `subtle`, `dynamic`, `cinematic`, default , How much the subject moves. Empty means default.
+- `visual_style` — string, one of ``, `realistic`, `cinematic`, `anime`, `product`, default , Overall look. Empty means the model follows the prompt alone.
+- `seed` — number, min 0, max 2147483647, Repeat a previous result. The same seed with the same input gives the same video; omit it for a new one each time.
+- `image_key` — string, Upload id of one reference image to guide the first frame. Optional.
+
+Output: `video_key` (artifact)
+
+Contract hash: `a7a770beb8d86786`
+
 ### `video.subtitle`
 
 Burn a transcript you already have into a video as styled subtitles. Costs 5 credits per minute at standard quality; draft costs 0.6x and high costs 1.5x. The duration is measured from the file you upload, not from anything you send.
@@ -686,6 +712,9 @@ Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: pr
 | `enhanced` | image | stable | `image.generate` | Better prompt adherence and fine detail than standard. |
 | `ltt_llm` | text | stable | `text.chat` | Text only, 89K usable input context. Coding, chat, agentic tool use, summarisation. |
 | `ltt_llm_vision` | text | stable | `text.chat` | Same model plus image reading, same 89K usable input context. Send images as OpenAI image_url parts. |
+| `seedance-2.0` | video | stable | `video.generate` | Seedance 2.0 |
+| `seedance-2.0-fast` | video | stable | `video.generate` | Seedance 2.0 Fast |
+| `seedance-2.0-mini` | video | stable | `video.generate` | Seedance 2.0 Mini |
 | `standard` | image | stable | `image.generate` | Balanced quality and cost. Start here. |
 | `standard-lite` | image | stable | `image.generate` | Same price as standard, tuned for speed over detail. |
 

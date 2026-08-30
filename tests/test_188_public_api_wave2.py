@@ -113,22 +113,48 @@ def test_video_upscale_is_open_and_never_asks_the_caller_for_the_duration():
     assert "_giu_cho_da_niem_phong" in tran
 
 
-def test_video_generate_stays_closed_because_its_options_depend_on_the_model():
-    """`resolution`/`duration`/`aspect_ratio` are declared `depends_on: model`
-    and the valid sets differ per model. Publishing their union would let a
-    caller pay for a combination the provider then refuses."""
+def test_video_generate_publishes_per_model_constraints_instead_of_a_union():
+    """Phép kiểm này TỪNG chốt điều ngược lại, và việc đảo nó là có chủ ý.
+
+    Bản cũ tên là `..._stays_closed_because_its_options_depend_on_the_model` và
+    khẳng định `api_exposed is False`. Lý do nó đưa ra vẫn **đúng nguyên**:
+
+        "Publishing their union would let a caller pay for a combination the
+         provider then refuses."
+
+    ⭐ Cái đổi không phải lý do, mà là **ta thôi phải publish hợp nhất**.
+       `PublicModel.constraints` (`catalog.py:173,187,347`) công bố tập giá trị
+       **của riêng từng model**, và `invocation._check_model_constraints` từ
+       chối tổ hợp sai **trước** `price()` — tức trước khi có báo giá, trước khi
+       giữ chỗ, trước khi quay số tới nhà cung cấp.
+
+    ⇒ Nên phép kiểm nay chốt đúng hai điều mà bản cũ lo: mỗi model nói tập của
+      riêng nó, và không ai trả tiền cho một tổ hợp sẽ bị từ chối.
+    """
+    from apps.taovideo import models
+    from platform_core.public_api.catalog import build_catalog, build_models
+    from platform_core.public_api.config import load_public_api_config
+
     tool = next(spec for item in discover()
                 if item.manifest.slug == "taovideo"
                 for spec in item.manifest.tools if spec.name == "video.generate")
-    assert tool.api_exposed is False
+    assert tool.api_exposed is True, "hop dong da viet xong thi phai khai"
     assert tool.params_schema["resolution"]["depends_on"] == "model"
 
-    from apps.taovideo import models
-
+    # Tap gia tri THAT SU khac nhau — do van la ca ly do phai lam viec nay.
     per_model = {name: tuple(spec["resolutions"])
                  for name, spec in models.MODELS.items()}
-    # The sets really do differ — that is the whole reason for the deferral.
     assert len(set(per_model.values())) > 1
+
+    cfg = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                  "LTT_PUBLIC_API_TOOLS": "video.generate"})
+    cong_bo = {m.name: m.to_public_dict()["constraints"]["resolutions"]
+               for m in build_models(build_catalog(cfg))}
+    for ten, that in per_model.items():
+        if models.MODELS[ten].get("active"):
+            assert cong_bo[ten] == list(that), (
+                f"model {ten} cong bo mot tap KHAC tap that — do dung la cach "
+                f"khach tra tien cho mot to hop se bi tu choi")
 
 
 # ── End to end on the GPU path ───────────────────────────────────────────────

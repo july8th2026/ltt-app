@@ -21,6 +21,60 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-30 — `video.generate` (Seedance) có hợp đồng công khai
+
+**ADDED — tool `video.generate`, và model đầu tiên công bố `constraints` riêng.**
+Client không hỏi tới thì không thấy gì đổi; không có thay đổi nào phá vỡ tương
+thích.
+
+⚠️ **Có hợp đồng ≠ gọi được.** Ba cổng fail-closed của Q92 vẫn nguyên: tool này
+chỉ phục vụ khi operator thêm nó vào `LTT_PUBLIC_API_TOOLS`. Hiện **chưa bật**.
+
+### Cái mới: ràng buộc **theo từng model**, không phải một tập hợp nhất
+
+`GET /api/v1/models` nay trả `constraints` cho mỗi model:
+
+```json
+{
+  "name": "seedance-2.0-mini",
+  "constraints": {
+    "resolutions": ["480p", "720p"],
+    "durations": [4, 5, 6, 8, 10, 12, 15],
+    "aspect_ratios": ["16:9", "9:16", "1:1", "4:3", "3:4", "21:9"],
+    "supports_seed": true,
+    "prompt_controls": ["camera", "motion", "visual_style"]
+  }
+}
+```
+
+`seedance-2.0` nhận thêm `1080p` và `4k`; hai model kia thì không.
+
+⭐ **Vì sao không publish một tập hợp nhất.** Hợp nhất sẽ nói với bạn rằng
+`seedance-2.0-mini` + `4k` là hợp lệ. Bạn gọi, trả tiền, rồi nhà cung cấp từ
+chối. Đó chính là lý do tool này bị đóng suốt từ đầu — và nó được mở bằng cách
+**giải** vấn đề đó, không phải bằng cách hạ tiêu chuẩn.
+
+### Tổ hợp sai bị từ chối **trước khi tiền chuyển**
+
+```
+POST /api/v1/quotes   {"model": "seedance-2.0-mini", "resolution": "4k"}
+400  resolution: model 'seedance-2.0-mini' does not accept '4k'.
+     Allowed: 480p, 720p. See constraints in GET /api/v1/models.
+```
+
+Trước `quotes`, trước giữ chỗ, trước khi chạm nhà cung cấp. Bạn **không** bị thu
+tiền cho một lượt sẽ bị từ chối.
+
+### Bốn tham chiếu media hoãn có ghi
+
+`image_keys`, `video_key`, `audio_key`, `refs` **không** có trong hợp đồng công
+khai đợt này — chúng chưa chứng minh được ownership + vòng đời qua
+`upload_sessions` ở đường API. Mở từng cái khi có bằng chứng, chứ không mở rồi
+kiểm sau. `image_key` (một ảnh tham chiếu) **có** trong hợp đồng.
+
+*Phải làm gì:* không gì cả, trừ khi bạn muốn dùng tool này khi nó mở. Lúc đó:
+đọc `constraints` của model trước khi dựng request.
+
 ## 2026-08-30 — cửa sổ ngữ cảnh công bố: sửa một con số nói sai
 
 **FIXED — mô tả model `ltt_llm` / `ltt_llm_vision` nói `131K` / `64K`, nay nói

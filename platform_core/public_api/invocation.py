@@ -65,7 +65,64 @@ def validate_public_input(tool, payload: dict) -> dict:
             continue
         spec = properties[name]
         clean[name] = _validate_value(name, value, spec)
+    _check_model_constraints(tool, clean)
     return clean
+
+
+def _check_model_constraints(tool, clean: dict) -> None:
+    """Reject combinations the *chosen model* does not accept.
+
+    Every check above this one looks at **one field at a time**. That is not
+    enough once a tool has several models with different capabilities: asking
+    `seedance-2.0-mini` for `4k` is type-correct and contract-invalid, and
+    nothing so far would say so.
+
+    ⭐ WHY THIS BELONGS HERE AND NOT IN THE APP. It has to run **before** the
+       money moves. `validate_public_input` is called by both `/quotes` and
+       `/jobs` before `price()`, so a bad combination is refused before a quote
+       is minted, before credit is held, and before the provider is dialled.
+       Push it into the worker and the customer has already paid to be told no.
+
+    ⛔ AND IT INVENTS NO NEW CONTRACT SURFACE. Both halves already exist and are
+       already validated at registration:
+
+         · which constraint governs which field — the app's own
+           ``params_schema[param] = {"depends_on": "model", "field": "..."}``,
+           checked by ``registry._validate_tool``;
+         · the values themselves — ``api_contract["models"][alias]["constraints"]``,
+           the same dict a customer reads from ``GET /api/v1/models``.
+
+       So the rule enforced here is *exactly* the rule published. There is no
+       second place for them to disagree.
+    """
+    from platform_core.registry import discover
+
+    model = clean.get("model")
+    if not model:
+        return
+    spec = (getattr(tool, "model_aliases", None) or {}).get(model)
+    if not isinstance(spec, dict):
+        return
+    rang_buoc = spec.get("constraints") or {}
+    if not rang_buoc:
+        return
+
+    schema = (tool.params_schema if hasattr(tool, "params_schema")
+              else _internal_schema(tool, discover()))
+    for param, khai in (schema or {}).items():
+        if not isinstance(khai, dict) or khai.get("depends_on") != "model":
+            continue
+        if param not in clean:
+            continue
+        cho_phep = rang_buoc.get(str(khai.get("field") or ""))
+        if not isinstance(cho_phep, list):
+            continue
+        if clean[param] not in cho_phep:
+            raise _field_error(
+                param,
+                f"model {model!r} does not accept {clean[param]!r}. "
+                f"Allowed: {', '.join(str(v) for v in cho_phep)}. "
+                f"See constraints in GET /api/v1/models.")
 
 
 def _validate_value(name: str, value, spec: dict):

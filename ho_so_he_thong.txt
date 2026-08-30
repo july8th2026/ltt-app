@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:bcf64703a56c6a5dff3e2c3673d4b68f88fbc27dec739b7ec34cf741da12143f
-Nguồn đã quét : 1260 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:fe1f6308c1a743d8e2680d67fbe1f8a49d084683f6e87c9b8860d1e9c47ec571
+Nguồn đã quét : 1261 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1072,7 +1072,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (298 file pytest + 3 frontend)
+10. QUALITY GATES (299 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1330,6 +1330,7 @@ Test inventory:
 - tests/test_332_gate_khong_tu_nhieu.py
 - tests/test_333_dat_bien_env.py
 - tests/test_334_ngan_sach_ltt_llm.py
+- tests/test_336_seedance_public_api.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1397,8 +1398,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1260 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:24, .py:952, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1261 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:24, .py:953, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2275,7 +2276,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (315)
+[tests] (316)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2544,6 +2545,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_332_gate_khong_tu_nhieu.py
 - tests/test_333_dat_bien_env.py
 - tests/test_334_ngan_sach_ltt_llm.py
+- tests/test_336_seedance_public_api.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2715,7 +2717,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1260 file; 12542364 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1261 file; 12563527 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -28085,7 +28087,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/taovideo/manifest.py
-SHA256=929eef7e4fd9af52deacc967ea361e247aeb17e00fe07cc02479a03b0ef2ed02 BYTES=3486 LINES=70
+SHA256=497d14074efdeac0928f3fd8e710aad2da92044cd27ab4e5c392d3bb402d0430 BYTES=10646 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `taovideo` — Tạo video AI (BytePlus ModelArk / Seedance 2.0). Di trú từ BOT
@@ -28104,6 +28106,142 @@ from __future__ import annotations
 
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
+
+
+def _hop_dong_api() -> dict:
+    """Hợp đồng công khai của `video.generate` — **sinh từ `models.py`**.
+
+    🔴 KHÔNG GÕ LẠI MỘT CON SỐ NÀO Ở ĐÂY. `apps/taovideo/models.py` đã giữ đủ
+       ràng buộc theo từng model. Chép chúng sang đây là tạo bản sao thứ hai của
+       sự thật, và bản sao sẽ lệch đúng vào hôm ta thêm một model.
+       (`USER_DECISIONS.md` §7 của gói API Expansion V2 cấm đúng việc này.)
+
+    ⭐ BA THỨ ĐI RA BA ĐƯỜNG KHÁC NHAU, và phân biệt được chúng là cả bài toán:
+
+       · `constraints`  -> CÔNG BỐ qua `PublicModel.to_public_dict()`. Đây là
+         thứ khách cần để biết tổ hợp nào hợp lệ **trước khi gọi**.
+       · `id`           -> KHAI nhưng KHÔNG công bố. `ToolView.to_public_dict()`
+         là danh sách trắng nên nó không có đường ra; và khai nó chính là cách
+         `test_212::test_no_vendor_model_id_reaches_a_customer_surface` biết
+         phải săn chuỗi nào. Giấu đi thì phép kiểm **mất mục tiêu**.
+       · `endpoint`     -> KHÔNG đi đâu cả. Địa chỉ hạ tầng, không phải thuộc
+         tính sản phẩm.
+
+    ⚠️ `enums` phải là **hợp** của mọi model, vì registry đòi một danh sách
+       phẳng cho mỗi enum lấy giá trị từ nguồn nội bộ. Hợp trả lời *"giá trị nào
+       tồn tại"*; `constraints` trả lời *"model này nhận giá trị nào"*. Thiếu vế
+       thứ hai thì khách phải thử rồi ăn lỗi — đó là lý do phải có cả hai.
+    """
+    from apps.taovideo import models as _m
+
+    hoat_dong = {ten: c for ten, c in _m.MODELS.items() if c.get("active")}
+
+    def _hop(truong: str) -> list:
+        gop: list = []
+        for c in hoat_dong.values():
+            for v in c.get(truong) or ():
+                if v not in gop:
+                    gop.append(v)
+        return gop
+
+    return {
+        "scopes": ("jobs:create",),
+        "description": ("Generate video from a text prompt, optionally guided "
+                        "by reference media. Valid resolution, duration and "
+                        "aspect ratio depend on the model — see each model's "
+                        "`constraints` in GET /api/v1/models."),
+        "models": {
+            ten: {
+                "id": c["provider_model_id"],
+                "description": c.get("label") or ten,
+                "stability": "stable",
+                "constraints": {
+                    "resolutions": list(c.get("resolutions") or ()),
+                    "durations": list(c.get("durations") or ()),
+                    "aspect_ratios": list(c.get("aspects") or ()),
+                    "supports_seed": bool(c.get("supports_seed")),
+                    "prompt_controls": list(c.get("prompt_controls") or ()),
+                },
+            }
+            for ten, c in hoat_dong.items()
+        },
+        "enums": {
+            "resolution": _hop("resolutions"),
+            "duration": _hop("durations"),
+            "aspect_ratio": _hop("aspects"),
+        },
+        # ⛔ HOÃN CÓ GHI, không phải bỏ qua kiểm. Bốn đường tham chiếu dưới đây
+        #    chưa chứng minh được ownership + vòng đời qua `upload_sessions` ở
+        #    đường API, và một tham chiếu mở mà chưa kiểm ownership là đường để
+        #    khách A đọc tệp của khách B. Mở từng cái khi có bằng chứng.
+        "hidden": ("image_keys", "video_key", "audio_key", "refs"),
+        # ⭐ MO TA CHO TUNG THAM SO — `test_198` doi, va no doi dung.
+        #
+        #    Mot tham so cong khai khong co mo ta la mot tham so khach phai
+        #    DOAN. Voi tool nay thi doan sai co gia that: `duration` doan nham
+        #    don vi la tra tien cho video dai gap ba lan.
+        "params": {
+            "prompt": {
+                "description": ("What the video should show. Write it in any "
+                                "language; longer and more specific prompts "
+                                "give steadier results than short ones."),
+                "example": "A calico cat stretching on a sunlit windowsill",
+            },
+            "resolution": {
+                "description": ("Output resolution. Valid values depend on the "
+                                "model — read `constraints.resolutions` for the "
+                                "model you picked. Higher costs more."),
+                "example": "720p",
+            },
+            "duration": {
+                "description": ("Video length in **seconds**, not frames. "
+                                "Valid values depend on the model — read "
+                                "`constraints.durations`. Price scales with it."),
+                "example": 5,
+            },
+            "aspect_ratio": {
+                "description": ("Frame shape. Valid values depend on the model "
+                                "— read `constraints.aspect_ratios`."),
+                "example": "16:9",
+            },
+            "generate_audio": {
+                "description": ("Whether the model also generates a soundtrack. "
+                                "Leave it on unless you are supplying your own."),
+                "example": True,
+            },
+            "camera": {
+                "description": ("Camera movement. Empty means the model "
+                                "decides."),
+                "example": "dolly_in",
+            },
+            "motion": {
+                "description": "How much the subject moves. Empty means default.",
+                "example": "subtle",
+            },
+            "visual_style": {
+                "description": ("Overall look. Empty means the model follows "
+                                "the prompt alone."),
+                "example": "cinematic",
+            },
+            "seed": {
+                "description": ("Repeat a previous result. The same seed with "
+                                "the same input gives the same video; omit it "
+                                "for a new one each time."),
+                "example": 12345,
+            },
+            "model": {
+                "description": ("Which model renders the video. Each one "
+                                "accepts a different set of resolutions and "
+                                "durations — see GET /api/v1/models."),
+                "example": "seedance-2.0-mini",
+            },
+            "image_key": {
+                "description": ("Upload id of one reference image to guide the "
+                                "first frame. Optional."),
+                "example": "up_...",
+            },
+        },
+    }
 
 
 def _cost(params: dict) -> int:
@@ -28148,6 +28286,13 @@ MANIFEST = AppManifest(
         },
         returns={"video_key": "video"},
         verifiable=("technical", "vlm_judge"),
+        # ⭐ `api_exposed` la MOT LOI KHAI ("hop dong nay da viet xong"), khong
+        #    phai cong tac mo hang. Thu mo hang la `LTT_PUBLIC_API_TOOLS` cua
+        #    operator — fail-closed cua Q92 van nguyen: bat co nay mot minh
+        #    KHONG mo tool nao.
+        # ⛔ Va registry tu choi nua voi: co hop dong ma khong khai la loi nap.
+        api_exposed=True,
+        api_contract=_hop_dong_api(),
     ),),
 
     enabled=True,
@@ -115201,7 +115346,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=7d87b30f46b3e4c4595a742d00cd167096f3753b5513e5a94bd296f6dd56fb93 BYTES=18703 LINES=400
+SHA256=fb06bb2ea1093e913bbadcfb6382311249a36dcb619c552d6e602d53f8558b79 BYTES=20787 LINES=457
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -115270,7 +115415,64 @@ def validate_public_input(tool, payload: dict) -> dict:
             continue
         spec = properties[name]
         clean[name] = _validate_value(name, value, spec)
+    _check_model_constraints(tool, clean)
     return clean
+
+
+def _check_model_constraints(tool, clean: dict) -> None:
+    """Reject combinations the *chosen model* does not accept.
+
+    Every check above this one looks at **one field at a time**. That is not
+    enough once a tool has several models with different capabilities: asking
+    `seedance-2.0-mini` for `4k` is type-correct and contract-invalid, and
+    nothing so far would say so.
+
+    ⭐ WHY THIS BELONGS HERE AND NOT IN THE APP. It has to run **before** the
+       money moves. `validate_public_input` is called by both `/quotes` and
+       `/jobs` before `price()`, so a bad combination is refused before a quote
+       is minted, before credit is held, and before the provider is dialled.
+       Push it into the worker and the customer has already paid to be told no.
+
+    ⛔ AND IT INVENTS NO NEW CONTRACT SURFACE. Both halves already exist and are
+       already validated at registration:
+
+         · which constraint governs which field — the app's own
+           ``params_schema[param] = {"depends_on": "model", "field": "..."}``,
+           checked by ``registry._validate_tool``;
+         · the values themselves — ``api_contract["models"][alias]["constraints"]``,
+           the same dict a customer reads from ``GET /api/v1/models``.
+
+       So the rule enforced here is *exactly* the rule published. There is no
+       second place for them to disagree.
+    """
+    from platform_core.registry import discover
+
+    model = clean.get("model")
+    if not model:
+        return
+    spec = (getattr(tool, "model_aliases", None) or {}).get(model)
+    if not isinstance(spec, dict):
+        return
+    rang_buoc = spec.get("constraints") or {}
+    if not rang_buoc:
+        return
+
+    schema = (tool.params_schema if hasattr(tool, "params_schema")
+              else _internal_schema(tool, discover()))
+    for param, khai in (schema or {}).items():
+        if not isinstance(khai, dict) or khai.get("depends_on") != "model":
+            continue
+        if param not in clean:
+            continue
+        cho_phep = rang_buoc.get(str(khai.get("field") or ""))
+        if not isinstance(cho_phep, list):
+            continue
+        if clean[param] not in cho_phep:
+            raise _field_error(
+                param,
+                f"model {model!r} does not accept {clean[param]!r}. "
+                f"Allowed: {', '.join(str(v) for v in cho_phep)}. "
+                f"See constraints in GET /api/v1/models.")
 
 
 def _validate_value(name: str, value, spec: dict):
@@ -156149,7 +156351,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=89439c6ec93b154efe79a0582271bd84e6951f572ecc824a8fe45ee0f947376b BYTES=26636 LINES=875
+SHA256=4b214884cfca796b3f5aa06eb99a4b44dbcf0857c99502c9e431239d4fffd765 BYTES=31519 LINES=1036
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -156791,6 +156993,167 @@ SHA256=89439c6ec93b154efe79a0582271bd84e6951f572ecc824a8fe45ee0f947376b BYTES=26
         "jobs:create"
       ],
       "contract_hash": "c55834222a3c4a0c"
+    },
+    {
+      "name": "video.generate",
+      "capability": "video",
+      "description": "Generate video from a text prompt, optionally guided by reference media. Valid resolution, duration and aspect ratio depend on the model — see each model's `constraints` in GET /api/v1/models.",
+      "execution_mode": "ASYNC_JOB",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "maxLength": 10000,
+            "description": "What the video should show. Write it in any language; longer and more specific prompts give steadier results than short ones.",
+            "examples": [
+              "A calico cat stretching on a sunlit windowsill"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "enum": [
+              "seedance-2.0",
+              "seedance-2.0-fast",
+              "seedance-2.0-mini"
+            ],
+            "description": "Which model renders the video. Each one accepts a different set of resolutions and durations — see GET /api/v1/models.",
+            "examples": [
+              "seedance-2.0-mini"
+            ]
+          },
+          "resolution": {
+            "type": "string",
+            "enum": [
+              "480p",
+              "720p",
+              "1080p",
+              "4k"
+            ],
+            "description": "Output resolution. Valid values depend on the model — read `constraints.resolutions` for the model you picked. Higher costs more.",
+            "examples": [
+              "720p"
+            ]
+          },
+          "duration": {
+            "type": "integer",
+            "enum": [
+              4,
+              5,
+              6,
+              8,
+              10,
+              12,
+              15
+            ],
+            "description": "Video length in **seconds**, not frames. Valid values depend on the model — read `constraints.durations`. Price scales with it.",
+            "examples": [
+              5
+            ]
+          },
+          "aspect_ratio": {
+            "type": "string",
+            "enum": [
+              "16:9",
+              "9:16",
+              "1:1",
+              "4:3",
+              "3:4",
+              "21:9"
+            ],
+            "description": "Frame shape. Valid values depend on the model — read `constraints.aspect_ratios`.",
+            "examples": [
+              "16:9"
+            ]
+          },
+          "generate_audio": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the model also generates a soundtrack. Leave it on unless you are supplying your own.",
+            "examples": [
+              true
+            ]
+          },
+          "camera": {
+            "type": "string",
+            "enum": [
+              "",
+              "static",
+              "dolly_in",
+              "tracking",
+              "orbit",
+              "aerial",
+              "handheld"
+            ],
+            "default": "",
+            "description": "Camera movement. Empty means the model decides.",
+            "examples": [
+              "dolly_in"
+            ]
+          },
+          "motion": {
+            "type": "string",
+            "enum": [
+              "",
+              "subtle",
+              "dynamic",
+              "cinematic"
+            ],
+            "default": "",
+            "description": "How much the subject moves. Empty means default.",
+            "examples": [
+              "subtle"
+            ]
+          },
+          "visual_style": {
+            "type": "string",
+            "enum": [
+              "",
+              "realistic",
+              "cinematic",
+              "anime",
+              "product"
+            ],
+            "default": "",
+            "description": "Overall look. Empty means the model follows the prompt alone.",
+            "examples": [
+              "cinematic"
+            ]
+          },
+          "seed": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 2147483647,
+            "description": "Repeat a previous result. The same seed with the same input gives the same video; omit it for a new one each time.",
+            "examples": [
+              12345
+            ]
+          },
+          "image_key": {
+            "type": "string",
+            "description": "Upload id of one reference image to guide the first frame. Optional.",
+            "examples": [
+              "up_..."
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "required": [
+          "prompt"
+        ]
+      },
+      "output_schema": {
+        "type": "object",
+        "properties": {
+          "video_key": {
+            "type": "artifact"
+          }
+        }
+      },
+      "required_scopes": [
+        "jobs:create"
+      ],
+      "contract_hash": "a7a770beb8d86786"
     },
     {
       "name": "video.subtitle",
@@ -174240,7 +174603,7 @@ def test_no_ui_route_became_public(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_188_public_api_wave2.py
-SHA256=595a3044ec6a61781084ffb409803cfc3ebe8d57490de8a670c47a5feb3e726f BYTES=15471 LINES=376
+SHA256=4b270e1adf4ba547dc6cfb3b45774978014cf90795f726153f8c61779d3a66ca BYTES=17008 LINES=402
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 12 — wave 2: the GPU workload, and two deliberate deferrals.
 
@@ -174357,22 +174720,48 @@ def test_video_upscale_is_open_and_never_asks_the_caller_for_the_duration():
     assert "_giu_cho_da_niem_phong" in tran
 
 
-def test_video_generate_stays_closed_because_its_options_depend_on_the_model():
-    """`resolution`/`duration`/`aspect_ratio` are declared `depends_on: model`
-    and the valid sets differ per model. Publishing their union would let a
-    caller pay for a combination the provider then refuses."""
+def test_video_generate_publishes_per_model_constraints_instead_of_a_union():
+    """Phép kiểm này TỪNG chốt điều ngược lại, và việc đảo nó là có chủ ý.
+
+    Bản cũ tên là `..._stays_closed_because_its_options_depend_on_the_model` và
+    khẳng định `api_exposed is False`. Lý do nó đưa ra vẫn **đúng nguyên**:
+
+        "Publishing their union would let a caller pay for a combination the
+         provider then refuses."
+
+    ⭐ Cái đổi không phải lý do, mà là **ta thôi phải publish hợp nhất**.
+       `PublicModel.constraints` (`catalog.py:173,187,347`) công bố tập giá trị
+       **của riêng từng model**, và `invocation._check_model_constraints` từ
+       chối tổ hợp sai **trước** `price()` — tức trước khi có báo giá, trước khi
+       giữ chỗ, trước khi quay số tới nhà cung cấp.
+
+    ⇒ Nên phép kiểm nay chốt đúng hai điều mà bản cũ lo: mỗi model nói tập của
+      riêng nó, và không ai trả tiền cho một tổ hợp sẽ bị từ chối.
+    """
+    from apps.taovideo import models
+    from platform_core.public_api.catalog import build_catalog, build_models
+    from platform_core.public_api.config import load_public_api_config
+
     tool = next(spec for item in discover()
                 if item.manifest.slug == "taovideo"
                 for spec in item.manifest.tools if spec.name == "video.generate")
-    assert tool.api_exposed is False
+    assert tool.api_exposed is True, "hop dong da viet xong thi phai khai"
     assert tool.params_schema["resolution"]["depends_on"] == "model"
 
-    from apps.taovideo import models
-
+    # Tap gia tri THAT SU khac nhau — do van la ca ly do phai lam viec nay.
     per_model = {name: tuple(spec["resolutions"])
                  for name, spec in models.MODELS.items()}
-    # The sets really do differ — that is the whole reason for the deferral.
     assert len(set(per_model.values())) > 1
+
+    cfg = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                  "LTT_PUBLIC_API_TOOLS": "video.generate"})
+    cong_bo = {m.name: m.to_public_dict()["constraints"]["resolutions"]
+               for m in build_models(build_catalog(cfg))}
+    for ten, that in per_model.items():
+        if models.MODELS[ten].get("active"):
+            assert cong_bo[ten] == list(that), (
+                f"model {ten} cong bo mot tap KHAC tap that — do dung la cach "
+                f"khach tra tien cho mot to hop se bi tu choi")
 
 
 # ── End to end on the GPU path ───────────────────────────────────────────────
@@ -175028,7 +175417,7 @@ def test_cancelling_a_data_job_refunds(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_190_public_api_coverage.py
-SHA256=c7b5e65a95fd716500312a35d3c13d739bf4388bf46ced013f5cc611b33b6f7f BYTES=8168 LINES=184
+SHA256=4bf5b06ef985896dc54c072573b77b0f16d8aa29899ca03b099c4036fb921891 BYTES=8188 LINES=187
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 14 — every app has a decision, and the code agrees with it.
 
@@ -175102,12 +175491,15 @@ DISPOSITION = {
     # gia, va giu cho cua job den tu API bi NIEM PHONG o con so da ky. Nen hai
     # trong ba tool da mo.
     #
-    # ⛔ Ba app con lai KHONG con chung mot ly do nua, va gop chung lai la cach
+    # ⛔ Hai app con lai KHONG con chung mot ly do nua, va gop chung lai la cach
     #    nhanh nhat de ai do mo nham o luot sau:
-    #    - `taovideo`  — tap gia tri hop le doi theo model (khong lien quan gi
-    #                    toi thoi luong);
     #    - `taoclipngan` — con thieu tran dong thoi GPU (H35.10c).
-    "taovideo": (MIGRATE, ()),
+    #
+    # `taovideo` roi khoi nhom do ngay 30/08 (API Expansion V2, Phase 03). Ly do
+    # cu — "tap gia tri hop le doi theo model" — van dung nguyen; thu doi la ta
+    # THOI PHAI publish mot tap hop nhat. Moi model cong bo `constraints` cua
+    # rieng no, va to hop sai bi tu choi TRUOC `price()`.
+    "taovideo": (EXPOSE_V1, ("video.generate",)),
     "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 
@@ -176143,7 +176535,7 @@ def test_the_new_tables_survive_a_backup_and_restore(api, tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_193_public_api_release.py
-SHA256=caeb47cf3e6e8fe47710038c84d0c0d4c14092727aba8f997120d943b61fd692 BYTES=20878 LINES=495
+SHA256=f0c628f266e925ec54d06f910e0c260382de8439fd7c7d45d9499977adfc4674 BYTES=20840 LINES=502
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Q92 / Prompt 17 — the release gate: canary, load, failure recovery.
 
@@ -176226,11 +176618,18 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # `video.subtitle` + `video.upscale` vao danh sach dong bang 29/08 (H35.10).
     # Canh bao cu van dung nguyen van cho ca hai: co mat o day nghia la HOP DONG
     # da dong bang, KHONG phai khach goi duoc.
+    #
+    # `video.generate` vao 30/08 (API Expansion V2, Phase 03). No la tool DAU
+    # TIEN dung `PublicModel.constraints`: moi model cong bo tap gia tri cua
+    # RIENG no, thay vi mot tap hop nhat noi doi ve hai model nho hon. Rao can
+    # cu — "tap tuy chon doi theo model" — dong bang cach do, khong phai bang
+    # cach ha tieu chuan. Canh bao cu VAN DUNG: co mat o day la HOP DONG dong
+    # bang, KHONG phai khach goi duoc.
     assert published == exposed == ["image.generate", "image.ltt",
                                     "image.thumbnail", "image.upscale",
                                     "story.storyboard", "text.chat",
-                                    "text.prompt_package", "video.subtitle",
-                                    "video.upscale"]
+                                    "text.prompt_package", "video.generate",
+                                    "video.subtitle", "video.upscale"]
 
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in
@@ -225440,6 +225839,136 @@ class TestBaCuaPhaiCONG_KHAI:
         van = " ".join(f"{a} {b}" for a, b in examples.CHAT_DIFFERENCES)
         for d, _, _ in examples.BA_CUA:
             assert d.removeprefix("POST ") in van, d
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_336_seedance_public_api.py
+SHA256=80039b8c3cc2582656e3940c9659108fe7be361a3cd438ab5a0e878154f246ff BYTES=5517 LINES=124
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_336 — `video.generate` (Seedance) ra Public API. (API Expansion V2, Phase 03)
+
+Ba tính chất neo ở đây, và cả ba đều là **tiền hoặc bảo mật**:
+
+  1. **Ràng buộc theo model phải tới được khách TRƯỚC khi họ gọi.** Nếu không,
+     họ đoán, họ sai, và họ trả tiền để bị từ chối.
+  2. **Tổ hợp sai bị chặn TRƯỚC quote/hold/dispatch.** Ba tool video trước đã
+     dính Q84 — báo giá đã ký vẫn quyết toán cao hơn. Ở đây chưa mở nên chưa có
+     ai để làm hỏng; luật phải đúng ngay từ đầu.
+  3. **Id nhà cung cấp không rò.** Alias tồn tại để đổi nhà cung cấp không thành
+     thay đổi phá vỡ tương thích; rò id thật là mất luôn lớp đệm đó.
+"""
+from __future__ import annotations
+
+import json
+
+import pytest
+
+from platform_core.public_api.catalog import build_catalog, build_models
+from platform_core.public_api.config import load_public_api_config
+
+TOOL = "video.generate"
+
+
+def _catalog():
+    cfg = load_public_api_config({"LTT_PUBLIC_API": "1",
+                                  "LTT_PUBLIC_API_TOOLS": TOOL})
+    return build_catalog(cfg)
+
+
+def _tool():
+    return next(t for t in _catalog() if t.name == TOOL)
+
+
+# ── 1. Hợp đồng sinh ra, không gõ tay ────────────────────────────────────────
+
+def test_hop_dong_SINH_tu_models_py_khong_chep():
+    """Đổi `MODELS` thì hợp đồng đổi theo. Chép tay là hai bản sẽ lệch."""
+    from apps.taovideo import models as m
+
+    hoat_dong = {k for k, v in m.MODELS.items() if v.get("active")}
+    cong_bo = {x.name for x in build_models(_catalog())}
+    assert cong_bo == hoat_dong, (
+        "danh sach model cong bo phai bang danh sach model dang bat trong "
+        "models.py — neu lech thi mot trong hai da bi go tay")
+
+
+def test_moi_model_mang_rang_buoc_CUA_RIENG_NO():
+    """Đây là cả lý do tồn tại của việc này.
+
+    `seedance-2.0` nhận `1080p`/`4k`; hai model kia thì không. Publish một tập
+    hợp nhất sẽ nói dối về hai model sau.
+    """
+    theo_ten = {x.name: x.to_public_dict()["constraints"]
+                for x in build_models(_catalog())}
+    assert "4k" in theo_ten["seedance-2.0"]["resolutions"]
+    assert "4k" not in theo_ten["seedance-2.0-mini"]["resolutions"]
+    for rb in theo_ten.values():
+        assert rb["resolutions"] and rb["durations"] and rb["aspect_ratios"]
+
+
+def test_KHONG_ro_id_nha_cung_cap_hay_dia_chi_ha_tang():
+    van = json.dumps(_tool().to_public_dict(), ensure_ascii=False)
+    van += json.dumps([x.to_public_dict() for x in build_models(_catalog())],
+                      ensure_ascii=False)
+    for xau in ("dreamina", "provider_model_id", "endpoint", "ep-2026",
+                "byteplus", "modelark"):
+        assert xau.lower() not in van.lower(), f"ro ra ngoai: {xau}"
+
+
+# ── 2. Tổ hợp sai bị chặn TRƯỚC khi tiền chuyển ─────────────────────────────
+
+def test_to_hop_SAI_theo_model_bi_tu_choi():
+    from platform_core.public_api import invocation
+    from platform_core.public_api.errors import ApiError
+
+    with pytest.raises(ApiError) as e:
+        invocation.validate_public_input(_tool(), {
+            "prompt": "x", "model": "seedance-2.0-mini", "resolution": "4k"})
+    # ⛔  chi la "400 invalid_request" — thong diep that o
+    #    . Doc nham cho lam phep kiem do trong khi ma DA dung.
+    tin = str(getattr(e.value, "detail", "")).lower()
+    assert "seedance-2.0-mini" in tin and "4k" in tin
+    assert "480p" in tin, "loi phai NOI RA gia tri nao duoc chap nhan"
+
+
+def test_to_hop_DUNG_di_qua():
+    from platform_core.public_api import invocation
+
+    sach = invocation.validate_public_input(_tool(), {
+        "prompt": "x", "model": "seedance-2.0", "resolution": "4k",
+        "duration": 5, "aspect_ratio": "16:9"})
+    assert sach["resolution"] == "4k"
+
+
+def test_kiem_chay_TRUOC_price():
+    """⛔ Bất biến quan trọng nhất của tệp này.
+
+    Ba tool video trước đã dính Q84: giá theo con số **khách khai**, worker đo
+    lại rồi nâng giữ chỗ ⇒ một báo giá đã ký vẫn quyết toán cao hơn. Luật rút
+    ra: mọi phép kiểm ảnh hưởng tới giá phải chạy **trước** khi tiền chuyển.
+    """
+    import inspect
+
+    from server.api import jobs as api_jobs
+
+    ma = inspect.getsource(api_jobs)
+    for than in ma.split("def ")[1:]:
+        if "validate_public_input" not in than or "price" not in than:
+            continue
+        assert than.index("validate_public_input") < than.index("price"), (
+            "price() chay truoc validate_public_input — mot to hop sai se duoc "
+            "bao gia va giu cho truoc khi bi tu choi")
+
+
+# ── 3. Tham chiếu chưa chứng minh ownership thì HOÃN, không mở ──────────────
+
+def test_bon_duong_tham_chieu_chua_an_toan_duoc_HOAN_CO_GHI():
+    """Hoãn ≠ bỏ qua kiểm. Một ref mở mà chưa kiểm ownership là đường để khách
+    A đọc tệp của khách B."""
+    thuoc_tinh = set(_tool().to_public_dict()["input_schema"]["properties"])
+    for hoan in ("image_keys", "video_key", "audio_key", "refs"):
+        assert hoan not in thuoc_tinh, f"{hoan} lot ra hop dong cong khai"
+    assert "prompt" in thuoc_tinh and "model" in thuoc_tinh
 
 @@@LTT_PROFILE_FILE_END@@@
 

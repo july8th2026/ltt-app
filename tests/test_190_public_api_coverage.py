@@ -70,12 +70,15 @@ DISPOSITION = {
     # gia, va giu cho cua job den tu API bi NIEM PHONG o con so da ky. Nen hai
     # trong ba tool da mo.
     #
-    # ⛔ Ba app con lai KHONG con chung mot ly do nua, va gop chung lai la cach
+    # ⛔ Hai app con lai KHONG con chung mot ly do nua, va gop chung lai la cach
     #    nhanh nhat de ai do mo nham o luot sau:
-    #    - `taovideo`  — tap gia tri hop le doi theo model (khong lien quan gi
-    #                    toi thoi luong);
     #    - `taoclipngan` — con thieu tran dong thoi GPU (H35.10c).
-    "taovideo": (MIGRATE, ()),
+    #
+    # `taovideo` roi khoi nhom do ngay 30/08 (API Expansion V2, Phase 03). Ly do
+    # cu — "tap gia tri hop le doi theo model" — van dung nguyen; thu doi la ta
+    # THOI PHAI publish mot tap hop nhat. Moi model cong bo `constraints` cua
+    # rieng no, va to hop sai bi tu choi TRUOC `price()`.
+    "taovideo": (EXPOSE_V1, ("video.generate",)),
     "autosubvideo": (EXPOSE_V1, ("video.subtitle",)),
     "taoclipngan": (MIGRATE, ()),
 

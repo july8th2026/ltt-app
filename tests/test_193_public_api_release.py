@@ -79,11 +79,18 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # `video.subtitle` + `video.upscale` vao danh sach dong bang 29/08 (H35.10).
     # Canh bao cu van dung nguyen van cho ca hai: co mat o day nghia la HOP DONG
     # da dong bang, KHONG phai khach goi duoc.
+    #
+    # `video.generate` vao 30/08 (API Expansion V2, Phase 03). No la tool DAU
+    # TIEN dung `PublicModel.constraints`: moi model cong bo tap gia tri cua
+    # RIENG no, thay vi mot tap hop nhat noi doi ve hai model nho hon. Rao can
+    # cu — "tap tuy chon doi theo model" — dong bang cach do, khong phai bang
+    # cach ha tieu chuan. Canh bao cu VAN DUNG: co mat o day la HOP DONG dong
+    # bang, KHONG phai khach goi duoc.
     assert published == exposed == ["image.generate", "image.ltt",
                                     "image.thumbnail", "image.upscale",
                                     "story.storyboard", "text.chat",
-                                    "text.prompt_package", "video.subtitle",
-                                    "video.upscale"]
+                                    "text.prompt_package", "video.generate",
+                                    "video.subtitle", "video.upscale"]
 
     # Migrations: three, and the head is the last of them.
     versions = sorted(path.name for path in
