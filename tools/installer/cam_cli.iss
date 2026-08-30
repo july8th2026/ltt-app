@@ -24,7 +24,7 @@
 
 #define TenApp      "LTT Studios - Cam cong cu viet ma"
 #define TenNgan     "LTTStudios-CamCLI"
-#define PhienBan    "1.2.0"
+#define PhienBan    "1.3.0"
 #define NhaXB       "LTT Studios"
 #define Web         "https://app.lttstudios.com"
 #define ThuMucNguon "..\..\build\exe\pyinstaller\LTTStudios-CamCLI"
@@ -76,11 +76,27 @@ Source: "..\cam_cli.bat"; DestDir: "{app}"; DestName: "LTTStudios-CamCLI.bat"; \
   Flags: ignoreversion
 Source: "..\cam_cli_launcher.ps1"; DestDir: "{app}"; \
   Flags: ignoreversion
+; Duong NANG QUYEN - chi can cho muc Claude Desktop. Xem chu thich o [Icons].
+Source: "..\cam_cli_admin.bat"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\cam_cli_admin.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#TenApp}"; Filename: "{app}\{#TenNgan}.exe"
 Name: "{group}\{#TenApp} - Batch launcher"; \
   Filename: "{app}\LTTStudios-CamCLI.bat"; WorkingDir: "{app}"
+; Loi tat NANG QUYEN. Muc "Claude Desktop" ghi vao HKCU\SOFTWARE\Policies: do la
+; nhanh Group Policy, ACL cho chinh chu chi ReadKey, chi Administrators moi ghi
+; duoc. Khong co loi tat nay thi muc do KHONG BAO GIO cam duoc tu ban cai - va
+; truoc 30/08 no that bai ma khong noi mot chu vi sao.
+;
+; !! KHONG dung `Flags: runasoriginaluser`: co do co nghia NGUOC LAI (chay nhu
+;    nguoi dung goc). Inno khong co co "run as admin" cho loi tat. Duong dung la
+;    tro vao `cam_cli_admin.bat` - kich ban do TU xin UAC roi goi lai launcher,
+;    va no da co san cho goi ZIP.
+; !! Ba muc con lai (Codex, Claude Code CLI, tien ich VS Code) KHONG can quyen
+;    quan tri. Dung bat khach chay ca cong cu bang admin.
+Name: "{group}\{#TenApp} (Administrator - chi can cho Claude Desktop)"; \
+  Filename: "{app}\cam_cli_admin.bat"; WorkingDir: "{app}"
 Name: "{group}\{cm:UninstallProgram,{#TenApp}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#TenApp}"; Filename: "{app}\{#TenNgan}.exe"; \
   Tasks: desktopicon

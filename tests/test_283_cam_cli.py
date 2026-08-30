@@ -55,6 +55,23 @@ def _nap(nha: pathlib.Path):
     return mod
 
 
+def _chan_duong_ra_ngoai(mod, nha, monkeypatch):
+    """Chan MOI duong tep ra ngoai `nha` — ke ca duong **khong** qua `NHA`.
+
+    🔴 `_vscode_settings()` doc thang `%APPDATA%`, khong di qua `NHA`. Tro `NHA`
+       vao tmp la CHUA DU, va cho do da can that ngay 30/08: mot phep kiem moi
+       da **ghi de `settings.json` that cua VS Code** tren may dang chay test.
+       Khong test nao do — ta chi biet vi tinh co doc tep do ngay sau.
+
+    ⚠️ Banh coc `test_KHONG_hang_duong_dan_nao_con_tro_ra_NGOAI_thu_muc_tam`
+       khong bat duoc, vi no chi soi cac HANG kieu `Path`. Mot **ham** doc bien
+       moi truong thi no khong nhin thay.
+    """
+    monkeypatch.setenv("APPDATA", str(nha / "AppData" / "Roaming"))
+    monkeypatch.setenv("LOCALAPPDATA", str(nha / "AppData" / "Local"))
+    (nha / "AppData" / "Roaming" / "Code" / "User").mkdir(parents=True, exist_ok=True)
+
+
 @pytest.fixture()
 def cc(tmp_path, monkeypatch):
     """Nạp `cam_cli` cô lập — **và chặn mọi đường ra ngoài thư mục tạm**.
@@ -69,6 +86,7 @@ def cc(tmp_path, monkeypatch):
        đúng loại "xanh vì lý do sai" mà dự án này đã dính nhiều lần.
     """
     mod = _nap(tmp_path)
+    _chan_duong_ra_ngoai(mod, tmp_path, monkeypatch)
     ghi = {}
     env = {}
     monkeypatch.setattr(mod, "_setx",
@@ -78,12 +96,18 @@ def cc(tmp_path, monkeypatch):
     monkeypatch.setattr(mod, "_doc_env_nguoi_dung", lambda t: env.get(t))
     monkeypatch.setattr(mod, "_reg_ghi",
                         lambda k, t, v: (ghi.__setitem__((k, t), v), True)[1])
+    # `cam_desktop` goi ban CO LY DO; thieu dong nay thi no cham vao registry
+    # THAT cua may dang chay test.
+    monkeypatch.setattr(mod, "_reg_ghi_ly_do",
+                        lambda k, t, v: (ghi.__setitem__((k, t), v), (True, ""))[1])
+    # Va no hoi quyen truoc. Tren may that quyen do KHONG co (nhanh Policies),
+    # nen khong va thi moi test desktop se di vao nhanh "thieu quyen".
+    monkeypatch.setattr(mod, "_co_quyen_chinh_sach", lambda k: (True, ""))
     monkeypatch.setattr(mod, "_reg_xoa",
                         lambda k, t: (ghi.pop((k, t), None), True)[1])
     monkeypatch.setattr(mod, "_reg_doc", lambda k, t: ghi.get((k, t)))
     mod._registry_gia = ghi          # test doc duoc da ghi gi
     mod._env_gia = env
-    (tmp_path / "AppData" / "Roaming" / "Code" / "User").mkdir(parents=True)
     return mod
 
 
@@ -740,8 +764,11 @@ def test_catalog_dung_khuon_Codex_chap_nhan(cc):
     for m in d["models"]:
         # `web_search_tool_type: null` bi tu choi -> phai BO HAN, khong phai null
         assert "web_search_tool_type" not in m
-        # doi i64, `0.9` lam Codex tu choi ca tep
-        assert isinstance(m["effective_context_window_percent"], int)
+        # 🔴 CLI doi i64, TIEN ICH VS CODE doi CHUOI cho cung truong nay. Khong
+        #    gia tri nao lam vua long ca hai, va ban `90` (hop le voi CLI) da
+        #    lam tien ich bao "Invalid configuration ... expected a string" roi
+        #    hong MOI luot tao chat. Bo han la cach duy nhat dung.
+        assert "effective_context_window_percent" not in m
         # khong duoc con truong null nao
         assert not [k for k, v in m.items() if v is None]
         assert m["context_window"] == cc.CUA_SO_NGU_CANH
@@ -792,3 +819,272 @@ def test_KHONG_hang_duong_dan_nao_con_tro_ra_NGOAI_thu_muc_tam(cc, tmp_path):
     assert not sot, (
         f"Cac hang nay tro RA NGOAI thu muc tam: {sot}. "
         f"Tro chung vao tmp trong `_nap()`.")
+
+
+# ── Ba lỗi đo được trên máy thật ngày 30/08 ────────────────────────────────
+
+class TestBaLoi3008:
+    """Cả ba đều **hỏng lặng lẽ** — công cụ báo xong, việc thì chưa xong."""
+
+    def test_reg_ghi_TRA_VE_LY_DO_chu_khong_chi_bool(self, tmp_path, monkeypatch):
+        """⛔ `except OSError: return False` vứt mất `WinError 5 Access denied`.
+
+        Hậu quả thật: dòng in ra là `[!!] inferenceProvider = gateway`, đọc như
+        "đã ghi giá trị này" trong khi nghĩa là ngược lại.
+
+        ⚠️ **Không** `skip` khi thiếu `winreg`. Bản đầu có, và nó bị bỏ qua trong
+           lượt chạy song song vì một lý do tôi chưa truy ra — tức phép kiểm
+           canh cho một lỗi thật lại **không canh gì cả** đúng lúc cần. Ở đây
+           dựng thẳng cả hai nhánh, nên nó luôn khẳng định một điều.
+        """
+        # Nap RIENG, khong qua fixture `cc`: fixture va `_reg_ghi_ly_do` thanh
+        # mot ham gia luon thanh cong, tuc no che mat chinh thu can do o day.
+        cc = _nap(tmp_path)
+
+        # Nhanh 1: winreg. Neu may khong co winreg thi dung mot ban gia — dieu
+        # dang do la "ly do co den duoc nguoi doc khong", khong phai winreg.
+        class _WinregGia:
+            @staticmethod
+            def CreateKey(*a, **k):
+                raise OSError(13, "Access is denied", None, 5)
+
+        monkeypatch.setattr(cc, "winreg", _WinregGia)
+        monkeypatch.setattr(cc, "_tach_khoa_registry", lambda khoa: (1, "nhanh"))
+        ok, vi_sao = cc._reg_ghi_ly_do(r"HKCU\SOFTWARE\Bat_Ky", "x", "y")
+        assert ok is False
+        assert "5" in vi_sao and "denied" in vi_sao.lower(), (
+            f"ly do bi nuot mat o nhanh winreg: {vi_sao!r}")
+
+        # Nhanh 2: rot ve `reg.exe`.
+        monkeypatch.setattr(cc, "_tach_khoa_registry", lambda khoa: None)
+
+        class _KetQua:
+            returncode = 1
+            stdout = ""
+            stderr = "ERROR: Access is denied."
+
+        monkeypatch.setattr(cc.subprocess, "run", lambda *a, **k: _KetQua())
+        ok, vi_sao = cc._reg_ghi_ly_do("KHOA_LA", "x", "y")
+        assert ok is False
+        assert "denied" in vi_sao.lower(), (
+            f"ly do bi nuot mat o nhanh reg.exe: {vi_sao!r}")
+
+    def test_cam_desktop_HOI_QUYEN_TRUOC_va_KHONG_ghi_nua_voi(self, cc, monkeypatch):
+        """Thiếu quyền thì **không ghi gì**, và nói đúng cách sửa.
+
+        Ghi bảy lần rồi bảy lần thất bại là để máy ở trạng thái nửa vời — và
+        nếu một lần tình cờ qua thì còn tệ hơn.
+        """
+        monkeypatch.setattr(cc, "_co_quyen_chinh_sach",
+                            lambda k: (False, "WinError 5: Access is denied"))
+        goi = []
+        monkeypatch.setattr(cc, "_reg_ghi_ly_do",
+                            lambda *a: (goi.append(a), (True, ""))[1])
+        van = "\n".join(cc.cam_desktop("https://x", "khoa", {}))
+        assert goi == [], "thieu quyen ma VAN ghi -> may o trang thai nua voi"
+        assert "Access is denied" in van, "khong noi ly do that"
+        assert "Run as administrator" in van, "khong noi cach sua"
+        assert "Bo chon muc 'Claude Desktop'" in van, "khong noi duong thoat"
+
+    def test_go_vscode_KHONG_DUOC_im_lang_khi_mat_tri_nho(self, cc, tmp_path):
+        """🔴 Lỗi nặng nhất: `go` báo xong, đĩa vẫn trỏ về LTT.
+
+        Đo thật 30/08 — `lenh_go` in tiêu đề "Tien ich VS Code:" rồi **không
+        một dòng nào**, và `settings.json` vẫn nguyên cấu hình của ta.
+        """
+        tep = cc._vscode_settings()
+        tep.parent.mkdir(parents=True, exist_ok=True)
+        tep.write_text(json.dumps({
+            "claudeCode.environmentVariables": [
+                {"name": "ANTHROPIC_BASE_URL", "value": "https://x/api"},
+                {"name": "ANTHROPIC_MODEL", "value": cc.MODEL},
+                {"name": "CUA_KHACH", "value": "giu nguyen"},
+            ],
+            "claudeCode.useTerminal": True,
+            "editor.fontSize": 14,
+        }), encoding="utf-8", newline="\n")
+
+        ra = cc.go_vscode({"goc": "https://x"})          # KHONG co tri nho
+        van = "\n".join(ra)
+        assert ra, "go_vscode im lang = khach tuong da go xong"
+
+        d = json.loads(tep.read_text(encoding="utf-8"))
+        con = d["claudeCode.environmentVariables"]
+        assert [x["name"] for x in con] == ["CUA_KHACH"], (
+            "phai bo dung nhung muc tro ve goc cua ta, khong hon khong kem")
+        assert d["editor.fontSize"] == 14, "dung toi thu khong phai cua ta"
+        assert "useTerminal" in van, "phai NOI RA thu co y khong dung toi"
+
+    def test_go_vscode_KHONG_dung_toi_cau_hinh_tro_di_CHO_KHAC(self, cc, tmp_path):
+        """Khách trỏ tiện ích sang gateway của **họ** — `go` không được xoá."""
+        tep = cc._vscode_settings()
+        tep.parent.mkdir(parents=True, exist_ok=True)
+        goc_json = json.dumps({"claudeCode.environmentVariables": [
+            {"name": "ANTHROPIC_BASE_URL", "value": "https://cua-toi.local/api"}]})
+        tep.write_text(goc_json, encoding="utf-8", newline="\n")
+
+        ra = cc.go_vscode({"goc": "https://app.lttstudios.com"})
+        assert json.loads(tep.read_text(encoding="utf-8")) == json.loads(goc_json)
+        assert ra and "khong muc nao" in "\n".join(ra)
+
+
+class TestKhongNhoGiaTriCuaTaLamCuaKhach:
+    """Lỗi #4 — loại **tự dính vĩnh viễn**, đo trên máy thật 30/08.
+
+    Chuỗi sự kiện:
+      1. `go` im lặng (lỗi #3) ⇒ cấu hình của ta ở lại trên đĩa;
+      2. tệp trạng thái mất trí nhớ ⇒ `cam` sau ghi nhớ lại từ đầu, và thứ nó
+         đọc được **chính là cấu hình của ta**;
+      3. từ đó `go` trung thực "hoàn nguyên" về... chính giá trị của ta.
+
+    Triệu chứng: `[OK] da tra ... ve nhu truoc` mà tệp **không đổi một chữ**.
+    Khách không bao giờ gỡ ra được, và không có dấu hiệu nào.
+    """
+
+    def test_cam_HAI_LAN_qua_hai_tep_trang_thai_van_go_SACH(self, cc, tmp_path):
+        tep = cc._vscode_settings()
+        tep.parent.mkdir(parents=True, exist_ok=True)
+        tep.write_text('{"editor.fontSize": 14}', encoding="utf-8", newline="\n")
+
+        cc.cam_vscode("https://x", {})                 # lan 1
+        cc.cam_vscode("https://x", {})                 # lan 2, tep trang thai MOI
+        ra = cc.go_vscode({"goc": "https://x", "vscode": {"khoa_da_them": {
+            k: None for k in ("claudeCode.environmentVariables",
+                              "claudeCode.disableLoginPrompt",
+                              "claudeCode.useTerminal")}}})
+        assert json.loads(tep.read_text(encoding="utf-8")) == {"editor.fontSize": 14}
+        assert ra
+
+    def test_nho_ban_cu_KHONG_ghi_gia_tri_cua_ta_lam_ban_goc(self, cc):
+        ghi = {}
+        cc._nho_ban_cu(ghi, "k", "GIA_TRI_CUA_TA", "GIA_TRI_CUA_TA")
+        assert ghi["k"] is None, (
+            "ghi nho gia tri cua CHINH TA lam 'ban goc cua khach' ⇒ `go` se "
+            "'hoan nguyen' ve chinh no, va khach ket vinh vien")
+
+        ghi2 = {}
+        cc._nho_ban_cu(ghi2, "k", "cua-khach", "cua-ta")
+        assert ghi2["k"] == "cua-khach"
+
+        ghi2["k"] = "cua-khach"                        # lan hai khong duoc de len
+        cc._nho_ban_cu(ghi2, "k", "cua-ta", "cua-ta")
+        assert ghi2["k"] == "cua-khach"
+
+    def test_cam_roi_go_van_bang_TUNG_BYTE_qua_hai_luot(self, cc, tmp_path):
+        """Phép thử trung tâm của tệp này, nhưng chạy **hai lượt cắm**."""
+        cfg = tmp_path / ".codex" / "config.toml"
+        cfg.parent.mkdir(parents=True)
+        cfg.write_text(CONFIG_CUA_KHACH, encoding="utf-8", newline="\n")
+        goc_byte = cfg.read_bytes()
+
+        tt = {}
+        cc.cam_codex("https://x", tt)
+        cc.cam_codex("https://x", {})              # tep trang thai MOI, mat tri nho
+        cc.go_codex(tt)
+        assert cfg.read_bytes() == goc_byte
+
+
+def test_KHONG_duong_tep_nao_ra_NGOAI_thu_muc_tam_KE_CA_qua_bien_moi_truong(
+        cc, tmp_path):
+    """Bánh cóc thứ hai — cho những đường **không** đi qua `NHA`.
+
+    🔴 Bánh cóc kia chỉ soi các **hằng** kiểu `Path`. `_vscode_settings()` là
+       một **hàm** đọc `%APPDATA%`, nên nó lọt qua — và ngày 30/08 một phép kiểm
+       mới đã ghi đè `settings.json` thật của VS Code trên máy chạy test. Không
+       test nào đỏ; chỉ tình cờ đọc tệp đó ngay sau mới biết.
+
+    ⇒ Ở đây gọi **thật** các hàm dựng đường dẫn rồi bắt chúng nằm trong tmp.
+    """
+    import pathlib as _pl
+    tam = tmp_path.resolve()
+    for ten in ("_vscode_settings",):
+        d = getattr(cc, ten)()
+        assert tam in _pl.Path(d).resolve().parents, (
+            f"`{ten}()` tro RA NGOAI thu muc tam: {d}. Chan bien moi truong "
+            f"tuong ung trong `_chan_duong_ra_ngoai`.")
+    assert tam in cc.TEP_NHAT_KY.resolve().parents
+
+
+class TestGoKhongCanKhoaVaKhongCanTriNho:
+    """Hai ràng buộc đến từ cách khách **thực sự** dùng nút "Gỡ ra".
+
+    ⭐ Khách bấm gỡ chính là lúc họ **thôi** dùng dịch vụ — thường để quay về tài
+       khoản của họ. Lúc đó họ không còn cầm khoá API, và bắt họ dán lại khoá để
+       gỡ là vô lý. Nên **không nhánh nào của `go` được đọc khoá**.
+
+    ⭐ Và tệp trạng thái mất là chuyện thường (cài lại máy, đổi tài khoản
+       Windows, một lượt `cam` sau ghi đè). Trước 30/08 gần như cả đường `go` đi
+       qua trí nhớ đó, nên khi mất thì công cụ báo "đã gỡ" mà máy vẫn nguyên.
+    """
+
+    def test_go_codex_XOA_bang_provider_ta_sinh_ra_du_KHONG_co_tri_nho(self, cc):
+        cfg = cc.NHA / ".codex" / "config.toml"
+        cfg.parent.mkdir(parents=True, exist_ok=True)
+        cc.cam_codex("https://app.lttstudios.com", {})       # tt bi vut di
+        assert "[model_providers.ltt]" in cfg.read_text(encoding="utf-8")
+
+        ra = cc.go_codex({})                                 # KHONG tri nho
+        van = cfg.read_text(encoding="utf-8")
+        assert "[model_providers.ltt]" not in van, (
+            "go de lai bang provider tro ve ta - khach doi tai khoan se hong")
+        assert ra
+
+    def test_go_codex_KHONG_dung_toi_bang_provider_cua_KHACH(self, cc):
+        """Khách tự khai, trỏ về ta, nhưng **không phải** bản ta sinh ra."""
+        cfg = _viet_cfg(cc, CONFIG_CO_SAN_LTT)
+        goc = cfg.read_bytes()
+        cc.go_codex({})
+        assert cfg.read_bytes() == goc
+
+    def test_go_desktop_van_xoa_chinh_sach_khi_MAT_tri_nho(self, cc):
+        for ten, gt in (("inferenceProvider", "gateway"),
+                        ("inferenceGatewayBaseUrl",
+                         "https://app.lttstudios.com/api"),
+                        ("inferenceModels",
+                         '[{"name": "' + cc.MODEL_DESKTOP + '"}]')):
+            cc._reg_ghi(cc.REG_DESKTOP_HKCU, ten, gt)
+
+        ra = cc.go_desktop({})                               # KHONG tri nho
+        assert ra, "im lang = khoa chinh sach nam lai vinh vien"
+        assert cc._reg_doc(cc.REG_DESKTOP_HKCU, "inferenceProvider") is None
+
+    def test_go_desktop_KHONG_dung_chinh_sach_tro_di_CHO_KHAC(self, cc):
+        cc._reg_ghi(cc.REG_DESKTOP_HKCU, "inferenceProvider", "gateway")
+        cc._reg_ghi(cc.REG_DESKTOP_HKCU, "inferenceGatewayBaseUrl",
+                    "https://gateway-cua-toi.local/api")
+        cc.go_desktop({})
+        assert cc._reg_doc(cc.REG_DESKTOP_HKCU, "inferenceProvider") == "gateway"
+
+    def test_KHONG_ham_go_nao_NHAN_khoa(self, cc):
+        """Banh coc: chu ky ham `go_*` khong duoc co tham so khoa.
+
+        ⚠️ Ban dau toi viet phep kiem nay bang cach doc source va tim chu "khoa"
+           trong tung dong — no do ngay o mot dong VUT khoa di
+           (`for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE, ENV_KHOA_CODEX)`), tuc no
+           do dung thu ta MUON co. Kiem CHU KY thi vua chat vua khong the doc
+           nham: mot ham khong nhan khoa thi khong the dung khoa.
+        """
+        import inspect
+        for ten in ("go_codex", "go_claude", "go_vscode", "go_desktop",
+                    "quet_con_sot"):
+            tham = list(inspect.signature(getattr(cc, ten)).parameters)
+            assert not [t for t in tham if "khoa" in t.lower()], (
+                f"`{ten}{tuple(tham)}` nhan khoa — nut go phai chay duoc khi "
+                f"khach da khong con khoa nua")
+
+    def test_lenh_go_chay_duoc_khi_KHONG_co_gi_ca(self, cc):
+        """Khong tep trang thai, khong cau hinh, khong khoa -> van phai chay."""
+        class _A:
+            pass
+        assert cc.lenh_go(_A()) == 0
+
+    def test_lenh_go_XOA_HAN_tep_trang_thai(self, cc, capsys):
+        cc.TEP_TRANG_THAI.parent.mkdir(parents=True, exist_ok=True)
+        cc.TEP_TRANG_THAI.write_text(
+            json.dumps({"goc": "https://x", "da_cam": True}), encoding="utf-8")
+
+        class _A:
+            pass
+        cc.lenh_go(_A())
+        assert not cc.TEP_TRANG_THAI.exists(), (
+            "giu lai tep trang thai la giu lai dung thu khach vua bao khong can")

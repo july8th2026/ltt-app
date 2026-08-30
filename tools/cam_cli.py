@@ -90,7 +90,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.2.0"
+PHIEN_BAN = "1.3.0"
 
 MODEL = "ltt_llm"
 
@@ -195,6 +195,35 @@ def _sao_luu(tep: pathlib.Path) -> pathlib.Path | None:
     if not bs.exists():
         bs.write_bytes(tep.read_bytes())
     return bs
+
+
+def _nho_ban_cu(ghi_nho: dict, ten: str, cu, cua_ta) -> None:
+    r"""Ghi nho gia tri **cua khach** truoc khi ta ghi de. Mot lan, va dung.
+
+    🔴 HAI CAI BAY, VA CAI THU HAI DA CAN THAT NGAY 30/08.
+
+    ① **Chi ghi nho lan dau.** Lan hai gia tri tren dia da la cua ta.
+       (`if ten not in ghi_nho`)
+
+    ② **VA NEU GIA TRI TREN DIA DA LA CUA TA THI DO KHONG PHAI CUA KHACH.**
+       Day moi la cho hiem. Chuoi su kien do duoc:
+
+         1. `go_vscode` im lang (loi #3) -> cau hinh cua ta o lai tren dia;
+         2. tep trang thai mat khoi `vscode` -> `cam` sau ghi nho lai tu dau,
+            va thu no doc duoc chinh la **cau hinh cua ta**;
+         3. tu do `go` trung thuc "hoan nguyen" ve... chinh gia tri cua ta.
+
+       Ket qua: `go` in `[OK] da tra ... ve nhu truoc` trong khi tep **khong
+       doi mot chu**. Khach khong bao gio go ra duoc, va khong co trieu chung
+       nao ngoai viec no cu the mai.
+
+    ⇒ Neu `cu == cua_ta` thi ghi nho `None` (= "von khong co"), tuc `go` se
+      **xoa** no. Dung ke ca khi khach tinh co dat trung: xoa xong ho van cam
+      lai duoc, con khong xoa duoc thi ho ket vinh vien.
+    """
+    if ten in ghi_nho:
+        return
+    ghi_nho[ten] = None if cu == cua_ta else cu
 
 
 def _doc_giu_dong(tep: pathlib.Path) -> tuple:
@@ -409,10 +438,32 @@ TEP_CATALOG = NHA / ".codex" / "ltt_model_catalog.json"
 def _catalog_codex() -> str:
     """Catalog model theo dung khuon `codex_models_manager` doc duoc.
 
-    ⚠️ Ba cho da lam Codex tu choi tep, tim ra bang cach lap 30/08:
+    ⚠️ Bon cho da lam Codex tu choi tep, tim ra bang cach lap 30/08:
        * `web_search_tool_type: null`  -> truong nay KHONG nhan null; bo han.
-       * `effective_context_window_percent: 0.9` -> doi **i64**, phai la `90`.
        * moi truong `null` khac deu an toan hon khi BO HAN de serde dung mac dinh.
+       * `effective_context_window_percent` -> **BO HAN**, xem ben duoi.
+       * khai duong dan toi tep KHONG ton tai -> Codex tu choi khoi dong.
+
+    🔴 CLI VA TIEN ICH VS CODE LA HAI BO DOC KHAC NHAU, VA CHUNG KHONG CUNG
+       KHUON. Day la bai hoc dat nhat cua ngay 30/08.
+
+       `effective_context_window_percent` ban dau la `0.9`; CLI (codex-cli
+       0.145) tu choi va doi **i64**, nen toi doi thanh `90`. CLI nhan, A/B sach,
+       toi tuong xong. Nhung **tien ich Codex trong VS Code** (app 26.825) doc
+       cung tep do va tra:
+
+           Invalid configuration: invalid type: integer `90`, expected a string
+
+       roi *"Windows setup didn't finish - Failed to load config"* va **moi lan
+       tao chat deu hong**. Tuc ban va cho CLI da **lam vo tien ich** - dung thu
+       khach dung hang ngay.
+
+    ⛔ KHONG co gia tri nao lam vua long ca hai (mot ben doi so, mot ben doi
+       chuoi), nen cach dung la **bo han truong do**. No la tuy chon; thu that
+       su can la `context_window`, va CLI van het canh bao khi khong co no.
+
+    ⭐ VA BAI HOC CHUNG: **do tren CA HAI bo doc truoc khi tin**. `codex exec`
+       chay sach khong chung minh gi ve tien ich.
     """
     import json
 
@@ -441,7 +492,8 @@ def _catalog_codex() -> str:
             "context_window": CUA_SO_NGU_CANH,
             "max_context_window": CUA_SO_NGU_CANH,
             "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
-            "effective_context_window_percent": 90,
+            # !! KHONG them `effective_context_window_percent` o day. CLI doi
+            #    i64, tien ich VS Code doi chuoi - xem docstring. Bo han.
             "experimental_supported_tools": [],
             "input_modalities": ["text", "image"] if doc_anh else ["text"],
             "supports_search_tool": False, "use_responses_lite": False,
@@ -532,6 +584,75 @@ def _toml_hop_le(van: str) -> tuple[bool, str]:
 def _co_provider_ltt(van: str) -> bool:
     """Có một bảng `[model_providers.ltt]` (ngoài khối của ta) không?"""
     return any(_RE_PROVIDER_LTT.match(d) for d in van.splitlines())
+
+
+def _go_bang_provider_ltt(van: str, goc: str, nl: str) -> tuple:
+    r"""Cat bang `[model_providers.ltt]` **cua ta** ra khoi `config.toml`.
+
+    🔴 VI SAO CAN RIENG HAM NAY — DAY LA LO THUNG LON NHAT CUA `go`.
+
+       `cam_codex` co mot nhanh "da co provider san -> khong chen lai"
+       (`co_prov`). Nhanh do dung cho lan cam thu hai, nhung no keo theo mot he
+       qua khong ai tinh: bang provider co the nam **NGOAI** cap dau moc. Ma
+       `go_codex` chi cat phan **trong** dau moc.
+
+       Ket qua do duoc 30/08 tren may that: chay `go`, cong cu bao xong, va
+       `~/.codex/config.toml` **van con**:
+
+           [model_providers.ltt]
+           base_url = "https://app.lttstudios.com/api/v1"
+           env_key = "LTT_API_KEY"
+
+       Khach quay ve tai khoan ChatGPT cua ho va gap loi, khong hieu vi sao.
+
+    ⛔ NHUNG CHI CAT KHI NO LA CUA TA. Dau van tay: `base_url` tro dung vao goc
+       cua ta. Mot khach tu khai `[model_providers.ltt]` tro di cho khac thi do
+       la cau hinh CUA HO — cat no la lap lai dung loi "xoa nhung gi trong giong
+       cua ta" ma ca tep test nay canh bao.
+
+    Tra `(van_moi, da_cat)`.
+    """
+    dong = van.split(nl)
+    dau = None
+    for i, d in enumerate(dong):
+        if _RE_PROVIDER_LTT.match(d):
+            dau = i
+            break
+    if dau is None:
+        return van, False
+
+    # Bang keo dai toi bang ke tiep (hoac het tep).
+    cuoi = len(dong)
+    for j in range(dau + 1, len(dong)):
+        if _RE_BANG.match(dong[j]) and not dong[j].lstrip().startswith("#"):
+            cuoi = j
+            break
+
+    # ⛔ DAU VAN TAY PHAI CHAT. "Co tro ve goc cua ta" la CHUA DU: khach hoan
+    #    toan co the tu khai `[model_providers.ltt]` tro ve dich vu cua ta ma
+    #    khong qua cong cu (co test chot ca nay). Xoa no la lap lai dung loi
+    #    "xoa nhung gi trong giong cua ta".
+    #
+    # ⇒ Chi cat khi **moi cap khoa/gia tri ta sinh ra** deu co mat dung y nguyen.
+    #    Chu thich va thu tu khong tinh — khach co the da them chu thich.
+    than = nl.join(dong[dau:cuoi])
+    can = [d.strip() for d in _codex_config(goc).splitlines()
+           if d.strip() and not d.lstrip().startswith(("#", "["))]
+    co = {d.strip() for d in dong[dau:cuoi]}
+    if not all(c in co for c in can):
+        return van, False           # cua KHACH — khong dung toi
+    del than
+
+    # Cac dong chu thich lien ngay TRUOC bang cung la cua ta (ta viet chung).
+    while dau > 0 and (dong[dau - 1].lstrip().startswith("#")
+                       or not dong[dau - 1].strip()):
+        dau -= 1
+    con = dong[:dau] + dong[cuoi:]
+    # Dung de lai hai dong trang lien nhau o cho vua cat.
+    while (dau > 0 and dau < len(con)
+           and not con[dau - 1].strip() and not con[dau].strip()):
+        del con[dau]
+    return nl.join(con), True
 
 
 def _vo_hieu_model_goc(van: str, nl: str) -> str:
@@ -642,6 +763,127 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     return ra
 
 
+def quet_con_sot(goc: str | None = None) -> list:
+    r"""Quet MAY THAT xem con dau vet nao cua LTT Studios. Tra danh sach chuoi.
+
+    🔴 HAI RANG BUOC, VA CA HAI DEU DEN TU CACH KHACH THUC SU DUNG NUT "GO RA".
+
+    ① **KHONG CAN KHOA API.** Khach bam "go ra" chinh la luc ho thoi dung dich
+       vu — ho khong con cam khoa nua, va bat ho dan lai khoa de go la vo ly.
+       Nen khong mot nhanh nao o day doc khoa.
+
+    ② **KHONG TIN TEP TRANG THAI.** Tri nho mat la chuyen thuong: cai lai may,
+       doi tai khoan Windows, dong bo thu muc nha, hay don gian mot luot `cam`
+       sau ghi de. Truoc 30/08 gan nhu ca duong `go` deu di qua tri nho do, nen
+       khi no mat thi cong cu bao "da go" ma may **van con nguyen** cau hinh.
+
+    ⇒ Moi thu o day nhan dien bang **dau van tay tren dia/registry/moi truong**.
+      Tep trang thai chi con mot vai tro: khoi phuc gia tri GOC CUA KHACH khi ta
+      da ghi de len no. Khong co no thi van go duoc, chi la khong hoan nguyen
+      duoc gia tri cu — va luc do ta phai NOI RA.
+    """
+    goc = (goc or GOC_MAC_DINH).rstrip("/")
+    ra = []
+
+    cfg = NHA / ".codex" / "config.toml"
+    if cfg.exists():
+        try:
+            van = cfg.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            van = ""
+        if MOC_MO in van or MOC_DONG in van:
+            ra.append(f"{cfg}: con dau moc cua cong cu")
+        if any(_RE_PROVIDER_LTT.match(d) for d in van.splitlines()):
+            ra.append(f"{cfg}: con bang [model_providers.ltt]")
+        if TAG_TAT in van:
+            ra.append(f"{cfg}: con dong bi cong cu vo hieu (tien to {TAG_TAT!r})")
+
+    for tep in (NHA / ".codex" / "ltt.config.toml", TEP_CATALOG):
+        if tep.exists():
+            ra.append(f"{tep}: tep do cong cu tao")
+
+    for tep, khoa in ((NHA / ".claude" / "settings.json", ("ANTHROPIC_BASE_URL",)),
+                      (_vscode_settings(), ("claudeCode.environmentVariables",))):
+        if not tep.exists():
+            continue
+        try:
+            van = tep.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        if goc in van:
+            ra.append(f"{tep}: con tro ve {goc}")
+        elif MODEL in van and any(k in van for k in khoa):
+            ra.append(f"{tep}: con nhac model {MODEL}")
+
+    for ten in CLAUDE_ENV + (ENV_KHOA_CLAUDE, ENV_KHOA_CODEX):
+        if _doc_env_nguoi_dung(ten):
+            ra.append(f"bien moi truong cap nguoi dung: {ten}")
+
+    for hk in (REG_DESKTOP_HKCU, REG_DESKTOP_HKLM):
+        con = [t for t in _DESKTOP_KHOA if _reg_doc(hk, t)]
+        if con:
+            ra.append(f"{hk}: con {', '.join(con)}")
+
+    return ra
+
+
+def _la_cua_ta(tep: pathlib.Path, dau_hieu) -> bool:
+    """Noi dung tep co mang dau van tay cua ta khong?"""
+    try:
+        van = tep.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return False
+    return all(d in van for d in dau_hieu)
+
+
+def _tra_hoac_xoa(tep: pathlib.Path, ta_tao, dau_hieu) -> list:
+    r"""Go mot tep ta co the da tao HOAC da ghi de.
+
+    🔴 BA NHANH, VA NHANH THU BA MOI LA CHO TUNG HONG.
+
+    ① Ta tao no  -> xoa.
+    ② Khach co tu truoc, co ban sao luu -> tra lai ban sao luu.
+    ③ **Ban sao luu CHINH NO cung la tep cua ta** -> "tra lai" khong go duoc gi.
+
+       Nhanh ③ xay ra that, va tu dinh mai mai: mot lan `cam` sau khi tri nho
+       mat se sao luu **cau hinh cua ta** roi ghi nho do la "ban goc cua khach".
+       Tu do `go` trung thuc khoi phuc... chinh cau hinh cua ta. Do duoc 30/08:
+       `~/.codex/ltt.config.toml` van con nguyen sau khi `go` bao xong.
+
+    ⇒ Truoc khi khoi phuc, DOC ban sao luu. Neu no mang dau van tay cua ta thi
+      no khong phai cua khach — xoa ca hai.
+    """
+    ra = []
+    if not tep.exists():
+        return ra
+    bs = tep.with_suffix(tep.suffix + ".truoc-ltt")
+    if ta_tao:
+        tep.unlink()
+        ra.append(f"  [OK] da xoa {tep} (ta tao no)")
+        if bs.exists() and _la_cua_ta(bs, dau_hieu):
+            bs.unlink()
+            ra.append(f"  [OK] da xoa {bs.name} (ban sao luu cung la cua ta)")
+        return ra
+    if not bs.exists():
+        if _la_cua_ta(tep, dau_hieu):
+            tep.unlink()
+            ra.append(f"  [OK] da xoa {tep} (khong co sao luu, nhung noi dung "
+                      f"la cua ta)")
+        else:
+            ra.append(f"  [!!] GIU {tep} - co tu truoc, khong co ban sao luu")
+        return ra
+    if _la_cua_ta(bs, dau_hieu):
+        # Nhanh ③.
+        tep.unlink()
+        bs.unlink()
+        ra.append(f"  [OK] da xoa {tep} (ban sao luu cung la cua ta - xem "
+                  f"`_tra_hoac_xoa`)")
+        return ra
+    tep.write_bytes(bs.read_bytes())
+    ra.append(f"  [OK] da tra {tep} ve ban truoc khi cam")
+    return ra
+
+
 def go_codex(tt: dict) -> list:
     ra = []
     cfg = NHA / ".codex" / "config.toml"
@@ -653,41 +895,26 @@ def go_codex(tt: dict) -> list:
         # Khôi phục các dòng `model`/`model_provider` của khách mà chế độ vscode
         # đã tạm vô hiệu (bóc tiền tố TAG_TAT) ⇒ trả về nguyên trạng từng byte.
         van = _khoi_phuc_model_goc(van)
+        # 🔴 VÀ CẮT BẢNG PROVIDER NẰM NGOÀI DẤU MỐC. Thiếu bước này thì `go` để
+        #    lại `[model_providers.ltt]` trỏ về ta trong config.toml của khách —
+        #    đo được trên máy thật 30/08. Xem `_go_bang_provider_ltt`.
+        goc = (tt.get("goc") or _doc_trang_thai().get("goc")
+               or GOC_MAC_DINH).rstrip("/")
+        van, cat_prov = _go_bang_provider_ltt(van, goc, crlf)
         if van != van_goc:
             _ghi_giu_dong(cfg, van, crlf)
-            ra.append(f"  [OK] da go khoi cua ta khoi {cfg}")
+            ra.append(f"  [OK] da go khoi cua ta khoi {cfg}"
+                      + (" (ke ca bang [model_providers.ltt] ngoai dau moc)"
+                         if cat_prov else ""))
         else:
             ra.append(f"  [--] {cfg} khong co khoi cua ta")
 
-    prof = NHA / ".codex" / "ltt.config.toml"
-    if prof.exists():
-        if tt.get("codex", {}).get("ta_tao_ltt_config"):
-            prof.unlink()
-            ra.append(f"  [OK] da xoa {prof} (ta tao no)")
-        else:
-            # Tep co TU TRUOC va ta da ghi de len no ⇒ tra lai tu ban sao luu.
-            # "Khong xoa" chua phai la tra ve nguyen trang.
-            bs = prof.with_suffix(prof.suffix + ".truoc-ltt")
-            if bs.exists():
-                prof.write_bytes(bs.read_bytes())
-                ra.append(f"  [OK] da tra {prof} ve ban truoc khi cam")
-            else:
-                ra.append(f"  [!!] GIU {prof} - co tu truoc, khong co ban sao luu")
-
-    # Catalog model: cung duong xu ly voi `ltt.config.toml` o tren. Bo qua no o
-    # `go` thi ta de lai mot tep rac ta tu tao - dung loai rac ma test
-    # `test_cam_roi_go_tra_ve_DUNG_TUNG_BYTE` sinh ra de bat.
-    if TEP_CATALOG.exists():
-        if tt.get("codex", {}).get("ta_tao_catalog"):
-            TEP_CATALOG.unlink()
-            ra.append(f"  [OK] da xoa {TEP_CATALOG} (ta tao no)")
-        else:
-            bs = TEP_CATALOG.with_suffix(TEP_CATALOG.suffix + ".truoc-ltt")
-            if bs.exists():
-                TEP_CATALOG.write_bytes(bs.read_bytes())
-                ra.append(f"  [OK] da tra {TEP_CATALOG} ve ban truoc khi cam")
-            else:
-                ra.append(f"  [!!] GIU {TEP_CATALOG} - co tu truoc, khong sao luu")
+    ra += _tra_hoac_xoa(NHA / ".codex" / "ltt.config.toml",
+                        tt.get("codex", {}).get("ta_tao_ltt_config"),
+                        ('model_provider = "ltt"',))
+    ra += _tra_hoac_xoa(TEP_CATALOG,
+                        tt.get("codex", {}).get("ta_tao_catalog"),
+                        ('"slug": "ltt_llm"', '(LTT Studios)'))
     return ra
 
 
@@ -717,22 +944,60 @@ def _tach_khoa_registry(khoa: str):
     return (goc, nhanh) if goc is not None else None
 
 
-def _reg_ghi(khoa: str, ten: str, gt: str) -> bool:
+def _reg_ghi_ly_do(khoa: str, ten: str, gt: str) -> tuple:
+    r"""Ghi mot gia tri. Tra `(thanh_cong, ly_do)` — **ly do KHONG duoc mat**.
+
+    🔴 BAN DAU HAM NAY CHI TRA `bool`, VA DIEU DO GIAU MAT MOT LOI CO THAT.
+
+       `HKCU\SOFTWARE\Policies` la nhanh danh cho Group Policy: ACL cho chinh
+       chu **chi ReadKey**, `BUILTIN\Administrators` moi co FullControl. Nen o
+       mot tien trinh khong nang quyen, moi lan ghi deu tra `WinError 5 Access
+       is denied` — va `except OSError: return False` **vut mat** cau do.
+
+       Hau qua do duoc 30/08: cong cu in
+           [!!] inferenceProvider = gateway
+       doc nhu "da ghi gia tri nay", trong khi nghia la nguoc lai. Khach thay
+       "khong cam duoc claude" ma khong co mot chu nao noi vi sao, va bang cach
+       nao sua. Dung lop loi ma CLAUDE.md goi la **hong lang le**.
+
+    ⇒ Bat cu ai goi ham nay deu phai **hien ly do ra cho khach**.
+    """
     tach = _tach_khoa_registry(khoa)
     if tach:
         try:
             with winreg.CreateKey(tach[0], tach[1]) as k:
                 winreg.SetValueEx(k, ten, 0, winreg.REG_SZ, gt)
-            return True
-        except OSError:
-            return False
+            return True, ""
+        except OSError as e:
+            return False, f"WinError {getattr(e, 'winerror', '?')}: {e.strerror}"
     try:
         r = subprocess.run(["reg", "add", khoa, "/v", ten, "/t", "REG_SZ",
                             "/d", gt, "/f"],
                            capture_output=True, text=True, timeout=10)
-        return r.returncode == 0
-    except (OSError, subprocess.SubprocessError):
-        return False
+        return r.returncode == 0, (r.stderr or r.stdout or "").strip()
+    except (OSError, subprocess.SubprocessError) as e:
+        return False, f"{type(e).__name__}: {e}"
+
+
+def _reg_ghi(khoa: str, ten: str, gt: str) -> bool:
+    return _reg_ghi_ly_do(khoa, ten, gt)[0]
+
+
+def _co_quyen_chinh_sach(khoa: str) -> tuple:
+    r"""Ta co ghi duoc vao nhanh chinh sach khong? `(duoc, ly_do)`.
+
+    ⭐ HOI TRUOC KHI LAM, DUNG THU ROI DOAN. Khong co phep kiem nay thi
+       `cam_desktop` ghi bay bay ra bay lan that bai roi moi biet — va neu mot
+       trong bay lan tinh co thanh cong thi may o lai trang thai **nua voi**.
+    """
+    tach = _tach_khoa_registry(khoa)
+    if not tach:
+        return True, ""             # khong phai Windows/khong tach duoc: de duong cu lo
+    try:
+        winreg.CreateKey(tach[0], tach[1]).Close()
+        return True, ""
+    except OSError as e:
+        return False, f"WinError {getattr(e, 'winerror', '?')}: {e.strerror}"
 
 
 def _reg_xoa(khoa: str, ten: str) -> bool:
@@ -826,31 +1091,93 @@ def cam_desktop(goc: str, khoa: str, tt: dict) -> list:
         #    hien cong tac **Chat / Cowork** va lan gui dau tien di ngay.
         "chatTabEnabled": "true",
     }
+    # 🔴 HOI QUYEN TRUOC, DUNG GHI ROI DOAN. (do 30/08)
+    #
+    #    `HKCU\SOFTWARE\Policies` la nhanh cua Group Policy. ACL that tren may
+    #    nay:  chinh chu = **ReadKey**, `BUILTIN\Administrators` = FullControl.
+    #    Nen mot cong cu chay khong nang quyen **khong the** cam muc nay — va
+    #    truoc ban va nay no that bai bay lan lien tiep ma khong noi vi sao.
+    #
+    # ⛔ Va no khong phai "loi cua khach": ban cai bang `.exe` chay GUI qua
+    #    `cam_cli_launcher.ps1`, duong do **khong nang quyen bao gio**. Chi goi
+    #    ZIP moi co `cam_cli_admin.ps1`. Nen mac dinh cua san pham la that bai.
+    duoc, vi_sao = _co_quyen_chinh_sach(REG_DESKTOP_HKCU)
+    if not duoc:
+        ra.append(f"  [!!] KHONG ghi duoc chinh sach: {vi_sao}")
+        ra.append(f"       {REG_DESKTOP_HKCU} la nhanh Group Policy — nguoi dung")
+        ra.append("       thuong chi co quyen DOC; chi Administrators ghi duoc.")
+        ra.append("  >>   HAI CACH SUA, chon mot:")
+        ra.append("       1. Dong cong cu, bam chuot phai vao no roi chon")
+        ra.append("          'Run as administrator', va cam lai.")
+        ra.append("       2. Bo chon muc 'Claude Desktop'. Claude Code CLI va")
+        ra.append("          tien ich VS Code KHONG can quyen quan tri.")
+        ra.append("  [--] Khong ghi gi ca - de may khong o trang thai nua voi.")
+        return ra
+
     ghi_nho = tt.setdefault("desktop", {}).setdefault("khoa_da_them", {})
     for ten, gt in gia_tri.items():
-        if ten not in ghi_nho:
-            ghi_nho[ten] = _reg_doc(REG_DESKTOP_HKCU, ten)   # None = von khong co
-        ok = _reg_ghi(REG_DESKTOP_HKCU, ten, gt)
+        _nho_ban_cu(ghi_nho, ten, _reg_doc(REG_DESKTOP_HKCU, ten), gt)
+        ok, vi_sao = _reg_ghi_ly_do(REG_DESKTOP_HKCU, ten, gt)
+        # ⛔ HIEN LY DO. Mot dong `[!!] inferenceProvider = gateway` doc nhu
+        #    "da ghi gia tri nay" trong khi no bao that bai — chinh cho do da
+        #    lam mot phien 30/08 tuong registry da co du.
+        duoi = "" if ok else f"   <== KHONG GHI DUOC: {vi_sao}"
         if ten == "inferenceGatewayApiKey":
-            ra.append(f"  [{'OK' if ok else '!!'}] {ten} (da dat, khong in ra)")
+            ra.append(f"  [{'OK' if ok else '!!'}] {ten} (da dat, khong in ra){duoi}")
         else:
-            ra.append(f"  [{'OK' if ok else '!!'}] {ten} = {gt}")
+            ra.append(f"  [{'OK' if ok else '!!'}] {ten} = {gt}{duoi}")
     ra.append("  [!!] Phai THOAT HAN Claude Desktop roi mo lai - cau hinh chi")
     ra.append("       duoc doc MOT LAN luc khoi dong.")
     return ra
 
 
 def go_desktop(tt: dict) -> list:
+    r"""Go chinh sach Claude Desktop.
+
+    ⛔ KHONG DUOC PHU THUOC TEP TRANG THAI. Ban cu `return` ngay khi khong co
+       tri nho, tuc mat so la bay khoa chinh sach **nam lai vinh vien** — con
+       tro ve gateway cua ta kem mot khoa API da chet. Khach doi sang tai khoan
+       khac va khong hieu vi sao Claude Desktop van goi di dau do.
+    """
     ra = []
     ghi_nho = tt.get("desktop", {}).get("khoa_da_them") or {}
     if not ghi_nho:
-        return ra
+        return _go_desktop_khong_tri_nho(tt)
     for ten, cu in ghi_nho.items():
         if cu is None:
             ra.append(f"  [{'OK' if _reg_xoa(REG_DESKTOP_HKCU, ten) else '--'}] bo {ten}")
         else:
             ra.append(f"  [{'OK' if _reg_ghi(REG_DESKTOP_HKCU, ten, cu) else '!!'}] "
                       f"tra {ten} ve gia tri cu")
+    return ra
+
+
+def _go_desktop_khong_tri_nho(tt: dict) -> list:
+    """Duong go khi khong con so ghi — nhan dien bang **noi dung khoa**.
+
+    Chi xoa khi chinh sach dang tro ve ta: `inferenceGatewayBaseUrl` chua goc
+    cua ta, hoac `inferenceModels` nhac ten model ta tu dat. Mot chinh sach tro
+    di cho khac la cua khach (hoac cua quan tri vien) — khong dung toi.
+    """
+    ra = []
+    goc = (tt.get("goc") or _doc_trang_thai().get("goc")
+           or GOC_MAC_DINH).rstrip("/")
+    url = _reg_doc(REG_DESKTOP_HKCU, "inferenceGatewayBaseUrl") or ""
+    models = _reg_doc(REG_DESKTOP_HKCU, "inferenceModels") or ""
+    if not (goc in url or MODEL_DESKTOP in models):
+        if any(_reg_doc(REG_DESKTOP_HKCU, t) for t in _DESKTOP_KHOA):
+            ra.append("  [--] Co chinh sach Claude Desktop nhung KHONG tro ve "
+                      + goc + " - khong dung toi (do la cua ban).")
+        return ra
+
+    ra.append("  [!!] Tep trang thai KHONG nho lan cam nao cho Claude Desktop.")
+    ra.append("       Van go, vi chinh sach dang tro ve " + goc + ".")
+    for ten in _DESKTOP_KHOA:
+        if _reg_doc(REG_DESKTOP_HKCU, ten) is None:
+            continue
+        ok = _reg_xoa(REG_DESKTOP_HKCU, ten)
+        ra.append(f"  [{'OK' if ok else '!!'}] bo {ten}"
+                  + ("" if ok else "  <== can quyen quan tri"))
     return ra
 
 
@@ -922,8 +1249,7 @@ def cam_vscode(goc: str, tt: dict) -> list:
         "claudeCode.useTerminal": True,
     }
     for ten, gt in moi.items():
-        if ten not in ghi_nho:
-            ghi_nho[ten] = d.get(ten)          # None = von KHONG co
+        _nho_ban_cu(ghi_nho, ten, d.get(ten), gt)
         d[ten] = gt
     _ghi_giu_dong(tep, _json_theo_dong(d, nl))
     ra.append("  [OK] " + str(tep))
@@ -932,11 +1258,33 @@ def cam_vscode(goc: str, tt: dict) -> list:
 
 
 def go_vscode(tt: dict) -> list:
+    r"""Go cau hinh tien ich VS Code.
+
+    🔴 BAN CU IM LANG HOAN TOAN KHI TEP TRANG THAI MAT TRI NHO — va do la loi
+       nang nhat trong ba loi tim ra ngay 30/08.
+
+       `return ra` voi `ra` rong nghia la `lenh_go` in dung tieu de
+       "Tien ich VS Code:" **roi khong mot dong nao**. Khach doc do la "khong co
+       gi de go". Su that do duoc: `settings.json` cua VS Code **van tro ve LTT**
+       sau khi `go` bao xong.
+
+    ⭐ VA TRI NHO MAT LA CHUYEN THUONG, khong phai ca hiem: khach cai lai, doi
+       may, dong bo thu muc nha, hoac mot lan `cam` sau chi chon vai muc — tep
+       trang thai bi ghi de bang cua luot moi.
+
+    ⛔ NHUNG KHONG DUOC "XOA NHUNG GI TRONG GIONG CUA TA". `claudeCode.*` la
+       khoa cua TIEN ICH, khach hoan toan co the tu dat. Nen khi mat tri nho ta
+       chi go **nhung muc chi thang vao goc cua ta** — do la dau van tay khong
+       the nham — va NOI RO nhung thu con lai ta co y khong dung toi.
+    """
     ra = []
     tep = _vscode_settings()
     ghi_nho = tt.get("vscode", {}).get("khoa_da_them") or {}
-    if not tep.exists() or not ghi_nho:
+    if not tep.exists():
+        ra.append(f"  [--] khong thay {tep} (bo qua)")
         return ra
+    if not ghi_nho:
+        return _go_vscode_khong_tri_nho(tep, tt)
     try:
         van, nl = _doc_giu_dong(tep)
         d = json.loads(van)
@@ -950,6 +1298,54 @@ def go_vscode(tt: dict) -> list:
             d[ten] = cu
     _ghi_giu_dong(tep, _json_theo_dong(d, nl))
     ra.append("  [OK] da tra " + str(tep) + " ve nhu truoc")
+    return ra
+
+
+def _go_vscode_khong_tri_nho(tep: pathlib.Path, tt: dict) -> list:
+    """Duong go khi tep trang thai khong nho ta da them gi.
+
+    Chi go **dau van tay khong the nham**: cac muc trong
+    `claudeCode.environmentVariables` co `value` tro thang vao goc cua ta.
+    Nhung khoa boolean (`disableLoginPrompt`, `useTerminal`) thi KHONG dung toi
+    — ta khong phan biet duoc chung la cua ta hay cua khach — nhung phai NOI RA.
+    """
+    ra = []
+    goc = (tt.get("goc") or _doc_trang_thai().get("goc") or GOC_MAC_DINH).rstrip("/")
+    try:
+        van, nl = _doc_giu_dong(tep)
+        d = json.loads(van) if van.strip() else {}
+    except ValueError:
+        ra.append("  [!!] " + str(tep) + " khong doc duoc - khong dung toi")
+        return ra
+
+    bien = d.get("claudeCode.environmentVariables")
+    if not isinstance(bien, list):
+        ra.append("  [--] tep trang thai khong nho gi, va khong thay cau hinh"
+                  " cua ta o " + str(tep))
+        return ra
+
+    cua_ta = {goc + "/api", MODEL}
+    con_lai = [x for x in bien
+               if not (isinstance(x, dict) and x.get("value") in cua_ta)]
+    if len(con_lai) == len(bien):
+        ra.append("  [--] tep trang thai khong nho gi, va khong muc nao trong "
+                  + str(tep) + " tro ve " + goc)
+        return ra
+
+    ra.append("  [!!] Tep trang thai KHONG nho lan cam nao cho VS Code.")
+    ra.append("       Van go, nhung chi nhung muc tro thang vao " + goc + ".")
+    if con_lai:
+        d["claudeCode.environmentVariables"] = con_lai
+    else:
+        d.pop("claudeCode.environmentVariables", None)
+    _ghi_giu_dong(tep, _json_theo_dong(d, nl))
+    ra.append(f"  [OK] da bo {len(bien) - len(con_lai)} bien tro ve LTT khoi "
+              + str(tep))
+    con = [k for k in ("claudeCode.disableLoginPrompt", "claudeCode.useTerminal")
+           if k in d]
+    if con:
+        ra.append("  [--] GIU nguyen " + ", ".join(con) + " - khong phan biet")
+        ra.append("       duoc la cua ta hay cua ban. Xoa tay neu muon.")
     return ra
 
 
@@ -1009,8 +1405,7 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     # Ghi nho DUNG NHUNG KHOA TA THEM, va gia tri cu neu khoa da ton tai.
     ghi_nho = tt.setdefault("claude", {}).setdefault("khoa_da_them", {})
     for ten, gt in gia_tri.items():
-        if ten not in ghi_nho:
-            ghi_nho[ten] = env.get(ten)      # None = khoa nay von KHONG co
+        _nho_ban_cu(ghi_nho, ten, env.get(ten), gt)
         env[ten] = gt
     _ghi_giu_dong(tep, _json_theo_dong(d, crlf))
     ra.append(f"  [OK] {tep}")
@@ -1278,16 +1673,69 @@ def lenh_go(a) -> int:
     print("Claude Desktop:")
     for d in go_desktop(tt):
         print(d)
-    tt["da_cam"] = False
-    tt.pop("claude", None)
-    tt.pop("codex", None)
-    tt.pop("vscode", None)
-    tt.pop("desktop", None)
-    _ghi_trang_thai(tt)
-    print("\nBan sao luu dau tien van con o cac tep `*.truoc-ltt` - khong tu xoa,")
-    print("de ban doi chieu neu can. Xoa tay khi da yen tam.")
+    goc_da_dung = tt.get("goc") or GOC_MAC_DINH
+    # 🔴 GO XONG THI XOA HAN TEP TRANG THAI, khong "danh dau da go".
+    #
+    #    Bam "go ra" nghia la khach THOI dung dich vu — thuong la de quay ve tai
+    #    khoan cua ho. Giu lai mot tep con ghi ta tung o day, kem `goc`, la giu
+    #    lai dung thu ho vua bao khong can. Lan sau ho cam KHOA KHAC, va khong co
+    #    gi trong tep nay dang mang sang lan do.
+    #
+    # ⚠️ Va no phai la buoc CUOI: cac ham go o tren van doc `goc` tu day de biet
+    #    dau la dau van tay cua ta.
+    try:
+        TEP_TRANG_THAI.unlink(missing_ok=True)
+    except OSError as exc:                                      # noqa: BLE001
+        print(f"  [!!] khong xoa duoc {TEP_TRANG_THAI}: {exc}")
+
+    # 🔴 GO XONG PHAI TU CHUNG MINH. Truoc 30/08 lenh nay chi in "da go" roi
+    #    ket thuc — va do la ly do bon cho con sot nam im hang tuan:
+    #    `[model_providers.ltt]` ngoai dau moc, `ltt.config.toml`, catalog, va
+    #    ca `settings.json` cua tien ich VS Code. Cong cu noi xong, may thi chua.
+    #
+    # ⭐ Cung tinh than voi `[THAT BAI MOT PHAN]` cua `cam`: **khong danh dau
+    #    xanh gia**. Quet lai bang chinh phep do, roi noi that con gi.
+    con = quet_con_sot(goc_da_dung)
+    print("\n" + "=" * 70)
+    if con:
+        print("[CON SOT] Van con dau vet cua LTT Studios o:")
+        for d in con:
+            print("  - " + d)
+        print("Neu ban KHONG co y giu, bao lai cho chung toi kem dong tren.")
+    else:
+        print("[OK] Da quet lai: khong con dau vet nao cua LTT Studios.")
+
+    bs = _cac_ban_sao_luu()
+    if bs:
+        print("")
+        if getattr(a, "sach", False):
+            # Khach da noi ro la muon sach. Cac tep nay la BAN GOC CUA HO, nen
+            # khong bao gio tu xoa - chi xoa khi duoc bao.
+            for t in bs:
+                try:
+                    t.unlink()
+                    print(f"  [OK] da xoa ban sao luu {t}")
+                except OSError as exc:                          # noqa: BLE001
+                    print(f"  [!!] khong xoa duoc {t}: {exc}")
+        else:
+            print("Con lai cac ban sao luu (BAN GOC CUA BAN truoc lan cam dau,")
+            print("khong phai cau hinh cua LTT). Khong tu xoa:")
+            for t in bs:
+                print("  - " + str(t))
+            print("Muon xoa luon:  " + _cach_goi("go --sach"))
     print("\n!! Mo lai VS Code / terminal de bien moi truong cu bien mat.")
     return 0
+
+
+def _cac_ban_sao_luu() -> list:
+    """Cac tep `*.truoc-ltt` con lai. Chung la **cua khach**, khong phai cua ta."""
+    ra = []
+    for thu in (NHA / ".codex", NHA / ".claude", _vscode_settings().parent):
+        try:
+            ra += sorted(thu.glob("*.truoc-ltt"))
+        except OSError:
+            continue
+    return ra
 
 
 def lenh_xem(a) -> int:
@@ -1491,7 +1939,12 @@ def main(argv=None) -> int:
                    help="hang muc can cam; lap lai co nay de chon nhieu. "
                         "Bo qua thi dung bo mac dinh tuong thich ban 1.0")
 
-    sub.add_parser("go", help="go ra, tra ve nguyen trang")
+    g = sub.add_parser("go", help="go ra, tra ve nguyen trang")
+    # !! KHONG co `--khoa` o day, va do la CO Y: khach bam go chinh la
+    #    luc ho thoi dung dich vu, khong con cam khoa nua.
+    g.add_argument("--sach", action="store_true",
+                   help="xoa luon cac ban sao luu *.truoc-ltt "
+                        "(chung la BAN GOC CUA BAN, nen mac dinh giu)")
     sub.add_parser("xem", help="xem dang cam gi")
 
     k = sub.add_parser("kiem", help="goi that mot luot de chac chan")
