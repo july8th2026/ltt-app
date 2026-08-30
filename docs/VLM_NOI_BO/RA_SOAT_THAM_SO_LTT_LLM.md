@@ -217,3 +217,50 @@ nửa đêm.
 ⚠️ **Còn lại một việc trên máy B**: nó vẫn *thực thi* 65.000 dù mã lẫn registry
 đều đã đúng. Nay `TestDoiChieuMayB` sẽ **đỏ** khi chạy có `LTT_LLM_TOKEN` — tức
 lệch này không còn ẩn được nữa.
+
+---
+
+## 7. ĐÃ GIẢI — nguồn thứ ba của `LTT_LLM_MAX_INPUT_TOKENS` (30/08)
+
+**Nó là `C:\ProgramData\LTTLlm\gateway.env` trên máy B**, và theo **thiết kế có
+chủ ý** tệp này **thắng tất cả**: `llm_gateway/main.py::nap_env()` đọc nó rồi ghi
+đè thẳng `os.environ`, với chú thích ngay tại chỗ:
+
+> *"**TỆP THẮNG.** Nó là nơi người vận hành sửa; giá trị `nssm` mang theo chỉ là
+> ảnh chụp cũ của chính tệp này."*
+
+### Vì sao mất lâu đến thế mới tìm ra
+
+Tôi đã lần lượt loại trừ — mỗi lần đều tốn một vòng đo:
+
+| Nghi can | Kết quả |
+|---|---|
+| Tiến trình cũ chưa restart | ✗ PID mới, rồi cả một lần **reboot** máy B |
+| Tiến trình con mồ côi giữ cổng | ✗ diệt rồi, vẫn thế |
+| `AppEnvironmentExtra` của NSSM | ✗ hỏi chính `nssm.exe`: **90000** |
+| `AppEnvironment` (thay thế toàn bộ) | ✗ rỗng |
+| Env cấp máy / người dùng | ✗ trống, rồi tôi đặt 96256 vẫn không ăn |
+| `min(cfg, catalog.max_context)` | ✗ catalog khai 131.072 |
+| Bản mã thứ hai (site-packages, ổ E:) | ✗ không có |
+| `__pycache__` cũ (deploy giữ timestamp) | ✗ xoá sạch, vẫn thế |
+| **`gateway.env` ngoài `H:\`** | ✅ **thủ phạm** |
+
+⭐ **Bài học đắt nhất:** tôi tìm tệp `.env` bằng `Get-ChildItem H:\LTT_LLM -Recurse`
+   — nhưng tệp thật nằm ở `C:\ProgramData\`, **ngoài cây thư mục của ứng dụng**.
+   Một nguồn cấu hình đặt ngoài thư mục dự án là nguồn khó tìm nhất, và ở đây nó
+   còn là nguồn **có quyền cao nhất**.
+
+### Sau khi sửa
+
+```
+LTT_LLM_MAX_INPUT_TOKENS: 65000 -> 96256      (bản sao lưu: gateway.env.truoc-96256)
+/health tran.input_tokens: 96256              ✅ khớp ngan_sach.TOKEN_VAO_TRAN
+tests/test_312: 21/21 PASS, 0 skip            ✅ ba tầng đồng ý
+```
+
+**+48% ngữ cảnh dùng được**, và quan trọng hơn: `TestDoiChieuMayB` nay chạy thật
+chứ không bỏ qua, nên lệch kiểu này **không thể ẩn được nữa**.
+
+⚠️ **Ghi cho phiên sau:** sửa trần token trên máy B thì sửa ở
+`C:\ProgramData\LTTLlm\gateway.env` rồi `Restart-Service LTTLlmGateway`. Sửa
+NSSM env hay env máy đều **vô tác dụng** — tệp ghi đè lên chúng.
