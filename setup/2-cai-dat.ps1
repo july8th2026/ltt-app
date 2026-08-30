@@ -99,6 +99,93 @@ if ($pyKiem) {
     Canh "Khong tim thay python de kiem ma nguon - BO QUA chot bien dich"
 }
 
+Head 'WhisperX sidecar rieng'
+# Sidecar nay chi phuc vu autosubvideo.
+#
+# !! CHUYEN LEN DAY 2026-08-30, TRUOC MOI `Stop-Service`.
+#
+#    Chu thich cu ngay tai cho nay da ghi: *"script da dung dich vu o tren,
+#    nen mot loi o day de production nam im"* - tuc no BIET minh nam trong cua
+#    so downtime, va chi ne bang try/catch. Ne mot loi thi production van nam
+#    trong suot thoi gian no tai ve (torch ~3,5 GB). Chuyen di thi khong.
+#
+#    Cung ngay do, khoi cai `vieneu-venv` mac dung loi ay va lam production
+#    nam 19 phut. `test_45::test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu`
+#    gio chan ca hai.
+#
+#    Ngay 2026-08-05 buoc nay nem loi (xem `Test-Py` trong chinh tep sidecar)
+#    va bi bo qua -> `whisperx-venv` rong toi tan 30/08, va `autosubvideo` chay
+#    nhanh du phong `faster-whisper`, MAT can chinh theo tu. No co ghi nhan
+#    (`alignment_status: fallback_unaligned`) nhung khong ai doc nhan do.
+#
+#    Goi tu `$src` chu khong `$appDir`: `$appDir` chi co noi dung moi sau
+#    robocopy, ma robocopy thi sau Stop-Service.
+# Khi may DA co LTT_WHISPERX_PYTHON thi bo qua duoc: chi autosubvideo giam
+# chuc nang. Khi CHUA co (cai moi) thi van phai dung, neu khong auto-sub hong
+# am tham.
+$whisperPy = $null
+try {
+    $whisperOut = @(& (Join-Path $src 'deploy\windows\install-whisperx-sidecar.ps1') `
+        -Root $Root -ReleaseDir $src -PythonExe 'python')
+    $whisperPy = $whisperOut[-1]
+} catch {
+    Note "WhisperX sidecar loi: $($_.Exception.Message)"
+}
+if (-not $whisperPy) {
+    $envProbe = Join-Path $secrets 'app.env'
+    $hasWhisper = (Test-Path $envProbe) -and
+        ((Get-Content $envProbe -Raw) -match '(?m)^LTT_WHISPERX_PYTHON=')
+    if (-not $hasWhisper) { throw 'Khong cai duoc WhisperX sidecar va app.env chua co LTT_WHISPERX_PYTHON' }
+    Note 'BO QUA WhisperX sidecar - app.env da co LTT_WHISPERX_PYTHON cu.'
+    Note 'autosubvideo co the giam chuc nang. Chay lai sidecar rieng khi ranh.'
+} else {
+    Ok 'WhisperX CUDA sidecar da san sang'
+}
+
+Head 'Venv giong noi (LTT VOICE) - CAI TRUOC KHI DUNG DICH VU'
+# !! VI SAO KHOI NAY O DAY - TRUOC CA `Head 'Copy ma nguon'`.
+#
+#    Ngay 2026-08-30 no nam o duoi, SAU `Stop-Service`. Mot lan tai ve ~6 GB
+#    (torch cu128) do dai bang dung mot khoang production sap. Tien trinh nang
+#    quyen chet trong luc tai => production nam 19 phut, `EXITCODE` rong.
+#
+#    Chu thich o `Head 'Copy ma nguon'` da canh bao san dieu nay: tac gia loai
+#    700 MB node_modules chi de RUT NGAN cua so do, va ghi rang mot lan treo
+#    robocopy da lam production ngung 20 phut ngay 2026-08-05. Toi tha 6 GB vao
+#    dung cua so ay.
+#
+#    Chay tu `$src` chu khong `$appDir`: `$appDir` chi co noi dung moi SAU
+#    robocopy, ma robocopy thi sau Stop-Service. Ban cai trong cay nguon giong
+#    het, va no cai mot venv NGOAI `app\` nen khong quan trong ban nao goi.
+#
+# !! BAI HOC, va no rong hon LTT VOICE: **khong dat mot viec DAI va CO THE HONG
+#    vao giua cua so ngung dich vu.** Cai venv khong can dich vu nao dung ca; no
+#    o duoi chi vi no "thuoc ve" app do trong dau nguoi viet. Su gan gui ve mat
+#    khai niem khong phai ly do de xep thu tu thi hanh.
+#
+#    Cai o day thi cung mot lan tai ve 6 GB do KHONG lam ai mat mot giay dich vu,
+#    va neu no hong thi buoc dang ky dich vu ben duoi tu bo qua (`$voicePy` rong).
+#
+# LTT VOICE chay VieNeu-TTS v3 Turbo tren GPU may nay (Q117/Q118). Khac ba dich vu
+# kia, no chay tu MOT VENV CACH LY: vieneu ghim transformers==4.57.6 va
+# torch==2.8.0+cu128; cai de len venv nen tang se ha cap torch Blackwell va lam
+# hong moi app GPU khac. Cung ly do da sinh ra whisperx-venv.
+#
+# LTT_VOICE_VENV_ROOT: venv nay ~8 GB. Bo trong thi dung $Root.
+$VoiceServiceName = 'LTTStudioVoice'
+$voiceVenvRoot = $env:LTT_VOICE_VENV_ROOT
+if (-not $voiceVenvRoot) { $voiceVenvRoot = $Root }
+$voicePy = ''
+try {
+    $out = @(& (Join-Path $src 'deploy\windows\install-vieneu-sidecar.ps1') `
+             -Root $Root -ReleaseDir $src -VenvRoot $voiceVenvRoot -PythonExe 'python')
+    $voicePy = ($out | Where-Object { $_ -like '*python.exe' } | Select-Object -Last 1)
+} catch {
+    # Khong chan ca ban cai vi mot app: nen tang van chay duoc khong co giong noi,
+    # va the app se tu hien "can thiet lap". Nhung PHAI in ro, khong nuot.
+    Write-Host "  [BO QUA] Khong cai duoc vieneu-venv: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
 Head 'Copy ma nguon'
 # Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,
 # python.exe cua service khoa file trong app\ -> Move-Item/robocopy that bai
@@ -186,33 +273,6 @@ if ($cudaOk) {
     & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null
     if ($LASTEXITCODE -eq 0) { Ok 'Da cai torch cu128 (CUDA OK)' }
     else { Note 'CANH BAO: torch chua thay CUDA - Tao Clip ngan se chay CPU rat cham (kiem tra driver NVIDIA / dung card Blackwell can cu128)' }
-}
-
-Head 'WhisperX sidecar rieng'
-# Sidecar nay chi phuc vu autosubvideo. No KHONG duoc phep lam sap ca ban cai:
-# script da dung dich vu o tren, nen mot loi o day de production nam im.
-# Ngay 2026-08-05 buoc nay nem loi (torch trong venv sidecar hong) va bo qua
-# ca alembic lan dang ky dich vu -> site ngung cho toi khi khoi phuc tay.
-# Khi may DA co LTT_WHISPERX_PYTHON thi bo qua duoc: chi autosubvideo giam
-# chuc nang. Khi CHUA co (cai moi) thi van phai dung, neu khong auto-sub hong
-# am tham.
-$whisperPy = $null
-try {
-    $whisperOut = @(& (Join-Path $appDir 'deploy\windows\install-whisperx-sidecar.ps1') `
-        -Root $Root -ReleaseDir $appDir -PythonExe 'python')
-    $whisperPy = $whisperOut[-1]
-} catch {
-    Note "WhisperX sidecar loi: $($_.Exception.Message)"
-}
-if (-not $whisperPy) {
-    $envProbe = Join-Path $secrets 'app.env'
-    $hasWhisper = (Test-Path $envProbe) -and
-        ((Get-Content $envProbe -Raw) -match '(?m)^LTT_WHISPERX_PYTHON=')
-    if (-not $hasWhisper) { throw 'Khong cai duoc WhisperX sidecar va app.env chua co LTT_WHISPERX_PYTHON' }
-    Note 'BO QUA WhisperX sidecar - app.env da co LTT_WHISPERX_PYTHON cu.'
-    Note 'autosubvideo co the giam chuc nang. Chay lai sidecar rieng khi ranh.'
-} else {
-    Ok 'WhisperX CUDA sidecar da san sang'
 }
 
 Head 'Cau hinh van hanh'
@@ -520,28 +580,8 @@ if ($existingC) {
 Ok 'Da nap bi mat vao moi truong sidecar codex'
 
 Head 'Dich vu Giong noi (LTT VOICE)'
-# LTT VOICE chay VieNeu-TTS v3 Turbo tren GPU may nay (Q117/Q118). Khac ba dich vu
-# tren, no chay tu MOT VENV CACH LY: vieneu ghim transformers==4.57.6 va
-# torch==2.8.0+cu128, cai de len venv nen tang se ha cap torch Blackwell va lam
-# hong moi app GPU khac. Cung ly do da sinh ra whisperx-venv.
-#
-# -VenvRoot: venv nay ~8 GB. Ngay 2026-08-30 o C: chi con 5,6 GB tren 930 GB va
-# pip chet giua chung voi [Errno 28]. Dat bien LTT_VOICE_VENV_ROOT de tro sang o
-# khac; bo trong thi dung $Root nhu cu.
-$VoiceServiceName = 'LTTStudioVoice'
-$voiceVenvRoot = $env:LTT_VOICE_VENV_ROOT
-if (-not $voiceVenvRoot) { $voiceVenvRoot = $Root }
-$voicePy = ''
-try {
-    $out = @(& (Join-Path $appDir 'deploy\windows\install-vieneu-sidecar.ps1') `
-             -Root $Root -ReleaseDir $appDir -VenvRoot $voiceVenvRoot -PythonExe 'python')
-    $voicePy = ($out | Where-Object { $_ -like '*python.exe' } | Select-Object -Last 1)
-} catch {
-    # Khong chan ca ban cai vi mot app: nen tang van chay duoc khong co giong noi.
-    # Nhung PHAI in ro, khong nuot -- app se hien "can thiet lap" tren the cua no.
-    Write-Host "  [BO QUA] Khong cai duoc vieneu-venv: $($_.Exception.Message)" -ForegroundColor Yellow
-}
-
+# Phan CAI DAT da chay o tren, TRUOC khi dung dich vu nao. Khoi nay chi con viec
+# dang ky dich vu -- vai giay.
 if ($voicePy -and (Test-Path $voicePy)) {
     $hfCache = Join-Path $voiceVenvRoot 'hf-cache'
     $envTxt2 = Get-Content $envFile -Raw -ErrorAction SilentlyContinue

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c0e6669b636213a5526b728ef48138a941b9207c0e5f96ca28f5a4b609ab87ab
-Nguồn đã quét : 1285 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:8880a59361baeaa59c9d8ee5e2e466717fa566120af10f9d1b55487bc80fc4fa
+Nguồn đã quét : 1286 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1122,7 +1122,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (301 file pytest + 3 frontend)
+10. QUALITY GATES (302 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1383,6 +1383,7 @@ Test inventory:
 - tests/test_336_seedance_public_api.py
 - tests/test_337_ltt_voice_gia.py
 - tests/test_338_ltt_voice_hop_dong.py
+- tests/test_339_noi_chuoi_artifact.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -1450,8 +1451,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1285 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:25, .py:973, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1286 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:25, .py:974, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2347,7 +2348,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - setup/nap_lai_env.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (318)
+[tests] (319)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2619,6 +2620,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_336_seedance_public_api.py
 - tests/test_337_ltt_voice_gia.py
 - tests/test_338_ltt_voice_hop_dong.py
+- tests/test_339_noi_chuoi_artifact.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2793,7 +2795,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1285 file; 12773926 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1286 file; 12791501 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -76188,7 +76190,7 @@ Write-Output $python
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/install-whisperx-sidecar.ps1
-SHA256=43cf3f77945ddc25ad043dcf368ec74a24bd36932966870a8d87cffc523ebc91 BYTES=1853 LINES=45
+SHA256=fd464c8f5456af3a16a95f5d2d2e7a94fa57225098e2c98f650e40f3ca0226ee BYTES=3001 LINES=72
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -76218,22 +76220,49 @@ if (-not (Test-Path $python)) {
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create WhisperX venv' }
 }
 
-& $python -c "import torch,sys; ok=torch.__version__.startswith('2.8.') and torch.cuda.is_available(); sys.exit(0 if ok else 1)" 2>$null
-$torchOk = ($LASTEXITCODE -eq 0)
+# WHY THIS HELPER EXISTS, AND WHY `2>$null` IS NOT ENOUGH.
+#
+#   Under `$ErrorActionPreference = 'Stop'` (set above), a native exe writing to
+#   stderr becomes a NativeCommandError and TERMINATES the script -- even when we
+#   are only ASKING a question ("is torch installed yet?") and "no" is the normal
+#   answer. `2>$null` redirects the stream but does not undo the preference.
+#
+#   MEASURED 2026-08-30: this is exactly why this script threw on 2026-08-05,
+#   after which 2-cai-dat.ps1 wrapped it in try/catch and skipped it. It has not
+#   installed anything since. `C:\LTTPlatform\whisperx-venv` was 0.01 GB -- a bare
+#   venv, no packages -- so `whisperx_available()` returned False and
+#   apps/autosubvideo silently ran its faster-whisper fallback, losing word-level
+#   alignment. It labelled the degradation honestly
+#   (`alignment_status: fallback_unaligned`) but nobody was reading the label.
+#
+#   A PROBE must never kill the install.
+function Test-Py {
+    param([string]$Code)
+    $before = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        & $python -c $Code *> $null
+        return ($LASTEXITCODE -eq 0)
+    } finally {
+        $ErrorActionPreference = $before
+    }
+}
+
+$torchOk = Test-Py "import torch,sys; ok=torch.__version__.startswith('2.8.') and torch.cuda.is_available(); sys.exit(0 if ok else 1)"
 if (-not $torchOk) {
     & $python -m pip install --upgrade pip --quiet
     & $python -m pip install 'torch==2.8.0' 'torchvision==0.23.0' 'torchaudio==2.8.0' --index-url https://download.pytorch.org/whl/cu128 --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install WhisperX CUDA torch' }
 }
 
-& $python -c "import whisperx,sys; import importlib.metadata as m; sys.exit(0 if m.version('whisperx')=='3.8.6' else 1)" 2>$null
-if ($LASTEXITCODE -ne 0) {
+if (-not (Test-Py "import whisperx,sys; import importlib.metadata as m; sys.exit(0 if m.version('whisperx')=='3.8.6' else 1)")) {
     & $python -m pip install -r $requirements --quiet
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install WhisperX dependencies' }
 }
 
-& $python -c "import torch,whisperx,sys; sys.exit(0 if torch.cuda.is_available() else 1)"
-if ($LASTEXITCODE -ne 0) { throw 'WhisperX sidecar cannot access CUDA' }
+if (-not (Test-Py "import torch,whisperx,sys; sys.exit(0 if torch.cuda.is_available() else 1)")) {
+    throw 'WhisperX sidecar cannot access CUDA'
+}
 Write-Output $python
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -118413,7 +118442,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=fb06bb2ea1093e913bbadcfb6382311249a36dcb619c552d6e602d53f8558b79 BYTES=20787 LINES=457
+SHA256=7ca596ff6be49e2a19cddca11b880356b1cdde644e185ef3e2fa3f6a5fdb69d3 BYTES=22015 LINES=487
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -118435,12 +118464,37 @@ database (Q26). Whatever the crash, either both rows are there or neither is.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from platform_core.public_api.errors import invalid_request
 
-# Media parameters take an upload/artifact id. Resolving one to a storage key is
-# Prompt 07's job; until then a tool that needs media simply cannot be called,
-# which is better than inventing a half-contract now.
+# Media parameters take an upload id **or an artifact id from an earlier job**.
+# The artifact half landed 30/08 (API Expansion V2, Phase 07) — the comment that
+# used to sit here said "Prompt 07's job", and this is that job.
 _MEDIA_TYPES = {"image", "image[]", "video", "video[]", "audio"}
+
+
+@dataclass(frozen=True)
+class ThamChieuArtifact:
+    """Ket qua cua mot job TRUOC, dung lam dau vao cho job sau.
+
+    🔴 VI SAO NO KHONG PHAI MOT `UploadSession`, VA VI SAO KHAC BIET DO QUAN
+       TRONG: mot upload duoc **tieu thu** — `promote_media` DOI no sang khoa
+       ben vung cua job moi, va ve cho cu khong con gi. Lam the voi mot artifact
+       la **lay mat ket qua cua job truoc**: khach van co id do, van co the tai
+       no, va lan tai sau se 404.
+
+    ⇒ Artifact chi duoc **tham chieu**. Tep khong di dau ca.
+
+    ⛔ Va no van phai qua du hai cong: chu so huu (`job.user_id`) va danh sach
+       trang cua hop dong dau ra (`media.storage_key_for(..., tool=...)`) — mot
+       tep trung gian ma handler tinh co de lai trong `result` khong duoc thanh
+       dau vao goi duoc chi vi ai do doan ra id.
+    """
+
+    staging_key: str
+    filename: str = ""
+    content_type: str = ""
 
 # Internal params the platform adds for its own bookkeeping. The prefix keeps
 # them out of the public contract and makes them greppable.
@@ -118725,6 +118779,11 @@ def promote_media(db, storage, *, job, sessions: dict) -> list:
     promotions: list = []
     params = dict(job.params or {})
     for param, session in sessions.items():
+        # ⛔ Artifact chi THAM CHIEU, khong dời. Doi no di la lay mat ket qua
+        #    cua job truoc: khach van cam id do, va lan tai sau se 404.
+        if isinstance(session, ThamChieuArtifact):
+            params[param] = session.staging_key
+            continue
         suffix = _suffix(session.filename)
         final_key = f"{job.app_slug}/{job.user_id}/{job.id}/{param}{suffix}"
         key = upload_sessions.promote(db, storage, session, job=job,
@@ -135970,7 +136029,7 @@ def register_tool_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/uploads.py
-SHA256=9fa70de91936530f27c077a677b3ef6c3300e27b67b3bdd05b49a5342232d4dd BYTES=12680 LINES=272
+SHA256=467243760b47087bbbb9db855e18718669c354f69b756037d3714e1f42706492 BYTES=17166 LINES=364
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/uploads`` and ``/api/v1/artifacts`` — media in and media out.
 
@@ -135989,10 +136048,12 @@ Two properties are worth stating out loud because they are easy to lose:
 """
 from __future__ import annotations
 
+import re
 from pathlib import PurePath
 
 from fastapi import Body, Depends, File, Path, Request, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from platform_core import upload_sessions
@@ -136221,14 +136282,104 @@ def _owned_artifact(db, principal: Principal, artifact_id: str, config):
     return job, field, index, tool
 
 
+#: Hinh dang cua mot artifact id: `<job_id>.<field>.<index>`. Doi day du de mot
+#: upload id (khong co dau cham) khong bao gio di nham nhanh.
+_MAU_ARTIFACT = re.compile(r"[^.]+\.[A-Za-z_][A-Za-z0-9_]*\.\d+")
+
+
+def _giai_artifact(db, principal: Principal, param: str, value: str):
+    """Ket qua cua mot job TRUOC -> mot tham chieu, KHONG phai mot ban sao.
+
+    ⛔ Moi loi o day tra CUNG MOT 400. Mot artifact cua tai khoan khac va mot id
+       bia phai khong phan biet duoc — neu khac nhau, no thanh mot cong do id.
+    """
+    from platform_core.public_api.invocation import ThamChieuArtifact
+
+    try:
+        job_id, field, index = media.parse_artifact_id(value)
+    except Exception:                                            # noqa: BLE001
+        raise invalid_request(f"{param}: unknown media id.", field=param) from None
+
+    job = db.execute(select(Job).where(Job.id == job_id)).scalar_one_or_none()
+    # `user_id` la cong THU NHAT. Khong co no thi bat ky ai doan duoc mot job id
+    # deu doc duoc ket qua cua nguoi khac.
+    if job is None or str(job.user_id) != str(principal.user_id):
+        raise invalid_request(f"{param}: unknown media id.", field=param)
+
+    # Cong THU HAI: danh sach trang cua hop dong dau ra cua chinh tool DA SINH
+    # ra artifact do — khong phai tool dang goi.
+    tool_sinh = _tool_cua_job(job)
+    if tool_sinh is None:
+        # 🔴 KHONG DUOC DI TIEP. `storage_key_for(..., tool=None)` **bo qua**
+        #    danh sach trang, nen mot job ma ta khong tim lai duoc ToolSpec se
+        #    bien moi thu handler de trong `result` — ban nhap, tep trung gian,
+        #    dump go loi — thanh dau vao goi duoc. Khong tim thay tool thi tu
+        #    choi, dung doan.
+        raise invalid_request(f"{param}: unknown media id.", field=param)
+    try:
+        khoa = media.storage_key_for(job, field, index, tool=tool_sinh)
+    except Exception:                                            # noqa: BLE001
+        raise invalid_request(f"{param}: unknown media id.", field=param) from None
+
+    return ThamChieuArtifact(staging_key=khoa,
+                             filename=PurePath(khoa).name,
+                             content_type="")
+
+
+def _tool_cua_job(job):
+    """ToolSpec da sinh ra job nay, hoac `None` neu khong tim duoc.
+
+    ⚠️ `None` lam `storage_key_for` BO qua danh sach trang, nen o day thieu tool
+       la phai TU CHOI, khong duoc di tiep. Bên goi chiu trach nhiem do.
+    """
+    from platform_core.registry import discover
+
+    for muc in discover():
+        if muc.error or muc.manifest.slug != job.app_slug:
+            continue
+        for t in muc.manifest.tools:
+            if t.job_type == job.job_type:
+                return t
+    return None
+
+
 def resolve_upload_reference(db, principal: Principal, tool, param: str,
                              value: str):
-    """Turn a public upload id into a session ready to be promoted.
+    """Turn a public media id into something the job path can use.
 
-    Called from the job-submit path. Everything a caller could try to smuggle in
-    here — another account's upload, an upload made for a different app, a raw
-    storage key, a ticket used twice — ends as the same 400.
+    Accepts **two** shapes, and that is the whole of API composability:
+
+      * an **upload id** — a file the caller sent us; returns an `UploadSession`
+        ready to be promoted (moved) into the new job;
+      * an **artifact id** (`<job>.<field>.<index>`) — the output of an earlier
+        job of the same account; returns a `ThamChieuArtifact`, which is
+        **referenced, never moved**.
+
+    🔴 VI SAO PHAI CO NUA THU HAI. Truoc 30/08 chi co upload, va chu thich o
+       `invocation.py` ghi thang rang giai artifact la *"Prompt 07's job"*. He
+       qua thuc te: **khong noi chuoi duoc**. Muon dua video vua sinh sang
+       `video.upscale` thi khach phai TAI VE roi TAI LEN LAI — mot tep hang tram
+       MB di ra roi di vao, qua Cloudflare, chi de o lai dung cho no dang nam.
+
+    ⛔ VA NUA THU HAI NAY NOI LONG MOT RANG BUOC, nen phai noi ro dieu do.
+       Upload bi khoa theo `app_slug`: mot ve tai len tao cho app A khong dung
+       duoc o app B, de mot ve bi lo khong mo duoc ca nen tang. Artifact **co y**
+       khong bi khoa nhu vay — day dung la muc dich: ket qua cua `taovideo` phai
+       dua duoc sang `upscalevideo`.
+
+       Hai cong con lai **khong** noi long, va chung moi la thu giu an toan:
+         · **chu so huu** — job sinh ra artifact phai thuoc chinh principal nay;
+         · **danh sach trang cua hop dong dau ra** — `media.storage_key_for(...,
+           tool=...)`: mot tep trung gian handler tinh co de lai trong `result`
+           khong duoc thanh dau vao goi duoc chi vi ai do doan ra id.
+
+    Moi thu mot ke goi co the thu tuon vao day — upload cua tai khoan khac, ve
+    dung hai lan, khoa luu tru tho, artifact cua nguoi khac, mot id bia — deu ra
+    cung mot 400.
     """
+    if _MAU_ARTIFACT.fullmatch(str(value or "")):
+        return _giai_artifact(db, principal, param, value)
+
     from platform_core.models import UploadSession
     from sqlalchemy import select
 
@@ -156776,7 +156927,7 @@ if ($script:Fail -gt 0) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/2-cai-dat.ps1
-SHA256=05a35a7856b5038c6c42cf970ea47c442950895fa0527ad6386aa59e620c19cb BYTES=32143 LINES=642
+SHA256=25cd710309a174d067c6aa587fede73b592406695e2a184bd91f10677723d629 BYTES=34134 LINES=682
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -156879,6 +157030,93 @@ if ($pyKiem) {
     Canh "Khong tim thay python de kiem ma nguon - BO QUA chot bien dich"
 }
 
+Head 'WhisperX sidecar rieng'
+# Sidecar nay chi phuc vu autosubvideo.
+#
+# !! CHUYEN LEN DAY 2026-08-30, TRUOC MOI `Stop-Service`.
+#
+#    Chu thich cu ngay tai cho nay da ghi: *"script da dung dich vu o tren,
+#    nen mot loi o day de production nam im"* - tuc no BIET minh nam trong cua
+#    so downtime, va chi ne bang try/catch. Ne mot loi thi production van nam
+#    trong suot thoi gian no tai ve (torch ~3,5 GB). Chuyen di thi khong.
+#
+#    Cung ngay do, khoi cai `vieneu-venv` mac dung loi ay va lam production
+#    nam 19 phut. `test_45::test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu`
+#    gio chan ca hai.
+#
+#    Ngay 2026-08-05 buoc nay nem loi (xem `Test-Py` trong chinh tep sidecar)
+#    va bi bo qua -> `whisperx-venv` rong toi tan 30/08, va `autosubvideo` chay
+#    nhanh du phong `faster-whisper`, MAT can chinh theo tu. No co ghi nhan
+#    (`alignment_status: fallback_unaligned`) nhung khong ai doc nhan do.
+#
+#    Goi tu `$src` chu khong `$appDir`: `$appDir` chi co noi dung moi sau
+#    robocopy, ma robocopy thi sau Stop-Service.
+# Khi may DA co LTT_WHISPERX_PYTHON thi bo qua duoc: chi autosubvideo giam
+# chuc nang. Khi CHUA co (cai moi) thi van phai dung, neu khong auto-sub hong
+# am tham.
+$whisperPy = $null
+try {
+    $whisperOut = @(& (Join-Path $src 'deploy\windows\install-whisperx-sidecar.ps1') `
+        -Root $Root -ReleaseDir $src -PythonExe 'python')
+    $whisperPy = $whisperOut[-1]
+} catch {
+    Note "WhisperX sidecar loi: $($_.Exception.Message)"
+}
+if (-not $whisperPy) {
+    $envProbe = Join-Path $secrets 'app.env'
+    $hasWhisper = (Test-Path $envProbe) -and
+        ((Get-Content $envProbe -Raw) -match '(?m)^LTT_WHISPERX_PYTHON=')
+    if (-not $hasWhisper) { throw 'Khong cai duoc WhisperX sidecar va app.env chua co LTT_WHISPERX_PYTHON' }
+    Note 'BO QUA WhisperX sidecar - app.env da co LTT_WHISPERX_PYTHON cu.'
+    Note 'autosubvideo co the giam chuc nang. Chay lai sidecar rieng khi ranh.'
+} else {
+    Ok 'WhisperX CUDA sidecar da san sang'
+}
+
+Head 'Venv giong noi (LTT VOICE) - CAI TRUOC KHI DUNG DICH VU'
+# !! VI SAO KHOI NAY O DAY - TRUOC CA `Head 'Copy ma nguon'`.
+#
+#    Ngay 2026-08-30 no nam o duoi, SAU `Stop-Service`. Mot lan tai ve ~6 GB
+#    (torch cu128) do dai bang dung mot khoang production sap. Tien trinh nang
+#    quyen chet trong luc tai => production nam 19 phut, `EXITCODE` rong.
+#
+#    Chu thich o `Head 'Copy ma nguon'` da canh bao san dieu nay: tac gia loai
+#    700 MB node_modules chi de RUT NGAN cua so do, va ghi rang mot lan treo
+#    robocopy da lam production ngung 20 phut ngay 2026-08-05. Toi tha 6 GB vao
+#    dung cua so ay.
+#
+#    Chay tu `$src` chu khong `$appDir`: `$appDir` chi co noi dung moi SAU
+#    robocopy, ma robocopy thi sau Stop-Service. Ban cai trong cay nguon giong
+#    het, va no cai mot venv NGOAI `app\` nen khong quan trong ban nao goi.
+#
+# !! BAI HOC, va no rong hon LTT VOICE: **khong dat mot viec DAI va CO THE HONG
+#    vao giua cua so ngung dich vu.** Cai venv khong can dich vu nao dung ca; no
+#    o duoi chi vi no "thuoc ve" app do trong dau nguoi viet. Su gan gui ve mat
+#    khai niem khong phai ly do de xep thu tu thi hanh.
+#
+#    Cai o day thi cung mot lan tai ve 6 GB do KHONG lam ai mat mot giay dich vu,
+#    va neu no hong thi buoc dang ky dich vu ben duoi tu bo qua (`$voicePy` rong).
+#
+# LTT VOICE chay VieNeu-TTS v3 Turbo tren GPU may nay (Q117/Q118). Khac ba dich vu
+# kia, no chay tu MOT VENV CACH LY: vieneu ghim transformers==4.57.6 va
+# torch==2.8.0+cu128; cai de len venv nen tang se ha cap torch Blackwell va lam
+# hong moi app GPU khac. Cung ly do da sinh ra whisperx-venv.
+#
+# LTT_VOICE_VENV_ROOT: venv nay ~8 GB. Bo trong thi dung $Root.
+$VoiceServiceName = 'LTTStudioVoice'
+$voiceVenvRoot = $env:LTT_VOICE_VENV_ROOT
+if (-not $voiceVenvRoot) { $voiceVenvRoot = $Root }
+$voicePy = ''
+try {
+    $out = @(& (Join-Path $src 'deploy\windows\install-vieneu-sidecar.ps1') `
+             -Root $Root -ReleaseDir $src -VenvRoot $voiceVenvRoot -PythonExe 'python')
+    $voicePy = ($out | Where-Object { $_ -like '*python.exe' } | Select-Object -Last 1)
+} catch {
+    # Khong chan ca ban cai vi mot app: nen tang van chay duoc khong co giong noi,
+    # va the app se tu hien "can thiet lap". Nhung PHAI in ro, khong nuot.
+    Write-Host "  [BO QUA] Khong cai duoc vieneu-venv: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
 Head 'Copy ma nguon'
 # Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,
 # python.exe cua service khoa file trong app\ -> Move-Item/robocopy that bai
@@ -156966,33 +157204,6 @@ if ($cudaOk) {
     & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null
     if ($LASTEXITCODE -eq 0) { Ok 'Da cai torch cu128 (CUDA OK)' }
     else { Note 'CANH BAO: torch chua thay CUDA - Tao Clip ngan se chay CPU rat cham (kiem tra driver NVIDIA / dung card Blackwell can cu128)' }
-}
-
-Head 'WhisperX sidecar rieng'
-# Sidecar nay chi phuc vu autosubvideo. No KHONG duoc phep lam sap ca ban cai:
-# script da dung dich vu o tren, nen mot loi o day de production nam im.
-# Ngay 2026-08-05 buoc nay nem loi (torch trong venv sidecar hong) va bo qua
-# ca alembic lan dang ky dich vu -> site ngung cho toi khi khoi phuc tay.
-# Khi may DA co LTT_WHISPERX_PYTHON thi bo qua duoc: chi autosubvideo giam
-# chuc nang. Khi CHUA co (cai moi) thi van phai dung, neu khong auto-sub hong
-# am tham.
-$whisperPy = $null
-try {
-    $whisperOut = @(& (Join-Path $appDir 'deploy\windows\install-whisperx-sidecar.ps1') `
-        -Root $Root -ReleaseDir $appDir -PythonExe 'python')
-    $whisperPy = $whisperOut[-1]
-} catch {
-    Note "WhisperX sidecar loi: $($_.Exception.Message)"
-}
-if (-not $whisperPy) {
-    $envProbe = Join-Path $secrets 'app.env'
-    $hasWhisper = (Test-Path $envProbe) -and
-        ((Get-Content $envProbe -Raw) -match '(?m)^LTT_WHISPERX_PYTHON=')
-    if (-not $hasWhisper) { throw 'Khong cai duoc WhisperX sidecar va app.env chua co LTT_WHISPERX_PYTHON' }
-    Note 'BO QUA WhisperX sidecar - app.env da co LTT_WHISPERX_PYTHON cu.'
-    Note 'autosubvideo co the giam chuc nang. Chay lai sidecar rieng khi ranh.'
-} else {
-    Ok 'WhisperX CUDA sidecar da san sang'
 }
 
 Head 'Cau hinh van hanh'
@@ -157300,28 +157511,8 @@ if ($existingC) {
 Ok 'Da nap bi mat vao moi truong sidecar codex'
 
 Head 'Dich vu Giong noi (LTT VOICE)'
-# LTT VOICE chay VieNeu-TTS v3 Turbo tren GPU may nay (Q117/Q118). Khac ba dich vu
-# tren, no chay tu MOT VENV CACH LY: vieneu ghim transformers==4.57.6 va
-# torch==2.8.0+cu128, cai de len venv nen tang se ha cap torch Blackwell va lam
-# hong moi app GPU khac. Cung ly do da sinh ra whisperx-venv.
-#
-# -VenvRoot: venv nay ~8 GB. Ngay 2026-08-30 o C: chi con 5,6 GB tren 930 GB va
-# pip chet giua chung voi [Errno 28]. Dat bien LTT_VOICE_VENV_ROOT de tro sang o
-# khac; bo trong thi dung $Root nhu cu.
-$VoiceServiceName = 'LTTStudioVoice'
-$voiceVenvRoot = $env:LTT_VOICE_VENV_ROOT
-if (-not $voiceVenvRoot) { $voiceVenvRoot = $Root }
-$voicePy = ''
-try {
-    $out = @(& (Join-Path $appDir 'deploy\windows\install-vieneu-sidecar.ps1') `
-             -Root $Root -ReleaseDir $appDir -VenvRoot $voiceVenvRoot -PythonExe 'python')
-    $voicePy = ($out | Where-Object { $_ -like '*python.exe' } | Select-Object -Last 1)
-} catch {
-    # Khong chan ca ban cai vi mot app: nen tang van chay duoc khong co giong noi.
-    # Nhung PHAI in ro, khong nuot -- app se hien "can thiet lap" tren the cua no.
-    Write-Host "  [BO QUA] Khong cai duoc vieneu-venv: $($_.Exception.Message)" -ForegroundColor Yellow
-}
-
+# Phan CAI DAT da chay o tren, TRUOC khi dung dich vu nao. Khoi nay chi con viec
+# dang ky dich vu -- vai giay.
 if ($voicePy -and (Test-Path $voicePy)) {
     $hfCache = Join-Path $voiceVenvRoot 'hf-cache'
     $envTxt2 = Get-Content $envFile -Raw -ErrorAction SilentlyContinue
@@ -230000,6 +230191,139 @@ def test_check_i18n_van_dem_hai_tep_co_thong_diep_nguoi_dung():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_339_noi_chuoi_artifact.py
+SHA256=444c0cab86ca04de041fcc50db5879aaf6da27002573c8970c07926de4394a1c BYTES=5543 LINES=127
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_337 — artifact của job trước làm ĐẦU VÀO của job sau. (V2, Phase 07)
+
+🔴 VÌ SAO NÓ ĐÁNG MỘT TỆP RIÊNG. Trước 30/08 `invocation.py` ghi thẳng:
+
+    "Media parameters take an upload/artifact id. Resolving one to a storage key
+     is Prompt 07's job; until then a tool that needs media simply cannot be
+     called, which is better than inventing a half-contract now."
+
+Nửa artifact chưa bao giờ được viết. Hệ quả thật: **không nối chuỗi được.** Muốn
+đưa video vừa sinh sang `video.upscale` thì khách phải **tải về rồi tải lên
+lại** — một tệp hàng trăm MB đi ra rồi đi vào, qua Cloudflare, chỉ để nằm lại
+đúng chỗ nó đang nằm.
+
+⛔ VÀ NÓ NỚI LỎNG MỘT RÀNG BUỘC, nên ba phép kiểm dưới đây canh đúng chỗ nới:
+
+  · upload bị khoá theo `app_slug`; artifact **cố ý không** — đó là mục đích;
+  · nhưng **chủ sở hữu** và **danh sách trắng hợp đồng đầu ra** thì không nới,
+    và chúng mới là thứ giữ an toàn.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+def test_artifact_KHONG_bi_doi_cho_nhu_upload():
+    """⛔ Bất biến quan trọng nhất: artifact chỉ được **tham chiếu**.
+
+    `promote_media` **dời** một upload sang khoá bền vững của job mới. Làm thế
+    với artifact là **lấy mất kết quả của job trước**: khách vẫn cầm id đó, vẫn
+    tải được nó, và lần tải sau sẽ 404.
+    """
+    import inspect
+
+    from platform_core.public_api import invocation
+
+    ma = inspect.getsource(invocation.promote_media)
+    assert "ThamChieuArtifact" in ma, (
+        "promote_media khong phan biet artifact voi upload — no se DOI tep cua "
+        "job truoc di, va lan tai sau se 404")
+    # Va no phai `continue` TRUOC khi cham `upload_sessions.promote`.
+    assert ma.index("ThamChieuArtifact") < ma.index("upload_sessions.promote")
+
+
+def test_ba_cong_bao_mat_o_duong_giai_artifact():
+    """Nới một ràng buộc thì hai cái còn lại phải chặt hơn, không lỏng hơn."""
+    import inspect
+
+    from server.api import uploads
+
+    ma = inspect.getsource(uploads._giai_artifact)
+    assert "principal.user_id" in ma, "thieu cong CHU SO HUU"
+    assert "storage_key_for" in ma and "tool=" in ma, (
+        "thieu cong DANH SACH TRANG cua hop dong dau ra")
+    assert "tool_sinh is None" in ma, (
+        "khong tim duoc ToolSpec ma van di tiep: `storage_key_for(tool=None)` "
+        "BO QUA danh sach trang, nen moi thu handler de trong `result` se thanh "
+        "dau vao goi duoc")
+
+
+def test_moi_loi_tra_CUNG_MOT_thong_diep():
+    """Một artifact của tài khoản khác và một id bịa phải **không phân biệt
+    được** — nếu khác nhau, chính thông điệp lỗi thành một cổng dò id."""
+    import inspect
+
+    from server.api import uploads
+
+    ma = inspect.getsource(uploads._giai_artifact)
+    assert ma.count('f"{param}: unknown media id."') >= 4, (
+        "cac nhanh loi phai tra cung mot cau; khac nhau la lo ra su ton tai")
+
+
+@pytest.mark.parametrize("gia_tri, khop", [
+    ("job123.video_key.0", True),
+    ("job123.video_key.12", True),
+    ("up_abc123", False),                 # upload id — khong co dau cham
+    ("job123.video_key", False),          # thieu chi so
+    ("job123..0", False),                 # thieu ten truong
+    ("", False),
+])
+def test_mau_artifact_khong_bat_nham_upload_id(gia_tri, khop):
+    """Một upload id không bao giờ được đi nhầm sang nhánh artifact."""
+    from server.api.uploads import _MAU_ARTIFACT
+
+    assert bool(_MAU_ARTIFACT.fullmatch(gia_tri)) is khop, gia_tri
+
+
+def test_do_thoi_luong_CHAY_DUOC_tren_artifact_noi_chuoi(monkeypatch):
+    """Chỗ dễ vỡ nhất của việc nối chuỗi, và nó là chỗ **tính tiền**.
+
+    Recipe A là `video.generate` → `video.upscale`. Nhưng `video.upscale` khai
+    `duration_s: {"measured_from": "video_key"}` — máy chủ **đo** thời lượng từ
+    tệp lúc báo giá (H35.10a, đóng lại Q84: giá không bao giờ được tính từ con
+    số người gọi khai).
+
+    ⇒ Nếu `apply_server_measurements` không đọc được `ThamChieuArtifact` thì
+      chuỗi này chết **ở đúng bước tính tiền** — và nó sẽ chết bằng một 400 khó
+      hiểu chứ không phải một câu nói rõ.
+    """
+    from platform_core.public_api import invocation
+    from platform_core.registry import discover
+
+    tool = next(t for m in discover() if not m.error
+                and m.manifest.slug == "upscalevideo"
+                for t in m.manifest.tools if t.name == "video.upscale")
+
+    # Kho giả: mọi khoá đều giải được thành một đường dẫn.
+    class _Kho:
+        @staticmethod
+        def local_path(key):
+            return f"/gia/{key}"
+
+        @staticmethod
+        def try_url_for(key):
+            return None
+
+    monkeypatch.setattr("platform_core.media.probe",
+                        lambda src: {"duration": 12.5})
+
+    tham_chieu = invocation.ThamChieuArtifact(
+        staging_key="upscalevideo/u1/job_abc/video_key.mp4",
+        filename="video_key.mp4")
+    ra = invocation.apply_server_measurements(
+        tool, {"video_key": "job_abc.video_key.0"},
+        sessions={"video_key": tham_chieu}, storage=_Kho())
+
+    assert ra["duration_s"] == 12.5, (
+        "khong do duoc thoi luong tu artifact -> Recipe A chet o buoc tinh tien")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_33_secret_scanner.py
 SHA256=f8674f560e82c3709e84970aff9edfa6eedf9183db5af6ef6bfafcf2034200c1 BYTES=3611 LINES=104
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -230977,7 +231301,7 @@ def test_fake_finding_matches_the_real_finding_fields():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_45_deploy_scripts.py
-SHA256=db0404e341735af0e7fd126f1ffb19730e807f976c3b4784594787c4f2d3da1b BYTES=11775 LINES=275
+SHA256=8a4dbe011f760fd9879ec4baef4cf9b0d76ca061969a33527e9f278652133272 BYTES=14954 LINES=334
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 P9 — deployment script sanity checks.
@@ -231254,6 +231578,65 @@ def test_server2016_bootstrap_pins_python_312_not_313():
         src = f.read()
     assert "3.12" in src
     assert "$PythonVersion = '3.13" not in src
+
+
+def test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu():
+    """🔴 Không đặt một việc DÀI và CÓ THỂ HỎNG vào giữa lúc dịch vụ đang tắt.
+
+    SỰ CỐ THẬT 2026-08-30 22:18. `2-cai-dat.ps1` dừng ba dịch vụ để xoay `app\`,
+    rồi chạy lệnh cài `vieneu-venv` — **một lần tải về ~6 GB** — ngay giữa cửa sổ
+    đó, rồi mới bật lại. Tiến trình nâng quyền chết trong lúc tải.
+
+    Kết quả: **production nằm 19 phút**, và `EXITCODE` rỗng nên không ai biết nó
+    dừng ở bước nào. Bản thân `deploy_nang_quyen.ps1` đã ghi sẵn rằng
+    *"EXITCODE rỗng khác hẳn EXITCODE=0"* — cảnh báo đó đúng, và nó vừa được
+    dùng đến.
+
+    ⭐ Lỗi KHÔNG phải ở chỗ tải về chậm. Lỗi ở chỗ **đặt** nó: cài venv không cần
+       dịch vụ nào dừng cả. Nó nằm dưới chỉ vì nó "thuộc về" app đó trong đầu
+       người viết. **Sự gần gũi về mặt khái niệm không phải lý do để xếp thứ tự
+       thi hành.**
+
+    Phép kiểm chốt đúng thứ đó: mọi lệnh gọi `install-*-sidecar.ps1` phải đứng
+    TRƯỚC dòng `Stop-Service` đầu tiên.
+    """
+    #: KHONG CON MIEN TRU NAO. Ban dau tep nay mien tru
+    #: `install-whisperx-sidecar.ps1` vi no nam sau `Stop-Service` tu truoc dot
+    #: LTT VOICE. Mien tru do da duoc BO cung ngay: khoi WhisperX cung chuyen len
+    #: truoc `Head 'Copy ma nguon'`.
+    #:
+    #: Ghi lai vi day la mot lua chon, khong phai mot su tinh co: mot mien tru
+    #: khong het han chinh la cach mot ngoai le song lau hon ly do sinh ra no.
+    MIEN_TRU = set()
+
+    # `2-cai-dat.ps1` o `setup/`, khong o `deploy/windows/` nhu cac tep kia.
+    goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(goc, "setup", "2-cai-dat.ps1"),
+              "r", encoding="utf-8") as f:
+        text = f.read()
+    dong = text.splitlines()
+
+    # Bo dong CHU THICH: tep nay noi VE `Stop-Service` o nhieu cho, va dem
+    # chung se lam phep kiem do vi mot cau van xuoi. Do that: dong 67 la
+    # "VI SAO CHOT NAY O DAY, VA O TRUOC Stop-Service".
+    def _la_ma(d):
+        return bool(d.strip()) and not d.strip().startswith("#")
+
+    dung = [i for i, d in enumerate(dong) if "Stop-Service" in d and _la_ma(d)]
+    assert dung, "2-cai-dat.ps1 khong con Stop-Service — phep kiem nay het nghia"
+
+    cai = [(i, d) for i, d in enumerate(dong)
+           if "install-" in d and "-sidecar.ps1" in d and _la_ma(d)
+           and not any(m in d for m in MIEN_TRU)]
+    assert cai, ("khong tim thay lenh cai sidecar nao ngoai mien tru — neu vua "
+                 "them mot mien tru moi thi phai ghi ly do, chu, va han bo")
+
+    sau = [i for i, _ in cai if i > min(dung)]
+    assert not sau, (
+        f"lenh cai sidecar o dong {[i + 1 for i in sau]} nam SAU Stop-Service "
+        f"dau tien (dong {min(dung) + 1}) — moi giay no chay la mot giay "
+        f"production nam. Chuyen no len TRUOC `Head 'Copy ma nguon'`, va goi tu "
+        f"`$src` chu khong `$appDir` (app\ chi co noi dung moi sau robocopy).")
 
 @@@LTT_PROFILE_FILE_END@@@
 

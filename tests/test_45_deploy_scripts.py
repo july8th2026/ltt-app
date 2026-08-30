@@ -273,3 +273,62 @@ def test_server2016_bootstrap_pins_python_312_not_313():
         src = f.read()
     assert "3.12" in src
     assert "$PythonVersion = '3.13" not in src
+
+
+def test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu():
+    """🔴 Không đặt một việc DÀI và CÓ THỂ HỎNG vào giữa lúc dịch vụ đang tắt.
+
+    SỰ CỐ THẬT 2026-08-30 22:18. `2-cai-dat.ps1` dừng ba dịch vụ để xoay `app\`,
+    rồi chạy lệnh cài `vieneu-venv` — **một lần tải về ~6 GB** — ngay giữa cửa sổ
+    đó, rồi mới bật lại. Tiến trình nâng quyền chết trong lúc tải.
+
+    Kết quả: **production nằm 19 phút**, và `EXITCODE` rỗng nên không ai biết nó
+    dừng ở bước nào. Bản thân `deploy_nang_quyen.ps1` đã ghi sẵn rằng
+    *"EXITCODE rỗng khác hẳn EXITCODE=0"* — cảnh báo đó đúng, và nó vừa được
+    dùng đến.
+
+    ⭐ Lỗi KHÔNG phải ở chỗ tải về chậm. Lỗi ở chỗ **đặt** nó: cài venv không cần
+       dịch vụ nào dừng cả. Nó nằm dưới chỉ vì nó "thuộc về" app đó trong đầu
+       người viết. **Sự gần gũi về mặt khái niệm không phải lý do để xếp thứ tự
+       thi hành.**
+
+    Phép kiểm chốt đúng thứ đó: mọi lệnh gọi `install-*-sidecar.ps1` phải đứng
+    TRƯỚC dòng `Stop-Service` đầu tiên.
+    """
+    #: KHONG CON MIEN TRU NAO. Ban dau tep nay mien tru
+    #: `install-whisperx-sidecar.ps1` vi no nam sau `Stop-Service` tu truoc dot
+    #: LTT VOICE. Mien tru do da duoc BO cung ngay: khoi WhisperX cung chuyen len
+    #: truoc `Head 'Copy ma nguon'`.
+    #:
+    #: Ghi lai vi day la mot lua chon, khong phai mot su tinh co: mot mien tru
+    #: khong het han chinh la cach mot ngoai le song lau hon ly do sinh ra no.
+    MIEN_TRU = set()
+
+    # `2-cai-dat.ps1` o `setup/`, khong o `deploy/windows/` nhu cac tep kia.
+    goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(goc, "setup", "2-cai-dat.ps1"),
+              "r", encoding="utf-8") as f:
+        text = f.read()
+    dong = text.splitlines()
+
+    # Bo dong CHU THICH: tep nay noi VE `Stop-Service` o nhieu cho, va dem
+    # chung se lam phep kiem do vi mot cau van xuoi. Do that: dong 67 la
+    # "VI SAO CHOT NAY O DAY, VA O TRUOC Stop-Service".
+    def _la_ma(d):
+        return bool(d.strip()) and not d.strip().startswith("#")
+
+    dung = [i for i, d in enumerate(dong) if "Stop-Service" in d and _la_ma(d)]
+    assert dung, "2-cai-dat.ps1 khong con Stop-Service — phep kiem nay het nghia"
+
+    cai = [(i, d) for i, d in enumerate(dong)
+           if "install-" in d and "-sidecar.ps1" in d and _la_ma(d)
+           and not any(m in d for m in MIEN_TRU)]
+    assert cai, ("khong tim thay lenh cai sidecar nao ngoai mien tru — neu vua "
+                 "them mot mien tru moi thi phai ghi ly do, chu, va han bo")
+
+    sau = [i for i, _ in cai if i > min(dung)]
+    assert not sau, (
+        f"lenh cai sidecar o dong {[i + 1 for i in sau]} nam SAU Stop-Service "
+        f"dau tien (dong {min(dung) + 1}) — moi giay no chay la mot giay "
+        f"production nam. Chuyen no len TRUOC `Head 'Copy ma nguon'`, va goi tu "
+        f"`$src` chu khong `$appDir` (app\ chi co noi dung moi sau robocopy).")
