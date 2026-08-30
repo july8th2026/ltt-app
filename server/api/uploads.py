@@ -27,7 +27,8 @@ from platform_core import upload_sessions
 from platform_core.models import Job, UPLOAD_READY
 from platform_core.public_api import media, policy, sandbox
 from platform_core.public_api.catalog import build_catalog, require_tool
-from platform_core.public_api.errors import invalid_request, not_found
+from platform_core.public_api.errors import (ApiError, invalid_request,
+                                             not_found)
 from platform_core.public_api.principal import Principal, ensure_owner
 from platform_core.public_api.scopes import (SCOPE_ARTIFACTS_READ,
                                              SCOPE_UPLOADS_WRITE)
@@ -264,7 +265,7 @@ def _giai_artifact(db, principal: Principal, param: str, value: str):
 
     try:
         job_id, field, index = media.parse_artifact_id(value)
-    except Exception:                                            # noqa: BLE001
+    except ApiError:
         raise invalid_request(f"{param}: unknown media id.", field=param) from None
 
     job = db.execute(select(Job).where(Job.id == job_id)).scalar_one_or_none()
@@ -285,7 +286,7 @@ def _giai_artifact(db, principal: Principal, param: str, value: str):
         raise invalid_request(f"{param}: unknown media id.", field=param)
     try:
         khoa = media.storage_key_for(job, field, index, tool=tool_sinh)
-    except Exception:                                            # noqa: BLE001
+    except ApiError:
         raise invalid_request(f"{param}: unknown media id.", field=param) from None
 
     return ThamChieuArtifact(staging_key=khoa,
