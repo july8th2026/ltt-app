@@ -115,6 +115,25 @@ def _npm() -> str | None:
 
 
 def _steps(quick: bool) -> list[Step]:
+    # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
+    #
+    #    Do 30/08: 282 tien trinh con `multiprocessing.spawn` mo coi, cu nhat 55
+    #    gio, giu 9,5 GB RAM va **khoa 85 GB temp** (154/158 thu muc pytest khong
+    #    xoa duoc). O muc do do o C: con 9,4 GB / 930 GB — va Postgres cua
+    #    production nam tren C:. Day thi Postgres tu choi ghi, va trieu chung se
+    #    KHONG noi "het dia".
+    #
+    # ⭐ `test_214` don dung roi (`join` -> `terminate` -> `join`); ro ri chi xay
+    #    ra khi tien trinh CHA bi giet giua chung — gate qua gio, Ctrl-C, hay
+    #    `gate.py | head` gay SIGPIPE. Khong co cach nao ngan mot tien trinh bi
+    #    SIGKILL don dep sau no.
+    #
+    # ⇒ Nen muc tieu khong phai NGAN ma la TU LANH: don xac cu truoc moi luot.
+    #    Nguong 3 gio de khong bao gio dung vao luot dang chay cua phien khac.
+    don_xac = [sys.executable, "tools/don_tien_trinh_mo_coi.py", "--giet"]
+    subprocess.run(don_xac, cwd=ROOT, capture_output=True, text=True,
+                   encoding="utf-8", errors="replace", timeout=120)
+
     steps: list[Step] = [
         # 🔴 DAT DAU TIEN co chu y: mot tep khong bien dich duoc thi moi
         #    phep do phia sau deu vo nghia. Da tung commit mot tep vo cu

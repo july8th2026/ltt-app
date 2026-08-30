@@ -147,3 +147,39 @@ def test_khong_doi_nhom_cua_hai_buoc_neo(ten):
     gate = _gate()
     nhom = {s.name: s.nhom for s in gate._steps(quick=False)}
     assert nhom[ten] in ("cong", "nang"), f"{ten} -> {nhom[ten]}"
+
+
+# ── Thu hồi xác tiến trình (30/08) ────────────────────────────────────────
+
+def test_gate_DON_XAC_tien_trinh_truoc_khi_do():
+    """🔴 Đo 30/08: 282 tiến trình con mồ côi, cũ nhất **55 giờ**.
+
+    Chúng giữ 9,5 GB RAM và **khoá 85 GB temp** — 154/158 thư mục pytest không
+    xoá được. Lúc đó ổ C: còn **9,4 GB / 930 GB**, và Postgres của production
+    nằm trên C:. Đầy thì Postgres từ chối ghi, và triệu chứng sẽ **không nói
+    "hết đĩa"** — nó hiện ra thành job hỏng ngẫu nhiên hoặc `/health/ready` 503.
+
+    ⭐ `test_214` dọn đúng rồi (`join` → `terminate` → `join`). Rò rỉ chỉ xảy ra
+       khi tiến trình **cha** bị giết giữa chừng, và không có cách nào bắt một
+       tiến trình bị SIGKILL dọn dẹp sau nó.
+
+    ⇒ Nên mục tiêu không phải NGĂN mà là **TỰ LÀNH**: dọn xác cũ trước mỗi lượt.
+    """
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "don_tien_trinh_mo_coi.py" in ma, (
+        "gate khong con don xac tien trinh truoc khi do — ro ri se tich lai "
+        "toi khi day o dia production")
+    # Va no phai chay TRUOC danh sach buoc, khong phai sau.
+    assert ma.index("don_tien_trinh_mo_coi.py") < ma.index("steps: list[Step]")
+
+
+def test_cong_cu_don_xac_KHONG_dung_toi_production():
+    """Ba thứ nó không bao giờ được chạm, dù mọi điều kiện khác đều khớp."""
+    ma = (GOC / "tools" / "don_tien_trinh_mo_coi.py").read_text(encoding="utf-8")
+    assert 'CAM = ("c:\\lttplatform\\\\",)' in ma.replace("'", '"') or \
+           "lttplatform" in ma.lower(), "khong con chan duong production"
+    # Phai doi DU ba dieu kien — thieu mot la co rui ro giet nham.
+    for dieu_kien in ("multiprocessing.spawn", "create_time", "python313"):
+        assert dieu_kien in ma.lower(), f"thieu dieu kien: {dieu_kien}"
+    # Mac dinh la CHI XEM. Mot cong cu giet tien trinh khong duoc mac dinh giet.
+    assert '"--giet"' in ma and "action=\"store_true\"" in ma

@@ -205,10 +205,14 @@ def _seed_deliveries(user_id: str, count: int) -> list:
 def _run_workers(scratch, seconds: float = RUN_SECONDS) -> None:
     """N tiến trình worker thật, chạy đồng thời, rồi dừng êm."""
     ctx = multiprocessing.get_context("spawn")
+    # `daemon=True` khong cuu duoc moi truong hop, nhung no cuu truong hop HAY
+    # XAY RA NHAT: cha thoat binh thuong hoac thoat vi ngoai le. Luc do Python
+    # tu ket lieu con daemon. Chi khi cha bi SIGKILL thi khong gi giup duoc —
+    # va do la ly do `gate.py` don xac truoc moi luot.
     procs = [ctx.Process(target=_child,
                          args=(PG_URL, scratch["data_dir"],
                                scratch["send_log"], seconds, i),
-                         name=f"mp-worker-{i}")
+                         name=f"mp-worker-{i}", daemon=True)
              for i in range(WORKERS)]
     for p in procs:
         p.start()
