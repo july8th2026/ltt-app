@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:5d25e593e45c03f564857ab4869f2a6b1c42834a7098674141eae4d9723c0a57
+Fingerprint   : sha256:7da1805a774c39d9950a1ea7d8aef822f573360b49f1a296747abaeba51d4662
 Nguồn đã quét : 1259 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -899,7 +899,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (168 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (170 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -923,6 +923,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_CODEX_SIDECAR_PORT
 - LTT_CODEX_SIDECAR_TOKEN
 - LTT_CONFIG_PATH
+- LTT_CONTRACT_BASELINE
+- LTT_CONTRACT_BASELINE_COMMITTED
 - LTT_COST_MICROS_PER_
 - LTT_COST_MICROS_PER_BYTE
 - LTT_COST_MICROS_PER_MS
@@ -1307,7 +1309,6 @@ Test inventory:
 - tests/test_309_toc_do_bo_test.py
 - tests/test_310_o_chon_tep.py
 - tests/test_311_vps_giao_dien_mvp.py
-- tests/test_312_ngan_sach_ltt_llm.py
 - tests/test_312_vps_khoa_dich_vu.py
 - tests/test_313_llm_admission.py
 - tests/test_317_admin_nav_contract.py
@@ -1327,6 +1328,7 @@ Test inventory:
 - tests/test_331_tu_hoan_giu_cho_treo.py
 - tests/test_332_gate_khong_tu_nhieu.py
 - tests/test_333_dat_bien_env.py
+- tests/test_334_ngan_sach_ltt_llm.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2521,7 +2523,6 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_309_toc_do_bo_test.py
 - tests/test_310_o_chon_tep.py
 - tests/test_311_vps_giao_dien_mvp.py
-- tests/test_312_ngan_sach_ltt_llm.py
 - tests/test_312_vps_khoa_dich_vu.py
 - tests/test_313_llm_admission.py
 - tests/test_317_admin_nav_contract.py
@@ -2541,6 +2542,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - tests/test_331_tu_hoan_giu_cho_treo.py
 - tests/test_332_gate_khong_tu_nhieu.py
 - tests/test_333_dat_bien_env.py
+- tests/test_334_ngan_sach_ltt_llm.py
 - tests/test_33_secret_scanner.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
@@ -2711,7 +2713,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:107, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12468735 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1259 file; 12477339 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3343,7 +3345,7 @@ lần sửa sau chỉ sửa một bản, đúng cái bệnh mục này sinh ra �
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=17122516efe45dd9ee1820243b47f4d69c825239e20002cfe7bc273f9ea7fcf6 BYTES=33980 LINES=394
+SHA256=2fa4831047ef4bcba1962e9fdff6b7f722cd983b1de50c23d518056d34bc5497 BYTES=33586 LINES=394
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3568,7 +3570,7 @@ nào**.
 | **LTT Nexus** (điều khiển máy từ xa) — nền tảng + wiring + billing | ✅ LIVE; Windows + Android chạy thật, thu credit thật. Vòng sửa lỗi 2026-08-22 đóng hết mục A+B của `docs/nexus/N7_DANH_SACH_VIEC.md`. ⏸️ **Một đợt đã commit nhưng CHƯA DEPLOY — đọc `docs/nexus/N8_CHO_DEPLOY.md` trước khi chạy deploy.** Còn hạ tầng C1–C4, macOS, iOS |
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 | **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_image`, không phải app | 🔨 giai đoạn A xong 2026-08-22 (H37, Q102); cổng render đã là dịch vụ trên B; bán ra `/api/v1` qua app `anhnoibo` + tool `image.ltt` — **chưa mở cho khách** (4 cổng còn khoá, D-034). 🔴 **So mù G6b 23/08: Gemini 24 – nhà 4 – hoà 2** (phần có ý nghĩa: **14 – 4**, vì chữ tiếng Việt **ngoài phạm vi** — D-048). Nhà thua vì **giải phẫu, hình học, chất chụp thật**. ⇒ **Đừng định vị nó là "đẹp hơn"; ảnh có chữ thì trả lời Gemini và đó là câu cuối.** ⛔ **Bỏ hẳn đối chứng ngoài** (D-046) — đo từ đây là **HiDream đấu HiDream, một lô một biến**. 🔒 **GIỮ 50 BƯỚC — G4 ĐÓNG 24/08 (D-054), câu cuối.** Lô B2c (seed thứ ba) nâng tổng lên **60 cặp**: 50 bước **33 – 18**, điểm 0,625, KTC [0,507; 0,744] **không chứa 0,5**. 36 bước đã thua **hai lô độc lập** ⇒ không nhận. ⚠️ Nhưng khác biệt **nhỏ hơn khác biệt giữa hai seed** (sàn nhiễu 91% > quyết đoán 85%) — đừng đọc thành "36 bước tệ rõ". Muốn mở lại thì phải là **phép kiểm tương đương**, không phải chạy lại phép cũ. 🔨 **Tiếp quản 24/08 (D-050, D-051):** chấm theo `docs/KHUON_BAN_MODEL_NHA.md` được **18/31**; đã sửa **lỗi tiền đang sống** — xin 4 ảnh, máy B trả 2, khách vẫn bị thu tiền 4 vì handler không báo `credit_cost` (cùng gốc với lỗi H38 đã sửa 23/08). Thêm `/live` + chốt GPU/CPU cho cổng render, giá về `apps/anhnoibo/gia.py` và công bố ở `/gia-api`. 🔓 **24/08 (D-052, D-053): giá hạ một phần ba** (5 → 3 credit/ảnh, tham chiếu 15 → 9), **bốn cổng MỞ trong mã**, **G5 đóng** (trần token 7.506 → 11.412, đo thật 20,1 GB · 239 s). **Máy chấm thay người** (D-052) — đổi lại mỗi phiếu quyết đoán phải viết lý do, `cham_mu.py` từ chối tính nếu thiếu. ⚠️ `render_gateway/deploy/deploy.ps1` có **hai lỗi khiến nó chưa từng deploy thành công lần nào** (đích sai một cấp + `Join-Path` giải ổ đĩa của máy A); đã sửa, nay 29/29 khớp hash. ✅ **G4 + G5 + G9 đều ĐÓNG 24/08.** G9: **100/100 lượt, 0 hỏng**, VRAM dao động 163 MB (0,9 %), nhiệt 69–74 °C, **không trôi gì** qua hơn ba giờ (D-056). ⏳ Còn **hai việc cần chủ sản phẩm**: bật cờ bằng `setup\cong_tac_tool_api.ps1` **rồi mới** deploy — sai thứ tự thì cờ không có tác dụng. ⛔ **D-057 (24/08): DỪNG kế hoạch dùng máy A sinh ảnh.** Không hạ độ chính xác model; `bf16` đỉnh 18.450 MB không vừa card 16.311 MB, và riêng Llama-3.1-8B trong bộ mã hoá đã lấp kín một card. Mở lại cần **phần cứng ≥ 24 GB**, không phải một cách xếp encoder khác. ⇒ Hệ quả: **trọng tài VRAM ở `docs/ANH_NOI_BO/CHIA_GPU_HAI_MODEL.md` nay BẮT BUỘC** — hai model vẫn dùng chung 3090 (18.450 + 19.237 = 37.687 MB / 24.576). **KẾ HOẠCH TIẾP: `docs/KE_HOACH_TIEP_2026-08-24.md`** (một danh sách duy nhất, có thứ tự). Xem D-045…D-057 + `docs/ANH_NOI_BO/` |
-| **LLM NỘI BỘ bán qua API** (H38, Q106+Q107) — Qwen3.8-27B trên máy B, bán qua `/api/v1` | ✅ **ĐANG BÁN 2026-08-24.** Ba cửa: `/jobs` · `/chat/completions` (`SYNC_BILLED`) · `/messages` + `/responses` (`STREAM`, cho Codex/Claude Code/Claude Desktop). Đã đo thật qua Cloudflare: luồng **119 giây không bị 524**, Codex CLI chạy đầu-tới-cuối, tiền khớp từng credit. Còn: phiên thật Claude Code/Desktop, xoay khoá, công cụ tự ghi cấu hình. Xem `docs/VLM_NOI_BO/` 🧹 **DỌN THAM SỐ 30/08:** mọi ngân sách token nay có **một nguồn chân lý** — `apps/ltt_llm/ngan_sach.py` (3 số gõ tay: `CUA_SO_MODEL` 131.072 · `TOKEN_RA_TRAN` 32.768 · `LE` 2.048; còn lại **dẫn xuất**: trần vào **96.256**, công bố cho client 88.555, body tối thiểu 433 KB). Mặc định token ra phải **gọi theo tên cửa** `mac_dinh_cho("sync"|"stream"|"job")` — một cái tên chung chung đã khiến cửa stream mượn ngân sách 1.024 của cửa đồng bộ và **mọi câu trả lời dài cụt ở đúng 1.024 token, im lặng**. ⚠️ **Đổi trần token của máy B thì sửa `llm_gateway/deploy/deploy.ps1` rồi deploy** — `C:\ProgramData\LTTLlm\gateway.env` là thứ **thắng tất cả** (nó ghi đè `os.environ`) nhưng do script sinh ra, sửa tay là mất ở lần deploy sau; NSSM env và env máy đều **vô tác dụng**. Sau mỗi lần đổi chạy `pytest tests/test_312_ngan_sach_ltt_llm.py` **có `LTT_LLM_TOKEN`** — 21 phép kiểm đối chiếu ba tầng (ta / mã máy B / máy B đang chạy). Xem `docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md` |
+| **LLM NỘI BỘ bán qua API** (H38, Q106+Q107) — Qwen3.8-27B trên máy B, bán qua `/api/v1` | ✅ **ĐANG BÁN 2026-08-24.** Ba cửa: `/jobs` · `/chat/completions` (`SYNC_BILLED`) · `/messages` + `/responses` (`STREAM`, cho Codex/Claude Code/Claude Desktop). Đã đo thật qua Cloudflare: luồng **119 giây không bị 524**, Codex CLI chạy đầu-tới-cuối, tiền khớp từng credit. Còn: phiên thật Claude Code/Desktop, xoay khoá, công cụ tự ghi cấu hình. Xem `docs/VLM_NOI_BO/` 🧹 **DỌN THAM SỐ 30/08:** mọi ngân sách token nay có **một nguồn chân lý** — `apps/ltt_llm/ngan_sach.py` (3 số gõ tay: `CUA_SO_MODEL` 131.072 · `TOKEN_RA_TRAN` 32.768 · `LE` 2.048; còn lại **dẫn xuất**: trần vào **96.256**, công bố cho client 88.555, body tối thiểu 433 KB). Mặc định token ra phải **gọi theo tên cửa** `mac_dinh_cho("sync"|"stream"|"job")` — một cái tên chung chung đã khiến cửa stream mượn ngân sách 1.024 của cửa đồng bộ và **mọi câu trả lời dài cụt ở đúng 1.024 token, im lặng**. ⚠️ **Đổi trần token của máy B thì sửa `llm_gateway/deploy/deploy.ps1` rồi deploy** — `C:\ProgramData\LTTLlm\gateway.env` là thứ **thắng tất cả** (nó ghi đè `os.environ`) nhưng do script sinh ra, sửa tay là mất ở lần deploy sau; NSSM env và env máy đều **vô tác dụng**. Sau mỗi lần đổi chạy `pytest tests/test_334_ngan_sach_ltt_llm.py` **có `LTT_LLM_TOKEN`** — 21 phép kiểm đối chiếu ba tầng (ta / mã máy B / máy B đang chạy). Xem `docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md` |
 | **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 🔴 **ĐANG SỐNG VÀ CÔNG KHAI — SỬA 2026-08-26, TRƯỚC ĐÓ HÀNG NÀY NÓI SAI VỀ PHÍA NGUY HIỂM.** Nó từng viết *"App vẫn **TẮT** (`LTT_VPS` chưa đặt)"*. Đọc production 26/08: `C:\LTTPlatform\secrets\app.env:72` → **`LTT_VPS=1`**, và `GET https://app.lttstudios.com/vps` trả **200 cho khách ẩn danh**. Biểu mẫu tạo máy **đang thu credit thật**. ⛔ Vì sao nguy hiểm chứ không chỉ sai: một phiên sau đọc dòng cũ sẽ sửa `/vps` **như sửa mã chết**. *(Cùng lớp lỗi với hàng Public API, sửa cùng ngày.)* 🔨 **~95% — G1→G10 xong 2026-08-25** (H39, Q103–Q105). Chuỗi đã đo thật đầu-tới-cuối: tạo máy **17 giây** → boot thẳng vào trình cài Windows → console trong trình duyệt → DHCP theo MAC → RDP từ Internet qua **IP riêng của từng máy** → thu tiền → treo → xoá → **trả IP về Vultr**. 🔴 **Cụm không chạy được virtio** — máy phải `sata0`+`e1000`, `agent:0`, `balloon:0` (xem `MO_HINH_CARD` trong `apps/vps/services/mang.py`). 🔴 **Khách TỰ CÀI Windows** (chốt 24/08): nền tảng **không bao giờ biết mật khẩu của khách**, không có template, không sysprep. Danh mục dừng ở **Server 2016, Server 2022, Windows 10 LTSC** — **KHÔNG bán Windows 11** (nhánh UEFI/vTPM đã gỡ khỏi `jobs.py`). ⚠️ Hợp đồng app có thêm `AppManifest.bao_tri` — app khai việc định kỳ, nền tảng chạy nó **dưới lease**; app tự dựng vòng lặp sẽ trừ tiền khách N lần mỗi chu kỳ. ✅ **G8 + G10 xong 25/08**: trang tạo máy hai bước, **trang bán công khai** (`/vps` phục vụ cả khách chưa đăng nhập — thẻ app trong catalog trỏ tới đó, nên đòi đăng nhập là ngõ cụt ngay bước đầu phễu), điều khoản riêng + clickwrap, sao kê thanh toán. `test_298` đối chiếu **từng con số** trong điều khoản với hằng số thật — đổi giá mà quên sửa điều khoản là gate đỏ. ✅ Đã **dọn sạch dấu vết diễn tập**: 0 VM lạ, **0 Reserved IP** bên Vultr, 4 bảng `vps_*` về 0 dòng; tài khoản thử bị **vô hiệu hoá chứ không xoá** (bút toán credit là append-only). ⚠️ Còn **G7b** (cpulimit + cảnh báo CPU) và **G9b** (diễn tập dựng lại cổng vào — **KHÔNG cần mua thêm VPS**: Reserved IP sống sót khi instance chết, nên có đường dựng lại $0; hoãn vì nó là hành động không đảo được trên một máy đang trả tiền). ⚠️ Trước khi mở bán phải chạy `setup\cong_tac_tool_api.ps1` **rồi mới** deploy. ✅ Đã xoá **3 template + 7 ISO chết**; đường `clone` gỡ hẳn, `os_images` chỉ còn Windows. Kho `local` còn **5,1 GB**, đủ cho ba ISO đang dùng. ⚠️ **Có shell root trên node** qua `tools/vps_node_shell.py` (termproxy = shell root; token cũng có `Sys.Modify`) — đừng lặp lại kết luận cũ rằng không có. ⚠️ Hạn ngạch Reserved IP của Vultr tính **cả IP vừa xoá**, nên tạo/xoá liên tục lúc thử sẽ làm lượt sau hỏng ở mốc 92%. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` và mục G ở `docs/KE_HOACH_TRIEN_KHAI.md` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
@@ -16961,7 +16963,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/ngan_sach.py
-SHA256=fef7837119509d7913896e1997282f2ede4dfee89bec8c136a1bc5cdb6ce2f06 BYTES=12501 LINES=181
+SHA256=2ace5548927a01a7f6f0e344a551a754dcf1e710507b6c90a69aa7da0d7e10d8 BYTES=12320 LINES=181
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách của `ltt_llm` — **nguồn chân lý duy nhất** cho mọi con số.
 
@@ -16994,7 +16996,7 @@ Bảy chỗ chồng chéo đo được hôm đó ghi ở
 
 ⛔ Và một luật cho người sửa: **`platform_core` không được import tệp này.** App
    phụ thuộc nền tảng, không phải chiều ngược lại. Nền tảng giữ trần riêng của
-   nó; `tests/test_312_ngan_sach_ltt_llm.py` **đối chiếu** hai bên và đỏ khi lệch.
+   nó; `tests/test_334_ngan_sach_ltt_llm.py` **đối chiếu** hai bên và đỏ khi lệch.
 """
 from __future__ import annotations
 
@@ -131235,7 +131237,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=9afeed22d41df375a06214f1270c3ea0ab0c43f9518651abee462a0768a090d6 BYTES=47665 LINES=893
+SHA256=f5ac13e043337dee29950faf1c5a07a2971c939b2985ba236718f07564cb98dc BYTES=48805 LINES=929
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -131680,6 +131682,41 @@ def _bao_400(detail: str, than: dict):
     return invalid_request(detail)
 
 
+#: Tiền tố của tên model **do chính client bịa ra** khi nó không biết model của
+#: ta. Đây KHÔNG phải danh sách hãng — nó là danh sách **triệu chứng**.
+_TIEN_TO_TEN_HANG = ("gpt-", "o1", "o3", "o4", "claude-", "gemini-", "grok-")
+
+
+def _goi_y_ten_la(ten: str) -> str:
+    """Thêm chỉ dẫn khi tên model là **tên sản phẩm của hãng khác**.
+
+    🔴 VÌ SAO ĐÁNG MỘT HÀM RIÊNG. Ngày 29-30/08 mất nhiều giờ mới hiểu vì sao
+       Codex gửi `model='gpt-5.6-luna'` — một tên không tồn tại ở chỗ ta. Gốc:
+       Codex **không có metadata** cho `ltt_llm`, nên nó rơi vào đường
+       `compact_model_fallback` và mượn tên một model OpenAI cho lượt phụ.
+       Bằng chứng: khai `model_catalog_json` xong thì `model_context_window`
+       của phiên đổi từ 84.127 sang **79.699 = 88.555 × 90 %** — đúng hai con
+       số ta khai — và 400 hết hẳn.
+
+    ⛔ VÀ VÌ SAO KHÔNG ÁNH XẠ TÊN ĐÓ VỀ `ltt_llm`. Nhận `gpt-5.6-luna` rồi lặng
+       lẽ phục vụ Qwen là **mượn tên sản phẩm của hãng khác** — đúng thứ mà
+       `TUYEN_TUONG_THICH` cố ý không làm (tên ở đó là tên TA tự đặt). Nó cũng
+       giấu mất cấu hình sai: khách tưởng đang chạy đúng, còn ta thì không bao
+       giờ biết máy nào khai thiếu catalog.
+
+    ⇒ Nên ta **vẫn từ chối**, chỉ nói thẳng cách sửa.
+    """
+    thap = (ten or "").lower()
+    if not any(thap.startswith(t) for t in _TIEN_TO_TEN_HANG):
+        return ""
+    return (
+        f" NOTE: `{ten}` is another vendor's product name — your client "
+        f"substituted it because it has no metadata for our model. Fix the "
+        f"client, not the request: for Codex declare `model_catalog_json` in "
+        f"~/.codex/config.toml (the `cam` command of our CLI tool does this "
+        f"for you). We do not alias other vendors' model names.")
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config) -> StreamingResponse:
     from platform_core import credit
@@ -131698,7 +131735,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
             f"`model` must be one of {list(aliases)}"
             f"{' or ' + str(list(TUYEN_TUONG_THICH)) if TUYEN_TUONG_THICH else ''}. "
             f"Claude Code sends whatever ANTHROPIC_MODEL is set to, and Codex "
-            f"sends `model` from its profile — set them to one of these.", than)
+            f"sends `model` from its profile — set them to one of these."
+            + _goi_y_ten_la(ten), than)
 
     tin = _tin_nhan(than)
     if not tin:
@@ -184840,7 +184878,7 @@ def test_the_request_page_can_be_narrowed_to_failures(portal):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_209_versioning_status.py
-SHA256=2cb24f511bbda61cab790075ac330df41914716e2ea7d1cbad485287ac1e5240 BYTES=19958 LINES=476
+SHA256=2d6d35f416b6fc09ae3a37dfa739e0e58c8c9731c7092c114a9934533e6cc28c BYTES=21344 LINES=511
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """EXT-17 — the frozen contract, the changelog, and a status page that is safe to publish.
 
@@ -184858,6 +184896,8 @@ A gate that passes everything is worse than no gate, because it is trusted.
 from __future__ import annotations
 
 import json
+import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -184950,10 +184990,48 @@ def _config(tools: str = ""):
                                    "LTT_PUBLIC_API_TOOLS": names})
 
 
-def _checker(*args) -> subprocess.CompletedProcess:
+def _checker(*args, ban_chuan: pathlib.Path | None = None,
+             nhu_commit: pathlib.Path | None = None
+             ) -> subprocess.CompletedProcess:
+    """Chay CHINH cong do, khong phai thu vien cua no.
+
+    ⭐ `ban_chuan` tro cong sang MOT BAN SAO. Truoc day cac test dot bien sua
+       THANG `docs/PUBLIC_API/CONTRACT_BASELINE.json` roi tra ve o `finally`,
+       va no hong theo hai duong THAT:
+
+       ① Tien trinh bi giet giua chung (vd `gate.py | head` -> SIGPIPE) thi tep
+         o lai ban. Lan chay sau chup DUNG BAN BAN do lam `saved` roi ghi lai
+         ⇒ rac **tu nhan len**, khong bao gio tu khoi.
+       ② `gate.py` chay `check_api_compat.py` SONG SONG voi bo test. Cong doc
+         tep trong khi test dang sua no ⇒ gate do **ngau nhien**, khong tai
+         hien duoc. Da mat mot vong chan doan vi dung cai nay (30/08).
+
+       Ca hai bien mat khi khong test nao cham vao tep that.
+    """
+    env = dict(os.environ)
+    if ban_chuan is not None:
+        env["LTT_CONTRACT_BASELINE"] = str(ban_chuan)
+    if nhu_commit is not None:
+        # dong vai "ban da commit" — de test canh bao lech-voi-git ma
+        # KHONG phai ghi vao tep chuan that.
+        env["LTT_CONTRACT_BASELINE_COMMITTED"] = str(nhu_commit)
     return subprocess.run(
         [sys.executable, "tools/check_api_compat.py", *args], cwd=ROOT,
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        env=env)
+
+
+def _ban_sao(tmp_path: pathlib.Path, doi=None) -> pathlib.Path:
+    """Ban sao cua ban chuan, da ap `doi(body)` neu co. KHONG cham tep that."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    body = json.loads(BASELINE.read_text(encoding="utf-8"))
+    if doi is not None:
+        doi(body)
+    tep = tmp_path / "CONTRACT_BASELINE.json"
+    tep.write_text(
+        json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8", newline="")
+    return tep
 
 
 # ── The snapshot is a stable fact ────────────────────────────────────────────
@@ -184979,7 +185057,14 @@ def test_the_committed_baseline_matches_the_code():
     assert BASELINE.is_file(), "the baseline must be committed"
     baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
     result = contract.compare(baseline, _snapshot())
-    assert result.clean, [item.line() for item in result.differences]
+    dong = [item.line() for item in result.differences]
+    goi_y = ("\n\n>> Neu thay chu `ghost` hoac HTTP 418 o tren thi day la RAC\n"
+             ">> con sot tu TRUOC 30/08 (hoi cac test dot bien con sua thang tep\n"
+             ">> nay). Chay:  git checkout docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
+             ">> Tu 30/08 cac test do chay tren BAN SAO, nen rac moi khong con\n"
+             ">> sinh ra nua — xem `_ban_sao()`."
+             if any("ghost" in d or "418" in d for d in dong) else "")
+    assert result.clean, str(dong) + goi_y
 
 
 # ── A breaking change fails CI ───────────────────────────────────────────────
@@ -185024,56 +185109,34 @@ def test_every_kind_of_breaking_change_is_refused(name, tmp_path):
     afterwards — a gate tested only through its library is a gate whose wiring
     nobody checked.
     """
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        BREAKING_MUTATIONS[name](body)
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 1, (
-            f"{name} was not refused:\n{result.stdout}{result.stderr}")
-        assert "PHA VO TUONG THICH" in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    result = _checker(ban_chuan=_ban_sao(tmp_path, BREAKING_MUTATIONS[name]))
+    assert result.returncode == 1, (
+        f"{name} was not refused:\n{result.stdout}{result.stderr}")
+    assert "PHA VO TUONG THICH" in result.stdout
 
 
-def test_an_additive_change_is_allowed():
+def test_an_additive_change_is_allowed(tmp_path):
     """A client that never asks for a new thing cannot notice it."""
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        body["tools"].pop(TOOL)          # baseline knows less than the code
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert "CONG THEM" in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    # ban chuan biet IT hon ma
+    result = _checker(ban_chuan=_ban_sao(tmp_path,
+                                         lambda d: d["tools"].pop(TOOL)))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "CONG THEM" in result.stdout
 
 
-def test_accepting_a_change_rewrites_the_baseline():
+def test_accepting_a_change_rewrites_the_baseline(tmp_path):
     """`--accept` is not a way past the gate; it is a change a reviewer sees."""
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        body["tools"][TOOL]["contract_hash"] = "0" * 16
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        assert _checker().returncode == 1
+    ban = _ban_sao(
+        tmp_path,
+        lambda d: d["tools"][TOOL].__setitem__("contract_hash", "0" * 16))
+    truoc = ban.read_text(encoding="utf-8")
+    assert _checker(ban_chuan=ban).returncode == 1
 
-        accepted = _checker("--accept")
-        assert accepted.returncode == 0
-        assert _checker().returncode == 0
-        # …and the file on disk really moved, which is what shows up in review.
-        assert BASELINE.read_text(encoding="utf-8") != json.dumps(
-            body, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    accepted = _checker("--accept", ban_chuan=ban)
+    assert accepted.returncode == 0
+    assert _checker(ban_chuan=ban).returncode == 0
+    # …and the file on disk really moved, which is what shows up in review.
+    assert ban.read_text(encoding="utf-8") != truoc
 
 
 def test_a_stale_snapshot_format_is_refused_rather_than_compared():
@@ -185256,12 +185319,12 @@ def test_the_webhook_payload_version_is_declared_next_to_the_payload():
     assert webhooks.PAYLOAD_VERSION == 1
 
 
-def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test():
+def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test(tmp_path):
     """Ngay 29/08 cai bay nay cắn HAI phien khac nhau trong mot buoi sang.
 
-    Chinh cac phep kiem trong tep nay phai ghi vao `CONTRACT_BASELINE.json` de
-    kiem duong day that cua `--accept`. Chung co `try/finally` de hoan nguyen —
-    nhung `finally` KHONG chay khi tien trinh bi giet (gate qua gio, Ctrl-C,
+    Hoi do chinh cac phep kiem trong tep nay ghi vao `CONTRACT_BASELINE.json`
+    de kiem duong day that cua `--accept`. Chung co `try/finally` de hoan nguyen
+    — nhung `finally` KHONG chay khi tien trinh bi giet (gate qua gio, Ctrl-C,
     worker chet). Mot luot bi ngat de lai tep ban, va lan chay sau do vi:
 
         [BREAKING] version: api_version changed v0 -> v1
@@ -185270,24 +185333,21 @@ def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test():
     hai phien deu di truy nguoc mot "su co hop dong API" khong ton tai.
 
     ⛔ Phep kiem nay chot rang canh bao KHONG lam diu ket qua: gate van tra 1.
+
+    ⭐ Tu 30/08 chinh phep kiem nay cung khong con ghi vao tep that: no dung
+       `_ban_sao` cho ca ban chuan lan ban "da commit". Nguon rac ma canh bao
+       nay canh bao ve, chinh la thu vua duoc go bo.
     """
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        body["api_version"] = "v0"
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 1, "canh bao khong duoc lam diu gate"
-        assert "KHAC ban da commit" in result.stdout
-        assert "git checkout" in result.stdout
-        assert "DUNG chay `--accept`" in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    ban = _ban_sao(tmp_path, lambda d: d.__setitem__("api_version", "v0"))
+    nhu_commit = _ban_sao(tmp_path / "goc")          # ban "da commit" gia lap
+    result = _checker(ban_chuan=ban, nhu_commit=nhu_commit)
+    assert result.returncode == 1, "canh bao khong duoc lam diu gate"
+    assert "KHAC ban da commit" in result.stdout
+    assert "git checkout" in result.stdout
+    assert "DUNG chay `--accept`" in result.stdout
 
 
-def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit():
+def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit(tmp_path):
     """Mot thay doi ma THAT khong duoc gan nhan "rac test".
 
     Hai canh cua cung mot nhanh, va ca hai deu quan trong:
@@ -185304,20 +185364,33 @@ def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit():
        Cach dung la TU TAO tien de roi hoan nguyen — dung khuon ma moi phep
        kiem khac trong tep nay da dung.
     """
-    saved = BASELINE.read_text(encoding="utf-8")
-    commit = subprocess.run(
-        ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
-        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=15)
-    # Khong co git thi dung ban tren dia: o mot cay lanh manh hai thu bang nhau,
-    # va neu khong bang thi phep kiem do la dung — cay dang hong that.
-    nhu_da_commit = commit.stdout if commit.returncode == 0 else saved
-    try:
-        BASELINE.write_text(nhu_da_commit, encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert "KHAC ban da commit" not in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    # Ban chuan va ban "da commit" GIONG HET nhau ⇒ khong duoc canh bao.
+    ban = _ban_sao(tmp_path)
+    nhu_commit = _ban_sao(tmp_path / "goc")
+    assert ban.read_bytes() == nhu_commit.read_bytes()
+    result = _checker(ban_chuan=ban, nhu_commit=nhu_commit)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "KHAC ban da commit" not in result.stdout
+
+
+def test_KHONG_test_nao_duoc_GHI_vao_ban_chuan_that():
+    """Banh coc: giu cho gate thoi do ngau nhien.
+
+    ⛔ `gate.py` chay `check_api_compat.py` SONG SONG voi bo test. Mot test ghi
+       vao `CONTRACT_BASELINE.json` la mot test co the lam cong do — hoac lam
+       chinh no do — tuy thoi diem. Va neu tien trinh bi giet giua chung thi tep
+       o lai ban, roi rac TU NHAN LEN o cac lan sau.
+
+    ⇒ Muon dot bien ban chuan thi dung `_ban_sao(tmp_path, ...)`.
+    """
+    van = pathlib.Path(__file__).read_text(encoding="utf-8")
+    xau = [d for d in van.splitlines()
+           if ("BASELINE." + "write_text") in d
+           or ("BASELINE." + "unlink") in d]
+    assert not xau, (
+        "Cac dong sau ghi vao BAN CHUAN THAT:\n  " + "\n  ".join(xau)
+        + "\nDung `_ban_sao(tmp_path, doi)` roi truyen qua "
+          "`_checker(ban_chuan=...)`.")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -220057,278 +220130,6 @@ def _may_gia():
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_312_ngan_sach_ltt_llm.py
-SHA256=93fa62db3d922391b7bb8df63fa60fd2d50010d7ba0d820ec68b87c10fdf50c3 BYTES=13566 LINES=266
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
-
-🔴 VÌ SAO BỘ KIỂM NÀY TỒN TẠI
-
-Ngày 30/08 một triệu chứng duy nhất — *"trả lời dài thì im lặng"* — bắt truy qua
-bốn tầng tham số ở bốn nơi. Thủ phạm: cửa stream mượn ngân sách 1.024 của cửa
-đồng bộ. Cùng buổi còn phát hiện `LTT_LLM_MAX_INPUT_TOKENS` tồn tại ở **ba nguồn
-bất đồng** (mặc định trong mã 90.000 · registry dịch vụ 90.000 · tiến trình đang
-chạy 65.000) mà **không phép kiểm nào phát hiện**.
-
-⭐ Nên bộ kiểm này không kiểm "mã có chạy không" — nó kiểm **các con số có còn
-   đồng ý với nhau không**. Đó là thứ duy nhất chặn được lớp lỗi đó tái phát.
-
-⚠️ Nhóm `TestDoiChieuMayB` gọi máy B thật nên **tự bỏ qua** khi không có mạng
-   LAN. Bỏ qua là chấp nhận được; **lệch thì phải đỏ**.
-"""
-from __future__ import annotations
-
-import os
-
-import pytest
-
-from apps.ltt_llm import ngan_sach
-
-
-class TestNguonChanLy:
-    """Ba con số gõ tay, phần còn lại phải là dẫn xuất."""
-
-    def test_tran_vao_la_dan_xuat_khong_phai_go_tay(self):
-        assert ngan_sach.TOKEN_VAO_TRAN == (
-            ngan_sach.CUA_SO_MODEL - ngan_sach.TOKEN_RA_TRAN - ngan_sach.LE)
-
-    def test_vao_cong_ra_khong_vuot_cua_so_model(self):
-        """Vào và ra chia nhau **một** cửa sổ. Tổng vượt là model tự cắt ngữ cảnh."""
-        assert (ngan_sach.TOKEN_VAO_TRAN + ngan_sach.TOKEN_RA_TRAN
-                <= ngan_sach.CUA_SO_MODEL)
-
-    def test_cong_bo_cho_client_thap_hon_tran_that(self):
-        """Client phải nén **trước** khi chạm trần, không phải lúc đã chạm.
-
-        Lệ 8% là cho lệch tokenizer: client đếm bằng bộ đếm của nó, model đếm
-        bằng bộ của Qwen — hai số không bao giờ khớp.
-        """
-        assert ngan_sach.CONG_BO_CHO_CLIENT < ngan_sach.TOKEN_VAO_TRAN
-
-    def test_body_toi_thieu_du_cho_tran_vao(self):
-        """⛔ Trần body từng chặn hội thoại dài ở ~64.000 token trong khi ta tưởng
-        đang chạm trần token của máy B. Hai trần không liên quan mà cái nhỏ thắng."""
-        assert ngan_sach.BODY_BYTES_TOI_THIEU >= (
-            ngan_sach.TOKEN_VAO_TRAN * 4), "body phai du cho tran vao"
-
-
-class TestMacDinhTheoCua:
-    """Mặc định phải **mang tên cửa** — đây là điều kiện để lỗi 30/08 không lặp."""
-
-    def test_moi_cua_deu_co_mac_dinh(self):
-        for cua in ("sync", "stream", "job"):
-            assert ngan_sach.mac_dinh_cho(cua) > 0
-
-    def test_ten_cua_sai_thi_NEM_chu_khong_tra_bua(self):
-        """Lỗi 30/08 sống được vì một mặc định chung chung trả về số của cửa khác."""
-        with pytest.raises(KeyError):
-            ngan_sach.mac_dinh_cho("khong_co_cua_nay")
-
-    def test_cua_stream_RONG_HON_cua_dong_bo(self):
-        """Cửa đồng bộ nhỏ vì trần 100 giây của Cloudflare; cửa stream không bị.
-
-        Đây chính là bất đẳng thức đã bị vi phạm suốt nhiều ngày.
-        """
-        assert ngan_sach.mac_dinh_cho("stream") > ngan_sach.mac_dinh_cho("sync")
-
-    def test_mac_dinh_khong_vuot_tran(self):
-        for cua in ngan_sach.CAC_CUA:
-            assert ngan_sach.mac_dinh_cho(cua) <= ngan_sach.TOKEN_RA_TRAN
-
-    def test_cua_stream_KHONG_co_tran_an_duoi_tran_cong_bo(self):
-        """Cửa stream phải mặc định **kịch trần**, không có trần ẩn nào thấp hơn.
-
-        ⛔ Phép kiểm này thay cho một phép kiểm cũ đòi điều NGƯỢC LẠI
-           (`stream < TOKEN_RA_TRAN`), viết theo lý do *"kịch trần bắt khách có
-           số dư gấp nhiều lần nhu cầu"*. **Phép đo bác bỏ lý do đó**: giá ra 400
-           credit/1M token ⇒ giữ trước cho 32.768 token chỉ **13,1 credit**, tức
-           1% số dư một tài khoản thường.
-
-        ⛔ Còn cái giá của việc đặt thấp thì đo được và đắt: 30/08 một lượt Codex
-           viết ba tệp dừng ở **đúng 8.192 token** ⇒ phản hồi cụt ⇒ Codex vứt ⇒
-           **không tệp nào được tạo**. Bất kỳ số nào dưới trần đều chỉ là chỗ để
-           cụt lần sau.
-        """
-        assert ngan_sach.mac_dinh_cho("stream") == ngan_sach.TOKEN_RA_TRAN
-
-
-class TestKhongConChongCheo:
-    """Không nơi nào được **định nghĩa lại** con số của `ngan_sach`."""
-
-    def test_manifest_chi_la_bi_danh(self):
-        from apps.ltt_llm import manifest
-        assert manifest.CUA_SO_NGU_CANH == ngan_sach.CUA_SO_MODEL
-        assert manifest.MAX_TOKENS_TRAN == ngan_sach.TOKEN_RA_TRAN
-        assert manifest.LE_NGU_CANH == ngan_sach.LE
-
-    def test_features_chi_la_bi_danh(self):
-        from apps.ltt_llm import features
-        assert features.KY_TU_MOI_TOKEN == ngan_sach.KY_TU_MOI_TOKEN
-        assert features.SYNC_MAX_TOKENS_MAC_DINH == ngan_sach.mac_dinh_cho("sync")
-
-    def test_executor_KHONG_con_mac_dinh_chung_chung(self):
-        """`default_max_tokens` là cái tên đã gây ra lỗi; nó phải biến mất."""
-        from apps.ltt_llm.executor import EXECUTOR
-        assert not hasattr(EXECUTOR, "default_max_tokens")
-        assert EXECUTOR.mac_dinh_cho("stream") == ngan_sach.mac_dinh_cho("stream")
-
-    def test_khong_con_hang_so_token_go_tay_trong_duong_sinh(self):
-        """Quét mã: không tệp nào được gán lại các con số này."""
-        import pathlib
-        import re
-        goc = pathlib.Path(__file__).resolve().parents[1]
-        cam = re.compile(
-            r"^\s*(MAX_TOKENS_TRAN|CUA_SO_NGU_CANH|LE_NGU_CANH|"
-            r"MAC_DINH_TOKEN_RA_STREAM|KY_TU_MOI_TOKEN)\s*=\s*[0-9]", re.M)
-        pham = []
-        for tep in (goc / "server" / "api" / "streaming.py",
-                    goc / "server" / "api" / "chat.py",
-                    goc / "apps" / "ltt_llm" / "manifest.py",
-                    goc / "apps" / "ltt_llm" / "features.py"):
-            if tep.exists() and cam.search(tep.read_text(encoding="utf-8")):
-                pham.append(tep.name)
-        assert not pham, f"cac tep con go tay hang so ngan sach: {pham}"
-
-
-class TestDoiChieuMayB:
-    """Số của ta phải khớp số máy B **đang thực thi**, không phải số ta tưởng.
-
-    ⛔ Đây là phép kiểm mà nếu có từ đầu thì mâu thuẫn 90.000-vs-65.000 đã lộ ra
-       ngay, thay vì phải truy nửa đêm qua bốn tầng.
-    """
-
-    @staticmethod
-    def _health():
-        import json
-        import urllib.request
-        goc = os.environ.get("LTT_LLM_GATEWAY_URL", "http://192.168.2.66:8299")
-        token = os.environ.get("LTT_LLM_TOKEN", "")
-        if not token:
-            pytest.skip("khong co LTT_LLM_TOKEN — bo qua doi chieu may B")
-        req = urllib.request.Request(f"{goc}/health",
-                                     headers={"Authorization": f"Bearer {token}"})
-        try:
-            with urllib.request.urlopen(req, timeout=10) as r:
-                return json.loads(r.read().decode("utf-8"))
-        except Exception as exc:                                  # noqa: BLE001
-            pytest.skip(f"khong goi duoc may B: {type(exc).__name__}")
-
-    def test_tran_vao_khop_may_B(self):
-        tran = self._health().get("tran", {})
-        assert tran.get("input_tokens") == ngan_sach.TOKEN_VAO_TRAN, (
-            f"may B dang thuc thi {tran.get('input_tokens')} nhung ta tinh "
-            f"{ngan_sach.TOKEN_VAO_TRAN} — mot trong hai noi sai")
-
-    def test_tran_ra_khop_may_B(self):
-        tran = self._health().get("tran", {})
-        assert tran.get("output_tokens") == ngan_sach.TOKEN_RA_TRAN
-
-    def test_dong_thoi_cua_ta_khong_vuot_may_B(self):
-        """Cho nhiều việc song song hơn máy B phục vụ được thì phần dôi ra chắc
-        chắn ăn 429/503 — không phải lỗi của bên nào, là hai trần không biết nhau."""
-        gh = self._health().get("gioi_han", {})
-        assert gh.get("max_dong_thoi") == ngan_sach.DONG_THOI_MAY_B, (
-            f"may B phuc vu {gh.get('max_dong_thoi')} luot cung luc nhung ta "
-            f"khai {ngan_sach.DONG_THOI_MAY_B}")
-
-
-class TestDoiChieuNenTang:
-    """Trần của **nền tảng** phải đủ rộng cho ngân sách của **app**.
-
-    ⚠️ `platform_core` KHÔNG được import `apps.ltt_llm` (app phụ thuộc nền tảng,
-       không phải chiều ngược lại). Nên hai bên giữ số riêng, và **bộ kiểm này là
-       chỗ duy nhất bắt chúng phải đồng ý**.
-
-    ⛔ Đây chính là cặp đã lệch ngày 30/08: nền tảng chặn body ở 256 KB trong khi
-       app cần ~433 KB cho `TOKEN_VAO_TRAN`, nên hội thoại dài bị chặn ở khoảng
-       64.000 token và ta tưởng đang chạm trần của máy B.
-    """
-
-    def test_tran_body_cua_nen_tang_du_cho_tran_vao_cua_app(self):
-        from platform_core.public_api.config import load_public_api_config
-        cfg = load_public_api_config()
-        assert cfg.max_body_bytes >= ngan_sach.BODY_BYTES_TOI_THIEU, (
-            f"nen tang cho {cfg.max_body_bytes} byte nhung app can it nhat "
-            f"{ngan_sach.BODY_BYTES_TOI_THIEU} de chua {ngan_sach.TOKEN_VAO_TRAN} "
-            f"token — dat LTT_PUBLIC_API_MAX_BODY_BYTES cho du")
-
-    def test_dong_thoi_khai_o_app_khop_hang_so_may_B(self):
-        """Ai đặt trần đồng thời cho `text.chat` phải đọc `DONG_THOI_MAY_B` trước."""
-        assert ngan_sach.DONG_THOI_MAY_B >= 1
-
-
-class TestDoiChieuKhoMayB:
-    """Mã nguồn của máy B nằm cùng kho này (`llm_gateway/`), nên drift bắt được
-    ngay lúc commit chứ không đợi tới lúc chạy.
-
-    ⛔ `KY_TU_MOI_TOKEN` là **phép ước token**, khai ở cả hai kho. Lệch nhau là
-       tiền ta giữ trước lệch tiền máy B tính — và **không có gì báo**.
-    """
-
-    @staticmethod
-    def _hang_so(ten: str, tep: str) -> float:
-        import pathlib
-        import re
-        goc = pathlib.Path(__file__).resolve().parents[1]
-        van = (goc / tep).read_text(encoding="utf-8")
-        m = (re.search(rf"^{ten}\s*=\s*([0-9_.]+)", van, re.M)
-             or re.search(rf"{ten}\s*([0-9_.]+)", van))
-        assert m, f"khong tim thay {ten} trong {tep}"
-        return float(m.group(1).replace("_", ""))
-
-    def test_uoc_token_khop_giua_hai_kho(self):
-        b = self._hang_so("KY_TU_MOI_TOKEN", "llm_gateway/ngan_sach.py")
-        assert b == ngan_sach.KY_TU_MOI_TOKEN, (
-            f"may B uoc {b} ky tu/token con ta uoc {ngan_sach.KY_TU_MOI_TOKEN} — "
-            f"tien giu truoc se lech tien B tinh")
-
-    def test_tran_ra_khop_mac_dinh_trong_ma_may_B(self):
-        b = self._hang_so(r'_int\("LTT_LLM_MAX_OUTPUT_TOKENS", ',
-                          "llm_gateway/config.py")
-        assert b == ngan_sach.TOKEN_RA_TRAN
-
-    def test_tran_vao_khop_mac_dinh_trong_ma_may_B(self):
-        """⛔ Đây là cặp đã lệch: mã B mặc định 90.000 còn ta tính 96.256."""
-        b = self._hang_so(r'_int\("LTT_LLM_MAX_INPUT_TOKENS", ',
-                          "llm_gateway/config.py")
-        assert b == ngan_sach.TOKEN_VAO_TRAN, (
-            f"ma may B mac dinh {b} nhung ta tinh {ngan_sach.TOKEN_VAO_TRAN}")
-
-
-class TestThuLaiKhiParserVo:
-    """Nhóm 3: tự thử lại **một lần** khi parser tool-call của llama.cpp vỡ.
-
-    ⛔ Bug thượng nguồn còn mở (ggml-org/llama.cpp#27733, #20260): model sinh
-       XONG một lượt hợp lệ rồi phát thừa một mẩu, parser hỏng ở phần đuôi và
-       **vứt toàn bộ kết quả**. Khách chỉ thấy "chạy xong rồi không có gì".
-
-    ⭐ Thử lại là hợp lệ vì lỗi **ngẫu nhiên theo lần sinh**, không phải lỗi của
-       yêu cầu — nhưng bộ nhận diện phải HẸP, nếu không ta sẽ đốt thêm một lượt
-       GPU cho mọi sự cố hạ tầng thật rồi vẫn hỏng y hệt.
-    """
-
-    def test_nhan_ra_dung_ba_dang_loi_parser(self):
-        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
-        assert f('{"error":{"message":"Failed to parse tool call arguments as '
-                 'JSON: [json.exception.parse_error.101] at column 3040"}}')
-        assert f("common_chat_peg_parse: unparsed peg-native output: <think>")
-        assert f("Failed to parse input at pos 12")
-
-    def test_KHONG_bat_nham_loi_ha_tang_that(self):
-        """Thử lại một lỗi thật chỉ đốt GPU thêm một lượt rồi hỏng y hệt."""
-        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
-        for that in ("CUDA out of memory", "model not found",
-                     "connection refused", "", "internal server error"):
-            assert not f(that), f"bat nham: {that!r}"
-
-    def test_mo_co_tham_so_chan_thu_lai_vo_han(self):
-        """`_da_thu_lai` là thứ giữ cho nó đúng MỘT lần, không thành vòng lặp."""
-        import inspect
-        from platform_core.llm import luong_vlm
-        assert "_da_thu_lai" in inspect.signature(luong_vlm.mo).parameters
-
-@@@LTT_PROFILE_FILE_END@@@
-
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_312_vps_khoa_dich_vu.py
 SHA256=f4bb4e72737a9690b7dc46daa8e51cdf09095ff01663b0048ee20f0c01d5a4d9 BYTES=11387 LINES=218
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -224562,6 +224363,355 @@ def test_LUON_nhac_nap_lai_env(envfile):
     r = _chay(envfile, "-Ten", "LTT_MOI", "-Gia_tri", "1")
     assert "nap_lai_env.ps1" in r.stdout
     assert "CHUA CO TAC DUNG" in r.stdout
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
+SHA256=383d53a25d7b4e699b6c9a0998589709e073fea91bcf18aab5d5848b3b2837d6 BYTES=17047 LINES=343
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
+
+🔴 VÌ SAO BỘ KIỂM NÀY TỒN TẠI
+
+Ngày 30/08 một triệu chứng duy nhất — *"trả lời dài thì im lặng"* — bắt truy qua
+bốn tầng tham số ở bốn nơi. Thủ phạm: cửa stream mượn ngân sách 1.024 của cửa
+đồng bộ. Cùng buổi còn phát hiện `LTT_LLM_MAX_INPUT_TOKENS` tồn tại ở **ba nguồn
+bất đồng** (mặc định trong mã 90.000 · registry dịch vụ 90.000 · tiến trình đang
+chạy 65.000) mà **không phép kiểm nào phát hiện**.
+
+⭐ Nên bộ kiểm này không kiểm "mã có chạy không" — nó kiểm **các con số có còn
+   đồng ý với nhau không**. Đó là thứ duy nhất chặn được lớp lỗi đó tái phát.
+
+⚠️ Nhóm `TestDoiChieuMayB` gọi máy B thật nên **tự bỏ qua** khi không có mạng
+   LAN. Bỏ qua là chấp nhận được; **lệch thì phải đỏ**.
+"""
+from __future__ import annotations
+
+import os
+
+import pytest
+
+from apps.ltt_llm import ngan_sach
+
+
+class TestNguonChanLy:
+    """Ba con số gõ tay, phần còn lại phải là dẫn xuất."""
+
+    def test_tran_vao_la_dan_xuat_khong_phai_go_tay(self):
+        assert ngan_sach.TOKEN_VAO_TRAN == (
+            ngan_sach.CUA_SO_MODEL - ngan_sach.TOKEN_RA_TRAN - ngan_sach.LE)
+
+    def test_vao_cong_ra_khong_vuot_cua_so_model(self):
+        """Vào và ra chia nhau **một** cửa sổ. Tổng vượt là model tự cắt ngữ cảnh."""
+        assert (ngan_sach.TOKEN_VAO_TRAN + ngan_sach.TOKEN_RA_TRAN
+                <= ngan_sach.CUA_SO_MODEL)
+
+    def test_cong_bo_cho_client_thap_hon_tran_that(self):
+        """Client phải nén **trước** khi chạm trần, không phải lúc đã chạm.
+
+        Lệ 8% là cho lệch tokenizer: client đếm bằng bộ đếm của nó, model đếm
+        bằng bộ của Qwen — hai số không bao giờ khớp.
+        """
+        assert ngan_sach.CONG_BO_CHO_CLIENT < ngan_sach.TOKEN_VAO_TRAN
+
+    def test_body_toi_thieu_du_cho_tran_vao(self):
+        """⛔ Trần body từng chặn hội thoại dài ở ~64.000 token trong khi ta tưởng
+        đang chạm trần token của máy B. Hai trần không liên quan mà cái nhỏ thắng."""
+        assert ngan_sach.BODY_BYTES_TOI_THIEU >= (
+            ngan_sach.TOKEN_VAO_TRAN * 4), "body phai du cho tran vao"
+
+
+class TestMacDinhTheoCua:
+    """Mặc định phải **mang tên cửa** — đây là điều kiện để lỗi 30/08 không lặp."""
+
+    def test_moi_cua_deu_co_mac_dinh(self):
+        for cua in ("sync", "stream", "job"):
+            assert ngan_sach.mac_dinh_cho(cua) > 0
+
+    def test_ten_cua_sai_thi_NEM_chu_khong_tra_bua(self):
+        """Lỗi 30/08 sống được vì một mặc định chung chung trả về số của cửa khác."""
+        with pytest.raises(KeyError):
+            ngan_sach.mac_dinh_cho("khong_co_cua_nay")
+
+    def test_cua_stream_RONG_HON_cua_dong_bo(self):
+        """Cửa đồng bộ nhỏ vì trần 100 giây của Cloudflare; cửa stream không bị.
+
+        Đây chính là bất đẳng thức đã bị vi phạm suốt nhiều ngày.
+        """
+        assert ngan_sach.mac_dinh_cho("stream") > ngan_sach.mac_dinh_cho("sync")
+
+    def test_mac_dinh_khong_vuot_tran(self):
+        for cua in ngan_sach.CAC_CUA:
+            assert ngan_sach.mac_dinh_cho(cua) <= ngan_sach.TOKEN_RA_TRAN
+
+    def test_cua_stream_KHONG_co_tran_an_duoi_tran_cong_bo(self):
+        """Cửa stream phải mặc định **kịch trần**, không có trần ẩn nào thấp hơn.
+
+        ⛔ Phép kiểm này thay cho một phép kiểm cũ đòi điều NGƯỢC LẠI
+           (`stream < TOKEN_RA_TRAN`), viết theo lý do *"kịch trần bắt khách có
+           số dư gấp nhiều lần nhu cầu"*. **Phép đo bác bỏ lý do đó**: giá ra 400
+           credit/1M token ⇒ giữ trước cho 32.768 token chỉ **13,1 credit**, tức
+           1% số dư một tài khoản thường.
+
+        ⛔ Còn cái giá của việc đặt thấp thì đo được và đắt: 30/08 một lượt Codex
+           viết ba tệp dừng ở **đúng 8.192 token** ⇒ phản hồi cụt ⇒ Codex vứt ⇒
+           **không tệp nào được tạo**. Bất kỳ số nào dưới trần đều chỉ là chỗ để
+           cụt lần sau.
+        """
+        assert ngan_sach.mac_dinh_cho("stream") == ngan_sach.TOKEN_RA_TRAN
+
+
+class TestKhongConChongCheo:
+    """Không nơi nào được **định nghĩa lại** con số của `ngan_sach`."""
+
+    def test_manifest_chi_la_bi_danh(self):
+        from apps.ltt_llm import manifest
+        assert manifest.CUA_SO_NGU_CANH == ngan_sach.CUA_SO_MODEL
+        assert manifest.MAX_TOKENS_TRAN == ngan_sach.TOKEN_RA_TRAN
+        assert manifest.LE_NGU_CANH == ngan_sach.LE
+
+    def test_features_chi_la_bi_danh(self):
+        from apps.ltt_llm import features
+        assert features.KY_TU_MOI_TOKEN == ngan_sach.KY_TU_MOI_TOKEN
+        assert features.SYNC_MAX_TOKENS_MAC_DINH == ngan_sach.mac_dinh_cho("sync")
+
+    def test_executor_KHONG_con_mac_dinh_chung_chung(self):
+        """`default_max_tokens` là cái tên đã gây ra lỗi; nó phải biến mất."""
+        from apps.ltt_llm.executor import EXECUTOR
+        assert not hasattr(EXECUTOR, "default_max_tokens")
+        assert EXECUTOR.mac_dinh_cho("stream") == ngan_sach.mac_dinh_cho("stream")
+
+    def test_khong_con_hang_so_token_go_tay_trong_duong_sinh(self):
+        """Quét mã: không tệp nào được gán lại các con số này."""
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        cam = re.compile(
+            r"^\s*(MAX_TOKENS_TRAN|CUA_SO_NGU_CANH|LE_NGU_CANH|"
+            r"MAC_DINH_TOKEN_RA_STREAM|KY_TU_MOI_TOKEN)\s*=\s*[0-9]", re.M)
+        pham = []
+        for tep in (goc / "server" / "api" / "streaming.py",
+                    goc / "server" / "api" / "chat.py",
+                    goc / "apps" / "ltt_llm" / "manifest.py",
+                    goc / "apps" / "ltt_llm" / "features.py"):
+            if tep.exists() and cam.search(tep.read_text(encoding="utf-8")):
+                pham.append(tep.name)
+        assert not pham, f"cac tep con go tay hang so ngan sach: {pham}"
+
+
+class TestDoiChieuMayB:
+    """Số của ta phải khớp số máy B **đang thực thi**, không phải số ta tưởng.
+
+    ⛔ Đây là phép kiểm mà nếu có từ đầu thì mâu thuẫn 90.000-vs-65.000 đã lộ ra
+       ngay, thay vì phải truy nửa đêm qua bốn tầng.
+    """
+
+    @staticmethod
+    def _health():
+        import json
+        import urllib.request
+        goc = os.environ.get("LTT_LLM_GATEWAY_URL", "http://192.168.2.66:8299")
+        token = os.environ.get("LTT_LLM_TOKEN", "")
+        if not token:
+            pytest.skip(
+                "khong co LTT_LLM_TOKEN — bo qua doi chieu SONG voi may B "
+                "(TestDoiChieuKhoMayB van doi chieu voi MA NGUON cua B, "
+                "khong can khoa va khong can mang)")
+        req = urllib.request.Request(f"{goc}/health",
+                                     headers={"Authorization": f"Bearer {token}"})
+        try:
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return json.loads(r.read().decode("utf-8"))
+        except Exception as exc:                                  # noqa: BLE001
+            pytest.skip(f"khong goi duoc may B: {type(exc).__name__}")
+
+    def test_tran_vao_khop_may_B(self):
+        tran = self._health().get("tran", {})
+        assert tran.get("input_tokens") == ngan_sach.TOKEN_VAO_TRAN, (
+            f"may B dang thuc thi {tran.get('input_tokens')} nhung ta tinh "
+            f"{ngan_sach.TOKEN_VAO_TRAN} — mot trong hai noi sai")
+
+    def test_tran_ra_khop_may_B(self):
+        tran = self._health().get("tran", {})
+        assert tran.get("output_tokens") == ngan_sach.TOKEN_RA_TRAN
+
+    def test_dong_thoi_cua_ta_khong_vuot_may_B(self):
+        """Cho nhiều việc song song hơn máy B phục vụ được thì phần dôi ra chắc
+        chắn ăn 429/503 — không phải lỗi của bên nào, là hai trần không biết nhau."""
+        gh = self._health().get("gioi_han", {})
+        assert gh.get("max_dong_thoi") == ngan_sach.DONG_THOI_MAY_B, (
+            f"may B phuc vu {gh.get('max_dong_thoi')} luot cung luc nhung ta "
+            f"khai {ngan_sach.DONG_THOI_MAY_B}")
+
+
+class TestDoiChieuNenTang:
+    """Trần của **nền tảng** phải đủ rộng cho ngân sách của **app**.
+
+    ⚠️ `platform_core` KHÔNG được import `apps.ltt_llm` (app phụ thuộc nền tảng,
+       không phải chiều ngược lại). Nên hai bên giữ số riêng, và **bộ kiểm này là
+       chỗ duy nhất bắt chúng phải đồng ý**.
+
+    ⛔ Đây chính là cặp đã lệch ngày 30/08: nền tảng chặn body ở 256 KB trong khi
+       app cần ~433 KB cho `TOKEN_VAO_TRAN`, nên hội thoại dài bị chặn ở khoảng
+       64.000 token và ta tưởng đang chạm trần của máy B.
+    """
+
+    def test_tran_body_cua_nen_tang_du_cho_tran_vao_cua_app(self):
+        from platform_core.public_api.config import load_public_api_config
+        cfg = load_public_api_config()
+        assert cfg.max_body_bytes >= ngan_sach.BODY_BYTES_TOI_THIEU, (
+            f"nen tang cho {cfg.max_body_bytes} byte nhung app can it nhat "
+            f"{ngan_sach.BODY_BYTES_TOI_THIEU} de chua {ngan_sach.TOKEN_VAO_TRAN} "
+            f"token — dat LTT_PUBLIC_API_MAX_BODY_BYTES cho du")
+
+    def test_dong_thoi_khai_o_app_khop_hang_so_may_B(self):
+        """Ai đặt trần đồng thời cho `text.chat` phải đọc `DONG_THOI_MAY_B` trước."""
+        assert ngan_sach.DONG_THOI_MAY_B >= 1
+
+
+class TestDoiChieuKhoMayB:
+    """Mã nguồn của máy B nằm cùng kho này (`llm_gateway/`), nên drift bắt được
+    ngay lúc commit chứ không đợi tới lúc chạy.
+
+    ⛔ `KY_TU_MOI_TOKEN` là **phép ước token**, khai ở cả hai kho. Lệch nhau là
+       tiền ta giữ trước lệch tiền máy B tính — và **không có gì báo**.
+    """
+
+    @staticmethod
+    def _hang_so(ten: str, tep: str) -> float:
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / tep).read_text(encoding="utf-8")
+        m = (re.search(rf"^{ten}\s*=\s*([0-9_.]+)", van, re.M)
+             or re.search(rf"{ten}\s*([0-9_.]+)", van))
+        assert m, f"khong tim thay {ten} trong {tep}"
+        return float(m.group(1).replace("_", ""))
+
+    def test_uoc_token_khop_giua_hai_kho(self):
+        b = self._hang_so("KY_TU_MOI_TOKEN", "llm_gateway/ngan_sach.py")
+        assert b == ngan_sach.KY_TU_MOI_TOKEN, (
+            f"may B uoc {b} ky tu/token con ta uoc {ngan_sach.KY_TU_MOI_TOKEN} — "
+            f"tien giu truoc se lech tien B tinh")
+
+    def test_tran_ra_khop_mac_dinh_trong_ma_may_B(self):
+        b = self._hang_so(r'_int\("LTT_LLM_MAX_OUTPUT_TOKENS", ',
+                          "llm_gateway/config.py")
+        assert b == ngan_sach.TOKEN_RA_TRAN
+
+    def test_tran_vao_khop_mac_dinh_trong_ma_may_B(self):
+        """⛔ Đây là cặp đã lệch: mã B mặc định 90.000 còn ta tính 96.256."""
+        b = self._hang_so(r'_int\("LTT_LLM_MAX_INPUT_TOKENS", ',
+                          "llm_gateway/config.py")
+        assert b == ngan_sach.TOKEN_VAO_TRAN, (
+            f"ma may B mac dinh {b} nhung ta tinh {ngan_sach.TOKEN_VAO_TRAN}")
+
+
+class TestThuLaiKhiParserVo:
+    """Nhóm 3: tự thử lại **một lần** khi parser tool-call của llama.cpp vỡ.
+
+    ⛔ Bug thượng nguồn còn mở (ggml-org/llama.cpp#27733, #20260): model sinh
+       XONG một lượt hợp lệ rồi phát thừa một mẩu, parser hỏng ở phần đuôi và
+       **vứt toàn bộ kết quả**. Khách chỉ thấy "chạy xong rồi không có gì".
+
+    ⭐ Thử lại là hợp lệ vì lỗi **ngẫu nhiên theo lần sinh**, không phải lỗi của
+       yêu cầu — nhưng bộ nhận diện phải HẸP, nếu không ta sẽ đốt thêm một lượt
+       GPU cho mọi sự cố hạ tầng thật rồi vẫn hỏng y hệt.
+    """
+
+    def test_nhan_ra_dung_ba_dang_loi_parser(self):
+        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
+        assert f('{"error":{"message":"Failed to parse tool call arguments as '
+                 'JSON: [json.exception.parse_error.101] at column 3040"}}')
+        assert f("common_chat_peg_parse: unparsed peg-native output: <think>")
+        assert f("Failed to parse input at pos 12")
+
+    def test_KHONG_bat_nham_loi_ha_tang_that(self):
+        """Thử lại một lỗi thật chỉ đốt GPU thêm một lượt rồi hỏng y hệt."""
+        from platform_core.llm.luong_vlm import _loi_parser_tool_call as f
+        for that in ("CUDA out of memory", "model not found",
+                     "connection refused", "", "internal server error"):
+            assert not f(that), f"bat nham: {that!r}"
+
+    def test_mo_co_tham_so_chan_thu_lai_vo_han(self):
+        """`_da_thu_lai` là thứ giữ cho nó đúng MỘT lần, không thành vòng lặp."""
+        import inspect
+        from platform_core.llm import luong_vlm
+        assert "_da_thu_lai" in inspect.signature(luong_vlm.mo).parameters
+
+
+# ── Tên model lạ: từ chối, nhưng chỉ đúng chỗ sửa (30/08) ──────────────────
+
+class TestTenModelCuaHangKhac:
+    """Codex bịa `gpt-5.6-luna` khi nó thiếu metadata cho `ltt_llm`.
+
+    ⛔ Ta **không** ánh xạ tên đó về `ltt_llm`. Nhận tên sản phẩm của hãng khác
+       rồi lặng lẽ phục vụ Qwen là mượn tên hãng — và giấu mất cấu hình sai.
+    """
+
+    def test_ten_hang_khac_duoc_chi_dung_cho_sua(self):
+        from server.api.streaming import _goi_y_ten_la
+        for ten in ("gpt-5.6-luna", "GPT-4o", "claude-sonnet-5", "gemini-3-pro"):
+            g = _goi_y_ten_la(ten)
+            assert "model_catalog_json" in g, ten
+            assert "do not alias" in g, ten
+
+    def test_ten_la_KHONG_phai_ten_hang_thi_khong_them_gi(self):
+        from server.api.streaming import _goi_y_ten_la
+        assert _goi_y_ten_la("mo-hinh-cua-toi") == ""
+        assert _goi_y_ten_la("") == ""
+
+    def test_KHONG_co_tuyen_tuong_thich_nao_muon_ten_hang(self):
+        """Bánh cóc: thêm alias `gpt-…`/`claude-3…` vào là gate đỏ."""
+        from server.api.streaming import TUYEN_TUONG_THICH, _TIEN_TO_TEN_HANG
+        for ten in TUYEN_TUONG_THICH:
+            assert not any(ten.lower().startswith(t) for t in _TIEN_TO_TEN_HANG), (
+                f"`{ten}` bat dau bang ten hang khac. Tuyen tuong thich phai "
+                f"dung ten TA tu dat (vd `ltt-llm-claude-compat`), khong phai "
+                f"ten san pham that cua ho.")
+
+
+# ── Công cụ cắm: hai client, cùng một nguồn chân lý (30/08) ────────────────
+
+class TestCamCliKhopNganSach:
+    """`cam_cli.py` chạy trên **máy khách**, nên nó không import được
+    `apps.ltt_llm`. Nó gõ lại hai con số — và việc đối chiếu là của TEST.
+
+    🔴 VÌ SAO KHÔNG ĐƯỢC LỆCH. Đây không phải tinh chỉnh, nó là **lỗi tiền**:
+       client tưởng cửa sổ rộng hơn thật thì nó **không nén hội thoại kịp**,
+       hội thoại vượt trần của ta, khách ăn 413 giữa chừng. Đúng triệu chứng
+       "hỏi dài thì im lặng" đã mất nhiều giờ tìm ở phía Codex.
+    """
+
+    @staticmethod
+    def _cam_cli():
+        import importlib.util
+        import pathlib
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "cam_cli_doi_chieu", goc / "tools" / "cam_cli.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
+    def test_cua_so_va_tran_ra_khop_nguon_chan_ly(self):
+        cc = self._cam_cli()
+        assert cc.CUA_SO_NGU_CANH == ngan_sach.CONG_BO_CHO_CLIENT
+        assert cc.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+
+    def test_ca_HAI_client_deu_duoc_noi_that_cua_so(self):
+        """Codex qua `model_catalog_json`; Claude Code qua biến môi trường.
+
+        ⭐ Hai tên khoá khác nhau, cùng một việc. Bỏ sót một bên là để đúng một
+           client rơi lại vào lỗi vừa sửa cho client kia.
+        """
+        cc = self._cam_cli()
+        import json
+        cat = json.loads(cc._catalog_codex())
+        assert all(m["context_window"] == ngan_sach.CONG_BO_CHO_CLIENT
+                   for m in cat["models"]), "Codex khong duoc noi that"
+        assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in cc.CLAUDE_ENV, \
+            "Claude Code khong duoc noi that — no se gia dinh 200k"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -238298,7 +238448,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=d70c10b2ca92cc8f958c614ba8be308771b1121b4338219747f6d28daf0c2b20 BYTES=65889 LINES=1504
+SHA256=53e05ce22353e7e24edb4b8564fd5655d8f4b544498aa740985edf86940dcdd2 BYTES=67117 LINES=1527
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -238421,6 +238571,8 @@ MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
 #: khach va KHONG duoc dung toi.
 #: Cua so ngu canh cong bo cho client, khop `ngan_sach.CONG_BO_CHO_CLIENT`.
 CUA_SO_NGU_CANH = 88555
+#: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
+TOKEN_RA_TRAN = 32768
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -239256,14 +239408,35 @@ def go_vscode(tt: dict) -> list:
 # ── Claude Code ─────────────────────────────────────────────────────────────
 
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
-              "ANTHROPIC_DEFAULT_HAIKU_MODEL")
+              "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+              "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
+              "CLAUDE_CODE_MAX_OUTPUT_TOKENS")
 
 
 def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     ra = []
+    # 🔴 HAI DONG CUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN.
+    #
+    #    Claude Code khong biet `ltt_llm`, nen no GIA DINH cua so 200.000 token
+    #    va bao thang ra:
+    #
+    #        "ltt_llm" is not a model this version of Claude Code recognizes,
+    #        so auto-compact will keep this session within 200k tokens
+    #        (the context window it assumes).
+    #
+    #    Tran vao that cua ta la 96.256. Voi gia dinh 200k, auto-compact **khong
+    #    bao gio kip nen**: hoi thoai vuot tran cua ta tu lau roi no van tuong
+    #    con nua duong. Khach an 413 giua chung — dung trieu chung "hoi dai thi
+    #    im lang" da mat nhieu gio de tim o phia Codex.
+    #
+    # ⭐ Da A/B do 30/08: dat bien nay xong thi canh bao bien mat.
+    #    Cung ho voi `model_catalog_json` cua Codex — hai client, hai ten khoa,
+    #    cung mot viec: NOI THAT cua so cho client, dung de no doan.
     gia_tri = {"ANTHROPIC_BASE_URL": f"{goc}/api",
                "ANTHROPIC_MODEL": MODEL,
-               "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL}
+               "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
+               "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
+               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN)}
     for ten, gt in gia_tri.items():
         ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
 
@@ -240878,7 +241051,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_api_compat.py
-SHA256=7f9097e14c19949d78b3ef833003a1dfcd9d1a6b1e85796860642e634643d429 BYTES=7405 LINES=178
+SHA256=584e9c7e207c578fc6ea4d6c9a7991f81a751e8f30828aeb2fb08504dfb4a5bb BYTES=9103 LINES=214
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """So sanh be mat cong khai voi ban chuan da dong bang.
 
@@ -240911,7 +241084,23 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-BASELINE = ROOT / "docs" / "PUBLIC_API" / "CONTRACT_BASELINE.json"
+BASELINE_THAT = ROOT / "docs" / "PUBLIC_API" / "CONTRACT_BASELINE.json"
+
+#: ⭐ CHO TEST TRO SANG MOT BAN SAO — va do KHONG phai tien nghi, la sua loi.
+#:
+#:    `test_209` phai chay CHINH cong nay (mot cong chi kiem qua thu vien la mot
+#:    cong khong ai kiem day dien). De lam vay no tung sua THANG tep chuan roi
+#:    tra ve trong `finally`. Hai hau qua that:
+#:
+#:    ① Tien trinh bi giet giua chung (vd `gate.py | head` -> SIGPIPE) thi tep
+#:      o lai ban — va lan chay sau chup DUNG BAN BAN do lam `saved` roi ghi
+#:      lai, nen rac TU NHAN LEN mai mai.
+#:    ② `gate.py` chay cong nay SONG SONG voi bo test. Cong doc tep trong khi
+#:      test dang sua no ⇒ gate do ngau nhien, khong tai hien duoc.
+#:
+#: ⛔ Bien nay CHI de test dung. Ma chay that khong bao gio dat no.
+BASELINE = pathlib.Path(
+    __import__("os").environ.get("LTT_CONTRACT_BASELINE") or BASELINE_THAT)
 
 def _utf8_stdout() -> None:
     """Console cua Windows khong mac dinh UTF-8, ma cac thong bao o day co dau.
@@ -241030,8 +241219,23 @@ def _canh_bao_ban_chuan_ban() -> None:
     ⛔ Ham nay KHONG tu sua tep va KHONG lam diu ket qua: gate van do. No chi
        them mot cau de nguoi doc biet cho ma nhin.
     """
+    import os
     import subprocess
 
+    # ⭐ SEAM CHO TEST — de test khong phai ghi vao tep chuan THAT chi de dung
+    #    duoc canh bao nay. Truoc 30/08 hai phep kiem o `test_209` bat buoc
+    #    phai ghi vao tep that, va chinh chung la nguon rac ma canh bao nay
+    #    noi toi. Mia mai, va co that.
+    dung_thay = os.environ.get("LTT_CONTRACT_BASELINE_COMMITTED")
+    if dung_thay:
+        nhu_commit = pathlib.Path(dung_thay).read_text(encoding="utf-8")
+        if nhu_commit == BASELINE.read_text(encoding="utf-8"):
+            return
+        _in_canh_bao()
+        return
+
+    if BASELINE != BASELINE_THAT:
+        return          # dang chay tren ban sao cua test — khong co gi de doi chieu
     try:
         commit = subprocess.run(
             ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
@@ -241044,11 +241248,16 @@ def _canh_bao_ban_chuan_ban() -> None:
     if commit.stdout == BASELINE.read_text(encoding="utf-8"):
         return                      # ban chuan dung bang ban commit -> that su la thay doi ma
 
+    _in_canh_bao()
+
+
+def _in_canh_bao() -> None:
     print(
         "\n⚠️  Ban chuan trong cay KHAC ban da commit.\n"
         "    Neu ban khong co y sua no, day rat co the la RAC cua mot luot test\n"
-        "    bi ngat: `test_209` ghi vao chinh tep nay va chi hoan nguyen o\n"
-        "    `finally` — thu do khong chay khi tien trinh bi giet.\n"
+        "    bi ngat. (Truoc 30/08 `test_209` ghi vao chinh tep nay va chi hoan\n"
+        "    nguyen o `finally` — thu do khong chay khi tien trinh bi giet. Nay\n"
+        "    cac phep kiem do chay tren ban sao, nen rac MOI khong con sinh ra.)\n"
         "    Dau hieu nhan ra: ten co tien to `ghost_` hoac HTTP 418.\n"
         "    Kiem bang:  git diff docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
         "    Neu la rac:  git checkout -- docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
@@ -241149,7 +241358,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_bo_qua.py
-SHA256=43ef3545845d7f547c0ae7c27b789b34c09286679594408aeabef7385266ab88 BYTES=7474 LINES=184
+SHA256=81863b8c73ec92ede08526630fe1555df4d3f5c52a696b20b6efa91e97408db9 BYTES=7720 LINES=187
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 check_bo_qua.py — banh coc chan BO QUA IM LANG trong bo test.
@@ -241303,9 +241512,12 @@ def main(argv=None) -> int:
     da_don = sorted(moc - set(cho))
 
     if a.accept:
+        # `newline=""` de giu LF. Mac dinh cua Python tren Windows dich \n
+        # thanh \r\n, nen moi lan `--accept` doi CA TEP thay vi mot dong — diff
+        # 14 dong cho mot thay doi 1 dong lam nguoi doc bo qua thu can nhin.
         TEP_MOC.write_text(DAU_HIEU + "\n"
                            + "".join(f"{k}\n" for k in sorted(cho)),
-                           encoding="utf-8")
+                           encoding="utf-8", newline="")
         print(f"Da ghi moc: {len(cho)} cho bo qua"
               + (f"; bo {len(da_don)}: {da_don}" if da_don else ""))
         return 0

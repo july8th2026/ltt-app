@@ -150,9 +150,12 @@ def main(argv=None) -> int:
     da_don = sorted(moc - set(cho))
 
     if a.accept:
+        # `newline=""` de giu LF. Mac dinh cua Python tren Windows dich \n
+        # thanh \r\n, nen moi lan `--accept` doi CA TEP thay vi mot dong — diff
+        # 14 dong cho mot thay doi 1 dong lam nguoi doc bo qua thu can nhin.
         TEP_MOC.write_text(DAU_HIEU + "\n"
                            + "".join(f"{k}\n" for k in sorted(cho)),
-                           encoding="utf-8")
+                           encoding="utf-8", newline="")
         print(f"Da ghi moc: {len(cho)} cho bo qua"
               + (f"; bo {len(da_don)}: {da_don}" if da_don else ""))
         return 0

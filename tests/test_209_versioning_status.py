@@ -14,6 +14,8 @@ A gate that passes everything is worse than no gate, because it is trusted.
 from __future__ import annotations
 
 import json
+import os
+import pathlib
 import re
 import subprocess
 import sys
@@ -106,10 +108,48 @@ def _config(tools: str = ""):
                                    "LTT_PUBLIC_API_TOOLS": names})
 
 
-def _checker(*args) -> subprocess.CompletedProcess:
+def _checker(*args, ban_chuan: pathlib.Path | None = None,
+             nhu_commit: pathlib.Path | None = None
+             ) -> subprocess.CompletedProcess:
+    """Chay CHINH cong do, khong phai thu vien cua no.
+
+    ⭐ `ban_chuan` tro cong sang MOT BAN SAO. Truoc day cac test dot bien sua
+       THANG `docs/PUBLIC_API/CONTRACT_BASELINE.json` roi tra ve o `finally`,
+       va no hong theo hai duong THAT:
+
+       ① Tien trinh bi giet giua chung (vd `gate.py | head` -> SIGPIPE) thi tep
+         o lai ban. Lan chay sau chup DUNG BAN BAN do lam `saved` roi ghi lai
+         ⇒ rac **tu nhan len**, khong bao gio tu khoi.
+       ② `gate.py` chay `check_api_compat.py` SONG SONG voi bo test. Cong doc
+         tep trong khi test dang sua no ⇒ gate do **ngau nhien**, khong tai
+         hien duoc. Da mat mot vong chan doan vi dung cai nay (30/08).
+
+       Ca hai bien mat khi khong test nao cham vao tep that.
+    """
+    env = dict(os.environ)
+    if ban_chuan is not None:
+        env["LTT_CONTRACT_BASELINE"] = str(ban_chuan)
+    if nhu_commit is not None:
+        # dong vai "ban da commit" — de test canh bao lech-voi-git ma
+        # KHONG phai ghi vao tep chuan that.
+        env["LTT_CONTRACT_BASELINE_COMMITTED"] = str(nhu_commit)
     return subprocess.run(
         [sys.executable, "tools/check_api_compat.py", *args], cwd=ROOT,
-        capture_output=True, text=True, encoding="utf-8", errors="replace")
+        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        env=env)
+
+
+def _ban_sao(tmp_path: pathlib.Path, doi=None) -> pathlib.Path:
+    """Ban sao cua ban chuan, da ap `doi(body)` neu co. KHONG cham tep that."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    body = json.loads(BASELINE.read_text(encoding="utf-8"))
+    if doi is not None:
+        doi(body)
+    tep = tmp_path / "CONTRACT_BASELINE.json"
+    tep.write_text(
+        json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8", newline="")
+    return tep
 
 
 # ── The snapshot is a stable fact ────────────────────────────────────────────
@@ -135,7 +175,14 @@ def test_the_committed_baseline_matches_the_code():
     assert BASELINE.is_file(), "the baseline must be committed"
     baseline = json.loads(BASELINE.read_text(encoding="utf-8"))
     result = contract.compare(baseline, _snapshot())
-    assert result.clean, [item.line() for item in result.differences]
+    dong = [item.line() for item in result.differences]
+    goi_y = ("\n\n>> Neu thay chu `ghost` hoac HTTP 418 o tren thi day la RAC\n"
+             ">> con sot tu TRUOC 30/08 (hoi cac test dot bien con sua thang tep\n"
+             ">> nay). Chay:  git checkout docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
+             ">> Tu 30/08 cac test do chay tren BAN SAO, nen rac moi khong con\n"
+             ">> sinh ra nua — xem `_ban_sao()`."
+             if any("ghost" in d or "418" in d for d in dong) else "")
+    assert result.clean, str(dong) + goi_y
 
 
 # ── A breaking change fails CI ───────────────────────────────────────────────
@@ -180,56 +227,34 @@ def test_every_kind_of_breaking_change_is_refused(name, tmp_path):
     afterwards — a gate tested only through its library is a gate whose wiring
     nobody checked.
     """
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        BREAKING_MUTATIONS[name](body)
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 1, (
-            f"{name} was not refused:\n{result.stdout}{result.stderr}")
-        assert "PHA VO TUONG THICH" in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    result = _checker(ban_chuan=_ban_sao(tmp_path, BREAKING_MUTATIONS[name]))
+    assert result.returncode == 1, (
+        f"{name} was not refused:\n{result.stdout}{result.stderr}")
+    assert "PHA VO TUONG THICH" in result.stdout
 
 
-def test_an_additive_change_is_allowed():
+def test_an_additive_change_is_allowed(tmp_path):
     """A client that never asks for a new thing cannot notice it."""
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        body["tools"].pop(TOOL)          # baseline knows less than the code
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert "CONG THEM" in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    # ban chuan biet IT hon ma
+    result = _checker(ban_chuan=_ban_sao(tmp_path,
+                                         lambda d: d["tools"].pop(TOOL)))
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "CONG THEM" in result.stdout
 
 
-def test_accepting_a_change_rewrites_the_baseline():
+def test_accepting_a_change_rewrites_the_baseline(tmp_path):
     """`--accept` is not a way past the gate; it is a change a reviewer sees."""
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        body["tools"][TOOL]["contract_hash"] = "0" * 16
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        assert _checker().returncode == 1
+    ban = _ban_sao(
+        tmp_path,
+        lambda d: d["tools"][TOOL].__setitem__("contract_hash", "0" * 16))
+    truoc = ban.read_text(encoding="utf-8")
+    assert _checker(ban_chuan=ban).returncode == 1
 
-        accepted = _checker("--accept")
-        assert accepted.returncode == 0
-        assert _checker().returncode == 0
-        # …and the file on disk really moved, which is what shows up in review.
-        assert BASELINE.read_text(encoding="utf-8") != json.dumps(
-            body, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    accepted = _checker("--accept", ban_chuan=ban)
+    assert accepted.returncode == 0
+    assert _checker(ban_chuan=ban).returncode == 0
+    # …and the file on disk really moved, which is what shows up in review.
+    assert ban.read_text(encoding="utf-8") != truoc
 
 
 def test_a_stale_snapshot_format_is_refused_rather_than_compared():
@@ -412,12 +437,12 @@ def test_the_webhook_payload_version_is_declared_next_to_the_payload():
     assert webhooks.PAYLOAD_VERSION == 1
 
 
-def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test():
+def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test(tmp_path):
     """Ngay 29/08 cai bay nay cắn HAI phien khac nhau trong mot buoi sang.
 
-    Chinh cac phep kiem trong tep nay phai ghi vao `CONTRACT_BASELINE.json` de
-    kiem duong day that cua `--accept`. Chung co `try/finally` de hoan nguyen —
-    nhung `finally` KHONG chay khi tien trinh bi giet (gate qua gio, Ctrl-C,
+    Hoi do chinh cac phep kiem trong tep nay ghi vao `CONTRACT_BASELINE.json`
+    de kiem duong day that cua `--accept`. Chung co `try/finally` de hoan nguyen
+    — nhung `finally` KHONG chay khi tien trinh bi giet (gate qua gio, Ctrl-C,
     worker chet). Mot luot bi ngat de lai tep ban, va lan chay sau do vi:
 
         [BREAKING] version: api_version changed v0 -> v1
@@ -426,24 +451,21 @@ def test_ban_chuan_ban_thi_checker_noi_ro_do_co_the_la_rac_test():
     hai phien deu di truy nguoc mot "su co hop dong API" khong ton tai.
 
     ⛔ Phep kiem nay chot rang canh bao KHONG lam diu ket qua: gate van tra 1.
+
+    ⭐ Tu 30/08 chinh phep kiem nay cung khong con ghi vao tep that: no dung
+       `_ban_sao` cho ca ban chuan lan ban "da commit". Nguon rac ma canh bao
+       nay canh bao ve, chinh la thu vua duoc go bo.
     """
-    saved = BASELINE.read_text(encoding="utf-8")
-    try:
-        body = json.loads(saved)
-        body["api_version"] = "v0"
-        BASELINE.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True)
-            + "\n", encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 1, "canh bao khong duoc lam diu gate"
-        assert "KHAC ban da commit" in result.stdout
-        assert "git checkout" in result.stdout
-        assert "DUNG chay `--accept`" in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    ban = _ban_sao(tmp_path, lambda d: d.__setitem__("api_version", "v0"))
+    nhu_commit = _ban_sao(tmp_path / "goc")          # ban "da commit" gia lap
+    result = _checker(ban_chuan=ban, nhu_commit=nhu_commit)
+    assert result.returncode == 1, "canh bao khong duoc lam diu gate"
+    assert "KHAC ban da commit" in result.stdout
+    assert "git checkout" in result.stdout
+    assert "DUNG chay `--accept`" in result.stdout
 
 
-def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit():
+def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit(tmp_path):
     """Mot thay doi ma THAT khong duoc gan nhan "rac test".
 
     Hai canh cua cung mot nhanh, va ca hai deu quan trong:
@@ -460,17 +482,30 @@ def test_khong_canh_bao_khi_ban_chuan_dung_bang_ban_commit():
        Cach dung la TU TAO tien de roi hoan nguyen — dung khuon ma moi phep
        kiem khac trong tep nay da dung.
     """
-    saved = BASELINE.read_text(encoding="utf-8")
-    commit = subprocess.run(
-        ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
-        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", timeout=15)
-    # Khong co git thi dung ban tren dia: o mot cay lanh manh hai thu bang nhau,
-    # va neu khong bang thi phep kiem do la dung — cay dang hong that.
-    nhu_da_commit = commit.stdout if commit.returncode == 0 else saved
-    try:
-        BASELINE.write_text(nhu_da_commit, encoding="utf-8", newline="")
-        result = _checker()
-        assert result.returncode == 0, result.stdout + result.stderr
-        assert "KHAC ban da commit" not in result.stdout
-    finally:
-        BASELINE.write_text(saved, encoding="utf-8", newline="")
+    # Ban chuan va ban "da commit" GIONG HET nhau ⇒ khong duoc canh bao.
+    ban = _ban_sao(tmp_path)
+    nhu_commit = _ban_sao(tmp_path / "goc")
+    assert ban.read_bytes() == nhu_commit.read_bytes()
+    result = _checker(ban_chuan=ban, nhu_commit=nhu_commit)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "KHAC ban da commit" not in result.stdout
+
+
+def test_KHONG_test_nao_duoc_GHI_vao_ban_chuan_that():
+    """Banh coc: giu cho gate thoi do ngau nhien.
+
+    ⛔ `gate.py` chay `check_api_compat.py` SONG SONG voi bo test. Mot test ghi
+       vao `CONTRACT_BASELINE.json` la mot test co the lam cong do — hoac lam
+       chinh no do — tuy thoi diem. Va neu tien trinh bi giet giua chung thi tep
+       o lai ban, roi rac TU NHAN LEN o cac lan sau.
+
+    ⇒ Muon dot bien ban chuan thi dung `_ban_sao(tmp_path, ...)`.
+    """
+    van = pathlib.Path(__file__).read_text(encoding="utf-8")
+    xau = [d for d in van.splitlines()
+           if ("BASELINE." + "write_text") in d
+           or ("BASELINE." + "unlink") in d]
+    assert not xau, (
+        "Cac dong sau ghi vao BAN CHUAN THAT:\n  " + "\n  ".join(xau)
+        + "\nDung `_ban_sao(tmp_path, doi)` roi truyen qua "
+          "`_checker(ban_chuan=...)`.")

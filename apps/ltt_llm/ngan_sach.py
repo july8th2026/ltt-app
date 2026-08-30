@@ -29,7 +29,7 @@ Bảy chỗ chồng chéo đo được hôm đó ghi ở
 
 ⛔ Và một luật cho người sửa: **`platform_core` không được import tệp này.** App
    phụ thuộc nền tảng, không phải chiều ngược lại. Nền tảng giữ trần riêng của
-   nó; `tests/test_312_ngan_sach_ltt_llm.py` **đối chiếu** hai bên và đỏ khi lệch.
+   nó; `tests/test_334_ngan_sach_ltt_llm.py` **đối chiếu** hai bên và đỏ khi lệch.
 """
 from __future__ import annotations
 

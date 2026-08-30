@@ -29,7 +29,23 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-BASELINE = ROOT / "docs" / "PUBLIC_API" / "CONTRACT_BASELINE.json"
+BASELINE_THAT = ROOT / "docs" / "PUBLIC_API" / "CONTRACT_BASELINE.json"
+
+#: ⭐ CHO TEST TRO SANG MOT BAN SAO — va do KHONG phai tien nghi, la sua loi.
+#:
+#:    `test_209` phai chay CHINH cong nay (mot cong chi kiem qua thu vien la mot
+#:    cong khong ai kiem day dien). De lam vay no tung sua THANG tep chuan roi
+#:    tra ve trong `finally`. Hai hau qua that:
+#:
+#:    ① Tien trinh bi giet giua chung (vd `gate.py | head` -> SIGPIPE) thi tep
+#:      o lai ban — va lan chay sau chup DUNG BAN BAN do lam `saved` roi ghi
+#:      lai, nen rac TU NHAN LEN mai mai.
+#:    ② `gate.py` chay cong nay SONG SONG voi bo test. Cong doc tep trong khi
+#:      test dang sua no ⇒ gate do ngau nhien, khong tai hien duoc.
+#:
+#: ⛔ Bien nay CHI de test dung. Ma chay that khong bao gio dat no.
+BASELINE = pathlib.Path(
+    __import__("os").environ.get("LTT_CONTRACT_BASELINE") or BASELINE_THAT)
 
 def _utf8_stdout() -> None:
     """Console cua Windows khong mac dinh UTF-8, ma cac thong bao o day co dau.
@@ -148,8 +164,23 @@ def _canh_bao_ban_chuan_ban() -> None:
     ⛔ Ham nay KHONG tu sua tep va KHONG lam diu ket qua: gate van do. No chi
        them mot cau de nguoi doc biet cho ma nhin.
     """
+    import os
     import subprocess
 
+    # ⭐ SEAM CHO TEST — de test khong phai ghi vao tep chuan THAT chi de dung
+    #    duoc canh bao nay. Truoc 30/08 hai phep kiem o `test_209` bat buoc
+    #    phai ghi vao tep that, va chinh chung la nguon rac ma canh bao nay
+    #    noi toi. Mia mai, va co that.
+    dung_thay = os.environ.get("LTT_CONTRACT_BASELINE_COMMITTED")
+    if dung_thay:
+        nhu_commit = pathlib.Path(dung_thay).read_text(encoding="utf-8")
+        if nhu_commit == BASELINE.read_text(encoding="utf-8"):
+            return
+        _in_canh_bao()
+        return
+
+    if BASELINE != BASELINE_THAT:
+        return          # dang chay tren ban sao cua test — khong co gi de doi chieu
     try:
         commit = subprocess.run(
             ["git", "show", f"HEAD:{BASELINE.relative_to(ROOT).as_posix()}"],
@@ -162,11 +193,16 @@ def _canh_bao_ban_chuan_ban() -> None:
     if commit.stdout == BASELINE.read_text(encoding="utf-8"):
         return                      # ban chuan dung bang ban commit -> that su la thay doi ma
 
+    _in_canh_bao()
+
+
+def _in_canh_bao() -> None:
     print(
         "\n⚠️  Ban chuan trong cay KHAC ban da commit.\n"
         "    Neu ban khong co y sua no, day rat co the la RAC cua mot luot test\n"
-        "    bi ngat: `test_209` ghi vao chinh tep nay va chi hoan nguyen o\n"
-        "    `finally` — thu do khong chay khi tien trinh bi giet.\n"
+        "    bi ngat. (Truoc 30/08 `test_209` ghi vao chinh tep nay va chi hoan\n"
+        "    nguyen o `finally` — thu do khong chay khi tien trinh bi giet. Nay\n"
+        "    cac phep kiem do chay tren ban sao, nen rac MOI khong con sinh ra.)\n"
         "    Dau hieu nhan ra: ten co tien to `ghost_` hoac HTTP 418.\n"
         "    Kiem bang:  git diff docs/PUBLIC_API/CONTRACT_BASELINE.json\n"
         "    Neu la rac:  git checkout -- docs/PUBLIC_API/CONTRACT_BASELINE.json\n"

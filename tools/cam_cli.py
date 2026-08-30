@@ -119,6 +119,8 @@ MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
 #: khach va KHONG duoc dung toi.
 #: Cua so ngu canh cong bo cho client, khop `ngan_sach.CONG_BO_CHO_CLIENT`.
 CUA_SO_NGU_CANH = 88555
+#: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
+TOKEN_RA_TRAN = 32768
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -954,14 +956,35 @@ def go_vscode(tt: dict) -> list:
 # ── Claude Code ─────────────────────────────────────────────────────────────
 
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
-              "ANTHROPIC_DEFAULT_HAIKU_MODEL")
+              "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+              "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
+              "CLAUDE_CODE_MAX_OUTPUT_TOKENS")
 
 
 def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
     ra = []
+    # 🔴 HAI DONG CUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN.
+    #
+    #    Claude Code khong biet `ltt_llm`, nen no GIA DINH cua so 200.000 token
+    #    va bao thang ra:
+    #
+    #        "ltt_llm" is not a model this version of Claude Code recognizes,
+    #        so auto-compact will keep this session within 200k tokens
+    #        (the context window it assumes).
+    #
+    #    Tran vao that cua ta la 96.256. Voi gia dinh 200k, auto-compact **khong
+    #    bao gio kip nen**: hoi thoai vuot tran cua ta tu lau roi no van tuong
+    #    con nua duong. Khach an 413 giua chung — dung trieu chung "hoi dai thi
+    #    im lang" da mat nhieu gio de tim o phia Codex.
+    #
+    # ⭐ Da A/B do 30/08: dat bien nay xong thi canh bao bien mat.
+    #    Cung ho voi `model_catalog_json` cua Codex — hai client, hai ten khoa,
+    #    cung mot viec: NOI THAT cua so cho client, dung de no doan.
     gia_tri = {"ANTHROPIC_BASE_URL": f"{goc}/api",
                "ANTHROPIC_MODEL": MODEL,
-               "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL}
+               "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
+               "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
+               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN)}
     for ten, gt in gia_tri.items():
         ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
 

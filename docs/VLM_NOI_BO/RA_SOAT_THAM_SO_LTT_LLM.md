@@ -191,7 +191,7 @@ nửa đêm.
 | 4 | Lỗi 413 **xưng tên trần** (`limit_name`, `limit_value`, `observed`) | ✅ |
 | 5 | `KY_TU_MOI_TOKEN` một nơi; test đối chiếu hai kho | ✅ |
 | 6 | `DONG_THOI_MAY_B` khai ra để trần đồng thời của ta biết trần của B | ✅ |
-| — | `tests/test_312_ngan_sach_ltt_llm.py` — **18 phép kiểm tự đối chiếu** | ✅ |
+| — | `tests/test_334_ngan_sach_ltt_llm.py` — **18 phép kiểm tự đối chiếu** | ✅ |
 
 ### Ba lệch THẬT mà bộ kiểm mới bắt được ngay khi vừa viết xong
 
@@ -321,7 +321,7 @@ tests/test_312: 21/21 PASS, 0 skip   (chay voi may B that)
 | Trần body của nền tảng | `DEFAULT_MAX_BODY_BYTES` | biến môi trường (chỉ dùng khi cần đè tạm) |
 | Token ra mặc định | `TOKEN_RA_MAC_DINH` theo **tên cửa** | đừng thêm một "mặc định chung" nào nữa |
 
-⭐ Và sau mỗi lần đổi: `pytest tests/test_312_ngan_sach_ltt_llm.py` **có
+⭐ Và sau mỗi lần đổi: `pytest tests/test_334_ngan_sach_ltt_llm.py` **có
 `LTT_LLM_TOKEN`** — nó là thứ duy nhất bắt được ba tầng nói ba số khác nhau.
 
 ---
@@ -461,3 +461,107 @@ mới thì nó đỏ ngay.
 
 ⚠️ Bánh cóc đó **không** kiểm "có nằm trong thư mục nhà không" — trên Windows
 `tmp_path` chính nó nằm dưới thư mục nhà, nên phép kiểm đó luôn đỏ.
+
+---
+
+## 11. Claude Code cũng đoán sai cửa sổ — và đó là lỗi tiền (30/08)
+
+### 11.1 Đo được, không phải suy luận
+
+Chạy thật `claude.exe -p` qua model của ta (cấu hình **cách ly**, không chạm
+phiên nào đang sống):
+
+```
+"ltt_llm" is not a model this version of Claude Code recognizes, so auto-compact
+will keep this session within 200k tokens (the context window it assumes).
+```
+
+Trần vào thật của ta là **96.256**. Với giả định **200.000**, auto-compact
+**không bao giờ nén kịp**: hội thoại đã vượt trần của ta từ lâu mà client vẫn
+tưởng còn nửa đường. Khách ăn **413 giữa chừng** — đúng triệu chứng *"hỏi dài
+thì im lặng"* đã mất nhiều giờ truy ở phía Codex.
+
+⇒ Đây **không phải tinh chỉnh**. Nó là cùng một lỗi tiền, ở client thứ hai.
+
+### 11.2 Cách sửa, đã A/B
+
+| | cảnh báo cửa sổ |
+|---|---|
+| không đặt `CLAUDE_CODE_MAX_CONTEXT_TOKENS` | **có** |
+| đặt `= 88555` | **hết** |
+
+`cam_claude` nay đặt thêm hai biến:
+
+```
+CLAUDE_CODE_MAX_CONTEXT_TOKENS = 88555      (= ngan_sach.CONG_BO_CHO_CLIENT)
+CLAUDE_CODE_MAX_OUTPUT_TOKENS  = 32768      (= ngan_sach.TOKEN_RA_TRAN)
+```
+
+⚠️ **Không dùng `modelOverrides`.** Đọc mô tả trong chính binary: nó là *ánh xạ
+từ model ID của Anthropic sang model ID của nhà cung cấp* — dùng để đổi tên, và
+cửa sổ vẫn lấy theo model ID của Anthropic. Nó **không** giải bài này.
+
+### 11.3 Hai client, một nguồn chân lý
+
+`test_334::TestCamCliKhopNganSach` chốt cả hai đường cùng nói một con số:
+
+| client | khoá | nói cửa sổ ở đâu |
+|---|---|---|
+| Codex | `model_catalog_json` | `context_window` trong tệp catalog |
+| Claude Code | biến môi trường | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` |
+
+Bỏ sót một bên là để **đúng một client** rơi lại vào lỗi vừa sửa cho client kia.
+
+### 11.4 Thử Claude Code an toàn — không cần VM
+
+`claude.exe` đọc `CLAUDE_CONFIG_DIR`, nên cách ly được hoàn toàn:
+
+```powershell
+$env:CLAUDE_CONFIG_DIR = "$env:TEMP\claude_thu_ltt"   # cau hinh RIENG
+$env:ANTHROPIC_BASE_URL = "https://app.lttstudios.com/api"
+$env:ANTHROPIC_MODEL    = "ltt_llm"
+$env:ANTHROPIC_AUTH_TOKEN = "<khoa LTT>"
+$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "88555"
+& $claude -p "cau hoi" --output-format text
+```
+
+Ba điều đã kiểm, không phải phỏng đoán:
+
+1. **Claude Desktop không bị chạm.** Đường của Desktop là chính sách registry
+   `HK*\SOFTWARE\Policies\Claude`; đọc máy 30/08 thì **cả HKCU lẫn HKLM đều
+   không có khoá đó**. Desktop không đọc `settings.json`, không đọc
+   `ANTHROPIC_BASE_URL`.
+2. **Phiên đang chạy không bị ngắt.** Env cấp User đã trỏ về LTT từ 27/08 mà
+   phiên đang chạy vẫn `ANTHROPIC_BASE_URL=https://api.anthropic.com`. `setx`
+   ghi registry, **không** đổi môi trường tiến trình đang sống; `settings.json`
+   đọc **lúc khởi động**. ⇒ chỉ ảnh hưởng phiên mở **sau**.
+3. Vì (1) và (2), **không cần VM** cho việc thử này. VM chỉ cần khi muốn thử
+   chính đường `cam`/`go` (setx + registry) đúng như khách sẽ chạy.
+
+---
+
+## 12. Dọn theo — gate thôi đỏ ngẫu nhiên (30/08)
+
+Ba thứ làm cổng chất lượng đỏ vì **chính nó**, không vì mã:
+
+**① `test_209` sửa thẳng `CONTRACT_BASELINE.json`.** Có `try/finally`, nhưng
+`finally` không chạy khi tiến trình bị giết — và `gate.py` chạy
+`check_api_compat.py` **song song** với bộ test, nên cổng đọc tệp trong khi test
+đang sửa. Tệ hơn: một lượt bị ngắt để tệp lại bẩn, rồi lượt sau chụp **đúng bản
+bẩn đó** làm `saved` và ghi lại ⇒ rác **tự nhân lên**.
+⇒ Nay các phép kiểm đó chạy trên **bản sao** (`_ban_sao`), qua hai biến chỉ dành
+cho test: `LTT_CONTRACT_BASELINE` và `LTT_CONTRACT_BASELINE_COMMITTED`. Có bánh
+cóc `test_KHONG_test_nao_duoc_GHI_vao_ban_chuan_that`.
+
+**② `check_bo_qua.py --accept` ghi CRLF**, nên mỗi lần chấp nhận một dòng lại
+đổi **cả tệp** — diff 14 dòng cho một thay đổi 1 dòng. Đã `newline=""`.
+
+**③ Số test trùng.** `test_312` bị hai phiên dùng cùng lúc; bản của đợt này đổi
+thành **`test_334_ngan_sach_ltt_llm.py`**.
+
+⚠️ Còn **một chỗ chưa đóng, và nó không thuộc đợt này**:
+`test_252_vps_giao_dien.py::test_app_TAT_khong_lot_vao_trang_chu_cua_nguoi_da_dang_nhap`
+đỏ **một lần** trong lượt gate ngay sau khi đổi tên tệp test (đổi tên làm đổi
+thứ tự chia nhóm song song), rồi xanh ở hai lượt sau và xanh khi chạy riêng.
+Dấu hiệu **trạng thái ngoài rò vào test**, không phải lỗi của mã VPS. Ghi ra đây
+để lần sau không ai truy nhầm sang phía `ltt_llm`.
