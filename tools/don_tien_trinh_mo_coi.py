@@ -109,14 +109,21 @@ def main(argv=None) -> int:
         print(f"Khong co tien trinh mo coi nao cu hon {a.gio:g} gio.")
         return 0
 
+    import psutil
+
     ram = 0
     cu_nhat = time.time()
     for p in ds:
+        # ⭐ BAT HEP, khong bat rong roi bo qua. Mot tien trinh bien mat giua luc
+        #    quet la chuyen THUONG — no khong dang mot dong log. Nhung
+        #    `except Exception: pass` thi nuot ca nhung loi KHONG thuong, va o
+        #    mot cong cu giet tien trinh, thu bi nuot co the chinh la ly do no
+        #    khong lam duoc viec.
         try:
             ram += p.memory_info().rss
             cu_nhat = min(cu_nhat, p.create_time())
-        except Exception:                                       # noqa: BLE001
-            pass
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
     tuoi = (time.time() - cu_nhat) / 3600.0
     print(f"Tien trinh con mo coi (cu hon {a.gio:g} gio): {len(ds)}")
     print(f"  RAM dang giu : {ram / 1024 ** 3:.1f} GB")
@@ -127,13 +134,24 @@ def main(argv=None) -> int:
         return 0
 
     xong = 0
+    khong_duoc: list = []
     for p in ds:
         try:
             p.kill()
             xong += 1
-        except Exception:                                       # noqa: BLE001
-            pass
+        except psutil.NoSuchProcess:
+            # Da tu thoat truoc khi ta toi. Van la ket qua dung.
+            xong += 1
+        except psutil.AccessDenied as exc:
+            # ⛔ KHONG nuot cai nay. In "Da dung: 194/194" trong khi that ra 12
+            #    cai con song la mot BAO CAO SAI — va lan sau nguoi doc se tin no
+            #    roi di tim nguyen nhan o cho khac.
+            khong_duoc.append((p.pid, str(exc)))
     print(f"\nDa dung: {xong}/{len(ds)}")
+    if khong_duoc:
+        print(f"KHONG dung duoc {len(khong_duoc)} (khong du quyen):")
+        for pid, vi_sao in khong_duoc[:5]:
+            print(f"  pid {pid}: {vi_sao}")
     return 0
 
 

@@ -58,7 +58,30 @@ import sys
 from babel.messages import pofile
 
 GOC = pathlib.Path(__file__).resolve().parent.parent
-TEP_PO = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+#: ⭐ SEAM CHO TEST — va do la SUA LOI, khong phai tien nghi.
+#:
+#:    `test_306` phai chay CHINH cong nay (mot cong chi kiem qua thu vien la mot
+#:    cong khong ai kiem day dien). De lam vay, ba phep kiem cua no ghi de
+#:    `messages.po` THAT roi tra ve trong `finally`. Cho do da vá **ba lan**:
+#:      · 26/08 — `write_text` doi LF thanh CRLF, "khoi phuc" khac ban goc
+#:                10.465 dong, va `git status` cua bat ky ai chay pytest bong
+#:                co mot tep .po sua doi khong hieu tu dau;
+#:      · luot sau — phai tra lai ca `st_mtime` (`os.utime`), vi dau van tay cua
+#:                gate doc mtime nen mot lan ghi-lai-y-het van lam no keu
+#:                "CAY DA DOI TRONG LUC CHAY";
+#:      · 30/08 — mot luot gate bi cat ngang de tep o lai **ban**, va nguoi don
+#:                phai chon giua "khoi phuc" va "giu cong nguoi khac dang lam
+#:                do trong cung tep do". Lan do mat 78 ban dich cua mot phien
+#:                khac.
+#:
+#: ⛔ Ba lan vá deu la vá TRIEU CHUNG. Goc la: **test khong duoc ghi vao tep
+#:    that**. Tro bien nay sang mot ban sao thi ca ba trieu chung bien mat cung
+#:    luc, va mot tien trinh bi giet giua chung khong de lai gi.
+#:
+#: ⛔ Bien nay CHI de test dung. Ma chay that khong bao gio dat no.
+_PO_THU = __import__("os").environ.get("LTT_PO_FILE")
+TEP_PO = (pathlib.Path(_PO_THU) if _PO_THU
+          else GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po")
 TEP_MOC = pathlib.Path(__file__).with_name("check_dich_thieu.moc")
 DAU_HIEU = "# tap-hop-muc-chua-dich"
 

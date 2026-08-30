@@ -20,10 +20,50 @@ import sys
 GOC = pathlib.Path(__file__).resolve().parent.parent
 
 
-def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None):
+def _chay(cong_cu: str, *doi_so: str, cwd: pathlib.Path | None = None,
+          po: pathlib.Path | None = None):
+    """Chay CHINH cong do. `po` tro no sang mot BAN SAO cua `messages.po`.
+
+    🔴 VI SAO CAN `po` — VA VI SAO BA LAN VA TRUOC DEU KHONG DU.
+
+       Bon phep kiem duoi day tung ghi de `locale/en/LC_MESSAGES/messages.po`
+       THAT roi tra ve trong `finally`. Cho do da va **ba lan**, moi lan mot
+       trieu chung khac:
+
+         26/08  `write_text` doi LF -> CRLF. Ban "khoi phuc" khac ban goc
+                **10.465 dong**, va `git status` cua bat ky ai chay pytest bong
+                co mot tep .po sua doi khong hieu tu dau. Sua: `write_bytes`.
+         sau do Phai tra lai ca `st_mtime` (`os.utime`) — dau van tay cua gate
+                doc mtime, nen mot lan ghi-lai-y-het van lam no in
+                "CAY DA DOI TRONG LUC CHAY", tu vo hieu hoa ca luot gate.
+         30/08  **Mat du lieu.** Hai luot gate chay song song:
+                  A chup `goc` = ban day du, ghi fixture
+                  B chup `goc` = **ban fixture cua A**, ghi tiep
+                  A khoi phuc ban day du
+                  B khoi phuc **ban fixture** de len  ->  con 81 byte
+                Lan do xoa 78 muc dich cua mot phien khac, va `git status` VAN
+                SACH — nen no khong nhin nhu mot su co, no nhin nhu chua ai lam
+                gi ca.
+
+    ⛔ Ba lan va deu dung ve ky thuat va deu la va TRIEU CHUNG. Goc chi co mot:
+       **mot test ghi vao tep that thi khong the an toan** — khong voi hai tien
+       trinh, khong voi mot tien trinh bi giet, khong voi mot nguoi khac dang
+       sua cung tep do.
+    """
+    env = dict(os.environ)
+    if po is not None:
+        env["LTT_PO_FILE"] = str(po)
     return subprocess.run([sys.executable, f"tools/{cong_cu}", *doi_so],
                           cwd=cwd or GOC, capture_output=True, text=True,
-                          encoding="utf-8", errors="replace")
+                          encoding="utf-8", errors="replace", env=env)
+
+
+def _po_ban_sao(tmp_path: pathlib.Path, them: str = "") -> pathlib.Path:
+    """Ban sao cua `messages.po`, co the noi them fixture. KHONG cham tep that."""
+    goc = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    ban = tmp_path / "messages.po"
+    ban.write_bytes(goc.read_bytes() + them.encode("utf-8"))
+    return ban
 
 
 # ── 1. Banh coc BO QUA IM LANG ─────────────────────────────────────────────
@@ -77,7 +117,11 @@ def test_fuzzy_duoc_DEM_NHU_CHUA_DICH():
     assert "FUZZY\t" in moc, "muc fuzzy phai nam trong moc, khong duoc mien"
 
 
-# ⛔ BA TEST DUOI DAY GHI DE `locale/en/LC_MESSAGES/messages.po` THAT.
+# ⛔ BA TEST DUOI DAY TUNG GHI DE `locale/en/LC_MESSAGES/messages.po`
+#    THAT. **KHONG CON NUA tu 30/08** — chung chay tren ban sao qua
+#    `_po_ban_sao()` + `LTT_PO_FILE`. Giu nguyen ca doan duoi vi no ghi
+#    lai BA LAN VA truoc do, va ba lan ay deu dung ky thuat ma deu vá
+#    TRIEU CHUNG — do moi la thu dang doc.
 #
 #    Khoi phuc trong `finally` PHAI la `write_bytes`, khong duoc `write_text`.
 #    Do that 26/08: ban dau chung dung `write_text(..., encoding="utf-8")`, va
@@ -139,77 +183,59 @@ def _bat_buoc_khong_con_rac(tep) -> None:
             f"Chay: git checkout -- {tep.relative_to(GOC).as_posix()}")
 
 
-def test_chuoi_MOI_chua_dich_lam_do():
-    po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
-    _bat_buoc_khong_con_rac(po)
+def test_chuoi_MOI_chua_dich_lam_do(tmp_path):
+    # Ban sao. KHONG cham tep that.
+    po = _po_ban_sao(tmp_path)
     goc = po.read_text(encoding="utf-8")
-    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
-    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
-    try:
-        po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
-                            'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
-                      encoding="utf-8")
-        r = _chay("check_dich_thieu.py")
-        assert r.returncode == 1, "them mot chuoi chua dich MOI ma van PASS"
-        assert "MUC MOI CHUA DICH" in r.stdout
-    finally:
-        po.write_bytes(goc_byte)
-        os.utime(po, ns=(goc_mtime, goc_mtime))
+    po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
+                        'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
+                  encoding="utf-8")
+    r = _chay("check_dich_thieu.py", po=po)
+    assert r.returncode == 1, "them mot chuoi chua dich MOI ma van PASS"
+    assert "MUC MOI CHUA DICH" in r.stdout
 
 
-def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI():
+def test_HOAN_DOI_van_lam_do_du_TONG_KHONG_DOI(tmp_path):
     """🔴 Chinh la ca lam `check_so_test.py` bao PASS tren mot va cham that.
 
     Dich mot muc cu VA them mot muc moi trong cung mot luot: tong van dung 279.
     Mot moc dem SO LUONG se noi PASS. Moc dem TAP HOP phai noi FAIL.
     """
-    po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
-    _bat_buoc_khong_con_rac(po)
+    # Ban sao. KHONG cham tep that.
+    po = _po_ban_sao(tmp_path)
     goc = po.read_text(encoding="utf-8")
-    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
-    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     moc = (GOC / "tools" / "check_dich_thieu.moc").read_text(encoding="utf-8")
     mot = next(d.split("\t", 1)[1]
                for d in moc.splitlines() if d.startswith("TRONG\t"))
     truoc = f'msgid "{mot}"\nmsgstr ""'
     if truoc not in goc:                       # muc nhieu dong — bo qua ca nay
         return
-    try:
-        moi = goc.replace(truoc, f'msgid "{mot}"\nmsgstr "TRANSLATED"', 1)
-        po.write_text(moi + '\n#: server/templates/khong_co_that.html:1\n'
-                            'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
-                      encoding="utf-8")
-        r = _chay("check_dich_thieu.py")
-        assert r.returncode == 1, (
-            "hoan doi mot-doi-mot lot qua — moc dang dem SO LUONG chu khong "
-            "phai TAP HOP")
-        assert "MUC MOI CHUA DICH" in r.stdout
-    finally:
-        po.write_bytes(goc_byte)
-        os.utime(po, ns=(goc_mtime, goc_mtime))
+    moi = goc.replace(truoc, f'msgid "{mot}"\nmsgstr "TRANSLATED"', 1)
+    po.write_text(moi + '\n#: server/templates/khong_co_that.html:1\n'
+                        'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
+                  encoding="utf-8")
+    r = _chay("check_dich_thieu.py", po=po)
+    assert r.returncode == 1, (
+        "hoan doi mot-doi-mot lot qua — moc dang dem SO LUONG chu khong "
+        "phai TAP HOP")
+    assert "MUC MOI CHUA DICH" in r.stdout
 
 
-def test_accept_TU_CHOI_khi_con_muc_moi():
+def test_accept_TU_CHOI_khi_con_muc_moi(tmp_path):
     """`--accept` phai la duong HA moc, khong duoc thanh duong im lang nang no."""
-    po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
-    _bat_buoc_khong_con_rac(po)
+    # Ban sao. KHONG cham tep that.
+    po = _po_ban_sao(tmp_path)
     goc = po.read_text(encoding="utf-8")
-    goc_byte = po.read_bytes()      # khoi phuc phai BYTE-EXACT — xem chu thich duoi
-    goc_mtime = po.stat().st_mtime_ns   # ...VA phai tra lai ca DAU THOI GIAN
     moc_truoc = (GOC / "tools" / "check_dich_thieu.moc").read_bytes()
     moc_mtime = (GOC / "tools" / "check_dich_thieu.moc").stat().st_mtime_ns
-    try:
-        po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
-                            'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
-                      encoding="utf-8")
-        r = _chay("check_dich_thieu.py", "--accept")
-        assert r.returncode == 1, "--accept nang moc len duoc"
-    finally:
-        po.write_bytes(goc_byte)
-        os.utime(po, ns=(goc_mtime, goc_mtime))
-        moc_tep = GOC / "tools" / "check_dich_thieu.moc"
-        moc_tep.write_bytes(moc_truoc)
-        os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
+    po.write_text(goc + '\n#: server/templates/khong_co_that.html:1\n'
+                        'msgid "Chuoi thu banh coc"\nmsgstr ""\n',
+                  encoding="utf-8")
+    r = _chay("check_dich_thieu.py", "--accept", po=po)
+    assert r.returncode == 1, "--accept nang moc len duoc"
+    moc_tep = GOC / "tools" / "check_dich_thieu.moc"
+    moc_tep.write_bytes(moc_truoc)
+    os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
 
 
 # ── 3. Ca hai phai nam TRONG gate ──────────────────────────────────────────
@@ -270,27 +296,81 @@ def test_chuoi_DA_BOC_ma_VANG_khoi_catalog_lam_do():
         os.utime(mau, ns=(goc_mtime, goc_mtime))
 
 
-def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac():
+def test_khoi_tao_loai_KHONG_nuot_duoc_loai_khac(tmp_path):
     """`--khoi-tao-loai` la cua thoat duy nhat, va no phai bi chan hai phia.
 
     Mot cua thoat khong gioi han se thanh cach nguoi ta lam im lang moi thu
     khac — nen no chi nhan muc CUA DUNG MOT LOAI duoc goi ten.
     """
-    po = GOC / "locale" / "en" / "LC_MESSAGES" / "messages.po"
+    # Bản sao cho `.po`. `.moc` vẫn là tệp thật — nó nhỏ, được trả lại
+    # byte-exact, và quan trọng hơn: nó không phải thứ người khác đang sửa.
+    po = _po_ban_sao(tmp_path)
     moc_tep = GOC / "tools" / "check_dich_thieu.moc"
     goc = po.read_bytes()
     moc = moc_tep.read_bytes()
-    goc_mtime = po.stat().st_mtime_ns
     moc_mtime = moc_tep.stat().st_mtime_ns
     try:
         po.write_bytes(goc.rstrip(b"\n") + b'\n\nmsgid "Chuoi thu loai TRONG"\n'
                                            b'msgstr ""\n')
-        r = _chay("check_dich_thieu.py", "--khoi-tao-loai", "VANG")
+        r = _chay("check_dich_thieu.py", "--khoi-tao-loai", "VANG", po=po)
         assert r.returncode == 1, (
             "khoi tao loai VANG da nuot mot muc TRONG moi")
         assert "ngoai loai VANG" in (r.stdout + r.stderr)
     finally:
-        po.write_bytes(goc)
-        os.utime(po, ns=(goc_mtime, goc_mtime))
         moc_tep.write_bytes(moc)
         os.utime(moc_tep, ns=(moc_mtime, moc_mtime))
+
+
+def test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT():
+    """Bánh cóc — và nó đóng lại một chỗ đã vá **ba lần** mà chưa lần nào tới gốc.
+
+    Bốn phép kiểm trong tệp này từng ghi đè `locale/en/LC_MESSAGES/messages.po`
+    thật rồi trả về trong `finally`. Ba lần vá, ba triệu chứng khác nhau:
+
+      26/08  `write_text` đổi LF → CRLF; bản "khôi phục" khác bản gốc **10.465
+             dòng**, và `git status` của bất kỳ ai chạy pytest bỗng bẩn.
+      sau đó Phải trả lại cả `st_mtime` — dấu vân tay của gate đọc mtime, nên
+             một lần ghi-lại-y-hệt vẫn làm nó in *"CAY DA DOI TRONG LUC CHAY"*,
+             tức một lượt gate tự vô hiệu hoá chính nó.
+      30/08  **Mất dữ liệu.** 78 mục dịch của một phiên khác biến mất, và
+             `git status` vẫn **sạch** — nên nó không nhìn như một sự cố, nó
+             nhìn như chưa ai làm gì cả.
+
+    ⚠️ Ở lần thứ ba có **ít nhất hai cơ chế** cùng cho ra đúng triệu chứng đó:
+       hai lượt gate chạy song song (lượt B chụp `goc` = bản fixture của A rồi
+       "khôi phục" đè lên), **và** một lần `git checkout` khôi phục tệp bẩn mà
+       không tách được rác test khỏi công người khác. Không có bằng chứng tách
+       được hai cái. ⇒ Đừng ghi nguyên nhân là một trong hai.
+
+    ⭐ Điều đáng ghi là: **cả hai đều biến mất khi test thôi ghi vào tệp thật.**
+       Đó là lý do bản vá này đúng cho cả hai mà không cần biết cái nào đã xảy
+       ra. Ba lần vá trước đều đúng về kỹ thuật và đều vá **triệu chứng**.
+
+    ⇒ Một test ghi vào tệp thật thì **không thể an toàn** — không với hai tiến
+      trình, không với một tiến trình bị giết, không với một người khác đang
+      sửa cùng tệp đó.
+    """
+    import ast
+
+    van = pathlib.Path(__file__).read_text(encoding="utf-8")
+
+    # ⭐ Chốt ĐƯỜNG DẪN, không chốt tên hàm ghi. `po.write_text(...)` bây giờ là
+    #    hợp lệ — `po` là bản sao. Thứ không được phép là **chạm tới tệp thật**,
+    #    và tệp thật chỉ được xuất hiện ở đúng một chỗ: hàm tạo bản sao.
+    cho_phep = "_po_ban_sao"
+    xau = []
+    for nut in ast.walk(ast.parse(van)):
+        if not isinstance(nut, ast.FunctionDef):
+            continue
+        # Bo qua chinh ham nay: no PHAI nhac duong dan de tim ra duong dan.
+        # Mot banh coc bat chinh no thi khong dung duoc.
+        if nut.name in (cho_phep,
+                        "test_KHONG_test_nao_duoc_GHI_vao_messages_po_THAT"):
+            continue
+        for d in (ast.get_source_segment(van, nut) or "").splitlines():
+            if 'GOC / "locale"' in d:
+                xau.append(f"{nut.name}: {d.strip()}")
+    assert not xau, (
+        "Cac ham sau cham toi `messages.po` THAT:\n  " + "\n  ".join(xau)
+        + f"\nChi `{cho_phep}()` duoc phep. Dung `_po_ban_sao(tmp_path)` roi "
+          "`_chay(..., po=po)`.")
