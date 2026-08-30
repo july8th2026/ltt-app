@@ -1,0 +1,46 @@
+# Cai vao VENV CACH LY `C:\LTTPlatform\vieneu-venv` — KHONG BAO GIO cai vao venv
+# nen tang. Cung ly do da sinh ra `requirements-whisperx.txt`:
+#
+#   vieneu 3.3.0 ghim `transformers==4.57.6` (README: "most stable transformers
+#   for the GPU SDK") va duong GPU ghim `torch==2.8.0+cu128`. Cai de len venv nen
+#   tang se ha cap torch Blackwell va lam hong moi app GPU khac.
+#
+# THU TU CAI QUAN TRONG — xem `deploy/windows/install-vieneu-sidecar.ps1`.
+# KHONG dung `pip install -r` cho ca tep nay mot luot: torch phai lay tu index
+# cu128 rieng, con lai lay tu PyPI.
+
+# --- Buoc 1: torch tu index cu128 (KHONG phai PyPI) --------------------------
+# pip install torch==2.8.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
+torch==2.8.0
+torchaudio==2.8.0
+
+# --- Buoc 2: transformers ghim (README upstream) -----------------------------
+transformers==4.57.6
+
+# --- Buoc 3: SDK ------------------------------------------------------------
+# Ghim chinh xac. `vieneu` keo theo: sea-g2p, onnxruntime, numpy, soundfile,
+# soxr, kaldi-native-fbank, tokenizers, huggingface_hub, PyYAML, gradio, librosa.
+vieneu==3.3.0
+
+# --- Buoc 4: WATERMARK — day la mot BAN VA, khong phai mot phu thuoc thuong ---
+#
+# 🔴 `vieneu` khai `perth>=0.2.0`, nhung goi ten `perth` tren PyPI la:
+#       "Wrapper for `threading.local` with enhanced value accessor"  (1.0.0, 2015)
+#    tuc HOAN TOAN khong lien quan am thanh. Watermarker that ten la
+#    `resemble-perth` — "Audio Watermarking and Detection Library".
+#
+#    `src/vieneu/base.py::_init_watermarker` bat ca `AttributeError` roi dat
+#    `self.watermarker = None`, nen loi bi NUOT IM LANG va moi luot sinh deu
+#    KHONG co watermark trong khi API mac dinh `apply_watermark=True`.
+#
+#    Upstream issue #191 (mo tu 2026-08-21).
+#
+# ⛔ PHAI GO `perth` TRUOC khi cai `resemble-perth`: ca hai cung chiem ten module
+#    `perth`. Khong go thi cai nao cai sau cung thi thang, va ket qua khong tat dinh.
+resemble-perth==1.0.1
+
+# --- Buoc 5: may chu sidecar -------------------------------------------------
+# `vieneu` keo theo gradio nen da co fastapi/uvicorn, nhung khong duoc dua vao
+# do: gradio doi phien ban fastapi cua rieng no va co the doi bat cu luc nao.
+fastapi>=0.141.1,<1.0
+uvicorn[standard]>=0.52.0,<1.0

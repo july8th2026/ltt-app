@@ -165,6 +165,120 @@ giữ nguyên. Q115 đã được triển khai thử nhưng 80K mất `120,322s`
 `82,325s`, quality PASS. Đây là mốc vận hành đã đo, không phải tuyên bố exact
 tokenizer; request vượt cap vẫn phải bị chặn trước GPU/credit.
 
+### Q117 — LTT VOICE (VieNeu-TTS) đặt ở đâu trong kiến trúc (2026-08-30)
+
+**Một app `apps/ltt_voice/` + một sidecar `voice_sidecar/` nghe `127.0.0.1:8120`.
+KHÔNG phải một provider, KHÔNG dùng `api_pool`, KHÔNG sửa `platform_core/` hay
+`server/`.** Engine chạy **trên máy A**, trong venv cách ly
+`C:\LTTPlatform\vieneu-venv`, dưới dịch vụ NSSM thứ tư `LTTStudioVoice`.
+
+**Vì sao không phải provider như Q102 làm với `ltt_image`.** Q102 đúng cho **máy
+B**: ở đó model là một dịch vụ HTTP ở máy khác, có token phải cất, phải xoay, và
+có thể chết độc lập — đúng việc của `api_pool`. Ở đây engine chạy **cùng máy, sau
+loopback**: không có khoá để xoay, không có hạn mức nhà cung cấp để đo, không có
+cooldown để áp. Đăng ký nó làm provider sẽ buộc phải mở rộng enum hạng mục khoá
+API (`platform_core/models.py` chỉ có `model_control · chat · image · video`) —
+tức **sửa nền tảng cho một năng lực không dùng tới**. Token sidecar đi đúng đường
+`LTT_CODEX_SIDECAR_TOKEN` đã chạy thật: một biến trong `app.env`, sinh lúc cài,
+giữ nguyên khi cài lại.
+
+**Vì sao vẫn phải là một app chứ không chỉ một sidecar.** Voice Profile là **dữ
+liệu nghiệp vụ có chủ sở hữu, có vòng đời, có consent** — provider không sở hữu
+bảng. Hợp đồng app đã chừa sẵn `table_prefix` cho đúng việc này (tiền lệ
+`apps/vps/`, năm bảng).
+
+**Vì sao venv cách ly là bắt buộc, không phải sở thích.** `vieneu==3.3.0` ghim
+`transformers==4.57.6` và đường GPU ghim `torch==2.8.0+cu128`. Đây **đúng cùng
+lý do** đã sinh ra `whisperx-venv` — tệp `requirements-whisperx.txt` viết thẳng:
+*"must never downgrade the platform's Blackwell/CUDA torch environment
+in-place."* Cùng luật, thực thể thứ hai.
+
+**Cái giá đã biết trước:** dịch vụ thứ tư có `AppDirectory` trỏ vào `app\` nên nó
+**giữ handle** trên thư mục đó. `update.ps1` hôm nay dừng đúng ba dịch vụ rồi
+`Move-Item app app.previous` — quên dịch vụ thứ tư thì bản cập nhật **gãy ở giữa**,
+hoặc tệ hơn là dịch vụ chạy tiếp bằng mã cũ trong im lặng. Phải sửa cùng một lần:
+`update.ps1` · `rollback.ps1` · `nap_lai_env.ps1` (đang ghi "ba dich vu") ·
+`4-nghiem-thu.ps1`.
+
+### Q118 — LTT VOICE chạy GPU hay CPU (2026-08-30)
+
+**GPU-first: một dịch vụ ẤM duy nhất, backend PyTorch, ghim một card bằng
+`CUDA_VISIBLE_DEVICES`.** Nó phục vụ cả ba loại việc — câu ngắn, streaming, batch
+long-form. Làn CPU/ONNX giữ lại **sau một cờ**, làm đường dự phòng khi card bận
+hoặc OOM, **không** làm mặc định.
+
+Bốn bằng chứng, đọc từ mã nguồn upstream `pnnbao97/VieNeu-TTS@36c4b50` ngày 30/08:
+
+1. **Trọng số nhỏ.** Đường PyTorch chỉ cần `update/model.safetensors` 248 MB +
+   `denoiser.onnx` 42,7 MB + `speaker_encoder.onnx` 28,3 MB ≈ **320 MB** — không
+   phải cả kho 1.678 MB. Trên card 16 GB nó sống chung được với `autosubvideo`
+   (6 GB) và nhiều khả năng cả `upscalevideo` quality (12 GB); con số VRAM thật
+   phải đo và ghi vào `gpu_vram_mb`.
+2. **Đường batch GPU được thiết kế cho Windows.**
+   `src/vieneu/v3_turbo_serve/cudagraph.py` nói thẳng: *"Unlike `torch.compile`,
+   `torch.cuda.CUDAGraph` needs no compiler toolchain, so it works on Windows +
+   CUDA."* Đây là rủi ro lớn nhất của một kế hoạch GPU-first trên Windows, và
+   upstream đã xử lý.
+3. **`gpu.py` đọc `memory.free` sống** từ `nvidia-smi` mỗi lần, nên một model
+   thường trú **tự động** hiện ra thành phần trống ít đi và `gpu_lease` đã tính
+   đúng. Không cần cơ chế mới, không sửa `platform_core`.
+4. 🔴 **Streaming KHÔNG bị backend chặn** — điều này sửa một khẳng định sai của
+   bản kế hoạch trước. `src/vieneu/v3turbo.py::infer_stream` ghi:
+   *"both the PyTorch and ONNX engines expose infer_stream"*, và cả hai engine
+   đều có hàm đó thật. Câu khuyên `backend="onnx"` trong README là **khuyến nghị
+   hiệu năng** (TTFA thấp hơn với câu ngắn), không phải giới hạn năng lực.
+   ⛔ Bài học: một câu văn xuôi trong README cũng là metadata. Năng lực đọc từ
+   **mã**, rồi **đo lúc chạy** — đúng thứ pack V2 đã cảnh báo ở một tầng khác
+   (`config.yaml` khai `supports_streaming: false` trong khi mã có streaming).
+
+**Chặn đồng thời bằng ba tầng, cả ba đều cần:** làn `voice:1` trong
+`LTT_WORKER_POOLS` · `admission_resource="vieneu_gpu"` + `admission_slots=1` để
+cả ba cửa job/sync/stream giành cùng một slot (Q114) · sidecar trả **429 +
+`Retry-After`, không bao giờ 5xx** làm hàng rào cuối (D-005: máy A coi 5xx là
+*hỏng*).
+
+⚠️ Bẫy phải biết trước khi khai `requires=("voice",)`: `platform_core/jobs.py`
+lọc bằng `set(manifest.requires).issubset(capabilities)`. Production đã đặt
+`LTT_WORKER_POOLS` mà **không** có làn `voice` thì job nằm `queued` **mãi mãi** —
+không lỗi, không cảnh báo, `/health/ready` vẫn 200.
+
+### Q119 — Hai trần chất lượng của LTT VOICE, và vì sao chúng không phải nút vặn của khách (2026-08-30)
+
+**① Tham số sinh mẫu (`temperature`, `top_k`, `top_p`, `repetition_penalty`,
+`repetition_window`) là HẰNG SỐ phía máy chủ.** Không ra hợp đồng công khai
+(`hidden` trong `api_contract`), không lên giao diện. Đổi chúng phải qua cổng
+chất lượng như đổi model.
+
+Hai lý do độc lập, cả hai có bằng chứng:
+- `src/vieneu/v3_turbo_serve/engine.py` giữ `self._graphs = {}` khoá theo
+  **`(B, temperature, top_k, top_p)`**. Mỗi tổ hợp mới = một CUDA graph mới + một
+  bộ đệm tĩnh + ba lượt warmup. Cho khách chỉnh ba tham số đó là mời họ làm nổ
+  cache graph trên card của ta.
+- `temperature` cao làm **lệch tông giữa các đoạn** — chính là upstream issue
+  #173.
+
+**② Trần ký tự cho MỘT lượt sinh đặt sâu dưới 3.000, khởi điểm 1.500.** Dài hơn
+thì đi đường long-form nhiều lượt sinh, mỗi lượt cùng một `speaker_emb`/
+`ref_codes`, ghép bằng ffmpeg.
+
+Con số 3.000 không phải ước lượng: upstream issue #168, người thử báo ngày
+06/07 **sau khi tác giả đã sửa drift**: *"lỗi sẽ xuất hiện nhiều khi xử lý text
+dài khoảng 3.000 ký tự trở lên. Giọng Xuân Vĩnh sẽ dễ bị đổi giọng khác (chuyển
+sang giọng như miền Trung). Các giọng khác đôi lúc đọc sang tiếng khác như
+Thái... chỉ một đoạn rồi quay lại Việt."*
+
+⛔ **Đây là trần CHẤT LƯỢNG, không phải trần hiệu năng.** Đừng nới nó cho tiện;
+nới là đổi thứ khách nghe được, nên phải qua cổng đo.
+
+**③ Watermark: một bản vá bắt buộc, không phải một phụ thuộc tuỳ chọn.** `vieneu`
+khai `perth>=0.2.0`, nhưng gói tên `perth` trên PyPI là *"Wrapper for
+`threading.local`"* — không liên quan âm thanh. Watermarker thật là
+`resemble-perth`. `base.py::_init_watermarker` bắt cả `AttributeError` rồi đặt
+`self.watermarker = None`, nên lỗi bị **nuốt im lặng** và mọi lượt sinh đều không
+có watermark trong khi mặc định `apply_watermark=True` (upstream #191).
+⇒ Bộ cài **gỡ `perth`, cài `resemble-perth`**; sidecar **từ chối khởi động** nếu
+`watermarker is None`. Không đi tiếp trong im lặng như upstream.
+
 ## 2. Ràng buộc bất biến
 
 Những điều dưới đây **không được vi phạm**, kể cả khi tiện tay:

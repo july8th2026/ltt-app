@@ -109,18 +109,57 @@ token ChatGPT khỏi mọi thứ khác trong web app.
 
 ---
 
-## 5. Developer API Center
+## 5. Developer API Center — 🔴 **khuyến nghị ban đầu của tôi SAI, đã rút**
 
-**Quan sát.** Cả cụm `/developers/*` trả **303 về `/login`**.
+### Tôi đã đề xuất gì, và vì sao nó sai
 
-### ⭐ Khuyến nghị
+Bản đầu của mục này viết: *"cả cụm `/developers/*` trả 303 về `/login`… nên làm
+một trang danh mục **công khai** sinh từ cùng builder"*, kèm tiền lệ `/vps`.
 
-Một trang danh mục **công khai**, sinh từ **cùng builder** với trang sau đăng
-nhập. Ranh giới giữ nguyên: *thứ giúp người ta quyết định mua thì công khai;
-thứ gắn với một tài khoản thì sau đăng nhập.*
+**Quan sát thì đúng, kết luận thì sai.** Nó là một quyết định của chủ sản phẩm,
+đã chốt **hai lần**, và tôi đã suy diễn ngược lại nó.
 
-Tiền lệ: `/vps` hồi 25/08 — thẻ app trong catalog trỏ tới trang đòi đăng nhập,
-và chốt hồi đó là **trang bán phải phục vụ cả khách chưa đăng nhập**.
+`docs/PUBLIC_API/QUY_CHUAN_TRANG_TAI_LIEU_API.md` §1 ghi nguyên văn:
+
+> **TOÀN BỘ `/developers/*` đứng sau đăng nhập.** Hệ thống API của LTT phải
+> đăng nhập mới kích hoạt được, nên cả khu đó là khu **của tài khoản**, không
+> phải khu bán hàng.
+
+> ⚠️ Chốt này đã đi qua hai nhịp […] nhịp đầu chủ sản phẩm bác riêng `tools`;
+> nhịp sau chốt **cả khu**.
+
+Và mã còn dựng bánh cóc hai chiều quanh nó — `TRANG_CONG_KHAI = frozenset()`,
+với `test_300::test_danh_sach_cong_khai_dung_bang_chot_cua_chu_san_pham` tồn tại
+**chỉ để** một danh sách rỗng không làm hai phép kiểm khác im lặng biến mất.
+
+Chú thích trong `server/routes/developer/_chung.py` thậm chí đã lường trước đúng
+sai lầm tôi vừa mắc:
+
+> *"`quickstart` không nằm trong chốt đó, và nó **KHÔNG** được mở theo suy diễn:
+> mở một trang ra rồi đóng lại tệ hơn là mở chậm."*
+
+### Ranh giới thật, và nó đã đầy đủ
+
+| Công khai | Sau đăng nhập |
+|---|---|
+| `/gia-api` · `/huong-dan` · `/huong-dan/cong-cu` · `/status/api` · `/tai/…` · `/api/v1/openapi.json` | **toàn bộ `/developers/*`** |
+
+Câu phân biệt, viết sẵn trong mã: **thứ trả lời *"có đáng mua không"* thì công
+khai; thứ trả lời *"tôi đang dùng cái gì"* thì sau đăng nhập.**
+
+### ⭐ Việc thật của Phase 06, sau khi rút khuyến nghị sai
+
+Không phải *mở thêm trang*, mà là **làm đủ nội dung ở khu đã công khai**. Phần
+đó **đã làm trong ngày 30/08**:
+
+* con số cửa sổ ngữ cảnh sinh từ một nguồn (dẹp 6 chỗ nói ba giá trị mâu thuẫn);
+* bảng **ba cửa** (`examples.BA_CUA`) ra `/huong-dan` — trước đó thông tin
+  "có ba cửa, hai trong đó stream" chỉ có ở `/developers/quickstart`;
+* `HUONG_DAN_CAM_CLI.md` thêm `model_catalog_json`, `CLAUDE_CODE_MAX_*`, và
+  **§2.6 Gỡ ra**.
+
+⇒ Phase 06 gần như **đã xong**, và phần còn lại là của chủ sản phẩm nếu họ muốn
+đổi chốt — không phải của tôi.
 
 ---
 
@@ -155,7 +194,7 @@ nên biết điều đó **trước** khi đầu tư.
 | Media đầu vào | mở theo bậc, hoãn có ghi | 5 đường ref, ownership qua `upload_sessions` | mở hết | ref chưa kiểm ownership = khách A đọc tệp khách B |
 | Hình dạng Codex | ToolSpec `STREAM` qua `require_tool` | `streaming.py:486`, `MODES_IN_USE` | bridge thẳng trong `streaming.py` | mất ba cổng fail-closed + mất cô lập tiến trình |
 | Backend Codex | **giữ Auth** | `USER_DECISIONS.md` §2 | provider API-key | không phải target chính; chỉ là phương án B nếu chủ sản phẩm đổi hướng |
-| Trang tài liệu | trang công khai, **cùng builder** | `/developers/*` 303; tiền lệ `/vps` | viết trang riêng | sinh danh sách thứ hai — `USER_DECISIONS.md` §7 cấm |
+| ~~Trang tài liệu~~ | 🔴 **RÚT** — chủ sản phẩm đã chốt hai lần rằng toàn bộ `/developers/*` sau đăng nhập | `QUY_CHUAN_TRANG_TAI_LIEU_API.md` §1; `TRANG_CONG_KHAI = frozenset()` + bánh cóc `test_300` | mở một trang danh mục công khai | **tôi đã đề xuất đúng cái này và nó sai** — suy diễn ngược một quyết định đã chốt. Xem §5 |
 
 ---
 

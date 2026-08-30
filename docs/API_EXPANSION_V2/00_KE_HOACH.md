@@ -122,7 +122,7 @@ Còn lại:
 
 | # | Việc | Nghiệm thu |
 |---|---|---|
-| B1 | 🔴 **Cả cụm `/developers/*` đang 303 về `/login`** — danh mục tool và quickstart nằm sau cổng đăng ký. Người đang **cân nhắc** tích hợp chưa có tài khoản. Cùng lớp lỗi với `/vps` hồi 25/08, và chốt hồi đó là *trang bán phải phục vụ cả khách chưa đăng nhập* | một trang danh mục **công khai** sinh từ cùng builder; không có dữ liệu của tài khoản nào lọt ra |
+| ~~B1~~ | 🔴 **RÚT — khuyến nghị này SAI.** Tôi đề xuất mở một trang danh mục công khai, nhưng chủ sản phẩm **đã chốt hai lần** rằng *toàn bộ `/developers/*` đứng sau đăng nhập* (`QUY_CHUAN_TRANG_TAI_LIEU_API.md` §1), và mã có bánh cóc hai chiều quanh chốt đó. Xem `02_OPTIONS` §5. | — |
 | B2 | Mỗi tool/model/capability có: route, hình dạng request, ví dụ chạy được, giá, chế độ thi hành | ví dụ trong tài liệu **chạy được** ở test-mode |
 | B3 | Không danh sách thứ hai — mọi thứ từ registry/contract | bánh cóc: gate đỏ nếu có danh sách gõ tay |
 
