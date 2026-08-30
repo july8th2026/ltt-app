@@ -82,3 +82,46 @@ def test_mau_artifact_khong_bat_nham_upload_id(gia_tri, khop):
     from server.api.uploads import _MAU_ARTIFACT
 
     assert bool(_MAU_ARTIFACT.fullmatch(gia_tri)) is khop, gia_tri
+
+
+def test_do_thoi_luong_CHAY_DUOC_tren_artifact_noi_chuoi(monkeypatch):
+    """Chỗ dễ vỡ nhất của việc nối chuỗi, và nó là chỗ **tính tiền**.
+
+    Recipe A là `video.generate` → `video.upscale`. Nhưng `video.upscale` khai
+    `duration_s: {"measured_from": "video_key"}` — máy chủ **đo** thời lượng từ
+    tệp lúc báo giá (H35.10a, đóng lại Q84: giá không bao giờ được tính từ con
+    số người gọi khai).
+
+    ⇒ Nếu `apply_server_measurements` không đọc được `ThamChieuArtifact` thì
+      chuỗi này chết **ở đúng bước tính tiền** — và nó sẽ chết bằng một 400 khó
+      hiểu chứ không phải một câu nói rõ.
+    """
+    from platform_core.public_api import invocation
+    from platform_core.registry import discover
+
+    tool = next(t for m in discover() if not m.error
+                and m.manifest.slug == "upscalevideo"
+                for t in m.manifest.tools if t.name == "video.upscale")
+
+    # Kho giả: mọi khoá đều giải được thành một đường dẫn.
+    class _Kho:
+        @staticmethod
+        def local_path(key):
+            return f"/gia/{key}"
+
+        @staticmethod
+        def try_url_for(key):
+            return None
+
+    monkeypatch.setattr("platform_core.media.probe",
+                        lambda src: {"duration": 12.5})
+
+    tham_chieu = invocation.ThamChieuArtifact(
+        staging_key="upscalevideo/u1/job_abc/video_key.mp4",
+        filename="video_key.mp4")
+    ra = invocation.apply_server_measurements(
+        tool, {"video_key": "job_abc.video_key.0"},
+        sessions={"video_key": tham_chieu}, storage=_Kho())
+
+    assert ra["duration_s"] == 12.5, (
+        "khong do duoc thoi luong tu artifact -> Recipe A chet o buoc tinh tien")

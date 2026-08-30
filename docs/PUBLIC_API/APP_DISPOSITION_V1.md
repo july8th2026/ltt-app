@@ -52,9 +52,38 @@ trạng thái nào khác mà app vẫn publish thì test đỏ.
 | `text.prompt_package` | prompt_ai_ommi | theo `scene_count` | ẩn `operation`/`model`/`resources` |
 | `story.storyboard` | prompt_ai_ommi | theo `scene_count` | như trên |
 
-5 ToolSpec còn lại **không** public: `video.generate`, `video.upscale`, `video.subtitle`,
-`video.short_clips` (chờ migrate), `image.batch_generate` (trùng năng lực với
-`image.generate`, `count` đã làm được).
+🔴 **SỬA 2026-08-30 — CÂU DƯỚI ĐÂY ĐÃ LỖI THỜI, và nó lỗi về phía nguy hiểm.**
+
+~~5 ToolSpec còn lại **không** public: `video.generate`, `video.upscale`,
+`video.subtitle`, `video.short_clips` (chờ migrate), `image.batch_generate`.~~
+
+Ba trong năm cái đó **đã có hợp đồng công khai**:
+
+| Tool | Thay đổi |
+|---|---|
+| `video.upscale` · `video.subtitle` | **mở 29/08** (H35.10) — máy chủ đo thời lượng lúc báo giá, đóng lại Q84 |
+| `video.generate` | **hợp đồng đóng băng 30/08** (API Expansion V2 Phase 03); operator **chưa bật** |
+
+⇒ Còn **hai** chưa có hợp đồng: `video.short_clips` (thiếu trần đồng thời GPU,
+H35.10c) và `image.batch_generate` (trùng năng lực với `image.generate`).
+
+⛔ **Vì sao nó lỗi về phía nguy hiểm:** một phiên sau đọc câu cũ sẽ tin ba tool
+đó là mã chết và sửa chúng như mã chết. Hai trong ba **đang phục vụ khách trả
+tiền**.
+
+⭐ Đây là **lần thứ ba** trong dự án một tài liệu trạng thái nói sai theo cùng
+hướng đó (hai lần trước ở hàng H35 của `CLAUDE.md`, sửa 26/08 và 30/08). Bài học
+đã ghi ở đó và áp luôn ở đây: **đừng đọc con số trong tài liệu, hỏi máy chủ.**
+
+```powershell
+Invoke-RestMethod https://app.lttstudios.com/api/v1/tools -Headers @{Authorization="Bearer $env:LTT_API_KEY"; "User-Agent"="ltt/1.0"} | ForEach-Object items | Select-Object name
+```
+
+hoặc, cho trạng thái trong cây (kể cả tool đã khai mà chưa bật):
+
+```powershell
+python tools\do_current_truth.py
+```
 
 ## 3. Ba việc chặn, một nguyên nhân gốc
 
