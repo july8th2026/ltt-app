@@ -11637,3 +11637,331 @@ msgstr "Plugging in Codex or Claude Code means the two streaming doors — the t
 
 msgid "Cửa"
 msgstr "Door"
+
+#: apps/ltt_voice
+msgid "Giọng nói LTT"
+msgstr "LTT Voice"
+
+#: apps/ltt_voice
+msgid "Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tạo giọng riêng của bạn từ một clip ba tới tám giây."
+msgstr "Turn text into natural Vietnamese speech. Create your own voice from a three-to-eight-second clip."
+
+#: apps/ltt_voice
+msgid "Âm thanh"
+msgstr "Audio"
+
+#: apps/ltt_voice
+msgid "MỚI"
+msgstr "NEW"
+
+#: apps/ltt_voice
+msgid "Tạo tiếng nói"
+msgstr "Generate speech"
+
+#: apps/ltt_voice
+msgid "Giọng của tôi"
+msgstr "My voices"
+
+#: apps/ltt_voice
+msgid "Dịch vụ giọng nói (LTTStudioVoice)"
+msgstr "Voice service (LTTStudioVoice)"
+
+#: apps/ltt_voice
+msgid "Chuyển văn bản thành giọng nói tiếng Việt."
+msgstr "Turn text into Vietnamese speech."
+
+#: apps/ltt_voice
+msgid "Chưa có văn bản để đọc."
+msgstr "There is no text to read yet."
+
+#: apps/ltt_voice
+msgid "Chỉ chọn một: giọng của bạn hoặc giọng có sẵn."
+msgstr "Pick one: your own voice or a built-in voice."
+
+#: apps/ltt_voice
+msgid "Không tìm thấy giọng này trong tài khoản của bạn."
+msgstr "That voice is not in your account."
+
+#: apps/ltt_voice
+msgid "Giọng này đang bị tắt. Hãy bật lại hoặc tạo giọng mới."
+msgstr "That voice is switched off. Turn it back on, or create a new one."
+
+#: apps/ltt_voice
+msgid "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."
+msgstr "That voice has not finished enrolling. Try again in a few minutes."
+
+#: apps/ltt_voice
+msgid "Đoạn văn bản quá dài cho một lượt đọc. Hãy chia thành nhiều đoạn ngắn hơn."
+msgstr "That passage is too long for a single read. Split it into shorter passages."
+
+#: apps/ltt_voice
+msgid "Máy tạo tiếng nói chưa sẵn sàng. Vui lòng thử lại sau."
+msgstr "The speech engine is not ready. Please try again shortly."
+
+#: apps/ltt_voice
+msgid "Máy tạo tiếng nói chưa được thiết lập trên máy chủ này (thiếu LTT_VOICE_SIDECAR_TOKEN)."
+msgstr "The speech engine is not set up on this server (LTT_VOICE_SIDECAR_TOKEN is missing)."
+
+#: apps/ltt_voice
+msgid "Máy tạo tiếng nói chưa được thiết lập."
+msgstr "The speech engine is not set up."
+
+#: apps/ltt_voice
+msgid "Thiếu thông tin để ghi danh giọng."
+msgstr "Missing information needed to enrol the voice."
+
+#: apps/ltt_voice
+msgid "Không ghi danh được giọng. Vui lòng thử lại."
+msgstr "Could not enrol the voice. Please try again."
+
+#: apps/ltt_voice
+msgid "Tệp âm thanh rỗng."
+msgstr "The audio file is empty."
+
+#: apps/ltt_voice
+msgid "Tệp vượt giới hạn {mb} MB. Clip mẫu chỉ cần vài giây, không cần cả bài."
+msgstr "The file is over the {mb} MB limit. A sample clip only needs a few seconds, not a whole track."
+
+#: apps/ltt_voice
+msgid "Không nhận ra định dạng âm thanh. Hãy gửi WAV, MP3 hoặc M4A."
+msgstr "Unrecognised audio format. Please send WAV, MP3 or M4A."
+
+#: apps/ltt_voice
+msgid "Chỉ nhận WAV, MP3 hoặc M4A."
+msgstr "Only WAV, MP3 or M4A are accepted."
+
+#: apps/ltt_voice
+msgid "Tệp WAV hỏng hoặc không phải PCM."
+msgstr "The WAV file is damaged or is not PCM."
+
+#: apps/ltt_voice
+msgid "Clip chỉ {co:.1f} giây. Cần ít nhất {can:.0f} giây giọng nói liên tục để nhân bản được."
+msgstr "The clip is only {co:.1f} seconds. Cloning needs at least {can:.0f} seconds of continuous speech."
+
+#: apps/ltt_voice
+msgid "Clip dài {co:.0f} giây, vượt {tran:.0f} giây. Hãy cắt lấy một đoạn nói rõ, không nhạc nền."
+msgstr "The clip is {co:.0f} seconds, over the {tran:.0f}-second limit. Trim it to one clearly spoken passage with no background music."
+
+#: apps/ltt_voice
+msgid "MIME khai '{khai}' khác nội dung thật '{that}'"
+msgstr "Declared MIME '{khai}' differs from the actual content '{that}'"
+
+#: apps/ltt_voice
+msgid "Không đọc được mẫu âm thanh."
+msgstr "Could not read the audio samples."
+
+#: apps/ltt_voice
+msgid "Âm thanh bị vỡ tiếng (thu quá to). Giọng nhân bản sẽ bị méo theo — nên thu lại nhỏ hơn."
+msgstr "The audio is clipping (recorded too loud). The cloned voice will inherit that distortion — record it quieter."
+
+#: apps/ltt_voice
+msgid "Hơn nửa clip là khoảng lặng. Hãy cắt bỏ phần im ở đầu và cuối."
+msgstr "More than half the clip is silence. Trim the quiet parts from the start and end."
+
+#: apps/ltt_voice
+msgid "Âm lượng rất nhỏ. Hãy thu lại gần micro hơn."
+msgstr "The level is very low. Record closer to the microphone."
+
+#: apps/ltt_voice
+msgid "Giọng bạn được phép tải lên"
+msgstr "Whose voice you may upload"
+
+#: apps/ltt_voice
+msgid "Chỉ tải lên giọng của chính bạn, hoặc giọng bạn có văn bản uỷ quyền của người nói. Không tải lên giọng người nổi tiếng, giọng lấy từ phim, video hay bản ghi mà bạn không có quyền."
+msgstr "Upload only your own voice, or a voice you hold written authorisation for. Do not upload the voice of a public figure, or a voice taken from a film, video or recording you have no rights to."
+
+#: apps/ltt_voice
+msgid "Clip mẫu"
+msgstr "Sample clip"
+
+#: apps/ltt_voice
+msgid "Từ {min:.0f} đến {max:.0f} giây, tối đa {mb} MB, định dạng WAV, MP3 hoặc M4A. Chúng tôi giữ nguyên bản clip để có thể dựng lại giọng khi nâng cấp model."
+msgstr "Between {min:.0f} and {max:.0f} seconds, up to {mb} MB, as WAV, MP3 or M4A. We keep the original clip so the voice can be rebuilt when the model is upgraded."
+
+#: apps/ltt_voice
+msgid "Độ dài mỗi lượt đọc"
+msgstr "Length of each read"
+
+#: apps/ltt_voice
+msgid "Tối đa {n} ký tự cho một lượt. Văn bản dài hơn nên chia thành nhiều lượt: giọng đọc giữ được sự đồng nhất tốt hơn khi mỗi lượt ngắn."
+msgstr "Up to {n} characters per read. Longer text should be split across several reads: the voice stays more consistent when each read is short."
+
+#: apps/ltt_voice
+msgid "Tiền"
+msgstr "Billing"
+
+#: apps/ltt_voice
+msgid "Tính theo số giây tiếng nói thật sự tạo ra, không theo số ký tự gửi lên. Chúng tôi giữ tạm một khoản theo độ dài văn bản và hoàn lại phần dư ngay khi xong. Nếu không đo được kết quả, bạn không bị trừ gì."
+msgstr "Charged by the seconds of speech actually produced, not by the characters you send. We hold an amount based on the text length and refund the remainder as soon as it finishes. If the result cannot be measured, you are charged nothing."
+
+#: apps/ltt_voice
+msgid "Đóng dấu"
+msgstr "Watermarking"
+
+#: apps/ltt_voice
+msgid "Mọi tệp tiếng tạo ra đều được đóng một dấu chìm không nghe thấy để nhận diện nội dung do máy tạo."
+msgstr "Every audio file produced carries an inaudible watermark identifying it as machine-generated."
+
+#: apps/ltt_voice
+msgid "Tôi xác nhận đây là giọng của chính tôi, hoặc tôi được người nói uỷ quyền sử dụng giọng này."
+msgstr "I confirm this is my own voice, or that the speaker has authorised me to use it."
+
+#: apps/ltt_voice
+msgid "theo giây tiếng nói sinh ra thật"
+msgstr "by the seconds of speech actually produced"
+
+#: apps/ltt_voice
+msgid "Tạo giọng mới (nhân bản)"
+msgstr "Create a new voice (cloning)"
+
+#: apps/ltt_voice
+msgid "thu một lần cho mỗi lần ghi danh"
+msgstr "charged once per enrolment"
+
+#: apps/ltt_voice
+msgid "một câu ~10 giây"
+msgstr "one sentence, ~10 seconds"
+
+#: apps/ltt_voice
+msgid "một đoạn ~60 giây"
+msgstr "one passage, ~60 seconds"
+
+#: apps/ltt_voice
+msgid "một bài ~5 phút"
+msgstr "one script, ~5 minutes"
+
+#: apps/ltt_voice
+msgid "Giữ chỗ tính theo số ký tự gửi lên; phần giữ dư được hoàn ngay khi job xong."
+msgstr "The hold is based on the characters you send; the surplus is refunded as soon as the job finishes."
+
+#: apps/ltt_voice
+msgid "Không đo được thời lượng tệp sinh ra thì hoàn đủ, thu 0."
+msgstr "If the produced file's duration cannot be measured, everything is refunded and nothing is charged."
+
+#: apps/ltt_voice
+msgid "Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Dùng giọng có sẵn, hoặc giọng riêng bạn đã tạo."
+msgstr "Turn text into natural Vietnamese speech. Use a built-in voice, or one you created yourself."
+
+#: apps/ltt_voice
+msgid "Dịch vụ giọng nói chưa được bật trên máy chủ này. Vui lòng liên hệ quản trị."
+msgstr "The voice service is not enabled on this server. Please contact an administrator."
+
+#: apps/ltt_voice
+msgid "Văn bản"
+msgstr "Text"
+
+#: apps/ltt_voice
+msgid "Nhập đoạn văn bản bạn muốn đọc thành tiếng…"
+msgstr "Type the text you want read aloud…"
+
+#: apps/ltt_voice
+msgid "ký tự"
+msgstr "characters"
+
+#: apps/ltt_voice
+msgid "credit tạm giữ"
+msgstr "credits held"
+
+#: apps/ltt_voice
+msgid "Giọng đọc"
+msgstr "Voice"
+
+#: apps/ltt_voice
+msgid "Giọng mặc định"
+msgstr "Default voice"
+
+#: apps/ltt_voice
+msgid "Cách tính tiền"
+msgstr "How billing works"
+
+#: apps/ltt_voice
+msgid "Không gửi được yêu cầu. Thử lại nhé."
+msgstr "Could not send the request. Please try again."
+
+#: apps/ltt_voice
+msgid "Tạo giọng riêng từ một clip ngắn của chính bạn."
+msgstr "Create your own voice from a short clip of yourself."
+
+#: apps/ltt_voice
+msgid "Mã giọng"
+msgstr "Voice id"
+
+#: apps/ltt_voice
+msgid "Sẵn sàng"
+msgstr "Ready"
+
+#: apps/ltt_voice
+msgid "Đang ghi danh…"
+msgstr "Enrolling…"
+
+#: apps/ltt_voice
+msgid "Bạn chưa có giọng nào."
+msgstr "You do not have any voices yet."
+
+#: apps/ltt_voice
+msgid "Tạo giọng mới"
+msgstr "Create a new voice"
+
+#: apps/ltt_voice
+msgid "Tên giọng"
+msgstr "Voice name"
+
+#: apps/ltt_voice
+msgid "Ví dụ: Giọng dẫn của tôi"
+msgstr "For example: My narration voice"
+
+#: apps/ltt_voice
+msgid "Từ 3 đến 30 giây, nói rõ, không nhạc nền."
+msgstr "Three to thirty seconds, clearly spoken, no background music."
+
+#: apps/ltt_voice
+msgid "Tạo giọng"
+msgstr "Create voice"
+
+#: apps/ltt_voice
+msgid "Hãy đặt tên cho giọng."
+msgstr "Please name the voice."
+
+#: apps/ltt_voice
+msgid "Bạn cần xác nhận đây là giọng của chính bạn hoặc bạn được uỷ quyền."
+msgstr "You need to confirm this is your own voice or that you are authorised to use it."
+
+#: apps/ltt_voice
+msgid "Không tìm thấy giọng."
+msgstr "Voice not found."
+
+#: apps/ltt_voice
+msgid "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
+msgstr "The text is {n} characters, over the {t} limit for a single read."
+
+#: apps/ltt_voice
+msgid "Lịch sử giọng nói"
+msgstr "Voice history"
+
+#: apps/ltt_voice
+msgid "Lịch sử tạo tiếng"
+msgstr "Speech history"
+
+#: apps/ltt_voice
+msgid "Chưa có lượt nào."
+msgstr "Nothing generated yet."
+
+#: apps/ltt_voice
+msgid "Credit"
+msgstr "Credits"
+
+#: apps/ltt_voice
+msgid "Danh tính công khai của một giọng: ai sở hữu, tên hiển thị, còn dùng được không. Là phía đối ứng của mọi lượt sinh tiếng đã tính tiền — mất nó thì lịch sử hoá đơn trỏ vào hư không."
+msgstr "The public identity of a voice: who owns it, its display name, whether it still works. It is the counterpart to every billed generation — lose it and the invoice history points at nothing."
+
+#: apps/ltt_voice
+msgid "Clip mẫu GỐC khách tải lên, giữ nguyên không xử lý. Hai việc: dựng lại giọng khi nâng cấp model, và chứng minh giọng nhân bản đến từ đúng tệp mà khách đã cam kết là của họ."
+msgstr "The ORIGINAL sample clip the customer uploaded, kept unprocessed. It serves two purposes: rebuilding the voice when the model is upgraded, and proving the cloned voice came from the exact file the customer attested was theirs."
+
+#: apps/ltt_voice
+msgid "Biểu diễn engine của một giọng, gắn với một phiên bản model cụ thể. KHÔNG BAO GIỜ ra API. Giữ lại để đối chiếu một tệp tiếng cũ với đúng bản model đã sinh ra nó."
+msgstr "The engine representation of a voice, bound to one specific model version. NEVER leaves through the API. Kept so an old audio file can be matched to the exact model build that produced it."
+
+#: apps/ltt_voice
+msgid "Cam kết sở hữu giọng: ai, lúc nào, bản điều khoản nào, hash tệp nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý do consent phải là DỮ LIỆU chứ không phải một ô tick."
+msgstr "The ownership attestation for a voice: who, when, which version of the terms, which file hash. This is the only table that can answer a legal question, and it is why consent has to be DATA rather than a tickbox."

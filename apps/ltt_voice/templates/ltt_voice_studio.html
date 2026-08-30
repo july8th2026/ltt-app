@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Giọng nói LTT") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Giọng nói LTT") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="lv-studio" aria-labelledby="lv-title">
+  <header class="lv-heading">
+    <div>
+      <h1 id="lv-title">{{ _("Tạo tiếng nói") }}</h1>
+      <p>{{ _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Dùng giọng có sẵn, hoặc giọng riêng bạn đã tạo.") }}</p>
+    </div>
+    <a class="btn ghost" href="{{ manifest.route_prefix }}/giong">{{ _("Giọng của tôi") }}</a>
+  </header>
+
+  {% if not cong_san_sang %}
+    {# Nói rõ đây là việc của máy chủ, không phải người dùng làm sai. #}
+    <div class="alert alert-err" role="alert">
+      {{ _("Dịch vụ giọng nói chưa được bật trên máy chủ này. Vui lòng liên hệ quản trị.") }}
+    </div>
+  {% endif %}
+
+  <form class="lv-form" id="lv-form" autocomplete="off">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <label class="lv-field">
+      {{ _("Văn bản") }} <strong>*</strong>
+      <textarea name="text" id="lv-text" rows="8" required
+                maxlength="{{ tran_ky_tu }}"
+                placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
+      <small class="lv-dem">
+        <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
+        · <span id="lv-uoc">0</span> {{ _("credit tạm giữ") }}
+      </small>
+    </label>
+
+    <label class="lv-field">
+      {{ _("Giọng đọc") }}
+      <select name="giong" id="lv-giong">
+        <option value="">{{ _("Giọng mặc định") }}</option>
+        {% if giong %}
+          <optgroup label="{{ _('Giọng của tôi') }}">
+            {% for g in giong %}
+              {% if g.trang_thai == 'active' %}
+                <option value="v:{{ g.public_id }}">{{ g.ten_hien_thi }}</option>
+              {% endif %}
+            {% endfor %}
+          </optgroup>
+        {% endif %}
+      </select>
+    </label>
+
+    <div class="lv-actions">
+      <button class="btn primary" type="submit" {% if not cong_san_sang %}disabled{% endif %}>
+        {{ _("Tạo tiếng nói") }}
+      </button>
+      <a class="btn ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Lịch sử") }}</a>
+    </div>
+  </form>
+
+  <div id="lv-ket-qua" class="lv-ket-qua" hidden>
+    <audio id="lv-player" controls preload="none"></audio>
+  </div>
+  <div id="lv-loi" class="alert alert-err" role="alert" hidden></div>
+
+  <details class="lv-gia">
+    <summary>{{ _("Cách tính tiền") }}</summary>
+    <ul>
+      {% for m in bang_gia.muc %}
+        <li><b>{{ m.ten }}</b> — {{ m.cach_tinh }}
+          {% if m.vi_du %}
+            <ul>{% for v in m.vi_du %}<li>{{ v.mo_ta }}: {{ v.credit }} credit</li>{% endfor %}</ul>
+          {% else %}: {{ m.credit }} credit{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    {% for g in bang_gia.ghi_chu %}<p><small>{{ g }}</small></p>{% endfor %}
+    <p><small>{{ _("Bảng giá") }}: <code>{{ bang_gia.phien_ban }}</code></small></p>
+  </details>
+</section>
+
+<script>
+(function () {
+  var o = document.getElementById('lv-text');
+  var so = document.getElementById('lv-so');
+  var uoc = document.getElementById('lv-uoc');
+  // Ước phía trình duyệt CHỈ để hiển thị. Số thật do máy chủ tính khi nộp —
+  // hai chỗ tính tiền là hai chỗ lệch nhau, nên chỗ này không bao giờ được là
+  // nguồn của con số bị trừ.
+  function dem() {
+    var n = o.value.length;
+    so.textContent = n;
+    uoc.textContent = n ? Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)) : 0;
+  }
+  o.addEventListener('input', dem); dem();
+
+  document.getElementById('lv-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var loi = document.getElementById('lv-loi');
+    var kq = document.getElementById('lv-ket-qua');
+    loi.hidden = true; kq.hidden = true;
+
+    var g = document.getElementById('lv-giong').value || '';
+    var fd = new FormData();
+    fd.append('csrf_token', e.target.csrf_token.value);
+    fd.append('text', o.value);
+    if (g.indexOf('v:') === 0) { fd.append('voice_id', g.slice(2)); }
+
+    fetch('{{ manifest.route_prefix }}/tao', {method: 'POST', body: fd})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { loi.textContent = d.loi; loi.hidden = false; return; }
+        window.location.href = '/jobs/' + d.job_id;
+      })
+      .catch(function () {
+        loi.textContent = '{{ _("Không gửi được yêu cầu. Thử lại nhé.") }}';
+        loi.hidden = false;
+      });
+  });
+})();
+</script>
+{% endblock %}

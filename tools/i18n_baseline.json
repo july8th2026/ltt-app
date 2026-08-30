@@ -113,7 +113,8 @@
     "server/templates/status.html": 7,
     "server/templates/verify_result.html": 3,
     "server/templating.py": 6,
-    "server/usage_rate_limit.py": 1
+    "server/usage_rate_limit.py": 1,
+    "apps/ltt_voice/manifest.py": 1
   },
-  "tong": 774
+  "tong": 775
 }

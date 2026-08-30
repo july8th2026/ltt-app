@@ -30,6 +30,7 @@ lam_am_cache.py — tải trước trọng số VieNeu vào cache HuggingFace.
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 
 #: Đường PyTorch/GPU. `update/` là subfolder mặc định của
@@ -55,16 +56,42 @@ def main(argv=None) -> int:
               file=sys.stderr)
         return 2
 
+    # Windows không có symlink cho tài khoản thường, nên `huggingface_hub` rơi về
+    # chế độ chép tệp. Cảnh báo đó là bình thường và không cần in mỗi lần cài.
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
     from huggingface_hub import snapshot_download
 
     mau = list(MAU_GPU)
     if args.include_onnx:
         mau += MAU_ONNX
 
-    duong = snapshot_download(repo_id=args.repo, revision=args.revision,
-                              allow_patterns=mau)
-    print(duong)
-    return 0
+    # 🔴 `max_workers=1` VÀ CÓ THỬ LẠI — cả hai đều từ một lần hỏng thật.
+    #
+    #    Lượt cài đầu tiên ngày 30/08 chết với:
+    #      FileNotFoundError: ...\blobs\5c9785c19639481f69f407f8b96859f0ea0d65af
+    #    rồi lượt chạy lại ngay sau đó **thành công không sửa gì**.
+    #
+    #    Cơ chế: trên Windows không có symlink, `huggingface_hub` tải vào `blobs\`
+    #    rồi CHÉP sang `snapshots\`. Tải song song nhiều tệp làm hai bước đó đua
+    #    nhau và một blob biến mất giữa chừng.
+    #
+    #    ⛔ Đừng đọc lỗi này thành "mạng hỏng" hay "repo sai" — nó tái hiện được
+    #       và nó là một cuộc đua cục bộ. Một luồng thì hết đua; thử lại thì che
+    #       nốt phần còn lại (quét virus giữ tệp, đĩa bận).
+    loi = None
+    for lan in range(1, 4):
+        try:
+            duong = snapshot_download(repo_id=args.repo, revision=args.revision,
+                                      allow_patterns=mau, max_workers=1)
+            print(duong)
+            return 0
+        except (FileNotFoundError, OSError) as e:
+            loi = e
+            print(f"lan {lan} that bai ({type(e).__name__}), thu lai...",
+                  file=sys.stderr)
+    print(f"tai model that bai sau 3 lan: {loi}", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

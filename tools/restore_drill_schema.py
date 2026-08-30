@@ -168,6 +168,22 @@ def main() -> int:
                     # LAN: mang khong bao loi, no chi im lang hong — va trieu
                     # chung se hien o cho khac, muon hon, va kho truy hon nhieu.
                     "uq_vps_instance_ip",
+                    # LTT VOICE (Q117). Mat mot trong hai la mot lop hong
+                    # KHAC NHAU, nen ca hai deu phai o day:
+                    #
+                    #   uq_voice_owner_ten -> mot khach co HAI giong cung ten.
+                    #     Khong hong du lieu, nhung khach khong con phan biet
+                    #     duoc chung trong danh sach chon giong, va ho se chon
+                    #     nham roi tra tien cho mot lan sinh sai giong.
+                    #
+                    #   uq_voice_ref_hash  -> CUNG mot tep mau ghi danh HAI lan
+                    #     cho cung mot giong. Rang buoc nay chinh la thu lam cho
+                    #     job ghi danh IDEMPOTENT: no khong "kiem truoc roi ghi"
+                    #     (giua hai buoc do co mot khoang trong), no cu INSERT va
+                    #     coi IntegrityError la duong chay binh thuong.
+                    #     Mat no thi mot lan bam hai lan se tinh tien hai lan.
+                    "uq_voice_owner_ten",
+                    "uq_voice_ref_hash",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot

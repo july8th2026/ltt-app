@@ -38,6 +38,48 @@ foreach ($s in @('LTTStudioWeb', 'LTTStudioWorker', 'cloudflared')) {
     else { Ok "$s dang chay" }
 }
 
+Head 'LTT VOICE (neu da cai)'
+# App nay chi kiem khi da cai. Chua cai KHONG phai loi: nen tang chay duoc ma
+# khong co giong noi, va the app se tu hien "can thiet lap".
+$voiceSvc = Get-Service 'LTTStudioVoice' -ErrorAction SilentlyContinue
+if (-not $voiceSvc) {
+    Write-Host '  [BO QUA] Chua cai dich vu giong noi' -ForegroundColor Yellow
+} else {
+    if ($voiceSvc.Status -ne 'Running') { Bad "LTTStudioVoice dang $($voiceSvc.Status)" }
+    else { Ok 'LTTStudioVoice dang chay' }
+
+    # /live KHONG can khoa - mot phep tham do song/chet khong nen phai mang bi mat.
+    $vport = 8120
+    $envF = Join-Path $secrets 'app.env'
+    if (Test-Path $envF) {
+        $m = (Select-String -Path $envF -Pattern '^LTT_VOICE_SIDECAR_PORT=(\d+)' -ErrorAction SilentlyContinue)
+        if ($m) { $vport = [int]$m.Matches[0].Groups[1].Value }
+    }
+    try {
+        $lv = Invoke-RestMethod "http://127.0.0.1:$vport/live" -TimeoutSec 10
+        if ($lv.ok) { Ok "Cong giong tra loi tren 127.0.0.1:$vport" }
+        else { Bad "Cong giong tra $($lv | ConvertTo-Json -Compress)" }
+    } catch { Bad "Cong giong khong tra loi: $($_.Exception.Message)" }
+
+    # LAN JOB `voice` TRONG DOI HINH WORKER.
+    #
+    #    platform_core/jobs.py loc bang
+    #        set(manifest.requires).issubset(capabilities)
+    #    App LTT VOICE khai requires=("voice",). Neu LTT_WORKER_POOLS DA duoc dat
+    #    ma KHONG co lan `voice` thi job nam `queued` MAI MAI -- khong loi, khong
+    #    canh bao, /health/ready van 200. Day la chot duy nhat bat duoc dieu do.
+    if (Test-Path $envF) {
+        $pools = (Select-String -Path $envF -Pattern '^LTT_WORKER_POOLS=(.*)$' -ErrorAction SilentlyContinue)
+        if (-not $pools) {
+            Ok 'LTT_WORKER_POOLS khong dat - worker da nang, job voice nhat duoc'
+        } elseif ($pools.Matches[0].Groups[1].Value -match 'voice') {
+            Ok 'LTT_WORKER_POOLS co lan voice'
+        } else {
+            Bad "LTT_WORKER_POOLS dat ma KHONG co lan 'voice' - job LTT VOICE se nam queued mai mai, khong loi nao bao. Them 'voice:1'."
+        }
+    }
+}
+
 Head 'App tra loi tren loopback'
 try {
     $r = Invoke-RestMethod "http://127.0.0.1:$Port/health/ready" -TimeoutSec 10

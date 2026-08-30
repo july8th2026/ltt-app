@@ -14,6 +14,8 @@ param(
     [string]$ServiceName = 'LTTStudioWeb',
     [string]$WorkerServiceName = 'LTTStudioWorker',
     [string]$CodexServiceName = 'LTTStudioCodex',
+
+    [string]$VoiceServiceName = 'LTTStudioVoice',
     [switch]$SkipServiceControl,
     [int]$Port = 8100
 )
@@ -31,7 +33,21 @@ if (-not (Test-Path $previous)) {
 Write-Host "`n=== Rolling back ===" -ForegroundColor Cyan
 
 if (-not $SkipServiceControl -and (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue)) {
-    foreach ($name in @($CodexServiceName, $WorkerServiceName, $ServiceName)) {
+    # LTTStudioVoice dau tien: no giu handle tren app\, va rollback cung xoay
+
+    # thu muc do. Cung ly do da ghi o update.ps1.
+
+    #
+
+    # vieneu-venv va hf-cache nam NGOAI app\ nen rollback khong dung toi chung.
+
+    # Vi vay install-vieneu-sidecar.ps1 phai idempotent THEO PHIEN BAN: lui ma
+
+    # ma khong lui venv la lech, va cach duy nhat phat hien la kiem phien ban.
+
+    foreach ($name in @($VoiceServiceName, $CodexServiceName,
+
+                        $WorkerServiceName, $ServiceName)) {
         Stop-Service $name -Force -ErrorAction SilentlyContinue
     }
     Start-Sleep -Seconds 5
@@ -51,6 +67,8 @@ if ($SkipServiceControl) {
 Start-Service $ServiceName
 Start-Service $WorkerServiceName -ErrorAction SilentlyContinue
 Start-Service $CodexServiceName -ErrorAction SilentlyContinue
+
+Start-Service $VoiceServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 8
 
 try {

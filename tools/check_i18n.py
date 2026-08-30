@@ -42,8 +42,29 @@ BO_QUA_THU_MUC = ("__pycache__", "node_modules", "/core/", "\\core\\",
                   "/tests/", "\\tests\\", "/tools/", "\\tools\\",
                   "/docs/", "\\docs\\", "/locale/", "\\locale\\")
 # Trang admin: chốt giữ tiếng Việt, chỉ một người đọc.
+#
+# 🔴 Hai tệp cuối KHÁC HẲN ba tệp trên, và lý do phải ghi ra: chúng chứa **dữ
+#    liệu ngữ âm tiếng Việt**, không phải chuỗi giao diện.
+#
+#    `text_pipeline.py` giữ bảng thay ký hiệu (" phần trăm", " đồng") và bảng số
+#    đọc thành chữ ("một", "hai", "mươi", "lăm"). `tu_dien.py` giữ bảng phát âm
+#    ("AI" -> "ây ai").
+#
+#    Chúng là **đầu vào của một model đọc tiếng Việt**. Bọc `_()` rồi dịch sang
+#    tiếng Anh nghĩa là ngày một người dùng đặt giao diện tiếng Anh, model sẽ
+#    đọc "percent" và "one hundred" **trong một câu tiếng Việt** — tức chính
+#    phép dịch làm hỏng giọng đọc.
+#
+#    Đây là cùng loại với hai ngoại lệ đã có trong `_khong_phai_cau()` (bảng ký
+#    tự, `notes=`): thu hẹp phạm vi ĐẾM cho thứ không bao giờ là chuỗi giao
+#    diện, không phải nới bánh cóc.
+#
+# ⚠️ Hệ quả phải biết: một chuỗi giao diện THẬT lỡ đặt vào hai tệp này sẽ không
+#    được đếm. Nên đừng đặt — thông điệp lỗi của LTT VOICE nằm ở
+#    `apps/ltt_voice/features.py` và `audio_input.py`, cả hai đều được đếm.
 BO_QUA_FILE = ("server/admin.py", "server/admin_api.py",
-               "server/templates/admin", "server/routes/admin")
+               "server/templates/admin", "server/routes/admin",
+               "apps/ltt_voice/text_pipeline.py", "apps/ltt_voice/tu_dien.py")
 
 if hasattr(sys.stdout, "buffer"):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",

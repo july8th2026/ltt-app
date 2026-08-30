@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Giọng của tôi") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Giọng của tôi") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="lv-giong" aria-labelledby="lv-g-title">
+  <header class="lv-heading">
+    <div>
+      <h1 id="lv-g-title">{{ _("Giọng của tôi") }}</h1>
+      <p>{{ _("Tạo giọng riêng từ một clip ngắn của chính bạn.") }}</p>
+    </div>
+    <a class="btn ghost" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
+  </header>
+
+  <table class="lv-bang">
+    <thead><tr>
+      <th>{{ _("Tên") }}</th><th>{{ _("Mã giọng") }}</th>
+      <th>{{ _("Trạng thái") }}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for g in giong %}
+      <tr>
+        <td>{{ g.ten_hien_thi }}</td>
+        <td><code>{{ g.public_id }}</code></td>
+        <td>
+          {% if g.trang_thai == 'active' %}{{ _("Sẵn sàng") }}
+          {% elif g.trang_thai == 'dang_ghi_danh' %}{{ _("Đang ghi danh…") }}
+          {% else %}{{ _("Đã tắt") }}{% endif %}
+        </td>
+        <td>
+          {% if g.trang_thai == 'active' %}
+          <form method="post" action="{{ manifest.route_prefix }}/giong/{{ g.public_id }}/tat">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="btn ghost" type="submit">{{ _("Tắt") }}</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="4">{{ _("Bạn chưa có giọng nào.") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>{{ _("Tạo giọng mới") }}</h2>
+  <form class="lv-form" id="lv-form-giong" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="lv-field">{{ _("Tên giọng") }} <strong>*</strong>
+      <input type="text" name="ten" maxlength="120" required
+             placeholder="{{ _('Ví dụ: Giọng dẫn của tôi') }}"></label>
+    <label class="lv-field">{{ _("Clip mẫu") }} <strong>*</strong>
+      <input type="file" name="tep" accept="audio/*" required>
+      <small>{{ _("Từ 3 đến 30 giây, nói rõ, không nhạc nền.") }}</small></label>
+
+    <fieldset class="lv-dk">
+      <legend>{{ _("Điều khoản") }}</legend>
+      <ul>{% for d in dieu_khoan %}<li><b>{{ d.tieu_de }}</b> — {{ d.noi_dung }}</li>{% endfor %}</ul>
+      <label><input type="checkbox" name="dong_y" value="1" required> {{ cam_ket }}</label>
+    </fieldset>
+
+    <button class="btn primary" type="submit">{{ _("Tạo giọng") }}</button>
+  </form>
+  <div id="lv-g-loi" class="alert alert-err" role="alert" hidden></div>
+</section>
+
+<script>
+document.getElementById('lv-form-giong').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var loi = document.getElementById('lv-g-loi');
+  loi.hidden = true;
+  var fd = new FormData(e.target);
+  fetch('{{ manifest.route_prefix }}/giong/tao', {method: 'POST', body: fd})
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (!d.ok) { loi.textContent = d.loi; loi.hidden = false; return; }
+      window.location.reload();
+    })
+    .catch(function () {
+      loi.textContent = '{{ _("Không gửi được yêu cầu. Thử lại nhé.") }}';
+      loi.hidden = false;
+    });
+});
+</script>
+{% endblock %}

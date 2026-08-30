@@ -25,6 +25,15 @@ EXPECTED = {
     # ToolSpec job-based — khong phai vi ai do quyet dinh mo no cho Agent. Ba cong
     # fail-closed cua Q92 va cong `is_active` cua H37 khong bi anh huong.
     "image.ltt",
+    # Model GIONG NOI noi bo (LTT VOICE, Q117/Q118). Cung ly do voi hai dong tren:
+    # `discover_tools()` lay MOI ToolSpec job-based, khong phai vi ai do quyet dinh
+    # mo no cho Agent.
+    #
+    # Khac `text.chat` o mot diem dang ghi: mot luot Agent chay tren mot LLM co the
+    # tu chon `speech.ltt` de doc ket qua thanh tieng — do la mot nang luc MOI cho
+    # Agent, va no ton tien khach. Neu dieu do khong mong muon thi cho dung khong
+    # phai o day ma o allowlist cua `planner.py`.
+    "speech.ltt",
     # Model NGON NGU noi bo (H38/Q106). Cung ly do: `discover_tools()` lay MOI
     # ToolSpec job-based.
     #

@@ -1,0 +1,352 @@
+"""
+engine.py — giữ MỘT thực thể VieNeu ấm, và giữ nó đúng.
+
+Ba việc, và cả ba đều có một sự cố thật đứng sau:
+
+  1. **Nạp model một lần, giữ ấm.** TTS là rất nhiều lượt ngắn; nạp lại mỗi lượt
+     là trả toàn bộ chi phí nạp cho một câu ba giây.
+  2. **Chốt "đang chạy GPU hay CPU" đọc từ SỐ ĐO.** Khuôn tầng 1 chốt 1.6. Sự cố
+     23/08 ở máy B: mọi chốt sống/chết đều xanh trong hơn một giờ trong khi model
+     bò trên CPU. Một cờ cấu hình không phát hiện được điều đó; `memory_allocated`
+     thì có.
+  3. **Từ chối khởi động nếu watermark không áp được.** Upstream nuốt lỗi này
+     (issue #191) và hậu quả là API nói có dấu trong khi không có. Ta không được
+     thừa kế sự im lặng đó.
+
+⛔ MỘT GPU = MỘT VIỆC. `_Cong` là bộ đếm đồng thời **không chờ**: hết chỗ thì ném
+   `DangBan` để tầng HTTP trả **429 + Retry-After**, không bao giờ 5xx. Lý do ở
+   D-005: máy A coi 5xx là *hỏng* và sẽ cooldown rồi vô hiệu hoá đường gọi.
+   Hàng đợi có chờ chỉ được sống ở admission plane của nền tảng (Q114).
+"""
+from __future__ import annotations
+
+import base64
+import io
+import logging
+import os
+import threading
+import time
+
+import numpy as np
+
+from . import tham_so
+
+log = logging.getLogger("ltt.voice.engine")
+
+
+class DangBan(RuntimeError):
+    """Hết suất chạy. Ánh xạ ra HTTP 429 + Retry-After."""
+
+    def __init__(self, retry_after_s: float = 5.0):
+        super().__init__("Cong giong dang ban.")
+        self.retry_after_s = retry_after_s
+
+
+class LoiEngine(RuntimeError):
+    """Engine hỏng thật (khác `DangBan`). Ánh xạ ra HTTP 503."""
+
+
+# ─────────────────────────────────────────────────────────── biểu diễn giọng ──
+#
+# Biểu diễn giọng là **hai mảng numpy của ta** (Q117/QĐ-3): `speaker_emb` và
+# `codes`. Đóng gói bằng `.npz` nén rồi base64 để đi qua JSON.
+#
+# ⭐ Vì sao không dùng `voices.json` của VieNeu: nó là định dạng của upstream,
+#    và định danh sản phẩm không được cột vào định dạng của một nhà cung cấp.
+#    `encode_reference()` trả thẳng hai mảng, nên ta không cần nó.
+
+def dong_goi_ref(speaker_emb, codes) -> str:
+    """Hai mảng -> chuỗi base64 (.npz nén)."""
+    buf = io.BytesIO()
+    np.savez_compressed(
+        buf,
+        speaker_emb=np.asarray(speaker_emb, dtype=np.float32),
+        codes=(np.zeros(0, dtype=np.int64) if codes is None
+               else np.asarray(codes, dtype=np.int64)),
+    )
+    return base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def mo_goi_ref(b64: str) -> dict:
+    """Chuỗi base64 -> dict `voice` mà `infer(voice=...)` nhận được.
+
+    Trả về đúng hình dạng `{"speaker_emb": ..., "codes": ...}` — cùng hình dạng
+    mà `get_preset_voice()` của SDK trả ra, nên hai đường (giọng dựng sẵn và
+    giọng nhân bản) đi chung một nhánh mã.
+    """
+    try:
+        raw = base64.b64decode(b64, validate=True)
+    except Exception as e:  # noqa: BLE001 - dữ liệu ngoài, thông điệp phải rõ
+        raise ValueError("ref khong phai base64 hop le") from e
+    with np.load(io.BytesIO(raw)) as z:
+        emb = np.asarray(z["speaker_emb"], dtype=np.float32)
+        codes = np.asarray(z["codes"], dtype=np.int64)
+    return {"speaker_emb": emb, "codes": (None if codes.size == 0 else codes)}
+
+
+# ─────────────────────────────────────────────────────────────── cổng đồng thời ──
+
+class _Cong:
+    """Bộ đếm suất chạy. KHÔNG chờ — hết chỗ thì ném ngay."""
+
+    def __init__(self, so_suat: int):
+        self._sem = threading.BoundedSemaphore(max(1, int(so_suat)))
+        self._dang_chay = 0
+        self._khoa = threading.Lock()
+        #: Thời gian một lượt gần nhất, để `Retry-After` là một con số có căn cứ
+        #: chứ không phải một hằng số bịa ra.
+        self._giay_gan_nhat = 5.0
+
+    @property
+    def dang_chay(self) -> int:
+        return self._dang_chay
+
+    def __enter__(self):
+        if not self._sem.acquire(blocking=False):
+            raise DangBan(retry_after_s=max(1.0, round(self._giay_gan_nhat, 1)))
+        with self._khoa:
+            self._dang_chay += 1
+        self._bat_dau = time.perf_counter()
+        return self
+
+    def __exit__(self, *a):
+        troi = time.perf_counter() - self._bat_dau
+        with self._khoa:
+            self._dang_chay -= 1
+            # Trung bình trượt nhẹ: một lượt bất thường không kéo lệch hẳn.
+            self._giay_gan_nhat = 0.7 * self._giay_gan_nhat + 0.3 * troi
+        self._sem.release()
+        return False
+
+
+# ───────────────────────────────────────────────────────────────────── engine ──
+
+class CongGiong:
+    """Bọc `Vieneu` ấm. Một thực thể cho cả tiến trình."""
+
+    def __init__(self, *, backend: str = "auto", device: str = "auto",
+                 precision: str = "int8", max_batch_size: int = 8,
+                 so_suat: int = 1, warmup: bool = True):
+        self.backend_xin = backend
+        self.device_xin = device
+        self.cong = _Cong(so_suat)
+        self._khoa_nap = threading.Lock()
+        self._tts = None
+        self._vram_sau_nap_mb = 0
+        self._nap_giay = 0.0
+        self.max_batch_size = max(1, int(max_batch_size))
+        self._precision = precision
+        self._warmup = warmup
+
+    # ── nạp ──────────────────────────────────────────────────────────────────
+    def nap(self) -> None:
+        if self._tts is not None:
+            return
+        with self._khoa_nap:
+            if self._tts is not None:
+                return
+            t0 = time.perf_counter()
+            from vieneu import Vieneu
+
+            tts = Vieneu(mode="v3turbo", backend=self.backend_xin,
+                         device=self.device_xin, precision=self._precision,
+                         max_batch_size=self.max_batch_size)
+
+            # 🔴 CHỐT WATERMARK — TỪ CHỐI KHỞI ĐỘNG, KHÔNG GHI LOG RỒI ĐI TIẾP.
+            #
+            #    `base.py::_init_watermarker` của upstream bắt cả `AttributeError`
+            #    rồi đặt `self.watermarker = None` — không một dòng log. Kết quả:
+            #    `apply_watermark=True` ở khắp nơi mà không có dấu nào được áp
+            #    (upstream #191, gốc là gói PyPI `perth` sai).
+            #
+            #    Nếu ta cũng chỉ ghi log thì ta thừa kế đúng lỗi đó: một lời hứa
+            #    provenance sai còn tệ hơn không hứa.
+            if getattr(tts, "watermarker", None) is None:
+                raise LoiEngine(
+                    "Watermarker khong nap duoc. Goi PyPI `perth` la thu vien "
+                    "threading, khong phai watermarker cua Resemble. Chay "
+                    "install-vieneu-sidecar.ps1 de go `perth` va cai "
+                    "`resemble-perth` (upstream issue 191).")
+
+            self._tts = tts
+            self._nap_giay = time.perf_counter() - t0
+            self._vram_sau_nap_mb = self._vram_dang_giu_mb()
+            log.info("VieNeu san sang: backend=%s device=%s nap=%.1fs vram=%dMB",
+                     self.backend_that, self.device_that, self._nap_giay,
+                     self._vram_sau_nap_mb)
+            if self._warmup:
+                self._lam_am()
+
+    def _lam_am(self) -> None:
+        """Một lượt sinh ngắn để dựng sẵn CUDA graph và nạp trọn đường đi.
+
+        ⚠️ Không có bước này thì **lượt đầu tiên của khách** phải trả phí capture
+           CUDA graph (`cudagraph.py`: warmup 3 lượt + một lần capture). Khách
+           không nên là người trả phí khởi động.
+        """
+        try:
+            t0 = time.perf_counter()
+            self._tts.infer("Xin chao.", **tham_so.bo_tham_so())
+            log.info("Lam am xong trong %.2fs", time.perf_counter() - t0)
+        except Exception as e:  # noqa: BLE001 - làm ấm hỏng không nên chặn khởi động
+            log.warning("Lam am that bai (van chay tiep): %s", e)
+
+    # ── đo thật, không đọc cấu hình ──────────────────────────────────────────
+    @staticmethod
+    def _vram_dang_giu_mb() -> int:
+        """VRAM tiến trình này đang giữ, theo torch. 0 = không dùng GPU.
+
+        ⭐ Đây là **phép đo**, không phải phép đọc cấu hình. Khuôn tầng 1 chốt 1.6
+           tồn tại vì một cờ `device=cuda` vẫn xanh khi model đã rơi về CPU.
+        """
+        try:
+            import torch
+            if not torch.cuda.is_available():
+                return 0
+            return int(torch.cuda.memory_allocated() / (1024 * 1024))
+        except Exception:  # noqa: BLE001 - không có torch = đường ONNX
+            return 0
+
+    @property
+    def backend_that(self) -> str:
+        return getattr(self._tts, "backend", "?") if self._tts else "chua_nap"
+
+    @property
+    def device_that(self) -> str:
+        if not self._tts:
+            return "chua_nap"
+        dev = getattr(getattr(self._tts, "engine", None), "device", None)
+        return str(dev) if dev is not None else self.backend_that
+
+    @property
+    def dang_tren_gpu(self) -> bool:
+        """CHỐT SỐ ĐO: có đang thật sự giữ VRAM không."""
+        return self._vram_dang_giu_mb() > 0
+
+    @property
+    def sample_rate(self) -> int:
+        return int(getattr(self._tts, "sample_rate", tham_so.SAMPLE_RATE)) \
+            if self._tts else tham_so.SAMPLE_RATE
+
+    def co_streaming(self) -> bool:
+        """Dò NĂNG LỰC LÚC CHẠY, không đọc `config.yaml`.
+
+        ⛔ `config.yaml` của upstream khai `supports_streaming: false` cho **mọi**
+           backbone trong khi `infer_stream` chạy thật trên cả hai engine. Đọc
+           trường metadata đó là tự khai sai năng lực của chính mình.
+        """
+        if not self._tts:
+            return False
+        eng = getattr(self._tts, "engine", None)
+        return callable(getattr(eng, "infer_stream", None))
+
+    # ── sinh tiếng ───────────────────────────────────────────────────────────
+    def _voice_arg(self, ref_b64: str | None, preset: str | None):
+        if ref_b64:
+            return mo_goi_ref(ref_b64)
+        if preset:
+            return preset
+        return None      # -> giọng mặc định của SDK
+
+    def noi(self, text: str, *, ref_b64=None, preset=None) -> tuple:
+        """Một lượt sinh. Trả `(wav_float32, giay)`."""
+        self.nap()
+        with self.cong:
+            t0 = time.perf_counter()
+            wav = self._tts.infer(text, voice=self._voice_arg(ref_b64, preset),
+                                  **tham_so.bo_tham_so())
+            return np.asarray(wav, dtype=np.float32), time.perf_counter() - t0
+
+    def noi_lo(self, texts: list, *, ref_b64=None, preset=None) -> tuple:
+        """Một lô. Trả `(danh_sach_wav, giay)`.
+
+        Dùng `infer_batch` để các chunk chia nhau từng bước forward trên GPU —
+        đó là chỗ GPU thật sự thắng CPU (README: *"The GPU win comes from
+        batching"*).
+        """
+        self.nap()
+        with self.cong:
+            t0 = time.perf_counter()
+            wavs = self._tts.infer_batch(
+                texts, voice=self._voice_arg(ref_b64, preset),
+                batch_size=self.max_batch_size, **tham_so.bo_tham_so())
+            return ([np.asarray(w, dtype=np.float32) for w in wavs],
+                    time.perf_counter() - t0)
+
+    def phat_dan(self, text: str, *, ref_b64=None, preset=None):
+        """Sinh theo frame. Generator các mảng float32.
+
+        Suất chạy được giữ **suốt cả generator** — nhả sớm là để lượt thứ hai
+        chen vào giữa lúc lượt đầu còn đang chiếm engine.
+        """
+        self.nap()
+        with self.cong:
+            for chunk in self._tts.infer_stream(
+                    text, voice=self._voice_arg(ref_b64, preset),
+                    **tham_so.bo_tham_so()):
+                if chunk is None or len(chunk) == 0:
+                    continue
+                yield np.asarray(chunk, dtype=np.float32)
+
+    # ── ghi danh ─────────────────────────────────────────────────────────────
+    def ghi_danh(self, duong_wav: str, *, denoise: bool = True) -> dict:
+        """Clip tham chiếu -> biểu diễn giọng của TA.
+
+        `encode_reference` trả `(speaker_emb, ref_codes)` dạng numpy; ta đóng gói
+        và **sở hữu** chúng. Không gọi `add_voice`/`save_voices` của SDK: chúng
+        ghi vào `voices.json` của upstream, tức là để định danh sản phẩm trôi
+        theo định dạng của một nhà cung cấp.
+        """
+        self.nap()
+        with self.cong:
+            t0 = time.perf_counter()
+            emb, codes = self._tts.encode_reference(duong_wav, denoise=denoise)
+            return {
+                "ref_b64": dong_goi_ref(emb, codes),
+                "emb_dim": int(np.asarray(emb).size),
+                "so_codes": (0 if codes is None else int(np.asarray(codes).size)),
+                "giay": time.perf_counter() - t0,
+            }
+
+    # ── công bố ──────────────────────────────────────────────────────────────
+    def nang_luc(self) -> dict:
+        """Năng lực **đo lúc chạy**, không đọc từ metadata."""
+        d = {
+            "da_nap": self._tts is not None,
+            "backend": self.backend_that,
+            "device": self.device_that,
+            "tren_gpu": self.dang_tren_gpu,
+            "vram_mb": self._vram_dang_giu_mb(),
+            "vram_sau_nap_mb": self._vram_sau_nap_mb,
+            "nap_giay": round(self._nap_giay, 2),
+            "sample_rate": self.sample_rate,
+            "streaming": self.co_streaming(),
+            "watermark": bool(getattr(self._tts, "watermarker", None)) if self._tts else False,
+            "max_batch_size": self.max_batch_size,
+            "dang_chay": self.cong.dang_chay,
+        }
+        d.update(tham_so.cong_bo())
+        return d
+
+
+# ── thực thể dùng chung cho cả tiến trình ────────────────────────────────────
+_CONG_GIONG: CongGiong | None = None
+_KHOA = threading.Lock()
+
+
+def lay_cong() -> CongGiong:
+    """Thực thể duy nhất. Cấu hình đọc từ môi trường, không hằng số rải rác."""
+    global _CONG_GIONG
+    if _CONG_GIONG is not None:
+        return _CONG_GIONG
+    with _KHOA:
+        if _CONG_GIONG is None:
+            _CONG_GIONG = CongGiong(
+                backend=os.environ.get("LTT_VOICE_BACKEND", "auto"),
+                device=os.environ.get("LTT_VOICE_DEVICE", "auto"),
+                precision=os.environ.get("LTT_VOICE_PRECISION", "int8"),
+                max_batch_size=int(os.environ.get("LTT_VOICE_MAX_BATCH", "8")),
+                so_suat=int(os.environ.get("LTT_VOICE_MAX_DONG_THOI", "1")),
+                warmup=os.environ.get("LTT_VOICE_WARMUP", "1") != "0",
+            )
+    return _CONG_GIONG

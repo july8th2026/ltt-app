@@ -1,4 +1,4 @@
-# nap_lai_env.ps1 - nap lai secrets\app.env vao moi truong cua ba dich vu.
+# nap_lai_env.ps1 - nap lai secrets\app.env vao moi truong cua BON dich vu.
 #
 #     powershell -ExecutionPolicy Bypass -File .\setup\nap_lai_env.ps1
 #
@@ -33,7 +33,17 @@
 [CmdletBinding()]
 param(
     [string]$Root = 'C:\LTTPlatform',
-    [string[]]$Services = @('LTTStudioWeb', 'LTTStudioWorker', 'LTTStudioCodex'),
+    # LTTStudioVoice them 2026-08-30 (Q117). No chay tu vieneu-venv nhung van
+
+    # lay env qua nssm nhu ba dich vu kia, nen no PHAI co trong danh sach nay:
+
+    # quen no thi doi mot co (vi du LTT_VOICE_BACKEND) se khong co tac dung, va
+
+    # khong loi nao bao.
+
+    [string[]]$Services = @('LTTStudioWeb', 'LTTStudioWorker', 'LTTStudioCodex',
+
+                            'LTTStudioVoice'),
     [switch]$KhongKhoiDongLai       # chi nap ENV, khong restart
 )
 

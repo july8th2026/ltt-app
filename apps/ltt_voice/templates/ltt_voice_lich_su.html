@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Lịch sử giọng nói") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Lịch sử") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="lv-lich-su">
+  <header class="lv-heading">
+    <div><h1>{{ _("Lịch sử tạo tiếng") }}</h1></div>
+    <a class="btn ghost" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
+  </header>
+
+  <table class="lv-bang">
+    <thead><tr>
+      <th>{{ _("Lúc") }}</th><th>{{ _("Văn bản") }}</th>
+      <th>{{ _("Thời lượng") }}</th><th>{{ _("Credit") }}</th><th></th>
+    </tr></thead>
+    <tbody>
+    {% for j in lich_su %}
+      <tr>
+        <td>{{ j.created_at }}</td>
+        <td>{{ (j.params or {}).get('text', '')[:80] }}</td>
+        <td>{% if j.result %}{{ j.result.get('duration_s', '-') }}s{% else %}-{% endif %}</td>
+        <td>{% if j.result %}{{ j.result.get('credit_cost', '-') }}{% else %}-{% endif %}</td>
+        <td>
+          {% if j.result and j.result.get('audio_key') %}
+            <audio controls preload="none"
+                   src="{{ manifest.route_prefix }}/audio/{{ j.result.audio_key }}"></audio>
+          {% endif %}
+        </td>
+      </tr>
+    {% else %}
+      <tr><td colspan="5">{{ _("Chưa có lượt nào.") }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

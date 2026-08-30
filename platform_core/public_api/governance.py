@@ -130,6 +130,41 @@ STORES: tuple = (
           "Chính bảng này ghi rằng nó tồn tại vì log xoay vòng rồi mất, còn câu "
           "hỏi của khách thì đến sau ba tháng.")),
 
+    # ── LTT VOICE ────────────────────────────────────────────────────────────
+    #
+    # ⛔ BỐN BẢNG NÀY GIỮ THỨ NHẠY CẢM NHẤT TRONG CẢ NỀN TẢNG: **giọng nói của
+    #    một con người thật**. Giọng là đặc điểm nhận dạng sinh trắc — nó không
+    #    cùng hạng với một prompt hay một tấm ảnh sản phẩm.
+    #
+    # 🔴 Vì sao cả bốn đều EVIDENCE (không tự già đi), kể cả bảng nghe như
+    #    "chỉ là kỹ thuật":
+    #
+    #    Nếu một ngày có tranh chấp *"ai cho phép các anh dùng giọng tôi"*, câu
+    #    trả lời phải ghép được **ba** thứ và mất một thứ là mất cả câu trả lời:
+    #    hồ sơ giọng (ai sở hữu), tệp nguồn (giọng nào), và bản cam kết (đồng ý
+    #    lúc nào, với bản điều khoản nào). Đặt hạn xoá cho bất kỳ cái nào trong
+    #    ba là tự bỏ khả năng tự bảo vệ.
+    #
+    # ⚠️ Đây KHÔNG phải lý do để giữ mãi mãi bất chấp. Khách xoá tài khoản thì cả
+    #    bốn đi cùng tài khoản — `retention_days=None` nghĩa là *"giữ chừng nào
+    #    tài khoản còn"*, không phải *"giữ vĩnh viễn"*.
+    Store("voice_profile", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Danh tính công khai của một giọng: ai sở hữu, tên hiển thị, còn "
+          "dùng được không. Là phía đối ứng của mọi lượt sinh tiếng đã tính "
+          "tiền — mất nó thì lịch sử hoá đơn trỏ vào hư không.")),
+    Store("voice_ref", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Clip mẫu GỐC khách tải lên, giữ nguyên không xử lý. Hai việc: dựng "
+          "lại giọng khi nâng cấp model, và chứng minh giọng nhân bản đến từ "
+          "đúng tệp mà khách đã cam kết là của họ.")),
+    Store("voice_repr", EVIDENCE, None, N_("vận hành"),
+          N_("Biểu diễn engine của một giọng, gắn với một phiên bản model cụ "
+          "thể. KHÔNG BAO GIỜ ra API. Giữ lại để đối chiếu một tệp tiếng cũ với "
+          "đúng bản model đã sinh ra nó.")),
+    Store("voice_consent", EVIDENCE, None, N_("chủ tài khoản + vận hành"),
+          N_("Cam kết sở hữu giọng: ai, lúc nào, bản điều khoản nào, hash tệp "
+          "nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý "
+          "do consent phải là DỮ LIỆU chứ không phải một ô tick.")),
+
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
           N_("Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."),

@@ -567,6 +567,24 @@ Output: `image_key` (artifact)
 
 Contract hash: `917d9f5da2fe9a80`
 
+### `speech.ltt`
+
+Turn Vietnamese or English text into natural speech. Use a built-in preset voice, or one of your own cloned voices by its stable voice id.
+
+Execution mode: `ASYNC_JOB`
+
+Scopes: `jobs:create`
+
+Input:
+
+- `text` — string, **required**, max length 1500, What to say. Vietnamese, English, or both mixed. Up to 1500 characters per call - longer scripts should be split into several calls, because voice consistency degrades on very long single passes.
+- `voice_id` — string, max length 40, One of your own cloned voices, as returned when you created it. Stays valid across engine upgrades. Leave empty to use a built-in voice.
+- `preset` — string, max length 64, A built-in voice name. Ignored when voice_id is given; sending both is rejected.
+
+Output: `audio_key` (artifact), `text` (string)
+
+Contract hash: `c352c4b436ec9ffc`
+
 ### `story.storyboard`
 
 Turn a story brief into a storyboard: one shot description per scene plus a master prompt. Priced by scene count.

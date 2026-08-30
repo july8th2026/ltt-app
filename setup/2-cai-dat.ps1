@@ -519,9 +519,79 @@ if ($existingC) {
 & $nssmExe set $CodexServiceName AppEnvironmentExtra ($envPairs -join "`r`n") | Out-Null
 Ok 'Da nap bi mat vao moi truong sidecar codex'
 
+Head 'Dich vu Giong noi (LTT VOICE)'
+# LTT VOICE chay VieNeu-TTS v3 Turbo tren GPU may nay (Q117/Q118). Khac ba dich vu
+# tren, no chay tu MOT VENV CACH LY: vieneu ghim transformers==4.57.6 va
+# torch==2.8.0+cu128, cai de len venv nen tang se ha cap torch Blackwell va lam
+# hong moi app GPU khac. Cung ly do da sinh ra whisperx-venv.
+#
+# -VenvRoot: venv nay ~8 GB. Ngay 2026-08-30 o C: chi con 5,6 GB tren 930 GB va
+# pip chet giua chung voi [Errno 28]. Dat bien LTT_VOICE_VENV_ROOT de tro sang o
+# khac; bo trong thi dung $Root nhu cu.
+$VoiceServiceName = 'LTTStudioVoice'
+$voiceVenvRoot = $env:LTT_VOICE_VENV_ROOT
+if (-not $voiceVenvRoot) { $voiceVenvRoot = $Root }
+$voicePy = ''
+try {
+    $out = @(& (Join-Path $appDir 'deploy\windows\install-vieneu-sidecar.ps1') `
+             -Root $Root -ReleaseDir $appDir -VenvRoot $voiceVenvRoot -PythonExe 'python')
+    $voicePy = ($out | Where-Object { $_ -like '*python.exe' } | Select-Object -Last 1)
+} catch {
+    # Khong chan ca ban cai vi mot app: nen tang van chay duoc khong co giong noi.
+    # Nhung PHAI in ro, khong nuot -- app se hien "can thiet lap" tren the cua no.
+    Write-Host "  [BO QUA] Khong cai duoc vieneu-venv: $($_.Exception.Message)" -ForegroundColor Yellow
+}
+
+if ($voicePy -and (Test-Path $voicePy)) {
+    $hfCache = Join-Path $voiceVenvRoot 'hf-cache'
+    $envTxt2 = Get-Content $envFile -Raw -ErrorAction SilentlyContinue
+    if ($envTxt2 -notmatch 'LTT_VOICE_SIDECAR_TOKEN=') {
+        $voiceTok = & $venvPy -c "import secrets;print(secrets.token_urlsafe(32))"
+        $add2 = "LTT_VOICE_SIDECAR_TOKEN=$voiceTok`r`nLTT_VOICE_SIDECAR_PORT=8120`r`nLTT_VIENEU_PYTHON=$voicePy`r`nHF_HOME=$hfCache"
+        [IO.File]::AppendAllText($envFile, "`r`n$add2`r`n", (New-Object Text.UTF8Encoding($false)))
+        Ok 'Da them LTT_VOICE_SIDECAR_TOKEN + port + HF_HOME vao app.env'
+    } else {
+        Ok 'LTT_VOICE_SIDECAR_TOKEN da co - GIU NGUYEN'
+    }
+    # Doc lai app.env de dich vu giong nhan duoc cac bien vua them.
+    $envPairs2 = @()
+    foreach ($line in (Get-Content $envFile -ErrorAction SilentlyContinue)) {
+        $l = $line.Trim()
+        if ($l -and -not $l.StartsWith('#') -and $l.Contains('=')) { $envPairs2 += $l }
+    }
+
+    $existingV = Get-Service $VoiceServiceName -ErrorAction SilentlyContinue
+    if ($existingV) {
+        if ($existingV.Status -eq 'Running') { Stop-Service $VoiceServiceName -Force; Start-Sleep -Seconds 2 }
+        Ok "Dich vu $VoiceServiceName da co - cap nhat cau hinh"
+    } else {
+        & $nssmExe install $VoiceServiceName $voicePy 'voice_sidecar_main.py' | Out-Null
+        Ok "Da tao dich vu $VoiceServiceName"
+    }
+    & $nssmExe set $VoiceServiceName Application    $voicePy | Out-Null
+    & $nssmExe set $VoiceServiceName AppDirectory   $appDir | Out-Null
+    & $nssmExe set $VoiceServiceName AppStdout      (Join-Path $logs 'voice-out.log') | Out-Null
+    & $nssmExe set $VoiceServiceName AppStderr      (Join-Path $logs 'voice-err.log') | Out-Null
+    & $nssmExe set $VoiceServiceName AppRotateFiles 1 | Out-Null
+    & $nssmExe set $VoiceServiceName AppRotateOnline 1 | Out-Null
+    & $nssmExe set $VoiceServiceName AppRotateBytes 10485760 | Out-Null
+    & $nssmExe set $VoiceServiceName Start          SERVICE_AUTO_START | Out-Null
+    & $nssmExe set $VoiceServiceName AppExit Default Restart | Out-Null
+    & $nssmExe set $VoiceServiceName AppRestartDelay 10000 | Out-Null
+    & $nssmExe set $VoiceServiceName AppEnvironmentExtra ($envPairs2 -join "`r`n") | Out-Null
+    Ok 'Da nap bi mat vao moi truong dich vu giong noi'
+} else {
+    Write-Host '  [BO QUA] Chua cai duoc dich vu giong noi - app LTT VOICE se hien "can thiet lap".' -ForegroundColor Yellow
+}
+
 Head 'Khoi dong'
 Start-Service $ServiceName
 Start-Service $CodexServiceName -ErrorAction SilentlyContinue
+
+# Sau cung: nap ~320 MB trong so len GPU, mat khoang 20 giay moi san sang.
+
+Start-Service $VoiceServiceName -ErrorAction SilentlyContinue
+
 Start-Sleep -Seconds 6
 $svc = Get-Service $ServiceName
 if ($svc.Status -ne 'Running') {

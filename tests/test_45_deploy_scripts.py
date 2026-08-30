@@ -13,6 +13,7 @@ Keeping deploy scripts pure ASCII sidesteps codepage issues entirely.
 from __future__ import annotations
 
 import os
+import re
 
 import pytest
 
@@ -57,12 +58,46 @@ def test_update_runs_migrations_before_start():
 
 
 def test_rollback_controls_all_runtime_services_and_supports_safe_rehearsal():
+    """Rollback phai dung MOI dich vu runtime truoc khi xoay thu muc `app\\`.
+
+    🔴 PHEP KIEM NAY TRUOC DAY CHOT MOT CHUOI LITERAL:
+
+           assert "@($CodexServiceName, $WorkerServiceName, $ServiceName)" in text
+
+       No do khi them dich vu thu tu (`LTTStudioVoice`, Q117) — dung, nhung do
+       vi **sai ly do**: no do vi chuoi doi, khong phai vi tinh chat bi vi pham.
+       Mot chuoi literal cung se XANH neu ai do them mot bien dich vu moi vao
+       `param()` roi quen dua no vao vong dung — tuc no bo lot dung ca loi that.
+
+    ⭐ Ban nay chot TINH CHAT: **moi bien `*ServiceName` khai o `param()` deu
+       phai xuat hien trong vong dung**. Them dich vu thu nam ma quen dung no
+       thi test do; doi thu tu hay xuong dong thi khong.
+
+    ⛔ Va chot them mot thu tu: dich vu giong noi phai dung TRUOC nhung dich vu
+       khac. `LTTStudioVoice` co `AppDirectory` tro vao `app\\` nen no giu handle
+       tren thu muc do; khong dung no truoc thi `Move-Item` nem loi giua chung.
+    """
     text = _read("rollback.ps1")
 
-    assert "CodexServiceName" in text
     assert "SkipServiceControl" in text
-    assert "@($CodexServiceName, $WorkerServiceName, $ServiceName)" in text
     assert "$resp.status -ne 'ready'" in text
+
+    khai = set(re.findall(r"\[string\]\$(\w*ServiceName)\s*=", text))
+    assert khai, "rollback.ps1 khong khai bien dich vu nao"
+
+    m = re.search(r"foreach\s*\(\$name\s+in\s+@\(([^)]*)\)", text, re.S)
+    assert m, "khong tim thay vong dung dich vu trong rollback.ps1"
+    trong_vong = set(re.findall(r"\$(\w*ServiceName)", m.group(1)))
+
+    thieu = khai - trong_vong
+    assert not thieu, (
+        f"rollback.ps1 khai {sorted(thieu)} nhung khong dung chung truoc khi "
+        f"xoay app\\ — chung se giu handle tren thu muc do")
+
+    if "VoiceServiceName" in trong_vong:
+        thu_tu = re.findall(r"\$(\w*ServiceName)", m.group(1))
+        assert thu_tu[0] == "VoiceServiceName", (
+            "LTTStudioVoice phai duoc dung DAU TIEN: no giu handle tren app\\")
 
 
 def test_service_env_loader_allows_empty_optional_integration_placeholders():

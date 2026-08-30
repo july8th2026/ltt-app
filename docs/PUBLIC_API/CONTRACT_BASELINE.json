@@ -340,6 +340,16 @@
         "jobs:create"
       ]
     },
+    "speech.ltt": {
+      "aliases": [],
+      "contract_hash": "c352c4b436ec9ffc",
+      "deprecated": "",
+      "execution_mode": "ASYNC_JOB",
+      "models": [],
+      "required_scopes": [
+        "jobs:create"
+      ]
+    },
     "story.storyboard": {
       "aliases": [],
       "contract_hash": "9c7cfd84114e0c1b",

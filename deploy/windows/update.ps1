@@ -21,6 +21,8 @@ param(
     [string]$ServiceName = 'LTTStudioWeb',
     [string]$WorkerServiceName = 'LTTStudioWorker',
     [string]$CodexServiceName = 'LTTStudioCodex',
+
+    [string]$VoiceServiceName = 'LTTStudioVoice',
     [int]$Port = 8100
 )
 
@@ -46,7 +48,21 @@ Write-Ok 'Data backup complete'
 
 Write-Step 'Stopping service'
 if (Get-Service -Name $ServiceName -ErrorAction SilentlyContinue) {
-    foreach ($name in @($CodexServiceName, $WorkerServiceName, $ServiceName)) {
+    # DUNG NGUOC CHIEU PHU THUOC, va LTTStudioVoice phai di DAU TIEN.
+
+    #
+
+    # Dich vu do co AppDirectory tro vao app\, nen no GIU HANDLE tren thu muc
+
+    # do. Khong dung no thi `Move-Item $release $previous` ben duoi NEM LOI va
+
+    # ban cap nhat dung giua chung -- hoac te hon, neu Windows cho move thi
+
+    # dich vu chay tiep bang MA CU, im lang, cho toi lan restart sau.
+
+    foreach ($name in @($VoiceServiceName, $CodexServiceName,
+
+                        $WorkerServiceName, $ServiceName)) {
         $service = Get-Service -Name $name -ErrorAction SilentlyContinue
         if ($service -and $service.Status -ne 'Stopped') {
             Stop-Service $name -Force -ErrorAction Stop
@@ -151,6 +167,12 @@ Write-Step 'Starting service'
 Start-Service $ServiceName
 Start-Service $WorkerServiceName -ErrorAction SilentlyContinue
 Start-Service $CodexServiceName -ErrorAction SilentlyContinue
+
+# Bat sau cung: no nap ~320 MB trong so len GPU va mat khoang 20 giay moi san
+
+# sang. Bat truoc thi no tranh CPU voi web dung luc web dang khoi dong.
+
+Start-Service $VoiceServiceName -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 8
 
 Write-Step 'Verifying health'

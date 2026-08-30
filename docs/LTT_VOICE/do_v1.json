@@ -1,0 +1,163 @@
+{
+  "phep": {
+    "ranh.pytorch.nap": {
+      "nap_giay": 19.4,
+      "backend": "pytorch",
+      "device": "cuda",
+      "sample_rate": 48000,
+      "vram_torch_mb": 334,
+      "vram_nvidia_smi_mb": 757,
+      "watermark_nap_duoc": true,
+      "co_infer_stream": true,
+      "gpu_truoc": [
+        [
+          0,
+          16311
+        ],
+        [
+          954,
+          16311
+        ]
+      ],
+      "gpu_sau": [
+        [
+          757,
+          16311
+        ],
+        [
+          954,
+          16311
+        ]
+      ]
+    },
+    "ranh.pytorch.ngu_lieu.vi_ngan": {
+      "so_ky_tu": 47,
+      "gen_s": 3.364,
+      "audio_s": 3.36,
+      "rtf": 1.0013,
+      "dinh": 0.6666,
+      "ok": true
+    },
+    "ranh.pytorch.ngu_lieu.en_ngan": {
+      "so_ky_tu": 56,
+      "gen_s": 2.514,
+      "audio_s": 3.6,
+      "rtf": 0.6984,
+      "dinh": 0.8277,
+      "ok": true
+    },
+    "ranh.pytorch.ngu_lieu.tron_vi_en": {
+      "so_ky_tu": 59,
+      "gen_s": 2.217,
+      "audio_s": 3.12,
+      "rtf": 0.7107,
+      "dinh": 0.5994,
+      "ok": true
+    },
+    "ranh.pytorch.ngu_lieu.so_tien_ngay": {
+      "so_ky_tu": 81,
+      "gen_s": 5.662,
+      "audio_s": 8.16,
+      "rtf": 0.6938,
+      "dinh": 0.6816,
+      "ok": true
+    },
+    "ranh.pytorch.ngu_lieu.danh_sach": {
+      "so_ky_tu": 52,
+      "gen_s": 2.112,
+      "audio_s": 3.04,
+      "rtf": 0.6947,
+      "dinh": 0.6512,
+      "ok": true
+    },
+    "ranh.pytorch.ngu_lieu.ch_tr": {
+      "so_ky_tu": 53,
+      "gen_s": 1.682,
+      "audio_s": 2.4,
+      "rtf": 0.7007,
+      "dinh": 0.7263,
+      "ok": true
+    },
+    "ranh.pytorch.ngu_lieu.viet_tat": {
+      "so_ky_tu": 51,
+      "gen_s": 2.611,
+      "audio_s": 3.76,
+      "rtf": 0.6943,
+      "dinh": 0.6445,
+      "ok": true
+    },
+    "ranh.pytorch.vram_dinh": {
+      "dinh_mb": 641,
+      "dat_truoc_mb": 1288,
+      "smi_sau": [
+        [
+          1445,
+          16311
+        ],
+        [
+          954,
+          16311
+        ]
+      ]
+    },
+    "ranh.pytorch.do_dai.500": {
+      "so_ky_tu": 500,
+      "gen_s": 10.05,
+      "audio_s": 24.42,
+      "rtf": 0.4116,
+      "ky_tu_moi_giay": 20.48,
+      "ok": true
+    },
+    "ranh.pytorch.do_dai.1000": {
+      "so_ky_tu": 1000,
+      "gen_s": 11.27,
+      "audio_s": 47.66,
+      "rtf": 0.2364,
+      "ky_tu_moi_giay": 20.98,
+      "ok": true
+    },
+    "ranh.pytorch.do_dai.1500": {
+      "so_ky_tu": 1500,
+      "gen_s": 12.58,
+      "audio_s": 71.62,
+      "rtf": 0.1757,
+      "ky_tu_moi_giay": 20.94,
+      "ok": true
+    },
+    "ranh.pytorch.do_dai.2000": {
+      "so_ky_tu": 2000,
+      "gen_s": 15.68,
+      "audio_s": 97.1,
+      "rtf": 0.1615,
+      "ky_tu_moi_giay": 20.6,
+      "ok": true
+    },
+    "ranh.pytorch.do_dai.3000": {
+      "so_ky_tu": 3000,
+      "gen_s": 17.55,
+      "audio_s": 144.54,
+      "rtf": 0.1214,
+      "ky_tu_moi_giay": 20.76,
+      "ok": true
+    },
+    "ranh.pytorch.on_dinh": {
+      "so_lan": 10,
+      "rtf_trung_binh": 0.7017,
+      "rtf_lech_chuan": 0.0048,
+      "audio_s_trung_binh": 3.216,
+      "audio_s_lech_chuan": 0.182
+    },
+    "ranh.pytorch.ttfa": {
+      "ttfa_ms": 398.5,
+      "so_chunk": 10,
+      "audio_s": 3.2,
+      "rtf": 1.0701,
+      "ok": true
+    },
+    "ranh.pytorch.watermark": {
+      "nap_duoc": true,
+      "hai_ban_khac_nhau": true,
+      "doc_lai_duoc": 1.0
+    }
+  }
+}

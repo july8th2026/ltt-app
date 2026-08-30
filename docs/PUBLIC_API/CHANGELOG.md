@@ -21,6 +21,78 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-08-30 — `speech.ltt`: giọng nói tiếng Việt, có hợp đồng công khai
+
+### ADDED
+
+Tool **`speech.ltt`** (app `ltt_voice`, `ASYNC_JOB`) — chuyển văn bản thành
+giọng nói tiếng Việt hoặc tiếng Anh, bằng giọng dựng sẵn hoặc bằng **giọng của
+chính khách** đã nhân bản.
+
+Chưa mở trong công tắc người vận hành (`LTT_PUBLIC_API_TOOLS`). Ba cổng
+fail-closed của Q92 nguyên vẹn; mục này chỉ nói rằng **hợp đồng đã có**.
+
+Hai tham số công khai:
+
+| Tham số | Ý nghĩa |
+|---|---|
+| `text` | Nội dung cần đọc. Việt, Anh, hoặc trộn. Tối đa **1.500 ký tự** một lượt. |
+| `voice_id` | Mã giọng của khách, dạng `vc_…`. Bỏ trống thì dùng giọng dựng sẵn. |
+
+### `voice_id` là một lời hứa, không phải một khoá tra cứu
+
+Mã giọng **ổn định qua mọi lần nâng cấp engine**. Biểu diễn engine (speaker
+embedding + reference codes) là dữ liệu nội bộ của nền tảng, nằm ở một bảng
+khác, và **không bao giờ đi ra API**. Nâng model = thêm một dòng biểu diễn mới
+và đổi cờ; `voice_id` của khách không đổi, tích hợp không phải sửa gì.
+
+⇒ Đây là điều kiện để một ngày nào đó thay engine mà không phá khách. Nếu
+`voice_id` từng là một khoá trỏ thẳng vào dữ liệu của model thì ngày nâng cấp là
+ngày mọi tích hợp gãy, vì một lý do hoàn toàn nội bộ.
+
+### 🔴 Trần 1.500 ký tự là trần CHẤT LƯỢNG, không phải trần kỹ thuật
+
+Đo thật ngày 30/08 trên phần cứng của nhà: **3.000 ký tự vẫn sinh ra được**,
+trong 17,6 giây, không lỗi. Trần thấp hơn thế vì chất lượng, không vì năng lực —
+upstream báo giọng bắt đầu **trôi vùng miền** từ khoảng ngưỡng đó
+(`pnnbao97/VieNeu-TTS#168`, người thử xác nhận sau khi tác giả đã sửa một lượt).
+
+Văn bản dài hơn thì **chia thành nhiều lượt gọi**. Đó không phải một hạn chế kỹ
+thuật ta chưa gỡ được — đó là cách giữ giọng đồng nhất.
+
+### Tham số sinh mẫu cố ý KHÔNG có trong hợp đồng
+
+`temperature`, `top_k`, `top_p` và họ hàng **không** là tham số công khai, và sẽ
+không trở thành. Hai lý do độc lập:
+
+1. Engine cache CUDA graph theo `(batch, temperature, top_k, top_p)`. Mỗi tổ hợp
+   mới là một graph mới cộng một bộ đệm tĩnh trên card — tức một khách chỉnh ba
+   con số đó có thể làm nở bộ nhớ GPU của cả hệ thống.
+2. `temperature` cao làm **lệch tông giữa các đoạn** trong một bài dài.
+
+Đây là tham số chất lượng sản phẩm, và đổi chúng phải qua cổng đo như đổi model.
+
+### Tiền: theo giây tiếng nói **thật sự sinh ra**
+
+Giữ chỗ theo số ký tự (sau chuẩn hoá), quyết toán theo **thời lượng đo bằng
+`ffprobe`** trên chính tệp đã sinh. Phần giữ dư hoàn ngay khi job xong. Không đo
+được thời lượng ⇒ **hoàn đủ, thu 0** — thu tiền không bằng chứng tệ hơn mất một
+ít tiền.
+
+### Đóng dấu chìm: có, và đã đo lại được
+
+Mọi tệp ra mang một watermark không nghe thấy. Đây là một lời hứa **đã kiểm**:
+dấu được lấy lại từ chính sóng âm của tệp đã sinh, kể cả tệp dùng giọng nhân
+bản.
+
+⚠️ Ghi ra vì nó suýt là một lời hứa sai: gói `perth` mà SDK upstream khai trên
+PyPI **không phải** thư viện watermark (nó là một tiện ích threading), và
+upstream nuốt lỗi đó trong im lặng, nên mặc định `apply_watermark=True` mà không
+có dấu nào được áp. Bộ cài của nhà thay bằng `resemble-perth` và dịch vụ **từ
+chối khởi động** nếu watermarker không nạp được.
+
+---
+
 ## 2026-08-30 — `video.generate` (Seedance) có hợp đồng công khai
 
 **ADDED — tool `video.generate`, và model đầu tiên công bố `constraints` riêng.**

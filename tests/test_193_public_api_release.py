@@ -86,10 +86,18 @@ def test_the_release_inventory_is_frozen_and_self_consistent():
     # cu — "tap tuy chon doi theo model" — dong bang cach do, khong phai bang
     # cach ha tieu chuan. Canh bao cu VAN DUNG: co mat o day la HOP DONG dong
     # bang, KHONG phai khach goi duoc.
-    assert published == exposed == ["image.generate", "image.ltt",
-                                    "image.thumbnail", "image.upscale",
-                                    "story.storyboard", "text.chat",
-                                    "text.prompt_package", "video.generate",
+    #
+    # `speech.ltt` vao 30/08 (Q117/Q118). No la tool dau tien cua mot model NHA
+    # chay tren CHINH may nay — sidecar am sau loopback, venv rieng — thay vi
+    # tren may B. Canh bao cu VAN DUNG nguyen van: co mat o day la HOP DONG dong
+    # bang, KHONG phai khach goi duoc.
+    #
+    # ⛔ Va no co them mot cong thu tu ma ba tool kia khong co: dich vu
+    #    `LTTStudioVoice` phai dang chay. Cong do khong o trong ma nguon nen
+    #    khong test nao thay duoc — `setup/4-nghiem-thu.ps1` la cho kiem no.
+    assert published == exposed == ["image.generate", "image.ltt", "image.thumbnail",
+                                    "image.upscale", "speech.ltt", "story.storyboard",
+                                    "text.chat", "text.prompt_package", "video.generate",
                                     "video.subtitle", "video.upscale"]
 
     # Migrations: three, and the head is the last of them.

@@ -54,6 +54,14 @@ DISPOSITION = {
     # frozen in `server/api/inventory.py` rather than here.
     "ltt_llm": (EXPOSE_V1, ("text.chat",)),
 
+    # The in-house VOICE model (Q117/Q118). Third of the in-house models, and
+    # the first one whose engine runs on **this machine** rather than on host B:
+    # a warm sidecar behind loopback, in its own venv. That changes where the
+    # failure modes live, but it changes nothing here — EXPOSE_V1 still records
+    # only that the tool is *allowed* to be published. `LTT_PUBLIC_API_TOOLS`
+    # still omits it, and the service itself must be installed and running.
+    "ltt_voice": (EXPOSE_V1, ("speech.ltt",)),
+
     # Selling virtual machines (H39). It declares **no ToolSpec at all**: a VM is
     # not a priced job with a contract-shaped input, it is a lease. Nothing about
     # the job contract applies, so it publishes nothing.
