@@ -110,6 +110,21 @@ class Step:
         self.cwd = cwd
         self.nhom = nhom
         self.ok: bool | None = None
+        #: Buoc chay xong, tra 0, NHUNG tu khai la no khong lam duoc viec.
+        #:
+        #: 🔴 VI SAO CAN TRANG THAI THU BA. `gate.py` chi doc MA THOAT, nen
+        #:    mot buoc bo qua va mot buoc dat trong Y HET nhau tren dong RESULT.
+        #:    Do 31/08: `bat bien da tien trinh` xanh trong 0,7 giay vi
+        #:    `check_multiproc.py` khong tao duoc CSDL test, in mot doan giai
+        #:    thich rat tu te, roi `return 0`.
+        #:
+        #: ⭐ Va `return 0` o do la DUNG, dung sua no: mot may khong co
+        #:    PostgreSQL phai chay duoc gate. Cai sai nam o cho DOC, khong o do.
+        #:
+        #: ⛔ Hai phien doc cung mot dong RESULT theo hai cach trai nguoc trong
+        #:    cung mot ngay, va ca hai deu tuong minh dung. Do la cai gia that:
+        #:    mot buoc khong chay ma trong nhu da chay thi khong ai di tim no.
+        self.bo_qua = False
         self.seconds = 0.0
         self.tail = ""
 
@@ -345,6 +360,21 @@ def _steps(quick: bool) -> list[Step]:
     return steps
 
 
+#: Buoc nao KHONG lam duoc viec cua no thi mo dau mot dong bang chuoi nay.
+#: Quy uoc, khong phai ma thoat — vi ma thoat 0 o cac buoc do la co chu y.
+DAU_BO_QUA = "BO QUA"
+
+
+def _tu_khai_bo_qua(output: str) -> bool:
+    """Buoc co tu khai rang no khong lam duoc viec khong.
+
+    ⛔ Chi nhan o DAU DONG. Mot buoc in "khong BO QUA gi ca" giua cau khong
+       phai mot buoc bo qua, va bat theo `in` se bien moi ban bao cao noi ve
+       viec bo qua thanh mot lan bo qua.
+    """
+    return any(d.lstrip().startswith(DAU_BO_QUA) for d in output.splitlines())
+
+
 def _run(step: Step) -> None:
     started = time.monotonic()
     try:
@@ -356,6 +386,7 @@ def _run(step: Step) -> None:
         step.ok = False
         output = f"khong chay duoc: {exc}"
     step.seconds = time.monotonic() - started
+    step.bo_qua = bool(step.ok) and _tu_khai_bo_qua(output)
     lines = [line for line in output.splitlines() if line.strip()]
     # 🔴 GIU 40 DONG, KHONG PHAI 4 — day la mot sua loi QUY TRINH, khong phai
     #    mot con so tuy chinh.
@@ -651,7 +682,7 @@ def main() -> int:
     print("\n" + "=" * 62)
     failed = [s for s in steps if not s.ok]
     for step in steps:
-        mark = "PASS" if step.ok else "FAIL"
+        mark = "BOQUA" if step.bo_qua else ("PASS" if step.ok else "FAIL")
         print(f"  [{mark}] {step.name:<28} {step.seconds:6.1f}s")
     if failed:
         print("\nChi tiet buoc that bai:")
@@ -677,6 +708,20 @@ def main() -> int:
         print("=" * 62)
 
     ket = "PASS" if not failed else f"FAIL ({len(failed)}/{len(steps)})"
+    # 🔴 BUOC BO QUA PHAI HIEN RA O DONG RESULT, khong chi trong bang tren.
+    #
+    #    Cung luat da ap cho `--quick`, `--vong-lap` va cay-doi: mot luot chay
+    #    it hon thi dong ket qua cua no phai TRONG KHAC. Ngay 31/08 hai phien
+    #    doc cung mot dong `PASS 25/25` theo hai cach trai nguoc, vi mot buoc
+    #    da tu bo qua ma dong RESULT khong he noi.
+    #
+    # ⛔ Va no phai keu KE CA KHI TAT CA CON LAI DEU DAT — do dung la luc
+    #    nguy hiem nhat: mot dong `PASS` tron ven che mot bat bien chua bao gio
+    #    duoc chung minh.
+    bo_qua = [s for s in steps if s.bo_qua]
+    if bo_qua:
+        ket += (f"  [{len(bo_qua)} BUOC TU BO QUA, KHONG PHAI BANG CHUNG: "
+                f"{', '.join(s.name for s in bo_qua)}]")
     # 🔴 CUNG LUAT VOI `--quick` VA `--vong-lap`: mot luot chay it tin cay
     #    hon thi DONG KET QUA cua no phai trong khac. Truoc day cay-doi chi duoc
     #    noi trong mot doan van phia tren, con dong RESULT in y het mot luot

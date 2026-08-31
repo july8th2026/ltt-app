@@ -1,0 +1,14 @@
+BO QUA bo bat bien da tien trinh — khong tao duoc CSDL test: ProgrammingError (khong noi duoc truoc do: OperationalError)
+  test_214 la thu duy nhat chung minh webhook khong gui trung,
+  canh bao khong nhan doi, va so credit khop khi nhieu tien
+  trinh worker chay cung luc.
+
+  !! Tren may CHU: gan nhu chac chan vi khong doc duoc
+      C:\LTTPlatform\secrets\ (da siet ve SYSTEM +
+      Administrators tu 27/08). Do KHONG phai loi.
+      Chay lai gate bang PowerShell Administrator, hoac dat
+      LTT_TEST_DATABASE_URL truoc khi chay.
+
+  Chay tay:
+    set LTT_TEST_DATABASE_URL=postgresql+psycopg://.../..._test
+    python -m pytest tests/test_214_multi_process_runtime.py

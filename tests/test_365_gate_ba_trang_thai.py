@@ -1,0 +1,177 @@
+"""test_365 — một bước gate TỰ BỎ QUA không được trông giống một bước ĐẠT.
+
+## Chuyện đã xảy ra, 31/08/2026
+
+`gate.py` chỉ đọc **mã thoát**. `tools/check_multiproc.py` không tạo được CSDL
+test, in một đoạn giải thích rất tử tế, rồi `return 0`. Gate đọc `0` và in
+`[PASS]` trong **0,7 giây**.
+
+Hậu quả đo được: **hai phiên đọc cùng một dòng `RESULT` theo hai cách trái
+ngược trong cùng một ngày, và cả hai đều tưởng mình đúng.**
+
+* Một phiên báo *"gate PASS 25/25"* — tin rằng bất biến đa tiến trình đã được
+  chứng minh.
+* Phiên kia (tôi) thấy `FAIL (1/25)`, đọc thông điệp tử tế của `check_multiproc`,
+  rồi **gán nó cho con số thất bại** vì nó khớp câu chuyện đang kể — trong khi
+  bước thật sự đỏ là một bước khác và **chưa bao giờ được gọi tên**.
+
+⭐ Cái giá không nằm ở "một bước không chạy". Nó nằm ở chỗ: **một cái bẫy im
+   lặng thì người ta đi tìm; một cái bẫy có sẵn lời giải thích thì người ta
+   thôi tìm.**
+
+## ⛔ Và `return 0` ở đó là ĐÚNG — đừng "sửa" nó
+
+Một máy không có PostgreSQL vẫn phải chạy được gate. Đổi `check_multiproc.py`
+thành trả khác 0 là biến một máy thiếu công cụ thành một máy không chạy được
+cổng chất lượng. **Cái sai nằm ở chỗ ĐỌC, không ở chỗ trả.** Phép kiểm cuối tệp
+này canh đúng điều đó, để phiên sau không sửa nhầm đầu.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+GOC = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(GOC / "tools"))
+
+from gate import DAU_BO_QUA, Step, _tu_khai_bo_qua  # noqa: E402
+
+
+# ── 1. Phát hiện đúng thứ cần phát hiện ────────────────────────────────────
+
+def test_nhan_ra_dau_ra_THAT_cua_check_multiproc():
+    """Đo trên chính hình dạng đã gây ra sự cố, không trên một chuỗi bịa."""
+    that = (
+        "BO QUA bo bat bien da tien trinh - khong tao duoc CSDL test: "
+        "ProgrammingError\n"
+        "  test_214 la thu duy nhat chung minh webhook khong gui trung,\n"
+        "  Do KHONG phai loi.\n")
+    assert _tu_khai_bo_qua(that) is True
+
+
+def test_buoc_dat_binh_thuong_KHONG_bi_gan_nhan():
+    assert _tu_khai_bo_qua("RESULT: PASS\n12 checks, 0 vi pham") is False
+    assert _tu_khai_bo_qua("") is False
+
+
+def test_chi_nhan_o_DAU_DONG():
+    """⛔ Bắt theo `in` sẽ biến mọi bản báo cáo *nói về* việc bỏ qua thành một
+    lần bỏ qua — kể cả chính đầu ra của `check_bo_qua.py`."""
+    assert _tu_khai_bo_qua("khong BO QUA gi ca\nRESULT: PASS") is False
+    assert _tu_khai_bo_qua("Cho BO QUA moi (0)\nRESULT: PASS") is False
+    assert _tu_khai_bo_qua("   " + DAU_BO_QUA + " vi thieu GPU") is True, (
+        "thut le van la dau dong — nhieu cong cu in co thut")
+
+
+# ── 2. Bỏ qua ≠ hỏng, nhưng cũng ≠ đạt ────────────────────────────────────
+
+def test_bo_qua_KHONG_bi_tinh_la_that_bai():
+    """Nếu tính là hỏng thì máy thiếu PostgreSQL không chạy được gate — đúng
+    cái hậu quả mà `return 0` sinh ra để tránh."""
+    s = Step("thu", ["x"], GOC)
+    s.ok, s.bo_qua = True, True
+    assert s.ok is True and s.bo_qua is True
+
+
+def test_step_mac_dinh_KHONG_bo_qua():
+    s = Step("thu", ["x"], GOC)
+    assert s.bo_qua is False, "mac dinh phai la 'da chay that'"
+
+
+# ── 3. Dòng RESULT phải tự khai — đây mới là chỗ người ta đọc ─────────────
+
+def test_dong_RESULT_khai_bao_buoc_bo_qua():
+    """🔴 Bảng liệt kê từng bước ở trên đã có `[BOQUA]`, nhưng **dòng RESULT là
+    thứ duy nhất được đọc khi người ta vội** — đúng bài học của cây-đổi."""
+    khoi = _khoi_sua_ket()
+    assert any("bo_qua" in k for k in khoi), (
+        "`bo_qua` phai dieu khien chinh bien `ket`, khong phai in roi bo. "
+        f"Cac khoi co sua `ket`: {khoi}")
+    assert any("KHONG PHAI BANG CHUNG" in k for k in khoi), (
+        "phai NOI RO rang luot nay khong chung minh duoc dieu no trong nhu da "
+        "chung minh")
+
+
+def test_keu_KE_CA_KHI_moi_buoc_khac_deu_dat():
+    """⛔ Đó đúng là lúc nguy hiểm nhất: một dòng `PASS` trọn vẹn che một bất
+    biến chưa bao giờ được chứng minh."""
+    import ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(ma))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    # Phep dem buoc bo qua phai nam o THAN HAM, khong long trong mot `if` nao.
+    # Long no vao nhanh "co that bai" thi mot luot toan PASS se im lang — dung
+    # luc can no keu nhat.
+    o_than = any(
+        isinstance(n, ast.Assign)
+        and any(isinstance(x, ast.Name) and x.id == "bo_qua" for x in n.targets)
+        for n in ham.body)
+    assert o_than, (
+        "`bo_qua = [...]` phai o than `main`, khong long trong mot nhanh dieu "
+        "kien — neu khong, mot luot toan PASS se khong bao gio khai bao")
+
+
+def test_bang_buoc_co_nhan_rieng():
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert '"BOQUA" if step.bo_qua' in ma
+
+
+# ── 4. Bánh cóc chống "sửa nhầm đầu" ─────────────────────────────────────
+
+def test_check_multiproc_van_phai_TRA_VE_0_khi_bo_qua():
+    """🔴 Phép kiểm này chốt một điều NGƯỢC với phản xạ tự nhiên.
+
+    Đọc "bước này bỏ qua mà báo đạt" xong, phản xạ là làm nó trả khác 0. Làm
+    thế là biến một máy **thiếu PostgreSQL** thành một máy **không chạy được
+    cổng chất lượng** — và người tiếp theo sẽ vô hiệu hoá cả bước bằng một cờ
+    `--bo-qua`, rồi cờ đó ở lại mãi.
+
+    Chỗ sai là chỗ ĐỌC (`gate.py`), và nó đã được sửa. Chỗ trả thì giữ nguyên.
+    """
+    ma = (GOC / "tools" / "check_multiproc.py").read_text(encoding="utf-8")
+    khuc = ma[ma.index("BO QUA"):]
+    assert "return 0" in khuc[:2000] or "sys.exit(0)" in khuc[:2000], (
+        "nhanh bo qua phai van tra 0 — xem docstring cua phep kiem nay truoc "
+        "khi doi")
+
+
+def test_moc_BO_QUA_la_mot_hang_so_dung_chung():
+    """Gõ tay chuỗi "BO QUA" ở hai nơi là hai nguồn chân lý cho một quy ước."""
+    from gate import DAU_BO_QUA as m
+
+    assert m == "BO QUA"
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "DAU_BO_QUA" in ma.split("def _tu_khai_bo_qua")[1][:400], (
+        "ham phat hien phai dung hang so, khong go lai chuoi")
+
+
+def _khoi_sua_ket() -> list[str]:
+    """Mã nguồn của mọi khối `if` trong `main()` có **sửa biến `ket`**.
+
+    🔴 Phép đo QUAN HỆ, không phải khoảng cách. Bản đầu của hai phép kiểm trên
+       cắt một cửa sổ 900 ký tự sau một mốc chuỗi — nó đỏ ngay khi ai đó chèn
+       một khối chú thích vào giữa, dù hành vi đúng nguyên.
+
+    ⭐ Đúng cái bẫy vừa làm `test_362` đỏ oan, và tôi đã chép nó sang đây trong
+       cùng một giờ. Neo vào khoảng cách vật lý thay vì vào quan hệ là một lỗi
+       dễ lây, vì nó trông như một phép kiểm chặt chẽ.
+    """
+    import ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(ma))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    ra = []
+    for n in ast.walk(ham):
+        if not isinstance(n, ast.If):
+            continue
+        sua = any(
+            (isinstance(x, ast.AugAssign) and isinstance(x.target, ast.Name)
+             and x.target.id == "ket")
+            or (isinstance(x, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ket" for t in x.targets))
+            for x in ast.walk(n))
+        if sua:
+            ra.append(ast.unparse(n))
+    return ra

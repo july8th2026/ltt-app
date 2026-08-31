@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:2cf983ef0194a475ffe0c807cd02f095e5e294390c60680cc047d0a20d1222ab
-Nguồn đã quét : 1352 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d354ad192f66c3b2a7f7453a8b8f78f75677538cd73c79d4ae2374a8620ba87b
+Nguồn đã quét : 1359 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -180,6 +180,7 @@ Các lớp chính:
     - apps/ltt_voice/__init__.py
     - apps/ltt_voice/audio_input.py
     - apps/ltt_voice/dieu_khoan.py
+    - apps/ltt_voice/doc_man_api.py
     - apps/ltt_voice/doc_man_giong.py
     - apps/ltt_voice/doc_man_lich_su.py
     - apps/ltt_voice/du_an.py
@@ -192,8 +193,8 @@ Các lớp chính:
     - apps/ltt_voice/manifest.py
     - apps/ltt_voice/routes/__init__.py
     - apps/ltt_voice/routes/_chung.py
+    - apps/ltt_voice/routes/_p_api.py
     - apps/ltt_voice/routes/_p_audio.py
-    - apps/ltt_voice/routes/_p_chua_xay.py
     - apps/ltt_voice/routes/_p_du_an.py
     - apps/ltt_voice/routes/_p_giong.py
     - apps/ltt_voice/routes/_p_lich_su.py
@@ -208,7 +209,7 @@ Các lớp chính:
     - apps/ltt_voice/templates/_voice_the.html
     - apps/ltt_voice/templates/_voice_trangthai.html
     - apps/ltt_voice/templates/_voice_vo.html
-    - apps/ltt_voice/templates/ltt_voice_chua_xay.html
+    - apps/ltt_voice/templates/ltt_voice_api.html
     - apps/ltt_voice/templates/ltt_voice_du_an.html
     - apps/ltt_voice/templates/ltt_voice_giong.html
     - apps/ltt_voice/templates/ltt_voice_lich_su.html
@@ -216,6 +217,7 @@ Các lớp chính:
     - apps/ltt_voice/templates/ltt_voice_mot_du_an.html
     - apps/ltt_voice/templates/ltt_voice_mot_lo.html
     - apps/ltt_voice/templates/ltt_voice_studio.html
+    - apps/ltt_voice/templates/ltt_voice_thongbao.html
     - apps/ltt_voice/text_pipeline.py
     - apps/ltt_voice/tham_chieu.py
     - apps/ltt_voice/tham_so_cong_khai.py
@@ -607,19 +609,19 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
 - [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:18
 - [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:18
-- [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_chua_xay.py:47
+- [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
 - [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:41
 - [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:65
 - [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:121
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:367
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:191
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:336
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:220
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:250
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:275
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:165
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:414
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:366
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:190
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:335
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:219
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:249
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:274
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:164
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:413
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:87
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:45
@@ -630,10 +632,10 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] POST   /ltt-voice/lo/kiem → kiem_danh_sach | auth~login | apps/ltt_voice/routes/_p_lo.py:69
 - [ltt_voice] POST   /ltt-voice/lo/tao → tao_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:119
 - [ltt_voice] GET    /ltt-voice/lo/{public_id} → trang_mot_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:161
-- [ltt_voice] POST   /ltt-voice/lo/{public_id}/chay → chay_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:200
-- [ltt_voice] GET    /ltt-voice/lo/{public_id}/tai → tai_ca_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:320
-- [ltt_voice] GET    /ltt-voice/lo/{public_id}/trang-thai → trang_thai_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:248
-- [ltt_voice] POST   /ltt-voice/lo/{public_id}/xoa → xoa_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:295
+- [ltt_voice] POST   /ltt-voice/lo/{public_id}/chay → chay_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:199
+- [ltt_voice] GET    /ltt-voice/lo/{public_id}/tai → tai_ca_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:319
+- [ltt_voice] GET    /ltt-voice/lo/{public_id}/trang-thai → trang_thai_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:247
+- [ltt_voice] POST   /ltt-voice/lo/{public_id}/xoa → xoa_lo | auth~login | apps/ltt_voice/routes/_p_lo.py:294
 - [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:181
 - [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:66
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
@@ -1178,7 +1180,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (320 file pytest + 3 frontend)
+10. QUALITY GATES (324 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1453,6 +1455,7 @@ Test inventory:
 - tests/test_349_ltt_voice_ky_tu_an.py
 - tests/test_350_ltt_voice_du_an.py
 - tests/test_351_ltt_voice_lo.py
+- tests/test_352_ltt_voice_tiep_can.py
 - tests/test_353_voice_sidecar_bo_do.py
 - tests/test_354_so_do_khong_troi.py
 - tests/test_35_p2_runtime_boundary.py
@@ -1460,6 +1463,9 @@ Test inventory:
 - tests/test_361_cua_so_yen.py
 - tests/test_362_cay_rieng_va_deploy.py
 - tests/test_363_suat_khong_ro.py
+- tests/test_364_ltt_voice_man_api.py
+- tests/test_365_gate_ba_trang_thai.py
+- tests/test_366_chuan_hoa_dau_vao.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -1525,8 +1531,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1352 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:30, .py:1022, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1359 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:31, .py:1027, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1609,7 +1615,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (270)
+[apps] (272)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1674,6 +1680,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/ltt_voice/__init__.py
 - apps/ltt_voice/audio_input.py
 - apps/ltt_voice/dieu_khoan.py
+- apps/ltt_voice/doc_man_api.py
 - apps/ltt_voice/doc_man_giong.py
 - apps/ltt_voice/doc_man_lich_su.py
 - apps/ltt_voice/du_an.py
@@ -1686,8 +1693,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/ltt_voice/manifest.py
 - apps/ltt_voice/routes/__init__.py
 - apps/ltt_voice/routes/_chung.py
+- apps/ltt_voice/routes/_p_api.py
 - apps/ltt_voice/routes/_p_audio.py
-- apps/ltt_voice/routes/_p_chua_xay.py
 - apps/ltt_voice/routes/_p_du_an.py
 - apps/ltt_voice/routes/_p_giong.py
 - apps/ltt_voice/routes/_p_lich_su.py
@@ -1702,7 +1709,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/ltt_voice/templates/_voice_the.html
 - apps/ltt_voice/templates/_voice_trangthai.html
 - apps/ltt_voice/templates/_voice_vo.html
-- apps/ltt_voice/templates/ltt_voice_chua_xay.html
+- apps/ltt_voice/templates/ltt_voice_api.html
 - apps/ltt_voice/templates/ltt_voice_du_an.html
 - apps/ltt_voice/templates/ltt_voice_giong.html
 - apps/ltt_voice/templates/ltt_voice_lich_su.html
@@ -1710,6 +1717,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/ltt_voice/templates/ltt_voice_mot_du_an.html
 - apps/ltt_voice/templates/ltt_voice_mot_lo.html
 - apps/ltt_voice/templates/ltt_voice_studio.html
+- apps/ltt_voice/templates/ltt_voice_thongbao.html
 - apps/ltt_voice/text_pipeline.py
 - apps/ltt_voice/tham_chieu.py
 - apps/ltt_voice/tham_so_cong_khai.py
@@ -2441,7 +2449,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (15)
+[setup] (16)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2449,6 +2457,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/4-nghiem-thu.ps1
 - setup/cai_dich_vu_giong.ps1
 - setup/chay_thu_giong.ps1
+- setup/chay_voi_env.ps1
 - setup/cong_tac_tool_api.ps1
 - setup/dat_bien_env.ps1
 - setup/deploy_nang_quyen.ps1
@@ -2458,7 +2467,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (337)
+[tests] (341)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2744,6 +2753,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_349_ltt_voice_ky_tu_an.py
 - tests/test_350_ltt_voice_du_an.py
 - tests/test_351_ltt_voice_lo.py
+- tests/test_352_ltt_voice_tiep_can.py
 - tests/test_353_voice_sidecar_bo_do.py
 - tests/test_354_so_do_khong_troi.py
 - tests/test_35_p2_runtime_boundary.py
@@ -2751,6 +2761,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_361_cua_so_yen.py
 - tests/test_362_cay_rieng_va_deploy.py
 - tests/test_363_suat_khong_ro.py
+- tests/test_364_ltt_voice_man_api.py
+- tests/test_365_gate_ba_trang_thai.py
+- tests/test_366_chuan_hoa_dau_vao.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -2935,7 +2948,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1352 file; 13449697 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1359 file; 13532249 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3653,7 +3666,7 @@ gate xong ở nhánh mình thì có lý do để không chạy lại — và đ�
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ CLAUDE.md
-SHA256=8f6b82cfe1e5573fd66cebe3c3333f64f77a0373b06c739c5b59eb7c3b3afb97 BYTES=39275 LINES=460
+SHA256=3b5542143b1ac61b6a7a2541f3865a0e08c581ce3260f57214c1c46ef08f20e8 BYTES=41894 LINES=480
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Hướng dẫn cho Claude
 
@@ -3879,7 +3892,7 @@ nào**.
 | Củng cố phần thi hành của API — lease, đội hình worker, metrics, vòng đời file | ✅ code xong 2026-08-16 (H36); **còn nợ 4 việc chứng minh** — xem H36.9–12 |
 | **Model tạo ảnh NỘI BỘ trên máy B (RTX 3090)** — provider `ltt_image`, không phải app | 🔨 giai đoạn A xong 2026-08-22 (H37, Q102); cổng render đã là dịch vụ trên B; bán ra `/api/v1` qua app `anhnoibo` + tool `image.ltt` — **chưa mở cho khách** (4 cổng còn khoá, D-034). 🔴 **So mù G6b 23/08: Gemini 24 – nhà 4 – hoà 2** (phần có ý nghĩa: **14 – 4**, vì chữ tiếng Việt **ngoài phạm vi** — D-048). Nhà thua vì **giải phẫu, hình học, chất chụp thật**. ⇒ **Đừng định vị nó là "đẹp hơn"; ảnh có chữ thì trả lời Gemini và đó là câu cuối.** ⛔ **Bỏ hẳn đối chứng ngoài** (D-046) — đo từ đây là **HiDream đấu HiDream, một lô một biến**. 🔒 **GIỮ 50 BƯỚC — G4 ĐÓNG 24/08 (D-054), câu cuối.** Lô B2c (seed thứ ba) nâng tổng lên **60 cặp**: 50 bước **33 – 18**, điểm 0,625, KTC [0,507; 0,744] **không chứa 0,5**. 36 bước đã thua **hai lô độc lập** ⇒ không nhận. ⚠️ Nhưng khác biệt **nhỏ hơn khác biệt giữa hai seed** (sàn nhiễu 91% > quyết đoán 85%) — đừng đọc thành "36 bước tệ rõ". Muốn mở lại thì phải là **phép kiểm tương đương**, không phải chạy lại phép cũ. 🔨 **Tiếp quản 24/08 (D-050, D-051):** chấm theo `docs/KHUON_BAN_MODEL_NHA.md` được **18/31**; đã sửa **lỗi tiền đang sống** — xin 4 ảnh, máy B trả 2, khách vẫn bị thu tiền 4 vì handler không báo `credit_cost` (cùng gốc với lỗi H38 đã sửa 23/08). Thêm `/live` + chốt GPU/CPU cho cổng render, giá về `apps/anhnoibo/gia.py` và công bố ở `/gia-api`. 🔓 **24/08 (D-052, D-053): giá hạ một phần ba** (5 → 3 credit/ảnh, tham chiếu 15 → 9), **bốn cổng MỞ trong mã**, **G5 đóng** (trần token 7.506 → 11.412, đo thật 20,1 GB · 239 s). **Máy chấm thay người** (D-052) — đổi lại mỗi phiếu quyết đoán phải viết lý do, `cham_mu.py` từ chối tính nếu thiếu. ⚠️ `render_gateway/deploy/deploy.ps1` có **hai lỗi khiến nó chưa từng deploy thành công lần nào** (đích sai một cấp + `Join-Path` giải ổ đĩa của máy A); đã sửa, nay 29/29 khớp hash. ✅ **G4 + G5 + G9 đều ĐÓNG 24/08.** G9: **100/100 lượt, 0 hỏng**, VRAM dao động 163 MB (0,9 %), nhiệt 69–74 °C, **không trôi gì** qua hơn ba giờ (D-056). ⏳ Còn **hai việc cần chủ sản phẩm**: bật cờ bằng `setup\cong_tac_tool_api.ps1` **rồi mới** deploy — sai thứ tự thì cờ không có tác dụng. ⛔ **D-057 (24/08): DỪNG kế hoạch dùng máy A sinh ảnh.** Không hạ độ chính xác model; `bf16` đỉnh 18.450 MB không vừa card 16.311 MB, và riêng Llama-3.1-8B trong bộ mã hoá đã lấp kín một card. Mở lại cần **phần cứng ≥ 24 GB**, không phải một cách xếp encoder khác. ⇒ Hệ quả: **trọng tài VRAM ở `docs/ANH_NOI_BO/CHIA_GPU_HAI_MODEL.md` nay BẮT BUỘC** — hai model vẫn dùng chung 3090 (18.450 + 19.237 = 37.687 MB / 24.576). **KẾ HOẠCH TIẾP: `docs/KE_HOACH_TIEP_2026-08-24.md`** (một danh sách duy nhất, có thứ tự). Xem D-045…D-057 + `docs/ANH_NOI_BO/` |
 | **LLM NỘI BỘ bán qua API** (H38, Q106+Q107) — Qwen3.8-27B trên máy B, bán qua `/api/v1` | ✅ **ĐANG BÁN 2026-08-24.** Ba cửa: `/jobs` · `/chat/completions` (`SYNC_BILLED`) · `/messages` + `/responses` (`STREAM`, cho Codex/Claude Code/Claude Desktop). Đã đo thật qua Cloudflare: luồng **119 giây không bị 524**, Codex CLI chạy đầu-tới-cuối, tiền khớp từng credit. Còn: phiên thật Claude Code/Desktop, xoay khoá, công cụ tự ghi cấu hình. Xem `docs/VLM_NOI_BO/` 🧹 **DỌN THAM SỐ 30/08:** mọi ngân sách token nay có **một nguồn chân lý** — `apps/ltt_llm/ngan_sach.py` (3 số gõ tay: `CUA_SO_MODEL` 131.072 · `TOKEN_RA_TRAN` 32.768 · `LE` 2.048; còn lại **dẫn xuất**: trần vào **96.256**, công bố cho client 88.555, body tối thiểu 433 KB). Mặc định token ra phải **gọi theo tên cửa** `mac_dinh_cho("sync"|"stream"|"job")` — một cái tên chung chung đã khiến cửa stream mượn ngân sách 1.024 của cửa đồng bộ và **mọi câu trả lời dài cụt ở đúng 1.024 token, im lặng**. ⚠️ **Đổi trần token của máy B thì sửa `llm_gateway/deploy/deploy.ps1` rồi deploy** — `C:\ProgramData\LTTLlm\gateway.env` là thứ **thắng tất cả** (nó ghi đè `os.environ`) nhưng do script sinh ra, sửa tay là mất ở lần deploy sau; NSSM env và env máy đều **vô tác dụng**. Sau mỗi lần đổi chạy `pytest tests/test_334_ngan_sach_ltt_llm.py` **có `LTT_LLM_TOKEN`** — 21 phép kiểm đối chiếu ba tầng (ta / mã máy B / máy B đang chạy). Xem `docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md` |
-| **LTT VOICE** — giọng nói tiếng Việt nhân bản (VieNeu-TTS v3 Turbo), chạy **trên máy A** | 🔨 **V0–V6 xong 2026-08-30** (Q117–Q119). ⭐ Khác `anhnoibo`/`ltt_llm` ở chỗ quan trọng nhất: engine chạy **cùng máy**, sau loopback `127.0.0.1:8120`, dịch vụ NSSM thứ tư `LTTStudioVoice` từ venv cách ly `vieneu-venv`. ⇒ **không provider, không `api_pool`, không sửa `platform_core/` hay `server/` dòng nào.** 📊 **Đo thật trên 5060 Ti:** VRAM đỉnh **641 MB** (reserved 1.288) — nhỏ hơn `upscalevideo` quality 12.000 MB gần 10 lần, nên sống chung thoải mái; RTF **0,121 @3.000 ký tự** / 0,70 @câu ngắn; TTFA **398 ms**; nạp model 19,4 s (10,5 s khi ấm). 🔴 **Ba lỗi upstream đã vá, đừng 'sửa' ngược:** ① gói PyPI `perth` là **thư viện threading**, không phải watermarker — phải `resemble-perth`, và `_init_watermarker` của upstream nuốt `AttributeError` nên **mọi lượt sinh trước đó đều không có dấu** (#191); ② `transformers==4.57.6` đòi `huggingface_hub<1.0` nhưng `vieneu` kéo `1.29` — cài theo thứ tự README là venv hỏng, chỉ lộ ra ở `import transformers`; ③ tải model trên Windows có **cuộc đua blobs→snapshots** (không symlink) ⇒ `max_workers=1` + thử lại. ⛔ **Trần 1.500 ký tự/lượt là trần CHẤT LƯỢNG** (#168 báo trôi giọng từ ~3.000), không phải trần kỹ thuật — 3.000 vẫn sinh được trong 17,6 s. ⛔ **`temperature`/`top_k`/`top_p` KHÔNG ra hợp đồng công khai**: cache CUDA graph khoá theo `(B, temp, top_k, top_p)`. ⚠️ **Bẫy deploy:** `LTTStudioVoice` giữ handle trên `app\` nên `update.ps1` phải dừng nó **đầu tiên**; và nếu production đã đặt `LTT_WORKER_POOLS` mà thiếu làn `voice` thì job nằm `queued` **mãi mãi, không lỗi nào báo** (`4-nghiem-thu.ps1` có chốt). ⚠️ **venv + cache đặt ở `D:\LTTPlatform-runtime`** vì C: chỉ còn 5,6 GB/930 GB. Còn V7–V10. Xem `docs/LTT_VOICE/` |
+| **LTT VOICE** — giọng nói tiếng Việt nhân bản (VieNeu-TTS v3 Turbo), chạy **trên máy A** | 🔨 **V0–V6 xong 2026-08-30** (Q117–Q119). ⭐ Khác `anhnoibo`/`ltt_llm` ở chỗ quan trọng nhất: engine chạy **cùng máy**, sau loopback `127.0.0.1:8120`, dịch vụ NSSM thứ tư `LTTStudioVoice` từ venv cách ly `vieneu-venv`. ⇒ **không provider, không `api_pool`, không sửa `platform_core/` hay `server/` dòng nào.** 📊 **Đo thật trên 5060 Ti:** VRAM đỉnh **641 MB** (reserved 1.288) — nhỏ hơn `upscalevideo` quality 12.000 MB gần 10 lần, nên sống chung thoải mái; RTF **0,121 @3.000 ký tự** / 0,70 @câu ngắn; TTFA **398 ms**; nạp model 19,4 s (10,5 s khi ấm). 🔴 **Ba lỗi upstream đã vá, đừng 'sửa' ngược:** ① gói PyPI `perth` là **thư viện threading**, không phải watermarker — phải `resemble-perth`, và `_init_watermarker` của upstream nuốt `AttributeError` nên **mọi lượt sinh trước đó đều không có dấu** (#191); ② `transformers==4.57.6` đòi `huggingface_hub<1.0` nhưng `vieneu` kéo `1.29` — cài theo thứ tự README là venv hỏng, chỉ lộ ra ở `import transformers`; ③ tải model trên Windows có **cuộc đua blobs→snapshots** (không symlink) ⇒ `max_workers=1` + thử lại. ⛔ **Trần 1.500 ký tự/lượt là trần CHẤT LƯỢNG** (#168 báo trôi giọng từ ~3.000), không phải trần kỹ thuật — 3.000 vẫn sinh được trong 17,6 s. ⛔ **`temperature`/`top_k`/`top_p` KHÔNG ra hợp đồng công khai**: cache CUDA graph khoá theo `(B, temp, top_k, top_p)`. ⚠️ **Bẫy deploy:** `LTTStudioVoice` giữ handle trên `app\` nên `update.ps1` phải dừng nó **đầu tiên**; và nếu production đã đặt `LTT_WORKER_POOLS` mà thiếu làn `voice` thì job nằm `queued` **mãi mãi, không lỗi nào báo** (`4-nghiem-thu.ps1` có chốt). ⚠️ **venv + cache đặt ở `D:\LTTPlatform-runtime`** vì C: chỉ còn 5,6 GB/930 GB. 🖥️ **GIAO DIỆN ĐẦY ĐỦ XONG 2026-08-31** — sáu màn: Tạo tiếng nói · Giọng của tôi · Dự án · Chạy lô · Lịch sử · API. Không tab nào còn `built=False`. Xem `docs/LTT_VOICE/VOICE_UI_EXECUTION_PLAN.md` §14 (nhật ký từng pha, kèm mọi lỗi đã tìm ra). ⛔ **ĐỪNG ĐỌC "Chạy lô đã xong" THÀNH "V9 đã xong".** Màn Chạy lô và màn Dự án nộp **một job cho mỗi dòng/khối** — đúng hình dạng cho MVP (mỗi dòng thử lại và tính tiền độc lập) nhưng **không** dùng `infer_batch` lẫn CUDA graph đã ấm. Tức **bề mặt** của V9 đã có, **phần hiệu năng** thì chưa. 🔴 **Một lỗi vòng đời đã sửa, đáng nhớ vì nó có hạn:** `voice_block.audio_key` sống mãi cùng dự án, còn tệp nó trỏ tới sống **30 ngày** theo hạn của `jobs` — nên sau 30 ngày khách mở dự án cũ sẽ thấy một trình phát 404 không lời giải thích. Nay mọi đường nghe đi qua **một** thẩm quyền `du_an.duong_tieng()` (thay cho năm chỗ tự dựng URL), và khối hết tệp thì **nói ra** thay vì để một ô trống. Còn V7–V10. Xem `docs/LTT_VOICE/` |
 | **Bán VPS (máy chủ ảo Windows)** — app `apps/vps/`, Proxmox chạy LỒNG trong VMware trên máy B | 🔴 **ĐANG SỐNG VÀ CÔNG KHAI — SỬA 2026-08-26, TRƯỚC ĐÓ HÀNG NÀY NÓI SAI VỀ PHÍA NGUY HIỂM.** Nó từng viết *"App vẫn **TẮT** (`LTT_VPS` chưa đặt)"*. Đọc production 26/08: `C:\LTTPlatform\secrets\app.env:72` → **`LTT_VPS=1`**, và `GET https://app.lttstudios.com/vps` trả **200 cho khách ẩn danh**. Biểu mẫu tạo máy **đang thu credit thật**. ⛔ Vì sao nguy hiểm chứ không chỉ sai: một phiên sau đọc dòng cũ sẽ sửa `/vps` **như sửa mã chết**. *(Cùng lớp lỗi với hàng Public API, sửa cùng ngày.)* 🔨 **~95% — G1→G10 xong 2026-08-25** (H39, Q103–Q105). Chuỗi đã đo thật đầu-tới-cuối: tạo máy **17 giây** → boot thẳng vào trình cài Windows → console trong trình duyệt → DHCP theo MAC → RDP từ Internet qua **IP riêng của từng máy** → thu tiền → treo → xoá → **trả IP về Vultr**. 🔴 **Cụm không chạy được virtio** — máy phải `sata0`+`e1000`, `agent:0`, `balloon:0` (xem `MO_HINH_CARD` trong `apps/vps/services/mang.py`). 🔴 **Khách TỰ CÀI Windows** (chốt 24/08): nền tảng **không bao giờ biết mật khẩu của khách**, không có template, không sysprep. Danh mục dừng ở **Server 2016, Server 2022, Windows 10 LTSC** — **KHÔNG bán Windows 11** (nhánh UEFI/vTPM đã gỡ khỏi `jobs.py`). ⚠️ Hợp đồng app có thêm `AppManifest.bao_tri` — app khai việc định kỳ, nền tảng chạy nó **dưới lease**; app tự dựng vòng lặp sẽ trừ tiền khách N lần mỗi chu kỳ. ✅ **G8 + G10 xong 25/08**: trang tạo máy hai bước, **trang bán công khai** (`/vps` phục vụ cả khách chưa đăng nhập — thẻ app trong catalog trỏ tới đó, nên đòi đăng nhập là ngõ cụt ngay bước đầu phễu), điều khoản riêng + clickwrap, sao kê thanh toán. `test_298` đối chiếu **từng con số** trong điều khoản với hằng số thật — đổi giá mà quên sửa điều khoản là gate đỏ. ✅ Đã **dọn sạch dấu vết diễn tập**: 0 VM lạ, **0 Reserved IP** bên Vultr, 4 bảng `vps_*` về 0 dòng; tài khoản thử bị **vô hiệu hoá chứ không xoá** (bút toán credit là append-only). ⚠️ Còn **G7b** (cpulimit + cảnh báo CPU) và **G9b** (diễn tập dựng lại cổng vào — **KHÔNG cần mua thêm VPS**: Reserved IP sống sót khi instance chết, nên có đường dựng lại $0; hoãn vì nó là hành động không đảo được trên một máy đang trả tiền). ⚠️ Trước khi mở bán phải chạy `setup\cong_tac_tool_api.ps1` **rồi mới** deploy. ✅ Đã xoá **3 template + 7 ISO chết**; đường `clone` gỡ hẳn, `os_images` chỉ còn Windows. Kho `local` còn **5,1 GB**, đủ cho ba ISO đang dùng. ⚠️ **Có shell root trên node** qua `tools/vps_node_shell.py` (termproxy = shell root; token cũng có `Sys.Modify`) — đừng lặp lại kết luận cũ rằng không có. ⚠️ Hạn ngạch Reserved IP của Vultr tính **cả IP vừa xoá**, nên tạo/xoá liên tục lúc thử sẽ làm lượt sau hỏng ở mốc 92%. Xem `docs/VPS/PHAN_TICH_VPS_PROXMOX.md` và mục G ở `docs/KE_HOACH_TRIEN_KHAI.md` |
 
 **Admin hiện tại là tài khoản trong CSDL** (`tools\create_admin.py`), đăng nhập
@@ -4047,6 +4060,26 @@ provider**.
 điểm ≥ 9/10 ở `docs/ANH_NOI_BO/KE_HOACH_THI_HANH.md`.
 
 Sáu thứ phải biết trước khi đụng vào:
+
+- 🔴 **ĐƯỜNG VÀO MÁY B: đọc `Ket_noi.md` trên Desktop TRƯỚC KHI TÌM CÁCH KHÁC.**
+  Kênh chính là **LTT Nexus**, không phải SSH: gọi controller máy A rồi proxy sang
+  `https://192.168.2.17:9444/api/v1/nodes/f8b24d88-6e3e-4719-8143-d5e83f68ed82/proxy/api/v1/<đường>`
+  kèm `X-Nexus-Protocol: 1` + `Authorization: Bearer <token>`
+  (token ở `%USERPROFILE%\.nexus\claude-code.token`). Có `command.run` và
+  `file.write`, tức làm được mọi việc SSH làm — agent chạy bằng **LocalSystem**
+  nên khởi động lại dịch vụ trên B được luôn.
+
+  ⛔ **`sshd` trên máy B đang `Disabled` có chủ ý** (từ 27/08). Cổng 22 đóng
+  **không phải** mạng hỏng. Ngày 31/08 tôi quét 22/2222/22022/8022, thử SMB, thử
+  `sc.exe` từ xa rồi kết luận "không vào được máy B" — trong khi câu trả lời nằm
+  sẵn trong `Ket_noi.md`, kể cả **lý do** cổng 22 đóng. Cần SSH cho một script
+  chỉ chạy được qua nó (vd `llm_gateway/deploy/deploy.ps1`) thì bật tạm **bằng
+  Nexus** rồi **đóng lại ngay sau khi xong**.
+
+  ⭐ **`NODE_OFFLINE` ≠ máy tắt.** Ba mức khác nhau, sửa ở ba nơi: máy tắt · máy
+  sống nhưng agent Nexus im · agent sống nhưng thiếu capability. Phân biệt bằng
+  `ping` → cổng `8199/8299` → `health.state`. Chi tiết ở memory
+  `may-b-duong-vao-va-du-phong`.
 
 - ⚠️ **Máy B có thể tự khởi động lại để cập nhật Windows** (Active Hours 07:00 →
   01:00; đã xảy ra 22/08 lúc 01:29, sự kiện `1074`, cuốn theo một lô ở ảnh 21/30).
@@ -18239,6 +18272,110 @@ CAM_KET = N_(
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/doc_man_api.py
+SHA256=5cee36a708b76b69527488b226949b018f6258e482a5b2041bfbabd6369fb291 BYTES=4902 LINES=98
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+doc_man_api.py — những gì MÀN API của Voice cần biết, và không gì hơn.
+
+## Màn này tồn tại để làm gì, khi đã có cả khu `/developers`
+
+Khu Lập trình viên trả lời mọi câu hỏi **chung**: khoá, hạn mức, giá, nhật ký,
+playground. Nó không trả lời được ba câu **riêng của giọng nói**, và đó là toàn
+bộ lý do màn này có mặt:
+
+1. **Mã giọng của tôi là gì?** Giọng nhân bản chỉ tồn tại trong tài khoản này;
+   `/developers/tools` mô tả tham số `voice_id` nhưng không biết khách có giọng
+   nào. Không có màn này thì khách phải sang màn Giọng, chép từng mã, rồi quay
+   lại — hoặc đoán.
+2. **Tên giọng dựng sẵn nào hợp lệ?** Hai mươi tên, và gõ sai một chữ thì lỗi
+   hiện ra ở tận lúc gọi, dưới dạng "không tìm thấy giọng".
+3. **Trần 1.500 ký tự là trần gì?** Nó là trần **chất lượng**, không phải trần
+   kỹ thuật (Q118) — và một dòng trong bảng tham số không nói được điều đó.
+
+⛔ **KHÔNG chép lại bất cứ thứ gì khu Lập trình viên đã có.** Không bảng giá thứ
+   hai, không danh sách khoá thứ hai, không nhật ký thứ hai. Hai bản của cùng
+   một sự thật thì bản nào cũng sai được một mình, và bản sai sẽ là bản không ai
+   nhớ phải cập nhật.
+
+## 🔴 Trạng thái phải là SỰ THẬT ĐANG CHẠY, không phải một hằng số
+
+`speech.ltt` khai `api_exposed=True` trong bản khai — điều đó **không** có nghĩa
+nó đang mở. Cổng thật là `LTT_PUBLIC_API_TOOLS`, và hôm nay công cụ này **không**
+có trong đó. Một màn nói "gọi thế này" trong khi cửa đóng sẽ đẩy khách vào một
+lượt 404 mà họ đọc thành "khoá của tôi sai".
+
+⚠️ Đây đúng là lớp lỗi mà `CLAUDE.md` đã dính **hai lần** với chính khu API: tài
+   liệu ghi "chưa mở" trong khi máy chủ đang bán. Bài học đã ghi ở đó là *đừng
+   đọc con số trong tài liệu, hỏi máy chủ* — nên màn này hỏi cấu hình đang chạy
+   mỗi lần dựng trang, không cache, không hằng số.
+"""
+from __future__ import annotations
+
+import logging
+
+log = logging.getLogger(__name__)
+
+#: Tên công cụ trên `/api/v1`. Cùng chuỗi với `manifest.ToolSpec.name`.
+TEN_TOOL = "speech.ltt"
+
+
+def trang_thai_tool(ten: str = TEN_TOOL) -> dict:
+    """`{khu_bat, tool_mo, chi_doc}` — đọc từ cấu hình ĐANG CHẠY.
+
+    Trả về trạng thái "đóng" nếu không đọc được, chứ không nổ: một màn hướng dẫn
+    hỏng không được phép làm khách mất luôn danh sách mã giọng bên dưới. Và đóng
+    là phía an toàn — nó khiến khách hỏi, thay vì khiến khách gọi rồi thất bại.
+    """
+    try:
+        from platform_core.public_api.config import load_public_api_config
+        cau_hinh = load_public_api_config()
+    except Exception:  # noqa: BLE001
+        log.exception("khong doc duoc cau hinh public api")
+        return {"khu_bat": False, "tool_mo": False, "chi_doc": False}
+    return {
+        "khu_bat": bool(cau_hinh.enabled),
+        "tool_mo": bool(cau_hinh.enabled and cau_hinh.tool_exposed(ten)),
+        "chi_doc": bool(cau_hinh.read_only),
+    }
+
+
+def ma_giong_cua_toi(db, owner_id: str) -> list:
+    """Mã giọng nhân bản còn dùng được, kèm tên hiển thị — để chép vào mã nguồn.
+
+    ⚠️ Chỉ giọng `active`. Một giọng đã gỡ vẫn còn hàng trong CSDL (bút toán trỏ
+       về nó), nhưng đưa mã của nó vào một trang hướng dẫn gọi API là mời khách
+       viết một lời gọi chắc chắn hỏng.
+    """
+    try:
+        from . import tham_chieu
+        cac = tham_chieu.danh_sach(db, owner_id=owner_id)
+    except Exception:  # noqa: BLE001
+        log.exception("khong doc duoc danh sach giong")
+        return []
+    return [{"ma": g.public_id, "ten": g.ten_hien_thi}
+            for g in cac if g.trang_thai == "active"]
+
+
+def vi_du_van_ban(ten: str = TEN_TOOL) -> str:
+    """Câu ví dụ cho tham số `text`, lấy từ CHÍNH `api_contract`.
+
+    ⛔ Không gõ lại vào khuôn mẫu. `/developers/tools` in ví dụ từ bản khai; nếu
+       màn này có bản riêng thì một ngày khách thấy hai câu khác nhau cho cùng
+       một tham số và không biết tin câu nào.
+    """
+    try:
+        from .manifest import MANIFEST
+        for t in MANIFEST.tools:
+            if t.name == ten:
+                return str((t.api_contract or {}).get("params", {})
+                           .get("text", {}).get("example") or "")
+    except Exception:  # noqa: BLE001
+        log.exception("khong doc duoc vi du tu ban khai")
+    return ""
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/doc_man_giong.py
 SHA256=9172c26dbb86158df1b79ff4b726a42a2fb5f6056d47903dd8478d8e30597eed BYTES=6022 LINES=132
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -18531,7 +18668,7 @@ def dong_cho_trang(job, duong_audio: str) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/du_an.py
-SHA256=46be4db3d2cbce7bf38c595e658c8d6beb1acdfbc3726fab4d0a9b89930ac22a BYTES=15027 LINES=330
+SHA256=93ec7eff03aec71d95bb0dadd2c69b65880a94b115b7e76161ae01157e5bcd80 BYTES=16921 LINES=368
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 du_an.py — nghiệp vụ của màn DỰ ÁN.
@@ -18642,6 +18779,44 @@ def cac_khoi(db, project_id: int) -> list:
         select(VoiceBlock).where(VoiceBlock.project_id == int(project_id))
         .order_by(VoiceBlock.thu_tu, VoiceBlock.id)
     ).scalars())
+
+
+def duong_tieng(db, cac, tien_to: str) -> dict:
+    """`id khối → URL nghe`. Khối mà tệp tiếng đã hết hạn thì KHÔNG có URL.
+
+    🔴 VÌ SAO PHẢI HỎI SANG BẢNG `jobs`. `voice_block.audio_key` chỉ là con trỏ;
+       tệp thật nằm trong vùng của job sinh ra nó, và `jobs` là CONTENT/30 ngày.
+       Sau 30 ngày `job_content.purge_expired` xoá tệp và đặt
+       `content_expired_at` — nhưng `audio_key` trên khối vẫn còn nguyên. Đọc
+       thẳng `audio_key` thì trang dựng một trình phát trỏ vào hư không: khách
+       bấm play, không có gì xảy ra, không có câu nào giải thích.
+
+    ⛔ VÀ VÌ SAO NÓ LÀ MỘT HÀM chứ không phải một điều kiện chép ở mỗi chỗ. Có
+       NĂM chỗ dựng đường nghe (hai ở Dự án, ba ở Chạy lô, kể cả nút tải ZIP).
+       Trước hàm này cả năm đều viết `if k.audio_key` — tức để sửa đúng thì phải
+       nhớ đủ năm, và chỗ thứ sáu sẽ lại quên. Một luật cho cả lớp.
+
+    ⚠️ Một truy vấn cho cả danh sách, không một truy vấn mỗi khối: một lô 500
+       dòng sẽ thành 500 lượt hỏi CSDL trên đúng con đường được hỏi lại mỗi vài
+       giây.
+    """
+    from sqlalchemy import select
+
+    from platform_core.models import Job
+
+    co_khoa = [k for k in cac if k.audio_key]
+    if not co_khoa:
+        return {}
+    ma_job = {str(k.job_id) for k in co_khoa if k.job_id}
+    het_han = set()
+    if ma_job:
+        het_han = {
+            str(x) for (x,) in db.execute(
+                select(Job.id).where(Job.id.in_(ma_job),
+                                     Job.content_expired_at.is_not(None)))
+        }
+    return {k.id: f"{tien_to}/audio/{k.audio_key}"
+            for k in co_khoa if str(k.job_id or "") not in het_han}
 
 
 def tim_khoi(db, project_id: int, block_id: int):
@@ -20229,7 +20404,7 @@ def tom_tat(cac: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
-SHA256=7cf47de8f96a2691964701e1064205915bf0aa34caa8d59562b39871740e2653 BYTES=12373 LINES=229
+SHA256=fdda24e2382e522ea1eb8d9fa29b1866f222a863c6f71e571ccac921bc8953f2 BYTES=12302 LINES=226
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `ltt_voice` — giọng nói tiếng Việt nhân bản, model chạy trên **máy A** (Q117).
@@ -20305,20 +20480,17 @@ MANIFEST = AppManifest(
     group=N_('Âm thanh'),
     badge=N_('MỚI'),
 
-    # ⭐ SÁU TAB. `built=False` khai thẳng màn nào chưa xây.
+    # ⭐ SÁU TAB, và từ P8 **cả sáu đều đã xây** — không tab nào còn
+    #    `built=False`. Cơ chế badge "đang xây" của nền tảng vẫn còn nguyên và
+    #    vẫn dùng được; thứ đã biến mất là những màn cần tới nó.
     #
-    #    `NavEntry.built=False` là một affordance có sẵn của nền tảng: `base.html`
-    #    tự gắn badge "đang xây" lên tab. Dùng nó thay vì giấu tab đi, vì hai thứ
-    #    đó nói hai điều khác nhau — giấu nói *"sản phẩm không có việc này"*,
-    #    badge nói *"có, và chưa tới lượt"*. Điều thứ hai đúng.
-    #
-    # ⛔ Nhưng tab đã hiện thì bấm vào PHẢI tới một chỗ nói được điều gì đó.
-    #    `routes/_p_chua_xay.py` có route thật, dựng từ `vo.CHUA_XAY`. Một tab
-    #    dẫn tới 404 tệ hơn không có tab: nó biến một lời hứa thành một lỗi.
-    #
-    # ⭐ Danh sách chưa-xây **co lại** khi màn được xây: Dự án rời ở P5, Chạy lô
-    #    ở P6. `tests/test_344` chốt hai bên luôn khớp — lệch một chiều thì trang
-    #    chưa-xây ném `KeyError`, lệch chiều kia thì có nội dung mồ côi.
+    # ⛔ Nếu một ngày thêm tab thứ bảy chưa xây: đặt `built=False` chứ ĐỪNG giấu
+    #    tab đi. Hai thứ đó nói hai điều khác nhau — giấu nói *"sản phẩm không
+    #    có việc này"*, badge nói *"có, và chưa tới lượt"*. Và tab đã hiện thì
+    #    bấm vào phải tới một chỗ nói được điều gì đó: một tab dẫn tới 404 tệ
+    #    hơn không có tab, vì nó biến một lời hứa thành một lỗi. Cơ chế trang
+    #    giữ chỗ cũ (`vo.CHUA_XAY` + `routes/_p_chua_xay.py`) đã gỡ khi màn cuối
+    #    được xây — dựng lại nó rẻ hơn là để nó nằm đó không phục vụ ai.
     #
     # Thứ tự theo luồng làm việc thật, không theo thứ tự xây: viết → chọn giọng →
     # gom thành dự án → chạy hàng loạt → xem lại → tự động hoá.
@@ -20328,7 +20500,7 @@ MANIFEST = AppManifest(
         NavEntry(N_('Dự án'), "/ltt-voice/du-an", "📚", "ltt_voice_du_an"),
         NavEntry(N_('Chạy lô'), "/ltt-voice/lo", "🧺", "ltt_voice_lo"),
         NavEntry(N_('Lịch sử'), "/ltt-voice/lich-su", "🕘", "ltt_voice_lich_su"),
-        NavEntry(N_('API'), "/ltt-voice/api", "🔌", "ltt_voice_api", False),
+        NavEntry(N_('API'), "/ltt-voice/api", "🔌", "ltt_voice_api"),
     ),
 
     job_types=("ltt_voice.synthesize", "ltt_voice.enroll"),
@@ -20464,7 +20636,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/__init__.py
-SHA256=9cfd0fde3146b3981cda2749ac6d68c1429da45899251cd81ca157882e322908 BYTES=1584 LINES=27
+SHA256=87848d6c1b5931df77ad07be6047bc276f9aa17f4727c679af5fda5462852145 BYTES=1644 LINES=26
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 routes/ — bề mặt web của LTT VOICE, tách theo màn (`AGENTS.md` mục 8).
@@ -20478,19 +20650,18 @@ Nền tảng chỉ cần biến `router`. Import từng mảnh ở đây để h
     _p_du_an.py     Dự án: danh sách · khối · sinh · xuất
     _p_lo.py        Chạy lô: nhận danh sách · kiểm hết · chạy hết · tải zip
     _p_lich_su.py   Lịch sử: lọc và liệt kê
-    _p_chua_xay.py  Màn đã có tab nhưng chưa xây
+    _p_api.py       API: mã giọng để dán vào mã nguồn + trạng thái cửa thật
     _p_audio.py     Phục vụ tệp tiếng — cửa duy nhất đọc kho của khách
 
-⛔ THỨ TỰ IMPORT CÓ NGHĨA. `_p_chua_xay` phải nằm **sau** mọi mảnh khai đường
-   thật: nó chỉ còn dựng những màn chưa ai xây, và ngày một màn được xây thì
-   route thật phải thắng. FastAPI khớp theo thứ tự đăng ký, nên một placeholder
-   đăng ký trước sẽ **nuốt** đường thật — và triệu chứng là một màn hoàn chỉnh
-   hiện ra trang "đang xây", không lỗi nào báo.
+⭐ TỪ P8 KHÔNG CÒN MẢNH GIỮ CHỖ. `_p_chua_xay.py` đã gỡ cùng màn cuối được xây.
+   Nó từng phải nằm **sau** mọi mảnh khác vì FastAPI khớp theo thứ tự đăng ký,
+   nên một placeholder đăng ký trước sẽ **nuốt** đường thật — và triệu chứng là
+   một màn hoàn chỉnh hiện ra trang "đang xây", không lỗi nào báo. Cái bẫy đó đi
+   cùng tệp; ghi lại ở đây phòng khi ai dựng lại cơ chế ấy.
 """
 from apps.ltt_voice.routes._chung import router
 from apps.ltt_voice.routes import (  # noqa: F401  (import để đăng ký route)
-    _p_tao, _p_giong, _p_du_an, _p_lo, _p_lich_su, _p_audio,
-    _p_chua_xay)
+    _p_tao, _p_giong, _p_du_an, _p_lo, _p_lich_su, _p_api, _p_audio)
 
 __all__ = ["router"]
 
@@ -20615,6 +20786,59 @@ def _het_phien():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_api.py
+SHA256=50288578979cece6979a640abc869692b436350306b7ae4454111f462cbffc06 BYTES=2066 LINES=47
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Màn API của Voice: mã giọng để dán vào mã nguồn, và trạng thái cửa thật.
+
+⛔ MÀN NÀY KHÔNG PHẢI MỘT BẢN SAO CỦA `/developers`. Nó không có bảng giá, không
+   có danh sách khoá, không có nhật ký — ba thứ đó khu Lập trình viên đã làm và
+   làm cho **mọi** công cụ. Ở đây chỉ có thứ chỉ đúng với giọng nói: mã giọng
+   của chính khách, tên giọng dựng sẵn hợp lệ, và trần ký tự cùng lý do của nó.
+
+🔴 TRẠNG THÁI ĐỌC TỪ CẤU HÌNH ĐANG CHẠY, mỗi lần dựng trang. Xem đầu
+   `doc_man_api.py` — hai lần trong dự án này một tài liệu đã nói sai về chính
+   khu API, và cả hai lần đều sai về phía nguy hiểm.
+"""
+from __future__ import annotations
+
+from ._chung import (TRAN_KY_TU_CONG_KHAI, Depends, HTMLResponse,
+                     Request, giong_mau, require_login, router, templates,
+                     user_hien_tai, vo, _db, _uid)
+
+
+@router.get("/api", response_class=HTMLResponse)
+def trang_api(request: Request, user=Depends(user_hien_tai),
+              _=Depends(require_login)):
+    from .. import doc_man_api
+
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        hang_doi = vo.dem_dang_chay(db, uid)
+        ma_giong = doc_man_api.ma_giong_cua_toi(db, uid)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    return templates.TemplateResponse(
+        request, "ltt_voice_api.html",
+        vo.ngu_canh(request, user, nav_key=vo.NAV_API, hang_doi=hang_doi,
+                    trang_thai=doc_man_api.trang_thai_tool(),
+                    ten_tool=doc_man_api.TEN_TOOL,
+                    ma_giong=ma_giong,
+                    giong_mau=giong_mau.DANH_SACH,
+                    mac_dinh=giong_mau.MAC_DINH,
+                    nhan_gioi=giong_mau.NHAN_GIOI,
+                    nhan_vung=giong_mau.NHAN_VUNG,
+                    vi_du=doc_man_api.vi_du_van_ban(),
+                    tran_ky_tu=TRAN_KY_TU_CONG_KHAI))
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_audio.py
 SHA256=c8eacb404f30af32191f938e4cb6e6345a6e7ae82f327c8c6144dc2a78b55252 BYTES=5169 LINES=84
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -20705,65 +20929,8 @@ def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_chua_xay.py
-SHA256=ef58d2888f4a1d52c75ba637fdf0c883e2067ed62a65892bc12834d69b54ca25 BYTES=2322 LINES=51
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""Màn đã có tab nhưng CHƯA xây: API.
-
-⭐ Danh sách này **co lại** mỗi khi một màn được xây thật — Dự án đã rời
-   khỏi đây ở P5, Chạy lô ở P6. Một tệp giữ chỗ không co lại là một tệp sẽ
-   giữ chỗ cho những màn đã tồn tại — và vì FastAPI khớp theo thứ tự đăng
-   ký, một bản giữ chỗ còn sót sẽ **nuốt** đường thật nếu ai đó đổi thứ tự
-   import ở `__init__.py`.
-"""
-from __future__ import annotations
-
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
-                     HTMLResponse, JSONResponse, Request, Response,
-                     StreamingResponse, UploadFile, _db, _het_phien,
-                     _t, _uid, doc_man_giong, doc_man_lich_su, features,
-                     gia, giong_mau, io, require_login, router, templates,
-                     tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON)
-
-
-# ── Màn chưa xây ─────────────────────────────────────────────────────────────
-#
-# ⭐ MỘT HANDLER CHO CẢ BA, không ba bản chép. Nội dung khác nhau là **dữ liệu**
-#    (`vo.CHUA_XAY`), không phải mã — nên ngày một màn được xây thật, việc phải
-#    làm là xoá một khoá trong từ điển và lật `built=True`, không phải đi tìm
-#    xem còn bản chép nào sót lại.
-#
-# ⛔ Trang này KHÔNG vẽ giao diện giả. Nó nói sẽ có gì, không mô phỏng cái sẽ có.
-
-def _trang_chua_xay(request: Request, user, nav_key: str):
-    uid = _uid(user)
-    gen = _db()
-    db = next(gen)
-    try:
-        hang_doi = vo.dem_dang_chay(db, uid)
-    finally:
-        try:
-            next(gen)
-        except StopIteration:
-            pass
-    return templates.TemplateResponse(
-        request, "ltt_voice_chua_xay.html",
-        vo.ngu_canh(request, user, nav_key=nav_key, hang_doi=hang_doi,
-                    man=vo.CHUA_XAY[nav_key]))
-
-
-@router.get("/api", response_class=HTMLResponse)
-def trang_api(request: Request, user=Depends(user_hien_tai),
-              _=Depends(require_login)):
-    return _trang_chua_xay(request, user, vo.NAV_API)
-
-
-
-@@@LTT_PROFILE_FILE_END@@@
-
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_du_an.py
-SHA256=aa6e1ad694d96da3556523acfa685efbd2a6e4baa633952476e72e43a3581099 BYTES=18054 LINES=452
+SHA256=b2aff8ed351394c69973b7dae1cb7f12059e117abc6e5a21ebfee394cf12c5dd BYTES=17981 LINES=451
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: danh sách · khối · sinh tiếng theo khối · xuất.
 
@@ -20896,14 +21063,14 @@ def trang_mot_du_an(request: Request, public_id: str,
             # 404 chứ không 403: phân biệt "không có" với "không phải của bạn"
             # là cho phép dò xem `public_id` nào có thật.
             return templates.TemplateResponse(
-                request, "ltt_voice_chua_xay.html",
+                request, "ltt_voice_thongbao.html",
                 vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN,
                             man={"tieu_de": _t("Không tìm thấy dự án"),
                                  "mo_ta": _t("Dự án này không tồn tại, hoặc "
-                                             "không thuộc tài khoản của bạn."),
-                                 "sap_co": ()}),
+                                             "không thuộc tài khoản của bạn.")}),
                 status_code=404)
         khoi = du_an.cac_khoi(db, d.id)
+        duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         tt = du_an.tom_tat(khoi)
         hang_doi = vo.dem_dang_chay(db, uid)
         cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
@@ -20912,8 +21079,7 @@ def trang_mot_du_an(request: Request, public_id: str,
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
             "trang_thai": k.trang_thai, "job_id": k.job_id,
             "giay": k.giay, "credit": k.credit,
-            "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                          if k.audio_key else ""),
+            "audio_url": duong.get(k.id, ""),
         } for k in khoi]
     finally:
         try:
@@ -21202,14 +21368,14 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
         db.commit()
 
         tt = du_an.tom_tat(khoi)
+        duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         return JSONResponse({
             "ok": True,
             "tom_tat": tt,
             "khoi": [{
                 "id": k.id, "trang_thai": k.trang_thai,
                 "giay": k.giay, "credit": k.credit,
-                "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                              if k.audio_key else ""),
+                "audio_url": duong.get(k.id, ""),
             } for k in khoi],
         })
     finally:
@@ -21426,7 +21592,7 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_lo.py
-SHA256=dc53b4b5e72b8bd15c9654055b2264643edfc213ec0f640e62c1f6650927a8b1 BYTES=15621 LINES=381
+SHA256=ee1124fed3a1aea5e84d28fabab15f78bad7cfe8e7683bb7edcc4d3946ef7f96 BYTES=15988 LINES=385
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Chạy lô: nhận danh sách, kiểm hết, chạy hết, tải cả lô.
 
@@ -21597,23 +21763,22 @@ def trang_mot_lo(request: Request, public_id: str,
         x = lo_mod.tim(db, public_id, owner_id=uid)
         if x is None:
             return templates.TemplateResponse(
-                request, "ltt_voice_chua_xay.html",
+                request, "ltt_voice_thongbao.html",
                 vo.ngu_canh(request, user, nav_key=vo.NAV_LO,
                             man={"tieu_de": _t("Không tìm thấy lô"),
                                  "mo_ta": _t("Lô này không tồn tại, hoặc không "
-                                             "thuộc tài khoản của bạn."),
-                                 "sap_co": ()}),
+                                             "thuộc tài khoản của bạn.")}),
                 status_code=404)
         cac = du_an.cac_khoi(db, x.id)
         tt = lo_mod.tom_tat(cac)
+        duong = du_an.duong_tieng(db, cac, MANIFEST.route_prefix)
         hang_doi = vo.dem_dang_chay(db, uid)
         dong = [{
             "id": k.id, "stt": i, "nhan": k.nhan, "text": k.text,
             "giong": k.giong or x.giong_mac_dinh,
             "trang_thai": k.trang_thai, "giay": k.giay, "credit": k.credit,
             "loi": k.loi,
-            "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                          if k.audio_key else ""),
+            "audio_url": duong.get(k.id, ""),
         } for i, k in enumerate(cac, 1)]
     finally:
         try:
@@ -21704,14 +21869,14 @@ def trang_thai_lo(public_id: str, user=Depends(user_hien_tai),
             x.trang_thai = "xong"
         db.commit()
 
+        duong = du_an.duong_tieng(db, cac, MANIFEST.route_prefix)
         return JSONResponse({
             "ok": True,
             "tom_tat": lo_mod.tom_tat(cac),
             "dong": [{
                 "id": k.id, "trang_thai": k.trang_thai, "giay": k.giay,
                 "credit": k.credit, "loi": k.loi,
-                "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                              if k.audio_key else ""),
+                "audio_url": duong.get(k.id, ""),
             } for k in cac],
         })
     finally:
@@ -21771,8 +21936,13 @@ def tai_ca_lo(public_id: str, user=Depends(user_hien_tai),
         x = lo_mod.tim(db, public_id, owner_id=uid)
         if x is None:
             return JSONResponse({"ok": False}, status_code=404)
-        cac = [k for k in du_an.cac_khoi(db, x.id)
-               if k.trang_thai == "xong" and k.audio_key]
+        # Cùng một thẩm quyền với đường nghe: tệp đã hết hạn thì không vào
+        # ZIP. Trước đây chỗ này tự hỏi `k.audio_key` nên nó sẽ gói vào một
+        # danh sách khoá mà kho không còn giữ tệp nào — và lỗi chỉ lộ ra giữa
+        # chừng lúc nén, sau khi khách đã bấm tải.
+        moi_khoi = du_an.cac_khoi(db, x.id)
+        duong = du_an.duong_tieng(db, moi_khoi, MANIFEST.route_prefix)
+        cac = [k for k in moi_khoi if k.trang_thai == "xong" and k.id in duong]
         if not cac:
             return JSONResponse({"ok": False, "loi": _t(
                 "Lô chưa có tệp nào xong.")}, status_code=400)
@@ -22627,7 +22797,7 @@ class VoiceBlock(Base):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_chon.html
-SHA256=a21004b924e3b3e7f16bde599d1944504fc5e62d42fae0303ddf3d9ad0398ad3 BYTES=4074 LINES=81
+SHA256=c7f02f517aa244907e020789847bc3a5aa33046f57887d5880f64c5860d52b0e BYTES=4136 LINES=81
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {#
   Bộ chọn giọng dùng chung. Studio hôm nay; Dự án và Chạy lô khi chúng được xây.
@@ -22667,9 +22837,9 @@ SHA256=a21004b924e3b3e7f16bde599d1944504fc5e62d42fae0303ddf3d9ad0398ad3 BYTES=40
     <input type="search" class="lv-chon-tim" id="lv-chon-tim"
            placeholder="{{ _('Tìm giọng…') }}" aria-label="{{ _('Tìm giọng') }}">
     <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-      <button type="button" class="lv-loc-nut on" data-chon-loai="">{{ _("Tất cả") }}</button>
-      <button type="button" class="lv-loc-nut" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
-      <button type="button" class="lv-loc-nut" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-loai="">{{ _("Tất cả") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
     </div>
   </div>
 
@@ -22894,7 +23064,7 @@ SHA256=09b0653b632a7324eb629955268060f4b74bf4046de27c372e1096c3e078cc09 BYTES=12
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_vo.html
-SHA256=7493c538d784880fa21b6d36c6d36543127884f28b650629f1e2a32967501793 BYTES=2112 LINES=42
+SHA256=072299bee32d6e341a5398fd230b8af6d944aff767c11d16e9d63c8535eceeb0 BYTES=3206 LINES=57
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {#
   Dải đầu màn dùng chung cho MỌI trang Voice: tiêu đề + mô tả + chip tình trạng.
@@ -22908,6 +23078,18 @@ SHA256=7493c538d784880fa21b6d36c6d36543127884f28b650629f1e2a32967501793 BYTES=21
     tieu_de   — bắt buộc
     mo_ta     — tuỳ chọn, một câu
     id_tieu_de— tuỳ chọn, để `aria-labelledby` của trang trỏ vào
+    quay_lai  — tuỳ chọn, `{href, nhan}` cho trang con (Dự án · Chạy lô)
+    dong_so   — tuỳ chọn, dòng số liệu HTML thay cho `mo_ta` một câu
+
+  🔴 HAI THAM SỐ CUỐI THÊM Ở P9, VÀ LÝ DO ĐÁNG GHI. Trước đó hai trang chi tiết
+     KHÔNG dùng mảnh này — chúng chép tay cả dải đầu màn, vì chúng cần một link
+     quay lại và một dòng số liệu mà mảnh này chưa nhận. Bản chép trông giống
+     hệt, nên không ai để ý nó đã lệch: nó **thiếu `title`** trên hai chip.
+
+  ⛔ Và cái thiếu đó không vô hại. Câu bị mất đúng là câu nói *"đây là việc của
+     máy chủ, không phải bạn làm sai"* — tức khách trên hai trang đó thấy một
+     phù hiệu đỏ mà không có lời giải thích. Bản chép luôn lệch; nó chỉ lệch ở
+     chỗ người chép không nghĩ tới.
 
   ⛔ HAI CHIP, KHÔNG PHẢI BA. Ảnh tham chiếu có `Engine Online`, `Queue`, và
      `Storage 256 GB / 1 TB`. Chip thứ ba không được vẽ: nền tảng **không có**
@@ -22916,8 +23098,11 @@ SHA256=7493c538d784880fa21b6d36c6d36543127884f28b650629f1e2a32967501793 BYTES=21
 #}
 <header class="lv-vo">
   <div class="lv-vo-chu">
+    {% if quay_lai %}
+      <p class="lv-mda-quay"><a href="{{ quay_lai.href }}">← {{ quay_lai.nhan }}</a></p>
+    {% endif %}
     <h1{% if id_tieu_de %} id="{{ id_tieu_de }}"{% endif %}>{{ tieu_de }}</h1>
-    {% if mo_ta %}<p>{{ mo_ta }}</p>{% endif %}
+    {% if dong_so %}<p>{{ dong_so }}</p>{% elif mo_ta %}<p>{{ mo_ta }}</p>{% endif %}
   </div>
 
   <div class="lv-vo-chip">
@@ -22941,47 +23126,145 @@ SHA256=7493c538d784880fa21b6d36c6d36543127884f28b650629f1e2a32967501793 BYTES=21
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_chua_xay.html
-SHA256=2bb7b1d06e9f18a3769aa8bc0ae24f8b6d86fb240a9fade8ea7072967bc551fb BYTES=1793 LINES=40
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_api.html
+SHA256=3a3354bff769981e03ff3a64d4f3808adb23512d9c6021660db76a30aa958b0a BYTES=7304 LINES=138
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
-{% block title %}{{ _(man.tieu_de) }} — {{ _("Giọng nói LTT") }}{% endblock %}
+{% block title %}{{ _("API") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
 {#
-  Màn cho ba tab đã hiện nhưng chưa xây: Dự án · Chạy lô · API.
+  Màn API của Voice — màn thứ sáu và cuối cùng.
 
-  ⛔ TRANG NÀY KHÔNG ĐƯỢC VẼ GIAO DIỆN GIẢ. Nó nói sẽ có gì, không mô phỏng cái
-     sẽ có. Một màn hình giả trông như đã xong là cách nhanh nhất để một phiên
-     sau tưởng nó đã xong — và dự án này đã trả giá đúng lớp lỗi đó hai lần
-     trong tài liệu (hàng Public API và hàng VPS trong `CLAUDE.md`, cả hai đều
-     nói sai **về phía nguy hiểm**).
+  🔴 NÓ CỐ TÌNH MỎNG. Khu `/developers` đã có khoá, hạn mức, giá, nhật ký,
+     playground và tài liệu — cho MỌI công cụ. Chép bất kỳ thứ nào trong đó về
+     đây là tạo bản thứ hai của một sự thật, và bản thứ hai sẽ trôi.
 
-  Nội dung đến từ `vo.CHUA_XAY` — dữ liệu, không phải markup chép tay.
+     Ở đây chỉ có thứ **chỉ đúng với giọng nói**:
+       ① mã giọng của chính khách (không nơi nào khác biết khách có giọng nào),
+       ② tên giọng dựng sẵn hợp lệ (hai mươi cái tên, gõ sai một chữ là lỗi ở
+         tận lúc gọi),
+       ③ trần ký tự và **lý do** nó là trần chất lượng chứ không phải trần kỹ
+         thuật (Q118),
+       ④ một ví dụ đúng cho đúng công cụ này.
+
+  ⛔ VÍ DỤ CHỈ HIỆN KHI CỬA THẬT SỰ MỞ. Một lệnh curl chép được, dán vào, rồi
+     trả 404 sẽ được khách đọc là "khoá của tôi sai" — họ đi tạo khoá mới và vẫn
+     404. Đúng cái bẫy `CLAUDE.md` mô tả ở mục Public API: lỗi của Cloudflare
+     hoặc của cổng, không có `request_id`, không tra được, và **phía ta không
+     thấy gì cả**.
 #}
 
 {% block content %}
-<section class="lv-man" aria-labelledby="lv-cx-title">
-  {% with tieu_de = _(man.tieu_de), mo_ta = _(man.mo_ta), id_tieu_de = "lv-cx-title" %}
+<section class="lv-man lv-api" aria-labelledby="lv-api-title">
+  {% with tieu_de = _("API"),
+          mo_ta = _("Gọi giọng của bạn từ mã nguồn của bạn, bằng mã giọng đã có."),
+          id_tieu_de = "lv-api-title" %}
     {% include "_voice_vo.html" %}
   {% endwith %}
 
-  <div class="ui-card lv-cx">
-    <span class="badge b-warn"><span class="dot"></span>{{ _("Đang xây") }}</span>
-    <h2>{{ _("Phần này sẽ có") }}</h2>
-    <ul class="lv-cx-ds">
-      {% for muc in man.sap_co %}<li>{{ _(muc) }}</li>{% endfor %}
-    </ul>
-    <p class="muted">{{ _("Trong lúc chờ, bạn vẫn tạo được tiếng nói từng đoạn ở màn Tạo tiếng nói.") }}</p>
-    <div class="lv-cx-nut">
-      <a class="btn primary" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
-      <a class="btn ghost" href="{{ manifest.route_prefix }}/giong">{{ _("Giọng của tôi") }}</a>
+  {# ── Trạng thái cửa: đọc từ cấu hình đang chạy, không phải hằng số ─────── #}
+  {% if trang_thai.tool_mo %}
+    <p class="alert alert-ok" role="status">
+      {{ _("Công cụ %(ten)s đang mở trên API công khai.") % {"ten": ten_tool} }}
+      {% if trang_thai.chi_doc %}
+        <strong>{{ _("Khu API đang ở chế độ chỉ đọc — lượt gọi tạo việc sẽ bị từ chối.") }}</strong>
+      {% endif %}
+    </p>
+  {% else %}
+    <p class="alert alert-warn" role="status">
+      <strong>{{ _("Công cụ %(ten)s chưa mở trên API công khai.") % {"ten": ten_tool} }}</strong>
+      {{ _("Bạn vẫn dùng được giọng của mình trên giao diện này. Muốn gọi từ mã nguồn thì liên hệ quản trị để mở công cụ.") }}
+    </p>
+  {% endif %}
+
+  <div class="lv-api-khung">
+    {# ── Cột trái: những gì chỉ màn này biết ───────────────────────────── #}
+    <div class="lv-api-trai">
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Mã giọng của bạn") }}</span>
+        {% if ma_giong %}
+          <p class="dim">{{ _("Dán thẳng vào tham số voice_id. Mã không đổi kể cả khi engine nâng cấp.") }}</p>
+          <ul class="lv-api-ds">
+            {% for g in ma_giong %}
+              <li>
+                <b>{{ g.ten }}</b>
+                {% with ma = g.ma, nho = true %}{% include "_voice_ma.html" %}{% endwith %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="dim">{{ _("Bạn chưa có giọng nhân bản nào.") }}
+            <a href="{{ manifest.route_prefix }}/giong">{{ _("Ghi danh một giọng") }}</a>
+            {{ _("rồi mã của nó sẽ hiện ở đây.") }}</p>
+        {% endif %}
+      </div>
+
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Giọng dựng sẵn") }}</span>
+        <p class="dim">{{ _("Không cần ghi danh. Truyền tên vào tham số preset, để trống voice_id.") }}</p>
+        <ul class="lv-api-mau">
+          {% for g in giong_mau %}
+            <li><code class="mono">{{ g.ma }}</code>
+              <small class="dim">{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }}</small></li>
+          {% endfor %}
+        </ul>
+        <p class="dim"><small>{{ _("Bỏ trống cả hai thì dùng %(ten)s.") % {"ten": mac_dinh} }}</small></p>
+      </div>
+    </div>
+
+    {# ── Cột phải: giới hạn + ví dụ + đường sang khu Lập trình viên ────── #}
+    <div class="lv-api-phai">
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Giới hạn của công cụ này") }}</span>
+        <dl class="lv-api-gh">
+          <dt>{{ _("Mỗi lượt gọi") }}</dt>
+          <dd>{{ _("%(n)s ký tự") % {"n": tran_ky_tu} }}</dd>
+        </dl>
+        {# ⭐ Câu này là toàn bộ lý do dòng trên tồn tại ở đây thay vì chỉ nằm
+             trong bảng tham số của `/developers/tools`. #}
+        <p class="dim"><small>{{ _("Đây là trần CHẤT LƯỢNG, không phải trần kỹ thuật: văn bản dài hơn vẫn sinh được, nhưng giọng bắt đầu trôi tông giữa các đoạn. Kịch bản dài thì chia thành nhiều lượt gọi.") }}</small></p>
+      </div>
+
+      {% if trang_thai.tool_mo %}
+        <div class="lv-st-o">
+          <span class="eyebrow">{{ _("Gọi thử") }}</span>
+          <div class="lv-api-ma">
+            <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-curl"
+                    aria-label="{{ _('Chép lệnh mẫu') }}"
+                    title="{{ _('Chép lệnh mẫu') }}">⧉</button>
+            <pre id="lv-api-curl" class="mono"><code>curl -X POST https://app.lttstudios.com/api/v1/jobs \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"tool": "{{ ten_tool }}",
+       "params": {"text": "{{ vi_du }}",
+                  "preset": "{{ mac_dinh }}"}}'</code></pre>
+          </div>
+          <p class="dim"><small>{{ _("Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
+        </div>
+      {% endif %}
+
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Phần dùng chung") }}</span>
+        {# ⛔ Đường dẫn, không phải bản sao. Bốn thứ dưới đây đúng cho mọi công
+             cụ, và khu Lập trình viên là nơi giữ chúng. #}
+        <ul class="lv-api-lien">
+          <li><a href="/developers/keys">{{ _("Khoá API") }}</a></li>
+          <li><a href="/developers/tools">{{ _("Hợp đồng tham số đầy đủ") }}</a></li>
+          <li><a href="/developers/pricing">{{ _("Giá và bộ mô phỏng") }}</a></li>
+          <li><a href="/developers/logs">{{ _("Nhật ký gọi và job") }}</a></li>
+        </ul>
+      </div>
     </div>
   </div>
 </section>
 {% endblock %}
 
+{# ⛔ MÀN NÀY KHÔNG CÓ MODULE JS RIÊNG — nhưng vẫn PHẢI nạp `voice.js`.
+     `LttVoice.chay()` tự chạy lúc tải và nối MỌI nút `.lv-ma-chep` trên trang:
+     nút chép mã giọng lẫn nút chép lệnh mẫu. Thiếu thẻ này thì các nút vẫn
+     **hiện đầy đủ và bấm được**, chỉ là không có gì xảy ra — đúng kiểu hỏng im
+     lặng, và bản đầu của màn này đã mắc đúng thế. #}
 {% block scripts %}
-{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 {% endblock %}
 
@@ -23094,7 +23377,7 @@ LttVoice.duAnDanhSach({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_giong.html
-SHA256=266d80aa4406c94479726228be69fda8a0d3a169832c3ea906825d47771a3d65 BYTES=10575 LINES=213
+SHA256=357dab0408f4f0766e80dbf3a3c5a88909499027afd2f4283754ff7612bea723 BYTES=10760 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Giọng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -23134,29 +23417,29 @@ SHA256=266d80aa4406c94479726228be69fda8a0d3a169832c3ea906825d47771a3d65 BYTES=10
                aria-label="{{ _('Tìm giọng theo tên') }}">
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
-          <button type="button" class="lv-loc-nut" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
-          <button type="button" class="lv-loc-nut" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Giới tính') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="gioi" data-gt="">{{ _("Mọi giới") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="gioi" data-gt="">{{ _("Mọi giới") }}</button>
           {% for k, nhan in nhan_gioi.items() %}
-            <button type="button" class="lv-loc-nut" data-loc="gioi" data-gt="{{ k }}">{{ _(nhan) }}</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="gioi" data-gt="{{ k }}">{{ _(nhan) }}</button>
           {% endfor %}
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Vùng miền') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="vung" data-gt="">{{ _("Mọi vùng") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="vung" data-gt="">{{ _("Mọi vùng") }}</button>
           {% for k, nhan in nhan_vung.items() %}
-            <button type="button" class="lv-loc-nut" data-loc="vung" data-gt="{{ k }}">{{ _(nhan) }}</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="vung" data-gt="{{ k }}">{{ _(nhan) }}</button>
           {% endfor %}
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Phong cách') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="phongcach" data-gt="">{{ _("Mọi phong cách") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="phongcach" data-gt="">{{ _("Mọi phong cách") }}</button>
           {% for k, nhan in nhan_phong_cach.items() %}
-            <button type="button" class="lv-loc-nut" data-loc="phongcach" data-gt="{{ k }}">{{ _(nhan) }}</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="phongcach" data-gt="{{ k }}">{{ _(nhan) }}</button>
           {% endfor %}
         </div>
       </div>
@@ -23313,7 +23596,7 @@ SHA256=266d80aa4406c94479726228be69fda8a0d3a169832c3ea906825d47771a3d65 BYTES=10
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_lich_su.html
-SHA256=d5d020b96ae21a5501d76df465edc07d1a1da735386a297eb752f9ac7525fc54 BYTES=9694 LINES=197
+SHA256=7bae7d0a4a52fe5ad47d66a368b44aa08e56fc71a282c115b7e4e2e40f2cac1d BYTES=9980 LINES=201
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -23347,16 +23630,20 @@ SHA256=d5d020b96ae21a5501d76df465edc07d1a1da735386a297eb752f9ac7525fc54 BYTES=96
       <form class="lv-loc" method="get" role="search">
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Trạng thái') }}">
           <button type="submit" name="tt" value=""
-                  class="lv-loc-nut {{ 'on' if not f_tt }}">
+                  class="lv-loc-nut {{ 'on' if not f_tt }}"
+                  {% if not f_tt %}aria-current="true"{% endif %}>
             {{ _("Tất cả") }} <span class="dim">{{ tom_tat.tong }}</span></button>
           <button type="submit" name="tt" value="done"
-                  class="lv-loc-nut {{ 'on' if f_tt == 'done' }}">
+                  class="lv-loc-nut {{ 'on' if f_tt == 'done' }}"
+                  {% if f_tt == 'done' %}aria-current="true"{% endif %}>
             {{ _("Hoàn tất") }} <span class="dim">{{ tom_tat.dem.done }}</span></button>
           <button type="submit" name="tt" value="running"
-                  class="lv-loc-nut {{ 'on' if f_tt == 'running' }}">
+                  class="lv-loc-nut {{ 'on' if f_tt == 'running' }}"
+                  {% if f_tt == 'running' %}aria-current="true"{% endif %}>
             {{ _("Đang tạo") }} <span class="dim">{{ tom_tat.dang_chay }}</span></button>
           <button type="submit" name="tt" value="error"
-                  class="lv-loc-nut {{ 'on' if f_tt == 'error' }}">
+                  class="lv-loc-nut {{ 'on' if f_tt == 'error' }}"
+                  {% if f_tt == 'error' %}aria-current="true"{% endif %}>
             {{ _("Lỗi") }} <span class="dim">{{ tom_tat.dem.error }}</span></button>
         </div>
 
@@ -23516,7 +23803,7 @@ LttVoice.lichSu({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_lo.html
-SHA256=d8606850e2aa08e04a276d40ed9ab1a06addc8960b93015d7e7b7e9647042686 BYTES=6631 LINES=142
+SHA256=0fd50c35b5888a3d15d8b623e4ba7ed840bc01d3e6ff6204a0651ae7ea69e0ae BYTES=6672 LINES=142
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Chạy lô") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -23557,8 +23844,8 @@ SHA256=d8606850e2aa08e04a276d40ed9ab1a06addc8960b93015d7e7b7e9647042686 BYTES=66
       <div class="lv-st-o">
         <span class="eyebrow">{{ _("Danh sách") }}</span>
         <div class="lv-loc-nhom lv-lo-nguon" role="group" aria-label="{{ _('Nguồn danh sách') }}">
-          <button type="button" class="lv-loc-nut on" data-nguon="dan">{{ _("Dán danh sách") }}</button>
-          <button type="button" class="lv-loc-nut" data-nguon="tep">{{ _("Tải tệp CSV") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-nguon="dan">{{ _("Dán danh sách") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-nguon="tep">{{ _("Tải tệp CSV") }}</button>
         </div>
 
         <div id="lv-lo-dan">
@@ -23664,7 +23951,7 @@ LttVoice.taoLo({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_mot_du_an.html
-SHA256=49cad2573bc0162b2bf6a279da92b03bd77f22e50d23a7f24487751411b8b650 BYTES=11179 LINES=203
+SHA256=0089ae09123e0df0dab6914c50d347bea6c5a217a8ddf66736e2f9edfe60383f BYTES=11634 LINES=205
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ du_an.ten }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -23690,24 +23977,14 @@ SHA256=49cad2573bc0162b2bf6a279da92b03bd77f22e50d23a7f24487751411b8b650 BYTES=11
 
 {% block content %}
 <section class="lv-man lv-mda" aria-labelledby="lv-mda-title">
-  <header class="lv-vo">
-    <div class="lv-vo-chu">
-      <p class="lv-mda-quay"><a href="{{ manifest.route_prefix }}/du-an">← {{ _("Dự án") }}</a></p>
-      <h1 id="lv-mda-title">{{ du_an.ten }}</h1>
-      <p>{{ tom_tat.so_khoi }} {{ _("khối") }}
-        {%- if tom_tat.xong %} · {{ tom_tat.xong }} {{ _("đã đọc") }}{% endif %}
-        {%- if tom_tat.giay %} · {{ (tom_tat.giay / 60) | round(1) }} {{ _("phút tiếng") }}{% endif %}
-        {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}</p>
-    </div>
-    <div class="lv-vo-chip">
-      {% if cong_san_sang %}
-        <span class="badge b-ok"><span class="dot"></span>{{ _("Engine sẵn sàng") }}</span>
-      {% else %}
-        <span class="badge b-err"><span class="dot"></span>{{ _("Engine chưa bật") }}</span>
-      {% endif %}
-      {% if hang_doi %}<a class="badge b-warn" href="/jobs"><span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>{% endif %}
-    </div>
-  </header>
+  {%- set dong_so %}{{ tom_tat.so_khoi }} {{ _("khối") }}
+    {%- if tom_tat.xong %} · {{ tom_tat.xong }} {{ _("đã đọc") }}{% endif %}
+    {%- if tom_tat.giay %} · {{ (tom_tat.giay / 60) | round(1) }} {{ _("phút tiếng") }}{% endif %}
+    {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}{% endset -%}
+  {% with tieu_de = du_an.ten, id_tieu_de = "lv-mda-title", dong_so = dong_so,
+          quay_lai = {"href": manifest.route_prefix ~ "/du-an", "nhan": _("Dự án")} %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
 
   <div class="lv-mda-khung">
     {# ── Cột trái: khối ──────────────────────────────────────────────────── #}
@@ -23740,6 +24017,11 @@ SHA256=49cad2573bc0162b2bf6a279da92b03bd77f22e50d23a7f24487751411b8b650 BYTES=11
       </form>
 
       <div id="lv-mda-loi" class="alert alert-err" role="alert" hidden></div>
+      {# Vung bao tin cho trinh doc man hinh. Con mat theo doi tien do qua
+         cac con so o tren; tai thi khong — nen tien do phai duoc NOI ra.
+         `sr-only` chu khong phai `hidden`: phan tu bi an hoan toan thi
+         trinh doc man hinh cung khong doc. #}
+      <p class="sr-only" id="lv-bao" role="status" aria-live="polite"></p>
 
       {% if khoi %}
         <ol class="lv-khoi-ds" id="lv-khoi-ds">
@@ -23792,6 +24074,11 @@ SHA256=49cad2573bc0162b2bf6a279da92b03bd77f22e50d23a7f24487751411b8b650 BYTES=11
                 </span>
                 {% if k.audio_url %}
                   <audio class="lv-khoi-phat" controls preload="none" src="{{ k.audio_url }}"></audio>
+                {% elif k.trang_thai == "xong" %}
+                  {# Khoi da doc xong ma khong con tep: job giu noi dung 30 ngay.
+                     Phai NOI ra — mot o trong o dung cho trinh phat trong y het
+                     mot loi hien thi. #}
+                  <small class="lv-het-han dim">{{ _("Tệp tiếng đã hết hạn sau 30 ngày. Đọc lại để có tệp mới.") }}</small>
                 {% endif %}
               </div>
             </li>
@@ -23864,7 +24151,9 @@ LttVoice.motDuAn({
     chuaDoc:   {{ _("Chưa đọc") | tojson }},
     loi:       {{ _("Lỗi") | tojson }},
     hetKhoi:   {{ _("Mọi khối đã được đọc.") | tojson }},
-    daNop:     {{ _("Đã gửi {n} khối vào hàng đợi.") | tojson }}
+    daNop:     {{ _("Đã gửi {n} khối vào hàng đợi.") | tojson }},
+    baoTienDo: {{ _("Đã đọc {x} trên {y} khối.") | tojson }},
+    baoXong:   {{ _("Đọc xong toàn bộ {y} khối.") | tojson }}
   }
 });
 </script>
@@ -23873,7 +24162,7 @@ LttVoice.motDuAn({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_mot_lo.html
-SHA256=c438a462a3925c47c2c2b18ee8613ca7f1e5e3f04f8a616334de9af46ac6d2a3 BYTES=4991 LINES=113
+SHA256=3006cf06c0969399debe5d3c99d880e7d351ce3e423687969103a050f92518e2 BYTES=5227 LINES=112
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ lo.ten }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -23891,22 +24180,12 @@ SHA256=c438a462a3925c47c2c2b18ee8613ca7f1e5e3f04f8a616334de9af46ac6d2a3 BYTES=49
 
 {% block content %}
 <section class="lv-man lv-mlo" aria-labelledby="lv-mlo-title">
-  <header class="lv-vo">
-    <div class="lv-vo-chu">
-      <p class="lv-mda-quay"><a href="{{ manifest.route_prefix }}/lo">← {{ _("Chạy lô") }}</a></p>
-      <h1 id="lv-mlo-title">{{ lo.ten }}</h1>
-      <p>{{ tom_tat.so_khoi }} {{ _("dòng") }}
-        {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}</p>
-    </div>
-    <div class="lv-vo-chip">
-      {% if cong_san_sang %}
-        <span class="badge b-ok"><span class="dot"></span>{{ _("Engine sẵn sàng") }}</span>
-      {% else %}
-        <span class="badge b-err"><span class="dot"></span>{{ _("Engine chưa bật") }}</span>
-      {% endif %}
-      {% if hang_doi %}<a class="badge b-warn" href="/jobs"><span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>{% endif %}
-    </div>
-  </header>
+  {%- set dong_so %}{{ tom_tat.so_khoi }} {{ _("dòng") }}
+    {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}{% endset -%}
+  {% with tieu_de = lo.ten, id_tieu_de = "lv-mlo-title", dong_so = dong_so,
+          quay_lai = {"href": manifest.route_prefix ~ "/lo", "nhan": _("Chạy lô")} %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
 
   <div class="lv-mlo-so" id="lv-mlo-so">
     <div class="ui-card"><span id="lv-so-tong">{{ tom_tat.so_khoi }}</span>
@@ -23935,6 +24214,11 @@ SHA256=c438a462a3925c47c2c2b18ee8613ca7f1e5e3f04f8a616334de9af46ac6d2a3 BYTES=49
   </div>
 
   <div id="lv-mlo-loi" class="alert alert-err" role="alert" hidden></div>
+  {# Vung bao tin cho trinh doc man hinh. Con mat theo doi tien do qua
+     cac con so o tren; tai thi khong — nen tien do phai duoc NOI ra.
+     `sr-only` chu khong phai `hidden`: phan tu bi an hoan toan thi
+     trinh doc man hinh cung khong doc. #}
+  <p class="sr-only" id="lv-bao" role="status" aria-live="polite"></p>
 
   <div class="lv-lo-bang-boc">
     <table class="lv-bang lv-mlo-bang">
@@ -23960,6 +24244,8 @@ SHA256=c438a462a3925c47c2c2b18ee8613ca7f1e5e3f04f8a616334de9af46ac6d2a3 BYTES=49
             <td class="lv-mlo-phat">
               {% if d.audio_url %}
                 <audio controls preload="none" src="{{ d.audio_url }}"></audio>
+              {% elif d.trang_thai == "xong" %}
+                <small class="lv-het-han dim">{{ _("Tệp tiếng đã hết hạn sau 30 ngày. Đọc lại để có tệp mới.") }}</small>
               {% endif %}
             </td>
           </tr>
@@ -23983,7 +24269,9 @@ LttVoice.motLo({
     daXong:   {{ _("Đã xong") | tojson }},
     dangDoc:  {{ _("Đang đọc…") | tojson }},
     cho:      {{ _("Đang chờ") | tojson }},
-    loi:      {{ _("Lỗi") | tojson }}
+    loi:      {{ _("Lỗi") | tojson }},
+    baoTienDo:{{ _("Đã xong {x} trên {y} dòng.") | tojson }},
+    baoXong:  {{ _("Chạy xong lô: {x} dòng xong, {e} lỗi.") | tojson }}
   }
 });
 </script>
@@ -24206,8 +24494,67 @@ LttVoice.studio({
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_thongbao.html
+SHA256=41dec0c162bf5151605b5f6d066042f643c2f7e836a902d82be9351109bf0206 BYTES=2445 LINES=53
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _(man.tieu_de) }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Trang một-câu trong vỏ của app: hôm nay là "không tìm thấy dự án / lô".
+
+  🔴 TỆP NÀY TỪNG TÊN LÀ `ltt_voice_chua_xay.html`, và cái tên đó đã nói dối
+     suốt hai pha. Nó sinh ra cho ba tab chưa xây, nhưng hai cửa 404 của Dự án
+     và Chạy lô đã mượn nó làm trang thông báo chung — nên khi màn cuối được xây
+     ở P8 và tôi xoá nó đi *"vì không còn màn nào chưa xây"*, hai đường 404 gãy
+     ngay lập tức, và **hai phép kiểm khác** đỏ chứ không phải phép kiểm nào của
+     màn API.
+
+  ⭐ Bài học đáng giữ hơn cái tên: **một tệp được dùng lại cho việc thứ hai mà
+     không được đổi tên là một cái bẫy đã cài sẵn.** Người xoá nó đọc cái tên,
+     tin cái tên, và cái tên đã cũ. Nên nó nay tên theo việc nó LÀM (thông báo),
+     không theo việc nó từng làm.
+
+  ⛔ VÀ KHÔNG CÒN BADGE "ĐANG XÂY". Badge ấy đúng với màn chưa xây và **sai** với
+     một trang 404 — nó bảo khách chờ một thứ sẽ không bao giờ tới, trong khi sự
+     thật là họ gõ nhầm địa chỉ hoặc dự án đó không phải của họ.
+
+  Tham số:
+    man.tieu_de   — bắt buộc
+    man.mo_ta     — bắt buộc
+    man.sap_co    — tuỳ chọn: danh sách gạch đầu dòng, rỗng thì không hiện khối
+#}
+
+{% block content %}
+<section class="lv-man" aria-labelledby="lv-cx-title">
+  {% with tieu_de = _(man.tieu_de), mo_ta = _(man.mo_ta), id_tieu_de = "lv-cx-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
+
+  <div class="ui-card lv-cx">
+    {% if man.sap_co %}
+      <h2>{{ _("Phần này sẽ có") }}</h2>
+      <ul class="lv-cx-ds">
+        {% for muc in man.sap_co %}<li>{{ _(muc) }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    <div class="lv-cx-nut">
+      <a class="btn primary" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
+      <a class="btn ghost" href="{{ manifest.route_prefix }}/giong">{{ _("Giọng của tôi") }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/text_pipeline.py
-SHA256=5698f87b0c1d865e4bb95386cc6f9c9fdb8e9273430e4b21521f857a5d74eb08 BYTES=14837 LINES=328
+SHA256=7fc198c6c426cc571cd025ce7c06ff3c5c58431169fe99bb4864cb38f964f8ba BYTES=22773 LINES=476
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 text_pipeline.py — chuẩn hoá văn bản **cấp sản phẩm** cho VI/EN.
@@ -24246,6 +24593,23 @@ from . import tu_dien
 
 # ── ký hiệu: chắc chắn phải thay, không ai đọc được một ký hiệu ───────────────
 _KY_HIEU = [
+    # 🔴 DẤU BA CHẤM — upstream issue #112, VÀ NÓ CHƯA ĐƯỢC SỬA Ở UPSTREAM.
+    #
+    #    Người báo lỗi: engine không ngắt hơi ở `...` như nó ngắt ở `,` hay `.`.
+    #    Tác giả sửa `...` trong `sea-g2p` 0.6.8. Nhưng người báo lỗi chỉ ra
+    #    tiếp: `…` (U+2026, MỘT ký tự) **khác** `...` (BA ký tự), và bản vá kia
+    #    không chạm tới nó. Tác giả trả lời *"Will add normalization for it in
+    #    the next patch"* — bản vá đó chưa có.
+    #
+    # ⭐ Nên `…` là của TA phải sửa, không chờ được. Đổi thành một dấu chấm:
+    #    đó đúng là thứ `sea-g2p` 0.6.8 làm với `...`, nên ta chỉ đang đưa ký tự
+    #    còn thiếu về cùng một chỗ.
+    #
+    # ⚠️ Đặt TRƯỚC luật `...`: nếu để sau, `…` vẫn còn nguyên khi luật kia chạy.
+    #    `(?:…\s*)+` gộp cả chuỗi: "đã…… thế" cho MỘT dấu chấm, không phải
+    #    hai. Hai dấu chấm cách nhau một khoảng trắng là hai câu rỗng.
+    (re.compile(r"\s*(?:…\s*)+"), ". "),
+    (re.compile(r"\s*\.{3,}\s*"), ". "),
     (re.compile(r"(?<=\d)\s*%"), " phần trăm"),
     # ⚠️ `₫` KHÔNG phải ký tự từ, nên `\b` sau nó không bao giờ khớp — test bắt
     #    được điều này. Tách hai luật: ký hiệu thì không cần biên từ; chữ `đ` thì
@@ -24373,6 +24737,132 @@ def _thay_gio(m: re.Match) -> str:
     return f"{_doc_so_nho(h)} giờ {_doc_so_nho(p)}"
 
 
+#: Dấu thanh và dấu phụ tiếng Việt ở dạng TỔ HỢP (sau NFD). Dùng để trả lời một
+#: câu hỏi duy nhất: chữ này có mang dấu tiếng Việt không.
+_DAU_VIET_NFD = frozenset("̣̀́̃̉"  # huyền sắc ngã hỏi nặng
+                          "̛̂̆")               # mũ, trăng, móc
+
+#: Một TỪ (chỉ chữ cái, không số, không gạch dưới).
+_TU_CHU = re.compile(r"[^\W\d_]+", re.UNICODE)
+
+#: Khoảng ngăn giữa hai từ mà vẫn coi chúng là CÙNG một chuỗi viết hoa. Cố ý
+#: hẹp: xuống dòng hay dấu chấm câu nặng thì đó là hai chuỗi khác nhau.
+_NGAN_TRONG_CHUOI = re.compile(r"^[ 	.,:;/–-]*$")
+
+
+#: Nguyên âm tiếng Việt, ở dạng CHỮ GỐC (sau khi bỏ dấu). `y` có mặt vì nó làm
+#: âm chính trong "quý", "ly", "mỹ".
+_NGUYEN_AM = frozenset("aeiouy")
+
+
+def _co_nguyen_am(tu: str) -> bool:
+    """Từ này có nguyên âm không.
+
+    🔴 ĐÂY LÀ MỘT SỰ THẬT NGÔN NGỮ, KHÔNG PHẢI MỘT PHỎNG ĐOÁN, và đó là lý do
+       nó được phép quyết định.
+
+       Mọi âm tiết tiếng Việt đều có âm chính, và âm chính luôn là một nguyên
+       âm. Nên một chữ **không có nguyên âm nào** thì không thể là một từ tiếng
+       Việt — nó chỉ có thể là chữ viết tắt:
+
+           HĐND · TNHH · THPT · ĐH · CĐ · QĐ · BĐS · VĐV
+
+       Ngược lại không đúng: `CPU`, `RAM`, `ISO`, `ABC` có nguyên âm mà vẫn là
+       viết tắt. Nên phép này chỉ dùng để **giữ lại**, không dùng để hạ xuống.
+    """
+    goc = unicodedata.normalize("NFD", tu.lower())
+    return any(ch in _NGUYEN_AM for ch in goc)
+
+
+def _co_dau_viet(tu: str) -> bool:
+    """Từ này có mang dấu tiếng Việt không (kể cả dạng dựng sẵn như `Ư`, `Ạ`)."""
+    return any(ch in _DAU_VIET_NFD for ch in unicodedata.normalize("NFD", tu))
+
+
+def _ha_chuoi_viet_hoa(t: str) -> str:
+    """VIẾT HOA TOÀN BỘ -> chữ thường, nhưng CHỈ khi chắc đó không phải viết tắt.
+
+    🔴 NGUỒN: upstream `pnnbao97/VieNeu-TTS` **issue #119**. Tác giả trả lời
+       nguyên văn:
+
+           "hiện tại nếu viết hoa toàn bộ như CHƯƠNG thì hệ thống đang hiểu nhầm
+            là từ viết tắt nên mới đọc từng chữ cái. Tạm thời bạn có thể chuyển
+            về chữ thường trước khi dùng."
+
+       Tức `"CHƯƠNG I"` được đọc thành *"xê hát u ơ en giê"*. Đây không phải ca
+       hiếm: văn bản hành chính, pháp lý, hợp đồng tiếng Việt đầy chữ viết hoa —
+       và đó đúng là thứ app này nhận. Khách dán một quyết định vào, nhận về một
+       bản thu đánh vần, và **vẫn bị thu tiền** vì job `done` và `credit_cost`
+       tính theo số giây thật sự sinh ra.
+
+    ⛔ VÌ SAO KHÔNG HẠ TẤT CẢ VỀ CHỮ THƯỜNG.
+
+       Đo thật: `"Xem mục CPU và RAM"` -> `"Xem mục xi pi diu và RAM"`. `CPU` có
+       trong từ điển phát âm, `RAM` thì không. Hạ hết thành chữ thường thì `CPU`
+       rơi khỏi từ điển, và `RAM` — vốn ĐANG được đánh vần **đúng** — thành chữ
+       "ram". Sửa một lỗi bằng cách tạo ra lỗi ngược lại.
+
+    ⭐ LUẬT, và vì sao nó an toàn:
+
+       Trong một **chuỗi liên tiếp** các từ viết hoa, nếu có ít nhất một từ mang
+       **dấu tiếng Việt** thì hạ cả chuỗi.
+
+       Cơ sở: **từ viết tắt tiếng Việt không mang dấu.** Không có `TNHH`, `UBND`,
+       `CPU`, `RAM`, `ISO` nào có dấu thanh. Nên một dấu trong chuỗi là bằng
+       chứng đây là chữ VIẾT HOA, không phải viết tắt.
+
+           "CHƯƠNG I. QUY ĐỊNH CHUNG"  -> hai chuỗi, mỗi chuỗi có một từ mang
+                                          dấu (CHƯƠNG, ĐỊNH) -> hạ cả hai ✅
+           "Xem mục CPU và RAM"        -> hai chuỗi một từ, không dấu -> giữ ✅
+
+    ⚠️ PHẦN DƯ, ghi ra chứ không giấu: `"CÔNG TY TNHH ABC"` là **một** chuỗi, và
+       `CÔNG` có dấu, nên `TNHH` bị hạ oan thành "tnhh". Luật này không che được
+       ca đó. Cửa `/xem-truoc` (Xem trước cách đọc) tồn tại đúng để khách nhìn
+       thấy và sửa — nhưng nó chỉ cứu người cẩn thận, không cứu người vội.
+
+       Không mở rộng luật để bắt nốt ca đó: mọi cách mở rộng tôi thử đều phải
+       đoán, và một phỏng đoán chạy ngầm ở tầng chuẩn hoá đúng là thứ sinh ra
+       lớp lỗi này ngay từ đầu.
+    """
+    # ⛔ DUYỆT TỪNG TỪ, không dùng một regex bắt cả chuỗi.
+    #
+    #    Bản đầu dùng `[^\W\d_]{2,}(?:[\s.,:;/-]+[^\W\d_]{2,})*`, và nó THAM:
+    #    với `"CÔNG TY TNHH ABC thông báo"` nó nuốt luôn "thông báo", rồi phép
+    #    kiểm "cả chuỗi phải viết hoa" hỏng, nên **không làm gì cả**. Lỗi im
+    #    lặng: hàm chạy, không ném, và trả về đúng thứ nó nhận.
+    tu = [m for m in _TU_CHU.finditer(t) if len(m.group(0)) >= 2]
+    if not tu:
+        return t
+
+    ra, i = [], 0
+    while i < len(tu):
+        if not tu[i].group(0).isupper():
+            i += 1
+            continue
+        j = i
+        while (j + 1 < len(tu) and tu[j + 1].group(0).isupper()
+               and _NGAN_TRONG_CHUOI.match(t[tu[j].end():tu[j + 1].start()])):
+            j += 1
+        if any(_co_dau_viet(m.group(0)) for m in tu[i:j + 1]):
+            # ⛔ Hạ TỪNG TỪ trong chuỗi, không hạ cả chuỗi một lượt: một chuỗi
+            #    có thể trộn chữ viết hoa với viết tắt, và `HĐND TỈNH` là ca
+            #    thật chứ không phải ca dựng ra. Chữ không có nguyên âm thì giữ
+            #    nguyên — nó không thể là một từ tiếng Việt.
+            ra.extend((m.start(), m.end()) for m in tu[i:j + 1]
+                      if _co_nguyen_am(m.group(0)))
+        i = j + 1
+
+    if not ra:
+        return t
+    manh, truoc = [], 0
+    for a, b in ra:
+        manh.append(t[truoc:a])
+        manh.append(t[a:b].lower())
+        truoc = b
+    manh.append(t[truoc:])
+    return "".join(manh)
+
+
 def _bo_ky_tu_vo_hinh(t: str) -> str:
     """Bỏ ký tự KHÔNG HIỂN THỊ. Phải chạy **trước mọi phép biến đổi khác**.
 
@@ -24458,6 +24948,11 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
     # Từ điển phát âm TRƯỚC khi đụng số: nó chứa tên riêng và cặp ch/tr, và một
     # số phép thay ở dưới có thể cắt mất ranh giới từ.
     t = tu_dien.ap_dung(t, them=tu_dien_rieng)
+
+    # ⚠️ SAU từ điển, không phải trước. Từ điển bung `CPU` thành "xi pi diu"
+    #    trước, nên tới đây không còn chữ hoa của viết tắt đã biết để hạ
+    #    nhầm. Thứ tự ở đây là một phần của bản vá, không phải chi tiết.
+    t = _ha_chuoi_viet_hoa(t)
 
     t = _STT.sub(lambda m: _doc_so_nho(int(m.group(1))).capitalize() + ". ", t)
     t = _NGAY.sub(_thay_ngay, t)
@@ -24810,7 +25305,7 @@ def ap_dung(text: str, *, them: dict | None = None) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/vo.py
-SHA256=c3cf23dd0ee1e9d8cd92adbd7dc2f49844c257c323352b04b495efd813dd504e BYTES=5427 LINES=111
+SHA256=ddd31e89c7938f10f6b16c4a0a1a0982a7bc60c0269f4b302d7c353a78082f56 BYTES=4234 LINES=88
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 vo.py — VỎ dùng chung của mọi màn LTT Voice Studio.
@@ -24854,29 +25349,6 @@ NAV_DU_AN = "ltt_voice_du_an"
 NAV_LO = "ltt_voice_lo"
 NAV_LICH_SU = "ltt_voice_lich_su"
 NAV_API = "ltt_voice_api"
-
-#: Màn chưa xây: nhãn + câu nói thật về thứ sẽ có. Nền tảng đã gắn badge "đang
-#: xây" lên tab qua `NavEntry.built=False`; đây là nội dung của chính trang đó.
-#:
-#: ⭐ VÌ SAO CÓ TRANG THẬT THAY VÌ ĐỂ 404: tab đã hiện trên thanh thì bấm vào
-#:    phải tới một chỗ nói được điều gì đó. Một tab dẫn tới 404 tệ hơn không có
-#:    tab — nó biến một lời hứa thành một lỗi.
-#:
-#: ⛔ Và trang này KHÔNG được vẽ giao diện giả. Nó nói sẽ có gì, không mô phỏng
-#:    cái sẽ có. Một màn hình giả trông như đã xong là cách nhanh nhất để một
-#:    phiên sau tưởng nó đã xong.
-CHUA_XAY = {
-    NAV_API: {
-        "tieu_de": N_('API'),
-        "mo_ta": N_('Gọi giọng của bạn từ mã nguồn của bạn, bằng mã giọng đã có.'),
-        "sap_co": (
-            N_('Mã giọng nào gọi được, và ví dụ gọi thử sẵn.'),
-            N_('Ví dụ cURL, Python, JavaScript cho đúng công cụ giọng nói.'),
-            N_('Khoá, hạn mức và nhật ký dùng chung với khu Lập trình viên.'),
-        ),
-    },
-}
-
 
 def dem_dang_chay(db, owner_id: str) -> int:
     """Số việc của KHÁCH NÀY trong app này đang chờ hoặc đang chạy.
@@ -123176,7 +123648,7 @@ def for_tool_name(name: str):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=230dab01a153bd598fe0d5bdf2746182116dffd96af9583e91a3e9c0ca7f194e BYTES=22065 LINES=349
+SHA256=f2a6a25e34d7bbff0df51b1619ab6734ea1093a7ab9289bacb4ad6cf950a81dd BYTES=23925 LINES=372
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -123344,6 +123816,29 @@ STORES: tuple = (
           N_("Cam kết sở hữu giọng: ai, lúc nào, bản điều khoản nào, hash tệp "
           "nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý "
           "do consent phải là DỮ LIỆU chứ không phải một ô tick.")),
+
+    # ── Dự án và Chạy lô: bản thảo của khách, không phải kết quả một job ─────
+    #
+    # ⭐ Vì sao `retention_days=None` chứ không phải 30 như `jobs`: một dự án là
+    #    thứ khách SOẠN — họ mở lại, sửa, đọc lại từng khối trong nhiều tuần.
+    #    Cho nó hết hạn theo lịch là xoá bản thảo của người ta trong khi họ vẫn
+    #    đang dùng. Nó đi khi khách xoá dự án, hoặc khi tài khoản đi.
+    #
+    # 🔴 HỆ QUẢ ĐÃ BIẾT, CHƯA SỬA. `voice_block.audio_key` trỏ vào tệp nằm trong
+    #    vùng của một JOB, và job là CONTENT/30 ngày — nên sau 30 ngày
+    #    `job_content.purge_expired` xoá tệp trong khi khối vẫn quảng cáo là có
+    #    tiếng. Khách mở dự án cũ và thấy một trình phát 404. Không ai dính điều
+    #    này hôm nay (tính năng chưa tới khách nào), nhưng nó có hạn: đúng 30
+    #    ngày sau lượt đọc đầu tiên của khách đầu tiên. Ghi ở đây chứ không giấu
+    #    trong một dòng TODO, vì đây là chỗ người ta sẽ đọc khi hỏi "dữ liệu này
+    #    sống bao lâu".
+    Store("voice_project", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một kịch bản dài hoặc một lô đang soạn: tên, giọng mặc định, "
+          "trạng thái. Bản thảo của khách, không phải sản phẩm của một job.")),
+    Store("voice_block", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng khối/dòng trong một dự án: văn bản khách gõ, giọng đã chọn, "
+          "và khoá tệp tiếng đã sinh. Văn bản là nội dung của khách; khoá tệp "
+          "chỉ là con trỏ — tệp thật sống theo hạn của job sinh ra nó.")),
 
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
@@ -149499,7 +149994,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=67c43ff82f242af0ef32f2db0e5d939329e51d39c2023217c99c7877020367e0 BYTES=251190 LINES=2693
+SHA256=8d03ae4a41fecd5f1a5f1174376e5557045b21e4417b903702d889053076ac7e BYTES=252750 LINES=2712
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -151979,11 +152474,29 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-tiendo{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-bottom:8px}
 .lv-tiendo>div{height:100%;width:0;background:var(--accent);transition:width var(--motion-normal)}
 
+/* Man API — cot doi, gap o mobile */
+.lv-api-khung{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.lv-api-trai,.lv-api-phai{display:grid;gap:14px;min-width:0}
+.lv-api-ds{display:grid;gap:7px;margin:8px 0 0;padding:0;list-style:none}
+.lv-api-ds li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.lv-api-mau{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:5px 12px;margin:8px 0 0;padding:0;list-style:none}
+.lv-api-mau li{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;min-width:0;font-size:12px}
+.lv-api-gh{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0 0}
+.lv-api-gh dt{color:var(--muted);font-size:12px}
+.lv-api-gh dd{margin:0;font-weight:600}
+.lv-api-lien{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none}
+.lv-api-lien a{display:inline-flex;align-items:center;min-height:24px}
+/* Khoi lenh: cuon NGANG trong chinh no, khong day trang ra */
+.lv-api-ma{position:relative;margin-top:8px}
+.lv-api-ma pre{overflow-x:auto;margin:0;padding:10px 34px 10px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:11.5px;line-height:1.5}
+.lv-api-ma .lv-ma-chep{position:absolute;top:6px;right:6px}
+@media(max-width:860px){.lv-api-khung{grid-template-columns:1fr}}
+
 /* Bo chon giong */
 .lv-chon{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
   padding:13px 14px}
 .lv-chon-dau{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
-.lv-chon-them{font-size:11.5px;color:var(--accent2);text-decoration:none;white-space:nowrap}
+.lv-chon-them{display:inline-flex;align-items:center;min-height:24px;padding:0 2px;font-size:11.5px;color:var(--accent2);text-decoration:none;white-space:nowrap}
 .lv-chon-them:hover{text-decoration:underline}
 .lv-chon-loc{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
 .lv-chon-tim{padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--line2);
@@ -152085,8 +152598,9 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-da-the-luc{margin:9px 0 0;font-size:11px}
 
 /* Mot du an */
+.lv-het-han{display:block;max-width:34ch;font-size:11px;line-height:1.35}
 .lv-mda-quay{margin:0 0 6px;font-size:12px}
-.lv-mda-quay a{color:var(--muted);text-decoration:none}
+.lv-mda-quay a{display:inline-flex;align-items:center;min-height:24px;padding-right:4px;color:var(--muted);text-decoration:none}
 .lv-mda-quay a:hover{color:var(--fg)}
 .lv-mda-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
 .lv-mda-trai{min-width:0}
@@ -152325,7 +152839,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45502 LINES=1130
+SHA256=7bb5d3d6f12ffd077ecdb9d8c53d58b7d061275dcaed45ea5068e204a7605e71 BYTES=48494 LINES=1194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -152348,6 +152862,59 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
  */
 (function () {
   "use strict";
+
+  /* ── Bat mot nut trong nhom loc ───────────────────────────────────────────
+   *
+   * ⭐ MOT LUAT CHO CA LOP, khong va tung cho. Truoc P7 co HAI vong lap rieng
+   *    cung lam mot viec (`.lv-loc-nut` o man Giong, `[data-chon-loai]` o bo
+   *    chon giong) va ca hai chi doi lop CSS `on`. Lop CSS la thu con MAT nhin
+   *    thay; trinh doc man hinh khong thay gi ca, nen no khong bao gio biet bo
+   *    loc nao dang bat. Them nut thu ba o mot man thu ba ma quen dong bo la
+   *    loi tai dien — nen no phai la mot ham, khong phai mot danh sach.
+   *
+   * ⛔ `aria-pressed` chu khong phai `role="radio"`. Radio bat buoc di kem mo
+   *    hinh ban phim mui ten + roving tabindex; khai vai radio ma khong dung
+   *    ban phim ay thi con te hon la khong khai gi — nguoi dung tin loi hua
+   *    cua vai dien roi bam mui ten va khong co gi xay ra.
+   */
+  function batNut(nut) {
+    var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
+    for (var k = 0; k < anhEm.length; k++) {
+      anhEm[k].classList.remove("on");
+      anhEm[k].setAttribute("aria-pressed", "false");
+    }
+    nut.classList.add("on");
+    nut.setAttribute("aria-pressed", "true");
+  }
+
+  /* ── Noi mot cau cho trinh doc man hinh ───────────────────────────────────
+   *
+   * 🔴 TIEN DO CHI TON TAI BANG MAT. Cac trang Du an va Chay lo cap nhat con so
+   *    "3/12" tai cho khi hoi job — mot nguoi nhin thay ngay, mot nguoi dung
+   *    trinh doc man hinh KHONG BIET GI CA cho toi khi ho tu tab lai qua o do.
+   *    Man Studio da co vung `aria-live` tu dau; hai man nay thi khong, va do
+   *    la khac biet duy nhat giua chung.
+   *
+   * ⛔ KHONG dat `aria-live` len chinh luoi con so. Moi luot hoi ghi lai ca bon
+   *    o, nen trinh doc man hinh se doc lai ca bon MOI VAI GIAY — dung ky thuat
+   *    ma khong dung duoc. Mot cau, va chi khi cau ay DOI.
+   */
+  function baoTin(cau) {
+    var o = document.getElementById("lv-bao");
+    if (!o || !cau || o.textContent === cau) return;
+    o.textContent = cau;
+  }
+
+  /* Thay {x} {y} {e} trong mot cau da dich. */
+  function dienSo(mau, so) {
+    var cau = String(mau || "");
+    for (var k in so) {
+      if (Object.prototype.hasOwnProperty.call(so, k)) {
+        cau = cau.split("{" + k + "}").join(String(so[k]));
+      }
+    }
+    return cau;
+  }
 
   /* ── Chep ma giong ────────────────────────────────────────────────────────
    *
@@ -152379,7 +152946,18 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
     }
 
     nut.addEventListener("click", function () {
+      /* Hai nguon: `data-ma` cho mot chuoi ngan, `data-chep-tu` cho noi dung
+       * cua mot phan tu khac (vi du mot khoi lenh nhieu dong).
+       *
+       * ⭐ VI SAO CO DANG THU HAI. Nhet ca mot lenh curl vao mot thuoc tinh la
+       *    tao BAN THU HAI cua chinh cai lenh dang hien tren trang — hai ban
+       *    cua mot su that, va ban sai se la ban khong ai nho phai sua. Doc
+       *    thang tu khoi ma thi chi co mot ban. */
       var ma = nut.dataset.ma || "";
+      if (!ma && nut.dataset.chepTu) {
+        var nguon = document.getElementById(nut.dataset.chepTu);
+        ma = nguon ? (nguon.innerText || nguon.textContent || "") : "";
+      }
       if (!ma) return;
       // Noi that la khong chep duoc, thay vi im lang nhu chua bam.
       var hong = function () { bao("Ctrl+C", null); };
@@ -152455,9 +153033,7 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
         nut.addEventListener("click", function () {
           dangLoc[nut.dataset.loc] = nut.dataset.gt || "";
           // Chi mot nut sang trong moi nhom.
-          var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
-          for (var k = 0; k < anhEm.length; k++) anhEm[k].classList.remove("on");
-          nut.classList.add("on");
+          batNut(nut);
           loc();
         });
       })(nutLoc[i]);
@@ -152846,9 +153422,7 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
       (function (nut) {
         nut.addEventListener("click", function () {
           locLoai = nut.dataset.chonLoai || "";
-          var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
-          for (var k = 0; k < anhEm.length; k++) anhEm[k].classList.remove("on");
-          nut.classList.add("on");
+          batNut(nut);
           locChon();
         });
       })(nutChonLoai[i]);
@@ -153123,6 +153697,9 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
             datSo("lv-tk-credit", tk.credit);
             var oTd = document.getElementById("lv-mda-tiendo");
             if (oTd) oTd.textContent = (tk.xong || 0) + "/" + (tk.so_khoi || 0);
+            var xg = tk.xong || 0, tg = tk.so_khoi || 0;
+            baoTin(dienSo(!conChay && xg === tg && tg ? chu.baoXong : chu.baoTienDo,
+                          {x: xg, y: tg}));
 
             if (conChay) {
               cho = Math.min(cho * 1.3, 8000);
@@ -153248,8 +153825,7 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
           var la = nut.dataset.nguon === "tep";
           document.getElementById("lv-lo-dan").hidden = la;
           document.getElementById("lv-lo-tep").hidden = !la;
-          for (var k = 0; k < nutNguon.length; k++) nutNguon[k].classList.remove("on");
-          nut.classList.add("on");
+          batNut(nut);
           // Doi nguon thi ket qua kiem cu khong con dung nua. Khoa lai.
           nutTao.disabled = true;
           oXem.hidden = true;
@@ -153406,6 +153982,8 @@ SHA256=9b372dae384c61baf2151457af0a7fcf4f4e3c24ec374b85c2ecc778b978a344 BYTES=45
             datSo("lv-so-tong", t.so_khoi);
             datSo("lv-so-xong", t.xong);
             datSo("lv-so-loi", t.loi);
+            var so = {x: t.xong || 0, y: t.so_khoi || 0, e: t.loi || 0};
+            baoTin(dienSo(conChay ? chu.baoTienDo : chu.baoXong, so));
             datSo("lv-so-uoc", t.uoc_con_lai_s || "—");
             var tai = document.getElementById("lv-lo-tai");
             if (tai && t.xong) tai.hidden = false;
@@ -165494,6 +166072,162 @@ $ErrorActionPreference = 'Continue'
 & $venvPy $tool @doiSo
 $ma = $LASTEXITCODE
 $ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/chay_voi_env.ps1
+SHA256=5d4a531a27230fea78ca54452ed9e8d88e090525ae1a0901c976e0c0da97c52c BYTES=6320 LINES=150
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Chay MOT viec da khai bao san, voi moi truong production da nap. CHI DOC.
+
+.DESCRIPTION
+    `secrets\app.env` bi khoa ACL (chi SYSTEM + Administrators), va ACL do LA
+    DUNG - dung noi long no. Tep nay la CAY CAU HEP: doc app.env, dat vao MOI
+    TRUONG CUA RIENG TIEN TRINH NAY, chay dung MOT viec trong danh sach trang,
+    roi thoat.
+
+    !! VI SAO KHONG PHAI MOT HAM "CHAY LENH BAT KY VOI ENV PRODUCTION".
+       Mot cong cu nhu vay bang voi viec cap quyen doc secrets cho moi thu -
+       chi khac la no di qua mot lop giay. Danh sach trang o duoi la thu lam
+       cho quyen nay HEP HON quyen doc tep, chu khong rong hon.
+
+    !! NO KHONG IN GIA TRI NAO. Khong echo env, khong dump, khong ghi log
+       chua bi mat. Neu ban can doc mot gia tri that thi do la viec cua chu
+       may, khong phai cua script nay.
+
+.PARAMETER Viec
+    Ten viec trong danh sach trang:
+
+      test-daluong   pytest tests/test_214_multi_process_runtime.py
+                     (bat bien da tien trinh - bang chung DUY NHAT cho viec
+                     webhook khong gui trung va credit khop khi nhieu worker
+                     chay cung luc)
+      cong-daluong   tools/check_multiproc.py  (buoc cua `gate.py`)
+      soi-su-co      tools/soi_su_co.py        (doc so request + hoi may B)
+      kiem-llm       tools/kiem_ltt_llm.py     (kiem toan tuyen A -> B)
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\chay_voi_env.ps1 -Viec test-daluong
+
+.NOTES
+    Can Administrator (de doc app.env dang bi khoa ACL).
+    Tep nay THUAN ASCII (quy tac 2 cua CLAUDE.md).
+#>
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory = $true)]
+    [ValidateSet('test-daluong', 'cong-daluong', 'soi-su-co', 'kiem-llm')]
+    [string]$Viec,
+
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+
+# !! DO DUNG THU CAN DO, VA DO NO TRUOC MOI THU KHAC.
+#
+#    "Co phai admin khong" chi la NGUOI DAI DIEN cho cau hoi that, va no sai
+#    duoc theo ca hai chieu: mot token UAC da loc van thuoc nhom Administrators
+#    nhung khong doc duoc, con mot tai khoan dich vu doc duoc ma khong phai
+#    admin. Cau hoi that la "toi co doc duoc tep nay khong".
+#
+#    Va phai do TRUOC `Test-Path`: voi `ErrorActionPreference = 'Stop'`,
+#    `Test-Path` tren mot tep bi ACL tu NEM va nuot mat thong diep ro rang.
+try {
+    $null = Get-Content $envFile -TotalCount 1 -ErrorAction Stop
+} catch {
+    throw @"
+Khong doc duoc $envFile
+
+ACL cua tep do (chi SYSTEM + Administrators) LA DUNG -- dung noi long no.
+Mo PowerShell bang 'Run as administrator' roi chay lai lenh nay.
+"@
+}
+
+# Danh sach trang. Them mot dong o day la mot quyet dinh co y thuc, va no hien
+# ra trong diff cho nguoi review thay - khac han voi mot cong cu chay-gi-cung-duoc.
+# !! DUNG PYTHON HE THONG, KHONG PHAI VENV PRODUCTION.
+#
+#    `C:\LTTPlatform\venv` la venv VAN HANH: no chi co thu vien de CHAY dich vu,
+#    khong co `pytest`. Goi no cho mot buoc test se ra
+#    "No module named pytest" - mot loi trong het nhu moi truong hong, trong khi
+#    that ra la chon nham trinh thong dich. Da dinh mot lan ngay 31/08.
+#
+#    Bon viec trong danh sach trang deu la CONG CU KIEM, khong phai ma dich vu,
+#    nen chung thuoc ve python he thong.
+# !! VA DUNG DUA VAO PATH. Tep nay chay duoc bang LocalSystem (qua Nexus), va
+#    LocalSystem co profile RIENG - `python` cua nguoi dung nam trong
+#    `C:\Users\<ai do>\AppData\Local\...` va khong he co tren PATH cua no.
+#    Trieu chung: "Khong tim thay python tren PATH" tren mot may ro rang co
+#    python. Nen do PATH truoc, roi do cac cho cai dat that.
+$py = (Get-Command python -ErrorAction SilentlyContinue).Source
+if (-not $py) {
+    $ungVien = @()
+    foreach ($hs in (Get-ChildItem 'C:\Users' -Directory -ErrorAction SilentlyContinue)) {
+        $ungVien += Join-Path $hs.FullName 'AppData\Local\Programs\Python\Python313\python.exe'
+    }
+    $ungVien += 'C:\Program Files\Python313\python.exe'
+    $py = $ungVien | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+if (-not $py) { throw "Khong tim thay python (da do PATH va cac cho cai dat thong thuong)." }
+
+$viecCuThe = @{
+    'test-daluong' = @($py, '-m', 'pytest', 'tests/test_214_multi_process_runtime.py', '-q')
+    'cong-daluong' = @($py, 'tools/check_multiproc.py')
+    'soi-su-co'    = @($py, 'tools/soi_su_co.py')
+    'kiem-llm'     = @($py, 'tools/kiem_ltt_llm.py')
+}
+$argv = $viecCuThe[$Viec]
+if (-not $argv) { throw "Viec khong co trong danh sach trang: $Viec" }
+
+# utf-8-sig o phia doc: quy tac 1 cam GHI BOM, doc thi phai chiu duoc.
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    $ten = $d.Substring(0, $i).Trim()
+    $gt  = $d.Substring($i + 1)
+    if ($ten) {
+        # KHONG in gia tri nao: tep nay giu khoa ma hoa token va mat khau CSDL.
+        Set-Item -Path "Env:$ten" -Value $gt
+        $so++
+    }
+}
+Write-Host "  [OK] Nap $so bien tu app.env vao tien trinh nay (khong in gia tri)" -ForegroundColor Green
+Write-Host "  [->] Chay: $Viec" -ForegroundColor Cyan
+
+$raThuMuc = Join-Path $Repo 'tmp'
+if (-not (Test-Path $raThuMuc)) { New-Item -ItemType Directory -Path $raThuMuc | Out-Null }
+$raTep = Join-Path $raThuMuc "chay_voi_env_$Viec.txt"
+
+# !! BAY DA DINH BON LAN TRONG HAI NGAY. Voi `ErrorActionPreference = 'Stop'`,
+#    mot exe NGOAI ghi ra stderr thanh NativeCommandError va KET THUC script -
+#    dong doc `$LASTEXITCODE` KHONG BAO GIO CHAY, va mot loi vo hai doc len
+#    giong het mot lan treo.
+#
+# !! KHONG dung `Tee-Object -Encoding`: tham so do chi co tu PowerShell 6, va
+#    tren 5.1 no vo LUC RANG BUOC PIPELINE nen lenh khong bao gio chay - trong
+#    khi man hinh van in "da luu ket qua". Ghi bang .NET, khong BOM.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+Push-Location $Repo
+$ket = (& $argv[0] $argv[1..($argv.Length - 1)] 2>&1 | Out-String)
+$ma = $LASTEXITCODE
+Pop-Location
+$ErrorActionPreference = $truoc
+
+Write-Host $ket
+[IO.File]::WriteAllText($raTep, $ket, (New-Object Text.UTF8Encoding($false)))
+Write-Host ""
+Write-Host "  [OK] Ket qua luu tai: $raTep" -ForegroundColor Green
 exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -239049,7 +239783,7 @@ def test_doi_dieu_khoan_thi_phai_doi_phien_ban():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_344_ltt_voice_vo.py
-SHA256=212cae5bea21e21bd01b0653301ccaab5426a46662b2f9b63167ebd478c4f75d BYTES=12775 LINES=269
+SHA256=bdb29499610e6013c9119c0ede883ee5871dd97d7de2a20616a1e66b23e38a13 BYTES=13294 LINES=272
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vỏ dùng chung của LTT Voice Studio — sáu tab, và tab đang mở phải SÁNG.
 
@@ -239091,7 +239825,7 @@ TAB_MONG_DOI = [
     ("/ltt-voice/du-an", vo.NAV_DU_AN, True),
     ("/ltt-voice/lo", vo.NAV_LO, True),
     ("/ltt-voice/lich-su", vo.NAV_LICH_SU, True),
-    ("/ltt-voice/api", vo.NAV_API, False),
+    ("/ltt-voice/api", vo.NAV_API, True),
 ]
 
 
@@ -239112,23 +239846,25 @@ def test_nav_key_cua_vo_khop_manifest():
         "Sua CA HAI cho, va nho: tab khong sang la mot loi KHONG co trieu chung.")
 
 
-def test_moi_tab_chua_xay_co_noi_dung_trong_CHUA_XAY():
-    """`built=False` và `vo.CHUA_XAY` phải là CÙNG một tập.
+def test_khong_con_tab_nao_chua_xay():
+    """Sau P8 cả sáu màn đều đã xây — và cơ chế giữ chỗ đã gỡ theo.
 
-    Lệch một chiều thì `_trang_chua_xay` ném `KeyError` (tab có, nội dung không);
-    lệch chiều kia thì có nội dung mồ côi không ai đọc — thứ sẽ sống mãi vì
-    không ai dám xoá.
+    ⭐ Phép kiểm này THAY một phép kiểm cũ (`built=False` phải khớp
+       `vo.CHUA_XAY`). Nó không bị xoá vì "không còn dùng": nó đổi việc, vì thứ
+       nó canh đã đổi. Trước P8 rủi ro là *tab có mà nội dung không*; sau P8 rủi
+       ro là *ai đó thêm `built=False` mà quên rằng trang giữ chỗ không còn tồn
+       tại* — tab sẽ dẫn tới 404, đúng thứ cơ chế cũ sinh ra để tránh.
+
+    ⛔ Nên nếu phép kiểm này đỏ: đừng lật `built` về `True` cho xong. Hoặc xây
+       màn đó, hoặc dựng lại trang giữ chỗ. Xem `routes/__init__.py` — nó ghi
+       lại cái bẫy thứ tự đăng ký đi kèm cơ chế ấy.
     """
-    tu_manifest = {e.nav_key for e in MANIFEST.nav if not e.built}
-    assert tu_manifest == set(vo.CHUA_XAY), (
-        f"chi co trong manifest: {tu_manifest - set(vo.CHUA_XAY)}\n"
-        f"chi co trong CHUA_XAY: {set(vo.CHUA_XAY) - tu_manifest}")
-
-    for khoa, man in vo.CHUA_XAY.items():
-        assert man.get("tieu_de"), f"{khoa} thieu tieu_de"
-        assert man.get("mo_ta"), f"{khoa} thieu mo_ta"
-        # Một trang "đang xây" không nói được sẽ có gì thì nó chỉ là một 404 lịch sự.
-        assert man.get("sap_co"), f"{khoa} khong noi duoc se co gi"
+    chua_xay = [e.nav_key for e in MANIFEST.nav if not e.built]
+    assert chua_xay == [], (
+        f"tab chua xay: {chua_xay} — nhung trang giu cho da go o P8, nen bam "
+        f"vao se la 404. Xem docstring.")
+    assert not hasattr(vo, "CHUA_XAY"), (
+        "vo.CHUA_XAY da go o P8; con lai la noi dung mo coi khong ai doc")
 
 
 def test_ngu_canh_bat_buoc_nav_key():
@@ -239259,39 +239995,40 @@ def test_dung_mot_tab_sang_moi_luot(khach):
         assert so_sang == 1, f"{duong}: co {so_sang} tab sang, phai la 1"
 
 
-def test_ba_man_chua_xay_khong_ve_giao_dien_gia(khach):
-    """Màn chưa xây phải NÓI sẽ có gì, không MÔ PHỎNG cái sẽ có.
+def test_man_api_noi_dung_su_that_ve_cua_dang_dong(khach):
+    """Màn API phải nói cửa đang ĐÓNG khi nó đóng, và không đưa lệnh chép được.
 
-    ⛔ Một màn hình giả trông như đã xong là cách nhanh nhất để một phiên sau
-       tưởng nó đã xong. Tài liệu dự án này đã nói sai **về phía nguy hiểm** hai
-       lần vì đúng lớp nhầm lẫn đó (hàng Public API và hàng VPS trong
-       `CLAUDE.md`).
+    🔴 Đây là chốt quan trọng nhất của màn này, và nó có tiền lệ đắt: `CLAUDE.md`
+       đã hai lần nói sai về chính khu API — cả hai lần **về phía nguy hiểm**
+       (ghi "chưa mở" trong khi máy chủ đang bán). Chốt này canh chiều ngược
+       lại, cũng nguy hiểm không kém: mời khách gọi một cửa chưa mở.
 
-    Cách chốt: trang phải mang badge "đang xây", và **không** được chứa biểu mẫu
-    nào — một `<form>` trên màn chưa xây là một nút bấm không dẫn tới đâu.
+    ⛔ Vì sao "không có lệnh chép được" chứ không chỉ "có một câu cảnh báo": một
+       lệnh curl nằm sẵn trên trang sẽ được chép bất kể câu chữ quanh nó, rồi
+       trả 404 — mà 404 ấy đến từ Cloudflare hoặc từ cổng, không `request_id`,
+       không dòng nào trong `public_api_requests`. Khách đọc thành "khoá sai",
+       đi tạo khoá mới, vẫn 404, và **phía ta không thấy gì cả**.
 
-    ⚠️ Soi trong PHẦN THÂN của màn, không soi cả tài liệu: vỏ nền tảng có sẵn
-       một `<form>` đăng xuất trong menu tài khoản, nên một phép kiểm quét cả
-       trang sẽ đỏ vì một thứ hoàn toàn không liên quan. Bản đầu của phép kiểm
-       này đúng chỗ đó — và đó là đúng loại tín hiệu sai làm người ta mất tin
-       vào bánh cóc.
+    ⚠️ Bộ test chạy với `LTT_PUBLIC_API` không đặt, nên đây là trạng thái đóng —
+       cùng trạng thái production hôm nay (`speech.ltt` không có trong
+       `LTT_PUBLIC_API_TOOLS`).
     """
-    for nav_key in vo.CHUA_XAY:
-        duong = next(e.path for e in MANIFEST.nav if e.nav_key == nav_key)
-        r = khach.get(duong)
-        assert r.status_code == 200
+    from apps.ltt_voice import doc_man_api
+    assert doc_man_api.trang_thai_tool()["tool_mo"] is False, (
+        "phep kiem nay gia dinh cua DONG; moi truong test da doi")
 
-        than = re.search(r'<section class="lv-man[^"]*".*?</section>',
-                         r.text, re.S)
-        assert than, f"{duong} khong co than man `.lv-man`"
-        than = than.group(0)
+    r = khach.get("/ltt-voice/api")
+    assert r.status_code == 200
+    than = re.search(r'<section class="lv-man[^"]*".*?</section>', r.text, re.S)
+    assert than, "khong co than man `.lv-man`"
+    than = than.group(0)
 
-        assert "lv-cx" in than, f"{duong} khong dung template chua xay"
-        assert "<form" not in than.lower(), (
-            f"{duong} co <form> trong than man — man chua xay khong duoc co "
-            f"dieu khien that.")
-        # Và phải nói rõ nó chưa xong, không để khách tự đoán.
-        assert "b-warn" in than, f"{duong} thieu badge 'dang xay'"
+    assert "alert-warn" in than, "cua dong ma khong co canh bao"
+    assert "curl" not in than.lower(), (
+        "cua dang dong ma trang van dua lenh goi chep duoc")
+    # Nhưng thứ dùng được NGAY thì vẫn phải còn: mã giọng và tên giọng dựng sẵn
+    # đúng dù cửa đóng, và một trang trắng trơn thì không giúp được ai.
+    assert "/developers/keys" in than, "mat duong sang khu Lap trinh vien"
 
 
 # ── Nguồn của mỗi lượt sinh ──────────────────────────────────────────────────
@@ -241381,6 +242118,265 @@ def test_uoc_con_lai_tinh_tu_so_giay_THAT():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_352_ltt_voice_tiep_can.py
+SHA256=78465212ebf106d5435b9b203c92ff25e9754773bf2db6baba53f9d9b2f3f605 BYTES=12306 LINES=253
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ba chốt tiếp cận của LTT Voice: trạng thái lọc, tiến độ nói ra, cỡ vùng chạm.
+
+## Vì sao ba thứ này được chốt bằng test chứ không bằng một lần rà soát
+
+Cả ba đều **vô hình với con mắt đang nhìn màn hình đúng**. Bộ lọc trông rõ ràng
+vì nút đang bật có màu; tiến độ trông rõ ràng vì con số nhảy; nút bấm trông vừa
+tay vì chuột chính xác hơn ngón tay. Không thứ nào trong ba thứ đó sẽ gây ra một
+báo lỗi, một dòng log, hay một ảnh chụp trông sai — nên nếu chúng hỏng lại thì
+chúng hỏng **im lặng**, và chỉ người dùng trình đọc màn hình biết.
+
+## Từng chốt
+
+**1. `aria-pressed` phải theo lớp `on`.** Lớp CSS `on` là thứ con mắt thấy;
+`aria-pressed` là thứ tai nghe. Trước P7 chỉ có cái đầu, ở **bốn** nhóm lọc trên
+ba màn — nên trình đọc màn hình đọc bốn nút giống hệt nhau và không nút nào tự
+xưng là đang bật. Test này soi **văn bản HTML máy chủ trả về**, tức trạng thái
+lúc trang vừa mở; phần đồng bộ khi bấm nằm ở `voice.js::batNut` và đã đo trên
+trình duyệt thật.
+
+⛔ **Lọc ở màn Lịch sử dùng `aria-current`, KHÔNG dùng `aria-pressed`.** Chúng là
+`<button type="submit">` trong một form GET — bấm là **tải lại trang**, không
+phải bật/tắt một công tắc. `aria-pressed` mô tả một nút đang bị nhấn giữ;
+`aria-current` mô tả "mục hiện hành trong một tập". Ở đây nghĩa thứ hai mới đúng.
+
+**2. Hai màn chi tiết phải có vùng `role="status"`.** Studio có từ đầu, Dự án và
+Chạy lô thì không — và đó là khác biệt DUY NHẤT giữa chúng, nên nó là thiếu sót
+chứ không phải lựa chọn. Không có vùng ấy thì tiến độ chỉ tồn tại bằng mắt.
+
+⛔ Vùng ấy phải là `sr-only`, **không phải `hidden`**. Phần tử `hidden` bị gỡ
+   khỏi cây tiếp cận, nên trình đọc màn hình cũng không đọc — đúng cái bẫy khiến
+   một vùng aria-live trông như đã làm mà thật ra câm.
+
+**3. Cỡ vùng chạm ≥ 24px.** `.lv-chon-them` cao 15px và link quay lại cao 17px.
+Cả hai gần như chắc chắn lọt **ngoại lệ khoảng cách** của WCAG 2.5.8 (chúng đứng
+một mình), nên đây không phải một vi phạm đã chứng minh — nhưng 15px vẫn là thứ
+khó bấm trên điện thoại, và `min-height` không tốn gì. Test giữ con số đó khỏi
+tụt lại.
+"""
+from __future__ import annotations
+
+import pathlib
+import re
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+MAU = GOC / "apps" / "ltt_voice" / "templates"
+CSS = GOC / "server" / "static" / "ltt.css"
+JS = GOC / "server" / "static" / "voice.js"
+
+
+# ── 1. aria-pressed trong khuôn mẫu ──────────────────────────────────────────
+
+@pytest.mark.parametrize("ten", ["_voice_chon.html", "ltt_voice_giong.html",
+                                 "ltt_voice_lo.html"])
+def test_moi_nut_loc_deu_khai_aria_pressed(ten):
+    s = (MAU / ten).read_text(encoding="utf-8")
+    for the in re.findall(r"<button[^>]*lv-loc-nut[^>]*>", s):
+        assert "aria-pressed=" in the, f"{ten}: nut loc thieu aria-pressed -> {the}"
+
+
+@pytest.mark.parametrize("ten", ["_voice_chon.html", "ltt_voice_giong.html",
+                                 "ltt_voice_lo.html"])
+def test_nut_dang_bat_khai_pressed_true(ten):
+    """Lớp `on` và `aria-pressed="true"` phải đi cùng nhau, không lệch."""
+    s = (MAU / ten).read_text(encoding="utf-8")
+    for the in re.findall(r"<button[^>]*lv-loc-nut[^>]*>", s):
+        co_on = 'lv-loc-nut on"' in the
+        pressed_true = 'aria-pressed="true"' in the
+        assert co_on == pressed_true, f"{ten}: lop `on` va aria-pressed lech -> {the}"
+
+
+def test_lich_su_dung_aria_current_chu_khong_phai_pressed():
+    s = (MAU / "ltt_voice_lich_su.html").read_text(encoding="utf-8")
+    assert 'aria-current="true"' in s
+    assert "aria-pressed" not in s, (
+        "loc o Lich su lam TAI LAI TRANG, khong phai bat/tat mot cong tac")
+
+
+# ── 2. Vùng báo tin ──────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("ten", ["ltt_voice_mot_du_an.html", "ltt_voice_mot_lo.html"])
+def test_man_chi_tiet_co_vung_bao_tin(ten):
+    s = (MAU / ten).read_text(encoding="utf-8")
+    m = re.search(r'<p[^>]*id="lv-bao"[^>]*>', s)
+    assert m, f"{ten}: thieu vung bao tin #lv-bao"
+    the = m.group(0)
+    assert 'role="status"' in the and 'aria-live="polite"' in the
+    assert "sr-only" in the, "phai la sr-only"
+    assert "hidden" not in the, (
+        "`hidden` go phan tu khoi cay tiep can — vung live se CAM")
+
+
+@pytest.mark.parametrize("ten,khoa", [("ltt_voice_mot_du_an.html", "khối"),
+                                      ("ltt_voice_mot_lo.html", "dòng")])
+def test_cau_bao_tin_duoc_dich_va_co_cho_dien_so(ten, khoa):
+    s = (MAU / ten).read_text(encoding="utf-8")
+    for ten_khoa in ("baoTienDo", "baoXong"):
+        m = re.search(ten_khoa + r":\s*\{\{ _\((.+?)\) \| tojson \}\}", s)
+        assert m, f"{ten}: {ten_khoa} phai di qua _() de dich duoc"
+    assert "{x}" in s and "{y}" in s, f"{ten}: cau bao tin phai co cho dien so"
+
+
+def test_voice_js_khong_dat_aria_live_len_luoi_con_so():
+    """Đặt live lên lưới số thì trình đọc màn hình đọc lại cả bốn ô mỗi vài giây."""
+    for ten in ("ltt_voice_mot_du_an.html", "ltt_voice_mot_lo.html"):
+        s = (MAU / ten).read_text(encoding="utf-8")
+        for the in re.findall(r"<div[^>]*aria-live[^>]*>", s):
+            assert "lv-mlo-so" not in the and "lv-mda-so" not in the
+
+
+def test_bao_tin_bo_qua_cau_trung():
+    """Ghi lại cùng một câu sẽ khiến trình đọc màn hình đọc lại — phải chặn."""
+    s = JS.read_text(encoding="utf-8")
+    m = re.search(r"function baoTin\(cau\) \{(.+?)\n  \}", s, re.S)
+    assert m, "khong tim thay baoTin()"
+    assert "o.textContent === cau" in m.group(1)
+
+
+def test_chi_mot_ham_bat_nut_cho_ca_ba_man():
+    """Ba vòng lặp riêng làm cùng một việc là ba chỗ để quên đồng bộ."""
+    s = JS.read_text(encoding="utf-8")
+    assert s.count("function batNut(") == 1
+    assert s.count("batNut(nut);") == 3, (
+        "ca ba nhom loc chay o trinh duyet phai di qua batNut()")
+    assert 'setAttribute("aria-pressed"' in s
+
+
+# ── 3. Cỡ vùng chạm ──────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("chon", [".lv-chon-them{", ".lv-mda-quay a{"])
+def test_vung_cham_khai_min_height_24px(chon):
+    s = CSS.read_text(encoding="utf-8")
+    i = s.find(chon)
+    assert i >= 0, f"khong tim thay luat {chon}"
+    luat = s[i:s.find("}", i)]
+    assert "min-height:24px" in luat, f"{chon}: thieu min-height:24px -> {luat}"
+    assert "inline-flex" in luat, (
+        "min-height khong an voi phan tu inline — phai la inline-flex")
+
+
+# ── 4. Đường nghe phải biết tệp còn hay đã hết hạn ───────────────────────────
+#
+# 🔴 Đây KHÔNG phải một chốt tiếp cận — nó lọt vào đây vì được tìm ra trong cùng
+#    lượt rà soát P7, khi `test_211` bắt hai bảng chưa khai hạn giữ. Khai xong
+#    thì lộ ra hệ quả: `voice_block.audio_key` sống mãi cùng dự án, còn tệp nó
+#    trỏ tới sống theo hạn 30 ngày của `jobs`.
+#
+# ⛔ Vì sao nó là lỗi thật chứ không phải chuyện xa: nó KHÔNG hỏng lúc xoá tệp.
+#    Nó hỏng lúc khách mở lại dự án cũ, thấy một trình phát trông bình thường,
+#    bấm, và không có gì xảy ra. Không lỗi, không câu giải thích — đúng kiểu
+#    hỏng im lặng mà dự án này đã trả giá nhiều lần.
+
+def test_khong_con_cho_nao_tu_dung_duong_nghe():
+    """Năm chỗ từng tự dựng URL. Giờ chỉ `duong_tieng` được phép."""
+    import re as _re
+
+    goc = GOC / "apps" / "ltt_voice"
+    pham = []
+    for tep in goc.rglob("*.py"):
+        if tep.name in ("du_an.py",):
+            continue
+        for i, dong in enumerate(tep.read_text(encoding="utf-8").splitlines(), 1):
+            if _re.search(r'/audio/\{k\.audio_key\}|/audio/" \+', dong):
+                pham.append(f"{tep.name}:{i}")
+    assert pham == [], (
+        f"tu dung duong nghe o {pham} — phai goi du_an.duong_tieng() de tep da "
+        f"het han khong hien ra mot trinh phat 404")
+
+
+def test_duong_tieng_bo_khoi_co_job_da_het_han(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'dt.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+    from platform_core.models import Job
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from datetime import datetime, timezone
+
+    from apps.ltt_voice import du_an
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        con = Job(user_id="u1", app_slug="ltt_voice", job_type="t",
+                  params={}, status="done", result={})
+        het = Job(user_id="u1", app_slug="ltt_voice", job_type="t",
+                  params={}, status="done", result={},
+                  content_expired_at=datetime.now(timezone.utc))
+        db.add_all([con, het])
+        db.commit()
+
+        class K:                       # đủ hình dạng cho hàm, không cần ORM
+            def __init__(self, i, job, khoa):
+                self.id, self.job_id, self.audio_key = i, str(job.id), khoa
+
+        cac = [K(1, con, "voice/out/u1/a.wav"),
+               K(2, het, "voice/out/u1/b.wav")]
+        d = du_an.duong_tieng(db, cac, "/ltt-voice")
+        assert d == {1: "/ltt-voice/audio/voice/out/u1/a.wav"}, d
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def test_duong_tieng_khong_hoi_csdl_khi_khong_khoi_nao_co_tieng():
+    """Một lô 500 dòng chưa chạy không được sinh ra một truy vấn thừa."""
+    from apps.ltt_voice import du_an
+
+    class K:
+        id, job_id, audio_key = 1, "", ""
+
+    class DbNo:
+        def execute(self, *a, **k):    # noqa: ARG002
+            raise AssertionError("khong duoc hoi CSDL khi khong co tep nao")
+
+    assert du_an.duong_tieng(DbNo(), [K()], "/x") == {}
+
+
+# ── 5. Một dải đầu màn, không tám bản chép ───────────────────────────────────
+
+def test_moi_trang_dung_chung_dai_dau_man():
+    """Không khuôn trang nào được tự dựng `<header class="lv-vo">`.
+
+    🔴 VÌ SAO CHỐT, KHI BẢN CHÉP TRÔNG GIỐNG HỆT. Hai trang chi tiết đã chép tay
+       dải này suốt P5–P8 và không ai thấy khác biệt — nhưng bản chép **thiếu
+       `title`** trên cả hai chip. Câu bị mất là câu nói *"đây là việc của máy
+       chủ, không phải bạn làm sai"*.
+
+    ⇒ Bản chép luôn lệch. Nó chỉ lệch ở chỗ người chép không nghĩ tới, và vì
+      trông giống nên không ai đi tìm.
+    """
+    pham = []
+    for tep in sorted(MAU.glob("ltt_voice_*.html")):
+        s = tep.read_text(encoding="utf-8")
+        if '<header class="lv-vo">' in s:
+            pham.append(tep.name)
+    assert pham == [], (
+        f"{pham} tu dung dai dau man — phai `include \"_voice_vo.html\"`")
+
+
+def test_dai_dau_man_giu_cau_giai_thich_tren_chip():
+    """Hai `title` này là nội dung, không phải trang trí."""
+    s = (MAU / "_voice_vo.html").read_text(encoding="utf-8")
+    assert s.count("title=") >= 3, (
+        "chip mat `title` — khach thay phu hieu do ma khong co loi giai thich")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_353_voice_sidecar_bo_do.py
 SHA256=324ddd6e4ca92fc8e1201e54ec41ee59d04e07ed7c649f9ce69f082c57afec2d BYTES=15625 LINES=319
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -242327,7 +243323,7 @@ def test_moi_chuoi_IN_RA_deu_thuan_ASCII():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_362_cay_rieng_va_deploy.py
-SHA256=4faaf46d6b60eeb0d12ca59aae908dd7345b330ccc8cb92e2d1a49c37b406a0c BYTES=7647 LINES=162
+SHA256=e66da9651f68fab663550d04a3972ad7a47ac50b1de03a40937eb5f4b22db8a9 BYTES=9176 LINES=196
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_362 — cây riêng cho mỗi phiên, và chốt chặn deploy nhầm cây.
 
@@ -242489,8 +243485,42 @@ def test_dong_RESULT_tu_khai_khi_cay_doi():
     """
     ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
     assert "KHONG DUNG LAM BANG CHUNG" in ma
-    khuc = ma.split('ket = "PASS" if not failed')[1][:600]
-    assert "cay_da_doi" in khuc, "phai gan vao chinh bien `ket`, khong in roi"
+    khoi = _khoi_sua_ket()
+    assert any("cay_da_doi" in k for k in khoi), (
+        "`cay_da_doi` phai dieu khien chinh bien `ket`, khong phai in roi bo. "
+        f"Cac khoi co sua `ket`: {khoi}")
+
+
+def _khoi_sua_ket() -> list[str]:
+    """Mã nguồn của mọi khối `if` trong `main()` có **sửa biến `ket`**.
+
+    🔴 VÌ SAO KHÔNG ĐẾM KÝ TỰ. Bản đầu của phép kiểm này cắt một cửa sổ 600 ký
+       tự sau mốc `ket = "PASS" ...` rồi tìm chuỗi trong đó. Nó đỏ ngay khi có
+       người **chèn một khối chú thích tử tế** vào giữa — hành vi đúng nguyên,
+       chỉ là `cay_da_doi` bị đẩy ra ngoài cửa sổ.
+
+    ⭐ Đó đúng lớp lỗi đã gặp nhiều lần trong ngày 31/08: **neo vào khoảng cách
+       vật lý thay vì vào quan hệ.** Ý định thật là *"cờ này phải điều khiển
+       chính biến `ket`"* — và đó là một quan hệ, hỏi cây cú pháp được.
+    """
+    import ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(ma))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    ra = []
+    for n in ast.walk(ham):
+        if not isinstance(n, ast.If):
+            continue
+        sua = any(
+            (isinstance(x, ast.AugAssign) and isinstance(x.target, ast.Name)
+             and x.target.id == "ket")
+            or (isinstance(x, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ket" for t in x.targets))
+            for x in ast.walk(n))
+        if sua:
+            ra.append(ast.unparse(n))
+    return ra
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -242765,6 +243795,559 @@ def test_LuongUpstream_van_la_mot_Iterator():
     lu = LuongUpstream(iter([b"a", b"b"]), lambda: None)
     assert list(lu) == [b"a", b"b"]
     assert iter(lu) is lu
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_364_ltt_voice_man_api.py
+SHA256=4d324dff10dd6a24db575f7cedf5865cb07a5e7230752867a65a7e2b22a59c24 BYTES=10059 LINES=217
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Màn API của Voice: nó nói đúng sự thật về cửa, ở CẢ HAI trạng thái.
+
+## Vì sao màn này cần test riêng, khi nó chỉ là một trang chữ
+
+Vì nội dung của nó **đổi theo cấu hình đang chạy**, và một trong hai nhánh
+không dựng được trên máy phát triển: cửa `speech.ltt` hôm nay đóng, nên mọi lần
+mở trình duyệt đều chỉ thấy đúng một nửa. Nửa còn lại — nửa có lệnh gọi chép
+được — chỉ tồn tại trên production, tức chỗ sai thì đắt nhất.
+
+## 🔴 Hai chiều sai, và cả hai đều đã có tiền lệ trong kho này
+
+**Nói ĐÓNG khi đang MỞ.** `CLAUDE.md` đã dính hai lần, cùng một hàng, cùng một
+hướng: tài liệu ghi *"tool chưa mở"* trong khi máy chủ đang thu tiền. Hệ quả
+được ghi thẳng ở đó: *"một phiên sau sẽ sửa nó như sửa mã chết."*
+
+**Nói MỞ khi đang ĐÓNG.** Chiều này chưa xảy ra nhưng đắt hơn, vì nạn nhân là
+khách chứ không phải một phiên Claude: một lệnh `curl` nằm sẵn trên trang sẽ
+được chép bất kể câu chữ quanh nó, và 404 trả về đến từ Cloudflare hoặc từ cổng
+— **không** `request_id`, **không** dòng nào trong `public_api_requests`, không
+tra được bằng `/admin/api-trace`. Khách đọc nó thành "khoá của tôi sai", đi tạo
+khoá mới, vẫn 404. Và phía ta không thấy gì cả.
+
+⇒ Nên chốt không phải là "có một câu cảnh báo", mà là **không có lệnh chép
+   được** khi cửa đóng.
+
+## Điều KHÔNG chốt ở đây, có chủ ý
+
+Nội dung chữ (cách diễn đạt, thứ tự khối) không bị đóng băng — nó sẽ đổi, và một
+test so từng câu chỉ tạo ra việc bảo trì. Thứ bị chốt là **quan hệ giữa trạng
+thái thật và thứ trang mời khách làm**.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-api.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-api")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="voice-api@test.com",
+                       password="matkhau-tot-12", is_verified=True)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    m = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/login").text)
+    assert m
+    client.post("/login", data={"username": "voice-api@test.com",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": m.group(1)})
+    try:
+        yield client
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _than(text: str) -> str:
+    m = re.search(r'<section class="lv-man[^"]*".*?</section>', text, re.S)
+    assert m, "khong tim thay than man `.lv-man`"
+    return m.group(0)
+
+
+# ── Cửa đóng ─────────────────────────────────────────────────────────────────
+
+def test_cua_dong_thi_khong_co_lenh_goi_chep_duoc(khach):
+    r = khach.get("/ltt-voice/api")
+    assert r.status_code == 200
+    than = _than(r.text)
+    assert "alert-warn" in than
+    assert "curl" not in than.lower()
+    assert "lv-ma-chep" not in than or "data-chep-tu" not in than
+
+
+def test_cua_dong_van_giu_thu_dung_duoc_ngay(khach):
+    """Đóng cửa API không làm mất giá trị còn lại của màn.
+
+    Tên giọng dựng sẵn và đường sang khu Lập trình viên đúng dù cửa đóng — một
+    trang chỉ có mỗi câu "chưa mở" là một trang không ai quay lại.
+    """
+    than = _than(khach.get("/ltt-voice/api").text)
+    from apps.ltt_voice import giong_mau
+    assert giong_mau.MAC_DINH in than
+    assert "/developers/keys" in than
+
+
+# ── Cửa mở ───────────────────────────────────────────────────────────────────
+
+@pytest.fixture()
+def cua_mo(monkeypatch):
+    monkeypatch.setenv("LTT_PUBLIC_API", "1")
+    monkeypatch.setenv("LTT_PUBLIC_API_TOOLS", "speech.ltt")
+    yield
+
+
+def test_cua_mo_thi_hien_lenh_goi_dung_ten_tool(khach, cua_mo):
+    than = _than(khach.get("/ltt-voice/api").text)
+    assert "alert-ok" in than, "cua mo ma van bao dong"
+    assert "curl" in than.lower()
+    from apps.ltt_voice import doc_man_api
+    assert doc_man_api.TEN_TOOL in than, "lenh mau khong nhac dung ten cong cu"
+    assert "/api/v1/jobs" in than
+
+
+def test_cua_mo_chi_doc_thi_noi_ra(khach, monkeypatch):
+    """`read_only` bật thì cửa "mở" vẫn từ chối tạo việc — phải nói trước."""
+    monkeypatch.setenv("LTT_PUBLIC_API", "1")
+    monkeypatch.setenv("LTT_PUBLIC_API_TOOLS", "speech.ltt")
+    monkeypatch.setenv("LTT_PUBLIC_API_READ_ONLY", "1")
+    than = _than(khach.get("/ltt-voice/api").text)
+    assert "alert-ok" in than
+    assert "read-only" in than.lower() or "chỉ đọc" in than
+
+
+def test_mot_cong_cu_KHAC_duoc_mo_khong_lam_man_nay_bao_mo(khach, monkeypatch):
+    """Chốt hẹp nhất, và là chốt dễ hỏng nhất nếu ai đọc `enabled` thay cho tool.
+
+    Production hôm nay có bốn công cụ mở — nếu màn này chỉ hỏi "khu API có bật
+    không" thì nó đã báo MỞ suốt, sai theo đúng chiều nguy hiểm.
+    """
+    monkeypatch.setenv("LTT_PUBLIC_API", "1")
+    monkeypatch.setenv("LTT_PUBLIC_API_TOOLS", "text.chat,image.ltt")
+    than = _than(khach.get("/ltt-voice/api").text)
+    assert "alert-warn" in than, "cong cu khac mo, khong phai cong cu nay"
+    assert "curl" not in than.lower()
+
+
+# ── Không đẻ ra bản sao thứ hai của một sự thật ──────────────────────────────
+
+def test_man_api_khong_in_gia(khach, cua_mo):
+    """Giá tính theo GIÂY tiếng ra, không theo ký tự vào.
+
+    Mọi cách viết giá ở một trang hướng dẫn gọi API đều là một phép ước, và một
+    phép ước in cạnh một lệnh `curl` sẽ được đọc là một lời hứa.
+    `/developers/pricing` có bộ mô phỏng thật.
+    """
+    than = _than(khach.get("/ltt-voice/api").text)
+    assert "credit" not in than.lower(), (
+        "man API dang in gia — do la ban thu hai cua mot su that, va ban sai se "
+        "la ban khong ai nho phai sua")
+
+
+# ── Nút chép chỉ hoạt động khi trang có nạp `voice.js` ───────────────────────
+
+def test_moi_khuon_co_nut_chep_deu_nap_voice_js():
+    """Bản đầu của màn API quên `{% block scripts %}` — và không gì báo.
+
+    🔴 VÌ SAO NÓ LÀ MỘT LỖI THẬT chứ không phải một thiếu sót nhỏ: nút chép vẫn
+       **hiện đầy đủ, vẫn bấm được, vẫn có con trỏ tay**. Nó chỉ không làm gì.
+       Khách bấm, tưởng đã chép, dán vào và nhận nội dung cũ trong bộ nhớ tạm —
+       tệ hơn một nút không có, vì một nút không có thì người ta đi bôi đen.
+
+    ⛔ Và nó không được phát hiện bởi bất kỳ phép kiểm HTTP nào, vì mọi phép
+       kiểm đó soi HTML — mà HTML thì **đúng**. Chỉ hành vi là sai. Nên chốt
+       phải bắc cầu giữa hai tệp: khuôn nào dùng nút thì khuôn ấy phải nạp mã.
+
+    ⚠️ Tính cả nút đến GIÁN TIẾP qua `_voice_ma.html`: một khuôn `include` mảnh
+       đó vẫn có nút, dù chính nó không viết chữ `lv-ma-chep` nào.
+    """
+    import pathlib
+
+    goc = pathlib.Path(__file__).resolve().parents[1] / "apps/ltt_voice/templates"
+    thieu = []
+    for tep in sorted(goc.glob("ltt_voice_*.html")):   # chỉ khuôn TRANG
+        noi_dung = tep.read_text(encoding="utf-8")
+        co_nut = "lv-ma-chep" in noi_dung or "_voice_ma.html" in noi_dung
+        if co_nut and "voice.js" not in noi_dung:
+            thieu.append(tep.name)
+    assert thieu == [], (
+        f"{thieu} co nut chep nhung khong nap voice.js — nut se hien va bam "
+        f"duoc ma khong lam gi ca")
+
+
+def test_vi_du_lay_tu_ban_khai_chu_khong_go_lai(khach, cua_mo):
+    """Câu ví dụ trên trang phải là CHÍNH câu trong `api_contract`.
+
+    ⭐ Không phải để tiết kiệm một dòng: hai bản của cùng một ví dụ sẽ lệch, và
+       bản lệch là bản không ai nhớ phải sửa. `/developers/tools` in ví dụ từ
+       bản khai; nếu màn này gõ lại thì một ngày khách thấy hai câu khác nhau
+       cho cùng một tham số và không biết tin câu nào.
+    """
+    from apps.ltt_voice import doc_man_api
+    from apps.ltt_voice.manifest import MANIFEST
+
+    tool = next(t for t in MANIFEST.tools if t.name == doc_man_api.TEN_TOOL)
+    vi_du = tool.api_contract["params"]["text"]["example"]
+    assert vi_du, "ban khai khong con vi du cho tham so `text`"
+    assert vi_du in _than(khach.get("/ltt-voice/api").text)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_365_gate_ba_trang_thai.py
+SHA256=90b0d87d4f41ec82dd4edca372820daafa745bce96da7976eaebcb27a43b4577 BYTES=8363 LINES=177
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_365 — một bước gate TỰ BỎ QUA không được trông giống một bước ĐẠT.
+
+## Chuyện đã xảy ra, 31/08/2026
+
+`gate.py` chỉ đọc **mã thoát**. `tools/check_multiproc.py` không tạo được CSDL
+test, in một đoạn giải thích rất tử tế, rồi `return 0`. Gate đọc `0` và in
+`[PASS]` trong **0,7 giây**.
+
+Hậu quả đo được: **hai phiên đọc cùng một dòng `RESULT` theo hai cách trái
+ngược trong cùng một ngày, và cả hai đều tưởng mình đúng.**
+
+* Một phiên báo *"gate PASS 25/25"* — tin rằng bất biến đa tiến trình đã được
+  chứng minh.
+* Phiên kia (tôi) thấy `FAIL (1/25)`, đọc thông điệp tử tế của `check_multiproc`,
+  rồi **gán nó cho con số thất bại** vì nó khớp câu chuyện đang kể — trong khi
+  bước thật sự đỏ là một bước khác và **chưa bao giờ được gọi tên**.
+
+⭐ Cái giá không nằm ở "một bước không chạy". Nó nằm ở chỗ: **một cái bẫy im
+   lặng thì người ta đi tìm; một cái bẫy có sẵn lời giải thích thì người ta
+   thôi tìm.**
+
+## ⛔ Và `return 0` ở đó là ĐÚNG — đừng "sửa" nó
+
+Một máy không có PostgreSQL vẫn phải chạy được gate. Đổi `check_multiproc.py`
+thành trả khác 0 là biến một máy thiếu công cụ thành một máy không chạy được
+cổng chất lượng. **Cái sai nằm ở chỗ ĐỌC, không ở chỗ trả.** Phép kiểm cuối tệp
+này canh đúng điều đó, để phiên sau không sửa nhầm đầu.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+GOC = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(GOC / "tools"))
+
+from gate import DAU_BO_QUA, Step, _tu_khai_bo_qua  # noqa: E402
+
+
+# ── 1. Phát hiện đúng thứ cần phát hiện ────────────────────────────────────
+
+def test_nhan_ra_dau_ra_THAT_cua_check_multiproc():
+    """Đo trên chính hình dạng đã gây ra sự cố, không trên một chuỗi bịa."""
+    that = (
+        "BO QUA bo bat bien da tien trinh - khong tao duoc CSDL test: "
+        "ProgrammingError\n"
+        "  test_214 la thu duy nhat chung minh webhook khong gui trung,\n"
+        "  Do KHONG phai loi.\n")
+    assert _tu_khai_bo_qua(that) is True
+
+
+def test_buoc_dat_binh_thuong_KHONG_bi_gan_nhan():
+    assert _tu_khai_bo_qua("RESULT: PASS\n12 checks, 0 vi pham") is False
+    assert _tu_khai_bo_qua("") is False
+
+
+def test_chi_nhan_o_DAU_DONG():
+    """⛔ Bắt theo `in` sẽ biến mọi bản báo cáo *nói về* việc bỏ qua thành một
+    lần bỏ qua — kể cả chính đầu ra của `check_bo_qua.py`."""
+    assert _tu_khai_bo_qua("khong BO QUA gi ca\nRESULT: PASS") is False
+    assert _tu_khai_bo_qua("Cho BO QUA moi (0)\nRESULT: PASS") is False
+    assert _tu_khai_bo_qua("   " + DAU_BO_QUA + " vi thieu GPU") is True, (
+        "thut le van la dau dong — nhieu cong cu in co thut")
+
+
+# ── 2. Bỏ qua ≠ hỏng, nhưng cũng ≠ đạt ────────────────────────────────────
+
+def test_bo_qua_KHONG_bi_tinh_la_that_bai():
+    """Nếu tính là hỏng thì máy thiếu PostgreSQL không chạy được gate — đúng
+    cái hậu quả mà `return 0` sinh ra để tránh."""
+    s = Step("thu", ["x"], GOC)
+    s.ok, s.bo_qua = True, True
+    assert s.ok is True and s.bo_qua is True
+
+
+def test_step_mac_dinh_KHONG_bo_qua():
+    s = Step("thu", ["x"], GOC)
+    assert s.bo_qua is False, "mac dinh phai la 'da chay that'"
+
+
+# ── 3. Dòng RESULT phải tự khai — đây mới là chỗ người ta đọc ─────────────
+
+def test_dong_RESULT_khai_bao_buoc_bo_qua():
+    """🔴 Bảng liệt kê từng bước ở trên đã có `[BOQUA]`, nhưng **dòng RESULT là
+    thứ duy nhất được đọc khi người ta vội** — đúng bài học của cây-đổi."""
+    khoi = _khoi_sua_ket()
+    assert any("bo_qua" in k for k in khoi), (
+        "`bo_qua` phai dieu khien chinh bien `ket`, khong phai in roi bo. "
+        f"Cac khoi co sua `ket`: {khoi}")
+    assert any("KHONG PHAI BANG CHUNG" in k for k in khoi), (
+        "phai NOI RO rang luot nay khong chung minh duoc dieu no trong nhu da "
+        "chung minh")
+
+
+def test_keu_KE_CA_KHI_moi_buoc_khac_deu_dat():
+    """⛔ Đó đúng là lúc nguy hiểm nhất: một dòng `PASS` trọn vẹn che một bất
+    biến chưa bao giờ được chứng minh."""
+    import ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(ma))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    # Phep dem buoc bo qua phai nam o THAN HAM, khong long trong mot `if` nao.
+    # Long no vao nhanh "co that bai" thi mot luot toan PASS se im lang — dung
+    # luc can no keu nhat.
+    o_than = any(
+        isinstance(n, ast.Assign)
+        and any(isinstance(x, ast.Name) and x.id == "bo_qua" for x in n.targets)
+        for n in ham.body)
+    assert o_than, (
+        "`bo_qua = [...]` phai o than `main`, khong long trong mot nhanh dieu "
+        "kien — neu khong, mot luot toan PASS se khong bao gio khai bao")
+
+
+def test_bang_buoc_co_nhan_rieng():
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert '"BOQUA" if step.bo_qua' in ma
+
+
+# ── 4. Bánh cóc chống "sửa nhầm đầu" ─────────────────────────────────────
+
+def test_check_multiproc_van_phai_TRA_VE_0_khi_bo_qua():
+    """🔴 Phép kiểm này chốt một điều NGƯỢC với phản xạ tự nhiên.
+
+    Đọc "bước này bỏ qua mà báo đạt" xong, phản xạ là làm nó trả khác 0. Làm
+    thế là biến một máy **thiếu PostgreSQL** thành một máy **không chạy được
+    cổng chất lượng** — và người tiếp theo sẽ vô hiệu hoá cả bước bằng một cờ
+    `--bo-qua`, rồi cờ đó ở lại mãi.
+
+    Chỗ sai là chỗ ĐỌC (`gate.py`), và nó đã được sửa. Chỗ trả thì giữ nguyên.
+    """
+    ma = (GOC / "tools" / "check_multiproc.py").read_text(encoding="utf-8")
+    khuc = ma[ma.index("BO QUA"):]
+    assert "return 0" in khuc[:2000] or "sys.exit(0)" in khuc[:2000], (
+        "nhanh bo qua phai van tra 0 — xem docstring cua phep kiem nay truoc "
+        "khi doi")
+
+
+def test_moc_BO_QUA_la_mot_hang_so_dung_chung():
+    """Gõ tay chuỗi "BO QUA" ở hai nơi là hai nguồn chân lý cho một quy ước."""
+    from gate import DAU_BO_QUA as m
+
+    assert m == "BO QUA"
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    assert "DAU_BO_QUA" in ma.split("def _tu_khai_bo_qua")[1][:400], (
+        "ham phat hien phai dung hang so, khong go lai chuoi")
+
+
+def _khoi_sua_ket() -> list[str]:
+    """Mã nguồn của mọi khối `if` trong `main()` có **sửa biến `ket`**.
+
+    🔴 Phép đo QUAN HỆ, không phải khoảng cách. Bản đầu của hai phép kiểm trên
+       cắt một cửa sổ 900 ký tự sau một mốc chuỗi — nó đỏ ngay khi ai đó chèn
+       một khối chú thích vào giữa, dù hành vi đúng nguyên.
+
+    ⭐ Đúng cái bẫy vừa làm `test_362` đỏ oan, và tôi đã chép nó sang đây trong
+       cùng một giờ. Neo vào khoảng cách vật lý thay vì vào quan hệ là một lỗi
+       dễ lây, vì nó trông như một phép kiểm chặt chẽ.
+    """
+    import ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(ma))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    ra = []
+    for n in ast.walk(ham):
+        if not isinstance(n, ast.If):
+            continue
+        sua = any(
+            (isinstance(x, ast.AugAssign) and isinstance(x.target, ast.Name)
+             and x.target.id == "ket")
+            or (isinstance(x, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ket" for t in x.targets))
+            for x in ast.walk(n))
+        if sua:
+            ra.append(ast.unparse(n))
+    return ra
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_366_chuan_hoa_dau_vao.py
+SHA256=0656d47d44325d90bc3a9688153bf044a0bf94ff26976de6d9f8936270564785 BYTES=6696 LINES=141
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Hai lỗi hình dạng đầu vào, tìm ra bằng cách đọc hộp thư lỗi của upstream.
+
+## Vì sao cả hai đều là lỗi TIỀN
+
+Không cái nào làm job hỏng. Job `done`, tệp có thật, thời lượng đúng, và
+`credit_cost` tính theo **số giây thật sự sinh ra** — nên khách trả tiền đầy đủ
+cho một bản thu đọc sai. Không dòng log nào được ghi.
+
+  · **#119** — `"CHƯƠNG I"` bị engine đọc thành *"xê hát u ơ en giê"*. Tác giả
+    upstream xác nhận: engine hiểu nhầm chữ viết hoa toàn bộ là từ viết tắt.
+  · **#112** — `…` (U+2026) không được chuẩn hoá nên không có chỗ ngắt hơi.
+    Upstream đã sửa `...` ở sea-g2p 0.6.8 nhưng `…` thì **chưa**.
+
+## Vì sao bộ test cũ không thấy
+
+Mọi phép kiểm chuẩn hoá trước đây gửi **văn bản sạch do chính ta viết**. Không ai
+dán một quyết định hành chính hay một đoạn copy từ Word vào một test. Ba lỗi tìm
+được hôm nay (#177, #119, #112) đều thuộc lớp đó — và không lỗi nào bị bắt bởi
+test, cả ba đều bắt bằng cách đọc xem **người khác đưa gì vào cùng model này**.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+def _ch(s: str) -> str:
+    from apps.ltt_voice.text_pipeline import chuan_hoa
+    return chuan_hoa(s)
+
+
+# ═══════════════════════════════════ #112 · dấu ba chấm ═════════════════════
+
+@pytest.mark.parametrize("vao", ["Anh ấy nói… rồi im lặng.",
+                                 "Anh ấy nói... rồi im lặng.",
+                                 "Anh ấy nói.... rồi im lặng."])
+def test_dau_ba_cham_thanh_mot_dau_cham(vao):
+    """`…` và `...` phải cùng về một dấu chấm — đó là chỗ engine ngắt hơi."""
+    ra = _ch(vao)
+    assert "…" not in ra, f"con ky tu U+2026 trong {ra!r}"
+    assert "..." not in ra, f"con ba dau cham trong {ra!r}"
+    assert ra.count(".") == 2, (
+        f"{ra!r} — mong doi dung hai dau cham (mot thay cho dau ba cham, mot "
+        f"ket cau)")
+
+
+def test_nhieu_dau_ba_cham_lien_tiep_gop_lam_mot():
+    """Hai dấu chấm cách nhau một khoảng trắng là hai câu rỗng, không phải một
+    quãng nghỉ dài."""
+    assert _ch("Chờ đã…… thế à?") == "Chờ đã. thế à?"
+
+
+def test_dau_ba_cham_khong_dung_vao_dau_cham_thuong():
+    assert _ch("Không có gì.") == "Không có gì."
+
+
+# ═══════════════════════════════════ #119 · VIẾT HOA ════════════════════════
+
+def test_viet_hoa_co_dau_bi_ha_xuong():
+    """🔴 Ca chính: văn bản hành chính tiếng Việt.
+
+    Tác giả upstream: *"nếu viết hoa toàn bộ như CHƯƠNG thì hệ thống đang hiểu
+    nhầm là từ viết tắt nên mới đọc từng chữ cái."*
+    """
+    assert _ch("CHƯƠNG I. QUY ĐỊNH CHUNG") == "chương I. quy định chung"
+    assert _ch("Điều 5. QUYẾT ĐỊNH này có hiệu lực") \
+        == "Điều 5. quyết định này có hiệu lực"
+
+
+def test_viet_tat_khong_dau_duoc_giu_nguyen():
+    """⛔ Ngược lại: `RAM` viết hoa đang được đánh vần **đúng**.
+
+    Hạ nó thành "ram" là sửa một lỗi bằng cách tạo ra lỗi ngược lại.
+    """
+    assert "RAM" in _ch("Xem mục CPU và RAM")
+    assert _ch("Theo ISO 9001 và TCVN") == "Theo ISO 9001 và TCVN"
+
+
+def test_tu_dien_viet_tat_van_khop_sau_khi_them_luat():
+    """Phép hạ đặt SAU `tu_dien.ap_dung` — nếu đảo thứ tự thì `CPU` rơi khỏi
+    từ điển và luật này lặng lẽ phá một tính năng khác."""
+    assert "xi pi diu" in _ch("Xem mục CPU và RAM")
+
+
+@pytest.mark.parametrize("vao,phai_giu", [
+    ("HĐND TỈNH ban hành", "HĐND"),
+    ("TRƯỜNG ĐH BÁCH KHOA", "ĐH"),
+    ("CÔNG TY TNHH ABC thông báo", "TNHH"),
+])
+def test_viet_tat_khong_co_nguyen_am_song_sot_trong_chuoi_co_dau(vao, phai_giu):
+    """🔴 Chuỗi trộn viết tắt với chữ viết hoa có dấu — ca THẬT, không dựng ra.
+
+    Mọi âm tiết tiếng Việt đều có nguyên âm làm âm chính. Nên một chữ không có
+    nguyên âm nào **không thể** là từ tiếng Việt — nó chỉ có thể là viết tắt.
+    Đó là một sự thật ngôn ngữ, và đó là lý do nó được phép quyết định.
+    """
+    ra = _ch(vao)
+    assert phai_giu in ra, (
+        f"{vao!r} -> {ra!r}: {phai_giu!r} khong co nguyen am nen no la viet "
+        f"tat, khong duoc ha xuong")
+
+
+def test_chu_hoa_dau_cau_khong_bi_dung_toi():
+    """Chỉ chuỗi VIẾT HOA TOÀN BỘ mới bị đụng, không phải chữ hoa đầu từ."""
+    assert _ch("Tôi Đi Học") == "Tôi Đi Học"
+    assert _ch("Xin chào các bạn") == "Xin chào các bạn"
+    assert _ch("Hà Nội và TP HCM") == "Hà Nội và TP HCM"
+
+
+def test_xuong_dong_tach_hai_chuoi_khac_nhau():
+    """Xuống dòng là ranh giới: tiêu đề và nội dung là hai chuỗi, không phải một."""
+    ra = _ch("TIÊU ĐỀ\nNỘI DUNG ở đây")
+    assert "tiêu đề" in ra and "nội dung" in ra
+
+
+def test_phan_du_da_biet_va_da_ghi():
+    """⚠️ Luật này KHÔNG che được viết tắt CÓ nguyên âm nằm trong chuỗi có dấu.
+
+    `"CÔNG TY TNHH ABC"` → `ABC` bị hạ thành `abc`. Ghi lại thành phép kiểm để
+    nó là một **giới hạn đã biết**, không phải một lỗi chờ ai đó phát hiện —
+    và để ngày ai đó sửa được nó thì phép kiểm này đỏ và bắt họ xoá dòng này.
+
+    Cửa `/xem-truoc` tồn tại đúng cho phần dư này.
+    """
+    ra = _ch("CÔNG TY TNHH ABC thông báo")
+    assert "TNHH" in ra, "phan giu duoc thi phai giu"
+    assert "abc" in ra, (
+        "neu ca nay da sua duoc thi xoa phep kiem nay va cap nhat chu thich "
+        "trong `_ha_chuoi_viet_hoa`")
+
+
+# ═══════════════════════════════════ không phá thứ đã có ════════════════════
+
+def test_khong_pha_phep_bo_ky_tu_vo_hinh():
+    """#177 vẫn phải hoạt động sau khi thêm hai luật mới."""
+    assert _ch("Xin​chào﻿ bạn") == "Xinchào bạn"
+
+
+def test_khong_pha_doc_so_va_ngay():
+    ra = _ch("Ngày 5/9/2026 có 30%")
+    assert "phần trăm" in ra
+    assert "/" not in ra, f"ngay chua duoc doc thanh chu: {ra!r}"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -265162,7 +266745,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=8e17b040a7e53596a7a9118519c587b6a23e2f1bfa143c8fde209ae0b5625497 BYTES=38981 LINES=715
+SHA256=46f8862dc2a1f0dcec157d2c8e0d371c70fb66290efe18a4aa1fa5c8f15e1582 BYTES=41269 LINES=760
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -265276,6 +266859,21 @@ class Step:
         self.cwd = cwd
         self.nhom = nhom
         self.ok: bool | None = None
+        #: Buoc chay xong, tra 0, NHUNG tu khai la no khong lam duoc viec.
+        #:
+        #: 🔴 VI SAO CAN TRANG THAI THU BA. `gate.py` chi doc MA THOAT, nen
+        #:    mot buoc bo qua va mot buoc dat trong Y HET nhau tren dong RESULT.
+        #:    Do 31/08: `bat bien da tien trinh` xanh trong 0,7 giay vi
+        #:    `check_multiproc.py` khong tao duoc CSDL test, in mot doan giai
+        #:    thich rat tu te, roi `return 0`.
+        #:
+        #: ⭐ Va `return 0` o do la DUNG, dung sua no: mot may khong co
+        #:    PostgreSQL phai chay duoc gate. Cai sai nam o cho DOC, khong o do.
+        #:
+        #: ⛔ Hai phien doc cung mot dong RESULT theo hai cach trai nguoc trong
+        #:    cung mot ngay, va ca hai deu tuong minh dung. Do la cai gia that:
+        #:    mot buoc khong chay ma trong nhu da chay thi khong ai di tim no.
+        self.bo_qua = False
         self.seconds = 0.0
         self.tail = ""
 
@@ -265511,6 +267109,21 @@ def _steps(quick: bool) -> list[Step]:
     return steps
 
 
+#: Buoc nao KHONG lam duoc viec cua no thi mo dau mot dong bang chuoi nay.
+#: Quy uoc, khong phai ma thoat — vi ma thoat 0 o cac buoc do la co chu y.
+DAU_BO_QUA = "BO QUA"
+
+
+def _tu_khai_bo_qua(output: str) -> bool:
+    """Buoc co tu khai rang no khong lam duoc viec khong.
+
+    ⛔ Chi nhan o DAU DONG. Mot buoc in "khong BO QUA gi ca" giua cau khong
+       phai mot buoc bo qua, va bat theo `in` se bien moi ban bao cao noi ve
+       viec bo qua thanh mot lan bo qua.
+    """
+    return any(d.lstrip().startswith(DAU_BO_QUA) for d in output.splitlines())
+
+
 def _run(step: Step) -> None:
     started = time.monotonic()
     try:
@@ -265522,6 +267135,7 @@ def _run(step: Step) -> None:
         step.ok = False
         output = f"khong chay duoc: {exc}"
     step.seconds = time.monotonic() - started
+    step.bo_qua = bool(step.ok) and _tu_khai_bo_qua(output)
     lines = [line for line in output.splitlines() if line.strip()]
     # 🔴 GIU 40 DONG, KHONG PHAI 4 — day la mot sua loi QUY TRINH, khong phai
     #    mot con so tuy chinh.
@@ -265817,7 +267431,7 @@ def main() -> int:
     print("\n" + "=" * 62)
     failed = [s for s in steps if not s.ok]
     for step in steps:
-        mark = "PASS" if step.ok else "FAIL"
+        mark = "BOQUA" if step.bo_qua else ("PASS" if step.ok else "FAIL")
         print(f"  [{mark}] {step.name:<28} {step.seconds:6.1f}s")
     if failed:
         print("\nChi tiet buoc that bai:")
@@ -265843,6 +267457,20 @@ def main() -> int:
         print("=" * 62)
 
     ket = "PASS" if not failed else f"FAIL ({len(failed)}/{len(steps)})"
+    # 🔴 BUOC BO QUA PHAI HIEN RA O DONG RESULT, khong chi trong bang tren.
+    #
+    #    Cung luat da ap cho `--quick`, `--vong-lap` va cay-doi: mot luot chay
+    #    it hon thi dong ket qua cua no phai TRONG KHAC. Ngay 31/08 hai phien
+    #    doc cung mot dong `PASS 25/25` theo hai cach trai nguoc, vi mot buoc
+    #    da tu bo qua ma dong RESULT khong he noi.
+    #
+    # ⛔ Va no phai keu KE CA KHI TAT CA CON LAI DEU DAT — do dung la luc
+    #    nguy hiem nhat: mot dong `PASS` tron ven che mot bat bien chua bao gio
+    #    duoc chung minh.
+    bo_qua = [s for s in steps if s.bo_qua]
+    if bo_qua:
+        ket += (f"  [{len(bo_qua)} BUOC TU BO QUA, KHONG PHAI BANG CHUNG: "
+                f"{', '.join(s.name for s in bo_qua)}]")
     # 🔴 CUNG LUAT VOI `--quick` VA `--vong-lap`: mot luot chay it tin cay
     #    hon thi DONG KET QUA cua no phai trong khac. Truoc day cay-doi chi duoc
     #    noi trong mot doan van phia tren, con dong RESULT in y het mot luot
@@ -266174,7 +267802,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=67c43ff82f242af0ef32f2db0e5d939329e51d39c2023217c99c7877020367e0 BYTES=251190 LINES=2693
+SHA256=8d03ae4a41fecd5f1a5f1174376e5557045b21e4417b903702d889053076ac7e BYTES=252750 LINES=2712
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -268654,11 +270282,29 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-tiendo{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-bottom:8px}
 .lv-tiendo>div{height:100%;width:0;background:var(--accent);transition:width var(--motion-normal)}
 
+/* Man API — cot doi, gap o mobile */
+.lv-api-khung{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+.lv-api-trai,.lv-api-phai{display:grid;gap:14px;min-width:0}
+.lv-api-ds{display:grid;gap:7px;margin:8px 0 0;padding:0;list-style:none}
+.lv-api-ds li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;min-width:0}
+.lv-api-mau{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:5px 12px;margin:8px 0 0;padding:0;list-style:none}
+.lv-api-mau li{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;min-width:0;font-size:12px}
+.lv-api-gh{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;margin:8px 0 0}
+.lv-api-gh dt{color:var(--muted);font-size:12px}
+.lv-api-gh dd{margin:0;font-weight:600}
+.lv-api-lien{display:grid;gap:5px;margin:8px 0 0;padding:0;list-style:none}
+.lv-api-lien a{display:inline-flex;align-items:center;min-height:24px}
+/* Khoi lenh: cuon NGANG trong chinh no, khong day trang ra */
+.lv-api-ma{position:relative;margin-top:8px}
+.lv-api-ma pre{overflow-x:auto;margin:0;padding:10px 34px 10px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);font-size:11.5px;line-height:1.5}
+.lv-api-ma .lv-ma-chep{position:absolute;top:6px;right:6px}
+@media(max-width:860px){.lv-api-khung{grid-template-columns:1fr}}
+
 /* Bo chon giong */
 .lv-chon{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
   padding:13px 14px}
 .lv-chon-dau{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
-.lv-chon-them{font-size:11.5px;color:var(--accent2);text-decoration:none;white-space:nowrap}
+.lv-chon-them{display:inline-flex;align-items:center;min-height:24px;padding:0 2px;font-size:11.5px;color:var(--accent2);text-decoration:none;white-space:nowrap}
 .lv-chon-them:hover{text-decoration:underline}
 .lv-chon-loc{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
 .lv-chon-tim{padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--line2);
@@ -268760,8 +270406,9 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-da-the-luc{margin:9px 0 0;font-size:11px}
 
 /* Mot du an */
+.lv-het-han{display:block;max-width:34ch;font-size:11px;line-height:1.35}
 .lv-mda-quay{margin:0 0 6px;font-size:12px}
-.lv-mda-quay a{color:var(--muted);text-decoration:none}
+.lv-mda-quay a{display:inline-flex;align-items:center;min-height:24px;padding-right:4px;color:var(--muted);text-decoration:none}
 .lv-mda-quay a:hover{color:var(--fg)}
 .lv-mda-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
 .lv-mda-trai{min-width:0}

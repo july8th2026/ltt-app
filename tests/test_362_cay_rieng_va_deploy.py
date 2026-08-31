@@ -158,5 +158,39 @@ def test_dong_RESULT_tu_khai_khi_cay_doi():
     """
     ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
     assert "KHONG DUNG LAM BANG CHUNG" in ma
-    khuc = ma.split('ket = "PASS" if not failed')[1][:600]
-    assert "cay_da_doi" in khuc, "phai gan vao chinh bien `ket`, khong in roi"
+    khoi = _khoi_sua_ket()
+    assert any("cay_da_doi" in k for k in khoi), (
+        "`cay_da_doi` phai dieu khien chinh bien `ket`, khong phai in roi bo. "
+        f"Cac khoi co sua `ket`: {khoi}")
+
+
+def _khoi_sua_ket() -> list[str]:
+    """Mã nguồn của mọi khối `if` trong `main()` có **sửa biến `ket`**.
+
+    🔴 VÌ SAO KHÔNG ĐẾM KÝ TỰ. Bản đầu của phép kiểm này cắt một cửa sổ 600 ký
+       tự sau mốc `ket = "PASS" ...` rồi tìm chuỗi trong đó. Nó đỏ ngay khi có
+       người **chèn một khối chú thích tử tế** vào giữa — hành vi đúng nguyên,
+       chỉ là `cay_da_doi` bị đẩy ra ngoài cửa sổ.
+
+    ⭐ Đó đúng lớp lỗi đã gặp nhiều lần trong ngày 31/08: **neo vào khoảng cách
+       vật lý thay vì vào quan hệ.** Ý định thật là *"cờ này phải điều khiển
+       chính biến `ket`"* — và đó là một quan hệ, hỏi cây cú pháp được.
+    """
+    import ast
+
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(ma))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    ra = []
+    for n in ast.walk(ham):
+        if not isinstance(n, ast.If):
+            continue
+        sua = any(
+            (isinstance(x, ast.AugAssign) and isinstance(x.target, ast.Name)
+             and x.target.id == "ket")
+            or (isinstance(x, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "ket" for t in x.targets))
+            for x in ast.walk(n))
+        if sua:
+            ra.append(ast.unparse(n))
+    return ra
