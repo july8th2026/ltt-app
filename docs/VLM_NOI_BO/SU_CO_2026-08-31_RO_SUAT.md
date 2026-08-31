@@ -1,6 +1,6 @@
 # Sự cố 31/08/2026 — một suất bị rò, sáu giờ ngừng dịch vụ
 
-**Trạng thái:** nguyên nhân đã chứng minh · đã sửa ba lớp · **chưa deploy**.
+**Trạng thái:** ĐÃ ĐÓNG. Nguyên nhân chứng minh · sửa ba lớp · **đã deploy cả hai máy và nghiệm thu 31/08 18:5x**.
 
 ---
 
@@ -128,15 +128,21 @@ vào lượt nào.
 
 ---
 
-## 5. Việc còn phải làm
+## 5. Đã thi hành
 
-1. **Khôi phục:** khởi động lại `LTTLlmGateway` trên máy B (suất nhả ngay).
-2. **Deploy** `llm_gateway/` xuống máy B — `llm_gateway/deploy/deploy.ps1`.
-3. Deploy máy A cho phần `luong_vlm`/`streaming`/`chat`.
+| Bước | Kết quả |
+|---|---|
+| Deploy máy A | `EXITCODE=0`, 18:17:29 → 18:19:44; `/health/ready` **200** ở loopback **và qua Cloudflare**; 6/6 thay đổi có trong `C:\LTTPlatformpp\` |
+| Máy B tắt ~18:19, chủ sản phẩm bật lại | suất rò nằm trong bộ nhớ tiến trình nên **mất theo lần khởi động** — đo được `dang_chay: 0` ngay khi máy lên |
+| Deploy máy B | qua `llm_gateway/deploy/deploy.ps1`; `gateway.env` **migrate giữ nguyên token/model**; import OK |
+| Nghiệm thu | `POST /v1/responses` → **HTTP 200** (33 s, gồm nạp model 27B từ nguội), và `dang_chay` về **0** sau lượt gọi |
+| `/health` sau vá | có `giu_lau_nhat_giay: 0.0` · `han_giu_s: 1200.0` · `da_thu_hoi: 0` |
 
-⚠️ Thứ tự không quan trọng với đúng đắn, nhưng ① là thứ khách đang chờ.
-
----
+⭐ **Đường vào máy B là LTT Nexus, không phải SSH.** `sshd` trên B để `Disabled`
+có chủ ý từ 27/08 — đó là lý do cổng 22 đóng, và tôi đã mất một vòng đi quét cổng
+trước khi đọc `Ket_noi.md`. Lần này bật SSH **tạm** bằng Nexus để chạy được script
+deploy chính thức, rồi **đóng lại ngay** (đã đối chiếu từ máy A: cổng 22 đóng).
+Ghi vào `CLAUDE.md` và memory để không lặp lại.
 
 ## 6. Bài học mang đi được
 
