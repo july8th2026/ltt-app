@@ -42,6 +42,15 @@ NHAC_DAI = ("Viet mot bai gioi thieu 400 tu ve lich su thanh pho Da Nang, "
             "chia thanh 4 doan.")
 
 
+#: 🔴 KHONG NUOT LOI O DAY, DU DAY CHI LA MOT BO DO.
+#:
+#:    `_smi()` va `_dem_tien_trinh_gpu()` sinh ra ANH CHUP NGU CANH cho moi con
+#:    so. Neu `nvidia-smi` hong ma ta tra `{}` im lang thi benchmark van chay,
+#:    van in mot con so dep — chi la con so ay **mat provenance**, va
+#:    `OPERATING_CONTRACT §4` noi thang rang no khong dung lam bang chung duoc.
+#:
+#: ⛔ Do dung la lop loi ma chuong trinh audit nay ton tai de chan: mot phep do
+#:    hong lang le doc len y het mot phep do sach.
 def _smi() -> dict:
     try:
         r = subprocess.run(
@@ -49,8 +58,10 @@ def _smi() -> dict:
              "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=15)
         v = [x.strip() for x in r.stdout.strip().split(",")]
         return {"vram_mb": int(v[0]), "gpu_pct": int(v[1]), "nhiet": int(v[2])}
-    except Exception:                                           # noqa: BLE001
-        return {}
+    except (OSError, subprocess.SubprocessError, ValueError, IndexError) as e:
+        print(f"  [!] KHONG DOC DUOC nvidia-smi ({type(e).__name__}: {e}) — "
+              f"cac con so duoi day KHONG co anh chup ngu canh", flush=True)
+        return {"loi": f"{type(e).__name__}: {e}"}
 
 
 def _dem_tien_trinh_gpu() -> int:
@@ -59,7 +70,9 @@ def _dem_tien_trinh_gpu() -> int:
                             "--format=csv,noheader"], capture_output=True,
                            text=True, timeout=15)
         return len([d for d in r.stdout.splitlines() if d.strip()])
-    except Exception:                                           # noqa: BLE001
+    except (OSError, subprocess.SubprocessError) as e:
+        print(f"  [!] KHONG DEM DUOC tien trinh GPU ({type(e).__name__}: {e})",
+              flush=True)
         return -1
 
 
