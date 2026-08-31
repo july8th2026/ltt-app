@@ -58,6 +58,32 @@ def nap_env(tep: Path = TEP_ENV) -> int:
     return dem
 
 
+def _ai_dang_nghe(host: str, port: int) -> str | None:
+    """PID đang nghe `port`, hoặc None nếu cổng trống.
+
+    Dò bằng **connect**, không phải bind: bind rồi đóng để nhường cho uvicorn là
+    một cuộc đua. Connect được nghĩa là có người đang nghe, và đó là tất cả những
+    gì ta cần biết.
+    """
+    import socket
+    import subprocess
+    dich = "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(1.5)
+        if s.connect_ex((dich, port)) != 0:
+            return None
+    try:
+        r = subprocess.run(["netstat", "-ano", "-p", "TCP"],
+                           capture_output=True, text=True, timeout=20)
+        for d in r.stdout.splitlines():
+            p = d.split()
+            if len(p) >= 5 and p[3] == "LISTENING" and p[1].endswith(f":{port}"):
+                return p[4]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "?"
+
+
 def main() -> None:
     logging.basicConfig(
         level=logging.INFO,
@@ -79,6 +105,32 @@ def main() -> None:
     if not cfg.token:
         log.warning("LTT_LLM_TOKEN rong -> KHONG kiem tra bearer. "
                     "Chi chap nhan duoc khi host van la 127.0.0.1")
+
+    # 🔴 CỔNG ĐÃ CÓ NGƯỜI GIỮ = DỪNG NGAY, NÓI TO, ĐỪNG THỬ BIND.
+    #
+    #    Đo 01/09 trên máy B: dừng vỏ bọc `nssm.exe` thì tiến trình con **sống sót
+    #    mồ côi** và vẫn giữ 8299. SCM dựng dịch vụ dậy, bản mới không bind được,
+    #    dịch vụ đứng ở `Paused` — và trong suốt 99 giây đó `/health` vẫn trả
+    #    **200**, vì chính con mồ côi phục vụ nó.
+    #
+    # ⛔ Đó là health XANH GIẢ, và nó giả **theo cấu trúc**: một endpoint sức khoẻ
+    #    do chính thứ cần kiểm phục vụ thì không bao giờ nói được "tôi là tiến
+    #    trình không nên tồn tại". Không sửa được bằng cách thêm trường vào
+    #    `/health`.
+    #
+    # ⭐ Chỗ này không sửa được cái giả đó — `/health` vẫn sẽ xanh. Nó sửa thứ
+    #    khác: biến một `Paused` câm thành một dòng log gọi đúng tên thủ phạm.
+    #    Người trực đọc log biết phải làm gì; đọc `Paused` thì không.
+    #    Việc phát hiện thuộc về chốt hai nguồn ở `tools/soi_cong_llm.py`.
+    giu = _ai_dang_nghe(cfg.host, cfg.port)
+    if giu is not None:
+        log.error("CONG %s DA CO NGUOI GIU (pid %s) -- KHONG khoi dong.",
+                  cfg.port, giu)
+        log.error("Nhieu kha nang la mot tien trinh MO COI song sot sau khi vo "
+                  "boc NSSM chet. `/health` cua no VAN XANH, dung tin.")
+        log.error("Xu ly: Stop-Process -Id %s -Force  roi  "
+                  "Start-Service LTTLlmGateway", giu)
+        raise SystemExit(2)
 
     app = create_app(cfg, HttpxUpstream(cfg.upstream_url))
 
