@@ -1,16 +1,13 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Giọng nói LTT") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Giọng nói LTT") }}</strong>{% endblock %}
+{% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
 {% block content %}
-<section class="lv-studio" aria-labelledby="lv-title">
-  <header class="lv-heading">
-    <div>
-      <h1 id="lv-title">{{ _("Tạo tiếng nói") }}</h1>
-      <p>{{ _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Dùng giọng có sẵn, hoặc giọng riêng bạn đã tạo.") }}</p>
-    </div>
-    <a class="btn ghost" href="{{ manifest.route_prefix }}/giong">{{ _("Giọng của tôi") }}</a>
-  </header>
+<section class="lv-man lv-studio" aria-labelledby="lv-title">
+  {% with tieu_de = _("Tạo tiếng nói"),
+          mo_ta = _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Dùng giọng có sẵn, hoặc giọng riêng bạn đã tạo."),
+          id_tieu_de = "lv-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
 
   {% if not cong_san_sang %}
     {# Nói rõ đây là việc của máy chủ, không phải người dùng làm sai. #}
@@ -23,7 +20,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
     <label class="lv-field">
-      {{ _("Văn bản") }} <strong>*</strong>
+      <span class="lv-nhan">{{ _("Văn bản") }} <strong>*</strong></span>
       <textarea name="text" id="lv-text" rows="8" required
                 maxlength="{{ tran_ky_tu }}"
                 placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
@@ -33,19 +30,33 @@
       </small>
     </label>
 
+    {# ⚠️ Ô CHỌN NÀY LÀ BẢN TẠM CỦA P2. Bộ chọn đầy đủ (hai tab, nghe thử, tìm)
+       là `_voice_chon.html`, dựng cùng lúc màn này được bố cục lại ba cột.
+       Nhưng nó phải liệt kê ĐỦ hai mươi giọng mẫu ngay từ bây giờ: màn Giọng đã
+       có nút "Dùng" trỏ sang đây, và một nút dẫn tới một ô chọn không có mục đó
+       là một ngõ cụt tệ hơn không có nút. #}
     <label class="lv-field">
       {{ _("Giọng đọc") }}
       <select name="giong" id="lv-giong">
-        <option value="">{{ _("Giọng mặc định") }}</option>
-        {% if giong %}
+        <option value=""{{ ' selected' if not giong_chon }}>
+          {{ _("Giọng mặc định") }} — {{ mac_dinh }}</option>
+
+        {% set cua_toi = giong | selectattr('trang_thai', 'equalto', 'active') | list %}
+        {% if cua_toi %}
           <optgroup label="{{ _('Giọng của tôi') }}">
-            {% for g in giong %}
-              {% if g.trang_thai == 'active' %}
-                <option value="v:{{ g.public_id }}">{{ g.ten_hien_thi }}</option>
-              {% endif %}
+            {% for g in cua_toi %}
+              <option value="v:{{ g.public_id }}"
+                {{- ' selected' if giong_chon == g.public_id }}>{{ g.ten_hien_thi }}</option>
             {% endfor %}
           </optgroup>
         {% endif %}
+
+        <optgroup label="{{ _('Giọng mẫu') }}">
+          {% for g in giong_mau %}
+            <option value="m:{{ g.ma }}"{{ ' selected' if giong_chon == g.ma }}>
+              {{ g.ma }} — {{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</option>
+          {% endfor %}
+        </optgroup>
       </select>
     </label>
 
@@ -103,7 +114,12 @@
     var fd = new FormData();
     fd.append('csrf_token', e.target.csrf_token.value);
     fd.append('text', o.value);
+    // Hai tien to, hai truong KHAC NHAU o phia may chu — va `features.chuan_hoa`
+    // TU CHOI neu gui ca hai. Do la co y: hai nguon giong cung luc la mot yeu
+    // cau khong co cau tra loi dung, nen no phai bi tu choi ro rang chu khong
+    // duoc lang le chon mot cai.
     if (g.indexOf('v:') === 0) { fd.append('voice_id', g.slice(2)); }
+    else if (g.indexOf('m:') === 0) { fd.append('preset', g.slice(2)); }
 
     fetch('{{ manifest.route_prefix }}/tao', {method: 'POST', body: fd})
       .then(function (r) { return r.json(); })
@@ -118,4 +134,9 @@
   });
 })();
 </script>
+{% endblock %}
+
+{% block scripts %}
+{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
 {% endblock %}

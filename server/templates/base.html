@@ -97,8 +97,20 @@
 <nav class="apptabs">
   {% for entry in _tabs %}
     <a href="{{ entry.path }}" class="{{ 'on' if nav==entry.nav_key else '' }}">
-      <span>{{ entry.icon }}</span> {{ entry.label }}
-      {%- if not entry.built %}<span class="badge b-warn" style="margin-left:6px"><span class="dot"></span>đang xây</span>{% endif %}</a>
+      {#- 🔴 `_(entry.label)`, KHONG phai `entry.label` tran.
+
+          Manifest da boc nhan bang `N_()` (danh dau de trich), nhung `N_()` chi
+          danh dau — no tra ve nguyen chuoi tieng Viet. Phai co `_()` o CHO
+          RENDER thi ban dich moi duoc tra. Thieu no thi thanh tab ra tieng Viet
+          tren ban EN, ngay ben canh mot trang da dich xong — va no hong o cho
+          khong ai nhin, vi nguoi doc ban EN thuong khong phai nguoi sua ma.
+
+          `_header.html` da lam dung (`_(a.manifest.display_name)`); rieng thanh
+          nay bo sot ke tu khi no thay sub-nav sidebar o H6.6. Do 31/08/2026:
+          ba nhan cua Voice DA CO ban dich san trong catalog va van ra tieng
+          Viet — tuc ban dich nam do khong ai doc toi. -#}
+      <span>{{ entry.icon }}</span> {{ _(entry.label) }}
+      {%- if not entry.built %}<span class="badge b-warn" style="margin-left:6px"><span class="dot"></span>{{ _("Đang xây") }}</span>{% endif %}</a>
   {% endfor %}
 </nav>
 {% endif %}

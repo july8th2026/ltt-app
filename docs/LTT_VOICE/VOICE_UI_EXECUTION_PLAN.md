@@ -311,12 +311,24 @@ Waveform **tĩnh** trong ảnh 02/04 chỉ là hình trang trí ⇒ chấp nhậ
 sẵn, đừng giải mã cả tệp cho một hình nhỏ trong danh sách 20 dòng.
 
 ### 7.4 `/audio/{key}` chỉ mở cho `voice/out/{uid}/`
-`apps/ltt_voice/routes.py:296` chặn theo tiền tố. Nghe thử **clip nguồn** (ảnh 02,
-`Reference Audio`) nằm ở tiền tố khác. ⇒ mở thêm đúng một tiền tố
-`voice/src/{uid}/`, **giữ nguyên khuôn kiểm bằng hình dạng khoá** — đừng thay
-bằng một phép tra CSDL, vì phép kiểm rẻ và không thể quên là thứ đang giữ an
-toàn cho đường này.
-⚠️ Một phiên khác đang sửa đúng vùng này (`voice/out/{owner}/{job}/tieng.wav`) — xem §11.
+`apps/ltt_voice/routes.py` chặn theo tiền tố. Nghe thử **clip nguồn** (ảnh 02,
+`Reference Audio`) nằm ở tiền tố khác. ⇒ mở thêm đúng một tiền tố, **giữ nguyên
+khuôn kiểm bằng hình dạng khoá** — đừng thay bằng một phép tra CSDL, vì một phép
+kiểm rẻ và không thể quên là thứ đang giữ an toàn cho đường này.
+
+🔴 **SỬA 31/08 sau đính chính của phiên `lttstudiosapp-9e` — bản đầu định mở một
+tiền tố MỚI `voice/src/{uid}/`, và đó là sai.** `tham_chieu.khoa_nguon()` đã có
+sẵn khuôn `voice/{owner}/{public_id}/source.<đuôi>`; dùng lại nó thay vì đẻ ra
+tiền tố thứ hai, để ngày khách xoá một giọng chỉ có **một** chỗ phải dọn.
+
+⭐ Và biết vì sao clip nguồn **cố ý không** có `job_id` trong khoá: nó nằm ngoài
+tầm dọn của `platform_core/job_content.py`, tức nó **không** chết theo hạn 30
+ngày của tệp kết quả. Đó là đúng — điều khoản hứa giữ nguyên bản clip để dựng
+lại giọng khi nâng engine, nên nó phải sống theo **vòng đời của hồ sơ giọng**.
+
+⚠️ `tests/test_343` có một phép quét TĨNH trên `apps/*/jobs.py`: cấm đặt job id
+ngay trước một dấu chấm. Handler mới nào cũng phải theo khuôn
+`{app}/{owner}/{job_id}/<tên tệp>`.
 
 ### 7.5 `Source` chưa được ghi ⇒ History không truy vết được
 Thêm `nguon` (`studio|project|batch|api`) vào `params` **tại mỗi cửa nộp job**.
@@ -451,3 +463,93 @@ Nội dung: đổi hình dạng khoá kho sang `voice/out/{owner}/{job}/tieng.wa
 | Q-A | **Projects và Batch có nằm trong đợt này không?** Chúng là +4 bảng, +1 loại job, ~6 ngày — một sản phẩm mới, không phải một lớp sơn | quyết P5/P6 |
 | Q-B | **Mở `speech.ltt` ra `/api/v1` khi nào?** Cần chạy `setup\cong_tac_tool_api.ps1` **rồi mới** deploy — sai thứ tự thì cờ vô tác dụng | quyết P8 |
 | Q-C | **Giọng mẫu công bố những giọng nào?** Cần danh sách chốt + một câu mô tả mỗi giọng + clip nghe thử | chặn phần "Sample Voices" của P3 |
+
+---
+
+## 14. Nhật ký thi hành
+
+Ghi **thứ đã đo được**, không ghi ý định. Mỗi mục nói rõ cái gì đã đổi so với kế
+hoạch và **vì sao** — một kế hoạch không ghi lại chỗ nó sai là một kế hoạch sẽ bị
+phiên sau đọc như sự thật.
+
+### P1 — Vỏ + hệ thiết kế · ✅ 2026-08-31 · gate đầy đủ PASS (25/25)
+
+Làm: 6 `NavEntry` (3 thật + 3 `built=False` có route thật) · `vo.py` với
+`nav_key` bắt buộc · chip Engine/Hàng đợi · 4 partial · `voice.js` · ghi `nguon`
+· `tests/test_344` (17 phép kiểm).
+
+**Ba lỗi đang sống mà audit §2 KHÔNG thấy — cả ba chỉ lộ ra khi mở trình duyệt:**
+
+1. 🔴 **Chín lớp CSS mà template dùng chưa từng tồn tại.** `.lv-form` `.lv-field`
+   `.lv-bang` `.lv-dem` `.lv-actions` `.lv-ket-qua` `.lv-gia` `.lv-dk` `.lv-man`
+   — app phát hành 31/08 với form và bảng **không có một dòng style nào**. Ba
+   trang vẫn render, vẫn 200, vẫn xanh trong toàn bộ 69 phép kiểm.
+   ⇒ Audit đọc mã tìm được "component nào dùng lại được"; nó **không** tìm được
+   "component nào được gọi mà không tồn tại". Đó là hai câu hỏi khác nhau, và
+   chỉ câu thứ hai cần một trình duyệt.
+2. 🔴 **Thanh tab ra tiếng Việt trên bản EN.** `base.html` in `{{ entry.label }}`
+   trần thay vì `{{ _(entry.label) }}` — và ba nhãn của Voice **đã có bản dịch
+   sẵn trong catalog**, tức bản dịch nằm đó không ai đọc tới. Lỗi thuộc nền
+   tảng, ảnh hưởng **mọi** app có tab.
+3. Dấu `*` bắt buộc rơi xuống dòng dưới nhãn (text node trần cạnh `<strong>`
+   trong flex-column).
+
+**Hai lần bánh cóc bắt đúng:**
+- `ltt.css` vốn **CRLF**; heredoc nối LF ⇒ `check_xuong_dong.py` đỏ. Ghi lại
+  đúng kiểu HEAD ⇒ diff về đúng số dòng thêm, 0 dòng nhiễu.
+- 31 chuỗi mới đẩy mốc dịch 343 → 374. **Dịch cả 31** rồi thêm tay vào `.po`.
+  ⛔ Không chạy `i18n.py trich`: `msgmerge` đoán bản dịch và gắn `#, fuzzy`, mà
+  `msgfmt` **bỏ qua** fuzzy — bản dịch đó không bao giờ tới mắt người dùng, nó
+  chỉ *trông như* đã làm xong.
+
+### P3 — Màn Giọng · ✅ 2026-08-31 (làm TRƯỚC P2)
+
+🔄 **ĐỔI THỨ TỰ so với §8, và đây là lý do.** Kế hoạch xếp P2 (Studio) trước P3
+(Giọng), nhưng chính §6 lại nói `_voice_chon.html` là **nút thắt** dùng chung ba
+màn. Hai câu đó mâu thuẫn nhau. Giải: dữ liệu giọng mẫu (`giong_mau.py`) là một
+**hợp đồng có phép kiểm đối chiếu engine** — chốt nó trước thì Studio tiêu thụ
+một thứ đã đúng, thay vì dựng một bộ chọn chỉ có "giọng của tôi" rồi dựng lại.
+
+✅ **Q-C đã tự trả lời được, không cần chặn chủ sản phẩm.** Engine có **hai mươi**
+giọng dựng sẵn, đọc thẳng từ `vieneu/assets/voices_v3_turbo.json` — không cần
+token, không nạp model, không gọi `/v1/voices`.
+
+⭐ **Và dữ liệu thật cho ba mặt lọc TỐT HƠN thứ ảnh vẽ.** Ảnh 02 lọc
+`VI / EN / Bilingual` + `All Families`; nền tảng không có hai khái niệm đó. Mỗi
+preset lại mang sẵn **giới tính · vùng miền (Bắc/Trung/Nam) · phong cách
+(tin tức/tự nhiên/kể chuyện)** — đúng ba câu người chọn giọng thực sự hỏi.
+⇒ Ở đây ảnh không bị "cắt bớt", nó được **thay bằng thứ đúng hơn**. Đó là hình
+dạng tốt nhất mà một mâu thuẫn ảnh-⇄-backend có thể có.
+
+⚠️ `phong_cach` là **nhãn mô tả, không phải nút vặn** — `v3turbo.py`: *"Style is
+deprecated on v3 Turbo … Kept only as voice metadata."*
+
+**🔴 Một lỗ tôi tự tạo rồi tự bắt được — đáng ghi vì nó sẽ lặp lại.**
+
+Để nghe lại clip gốc (ảnh 02 `Reference Audio`), tôi mở thêm tiền tố
+`voice/{uid}/` ở cửa `/audio/`. Nghe thì đúng — thư mục của chính khách đó.
+Nhưng `tham_chieu.khoa_bieu_dien()` ghi `voice/{uid}/{pid}/repr-<vân tay>.npz`
+vào **cùng thư mục ấy**, và tệp đó chứa `speaker_emb`. `tables.py` nói thẳng:
+*"KHÔNG BAO GIỜ ra ngoài."*
+
+⇒ Cửa nay mở theo **TÊN TỆP** (`source.*`), không theo thư mục.
+⇒ `tests/test_346` chốt bằng cách đặt một tệp `repr-*.npz` **có thật** vào kho
+rồi đòi 404 — nới cửa ra là đỏ ngay, không phải một phép kiểm chỉ xanh vì tệp
+không tồn tại.
+
+⭐ Bài học tổng quát: **"thư mục của khách" không phải một ranh giới quyền.**
+Nó là một ranh giới *sở hữu*. Hai thứ đó trùng nhau cho tới ngày có tệp nội bộ
+nằm trong đó — và ngày đó đã đến từ trước, chỉ chưa ai mở cửa.
+
+**Cũng đã đóng trong P3:** `preset` trước đây **không được kiểm ở đâu cả**. Một
+tên bịa đi tới worker rồi SDK ném `ValueError` — mà `ValueError` không phải
+`LoiNguoiGoi`, nên job **bị thử lại ba lần**. Phép kiểm đặt trong
+`features.chuan_hoa`, **không** trong route: Public API đi thẳng xuống job.
+
+### Còn lại
+
+P2 (Studio) · P4 (Lịch sử) → **vạch MVP**. Rồi P5/P6 (cần chốt Q-A), P7, P8, P9.
+
+⚠️ **Chưa deploy.** Production (`C:\LTTPlatform\app`) vẫn là bản cũ, nên chưa
+chốt được trên `https://app.lttstudios.com` như quy tắc 5b đòi. Deploy cần chủ
+sản phẩm bấm UAC ⇒ gộp **một lần** ở vạch MVP, không deploy sau mỗi pha.

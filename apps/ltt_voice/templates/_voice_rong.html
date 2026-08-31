@@ -1,0 +1,19 @@
+{#
+  Trạng thái rỗng. Dùng ở mọi danh sách của Voice Studio.
+
+  ⭐ Một empty state chỉ nói "chưa có gì" là một ngõ cụt. Cái nó phải làm là nói
+     **bước tiếp theo**, vì người gặp nó gần như luôn là người mới. Cả ba màn đầu
+     đều có một bước tiếp theo rõ ràng, nên cả ba đều truyền `nut` + `nut_href`.
+
+  Tham số:
+    tieu_de   — bắt buộc
+    mo_ta     — tuỳ chọn
+    nut       — tuỳ chọn, nhãn nút
+    nut_href  — đi kèm `nut`
+#}
+<div class="lv-rong">
+  <div class="lv-rong-hinh" aria-hidden="true">🎙️</div>
+  <p class="lv-rong-tieu-de">{{ tieu_de }}</p>
+  {% if mo_ta %}<p class="lv-rong-mo-ta">{{ mo_ta }}</p>{% endif %}
+  {% if nut and nut_href %}<a class="btn primary" href="{{ nut_href }}">{{ nut }}</a>{% endif %}
+</div>

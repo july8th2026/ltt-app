@@ -1,0 +1,89 @@
+{#
+  Một thẻ giọng. MỘT partial cho CẢ HAI loại — giọng mẫu và giọng nhân bản.
+
+  ⭐ Vì sao không tách hai: chúng khác nhau ở đúng ba chỗ (nhãn loại, có mã
+     `vc_` hay không, có nút Tắt hay không) và giống nhau ở mười chỗ còn lại.
+     Hai partial thì mười chỗ giống nhau kia sẽ lệch dần, và cái lệch đầu tiên
+     gần như chắc chắn là nút "Dùng" — tức đúng nút mà lệch một chút là khách
+     chọn một giọng rồi nhận một giọng khác.
+
+  ⛔ KHÔNG có ba thanh phần trăm `Similarity / Pronunciation / Stability` mà ảnh
+     tham chiếu 02 vẽ. Nền tảng **không đo gì cả** — đó là cổng V10. Bịa ba con
+     số ở đây là cách nhanh nhất phá lòng tin, và chúng sẽ không bao giờ xoá
+     được vì không ai dám là người đầu tiên nói chúng vô nghĩa.
+
+  Tham số:
+    g       — GiongMau, hoặc VoiceProfile
+    la_mau  — True nếu là giọng dựng sẵn
+    chon    — True nếu đang được chọn
+    tk      — dict thống kê (chỉ giọng nhân bản), có thể thiếu
+#}
+{% set ma = g.public_id %}
+<article class="lv-the{{ ' chon' if chon }}"
+         data-ma="{{ ma }}"
+         data-loai="{{ 'mau' if la_mau else 'toi' }}"
+         data-ten="{{ g.ten_hien_thi }}"
+         data-trangthai="{{ g.trang_thai }}"
+         {%- if la_mau %}
+         data-gioi="{{ g.gioi }}" data-vung="{{ g.vung }}" data-phongcach="{{ g.phong_cach }}"
+         {%- endif %}
+         tabindex="0" role="button"
+         aria-pressed="{{ 'true' if chon else 'false' }}"
+         aria-label="{{ _('Xem giọng') }} {{ g.ten_hien_thi }}">
+
+  <div class="lv-the-dau">
+    {# Hình sóng chỉ là NGÔN NGỮ THỊ GIÁC, không phải dữ liệu. Nó là SVG dựng
+       sẵn, không phải sóng thật của giọng này — giải mã một tệp tiếng cho mỗi
+       ô trong lưới hai mươi ô là trả một cái giá thật cho một thứ trang trí.
+       Waveform THẬT chỉ vẽ ở chỗ có một tệp cụ thể để vẽ (trình phát). #}
+    <span class="lv-the-song" aria-hidden="true">
+      <svg viewBox="0 0 48 24" width="48" height="24" role="presentation">
+        {%- for h in [6,12,20,9,16,22,11,7,17,13,21,8,15,10,19,6] %}
+        <rect x="{{ loop.index0 * 3 }}" y="{{ (24 - h) // 2 }}" width="2"
+              height="{{ h }}" rx="1"></rect>
+        {%- endfor %}
+      </svg>
+    </span>
+    <div class="lv-the-ten">
+      <b>{{ g.ten_hien_thi }}</b>
+      {% if la_mau %}
+        <span class="chip">{{ _("Giọng mẫu") }}</span>
+      {% else %}
+        <span class="chip v">{{ _("Giọng của tôi") }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <p class="lv-the-tinh">
+    {% if la_mau %}
+      {{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}
+    {% else %}
+      {% if g.trang_thai == 'active' %}
+        {{ _("Sẵn sàng") }}
+        {%- if tk and tk.so_luot %} · {{ tk.so_luot }} {{ _("lượt") }}{% endif %}
+      {% elif g.trang_thai == 'dang_ghi_danh' %}
+        <span class="badge b-warn"><span class="dot"></span>{{ _("Đang ghi danh…") }}</span>
+      {% else %}
+        <span class="badge b-grey"><span class="dot"></span>{{ _("Đã tắt") }}</span>
+      {% endif %}
+    {% endif %}
+  </p>
+
+  {% with nho = true %}{% include "_voice_ma.html" %}{% endwith %}
+
+  <div class="lv-the-nut">
+    {% if g.trang_thai == 'active' %}
+      {# `?giong=` được màn Tạo tiếng nói đọc để chọn sẵn — một cú bấm từ đây
+         tới chỗ dùng nó, thay vì bắt khách tự tìm lại trong ô chọn. #}
+      <a class="btn sm primary"
+         href="{{ manifest.route_prefix }}?giong={{ ma | urlencode }}">{{ _("Dùng") }}</a>
+    {% else %}
+      {# `.ghost`, KHONG phai `.btn` tran. `.btn` co san `background:var(--accent)`
+         nen mot nut bi vo hieu ma khong khai kieu se hien do dam — trong y het
+         nut chinh, chi mo hon mot chut. Nguoi dung se bam vao no. #}
+      <button class="btn sm ghost" type="button" disabled
+              title="{{ _('Giọng chưa sẵn sàng.') }}">{{ _("Dùng") }}</button>
+    {% endif %}
+    <button class="btn sm ghost lv-the-xem" type="button">{{ _("Chi tiết") }}</button>
+  </div>
+</article>

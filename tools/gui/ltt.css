@@ -2204,3 +2204,217 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
    `title` va van chon-chep duoc. */
 .adm-id-cat{display:inline-block;max-width:15ch;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   LTT VOICE STUDIO — tien to `.lv-`  (P1: vo dung chung)
+
+   ⛔ KHONG khai lai mot mau nao. Moi gia tri duoi day di qua `var(--…)` cua khoi
+      token o dau tep. Sau khi doi chieu voi 6 anh tham chieu cua prompt pack V1
+      (den charcoal · do #ef3731 · border manh · status green/orange/red), KHONG
+      CO mot token nao phai them — nen mot bang mau thu hai o day se chi la mot
+      ban sao se lech di.
+
+   ⭐ Dat trong `ltt.css` chu khong phai mot `voice.css` rieng: tien le `.vps-*`
+      ngay tren, va quan trong hon la cache-bust. Mot tep CSS thu hai la mot
+      duong nua phai nho dinh `?v=`, va CLAUDE.md quy tac 6 ghi ro cai gia cua
+      lan quen truoc — Cloudflare phuc vu ban cu 4 gio.
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Dai dau man: tieu de + chip tinh trang ── */
+.lv-vo{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:12px 20px;flex-wrap:wrap;margin-bottom:18px}
+.lv-vo-chu h1{margin:0;font-size:21px;letter-spacing:-.2px}
+.lv-vo-chu p{margin:5px 0 0;color:var(--muted);font-size:13px;max-width:62ch}
+.lv-vo-chip{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.lv-vo-chip a.badge{text-decoration:none}
+.lv-vo-chip a.badge:hover{filter:brightness(1.15)}
+
+/* ── Ma giong + nut chep ── */
+.lv-ma{display:inline-flex;align-items:center;gap:4px;max-width:100%}
+.lv-ma code{font-size:12px;color:var(--muted);background:var(--panel2);
+  border:1px solid var(--line);border-radius:var(--radius-sm);padding:2px 7px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv-ma.nho code{font-size:11px;padding:1px 6px}
+.lv-ma-chep{background:none;border:1px solid transparent;border-radius:var(--radius-sm);
+  color:var(--dim);cursor:pointer;font:inherit;font-size:13px;line-height:1;
+  padding:4px 6px;transition:var(--motion-fast)}
+.lv-ma-chep:hover{color:var(--fg);border-color:var(--line2);background:var(--panel2)}
+/* Da chep: xanh trong mot nhip. `.da` do `voice.js` gan roi go. */
+.lv-ma-chep.da{color:var(--ok);border-color:var(--ok-line);background:var(--ok-bg)}
+
+/* ── Trang thai rong ── */
+.lv-rong{text-align:center;padding:40px 20px;border:1px dashed var(--line2);
+  border-radius:var(--radius);background:var(--panel)}
+.lv-rong-hinh{font-size:30px;opacity:.5;margin-bottom:10px}
+.lv-rong-tieu-de{margin:0;font-size:15px;font-weight:600;color:var(--fg)}
+.lv-rong-mo-ta{margin:6px auto 16px;color:var(--muted);font-size:13px;max-width:46ch}
+
+/* ── Man chua xay ── */
+.lv-cx{max-width:640px}
+.lv-cx h2{margin:12px 0 8px;font-size:15px}
+.lv-cx-ds{margin:0 0 14px;padding-left:20px;color:var(--muted);font-size:13.5px}
+.lv-cx-ds li{margin-bottom:5px}
+.lv-cx-nut{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+
+@media(max-width:640px){
+  .lv-vo{flex-direction:column}
+  .lv-vo-chu h1{font-size:19px}
+}
+
+/* ── Nen chung cua mot man Voice ──────────────────────────────────────────────
+   🔴 CHIN LOP DUOI DAY CHUA TUNG TON TAI. App phat hanh 31/08/2026 voi template
+      tro vao `.lv-form` `.lv-field` `.lv-bang` `.lv-dem` `.lv-actions`
+      `.lv-ket-qua` `.lv-gia` `.lv-dk` `.lv-man` — va KHONG lop nao trong so do
+      co mot dong CSS. Ba man deu render, deu tra 200, deu xanh trong test; chung
+      chi khong duoc dinh dang. Do dung la thu ma quy tac 5 cua CLAUDE.md noi:
+      test xanh khong chung minh trang hien thi dung.
+
+   ⭐ Dat o day chu khong noi tung trang: chung la nen chung cua ca sau man, va
+      mot ban chep trong `<style>` cua tung trang la sau cho de chung lech nhau.
+   ────────────────────────────────────────────────────────────────────────── */
+.lv-man{max-width:1120px}
+
+/* Form */
+.lv-form{display:flex;flex-direction:column;gap:14px;max-width:760px}
+.lv-field{display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--muted)}
+.lv-field strong{color:var(--accent);font-weight:600}
+.lv-field>textarea,.lv-field>input[type=text],.lv-field>select,.lv-field>input[type=file]{
+  padding:11px 12px;border-radius:var(--radius-md);border:1px solid var(--line2);
+  background:var(--panel2);color:var(--fg);font:inherit;font-size:14px;width:100%}
+.lv-field>textarea{resize:vertical;min-height:150px;line-height:1.6}
+.lv-field>textarea:focus,.lv-field>input:focus,.lv-field>select:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-field>small{color:var(--dim);font-size:11.5px}
+.lv-dem{display:flex;gap:6px;align-items:center;color:var(--dim);font-size:11.5px;
+  font-variant-numeric:tabular-nums}
+.lv-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-top:4px}
+
+/* Bang danh sach */
+.lv-bang{width:100%;border-collapse:collapse;font-size:13px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  overflow:hidden;margin-bottom:22px}
+.lv-bang th{text-align:left;padding:10px 13px;font-size:11px;font-weight:600;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+  background:var(--panel2);border-bottom:1px solid var(--line)}
+.lv-bang td{padding:11px 13px;border-bottom:1px solid var(--line);vertical-align:middle}
+.lv-bang tbody tr:last-child td{border-bottom:none}
+.lv-bang tbody tr:hover td{background:var(--panel2)}
+.lv-bang td form{margin:0}
+.lv-bang audio{height:32px;max-width:230px;vertical-align:middle}
+/* O chua empty state: bo vien va nen hang de khoi long hai khung vao nhau. */
+.lv-bang td:has(>.lv-rong){padding:0;background:transparent}
+.lv-bang td>.lv-rong{border:none;border-radius:0}
+
+/* Ket qua mot luot sinh */
+.lv-ket-qua{margin-top:16px;padding:14px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--panel)}
+.lv-ket-qua audio{width:100%;max-width:520px}
+
+/* Dieu khoan ghi danh */
+.lv-dk{border:1px solid var(--line2);border-radius:var(--radius-md);
+  background:var(--panel);padding:13px 15px;margin:0}
+.lv-dk legend{padding:0 6px;font-size:12px;color:var(--dim)}
+.lv-dk ul{margin:0 0 11px;padding-left:19px;color:var(--muted);font-size:12.5px}
+.lv-dk li{margin-bottom:4px}
+.lv-dk>label{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--fg)}
+.lv-dk>label input{margin-top:3px;flex:0 0 auto}
+
+/* Cach tinh tien */
+.lv-gia{margin-top:22px;border:1px solid var(--line);border-radius:var(--radius);
+  background:var(--panel);padding:12px 15px;font-size:12.5px;color:var(--muted)}
+.lv-gia summary{cursor:pointer;color:var(--fg);font-size:13px}
+.lv-gia ul{margin:10px 0 0;padding-left:19px}
+.lv-gia li{margin-bottom:4px}
+.lv-gia code{font-family:var(--mono);font-size:11.5px}
+
+@media(max-width:640px){
+  .lv-bang{display:block;overflow-x:auto}
+}
+/* Nhan cua mot o nhap. Phai la MOT phan tu: trong mot flex-column, mot text node
+   tran va mot `<strong>` ben canh no thanh HAI dong — nen dau sao bat buoc roi
+   xuong duoi nhan, trong nhu mot loi go nham. */
+.lv-nhan{display:inline-flex;gap:4px;align-items:baseline}
+
+/* ── Man Giong: luoi the + loc + panel chi tiet (P3) ───────────────────────── */
+.lv-g-khung{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.lv-g-trai{min-width:0}
+.lv-g-phai{position:sticky;top:72px}
+
+/* Loc */
+.lv-loc{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:14px}
+.lv-loc-tim{flex:1 1 200px;min-width:170px;padding:8px 11px;border-radius:var(--radius-md);
+  border:1px solid var(--line2);background:var(--panel2);color:var(--fg);font:inherit;font-size:13px}
+.lv-loc-tim:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-loc-nhom{display:inline-flex;background:var(--panel2);border:1px solid var(--line);
+  border-radius:var(--radius-md);padding:2px;gap:2px}
+.lv-loc-nut{padding:5px 10px;border:none;border-radius:var(--radius-sm);background:none;
+  color:var(--muted);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;
+  transition:var(--motion-fast)}
+.lv-loc-nut:hover{color:var(--fg)}
+/* Do CHI danh cho muc dang chon — dung to mau moi nut. */
+.lv-loc-nut.on{background:var(--accent-soft);color:#ffd0cc;border:1px solid var(--brand-border);
+  padding:4px 9px}
+.lv-g-dem{margin:0 0 10px;color:var(--dim);font-size:11.5px}
+
+/* Luoi the */
+.lv-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));gap:12px}
+.lv-the{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 14px;cursor:pointer;transition:border-color var(--motion-fast),background var(--motion-fast)}
+.lv-the:hover{border-color:var(--line2);background:var(--panel2)}
+.lv-the:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+/* Chon = vien do + mot quang rat nhe. Khong to nen do: mot luoi 20 o do ruc la
+   mot luoi khong con diem nhan nao. */
+.lv-the.chon{border-color:var(--brand-border);box-shadow:0 0 0 3px var(--focus-shadow)}
+.lv-the-dau{display:flex;gap:10px;align-items:center;margin-bottom:9px}
+.lv-the-song{flex:0 0 auto;display:grid;place-items:center;width:44px;height:44px;
+  border-radius:50%;background:var(--brand-soft);border:1px solid var(--brand-border)}
+.lv-the-song svg rect{fill:var(--brand-hover)}
+.lv-the-ten{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.lv-the-ten b{font-size:13.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;max-width:100%}
+.lv-the-tinh{margin:0 0 9px;color:var(--muted);font-size:11.5px;min-height:16px}
+.lv-the-nut{display:flex;gap:7px;margin-top:10px}
+.lv-the-nut .btn{flex:1;justify-content:center}
+
+/* Panel chi tiet */
+.lv-ct-rong{text-align:center;padding:26px 16px}
+.lv-ct-dau{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:4px}
+.lv-ct-dau b{font-size:15px}
+.lv-ct-tinh{margin:0 0 12px;font-size:12px}
+.lv-ct-bang{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 14px;font-size:12px}
+.lv-ct-bang dt{color:var(--dim)}
+.lv-ct-bang dd{margin:0;min-width:0}
+.lv-ct-nut{display:flex;gap:8px;margin-bottom:14px}
+.lv-ct-nut .btn{flex:1;justify-content:center}
+/* Giong chua san sang: van doc duoc, nhung khong bam duoc. */
+.lv-tat{opacity:.5;pointer-events:none}
+.lv-ct-so{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 0;
+  border-top:1px solid var(--line);margin-top:4px}
+.lv-ct-so div{text-align:center}
+.lv-ct-so span{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.lv-ct-so small{display:block;color:var(--dim);font-size:10.5px;margin-top:2px}
+.lv-ct-de{margin:12px 0 8px;font-size:12px;color:var(--dim);font-weight:600;
+  letter-spacing:.05em;text-transform:uppercase}
+.lv-ct-clip-hang{display:flex;gap:8px;align-items:center;margin-bottom:7px}
+.lv-ct-clip-hang audio{flex:1;min-width:0;height:32px}
+.lv-ct-clip-hang small{color:var(--dim);font-size:11px;font-variant-numeric:tabular-nums}
+.lv-g-phai .dim{font-size:11px;margin:8px 0 0;line-height:1.5}
+.lv-g-phai form{margin-top:12px}
+
+/* Tao giong moi */
+.lv-tao-giong{margin-top:30px;padding-top:24px;border-top:1px solid var(--line)}
+.lv-tao-giong h2{margin:0 0 14px;font-size:16px}
+.lv-buoc{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;
+  list-style:none;counter-reset:b;margin:0 0 20px;padding:0}
+.lv-buoc li{counter-increment:b;padding:12px 14px 12px 42px;position:relative;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-md)}
+.lv-buoc li::before{content:counter(b);position:absolute;left:13px;top:12px;width:20px;height:20px;
+  border-radius:50%;background:var(--accent-soft);border:1px solid var(--brand-border);
+  color:#ffd0cc;font-size:11px;font-weight:600;display:grid;place-items:center}
+.lv-buoc b{display:block;font-size:13px;margin-bottom:3px}
+.lv-buoc span{color:var(--muted);font-size:12px;line-height:1.45}
+
+@media(max-width:1000px){
+  .lv-g-khung{grid-template-columns:1fr}
+  .lv-g-phai{position:static}
+}

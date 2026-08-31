@@ -72,10 +72,26 @@ MANIFEST = AppManifest(
     group=N_('Âm thanh'),
     badge=N_('MỚI'),
 
+    # ⭐ SÁU TAB, BA TRONG SỐ ĐÓ KHAI THẲNG LÀ CHƯA XÂY.
+    #
+    #    `NavEntry.built=False` là một affordance có sẵn của nền tảng: `base.html`
+    #    tự gắn badge "đang xây" lên tab. Dùng nó thay vì giấu tab đi, vì hai thứ
+    #    đó nói hai điều khác nhau — giấu nói *"sản phẩm không có việc này"*,
+    #    badge nói *"có, và chưa tới lượt"*. Điều thứ hai đúng.
+    #
+    # ⛔ Nhưng tab đã hiện thì bấm vào PHẢI tới một chỗ nói được điều gì đó.
+    #    `routes.py` có route thật cho cả ba, dựng từ `vo.CHUA_XAY`. Một tab dẫn
+    #    tới 404 tệ hơn không có tab: nó biến một lời hứa thành một lỗi.
+    #
+    # Thứ tự theo luồng làm việc thật, không theo thứ tự xây: viết → chọn giọng →
+    # gom thành dự án → chạy hàng loạt → xem lại → tự động hoá.
     nav=(
         NavEntry(N_('Tạo tiếng nói'), "/ltt-voice", "🎙️", "ltt_voice"),
         NavEntry(N_('Giọng của tôi'), "/ltt-voice/giong", "🗣️", "ltt_voice_giong"),
+        NavEntry(N_('Dự án'), "/ltt-voice/du-an", "📚", "ltt_voice_du_an", False),
+        NavEntry(N_('Chạy lô'), "/ltt-voice/lo", "🧺", "ltt_voice_lo", False),
         NavEntry(N_('Lịch sử'), "/ltt-voice/lich-su", "🕘", "ltt_voice_lich_su"),
+        NavEntry(N_('API'), "/ltt-voice/api", "🔌", "ltt_voice_api", False),
     ),
 
     job_types=("ltt_voice.synthesize", "ltt_voice.enroll"),

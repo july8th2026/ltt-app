@@ -1,17 +1,18 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Lịch sử giọng nói") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Lịch sử") }}</strong>{% endblock %}
+{% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
 {% block content %}
-<section class="lv-lich-su">
-  <header class="lv-heading">
-    <div><h1>{{ _("Lịch sử tạo tiếng") }}</h1></div>
-    <a class="btn ghost" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
-  </header>
+<section class="lv-man lv-lich-su" aria-labelledby="lv-ls-title">
+  {% with tieu_de = _("Lịch sử tạo tiếng"),
+          mo_ta = _("Mọi lượt đọc của bạn, nghe lại và tải về được."),
+          id_tieu_de = "lv-ls-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
 
   <table class="lv-bang">
     <thead><tr>
       <th>{{ _("Lúc") }}</th><th>{{ _("Văn bản") }}</th>
+      <th>{{ _("Trạng thái") }}</th>
       <th>{{ _("Thời lượng") }}</th><th>{{ _("Credit") }}</th><th></th>
     </tr></thead>
     <tbody>
@@ -22,6 +23,7 @@
            canh (`10:03 31/08/2026`). Dung dung khuon do. #}
         <td><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
         <td>{{ (j.params or {}).get('text', '')[:80] }}</td>
+        <td>{% with tt = j.status %}{% include "_voice_trangthai.html" %}{% endwith %}</td>
         <td>{% if j.result %}{{ j.result.get('duration_s', '-') }}s{% else %}-{% endif %}</td>
         <td>{% if j.result %}{{ j.result.get('credit_cost', '-') }}{% else %}-{% endif %}</td>
         <td>
@@ -32,9 +34,20 @@
         </td>
       </tr>
     {% else %}
-      <tr><td colspan="5">{{ _("Chưa có lượt nào.") }}</td></tr>
+      <tr><td colspan="6">
+        {% with tieu_de = _("Chưa có lượt nào"),
+                mo_ta = _("Mỗi lần bạn tạo tiếng nói, lượt đó xuất hiện ở đây để nghe lại và tải về."),
+                nut = _("Tạo tiếng nói"), nut_href = manifest.route_prefix %}
+          {% include "_voice_rong.html" %}
+        {% endwith %}
+      </td></tr>
     {% endfor %}
     </tbody>
   </table>
 </section>
+{% endblock %}
+
+{% block scripts %}
+{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
 {% endblock %}

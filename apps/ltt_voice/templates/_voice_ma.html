@@ -1,0 +1,23 @@
+{#
+  Mã giọng (`vc_…`) kèm nút chép. Dùng ở Studio, Giọng của tôi, Lịch sử, API.
+
+  🔴 VÌ SAO MÃ GIỌNG XỨNG ĐÁNG CÓ MỘT COMPONENT RIÊNG.
+
+     `voice_id` là **hợp đồng dài hạn** của sản phẩm: `tables.py` cam kết nó
+     không bao giờ đổi, kể cả khi lên engine mới. Nó là thứ khách dán vào mã
+     nguồn của họ. Một chuỗi 35 ký tự mà phải tô bằng chuột là một chỗ chép hụt,
+     và chép hụt một `voice_id` thì lỗi hiện ra ở tận lúc gọi API dưới dạng
+     "không tìm thấy giọng" — một thông điệp trỏ sai chỗ hoàn toàn.
+
+  ⭐ Tăng cường dần: không có JS thì vẫn là một chuỗi đọc và bôi đen được, chỉ
+     mất cái nút. Cùng nguyên tắc `server/static/sao_chep.js` đã dùng.
+
+  Tham số:
+    ma    — bắt buộc
+    nho   — tuỳ chọn, cỡ chữ nhỏ hơn cho danh sách dày
+#}
+<span class="lv-ma{% if nho %} nho{% endif %}">
+  <code class="mono">{{ ma }}</code>
+  <button type="button" class="lv-ma-chep" data-ma="{{ ma }}"
+          aria-label="{{ _('Chép mã giọng') }}" title="{{ _('Chép mã giọng') }}">⧉</button>
+</span>

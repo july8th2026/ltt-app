@@ -1,0 +1,42 @@
+{#
+  Dải đầu màn dùng chung cho MỌI trang Voice: tiêu đề + mô tả + chip tình trạng.
+
+  ⭐ Vì sao là một partial chứ không phải chép vào từng trang: ba trang hôm nay
+     sẽ thành sáu, và mỗi bản chép là một chỗ để dải này lệch đi. Ảnh tham chiếu
+     có đúng một dải như vậy trên cả sáu màn — đó là thứ làm chúng trông như một
+     sản phẩm chứ không phải sáu trang rời.
+
+  Tham số:
+    tieu_de   — bắt buộc
+    mo_ta     — tuỳ chọn, một câu
+    id_tieu_de— tuỳ chọn, để `aria-labelledby` của trang trỏ vào
+
+  ⛔ HAI CHIP, KHÔNG PHẢI BA. Ảnh tham chiếu có `Engine Online`, `Queue`, và
+     `Storage 256 GB / 1 TB`. Chip thứ ba không được vẽ: nền tảng **không có**
+     hạn mức dung lượng cho khách, nên con số đó sẽ phải bịa. Một con số bịa
+     trong vỏ giao diện là một lời hứa bịa, và nó sẽ sống lâu hơn người đặt nó.
+#}
+<header class="lv-vo">
+  <div class="lv-vo-chu">
+    <h1{% if id_tieu_de %} id="{{ id_tieu_de }}"{% endif %}>{{ tieu_de }}</h1>
+    {% if mo_ta %}<p>{{ mo_ta }}</p>{% endif %}
+  </div>
+
+  <div class="lv-vo-chip">
+    {% if cong_san_sang %}
+      <span class="badge b-ok" title="{{ _('Máy tạo tiếng nói đã sẵn sàng.') }}">
+        <span class="dot"></span>{{ _("Engine sẵn sàng") }}</span>
+    {% else %}
+      {# Nói rõ đây là việc của máy chủ, không phải người dùng làm sai. #}
+      <span class="badge b-err" title="{{ _('Dịch vụ giọng nói chưa được bật trên máy chủ này.') }}">
+        <span class="dot"></span>{{ _("Engine chưa bật") }}</span>
+    {% endif %}
+
+    {# Chỉ hiện khi có việc. Một chip ghi "0" chiếm chỗ để nói không có gì. #}
+    {% if hang_doi %}
+      <a class="badge b-warn" href="/jobs"
+         title="{{ _('Việc của bạn đang chờ hoặc đang chạy.') }}">
+        <span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>
+    {% endif %}
+  </div>
+</header>

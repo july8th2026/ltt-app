@@ -1,0 +1,25 @@
+{#
+  Badge trạng thái của một lượt sinh. Ánh xạ trạng thái job -> lớp badge nền tảng.
+
+  ⭐ MỘT CHỖ ÁNH XẠ DUY NHẤT. Trước P1 phép ánh xạ này nằm rải trong từng template
+     dưới dạng `{% if %}` chép tay, và đó là loại trùng lặp lặng lẽ nhất: hai bản
+     chép không bao giờ báo lỗi khi lệch nhau, chúng chỉ hiện hai màu khác nhau
+     cho cùng một trạng thái ở hai trang.
+
+  ⛔ Dùng lớp `.b-ok/.b-warn/.b-err/.b-grey` của `ltt.css`, không tự đặt màu.
+     Ba màu status của nền tảng đã đúng ngữ nghĩa ảnh tham chiếu đòi.
+
+  Tham số:
+    tt — chuỗi trạng thái job: queued | running | done | error | cancelled
+#}
+{%- if tt == 'done' -%}
+  <span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
+{%- elif tt == 'running' -%}
+  <span class="badge b-warn"><span class="dot"></span>{{ _("Đang tạo") }}</span>
+{%- elif tt == 'queued' -%}
+  <span class="badge b-warn"><span class="dot"></span>{{ _("Đang chờ") }}</span>
+{%- elif tt == 'cancelled' -%}
+  <span class="badge b-grey"><span class="dot"></span>{{ _("Đã huỷ") }}</span>
+{%- else -%}
+  <span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
+{%- endif -%}

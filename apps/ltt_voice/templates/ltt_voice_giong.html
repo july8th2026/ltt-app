@@ -1,84 +1,213 @@
 {% extends "base.html" %}
-{% block title %}{{ _("Giọng của tôi") }} — LTT AI Studio{% endblock %}
-{% block topbar_title %}<strong>{{ _("Giọng của tôi") }}</strong>{% endblock %}
+{% block title %}{{ _("Giọng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Màn Giọng. Đối chiếu với ảnh tham chiếu `02_VOICES.png`:
+
+  GIỮ   lưới thẻ · lọc Tất cả/Mẫu/Của tôi · ô tìm · mã giọng chép được ·
+        panel chi tiết bên phải · nghe clip nguồn · hướng dẫn tạo giọng.
+
+  ĐỔI   ba mặt lọc. Ảnh lọc `VI / EN / Bilingual` + `All Families`; nền tảng
+        không có hai khái niệm đó (engine tự xử VI lẫn EN nên không giọng nào
+        "chỉ EN", và "Voice Family" không tồn tại ở đâu cả). Dữ liệu thật lại
+        cho ba mặt tốt hơn, và đúng ba câu người chọn giọng thực sự hỏi:
+        giới tính · vùng miền · phong cách.
+
+  BỎ    `Similarity 92%` · `Pronunciation 94%` · `Stability 90%` — không đo gì
+        cả, đó là cổng V10 (xem `_voice_the.html`).
+        Và `Quick Guide` năm bước: luồng thật có ba bước; vẽ năm là vẽ một luồng
+        không tồn tại, rồi người dùng đi tìm hai bước không có.
+#}
 
 {% block content %}
-<section class="lv-giong" aria-labelledby="lv-g-title">
-  <header class="lv-heading">
-    <div>
-      <h1 id="lv-g-title">{{ _("Giọng của tôi") }}</h1>
-      <p>{{ _("Tạo giọng riêng từ một clip ngắn của chính bạn.") }}</p>
+<section class="lv-man lv-giong" aria-labelledby="lv-g-title">
+  {% with tieu_de = _("Giọng nói"),
+          mo_ta = _("Chọn một giọng có sẵn, hoặc tạo giọng riêng từ một clip ngắn của chính bạn."),
+          id_tieu_de = "lv-g-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
+
+  <div class="lv-g-khung">
+    {# ── Cột trái: lọc + lưới ────────────────────────────────────────────── #}
+    <div class="lv-g-trai">
+      <div class="lv-loc" role="search">
+        <input type="search" id="lv-tim" class="lv-loc-tim"
+               placeholder="{{ _('Tìm giọng theo tên…') }}"
+               aria-label="{{ _('Tìm giọng theo tên') }}">
+
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
+          <button type="button" class="lv-loc-nut on" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
+          <button type="button" class="lv-loc-nut" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
+          <button type="button" class="lv-loc-nut" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
+        </div>
+
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Giới tính') }}">
+          <button type="button" class="lv-loc-nut on" data-loc="gioi" data-gt="">{{ _("Mọi giới") }}</button>
+          {% for k, nhan in nhan_gioi.items() %}
+            <button type="button" class="lv-loc-nut" data-loc="gioi" data-gt="{{ k }}">{{ _(nhan) }}</button>
+          {% endfor %}
+        </div>
+
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Vùng miền') }}">
+          <button type="button" class="lv-loc-nut on" data-loc="vung" data-gt="">{{ _("Mọi vùng") }}</button>
+          {% for k, nhan in nhan_vung.items() %}
+            <button type="button" class="lv-loc-nut" data-loc="vung" data-gt="{{ k }}">{{ _(nhan) }}</button>
+          {% endfor %}
+        </div>
+
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Phong cách') }}">
+          <button type="button" class="lv-loc-nut on" data-loc="phongcach" data-gt="">{{ _("Mọi phong cách") }}</button>
+          {% for k, nhan in nhan_phong_cach.items() %}
+            <button type="button" class="lv-loc-nut" data-loc="phongcach" data-gt="{{ k }}">{{ _(nhan) }}</button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <p class="lv-g-dem" role="status" aria-live="polite">
+        <span id="lv-g-so">{{ giong_mau|length + giong|length }}</span> {{ _("giọng") }}
+      </p>
+
+      <div class="lv-luoi" id="lv-luoi">
+        {% for g in giong %}
+          {% with la_mau = false, tk = thong_ke.get(g.public_id) %}
+            {% include "_voice_the.html" %}
+          {% endwith %}
+        {% endfor %}
+        {% for g in giong_mau %}
+          {% with la_mau = true %}{% include "_voice_the.html" %}{% endwith %}
+        {% endfor %}
+      </div>
+
+      {# Hiện khi bộ lọc không còn giọng nào. Một lưới trống không nói gì là một
+         ngõ cụt — người dùng sẽ tưởng trang hỏng chứ không tưởng mình lọc chặt. #}
+      <div id="lv-g-khonghop" hidden>
+        {% with tieu_de = _("Không có giọng nào khớp"),
+                mo_ta = _("Thử bỏ bớt một bộ lọc, hoặc xoá từ khoá tìm kiếm.") %}
+          {% include "_voice_rong.html" %}
+        {% endwith %}
+      </div>
     </div>
-    <a class="btn ghost" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
-  </header>
 
-  <table class="lv-bang">
-    <thead><tr>
-      <th>{{ _("Tên") }}</th><th>{{ _("Mã giọng") }}</th>
-      <th>{{ _("Trạng thái") }}</th><th></th>
-    </tr></thead>
-    <tbody>
-    {% for g in giong %}
-      <tr>
-        <td>{{ g.ten_hien_thi }}</td>
-        <td><code>{{ g.public_id }}</code></td>
-        <td>
-          {% if g.trang_thai == 'active' %}{{ _("Sẵn sàng") }}
-          {% elif g.trang_thai == 'dang_ghi_danh' %}{{ _("Đang ghi danh…") }}
-          {% else %}{{ _("Đã tắt") }}{% endif %}
-        </td>
-        <td>
-          {% if g.trang_thai == 'active' %}
-          <form method="post" action="{{ manifest.route_prefix }}/giong/{{ g.public_id }}/tat">
+    {# ── Cột phải: chi tiết giọng đang chọn ──────────────────────────────── #}
+    <aside class="lv-g-phai" aria-live="polite" aria-label="{{ _('Chi tiết giọng') }}">
+      <div class="ui-card lv-ct-rong" id="lv-ct-rong">
+        <p class="muted">{{ _("Chọn một giọng để xem chi tiết.") }}</p>
+      </div>
+
+      <div class="ui-card lv-ct" id="lv-ct" hidden>
+        <div class="lv-ct-dau">
+          <b id="lv-ct-ten"></b>
+          <span class="chip" id="lv-ct-loai"></span>
+        </div>
+        <p class="muted lv-ct-tinh" id="lv-ct-tinh"></p>
+
+        <dl class="lv-ct-bang">
+          <dt>{{ _("Mã dùng khi gọi") }}</dt>
+          <dd><span class="lv-ma"><code class="mono" id="lv-ct-ma"></code>
+            <button type="button" class="lv-ma-chep" id="lv-ct-chep"
+                    aria-label="{{ _('Chép mã giọng') }}">⧉</button></span></dd>
+          <dt>{{ _("Trạng thái") }}</dt>
+          <dd id="lv-ct-tt"></dd>
+        </dl>
+
+        <div class="lv-ct-nut">
+          <a class="btn primary" id="lv-ct-dung" href="#">{{ _("Dùng giọng này") }}</a>
+        </div>
+
+        {# Chỉ giọng của khách mới có phần dưới. #}
+        <div id="lv-ct-cuatoi" hidden>
+          <div class="lv-ct-so">
+            <div><span id="lv-ct-luot">0</span><small>{{ _("lượt đọc") }}</small></div>
+            <div><span id="lv-ct-phut">0</span><small>{{ _("phút tiếng") }}</small></div>
+            <div><span id="lv-ct-cuoi">—</span><small>{{ _("dùng gần nhất") }}</small></div>
+          </div>
+
+          <h3 class="lv-ct-de">{{ _("Clip gốc đã dùng để tạo giọng") }}</h3>
+          <div id="lv-ct-clip"></div>
+          <p class="dim">{{ _("Clip gốc được giữ để dựng lại giọng khi engine nâng cấp. Nó không bị xoá theo hạn lưu của tệp kết quả.") }}</p>
+
+          <form method="post" id="lv-ct-tat">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="btn ghost" type="submit">{{ _("Tắt") }}</button>
+            <button class="btn danger sm" type="submit">{{ _("Tắt giọng này") }}</button>
           </form>
-          {% endif %}
-        </td>
-      </tr>
-    {% else %}
-      <tr><td colspan="4">{{ _("Bạn chưa có giọng nào.") }}</td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+          <p class="dim">{{ _("Tắt thì giọng không dùng được nữa, nhưng lịch sử và các tệp đã tạo vẫn giữ nguyên.") }}</p>
+        </div>
+      </div>
+    </aside>
+  </div>
 
-  <h2>{{ _("Tạo giọng mới") }}</h2>
-  <form class="lv-form" id="lv-form-giong" enctype="multipart/form-data">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-    <label class="lv-field">{{ _("Tên giọng") }} <strong>*</strong>
-      <input type="text" name="ten" maxlength="120" required
-             placeholder="{{ _('Ví dụ: Giọng dẫn của tôi') }}"></label>
-    <label class="lv-field">{{ _("Clip mẫu") }} <strong>*</strong>
-      <input type="file" name="tep" accept="audio/*" required>
-      <small>{{ _("Từ 3 đến 30 giây, nói rõ, không nhạc nền.") }}</small></label>
+  {# ── Tạo giọng mới — BA bước, đúng luồng thật ─────────────────────────── #}
+  <section class="lv-tao-giong" aria-labelledby="lv-tg-title">
+    <h2 id="lv-tg-title">{{ _("Tạo giọng của riêng bạn") }}</h2>
+    <ol class="lv-buoc">
+      <li><b>{{ _("Đặt tên") }}</b><span>{{ _("Tên để bạn nhận ra giọng này về sau.") }}</span></li>
+      <li><b>{{ _("Tải clip mẫu") }}</b><span>{{ _("Ba tới ba mươi giây, nói rõ, không nhạc nền.") }}</span></li>
+      <li><b>{{ _("Xác nhận quyền") }}</b><span>{{ _("Đọc điều khoản và xác nhận đây là giọng bạn được phép dùng.") }}</span></li>
+    </ol>
 
-    <fieldset class="lv-dk">
-      <legend>{{ _("Điều khoản") }}</legend>
-      <ul>{% for d in dieu_khoan %}<li><b>{{ d.tieu_de }}</b> — {{ d.noi_dung }}</li>{% endfor %}</ul>
-      <label><input type="checkbox" name="dong_y" value="1" required> {{ cam_ket }}</label>
-    </fieldset>
+    <form class="lv-form" id="lv-form-giong" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label class="lv-field"><span class="lv-nhan">{{ _("Tên giọng") }} <strong>*</strong></span>
+        <input type="text" name="ten" maxlength="120" required
+               placeholder="{{ _('Ví dụ: Giọng dẫn của tôi') }}"></label>
+      <label class="lv-field"><span class="lv-nhan">{{ _("Clip mẫu") }} <strong>*</strong></span>
+        <input type="file" name="tep" accept="audio/*" required>
+        <small>{{ _("Từ 3 đến 30 giây, nói rõ, không nhạc nền.") }}</small></label>
 
-    <button class="btn primary" type="submit">{{ _("Tạo giọng") }}</button>
-  </form>
-  <div id="lv-g-loi" class="alert alert-err" role="alert" hidden></div>
+      <fieldset class="lv-dk">
+        <legend>{{ _("Điều khoản") }}</legend>
+        <ul>{% for d in dieu_khoan %}<li><b>{{ d.tieu_de }}</b> — {{ d.noi_dung }}</li>{% endfor %}</ul>
+        <label><input type="checkbox" name="dong_y" value="1" required> {{ cam_ket }}</label>
+      </fieldset>
+
+      <div class="lv-actions">
+        <button class="btn primary" type="submit">{{ _("Tạo giọng") }}</button>
+      </div>
+    </form>
+    <div id="lv-g-loi" class="alert alert-err" role="alert" hidden></div>
+  </section>
 </section>
+{% endblock %}
 
+{% block scripts %}
+{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
 <script>
-document.getElementById('lv-form-giong').addEventListener('submit', function (e) {
-  e.preventDefault();
-  var loi = document.getElementById('lv-g-loi');
-  loi.hidden = true;
-  var fd = new FormData(e.target);
-  fetch('{{ manifest.route_prefix }}/giong/tao', {method: 'POST', body: fd})
-    .then(function (r) { return r.json(); })
-    .then(function (d) {
-      if (!d.ok) { loi.textContent = d.loi; loi.hidden = false; return; }
-      window.location.reload();
-    })
-    .catch(function () {
-      loi.textContent = '{{ _("Không gửi được yêu cầu. Thử lại nhé.") }}';
-      loi.hidden = false;
-    });
-});
+(function () {
+  var duong = {{ manifest.route_prefix | tojson }};
+
+  LttVoice.luoiGiong({
+    duong: duong,
+    // Chi tiet cua giong NHAN BAN: dung so lieu may chu da tinh san, khong goi
+    // them mot vong nao khi bam vao mot the.
+    chiTiet: {{ chi_tiet | tojson }},
+    chu: {
+      mau: {{ _("Giọng mẫu") | tojson }},
+      cuaToi: {{ _("Giọng của tôi") | tojson }},
+      sanSang: {{ _("Sẵn sàng") | tojson }},
+      dangGhiDanh: {{ _("Đang ghi danh…") | tojson }},
+      daTat: {{ _("Đã tắt") | tojson }},
+      chuaDung: {{ _("chưa dùng") | tojson }}
+    }
+  });
+
+  document.getElementById('lv-form-giong').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var loi = document.getElementById('lv-g-loi');
+    loi.hidden = true;
+    var nut = e.target.querySelector('button[type=submit]');
+    nut.disabled = true;
+    fetch(duong + '/giong/tao', {method: 'POST', body: new FormData(e.target)})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) { loi.textContent = d.loi; loi.hidden = false; nut.disabled = false; return; }
+        window.location.reload();
+      })
+      .catch(function () {
+        loi.textContent = {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }};
+        loi.hidden = false; nut.disabled = false;
+      });
+  });
+})();
 </script>
 {% endblock %}

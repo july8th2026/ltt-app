@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ _(man.tieu_de) }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Màn cho ba tab đã hiện nhưng chưa xây: Dự án · Chạy lô · API.
+
+  ⛔ TRANG NÀY KHÔNG ĐƯỢC VẼ GIAO DIỆN GIẢ. Nó nói sẽ có gì, không mô phỏng cái
+     sẽ có. Một màn hình giả trông như đã xong là cách nhanh nhất để một phiên
+     sau tưởng nó đã xong — và dự án này đã trả giá đúng lớp lỗi đó hai lần
+     trong tài liệu (hàng Public API và hàng VPS trong `CLAUDE.md`, cả hai đều
+     nói sai **về phía nguy hiểm**).
+
+  Nội dung đến từ `vo.CHUA_XAY` — dữ liệu, không phải markup chép tay.
+#}
+
+{% block content %}
+<section class="lv-man" aria-labelledby="lv-cx-title">
+  {% with tieu_de = _(man.tieu_de), mo_ta = _(man.mo_ta), id_tieu_de = "lv-cx-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
+
+  <div class="ui-card lv-cx">
+    <span class="badge b-warn"><span class="dot"></span>{{ _("Đang xây") }}</span>
+    <h2>{{ _("Phần này sẽ có") }}</h2>
+    <ul class="lv-cx-ds">
+      {% for muc in man.sap_co %}<li>{{ _(muc) }}</li>{% endfor %}
+    </ul>
+    <p class="muted">{{ _("Trong lúc chờ, bạn vẫn tạo được tiếng nói từng đoạn ở màn Tạo tiếng nói.") }}</p>
+    <div class="lv-cx-nut">
+      <a class="btn primary" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
+      <a class="btn ghost" href="{{ manifest.route_prefix }}/giong">{{ _("Giọng của tôi") }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+{% endblock %}

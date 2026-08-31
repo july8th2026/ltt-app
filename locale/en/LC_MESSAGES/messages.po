@@ -11973,3 +11973,232 @@ msgstr "How long files are kept"
 #: apps/ltt_voice
 msgid "Tệp tiếng tạo ra được giữ {n} ngày kể từ khi xong, rồi xoá. Hãy tải về trong khoảng đó. Lịch sử lượt tạo và bút toán credit vẫn giữ lại để đối chiếu, chỉ tệp là hết hạn."
 msgstr "Audio files are kept for {n} days after completion, then deleted. Download yours within that window. Your generation history and credit entries are retained for reconciliation — only the files expire."
+
+# --- LTT Voice Studio, loat giao dien P1 (2026-08-31) ---
+
+msgid "API"
+msgstr "API"
+
+msgid "Bạn chưa có giọng nào"
+msgstr "You have no voices yet"
+
+msgid "Chia một kịch bản dài thành nhiều khối, đọc từng khối bằng giọng riêng, rồi ghép lại thành một tệp."
+msgstr "Split a long script into blocks, read each block in its own voice, then join them into one file."
+
+msgid "Chép mã giọng"
+msgstr "Copy voice ID"
+
+msgid "Chưa có lượt nào"
+msgstr "Nothing generated yet"
+
+msgid "Chạy lô"
+msgstr "Batch"
+
+msgid "Chạy lần lượt, xem tiến độ từng dòng, thử lại dòng hỏng."
+msgstr "Run them one by one, watch each row's progress, retry the ones that fail."
+
+msgid "Dịch vụ giọng nói chưa được bật trên máy chủ này."
+msgstr "The voice service is not enabled on this server."
+
+msgid "Dự án"
+msgstr "Projects"
+
+msgid "Engine chưa bật"
+msgstr "Engine off"
+
+msgid "Engine sẵn sàng"
+msgstr "Engine ready"
+
+msgid "Ghi hoặc tải lên một clip ngắn của chính bạn, và dùng giọng đó ở mọi màn."
+msgstr "Record or upload a short clip of your own voice, then use it anywhere in the studio."
+
+msgid "Gọi giọng của bạn từ mã nguồn của bạn, bằng mã giọng đã có."
+msgstr "Call your voices from your own code, using the voice IDs you already have."
+
+msgid "Khoá, hạn mức và nhật ký dùng chung với khu Lập trình viên."
+msgstr "Keys, quotas and logs are shared with the Developers area."
+
+msgid "Kiểm toàn bộ danh sách hợp lệ TRƯỚC khi giữ đồng credit nào."
+msgstr "Validate the whole list BEFORE holding a single credit."
+
+msgid "Máy tạo tiếng nói đã sẵn sàng."
+msgstr "The speech engine is ready."
+
+msgid "Mã giọng nào gọi được, và ví dụ gọi thử sẵn."
+msgstr "Which voice IDs you can call, with a ready-made test request."
+
+msgid "Mọi lượt đọc của bạn, nghe lại và tải về được."
+msgstr "Everything you have generated, ready to play back and download."
+
+msgid "Mỗi khối chọn một giọng — người dẫn một giọng, nhân vật một giọng."
+msgstr "Pick a voice per block — one for the narrator, another for each character."
+
+msgid "Mỗi lần bạn tạo tiếng nói, lượt đó xuất hiện ở đây để nghe lại và tải về."
+msgstr "Every time you generate speech, it shows up here to play back and download."
+
+msgid "Nhận CSV hoặc dán thẳng danh sách."
+msgstr "Upload a CSV, or just paste a list."
+
+msgid "Phần này sẽ có"
+msgstr "What this will do"
+
+msgid "Trong lúc chờ, bạn vẫn tạo được tiếng nói từng đoạn ở màn Tạo tiếng nói."
+msgstr "In the meantime you can still generate speech one passage at a time on the Generate speech screen."
+
+msgid "Tách kịch bản thành khối, sửa từng khối riêng."
+msgstr "Break a script into blocks and edit each one on its own."
+
+msgid "Tải lên một danh sách và đọc tất cả trong một lượt, mỗi dòng một tệp."
+msgstr "Upload a list and read all of it in one run, one file per row."
+
+msgid "Tải về cả lô trong một tệp nén."
+msgstr "Download the whole batch as one zip."
+
+msgid "Việc của bạn đang chờ hoặc đang chạy."
+msgstr "Your jobs that are queued or running."
+
+msgid "Ví dụ cURL, Python, JavaScript cho đúng công cụ giọng nói."
+msgstr "cURL, Python and JavaScript examples for the speech tool itself."
+
+msgid "Xuất một tệp liền mạch."
+msgstr "Export a single seamless file."
+
+msgid "Đọc lại chỉ khối đã sửa, không phải cả bài."
+msgstr "Re-read only the block you changed, not the whole piece."
+
+msgid "Đang xây"
+msgstr "In progress"
+
+# --- LTT Voice Studio, man Giong P3 (2026-08-31) ---
+
+msgid "Ba tới ba mươi giây, nói rõ, không nhạc nền."
+msgstr "Three to thirty seconds, clearly spoken, no background music."
+
+msgid "Chi tiết giọng"
+msgstr "Voice details"
+
+msgid "Chọn một giọng có sẵn, hoặc tạo giọng riêng từ một clip ngắn của chính bạn."
+msgstr "Pick a built-in voice, or create your own from a short clip of yourself."
+
+msgid "Chọn một giọng để xem chi tiết."
+msgstr "Select a voice to see its details."
+
+msgid "Clip gốc đã dùng để tạo giọng"
+msgstr "Original clip used to create this voice"
+
+msgid "Clip gốc được giữ để dựng lại giọng khi engine nâng cấp. Nó không bị xoá theo hạn lưu của tệp kết quả."
+msgstr "We keep the original clip so the voice can be rebuilt when the engine is upgraded. It is not deleted on the schedule that applies to generated files."
+
+msgid "Dùng"
+msgstr "Use"
+
+msgid "Dùng giọng này"
+msgstr "Use this voice"
+
+msgid "Giọng chưa sẵn sàng."
+msgstr "This voice is not ready yet."
+
+msgid "Giọng mẫu"
+msgstr "Built-in"
+
+msgid "Giọng nói"
+msgstr "Voices"
+
+msgid "Giới tính"
+msgstr "Gender"
+
+msgid "Không có giọng nào khớp"
+msgstr "No voice matches"
+
+msgid "Loại giọng"
+msgstr "Voice type"
+
+msgid "Miền Bắc"
+msgstr "Northern"
+
+msgid "Miền Nam"
+msgstr "Southern"
+
+msgid "Miền Trung"
+msgstr "Central"
+
+msgid "Mã dùng khi gọi"
+msgstr "ID to use when calling"
+
+msgid "Mọi giới"
+msgstr "Any gender"
+
+msgid "Mọi phong cách"
+msgstr "Any style"
+
+msgid "Mọi vùng"
+msgstr "Any region"
+
+msgid "Nam"
+msgstr "Male"
+
+msgid "Nữ"
+msgstr "Female"
+
+msgid "Thử bỏ bớt một bộ lọc, hoặc xoá từ khoá tìm kiếm."
+msgstr "Try removing a filter, or clearing the search box."
+
+msgid "Tin tức"
+msgstr "News"
+
+msgid "Tên để bạn nhận ra giọng này về sau."
+msgstr "A name so you can recognise this voice later."
+
+msgid "Tìm giọng theo tên"
+msgstr "Search voices by name"
+
+msgid "Tìm giọng theo tên…"
+msgstr "Search voices by name…"
+
+msgid "Tạo giọng của riêng bạn"
+msgstr "Create your own voice"
+
+msgid "Tải clip mẫu"
+msgstr "Upload a sample clip"
+
+msgid "Tắt giọng này"
+msgstr "Disable this voice"
+
+msgid "Tắt thì giọng không dùng được nữa, nhưng lịch sử và các tệp đã tạo vẫn giữ nguyên."
+msgstr "Disabling stops the voice being used, but your history and the files already generated stay exactly as they are."
+
+msgid "Tự nhiên"
+msgstr "Natural"
+
+msgid "Vùng miền"
+msgstr "Region"
+
+msgid "Xem giọng"
+msgstr "View voice"
+
+msgid "Xác nhận quyền"
+msgstr "Confirm your rights"
+
+msgid "chưa dùng"
+msgstr "not used yet"
+
+msgid "dùng gần nhất"
+msgstr "last used"
+
+msgid "giọng"
+msgstr "voices"
+
+msgid "lượt"
+msgstr "reads"
+
+msgid "lượt đọc"
+msgstr "reads"
+
+msgid "phút tiếng"
+msgstr "minutes of audio"
+
+msgid "Đặt tên"
+msgstr "Name it"
+
+msgid "Đọc điều khoản và xác nhận đây là giọng bạn được phép dùng."
+msgstr "Read the terms and confirm this is a voice you are allowed to use."

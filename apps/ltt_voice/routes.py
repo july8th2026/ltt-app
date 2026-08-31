@@ -25,7 +25,7 @@ from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
 
-from . import features, gia, sidecar_client, tham_chieu
+from . import doc_man_giong, features, giong_mau, tham_chieu, vo
 from .manifest import MANIFEST
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
@@ -51,32 +51,57 @@ def _db():
     return get_session()
 
 
-def _ngu_canh(request: Request, user, **them) -> dict:
-    d = {"request": request, "user": user, "manifest": MANIFEST,
-         "tran_ky_tu": TRAN_KY_TU_CONG_KHAI,
-         "bang_gia": gia.bang_gia(),
-         "cong_san_sang": sidecar_client.san_sang()}
-    d.update(them)
-    return d
+# ⭐ Vỏ dùng chung đã chuyển sang `vo.py`. Route chỉ còn gọi nó.
+#
+#    Trước P1 hàm này nằm ngay đây và **không đặt `nav`** — nên phép so
+#    `nav == entry.nav_key` trong `base.html` luôn False và cả ba tab của Voice
+#    đều xám kể từ ngày phát hành. Không phép kiểm nào bắt được: trang vẫn 200,
+#    chỉ là không tab nào sáng. `vo.ngu_canh` bắt buộc truyền `nav_key`, nên lỗi
+#    đó không tái diễn được nữa.
 
 
 # ── Tạo tiếng nói ────────────────────────────────────────────────────────────
 
 @router.get("", response_class=HTMLResponse)
 @router.get("/", response_class=HTMLResponse)
-def trang_tao(request: Request, user=Depends(user_hien_tai),
+def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
               _=Depends(require_login)):
+    """Màn tạo tiếng nói.
+
+    `?giong=` cho phép màn Giọng gửi thẳng một lựa chọn sang đây — một cú bấm từ
+    chỗ chọn tới chỗ dùng, thay vì bắt khách tự tìm lại cái tên vừa xem trong
+    một ô chọn hai mươi mục.
+
+    ⛔ Tham số này là **chuỗi khách gửi**, nên nó không được tin. Nó chỉ dùng để
+       *chọn sẵn* một mục trong danh sách máy chủ đã dựng; giá trị không khớp
+       mục nào thì bỏ qua, im lặng và an toàn. Quyền sở hữu vẫn kiểm ở cửa nộp
+       (`features.giai_giong`) như cũ — chỗ này không phải một cửa.
+    """
+    uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
-        giong = tham_chieu.danh_sach(db, owner_id=_uid(user))
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        hang_doi = vo.dem_dang_chay(db, uid)
     finally:
         try:
             next(gen)
         except StopIteration:
             pass
+
+    xin = (giong or "").strip()
+    hop_le = (giong_mau.hop_le(xin)
+              or any(g.public_id == xin and g.trang_thai == "active"
+                     for g in cua_toi))
     return templates.TemplateResponse(
-        request, "ltt_voice_studio.html", _ngu_canh(request, user, giong=giong))
+        request, "ltt_voice_studio.html",
+        vo.ngu_canh(request, user, nav_key=vo.NAV_STUDIO, hang_doi=hang_doi,
+                    giong=cua_toi, giong_mau=giong_mau.DANH_SACH,
+                    nhan_gioi=giong_mau.NHAN_GIOI,
+                    nhan_vung=giong_mau.NHAN_VUNG,
+                    nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
+                    giong_chon=(xin if hop_le else ""),
+                    mac_dinh=giong_mau.MAC_DINH))
 
 
 @router.post("/tao")
@@ -126,8 +151,17 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
         job = submit_with_credit(
             db, user_id=_uid(user), app_slug=MANIFEST.slug,
             job_type="ltt_voice.synthesize",
+            # 🔴 `nguon` GHI NGAY TỪ BÂY GIỜ, dù màn Lịch sử chưa dùng tới.
+            #
+            #    Ảnh tham chiếu 05 lọc lịch sử theo nguồn (Studio · Dự án · Lô ·
+            #    API) — và đó là thứ **không thể bù lại sau**. Thêm cột lọc thì
+            #    làm lúc nào cũng được; nhưng một job đã chạy mà không ghi nó
+            #    đến từ đâu thì mãi mãi không biết. Ghi ở P1 tốn một dòng; ghi
+            #    sau P6 tốn một dòng Y HỆT **cộng với** một khoảng lịch sử
+            #    khuyết mà không lệnh nào vá được.
             params={"text": yc.text, "voice_id": yc.voice_id,
-                    "preset": yc.preset, "owner_id": _uid(user)},
+                    "preset": yc.preset, "owner_id": _uid(user),
+                    "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots)
@@ -148,10 +182,15 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
 @router.get("/giong", response_class=HTMLResponse)
 def trang_giong(request: Request, user=Depends(user_hien_tai),
                 _=Depends(require_login)):
+    uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
-        giong = tham_chieu.danh_sach(db, owner_id=_uid(user))
+        giong = tham_chieu.danh_sach(db, owner_id=uid)
+        hang_doi = vo.dem_dang_chay(db, uid)
+        thong_ke = doc_man_giong.thong_ke_theo_giong(db, uid, MANIFEST.slug)
+        chi_tiet = doc_man_giong.chi_tiet_cho_trang(
+            db, giong, thong_ke, f"{MANIFEST.route_prefix}/audio")
     finally:
         try:
             next(gen)
@@ -160,8 +199,13 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
     from .dieu_khoan import CAM_KET, cac_dieu
     return templates.TemplateResponse(
         request, "ltt_voice_giong.html",
-        _ngu_canh(request, user, giong=giong, dieu_khoan=cac_dieu(),
-                  cam_ket=CAM_KET))
+        vo.ngu_canh(request, user, nav_key=vo.NAV_GIONG, hang_doi=hang_doi,
+                    giong=giong, giong_mau=giong_mau.DANH_SACH,
+                    nhan_gioi=giong_mau.NHAN_GIOI,
+                    nhan_vung=giong_mau.NHAN_VUNG,
+                    nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
+                    thong_ke=thong_ke, chi_tiet=chi_tiet,
+                    dieu_khoan=cac_dieu(), cam_ket=CAM_KET))
 
 
 @router.post("/giong/tao")
@@ -223,6 +267,7 @@ async def tao_giong(request: Request, ten: str = Form(""),
             job_type="ltt_voice.enroll",
             params={"owner_id": uid, "voice_id": ho_so.public_id,
                     "source_key": khoa, "ref_id": ref.id,
+                    "nguon": "giong",
                     "_job_type": "ltt_voice.enroll"})
         db.commit()
         return JSONResponse({"ok": True, "voice_id": ho_so.public_id,
@@ -266,18 +311,66 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
 def trang_lich_su(request: Request, user=Depends(user_hien_tai),
                   _=Depends(require_login)):
     from platform_core import job_history
+    uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
         lich_su, _cursor = job_history.list_owned(
-            db, _uid(user), app_slug=MANIFEST.slug, limit=50)
+            db, uid, app_slug=MANIFEST.slug, limit=50)
+        hang_doi = vo.dem_dang_chay(db, uid)
     finally:
         try:
             next(gen)
         except StopIteration:
             pass
     return templates.TemplateResponse(
-        request, "ltt_voice_lich_su.html", _ngu_canh(request, user, lich_su=lich_su))
+        request, "ltt_voice_lich_su.html",
+        vo.ngu_canh(request, user, nav_key=vo.NAV_LICH_SU, hang_doi=hang_doi,
+                    lich_su=lich_su))
+
+
+# ── Màn chưa xây ─────────────────────────────────────────────────────────────
+#
+# ⭐ MỘT HANDLER CHO CẢ BA, không ba bản chép. Nội dung khác nhau là **dữ liệu**
+#    (`vo.CHUA_XAY`), không phải mã — nên ngày một màn được xây thật, việc phải
+#    làm là xoá một khoá trong từ điển và lật `built=True`, không phải đi tìm
+#    xem còn bản chép nào sót lại.
+#
+# ⛔ Trang này KHÔNG vẽ giao diện giả. Nó nói sẽ có gì, không mô phỏng cái sẽ có.
+
+def _trang_chua_xay(request: Request, user, nav_key: str):
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        hang_doi = vo.dem_dang_chay(db, uid)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    return templates.TemplateResponse(
+        request, "ltt_voice_chua_xay.html",
+        vo.ngu_canh(request, user, nav_key=nav_key, hang_doi=hang_doi,
+                    man=vo.CHUA_XAY[nav_key]))
+
+
+@router.get("/du-an", response_class=HTMLResponse)
+def trang_du_an(request: Request, user=Depends(user_hien_tai),
+                _=Depends(require_login)):
+    return _trang_chua_xay(request, user, vo.NAV_DU_AN)
+
+
+@router.get("/lo", response_class=HTMLResponse)
+def trang_lo(request: Request, user=Depends(user_hien_tai),
+             _=Depends(require_login)):
+    return _trang_chua_xay(request, user, vo.NAV_LO)
+
+
+@router.get("/api", response_class=HTMLResponse)
+def trang_api(request: Request, user=Depends(user_hien_tai),
+              _=Depends(require_login)):
+    return _trang_chua_xay(request, user, vo.NAV_API)
 
 
 # ── Phục vụ tệp tiếng ────────────────────────────────────────────────────────
@@ -293,9 +386,46 @@ def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
     ⚠️ Dấu gạch chéo sau `{job_id}` là bắt buộc, và không phải vì route này —
        `platform_core/job_content.py` chỉ dọn được tệp có job id **là một đoạn
        đường dẫn**. Xem chú thích ở `jobs.py`.
+
+    ⭐ HAI TIỀN TỐ, VÀ CHÚNG CÓ VÒNG ĐỜI KHÁC NHAU — đó là lý do có hai chứ không
+       phải vì lịch sử để lại:
+
+         `voice/out/{uid}/{job_id}/…`   tệp KẾT QUẢ. Có `job_id` trong khoá nên
+                                        `job_content.py` dọn được, và điều khoản
+                                        hứa xoá sau 30 ngày.
+         `voice/{uid}/{public_id}/…`    clip GỐC của khách (`tham_chieu.khoa_nguon`).
+                                        **Cố ý không** có `job_id`, nên nằm ngoài
+                                        tầm dọn — điều khoản hứa giữ nguyên bản để
+                                        dựng lại giọng khi nâng engine, nên nó phải
+                                        sống theo vòng đời của HỒ SƠ GIỌNG, không
+                                        theo hạn của tệp kết quả.
+
+    ⛔ Vẫn kiểm bằng **hình dạng khoá**, không bằng một phép tra CSDL. Một phép
+       kiểm rẻ và không thể quên là thứ đang giữ an toàn cho đường này; đổi nó
+       thành một truy vấn là mời một nhánh nào đó sau này quên gọi.
+
+    🔴 VÀ ĐÂY LÀ CHỖ PHẢI CẨN THẬN NHẤT CỦA CẢ TỆP.
+
+       Bản đầu của việc mở clip gốc cho phép nguyên tiền tố `voice/{uid}/`. Nghe
+       thì đúng — đó là thư mục của chính khách đó. Nhưng **biểu diễn engine
+       cũng nằm trong đó**: `tham_chieu.khoa_bieu_dien` ghi
+       `voice/{owner}/{public_id}/repr-<van_tay>.npz`, và tệp ấy chứa
+       `speaker_emb`. `tables.py` nói thẳng về nó: *"KHÔNG BAO GIỜ ra ngoài.
+       Khách không cần biết nó tồn tại."*
+
+       Một khách tải embedding của **chính mình** thì chưa phải thảm hoạ, nhưng
+       nó phá đúng ranh giới mà cả thiết kế bảng được dựng lên để giữ: `voice_id`
+       là danh tính công khai, biểu diễn là thứ nội bộ có thể thay khi đổi engine.
+       Cho nó rò ra một lần là biến nó thành thứ ai đó sẽ phụ thuộc vào.
+
+       Nên cửa này mở theo **TÊN TỆP**, không theo thư mục: chỉ `source.*`.
     """
     uid = _uid(user)
-    if not key.startswith(f"voice/out/{uid}/"):
+    ten_tep = key.rsplit("/", 1)[-1]
+    la_ket_qua = key.startswith(f"voice/out/{uid}/")
+    la_clip_goc = (key.startswith(f"voice/{uid}/")
+                   and ten_tep.startswith("source."))
+    if not (la_ket_qua or la_clip_goc):
         return Response(status_code=404)
     from platform_core.storage import get_storage
     try:
@@ -308,4 +438,10 @@ def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
         import logging
         logging.getLogger(__name__).warning("khong doc duoc audio %s: %s", key, e)
         return Response(status_code=404)
-    return StreamingResponse(io.BytesIO(data), media_type="audio/wav")
+    # Kieu noi dung theo DUOI TEP, khong gan cung `audio/wav`. Tep ket qua luon
+    # la WAV, nhung clip GOC cua khach thi khong: `luu_nguon` nhan ca mp3 va m4a
+    # (xem bang duoi o `tham_chieu.luu_nguon`). Bao sai kieu thi trinh duyet tu
+    # choi phat, va trieu chung la mot trinh phat im lang chu khong phai mot loi.
+    kieu = {"wav": "audio/wav", "mp3": "audio/mpeg", "m4a": "audio/mp4"}.get(
+        ten_tep.rsplit(".", 1)[-1].lower(), "application/octet-stream")
+    return StreamingResponse(io.BytesIO(data), media_type=kieu)
