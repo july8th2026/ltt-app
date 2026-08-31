@@ -144,3 +144,43 @@ minh, và phần lớn đã có phép kiểm giữ.
 ⛔ **86 không phải điểm phát hành.** Ba phase còn nợ phần khó nhất: bảy cửa sổ
 sự cố của `02`, F01–F28 của `06`, canary client thật của `05`. Điểm phản ánh
 **thứ đã chứng minh**, không phải thứ đã làm xong.
+
+
+---
+
+## 6. Đóng băng trước-chung-kết (G05)
+
+**Lượt gate đóng băng, 31/08 22:4x, cây đứng yên cả lượt:**
+
+```
+RESULT: FAIL (1/25)  [1 BUOC TU BO QUA, KHONG PHAI BANG CHUNG: bat bien da tien trinh]
+                     KHONG co dong "CAY DA DOI"
+```
+
+**24/25 bước xanh.** Bước đỏ duy nhất là `bo test (song song)`, chứa **ba** lỗi —
+và **không lỗi nào thuộc phạm vi `ltt_llm`**:
+
+| Lỗi | Chủ | Bản chất |
+|---|---|---|
+| `test_344_ltt_voice_vo::test_ngu_canh_bat_buoc_nav_key` | phiên `-e7` | **chỉ đỏ khi chạy song song** — chạy riêng 1/1 xanh, chạy cùng 228 bài của nhóm cũng xanh. Trạng thái ngoài rò vào test |
+| `test_177_system_profile` ×2 | dùng chung | hồ sơ hệ thống lại cũ vì ba phiên vẫn ghi |
+
+⛔ **Không tuyên bố chương trình là `PASS`.** "Ngoài phạm vi" không phải "xanh",
+và một dòng RESULT đỏ là một dòng RESULT đỏ.
+
+⭐ Và quy ước 10.7 (*"người chạy lượt gate bằng chứng cuối cùng sinh lại hồ sơ"*)
+hoá ra **chưa đủ**: nó không nói gì về việc cây vẫn đổi **sau** lần sinh lại. Ba
+phiên cùng cây thì hồ sơ dẫn xuất cũ lại trong vài phút. Ghi thành rủi ro, chưa
+sửa — sửa nó là đổi cách ba phiên phối hợp, không phải đổi một tệp.
+
+### Trạng thái ứng viên phát hành
+
+| | |
+|---|---|
+| Đã deploy production hôm nay | vá rò suất (A+B) · trọng tài GPU (B) · máy A: mang lý do bận + `CAPACITY_REFUSED` |
+| Chưa deploy | `deploy.ps1` cảnh báo cấu hình chưa hiệu lực *(chỉ chạy khi deploy lần sau)* |
+| Rollback | `git revert` + deploy lại; máy B có `H:\LTT_LLMeleases\` |
+| Benchmark sau thay đổi | chất lượng **12/12 không đổi** trước và sau bản vá trọng tài |
+
+⛔ **Không giả thuyết tối ưu mới sau điểm này.** Mọi ý còn lại đã ghi `DEFER`
+trong bảng quyết định của từng phase.
