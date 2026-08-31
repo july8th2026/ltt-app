@@ -129,6 +129,64 @@ foreach ($goi in @("llm_gateway", "render_gateway")) {
     Dat "$goi"
 }
 
+# --- 2b. So hash hai ben -------------------------------------------------------
+#
+# Muc dich KHONG phai bat loi duong truyen. La bat viec SUA TAY TREN MAY B -- loi
+# kinh dien cua du an nay va la thu quy tac 1 o dau tep nay cam: sua o may chay,
+# quen sua o repo, lan deploy sau mat trang va mat AM THAM.
+#
+# ! Ra soat chuoi cung ung 01/09: `render_gateway/deploy/deploy.ps1` co 15 dong
+#    doi chieu hash; tep NAY co 0. Hai cong tren CUNG MOT MAY, hai script deploy,
+#    mot cai kiem va mot cai khong. Buoc 6 ("import OK") chi chung minh module
+#    NAP DUOC, khong chung minh moi tep chep dung -- mot tep .py cu con sot lai
+#    van cho `import` thanh cong.
+Buoc "2b. So hash hai ben"
+$mongDoi = @{}
+foreach ($goi in @("llm_gateway", "render_gateway")) {
+    foreach ($t in (Get-ChildItem (Join-Path $RepoGoc $goi) -Recurse -File -Filter *.py |
+                    Where-Object { $_.FullName -notmatch '__pycache__' })) {
+        $tuong = $t.FullName.Substring($RepoGoc.Length).TrimStart('\').Replace('\', '/')
+        $mongDoi[$tuong] = (Get-FileHash -Algorithm SHA256 -LiteralPath $t.FullName).Hash.ToLower()
+    }
+}
+$noiDungHash = ($mongDoi.GetEnumerator() | ForEach-Object { "$($_.Key)=$($_.Value)" }) -join "`n"
+$tamHash = Join-Path $env:TEMP "ltt_llm_hash.txt"
+[IO.File]::WriteAllText($tamHash, $noiDungHash, (New-Object Text.UTF8Encoding($false)))
+& scp.exe -i $Khoa -o BatchMode=yes -q $tamHash "${User}@${MayB}:$Goc/work/hash_mong_doi.txt"
+if ($LASTEXITCODE -ne 0) { Loi "scp bang hash that bai"; exit 1 }
+Remove-Item $tamHash -Force
+
+# !! PHAI dung `-EncodedCommand`. Mot khoi PowerShell NHIEU DONG khong song sot
+#    qua duong `ssh -> cmd.exe tren may B`: ssh truyen ca khoi nhu MOT doi so,
+#    cmd.exe thay xuong dong va cat no thanh nhieu lenh roi. Da dinh 01/09, va
+#    trieu chung la mot dong "[LOI] ssh that bai" kem ca doan script in ra man
+#    hinh -- trong nhu loi cu phap, thuc ra la loi VAN CHUYEN.
+#
+#    Base64 khong co ky tu nao ma cmd.exe hay PowerShell muon dien giai, nen no
+#    qua duoc ca hai tang khong suy suyen. Cung ly do voi `bput` dung base64.
+$gW2 = $Goc.Replace("/", "\")
+$maKiem = @"
+`$goc = '$gW2\gateway'
+`$lech = @()
+foreach (`$dong in [IO.File]::ReadAllLines('$gW2\work\hash_mong_doi.txt')) {
+    if (-not `$dong) { continue }
+    `$p = `$dong.Split('=', 2)
+    `$tep = Join-Path `$goc (`$p[0] -replace '/', '\')
+    if (-not (Test-Path -LiteralPath `$tep)) { `$lech += ('THIEU  ' + `$p[0]); continue }
+    `$h = (Get-FileHash -Algorithm SHA256 -LiteralPath `$tep).Hash.ToLower()
+    if (`$h -ne `$p[1]) { `$lech += ('KHAC   ' + `$p[0]) }
+}
+if (`$lech.Count -gt 0) { `$lech | ForEach-Object { Write-Host `$_ }; 'CO_LECH' } else { 'KHOP' }
+"@
+$b64Kiem = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($maKiem))
+$ktHash = ChayTrenB "powershell -NoProfile -EncodedCommand $b64Kiem"
+if (($ktHash -join " ") -match "CO_LECH") {
+    Loi "Tep tren may B LECH so voi repo. Nhieu kha nang co ai da sua tay tren B."
+    $ktHash | Write-Host
+    exit 1
+}
+Dat "hash khop $($mongDoi.Count) tep - khong co tep nao bi sua tay tren may B"
+
 # --- 3. Cau hinh llama-swap ----------------------------------------------------
 Buoc "3. Cau hinh llama-swap"
 & scp.exe -i $Khoa -o BatchMode=yes -q (Join-Path $PSScriptRoot "llama-swap.yaml") `
