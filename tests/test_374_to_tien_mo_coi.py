@@ -11,7 +11,7 @@ thật, và mỗi cái đều có thể làm phép kiểm im lặng đúng lúc 
 """
 from __future__ import annotations
 
-import sys
+
 
 import pytest
 
@@ -104,12 +104,21 @@ class TestKhongTuThoat:
 
 
 class TestTrenMayThat:
-    @pytest.mark.skipif(sys.platform != "win32", reason="chi co y nghia tren Windows")
     def test_doc_duoc_cay_that_va_KHONG_no(self):
         """Đọc cây thật một lượt: phải ra kết quả dùng được, không ném lỗi.
 
         pytest không chạy dưới NSSM nên `theo_doi` sẽ là False — và đó chính là
-        điều cần chốt: trường hợp bình thường không được biến thành báo động.
+        điều cần chốt: trường hợp bình thường **không được** biến thành báo động.
+
+        ⭐ KHÔNG `skipif(win32)`, dù `to_tien.py` chỉ làm việc thật trên Windows.
+           Trên nền khác `_cay_len` trả `[]` ⇒ `theo_doi=False`, `mo_coi=None` —
+           **đúng hai điều tệp này khẳng định**. Tức phép kiểm có nghĩa ở cả hai
+           nơi, và một `skipif` ở đây chỉ làm bánh cóc bỏ-qua nhích lên mà không
+           đổi lấy gì.
+
+        ⛔ Bản đầu tôi có đặt `skipif` theo phản xạ "đây là mã Windows". Bánh cóc
+           `test_306` bắt được. Cách sửa đúng là **bỏ cái skip thừa**, không phải
+           nới mốc — nới mốc thì lần sau một skip thật sẽ trôi qua cùng chỗ đó.
         """
         st = ToTien().trang_thai()
         assert st["theo_doi"] is False
