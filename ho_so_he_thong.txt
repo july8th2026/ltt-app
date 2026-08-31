@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:f248db489507b33a9d7973917cc1a52f889c0868e48419ee807a1f6f7df4ee34
-Nguồn đã quét : 1381 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:7384556f5b20f05559184b1a0e4bf38c3c2b7c9e10865f920d5bddeebb2d69f6
+Nguồn đã quét : 1385 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1182,7 +1182,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (332 file pytest + 3 frontend)
+10. QUALITY GATES (334 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1476,6 +1476,8 @@ Test inventory:
 - tests/test_372_may_b_khong_voi_toi.py
 - tests/test_373_ssrf_anh_tu_xa.py
 - tests/test_374_to_tien_mo_coi.py
+- tests/test_375_ltt_voice_nop_lai_khong_trung.py
+- tests/test_376_cong_chat_luong_voice.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -1541,8 +1543,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1381 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:35, .py:1045, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1385 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:36, .py:1048, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2459,7 +2461,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (20)
+[setup] (21)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2469,6 +2471,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/chay_thu_ghi_danh.ps1
 - setup/chay_thu_giong.ps1
 - setup/chay_voi_env.ps1
+- setup/cong_chat_luong_voice.ps1
 - setup/cong_tac_tool_api.ps1
 - setup/dat_bien_env.ps1
 - setup/deploy_nang_quyen.ps1
@@ -2481,7 +2484,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (349)
+[tests] (351)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2786,6 +2789,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_372_may_b_khong_voi_toi.py
 - tests/test_373_ssrf_anh_tu_xa.py
 - tests/test_374_to_tien_mo_coi.py
+- tests/test_375_ltt_voice_nop_lai_khong_trung.py
+- tests/test_376_cong_chat_luong_voice.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -2832,7 +2837,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (137)
+[tools] (138)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2884,6 +2889,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/chuan_hoa_anh.py
 - tools/chuong_baseline.json
 - tools/cleanup_agent_canary.py
+- tools/cong_chat_luong_voice.py
 - tools/create_admin.py
 - tools/cua_so_yen.py
 - tools/danh_gia_llm.py
@@ -2980,7 +2986,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1381 file; 13738420 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1385 file; 13775109 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -25233,7 +25239,7 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_so_cong_khai.py
-SHA256=7e26a739e0e9221da9994db4d92bec9a3df66e2e4a8bfdb33d84eaf952a0fcac BYTES=2748 LINES=46
+SHA256=93bc27027f1e9a0a3418b97888f13dc26157316372795be63699c22faf07134c BYTES=3784 LINES=59
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_so_cong_khai.py — vài hằng số mà CẢ HAI phía cùng phải biết.
@@ -25278,8 +25284,21 @@ TRAN_MOI_LUOT_SINH = 1500
 #:    tự. Đường đã có, cổng chưa mở — và thứ tự đó là có chủ ý: hạ tầng sẵn sàng
 #:    không phải là bằng chứng chất lượng. Nới nó vẫn phải qua V10.
 #:
-#: Trần trên tuyệt đối: `TRAN_MOI_LUOT_SINH × voice_sidecar.tham_so
-#: .TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn) — vượt nữa thì cổng trả 413.
+#: ✅ MỘT trong các điều kiện ấy đã xong (01/09/2026): **trôi tông đã đo, và
+#:    không có**. Ba lượt độc lập trên bài 12 đoạn, `tools/do_troi_tong.py`:
+#:    chênh F0 giữa các đoạn 11–20 Hz so với sàn nhiễu (độ lệch F0 *bên trong*
+#:    một đoạn) 19–26 Hz, độ dốc −0,2 đến +1,1 Hz mỗi đoạn. Không vượt sàn, và
+#:    phần vượt thì không có hướng.
+#:
+#: ⛔ ĐỪNG đọc điều đó thành "nới được rồi". Trôi tông là MỘT chiều của chất
+#:    lượng; V10 còn CER/WER, tương đồng người nói, clipping, tỉ lệ hỏng. Một
+#:    phép đo không thay được một cổng — đó đúng là cách một cảnh báo đúng bị
+#:    biến thành một lời cho phép.
+#:
+#: ✅ Và trần tuyệt đối cũ đã BỎ. Trước 01/09 nó là `TRAN_MOI_LUOT_SINH ×
+#:    voice_sidecar.tham_so.TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn), vì cửa văn bản
+#:    dài áp kích thước một lượt gộp lô lên chính người gọi — bài 12 đoạn nhận
+#:    `413`. Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
 TRAN_KY_TU_CONG_KHAI = 1500
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -166546,6 +166565,85 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/cong_chat_luong_voice.ps1
+SHA256=0f456606c20562190e610cd16aa9e83c893a0fad56ba5f31cb6322173d8cafdd BYTES=2589 LINES=73
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\cong_chat_luong_voice.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    [switch]$Ghim,
+    [int]$Vong    = 3
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\cong_chat_luong_voice.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+if ($Ghim) { $doiSo += @('--ghim', '--vong', "$Vong") }
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/cong_tac_tool_api.ps1
 SHA256=62d9f3d4d9d5c9f71e6f8fd1c713d0d7cad9d8541f20a5afc15587c055020905 BYTES=3539 LINES=82
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -246657,6 +246755,422 @@ class TestTrenMayThat:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_375_ltt_voice_nop_lai_khong_trung.py
+SHA256=222f170dfcde3daaa7633cfa3b7ec45f705f01011ea676c46d78bec7d77c2ba3 BYTES=9703 LINES=249
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+V9 · hai chốt cuối: **nộp trùng không sinh việc trùng**, và **chạy lại không
+bắt đầu từ 0**.
+
+`docs/LTT_VOICE/00_PHUONG_AN_VA_LO_TRINH.md` đặt chúng thành điều kiện qua V9.
+Cả hai đều là chuyện TIỀN, không phải chuyện tiện lợi:
+
+  · nộp trùng ⇒ khách bị thu **hai lần** cho một dòng, và nhận về hai tệp giống
+    nhau mà không hiểu vì sao;
+  · chạy lại từ 0 ⇒ một bài hai mươi khối mà worker chết ở khối mười chín sẽ
+    tính tiền lại **cả hai mươi**.
+
+⭐ Hình dạng của lời giải nằm ở `du_an.khoi_can_tao` + trạng thái khối: một khối
+   vừa nộp chuyển sang `dang_tao`, và `khoi_can_tao` chỉ nhặt `moi` / `loi` /
+   `can_tao_lai`. Nên "nộp lại" tự nó là "nộp phần còn thiếu".
+
+⛔ Nhưng lập luận đó **không phải bằng chứng**, và nó phụ thuộc vào hai thứ nằm ở
+   hai tệp khác nhau (bộ lọc ở `du_an.py`, phép gán trạng thái ở `_p_du_an.py`).
+   Ai đó sửa một trong hai mà không biết cái kia là mở lại cả hai lỗ. Đây là
+   phép kiểm đứng giữa.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    """Một khách đã đăng nhập, có credit, trên SQLite tạm."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-nop.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-nop-lai")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import apps.ltt_voice.tables  # noqa: F401
+    import platform_core.models  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core import credit
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="voice-nop@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.flush()
+        credit.nap(db, u.id, 500, note="test_375")
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    login = client.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert m
+    client.post("/login", data={"username": "voice-nop@test.com",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": m.group(1)})
+    try:
+        yield client, uid
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _csrf(client) -> str:
+    r = client.get("/ltt-voice/du-an")
+    m = re.search(r'name="csrf_token"\s+value="([^"]+)"', r.text)
+    assert m, "khong lay duoc csrf_token — xem `vo.ngu_canh`"
+    return m.group(1)
+
+
+def _tao_du_an(client, so_khoi: int) -> str:
+    r = client.post("/ltt-voice/du-an/tao",
+                    data={"ten": "Bai doc thu", "giong": "m:Adam",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    pid = r.json()["id"]
+
+    # ⛔ Ngăn bằng DÒNG TRỐNG, không phải dấu cách. `nhap_van_ban` tôn trọng
+    #    đoạn văn của tác giả và gói các câu ngắn vào **một** khối cho tới trần
+    #    1.500 ký tự — nên năm câu nối bằng dấu cách ra đúng MỘT khối, và phép
+    #    kiểm sẽ đo một thứ khác hẳn thứ nó định đo.
+    cau = "\n\n".join(f"Day la cau thu {i + 1} cua bai doc thu."
+                      for i in range(so_khoi))
+    r = client.post(f"/ltt-voice/du-an/{pid}/nhap",
+                    data={"text": cau, "csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    return pid
+
+
+def _so_job(uid: str) -> int:
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        return db.query(Job).filter(Job.user_id == str(uid)).count()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _cac_khoi(pid: str, uid: str):
+    import platform_core.db as dbmod
+
+    from apps.ltt_voice import du_an
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        d = du_an.tim(db, pid, owner_id=uid)
+        assert d is not None
+        return list(du_an.cac_khoi(db, d.id))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_nop_HAI_LAN_lien_tiep_khong_sinh_job_thu_hai(khach):
+    """🔴 Khách bấm "Đọc tất cả" hai lần thì phải trả tiền MỘT lần.
+
+    Bấm hai lần là chuyện bình thường: lần đầu không thấy gì đổi ngay (job đang
+    xếp hàng), nên người ta bấm lại. Nếu mỗi lần bấm sinh một bộ job mới thì
+    khách trả tiền gấp đôi cho **cùng một bài**, và nhận về hai bộ tệp giống
+    nhau mà không có gì giải thích.
+
+    ⛔ Và nó không tự sửa được ở tầng giao diện. Vô hiệu hoá cái nút sau lần bấm
+       đầu chỉ chặn được **một** trình duyệt; hai tab, hoặc một lần tải lại
+       trang, là qua ngay. Chốt phải nằm ở phía máy chủ.
+    """
+    client, uid = khach
+    pid = _tao_du_an(client, 4)
+
+    truoc = _so_job(uid)
+    r1 = client.post(f"/ltt-voice/du-an/{pid}/doc-tat-ca",
+                     data={"csrf_token": _csrf(client)})
+    assert r1.status_code == 200, r1.text
+    d1 = r1.json()
+    assert d1["ok"] and d1["so_nop"] == 4, d1
+    sau_lan_1 = _so_job(uid)
+    assert sau_lan_1 - truoc == 4, f"lan 1 sinh {sau_lan_1 - truoc} job, can 4"
+
+    # Bấm lại NGAY, chưa khối nào xong.
+    r2 = client.post(f"/ltt-voice/du-an/{pid}/doc-tat-ca",
+                     data={"csrf_token": _csrf(client)})
+    assert r2.status_code == 200, r2.text
+    d2 = r2.json()
+    assert d2["so_nop"] == 0, f"lan 2 nop them {d2['so_nop']} khoi — trung viec"
+    assert _so_job(uid) == sau_lan_1, (
+        f"lan 2 sinh them {_so_job(uid) - sau_lan_1} job cho cung mot bai")
+
+
+def test_chay_lai_sau_khi_MOT_PHAN_da_xong_chi_nop_phan_con_THIEU(khach):
+    """🔴 Worker chết ở khối 19/20 thì chạy lại KHÔNG được tính tiền lại cả 20.
+
+    Đây là chốt "chạy lại không bắt đầu từ 0" của V9. Mô phỏng đúng thứ xảy ra
+    thật: một phần khối đã xong, một khối **hỏng**, phần còn lại chưa chạm tới.
+
+    ⭐ Khối `loi` PHẢI được nộp lại — nó là thứ khách đang chờ. Khối `xong` thì
+       KHÔNG. Hai điều đó là hai vế của cùng một phép lọc, và một phép kiểm chỉ
+       chốt một vế sẽ xanh với một bộ lọc trả về rỗng.
+    """
+    import platform_core.db as dbmod
+
+    from apps.ltt_voice import du_an
+
+    client, uid = khach
+    pid = _tao_du_an(client, 5)
+
+    r = client.post(f"/ltt-voice/du-an/{pid}/doc-tat-ca",
+                    data={"csrf_token": _csrf(client)})
+    assert r.json()["so_nop"] == 5
+    sau_lan_1 = _so_job(uid)
+
+    # Ba khối xong, một khối lỗi, một khối vẫn đang tạo.
+    khoi = _cac_khoi(pid, uid)
+    assert len(khoi) == 5
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        d = du_an.tim(db, pid, owner_id=uid)
+        cac = list(du_an.cac_khoi(db, d.id))
+        for k in cac[:3]:
+            k.trang_thai = "xong"
+            k.audio_key = f"gia/{k.id}.wav"
+        cac[3].trang_thai = "loi"
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    r = client.post(f"/ltt-voice/du-an/{pid}/doc-tat-ca",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["so_nop"] == 1, (
+        f"nop lai {d['so_nop']} khoi; chi khoi `loi` phai duoc nop lai "
+        f"(3 khoi `xong` va 1 khoi `dang_tao` thi khong)")
+    assert _so_job(uid) - sau_lan_1 == 1
+
+    # Ba khối `xong` phải còn nguyên tệp — nộp lại không được xoá kết quả cũ.
+    con = {k.trang_thai for k in _cac_khoi(pid, uid) if k.audio_key}
+    assert "xong" in con, "khoi da xong bi mat ket qua sau khi nop lai"
+
+
+def test_bo_loc_KHOI_CAN_TAO_khong_bao_gio_tra_khoi_DANG_TAO(khach):
+    """Bánh cóc cho chính phép lọc, ở tầng dưới HTTP.
+
+    Hai phép kiểm trên đi qua HTTP nên chúng chứng minh **hành vi**. Phép kiểm
+    này chốt **cơ chế**: nếu ai đó thêm `"dang_tao"` vào danh sách trạng thái
+    được nhặt lại, hai phép trên vẫn có thể xanh trong một cấu hình nào đó,
+    còn phép này thì không.
+    """
+    from apps.ltt_voice import du_an
+
+    class _K:
+        def __init__(self, tt, text="co chu"):
+            self.trang_thai, self.text = tt, text
+
+    cac = [_K("moi"), _K("dang_tao"), _K("xong"), _K("loi"),
+           _K("can_tao_lai"), _K("moi", "   ")]
+    ra = {k.trang_thai for k in du_an.khoi_can_tao(cac)}
+    assert ra == {"moi", "loi", "can_tao_lai"}, ra
+    assert len(du_an.khoi_can_tao(cac)) == 3, "khoi rong phai bi bo"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_376_cong_chat_luong_voice.py
+SHA256=9a5bf2be92a5f9cd1b0f02c9d68190f1fdc7bc1d29c0e5bbd3babd2c453d26aa BYTES=7421 LINES=155
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+V10 · bánh cóc cho chính **cổng** chất lượng.
+
+`tools/cong_chat_luong_voice.py` chạm GPU nên nó không vào bộ test được. Nhưng
+ba tính chất khiến nó là một **cổng** chứ không phải một bản báo cáo thì kiểm
+được mà không cần GPU, và đó là ba thứ dễ mất nhất khi ai đó sửa nhanh:
+
+  ① baseline phải TỒN TẠI và ĐÚNG cấu hình hiện tại — đổi `tham_so.py` mà không
+    đo lại thì đỏ;
+  ② dung sai phải đến từ SỐ ĐO, không phải một hằng số gõ tay;
+  ③ cổng không được chứa phép đo đã có ngưỡng tuyệt đối có nguồn — một dải
+    quanh trung bình có thể **nới lỏng** một bảo đảm.
+
+⭐ Điều kiện V10 nói: *"baseline ghim theo phiên bản; v3 full không được lên chỉ
+   vì nghe hay hơn; đổi `tham_so.py` cũng phải qua cổng này"*. Ba câu ấy đều quy
+   về ① — khoá phiên bản là thứ biến "một bản báo cáo" thành "một cái cổng".
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+TEP = GOC / "voice_sidecar" / "baseline_chat_luong.json"
+
+
+def _bl() -> dict:
+    assert TEP.is_file(), (
+        f"khong co baseline ({TEP}). Chay "
+        f"`setup\\cong_chat_luong_voice.ps1 -Ghim`.")
+    return json.loads(TEP.read_text(encoding="utf-8"))
+
+
+def test_baseline_DUNG_cho_phien_ban_tham_so_HIEN_TAI():
+    """🔴 Đây là câu chốt của V10, và nó chỉ là một phép so chuỗi.
+
+    `tham_so.py` giữ `temperature`, `top_k`, `top_p`, `max_new_frames` — đổi bất
+    cứ số nào cũng đổi **mọi** chỉ số chất lượng. Trước hôm nay không có gì bắt
+    người đổi phải đo lại: `do_chat_luong.phan_quyet` tự khai rằng CER, tương
+    đồng người nói và trôi giọng *"được BÁO SỐ và đánh dấu `chua_hieu_chuan` —
+    chúng không tham gia kết luận"*.
+
+    ⭐ Nên "cổng" ở đây không phải một ngưỡng chất lượng tuyệt đối — không có
+       ngưỡng tuyệt đối nào đúng cho CER cả. Nó là một **khoá phiên bản**: đổi
+       tham số ⇒ baseline hết hiệu lực ⇒ phải đo lại ⇒ và lúc đo lại thì mọi con
+       số nằm trên bàn cho người ta nhìn.
+
+       Đó cũng là cách duy nhất chặn được *"v3 full nghe hay hơn nên cho lên"*.
+    """
+    from voice_sidecar import tham_so
+
+    bl = _bl()
+    khoa = bl.get("khoa") or {}
+    assert khoa.get("phien_ban_tham_so") == tham_so.PHIEN_BAN_THAM_SO, (
+        f"baseline ghim cho tham so {khoa.get('phien_ban_tham_so')!r}, hien tai "
+        f"la {tham_so.PHIEN_BAN_THAM_SO!r}.\n"
+        f"Doi tham so la DOI PHEP DO — chay lai "
+        f"`setup\\cong_chat_luong_voice.ps1 -Ghim` de do lai, dung sua tay "
+        f"chuoi phien ban trong baseline.")
+
+
+def test_baseline_DUNG_cho_corpus_HIEN_TAI():
+    """Đổi corpus cũng là đổi phép đo — CER của bộ câu này không so được với CER
+    của bộ câu khác."""
+    import hashlib
+
+    from tools import cong_chat_luong_voice as cong
+
+    bam = hashlib.sha256(chr(10).join(cong.CORPUS).encode()).hexdigest()[:16]
+    khoa = _bl().get("khoa") or {}
+    assert khoa.get("bam_corpus") == bam, (
+        "baseline ghim cho mot corpus KHAC. Chay lai `-Ghim`.")
+    assert khoa.get("so_cau") == len(cong.CORPUS)
+
+
+def test_moi_cau_trong_corpus_DU_DAI_de_do_duoc_troi_giong():
+    """🔴 Corpus quá ngắn thì chỉ số quan trọng nhất VẮNG MẶT, và cổng vẫn xanh.
+
+    `do_troi_giong` cắt cửa sổ `CUA_SO_TROI_S` giây và cần **ít nhất hai** cửa
+    sổ; ngắn hơn thì nó trả `{"co": False}`. Lô ghim đầu tiên (01/09) dùng tám
+    câu ngắn, và baseline dựng lên **thiếu hẳn** `on_dinh_giong` — không có gì
+    báo, nó chỉ đơn giản không có trong bảng.
+
+    ⛔ Một cổng thiếu một mục vẫn in ra `CONG XANH`. Đó là kiểu hỏng tệ nhất của
+       một cổng: nó không nói dối, nó chỉ **không nhắc tới** thứ nó không đo.
+
+    Phép kiểm ước độ dài từ số ký tự bằng `gia.giay_uoc` — chính hàm nền tảng
+    dùng để giữ chỗ credit, nên không cần chạm GPU.
+    """
+    from apps.ltt_voice import gia
+    from tools import cong_chat_luong_voice as cong
+    from voice_sidecar.do_chat_luong import CUA_SO_TROI_S
+
+    can = 2 * CUA_SO_TROI_S
+    ngan = [(i, len(c), round(gia.giay_uoc(len(c)), 1))
+            for i, c in enumerate(cong.CORPUS)
+            if gia.giay_uoc(len(c)) < can]
+    assert not ngan, (
+        f"{len(ngan)}/{len(cong.CORPUS)} cau uoc ngan hon {can}s nen "
+        f"`do_troi_giong` se khong chay: {ngan}")
+
+
+def test_baseline_co_DU_moi_phep_do_ma_cong_se_hoi():
+    """Baseline thiếu một mục ⇒ cổng không bao giờ kiểm mục đó, và vẫn xanh."""
+    bl = _bl()
+    co = set(bl.get("do") or {})
+    can = {"cer", "wer", "on_dinh_giong", "rtf", "_ty_le_hong"}
+    assert can <= co, f"baseline thieu {sorted(can - co)}"
+
+
+def test_dung_sai_den_tu_SO_DO_chu_khong_go_tay():
+    """⛔ Một dung sai gõ tay là chọn giữa hai cái sai.
+
+    Rộng quá thì cổng không bắt được gì; hẹp quá thì nó đỏ vì nhiễu và **sẽ bị
+    tắt trong một tuần** — kéo theo cả những mục nó bảo vệ đúng.
+
+    Nên mỗi mục phải mang theo `lech` **đo được giữa các vòng**, và ngưỡng phải
+    nằm cách trung bình đúng bằng `HE_SO_DUNG_SAI × lech` (hoặc sàn tối thiểu,
+    tuỳ cái nào lớn hơn).
+    """
+    from tools import cong_chat_luong_voice as cong
+
+    bl = _bl()
+    assert bl.get("so_vong", 0) >= 2, (
+        "baseline ghim bang 1 vong — mot vong khong do duoc DO LECH, va khong "
+        "co do lech thi dung sai phai go tay")
+
+    for ten, muc in (bl.get("do") or {}).items():
+        assert "lech" in muc, f"{ten}: baseline khong mang do lech"
+        thap, cao = cong._nguong(ten, muc["tb"], muc["lech"])
+        assert muc.get("thap") == thap and muc.get("cao") == cao, (
+            f"{ten}: nguong trong baseline ({muc.get('thap')}, {muc.get('cao')}) "
+            f"khac nguong tinh lai ({thap}, {cao}) — ai do da sua tay")
+
+
+@pytest.mark.parametrize("ten", ["lufs", "true_peak_dbtp"])
+def test_cong_KHONG_chua_phep_do_da_co_nguong_tuyet_doi(ten):
+    """🔴 Một dải quanh trung bình có thể NỚI LỎNG một bảo đảm tuyệt đối.
+
+    `lufs` và `true_peak_dbtp` đã có ngưỡng có nguồn (EBU R128 / ITU-R BS.1770-4)
+    và `do_chat_luong.phan_quyet` đã chốt chúng. Đưa chúng vào cổng tương đối
+    này là thay một bảo đảm bằng một dải.
+
+    ⭐ Không phải lo xa. Lô ghim đầu tiên (01/09) tính ra trần `true_peak`
+       **+0,0479 dBTP** — tức cổng sẽ cho qua một bản **vỡ tiếng**, trong khi
+       hợp đồng nói trần là **−1,0**. Một cổng làm cho hệ thống lỏng hơn lúc
+       chưa có nó.
+    """
+    from tools import cong_chat_luong_voice as cong
+
+    assert ten not in cong.CHIEU, f"{ten} khong duoc nam trong cong tuong doi"
+    assert ten not in (_bl().get("do") or {}), (
+        f"baseline con giu {ten} — ghim lai sau khi bo no khoi bo do")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_37_p3_web_foundation.py
 SHA256=aacce5c8768946e04dc3f62d4f6ad04c728825d80974e948f90e73dc5d6a93c8 BYTES=15890 LINES=372
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -267247,6 +267761,357 @@ def main() -> int:
         print(f"Deactivated {len(users)} canary users; sessions revoked; audit kept.")
     finally:
         db.close()
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/cong_chat_luong_voice.py
+SHA256=961fcac9bdea1c4c50a5bc3bfea3ef5f8c49a8b6a62d9773250f31fee6288ff0 BYTES=15940 LINES=345
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+cong_chat_luong_voice.py — V10 · CỔNG chất lượng, không phải một bản báo cáo.
+
+    powershell -File .\setup\cong_chat_luong_voice.ps1 -Ghim    # dung baseline
+    powershell -File .\setup\cong_chat_luong_voice.ps1          # chay cong
+
+## Vì sao cần một cổng chứ không phải thêm số đo
+
+`voice_sidecar/do_chat_luong.py` đã đo gần đủ mọi thứ V10 cần. Nhưng `phan_quyet`
+của nó tự khai một giới hạn thẳng thắn:
+
+    "Phan quyet nay CHI phu cac muc co nguong co nguon. CER, tuong dong nguoi
+     noi va troi giong duoc BAO SO va danh dau `chua_hieu_chuan` — chung khong
+     tham gia ket luan."
+
+Tức ba phép đo quan trọng nhất về **chất lượng nghe được** đang chỉ in ra màn
+hình. Không có gì đỏ khi chúng tụt. Đổi `tham_so.py` — `temperature`, `top_k`,
+số bước — thì mọi con số ấy đổi theo, và **không ai biết là đã đổi theo hướng
+nào**.
+
+⭐ Vấn đề của chúng không phải "chưa ai đặt ngưỡng". Là **không có ngưỡng tuyệt
+   đối nào để đặt**: CER 4% là tốt hay tệ phụ thuộc bộ câu, giọng, và cả bộ ASR.
+   Con số duy nhất có nghĩa là **so với chính hệ thống này hôm qua**.
+
+⇒ Nên cổng này so với một **baseline ghim theo phiên bản**, không so với một
+   hằng số gõ tay.
+
+## ⛔ DUNG SAI LẤY TỪ SỐ ĐO, KHÔNG GÕ TAY
+
+Sinh tiếng có ngẫu nhiên. Chạy cùng một câu hai lần cho hai CER khác nhau. Nên
+`--ghim` chạy corpus **nhiều vòng** và lấy độ lệch làm dung sai:
+
+    ngưỡng = trung bình ± HE_SO_DUNG_SAI × độ lệch     (có sàn tối thiểu)
+
+Gõ tay một dung sai là chọn giữa hai cái sai: rộng quá thì cổng không bắt được
+gì, hẹp quá thì nó đỏ vì nhiễu và **sẽ bị tắt trong một tuần** — kéo theo cả
+những mục nó bảo vệ đúng.
+
+## 🔴 FAIL-CLOSED THEO PHIÊN BẢN
+
+Baseline khoá theo `(PHIEN_BAN_THAM_SO, phien_ban_bo_do)`. Đổi một trong hai thì
+**không có baseline** cho cấu hình mới, và cổng **từ chối** thay vì lấy đại
+baseline cũ.
+
+Đó chính là điều kiện V10 đòi: *"đổi `tham_so.py` cũng phải qua cổng này"* và
+*"v3 full không được lên chỉ vì nghe hay hơn"*. Một cấu hình mới phải **đo lại**
+để có baseline, và lúc đo lại thì mọi con số đều nằm trên bàn.
+
+⚠️ Chạm GPU thật, không chạm sổ tiền (gọi thẳng cổng giọng).
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import statistics
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+TEP_BASELINE = os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "voice_sidecar", "baseline_chat_luong.json")
+
+#: Số lần độ lệch dùng làm dung sai. 3σ ≈ 99,7% nếu phân bố chuẩn — đủ rộng để
+#: nhiễu bình thường không làm đỏ, đủ hẹp để một cú tụt thật thì thấy.
+HE_SO_DUNG_SAI = 3.0
+
+#: Sàn dung sai cho từng phép đo. Cần vì một chỉ số **rất ổn định** sẽ cho độ
+#: lệch gần 0, và khi đó `3σ` thành một cửa hẹp tới mức vô lý.
+SAN_DUNG_SAI = {
+    "cer": 0.02,              # 2 điểm phần trăm
+    "wer": 0.03,
+    "on_dinh_giong": 0.02,
+    "rtf": 0.05,
+}
+
+#: Corpus cố định. ⛔ ĐỔI CORPUS LÀ ĐỔI PHÉP ĐO — baseline cũ không còn so được,
+#: nên corpus phải nằm trong khoá phiên bản (xem `_khoa`).
+#:
+#: 🔴 MỖI CÂU PHẢI DÀI HƠN 6 GIÂY KHI ĐỌC RA. `do_troi_giong` cắt cửa sổ 3
+#:    giây và cần ít nhất hai cửa sổ; ngắn hơn thì nó trả `{co: False}` và
+#:    **phép đo trôi giọng lặng lẽ vắng mặt khỏi baseline**.
+#:
+#:    Lô ghim đầu tiên (01/09) dính đúng thế: corpus 8 câu ngắn, và cổng
+#:    dựng lên thiếu hẳn chỉ số quan trọng nhất mà **không có gì báo** —
+#:    nó chỉ đơn giản không có trong bảng. Một cổng thiếu một mục thì vẫn
+#:    in ra `CONG XANH`.
+CORPUS = [
+    "Hôm nay trời nắng đẹp nên tôi đi bộ ra công viên gần nhà, ngồi ở cái ghế "
+    "quen thuộc dưới gốc cây và đọc nốt mấy trang sách còn dở từ tuần trước.",
+    "Chị ấy nói rằng cuộc họp sẽ bắt đầu lúc chín giờ ba mươi sáng mai, và đề "
+    "nghị mọi người đọc trước bản tóm tắt đã gửi qua thư điện tử chiều qua.",
+    "Giá vé vào cửa là hai trăm bốn mươi lăm nghìn đồng cho một người lớn, trẻ "
+    "em dưới sáu tuổi được miễn phí, còn nhóm từ mười người trở lên giảm hai "
+    "mươi phần trăm.",
+    "Nghĩa là chúng ta phải hoàn thành toàn bộ phần thiết kế trước ngày mười "
+    "lăm tháng chín, sau đó còn hai tuần nữa để sửa những chỗ khách hàng góp ý.",
+    "Anh Tuấn vừa chuyển tới sống ở quận Bảy được khoảng ba tháng, anh nói khu "
+    "đó yên tĩnh hơn chỗ cũ nhiều nhưng đi làm thì xa hơn chừng bốn cây số.",
+    "Món này ăn kèm với rau sống và nước chấm pha hơi ngọt một chút, nếu thích "
+    "cay thì thêm vài lát ớt tươi, còn không thì để nguyên cũng đã rất vừa miệng.",
+]
+
+
+class KhongDoDuoc(RuntimeError):
+    """Không đo được thì VỠ. Một phép đo thiếu không được thành một con số."""
+
+
+def _khoa() -> dict:
+    """Khoá phiên bản của baseline. Đổi bất cứ phần nào ⇒ baseline cũ hết hiệu lực."""
+    import hashlib
+
+    from voice_sidecar import do_chat_luong, tham_so
+
+    bam = hashlib.sha256(chr(10).join(CORPUS).encode()).hexdigest()[:16]
+    return {
+        "phien_ban_tham_so": tham_so.PHIEN_BAN_THAM_SO,
+        "phien_ban_bo_do": do_chat_luong.do_tat_ca.__globals__.get(
+            "_PHIEN_BAN_BO_DO", "ltt-voice-do-2026-08-31a"),
+        "bam_corpus": bam,
+        "so_cau": len(CORPUS),
+    }
+
+
+def _do_mot_vong(giu_tep: bool = False) -> dict:
+    """Sinh cả corpus rồi đo. Trả `{ten_do: [gia tri tung cau]}`."""
+    from apps.ltt_voice import sidecar_client
+    from voice_sidecar import do_chat_luong
+
+    ra = {k: [] for k in ("cer", "wer", "on_dinh_giong", "rtf")}
+    hong = 0
+    for cau in CORPUS:
+        try:
+            raw, dau = sidecar_client.noi(cau)
+        except Exception as e:                       # noqa: BLE001
+            # Một câu hỏng là một SỐ ĐO (tỉ lệ hỏng), không phải một lý do dừng.
+            print(f"  [hong] {type(e).__name__}: {e}")
+            hong += 1
+            continue
+        doc = {str(k).lower(): v for k, v in dict(dau or {}).items()}
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        try:
+            tmp.write(raw)
+            tmp.close()
+            kq = do_chat_luong.do_tat_ca(tmp.name, text=cau)
+        finally:
+            try:
+                os.unlink(tmp.name)
+            except OSError:
+                pass
+
+        dh = kq.get("de_hieu") or {}
+        if dh.get("co") and dh.get("cer") is not None:
+            ra["cer"].append(float(dh["cer"]))
+        if dh.get("co") and dh.get("wer") is not None:
+            ra["wer"].append(float(dh["wer"]))
+        # ⭐ `do_troi_giong` trả `cosine_trung_binh` — độ GIỐNG giữa các cửa sổ
+        #    trong cùng một bản. CAO là ổn định, THẤP là trôi. Nên nó vào bảng
+        #    dưới tên `on_dinh_giong` với chiều `+1`, không phải "trôi" chiều −1.
+        #
+        # ⛔ Đặt sai chiều thì cổng xanh đúng lúc chất lượng tụt, và đỏ đúng lúc
+        #    nó tốt lên. Đây là chỗ một cái tên gần đúng gây hại nhiều nhất.
+        tr = (kq.get("troi_giong") or {}).get("cosine_trung_binh")
+        if tr is not None:
+            ra["on_dinh_giong"].append(float(tr))
+        # ⛔ KHÔNG đưa `lufs` và `true_peak_dbtp` vào cổng tương đối này.
+        #    Chúng đã có ngưỡng TUYỆT ĐỐI CÓ NGUỒN (EBU R128 / BS.1770-4) và
+        #    `do_chat_luong.phan_quyet` đã chốt. Một dải dung sai quanh trung
+        #    bình có thể **nới lỏng** một bảo đảm tuyệt đối: lô ghim đầu tiên
+        #    cho `true_peak` trần +0,0479 dBTP, tức cổng sẽ cho qua một bản
+        #    VỠ TIẾNG trong khi hợp đồng nói trần là −1,0.
+        if doc.get("x-rtf"):
+            ra["rtf"].append(float(doc["x-rtf"]))
+
+    ra["_ty_le_hong"] = [hong / float(len(CORPUS))]
+    return ra
+
+
+def _gom(vong: list) -> dict:
+    """Gộp nhiều vòng thành `{ten: {tb, lech, n}}`.
+
+    🔴 ĐỘ LỆCH LẤY GIỮA CÁC VÒNG, KHÔNG GỘP MỌI CÂU LẠI RỒI TÍNH.
+
+       Bản đầu gộp mọi giá trị của mọi câu ở mọi vòng thành một đống rồi lấy độ
+       lệch của đống ấy. Nó trộn **hai nguồn biến thiên khác hẳn nhau**:
+
+         · giữa CÂU  — câu có số, câu có tên riêng thì CER cao hơn hẳn. Đây là
+                       một khác biệt **hệ thống và luôn có mặt**, không phải
+                       nhiễu, và nó KHÔNG lặp lại khác đi ở lượt sau.
+         · giữa VÒNG — cùng câu, chạy lại cho kết quả khác. Đây mới là nhiễu,
+                       và là thứ duy nhất cổng cần bỏ qua.
+
+       Hệ quả đo được (lô ghim 01/09): CER trung bình 0,148 với "độ lệch" 0,134
+       ⇒ dung sai `3σ` cho trần **0,549**. Một cổng cho phép CER 55% không chặn
+       được bất cứ điều gì — nó chỉ trông như một cổng.
+
+    ⭐ Đúng đơn vị: cổng chạy MỘT vòng rồi so **trung bình corpus của vòng đó**.
+       Nên baseline phải là trung bình của các trung-bình-vòng, và độ lệch phải
+       là độ lệch GIỮA các trung-bình-vòng. Cùng đại lượng, cùng thang.
+    """
+    ten = sorted({k for v in vong for k in v})
+    ra = {}
+    for k in ten:
+        # Trung bình corpus của TỪNG vòng — đúng đại lượng mà cổng sẽ tính.
+        tb_vong = [statistics.mean(v[k]) for v in vong if v.get(k)]
+        if not tb_vong:
+            continue
+        ra[k] = {
+            "tb": round(statistics.mean(tb_vong), 4),
+            "lech": (round(statistics.pstdev(tb_vong), 4)
+                     if len(tb_vong) > 1 else 0.0),
+            "so_vong": len(tb_vong),
+            "n": sum(len(v.get(k, ())) for v in vong),
+            # Giữ lại để người đọc thấy hai nguồn biến thiên là hai thứ khác
+            # nhau, và thấy cái nào lớn hơn.
+            "lech_giua_cau": round(statistics.pstdev(
+                [x for v in vong for x in v.get(k, ())]), 4)
+            if sum(len(v.get(k, ())) for v in vong) > 1 else 0.0,
+        }
+    return ra
+
+
+#: Chiều "xấu đi" của từng phép đo. `-1` = nhỏ hơn là tốt hơn.
+CHIEU = {"cer": -1, "wer": -1, "rtf": -1,
+         "on_dinh_giong": +1, "_ty_le_hong": -1}
+
+
+def _nguong(ten: str, tb: float, lech: float) -> tuple:
+    """`(thấp, cao)` cho một phép đo. `None` ở một đầu = không chặn đầu đó."""
+    dung = max(HE_SO_DUNG_SAI * lech, SAN_DUNG_SAI.get(ten, 0.05))
+    chieu = CHIEU.get(ten, 0)
+    if chieu < 0:                       # nhỏ hơn là tốt ⇒ chỉ chặn phía TRÊN
+        return None, round(tb + dung, 4)
+    if chieu > 0:                       # lớn hơn là tốt ⇒ chỉ chặn phía DƯỚI
+        return round(tb - dung, 4), None
+    return round(tb - dung, 4), round(tb + dung, 4)   # lệch phía nào cũng xấu
+
+
+def ghim(vong: int) -> dict:
+    print(f"Dung baseline: {vong} vong x {len(CORPUS)} cau\n")
+    cac = []
+    for i in range(vong):
+        print(f"[vong {i + 1}/{vong}]")
+        cac.append(_do_mot_vong())
+    gom = _gom(cac)
+    bl = {"khoa": _khoa(), "so_vong": vong, "do": {}}
+    for k, v in gom.items():
+        thap, cao = _nguong(k, v["tb"], v["lech"])
+        bl["do"][k] = {**v, "thap": thap, "cao": cao}
+        print(f"  {k:16} tb {v['tb']:>9.4f}  lech {v['lech']:>7.4f}  "
+              f"-> [{thap}, {cao}]")
+    return bl
+
+
+def chay_cong() -> int:
+    if not os.path.isfile(TEP_BASELINE):
+        print(f"KHONG CO BASELINE ({TEP_BASELINE}). Chay `--ghim` truoc.",
+              file=sys.stderr)
+        return 2
+    with open(TEP_BASELINE, encoding="utf-8") as f:
+        bl = json.load(f)
+
+    # 🔴 FAIL-CLOSED. Khoá lệch ⇒ TỪ CHỐI, không lấy đại baseline cũ.
+    khoa_nay = _khoa()
+    lech = {k: (bl["khoa"].get(k), v) for k, v in khoa_nay.items()
+            if bl["khoa"].get(k) != v}
+    if lech:
+        print("BASELINE KHONG DUNG CHO CAU HINH NAY:", file=sys.stderr)
+        for k, (cu, moi) in lech.items():
+            print(f"  {k}: baseline={cu!r}  hien tai={moi!r}", file=sys.stderr)
+        print("\nDoi tham so / bo do / corpus la doi PHEP DO. Chay `--ghim` de\n"
+              "do lai — do dung la cong ma V10 doi: mot cau hinh moi phai dat\n"
+              "moi con so len ban, khong duoc muon ket qua cua cau hinh cu.",
+              file=sys.stderr)
+        return 2
+
+    print("Chay cong (1 vong)\n")
+    gom = _gom([_do_mot_vong()])
+
+    xau, thieu = [], []
+    for k, muc in bl["do"].items():
+        if k not in gom:
+            thieu.append(k)
+            continue
+        tb = gom[k]["tb"]
+        thap, cao = muc.get("thap"), muc.get("cao")
+        ok = ((thap is None or tb >= thap) and (cao is None or tb <= cao))
+        dau = "ok  " if ok else "XAU "
+        print(f"  [{dau}] {k:16} {tb:>9.4f}   baseline {muc['tb']:>9.4f} "
+              f"[{thap}, {cao}]")
+        if not ok:
+            xau.append(f"{k}: {tb} ngoai [{thap}, {cao}] "
+                       f"(baseline {muc['tb']})")
+
+    print("\n" + "=" * 70)
+    if thieu:
+        # ⛔ Thiếu một phép đo KHÔNG được đọc thành "đạt". Bộ ASR chết là mất
+        #    CER, và mất CER trong im lặng nghĩa là cổng còn xanh trong khi thứ
+        #    quan trọng nhất không được kiểm.
+        print(f"  🔴 THIEU {len(thieu)} phep do: {thieu}")
+        print("     Khong ket luan duoc. Xem bo ASR / bo ma hoa giong.")
+        return 2
+    if xau:
+        print(f"  🔴 CONG DO — {len(xau)} phep do tut khoi baseline:")
+        for d in xau:
+            print(f"     {d}")
+        return 1
+    print(f"  ✅ CONG XANH — {len(bl['do'])} phep do deu trong dung sai.")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ghim", action="store_true",
+                    help="Do lai va GHI baseline moi cho cau hinh hien tai.")
+    ap.add_argument("--vong", type=int, default=3,
+                    help="So vong khi ghim. Mot vong khong do duoc do lech.")
+    a = ap.parse_args(argv)
+
+    from apps.ltt_voice import sidecar_client
+    if not sidecar_client.san_sang():
+        print("Cong giong CHUA san sang.", file=sys.stderr)
+        return 2
+
+    if not a.ghim:
+        return chay_cong()
+
+    if a.vong < 2:
+        print("`--ghim` can it nhat 2 vong: mot vong khong do duoc DO LECH, va "
+              "khong co do lech thi dung sai phai go tay.", file=sys.stderr)
+        return 2
+    bl = ghim(a.vong)
+    with open(TEP_BASELINE, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(bl, f, ensure_ascii=False, indent=2)
+        f.write("\n")
+    print(f"\nDa ghi baseline: {TEP_BASELINE}")
     return 0
 
 

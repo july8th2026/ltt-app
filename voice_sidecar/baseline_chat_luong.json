@@ -1,0 +1,56 @@
+{
+  "khoa": {
+    "phien_ban_tham_so": "ltt-voice-2026-08-30a",
+    "phien_ban_bo_do": "ltt-voice-do-2026-08-31a",
+    "bam_corpus": "9e4e94d1bd7641c6",
+    "so_cau": 6
+  },
+  "so_vong": 3,
+  "do": {
+    "_ty_le_hong": {
+      "tb": 0.0,
+      "lech": 0.0,
+      "so_vong": 3,
+      "n": 3,
+      "lech_giua_cau": 0.0,
+      "thap": null,
+      "cao": 0.05
+    },
+    "cer": {
+      "tb": 0.1221,
+      "lech": 0.0081,
+      "so_vong": 3,
+      "n": 18,
+      "lech_giua_cau": 0.107,
+      "thap": null,
+      "cao": 0.1464
+    },
+    "on_dinh_giong": {
+      "tb": 0.826,
+      "lech": 0.0089,
+      "so_vong": 3,
+      "n": 18,
+      "lech_giua_cau": 0.0329,
+      "thap": 0.7993,
+      "cao": null
+    },
+    "rtf": {
+      "tb": 0.6867,
+      "lech": 0.0009,
+      "so_vong": 3,
+      "n": 18,
+      "lech_giua_cau": 0.0031,
+      "thap": null,
+      "cao": 0.7367
+    },
+    "wer": {
+      "tb": 0.1785,
+      "lech": 0.0194,
+      "so_vong": 3,
+      "n": 18,
+      "lech_giua_cau": 0.1135,
+      "thap": null,
+      "cao": 0.2367
+    }
+  }
+}
