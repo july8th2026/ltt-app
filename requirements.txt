@@ -14,7 +14,7 @@ google-auth>=2.28.0,<3.0
 requests>=2.31.0,<3.0
 pytz>=2024.1
 tzdata>=2024.1
-cryptography>=42.0.0,<47.0
+cryptography>=46.0.7,<47.0   # 46.0.6 dinh GHSA-p423-j2cm-9vmq. Bon advisory con lai doi 48-50, tuc phai NOI TRAN <47 - quyet dinh rieng
 
 # --- Phu thuoc chi dung cho TEST ---
 #
