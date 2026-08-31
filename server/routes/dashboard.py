@@ -143,9 +143,21 @@ def gia_api(request: Request):
         v["credit"] = gia_anh.tinh(so_anh=v["so"], che_do=v["che_do"])
         v["dong"] = v["credit"] * 100
 
+    # Giọng nói model nhà (V7). `gia.bang_gia()` đã tự viết trong docstring rằng
+    # trang này phải đọc nó — chỉ là chưa ai nối dây, nên khách vẫn không có
+    # cách nào biết giá tiếng nói trước khi đăng ký. Đúng thứ tự ngược đã nói ở
+    # đầu hàm, lặp lại lần thứ ba với một đơn vị đo thứ ba.
+    from apps.ltt_voice import gia as gia_tieng
+
+    # ⛔ KHÔNG dựng thêm một danh sách ví dụ ở đây. `bang_gia()` đã tính sẵn ví
+    #    dụ bằng chính `tinh()`, và thêm một danh sách thứ hai ở tầng route là
+    #    tạo đúng cái "bảng giá thứ hai" mà cả hàm ấy lẫn đầu hàm này cảnh báo.
+    bang_tieng = gia_tieng.bang_gia()
+
     return templates.TemplateResponse(request, "gia_api.html", {
         "bang": bang, "vi_du": vi_du,
         "bang_anh": bang_anh, "vi_du_anh": vi_du_anh,
+        "bang_tieng": bang_tieng,
         "user": _user_hien_tai(request),
     })
 

@@ -241,3 +241,83 @@ def test_anhnoibo_ban_TREN_gia_von_o_ca_hai_che_do(che_do, tham_chieu):
     ban = int(app.manifest.credit_cost({"count": 1, "mode": che_do})) * G.MCREDIT_MOI_CREDIT
     von = G.mot_anh("hidream-o1", tham_chieu=tham_chieu)
     assert ban > von, f"che do {che_do}: ban {ban} <= von {von}"
+
+
+# ═══════════════ LTT VOICE — đơn vị "một giây tiếng", không phải "một ảnh" ══
+def test_ltt_voice_ban_TREN_gia_von_moi_giay_tieng():
+    """🔴 Cho tới 01/09/2026 app này bán mà **không biết mình lãi hay lỗ**.
+
+    `apps/ltt_voice/gia.py` tự thú điều đó ngay trong mã: *"Chưa đối chiếu được
+    với giá vốn vì chưa có RTF đo thật (V1)"*. Nghĩa là `MCREDIT_MOI_GIAY = 200`
+    là một hằng số **không có cơ sở chi phí nào** — đúng hình dạng của
+    `CREDIT_PER_IMAGE = 5`, thứ đã chạy 22 ngày ở 45–57 % giá vốn mà không ai
+    thấy, vì **không có gì để so với**.
+
+    ⭐ `_khao_sat()` ở trên không bắt được nó, và không phải vì nó quên: nó gọi
+       `G.mot_anh`, và voice **không bán theo ảnh**. Một bánh cóc chỉ bảo vệ
+       được thứ nó nhìn thấy, và một đơn vị đo mới thì vô hình với nó cho tới
+       khi có người viết phép so cho đúng đơn vị ấy.
+
+    Số đo 01/09 (4 bậc × 3 lượt, đọc `X-Duration-S`/`X-Gen-S` của chính cổng
+    giọng): bậc đắt nhất là **câu ngắn** — RTF 0,699, 29,8 W → 2,83 mcredit mỗi
+    giây tiếng. Bán 200. Biên hơn 98 %.
+    """
+    from apps.ltt_voice import gia
+
+    von = G.mot_giay_tieng("ltt-voice-v3turbo")
+    ban = gia.MCREDIT_MOI_GIAY
+    assert ban > von, (
+        f"ban {ban} mcredit/giay tieng <= von {von}. Doi gia trong "
+        f"`apps/ltt_voice/gia.py`, hoac do lai bang "
+        f"`setup\do_gia_von_voice.ps1` neu phan cung da doi.")
+
+
+def test_gia_von_voice_doc_bang_DUNG_DON_VI_chu_khong_im_lang_tra_so_khac():
+    """⛔ Hỏi giá vốn voice bằng hàm của ảnh phải NÉM, không được trả một con số.
+
+    Đây là điều `mot_anh`/`mot_giay_tieng` cùng chặn qua `mode`. Không có chốt
+    này thì một lần gọi nhầm hàm sẽ so **giá một giây tiếng** với **giá một
+    ảnh** — hai con số cùng đơn vị milli-credit, cùng kiểu `int`, chênh nhau ba
+    bậc, và không có gì trong hệ thống kiểu nào phản đối.
+    """
+    with pytest.raises(G.KhongBietGiaVon):
+        G.mot_anh("ltt-voice-v3turbo")
+    with pytest.raises(G.KhongBietGiaVon):
+        G.mot_giay_tieng("hidream-o1")
+
+
+def test_gia_api_CONG_KHAI_co_gia_tieng_va_lay_tu_ham_ra_hoa_don():
+    """Chốt 3.6 của khuôn bán model nhà: giá phải lên trang công khai.
+
+    ⭐ `gia.bang_gia()` đã tự viết trong docstring rằng `/gia-api` đọc **hàm
+       này**, không gõ lại số — và suốt từ khi viết, **không ai nối dây**. Trang
+       giá công khai nói về token và về ảnh, không nói một chữ nào về giọng nói,
+       trong khi app giọng nói đang bán thật.
+
+       Đó là đúng thứ tự ngược mà chính hàm `gia_api()` mở đầu bằng cách chê:
+       *"muốn biết giá thì phải đăng ký trước… không ai đăng ký một dịch vụ
+       tính tiền để xem nó tính bao nhiêu"*. Lặp lại lần thứ ba, với đơn vị đo
+       thứ ba.
+
+    ⛔ Phép kiểm này so **giá trị**, không so sự có mặt của khối. Một khối HTML
+       có tiêu đề "Giá tạo giọng nói" mà số bên trong gõ tay vẫn qua được nếu
+       chỉ kiểm tiêu đề — nên nó lấy `tinh(60)` từ chính module giá rồi tìm
+       đúng con số ấy trong trang.
+    """
+    from fastapi.testclient import TestClient
+
+    from apps.ltt_voice import gia as gia_tieng
+    from server.app import create_app
+
+    c = TestClient(create_app(), base_url="https://testserver")
+    r = c.get("/gia-api")           # KHÔNG đăng nhập — trang này phải công khai
+    assert r.status_code == 200, f"/gia-api tra {r.status_code}"
+    t = r.text
+
+    assert gia_tieng.PHIEN_BAN_GIA in t, (
+        "trang gia khong noi phien ban gia cua giong noi — mot con so khong co "
+        "phien ban thi khong doi soat duoc voi hoa don cu")
+    mot_phut = gia_tieng.tinh(60)
+    assert f">{mot_phut}<" in t or f"{mot_phut}</strong>" in t, (
+        f"khong thay gia mot phut ({mot_phut} credit) trong trang. Neu template "
+        f"go tay so thi day la luc no lech.")

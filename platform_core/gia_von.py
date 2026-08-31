@@ -184,6 +184,30 @@ def mot_anh(model_id: str, *, tham_chieu: bool = False) -> int:
     return int(gia)
 
 
+def mot_giay_tieng(model_id: str) -> int:
+    """Giá vốn **một giây tiếng nói sinh ra**, milli-credit.
+
+    ⭐ Đơn vị này khác `mot_anh` ở một chỗ quan trọng: **thứ ta bán không phải
+       thứ ta tốn**. Một giây tiếng tốn `RTF` giây GPU, và RTF của VieNeu **không
+       hằng số** — 0,699 cho một câu ngắn, 0,230 cho 1.500 ký tự, tức chênh ba
+       lần. Nên con số trong bảng là con số của **bậc đắt nhất** (câu ngắn):
+       tính đắt ở đoạn dài chỉ là bảo thủ, còn bán lỗ ở câu ngắn là lỗ thật.
+
+    ⛔ Đừng lấy RTF trung bình của các bậc. Trung bình một đại lượng phi tuyến
+       theo độ dài rồi áp cho mọi độ dài là cách chắc chắn để lỗ ở đúng loại
+       đơn hàng phổ biến nhất — câu ngắn.
+    """
+    m = _muc(model_id)
+    if m.get("mode") != "audio_speech":
+        raise KhongBietGiaVon(
+            f"'{model_id}' khong phai model sinh tieng (mode={m.get('mode')})")
+    gia = m.get("output_cost_per_audio_second_mcredit")
+    if gia is None:
+        raise KhongBietGiaVon(
+            f"'{model_id}' thieu output_cost_per_audio_second_mcredit")
+    return int(gia)
+
+
 def theo_token(model_id: str, *, vao: int = 0, ra: int = 0, cache: int = 0) -> int:
     """Giá vốn một lượt gọi tính theo token, milli-credit.
 

@@ -88,6 +88,29 @@
         "GIA DINH co the sai: gia dien, so gio dung moi ngay, doi GPU.",
         "Doi gia dinh thi doi so — nhung bac do lon (re hon Gemini Pro ~34 lan) khong dao duoc."
       ]
+    },
+    "ltt-voice-v3turbo": {
+      "mode": "audio_speech",
+      "output_cost_per_audio_second_mcredit": 3,
+      "nguon": "do that tren may A 2026-09-01 bang tools/do_gia_von_voice.py",
+      "ngay_tra": "2026-09-01",
+      "ghi_chu": [
+        "MODEL NHA - khong tra tien nha cung cap, nhung CHIEM GPU.",
+        "Do 4 bac do dai x 3 luot, doc X-Duration-S / X-Gen-S cua chinh cong giong:",
+        "  cau ngan   36 ky tu  RTF 0,699  29,8 W  -> 2,83 mcredit/giay tieng",
+        "  mot doan  167 ky tu  RTF 0,682  36,7 W  -> 2,80",
+        "  nam tram  496 ky tu  RTF 0,300  36,8 W  -> 1,23",
+        "  1.500 ky tu         RTF 0,230  39,0 W  -> 0,95",
+        "LAY BAC DAT NHAT (cau ngan) va lam tron LEN 3 - ban lo o cau ngan la lo",
+        "that, con tinh dat o doan dai chi la bao thu.",
+        "Khau hao chiem 94%: dien chi 0,0175d/giay tieng, khau hao 0,266d.",
+        "  dien     = 29,8 W x 0,699 s / 3.600.000 x 3.000d/kWh",
+        "  khau hao = 12 trieu / (3 nam x 365 x 8h) x 0,699 s",
+        "GIA DINH co the sai: gia dien 3.000d/kWh, card 12 trieu, 8h dung moi ngay,",
+        "khau hao 3 nam. Doi gia dinh thi do lai - dung sua so bang tay.",
+        "Do bang CONG SUAT TOAN PHAN luc chay (khong tru 8,9 W luc ranh) de bao thu",
+        "va de so duoc voi hidream-o1, von tinh cung kieu."
+      ]
     }
   },
   "khai_o_noi_khac": {

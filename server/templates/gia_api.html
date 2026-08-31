@@ -113,6 +113,59 @@
 </div>
 
 <div class="card">
+  {# Giọng nói — đơn vị THỨ BA của trang này (token · ảnh · giây tiếng). Mọi số
+     dưới đây đến từ `apps.ltt_voice.gia.bang_gia()`, tức chính hàm ra hoá đơn;
+     không con số nào gõ lại ở đây. #}
+  <h2 style="margin-top:0;font-size:20px;">{{ _("Giá tạo giọng nói") }}</h2>
+  <p>{{ _("Model giọng tiếng Việt chạy trên máy của chúng tôi. Tính theo giây tiếng nói thật sự sinh ra, không theo số ký tự bạn gửi lên.") }}</p>
+  <p class="muted">1 credit = 100đ · {{ _("phiên bản giá") }} <code>{{ bang_tieng.phien_ban }}</code></p>
+
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Khoản") }}</th>
+      <th>{{ _("cách tính") }}</th>
+      <th style="text-align:right;">{{ _("credit") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for m in bang_tieng.muc %}
+        <tr>
+          <td>{{ m.ten }}</td>
+          <td class="muted">{{ m.cach_tinh }}</td>
+          <td style="text-align:right;"><strong>
+            {%- if m.credit_moi_phut is defined and m.credit_moi_phut -%}
+              {{ m.credit_moi_phut }} <span class="muted">/ {{ _("phút") }}</span>
+            {%- else -%}
+              {{ m.credit }}
+            {%- endif -%}
+          </strong></td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  {% for m in bang_tieng.muc %}{% if m.vi_du %}
+    <table class="table">
+      <thead><tr>
+        <th>{{ _("Lượt gọi") }}</th>
+        <th style="text-align:right;">{{ _("credit") }}</th>
+        <th style="text-align:right;">{{ _("tiền") }}</th>
+      </tr></thead>
+      <tbody>
+        {% for v in m.vi_du %}
+          <tr>
+            <td>{{ v.mo_ta }}</td>
+            <td style="text-align:right;"><strong>{{ v.credit }}</strong></td>
+            <td style="text-align:right;">{{ "{:,}".format(v.credit * 100) }}{{ _("đ") }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}{% endfor %}
+
+  {% for g in bang_tieng.ghi_chu %}<p class="muted">{{ g }}</p>{% endfor %}
+</div>
+
+<div class="card">
   <h2 style="margin-top:0;">{{ _("Ba điều nên biết trước khi dùng") }}</h2>
 
   <h3>{{ _("Trả cho thứ đã sinh ra, không trả cho thứ đã xin") }}</h3>
