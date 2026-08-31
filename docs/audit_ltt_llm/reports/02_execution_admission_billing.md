@@ -120,9 +120,32 @@ Thứ tự trong cửa stream, đọc từ mã:
 
 ## 5. Còn nợ
 
+### 🔴 SỬA — bảy cửa sổ sự cố **ĐÃ ĐƯỢC PHỦ**, tôi viết "CHƯA" khi chưa tra
+
+Bản đầu của mục này ghi bảy cửa sổ là **CHƯA**. Tra kỹ thì cả bảy đều có phép
+kiểm, chỉ nằm rải ở bốn tệp nên không thấy khi nhìn một chỗ:
+
+| # | Cửa sổ | Phép kiểm |
+|---|---|---|
+| 1 | trước khi giữ | `test_khong_du_credit_thi_khong_giu_va_khong_goi_model` · `test_submit_thieu_credit_khong_tao_job` |
+| 2 | sau giữ, **trước commit** | `test_submit_thieu_credit_khong_tao_job` — cuộn **cả cụm**, job lẫn bút toán |
+| 3 | sau commit, trước dispatch | `test_331_tu_hoan_giu_cho_treo` |
+| 4 | sau dispatch, trước token đầu | `test_331` + `test_ban_thi_503_va_HOAN_DU` |
+| 5 | **giữa chừng** | `test_CAT_GIUA_CHUNG_van_thu_dung_phan_da_sinh` |
+| 6 | xong rồi, trước quyết toán | `test_331` |
+| 7 | quyết toán rồi, trước khi client nhận | `test_quyet_toan_hai_lan_khong_thu_hai_lan` |
+
+⭐ `test_331` phủ **ba** cửa sổ cùng lúc, vì cả ba quy về **một** câu hỏi: *một
+khoản giữ chỗ tồn tại mà quyết toán không bao giờ chạy — có được thu hồi
+không?* Nó kiểm cả chiều ngược: mốc 8 giờ **chưa** hoàn, khoản không có khoá
+**không** tự hoàn (*"tự động hoá nó nghĩa là đoán tiền thuộc về ai"*).
+
+⇒ **Đường tiền được test kỹ hơn hẳn mức tôi giả định khi bắt đầu phase này.**
+
+### Còn nợ thật
+
 | Mục | Trạng thái |
 |---|---|
-| B18 tiêm lỗi vào **bảy cửa sổ sự cố** (trước giữ · sau giữ trước commit · sau commit trước dispatch · sau dispatch trước token đầu · giữa chừng · sau khi xong trước quyết toán · sau quyết toán trước khi client nhận) | **CHƯA** |
 | B16/B17 huỷ và ngắt kết nối — kiểm bằng client thật | **CHƯA** |
 | B14/B15 phạm vi idempotency khi **thử lại** | mới đọc mã, chưa đo |
 | B24 tool-call streaming | **CHƯA** |

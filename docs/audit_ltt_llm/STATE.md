@@ -155,7 +155,7 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | Domain | Trọng số | Điểm | Confidence |
 |---|---:|---:|---|
 | Correctness & invariants | 20 | 17 | **HIGH** *(trọng tài đã sửa, A/B đo được)* |
-| Money/admission/failure semantics | 15 | 14 | HIGH *(+INV-009/010/011)* |
+| Money/admission/failure semantics | 15 | **15** | **HIGH** — bảy cửa sổ sự cố **đều có phép kiểm** (78 passed) |
 | Model quality & tool/context fidelity | 15 | **12** | **HIGH** — 12/12, chấm bằng chạy thật |
 | Performance/resource efficiency | 15 | **11** | **HIGH** — có mốc, khớp số lịch sử |
 | Reliability/recovery | 10 | 8 | HIGH *(F01–F28 phần lớn chưa chạy)* |
@@ -163,7 +163,7 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | Observability/operations | 5 | 5 | HIGH |
 | Tests/evidence/reproducibility | 5 | 5 | HIGH |
 | Maintainability/SSOT/deployment | 5 | 5 | HIGH *(Prompt 01)* |
-| **TOTAL** | **100** | **86** | **HIGH** *(69 → 71 → 78 → 80 → 82 → **86**)* |
+| **TOTAL** | **100** | **87** | **HIGH** *(69 → 71 → 78 → 80 → 82 → 86 → **87**)* |
 
 ⛔ **69 không phải "hệ thống tệ".** Phần lớn điểm trừ nằm ở **thiếu phép đo**, không ở
 hỏng đã biết: G5 không có bộ đánh giá nào, và mọi số hiệu năng đều `PENDING LIVE`.
@@ -195,10 +195,9 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 
 ## Next phase — CÒN NỢ, theo thứ tự giá trị
 
-1. **`02` — bảy cửa sổ sự cố** (trước giữ · sau giữ trước commit · sau commit
-   trước dispatch · sau dispatch trước token đầu · giữa chừng · sau khi xong
-   trước quyết toán · sau quyết toán trước khi client nhận). Phần khó nhất của
-   B01–B25, và là phần nói về **tiền**.
+1. ~~`02` — bảy cửa sổ sự cố~~ **ĐÃ PHỦ** — tra kỹ thì cả bảy đều có phép
+   kiểm, rải ở bốn tệp (`test_331` phủ ba cửa sổ cùng lúc). Tôi ghi "CHƯA" khi
+   chưa tra; đã sửa ở `reports/02`.
 2. **`06` — F01–F28**: tiêm lỗi, mô hình health, bảng quan sát, quét bảo mật,
    diễn tập rollback, phong bì SLO.
 3. **`05` — canary client thật** (E15–E17). **BLOCKED**: cần một khoá `/api/v1`
