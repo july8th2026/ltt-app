@@ -34,6 +34,7 @@ import argparse
 import json
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 if hasattr(sys.stdout, "reconfigure"):
@@ -68,21 +69,43 @@ def _hoi_osv(truy: list[dict]) -> list[dict]:
         return json.load(r).get("results", [])
 
 
+#: Ba trạng thái, KHÔNG phải hai. `_ban_va()` bản đầu trả `"?"` cho **cả**
+#: "chưa có bản vá" lẫn "không hỏi được OSV" — hai điều trái ngược nhau về mặt
+#: hành động, gộp thành một ký tự.
+#:
+#: 🔴 Nó là một lỗ trong đúng nguyên tắc tệp này tự đặt ra ở docstring đầu tệp:
+#:    *"Không nói lỗi mạng thành 'sạch'."* `_hoi_osv()` giữ được nguyên tắc đó,
+#:    còn `_ban_va()` thì không — cùng một tệp, cùng một buổi, hai chuẩn khác
+#:    nhau. Một phiên khác bắt được khi bánh cóc nuốt-lỗi đỏ.
+#:
+#: ⭐ Vì sao đáng sửa chứ không đáng miễn trừ: con số bản vá là thứ **quyết định
+#:    việc này rẻ hay đắt** (nâng patch hay nới trần major). Đọc nhầm "OSV trả
+#:    500" thành "chưa ai vá" sẽ hoãn một bản vá đang nằm sẵn đó.
+KHONG_HOI_DUOC = "KHONG-HOI-DUOC"
+CHUA_CO_BAN_VA = "chua-co-ban-va"
+
+
 def _ban_va(ma: str) -> str:
-    """Bản đầu tiên đã vá — con số quyết định việc này rẻ hay đắt."""
+    """Bản đầu tiên đã vá, hoặc một trong hai hằng trạng thái ở trên.
+
+    Bắt hẹp theo từng loại hỏng, để một lỗi KHÔNG lường trước (vd `MemoryError`)
+    vẫn nổ ra thay vì bị gộp vào "không hỏi được".
+    """
     try:
         req = urllib.request.Request(f"https://api.osv.dev/v1/vulns/{ma}",
                                      headers={"User-Agent": "ltt-audit/1.0"})
         with urllib.request.urlopen(req, timeout=45) as r:
             d = json.load(r)
-    except Exception:                                           # noqa: BLE001
-        return "?"
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError,
+            OSError, ValueError) as e:
+        print(f"        [!] khong hoi duoc OSV ve {ma}: {type(e).__name__}: {e}")
+        return KHONG_HOI_DUOC
     for a in d.get("affected", []):
         for rg in a.get("ranges", []):
             for ev in rg.get("events", []):
                 if "fixed" in ev:
                     return ev["fixed"]
-    return "?"
+    return CHUA_CO_BAN_VA
 
 
 def main() -> int:
@@ -112,6 +135,7 @@ def main() -> int:
         return 2
 
     co = []
+    hong: list[str] = []   # advisory KHONG tra cuu duoc ban va
     for q, res in zip(truy, kq):
         vulns = res.get("vulns") or []
         g, v = q["package"]["name"], q["version"]
@@ -126,7 +150,16 @@ def main() -> int:
         for x in vulns[:5]:
             ma = x.get("id", "?")
             tt = (x.get("summary") or "").strip()[:78]
-            hau = f"   -> va tu {_ban_va(ma)}" if a.chi_tiet else ""
+            hau = ""
+            if a.chi_tiet:
+                bv = _ban_va(ma)
+                if bv == KHONG_HOI_DUOC:
+                    hong.append(ma)
+                    hau = "   -> KHONG HOI DUOC (khong phai 'chua co ban va')"
+                elif bv == CHUA_CO_BAN_VA:
+                    hau = "   -> CHUA CO BAN VA"
+                else:
+                    hau = f"   -> va tu {bv}"
             print(f"        {ma:<22} {tt}{hau}")
         if len(vulns) > 5:
             print(f"        ... con {len(vulns) - 5} advisory nua")
@@ -137,6 +170,13 @@ def main() -> int:
         print("    1. goi do co nam tren duong DU LIEU KHONG TIN CAY khong?")
         print("    2. advisory co AV:N + PR:N khong?")
         print("    3. ban va cach bao xa?")
+    if hong:
+        # Khong de con so nay chim trong danh sach. Mot ban tin thieu mot phan
+        # ma khong noi ra la mot ban tin doc gia tuong la day du.
+        print()
+        print(f"  [!] {len(hong)} advisory KHONG TRA CUU DUOC ban va: "
+              f"{', '.join(hong[:6])}{' ...' if len(hong) > 6 else ''}")
+        print("      => cac muc do CHUA BIET re hay dat, khong phai 'chua ai va'.")
     # ⛔ Luon tra 0: day la mot ban tin, khong phai mot phan quyet. Tra khac 0 se
     #    khien ai do cam no vao gate, va gate se do vao mot buoi sang khong ai
     #    doi mot dong ma nao.
