@@ -159,15 +159,48 @@ SLO."* Ở ta **nó xanh giả**. Đo thật, dừng vỏ bọc `nssm.exe`:
 Tiến trình con **sống sót mồ côi**, giữ cổng, trả 200 — suốt 99 giây, trong khi
 dịch vụ đã chết và **không có ai dựng nó dậy nữa**.
 
-⛔ **Không sửa được bằng cách làm `/health` thông minh hơn.** `/health` do *chính
-con mồ côi* phục vụ; một endpoint sức khoẻ được phục vụ bởi thứ cần kiểm tra thì
-vĩnh viễn không nói được *"tôi là tiến trình không nên tồn tại"*. Nó **không nói
-dối** — nó thành thật báo cáo về một tiến trình **thật sự khoẻ**, chỉ là tiến
-trình đó lẽ ra không nên đang chạy.
+`/health` **không nói dối** — nó thành thật báo cáo về một tiến trình **thật sự
+khoẻ**, chỉ là tiến trình đó lẽ ra không nên đang chạy. Cái sai nằm ở câu hỏi,
+không ở câu trả lời: *"anh có khoẻ không"* là câu hỏi sai, câu đúng là *"anh có
+nên đang chạy không"*.
 
-⇒ Lớp lỗi này chỉ lộ ra khi đối chiếu **hai nguồn độc lập**: tiến trình tự nói, và
-Windows nói. Đo một nguồn thì không bao giờ thấy, dù đo kỹ đến đâu. Đây không phải
-chuyện *kiểm cho chắc*; nó là chuyện **số nguồn**.
+### ✏️ SỬA MỘT CÂU TÔI ĐÃ VIẾT QUÁ MẠNH
+
+Bản đầu của mục này viết: *"không sửa được bằng cách làm `/health` thông minh
+hơn — một endpoint sức khoẻ được phục vụ bởi thứ cần kiểm tra thì **vĩnh viễn**
+không nói được «tôi là tiến trình không nên tồn tại»."*
+
+**Câu đó sai.** Con mồ côi biết một sự thật về *thế giới bên ngoài nó*: cha nó đã
+chết. Đo trên máy B 01/09:
+
+```
+PPID cua tien trinh phuc vu van la 13672,
+va tien trinh do bay gio: <KHONG CON TON TAI>
+```
+
+⇒ Thông tin **có sẵn**. Một bản sửa **một nguồn** là khả thi: cổng chụp
+`(PPID, tên cha, giờ sinh cha)` lúc khởi động, rồi định kỳ kiểm — cha chết thì
+tự khai `mo_coi: true` (hoặc tự thoát để NSSM/SCM dựng lại sạch).
+
+⚠️ Phải so **cả ba**, không chỉ PPID: Windows tái sử dụng PID sau một thời gian,
+nên "PPID vẫn tồn tại" là một phép kiểm sẽ im lặng đúng lúc nó cần nói.
+
+⚠️ Và cây tiến trình **sâu hơn tôi tưởng** — `nssm → python → python`. Dừng ở
+tầng giữa thì con lá **chết theo**; chỉ dừng ở tầng SCM biết mới sinh mồ côi. Nên
+bản sửa một nguồn phải neo vào **đúng tổ tiên là `nssm.exe`**, không phải "cha
+trực tiếp".
+
+**Vì sao vẫn giữ chốt hai nguồn** dù bản một nguồn khả thi:
+
+* nó **đã chạy được ngay**, không cần deploy sang máy B (deploy là ranh giới giữ lại);
+* nó bắt cả những lệch **khác** hướng — dịch vụ `Running` mà `/health` chết;
+* bản một nguồn đòi cổng tự-thoát-đúng-cách, và một tiến trình tự sát sai lúc là
+  một lớp lỗi mới. Nó nên đến **sau** khi có người quan sát, không phải thay.
+
+⇒ Bài học không phải *"phải luôn hai nguồn"*. Là: **tôi đã đóng khung một hạn chế
+kỹ thuật thành một điều bất khả**, và một câu như thế trong tài liệu sẽ khiến
+phiên sau không thử bản sửa rẻ hơn. Sáu giờ sau khi viết nó tôi tự kiểm và nó
+sai.
 
 ### Ba việc, và một kết quả âm đáng ghi
 

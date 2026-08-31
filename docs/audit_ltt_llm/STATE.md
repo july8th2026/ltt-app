@@ -188,6 +188,7 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 | P3 | Bước gate multiproc vẫn bỏ qua ở đường chạy thường | 06 | cần env production; đã có cầu | MITIGATED |
 | **P1** | **`/health` xanh giả 99 s khi tiến trình cổng mồ côi** — dịch vụ Stopped, không ai dựng dậy, không cảnh báo nào nổi | 06 | đo thật 01/09; `soi_cong_llm.py` phát hiện được **nhưng chưa có lịch chạy** | **MITIGATED** — còn cần chỗ buộc chạy |
 | P2 | `sc failure` **không đủ**: bản mới không giành được cổng vì mồ côi giữ | 06 | cần diệt mồ côi (Job Object) hoặc chốt cổng khi khởi động | OPEN |
+| P3 | Bản sửa **một nguồn** (cổng tự biết mình mồ côi) chưa làm | 06 | thông tin đã chứng minh là có sẵn; phải neo vào tổ tiên `nssm.exe`, so cả PID+tên+giờ sinh | OPEN |
 | P2 | `pillow` 34 advisory · `aiohttp` 28 — đều đòi **nới trần ghim** | 06 | nới `<12` chạm mọi app ảnh ⇒ cần chủ dự án quyết | OPEN |
 | P3 | Công cụ advisory ngoài gate ⇒ **sẽ không ai chạy** | 06 | cần một mục vận hành có chu kỳ | OPEN |
 
