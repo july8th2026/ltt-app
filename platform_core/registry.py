@@ -339,6 +339,36 @@ class AppManifest:
     # báo. Khai ở manifest vì chỉ app biết việc của nó lâu nhất là bao lâu.
     max_runtime_s: dict = field(default_factory=dict)
 
+    # Chờ bao lâu rồi thử lại, khi tài nguyên dùng chung đang bận, theo `job_type`:
+    #   cho_tai_nguyen_s = {"myapp.render": 3}
+    # Bỏ trống = dùng `job_runner.GPU_RETRY_DELAY_S` (20 giây) như trước.
+    #
+    # 🔴 VÌ SAO MỘT HẰNG SỐ TOÀN CỤC KHÔNG PHỤC VỤ ĐƯỢC MỌI APP.
+    #
+    #    20 giây được chọn cho job GPU dài hàng phút: nằm không 20 giây giữa hai
+    #    lượt render là không đáng kể, còn quay vòng dày hơn thì đốt CPU và CSDL.
+    #
+    #    Nhưng job của LTT VOICE làm việc **5 giây**. Đo thật 31/08/2026, năm job
+    #    đồng thời trên một suất:
+    #
+    #        làm việc thật : 4,75 – 5,42 giây (ổn định, không chậm đi khi tải lên)
+    #        xếp hàng      : 0,07 → 20,2 → 40,8 → 61,2 → 82,0 giây
+    #
+    #    Bậc 20 giây đó **không phải** thời gian job trước chiếm tài nguyên — job
+    #    trước nhả sau ~5 giây. Đó là thời gian job sau *chưa quay lại hỏi*. GPU
+    #    nằm không ~15 trong mỗi 20 giây: mất **75 % thông lượng**, và mất ở chỗ
+    #    không ai nhìn vì mọi job vẫn `done`, vẫn đúng tiền.
+    #
+    # ⚠️ Đừng hạ hằng số toàn cục để "sửa" việc này: nó sẽ bắt các app render
+    #    quay vòng dày gấp bảy lần cho một tài nguyên mà chúng biết là sẽ bận
+    #    hàng phút. Chỉ app biết việc của nó dài bao lâu — nên nó khai.
+    cho_tai_nguyen_s: dict = field(default_factory=dict)
+
+    def cho_tai_nguyen_for(self, job_type: str, *, default: int = 20) -> int:
+        """Giãn cách thử lại khi tài nguyên bận, giây. Kẹp sàn 1 giây."""
+        khai = int((self.cho_tai_nguyen_s or {}).get(job_type, 0))
+        return max(1, khai) if khai > 0 else max(1, int(default))
+
     def vram_for(self, job_type: str) -> int:
         """VRAM tối thiểu cho một `job_type`. 0 = không cần GPU riêng."""
         return int((self.gpu_vram_mb or {}).get(job_type, 0))

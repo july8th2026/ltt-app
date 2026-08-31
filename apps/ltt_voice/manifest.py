@@ -108,6 +108,20 @@ MANIFEST = AppManifest(
     # treo mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
     max_runtime_s={"ltt_voice.synthesize": 900, "ltt_voice.enroll": 300},
 
+    # Bận thì 3 giây sau hỏi lại, thay vì 20 giây mặc định của nền tảng.
+    #
+    # 🔴 ĐO THẬT 31/08/2026, năm job đồng thời trên một suất:
+    #      làm việc thật : 4,75 – 5,42 giây
+    #      xếp hàng      : 0,07 → 20,2 → 40,8 → 61,2 → 82,0 giây
+    #    Bậc 20 giây KHÔNG phải thời gian job trước chiếm GPU — nó nhả sau ~5
+    #    giây. Đó là thời gian job sau chưa quay lại hỏi. GPU nằm không ~15
+    #    trong mỗi 20 giây.
+    #
+    # ⚠️ 3 chứ không phải 1: mỗi lượt hỏi là một vòng CSDL, và với nhiều job
+    #    xếp hàng thì 1 giây thành một vòng lặp bận. 3 giây giữ phần lãng phí
+    #    dưới ~40 % của một lượt 5 giây mà không biến hàng đợi thành máy bơm.
+    cho_tai_nguyen_s={"ltt_voice.synthesize": 3, "ltt_voice.enroll": 3},
+
     credit_cost=_gia,
 
     enabled=True,

@@ -234,3 +234,57 @@ def test_ha_tran_giu_nguyen_tuong_quan_giua_cac_doan():
     assert 0.8 < ti < 1.25, (
         f"ti le RMS hai nua = {ti:.3f} — ha tran da lam meo tuong quan, "
         "gan nhu chac chan la da nen chu khong ha deu")
+
+
+# ── giãn cách chờ tài nguyên ─────────────────────────────────────────────────
+
+def test_gian_cach_cho_tai_nguyen_khai_theo_app():
+    """🔴 Một hằng số toàn cục không phục vụ được cả job 5 giây lẫn job 5 phút.
+
+    ĐO THẬT 31/08/2026, năm job LTT VOICE đồng thời trên một suất:
+
+        làm việc thật : 4,75 – 5,42 giây  (ổn định, không chậm đi khi tải lên)
+        xếp hàng      : 0,07 → 20,2 → 40,8 → 61,2 → 82,0 giây
+
+    Bậc 20 giây **không phải** thời gian job trước chiếm GPU — nó nhả sau ~5
+    giây. Đó là `GPU_RETRY_DELAY_S`: thời gian job sau chưa quay lại hỏi. GPU
+    nằm không ~15 trong mỗi 20 giây, tức mất 75 % thông lượng — và mất ở chỗ
+    không ai nhìn, vì mọi job vẫn `done` và vẫn đúng tiền.
+    """
+    from platform_core.job_runner import GPU_RETRY_DELAY_S, _cho_tai_nguyen
+    from platform_core.registry import discover
+
+    mf = next(i.manifest for i in discover() if i.manifest.slug == "ltt_voice")
+
+    for jt in ("ltt_voice.synthesize", "ltt_voice.enroll"):
+        khai = mf.cho_tai_nguyen_for(jt, default=GPU_RETRY_DELAY_S)
+        assert khai < GPU_RETRY_DELAY_S, (
+            f"{jt} khai {khai}s, khong nho hon mac dinh {GPU_RETRY_DELAY_S}s — "
+            f"job nay lam viec ~5 giay nen 20 giay la lang phi")
+        assert khai >= 2, (
+            f"{jt} khai {khai}s: qua day. Moi luot hoi la mot vong CSDL; "
+            f"1 giay bien hang doi thanh mot vong lap ban")
+        assert _cho_tai_nguyen(jt) == khai, (
+            "`job_runner` khong doc khai bao cua app — bo sung hop dong nay "
+            "khong co tac dung gi")
+
+
+def test_app_khong_khai_thi_giu_nguyen_mac_dinh_nen_tang():
+    """⛔ Bổ sung hợp đồng phải TƯƠNG THÍCH NGƯỢC.
+
+    App cũ không khai `cho_tai_nguyen_s` phải giữ đúng hành vi 20 giây như
+    trước. Một "cải tiến" đổi ngầm hành vi của mọi app khác là một hồi quy.
+    """
+    from platform_core.job_runner import GPU_RETRY_DELAY_S, _cho_tai_nguyen
+    from platform_core.registry import AppManifest, discover
+
+    trong = AppManifest(slug="x", display_name="x", route_prefix="/x")
+    assert trong.cho_tai_nguyen_for("x.y", default=GPU_RETRY_DELAY_S) == GPU_RETRY_DELAY_S
+
+    khong_khai = [i.manifest for i in discover()
+                  if not i.error and not i.manifest.cho_tai_nguyen_s
+                  and i.manifest.job_types]
+    assert khong_khai, "khong con app nao chua khai — phep kiem het nghia"
+    jt = khong_khai[0].job_types[0]
+    assert _cho_tai_nguyen(jt) == GPU_RETRY_DELAY_S, (
+        f"{jt} khong khai gi ma bi doi giãn cách — do la mot hoi quy")

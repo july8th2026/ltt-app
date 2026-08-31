@@ -329,17 +329,40 @@ def _tra_ve_hang_doi(job_id: str, job_type: str, *, resource: str = "gpu") -> No
         job = db.get(Job, job_id)
         if job is not None and job.status not in (JOB_CANCELLED,):
             job.status = JOB_QUEUED
+            # App khai được thì dùng của app: 20 giây hợp với job render dài
+            # hàng phút, và đốt 75% thông lượng của một job 5 giây (xem
+            # `AppManifest.cho_tai_nguyen_s`).
+            delay = _cho_tai_nguyen(job_type)
             job.worker_id = ""
             job.next_run_at = datetime.now(timezone.utc) + timedelta(
-                seconds=GPU_RETRY_DELAY_S)
+                seconds=delay)
             job_events.append(
                 db, job, "resource_wait", public_message=N_("Đang chờ tài nguyên xử lý."),
-                details={"delay_seconds": GPU_RETRY_DELAY_S,
+                details={"delay_seconds": delay,
                          "status": JOB_QUEUED, "resource": resource}, level="warning",
             )
             db.commit()
     log.info("job %s (%s) hoãn %ss: tài nguyên %s đang bận",
-             job_id[:8], job_type, GPU_RETRY_DELAY_S, resource)
+             job_id[:8], job_type, _cho_tai_nguyen(job_type), resource)
+
+
+def _cho_tai_nguyen(job_type: str) -> int:
+    """Giãn cách thử lại khi tài nguyên bận, theo khai báo của app.
+
+    Không đọc được registry ⇒ dùng mặc định nền tảng. Một app hỏng manifest
+    không được phép làm hỏng cả vòng worker.
+    """
+    try:
+        from platform_core.registry import discover
+        for item in discover():
+            if item.error:
+                continue
+            if job_type in item.manifest.job_types:
+                return item.manifest.cho_tai_nguyen_for(
+                    job_type, default=GPU_RETRY_DELAY_S)
+    except Exception:                       # noqa: BLE001
+        log.exception("khong doc duoc gian cach cho tai nguyen cua %s", job_type)
+    return GPU_RETRY_DELAY_S
 
 
 def _mark_job_admitted(job_id: str) -> None:
