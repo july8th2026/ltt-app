@@ -47,8 +47,12 @@ foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
     $d = $dong.Trim()
     if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
     $i = $d.IndexOf('=')
-    $ten = $d.Substring(0, $i).Trim()
-    if ($ten) { Set-Item -Path "Env:$ten" -Value $d.Substring($i + 1); $so++ }
+    # !! KHONG dat ten bien la $ten O DAY. PowerShell khong phan biet hoa
+    #    thuong, nen $ten va tham so -Ten LA MOT BIEN. Vong lap nay se ghi de
+    #    -Ten bang ten bien moi truong CUOI CUNG trong app.env, va giong duoc
+    #    tao ra mang ten "HF_HOME". Da xay ra that 31/08, hai luot lien.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
 }
 Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
 $env:PYTHONPATH = $Repo

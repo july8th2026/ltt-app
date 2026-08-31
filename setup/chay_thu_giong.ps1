@@ -48,8 +48,13 @@ foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
     $d = $dong.Trim()
     if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
     $i = $d.IndexOf('=')
-    $ten = $d.Substring(0, $i).Trim()
-    if ($ten) { Set-Item -Path "Env:$ten" -Value $d.Substring($i + 1); $so++ }
+    # !! Ten bien phai KHONG trung mot tham so nao cua chinh script. PowerShell
+    #    khong phan biet hoa thuong, nen mot vong lap dung $ten se ghi de tham
+    #    so -Ten bang bien moi truong CUOI CUNG trong app.env. Da xay ra that o
+    #    chay_thu_ghi_danh.ps1 ngay 31/08: giong duoc tao ra ten la "HF_HOME".
+    #    `tools/check_ps_bien_trung_tham_so.py` chot viec nay.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
 }
 Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
 

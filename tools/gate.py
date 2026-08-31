@@ -206,6 +206,12 @@ def _steps(quick: bool) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
+        # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
+        # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra
+        # mang ten "HF_HOME", bien cuoi cung trong app.env.
+        Step("bien .ps1 trung tham so",
+             [sys.executable, "tools/check_ps_bien_trung_tham_so.py"], ROOT),
         # Banh coc: khong cho THEM so tep test bi trung. Do 23/08/2026: 24 so dang
         # trung, co so mang BA tep. Nguyen nhan la nhieu phien lam viec song song,
         # moi phien chon so tiep theo theo thu no nhin thay luc bat dau. Buoc nay
