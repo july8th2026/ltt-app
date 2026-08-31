@@ -51,6 +51,38 @@ class JobError(Exception):
     pass
 
 
+class LoiNguoiGoi(Exception):
+    """Lỗi nằm ở **yêu cầu của người gọi**, không ở hệ thống. ⛔ KHÔNG thử lại.
+
+    ## Khoảng trống hợp đồng mà lớp này lấp
+
+    Trước 31/08/2026, khả năng thử-lại của một job được quyết định **hoàn toàn**
+    bởi `job_runner._provider_failure_kind` — một danh sách gõ tay các kiểu ngoại
+    lệ của provider LLM. Mọi ngoại lệ khác rơi vào nhánh mặc định `"retry"`.
+
+    Hệ quả: một handler ném "không tìm thấy giọng này trong tài khoản của bạn"
+    được **thử lại ba lần**. Ba suất GPU, ba lượt xếp hàng, ba lần chờ — cho một
+    việc không bao giờ thành công, vì nguyên nhân là dữ liệu người dùng gửi lên
+    chứ không phải một trục trặc thoáng qua.
+
+    ⭐ Đo thật ngày 31/08/2026: job `a49ce0d3` (một tài khoản mượn `voice_id` của
+       tài khoản khác) chạy `attempts = 3` rồi mới `error`. Tiền được hoàn đúng,
+       nhưng khách phải chờ 31 giây để nghe một câu trả lời mà cửa vào đã biết
+       ngay từ đầu.
+
+    ⛔ Đừng dùng nó cho lỗi hạ tầng. "Máy bận", "mạng chập chờn", "cổng chưa nạp
+       xong model" đều PHẢI được thử lại — đánh dấu chúng là lỗi người gọi biến
+       một trục trặc thoáng qua thành một thất bại vĩnh viễn trong mắt khách.
+
+    Cách dùng trong app::
+
+        from platform_core.jobs import LoiNguoiGoi
+
+        class LoiGiongNoi(LoiNguoiGoi):
+            \"\"\"Thông điệp đưa thẳng cho khách — phải nói được cách sửa.\"\"\"
+    """
+
+
 def _bay_gio() -> datetime:
     return datetime.now(timezone.utc)
 

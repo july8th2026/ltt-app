@@ -169,3 +169,93 @@ def test_nut_tao_khong_bao_het_credit_khi_tai_khoan_co_credit(khach):
     assert "con 0" not in than, (
         f"handler tra ve 'con 0' du tai khoan da co credit — gan nhu chac chan "
         f"`_uid` tra ve '0'/'' thay vi UUID that.\n{than[:300]}")
+
+
+def test_khong_dung_duoc_giong_cua_khach_khac(khach, tmp_path):
+    """🔴 Gửi `voice_id` của người khác phải bị chặn NGAY TẠI CỬA, 400.
+
+    ĐO THẬT 31/08/2026 trên production: tài khoản B gửi `voice_id` của tài
+    khoản A và nhận **HTTP 200 kèm job_id**. Giọng không bị dùng — worker chặn
+    đúng — nhưng job vẫn giữ credit, vẫn xếp hàng, và bị thử lại **ba lần**
+    trước khi báo lỗi. 31 giây để nghe một câu mà cửa vào trả lời được ngay.
+
+    ⭐ Phép kiểm cũng chốt **thông điệp**: một câu duy nhất cho cả "không tồn
+       tại" lẫn "không phải của bạn". Phân biệt hai câu đó là biến cửa này
+       thành máy dò `voice_id` nào có thật.
+    """
+    import re
+
+    from platform_core import credit, users
+    from platform_core.db import get_session
+
+    from apps.ltt_voice.tables import VoiceProfile
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, "voice-ui@test.com")
+        credit.nap(db, u.id, 50, note="test_340 cach ly")
+        # Giọng của NGƯỜI KHÁC.
+        # `id` gán tay: SQLite chỉ tự tăng cho `INTEGER PRIMARY KEY` (bí danh
+        # rowid), không cho `BigInteger`. Production là PostgreSQL nên cột này
+        # tự tăng thật — khác biệt của môi trường test, không phải của sản phẩm.
+        nguoi_khac = VoiceProfile(id=9_000_001, owner_id="nguoi-khac-0000",
+                                  ten_hien_thi="Giong cua nguoi khac",
+                                  trang_thai="active")
+        db.add(nguoi_khac)
+        db.commit()
+        vid = nguoi_khac.public_id
+        truoc = credit.so_du(db, u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    trang = khach.get("/ltt-voice")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', trang.text)
+    r = khach.post("/ltt-voice/tao",
+                   data={"text": "Thu dung giong cua nguoi khac.",
+                         "voice_id": vid, "preset": "",
+                         "csrf_token": m.group(1)})
+
+    assert r.status_code == 400, (
+        f"gui voice_id cua nguoi khac ma duoc {r.status_code}: {r.text[:200]}\n"
+        "Cua vao phai tu choi ngay, khong duoc giu credit roi de worker phat "
+        "hien sau ba lan thu.")
+    assert "job_id" not in r.text, "khong duoc tao job cho mot yeu cau da biet la sai"
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        assert credit.so_du(db, u.id) == truoc, (
+            "so du doi sau mot yeu cau bi tu choi — dang giu credit cho viec "
+            "khong bao gio chay")
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_loi_giong_noi_la_loi_nguoi_goi_nen_khong_bi_thu_lai():
+    """🔴 Lỗi của người gọi không được thử lại ba lần.
+
+    Trước 31/08/2026 nền tảng quyết định thử-lại **hoàn toàn** từ một danh sách
+    gõ tay các ngoại lệ của provider LLM; mọi thứ khác rơi vào nhánh mặc định
+    `"retry"`. Một handler ném "giọng này không phải của bạn" tiêu ba suất GPU.
+    """
+    from platform_core.job_runner import _provider_failure_kind
+    from platform_core.jobs import LoiNguoiGoi
+
+    from apps.ltt_voice.features import DangBanTam, LoiGiongNoi
+
+    assert issubclass(LoiGiongNoi, LoiNguoiGoi)
+    kind, _ = _provider_failure_kind(LoiGiongNoi("x"), provider_state="")
+    assert kind == "loi_nguoi_goi", f"phan loai ra {kind!r}, khong duoc thu lai"
+
+    # ⛔ Va chieu nguoc lai: MAY BAN phai duoc thu lai. Danh dau no la loi nguoi
+    #    goi se bien mot truc trac thoang qua thanh that bai vinh vien.
+    assert not issubclass(DangBanTam, LoiNguoiGoi), (
+        "`DangBanTam` la 'may dang ban' — no PHAI duoc xep lai, khong duoc coi "
+        "la loi cua khach")

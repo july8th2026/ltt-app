@@ -20,14 +20,22 @@ import logging
 from dataclasses import dataclass, field
 
 from platform_core.i18n import _ as _t
+from platform_core.jobs import LoiNguoiGoi
 
 from . import gia, sidecar_client, tham_chieu, text_pipeline
 
 log = logging.getLogger(__name__)
 
 
-class LoiGiongNoi(RuntimeError):
-    """Thông điệp đưa thẳng ra cho khách — phải nói được cách sửa."""
+class LoiGiongNoi(LoiNguoiGoi):
+    """Thông điệp đưa thẳng ra cho khách — phải nói được cách sửa.
+
+    ⛔ Kế thừa `platform_core.jobs.LoiNguoiGoi` để nền tảng **không thử lại**.
+       Mọi lỗi ném ra từ đây đều là lỗi của *yêu cầu* (thiếu văn bản, giọng
+       không phải của bạn, văn bản quá dài) — chạy lại y hệt sẽ hỏng y hệt.
+
+       Máy bận thì đi đường khác: `DangBanTam`, và nó PHẢI được thử lại.
+    """
 
 
 class DangBanTam(RuntimeError):

@@ -501,6 +501,10 @@ def _chay_handler(worker_id: str, job_id: str, job_type: str, params: dict,
                         jobq.defer_resource(
                             db, job, retry_after=retry_after,
                             resource=job.admission_resource)
+                    elif kind == "loi_nguoi_goi":
+                        # KHÔNG đụng `provider_state`: không provider nào từ
+                        # chối cả — chính yêu cầu đã sai từ đầu.
+                        jobq.fail(db, job, safe_error, retry=False)
                     elif kind == "rejected":
                         job.provider_state = jobq.PROVIDER_REJECTED
                         jobq.fail(db, job, safe_error, retry=False)
@@ -549,6 +553,11 @@ def _provider_failure_kind(exc: Exception, *, provider_state: str) -> tuple[str,
         AmbiguousProviderError, BanError, ProviderOomError, VuotNganSachError)
     from platform_core.llm.dieu_phoi import KhongCoProviderNao
 
+    # ⛔ ĐẶT TRƯỚC mọi phép phân loại provider. Lỗi của người gọi không phụ
+    #    thuộc provider nào cả, và để nó rơi xuống nhánh mặc định `"retry"` là
+    #    thử lại ba lần một việc không bao giờ thành công (xem `LoiNguoiGoi`).
+    if isinstance(exc, jobq.LoiNguoiGoi):
+        return "loi_nguoi_goi", 0
     if isinstance(exc, BanError):
         return "resource_wait", max(1, int(exc.retry_after_s or 20))
     if isinstance(exc, KhongCoProviderNao) and exc.busy_only:

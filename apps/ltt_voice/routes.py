@@ -103,6 +103,26 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
     gen = _db()
     db = next(gen)
     try:
+        # 🔴 KIỂM QUYỀN NGAY TẠI CỬA, trước khi giữ credit.
+        #
+        #    Phép kiểm này cũng chạy trong worker (`jobs.py` gọi `giai_giong`),
+        #    và nó PHẢI ở lại đó — worker mới là cửa thật, vì Public API không
+        #    đi qua route này. Nhưng chỉ có ở worker thì chưa đủ:
+        #
+        #    Đo thật 31/08/2026 trên production: tài khoản B gửi `voice_id` của
+        #    tài khoản A và nhận **HTTP 200 kèm job_id**. Giọng không bị dùng —
+        #    worker chặn đúng — nhưng job vẫn được giữ credit, vẫn xếp hàng, và
+        #    bị thử lại **ba lần**. Khách chờ 31 giây để nghe một câu trả lời mà
+        #    cửa vào đã biết ngay từ đầu.
+        #
+        #    Gọi `features.giai_giong` ở đây KHÔNG phá quy tắc "nghiệp vụ ở
+        #    features": vẫn là features quyết định, route chỉ hỏi sớm hơn.
+        try:
+            features.giai_giong(db, yc)
+        except features.LoiGiongNoi as e:
+            db.rollback()
+            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+
         job = submit_with_credit(
             db, user_id=_uid(user), app_slug=MANIFEST.slug,
             job_type="ltt_voice.synthesize",
