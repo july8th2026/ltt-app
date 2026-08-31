@@ -293,7 +293,62 @@ cụ **sẽ không ai chạy** (`check_multiproc` đã phải vào gate mới đ
 
 ---
 
-## 9. Còn nợ của phase này
+## 9. §7 Phong bì năng lực đang bền vững
+
+Dựng từ số đo Prompt 04. **Không đề xuất phần cứng/topology mới** — ngoài phạm vi
+chương trình này.
+
+### Ràng buộc cứng, theo thứ tự cắn trước
+
+| # | Ràng buộc | Con số | Cắn khi nào |
+|---|---|---:|---|
+| 1 | **`max_dong_thoi = 1`** | 1 luồng | **ngay lập tức** — khách thứ hai bị 429 |
+| 2 | `rpm` | 120 | ~2 req/s, xa hơn #1 nhiều |
+| 3 | VRAM khi model nạp | 22,4 / 24,6 GiB (**91 %**) | khi hàng xóm cần card |
+| 4 | Cloudflare chờ phản hồi | 100 s | cửa đồng bộ, không phải cửa luồng |
+| 5 | Trần token vào | 96.256 | theo yêu cầu, không theo tải |
+
+⭐ **Ràng buộc #1 quyết định mọi thứ khác.** Ở `max_dong_thoi = 1`, năng lực
+**không** là một đường cong tải — nó là một hàng đợi một chỗ. Ba ràng buộc dưới
+không bao giờ được chạm tới trước nó.
+
+### Phong bì suy ra
+
+```
+1 luồng  ×  63,3 tok/s  =  63,3 tok/s cho TOÀN HỆ, không phải cho mỗi khách
+```
+
+| Hình dạng yêu cầu | Thời gian một lượt | Thông lượng bền vững |
+|---|---:|---:|
+| ngắn (200 token ra) | 4,36 s | **~13,8 req/phút** |
+| dài (900 token ra) | 17,20 s | **~3,5 req/phút** |
+| ngữ cảnh lớn (52K vào) | ~77 s | **~0,8 req/phút** |
+
+⚠️ Đây là **trần lý thuyết ở tải hoàn hảo**. Khách thứ hai đến giữa một lượt 77 s
+sẽ **chờ trọn 77 giây** hoặc bị 429 — không có mức suy giảm ở giữa.
+
+### Ngưỡng biện minh cho việc mở rộng
+
+| Ngưỡng | Đo bằng gì | Nghĩa |
+|---|---|---|
+| tỉ lệ 429 > 5 % trong một giờ | `metrics.CAPACITY_REFUSED` | hàng đợi một chỗ đã thành nút cổ chai thật |
+| p95 chờ hàng đợi > 30 s | chưa có metric | **cần thêm**, xem §5 báo cáo 02 |
+| VRAM đỉnh > 23,5 GiB | `nvidia-smi` trong `/health` | hết biên cho hàng xóm |
+
+🔴 **Ngưỡng thứ hai chưa đo được** — chưa có metric thời gian chờ hàng đợi. Cho
+tới khi có, phong bì này nói được *"trần ở đâu"* nhưng **không** nói được
+*"ta đang cách trần bao xa"*, và đó mới là con số dùng để quyết định mở rộng.
+
+### Rủi ro P2 đã ghi, nay có số
+
+`max_dong_thoi = 1` ⇒ **một sự cố suất = 100 % ngừng dịch vụ**. Sự cố 31/08 chính
+là hình dạng đó: một suất rò, và vì chỉ có một suất, hệ **mất hoàn toàn 6 giờ**.
+Nay đã có ba tầng nhả + hạn giữ 1200 s, nhưng **hình dạng rủi ro không đổi** —
+chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
+
+---
+
+## 10. Còn nợ của phase này
 
 | Mục | Trạng thái |
 |---|---|
@@ -304,7 +359,7 @@ cụ **sẽ không ai chạy** (`check_multiproc` đã phải vào gate mới đ
 | F19 quét bí mật · F20 advisory | ✅ **XONG** |
 | F14 SSRF hồ sơ vision · F21 ACL / đặc quyền tối thiểu | **CHƯA** |
 | F22–F27 checklist deploy/rollback + diễn tập rollback | **MỘT PHẦN** — §3 đã đi thật hai lần, chưa diễn tập rollback |
-| F28 phong bì năng lực / SLO | **CHƯA** |
+| F28 phong bì năng lực / SLO | ✅ **XONG** (§9) — nhưng thiếu metric *thời gian chờ hàng đợi*, nên nói được trần ở đâu mà **không** nói được ta cách trần bao xa |
 
 ⛔ **Không đánh dấu phase này `PASS`.** Phần đã làm thì có số đo và tái hiện được;
 phần còn lại là một nửa phase chưa chạy.
