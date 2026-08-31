@@ -391,6 +391,26 @@ provider**.
 
 Sáu thứ phải biết trước khi đụng vào:
 
+- 🔴 **ĐƯỜNG VÀO MÁY B: đọc `Ket_noi.md` trên Desktop TRƯỚC KHI TÌM CÁCH KHÁC.**
+  Kênh chính là **LTT Nexus**, không phải SSH: gọi controller máy A rồi proxy sang
+  `https://192.168.2.17:9444/api/v1/nodes/f8b24d88-6e3e-4719-8143-d5e83f68ed82/proxy/api/v1/<đường>`
+  kèm `X-Nexus-Protocol: 1` + `Authorization: Bearer <token>`
+  (token ở `%USERPROFILE%\.nexus\claude-code.token`). Có `command.run` và
+  `file.write`, tức làm được mọi việc SSH làm — agent chạy bằng **LocalSystem**
+  nên khởi động lại dịch vụ trên B được luôn.
+
+  ⛔ **`sshd` trên máy B đang `Disabled` có chủ ý** (từ 27/08). Cổng 22 đóng
+  **không phải** mạng hỏng. Ngày 31/08 tôi quét 22/2222/22022/8022, thử SMB, thử
+  `sc.exe` từ xa rồi kết luận "không vào được máy B" — trong khi câu trả lời nằm
+  sẵn trong `Ket_noi.md`, kể cả **lý do** cổng 22 đóng. Cần SSH cho một script
+  chỉ chạy được qua nó (vd `llm_gateway/deploy/deploy.ps1`) thì bật tạm **bằng
+  Nexus** rồi **đóng lại ngay sau khi xong**.
+
+  ⭐ **`NODE_OFFLINE` ≠ máy tắt.** Ba mức khác nhau, sửa ở ba nơi: máy tắt · máy
+  sống nhưng agent Nexus im · agent sống nhưng thiếu capability. Phân biệt bằng
+  `ping` → cổng `8199/8299` → `health.state`. Chi tiết ở memory
+  `may-b-duong-vao-va-du-phong`.
+
 - ⚠️ **Máy B có thể tự khởi động lại để cập nhật Windows** (Active Hours 07:00 →
   01:00; đã xảy ra 22/08 lúc 01:29, sự kiện `1074`, cuốn theo một lô ở ảnh 21/30).
   ✅ **KHÔNG còn là hạn chót nữa.** Lô đo nay ghi kết quả **sau mỗi ảnh** và **bỏ qua
