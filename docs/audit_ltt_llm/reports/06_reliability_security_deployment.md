@@ -1,11 +1,19 @@
-# Prompt 06 — Reliability, Security, Deployment (phần đã thi hành)
+# Prompt 06 — Reliability, Security, Observability, Deployment & Recovery
 
-**31/08/2026, 21:20–22:00.** Ownership: F01–F28.
+**31/08/2026 21:20 → 01/09 01:10.** Ownership: F01–F28.
 
-⚠️ **Phase này CHƯA đóng.** Nó nhận hai `CHANGE` treo từ Prompt 03/04 và thi
-hành chúng vì cả hai đang ảnh hưởng khách thật. Phần còn lại của F01–F28 (tiêm
-lỗi, mô hình health, bảng quan sát, quét bảo mật, phong bì năng lực) **chưa
-làm** — xem §5.
+⚠️ **Phase này CHƯA đóng** — còn khoảng một nửa, liệt kê ở §10.
+
+Đã có số đo: hai `CHANGE` treo từ Prompt 03/04 (§1, §2) · tiêm lỗi thật trên máy
+B (§5) · mô hình health + **phát hiện chính** là `/health` xanh giả (§6) · quét
+bí mật và advisory (§8) · phong bì năng lực (§9).
+
+Chưa làm: bốn ca tiêm lỗi phía máy A · bảng metric/cardinality · SSRF hồ sơ
+vision · ACL đặc quyền tối thiểu · diễn tập rollback.
+
+⭐ **§7 đáng đọc ngay cả khi bạn bỏ qua phần còn lại.** Nó ghi **bốn** lần hỏng
+dụng cụ trong một tối, và cả bốn đều đọc lên y hệt một kết quả thật — ba trong
+bốn sai về phía sẽ khiến không ai đi tìm.
 
 ---
 
@@ -89,8 +97,11 @@ vụ chết. Nó không sinh mới khi tệp đã tồn tại.
   chính nó (43 ký tự) + URL loopback + các trần.
 * Cầu hẹp `setup/chay_voi_env.ps1` nạp `app.env` vào **riêng tiến trình**, chạy
   đúng bốn việc trong danh sách trắng, **không in giá trị nào**.
-* ⚠️ **Chưa làm:** quét bí mật trong release, quét phụ thuộc/advisory, rà soát
-  SSRF của hồ sơ vision (F19, F20, F14).
+* ✅ **F19, F20 nay ĐÃ LÀM — xem §8.** (Dòng cũ ở đây ghi *"chưa làm"*; giữ
+  nguyên nó sẽ thành hai câu ngược nhau trong một tệp, đúng lỗi mà `CLAUDE.md`
+  đã dính hai lần với hàng Public API.)
+* ⚠️ **Còn lại:** rà soát SSRF của hồ sơ vision (F14), ACL/đặc quyền tối thiểu
+  (F21), chuỗi cung ứng bản cập nhật.
 
 ---
 
