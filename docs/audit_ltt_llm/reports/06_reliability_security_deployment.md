@@ -9,8 +9,12 @@ B (§5) · **phát hiện chính** là `/health` xanh giả (§6) · quét bí m
 (§8) · phong bì năng lực (§9) · soát quan sát (§10) · SSRF, ACL, và **diễn tập
 rollback thật 18,9 s** (§3, §4, §11).
 
-Còn nợ: máy A restart · CUDA hỏng (không tiêm an toàn được) · chuỗi cung ứng bản
-cập nhật.
+Còn nợ: **tiêm** lỗi máy-A-restart · **tiêm** lỗi CUDA (chưa có cách làm an toàn) ·
+chuỗi cung ứng bản cập nhật.
+
+⚠️ *"Tiêm lỗi CUDA"* là **một kịch bản cần dựng để thử**, không phải một sự cố
+đang xảy ra. Đo 01/09: máy A hai RTX 5060 Ti driver 596.21 lành; máy B RTX 3090
+driver 610.88, `/health` khai `tren_gpu: true`, VRAM 22.416 MiB khi model nạp.
 
 ⭐ **§7 đáng đọc ngay cả khi bạn bỏ qua phần còn lại.** Nó ghi **bốn** lần hỏng
 dụng cụ trong một tối, và cả bốn đều đọc lên y hệt một kết quả thật — ba trong
@@ -464,7 +468,7 @@ chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
 | F01 luồng treo · F08 llama-server chết · F09 vỏ bọc chết · F10 mất điện | ✅ **ĐO XONG** |
 | F02 DB chập chờn · F03 worker restart · F04 lease cũ | ✅ **ĐÃ PHỦ** — `pool_pre_ping` + `test_215` ("chủ chết thì lease hết hạn", "worker chết giữa lúc gửi") |
 | F06 máy B không với tới được | ✅ **XONG** — `test_372`, 6 phép kiểm gồm một đối chứng |
-| F05 máy A restart · F07 CUDA hỏng · CPU fallback | **CHƯA** — F07 không tiêm an toàn được; cần cách khác |
+| F05 tiêm lỗi máy-A-restart · F07 **tiêm** lỗi CUDA · CPU fallback | **CHƯA** — chưa có cách tiêm an toàn. ⚠️ Đây là kịch bản cần dựng, **không phải** máy nào đang hỏng: cả hai máy đo 01/09 đều lành |
 | F11–F16 mô hình health + bảng quan sát | ✅ **XONG** — §6 mô hình health, §10 soát metric/cardinality/riêng tư. Kết luận: **không thêm metric nào** |
 | F19 quét bí mật · F20 advisory | ✅ **XONG** |
 | F14 SSRF hồ sơ vision | ✅ **XONG** — `test_373`, 30 phép kiểm, 3 giao thức × 6 đích thật + 7 biến thể lách |

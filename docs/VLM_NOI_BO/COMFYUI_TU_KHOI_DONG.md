@@ -1,17 +1,28 @@
 # ComfyUI có tự khởi động cùng Windows được không?
 
-> ## 📌 VIỆC CÒN NỢ — chủ dự án tự chạy trên máy B
+> ## ✅ ĐÃ XONG — đo trên máy B ngày 01/09/2026
 >
-> **Đã duyệt 22/08/2026. Script đã sửa xong, đã đẩy sang máy B, đã kiểm parse.**
-> Chỉ còn bước cần quyền Administrator mà phiên SSH không nâng được.
->
-> **Bước 1** — máy B, PowerShell **Run as administrator**:
 > ```
-> powershell -ExecutionPolicy Bypass -File E:\AI\ltt_render\gateway\render_gateway\deploy\cai_dat_dich_vu.ps1
+> LTTComfyUI         Running   Automatic
+> LTTRenderGateway   Running   Automatic
+> cổng 8188: pid=8080 python, cha pid=7304 python (còn sống ⇒ KHÔNG mồ côi)
 > ```
 >
-> **Bước 2** — ⚠️ ComfyUI **mồ côi** hiện tại vẫn giữ cổng 8188 nên dịch vụ chưa lên
-> được. Phải dừng **đúng nó** rồi khởi động dịch vụ:
+> 🗑️ **Khối này trước đây là một "VIỆC CÒN NỢ" bảo chủ dự án chạy tay hai bước**,
+> và nó nói *"ComfyUI mồ côi hiện tại vẫn giữ cổng 8188 nên dịch vụ chưa lên
+> được"*. Cả hai bước **đã hoàn thành** — dịch vụ đang `Automatic` và tiến trình
+> giữ cổng có cha còn sống.
+>
+> ⛔ Vì sao đáng sửa chứ không đáng để đó: một khối "việc còn nợ" đã xong sẽ khiến
+> phiên sau **đi làm lại một việc không còn tồn tại** — và bước 2 dưới đây là một
+> lệnh **dừng tiến trình trên máy đang phục vụ**. Chạy lại nó vô cớ là tự gây sự
+> cố. Cùng lớp lỗi với hai hàng trong `CLAUDE.md` từng nói sai về phía nguy hiểm.
+>
+> ⭐ **Giữ lại hai đoạn dưới vì chúng là bài học, không phải việc cần làm.**
+> Chúng vẫn đúng nếu một ngày ComfyUI *thật sự* mồ côi lần nữa.
+>
+> <details><summary>Quy trình gỡ khi ComfyUI mồ côi giữ cổng 8188</summary>
+>
 > ```
 > Get-CimInstance Win32_Process -Filter "Name='python.exe'" |
 >   Where-Object { $_.CommandLine -like '*ComfyUI*' } |
@@ -26,14 +37,23 @@
 > ⏱️ **Chờ hàng đợi ComfyUI rỗng** (`curl http://127.0.0.1:8188/queue`) rồi hãy
 > chạy — nếu không sẽ cắt ngang một lượt ảnh hoặc một lượt video.
 >
-> ✅ **Sau một lần khởi động lại máy thì bước 2 là thừa**: ComfyUI mồ côi đã chết
-> theo, cổng 8188 rỗng, chỉ cần `Start-Service LTTComfyUI`.
+> ✅ **Sau một lần khởi động lại máy thì bước dừng tiến trình là thừa**: ComfyUI
+> mồ côi đã chết theo, cổng 8188 rỗng, chỉ cần `Start-Service LTTComfyUI`.
 >
-> **Bước 3** — kiểm:
+> Kiểm sau khi gỡ:
 > ```
 > Get-Service LTTComfyUI          # phai Running / Automatic
 > curl http://127.0.0.1:8188/queue
 > ```
+>
+> </details>
+>
+> ⭐ **Ghi chú 01/09:** hình dạng "tiến trình mồ côi giữ cổng, dịch vụ không lên
+> được" **không riêng ComfyUI** — cùng đêm nó xảy ra với `LTTLlmGateway` và tạo
+> ra một `/health` **xanh giả suốt 99 giây**. Nay `llm_gateway` tự khai
+> `duoi_dich_vu.mo_coi` trong `/health`, và `main.py` từ chối khởi động khi cổng
+> đã có người giữ. `render_gateway` **chưa có** hai thứ đó — xem
+> `docs/audit_ltt_llm/reports/06…md` §6 nếu định làm.
 >
 > **Ba thay đổi đã làm trong script** (§4 giải thích vì sao):
 > `+--reserve-vram 3` · `−--cache-ram 24 64` · `+AppKillProcessTree 1`

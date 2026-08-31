@@ -156,11 +156,11 @@ sau vì nó đã có doanh thu còn ba việc trên thì chưa.
 | # | Nợ | Mức |
 |---|---|---|
 | N1 | `test_221` trên một bucket R2 vứt đi (H36) | chặn bởi quyết định hạ tầng, không phải mã |
-| N2 | `gate.py` **đầy đủ** chưa chạy trọn lần nào | mỗi lần đều bị deploy hoặc timeout cắt |
+| ~~N2~~ | ~~`gate.py` đầy đủ chưa chạy trọn lần nào~~ | ✅ **ĐÓNG 01/09** — `RESULT: PASS`, 5,3 phút, cây đứng yên. Cần một **cửa sổ yên** thoả thuận với phiên kia; ba lượt trước đó bị vô hiệu vì cây đổi giữa chừng |
 | N3 | Cảnh báo mới `ltt_llm:tren_cpu` chưa được thử bằng một sự cố thật | chỉ mới thử trên sự cố tình cờ hôm 23/08 |
-| N4 | `AUOptions` máy B chưa đổi ⇒ **QT-7 (mốc 01:00) vẫn còn hiệu lực** | một lệnh, cần Administrator |
+| ~~N4~~ | ~~`AUOptions` máy B ⇒ mốc 01:00~~ | 🗑️ **KHÔNG CÒN LÀ VIỆC** — `CLAUDE.md:420` chốt **không cần** đổi `AUOptions` (nó là thiết lập bảo mật, cái giá lớn hơn thứ nó cứu), và lô đo nay ghi kết quả sau mỗi ảnh nên một lần khởi động lại chỉ mất **đúng một ảnh**. Dòng này mâu thuẫn với quyết định hiện hành |
 | N5 | Codex báo *"Model metadata for `ltt_llm` not found"* | không chặn, nhưng làm ước chi phí của nó sai |
-| N6 | Số test trùng giữa hai phiên đã xảy ra **hai lần** | gate đã có chốt `trung so test`; phiên sau dùng ≥ 274 |
+| N6 | Số test trùng giữa hai phiên — nay **ba lần** (371, 01/09) | ⚠️ Mốc "≥ 274" đã **lỗi thời**: cao nhất hiện là **377**. Và bài học không phải một con số — `ls tests/` là **ảnh chụp** của một cây có hai người ghi. Chạy `tools/check_so_test.py` **ngay trước** khi đặt tên |
 
 ---
 
