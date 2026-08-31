@@ -504,7 +504,7 @@ Input:
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `d8d957479035c7c8`
+Contract hash: `09c21c078eb6ca12`
 
 ### `image.ltt`
 
@@ -524,7 +524,7 @@ Input:
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `fb38cff7d6272b32`
+Contract hash: `f049eda67a1f475a`
 
 ### `image.thumbnail`
 
@@ -548,7 +548,7 @@ Input:
 
 Output: `image_keys` (artifact[]), `prompt` (string)
 
-Contract hash: `f1894755c0b48b16`
+Contract hash: `00e6a8906c3c5574`
 
 ### `image.upscale`
 
@@ -565,7 +565,7 @@ Input:
 
 Output: `image_key` (artifact)
 
-Contract hash: `917d9f5da2fe9a80`
+Contract hash: `3e20b273b2ad950a`
 
 ### `speech.ltt`
 
@@ -583,7 +583,7 @@ Input:
 
 Output: `audio_key` (artifact), `text` (string)
 
-Contract hash: `c352c4b436ec9ffc`
+Contract hash: `34f673d8463aba44`
 
 ### `story.storyboard`
 
@@ -676,7 +676,7 @@ Input:
 
 Output: `video_key` (artifact)
 
-Contract hash: `d7369f2dffe776c5`
+Contract hash: `862ceb0dd1589af9`
 
 ### `video.subtitle`
 
@@ -698,7 +698,7 @@ Input:
 
 Output: `video_key` (artifact), `srt_key` (string), `ass_key` (string)
 
-Contract hash: `2e6e7bfda482d0ec`
+Contract hash: `27bcb797d051e2a0`
 
 ### `video.upscale`
 
@@ -722,7 +722,7 @@ Input:
 
 Output: `video_key` (artifact)
 
-Contract hash: `91f9b8aece786b60`
+Contract hash: `cb03d863f7074888`
 
 ### Models
 

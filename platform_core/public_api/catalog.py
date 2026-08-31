@@ -300,8 +300,28 @@ def project_tool(manifest, tool) -> PublicTool:
     if required:
         input_schema["required"] = sorted(required)
 
+    # 🔴 KEEP THE MEDIA KIND. Do not flatten everything into `artifact`.
+    #
+    #    `image`, `video` and `audio` all map to `"artifact"`, and at that point
+    #    *what kind of file this is* leaves the system. Two real consequences:
+    #
+    #      · The sandbox returns **a PNG for everything** - `media
+    #        .store_sandbox_artifact` had `SAMPLE_PNG` hard-wired. Accidentally
+    #        right for image tools; `speech.ltt` is the first audio tool on the
+    #        API, and an integrator would download a `.png` served as
+    #        `image/png` from a field the schema calls audio.
+    #      · A caller reading `{"type": "artifact"}` cannot tell whether to
+    #        expect a WAV or a PNG.
+    #
+    #    `media` is ADDITIVE - nothing reading `type` is affected. It still
+    #    changes every artifact tool's `contract_hash`, so it went through
+    #    `check_api_compat --accept` with a CHANGELOG entry, on purpose.
     output_schema = {"type": "object", "properties": {
-        str(key): {"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string")}
+        str(key): ({"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string"),
+                    "media": str(value).rstrip("[]")}
+                   if _PUBLIC_OUTPUT_TYPES.get(str(value), "").startswith(
+                       "artifact")
+                   else {"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string")})
         for key, value in tool.returns.items()}}
 
     from platform_core.public_api.limits import resource_class

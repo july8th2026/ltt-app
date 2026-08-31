@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7384556f5b20f05559184b1a0e4bf38c3c2b7c9e10865f920d5bddeebb2d69f6
-Nguồn đã quét : 1385 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d07ad094ae4e18fb09d534dc8183b2de990317f29c2912eec8f84b03579598a9
+Nguồn đã quét : 1386 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1182,7 +1182,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (334 file pytest + 3 frontend)
+10. QUALITY GATES (335 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1478,6 +1478,7 @@ Test inventory:
 - tests/test_374_to_tien_mo_coi.py
 - tests/test_375_ltt_voice_nop_lai_khong_trung.py
 - tests/test_376_cong_chat_luong_voice.py
+- tests/test_377_sandbox_dung_loai_media.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -1543,8 +1544,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1385 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:36, .py:1048, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1386 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:36, .py:1049, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2484,7 +2485,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (351)
+[tests] (352)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2791,6 +2792,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_374_to_tien_mo_coi.py
 - tests/test_375_ltt_voice_nop_lai_khong_trung.py
 - tests/test_376_cong_chat_luong_voice.py
+- tests/test_377_sandbox_dung_loai_media.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -2986,7 +2988,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1385 file; 13775109 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1386 file; 13786796 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -120946,7 +120948,7 @@ __all__ = ["Unavailable", "check", "reset"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/catalog.py
-SHA256=12cac3681c027cd87ae559558c06af1eca1626c850e62a4c7cdf48d848233b84 BYTES=18890 LINES=428
+SHA256=1d4de4667526aa3daee483348ad286308035c281dc95e97cf83508d24d86f5e0 BYTES=20107 LINES=448
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """The public tool catalog: what ``/api/v1`` is allowed to offer, and in what shape.
 
@@ -121250,8 +121252,28 @@ def project_tool(manifest, tool) -> PublicTool:
     if required:
         input_schema["required"] = sorted(required)
 
+    # 🔴 KEEP THE MEDIA KIND. Do not flatten everything into `artifact`.
+    #
+    #    `image`, `video` and `audio` all map to `"artifact"`, and at that point
+    #    *what kind of file this is* leaves the system. Two real consequences:
+    #
+    #      · The sandbox returns **a PNG for everything** - `media
+    #        .store_sandbox_artifact` had `SAMPLE_PNG` hard-wired. Accidentally
+    #        right for image tools; `speech.ltt` is the first audio tool on the
+    #        API, and an integrator would download a `.png` served as
+    #        `image/png` from a field the schema calls audio.
+    #      · A caller reading `{"type": "artifact"}` cannot tell whether to
+    #        expect a WAV or a PNG.
+    #
+    #    `media` is ADDITIVE - nothing reading `type` is affected. It still
+    #    changes every artifact tool's `contract_hash`, so it went through
+    #    `check_api_compat --accept` with a CHANGELOG entry, on purpose.
     output_schema = {"type": "object", "properties": {
-        str(key): {"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string")}
+        str(key): ({"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string"),
+                    "media": str(value).rstrip("[]")}
+                   if _PUBLIC_OUTPUT_TYPES.get(str(value), "").startswith(
+                       "artifact")
+                   else {"type": _PUBLIC_OUTPUT_TYPES.get(str(value), "string")})
         for key, value in tool.returns.items()}}
 
     from platform_core.public_api.limits import resource_class
@@ -125752,7 +125774,7 @@ def enforce_daily_credit(db, *, principal, config, cost: int,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/media.py
-SHA256=0609059bf3879b92bb0ee46f7a703f3ac2dfe5cbfa79b3950d195657da46b69d BYTES=6786 LINES=162
+SHA256=0026c87af1bffef7149c070de9b8bbef2feb810007a1b4e7c1bab696a8cdcf9c BYTES=9200 LINES=207
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Public media: upload tickets in, artifacts out.
 
@@ -125853,21 +125875,66 @@ def artifacts_of(job, tool) -> list:
     return found
 
 
+#: Canned bytes per declared media kind: ``kind -> (suffix, content type)``.
+_SANDBOX_MEDIA = {
+    "audio": (".wav", "audio/wav"),
+    "image": (".png", "image/png"),
+}
+
+#: 🔴 Kinds the catalog can emit that have no honest sample yet, with the reason.
+#:
+#:    These fall back to the PNG sample, which is wrong — and saying so here is
+#:    the point. ``tests/test_377`` refuses any kind that is neither sampled nor
+#:    listed, so the gap stays visible instead of decaying into "that's just how
+#:    the sandbox behaves".
+#:
+#: ⛔ Do NOT close this by inventing a file. A WAV renamed ``.mp4`` is exactly
+#:    the lie this whole change removes; it would satisfy the test and mislead
+#:    the caller harder, because now the extension agrees with the schema.
+CHUA_CO_MAU = {
+    "video": (
+        "A minimal VALID mp4 needs ftyp + moov with a real codec sample entry; "
+        "anything less is rejected by players and by ffprobe, so there is no "
+        "one-liner. `video.upscale` and `video.subtitle` are already open, so "
+        "their sandbox has been serving PNGs the whole time - this is a real, "
+        "pre-existing bug, not a new gap introduced with audio. Build the boxes "
+        "programmatically (never embed a blob) when someone picks this up."),
+}
+
+
 def store_sandbox_artifact(storage, params: dict, field: str,
-                           index: int) -> str:
-    """Write a canned file and return its storage key.
+                           index: int, media: str = "image") -> str:
+    """Write a canned file of the declared kind and return its storage key.
 
     Real bytes in real storage, so the download path a sandbox caller exercises
     is the same one live output uses — presigned URL, expiry and all.
+
+    🔴 ``media`` used to not exist, and this wrote a **PNG for everything**.
+
+       That was invisible while every open tool returned images. ``speech.ltt``
+       is the first audio tool on the API, and without this a sandbox caller
+       downloads a file named ``.png``, served as ``image/png``, from a field
+       the schema calls audio — then writes their integration around it.
+
+    ⛔ An unknown kind falls back to the image sample rather than raising, and
+       that is a deliberate, uncomfortable choice: a sandbox is a *learning*
+       surface, and failing a whole sandbox job because a new media kind has no
+       canned file would break callers over something that costs nothing and
+       produces nothing. But it does mean adding a kind without adding a sample
+       here degrades silently — so ``tests/test_377`` asserts every kind the
+       catalog can emit has an entry.
     """
     import io
     import uuid as _uuid
 
-    from platform_core.public_api.sandbox import SAMPLE_PNG
+    from platform_core.public_api.sandbox import SAMPLE_PNG, sample_wav
+
+    duoi, mime = _SANDBOX_MEDIA.get(str(media), _SANDBOX_MEDIA["image"])
+    noi_dung = sample_wav() if duoi == ".wav" else SAMPLE_PNG
 
     owner = str((params or {}).get("owner_id") or "sandbox")
-    key = f"users/{owner}/sandbox/{_uuid.uuid4().hex}-{field}-{index}.png"
-    storage.put(key, io.BytesIO(SAMPLE_PNG), content_type="image/png")
+    key = f"users/{owner}/sandbox/{_uuid.uuid4().hex}-{field}-{index}{duoi}"
+    storage.put(key, io.BytesIO(noi_dung), content_type=mime)
     return key
 
 
@@ -128971,7 +129038,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/sandbox.py
-SHA256=3540925e155786762cb928c8ce40bd81150f707606b43e1fe11b4e88cfbfad38 BYTES=5943 LINES=142
+SHA256=d65c94d65e471e2f2bfaeef9b0e20dc7609622453c0545b209b83c4355d152a0 BYTES=7329 LINES=173
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Test mode: the whole API, with the provider replaced and no money moved.
 
@@ -129015,6 +129082,32 @@ SAMPLE_PNG = (b"\x89PNG\r\n\x1a\n"
               b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89"
               b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
               b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
+
+def sample_wav(seconds: float = 0.25, rate: int = 24_000) -> bytes:
+    """A real, silent, single-channel 16-bit WAV.
+
+    🔴 Built, not embedded. A blob of escaped bytes in source is one bad copy
+       away from being something else entirely, and the failure is invisible:
+       the constant still exists, still has a plausible length, and the sandbox
+       still hands it out. Building it means the header can only be wrong if
+       ``wave`` itself is.
+
+    Silence is deliberate. A sandbox artifact exists so an integrator can
+    exercise the download path -- presigned URL, expiry, content type -- not so
+    they can listen to it. Shipping recognisable speech here would invite
+    someone to treat the sandbox as a free voice.
+    """
+    import io as _io
+    import wave as _wave
+
+    buf = _io.BytesIO()
+    with _wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(bytes(2 * int(rate * seconds)))
+    return buf.getvalue()
+
 
 SAMPLE_TEXT = ("This is sandbox output. No provider was called and no credit "
                "moved. Switch to a live key to get real results.")
@@ -129104,11 +129197,16 @@ def canned_result(tool, params: dict, storage) -> dict:
     result: dict = {}
     for field, spec in outputs.items():
         kind = str(spec.get("type") or "")
+        # The declared media kind, kept by `catalog` alongside `type`. Defaults
+        # to image only because every tool open before `speech.ltt` was one.
+        media = str(spec.get("media") or "image")
         if kind == "artifact":
-            result[field] = store_sandbox_artifact(storage, params, field, 0)
+            result[field] = store_sandbox_artifact(storage, params, field, 0,
+                                                   media=media)
         elif kind == "artifact[]":
             count = _how_many(tool, field, params)
-            result[field] = [store_sandbox_artifact(storage, params, field, i)
+            result[field] = [store_sandbox_artifact(storage, params, field, i,
+                                                    media=media)
                              for i in range(count)]
         elif kind == "object":
             result[field] = {"sandbox": True, "note": SAMPLE_TEXT}
@@ -168771,7 +168869,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33759 LINES=1105
+SHA256=b28f1d57b59f70a5c205337e68c3bc076acf383f8f6509d6b3cae6d168d8f904 BYTES=33999 LINES=1113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -168845,7 +168943,8 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "image_keys": {
-            "type": "artifact[]"
+            "type": "artifact[]",
+            "media": "image"
           },
           "prompt": {
             "type": "string"
@@ -168855,7 +168954,7 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "d8d957479035c7c8"
+      "contract_hash": "09c21c078eb6ca12"
     },
     {
       "name": "image.ltt",
@@ -168927,7 +169026,8 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "image_keys": {
-            "type": "artifact[]"
+            "type": "artifact[]",
+            "media": "image"
           },
           "prompt": {
             "type": "string"
@@ -168937,7 +169037,7 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "fb38cff7d6272b32"
+      "contract_hash": "f049eda67a1f475a"
     },
     {
       "name": "image.thumbnail",
@@ -169068,7 +169168,8 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "image_keys": {
-            "type": "artifact[]"
+            "type": "artifact[]",
+            "media": "image"
           },
           "prompt": {
             "type": "string"
@@ -169078,7 +169179,7 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "f1894755c0b48b16"
+      "contract_hash": "00e6a8906c3c5574"
     },
     {
       "name": "image.upscale",
@@ -169117,14 +169218,15 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "image_key": {
-            "type": "artifact"
+            "type": "artifact",
+            "media": "image"
           }
         }
       },
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "917d9f5da2fe9a80"
+      "contract_hash": "3e20b273b2ad950a"
     },
     {
       "name": "speech.ltt",
@@ -169168,7 +169270,8 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "audio_key": {
-            "type": "artifact"
+            "type": "artifact",
+            "media": "audio"
           },
           "text": {
             "type": "string"
@@ -169178,7 +169281,7 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "c352c4b436ec9ffc"
+      "contract_hash": "34f673d8463aba44"
     },
     {
       "name": "story.storyboard",
@@ -169635,14 +169738,15 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "video_key": {
-            "type": "artifact"
+            "type": "artifact",
+            "media": "video"
           }
         }
       },
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "d7369f2dffe776c5"
+      "contract_hash": "862ceb0dd1589af9"
     },
     {
       "name": "video.subtitle",
@@ -169750,7 +169854,8 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "video_key": {
-            "type": "artifact"
+            "type": "artifact",
+            "media": "video"
           },
           "srt_key": {
             "type": "string"
@@ -169763,7 +169868,7 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "2e6e7bfda482d0ec"
+      "contract_hash": "27bcb797d051e2a0"
     },
     {
       "name": "video.upscale",
@@ -169867,14 +169972,15 @@ SHA256=0d70dd981fd9f760059a6dbe64c84792cecfe5d310b48c0c8f1df97b53a91602 BYTES=33
         "type": "object",
         "properties": {
           "video_key": {
-            "type": "artifact"
+            "type": "artifact",
+            "media": "video"
           }
         }
       },
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "91f9b8aece786b60"
+      "contract_hash": "cb03d863f7074888"
     }
   ]
 }
@@ -247168,6 +247274,144 @@ def test_cong_KHONG_chua_phep_do_da_co_nguong_tuyet_doi(ten):
     assert ten not in cong.CHIEU, f"{ten} khong duoc nam trong cong tuong doi"
     assert ten not in (_bl().get("do") or {}), (
         f"baseline con giu {ten} — ghim lai sau khi bo no khoi bo do")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_377_sandbox_dung_loai_media.py
+SHA256=c37ed722285f964b949e756cc8fb75bf32080123c43411e8a3b3571f1e70692e BYTES=6430 LINES=132
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+🔴 Chế độ thử của `/api/v1` trả **PNG cho mọi thứ**, kể cả tool trả về TIẾNG.
+
+`catalog.py` làm phẳng `image` / `video` / `audio` thành cùng một `"artifact"`
+trong lược đồ công khai, và tới đó thì thông tin *đây là tệp gì* biến mất khỏi
+hệ thống. `media.store_sandbox_artifact` không còn gì để dựa vào nên nó ghi cứng
+`SAMPLE_PNG`.
+
+⭐ Vô hình suốt từ đầu, vì **mọi tool mở trước `speech.ltt` đều trả về ảnh**. Lỗi
+   không nằm ở một dòng ai đó viết sai — nó nằm ở chỗ hệ thống chưa bao giờ bị
+   hỏi một câu hỏi khác.
+
+⛔ Hậu quả nếu để nguyên: người tích hợp bật chế độ thử, tải về một tệp `.png`
+   phục vụ dưới `content_type: image/png` từ một trường mà lược đồ gọi là audio,
+   rồi **viết tích hợp quanh nó**. Họ chỉ phát hiện khi đổi sang khoá thật —
+   tức đúng lúc bắt đầu trả tiền.
+
+Cách sửa giữ lại `media` bên cạnh `type` trong lược đồ công khai. Đó là **cộng
+thêm**: ai đang đọc `type` không bị ảnh hưởng, còn khách thì lần đầu tiên biết
+nên chờ WAV hay PNG.
+"""
+from __future__ import annotations
+
+import io
+import wave
+
+import pytest
+
+
+def test_luoc_do_cong_khai_GIU_loai_media_ben_canh_artifact():
+    """`{"type": "artifact"}` không nói được đây là ảnh hay tiếng."""
+    from platform_core.public_api.catalog import project_tool
+    from platform_core.registry import discover
+
+    thay = {}
+    for app in discover():
+        if app.error:
+            continue
+        for tool in (app.manifest.tools or []):
+            if not getattr(tool, "api_exposed", False):
+                continue
+            pt = project_tool(app.manifest, tool)
+            for ten, spec in (pt.output_schema or {}).get("properties",
+                                                          {}).items():
+                if str(spec.get("type", "")).startswith("artifact"):
+                    thay[f"{pt.name}.{ten}"] = spec
+    assert thay, "khong tool nao tra ve artifact — phep kiem dang mu"
+    thieu = [k for k, v in thay.items() if not v.get("media")]
+    assert not thieu, f"artifact khong khai loai media: {thieu}"
+
+
+def test_MOI_loai_media_catalog_sinh_ra_deu_co_mau_trong_sandbox():
+    """⛔ Thêm một loại media mà quên thêm mẫu thì sandbox tụt về ảnh — IM LẶNG.
+
+    `store_sandbox_artifact` cố ý **không ném** với loại lạ: một sandbox là bề
+    mặt để học, và làm hỏng cả một job thử vì một loại media mới chưa có tệp mẫu
+    là phạt người dùng cho một việc không tốn gì và không sinh ra gì.
+
+    ⭐ Nhưng "không ném" phải đi kèm "không âm thầm". Phép kiểm này là vế thứ
+       hai: mọi loại `catalog` có thể phát ra đều phải có mẫu ở đây.
+    """
+    from platform_core.public_api.catalog import _PUBLIC_OUTPUT_TYPES
+    from platform_core.public_api.media import CHUA_CO_MAU, _SANDBOX_MEDIA
+
+    loai = {k.rstrip("[]") for k, v in _PUBLIC_OUTPUT_TYPES.items()
+            if str(v).startswith("artifact")}
+    thieu = sorted(loai - set(_SANDBOX_MEDIA) - set(CHUA_CO_MAU))
+    assert not thieu, (
+        f"catalog phat ra loai media {thieu} nhung sandbox khong co mau — "
+        f"chung se lang le nhan tep PNG. Them mau vao `_SANDBOX_MEDIA`, hoac "
+        f"khai vao `CHUA_CO_MAU` kem ly do neu chua lam duoc ngay.")
+
+
+def test_moi_loai_CHUA_CO_MAU_deu_co_ly_do_viet_ra():
+    """⛔ Danh sách miễn trừ phải ký tên, nếu không nó thành chỗ đổ rác.
+
+    `CHUA_CO_MAU` tồn tại vì `video` chưa có tệp mẫu hợp lệ và dựng một MP4 tối
+    thiểu **đúng chuẩn** là việc riêng, không phải một dòng. Nhưng một danh sách
+    miễn trừ không có lý do sẽ dài ra trong im lặng, và khi đó nó bảo vệ đúng
+    thứ nó lẽ ra phải phơi bày.
+    """
+    from platform_core.public_api.media import CHUA_CO_MAU
+
+    for loai, ly_do in CHUA_CO_MAU.items():
+        assert len(str(ly_do)) > 40, f"{loai}: ly do qua ngan de doc lai"
+
+
+def test_mau_audio_la_WAV_THAT_chu_khong_phai_mot_khoi_byte_goi_la_wav():
+    """Mẫu phải mở được bằng `wave`, không chỉ mang đuôi `.wav`.
+
+    🔴 Mẫu này được **DỰNG**, không nhúng. Một khối byte escape trong mã nguồn
+       chỉ cách một lần chép hỏng là thành thứ khác hẳn, và nó hỏng vô hình:
+       hằng số vẫn tồn tại, vẫn có độ dài trông hợp lý, sandbox vẫn phát ra.
+
+       Không phải lo xa — trong chính phiên viết mã này, hai lần một hằng số
+       nhị phân đi qua heredoc và biến thành **null byte**, làm tệp Python
+       không phân tích được. Lần thứ hai là lúc tôi đang viết đúng cái mẫu WAV
+       này. Dựng bằng `wave` thì nó chỉ sai được nếu `wave` sai.
+    """
+    from platform_core.public_api.sandbox import sample_wav
+
+    d = sample_wav()
+    with wave.open(io.BytesIO(d), "rb") as w:
+        assert w.getnchannels() == 1
+        assert w.getsampwidth() == 2
+        assert w.getframerate() > 0
+        assert w.getnframes() > 0
+
+
+@pytest.mark.parametrize("media,duoi,mime", [
+    ("audio", ".wav", "audio/wav"),
+    ("image", ".png", "image/png"),
+    ("khong_biet", ".png", "image/png"),      # lối lui, có chủ ý
+])
+def test_sandbox_ghi_dung_duoi_va_content_type(media, duoi, mime, tmp_path):
+    from platform_core.public_api.media import store_sandbox_artifact
+    from platform_core.storage import LocalStorage
+
+    kho = LocalStorage(str(tmp_path))
+    khoa = store_sandbox_artifact(kho, {"owner_id": "u1"}, "audio_key", 0,
+                                  media=media)
+    assert khoa.endswith(duoi), f"{media} -> {khoa}"
+
+
+def test_speech_ltt_khai_tra_ve_AUDIO():
+    """Bánh cóc cho chính bản khai: nếu ai đó đổi `returns` sang `image` thì mọi
+    phép kiểm trên vẫn xanh, và sandbox lại phát PNG cho tiếng nói."""
+    from apps.ltt_voice.manifest import MANIFEST
+
+    tool = [t for t in MANIFEST.tools if t.name == "speech.ltt"]
+    assert tool, "khong tim thay `speech.ltt` trong ban khai"
+    assert tool[0].returns.get("audio_key") == "audio", tool[0].returns
 
 @@@LTT_PROFILE_FILE_END@@@
 

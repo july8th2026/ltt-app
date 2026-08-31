@@ -298,7 +298,7 @@
   "tools": {
     "image.generate": {
       "aliases": [],
-      "contract_hash": "d8d957479035c7c8",
+      "contract_hash": "09c21c078eb6ca12",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [
@@ -312,7 +312,7 @@
     },
     "image.ltt": {
       "aliases": [],
-      "contract_hash": "fb38cff7d6272b32",
+      "contract_hash": "f049eda67a1f475a",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
@@ -322,7 +322,7 @@
     },
     "image.thumbnail": {
       "aliases": [],
-      "contract_hash": "f1894755c0b48b16",
+      "contract_hash": "00e6a8906c3c5574",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
@@ -332,7 +332,7 @@
     },
     "image.upscale": {
       "aliases": [],
-      "contract_hash": "917d9f5da2fe9a80",
+      "contract_hash": "3e20b273b2ad950a",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
@@ -342,7 +342,7 @@
     },
     "speech.ltt": {
       "aliases": [],
-      "contract_hash": "c352c4b436ec9ffc",
+      "contract_hash": "34f673d8463aba44",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
@@ -385,7 +385,7 @@
     },
     "video.generate": {
       "aliases": [],
-      "contract_hash": "d7369f2dffe776c5",
+      "contract_hash": "862ceb0dd1589af9",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [
@@ -399,7 +399,7 @@
     },
     "video.subtitle": {
       "aliases": [],
-      "contract_hash": "2e6e7bfda482d0ec",
+      "contract_hash": "27bcb797d051e2a0",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],
@@ -409,7 +409,7 @@
     },
     "video.upscale": {
       "aliases": [],
-      "contract_hash": "91f9b8aece786b60",
+      "contract_hash": "cb03d863f7074888",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],

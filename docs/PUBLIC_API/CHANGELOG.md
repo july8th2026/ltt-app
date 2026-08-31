@@ -21,6 +21,51 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-01 — `speech.ltt` MỞ, và `output_schema` nói ra loại tệp
+
+**ADDED · `speech.ltt` phục vụ thật.** Văn bản tiếng Việt thành giọng nói, chế
+độ `ASYNC_JOB`. Giá theo **giây tiếng thật sự sinh ra**, không theo ký tự gửi
+lên: nền tảng giữ một trần ước cao rồi hoàn phần dư khi job xong — cùng hình
+dạng `text.chat`. Trần **1.500 ký tự** mỗi lượt là trần **chất lượng**, không
+phải hiệu năng.
+
+**ADDED · `output_schema` của mọi trường artifact nay có `media`.**
+
+```diff
+  "audio_key": {
+    "type": "artifact",
++   "media": "audio"
+  }
+```
+
+Giá trị: `"image"`, `"video"`, `"audio"`.
+
+*Có phải sửa gì không?* **Không.** Đây là một trường **thêm vào**; client đang
+đọc `type` không bị ảnh hưởng, và không trường nào bị bỏ hay đổi nghĩa.
+
+*Vì sao vẫn nằm ở đây?* Vì nó đổi `contract_hash` của **tám** tool — mọi tool
+trả về artifact. Ai đang lưu hash để phát hiện hợp đồng dịch chuyển sẽ thấy nó
+dịch, và **đó là đúng ý**: hợp đồng có dịch thật, chỉ là dịch theo hướng nới ra.
+Đã chạy `check_api_compat --accept`.
+
+*Vì sao thêm?* `{"type": "artifact"}` không nói được nên chờ WAV hay PNG. Nó
+không thành vấn đề chừng nào mọi tool đều trả ảnh — và điều đó đúng cho tới
+`speech.ltt`. Cùng chỗ thiếu ấy khiến **chế độ thử trả PNG cho mọi loại**:
+người tích hợp bật sandbox cho một tool âm thanh sẽ tải về một tệp `.png` phục
+vụ dưới `image/png` từ một trường lược đồ gọi là audio, rồi viết tích hợp quanh
+nó — và chỉ phát hiện khi đổi sang khoá thật, tức đúng lúc bắt đầu trả tiền.
+
+**FIXED · chế độ thử của tool âm thanh trả WAV thật.** Mẫu được **dựng** bằng
+`wave`, không nhúng byte.
+
+⚠️ **Chưa sửa cho video.** `video.upscale` và `video.subtitle` đã mở từ 29/08 và
+chế độ thử của chúng **vẫn** phát PNG — đây là một lỗi **có từ trước**, không
+phải lỗi mới. Một MP4 tối thiểu hợp lệ cần `ftyp` + `moov` với sample entry
+thật, nên nó là một việc riêng. Đã khai vào `media.CHUA_CO_MAU` kèm lý do, và
+`tests/test_377` từ chối mọi loại media không có mẫu **và** không được khai —
+nên chỗ thiếu này ở lại chỗ nhìn thấy được thay vì mục ra thành "sandbox nó vốn
+thế".
+
 ## 2026-08-30 (b) — nhiều tệp cho một tham số, và ba tham chiếu Seedance mở
 
 **ADDED — tham số media dạng mảng, và `video.generate` nhận thêm ba đường tham

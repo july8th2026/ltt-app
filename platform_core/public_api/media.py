@@ -97,21 +97,66 @@ def artifacts_of(job, tool) -> list:
     return found
 
 
+#: Canned bytes per declared media kind: ``kind -> (suffix, content type)``.
+_SANDBOX_MEDIA = {
+    "audio": (".wav", "audio/wav"),
+    "image": (".png", "image/png"),
+}
+
+#: 🔴 Kinds the catalog can emit that have no honest sample yet, with the reason.
+#:
+#:    These fall back to the PNG sample, which is wrong — and saying so here is
+#:    the point. ``tests/test_377`` refuses any kind that is neither sampled nor
+#:    listed, so the gap stays visible instead of decaying into "that's just how
+#:    the sandbox behaves".
+#:
+#: ⛔ Do NOT close this by inventing a file. A WAV renamed ``.mp4`` is exactly
+#:    the lie this whole change removes; it would satisfy the test and mislead
+#:    the caller harder, because now the extension agrees with the schema.
+CHUA_CO_MAU = {
+    "video": (
+        "A minimal VALID mp4 needs ftyp + moov with a real codec sample entry; "
+        "anything less is rejected by players and by ffprobe, so there is no "
+        "one-liner. `video.upscale` and `video.subtitle` are already open, so "
+        "their sandbox has been serving PNGs the whole time - this is a real, "
+        "pre-existing bug, not a new gap introduced with audio. Build the boxes "
+        "programmatically (never embed a blob) when someone picks this up."),
+}
+
+
 def store_sandbox_artifact(storage, params: dict, field: str,
-                           index: int) -> str:
-    """Write a canned file and return its storage key.
+                           index: int, media: str = "image") -> str:
+    """Write a canned file of the declared kind and return its storage key.
 
     Real bytes in real storage, so the download path a sandbox caller exercises
     is the same one live output uses — presigned URL, expiry and all.
+
+    🔴 ``media`` used to not exist, and this wrote a **PNG for everything**.
+
+       That was invisible while every open tool returned images. ``speech.ltt``
+       is the first audio tool on the API, and without this a sandbox caller
+       downloads a file named ``.png``, served as ``image/png``, from a field
+       the schema calls audio — then writes their integration around it.
+
+    ⛔ An unknown kind falls back to the image sample rather than raising, and
+       that is a deliberate, uncomfortable choice: a sandbox is a *learning*
+       surface, and failing a whole sandbox job because a new media kind has no
+       canned file would break callers over something that costs nothing and
+       produces nothing. But it does mean adding a kind without adding a sample
+       here degrades silently — so ``tests/test_377`` asserts every kind the
+       catalog can emit has an entry.
     """
     import io
     import uuid as _uuid
 
-    from platform_core.public_api.sandbox import SAMPLE_PNG
+    from platform_core.public_api.sandbox import SAMPLE_PNG, sample_wav
+
+    duoi, mime = _SANDBOX_MEDIA.get(str(media), _SANDBOX_MEDIA["image"])
+    noi_dung = sample_wav() if duoi == ".wav" else SAMPLE_PNG
 
     owner = str((params or {}).get("owner_id") or "sandbox")
-    key = f"users/{owner}/sandbox/{_uuid.uuid4().hex}-{field}-{index}.png"
-    storage.put(key, io.BytesIO(SAMPLE_PNG), content_type="image/png")
+    key = f"users/{owner}/sandbox/{_uuid.uuid4().hex}-{field}-{index}{duoi}"
+    storage.put(key, io.BytesIO(noi_dung), content_type=mime)
     return key
 
 

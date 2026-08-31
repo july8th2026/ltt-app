@@ -41,6 +41,32 @@ SAMPLE_PNG = (b"\x89PNG\r\n\x1a\n"
               b"\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01"
               b"\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82")
 
+def sample_wav(seconds: float = 0.25, rate: int = 24_000) -> bytes:
+    """A real, silent, single-channel 16-bit WAV.
+
+    🔴 Built, not embedded. A blob of escaped bytes in source is one bad copy
+       away from being something else entirely, and the failure is invisible:
+       the constant still exists, still has a plausible length, and the sandbox
+       still hands it out. Building it means the header can only be wrong if
+       ``wave`` itself is.
+
+    Silence is deliberate. A sandbox artifact exists so an integrator can
+    exercise the download path -- presigned URL, expiry, content type -- not so
+    they can listen to it. Shipping recognisable speech here would invite
+    someone to treat the sandbox as a free voice.
+    """
+    import io as _io
+    import wave as _wave
+
+    buf = _io.BytesIO()
+    with _wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(bytes(2 * int(rate * seconds)))
+    return buf.getvalue()
+
+
 SAMPLE_TEXT = ("This is sandbox output. No provider was called and no credit "
                "moved. Switch to a live key to get real results.")
 
@@ -129,11 +155,16 @@ def canned_result(tool, params: dict, storage) -> dict:
     result: dict = {}
     for field, spec in outputs.items():
         kind = str(spec.get("type") or "")
+        # The declared media kind, kept by `catalog` alongside `type`. Defaults
+        # to image only because every tool open before `speech.ltt` was one.
+        media = str(spec.get("media") or "image")
         if kind == "artifact":
-            result[field] = store_sandbox_artifact(storage, params, field, 0)
+            result[field] = store_sandbox_artifact(storage, params, field, 0,
+                                                   media=media)
         elif kind == "artifact[]":
             count = _how_many(tool, field, params)
-            result[field] = [store_sandbox_artifact(storage, params, field, i)
+            result[field] = [store_sandbox_artifact(storage, params, field, i,
+                                                    media=media)
                              for i in range(count)]
         elif kind == "object":
             result[field] = {"sandbox": True, "note": SAMPLE_TEXT}
