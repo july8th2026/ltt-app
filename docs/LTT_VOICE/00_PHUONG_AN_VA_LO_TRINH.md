@@ -624,6 +624,24 @@ với `?v={{ asset_ver }}`. Không React trừ khi chứng minh được cần.
 → **Qua khi** kiểm bằng trình duyệt **trên `https://app.lttstudios.com`** (không
 chỉ loopback) · console sạch · mặc định không lộ một điều khiển VieNeu nào.
 
+### V6b · Giao diện đầy đủ — **đã xây 2026-08-31**, ngoài kế hoạch ban đầu
+
+V6 khai **bốn** màn. Thực tế đã xây **sáu**: Tạo tiếng nói · Giọng của tôi ·
+**Dự án** · **Chạy lô** · Lịch sử · **API**. Nhật ký từng pha (P1–P9) kèm mọi lỗi tìm
+ra ở `VOICE_UI_EXECUTION_PLAN.md` §14.
+
+⛔ **ĐIỀU KIỆN QUA CỦA V6 CHƯA ĐẠT CHO SÁU MÀN NÀY.** V6 đòi *"kiểm bằng trình
+   duyệt trên `https://app.lttstudios.com`, không chỉ loopback"*. Đã kiểm trên
+   loopback (`127.0.0.1:8126`) ở ba điểm gãy; **chưa** kiểm trên URL công khai, vì
+   P7–P9 chưa deploy. Đây không phải chi tiết thủ tục: `ltt.css` đổi nhiều, và
+   Cloudflare **đã từng** phục vụ bản CSS cũ suốt 4 giờ (CLAUDE.md quy tắc 5b).
+
+⚠️ **Đừng đọc "Chạy lô đã xây" thành "V9 đã xong".** Màn Chạy lô và màn Dự án nộp
+   **một job cho mỗi dòng/khối** — đúng hình dạng cho MVP (mỗi dòng thử lại và tính
+   tiền độc lập) nhưng **không** dùng `infer_batch` lẫn CUDA graph đã ấm. V9 vẫn còn
+   nguyên phần hiệu năng, và cả hai điều kiện qua của nó (giết worker giữa chừng ⇒
+   chạy lại không từ 0 · đã đo trôi tông #173).
+
 ### V7 · Giá công bố + giá vốn — 1 ngày
 `gia.py` có phiên bản; `gia_von.json` tính từ **giây GPU đo thật ở V1**; `/gia-api`
 lấy số **từ chính hàm ra hoá đơn**.

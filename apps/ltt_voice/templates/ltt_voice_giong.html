@@ -36,29 +36,29 @@
                aria-label="{{ _('Tìm giọng theo tên') }}">
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
-          <button type="button" class="lv-loc-nut" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
-          <button type="button" class="lv-loc-nut" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="toi">{{ _("Giọng của tôi") }}</button>
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Giới tính') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="gioi" data-gt="">{{ _("Mọi giới") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="gioi" data-gt="">{{ _("Mọi giới") }}</button>
           {% for k, nhan in nhan_gioi.items() %}
-            <button type="button" class="lv-loc-nut" data-loc="gioi" data-gt="{{ k }}">{{ _(nhan) }}</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="gioi" data-gt="{{ k }}">{{ _(nhan) }}</button>
           {% endfor %}
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Vùng miền') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="vung" data-gt="">{{ _("Mọi vùng") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="vung" data-gt="">{{ _("Mọi vùng") }}</button>
           {% for k, nhan in nhan_vung.items() %}
-            <button type="button" class="lv-loc-nut" data-loc="vung" data-gt="{{ k }}">{{ _(nhan) }}</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="vung" data-gt="{{ k }}">{{ _(nhan) }}</button>
           {% endfor %}
         </div>
 
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Phong cách') }}">
-          <button type="button" class="lv-loc-nut on" data-loc="phongcach" data-gt="">{{ _("Mọi phong cách") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="phongcach" data-gt="">{{ _("Mọi phong cách") }}</button>
           {% for k, nhan in nhan_phong_cach.items() %}
-            <button type="button" class="lv-loc-nut" data-loc="phongcach" data-gt="{{ k }}">{{ _(nhan) }}</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="phongcach" data-gt="{{ k }}">{{ _(nhan) }}</button>
           {% endfor %}
         </div>
       </div>

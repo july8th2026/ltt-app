@@ -20,6 +20,59 @@
 (function () {
   "use strict";
 
+  /* ── Bat mot nut trong nhom loc ───────────────────────────────────────────
+   *
+   * ⭐ MOT LUAT CHO CA LOP, khong va tung cho. Truoc P7 co HAI vong lap rieng
+   *    cung lam mot viec (`.lv-loc-nut` o man Giong, `[data-chon-loai]` o bo
+   *    chon giong) va ca hai chi doi lop CSS `on`. Lop CSS la thu con MAT nhin
+   *    thay; trinh doc man hinh khong thay gi ca, nen no khong bao gio biet bo
+   *    loc nao dang bat. Them nut thu ba o mot man thu ba ma quen dong bo la
+   *    loi tai dien — nen no phai la mot ham, khong phai mot danh sach.
+   *
+   * ⛔ `aria-pressed` chu khong phai `role="radio"`. Radio bat buoc di kem mo
+   *    hinh ban phim mui ten + roving tabindex; khai vai radio ma khong dung
+   *    ban phim ay thi con te hon la khong khai gi — nguoi dung tin loi hua
+   *    cua vai dien roi bam mui ten va khong co gi xay ra.
+   */
+  function batNut(nut) {
+    var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
+    for (var k = 0; k < anhEm.length; k++) {
+      anhEm[k].classList.remove("on");
+      anhEm[k].setAttribute("aria-pressed", "false");
+    }
+    nut.classList.add("on");
+    nut.setAttribute("aria-pressed", "true");
+  }
+
+  /* ── Noi mot cau cho trinh doc man hinh ───────────────────────────────────
+   *
+   * 🔴 TIEN DO CHI TON TAI BANG MAT. Cac trang Du an va Chay lo cap nhat con so
+   *    "3/12" tai cho khi hoi job — mot nguoi nhin thay ngay, mot nguoi dung
+   *    trinh doc man hinh KHONG BIET GI CA cho toi khi ho tu tab lai qua o do.
+   *    Man Studio da co vung `aria-live` tu dau; hai man nay thi khong, va do
+   *    la khac biet duy nhat giua chung.
+   *
+   * ⛔ KHONG dat `aria-live` len chinh luoi con so. Moi luot hoi ghi lai ca bon
+   *    o, nen trinh doc man hinh se doc lai ca bon MOI VAI GIAY — dung ky thuat
+   *    ma khong dung duoc. Mot cau, va chi khi cau ay DOI.
+   */
+  function baoTin(cau) {
+    var o = document.getElementById("lv-bao");
+    if (!o || !cau || o.textContent === cau) return;
+    o.textContent = cau;
+  }
+
+  /* Thay {x} {y} {e} trong mot cau da dich. */
+  function dienSo(mau, so) {
+    var cau = String(mau || "");
+    for (var k in so) {
+      if (Object.prototype.hasOwnProperty.call(so, k)) {
+        cau = cau.split("{" + k + "}").join(String(so[k]));
+      }
+    }
+    return cau;
+  }
+
   /* ── Chep ma giong ────────────────────────────────────────────────────────
    *
    * 🔴 `voice_id` la hop dong dai han: `tables.py` cam ket no khong bao gio doi,
@@ -50,7 +103,18 @@
     }
 
     nut.addEventListener("click", function () {
+      /* Hai nguon: `data-ma` cho mot chuoi ngan, `data-chep-tu` cho noi dung
+       * cua mot phan tu khac (vi du mot khoi lenh nhieu dong).
+       *
+       * ⭐ VI SAO CO DANG THU HAI. Nhet ca mot lenh curl vao mot thuoc tinh la
+       *    tao BAN THU HAI cua chinh cai lenh dang hien tren trang — hai ban
+       *    cua mot su that, va ban sai se la ban khong ai nho phai sua. Doc
+       *    thang tu khoi ma thi chi co mot ban. */
       var ma = nut.dataset.ma || "";
+      if (!ma && nut.dataset.chepTu) {
+        var nguon = document.getElementById(nut.dataset.chepTu);
+        ma = nguon ? (nguon.innerText || nguon.textContent || "") : "";
+      }
       if (!ma) return;
       // Noi that la khong chep duoc, thay vi im lang nhu chua bam.
       var hong = function () { bao("Ctrl+C", null); };
@@ -126,9 +190,7 @@
         nut.addEventListener("click", function () {
           dangLoc[nut.dataset.loc] = nut.dataset.gt || "";
           // Chi mot nut sang trong moi nhom.
-          var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
-          for (var k = 0; k < anhEm.length; k++) anhEm[k].classList.remove("on");
-          nut.classList.add("on");
+          batNut(nut);
           loc();
         });
       })(nutLoc[i]);
@@ -517,9 +579,7 @@
       (function (nut) {
         nut.addEventListener("click", function () {
           locLoai = nut.dataset.chonLoai || "";
-          var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
-          for (var k = 0; k < anhEm.length; k++) anhEm[k].classList.remove("on");
-          nut.classList.add("on");
+          batNut(nut);
           locChon();
         });
       })(nutChonLoai[i]);
@@ -794,6 +854,9 @@
             datSo("lv-tk-credit", tk.credit);
             var oTd = document.getElementById("lv-mda-tiendo");
             if (oTd) oTd.textContent = (tk.xong || 0) + "/" + (tk.so_khoi || 0);
+            var xg = tk.xong || 0, tg = tk.so_khoi || 0;
+            baoTin(dienSo(!conChay && xg === tg && tg ? chu.baoXong : chu.baoTienDo,
+                          {x: xg, y: tg}));
 
             if (conChay) {
               cho = Math.min(cho * 1.3, 8000);
@@ -919,8 +982,7 @@
           var la = nut.dataset.nguon === "tep";
           document.getElementById("lv-lo-dan").hidden = la;
           document.getElementById("lv-lo-tep").hidden = !la;
-          for (var k = 0; k < nutNguon.length; k++) nutNguon[k].classList.remove("on");
-          nut.classList.add("on");
+          batNut(nut);
           // Doi nguon thi ket qua kiem cu khong con dung nua. Khoa lai.
           nutTao.disabled = true;
           oXem.hidden = true;
@@ -1077,6 +1139,8 @@
             datSo("lv-so-tong", t.so_khoi);
             datSo("lv-so-xong", t.xong);
             datSo("lv-so-loi", t.loi);
+            var so = {x: t.xong || 0, y: t.so_khoi || 0, e: t.loi || 0};
+            baoTin(dienSo(conChay ? chu.baoTienDo : chu.baoXong, so));
             datSo("lv-so-uoc", t.uoc_con_lai_s || "—");
             var tai = document.getElementById("lv-lo-tai");
             if (tai && t.xong) tai.hidden = false;

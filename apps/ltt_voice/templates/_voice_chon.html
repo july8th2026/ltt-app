@@ -36,9 +36,9 @@
     <input type="search" class="lv-chon-tim" id="lv-chon-tim"
            placeholder="{{ _('Tìm giọng…') }}" aria-label="{{ _('Tìm giọng') }}">
     <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
-      <button type="button" class="lv-loc-nut on" data-chon-loai="">{{ _("Tất cả") }}</button>
-      <button type="button" class="lv-loc-nut" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
-      <button type="button" class="lv-loc-nut" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-loai="">{{ _("Tất cả") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
     </div>
   </div>
 

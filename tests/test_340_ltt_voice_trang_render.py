@@ -260,3 +260,37 @@ def test_loi_giong_noi_la_loi_nguoi_goi_nen_khong_bi_thu_lai():
     assert not issubclass(DangBanTam, LoiNguoiGoi), (
         "`DangBanTam` la 'may dang ban' — no PHAI duoc xep lai, khong duoc coi "
         "la loi cua khach")
+
+
+@pytest.mark.parametrize("duong", ["/ltt-voice", "/ltt-voice/giong"])
+def test_moi_form_deu_co_CSRF_TOKEN_KHONG_RONG(khach, duong):
+    """🔴 Token rỗng làm chết mọi cửa POST, và nó chết IM LẶNG.
+
+    Mọi template Voice viết `value="{{ csrf_token }}"`. `vo.ngu_canh` — bộ dựng
+    ngữ cảnh cho MỌI màn — không hề đặt khoá đó, nên Jinja render **chuỗi rỗng**:
+    không cảnh báo, không lỗi. Và `verify_csrf_token` khi ấy cũng đang bị bỏ qua
+    kết quả, nên **hai lỗi triệt tiêu nhau** và mọi thứ trông vẫn chạy.
+
+    Vá lỗ CSRF (thi hành thật) gỡ một trong hai, và lỗi còn lại hiện ra ngay:
+    mọi form trả 400 *"Phiên đã hết hạn"* — tạo tiếng, tạo giọng, tắt giọng, dự
+    án, chạy lô. Đo thật trên production 31/08/2026: form đăng xuất của
+    `base.html` có token 43 ký tự, **mọi form của app có `value=""`**.
+
+    ⭐ Bài học không phải "nhớ thêm token". Là: **hai lỗi triệt tiêu nhau thì sửa
+       một cái sẽ làm lộ cái kia**, và cái lộ ra trông y hệt một hồi quy do bản
+       vá gây ra. Nó không phải — nó là thứ đã hỏng suốt từ đầu.
+
+    ⛔ Và phép kiểm này chốt GIÁ TRỊ, không chốt sự có mặt của trường. Một
+       `<input name="csrf_token" value="">` vẫn là một trường có mặt.
+    """
+    import re
+
+    r = khach.get(duong)
+    assert r.status_code == 200, f"{duong} tra {r.status_code}"
+
+    tok = re.findall(r'name="csrf_token"\s+value="([^"]*)"', r.text)
+    assert tok, f"{duong} khong co truong csrf_token nao"
+    rong = [i for i, t in enumerate(tok) if not t.strip()]
+    assert not rong, (
+        f"{duong}: {len(rong)}/{len(tok)} truong csrf_token RONG. Moi cua POST "
+        f"dung chung se tra 400 'Phien da het han'. Xem `vo.ngu_canh`.")

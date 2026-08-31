@@ -1,4 +1,4 @@
-# Mười lăm cái bẫy trong chính cổng chất lượng
+# Hai mươi cái bẫy trong chính cổng chất lượng
 
 **2026-08-25.** Không phải bẫy trong sản phẩm — bẫy trong **thứ dùng để chứng
 minh sản phẩm đúng**. Tất cả đều cùng một hình dạng:
@@ -529,7 +529,188 @@ Bằng chứng rằng cả bốn **chặn thật**, không chỉ tồn tại:
 bẫy 1, lớp `VANG` của bẫy 9, và ca cửa-thoát-nuốt-loại-khác) cùng hai phép kiểm
 mới trong `tests/test_145_gate_covers_everything.py`.
 
-⚠️ Bẫy 7, 8 và 10 **chưa có bánh cóc**. Chúng được ghi ở đây vì cả ba đều là
+## Bẫy 17 — Một BƯỚC GATE tự bỏ qua rồi hiện ra là `[PASS]`
+
+Bẫy 6 nói về **test** bị bỏ qua, và `check_bo_qua.py` đã bịt nó. Đây là anh em
+sinh đôi ở tầng trên: một **bước gate** tự bỏ qua chính mình.
+
+`tools/check_multiproc.py` cần một CSDL PostgreSQL để chạy `test_214`. Không có
+thì nó in một khối chữ rất rõ ràng — *"BO QUA bo bat bien da tien trinh"* — rồi
+`return 0`. Cái `return 0` ấy **có chủ ý và được ghi lý do ngay tại chỗ**: một
+máy không có PostgreSQL vẫn phải làm việc được. Đây không phải lỗi của công cụ.
+
+Chỗ hụt nằm ở **cách gate trình bày**. `gate.py` chỉ đọc mã thoát, nên nó in:
+
+```
+[PASS] bat bien da tien trinh          0.7s
+```
+
+và dòng tổng kết nói `RESULT: PASS` với 25/25 bước. Đọc dòng đó, người ta hiểu
+là **hai mươi lăm điều đã được chứng minh**. Thật ra là hai mươi bốn.
+
+⛔ **0,7 giây là dấu hiệu, và nó rất dễ trôi qua mắt.** Bước ấy phải tạo một CSDL
+   rồi chạy một bộ test đa tiến trình; không đời nào xong trong 0,7 giây. Nhưng
+   nó nằm giữa hai mươi bốn dòng khác cũng tính bằng giây, nên nó trông bình
+   thường. Ngày 31/08 tôi báo *"PASS 25/25"* rồi mới quay lại soi con số đó.
+
+⚠️ **Và đo cho đúng thì cũng có bẫy riêng.** Lần đầu tôi chạy:
+
+```bash
+python tools/check_multiproc.py 2>&1 | tail -12; echo "ma thoat = $?"
+```
+
+`$?` ở đó là mã thoát của **`tail`**, không phải của Python — nên nó luôn là 0
+bất kể chuyện gì xảy ra. Phải tách ra:
+
+```bash
+python tools/check_multiproc.py > out.txt 2>&1; ma=$?; echo "$ma"
+```
+
+Đo lại đúng cách: **exit 0, 0 giây, có in `BO QUA`**.
+
+🔴 **Hai phiên đọc CÙNG một bước ra HAI kết quả trái ngược — và lời giải đáng
+giá hơn chính cái bẫy.** Một phiên song song báo `RESULT: FAIL (1/25)` và chỉ đích
+danh bước này; phiên của tôi báo `[PASS]`. Cả hai cùng nhìn thấy khối chữ *"BO QUA"*.
+
+Truy ra thì bước ấy **luôn PASS** — nó trả 0. Phiên kia có một bước khác đang đỏ
+thật, đọc được thông điệp *"BO QUA"* trong nhật ký, và **gán** con số `FAIL(1/25)`
+cho nó vì nó khớp câu chuyện đang kể. Bước đỏ thật không bao giờ được gọi tên.
+
+⛔ Đó là cái giá thật của bẫy này, và nó không phải *"một bước không chạy"*. Một
+   dòng chữ giải thích rất tử tế nằm cạnh một dấu `[PASS]` sẽ được đọc thành **lời
+   giải thích cho một thất bại khác** — và thất bại thật ấy đi qua mà không ai tìm.
+
+⭐ Hai phiên đều tự sửa trước khi báo với chủ sản phẩm, và cả hai đều chỉ sửa được
+   vì **đo lại thay vì suy ra**: `exit=0, 505 ms` ở một phiên, `exit=0, 0 giây` ở
+   phiên kia. Hai phép đo đồng ý; hai câu chuyện thì không.
+
+**Cách dùng cho tới khi có bánh cóc:** trước khi lấy một lượt gate làm bằng
+chứng, liếc cột thời gian. Bước nào nhanh một cách vô lý so với việc nó khai là
+mình làm thì chạy tay bước đó và đọc đầu ra, đừng đọc mã thoát.
+
+⛔ Và **đừng "sửa" bằng cách cho `check_multiproc.py` trả về khác 0.** Làm thế là
+biến một máy không có PostgreSQL thành một máy không chạy được gate — tức đổi
+một lời nói dối lấy một cản trở. Sửa đúng là cho gate có trạng thái thứ ba
+(`BOQUA`) tách khỏi `PASS`, và cho dòng `RESULT` nói ra số bước đã bỏ qua.
+
+---
+
+## Bẫy 18 — Bánh cóc số tệp test không thấy tệp **chưa được git theo dõi**
+
+`tools/check_so_test.py` đọc cây làm việc, nên nó **có** thấy tệp mới. Nhưng nó
+chỉ thấy chúng **khi bạn chạy nó** — và giữa hai lượt chạy của hai phiên khác
+nhau không có gì khóa số cả.
+
+Ngày 31/08, ba phiên cùng xây trên một cây. **Va chạm số tệp test xảy ra ba lần
+trong một buổi:**
+
+| Phiên | Lấy | Đụng phải | Kết cục |
+|---|---|---|---|
+| A | `test_353` | `test_353_voice_sidecar_bo_do.py` (đã commit) | đổi → 354 |
+| A | `test_354` | `test_354_so_do_khong_troi.py` (đã commit) | đổi → **364** |
+| B và C | cùng `test_365` | nhau — **cả hai chưa commit** | một bên đổi → 366 |
+
+Hai hàng đầu bánh cóc **bắt được** — tệp kia đã nằm trong git. Hàng thứ ba thì
+không: hai tệp cùng tên số cùng tồn tại trên đĩa, nhưng **mỗi phiên chạy kiểm tra
+trước khi phiên kia tạo tệp của mình**, nên cả hai đều thấy số đó còn trống. Cả
+hai đều đúng tại thời điểm đo.
+
+⛔ Đây **không phải** lỗi của `check_so_test.py`. Nó là một bánh cóc, không phải một
+   cái khoá — và không bánh cóc nào chặn được hai người quyết định cùng lúc dựa
+   trên cùng một ảnh chụp cũ.
+
+⭐ Cùng hình dạng với Bẫy 5 (*kết quả nói về một cây đã không còn*) và với chính
+   `cua_so_yen`: **cơ chế chỉ bảo vệ thứ nó nhìn thấy**, và cái nó không nhìn thấy ở
+   đây là **ý định của phiên khác** — thứ chưa thành tệp lúc nó nhìn.
+
+**Cách dùng cho tới khi có cái khoá:** khi nhiều phiên cùng xây, đừng chỉ chạy
+`check_so_test.py` — **nói số mình lấy ra cho các phiên khác** trước khi tạo tệp.
+Một tin nhắn một dòng rẻ hơn ba lượt đổi tên.
+
+⚠️ Và đổi tên **không miễn phí**: số tệp test đi vào tài liệu, nhật ký và tin nhắn
+   giữa các phiên. Lượt đổi 353→354→364 ở trên kéo theo ba chỗ phải sửa trong
+   `VOICE_UI_EXECUTION_PLAN.md`, và một trong ba đã suýt trôi.
+
+---
+
+## Bẫy 19 — Một phép kiểm neo vào **khoảng cách vật lý**, và nó LÂY
+
+Một số phép kiểm đọc **mã nguồn** của công cụ để chốt một quan hệ trong đó. Khuôn
+hay dùng nhất:
+
+```python
+khuc = ma.split('ket = "PASS" if not failed')[1][:600]
+assert "cay_da_doi" in khuc, "phai gan vao chinh bien `ket`, khong in roi"
+```
+
+Câu `assert` nói đúng ý định: *"phải gắn vào chính biến `ket`"*. Nhưng thứ nó **đo**
+lạ là: *"nằm trong 600 ký tự kể từ một chuỗi mốc"*. Hai thứ đó trùng nhau **cho tới
+khi ai đó chèn một khối chú thích tử tế vào giữa** — lúc ấy hành vi vẫn đúng và phép
+kiểm đỏ. Ngày 31/08 đúng thế: một bản vá thêm 9 dòng chú thích ngay sau mốc.
+
+🔴 **NHƯNG ĐÓ CHƯA PHẢI PHẦN ĐÁNG GHI.** Sau khi cái thứ nhất được chỉ ra và
+chẩn đoán rõ ràng, phiên sửa nó viết một tệp test **mới** — và chép **đúng khuôn đó
+thêm hai lần nữa** (`[:900]` × 2), trong vòng một giờ.
+
+⭐ Vì sao khuôn này lây trong khi các bẫy khác thì không: **nó trông chặt chẽ.** Một
+   `assert` đọc thẳng mã nguồn, có cắt cửa sổ, có câu báo lỗi giải thích ý định —
+   nó mang **mọi dấu hiệu bề ngoài của một phép kiểm tốt**. Ta không tránh nó vì ta
+   không nhận ra dạng của nó, kể cả ngay sau khi vừa đọc chẩn đoán về chính nó.
+
+**Đã sửa — bằng một phép đo QUAN HỆ, không phải một cửa sổ rộng hơn.** Nới `[:600]`
+thành `[:2000]` chỉ dời ngày nó gãy. Cả ba chỗ nay hỏi `ast`: *khối nào trong hàm
+`main` có sửa biến `ket`*, rồi đòi cờ xuất hiện trong một trong số đó. Chèn bao nhiêu
+chú thích cũng không làm nó đỏ.
+
+⚠️ **Dấu hiệu nhận dạng cho lần sau:** trong một phép kiểm đọc mã nguồn, mọi con
+   số đo **ký tự hoặc dòng** (`[:600]`, `splitlines()[i:i+20]`, `± 3 dòng`) đều là một
+   xấp xỉ cho một quan hệ cú pháp. `ast` biết quan hệ đó; chỉ cần hỏi nó.
+
+---
+
+## Bẫy 20 — Sửa một tầng bỏ qua không làm lộ tầng bỏ qua **bên dưới nó**
+
+Bẫy 17 nói về một **bước gate** tự bỏ qua rồi hiện ra là `[PASS]`. Sửa xong nó, ta
+tưởng đã nhìn thấu xuống đáy. Chưa.
+
+Ngày 31/08, sau khi bước `bat bien da tien trinh` đã được vá để tự khai lúc nó bỏ
+qua, một phiên gọi thẳng bộ test bên dưới:
+
+```
+pytest tests/test_214_multi_process_runtime.py
+sssssss   7 skipped in 0.26s
+```
+
+**Bảy phép kiểm, bảy chữ `s`.** Chúng bỏ qua vì một lý do **khác hẳn** lý do của
+bước gate: chúng đòi một **CSDL test riêng** (`LTT_TEST_DATABASE_URL`), còn
+`app.env` chỉ có `LTT_DATABASE_URL` của production. Chúng **đúng khi từ chối** —
+không bộ test nào được phép chạy trên CSDL thật.
+
+⇒ Hai tầng bỏ qua **chồng lên nhau cho cùng một bất biến**, mỗi tầng một nguyên
+  nhân. Gỡ tầng trên ra không làm tầng dưới hiện lên; nó chỉ đổi câu trả lời từ
+  *"không biết"* thành *"không biết, và tôi có nói ra"*.
+
+⛔ **HỆ QUẢ THỰC HÀNH, và nó trái trực giác:** không được thay `check_multiproc.py`
+   bằng một lệnh `pytest` *"tương đương"*. Công cụ ấy không phải một lớp bọc — **nó
+   là thứ TẠO RA cái CSDL test** mà bộ test đòi. Gọi pytest trực tiếp trông như một
+   đường tắt sạch hơn, và nó trả về bảy chữ `s` trong 0,26 giây — **nhanh, xanh, và
+   rỗng**.
+
+⭐ **Cách nhìn ra nó:** khi một bước bỏ qua được sửa để *"nói ra"*, đừng dừng ở đó.
+   Hỏi tiếp: **nếu tầng này chạy được thật thì tầng dưới có chạy không?** Ở đây câu
+   trả lời là không, và chỉ lộ ra vì có người gọi tay tầng dưới một lần.
+
+✅ **Kết cục có hậu, và đáng ghi đủ:** đi đúng đường thì nó chạy — **7 passed /
+134,61 s**, lần đầu tiên trên máy này. Đường đó: `setup/chay_voi_env.ps1` nạp
+`secrets\app.env` vào riêng tiến trình nó, gọi qua Nexus (LocalSystem đọc được
+`secrets\`), và chạy bằng **Scheduled Task** — vì `Start-Process` tách rời từ một
+lượt `exec` của Nexus **chết theo phiên**, và nó chết **im lặng**: 40 phút trôi qua
+trước khi ai đó đo CPU và thấy không có lấy một `python.exe` nào.
+
+---
+
+⚠️ Bẫy 7, 8, 10, 18 và 20 **chưa có bánh cóc** (Bẫy 17 và 19 đã có, vá 31/08).
+Chúng được ghi ở đây vì cả năm đều là
 loại chỉ nhận ra khi đã biết trước — và cái giá của việc không biết là một vòng
 chẩn đoán đi sai hướng ngay từ câu đầu tiên.
 

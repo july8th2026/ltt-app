@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ _(man.tieu_de) }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Trang một-câu trong vỏ của app: hôm nay là "không tìm thấy dự án / lô".
+
+  🔴 TỆP NÀY TỪNG TÊN LÀ `ltt_voice_chua_xay.html`, và cái tên đó đã nói dối
+     suốt hai pha. Nó sinh ra cho ba tab chưa xây, nhưng hai cửa 404 của Dự án
+     và Chạy lô đã mượn nó làm trang thông báo chung — nên khi màn cuối được xây
+     ở P8 và tôi xoá nó đi *"vì không còn màn nào chưa xây"*, hai đường 404 gãy
+     ngay lập tức, và **hai phép kiểm khác** đỏ chứ không phải phép kiểm nào của
+     màn API.
+
+  ⭐ Bài học đáng giữ hơn cái tên: **một tệp được dùng lại cho việc thứ hai mà
+     không được đổi tên là một cái bẫy đã cài sẵn.** Người xoá nó đọc cái tên,
+     tin cái tên, và cái tên đã cũ. Nên nó nay tên theo việc nó LÀM (thông báo),
+     không theo việc nó từng làm.
+
+  ⛔ VÀ KHÔNG CÒN BADGE "ĐANG XÂY". Badge ấy đúng với màn chưa xây và **sai** với
+     một trang 404 — nó bảo khách chờ một thứ sẽ không bao giờ tới, trong khi sự
+     thật là họ gõ nhầm địa chỉ hoặc dự án đó không phải của họ.
+
+  Tham số:
+    man.tieu_de   — bắt buộc
+    man.mo_ta     — bắt buộc
+    man.sap_co    — tuỳ chọn: danh sách gạch đầu dòng, rỗng thì không hiện khối
+#}
+
+{% block content %}
+<section class="lv-man" aria-labelledby="lv-cx-title">
+  {% with tieu_de = _(man.tieu_de), mo_ta = _(man.mo_ta), id_tieu_de = "lv-cx-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
+
+  <div class="ui-card lv-cx">
+    {% if man.sap_co %}
+      <h2>{{ _("Phần này sẽ có") }}</h2>
+      <ul class="lv-cx-ds">
+        {% for muc in man.sap_co %}<li>{{ _(muc) }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+    <div class="lv-cx-nut">
+      <a class="btn primary" href="{{ manifest.route_prefix }}">{{ _("Tạo tiếng nói") }}</a>
+      <a class="btn ghost" href="{{ manifest.route_prefix }}/giong">{{ _("Giọng của tôi") }}</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+{# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+{% endblock %}

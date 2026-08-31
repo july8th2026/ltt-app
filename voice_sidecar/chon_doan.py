@@ -125,6 +125,20 @@ class KetQuaChon:
     diem_dai_dien: float | None = None
     snr_db: float | None = None
     so_ung_vien: int = 0
+    #: Thang nào đã chấm chất lượng: `"dnsmos_ovrl"` | `"snr_db"` | `""`.
+    #:
+    #: 🔴 THIẾU TRƯỜNG NÀY LÀ MỘT LỖI THẬT, ĐO ĐƯỢC TRÊN PRODUCTION 31/08.
+    #:    `diem_chat_luong` tính đúng tên thang và docstring của nó hứa hẳn là
+    #:    *"nói ra là đã lui"* — rồi người gọi **vứt** giá trị thứ hai đi. Nên
+    #:    báo cáo của một lượt ghi danh thật không có cách nào nói DNSMOS có
+    #:    chạy hay đã lui về SNR, và tôi phải mở venv của sidecar ra hỏi tay.
+    #:
+    #: ⛔ Vì sao nó không chỉ là bất tiện: `dnsmos.cham` trả `None` **im lặng**
+    #:    khi thiếu `onnxruntime`, thiếu `scipy`, hay thiếu tệp model. Một lần
+    #:    deploy làm rơi một trong ba thứ đó sẽ hạ chất lượng bộ chọn xuống
+    #:    thang SNR — và **không một dòng nào ở đâu đổi**. Trường này là thứ
+    #:    duy nhất làm việc đó nhìn thấy được.
+    thang_chat_luong: str = ""
     ly_do: str = ""
     bang_diem: list = field(default_factory=list)
 
@@ -282,6 +296,22 @@ def diem_chat_luong(wav, sr: int) -> tuple[float, str]:
     return float(_snr_db(wav, sr) or -99.0), "snr_db"
 
 
+def _lam_tron(x: float | None) -> float | None:
+    """Làm tròn mà GIỮ `None`.
+
+    🔴 `round(_snr_db(...) or 0.0, 2)` biến "không đo được" thành `0.0`, và
+       `0.0` đọc lên là "đã đo, và bằng 0 dB". Hai câu đó khác nhau hoàn toàn.
+
+    ⭐ Nó vừa xảy ra thật: lượt ghi danh production 31/08 báo `"snr_db": 0.0`.
+       Không phải một bản thu tệ — clip do TTS sinh nên khoảng lặng là **số 0
+       tuyệt đối**, `_snr_db` trả `None` đúng như nó phải làm (SNR so với im
+       lặng tuyệt đối không có nghĩa), rồi `or 0.0` nuốt mất chữ "không biết".
+
+    ⛔ Đừng "sửa" `_snr_db` để nó trả 0 hay 99. `None` là câu trả lời đúng.
+    """
+    return None if x is None else round(float(x), 2)
+
+
 def _snr_db(wav, sr: int) -> float | None:
     """SNR ước lượng: 25 % khung to nhất so với 10 % khung yên nhất.
 
@@ -334,25 +364,26 @@ def chon(wav, sr: int, *, bo_ma_hoa=None) -> KetQuaChon:
     if bo_ma_hoa is None:
         a, b = max(uv, key=lambda x: (_snr_db(wav[x[0]:x[1]], sr) or 0.0, x[1] - x[0]))
         return KetQuaChon(round(a / sr, 3), round(b / sr, 3),
-                          snr_db=round(_snr_db(wav[a:b], sr) or 0.0, 2),
+                          snr_db=_lam_tron(_snr_db(wav[a:b], sr)),
                           so_ung_vien=len(uv),
                           ly_do="khong nap duoc bo ma hoa giong — chon theo SNR, "
                                 "KHONG theo dai dien")
 
-    emb_ca_clip = _moc_ben_vung(wav, sr, uv, bo_ma_hoa)
+    emb_ca_clip, thang = _moc_ben_vung(wav, sr, uv, bo_ma_hoa)
     diem = [(_cosine(bo_ma_hoa(wav[a:b], sr), emb_ca_clip), a, b) for a, b in uv]
     diem.sort(key=lambda x: (round(x[0], 4), x[2] - x[1]), reverse=True)
     d, a, b = diem[0]
     return KetQuaChon(
         bat_dau_s=round(a / sr, 3), ket_thuc_s=round(b / sr, 3),
-        diem_dai_dien=round(d, 4), snr_db=round(_snr_db(wav[a:b], sr) or 0.0, 2),
-        so_ung_vien=len(uv), ly_do="chon theo dai dien (cosine voi ca clip)",
+        diem_dai_dien=round(d, 4), snr_db=_lam_tron(_snr_db(wav[a:b], sr)),
+        so_ung_vien=len(uv), thang_chat_luong=thang,
+        ly_do="chon theo dai dien (cosine voi ca clip)",
         bang_diem=[(round(x[1] / sr, 2), round(x[2] / sr, 2), round(x[0], 4))
                    for x in diem[:10]])
 
 
 def _moc_ben_vung(wav, sr: int, uv: list, bo_ma_hoa):
-    """Embedding MỐC để so sánh — ước lượng BỀN VỮNG, không phải cả clip thô.
+    """Embedding MỐC + tên thang đã chấm. Ước lượng BỀN VỮNG, không phải clip thô.
 
     🔴 ĐÂY LÀ LỖI THỨ HAI CỦA CHÍNH TỆP NÀY, và phép thử tổng hợp mới lộ ra.
 
@@ -372,16 +403,18 @@ def _moc_ben_vung(wav, sr: int, uv: list, bo_ma_hoa):
        tốt hơn vẫn xấu. Không có cách nào chọn ra một đoạn tốt từ một bản thu
        không có đoạn nào tốt, và bộ chọn không nên giả vờ có.
     """
-    diem = [(diem_chat_luong(wav[a:b], sr)[0], a, b) for a, b in uv]
+    cham = [(diem_chat_luong(wav[a:b], sr), a, b) for a, b in uv]
+    thang = cham[0][0][1] if cham else ""
+    diem = [(d, a, b) for (d, _), a, b in cham]
     if len(diem) < 3:
-        return bo_ma_hoa(wav, sr)
+        return bo_ma_hoa(wav, sr), thang
     nguong = float(np.median([x[0] for x in diem]))
     tot = [(a, b) for d, a, b in diem if d >= nguong] or [(a, b) for _, a, b in diem]
     cac = [np.asarray(bo_ma_hoa(wav[a:b], sr), dtype=np.float64).ravel()
            for a, b in tot]
     tb = np.mean(cac, axis=0)
     chuan = np.linalg.norm(tb)
-    return tb / chuan if chuan else tb
+    return (tb / chuan if chuan else tb), thang
 
 
 def _bo_ma_hoa_mac_dinh():

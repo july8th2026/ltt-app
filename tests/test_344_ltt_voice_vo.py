@@ -80,6 +80,23 @@ def test_khong_con_tab_nao_chua_xay():
         "vo.CHUA_XAY da go o P8; con lai la noi dung mo coi khong ai doc")
 
 
+class _RequestGia:
+    """Đủ hình dạng cho `ngu_canh`: một phiên ghi được.
+
+    ⛔ Từ khi `ngu_canh` phát `csrf_token`, nó **bắt buộc** cần một `request` thật
+       có `.session`. Phép kiểm này trước đó truyền `None` và vẫn xanh — vì lúc ấy
+       `ngu_canh` **không hề động đến `request`**, chính là lỗi P0 đã khiến mọi form
+       Voice render token rỗng trên production.
+
+    ⭐ Nên **không nới lỏng `ngu_canh` cho `None` đi qua** để phép kiểm xanh lại.
+       Làm thế là dựng lại đúng cái cửa đã cho lỗi đó lọt. Phép kiểm đổi, không
+       phải mã đổi.
+    """
+
+    def __init__(self):
+        self.session = {}
+
+
 def test_ngu_canh_bat_buoc_nav_key():
     """Không có mặc định cho `nav_key`.
 
@@ -87,12 +104,17 @@ def test_ngu_canh_bat_buoc_nav_key():
     — và sáng nhầm là loại lỗi không ai đi báo.
     """
     with pytest.raises(TypeError):
-        vo.ngu_canh(None, None)  # type: ignore[call-arg]
+        vo.ngu_canh(_RequestGia(), None)  # type: ignore[call-arg]
 
-    d = vo.ngu_canh(None, None, nav_key=vo.NAV_GIONG)
+    d = vo.ngu_canh(_RequestGia(), None, nav_key=vo.NAV_GIONG)
     assert d["nav"] == vo.NAV_GIONG
     # `base.html` đọc đúng khoá tên `nav`. Đổi tên khoá là gãy vỏ.
     assert "nav" in d and "manifest" in d and "hang_doi" in d
+    # 🔴 CHỐT CHÍNH LỖI P0: `ngu_canh` phải PHÁT token, không chỉ để chỗ trống.
+    #    Mọi khuôn mẫu Voice viết `value="{{ csrf_token }}"`; thiếu khoá này thì
+    #    Jinja render chuỗi rỗng, không cảnh báo, và **mọi POST trả 400**.
+    assert d.get("csrf_token"), (
+        "ngu_canh() khong phat csrf_token — moi form Voice se render value=\"\"")
 
 
 # ── 2 + 3. Đi qua router thật ────────────────────────────────────────────────

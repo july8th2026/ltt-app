@@ -16,6 +16,145 @@
 
 
 
+## 2026-08-31 — Giao diện LTT Voice: sáu màn, chín pha (P1–P9)
+
+- **Mục tiêu:** xây đầy đủ giao diện và tính năng trong giao diện cho `apps/ltt_voice`
+- **Hạng mục:** LTT VOICE — giao diện (tách khỏi lộ trình V7–V10 của engine)
+- **Trạng thái:** xong (chưa deploy — chủ sản phẩm xem local rồi quyết)
+
+### Đã làm
+
+Sáu màn: **Tạo tiếng nói · Giọng của tôi · Dự án · Chạy lô · Lịch sử · API**.
+Không tab nào còn `built=False`; cơ chế trang giữ chỗ đã gỡ.
+
+Nhật ký từng pha kèm **mọi lỗi tìm ra và vì sao chúng thoát được bộ test** nằm ở
+`docs/LTT_VOICE/VOICE_UI_EXECUTION_PLAN.md` §14. Ở đây chỉ ghi thứ ảnh hưởng
+ngoài phạm vi giao diện.
+
+**Ba lỗi đang sống, có hậu quả tiền hoặc bảo mật:**
+
+1. **CSRF chưa từng được thi hành.** `verify_csrf_token` trả `bool`; `ltt_voice`
+   là app **duy nhất** bỏ qua kết quả, ở cả **bốn** cửa POST. ⚠️ Nói cho đúng
+   mức: với `same_site="lax"` đòn tấn công liên-site cổ điển đã bị chặn sẵn, nên
+   đây không phải một lỗ đang bị khai thác được — nhưng nó là lớp bảo vệ mà mọi
+   app khác đều có và app này thì không. Đã sửa + hai lớp bánh cóc (một phép
+   kiểm HTTP cho từng cửa, và một bộ quét AST cấm gọi `verify_csrf_token` mà
+   không dùng kết quả).
+
+2. **Cửa `/audio/` mở quá rộng.** Bản đầu của tôi cho đọc cả `voice/{uid}/`, tức
+   lộ `repr-*.npz` — biểu diễn người nói. Đã thu hẹp về đúng hai dạng khoá.
+   `test_346` đặt một tệp repr **thật** vào kho và đòi 404.
+
+3. **Vòng đời tệp tiếng — lỗi có HẠN.** `voice_block.audio_key` sống mãi cùng dự
+   án, còn tệp nó trỏ tới sống **30 ngày** theo hạn của `jobs`. Sau 30 ngày
+   khách mở dự án cũ thấy một trình phát trông bình thường, bấm, **không có gì
+   xảy ra**. Hôm nay chưa ai dính — nó sẽ dính đúng 30 ngày sau lượt đọc đầu
+   tiên của khách đầu tiên. Sửa bằng **một** thẩm quyền `du_an.duong_tieng()`
+   thay cho **năm** chỗ tự dựng URL, và khối hết tệp thì **nói ra**.
+
+**Sửa ngoài `apps/ltt_voice/`** — hai chỗ, đều bắt buộc:
+- `platform_core/public_api/governance.py`: khai `voice_project` + `voice_block`
+  (CONTENT, giữ theo tài khoản). `test_211` đỏ vì thiếu chúng.
+- `server/templates/base.html`: một dòng — `{{ entry.label }}` → `{{ _(entry.label) }}`.
+  Nhãn tab **chưa bao giờ được dịch** cho bất kỳ app nào; ba bản dịch tiếng Anh
+  của Voice đã nằm sẵn trong catalog mà không ai đọc.
+
+### Test đã chạy
+
+| Lệnh | Kết quả |
+|---|---|
+| `python -m pytest` mười tệp test của đợt này (`test_344`…`test_352`, `test_364`) | **PASS** — 171 passed |
+| `python tools/gate.py` — bằng chứng, cây đứng yên cả lượt | **PASS 25/25**. `bộ test (song song)` 304 s; ba bộ frontend xanh. ⛔ **Nhưng 25/25 ấy chỉ chứng minh 24 điều** — xem ngay dưới |
+| `python tools/gate.py --vong-lap` (nhiều lượt trong khi xây) | dùng để dò, **không** tính là bằng chứng — chính dòng `RESULT` của nó nói vậy |
+
+⚠️ **Đã sinh lại `ho_so_he_thong.txt` NGAY TRƯỚC lượt gate làm bằng chứng** và
+không ghi gì vào cây trong lúc nó chạy — lượt trước tôi tự phá cửa sổ yên của
+chính mình bằng cách sửa tài liệu giữa chừng, và gate in thẳng
+`CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG`. Lượt này không có dòng đó.
+
+🔴 **`bất biến đa tiến trình` KHÔNG ĐƯỢC CHỨNG MINH Ở PHIÊN NÀY.** Nó hiện
+`[PASS] 0,7s`, nhưng đo trực tiếp: `exit=0`, **0 giây**, có in `BO QUA`. Nó không
+tạo được CSDL test PostgreSQL (không đọc được `C:\LTTPlatform\secrets\`, siết về
+SYSTEM + Administrators từ 27/08) nên tự bỏ qua — và `return 0` ấy **có chủ ý**,
+được ghi lý do ngay trong `check_multiproc.py`. Chỗ hụt là `gate.py` chỉ đọc mã
+thoát, nên một lượt BỎ QUA và một lượt ĐẮT trông y hệt nhau.
+
+✅ **ĐÃ CHỨNG MINH — cùng ngày, bởi một phiên khác.** Lúc tôi viết đoạn trên,
+`test_214` chưa từng chạy trên máy này. Phiên `-a5` chạy được nó tối 31/08:
+**7 passed / 134,61 s**, và bước gate tương ứng không còn tự bỏ qua
+(`_tu_khai_bo_qua -> False`). Đây là **lần đầu tiên** bất biến đa tiến trình có bằng
+chứng sống trên máy này.
+
+⚠️ Con số trên là **phép đo của phiên `-a5`**, không phải của phiên này — phiên này
+   không đọc được `secrets\` nên không tự chạy lại được để xác nhận.
+
+⛔ **VÀ ĐƯỜNG ĐI TÔI ĐOÁN TRONG BẢN TRƯỚC LÀ SAI.** Tôi viết *"cần PowerShell
+   Administrator hoặc đặt `LTT_TEST_DATABASE_URL`"*. Đường thực tế chạy được là:
+
+   1. `setup/chay_voi_env.ps1` — nạp `secrets\app.env` vào **riêng tiến trình nó**,
+      chạy đúng một việc trong danh sách trắng, không in giá trị nào.
+   2. Gọi qua **Nexus trên máy A** — agent chạy bằng LocalSystem nên đọc được
+      `secrets\`.
+   3. ⛔ **Bằng Scheduled Task, KHÔNG bằng `Start-Process`.** Một tiến trình tách rời
+      từ một lượt `exec` của Nexus **chết theo phiên**. Phiên `-a5` để nó *"chạy"*
+      40 phút rồi mới đo CPU và thấy không có lấy một `python.exe` nào — nó chưa bao
+      giờ chạy. Câu trả lời nằm sẵn trong memory của dự án (*"lô đo dài trên máy B
+      phải dùng Scheduled Task"*), và không ai đọc nó.
+
+🔴 **VÀ CÓ HAI TẦNG BỎ QUA CHỒNG LÊN NHAU, không phải một.** Phiên `-a5` thử gọi
+   thẳng `pytest tests/test_214...` trước và nhận `sssssss — 7 skipped in 0.26s`:
+   bản thân bộ test cũng tự bỏ qua, vì nó đòi một **CSDL test riêng**
+   (`LTT_TEST_DATABASE_URL`) và `app.env` chỉ có `LTT_DATABASE_URL` của production.
+   Nó **đúng khi từ chối** chạy trên CSDL thật.
+
+   ⇒ Sửa tầng trên (bước gate) **không** làm lộ tầng dưới. Và
+     `check_multiproc.py` mới là thứ **tạo ra** CSDL test — nên không được thay nó
+     bằng một lệnh `pytest` trông như tương đương. Ghi thành **Bẫy 20**.
+
+⭐ Hai phiên ban đầu báo hai điều trái ngược về bước này (một bên `PASS`, một bên
+`FAIL 1/25`), và cả hai đều tự sửa sau khi **đo lại thay vì suy ra**. Chi tiết ở
+`docs/BAY_TRONG_CONG_CHAT_LUONG.md` — **Bẫy 17**.
+
+### Quyết định mới
+Không có Q mới. Q118 (trần ký tự là trần **chất lượng**) và Q119 (không lộ tham
+số sinh mẫu) được **thi hành** trong giao diện, không bị đổi.
+
+### Cách lùi lại
+Toàn bộ nằm trong `apps/ltt_voice/`, `server/static/{ltt.css,voice.js}`,
+`server/templates/base.html`, `platform_core/public_api/governance.py`, và
+`tests/test_34[4-9]|35[0-2]|364*`. Hai migration: `c3d9f52a7e18` (dự án),
+`d4e0a63b8f29` (lô) — cả hai đã thử `upgrade` + `downgrade` sạch trên sqlite vứt đi.
+
+### Còn tồn đọng
+
+⛔ **ĐỪNG đọc "Chạy lô đã xong" thành "V9 đã xong".** Dự án và Chạy lô nộp **một
+job cho mỗi dòng/khối** — đúng hình dạng cho MVP (mỗi dòng thử lại và tính tiền
+độc lập) nhưng **không** dùng `infer_batch` lẫn CUDA graph đã ấm. Bề mặt của V9
+có, phần hiệu năng chưa.
+
+🔴 **LTT VOICE ĐANG SỐNG TRÊN PRODUCTION** — đo 31/08: thẻ app có trong
+  `/ung-dung` công khai, và `C:\LTTPlatform\app\apps\ltt_voice\` đã có P1–P6.
+  Bản đang chạy **đã có** hai bản vá bảo mật (CSRF bốn cửa, cửa `/audio/` thu
+  hẹp). Thứ **chưa** lên: P7 · P8 · P9.
+
+  ⇒ Hệ quả cụ thể: **lỗi tệp tiếng 30 ngày đang tồn tại trên bản khách đang
+  dùng.** Nó chưa nổ vì chưa dự án nào đủ 30 ngày tuổi, không phải vì nó không
+  có ở đó.
+
+- **Chưa deploy đợt này.** Chưa kiểm được P7–P9 trên
+  `https://app.lttstudios.com` vì chúng chưa lên đó. Sau deploy phải soi URL công khai (CLAUDE.md quy tắc 5b) —
+  `ltt.css` đổi nhiều, và CF đã một lần phục vụ bản CSS cũ 4 giờ.
+- **Bốn bảng Voice cũ vẫn dùng `BigInteger` làm khoá chính** — không tự tăng
+  trên SQLite (SQLAlchemy #2074). Hai bảng mới đã dùng `with_variant`; bốn bảng
+  cũ thì chưa. Không ảnh hưởng production (PostgreSQL) nhưng làm test local vỡ.
+- `speech.ltt` vẫn **chưa** trong `LTT_PUBLIC_API_TOOLS`. Màn API nói đúng điều
+  đó và không đưa lệnh gọi chép được.
+
+### Việc tiếp theo
+1. Chủ sản phẩm xem local, quyết deploy.
+2. Sau deploy: soi sáu màn trên URL công khai.
+3. V7–V10 theo `docs/LTT_VOICE/00_PHUONG_AN_VA_LO_TRINH.md`.
+
 ## 2026-08-29 — ĐÓNG DỰ ÁN. Đọc mục này trước nếu bạn là phiên tiếp theo
 
 **29 commit, hai phiên làm song song, ba lượt deploy `EXITCODE=0`.**

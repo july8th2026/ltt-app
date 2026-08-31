@@ -21,6 +21,7 @@ vo.py — VỎ dùng chung của mọi màn LTT Voice Studio.
 from __future__ import annotations
 
 from platform_core.i18n import N_
+from server.auth.csrf import issue_csrf_token
 
 from . import gia, sidecar_client
 from .manifest import MANIFEST
@@ -40,29 +41,6 @@ NAV_DU_AN = "ltt_voice_du_an"
 NAV_LO = "ltt_voice_lo"
 NAV_LICH_SU = "ltt_voice_lich_su"
 NAV_API = "ltt_voice_api"
-
-#: Màn chưa xây: nhãn + câu nói thật về thứ sẽ có. Nền tảng đã gắn badge "đang
-#: xây" lên tab qua `NavEntry.built=False`; đây là nội dung của chính trang đó.
-#:
-#: ⭐ VÌ SAO CÓ TRANG THẬT THAY VÌ ĐỂ 404: tab đã hiện trên thanh thì bấm vào
-#:    phải tới một chỗ nói được điều gì đó. Một tab dẫn tới 404 tệ hơn không có
-#:    tab — nó biến một lời hứa thành một lỗi.
-#:
-#: ⛔ Và trang này KHÔNG được vẽ giao diện giả. Nó nói sẽ có gì, không mô phỏng
-#:    cái sẽ có. Một màn hình giả trông như đã xong là cách nhanh nhất để một
-#:    phiên sau tưởng nó đã xong.
-CHUA_XAY = {
-    NAV_API: {
-        "tieu_de": N_('API'),
-        "mo_ta": N_('Gọi giọng của bạn từ mã nguồn của bạn, bằng mã giọng đã có.'),
-        "sap_co": (
-            N_('Mã giọng nào gọi được, và ví dụ gọi thử sẵn.'),
-            N_('Ví dụ cURL, Python, JavaScript cho đúng công cụ giọng nói.'),
-            N_('Khoá, hạn mức và nhật ký dùng chung với khu Lập trình viên.'),
-        ),
-    },
-}
-
 
 def dem_dang_chay(db, owner_id: str) -> int:
     """Số việc của KHÁCH NÀY trong app này đang chờ hoặc đang chạy.
@@ -106,6 +84,24 @@ def ngu_canh(request, user, *, nav_key: str, hang_doi: int = 0, **them) -> dict:
         "bang_gia": gia.bang_gia(),
         "cong_san_sang": sidecar_client.san_sang(),
         "hang_doi": hang_doi,
+        # 🔴 THIẾU DÒNG NÀY LÀM CHẾT MỌI CỬA POST CỦA APP, và nó chết IM LẶNG
+        #    suốt từ ngày phát hành cho tới khi CSRF được thi hành thật.
+        #
+        #    Mọi template Voice viết `value="{{ csrf_token }}"`. Không có khoá
+        #    này trong ngữ cảnh thì Jinja render **chuỗi rỗng** — không cảnh
+        #    báo, không lỗi. Và `verify_csrf_token` khi đó cũng đang bị bỏ qua
+        #    kết quả, nên hai lỗi triệt tiêu nhau và mọi thứ trông vẫn chạy.
+        #
+        #    Vá lỗ CSRF (thi hành thật) gỡ một trong hai, và lỗi còn lại hiện
+        #    ra ngay: **mọi form trả 400 "Phiên đã hết hạn"** — tạo tiếng, tạo
+        #    giọng, tắt giọng, dự án, chạy lô. Đo thật trên production
+        #    31/08/2026: form đăng xuất của `base.html` có token 43 ký tự, mọi
+        #    form của app có `value=""`.
+        #
+        # ⭐ Bài học không phải "nhớ thêm token". Là: **hai lỗi triệt tiêu nhau
+        #    thì sửa một cái sẽ làm lộ cái kia**, và cái lộ ra trông y hệt một
+        #    hồi quy do bản vá gây ra. Nó không phải.
+        "csrf_token": issue_csrf_token(request),
     }
     d.update(them)
     return d

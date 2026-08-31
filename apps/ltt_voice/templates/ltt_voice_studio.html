@@ -69,16 +69,19 @@
     <div class="lv-st-giua">
       <div class="lv-st-o">
         <div class="lv-st-o-dau">
-          <span class="eyebrow">{{ _("Kịch bản") }}</span>
+          <span class="eyebrow" id="lv-nh-text">{{ _("Kịch bản") }}</span>
           <div class="lv-st-o-nut">
             <button type="button" class="btn sm ghost" id="lv-nut-xem">{{ _("Xem trước cách đọc") }}</button>
             <button type="button" class="btn sm ghost" id="lv-nut-xoa">{{ _("Xoá") }}</button>
           </div>
         </div>
 
+        {# ⛔ `aria-labelledby` chu khong phai placeholder: placeholder bien mat
+           ngay khi khach go chu dau tien, va nhieu trinh doc man hinh khong
+           doc no. Day la o nhap CHINH cua ca app. #}
         <textarea name="text" id="lv-text" rows="12" required
                   maxlength="{{ tran_ky_tu }}"
-                  aria-describedby="lv-dem"
+                  aria-labelledby="lv-nh-text" aria-describedby="lv-dem"
                   placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
         <p class="lv-dem" id="lv-dem">
           <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}

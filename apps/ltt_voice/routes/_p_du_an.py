@@ -129,14 +129,14 @@ def trang_mot_du_an(request: Request, public_id: str,
             # 404 chứ không 403: phân biệt "không có" với "không phải của bạn"
             # là cho phép dò xem `public_id` nào có thật.
             return templates.TemplateResponse(
-                request, "ltt_voice_chua_xay.html",
+                request, "ltt_voice_thongbao.html",
                 vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN,
                             man={"tieu_de": _t("Không tìm thấy dự án"),
                                  "mo_ta": _t("Dự án này không tồn tại, hoặc "
-                                             "không thuộc tài khoản của bạn."),
-                                 "sap_co": ()}),
+                                             "không thuộc tài khoản của bạn.")}),
                 status_code=404)
         khoi = du_an.cac_khoi(db, d.id)
+        duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         tt = du_an.tom_tat(khoi)
         hang_doi = vo.dem_dang_chay(db, uid)
         cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
@@ -145,8 +145,7 @@ def trang_mot_du_an(request: Request, public_id: str,
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
             "trang_thai": k.trang_thai, "job_id": k.job_id,
             "giay": k.giay, "credit": k.credit,
-            "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                          if k.audio_key else ""),
+            "audio_url": duong.get(k.id, ""),
         } for k in khoi]
     finally:
         try:
@@ -435,14 +434,14 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
         db.commit()
 
         tt = du_an.tom_tat(khoi)
+        duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         return JSONResponse({
             "ok": True,
             "tom_tat": tt,
             "khoi": [{
                 "id": k.id, "trang_thai": k.trang_thai,
                 "giay": k.giay, "credit": k.credit,
-                "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                              if k.audio_key else ""),
+                "audio_url": duong.get(k.id, ""),
             } for k in khoi],
         })
     finally:

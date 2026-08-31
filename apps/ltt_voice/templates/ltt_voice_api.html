@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}{{ _("API") }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Màn API của Voice — màn thứ sáu và cuối cùng.
+
+  🔴 NÓ CỐ TÌNH MỎNG. Khu `/developers` đã có khoá, hạn mức, giá, nhật ký,
+     playground và tài liệu — cho MỌI công cụ. Chép bất kỳ thứ nào trong đó về
+     đây là tạo bản thứ hai của một sự thật, và bản thứ hai sẽ trôi.
+
+     Ở đây chỉ có thứ **chỉ đúng với giọng nói**:
+       ① mã giọng của chính khách (không nơi nào khác biết khách có giọng nào),
+       ② tên giọng dựng sẵn hợp lệ (hai mươi cái tên, gõ sai một chữ là lỗi ở
+         tận lúc gọi),
+       ③ trần ký tự và **lý do** nó là trần chất lượng chứ không phải trần kỹ
+         thuật (Q118),
+       ④ một ví dụ đúng cho đúng công cụ này.
+
+  ⛔ VÍ DỤ CHỈ HIỆN KHI CỬA THẬT SỰ MỞ. Một lệnh curl chép được, dán vào, rồi
+     trả 404 sẽ được khách đọc là "khoá của tôi sai" — họ đi tạo khoá mới và vẫn
+     404. Đúng cái bẫy `CLAUDE.md` mô tả ở mục Public API: lỗi của Cloudflare
+     hoặc của cổng, không có `request_id`, không tra được, và **phía ta không
+     thấy gì cả**.
+#}
+
+{% block content %}
+<section class="lv-man lv-api" aria-labelledby="lv-api-title">
+  {% with tieu_de = _("API"),
+          mo_ta = _("Gọi giọng của bạn từ mã nguồn của bạn, bằng mã giọng đã có."),
+          id_tieu_de = "lv-api-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
+
+  {# ── Trạng thái cửa: đọc từ cấu hình đang chạy, không phải hằng số ─────── #}
+  {% if trang_thai.tool_mo %}
+    <p class="alert alert-ok" role="status">
+      {{ _("Công cụ %(ten)s đang mở trên API công khai.") % {"ten": ten_tool} }}
+      {% if trang_thai.chi_doc %}
+        <strong>{{ _("Khu API đang ở chế độ chỉ đọc — lượt gọi tạo việc sẽ bị từ chối.") }}</strong>
+      {% endif %}
+    </p>
+  {% else %}
+    <p class="alert alert-warn" role="status">
+      <strong>{{ _("Công cụ %(ten)s chưa mở trên API công khai.") % {"ten": ten_tool} }}</strong>
+      {{ _("Bạn vẫn dùng được giọng của mình trên giao diện này. Muốn gọi từ mã nguồn thì liên hệ quản trị để mở công cụ.") }}
+    </p>
+  {% endif %}
+
+  <div class="lv-api-khung">
+    {# ── Cột trái: những gì chỉ màn này biết ───────────────────────────── #}
+    <div class="lv-api-trai">
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Mã giọng của bạn") }}</span>
+        {% if ma_giong %}
+          <p class="dim">{{ _("Dán thẳng vào tham số voice_id. Mã không đổi kể cả khi engine nâng cấp.") }}</p>
+          <ul class="lv-api-ds">
+            {% for g in ma_giong %}
+              <li>
+                <b>{{ g.ten }}</b>
+                {% with ma = g.ma, nho = true %}{% include "_voice_ma.html" %}{% endwith %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="dim">{{ _("Bạn chưa có giọng nhân bản nào.") }}
+            <a href="{{ manifest.route_prefix }}/giong">{{ _("Ghi danh một giọng") }}</a>
+            {{ _("rồi mã của nó sẽ hiện ở đây.") }}</p>
+        {% endif %}
+      </div>
+
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Giọng dựng sẵn") }}</span>
+        <p class="dim">{{ _("Không cần ghi danh. Truyền tên vào tham số preset, để trống voice_id.") }}</p>
+        <ul class="lv-api-mau">
+          {% for g in giong_mau %}
+            <li><code class="mono">{{ g.ma }}</code>
+              <small class="dim">{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }}</small></li>
+          {% endfor %}
+        </ul>
+        <p class="dim"><small>{{ _("Bỏ trống cả hai thì dùng %(ten)s.") % {"ten": mac_dinh} }}</small></p>
+      </div>
+    </div>
+
+    {# ── Cột phải: giới hạn + ví dụ + đường sang khu Lập trình viên ────── #}
+    <div class="lv-api-phai">
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Giới hạn của công cụ này") }}</span>
+        <dl class="lv-api-gh">
+          <dt>{{ _("Mỗi lượt gọi") }}</dt>
+          <dd>{{ _("%(n)s ký tự") % {"n": tran_ky_tu} }}</dd>
+        </dl>
+        {# ⭐ Câu này là toàn bộ lý do dòng trên tồn tại ở đây thay vì chỉ nằm
+             trong bảng tham số của `/developers/tools`. #}
+        <p class="dim"><small>{{ _("Đây là trần CHẤT LƯỢNG, không phải trần kỹ thuật: văn bản dài hơn vẫn sinh được, nhưng giọng bắt đầu trôi tông giữa các đoạn. Kịch bản dài thì chia thành nhiều lượt gọi.") }}</small></p>
+      </div>
+
+      {% if trang_thai.tool_mo %}
+        <div class="lv-st-o">
+          <span class="eyebrow">{{ _("Gọi thử") }}</span>
+          <div class="lv-api-ma">
+            <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-curl"
+                    aria-label="{{ _('Chép lệnh mẫu') }}"
+                    title="{{ _('Chép lệnh mẫu') }}">⧉</button>
+            <pre id="lv-api-curl" class="mono"><code>curl -X POST https://app.lttstudios.com/api/v1/jobs \
+  -H "Authorization: Bearer $LTT_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"tool": "{{ ten_tool }}",
+       "params": {"text": "{{ vi_du }}",
+                  "preset": "{{ mac_dinh }}"}}'</code></pre>
+          </div>
+          <p class="dim"><small>{{ _("Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
+        </div>
+      {% endif %}
+
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Phần dùng chung") }}</span>
+        {# ⛔ Đường dẫn, không phải bản sao. Bốn thứ dưới đây đúng cho mọi công
+             cụ, và khu Lập trình viên là nơi giữ chúng. #}
+        <ul class="lv-api-lien">
+          <li><a href="/developers/keys">{{ _("Khoá API") }}</a></li>
+          <li><a href="/developers/tools">{{ _("Hợp đồng tham số đầy đủ") }}</a></li>
+          <li><a href="/developers/pricing">{{ _("Giá và bộ mô phỏng") }}</a></li>
+          <li><a href="/developers/logs">{{ _("Nhật ký gọi và job") }}</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{# ⛔ MÀN NÀY KHÔNG CÓ MODULE JS RIÊNG — nhưng vẫn PHẢI nạp `voice.js`.
+     `LttVoice.chay()` tự chạy lúc tải và nối MỌI nút `.lv-ma-chep` trên trang:
+     nút chép mã giọng lẫn nút chép lệnh mẫu. Thiếu thẻ này thì các nút vẫn
+     **hiện đầy đủ và bấm được**, chỉ là không có gì xảy ra — đúng kiểu hỏng im
+     lặng, và bản đầu của màn này đã mắc đúng thế. #}
+{% block scripts %}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+{% endblock %}

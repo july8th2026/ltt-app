@@ -10,18 +10,17 @@ Nền tảng chỉ cần biến `router`. Import từng mảnh ở đây để h
     _p_du_an.py     Dự án: danh sách · khối · sinh · xuất
     _p_lo.py        Chạy lô: nhận danh sách · kiểm hết · chạy hết · tải zip
     _p_lich_su.py   Lịch sử: lọc và liệt kê
-    _p_chua_xay.py  Màn đã có tab nhưng chưa xây
+    _p_api.py       API: mã giọng để dán vào mã nguồn + trạng thái cửa thật
     _p_audio.py     Phục vụ tệp tiếng — cửa duy nhất đọc kho của khách
 
-⛔ THỨ TỰ IMPORT CÓ NGHĨA. `_p_chua_xay` phải nằm **sau** mọi mảnh khai đường
-   thật: nó chỉ còn dựng những màn chưa ai xây, và ngày một màn được xây thì
-   route thật phải thắng. FastAPI khớp theo thứ tự đăng ký, nên một placeholder
-   đăng ký trước sẽ **nuốt** đường thật — và triệu chứng là một màn hoàn chỉnh
-   hiện ra trang "đang xây", không lỗi nào báo.
+⭐ TỪ P8 KHÔNG CÒN MẢNH GIỮ CHỖ. `_p_chua_xay.py` đã gỡ cùng màn cuối được xây.
+   Nó từng phải nằm **sau** mọi mảnh khác vì FastAPI khớp theo thứ tự đăng ký,
+   nên một placeholder đăng ký trước sẽ **nuốt** đường thật — và triệu chứng là
+   một màn hoàn chỉnh hiện ra trang "đang xây", không lỗi nào báo. Cái bẫy đó đi
+   cùng tệp; ghi lại ở đây phòng khi ai dựng lại cơ chế ấy.
 """
 from apps.ltt_voice.routes._chung import router
 from apps.ltt_voice.routes import (  # noqa: F401  (import để đăng ký route)
-    _p_tao, _p_giong, _p_du_an, _p_lo, _p_lich_su, _p_audio,
-    _p_chua_xay)
+    _p_tao, _p_giong, _p_du_an, _p_lo, _p_lich_su, _p_api, _p_audio)
 
 __all__ = ["router"]

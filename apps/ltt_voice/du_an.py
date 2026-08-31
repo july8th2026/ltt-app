@@ -109,6 +109,44 @@ def cac_khoi(db, project_id: int) -> list:
     ).scalars())
 
 
+def duong_tieng(db, cac, tien_to: str) -> dict:
+    """`id khối → URL nghe`. Khối mà tệp tiếng đã hết hạn thì KHÔNG có URL.
+
+    🔴 VÌ SAO PHẢI HỎI SANG BẢNG `jobs`. `voice_block.audio_key` chỉ là con trỏ;
+       tệp thật nằm trong vùng của job sinh ra nó, và `jobs` là CONTENT/30 ngày.
+       Sau 30 ngày `job_content.purge_expired` xoá tệp và đặt
+       `content_expired_at` — nhưng `audio_key` trên khối vẫn còn nguyên. Đọc
+       thẳng `audio_key` thì trang dựng một trình phát trỏ vào hư không: khách
+       bấm play, không có gì xảy ra, không có câu nào giải thích.
+
+    ⛔ VÀ VÌ SAO NÓ LÀ MỘT HÀM chứ không phải một điều kiện chép ở mỗi chỗ. Có
+       NĂM chỗ dựng đường nghe (hai ở Dự án, ba ở Chạy lô, kể cả nút tải ZIP).
+       Trước hàm này cả năm đều viết `if k.audio_key` — tức để sửa đúng thì phải
+       nhớ đủ năm, và chỗ thứ sáu sẽ lại quên. Một luật cho cả lớp.
+
+    ⚠️ Một truy vấn cho cả danh sách, không một truy vấn mỗi khối: một lô 500
+       dòng sẽ thành 500 lượt hỏi CSDL trên đúng con đường được hỏi lại mỗi vài
+       giây.
+    """
+    from sqlalchemy import select
+
+    from platform_core.models import Job
+
+    co_khoa = [k for k in cac if k.audio_key]
+    if not co_khoa:
+        return {}
+    ma_job = {str(k.job_id) for k in co_khoa if k.job_id}
+    het_han = set()
+    if ma_job:
+        het_han = {
+            str(x) for (x,) in db.execute(
+                select(Job.id).where(Job.id.in_(ma_job),
+                                     Job.content_expired_at.is_not(None)))
+        }
+    return {k.id: f"{tien_to}/audio/{k.audio_key}"
+            for k in co_khoa if str(k.job_id or "") not in het_han}
+
+
 def tim_khoi(db, project_id: int, block_id: int):
     from .tables_du_an import VoiceBlock
     k = db.get(VoiceBlock, int(block_id))

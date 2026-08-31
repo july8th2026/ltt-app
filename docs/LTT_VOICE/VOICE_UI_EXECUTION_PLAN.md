@@ -615,6 +615,147 @@ Job cũ hơn P1 không có `nguon` ⇒ hiện rỗng, **không đoán**.
 
 ---
 
+### P7 — Đáp ứng · tiếp cận · ma trận trạng thái ✅ 2026-08-31
+
+**Rà soát trước, sửa sau.** Đo trên trình duyệt thật ở **375 · 768 · 1280 px**,
+cả sáu màn cộng hai màn chi tiết.
+
+**Điều KHÔNG hỏng** (ghi lại để phiên sau khỏi đo lại): không màn nào tràn ngang
+ở bất kỳ điểm gãy nào; không nút/liên kết nào thiếu tên; hai nút biểu tượng
+(`×`, `⧉`) đã có `aria-label` từ trước; mọi ô nhập đều có nhãn; không `tabindex`
+dương; viền focus bàn phím hiện rõ (1,6 px, có offset); `html lang` đúng.
+
+⚠️ Và một cái **suýt** thành phát hiện sai: bộ dò đầu tiên của tôi báo "không nút
+nào thiếu tên" — vì nó đọc `textContent`, mà `×` thì **có** nội dung. Nút biểu
+tượng qua được một phép đo không hỏi đúng câu. Phải hỏi lại bằng `aria-label`
+mới thấy chúng vốn đã ổn; nếu chúng **không** ổn thì phép đo đầu đã cho tôi một
+lời trấn an sai.
+
+**Ba thứ đã sửa:**
+
+1. **`aria-pressed` cho bốn nhóm lọc** (Studio, Giọng ×4 nhóm, Chạy lô). Trước
+   đó trạng thái "đang bật" chỉ tồn tại bằng lớp CSS `on` — con mắt thấy, trình
+   đọc màn hình không. Màn Lịch sử dùng **`aria-current`** thay vì `aria-pressed`
+   vì nút ở đó là `submit` làm **tải lại trang**, không phải công tắc.
+
+   ⭐ Và nó được sửa bằng **một hàm** `batNut()` chứ không phải ba chỗ vá: ba
+   vòng lặp riêng đang làm cùng một việc là ba chỗ để quên đồng bộ nút thứ tư.
+   Đây là đúng bài học của lỗi `[hidden]` ở P4 — *đặt một luật trên cả lớp, đừng
+   liệt kê đường hỏng*.
+
+2. **Vùng `role="status"` cho hai màn chi tiết.** Studio có từ đầu; Dự án và
+   Chạy lô thì không — nên tiến độ ở hai màn đó chỉ tồn tại bằng mắt. Thêm một
+   `<p class="sr-only" role="status" aria-live="polite">` và một hàm `baoTin()`
+   nói **một câu**, và chỉ khi câu ấy **đổi**.
+
+   ⛔ Không đặt `aria-live` lên chính lưới con số: mỗi luợt hỏi ghi lại cả bốn ô,
+   nên trình đọc màn hình sẽ đọc lại cả bốn **mỗi vài giây**.
+
+   Đo thật: `Read 0 of 3 blocks.` → `Read 1 of 3 blocks.` → `Finished reading all
+   3 blocks.`; lô: `Batch finished: 2 rows done, 1 failed.`
+
+3. **Cỡ vùng chạm ≥ 24 px** cho `.lv-chon-them` (15 px) và link quay lại (17 px).
+   ⚠️ Nói cho đúng: cả hai **gần như chắc chắn lọt ngoại lệ khoảng cách** của
+   WCAG 2.5.8 vì chúng đứng một mình — nên đây **không** phải một vi phạm đã
+   chứng minh, mà là một chỗ khó bấm bằng ngón tay. Sửa vì `min-height` không
+   tốn gì, không vì một điều khoản.
+
+**Và một lỗi thật, tìm ra ngoài phạm vi P7.** `python tools/gate.py --vong-lap`
+đỏ ở `test_211`: hai bảng `voice_project` / `voice_block` chưa khai hạn giữ.
+Khai xong thì lộ ra hệ quả:
+
+🔴 **`voice_block.audio_key` sống mãi cùng dự án; tệp nó trỏ tới sống 30 ngày.**
+`jobs` là CONTENT/30, nên `job_content.purge_expired` xoá tệp và đặt
+`content_expired_at` — còn khối vẫn quảng cáo là có tiếng. Khách mở dự án cũ,
+thấy một trình phát trông bình thường, bấm, **không có gì xảy ra**.
+
+Nó có **hạn**: đúng 30 ngày sau lượt đọc đầu tiên của khách đầu tiên. Hôm nay
+chưa ai dính, nên rất dễ ghi một dòng TODO rồi quên.
+
+Sửa bằng **một thẩm quyền duy nhất** `du_an.duong_tieng()` — một truy vấn cho cả
+danh sách, trả `id khối → URL`, và khối có job hết hạn thì **không có URL**.
+Trước đó **năm** chỗ tự dựng URL bằng `if k.audio_key` (hai ở Dự án, ba ở Chạy
+lô, kể cả nút ZIP): sửa đúng nghĩa là phải nhớ đủ năm. Có test cấm chỗ thứ sáu.
+
+⭐ Và ô trống **được nói ra**: khối `xong` mà không còn tệp hiện câu *"Tệp tiếng
+đã hết hạn sau 30 ngày. Đọc lại để có tệp mới."* Một ô trống ở chỗ đáng lẽ có
+trình phát trông y hệt một lỗi hiển thị — tức tôi đã dời cái hỏng im lặng chứ
+chưa gỡ nó, nếu dừng ở bước trước.
+
+**Chốt:** `tests/test_352_ltt_voice_tiep_can.py`, 19 phép kiểm. Đã **thử lùi ba
+sửa đổi** để chắc test bắt được — cả ba đều đỏ đúng chỗ.
+
+
+### P8 — Màn API ✅ 2026-08-31
+
+**Màn thứ sáu, và nó cố tình mỏng.** Khu `/developers` đã có khoá · hạn mức ·
+giá · nhật ký · playground · tài liệu, cho **mọi** công cụ. Chép bất kỳ thứ nào
+về đây là tạo bản thứ hai của một sự thật, và bản thứ hai sẽ trôi.
+
+Chỉ giữ thứ **chỉ đúng với giọng nói**: mã giọng của chính khách · 20 tên giọng
+dựng sẵn · trần 1.500 ký tự **kèm lý do** (trần chất lượng, không phải trần kỹ
+thuật — Q118) · một ví dụ đúng cho đúng công cụ. Bốn thứ còn lại là **đường dẫn**
+sang khu Lập trình viên, không phải bản sao.
+
+⭐ Và tôi suýt vi phạm quy tắc ấy trong **chính lượt viết nó**: bản nháp đầu của
+`_p_api.py` truyền một hằng số giá xuống khuôn mẫu. Giá của Voice tính theo
+**giây tiếng ra**, không theo ký tự vào — nên mọi cách viết nó ở một trang hướng
+dẫn đều là một phép ước, và một phép ước in cạnh một lệnh `curl` sẽ được đọc là
+một lời hứa. Đã gỡ, và có `test_364::test_man_api_khong_in_gia` giữ chỗ trống ấy.
+
+**🔴 Chốt quan trọng nhất: ví dụ chỉ hiện khi cửa THẬT SỰ mở.**
+
+`speech.ltt` khai `api_exposed=True` — điều đó **không** nghĩa là nó đang mở.
+Cổng thật là `LTT_PUBLIC_API_TOOLS`, và hôm nay công cụ này không có trong đó.
+Màn đọc cấu hình **đang chạy** mỗi lần dựng trang, không hằng số, không cache.
+
+Hai chiều sai, cả hai đều có tiền lệ đắt:
+
+- *Nói ĐÓNG khi đang MỞ* — `CLAUDE.md` đã dính **hai lần**, cùng một hàng, cùng
+  một hướng.
+- *Nói MỞ khi đang ĐÓNG* — chưa xảy ra nhưng đắt hơn, vì nạn nhân là **khách**:
+  một `curl` nằm sẵn sẽ được chép bất kể câu chữ quanh nó, rồi trả 404 từ
+  Cloudflare hoặc từ cổng — không `request_id`, không dòng nào trong
+  `public_api_requests`, không tra được. Khách đọc thành "khoá của tôi sai", tạo
+  khoá mới, vẫn 404, và **phía ta không thấy gì cả**.
+
+⇒ Nên chốt không phải *"có một câu cảnh báo"* mà là **không có lệnh chép được**.
+`test_364` chạy cả bốn tổ hợp, gồm cả *"một công cụ KHÁC đang mở"* — nếu màn chỉ
+hỏi `LTT_PUBLIC_API` thay vì hỏi đúng công cụ, nó đã báo MỞ suốt trên production
+(bốn công cụ đang mở ở đó).
+
+**Cơ chế giữ chỗ đã gỡ.** `vo.CHUA_XAY` + `routes/_p_chua_xay.py` không còn phục
+vụ ai khi màn cuối được xây. `test_344` **đổi việc** thay vì bị xoá: nó nay canh
+"không tab nào còn `built=False`", vì rủi ro đã đổi chiều — ai thêm
+`built=False` bây giờ sẽ tạo ra một tab dẫn tới 404.
+
+**⚠️ Và việc gỡ đó làm gãy hai đường 404**, phát hiện bởi hai phép kiểm **không
+thuộc màn API**:
+
+🔴 `ltt_voice_chua_xay.html` **không chỉ** là trang giữ chỗ. Hai cửa 404 của Dự
+án và Chạy lô đã mượn nó làm trang thông báo chung từ P5/P6 — nhưng **cái tên
+không nói điều đó**. Tôi đọc cái tên, tin cái tên, xoá tệp, và hai đường gãy.
+
+⭐ Bài học đáng giữ hơn cái tên: **một tệp được dùng lại cho việc thứ hai mà
+không được đổi tên là một cái bẫy đã cài sẵn** cho người dọn dẹp sau. Nay nó tên
+`ltt_voice_thongbao.html` — theo việc nó **làm**, không theo việc nó **từng
+làm** — và badge "đang xây" đã bỏ, vì badge ấy bảo khách chờ một thứ sẽ không
+bao giờ tới trong khi sự thật là họ gõ nhầm địa chỉ.
+
+**Và một lỗi im lặng nữa, chỉ trình duyệt thấy.** Bản đầu của khuôn API **quên
+`{% block scripts %}`**. Mọi phép kiểm HTTP đều xanh, vì HTML **đúng** — chỉ
+hành vi sai: nút chép hiện đầy đủ, bấm được, có con trỏ tay, và **không làm gì
+cả**. Tệ hơn một nút không có, vì không có nút thì người ta đi bôi đen. Bắt được
+khi bấm thật trong trình duyệt (`dataset.ganChep` là `undefined`). Chốt lại bằng
+một phép kiểm bắc cầu hai tệp: khuôn trang nào có nút chép — kể cả **gián tiếp**
+qua `_voice_ma.html` — thì khuôn ấy phải nạp `voice.js`.
+
+**Chốt:** `tests/test_364_ltt_voice_man_api.py`, 8 phép kiểm; `test_344` cập nhật.
+Đã soi cả hai nhánh trên trình duyệt thật (nhánh "mở" bằng một tệp đánh dấu
+trong scratchpad, đã tắt sau khi soi) và xác nhận nút chép lấy đúng 6 dòng lệnh
+thật từ khối mã, không từ một bản sao trong thuộc tính.
+
+
 ## 15. Điều rút ra sau bốn pha
 
 **Năm lỗi đang sống, và không lỗi nào bị bộ test cũ bắt.** Ba lỗi chỉ thấy được

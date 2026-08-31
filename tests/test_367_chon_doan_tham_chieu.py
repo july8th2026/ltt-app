@@ -317,3 +317,52 @@ def test_diem_chat_luong_luon_NOI_RA_dang_dung_thang_nao():
 
     _, nguon = diem_chat_luong(_tieng(2.0), SR)
     assert nguon in ("dnsmos_ovrl", "snr_db"), f"nguon la {nguon!r}"
+
+
+def test_ket_qua_NOI_RA_thang_da_cham_chu_khong_chi_tinh_roi_vut():
+    """🔴 `diem_chat_luong` tính đúng tên thang rồi người gọi VỨT nó đi.
+
+    Docstring của `diem_chat_luong` hứa hẳn: *"không thì lui về SNR và **nói ra
+    là đã lui** — hai thang khác nhau không so được với nhau"*. Lời hứa đó đúng,
+    và đường ống không giao nó: `_moc_ben_vung` lấy `[0]` rồi bỏ `[1]`.
+
+    Hệ quả đo được trên production 31/08: báo cáo ghi danh thật có `diem_dai_dien`,
+    `snr_db`, `so_ung_vien`, `ly_do` — và **không cách nào** biết DNSMOS có chạy.
+    Phải mở venv của sidecar ra gọi tay mới biết (nó có chạy: OVRL 2,927).
+
+    ⛔ Vì sao đó không chỉ là bất tiện. `dnsmos.cham` trả `None` **im lặng** khi
+       thiếu `onnxruntime`, thiếu `scipy`, hoặc thiếu tệp model — ba thứ mà một
+       lần deploy hoàn toàn có thể làm rơi. Khi đó bộ chọn tụt về thang SNR, tức
+       tụt về đúng thứ ta đã bỏ vì *"SNR chỉ đo tương phản mức"*, và **không một
+       dòng nào ở đâu đổi**. Trường này là thứ duy nhất làm việc đó nhìn thấy.
+
+    ⭐ Cùng một hình dạng với ba lỗi khác cùng ngày: cơ chế cho phép dùng sai
+       trong im lặng. Ở đây thậm chí lời cảnh báo đã được viết sẵn — chỉ là chưa
+       ai nối dây cho nó tới được người đọc.
+    """
+    from voice_sidecar import chon_doan
+
+    kq = chon_doan.chon(_clip_ba_vung(), SR, bo_ma_hoa=_ma_hoa_gia)
+    assert kq.da_chon_that, "clip nay phai chon duoc — kiem tra lai fixture"
+    assert kq.thang_chat_luong in ("dnsmos_ovrl", "snr_db"), (
+        f"thang_chat_luong = {kq.thang_chat_luong!r}. Bao cao phai noi da cham "
+        f"bang thang nao, neu khong mot lan tut ve SNR se khong ai thay.")
+
+
+def test_khong_do_duoc_SNR_phai_la_None_chu_khong_phai_khong_do():
+    """🔴 `round(x or 0.0, 2)` biến "không đo được" thành "đo được, bằng 0".
+
+    Đã xảy ra thật: lượt ghi danh production 31/08 báo `"snr_db": 0.0`. Đọc lên
+    giống một bản thu tệ đến mức tiếng bằng nền. Sự thật khác hẳn — clip do TTS
+    sinh nên khoảng lặng là **số 0 tuyệt đối**, `_snr_db` trả `None` đúng như nó
+    phải làm (SNR so với im lặng tuyệt đối không có nghĩa), và `or 0.0` nuốt mất
+    chữ *"không biết"* rồi thay bằng một con số trông như một phép đo.
+
+    ⛔ Cách sửa SAI là làm `_snr_db` trả 0 hay -99 cho đủ kiểu. `None` là câu
+       trả lời đúng; việc của tầng báo cáo là chở nó đi chứ không phải lấp nó.
+    """
+    from voice_sidecar.chon_doan import _lam_tron
+
+    assert _lam_tron(None) is None, "None phai di qua nguyen ven"
+    assert _lam_tron(0.0) == 0.0, "mot phep do bang 0 that thi van la 0"
+    assert _lam_tron(12.3456) == 12.35

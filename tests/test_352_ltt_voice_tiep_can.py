@@ -251,3 +251,125 @@ def test_dai_dau_man_giu_cau_giai_thich_tren_chip():
     s = (MAU / "_voice_vo.html").read_text(encoding="utf-8")
     assert s.count("title=") >= 3, (
         "chip mat `title` — khach thay phu hieu do ma khong co loi giai thich")
+
+
+# ── 6. Mọi ô nhập phải có TÊN đọc được ───────────────────────────────────────
+#
+# 🔴 Ba ô đã sống trên production mà không có tên, và bộ test không thể thấy:
+#
+#      /ltt-voice      textarea#lv-text        ô nhập CHÍNH của cả app
+#      /ltt-voice/lo   input[file]#lv-lo-file  không tên nào cả
+#      /ltt-voice/lo   input#lv-lo-ten
+#
+# ⛔ `placeholder` KHÔNG phải nhãn. Nó biến mất ngay khi khách gõ ký tự đầu tiên,
+#    và nhiều trình đọc màn hình không đọc nó. Ô `type=file` thì còn không có cả
+#    placeholder — trình đọc màn hình chỉ nói "nút", không nói nút gì.
+#
+# ⭐ Gốc chung là một quyết định THẨM MỸ: thiết kế dùng `<span class="eyebrow">`
+#    làm tiêu đề khối. Nó đẹp, nó đọc được bằng mắt, và nó **không liên kết** với
+#    ô nhập. Nên khuôn mẫu trông như đã có nhãn ở khắp nơi.
+#
+# ⇒ Sửa bằng `aria-labelledby` trỏ vào chính eyebrow đó — giữ nguyên hình thức,
+#   thêm quan hệ. Phép kiểm dưới đây soi HTML ĐÃ RENDER, vì quan hệ `for`/`id`
+#   chỉ tồn tại sau khi Jinja chạy.
+
+@pytest.fixture()
+def khach_tc(tmp_path, monkeypatch):
+    import re as _re
+
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-tc.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-tiep-can")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="voice-tc@test.com",
+                       password="matkhau-tot-12", is_verified=True)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    m = _re.search(r'name="csrf_token" value="([^"]+)"', client.get("/login").text)
+    assert m
+    client.post("/login", data={"username": "voice-tc@test.com",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": m.group(1)})
+    try:
+        yield client
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+MAN = ["/ltt-voice", "/ltt-voice/giong", "/ltt-voice/du-an",
+       "/ltt-voice/lo", "/ltt-voice/lich-su", "/ltt-voice/api"]
+
+
+@pytest.mark.parametrize("duong", MAN)
+def test_moi_o_nhap_deu_co_ten_doc_duoc(khach_tc, duong):
+    import html.parser
+
+    class Soi(html.parser.HTMLParser):
+        """⚠️ BA cách gán nhãn hợp lệ, không phải một.
+
+        `<label for=id>` · `aria-label`/`aria-labelledby` · và **ô nằm BÊN TRONG
+        một `<label>`**. Bản đầu của bộ soi này quên cách thứ ba và báo đỏ 21
+        radio của bộ chọn giọng — chúng vốn đúng. Một phép kiểm tiếp cận báo
+        động giả là cách nhanh nhất để người ta tắt nó đi.
+        """
+
+        def __init__(self):
+            super().__init__()
+            self.o = []          # (tag, thuoc tinh) của mọi ô nhập hiện ra
+            self.nhan_for = set()
+            self.trong_label = 0
+
+        def handle_starttag(self, tag, attrs):
+            d = dict(attrs)
+            if tag == "label":
+                self.trong_label += 1
+                if d.get("for"):
+                    self.nhan_for.add(d["for"])
+            if tag in ("input", "textarea", "select"):
+                if d.get("type") in ("hidden", "submit", "button"):
+                    return
+                self.o.append((tag, d, self.trong_label > 0))
+
+        def handle_endtag(self, tag):
+            if tag == "label" and self.trong_label:
+                self.trong_label -= 1
+
+    r = khach_tc.get(duong)
+    assert r.status_code == 200, r.text[:200]
+    s = Soi()
+    s.feed(r.text)
+
+    thieu = [f'{t}#{d.get("id") or d.get("name") or "?"}'
+             for t, d, boc_label in s.o
+             if not (boc_label or d.get("aria-label") or d.get("aria-labelledby")
+                     or d.get("title") or (d.get("id") in s.nhan_for))]
+    assert thieu == [], (
+        f"{duong}: {thieu} khong co ten doc duoc. `placeholder` KHONG tinh — no "
+        f"bien mat khi go va nhieu trinh doc man hinh khong doc no.")

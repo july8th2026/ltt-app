@@ -351,7 +351,13 @@ class CongGiong:
                 "bat_dau_s": kq.bat_dau_s, "ket_thuc_s": kq.ket_thuc_s,
                 "goc_giay": round(len(wav) / float(sr), 2),
                 "diem_dai_dien": kq.diem_dai_dien, "snr_db": kq.snr_db,
-                "so_ung_vien": kq.so_ung_vien, "ly_do": kq.ly_do,
+                "so_ung_vien": kq.so_ung_vien,
+                # Thang nào đã chấm chất lượng. `dnsmos.cham` trả `None` IM
+                # LẶNG khi thiếu `onnxruntime`/`scipy`/tệp model, nên không có
+                # dòng này thì một lần deploy làm rơi chúng sẽ hạ bộ chọn về
+                # SNR mà không gì ở đâu đổi. Xem `KetQuaChon.thang_chat_luong`.
+                "thang_chat_luong": kq.thang_chat_luong,
+                "ly_do": kq.ly_do,
             }
         except Exception as e:      # noqa: BLE001 - chon hong KHONG duoc lam hong ghi danh
             log.warning("chon doan tham chieu hong, dung nguyen clip: %s", e)

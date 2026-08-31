@@ -72,20 +72,17 @@ MANIFEST = AppManifest(
     group=N_('Âm thanh'),
     badge=N_('MỚI'),
 
-    # ⭐ SÁU TAB. `built=False` khai thẳng màn nào chưa xây.
+    # ⭐ SÁU TAB, và từ P8 **cả sáu đều đã xây** — không tab nào còn
+    #    `built=False`. Cơ chế badge "đang xây" của nền tảng vẫn còn nguyên và
+    #    vẫn dùng được; thứ đã biến mất là những màn cần tới nó.
     #
-    #    `NavEntry.built=False` là một affordance có sẵn của nền tảng: `base.html`
-    #    tự gắn badge "đang xây" lên tab. Dùng nó thay vì giấu tab đi, vì hai thứ
-    #    đó nói hai điều khác nhau — giấu nói *"sản phẩm không có việc này"*,
-    #    badge nói *"có, và chưa tới lượt"*. Điều thứ hai đúng.
-    #
-    # ⛔ Nhưng tab đã hiện thì bấm vào PHẢI tới một chỗ nói được điều gì đó.
-    #    `routes/_p_chua_xay.py` có route thật, dựng từ `vo.CHUA_XAY`. Một tab
-    #    dẫn tới 404 tệ hơn không có tab: nó biến một lời hứa thành một lỗi.
-    #
-    # ⭐ Danh sách chưa-xây **co lại** khi màn được xây: Dự án rời ở P5, Chạy lô
-    #    ở P6. `tests/test_344` chốt hai bên luôn khớp — lệch một chiều thì trang
-    #    chưa-xây ném `KeyError`, lệch chiều kia thì có nội dung mồ côi.
+    # ⛔ Nếu một ngày thêm tab thứ bảy chưa xây: đặt `built=False` chứ ĐỪNG giấu
+    #    tab đi. Hai thứ đó nói hai điều khác nhau — giấu nói *"sản phẩm không
+    #    có việc này"*, badge nói *"có, và chưa tới lượt"*. Và tab đã hiện thì
+    #    bấm vào phải tới một chỗ nói được điều gì đó: một tab dẫn tới 404 tệ
+    #    hơn không có tab, vì nó biến một lời hứa thành một lỗi. Cơ chế trang
+    #    giữ chỗ cũ (`vo.CHUA_XAY` + `routes/_p_chua_xay.py`) đã gỡ khi màn cuối
+    #    được xây — dựng lại nó rẻ hơn là để nó nằm đó không phục vụ ai.
     #
     # Thứ tự theo luồng làm việc thật, không theo thứ tự xây: viết → chọn giọng →
     # gom thành dự án → chạy hàng loạt → xem lại → tự động hoá.
@@ -95,7 +92,7 @@ MANIFEST = AppManifest(
         NavEntry(N_('Dự án'), "/ltt-voice/du-an", "📚", "ltt_voice_du_an"),
         NavEntry(N_('Chạy lô'), "/ltt-voice/lo", "🧺", "ltt_voice_lo"),
         NavEntry(N_('Lịch sử'), "/ltt-voice/lich-su", "🕘", "ltt_voice_lich_su"),
-        NavEntry(N_('API'), "/ltt-voice/api", "🔌", "ltt_voice_api", False),
+        NavEntry(N_('API'), "/ltt-voice/api", "🔌", "ltt_voice_api"),
     ),
 
     job_types=("ltt_voice.synthesize", "ltt_voice.enroll"),

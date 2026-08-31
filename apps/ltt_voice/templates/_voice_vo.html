@@ -10,6 +10,18 @@
     tieu_de   — bắt buộc
     mo_ta     — tuỳ chọn, một câu
     id_tieu_de— tuỳ chọn, để `aria-labelledby` của trang trỏ vào
+    quay_lai  — tuỳ chọn, `{href, nhan}` cho trang con (Dự án · Chạy lô)
+    dong_so   — tuỳ chọn, dòng số liệu HTML thay cho `mo_ta` một câu
+
+  🔴 HAI THAM SỐ CUỐI THÊM Ở P9, VÀ LÝ DO ĐÁNG GHI. Trước đó hai trang chi tiết
+     KHÔNG dùng mảnh này — chúng chép tay cả dải đầu màn, vì chúng cần một link
+     quay lại và một dòng số liệu mà mảnh này chưa nhận. Bản chép trông giống
+     hệt, nên không ai để ý nó đã lệch: nó **thiếu `title`** trên hai chip.
+
+  ⛔ Và cái thiếu đó không vô hại. Câu bị mất đúng là câu nói *"đây là việc của
+     máy chủ, không phải bạn làm sai"* — tức khách trên hai trang đó thấy một
+     phù hiệu đỏ mà không có lời giải thích. Bản chép luôn lệch; nó chỉ lệch ở
+     chỗ người chép không nghĩ tới.
 
   ⛔ HAI CHIP, KHÔNG PHẢI BA. Ảnh tham chiếu có `Engine Online`, `Queue`, và
      `Storage 256 GB / 1 TB`. Chip thứ ba không được vẽ: nền tảng **không có**
@@ -18,8 +30,11 @@
 #}
 <header class="lv-vo">
   <div class="lv-vo-chu">
+    {% if quay_lai %}
+      <p class="lv-mda-quay"><a href="{{ quay_lai.href }}">← {{ quay_lai.nhan }}</a></p>
+    {% endif %}
     <h1{% if id_tieu_de %} id="{{ id_tieu_de }}"{% endif %}>{{ tieu_de }}</h1>
-    {% if mo_ta %}<p>{{ mo_ta }}</p>{% endif %}
+    {% if dong_so %}<p>{{ dong_so }}</p>{% elif mo_ta %}<p>{{ mo_ta }}</p>{% endif %}
   </div>
 
   <div class="lv-vo-chip">

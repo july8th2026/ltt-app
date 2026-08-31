@@ -167,23 +167,22 @@ def trang_mot_lo(request: Request, public_id: str,
         x = lo_mod.tim(db, public_id, owner_id=uid)
         if x is None:
             return templates.TemplateResponse(
-                request, "ltt_voice_chua_xay.html",
+                request, "ltt_voice_thongbao.html",
                 vo.ngu_canh(request, user, nav_key=vo.NAV_LO,
                             man={"tieu_de": _t("Không tìm thấy lô"),
                                  "mo_ta": _t("Lô này không tồn tại, hoặc không "
-                                             "thuộc tài khoản của bạn."),
-                                 "sap_co": ()}),
+                                             "thuộc tài khoản của bạn.")}),
                 status_code=404)
         cac = du_an.cac_khoi(db, x.id)
         tt = lo_mod.tom_tat(cac)
+        duong = du_an.duong_tieng(db, cac, MANIFEST.route_prefix)
         hang_doi = vo.dem_dang_chay(db, uid)
         dong = [{
             "id": k.id, "stt": i, "nhan": k.nhan, "text": k.text,
             "giong": k.giong or x.giong_mac_dinh,
             "trang_thai": k.trang_thai, "giay": k.giay, "credit": k.credit,
             "loi": k.loi,
-            "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                          if k.audio_key else ""),
+            "audio_url": duong.get(k.id, ""),
         } for i, k in enumerate(cac, 1)]
     finally:
         try:
@@ -274,14 +273,14 @@ def trang_thai_lo(public_id: str, user=Depends(user_hien_tai),
             x.trang_thai = "xong"
         db.commit()
 
+        duong = du_an.duong_tieng(db, cac, MANIFEST.route_prefix)
         return JSONResponse({
             "ok": True,
             "tom_tat": lo_mod.tom_tat(cac),
             "dong": [{
                 "id": k.id, "trang_thai": k.trang_thai, "giay": k.giay,
                 "credit": k.credit, "loi": k.loi,
-                "audio_url": (f"{MANIFEST.route_prefix}/audio/{k.audio_key}"
-                              if k.audio_key else ""),
+                "audio_url": duong.get(k.id, ""),
             } for k in cac],
         })
     finally:
@@ -341,8 +340,13 @@ def tai_ca_lo(public_id: str, user=Depends(user_hien_tai),
         x = lo_mod.tim(db, public_id, owner_id=uid)
         if x is None:
             return JSONResponse({"ok": False}, status_code=404)
-        cac = [k for k in du_an.cac_khoi(db, x.id)
-               if k.trang_thai == "xong" and k.audio_key]
+        # Cùng một thẩm quyền với đường nghe: tệp đã hết hạn thì không vào
+        # ZIP. Trước đây chỗ này tự hỏi `k.audio_key` nên nó sẽ gói vào một
+        # danh sách khoá mà kho không còn giữ tệp nào — và lỗi chỉ lộ ra giữa
+        # chừng lúc nén, sau khi khách đã bấm tải.
+        moi_khoi = du_an.cac_khoi(db, x.id)
+        duong = du_an.duong_tieng(db, moi_khoi, MANIFEST.route_prefix)
+        cac = [k for k in moi_khoi if k.trang_thai == "xong" and k.id in duong]
         if not cac:
             return JSONResponse({"ok": False, "loi": _t(
                 "Lô chưa có tệp nào xong.")}, status_code=400)

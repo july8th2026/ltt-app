@@ -38,7 +38,23 @@ _STATIC_DIR = pathlib.Path(__file__).resolve().parent / "static"
 #:
 #: ⛔ Đó chính là cái bẫy quy tắc 6 của `CLAUDE.md` mô tả, và nó đã xảy ra một
 #:    lần với `ltt.css`: sửa xong ở origin mà người dùng vẫn nhận bản cũ 4 tiếng.
-TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js")
+# 🔴 MọI TẬP Ở ĐÂY PHẢI LÀ MọI TẬP MANG `?v={{ asset_ver }}`.
+#
+#    Danh sách này **tính ra** hash, còn khuôn mẫu thì **đính** hash ấy vào bất cứ
+#    tệp nào. Hai việc đó không có gì buộc phải khớp — và khi lệch, tệp bị bỏ
+#    quên sẽ đổi nội dung mà **URL không đổi**, nên Cloudflare phục vụ bản cũ
+#    tới hết TTL, không lỗi nào báo.
+#
+# ⛔ `voice.js` và `dev_playground.js` đã thiếu ở đây một thời gian. Chúng không
+#    nổ vì mọi đợt đều đổi `ltt.css` cùng lúc nên hash vẫn nhảy. Cái lỗ chỉ lộ
+#    ra ở đúng hình dạng của một **đợt sửa lỗi**: chạm mỗi JavaScript, không
+#    chạm CSS — tức nằm im cho tới lần deploy cần nó nhất.
+#
+#    `tests/test_369_asset_ver_day_du.py` nay đọc khuôn mẫu để biết tệp nào đang
+#    được đính version, rồi đòi danh sách này phủ hết. Thêm tệp mới mà quên khai
+#    là đỏ ngay — một luật cho cả lớp, không phải một danh sách được nhớ tay.
+TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
+                      "voice.js", "dev_playground.js")
 
 
 def _tinh_asset_ver() -> str:

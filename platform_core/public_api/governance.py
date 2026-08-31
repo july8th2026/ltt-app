@@ -165,6 +165,29 @@ STORES: tuple = (
           "nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý "
           "do consent phải là DỮ LIỆU chứ không phải một ô tick.")),
 
+    # ── Dự án và Chạy lô: bản thảo của khách, không phải kết quả một job ─────
+    #
+    # ⭐ Vì sao `retention_days=None` chứ không phải 30 như `jobs`: một dự án là
+    #    thứ khách SOẠN — họ mở lại, sửa, đọc lại từng khối trong nhiều tuần.
+    #    Cho nó hết hạn theo lịch là xoá bản thảo của người ta trong khi họ vẫn
+    #    đang dùng. Nó đi khi khách xoá dự án, hoặc khi tài khoản đi.
+    #
+    # 🔴 HỆ QUẢ ĐÃ BIẾT, CHƯA SỬA. `voice_block.audio_key` trỏ vào tệp nằm trong
+    #    vùng của một JOB, và job là CONTENT/30 ngày — nên sau 30 ngày
+    #    `job_content.purge_expired` xoá tệp trong khi khối vẫn quảng cáo là có
+    #    tiếng. Khách mở dự án cũ và thấy một trình phát 404. Không ai dính điều
+    #    này hôm nay (tính năng chưa tới khách nào), nhưng nó có hạn: đúng 30
+    #    ngày sau lượt đọc đầu tiên của khách đầu tiên. Ghi ở đây chứ không giấu
+    #    trong một dòng TODO, vì đây là chỗ người ta sẽ đọc khi hỏi "dữ liệu này
+    #    sống bao lâu".
+    Store("voice_project", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một kịch bản dài hoặc một lô đang soạn: tên, giọng mặc định, "
+          "trạng thái. Bản thảo của khách, không phải sản phẩm của một job.")),
+    Store("voice_block", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng khối/dòng trong một dự án: văn bản khách gõ, giọng đã chọn, "
+          "và khoá tệp tiếng đã sinh. Văn bản là nội dung của khách; khoá tệp "
+          "chỉ là con trỏ — tệp thật sống theo hạn của job sinh ra nó.")),
+
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
           N_("Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."),

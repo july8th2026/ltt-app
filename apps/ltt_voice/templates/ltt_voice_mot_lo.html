@@ -14,22 +14,12 @@
 
 {% block content %}
 <section class="lv-man lv-mlo" aria-labelledby="lv-mlo-title">
-  <header class="lv-vo">
-    <div class="lv-vo-chu">
-      <p class="lv-mda-quay"><a href="{{ manifest.route_prefix }}/lo">← {{ _("Chạy lô") }}</a></p>
-      <h1 id="lv-mlo-title">{{ lo.ten }}</h1>
-      <p>{{ tom_tat.so_khoi }} {{ _("dòng") }}
-        {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}</p>
-    </div>
-    <div class="lv-vo-chip">
-      {% if cong_san_sang %}
-        <span class="badge b-ok"><span class="dot"></span>{{ _("Engine sẵn sàng") }}</span>
-      {% else %}
-        <span class="badge b-err"><span class="dot"></span>{{ _("Engine chưa bật") }}</span>
-      {% endif %}
-      {% if hang_doi %}<a class="badge b-warn" href="/jobs"><span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>{% endif %}
-    </div>
-  </header>
+  {%- set dong_so %}{{ tom_tat.so_khoi }} {{ _("dòng") }}
+    {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}{% endset -%}
+  {% with tieu_de = lo.ten, id_tieu_de = "lv-mlo-title", dong_so = dong_so,
+          quay_lai = {"href": manifest.route_prefix ~ "/lo", "nhan": _("Chạy lô")} %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
 
   <div class="lv-mlo-so" id="lv-mlo-so">
     <div class="ui-card"><span id="lv-so-tong">{{ tom_tat.so_khoi }}</span>
@@ -58,6 +48,11 @@
   </div>
 
   <div id="lv-mlo-loi" class="alert alert-err" role="alert" hidden></div>
+  {# Vung bao tin cho trinh doc man hinh. Con mat theo doi tien do qua
+     cac con so o tren; tai thi khong — nen tien do phai duoc NOI ra.
+     `sr-only` chu khong phai `hidden`: phan tu bi an hoan toan thi
+     trinh doc man hinh cung khong doc. #}
+  <p class="sr-only" id="lv-bao" role="status" aria-live="polite"></p>
 
   <div class="lv-lo-bang-boc">
     <table class="lv-bang lv-mlo-bang">
@@ -83,6 +78,8 @@
             <td class="lv-mlo-phat">
               {% if d.audio_url %}
                 <audio controls preload="none" src="{{ d.audio_url }}"></audio>
+              {% elif d.trang_thai == "xong" %}
+                <small class="lv-het-han dim">{{ _("Tệp tiếng đã hết hạn sau 30 ngày. Đọc lại để có tệp mới.") }}</small>
               {% endif %}
             </td>
           </tr>
@@ -106,7 +103,9 @@ LttVoice.motLo({
     daXong:   {{ _("Đã xong") | tojson }},
     dangDoc:  {{ _("Đang đọc…") | tojson }},
     cho:      {{ _("Đang chờ") | tojson }},
-    loi:      {{ _("Lỗi") | tojson }}
+    loi:      {{ _("Lỗi") | tojson }},
+    baoTienDo:{{ _("Đã xong {x} trên {y} dòng.") | tojson }},
+    baoXong:  {{ _("Chạy xong lô: {x} dòng xong, {e} lỗi.") | tojson }}
   }
 });
 </script>

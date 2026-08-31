@@ -12639,3 +12639,127 @@ msgstr "Read a whole list in one run, one file per row."
 
 msgid "đã xong"
 msgstr "done"
+
+#: apps/ltt_voice/templates/
+msgid "Đã đọc {x} trên {y} khối."
+msgstr "Read {x} of {y} blocks."
+
+#: apps/ltt_voice/templates/
+msgid "Đọc xong toàn bộ {y} khối."
+msgstr "Finished reading all {y} blocks."
+
+#: apps/ltt_voice/templates/
+msgid "Đã xong {x} trên {y} dòng."
+msgstr "Done {x} of {y} rows."
+
+#: apps/ltt_voice/templates/
+msgid "Chạy xong lô: {x} dòng xong, {e} lỗi."
+msgstr "Batch finished: {x} rows done, {e} failed."
+
+#: apps/ltt_voice/
+msgid "Tệp tiếng đã hết hạn sau 30 ngày. Đọc lại để có tệp mới."
+msgstr "The audio expired after 30 days. Read it again to get a new file."
+
+#: apps/ltt_voice/
+msgid "Một kịch bản dài hoặc một lô đang soạn: tên, giọng mặc định, trạng thái. Bản thảo của khách, không phải sản phẩm của một job."
+msgstr "A long script or a batch being drafted: name, default voice, status. The customer's own draft, not the output of a job."
+
+#: apps/ltt_voice/
+msgid "Từng khối/dòng trong một dự án: văn bản khách gõ, giọng đã chọn, và khoá tệp tiếng đã sinh. Văn bản là nội dung của khách; khoá tệp chỉ là con trỏ — tệp thật sống theo hạn của job sinh ra nó."
+msgstr "Each block/row in a project: the text the customer typed, the chosen voice, and the key of the audio produced. The text is customer content; the key is only a pointer — the file itself lives by the retention of the job that made it."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Công cụ %(ten)s đang mở trên API công khai."
+msgstr "The %(ten)s tool is open on the public API."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Khu API đang ở chế độ chỉ đọc — lượt gọi tạo việc sẽ bị từ chối."
+msgstr "The API is in read-only mode - calls that create work will be refused."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Công cụ %(ten)s chưa mở trên API công khai."
+msgstr "The %(ten)s tool is not open on the public API yet."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Bạn vẫn dùng được giọng của mình trên giao diện này. Muốn gọi từ mã nguồn thì liên hệ quản trị để mở công cụ."
+msgstr "You can still use your voices here in the web app. To call them from code, ask an administrator to open the tool."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Mã giọng của bạn"
+msgstr "Your voice ids"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Dán thẳng vào tham số voice_id. Mã không đổi kể cả khi engine nâng cấp."
+msgstr "Paste straight into the voice_id parameter. The id never changes, not even across engine upgrades."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Bạn chưa có giọng nhân bản nào."
+msgstr "You have no cloned voices yet."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Ghi danh một giọng"
+msgstr "Enrol a voice"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "rồi mã của nó sẽ hiện ở đây."
+msgstr "and its id will show up here."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Giọng dựng sẵn"
+msgstr "Built-in voices"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Không cần ghi danh. Truyền tên vào tham số preset, để trống voice_id."
+msgstr "No enrolment needed. Pass the name in the preset parameter and leave voice_id empty."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Bỏ trống cả hai thì dùng %(ten)s."
+msgstr "Leave both empty and %(ten)s is used."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Giới hạn của công cụ này"
+msgstr "Limits of this tool"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Mỗi lượt gọi"
+msgstr "Per call"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "%(n)s ký tự"
+msgstr "%(n)s characters"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Đây là trần CHẤT LƯỢNG, không phải trần kỹ thuật: văn bản dài hơn vẫn sinh được, nhưng giọng bắt đầu trôi tông giữa các đoạn. Kịch bản dài thì chia thành nhiều lượt gọi."
+msgstr "This is a QUALITY ceiling, not a technical one: longer text still synthesises, but the voice starts drifting in tone between passages. Split long scripts across several calls."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Chép lệnh mẫu"
+msgstr "Copy the example command"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook."
+msgstr "The call returns a job. Poll /api/v1/jobs/{id} until it finishes, or register a webhook."
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Phần dùng chung"
+msgstr "Shared across every tool"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Khoá API"
+msgstr "API keys"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Hợp đồng tham số đầy đủ"
+msgstr "Full parameter contract"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Giá và bộ mô phỏng"
+msgstr "Pricing and simulator"
+
+#: apps/ltt_voice/templates/ltt_voice_api.html
+msgid "Nhật ký gọi và job"
+msgstr "Request and job logs"
+
+#: apps/ltt_voice/templates/ltt_voice_lo.html
+msgid "Tệp CSV danh sách"
+msgstr "List CSV file"

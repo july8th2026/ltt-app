@@ -30,16 +30,20 @@
       <form class="lv-loc" method="get" role="search">
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Trạng thái') }}">
           <button type="submit" name="tt" value=""
-                  class="lv-loc-nut {{ 'on' if not f_tt }}">
+                  class="lv-loc-nut {{ 'on' if not f_tt }}"
+                  {% if not f_tt %}aria-current="true"{% endif %}>
             {{ _("Tất cả") }} <span class="dim">{{ tom_tat.tong }}</span></button>
           <button type="submit" name="tt" value="done"
-                  class="lv-loc-nut {{ 'on' if f_tt == 'done' }}">
+                  class="lv-loc-nut {{ 'on' if f_tt == 'done' }}"
+                  {% if f_tt == 'done' %}aria-current="true"{% endif %}>
             {{ _("Hoàn tất") }} <span class="dim">{{ tom_tat.dem.done }}</span></button>
           <button type="submit" name="tt" value="running"
-                  class="lv-loc-nut {{ 'on' if f_tt == 'running' }}">
+                  class="lv-loc-nut {{ 'on' if f_tt == 'running' }}"
+                  {% if f_tt == 'running' %}aria-current="true"{% endif %}>
             {{ _("Đang tạo") }} <span class="dim">{{ tom_tat.dang_chay }}</span></button>
           <button type="submit" name="tt" value="error"
-                  class="lv-loc-nut {{ 'on' if f_tt == 'error' }}">
+                  class="lv-loc-nut {{ 'on' if f_tt == 'error' }}"
+                  {% if f_tt == 'error' %}aria-current="true"{% endif %}>
             {{ _("Lỗi") }} <span class="dim">{{ tom_tat.dem.error }}</span></button>
         </div>
 

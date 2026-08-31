@@ -81,10 +81,33 @@ def khach(tmp_path, monkeypatch):
 
 
 def _csrf(client) -> str:
+    """Token lấy từ ĐÚNG form của app, không phải form đầu tiên trên trang.
+
+    🔴 BẢN ĐẦU CỦA HÀM NÀY LẤY BẰNG CHỨNG TỪ SAI CHỖ, và nó che một P0 sống
+       trên production nhiều ngày.
+
+       Nó viết `re.search(r'name="csrf_token" value="([^"]+)"', r.text)`. Mẫu
+       `([^"]+)` đòi ít nhất một ký tự, nên một token **rỗng** sẽ không khớp và
+       `assert` sẽ nổ — nghe như một phép kiểm chặt. Nhưng `re.search` lấy khớp
+       **ĐẦU TIÊN** trong trang, và khớp đầu tiên là form đăng xuất của
+       `base.html` — thứ **nền tảng** tự đặt, luôn có giá trị.
+
+       Trong khi đó `vo.ngu_canh()` chưa bao giờ đặt khoá `csrf_token`, nên mọi
+       form của CHÍNH app render `value=""`. Hai form dùng chung một token phiên,
+       nên POST trong test vẫn 200 — còn khách thật bấm nút thì nhận
+       `400 Phiên đã hết hạn`. Sinh tiếng, tạo giọng, tắt giọng đều chết.
+
+    ⇒ Bài học không phải "quên kiểm CSRF". Là: **một phép kiểm đọc dữ liệu từ
+      một chỗ khác với chỗ nó đang nói về, thì nó không nói về chỗ đó.**
+    """
     r = client.get("/ltt-voice")
-    m = re.search(r'name="csrf_token" value="([^"]+)"', r.text)
-    assert m, "khong lay duoc csrf tu trang Studio"
-    return m.group(1)
+    m = re.search(r'<form[^>]*id="lv-form"[\s\S]*?name="csrf_token" value="([^"]*)"',
+                  r.text)
+    assert m, "khong tim thay form `lv-form` cua Studio"
+    token = m.group(1)
+    assert token, (
+        "form cua app render csrf_token RONG — `vo.ngu_canh()` khong dat khoa do")
+    return token
 
 
 def _tao_job(uid: str, *, status: str, result=None, error: str = "") -> str:

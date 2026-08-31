@@ -35,10 +35,10 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
       <div class="lv-st-o">
-        <span class="eyebrow">{{ _("Danh sách") }}</span>
+        <span class="eyebrow" id="lv-nh-ds">{{ _("Danh sách") }}</span>
         <div class="lv-loc-nhom lv-lo-nguon" role="group" aria-label="{{ _('Nguồn danh sách') }}">
-          <button type="button" class="lv-loc-nut on" data-nguon="dan">{{ _("Dán danh sách") }}</button>
-          <button type="button" class="lv-loc-nut" data-nguon="tep">{{ _("Tải tệp CSV") }}</button>
+          <button type="button" class="lv-loc-nut on" aria-pressed="true" data-nguon="dan">{{ _("Dán danh sách") }}</button>
+          <button type="button" class="lv-loc-nut" aria-pressed="false" data-nguon="tep">{{ _("Tải tệp CSV") }}</button>
         </div>
 
         <div id="lv-lo-dan">
@@ -49,14 +49,19 @@
         </div>
 
         <div id="lv-lo-tep" hidden>
-          <input type="file" name="tep" id="lv-lo-file" accept=".csv,.txt">
+          {# O `file` truoc day KHONG co ten nao ca — trinh doc man hinh chi
+             noi "nut". Nhan rieng chu khong muon eyebrow "Danh sach": o nay
+             lam mot viec hep hon ca khoi. #}
+          <input type="file" name="tep" id="lv-lo-file" accept=".csv,.txt"
+                 aria-label="{{ _('Tệp CSV danh sách') }}">
           <p class="dim">{{ _("CSV cần một cột nội dung (text / noi_dung / content). Cột giọng và cột tên là tuỳ chọn.") }}</p>
         </div>
       </div>
 
       <div class="lv-st-o">
-        <span class="eyebrow">{{ _("Tên lô") }}</span>
+        <span class="eyebrow" id="lv-nh-ten">{{ _("Tên lô") }}</span>
         <input type="text" name="ten" id="lv-lo-ten" maxlength="200" class="lv-chon-tim"
+               aria-labelledby="lv-nh-ten"
                placeholder="{{ _('Ví dụ: Lời chào cho 50 khách hàng') }}">
       </div>
 
