@@ -17,7 +17,10 @@
     <tbody>
     {% for j in lich_su %}
       <tr>
-        <td>{{ j.created_at }}</td>
+        {# `{{ j.created_at }}` in nguyen `2026-08-31 10:03:40.582730+07:00` —
+           dung ky thuat, sai voi nguoi doc, va lech han voi trang job ngay ben
+           canh (`10:03 31/08/2026`). Dung dung khuon do. #}
+        <td><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
         <td>{{ (j.params or {}).get('text', '')[:80] }}</td>
         <td>{% if j.result %}{{ j.result.get('duration_s', '-') }}s{% else %}-{% endif %}</td>
         <td>{% if j.result %}{{ j.result.get('credit_cost', '-') }}{% else %}-{% endif %}</td>

@@ -45,7 +45,7 @@ class YeuCau:
     text: str
     voice_id: str = ""
     preset: str = ""
-    owner_id: int = 0
+    owner_id: str = ""
     doc_so_tran: bool = False
 
     @property
@@ -73,10 +73,9 @@ def chuan_hoa(params: dict) -> YeuCau:
         # Từ chối rõ ràng, đừng lặng lẽ chọn một cái.
         raise LoiGiongNoi(_t("Chỉ chọn một: giọng của bạn hoặc giọng có sẵn."))
 
-    try:
-        owner_id = int(p.get("owner_id") or p.get("user_id") or 0)
-    except (TypeError, ValueError):
-        owner_id = 0
+    # ⛔ Giữ NGUYÊN dạng chuỗi. `User.id` là UUID chuỗi; ép `int()` ở đây
+    #    từng ném rồi bị nuốt, cho ra `owner_id = 0` cho mọi người dùng.
+    owner_id = str(p.get("owner_id") or p.get("user_id") or "").strip()
 
     return YeuCau(text=text, voice_id=voice_id, preset=preset,
                   owner_id=owner_id,

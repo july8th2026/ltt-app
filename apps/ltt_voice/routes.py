@@ -32,11 +32,18 @@ from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 router = APIRouter(tags=["ltt_voice"])
 
 
-def _uid(user) -> int:
-    try:
-        return int(getattr(user, "id", 0) or 0)
-    except (TypeError, ValueError):
-        return 0
+def _uid(user) -> str:
+    """Id người dùng, dạng CHUỖI.
+
+    ⛔ Đừng ép `int()`. `User.id` là UUID chuỗi, nên `int()` ném, và bản
+       đầu của hàm này bắt lỗi rồi trả `0` — một giá trị **hợp lệ về kiểu
+       nhưng sai về nghĩa**. Hậu quả đo được trên máy chủ thật 31/08/2026:
+       trang hiện đúng "56 credit" ở header (chỗ đó đọc phiên trực tiếp)
+       trong khi nút Tạo trả *"Khong du credit: can 2, con 0"*, vì handler
+       tra sổ của người dùng "0". Và nguy hơn tiền: mọi `owner_id` đều
+       thành 0, tức giọng của mọi khách chung một chủ.
+    """
+    return str(getattr(user, "id", "") or "")
 
 
 def _db():
@@ -69,7 +76,7 @@ def trang_tao(request: Request, user=Depends(user_hien_tai),
         except StopIteration:
             pass
     return templates.TemplateResponse(
-        "ltt_voice_studio.html", _ngu_canh(request, user, giong=giong))
+        request, "ltt_voice_studio.html", _ngu_canh(request, user, giong=giong))
 
 
 @router.post("/tao")
@@ -97,7 +104,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
     db = next(gen)
     try:
         job = submit_with_credit(
-            db, user_id=str(_uid(user)), app_slug=MANIFEST.slug,
+            db, user_id=_uid(user), app_slug=MANIFEST.slug,
             job_type="ltt_voice.synthesize",
             params={"text": yc.text, "voice_id": yc.voice_id,
                     "preset": yc.preset, "owner_id": _uid(user)},
@@ -132,7 +139,7 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
             pass
     from .dieu_khoan import CAM_KET, cac_dieu
     return templates.TemplateResponse(
-        "ltt_voice_giong.html",
+        request, "ltt_voice_giong.html",
         _ngu_canh(request, user, giong=giong, dieu_khoan=cac_dieu(),
                   cam_ket=CAM_KET))
 
@@ -243,14 +250,14 @@ def trang_lich_su(request: Request, user=Depends(user_hien_tai),
     db = next(gen)
     try:
         lich_su, _cursor = job_history.list_owned(
-            db, str(_uid(user)), app_slug=MANIFEST.slug, limit=50)
+            db, _uid(user), app_slug=MANIFEST.slug, limit=50)
     finally:
         try:
             next(gen)
         except StopIteration:
             pass
     return templates.TemplateResponse(
-        "ltt_voice_lich_su.html", _ngu_canh(request, user, lich_su=lich_su))
+        request, "ltt_voice_lich_su.html", _ngu_canh(request, user, lich_su=lich_su))
 
 
 # ── Phục vụ tệp tiếng ────────────────────────────────────────────────────────

@@ -59,6 +59,12 @@ def main(argv=None) -> int:
                     help="Tai khoan da co thi dat lai mat khau va thu hoi phien cu.")
     ap.add_argument("--liet-ke", action="store_true",
                     help="Chi liet ke tai khoan thu dang co, khong tao gi.")
+    # ⛔ Mặc định 0, và **chỉ** nhận cho email đuôi `.local` (kiểm lại ở chỗ dùng).
+    #    Đây là ngoại lệ có chủ ý với điều 1 ở đầu tệp: một lượt chạy thử
+    #    đầu-tới-cuối phải trả phí thật thì mới chứng minh được sổ tiền, nhưng
+    #    bút toán sinh ra mang ghi chú tự khai để một tháng sau còn truy được.
+    ap.add_argument("--nap", type=int, default=0, metavar="N",
+                    help="Nap N credit cho tai khoan THU (.local). Mac dinh 0.")
     a = ap.parse_args(argv)
 
     from sqlalchemy import select
@@ -135,6 +141,21 @@ def main(argv=None) -> int:
             print(f"  (khong doc duoc so du: {type(e).__name__}: {e})",
                   file=sys.stderr)
             so_du = None
+
+        # ── nạp, CHỈ khi được yêu cầu rõ ────────────────────────────────────
+        if a.nap > 0:
+            if not u.email.endswith(DUOI_THU):
+                print("TU CHOI nap cho tai khoan khong phai `.local`.",
+                      file=sys.stderr)
+                return 2
+            from platform_core import credit as _credit
+            ghi_chu = (f"LUOT CHAY THU - tai khoan thu {u.email}, nap boi "
+                       f"tools/tai_khoan_thu.py. KHONG phai khoan nap cua khach.")
+            _credit.nap(db, u.id, a.nap, note=ghi_chu)
+            db.commit()
+            so_du = _credit.so_du(db, u.id)
+            print("")
+            print(f"DA NAP {a.nap} credit (but toan co ghi chu truy duoc).")
 
         if so_du is not None:
             print(f"\nSo du: {so_du} credit")

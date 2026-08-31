@@ -20,6 +20,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 
 if (-not (Test-Path $Archive)) { throw "Archive not found: $Archive" }
 
@@ -95,7 +117,7 @@ if (Test-Path $envFile) {
         # --clean --if-exists: xoa doi tuong cu roi nap lai (khoi phuc that su,
         # khong chi chen them). --no-owner: bo qua chu so huu de khong ket owner
         # cu. -1: mot transaction, loi thi rollback het (khong de CSDL nua voi).
-        & $pgRestore -U $dbUser -h $dbHost -p $dbPort -d $dbName --clean --if-exists --no-owner -1 $dumpFile
+        Invoke-Ngoai { & $pgRestore -U $dbUser -h $dbHost -p $dbPort -d $dbName --clean --if-exists --no-owner -1 $dumpFile }
         $rc = $LASTEXITCODE
         $env:PGPASSWORD = $null
         if ($rc -ne 0) {

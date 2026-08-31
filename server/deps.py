@@ -41,8 +41,22 @@ def get_db() -> Iterator[Session]:
             next(gen)      # để get_session chạy nốt phần đóng phiên
 
 
-def user_hien_tai(request) -> Optional["object"]:
+def user_hien_tai(request: Request) -> Optional["object"]:
     """User CSDL từ phiên đăng nhập, hoặc None.
+
+    ⚠️ `request: Request` — CHÚ KIỂU LÀ BẮT BUỘC, không phải trang trí.
+
+       Thiếu nó thì hàm vẫn chạy đúng khi **gọi thẳng** (`user_hien_tai(request)`,
+       cách chín app đang dùng), nhưng vỡ khi nối qua `Depends(user_hien_tai)`:
+       FastAPI soi chữ ký, thấy một tham số tên `request` không kiểu, và hiểu nó
+       là **query param bắt buộc**. Trang trả **422** với
+       `{"loc":["query","request"],"msg":"Field required"}` — một thông báo không
+       hề nhắc tới đăng nhập, nên nó đọc như lỗi tham số của app.
+
+       Đã mất một vòng truy 31/08/2026 vì đúng chỗ này: `apps/ltt_voice` là app
+       đầu tiên nối qua `Depends`, và cả bộ test xanh vì test gọi thẳng hàm.
+       Hai anh em ngay dưới (`is_operator`, `require_operator`) vẫn luôn có chú
+       kiểu; thiếu ở đây là một chỗ lệch, không phải một lựa chọn.
 
     None khi: chưa đăng nhập, đăng nhập bằng đường admin-env (không có user_id
     trong bảng users), hoặc CSDL chưa cấu hình. Dùng cho các route cần một user

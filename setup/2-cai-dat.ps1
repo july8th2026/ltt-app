@@ -29,6 +29,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 function Canh($m) { Write-Host "  [!!] $m" -ForegroundColor Yellow }
@@ -190,11 +212,27 @@ Head 'Copy ma nguon'
 # Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,
 # python.exe cua service khoa file trong app\ -> Move-Item/robocopy that bai
 # (loi "being used by another process"). Script se cai lai + khoi dong o cuoi.
-Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
-Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
-# Sidecar Codex cung co AppDirectory = app\ -> phai dung truoc khi Move-Item, neu khong
-# python.exe cua no khoa thu muc app\ va bo cai that bai (loi Move-Item IOException).
-Stop-Service 'LTTStudioCodex' -Force -ErrorAction SilentlyContinue
+# !! MOI dich vu co AppDirectory = app\ deu PHAI co trong danh sach nay.
+#
+#    `Move-Item` khong xoay duoc mot thu muc dang bi mot tien trinh mo. Bo sot
+#    MOT dich vu la du: no giu app\, Move-Item nem IOException, va script chet
+#    NGAY SAU khi da dung ba dich vu kia -> trang cong khai tra 502 cho toi khi
+#    co nguoi bat lai bang tay.
+#
+#    Da xay ra that 31/08/2026: `LTTStudioVoice` duoc them (Q117) nhung khong
+#    duoc them vao day. Deploy chay toi 09:36:46 roi dung; production 502 khoang
+#    ba phut. Trieu chung nhin nhu mot loi quyen han, khong nhu mot dich vu bi
+#    bo sot.
+#
+#    Nen danh sach o day duoc DAN XUAT tu chinh cac bien ten dich vu, va
+#    `tests/test_45_deploy_scripts.py` chot rang moi dich vu duoc nssm dang ky
+#    trong tep nay deu co mat. Them dich vu moi ma quen -> gate do, khong phai
+#    production do.
+$DichVuGiuAppDir = @($WorkerServiceName, $ServiceName, 'LTTStudioCodex',
+                     $VoiceServiceName)
+foreach ($svc in $DichVuGiuAppDir) {
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+}
 Start-Sleep -Seconds 2
 # Giu ban truoc de rollback duoc.
 if (Test-Path $appDir) {
@@ -254,23 +292,26 @@ if (-not (Test-Path $venvPy)) {
     if ($LASTEXITCODE -ne 0) { throw 'Tao venv that bai' }
     Ok 'Da tao venv'
 } else { Ok 'venv da co' }
-& $venvPy -m pip install --upgrade pip --quiet
-& $venvPy -m pip install -r (Join-Path $appDir 'requirements.txt') --quiet
-& $venvPy -m pip install -r (Join-Path $appDir 'requirements-server.txt') --quiet
+Invoke-Ngoai { & $venvPy -m pip install --upgrade pip --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install --upgrade pip --quiet" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $appDir 'requirements.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $appDir 'requirements" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $appDir 'requirements-server.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $appDir 'requirements" }
 Ok 'Da cai thu vien'
 
 # TAO CLIP NGAN (engine cutclipshort) can torch GPU. KHONG de trong requirements vi
 # pip keo ban CPU tu PyPI; card Blackwell (RTX 50xx) BAT BUOC torch cu128. Chi cai khi
 # torch chua co / chua thay CUDA (tranh tai lai ~2.5GB moi lan deploy).
-& $venvPy -c "import importlib.util,sys; sys.exit(0) if importlib.util.find_spec('torch') else sys.exit(1)" 2>$null | Out-Null; $hasTorch = ($LASTEXITCODE -eq 0)
+Invoke-Ngoai { & $venvPy -c "import importlib.util,sys; sys.exit(0) if importlib.util.find_spec('torch') else sys.exit(1)" 2>$null | Out-Null; $hasTorch = ($LASTEXITCODE -eq 0) }
 $cudaOk = $false
 if ($hasTorch) { & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null; $cudaOk = ($LASTEXITCODE -eq 0) }
 if ($cudaOk) {
     Ok 'torch CUDA da san sang - GIU NGUYEN'
 } else {
     Note 'Cai torch cu128 (Blackwell) - lan dau ~2.5GB, cho chut'
-    & $venvPy -m pip install "torch>=2.7" "torchaudio>=2.7" "torchvision>=0.22" --index-url https://download.pytorch.org/whl/cu128 --quiet
-    & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null
+    Invoke-Ngoai { & $venvPy -m pip install "torch>=2.7" "torchaudio>=2.7" "torchvision>=0.22" --index-url https://download.pytorch.org/whl/cu128 --quiet }
+    Invoke-Ngoai { & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null }
     if ($LASTEXITCODE -eq 0) { Ok 'Da cai torch cu128 (CUDA OK)' }
     else { Note 'CANH BAO: torch chua thay CUDA - Tao Clip ngan se chay CPU rat cham (kiem tra driver NVIDIA / dung card Blackwell can cu128)' }
 }
@@ -464,7 +505,7 @@ $envText = if (Test-Path $envFile) { Get-Content $envFile -Raw } else { '' }
 if ($envText -match '(?m)^LTT_DATABASE_URL=(.+)$') {
     $env:LTT_DATABASE_URL = $Matches[1].Trim()
     Push-Location $appDir
-    & $venvPy -m alembic upgrade head
+    Invoke-Ngoai { & $venvPy -m alembic upgrade head }
     $rc = $LASTEXITCODE
     Pop-Location
     $env:LTT_DATABASE_URL = $null

@@ -75,7 +75,13 @@ class VoiceProfile(Base):
     #: Thứ DUY NHẤT khách và API nhìn thấy. Không bao giờ đổi, kể cả khi đổi engine.
     public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True,
                                            default=sinh_public_id)
-    owner_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    #: ⛔ String(36), KHÔNG phải số. `User.id` của nền tảng là **UUID chuỗi**
+    #:    (`platform_core/models.py:73` — cố ý, để id không đoán được và không
+    #:    lộ quy mô). App này ban đầu khai `BigInteger`, và hệ quả không phải
+    #:    một lỗi kiểu ồn ào mà là một sự im lặng: chỗ đọc id ép `int(...)`,
+    #:    ném, bị nuốt, trả **0** — nên MỌI khách đều thành chủ sở hữu số 0 và
+    #:    sẽ nhìn thấy giọng của nhau. Đổi 31/08/2026 khi cả bốn bảng còn rỗng.
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
     ten_hien_thi: Mapped[str] = mapped_column(String(120))
     ngon_ngu: Mapped[str] = mapped_column(String(16), default="vi")
     ghi_chu: Mapped[str] = mapped_column(Text, default="")
@@ -150,7 +156,7 @@ class VoiceConsent(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
-    owner_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
 
     #: Phiên bản bản điều khoản đã hiện ra màn hình lúc bấm. Không có nó thì
     #: không trả lời được "họ đồng ý với cái gì".

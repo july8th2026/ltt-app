@@ -332,3 +332,53 @@ def test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu():
         f"dau tien (dong {min(dung) + 1}) — moi giay no chay la mot giay "
         f"production nam. Chuyen no len TRUOC `Head 'Copy ma nguon'`, va goi tu "
         f"`$src` chu khong `$appDir` (app\ chi co noi dung moi sau robocopy).")
+
+
+def test_moi_dich_vu_giu_appdir_deu_bi_dung_truoc_khi_xoay_app():
+    """🔴 Mọi dịch vụ chạy từ `app\` phải nằm trong danh sách dừng.
+
+    SỰ CỐ THẬT 2026-08-31 09:36. `LTTStudioVoice` được thêm (Q117) với
+    `AppDirectory = C:\LTTPlatform\app`, nhưng **không** được thêm vào khối
+    `Stop-Service` ở đầu bước "Copy ma nguon". Tiến trình python của nó giữ
+    `app\` mở, `Move-Item` ném IOException, và script chết **ngay sau khi đã
+    dừng ba dịch vụ kia** — production trả 502 khoảng ba phút.
+
+    ⭐ Vì sao nó khó thấy: thông báo lỗi là *"The process cannot access the file
+       because it is being used by another process"* — nó đọc như một vấn đề
+       quyền hạn hoặc một khoá còn sót, chứ không nói rằng có một dịch vụ bị bỏ
+       sót. Và nó chỉ vỡ khi cài **lại** trên máy đang chạy, tức đúng lúc cái
+       giá của việc vỡ là cao nhất.
+
+    Phép kiểm chốt bằng cách **đối chiếu hai danh sách trong cùng một tệp**: mọi
+    tên dịch vụ mà tệp này đăng ký với nssm đều phải xuất hiện trong
+    `$DichVuGiuAppDir`. Thêm dịch vụ thứ năm mà quên → gate đỏ.
+    """
+    import re
+
+    goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(goc, "setup", "2-cai-dat.ps1"),
+              "r", encoding="utf-8") as f:
+        text = f.read()
+
+    # `$XxxServiceName = 'LTTStudioYyy'` -> {bien: ten}
+    bien = dict(re.findall(r"\$(\w*ServiceName)\s*=\s*'(LTTStudio\w+)'", text))
+    assert bien, "khong tim thay khai bao ten dich vu nao — phep kiem het nghia"
+
+    m = re.search(r"\$DichVuGiuAppDir\s*=\s*@\((.*?)\)", text, re.S)
+    assert m, ("khong thay `$DichVuGiuAppDir` — danh sach dich vu phai dung "
+               "truoc khi xoay app\ can ton tai o MOT cho, khong rai rac")
+
+    trong_ds = set()
+    for phan in re.findall(r"\$(\w+)|'(LTTStudio\w+)'", m.group(1)):
+        ten_bien, ten_thang = phan
+        if ten_thang:
+            trong_ds.add(ten_thang)
+        elif ten_bien in bien:
+            trong_ds.add(bien[ten_bien])
+
+    thieu = set(bien.values()) - trong_ds
+    assert not thieu, (
+        f"dich vu {sorted(thieu)} duoc dang ky trong 2-cai-dat.ps1 nhung KHONG "
+        f"co trong $DichVuGiuAppDir. Neu no chay tu app\ thi no se giu thu muc "
+        f"do va `Move-Item $appDir` se nem IOException — sau khi cac dich vu "
+        f"kia da dung. Ket qua: production 502 cho toi khi co nguoi bat tay.")

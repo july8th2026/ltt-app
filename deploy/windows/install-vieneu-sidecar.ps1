@@ -39,6 +39,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 if (-not $ReleaseDir) { $ReleaseDir = Join-Path $Root 'app' }
 if (-not $VenvRoot)   { $VenvRoot   = $Root }
 
@@ -87,7 +109,7 @@ function Test-Py {
     $before = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & $python -c $Code *> $null
+        Invoke-Ngoai { & $python -c $Code *> $null }
         return ($LASTEXITCODE -eq 0)
     } finally {
         $ErrorActionPreference = $before
@@ -97,16 +119,17 @@ function Test-Py {
 # ------------------------------------------------------------------ venv -----
 if (-not (Test-Path $python)) {
     Write-Step 'Creating vieneu-venv'
-    & $PythonExe -m venv $venv
+    Invoke-Ngoai { & $PythonExe -m venv $venv }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create vieneu venv' }
-    & $python -m pip install --upgrade pip --quiet
+    Invoke-Ngoai { & $python -m pip install --upgrade pip --quiet }
+    if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $python -m pip install --upgrade pip --quiet" }
 }
 
 # ------------------------------------------------------- torch (cu128) -------
 # Probe BY VERSION and BY CUDA, not merely "is torch importable".
 if (-not (Test-Py "import torch,sys; sys.exit(0 if torch.__version__.startswith('$TORCH_VER') and torch.cuda.is_available() else 1)")) {
     Write-Step "Installing torch $TORCH_VER + cu128 (large download, several minutes)"
-    & $python -m pip install "torch==$TORCH_VER" "torchaudio==$TORCH_VER" --index-url $CU_INDEX --quiet
+    Invoke-Ngoai { & $python -m pip install "torch==$TORCH_VER" "torchaudio==$TORCH_VER" --index-url $CU_INDEX --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install CUDA torch for vieneu' }
 }
 Write-Ok "torch $TORCH_VER"
@@ -114,7 +137,7 @@ Write-Ok "torch $TORCH_VER"
 # ------------------------------------------------------- transformers --------
 if (-not (Test-Py "import importlib.metadata as m,sys; sys.exit(0 if m.version('transformers')=='$TRANSFORMERS_VER' else 1)")) {
     Write-Step "Installing transformers $TRANSFORMERS_VER (upstream pin for the GPU SDK)"
-    & $python -m pip install "transformers==$TRANSFORMERS_VER" --quiet
+    Invoke-Ngoai { & $python -m pip install "transformers==$TRANSFORMERS_VER" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install transformers' }
 }
 Write-Ok "transformers $TRANSFORMERS_VER"
@@ -122,7 +145,7 @@ Write-Ok "transformers $TRANSFORMERS_VER"
 # ------------------------------------------------------------- vieneu --------
 if (-not (Test-Py "import importlib.metadata as m,sys; sys.exit(0 if m.version('vieneu')=='$VIENEU_VER' else 1)")) {
     Write-Step "Installing vieneu $VIENEU_VER"
-    & $python -m pip install "vieneu==$VIENEU_VER" --quiet
+    Invoke-Ngoai { & $python -m pip install "vieneu==$VIENEU_VER" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install vieneu' }
 }
 Write-Ok "vieneu $VIENEU_VER"
@@ -144,7 +167,7 @@ Write-Ok "vieneu $VIENEU_VER"
 # pinning down is safe. This step must run AFTER vieneu or vieneu re-raises it.
 if (-not (Test-Py "import transformers, huggingface_hub")) {
     Write-Step 'Pinning huggingface_hub<1.0 (transformers 4.57.6 ceiling)'
-    & $python -m pip install "huggingface_hub>=0.34.0,<1.0" --quiet
+    Invoke-Ngoai { & $python -m pip install "huggingface_hub>=0.34.0,<1.0" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to pin huggingface_hub' }
 }
 Write-Ok 'transformers + huggingface_hub agree'
@@ -158,9 +181,9 @@ if (-not (Test-Py "import perth,sys; sys.exit(0 if hasattr(perth,'PerthImplicitW
     Write-Step 'Watermark patch: uninstall `perth` (wrong package), install `resemble-perth`'
     $before = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    & $python -m pip uninstall -y perth *> $null
+    Invoke-Ngoai { & $python -m pip uninstall -y perth *> $null }
     $ErrorActionPreference = $before
-    & $python -m pip install "resemble-perth==$PERTH_VER" --quiet
+    Invoke-Ngoai { & $python -m pip install "resemble-perth==$PERTH_VER" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install resemble-perth' }
 }
 Write-Ok "resemble-perth $PERTH_VER"
@@ -168,7 +191,7 @@ Write-Ok "resemble-perth $PERTH_VER"
 # ------------------------------------------------------ sidecar server -------
 if (-not (Test-Py "import fastapi,uvicorn")) {
     Write-Step 'Installing fastapi + uvicorn for the sidecar'
-    & $python -m pip install "fastapi>=0.141.1,<1.0" "uvicorn[standard]>=0.52.0,<1.0" --quiet
+    Invoke-Ngoai { & $python -m pip install "fastapi>=0.141.1,<1.0" "uvicorn[standard]>=0.52.0,<1.0" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install sidecar server deps' }
 }
 
@@ -181,7 +204,7 @@ if (-not $SkipWarmCache) {
     if (Test-Path $warm) {
         Write-Step 'Warming the HuggingFace cache (~320 MB)'
         $env:HF_HOME = $hfCache
-        & $python $warm --repo $MODEL_REPO --revision $MODEL_REV
+        Invoke-Ngoai { & $python $warm --repo $MODEL_REPO --revision $MODEL_REV }
         if ($LASTEXITCODE -ne 0) { throw 'Failed to warm the HuggingFace cache' }
         Write-Ok 'HF cache ready'
     } else {

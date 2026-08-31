@@ -30,6 +30,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 function Note($m) { Write-Host "  $m" -ForegroundColor Yellow }
@@ -107,7 +129,7 @@ if (Test-Path $cert) {
     Write-Host "  va chon zone '$zone' (ca ten mien - da chuyen sang Cloudflare)." -ForegroundColor Yellow
     Write-Host "  Xong thi script tu chay tiep." -ForegroundColor Yellow
     Write-Host ""
-    & $cfExe tunnel login
+    Invoke-Ngoai { & $cfExe tunnel login }
     if (-not (Test-Path $cert)) { throw 'Dang nhap chua xong - khong thay cert.pem. Chay lai script.' }
     Ok 'Dang nhap thanh cong'
 }
@@ -117,7 +139,7 @@ $list = Invoke-Cf tunnel list
 if ($list -match [regex]::Escape($TunnelName)) {
     Ok "Tunnel '$TunnelName' da ton tai"
 } else {
-    & $cfExe tunnel create $TunnelName
+    Invoke-Ngoai { & $cfExe tunnel create $TunnelName }
     if ($LASTEXITCODE -ne 0) { throw "Tao tunnel that bai" }
     Ok "Da tao tunnel '$TunnelName'"
 }
@@ -205,7 +227,7 @@ $svc = Get-Service $svcName -ErrorAction SilentlyContinue
 if ($svc) {
     Get-Process cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
-    & $cfExe service uninstall 2> $null | Out-Null
+    Invoke-Ngoai { & $cfExe service uninstall 2> $null | Out-Null }
     & $nssmExe remove $svcName confirm 2> $null | Out-Null
     & sc.exe delete $svcName 2> $null | Out-Null
     Start-Sleep -Seconds 3

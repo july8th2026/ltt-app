@@ -150,10 +150,10 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
     from . import features, gia, sidecar_client, tham_chieu
 
     p = params or {}
-    try:
-        owner_id = int(p.get("owner_id") or 0)
-    except (TypeError, ValueError):
-        owner_id = 0
+    # ⛔ Giữ dạng chuỗi: `User.id` là UUID chuỗi. Bản đầu ép `int()` rồi nuốt
+    #    lỗi thành `0` — một giá trị hợp lệ về kiểu, sai về nghĩa, và nó biến
+    #    "ghi danh cho ai" thành "ghi danh cho người dùng số 0".
+    owner_id = str(p.get("owner_id") or "").strip()
     public_id = str(p.get("voice_id") or "").strip()
     nguon_key = str(p.get("source_key") or "").strip()
     if not (owner_id and public_id and nguon_key):

@@ -113,7 +113,15 @@ MANIFEST = AppManifest(
     enabled=True,
     public=True,
     surface="customer",
-    lifecycle="development",
+    # PHAT HANH 2026-08-31, sau khi ba man hinh duoc kiem TREN URL CONG KHAI
+    # bang trinh duyet that (CLAUDE.md quy tac 5b), khong chi bang test:
+    #   · GET /ltt-voice, /giong, /lich-su -> 200, render dung, 0 loi console
+    #   · bam nut Tao -> job that -> worker that -> 24 giay -> WAV 399 KB
+    #   · so tien: 56 -> 55 credit, khop voi `credit_cost` handler bao ve
+    # Vong kiem do tim ra ba loi ma toan bo bo test da bo qua: 422 (thieu chu
+    # kieu o `Depends`), 500 (sai chu ky `TemplateResponse`), va `owner_id`
+    # kieu so trong khi `User.id` la UUID chuoi.
+    lifecycle="released",
     capabilities=("audio",),
     table_prefix="voice",
 

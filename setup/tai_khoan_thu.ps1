@@ -30,7 +30,10 @@ param(
     [string]$Repo  = '',
     [string]$Email = '',
     [switch]$DatLaiMatKhau,
-    [switch]$LietKe
+    [switch]$LietKe,
+    # Nap credit cho tai khoan THU. Mac dinh 0 = khong nap.
+    # Cong cu Python tu choi neu email khong ket thuc bang `.local`.
+    [int]$Nap = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -79,6 +82,22 @@ $doiSo = @()
 if ($Email)         { $doiSo += @('--email', $Email) }
 if ($DatLaiMatKhau) { $doiSo += '--dat-lai-mat-khau' }
 if ($LietKe)        { $doiSo += '--liet-ke' }
+if ($Nap -gt 0)     { $doiSo += @('--nap', "$Nap") }
 
+# !! BAY DA DINH BA LAN TRONG HAI NGAY - xem `Test-Py` trong
+#    `deploy\windows\install-vieneu-sidecar.ps1`.
+#
+#    Voi `$ErrorActionPreference = 'Stop'`, mot exe NGOAI ghi ra stderr se thanh
+#    NativeCommandError va KET THUC script. Python ghi ra stderr vi rat nhieu ly
+#    do binh thuong (SyntaxWarning, mot dong chan doan), va khi do:
+#      - lenh sau `;` KHONG chay  -> `EXITCODE=` khong bao gio duoc ghi
+#      - va `EXITCODE` RONG doc len giong het "tien trinh khong chay"
+#    tuc mot loi vo hai bi doc thanh mot loi nghiem trong.
+#
+#    Nen quanh LOI GOI CUOI: ha xuong 'Continue', doc $LASTEXITCODE, roi tra lai.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 & $venvPy $tool @doiSo
-exit $LASTEXITCODE
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:f5fb25d06ea5628e864bee63682fae116790cac77df909afb70fb447307c307e
-Nguồn đã quét : 1289 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:33879148f71ab63a675a39c8b9672239ed2d0ed1ddff49d4298d8dd03817b7c2
+Nguồn đã quét : 1296 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -165,7 +165,7 @@ Các lớp chính:
     - apps/ltt_llm/ngan_sach.py
 
 [ltt_voice] Giọng nói LTT
-  URL=/ltt-voice | surface=customer | lifecycle=development
+  URL=/ltt-voice | surface=customer | lifecycle=released
   enabled=True | public=True | parent=-
   requires=voice | capabilities=audio
   HTTP routes=8 | table_prefix=voice | manifest_error=-
@@ -578,14 +578,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [chataistudio] GET    /chataistudio/img/{key:path} → chat_image | auth~login | apps/chataistudio/routes.py:504
 - [chataistudio] POST   /chataistudio/new → new_conv | auth~login | apps/chataistudio/routes.py:138
 - [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
-- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes.py:60
-- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes.py:60
-- [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes.py:259
-- [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes.py:122
-- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes.py:141
-- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes.py:215
-- [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes.py:239
-- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes.py:76
+- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes.py:67
+- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes.py:67
+- [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes.py:266
+- [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes.py:129
+- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes.py:148
+- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes.py:222
+- [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes.py:246
+- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes.py:83
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:181
@@ -856,17 +856,17 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - singleton_leases → SingletonLease | platform_core/models.py:887
 - upload_sessions → UploadSession | platform_core/models.py:425
 - users → User | platform_core/models.py:73
-- voice_consent → VoiceConsent | apps/ltt_voice/tables.py:146
+- voice_consent → VoiceConsent | apps/ltt_voice/tables.py:152
 - voice_profile → VoiceProfile | apps/ltt_voice/tables.py:63
-- voice_ref → VoiceRef | apps/ltt_voice/tables.py:94
-- voice_repr → VoiceRepr | apps/ltt_voice/tables.py:115
+- voice_ref → VoiceRef | apps/ltt_voice/tables.py:100
+- voice_repr → VoiceRepr | apps/ltt_voice/tables.py:121
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
 - vps_gateway → VpsGateway | apps/vps/tables.py:68
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (60)
+6. ALEMBIC MIGRATIONS (61)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -927,6 +927,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - d70a3c4e9f62 ← c6f92a3b8d51 | H41.9/Q2: durable per-account fair claim cursor. | alembic/versions/20260828_1200_job_fair_claim.py
 - e83b5d7c1a40 ← d70a3c4e9f62 | H41.9/Q3: durable job admission timestamp. | alembic/versions/20260828_1300_job_admitted_at.py
 - a1f7c3d90b12 ← e83b5d7c1a40 | Bang cua LTT VOICE: voice_profile, voice_ref, voice_repr, voice_consent. | alembic/versions/20260830_1900_voice_tables.py
+- b2c8e41d5a90 ← a1f7c3d90b12 | voice_*: owner_id BigInteger -> String(36) | alembic/versions/20260831_1000_voice_owner_uuid.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1122,7 +1123,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (302 file pytest + 3 frontend)
+10. QUALITY GATES (304 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1385,6 +1386,8 @@ Test inventory:
 - tests/test_338_ltt_voice_hop_dong.py
 - tests/test_339_noi_chuoi_artifact.py
 - tests/test_33_secret_scanner.py
+- tests/test_340_ltt_voice_trang_render.py
+- tests/test_341_khong_query_param_request.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -1451,8 +1454,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1289 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:27, .py:975, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1296 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:29, .py:980, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1465,7 +1468,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 [README.md] (1)
 - README.md
 
-[alembic] (62)
+[alembic] (63)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1528,6 +1531,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - alembic/versions/20260828_1200_job_fair_claim.py
 - alembic/versions/20260828_1300_job_admitted_at.py
 - alembic/versions/20260830_1900_voice_tables.py
+- alembic/versions/20260831_1000_voice_owner_uuid.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2336,21 +2340,23 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (12)
+[setup] (14)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
 - setup/cai_dich_vu_giong.ps1
+- setup/chay_thu_giong.ps1
 - setup/cong_tac_tool_api.ps1
 - setup/dat_bien_env.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/nap_lai_env.ps1
 - setup/tai_khoan_thu.ps1
+- setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (319)
+[tests] (321)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2624,6 +2630,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_338_ltt_voice_hop_dong.py
 - tests/test_339_noi_chuoi_artifact.py
 - tests/test_33_secret_scanner.py
+- tests/test_340_ltt_voice_trang_render.py
+- tests/test_341_khong_query_param_request.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -2671,7 +2679,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (116)
+[tools] (118)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2699,6 +2707,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tools/cam_cli_gui.py
 - tools/cam_cli_launcher.ps1
 - tools/cham_mu.py
+- tools/chay_thu_ltt_voice.py
 - tools/check_api_compat.py
 - tools/check_bien_dich.py
 - tools/check_bo_qua.py
@@ -2777,6 +2786,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tools/upscale_dual_gpu_soak.py
 - tools/upscale_gpu_smoke.py
 - tools/upscale_option_matrix.py
+- tools/ve_dang_nhap_thu.py
 - tools/vps_doctor.py
 - tools/vps_dung_lai_cong_vao.py
 - tools/vps_dung_mau.py
@@ -2798,7 +2808,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1289 file; 12817914 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1296 file; 12870188 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -7934,6 +7944,82 @@ def downgrade() -> None:
     op.drop_table("voice_repr")
     op.drop_table("voice_ref")
     op.drop_table("voice_profile")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260831_1000_voice_owner_uuid.py
+SHA256=d58f9cceefda6104562b46005f6dddd570f1e89fcf88beba1e28de27d6600467 BYTES=3009 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""voice_*: owner_id BigInteger -> String(36)
+
+⛔ SỬA MỘT LỖI SAI KIỂU ĐÃ LÊN PRODUCTION.
+
+`platform_core.models.User.id` là **UUID chuỗi** — cố ý, để id không đoán được
+và không lộ quy mô. App `ltt_voice` khai `owner_id` là `BigInteger`, và mọi chỗ
+đọc id đều ép `int(...)` rồi **nuốt lỗi** thành `0`.
+
+Hệ quả đo được trên máy chủ thật 31/08/2026:
+
+  · Trang hiện đúng `56 credit` ở header (chỗ đó đọc phiên trực tiếp) trong khi
+    bấm Tạo trả `Khong du credit: can 2, con 0` — vì handler tra sổ của người
+    dùng `"0"`. Nhìn như lỗi sổ tiền, thật ra là lỗi danh tính.
+  · Và nguy hơn tiền: **mọi `owner_id` đều là 0**, nên `Giọng của tôi` sẽ hiện
+    giọng của mọi khách cho mọi khách. Lỗi này còn tiềm ẩn chỉ vì chưa ai kịp
+    tạo giọng nào.
+
+⭐ Vì sao đổi kiểu được mà không cần chuyển dữ liệu: đo trước khi đổi, cả bốn
+   bảng `voice_*` đều **0 dòng**. App chưa từng phục vụ ai. Nếu về sau đọc lại
+   tệp này khi bảng đã có dữ liệu thì đây KHÔNG còn là khuôn để chép.
+
+Revision ID: b2c8e41d5a90
+Revises: a1f7c3d90b12
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "b2c8e41d5a90"
+down_revision = "a1f7c3d90b12"
+branch_labels = None
+depends_on = None
+
+#: (bảng, cột). `voice_ref` và `voice_repr` không mang `owner_id` — chúng treo
+#: vào `profile_id`, nên chủ sở hữu suy ra từ profile, không nhân bản.
+COT = [("voice_profile", "owner_id"), ("voice_consent", "owner_id")]
+
+
+#: ⚠️ `batch_alter_table`, KHÔNG phải `op.alter_column` trần.
+#:
+#:    Production là PostgreSQL, nhưng vòng kiểm `test_63::test_vong_di_tru_tien_
+#:    lui_tien` chạy toàn bộ chuỗi migration trên **SQLite**, và SQLite không có
+#:    `ALTER TABLE ... ALTER COLUMN ... TYPE` — nó trả `near "ALTER": syntax
+#:    error`. `batch_alter_table` dựng lại bảng trên SQLite và vẫn phát ra
+#:    `ALTER COLUMN` thật trên PostgreSQL. Cùng khuôn với migration
+#:    `5b9e2c47a103` (`vps_console_ve.pve_ve`).
+
+
+def upgrade() -> None:
+    for bang, cot in COT:
+        with op.batch_alter_table(bang) as batch:
+            batch.alter_column(
+                cot,
+                existing_type=sa.BigInteger(),
+                type_=sa.String(length=36),
+                existing_nullable=False,
+                # PostgreSQL không tự ép bigint -> varchar; nói rõ phép ép.
+                postgresql_using=f"{cot}::varchar(36)")
+
+
+def downgrade() -> None:
+    for bang, cot in COT:
+        with op.batch_alter_table(bang) as batch:
+            batch.alter_column(
+                cot,
+                existing_type=sa.String(length=36),
+                type_=sa.BigInteger(),
+                existing_nullable=False,
+                postgresql_using=f"{cot}::bigint")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -17728,7 +17814,7 @@ CAM_KET = N_(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/features.py
-SHA256=9672fbea3d6a7c7f09082b11865dcd27311ffe02d6a4b9ca9ad06eb50d0a29b8 BYTES=7838 LINES=190
+SHA256=a1ddd5f304a06a7507778e2f0aa5673052f85e89632f769835ff7bc3ffaac1ba BYTES=7956 LINES=189
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — NGHIỆP VỤ của LTT VOICE. Mọi cửa gọi vào đây.
@@ -17777,7 +17863,7 @@ class YeuCau:
     text: str
     voice_id: str = ""
     preset: str = ""
-    owner_id: int = 0
+    owner_id: str = ""
     doc_so_tran: bool = False
 
     @property
@@ -17805,10 +17891,9 @@ def chuan_hoa(params: dict) -> YeuCau:
         # Từ chối rõ ràng, đừng lặng lẽ chọn một cái.
         raise LoiGiongNoi(_t("Chỉ chọn một: giọng của bạn hoặc giọng có sẵn."))
 
-    try:
-        owner_id = int(p.get("owner_id") or p.get("user_id") or 0)
-    except (TypeError, ValueError):
-        owner_id = 0
+    # ⛔ Giữ NGUYÊN dạng chuỗi. `User.id` là UUID chuỗi; ép `int()` ở đây
+    #    từng ném rồi bị nuốt, cho ra `owner_id = 0` cho mọi người dùng.
+    owner_id = str(p.get("owner_id") or p.get("user_id") or "").strip()
 
     return YeuCau(text=text, voice_id=voice_id, preset=preset,
                   owner_id=owner_id,
@@ -18122,7 +18207,7 @@ def bang_gia() -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/jobs.py
-SHA256=ba7bc106afa3b8cccd48e334a3b6792aba8faddbf1ec204313aa218326e5627f BYTES=8947 LINES=219
+SHA256=98b1acdb5ac7b0d4f85e938b070f5a5aa73f52542b6e2bf3f2509e7bea13c5b0 BYTES=9159 LINES=219
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker.
@@ -18276,10 +18361,10 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
     from . import features, gia, sidecar_client, tham_chieu
 
     p = params or {}
-    try:
-        owner_id = int(p.get("owner_id") or 0)
-    except (TypeError, ValueError):
-        owner_id = 0
+    # ⛔ Giữ dạng chuỗi: `User.id` là UUID chuỗi. Bản đầu ép `int()` rồi nuốt
+    #    lỗi thành `0` — một giá trị hợp lệ về kiểu, sai về nghĩa, và nó biến
+    #    "ghi danh cho ai" thành "ghi danh cho người dùng số 0".
+    owner_id = str(p.get("owner_id") or "").strip()
     public_id = str(p.get("voice_id") or "").strip()
     nguon_key = str(p.get("source_key") or "").strip()
     if not (owner_id and public_id and nguon_key):
@@ -18347,7 +18432,7 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
-SHA256=4774a2b7cb9c4078f42f1b5c20afb6e5bba1246484b2c4ba3fd67b63d1abcf28 BYTES=9367 LINES=187
+SHA256=48c6b73c47b2e9593707c8a6abe969f82d686a5d6604007138857cb917a721bc BYTES=9954 LINES=195
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `ltt_voice` — giọng nói tiếng Việt nhân bản, model chạy trên **máy A** (Q117).
@@ -18464,7 +18549,15 @@ MANIFEST = AppManifest(
     enabled=True,
     public=True,
     surface="customer",
-    lifecycle="development",
+    # PHAT HANH 2026-08-31, sau khi ba man hinh duoc kiem TREN URL CONG KHAI
+    # bang trinh duyet that (CLAUDE.md quy tac 5b), khong chi bang test:
+    #   · GET /ltt-voice, /giong, /lich-su -> 200, render dung, 0 loi console
+    #   · bam nut Tao -> job that -> worker that -> 24 giay -> WAV 399 KB
+    #   · so tien: 56 -> 55 credit, khop voi `credit_cost` handler bao ve
+    # Vong kiem do tim ra ba loi ma toan bo bo test da bo qua: 422 (thieu chu
+    # kieu o `Depends`), 500 (sai chu ky `TemplateResponse`), va `owner_id`
+    # kieu so trong khi `User.id` la UUID chuoi.
+    lifecycle="released",
     capabilities=("audio",),
     table_prefix="voice",
 
@@ -18540,7 +18633,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes.py
-SHA256=fcd04934db85f12956ec928c28b9745331af87ddc7334050b27cbdba8079f491 BYTES=11696 LINES=280
+SHA256=f555eaba602605fd2bf8fc5d33baf4e18468e109d4646f0a3e29aedecfc44fa1 BYTES=12320 LINES=287
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Giao diện của LTT VOICE. Router **không** tự viết prefix — nền tảng gắn từ
@@ -18576,11 +18669,18 @@ from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 router = APIRouter(tags=["ltt_voice"])
 
 
-def _uid(user) -> int:
-    try:
-        return int(getattr(user, "id", 0) or 0)
-    except (TypeError, ValueError):
-        return 0
+def _uid(user) -> str:
+    """Id người dùng, dạng CHUỖI.
+
+    ⛔ Đừng ép `int()`. `User.id` là UUID chuỗi, nên `int()` ném, và bản
+       đầu của hàm này bắt lỗi rồi trả `0` — một giá trị **hợp lệ về kiểu
+       nhưng sai về nghĩa**. Hậu quả đo được trên máy chủ thật 31/08/2026:
+       trang hiện đúng "56 credit" ở header (chỗ đó đọc phiên trực tiếp)
+       trong khi nút Tạo trả *"Khong du credit: can 2, con 0"*, vì handler
+       tra sổ của người dùng "0". Và nguy hơn tiền: mọi `owner_id` đều
+       thành 0, tức giọng của mọi khách chung một chủ.
+    """
+    return str(getattr(user, "id", "") or "")
 
 
 def _db():
@@ -18613,7 +18713,7 @@ def trang_tao(request: Request, user=Depends(user_hien_tai),
         except StopIteration:
             pass
     return templates.TemplateResponse(
-        "ltt_voice_studio.html", _ngu_canh(request, user, giong=giong))
+        request, "ltt_voice_studio.html", _ngu_canh(request, user, giong=giong))
 
 
 @router.post("/tao")
@@ -18641,7 +18741,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
     db = next(gen)
     try:
         job = submit_with_credit(
-            db, user_id=str(_uid(user)), app_slug=MANIFEST.slug,
+            db, user_id=_uid(user), app_slug=MANIFEST.slug,
             job_type="ltt_voice.synthesize",
             params={"text": yc.text, "voice_id": yc.voice_id,
                     "preset": yc.preset, "owner_id": _uid(user)},
@@ -18676,7 +18776,7 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
             pass
     from .dieu_khoan import CAM_KET, cac_dieu
     return templates.TemplateResponse(
-        "ltt_voice_giong.html",
+        request, "ltt_voice_giong.html",
         _ngu_canh(request, user, giong=giong, dieu_khoan=cac_dieu(),
                   cam_ket=CAM_KET))
 
@@ -18787,14 +18887,14 @@ def trang_lich_su(request: Request, user=Depends(user_hien_tai),
     db = next(gen)
     try:
         lich_su, _cursor = job_history.list_owned(
-            db, str(_uid(user)), app_slug=MANIFEST.slug, limit=50)
+            db, _uid(user), app_slug=MANIFEST.slug, limit=50)
     finally:
         try:
             next(gen)
         except StopIteration:
             pass
     return templates.TemplateResponse(
-        "ltt_voice_lich_su.html", _ngu_canh(request, user, lich_su=lich_su))
+        request, "ltt_voice_lich_su.html", _ngu_canh(request, user, lich_su=lich_su))
 
 
 # ── Phục vụ tệp tiếng ────────────────────────────────────────────────────────
@@ -18979,7 +19079,7 @@ def giong_dung_san() -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tables.py
-SHA256=8af701acdc11536547bb932e3fa21a2642e3067fb07103b2d2c5f5ba472aad30 BYTES=8721 LINES=165
+SHA256=dcefe51cb1740a8eb9fc6ed892ba3e8e04a29b0865e69924fd736d6e75f04f62 BYTES=9309 LINES=171
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của LTT VOICE. Tiền tố `voice_` theo `MANIFEST.table_prefix`.
 
@@ -19058,7 +19158,13 @@ class VoiceProfile(Base):
     #: Thứ DUY NHẤT khách và API nhìn thấy. Không bao giờ đổi, kể cả khi đổi engine.
     public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True,
                                            default=sinh_public_id)
-    owner_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    #: ⛔ String(36), KHÔNG phải số. `User.id` của nền tảng là **UUID chuỗi**
+    #:    (`platform_core/models.py:73` — cố ý, để id không đoán được và không
+    #:    lộ quy mô). App này ban đầu khai `BigInteger`, và hệ quả không phải
+    #:    một lỗi kiểu ồn ào mà là một sự im lặng: chỗ đọc id ép `int(...)`,
+    #:    ném, bị nuốt, trả **0** — nên MỌI khách đều thành chủ sở hữu số 0 và
+    #:    sẽ nhìn thấy giọng của nhau. Đổi 31/08/2026 khi cả bốn bảng còn rỗng.
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
     ten_hien_thi: Mapped[str] = mapped_column(String(120))
     ngon_ngu: Mapped[str] = mapped_column(String(16), default="vi")
     ghi_chu: Mapped[str] = mapped_column(Text, default="")
@@ -19133,7 +19239,7 @@ class VoiceConsent(Base):
 
     id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
-    owner_id: Mapped[int] = mapped_column(BigInteger, index=True)
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
 
     #: Phiên bản bản điều khoản đã hiện ra màn hình lúc bấm. Không có nó thì
     #: không trả lời được "họ đồng ý với cái gì".
@@ -19240,7 +19346,7 @@ document.getElementById('lv-form-giong').addEventListener('submit', function (e)
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_lich_su.html
-SHA256=a8379540769f1e55cba070174d495e7709adee7902cc79e27e8dab4f72eb52d5 BYTES=1380 LINES=37
+SHA256=b1205b608e34a5c8756191521fe08f04bba77fa99a5458434a78adcca048ad3e BYTES=1684 LINES=40
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử giọng nói") }} — LTT AI Studio{% endblock %}
@@ -19261,7 +19367,10 @@ SHA256=a8379540769f1e55cba070174d495e7709adee7902cc79e27e8dab4f72eb52d5 BYTES=13
     <tbody>
     {% for j in lich_su %}
       <tr>
-        <td>{{ j.created_at }}</td>
+        {# `{{ j.created_at }}` in nguyen `2026-08-31 10:03:40.582730+07:00` —
+           dung ky thuat, sai voi nguoi doc, va lech han voi trang job ngay ben
+           canh (`10:03 31/08/2026`). Dung dung khuon do. #}
+        <td><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
         <td>{{ (j.params or {}).get('text', '')[:80] }}</td>
         <td>{% if j.result %}{{ j.result.get('duration_s', '-') }}s{% else %}-{% endif %}</td>
         <td>{% if j.result %}{{ j.result.get('credit_cost', '-') }}{% else %}-{% endif %}</td>
@@ -19670,7 +19779,7 @@ def chuan_bi(text: str, *, tran_moi_doan: int, doc_so_tran: bool = False,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_chieu.py
-SHA256=f68e0d2d63d3f0cf7d3368acaa683c71bda33a33d75267a673dd9a135c151416 BYTES=5089 LINES=125
+SHA256=38a63fb799c759c59c1b98b89572e89b25bac9e5f2ba32b3aeea09d5d1121e43 BYTES=5089 LINES=125
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_chieu.py — tra cứu và lưu Voice Profile / biểu diễn engine.
@@ -19693,11 +19802,11 @@ log = logging.getLogger(__name__)
 
 #: Tiền tố khoá trong `platform_core.storage`. Có `owner_id` trong đường dẫn để
 #: một lần nhìn vào kho là biết tệp thuộc về ai.
-def khoa_nguon(owner_id: int, public_id: str) -> str:
+def khoa_nguon(owner_id: str, public_id: str) -> str:
     return f"voice/{owner_id}/{public_id}/source"
 
 
-def khoa_bieu_dien(owner_id: int, public_id: str, van_tay: str) -> str:
+def khoa_bieu_dien(owner_id: str, public_id: str, van_tay: str) -> str:
     #: Có vân tay trong khoá để hai biểu diễn của hai revision **không đè nhau**.
     #: Đè nhau thì lùi model về bản cũ sẽ đọc phải biểu diễn của bản mới.
     return f"voice/{owner_id}/{public_id}/repr-{van_tay}.npz"
@@ -19709,7 +19818,7 @@ def van_tay(data: bytes) -> str:
 
 # ── tra cứu ──────────────────────────────────────────────────────────────────
 
-def tim_profile(db, public_id: str, *, owner_id: int):
+def tim_profile(db, public_id: str, *, owner_id: str):
     """Tìm theo `public_id` **và** chủ sở hữu, trong MỘT truy vấn.
 
     ⛔ Đừng tách thành "tìm theo id rồi so owner": hai bước thì có một khoảng
@@ -19724,15 +19833,15 @@ def tim_profile(db, public_id: str, *, owner_id: int):
     return db.execute(
         select(VoiceProfile).where(
             VoiceProfile.public_id == str(public_id),
-            VoiceProfile.owner_id == int(owner_id))
+            VoiceProfile.owner_id == str(owner_id))
     ).scalar_one_or_none()
 
 
-def danh_sach(db, *, owner_id: int, gom_tat: bool = False) -> list:
+def danh_sach(db, *, owner_id: str, gom_tat: bool = False) -> list:
     from sqlalchemy import select
 
     from .tables import VoiceProfile
-    q = select(VoiceProfile).where(VoiceProfile.owner_id == int(owner_id))
+    q = select(VoiceProfile).where(VoiceProfile.owner_id == str(owner_id))
     if not gom_tat:
         q = q.where(VoiceProfile.trang_thai != "revoked")
     return list(db.execute(q.order_by(VoiceProfile.tao_luc.desc())).scalars())
@@ -19772,7 +19881,7 @@ def nap_ref_b64(bieu_dien) -> str:
         return base64.b64encode(f.read()).decode("ascii")
 
 
-def luu_bieu_dien(*, owner_id: int, public_id: str, ref_b64: str) -> tuple:
+def luu_bieu_dien(*, owner_id: str, public_id: str, ref_b64: str) -> tuple:
     """Ghi `.npz` biểu diễn vào kho. Trả `(storage_key, van_tay)`."""
     import base64
 
@@ -19784,7 +19893,7 @@ def luu_bieu_dien(*, owner_id: int, public_id: str, ref_b64: str) -> tuple:
     return khoa, vt
 
 
-def luu_nguon(*, owner_id: int, public_id: str, data: bytes, mime: str) -> str:
+def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
     """Ghi tệp GỐC bất biến. Không nén, không chuyển đổi, không cắt.
 
     ⛔ Bản gốc là thứ duy nhất cho phép **dựng lại** biểu diễn khi lên engine mới
@@ -75657,7 +75766,7 @@ Write-Host "Giai doan thuong mai: them mot ban off-site (R2/may khac)." -Foregro
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/backup.ps1
-SHA256=7e9675c4eeeb500171bc78a69ae22bc5cf5fdac659fd577cc0c34296c8b275e9 BYTES=7858 LINES=167
+SHA256=9479d0fc470a0079ae2d0902e50d824f8ed848408155ec9f71e1a4b3bfe86087 BYTES=9073 LINES=189
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -75697,6 +75806,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 
 $dataDir = Join-Path $Root 'data'
 if ($BackupDir) { $backups = $BackupDir } else { $backups = Join-Path $Root 'backups' }
@@ -75748,7 +75879,7 @@ if (Test-Path $envFile) {
             $env:PGPASSWORD = $dbPass
             # Dinh dang custom (-Fc): nen san va khoi phuc chon loc duoc bang
             # pg_restore, khac han mot file .sql phang.
-            & $pgDump -U $dbUser -h $dbHost -p $dbPort -d $dbName -Fc -f $dumpFile
+            Invoke-Ngoai { & $pgDump -U $dbUser -h $dbHost -p $dbPort -d $dbName -Fc -f $dumpFile }
             $rc = $LASTEXITCODE
             $env:PGPASSWORD = $null
             if ($rc -ne 0 -or -not (Test-Path $dumpFile)) {
@@ -75991,7 +76122,7 @@ Write-Host '  Send the IP + username to continue the deployment.' -ForegroundCol
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/install-vieneu-sidecar.ps1
-SHA256=05bb5c378cb404b7ab95a11c75f8110f8a8bef643a5cadb0624d004acdfc5d27 BYTES=10241 LINES=206
+SHA256=4ad3ef231a251c7bf98ab34fa51f08d96922842a7f6df1f9778bad48201dc633 BYTES=11706 LINES=229
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -76034,6 +76165,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 if (-not $ReleaseDir) { $ReleaseDir = Join-Path $Root 'app' }
 if (-not $VenvRoot)   { $VenvRoot   = $Root }
 
@@ -76082,7 +76235,7 @@ function Test-Py {
     $before = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & $python -c $Code *> $null
+        Invoke-Ngoai { & $python -c $Code *> $null }
         return ($LASTEXITCODE -eq 0)
     } finally {
         $ErrorActionPreference = $before
@@ -76092,16 +76245,17 @@ function Test-Py {
 # ------------------------------------------------------------------ venv -----
 if (-not (Test-Path $python)) {
     Write-Step 'Creating vieneu-venv'
-    & $PythonExe -m venv $venv
+    Invoke-Ngoai { & $PythonExe -m venv $venv }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create vieneu venv' }
-    & $python -m pip install --upgrade pip --quiet
+    Invoke-Ngoai { & $python -m pip install --upgrade pip --quiet }
+    if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $python -m pip install --upgrade pip --quiet" }
 }
 
 # ------------------------------------------------------- torch (cu128) -------
 # Probe BY VERSION and BY CUDA, not merely "is torch importable".
 if (-not (Test-Py "import torch,sys; sys.exit(0 if torch.__version__.startswith('$TORCH_VER') and torch.cuda.is_available() else 1)")) {
     Write-Step "Installing torch $TORCH_VER + cu128 (large download, several minutes)"
-    & $python -m pip install "torch==$TORCH_VER" "torchaudio==$TORCH_VER" --index-url $CU_INDEX --quiet
+    Invoke-Ngoai { & $python -m pip install "torch==$TORCH_VER" "torchaudio==$TORCH_VER" --index-url $CU_INDEX --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install CUDA torch for vieneu' }
 }
 Write-Ok "torch $TORCH_VER"
@@ -76109,7 +76263,7 @@ Write-Ok "torch $TORCH_VER"
 # ------------------------------------------------------- transformers --------
 if (-not (Test-Py "import importlib.metadata as m,sys; sys.exit(0 if m.version('transformers')=='$TRANSFORMERS_VER' else 1)")) {
     Write-Step "Installing transformers $TRANSFORMERS_VER (upstream pin for the GPU SDK)"
-    & $python -m pip install "transformers==$TRANSFORMERS_VER" --quiet
+    Invoke-Ngoai { & $python -m pip install "transformers==$TRANSFORMERS_VER" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install transformers' }
 }
 Write-Ok "transformers $TRANSFORMERS_VER"
@@ -76117,7 +76271,7 @@ Write-Ok "transformers $TRANSFORMERS_VER"
 # ------------------------------------------------------------- vieneu --------
 if (-not (Test-Py "import importlib.metadata as m,sys; sys.exit(0 if m.version('vieneu')=='$VIENEU_VER' else 1)")) {
     Write-Step "Installing vieneu $VIENEU_VER"
-    & $python -m pip install "vieneu==$VIENEU_VER" --quiet
+    Invoke-Ngoai { & $python -m pip install "vieneu==$VIENEU_VER" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install vieneu' }
 }
 Write-Ok "vieneu $VIENEU_VER"
@@ -76139,7 +76293,7 @@ Write-Ok "vieneu $VIENEU_VER"
 # pinning down is safe. This step must run AFTER vieneu or vieneu re-raises it.
 if (-not (Test-Py "import transformers, huggingface_hub")) {
     Write-Step 'Pinning huggingface_hub<1.0 (transformers 4.57.6 ceiling)'
-    & $python -m pip install "huggingface_hub>=0.34.0,<1.0" --quiet
+    Invoke-Ngoai { & $python -m pip install "huggingface_hub>=0.34.0,<1.0" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to pin huggingface_hub' }
 }
 Write-Ok 'transformers + huggingface_hub agree'
@@ -76153,9 +76307,9 @@ if (-not (Test-Py "import perth,sys; sys.exit(0 if hasattr(perth,'PerthImplicitW
     Write-Step 'Watermark patch: uninstall `perth` (wrong package), install `resemble-perth`'
     $before = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
-    & $python -m pip uninstall -y perth *> $null
+    Invoke-Ngoai { & $python -m pip uninstall -y perth *> $null }
     $ErrorActionPreference = $before
-    & $python -m pip install "resemble-perth==$PERTH_VER" --quiet
+    Invoke-Ngoai { & $python -m pip install "resemble-perth==$PERTH_VER" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install resemble-perth' }
 }
 Write-Ok "resemble-perth $PERTH_VER"
@@ -76163,7 +76317,7 @@ Write-Ok "resemble-perth $PERTH_VER"
 # ------------------------------------------------------ sidecar server -------
 if (-not (Test-Py "import fastapi,uvicorn")) {
     Write-Step 'Installing fastapi + uvicorn for the sidecar'
-    & $python -m pip install "fastapi>=0.141.1,<1.0" "uvicorn[standard]>=0.52.0,<1.0" --quiet
+    Invoke-Ngoai { & $python -m pip install "fastapi>=0.141.1,<1.0" "uvicorn[standard]>=0.52.0,<1.0" --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install sidecar server deps' }
 }
 
@@ -76176,7 +76330,7 @@ if (-not $SkipWarmCache) {
     if (Test-Path $warm) {
         Write-Step 'Warming the HuggingFace cache (~320 MB)'
         $env:HF_HOME = $hfCache
-        & $python $warm --repo $MODEL_REPO --revision $MODEL_REV
+        Invoke-Ngoai { & $python $warm --repo $MODEL_REPO --revision $MODEL_REV }
         if ($LASTEXITCODE -ne 0) { throw 'Failed to warm the HuggingFace cache' }
         Write-Ok 'HF cache ready'
     } else {
@@ -76203,7 +76357,7 @@ Write-Output $python
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/install-whisperx-sidecar.ps1
-SHA256=fd464c8f5456af3a16a95f5d2d2e7a94fa57225098e2c98f650e40f3ca0226ee BYTES=3001 LINES=72
+SHA256=b76752bbec72850acdd8f530683539aba4673f0c9b5d4db4b4298da13c32ca46 BYTES=4262 LINES=94
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -76222,6 +76376,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 if (-not $ReleaseDir) { $ReleaseDir = Join-Path $Root 'app' }
 $venv = Join-Path $Root 'whisperx-venv'
 $python = Join-Path $venv 'Scripts\python.exe'
@@ -76229,7 +76405,7 @@ $requirements = Join-Path $ReleaseDir 'requirements-whisperx.txt'
 if (-not (Test-Path $requirements)) { throw 'requirements-whisperx.txt is missing' }
 
 if (-not (Test-Path $python)) {
-    & $PythonExe -m venv $venv
+    Invoke-Ngoai { & $PythonExe -m venv $venv }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create WhisperX venv' }
 }
 
@@ -76254,7 +76430,7 @@ function Test-Py {
     $before = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & $python -c $Code *> $null
+        Invoke-Ngoai { & $python -c $Code *> $null }
         return ($LASTEXITCODE -eq 0)
     } finally {
         $ErrorActionPreference = $before
@@ -76263,13 +76439,13 @@ function Test-Py {
 
 $torchOk = Test-Py "import torch,sys; ok=torch.__version__.startswith('2.8.') and torch.cuda.is_available(); sys.exit(0 if ok else 1)"
 if (-not $torchOk) {
-    & $python -m pip install --upgrade pip --quiet
-    & $python -m pip install 'torch==2.8.0' 'torchvision==0.23.0' 'torchaudio==2.8.0' --index-url https://download.pytorch.org/whl/cu128 --quiet
+    Invoke-Ngoai { & $python -m pip install --upgrade pip --quiet }
+    Invoke-Ngoai { & $python -m pip install 'torch==2.8.0' 'torchvision==0.23.0' 'torchaudio==2.8.0' --index-url https://download.pytorch.org/whl/cu128 --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install WhisperX CUDA torch' }
 }
 
 if (-not (Test-Py "import whisperx,sys; import importlib.metadata as m; sys.exit(0 if m.version('whisperx')=='3.8.6' else 1)")) {
-    & $python -m pip install -r $requirements --quiet
+    Invoke-Ngoai { & $python -m pip install -r $requirements --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install WhisperX dependencies' }
 }
 
@@ -76281,7 +76457,7 @@ Write-Output $python
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/install.ps1
-SHA256=5e95565c1351d93bda44ec9b84dfbf6eae27c1214c3ef08753510de57506eb2a BYTES=7318 LINES=168
+SHA256=5c1af64a1f7dca8801d931ea529865ffc19b7122a801e0ef11b8b6e7495db104 BYTES=8884 LINES=193
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -76311,6 +76487,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 
 function Write-Step($msg) { Write-Host "`n=== $msg ===" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "  [OK] $msg" -ForegroundColor Green }
@@ -76338,12 +76536,15 @@ Expand-Archive -Path $SourceZip -DestinationPath $release -Force
 Write-Ok "Extracted to $release"
 
 Write-Step 'Creating virtual environment'
-& $PythonExe -m venv $venv
+Invoke-Ngoai { & $PythonExe -m venv $venv }
 if ($LASTEXITCODE -ne 0) { throw "Failed to create venv with '$PythonExe'" }
 $venvPy = Join-Path $venv 'Scripts\python.exe'
-& $venvPy -m pip install --upgrade pip --quiet
-& $venvPy -m pip install -r (Join-Path $release 'requirements.txt') --quiet
-& $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet
+Invoke-Ngoai { & $venvPy -m pip install --upgrade pip --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install --upgrade pip --quiet" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $release 'requirements.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $release 'requirement" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $release 'requirement" }
 Write-Ok 'Dependencies installed'
 
 Write-Step 'Installing isolated WhisperX CUDA sidecar'
@@ -76455,7 +76656,7 @@ Write-Host @"
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/restore.ps1
-SHA256=d9e51a753c40d79f853aecead01c81f7199ff24b420966ebabc449ca4006e963 BYTES=5416 LINES=110
+SHA256=6748f7bee9f624fe25da9c30b492055dbe007eadcf6bc39ca0eb07981556ed48 BYTES=6631 LINES=132
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -76479,6 +76680,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 
 if (-not (Test-Path $Archive)) { throw "Archive not found: $Archive" }
 
@@ -76554,7 +76777,7 @@ if (Test-Path $envFile) {
         # --clean --if-exists: xoa doi tuong cu roi nap lai (khoi phuc that su,
         # khong chi chen them). --no-owner: bo qua chu so huu de khong ket owner
         # cu. -1: mot transaction, loi thi rollback het (khong de CSDL nua voi).
-        & $pgRestore -U $dbUser -h $dbHost -p $dbPort -d $dbName --clean --if-exists --no-owner -1 $dumpFile
+        Invoke-Ngoai { & $pgRestore -U $dbUser -h $dbHost -p $dbPort -d $dbName --clean --if-exists --no-owner -1 $dumpFile }
         $rc = $LASTEXITCODE
         $env:PGPASSWORD = $null
         if ($rc -ne 0) {
@@ -76721,7 +76944,7 @@ Write-Host "  Restart-Service $ServiceName" -ForegroundColor White
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ deploy/windows/update.ps1
-SHA256=2520a739ebd70c5b52870388d75960abe76e6a7db69f4abb4bffba6df1fe9107 BYTES=7968 LINES=189
+SHA256=78986d9d2b6dfbc307fc0190e6593f61f33be644b27ebf419fdbacad802b6f7d BYTES=9419 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -76752,6 +76975,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 
 $principal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
 if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
@@ -76833,8 +77078,10 @@ if (Test-Path $cfg) {
 }
 
 Write-Step 'Updating dependencies'
-& $venvPy -m pip install -r (Join-Path $release 'requirements.txt') --quiet
-& $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $release 'requirements.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $release 'requirement" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $release 'requirements-server.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $release 'requirement" }
 Write-Ok 'Dependencies updated'
 
 Write-Step 'Updating isolated WhisperX CUDA sidecar'
@@ -76878,7 +77125,7 @@ $envFileForMig = Join-Path $Root 'secrets\app.env'
 if ((Test-Path $envFileForMig) -and ((Get-Content $envFileForMig -Raw) -match '(?m)^LTT_DATABASE_URL=(.+)$')) {
     $env:LTT_DATABASE_URL = $Matches[1].Trim()
     Push-Location $release
-    & $venvPy -m alembic upgrade head
+    Invoke-Ngoai { & $venvPy -m alembic upgrade head }
     $rc = $LASTEXITCODE
     Pop-Location
     $env:LTT_DATABASE_URL = $null
@@ -137533,7 +137780,7 @@ def xac_minh(token: str, *, remote_ip: str = "") -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/deps.py
-SHA256=b4fe194b806bf03c6d9d30986399f817e014f8c151cdc9a15b92f4d4de8b5da9 BYTES=4281 LINES=122
+SHA256=fadcc30466ff78d77c66695df59b84e5bbe4fa31a6819385eb76cd8f431f82d9 BYTES=5293 LINES=136
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 deps.py — FastAPI dependency dùng chung cho tầng web.
@@ -137578,8 +137825,22 @@ def get_db() -> Iterator[Session]:
             next(gen)      # để get_session chạy nốt phần đóng phiên
 
 
-def user_hien_tai(request) -> Optional["object"]:
+def user_hien_tai(request: Request) -> Optional["object"]:
     """User CSDL từ phiên đăng nhập, hoặc None.
+
+    ⚠️ `request: Request` — CHÚ KIỂU LÀ BẮT BUỘC, không phải trang trí.
+
+       Thiếu nó thì hàm vẫn chạy đúng khi **gọi thẳng** (`user_hien_tai(request)`,
+       cách chín app đang dùng), nhưng vỡ khi nối qua `Depends(user_hien_tai)`:
+       FastAPI soi chữ ký, thấy một tham số tên `request` không kiểu, và hiểu nó
+       là **query param bắt buộc**. Trang trả **422** với
+       `{"loc":["query","request"],"msg":"Field required"}` — một thông báo không
+       hề nhắc tới đăng nhập, nên nó đọc như lỗi tham số của app.
+
+       Đã mất một vòng truy 31/08/2026 vì đúng chỗ này: `apps/ltt_voice` là app
+       đầu tiên nối qua `Depends`, và cả bộ test xanh vì test gọi thẳng hàm.
+       Hai anh em ngay dưới (`is_operator`, `require_operator`) vẫn luôn có chú
+       kiểu; thiếu ở đây là một chỗ lệch, không phải một lựa chọn.
 
     None khi: chưa đăng nhập, đăng nhập bằng đường admin-env (không có user_id
     trong bảng users), hoặc CSDL chưa cấu hình. Dùng cho các route cần một user
@@ -157002,7 +157263,7 @@ if ($script:Fail -gt 0) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/2-cai-dat.ps1
-SHA256=25cd710309a174d067c6aa587fede73b592406695e2a184bd91f10677723d629 BYTES=34134 LINES=682
+SHA256=69db34b18815c15fe01c47fcce1498b7ecc869598615b966331a922dae377e24 BYTES=36440 LINES=723
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -157035,6 +157296,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 function Canh($m) { Write-Host "  [!!] $m" -ForegroundColor Yellow }
@@ -157196,11 +157479,27 @@ Head 'Copy ma nguon'
 # Dung dich vu truoc khi dong vao app\. Khi chay LAI tren may dang phuc vu that,
 # python.exe cua service khoa file trong app\ -> Move-Item/robocopy that bai
 # (loi "being used by another process"). Script se cai lai + khoi dong o cuoi.
-Stop-Service $WorkerServiceName -Force -ErrorAction SilentlyContinue
-Stop-Service $ServiceName -Force -ErrorAction SilentlyContinue
-# Sidecar Codex cung co AppDirectory = app\ -> phai dung truoc khi Move-Item, neu khong
-# python.exe cua no khoa thu muc app\ va bo cai that bai (loi Move-Item IOException).
-Stop-Service 'LTTStudioCodex' -Force -ErrorAction SilentlyContinue
+# !! MOI dich vu co AppDirectory = app\ deu PHAI co trong danh sach nay.
+#
+#    `Move-Item` khong xoay duoc mot thu muc dang bi mot tien trinh mo. Bo sot
+#    MOT dich vu la du: no giu app\, Move-Item nem IOException, va script chet
+#    NGAY SAU khi da dung ba dich vu kia -> trang cong khai tra 502 cho toi khi
+#    co nguoi bat lai bang tay.
+#
+#    Da xay ra that 31/08/2026: `LTTStudioVoice` duoc them (Q117) nhung khong
+#    duoc them vao day. Deploy chay toi 09:36:46 roi dung; production 502 khoang
+#    ba phut. Trieu chung nhin nhu mot loi quyen han, khong nhu mot dich vu bi
+#    bo sot.
+#
+#    Nen danh sach o day duoc DAN XUAT tu chinh cac bien ten dich vu, va
+#    `tests/test_45_deploy_scripts.py` chot rang moi dich vu duoc nssm dang ky
+#    trong tep nay deu co mat. Them dich vu moi ma quen -> gate do, khong phai
+#    production do.
+$DichVuGiuAppDir = @($WorkerServiceName, $ServiceName, 'LTTStudioCodex',
+                     $VoiceServiceName)
+foreach ($svc in $DichVuGiuAppDir) {
+    Stop-Service $svc -Force -ErrorAction SilentlyContinue
+}
 Start-Sleep -Seconds 2
 # Giu ban truoc de rollback duoc.
 if (Test-Path $appDir) {
@@ -157260,23 +157559,26 @@ if (-not (Test-Path $venvPy)) {
     if ($LASTEXITCODE -ne 0) { throw 'Tao venv that bai' }
     Ok 'Da tao venv'
 } else { Ok 'venv da co' }
-& $venvPy -m pip install --upgrade pip --quiet
-& $venvPy -m pip install -r (Join-Path $appDir 'requirements.txt') --quiet
-& $venvPy -m pip install -r (Join-Path $appDir 'requirements-server.txt') --quiet
+Invoke-Ngoai { & $venvPy -m pip install --upgrade pip --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install --upgrade pip --quiet" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $appDir 'requirements.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $appDir 'requirements" }
+Invoke-Ngoai { & $venvPy -m pip install -r (Join-Path $appDir 'requirements-server.txt') --quiet }
+if ($LASTEXITCODE -ne 0) { throw "Loi khi chay: & $venvPy -m pip install -r (Join-Path $appDir 'requirements" }
 Ok 'Da cai thu vien'
 
 # TAO CLIP NGAN (engine cutclipshort) can torch GPU. KHONG de trong requirements vi
 # pip keo ban CPU tu PyPI; card Blackwell (RTX 50xx) BAT BUOC torch cu128. Chi cai khi
 # torch chua co / chua thay CUDA (tranh tai lai ~2.5GB moi lan deploy).
-& $venvPy -c "import importlib.util,sys; sys.exit(0) if importlib.util.find_spec('torch') else sys.exit(1)" 2>$null | Out-Null; $hasTorch = ($LASTEXITCODE -eq 0)
+Invoke-Ngoai { & $venvPy -c "import importlib.util,sys; sys.exit(0) if importlib.util.find_spec('torch') else sys.exit(1)" 2>$null | Out-Null; $hasTorch = ($LASTEXITCODE -eq 0) }
 $cudaOk = $false
 if ($hasTorch) { & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null; $cudaOk = ($LASTEXITCODE -eq 0) }
 if ($cudaOk) {
     Ok 'torch CUDA da san sang - GIU NGUYEN'
 } else {
     Note 'Cai torch cu128 (Blackwell) - lan dau ~2.5GB, cho chut'
-    & $venvPy -m pip install "torch>=2.7" "torchaudio>=2.7" "torchvision>=0.22" --index-url https://download.pytorch.org/whl/cu128 --quiet
-    & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null
+    Invoke-Ngoai { & $venvPy -m pip install "torch>=2.7" "torchaudio>=2.7" "torchvision>=0.22" --index-url https://download.pytorch.org/whl/cu128 --quiet }
+    Invoke-Ngoai { & $venvPy -c "import torch,sys; sys.exit(0) if torch.cuda.is_available() else sys.exit(1)" 2>$null }
     if ($LASTEXITCODE -eq 0) { Ok 'Da cai torch cu128 (CUDA OK)' }
     else { Note 'CANH BAO: torch chua thay CUDA - Tao Clip ngan se chay CPU rat cham (kiem tra driver NVIDIA / dung card Blackwell can cu128)' }
 }
@@ -157470,7 +157772,7 @@ $envText = if (Test-Path $envFile) { Get-Content $envFile -Raw } else { '' }
 if ($envText -match '(?m)^LTT_DATABASE_URL=(.+)$') {
     $env:LTT_DATABASE_URL = $Matches[1].Trim()
     Push-Location $appDir
-    & $venvPy -m alembic upgrade head
+    Invoke-Ngoai { & $venvPy -m alembic upgrade head }
     $rc = $LASTEXITCODE
     Pop-Location
     $env:LTT_DATABASE_URL = $null
@@ -157690,7 +157992,7 @@ Write-Host "Mat LTT_TOKEN_ENCRYPTION_KEY la mat toan bo token Facebook/TikTok da
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/3-cloudflare.ps1
-SHA256=9d4493a680dd934b37d4641fb2a3071236742de188e489b68854bded68679572 BYTES=11680 LINES=272
+SHA256=18f12a99d5a7f53e101af542ab067ef849035ad9edbbddfdef9ae52aed72b9c3 BYTES=12907 LINES=294
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -157724,6 +158026,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 function Head($m) { Write-Host ""; Write-Host "=== $m ===" -ForegroundColor Cyan }
 function Ok($m)   { Write-Host "  [OK] $m" -ForegroundColor Green }
 function Note($m) { Write-Host "  $m" -ForegroundColor Yellow }
@@ -157801,7 +158125,7 @@ if (Test-Path $cert) {
     Write-Host "  va chon zone '$zone' (ca ten mien - da chuyen sang Cloudflare)." -ForegroundColor Yellow
     Write-Host "  Xong thi script tu chay tiep." -ForegroundColor Yellow
     Write-Host ""
-    & $cfExe tunnel login
+    Invoke-Ngoai { & $cfExe tunnel login }
     if (-not (Test-Path $cert)) { throw 'Dang nhap chua xong - khong thay cert.pem. Chay lai script.' }
     Ok 'Dang nhap thanh cong'
 }
@@ -157811,7 +158135,7 @@ $list = Invoke-Cf tunnel list
 if ($list -match [regex]::Escape($TunnelName)) {
     Ok "Tunnel '$TunnelName' da ton tai"
 } else {
-    & $cfExe tunnel create $TunnelName
+    Invoke-Ngoai { & $cfExe tunnel create $TunnelName }
     if ($LASTEXITCODE -ne 0) { throw "Tao tunnel that bai" }
     Ok "Da tao tunnel '$TunnelName'"
 }
@@ -157899,7 +158223,7 @@ $svc = Get-Service $svcName -ErrorAction SilentlyContinue
 if ($svc) {
     Get-Process cloudflared -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
     Start-Sleep -Seconds 2
-    & $cfExe service uninstall 2> $null | Out-Null
+    Invoke-Ngoai { & $cfExe service uninstall 2> $null | Out-Null }
     & $nssmExe remove $svcName confirm 2> $null | Out-Null
     & sc.exe delete $svcName 2> $null | Out-Null
     Start-Sleep -Seconds 3
@@ -158380,6 +158704,89 @@ exit 0
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/chay_thu_giong.ps1
+SHA256=820af0a94ad94a3b1718ca6ab3c501742df18f739e397653d6a66016620b1b38 BYTES=2947 LINES=77
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the LTT VOICE end-to-end check with production's environment loaded.
+
+.DESCRIPTION
+    Same narrow bridge as tai_khoan_thu.ps1: read app.env into THIS process only,
+    run one named tool, exit. Never prints a value from app.env.
+
+    The tool submits a real job and waits for the REAL production worker to pick
+    it up. It does not call the handler itself -- a script that does would stay
+    green even when the queue is broken, when the worker pool lacks the `voice`
+    lane, or when the voice service is down. Those are the three things that
+    actually break on deploy.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\chay_thu_giong.ps1 -TaiVe out.wav
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root  = 'C:\LTTPlatform',
+    [string]$Repo  = '',
+    [string]$Email = '',
+    [string]$Text  = '',
+    [string]$TaiVe = '',
+    [int]$ChoGiay  = 300
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\chay_thu_ltt_voice.py'
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    $ten = $d.Substring(0, $i).Trim()
+    if ($ten) { Set-Item -Path "Env:$ten" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$doiSo = @('--cho-giay', "$ChoGiay")
+if ($Email) { $doiSo += @('--email', $Email) }
+if ($Text)  { $doiSo += @('--text',  $Text) }
+if ($TaiVe) { $doiSo += @('--tai-ve', $TaiVe) }
+
+# !! BAY DA DINH BA LAN TRONG HAI NGAY - xem `Test-Py` trong
+#    `deploy\windows\install-vieneu-sidecar.ps1`.
+#
+#    Voi `$ErrorActionPreference = 'Stop'`, mot exe NGOAI ghi ra stderr se thanh
+#    NativeCommandError va KET THUC script. Python ghi ra stderr vi rat nhieu ly
+#    do binh thuong (SyntaxWarning, mot dong chan doan), va khi do:
+#      - lenh sau `;` KHONG chay  -> `EXITCODE=` khong bao gio duoc ghi
+#      - va `EXITCODE` RONG doc len giong het "tien trinh khong chay"
+#    tuc mot loi vo hai bi doc thanh mot loi nghiem trong.
+#
+#    Nen quanh LOI GOI CUOI: ha xuong 'Continue', doc $LASTEXITCODE, roi tra lai.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/cong_tac_tool_api.ps1
 SHA256=62d9f3d4d9d5c9f71e6f8fd1c713d0d7cad9d8541f20a5afc15587c055020905 BYTES=3539 LINES=82
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -158819,7 +159226,7 @@ Write-Host '  curl.exe -s https://app.lttstudios.com/api/v1/health'
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/tai_khoan_thu.ps1
-SHA256=9af928291a049a8592fd7231dae44fc61c929e240ed01942c3dc8c4477e208d4 BYTES=3205 LINES=84
+SHA256=3aa765f460a685847814f834897bfdba70306f95b0e495e1243cc115df81aac7 BYTES=4144 LINES=103
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -158853,7 +159260,10 @@ param(
     [string]$Repo  = '',
     [string]$Email = '',
     [switch]$DatLaiMatKhau,
-    [switch]$LietKe
+    [switch]$LietKe,
+    # Nap credit cho tai khoan THU. Mac dinh 0 = khong nap.
+    # Cong cu Python tu choi neu email khong ket thuc bang `.local`.
+    [int]$Nap = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -158902,8 +159312,96 @@ $doiSo = @()
 if ($Email)         { $doiSo += @('--email', $Email) }
 if ($DatLaiMatKhau) { $doiSo += '--dat-lai-mat-khau' }
 if ($LietKe)        { $doiSo += '--liet-ke' }
+if ($Nap -gt 0)     { $doiSo += @('--nap', "$Nap") }
 
+# !! BAY DA DINH BA LAN TRONG HAI NGAY - xem `Test-Py` trong
+#    `deploy\windows\install-vieneu-sidecar.ps1`.
+#
+#    Voi `$ErrorActionPreference = 'Stop'`, mot exe NGOAI ghi ra stderr se thanh
+#    NativeCommandError va KET THUC script. Python ghi ra stderr vi rat nhieu ly
+#    do binh thuong (SyntaxWarning, mot dong chan doan), va khi do:
+#      - lenh sau `;` KHONG chay  -> `EXITCODE=` khong bao gio duoc ghi
+#      - va `EXITCODE` RONG doc len giong het "tien trinh khong chay"
+#    tuc mot loi vo hai bi doc thanh mot loi nghiem trong.
+#
+#    Nen quanh LOI GOI CUOI: ha xuong 'Continue', doc $LASTEXITCODE, roi tra lai.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 & $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/ve_dang_nhap_thu.ps1
+SHA256=4e7596c318c29166470e2556cb4a0cc7840f578dd824f492283fcbc4821b68b7 BYTES=2296 LINES=66
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Mint a one-time SSO ticket for the .local TEST account and print its URL.
+
+.DESCRIPTION
+    Same narrow bridge as tai_khoan_thu.ps1: read app.env into THIS process only,
+    run one named tool, exit. It prints exactly one line -- the URL.
+
+    The ticket lives 90 seconds and is single-use (platform_core/nexus/sso.py).
+    Open it immediately; a printed ticket left sitting is a dead ticket.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\ve_dang_nhap_thu.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root  = 'C:\LTTPlatform',
+    [string]$Repo  = '',
+    [string]$Email = '',
+    [string]$Goc   = ''
+)
+
+$ErrorActionPreference = 'Stop'
+
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi 'Stop', mot exe NGOAI ghi ra stderr se thanh NativeCommandError va KET
+# THUC script -- ke ca khi exe do tra ve 0. Xem chu thich day du trong
+# deploy\windows\install-vieneu-sidecar.ps1.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
+
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\ve_dang_nhap_thu.py'
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    $ten = $d.Substring(0, $i).Trim()
+    if ($ten) { Set-Item -Path "Env:$ten" -Value $d.Substring($i + 1) }
+}
+
+$doiSo = @()
+if ($Email) { $doiSo += @('--email', $Email) }
+if ($Goc)   { $doiSo += @('--goc',   $Goc) }
+
+Invoke-Ngoai { & $venvPy $tool @doiSo }
 exit $LASTEXITCODE
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -230874,6 +231372,294 @@ def test_runtime_browser_and_test_artifacts_are_excluded(tmp_path):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_340_ltt_voice_trang_render.py
+SHA256=8f45d7cf965fd614fd47695acf771323a9f00baa474ceca077880fe6cdb6107d BYTES=7310 LINES=171
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ba trang của LTT VOICE phải RENDER được, không chỉ tồn tại.
+
+## Vì sao tệp này tồn tại
+
+Ngày 31/08/2026, app đã có 42 phép kiểm hợp đồng + 27 phép kiểm giá, tất cả
+xanh, và bộ test đầy đủ xanh. Rồi mở trình duyệt lần đầu:
+
+    GET /ltt-voice  ->  422   {"loc":["query","request"],"msg":"Field required"}
+    (sửa xong)      ->  500   TypeError: unhashable type: 'dict'
+
+**Hai lỗi liên tiếp, và cả hai đều nghĩa là trang chưa render nổi một lần nào.**
+Lỗi thứ nhất là `Depends(user_hien_tai)` thiếu chú kiểu; lỗi thứ hai là gọi
+`TemplateResponse(name, context)` trong khi Starlette ở đây nhận
+`TemplateResponse(request, name, context)`.
+
+⭐ Điều đáng học không phải "thiếu test", mà là **loại test đã có không thể bắt
+   được loại lỗi này**: mọi phép kiểm cũ đọc manifest, gọi thẳng hàm, đối chiếu
+   bảng giá — không cái nào đi qua router và qua Jinja. Đó chính là điều
+   `CLAUDE.md` quy tắc 5 nói: test xanh không chứng minh trang hiển thị được.
+
+Nên phép kiểm ở đây cố tình đi **đường dài nhất còn chạy được trong test**:
+dựng app thật, đăng nhập thật, GET thật, và đòi 200 + một mẩu nội dung.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+#: (đường, một mẩu chữ PHẢI có trong trang). Mẩu chữ giữ cho phép kiểm không
+#: hài lòng với một trang lỗi được render với mã 200.
+#:
+#: ⚠️ Neo bằng `id=` của chính template, KHÔNG bằng chữ hiển thị: chữ hiển thị
+#:    đi qua `_()` nên nó đổi theo ngôn ngữ, và một phép kiểm neo vào bản dịch
+#:    sẽ đỏ vào ngày ai đó đổi một câu — một tín hiệu sai, đúng loại làm người
+#:    ta mất tin vào bánh cóc.
+TRANG = [
+    ("/ltt-voice", 'id="lv-form"'),
+    ("/ltt-voice/giong", 'id="lv-form-giong"'),
+    ("/ltt-voice/lich-su", "/ltt-voice"),
+]
+
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    """Một tài khoản đã đăng nhập, trên CSDL sqlite dùng một lần."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-ui.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-ui")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+
+    # ⚠️ `create_all` chỉ dựng bảng của model ĐÃ import. Bảng riêng của app nằm
+    #    ở `apps/ltt_voice/tables.py`; quên dòng này thì `/ltt-voice` ném
+    #    `no such table: voice_profile` — và vì lớp xử lý lỗi bọc nó lại, phép
+    #    kiểm nhận **200 kèm một trang lỗi**, tức xanh nhầm. Chính vì thế phần
+    #    khẳng định dưới đòi cả mã 200 LẪN một mẩu nội dung thật.
+    import apps.ltt_voice.tables  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        tao_nguoi_dung(db, email="voice-ui@test.com",
+                       password="matkhau-tot-12", is_verified=True)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    login = client.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert m, "khong lay duoc csrf_token tu /login"
+    r = client.post("/login", data={"username": "voice-ui@test.com",
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": m.group(1)})
+    assert r.status_code in (200, 302, 303), f"dang nhap that bai: {r.status_code}"
+    try:
+        yield client
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+@pytest.mark.parametrize("duong,phai_co", TRANG)
+def test_trang_render_duoc(khach, duong, phai_co):
+    r = khach.get(duong)
+    assert r.status_code == 200, (
+        f"{duong} tra {r.status_code}, khong phai 200.\n"
+        f"{r.text[:400]}\n\n"
+        "422 -> mot ham dung qua `Depends` thieu chu kieu (xem server/deps.py).\n"
+        "500 -> xem log; da tung la `TemplateResponse(name, ctx)` trong khi "
+        "Starlette o day nhan `TemplateResponse(request, name, ctx)`.")
+    assert phai_co in r.text, (
+        f"{duong} tra 200 nhung khong chua {phai_co!r} — nhieu kha nang la mot "
+        f"trang loi duoc render voi ma 200, chu khong phai trang that.")
+
+
+def test_uid_tra_ve_uuid_chu_khong_phai_so_khong():
+    """🔴 `_uid` phải trả đúng id của người dùng, không phải `0`.
+
+    `User.id` là UUID chuỗi. Bản đầu của `_uid` ép `int(...)` rồi bắt lỗi trả
+    `0` — hợp lệ về kiểu, sai về nghĩa, và **không có triệu chứng nào ở nơi
+    xảy ra**. Nó chỉ hiện ra ở hai chỗ xa đó:
+
+      · sổ tiền: header hiện `56 credit` (đọc phiên) còn nút Tạo trả
+        `Khong du credit: can 2, con 0` (tra sổ của người dùng `"0"`);
+      · quyền riêng tư: mọi `owner_id` bằng 0 ⇒ mọi khách chung một chủ sở hữu.
+
+    Phép kiểm nhỏ, nhưng nó chốt đúng cái mắt xích đã đứt.
+    """
+    from apps.ltt_voice.routes import _uid
+
+    class GiaUser:
+        id = "3f2a9c10-5b7e-4d21-8a6f-11223344abcd"
+
+    assert _uid(GiaUser()) == GiaUser.id
+    assert _uid(None) == ""
+
+
+def test_nut_tao_khong_bao_het_credit_khi_tai_khoan_co_credit(khach):
+    """Bấm Tạo với tài khoản CÓ credit thì không được trả 'con 0'.
+
+    Đây là phép kiểm đi qua đúng đường mà trình duyệt đi: POST form thật, kèm
+    CSRF thật. Nó đỏ khi `_uid` trả sai, kể cả khi trang vẫn render 200.
+    """
+    import re
+
+    from platform_core import credit, users
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, "voice-ui@test.com")
+        credit.nap(db, u.id, 50, note="test_340")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    trang = khach.get("/ltt-voice")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', trang.text)
+    assert m, "khong thay csrf_token tren trang tao"
+
+    r = khach.post("/ltt-voice/tao",
+                   data={"text": "Xin chao, day la mot cau thu.",
+                         "voice_id": "", "preset": "",
+                         "csrf_token": m.group(1)})
+    than = r.text
+    assert "con 0" not in than, (
+        f"handler tra ve 'con 0' du tai khoan da co credit — gan nhu chac chan "
+        f"`_uid` tra ve '0'/'' thay vi UUID that.\n{than[:300]}")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_341_khong_query_param_request.py
+SHA256=aa4dae9aa97cb98bffec5d782eb3e50361d4a385c2b52295abd8ddca5f9e5a40 BYTES=4577 LINES=105
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Không route nào được đòi một query param tên `request`.
+
+## Lỗi mà phép kiểm này chốt
+
+`server.deps.user_hien_tai` từng khai `def user_hien_tai(request)` — không chú
+kiểu. Gọi thẳng thì đúng, nên chín app dùng nó nhiều tháng không sao. App thứ
+mười nối nó qua `Depends(user_hien_tai)`; FastAPI soi chữ ký, thấy tham số
+`request` không kiểu, và hiểu nó là **query param bắt buộc**. Trang trả 422:
+
+    {"loc": ["query", "request"], "msg": "Field required"}
+
+## Vì sao bộ test cũ không thấy
+
+Vì test gọi thẳng hàm, còn trình duyệt đi qua router. Đây là đúng loại lỗi mà
+`CLAUDE.md` quy tắc 5 nói tới: test xanh không chứng minh trang hiển thị được.
+
+## Vì sao chốt theo TÊN, không theo một app
+
+`request`, `response`, `background_tasks`, `websocket` là những tên mà FastAPI
+gán ý nghĩa **theo kiểu**, không theo tên. Quên chú kiểu ở bất kỳ tên nào trong
+số đó đều biến nó thành query param bắt buộc, và mọi lần đều cho một thông báo
+lỗi không hề nhắc tới nguyên nhân thật. Nên chốt cả nhóm tên, một lần, cho mọi
+route hiện có và mọi route sau này.
+"""
+from __future__ import annotations
+
+import pytest
+
+#: Tên tham số mà FastAPI phân giải theo KIỂU. Thấy chúng trong query params
+#: nghĩa là ai đó quên chú kiểu.
+TEN_PHAI_CO_KIEU = {"request", "response", "background_tasks", "websocket"}
+
+
+def _cac_route():
+    """Mọi APIRoute, kể cả route nằm trong router lồng.
+
+    ⚠️ `app.routes` KHÔNG phẳng. Phiên bản FastAPI ở đây giữ mỗi
+       `include_router` thành một `_IncludedRouter` và chỉ mở nó ra lúc định
+       tuyến. Duyệt một tầng thì thấy đúng 4 route mặc định của FastAPI và
+       **không thấy route nào của app nào** — nên một phép kiểm duyệt một tầng
+       sẽ XANH bất kể có lỗi hay không.
+
+       Bản đầu của tệp này mắc đúng lỗi đó: nó xanh cả khi chú kiểu bị gỡ ra.
+       Một bánh cóc không đỏ được thì tệ hơn là không có, vì nó phát ra một
+       lời hứa mà nó không giữ.
+    """
+    from fastapi.routing import APIRoute
+
+    from server.app import create_app
+
+    def di(cac, sau=0):
+        if sau > 8:
+            return
+        for r in cac:
+            if isinstance(r, APIRoute):
+                yield r
+                continue
+            # `_IncludedRouter` không phơi `.routes`; router thật nằm ở
+            # `.original_router`. Giữ cả hai lối để phép kiểm không mục khi
+            # FastAPI đổi cách biểu diễn.
+            con = (getattr(r, "routes", None)
+                   or getattr(getattr(r, "original_router", None), "routes", None)
+                   or getattr(getattr(r, "router", None), "routes", None))
+            if con:
+                yield from di(con, sau + 1)
+
+    yield from di(create_app().routes)
+
+
+def test_khong_route_nao_doi_query_param_ten_dac_biet():
+    xau = []
+    for route in _cac_route():
+        for p in route.dependant.query_params:
+            if p.name in TEN_PHAI_CO_KIEU:
+                xau.append(f"{route.path} -> query param '{p.name}'")
+        for phu in route.dependant.dependencies:
+            for p in phu.query_params:
+                if p.name in TEN_PHAI_CO_KIEU:
+                    xau.append(f"{route.path} -> Depends({phu.name}) "
+                               f"-> query param '{p.name}'")
+
+    assert not xau, (
+        "Nhung route sau doi mot query param mang ten ma FastAPI phan giai theo "
+        "KIEU. Gan nhu chac chan la thieu chu kieu (vd `request` thay vi "
+        "`request: Request`) o mot ham duoc dung qua Depends. Trang se tra 422 "
+        "voi mot thong bao khong nhac gi toi nguyen nhan that:\n  "
+        + "\n  ".join(sorted(set(xau))))
+
+
+@pytest.mark.parametrize("duong", ["/ltt-voice", "/ltt-voice/"])
+def test_trang_ltt_voice_khong_tra_422(duong):
+    """Ca cu the da vo that, giu lai de no khong quay lai.
+
+    Chua dang nhap thi mong doi 303 ve /login — DUNG la 422.
+    """
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    r = client.get(duong)
+    assert r.status_code != 422, (
+        f"{duong} tra 422: {r.text[:300]}\n"
+        "Xem chu thich o `server/deps.py::user_hien_tai`.")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_35_p2_runtime_boundary.py
 SHA256=9a36aa62ca651c0688050fecf6889845a422156d5ec0590405ce27e5f756dcf7 BYTES=5180 LINES=119
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -231741,7 +232527,7 @@ def test_fake_finding_matches_the_real_finding_fields():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_45_deploy_scripts.py
-SHA256=8a4dbe011f760fd9879ec4baef4cf9b0d76ca061969a33527e9f278652133272 BYTES=14954 LINES=334
+SHA256=1b7a44a101095cd59494b440461c5ae2c19544703a76fbec81790e5159c6c865 BYTES=17553 LINES=384
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 P9 — deployment script sanity checks.
@@ -232077,6 +232863,56 @@ def test_viec_dai_khong_nam_trong_cua_so_ngung_dich_vu():
         f"dau tien (dong {min(dung) + 1}) — moi giay no chay la mot giay "
         f"production nam. Chuyen no len TRUOC `Head 'Copy ma nguon'`, va goi tu "
         f"`$src` chu khong `$appDir` (app\ chi co noi dung moi sau robocopy).")
+
+
+def test_moi_dich_vu_giu_appdir_deu_bi_dung_truoc_khi_xoay_app():
+    """🔴 Mọi dịch vụ chạy từ `app\` phải nằm trong danh sách dừng.
+
+    SỰ CỐ THẬT 2026-08-31 09:36. `LTTStudioVoice` được thêm (Q117) với
+    `AppDirectory = C:\LTTPlatform\app`, nhưng **không** được thêm vào khối
+    `Stop-Service` ở đầu bước "Copy ma nguon". Tiến trình python của nó giữ
+    `app\` mở, `Move-Item` ném IOException, và script chết **ngay sau khi đã
+    dừng ba dịch vụ kia** — production trả 502 khoảng ba phút.
+
+    ⭐ Vì sao nó khó thấy: thông báo lỗi là *"The process cannot access the file
+       because it is being used by another process"* — nó đọc như một vấn đề
+       quyền hạn hoặc một khoá còn sót, chứ không nói rằng có một dịch vụ bị bỏ
+       sót. Và nó chỉ vỡ khi cài **lại** trên máy đang chạy, tức đúng lúc cái
+       giá của việc vỡ là cao nhất.
+
+    Phép kiểm chốt bằng cách **đối chiếu hai danh sách trong cùng một tệp**: mọi
+    tên dịch vụ mà tệp này đăng ký với nssm đều phải xuất hiện trong
+    `$DichVuGiuAppDir`. Thêm dịch vụ thứ năm mà quên → gate đỏ.
+    """
+    import re
+
+    goc = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(goc, "setup", "2-cai-dat.ps1"),
+              "r", encoding="utf-8") as f:
+        text = f.read()
+
+    # `$XxxServiceName = 'LTTStudioYyy'` -> {bien: ten}
+    bien = dict(re.findall(r"\$(\w*ServiceName)\s*=\s*'(LTTStudio\w+)'", text))
+    assert bien, "khong tim thay khai bao ten dich vu nao — phep kiem het nghia"
+
+    m = re.search(r"\$DichVuGiuAppDir\s*=\s*@\((.*?)\)", text, re.S)
+    assert m, ("khong thay `$DichVuGiuAppDir` — danh sach dich vu phai dung "
+               "truoc khi xoay app\ can ton tai o MOT cho, khong rai rac")
+
+    trong_ds = set()
+    for phan in re.findall(r"\$(\w+)|'(LTTStudio\w+)'", m.group(1)):
+        ten_bien, ten_thang = phan
+        if ten_thang:
+            trong_ds.add(ten_thang)
+        elif ten_bien in bien:
+            trong_ds.add(bien[ten_bien])
+
+    thieu = set(bien.values()) - trong_ds
+    assert not thieu, (
+        f"dich vu {sorted(thieu)} duoc dang ky trong 2-cai-dat.ps1 nhung KHONG "
+        f"co trong $DichVuGiuAppDir. Neu no chay tu app\ thi no se giu thu muc "
+        f"do va `Move-Item $appDir` se nem IOException — sau khi cac dich vu "
+        f"kia da dung. Ket qua: production 502 cho toi khi co nguoi bat tay.")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -247674,6 +248510,228 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/chay_thu_ltt_voice.py
+SHA256=a876dfdc9384599ac95295e0596c050b9540ebc3d2bdf5e9b878299a65600c02 BYTES=8779 LINES=216
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+chay_thu_ltt_voice.py — chạy LTT VOICE đầu-tới-cuối trên production, bằng đúng
+đường mà một khách hàng đi.
+
+    powershell -File .\setup\tai_khoan_thu.ps1   # tao tai khoan truoc
+    ... roi chay tep nay qua mot lop nap app.env (xem `chay_thu_ltt_voice.ps1`)
+
+⭐ VÌ SAO KHÔNG GIẢ LẬP GÌ CẢ.
+
+   Kịch bản này **không** gọi thẳng `features` hay sidecar. Nó nộp một job qua
+   `submit_with_credit` — đúng hàm mà `routes.py` gọi — rồi **đứng chờ worker
+   production thật nhặt nó lên**. Nghĩa là nó đi qua: hàng đợi, admission lease,
+   đội hình worker, handler, cổng giọng, `ffprobe`, và quyết toán credit.
+
+   Một kịch bản gọi thẳng vào `features` sẽ xanh kể cả khi hàng đợi hỏng, khi
+   worker thiếu làn `voice`, hay khi dịch vụ giọng chưa chạy. Ba thứ đó chính là
+   ba thứ hay hỏng nhất khi deploy.
+
+⛔ NÓ CHẠM TIỀN THẬT. Job trả phí giữ chỗ rồi quyết toán trong sổ credit, và sổ
+   credit **chỉ ghi thêm**. Vì vậy kịch bản này:
+     · **in số dư trước và sau**, và đối chiếu với `credit_cost` handler báo về;
+     · **không tự nạp credit** — thiếu tiền thì nó dừng và nói ra;
+     · dùng `note` ghi rõ đây là lượt chạy thử, để một tháng sau còn truy được.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import os
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR
+
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                  errors="replace", line_buffering=True)
+
+#: Câu thử. Cố ý gồm bốn ô hay hỏng cùng lúc: dấu thanh dày, một cặp `ch`/`tr`
+#: (upstream #168), một con số, và một từ tiếng Anh xen giữa.
+CAU_THU = ("Chào mừng bạn đến với LTT Studios. Chưởng trình hôm nay có ba phần, "
+           "bắt đầu lúc 9 giờ sáng, và chúng tôi sẽ dùng AI để đọc toàn bộ nội "
+           "dung này.")
+
+
+#: ⛔ NHẬP hằng số, đừng gõ lại chuỗi. Tôi đã đoán sai tập này HAI lần trong
+#: một buổi — lần đầu thiếu `error` (job hỏng bị đọc thành treo), lần sau vẫn
+#: sai vì nền tảng dùng `done` chứ không phải `succeeded`, nên một lượt chạy
+#: THÀNH CÔNG cũng bị báo là "HET GIO". Cả hai lần triệu chứng giống hệt nhau
+#: và đều đổ tội nhầm cho worker.
+KET_THUC = (JOB_DONE, JOB_ERROR, JOB_CANCELLED)
+
+
+def _in(m=""):
+    print(m)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
+    ap.add_argument("--text", default=CAU_THU)
+    ap.add_argument("--cho-giay", type=int, default=300)
+    ap.add_argument("--tai-ve", default="", help="Ghi tep tieng ra duong nay.")
+    a = ap.parse_args(argv)
+
+    from platform_core import credit, users
+    from platform_core.db import get_session
+    from platform_core.job_submit import submit_with_credit
+    from platform_core.registry import discover
+
+    mf = next((i.manifest for i in discover() if i.manifest.slug == "ltt_voice"), None)
+    if mf is None:
+        _in("KHONG THAY app ltt_voice trong registry")
+        return 2
+    tool = mf.tools[0]
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, a.email)
+        if u is None:
+            _in(f"KHONG THAY tai khoan {a.email} — chay setup\\tai_khoan_thu.ps1 truoc")
+            return 2
+
+        gia_bao = mf.credit_cost({"text": a.text})
+        truoc = credit.so_du(db, u.id)
+        _in(f"Tai khoan : {u.email}")
+        _in(f"So du     : {truoc} credit")
+        _in(f"Bao gia   : {gia_bao} credit (tran uoc cao — quyet toan theo giay that)")
+        _in(f"Van ban   : {len(a.text)} ky tu")
+
+        if truoc < gia_bao:
+            _in("")
+            _in(f"DUNG: khong du credit ({truoc} < {gia_bao}).")
+            _in("Kich ban nay CO Y khong tu nap: nap credit la mot but toan trong")
+            _in("so tien, va so tien chi ghi them. Chu san pham nap qua duong da co.")
+            return 3
+
+        job = submit_with_credit(
+            db, user_id=str(u.id), app_slug="ltt_voice",
+            job_type="ltt_voice.synthesize",
+            params={"text": a.text, "voice_id": "", "preset": "",
+                    "owner_id": u.id},
+            admission_resource=tool.admission_resource,
+            admission_slots=tool.admission_slots)
+        db.commit()
+        job_id = str(job.id)
+        _in(f"Da nop job: {job_id}")
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # ── chờ WORKER THẬT nhặt và chạy ─────────────────────────────────────────
+    _in("")
+    _in("Cho worker production nhat job (KHONG tu chay handler)...")
+    from sqlalchemy import select
+
+    from platform_core.models import Job
+
+    def lay_job(db, jid):
+        return db.execute(select(Job).where(Job.id == jid)).scalar_one_or_none()
+
+    t0 = time.time()
+    trang_thai_cu = ""
+    ket = None
+    while time.time() - t0 < a.cho_giay:
+        gen = get_session()
+        db = next(gen)
+        try:
+            j = lay_job(db, job_id)
+            tt = getattr(j, "status", "?")
+            if tt != trang_thai_cu:
+                _in(f"  [{time.time() - t0:6.1f}s] {trang_thai_cu or '-'} -> {tt}")
+                trang_thai_cu = tt
+            # ⚠️ Tập này phải khớp `platform_core` chứ không phải trí nhớ.
+            #    Bản đầu viết ("succeeded","failed","cancelled") — thiếu
+            #    "error", đúng trạng thái mà worker THẬT đặt khi handler
+            #    ném. Hệ quả: job hỏng ở giây 34, kịch bản vẫn đứng chờ
+            #    hết 300 giây rồi báo "HET GIO", tức một lỗi có tên bị
+            #    trình bày thành một lần treo không tên.
+            if tt in KET_THUC:
+                ket = {"status": tt, "result": getattr(j, "result", None),
+                       "error": getattr(j, "error", None)}
+                break
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+        time.sleep(2)
+
+    if ket is None:
+        _in("")
+        _in(f"HET GIO sau {a.cho_giay}s — job van o trang thai '{trang_thai_cu}'.")
+        if trang_thai_cu == "queued":
+            _in("")
+            _in("!! `queued` mai mai la trieu chung CO TEN: doi hinh worker thieu lan")
+            _in("   `voice`. `jobs.py` loc bang set(requires).issubset(capabilities),")
+            _in("   nen job khong bao gio duoc nhat va KHONG loi nao duoc ghi.")
+            _in("   Kiem: LTT_WORKER_POOLS trong app.env.")
+        return 1
+
+    _in("")
+    _in(f"KET QUA: {ket['status']}")
+    if ket["status"] != JOB_DONE:
+        _in(f"  loi: {ket.get('error')}")
+        return 1
+
+    r = ket["result"] or {}
+    _in(f"  audio_key   : {r.get('audio_key')}")
+    _in(f"  duration_s  : {r.get('duration_s')}")
+    _in(f"  credit_cost : {r.get('credit_cost')}   (bao gia {gia_bao})")
+    _in(f"  bang gia    : {r.get('phien_ban_gia')}")
+
+    # ── đối chiếu SỔ TIỀN, không tin con số handler tự khai ──────────────────
+    gen = get_session()
+    db = next(gen)
+    try:
+        sau = credit.so_du(db, u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    da_tru = truoc - sau
+    _in("")
+    _in("DOI CHIEU SO TIEN (nguon chan ly, khong phai con so handler khai):")
+    _in(f"  truoc {truoc}  ->  sau {sau}   => da tru {da_tru} credit")
+    bao_ve = r.get("credit_cost")
+    khop = (da_tru == bao_ve)
+    _in(f"  {'KHOP' if khop else 'LECH'} voi credit_cost handler bao ve ({bao_ve})")
+    if da_tru < gia_bao:
+        _in(f"  Da HOAN {gia_bao - da_tru} credit phan giu du — dung chot 3.4 cua khuon.")
+
+    if a.tai_ve and r.get("audio_key"):
+        from platform_core.storage import get_storage
+        with get_storage().open(r["audio_key"]) as f:
+            data = f.read()
+        with open(a.tai_ve, "wb") as f:
+            f.write(data)
+        _in(f"\nDa tai ve: {a.tai_ve} ({len(data)} byte)")
+
+    print("\n__KET_QUA_JSON__" + json.dumps(
+        {"job_id": job_id, **r, "da_tru": da_tru, "khop_so_tien": khop},
+        ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_api_compat.py
 SHA256=584e9c7e207c578fc6ea4d6c9a7991f81a751e8f30828aeb2fb08504dfb4a5bb BYTES=9103 LINES=214
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -260873,7 +261931,7 @@ SHA256=b3b3695400ca1cd21ee34975095a6d318139f67d36494bdd50fdb884c9c89cd5 BYTES=15
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/tai_khoan_thu.py
-SHA256=7aa9a992b022624edadf3ed5808b01e3fd860565cc95cf81da82c204117010fd BYTES=7402 LINES=157
+SHA256=d183f56b86bf02e3efdc897af1db74103a2c15bed682f2987960ce6314dfbf03 BYTES=8770 LINES=178
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tai_khoan_thu.py — tìm hoặc tạo một tài khoản THỬ để kiểm giao diện thật.
@@ -260936,6 +261994,12 @@ def main(argv=None) -> int:
                     help="Tai khoan da co thi dat lai mat khau va thu hoi phien cu.")
     ap.add_argument("--liet-ke", action="store_true",
                     help="Chi liet ke tai khoan thu dang co, khong tao gi.")
+    # ⛔ Mặc định 0, và **chỉ** nhận cho email đuôi `.local` (kiểm lại ở chỗ dùng).
+    #    Đây là ngoại lệ có chủ ý với điều 1 ở đầu tệp: một lượt chạy thử
+    #    đầu-tới-cuối phải trả phí thật thì mới chứng minh được sổ tiền, nhưng
+    #    bút toán sinh ra mang ghi chú tự khai để một tháng sau còn truy được.
+    ap.add_argument("--nap", type=int, default=0, metavar="N",
+                    help="Nap N credit cho tai khoan THU (.local). Mac dinh 0.")
     a = ap.parse_args(argv)
 
     from sqlalchemy import select
@@ -261012,6 +262076,21 @@ def main(argv=None) -> int:
             print(f"  (khong doc duoc so du: {type(e).__name__}: {e})",
                   file=sys.stderr)
             so_du = None
+
+        # ── nạp, CHỈ khi được yêu cầu rõ ────────────────────────────────────
+        if a.nap > 0:
+            if not u.email.endswith(DUOI_THU):
+                print("TU CHOI nap cho tai khoan khong phai `.local`.",
+                      file=sys.stderr)
+                return 2
+            from platform_core import credit as _credit
+            ghi_chu = (f"LUOT CHAY THU - tai khoan thu {u.email}, nap boi "
+                       f"tools/tai_khoan_thu.py. KHONG phai khoan nap cua khach.")
+            _credit.nap(db, u.id, a.nap, note=ghi_chu)
+            db.commit()
+            so_du = _credit.so_du(db, u.id)
+            print("")
+            print(f"DA NAP {a.nap} credit (but toan co ghi chu truy duoc).")
 
         if so_du is not None:
             print(f"\nSo du: {so_du} credit")
@@ -262218,6 +263297,95 @@ def main() -> int:
     print(json.dumps({"passed": aggregate["passed"],
                       "wall_seconds": aggregate["wall_seconds"]}), flush=True)
     return 0 if aggregate["passed"] else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/ve_dang_nhap_thu.py
+SHA256=79f72dd88d23bd4d5446a89b5b37317cde6f753328609972b26079eb1cad877b BYTES=3299 LINES=83
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+ve_dang_nhap_thu.py — phát một VÉ ĐĂNG NHẬP MỘT LẦN cho tài khoản THỬ, để kiểm
+giao diện bằng trình duyệt thật.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\ve_dang_nhap_thu.ps1
+
+⭐ VÌ SAO ĐI ĐƯỜNG NÀY, KHÔNG PHẢI ĐI QUA Ô MẬT KHẨU
+
+   `CLAUDE.md` quy tắc 5/5b bắt kiểm giao diện trên URL công khai, và phần lớn
+   màn hình đáng kiểm nằm **sau đăng nhập**. Ba đường vào có thể nghĩ tới:
+
+     1. Gõ mật khẩu vào `/login` — ngoài chuyện đó là việc không được làm, nó
+        còn **không chạy**: `/login` có Turnstile, tức một phép xác minh chống
+        bot, và vượt nó cũng là việc không được làm.
+     2. Tự ký một cookie phiên — cookie trình duyệt ở đây là Starlette session
+        ĐÃ KÝ. Ký lấy bằng khoá của ứng dụng là chế ra một chứng danh ở ngoài
+        luồng xác thực. Không làm.
+     3. **Vé SSO một lần** — `platform_core/nexus/sso.py`. Đây là một **tính
+        năng có sẵn của sản phẩm**, không phải một đường vòng: ứng dụng Nexus
+        vẫn dùng đúng nó để nối phiên app sang phiên web.
+
+   Chọn 3. Nó đi qua đúng cửa mà nền tảng đã mở, và nó thừa hưởng luôn ba ràng
+   buộc mà cửa đó tự mang theo: vé sống 90 giây, dùng một lần rồi bị xoá, và
+   phiên sinh ra mang nhãn tự khai trong danh sách phiên.
+
+⛔ CHỈ CHO ĐUÔI `.local`. Vé là một chứng danh sống. Phát vé cho một tài khoản
+   khách — kể cả để "xem thử giúp họ" — là mượn danh tính của họ. Chặn ở đây
+   bằng quy ước đuôi email, cùng thứ mà `tai_khoan_thu.py` dùng.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                  errors="replace", line_buffering=True)
+
+DUOI_THU = ".local"
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
+    ap.add_argument("--goc", default="https://app.lttstudios.com",
+                    help="Goc URL de ghep ve vao.")
+    a = ap.parse_args(argv)
+
+    if not a.email.endswith(DUOI_THU):
+        print(f"TU CHOI: chi phat ve cho tai khoan thu (duoi '{DUOI_THU}').",
+              file=sys.stderr)
+        return 2
+
+    from platform_core import users
+    from platform_core.db import get_session
+    from platform_core.nexus import sso
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, a.email)
+        if u is None:
+            print(f"KHONG THAY {a.email}", file=sys.stderr)
+            return 2
+        ve = sso.tao_ve(db, u, ip="127.0.0.1")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # Vé sống 90 giây — in ra rồi phải mở NGAY.
+    print(f"{a.goc.rstrip('/')}/nexus-sso?ma={ve}")
+    return 0
 
 
 if __name__ == "__main__":

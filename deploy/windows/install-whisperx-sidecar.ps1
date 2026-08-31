@@ -15,6 +15,28 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# --------------------------------------------------------------- Invoke-Ngoai
+# Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
+# `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
+#
+# pip, python, cloudflared va pg_dump deu ghi ra stderr trong luc chay binh
+# thuong (canh bao, thanh tien trinh, mot dong chan doan). Hau qua khong phai
+# "bao loi sai" ma la IM LANG: dong `if ($LASTEXITCODE -ne 0)` ngay sau do
+# KHONG BAO GIO CHAY, script chet giua chung, va nhat ky dung lai o dong cuoi
+# in duoc. Mot loi vo hai doc len giong het mot lan treo.
+#
+# Bay nay da dinh BON LAN trong hai ngay (30-31/08/2026): installer sidecar,
+# `Test-Py`, `tai_khoan_thu.ps1`, roi buoc lam am HF cache.
+#
+# Boc loi goi lai: ha xuong 'Continue' dung trong khoi, roi tra lai. Khoi la
+# `scriptblock` nen bien cua ham goi van thay duoc, va `$LASTEXITCODE` giu
+# nguyen tu lenh cuoi -- moi phep kiem ma san co van dung.
+function Invoke-Ngoai {
+    param([Parameter(Mandatory = $true)][scriptblock]$Khoi)
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try { & $Khoi } finally { $ErrorActionPreference = $truoc }
+}
 if (-not $ReleaseDir) { $ReleaseDir = Join-Path $Root 'app' }
 $venv = Join-Path $Root 'whisperx-venv'
 $python = Join-Path $venv 'Scripts\python.exe'
@@ -22,7 +44,7 @@ $requirements = Join-Path $ReleaseDir 'requirements-whisperx.txt'
 if (-not (Test-Path $requirements)) { throw 'requirements-whisperx.txt is missing' }
 
 if (-not (Test-Path $python)) {
-    & $PythonExe -m venv $venv
+    Invoke-Ngoai { & $PythonExe -m venv $venv }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to create WhisperX venv' }
 }
 
@@ -47,7 +69,7 @@ function Test-Py {
     $before = $ErrorActionPreference
     $ErrorActionPreference = 'Continue'
     try {
-        & $python -c $Code *> $null
+        Invoke-Ngoai { & $python -c $Code *> $null }
         return ($LASTEXITCODE -eq 0)
     } finally {
         $ErrorActionPreference = $before
@@ -56,13 +78,13 @@ function Test-Py {
 
 $torchOk = Test-Py "import torch,sys; ok=torch.__version__.startswith('2.8.') and torch.cuda.is_available(); sys.exit(0 if ok else 1)"
 if (-not $torchOk) {
-    & $python -m pip install --upgrade pip --quiet
-    & $python -m pip install 'torch==2.8.0' 'torchvision==0.23.0' 'torchaudio==2.8.0' --index-url https://download.pytorch.org/whl/cu128 --quiet
+    Invoke-Ngoai { & $python -m pip install --upgrade pip --quiet }
+    Invoke-Ngoai { & $python -m pip install 'torch==2.8.0' 'torchvision==0.23.0' 'torchaudio==2.8.0' --index-url https://download.pytorch.org/whl/cu128 --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install WhisperX CUDA torch' }
 }
 
 if (-not (Test-Py "import whisperx,sys; import importlib.metadata as m; sys.exit(0 if m.version('whisperx')=='3.8.6' else 1)")) {
-    & $python -m pip install -r $requirements --quiet
+    Invoke-Ngoai { & $python -m pip install -r $requirements --quiet }
     if ($LASTEXITCODE -ne 0) { throw 'Failed to install WhisperX dependencies' }
 }
 
