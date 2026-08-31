@@ -2,14 +2,15 @@
 
 **31/08/2026 21:20 → 01/09 01:10.** Ownership: F01–F28.
 
-⚠️ **Phase này CHƯA đóng** — còn khoảng một nửa, liệt kê ở §10.
+⚠️ **Phase này CHƯA đóng** — nhưng phần còn nợ nay nhỏ, liệt kê ở §11.
 
 Đã có số đo: hai `CHANGE` treo từ Prompt 03/04 (§1, §2) · tiêm lỗi thật trên máy
-B (§5) · mô hình health + **phát hiện chính** là `/health` xanh giả (§6) · quét
-bí mật và advisory (§8) · phong bì năng lực (§9).
+B (§5) · **phát hiện chính** là `/health` xanh giả (§6) · quét bí mật + advisory
+(§8) · phong bì năng lực (§9) · soát quan sát (§10) · SSRF, ACL, và **diễn tập
+rollback thật 18,9 s** (§3, §4, §11).
 
-Chưa làm: bốn ca tiêm lỗi phía máy A · bảng metric/cardinality · SSRF hồ sơ
-vision · ACL đặc quyền tối thiểu · diễn tập rollback.
+Còn nợ: máy A restart · CUDA hỏng (không tiêm an toàn được) · chuỗi cung ứng bản
+cập nhật.
 
 ⭐ **§7 đáng đọc ngay cả khi bạn bỏ qua phần còn lại.** Nó ghi **bốn** lần hỏng
 dụng cụ trong một tối, và cả bốn đều đọc lên y hệt một kết quả thật — ba trong
@@ -81,7 +82,23 @@ nhận được.
 | Đã chạy | 18:17 (`EXITCODE=0`) | 18:37 và 21:30 |
 | Giữ cấu hình vận hành | `app.env` không đụng | `gateway.env` **migrate giữ token/model** |
 | Kênh vào khi SSH tắt | — | **Nexus** (bật SSH tạm, đóng lại sau) |
-| Rollback | `app.previous/` | `H:\LTT_LLM\releases\` có bản trước |
+| Rollback | `app.previous/` | `releases/auto-<mốc>`, **chụp mỗi lần deploy** |
+
+🔴 **Rà soát 01/09 tìm ra đường rollback của máy B không được nuôi.** `releases/`
+chỉ có hai bản, cả hai từ **27/08** — bốn lần deploy trong ngày không chụp bản
+nào. Tức nó tồn tại *trên giấy*: nếu một lần deploy làm hỏng thì cách duy nhất
+còn lại là `git revert` + deploy lại, đòi máy A sống **và** bật được `sshd`.
+Máy A đã có `app.previous/` cho đúng việc này; máy B thì không.
+
+Nay `deploy.ps1` chụp **trước khi đè** và **tự kiểm bản chụp**. Chụp thất bại thì
+không dừng deploy — nhưng nói to, vì từ đó trở đi ta deploy **không có đường lui**.
+
+**Diễn tập rollback THẬT (F26), không phải mô phỏng:**
+
+```
+làm hỏng một module  ->  dịch vụ Paused, health chết
+xcopy ngược + restart ->  18,9 GIÂY  ->  Running, health sống, tệp đã về
+```
 
 ⭐ **`gateway.env` migrate tại chỗ** (dòng 114–116 của `deploy.ps1`) — kiểm trước
 khi deploy, vì nếu nó sinh token mới thì khoá máy A lưu sẽ lệch và toàn bộ dịch
@@ -100,8 +117,21 @@ vụ chết. Nó không sinh mới khi tệp đã tồn tại.
 * ✅ **F19, F20 nay ĐÃ LÀM — xem §8.** (Dòng cũ ở đây ghi *"chưa làm"*; giữ
   nguyên nó sẽ thành hai câu ngược nhau trong một tệp, đúng lỗi mà `CLAUDE.md`
   đã dính hai lần với hàng Public API.)
-* ⚠️ **Còn lại:** rà soát SSRF của hồ sơ vision (F14), ACL/đặc quyền tối thiểu
-  (F21), chuỗi cung ứng bản cập nhật.
+* ✅ **F14 SSRF nay ĐÃ CHỐT** — `test_373`, 30 phép kiểm. Biện pháp **đã có sẵn
+  trong mã** và giải thích rõ, nhưng `grep url_tu_xa tests/` trả về **rỗng**:
+  một biện pháp bảo mật đang làm việc mà không phép kiểm nào giữ, tức cách một
+  lần refactor thiện chí là mất — và mất **không tiếng động**.
+* ✅ **F21 ACL nay ĐÃ SIẾT** — `gateway.env` cho `BUILTIN\Users` quyền đọc, tức
+  **mọi tài khoản cục bộ trên máy B đọc được bearer token**. Không phải lo xa:
+  máy B có **hai tài khoản sandbox Codex** đang bật (`CodexSandboxOffline`,
+  `CodexSandboxOnline`) cộng `Guest` — đúng loại tài khoản sinh ra để chạy mã
+  không tin cậy. So sánh: `app.env` trên máy A chỉ SYSTEM + Administrators, và
+  chính báo cáo này đã ghi ACL đó *"LÀ ĐÚNG"*. Hai máy lẽ ra cùng một chuẩn.
+  Nay đã siết, và **đặt lại ở mỗi lần deploy** — sửa tay là mất ở lần sau.
+* ⚠️ **Chấp nhận có ý, không phải bỏ sót:** dịch vụ chạy bằng `LocalSystem` —
+  nhiều quyền hơn cần, nhưng đổi nó chạm quyền truy cập GPU. `Guest` đang bật
+  trên máy B là chính sách máy, ngoài phạm vi audit này.
+* ⚠️ **Còn lại:** chuỗi cung ứng bản cập nhật.
 
 ---
 
@@ -343,12 +373,80 @@ sẽ **chờ trọn 77 giây** hoặc bị 429 — không có mức suy giảm �
 | Ngưỡng | Đo bằng gì | Nghĩa |
 |---|---|---|
 | tỉ lệ 429 > 5 % trong một giờ | `metrics.CAPACITY_REFUSED` | hàng đợi một chỗ đã thành nút cổ chai thật |
-| p95 chờ hàng đợi > 30 s | chưa có metric | **cần thêm**, xem §5 báo cáo 02 |
+| chờ hàng đợi > 30 s | `admission_delay_ms` — **đã có**, xem ✏️ dưới | đang tiến tới trần |
 | VRAM đỉnh > 23,5 GiB | `nvidia-smi` trong `/health` | hết biên cho hàng xóm |
 
-🔴 **Ngưỡng thứ hai chưa đo được** — chưa có metric thời gian chờ hàng đợi. Cho
-tới khi có, phong bì này nói được *"trần ở đâu"* nhưng **không** nói được
-*"ta đang cách trần bao xa"*, và đó mới là con số dùng để quyết định mở rộng.
+### ✏️ SỬA LẦN HAI — cùng hình dạng với lần trước
+
+Bản đầu mục này viết: *"ngưỡng thứ hai **chưa đo được** — chưa có metric thời
+gian chờ hàng đợi."* **Sai.** `platform_core/public_api/metrics.py:66` có sẵn:
+
+```python
+LATENCY_ADMISSION = "admission_delay_ms"
+```
+
+Sắc thái đúng, và nó nhỏ hơn nhiều: metric **có**, nhưng nó gom
+`count / total_ms / max_ms` ⇒ cho **trung bình và cực đại**, không cho **p95**.
+Mà `max_ms` là một cận trên bảo thủ — dùng được ngay để đặt ngưỡng, chỉ là nó
+nhạy với một lượt lẻ bất thường.
+
+⇒ Không phải *"phải xây metric"*. Là *"phải đọc metric đang có, và biết nó nói
+`max` chứ không nói `p95`."*
+
+⚠️ Đây là **lần thứ hai trong một đêm** tôi tuyên bố một thứ **không tồn tại**
+trong khi nó có sẵn — lần trước là *"không thể sửa bằng một nguồn"* ở §6. Cùng
+một hình dạng: một câu khẳng định rộng hơn thứ tôi đã thực sự tra. Và cả hai lần
+đều tự bắt được **chỉ vì đi tra tiếp**, không phải vì có phép kiểm nào đỏ.
+
+---
+
+## 10. §3 Quan sát — soát nhu cầu, cardinality, riêng tư (F11–F16)
+
+### Đã có, và đủ dùng
+
+`platform_core/public_api/metrics.py` — 20+ bộ đếm phủ đủ vòng đời:
+
+| Nhóm | Metric |
+|---|---|
+| Yêu cầu | `requests` · `auth_success` · `auth_failure` · `rate_limited` |
+| Từ chối | `capacity_refused` · `kill_switch_refused` |
+| Idempotency | `idempotency_replay` · `idempotency_conflict` |
+| **Tiền** | `credit_held` · `credit_settled` · `credit_refunded` · `credit_exhausted` |
+| Việc | `jobs_created` · `jobs_cancelled` |
+| Webhook | `webhook_delivered` · `webhook_failed` |
+| **Suất** | `admission_acquired` · `rejected` · `released` · **`expired`** |
+| Trễ | `request_ms` · `queue_pickup_ms` · `admission_delay_ms` |
+
+⭐ Bốn metric `admission_*` là bộ duy nhất nhìn ra được sự cố 31/08: `acquired`
+trừ `released` là số suất **đang treo**, và `expired` đếm số lần chặn cuối phải
+đỡ. Trên máy B đã có bản tương đương ở `/health` (`da_thu_hoi`).
+
+### Cardinality — **không có rủi ro**, và lý do là kiến trúc
+
+```python
+def increment(name: str, amount: int = 1) -> None:
+```
+
+**Không có nhãn.** Không `user_id`, không `key_id`, không `model`. Nghĩa là số
+chuỗi thời gian bị chặn cứng bởi số hằng đã khai — nó **không thể** nổ theo số
+khách hay số khoá.
+
+Cái giá đã trả: không cắt lát được *"khách nào đang bị 429"*. Bù lại bằng
+`public_api_requests` (có `request_id`, tra qua `/admin/api-trace`) — tức chi
+tiết nằm ở **log có cấu trúc**, còn metric giữ vai trò tổng hợp. Đó là một sự
+phân vai đúng, không phải một thiếu sót.
+
+### Riêng tư — sạch, **do hệ quả** của điều trên
+
+Không nhãn ⇒ không có dữ liệu cá nhân nào lọt vào metric. Không cần thêm luật
+che, vì không có gì để che.
+
+### Không đề xuất thêm metric nào
+
+Prompt 06 §3 nói *"only add metrics that answer an operational question."* Mọi
+câu hỏi vận hành đã nêu trong báo cáo này — *có rò suất không · có đang chạm trần
+không · khách có bị thu tiền oan không · máy B có xanh giả không* — đều trả lời
+được bằng thứ **đang có**. Thêm nữa là thêm việc phải nuôi.
 
 ### Rủi ro P2 đã ghi, nay có số
 
@@ -359,17 +457,19 @@ chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
 
 ---
 
-## 10. Còn nợ của phase này
+## 11. Còn nợ của phase này
 
 | Mục | Trạng thái |
 |---|---|
 | F01 luồng treo · F08 llama-server chết · F09 vỏ bọc chết · F10 mất điện | ✅ **ĐO XONG** |
-| F02 DB transient · F03 worker restart · F04 stale lease · F06 B unreachable | **CHƯA** — đều ở phía máy A |
-| F05 A restart · F07 CUDA hỏng · CPU fallback | **CHƯA** — F07 không tiêm an toàn được |
-| F11–F16 mô hình health + bảng quan sát + chất lượng cảnh báo | **MỘT PHẦN** — §6 đã lập mô hình health và một cảnh báo có runbook; bảng metric/cardinality thì chưa |
+| F02 DB chập chờn · F03 worker restart · F04 lease cũ | ✅ **ĐÃ PHỦ** — `pool_pre_ping` + `test_215` ("chủ chết thì lease hết hạn", "worker chết giữa lúc gửi") |
+| F06 máy B không với tới được | ✅ **XONG** — `test_372`, 6 phép kiểm gồm một đối chứng |
+| F05 máy A restart · F07 CUDA hỏng · CPU fallback | **CHƯA** — F07 không tiêm an toàn được; cần cách khác |
+| F11–F16 mô hình health + bảng quan sát | ✅ **XONG** — §6 mô hình health, §10 soát metric/cardinality/riêng tư. Kết luận: **không thêm metric nào** |
 | F19 quét bí mật · F20 advisory | ✅ **XONG** |
-| F14 SSRF hồ sơ vision · F21 ACL / đặc quyền tối thiểu | **CHƯA** |
-| F22–F27 checklist deploy/rollback + diễn tập rollback | **MỘT PHẦN** — §3 đã đi thật hai lần, chưa diễn tập rollback |
+| F14 SSRF hồ sơ vision | ✅ **XONG** — `test_373`, 30 phép kiểm, 3 giao thức × 6 đích thật + 7 biến thể lách |
+| F21 ACL / đặc quyền tối thiểu | ✅ **XONG** — siết `gateway.env`, và đặt lại ở **mỗi lần deploy** |
+| F22–F27 deploy/rollback + diễn tập | ✅ **XONG** — deploy nay **chụp bản trước**, và diễn tập rollback thật: hỏng → **18,9 s** → lành |
 | F28 phong bì năng lực / SLO | ✅ **XONG** (§9) — nhưng thiếu metric *thời gian chờ hàng đợi*, nên nói được trần ở đâu mà **không** nói được ta cách trần bao xa |
 
 ⛔ **Không đánh dấu phase này `PASS`.** Phần đã làm thì có số đo và tái hiện được;

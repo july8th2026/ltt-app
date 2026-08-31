@@ -141,6 +141,13 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | 06 | `sc failure` cho hai dịch vụ LLM trên máy B | *cấu hình máy B, ngoài kho* | SCM có kích hoạt (Stopped→Paused @62,9s) | `sc failure <ten> reset= 0 actions= ""` |
 | 06 | Nâng 2 phụ thuộc có advisory, nằm trong ghim sẵn có | `requirements-server.txt` · `requirements.txt` | 437 passed; `python-multipart` về **sạch** trên OSV | git revert |
 | 06 | `_ban_va()` tách "chưa có bản vá" khỏi "không hỏi được" | `tools/check_phu_thuoc_advisory.py` | bánh cóc nuốt-lỗi về 63 = PASS | git revert |
+| 06 | Cổng **tự biết mình mồ côi** — bản sửa một nguồn | `llm_gateway/to_tien.py` · `api.py` | `test_371` 8 phép + đo thật trên B: dịch vụ `Stopped` mà `/health` khai `mo_coi:true` | git revert + deploy |
+| 06 | Chốt cổng: từ chối khởi động khi 8299 đã có người giữ | `llm_gateway/main.py` | log gọi đúng `pid 23360` trên máy thật (trước là `Paused` câm) | git revert + deploy |
+| 06 | Chốt ca **máy B không với tới được** (khác ca bận) | `tests/test_372` | 6 phép kiểm, gồm một đối chứng "đã thực sự gọi rồi mới hỏng" | xoá tệp |
+| 06 | Chốt chặn **SSRF ảnh từ xa** — biện pháp chưa ai chốt | `tests/test_373` | 30 phép: 3 giao thức × 6 đích thật + 7 biến thể lách + đối chứng | xoá tệp |
+| 06 | Siết ACL bí mật máy B, **đặt lại mỗi lần deploy** | `llm_gateway/deploy/deploy.ps1` | chạy thật: `ACL gateway.env: chi SYSTEM + Administrators` | `icacls /grant` lại |
+| 06 | Deploy **chụp bản trước khi đè** + diễn tập rollback | `llm_gateway/deploy/deploy.ps1` | diễn tập thật: hỏng → **18,9 s** → lành | git revert |
+| 06 | `deploy.ps1` sửa 2 lỗi làm nó **chưa bao giờ chạy nổi** | `llm_gateway/deploy/deploy.ps1` | chạy hết 6 bước; cảnh báo trôi cấu hình **nổ lần đầu** | git revert |
 
 ## Benchmark summary
 
