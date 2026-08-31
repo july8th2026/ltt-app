@@ -135,7 +135,8 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | 00 | Ba phép kiểm đổi từ **đếm ký tự** sang **quan hệ cú pháp** | `test_362` · `test_365` | 22 phép kiểm xanh | git revert |
 | 04 | Bộ đánh giá chất lượng + bộ đo hiệu năng | `tools/danh_gia_llm.py` · `tools/bench_llm_hieu_nang.py` | 12/12 trên 8 chiều | xoá tệp |
 | 06 | Trọng tài phân biệt tải của ta | `llm_gateway/trong_tai.py` · `api.py` | `test_368` 8 phép kiểm + A/B 9/12→0/12 | git revert + deploy lại |
-| 06 | `deploy.ps1` nói khi cấu hình chưa có hiệu lực | `llm_gateway/deploy/deploy.ps1` | cú pháp 5.1 OK, thuần ASCII | git revert |
+| 06 | `deploy.ps1` nói khi cấu hình chưa có hiệu lực | `llm_gateway/deploy/deploy.ps1` | 🔴 **bằng chứng cũ SAI** — "cú pháp OK" trả lời một câu hỏi khác; khối này gọi 2 hàm không tồn tại nên **chết mọi lần**. Nay đã **chạy hết 6 bước** và cảnh báo **nổ lần đầu** | git revert |
+| 06 | ✅ **ĐÃ DEPLOY 01/09 01:00** — chốt cổng chạy thật trên máy B, log gọi đúng `pid 23360` + cách xử lý (trước là `Paused` câm) | *xem hai dòng dưới* | | |
 | 06 | Bắt **health xanh giả** khi tiến trình cổng sống sót mồ côi | `tools/soi_cong_llm.py` · `llm_gateway/main.py` | `test_370` 11 phép kiểm + chứng minh đầu-tới-cuối trên máy B (LÀNH→LỆCH→runbook→LÀNH) | xoá tệp / git revert |
 | 06 | `sc failure` cho hai dịch vụ LLM trên máy B | *cấu hình máy B, ngoài kho* | SCM có kích hoạt (Stopped→Paused @62,9s) | `sc failure <ten> reset= 0 actions= ""` |
 | 06 | Nâng 2 phụ thuộc có advisory, nằm trong ghim sẵn có | `requirements-server.txt` · `requirements.txt` | 437 passed; `python-multipart` về **sạch** trên OSV | git revert |
