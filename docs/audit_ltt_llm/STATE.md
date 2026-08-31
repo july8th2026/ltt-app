@@ -4,8 +4,8 @@
 > chi tiết nằm ở `reports/`, không paste log vào đây.
 
 ## Program
-- **Current phase:** 00 — Discovery & Frozen Baseline
-- **Last completed phase:** (chưa có phase nào trước 00)
+- **Current phase:** 03 — Machine B Gateway, GPU Control (XONG)
+- **Last completed phase:** 00 (BASELINE FROZEN) → 03
 - **Repo revision / branch:** `2ed62d7` → nhánh `admin-mvp-v3`
   *(cây có 38 tệp chưa commit lúc chạy baseline — 34 của phiên `-e7`, xem §WIP)*
 - **Machine A:** `DESKTOP-H9AGFUQ` · 192.168.2.17 · Python 3.13.12 ·
@@ -82,8 +82,9 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 
 | # | Mâu thuẫn | Bằng chứng | Ghi chú |
 |---|---|---|---|
-| **C-01** | **Trần input `65K` đã chết vẫn còn ở 6 chỗ, và TỚI TAY KHÁCH** | `llm_gateway/deploy/llama-swap.yaml:130` `description: "... input public 65K"` → phơi qua `llm_gateway/api.py:181` ở `/v1/models`. Trần thật `TOKEN_VAO_TRAN = 96_256`, công bố client `88_555` | Prompt 00 §5 gọi đích danh loại này. Còn ở `apps/ltt_llm/manifest.py:30`, `llm_gateway/catalog.py:32`, `llama-swap.yaml:111/117/130`, và `-c 65536` dòng 184 (hồ sơ vision) |
+| ~~C-01~~ | 🔴 **TÔI VIẾT SAI, đã sửa ở Prompt 03 §6.** `/v1/models` lấy dữ liệu từ `catalog.py`, **không** từ `llama-swap.yaml` ⇒ `65K` **không** tới khách. Và `65536` của vision là **cấu hình đang chạy**, không phải số chết | đo thật: `context_window` 131072 / 65536 | Mâu thuẫn thật hẹp hơn: `context_window=131072` (engine) vs cưỡng chế `96.256`. Cổng B chỉ nghe LAN ⇒ **không tới khách**. Hạ P2→P3 |
 | **C-02** | `DONG_THOI_MAY_B = 1` ở máy A là **bản sao** của `max_dong_thoi = 1` ở máy B | `apps/ltt_llm/ngan_sach.py:167` vs `llm_gateway/gioi_han.py` | Hai nguồn cho một sự thật. `test_334` có đối chiếu — cần xác minh nó phủ **con số này** |
+| **C-04** | 🔴 **Cấu hình trên đĩa ≠ cấu hình đang chạy** | `llama-swap.yaml` trên đĩa ghi `65K` (deploy 18:37), tiến trình khởi động 18:34, `/running` báo `90K` | `deploy.ps1` chép tệp mà **không restart `LTTLlamaSwap`**. Và bản deploy hôm nay **lùi** mô tả 90K→65K, chưa có hiệu lực. Xem `reports/03` §5 |
 | **C-03** | Bộ lọc che bí mật của tôi che nhầm `MAX_INPUT_TOKENS`/`MAX_OUTPUT_TOKENS` | mẫu `TOKEN` khớp quá rộng | Không phải lỗi hệ thống, là lỗi công cụ đo của tôi. Giá trị thật: 96.256 / 32.768 |
 
 ## Decisions
@@ -93,6 +94,13 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | D-00-1 | 00 | Chụp baseline **sau** bản vá rò suất | KEEP | Baseline = production hiện tại. Trạng thái trước-vá không lấy lại được; khai rõ tốt hơn giả vờ có mốc cũ |
 | D-00-2 | 00 | `gate.py` chỉ có PASS/FAIL | **CHANGE** | Một bước tự bỏ qua trông y hệt một bước đạt ⇒ hai phiên đọc cùng dòng RESULT trái ngược nhau trong một ngày |
 | D-00-3 | 00 | `check_multiproc.py` trả `return 0` khi bỏ qua | **KEEP** | Đúng: máy thiếu PostgreSQL vẫn phải chạy được gate. Chỗ sai là chỗ **đọc** |
+| D-03-1 | 03 | Ranh giới cổng (auth · allow-list · 413 trước GPU) | **KEEP** | Đo thật 7 đường: 401/404/413 đều ≤0,02 s ⇒ chặn **trước** GPU |
+| D-03-2 | 03 | Đồng thời 429 + `Retry-After` | **KEEP** | A=200/1,59 s · B=429/0,05 s · retry 15 — từ chối nhanh, không xếp hàng ẩn |
+| D-03-3 | 03 | Đếm tiến trình python thay vì ngưỡng VRAM | **KEEP** | `used_memory` = `[N/A]` cho **mọi** tiến trình ⇒ quy chủ VRAM **không khả thi**, không phải lựa chọn ưa thích |
+| D-03-4 | 03 | 14 s ở một thân sai | **DEFER → 06** | Không tái hiện được (lượt sau 0,71 s). Báo thành defect khi chưa tái hiện là làm phiên sau sửa thứ không hỏng |
+| D-03-5 | 03 | `deploy.ps1` chép `llama-swap.yaml` mà không restart | **CHANGE → 06** | Cấu hình trên đĩa ≠ cấu hình đang chạy, và im lặng. Chạm deploy ⇒ thuộc Prompt 06 |
+| D-03-6 | 03 | `context_window` 131K vs cưỡng chế 96K | **KEEP (P3)** | Ba số cho ba việc (engine 131.072 / trần vào 96.256 / công bố 88.555); cổng B không tới khách |
+| D-03-7 | 03 | `max_dong_thoi = 1` | **KEEP** | `--parallel 1` của llama-server; đổi là mời OOM |
 
 ## Changes kept
 
@@ -118,12 +126,12 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | Money/admission/failure semantics | 15 | 13 | HIGH *(INV-001/003/004 có bằng chứng sống)* |
 | Model quality & tool/context fidelity | 15 | **6** | LOW — **không có bộ đánh giá nào** |
 | Performance/resource efficiency | 15 | **7** | LOW — chưa đo |
-| Reliability/recovery | 10 | 7 | MEDIUM |
-| Security boundaries | 10 | 8 | MEDIUM |
+| Reliability/recovery | 10 | 8 | **HIGH** *(Prompt 03)* |
+| Security boundaries | 10 | 9 | **HIGH** *(Prompt 03)* |
 | Observability/operations | 5 | 4 | MEDIUM |
 | Tests/evidence/reproducibility | 5 | 4 | HIGH |
 | Maintainability/SSOT/deployment | 5 | 4 | MEDIUM |
-| **TOTAL** | **100** | **69** | **MEDIUM** |
+| **TOTAL** | **100** | **71** | **MEDIUM** *(69 sau Prompt 00 → 71 sau 03)* |
 
 ⛔ **69 không phải "hệ thống tệ".** Phần lớn điểm trừ nằm ở **thiếu phép đo**, không ở
 hỏng đã biết: G5 không có bộ đánh giá nào, và mọi số hiệu năng đều `PENDING LIVE`.
@@ -151,11 +159,9 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
 ## Next phase
-- **Prompt:** `03_MACHINE_B_GATEWAY_GPU_CONTROL.md`
-  *(đổi thứ tự có chủ ý: 03+04 tự chủ 100 %, và máy B đang rảnh — điều kiện có
-  thể mất bất cứ lúc nào khi dự án video chạy lại)*
-- **Must read:** `llm_gateway/*` · `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md` ·
-  `Ket_noi.md` (đường vào máy B)
-- **Questions:** C16–C21 (dò bận/CPU degraded) đo được thật tới đâu? `don_dep`
-  có dọn nhầm workload của người khác không?
-- **Do not disturb:** 34 tệp WIP của `-e7`; `apps/ltt_voice/**`
+- **Prompt:** `04_QWEN_QUALITY_PERFORMANCE.md`
+- **Must read:** `reports/03_machine_b_gateway_gpu.md` · `llm_gateway/deploy/llama-swap.yaml`
+- **Questions:** G5 chưa có bộ đánh giá nào — phải **xây**. Benchmark phải kèm
+  ảnh chụp `trong_tai` + danh sách tiến trình GPU, vì **máy B là một máy để bàn
+  đang dùng** (23 tiến trình trên card, gồm Edge/Zalo/Adobe/Riot Vanguard).
+- **Do not disturb:** WIP của `-e7`; `apps/ltt_voice/**`
