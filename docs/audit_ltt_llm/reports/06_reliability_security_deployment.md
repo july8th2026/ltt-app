@@ -9,12 +9,17 @@ B (§5) · **phát hiện chính** là `/health` xanh giả (§6) · quét bí m
 (§8) · phong bì năng lực (§9) · soát quan sát (§10) · SSRF, ACL, và **diễn tập
 rollback thật 18,9 s** (§3, §4, §11).
 
-Còn nợ: **tiêm** lỗi máy-A-restart · **tiêm** lỗi CUDA (chưa có cách làm an toàn) ·
-chuỗi cung ứng bản cập nhật.
+Còn nợ: diễn tập reboot máy A thật (§12).
 
-⚠️ *"Tiêm lỗi CUDA"* là **một kịch bản cần dựng để thử**, không phải một sự cố
-đang xảy ra. Đo 01/09: máy A hai RTX 5060 Ti driver 596.21 lành; máy B RTX 3090
-driver 610.88, `/health` khai `tren_gpu: true`, VRAM 22.416 MiB khi model nạp.
+🔴 **ĐỌC TÊN CÁC MỤC F NHƯ CÂU HỎI, KHÔNG NHƯ CHẨN ĐOÁN.** *"Tiêm lỗi CUDA"*,
+*"máy A khởi động lại"* là **kịch bản cần dựng để thử**, không phải sự cố đang
+xảy ra. Chủ dự án đã đọc nhầm **hai lần** vì tôi viết cụt (*"CUDA hỏng"*,
+*"máy-A-restart"*) — một lần là lỗi diễn đạt, hai lần cùng kiểu là lỗi **đặt
+tên**, nên các mục nay viết dạng câu hỏi.
+
+Đo 01/09, **không máy nào hỏng**: máy A hai RTX 5060 Ti driver 596.21, năm dịch
+vụ `Running/Automatic`; máy B RTX 3090 driver 610.88, `/health` khai
+`tren_gpu: true`, VRAM 22.416 MiB khi model nạp.
 
 ⭐ **§7 đáng đọc ngay cả khi bạn bỏ qua phần còn lại.** Nó ghi **bốn** lần hỏng
 dụng cụ trong một tối, và cả bốn đều đọc lên y hệt một kết quả thật — ba trong
@@ -462,6 +467,42 @@ chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
 
 ---
 
+## 12. §1 F05 — *"nếu máy A khởi động lại thì sao?"*
+
+Đo 01/09. **Máy A không có lỗi nào** — mục này hỏi một giả định.
+
+| Dịch vụ | Trạng thái | Khởi động | NSSM `AppExit` | SCM failure-actions |
+|---|---|---|---|---|
+| `LTTStudioWeb` | Running | Automatic | **Restart** | ❌ **không có** |
+| `LTTStudioWorker` | Running | Automatic | **Restart** | ❌ |
+| `LTTStudioVoice` | Running | Automatic | **Restart** | ❌ |
+| `LTTStudioCodex` | Running | Automatic | — | ❌ |
+| `cloudflared` | Running | Automatic | — | ❌ |
+
+### Trả lời từng chế độ hỏng
+
+| Hỏng | Chuyện gì xảy ra |
+|---|---|
+| **máy reboot** (mất điện, Windows Update) | ✅ cả 5 `Automatic` ⇒ tự lên lại. Job dở dang được nhận lại qua lease hết hạn (`test_215`), khoản giữ treo được tự hoàn (H41.3) |
+| **tiến trình con chết** | ✅ NSSM `AppExit=Restart` dựng dậy |
+| **vỏ bọc `nssm.exe` chết** | ❌ **không ai dựng dậy** — SCM không có failure-actions |
+
+🔴 **Hàng thứ ba là đúng cái lỗ đã bịt trên máy B đêm nay** — và ở đây nó nằm
+trên máy **đang phục vụ khách thật**. Nếu vỏ bọc chết, tiến trình con sống sót
+mồ côi vẫn giữ cổng, trang web **vẫn trả lời**, còn `Get-Service` nói `Stopped`
+và không có gì dựng nó dậy nữa.
+
+⏳ **Cần Administrator** (ranh giới UAC ta giữ). Lệnh đã soạn sẵn ở phần trả lời
+cho chủ dự án; nó chỉ đặt **chính sách cho lần hỏng sau**, không khởi động lại
+gì, nên chạy được lúc đang phục vụ.
+
+⚠️ **Chưa diễn tập reboot thật.** Máy A là production **và** đang chạy phiên
+làm việc này, nên một lần reboot cắt luôn tay đang gõ. Bảng trên suy từ cấu
+hình đã đo, không phải từ một lần reboot quan sát được — và phải đọc đúng phạm
+vi đó.
+
+---
+
 ## 11. Còn nợ của phase này
 
 | Mục | Trạng thái |
@@ -470,7 +511,7 @@ chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
 | F02 DB chập chờn · F03 worker restart · F04 lease cũ | ✅ **ĐÃ PHỦ** — `pool_pre_ping` + `test_215` ("chủ chết thì lease hết hạn", "worker chết giữa lúc gửi") |
 | F06 máy B không với tới được | ✅ **XONG** — `test_372`, 6 phép kiểm gồm một đối chứng |
 | F07 CUDA hỏng / CPU fallback | ✅ **PHỦ Ở MỨC PHÁT HIỆN** — `test_270` (10 phép, có ca thật 23/08) + `test_378` chốt **mắt xích giữa** mà trước đây không ai kiểm. Không tiêm được lỗi CUDA an toàn, **và không cần**: thứ thật sự hỏng ngày 23/08 không phải CUDA mà là **hơn một giờ không ai biết** |
-| F05 tiêm lỗi máy-A-restart | **CHƯA** |
+| F05 kịch bản *“nếu máy A khởi động lại”* | **MỘT PHẦN** — xem §12. Đã đo cấu hình; chưa diễn tập reboot thật |
 | F11–F16 mô hình health + bảng quan sát | ✅ **XONG** — §6 mô hình health, §10 soát metric/cardinality/riêng tư. Kết luận: **không thêm metric nào** |
 | F19 quét bí mật · F20 advisory | ✅ **XONG** |
 | F14 SSRF hồ sơ vision | ✅ **XONG** — `test_373`, 30 phép kiểm, 3 giao thức × 6 đích thật + 7 biến thể lách |

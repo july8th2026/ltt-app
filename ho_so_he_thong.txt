@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:686dcc3e9e9e3bc20f020b46fff8546445610dcba1d8328194a07a836bef8065
-Nguồn đã quét : 1387 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:1c4c3a0ad76358cd273024928f7c8fae9147571c75ceed672d2f82d5048cb319
+Nguồn đã quét : 1388 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1534,8 +1534,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1387 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:38, .py:1050, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1388 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:39, .py:1050, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2448,7 +2448,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (23)
+[setup] (24)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2468,6 +2468,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/do_troi_tong.ps1
 - setup/khoa_thu_api.ps1
 - setup/nap_lai_env.ps1
+- setup/soi_kho_giong_cu.ps1
 - setup/soi_su_co.ps1
 - setup/tai_khoan_thu.ps1
 - setup/ve_dang_nhap_thu.ps1
@@ -2979,7 +2980,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1387 file; 13763432 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1388 file; 13765986 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -166636,6 +166637,83 @@ foreach ($svc in ($Services | Sort-Object -Descending)) {
 Write-Host ""
 Write-Host 'XONG. Kiem lai bang mot thu that, khong tin trang thai dich vu:' -ForegroundColor Cyan
 Write-Host '  curl.exe -s https://app.lttstudios.com/api/v1/health'
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/soi_kho_giong_cu.ps1
+SHA256=b082ed4f0e09153d0d5fe7dba719627123a7752faf2b49f45fbd27973cd5b132 BYTES=2554 LINES=71
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Score the OLD system's voice library with the NEW measuring suite.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\soi_kho_giong_cu.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    [switch]$BoAsr
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\soi_kho_giong_cu.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+if ($BoAsr) { $doiSo += '--bo-asr' }
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
