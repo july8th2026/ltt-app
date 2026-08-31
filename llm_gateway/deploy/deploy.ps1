@@ -81,6 +81,40 @@ ChayTrenB "if not exist $g\logs mkdir $g\logs"       | Out-Null
 ChayTrenB "if not exist $g\work mkdir $g\work"       | Out-Null
 Dat "$Goc/gateway, /logs, /work"
 
+# --- 1b. Chup ban dang chay TRUOC khi de len ----------------------------------
+#
+# ! Ra soat F22-F27 ngay 01/09: `H:\LTT_LLM\releases` chi co HAI ban, ca hai tu
+#    27/08. Bon lan deploy trong ngay 31/08-01/09 khong chup ban nao. Tuc duong
+#    rollback ton tai TREN GIAY nhung khong duoc nuoi: neu mot lan deploy lam
+#    hong thi khong co "ban truoc" de quay ve, va cach duy nhat con lai la
+#    `git revert` + deploy lai -- doi may A song VA sshd bat duoc.
+#
+#    May A da co `app.previous/` cho dung viec nay. May B thi khong. Hai may le
+#    ra phai cung mot chuan.
+#
+# ! Chup bang `xcopy` TREN MAY B chu khong keo ve may A: nhanh hon nhieu lan, va
+#    quan trong hon la no khong phu thuoc duong mang -- mot ban chup that bai
+#    giua chung con te hon khong chup, vi no trong nhu mot ban chup.
+$dauThoiGian = (Get-Date).ToString("yyyyMMdd-HHmmss")
+$banChup = "$Goc/releases/auto-$dauThoiGian"
+Buoc "1b. Chup ban dang chay -> releases/auto-$dauThoiGian"
+$gW = $Goc.Replace("/", "\")
+$bcW = $banChup.Replace("/", "\")
+$coBan = ChayTrenB "if exist $gW\gateway\llm_gateway (echo CO) else (echo KHONG)"
+if (($coBan -join "") -match "CO") {
+    ChayTrenB "mkdir $bcW 2>nul & xcopy /E /I /Q /Y $gW\gateway $bcW\gateway" | Out-Null
+    $kiem = ChayTrenB "if exist $bcW\gateway\llm_gateway\main.py (echo CO) else (echo KHONG)"
+    if (($kiem -join "") -match "CO") {
+        Dat "da chup ban dang chay (rollback: xcopy nguoc lai roi Restart-Service)"
+    } else {
+        # Khong `exit 1`: deploy van nen di tiep. Nhung PHAI noi to, vi tu day
+        # tro di ta dang deploy MA KHONG CO duong lui.
+        Canh "CHUP THAT BAI - deploy tiep nhung KHONG CO ban de rollback."
+    }
+} else {
+    Dat "chua co ban nao tren may B - khong can chup"
+}
+
 # --- 2. Chep ma nguon ----------------------------------------------------------
 # `llm_gateway` can `render_gateway.busy` (D-013/D-022 - khong chep lai 275 dong do).
 # Hai goi nay deploy CUNG NHAU, do la giao uoc.
