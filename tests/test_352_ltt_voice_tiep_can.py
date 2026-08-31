@@ -52,7 +52,7 @@ JS = GOC / "server" / "static" / "voice.js"
 # ── 1. aria-pressed trong khuôn mẫu ──────────────────────────────────────────
 
 @pytest.mark.parametrize("ten", ["_voice_chon.html", "ltt_voice_giong.html",
-                                 "ltt_voice_lo.html"])
+                                 ])
 def test_moi_nut_loc_deu_khai_aria_pressed(ten):
     s = (MAU / ten).read_text(encoding="utf-8")
     for the in re.findall(r"<button[^>]*lv-loc-nut[^>]*>", s):
@@ -60,7 +60,7 @@ def test_moi_nut_loc_deu_khai_aria_pressed(ten):
 
 
 @pytest.mark.parametrize("ten", ["_voice_chon.html", "ltt_voice_giong.html",
-                                 "ltt_voice_lo.html"])
+                                 ])
 def test_nut_dang_bat_khai_pressed_true(ten):
     """Lớp `on` và `aria-pressed="true"` phải đi cùng nhau, không lệch."""
     s = (MAU / ten).read_text(encoding="utf-8")
@@ -79,7 +79,7 @@ def test_lich_su_dung_aria_current_chu_khong_phai_pressed():
 
 # ── 2. Vùng báo tin ──────────────────────────────────────────────────────────
 
-@pytest.mark.parametrize("ten", ["ltt_voice_mot_du_an.html", "ltt_voice_mot_lo.html"])
+@pytest.mark.parametrize("ten", ["ltt_voice_mot_du_an.html"])
 def test_man_chi_tiet_co_vung_bao_tin(ten):
     s = (MAU / ten).read_text(encoding="utf-8")
     m = re.search(r'<p[^>]*id="lv-bao"[^>]*>', s)
@@ -92,7 +92,7 @@ def test_man_chi_tiet_co_vung_bao_tin(ten):
 
 
 @pytest.mark.parametrize("ten,khoa", [("ltt_voice_mot_du_an.html", "khối"),
-                                      ("ltt_voice_mot_lo.html", "dòng")])
+                                      ])
 def test_cau_bao_tin_duoc_dich_va_co_cho_dien_so(ten, khoa):
     s = (MAU / ten).read_text(encoding="utf-8")
     for ten_khoa in ("baoTienDo", "baoXong"):
@@ -103,7 +103,7 @@ def test_cau_bao_tin_duoc_dich_va_co_cho_dien_so(ten, khoa):
 
 def test_voice_js_khong_dat_aria_live_len_luoi_con_so():
     """Đặt live lên lưới số thì trình đọc màn hình đọc lại cả bốn ô mỗi vài giây."""
-    for ten in ("ltt_voice_mot_du_an.html", "ltt_voice_mot_lo.html"):
+    for ten in ("ltt_voice_mot_du_an.html",):
         s = (MAU / ten).read_text(encoding="utf-8")
         for the in re.findall(r"<div[^>]*aria-live[^>]*>", s):
             assert "lv-mlo-so" not in the and "lv-mda-so" not in the
@@ -258,8 +258,6 @@ def test_dai_dau_man_giu_cau_giai_thich_tren_chip():
 # 🔴 Ba ô đã sống trên production mà không có tên, và bộ test không thể thấy:
 #
 #      /ltt-voice      textarea#lv-text        ô nhập CHÍNH của cả app
-#      /ltt-voice/lo   input[file]#lv-lo-file  không tên nào cả
-#      /ltt-voice/lo   input#lv-lo-ten
 #
 # ⛔ `placeholder` KHÔNG phải nhãn. Nó biến mất ngay khi khách gõ ký tự đầu tiên,
 #    và nhiều trình đọc màn hình không đọc nó. Ô `type=file` thì còn không có cả
@@ -324,7 +322,7 @@ def khach_tc(tmp_path, monkeypatch):
 
 
 MAN = ["/ltt-voice", "/ltt-voice/giong", "/ltt-voice/du-an",
-       "/ltt-voice/lo", "/ltt-voice/lich-su", "/ltt-voice/api"]
+       "/ltt-voice/lich-su", "/ltt-voice/api"]
 
 
 @pytest.mark.parametrize("duong", MAN)

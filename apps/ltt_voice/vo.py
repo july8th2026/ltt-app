@@ -38,7 +38,6 @@ from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 NAV_STUDIO = "ltt_voice"
 NAV_GIONG = "ltt_voice_giong"
 NAV_DU_AN = "ltt_voice_du_an"
-NAV_LO = "ltt_voice_lo"
 NAV_LICH_SU = "ltt_voice_lich_su"
 NAV_API = "ltt_voice_api"
 

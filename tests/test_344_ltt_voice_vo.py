@@ -28,7 +28,7 @@ import pytest
 from apps.ltt_voice import vo
 from apps.ltt_voice.manifest import MANIFEST
 
-#: Sáu tab, đúng thứ tự luồng làm việc. Chốt bằng một danh sách gõ tay chứ không
+#: Năm tab, đúng thứ tự luồng làm việc. Chốt bằng một danh sách gõ tay chứ không
 #: bằng `len(...)`: một phép kiểm đếm số lượng vẫn xanh khi ai đó đổi `Dự án`
 #: thành một tab khác, và bài học "chốt TẬP HỢP không chốt số lượng" đã có sẵn
 #: trong bộ nhớ dự án.
@@ -36,7 +36,6 @@ TAB_MONG_DOI = [
     ("/ltt-voice", vo.NAV_STUDIO, True),
     ("/ltt-voice/giong", vo.NAV_GIONG, True),
     ("/ltt-voice/du-an", vo.NAV_DU_AN, True),
-    ("/ltt-voice/lo", vo.NAV_LO, True),
     ("/ltt-voice/lich-su", vo.NAV_LICH_SU, True),
     ("/ltt-voice/api", vo.NAV_API, True),
 ]

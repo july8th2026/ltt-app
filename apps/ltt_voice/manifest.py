@@ -99,7 +99,6 @@ MANIFEST = AppManifest(
         NavEntry(N_('Tạo tiếng nói'), "/ltt-voice", "🎙️", "ltt_voice"),
         NavEntry(N_('Giọng của tôi'), "/ltt-voice/giong", "🗣️", "ltt_voice_giong"),
         NavEntry(N_('Dự án'), "/ltt-voice/du-an", "📚", "ltt_voice_du_an"),
-        NavEntry(N_('Chạy lô'), "/ltt-voice/lo", "🧺", "ltt_voice_lo"),
         NavEntry(N_('Lịch sử'), "/ltt-voice/lich-su", "🕘", "ltt_voice_lich_su"),
         NavEntry(N_('API'), "/ltt-voice/api", "🔌", "ltt_voice_api"),
     ),

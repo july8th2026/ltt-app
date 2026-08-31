@@ -8,7 +8,6 @@ Nền tảng chỉ cần biến `router`. Import từng mảnh ở đây để h
     _p_tao.py       Tạo tiếng nói: dựng trang · xem trước cách đọc · nộp · kết quả
     _p_giong.py     Giọng: lưới giọng · ghi danh · tắt
     _p_du_an.py     Dự án: danh sách · khối · sinh · xuất
-    _p_lo.py        Chạy lô: nhận danh sách · kiểm hết · chạy hết · tải zip
     _p_lich_su.py   Lịch sử: lọc và liệt kê
     _p_api.py       API: mã giọng để dán vào mã nguồn + trạng thái cửa thật
     _p_audio.py     Phục vụ tệp tiếng — cửa duy nhất đọc kho của khách
@@ -21,6 +20,6 @@ Nền tảng chỉ cần biến `router`. Import từng mảnh ở đây để h
 """
 from apps.ltt_voice.routes._chung import router
 from apps.ltt_voice.routes import (  # noqa: F401  (import để đăng ký route)
-    _p_tao, _p_giong, _p_du_an, _p_lo, _p_lich_su, _p_api, _p_audio)
+    _p_tao, _p_giong, _p_du_an, _p_lich_su, _p_api, _p_audio)
 
 __all__ = ["router"]

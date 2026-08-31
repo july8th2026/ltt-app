@@ -1,5 +1,30 @@
 """
-tables_du_an.py — hai bảng dùng cho CẢ Dự án LẪN Chạy lô.
+tables_du_an.py — hai bảng của màn Dự án.
+
+🗑️ **CHẠY LÔ ĐÃ GỠ 01/09/2026.** Phần dưới đây nói về hai màn dùng chung bảng;
+   nay chỉ còn một. Giữ nguyên lập luận vì cột `loai` vẫn còn và vì lý do gỡ
+   đáng đọc trước khi ai đó dựng lại màn ấy:
+
+   Chạy lô tồn tại **chỉ để chạy khối lượng lớn** — và nó là màn duy nhất
+   không thể nhanh lên nếu không đổi ngữ nghĩa tính tiền. Nó nộp **một job cho
+   mỗi dòng**, nên một CSV 500 dòng bỏ lại đúng **3,47 lần** thông lượng mà
+   `infer_batch` cho không (đo 01/09: 1,457× so với 5,059× giây tiếng trên mỗi
+   giây GPU, khoảng cách lớn hơn dao động 49 lần).
+
+   Tức nó **hứa "lô" và giao một vòng lặp**. Giữ nguyên như vậy là lựa chọn duy
+   nhất chắc chắn sai; hai lựa chọn đúng là dựng lại quanh `infer_batch` (và
+   chấp nhận thử-lại/tính-tiền thô hơn) hoặc gỡ.
+
+   Đo trước khi gỡ, theo tiền lệ Q108/Q109: **0 lô, 0 dự án, 0 chủ sở hữu** —
+   `voice_project` chưa có dòng nào. Mã còn trong lịch sử git.
+
+   ⛔ Dựng lại thì **đừng chép lại bản cũ**. Bản cũ đúng ở phần *"kiểm toàn bộ
+      danh sách trước khi giữ một đồng"* và sai ở phần thi hành. Phần đúng đáng
+      giữ; phần sai là lý do nó không còn ở đây.
+
+   ⚠️ Cột `loai` **giữ lại**. Nay nó chỉ mang một giá trị, nhưng bỏ nó cần một
+      migration trên một bảng đang sống để đổi lấy đúng một cột `varchar(16)` —
+      cái giá không đáng, và nó là chỗ móc sẵn nếu màn ấy quay lại.
 
 🔴 VÌ SAO CHẠY LÔ DÙNG CHUNG BẢNG VỚI DỰ ÁN, KHÔNG CÓ HAI BẢNG RIÊNG.
 
