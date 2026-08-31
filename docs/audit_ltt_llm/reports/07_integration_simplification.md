@@ -150,6 +150,46 @@ sự cố của `02`, F01–F28 của `06`, canary client thật của `05`. Đi
 
 ## 6. Đóng băng trước-chung-kết (G05)
 
+### ✅ Lượt cuối cùng — XANH
+
+Sau khi cả hai phiên kia thả bút và tôi sinh lại hồ sơ:
+
+```
+[BOQUA] bat bien da tien trinh          0.8s
+[PASS]  bo test (song song)           299.9s
+RESULT: PASS  [1 BUOC TU BO QUA, KHONG PHAI BANG CHUNG: bat bien da tien trinh]
+```
+
+**Không có dòng `CAY DA DOI`** ⇒ cây đứng yên cả lượt. **24/25 bước PASS, 1 bước
+tự khai bỏ qua.**
+
+⚠️ **Và nó không thuần tuý là bằng chứng của `ltt_llm`.** Phiên `-9e` chỉ ra
+đúng: gate chạy **toàn kho**, nên lượt này kiểm luôn cả mã LTT VOICE vừa vào.
+Đó là điều tốt cho kho, nhưng khi đọc nó như bằng chứng cho chương trình audit
+thì phải biết nó rộng hơn phạm vi.
+
+⛔ Và bước `bat bien da tien trinh` **vẫn bỏ qua ở đường chạy thường** — nó chỉ
+chạy được qua `setup/chay_voi_env.ps1` dưới Scheduled Task/SYSTEM. Bằng chứng
+`test_214` 7 passed/134,61 s là **một lượt chạy tay**, không phải một bước gate.
+Dòng RESULT nói đúng điều đó, và đó là lý do nó được sửa để nói.
+
+### Ba lượt trước, và vì sao ghi lại cả ba
+
+| Lượt | Kết quả | Nguyên nhân |
+|---|---|---|
+| 1 | `FAIL (2/25)` + `CAY DA DOI` | `-e7` đang ghi template |
+| 2 | `FAIL (1/25)` | `test_344` — **tôi chẩn đoán sai**, xem dưới |
+| 3 | `FAIL (1/25)` | `kieu xuong dong` — `-9e` ghi `.ps1` bằng CRLF |
+| **4** | **`PASS`** | cả hai thả bút, hồ sơ sinh lại |
+
+⭐ Ghi cả bốn vì **ba lượt đầu không có lượt nào lỗi ở `ltt_llm`** — và nếu chỉ
+ghi lượt xanh thì mất đúng thứ đáng học: với ba phiên cùng cây, **phần khó không
+phải làm cho gate xanh, mà là tìm được một khoảnh khắc nó nói về cây hiện tại.**
+
+---
+
+## 6b. Ghi chú cũ (giữ lại vì lý do rút ra vẫn đúng)
+
 **Lượt gate đóng băng, 31/08 22:4x, cây đứng yên cả lượt:**
 
 ```

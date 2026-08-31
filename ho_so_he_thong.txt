@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7647e156c74a72fb376ead2d11c2c10bc27dc403cba942469826025c2b516546
-Nguồn đã quét : 1367 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:245a3d4a21347fec389c389afa65c2f98fa61d75f1fcca20e0f7ce7ea81e650d
+Nguồn đã quét : 1368 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1535,8 +1535,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1367 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:32, .py:1034, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1368 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:32, .py:1035, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2818,7 +2818,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (131)
+[tools] (132)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2859,6 +2859,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/check_i18n.py
 - tools/check_ky_tu_dieu_khien.py
 - tools/check_multiproc.py
+- tools/check_ps_bien_trung_tham_so.py
 - tools/check_sdk_contract.py
 - tools/check_server_routes.py
 - tools/check_silent_except.py
@@ -2960,7 +2961,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1367 file; 13622399 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1368 file; 13632676 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -166085,7 +166086,7 @@ exit 0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/chay_thu_ghi_danh.ps1
-SHA256=047da03e6f58b232c08151cf90962426290b2785d2bac0b5fc289dab2ce2e066 BYTES=2433 LINES=67
+SHA256=4ff2ec5d261e647986e6e1823686d3883be370f2e2ba991ff5c52dcdf38176e2 BYTES=2748 LINES=71
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -166136,8 +166137,12 @@ foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
     $d = $dong.Trim()
     if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
     $i = $d.IndexOf('=')
-    $ten = $d.Substring(0, $i).Trim()
-    if ($ten) { Set-Item -Path "Env:$ten" -Value $d.Substring($i + 1); $so++ }
+    # !! KHONG dat ten bien la $ten O DAY. PowerShell khong phan biet hoa
+    #    thuong, nen $ten va tham so -Ten LA MOT BIEN. Vong lap nay se ghi de
+    #    -Ten bang ten bien moi truong CUOI CUNG trong app.env, va giong duoc
+    #    tao ra mang ten "HF_HOME". Da xay ra that 31/08, hai luot lien.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
 }
 Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
 $env:PYTHONPATH = $Repo
@@ -166158,7 +166163,7 @@ exit $ma
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/chay_thu_giong.ps1
-SHA256=820af0a94ad94a3b1718ca6ab3c501742df18f739e397653d6a66016620b1b38 BYTES=2947 LINES=77
+SHA256=0598932bafea5651dbd4fe57a4b47b64c3e0944ae959acf1d47698346213f6ee BYTES=3340 LINES=82
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -166210,8 +166215,13 @@ foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
     $d = $dong.Trim()
     if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
     $i = $d.IndexOf('=')
-    $ten = $d.Substring(0, $i).Trim()
-    if ($ten) { Set-Item -Path "Env:$ten" -Value $d.Substring($i + 1); $so++ }
+    # !! Ten bien phai KHONG trung mot tham so nao cua chinh script. PowerShell
+    #    khong phan biet hoa thuong, nen mot vong lap dung $ten se ghi de tham
+    #    so -Ten bang bien moi truong CUOI CUNG trong app.env. Da xay ra that o
+    #    chay_thu_ghi_danh.ps1 ngay 31/08: giong duoc tao ra ten la "HF_HOME".
+    #    `tools/check_ps_bien_trung_tham_so.py` chot viec nay.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
 }
 Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
 
@@ -240042,7 +240052,7 @@ def test_doi_dieu_khoan_thi_phai_doi_phien_ban():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_344_ltt_voice_vo.py
-SHA256=bdb29499610e6013c9119c0ede883ee5871dd97d7de2a20616a1e66b23e38a13 BYTES=13294 LINES=272
+SHA256=0ffb88d3330909b31b084bcd117d55b5c28dd161c520b2e58b575597e71c084e BYTES=14451 LINES=294
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vỏ dùng chung của LTT Voice Studio — sáu tab, và tab đang mở phải SÁNG.
 
@@ -240126,6 +240136,23 @@ def test_khong_con_tab_nao_chua_xay():
         "vo.CHUA_XAY da go o P8; con lai la noi dung mo coi khong ai doc")
 
 
+class _RequestGia:
+    """Đủ hình dạng cho `ngu_canh`: một phiên ghi được.
+
+    ⛔ Từ khi `ngu_canh` phát `csrf_token`, nó **bắt buộc** cần một `request` thật
+       có `.session`. Phép kiểm này trước đó truyền `None` và vẫn xanh — vì lúc ấy
+       `ngu_canh` **không hề động đến `request`**, chính là lỗi P0 đã khiến mọi form
+       Voice render token rỗng trên production.
+
+    ⭐ Nên **không nới lỏng `ngu_canh` cho `None` đi qua** để phép kiểm xanh lại.
+       Làm thế là dựng lại đúng cái cửa đã cho lỗi đó lọt. Phép kiểm đổi, không
+       phải mã đổi.
+    """
+
+    def __init__(self):
+        self.session = {}
+
+
 def test_ngu_canh_bat_buoc_nav_key():
     """Không có mặc định cho `nav_key`.
 
@@ -240133,12 +240160,17 @@ def test_ngu_canh_bat_buoc_nav_key():
     — và sáng nhầm là loại lỗi không ai đi báo.
     """
     with pytest.raises(TypeError):
-        vo.ngu_canh(None, None)  # type: ignore[call-arg]
+        vo.ngu_canh(_RequestGia(), None)  # type: ignore[call-arg]
 
-    d = vo.ngu_canh(None, None, nav_key=vo.NAV_GIONG)
+    d = vo.ngu_canh(_RequestGia(), None, nav_key=vo.NAV_GIONG)
     assert d["nav"] == vo.NAV_GIONG
     # `base.html` đọc đúng khoá tên `nav`. Đổi tên khoá là gãy vỏ.
     assert "nav" in d and "manifest" in d and "hang_doi" in d
+    # 🔴 CHỐT CHÍNH LỖI P0: `ngu_canh` phải PHÁT token, không chỉ để chỗ trống.
+    #    Mọi khuôn mẫu Voice viết `value="{{ csrf_token }}"`; thiếu khoá này thì
+    #    Jinja render chuỗi rỗng, không cảnh báo, và **mọi POST trả 400**.
+    assert d.get("csrf_token"), (
+        "ngu_canh() khong phat csrf_token — moi form Voice se render value=\"\"")
 
 
 # ── 2 + 3. Đi qua router thật ────────────────────────────────────────────────
@@ -244756,7 +244788,7 @@ def test_khong_pha_doc_so_va_ngay():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_367_chon_doan_tham_chieu.py
-SHA256=901a32d1985b8cab23214aa1bcfa4bb990b4019ac4489fe94c57f911b3abd622 BYTES=14253 LINES=319
+SHA256=296ef3168f5b94941c51b62fc24e595fa12a3c57552540ab9388942f210a80c1 BYTES=17268 LINES=368
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Chọn đoạn tham chiếu tốt nhất trong clip dài — và hai lỗi bộ chọn đã mắc.
 
@@ -245077,6 +245109,55 @@ def test_diem_chat_luong_luon_NOI_RA_dang_dung_thang_nao():
 
     _, nguon = diem_chat_luong(_tieng(2.0), SR)
     assert nguon in ("dnsmos_ovrl", "snr_db"), f"nguon la {nguon!r}"
+
+
+def test_ket_qua_NOI_RA_thang_da_cham_chu_khong_chi_tinh_roi_vut():
+    """🔴 `diem_chat_luong` tính đúng tên thang rồi người gọi VỨT nó đi.
+
+    Docstring của `diem_chat_luong` hứa hẳn: *"không thì lui về SNR và **nói ra
+    là đã lui** — hai thang khác nhau không so được với nhau"*. Lời hứa đó đúng,
+    và đường ống không giao nó: `_moc_ben_vung` lấy `[0]` rồi bỏ `[1]`.
+
+    Hệ quả đo được trên production 31/08: báo cáo ghi danh thật có `diem_dai_dien`,
+    `snr_db`, `so_ung_vien`, `ly_do` — và **không cách nào** biết DNSMOS có chạy.
+    Phải mở venv của sidecar ra gọi tay mới biết (nó có chạy: OVRL 2,927).
+
+    ⛔ Vì sao đó không chỉ là bất tiện. `dnsmos.cham` trả `None` **im lặng** khi
+       thiếu `onnxruntime`, thiếu `scipy`, hoặc thiếu tệp model — ba thứ mà một
+       lần deploy hoàn toàn có thể làm rơi. Khi đó bộ chọn tụt về thang SNR, tức
+       tụt về đúng thứ ta đã bỏ vì *"SNR chỉ đo tương phản mức"*, và **không một
+       dòng nào ở đâu đổi**. Trường này là thứ duy nhất làm việc đó nhìn thấy.
+
+    ⭐ Cùng một hình dạng với ba lỗi khác cùng ngày: cơ chế cho phép dùng sai
+       trong im lặng. Ở đây thậm chí lời cảnh báo đã được viết sẵn — chỉ là chưa
+       ai nối dây cho nó tới được người đọc.
+    """
+    from voice_sidecar import chon_doan
+
+    kq = chon_doan.chon(_clip_ba_vung(), SR, bo_ma_hoa=_ma_hoa_gia)
+    assert kq.da_chon_that, "clip nay phai chon duoc — kiem tra lai fixture"
+    assert kq.thang_chat_luong in ("dnsmos_ovrl", "snr_db"), (
+        f"thang_chat_luong = {kq.thang_chat_luong!r}. Bao cao phai noi da cham "
+        f"bang thang nao, neu khong mot lan tut ve SNR se khong ai thay.")
+
+
+def test_khong_do_duoc_SNR_phai_la_None_chu_khong_phai_khong_do():
+    """🔴 `round(x or 0.0, 2)` biến "không đo được" thành "đo được, bằng 0".
+
+    Đã xảy ra thật: lượt ghi danh production 31/08 báo `"snr_db": 0.0`. Đọc lên
+    giống một bản thu tệ đến mức tiếng bằng nền. Sự thật khác hẳn — clip do TTS
+    sinh nên khoảng lặng là **số 0 tuyệt đối**, `_snr_db` trả `None` đúng như nó
+    phải làm (SNR so với im lặng tuyệt đối không có nghĩa), và `or 0.0` nuốt mất
+    chữ *"không biết"* rồi thay bằng một con số trông như một phép đo.
+
+    ⛔ Cách sửa SAI là làm `_snr_db` trả 0 hay -99 cho đủ kiểu. `None` là câu
+       trả lời đúng; việc của tầng báo cáo là chở nó đi chứ không phải lấp nó.
+    """
+    from voice_sidecar.chon_doan import _lam_tron
+
+    assert _lam_tron(None) is None, "None phai di qua nguyen ven"
+    assert _lam_tron(0.0) == 0.0, "mot phep do bang 0 that thi van la 0"
+    assert _lam_tron(12.3456) == 12.35
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -264526,6 +264607,144 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_ps_bien_trung_tham_so.py
+SHA256=1c1abfd2155a99365219fdf7e7ed2b483d458c95171a35422159572143797072 BYTES=4977 LINES=132
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+check_ps_bien_trung_tham_so.py — bien cuc bo trong .ps1 KHONG duoc trung ten mot
+tham so cua chinh script do.
+
+    python tools\check_ps_bien_trung_tham_so.py
+
+## Vi sao co tep nay
+
+PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script chi la
+mot bien binh thuong trong pham vi script. Nen mot vong lap gan `$ten` se **ghi
+de** tham so `-Ten` — khong loi, khong canh bao, khong dau vet.
+
+Da xay ra that ngay 31/08/2026 trong `setup/chay_thu_ghi_danh.ps1`: vong lap nap
+`app.env` dat `$ten` cho tung ten bien moi truong, nen sau vong lap `$Ten` mang
+gia tri `HF_HOME` — bien cuoi cung trong tep. Hai luot ghi danh lien tao ra giong
+mang ten "HF_HOME", va luot thu hai chet vi rang buoc duy nhat `(owner_id, ten)`.
+
+⭐ Vi sao mot phep kiem tinh chu khong phai "nho dat ten cho khac": no hong theo
+   kieu khong ai nghi den. Nguoi doc thay `$ten` trong mot vong lap 3 dong va
+   thay `$Ten` trong khoi `param()` cach do 30 dong, va **khong co gi noi chung
+   la mot**. Chinh vi khoang cach do ma mat thuong khong bat duoc.
+
+## Luat chinh xac: KHONG gan tham so BEN TRONG mot vong lap
+
+⛔ Phep kiem nay khong doc duoc y dinh, nen no khong hoi "ban co dinh gan tham
+   so khong". No hoi mot cau HEP hon va tra loi duoc: **co gan trong than mot
+   vong lap khong.**
+
+   Lan chay dau tien lam ro vi sao phai hep the. No bao do `setup/cai_dich_vu_giong.ps1`:
+
+       if (-not $VenvRoot) { $VenvRoot = $env:LTT_VOICE_VENV_ROOT }
+
+   Do la thanh nguoi ta dien GIA TRI MAC DINH cho mot tham so — dung han, va rat
+   pho bien. Mot phep kiem bao dong o do se bi tat di trong mot tuan, va keo theo
+   ca truong hop that.
+
+⭐ Vong lap la thu tao ra khac biet. Loi that can SU LAP: `$ten` bi gan lai moi
+   vong, nen sau vong lap no mang gia tri cua **luot cuoi**, chang lien quan gi
+   toi thu tham so dinh mang. Ngoai vong lap, mot phep gan `$Ten = ...` nam ngay
+   truoc mat va doc len dung nhu no lam.
+
+   Nen: gan tham so ngoai vong lap = duoc. Trong vong lap = phai doi ten bien.
+   That su muon doi tham so tu mot vong lap thi tinh vao mot bien khac roi gan
+   mot lan sau khi vong lap ket thuc.
+"""
+from __future__ import annotations
+
+import io
+import re
+import sys
+from pathlib import Path
+
+if hasattr(sys.stdout, "buffer"):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
+                                  errors="replace", line_buffering=True)
+
+GOC = Path(__file__).resolve().parents[1]
+THU_MUC = ("setup", "deploy", "tools")
+
+#: `[string]$Ten = '...'` hay `[int]$ChoGiay,` trong khoi param().
+_THAM_SO = re.compile(r"^\s*(?:\[[^\]]+\]\s*)*\$([A-Za-z_]\w*)\s*(?:=|,|\)|$)")
+#: Mot phep GAN — `$ten = ...`. Khong tinh viec doc `$ten`.
+_GAN = re.compile(r"^\s*\$([A-Za-z_]\w*)\s*=[^=]")
+#: Mo dau mot vong lap. `do` co than `{...}` truoc `while`/`until`.
+_VONG_LAP = re.compile(r"(^|[^\w-])(foreach|for|while|do)\s*[({]", re.I)
+
+
+def _tham_so(dong: list[str]) -> tuple[set[str], int]:
+    """Ten tham so (thuong hoa) + dong ket thuc khoi `param(`."""
+    ten, trong, sau = set(), False, 0
+    for i, d in enumerate(dong):
+        if not trong:
+            if re.match(r"^\s*param\s*\(", d, re.I):
+                trong = True
+            continue
+        if re.match(r"^\s*\)", d):
+            return ten, i
+        m = _THAM_SO.match(d)
+        if m:
+            ten.add(m.group(1).lower())
+        sau = i
+    return ten, sau
+
+
+def kiem(tep: Path) -> list[str]:
+    dong = tep.read_text(encoding="utf-8", errors="replace").splitlines()
+    tso, het = _tham_so(dong)
+    if not tso:
+        return []
+    loi, sau, muc_vong = [], 0, []
+    for i, d in enumerate(dong[het + 1:], start=het + 2):
+        tho = re.sub(r"#.*$", "", d)
+        cho_vong = bool(_VONG_LAP.search(tho))
+
+        m = _GAN.match(d)
+        if m and m.group(1).lower() in tso and muc_vong:
+            loi.append(f"{tep.relative_to(GOC)}:{i}: gan ${m.group(1)} trong "
+                       f"than vong lap — trung tham so cua chinh script, va "
+                       f"PowerShell khong phan biet hoa thuong")
+
+        # Dem ngoac SAU khi cham, de mot dong `foreach (...) {` tinh la mo vong.
+        for c in tho:
+            if c == "{":
+                sau += 1
+                if cho_vong:
+                    muc_vong.append(sau)
+                    cho_vong = False
+            elif c == "}":
+                if muc_vong and muc_vong[-1] == sau:
+                    muc_vong.pop()
+                sau = max(0, sau - 1)
+    return loi
+
+
+def main() -> int:
+    loi = []
+    for tm in THU_MUC:
+        for tep in sorted((GOC / tm).rglob("*.ps1")):
+            loi += kiem(tep)
+    if loi:
+        print("BIEN CUC BO TRUNG TEN THAM SO:")
+        for d in loi:
+            print(f"  {d}")
+        print("\nDoi ten bien cuc bo. Xem docstring cua tep nay.")
+        return 1
+    print("[OK] khong tep .ps1 nao gan de len tham so cua chinh no "
+          "tu trong mot vong lap")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_sdk_contract.py
 SHA256=e0d40e0f93e06125ffb88fc8f04e388cdf2848b711743ea7cb3eba5640b866f3 BYTES=4930 LINES=124
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -268790,7 +269009,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=46f8862dc2a1f0dcec157d2c8e0d371c70fb66290efe18a4aa1fa5c8f15e1582 BYTES=41269 LINES=760
+SHA256=b039fdd63eb2cb422f6e48edee5b12eff17ff3157b275112e14c95414d5fdb58 BYTES=41689 LINES=766
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -269000,6 +269219,12 @@ def _steps(quick: bool) -> list[Step]:
         # Banh coc: khong cho THEM cho nuot loi lang le. Xem
         # tools/check_silent_except.py vi sao khong doi ve 0 ngay.
         Step("nuot loi lang le", [sys.executable, "tools/check_silent_except.py"], ROOT),
+        # PowerShell khong phan biet hoa thuong o ten bien, va tham so cua script
+        # chi la mot bien thuong. Nen mot vong lap gan `$ten` ghi de tham so
+        # `-Ten` — khong loi, khong canh bao. Da xay ra 31/08/2026: giong tao ra
+        # mang ten "HF_HOME", bien cuoi cung trong app.env.
+        Step("bien .ps1 trung tham so",
+             [sys.executable, "tools/check_ps_bien_trung_tham_so.py"], ROOT),
         # Banh coc: khong cho THEM so tep test bi trung. Do 23/08/2026: 24 so dang
         # trung, co so mang BA tep. Nguyen nhan la nhieu phien lam viec song song,
         # moi phien chon so tiep theo theo thu no nhin thay luc bat dau. Buoc nay

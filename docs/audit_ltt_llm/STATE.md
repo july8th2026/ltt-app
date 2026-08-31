@@ -25,9 +25,9 @@
 ## Frozen baseline
 - **Baseline commit:** `2ed62d7` (+ WIP của `-e7`, chưa commit)
 - **Baseline test artifact:** `gate.py` → `RESULT: PASS` (00, cây yên)
-- **Đóng băng cuối (07):** `RESULT: FAIL (1/25)` — 24/25 xanh; bước đỏ chứa 3
-  lỗi, **không lỗi nào thuộc `ltt_llm`** (1 của `-e7` chỉ đỏ khi song song,
-  2 là hồ sơ dẫn xuất cũ vì ba phiên vẫn ghi). Cây **đứng yên** cả lượt
+- **Đóng băng cuối (07): ✅ `RESULT: PASS`** — 24/25 PASS + 1 bước **tự khai
+  bỏ qua** (`bat bien da tien trinh`). **Không** có dòng `CAY DA DOI`.
+  ⚠️ Gate chạy toàn kho ⇒ lượt này rộng hơn phạm vi `ltt_llm`
 - **Bằng chứng bổ sung ngoài gate:** `test_214` (bất biến đa tiến trình) —
   **7 passed / 134,61 s**, chạy qua `chay_voi_env.ps1 -Viec cong-daluong` dưới
   Scheduled Task/SYSTEM. Đây là **lần đầu tiên** nó chạy trên máy này.
