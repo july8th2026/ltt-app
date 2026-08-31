@@ -19,7 +19,7 @@ import tempfile
 
 from platform_core.i18n import _ as _t
 
-from .features import DangBanTam, LoiGiongNoi  # noqa: F401 (giữ tên cho chỗ import)
+from .features import DangBanTam, LoiGiongNoi, LoiHaTang  # noqa: F401 (giữ tên cho chỗ import)
 from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
 
 log = logging.getLogger(__name__)
@@ -214,7 +214,13 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
         except sidecar_client.SidecarBan as e:
             raise DangBanTam(retry_after_s=e.retry_after_s) from e
         except sidecar_client.LoiSidecar as e:
-            raise LoiGiongNoi(_t("Không ghi danh được giọng. Vui lòng thử lại.")) from e
+            # ⛔ `LoiHaTang`, KHÔNG phải `LoiGiongNoi` — cùng lỗi đã sửa ở
+            #    `features._goi_va_dich_loi` (09b5ab6), và bản sửa đó BỎ SÓT chỗ
+            #    này. `LoiGiongNoi` kế thừa `LoiNguoiGoi` nên nền tảng không thử
+            #    lại, trong khi thông điệp hứa với khách là "vui lòng thử lại".
+            #    Cổng giọng khởi động lại sau deploy ⇒ mọi lượt ghi danh đang
+            #    bay hỏng vĩnh viễn thay vì được xếp lại vài giây sau.
+            raise LoiHaTang(_t("Không ghi danh được giọng. Vui lòng thử lại.")) from e
     finally:
         try:
             os.unlink(tmp.name)
@@ -223,6 +229,16 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
 
     khoa, vt = tham_chieu.luu_bieu_dien(owner_id=owner_id, public_id=public_id,
                                         ref_b64=kq["ref_b64"])
+
+    # ⭐ Hồ sơ chọn đoạn đi thẳng ra kết quả job: khách quay lại hỏi "sao giọng
+    #    nghe không giống tôi" thì đây là thứ trả lời được — ta đã lấy đoạn nào
+    #    trong clip của họ, và vì sao. Không có nó thì phép chọn là một phỏng
+    #    đoán chạy ngầm, đúng lớp lỗi cả app này đi sửa.
+    #
+    # ⚠️ Đây là để HIỆN, không phải để đối chất: `job_content.purge_expired` dọn
+    #    `result = {}` sau 30 ngày. Bằng chứng cần sống lâu hơn thì phải nằm ở
+    #    một cột trong bảng của app.
+    chon = kq.get("chon_doan") or {}
 
     def _ghi(db):
         from .tables import VoiceProfile, VoiceRepr
@@ -250,4 +266,5 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
         "emb_dim": kq.get("emb_dim"),
         "credit_cost": gia.CREDIT_GHI_DANH,
         "phien_ban_gia": gia.PHIEN_BAN_GIA,
+        "chon_doan": chon,
     }

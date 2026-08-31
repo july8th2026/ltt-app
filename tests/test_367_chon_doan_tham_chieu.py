@@ -179,3 +179,72 @@ def test_cua_so_doc_tu_SDK_chu_khong_go_lai():
     assert CUA_SO_S == pytest.approx(8.0), (
         f"CUA_SO_S = {CUA_SO_S}. Neu upstream that su doi con so nay thi cap "
         f"nhat phep kiem; neu khong thi mot cho nao do da go cung sai.")
+
+
+# ═══════════════════════════════════ nối vào đường ghi danh ═════════════════
+
+def test_chon_hong_thi_DUNG_NGUYEN_CLIP_chu_khong_nem(tmp_path):
+    """⛔ Một bước tối ưu không được thêm một đường hỏng mới.
+
+    `_chon_doan_tham_chieu` chạy trong venv giọng và cần `soundfile`. Ở venv nền
+    tảng (nơi phép kiểm này chạy) không có nó — nên đây đúng là ca "chọn hỏng",
+    và nó phải lui về **nguyên tệp gốc**, không được ném lên trên.
+    """
+    from voice_sidecar.engine import CongGiong
+
+    tep = tmp_path / "x.wav"
+    tep.write_bytes(b"RIFF____WAVEfmt ")      # không phải wav hợp lệ
+    duong, ho_so = CongGiong._chon_doan_tham_chieu(None, str(tep))
+
+    assert duong == str(tep), "chon hong ma khong tra ve tep goc"
+    assert ho_so["da_chon"] is False
+    assert ho_so.get("ly_do"), "phai noi vi sao khong chon duoc"
+
+
+def test_ghi_danh_luon_bao_ve_ho_so_chon():
+    """Kết quả ghi danh phải mang `chon_doan` — không có nó thì phép chọn là một
+    phỏng đoán chạy ngầm, đúng lớp lỗi cả app này đi sửa."""
+    import inspect
+
+    from voice_sidecar.engine import CongGiong
+
+    ma = inspect.getsource(CongGiong.ghi_danh)
+    assert '"chon_doan"' in ma, (
+        "`ghi_danh` khong tra ve `chon_doan`. Khach hoi 'sao giong khong giong "
+        "toi' thi khong co gi tra loi ho da lay doan nao.")
+    assert "_chon_doan_tham_chieu" in ma, "chua goi bo chon truoc khi enroll"
+
+
+def test_tep_tam_cua_bo_chon_duoc_don(tmp_path):
+    """Đoạn đã chọn ghi ra một tệp tạm — quên xoá là rò một tệp mỗi lượt ghi danh."""
+    import inspect
+
+    from voice_sidecar.engine import CongGiong
+
+    ma = inspect.getsource(CongGiong.ghi_danh)
+    assert "finally:" in ma and "unlink" in ma, (
+        "tep tam cua bo chon phai duoc xoa trong `finally` — mot lan enroll "
+        "hong giua chung khong duoc de lai rac")
+
+
+def test_ghi_danh_dich_loi_HA_TANG_dung_lop():
+    """🔴 Bản sửa 09b5ab6 BỎ SÓT chỗ này.
+
+    `_ghi_danh` cũng dịch `LoiSidecar` thành `LoiGiongNoi` — tức `LoiNguoiGoi`,
+    tức nền tảng **không thử lại** — trong khi thông điệp hứa "vui lòng thử lại".
+    Mỗi lần deploy khởi động lại cổng giọng, mọi lượt ghi danh đang bay hỏng
+    vĩnh viễn thay vì được xếp lại vài giây sau.
+    """
+    import inspect
+
+    from apps.ltt_voice import jobs
+
+    ma = inspect.getsource(jobs._ghi_danh)
+    i = ma.find("except sidecar_client.LoiSidecar")
+    assert i > 0, "mat nhanh xu ly LoiSidecar trong _ghi_danh"
+    nhanh = "\n".join(d for d in ma[i:].splitlines()
+                      if not d.lstrip().startswith("#"))[:400]
+    assert "raise LoiHaTang(" in nhanh, (
+        "nhanh `LoiSidecar` cua `_ghi_danh` phai nem `LoiHaTang`. Nem "
+        "`LoiGiongNoi` la noi voi khach 'vui long thu lai' roi tu quyet khong "
+        "thu lai.")

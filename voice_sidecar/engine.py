@@ -24,6 +24,7 @@ import base64
 import io
 import logging
 import os
+import tempfile
 import threading
 import time
 
@@ -300,13 +301,61 @@ class CongGiong:
         self.nap()
         with self.cong:
             t0 = time.perf_counter()
-            emb, codes = self._tts.encode_reference(duong_wav, denoise=denoise)
+            # 🔴 CHỌN ĐOẠN TRƯỚC KHI SDK CẮT MÙ.
+            #
+            #    `prepare_reference` lấy 8 giây ĐẦU và vứt phần còn lại. Ta có
+            #    cả clip nên chọn được đoạn đại diện nhất rồi đưa nó đúng đoạn
+            #    ấy. Xem `chon_doan.py` cho hàm mục tiêu và nguồn.
+            #
+            # ⛔ Không bao giờ tệ hơn hôm nay: chọn hỏng thì dùng nguyên tệp gốc,
+            #    tức đúng hành vi cũ. Một bước tối ưu KHÔNG được thêm một đường
+            #    hỏng mới vào chỗ trước đây vẫn chạy.
+            duong_dung, ho_so_chon = self._chon_doan_tham_chieu(duong_wav)
+            try:
+                emb, codes = self._tts.encode_reference(duong_dung, denoise=denoise)
+            finally:
+                if duong_dung != duong_wav:
+                    try:
+                        os.unlink(duong_dung)
+                    except OSError:
+                        pass
             return {
                 "ref_b64": dong_goi_ref(emb, codes),
                 "emb_dim": int(np.asarray(emb).size),
                 "so_codes": (0 if codes is None else int(np.asarray(codes).size)),
                 "giay": time.perf_counter() - t0,
+                "chon_doan": ho_so_chon,
             }
+
+    def _chon_doan_tham_chieu(self, duong_wav: str) -> tuple:
+        """`(đường dẫn để enroll, hồ sơ chọn)`. Hỏng thì trả nguyên tệp gốc."""
+        try:
+            import soundfile as sf
+
+            from . import chon_doan
+
+            wav, sr = sf.read(duong_wav, dtype="float32", always_2d=False)
+            if getattr(wav, "ndim", 1) > 1:
+                wav = wav.mean(axis=1)
+            kq = chon_doan.chon(np.asarray(wav, dtype=np.float32), int(sr))
+            if not kq.da_chon_that:
+                return duong_wav, {"da_chon": False, "ly_do": kq.ly_do}
+
+            a = int(kq.bat_dau_s * sr)
+            b = min(len(wav), int(kq.ket_thuc_s * sr))
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            tmp.close()
+            sf.write(tmp.name, np.asarray(wav[a:b], dtype=np.float32), int(sr))
+            return tmp.name, {
+                "da_chon": True,
+                "bat_dau_s": kq.bat_dau_s, "ket_thuc_s": kq.ket_thuc_s,
+                "goc_giay": round(len(wav) / float(sr), 2),
+                "diem_dai_dien": kq.diem_dai_dien, "snr_db": kq.snr_db,
+                "so_ung_vien": kq.so_ung_vien, "ly_do": kq.ly_do,
+            }
+        except Exception as e:      # noqa: BLE001 - chon hong KHONG duoc lam hong ghi danh
+            log.warning("chon doan tham chieu hong, dung nguyen clip: %s", e)
+            return duong_wav, {"da_chon": False, "ly_do": f"loi: {type(e).__name__}"}
 
     # ── công bố ──────────────────────────────────────────────────────────────
     def nang_luc(self) -> dict:
