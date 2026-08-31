@@ -161,7 +161,8 @@ class TrongTai:
                  dem_python_gpu: Callable[[], Optional[int]] = _dem_python_gpu_mac_dinh,
                  ram_trong_gb: Callable[[], Optional[float]] = _ram_trong_gb_mac_dinh,
                  tai_gpu: Callable[[], Optional[int]] = _tai_gpu_mac_dinh,
-                 tai_dang_tinh: int = TAI_GPU_DANG_TINH):
+                 tai_dang_tinh: int = TAI_GPU_DANG_TINH,
+                 model_cua_ta_dang_chay: Callable[[], bool] = lambda: False):
         self.ram_toi_thieu = ram_trong_toi_thieu_gb
         self.bat = bat
         self.tran_python_gpu = tran_python_gpu
@@ -169,6 +170,9 @@ class TrongTai:
         self._ram = ram_trong_gb
         self._tai = tai_gpu
         self.tai_dang_tinh = tai_dang_tinh
+        #: Model CUA TA co dang nap va san sang khong. Mac dinh `False` de giu
+        #: nguyen hanh vi cu khi ben goi khong noi day — xem `phan_xu`.
+        self._model_cua_ta = model_cua_ta_dang_chay
 
     def phan_xu(self) -> PhanXu:
         if not self.bat:
@@ -197,6 +201,38 @@ class TrongTai:
         if n >= 1:
             tai = self._tai()
             if tai is not None and tai >= self.tai_dang_tinh:
+                # 🔴 TẢI CAO CỦA CHÍNH TA KHÔNG PHẢI TẢI CỦA NGƯỜI KHÁC.
+                #
+                #    `llama-server.exe` **không phải python** nên nó không bị
+                #    đếm ở `n`. Nhưng khi nó đang sinh chữ, card lên 89–100 % —
+                #    và nhánh trên quy mức tải ấy cho **ComfyUI**, cái python duy
+                #    nhất được đếm. ComfyUI lúc đó đang ngồi im.
+                #
+                # ⛔ Đo 31/08, hai lượt độc lập: **14/20 = 70 %** yêu cầu bị từ
+                #    chối oan. Máy khoẻ, model sẵn sàng, ComfyUI im — và cổng vẫn
+                #    trả 429 vì nó thấy tải do **chính nó** tạo ra. Mọi lượt đều
+                #    thành công khi thử lại.
+                #
+                # 🔴 Với khách thật, triệu chứng là: một client tuần tự (Codex,
+                #    Claude Code — hỏi, đọc, hỏi tiếp) ngẫu nhiên nhận
+                #    `503 model is busy` vì GPU còn nóng từ **lượt trước của
+                #    chính họ**, và không có cách nào phân biệt với "máy B bận
+                #    thật".
+                #
+                # ⭐ Vì sao điều kiện là "model của ta đang chạy" chứ không phải
+                #    một ngưỡng tải khác: nhánh này sinh ra để tránh **NẠP** model
+                #    đè lên việc người khác — chính câu cuối của thông điệp nói
+                #    thế. Model đã nạp rồi thì **không có gì để nạp**, nên lý do
+                #    tồn tại của nhánh đã hết.
+                #
+                # ⚠️ Cái giá, nói thẳng: nếu model ta đã nạp **và** ComfyUI bắt
+                #    đầu vẽ thật, ta sẽ không còn từ chối. Chấp nhận được vì
+                #    `--reserve-vram 3` đã có và VRAM của ta ổn định ở 22,4 GB;
+                #    đổi lại là chấm dứt 70 % lượt từ chối oan.
+                if self._model_cua_ta():
+                    return PhanXu(ban=False, so_python_gpu=n, ram_trong_gb=ram,
+                                  ly_do=(f"tai GPU {tai}% nhung model cua ta dang "
+                                         f"chay — tai nay la CUA TA"))
                 return PhanXu(ban=True, so_python_gpu=n, ram_trong_gb=ram,
                               ly_do=(f"co tien trinh python tren card va tai GPU "
                                      f"{tai}% (>= {self.tai_dang_tinh}%) — dang ve, "

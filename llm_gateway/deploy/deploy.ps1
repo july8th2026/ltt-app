@@ -91,6 +91,34 @@ Buoc "3. Cau hinh llama-swap"
 if ($LASTEXITCODE -ne 0) { Loi "scp llama-swap.yaml that bai"; exit 1 }
 Dat "llama-swap.yaml"
 
+# !! CHEP MOT TEP CAU HINH MA KHONG RESTART THI TEP AY KHONG PHAI CAU HINH.
+#
+#    `llama-swap` doc cau hinh MOT LAN luc khoi dong. Tep moi nam tren dia BAT
+#    DONG cho toi khi co thu khac restart dich vu - co the vai ngay sau, va khi
+#    do no co hieu luc AM THAM, khong ai cho doi.
+#
+#    Do 31/08: tep tren dia ghi luc 18:37 mo ta "input public 65K", tien trinh
+#    llama-swap khoi dong luc 18:34, va `/running` van bao "90K". Ba con so, hai
+#    su that khac nhau, khong mot dong canh bao nao.
+#
+# ! Script nay KHONG tu restart. `llama-swap` restart la unload model, va mot
+#    lan unload giua gio phuc vu la mot quyet dinh van hanh chu khong phai mot
+#    buoc phu cua deploy. Nhung IM LANG thi khong chap nhan duoc - nen no PHAT
+#    HIEN va NOI.
+$tuoiSwap = ChayTrenB "powershell -NoProfile -Command \"$p=Get-Process llama-swap -EA SilentlyContinue ^| Select-Object -First 1; if ($p) { $p.StartTime.ToString('yyyy-MM-ddTHH:mm:ss') } else { 'KHONG_CHAY' }\""
+$tuoiSwap = ($tuoiSwap -join "").Trim()
+if ($tuoiSwap -and $tuoiSwap -ne "KHONG_CHAY") {
+    try {
+        $batDau = [datetime]::Parse($tuoiSwap)
+        if ($batDau -lt (Get-Date).AddMinutes(-1)) {
+            Canh "llama-swap dang chay tu $tuoiSwap - CAU HINH VUA CHEP CHUA CO HIEU LUC."
+            Note "    Cau hinh dang chay van la ban CU. De ap ban moi:"
+            Note "      Restart-Service LTTLlamaSwap    (tren may B - se UNLOAD model)"
+            Note "    Neu chi doi ma cong (khong doi llama-swap.yaml) thi bo qua dong nay."
+        }
+    } catch { Canh "khong doc duoc thoi diem khoi dong cua llama-swap: $tuoiSwap" }
+}
+
 # --- 4. venv -------------------------------------------------------------------
 if (-not $BoQuaVenv) {
     Buoc "4. venv + thu vien"

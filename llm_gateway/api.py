@@ -63,8 +63,15 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     if la:
         log.warning("LTT_LLM_MODELS co ten khong khop ho so nao: %s", ", ".join(la))
 
+    # ⭐ `model_cua_ta_dang_chay` noi cho trong tai biet tai cao tren card la CUA
+    #    TA hay cua nguoi khac. `_co_model_cua_ta_dang_chay` dinh nghia ben duoi;
+    #    lambda giai ten luc GOI, nen thu tu dinh nghia khong thanh van de.
+    #
+    # ⛔ Va no duoc goi LUOI — chi khi nhanh tai thuc su can den, xem `phan_xu`.
+    #    Goi `/running` moi yeu cau la them mot vong loopback vao duong nong.
     tt = trong_tai if trong_tai is not None else TrongTai(
-        ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, bat=cfg.trong_tai_bat)
+        ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, bat=cfg.trong_tai_bat,
+        model_cua_ta_dang_chay=lambda: _co_model_cua_ta_dang_chay())
 
     gh = gioi_han if gioi_han is not None else GioiHan(
         max_dong_thoi=cfg.max_dong_thoi, rpm=cfg.rpm, now=now)

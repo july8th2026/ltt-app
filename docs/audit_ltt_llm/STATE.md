@@ -4,8 +4,8 @@
 > chi tiết nằm ở `reports/`, không paste log vào đây.
 
 ## Program
-- **Current phase:** 04 — Qwen Quality & Performance (XONG)
-- **Last completed phase:** 00 → 03 → 04
+- **Current phase:** 06 — Reliability/Deployment (**MỘT PHẦN** — hai CHANGE đã thi hành, F01–F28 chưa xong)
+- **Last completed phase:** 00 → 03 → 04 → (06 một phần)
 - **Repo revision / branch:** `2ed62d7` → nhánh `admin-mvp-v3`
   *(cây có 38 tệp chưa commit lúc chạy baseline — 34 của phiên `-e7`, xem §WIP)*
 - **Machine A:** `DESKTOP-H9AGFUQ` · 192.168.2.17 · Python 3.13.12 ·
@@ -105,6 +105,8 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | D-04-2 | 04 | Trọng tài quy tải của **chính ta** thành của người khác | **CHANGE → 06** | 70 % lượt bị từ chối oan (14/20), đo hai lần độc lập |
 | D-04-6 | 04 | Nâng llama.cpp b10689→b10717 | **DEFER** | 6/28 commit liên quan, nhưng thiếu mốc `--lan 5` + rollback đã thử |
 | D-04-8 | 04 | Thượng nguồn không gửi `usage` trong SSE | **DEFER → 05** | Làm decode tok/s thành **ước**, không phải đo |
+| D-06-1 | 06 | Trọng tài bỏ qua nhánh tải khi **model của ta** đang chạy | **CHANGE — ĐÃ LÀM** | A/B đo được: 429 lần-đầu **9/12 → 0/12**; chất lượng 12/12 không đổi |
+| D-06-2 | 06 | `deploy.ps1` phát hiện cấu hình chưa có hiệu lực | **CHANGE — ĐÃ LÀM** | Không tự restart (unload model là quyết định vận hành), nhưng **không im lặng** |
 
 ## Changes kept
 
@@ -113,6 +115,9 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | 00 | `gate.py` ba trạng thái `PASS/BOQUA/LOI` + dòng RESULT tự khai | `tools/gate.py` | `test_365` 10 phép kiểm; thấy `[BOQUA]` trong lượt gate thật | git revert |
 | 00 | Cầu hẹp chạy việc kiểm với env production | `setup/chay_voi_env.ps1` | `test_214` 7 passed | xoá tệp |
 | 00 | Ba phép kiểm đổi từ **đếm ký tự** sang **quan hệ cú pháp** | `test_362` · `test_365` | 22 phép kiểm xanh | git revert |
+| 04 | Bộ đánh giá chất lượng + bộ đo hiệu năng | `tools/danh_gia_llm.py` · `tools/bench_llm_hieu_nang.py` | 12/12 trên 8 chiều | xoá tệp |
+| 06 | Trọng tài phân biệt tải của ta | `llm_gateway/trong_tai.py` · `api.py` | `test_366` 8 phép kiểm + A/B 9/12→0/12 | git revert + deploy lại |
+| 06 | `deploy.ps1` nói khi cấu hình chưa có hiệu lực | `llm_gateway/deploy/deploy.ps1` | cú pháp 5.1 OK, thuần ASCII | git revert |
 
 ## Benchmark summary
 
@@ -132,16 +137,16 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 
 | Domain | Trọng số | Điểm | Confidence |
 |---|---:|---:|---|
-| Correctness & invariants | 20 | 15 | MEDIUM *(−1: trọng tài từ chối oan)* |
+| Correctness & invariants | 20 | 17 | **HIGH** *(trọng tài đã sửa, A/B đo được)* |
 | Money/admission/failure semantics | 15 | 13 | HIGH *(INV-001/003/004 có bằng chứng sống)* |
 | Model quality & tool/context fidelity | 15 | **12** | **HIGH** — 12/12, chấm bằng chạy thật |
 | Performance/resource efficiency | 15 | **11** | **HIGH** — có mốc, khớp số lịch sử |
-| Reliability/recovery | 10 | 8 | **HIGH** *(Prompt 03)* |
+| Reliability/recovery | 10 | 8 | HIGH *(F01–F28 phần lớn chưa chạy)* |
 | Security boundaries | 10 | 9 | **HIGH** *(Prompt 03)* |
 | Observability/operations | 5 | 4 | MEDIUM |
 | Tests/evidence/reproducibility | 5 | 5 | HIGH |
 | Maintainability/SSOT/deployment | 5 | 4 | MEDIUM |
-| **TOTAL** | **100** | **78** | **MEDIUM-HIGH** *(69 → 71 → **78**)* |
+| **TOTAL** | **100** | **80** | **MEDIUM-HIGH** *(69 → 71 → 78 → **80**)* |
 
 ⛔ **69 không phải "hệ thống tệ".** Phần lớn điểm trừ nằm ở **thiếu phép đo**, không ở
 hỏng đã biết: G5 không có bộ đánh giá nào, và mọi số hiệu năng đều `PENDING LIVE`.
@@ -151,7 +156,8 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 
 | P | Risk | Phase | Cần bằng chứng gì | Status |
 |---|---|---|---|---|
-| P1 | 🔴 **Trọng tài GPU từ chối oan 70 % lượt** — nhận nhầm tải của chính ta thành của ComfyUI | **06** | phương án (a) đã chọn, cần A/B + deploy | **OPEN** |
+| ~~P1~~ | Trọng tài GPU từ chối oan 70 % lượt | 06 | **A/B: 9/12 → 0/12 bị 429, chất lượng 12/12 không đổi.** Đã deploy | **ĐÓNG** |
+| ~~P2~~ | `deploy.ps1` im lặng về cấu hình chưa có hiệu lực | 06 | nay phát hiện + nói, không tự restart | **ĐÓNG** |
 | ~~P1~~ | G5 không có chủ sở hữu | 04 | `tools/danh_gia_llm.py` — 12/12 | **ĐÓNG** |
 | P2 | Vision **đang bán** mà chưa có bài đánh giá nào | 05 | thêm bài vision vào bộ đề | OPEN |
 | P2 | `65K` chết tới tay khách qua `/v1/models` | 01 | sửa 6 chỗ + một nguồn chân lý | OPEN |
@@ -171,8 +177,9 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
 ## Next phase
-- **Prompt:** `01_MACHINE_A_CORE_CONTEXT_CONTRACT.md`
-- **Must read:** `reports/03` · `reports/04` · `apps/ltt_llm/ngan_sach.py`
-- **Questions:** `test_334` có phủ `DONG_THOI_MAY_B` không? metadata cũ ở
-  `manifest.py:30` (`65K`)?
+- **Prompt:** `01_MACHINE_A_CORE_CONTEXT_CONTRACT.md` → rồi `02`, `05`, phần còn
+  lại của `06`, `07`
+- 🔴 **Prompt 08 phải do PHIÊN KHÁC chạy** — gói gọi nó là *independent final
+  acceptance*; một phiên thi hành 00–07 rồi tự nghiệm thu thì "independent" chỉ
+  còn là trang trí.
 - **Do not disturb:** WIP của `-e7`; `apps/ltt_voice/**`
