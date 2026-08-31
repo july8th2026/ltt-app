@@ -232,6 +232,33 @@ if (($co -join "") -match "CO") {
     Write-Host "    ssh -i $Khoa $User@$MayB ""findstr LTT_LLM_TOKEN $envDir\gateway.env""" -ForegroundColor Yellow
 }
 
+# --- 5b. Siet ACL cua tep bi mat -----------------------------------------------
+#
+# ! Ra soat F21 ngay 01/09: `gateway.env` cho `BUILTIN\Users` quyen doc, tuc MOI
+#    tai khoan cuc bo tren may B doc duoc bearer token cua cong. Va do khong phai
+#    mot lo xa: may B co hai tai khoan sandbox Codex dang bat
+#    (CodexSandboxOffline, CodexSandboxOnline) cong voi Guest -- dung loai tai
+#    khoan sinh ra de chay ma khong tin cay.
+#
+#    So sanh: `app.env` tren may A chi SYSTEM + Administrators, va bao cao audit
+#    da ghi ACL do "LA DUNG - dung noi long no". Hai may le ra phai cung chuan.
+#
+# ! Vi sao nam TRONG script chu khong sua tay tren may B: quy tac 1 o dau tep --
+#    sua tay la mat trang o lan deploy sau, mat AM THAM. Mot bien phap bao mat
+#    chi song neu no duoc dat lai moi lan deploy.
+#
+#    Dich vu chay bang LocalSystem nen van doc duoc; `lengo` la Administrator nen
+#    deploy van ghi duoc. Ca hai da kiem that 01/09.
+$aclLenh = ("icacls C:\ProgramData\LTTLlm\gateway.env /inheritance:d " +
+            "&& icacls C:\ProgramData\LTTLlm\gateway.env /remove:g *S-1-5-32-545")
+ChayTrenB $aclLenh | Out-Null
+$conUsers = ChayTrenB "icacls C:\ProgramData\LTTLlm\gateway.env"
+if (($conUsers -join " ") -match "S-1-5-32-545|BUILTIN\\Users") {
+    Canh "gateway.env VAN cho BUILTIN\Users doc - bearer token khong duoc bao ve."
+} else {
+    Dat "ACL gateway.env: chi SYSTEM + Administrators"
+}
+
 # --- 6. Kiem nhanh -------------------------------------------------------------
 Buoc "6. Kiem import tren may B"
 # !! Chay mot TEP .py, khong phai `python -c "..."` - quy tac 3 cua CLAUDE.md:
