@@ -27,6 +27,17 @@ $RepoGoc = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 function Buoc($s) { Write-Host ""; Write-Host "== $s" -ForegroundColor Cyan }
 function Dat($s)  { Write-Host "  [OK]  $s" -ForegroundColor Green }
 function Loi($s)  { Write-Host "  [LOI] $s" -ForegroundColor Red }
+# !! `Canh` KHAC `Loi`: canh bao la "deploy xong nhung co dieu ban can biet",
+#    con `Loi` la "deploy that bai". Gop hai cai lam mot thi hoac ta bao dong
+#    gia, hoac ta nuot mat mot dieu can noi.
+#
+# !! Hai ham nay TUNG THIEU, va khoi canh bao cau hinh o buoc 3 goi chung nen
+#    deploy CHET NGAY O DO - moi lan, khong tru lan nao. No qua duoc vong kiem
+#    truoc day vi kiem do chi chay `[Parser]::ParseFile`, ma cu phap KHONG bat
+#    duoc mot lenh khong ton tai. Bai hoc: mot script deploy chi duoc coi la da
+#    kiem khi no CHAY HET, khong phai khi no PHAN TICH DUOC.
+function Canh($s) { Write-Host "  [!]   $s" -ForegroundColor Yellow }
+function Note($s) { Write-Host "$s" -ForegroundColor DarkGray }
 
 # !! KHONG dat ten ham la `SSH`: PowerShell KHONG phan biet hoa thuong, nen ben
 #    trong ham `& ssh` se phan giai ve CHINH HAM DO -> de quy vo han -> "call depth
@@ -105,7 +116,21 @@ Dat "llama-swap.yaml"
 #    lan unload giua gio phuc vu la mot quyet dinh van hanh chu khong phai mot
 #    buoc phu cua deploy. Nhung IM LANG thi khong chap nhan duoc - nen no PHAT
 #    HIEN va NOI.
-$tuoiSwap = ChayTrenB "powershell -NoProfile -Command \"$p=Get-Process llama-swap -EA SilentlyContinue ^| Select-Object -First 1; if ($p) { $p.StartTime.ToString('yyyy-MM-ddTHH:mm:ss') } else { 'KHONG_CHAY' }\""
+# !! DONG NAY DA TUNG LAM VO CA SCRIPT. Ban dau no la mot chuoi NHAY KEP chua
+#    `\"` va `^|`. PowerShell KHONG thoat bang backslash, nen `\"` ket thuc chuoi
+#    SOM va phan con lai thanh lenh:
+#
+#      The term '\' is not recognized as the name of a cmdlet...
+#
+#    Va `$p` trong chuoi nhay kep bi may A khai trien thanh rong TRUOC khi gui.
+#    Cung ho voi quy tac 3 cua CLAUDE.md ("PowerShell nuot dau ngoac kep").
+#
+# => NHAY DON o ngoai: may A khong khai trien gi, `"` ben trong la ky tu that,
+#    `''` la mot dau nhay don. Va BO HAN dau ong - `@(...)[0]` thay cho
+#    `| Select-Object -First 1`, nen khong con phai lo cmd.exe co an `|` khong
+#    (do la ly do ban cu phai chap va `^|`).
+$qSwap = 'powershell -NoProfile -Command "$p=@(Get-Process llama-swap -EA SilentlyContinue)[0]; if ($p) { $p.StartTime.ToString(''yyyy-MM-ddTHH:mm:ss'') } else { ''KHONG_CHAY'' }"'
+$tuoiSwap = ChayTrenB $qSwap
 $tuoiSwap = ($tuoiSwap -join "").Trim()
 if ($tuoiSwap -and $tuoiSwap -ne "KHONG_CHAY") {
     try {
