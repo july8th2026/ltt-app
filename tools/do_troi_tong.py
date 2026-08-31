@@ -50,9 +50,12 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+# ⛔ `reconfigure`, KHÔNG bọc lại `sys.stdout` bằng một TextIOWrapper mới.
+#    Bọc lại tạo một đối tượng thứ hai trên cùng một `buffer`, và hai lớp đệm
+#    trên một luồng thì thứ tự dòng in ra không còn bảo đảm. `test_353` chốt
+#    việc này — và nó vừa bắt tôi ba lần trong một buổi.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 #: Giọng người lớn nằm gọn trong khoảng này. Đặt hẹp hơn mặc định của librosa để
 #: `pyin` không đi lạc lên hoà âm bậc hai — một lỗi khiến F0 nhảy gấp đôi và đọc
@@ -166,22 +169,14 @@ def main(argv=None) -> int:
     ra["lan_luot"] = ho_so_b
 
     # ── A. gộp lô: cả bài trong một lượt, rồi cắt lại theo mốc ghép ──────────
-    # 🔴 CỬA GỘP LÔ CÓ TRẦN 8 ĐOẠN (`tham_so.TRAN_SO_VAN_BAN_BATCH`), và bộ đo
-    #    này tìm ra nó bằng cách đâm vào: 12 đoạn → HTTP 413.
+    # ⭐ CẢ BÀI, không cắt bớt. Bộ đo này từng phải cắt còn 8 đoạn vì cửa văn bản
+    #    dài áp `TRAN_SO_VAN_BAN_BATCH` — kích thước một lượt gộp lô, tức một
+    #    chi tiết thi hành bên trong — lên chính người gọi. Nó tìm ra điều đó
+    #    bằng cách đâm vào: 12 đoạn → `413 "Lo 12 van ban, vuot tran 8"`.
     #
-    #    Nó chưa với tới được từ ngoài, vì trần công khai đang là 1.500 ký tự
-    #    một yêu cầu nên một bài không bao giờ chia ra quá vài đoạn. Nhưng nó là
-    #    **trần thật sẽ chặn** ngày nào nâng trần công khai lên — và đó chính là
-    #    thứ mốc V9 đang bàn. Ghi ra đây để lần nâng ấy không phải tìm lại.
-    from voice_sidecar import tham_so as _ts
-
-    tran_lo = int(getattr(_ts, "TRAN_SO_VAN_BAN_BATCH", 8))
-    doan_a = doan[:tran_lo]
-    if len(doan_a) < len(doan):
-        print(f"\n[A] gop lo — CHI {len(doan_a)}/{len(doan)} doan "
-              f"(tran cua cua gop lo la {tran_lo})")
-    else:
-        print("\n[A] gop lo — ca bai trong mot `infer_batch`")
+    #    Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
+    doan_a = doan
+    print("\n[A] gop lo — ca bai, cua tu chia nhom")
     raw, dau = sidecar_client.noi_dai(list(doan_a))
     w, sr = _doc_wav(raw)
     doc = {str(k).lower(): v for k, v in dict(dau or {}).items()}
@@ -191,18 +186,29 @@ def main(argv=None) -> int:
     #    chèn nghỉ giữa các đoạn, nên chia đều sẽ cắt lệch dần và mọi đoạn sau
     #    đều đo nhầm vùng. Chia bằng nhau chỉ dùng khi hồ sơ ghép không nói mốc,
     #    và khi đó phải NÓI RA là con số kém tin hơn.
-    moc = None
-    try:
-        hs = json.loads(doc.get("x-ghep") or "{}")
-        moc = hs.get("moc_s") or hs.get("moc")
-    except Exception:                                    # noqa: BLE001
-        moc = None
-
+    # ⛔ MỘT DỤNG CỤ ĐO SAI KHÔNG ĐƯỢC PHÉP CHẠY TIẾP. Bản đầu lui về chia đều
+    #    khi thiếu mốc, và lượt đo 01/09 đã cho ra một "phát hiện" rất thuyết
+    #    phục nhờ đúng cái lối lui ấy: −5,05 Hz mỗi đoạn, có hướng, vượt sàn
+    #    nhiễu. Nhưng chia đều sai **luỹ tiến** (mỗi mối nối chèn thêm `nghi`
+    #    giây), nên nó tự sinh ra một xu hướng đơn điệu — đúng hình dạng của
+    #    thứ ta đang đi tìm.
+    #
+    # ⭐ Nên chỗ này KHÔNG lui nữa: thiếu mốc thì **vỡ**. Một phép đo nói "kém
+    #    tin hơn" ở dòng cuối vẫn sẽ được ai đó trích ra khỏi ngữ cảnh và đọc
+    #    như một kết luận. Ba lần trong ngày hôm nay một dụng cụ hỏng đã cho ra
+    #    thứ đọc lên y hệt một kết quả thật.
+    tho = (doc.get("x-moc-s") or "").strip()
+    if not tho:
+        raise ThieuTruong(
+            "dau phan hoi thieu X-Moc-S. Cong giong phai noi moc tung doan — "
+            "chia deu ma doan se cat lech luy tien va sinh ra mot xu huong GIA. "
+            f"Dau co: {sorted(doc)}")
+    moc = [float(x) for x in tho.split(",") if x.strip()]
+    if len(moc) != len(doan_a) + 1:
+        raise ThieuTruong(
+            f"X-Moc-S co {len(moc)} moc cho {len(doan_a)} doan; can "
+            f"{len(doan_a) + 1}")
     ho_so_a, cach_cat = [], "moc that tu ho so ghep"
-    if not moc or len(moc) != len(doan_a) + 1:
-        cach_cat = "CHIA DEU (ho so ghep khong noi moc) — kem tin hon"
-        b = np.linspace(0, len(w), len(doan_a) + 1).astype(int)
-        moc = [float(x) / sr for x in b]
     for i in range(len(doan_a)):
         seg = w[int(moc[i] * sr):int(moc[i + 1] * sr)]
         tk = _thong_ke(_f0(seg, sr))

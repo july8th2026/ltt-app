@@ -36,7 +36,6 @@ phần trăm (model có ngẫu nhiên) và khi đó tổng thời gian không so
 from __future__ import annotations
 
 import argparse
-import io
 import json
 import os
 import statistics
@@ -45,9 +44,12 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+# ⛔ `reconfigure`, KHÔNG bọc lại `sys.stdout` bằng một TextIOWrapper mới.
+#    Bọc lại tạo một đối tượng thứ hai trên cùng một `buffer`, và hai lớp đệm
+#    trên một luồng thì thứ tự dòng in ra không còn bảo đảm. `test_353` chốt
+#    việc này — và nó vừa bắt tôi ba lần trong một buổi.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 #: Mười đoạn như một bài đọc thật: dài ngắn khác nhau, nội dung khác nhau.
 #: ⛔ Đừng dùng cùng một câu lặp N lần — cache và cách chia chunk của model đều

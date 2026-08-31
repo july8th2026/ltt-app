@@ -46,6 +46,30 @@ def kiem_mot_luot(text: str) -> str:
     return t
 
 
+def kiem_bai_dai(texts) -> list:
+    """Kiểm một BÀI ĐỌC nhiều đoạn. Mỗi đoạn qua `kiem_mot_luot`; **không** có
+    trần số đoạn.
+
+    🔴 `kiem_mot_lo` áp `TRAN_SO_VAN_BAN_BATCH` — một con số tự khai là tạm
+       (*"giữ thấp hơn cho tới khi đo được VRAM thật của từng bậc batch"*). Áp nó
+       cho cửa văn bản dài là để một **chi tiết thi hành bên trong** rò ra thành
+       **hợp đồng của người gọi**: người nộp một bài đọc phải tự biết engine gộp
+       lô mấy đoạn một lượt, và một bài chín đoạn thì nhận `413`.
+
+    ⭐ Đo thật 01/09/2026: một bài mười hai đoạn trả `413 "Lo 12 van ban, vuot
+       tran 8"`. Không ai chọn giới hạn ấy cho khách cả — nó là số của một cái
+       vòng lặp bên trong, đi lạc ra cửa.
+
+    ⛔ Trần thật của một bài dài là **tổng số ký tự**, và nó ở tầng app
+       (`TRAN_KY_TU_CONG_KHAI`). Ở đây chỉ chốt từng đoạn.
+    """
+    ds = list(texts or [])
+    if not ds:
+        raise VuotNganSach("Bai rong.", do_dai=0,
+                           tran=tham_so.TRAN_KY_TU_MOT_LUOT)
+    return [kiem_mot_luot(t) for t in ds]
+
+
 def kiem_mot_lo(texts) -> list:
     """Kiểm một lô. Mỗi phần tử phải qua `kiem_mot_luot`, và lô có trần riêng."""
     ds = list(texts or [])

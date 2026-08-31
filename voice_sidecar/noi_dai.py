@@ -274,11 +274,26 @@ def ghep(wavs, sr: int, so_cau=None) -> tuple:
         return np.zeros(0, dtype=np.float32), {"so_doan": 0}
 
     lang = np.zeros(int(round(nghi * sr)), dtype=np.float32)
-    manh = []
+    manh, moc, cho = [], [], 0
     for i, w in enumerate(da_cat):
         if i:
             manh.append(lang)
+            cho += len(lang)
+        # 🔴 MỐC BẮT ĐẦU CỦA TỪNG ĐOẠN TRONG BẢN ĐÃ GHÉP.
+        #
+        #    Hàm này biết chính xác từng đoạn nằm ở đâu — nó vừa xếp chúng —
+        #    nhưng trước 01/09 nó không nói ra. Hệ quả: bất cứ ai muốn đo lại
+        #    **từng đoạn** trong bản ghép đều phải **chia đều** mà đoán, và chia
+        #    đều thì sai LUỸ TIẾN vì mỗi mối nối chèn thêm `nghi` giây.
+        #
+        # ⛔ Cái sai đó không hiền: nó lệch dần theo chỉ số đoạn, nên nó sinh ra
+        #    đúng hình dạng một **xu hướng đơn điệu**. Phép đo trôi tông đầu tiên
+        #    (01/09) đọc ra "−5,05 Hz mỗi đoạn, có hướng, vượt sàn nhiễu" — một
+        #    kết luận nghe rất chắc, và nó có thể hoàn toàn là hiện vật của phép
+        #    cắt. Một dụng cụ hỏng cho ra thứ **đọc lên y hệt một phát hiện**.
+        moc.append(cho / float(sr) if sr else 0.0)
         manh.append(w)
+        cho += len(w)
     ra = np.concatenate(manh).astype(np.float32)
 
     # ── bảo đảm trần đỉnh, SAU khi đã ghép ──────────────────────────────────
@@ -294,6 +309,11 @@ def ghep(wavs, sr: int, so_cau=None) -> tuple:
 
     return ra, {
         "so_doan": len(da_cat),
+        # Mốc bắt đầu + mốc kết thúc, `len+1` phần tử — cùng khuôn với một mảng
+        # ranh giới, để người đọc cắt được `[moc[i], moc[i+1]]` mà không phải
+        # cộng độ dài lấy từ nơi khác.
+        "moc_s": [round(float(x), 4) for x in moc] +
+                 [round(len(ra) / float(sr), 4) if sr else 0.0],
         "nghi_s": round(float(nghi), 3),
         "nguon_nghi": nguon,
         "chinh_do_to_db": da_chinh,

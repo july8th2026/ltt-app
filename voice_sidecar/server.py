@@ -244,9 +244,25 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
         Trả về **cùng hình dạng** `/v1/speech` — một WAV + header — nên tầng job
         gọi cửa nào cũng chỉ có một nhánh xử lý phản hồi.
         """
-        texts = ngan_sach.kiem_mot_lo(body.texts)
+        # 🔴 KHÔNG áp trần số đoạn ở cửa này. `TRAN_SO_VAN_BAN_BATCH` là kích
+        #    thước một lượt gộp lô — một chi tiết thi hành bên trong — và áp nó
+        #    ở đây làm nó rò ra thành hợp đồng của người gọi. Đo 01/09: một bài
+        #    mười hai đoạn nhận `413 "Lo 12 van ban, vuot tran 8"`. Không ai
+        #    chọn giới hạn ấy cho khách; nó là số của một cái vòng lặp đi lạc.
+        texts = ngan_sach.kiem_bai_dai(body.texts)
         c = lay()
-        wavs, giay = c.noi_lo(texts, ref_b64=body.ref_b64, preset=body.preset)
+
+        # Bài dài hơn một lượt gộp lô thì chia NHÓM, chứ không từ chối. Phép
+        # ghép vẫn làm MỘT LẦN trên toàn bộ đoạn ở dưới, nên nhịp nghỉ và phép
+        # cân mức vẫn tính trên cả bài — chia nhóm ở đây thuần tuý là chuyện xếp
+        # việc cho GPU, không đụng gì tới kết quả nghe được.
+        n = max(1, int(tham_so.TRAN_SO_VAN_BAN_BATCH))
+        wavs, giay = [], 0.0
+        for i in range(0, len(texts), n):
+            phan, g = c.noi_lo(texts[i:i + n], ref_b64=body.ref_b64,
+                               preset=body.preset)
+            wavs.extend(phan)
+            giay += g
         sr = c.sample_rate
         # Số câu mỗi đoạn: bộ ghép cần nó để biết đâu là ranh giới CÂU giữa hằng
         # trăm khe TỪ. Chỉ là đếm dấu kết câu — không phải chia đoạn, việc đó
@@ -268,6 +284,12 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
                 "X-So-Doan": _dau(ho_so.get("so_doan", 0)),
                 "X-Nghi-S": _dau(ho_so.get("nghi_s", 0.0)),
                 "X-Nguon-Nghi": _dau(ho_so.get("nguon_nghi", "")),
+                # Mốc từng đoạn, giây, ngăn bằng dấu phẩy. Thiếu nó thì người
+                # đo lại phải CHIA DEU mà đoán, và chia đều sai luỹ tiến vì mỗi
+                # mối nối chèn thêm `nghi` giây — sinh ra đúng hình dạng một xu
+                # hướng đơn điệu. Xem chú thích ở `noi_dai.ghep`.
+                "X-Moc-S": _dau(",".join(str(x) for x in
+                                         (ho_so.get("moc_s") or ()))),
                 "X-Ha-Tran-Db": _dau(ho_so.get("ha_tran_db", 0.0)),
             })
 
