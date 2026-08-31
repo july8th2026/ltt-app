@@ -4,8 +4,8 @@
 > chi tiết nằm ở `reports/`, không paste log vào đây.
 
 ## Program
-- **Current phase:** 03 — Machine B Gateway, GPU Control (XONG)
-- **Last completed phase:** 00 (BASELINE FROZEN) → 03
+- **Current phase:** 04 — Qwen Quality & Performance (XONG)
+- **Last completed phase:** 00 → 03 → 04
 - **Repo revision / branch:** `2ed62d7` → nhánh `admin-mvp-v3`
   *(cây có 38 tệp chưa commit lúc chạy baseline — 34 của phiên `-e7`, xem §WIP)*
 - **Machine A:** `DESKTOP-H9AGFUQ` · 192.168.2.17 · Python 3.13.12 ·
@@ -101,6 +101,10 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | D-03-5 | 03 | `deploy.ps1` chép `llama-swap.yaml` mà không restart | **CHANGE → 06** | Cấu hình trên đĩa ≠ cấu hình đang chạy, và im lặng. Chạm deploy ⇒ thuộc Prompt 06 |
 | D-03-6 | 03 | `context_window` 131K vs cưỡng chế 96K | **KEEP (P3)** | Ba số cho ba việc (engine 131.072 / trần vào 96.256 / công bố 88.555); cổng B không tới khách |
 | D-03-7 | 03 | `max_dong_thoi = 1` | **KEEP** | `--parallel 1` của llama-server; đổi là mời OOM |
+| D-04-1 | 04 | Bộ đánh giá chất lượng (`tools/danh_gia_llm.py`) | **CHANGE (thêm)** | G5 không có chủ sở hữu; nay đo được 8 chiều, chấm lập trình bằng **chạy thật** |
+| D-04-2 | 04 | Trọng tài quy tải của **chính ta** thành của người khác | **CHANGE → 06** | 70 % lượt bị từ chối oan (14/20), đo hai lần độc lập |
+| D-04-6 | 04 | Nâng llama.cpp b10689→b10717 | **DEFER** | 6/28 commit liên quan, nhưng thiếu mốc `--lan 5` + rollback đã thử |
+| D-04-8 | 04 | Thượng nguồn không gửi `usage` trong SSE | **DEFER → 05** | Làm decode tok/s thành **ước**, không phải đo |
 
 ## Changes kept
 
@@ -114,7 +118,13 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 
 | Metric | Baseline | Notes |
 |---|---:|---|
-| *(mọi mục)* | **PENDING LIVE** | Chưa đo. Máy B rảnh ⇒ đo được ở Prompt 04 |
+| TTFT (ấm, 200 tok) | **1,26 s** | trung vị n=5 |
+| Decode | **63,3 tok/s** | trung vị; khớp mốc lịch sử "card sạch" P6/D-005 |
+| End-to-end 200 tok | 4,36 s | trung vị n=5 |
+| End-to-end 900 tok | 17,20 s | trung vị n=2 |
+| Ngữ cảnh 52K token | **~77 s** | và **không lệch theo vị trí kim** |
+| VRAM | 22.433 MiB | không đổi qua toàn bộ phép đo |
+| Chất lượng | **12/12 (100 %)** | 8 chiều, `n=1` — là mốc, chưa đủ cho A/B |
 | VRAM khi model nạp | 22.376 / 24.576 MiB | đo 31/08 sau một lượt gọi, GPU 0 % tải — **91 %** |
 | Một lượt `/v1/responses` nguội | 33 s | gồm nạp model 27B từ nguội, 8 token ra |
 
@@ -122,16 +132,16 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 
 | Domain | Trọng số | Điểm | Confidence |
 |---|---:|---:|---|
-| Correctness & invariants | 20 | 16 | MEDIUM |
+| Correctness & invariants | 20 | 15 | MEDIUM *(−1: trọng tài từ chối oan)* |
 | Money/admission/failure semantics | 15 | 13 | HIGH *(INV-001/003/004 có bằng chứng sống)* |
-| Model quality & tool/context fidelity | 15 | **6** | LOW — **không có bộ đánh giá nào** |
-| Performance/resource efficiency | 15 | **7** | LOW — chưa đo |
+| Model quality & tool/context fidelity | 15 | **12** | **HIGH** — 12/12, chấm bằng chạy thật |
+| Performance/resource efficiency | 15 | **11** | **HIGH** — có mốc, khớp số lịch sử |
 | Reliability/recovery | 10 | 8 | **HIGH** *(Prompt 03)* |
 | Security boundaries | 10 | 9 | **HIGH** *(Prompt 03)* |
 | Observability/operations | 5 | 4 | MEDIUM |
-| Tests/evidence/reproducibility | 5 | 4 | HIGH |
+| Tests/evidence/reproducibility | 5 | 5 | HIGH |
 | Maintainability/SSOT/deployment | 5 | 4 | MEDIUM |
-| **TOTAL** | **100** | **71** | **MEDIUM** *(69 sau Prompt 00 → 71 sau 03)* |
+| **TOTAL** | **100** | **78** | **MEDIUM-HIGH** *(69 → 71 → **78**)* |
 
 ⛔ **69 không phải "hệ thống tệ".** Phần lớn điểm trừ nằm ở **thiếu phép đo**, không ở
 hỏng đã biết: G5 không có bộ đánh giá nào, và mọi số hiệu năng đều `PENDING LIVE`.
@@ -141,7 +151,9 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 
 | P | Risk | Phase | Cần bằng chứng gì | Status |
 |---|---|---|---|---|
-| P1 | **G5 không có chủ sở hữu** — không đo được chat/coding/tool/long-context/tiếng Việt/vision | 04 | phải **xây** bộ đánh giá | OPEN |
+| P1 | 🔴 **Trọng tài GPU từ chối oan 70 % lượt** — nhận nhầm tải của chính ta thành của ComfyUI | **06** | phương án (a) đã chọn, cần A/B + deploy | **OPEN** |
+| ~~P1~~ | G5 không có chủ sở hữu | 04 | `tools/danh_gia_llm.py` — 12/12 | **ĐÓNG** |
+| P2 | Vision **đang bán** mà chưa có bài đánh giá nào | 05 | thêm bài vision vào bộ đề | OPEN |
 | P2 | `65K` chết tới tay khách qua `/v1/models` | 01 | sửa 6 chỗ + một nguồn chân lý | OPEN |
 | P2 | `max_dong_thoi = 1` ⇒ một sự cố suất = **100 %** ngừng dịch vụ | 03 | không có mức suy giảm ở giữa | OPEN |
 | P3 | VRAM 22,4/24,6 GiB khi model nạp; ba hộ dùng chung card | 03/04 | benchmark phải kèm ảnh chụp `trong_tai` | OPEN |
@@ -159,9 +171,8 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
 ## Next phase
-- **Prompt:** `04_QWEN_QUALITY_PERFORMANCE.md`
-- **Must read:** `reports/03_machine_b_gateway_gpu.md` · `llm_gateway/deploy/llama-swap.yaml`
-- **Questions:** G5 chưa có bộ đánh giá nào — phải **xây**. Benchmark phải kèm
-  ảnh chụp `trong_tai` + danh sách tiến trình GPU, vì **máy B là một máy để bàn
-  đang dùng** (23 tiến trình trên card, gồm Edge/Zalo/Adobe/Riot Vanguard).
+- **Prompt:** `01_MACHINE_A_CORE_CONTEXT_CONTRACT.md`
+- **Must read:** `reports/03` · `reports/04` · `apps/ltt_llm/ngan_sach.py`
+- **Questions:** `test_334` có phủ `DONG_THOI_MAY_B` không? metadata cũ ở
+  `manifest.py:30` (`65K`)?
 - **Do not disturb:** WIP của `-e7`; `apps/ltt_voice/**`

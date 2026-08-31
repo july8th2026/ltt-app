@@ -1,0 +1,232 @@
+{
+ "model": "qwen38-api",
+ "url": "http://127.0.0.1:8299",
+ "lan": 1,
+ "luc": "2026-08-31 21:03:58",
+ "bai": [
+  {
+   "ma_bai": "vi-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 3.08,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 107,
+    "prompt_tokens": 30,
+    "total_tokens": 137,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.78,
+   "ra": "45000",
+   "su_dung": {
+    "completion_tokens": 114,
+    "prompt_tokens": 58,
+    "total_tokens": 172,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 1.94,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 33,
+    "prompt_tokens": 27,
+    "total_tokens": 60,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 3.84,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n < 2:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    i = 3\n    while i * i <= n:\n        if n % i == 0:\n            return False\n        i += 2\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 191,
+    "prompt_tokens": 60,
+    "total_tokens": 251,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 3.61,
+   "ra": "```python\ndef trung_binh(ds):\n    if not ds:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 165,
+    "prompt_tokens": 82,
+    "total_tokens": 247,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.72,
+   "ra": "{\"ten\":\"Lan\",\"tuoi\":28,\"ky_nang\":[\"Python\",\"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 101,
+    "prompt_tokens": 87,
+    "total_tokens": 188,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 74.89,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 107,
+    "prompt_tokens": 67926,
+    "total_tokens": 68033,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 77.03,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 107,
+    "prompt_tokens": 67925,
+    "total_tokens": 68032,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 77.89,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 148,
+    "prompt_tokens": 67925,
+    "total_tokens": 68073,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 10.19,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 538,
+    "prompt_tokens": 49,
+    "total_tokens": 587,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.91,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "WzRWwj2iv1qDmHG1jrZt4COHWPSHanSJ"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 70,
+    "prompt_tokens": 559,
+    "total_tokens": 629,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.95,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "zUcc944mkVuiAJaY5XQLL5IoAEE2FQIf"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 112,
+    "prompt_tokens": 571,
+    "total_tokens": 683,
+    "prompt_tokens_details": {
+     "cached_tokens": 537
+    }
+   },
+   "so_429": 1,
+   "loi": ""
+  }
+ ]
+}
