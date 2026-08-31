@@ -147,7 +147,21 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
             pass
 
     job_id = str(getattr(ctx, "job_id", "") or "adhoc")
-    khoa = f"voice/out/{yc.owner_id or 'chung'}/{job_id}.wav"
+    # 🔴 `{job_id}/` — CÓ dấu gạch chéo sau job id, không phải `{job_id}.wav`.
+    #
+    #    `platform_core/job_content.py` nhận diện tệp thuộc về một job bằng
+    #    cách tìm **`/{job_id}/` như một đoạn đường dẫn**, và nó cố ý sai
+    #    theo hướng bỏ sót: thà không dọn còn hơn xoá nhầm tệp của job khác.
+    #
+    #    Bản đầu ghi `.../{job_id}.wav` — job id nằm cuối, theo sau là dấu
+    #    chấm. Không khớp. Hệ quả: **tệp tiếng của app này không bao giờ
+    #    bị dọn**, trong khi vòng bảo trì vẫn chạy, vẫn báo thành công, và
+    #    `content_expired_at` vẫn được đánh dấu. Một rò rỉ hoàn toàn im
+    #    lặng: đủ giấy tờ nói đã dọn, không tệp nào bị xoá.
+    #
+    #    Bảy app còn lại đều theo đúng `{app}/{owner}/{job_id}/...`; chỉ
+    #    app này lệch. `tests/test_343` chốt lại cả hai chiều.
+    khoa = f"voice/out/{yc.owner_id or 'chung'}/{job_id}/tieng.wav"
     get_storage().put(khoa, io.BytesIO(wav_bytes), content_type="audio/wav")
 
     ket = features.KetQua(

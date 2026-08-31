@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4e2f015e588de244c62af5e868d51394d9bed6304e9c5f4bf1fed9af20d9fccd
-Nguồn đã quét : 1302 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:2d0182b73ac89aad880481ad0f02cf3abdde7b6f292ccb58dd32d9b9302f7019
+Nguồn đã quét : 1303 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1123,7 +1123,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (305 file pytest + 3 frontend)
+10. QUALITY GATES (306 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1389,6 +1389,7 @@ Test inventory:
 - tests/test_340_ltt_voice_trang_render.py
 - tests/test_341_khong_query_param_request.py
 - tests/test_342_ltt_voice_noi_dai.py
+- tests/test_343_khoa_kho_don_duoc.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -1455,8 +1456,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1302 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:29, .py:986, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1303 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:29, .py:987, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2357,7 +2358,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (322)
+[tests] (323)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2634,6 +2635,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_340_ltt_voice_trang_render.py
 - tests/test_341_khong_query_param_request.py
 - tests/test_342_ltt_voice_noi_dai.py
+- tests/test_343_khoa_kho_don_duoc.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -2815,7 +2817,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1302 file; 12927665 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1303 file; 12937261 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17730,7 +17732,7 @@ def _do_chat_luong(mau: list) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/dieu_khoan.py
-SHA256=1d87214c8b8172097335ec4e15a1789ec0900510f4060ab04a8a1daa81810364 BYTES=4404 LINES=85
+SHA256=7bb60b4b8da81dfe447804b9564d61c23a2f32f1e7c8595db6c7d9c9e5430182 BYTES=5140 LINES=97
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 dieu_khoan.py — điều khoản dùng giọng nói, và bản cam kết sở hữu.
@@ -17751,13 +17753,17 @@ from __future__ import annotations
 
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
+from platform_core.job_content import RETENTION_DAYS
 
 from .audio_input import GIAY_TOI_DA, GIAY_TOI_THIEU, MAX_BYTES
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
 #: Đổi bất cứ câu nào bên dưới thì phải đổi chuỗi này. Bản cam kết đã lưu trỏ tới
 #: đúng phiên bản, nên không có phiên bản thì không biết khách đã đồng ý với gì.
-PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-08-30a"
+#: 31/08/2026 — thêm điều "Giữ tệp bao lâu". Bản cam kết cũ vẫn trỏ tới
+#: `…-2026-08-30a`, và đó là đúng việc: khách đã đồng ý với bản KHÔNG có
+#: điều đó, nên bản ghi phải nói vậy.
+PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-08-31a"
 
 
 def cac_dieu() -> list:
@@ -17794,6 +17800,14 @@ def cac_dieu() -> list:
                 "gửi lên. Chúng tôi giữ tạm một khoản theo độ dài văn bản và hoàn "
                 "lại phần dư ngay khi xong. Nếu không đo được kết quả, bạn không "
                 "bị trừ gì."),
+        },
+        {
+            "tieu_de": _t("Giữ tệp bao lâu"),
+            "noi_dung": _t(
+                "Tệp tiếng tạo ra được giữ {n} ngày kể từ khi xong, rồi xoá. "
+                "Hãy tải về trong khoảng đó. Lịch sử lượt tạo và bút toán credit "
+                "vẫn giữ lại để đối chiếu, chỉ tệp là hết hạn."
+            ).format(n=RETENTION_DAYS),
         },
         {
             "tieu_de": _t("Đóng dấu"),
@@ -18239,7 +18253,7 @@ def bang_gia() -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/jobs.py
-SHA256=6516e88686e22491ad4a3f2a7ded7505ba694fe8026800d03f967c2d2a5cf254 BYTES=10360 LINES=239
+SHA256=887576c355fd9789b49af780c3b8896c01298bae7e1814f12d06fde32b38f659 BYTES=11373 LINES=253
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker.
@@ -18390,7 +18404,21 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
             pass
 
     job_id = str(getattr(ctx, "job_id", "") or "adhoc")
-    khoa = f"voice/out/{yc.owner_id or 'chung'}/{job_id}.wav"
+    # 🔴 `{job_id}/` — CÓ dấu gạch chéo sau job id, không phải `{job_id}.wav`.
+    #
+    #    `platform_core/job_content.py` nhận diện tệp thuộc về một job bằng
+    #    cách tìm **`/{job_id}/` như một đoạn đường dẫn**, và nó cố ý sai
+    #    theo hướng bỏ sót: thà không dọn còn hơn xoá nhầm tệp của job khác.
+    #
+    #    Bản đầu ghi `.../{job_id}.wav` — job id nằm cuối, theo sau là dấu
+    #    chấm. Không khớp. Hệ quả: **tệp tiếng của app này không bao giờ
+    #    bị dọn**, trong khi vòng bảo trì vẫn chạy, vẫn báo thành công, và
+    #    `content_expired_at` vẫn được đánh dấu. Một rò rỉ hoàn toàn im
+    #    lặng: đủ giấy tờ nói đã dọn, không tệp nào bị xoá.
+    #
+    #    Bảy app còn lại đều theo đúng `{app}/{owner}/{job_id}/...`; chỉ
+    #    app này lệch. `tests/test_343` chốt lại cả hai chiều.
+    khoa = f"voice/out/{yc.owner_id or 'chung'}/{job_id}/tieng.wav"
     get_storage().put(khoa, io.BytesIO(wav_bytes), content_type="audio/wav")
 
     ket = features.KetQua(
@@ -18699,7 +18727,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes.py
-SHA256=3698294e248caa6b7bdd0eb0f8bf350cef0040ed1ee46339c3faad17d60866f4 BYTES=13541 LINES=307
+SHA256=3ad848ee42c4514f11c79cd1980c2f4ae9b0779bf52e88c0155283b3d0f666f5 BYTES=13805 LINES=311
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Giao diện của LTT VOICE. Router **không** tự viết prefix — nền tảng gắn từ
@@ -18989,9 +19017,13 @@ def trang_lich_su(request: Request, user=Depends(user_hien_tai),
 def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
     """Phục vụ tệp tiếng. **Kiểm sở hữu bằng chính hình dạng khoá.**
 
-    Khoá có dạng `voice/out/{owner_id}/{job_id}.wav`, nên chỉ chủ mới đọc được
-    tệp của mình. Đoán một `job_id` khác cũng không ra vì phần `owner_id` không
-    khớp.
+    Khoá có dạng `voice/out/{owner_id}/{job_id}/tieng.wav`, nên chỉ chủ mới đọc
+    được tệp của mình. Đoán một `job_id` khác cũng không ra vì phần `owner_id`
+    không khớp.
+
+    ⚠️ Dấu gạch chéo sau `{job_id}` là bắt buộc, và không phải vì route này —
+       `platform_core/job_content.py` chỉ dọn được tệp có job id **là một đoạn
+       đường dẫn**. Xem chú thích ở `jobs.py`.
     """
     uid = _uid(user)
     if not key.startswith(f"voice/out/{uid}/"):
@@ -232260,6 +232292,152 @@ def test_app_khong_khai_thi_giu_nguyen_mac_dinh_nen_tang():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_343_khoa_kho_don_duoc.py
+SHA256=4471dfa8dd9cbb5db3977272e0ee65d45061af767fa312558127939bd1962f04 BYTES=7026 LINES=140
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Tệp app sinh ra phải DỌN ĐƯỢC — khoá lưu trữ phải khớp cách nền tảng nhận diện.
+
+## Lỗi mà tệp này chốt
+
+`platform_core/job_content.py` hết hạn nội dung của job sau `RETENTION_DAYS`, và
+nó nhận diện tệp thuộc về một job bằng cách tìm **`/{job_id}/` như một đoạn
+đường dẫn**. Phép nhận dạng đó cố ý sai theo hướng **bỏ sót**: thà không dọn còn
+hơn xoá nhầm tệp của job khác — đúng hướng sai duy nhất chấp nhận được với một
+thao tác không hoàn tác.
+
+`apps/ltt_voice` ghi `voice/out/{owner}/{job_id}.wav`: job id nằm **cuối**, theo
+sau là dấu chấm. Không khớp.
+
+🔴 Hệ quả là một rò rỉ **hoàn toàn im lặng**. Vòng bảo trì vẫn chạy, vẫn dọn
+   những job khác, vẫn đặt `content_expired_at`, vẫn ghi log "đã hết hạn N job".
+   Chỉ là không tệp tiếng nào bị xoá. Đủ giấy tờ nói đã dọn, không byte nào đi.
+
+Bảy app còn lại đều theo đúng `{app}/{owner}/{job_id}/...`; chỉ app này lệch.
+
+## Hai chiều
+
+1. **Hành vi** — dựng một job thật của `ltt_voice` rồi đòi `content_keys` tìm ra
+   khoá của nó. Đây là phép kiểm thật.
+2. **Tĩnh** — quét mọi `apps/*/jobs.py` tìm đúng hình dạng đã sai (`{job_id}` mà
+   ngay sau là dấu chấm). Rẻ, và nó bắt app THỨ CHÍN trước khi app đó chạy.
+"""
+from __future__ import annotations
+
+import os
+import re
+
+APPS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                    "apps")
+
+#: `{job_id}` (hoặc biến tương đương) mà ngay sau là dấu chấm — tức job id
+#: KHÔNG phải một đoạn đường dẫn.
+XAU = re.compile(r"\{(?:job_id|jid)[^}]*\}\.")
+
+
+def test_ltt_voice_khoa_ket_qua_duoc_nhan_dien_de_don():
+    from platform_core.job_content import content_keys
+    from platform_core.models import Job
+
+    from apps.ltt_voice import jobs as vjobs      # noqa: F401 - dam bao import duoc
+
+    job_id = "6e0c2cc8-ee78-45fa-8775-0c3036fc47a0"
+    khoa = f"voice/out/nguoi-dung-1/{job_id}/tieng.wav"
+    job = Job(id=job_id, user_id="u", app_slug="ltt_voice",
+              job_type="ltt_voice.synthesize",
+              params={"text": "xin chao"},
+              result={"audio_key": khoa, "duration_s": 8.0})
+
+    thay = content_keys(job)
+    assert khoa in thay, (
+        f"`content_keys` khong tim thay {khoa!r}.\n"
+        f"No tim `/{job_id}/` NHU MOT DOAN DUONG DAN. Khoa ket thuc bang "
+        f"`{{job_id}}.wav` se khong khop, va tep se KHONG BAO GIO bi don — "
+        f"trong khi vong bao tri van bao la da don.")
+
+
+def test_khoa_cua_moi_app_deu_dat_job_id_lam_doan_duong_dan():
+    """Quét tĩnh: không app nào được đặt job id ngay trước một dấu chấm."""
+    # ⛔ CHỈ quét `jobs.py`. Bản đầu quét mọi `.py` trong `apps/` và cho ba
+    #    dương tính giả: một route path `/package/{job_id}.zip`, một tên tệp
+    #    trong `Content-Disposition`, và một docstring NÓI VỀ hình dạng sai.
+    #
+    #    Cả ba đều vô hại, và đó chính là vấn đề: một bánh cóc đỏ vì thứ vô hại
+    #    sẽ bị người ta tắt đi, rồi ngày nó đỏ vì thứ thật sẽ không ai nhìn.
+    #    Khoá lưu trữ chỉ được dựng trong handler, nên quét đúng chỗ đó.
+    xau = []
+    for goc, _, tep in os.walk(APPS):
+        if "__pycache__" in goc:
+            continue
+        for ten in tep:
+            if ten != "jobs.py":
+                continue
+            duong = os.path.join(goc, ten)
+            with open(duong, encoding="utf-8") as f:
+                for i, dong in enumerate(f, 1):
+                    # Bỏ dòng chú thích: tệp này và `jobs.py` của ltt_voice đều
+                    # NÓI VỀ hình dạng sai đó, và đếm chúng làm phép kiểm đỏ vì
+                    # một câu văn xuôi.
+                    if dong.lstrip().startswith("#"):
+                        continue
+                    if XAU.search(dong):
+                        rel = os.path.relpath(duong, os.path.dirname(APPS))
+                        xau.append(f"{rel}:{i}  {dong.strip()[:80]}")
+
+    assert not xau, (
+        "Nhung dong sau dat job id ngay truoc mot dau cham. Neu do la mot khoa "
+        "luu tru thi tep se KHONG BAO GIO bi don:\n  " + "\n  ".join(xau) +
+        "\n\nQuy uoc cua nen tang: `{app}/{owner}/{job_id}/<ten tep>`.")
+
+
+def test_dieu_khoan_noi_ro_giu_tep_bao_lau_va_lay_tu_hang_so():
+    """Cửa sổ tải tệp là một LỜI HỨA, nên nó phải nằm trong điều khoản.
+
+    `platform_core/job_content.py` tự viết ra yêu cầu này: *"Đây là lời hứa với
+    khách về cửa sổ tải artifact, nên nó phải xuất hiện trong tài liệu công khai
+    chứ không chỉ ở đây."* Trước 31/08/2026 không tài liệu công khai nào của
+    nền tảng nhắc tới `RETENTION_DAYS` — kể cả điều khoản của app này.
+
+    ⭐ Và con số phải LẤY TỪ HẰNG SỐ, không gõ lại. Cùng khuôn `apps/vps` +
+       `test_298`: đổi hạn lưu mà quên sửa điều khoản là gate đỏ, chứ không phải
+       một trang web nói sai trong im lặng.
+    """
+    from platform_core.job_content import RETENTION_DAYS
+
+    from apps.ltt_voice.dieu_khoan import cac_dieu
+
+    noi_dung = " ".join(d["noi_dung"] for d in cac_dieu())
+    assert str(RETENTION_DAYS) in noi_dung, (
+        f"dieu khoan khong nhac toi han luu {RETENTION_DAYS} ngay. Khach khong "
+        f"co cau tra loi cho 'toi tai duoc tep nay trong bao lau'.")
+
+    tieu_de = [d["tieu_de"] for d in cac_dieu()]
+    assert any("tệp" in t.lower() for t in tieu_de), (
+        f"khong co dieu nao ve viec giu tep: {tieu_de}")
+
+
+def test_doi_dieu_khoan_thi_phai_doi_phien_ban():
+    """Bản cam kết đã lưu trỏ tới một phiên bản — nên phiên bản phải nhúc nhích.
+
+    Không có phép kiểm nào biết được "câu chữ đã đổi" nếu không giữ một bản
+    chụp. Nên chốt thứ kiểm được: **số điều** và phiên bản đi cùng nhau. Thêm
+    một điều mà quên bump phiên bản thì mọi bản cam kết cũ sẽ trỏ tới một văn
+    bản mà khách chưa từng đọc.
+    """
+    from apps.ltt_voice.dieu_khoan import PHIEN_BAN_DIEU_KHOAN, cac_dieu
+
+    #: Cập nhật CẢ HAI khi đổi điều khoản. Đây là một bản chụp có chủ ý.
+    SO_DIEU = 6
+    PHIEN_BAN = "ltt-voice-dk-2026-08-31a"
+
+    assert len(cac_dieu()) == SO_DIEU, (
+        f"so dieu khoan doi ({len(cac_dieu())} != {SO_DIEU}) — hay bump "
+        f"`PHIEN_BAN_DIEU_KHOAN` va cap nhat hai hang so trong phep kiem nay")
+    assert PHIEN_BAN_DIEU_KHOAN == PHIEN_BAN, (
+        f"phien ban dieu khoan la {PHIEN_BAN_DIEU_KHOAN!r}, phep kiem cho "
+        f"{PHIEN_BAN!r}. Neu vua doi cau chu thi cap nhat o day.")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_35_p2_runtime_boundary.py
 SHA256=9a36aa62ca651c0688050fecf6889845a422156d5ec0590405ce27e5f756dcf7 BYTES=5180 LINES=119
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -252381,7 +252559,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/dich_ltt_voice_en.py
-SHA256=c3e75fc2a03bf37b252bc5c45589b8b8be28c287e79589e446afc8f534cfa921 BYTES=13817 LINES=246
+SHA256=1eb0d364e72f2467db9c057965265dd8d0ec69bd9dc89236ac02e719e9f5401e BYTES=14374 LINES=254
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 dich_ltt_voice_en.py — ban dich EN cua LTT VOICE, duoi dang MOT SCRIPT.
@@ -252511,6 +252689,14 @@ DICH = {
         "characters you send. We hold an amount based on the text length and "
         "refund the remainder as soon as it finishes. If the result cannot be "
         "measured, you are charged nothing.",
+    "Giữ tệp bao lâu": "How long files are kept",
+    "Tệp tiếng tạo ra được giữ {n} ngày kể từ khi xong, rồi xoá. "
+    "Hãy tải về trong khoảng đó. Lịch sử lượt tạo và bút toán credit "
+    "vẫn giữ lại để đối chiếu, chỉ tệp là hết hạn.":
+        "Audio files are kept for {n} days after completion, then "
+        "deleted. Download yours within that window. Your generation "
+        "history and credit entries are retained for reconciliation — "
+        "only the files expire.",
     "Đóng dấu": "Watermarking",
     "Mọi tệp tiếng tạo ra đều được đóng một dấu chìm không nghe thấy "
     "để nhận diện nội dung do máy tạo.":

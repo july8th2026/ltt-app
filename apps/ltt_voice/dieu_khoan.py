@@ -17,13 +17,17 @@ from __future__ import annotations
 
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
+from platform_core.job_content import RETENTION_DAYS
 
 from .audio_input import GIAY_TOI_DA, GIAY_TOI_THIEU, MAX_BYTES
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
 #: Đổi bất cứ câu nào bên dưới thì phải đổi chuỗi này. Bản cam kết đã lưu trỏ tới
 #: đúng phiên bản, nên không có phiên bản thì không biết khách đã đồng ý với gì.
-PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-08-30a"
+#: 31/08/2026 — thêm điều "Giữ tệp bao lâu". Bản cam kết cũ vẫn trỏ tới
+#: `…-2026-08-30a`, và đó là đúng việc: khách đã đồng ý với bản KHÔNG có
+#: điều đó, nên bản ghi phải nói vậy.
+PHIEN_BAN_DIEU_KHOAN = "ltt-voice-dk-2026-08-31a"
 
 
 def cac_dieu() -> list:
@@ -60,6 +64,14 @@ def cac_dieu() -> list:
                 "gửi lên. Chúng tôi giữ tạm một khoản theo độ dài văn bản và hoàn "
                 "lại phần dư ngay khi xong. Nếu không đo được kết quả, bạn không "
                 "bị trừ gì."),
+        },
+        {
+            "tieu_de": _t("Giữ tệp bao lâu"),
+            "noi_dung": _t(
+                "Tệp tiếng tạo ra được giữ {n} ngày kể từ khi xong, rồi xoá. "
+                "Hãy tải về trong khoảng đó. Lịch sử lượt tạo và bút toán credit "
+                "vẫn giữ lại để đối chiếu, chỉ tệp là hết hạn."
+            ).format(n=RETENTION_DAYS),
         },
         {
             "tieu_de": _t("Đóng dấu"),

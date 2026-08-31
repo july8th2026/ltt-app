@@ -11965,3 +11965,11 @@ msgstr "The engine representation of a voice, bound to one specific model versio
 #: apps/ltt_voice
 msgid "Cam kết sở hữu giọng: ai, lúc nào, bản điều khoản nào, hash tệp nào. Đây là bảng duy nhất trả lời được câu hỏi pháp lý, và nó là lý do consent phải là DỮ LIỆU chứ không phải một ô tick."
 msgstr "The ownership attestation for a voice: who, when, which version of the terms, which file hash. This is the only table that can answer a legal question, and it is why consent has to be DATA rather than a tickbox."
+
+#: apps/ltt_voice
+msgid "Giữ tệp bao lâu"
+msgstr "How long files are kept"
+
+#: apps/ltt_voice
+msgid "Tệp tiếng tạo ra được giữ {n} ngày kể từ khi xong, rồi xoá. Hãy tải về trong khoảng đó. Lịch sử lượt tạo và bút toán credit vẫn giữ lại để đối chiếu, chỉ tệp là hết hạn."
+msgstr "Audio files are kept for {n} days after completion, then deleted. Download yours within that window. Your generation history and credit entries are retained for reconciliation — only the files expire."

@@ -286,9 +286,13 @@ def trang_lich_su(request: Request, user=Depends(user_hien_tai),
 def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
     """Phục vụ tệp tiếng. **Kiểm sở hữu bằng chính hình dạng khoá.**
 
-    Khoá có dạng `voice/out/{owner_id}/{job_id}.wav`, nên chỉ chủ mới đọc được
-    tệp của mình. Đoán một `job_id` khác cũng không ra vì phần `owner_id` không
-    khớp.
+    Khoá có dạng `voice/out/{owner_id}/{job_id}/tieng.wav`, nên chỉ chủ mới đọc
+    được tệp của mình. Đoán một `job_id` khác cũng không ra vì phần `owner_id`
+    không khớp.
+
+    ⚠️ Dấu gạch chéo sau `{job_id}` là bắt buộc, và không phải vì route này —
+       `platform_core/job_content.py` chỉ dọn được tệp có job id **là một đoạn
+       đường dẫn**. Xem chú thích ở `jobs.py`.
     """
     uid = _uid(user)
     if not key.startswith(f"voice/out/{uid}/"):

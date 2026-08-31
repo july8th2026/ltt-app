@@ -126,6 +126,14 @@ DICH = {
         "characters you send. We hold an amount based on the text length and "
         "refund the remainder as soon as it finishes. If the result cannot be "
         "measured, you are charged nothing.",
+    "Giữ tệp bao lâu": "How long files are kept",
+    "Tệp tiếng tạo ra được giữ {n} ngày kể từ khi xong, rồi xoá. "
+    "Hãy tải về trong khoảng đó. Lịch sử lượt tạo và bút toán credit "
+    "vẫn giữ lại để đối chiếu, chỉ tệp là hết hạn.":
+        "Audio files are kept for {n} days after completion, then "
+        "deleted. Download yours within that window. Your generation "
+        "history and credit entries are retained for reconciliation — "
+        "only the files expire.",
     "Đóng dấu": "Watermarking",
     "Mọi tệp tiếng tạo ra đều được đóng một dấu chìm không nghe thấy "
     "để nhận diện nội dung do máy tạo.":
