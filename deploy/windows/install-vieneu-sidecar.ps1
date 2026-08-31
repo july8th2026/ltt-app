@@ -210,10 +210,10 @@ if (-not $SkipWarmCache) {
     }
 
     # ------------------------------------------------------- DNSMOS P.835 ----
-    # 1,16 MB, CC-BY-4.0, ghim theo commit + sha256 (xem voice_sidecar	ai_dnsmos.py).
+    # 1,16 MB, CC-BY-4.0, ghim theo commit + sha256 (xem voice_sidecar\tai_dnsmos.py).
     # Bo cham chat luong cho `chon_doan`: no bat duoc VO TIENG, thu ma SNR mu han.
     # Thieu no KHONG lam hong gi - `chon_doan` tu lui ve SNR.
-    $taiDnsmos = Join-Path $ReleaseDir 'voice_sidecar	ai_dnsmos.py'
+    $taiDnsmos = Join-Path $ReleaseDir 'voice_sidecar\tai_dnsmos.py'
     if (Test-Path $taiDnsmos) {
         Write-Step 'DNSMOS P.835 (1,16 MB)'
         $env:HF_HOME = $hfCache
@@ -227,7 +227,7 @@ if (-not $SkipWarmCache) {
             Write-Ok 'DNSMOS san sang'
         }
     } else {
-        Write-Host "  [SKIP] not found: $warm" -ForegroundColor Yellow
+        Write-Host "  [SKIP] khong thay $taiDnsmos - bo qua DNSMOS" -ForegroundColor Yellow
     }
 }
 
