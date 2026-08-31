@@ -48,6 +48,41 @@ def _pcm16(wav_f32: np.ndarray) -> bytes:
             * 32767.0).astype(np.int16).tobytes()
 
 
+def _dau(v) -> str:
+    r"""Một giá trị an toàn để đặt vào đầu HTTP.
+
+    🔴 ĐẦU HTTP CHỈ NHẬN latin-1, và Starlette **ném** khi gặp ký tự ngoài bảng
+       đó. Nghĩa là một chữ tiếng Việt hay một dấu gạch ngang dài lọt vào một
+       trường chẩn đoán sẽ làm **cả phản hồi** thành `500`.
+
+    ⛔ Và đây là kiểu hỏng tệ nhất trong các kiểu: **việc đã làm xong rồi mới bị
+       vứt đi**. Model đã sinh đủ tiếng, đã ghép, đã cân mức — rồi cả lượt tan
+       vì một chuỗi *giải thích* có dấu `—`. Khách thấy "lỗi hệ thống", máy chủ
+       thấy một `UnicodeEncodeError` ở tầng Starlette không nhắc gì tới giọng
+       nói, và GPU thì đã tiêu thật.
+
+    ⭐ Đã xảy ra thật 01/09/2026. `noi_dai.nhip_nghi` có ba lối ra; **một** trong
+       ba viết `"UOC THO tu N khoang lang bat ky (khong biet so cau) — con so
+       nay thien ve khe TU"`. Lối ra đó chạy khi không dò được ranh giới câu nào
+       giữa các đoạn — tức đúng lúc khách nộp **nhiều dòng ngắn**, mỗi dòng một
+       câu. Hai lối ra kia thuần ASCII, nên lỗi chỉ hiện ở một phần ba số ca và
+       trông như ngẫu nhiên.
+
+    ⛔ ĐỪNG sửa bằng cách bỏ dấu `—` trong chuỗi đó. Đó là đập một con chuột
+       trong khi cái lỗ vẫn mở: mọi chuỗi chẩn đoán viết bằng tiếng Việt sau này
+       đều là một quả mìn, và không có gì trong hệ thống kiểu nào phản đối. Sửa
+       ở **cửa ra** thì cửa đóng cho tất cả.
+    """
+    s = "" if v is None else str(v)
+    try:
+        s.encode("latin-1")
+        return s
+    except UnicodeEncodeError:
+        # Giữ được chữ nào hay chữ ấy; phần còn lại thành `?`. Đây là trường
+        # CHẨN ĐOÁN — đọc được gần đúng vẫn hơn là làm hỏng cả phản hồi.
+        return s.encode("latin-1", "replace").decode("latin-1")
+
+
 def _wav_bytes(wav_f32: np.ndarray, sr: int) -> bytes:
     buf = io.BytesIO()
     with wave.open(buf, "wb") as w:
@@ -170,7 +205,7 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
                 "X-Gen-S": f"{giay:.3f}",
                 "X-RTF": f"{(giay / thoi_luong):.4f}" if thoi_luong else "0",
                 "X-Sample-Rate": str(sr),
-                "X-Tham-So": tham_so.PHIEN_BAN_THAM_SO,
+                "X-Tham-So": _dau(tham_so.PHIEN_BAN_THAM_SO),
             })
 
     @app.post("/v1/batch")
@@ -226,14 +261,14 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
                 "X-Gen-S": f"{giay:.3f}",
                 "X-RTF": f"{(giay / thoi_luong):.4f}" if thoi_luong else "0",
                 "X-Sample-Rate": str(sr),
-                "X-Tham-So": tham_so.PHIEN_BAN_THAM_SO,
+                "X-Tham-So": _dau(tham_so.PHIEN_BAN_THAM_SO),
                 # Hồ sơ phép ghép. Khi một bản đọc nghe lạ ở mối nối thì đây là
                 # thứ trả lời được "nghỉ bao lâu, con số đó từ đâu ra, đoạn nào
                 # bị cân mức" — thay vì phải chạy lại rồi đoán.
-                "X-So-Doan": str(ho_so.get("so_doan", 0)),
-                "X-Nghi-S": str(ho_so.get("nghi_s", 0.0)),
-                "X-Nguon-Nghi": str(ho_so.get("nguon_nghi", "")),
-                "X-Ha-Tran-Db": str(ho_so.get("ha_tran_db", 0.0)),
+                "X-So-Doan": _dau(ho_so.get("so_doan", 0)),
+                "X-Nghi-S": _dau(ho_so.get("nghi_s", 0.0)),
+                "X-Nguon-Nghi": _dau(ho_so.get("nguon_nghi", "")),
+                "X-Ha-Tran-Db": _dau(ho_so.get("ha_tran_db", 0.0)),
             })
 
     @app.post("/v1/stream")
