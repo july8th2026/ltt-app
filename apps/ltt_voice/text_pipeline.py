@@ -35,6 +35,23 @@ from . import tu_dien
 
 # ── ký hiệu: chắc chắn phải thay, không ai đọc được một ký hiệu ───────────────
 _KY_HIEU = [
+    # 🔴 DẤU BA CHẤM — upstream issue #112, VÀ NÓ CHƯA ĐƯỢC SỬA Ở UPSTREAM.
+    #
+    #    Người báo lỗi: engine không ngắt hơi ở `...` như nó ngắt ở `,` hay `.`.
+    #    Tác giả sửa `...` trong `sea-g2p` 0.6.8. Nhưng người báo lỗi chỉ ra
+    #    tiếp: `…` (U+2026, MỘT ký tự) **khác** `...` (BA ký tự), và bản vá kia
+    #    không chạm tới nó. Tác giả trả lời *"Will add normalization for it in
+    #    the next patch"* — bản vá đó chưa có.
+    #
+    # ⭐ Nên `…` là của TA phải sửa, không chờ được. Đổi thành một dấu chấm:
+    #    đó đúng là thứ `sea-g2p` 0.6.8 làm với `...`, nên ta chỉ đang đưa ký tự
+    #    còn thiếu về cùng một chỗ.
+    #
+    # ⚠️ Đặt TRƯỚC luật `...`: nếu để sau, `…` vẫn còn nguyên khi luật kia chạy.
+    #    `(?:…\s*)+` gộp cả chuỗi: "đã…… thế" cho MỘT dấu chấm, không phải
+    #    hai. Hai dấu chấm cách nhau một khoảng trắng là hai câu rỗng.
+    (re.compile(r"\s*(?:…\s*)+"), ". "),
+    (re.compile(r"\s*\.{3,}\s*"), ". "),
     (re.compile(r"(?<=\d)\s*%"), " phần trăm"),
     # ⚠️ `₫` KHÔNG phải ký tự từ, nên `\b` sau nó không bao giờ khớp — test bắt
     #    được điều này. Tách hai luật: ký hiệu thì không cần biên từ; chữ `đ` thì
@@ -162,6 +179,132 @@ def _thay_gio(m: re.Match) -> str:
     return f"{_doc_so_nho(h)} giờ {_doc_so_nho(p)}"
 
 
+#: Dấu thanh và dấu phụ tiếng Việt ở dạng TỔ HỢP (sau NFD). Dùng để trả lời một
+#: câu hỏi duy nhất: chữ này có mang dấu tiếng Việt không.
+_DAU_VIET_NFD = frozenset("̣̀́̃̉"  # huyền sắc ngã hỏi nặng
+                          "̛̂̆")               # mũ, trăng, móc
+
+#: Một TỪ (chỉ chữ cái, không số, không gạch dưới).
+_TU_CHU = re.compile(r"[^\W\d_]+", re.UNICODE)
+
+#: Khoảng ngăn giữa hai từ mà vẫn coi chúng là CÙNG một chuỗi viết hoa. Cố ý
+#: hẹp: xuống dòng hay dấu chấm câu nặng thì đó là hai chuỗi khác nhau.
+_NGAN_TRONG_CHUOI = re.compile(r"^[ 	.,:;/–-]*$")
+
+
+#: Nguyên âm tiếng Việt, ở dạng CHỮ GỐC (sau khi bỏ dấu). `y` có mặt vì nó làm
+#: âm chính trong "quý", "ly", "mỹ".
+_NGUYEN_AM = frozenset("aeiouy")
+
+
+def _co_nguyen_am(tu: str) -> bool:
+    """Từ này có nguyên âm không.
+
+    🔴 ĐÂY LÀ MỘT SỰ THẬT NGÔN NGỮ, KHÔNG PHẢI MỘT PHỎNG ĐOÁN, và đó là lý do
+       nó được phép quyết định.
+
+       Mọi âm tiết tiếng Việt đều có âm chính, và âm chính luôn là một nguyên
+       âm. Nên một chữ **không có nguyên âm nào** thì không thể là một từ tiếng
+       Việt — nó chỉ có thể là chữ viết tắt:
+
+           HĐND · TNHH · THPT · ĐH · CĐ · QĐ · BĐS · VĐV
+
+       Ngược lại không đúng: `CPU`, `RAM`, `ISO`, `ABC` có nguyên âm mà vẫn là
+       viết tắt. Nên phép này chỉ dùng để **giữ lại**, không dùng để hạ xuống.
+    """
+    goc = unicodedata.normalize("NFD", tu.lower())
+    return any(ch in _NGUYEN_AM for ch in goc)
+
+
+def _co_dau_viet(tu: str) -> bool:
+    """Từ này có mang dấu tiếng Việt không (kể cả dạng dựng sẵn như `Ư`, `Ạ`)."""
+    return any(ch in _DAU_VIET_NFD for ch in unicodedata.normalize("NFD", tu))
+
+
+def _ha_chuoi_viet_hoa(t: str) -> str:
+    """VIẾT HOA TOÀN BỘ -> chữ thường, nhưng CHỈ khi chắc đó không phải viết tắt.
+
+    🔴 NGUỒN: upstream `pnnbao97/VieNeu-TTS` **issue #119**. Tác giả trả lời
+       nguyên văn:
+
+           "hiện tại nếu viết hoa toàn bộ như CHƯƠNG thì hệ thống đang hiểu nhầm
+            là từ viết tắt nên mới đọc từng chữ cái. Tạm thời bạn có thể chuyển
+            về chữ thường trước khi dùng."
+
+       Tức `"CHƯƠNG I"` được đọc thành *"xê hát u ơ en giê"*. Đây không phải ca
+       hiếm: văn bản hành chính, pháp lý, hợp đồng tiếng Việt đầy chữ viết hoa —
+       và đó đúng là thứ app này nhận. Khách dán một quyết định vào, nhận về một
+       bản thu đánh vần, và **vẫn bị thu tiền** vì job `done` và `credit_cost`
+       tính theo số giây thật sự sinh ra.
+
+    ⛔ VÌ SAO KHÔNG HẠ TẤT CẢ VỀ CHỮ THƯỜNG.
+
+       Đo thật: `"Xem mục CPU và RAM"` -> `"Xem mục xi pi diu và RAM"`. `CPU` có
+       trong từ điển phát âm, `RAM` thì không. Hạ hết thành chữ thường thì `CPU`
+       rơi khỏi từ điển, và `RAM` — vốn ĐANG được đánh vần **đúng** — thành chữ
+       "ram". Sửa một lỗi bằng cách tạo ra lỗi ngược lại.
+
+    ⭐ LUẬT, và vì sao nó an toàn:
+
+       Trong một **chuỗi liên tiếp** các từ viết hoa, nếu có ít nhất một từ mang
+       **dấu tiếng Việt** thì hạ cả chuỗi.
+
+       Cơ sở: **từ viết tắt tiếng Việt không mang dấu.** Không có `TNHH`, `UBND`,
+       `CPU`, `RAM`, `ISO` nào có dấu thanh. Nên một dấu trong chuỗi là bằng
+       chứng đây là chữ VIẾT HOA, không phải viết tắt.
+
+           "CHƯƠNG I. QUY ĐỊNH CHUNG"  -> hai chuỗi, mỗi chuỗi có một từ mang
+                                          dấu (CHƯƠNG, ĐỊNH) -> hạ cả hai ✅
+           "Xem mục CPU và RAM"        -> hai chuỗi một từ, không dấu -> giữ ✅
+
+    ⚠️ PHẦN DƯ, ghi ra chứ không giấu: `"CÔNG TY TNHH ABC"` là **một** chuỗi, và
+       `CÔNG` có dấu, nên `TNHH` bị hạ oan thành "tnhh". Luật này không che được
+       ca đó. Cửa `/xem-truoc` (Xem trước cách đọc) tồn tại đúng để khách nhìn
+       thấy và sửa — nhưng nó chỉ cứu người cẩn thận, không cứu người vội.
+
+       Không mở rộng luật để bắt nốt ca đó: mọi cách mở rộng tôi thử đều phải
+       đoán, và một phỏng đoán chạy ngầm ở tầng chuẩn hoá đúng là thứ sinh ra
+       lớp lỗi này ngay từ đầu.
+    """
+    # ⛔ DUYỆT TỪNG TỪ, không dùng một regex bắt cả chuỗi.
+    #
+    #    Bản đầu dùng `[^\W\d_]{2,}(?:[\s.,:;/-]+[^\W\d_]{2,})*`, và nó THAM:
+    #    với `"CÔNG TY TNHH ABC thông báo"` nó nuốt luôn "thông báo", rồi phép
+    #    kiểm "cả chuỗi phải viết hoa" hỏng, nên **không làm gì cả**. Lỗi im
+    #    lặng: hàm chạy, không ném, và trả về đúng thứ nó nhận.
+    tu = [m for m in _TU_CHU.finditer(t) if len(m.group(0)) >= 2]
+    if not tu:
+        return t
+
+    ra, i = [], 0
+    while i < len(tu):
+        if not tu[i].group(0).isupper():
+            i += 1
+            continue
+        j = i
+        while (j + 1 < len(tu) and tu[j + 1].group(0).isupper()
+               and _NGAN_TRONG_CHUOI.match(t[tu[j].end():tu[j + 1].start()])):
+            j += 1
+        if any(_co_dau_viet(m.group(0)) for m in tu[i:j + 1]):
+            # ⛔ Hạ TỪNG TỪ trong chuỗi, không hạ cả chuỗi một lượt: một chuỗi
+            #    có thể trộn chữ viết hoa với viết tắt, và `HĐND TỈNH` là ca
+            #    thật chứ không phải ca dựng ra. Chữ không có nguyên âm thì giữ
+            #    nguyên — nó không thể là một từ tiếng Việt.
+            ra.extend((m.start(), m.end()) for m in tu[i:j + 1]
+                      if _co_nguyen_am(m.group(0)))
+        i = j + 1
+
+    if not ra:
+        return t
+    manh, truoc = [], 0
+    for a, b in ra:
+        manh.append(t[truoc:a])
+        manh.append(t[a:b].lower())
+        truoc = b
+    manh.append(t[truoc:])
+    return "".join(manh)
+
+
 def _bo_ky_tu_vo_hinh(t: str) -> str:
     """Bỏ ký tự KHÔNG HIỂN THỊ. Phải chạy **trước mọi phép biến đổi khác**.
 
@@ -247,6 +390,11 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
     # Từ điển phát âm TRƯỚC khi đụng số: nó chứa tên riêng và cặp ch/tr, và một
     # số phép thay ở dưới có thể cắt mất ranh giới từ.
     t = tu_dien.ap_dung(t, them=tu_dien_rieng)
+
+    # ⚠️ SAU từ điển, không phải trước. Từ điển bung `CPU` thành "xi pi diu"
+    #    trước, nên tới đây không còn chữ hoa của viết tắt đã biết để hạ
+    #    nhầm. Thứ tự ở đây là một phần của bản vá, không phải chi tiết.
+    t = _ha_chuoi_viet_hoa(t)
 
     t = _STT.sub(lambda m: _doc_so_nho(int(m.group(1))).capitalize() + ". ", t)
     t = _NGAY.sub(_thay_ngay, t)
