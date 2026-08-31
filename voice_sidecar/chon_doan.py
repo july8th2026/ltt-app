@@ -42,10 +42,23 @@ trước rồi đưa nó đúng 8 giây ta chọn.
 10k★) chấm từng đoạn bằng **DNSMOS P.835** (`sig_bak_ovr.onnx`, Microsoft
 DNS-Challenge) rồi lọc theo ngưỡng.
 
-⚠️ Ta CHƯA dùng DNSMOS: nó là một model ONNX phải tải thêm, và thêm một tài sản
-   vào đường ghi danh là một quyết định riêng. Tạm thay bằng SNR + tỉ lệ chạm
-   trần — yếu hơn, và ghi rõ ở đây là yếu hơn để không ai tưởng đã đủ. Đường
-   nâng cấp có tên và có địa chỉ.
+✅ TA ĐÃ DÙNG DNSMOS (31/08/2026). Lý do hoãn trước đây — "một model ONNX phải
+   tải thêm" — không đứng vững khi đo: model **1,16 MB**, giấy phép CC-BY-4.0,
+   chạy trên `onnxruntime` ta đã có. Xem `dnsmos.py` và `tai_dnsmos.py`.
+
+   Đo trên tiếng nói THẬT (không phải âm tổng hợp — DNSMOS huấn luyện trên tiếng
+   người và cho số vô nghĩa trên sóng sin):
+
+       tiếng sạch    SIG 2,764  BAK 3,977  OVRL 2,555
+       nhiễu nhẹ                BAK 2,917  OVRL 2,040
+       nhiễu vừa                BAK 1,920  OVRL 1,562
+       vỡ tiếng      SIG 2,244  BAK 4,024  OVRL 2,127
+
+   `BAK` bám nhiễu đơn điệu, và `SIG` bắt được **vỡ tiếng** trong khi `BAK` vẫn
+   cao — vì vỡ tiếng không phải nhiễu nền. SNR mù hẳn chỗ đó.
+
+⚠️ Nhưng IM LẶNG ăn OVRL 1,840, cao hơn tiếng nhiễu. DNSMOS không thay được cổng
+   tỉ lệ tiếng — nó bổ sung, không thay thế.
 
 **Bước 3 · chọn một** — chỗ này **không có tiền lệ trực tiếp**, và nói thẳng:
    các quy trình cộng đồng LỌC MỘT KHO (giữ mọi đoạn qua ngưỡng), còn ta phải
@@ -256,11 +269,24 @@ def _ty_le_cham_tran(wav) -> float:
     return 0.0 if not len(wav) else float(np.mean(np.abs(wav) >= 0.999))
 
 
+def diem_chat_luong(wav, sr: int) -> tuple[float, str]:
+    """Điểm chất lượng của một đoạn, `(điểm, nguồn)`. Càng cao càng sạch.
+
+    DNSMOS OVRL nếu có model; không thì lui về SNR và **nói ra là đã lui** —
+    hai thang khác nhau không so được với nhau, nên phải biết đang đọc thang nào.
+    """
+    from . import dnsmos
+    d = dnsmos.cham(wav, sr)
+    if d is not None:
+        return float(d["ovrl"]), "dnsmos_ovrl"
+    return float(_snr_db(wav, sr) or -99.0), "snr_db"
+
+
 def _snr_db(wav, sr: int) -> float | None:
     """SNR ước lượng: 25 % khung to nhất so với 10 % khung yên nhất.
 
-    ⚠️ Đây là hàng THAY TẠM cho DNSMOS P.835 (xem đầu tệp). Nó đo tương phản
-       mức, không đo chất lượng cảm nhận — một bản thu méo đều vẫn ra SNR đẹp.
+    ⚠️ LỐI LUI khi không có DNSMOS. Nó đo tương phản mức, không đo chất lượng
+       cảm nhận — một bản thu méo đều hay vỡ tiếng vẫn ra SNR đẹp.
     """
     rms, _ = _khung_rms(wav, sr)
     if len(rms) < 10:
@@ -346,11 +372,11 @@ def _moc_ben_vung(wav, sr: int, uv: list, bo_ma_hoa):
        tốt hơn vẫn xấu. Không có cách nào chọn ra một đoạn tốt từ một bản thu
        không có đoạn nào tốt, và bộ chọn không nên giả vờ có.
     """
-    snr = [(_snr_db(wav[a:b], sr) or -99.0, a, b) for a, b in uv]
-    if len(snr) < 3:
+    diem = [(diem_chat_luong(wav[a:b], sr)[0], a, b) for a, b in uv]
+    if len(diem) < 3:
         return bo_ma_hoa(wav, sr)
-    nguong = float(np.median([x[0] for x in snr]))
-    tot = [(a, b) for s_, a, b in snr if s_ >= nguong] or [(a, b) for _, a, b in snr]
+    nguong = float(np.median([x[0] for x in diem]))
+    tot = [(a, b) for d, a, b in diem if d >= nguong] or [(a, b) for _, a, b in diem]
     cac = [np.asarray(bo_ma_hoa(wav[a:b], sr), dtype=np.float64).ravel()
            for a, b in tot]
     tb = np.mean(cac, axis=0)

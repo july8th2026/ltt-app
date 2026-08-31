@@ -207,6 +207,25 @@ if (-not $SkipWarmCache) {
         Invoke-Ngoai { & $python $warm --repo $MODEL_REPO --revision $MODEL_REV }
         if ($LASTEXITCODE -ne 0) { throw 'Failed to warm the HuggingFace cache' }
         Write-Ok 'HF cache ready'
+    }
+
+    # ------------------------------------------------------- DNSMOS P.835 ----
+    # 1,16 MB, CC-BY-4.0, ghim theo commit + sha256 (xem voice_sidecar	ai_dnsmos.py).
+    # Bo cham chat luong cho `chon_doan`: no bat duoc VO TIENG, thu ma SNR mu han.
+    # Thieu no KHONG lam hong gi - `chon_doan` tu lui ve SNR.
+    $taiDnsmos = Join-Path $ReleaseDir 'voice_sidecar	ai_dnsmos.py'
+    if (Test-Path $taiDnsmos) {
+        Write-Step 'DNSMOS P.835 (1,16 MB)'
+        $env:HF_HOME = $hfCache
+        $truocDns = $env:PYTHONPATH
+        $env:PYTHONPATH = $ReleaseDir
+        Invoke-Ngoai { & $python -m voice_sidecar.tai_dnsmos }
+        $env:PYTHONPATH = $truocDns
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host '  [BO QUA] khong tai duoc DNSMOS - chon doan se lui ve SNR' -ForegroundColor Yellow
+        } else {
+            Write-Ok 'DNSMOS san sang'
+        }
     } else {
         Write-Host "  [SKIP] not found: $warm" -ForegroundColor Yellow
     }

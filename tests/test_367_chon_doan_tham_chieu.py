@@ -248,3 +248,72 @@ def test_ghi_danh_dich_loi_HA_TANG_dung_lop():
         "nhanh `LoiSidecar` cua `_ghi_danh` phai nem `LoiHaTang`. Nem "
         "`LoiGiongNoi` la noi voi khach 'vui long thu lai' roi tu quyet khong "
         "thu lai.")
+
+
+# ═══════════════════════════════════ DNSMOS ═════════════════════════════════
+
+def test_ghim_dnsmos_day_du_ba_thu():
+    """⛔ Ghim COMMIT + sha256 + kích thước, cả ba cùng lúc.
+
+    `microsoft/DNS-Challenge` là kho đang sống. Tải theo `master` thì hai lần cài
+    cách nhau vài tháng có thể lấy hai model khác nhau — và điểm chất lượng đổi
+    mà không ai đổi một dòng mã nào.
+    """
+    from voice_sidecar.tai_dnsmos import COMMIT, SHA256, SO_BYTE, URL
+
+    assert len(COMMIT) == 40 and all(c in "0123456789abcdef" for c in COMMIT), (
+        f"COMMIT phai la mot SHA day du, duoc {COMMIT!r}")
+    assert len(SHA256) == 64
+    assert SO_BYTE == 1_157_965
+    assert COMMIT in URL, "URL khong ghim theo commit — dang tai theo nhanh"
+    assert "master" not in URL and "/main/" not in URL
+
+
+def test_he_so_hieu_chuan_dnsmos_khop_ban_goc():
+    """Đầu ra thô của model KHÔNG phải thang MOS.
+
+    Bỏ bước hiệu chuẩn cho ra những con số nằm ngoài 1–5, và không gì báo. Ba bộ
+    hệ số chép nguyên từ `dnsmos_local.py` (bản không cá nhân hoá).
+    """
+    from voice_sidecar.dnsmos import _HE_SO_BAK, _HE_SO_OVR, _HE_SO_SIG
+
+    assert _HE_SO_SIG == (-0.08397278, 1.22083953, 0.0052439)
+    assert _HE_SO_BAK == (-0.13166888, 1.60915514, -0.39604546)
+    assert _HE_SO_OVR == (-0.06766283, 1.11546468, 0.04602535)
+
+
+def test_dnsmos_thieu_model_thi_tra_None_chu_khong_nem():
+    """`None` nghĩa là KHÔNG BIẾT, và người gọi phải xử lý nó khác với "điểm 0"."""
+    import numpy as np
+
+    from voice_sidecar import dnsmos
+
+    truoc = dnsmos._PHIEN
+    dnsmos._PHIEN = None
+    try:
+        import os
+        cu = os.environ.get("LTT_DNSMOS_DIR")
+        os.environ["LTT_DNSMOS_DIR"] = "/khong-co-thu-muc-nay"
+        try:
+            assert dnsmos.cham(np.zeros(1000, np.float32), 16000) is None
+        finally:
+            if cu is None:
+                os.environ.pop("LTT_DNSMOS_DIR", None)
+            else:
+                os.environ["LTT_DNSMOS_DIR"] = cu
+    finally:
+        dnsmos._PHIEN = truoc
+
+
+def test_diem_chat_luong_luon_NOI_RA_dang_dung_thang_nao():
+    """Hai thang khác nhau không so được với nhau.
+
+    DNSMOS OVRL nằm trong 1–5; SNR tính bằng dB và có thể âm. Trộn hai thang
+    trong một cột số là một bảng nhìn được mà đọc sai.
+    """
+    import numpy as np
+
+    from voice_sidecar.chon_doan import diem_chat_luong
+
+    _, nguon = diem_chat_luong(_tieng(2.0), SR)
+    assert nguon in ("dnsmos_ovrl", "snr_db"), f"nguon la {nguon!r}"
