@@ -4,8 +4,8 @@
 > chi tiết nằm ở `reports/`, không paste log vào đây.
 
 ## Program
-- **Current phase:** 06 — Reliability/Deployment (**MỘT PHẦN** — hai CHANGE đã thi hành, F01–F28 chưa xong)
-- **Last completed phase:** 00 → 03 → 04 → (06 một phần)
+- **Current phase:** 02 — Execution/Admission/Billing (**MỘT PHẦN**)
+- **Last completed phase:** 00 → 03 → 04 → 06(phần) → 01 → 02(phần)
 - **Repo revision / branch:** `2ed62d7` → nhánh `admin-mvp-v3`
   *(cây có 38 tệp chưa commit lúc chạy baseline — 34 của phiên `-e7`, xem §WIP)*
 - **Machine A:** `DESKTOP-H9AGFUQ` · 192.168.2.17 · Python 3.13.12 ·
@@ -74,7 +74,10 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | INV-003 | Bận ⇒ khách **không** bị thu tiền, có `Retry-After` | `streaming.py` · `chat.py` | sự cố 31/08: 89 lượt hỏng, `credit=+0` mọi dòng | **VERIFIED-LIVE** |
 | INV-004 | Bận (429 của B) **không** bị hiểu là provider hỏng ⇒ không disable khoá | `luong_vlm.py` | khoá `ltt_llm` vẫn `active` sau 89 lượt hỏng | **VERIFIED-LIVE** |
 | INV-005 | Ngân sách token có **một** nguồn chân lý, ba tầng không trôi | `apps/ltt_llm/ngan_sach.py` | `test_334` — `TestDoiChieuMayB` · `TestDoiChieuNenTang` · `TestDoiChieuKhoMayB` | **VERIFIED** |
-| INV-006 | Giá không bao giờ suy ra từ con số **khách khai** | `gia_token` + `apply_server_measurements` | Q84 / H35.10 | UNSEEN *(Prompt 02)* |
+| INV-006 | Giá không bao giờ suy ra từ con số **khách khai** | `gia_token` + `apply_server_measurements` | Q84 / H35.10 | UNSEEN *(còn nợ)* |
+| INV-009 | Không đọc được `usage` ⇒ **hoàn đủ, thu 0** — không đoán | `gia_token.tinh` ném `KhongDoDuocError` | mã + `test_252` | **VERIFIED** |
+| INV-010 | Cửa stream đọc `usage` THẬT (không ước) | `dem_token_luong.DemToken` quét mọi khối `usage` | nhật ký production: `khoi=64 token_ra=67` | **VERIFIED-LIVE** |
+| INV-011 | `request_id` là khoá idempotency của **cả** giữ chỗ lẫn quyết toán | `giu_cho_luot` ném nếu thiếu | mã | **VERIFIED** |
 | INV-007 | Tổ hợp tham số sai bị chặn **trước** `price()`/hold | `invocation.validate_public_input` | `test_336` | **VERIFIED** |
 | INV-008 | Khoản giữ chỗ treo được tự hoàn | `credit.tu_hoan_treo` (H41.3) | có hàm + chạy dưới `_mot_luot_bao_tri` | INFERRED *(Prompt 02)* |
 
@@ -107,6 +110,9 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | D-04-8 | 04 | Thượng nguồn không gửi `usage` trong SSE | **DEFER → 05** | Làm decode tok/s thành **ước**, không phải đo |
 | D-06-1 | 06 | Trọng tài bỏ qua nhánh tải khi **model của ta** đang chạy | **CHANGE — ĐÃ LÀM** | A/B đo được: 429 lần-đầu **9/12 → 0/12**; chất lượng 12/12 không đổi |
 | D-06-2 | 06 | `deploy.ps1` phát hiện cấu hình chưa có hiệu lực | **CHANGE — ĐÃ LÀM** | Không tự restart (unload model là quyết định vận hành), nhưng **không im lặng** |
+| D-01-4 | 01 | Bốn bản sao hằng số không được canh | **CHANGE — ĐÃ LÀM** | Hai tới tay khách; ghép bằng **phép kiểm** chứ không bằng `import` (hợp đồng app cấm platform phụ thuộc app) |
+| D-02-1 | 02 | `DemToken` đếm dọc đường | **KEEP** | Đọc `usage` thật — **một** nguồn, hai cách đọc |
+| D-02-2 | 02 | `reports/04` nói "upstream không gửi usage" | **ĐÃ SỬA** | Giới hạn của bộ đo tôi viết (thiếu `stream_options.include_usage`), không của nền tảng |
 
 ## Changes kept
 
@@ -138,15 +144,15 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | Domain | Trọng số | Điểm | Confidence |
 |---|---:|---:|---|
 | Correctness & invariants | 20 | 17 | **HIGH** *(trọng tài đã sửa, A/B đo được)* |
-| Money/admission/failure semantics | 15 | 13 | HIGH *(INV-001/003/004 có bằng chứng sống)* |
+| Money/admission/failure semantics | 15 | 14 | HIGH *(+INV-009/010/011)* |
 | Model quality & tool/context fidelity | 15 | **12** | **HIGH** — 12/12, chấm bằng chạy thật |
 | Performance/resource efficiency | 15 | **11** | **HIGH** — có mốc, khớp số lịch sử |
 | Reliability/recovery | 10 | 8 | HIGH *(F01–F28 phần lớn chưa chạy)* |
 | Security boundaries | 10 | 9 | **HIGH** *(Prompt 03)* |
 | Observability/operations | 5 | 4 | MEDIUM |
 | Tests/evidence/reproducibility | 5 | 5 | HIGH |
-| Maintainability/SSOT/deployment | 5 | 4 | MEDIUM |
-| **TOTAL** | **100** | **80** | **MEDIUM-HIGH** *(69 → 71 → 78 → **80**)* |
+| Maintainability/SSOT/deployment | 5 | 5 | HIGH *(Prompt 01)* |
+| **TOTAL** | **100** | **82** | **HIGH** *(69 → 71 → 78 → 80 → **82**)* |
 
 ⛔ **69 không phải "hệ thống tệ".** Phần lớn điểm trừ nằm ở **thiếu phép đo**, không ở
 hỏng đã biết: G5 không có bộ đánh giá nào, và mọi số hiệu năng đều `PENDING LIVE`.
@@ -177,9 +183,7 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
 ## Next phase
-- **Prompt:** `01_MACHINE_A_CORE_CONTEXT_CONTRACT.md` → rồi `02`, `05`, phần còn
-  lại của `06`, `07`
-- 🔴 **Prompt 08 phải do PHIÊN KHÁC chạy** — gói gọi nó là *independent final
-  acceptance*; một phiên thi hành 00–07 rồi tự nghiệm thu thì "independent" chỉ
-  còn là trang trí.
+- **Còn lại:** `05` (giao thức/client E2E) · phần còn lại của `02` (bảy cửa sổ
+  sự cố) và `06` (F01–F28) · `07` (tích hợp)
+- 🔴 **Prompt 08 phải do PHIÊN KHÁC chạy** — *independent final acceptance*.
 - **Do not disturb:** WIP của `-e7`; `apps/ltt_voice/**`

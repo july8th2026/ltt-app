@@ -86,9 +86,19 @@ sau  : VRAM 22.433 MiB, GPU 40 %, 60 °C, 25 tien trinh tren card
 độc lập, cách nhau nhiều ngày, cùng một số ⇒ runtime đang ở trạng thái **sạch**
 và ổn định.
 
-⚠️ **`token_ra` là ƯỚC LƯỢNG**, đánh dấu `token_ra_la_uoc: true` trong artifact:
-thượng nguồn **không gửi `usage` trong luồng SSE**, nên số token suy từ số khối
-SSE. Decode tok/s vì thế là ước, không phải đo. *(D-06 riêng — xem §7.)*
+⚠️ **`token_ra` là ƯỚC LƯỢNG**, đánh dấu `token_ra_la_uoc: true` trong artifact.
+
+🔴 **SỬA 31/08 sau Prompt 02 — tôi viết sai nguyên nhân.** Bản đầu ghi *"thượng
+nguồn **không gửi** `usage` trong luồng SSE"*, như thể đó là một thiếu sót của
+nền tảng. **Không phải.** Tôi gọi cửa `/v1/chat/completions` mà **không xin
+`stream_options.include_usage`** — kiểu OpenAI chỉ gửi `usage` khi được xin.
+
+Ba cửa thật của nền tảng **có** nhận được, và có bằng chứng sống trong nhật ký
+production: `STREAM XONG khoi=64 token_ra=67` — `token_ra ≠ khoi` ⇒ đó là
+`usage` thật chứ không phải phép đếm khối.
+
+⇒ `decode_tok_s` ở đây là **ước**, và nó ước vì **bộ đo của tôi thiếu một tham
+số**, không vì hệ thống thiếu dữ liệu. Xem `reports/02` §1.
 
 VRAM **không đổi** qua toàn bộ phép đo (22.433 MiB) ⇒ không rò bộ nhớ trong
 vòng đời một hồ sơ.
