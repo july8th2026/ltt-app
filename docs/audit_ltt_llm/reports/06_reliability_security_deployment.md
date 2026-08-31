@@ -135,7 +135,8 @@ vụ chết. Nó không sinh mới khi tệp đã tồn tại.
 * ⚠️ **Chấp nhận có ý, không phải bỏ sót:** dịch vụ chạy bằng `LocalSystem` —
   nhiều quyền hơn cần, nhưng đổi nó chạm quyền truy cập GPU. `Guest` đang bật
   trên máy B là chính sách máy, ngoài phạm vi audit này.
-* ⚠️ **Còn lại:** chuỗi cung ứng bản cập nhật.
+* ✅ **Chuỗi cung ứng nay ĐÃ SOÁT.** Nexus (thứ duy nhất phát tới máy **bên thứ ba**) ký Ed25519 và tự kiểm trước khi ghi — đúng chỗ cần ký. Nền tảng và cổng thì tin **cây nguồn cục bộ** + khoá SSH; đó là ranh giới tin cậy hợp lý, không phải lỗ.
+  🔴 Nhưng tìm ra một **bất đối xứng**: `render_gateway/deploy` có 15 dòng đối chiếu hash, `llm_gateway/deploy` có **0**. Hai cổng cùng một máy, một cái kiểm một cái không. Nay đã có, và chạy thật: **34/34 tệp khớp — máy B không bị sửa tay**. Đó là lần đầu ta *biết* điều đó thay vì giả định.
 
 ---
 
@@ -468,7 +469,8 @@ chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
 | F01 luồng treo · F08 llama-server chết · F09 vỏ bọc chết · F10 mất điện | ✅ **ĐO XONG** |
 | F02 DB chập chờn · F03 worker restart · F04 lease cũ | ✅ **ĐÃ PHỦ** — `pool_pre_ping` + `test_215` ("chủ chết thì lease hết hạn", "worker chết giữa lúc gửi") |
 | F06 máy B không với tới được | ✅ **XONG** — `test_372`, 6 phép kiểm gồm một đối chứng |
-| F05 tiêm lỗi máy-A-restart · F07 **tiêm** lỗi CUDA · CPU fallback | **CHƯA** — chưa có cách tiêm an toàn. ⚠️ Đây là kịch bản cần dựng, **không phải** máy nào đang hỏng: cả hai máy đo 01/09 đều lành |
+| F07 CUDA hỏng / CPU fallback | ✅ **PHỦ Ở MỨC PHÁT HIỆN** — `test_270` (10 phép, có ca thật 23/08) + `test_378` chốt **mắt xích giữa** mà trước đây không ai kiểm. Không tiêm được lỗi CUDA an toàn, **và không cần**: thứ thật sự hỏng ngày 23/08 không phải CUDA mà là **hơn một giờ không ai biết** |
+| F05 tiêm lỗi máy-A-restart | **CHƯA** |
 | F11–F16 mô hình health + bảng quan sát | ✅ **XONG** — §6 mô hình health, §10 soát metric/cardinality/riêng tư. Kết luận: **không thêm metric nào** |
 | F19 quét bí mật · F20 advisory | ✅ **XONG** |
 | F14 SSRF hồ sơ vision | ✅ **XONG** — `test_373`, 30 phép kiểm, 3 giao thức × 6 đích thật + 7 biến thể lách |
