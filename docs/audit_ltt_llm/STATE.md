@@ -136,6 +136,10 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | 04 | Bộ đánh giá chất lượng + bộ đo hiệu năng | `tools/danh_gia_llm.py` · `tools/bench_llm_hieu_nang.py` | 12/12 trên 8 chiều | xoá tệp |
 | 06 | Trọng tài phân biệt tải của ta | `llm_gateway/trong_tai.py` · `api.py` | `test_368` 8 phép kiểm + A/B 9/12→0/12 | git revert + deploy lại |
 | 06 | `deploy.ps1` nói khi cấu hình chưa có hiệu lực | `llm_gateway/deploy/deploy.ps1` | cú pháp 5.1 OK, thuần ASCII | git revert |
+| 06 | Bắt **health xanh giả** khi tiến trình cổng sống sót mồ côi | `tools/soi_cong_llm.py` · `llm_gateway/main.py` | `test_370` 11 phép kiểm + chứng minh đầu-tới-cuối trên máy B (LÀNH→LỆCH→runbook→LÀNH) | xoá tệp / git revert |
+| 06 | `sc failure` cho hai dịch vụ LLM trên máy B | *cấu hình máy B, ngoài kho* | SCM có kích hoạt (Stopped→Paused @62,9s) | `sc failure <ten> reset= 0 actions= ""` |
+| 06 | Nâng 2 phụ thuộc có advisory, nằm trong ghim sẵn có | `requirements-server.txt` · `requirements.txt` | 437 passed; `python-multipart` về **sạch** trên OSV | git revert |
+| 06 | `_ban_va()` tách "chưa có bản vá" khỏi "không hỏi được" | `tools/check_phu_thuoc_advisory.py` | bánh cóc nuốt-lỗi về 63 = PASS | git revert |
 
 ## Benchmark summary
 
@@ -182,6 +186,10 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 | P2 | `max_dong_thoi = 1` ⇒ một sự cố suất = **100 %** ngừng dịch vụ | 03 | không có mức suy giảm ở giữa | OPEN |
 | P3 | VRAM 22,4/24,6 GiB khi model nạp; ba hộ dùng chung card | 03/04 | benchmark phải kèm ảnh chụp `trong_tai` | OPEN |
 | P3 | Bước gate multiproc vẫn bỏ qua ở đường chạy thường | 06 | cần env production; đã có cầu | MITIGATED |
+| **P1** | **`/health` xanh giả 99 s khi tiến trình cổng mồ côi** — dịch vụ Stopped, không ai dựng dậy, không cảnh báo nào nổi | 06 | đo thật 01/09; `soi_cong_llm.py` phát hiện được **nhưng chưa có lịch chạy** | **MITIGATED** — còn cần chỗ buộc chạy |
+| P2 | `sc failure` **không đủ**: bản mới không giành được cổng vì mồ côi giữ | 06 | cần diệt mồ côi (Job Object) hoặc chốt cổng khi khởi động | OPEN |
+| P2 | `pillow` 34 advisory · `aiohttp` 28 — đều đòi **nới trần ghim** | 06 | nới `<12` chạm mọi app ảnh ⇒ cần chủ dự án quyết | OPEN |
+| P3 | Công cụ advisory ngoài gate ⇒ **sẽ không ai chạy** | 06 | cần một mục vận hành có chu kỳ | OPEN |
 
 ## Pending live canaries
 - Benchmark Qwen (D30–D36) — máy B rảnh, chưa chạy

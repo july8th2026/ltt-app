@@ -94,15 +94,187 @@ vụ chết. Nó không sinh mới khi tệp đã tồn tại.
 
 ---
 
-## 5. Còn nợ của phase này
+## 5. §1 Tiêm lỗi thật trên máy B (F01–F10, một phần)
+
+**01/09, 23:30–00:20.** Chủ dự án xác nhận **chưa có khách ngoài** (log cổng: 537
+yêu cầu từ 192.168.2.17 đều là lưu lượng thử của phiên này), nên bán kính bằng 0.
+
+### Chuỗi phải sống để `ltt_llm` phục vụ một yêu cầu
+
+```
+Windows boot → LTTLlamaSwap (8280)  Automatic, không phụ thuộc ai
+             → LTTLlmGateway (8299) Automatic, DependsOn LTTLlamaSwap
+             → request đầu → llama-swap sinh llama-server, nạp GGUF 15,33 GiB
+             → sau ttl 1800s → nhả, VRAM 22.420 → 886 MiB
+```
+
+⭐ **Kích hoạt là theo Windows, không phải máy A gọi mở.** `grep Start-Service`
+trong `platform_core/`, `server/`, `apps/` trả về **rỗng** — máy A không bao giờ
+bật dịch vụ trên B; nó chỉ gọi, hỏng thì `KhongMoDuocLuong`, bận thì cascade sang
+Gemini. Thứ *duy nhất* nạp theo yêu cầu là **model**, và đó là thiết kế đúng: giữ
+15,9 GB VRAM thường trú sẽ chặn hai hộ kia dùng chung card (D-037).
+
+### Bảng `failure → detect → recovery`
+
+| Hỏng | Phát hiện | Ai dựng dậy | Đo được | Khách thấy |
+|---|---|---|---|---|
+| luồng bị cắt giữa chừng (RST) | — | 2 tầng nhả suất | `dang_chay=0`, `da_thu_hoi=0` | không gì |
+| `llama-server.exe` chết | request kế tiếp | llama-swap | **17,7 s** | một request chậm |
+| tiến trình con python chết | NSSM | `AppExit=Restart`, delay 15 s | PID đổi thật | ~15 s lỗi |
+| **vỏ bọc `nssm.exe` chết** | **KHÔNG AI THẤY** | **không ai** | **99 s health xanh giả** | không gì → rồi sập |
+| mất điện / reboot | — | `StartType=Automatic` cả hai | *suy ra từ cấu hình* | boot xong là xong |
+
+### F01 luồng treo — thử hồi quy cho sự cố rò suất 31/08
+
+Cắt 3 luồng bằng `SO_LINGER(1,0)` → **RST**, tức khách *rút mạng* chứ không phải
+đóng tab tử tế. Ba mốc **0,3 s / 1,5 s / 4 s**; mốc 0,3 s cắt *trước khi generator
+kịp chạy dòng đầu*, đúng đường rò cũ.
+
+```
+dang_chay=0/1 suốt cả 3 lần và suốt 30 s theo dõi
+da_thu_hoi=0
+```
+
+⭐ `da_thu_hoi=0` mới là phần đáng kể: **chặn cuối (hạn giữ 1200 s) không phải
+đỡ**. Hai tầng trên tự nhả suất trước khi đến lượt nó. Nếu nó `>0` thì suất vẫn
+về 0 nhưng bằng một đường khác — một tin xấu đội lốt tin tốt.
+
+**Đối chứng** (bắt buộc, xem §7): đọc đồng hồ *trong lúc* một luồng chạy thật →
+`[1,1,1,1,1,1,0]`, đỉnh = 1. Không có bước này thì một đồng hồ **chết** cũng cho
+ra dãy 0 y hệt.
+
+---
+
+## 6. 🔴 §2 PHÁT HIỆN CHÍNH: `/health` xanh giả, và nó giả **theo cấu trúc**
+
+Prompt 06 §2 yêu cầu *"prove health isn't accidentally green for a state violating
+SLO."* Ở ta **nó xanh giả**. Đo thật, dừng vỏ bọc `nssm.exe`:
+
+```
++ 0.0s   /health=200  Get-Service=Stopped   cong8299=26528
++62.9s   /health=200  Get-Service=Paused    cong8299=26528
++99.0s   /health=200  Get-Service=Paused    cong8299=26528
+```
+
+Tiến trình con **sống sót mồ côi**, giữ cổng, trả 200 — suốt 99 giây, trong khi
+dịch vụ đã chết và **không có ai dựng nó dậy nữa**.
+
+⛔ **Không sửa được bằng cách làm `/health` thông minh hơn.** `/health` do *chính
+con mồ côi* phục vụ; một endpoint sức khoẻ được phục vụ bởi thứ cần kiểm tra thì
+vĩnh viễn không nói được *"tôi là tiến trình không nên tồn tại"*. Nó **không nói
+dối** — nó thành thật báo cáo về một tiến trình **thật sự khoẻ**, chỉ là tiến
+trình đó lẽ ra không nên đang chạy.
+
+⇒ Lớp lỗi này chỉ lộ ra khi đối chiếu **hai nguồn độc lập**: tiến trình tự nói, và
+Windows nói. Đo một nguồn thì không bao giờ thấy, dù đo kỹ đến đâu. Đây không phải
+chuyện *kiểm cho chắc*; nó là chuyện **số nguồn**.
+
+### Ba việc, và một kết quả âm đáng ghi
+
+1. ✅ `sc failure` cả hai dịch vụ (reset 86400; restart 15 s/60 s/120 s).
+   🔴 **CẦN NHƯNG KHÔNG ĐỦ** — đo lại: SCM *có* kích hoạt (Stopped → Paused ở
+   62,9 s) nhưng bản mới **không giành được cổng** vì mồ côi giữ. Tôi đã suýt
+   báo "đã sửa" sau bước này.
+2. ✅ `llm_gateway/main.py` từ chối khởi động khi 8299 đã có người giữ, in PID thủ
+   phạm + hai dòng xử lý. Nó **không** sửa cái xanh giả; nó biến một `Paused` câm
+   thành một dòng log chẩn đoán được. Dò bằng **connect** chứ không bind — bind
+   rồi đóng để nhường cho uvicorn là một cuộc đua.
+3. ✅ `tools/soi_cong_llm.py` — chốt hai nguồn, **lấy trong một lượt gọi** để
+   chúng nói về cùng một khoảnh khắc (hai lượt cách nhau vài giây là hai ảnh chụp
+   khác nhau, và đúng cái lệch ta đang săn có thể lọt qua khe giữa chúng).
+
+**Chứng minh đầu-tới-cuối trên máy thật:** LÀNH → tạo mồ côi → công cụ kêu `LỆCH`
+và gọi đúng `pid 14244` → khôi phục bằng **đúng hai dòng nó in ra** → LÀNH.
+`test_370` chốt phán xử bằng dữ liệu tổng hợp (11 phép, chạy offline).
+
+### Bề mặt không xác thực (đo)
+
+```
+/live      200 không cần token   {"ok":true,"version":"0.1.0"}
+/health    401      /v1/models  401      /metrics 404      /  404
+```
+
+✅ Đúng hướng: liveness mở và tối thiểu, chỉ số vận hành chi tiết thì đóng. Bộ
+chăm sóc dịch vụ không cầm token vẫn phân biệt được *chết* với *sống nhưng từ
+chối ta*. ⚠️ Nhưng `/live` **cũng do con mồ côi phục vụ** — nó nằm trong đúng
+phạm vi mù ở trên.
+
+---
+
+## 7. ⚠️ Chất lượng phép đo: **bốn** lần hỏng dụng cụ trong một tối
+
+Ghi ra vì cả bốn **đọc lên y hệt một kết quả thật**, và ba trong bốn sai về phía
+sẽ khiến không ai đi tìm.
+
+| # | Cơ chế | Nó nói gì | Sự thật |
+|---|---|---|---|
+| 1 | đọc sai tên trường → `.get()` → `None` | *"RO SUAT quay lai"* | hệ thống lành lặn |
+| 2 | đồng hồ có thể chết mà vẫn cho dãy 0 | *"không rò"* | chưa biết — phải đối chứng |
+| 3 | `curl -w` qua Nexus trả **chuỗi rỗng** | *"chết từ giây 0"* | dịch vụ vẫn chạy |
+| 4 | Nexus cắt ở **120 s cứng** bất kể `timeout_ms` | mất sạch phép đo 150 s | NSSM *đã* dựng dậy |
+
+⇒ Hai thói quen, không phải hai bước thêm:
+
+* **Kiểm dụng cụ ở dòng đầu.** Bộ đo cuối từ chối chạy nếu `/health` không 200 và
+  `Get-Service` không Running — và nói rõ *"không đo được"*, khác *"không đạt"*.
+* **Ghi xuống tệp từng bước.** Một lần đứt vận chuyển không được xoá phép đo.
+  Cùng bài học với lô đo ảnh ghi kết quả sau mỗi ảnh.
+
+⭐ Và một điều về hình dạng: lỗi #1 (`h["dang_giu"]` → `None`) cùng lớp với
+`_ban_va()` gộp *"chưa có bản vá"* vào *"không hỏi được"* — **một giá trị trông
+hợp lý thay cho sự vắng mặt**. Đó là lớp lỗi mà bánh cóc `check_silent_except`
+sinh ra để chặn, và nó xuất hiện hai lần trong một buổi ở hai tầng khác nhau.
+
+---
+
+## 8. §5 Bảo mật — quét đầy đủ (F19, F20)
+
+**F19 quét bí mật trong nguồn:** `tools/scan_source_secrets.py` →
+**0 phát hiện / 2.123 tệp**, `RESULT: PASS`.
+
+**F20 phụ thuộc & advisory:** `tools/check_phu_thuoc_advisory.py` hỏi OSV.dev về
+19 gói chạm dữ liệu không tin cậy hoặc giữ bí mật. **5/19 có advisory.** Đã sửa
+**hai cái nằm trong ghim sẵn có**, tức không phải quyết định kiến trúc:
+
+| Gói | Từ → đến | Vì sao ưu tiên |
+|---|---|---|
+| `python-multipart` | 0.0.29 → **≥0.0.31** | **chạm được**: `server/api/uploads.py:139` nhận `UploadFile` trên bề mặt **công khai** `/api/v1`; 3 advisory `AV:N/PR:N`. Sau khi nâng: **sạch** |
+| `cryptography` | 46.0.6 → **≥46.0.7** | 9 → 7 advisory |
+
+Xác minh: **437 passed / 3 skipped** trên các đường upload + token + mã hoá.
+
+**Còn nợ, đều đòi NỚI TRẦN GHIM** ⇒ không tự quyết:
+`pillow` 34 advisory (cần 12.3.0, ghim `<12` — chạm mọi app ảnh) ·
+`aiohttp` 28 (cần 3.14.1, phụ thuộc gián tiếp) · `cryptography` 7 còn lại (cần ≥48) ·
+`urllib3` 4 (vá ở 2.7.0).
+
+⛔ Công cụ **không vào gate** và **luôn trả 0**: nó gọi mạng (gate phải tất định +
+chạy offline) và kết quả **đổi mà mã không đổi** — một advisory công bố hôm nay
+làm đỏ một cây không ai chạm tuần này. Đó là **bản tin**, không phải **phán quyết
+về một thay đổi**. Mất mạng thì trả 2 và nói *"KHÔNG KẾT LUẬN ĐƯỢC"*, không bao
+giờ nói thành *"sạch"*.
+
+⚠️ **Cái giá đã ghi ra, không phải để đổi ý:** một công cụ ngoài gate là một công
+cụ **sẽ không ai chạy** (`check_multiproc` đã phải vào gate mới được chạy đều).
+⇒ Nó cần một chỗ **buộc chạy theo lịch**, không phải "chạy khi nhớ".
+
+---
+
+## 9. Còn nợ của phase này
 
 | Mục | Trạng thái |
 |---|---|
-| F01–F10 tiêm lỗi (A restart, DB transient, worker restart, stale lease, hung stream, B unreachable, gateway/llama-swap crash, CUDA hỏng, mất điện) | **CHƯA** |
-| F11–F16 mô hình health + bảng quan sát + chất lượng cảnh báo | **CHƯA** |
-| F17–F21 quét bảo mật đầy đủ | **CHƯA** |
-| F26 thử rollback thật | **CHƯA** — mới có đường, chưa diễn tập |
+| F01 luồng treo · F08 llama-server chết · F09 vỏ bọc chết · F10 mất điện | ✅ **ĐO XONG** |
+| F02 DB transient · F03 worker restart · F04 stale lease · F06 B unreachable | **CHƯA** — đều ở phía máy A |
+| F05 A restart · F07 CUDA hỏng · CPU fallback | **CHƯA** — F07 không tiêm an toàn được |
+| F11–F16 mô hình health + bảng quan sát + chất lượng cảnh báo | **MỘT PHẦN** — §6 đã lập mô hình health và một cảnh báo có runbook; bảng metric/cardinality thì chưa |
+| F19 quét bí mật · F20 advisory | ✅ **XONG** |
+| F14 SSRF hồ sơ vision · F21 ACL / đặc quyền tối thiểu | **CHƯA** |
+| F22–F27 checklist deploy/rollback + diễn tập rollback | **MỘT PHẦN** — §3 đã đi thật hai lần, chưa diễn tập rollback |
 | F28 phong bì năng lực / SLO | **CHƯA** |
 
-⛔ Không đánh dấu phase này `PASS`. Hai `CHANGE` đã xong và đo được; phần còn
-lại là một phase đầy đủ chưa chạy.
+⛔ **Không đánh dấu phase này `PASS`.** Phần đã làm thì có số đo và tái hiện được;
+phần còn lại là một nửa phase chưa chạy.
+
+⏸️ **`llm_gateway/main.py` CHƯA DEPLOY sang máy B** — deploy là một trong ba ranh
+giới giữ lại. `tools/soi_cong_llm.py` chạy từ máy A nên **đã dùng được ngay**.
