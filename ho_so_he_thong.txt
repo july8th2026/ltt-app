@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:245a3d4a21347fec389c389afa65c2f98fa61d75f1fcca20e0f7ce7ea81e650d
-Nguồn đã quét : 1368 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:adb22cb995221f42d42df7feb71c0450526a98bc9290e788fd17abc771f469f7
+Nguồn đã quét : 1369 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1535,8 +1535,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1368 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:32, .py:1035, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1369 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:32, .py:1036, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2818,7 +2818,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (132)
+[tools] (133)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2859,6 +2859,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/check_i18n.py
 - tools/check_ky_tu_dieu_khien.py
 - tools/check_multiproc.py
+- tools/check_phu_thuoc_advisory.py
 - tools/check_ps_bien_trung_tham_so.py
 - tools/check_sdk_contract.py
 - tools/check_server_routes.py
@@ -2961,7 +2962,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1368 file; 13632676 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1369 file; 13646203 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -20434,7 +20435,7 @@ def tom_tat(cac: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
-SHA256=fdda24e2382e522ea1eb8d9fa29b1866f222a863c6f71e571ccac921bc8953f2 BYTES=12302 LINES=226
+SHA256=e52afb9a185f1be0a25d42f9b73efd876c61716bc669e1d4803ecf56aa3bfd8b BYTES=13043 LINES=235
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `ltt_voice` — giọng nói tiếng Việt nhân bản, model chạy trên **máy A** (Q117).
@@ -20503,8 +20504,17 @@ MANIFEST = AppManifest(
     slug="ltt_voice",
     display_name=N_('Giọng nói LTT'),
     route_prefix="/ltt-voice",
+    # ⛔ BA MƯƠI, không phải tám. `audio_input.GIAY_TOI_DA = 30.0`, điều khoản
+    #    và biểu mẫu đều nói 3–30; chỉ dòng văn xuôi này gõ tay nên nó trôi.
+    #
+    #    Và nó trôi về phía tệ nhất: nói THẤP hơn sự thật khiến khách **tự tay
+    #    làm hỏng kết quả của chính họ**. Người có clip 20 giây đọc thẻ này rồi
+    #    cắt còn 8 — trong khi bộ chọn vừa đo được là nó dùng đúng phần
+    #    13,08–20,80s của một clip 29,58s. Họ vứt đi đúng phần tốt nhất, và
+    #    không bao giờ biết là mình đã vứt.
     summary=N_('Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tạo giọng '
-               'riêng của bạn từ một clip ba tới tám giây.'),
+               'riêng của bạn từ một clip ba tới ba mươi giây — hệ thống tự '
+               'chọn đoạn tốt nhất trong đó.'),
     icon="🎙️",
     accent="#0F766E",
     group=N_('Âm thanh'),
@@ -133890,7 +133900,7 @@ def don_phien_het_han(db: DbSession) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ requirements-server.txt
-SHA256=d85b3fa78022222417e5112228c2d4449964f7d175b1815a5fc62ac47073ea86 BYTES=2406 LINES=50
+SHA256=8f2bb9b6204e8df7867f09543ad990d7a4e9ca420cbcfa553183bb8d724425cb BYTES=2581 LINES=50
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Thu vien chi danh cho phan web. Cai kem requirements.txt.
 #
@@ -133908,7 +133918,7 @@ starlette>=1.3.1,<2.0
 uvicorn[standard]>=0.52.0,<1.0
 itsdangerous>=2.2.0,<3.0
 jinja2>=3.1.6,<4.0
-python-multipart>=0.0.29,<1.0
+python-multipart>=0.0.31,<1.0   # 0.0.29 co 8 advisory AV:N/PR:N tren duong /api/v1/uploads: DoS thoi gian binh phuong, buon lau tham so, Content-Length am buffer ca than. 7 va o 0.0.30, cai cuoi o 0.0.31
 httpx>=0.28.1,<1.0
 sentry-sdk>=2.22,<3.0
 yt-dlp>=2026.3.17,<2027.0  # Agent Social Video: Python API only; no shell/netrc/exec options
@@ -133955,7 +133965,7 @@ whisperx==3.8.6
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ requirements.txt
-SHA256=1bb9a47cf87599f5aa127a8a298d856a5f3aae47d78e4dcb2a4cbcd37923a306 BYTES=1368 LINES=30
+SHA256=89dc55266e3eefaca62011cad7a2cad1b431984f1a009fca08d4ebba6eb62e23 BYTES=1478 LINES=30
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Core runtime — Google Sheets, the Graph / TikTok HTTP clients, and the
 # encrypted token store. Shared by the web app and worker_main.py.
@@ -133973,7 +133983,7 @@ google-auth>=2.28.0,<3.0
 requests>=2.31.0,<3.0
 pytz>=2024.1
 tzdata>=2024.1
-cryptography>=42.0.0,<47.0
+cryptography>=46.0.7,<47.0   # 46.0.6 dinh GHSA-p423-j2cm-9vmq. Bon advisory con lai doi 48-50, tuc phai NOI TRAN <47 - quyet dinh rieng
 
 # --- Phu thuoc chi dung cho TEST ---
 #
@@ -239197,7 +239207,7 @@ def test_runtime_browser_and_test_artifacts_are_excluded(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_340_ltt_voice_trang_render.py
-SHA256=f50ee675e994603f2d974f90a00c6848c3b6b0367ed0de35d54fc77685b5cb1e BYTES=13259 LINES=296
+SHA256=f71ef6703cd050cb9442e623371a19d0fe509ed5d983e6eee66886b960013868 BYTES=17341 LINES=365
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba trang của LTT VOICE phải RENDER được, không chỉ tồn tại.
 
@@ -239495,6 +239505,75 @@ def test_moi_form_deu_co_CSRF_TOKEN_KHONG_RONG(khach, duong):
     assert not rong, (
         f"{duong}: {len(rong)}/{len(tok)} truong csrf_token RONG. Moi cua POST "
         f"dung chung se tra 400 'Phien da het han'. Xem `vo.ngu_canh`.")
+
+
+def test_loi_chao_ban_khong_duoc_noi_mot_con_so_KHAC_hang_so_that():
+    """🔴 Thẻ app nói "ba tới TÁM giây" trong khi hệ thống nhận tới BA MƯƠI.
+
+    `audio_input.GIAY_TOI_DA = 30.0`, và cả điều khoản lẫn biểu mẫu đều nói 3–30
+    vì chúng **dẫn xuất** từ hằng số đó. Chỉ dòng văn xuôi trong `manifest.py`
+    gõ tay, nên chỉ nó trôi — và nó là dòng đứng ở danh mục, tức thứ khách đọc
+    **đầu tiên và nhiều nhất**.
+
+    ⛔ Nó trôi về phía tệ nhất. Một lời chào bán nói THẤP hơn sự thật không làm
+       khách bỏ đi — nó làm khách **tự tay làm hỏng kết quả của chính họ**:
+       người có clip 20 giây sẽ cắt còn 8 trước khi tải lên. Bộ chọn vừa đo
+       được là nó dùng đúng phần 13,08–20,80s của một clip 29,58s, nên người đó
+       vừa vứt đi đúng phần tốt nhất — và không có gì báo cho họ biết.
+
+    ⭐ Vì sao chốt bằng phép kiểm chứ không bằng "nhớ sửa cả hai chỗ": ba chỗ đã
+       lệch nhau suốt và **không chỗ nào sai một mình** — hai chỗ đúng vì chúng
+       đọc hằng số, một chỗ sai vì nó chép. Cách sửa bền là bắt chỗ chép phải
+       chứng minh nó khớp, chứ không phải thêm một người phải nhớ.
+    """
+    import re
+
+    from apps.ltt_voice.audio_input import GIAY_TOI_DA, GIAY_TOI_THIEU
+    from apps.ltt_voice.manifest import MANIFEST
+
+    # Dài trước ngắn: "ba mươi" phải khớp trước "ba", nếu không "ba mươi giây"
+    # đọc thành số 3 và phép kiểm sẽ xanh trên đúng câu sai.
+    CHU_SO = {"ba mươi": 30, "hai mươi": 20, "mười lăm": 15, "mười": 10,
+              "một": 1, "hai": 2, "ba": 3, "bốn": 4, "năm": 5, "sáu": 6,
+              "bảy": 7, "tám": 8, "chín": 9}
+    mau = re.compile(r"\d+|" + "|".join(re.escape(k) for k in CHU_SO), re.I)
+
+    # ⛔ CHỈ đọc cụm ĐỨNG NGAY TRƯỚC chữ "giây", không đọc cả câu. Bản đầu quét
+    #    cả câu và báo động ngay ở **"một clip"** — trong tiếng Việt "một" là
+    #    mạo từ, không phải một phép đo. Đó là lần báo động giả thứ hai trong
+    #    cùng một buổi, cùng một cách sửa: thu hẹp LUẬT cho đúng bản chất chứ
+    #    đừng nới ngoại lệ cho câu này.
+    NOI = {"tới", "đến", "-", "–", "—"}
+
+    def _so_canh_giay(cau: str) -> set:
+        thay = set()
+        for m in re.finditer(r"giây", cau, re.I):
+            tu = re.findall(r"[\w–—-]+", cau[:m.start()], re.UNICODE)
+            lui = []
+            for t in reversed(tu):
+                if t.lower() in NOI or t.lower() in CHU_SO or t.isdigit()                         or t.lower() == "mươi":
+                    lui.append(t)
+                else:
+                    break
+            cum = " ".join(reversed(lui))
+            thay |= {int(x) if (x := k.strip()).isdigit() else CHU_SO[x.lower()]
+                     for k in mau.findall(cum)}
+        return thay
+
+    # ⛔ CHỈ soi `summary`, có chủ ý. Quét mọi chuỗi trong `manifest.py` có chữ
+    #    "giây" sẽ bắt cả trần thời gian chạy, hạn lưu tệp, thời hạn lease — toàn
+    #    số hợp lệ — và một phép kiểm báo động giả thì bị tắt trong một tuần,
+    #    kéo theo cả trường hợp thật. `summary` là dòng khách đọc ở danh mục;
+    #    đó là chỗ một con số sai gây hại, và là chỗ hẹp đủ để chốt.
+    cho_phep = {int(GIAY_TOI_THIEU), int(GIAY_TOI_DA)}
+    cau = str(MANIFEST.summary)
+    thay = _so_canh_giay(cau)
+    assert thay, f"summary khong noi mot moc giay nao: {cau!r}"
+    thua = thay - cho_phep
+    assert not thua, (
+        f"MANIFEST.summary noi so {sorted(thua)} — hang so that la "
+        f"{sorted(cho_phep)} ({GIAY_TOI_THIEU}–{GIAY_TOI_DA} giay). "
+        f"Cau: {cau!r}")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -264604,6 +264683,199 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_phu_thuoc_advisory.py
+SHA256=68439034b5dcb4dbba7bf70be26042c6b65eb4909e3ce2bf1812296290fa6925 BYTES=8419 LINES=187
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""check_phu_thuoc_advisory.py — hỏi OSV.dev xem thư viện đang cài có lỗ hổng nào.
+
+    python tools/check_phu_thuoc_advisory.py            # goi nhay cam
+    python tools/check_phu_thuoc_advisory.py --tat-ca   # moi goi da cai
+
+## ⛔ VÌ SAO KHÔNG ĐƯA VÀO `gate.py`
+
+Nó gọi mạng. Một cổng chất lượng phải **tất định và chạy được offline** — thêm
+một lượt gọi ra Internet nghĩa là gate đỏ khi mất mạng, đỏ khi OSV chậm, và đỏ
+vào một buổi sáng không ai đổi dòng mã nào. Một cổng đỏ vì lý do ngoài kho là
+một cổng người ta học cách bỏ qua.
+
+⭐ Và nó còn một tính chất khiến nó **không hợp làm bánh cóc**: kết quả đổi **mà
+   mã không đổi**. Một advisory mới công bố hôm nay làm hôm nay đỏ trong khi
+   commit cuối cùng là tuần trước. Đó là thông tin đúng, nhưng nó là **tin tức**,
+   không phải **phán quyết về một thay đổi**.
+
+⇒ Chạy nó theo lịch hoặc trước mỗi đợt phát hành, đọc bằng mắt, rồi quyết.
+
+## Đọc kết quả thế nào
+
+Một advisory **không** tự động là một việc phải làm. Ba câu hỏi, theo thứ tự:
+
+1. **Chạm được không?** Gói đó có nằm trên đường dữ liệu **không tin cậy** đi
+   vào không? `python-multipart` phân tích thân multipart của khách ⇒ chạm được.
+   Một gói chỉ dùng trong script dựng thì không.
+2. **`AV:N` + `PR:N`?** Kích được từ mạng, không cần quyền — đó là mức đáng sửa
+   sớm.
+3. **Bản vá cách bao xa?** Một số hiệu patch khác hẳn một lần nâng major.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+import urllib.error
+import urllib.request
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+#: Gói **chạm dữ liệu không tin cậy** hoặc **giữ bí mật**. Danh sách này là một
+#: phán đoán, không phải một sự thật — thêm bớt khi kiến trúc đổi.
+#:
+#: ⛔ Đừng in emoji ra stdout: console PowerShell 5.1 là CP1252 và một ký tự
+#:    ngoài bảng làm cả công cụ chết giữa chừng (đã dính 31/08).
+NHAY_CAM = (
+    "fastapi", "starlette", "uvicorn", "httpx", "requests", "urllib3",
+    "aiohttp", "python-multipart", "jinja2", "itsdangerous", "pyjwt",
+    "cryptography", "sqlalchemy", "alembic", "psycopg", "pydantic",
+    "pillow", "boto3", "botocore", "paramiko", "lxml", "pyyaml",
+)
+
+
+def _da_cai() -> dict[str, str]:
+    r = subprocess.run([sys.executable, "-m", "pip", "list", "--format=json"],
+                       capture_output=True, text=True, timeout=300)
+    return {g["name"].lower(): g["version"] for g in json.loads(r.stdout or "[]")}
+
+
+def _hoi_osv(truy: list[dict]) -> list[dict]:
+    req = urllib.request.Request(
+        "https://api.osv.dev/v1/querybatch",
+        data=json.dumps({"queries": truy}).encode(),
+        headers={"Content-Type": "application/json",
+                 "User-Agent": "ltt-audit/1.0"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        return json.load(r).get("results", [])
+
+
+#: Ba trạng thái, KHÔNG phải hai. `_ban_va()` bản đầu trả `"?"` cho **cả**
+#: "chưa có bản vá" lẫn "không hỏi được OSV" — hai điều trái ngược nhau về mặt
+#: hành động, gộp thành một ký tự.
+#:
+#: 🔴 Nó là một lỗ trong đúng nguyên tắc tệp này tự đặt ra ở docstring đầu tệp:
+#:    *"Không nói lỗi mạng thành 'sạch'."* `_hoi_osv()` giữ được nguyên tắc đó,
+#:    còn `_ban_va()` thì không — cùng một tệp, cùng một buổi, hai chuẩn khác
+#:    nhau. Một phiên khác bắt được khi bánh cóc nuốt-lỗi đỏ.
+#:
+#: ⭐ Vì sao đáng sửa chứ không đáng miễn trừ: con số bản vá là thứ **quyết định
+#:    việc này rẻ hay đắt** (nâng patch hay nới trần major). Đọc nhầm "OSV trả
+#:    500" thành "chưa ai vá" sẽ hoãn một bản vá đang nằm sẵn đó.
+KHONG_HOI_DUOC = "KHONG-HOI-DUOC"
+CHUA_CO_BAN_VA = "chua-co-ban-va"
+
+
+def _ban_va(ma: str) -> str:
+    """Bản đầu tiên đã vá, hoặc một trong hai hằng trạng thái ở trên.
+
+    Bắt hẹp theo từng loại hỏng, để một lỗi KHÔNG lường trước (vd `MemoryError`)
+    vẫn nổ ra thay vì bị gộp vào "không hỏi được".
+    """
+    try:
+        req = urllib.request.Request(f"https://api.osv.dev/v1/vulns/{ma}",
+                                     headers={"User-Agent": "ltt-audit/1.0"})
+        with urllib.request.urlopen(req, timeout=45) as r:
+            d = json.load(r)
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError,
+            OSError, ValueError) as e:
+        print(f"        [!] khong hoi duoc OSV ve {ma}: {type(e).__name__}: {e}")
+        return KHONG_HOI_DUOC
+    for a in d.get("affected", []):
+        for rg in a.get("ranges", []):
+            for ev in rg.get("events", []):
+                if "fixed" in ev:
+                    return ev["fixed"]
+    return CHUA_CO_BAN_VA
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="Hoi OSV.dev ve thu vien da cai.")
+    p.add_argument("--tat-ca", action="store_true",
+                   help="quet moi goi da cai, khong chi goi nhay cam")
+    p.add_argument("--chi-tiet", action="store_true",
+                   help="tra them ban da va cho tung advisory (cham hon)")
+    a = p.parse_args()
+
+    cai = _da_cai()
+    ten = sorted(cai) if a.tat_ca else [g for g in NHAY_CAM if g in cai]
+    truy = [{"package": {"name": g, "ecosystem": "PyPI"}, "version": cai[g]}
+            for g in ten]
+    if not truy:
+        print("khong co goi nao de hoi")
+        return 0
+
+    print(f"Hoi OSV.dev ve {len(truy)} goi da cai...\n")
+    try:
+        kq = _hoi_osv(truy)
+    except Exception as e:                                      # noqa: BLE001
+        # ⛔ Khong noi loi mang thanh "sach". Mot cong cu bao mat im lang khi no
+        #    khong hoi duoc la mot cong cu noi doi.
+        print(f"KHONG HOI DUOC OSV ({type(e).__name__}: {e})")
+        print("=> KHONG KET LUAN DUOC. Day KHONG phai 'sach'.")
+        return 2
+
+    co = []
+    hong: list[str] = []   # advisory KHONG tra cuu duoc ban va
+    for q, res in zip(truy, kq):
+        vulns = res.get("vulns") or []
+        g, v = q["package"]["name"], q["version"]
+        if vulns:
+            co.append((g, v, vulns))
+        else:
+            print(f"     {g:<20} {v:<14} sach")
+
+    print()
+    for g, v, vulns in co:
+        print(f"  [CO] {g} {v} — {len(vulns)} advisory")
+        for x in vulns[:5]:
+            ma = x.get("id", "?")
+            tt = (x.get("summary") or "").strip()[:78]
+            hau = ""
+            if a.chi_tiet:
+                bv = _ban_va(ma)
+                if bv == KHONG_HOI_DUOC:
+                    hong.append(ma)
+                    hau = "   -> KHONG HOI DUOC (khong phai 'chua co ban va')"
+                elif bv == CHUA_CO_BAN_VA:
+                    hau = "   -> CHUA CO BAN VA"
+                else:
+                    hau = f"   -> va tu {bv}"
+            print(f"        {ma:<22} {tt}{hau}")
+        if len(vulns) > 5:
+            print(f"        ... con {len(vulns) - 5} advisory nua")
+
+    print(f"\n  {len(co)}/{len(truy)} goi co advisory")
+    if co:
+        print("\n  Doc bang ba cau hoi, theo thu tu (xem docstring dau tep):")
+        print("    1. goi do co nam tren duong DU LIEU KHONG TIN CAY khong?")
+        print("    2. advisory co AV:N + PR:N khong?")
+        print("    3. ban va cach bao xa?")
+    if hong:
+        # Khong de con so nay chim trong danh sach. Mot ban tin thieu mot phan
+        # ma khong noi ra la mot ban tin doc gia tuong la day du.
+        print()
+        print(f"  [!] {len(hong)} advisory KHONG TRA CUU DUOC ban va: "
+              f"{', '.join(hong[:6])}{' ...' if len(hong) > 6 else ''}")
+        print("      => cac muc do CHUA BIET re hay dat, khong phai 'chua ai va'.")
+    # ⛔ Luon tra 0: day la mot ban tin, khong phai mot phan quyet. Tra khac 0 se
+    #    khien ai do cam no vao gate, va gate se do vao mot buoi sang khong ai
+    #    doi mot dong ma nao.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

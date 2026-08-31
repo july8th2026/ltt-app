@@ -65,8 +65,17 @@ MANIFEST = AppManifest(
     slug="ltt_voice",
     display_name=N_('Giọng nói LTT'),
     route_prefix="/ltt-voice",
+    # ⛔ BA MƯƠI, không phải tám. `audio_input.GIAY_TOI_DA = 30.0`, điều khoản
+    #    và biểu mẫu đều nói 3–30; chỉ dòng văn xuôi này gõ tay nên nó trôi.
+    #
+    #    Và nó trôi về phía tệ nhất: nói THẤP hơn sự thật khiến khách **tự tay
+    #    làm hỏng kết quả của chính họ**. Người có clip 20 giây đọc thẻ này rồi
+    #    cắt còn 8 — trong khi bộ chọn vừa đo được là nó dùng đúng phần
+    #    13,08–20,80s của một clip 29,58s. Họ vứt đi đúng phần tốt nhất, và
+    #    không bao giờ biết là mình đã vứt.
     summary=N_('Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tạo giọng '
-               'riêng của bạn từ một clip ba tới tám giây.'),
+               'riêng của bạn từ một clip ba tới ba mươi giây — hệ thống tự '
+               'chọn đoạn tốt nhất trong đó.'),
     icon="🎙️",
     accent="#0F766E",
     group=N_('Âm thanh'),

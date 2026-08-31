@@ -11643,8 +11643,8 @@ msgid "Giọng nói LTT"
 msgstr "LTT Voice"
 
 #: apps/ltt_voice
-msgid "Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tạo giọng riêng của bạn từ một clip ba tới tám giây."
-msgstr "Turn text into natural Vietnamese speech. Create your own voice from a three-to-eight-second clip."
+msgid "Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tạo giọng riêng của bạn từ một clip ba tới ba mươi giây — hệ thống tự chọn đoạn tốt nhất trong đó."
+msgstr "Turn text into natural Vietnamese speech. Create your own voice from a clip of three to thirty seconds — we pick the best part of it."
 
 #: apps/ltt_voice
 msgid "Âm thanh"

@@ -294,3 +294,72 @@ def test_moi_form_deu_co_CSRF_TOKEN_KHONG_RONG(khach, duong):
     assert not rong, (
         f"{duong}: {len(rong)}/{len(tok)} truong csrf_token RONG. Moi cua POST "
         f"dung chung se tra 400 'Phien da het han'. Xem `vo.ngu_canh`.")
+
+
+def test_loi_chao_ban_khong_duoc_noi_mot_con_so_KHAC_hang_so_that():
+    """🔴 Thẻ app nói "ba tới TÁM giây" trong khi hệ thống nhận tới BA MƯƠI.
+
+    `audio_input.GIAY_TOI_DA = 30.0`, và cả điều khoản lẫn biểu mẫu đều nói 3–30
+    vì chúng **dẫn xuất** từ hằng số đó. Chỉ dòng văn xuôi trong `manifest.py`
+    gõ tay, nên chỉ nó trôi — và nó là dòng đứng ở danh mục, tức thứ khách đọc
+    **đầu tiên và nhiều nhất**.
+
+    ⛔ Nó trôi về phía tệ nhất. Một lời chào bán nói THẤP hơn sự thật không làm
+       khách bỏ đi — nó làm khách **tự tay làm hỏng kết quả của chính họ**:
+       người có clip 20 giây sẽ cắt còn 8 trước khi tải lên. Bộ chọn vừa đo
+       được là nó dùng đúng phần 13,08–20,80s của một clip 29,58s, nên người đó
+       vừa vứt đi đúng phần tốt nhất — và không có gì báo cho họ biết.
+
+    ⭐ Vì sao chốt bằng phép kiểm chứ không bằng "nhớ sửa cả hai chỗ": ba chỗ đã
+       lệch nhau suốt và **không chỗ nào sai một mình** — hai chỗ đúng vì chúng
+       đọc hằng số, một chỗ sai vì nó chép. Cách sửa bền là bắt chỗ chép phải
+       chứng minh nó khớp, chứ không phải thêm một người phải nhớ.
+    """
+    import re
+
+    from apps.ltt_voice.audio_input import GIAY_TOI_DA, GIAY_TOI_THIEU
+    from apps.ltt_voice.manifest import MANIFEST
+
+    # Dài trước ngắn: "ba mươi" phải khớp trước "ba", nếu không "ba mươi giây"
+    # đọc thành số 3 và phép kiểm sẽ xanh trên đúng câu sai.
+    CHU_SO = {"ba mươi": 30, "hai mươi": 20, "mười lăm": 15, "mười": 10,
+              "một": 1, "hai": 2, "ba": 3, "bốn": 4, "năm": 5, "sáu": 6,
+              "bảy": 7, "tám": 8, "chín": 9}
+    mau = re.compile(r"\d+|" + "|".join(re.escape(k) for k in CHU_SO), re.I)
+
+    # ⛔ CHỈ đọc cụm ĐỨNG NGAY TRƯỚC chữ "giây", không đọc cả câu. Bản đầu quét
+    #    cả câu và báo động ngay ở **"một clip"** — trong tiếng Việt "một" là
+    #    mạo từ, không phải một phép đo. Đó là lần báo động giả thứ hai trong
+    #    cùng một buổi, cùng một cách sửa: thu hẹp LUẬT cho đúng bản chất chứ
+    #    đừng nới ngoại lệ cho câu này.
+    NOI = {"tới", "đến", "-", "–", "—"}
+
+    def _so_canh_giay(cau: str) -> set:
+        thay = set()
+        for m in re.finditer(r"giây", cau, re.I):
+            tu = re.findall(r"[\w–—-]+", cau[:m.start()], re.UNICODE)
+            lui = []
+            for t in reversed(tu):
+                if t.lower() in NOI or t.lower() in CHU_SO or t.isdigit()                         or t.lower() == "mươi":
+                    lui.append(t)
+                else:
+                    break
+            cum = " ".join(reversed(lui))
+            thay |= {int(x) if (x := k.strip()).isdigit() else CHU_SO[x.lower()]
+                     for k in mau.findall(cum)}
+        return thay
+
+    # ⛔ CHỈ soi `summary`, có chủ ý. Quét mọi chuỗi trong `manifest.py` có chữ
+    #    "giây" sẽ bắt cả trần thời gian chạy, hạn lưu tệp, thời hạn lease — toàn
+    #    số hợp lệ — và một phép kiểm báo động giả thì bị tắt trong một tuần,
+    #    kéo theo cả trường hợp thật. `summary` là dòng khách đọc ở danh mục;
+    #    đó là chỗ một con số sai gây hại, và là chỗ hẹp đủ để chốt.
+    cho_phep = {int(GIAY_TOI_THIEU), int(GIAY_TOI_DA)}
+    cau = str(MANIFEST.summary)
+    thay = _so_canh_giay(cau)
+    assert thay, f"summary khong noi mot moc giay nao: {cau!r}"
+    thua = thay - cho_phep
+    assert not thua, (
+        f"MANIFEST.summary noi so {sorted(thua)} — hang so that la "
+        f"{sorted(cho_phep)} ({GIAY_TOI_THIEU}–{GIAY_TOI_DA} giay). "
+        f"Cau: {cau!r}")
