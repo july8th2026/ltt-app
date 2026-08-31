@@ -41,6 +41,19 @@ TRAN_MOI_LUOT_SINH = 1500
 #:    tự. Đường đã có, cổng chưa mở — và thứ tự đó là có chủ ý: hạ tầng sẵn sàng
 #:    không phải là bằng chứng chất lượng. Nới nó vẫn phải qua V10.
 #:
-#: Trần trên tuyệt đối: `TRAN_MOI_LUOT_SINH × voice_sidecar.tham_so
-#: .TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn) — vượt nữa thì cổng trả 413.
+#: ✅ MỘT trong các điều kiện ấy đã xong (01/09/2026): **trôi tông đã đo, và
+#:    không có**. Ba lượt độc lập trên bài 12 đoạn, `tools/do_troi_tong.py`:
+#:    chênh F0 giữa các đoạn 11–20 Hz so với sàn nhiễu (độ lệch F0 *bên trong*
+#:    một đoạn) 19–26 Hz, độ dốc −0,2 đến +1,1 Hz mỗi đoạn. Không vượt sàn, và
+#:    phần vượt thì không có hướng.
+#:
+#: ⛔ ĐỪNG đọc điều đó thành "nới được rồi". Trôi tông là MỘT chiều của chất
+#:    lượng; V10 còn CER/WER, tương đồng người nói, clipping, tỉ lệ hỏng. Một
+#:    phép đo không thay được một cổng — đó đúng là cách một cảnh báo đúng bị
+#:    biến thành một lời cho phép.
+#:
+#: ✅ Và trần tuyệt đối cũ đã BỎ. Trước 01/09 nó là `TRAN_MOI_LUOT_SINH ×
+#:    voice_sidecar.tham_so.TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn), vì cửa văn bản
+#:    dài áp kích thước một lượt gộp lô lên chính người gọi — bài 12 đoạn nhận
+#:    `413`. Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
 TRAN_KY_TU_CONG_KHAI = 1500
