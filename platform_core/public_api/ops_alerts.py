@@ -105,6 +105,23 @@ NGUONG = {
     # ⚠️ Đây KHÁC "cổng im lặng". Cổng vẫn trả `200` bình thường — thứ hỏng nằm
     #    sau nó, và triệu chứng là **chậm**, không phải **lỗi**.
     "ltt_llm:tren_cpu": 1,
+    # 🔴 CỔNG MÁY B LÀ MỘT TIẾN TRÌNH MỒ CÔI. Ngưỡng 1, cùng ba lý do như
+    # `tren_cpu` ngay trên — và lý do thứ hai còn đúng hơn ở đây:
+    #
+    #   1. **Không có dương tính giả.** Cổng chụp tổ tiên `nssm.exe` lúc khởi
+    #      động rồi so PID + tên + giờ sinh. Không tìm thấy vỏ bọc thì nó khai
+    #      `theo_doi: false`, không khai mồ côi.
+    #   2. **KHÔNG TỰ KHỎI, và đây là điểm khác biệt.** `tren_cpu` cần một lần
+    #      khởi động lại máy; mồ côi thì **không có ai để khởi động lại nó cả** —
+    #      dịch vụ đã `Stopped`, SCM không giành được cổng, và tiến trình đang
+    #      phục vụ là thứ cuối cùng còn sống. Nó chạy cho tới khi chết, rồi hết.
+    #   3. **Mọi chốt khác đều xanh.** Đo 01/09: `/health` trả **200 suốt 99
+    #      giây** trong khi `Get-Service` nói `Stopped`.
+    #
+    # ⚠️ Cổng CŨ không có trường `duoi_dich_vu`. Thiếu nó là **chưa biết**, và
+    #    `_tham_mo_coi_may_b` im — nếu coi thiếu là "bình thường" thì một lần
+    #    deploy hụt sẽ tắt vĩnh viễn phép thăm này mà không ai hay.
+    "ltt_llm:mo_coi": 1,
     # Cổng ẢNH (máy B) im lặng. Một dịch vụ KHÁC, cổng khác, khởi động riêng —
     # cổng VLM xanh không nói gì về nó. Ngưỡng 2, cùng lý do như trên.
     #

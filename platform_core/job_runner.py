@@ -856,6 +856,9 @@ def _quet_canh_bao() -> None:
         # Sau `_tham_cong_vlm`, không thay nó: cổng có thể SỐNG mà model vẫn đang
         # bò trên CPU. Hai câu hỏi khác nhau, hai cảnh báo khác nhau.
         _tham_gpu_may_b(db)
+        # Cùng một thân `/health`, cùng một họ lỗi: cổng trả lời ĐÚNG về chính
+        # nó nhưng câu hỏi đã sai. Xem docstring `_tham_mo_coi_may_b`.
+        _tham_mo_coi_may_b(db)
         # Cổng ẢNH là một dịch vụ KHÁC, trên cùng máy B. Nó chết thì cổng VLM vẫn
         # xanh, và ngược lại — nên nó cần phép thăm riêng (H37/L2).
         _tham_cong_render()
@@ -1058,6 +1061,54 @@ def _tham_gpu_anh(db) -> bool:
     return False
 
 
+def _health_may_b(db) -> Optional[dict]:
+    """Thân `/health` của cổng máy B, hoặc `None` nếu KHÔNG ĐỌC ĐƯỢC.
+
+    ⭐ `None` nghĩa là **chưa biết**, không phải "bình thường". Mọi người gọi đều
+       phải coi `None` là *im lặng*, đừng suy ra điều gì từ nó — đó là lý do hàm
+       này trả `None` chứ không trả `{}`: một dict rỗng sẽ lặng lẽ đi qua mọi
+       phép `.get()` phía sau và trông y hệt một máy B khoẻ mạnh.
+
+    Tách ra vì **hai** phép thăm cùng cần thân này (`_tham_gpu_may_b` và
+    `_tham_mo_coi_may_b`); gọi hai lượt HTTP cho cùng một endpoint trong cùng một
+    vòng bảo trì là lãng phí, và tệ hơn là hai lượt đó có thể thấy **hai khoảnh
+    khắc khác nhau** rồi kết luận mâu thuẫn nhau.
+    """
+    goc = (os.environ.get("LTT_LLM_BASE_URL") or "").strip().rstrip("/")
+    if not goc:
+        return None
+
+    try:
+        from platform_core import api_keys, api_pool
+        from platform_core.models import APIKEY_CAT_CHAT
+
+        key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
+                                thu_tu_provider=["ltt_llm"])
+        token = api_keys.lay_credential(db, key)
+    except Exception as exc:                                    # noqa: BLE001
+        # Chưa cấu hình khoá `ltt_llm` → không đoán, không báo động. Nhưng ghi
+        # lại: "im lặng" phải khác "biến mất", nếu không thì ngày khoá bị xoá
+        # nhầm sẽ trông y hệt ngày mọi thứ bình thường.
+        log.debug("bo qua tham may B: khong lay duoc khoa (%s)",
+                  type(exc).__name__)
+        return None
+
+    try:
+        import httpx
+
+        r = httpx.get(f"{goc}/health", timeout=8.0,
+                      headers={"Authorization": f"Bearer {token}"})
+        if r.status_code != 200:
+            return None                  # `_tham_cong_vlm` đã lo phần chết/sống
+        return r.json() or {}
+    except Exception as exc:                                    # noqa: BLE001
+        # `_tham_cong_vlm` ngay trên đã lo phần chết/sống và đã đếm nếu cần, nên
+        # ở đây KHÔNG đếm lần hai — nhưng vẫn ghi, để một `/health` hỏng theo
+        # kiểu khác (JSON vỡ, timeout) không trôi qua không dấu vết.
+        log.info("khong doc duoc /health may B: %s", type(exc).__name__)
+        return None
+
+
 def _tham_gpu_may_b(db) -> bool:
     """Model trên máy B có THẬT SỰ nằm trên card không, hay đang bò trên CPU?
 
@@ -1077,40 +1128,10 @@ def _tham_gpu_may_b(db) -> bool:
     ⛔ KHÔNG đánh dấu lỗi cho khoá ở đây. Đây là phép **quan sát**, không phải một
        lượt gọi thật; `danh_dau_loi` sẽ tắt khoá model nhà sau 5 lần (D-005).
     """
-    goc = (os.environ.get("LTT_LLM_BASE_URL") or "").strip().rstrip("/")
-    if not goc:
+    than = _health_may_b(db)
+    if than is None:
         return True
-
-    try:
-        from platform_core import api_keys, api_pool
-        from platform_core.models import APIKEY_CAT_CHAT
-
-        key = api_pool.chon_key(db, category=APIKEY_CAT_CHAT,
-                                thu_tu_provider=["ltt_llm"])
-        token = api_keys.lay_credential(db, key)
-    except Exception as exc:                                    # noqa: BLE001
-        # Chưa cấu hình khoá `ltt_llm` → không đoán, không báo động. Nhưng ghi
-        # lại: "im lặng" phải khác "biến mất", nếu không thì ngày khoá bị xoá
-        # nhầm sẽ trông y hệt ngày mọi thứ bình thường.
-        log.debug("bo qua tham GPU may B: khong lay duoc khoa (%s)",
-                  type(exc).__name__)
-        return True
-
-    try:
-        import httpx
-
-        r = httpx.get(f"{goc}/health", timeout=8.0,
-                      headers={"Authorization": f"Bearer {token}"})
-        if r.status_code != 200:
-            return True                  # `_tham_cong_vlm` đã lo phần chết/sống
-        gpu = (r.json() or {}).get("gpu") or {}
-    except Exception as exc:                                    # noqa: BLE001
-        # `_tham_cong_vlm` ngay trên đã lo phần chết/sống và đã đếm nếu cần, nên
-        # ở đây KHÔNG đếm lần hai — nhưng vẫn ghi, để một `/health` hỏng theo
-        # kiểu khác (JSON vỡ, timeout) không trôi qua không dấu vết.
-        log.info("khong doc duoc /health may B de kiem GPU: %s",
-                 type(exc).__name__)
-        return True
+    gpu = than.get("gpu") or {}
 
     if not gpu.get("dang_lo"):
         return True
@@ -1125,6 +1146,47 @@ def _tham_gpu_may_b(db) -> bool:
         metrics.increment("ltt_llm:tren_cpu")
     except Exception:                                           # noqa: BLE001
         log.warning("khong dem duoc ltt_llm:tren_cpu", exc_info=True)
+    return False
+
+
+def _tham_mo_coi_may_b(db) -> bool:
+    """Cổng máy B có đang là một tiến trình MỒ CÔI không?
+
+    🔴 Đo 01/09: dừng vỏ bọc `nssm.exe` của `LTTLlmGateway` thì tiến trình con
+       **sống sót**, vẫn giữ cổng 8299, vẫn trả `/health` = **200** — suốt 99
+       giây, trong khi `Get-Service` nói `Stopped` và **không ai dựng nó dậy
+       nữa**. Mọi chốt sống/chết đều xanh.
+
+    ⭐ CÙNG HỌ VỚI `_tham_gpu_may_b` NGAY TRÊN, và đó là lý do nó nằm ở đây chứ
+       không có một vòng lặp riêng. Cả hai đều là: **cổng trả lời đúng về chính
+       nó, nhưng câu hỏi đã sai**. Bên kia hỏi *"anh có khoẻ không"* trong khi
+       cần hỏi *"anh có đang chạy trên GPU không"*; bên này cần hỏi *"anh có NÊN
+       đang chạy không"*.
+
+    ⛔ KHÔNG dựng vòng nền thứ hai. `_mot_luot_bao_tri` chạy dưới lease nên mỗi
+       việc trong đó chạy **đúng một lần trên toàn cụm**; một vòng tự dựng sẽ
+       chạy ở **mọi** tiến trình worker và báo động trùng N lần (bài học H36).
+
+    ⚠️ Cổng cũ **không có** trường `duoi_dich_vu` — thiếu nó là *chưa biết*, và
+       chưa biết thì **im**. Nếu coi thiếu là "bình thường" thì một lần deploy
+       hụt sẽ tắt vĩnh viễn phép thăm này mà không ai hay.
+    """
+    than = _health_may_b(db)
+    if than is None:
+        return True
+    dd = than.get("duoi_dich_vu")
+    if not isinstance(dd, dict) or dd.get("mo_coi") is not True:
+        return True
+
+    log.error("cong may B la tien trinh MO COI: vo boc dich vu (pid %s, sinh %s) "
+              "da chet nhung tien trinh van chay va van giu cong. Khong ai dung "
+              "no day neu no chet.", dd.get("vo_boc_pid"), dd.get("vo_boc_sinh"))
+    try:
+        from platform_core.public_api import metrics
+
+        metrics.increment("ltt_llm:mo_coi")
+    except Exception:                                           # noqa: BLE001
+        log.warning("khong dem duoc ltt_llm:mo_coi", exc_info=True)
     return False
 
 

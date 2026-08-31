@@ -179,3 +179,62 @@ class TestNguongVanLaMOT:
         from platform_core.public_api.ops_alerts import NGUONG
         assert NGUONG["ltt_llm:tren_cpu"] == 1
         assert NGUONG["ltt_image:tren_cpu"] == 1, "ben anh cung mot ly do"
+
+
+class TestThamMoCoi:
+    """Cùng thân `/health`, cùng họ lỗi — nên nằm cùng vòng thăm, không vòng riêng.
+
+    Đo 01/09: `/health` trả **200 suốt 99 giây** trong khi `Get-Service` nói
+    `Stopped`. Máy A không có cách nào biết, vì nó chỉ hỏi *"anh có khoẻ không"*.
+    Nay cổng tự khai `duoi_dich_vu.mo_coi` và máy A đọc nó ở đây.
+
+    ⛔ Dùng `monkeypatch` chứ KHÔNG gán thẳng thuộc tính module rồi
+       `importlib.reload`. Bản đầu tôi viết kiểu đó: nó chạy xanh, nhưng reload
+       một module giữa phiên là **rò trạng thái sang phép kiểm khác** — thứ làm
+       một bộ test xanh khi chạy riêng và đỏ khi chạy cả cụm.
+    """
+
+    @pytest.fixture
+    def dat_than(self, monkeypatch):
+        def _dat(than):
+            monkeypatch.setattr(job_runner, "_health_may_b", lambda db: than)
+        return _dat
+
+    def test_may_B_khai_mo_coi_thi_may_A_DEM(self, bat_metric, dat_than):
+        """Khoẻ về MỌI mặt khác, chỉ mồ côi — đúng hình dạng đo được 01/09."""
+        dat_than({"gpu": {"dang_lo": False, "tren_gpu": True},
+                  "duoi_dich_vu": {"theo_doi": True, "mo_coi": True,
+                                   "vo_boc_pid": 3896,
+                                   "vo_boc_sinh": "2026-09-01T01:10:00"}})
+        assert job_runner._tham_mo_coi_may_b(None) is False
+        assert "ltt_llm:mo_coi" in bat_metric
+
+    def test_khoe_va_KHONG_mo_coi_thi_im(self, bat_metric, dat_than):
+        dat_than({"duoi_dich_vu": {"theo_doi": True, "mo_coi": False}})
+        assert job_runner._tham_mo_coi_may_b(None) is True
+        assert bat_metric == []
+
+    @pytest.mark.parametrize("than", [
+        {},                                              # cong CU, khong co truong
+        {"gpu": {}},
+        {"duoi_dich_vu": None},
+        {"duoi_dich_vu": {"theo_doi": False, "mo_coi": None}},   # chay tay
+        None,                                            # khong doc duoc /health
+    ])
+    def test_thieu_truong_la_CHUA_BIET_chu_khong_phai_binh_thuong(
+            self, bat_metric, dat_than, than):
+        """⚠️ Coi thiếu là "bình thường" thì một lần deploy hụt sẽ tắt vĩnh viễn
+        phép thăm này mà không ai hay — cùng lớp lỗi với `.get()` trả `None`."""
+        dat_than(than)
+        assert job_runner._tham_mo_coi_may_b(None) is True, than
+        assert bat_metric == [], than
+
+    def test_nguong_la_MOT(self):
+        """Mồ côi **không có ai để dựng dậy nó cả** — khác `tren_cpu` ở chỗ đó.
+
+        `tren_cpu` cần một lần khởi động lại máy. Mồ côi thì dịch vụ đã `Stopped`,
+        SCM không giành được cổng, và tiến trình đang phục vụ là thứ cuối cùng
+        còn sống. Nó chạy cho tới khi chết, rồi hết.
+        """
+        from platform_core.public_api.ops_alerts import NGUONG
+        assert NGUONG["ltt_llm:mo_coi"] == 1
