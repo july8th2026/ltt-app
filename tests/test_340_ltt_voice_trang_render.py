@@ -125,7 +125,8 @@ def test_uid_tra_ve_uuid_chu_khong_phai_so_khong():
 
     Phép kiểm nhỏ, nhưng nó chốt đúng cái mắt xích đã đứt.
     """
-    from apps.ltt_voice.routes import _uid
+    # `routes` la mot PACKAGE tu P5; `_uid` song o manh dung chung.
+    from apps.ltt_voice.routes._chung import _uid
 
     class GiaUser:
         id = "3f2a9c10-5b7e-4d21-8a6f-11223344abcd"

@@ -162,10 +162,84 @@ def _thay_gio(m: re.Match) -> str:
     return f"{_doc_so_nho(h)} giờ {_doc_so_nho(p)}"
 
 
+def _bo_ky_tu_vo_hinh(t: str) -> str:
+    """Bỏ ký tự KHÔNG HIỂN THỊ. Phải chạy **trước mọi phép biến đổi khác**.
+
+    🔴 NGUỒN: upstream `pnnbao97/VieNeu-TTS` **issue #177** (đã đóng). Người dùng
+       báo *"xuất hiện các tiếng nước ngoài chèn giữa giọng đọc tiếng Việt"*.
+       Tác giả trả lời, nguyên văn:
+
+         *"khả năng cao lỗi này KHÔNG phải do model mà xuất phát từ ký tự Unicode
+          ẩn hoặc định dạng văn bản đầu vào. Các văn bản dạng hành chính sao chép
+          từ Word hoặc trang tin thường chứa các ký tự không hiển thị
+          (zero-width characters). Khi đi qua bộ tokenizer, chúng tạo ra các
+          token lạ (OOV), khiến mô hình sinh ra tiếng lạ trước khi đọc tiếp câu
+          sau."*
+
+       Người báo lỗi xác nhận đã sửa được bằng cách đổi hàm chia đoạn.
+
+    ⛔ VÌ SAO NÓ LÀ LỖI **TIỀN**, không chỉ lỗi chất lượng: job vẫn `done`, và
+       `credit_cost` tính theo **giây thật sự sinh ra** — nên khách trả tiền cho
+       một bản thu có tiếng lạ chen vào, và **không lỗi nào báo**.
+
+    ⭐ XOÁ THEO **CATEGORY**, không theo danh sách gõ tay. Mọi thủ phạm đều là
+       `Cf` (format): ZWSP · ZWNJ · ZWJ · BOM · soft hyphen · word joiner · và
+       cả directional mark `U+202A–202E` — thứ Word rải vào mà không ai thấy.
+       Một danh sách gõ tay sẽ thiếu đúng cái chưa gặp bao giờ.
+       `U+2028`/`U+2029` là `Zl`/`Zp` — chúng **là** ngắt dòng thật, nên đổi
+       thành `\\n` chứ không xoá.
+
+    ⛔ XOÁ, KHÔNG THAY BẰNG KHOẢNG TRẮNG. ZWSP và soft hyphen là **gợi ý chỗ
+       ngắt dòng**, không phải dấu phân cách: `"Xin<ZWSP>chào"` nghĩa là
+       `"Xinchào"` có thể xuống dòng ở giữa — không phải `"Xin chào"`. Thay bằng
+       khoảng trắng là tự tạo ra một từ mới.
+
+    ⚠️ ĐÁNH ĐỔI CÓ THẬT: xoá `U+200D` (ZWJ) sẽ **tách chuỗi emoji ghép** — một
+       emoji gia đình thành bốn người rời rạc. Với một bộ đọc tiếng Việt thì vô
+       hại (emoji không được đọc), nhưng nó là một cái giá, không phải một bước
+       miễn phí. Ghi ra để phiên sau không tưởng là không mất gì.
+
+    ⚠️ Nó làm **số ký tự giảm**, tức báo giá giảm. Đúng hướng: khách trả cho thứ
+       được đọc, không trả cho thứ vô hình. `manifest._gia()` đã chuẩn hoá trước
+       khi đếm nên nó tự khớp, không phải sửa gì thêm.
+
+    ⭐ CHỖ ĐẶT QUAN TRỌNG HƠN BẢN THÂN PHÉP XOÁ. Nó phải chạy **trước**
+       `tu_dien.ap_dung` và trước các regex số/ngày/giờ: một ZWSP nằm giữa một từ
+       không chỉ làm model đọc lạ — nó còn **phá khớp từ điển** và phá `_NGAY` /
+       `_GIO` / `_STT`. Cùng một ký tự ẩn gây ba loại lỗi, và hai loại sau im
+       lặng hoàn toàn.
+
+    🔴 CHẠY **TRƯỚC** `normalize("NFC")` — xem phép đo ở chính chỗ gọi. Cả hai
+       thứ tự đều in ra `'á'`, nhưng chỉ một thứ tự cho **đúng một code point**.
+    """
+    if not t:
+        return t
+    ra = []
+    for ch in t:
+        loai = unicodedata.category(ch)
+        if loai == "Cf":
+            continue
+        ra.append("\n" if loai in ("Zl", "Zp") else ch)
+    return "".join(ra)
+
+
 def chuan_hoa(text: str, *, doc_so_tran: bool = False,
               tu_dien_rieng: dict | None = None) -> str:
     """Một chuỗi vào, một chuỗi ra. Không trạng thái, test được từng phép."""
-    t = unicodedata.normalize("NFC", text or "")
+    # 🔴 XOÁ KÝ TỰ VÔ HÌNH **TRƯỚC** `NFC`, VÀ THỨ TỰ NÀY ĐÃ ĐƯỢC ĐO.
+    #
+    #    Ca khó: `'a'` + `U+200B` + dấu sắc tổ hợp `U+0301`.
+    #      xoá SAU  NFC  ->  U+0061 U+0301   (rời)   — KHÔNG phải NFC
+    #      xoá TRƯỚC NFC ->  U+00E1          (ghép)  — đúng NFC
+    #    NFC không ghép được qua một ký tự chen giữa, nên xoá sau thì phép ghép
+    #    đã lỡ mất chuyến. Hai chuỗi **nhìn giống hệt nhau** và in ra như nhau.
+    #
+    # ⛔ Và nó không phải chuyện thẩm mỹ: với tokenizer đó là **hai chuỗi khác
+    #    nhau**, tức đúng loại token lạ (OOV) mà cả phép xoá này sinh ra để
+    #    tránh. Sửa một nửa lỗi rồi để lại nửa kia ở dạng khó thấy hơn thì tệ
+    #    hơn không sửa — vì lần sau sẽ không ai nghĩ tới nó nữa.
+    t = _bo_ky_tu_vo_hinh(text or "")
+    t = unicodedata.normalize("NFC", t)
 
     t = _URL.sub(" đường dẫn ", t)
     t = _EMAIL.sub(" địa chỉ email ", t)

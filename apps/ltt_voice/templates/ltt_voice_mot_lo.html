@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ lo.ten }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Màn một lô đang chạy. Ảnh tham chiếu `04_BATCH.png`, nửa dưới.
+
+  GIỮ   bốn ô số (tổng · xong · lỗi · ước còn lại) · hàng đợi từng dòng có trình
+        phát, giọng, thời lượng, trạng thái · tải cả lô.
+
+  ⭐ Ô "ước còn lại" chỉ hiện khi ĐÃ CÓ dòng xong: nó tính từ số giây thật đã đo,
+     không từ một hằng số. Chưa có dòng nào xong thì **không đoán** — một con số
+     bịa ở chỗ này sẽ được đọc như một lời hứa.
+#}
+
+{% block content %}
+<section class="lv-man lv-mlo" aria-labelledby="lv-mlo-title">
+  <header class="lv-vo">
+    <div class="lv-vo-chu">
+      <p class="lv-mda-quay"><a href="{{ manifest.route_prefix }}/lo">← {{ _("Chạy lô") }}</a></p>
+      <h1 id="lv-mlo-title">{{ lo.ten }}</h1>
+      <p>{{ tom_tat.so_khoi }} {{ _("dòng") }}
+        {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}</p>
+    </div>
+    <div class="lv-vo-chip">
+      {% if cong_san_sang %}
+        <span class="badge b-ok"><span class="dot"></span>{{ _("Engine sẵn sàng") }}</span>
+      {% else %}
+        <span class="badge b-err"><span class="dot"></span>{{ _("Engine chưa bật") }}</span>
+      {% endif %}
+      {% if hang_doi %}<a class="badge b-warn" href="/jobs"><span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="lv-mlo-so" id="lv-mlo-so">
+    <div class="ui-card"><span id="lv-so-tong">{{ tom_tat.so_khoi }}</span>
+      <small>{{ _("tổng dòng") }}</small></div>
+    <div class="ui-card"><span id="lv-so-xong" class="ok">{{ tom_tat.xong }}</span>
+      <small>{{ _("đã xong") }}</small></div>
+    <div class="ui-card"><span id="lv-so-loi" class="err">{{ tom_tat.loi }}</span>
+      <small>{{ _("lỗi") }}</small></div>
+    <div class="ui-card"><span id="lv-so-uoc">{{ tom_tat.uoc_con_lai_s or '—' }}</span>
+      <small>{{ _("giây còn lại (ước)") }}</small></div>
+  </div>
+
+  <div class="lv-mlo-nut">
+    <button class="btn primary" type="button" id="lv-lo-chay"
+            {% if not cong_san_sang %}disabled{% endif %}>
+      {{ _("Chạy phần còn thiếu") }}
+    </button>
+    <a class="btn ghost" id="lv-lo-tai"
+       href="{{ manifest.route_prefix }}/lo/{{ lo.public_id }}/tai"
+       {% if not tom_tat.xong %}hidden{% endif %}>{{ _("Tải cả lô (ZIP)") }}</a>
+    <form method="post" id="lv-lo-xoa" class="lv-mlo-xoa"
+          action="{{ manifest.route_prefix }}/lo/{{ lo.public_id }}/xoa">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn danger sm" type="submit">{{ _("Xoá lô") }}</button>
+    </form>
+  </div>
+
+  <div id="lv-mlo-loi" class="alert alert-err" role="alert" hidden></div>
+
+  <div class="lv-lo-bang-boc">
+    <table class="lv-bang lv-mlo-bang">
+      <thead><tr>
+        <th>#</th><th>{{ _("Tên tệp") }}</th><th>{{ _("Nội dung") }}</th>
+        <th>{{ _("Giọng") }}</th><th>{{ _("Thời lượng") }}</th>
+        <th>{{ _("Trạng thái") }}</th><th></th>
+      </tr></thead>
+      <tbody>
+        {% for d in dong %}
+          <tr data-id="{{ d.id }}" data-tt="{{ d.trang_thai }}">
+            <td class="dim tnum">{{ d.stt }}</td>
+            <td class="mono lv-mlo-ten">{{ d.nhan }}</td>
+            <td class="lv-mlo-chu">{{ d.text[:90] }}</td>
+            <td class="mono lv-mlo-giong">{{ d.giong.split(':')[-1] if d.giong else _("mặc định") }}</td>
+            <td class="tnum lv-mlo-giay">{% if d.giay %}{{ d.giay }}s{% else %}—{% endif %}</td>
+            <td class="lv-mlo-tt">
+              {% with tt = {'moi':'queued','dang_tao':'running','xong':'done','loi':'error'}.get(d.trang_thai, d.trang_thai) %}
+                {% include "_voice_trangthai.html" %}
+              {% endwith %}
+              {% if d.loi %}<small class="lv-mlo-cau-loi">{{ d.loi }}</small>{% endif %}
+            </td>
+            <td class="lv-mlo-phat">
+              {% if d.audio_url %}
+                <audio controls preload="none" src="{{ d.audio_url }}"></audio>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.motLo({
+  duong: {{ manifest.route_prefix | tojson }},
+  maLo: {{ lo.public_id | tojson }},
+  chu: {
+    khongGui: {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }},
+    hetDong:  {{ _("Mọi dòng đã được đọc.") | tojson }},
+    daNop:    {{ _("Đã gửi {n} dòng vào hàng đợi.") | tojson }},
+    daXong:   {{ _("Đã xong") | tojson }},
+    dangDoc:  {{ _("Đang đọc…") | tojson }},
+    cho:      {{ _("Đang chờ") | tojson }},
+    loi:      {{ _("Lỗi") | tojson }}
+  }
+});
+</script>
+{% endblock %}

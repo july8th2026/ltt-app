@@ -2563,3 +2563,131 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   .lv-ls-dong{grid-template-columns:1fr}
   .lv-ls-phai{justify-content:flex-start}
 }
+
+/* ── Man Du an (P5) ────────────────────────────────────────────────────────── */
+.lv-da-dau{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.lv-da-moi{max-width:620px;margin-bottom:18px;display:flex;flex-direction:column;gap:12px}
+.lv-da-giong summary{cursor:pointer;font-size:12.5px;color:var(--fg)}
+.lv-da-giong .lv-chon{margin-top:9px;border:none;padding:0;background:none}
+.lv-da-luoi{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.lv-da-the{display:block;text-decoration:none;color:inherit;background:var(--panel);
+  border:1px solid var(--line);border-radius:var(--radius);padding:14px 15px;
+  transition:border-color var(--motion-fast),background var(--motion-fast)}
+.lv-da-the:hover{border-color:var(--brand-border);background:var(--panel2)}
+.lv-da-the-dau{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.lv-da-the-dau b{font-size:14px;line-height:1.3}
+.lv-da-the-so{margin:8px 0 10px;color:var(--muted);font-size:12px}
+.lv-da-thanh{height:5px;background:var(--panel2);border-radius:3px;overflow:hidden}
+.lv-da-thanh>div{height:100%;background:var(--accent);border-radius:3px}
+.lv-da-the-luc{margin:9px 0 0;font-size:11px}
+
+/* Mot du an */
+.lv-mda-quay{margin:0 0 6px;font-size:12px}
+.lv-mda-quay a{color:var(--muted);text-decoration:none}
+.lv-mda-quay a:hover{color:var(--fg)}
+.lv-mda-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.lv-mda-trai{min-width:0}
+.lv-mda-phai{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
+.lv-mda-phai .lv-chon{border:none;padding:0;background:none;margin-bottom:10px}
+.lv-mda-phai .lv-chon-ds{max-height:200px}
+.lv-mda-ghi{margin:8px 0 0;font-size:11px;line-height:1.5}
+.lv-mda-thanh-cong-cu{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.lv-mda-thanh-cong-cu .dim{margin-left:auto;font-variant-numeric:tabular-nums}
+.lv-mda-nhap{margin-bottom:14px;display:flex;flex-direction:column;gap:10px}
+
+/* Khoi */
+.lv-khoi-ds{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px}
+.lv-khoi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 13px}
+.lv-khoi:hover{border-color:var(--line2)}
+/* Chua luu: vien vang. Vi o van ban chi luu khi mat tieu diem, khach phai thay
+   duoc rang thu ho vua go CHUA di dau ca. */
+.lv-khoi.chua-luu{border-color:var(--warn-line)}
+.lv-khoi-dau{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.lv-khoi-so{font-family:var(--mono);font-size:11px;color:var(--dim);
+  background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius-sm);
+  padding:2px 7px;flex:0 0 auto}
+.lv-khoi-nut{margin-left:auto;display:flex;gap:6px}
+.lv-khoi-chu{width:100%;padding:9px 11px;border-radius:var(--radius-sm);
+  border:1px solid var(--line2);background:var(--panel2);color:var(--fg);
+  font:inherit;font-size:13.5px;line-height:1.6;resize:vertical;min-height:62px}
+.lv-khoi-chu:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-khoi-chan{display:flex;gap:9px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.lv-khoi-giong{padding:5px 9px;border-radius:var(--radius-sm);border:1px solid var(--line2);
+  background:var(--panel2);color:var(--fg);font:inherit;font-size:12px;max-width:190px}
+.lv-khoi-meta{font-size:11px;font-variant-numeric:tabular-nums}
+.lv-khoi-phat{height:30px;flex:1;min-width:180px;margin-left:auto}
+
+@media(max-width:1000px){
+  .lv-mda-khung{grid-template-columns:1fr}
+  .lv-mda-phai{position:static}
+}
+@media(max-width:560px){
+  .lv-khoi-phat{margin-left:0;width:100%;flex-basis:100%}
+  .lv-mda-thanh-cong-cu .dim{margin-left:0}
+}
+
+/* 🔴 `[hidden]` PHAI THANG `display` — TREN MOI PHAN TU cua man Voice.
+   Thuoc tinh HTML `hidden` chi la `display:none` o bang kieu cua trinh duyet, nen
+   BAT KY luat `display` nao cua ta cung de bep no. Markup dung, JS dung, chi co
+   CSS lat nguoc y dinh — mot loi hoan toan im lang.
+
+   ⭐ VA VI SAO LUAT NAY LA MOT LUAT CHUNG, KHONG PHAI MOT DANH SACH.
+      Ban dau o day liet ke bon lop cu the (`.lv-da-moi`, `.lv-mda-nhap`, ...).
+      Do la sua TUNG CA thay vi sua CA LOP LOI — va no tai dien trong vong mot
+      gio, o nut "Tai ca lo (ZIP)" (`.btn` co `display:inline-flex`), voi dung
+      trieu chung cu. Mot danh sach chi bao ve nhung gi da tung hong.
+
+   Pham vi gioi han trong `.lv-man` de khong doi hanh vi cua app khac. */
+.lv-man [hidden],
+.lv-man[hidden]{display:none!important}
+
+/* ── Man Chay lo (P6) ──────────────────────────────────────────────────────── */
+.lv-lo-khung{display:grid;grid-template-columns:330px minmax(0,1fr);gap:18px;align-items:start}
+.lv-lo-trai,.lv-lo-phai{display:flex;flex-direction:column;gap:12px;min-width:0}
+.lv-lo-nguon{width:100%;margin-bottom:9px}
+.lv-lo-nguon .lv-loc-nut{flex:1;text-align:center}
+.lv-lo-trai textarea{width:100%;padding:10px 12px;border-radius:var(--radius-md);
+  border:1px solid var(--line2);background:var(--panel2);color:var(--fg);
+  font:inherit;font-size:13px;line-height:1.6;resize:vertical;min-height:150px}
+.lv-lo-trai textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-lo-trai input[type=file]{width:100%;font-size:12.5px;color:var(--muted)}
+.lv-lo-trai .dim{margin:6px 0 0;font-size:11px;line-height:1.5}
+.lv-lo-trai .lv-chon{border:1px solid var(--line)}
+
+/* Bang xem truoc / hang doi: cuon NGANG trong khung cua no, khong day ca trang. */
+.lv-lo-bang-boc{overflow-x:auto;border-radius:var(--radius)}
+.lv-lo-bang,.lv-mlo-bang{margin-bottom:0;font-size:12px;min-width:560px}
+.lv-lo-bang td,.lv-mlo-bang td{padding:8px 11px;vertical-align:top}
+.lv-lo-bang tr.hong td{background:var(--err-bg)}
+.lv-mlo-chu{max-width:290px;color:var(--muted)}
+.lv-mlo-ten{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px}
+.lv-mlo-giong{font-size:11px;color:var(--muted)}
+.lv-mlo-cau-loi{display:block;margin-top:4px;color:var(--err);font-size:10.5px;line-height:1.4}
+.lv-mlo-phat audio{height:30px;width:190px}
+
+/* Bon o so */
+.lv-mlo-so{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;
+  margin-bottom:14px}
+.lv-mlo-so .ui-card{text-align:center;padding:13px}
+.lv-mlo-so span{display:block;font-size:22px;font-weight:600;font-variant-numeric:tabular-nums}
+.lv-mlo-so span.ok{color:var(--ok)} .lv-mlo-so span.err{color:var(--err)}
+.lv-mlo-so small{display:block;color:var(--dim);font-size:10.5px;margin-top:3px}
+.lv-mlo-nut{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.lv-mlo-xoa{margin:0 0 0 auto}
+
+/* Lo gan day */
+.lv-lo-ds{list-style:none;margin:8px 0 0;padding:0;font-size:12.5px}
+.lv-lo-ds li{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:8px 0;border-bottom:1px solid var(--line)}
+.lv-lo-ds li:last-child{border-bottom:none}
+.lv-lo-ds a{color:inherit;text-decoration:none;min-width:0}
+.lv-lo-ds a:hover b{color:var(--accent2)}
+.lv-lo-ds b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lv-lo-ds .dim{font-size:11px}
+.lv-lo-loi-so{color:var(--err)}
+
+@media(max-width:1000px){
+  .lv-lo-khung{grid-template-columns:1fr}
+  .lv-mlo-xoa{margin-left:0}
+}

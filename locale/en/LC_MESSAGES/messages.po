@@ -12335,3 +12335,307 @@ msgstr "Showing the {n} most recent items. Anything older is not in this list."
 
 msgid "—"
 msgstr "—"
+
+# --- LTT Voice Studio, man Du an P5 (2026-08-31) ---
+
+msgid "Chia một kịch bản dài thành khối, đọc từng khối, rồi ghép lại."
+msgstr "Split a long script into blocks, read each one, then put them back together."
+
+msgid "Chưa có dự án nào"
+msgstr "No projects yet"
+
+msgid "Chưa có văn bản để nhập."
+msgstr "There is no text to import."
+
+msgid "Chưa đọc"
+msgstr "Not read yet"
+
+msgid "Cài đặt dự án"
+msgstr "Project settings"
+
+msgid "Các khối dùng giọng khác nhau, nên chúng phải được đọc riêng. Chỗ nối giữa hai giọng là chủ ý, không phải lỗi."
+msgstr "The blocks use different voices, so they have to be read separately. A seam between two voices is intentional, not a defect."
+
+msgid "Cả dự án dùng một giọng, nên đọc liền một lượt sẽ mượt hơn ghép từng khối: giọng không bị lệch tông ở chỗ nối."
+msgstr "The whole project uses one voice, so reading it in a single pass sounds smoother than stitching blocks: the voice does not drift in pitch at the seams."
+
+msgid "Cắt theo ranh giới câu, không cắt giữa câu. Mỗi khối tối đa {n} ký tự."
+msgstr "Split on sentence boundaries, never mid-sentence. Up to {n} characters per block."
+
+msgid "Cắt thành khối"
+msgstr "Split into blocks"
+
+msgid "Dán cả kịch bản để máy cắt theo câu, hoặc thêm từng khối một."
+msgstr "Paste the whole script and let it be split by sentence, or add blocks one at a time."
+
+msgid "Dán cả kịch bản — máy sẽ cắt theo câu"
+msgstr "Paste the whole script — it will be split by sentence"
+
+msgid "Dán kịch bản dài"
+msgstr "Paste a long script"
+
+msgid "Dán toàn bộ kịch bản vào đây…"
+msgstr "Paste the entire script here…"
+
+msgid "Dự án chưa có khối nào"
+msgstr "This project has no blocks yet"
+
+msgid "Dự án hợp với kịch bản dài: chia thành khối, sửa và đọc lại từng khối mà không phải làm lại cả bài."
+msgstr "Projects suit long scripts: split them into blocks, then edit and re-read one block without redoing the whole piece."
+
+msgid "Dự án này không tồn tại, hoặc không thuộc tài khoản của bạn."
+msgstr "This project does not exist, or it does not belong to your account."
+
+msgid "Dự án đã đạt {n} khối — giới hạn hiện tại. Hãy tách thành hai dự án."
+msgstr "This project has reached {n} blocks, the current limit. Split it into two projects."
+
+msgid "Giọng cho khối này"
+msgstr "Voice for this block"
+
+msgid "Giọng mặc định cho cả dự án"
+msgstr "Default voice for the whole project"
+
+msgid "Huỷ"
+msgstr "Cancel"
+
+msgid "Hãy đặt tên cho dự án."
+msgstr "Please give the project a name."
+
+msgid "Không tìm thấy dự án"
+msgstr "Project not found"
+
+msgid "Khối dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
+msgstr "This block is {n} characters, over the {t} limit for a single read."
+
+msgid "Khối này chưa có văn bản."
+msgstr "This block has no text yet."
+
+msgid "Lưu"
+msgstr "Save"
+
+msgid "Mọi khối đã được đọc."
+msgstr "Every block has already been read."
+
+msgid "Nháp"
+msgstr "Draft"
+
+msgid "Nội dung khối"
+msgstr "Block content"
+
+msgid "Nội dung khối…"
+msgstr "Block content…"
+
+msgid "Theo dự án"
+msgstr "Project default"
+
+msgid "Thêm khối"
+msgstr "Add block"
+
+msgid "Tạo dự án"
+msgstr "Create project"
+
+msgid "Tải từng khối bằng trình phát ở mỗi khối. Xuất một tệp ghép sẽ có ở bản sau."
+msgstr "Download each block from its own player. Exporting one joined file is coming in a later release."
+
+msgid "Tổng kết"
+msgstr "Summary"
+
+msgid "Ví dụ: Podcast tập 12"
+msgstr "For example: Podcast episode 12"
+
+msgid "Văn bản này chia ra {n} khối nhưng dự án chỉ còn chỗ cho {c}."
+msgstr "This text splits into {n} blocks but the project only has room for {c}."
+
+msgid "Văn bản đã đổi"
+msgstr "Text changed"
+
+msgid "Xong"
+msgstr "Done"
+
+msgid "Xoá dự án"
+msgstr "Delete project"
+
+msgid "Xoá dự án không xoá các tệp tiếng đã tạo — chúng vẫn ở Lịch sử."
+msgstr "Deleting a project does not delete the audio it produced — that stays in History."
+
+msgid "Xoá khối"
+msgstr "Delete block"
+
+msgid "Xoá khối này?"
+msgstr "Delete this block?"
+
+msgid "chọn sau cũng được"
+msgstr "you can choose later"
+
+msgid "dự án"
+msgstr "projects"
+
+msgid "khối"
+msgstr "blocks"
+
+msgid "Đang làm"
+msgstr "In progress"
+
+msgid "Đang đọc…"
+msgstr "Reading…"
+
+msgid "Đã gửi {n} khối vào hàng đợi."
+msgstr "Sent {n} blocks to the queue."
+
+msgid "Đã lưu"
+msgstr "Saved"
+
+msgid "Đã đọc"
+msgstr "Read"
+
+msgid "Đọc phần còn thiếu"
+msgstr "Read what is missing"
+
+msgid "đã đọc"
+msgstr "read"
+
+# --- LTT Voice Studio, man Chay lo P6 (2026-08-31) ---
+
+msgid "CSV cần một cột nội dung (text / noi_dung / content). Cột giọng và cột tên là tuỳ chọn."
+msgstr "The CSV needs a content column (text / noi_dung / content). Voice and name columns are optional."
+
+msgid "Chưa có danh sách để đọc."
+msgstr "There is no list to read."
+
+msgid "Chưa có lô nào."
+msgstr "No batches yet."
+
+msgid "Chạy phần còn thiếu"
+msgstr "Run what is missing"
+
+msgid "Còn {n} dòng chưa hợp lệ — sửa xong mới tạo được lô. Chưa đồng credit nào bị giữ."
+msgstr "{n} rows are still invalid — fix them before creating the batch. No credits have been held."
+
+msgid "Còn {n} dòng chưa hợp lệ. Sửa xong rồi tạo lô — chưa đồng credit nào bị giữ."
+msgstr "{n} rows are still invalid. Fix them, then create the batch — no credits have been held."
+
+msgid "Danh sách có {n} dòng, vượt giới hạn {t} cho một lô."
+msgstr "The list has {n} rows, over the {t} limit for one batch."
+
+msgid "Danh sách không có dòng nào có nội dung."
+msgstr "The list has no rows with content."
+
+msgid "Danh sách nội dung"
+msgstr "Content list"
+
+msgid "Dài {n} ký tự, vượt giới hạn {t}."
+msgstr "{n} characters, over the {t} limit."
+
+msgid "Dán danh sách"
+msgstr "Paste a list"
+
+msgid "Giọng {g} đang bị tắt."
+msgstr "Voice {g} is disabled."
+
+msgid "Hợp lệ"
+msgstr "Valid"
+
+msgid "Không có giọng dựng sẵn tên {g}."
+msgstr "There is no built-in voice named {g}."
+
+msgid "Không tìm thấy giọng {g} trong tài khoản của bạn."
+msgstr "Voice {g} was not found in your account."
+
+msgid "Không tìm thấy lô"
+msgstr "Batch not found"
+
+msgid "Không tạo được tiếng nói."
+msgstr "The speech could not be generated."
+
+msgid "Không đọc được tiêu đề cột của tệp CSV."
+msgstr "The CSV header row could not be read."
+
+msgid "Không đọc được tệp. Hãy lưu lại dưới dạng CSV UTF-8."
+msgstr "The file could not be read. Please save it as UTF-8 CSV."
+
+msgid "Kiểm danh sách"
+msgstr "Check the list"
+
+msgid "Lô chưa có tệp nào xong."
+msgstr "This batch has no finished files yet."
+
+msgid "Lô gần đây"
+msgstr "Recent batches"
+
+msgid "Lô không tên"
+msgstr "Untitled batch"
+
+msgid "Lô này không tồn tại, hoặc không thuộc tài khoản của bạn."
+msgstr "This batch does not exist, or it does not belong to your account."
+
+msgid "Mọi dòng hợp lệ. Tạo lô rồi bấm chạy."
+msgstr "Every row is valid. Create the batch, then run it."
+
+msgid "Mọi dòng đã được đọc."
+msgstr "Every row has already been read."
+
+msgid "Mỗi dòng một câu…"
+msgstr "One sentence per line…"
+
+msgid "Mỗi dòng một tệp WAV, tải về trong một tệp nén."
+msgstr "One WAV per row, downloaded together as a zip."
+
+msgid "Mỗi dòng thành một tệp. Tối đa {n} dòng."
+msgstr "Each line becomes one file. Up to {n} lines."
+
+msgid "Nguồn danh sách"
+msgstr "List source"
+
+msgid "Theo lô"
+msgstr "Batch default"
+
+msgid "Tên lô"
+msgstr "Batch name"
+
+msgid "Tên tệp"
+msgstr "File name"
+
+msgid "Tạo lô"
+msgstr "Create batch"
+
+msgid "Tải cả lô (ZIP)"
+msgstr "Download all (ZIP)"
+
+msgid "Tải tệp CSV"
+msgstr "Upload a CSV"
+
+msgid "Tệp CSV không có cột nội dung. Cần một cột tên: {ds}."
+msgstr "The CSV has no content column. It needs one named: {ds}."
+
+msgid "Ví dụ: Lời chào cho 50 khách hàng"
+msgstr "For example: Greetings for 50 customers"
+
+msgid "Xem trước ánh xạ"
+msgstr "Mapping preview"
+
+msgid "Xoá lô"
+msgstr "Delete batch"
+
+msgid "dòng"
+msgstr "rows"
+
+msgid "giây còn lại (ước)"
+msgstr "seconds left (est.)"
+
+msgid "tổng dòng"
+msgstr "rows in total"
+
+msgid "{n}/{t} dòng hợp lệ"
+msgstr "{n}/{t} rows valid"
+
+msgid "Đã gửi {n} dòng vào hàng đợi."
+msgstr "Sent {n} rows to the queue."
+
+msgid "Đã xong"
+msgstr "Done"
+
+msgid "Đọc cả một danh sách trong một lượt, mỗi dòng một tệp."
+msgstr "Read a whole list in one run, one file per row."
+
+msgid "đã xong"
+msgstr "done"

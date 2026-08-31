@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Dự án") }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Danh sách dự án. Ảnh tham chiếu 03 gộp danh sách vào cột trái của màn biên
+  tập; ở đây tách thành hai trang.
+
+  ⭐ Vì sao tách: cột trái của ảnh gánh ba việc cùng lúc (chọn dự án, chọn
+     chương, xem tiến độ) trên một cột hẹp. Bỏ chương rồi thì việc còn lại đủ
+     nhẹ để danh sách có trang riêng — và một trang riêng thì thẻ dự án có chỗ
+     nói tiến độ thật thay vì hai dòng chữ nhỏ.
+#}
+
+{% block content %}
+<section class="lv-man lv-da" aria-labelledby="lv-da-title">
+  {% with tieu_de = _("Dự án"),
+          mo_ta = _("Chia một kịch bản dài thành khối, đọc từng khối, rồi ghép lại."),
+          id_tieu_de = "lv-da-title" %}
+    {% include "_voice_vo.html" %}
+  {% endwith %}
+
+  <div class="lv-da-dau">
+    <button class="btn primary" type="button" id="lv-da-nut-moi">+ {{ _("Dự án mới") }}</button>
+    <span class="dim">{{ du_an_ds|length }} {{ _("dự án") }}</span>
+  </div>
+
+  {# Biểu mẫu tạo — ẩn tới khi bấm, để trang không mở ra bằng một ô trống. #}
+  <form class="ui-card lv-da-moi" id="lv-da-moi" hidden>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="lv-field"><span class="lv-nhan">{{ _("Tên dự án") }} <strong>*</strong></span>
+      <input type="text" name="ten" id="lv-da-ten" maxlength="200" required
+             placeholder="{{ _('Ví dụ: Podcast tập 12') }}"></label>
+
+    <details class="lv-da-giong">
+      <summary>{{ _("Giọng mặc định cho cả dự án") }} <span class="dim">({{ _("chọn sau cũng được") }})</span></summary>
+      {% include "_voice_chon.html" %}
+    </details>
+
+    <div class="lv-actions">
+      <button class="btn primary" type="submit">{{ _("Tạo dự án") }}</button>
+      <button class="btn ghost" type="button" id="lv-da-huy">{{ _("Huỷ") }}</button>
+    </div>
+  </form>
+  <div id="lv-da-loi" class="alert alert-err" role="alert" hidden></div>
+
+  {% if du_an_ds %}
+    <div class="lv-da-luoi">
+      {% for d in du_an_ds %}
+        {% set t = dem.get(d.public_id) %}
+        <a class="lv-da-the" href="{{ manifest.route_prefix }}/du-an/{{ d.public_id }}">
+          <div class="lv-da-the-dau">
+            <b>{{ d.ten }}</b>
+            {% if d.trang_thai == 'xong' %}
+              <span class="badge b-ok"><span class="dot"></span>{{ _("Xong") }}</span>
+            {% elif d.trang_thai == 'dang_lam' %}
+              <span class="badge b-warn"><span class="dot"></span>{{ _("Đang làm") }}</span>
+            {% else %}
+              <span class="badge b-grey"><span class="dot"></span>{{ _("Nháp") }}</span>
+            {% endif %}
+          </div>
+
+          <p class="lv-da-the-so">
+            {{ t.so_khoi }} {{ _("khối") }}
+            {%- if t.xong %} · {{ t.xong }} {{ _("đã đọc") }}{% endif %}
+            {%- if t.giay %} · {{ (t.giay / 60) | round(1) }} {{ _("phút") }}{% endif %}
+          </p>
+
+          {# Thanh tiến độ chỉ hiện khi có khối — một thanh 0/0 không nói gì. #}
+          {% if t.so_khoi %}
+            <div class="lv-da-thanh" role="progressbar"
+                 aria-valuemin="0" aria-valuemax="100"
+                 aria-valuenow="{{ (t.xong * 100 // t.so_khoi) }}">
+              <div style="width:{{ (t.xong * 100 // t.so_khoi) }}%"></div>
+            </div>
+          {% endif %}
+
+          <p class="lv-da-the-luc dim">
+            <time datetime="{{ d.sua_luc.isoformat() }}">{{ d.sua_luc.strftime('%H:%M %d/%m/%Y') }}</time>
+          </p>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% with tieu_de = _("Chưa có dự án nào"),
+            mo_ta = _("Dự án hợp với kịch bản dài: chia thành khối, sửa và đọc lại từng khối mà không phải làm lại cả bài.") %}
+      {% include "_voice_rong.html" %}
+    {% endwith %}
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.duAnDanhSach({
+  duong: {{ manifest.route_prefix | tojson }},
+  chu: { khongGui: {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }} }
+});
+</script>
+{% endblock %}

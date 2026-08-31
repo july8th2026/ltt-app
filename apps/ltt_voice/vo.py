@@ -52,28 +52,6 @@ NAV_API = "ltt_voice_api"
 #:    cái sẽ có. Một màn hình giả trông như đã xong là cách nhanh nhất để một
 #:    phiên sau tưởng nó đã xong.
 CHUA_XAY = {
-    NAV_DU_AN: {
-        "tieu_de": N_('Dự án'),
-        "mo_ta": N_('Chia một kịch bản dài thành nhiều khối, đọc từng khối bằng '
-                    'giọng riêng, rồi ghép lại thành một tệp.'),
-        "sap_co": (
-            N_('Tách kịch bản thành khối, sửa từng khối riêng.'),
-            N_('Mỗi khối chọn một giọng — người dẫn một giọng, nhân vật một giọng.'),
-            N_('Đọc lại chỉ khối đã sửa, không phải cả bài.'),
-            N_('Xuất một tệp liền mạch.'),
-        ),
-    },
-    NAV_LO: {
-        "tieu_de": N_('Chạy lô'),
-        "mo_ta": N_('Tải lên một danh sách và đọc tất cả trong một lượt, mỗi dòng '
-                    'một tệp.'),
-        "sap_co": (
-            N_('Nhận CSV hoặc dán thẳng danh sách.'),
-            N_('Kiểm toàn bộ danh sách hợp lệ TRƯỚC khi giữ đồng credit nào.'),
-            N_('Chạy lần lượt, xem tiến độ từng dòng, thử lại dòng hỏng.'),
-            N_('Tải về cả lô trong một tệp nén.'),
-        ),
-    },
     NAV_API: {
         "tieu_de": N_('API'),
         "mo_ta": N_('Gọi giọng của bạn từ mã nguồn của bạn, bằng mã giọng đã có.'),

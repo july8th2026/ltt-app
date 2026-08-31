@@ -35,8 +35,8 @@ from apps.ltt_voice.manifest import MANIFEST
 TAB_MONG_DOI = [
     ("/ltt-voice", vo.NAV_STUDIO, True),
     ("/ltt-voice/giong", vo.NAV_GIONG, True),
-    ("/ltt-voice/du-an", vo.NAV_DU_AN, False),
-    ("/ltt-voice/lo", vo.NAV_LO, False),
+    ("/ltt-voice/du-an", vo.NAV_DU_AN, True),
+    ("/ltt-voice/lo", vo.NAV_LO, True),
     ("/ltt-voice/lich-su", vo.NAV_LICH_SU, True),
     ("/ltt-voice/api", vo.NAV_API, False),
 ]
@@ -254,10 +254,15 @@ def test_luot_sinh_tu_studio_ghi_nguon():
     Đọc thẳng mã nguồn thay vì chạy một job: rẻ, và nó chốt đúng điều cần chốt —
     rằng khoá đó có mặt tại **cửa nộp**.
     """
-    import inspect
+    # ⚠️ `routes` nay la mot PACKAGE. `inspect.getsource` chi tra `__init__.py`,
+    #    nen phai doc TUNG manh — neu khong, phep kiem xanh vi no khong nhin
+    #    thay gi ca, dung loai xanh-gia te nhat.
+    import pathlib
 
     from apps.ltt_voice import routes
-    ma = inspect.getsource(routes)
+    thu_muc = pathlib.Path(routes.__file__).parent
+    ma = "\n".join(f.read_text(encoding="utf-8")
+                   for f in sorted(thu_muc.glob("*.py")))
     assert '"nguon": "studio"' in ma, (
         "cua nop cua Studio khong ghi `nguon`. Xem VOICE_UI_EXECUTION_PLAN §7.5.")
     assert '"nguon": "giong"' in ma, (

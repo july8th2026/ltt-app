@@ -314,13 +314,19 @@ def test_khong_cua_nao_bo_qua_ket_qua_verify():
        thấy mã thật: chuỗi và chú thích vô hình với nó.
     """
     import ast
-    import inspect
+    import pathlib
 
     from apps.ltt_voice import routes
 
-    cay = ast.parse(inspect.getsource(routes))
+    # ⚠️ `routes` la mot PACKAGE. Quet TUNG manh: `inspect.getsource` chi cho
+    #    `__init__.py`, va mot may quet khong nhin thay gi thi luon xanh.
+    thu_muc = pathlib.Path(routes.__file__).parent
+    nut_all = []
+    for f in sorted(thu_muc.glob("*.py")):
+        nut_all.extend(ast.walk(ast.parse(f.read_text(encoding="utf-8"))))
+
     xau = []
-    for nut in ast.walk(cay):
+    for nut in nut_all:
         # `ast.Expr` = một biểu thức đứng riêng làm câu lệnh, tức giá trị của nó
         # bị vứt đi. Đó chính xác là hình dạng của lỗi.
         if not isinstance(nut, ast.Expr) or not isinstance(nut.value, ast.Call):

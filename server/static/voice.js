@@ -616,9 +616,510 @@
     chay();
   }
 
+  /* ── Tien ich chung cho hai man Du an ─────────────────────────────────── */
+
+  function nop(duong, csrf, du_lieu) {
+    var fd = new FormData();
+    fd.append("csrf_token", csrf);
+    for (var k in du_lieu) {
+      if (du_lieu[k] !== null && du_lieu[k] !== undefined) fd.append(k, du_lieu[k]);
+    }
+    return fetch(duong, {method: "POST", body: fd}).then(function (r) {
+      return r.json();
+    });
+  }
+
+  function csrfCua(goc) {
+    var o = (goc || document).querySelector('input[name="csrf_token"]');
+    return o ? o.value : "";
+  }
+
+  /* ── Man danh sach du an ───────────────────────────────────────────────── */
+  function duAnDanhSach(cauHinh) {
+    var form = document.getElementById("lv-da-moi");
+    if (!form) return;
+    var cfg = cauHinh || {}, chu = cfg.chu || {}, duong = cfg.duong || "";
+    var oLoi = document.getElementById("lv-da-loi");
+
+    function mo(hien) {
+      form.hidden = !hien;
+      if (hien) document.getElementById("lv-da-ten").focus();
+    }
+    document.getElementById("lv-da-nut-moi").addEventListener("click", function () {
+      mo(form.hidden);
+    });
+    document.getElementById("lv-da-huy").addEventListener("click", function () {
+      mo(false);
+    });
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      oLoi.hidden = true;
+      var nut = form.querySelector('button[type="submit"]');
+      nut.disabled = true;
+      var giong = (form.querySelector('input[name="giong"]:checked') || {}).value || "";
+      nop(duong + "/du-an/tao", csrfCua(form),
+          {ten: form.ten.value, giong: giong})
+        .then(function (d) {
+          if (!d.ok) { oLoi.textContent = d.loi; oLoi.hidden = false; nut.disabled = false; return; }
+          // Di thang vao du an vua tao: nguoi ta tao du an DE soan no, khong de
+          // ngam no trong danh sach.
+          window.location.href = duong + "/du-an/" + encodeURIComponent(d.id);
+        })
+        .catch(function () {
+          oLoi.textContent = chu.khongGui; oLoi.hidden = false; nut.disabled = false;
+        });
+    });
+
+    chay();
+  }
+
+  /* ── Man mot du an ─────────────────────────────────────────────────────── */
+  function motDuAn(cauHinh) {
+    var ds = document.getElementById("lv-khoi-ds");
+    var cfg = cauHinh || {}, chu = cfg.chu || {};
+    var duong = cfg.duong || "";
+    var goc = duong + "/du-an/" + encodeURIComponent(cfg.maDuAn || "");
+    var csrf = csrfCua(document);
+    var oLoi = document.getElementById("lv-mda-loi");
+    var dongHo = null;
+
+    function baoLoi(cau) {
+      if (!oLoi) return;
+      oLoi.textContent = cau || chu.khongGui;
+      oLoi.hidden = false;
+    }
+    function xoaLoi() { if (oLoi) oLoi.hidden = true; }
+
+    /* Luu mot khoi. Goi khi o van ban mat tieu diem, khong goi moi phim go.
+     *
+     * ⭐ `blur` chu khong `input`: mot yeu cau moi ky tu la mot yeu cau moi 50ms
+     *    khi go nhanh, va no khong cho them gi — khoi chi can dung TRUOC khi
+     *    duoc doc. Cai gia la neu khach dong tab giua chung thi mat, nen o van
+     *    ban co vien doi mau bao "chua luu". */
+    function luuKhoi(li, xong) {
+      var id = li.dataset.id;
+      var chuMoi = li.querySelector(".lv-khoi-chu").value;
+      var giongMoi = li.querySelector(".lv-khoi-giong").value;
+      return nop(goc + "/khoi/" + id + "/sua", csrf, {text: chuMoi, giong: giongMoi})
+        .then(function (d) {
+          if (d.ok) {
+            li.classList.remove("chua-luu");
+            if (d.trang_thai) datTrangThai(li, d.trang_thai);
+          }
+          if (xong) xong(d);
+          return d;
+        });
+    }
+
+    function datTrangThai(li, tt) {
+      li.dataset.tt = tt;
+      var o = li.querySelector(".lv-khoi-tt");
+      if (!o) return;
+      var ban = {xong: ["b-ok", chu.daDoc], dang_tao: ["b-warn", chu.dangDoc],
+                 can_tao_lai: ["b-warn", chu.doiChu], loi: ["b-err", chu.loi],
+                 moi: ["b-grey", chu.chuaDoc]}[tt] || ["b-grey", tt];
+      o.innerHTML = "";
+      var s = document.createElement("span");
+      s.className = "badge " + ban[0];
+      var c = document.createElement("span"); c.className = "dot";
+      s.appendChild(c); s.appendChild(document.createTextNode(ban[1]));
+      o.appendChild(s);
+    }
+
+    function ganKhoi(li) {
+      var oChu = li.querySelector(".lv-khoi-chu");
+      var oGiong = li.querySelector(".lv-khoi-giong");
+
+      oChu.addEventListener("input", function () { li.classList.add("chua-luu"); });
+      oChu.addEventListener("blur", function () {
+        if (li.classList.contains("chua-luu")) luuKhoi(li);
+      });
+      oGiong.addEventListener("change", function () { luuKhoi(li); });
+
+      li.querySelector(".lv-khoi-doc").addEventListener("click", function () {
+        xoaLoi();
+        // Luu TRUOC khi doc. Doc mot khoi voi van ban cu la tieu tien that cho
+        // mot ket qua khach khong con muon.
+        luuKhoi(li, function () {
+          nop(goc + "/khoi/" + li.dataset.id + "/doc", csrf, {})
+            .then(function (d) {
+              if (!d.ok) { baoLoi(d.loi); return; }
+              datTrangThai(li, "dang_tao");
+              batDauTheoDoi();
+            })
+            .catch(function () { baoLoi(chu.khongGui); });
+        });
+      });
+
+      li.querySelector(".lv-khoi-xoa").addEventListener("click", function () {
+        if (!window.confirm(chu.xacNhanXoa)) return;
+        nop(goc + "/khoi/" + li.dataset.id + "/xoa", csrf, {})
+          .then(function (d) { if (d.ok) window.location.reload(); });
+      });
+    }
+
+    if (ds) {
+      var cac = [].slice.call(ds.querySelectorAll(".lv-khoi"));
+      for (var i = 0; i < cac.length; i++) ganKhoi(cac[i]);
+    }
+
+    /* Theo doi ca du an bang MOT loi goi, khong mot loi goi moi khoi. */
+    function batDauTheoDoi() {
+      if (dongHo) return;
+      var cho = 1500;
+      (function vong() {
+        fetch(goc + "/trang-thai")
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) return;
+            var conChay = 0;
+            for (var i = 0; i < d.khoi.length; i++) {
+              var k = d.khoi[i];
+              var li = ds && ds.querySelector('[data-id="' + k.id + '"]');
+              if (!li) continue;
+              if (li.dataset.tt !== k.trang_thai) datTrangThai(li, k.trang_thai);
+              if (k.trang_thai === "dang_tao") conChay++;
+              // Tep vua xong: gan trinh phat vao, khong bat tai lai trang.
+              if (k.audio_url && !li.querySelector(".lv-khoi-phat")) {
+                var au = document.createElement("audio");
+                au.className = "lv-khoi-phat";
+                au.controls = true; au.preload = "none"; au.src = k.audio_url;
+                li.querySelector(".lv-khoi-chan").appendChild(au);
+              }
+            }
+            var tk = d.tom_tat || {};
+            datSo("lv-tk-khoi", tk.so_khoi);
+            datSo("lv-tk-xong", tk.xong);
+            datSo("lv-tk-credit", tk.credit);
+            var oTd = document.getElementById("lv-mda-tiendo");
+            if (oTd) oTd.textContent = (tk.xong || 0) + "/" + (tk.so_khoi || 0);
+
+            if (conChay) {
+              cho = Math.min(cho * 1.3, 8000);
+              dongHo = setTimeout(vong, cho);
+            } else {
+              dongHo = null;   // het viec thi THOI hoi, dung dap nhip mai
+            }
+          })
+          .catch(function () {
+            cho = Math.min(cho * 2, 15000);
+            dongHo = setTimeout(vong, cho);
+          });
+      })();
+      dongHo = 1;
+    }
+
+    function datSo(id, v) {
+      var o = document.getElementById(id);
+      if (o && v !== undefined && v !== null) o.textContent = String(v);
+    }
+
+    // Con khoi dang doc luc mo trang thi theo doi ngay.
+    if (ds && ds.querySelector('[data-tt="dang_tao"]')) batDauTheoDoi();
+
+    /* Thanh cong cu */
+    var nutTatCa = document.getElementById("lv-doc-tat-ca");
+    if (nutTatCa) nutTatCa.addEventListener("click", function () {
+      xoaLoi();
+      nutTatCa.disabled = true;
+      nop(goc + "/doc-tat-ca", csrf, {})
+        .then(function (d) {
+          nutTatCa.disabled = false;
+          if (!d.ok) { baoLoi(d.loi); return; }
+          if (!d.so_nop) { baoLoi(chu.hetKhoi); return; }
+          // Bao ca so da nop LAN cho con lai neu dung giua chung — mot con so
+          // "da gui 3" ma khong noi con 17 la mot nua su that.
+          if (d.loi) baoLoi(chu.daNop.replace("{n}", d.so_nop) + " " + d.loi);
+          batDauTheoDoi();
+          window.location.reload();
+        })
+        .catch(function () { nutTatCa.disabled = false; baoLoi(chu.khongGui); });
+    });
+
+    var nutThem = document.getElementById("lv-them-khoi");
+    if (nutThem) nutThem.addEventListener("click", function () {
+      nop(goc + "/khoi/them", csrf, {text: ""})
+        .then(function (d) {
+          if (!d.ok) { baoLoi(d.loi); return; }
+          window.location.reload();
+        })
+        .catch(function () { baoLoi(chu.khongGui); });
+    });
+
+    var formNhap = document.getElementById("lv-nhap");
+    var nutNhap = document.getElementById("lv-nut-nhap");
+    if (formNhap && nutNhap) {
+      nutNhap.addEventListener("click", function () { formNhap.hidden = !formNhap.hidden; });
+      document.getElementById("lv-nhap-huy").addEventListener("click", function () {
+        formNhap.hidden = true;
+      });
+      formNhap.addEventListener("submit", function (e) {
+        e.preventDefault();
+        xoaLoi();
+        var nut = formNhap.querySelector('button[type="submit"]');
+        nut.disabled = true;
+        nop(goc + "/nhap", csrf, {text: formNhap.text.value})
+          .then(function (d) {
+            if (!d.ok) { baoLoi(d.loi); nut.disabled = false; return; }
+            window.location.reload();
+          })
+          .catch(function () { baoLoi(chu.khongGui); nut.disabled = false; });
+      });
+    }
+
+    var formCaiDat = document.getElementById("lv-mda-caidat");
+    if (formCaiDat) formCaiDat.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var giong = (formCaiDat.querySelector('input[name="giong"]:checked') || {}).value || "";
+      var nut = formCaiDat.querySelector('button[type="submit"]');
+      nut.disabled = true;
+      nop(goc + "/sua", csrf, {ten: formCaiDat.ten.value, giong: giong})
+        .then(function () { window.location.reload(); })
+        .catch(function () { nut.disabled = false; baoLoi(chu.khongGui); });
+    });
+
+    chay();
+  }
+
+  /* ── Man tao lo ────────────────────────────────────────────────────────────
+   *
+   * 🔴 NUT "TAO LO" KHOA TOI KHI MOI DONG HOP LE. Do la luat lon nhat cua man
+   *    nay, va o day no chi la mot thuoc tinh `disabled` — nhung thuoc tinh do
+   *    la thu dung giua khach va mot lo 500 dong bi giu tien roi hong o dong 47.
+   *
+   * ⚠️ Va no KHONG phai lop bao ve duy nhat: `POST /lo/tao` kiem lai o may chu
+   *    va tu choi neu con dong hong. Mot nut bi khoa la mot tien nghi; may chu
+   *    moi la cua.
+   */
+  function taoLo(cauHinh) {
+    var form = document.getElementById("lv-lo-form");
+    if (!form) return;
+    var cfg = cauHinh || {}, chu = cfg.chu || {}, duong = cfg.duong || "";
+
+    var oChu = document.getElementById("lv-lo-chu");
+    var oFile = document.getElementById("lv-lo-file");
+    var oXem = document.getElementById("lv-lo-xem");
+    var oBody = document.getElementById("lv-lo-tbody");
+    var oDem = document.getElementById("lv-lo-dem");
+    var oGhi = document.getElementById("lv-lo-ghi");
+    var oLoi = document.getElementById("lv-lo-loi");
+    var nutTao = document.getElementById("lv-lo-nut-tao");
+    var laCsv = false;
+
+    function baoLoi(cau) {
+      oLoi.textContent = cau || chu.khongGui;
+      oLoi.hidden = false;
+    }
+
+    var nutNguon = document.querySelectorAll("[data-nguon]");
+    for (var i = 0; i < nutNguon.length; i++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          var la = nut.dataset.nguon === "tep";
+          document.getElementById("lv-lo-dan").hidden = la;
+          document.getElementById("lv-lo-tep").hidden = !la;
+          for (var k = 0; k < nutNguon.length; k++) nutNguon[k].classList.remove("on");
+          nut.classList.add("on");
+          // Doi nguon thi ket qua kiem cu khong con dung nua. Khoa lai.
+          nutTao.disabled = true;
+          oXem.hidden = true;
+        });
+      })(nutNguon[i]);
+    }
+
+    function ve(d) {
+      oBody.textContent = "";
+      for (var i = 0; i < d.dong.length; i++) {
+        var r = d.dong[i];
+        var tr = document.createElement("tr");
+        if (!r.hop_le) tr.className = "hong";
+        function o(chuNoi, lop) {
+          var td = document.createElement("td");
+          if (lop) td.className = lop;
+          td.textContent = chuNoi;
+          return td;
+        }
+        tr.appendChild(o(String(r.thu_tu), "dim tnum"));
+        tr.appendChild(o(r.text.slice(0, 70), "lv-mlo-chu"));
+        tr.appendChild(o((r.giong || "").split(":").pop() || chu.theoLo, "mono"));
+        tr.appendChild(o(r.nhan, "mono"));
+
+        var td = document.createElement("td");
+        var s = document.createElement("span");
+        s.className = "badge " + (r.hop_le ? "b-ok" : "b-err");
+        var cham = document.createElement("span"); cham.className = "dot";
+        s.appendChild(cham);
+        s.appendChild(document.createTextNode(r.hop_le ? chu.ok : (r.loi || "")));
+        td.appendChild(s);
+        tr.appendChild(td);
+        oBody.appendChild(tr);
+      }
+
+      oDem.textContent = (chu.hopLe || "")
+        .replace("{n}", d.so_hop_le).replace("{t}", d.dong.length);
+      oDem.className = "badge " + (d.so_hong ? "b-err" : "b-ok");
+      oGhi.textContent = d.so_hong
+        ? (chu.conHong || "").replace("{n}", d.so_hong)
+        : chu.tatCaHopLe;
+      oXem.hidden = false;
+      nutTao.disabled = d.so_hong > 0 || d.dong.length === 0;
+    }
+
+    function goiKiem() {
+      oLoi.hidden = true;
+      var fd = new FormData();
+      fd.append("csrf_token", form.csrf_token.value);
+      fd.append("noi_dung", oChu ? oChu.value : "");
+      fd.append("giong", (form.querySelector('input[name="giong"]:checked') || {}).value || "");
+      if (oFile && oFile.files && oFile.files[0]) {
+        fd.append("tep", oFile.files[0]);
+        laCsv = /\.csv$/i.test(oFile.files[0].name);
+      }
+      return fetch(duong + "/lo/kiem", {method: "POST", body: fd})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { baoLoi(d.loi); nutTao.disabled = true; return null; }
+          ve(d);
+          return d;
+        })
+        .catch(function () { baoLoi(chu.khongGui); return null; });
+    }
+
+    document.getElementById("lv-lo-nut-kiem").addEventListener("click", goiKiem);
+    // Doi noi dung thi ket qua kiem cu het hieu luc — khoa lai ngay.
+    if (oChu) oChu.addEventListener("input", function () {
+      nutTao.disabled = true;
+    });
+    if (oFile) oFile.addEventListener("change", goiKiem);
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      oLoi.hidden = true;
+      nutTao.disabled = true;
+      var fd = new FormData();
+      fd.append("csrf_token", form.csrf_token.value);
+      fd.append("ten", document.getElementById("lv-lo-ten").value);
+      fd.append("noi_dung", oChu ? oChu.value : "");
+      fd.append("la_csv", laCsv ? "1" : "");
+      fd.append("giong", (form.querySelector('input[name="giong"]:checked') || {}).value || "");
+      fetch(duong + "/lo/tao", {method: "POST", body: fd})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { baoLoi(d.loi); if (d.dong) ve(d); return; }
+          window.location.href = duong + "/lo/" + encodeURIComponent(d.id);
+        })
+        .catch(function () { baoLoi(chu.khongGui); nutTao.disabled = false; });
+    });
+
+    chay();
+  }
+
+  /* ── Man mot lo dang chay ─────────────────────────────────────────────── */
+  function motLo(cauHinh) {
+    var bang = document.querySelector(".lv-mlo-bang tbody");
+    if (!bang) return;
+    var cfg = cauHinh || {}, chu = cfg.chu || {};
+    var goc = (cfg.duong || "") + "/lo/" + encodeURIComponent(cfg.maLo || "");
+    var csrf = csrfCua(document);
+    var oLoi = document.getElementById("lv-mlo-loi");
+    var dongHo = null;
+
+    var TEN = {xong: chu.daXong, dang_tao: chu.dangDoc, moi: chu.cho, loi: chu.loi};
+    var LOP = {xong: "b-ok", dang_tao: "b-warn", moi: "b-warn", loi: "b-err"};
+
+    function baoLoi(cau) { oLoi.textContent = cau || chu.khongGui; oLoi.hidden = false; }
+
+    function datSo(id, v) {
+      var o = document.getElementById(id);
+      if (o && v !== undefined && v !== null) o.textContent = String(v);
+    }
+
+    function theoDoi() {
+      if (dongHo) return;
+      var cho = 2000;
+      (function vong() {
+        fetch(goc + "/trang-thai")
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) return;
+            var conChay = 0;
+            for (var i = 0; i < d.dong.length; i++) {
+              var x = d.dong[i];
+              var tr = bang.querySelector('[data-id="' + x.id + '"]');
+              if (!tr) continue;
+              if (x.trang_thai === "dang_tao" || x.trang_thai === "moi") conChay++;
+              if (tr.dataset.tt === x.trang_thai && !x.audio_url) continue;
+              tr.dataset.tt = x.trang_thai;
+
+              var oTt = tr.querySelector(".lv-mlo-tt");
+              oTt.textContent = "";
+              var s = document.createElement("span");
+              s.className = "badge " + (LOP[x.trang_thai] || "b-grey");
+              var cham = document.createElement("span"); cham.className = "dot";
+              s.appendChild(cham);
+              s.appendChild(document.createTextNode(TEN[x.trang_thai] || x.trang_thai));
+              oTt.appendChild(s);
+              if (x.loi) {
+                var sm = document.createElement("small");
+                sm.className = "lv-mlo-cau-loi";
+                sm.textContent = x.loi;
+                oTt.appendChild(sm);
+              }
+              if (x.giay) tr.querySelector(".lv-mlo-giay").textContent = x.giay + "s";
+              if (x.audio_url && !tr.querySelector("audio")) {
+                var au = document.createElement("audio");
+                au.controls = true; au.preload = "none"; au.src = x.audio_url;
+                tr.querySelector(".lv-mlo-phat").appendChild(au);
+              }
+            }
+            var t = d.tom_tat || {};
+            datSo("lv-so-tong", t.so_khoi);
+            datSo("lv-so-xong", t.xong);
+            datSo("lv-so-loi", t.loi);
+            datSo("lv-so-uoc", t.uoc_con_lai_s || "—");
+            var tai = document.getElementById("lv-lo-tai");
+            if (tai && t.xong) tai.hidden = false;
+
+            if (conChay) {
+              cho = Math.min(cho * 1.25, 10000);
+              dongHo = setTimeout(vong, cho);
+            } else {
+              dongHo = null;   // het viec thi THOI hoi
+            }
+          })
+          .catch(function () {
+            cho = Math.min(cho * 2, 20000);
+            dongHo = setTimeout(vong, cho);
+          });
+      })();
+      dongHo = 1;
+    }
+
+    if (bang.querySelector('[data-tt="dang_tao"]')) theoDoi();
+
+    var nutChay = document.getElementById("lv-lo-chay");
+    if (nutChay) nutChay.addEventListener("click", function () {
+      oLoi.hidden = true;
+      nutChay.disabled = true;
+      nop(goc + "/chay", csrf, {})
+        .then(function (d) {
+          nutChay.disabled = false;
+          if (!d.ok) { baoLoi(d.loi); return; }
+          if (!d.so_nop) { baoLoi(chu.hetDong); return; }
+          if (d.loi) baoLoi(chu.daNop.replace("{n}", d.so_nop) + " " + d.loi);
+          window.location.reload();
+        })
+        .catch(function () { nutChay.disabled = false; baoLoi(chu.khongGui); });
+    });
+
+    chay();
+  }
+
   // Cho phan duoc them sau (ket qua sinh, danh sach tai them) tu gan lai.
   window.LttVoice = {
-    gan: chay, luoiGiong: luoiGiong, studio: studio, lichSu: lichSu
+    gan: chay, luoiGiong: luoiGiong, studio: studio, lichSu: lichSu,
+    duAnDanhSach: duAnDanhSach, motDuAn: motDuAn, taoLo: taoLo, motLo: motLo
   };
 
   if (document.readyState === "loading") {

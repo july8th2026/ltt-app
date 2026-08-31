@@ -169,3 +169,24 @@ class VoiceConsent(Base):
     user_agent: Mapped[str] = mapped_column(String(256), default="")
     dong_y_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  default=_now)
+
+
+# ── Bảng của màn Dự án ───────────────────────────────────────────────────────
+#
+# 🔴 MỘT DÒNG NÀY LÀ BẮT BUỘC, và thiếu nó hỏng theo kiểu tệ nhất.
+#
+#    `platform_core/registry.load_app_tables` chỉ import đúng
+#    `apps/<slug>/tables.py` — Alembic gọi nó trong `env.py` để dựng
+#    `Base.metadata`. Server thì import gián tiếp qua route, nên **server vẫn
+#    chạy** nếu thiếu dòng này.
+#
+#    Hệ quả của việc thiếu: `alembic revision --autogenerate` không thấy hai
+#    bảng kia và **đề nghị XOÁ chúng**, im lặng, trong một migration mà người
+#    duyệt tưởng là dọn dẹp.
+#
+# ⭐ Model đặt ở tệp riêng (`tables_du_an.py`) có chủ ý: bốn bảng phía trên là
+#    danh tính giọng — hợp đồng dài hạn, consent pháp lý, lời hứa "nâng engine
+#    không phá `voice_id`". Dự án chỉ là một công cụ soạn thảo và sẽ đổi hình
+#    nhiều lần. Trộn chúng là mời người sửa công cụ đi ngang qua bốn bảng không
+#    được phép lay động.
+from .tables_du_an import VoiceBlock, VoiceProject  # noqa: E402,F401

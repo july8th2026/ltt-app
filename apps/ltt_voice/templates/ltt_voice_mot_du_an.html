@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}{{ du_an.ten }} — {{ _("Giọng nói LTT") }}{% endblock %}
+
+{#
+  Màn biên tập một dự án. Đối chiếu với ảnh tham chiếu `03_PROJECTS.png`:
+
+  GIỮ   danh sách khối · giọng theo khối · trạng thái theo khối · nghe từng
+        khối · sinh lại một khối · panel chi tiết bên phải · tổng kết dự án.
+
+  BỎ    **Chương** — một tầng lồng làm đôi mọi màn hình để đổi lấy rất ít ở bản
+        đầu. Thêm được lúc nào cũng được; gỡ ra thì không.
+  BỎ    **V1/V2/V3 theo khối** — lịch sử job đã giữ đủ mọi lượt sinh. Một bảng
+        phiên bản thứ hai là nguồn chân lý thứ hai cho cùng một sự thật.
+  BỎ    **Lock Completed** — nó giải một vấn đề chưa có (sinh lại nhầm hàng
+        loạt), và cái giá là một trạng thái nữa trên mỗi khối.
+
+  ⭐ THÊM một thứ ảnh không có, vì số đo đòi: khi cả dự án dùng MỘT giọng, có
+     nút **đọc liền một lượt**. Upstream issue #142, tác giả: *"việc gọi API cho
+     từng chunk riêng lẻ làm mất đi tính liên tục của trạng thái cảm xúc và nhịp
+     điệu từ đoạn trước đó."* Ghép N tệp không bao giờ mượt bằng một lượt đọc.
+#}
+
+{% block content %}
+<section class="lv-man lv-mda" aria-labelledby="lv-mda-title">
+  <header class="lv-vo">
+    <div class="lv-vo-chu">
+      <p class="lv-mda-quay"><a href="{{ manifest.route_prefix }}/du-an">← {{ _("Dự án") }}</a></p>
+      <h1 id="lv-mda-title">{{ du_an.ten }}</h1>
+      <p>{{ tom_tat.so_khoi }} {{ _("khối") }}
+        {%- if tom_tat.xong %} · {{ tom_tat.xong }} {{ _("đã đọc") }}{% endif %}
+        {%- if tom_tat.giay %} · {{ (tom_tat.giay / 60) | round(1) }} {{ _("phút tiếng") }}{% endif %}
+        {%- if tom_tat.credit %} · {{ tom_tat.credit }} credit{% endif %}</p>
+    </div>
+    <div class="lv-vo-chip">
+      {% if cong_san_sang %}
+        <span class="badge b-ok"><span class="dot"></span>{{ _("Engine sẵn sàng") }}</span>
+      {% else %}
+        <span class="badge b-err"><span class="dot"></span>{{ _("Engine chưa bật") }}</span>
+      {% endif %}
+      {% if hang_doi %}<a class="badge b-warn" href="/jobs"><span class="dot"></span>{{ _("Đang chạy") }} {{ hang_doi }}</a>{% endif %}
+    </div>
+  </header>
+
+  <div class="lv-mda-khung">
+    {# ── Cột trái: khối ──────────────────────────────────────────────────── #}
+    <div class="lv-mda-trai">
+      <div class="lv-mda-thanh-cong-cu">
+        <button class="btn sm primary" type="button" id="lv-doc-tat-ca"
+                {% if not cong_san_sang %}disabled{% endif %}>
+          {{ _("Đọc phần còn thiếu") }}
+        </button>
+        <button class="btn sm ghost" type="button" id="lv-them-khoi">+ {{ _("Thêm khối") }}</button>
+        <button class="btn sm ghost" type="button" id="lv-nut-nhap">{{ _("Dán kịch bản dài") }}</button>
+        <span class="dim" id="lv-mda-tiendo"
+              data-xong="{{ tom_tat.xong }}" data-tong="{{ tom_tat.so_khoi }}">
+          {{ tom_tat.xong }}/{{ tom_tat.so_khoi }}
+        </span>
+      </div>
+
+      <form class="ui-card lv-mda-nhap" id="lv-nhap" hidden>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <label class="lv-field">
+          <span class="lv-nhan">{{ _("Dán cả kịch bản — máy sẽ cắt theo câu") }}</span>
+          <textarea name="text" rows="8" required
+                    placeholder="{{ _('Dán toàn bộ kịch bản vào đây…') }}"></textarea>
+          <small class="dim">{{ _("Cắt theo ranh giới câu, không cắt giữa câu. Mỗi khối tối đa {n} ký tự.").format(n=tran_ky_tu) }}</small>
+        </label>
+        <div class="lv-actions">
+          <button class="btn primary sm" type="submit">{{ _("Cắt thành khối") }}</button>
+          <button class="btn ghost sm" type="button" id="lv-nhap-huy">{{ _("Huỷ") }}</button>
+        </div>
+      </form>
+
+      <div id="lv-mda-loi" class="alert alert-err" role="alert" hidden></div>
+
+      {% if khoi %}
+        <ol class="lv-khoi-ds" id="lv-khoi-ds">
+          {% for k in khoi %}
+            <li class="lv-khoi" data-id="{{ k.id }}" data-tt="{{ k.trang_thai }}"
+                data-thutu="{{ k.thu_tu }}">
+              <div class="lv-khoi-dau">
+                <span class="lv-khoi-so">{{ '%02d' % loop.index }}</span>
+                <span class="lv-khoi-tt">
+                  {% if k.trang_thai == 'xong' %}
+                    <span class="badge b-ok"><span class="dot"></span>{{ _("Đã đọc") }}</span>
+                  {% elif k.trang_thai == 'dang_tao' %}
+                    <span class="badge b-warn"><span class="dot"></span>{{ _("Đang đọc…") }}</span>
+                  {% elif k.trang_thai == 'can_tao_lai' %}
+                    {# ⭐ KHÁC `moi`: vẫn còn tệp cũ nghe được, chỉ là văn bản đã đổi. #}
+                    <span class="badge b-warn"><span class="dot"></span>{{ _("Văn bản đã đổi") }}</span>
+                  {% elif k.trang_thai == 'loi' %}
+                    <span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
+                  {% else %}
+                    <span class="badge b-grey"><span class="dot"></span>{{ _("Chưa đọc") }}</span>
+                  {% endif %}
+                </span>
+                <span class="lv-khoi-nut">
+                  <button class="btn sm ghost lv-khoi-doc" type="button"
+                          {% if not cong_san_sang %}disabled{% endif %}>{{ _("Đọc") }}</button>
+                  <button class="btn sm ghost lv-khoi-xoa" type="button"
+                          aria-label="{{ _('Xoá khối') }}">✕</button>
+                </span>
+              </div>
+
+              <textarea class="lv-khoi-chu" rows="3" maxlength="{{ tran_ky_tu }}"
+                        aria-label="{{ _('Nội dung khối') }} {{ loop.index }}"
+                        placeholder="{{ _('Nội dung khối…') }}">{{ k.text }}</textarea>
+
+              <div class="lv-khoi-chan">
+                <select class="lv-khoi-giong" aria-label="{{ _('Giọng cho khối này') }}">
+                  <option value=""{{ ' selected' if not k.giong }}>{{ _("Theo dự án") }}</option>
+                  {% for g in giong %}
+                    {% if g.trang_thai == 'active' %}
+                      <option value="v:{{ g.public_id }}"{{ ' selected' if k.giong == 'v:' ~ g.public_id }}>{{ g.ten_hien_thi }}</option>
+                    {% endif %}
+                  {% endfor %}
+                  {% for g in giong_mau %}
+                    <option value="m:{{ g.ma }}"{{ ' selected' if k.giong == 'm:' ~ g.ma }}>{{ g.ma }}</option>
+                  {% endfor %}
+                </select>
+                <span class="lv-khoi-meta dim">
+                  {%- if k.giay %}{{ k.giay }}s{% endif %}
+                  {%- if k.credit %} · {{ k.credit }} credit{% endif %}
+                </span>
+                {% if k.audio_url %}
+                  <audio class="lv-khoi-phat" controls preload="none" src="{{ k.audio_url }}"></audio>
+                {% endif %}
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      {% else %}
+        {% with tieu_de = _("Dự án chưa có khối nào"),
+                mo_ta = _("Dán cả kịch bản để máy cắt theo câu, hoặc thêm từng khối một.") %}
+          {% include "_voice_rong.html" %}
+        {% endwith %}
+      {% endif %}
+    </div>
+
+    {# ── Cột phải: cài đặt + xuất ────────────────────────────────────────── #}
+    <aside class="lv-mda-phai">
+      <form class="ui-card" id="lv-mda-caidat">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <span class="eyebrow">{{ _("Cài đặt dự án") }}</span>
+        <label class="lv-field"><span class="lv-nhan">{{ _("Tên") }}</span>
+          <input type="text" name="ten" value="{{ du_an.ten }}" maxlength="200"></label>
+        {% include "_voice_chon.html" %}
+        <div class="lv-actions">
+          <button class="btn sm primary" type="submit">{{ _("Lưu") }}</button>
+        </div>
+      </form>
+
+      <div class="ui-card">
+        <span class="eyebrow">{{ _("Xuất") }}</span>
+        {% if tom_tat.mot_giong and tom_tat.so_khoi > 1 %}
+          {# ⭐ Chỉ hiện khi cả dự án MỘT giọng — xem chú thích đầu tệp. #}
+          <p class="dim lv-mda-ghi">{{ _("Cả dự án dùng một giọng, nên đọc liền một lượt sẽ mượt hơn ghép từng khối: giọng không bị lệch tông ở chỗ nối.") }}</p>
+        {% elif tom_tat.so_khoi > 1 %}
+          <p class="dim lv-mda-ghi">{{ _("Các khối dùng giọng khác nhau, nên chúng phải được đọc riêng. Chỗ nối giữa hai giọng là chủ ý, không phải lỗi.") }}</p>
+        {% endif %}
+        <p class="dim lv-mda-ghi">{{ _("Tải từng khối bằng trình phát ở mỗi khối. Xuất một tệp ghép sẽ có ở bản sau.") }}</p>
+      </div>
+
+      <div class="ui-card">
+        <span class="eyebrow">{{ _("Tổng kết") }}</span>
+        <div class="lv-ct-so">
+          <div><span id="lv-tk-khoi">{{ tom_tat.so_khoi }}</span><small>{{ _("khối") }}</small></div>
+          <div><span id="lv-tk-xong">{{ tom_tat.xong }}</span><small>{{ _("đã đọc") }}</small></div>
+          <div><span id="lv-tk-credit">{{ tom_tat.credit }}</span><small>{{ _("credit") }}</small></div>
+        </div>
+        <form method="post" id="lv-mda-xoa"
+              action="{{ manifest.route_prefix }}/du-an/{{ du_an.public_id }}/xoa">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn danger sm" type="submit">{{ _("Xoá dự án") }}</button>
+        </form>
+        <p class="dim lv-mda-ghi">{{ _("Xoá dự án không xoá các tệp tiếng đã tạo — chúng vẫn ở Lịch sử.") }}</p>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.motDuAn({
+  duong: {{ manifest.route_prefix | tojson }},
+  maDuAn: {{ du_an.public_id | tojson }},
+  chu: {
+    khongGui:  {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }},
+    xacNhanXoa:{{ _("Xoá khối này?") | tojson }},
+    daLuu:     {{ _("Đã lưu") | tojson }},
+    dangDoc:   {{ _("Đang đọc…") | tojson }},
+    daDoc:     {{ _("Đã đọc") | tojson }},
+    doiChu:    {{ _("Văn bản đã đổi") | tojson }},
+    chuaDoc:   {{ _("Chưa đọc") | tojson }},
+    loi:       {{ _("Lỗi") | tojson }},
+    hetKhoi:   {{ _("Mọi khối đã được đọc.") | tojson }},
+    daNop:     {{ _("Đã gửi {n} khối vào hàng đợi.") | tojson }}
+  }
+});
+</script>
+{% endblock %}
