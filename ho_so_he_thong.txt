@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d07ad094ae4e18fb09d534dc8183b2de990317f29c2912eec8f84b03579598a9
-Nguồn đã quét : 1386 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:e9535ba307e19236a7a436f0fcb927b8902fb52ef90019e6f7ebee818d81b1d7
+Nguồn đã quét : 1388 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1544,8 +1544,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1386 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:36, .py:1049, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1388 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:37, .py:1050, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2462,7 +2462,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (21)
+[setup] (22)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2479,6 +2479,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/do_gia_von_voice.ps1
 - setup/do_lo_giong.ps1
 - setup/do_troi_tong.ps1
+- setup/khoa_thu_api.ps1
 - setup/nap_lai_env.ps1
 - setup/soi_su_co.ps1
 - setup/tai_khoan_thu.ps1
@@ -2839,7 +2840,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (138)
+[tools] (139)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2921,6 +2922,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/import_r2_modelark_from_botgemini.py
 - tools/job_retention.py
 - tools/khach_gia_lap_anh.py
+- tools/khoa_thu_api.py
 - tools/kiem_ltt_llm.py
 - tools/lint_app_contract.py
 - tools/nexus_release_key.py
@@ -2988,7 +2990,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1386 file; 13786796 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1388 file; 13792645 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -167289,6 +167291,76 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/khoa_thu_api.ps1
+SHA256=1e3e095f970049802351de206365a1547c6080706c80c11326a9cfe7f68c7c9a BYTES=2239 LINES=64
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Mint one API key for the .local test account.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool prints a live credential ONCE. It never reaches a file here; do
+    not paste it into anything that gets committed.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\khoa_thu_api.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    [string]$Email = '',
+    [string]$CheDo = 'live'
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\khoa_thu_api.py'
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+$env:PYTHONPATH = $Repo
+
+$doiSo = @('--che-do', $CheDo)
+if ($Email) { $doiSo += @('--email', $Email) }
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/nap_lai_env.ps1
 SHA256=705dd55faf5a628aac8da78a8b73cea76e4a9dbc7b3ab157977d761bc61f086a BYTES=4502 LINES=105
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -276988,6 +277060,101 @@ def main() -> int:
     print(f"     da thu: {truoc} - {sau} = {(truoc or 0) - (sau or 0)} credit")
     print(f"     bao gia noi truoc: {bao_gia.get('credits')} credit")
     print("\nXONG.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/khoa_thu_api.py
+SHA256=a952f0b5feae47c62b029390c3956ce41fbb100a458d6306e8f0742bc0d6dbfb BYTES=3610 LINES=89
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+khoa_thu_api.py — phát một KHOÁ API cho tài khoản THỬ, để nghiệm thu `/api/v1`
+bằng đúng đường mà một khách lập trình đi.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\khoa_thu_api.ps1
+
+## Vì sao cần
+
+Điều kiện qua V8 là *"gọi thật qua Cloudflare bằng khoá thật"*. Không có cách
+nào kiểm điều đó mà không có một khoá — và khoá thì `platform_core.public_api
+.keys` chỉ trả về **một lần**, không lấy lại được.
+
+⭐ Đây không phải một đường vòng: `issue()` là đúng hàm mà cổng nhà phát triển
+   gọi khi khách bấm "tạo khoá". Nó thừa hưởng mọi ràng buộc của cửa đó — trần
+   số khoá mỗi tài khoản, pepper hiện hành, scope.
+
+⛔ CHỈ CHO ĐUÔI `.local`. Một khoá API là một chứng danh sống, và nó **tiêu tiền
+   thật** của chủ sở hữu. Phát khoá cho một tài khoản khách — kể cả để "thử
+   giúp họ" — là mượn danh tính và ví của họ. Chặn ở đây bằng cùng quy ước đuôi
+   email mà `ve_dang_nhap_thu.py` dùng.
+
+⚠️ In khoá ra màn hình. Đừng chạy nó trong một phiên có người khác nhìn, và
+   đừng chép khoá vào bất cứ tệp nào được commit.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+DUOI_THU = ".local"
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
+    ap.add_argument("--ten", default="nghiem thu speech.ltt")
+    ap.add_argument("--che-do", default="live", choices=("live", "test"),
+                    help="`test` = che do thu: khong cham GPU, khong cham so tien.")
+    a = ap.parse_args(argv)
+
+    if not a.email.endswith(DUOI_THU):
+        print(f"TU CHOI: chi phat khoa cho tai khoan thu (duoi '{DUOI_THU}').",
+              file=sys.stderr)
+        return 2
+
+    from platform_core import users
+    from platform_core.db import get_session
+    from platform_core.public_api import keys as devkeys
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, a.email)
+        if u is None:
+            print(f"KHONG THAY {a.email}", file=sys.stderr)
+            return 2
+        try:
+            # ⭐ Đủ để đi HẾT một vòng nghiệm thu: đọc danh mục, nộp việc, theo
+            #   dõi, tải kết quả. Lần đầu tôi chỉ xin `jobs:*` và `/api/v1/tools`
+            #   trả `403 missing_scope` — một lỗi tốt, vì nó nói **thiếu scope
+            #   nào** thay vì chỉ "không được phép".
+            _, token = devkeys.issue(
+                db, user_id=str(u.id), name=a.ten, mode=a.che_do,
+                scopes=("tools:read", "jobs:create", "jobs:read",
+                        "artifacts:read", "credits:read"))
+        except devkeys.DeveloperKeyError as e:
+            # Trần số khoá là một ràng buộc THẬT của sản phẩm, không phải một
+            # phiền toái của kịch bản này. Nói ra rồi dừng, đừng đi vòng.
+            print(f"TU CHOI: {e}", file=sys.stderr)
+            return 2
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    print(token)
     return 0
 
 
