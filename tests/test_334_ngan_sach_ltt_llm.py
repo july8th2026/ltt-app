@@ -237,6 +237,67 @@ class TestDoiChieuKhoMayB:
             f"ma may B mac dinh {b} nhung ta tinh {ngan_sach.TOKEN_VAO_TRAN}")
 
 
+class TestBanSaoConLai:
+    """Ba bản sao trên máy A mà `TestKhongConChongCheo` **không** quét tới.
+
+    Bánh cóc chống-gõ-tay hiện chỉ soi bốn tệp (`streaming`, `chat`, `manifest`,
+    `features`) và năm cái tên. Quét lại toàn kho ngày 31/08 (Prompt 01/W4) tìm
+    ra ba chỗ nữa giữ bản sao, và **hai trong đó tới tay khách**.
+
+    ⭐ VÀ GÕ TAY Ở ĐÂY LÀ THIẾT KẾ ĐÚNG, đừng "sửa" bằng cách import.
+       `platform_core/` và `server/` **không được** phụ thuộc vào `apps/` — đó là
+       hợp đồng app của kho này. Nên thứ ghép hai đầu lại phải là **một phép
+       kiểm**, không phải một câu `import`. Lớp này chính là cái ghép ấy; trước
+       31/08 nó chưa tồn tại.
+    """
+
+    @staticmethod
+    def _so(ten: str, tep: str) -> int:
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / tep).read_text(encoding="utf-8")
+        m = re.search(rf"^{ten}\s*=\s*([0-9_]+)", van, re.M)
+        assert m, f"khong tim thay {ten} trong {tep}"
+        return int(m.group(1).replace("_", ""))
+
+    def test_vi_du_cho_khach_dung_dung_tran_ra(self):
+        """🔴 `examples.py` sinh ra `CLAUDE_CODE_MAX_OUTPUT_TOKENS` trong đoạn
+        cấu hình **ta đưa cho khách dán vào máy họ**.
+
+        Lệch ở đây nghĩa là ta phát cho khách một cấu hình sai, và họ sẽ gặp lỗi
+        ở máy họ chứ không ở máy ta — kiểu lỗi đắt nhất để lần ra.
+        """
+        assert self._so("TOKEN_RA_TRAN",
+                        "platform_core/public_api/examples.py") == ngan_sach.TOKEN_RA_TRAN
+
+    def test_tran_ra_o_duong_tool_khop(self):
+        """`server/api/tools.py:TOKEN_RA_TOI_DA` là trần THẬT trên đường sống
+        (dùng làm giá trị lùi khi client không khai `max_tokens`)."""
+        assert self._so("TOKEN_RA_TOI_DA",
+                        "server/api/tools.py") == ngan_sach.TOKEN_RA_TRAN
+
+    def test_catalog_may_B_khop_cua_so_model(self):
+        """`llm_gateway/catalog.py` công bố `max_context` ở `/v1/models` của B."""
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
+        m = re.search(r'ten="qwen38-api".*?max_context=([0-9_]+)', van, re.S)
+        assert m, "khong tim thay max_context cua qwen38-api"
+        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
+
+    def test_registry_provider_khop_cua_so_model(self):
+        """`platform_core/providers.py` khai `context_window` cho model nhà."""
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / "platform_core" / "providers.py").read_text(encoding="utf-8")
+        m = re.search(r'"context_window":\s*([0-9_]+)', van)
+        assert m, "khong tim thay context_window trong providers.py"
+        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
+
+
 class TestThuLaiKhiParserVo:
     """Nhóm 3: tự thử lại **một lần** khi parser tool-call của llama.cpp vỡ.
 
