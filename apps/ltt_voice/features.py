@@ -38,6 +38,33 @@ class LoiGiongNoi(LoiNguoiGoi):
     """
 
 
+class LoiHaTang(RuntimeError):
+    """Cổng giọng trục trặc. **PHẢI được thử lại** — không phải lỗi của khách.
+
+    🔴 LỚP NÀY SINH RA TỪ MỘT HỒI QUY, ghi lại để không ai gộp nó vào
+       `LoiGiongNoi` lần nữa.
+
+       31/08/2026, commit `c8634b8` cho `LoiGiongNoi` kế thừa
+       `platform_core.jobs.LoiNguoiGoi` để nền tảng thôi thử lại ba lần một lỗi
+       vĩnh viễn. Đúng cho "giọng này không phải của bạn". **Sai** cho nhánh
+       `LoiSidecar`, vốn cũng ném `LoiGiongNoi` — và nhánh đó gồm: mạng chập
+       chờn, cổng trả 5xx, cổng đang khởi động lại sau deploy, cổng trả thứ
+       không phải JSON.
+
+       Hệ quả: thông điệp nói *"Vui lòng thử lại sau"* trong khi nền tảng đã
+       quyết **không bao giờ thử lại**. Và ca thường gặp nhất chính là ca tệ
+       nhất — deploy khởi động lại `LTTStudioVoice`, mọi job đang bay đều hỏng
+       vĩnh viễn thay vì được xếp lại vài giây sau.
+
+       ⭐ Chính docstring của `LoiNguoiGoi` đã cảnh báo đúng điều này: *"Đừng
+          dùng nó cho lỗi hạ tầng… đánh dấu chúng là lỗi người gọi biến một
+          trục trặc thoáng qua thành một thất bại vĩnh viễn trong mắt khách."*
+          Tôi viết câu đó rồi vi phạm nó trong cùng một commit.
+
+    ⛔ KHÔNG kế thừa `LoiNguoiGoi`. Đó là toàn bộ lý do lớp này tồn tại.
+    """
+
+
 class DangBanTam(RuntimeError):
     """Máy đang bận. **KHÔNG PHẢI HỎNG** — job phải được xếp lại, không tính tiền."""
 
@@ -80,6 +107,23 @@ def chuan_hoa(params: dict) -> YeuCau:
         # Hai nguồn giọng cùng lúc là một yêu cầu không có câu trả lời đúng.
         # Từ chối rõ ràng, đừng lặng lẽ chọn một cái.
         raise LoiGiongNoi(_t("Chỉ chọn một: giọng của bạn hoặc giọng có sẵn."))
+
+    # 🔴 KIỂM `preset` Ở ĐÂY, KHÔNG Ở ROUTE — và không kiểm là mất tiền của khách.
+    #
+    #    Một tên giọng bịa đi lọt hết đường xuống worker, rồi SDK mới ném
+    #    `ValueError: Voice 'X' not found`. Mà `ValueError` **không phải**
+    #    `LoiNguoiGoi`, nên nền tảng coi đó là lỗi hạ tầng và **thử lại ba lần**.
+    #    Khách chờ khoảng ba mươi giây cho một câu trả lời mà cửa vào đã biết
+    #    ngay từ đầu — đúng lớp lỗi mà `voice_id` đã mắc và đã sửa (xem chú thích
+    #    ở `routes.py::tao`).
+    #
+    # ⛔ Và nó phải ở `features`, không ở `routes`: Public API đi **thẳng** xuống
+    #    job, không qua route nào cả. Đặt phép kiểm trong một cánh cửa thì cánh
+    #    cửa thứ hai không có nó — đúng cái bẫy docstring đầu tệp này cảnh báo.
+    if preset:
+        from . import giong_mau
+        if not giong_mau.hop_le(preset):
+            raise LoiGiongNoi(_t("Không có giọng dựng sẵn tên này."))
 
     # ⛔ Giữ NGUYÊN dạng chuỗi. `User.id` là UUID chuỗi; ép `int()` ở đây
     #    từng ném rồi bị nuốt, cho ra `owner_id = 0` cho mọi người dùng.
@@ -183,8 +227,10 @@ def _goi_va_dich_loi(ham, *doi_so, **tham_so):
             "Đoạn văn bản quá dài cho một lượt đọc. Hãy chia thành nhiều đoạn "
             "ngắn hơn.")) from e
     except sidecar_client.LoiSidecar as e:
+        # ⛔ `LoiHaTang`, KHÔNG phải `LoiGiongNoi`. Nhánh này là trục trặc của
+        #    HẠ TẦNG, và thông điệp của nó hứa với khách là sẽ thử lại.
         log.warning("cong giong loi: %s", e)
-        raise LoiGiongNoi(_t(
+        raise LoiHaTang(_t(
             "Máy tạo tiếng nói chưa sẵn sàng. Vui lòng thử lại sau.")) from e
 
 

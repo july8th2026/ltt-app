@@ -262,3 +262,58 @@ def test_moi_nguong_phan_quyet_deu_co_nguon_ghi_ngay_canh():
         assert ten in khoi, (
             f"`{ten}` khong nam trong khoi 'nguong CO NGUON'. Moi nguong tham "
             f"gia phan quyet deu phai co nguon ghi ngay canh no.")
+
+
+# ═══════════════════════════ phan loai loi: ai duoc thu lai ══════════════════
+
+def test_loi_HA_TANG_phai_duoc_thu_lai_con_loi_NGUOI_GOI_thi_khong():
+    """🔴 Hồi quy thật, do commit `c8634b8` của chính phiên này gây ra.
+
+    Cho `LoiGiongNoi` kế thừa `LoiNguoiGoi` là **đúng** cho "giọng này không
+    phải của bạn" — chạy lại y hệt sẽ hỏng y hệt. Nhưng nhánh `LoiSidecar` cũng
+    ném `LoiGiongNoi`, và nhánh đó gồm: mạng chập chờn, cổng trả 5xx, cổng đang
+    khởi động lại sau deploy.
+
+    Hệ quả: thông điệp nói *"Vui lòng thử lại sau"* trong khi nền tảng đã quyết
+    **không bao giờ thử lại**. Ca thường gặp nhất là ca tệ nhất — mỗi lần deploy
+    khởi động lại `LTTStudioVoice`, mọi job đang bay hỏng vĩnh viễn thay vì được
+    xếp lại vài giây sau.
+
+    ⭐ Chính docstring của `LoiNguoiGoi` đã cảnh báo đúng điều này. Phép kiểm
+       này biến lời cảnh báo đó thành thứ máy đọc được.
+    """
+    from platform_core.job_runner import _provider_failure_kind
+    from platform_core.jobs import LoiNguoiGoi
+
+    from apps.ltt_voice.features import DangBanTam, LoiGiongNoi, LoiHaTang
+
+    # Lỗi của NGƯỜI GỌI: không thử lại.
+    assert issubclass(LoiGiongNoi, LoiNguoiGoi)
+    assert _provider_failure_kind(LoiGiongNoi("x"), provider_state="")[0] \
+        == "loi_nguoi_goi"
+
+    # Lỗi HẠ TẦNG: PHẢI thử lại.
+    assert not issubclass(LoiHaTang, LoiNguoiGoi), (
+        "`LoiHaTang` ke thua `LoiNguoiGoi` — do la toan bo hoi quy ma lop nay "
+        "sinh ra de sua")
+    assert _provider_failure_kind(LoiHaTang("x"), provider_state="")[0] != \
+        "loi_nguoi_goi", "cong giong truc trac ma khong duoc thu lai"
+
+    # Máy bận: xếp lại, cũng không phải lỗi khách.
+    assert not issubclass(DangBanTam, LoiNguoiGoi)
+
+
+def test_nhanh_LoiSidecar_khong_duoc_nem_LoiGiongNoi():
+    """Chốt đúng chỗ đã sai, để nó không lặng lẽ quay lại."""
+    import inspect
+
+    from apps.ltt_voice import features
+
+    dong = inspect.getsource(features._goi_va_dich_loi).splitlines()
+    ma = chr(10).join(d for d in dong if not d.lstrip().startswith("#"))
+    i = ma.find("except sidecar_client.LoiSidecar")
+    assert i > 0, "mat nhanh xu ly LoiSidecar"
+    nhanh = ma[i:]
+    assert "raise LoiHaTang(" in nhanh, (
+        "nhanh `LoiSidecar` phai nem `LoiHaTang`. Nem `LoiGiongNoi` o day la "
+        "noi voi khach 'vui long thu lai sau' roi tu quyet khong thu lai.")
