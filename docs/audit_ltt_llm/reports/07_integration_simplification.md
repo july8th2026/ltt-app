@@ -162,8 +162,43 @@ và **không lỗi nào thuộc phạm vi `ltt_llm`**:
 
 | Lỗi | Chủ | Bản chất |
 |---|---|---|
-| `test_344_ltt_voice_vo::test_ngu_canh_bat_buoc_nav_key` | phiên `-e7` | **chỉ đỏ khi chạy song song** — chạy riêng 1/1 xanh, chạy cùng 228 bài của nhóm cũng xanh. Trạng thái ngoài rò vào test |
+| `test_344_ltt_voice_vo::test_ngu_canh_bat_buoc_nav_key` | phiên `-e7` | 🔴 **CHẨN ĐOÁN ĐẦU CỦA TÔI SAI** — xem dưới |
 | `test_177_system_profile` ×2 | dùng chung | hồ sơ hệ thống lại cũ vì ba phiên vẫn ghi |
+
+### 🔴 Chẩn đoán `test_344` của tôi: đúng triệu chứng, **sai nguyên nhân**
+
+Tôi kết luận *"chỉ đỏ khi chạy song song ⇒ trạng thái ngoài rò vào test"*, dựa
+trên ba mức loại trừ: chạy riêng xanh · chạy cùng 228 bài của nhóm xanh · chạy
+trong gate đỏ.
+
+**Ba phép đo ấy đều đúng, và kết luận vẫn sai.** Phiên `-e7` chỉ ra: lượt gate
+của tôi chạy trên cây **trước** khi họ sửa. Nguyên nhân thật là **bản vá CSRF
+của `-9e` làm vỡ một giả định trong test của họ** — `ngu_canh(None, None)` từng
+đi lọt vì `ngu_canh` chưa bao giờ chạm `request`; sau bản vá nó gọi
+`issue_csrf_token(request)`.
+
+⭐ Và cái `None` đi lọt ấy **chính là lỗ hổng**: một hàm dựng ngữ cảnh cho mọi
+màn mà không bao giờ chạm `request` thì **không thể phát token**. Phép kiểm xanh
+suốt vì nó đang đo một hàm không làm việc nó cần làm.
+
+⛔ **Bài học, và nó là Bẫy 5 trong chính tài liệu bẫy của kho**: *kết quả nói về
+một cây đã không còn.* Ba mức loại trừ của tôi rất kỹ — và chúng đo một cây mà
+tại thời điểm tôi viết kết luận đã không tồn tại nữa. Kỹ lưỡng không cứu được
+một phép đo đã hết hạn.
+
+*(Đây là lần thứ **năm** trong ngày tôi suy ra một kết luận rộng hơn thứ phép đo
+cho phép. Bốn lần trước tôi tự bắt được; lần này phải nhờ phiên khác.)*
+
+### Lượt chạy lại trên cây đã sửa
+
+`test_344` nay **18 passed**. Nhưng lượt gate lại vẫn `FAIL (1/25)` — lần này
+bước đỏ là `kieu xuong dong`, vì phiên `-9e` **đang ghi**:
+`setup/chay_thu_ghi_danh.ps1` vừa đổi LF → CRLF.
+
+⇒ **Cũng không thuộc `ltt_llm`.** Nhưng nó cho thấy một điều thật hơn cả kết
+quả: **với ba phiên cùng ghi một cây, một lượt gate "đóng băng" gần như không
+tồn tại.** Quy ước 10.7 nói *"người chạy lượt cuối sinh lại hồ sơ"* — nhưng
+"lượt cuối" là một thời điểm không bao giờ tới.
 
 ⛔ **Không tuyên bố chương trình là `PASS`.** "Ngoài phạm vi" không phải "xanh",
 và một dòng RESULT đỏ là một dòng RESULT đỏ.
