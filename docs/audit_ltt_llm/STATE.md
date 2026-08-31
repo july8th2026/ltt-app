@@ -4,8 +4,8 @@
 > chi tiết nằm ở `reports/`, không paste log vào đây.
 
 ## Program
-- **Current phase:** 02 — Execution/Admission/Billing (**MỘT PHẦN**)
-- **Last completed phase:** 00 → 03 → 04 → 06(phần) → 01 → 02(phần)
+- **Current phase:** 07 — Integration (XONG). **07/08 phase đã chạy**
+- **Last completed phase:** 00 → 03 → 04 → 06(phần) → 01 → 02(phần) → 05(phần) → 07
 - **Repo revision / branch:** `2ed62d7` → nhánh `admin-mvp-v3`
   *(cây có 38 tệp chưa commit lúc chạy baseline — 34 của phiên `-e7`, xem §WIP)*
 - **Machine A:** `DESKTOP-H9AGFUQ` · 192.168.2.17 · Python 3.13.12 ·
@@ -78,6 +78,11 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | INV-009 | Không đọc được `usage` ⇒ **hoàn đủ, thu 0** — không đoán | `gia_token.tinh` ném `KhongDoDuocError` | mã + `test_252` | **VERIFIED** |
 | INV-010 | Cửa stream đọc `usage` THẬT (không ước) | `dem_token_luong.DemToken` quét mọi khối `usage` | nhật ký production: `khoi=64 token_ra=67` | **VERIFIED-LIVE** |
 | INV-011 | `request_id` là khoá idempotency của **cả** giữ chỗ lẫn quyết toán | `giu_cho_luot` ném nếu thiếu | mã | **VERIFIED** |
+| INV-012 | Thử lại **không thể** thu tiền hai lần | `_giu_cho_da_niem_phong` + `_khoa_so_du_user` | mã, `test_68` | **VERIFIED** |
+| INV-013 | Bận **không** disable khoá provider | `luong_vlm` không gọi `danh_dau_loi` trên 429 | khoá `active` sau 89 lượt hỏng | **VERIFIED-LIVE** |
+| INV-014 | Không có hàng đợi kép A↔B | admission (A) + gioi_han (B) | A=200/1,59 s · B=429/**0,05 s** | **VERIFIED-LIVE** |
+| INV-015 | Alias không rò sang máy B | `features.ALIAS_SANG_ID` | gửi `ltt_llm` vào B ⇒ **404** | **VERIFIED-LIVE** |
+| INV-016 | Deploy một máy thất bại an toàn | — | 31/08 deploy A(18:17) rồi B(18:37) rồi B một mình(21:30) | **VERIFIED-LIVE** |
 | INV-007 | Tổ hợp tham số sai bị chặn **trước** `price()`/hold | `invocation.validate_public_input` | `test_336` | **VERIFIED** |
 | INV-008 | Khoản giữ chỗ treo được tự hoàn | `credit.tu_hoan_treo` (H41.3) | có hàm + chạy dưới `_mot_luot_bao_tri` | INFERRED *(Prompt 02)* |
 
@@ -113,6 +118,12 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | D-01-4 | 01 | Bốn bản sao hằng số không được canh | **CHANGE — ĐÃ LÀM** | Hai tới tay khách; ghép bằng **phép kiểm** chứ không bằng `import` (hợp đồng app cấm platform phụ thuộc app) |
 | D-02-1 | 02 | `DemToken` đếm dọc đường | **KEEP** | Đọc `usage` thật — **một** nguồn, hai cách đọc |
 | D-02-2 | 02 | `reports/04` nói "upstream không gửi usage" | **ĐÃ SỬA** | Giới hạn của bộ đo tôi viết (thiếu `stream_options.include_usage`), không của nền tảng |
+| D-05-2 | 05 | `DemToken` quét **mọi** khối `usage` | **KEEP** | Cửa Anthropic đặt `input_tokens` ở **đầu** luồng — đọc khối cuối là tính thiếu tiền |
+| D-05-4 | 05 | Ngân sách nhỏ ⇒ 0 `output_text.delta`, HTTP vẫn 200 | **DEFER (tài liệu)** | Hành vi model (`--reasoning-format deepseek`), không phải lỗi — nhưng chưa ai nói cho khách |
+| D-05-5 | 05 | Canary client thật (Codex/Claude Code/VS Code) | **BLOCKED** | Cần khoá API do chủ sản phẩm cấp |
+| D-07-1 | 07 | Sáu bản sao hằng số ngữ cảnh | **KEEP** | Không gộp được — hợp đồng app cấm `platform_core` phụ thuộc `apps`; phép kiểm **là** cơ chế ghép |
+| D-07-2 | 07 | `admission` (A) + `gioi_han` (B) | **KEEP** | Hai tầng khác nhau, **không** phải hàng đợi kép: đo được 429 trong 0,05 s |
+| D-07-3 | 07 | Mọi ứng viên xoá khác | **KEEP** | Không cái nào đạt ngưỡng; §5 cấm CHANGE chỉ vì "trông trùng" |
 
 ## Changes kept
 
@@ -149,10 +160,10 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | Performance/resource efficiency | 15 | **11** | **HIGH** — có mốc, khớp số lịch sử |
 | Reliability/recovery | 10 | 8 | HIGH *(F01–F28 phần lớn chưa chạy)* |
 | Security boundaries | 10 | 9 | **HIGH** *(Prompt 03)* |
-| Observability/operations | 5 | 4 | MEDIUM |
+| Observability/operations | 5 | 5 | HIGH |
 | Tests/evidence/reproducibility | 5 | 5 | HIGH |
 | Maintainability/SSOT/deployment | 5 | 5 | HIGH *(Prompt 01)* |
-| **TOTAL** | **100** | **82** | **HIGH** *(69 → 71 → 78 → 80 → **82**)* |
+| **TOTAL** | **100** | **86** | **HIGH** *(69 → 71 → 78 → 80 → 82 → **86**)* |
 
 ⛔ **69 không phải "hệ thống tệ".** Phần lớn điểm trừ nằm ở **thiếu phép đo**, không ở
 hỏng đã biết: G5 không có bộ đánh giá nào, và mọi số hiệu năng đều `PENDING LIVE`.
@@ -182,8 +193,20 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 **một** tệp: `platform_core/public_api/governance.py` (khai hai bảng
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
-## Next phase
-- **Còn lại:** `05` (giao thức/client E2E) · phần còn lại của `02` (bảy cửa sổ
-  sự cố) và `06` (F01–F28) · `07` (tích hợp)
-- 🔴 **Prompt 08 phải do PHIÊN KHÁC chạy** — *independent final acceptance*.
-- **Do not disturb:** WIP của `-e7`; `apps/ltt_voice/**`
+## Next phase — CÒN NỢ, theo thứ tự giá trị
+
+1. **`02` — bảy cửa sổ sự cố** (trước giữ · sau giữ trước commit · sau commit
+   trước dispatch · sau dispatch trước token đầu · giữa chừng · sau khi xong
+   trước quyết toán · sau quyết toán trước khi client nhận). Phần khó nhất của
+   B01–B25, và là phần nói về **tiền**.
+2. **`06` — F01–F28**: tiêm lỗi, mô hình health, bảng quan sát, quét bảo mật,
+   diễn tập rollback, phong bì SLO.
+3. **`05` — canary client thật** (E15–E17). **BLOCKED**: cần một khoá `/api/v1`
+   do chủ sản phẩm cấp; tạo khoá là cấp một credential thật, không phải một
+   thao tác audit.
+4. **`04` — `--lan 5`** cho A/B thật, và **vision** (`qwen38-vision` đang bán mà
+   chưa có bài đánh giá nào).
+
+🔴 **Prompt 08 phải do PHIÊN KHÁC chạy.** Tôi đã thi hành bảy phase; tự nghiệm
+thu thì *independent* chỉ còn là trang trí — và trong ngày này đã có **ba lần**
+phiên khác nhìn ra thứ tôi bỏ sót.
