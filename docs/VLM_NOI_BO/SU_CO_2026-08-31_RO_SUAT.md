@@ -132,7 +132,7 @@ vào lượt nào.
 
 | Bước | Kết quả |
 |---|---|
-| Deploy máy A | `EXITCODE=0`, 18:17:29 → 18:19:44; `/health/ready` **200** ở loopback **và qua Cloudflare**; 6/6 thay đổi có trong `C:\LTTPlatformpp\` |
+| Deploy máy A | `EXITCODE=0`, 18:17:29 → 18:19:44; `/health/ready` **200** ở loopback **và qua Cloudflare**; 6/6 thay đổi có trong `C:\LTTPlatform\app\` |
 | Máy B tắt ~18:19, chủ sản phẩm bật lại | suất rò nằm trong bộ nhớ tiến trình nên **mất theo lần khởi động** — đo được `dang_chay: 0` ngay khi máy lên |
 | Deploy máy B | qua `llm_gateway/deploy/deploy.ps1`; `gateway.env` **migrate giữ nguyên token/model**; import OK |
 | Nghiệm thu | `POST /v1/responses` → **HTTP 200** (33 s, gồm nạp model 27B từ nguội), và `dang_chay` về **0** sau lượt gọi |
