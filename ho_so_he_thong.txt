@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:33879148f71ab63a675a39c8b9672239ed2d0ed1ddff49d4298d8dd03817b7c2
-Nguồn đã quét : 1296 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:fca630279abaeda26092d3540c61ed1e022633abb7a49f9218a9f7ebed45a905
+Nguồn đã quét : 1298 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1123,7 +1123,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (304 file pytest + 3 frontend)
+10. QUALITY GATES (305 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1388,6 +1388,7 @@ Test inventory:
 - tests/test_33_secret_scanner.py
 - tests/test_340_ltt_voice_trang_render.py
 - tests/test_341_khong_query_param_request.py
+- tests/test_342_ltt_voice_noi_dai.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -1454,8 +1455,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1296 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:29, .py:980, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1298 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:39, .md:14, .mjs:4, .ps1:29, .py:982, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2356,7 +2357,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (321)
+[tests] (322)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2632,6 +2633,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_33_secret_scanner.py
 - tests/test_340_ltt_voice_trang_render.py
 - tests/test_341_khong_query_param_request.py
+- tests/test_342_ltt_voice_noi_dai.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -2679,7 +2681,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (118)
+[tools] (119)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2731,6 +2733,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - tools/dich_ltt_voice_en.py
 - tools/do_bo_cuc.py
 - tools/do_current_truth.py
+- tools/do_van_ban_dai.py
 - tools/doctor.py
 - tools/doi_chung_gemini.py
 - tools/don_tien_trinh_mo_coi.py
@@ -2808,7 +2811,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:110, .ini:1, .js:14, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1296 file; 12870188 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1298 file; 12893304 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17814,7 +17817,7 @@ CAM_KET = N_(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/features.py
-SHA256=a1ddd5f304a06a7507778e2f0aa5673052f85e89632f769835ff7bc3ffaac1ba BYTES=7956 LINES=189
+SHA256=a950dc28ba87f5d9d8deb30d288d511637cdcbcc930c2a5fefbf16c800cd8c47 BYTES=8812 LINES=206
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — NGHIỆP VỤ của LTT VOICE. Mọi cửa gọi vào đây.
@@ -17972,15 +17975,20 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     return tham_chieu.nap_ref_b64(bieu_dien), None, ()
 
 
-def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
-    """Gọi sidecar và **dịch lỗi hạ tầng thành câu khách đọc được**.
+def _goi_va_dich_loi(ham, *doi_so, **tham_so):
+    """Chạy một lời gọi cổng và **dịch lỗi hạ tầng thành câu khách đọc được**.
 
     ⛔ BẬN KHÔNG PHẢI HỎNG. `SidecarBan` -> `DangBanTam`, và tầng job phải xếp
        lại chứ không đánh dấu job hỏng. Một job bị coi là hỏng sẽ **trừ credit**
        cho một việc chưa từng chạy.
+
+    ⭐ Tách ra dùng chung cho cả hai cửa (một lượt và văn bản dài) chứ không
+       chép đôi: hai bản chép của một bảng dịch lỗi sẽ lệch, và cái lệch đầu
+       tiên gần như chắc chắn là nhánh `SidecarBan` — tức đúng nhánh mà lệch
+       một chút là mất tiền của khách.
     """
     try:
-        return sidecar_client.noi(text, ref_b64=ref_b64, preset=preset)
+        return ham(*doi_so, **tham_so)
     except sidecar_client.SidecarBan as e:
         raise DangBanTam(retry_after_s=e.retry_after_s) from e
     except sidecar_client.VanBanQuaDai as e:
@@ -17991,6 +17999,18 @@ def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
         log.warning("cong giong loi: %s", e)
         raise LoiGiongNoi(_t(
             "Máy tạo tiếng nói chưa sẵn sàng. Vui lòng thử lại sau.")) from e
+
+
+def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
+    """Một lượt sinh. Trả `(wav_bytes, headers)`."""
+    return _goi_va_dich_loi(sidecar_client.noi, text,
+                            ref_b64=ref_b64, preset=preset)
+
+
+def goi_cong_dai(doan: list, *, ref_b64=None, preset=None) -> tuple:
+    """Nhiều đoạn -> MỘT tệp liền mạch. Cùng hình dạng trả về với `goi_cong`."""
+    return _goi_va_dich_loi(sidecar_client.noi_dai, list(doan),
+                            ref_b64=ref_b64, preset=preset)
 
 
 def hash_noi_dung(data: bytes) -> str:
@@ -18207,7 +18227,7 @@ def bang_gia() -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/jobs.py
-SHA256=98b1acdb5ac7b0d4f85e938b070f5a5aa73f52542b6e2bf3f2509e7bea13c5b0 BYTES=9159 LINES=219
+SHA256=6516e88686e22491ad4a3f2a7ded7505ba694fe8026800d03f967c2d2a5cf254 BYTES=10360 LINES=239
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker.
@@ -18231,6 +18251,7 @@ import tempfile
 from platform_core.i18n import _ as _t
 
 from .features import DangBanTam, LoiGiongNoi  # noqa: F401 (giữ tên cho chỗ import)
+from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
 
 log = logging.getLogger(__name__)
 
@@ -18308,10 +18329,29 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     ref_b64, preset, _ = _voi_db(lambda db: features.giai_giong(db, yc))
 
+    # ── chia đoạn: văn bản dài đi ĐƯỜNG KHÁC, không phải bị từ chối ──────────
+    #
+    # `TRAN_MOI_LUOT_SINH` là trần của MỘT lượt `infer` (trần chất lượng, Q119).
+    # `TRAN_KY_TU_CONG_KHAI` là trần của MỘT YÊU CẦU. Trước 31/08 hai thứ này là
+    # một con số, nên "dài hơn 1.500" đồng nghĩa với "bị từ chối" — dù chính
+    # thông điệp lỗi của cổng đã nói *"phải đi đường long-form nhiều lượt"*.
+    #
+    # ⭐ Chia lượt an toàn vì đã ĐO, không vì hợp lý: giọng mặc định giữ nguyên
+    #    người nói qua các lượt gọi riêng (0,9254 — cao hơn cả sàn nhiễu 0,8524
+    #    của hai nửa trong cùng một lượt). Xem
+    #    `voice_sidecar/do_giu_giong_nhieu_luot.py`.
+    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    doan = chuan.doan or [yc.text]
+
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
     #    xếp lại. Bọc nó thành LoiGiongNoi ở đây là biến "máy đang bận" thành
     #    "job hỏng", và một job hỏng sẽ TRỪ CREDIT cho việc chưa từng chạy.
-    wav_bytes, headers = features.goi_cong(yc.text, ref_b64=ref_b64, preset=preset)
+    if len(doan) > 1:
+        wav_bytes, headers = features.goi_cong_dai(
+            doan, ref_b64=ref_b64, preset=preset)
+    else:
+        wav_bytes, headers = features.goi_cong(
+            doan[0], ref_b64=ref_b64, preset=preset)
 
     # Đo trên tệp thật, không tin header của sidecar. Header chỉ để đối chiếu.
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
@@ -18343,7 +18383,7 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     ket = features.KetQua(
         yeu_cau=yc, audio_key=khoa, giay=giay,
-        text_da_chuan_hoa=yc.text, so_doan=1)
+        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=len(doan))
 
     if giay <= 0:
         log.warning("job %s: khong do duoc thoi luong -> thu 0 credit", job_id)
@@ -18926,7 +18966,7 @@ def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/sidecar_client.py
-SHA256=6ea345413e9f069ac3fef9ed23274273bbbfc197af5d0c74279498423196c3e8 BYTES=5491 LINES=147
+SHA256=48aeb19a869ce05d9828f21b92a70b862d54eee39b4b04a48333b4085c4b1f18 BYTES=6062 LINES=159
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 sidecar_client.py — gọi cổng giọng ở `127.0.0.1:8120`.
@@ -19063,6 +19103,18 @@ def noi_lo(texts: list, *, ref_b64: str | None = None,
                 {"texts": list(texts), "ref_b64": ref_b64, "preset": preset},
                 timeout=timeout)
     return d
+
+
+def noi_dai(texts: list, *, ref_b64: str | None = None,
+            preset: str | None = None, timeout: float = 1800.0) -> tuple:
+    """Nhiều đoạn -> MỘT tệp WAV liền mạch. Trả `(wav_bytes, headers)`.
+
+    Cùng hình dạng trả về với `noi()` — có chủ ý: tầng job chỉ nên có **một**
+    nhánh xử lý phản hồi, dù văn bản một đoạn hay tám đoạn.
+    """
+    return _goi("/v1/speech-dai",
+                {"texts": list(texts), "ref_b64": ref_b64, "preset": preset},
+                timeout=timeout, nhi_phan=True)
 
 
 def ghi_danh(duong_wav: str, *, denoise: bool = True,
@@ -19910,7 +19962,7 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_so_cong_khai.py
-SHA256=74b341914d60da3f5d59fea409ac605f49050fe69477155252df4188c46c65c4 BYTES=1348 LINES=24
+SHA256=7e26a739e0e9221da9994db4d92bec9a3df66e2e4a8bfdb33d84eaf952a0fcac BYTES=2748 LINES=46
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_so_cong_khai.py — vài hằng số mà CẢ HAI phía cùng phải biết.
@@ -19928,13 +19980,35 @@ tham_so_cong_khai.py — vài hằng số mà CẢ HAI phía cùng phải biết
 """
 from __future__ import annotations
 
-#: Trần ký tự công bố cho MỘT lượt gọi. Phải khớp
-#: `voice_sidecar.tham_so.TRAN_KY_TU_MOT_LUOT`.
+#: Trần của MỘT LƯỢT SINH. Phải khớp `voice_sidecar.tham_so.TRAN_KY_TU_MOT_LUOT`.
 #:
 #: Đây là TRẦN CHẤT LƯỢNG (Q119), không phải trần hiệu năng: upstream #168 báo
 #: giọng bắt đầu trôi từ khoảng 3.000 ký tự. Đo 30/08 cho thấy 3.000 ký tự vẫn
 #: SINH RA ĐƯỢC (17,6 giây, không lỗi) — nên con số này không đến từ giới hạn kỹ
 #: thuật, nó đến từ chỗ chất lượng bắt đầu tụt. Nới nó phải qua cổng V10.
+TRAN_MOI_LUOT_SINH = 1500
+
+#: Trần của MỘT YÊU CẦU của khách.
+#:
+#: 🔴 HAI TRẦN NÀY LÀ HAI THỨ KHÁC NHAU, và trước 31/08/2026 chúng là một con số.
+#:
+#:    Hệ quả của việc gộp: văn bản 3.000 ký tự bị **từ chối**, trong khi chính
+#:    thông điệp lỗi của cổng đã nói *"Van ban dai hon phai di duong long-form
+#:    nhieu luot sinh"* — con đường ấy chưa bao giờ được xây. `chia_doan()` có
+#:    sẵn trong `text_pipeline.py` và **không được gọi ở đâu cả**; `jobs.py` gán
+#:    cứng `so_doan=1`.
+#:
+#: ⭐ Tách hai trần ra thì mỗi con số nói đúng một điều:
+#:      · `TRAN_MOI_LUOT_SINH`   — model đọc liền được bao nhiêu trước khi trôi
+#:      · `TRAN_KY_TU_CONG_KHAI` — khách gửi được bao nhiêu trong một lần
+#:    Yêu cầu dài hơn một lượt thì **chia rồi ghép**, không từ chối.
+#:
+#: ⚠️ Vẫn giữ 1.500 cho tới khi đo được chất lượng bản GHÉP ở 3.000 và 5.000 ký
+#:    tự. Đường đã có, cổng chưa mở — và thứ tự đó là có chủ ý: hạ tầng sẵn sàng
+#:    không phải là bằng chứng chất lượng. Nới nó vẫn phải qua V10.
+#:
+#: Trần trên tuyệt đối: `TRAN_MOI_LUOT_SINH × voice_sidecar.tham_so
+#: .TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn) — vượt nữa thì cổng trả 413.
 TRAN_KY_TU_CONG_KHAI = 1500
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -231660,6 +231734,248 @@ def test_trang_ltt_voice_khong_tra_422(duong):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_342_ltt_voice_noi_dai.py
+SHA256=63736f573459d8599f848417a9801d4555d34b0c895c8aa0ac2bb34fd3b2ae38 BYTES=10599 LINES=236
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Đường văn bản dài: chia đoạn, ghép, và hai trần là hai thứ khác nhau.
+
+Bộ ghép (`voice_sidecar/noi_dai.py`) chỉ dùng numpy nên chạy được trong venv nền
+tảng — không cần torch, không cần model. Nhờ vậy nó kiểm được **logic ghép** mà
+không phải nạp GPU, và phần cần GPU chỉ còn là phép đo chất lượng ở V10.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+SR = 48_000
+
+
+def _tieng(giay: float, muc: float = 0.2) -> np.ndarray:
+    """Một đoạn 'có tiếng': nhiễu ở mức cho trước. Không cần giống tiếng nói —
+    bộ ghép chỉ phân biệt có tiếng / im theo RMS."""
+    n = int(SR * giay)
+    rng = np.random.default_rng(0)
+    return (rng.standard_normal(n) * muc).astype(np.float32)
+
+
+def _im(giay: float) -> np.ndarray:
+    return np.zeros(int(SR * giay), dtype=np.float32)
+
+
+def _doan(im_dau: float, tieng: float, im_cuoi: float, muc: float = 0.2):
+    return np.concatenate([_im(im_dau), _tieng(tieng, muc), _im(im_cuoi)])
+
+
+# ── trần ─────────────────────────────────────────────────────────────────────
+
+def test_hai_tran_la_hai_hang_so_khac_nhau():
+    """🔴 Gộp hai trần làm một là nguyên nhân gốc của việc văn bản dài bị TỪ CHỐI.
+
+    `TRAN_MOI_LUOT_SINH` là "model đọc liền được bao nhiêu"; `TRAN_KY_TU_CONG_KHAI`
+    là "khách gửi được bao nhiêu trong một lần". Một con số cho hai câu hỏi nghĩa
+    là nới cái này bắt buộc nới cái kia — và một trong hai lần nới đó sẽ sai.
+    """
+    from apps.ltt_voice import tham_so_cong_khai as t
+
+    assert hasattr(t, "TRAN_MOI_LUOT_SINH")
+    assert hasattr(t, "TRAN_KY_TU_CONG_KHAI")
+    assert t.TRAN_KY_TU_CONG_KHAI >= t.TRAN_MOI_LUOT_SINH, (
+        "tran cua mot YEU CAU khong the nho hon tran cua mot LUOT SINH — "
+        "nhu the thi khong yeu cau nao dung mot luot tron ven")
+
+
+def test_van_ban_dai_duoc_chia_chu_khong_bi_tu_choi():
+    from apps.ltt_voice import features
+    from apps.ltt_voice.tham_so_cong_khai import TRAN_MOI_LUOT_SINH
+
+    cau = "Đây là một câu thử có độ dài vừa phải để chia đoạn. "
+    dai = cau * 120                       # ~6.000 ký tự
+    yc = features.chuan_hoa({"text": dai})
+    kq = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+
+    assert len(kq.doan) > 1, "van ban 6.000 ky tu phai duoc chia thanh nhieu doan"
+    assert all(len(d) <= TRAN_MOI_LUOT_SINH for d in kq.doan), (
+        "moi doan phai lot tran mot luot sinh, neu khong cong se tra 413")
+    # Không mất chữ: ghép các đoạn lại phải phủ hết nội dung đã chuẩn hoá.
+    assert sum(len(d) for d in kq.doan) >= len(kq.da_chuan_hoa) * 0.98
+
+
+# ── ghép ─────────────────────────────────────────────────────────────────────
+
+def test_ghep_mot_doan_khong_dong_gi():
+    from voice_sidecar import noi_dai
+
+    w = _doan(0.2, 1.0, 0.3)
+    ra, ho_so = noi_dai.ghep([w], SR)
+    assert ho_so["so_doan"] == 1
+    assert np.array_equal(ra, w), "mot doan thi khong co moi noi nao de sua"
+
+
+def test_ghep_cat_im_hai_dau_nen_moi_noi_khong_bi_im_gap_doi():
+    from voice_sidecar import noi_dai
+
+    # Mỗi đoạn mang 0,5s im cuối + 0,5s im đầu -> nối thẳng là 1,0s im ở mối nối.
+    ds = [_doan(0.5, 1.0, 0.5) for _ in range(3)]
+    ra, ho_so = noi_dai.ghep(ds, SR)
+
+    assert ho_so["so_doan"] == 3
+    tho = sum(len(w) for w in ds) / SR
+    assert len(ra) / SR < tho, (
+        "ban ghep phai NGAN hon tong tho — im o moi noi da bi cat")
+
+    # Khoảng lặng dài nhất trong bản ghép phải là nhịp nghỉ đã chọn, không phải
+    # tổng hai khoảng im cộng lại.
+    lang = noi_dai.khoang_lang_giua(ra, SR)
+    if lang:
+        assert max(lang) <= ho_so["nghi_s"] + 0.05, (
+            f"con mot khoang lang {max(lang):.3f}s > nhip nghi "
+            f"{ho_so['nghi_s']}s — im o moi noi chua bi cat het")
+
+
+def test_nhip_nghi_lay_RANH_GIOI_CAU_chu_khong_phai_khe_tu():
+    """🔴 Trung vị MỌI khoảng lặng là sai, và sai rất xa.
+
+    ĐO THẬT 31/08/2026: bản 2.907 ký tự có **214** khoảng lặng giữa, trung vị
+    **0,04 giây** — đó là khe giữa hai TỪ, không phải nghỉ giữa hai CÂU. Đặt
+    0,04 s ở mối nối là nối gần như dính liền.
+
+    Phép kiểm dựng đúng hình dạng đó: mỗi đoạn có hai câu (một ranh giới 0,40s)
+    và **rất nhiều** khe từ 40 ms. Trung vị toàn bộ sẽ ra ~0,04; chỉ cách lấy
+    `S − 1` khoảng dài nhất mới ra 0,40.
+    """
+    from voice_sidecar import noi_dai
+
+    def hai_cau():
+        manh = [_tieng(0.25)]
+        for _ in range(8):                       # khe TU, 40 ms
+            manh += [_im(0.04), _tieng(0.25)]
+        manh += [_im(0.40)]                      # ranh gioi CAU
+        manh += [_tieng(0.25)]
+        for _ in range(8):
+            manh += [_im(0.04), _tieng(0.25)]
+        return np.concatenate(manh)
+
+    ds = [hai_cau() for _ in range(3)]
+
+    nghi, nguon = noi_dai.nhip_nghi(ds, SR, so_cau=[2, 2, 2])
+    assert abs(nghi - 0.40) < 0.08, (
+        f"do duoc {nghi:.3f}s, mong doi ~0.40 — dang lay nham khe tu")
+    assert "ranh gioi cau" in nguon
+
+    # Không biết số câu -> ước thô, và PHẢI tự khai là ước thô.
+    nghi2, nguon2 = noi_dai.nhip_nghi(ds, SR)
+    assert "UOC THO" in nguon2
+    assert nghi2 == noi_dai.NGHI_LUI_S, (
+        "uoc tho ra ~0,04s, ngan hon loi lui — phai dung loi lui chu khong "
+        "dung mot con so chac chan sai")
+
+    # Không có khoảng lặng giữa nào -> phải LUI, và phải NÓI là đã lui.
+    nghi2, nguon2 = noi_dai.nhip_nghi([_tieng(1.0), _tieng(1.0)], SR)
+    assert nghi2 == noi_dai.NGHI_LUI_S
+    assert "lui" in nguon2, (
+        "mot con so mac dinh trong giong het mot con so do duoc neu khong ai "
+        "ghi lai no den tu dau")
+
+
+def test_nhip_nghi_bi_kep_khi_ban_doc_co_quang_nghi_rat_dai():
+    from voice_sidecar import noi_dai
+
+    dai = np.concatenate([_tieng(0.5), _im(2.0), _tieng(0.5)])
+    nghi, nguon = noi_dai.nhip_nghi([dai], SR)
+    assert nghi == noi_dai.NGHI_TOI_DA_S
+    assert "kep" in nguon
+
+
+def test_can_do_to_keo_doan_lech_ve_gan_trung_vi():
+    from voice_sidecar import noi_dai
+
+    ds = [_doan(0.1, 1.0, 0.1, muc=0.20),
+          _doan(0.1, 1.0, 0.1, muc=0.20),
+          _doan(0.1, 1.0, 0.1, muc=0.14)]        # thấp hơn ~3,1 dB
+    ra, chinh = noi_dai.can_do_to(ds, SR)
+
+    assert chinh[2] > 0, "doan nho tieng phai duoc keo len"
+    assert abs(chinh[0]) < 0.5 and abs(chinh[1]) < 0.5, (
+        "hai doan dung muc trung vi thi gan nhu khong bi dong")
+    assert all(abs(c) <= noi_dai.KEP_CHINH_DB + 1e-6 for c in chinh)
+
+
+def test_can_do_to_khong_san_phang_mot_doan_co_y_nho_tieng():
+    """⛔ Kẹp ±3 dB là để KHÔNG sửa thứ model cố ý làm."""
+    from voice_sidecar import noi_dai
+
+    ds = [_doan(0.1, 1.0, 0.1, muc=0.20),
+          _doan(0.1, 1.0, 0.1, muc=0.20),
+          _doan(0.1, 1.0, 0.1, muc=0.02)]        # thì thầm: thấp ~20 dB
+    _, chinh = noi_dai.can_do_to(ds, SR)
+    assert chinh[2] == pytest.approx(noi_dai.KEP_CHINH_DB), (
+        "phai DUNG o vach kep, khong keo doan thi tham len bang phan con lai")
+
+
+def test_ghep_bo_qua_doan_rong_ma_khong_no():
+    from voice_sidecar import noi_dai
+
+    ra, ho_so = noi_dai.ghep([_doan(0.1, 0.6, 0.1), np.zeros(0, np.float32)], SR)
+    assert ho_so["so_doan"] == 1
+    assert len(ra) > 0
+
+
+def test_ghep_khong_bao_gio_vuot_tran_dinh_that():
+    """🔴 Phép cân độ to có thể đẩy đỉnh vượt trần — bản ghép phải tự hạ lại.
+
+    ĐO THẬT 31/08/2026: bản 4.920 ký tự (4 đoạn) ra **−0,65 dBTP**, vượt trần
+    EBU R128 (−1,0), trong khi bản một đoạn cùng ngày là −1,10. Lỗi **không**
+    lộ ra ở bản ngắn: một đoạn thì không có gì để cân, nên nó chỉ xuất hiện
+    đúng ở cấu hình vừa mới xây — tức đúng chỗ chưa ai nhìn.
+    """
+    from voice_sidecar import noi_dai
+
+    # Ba đoạn to gần trần + một đoạn nhỏ hơn ~3 dB (sẽ bị kéo lên kịch kẹp).
+    ds = [_doan(0.1, 1.0, 0.1, muc=0.30) for _ in range(3)]
+    ds.append(_doan(0.1, 1.0, 0.1, muc=0.21))
+    for w in ds:                       # đẩy đỉnh sát trần
+        w *= 0.85 / max(1e-9, float(np.max(np.abs(w))))
+
+    ra, ho_so = noi_dai.ghep(ds, SR)
+    tp = noi_dai.dinh_that(ra)
+    assert tp <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6, (
+        f"ban ghep ra {tp:.2f} dBTP, vuot tran "
+        f"{noi_dai.TRAN_TRUE_PEAK_DBTP} — nguoi nghe se vo tieng o bo chuyen doi")
+    assert "ha_tran_db" in ho_so, "phai KHAI da ha bao nhieu, khong ha am tham"
+
+
+def test_ha_tran_giu_nguyen_tuong_quan_giua_cac_doan():
+    """Hạ trần là hạ ĐỀU cả bản — không nén, không kẹp từng đoạn.
+
+    Nén hay kẹp sẽ tạo méo mới đúng ở chỗ ồn nhất, và nó xoá luôn kết quả của
+    phép cân độ to vừa làm ở bước trước.
+    """
+    from voice_sidecar import noi_dai
+
+    ds = [_doan(0.1, 1.0, 0.1, muc=0.30), _doan(0.1, 1.0, 0.1, muc=0.30)]
+    for w in ds:
+        w *= 0.95 / max(1e-9, float(np.max(np.abs(w))))
+
+    ra, ho_so = noi_dai.ghep(ds, SR)
+    # ⛔ KHÔNG `pytest.skip` ở đây. Hai đoạn ở 0,95 đỉnh thì bản ghép **luôn**
+    #    vượt trần, nên một nhánh bỏ qua ở đây là mã chết — và một test bị bỏ
+    #    qua là một test không canh gì cả. Khẳng định thẳng rằng nó đã hạ.
+    assert ho_so["ha_tran_db"] < 0, (
+        f"lo nay phai cham tran (dinh truoc {ho_so.get('dinh_truoc_dbtp')} dBTP) "
+        f"nhung `ha_tran_db` = {ho_so.get('ha_tran_db')} — phep kiem duoi day "
+        f"se khong kiem gi ca")
+
+    # Tỉ lệ RMS giữa nửa đầu và nửa sau phải gần như không đổi sau khi hạ.
+    giua = len(ra) // 2
+    ti = float(np.sqrt((ra[:giua].astype(np.float64) ** 2).mean())
+               / max(1e-12, np.sqrt((ra[giua:].astype(np.float64) ** 2).mean())))
+    assert 0.8 < ti < 1.25, (
+        f"ti le RMS hai nua = {ti:.3f} — ha tran da lam meo tuong quan, "
+        "gan nhu chac chan la da nen chu khong ha deu")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_35_p2_runtime_boundary.py
 SHA256=9a36aa62ca651c0688050fecf6889845a422156d5ec0590405ce27e5f756dcf7 BYTES=5180 LINES=119
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -252332,6 +252648,202 @@ def main(argv=None) -> int:
     print("\n⚠️ `DANG_MO` doc tu bien LTT_PUBLIC_API_TOOLS cua TIEN TRINH NAY.")
     print("   Muon biet production dang mo gi thi hoi may chu:")
     print("   GET /api/v1/tools  (nho User-Agent — xem CLAUDE.md)")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_van_ban_dai.py
+SHA256=03409427e926b86b4e8caf8eecbe6b42a6e30d8ed1e89af14397b2205d6d5022 BYTES=8489 LINES=190
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_van_ban_dai.py — ĐO chất lượng bản GHÉP ở 3.000 và 5.000 ký tự.
+
+    $env:LTT_VOICE_SIDECAR_TOKEN = '<token>'
+    C:\LTTPlatform\vieneu-venv\Scripts\python.exe tools\do_van_ban_dai.py
+
+⭐ Đây là số liệu để quyết định có nới `TRAN_KY_TU_CONG_KHAI` hay không. Đường
+   đã xây (chia đoạn + `/v1/speech-dai`), cổng vẫn đóng ở 1.500 — và thứ tự đó
+   là có chủ ý: **hạ tầng chạy được không phải bằng chứng chất lượng.**
+
+## Ba câu hỏi, ba con số
+
+  ① Còn là một người nói không?   -> `troi_giong` (cửa sổ 3 giây)
+  ② Mối nối có nghe thấy không?   -> khoảng lặng dài nhất + nhịp nghỉ đã dùng
+  ③ Đọc có đúng chữ không?        -> CER/WER/sai dấu qua ASR
+
+## Vì sao chạy trong VENV GIỌNG chứ không venv nền tảng
+
+`do_chat_luong` cần onnxruntime + perth + faster-whisper — chúng ở venv giọng.
+`apps/ltt_voice/text_pipeline.py` thì **chỉ dùng `re`** (cố ý), nên nhập được
+vào đây mà không kéo theo `platform_core`. Còn cổng thì gọi qua HTTP loopback.
+
+⛔ KHÔNG đi qua hàng đợi job: đây là phép đo MODEL, không phải phép đo hệ thống.
+   Đường đầu-tới-cuối đã có `tools/chay_thu_ltt_voice.py` lo.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# `reconfigure`, khong phai boc mot TextIOWrapper moi — xem chu thich day du o
+# `voice_sidecar/do_chat_luong.py`. Hai lop boc tren cung mot buffer se dong
+# buffer do khi lop thu nhat bi thu hoi.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+#: Văn bản nguồn. Câu dài ngắn xen kẽ, có số, có tên riêng, có dấu thanh dày —
+#: giống một bài đọc thật hơn là một câu lặp lại. Một câu lặp lại sẽ cho CER
+#: đẹp giả tạo, vì ASR chỉ phải đoán đúng một lần rồi lặp.
+KHOI = [
+    "Buổi sáng ở thành phố bắt đầu bằng tiếng còi xe và mùi cà phê từ những "
+    "quán nhỏ ven đường.",
+    "Chị Lan mở cửa hàng lúc sáu giờ ba mươi, sắp lại từng chiếc ghế, rồi ngồi "
+    "đợi người khách đầu tiên.",
+    "Năm 2019, khu phố này còn vắng.",
+    "Bây giờ thì khác hẳn: mười bảy hàng quán chen nhau trên đúng một trăm mét "
+    "đường, và buổi tối người ta phải gửi xe cách đó hai dãy nhà.",
+    "Ông Tám bán bánh mì ở góc đường nói rằng ông đã đứng ở đó ba mươi hai năm, "
+    "và chưa từng nghỉ một ngày nào ngoài mùng một Tết.",
+    "Có những thay đổi đến chậm tới mức không ai kịp nhận ra chúng đang xảy ra.",
+    "Con hẻm nhỏ phía sau chợ giờ đã thành một dãy quán cà phê, nơi những người "
+    "trẻ ngồi làm việc với máy tính xách tay suốt cả buổi chiều.",
+    "Nhưng vẫn còn đó tiếng rao quen thuộc mỗi tối, và tiếng chuông nhà thờ lúc "
+    "năm giờ sáng.",
+]
+
+
+def _van_ban(so_ky_tu: int) -> str:
+    ra, n, i = [], 0, 0
+    while n < so_ky_tu:
+        c = KHOI[i % len(KHOI)]
+        ra.append(c)
+        n += len(c) + 1
+        i += 1
+    cat = " ".join(ra)[:so_ky_tu]
+    return (cat.rsplit(".", 1)[0] + ".") if "." in cat else cat
+
+
+def _goi(duong: str, body: dict, token: str, timeout: float = 1800.0):
+    cong = (os.environ.get("LTT_VOICE_SIDECAR_PORT") or "8120").strip()
+    url = f"http://127.0.0.1:{cong}{duong}"
+    req = urllib.request.Request(
+        url, data=json.dumps(body).encode("utf-8"),
+        headers={"Content-Type": "application/json",
+                 "Authorization": f"Bearer {token}"})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            # ⚠️ Khoá viết THƯỜNG. HTTP/1.1 không phân biệt hoa thường ở tên
+            #    header, và FastAPI phát ra chữ thường — nên tra `X-Gen-S`
+            #    trên `dict(r.headers)` trả None và mọi cột hiện `-`, trông
+            #    y như cổng không gửi gì.
+            return r.read(), {k.lower(): v for k, v in r.headers.items()}
+    except urllib.error.HTTPError as e:
+        chi_tiet = e.read()[:400].decode("utf-8", "replace")
+        raise SystemExit(f"cong tra {e.code}: {chi_tiet}") from e
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--do-dai", type=int, nargs="+", default=[1500, 3000, 5000])
+    ap.add_argument("--thu-muc", default="tmp/vdai")
+    a = ap.parse_args(argv)
+
+    token = (os.environ.get("LTT_VOICE_SIDECAR_TOKEN") or "").strip()
+    if not token:
+        print("Thieu LTT_VOICE_SIDECAR_TOKEN.", file=sys.stderr)
+        return 2
+
+    os.makedirs(a.thu_muc, exist_ok=True)
+
+    from apps.ltt_voice import text_pipeline
+    from apps.ltt_voice.tham_so_cong_khai import TRAN_MOI_LUOT_SINH
+    from voice_sidecar import do_chat_luong
+
+    bang = []
+    for n in a.do_dai:
+        chuan = text_pipeline.chuan_bi(_van_ban(n),
+                                       tran_moi_doan=TRAN_MOI_LUOT_SINH)
+        doan = chuan.doan or [chuan.da_chuan_hoa]
+        print(f"\n{'=' * 70}")
+        print(f"  {len(chuan.da_chuan_hoa)} ky tu -> {len(doan)} doan "
+              f"{[len(d) for d in doan]}")
+        print("=" * 70)
+
+        if len(doan) > 1:
+            wav, headers = _goi("/v1/speech-dai", {"texts": doan}, token)
+        else:
+            wav, headers = _goi("/v1/speech", {"text": doan[0]}, token)
+
+        duong = os.path.join(a.thu_muc, f"dai_{n}.wav")
+        with open(duong, "wb") as f:
+            f.write(wav)
+        with open(os.path.join(a.thu_muc, f"dai_{n}.txt"), "w",
+                  encoding="utf-8") as f:
+            f.write(chuan.da_chuan_hoa)
+
+        print(f"  ghi   : {duong} ({len(wav)} byte)")
+        print(f"  sinh  : {headers.get('x-gen-s', '-')}s  RTF "
+              f"{headers.get('x-rtf', '-')}")
+        print(f"  nghi  : {headers.get('x-nghi-s', '-')}s "
+              f"({headers.get('x-nguon-nghi', '-')})")
+
+        kq = do_chat_luong.do_tat_ca(duong, text=chuan.da_chuan_hoa)
+        do_chat_luong._in_dep(kq)
+
+        bang.append({
+            "so_ky_tu": len(chuan.da_chuan_hoa),
+            "so_doan": len(doan),
+            "nghi_s": headers.get("x-nghi-s"),
+            "nguon_nghi": headers.get("x-nguon-nghi"),
+            "gen_s": headers.get("x-gen-s"),
+            "rtf": headers.get("x-rtf"),
+            "ha_tran_db": headers.get("x-ha-tran-db"),
+            "duong": duong,
+            "do": kq,
+        })
+
+    # ── bảng tóm tắt: đây là thứ để quyết định ───────────────────────────────
+    def _o(d, *khoa, mac_dinh="-"):
+        for k in khoa:
+            d = (d or {}).get(k) if isinstance(d, dict) else None
+        return mac_dinh if d is None else d
+
+    print(f"\n{'=' * 84}")
+    print("  BANG SO DE QUYET DINH CO NOI TRAN HAY KHONG")
+    print("=" * 84)
+    print(f"  {'ky tu':>6} {'doan':>4} {'troi tb':>8} {'troi min':>9} "
+          f"{'lang max':>9} {'CER%':>6} {'dau%':>6} {'dBTP':>7} {'LUFS':>7} "
+          f"{'RTF':>7}")
+    for m in bang:
+        d = m["do"]
+        print(f"  {m['so_ky_tu']:>6} {m['so_doan']:>4} "
+              f"{_o(d, 'troi_giong', 'cosine_trung_binh'):>8} "
+              f"{_o(d, 'troi_giong', 'cosine_thap_nhat'):>9} "
+              f"{_o(d, 'khoang_lang', 'im_giua_dai_nhat_s'):>9} "
+              f"{_o(d, 'de_hieu', 'cer'):>6} "
+              f"{_o(d, 'de_hieu', 'ter_sai_dau'):>6} "
+              f"{_o(d, 'tin_hieu', 'true_peak_dbtp'):>7} "
+              f"{_o(d, 'tin_hieu', 'lufs'):>7} "
+              f"{m.get('rtf') or '-':>7}")
+    print()
+    print("  Doc bang the nao: dong 1.500 ky tu la DOI CHUNG — do la cau hinh")
+    print("  dang ban hom nay: mot luot sinh, khong co moi noi nao. Cac dong")
+    print("  duoi chi dang tin neu chung KHONG te hon dong do mot cach he thong.")
+
+    duong_json = os.path.join(a.thu_muc, "tom_tat.json")
+    with open(duong_json, "w", encoding="utf-8") as f:
+        json.dump(bang, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {duong_json}")
     return 0
 
 

@@ -19,6 +19,7 @@ from __future__ import annotations
 import io
 import logging
 import os
+import re
 import wave
 
 import numpy as np
@@ -27,12 +28,16 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
 from . import engine as eng
-from . import ngan_sach, tham_so
+from . import ngan_sach, noi_dai, tham_so
 
 log = logging.getLogger("ltt.voice.server")
 
 
 # ── WAV ──────────────────────────────────────────────────────────────────────
+#: Dấu kết câu. Chỉ dùng để ĐẾM câu cho bộ ghép — không chia gì cả.
+_KET_CAU = re.compile(r"[.!?…]+(?:\s|$)")
+
+
 def _pcm16(wav_f32: np.ndarray) -> bytes:
     """float32 [-1,1] -> PCM16. Kẹp trước khi ép kiểu, không sau.
 
@@ -185,6 +190,51 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
         return {"items": muc, "sample_rate": sr, "gen_s": round(giay, 3),
                 "rtf": round(giay / tong, 4) if tong else 0.0,
                 "tham_so": tham_so.PHIEN_BAN_THAM_SO}
+
+    @app.post("/v1/speech-dai")
+    def speech_dai(body: ThanLo, _: None = Depends(auth)):
+        """Nhiều lượt sinh -> MỘT tệp WAV liền mạch (đường văn bản dài).
+
+        ⭐ Vì sao là một cửa riêng chứ không phải `/v1/batch` + ghép ở phía app:
+
+           `/v1/batch` trả N tệp rời, đúng cho người gọi muốn từng đoạn riêng.
+           Đường văn bản dài thì ngược lại — nó cần **một** bản đọc, và việc
+           ghép là việc ÂM THANH: đo im ở mối nối, lấy trung vị nhịp nghỉ, cân
+           mức. Làm việc đó ở phía app nghĩa là kéo numpy và cả một bộ phân tích
+           tín hiệu vào tiến trình worker, trong khi ở đây chúng đã có sẵn.
+
+           Chia đoạn thì ngược lại là việc VĂN BẢN, và nó ở phía app
+           (`text_pipeline.chia_doan`). Mỗi bên làm đúng thứ nó có công cụ.
+
+        Trả về **cùng hình dạng** `/v1/speech` — một WAV + header — nên tầng job
+        gọi cửa nào cũng chỉ có một nhánh xử lý phản hồi.
+        """
+        texts = ngan_sach.kiem_mot_lo(body.texts)
+        c = lay()
+        wavs, giay = c.noi_lo(texts, ref_b64=body.ref_b64, preset=body.preset)
+        sr = c.sample_rate
+        # Số câu mỗi đoạn: bộ ghép cần nó để biết đâu là ranh giới CÂU giữa hằng
+        # trăm khe TỪ. Chỉ là đếm dấu kết câu — không phải chia đoạn, việc đó
+        # vẫn ở `apps/ltt_voice/text_pipeline.py`.
+        so_cau = [max(1, len(_KET_CAU.findall(t)) or 1) for t in texts]
+        wav, ho_so = noi_dai.ghep(wavs, sr, so_cau=so_cau)
+        thoi_luong = len(wav) / float(sr) if sr else 0.0
+        return Response(
+            content=_wav_bytes(wav, sr), media_type="audio/wav",
+            headers={
+                "X-Duration-S": f"{thoi_luong:.3f}",
+                "X-Gen-S": f"{giay:.3f}",
+                "X-RTF": f"{(giay / thoi_luong):.4f}" if thoi_luong else "0",
+                "X-Sample-Rate": str(sr),
+                "X-Tham-So": tham_so.PHIEN_BAN_THAM_SO,
+                # Hồ sơ phép ghép. Khi một bản đọc nghe lạ ở mối nối thì đây là
+                # thứ trả lời được "nghỉ bao lâu, con số đó từ đâu ra, đoạn nào
+                # bị cân mức" — thay vì phải chạy lại rồi đoán.
+                "X-So-Doan": str(ho_so.get("so_doan", 0)),
+                "X-Nghi-S": str(ho_so.get("nghi_s", 0.0)),
+                "X-Nguon-Nghi": str(ho_so.get("nguon_nghi", "")),
+                "X-Ha-Tran-Db": str(ho_so.get("ha_tran_db", 0.0)),
+            })
 
     @app.post("/v1/stream")
     def stream(body: ThanNoi, _: None = Depends(auth)):

@@ -154,15 +154,20 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     return tham_chieu.nap_ref_b64(bieu_dien), None, ()
 
 
-def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
-    """Gọi sidecar và **dịch lỗi hạ tầng thành câu khách đọc được**.
+def _goi_va_dich_loi(ham, *doi_so, **tham_so):
+    """Chạy một lời gọi cổng và **dịch lỗi hạ tầng thành câu khách đọc được**.
 
     ⛔ BẬN KHÔNG PHẢI HỎNG. `SidecarBan` -> `DangBanTam`, và tầng job phải xếp
        lại chứ không đánh dấu job hỏng. Một job bị coi là hỏng sẽ **trừ credit**
        cho một việc chưa từng chạy.
+
+    ⭐ Tách ra dùng chung cho cả hai cửa (một lượt và văn bản dài) chứ không
+       chép đôi: hai bản chép của một bảng dịch lỗi sẽ lệch, và cái lệch đầu
+       tiên gần như chắc chắn là nhánh `SidecarBan` — tức đúng nhánh mà lệch
+       một chút là mất tiền của khách.
     """
     try:
-        return sidecar_client.noi(text, ref_b64=ref_b64, preset=preset)
+        return ham(*doi_so, **tham_so)
     except sidecar_client.SidecarBan as e:
         raise DangBanTam(retry_after_s=e.retry_after_s) from e
     except sidecar_client.VanBanQuaDai as e:
@@ -173,6 +178,18 @@ def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
         log.warning("cong giong loi: %s", e)
         raise LoiGiongNoi(_t(
             "Máy tạo tiếng nói chưa sẵn sàng. Vui lòng thử lại sau.")) from e
+
+
+def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
+    """Một lượt sinh. Trả `(wav_bytes, headers)`."""
+    return _goi_va_dich_loi(sidecar_client.noi, text,
+                            ref_b64=ref_b64, preset=preset)
+
+
+def goi_cong_dai(doan: list, *, ref_b64=None, preset=None) -> tuple:
+    """Nhiều đoạn -> MỘT tệp liền mạch. Cùng hình dạng trả về với `goi_cong`."""
+    return _goi_va_dich_loi(sidecar_client.noi_dai, list(doan),
+                            ref_b64=ref_b64, preset=preset)
 
 
 def hash_noi_dung(data: bytes) -> str:

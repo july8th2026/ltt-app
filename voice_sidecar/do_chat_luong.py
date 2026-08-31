@@ -73,7 +73,6 @@ G. **Đóng dấu** — dấu chìm có đọc lại được không.
 from __future__ import annotations
 
 import argparse
-import io
 import json
 import math
 import os
@@ -83,11 +82,23 @@ import sys
 import unicodedata
 
 # Console Windows mac dinh cp1252: in mot chu tieng Viet la UnicodeEncodeError,
-# va bo do se chet DUNG O BUOC IN — sau khi da do xong het. Cung khuon
-# `tools/check_i18n.py` da dung.
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+# va bo do se chet DUNG O BUOC IN — sau khi da do xong het.
+#
+# 🔴 `reconfigure()`, KHONG phai `sys.stdout = io.TextIOWrapper(...)`.
+#
+#    Gan mot TextIOWrapper MOI de len cung mot `buffer` la dat mot qua bom hen
+#    gio: khi module thu hai lam dung viec do, wrapper cua module thu nhat mat
+#    tham chieu, bi thu hoi, va **dong luon buffer ben duoi**. Ca hai cung chet.
+#
+#    Da no that 31/08/2026: `tools/do_van_ban_dai.py` boc stdout roi `import
+#    voice_sidecar.do_chat_luong` boc lan nua. Phep do chay xong sach se, roi
+#    dong `print` dau tien nem `ValueError: I/O operation on closed file` —
+#    mot thong diep khong he nhac toi ma hoa, tuc no giau ca nguyen nhan lan
+#    noi xay ra.
+#
+#    `reconfigure()` sua tai cho, khong tao doi tuong moi, va goi hai lan vo hai.
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 # ── ngưỡng CÓ NGUỒN ─────────────────────────────────────────────────────────
 #
@@ -191,7 +202,6 @@ def do_tin_hieu(wav, sr: int) -> dict:
 
     rms, _ = _khung_rms(wav, sr)
     if len(rms):
-        im = rms[rms < 10 ** (NGUONG_IM_DBFS / 20.0)]
         # Nền nhiễu = mức của 10% khung yên nhất. Nếu không có khung yên nào thì
         # tệp không có khoảng lặng để đo nền — báo None, đừng bịa.
         yen = np.sort(rms)[:max(1, len(rms) // 10)]
@@ -314,7 +324,18 @@ def _asr(duong: str, ngon_ngu: str = "vi") -> dict:
         "import sys,json\n"
         "from faster_whisper import WhisperModel\n"
         "m=WhisperModel(sys.argv[2], device='cpu', compute_type='int8')\n"
-        "seg,_=m.transcribe(sys.argv[1], language=sys.argv[3], beam_size=5)\n"
+        # 🔴 `condition_on_previous_text=False`. Mac dinh cua Whisper la True:
+        #    moi cua so 30 giay duoc moi lam dieu kien bang ban dich cua cua so
+        #    truoc. Tren audio DAI va lap noi dung, no sinh vong lap roi **BO
+        #    HAN mot doan** — va no bo o GIUA, nen ban ghi van ket thuc dung
+        #    cho, trong y het mot ban ghi day du.
+        #
+        #    Do that 31/08/2026: ban 2.907 ky tu, ban ghi lai chi phu 74,5% van
+        #    ban trong khi PHAN CUOI khop hoan hao. CER bao 29,9% — gan nhu
+        #    toan bo con so do la chu BI BO, khong phai chu doc SAI. Ket luan
+        #    "ghep lam giam chat luong" rut ra tu do se la sai.
+        "seg,_=m.transcribe(sys.argv[1], language=sys.argv[3], beam_size=5,\n"
+        "                   condition_on_previous_text=False)\n"
         "print(json.dumps({'text':' '.join(s.text for s in seg)}))\n"
     )
     try:
@@ -347,10 +368,17 @@ def do_de_hieu(duong: str, text_goc: str, ngon_ngu: str = "vi") -> dict:
     d_goc, d_nghe = _chi_dau(text_goc), _chi_dau(kq["text"])
     ter = _levenshtein(d_goc, d_nghe) / max(1, len(d_goc)) if d_goc else None
 
+    # ⭐ TỈ LỆ PHỦ. Không có nó thì một bản ghi bị bỏ mất 25% ở giữa vẫn cho ra
+    #    một CER trông hoàn toàn bình thường, và người đọc sẽ quy tội cho TTS.
+    #    Nó không phải một ngưỡng — nó là **điều kiện để CER có nghĩa**: hai CER
+    #    chỉ so được với nhau khi hai lượt phủ xấp xỉ như nhau.
+    phu = len(nghe) / max(1, len(goc))
+
     return {
         "co": True,
         "text_goc": text_goc,
         "text_nghe_lai": kq["text"].strip(),
+        "ty_le_phu": round(phu, 4),
         "cer": round(cer, 4),
         "wer": round(wer, 4),
         "ter_sai_dau": round(ter, 4) if ter is not None else None,
@@ -358,7 +386,12 @@ def do_de_hieu(duong: str, text_goc: str, ngon_ngu: str = "vi") -> dict:
         "chua_hieu_chuan": True,
         "ghi_chu": ("CER/WER phu thuoc chat luong bo nhan dang, KHONG chi phu "
                     "thuoc TTS. Muon phan quyet thi phai do SAN cua chinh bo "
-                    "nhan dang tren giong nguoi that truoc."),
+                    "nhan dang tren giong nguoi that truoc."
+                    + ("" if phu >= 0.95 else
+                       f" [!] Ban ghi lai chi phu {phu * 100:.1f}% van ban goc "
+                       f"— bo nhan dang da BO mot phan audio, nen CER o day "
+                       f"chu yeu do chu BI BO chu khong phai chu doc SAI. "
+                       f"Dung so CER nay voi mot luot co ty le phu khac.")),
     }
 
 
@@ -603,6 +636,9 @@ def _in_dep(kq: dict) -> None:
     print("\nDO DUOC, CHUA HIEU CHUAN (khong tham gia phan quyet):")
     dh = kq["de_hieu"]
     if dh.get("co"):
+        print(f"  phu {dh.get('ty_le_phu', 0):.1%} van ban goc"
+              + ("" if dh.get('ty_le_phu', 1) >= 0.95 else
+                 "  <- BO NHAN DANG BO BOT, CER duoi day khong so duoc voi luot khac"))
         print(f"  CER {dh['cer']:.2%}  WER {dh['wer']:.2%}  "
               f"sai dau {dh['ter_sai_dau']:.2%}" if dh.get("ter_sai_dau") is not None
               else f"  CER {dh['cer']:.2%}  WER {dh['wer']:.2%}")

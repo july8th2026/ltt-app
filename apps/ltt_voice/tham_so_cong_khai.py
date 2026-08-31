@@ -14,11 +14,33 @@ tham_so_cong_khai.py — vài hằng số mà CẢ HAI phía cùng phải biết
 """
 from __future__ import annotations
 
-#: Trần ký tự công bố cho MỘT lượt gọi. Phải khớp
-#: `voice_sidecar.tham_so.TRAN_KY_TU_MOT_LUOT`.
+#: Trần của MỘT LƯỢT SINH. Phải khớp `voice_sidecar.tham_so.TRAN_KY_TU_MOT_LUOT`.
 #:
 #: Đây là TRẦN CHẤT LƯỢNG (Q119), không phải trần hiệu năng: upstream #168 báo
 #: giọng bắt đầu trôi từ khoảng 3.000 ký tự. Đo 30/08 cho thấy 3.000 ký tự vẫn
 #: SINH RA ĐƯỢC (17,6 giây, không lỗi) — nên con số này không đến từ giới hạn kỹ
 #: thuật, nó đến từ chỗ chất lượng bắt đầu tụt. Nới nó phải qua cổng V10.
+TRAN_MOI_LUOT_SINH = 1500
+
+#: Trần của MỘT YÊU CẦU của khách.
+#:
+#: 🔴 HAI TRẦN NÀY LÀ HAI THỨ KHÁC NHAU, và trước 31/08/2026 chúng là một con số.
+#:
+#:    Hệ quả của việc gộp: văn bản 3.000 ký tự bị **từ chối**, trong khi chính
+#:    thông điệp lỗi của cổng đã nói *"Van ban dai hon phai di duong long-form
+#:    nhieu luot sinh"* — con đường ấy chưa bao giờ được xây. `chia_doan()` có
+#:    sẵn trong `text_pipeline.py` và **không được gọi ở đâu cả**; `jobs.py` gán
+#:    cứng `so_doan=1`.
+#:
+#: ⭐ Tách hai trần ra thì mỗi con số nói đúng một điều:
+#:      · `TRAN_MOI_LUOT_SINH`   — model đọc liền được bao nhiêu trước khi trôi
+#:      · `TRAN_KY_TU_CONG_KHAI` — khách gửi được bao nhiêu trong một lần
+#:    Yêu cầu dài hơn một lượt thì **chia rồi ghép**, không từ chối.
+#:
+#: ⚠️ Vẫn giữ 1.500 cho tới khi đo được chất lượng bản GHÉP ở 3.000 và 5.000 ký
+#:    tự. Đường đã có, cổng chưa mở — và thứ tự đó là có chủ ý: hạ tầng sẵn sàng
+#:    không phải là bằng chứng chất lượng. Nới nó vẫn phải qua V10.
+#:
+#: Trần trên tuyệt đối: `TRAN_MOI_LUOT_SINH × voice_sidecar.tham_so
+#: .TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn) — vượt nữa thì cổng trả 413.
 TRAN_KY_TU_CONG_KHAI = 1500

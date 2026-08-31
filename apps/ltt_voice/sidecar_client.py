@@ -135,6 +135,18 @@ def noi_lo(texts: list, *, ref_b64: str | None = None,
     return d
 
 
+def noi_dai(texts: list, *, ref_b64: str | None = None,
+            preset: str | None = None, timeout: float = 1800.0) -> tuple:
+    """Nhiều đoạn -> MỘT tệp WAV liền mạch. Trả `(wav_bytes, headers)`.
+
+    Cùng hình dạng trả về với `noi()` — có chủ ý: tầng job chỉ nên có **một**
+    nhánh xử lý phản hồi, dù văn bản một đoạn hay tám đoạn.
+    """
+    return _goi("/v1/speech-dai",
+                {"texts": list(texts), "ref_b64": ref_b64, "preset": preset},
+                timeout=timeout, nhi_phan=True)
+
+
 def ghi_danh(duong_wav: str, *, denoise: bool = True,
              timeout: float = 300.0) -> dict:
     d, _ = _goi("/v1/enroll", {"duong_wav": duong_wav, "denoise": denoise},

@@ -20,6 +20,7 @@ import tempfile
 from platform_core.i18n import _ as _t
 
 from .features import DangBanTam, LoiGiongNoi  # noqa: F401 (giữ tên cho chỗ import)
+from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
 
 log = logging.getLogger(__name__)
 
@@ -97,10 +98,29 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     ref_b64, preset, _ = _voi_db(lambda db: features.giai_giong(db, yc))
 
+    # ── chia đoạn: văn bản dài đi ĐƯỜNG KHÁC, không phải bị từ chối ──────────
+    #
+    # `TRAN_MOI_LUOT_SINH` là trần của MỘT lượt `infer` (trần chất lượng, Q119).
+    # `TRAN_KY_TU_CONG_KHAI` là trần của MỘT YÊU CẦU. Trước 31/08 hai thứ này là
+    # một con số, nên "dài hơn 1.500" đồng nghĩa với "bị từ chối" — dù chính
+    # thông điệp lỗi của cổng đã nói *"phải đi đường long-form nhiều lượt"*.
+    #
+    # ⭐ Chia lượt an toàn vì đã ĐO, không vì hợp lý: giọng mặc định giữ nguyên
+    #    người nói qua các lượt gọi riêng (0,9254 — cao hơn cả sàn nhiễu 0,8524
+    #    của hai nửa trong cùng một lượt). Xem
+    #    `voice_sidecar/do_giu_giong_nhieu_luot.py`.
+    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    doan = chuan.doan or [yc.text]
+
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
     #    xếp lại. Bọc nó thành LoiGiongNoi ở đây là biến "máy đang bận" thành
     #    "job hỏng", và một job hỏng sẽ TRỪ CREDIT cho việc chưa từng chạy.
-    wav_bytes, headers = features.goi_cong(yc.text, ref_b64=ref_b64, preset=preset)
+    if len(doan) > 1:
+        wav_bytes, headers = features.goi_cong_dai(
+            doan, ref_b64=ref_b64, preset=preset)
+    else:
+        wav_bytes, headers = features.goi_cong(
+            doan[0], ref_b64=ref_b64, preset=preset)
 
     # Đo trên tệp thật, không tin header của sidecar. Header chỉ để đối chiếu.
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
@@ -132,7 +152,7 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     ket = features.KetQua(
         yeu_cau=yc, audio_key=khoa, giay=giay,
-        text_da_chuan_hoa=yc.text, so_doan=1)
+        text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=len(doan))
 
     if giay <= 0:
         log.warning("job %s: khong do duoc thoi luong -> thu 0 credit", job_id)
