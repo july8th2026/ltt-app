@@ -283,6 +283,20 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
         db.commit()
         _release_ticket()
         # ⛔ BAN != HONG (D-005). 429/503 + Retry-After, va khach KHONG bi thu tien.
+        # 🔴 ĐẾM VÀO `CAPACITY_REFUSED`, KHÔNG CHỈ ĐỂ NÓ RƠI VÀO 5xx.
+        #
+        #    `metrics.py` đã tách hai thứ này từ đầu: 5xx là "nền tảng hỏng",
+        #    còn thiếu năng lực phía sau là "mất doanh thu" — khác nguyên nhân,
+        #    khác cách sửa, nên khác ngưỡng cảnh báo. Nhưng bộ đếm năng lực chỉ
+        #    được nuôi ở cửa job; ba nhánh bận đồng bộ/stream không nuôi gì.
+        #
+        # ⛔ Hệ quả đo 31/08: suốt một đợt bận kéo hơn năm giờ, thư gửi người
+        #    trực nói `responses_5xx` — tức "nền tảng hỏng" — trong khi nền tảng
+        #    làm đúng và thứ hết là năng lực máy B. Chẩn đoán sai ngay từ dòng
+        #    tiêu đề, và `CAPACITY_REFUSED` đứng im ở 0 suốt sự cố.
+        metrics.increment(metrics.CAPACITY_REFUSED)
+        log.warning("BAN mot-cuc: user=%s duong=%s ly_do=%s",
+                    principal.user_id[:8], duong, e)
         raise service_unavailable(f"The model is busy right now: {e}",
                                   retry_after=getattr(e, "thu_lai_sau_s", 30)) from None
     except (VuotNganSachError, CongVlmError) as e:
@@ -644,6 +658,10 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         admission.release_by_id(ticket.id)
         if e.ban:
             # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
+            # Đếm vào `CAPACITY_REFUSED` — lý do đầy đủ ở nhánh bận của `_mot_cuc`.
+            metrics.increment(metrics.CAPACITY_REFUSED)
+            log.warning("BAN luong: user=%s duong=%s ly_do=%s",
+                        principal.user_id[:8], duong, e.ly_do)
             raise service_unavailable(f"The model is busy right now: {e.ly_do}",
                                       retry_after=e.thu_lai_sau_s) from None
         if getattr(e, "qua_dai", False):

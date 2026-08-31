@@ -609,3 +609,89 @@ lần sửa sau chỉ sửa một bản, đúng cái bệnh mục này sinh ra �
 
 Đã suýt dính ngày 27/08: hai phiên cùng định ghi khuôn phối hợp này. Cách xử lý
 đúng là **gộp vào bản có sẵn rồi xoá bản trùng**, kèm dòng chỉ mục của nó.
+
+### 10.6 Cửa sổ yên: máy tự giữ hàng đợi, thay vì ba người nhắn nhau
+
+Chốt 2026-08-31, sau một buổi **ba** phiên cùng cây.
+
+Giao ước ở 10.2 chống được việc **đè tệp** của nhau — và nó đã làm đúng việc,
+0 lần đè. Nhưng nó không chống được thứ thứ hai, và thứ này mới đắt: **hai lượt
+`gate.py` chạy gần nhau đều cho ĐỎ GIẢ.** Mỗi lượt mất 5–6 phút, và mỗi lượt
+thấy tệp của phiên kia đổi giữa chừng nên kết quả nói về một cây không còn tồn
+tại. Hôm đó cả hai phiên đều mất một lượt, và cả hai dòng `RESULT` **trông y hệt
+một lượt sạch**.
+
+⛔ **Đừng “song song hoá” cổng chất lượng để chữa cái này.** Pha `bo test` đã lấy
+`-n auto` = **mọi lõi** (20 lõi; nối tiếp 1.534 giây → song song 234 giây). Hai
+lượt cùng lúc chỉ chia đôi cùng một chiếc bánh: tổng thời gian gần y hệt chạy
+lần lượt, nhưng trả thêm gấp đôi bộ nhớ, gấp đôi thư mục tạm, và gấp đôi khả
+năng đo sai. Song song hoá một thứ **đã bão hoà lõi** không phải tối ưu.
+
+**Ba thứ đã dựng:**
+
+```powershell
+python tools/cua_so_yen.py trang-thai   # ai dang giu, tu bao gio
+python tools/cay_rieng.py liet-ke       # cac cay lam viec dang co
+python tools/gate.py --khong-khoa       # chay ngay, khong xep hang
+```
+
+**① `gate.py` đầy đủ xếp hàng** sau một khoá cấp máy. Đợi quá 15 phút thì nó
+**vẫn chạy**, kèm băng báo rằng lượt này có thể bị nhiễu — một cổng chất lượng
+từ chối chạy vì bận là một cổng không ai dùng.
+
+⚠️ Trong hầu hết harness, **màn hình im lặng suốt lúc xếp hàng** vì đầu ra chỉ
+hiện khi lệnh kết thúc. Biết trước điều đó, đừng tưởng treo.
+
+⛔ `--quick` và `--vong-lap` **không** xếp hàng, và đó là chủ ý: cả hai đã tự
+khai chúng không phải bằng chứng, nên nhiễu trên phép đo của chúng ít quan trọng
+hơn hẳn — còn chặn một vòng lặp ngắn sau một lượt đầy đủ 6 phút là giết đúng cái
+làm nó hữu dụng.
+
+**② Dòng `RESULT` tự khai khi cây đổi:**
+
+```
+RESULT: FAIL (4/25)  [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]
+```
+
+Cùng luật đã áp cho `--quick` và `--vong-lap`: **một lượt chạy ít tin cậy hơn thì
+dòng kết quả của nó phải trông khác.** Trước bản vá, cây-đổi chỉ được nói trong
+một đoạn văn phía trên, còn dòng `RESULT` in y hệt — và dòng `RESULT` là thứ duy
+nhất được đọc khi người ta vội.
+
+**③ Cây riêng (`git worktree`) — tuỳ chọn, không mặc định.** Nó cho một cây
+không ai khác ghi vào, nhưng đòi nhánh riêng (`phien/<tên>`) và phải **gộp lại**.
+Mô hình lane-theo-tệp ở 10.2 đang chạy tốt, nên chỉ lấy cây riêng khi bạn thật sự
+cần một cửa sổ yên dài.
+
+🔴 **VÀ CƠ CHẾ NÀY TỰ SINH RA MỘT MỐI NGUY LỚN HƠN THỨ NÓ CHỮA.** Máy này **là**
+production, và `setup\2-cai-dat.ps1` chép **cả cây** sang `C:\LTTPlatform`.
+Nhiều cây riêng nghĩa là nhiều thư mục **trông giống hệt nhau**, và deploy nhầm
+một trong số đó là lỗi **im lặng**: script chạy xong, báo thành công, và
+production chạy một nhánh không ai định phát hành.
+
+⇒ `2-cai-dat.ps1` có chốt chặn: nó **từ chối** khi `.git` của cây nguồn là một
+**tệp** (cây liên kết) thay vì **thư mục** (cây chính). Không có `.git` thì cho
+qua — đó là đường cài hợp lệ từ một bản chép. `test_362` canh chốt đó còn nguyên
+**và nằm trước mọi thao tác ghi**.
+
+### 10.7 Tệp dẫn xuất: người chạy lượt cuối sinh lại
+
+`ho_so_he_thong.txt` đổi theo **mọi** thay đổi mã nguồn của **bất kỳ ai**. Sinh
+lại nó giữa chừng chỉ tạo một phiên bản sẽ cũ trong vài phút — đã đo đúng vậy
+ngày 31/08: sinh lại xong, phiên khác thêm một tệp, nó cũ lại ngay.
+
+⇒ Để **người chạy lượt gate làm bằng chứng cuối cùng** sinh lại, một lần, trên
+một cây đứng yên.
+
+🔴 **Và khi nó ĐỤNG ĐỘ lúc gộp: sinh lại trên cây ĐÃ GỘP — không bao giờ
+`--ours`/`--theirs`.**
+
+Lý do không hiển nhiên, nên viết ra: đây là một đụng độ **13 MB** trong một tệp
+**sinh ra**. Người gặp nó thấy hàng nghìn dòng `<<<<<<<` và phản xạ tự nhiên là
+chọn một bên cho xong — phản xạ ấy **đúng** với hầu hết tệp dẫn xuất, và **sai**
+với tệp này: chọn một bên cho ra một hồ sơ tả **một cây không tồn tại**, không
+phải cây của ai cả, mà là cây của một bên *trước khi* gộp.
+
+`test_177` bắt được, nhưng chỉ khi có người chạy gate **sau** merge. Ai vừa chạy
+gate xong ở nhánh mình thì có lý do để không chạy lại — và đó đúng là lúc nó lọt.
+

@@ -20,6 +20,7 @@ luong_vlm.py — mở một luồng SSE tới model nhà, và **chuyển tiếp 
 """
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from typing import Any, Iterator, Optional
@@ -152,9 +153,23 @@ def mo(db, *, duong: str, than: dict, timeout_s: float = 900.0,
 
     if r.status_code == 429:
         # ⛔ BẬN ≠ HỎNG (D-005). Không đánh dấu lỗi cho khoá.
+        #
+        # 🔴 NHUNG LY DO PHAI DI THEO. Máy B phân biệt **ba** kiểu bận, và
+        #    mỗi kiểu sửa một cách khác hẳn:
+        #
+        #      "cong dang day"                   -> suất bị rò, cổng tự bóp cổ mình
+        #      "may B dang ban"                  -> việc KHÁC đang giữ card
+        #      "card chua san sang de nap model" -> ComfyUI không nhả VRAM
+        #
+        #    Bản trước đọc thân lỗi vào `than_loi` rồi **vứt đi**, thay bằng một
+        #    chuỗi cứng — nên cả ba kiểu tới người trực dưới đúng một câu chữ.
+        #
+        # ⛔ Đo 31/08: một đợt 503 kéo hơn năm giờ (89/117 lượt của một khách)
+        #    mà nhật ký không có lấy một dòng nói vì sao. Đó đúng là bài học đã
+        #    ghi cho nhánh 5xx ngay bên dưới — chỉ là chưa ai áp cho nhánh này.
         than_loi = _doc_het(r, ctx, client)
-        raise KhongMoDuocLuong("may B dang ban", ban=True,
-                               thu_lai_sau_s=_retry_after(r))
+        raise KhongMoDuocLuong(f"may B dang ban: {_ly_do_ban(than_loi)}",
+                               ban=True, thu_lai_sau_s=_retry_after(r))
     if r.status_code >= 400:
         than_loi = _doc_het(r, ctx, client)
         if r.status_code == 413:
@@ -240,3 +255,28 @@ def _retry_after(r) -> int:
         return max(1, int(r.headers.get("retry-after") or 30))
     except (TypeError, ValueError):
         return 30
+
+
+def _ly_do_ban(than: str) -> str:
+    """Rút lý do người-đọc-được từ thân 429 của máy B.
+
+    Cổng bên đó ném `HTTPException(detail={"ly_do": ..., "chi_tiet": ...})`, nên
+    JSON tới đây có dạng `{"detail": {...}}`.
+
+    ⛔ Nhưng **đừng đòi hỏi hình dạng đó**. Một proxy, một trang lỗi của
+       Cloudflare, hay một bản cổng cũ hơn đều trả thứ khác — và đúng lúc ấy ta
+       cần thông tin nhất. Không đọc được thì trả **văn bản thô**, vì thô vẫn hơn
+       rỗng; cả hàm không có đường nào ném ra ngoài.
+    """
+    try:
+        goc = json.loads(than)
+    except (ValueError, TypeError):
+        return than.strip()[:300] or "khong ro (thuong nguon khong noi gi)"
+    if isinstance(goc, dict) and isinstance(goc.get("detail"), (dict, str)):
+        goc = goc["detail"]
+    if not isinstance(goc, dict):
+        return str(goc)[:300]
+    phan = [str(goc[k]) for k in ("ly_do", "chi_tiet") if goc.get(k)]
+    if goc.get("vram_dung_mb"):
+        phan.append("VRAM dang dung %s MB" % goc["vram_dung_mb"])
+    return " | ".join(phan)[:300] or than.strip()[:300]

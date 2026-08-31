@@ -244,6 +244,11 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
     except BanError as e:
         thanh_toan.hoan_luot(db, user_id=principal.user_id, request_id=request_id)
         db.commit()
+        # Đếm vào `CAPACITY_REFUSED` — lý do đầy đủ ở nhánh bận của
+        # `_mot_cuc` trong `server/api/streaming.py`.
+        metrics.increment(metrics.CAPACITY_REFUSED)
+        log.warning("BAN dong bo: user=%s duong=/chat/completions ly_do=%s",
+                    principal.user_id[:8], e)
         raise service_unavailable(
             f"The model is busy right now: {e}", retry_after=30) from None
     except VuotNganSachError as e:

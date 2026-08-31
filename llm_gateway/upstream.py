@@ -67,9 +67,72 @@ class HttpxUpstream:
                 for khoi in r.iter_raw():
                     yield khoi
             finally:
-                try:
-                    ctx.__exit__(None, None, None)
-                finally:
-                    client.close()
+                dong()
 
-        return r.status_code, content_type, _di()
+        da_dong = [False]
+
+        def dong() -> None:
+            """Đóng kết nối thượng nguồn. Gọi bao nhiêu lần cũng được."""
+            if da_dong[0]:
+                return
+            da_dong[0] = True
+            try:
+                ctx.__exit__(None, None, None)
+            finally:
+                client.close()
+
+        # 🔴 VÌ SAO PHẢI GIAO RA MỘT HÀM ĐÓNG, KHÔNG CHỈ MỘT GENERATOR.
+        #
+        #    Kết nối đã MỞ ngay lúc này — `ctx.__enter__()` chạy ở trên, header
+        #    đã về. Nhưng thứ đóng nó lại nằm trong `finally` của `_di`, và
+        #    `finally` ấy chỉ tồn tại **sau khi generator chạy dòng đầu tiên**.
+        #
+        #    Không ai lặp qua `_di` thì khối `try` chưa từng được vào, nên
+        #    `.close()` trên generator cũng **không** chạy `finally` — Python chỉ
+        #    đánh dấu nó đã đóng. Kết quả: socket còn mở và `llama-server` sinh
+        #    chữ tiếp cho một yêu cầu không còn ai đọc.
+        #
+        #    Đây đúng là đường đã gây sự cố 31/08 ở tầng trên (`boc_luong` giữ
+        #    suất vĩnh viễn vì cùng lý do). Nên đường dọn phải gọi được **mà
+        #    không cần generator khởi động**.
+        return r.status_code, content_type, LuongUpstream(_di(), dong)
+
+
+class LuongUpstream:
+    """Luồng byte kèm một đường đóng gọi được **độc lập với việc lặp**.
+
+    Vẫn là `Iterator[bytes]` nên `Upstream` protocol không đổi, và mọi bản giả
+    trong test trả `iter([...])` vẫn dùng được — bên gọi hỏi `dong` bằng
+    `getattr`, không đòi hỏi.
+    """
+
+    __slots__ = ("_it", "dong")
+
+    def __init__(self, it: Iterator[bytes], dong):
+        self._it = it
+        self.dong = dong
+
+    def __iter__(self) -> "LuongUpstream":
+        return self
+
+    def __next__(self) -> bytes:
+        return next(self._it)
+
+    def close(self) -> None:
+        """`nhip_tim` tìm `.close()` để bảo thượng nguồn dừng sinh chữ.
+
+        Đóng generator TRƯỚC (để `finally` của nó chạy nếu nó đã khởi động), rồi
+        đóng thẳng — `dong` idempotent nên gọi hai lần vô hại.
+
+        ⚠️ `getattr` chứ không gọi thẳng: **không phải iterator nào cũng có
+           `close`**. Bản đầu của tôi gọi `self._it.close()` trần và vỡ với một
+           `list_iterator` — tức nó chỉ chạy được với đúng generator thật, và
+           mọi bản giả trong bộ test sẽ ném `AttributeError` **từ trong đường
+           dọn dẹp**, nơi một ngoại lệ dễ nuốt mất cả việc đóng thượng nguồn.
+        """
+        dong_it = getattr(self._it, "close", None)
+        try:
+            if dong_it is not None:
+                dong_it()
+        finally:
+            self.dong()

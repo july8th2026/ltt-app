@@ -46,11 +46,16 @@ là nửa giờ mất trắng mỗi vòng.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cua_so_yen import CuaSoYen  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
@@ -610,15 +615,38 @@ def main() -> int:
                         help="so luong buoc tinh chay cung luc (mac dinh 8)")
     parser.add_argument("--tuan-tu", action="store_true",
                         help="ep chay noi tiep - de go loi chinh gate")
+    parser.add_argument("--phien", default="",
+                        help="ten phien, hien cho phien khac dang doi")
+    parser.add_argument("--khong-khoa", action="store_true",
+                        help="chay ngay, khong xep hang cua so yen")
+    parser.add_argument("--cho", type=float, default=15.0,
+                        help="so phut chiu xep hang truoc khi chay khong khoa")
     args = parser.parse_args()
 
     steps = _steps(args.quick or args.vong_lap)
     if args.vong_lap:
         steps = _rut_gon_vong_lap(steps)
-    cay_dau = _anh_chup_cay()
-    print(f"Gate: {len(steps)} buoc"
-          f"{'' if args.tuan_tu else f', {args.j} luong cho buoc tinh'}\n")
-    _chay_theo_lich(steps, j=args.j, tuan_tu=args.tuan_tu)
+    # 🔴 XEP HANG, DUNG CHAY TRANH. Pha `bo test` lay `-n auto` = MOI loi,
+    #    nen hai luot cung luc chi chia doi cung mot chiec banh: tong thoi gian
+    #    gan y het chay lan luot, nhung tra them gap doi bo nho, gap doi thu muc
+    #    tam, va gap doi kha nang do sai. Xem `tools/cua_so_yen.py`.
+    #
+    # ⛔ CHI luot DAY DU xep hang. `--quick` va `--vong-lap` thi khong, va
+    #    khong phai vi tiec thoi gian: ca hai deu TU KHAI rang chung khong phai
+    #    bang chung (xem dong RESULT cua chung), nen tranh chap lam nhieu phep do
+    #    cua chung it quan trong hon han. Nguoc lai, chan mot vong lap ngan sau
+    #    mot luot day du 6 phut la giet dung cai lam no huu dung.
+    lenh = ("gate --quick" if args.quick else
+            "gate --vong-lap" if args.vong_lap else "gate")
+    phien = (args.phien or os.environ.get("LTT_PHIEN")
+             or f"{socket.gethostname()}:{os.getpid()}")
+    with CuaSoYen(phien, lenh,
+                  bat=not (args.quick or args.vong_lap or args.khong_khoa),
+                  cho_toi_da_s=args.cho * 60):
+        cay_dau = _anh_chup_cay()
+        print(f"Gate: {len(steps)} buoc"
+              f"{'' if args.tuan_tu else f', {args.j} luong cho buoc tinh'}\n")
+        _chay_theo_lich(steps, j=args.j, tuan_tu=args.tuan_tu)
 
     print("\n" + "=" * 62)
     failed = [s for s in steps if not s.ok]
@@ -640,7 +668,8 @@ def main() -> int:
     #    như bằng chứng cho hiện tại là cách sinh ra ba vòng sửa những thứ
     #    không còn hỏng.
     cay_cuoi = _anh_chup_cay()
-    if cay_cuoi != cay_dau:
+    cay_da_doi = cay_cuoi != cay_dau
+    if cay_da_doi:
         print("CAY DA DOI TRONG LUC CHAY:")
         _ke_cho_da_doi(cay_dau, cay_cuoi)
         print("Ket qua duoi day noi ve cay luc BAT DAU, khong phai cay hien tai.")
@@ -648,6 +677,12 @@ def main() -> int:
         print("=" * 62)
 
     ket = "PASS" if not failed else f"FAIL ({len(failed)}/{len(steps)})"
+    # 🔴 CUNG LUAT VOI `--quick` VA `--vong-lap`: mot luot chay it tin cay
+    #    hon thi DONG KET QUA cua no phai trong khac. Truoc day cay-doi chi duoc
+    #    noi trong mot doan van phia tren, con dong RESULT in y het mot luot
+    #    sach - va dong RESULT la thu duy nhat duoc doc khi nguoi ta voi.
+    if cay_da_doi:
+        ket += "  [CAY DA DOI GIUA CHUNG - KHONG DUNG LAM BANG CHUNG]"
     if args.vong_lap:
         # 🔴 Cùng luật với `--quick`: một chế độ chạy ít hơn thì dòng kết quả
         #    của nó **phải trông khác**. Đọc "PASS" ở đây rồi báo xong là lặp

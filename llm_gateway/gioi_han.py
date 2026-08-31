@@ -26,11 +26,25 @@ gioi_han.py — hàng rào của riêng cổng VLM: đồng thời và tần su�
 """
 from __future__ import annotations
 
+import logging
 import threading
 import time
 from collections import deque
 from dataclasses import dataclass
 from typing import Callable, Optional
+
+log = logging.getLogger("llm_gateway.gioi_han")
+
+#: Hạn giữ một suất trước khi coi nó là suất chết.
+#:
+#: 1.200 giây = 20 phút, rộng hơn `stream_timeout_s` (900) một biên dày. Phải
+#: rộng hơn: thu hồi một suất **đang chạy thật** là cho phép lượt thứ hai vào
+#: cùng một GPU `--parallel 1`, tức đổi một sự cố tự khỏi lấy một sự cố tệ hơn.
+#:
+#: ⛔ Đừng hạ số này để "phát hiện sớm hơn". Muốn phát hiện sớm thì đọc
+#:    `giu_lau_nhat_giay` ở `/health` — nó báo **ngay**, mà không đụng gì tới
+#:    một lượt đang chạy.
+HAN_GIU_MAC_DINH_S = 1200.0
 
 
 @dataclass(frozen=True)
@@ -39,6 +53,8 @@ class PhanXuGioiHan:
     ly_do: str = ""
     #: Gợi ý cho header `Retry-After`, tính bằng giây.
     thu_lai_sau_s: int = 5
+    #: Mã suất vừa cấp (0 khi từ chối). `cap_suat` dùng để dựng `Suat`.
+    ma: int = 0
 
 
 class Suat:
@@ -55,10 +71,14 @@ class Suat:
        liệu, đừng để nó phụ thuộc vào việc đọc kỹ luồng điều khiển.
     """
 
-    __slots__ = ("_gh", "_da_tra")
+    __slots__ = ("_gh", "_ma", "_da_tra")
 
-    def __init__(self, gh: "GioiHan"):
+    def __init__(self, gh: "GioiHan", ma: int):
         self._gh = gh
+        #: Mã riêng của suất này. Cần vì `GioiHan` nay giữ **thời điểm cấp của
+        #: từng suất** để thu hồi suất quá hạn — một bộ đếm thuần không nói được
+        #: suất nào đã treo bao lâu.
+        self._ma = ma
         self._da_tra = False
 
     @property
@@ -69,7 +89,7 @@ class Suat:
         if self._da_tra:
             return
         self._da_tra = True
-        self._gh._nha()
+        self._gh._nha(self._ma)
 
 
 class GioiHan:
@@ -79,22 +99,46 @@ class GioiHan:
     """
 
     def __init__(self, *, max_dong_thoi: int = 1, rpm: int = 120,
+                 han_giu_s: float = HAN_GIU_MAC_DINH_S,
                  now: Callable[[], float] = time.monotonic):
         self.max_dong_thoi = max(1, int(max_dong_thoi))
         self.rpm = max(0, int(rpm))          # 0 = tắt chốt tần suất
+        self.han_giu_s = float(han_giu_s)
         self._now = now
         self._khoa = threading.Lock()
-        self._dang_chay = 0
+        #: mã suất → thời điểm cấp. **Không phải một bộ đếm.** Một con số chỉ
+        #: nói "đang giữ mấy suất"; cái map này còn nói *từ bao giờ*, và đó là
+        #: thứ duy nhất cho phép thu hồi suất treo. Xem `_thu_hoi_qua_han`.
+        self._dang_giu: dict[int, float] = {}
+        self._ma_ke = 0
+        self._da_thu_hoi = 0
         self._moc: deque = deque()
 
     # ── đọc trạng thái, cho `/health` ────────────────────────────────────────
     def trang_thai(self) -> dict:
         with self._khoa:
-            self._cuon(self._now())
-            return {"dang_chay": self._dang_chay,
+            t = self._now()
+            self._cuon(t)
+            gia_nhat = max((t - t0 for t0 in self._dang_giu.values()), default=0.0)
+            return {"dang_chay": len(self._dang_giu),
                     "max_dong_thoi": self.max_dong_thoi,
                     "trong_phut_qua": len(self._moc),
-                    "rpm": self.rpm}
+                    "rpm": self.rpm,
+                    # 🔴 HAI SỐ NÀY LÀ CẢ LÝ DO SỰ CỐ 31/08 KÉO SÁU GIỜ.
+                    #
+                    #    Hôm đó `/health` trả `dang_chay: 1` — đúng, đầy đủ, và
+                    #    **không phân biệt được** một lượt đang chạy 3 giây với
+                    #    một suất đã treo sáu tiếng. Người trực nhìn vào chỉ thấy
+                    #    "có một việc đang chạy", tức trạng thái bình thường.
+                    #
+                    #    `giu_lau_nhat_giay` biến chuyện đó thành hiển nhiên:
+                    #    một lượt thật hiếm khi quá vài phút.
+                    "giu_lau_nhat_giay": round(gia_nhat, 1),
+                    "han_giu_s": self.han_giu_s,
+                    # Đếm số lần đã phải tự cứu. **Khác 0 nghĩa là CÓ BUG**, chỉ
+                    # là bug đó không còn gây sự cố. Tự lành mà im lặng thì chỉ
+                    # đổi một sự cố nhìn thấy được lấy một sự cố vô hình.
+                    "da_thu_hoi": self._da_thu_hoi}
 
     def _cuon(self, t: float) -> None:
         """Bỏ các mốc cũ hơn 60 giây. Cửa sổ trượt, không phải ô cố định.
@@ -116,14 +160,15 @@ class GioiHan:
         t = self._now()
         with self._khoa:
             self._cuon(t)
+            self._thu_hoi_qua_han(t)
 
-            if self._dang_chay >= self.max_dong_thoi:
+            if len(self._dang_giu) >= self.max_dong_thoi:
                 # Đợi một lượt LLM xong mất hàng chục giây, nên gợi ý thử lại
                 # cũng phải cùng thang đó. Bảo khách quay lại sau 1 giây là mời
                 # họ tạo thêm một vòng lặp bận.
                 return PhanXuGioiHan(
                     False,
-                    f"dang chay {self._dang_chay}/{self.max_dong_thoi} luot",
+                    f"dang chay {len(self._dang_giu)}/{self.max_dong_thoi} luot",
                     thu_lai_sau_s=15)
 
             if self.rpm and len(self._moc) >= self.rpm:
@@ -131,9 +176,45 @@ class GioiHan:
                 return PhanXuGioiHan(
                     False, f"vuot {self.rpm} luot moi phut", thu_lai_sau_s=cho)
 
-            self._dang_chay += 1
+            self._ma_ke += 1
+            self._dang_giu[self._ma_ke] = t
             self._moc.append(t)
-            return PhanXuGioiHan(True)
+            return PhanXuGioiHan(True, ma=self._ma_ke)
+
+    def _thu_hoi_qua_han(self, t: float) -> None:
+        """Thu lại suất giữ quá `han_giu_s`. **Gọi khi đã cầm khoá.**
+
+        🔴 ĐÂY LÀ LƯỚI CUỐI, KHÔNG PHẢI ĐƯỜNG SỬA CHÍNH.
+
+           Đường sửa chính là mọi lối ra đều trả suất, và `Suat` đã lo tính
+           một-lần cho việc đó. Nhưng ngày 31/08 chứng minh rằng "mọi lối ra"
+           là một danh sách người ta **tưởng** mình đã liệt kê đủ: `boc_luong`
+           canh đúng ba đường (chạy hết · khách ngắt giữa chừng · thượng nguồn
+           vỡ) và trượt đường thứ tư — generator **chưa bao giờ chạy**, nên khối
+           `try` chưa từng được vào và `finally` không tồn tại về mặt thực thi.
+
+           Hậu quả: một suất treo, `max_dong_thoi = 1`, và cổng trả 429 suốt
+           **sáu giờ** trong khi GPU rảnh và model còn chưa nạp.
+
+        ⭐ Nên lưới này KHÔNG cố đoán các đường rò. Nó chỉ khẳng định một điều
+           yếu hơn nhưng đúng với mọi đường: **không lượt nào chạy lâu hơn
+           `han_giu_s`**, nên suất nào giữ lâu hơn thế đều là suất chết.
+
+        ⛔ VÀ NÓ PHẢI ỒN ÀO. Thu hồi trong im lặng chỉ đổi một sự cố nhìn thấy
+           được lấy một sự cố vô hình — cổng vẫn chạy, không ai biết có bug, và
+           lần rò tiếp theo lại mất đúng `han_giu_s` mỗi lượt.
+        """
+        if not self._dang_giu:
+            return
+        chet = [ma for ma, t0 in self._dang_giu.items() if t - t0 > self.han_giu_s]
+        for ma in chet:
+            tuoi = t - self._dang_giu.pop(ma)
+            self._da_thu_hoi += 1
+            log.warning(
+                "THU HOI suat treo #%d: giu %.0f giay > han %.0f giay. "
+                "Mot duong ra nao do da KHONG tra suat - day la BUG, cong chi "
+                "dang tu cuu. Tong so lan thu hoi: %d",
+                ma, tuoi, self.han_giu_s, self._da_thu_hoi)
 
     def cap_suat(self) -> tuple[PhanXuGioiHan, Optional[Suat]]:
         """Xin và cấp trong một nhịp. Được thì trả `(cho_qua, Suat)`.
@@ -143,12 +224,17 @@ class GioiHan:
            khi token còn chảy hàng chục giây sau đó.
         """
         px = self._xin_vao()
-        return (px, Suat(self) if px.cho_qua else None)
+        return (px, Suat(self, px.ma) if px.cho_qua else None)
 
-    def _nha(self) -> None:
-        """Chỉ `Suat.tra()` được gọi. Gọi thẳng là bỏ qua chốt một-lần."""
+    def _nha(self, ma: int) -> None:
+        """Chỉ `Suat.tra()` được gọi. Gọi thẳng là bỏ qua chốt một-lần.
+
+        `pop` chứ không phải trừ một: nếu suất này đã bị `_thu_hoi_qua_han` lấy
+        đi thì bản ghi không còn, và trừ một lần nữa sẽ **cắt vào suất của người
+        khác** — đúng cái lỗi âm-bộ-đếm mà `Suat` sinh ra để chặn.
+        """
         with self._khoa:
-            self._dang_chay = max(0, self._dang_chay - 1)
+            self._dang_giu.pop(ma, None)
 
 
 def boc_luong(luong, suat: Suat):

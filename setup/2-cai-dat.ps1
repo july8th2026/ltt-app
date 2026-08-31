@@ -62,6 +62,24 @@ $isAdmin = ([Security.Principal.WindowsPrincipal] `
 if (-not $isAdmin) { throw 'Can quyen Administrator. Mo PowerShell bang Run as administrator.' }
 
 $src     = Split-Path -Parent $PSScriptRoot
+
+# ------------------------------------------------------- Chan deploy nham cay
+# May nay LA production, va buoc duoi day chep CA CAY sang C:\LTTPlatform. Tu
+# 31/08 moi phien Claude co the co mot `git worktree` rieng (tools\cay_rieng.py),
+# nen tren o D: co nhieu thu muc TRONG GIONG HET NHAU. Deploy nham mot trong so
+# chung la loi IM LANG: script chay xong, bao thanh cong, va production chay mot
+# nhanh khong ai dinh phat hanh.
+#
+# Phep phan biet khong can goi git (nen khong dinh bay stderr cua Invoke-Ngoai):
+# cay chinh co `.git` la THU MUC, cay lien ket co `.git` la mot TEP tro toi cay
+# chung. Da do tren ca ba cay that ngay 31/08.
+#
+# Khong co `.git` thi CHO QUA -- do la duong cai hop le tu mot ban chep thuan,
+# dung nhu .DESCRIPTION o dau tep mo ta.
+$gitPath = Join-Path $src '.git'
+if ((Test-Path $gitPath) -and -not (Test-Path $gitPath -PathType Container)) {
+    throw "Dang cai tu mot CAY RIENG (git worktree): $src`nDeploy chi duoc chay tu cay chinh. Xem: python tools\cay_rieng.py liet-ke"
+}
 $appDir  = Join-Path $Root 'app'
 $dataDir = Join-Path $Root 'data'
 $secrets = Join-Path $Root 'secrets'

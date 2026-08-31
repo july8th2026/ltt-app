@@ -29,6 +29,7 @@ from typing import Any, Optional
 
 from fastapi import Body, Depends, FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse, Response, StreamingResponse
+from starlette.background import BackgroundTask
 
 from . import __version__
 from . import ngan_sach as NS
@@ -293,10 +294,40 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             #    giây sau đó. Trả suất ở đây là đo đồng thời bằng "số lần bấm nút"
             #    chứ không phải "số lượt đang chạy", và chốt thành vô nghĩa đúng
             #    lúc cần nó nhất.
+            # 🔴 DON DEP KHONG DUOC PHU THUOC VAO VIEC GENERATOR CHAY.
+            #
+            #    `boc_luong` tra suat trong `finally`, va do la dung — nhung mot
+            #    `finally` chi ton tai SAU khi generator chay dong dau tien. Neu
+            #    Starlette khong bao gio lap qua no (khach da ngat truoc khi byte
+            #    dau chay), khoi `try` chua tung duoc vao, `finally` khong chay,
+            #    va suat bi giu VINH VIEN.
+            #
+            # ⛔ Do la nguyen nhan su co 31/08: mot suat treo, `max_dong_thoi=1`,
+            #    cong tra 429 suot SAU GIO trong khi GPU ranh va model chua nap.
+            #    89/117 luot cua mot khach hong. Ba phep kiem cua `boc_luong` deu
+            #    goi `next(g)` truoc, nen khong phep nao cham trang thai nay.
+            #
+            # ⭐ `BackgroundTask` chay khi PHAN HOI ket thuc, ke ca khi than chua
+            #    tung duoc doc — nen no phu dung khe ho ay. Day cung la khuon ma
+            #    may A DA dung dung cho ve admission (`server/api/streaming.py`),
+            #    chi la chua duoc mang sang day.
+            #
+            # `Suat.tra()` va `dong()` deu idempotent, nen lop nay CONG THEM chu
+            # khong thay the `finally` — hai duong doc lap cho cung mot viec.
+            dong_thuong_nguon = getattr(luong, "dong", None)
+
+            def _don_dep() -> None:
+                try:
+                    suat.tra()
+                finally:
+                    if dong_thuong_nguon is not None:
+                        dong_thuong_nguon()
+
             luong = boc_nhip_tim(luong, moi_giay=cfg.nhip_tim_giay)
             return StreamingResponse(boc_luong(luong, suat), status_code=ma,
                                      media_type=ct,
-                                     headers={"X-LTT-Token-Vao": str(do.token_vao)})
+                                     headers={"X-LTT-Token-Vao": str(do.token_vao)},
+                                     background=BackgroundTask(_don_dep))
 
         try:
             ma, thu = upstream.json("POST", duong, body=body,
