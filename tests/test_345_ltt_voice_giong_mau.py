@@ -16,40 +16,56 @@ phép trả giá đó.
 
 Cùng khuôn `tests/test_331_ltt_voice_tham_so.py` đã dùng cho trần ký tự.
 
-## Vì sao phần lớn phép kiểm ở đây BỎ QUA khi không thấy tệp gốc
+## 🔴 Bản đầu của tệp này có bốn phép kiểm ÂM THẦM KHÔNG CHẠY
 
-Venv của engine không có trên mọi máy chạy test (CI, máy phát triển không cài
-GPU). Đòi nó có mặt sẽ làm bộ test đỏ vì một lý do không liên quan gì tới mã.
-Nhưng những phép kiểm **không** cần tệp gốc — hình dạng dữ liệu, mặt lọc, mã
-không trùng — thì luôn chạy.
+Chúng đọc thẳng `vieneu-venv/.../voices_v3_turbo.json` và `skipif` khi không
+thấy. Chạy tay thì thấy tệp và **xanh**; chạy dưới `tools/gate.py` thì không —
+venv của engine nằm ngoài kho. Nên đúng bốn phép kiểm quan trọng nhất ở đây
+không canh gì cả, trong khi dòng tổng kết vẫn nói "12 passed".
+
+`tools/check_bo_qua_im_lang.py` bắt được, và câu nó in ra đáng giữ lại:
+*"Một test bị bỏ qua là một test KHÔNG canh gì cả."*
+
+⇒ Nay đối chiếu với **ảnh chụp trong kho** (`apps/ltt_voice/giong_mau_engine.json`),
+nên **không phép kiểm nào ở tệp này bị bỏ qua nữa** — ở bất kỳ máy nào.
+
+⚠️ Cái giá của việc đó, nói thẳng: ảnh chụp chốt *"`giong_mau.py` khớp thứ ta đã
+chụp"*, chứ không chốt *"thứ ta đã chụp còn đúng"*. Câu thứ hai do
+`tools/sinh_giong_mau_engine.py` giữ, và nó phải được chạy khi nâng engine.
+Một phép kiểm luôn chạy nhưng chốt hẹp hơn thì vẫn hơn hẳn một phép kiểm chốt
+rộng mà không bao giờ chạy.
 """
 from __future__ import annotations
 
 import json
 import pathlib
 
-import pytest
-
 from apps.ltt_voice import giong_mau as gm
 
-#: Nơi SDK cất bản gốc. Hai đường vì venv nằm ngoài `app\` (C: chật, xem
-#: `CLAUDE.md` hàng LTT VOICE) và máy chủ có thể đặt nó ở một trong hai.
-DUONG_GOC = (
-    pathlib.Path(r"D:\LTTPlatform-runtime\vieneu-venv\Lib\site-packages"
-                 r"\vieneu\assets\voices_v3_turbo.json"),
-    pathlib.Path(r"C:\LTTPlatform\vieneu-venv\Lib\site-packages"
-                 r"\vieneu\assets\voices_v3_turbo.json"),
-)
+#: 🔴 ĐỐI CHIẾU VỚI ẢNH CHỤP TRONG KHO, KHÔNG VỚI MỘT ĐƯỜNG DẪN TRÊN MÁY.
+#:
+#:    Bản đầu đọc thẳng `vieneu-venv/.../voices_v3_turbo.json` bằng đường tuyệt
+#:    đối, và **bỏ qua** khi không thấy tệp. Chạy tay thì thấy và xanh; chạy
+#:    dưới `tools/gate.py` thì không — venv của engine nằm ngoài kho, ngoài tầm
+#:    với của lượt chạy.
+#:
+#:    Hệ quả: bốn phép kiểm quan trọng nhất tệp này **âm thầm không chạy**, và
+#:    `check_bo_qua_im_lang` bắt được đúng điều ấy. Câu nó in ra đáng ghi lại:
+#:    *"Một test bị bỏ qua là một test KHÔNG canh gì cả."*
+#:
+#: ⭐ Ảnh chụp nằm trong git ⇒ phép kiểm **luôn chạy**, ở mọi máy, kể cả nơi
+#:    không cài engine.
+#:
+#: ⚠️ Nhưng biết rõ nó chốt cái gì: "`giong_mau.py` khớp thứ ta ĐÃ CHỤP". Nó
+#:    **không** chốt "thứ ta đã chụp còn đúng". Hai câu đó tách nhau đúng vào
+#:    ngày nâng model — và đó là ngày duy nhất chúng có thể sai. Việc giữ câu
+#:    thứ hai là của `tools/sinh_giong_mau_engine.py`, chạy khi nâng engine.
+ANH_CHUP = (pathlib.Path(__file__).resolve().parent.parent
+            / "apps" / "ltt_voice" / "giong_mau_engine.json")
 
 
-def _ban_goc() -> dict | None:
-    for p in DUONG_GOC:
-        try:
-            if p.is_file():
-                return json.loads(p.read_text(encoding="utf-8"))
-        except OSError:
-            continue
-    return None
+def _ban_goc() -> dict:
+    return json.loads(ANH_CHUP.read_text(encoding="utf-8"))
 
 
 # ── Luôn chạy: hình dạng dữ liệu ─────────────────────────────────────────────
@@ -118,10 +134,8 @@ def test_giong_mau_co_cung_be_mat_voi_giong_nhan_ban():
         assert g.la_mau is True
 
 
-# ── Chỉ chạy khi thấy bản gốc: hợp đồng với engine ───────────────────────────
+# ── Hợp đồng với engine (qua ảnh chụp trong kho) ─────────────────────────────
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_tap_hop_ma_khop_ban_goc_hai_chieu():
     """🔴 Phép kiểm quan trọng nhất tệp này.
 
@@ -129,7 +143,7 @@ def test_tap_hop_ma_khop_ban_goc_hai_chieu():
     thừa một giọng thì ta bán thứ không tồn tại, và khách phát hiện ra bằng cách
     mất tiền.
     """
-    goc = set((_ban_goc() or {}).get("presets", {}))
+    goc = set(_ban_goc().get("presets", {}))
     ta = {g.ma for g in gm.DANH_SACH}
     assert ta == goc, (
         f"\n  engine co ma ta KHONG khai : {sorted(goc - ta)}"
@@ -137,10 +151,8 @@ def test_tap_hop_ma_khop_ban_goc_hai_chieu():
         "Sua `apps/ltt_voice/giong_mau.py`. Ma phai dung TUNG KY TU, ke ca dau.")
 
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_gioi_tinh_khop_ban_goc():
-    goc = (_ban_goc() or {}).get("presets", {})
+    goc = _ban_goc().get("presets", {})
     doi = {"male": "nam", "female": "nu"}
     for g in gm.DANH_SACH:
         that = doi.get(str(goc[g.ma].get("gender") or ""))
@@ -148,12 +160,10 @@ def test_gioi_tinh_khop_ban_goc():
             f"{g.ma}: ta khai gioi={g.gioi!r}, engine noi {that!r}")
 
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_vung_mien_khop_mo_ta_ban_goc():
     """Vùng miền chỉ có trong chuỗi `description` (`"Nam · Bắc · …"`), không có
     cột riêng — nên đối chiếu bằng cách đọc mẩu giữa."""
-    goc = (_ban_goc() or {}).get("presets", {})
+    goc = _ban_goc().get("presets", {})
     doi = {"Bắc": "bac", "Trung": "trung", "Nam": "nam"}
     for g in gm.DANH_SACH:
         phan = [p.strip() for p in str(goc[g.ma].get("description") or "").split("·")]
@@ -164,8 +174,6 @@ def test_vung_mien_khop_mo_ta_ban_goc():
             f"{g.ma}: ta khai vung={g.vung!r}, mo ta cua engine noi {phan[1]!r}")
 
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_mac_dinh_khop_ban_goc():
-    assert (_ban_goc() or {}).get("default_voice") == gm.MAC_DINH, (
+    assert _ban_goc().get("default_voice") == gm.MAC_DINH, (
         "giong mac dinh cua ta lech khoi `default_voice` cua engine")

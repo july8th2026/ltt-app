@@ -12202,3 +12202,136 @@ msgstr "Name it"
 
 msgid "Đọc điều khoản và xác nhận đây là giọng bạn được phép dùng."
 msgstr "Read the terms and confirm this is a voice you are allowed to use."
+
+msgid "Không có giọng dựng sẵn tên này."
+msgstr "There is no built-in voice with that name."
+
+# --- LTT Voice Studio, man Studio P2 (2026-08-31) ---
+
+msgid "Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tự nhận cả tiếng Anh xen giữa."
+msgstr "Turn text into natural Vietnamese speech. English mixed in is picked up automatically."
+
+msgid "Chép mã yêu cầu"
+msgstr "Copy request ID"
+
+msgid "Chưa có lượt nào. Lượt đầu tiên sẽ hiện ở đây."
+msgstr "Nothing generated yet. Your first one will show up here."
+
+msgid "Chọn giọng đọc"
+msgstr "Choose a voice"
+
+msgid "Không có giọng nào khớp."
+msgstr "No voice matches."
+
+msgid "Không tạo được tiếng nói. Bạn có thể thử lại."
+msgstr "The speech could not be generated. You can try again."
+
+msgid "Không xem trước được lúc này."
+msgstr "Preview is not available right now."
+
+msgid "Kịch bản"
+msgstr "Script"
+
+msgid "Máy sẽ đọc thành"
+msgstr "What will actually be read"
+
+msgid "Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá."
+msgstr "It reads exactly what you wrote — nothing needed rewriting."
+
+msgid "Mã yêu cầu"
+msgstr "Request ID"
+
+msgid "Mất kết nối tạm thời. Đang thử lại…"
+msgstr "Connection lost for a moment. Retrying…"
+
+msgid "Mở trang việc"
+msgstr "Open job page"
+
+msgid "Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây."
+msgstr "Type your text and press Generate speech. The result appears right here."
+
+msgid "Phiên đã hết hạn. Hãy tải lại trang."
+msgstr "Your session has expired. Please reload the page."
+
+msgid "Tìm giọng"
+msgstr "Search voices"
+
+msgid "Tìm giọng…"
+msgstr "Search voices…"
+
+msgid "Tạm giữ"
+msgstr "Holding"
+
+msgid "Tạo giọng của tôi"
+msgstr "Create my own voice"
+
+msgid "Tải WAV"
+msgstr "Download WAV"
+
+msgid "Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch."
+msgstr "The text will be split into {n} passes and joined seamlessly."
+
+msgid "Xem trước cách đọc"
+msgstr "Preview how it reads"
+
+msgid "hoàn phần dư khi xong"
+msgstr "the remainder is refunded when it finishes"
+
+msgid "Đang tạo tiếng…"
+msgstr "Generating…"
+
+msgid "Đang xếp hàng…"
+msgstr "Queued…"
+
+msgid "Đóng"
+msgstr "Close"
+
+msgid "Định dạng duy nhất hiện có. Tải về rồi chuyển đổi nếu cần thứ khác."
+msgstr "The only format available. Download it and convert if you need something else."
+
+# --- LTT Voice Studio, man Lich su P4 (2026-08-31) ---
+
+msgid "(không có văn bản)"
+msgstr "(no text)"
+
+msgid "Ghi danh giọng"
+msgstr "Voice enrolment"
+
+msgid "Giọng"
+msgstr "Voice"
+
+msgid "Giọng dùng nhiều nhất"
+msgstr "Most used voice"
+
+msgid "Không có lượt nào khớp"
+msgstr "Nothing matches"
+
+msgid "Lượt đang chọn"
+msgstr "Selected item"
+
+msgid "Mọi giọng"
+msgstr "Any voice"
+
+msgid "Mọi nguồn"
+msgstr "Any source"
+
+msgid "Thử bỏ bớt một bộ lọc."
+msgstr "Try removing a filter."
+
+msgid "Tính trên {n} lượt gần nhất."
+msgstr "Based on the {n} most recent items."
+
+msgid "Tóm tắt hoạt động"
+msgstr "Activity summary"
+
+msgid "credit đã tính"
+msgstr "credits charged"
+
+msgid "tỉ lệ lỗi"
+msgstr "error rate"
+
+msgid "Đang hiện {n} lượt gần nhất. Lịch sử cũ hơn không nằm trong danh sách này."
+msgstr "Showing the {n} most recent items. Anything older is not in this list."
+
+msgid "—"
+msgstr "—"

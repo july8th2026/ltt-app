@@ -1,0 +1,81 @@
+{#
+  Bộ chọn giọng dùng chung. Studio hôm nay; Dự án và Chạy lô khi chúng được xây.
+
+  🔴 VÌ SAO LÀ RADIO CHỨ KHÔNG PHẢI `<select>`.
+
+     Hai mươi hai giọng, mỗi giọng mang ba tính chất (giới · vùng · phong cách).
+     Một `<option>` chỉ đựng được một dòng chữ, nên mọi thứ phải nhồi vào cái tên
+     — và người chọn phải đọc hai mươi hai dòng chữ dài giống nhau. Radio thì mỗi
+     mục là một khối, tính chất nằm ở dòng riêng, và mắt lướt được.
+
+  ⭐ Và nó **chạy khi không có JS**: đây là một nhóm radio thật trong form thật.
+     Không có JS thì mất tab lọc và ô tìm, còn chọn và gửi vẫn nguyên vẹn. Cùng
+     nguyên tắc tăng cường dần của `sao_chep.js`.
+
+  ⛔ MỘT TRƯỜNG, HAI TIỀN TỐ. `name="giong"`, giá trị `m:<tên>` cho giọng dựng
+     sẵn và `v:<vc_…>` cho giọng nhân bản. Máy chủ tách tiền tố rồi gửi xuống
+     đúng `preset` hoặc `voice_id` — và `features.chuan_hoa` **từ chối** nếu cả
+     hai cùng có. Dùng hai trường riêng ở đây thì hai radio ở hai nhóm có thể
+     cùng được chọn, và ta tự tạo ra đúng trạng thái mà tầng dưới cấm.
+
+  Tham số:
+    giong        — VoiceProfile của khách
+    giong_mau    — 20 giọng dựng sẵn
+    giong_chon   — mã đang chọn sẵn ("" = mặc định)
+    mac_dinh     — tên giọng mặc định của engine
+#}
+{% set cua_toi = giong | selectattr('trang_thai', 'equalto', 'active') | list %}
+
+<div class="lv-chon" id="lv-chon">
+  <div class="lv-chon-dau">
+    <span class="eyebrow">{{ _("Giọng đọc") }}</span>
+    <a class="lv-chon-them" href="{{ manifest.route_prefix }}/giong">+ {{ _("Tạo giọng của tôi") }}</a>
+  </div>
+
+  <div class="lv-chon-loc">
+    <input type="search" class="lv-chon-tim" id="lv-chon-tim"
+           placeholder="{{ _('Tìm giọng…') }}" aria-label="{{ _('Tìm giọng') }}">
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
+      <button type="button" class="lv-loc-nut on" data-chon-loai="">{{ _("Tất cả") }}</button>
+      <button type="button" class="lv-loc-nut" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
+      <button type="button" class="lv-loc-nut" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
+    </div>
+  </div>
+
+  <div class="lv-chon-ds" role="radiogroup" aria-label="{{ _('Chọn giọng đọc') }}">
+    {# Mặc định luôn đứng đầu và luôn hiện — nó là lối thoát khi bộ lọc không
+       còn gì, và là thứ khách chọn nếu họ không muốn nghĩ. #}
+    <label class="lv-chon-muc" data-loai="" data-ten="{{ mac_dinh }}">
+      <input type="radio" name="giong" value=""
+             {{ 'checked' if not giong_chon }}>
+      <span class="lv-chon-noi">
+        <b>{{ _("Giọng mặc định") }}</b>
+        <small>{{ mac_dinh }}</small>
+      </span>
+    </label>
+
+    {% for g in cua_toi %}
+      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}">
+        <input type="radio" name="giong" value="v:{{ g.public_id }}"
+               {{ 'checked' if giong_chon == g.public_id }}>
+        <span class="lv-chon-noi">
+          <b>{{ g.ten_hien_thi }}</b>
+          <small><span class="chip v">{{ _("Giọng của tôi") }}</span></small>
+        </span>
+      </label>
+    {% endfor %}
+
+    {% for g in giong_mau %}
+      <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}">
+        <input type="radio" name="giong" value="m:{{ g.ma }}"
+               {{ 'checked' if giong_chon == g.ma }}>
+        <span class="lv-chon-noi">
+          <b>{{ g.ma }}</b>
+          <small>{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</small>
+        </span>
+      </label>
+    {% endfor %}
+  </div>
+
+  <p class="lv-chon-rong" id="lv-chon-rong" hidden>{{ _("Không có giọng nào khớp.") }}</p>
+</div>

@@ -43,6 +43,11 @@ def thong_ke_theo_giong(db, owner_id: str, app_slug: str) -> dict:
 
         from platform_core.models import Job
     except Exception:  # noqa: BLE001 - khong nap duoc model thi tra rong
+        # ⛔ Nuốt lỗi mà không ghi lại là làm nó biến mất ở đúng chỗ khó tìm
+        #    nhất. `tools/check_silent_except.py` là bánh cóc cho đúng việc này,
+        #    và nó bắt được dòng này ngay lượt gate đầu tiên.
+        log.warning("khong nap duoc model Job de dem thong ke giong",
+                    exc_info=True)
         return {}
 
     #: Trần dòng đọc về. Một khách sinh mười nghìn lượt thì con số "đã đọc bao

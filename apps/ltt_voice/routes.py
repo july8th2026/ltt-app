@@ -19,15 +19,27 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
 
+from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.csrf import verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
 
-from . import doc_man_giong, features, giong_mau, tham_chieu, vo
+from . import (doc_man_giong, doc_man_lich_su, features, gia, giong_mau,
+               tham_chieu, vo)
 from .manifest import MANIFEST
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+
+#: Nhãn người đọc cho `params["nguon"]`. Khai ở đây vì nó là chuyện của **màn
+#: hình**, không phải của nghiệp vụ — worker không quan tâm lượt này đến từ đâu.
+NHAN_NGUON = {
+    "studio": N_('Tạo tiếng nói'),
+    "giong": N_('Ghi danh giọng'),
+    "du_an": N_('Dự án'),
+    "lo": N_('Chạy lô'),
+    "api": N_('API'),
+}
 
 router = APIRouter(tags=["ltt_voice"])
 
@@ -49,6 +61,39 @@ def _uid(user) -> str:
 def _db():
     from platform_core.db import get_session
     return get_session()
+
+
+def _het_phien():
+    """Phản hồi khi CSRF không khớp.
+
+    🔴 LỖI ĐANG SỐNG, PHÁT HIỆN 31/08/2026 — VÀ HÌNH DẠNG CỦA NÓ ĐÁNG GHI LẠI.
+
+       `verify_csrf_token` **trả về `bool`**, nó không ném. Bốn cửa POST của app
+       này gọi nó rồi **vứt kết quả đi**:
+
+           verify_csrf_token(request, csrf_token)      # <- không dùng gì cả
+
+       Nên CSRF chưa bao giờ được thi hành ở đây, kể từ ngày phát hành. Ba cửa
+       bị ảnh hưởng đều là cửa có hậu quả: `/tao` tiêu credit, `/giong/tao` tạo
+       hồ sơ giọng **và ghi một cam kết pháp lý**, `/giong/{id}/tat` vô hiệu hoá
+       giọng của khách.
+
+    ⭐ Vì sao không ai thấy: dòng gọi **trông đúng**, và chú thích đầu tệp còn
+       ghi rõ *"kiểm quyền/CSRF"* — nên đọc lướt thì mọi thứ ở đúng chỗ. Nó chỉ
+       lộ ra khi có người gửi một token sai và **đòi** một mã lỗi.
+       Đối chiếu: mọi app khác trong kho đều viết `if not verify_csrf_token(...)`.
+       `ltt_voice` là app duy nhất không.
+
+    ⚠️ Mức nguy hiểm thật, nói cho đúng chứ không nói to: cookie phiên đặt
+       `same_site="lax"` (`server/app.py`), nên một biểu mẫu POST từ site khác
+       **không** kèm được cookie — trình duyệt hiện đại đã chặn phần lớn đường
+       khai thác. Đây là phòng thủ nhiều lớp bị hụt một lớp, không phải một cánh
+       cửa mở toang. Nhưng lớp đó tồn tại vì `lax` không bảo vệ mọi thứ, và vì
+       một app không được dựa vào cấu hình của app khác.
+    """
+    return JSONResponse(
+        {"ok": False, "loi": _t("Phiên đã hết hạn. Hãy tải lại trang.")},
+        status_code=400)
 
 
 # ⭐ Vỏ dùng chung đã chuyển sang `vo.py`. Route chỉ còn gọi nó.
@@ -77,12 +122,18 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
        mục nào thì bỏ qua, im lặng và an toàn. Quyền sở hữu vẫn kiểm ở cửa nộp
        (`features.giai_giong`) như cũ — chỗ này không phải một cửa.
     """
+    from platform_core import job_history
+
     uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
         cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
         hang_doi = vo.dem_dang_chay(db, uid)
+        # "Gần đây" chỉ ba dòng: nó là một lối quay lại, không phải màn Lịch sử
+        # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.
+        gan_day, _cur = job_history.list_owned(
+            db, uid, app_slug=MANIFEST.slug, limit=3)
     finally:
         try:
             next(gen)
@@ -101,14 +152,131 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
                     giong_chon=(xin if hop_le else ""),
-                    mac_dinh=giong_mau.MAC_DINH))
+                    mac_dinh=giong_mau.MAC_DINH,
+                    gan_day=gan_day))
+
+
+@router.post("/xem-truoc")
+def xem_truoc(request: Request, text: str = Form(""),
+              csrf_token: str = Form(""), user=Depends(user_hien_tai),
+              _=Depends(require_login)):
+    """Văn bản này máy sẽ đọc thành gì, và tốn khoảng bao nhiêu.
+
+    ⭐ VÌ SAO NÓ ĐÁNG CÓ MỘT ROUTE RIÊNG.
+
+       `text_pipeline.chuan_hoa` quyết định **cả tiền lẫn âm thanh**:
+       `manifest._gia()` đếm ký tự **sau** chuẩn hoá, nên số ký tự bị tính tiền
+       không phải số ký tự khách gõ. Trước ô này khách không có cách nào thấy
+       điều đó trước khi bấm — họ chỉ gặp nó dưới dạng một hoá đơn không giải
+       thích được.
+
+    ⚠️ ĐỘ LỚN CỦA CHÊNH LỆCH PHỤ THUỘC MỘT CỜ ĐANG TẮT — nói cho đúng, vì bản
+       đầu của chú thích này nói quá và một phiên sau sẽ tin nó:
+
+         hôm nay (`doc_so_tran=False`)  "15%"        -> "15 phần trăm"   (+9)
+                                        "1.250.000"  -> "1250000"        (−2)
+         khi cờ được bật               "1.250.000"  -> "một triệu hai trăm
+                                                       năm mươi nghìn"  (+30)
+
+       Tức hôm nay chênh lệch nhỏ và có thể âm; nó sẽ lớn khi `doc_so_tran` được
+       bật. `text_pipeline` để nó tắt **có chủ ý**: chưa đo được `sea-g2p` có tự
+       đọc số đúng chưa, và bật bừa thì có thể sinh ra đọc hai lần.
+       ⇒ Ô này có giá trị ở **cả hai** trạng thái, vì nó hiện thứ máy **sẽ đọc**,
+         không hiện một con số ước.
+
+    ⛔ THUẦN TÍNH TOÁN. Không chạm CSDL, không chạm mạng, không chạm GPU, không
+       giữ credit. Đó là điều kiện để nó gọi được ở mỗi lần khách tò mò mà không
+       tốn gì — và nếu ngày nào đó nó cần một trong bốn thứ trên thì nó phải
+       thôi là một "xem trước".
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+
+    from . import text_pipeline
+    from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
+
+    tho = (text or "").strip()
+    if not tho:
+        return JSONResponse({"ok": False, "loi": _t("Chưa có văn bản để đọc.")},
+                            status_code=400)
+    if len(tho) > TRAN_KY_TU_CONG_KHAI:
+        return JSONResponse({"ok": False, "loi": _t(
+            "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
+        ).format(n=len(tho), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
+
+    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    da = chuan.da_chuan_hoa
+    return JSONResponse({
+        "ok": True,
+        "da_chuan_hoa": da,
+        "so_ky_tu_tho": len(tho),
+        "so_ky_tu": len(da),
+        "so_doan": len(chuan.doan),
+        # Cùng một hàm mà `manifest.credit_cost` gọi — nên con số hiện ra ở đây
+        # là con số sẽ bị tạm giữ, không phải một ước lượng thứ hai.
+        "uoc_credit": gia.uoc_tran(so_ky_tu=len(da)),
+        "doi_khac": da != tho,
+    })
+
+
+@router.get("/ket-qua/{job_id}")
+def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Trạng thái + kết quả của một lượt, dạng JSON, cho màn Studio poll.
+
+    🔴 VÌ SAO KHÔNG DÙNG `/api/jobs/{id}` CỦA NỀN TẢNG.
+
+       `job_history.customer_payload` cố tình **không** trả `result` lẫn `error`
+       — nó là gói dùng chung cho mọi app, và `result` mỗi app một hình dạng.
+       Studio thì cần đúng ba thứ trong đó: khoá tệp tiếng, thời lượng, credit.
+
+    ⛔ Quyền đọc đi qua `job_history.get_owned`, tức lọc theo `user_id` **trong
+       chính câu truy vấn**. Không tra job rồi so chủ ở bước sau: giữa hai bước
+       đó có một khoảng trống mà một bản vá sau này rất dễ quên.
+
+    ⚠️ Thông điệp lỗi lấy từ **sự kiện công khai**, không từ `job.error`.
+       `job_events.public_message` là câu đã được duyệt để hiện cho chủ job;
+       `job.error` là chuỗi thô của ngoại lệ và có thể mang chi tiết nội bộ.
+    """
+    from platform_core import job_history
+
+    gen = _db()
+    db = next(gen)
+    try:
+        job = job_history.get_owned(db, _uid(user), job_id)
+        if job is None:
+            return JSONResponse({"ok": False}, status_code=404)
+
+        kq = (job.result or {}) if job.status == "done" else {}
+        ra = {
+            "ok": True,
+            "trang_thai": job.status,
+            "tien_do": max(0, min(100, int(job.progress or 0))),
+            "audio_url": (f"{MANIFEST.route_prefix}/audio/{kq['audio_key']}"
+                          if kq.get("audio_key") else ""),
+            "giay": kq.get("duration_s"),
+            "credit": kq.get("credit_cost"),
+            "so_doan": kq.get("so_doan"),
+        }
+        if job.status == "error":
+            from platform_core import job_events
+            cau = [e.public_message for e in job_events.timeline(db, job.id)
+                   if e.level == "error" and e.public_message]
+            ra["loi"] = cau[-1] if cau else _t(
+                "Không tạo được tiếng nói. Bạn có thể thử lại.")
+        return JSONResponse(ra)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 @router.post("/tao")
 def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
         preset: str = Form(""), csrf_token: str = Form(""),
         user=Depends(user_hien_tai), _=Depends(require_login)):
-    verify_csrf_token(request, csrf_token)
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
 
     from platform_core.job_submit import submit_with_credit
 
@@ -214,7 +382,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
                     tep: UploadFile = File(...),
                     user=Depends(user_hien_tai), _=Depends(require_login)):
     """Ghi danh một giọng mới. Consent lưu thành **dữ liệu**, không phải ghi chú."""
-    verify_csrf_token(request, csrf_token)
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
     uid = _uid(user)
 
     if not (ten or "").strip():
@@ -287,7 +456,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
 def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
               user=Depends(user_hien_tai), _=Depends(require_login)):
     """Vô hiệu hoá. ⛔ KHÔNG xoá — xoá là làm mồ côi lịch sử đã tính tiền."""
-    verify_csrf_token(request, csrf_token)
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
     gen = _db()
     db = next(gen)
     try:
@@ -308,25 +478,40 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
 # ── Lịch sử ──────────────────────────────────────────────────────────────────
 
 @router.get("/lich-su", response_class=HTMLResponse)
-def trang_lich_su(request: Request, user=Depends(user_hien_tai),
+def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
+                  giong: str = "", user=Depends(user_hien_tai),
                   _=Depends(require_login)):
-    from platform_core import job_history
+    """Lịch sử tạo tiếng, lọc theo trạng thái · nguồn · giọng.
+
+    ⛔ Ba tham số lọc là **chuỗi khách gửi**, nhưng chúng không chạm SQL: chúng
+       chỉ đi vào một phép so bằng trong Python (`doc_man_lich_su.loc`). Giá trị
+       lạ thì không khớp gì và trả danh sách rỗng — an toàn, và đúng nghĩa.
+    """
     uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
-        lich_su, _cursor = job_history.list_owned(
-            db, uid, app_slug=MANIFEST.slug, limit=50)
+        goi = doc_man_lich_su.doc(db, uid, MANIFEST.slug,
+                                  trang_thai=tt, nguon=nguon, giong=giong)
         hang_doi = vo.dem_dang_chay(db, uid)
     finally:
         try:
             next(gen)
         except StopIteration:
             pass
+
+    duong_audio = f"{MANIFEST.route_prefix}/audio"
     return templates.TemplateResponse(
         request, "ltt_voice_lich_su.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_LICH_SU, hang_doi=hang_doi,
-                    lich_su=lich_su))
+                    dong=[doc_man_lich_su.dong_cho_trang(j, duong_audio)
+                          for j in goi["dong"]],
+                    tom_tat=goi["tom_tat"], bi_cat=goi["bi_cat"],
+                    tran=goi["tran"],
+                    giong_da_dung=goi["giong_da_dung"],
+                    nguon_da_dung=goi["nguon_da_dung"],
+                    nhan_nguon=NHAN_NGUON,
+                    f_tt=tt, f_nguon=nguon, f_giong=giong))
 
 
 # ── Màn chưa xây ─────────────────────────────────────────────────────────────

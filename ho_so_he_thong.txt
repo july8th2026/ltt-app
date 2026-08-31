@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:06600d3f2793508b2cceeeca4b21181a5f574f889c55895eeff0cf46b8eb835c
-Nguồn đã quét : 1317 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d112fbaa2f3031a9524b80a4773c0b6d1d124027b154adc565a5f4e46b960e98
+Nguồn đã quét : 1324 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -168,7 +168,7 @@ Các lớp chính:
   URL=/ltt-voice | surface=customer | lifecycle=released
   enabled=True | public=True | parent=-
   requires=voice | capabilities=audio
-  HTTP routes=11 | table_prefix=voice | manifest_error=-
+  HTTP routes=13 | table_prefix=voice | manifest_error=-
   credit_cost=apps.ltt_voice.manifest._gia
   job_types=ltt_voice.synthesize, ltt_voice.enroll
   gpu_vram_mb=ltt_voice.enroll:2000, ltt_voice.synthesize:2000
@@ -181,14 +181,17 @@ Các lớp chính:
     - apps/ltt_voice/audio_input.py
     - apps/ltt_voice/dieu_khoan.py
     - apps/ltt_voice/doc_man_giong.py
+    - apps/ltt_voice/doc_man_lich_su.py
     - apps/ltt_voice/features.py
     - apps/ltt_voice/gia.py
     - apps/ltt_voice/giong_mau.py
+    - apps/ltt_voice/giong_mau_engine.json
     - apps/ltt_voice/jobs.py
     - apps/ltt_voice/manifest.py
     - apps/ltt_voice/routes.py
     - apps/ltt_voice/sidecar_client.py
     - apps/ltt_voice/tables.py
+    - apps/ltt_voice/templates/_voice_chon.html
     - apps/ltt_voice/templates/_voice_ma.html
     - apps/ltt_voice/templates/_voice_rong.html
     - apps/ltt_voice/templates/_voice_the.html
@@ -500,7 +503,7 @@ Các lớp chính:
     - apps/vps/tables.py
     - apps/vps/ten_may.py
 
-4. HTTP ROUTE INVENTORY (310)
+4. HTTP ROUTE INVENTORY (312)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -587,17 +590,19 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [chataistudio] GET    /chataistudio/img/{key:path} → chat_image | auth~login | apps/chataistudio/routes.py:504
 - [chataistudio] POST   /chataistudio/new → new_conv | auth~login | apps/chataistudio/routes.py:138
 - [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
-- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes.py:67
-- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes.py:67
-- [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes.py:371
-- [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes.py:379
-- [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes.py:359
-- [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes.py:183
-- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes.py:212
-- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes.py:287
-- [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes.py:311
-- [ltt_voice] GET    /ltt-voice/lo → trang_lo | auth~login | apps/ltt_voice/routes.py:365
-- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes.py:108
+- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes.py:112
+- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes.py:112
+- [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes.py:556
+- [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes.py:564
+- [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes.py:544
+- [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes.py:351
+- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes.py:380
+- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes.py:456
+- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes.py:223
+- [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes.py:481
+- [ltt_voice] GET    /ltt-voice/lo → trang_lo | auth~login | apps/ltt_voice/routes.py:550
+- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes.py:275
+- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes.py:160
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:181
@@ -1135,7 +1140,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (310 file pytest + 3 frontend)
+10. QUALITY GATES (313 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1405,7 +1410,10 @@ Test inventory:
 - tests/test_344_ltt_voice_vo.py
 - tests/test_345_ltt_voice_giong_mau.py
 - tests/test_346_ltt_voice_cua_audio.py
+- tests/test_347_ltt_voice_studio.py
+- tests/test_348_ltt_voice_lich_su.py
 - tests/test_353_voice_sidecar_bo_do.py
+- tests/test_354_so_do_khong_troi.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -1472,8 +1480,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1317 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:39, .md:14, .mjs:4, .ps1:29, .py:994, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1324 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:117, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:29, .py:999, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1554,7 +1562,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (252)
+[apps] (255)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1620,14 +1628,17 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 - apps/ltt_voice/audio_input.py
 - apps/ltt_voice/dieu_khoan.py
 - apps/ltt_voice/doc_man_giong.py
+- apps/ltt_voice/doc_man_lich_su.py
 - apps/ltt_voice/features.py
 - apps/ltt_voice/gia.py
 - apps/ltt_voice/giong_mau.py
+- apps/ltt_voice/giong_mau_engine.json
 - apps/ltt_voice/jobs.py
 - apps/ltt_voice/manifest.py
 - apps/ltt_voice/routes.py
 - apps/ltt_voice/sidecar_client.py
 - apps/ltt_voice/tables.py
+- apps/ltt_voice/templates/_voice_chon.html
 - apps/ltt_voice/templates/_voice_ma.html
 - apps/ltt_voice/templates/_voice_rong.html
 - apps/ltt_voice/templates/_voice_the.html
@@ -2384,7 +2395,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (327)
+[tests] (330)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2665,7 +2676,10 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 - tests/test_344_ltt_voice_vo.py
 - tests/test_345_ltt_voice_giong_mau.py
 - tests/test_346_ltt_voice_cua_audio.py
+- tests/test_347_ltt_voice_studio.py
+- tests/test_348_ltt_voice_lich_su.py
 - tests/test_353_voice_sidecar_bo_do.py
+- tests/test_354_so_do_khong_troi.py
 - tests/test_35_p2_runtime_boundary.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
@@ -2713,7 +2727,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (123)
+[tools] (124)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2806,6 +2820,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 - tools/server_routes_baseline.json
 - tools/set_api_rate.py
 - tools/silent_except_baseline.json
+- tools/sinh_giong_mau_engine.py
 - tools/sinh_golden_api.py
 - tools/so_deploy.py
 - tools/soi_job.py
@@ -2847,7 +2862,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:116, .ini:1, .js:15, .json:3
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1317 file; 13069680 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1324 file; 13177025 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17865,7 +17880,7 @@ CAM_KET = N_(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/doc_man_giong.py
-SHA256=a65de2f9bdf6f3c0ea308b9d6757c9f6db7f541b3e7c44e83f188904c71c1a27 BYTES=5646 LINES=127
+SHA256=9172c26dbb86158df1b79ff4b726a42a2fb5f6056d47903dd8478d8e30597eed BYTES=6022 LINES=132
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 doc_man_giong.py — số liệu mà MÀN GIỌNG cần, gom trong ít truy vấn nhất.
@@ -17912,6 +17927,11 @@ def thong_ke_theo_giong(db, owner_id: str, app_slug: str) -> dict:
 
         from platform_core.models import Job
     except Exception:  # noqa: BLE001 - khong nap duoc model thi tra rong
+        # ⛔ Nuốt lỗi mà không ghi lại là làm nó biến mất ở đúng chỗ khó tìm
+        #    nhất. `tools/check_silent_except.py` là bánh cóc cho đúng việc này,
+        #    và nó bắt được dòng này ngay lượt gate đầu tiên.
+        log.warning("khong nap duoc model Job de dem thong ke giong",
+                    exc_info=True)
         return {}
 
     #: Trần dòng đọc về. Một khách sinh mười nghìn lượt thì con số "đã đọc bao
@@ -17994,6 +18014,159 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
             ],
         }
     return ra
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/doc_man_lich_su.py
+SHA256=4e8bbcb1deec4120e5409c132e8f8e81d390276d2e671a01841706faa0c9aaa7 BYTES=6037 LINES=147
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+doc_man_lich_su.py — số liệu mà MÀN LỊCH SỬ cần.
+
+⭐ Cùng lý do tách như `doc_man_giong.py`: đây là câu hỏi của **một màn hình**
+   ("lượt nào, từ đâu, tốn bao nhiêu"), không phải quy tắc nghiệp vụ. Và nó
+   không nằm trên đường đi của worker, nên đổi nó không chạm vào chỗ tiêu tiền.
+
+⛔ CHỈ ĐỌC. Không ghi, không quyết định. Một con số hỏng ở đây được phép là 0.
+"""
+from __future__ import annotations
+
+import logging
+
+log = logging.getLogger(__name__)
+
+#: Số dòng đọc về trước khi lọc trong Python.
+#:
+#: 🔴 VÌ SAO CÓ TRẦN, VÀ VÌ SAO NÓ PHẢI ĐƯỢC NÓI RA.
+#:
+#:    `nguon` và `voice_id` nằm trong cột JSON `params`. SQLite và PostgreSQL
+#:    truy JSON bằng hai cú pháp khác nhau, nên lọc hai mặt đó ở tầng SQL sẽ là
+#:    hai nhánh mã — và nhánh chỉ chạy trên một CSDL là nhánh sẽ mục.
+#:    ⇒ Lọc trong Python, sau một lượt đọc có trần.
+#:
+#: ⛔ Nhưng một cái trần **không nói ra** thì tệ hơn không có trần: màn hình sẽ
+#:    trông như đã liệt kê hết trong khi nó cắt bớt. `tom_tat()` trả `bi_cat` để
+#:    giao diện nói thẳng điều đó.
+TRAN_DOC = 500
+
+#: Nguồn đã biết. Khớp giá trị `params["nguon"]` mà các cửa nộp ghi vào.
+NGUON = ("studio", "giong", "du_an", "lo", "api")
+
+
+def _nguon_cua(job) -> str:
+    """Lượt này đến từ đâu.
+
+    ⚠️ Job **cũ hơn P1** không có khoá `nguon` — chúng được nộp trước khi cửa
+       ghi nó. Trả `""` chứ không đoán: đoán một nguồn cho dữ liệu lịch sử là
+       bịa ra một sự thật không ai kiểm được nữa.
+    """
+    return str((job.params or {}).get("nguon") or "")
+
+
+def _giong_cua(job) -> str:
+    p = job.params or {}
+    return str(p.get("voice_id") or p.get("preset") or "")
+
+
+def loc(job_list, *, trang_thai: str = "", nguon: str = "", giong: str = ""):
+    """Lọc trong Python. Chuỗi rỗng nghĩa là **không lọc mặt đó**."""
+    ra = list(job_list)
+    if trang_thai:
+        ra = [j for j in ra if j.status == trang_thai]
+    if nguon:
+        ra = [j for j in ra if _nguon_cua(j) == nguon]
+    if giong:
+        ra = [j for j in ra if _giong_cua(j) == giong]
+    return ra
+
+
+def tom_tat(job_list) -> dict:
+    """Đếm theo trạng thái + vài con số nhanh. Tính trên **tập đã đọc về**.
+
+    ⚠️ Nói rõ phạm vi: đây là thống kê của `TRAN_DOC` lượt gần nhất, không phải
+       của toàn bộ lịch sử. Một con số "tổng cộng" mà thật ra là "tổng của 500
+       lượt gần đây" là một con số sai ở đúng chỗ người ta tin nó nhất.
+    """
+    dem = {"done": 0, "error": 0, "queued": 0, "running": 0, "cancelled": 0}
+    tong_giay = 0.0
+    tong_credit = 0
+    dem_giong: dict = {}
+
+    for j in job_list:
+        if j.status in dem:
+            dem[j.status] += 1
+        kq = j.result or {}
+        try:
+            tong_giay += float(kq.get("duration_s") or 0.0)
+        except (TypeError, ValueError):
+            pass
+        try:
+            tong_credit += int(kq.get("credit_cost") or 0)
+        except (TypeError, ValueError):
+            pass
+        g = _giong_cua(j)
+        if g:
+            dem_giong[g] = dem_giong.get(g, 0) + 1
+
+    tong = len(job_list)
+    hay_dung = max(dem_giong.items(), key=lambda x: x[1]) if dem_giong else None
+    return {
+        "tong": tong,
+        "dem": dem,
+        "dang_chay": dem["queued"] + dem["running"],
+        "phut": round(tong_giay / 60.0, 1),
+        "credit": tong_credit,
+        # Tỉ lệ lỗi tính trên số lượt ĐÃ KẾT THÚC, không trên tổng: một lượt
+        # đang chạy chưa hỏng, và đếm nó vào mẫu số làm tỉ lệ trông đẹp lên.
+        "ti_le_loi": (round(dem["error"] * 100.0 / (dem["done"] + dem["error"]), 1)
+                      if (dem["done"] + dem["error"]) else 0.0),
+        "giong_hay_dung": hay_dung[0] if hay_dung else "",
+        "giong_hay_dung_so": hay_dung[1] if hay_dung else 0,
+    }
+
+
+def doc(db, owner_id: str, app_slug: str, *, trang_thai: str = "",
+        nguon: str = "", giong: str = "") -> dict:
+    """Một lượt đọc, trả mọi thứ màn Lịch sử cần."""
+    from platform_core import job_history
+
+    try:
+        tat_ca, _cursor = job_history.list_owned(
+            db, owner_id, app_slug=app_slug, limit=TRAN_DOC)
+    except Exception:  # noqa: BLE001 - man hinh khong duoc sap vi mot truy van
+        log.warning("khong doc duoc lich su cua %s", owner_id, exc_info=True)
+        tat_ca = []
+
+    return {
+        "tat_ca": tat_ca,
+        "dong": loc(tat_ca, trang_thai=trang_thai, nguon=nguon, giong=giong),
+        "tom_tat": tom_tat(tat_ca),
+        # Đúng bằng trần nghĩa là **có thể** còn nữa. Giao diện phải nói ra.
+        "bi_cat": len(tat_ca) >= TRAN_DOC,
+        "tran": TRAN_DOC,
+        # Các giọng thực sự xuất hiện trong lịch sử — ô lọc chỉ nên liệt kê
+        # những giọng có ít nhất một lượt, không liệt kê cả hai mươi hai.
+        "giong_da_dung": sorted({_giong_cua(j) for j in tat_ca if _giong_cua(j)}),
+        "nguon_da_dung": sorted({_nguon_cua(j) for j in tat_ca if _nguon_cua(j)}),
+    }
+
+
+def dong_cho_trang(job, duong_audio: str) -> dict:
+    """Một dòng lịch sử, đã phẳng hoá cho template."""
+    kq = job.result or {}
+    return {
+        "id": str(job.id),
+        "luc": job.created_at,
+        "trang_thai": job.status,
+        "text": str((job.params or {}).get("text") or "")[:160],
+        "giong": _giong_cua(job),
+        "nguon": _nguon_cua(job),
+        "giay": kq.get("duration_s"),
+        "credit": kq.get("credit_cost"),
+        "so_doan": kq.get("so_doan"),
+        "audio_url": (f"{duong_audio}/{kq['audio_key']}"
+                      if kq.get("audio_key") else ""),
+    }
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -18462,7 +18635,7 @@ def bang_gia() -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/giong_mau.py
-SHA256=06425f4168618a3ec28584083143b3476285e417e41246d28751e1aa6c778426 BYTES=6657 LINES=151
+SHA256=5f4fd4994313b0907a4a70d50dfdf638773b6e0937e1806b76a1e36c295d7351 BYTES=7674 LINES=174
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 giong_mau.py — hai mươi GIỌNG MẪU mà engine dựng sẵn, khai thành hợp đồng.
@@ -18505,13 +18678,11 @@ giong_mau.py — hai mươi GIỌNG MẪU mà engine dựng sẵn, khai thành h
 """
 from __future__ import annotations
 
+import json
+import pathlib
 from dataclasses import dataclass
 
 from platform_core.i18n import N_
-
-#: Tên preset mà engine dùng khi khách không chọn gì. Khớp `default_voice` trong
-#: `vieneu/assets/voices_v3_turbo.json`.
-MAC_DINH = "Adam"
 
 NHAN_GIOI = {"nam": N_('Nam'), "nu": N_('Nữ')}
 NHAN_VUNG = {"bac": N_('Miền Bắc'), "trung": N_('Miền Trung'), "nam": N_('Miền Nam')}
@@ -18555,33 +18726,58 @@ class GiongMau:
         return self.ma
 
 
-#: Hai mươi giọng, đọc từ `vieneu/assets/voices_v3_turbo.json` ngày 31/08/2026.
-#: Thứ tự: nam trước nữ, trong mỗi nhóm theo vùng Bắc → Trung → Nam. Không theo
-#: thứ tự của tệp JSON — thứ tự đó không có nghĩa gì với người đọc.
-DANH_SACH: tuple[GiongMau, ...] = (
-    # ── Nam ──
-    GiongMau("Minh Đức", "nam", "bac", "tin_tuc"),
-    GiongMau("Phạm Tuyên", "nam", "bac", "tu_nhien"),
-    GiongMau("Thanh Bình", "nam", "bac", "doc_truyen"),
-    GiongMau("Quang Sơn", "nam", "trung", "tu_nhien"),
-    GiongMau("Minh Triết", "nam", "nam", "tin_tuc"),
-    GiongMau("Xuân Vĩnh", "nam", "nam", "tu_nhien"),
-    GiongMau("Adam", "nam", "nam", "tu_nhien"),
-    GiongMau("Thái Sơn", "nam", "nam", "doc_truyen"),
-    GiongMau("Đức Trí", "nam", "nam", "doc_truyen"),
-    # ── Nữ ──
-    GiongMau("Mai Anh", "nu", "bac", "tin_tuc"),
-    GiongMau("Trúc Ly", "nu", "bac", "tu_nhien"),
-    GiongMau("Đoan Trang", "nu", "bac", "tu_nhien"),
-    GiongMau("Ngọc Huyền", "nu", "bac", "tu_nhien"),
-    GiongMau("Ngọc Linh", "nu", "bac", "doc_truyen"),
-    GiongMau("Quỳnh Anh", "nu", "bac", "doc_truyen"),
-    GiongMau("Ngọc Trân", "nu", "trung", "tu_nhien"),
-    GiongMau("Thùy Dung", "nu", "nam", "tin_tuc"),
-    GiongMau("Thục Đoan", "nu", "nam", "doc_truyen"),
-    GiongMau("Mỹ Duyên", "nu", "nam", "doc_truyen"),
-    GiongMau("Kim Thanh", "nu", "nam", "doc_truyen"),
-)
+#: Ảnh chụp danh sách preset của engine, nằm trong git.
+#: Sinh bằng `tools/sinh_giong_mau_engine.py`; **đừng sửa tay**.
+ANH_CHUP = pathlib.Path(__file__).with_name("giong_mau_engine.json")
+
+_DOI_GIOI = {"male": "nam", "female": "nu"}
+
+
+def _nap() -> tuple:
+    """Dựng `DANH_SACH` từ ảnh chụp, một lần lúc nạp module.
+
+    🔴 VÌ SAO ĐỌC TỆP CHỨ KHÔNG GÕ TAY HAI MƯƠI DÒNG.
+
+       Bản đầu khai thẳng hai mươi `GiongMau("Minh Đức", "nam", …)` trong mã.
+       `tools/check_i18n.py` đỏ ngay: **17 chuỗi chưa bọc `_()`**.
+
+       Và nó đúng theo luật của nó — nhưng bọc `_()` ở đây sẽ **sai một cách
+       nguy hiểm**: tên preset là thứ đi thẳng vào `infer(voice=...)`. Một cái
+       tên "đã dịch" là một cái tên engine không nhận ra, và lỗi chỉ hiện ở
+       worker sau khi khách đã bị giữ credit.
+
+    ⭐ Lối ra không phải là cãi với bánh cóc, mà là **bỏ bản chép**. Tên giọng
+       vốn là dữ liệu của engine, không phải hằng số của ta. Đọc từ ảnh chụp thì:
+         · không còn chuỗi tiếng Việt nào trong tệp `.py` này;
+         · không còn hai chỗ phải khớp nhau bằng tay;
+         · và ngày nâng engine, `sinh_giong_mau_engine.py` là chỗ **duy nhất**
+           phải chạy.
+
+    ⚠️ Đọc tệp lúc import: 2,5 KB, một lần cho cả tiến trình. Không chạm mạng,
+       không nạp model — đó vẫn là toàn bộ lý do tệp này không hỏi `/v1/voices`.
+    """
+    d = json.loads(ANH_CHUP.read_text(encoding="utf-8"))
+    ra = []
+    for ten, v in d.get("presets", {}).items():
+        ra.append(GiongMau(
+            ma=ten,
+            gioi=_DOI_GIOI.get(str(v.get("gender") or ""), ""),
+            vung=str(v.get("vung") or ""),
+            phong_cach=str(v.get("style") or ""),
+        ))
+    # Sắp cho người đọc: nam trước nữ, rồi Bắc → Trung → Nam, rồi theo tên.
+    # Thứ tự trong JSON là thứ tự của engine và không có nghĩa gì với ai.
+    thu_tu_vung = {"bac": 0, "trung": 1, "nam": 2}
+    ra.sort(key=lambda g: (g.gioi != "nam", thu_tu_vung.get(g.vung, 9), g.ma))
+    return tuple(ra)
+
+
+DANH_SACH: tuple[GiongMau, ...] = _nap()
+
+#: Giọng engine dùng khi khách không chọn gì. Lấy từ ảnh chụp, không gõ tay —
+#: gõ tay thì ngày engine đổi mặc định, ta vẫn nói cái cũ.
+MAC_DINH: str = str(
+    json.loads(ANH_CHUP.read_text(encoding="utf-8")).get("default_voice") or "")
 
 #: Tra nhanh theo mã. Dựng một lần lúc nạp module.
 THEO_MA = {g.ma: g for g in DANH_SACH}
@@ -18615,6 +18811,138 @@ def loc(*, gioi: str = "", vung: str = "", phong_cach: str = "",
         q = tim_kiem.strip().lower()
         kq = [g for g in kq if q in g.ma.lower()]
     return kq
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/giong_mau_engine.json
+SHA256=2b6241a8c8fcd708ef512ff99b34b9842880b65dff90ada258a789767062ac13 BYTES=3491 LINES=126
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{
+  "_ghi_chu": "Anh chup danh sach preset cua engine. SINH RA, dung sua tay. Sinh lai bang tools/sinh_giong_mau_engine.py khi nang engine.",
+  "default_voice": "Adam",
+  "presets": {
+    "Adam": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Nam · Giọng đọc tự nhiên",
+      "vung": "nam"
+    },
+    "Kim Thanh": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Nam · Phong cách đọc truyện",
+      "vung": "nam"
+    },
+    "Mai Anh": {
+      "gender": "female",
+      "style": "tin_tuc",
+      "description": "Nữ · Bắc · Phong cách tin tức",
+      "vung": "bac"
+    },
+    "Minh Triết": {
+      "gender": "male",
+      "style": "tin_tuc",
+      "description": "Nam · Nam · Phong cách tin tức",
+      "vung": "nam"
+    },
+    "Minh Đức": {
+      "gender": "male",
+      "style": "tin_tuc",
+      "description": "Nam · Bắc · Phong cách tin tức",
+      "vung": "bac"
+    },
+    "Mỹ Duyên": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Nam · Phong cách đọc truyện",
+      "vung": "nam"
+    },
+    "Ngọc Huyền": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Bắc · Giọng đọc tự nhiên",
+      "vung": "bac"
+    },
+    "Ngọc Linh": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Bắc · Phong cách kể chuyện",
+      "vung": "bac"
+    },
+    "Ngọc Trân": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Trung · Phong cách tự nhiên",
+      "vung": "trung"
+    },
+    "Phạm Tuyên": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Bắc · Phong cách tự nhiên",
+      "vung": "bac"
+    },
+    "Quang Sơn": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Trung · Phong cách tự nhiên",
+      "vung": "trung"
+    },
+    "Quỳnh Anh": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Bắc · Phong cách đọc truyện",
+      "vung": "bac"
+    },
+    "Thanh Bình": {
+      "gender": "male",
+      "style": "doc_truyen",
+      "description": "Nam · Bắc · Phong cách kể chuyện",
+      "vung": "bac"
+    },
+    "Thái Sơn": {
+      "gender": "male",
+      "style": "doc_truyen",
+      "description": "Nam · Nam · Phong cách kể chuyện",
+      "vung": "nam"
+    },
+    "Thùy Dung": {
+      "gender": "female",
+      "style": "tin_tuc",
+      "description": "Nữ · Nam · Phong cách tin tức",
+      "vung": "nam"
+    },
+    "Thục Đoan": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Nam · Phong cách kể chuyện",
+      "vung": "nam"
+    },
+    "Trúc Ly": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Bắc · Phong cách tự nhiên",
+      "vung": "bac"
+    },
+    "Xuân Vĩnh": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Nam · Phong cách tự nhiên",
+      "vung": "nam"
+    },
+    "Đoan Trang": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Bắc · Phong cách tự nhiên",
+      "vung": "bac"
+    },
+    "Đức Trí": {
+      "gender": "male",
+      "style": "doc_truyen",
+      "description": "Nam · Nam · Phong cách đọc truyện",
+      "vung": "nam"
+    }
+  }
+}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -19109,7 +19437,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes.py
-SHA256=e017deb32372370781f934c070130f89881c416b6689d053666328e678cb4c80 BYTES=21621 LINES=447
+SHA256=5747a0fa7d8044dca60d6cdd2f88f0d8836c88e188bf385f22db05e1c3cbac18 BYTES=31100 LINES=632
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Giao diện của LTT VOICE. Router **không** tự viết prefix — nền tảng gắn từ
@@ -19132,15 +19460,27 @@ from fastapi import APIRouter, Depends, File, Form, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse, RedirectResponse,
                                Response, StreamingResponse)
 
+from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.csrf import verify_csrf_token
 from server.auth.session import require_login
 from server.deps import user_hien_tai
 from server.templating import templates
 
-from . import doc_man_giong, features, giong_mau, tham_chieu, vo
+from . import (doc_man_giong, doc_man_lich_su, features, gia, giong_mau,
+               tham_chieu, vo)
 from .manifest import MANIFEST
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+
+#: Nhãn người đọc cho `params["nguon"]`. Khai ở đây vì nó là chuyện của **màn
+#: hình**, không phải của nghiệp vụ — worker không quan tâm lượt này đến từ đâu.
+NHAN_NGUON = {
+    "studio": N_('Tạo tiếng nói'),
+    "giong": N_('Ghi danh giọng'),
+    "du_an": N_('Dự án'),
+    "lo": N_('Chạy lô'),
+    "api": N_('API'),
+}
 
 router = APIRouter(tags=["ltt_voice"])
 
@@ -19162,6 +19502,39 @@ def _uid(user) -> str:
 def _db():
     from platform_core.db import get_session
     return get_session()
+
+
+def _het_phien():
+    """Phản hồi khi CSRF không khớp.
+
+    🔴 LỖI ĐANG SỐNG, PHÁT HIỆN 31/08/2026 — VÀ HÌNH DẠNG CỦA NÓ ĐÁNG GHI LẠI.
+
+       `verify_csrf_token` **trả về `bool`**, nó không ném. Bốn cửa POST của app
+       này gọi nó rồi **vứt kết quả đi**:
+
+           verify_csrf_token(request, csrf_token)      # <- không dùng gì cả
+
+       Nên CSRF chưa bao giờ được thi hành ở đây, kể từ ngày phát hành. Ba cửa
+       bị ảnh hưởng đều là cửa có hậu quả: `/tao` tiêu credit, `/giong/tao` tạo
+       hồ sơ giọng **và ghi một cam kết pháp lý**, `/giong/{id}/tat` vô hiệu hoá
+       giọng của khách.
+
+    ⭐ Vì sao không ai thấy: dòng gọi **trông đúng**, và chú thích đầu tệp còn
+       ghi rõ *"kiểm quyền/CSRF"* — nên đọc lướt thì mọi thứ ở đúng chỗ. Nó chỉ
+       lộ ra khi có người gửi một token sai và **đòi** một mã lỗi.
+       Đối chiếu: mọi app khác trong kho đều viết `if not verify_csrf_token(...)`.
+       `ltt_voice` là app duy nhất không.
+
+    ⚠️ Mức nguy hiểm thật, nói cho đúng chứ không nói to: cookie phiên đặt
+       `same_site="lax"` (`server/app.py`), nên một biểu mẫu POST từ site khác
+       **không** kèm được cookie — trình duyệt hiện đại đã chặn phần lớn đường
+       khai thác. Đây là phòng thủ nhiều lớp bị hụt một lớp, không phải một cánh
+       cửa mở toang. Nhưng lớp đó tồn tại vì `lax` không bảo vệ mọi thứ, và vì
+       một app không được dựa vào cấu hình của app khác.
+    """
+    return JSONResponse(
+        {"ok": False, "loi": _t("Phiên đã hết hạn. Hãy tải lại trang.")},
+        status_code=400)
 
 
 # ⭐ Vỏ dùng chung đã chuyển sang `vo.py`. Route chỉ còn gọi nó.
@@ -19190,12 +19563,18 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
        mục nào thì bỏ qua, im lặng và an toàn. Quyền sở hữu vẫn kiểm ở cửa nộp
        (`features.giai_giong`) như cũ — chỗ này không phải một cửa.
     """
+    from platform_core import job_history
+
     uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
         cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
         hang_doi = vo.dem_dang_chay(db, uid)
+        # "Gần đây" chỉ ba dòng: nó là một lối quay lại, không phải màn Lịch sử
+        # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.
+        gan_day, _cur = job_history.list_owned(
+            db, uid, app_slug=MANIFEST.slug, limit=3)
     finally:
         try:
             next(gen)
@@ -19214,14 +19593,131 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
                     giong_chon=(xin if hop_le else ""),
-                    mac_dinh=giong_mau.MAC_DINH))
+                    mac_dinh=giong_mau.MAC_DINH,
+                    gan_day=gan_day))
+
+
+@router.post("/xem-truoc")
+def xem_truoc(request: Request, text: str = Form(""),
+              csrf_token: str = Form(""), user=Depends(user_hien_tai),
+              _=Depends(require_login)):
+    """Văn bản này máy sẽ đọc thành gì, và tốn khoảng bao nhiêu.
+
+    ⭐ VÌ SAO NÓ ĐÁNG CÓ MỘT ROUTE RIÊNG.
+
+       `text_pipeline.chuan_hoa` quyết định **cả tiền lẫn âm thanh**:
+       `manifest._gia()` đếm ký tự **sau** chuẩn hoá, nên số ký tự bị tính tiền
+       không phải số ký tự khách gõ. Trước ô này khách không có cách nào thấy
+       điều đó trước khi bấm — họ chỉ gặp nó dưới dạng một hoá đơn không giải
+       thích được.
+
+    ⚠️ ĐỘ LỚN CỦA CHÊNH LỆCH PHỤ THUỘC MỘT CỜ ĐANG TẮT — nói cho đúng, vì bản
+       đầu của chú thích này nói quá và một phiên sau sẽ tin nó:
+
+         hôm nay (`doc_so_tran=False`)  "15%"        -> "15 phần trăm"   (+9)
+                                        "1.250.000"  -> "1250000"        (−2)
+         khi cờ được bật               "1.250.000"  -> "một triệu hai trăm
+                                                       năm mươi nghìn"  (+30)
+
+       Tức hôm nay chênh lệch nhỏ và có thể âm; nó sẽ lớn khi `doc_so_tran` được
+       bật. `text_pipeline` để nó tắt **có chủ ý**: chưa đo được `sea-g2p` có tự
+       đọc số đúng chưa, và bật bừa thì có thể sinh ra đọc hai lần.
+       ⇒ Ô này có giá trị ở **cả hai** trạng thái, vì nó hiện thứ máy **sẽ đọc**,
+         không hiện một con số ước.
+
+    ⛔ THUẦN TÍNH TOÁN. Không chạm CSDL, không chạm mạng, không chạm GPU, không
+       giữ credit. Đó là điều kiện để nó gọi được ở mỗi lần khách tò mò mà không
+       tốn gì — và nếu ngày nào đó nó cần một trong bốn thứ trên thì nó phải
+       thôi là một "xem trước".
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+
+    from . import text_pipeline
+    from .tham_so_cong_khai import TRAN_MOI_LUOT_SINH
+
+    tho = (text or "").strip()
+    if not tho:
+        return JSONResponse({"ok": False, "loi": _t("Chưa có văn bản để đọc.")},
+                            status_code=400)
+    if len(tho) > TRAN_KY_TU_CONG_KHAI:
+        return JSONResponse({"ok": False, "loi": _t(
+            "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
+        ).format(n=len(tho), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
+
+    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    da = chuan.da_chuan_hoa
+    return JSONResponse({
+        "ok": True,
+        "da_chuan_hoa": da,
+        "so_ky_tu_tho": len(tho),
+        "so_ky_tu": len(da),
+        "so_doan": len(chuan.doan),
+        # Cùng một hàm mà `manifest.credit_cost` gọi — nên con số hiện ra ở đây
+        # là con số sẽ bị tạm giữ, không phải một ước lượng thứ hai.
+        "uoc_credit": gia.uoc_tran(so_ky_tu=len(da)),
+        "doi_khac": da != tho,
+    })
+
+
+@router.get("/ket-qua/{job_id}")
+def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Trạng thái + kết quả của một lượt, dạng JSON, cho màn Studio poll.
+
+    🔴 VÌ SAO KHÔNG DÙNG `/api/jobs/{id}` CỦA NỀN TẢNG.
+
+       `job_history.customer_payload` cố tình **không** trả `result` lẫn `error`
+       — nó là gói dùng chung cho mọi app, và `result` mỗi app một hình dạng.
+       Studio thì cần đúng ba thứ trong đó: khoá tệp tiếng, thời lượng, credit.
+
+    ⛔ Quyền đọc đi qua `job_history.get_owned`, tức lọc theo `user_id` **trong
+       chính câu truy vấn**. Không tra job rồi so chủ ở bước sau: giữa hai bước
+       đó có một khoảng trống mà một bản vá sau này rất dễ quên.
+
+    ⚠️ Thông điệp lỗi lấy từ **sự kiện công khai**, không từ `job.error`.
+       `job_events.public_message` là câu đã được duyệt để hiện cho chủ job;
+       `job.error` là chuỗi thô của ngoại lệ và có thể mang chi tiết nội bộ.
+    """
+    from platform_core import job_history
+
+    gen = _db()
+    db = next(gen)
+    try:
+        job = job_history.get_owned(db, _uid(user), job_id)
+        if job is None:
+            return JSONResponse({"ok": False}, status_code=404)
+
+        kq = (job.result or {}) if job.status == "done" else {}
+        ra = {
+            "ok": True,
+            "trang_thai": job.status,
+            "tien_do": max(0, min(100, int(job.progress or 0))),
+            "audio_url": (f"{MANIFEST.route_prefix}/audio/{kq['audio_key']}"
+                          if kq.get("audio_key") else ""),
+            "giay": kq.get("duration_s"),
+            "credit": kq.get("credit_cost"),
+            "so_doan": kq.get("so_doan"),
+        }
+        if job.status == "error":
+            from platform_core import job_events
+            cau = [e.public_message for e in job_events.timeline(db, job.id)
+                   if e.level == "error" and e.public_message]
+            ra["loi"] = cau[-1] if cau else _t(
+                "Không tạo được tiếng nói. Bạn có thể thử lại.")
+        return JSONResponse(ra)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 
 @router.post("/tao")
 def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
         preset: str = Form(""), csrf_token: str = Form(""),
         user=Depends(user_hien_tai), _=Depends(require_login)):
-    verify_csrf_token(request, csrf_token)
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
 
     from platform_core.job_submit import submit_with_credit
 
@@ -19327,7 +19823,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
                     tep: UploadFile = File(...),
                     user=Depends(user_hien_tai), _=Depends(require_login)):
     """Ghi danh một giọng mới. Consent lưu thành **dữ liệu**, không phải ghi chú."""
-    verify_csrf_token(request, csrf_token)
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
     uid = _uid(user)
 
     if not (ten or "").strip():
@@ -19400,7 +19897,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
 def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
               user=Depends(user_hien_tai), _=Depends(require_login)):
     """Vô hiệu hoá. ⛔ KHÔNG xoá — xoá là làm mồ côi lịch sử đã tính tiền."""
-    verify_csrf_token(request, csrf_token)
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
     gen = _db()
     db = next(gen)
     try:
@@ -19421,25 +19919,40 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
 # ── Lịch sử ──────────────────────────────────────────────────────────────────
 
 @router.get("/lich-su", response_class=HTMLResponse)
-def trang_lich_su(request: Request, user=Depends(user_hien_tai),
+def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
+                  giong: str = "", user=Depends(user_hien_tai),
                   _=Depends(require_login)):
-    from platform_core import job_history
+    """Lịch sử tạo tiếng, lọc theo trạng thái · nguồn · giọng.
+
+    ⛔ Ba tham số lọc là **chuỗi khách gửi**, nhưng chúng không chạm SQL: chúng
+       chỉ đi vào một phép so bằng trong Python (`doc_man_lich_su.loc`). Giá trị
+       lạ thì không khớp gì và trả danh sách rỗng — an toàn, và đúng nghĩa.
+    """
     uid = _uid(user)
     gen = _db()
     db = next(gen)
     try:
-        lich_su, _cursor = job_history.list_owned(
-            db, uid, app_slug=MANIFEST.slug, limit=50)
+        goi = doc_man_lich_su.doc(db, uid, MANIFEST.slug,
+                                  trang_thai=tt, nguon=nguon, giong=giong)
         hang_doi = vo.dem_dang_chay(db, uid)
     finally:
         try:
             next(gen)
         except StopIteration:
             pass
+
+    duong_audio = f"{MANIFEST.route_prefix}/audio"
     return templates.TemplateResponse(
         request, "ltt_voice_lich_su.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_LICH_SU, hang_doi=hang_doi,
-                    lich_su=lich_su))
+                    dong=[doc_man_lich_su.dong_cho_trang(j, duong_audio)
+                          for j in goi["dong"]],
+                    tom_tat=goi["tom_tat"], bi_cat=goi["bi_cat"],
+                    tran=goi["tran"],
+                    giong_da_dung=goi["giong_da_dung"],
+                    nguon_da_dung=goi["nguon_da_dung"],
+                    nhan_nguon=NHAN_NGUON,
+                    f_tt=tt, f_nguon=nguon, f_giong=giong))
 
 
 # ── Màn chưa xây ─────────────────────────────────────────────────────────────
@@ -19900,6 +20413,93 @@ class VoiceConsent(Base):
     user_agent: Mapped[str] = mapped_column(String(256), default="")
     dong_y_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  default=_now)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_chon.html
+SHA256=a21004b924e3b3e7f16bde599d1944504fc5e62d42fae0303ddf3d9ad0398ad3 BYTES=4074 LINES=81
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{#
+  Bộ chọn giọng dùng chung. Studio hôm nay; Dự án và Chạy lô khi chúng được xây.
+
+  🔴 VÌ SAO LÀ RADIO CHỨ KHÔNG PHẢI `<select>`.
+
+     Hai mươi hai giọng, mỗi giọng mang ba tính chất (giới · vùng · phong cách).
+     Một `<option>` chỉ đựng được một dòng chữ, nên mọi thứ phải nhồi vào cái tên
+     — và người chọn phải đọc hai mươi hai dòng chữ dài giống nhau. Radio thì mỗi
+     mục là một khối, tính chất nằm ở dòng riêng, và mắt lướt được.
+
+  ⭐ Và nó **chạy khi không có JS**: đây là một nhóm radio thật trong form thật.
+     Không có JS thì mất tab lọc và ô tìm, còn chọn và gửi vẫn nguyên vẹn. Cùng
+     nguyên tắc tăng cường dần của `sao_chep.js`.
+
+  ⛔ MỘT TRƯỜNG, HAI TIỀN TỐ. `name="giong"`, giá trị `m:<tên>` cho giọng dựng
+     sẵn và `v:<vc_…>` cho giọng nhân bản. Máy chủ tách tiền tố rồi gửi xuống
+     đúng `preset` hoặc `voice_id` — và `features.chuan_hoa` **từ chối** nếu cả
+     hai cùng có. Dùng hai trường riêng ở đây thì hai radio ở hai nhóm có thể
+     cùng được chọn, và ta tự tạo ra đúng trạng thái mà tầng dưới cấm.
+
+  Tham số:
+    giong        — VoiceProfile của khách
+    giong_mau    — 20 giọng dựng sẵn
+    giong_chon   — mã đang chọn sẵn ("" = mặc định)
+    mac_dinh     — tên giọng mặc định của engine
+#}
+{% set cua_toi = giong | selectattr('trang_thai', 'equalto', 'active') | list %}
+
+<div class="lv-chon" id="lv-chon">
+  <div class="lv-chon-dau">
+    <span class="eyebrow">{{ _("Giọng đọc") }}</span>
+    <a class="lv-chon-them" href="{{ manifest.route_prefix }}/giong">+ {{ _("Tạo giọng của tôi") }}</a>
+  </div>
+
+  <div class="lv-chon-loc">
+    <input type="search" class="lv-chon-tim" id="lv-chon-tim"
+           placeholder="{{ _('Tìm giọng…') }}" aria-label="{{ _('Tìm giọng') }}">
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
+      <button type="button" class="lv-loc-nut on" data-chon-loai="">{{ _("Tất cả") }}</button>
+      <button type="button" class="lv-loc-nut" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
+      <button type="button" class="lv-loc-nut" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
+    </div>
+  </div>
+
+  <div class="lv-chon-ds" role="radiogroup" aria-label="{{ _('Chọn giọng đọc') }}">
+    {# Mặc định luôn đứng đầu và luôn hiện — nó là lối thoát khi bộ lọc không
+       còn gì, và là thứ khách chọn nếu họ không muốn nghĩ. #}
+    <label class="lv-chon-muc" data-loai="" data-ten="{{ mac_dinh }}">
+      <input type="radio" name="giong" value=""
+             {{ 'checked' if not giong_chon }}>
+      <span class="lv-chon-noi">
+        <b>{{ _("Giọng mặc định") }}</b>
+        <small>{{ mac_dinh }}</small>
+      </span>
+    </label>
+
+    {% for g in cua_toi %}
+      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}">
+        <input type="radio" name="giong" value="v:{{ g.public_id }}"
+               {{ 'checked' if giong_chon == g.public_id }}>
+        <span class="lv-chon-noi">
+          <b>{{ g.ten_hien_thi }}</b>
+          <small><span class="chip v">{{ _("Giọng của tôi") }}</span></small>
+        </span>
+      </label>
+    {% endfor %}
+
+    {% for g in giong_mau %}
+      <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}">
+        <input type="radio" name="giong" value="m:{{ g.ma }}"
+               {{ 'checked' if giong_chon == g.ma }}>
+        <span class="lv-chon-noi">
+          <b>{{ g.ma }}</b>
+          <small>{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</small>
+        </span>
+      </label>
+    {% endfor %}
+  </div>
+
+  <p class="lv-chon-rong" id="lv-chon-rong" hidden>{{ _("Không có giọng nào khớp.") }}</p>
+</div>
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -20397,74 +20997,241 @@ SHA256=266d80aa4406c94479726228be69fda8a0d3a169832c3ea906825d47771a3d65 BYTES=10
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_lich_su.html
-SHA256=dd13da8c4f9619b5099dfaae961a212875d19fba9dfa9fb91ae0d320a2fea509 BYTES=2302 LINES=53
+SHA256=d5d020b96ae21a5501d76df465edc07d1a1da735386a297eb752f9ac7525fc54 BYTES=9694 LINES=197
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{#
+  Màn Lịch sử. Đối chiếu với ảnh tham chiếu `05_HISTORY.png`:
+
+  GIỮ   danh sách + nghe lại + tải + mở lại · lọc theo trạng thái và nguồn ·
+        thẻ nguồn (Studio · Dự án · Lô · API) · tóm tắt hoạt động · đang xử lý ·
+        panel chi tiết có mã yêu cầu.
+
+  ĐỔI   ảnh lọc thêm `Language`; nền tảng không ghi ngôn ngữ ở đâu cả (engine tự
+        xử VI lẫn EN). Thay bằng lọc theo **giọng**, vốn có thật và hữu ích hơn.
+
+  ⚠️ Thẻ nguồn chỉ hiện được với lượt nộp TỪ P1 trở đi. Job cũ hơn không mang
+     khoá `nguon`, và ta **không đoán** — đoán một nguồn cho dữ liệu lịch sử là
+     bịa ra một sự thật không ai kiểm lại được nữa.
+#}
+
 {% block content %}
-<section class="lv-man lv-lich-su" aria-labelledby="lv-ls-title">
+<section class="lv-man lv-ls" aria-labelledby="lv-ls-title">
   {% with tieu_de = _("Lịch sử tạo tiếng"),
           mo_ta = _("Mọi lượt đọc của bạn, nghe lại và tải về được."),
           id_tieu_de = "lv-ls-title" %}
     {% include "_voice_vo.html" %}
   {% endwith %}
 
-  <table class="lv-bang">
-    <thead><tr>
-      <th>{{ _("Lúc") }}</th><th>{{ _("Văn bản") }}</th>
-      <th>{{ _("Trạng thái") }}</th>
-      <th>{{ _("Thời lượng") }}</th><th>{{ _("Credit") }}</th><th></th>
-    </tr></thead>
-    <tbody>
-    {% for j in lich_su %}
-      <tr>
-        {# `{{ j.created_at }}` in nguyen `2026-08-31 10:03:40.582730+07:00` —
-           dung ky thuat, sai voi nguoi doc, va lech han voi trang job ngay ben
-           canh (`10:03 31/08/2026`). Dung dung khuon do. #}
-        <td><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
-        <td>{{ (j.params or {}).get('text', '')[:80] }}</td>
-        <td>{% with tt = j.status %}{% include "_voice_trangthai.html" %}{% endwith %}</td>
-        <td>{% if j.result %}{{ j.result.get('duration_s', '-') }}s{% else %}-{% endif %}</td>
-        <td>{% if j.result %}{{ j.result.get('credit_cost', '-') }}{% else %}-{% endif %}</td>
-        <td>
-          {% if j.result and j.result.get('audio_key') %}
-            <audio controls preload="none"
-                   src="{{ manifest.route_prefix }}/audio/{{ j.result.audio_key }}"></audio>
-          {% endif %}
-        </td>
-      </tr>
-    {% else %}
-      <tr><td colspan="6">
-        {% with tieu_de = _("Chưa có lượt nào"),
-                mo_ta = _("Mỗi lần bạn tạo tiếng nói, lượt đó xuất hiện ở đây để nghe lại và tải về."),
-                nut = _("Tạo tiếng nói"), nut_href = manifest.route_prefix %}
-          {% include "_voice_rong.html" %}
-        {% endwith %}
-      </td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="lv-ls-khung">
+    {# ── Cột trái: lọc + danh sách ───────────────────────────────────────── #}
+    <div class="lv-ls-trai">
+      <form class="lv-loc" method="get" role="search">
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Trạng thái') }}">
+          <button type="submit" name="tt" value=""
+                  class="lv-loc-nut {{ 'on' if not f_tt }}">
+            {{ _("Tất cả") }} <span class="dim">{{ tom_tat.tong }}</span></button>
+          <button type="submit" name="tt" value="done"
+                  class="lv-loc-nut {{ 'on' if f_tt == 'done' }}">
+            {{ _("Hoàn tất") }} <span class="dim">{{ tom_tat.dem.done }}</span></button>
+          <button type="submit" name="tt" value="running"
+                  class="lv-loc-nut {{ 'on' if f_tt == 'running' }}">
+            {{ _("Đang tạo") }} <span class="dim">{{ tom_tat.dang_chay }}</span></button>
+          <button type="submit" name="tt" value="error"
+                  class="lv-loc-nut {{ 'on' if f_tt == 'error' }}">
+            {{ _("Lỗi") }} <span class="dim">{{ tom_tat.dem.error }}</span></button>
+        </div>
+
+        {% if nguon_da_dung %}
+          <label class="lv-loc-o">
+            <span class="dim">{{ _("Nguồn") }}</span>
+            <select name="nguon" onchange="this.form.submit()">
+              <option value="">{{ _("Mọi nguồn") }}</option>
+              {% for n in nguon_da_dung %}
+                <option value="{{ n }}"{{ ' selected' if f_nguon == n }}>{{ _(nhan_nguon.get(n, n)) }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        {% endif %}
+
+        {% if giong_da_dung %}
+          <label class="lv-loc-o">
+            <span class="dim">{{ _("Giọng") }}</span>
+            <select name="giong" onchange="this.form.submit()">
+              <option value="">{{ _("Mọi giọng") }}</option>
+              {% for g in giong_da_dung %}
+                <option value="{{ g }}"{{ ' selected' if f_giong == g }}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        {% endif %}
+
+        {% if f_tt or f_nguon or f_giong %}
+          <a class="lv-loc-bo" href="{{ manifest.route_prefix }}/lich-su">{{ _("Bỏ lọc") }}</a>
+        {% endif %}
+      </form>
+
+      <p class="lv-g-dem">{{ dong|length }} {{ _("lượt") }}</p>
+
+      {% if dong %}
+        <div class="lv-ls-ds">
+          {% for d in dong %}
+            <article class="lv-ls-dong" data-id="{{ d.id }}" tabindex="0"
+                     data-audio="{{ d.audio_url }}"
+                     data-giay="{{ d.giay if d.giay is not none else '' }}"
+                     data-credit="{{ d.credit if d.credit is not none else '' }}"
+                     data-giong="{{ d.giong }}" data-nguon="{{ d.nguon }}"
+                     data-luc="{{ d.luc.strftime('%H:%M %d/%m/%Y') }}"
+                     data-tt="{{ d.trang_thai }}">
+              <div class="lv-ls-chinh">
+                <p class="lv-ls-chu">{{ d.text or _("(không có văn bản)") }}</p>
+                <p class="lv-ls-meta">
+                  <time datetime="{{ d.luc.isoformat() }}">{{ d.luc.strftime('%H:%M %d/%m/%Y') }}</time>
+                  {% if d.giong %}· <span class="mono">{{ d.giong }}</span>{% endif %}
+                  {% if d.giay %}· {{ d.giay }}s{% endif %}
+                  {% if d.credit is not none %}· {{ d.credit }} credit{% endif %}
+                </p>
+              </div>
+              <div class="lv-ls-phai">
+                {% if d.nguon %}<span class="chip m">{{ _(nhan_nguon.get(d.nguon, d.nguon)) }}</span>{% endif %}
+                {% with tt = d.trang_thai %}{% include "_voice_trangthai.html" %}{% endwith %}
+              </div>
+              {% if d.audio_url %}
+                <audio class="lv-ls-phat" controls preload="none" src="{{ d.audio_url }}"></audio>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+
+        {% if bi_cat %}
+          {# ⛔ Một cái trần không nói ra thì tệ hơn không có trần: màn hình sẽ
+             trông như đã liệt kê hết trong khi nó cắt bớt. #}
+          <p class="lv-ls-cat dim">
+            {{ _("Đang hiện {n} lượt gần nhất. Lịch sử cũ hơn không nằm trong danh sách này.").format(n=tran) }}
+          </p>
+        {% endif %}
+      {% else %}
+        {% if f_tt or f_nguon or f_giong %}
+          {% with tieu_de = _("Không có lượt nào khớp"),
+                  mo_ta = _("Thử bỏ bớt một bộ lọc."),
+                  nut = _("Bỏ lọc"), nut_href = manifest.route_prefix + "/lich-su" %}
+            {% include "_voice_rong.html" %}
+          {% endwith %}
+        {% else %}
+          {% with tieu_de = _("Chưa có lượt nào"),
+                  mo_ta = _("Mỗi lần bạn tạo tiếng nói, lượt đó xuất hiện ở đây để nghe lại và tải về."),
+                  nut = _("Tạo tiếng nói"), nut_href = manifest.route_prefix %}
+            {% include "_voice_rong.html" %}
+          {% endwith %}
+        {% endif %}
+      {% endif %}
+    </div>
+
+    {# ── Cột phải: tóm tắt + đang xử lý + chi tiết ───────────────────────── #}
+    <aside class="lv-ls-phai-cot" aria-label="{{ _('Tóm tắt') }}">
+      <div class="ui-card">
+        <span class="eyebrow">{{ _("Tóm tắt hoạt động") }}</span>
+        <ul class="lv-tt">
+          <li><span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
+            <b>{{ tom_tat.dem.done }}</b></li>
+          <li><span class="badge b-warn"><span class="dot"></span>{{ _("Đang chạy") }}</span>
+            <b>{{ tom_tat.dang_chay }}</b></li>
+          <li><span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
+            <b>{{ tom_tat.dem.error }}</b></li>
+        </ul>
+        <div class="lv-ct-so">
+          <div><span>{{ tom_tat.phut }}</span><small>{{ _("phút tiếng") }}</small></div>
+          <div><span>{{ tom_tat.credit }}</span><small>{{ _("credit đã tính") }}</small></div>
+          <div><span>{{ tom_tat.ti_le_loi }}%</span><small>{{ _("tỉ lệ lỗi") }}</small></div>
+        </div>
+        {% if tom_tat.giong_hay_dung %}
+          <p class="dim lv-tt-giong">{{ _("Giọng dùng nhiều nhất") }}:
+            <span class="mono">{{ tom_tat.giong_hay_dung }}</span>
+            ({{ tom_tat.giong_hay_dung_so }})</p>
+        {% endif %}
+        {# Phạm vi của mọi con số trên: nói ra, đừng để người đọc tự suy. #}
+        <p class="dim lv-tt-pham-vi">{{ _("Tính trên {n} lượt gần nhất.").format(n=tom_tat.tong) }}</p>
+      </div>
+
+      <div class="ui-card lv-ct" id="lv-ls-ct" hidden>
+        <div class="lv-ct-dau">
+          <span class="eyebrow">{{ _("Lượt đang chọn") }}</span>
+          <span id="lv-ls-ct-tt"></span>
+        </div>
+        <dl class="lv-ct-bang">
+          <dt>{{ _("Lúc") }}</dt><dd id="lv-ls-ct-luc"></dd>
+          <dt>{{ _("Giọng") }}</dt><dd id="lv-ls-ct-giong"></dd>
+          <dt>{{ _("Thời lượng") }}</dt><dd id="lv-ls-ct-giay"></dd>
+          <dt>{{ _("Credit đã tính") }}</dt><dd id="lv-ls-ct-credit"></dd>
+          <dt>{{ _("Mã yêu cầu") }}</dt>
+          <dd><span class="lv-ma nho"><code class="mono" id="lv-ls-ct-id"></code>
+            <button type="button" class="lv-ma-chep" id="lv-ls-ct-chep"
+                    aria-label="{{ _('Chép mã yêu cầu') }}">⧉</button></span></dd>
+        </dl>
+        <div class="lv-ct-nut">
+          <a class="btn primary sm" id="lv-ls-ct-tai" download hidden>{{ _("Tải WAV") }}</a>
+          <a class="btn ghost sm" id="lv-ls-ct-job" href="#">{{ _("Mở trang việc") }}</a>
+        </div>
+      </div>
+    </aside>
+  </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.lichSu({
+  chu: {
+    sanSang: {{ _("Hoàn tất") | tojson }},
+    dangTao: {{ _("Đang tạo") | tojson }},
+    dangCho: {{ _("Đang chờ") | tojson }},
+    loi:     {{ _("Lỗi") | tojson }},
+    daHuy:   {{ _("Đã huỷ") | tojson }},
+    khong:   {{ _("—") | tojson }}
+  }
+});
+</script>
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_studio.html
-SHA256=54a4027145e1237292e16699305106801a2b7b667199fbfb2fdd90b165c84afc BYTES=6145 LINES=142
+SHA256=834bf84133ac3c8e8017ae27d28cb858c9a7aa20c5e52fc676028c707bf24a28 BYTES=10289 LINES=209
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{#
+  Màn Studio. Đối chiếu với ảnh tham chiếu `01_STUDIO.png`:
+
+  GIỮ   ba cột · chọn giọng hai loại · ô kịch bản + đếm ký tự · xem trước chuẩn
+        hoá · kết quả tại chỗ có sóng âm · chi tiết kỹ thuật · danh sách gần đây.
+
+  BỎ, và mỗi cái một lý do khác nhau — xem §9 của
+  `docs/LTT_VOICE/VOICE_UI_EXECUTION_PLAN.md`:
+    · `DELIVERY STYLE` (tốc độ + phong cách) — ⛔ Q119 CẤM phơi ra. Hai lý do
+      độc lập: cache CUDA graph khoá theo `(B, temperature, top_k, top_p)`, và
+      upstream #173 lệch tông giữa các đoạn.
+    · `MODE Fast / Quality` — không tồn tại ở bất kỳ tầng nào.
+    · `LANGUAGE Auto / VI / EN` — engine tự xử VI lẫn EN. Ba nút giả tệ hơn một
+      câu thật, nên ở đây là một câu thật.
+    · `VERSIONS V1/V2/V3` — phiên bản là khái niệm của **khối** trong một dự án,
+      không phải của một lượt đọc lẻ. Nó thuộc P5.
+    · `Save to Project` — chưa có Dự án. Nút sẽ xuất hiện cùng P5, không sớm hơn.
+
+  ĐỔI  `OUTPUT WAV / MP3 / 48 kHz` từ **ba nút bấm** thành **một dòng sự thật**.
+       Cổng chỉ trả WAV ở một sample rate; ba nút trong đó hai nút không làm gì
+       là ba lời hứa, hai lời sai.
+#}
+
 {% block content %}
 <section class="lv-man lv-studio" aria-labelledby="lv-title">
   {% with tieu_de = _("Tạo tiếng nói"),
-          mo_ta = _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Dùng giọng có sẵn, hoặc giọng riêng bạn đã tạo."),
+          mo_ta = _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tự nhận cả tiếng Anh xen giữa."),
           id_tieu_de = "lv-title" %}
     {% include "_voice_vo.html" %}
   {% endwith %}
@@ -20476,129 +21243,173 @@ SHA256=54a4027145e1237292e16699305106801a2b7b667199fbfb2fdd90b165c84afc BYTES=61
     </div>
   {% endif %}
 
-  <form class="lv-form" id="lv-form" autocomplete="off">
+  <form class="lv-st" id="lv-form" autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <label class="lv-field">
-      <span class="lv-nhan">{{ _("Văn bản") }} <strong>*</strong></span>
-      <textarea name="text" id="lv-text" rows="8" required
-                maxlength="{{ tran_ky_tu }}"
-                placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
-      <small class="lv-dem">
-        <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
-        · <span id="lv-uoc">0</span> {{ _("credit tạm giữ") }}
-      </small>
-    </label>
+    {# ── Cột trái: chọn giọng + đầu ra + nút tạo ─────────────────────────── #}
+    <div class="lv-st-trai">
+      {% include "_voice_chon.html" %}
 
-    {# ⚠️ Ô CHỌN NÀY LÀ BẢN TẠM CỦA P2. Bộ chọn đầy đủ (hai tab, nghe thử, tìm)
-       là `_voice_chon.html`, dựng cùng lúc màn này được bố cục lại ba cột.
-       Nhưng nó phải liệt kê ĐỦ hai mươi giọng mẫu ngay từ bây giờ: màn Giọng đã
-       có nút "Dùng" trỏ sang đây, và một nút dẫn tới một ô chọn không có mục đó
-       là một ngõ cụt tệ hơn không có nút. #}
-    <label class="lv-field">
-      {{ _("Giọng đọc") }}
-      <select name="giong" id="lv-giong">
-        <option value=""{{ ' selected' if not giong_chon }}>
-          {{ _("Giọng mặc định") }} — {{ mac_dinh }}</option>
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Đầu ra") }}</span>
+        {# SỰ THẬT, không phải điều khiển. Cổng trả đúng một định dạng. #}
+        <p class="lv-st-that">WAV · 48 kHz</p>
+        <small class="dim">{{ _("Định dạng duy nhất hiện có. Tải về rồi chuyển đổi nếu cần thứ khác.") }}</small>
+      </div>
 
-        {% set cua_toi = giong | selectattr('trang_thai', 'equalto', 'active') | list %}
-        {% if cua_toi %}
-          <optgroup label="{{ _('Giọng của tôi') }}">
-            {% for g in cua_toi %}
-              <option value="v:{{ g.public_id }}"
-                {{- ' selected' if giong_chon == g.public_id }}>{{ g.ten_hien_thi }}</option>
-            {% endfor %}
-          </optgroup>
-        {% endif %}
+      <div class="lv-st-nut">
+        <button class="btn primary lv-st-tao" type="submit" id="lv-nut-tao"
+                {% if not cong_san_sang %}disabled{% endif %}>
+          {{ _("Tạo tiếng nói") }}
+        </button>
+        <p class="lv-st-uoc" id="lv-uoc-dong" hidden>
+          {{ _("Tạm giữ") }} <b id="lv-uoc">0</b> {{ _("credit") }}
+          · <span class="dim">{{ _("hoàn phần dư khi xong") }}</span>
+        </p>
+      </div>
+    </div>
 
-        <optgroup label="{{ _('Giọng mẫu') }}">
-          {% for g in giong_mau %}
-            <option value="m:{{ g.ma }}"{{ ' selected' if giong_chon == g.ma }}>
-              {{ g.ma }} — {{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</option>
+    {# ── Cột giữa: kịch bản ──────────────────────────────────────────────── #}
+    <div class="lv-st-giua">
+      <div class="lv-st-o">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Kịch bản") }}</span>
+          <div class="lv-st-o-nut">
+            <button type="button" class="btn sm ghost" id="lv-nut-xem">{{ _("Xem trước cách đọc") }}</button>
+            <button type="button" class="btn sm ghost" id="lv-nut-xoa">{{ _("Xoá") }}</button>
+          </div>
+        </div>
+
+        <textarea name="text" id="lv-text" rows="12" required
+                  maxlength="{{ tran_ky_tu }}"
+                  aria-describedby="lv-dem"
+                  placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
+        <p class="lv-dem" id="lv-dem">
+          <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
+        </p>
+      </div>
+
+      {# ⭐ XEM TRƯỚC CÁCH ĐỌC — không phải trang trí.
+         `manifest._gia()` đếm ký tự **sau** chuẩn hoá, nên số bị tính tiền không
+         phải số khách gõ; và quan trọng hơn, đây là chỗ duy nhất khách thấy được
+         máy sẽ đọc "15%" thành "15 phần trăm" trước khi trả tiền cho nó.
+         ⚠️ Hôm nay chênh lệch nhỏ (`doc_so_tran` đang TẮT có chủ ý); nó sẽ lớn khi
+            cờ đó được bật. Chi tiết ở `routes.py::xem_truoc`. #}
+      <div class="lv-st-o lv-xt" id="lv-xt" hidden>
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Máy sẽ đọc thành") }}</span>
+          <button type="button" class="lv-xt-dong" id="lv-xt-dong"
+                  aria-label="{{ _('Đóng') }}">×</button>
+        </div>
+        <p class="lv-xt-chu" id="lv-xt-chu"></p>
+        <p class="dim" id="lv-xt-ghi"></p>
+      </div>
+
+      <div class="lv-st-o" id="lv-gan-day-o">
+        <span class="eyebrow">{{ _("Gần đây") }}</span>
+        <div id="lv-gan-day">
+          {% if gan_day %}
+            <ul class="lv-gd">
+              {% for j in gan_day %}
+                <li>
+                  <span class="lv-gd-chu">{{ (j.params or {}).get('text', '')[:70] }}</span>
+                  <span class="lv-gd-phai">
+                    {% if j.result and j.result.get('duration_s') %}
+                      <small class="dim tnum">{{ j.result.get('duration_s') }}s</small>
+                    {% endif %}
+                    {% with tt = j.status %}{% include "_voice_trangthai.html" %}{% endwith %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="dim">{{ _("Chưa có lượt nào. Lượt đầu tiên sẽ hiện ở đây.") }}</p>
+          {% endif %}
+        </div>
+        <a class="lv-gd-tatca" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }} →</a>
+      </div>
+    </div>
+
+    {# ── Cột phải: kết quả ───────────────────────────────────────────────── #}
+    <div class="lv-st-phai">
+      <div class="lv-st-o lv-kq" id="lv-kq" aria-live="polite">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Kết quả") }}</span>
+          <span id="lv-kq-tt"></span>
+        </div>
+
+        <div id="lv-kq-cho">
+          <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
+        </div>
+
+        <div id="lv-kq-chay" hidden>
+          <div class="lv-tiendo"><div id="lv-tiendo-thanh" role="progressbar"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+          <p class="dim" id="lv-kq-buoc">{{ _("Đang xếp hàng…") }}</p>
+        </div>
+
+        <div id="lv-kq-xong" hidden>
+          {# Sóng âm THẬT, vẽ từ chính tệp vừa sinh bằng Web Audio + canvas.
+             Không thư viện — CSP chặn CDN, và một canvas là đủ. #}
+          <canvas id="lv-song" class="lv-song" height="72" aria-hidden="true"></canvas>
+          <audio id="lv-player" controls preload="metadata"></audio>
+          <div class="lv-kq-nut">
+            <a class="btn primary sm" id="lv-tai" download>{{ _("Tải WAV") }}</a>
+            <a class="btn ghost sm" id="lv-mo-job" href="#">{{ _("Mở trang việc") }}</a>
+          </div>
+          <dl class="lv-kq-ct">
+            <dt>{{ _("Thời lượng") }}</dt><dd id="lv-ct-giay">—</dd>
+            <dt>{{ _("Credit đã tính") }}</dt><dd id="lv-ct-credit">—</dd>
+            <dt>{{ _("Định dạng") }}</dt><dd>WAV · 48 kHz</dd>
+            <dt>{{ _("Mã yêu cầu") }}</dt>
+            <dd><span class="lv-ma nho"><code class="mono" id="lv-ct-job"></code>
+              <button type="button" class="lv-ma-chep" id="lv-ct-job-chep"
+                      aria-label="{{ _('Chép mã yêu cầu') }}">⧉</button></span></dd>
+          </dl>
+        </div>
+
+        <div id="lv-kq-loi" class="alert alert-err" role="alert" hidden></div>
+      </div>
+
+      <details class="lv-gia">
+        <summary>{{ _("Cách tính tiền") }}</summary>
+        <ul>
+          {% for m in bang_gia.muc %}
+            <li><b>{{ m.ten }}</b> — {{ m.cach_tinh }}
+              {% if m.vi_du %}
+                <ul>{% for v in m.vi_du %}<li>{{ v.mo_ta }}: {{ v.credit }} credit</li>{% endfor %}</ul>
+              {% else %}: {{ m.credit }} credit{% endif %}
+            </li>
           {% endfor %}
-        </optgroup>
-      </select>
-    </label>
-
-    <div class="lv-actions">
-      <button class="btn primary" type="submit" {% if not cong_san_sang %}disabled{% endif %}>
-        {{ _("Tạo tiếng nói") }}
-      </button>
-      <a class="btn ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Lịch sử") }}</a>
+        </ul>
+        {% for g in bang_gia.ghi_chu %}<p><small>{{ g }}</small></p>{% endfor %}
+        <p><small>{{ _("Bảng giá") }}: <code>{{ bang_gia.phien_ban }}</code></small></p>
+      </details>
     </div>
   </form>
-
-  <div id="lv-ket-qua" class="lv-ket-qua" hidden>
-    <audio id="lv-player" controls preload="none"></audio>
-  </div>
-  <div id="lv-loi" class="alert alert-err" role="alert" hidden></div>
-
-  <details class="lv-gia">
-    <summary>{{ _("Cách tính tiền") }}</summary>
-    <ul>
-      {% for m in bang_gia.muc %}
-        <li><b>{{ m.ten }}</b> — {{ m.cach_tinh }}
-          {% if m.vi_du %}
-            <ul>{% for v in m.vi_du %}<li>{{ v.mo_ta }}: {{ v.credit }} credit</li>{% endfor %}</ul>
-          {% else %}: {{ m.credit }} credit{% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-    {% for g in bang_gia.ghi_chu %}<p><small>{{ g }}</small></p>{% endfor %}
-    <p><small>{{ _("Bảng giá") }}: <code>{{ bang_gia.phien_ban }}</code></small></p>
-  </details>
 </section>
-
-<script>
-(function () {
-  var o = document.getElementById('lv-text');
-  var so = document.getElementById('lv-so');
-  var uoc = document.getElementById('lv-uoc');
-  // Ước phía trình duyệt CHỈ để hiển thị. Số thật do máy chủ tính khi nộp —
-  // hai chỗ tính tiền là hai chỗ lệch nhau, nên chỗ này không bao giờ được là
-  // nguồn của con số bị trừ.
-  function dem() {
-    var n = o.value.length;
-    so.textContent = n;
-    uoc.textContent = n ? Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)) : 0;
-  }
-  o.addEventListener('input', dem); dem();
-
-  document.getElementById('lv-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var loi = document.getElementById('lv-loi');
-    var kq = document.getElementById('lv-ket-qua');
-    loi.hidden = true; kq.hidden = true;
-
-    var g = document.getElementById('lv-giong').value || '';
-    var fd = new FormData();
-    fd.append('csrf_token', e.target.csrf_token.value);
-    fd.append('text', o.value);
-    // Hai tien to, hai truong KHAC NHAU o phia may chu — va `features.chuan_hoa`
-    // TU CHOI neu gui ca hai. Do la co y: hai nguon giong cung luc la mot yeu
-    // cau khong co cau tra loi dung, nen no phai bi tu choi ro rang chu khong
-    // duoc lang le chon mot cai.
-    if (g.indexOf('v:') === 0) { fd.append('voice_id', g.slice(2)); }
-    else if (g.indexOf('m:') === 0) { fd.append('preset', g.slice(2)); }
-
-    fetch('{{ manifest.route_prefix }}/tao', {method: 'POST', body: fd})
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d.ok) { loi.textContent = d.loi; loi.hidden = false; return; }
-        window.location.href = '/jobs/' + d.job_id;
-      })
-      .catch(function () {
-        loi.textContent = '{{ _("Không gửi được yêu cầu. Thử lại nhé.") }}';
-        loi.hidden = false;
-      });
-  });
-})();
-</script>
 {% endblock %}
 
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.studio({
+  duong: {{ manifest.route_prefix | tojson }},
+  tranKyTu: {{ tran_ky_tu | tojson }},
+  chu: {
+    dangCho:   {{ _("Đang xếp hàng…") | tojson }},
+    dangTao:   {{ _("Đang tạo tiếng…") | tojson }},
+    xong:      {{ _("Hoàn tất") | tojson }},
+    loi:       {{ _("Lỗi") | tojson }},
+    khongGui:  {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }},
+    matKetNoi: {{ _("Mất kết nối tạm thời. Đang thử lại…") | tojson }},
+    khongXem:  {{ _("Không xem trước được lúc này.") | tojson }},
+    khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
+    doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }}
+  }
+});
+</script>
 {% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -145781,7 +146592,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=703e76827922abd00b9c050df1fc06a499f33050e741c04d9dfcfa76d028f198 BYTES=235388 LINES=2420
+SHA256=6a491b93150cdfef8dbe3fd7d23a7c567d2e204c3fb9fee693585e3b2e87b6a0 BYTES=243553 LINES=2565
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -148204,6 +149015,151 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   .lv-g-phai{position:static}
 }
 
+/* ── Man Studio: bo cuc ba cot (P2) ────────────────────────────────────────── */
+.lv-st{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;gap:16px;align-items:start}
+.lv-st-trai,.lv-st-giua,.lv-st-phai{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lv-st-phai{position:sticky;top:72px}
+
+.lv-st-o{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 14px}
+.lv-st-o-dau{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-bottom:9px;flex-wrap:wrap}
+.lv-st-o-nut{display:flex;gap:6px}
+/* Su that hien thi, KHONG phai dieu khien — nen no khong trong nhu nut bam. */
+.lv-st-that{margin:4px 0 3px;font-family:var(--mono);font-size:13px;color:var(--fg)}
+.lv-st-nut{display:flex;flex-direction:column;gap:8px}
+.lv-st-tao{justify-content:center;padding:11px 16px;font-size:14px;font-weight:600}
+.lv-st-uoc{margin:0;text-align:center;font-size:11.5px;color:var(--muted)}
+
+/* O kich ban */
+.lv-st-giua textarea{width:100%;padding:11px 12px;border-radius:var(--radius-md);
+  border:1px solid var(--line2);background:var(--panel2);color:var(--fg);
+  font:inherit;font-size:14px;line-height:1.65;resize:vertical;min-height:210px}
+.lv-st-giua textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-st-giua .lv-dem{margin:7px 0 0;justify-content:flex-end}
+/* Sap cham tran: doi mau TRUOC khi bi cat, chu khong bao sau. */
+.sap-tran{color:var(--warn)!important;font-weight:600}
+
+/* Xem truoc cach doc */
+.lv-xt{border-color:var(--brand-border);background:var(--brand-soft)}
+.lv-xt-chu{margin:0 0 7px;font-size:13.5px;line-height:1.7;color:var(--fg);
+  white-space:pre-wrap;word-break:break-word}
+.lv-xt-dong{background:none;border:none;color:var(--dim);font-size:17px;line-height:1;
+  cursor:pointer;padding:0 4px}
+.lv-xt-dong:hover{color:var(--fg)}
+
+/* Gan day */
+.lv-gd{list-style:none;margin:0;padding:0;font-size:12.5px}
+.lv-gd li{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--line)}
+.lv-gd li:last-child{border-bottom:none}
+.lv-gd-chu{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.lv-gd-phai{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.lv-gd-tatca{display:inline-block;margin-top:9px;font-size:12px;color:var(--accent2);
+  text-decoration:none}
+.lv-gd-tatca:hover{text-decoration:underline}
+
+/* Ket qua */
+.lv-kq{min-height:150px}
+.lv-song{display:block;width:100%;height:72px;margin-bottom:9px}
+.lv-kq audio{width:100%;height:36px}
+.lv-kq-nut{display:flex;gap:7px;margin:11px 0}
+.lv-kq-nut .btn{flex:1;justify-content:center}
+.lv-kq-ct{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;
+  font-size:11.5px;padding-top:11px;border-top:1px solid var(--line)}
+.lv-kq-ct dt{color:var(--dim)}
+.lv-kq-ct dd{margin:0;min-width:0;font-variant-numeric:tabular-nums}
+.lv-tiendo{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.lv-tiendo>div{height:100%;width:0;background:var(--accent);transition:width var(--motion-normal)}
+
+/* Bo chon giong */
+.lv-chon{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 14px}
+.lv-chon-dau{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
+.lv-chon-them{font-size:11.5px;color:var(--accent2);text-decoration:none;white-space:nowrap}
+.lv-chon-them:hover{text-decoration:underline}
+.lv-chon-loc{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
+.lv-chon-tim{padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--line2);
+  background:var(--panel2);color:var(--fg);font:inherit;font-size:12.5px;width:100%}
+.lv-chon-tim:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-chon-loc .lv-loc-nhom{width:100%}
+.lv-chon-loc .lv-loc-nut{flex:1;text-align:center}
+/* Danh sach cuon: hai muoi hai muc phai vua mot cot, khong day nut Tao xuong
+   duoi man hinh. */
+.lv-chon-ds{max-height:290px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+  margin:0 -4px;padding:0 4px}
+.lv-chon-muc{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;
+  border-radius:var(--radius-sm);border:1px solid transparent;cursor:pointer;
+  transition:background var(--motion-fast)}
+.lv-chon-muc:hover{background:var(--panel2)}
+.lv-chon-muc input{margin-top:3px;flex:0 0 auto;accent-color:var(--accent)}
+/* Dang chon = vien do. Nen do dam cho mot muc trong danh sach 22 muc la qua to
+   tieng; vien noi du. */
+.lv-chon-muc:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
+.lv-chon-muc:focus-within{outline:2px solid var(--focus-ring);outline-offset:1px}
+.lv-chon-noi{min-width:0;display:flex;flex-direction:column;gap:2px}
+.lv-chon-noi b{font-size:12.5px;line-height:1.3}
+.lv-chon-noi small{color:var(--dim);font-size:11px}
+.lv-chon-rong{margin:8px 0 0;color:var(--dim);font-size:11.5px;text-align:center}
+
+@media(max-width:1180px){
+  .lv-st{grid-template-columns:270px minmax(0,1fr)}
+  .lv-st-phai{grid-column:1 / -1;position:static}
+}
+@media(max-width:820px){
+  .lv-st{grid-template-columns:1fr}
+  .lv-st-phai{grid-column:auto}
+  .lv-chon-ds{max-height:240px}
+}
+
+/* ── Man Lich su (P4) ──────────────────────────────────────────────────────── */
+.lv-ls-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.lv-ls-trai{min-width:0}
+.lv-ls-phai-cot{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
+
+/* Loc: la mot form GET that, nen no chay ca khi khong co JS. */
+.lv-ls .lv-loc{align-items:flex-end}
+.lv-loc-o{display:flex;flex-direction:column;gap:3px;font-size:11px}
+.lv-loc-o select{padding:6px 9px;border-radius:var(--radius-sm);border:1px solid var(--line2);
+  background:var(--panel2);color:var(--fg);font:inherit;font-size:12.5px}
+.lv-loc-bo{font-size:12px;color:var(--accent2);text-decoration:none;padding-bottom:7px}
+.lv-loc-bo:hover{text-decoration:underline}
+.lv-loc-nut .dim{margin-left:4px;font-variant-numeric:tabular-nums}
+
+/* Danh sach */
+.lv-ls-ds{display:flex;flex-direction:column;gap:8px}
+.lv-ls-dong{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 13px;cursor:pointer;transition:border-color var(--motion-fast)}
+.lv-ls-dong:hover{border-color:var(--line2);background:var(--panel2)}
+.lv-ls-dong:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.lv-ls-dong.chon{border-color:var(--brand-border);box-shadow:0 0 0 3px var(--focus-shadow)}
+.lv-ls-chinh{min-width:0}
+.lv-ls-chu{margin:0 0 4px;font-size:13px;line-height:1.45;color:var(--fg);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lv-ls-meta{margin:0;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.lv-ls-meta .mono{font-size:10.5px}
+.lv-ls-phai{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;
+  align-content:flex-start}
+.lv-ls-phat{grid-column:1 / -1;width:100%;height:32px;margin-top:2px}
+.lv-ls-cat{margin:12px 0 0;font-size:11.5px;text-align:center}
+
+/* Tom tat */
+.lv-tt{list-style:none;margin:9px 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.lv-tt li{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}
+.lv-tt b{font-variant-numeric:tabular-nums;font-size:13px}
+.lv-tt-giong{margin:10px 0 0;font-size:11.5px}
+.lv-tt-pham-vi{margin:6px 0 0;font-size:10.5px}
+
+@media(max-width:1000px){
+  .lv-ls-khung{grid-template-columns:1fr}
+  .lv-ls-phai-cot{position:static}
+}
+@media(max-width:560px){
+  .lv-ls-dong{grid-template-columns:1fr}
+  .lv-ls-phai{justify-content:flex-start}
+}
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/prompt-ai-ommi/.vite/manifest.json
@@ -148334,7 +149290,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=ac03669c1b552f2580a6a5133896b4c59ba01061d522a107cee98535cad49798 BYTES=10005 LINES=250
+SHA256=221f1dc7b0484be234d83418084841c21d2e2816f0cbdeb2272626919676e24c BYTES=25153 LINES=629
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -148577,8 +149533,387 @@ SHA256=ac03669c1b552f2580a6a5133896b4c59ba01061d522a107cee98535cad49798 BYTES=10
     loc();
   }
 
+  /* ── Song am that, ve tu chinh tep vua sinh ───────────────────────────────
+   *
+   * ⭐ KHONG THU VIEN. `AudioContext.decodeAudioData` + mot `<canvas>` la du,
+   *    va CSP cua nen tang chan CDN ngoai nen mot thu vien se phai tu-host —
+   *    them mot tep nua phai nho dinh `?v=`.
+   *
+   * ⛔ CHI ve o cho co MOT tep cu the de ve. Hinh song trong luoi giong la SVG
+   *    dung san, khong phai song that: giai ma mot tep tieng cho moi o trong
+   *    mot luoi hai muoi o la tra mot cai gia that cho mot thu trang tri.
+   *
+   * ⚠️ `decodeAudioData` giai ma TOAN BO tep trong bo nho. Voi mot luot doc
+   *    1.500 ky tu (~90 giay, WAV 48 kHz mono ~8,6 MB) thi on. Neu tran ky tu
+   *    duoc noi nhieu lan thi cho nay phai doi sang doc dan — nhung do la mot
+   *    van de chua ton tai, va no se bao bang mot khoang lag chu khong bang
+   *    mot loi im lang.
+   */
+  function veSong(canvas, url) {
+    if (!canvas || !url || !window.AudioContext) return;
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    fetch(url)
+      .then(function (r) { return r.arrayBuffer(); })
+      .then(function (buf) { return new Ctx().decodeAudioData(buf); })
+      .then(function (am) {
+        var dpr = window.devicePixelRatio || 1;
+        var rong = canvas.clientWidth || 300;
+        var cao = canvas.clientHeight || 72;
+        canvas.width = Math.round(rong * dpr);
+        canvas.height = Math.round(cao * dpr);
+        var g = canvas.getContext("2d");
+        g.scale(dpr, dpr);
+
+        var du = am.getChannelData(0);
+        var rongCot = 3, khe = 1;
+        var soCot = Math.max(1, Math.floor(rong / rongCot));
+        var moiCot = Math.floor(du.length / soCot) || 1;
+
+        // Mau lay tu bien CSS, khong go cung — doi bang mau la doi mot cho.
+        var mau = getComputedStyle(document.documentElement)
+          .getPropertyValue("--brand-hover").trim() || "#ff514a";
+        g.fillStyle = mau;
+
+        for (var i = 0; i < soCot; i++) {
+          var dinh = 0;
+          for (var j = 0; j < moiCot; j++) {
+            var v = Math.abs(du[i * moiCot + j] || 0);
+            if (v > dinh) dinh = v;
+          }
+          var h = Math.max(2, dinh * cao * 0.92);
+          g.fillRect(i * rongCot, (cao - h) / 2, rongCot - khe, h);
+        }
+      })
+      .catch(function () {
+        // Khong ve duoc song thi trinh phat van chay. An canvas di, dung de
+        // mot o trong khong giai thich duoc.
+        canvas.hidden = true;
+      });
+  }
+
+  /* ── Man Studio ───────────────────────────────────────────────────────── */
+  function studio(cauHinh) {
+    var form = document.getElementById("lv-form");
+    if (!form) return;
+
+    var cfg = cauHinh || {};
+    var chu = cfg.chu || {};
+    var duong = cfg.duong || "";
+
+    var oText = document.getElementById("lv-text");
+    var oSo = document.getElementById("lv-so");
+    var oUoc = document.getElementById("lv-uoc");
+    var oUocDong = document.getElementById("lv-uoc-dong");
+    var nutTao = document.getElementById("lv-nut-tao");
+
+    /* Dem ky tu.
+     * ⛔ Con so credit o day CHI de hien thi. So that do may chu tinh khi nop —
+     *    hai cho tinh tien la hai cho lech nhau, nen cho nay khong bao gio duoc
+     *    la nguon cua con so bi tru. No la mot uoc luong tho de khach khong bi
+     *    bat ngo; `POST /xem-truoc` moi cho con so dung. */
+    function dem() {
+      var n = oText.value.length;
+      oSo.textContent = String(n);
+      var tran = cfg.tranKyTu || 0;
+      if (tran) oSo.classList.toggle("sap-tran", n >= tran * 0.9);
+      if (oUocDong) oUocDong.hidden = n === 0;
+      if (oUoc && n) oUoc.textContent = String(Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)));
+    }
+    oText.addEventListener("input", dem);
+    dem();
+
+    document.getElementById("lv-nut-xoa").addEventListener("click", function () {
+      oText.value = ""; dem(); oText.focus();
+      document.getElementById("lv-xt").hidden = true;
+    });
+
+    /* Xem truoc cach doc. */
+    var oXt = document.getElementById("lv-xt");
+    document.getElementById("lv-xt-dong").addEventListener("click", function () {
+      oXt.hidden = true;
+    });
+    document.getElementById("lv-nut-xem").addEventListener("click", function () {
+      var fd = new FormData();
+      fd.append("csrf_token", form.csrf_token.value);
+      fd.append("text", oText.value);
+      fetch(duong + "/xem-truoc", {method: "POST", body: fd})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          var oChu = document.getElementById("lv-xt-chu");
+          var oGhi = document.getElementById("lv-xt-ghi");
+          if (!d.ok) { oChu.textContent = d.loi || chu.khongXem; oGhi.textContent = ""; }
+          else {
+            oChu.textContent = d.da_chuan_hoa;
+            var ghi = [];
+            if (!d.doi_khac) ghi.push(chu.khongDoi);
+            if (d.so_doan > 1) ghi.push((chu.doanNhieu || "").replace("{n}", d.so_doan));
+            ghi.push(d.so_ky_tu + " / " + (cfg.tranKyTu || "?"));
+            oGhi.textContent = ghi.join(" · ");
+            // Con so nay den tu CHINH ham ra hoa don (`gia.uoc_tran`), nen no
+            // khong the lech voi phan se bi tam giu.
+            if (oUoc && d.uoc_credit != null) oUoc.textContent = String(d.uoc_credit);
+          }
+          oXt.hidden = false;
+        })
+        .catch(function () {
+          document.getElementById("lv-xt-chu").textContent = chu.khongXem;
+          document.getElementById("lv-xt-ghi").textContent = "";
+          oXt.hidden = false;
+        });
+    });
+
+    /* Nop + theo doi TAI CHO.
+     *
+     * ⭐ Ban truoc lam `window.location.href = '/jobs/' + id` — tuc bam Tao la
+     *    ROI KHOI trang, mat van ban, va muon sinh lai thi phai go lai. Anh
+     *    tham chieu 01 (va le thuong) muon ket qua hien ngay tai cho. */
+    var oCho = document.getElementById("lv-kq-cho");
+    var oChay = document.getElementById("lv-kq-chay");
+    var oXong = document.getElementById("lv-kq-xong");
+    var oLoi = document.getElementById("lv-kq-loi");
+    var oTt = document.getElementById("lv-kq-tt");
+    var oThanh = document.getElementById("lv-tiendo-thanh");
+    var oBuoc = document.getElementById("lv-kq-buoc");
+    var dongHo = null;
+
+    function nhan(lop, chuNhan) {
+      oTt.innerHTML = "";
+      var s = document.createElement("span");
+      s.className = "badge " + lop;
+      var d = document.createElement("span"); d.className = "dot";
+      s.appendChild(d); s.appendChild(document.createTextNode(chuNhan));
+      oTt.appendChild(s);
+    }
+
+    function hien(cai) {
+      oCho.hidden = cai !== "cho";
+      oChay.hidden = cai !== "chay";
+      oXong.hidden = cai !== "xong";
+      oLoi.hidden = cai !== "loi";
+    }
+
+    function baoLoi(cau) {
+      if (dongHo) clearTimeout(dongHo);
+      oLoi.textContent = cau;
+      hien("loi");
+      nhan("b-err", chu.loi);
+      nutTao.disabled = false;
+    }
+
+    function xong(d, jobId) {
+      if (dongHo) clearTimeout(dongHo);
+      hien("xong");
+      nhan("b-ok", chu.xong);
+      nutTao.disabled = false;
+
+      var au = document.getElementById("lv-player");
+      au.src = d.audio_url;
+      var tai = document.getElementById("lv-tai");
+      tai.href = d.audio_url;
+      tai.setAttribute("download", "ltt-voice-" + jobId.slice(0, 8) + ".wav");
+      document.getElementById("lv-mo-job").href = "/jobs/" + jobId;
+      document.getElementById("lv-ct-giay").textContent =
+        d.giay != null ? d.giay + "s" : "-";
+      document.getElementById("lv-ct-credit").textContent =
+        d.credit != null ? String(d.credit) : "-";
+      document.getElementById("lv-ct-job").textContent = jobId;
+      var nutChep = document.getElementById("lv-ct-job-chep");
+      if (nutChep) { nutChep.dataset.ma = jobId; chay(oXong); }
+
+      var canvas = document.getElementById("lv-song");
+      canvas.hidden = false;
+      veSong(canvas, d.audio_url);
+    }
+
+    function theoDoi(jobId, cho) {
+      // Gian cach tang dan: nhanh luc dau (job ngan xong trong vai giay), thua
+      // dan de mot job dai khong bien thanh mot may bom yeu cau.
+      fetch(duong + "/ket-qua/" + encodeURIComponent(jobId))
+        .then(function (r) {
+          if (!r.ok) throw new Error("http " + r.status);
+          return r.json();
+        })
+        .then(function (d) {
+          if (d.trang_thai === "done") { xong(d, jobId); return; }
+          if (d.trang_thai === "error" || d.trang_thai === "cancelled") {
+            baoLoi(d.loi || chu.loi); return;
+          }
+          hien("chay");
+          nhan("b-warn", d.trang_thai === "running" ? chu.dangTao : chu.dangCho);
+          oThanh.style.width = (d.tien_do || 0) + "%";
+          oThanh.setAttribute("aria-valuenow", String(d.tien_do || 0));
+          oBuoc.textContent = d.trang_thai === "running" ? chu.dangTao : chu.dangCho;
+          dongHo = setTimeout(function () {
+            theoDoi(jobId, Math.min(cho * 1.4, 8000));
+          }, cho);
+        })
+        .catch(function () {
+          // Mang chap chon KHONG phai job hong. Noi ro va thu lai cham hon,
+          // dung bao khach rang luot doc cua ho da that bai.
+          oBuoc.textContent = chu.matKetNoi;
+          dongHo = setTimeout(function () {
+            theoDoi(jobId, Math.min(cho * 2, 15000));
+          }, Math.min(cho * 2, 15000));
+        });
+    }
+
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+      if (dongHo) clearTimeout(dongHo);
+      nutTao.disabled = true;
+      hien("chay");
+      nhan("b-warn", chu.dangCho);
+      oThanh.style.width = "0%";
+      oBuoc.textContent = chu.dangCho;
+
+      var g = (form.querySelector('input[name="giong"]:checked') || {}).value || "";
+      var fd = new FormData();
+      fd.append("csrf_token", form.csrf_token.value);
+      fd.append("text", oText.value);
+      // Hai tien to, hai truong khac nhau o phia may chu — va
+      // `features.chuan_hoa` TU CHOI neu gui ca hai.
+      if (g.indexOf("v:") === 0) fd.append("voice_id", g.slice(2));
+      else if (g.indexOf("m:") === 0) fd.append("preset", g.slice(2));
+
+      fetch(duong + "/tao", {method: "POST", body: fd})
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) { baoLoi(d.loi); return; }
+          theoDoi(d.job_id, 1200);
+        })
+        .catch(function () { baoLoi(chu.khongGui); });
+    });
+
+    /* Loc trong bo chon giong. */
+    var dsMuc = [].slice.call(document.querySelectorAll(".lv-chon-muc"));
+    var oTimChon = document.getElementById("lv-chon-tim");
+    var oChonRong = document.getElementById("lv-chon-rong");
+    var locLoai = "";
+
+    function locChon() {
+      var q = ((oTimChon && oTimChon.value) || "").trim().toLowerCase();
+      var con = 0;
+      for (var i = 0; i < dsMuc.length; i++) {
+        var m = dsMuc[i], d = m.dataset;
+        // Muc mac dinh (data-loai rong) LUON hien: no la loi thoat khi bo loc
+        // khong con gi, va la thu khach chon neu ho khong muon nghi.
+        var hop = d.loai === ""
+          || ((!locLoai || d.loai === locLoai)
+              && (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0));
+        m.hidden = !hop;
+        if (hop && d.loai !== "") con++;
+      }
+      if (oChonRong) oChonRong.hidden = con !== 0;
+    }
+
+    var nutChonLoai = document.querySelectorAll("[data-chon-loai]");
+    for (var i = 0; i < nutChonLoai.length; i++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locLoai = nut.dataset.chonLoai || "";
+          var anhEm = nut.parentNode.querySelectorAll(".lv-loc-nut");
+          for (var k = 0; k < anhEm.length; k++) anhEm[k].classList.remove("on");
+          nut.classList.add("on");
+          locChon();
+        });
+      })(nutChonLoai[i]);
+    }
+    if (oTimChon) oTimChon.addEventListener("input", locChon);
+
+    chay();
+  }
+
+  /* ── Man Lich su: chon mot dong -> panel chi tiet ──────────────────────────
+   *
+   * ⭐ Loc o man nay chay PHIA MAY CHU (form GET), khac man Giong. Ly do: lich
+   *    su co the dai va duoc doc theo tran, nen loc phia trinh duyet se loc tren
+   *    mot tap DA BI CAT — tra ra it hon su that ma khong noi gi. Loc o may chu
+   *    thi tran duoc ap SAU khi loc, va giao dien noi ro pham vi.
+   *
+   *    Doi lai: moi lan doi bo loc la mot vong tai trang. Chap nhan duoc, va no
+   *    cho URL chia se duoc — mot thu loc phia trinh duyet khong cho.
+   */
+  function lichSu(cauHinh) {
+    var ds = [].slice.call(document.querySelectorAll(".lv-ls-dong"));
+    if (!ds.length) return;
+
+    var chu = (cauHinh || {}).chu || {};
+    var oCt = document.getElementById("lv-ls-ct");
+    if (!oCt) return;
+
+    var TEN_TT = {
+      done: chu.sanSang, running: chu.dangTao, queued: chu.dangCho,
+      cancelled: chu.daHuy, error: chu.loi
+    };
+    var LOP_TT = {
+      done: "b-ok", running: "b-warn", queued: "b-warn",
+      cancelled: "b-grey", error: "b-err"
+    };
+
+    function dat(id, v) {
+      var o = document.getElementById(id);
+      if (o) o.textContent = (v === "" || v == null) ? (chu.khong || "-") : String(v);
+    }
+
+    function mo(dong) {
+      var d = dong.dataset;
+      for (var i = 0; i < ds.length; i++) ds[i].classList.remove("chon");
+      dong.classList.add("chon");
+
+      var tt = document.getElementById("lv-ls-ct-tt");
+      tt.innerHTML = "";
+      var s = document.createElement("span");
+      s.className = "badge " + (LOP_TT[d.tt] || "b-grey");
+      var cham = document.createElement("span"); cham.className = "dot";
+      s.appendChild(cham);
+      s.appendChild(document.createTextNode(TEN_TT[d.tt] || d.tt));
+      tt.appendChild(s);
+
+      dat("lv-ls-ct-luc", d.luc);
+      dat("lv-ls-ct-giong", d.giong);
+      dat("lv-ls-ct-giay", d.giay ? d.giay + "s" : "");
+      dat("lv-ls-ct-credit", d.credit);
+      dat("lv-ls-ct-id", d.id);
+
+      var nutChep = document.getElementById("lv-ls-ct-chep");
+      if (nutChep) { nutChep.dataset.ma = d.id; chay(oCt); }
+
+      var tai = document.getElementById("lv-ls-ct-tai");
+      if (tai) {
+        // An nut tai khi khong co tep — mot nut tai ve mot thu khong ton tai la
+        // mot nut lam nguoi dung tuong ho lam sai.
+        tai.hidden = !d.audio;
+        if (d.audio) {
+          tai.href = d.audio;
+          tai.setAttribute("download", "ltt-voice-" + d.id.slice(0, 8) + ".wav");
+        }
+      }
+      var job = document.getElementById("lv-ls-ct-job");
+      if (job) job.href = "/jobs/" + d.id;
+
+      oCt.hidden = false;
+    }
+
+    for (var i = 0; i < ds.length; i++) {
+      (function (dong) {
+        dong.addEventListener("click", function (e) {
+          // Trinh phat va lien ket giu cu bam cua chinh chung.
+          if (e.target.closest("audio, a, button")) return;
+          mo(dong);
+        });
+        dong.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); mo(dong); }
+        });
+      })(ds[i]);
+    }
+
+    chay();
+  }
+
   // Cho phan duoc them sau (ket qua sinh, danh sach tai them) tu gan lai.
-  window.LttVoice = { gan: chay, luoiGiong: luoiGiong };
+  window.LttVoice = {
+    gan: chay, luoiGiong: luoiGiong, studio: studio, lichSu: lichSu
+  };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () { chay(); });
@@ -234285,7 +235620,7 @@ def test_luot_sinh_tu_studio_ghi_nguon():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_345_ltt_voice_giong_mau.py
-SHA256=66f3579665f34c557acf222818cf4c72db2de47b3930f0c1bae07ecdd8658b13 BYTES=7402 LINES=171
+SHA256=1d59d19789831d4c4f924c5de0d1e6c6b0ad4d30fa9571e233c40f62ca3c4a1c BYTES=8432 LINES=179
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hai mươi giọng mẫu khai ở nền tảng phải KHỚP đúng thứ engine có.
 
@@ -234305,40 +235640,56 @@ phép trả giá đó.
 
 Cùng khuôn `tests/test_331_ltt_voice_tham_so.py` đã dùng cho trần ký tự.
 
-## Vì sao phần lớn phép kiểm ở đây BỎ QUA khi không thấy tệp gốc
+## 🔴 Bản đầu của tệp này có bốn phép kiểm ÂM THẦM KHÔNG CHẠY
 
-Venv của engine không có trên mọi máy chạy test (CI, máy phát triển không cài
-GPU). Đòi nó có mặt sẽ làm bộ test đỏ vì một lý do không liên quan gì tới mã.
-Nhưng những phép kiểm **không** cần tệp gốc — hình dạng dữ liệu, mặt lọc, mã
-không trùng — thì luôn chạy.
+Chúng đọc thẳng `vieneu-venv/.../voices_v3_turbo.json` và `skipif` khi không
+thấy. Chạy tay thì thấy tệp và **xanh**; chạy dưới `tools/gate.py` thì không —
+venv của engine nằm ngoài kho. Nên đúng bốn phép kiểm quan trọng nhất ở đây
+không canh gì cả, trong khi dòng tổng kết vẫn nói "12 passed".
+
+`tools/check_bo_qua_im_lang.py` bắt được, và câu nó in ra đáng giữ lại:
+*"Một test bị bỏ qua là một test KHÔNG canh gì cả."*
+
+⇒ Nay đối chiếu với **ảnh chụp trong kho** (`apps/ltt_voice/giong_mau_engine.json`),
+nên **không phép kiểm nào ở tệp này bị bỏ qua nữa** — ở bất kỳ máy nào.
+
+⚠️ Cái giá của việc đó, nói thẳng: ảnh chụp chốt *"`giong_mau.py` khớp thứ ta đã
+chụp"*, chứ không chốt *"thứ ta đã chụp còn đúng"*. Câu thứ hai do
+`tools/sinh_giong_mau_engine.py` giữ, và nó phải được chạy khi nâng engine.
+Một phép kiểm luôn chạy nhưng chốt hẹp hơn thì vẫn hơn hẳn một phép kiểm chốt
+rộng mà không bao giờ chạy.
 """
 from __future__ import annotations
 
 import json
 import pathlib
 
-import pytest
-
 from apps.ltt_voice import giong_mau as gm
 
-#: Nơi SDK cất bản gốc. Hai đường vì venv nằm ngoài `app\` (C: chật, xem
-#: `CLAUDE.md` hàng LTT VOICE) và máy chủ có thể đặt nó ở một trong hai.
-DUONG_GOC = (
-    pathlib.Path(r"D:\LTTPlatform-runtime\vieneu-venv\Lib\site-packages"
-                 r"\vieneu\assets\voices_v3_turbo.json"),
-    pathlib.Path(r"C:\LTTPlatform\vieneu-venv\Lib\site-packages"
-                 r"\vieneu\assets\voices_v3_turbo.json"),
-)
+#: 🔴 ĐỐI CHIẾU VỚI ẢNH CHỤP TRONG KHO, KHÔNG VỚI MỘT ĐƯỜNG DẪN TRÊN MÁY.
+#:
+#:    Bản đầu đọc thẳng `vieneu-venv/.../voices_v3_turbo.json` bằng đường tuyệt
+#:    đối, và **bỏ qua** khi không thấy tệp. Chạy tay thì thấy và xanh; chạy
+#:    dưới `tools/gate.py` thì không — venv của engine nằm ngoài kho, ngoài tầm
+#:    với của lượt chạy.
+#:
+#:    Hệ quả: bốn phép kiểm quan trọng nhất tệp này **âm thầm không chạy**, và
+#:    `check_bo_qua_im_lang` bắt được đúng điều ấy. Câu nó in ra đáng ghi lại:
+#:    *"Một test bị bỏ qua là một test KHÔNG canh gì cả."*
+#:
+#: ⭐ Ảnh chụp nằm trong git ⇒ phép kiểm **luôn chạy**, ở mọi máy, kể cả nơi
+#:    không cài engine.
+#:
+#: ⚠️ Nhưng biết rõ nó chốt cái gì: "`giong_mau.py` khớp thứ ta ĐÃ CHỤP". Nó
+#:    **không** chốt "thứ ta đã chụp còn đúng". Hai câu đó tách nhau đúng vào
+#:    ngày nâng model — và đó là ngày duy nhất chúng có thể sai. Việc giữ câu
+#:    thứ hai là của `tools/sinh_giong_mau_engine.py`, chạy khi nâng engine.
+ANH_CHUP = (pathlib.Path(__file__).resolve().parent.parent
+            / "apps" / "ltt_voice" / "giong_mau_engine.json")
 
 
-def _ban_goc() -> dict | None:
-    for p in DUONG_GOC:
-        try:
-            if p.is_file():
-                return json.loads(p.read_text(encoding="utf-8"))
-        except OSError:
-            continue
-    return None
+def _ban_goc() -> dict:
+    return json.loads(ANH_CHUP.read_text(encoding="utf-8"))
 
 
 # ── Luôn chạy: hình dạng dữ liệu ─────────────────────────────────────────────
@@ -234407,10 +235758,8 @@ def test_giong_mau_co_cung_be_mat_voi_giong_nhan_ban():
         assert g.la_mau is True
 
 
-# ── Chỉ chạy khi thấy bản gốc: hợp đồng với engine ───────────────────────────
+# ── Hợp đồng với engine (qua ảnh chụp trong kho) ─────────────────────────────
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_tap_hop_ma_khop_ban_goc_hai_chieu():
     """🔴 Phép kiểm quan trọng nhất tệp này.
 
@@ -234418,7 +235767,7 @@ def test_tap_hop_ma_khop_ban_goc_hai_chieu():
     thừa một giọng thì ta bán thứ không tồn tại, và khách phát hiện ra bằng cách
     mất tiền.
     """
-    goc = set((_ban_goc() or {}).get("presets", {}))
+    goc = set(_ban_goc().get("presets", {}))
     ta = {g.ma for g in gm.DANH_SACH}
     assert ta == goc, (
         f"\n  engine co ma ta KHONG khai : {sorted(goc - ta)}"
@@ -234426,10 +235775,8 @@ def test_tap_hop_ma_khop_ban_goc_hai_chieu():
         "Sua `apps/ltt_voice/giong_mau.py`. Ma phai dung TUNG KY TU, ke ca dau.")
 
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_gioi_tinh_khop_ban_goc():
-    goc = (_ban_goc() or {}).get("presets", {})
+    goc = _ban_goc().get("presets", {})
     doi = {"male": "nam", "female": "nu"}
     for g in gm.DANH_SACH:
         that = doi.get(str(goc[g.ma].get("gender") or ""))
@@ -234437,12 +235784,10 @@ def test_gioi_tinh_khop_ban_goc():
             f"{g.ma}: ta khai gioi={g.gioi!r}, engine noi {that!r}")
 
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_vung_mien_khop_mo_ta_ban_goc():
     """Vùng miền chỉ có trong chuỗi `description` (`"Nam · Bắc · …"`), không có
     cột riêng — nên đối chiếu bằng cách đọc mẩu giữa."""
-    goc = (_ban_goc() or {}).get("presets", {})
+    goc = _ban_goc().get("presets", {})
     doi = {"Bắc": "bac", "Trung": "trung", "Nam": "nam"}
     for g in gm.DANH_SACH:
         phan = [p.strip() for p in str(goc[g.ma].get("description") or "").split("·")]
@@ -234453,10 +235798,8 @@ def test_vung_mien_khop_mo_ta_ban_goc():
             f"{g.ma}: ta khai vung={g.vung!r}, mo ta cua engine noi {phan[1]!r}")
 
 
-@pytest.mark.skipif(_ban_goc() is None,
-                    reason="khong thay voices_v3_turbo.json (venv engine)")
 def test_mac_dinh_khop_ban_goc():
-    assert (_ban_goc() or {}).get("default_voice") == gm.MAC_DINH, (
+    assert _ban_goc().get("default_voice") == gm.MAC_DINH, (
         "giong mac dinh cua ta lech khoi `default_voice` cua engine")
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -234678,6 +236021,606 @@ def test_khong_dang_nhap_thi_khong_doc_duoc(tmp_path, monkeypatch, khach):
         assert r.status_code != 200, "khach an danh doc duoc tep tieng"
     finally:
         la.close()
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_347_ltt_voice_studio.py
+SHA256=3a150238b96f5faf5388c0ae2c64de1493a8d31c377880c51d6d7011c1bfee54 BYTES=14381 LINES=338
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Hai cửa mới của màn Studio: xem trước cách đọc, và theo dõi kết quả tại chỗ.
+
+## Vì sao hai cửa này tồn tại
+
+**`POST /xem-truoc`** — `manifest._gia()` đếm ký tự **sau** khi chuẩn hoá, nên số
+ký tự bị tính tiền không phải số ký tự khách gõ. Trước cửa này khách không có
+cách nào thấy điều đó trước khi bấm; họ chỉ gặp nó dưới dạng một hoá đơn không
+giải thích được.
+
+**`GET /ket-qua/{job_id}`** — `job_history.customer_payload` cố tình **không**
+trả `result` lẫn `error`: nó là gói dùng chung cho mọi app, mà `result` thì mỗi
+app một hình dạng. Studio cần đúng ba thứ trong đó (khoá tệp, thời lượng,
+credit), nên app tự mở một cửa hẹp thay vì nới cửa chung.
+
+## Điều được chốt chặt nhất ở đây
+
+⛔ **`/ket-qua/` không được trả `job.error` thô.** `job_events.public_message` là
+   câu đã duyệt để hiện cho chủ job; `job.error` là chuỗi ngoại lệ và có thể mang
+   chi tiết nội bộ. Hai thứ đó khác nhau, và chỉ có một cái được ra ngoài.
+
+⛔ **Quyền đọc lọc trong chính câu truy vấn** (`job_history.get_owned`), không
+   phải tra job rồi so chủ ở bước sau — giữa hai bước đó có một khoảng trống mà
+   một bản vá sau này rất dễ quên.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-st.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-studio")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="voice-st@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    login = client.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert m
+    r = client.post("/login", data={"username": "voice-st@test.com",
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": m.group(1)})
+    assert r.status_code in (200, 302, 303)
+    try:
+        yield client, uid
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _csrf(client) -> str:
+    r = client.get("/ltt-voice")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', r.text)
+    assert m, "khong lay duoc csrf tu trang Studio"
+    return m.group(1)
+
+
+def _tao_job(uid: str, *, status: str, result=None, error: str = "") -> str:
+    """Đặt thẳng một job vào CSDL. Nhanh hơn, và không cần worker."""
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        job = Job(user_id=uid, app_slug="ltt_voice",
+                  job_type="ltt_voice.synthesize",
+                  params={"text": "xin chao"}, status=status,
+                  result=result or {}, error=error, progress=100)
+        db.add(job)
+        db.commit()
+        return str(job.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+# ── Xem trước cách đọc ───────────────────────────────────────────────────────
+
+def test_xem_truoc_hien_dung_thu_may_se_doc(khach):
+    """Ký hiệu phải được nở ra thành chữ — đó là toàn bộ điểm của ô này."""
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "Tang 15% so voi thang truoc.",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["ok"] is True
+    assert "phần trăm" in d["da_chuan_hoa"], (
+        f"'%' khong duoc no ra: {d['da_chuan_hoa']!r}")
+    assert d["doi_khac"] is True
+
+
+def test_xem_truoc_bao_dung_khi_khong_co_gi_de_doi(khach):
+    """Văn bản thuần chữ thì `doi_khac` phải là False.
+
+    ⭐ Nói "không có gì phải chuẩn hoá" là một câu trả lời **có ích**. Hiện một
+       ô xem trước giống hệt ô nhập mà không giải thích thì người dùng sẽ tưởng
+       tính năng hỏng.
+    """
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "Xin chao cac ban",
+                          "csrf_token": _csrf(client)})
+    d = r.json()
+    assert d["ok"] is True and d["doi_khac"] is False
+
+
+def test_uoc_credit_den_tu_CHINH_ham_ra_hoa_don(khach):
+    """🔴 Con số hiện ra phải là con số sẽ bị tạm giữ, không phải ước lượng thứ hai.
+
+    Hai chỗ tính tiền là hai chỗ sẽ lệch nhau. Ở đây `/xem-truoc` và
+    `manifest.credit_cost` phải cho **cùng** một số cho **cùng** một văn bản.
+    """
+    from apps.ltt_voice.manifest import MANIFEST
+
+    client, _uid = khach
+    van_ban = "Doanh thu thang nay tang 15% so voi thang truoc."
+    d = client.post("/ltt-voice/xem-truoc",
+                    data={"text": van_ban, "csrf_token": _csrf(client)}).json()
+    assert d["uoc_credit"] == MANIFEST.credit_cost({"text": van_ban}), (
+        "so credit o o xem truoc LECH khoi so ma cua nop se giu")
+
+
+def test_xem_truoc_tu_choi_van_ban_rong(khach):
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "   ", "csrf_token": _csrf(client)})
+    assert r.status_code == 400
+
+
+def test_xem_truoc_doi_csrf(khach):
+    """Cửa POST nào cũng phải qua CSRF, kể cả cửa chỉ tính toán."""
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "xin chao", "csrf_token": "sai-bet"})
+    assert r.status_code >= 400
+
+
+# ── Theo dõi kết quả ─────────────────────────────────────────────────────────
+
+def test_ket_qua_khi_xong_tra_du_thu_studio_can(khach):
+    client, uid = khach
+    jid = _tao_job(uid, status="done", result={
+        "audio_key": f"voice/out/{uid}/job/tieng.wav",
+        "duration_s": 4.25, "credit_cost": 2, "so_doan": 1})
+
+    d = client.get(f"/ltt-voice/ket-qua/{jid}").json()
+    assert d["trang_thai"] == "done"
+    assert d["giay"] == 4.25
+    assert d["credit"] == 2
+    # URL phát phải đi qua cửa `/audio/` của app, không lộ khoá kho trần.
+    assert d["audio_url"].startswith("/ltt-voice/audio/")
+
+
+def test_ket_qua_khi_dang_chay_khong_tra_tep(khach):
+    client, uid = khach
+    jid = _tao_job(uid, status="running")
+    d = client.get(f"/ltt-voice/ket-qua/{jid}").json()
+    assert d["trang_thai"] == "running"
+    assert d["audio_url"] == ""
+
+
+def test_ket_qua_KHONG_TRA_error_tho(khach):
+    """🔴 Phép kiểm quan trọng nhất tệp này.
+
+    `job.error` là chuỗi ngoại lệ thô. Nó có thể mang đường dẫn nội bộ, tên host,
+    hay một mẩu payload. Cửa này chỉ được trả câu đã duyệt (`public_message`) —
+    và khi không có câu nào, một câu chung chung, **không phải** chuỗi thô.
+    """
+    client, uid = khach
+    bi_mat = "Traceback: C:/LTTPlatform/secrets/app.env line 42 token=abc123"
+    jid = _tao_job(uid, status="error", error=bi_mat)
+
+    r = client.get(f"/ltt-voice/ket-qua/{jid}")
+    d = r.json()
+    assert d["trang_thai"] == "error"
+    assert "loi" in d and d["loi"], "job hong ma khong noi duoc gi cho khach"
+    assert "secrets" not in r.text and "abc123" not in r.text, (
+        "CHUOI LOI THO RO RA NGOAI:\n" + r.text[:400])
+
+
+def test_ket_qua_cua_nguoi_khac_tra_404(khach):
+    """Quyền lọc trong chính câu truy vấn, không so chủ ở bước sau."""
+    client, _uid = khach
+    jid = _tao_job("00000000-0000-0000-0000-000000000000", status="done",
+                   result={"audio_key": "voice/out/x/job/tieng.wav"})
+    assert client.get(f"/ltt-voice/ket-qua/{jid}").status_code == 404
+
+
+def test_ket_qua_job_khong_ton_tai_tra_404(khach):
+    client, _uid = khach
+    assert client.get("/ltt-voice/ket-qua/khong-co-that").status_code == 404
+
+
+# ── Màn Studio dựng đủ thứ nó hứa ────────────────────────────────────────────
+
+def test_studio_liet_ke_du_hai_muoi_giong_mau(khach):
+    """Màn Giọng có nút "Dùng" trỏ sang đây. Một nút dẫn tới một ô chọn thiếu
+    mục đó là một ngõ cụt tệ hơn không có nút."""
+    from apps.ltt_voice import giong_mau
+
+    client, _uid = khach
+    html = client.get("/ltt-voice").text
+    thieu = [g.ma for g in giong_mau.DANH_SACH
+             if f'value="m:{g.ma}"' not in html]
+    assert not thieu, f"bo chon giong thieu: {thieu}"
+
+
+def test_studio_chon_san_giong_tu_tham_so(khach):
+    client, _uid = khach
+    html = client.get("/ltt-voice", params={"giong": "Adam"}).text
+    assert re.search(r'value="m:Adam"[^>]*\schecked', html), (
+        "?giong=Adam khong duoc chon san")
+
+
+def test_studio_bo_qua_giong_bia(khach):
+    """Tham số là chuỗi khách gửi ⇒ không tin. Giá trị lạ thì im lặng bỏ qua."""
+    client, _uid = khach
+    html = client.get("/ltt-voice", params={"giong": "KHONG-CO-THAT"}).text
+    assert 'value=""  checked' in html or re.search(
+        r'value=""[^>]*\schecked', html), "khong roi ve giong mac dinh"
+    assert "KHONG-CO-THAT" not in html, "gia tri la duoc doi lai ra HTML"
+
+
+def test_studio_KHONG_ve_dieu_khien_bi_cam(khach):
+    """⛔ Q119: tốc độ, phong cách, temperature — không cái nào được lên giao diện.
+
+    Và `MODE Fast/Quality` cùng `LANGUAGE VI/EN` thì backend không có, nên vẽ
+    chúng là hứa một thứ không tồn tại.
+    """
+    client, _uid = khach
+    html = client.get("/ltt-voice").text.lower()
+    for cam in ("temperature", "top_k", "top_p", 'name="speed"',
+                'name="toc_do"', 'name="mode"', 'name="language"'):
+        assert cam not in html, f"dieu khien bi cam lo ra giao dien: {cam!r}"
+
+
+# ── CSRF: bánh cóc cho một lỗ đã sống từ ngày phát hành ──────────────────────
+
+#: MỌI cửa POST của app, kèm dữ liệu tối thiểu để nó đi tới bước kiểm CSRF.
+#:
+#: 🔴 Chốt theo DANH SÁCH ĐẦY ĐỦ chứ không theo cửa vừa bắt được. Lỗ này không
+#:    phải một chỗ quên — nó là **cùng một dòng sai chép ra bốn chỗ**, nên phép
+#:    kiểm phải phủ cả bốn. Thêm cửa POST thứ năm mà quên CSRF thì
+#:    `test_moi_cua_post_deu_doi_csrf` vẫn xanh (nó chỉ biết những gì được liệt
+#:    kê) — nên có thêm `test_khong_cua_nao_bo_qua_ket_qua_verify` quét mã nguồn.
+CUA_POST = [
+    ("/ltt-voice/tao", {"text": "xin chao"}),
+    ("/ltt-voice/xem-truoc", {"text": "xin chao"}),
+    ("/ltt-voice/giong/vc_khongcothat/tat", {}),
+]
+
+
+@pytest.mark.parametrize("duong,du_lieu", CUA_POST)
+def test_moi_cua_post_deu_doi_csrf(khach, duong, du_lieu):
+    """Token sai ⇒ phải bị từ chối, không được làm việc rồi trả 200.
+
+    Ba cửa này đều có hậu quả: tiêu credit · tính toán · vô hiệu hoá giọng.
+    """
+    client, _uid = khach
+    r = client.post(duong, data=dict(du_lieu, csrf_token="sai-bet"))
+    assert r.status_code >= 400, (
+        f"{duong} nhan token CSRF SAI ma van tra {r.status_code}")
+
+
+def test_khong_cua_nao_bo_qua_ket_qua_verify():
+    """🔴 Quét mã nguồn, vì phép kiểm theo danh sách không thấy cửa MỚI.
+
+    `verify_csrf_token` **trả `bool`**, nó không ném. Gọi nó rồi vứt kết quả đi
+    là một dòng **trông đúng** — và đó chính xác là cách lỗ này sống sót từ ngày
+    phát hành qua 69 phép kiểm.
+
+    Luật: giá trị trả về phải được **dùng**, tức lời gọi không được đứng một
+    mình như một câu lệnh.
+
+    ⚠️ Đọc bằng AST chứ không quét từng dòng. Bản đầu quét dòng và tự bắt chính
+       **docstring** của mình — vì docstring có in ra dòng sai làm ví dụ. Một
+       bánh cóc báo động vì văn xuôi là một bánh cóc sẽ bị tắt đi. AST chỉ nhìn
+       thấy mã thật: chuỗi và chú thích vô hình với nó.
+    """
+    import ast
+    import inspect
+
+    from apps.ltt_voice import routes
+
+    cay = ast.parse(inspect.getsource(routes))
+    xau = []
+    for nut in ast.walk(cay):
+        # `ast.Expr` = một biểu thức đứng riêng làm câu lệnh, tức giá trị của nó
+        # bị vứt đi. Đó chính xác là hình dạng của lỗi.
+        if not isinstance(nut, ast.Expr) or not isinstance(nut.value, ast.Call):
+            continue
+        ham = nut.value.func
+        ten = getattr(ham, "id", None) or getattr(ham, "attr", None)
+        if ten == "verify_csrf_token":
+            xau.append(f"  dong {nut.lineno}")
+
+    assert not xau, (
+        "Co loi goi `verify_csrf_token` dung MOT MINH, tuc ket qua bi vut di:\n"
+        + "\n".join(xau)
+        + "\n\nHam nay tra `bool`, no KHONG nem. Viet:\n"
+          "    if not verify_csrf_token(request, csrf_token):\n"
+          "        return _het_phien()")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_348_ltt_voice_lich_su.py
+SHA256=0c9362f00c05d5800cfaf921f6276ae3b3c892e5e63f13e99c7336b9ef3cbea6 BYTES=10035 LINES=250
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Màn Lịch sử: lọc đúng, đếm đúng, và **nói ra** chỗ nó cắt bớt.
+
+## Ba thứ tệp này canh
+
+1. **Lọc theo nguồn thực sự hoạt động.** `nguon` được ghi từ P1 và là thứ duy
+   nhất trả lời "lượt này đến từ đâu". Nếu bộ lọc lặng lẽ không khớp thì màn
+   hình trả rỗng và người dùng kết luận sai rằng họ chưa từng dùng API.
+
+2. **Con số tóm tắt tính đúng mẫu số.** Tỉ lệ lỗi tính trên số lượt **đã kết
+   thúc**, không trên tổng — một lượt đang chạy chưa hỏng, và đếm nó vào mẫu số
+   làm tỉ lệ trông đẹp lên một cách sai.
+
+3. 🔴 **Trần đọc phải được nói ra.** `doc_man_lich_su.TRAN_DOC` cắt danh sách ở
+   500 lượt. Một cái trần **không nói ra** tệ hơn không có trần: màn hình trông
+   như đã liệt kê hết trong khi nó cắt bớt, và người dùng đi tìm một lượt cũ rồi
+   kết luận nó đã bị xoá.
+"""
+from __future__ import annotations
+
+import datetime as dt
+import re
+from types import SimpleNamespace
+
+import pytest
+
+from apps.ltt_voice import doc_man_lich_su as dls
+
+
+def _job(**kw):
+    """Một job giả, đủ hình dạng cho `doc_man_lich_su`."""
+    return SimpleNamespace(
+        id=kw.get("id", "job-1"),
+        status=kw.get("status", "done"),
+        params=kw.get("params", {}),
+        result=kw.get("result", {}),
+        created_at=kw.get("created_at", dt.datetime(2026, 8, 31, 10, 0)),
+    )
+
+
+# ── Lọc ──────────────────────────────────────────────────────────────────────
+
+def test_loc_theo_nguon():
+    ds = [_job(params={"nguon": "studio"}), _job(params={"nguon": "api"}),
+          _job(params={"nguon": "api"})]
+    assert len(dls.loc(ds, nguon="api")) == 2
+    assert len(dls.loc(ds, nguon="studio")) == 1
+    assert len(dls.loc(ds)) == 3, "khong loc gi ma van mat dong"
+
+
+def test_loc_theo_giong_gom_ca_hai_loai():
+    """Giọng nhân bản đi qua `voice_id`, giọng mẫu đi qua `preset`.
+
+    ⭐ Hai trường khác nhau ở tầng dưới, nhưng với người xem lịch sử chúng là
+       **cùng một câu hỏi**: "lượt này đọc bằng giọng nào". Nên bộ lọc phải
+       nhìn cả hai; nhìn một cái thì một nửa lịch sử biến mất khỏi bộ lọc.
+    """
+    ds = [_job(params={"preset": "Adam"}),
+          _job(params={"voice_id": "vc_abc"}),
+          _job(params={"preset": "Trúc Ly"})]
+    assert len(dls.loc(ds, giong="Adam")) == 1
+    assert len(dls.loc(ds, giong="vc_abc")) == 1
+
+
+def test_loc_gia_tri_la_tra_rong_chu_khong_no():
+    """Tham số lọc là chuỗi khách gửi. Giá trị lạ ⇒ rỗng, không ngoại lệ."""
+    ds = [_job(params={"nguon": "studio"})]
+    assert dls.loc(ds, nguon="'; DROP TABLE jobs; --") == []
+
+
+def test_job_cu_khong_co_nguon_thi_khong_doan():
+    """⛔ Job nộp TRƯỚC P1 không mang `nguon`. Trả rỗng, đừng đoán.
+
+    Đoán một nguồn cho dữ liệu lịch sử là bịa ra một sự thật mà sau đó không ai
+    kiểm lại được — và nó sẽ được đọc như thật.
+    """
+    assert dls._nguon_cua(_job(params={"text": "cu"})) == ""
+    # Và job cũ không được lọt vào bất kỳ bộ lọc nguồn nào.
+    for n in dls.NGUON:
+        assert dls.loc([_job(params={"text": "cu"})], nguon=n) == []
+
+
+# ── Tóm tắt ──────────────────────────────────────────────────────────────────
+
+def test_ti_le_loi_tinh_tren_luot_DA_KET_THUC():
+    """🔴 Mẫu số là done+error, không phải tổng.
+
+    Ba xong, một lỗi, sáu đang chạy: tỉ lệ lỗi là 1/4 = 25%, **không** phải
+    1/10 = 10%. Dùng tổng làm mẫu số khiến tỉ lệ lỗi tụt xuống mỗi khi có nhiều
+    việc đang xếp hàng — tức nó đẹp nhất đúng lúc hệ thống tắc nhất.
+    """
+    ds = ([_job(status="done") for _ in range(3)]
+          + [_job(status="error")]
+          + [_job(status="queued") for _ in range(6)])
+    assert dls.tom_tat(ds)["ti_le_loi"] == 25.0
+
+
+def test_ti_le_loi_khong_chia_cho_khong():
+    ds = [_job(status="queued"), _job(status="running")]
+    assert dls.tom_tat(ds)["ti_le_loi"] == 0.0
+
+
+def test_tom_tat_cong_don_giay_va_credit():
+    ds = [_job(result={"duration_s": 30.0, "credit_cost": 2}),
+          _job(result={"duration_s": 30.0, "credit_cost": 3})]
+    t = dls.tom_tat(ds)
+    assert t["phut"] == 1.0
+    assert t["credit"] == 5
+
+
+def test_tom_tat_khong_vo_vi_du_lieu_ban():
+    """Một `result` méo không được làm sập màn hình."""
+    ds = [_job(result={"duration_s": "khong-phai-so", "credit_cost": None}),
+          _job(result=None)]
+    t = dls.tom_tat(ds)
+    assert t["phut"] == 0.0 and t["credit"] == 0
+
+
+def test_giong_hay_dung():
+    ds = ([_job(params={"preset": "Adam"}) for _ in range(3)]
+          + [_job(params={"preset": "Trúc Ly"})])
+    t = dls.tom_tat(ds)
+    assert t["giong_hay_dung"] == "Adam" and t["giong_hay_dung_so"] == 3
+
+
+# ── Trần đọc phải nói ra ─────────────────────────────────────────────────────
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-ls.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-ls")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="voice-ls@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    login = client.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert m
+    client.post("/login", data={"username": "voice-ls@test.com",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": m.group(1)})
+    try:
+        yield client, uid
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _gieo(uid: str, so: int, **kw) -> None:
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        for i in range(so):
+            db.add(Job(user_id=uid, app_slug="ltt_voice",
+                       job_type="ltt_voice.synthesize",
+                       params={"text": f"cau {i}", "nguon": kw.get("nguon", "studio"),
+                               "preset": "Adam"},
+                       status=kw.get("status", "done"),
+                       result={"duration_s": 1.0, "credit_cost": 1,
+                               "audio_key": f"voice/out/{uid}/j{i}/tieng.wav"}))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_khi_cham_tran_thi_MAN_HINH_PHAI_NOI(khach, monkeypatch):
+    """🔴 Cắt bớt trong im lặng là nói dối bằng cách bỏ sót.
+
+    Hạ trần xuống 5 rồi gieo 6 lượt: trang phải mang cờ `bi_cat` và in ra câu
+    giải thích, chứ không chỉ hiện 5 dòng như thể đó là tất cả.
+    """
+    monkeypatch.setattr(dls, "TRAN_DOC", 5)
+    client, uid = khach
+    _gieo(uid, 6)
+
+    html = client.get("/ltt-voice/lich-su").text
+    assert "lv-ls-cat" in html, (
+        "cham tran ma trang KHONG noi gi — nguoi dung se tuong day la tat ca")
+
+
+def test_khi_chua_cham_tran_thi_khong_doa_nguoi_dung(khach, monkeypatch):
+    """Và ngược lại: chưa cắt gì thì đừng hiện cảnh báo. Một cảnh báo luôn hiện
+    là một cảnh báo không ai đọc."""
+    monkeypatch.setattr(dls, "TRAN_DOC", 50)
+    client, uid = khach
+    _gieo(uid, 3)
+    assert "lv-ls-cat" not in client.get("/ltt-voice/lich-su").text
+
+
+# ── Đi qua router thật ───────────────────────────────────────────────────────
+
+def test_loc_qua_url(khach):
+    client, uid = khach
+    _gieo(uid, 2, nguon="studio")
+    _gieo(uid, 3, nguon="api")
+
+    def dem(url):
+        return len(re.findall(r'class="lv-ls-dong"', client.get(url).text))
+
+    assert dem("/ltt-voice/lich-su") == 5
+    assert dem("/ltt-voice/lich-su?nguon=api") == 3
+    assert dem("/ltt-voice/lich-su?nguon=studio") == 2
+    assert dem("/ltt-voice/lich-su?nguon=khong-co-that") == 0
+
+
+def test_lich_su_khong_lo_khoa_kho_tran(khach):
+    """URL phát phải đi qua cửa `/audio/` của app, không lộ khoá kho.
+
+    Khoá kho là chi tiết nội bộ; hiện nó ra là mời người ta thử ghép tay một
+    khoá khác.
+    """
+    client, uid = khach
+    _gieo(uid, 1)
+    html = client.get("/ltt-voice/lich-su").text
+    assert 'src="/ltt-voice/audio/voice/out/' in html
+    assert 'src="voice/out/' not in html
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -235003,6 +236946,179 @@ def test_nhanh_LoiSidecar_khong_duoc_nem_LoiGiongNoi():
     assert "raise LoiHaTang(" in nhanh, (
         "nhanh `LoiSidecar` phai nem `LoiHaTang`. Nem `LoiGiongNoi` o day la "
         "noi voi khach 'vui long thu lai sau' roi tu quyet khong thu lai.")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_354_so_do_khong_troi.py
+SHA256=4fe593906356162bc881d6b66b87d25f42b2ff39751c732ba706ae1c74f1d974 BYTES=8268 LINES=167
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Số đo đã ghi phải KHỚP với con số đang dùng trong mã — và với nhau.
+
+## Vì sao
+
+`docs/LTT_VOICE/do_v1.json` là bản đo thật trên RTX 5060 Ti (30/08/2026). Nhiều
+hằng số trong mã **lấy từ nó**: sàn VRAM để xếp chỗ, tỉ lệ ký tự/giây để báo giá,
+trần thời gian chạy. Nhưng chúng là hai bản chép, và hai bản chép không có phép
+kiểm là hai bản chép **sẽ lệch**.
+
+Cái lệch đó không kêu: job vẫn chạy, tiền vẫn trừ, chỉ là con số ai đó dựa vào
+để quyết định đã cũ. Đó là toàn bộ lý do tệp này tồn tại.
+
+⛔ NÓ KHÔNG PHẢI PHÉP ĐO. Nó không nạp model, không chạm GPU, không cần
+   `vieneu-venv`. Nó chỉ đối chiếu **giấy tờ với mã**. Muốn đo lại thì chạy
+   `voice_sidecar/do_v1.py` trên máy có card, rồi cập nhật `do_v1.json` — và
+   khi đó tệp này sẽ nói ngay nếu số mới phá một giả định nào trong mã.
+
+## Hợp đồng `job.result`
+
+Phần cuối tệp chốt **hình dạng** `result` mà handler trả về. Giao diện đọc thẳng
+`audio_key`, `duration_s`, `credit_cost` để hiện lịch sử; đổi tên một khoá là
+làm trắng một cột mà không ai được báo.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+DO_V1 = GOC / "docs" / "LTT_VOICE" / "do_v1.json"
+
+
+def _do() -> dict:
+    return json.loads(DO_V1.read_text(encoding="utf-8"))["phep"]
+
+
+# ═══════════════════════════════════════════════ VRAM ════════════════════════
+
+def test_san_vram_khai_trong_manifest_cao_hon_dinh_da_do():
+    """Sàn xếp chỗ phải nằm TRÊN đỉnh đã đo, nếu không job bị xếp vào card chật.
+
+    ⚠️ `gpu_vram_mb` là sàn ĐỂ XẾP CHỖ, không phải hạn mức cứng. Khai thấp hơn
+       thực tế thì nền tảng vẫn cho job chạy — chỉ là nó có thể xếp job vào một
+       card gần đầy, rồi hỏng vì hết bộ nhớ ở giữa chừng. Một lỗi chỉ xuất hiện
+       khi máy bận, tức đúng lúc tệ nhất.
+    """
+    from platform_core.registry import discover
+
+    d = _do()["ranh.pytorch.vram_dinh"]
+    dinh = float(d["dinh_mb"])
+    dat_truoc = float(d["dat_truoc_mb"])
+
+    mf = next(i.manifest for i in discover() if i.manifest.slug == "ltt_voice")
+    for jt in ("ltt_voice.synthesize", "ltt_voice.enroll"):
+        khai = mf.vram_for(jt)
+        assert khai >= dat_truoc, (
+            f"{jt} khai {khai} MB, thap hon VRAM torch DA DAT TRUOC "
+            f"({dat_truoc} MB, dinh cap phat {dinh} MB) trong `do_v1.json`.\n"
+            f"Sàn xep cho phai tren so da do — neu khong, job bi xep vao card "
+            f"gan day roi hong giua chung, va chi hong khi may ban.")
+
+
+def test_san_vram_khong_khai_thua_qua_dang():
+    """Khai thừa cũng có giá: job phải chờ một card trống hơn mức nó cần.
+
+    Không có ngưỡng chuẩn nào cho "thừa bao nhiêu là quá", nên chốt một bội số
+    rộng rãi — nó bắt lỗi gõ nhầm một số 0, không bắt sự dè dặt hợp lý.
+    """
+    from platform_core.registry import discover
+
+    dat_truoc = float(_do()["ranh.pytorch.vram_dinh"]["dat_truoc_mb"])
+    mf = next(i.manifest for i in discover() if i.manifest.slug == "ltt_voice")
+    khai = mf.vram_for("ltt_voice.synthesize")
+    assert khai <= dat_truoc * 5, (
+        f"khai {khai} MB, gap hon nam lan muc da do ({dat_truoc} MB). Khai thua "
+        f"lam job phai cho mot card trong hon muc no can.")
+
+
+# ═══════════════════════════════════════════════ tốc độ ══════════════════════
+
+def test_ti_le_ky_tu_moi_giay_dung_de_bao_gia_KHONG_cao_hon_do_that():
+    """🔴 Hướng lệch ở đây quyết định khách bị thu thừa hay thiếu.
+
+    `gia.KY_TU_MOI_GIAY_UOC` chia số ký tự để ước ra số giây, rồi giữ chỗ theo
+    đó. Khai tỉ lệ **cao hơn** thực tế ⇒ ước ra ÍT giây hơn ⇒ giữ thiếu ⇒ quyết
+    toán vượt phần đã giữ.
+
+    Đo 31/08 trên ba độ dài: 19,6 / 19,8 / 19,9 ký tự mỗi giây, và biên báo giá
+    ổn định +11 %. Giữ tỉ lệ khai **dưới** mức đã đo là giữ nguyên hướng lệch an
+    toàn đó.
+    """
+    from apps.ltt_voice import gia
+
+    d = _do()
+    do_that = [v["ky_tu_moi_giay"] for k, v in d.items()
+               if k.startswith("ranh.pytorch.do_dai.") and v.get("ok")]
+    assert do_that, "khong tim thay so do do_dai nao trong do_v1.json"
+
+    assert gia.KY_TU_MOI_GIAY_UOC <= min(do_that), (
+        f"bao gia dung {gia.KY_TU_MOI_GIAY_UOC} ky tu/giay, CAO HON muc cham "
+        f"nhat da do ({min(do_that)}). Uoc ra it giay hon thuc te ⇒ giu thieu "
+        f"⇒ quyet toan vuot phan da giu.")
+
+
+def test_tran_thoi_gian_chay_rong_hon_luot_dai_nhat_da_do():
+    """Trần tồn tại để bắt job TREO, không để bắt job chậm."""
+    from platform_core.registry import discover
+
+    d = _do()
+    lau_nhat = max(v["gen_s"] for k, v in d.items()
+                   if k.startswith("ranh.pytorch.do_dai.") and v.get("ok"))
+    mf = next(i.manifest for i in discover() if i.manifest.slug == "ltt_voice")
+    tran = mf.runtime_limit_for("ltt_voice.synthesize", default=0)
+    assert tran >= lau_nhat * 10, (
+        f"tran {tran}s chi gap {tran / lau_nhat:.1f} lan luot dai nhat da do "
+        f"({lau_nhat}s). Tran nay de bat job TREO; dat sat qua thi no bat nham "
+        f"job cham.")
+
+
+# ═════════════════════════════════════ hợp đồng `job.result` ═════════════════
+
+def test_result_giu_dung_bon_khoa_ma_giao_dien_doc():
+    """🔴 Giao diện đọc thẳng `result`; đổi tên một khoá là làm trắng một cột.
+
+    Trang Lịch sử hiện thời lượng, credit và nút nghe lại từ `job.result`. Không
+    có hợp đồng thì một lần đổi tên trong `features.py` sẽ làm trắng cột đó, và
+    **không phép kiểm nào của app kêu** — dữ liệu vẫn đúng, chỉ là không ai đọc
+    được nó nữa.
+
+    ⭐ Chốt là TẬP CON, không phải tập bằng: thêm khoá mới luôn an toàn, bỏ hay
+       đổi tên thì không. Cùng luật với bánh cóc khác trong kho này.
+    """
+    from apps.ltt_voice import features
+
+    yc = features.YeuCau(text="xin chao", owner_id="u1")
+    kq = features.KetQua(yeu_cau=yc, audio_key="voice/out/u1/j1/tieng.wav",
+                         giay=3.25, text_da_chuan_hoa="xin chao", so_doan=1)
+    r = kq.as_result()
+
+    #: Giao diện và Public API dựa vào đúng những khoá này.
+    BAT_BUOC = {"audio_key", "duration_s", "credit_cost", "text",
+                "so_doan", "phien_ban_gia"}
+    thieu = BAT_BUOC - set(r)
+    assert not thieu, (
+        f"`as_result()` thieu {sorted(thieu)}. Giao dien doc thang cac khoa nay; "
+        f"bo mot cai la lam trang mot cot ma khong phep kiem nao keu.")
+
+    assert isinstance(r["duration_s"], (int, float))
+    assert isinstance(r["credit_cost"], int)
+    assert isinstance(r["audio_key"], str) and r["audio_key"]
+
+
+def test_credit_cost_luon_co_mat_ke_ca_khi_khong_do_duoc_thoi_luong():
+    """⛔ Thiếu `credit_cost` thì nền tảng thu TRỌN phần đã giữ, im lặng.
+
+    Đúng lỗi H37 mắc và đã sửa 24/08: xin 4 ảnh, máy trả 2, khách vẫn bị thu 4.
+    """
+    from apps.ltt_voice import features
+
+    yc = features.YeuCau(text="xin chao", owner_id="u1")
+    kq = features.KetQua(yeu_cau=yc, audio_key="k", giay=0.0,
+                         text_da_chuan_hoa="xin chao")
+    r = kq.as_result()
+    assert "credit_cost" in r
+    assert r["credit_cost"] == 0, (
+        "khong do duoc thoi luong ma van tinh tien — thu tien khong bang chung "
+        "te hon mat mot it tien (khuon 3.5)")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -258096,7 +260212,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=703e76827922abd00b9c050df1fc06a499f33050e741c04d9dfcfa76d028f198 BYTES=235388 LINES=2420
+SHA256=6a491b93150cdfef8dbe3fd7d23a7c567d2e204c3fb9fee693585e3b2e87b6a0 BYTES=243553 LINES=2565
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -260519,6 +262635,151 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   .lv-g-phai{position:static}
 }
 
+/* ── Man Studio: bo cuc ba cot (P2) ────────────────────────────────────────── */
+.lv-st{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;gap:16px;align-items:start}
+.lv-st-trai,.lv-st-giua,.lv-st-phai{display:flex;flex-direction:column;gap:14px;min-width:0}
+.lv-st-phai{position:sticky;top:72px}
+
+.lv-st-o{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 14px}
+.lv-st-o-dau{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  margin-bottom:9px;flex-wrap:wrap}
+.lv-st-o-nut{display:flex;gap:6px}
+/* Su that hien thi, KHONG phai dieu khien — nen no khong trong nhu nut bam. */
+.lv-st-that{margin:4px 0 3px;font-family:var(--mono);font-size:13px;color:var(--fg)}
+.lv-st-nut{display:flex;flex-direction:column;gap:8px}
+.lv-st-tao{justify-content:center;padding:11px 16px;font-size:14px;font-weight:600}
+.lv-st-uoc{margin:0;text-align:center;font-size:11.5px;color:var(--muted)}
+
+/* O kich ban */
+.lv-st-giua textarea{width:100%;padding:11px 12px;border-radius:var(--radius-md);
+  border:1px solid var(--line2);background:var(--panel2);color:var(--fg);
+  font:inherit;font-size:14px;line-height:1.65;resize:vertical;min-height:210px}
+.lv-st-giua textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-st-giua .lv-dem{margin:7px 0 0;justify-content:flex-end}
+/* Sap cham tran: doi mau TRUOC khi bi cat, chu khong bao sau. */
+.sap-tran{color:var(--warn)!important;font-weight:600}
+
+/* Xem truoc cach doc */
+.lv-xt{border-color:var(--brand-border);background:var(--brand-soft)}
+.lv-xt-chu{margin:0 0 7px;font-size:13.5px;line-height:1.7;color:var(--fg);
+  white-space:pre-wrap;word-break:break-word}
+.lv-xt-dong{background:none;border:none;color:var(--dim);font-size:17px;line-height:1;
+  cursor:pointer;padding:0 4px}
+.lv-xt-dong:hover{color:var(--fg)}
+
+/* Gan day */
+.lv-gd{list-style:none;margin:0;padding:0;font-size:12.5px}
+.lv-gd li{display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding:7px 0;border-bottom:1px solid var(--line)}
+.lv-gd li:last-child{border-bottom:none}
+.lv-gd-chu{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.lv-gd-phai{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+.lv-gd-tatca{display:inline-block;margin-top:9px;font-size:12px;color:var(--accent2);
+  text-decoration:none}
+.lv-gd-tatca:hover{text-decoration:underline}
+
+/* Ket qua */
+.lv-kq{min-height:150px}
+.lv-song{display:block;width:100%;height:72px;margin-bottom:9px}
+.lv-kq audio{width:100%;height:36px}
+.lv-kq-nut{display:flex;gap:7px;margin:11px 0}
+.lv-kq-nut .btn{flex:1;justify-content:center}
+.lv-kq-ct{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;margin:0;
+  font-size:11.5px;padding-top:11px;border-top:1px solid var(--line)}
+.lv-kq-ct dt{color:var(--dim)}
+.lv-kq-ct dd{margin:0;min-width:0;font-variant-numeric:tabular-nums}
+.lv-tiendo{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.lv-tiendo>div{height:100%;width:0;background:var(--accent);transition:width var(--motion-normal)}
+
+/* Bo chon giong */
+.lv-chon{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:13px 14px}
+.lv-chon-dau{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:9px}
+.lv-chon-them{font-size:11.5px;color:var(--accent2);text-decoration:none;white-space:nowrap}
+.lv-chon-them:hover{text-decoration:underline}
+.lv-chon-loc{display:flex;flex-direction:column;gap:7px;margin-bottom:9px}
+.lv-chon-tim{padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--line2);
+  background:var(--panel2);color:var(--fg);font:inherit;font-size:12.5px;width:100%}
+.lv-chon-tim:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus-shadow);outline:none}
+.lv-chon-loc .lv-loc-nhom{width:100%}
+.lv-chon-loc .lv-loc-nut{flex:1;text-align:center}
+/* Danh sach cuon: hai muoi hai muc phai vua mot cot, khong day nut Tao xuong
+   duoi man hinh. */
+.lv-chon-ds{max-height:290px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+  margin:0 -4px;padding:0 4px}
+.lv-chon-muc{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;
+  border-radius:var(--radius-sm);border:1px solid transparent;cursor:pointer;
+  transition:background var(--motion-fast)}
+.lv-chon-muc:hover{background:var(--panel2)}
+.lv-chon-muc input{margin-top:3px;flex:0 0 auto;accent-color:var(--accent)}
+/* Dang chon = vien do. Nen do dam cho mot muc trong danh sach 22 muc la qua to
+   tieng; vien noi du. */
+.lv-chon-muc:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
+.lv-chon-muc:focus-within{outline:2px solid var(--focus-ring);outline-offset:1px}
+.lv-chon-noi{min-width:0;display:flex;flex-direction:column;gap:2px}
+.lv-chon-noi b{font-size:12.5px;line-height:1.3}
+.lv-chon-noi small{color:var(--dim);font-size:11px}
+.lv-chon-rong{margin:8px 0 0;color:var(--dim);font-size:11.5px;text-align:center}
+
+@media(max-width:1180px){
+  .lv-st{grid-template-columns:270px minmax(0,1fr)}
+  .lv-st-phai{grid-column:1 / -1;position:static}
+}
+@media(max-width:820px){
+  .lv-st{grid-template-columns:1fr}
+  .lv-st-phai{grid-column:auto}
+  .lv-chon-ds{max-height:240px}
+}
+
+/* ── Man Lich su (P4) ──────────────────────────────────────────────────────── */
+.lv-ls-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+.lv-ls-trai{min-width:0}
+.lv-ls-phai-cot{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
+
+/* Loc: la mot form GET that, nen no chay ca khi khong co JS. */
+.lv-ls .lv-loc{align-items:flex-end}
+.lv-loc-o{display:flex;flex-direction:column;gap:3px;font-size:11px}
+.lv-loc-o select{padding:6px 9px;border-radius:var(--radius-sm);border:1px solid var(--line2);
+  background:var(--panel2);color:var(--fg);font:inherit;font-size:12.5px}
+.lv-loc-bo{font-size:12px;color:var(--accent2);text-decoration:none;padding-bottom:7px}
+.lv-loc-bo:hover{text-decoration:underline}
+.lv-loc-nut .dim{margin-left:4px;font-variant-numeric:tabular-nums}
+
+/* Danh sach */
+.lv-ls-ds{display:flex;flex-direction:column;gap:8px}
+.lv-ls-dong{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+  padding:11px 13px;cursor:pointer;transition:border-color var(--motion-fast)}
+.lv-ls-dong:hover{border-color:var(--line2);background:var(--panel2)}
+.lv-ls-dong:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.lv-ls-dong.chon{border-color:var(--brand-border);box-shadow:0 0 0 3px var(--focus-shadow)}
+.lv-ls-chinh{min-width:0}
+.lv-ls-chu{margin:0 0 4px;font-size:13px;line-height:1.45;color:var(--fg);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lv-ls-meta{margin:0;font-size:11px;color:var(--dim);font-variant-numeric:tabular-nums}
+.lv-ls-meta .mono{font-size:10.5px}
+.lv-ls-phai{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;
+  align-content:flex-start}
+.lv-ls-phat{grid-column:1 / -1;width:100%;height:32px;margin-top:2px}
+.lv-ls-cat{margin:12px 0 0;font-size:11.5px;text-align:center}
+
+/* Tom tat */
+.lv-tt{list-style:none;margin:9px 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.lv-tt li{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}
+.lv-tt b{font-variant-numeric:tabular-nums;font-size:13px}
+.lv-tt-giong{margin:10px 0 0;font-size:11.5px}
+.lv-tt-pham-vi{margin:6px 0 0;font-size:10.5px}
+
+@media(max-width:1000px){
+  .lv-ls-khung{grid-template-columns:1fr}
+  .lv-ls-phai-cot{position:static}
+}
+@media(max-width:560px){
+  .lv-ls-dong{grid-template-columns:1fr}
+  .lv-ls-phai{justify-content:flex-start}
+}
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/h26_queue_soak.py
@@ -260797,7 +263058,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/i18n_baseline.json
-SHA256=a0acc254d4420516e0f379ccd81b709d80253ca9d3a29db1b9de507d9b66c74b BYTES=4883 LINES=120
+SHA256=093ffcda06b776201a0c5301daafa712df8fa2d88939df40fdfb1511bc0b5c87 BYTES=4843 LINES=119
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "theo_file": {
@@ -260828,6 +263089,7 @@ SHA256=a0acc254d4420516e0f379ccd81b709d80253ca9d3a29db1b9de507d9b66c74b BYTES=48
     "apps/chataistudio/routes.py": 5,
     "apps/chataistudio/sidecar_client.py": 2,
     "apps/chataistudio/templates/chataistudio_admin.html": 9,
+    "apps/ltt_voice/manifest.py": 1,
     "apps/prompt_ai_ommi/jobs.py": 7,
     "apps/prompt_ai_ommi/manifest.py": 4,
     "apps/prompt_ai_ommi/project_schema.py": 4,
@@ -260898,7 +263160,6 @@ SHA256=a0acc254d4420516e0f379ccd81b709d80253ca9d3a29db1b9de507d9b66c74b BYTES=48
     "server/routes/auth.py": 6,
     "server/routes/register.py": 13,
     "server/templates/_doi_ngon_ngu.html": 1,
-    "server/templates/base.html": 1,
     "server/templates/error.html": 1,
     "server/templates/forgot_password.html": 5,
     "server/templates/home.html": 2,
@@ -260914,10 +263175,9 @@ SHA256=a0acc254d4420516e0f379ccd81b709d80253ca9d3a29db1b9de507d9b66c74b BYTES=48
     "server/templates/status.html": 7,
     "server/templates/verify_result.html": 3,
     "server/templating.py": 6,
-    "server/usage_rate_limit.py": 1,
-    "apps/ltt_voice/manifest.py": 1
+    "server/usage_rate_limit.py": 1
   },
-  "tong": 775
+  "tong": 774
 }
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -264992,6 +267252,155 @@ SHA256=815c56916c22cee8117dc99ddec2557a3defeec70754989d882ff3071a34ac1b BYTES=19
 {
   "max": 63
 }
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/sinh_giong_mau_engine.py
+SHA256=ff888c3624768e6b4962806001ff9508834eaa6223377a06605ac60ec6f4bef8 BYTES=6183 LINES=143
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+sinh_giong_mau_engine.py — chụp lại danh sách preset của engine vào kho.
+
+    py tools\\sinh_giong_mau_engine.py
+
+🔴 VÌ SAO CẦN MỘT ẢNH CHỤP TRONG KHO, KHI ĐÃ CÓ TỆP GỐC TRÊN ĐĨA.
+
+   `tests/test_345_ltt_voice_giong_mau.py` đối chiếu `apps/ltt_voice/giong_mau.py`
+   với danh sách thật của engine. Bản đầu đọc thẳng
+   `…\\vieneu-venv\\…\\assets\\voices_v3_turbo.json` bằng đường dẫn tuyệt đối, và
+   **bỏ qua** phép kiểm khi không thấy tệp.
+
+   Chạy tay thì nó thấy tệp và xanh. Chạy dưới `tools/gate.py` thì **không** —
+   venv của engine nằm ngoài kho, ngoài tầm với của lượt chạy. Nên bốn phép kiểm
+   quan trọng nhất của tệp đó âm thầm không chạy, và `check_bo_qua_im_lang` bắt
+   được đúng điều ấy: *"một test bị bỏ qua là một test KHÔNG canh gì cả."*
+
+⭐ Ảnh chụp sửa việc đó: nó nằm trong git, nên phép kiểm **luôn chạy**, ở mọi
+   máy, kể cả nơi không cài engine.
+
+⛔ NHƯNG ẢNH CHỤP KHÔNG THAY ĐƯỢC VIỆC HỎI ENGINE. Nó chốt "`giong_mau.py` khớp
+   thứ ta đã chụp"; nó **không** chốt "thứ ta đã chụp còn đúng". Hai câu đó tách
+   nhau đúng vào ngày nâng model — và đó là ngày duy nhất chúng có thể sai.
+
+   ⇒ Nâng engine thì **chạy lại tệp này**, và commit phần diff. Nếu diff rỗng
+     thì danh sách không đổi; nếu không rỗng thì `giong_mau.py` phải sửa theo, và
+     `test_345` sẽ nói chính xác chỗ nào.
+
+⚠️ Ảnh chụp **không** chứa `speaker_emb` lẫn `codes`. Chỉ tên, giới tính, mô tả —
+   đủ để đối chiếu, và không kéo 140 KB dữ liệu mô hình vào kho.
+"""
+from __future__ import annotations
+
+import json
+import pathlib
+import sys
+
+#: Hai đường vì venv engine nằm **ngoài** `app\` (ổ C: chật — xem `CLAUDE.md`
+#: hàng LTT VOICE), và máy chủ có thể đặt nó ở một trong hai.
+NGUON = (
+    pathlib.Path(r"D:\LTTPlatform-runtime\vieneu-venv\Lib\site-packages"
+                 r"\vieneu\assets\voices_v3_turbo.json"),
+    pathlib.Path(r"C:\LTTPlatform\vieneu-venv\Lib\site-packages"
+                 r"\vieneu\assets\voices_v3_turbo.json"),
+)
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+DICH = GOC / "apps" / "ltt_voice" / "giong_mau_engine.json"
+
+GHI_CHU = ("Anh chup danh sach preset cua engine. SINH RA, dung sua tay. "
+           "Sinh lai bang tools/sinh_giong_mau_engine.py khi nang engine.")
+
+
+#: Mẩu GIỮA của `description` là vùng miền: `"Nam · Bắc · Phong cách tin tức"`.
+_VUNG = {"Bắc": "bac", "Trung": "trung", "Nam": "nam"}
+
+
+def _vung_tu_mo_ta(mo_ta: str) -> str | None:
+    """Đọc vùng miền ra khỏi mô tả. Trả `None` khi không đọc được.
+
+    ⛔ `None` chứ không phải `""`: hai thứ đó khác nhau ở chỗ quan trọng nhất —
+       `""` là "giọng này không có vùng", `None` là "ta không biết". Chỉ cái
+       thứ hai đáng làm dừng việc sinh ảnh chụp.
+    """
+    phan = [p.strip() for p in str(mo_ta or "").split("·")]
+    if len(phan) < 2:
+        return None
+    return _VUNG.get(phan[1])
+
+
+def doc_nguon() -> dict | None:
+    for p in NGUON:
+        try:
+            if p.is_file():
+                return json.loads(p.read_text(encoding="utf-8"))
+        except OSError:
+            continue
+    return None
+
+
+def main(argv=None) -> int:
+    d = doc_nguon()
+    if d is None:
+        print("KHONG thay voices_v3_turbo.json. Duong da thu:")
+        for p in NGUON:
+            print(f"  {p}")
+        print("\nChay tep nay tren may CO cai engine (may A).")
+        return 1
+
+    presets = {}
+    hong = []
+    for n, v in sorted(d.get("presets", {}).items()):
+        mo_ta = str(v.get("description") or "")
+        vung = _vung_tu_mo_ta(mo_ta)
+        if vung is None:
+            hong.append(f"  {n!r}: khong doc duoc vung tu {mo_ta!r}")
+        presets[n] = {
+            "gender": v.get("gender", ""),
+            # `style` là cột THẬT của engine (`tin_tuc`/`tu_nhien`/`doc_truyen`).
+            # Lấy thẳng nó, đừng đoán từ `description` — mô tả upstream không
+            # nhất quán ("Phong cách kể chuyện" và "Phong cách đọc truyện" cùng
+            # là `doc_truyen`).
+            "style": v.get("style", ""),
+            "description": mo_ta,
+            "vung": vung or "",
+        }
+
+    if hong:
+        # 🔴 HỎNG TO TIẾNG, đừng ghi một ảnh chụp khuyết.
+        #
+        #    Vùng miền chỉ có trong chuỗi `description` (`"Nam · Bắc · …"`) —
+        #    không có cột riêng, nên nó phải được đọc ra. Ngày upstream đổi khuôn
+        #    mô tả, phép đọc đó sẽ hỏng; nếu ta lặng lẽ ghi `vung: ""` thì bộ lọc
+        #    vùng miền trên giao diện **im lặng rỗng** và không ai biết vì sao.
+        print("KHONG doc duoc vung mien cua mot so giong:")
+        print("\n".join(hong))
+        print("\nKhuon mo ta cua upstream co the da doi. Sua `_vung_tu_mo_ta`.")
+        return 1
+
+    ra = {
+        "_ghi_chu": GHI_CHU,
+        "default_voice": d.get("default_voice"),
+        "presets": presets,
+    }
+    moi = json.dumps(ra, ensure_ascii=False, indent=2) + "\n"
+    cu = DICH.read_text(encoding="utf-8") if DICH.is_file() else ""
+    if moi == cu:
+        print(f"{DICH.name}: khong doi ({len(ra['presets'])} preset)")
+        return 0
+
+    # LF, khong CRLF: tep JSON nay la LF trong git.
+    DICH.write_text(moi, encoding="utf-8", newline="\n")
+    print(f"{DICH.name}: DA GHI ({len(ra['presets'])} preset)")
+    # ⛔ stdout cua mot cong cu phai la ASCII thuan. Mot emoji o day da tung
+    #    lam gate do tren may nay (CLAUDE.md muc 4) — console Windows mac
+    #    dinh la cp1252 va `print` NEM chu khong xuong dong.
+    print("CANH BAO: danh sach preset DA DOI. Kiem `apps/ltt_voice/giong_mau.py`, "
+          "roi chay `pytest tests/test_345_ltt_voice_giong_mau.py`.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

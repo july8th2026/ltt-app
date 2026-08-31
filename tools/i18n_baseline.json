@@ -27,6 +27,7 @@
     "apps/chataistudio/routes.py": 5,
     "apps/chataistudio/sidecar_client.py": 2,
     "apps/chataistudio/templates/chataistudio_admin.html": 9,
+    "apps/ltt_voice/manifest.py": 1,
     "apps/prompt_ai_ommi/jobs.py": 7,
     "apps/prompt_ai_ommi/manifest.py": 4,
     "apps/prompt_ai_ommi/project_schema.py": 4,
@@ -97,7 +98,6 @@
     "server/routes/auth.py": 6,
     "server/routes/register.py": 13,
     "server/templates/_doi_ngon_ngu.html": 1,
-    "server/templates/base.html": 1,
     "server/templates/error.html": 1,
     "server/templates/forgot_password.html": 5,
     "server/templates/home.html": 2,
@@ -113,8 +113,7 @@
     "server/templates/status.html": 7,
     "server/templates/verify_result.html": 3,
     "server/templating.py": 6,
-    "server/usage_rate_limit.py": 1,
-    "apps/ltt_voice/manifest.py": 1
+    "server/usage_rate_limit.py": 1
   },
-  "tong": 775
+  "tong": 774
 }

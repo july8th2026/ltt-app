@@ -1,10 +1,33 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{#
+  Màn Studio. Đối chiếu với ảnh tham chiếu `01_STUDIO.png`:
+
+  GIỮ   ba cột · chọn giọng hai loại · ô kịch bản + đếm ký tự · xem trước chuẩn
+        hoá · kết quả tại chỗ có sóng âm · chi tiết kỹ thuật · danh sách gần đây.
+
+  BỎ, và mỗi cái một lý do khác nhau — xem §9 của
+  `docs/LTT_VOICE/VOICE_UI_EXECUTION_PLAN.md`:
+    · `DELIVERY STYLE` (tốc độ + phong cách) — ⛔ Q119 CẤM phơi ra. Hai lý do
+      độc lập: cache CUDA graph khoá theo `(B, temperature, top_k, top_p)`, và
+      upstream #173 lệch tông giữa các đoạn.
+    · `MODE Fast / Quality` — không tồn tại ở bất kỳ tầng nào.
+    · `LANGUAGE Auto / VI / EN` — engine tự xử VI lẫn EN. Ba nút giả tệ hơn một
+      câu thật, nên ở đây là một câu thật.
+    · `VERSIONS V1/V2/V3` — phiên bản là khái niệm của **khối** trong một dự án,
+      không phải của một lượt đọc lẻ. Nó thuộc P5.
+    · `Save to Project` — chưa có Dự án. Nút sẽ xuất hiện cùng P5, không sớm hơn.
+
+  ĐỔI  `OUTPUT WAV / MP3 / 48 kHz` từ **ba nút bấm** thành **một dòng sự thật**.
+       Cổng chỉ trả WAV ở một sample rate; ba nút trong đó hai nút không làm gì
+       là ba lời hứa, hai lời sai.
+#}
+
 {% block content %}
 <section class="lv-man lv-studio" aria-labelledby="lv-title">
   {% with tieu_de = _("Tạo tiếng nói"),
-          mo_ta = _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Dùng giọng có sẵn, hoặc giọng riêng bạn đã tạo."),
+          mo_ta = _("Chuyển văn bản thành giọng nói tiếng Việt tự nhiên. Tự nhận cả tiếng Anh xen giữa."),
           id_tieu_de = "lv-title" %}
     {% include "_voice_vo.html" %}
   {% endwith %}
@@ -16,127 +39,171 @@
     </div>
   {% endif %}
 
-  <form class="lv-form" id="lv-form" autocomplete="off">
+  <form class="lv-st" id="lv-form" autocomplete="off">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    <label class="lv-field">
-      <span class="lv-nhan">{{ _("Văn bản") }} <strong>*</strong></span>
-      <textarea name="text" id="lv-text" rows="8" required
-                maxlength="{{ tran_ky_tu }}"
-                placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
-      <small class="lv-dem">
-        <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
-        · <span id="lv-uoc">0</span> {{ _("credit tạm giữ") }}
-      </small>
-    </label>
+    {# ── Cột trái: chọn giọng + đầu ra + nút tạo ─────────────────────────── #}
+    <div class="lv-st-trai">
+      {% include "_voice_chon.html" %}
 
-    {# ⚠️ Ô CHỌN NÀY LÀ BẢN TẠM CỦA P2. Bộ chọn đầy đủ (hai tab, nghe thử, tìm)
-       là `_voice_chon.html`, dựng cùng lúc màn này được bố cục lại ba cột.
-       Nhưng nó phải liệt kê ĐỦ hai mươi giọng mẫu ngay từ bây giờ: màn Giọng đã
-       có nút "Dùng" trỏ sang đây, và một nút dẫn tới một ô chọn không có mục đó
-       là một ngõ cụt tệ hơn không có nút. #}
-    <label class="lv-field">
-      {{ _("Giọng đọc") }}
-      <select name="giong" id="lv-giong">
-        <option value=""{{ ' selected' if not giong_chon }}>
-          {{ _("Giọng mặc định") }} — {{ mac_dinh }}</option>
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Đầu ra") }}</span>
+        {# SỰ THẬT, không phải điều khiển. Cổng trả đúng một định dạng. #}
+        <p class="lv-st-that">WAV · 48 kHz</p>
+        <small class="dim">{{ _("Định dạng duy nhất hiện có. Tải về rồi chuyển đổi nếu cần thứ khác.") }}</small>
+      </div>
 
-        {% set cua_toi = giong | selectattr('trang_thai', 'equalto', 'active') | list %}
-        {% if cua_toi %}
-          <optgroup label="{{ _('Giọng của tôi') }}">
-            {% for g in cua_toi %}
-              <option value="v:{{ g.public_id }}"
-                {{- ' selected' if giong_chon == g.public_id }}>{{ g.ten_hien_thi }}</option>
-            {% endfor %}
-          </optgroup>
-        {% endif %}
+      <div class="lv-st-nut">
+        <button class="btn primary lv-st-tao" type="submit" id="lv-nut-tao"
+                {% if not cong_san_sang %}disabled{% endif %}>
+          {{ _("Tạo tiếng nói") }}
+        </button>
+        <p class="lv-st-uoc" id="lv-uoc-dong" hidden>
+          {{ _("Tạm giữ") }} <b id="lv-uoc">0</b> {{ _("credit") }}
+          · <span class="dim">{{ _("hoàn phần dư khi xong") }}</span>
+        </p>
+      </div>
+    </div>
 
-        <optgroup label="{{ _('Giọng mẫu') }}">
-          {% for g in giong_mau %}
-            <option value="m:{{ g.ma }}"{{ ' selected' if giong_chon == g.ma }}>
-              {{ g.ma }} — {{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</option>
+    {# ── Cột giữa: kịch bản ──────────────────────────────────────────────── #}
+    <div class="lv-st-giua">
+      <div class="lv-st-o">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Kịch bản") }}</span>
+          <div class="lv-st-o-nut">
+            <button type="button" class="btn sm ghost" id="lv-nut-xem">{{ _("Xem trước cách đọc") }}</button>
+            <button type="button" class="btn sm ghost" id="lv-nut-xoa">{{ _("Xoá") }}</button>
+          </div>
+        </div>
+
+        <textarea name="text" id="lv-text" rows="12" required
+                  maxlength="{{ tran_ky_tu }}"
+                  aria-describedby="lv-dem"
+                  placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
+        <p class="lv-dem" id="lv-dem">
+          <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
+        </p>
+      </div>
+
+      {# ⭐ XEM TRƯỚC CÁCH ĐỌC — không phải trang trí.
+         `manifest._gia()` đếm ký tự **sau** chuẩn hoá, nên số bị tính tiền không
+         phải số khách gõ; và quan trọng hơn, đây là chỗ duy nhất khách thấy được
+         máy sẽ đọc "15%" thành "15 phần trăm" trước khi trả tiền cho nó.
+         ⚠️ Hôm nay chênh lệch nhỏ (`doc_so_tran` đang TẮT có chủ ý); nó sẽ lớn khi
+            cờ đó được bật. Chi tiết ở `routes.py::xem_truoc`. #}
+      <div class="lv-st-o lv-xt" id="lv-xt" hidden>
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Máy sẽ đọc thành") }}</span>
+          <button type="button" class="lv-xt-dong" id="lv-xt-dong"
+                  aria-label="{{ _('Đóng') }}">×</button>
+        </div>
+        <p class="lv-xt-chu" id="lv-xt-chu"></p>
+        <p class="dim" id="lv-xt-ghi"></p>
+      </div>
+
+      <div class="lv-st-o" id="lv-gan-day-o">
+        <span class="eyebrow">{{ _("Gần đây") }}</span>
+        <div id="lv-gan-day">
+          {% if gan_day %}
+            <ul class="lv-gd">
+              {% for j in gan_day %}
+                <li>
+                  <span class="lv-gd-chu">{{ (j.params or {}).get('text', '')[:70] }}</span>
+                  <span class="lv-gd-phai">
+                    {% if j.result and j.result.get('duration_s') %}
+                      <small class="dim tnum">{{ j.result.get('duration_s') }}s</small>
+                    {% endif %}
+                    {% with tt = j.status %}{% include "_voice_trangthai.html" %}{% endwith %}
+                  </span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="dim">{{ _("Chưa có lượt nào. Lượt đầu tiên sẽ hiện ở đây.") }}</p>
+          {% endif %}
+        </div>
+        <a class="lv-gd-tatca" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }} →</a>
+      </div>
+    </div>
+
+    {# ── Cột phải: kết quả ───────────────────────────────────────────────── #}
+    <div class="lv-st-phai">
+      <div class="lv-st-o lv-kq" id="lv-kq" aria-live="polite">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Kết quả") }}</span>
+          <span id="lv-kq-tt"></span>
+        </div>
+
+        <div id="lv-kq-cho">
+          <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
+        </div>
+
+        <div id="lv-kq-chay" hidden>
+          <div class="lv-tiendo"><div id="lv-tiendo-thanh" role="progressbar"
+               aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div></div>
+          <p class="dim" id="lv-kq-buoc">{{ _("Đang xếp hàng…") }}</p>
+        </div>
+
+        <div id="lv-kq-xong" hidden>
+          {# Sóng âm THẬT, vẽ từ chính tệp vừa sinh bằng Web Audio + canvas.
+             Không thư viện — CSP chặn CDN, và một canvas là đủ. #}
+          <canvas id="lv-song" class="lv-song" height="72" aria-hidden="true"></canvas>
+          <audio id="lv-player" controls preload="metadata"></audio>
+          <div class="lv-kq-nut">
+            <a class="btn primary sm" id="lv-tai" download>{{ _("Tải WAV") }}</a>
+            <a class="btn ghost sm" id="lv-mo-job" href="#">{{ _("Mở trang việc") }}</a>
+          </div>
+          <dl class="lv-kq-ct">
+            <dt>{{ _("Thời lượng") }}</dt><dd id="lv-ct-giay">—</dd>
+            <dt>{{ _("Credit đã tính") }}</dt><dd id="lv-ct-credit">—</dd>
+            <dt>{{ _("Định dạng") }}</dt><dd>WAV · 48 kHz</dd>
+            <dt>{{ _("Mã yêu cầu") }}</dt>
+            <dd><span class="lv-ma nho"><code class="mono" id="lv-ct-job"></code>
+              <button type="button" class="lv-ma-chep" id="lv-ct-job-chep"
+                      aria-label="{{ _('Chép mã yêu cầu') }}">⧉</button></span></dd>
+          </dl>
+        </div>
+
+        <div id="lv-kq-loi" class="alert alert-err" role="alert" hidden></div>
+      </div>
+
+      <details class="lv-gia">
+        <summary>{{ _("Cách tính tiền") }}</summary>
+        <ul>
+          {% for m in bang_gia.muc %}
+            <li><b>{{ m.ten }}</b> — {{ m.cach_tinh }}
+              {% if m.vi_du %}
+                <ul>{% for v in m.vi_du %}<li>{{ v.mo_ta }}: {{ v.credit }} credit</li>{% endfor %}</ul>
+              {% else %}: {{ m.credit }} credit{% endif %}
+            </li>
           {% endfor %}
-        </optgroup>
-      </select>
-    </label>
-
-    <div class="lv-actions">
-      <button class="btn primary" type="submit" {% if not cong_san_sang %}disabled{% endif %}>
-        {{ _("Tạo tiếng nói") }}
-      </button>
-      <a class="btn ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Lịch sử") }}</a>
+        </ul>
+        {% for g in bang_gia.ghi_chu %}<p><small>{{ g }}</small></p>{% endfor %}
+        <p><small>{{ _("Bảng giá") }}: <code>{{ bang_gia.phien_ban }}</code></small></p>
+      </details>
     </div>
   </form>
-
-  <div id="lv-ket-qua" class="lv-ket-qua" hidden>
-    <audio id="lv-player" controls preload="none"></audio>
-  </div>
-  <div id="lv-loi" class="alert alert-err" role="alert" hidden></div>
-
-  <details class="lv-gia">
-    <summary>{{ _("Cách tính tiền") }}</summary>
-    <ul>
-      {% for m in bang_gia.muc %}
-        <li><b>{{ m.ten }}</b> — {{ m.cach_tinh }}
-          {% if m.vi_du %}
-            <ul>{% for v in m.vi_du %}<li>{{ v.mo_ta }}: {{ v.credit }} credit</li>{% endfor %}</ul>
-          {% else %}: {{ m.credit }} credit{% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-    {% for g in bang_gia.ghi_chu %}<p><small>{{ g }}</small></p>{% endfor %}
-    <p><small>{{ _("Bảng giá") }}: <code>{{ bang_gia.phien_ban }}</code></small></p>
-  </details>
 </section>
-
-<script>
-(function () {
-  var o = document.getElementById('lv-text');
-  var so = document.getElementById('lv-so');
-  var uoc = document.getElementById('lv-uoc');
-  // Ước phía trình duyệt CHỈ để hiển thị. Số thật do máy chủ tính khi nộp —
-  // hai chỗ tính tiền là hai chỗ lệch nhau, nên chỗ này không bao giờ được là
-  // nguồn của con số bị trừ.
-  function dem() {
-    var n = o.value.length;
-    so.textContent = n;
-    uoc.textContent = n ? Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)) : 0;
-  }
-  o.addEventListener('input', dem); dem();
-
-  document.getElementById('lv-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var loi = document.getElementById('lv-loi');
-    var kq = document.getElementById('lv-ket-qua');
-    loi.hidden = true; kq.hidden = true;
-
-    var g = document.getElementById('lv-giong').value || '';
-    var fd = new FormData();
-    fd.append('csrf_token', e.target.csrf_token.value);
-    fd.append('text', o.value);
-    // Hai tien to, hai truong KHAC NHAU o phia may chu — va `features.chuan_hoa`
-    // TU CHOI neu gui ca hai. Do la co y: hai nguon giong cung luc la mot yeu
-    // cau khong co cau tra loi dung, nen no phai bi tu choi ro rang chu khong
-    // duoc lang le chon mot cai.
-    if (g.indexOf('v:') === 0) { fd.append('voice_id', g.slice(2)); }
-    else if (g.indexOf('m:') === 0) { fd.append('preset', g.slice(2)); }
-
-    fetch('{{ manifest.route_prefix }}/tao', {method: 'POST', body: fd})
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d.ok) { loi.textContent = d.loi; loi.hidden = false; return; }
-        window.location.href = '/jobs/' + d.job_id;
-      })
-      .catch(function () {
-        loi.textContent = '{{ _("Không gửi được yêu cầu. Thử lại nhé.") }}';
-        loi.hidden = false;
-      });
-  });
-})();
-</script>
 {% endblock %}
 
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.studio({
+  duong: {{ manifest.route_prefix | tojson }},
+  tranKyTu: {{ tran_ky_tu | tojson }},
+  chu: {
+    dangCho:   {{ _("Đang xếp hàng…") | tojson }},
+    dangTao:   {{ _("Đang tạo tiếng…") | tojson }},
+    xong:      {{ _("Hoàn tất") | tojson }},
+    loi:       {{ _("Lỗi") | tojson }},
+    khongGui:  {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }},
+    matKetNoi: {{ _("Mất kết nối tạm thời. Đang thử lại…") | tojson }},
+    khongXem:  {{ _("Không xem trước được lúc này.") | tojson }},
+    khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
+    doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }}
+  }
+});
+</script>
 {% endblock %}

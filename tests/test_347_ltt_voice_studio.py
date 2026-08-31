@@ -1,0 +1,338 @@
+"""Hai cửa mới của màn Studio: xem trước cách đọc, và theo dõi kết quả tại chỗ.
+
+## Vì sao hai cửa này tồn tại
+
+**`POST /xem-truoc`** — `manifest._gia()` đếm ký tự **sau** khi chuẩn hoá, nên số
+ký tự bị tính tiền không phải số ký tự khách gõ. Trước cửa này khách không có
+cách nào thấy điều đó trước khi bấm; họ chỉ gặp nó dưới dạng một hoá đơn không
+giải thích được.
+
+**`GET /ket-qua/{job_id}`** — `job_history.customer_payload` cố tình **không**
+trả `result` lẫn `error`: nó là gói dùng chung cho mọi app, mà `result` thì mỗi
+app một hình dạng. Studio cần đúng ba thứ trong đó (khoá tệp, thời lượng,
+credit), nên app tự mở một cửa hẹp thay vì nới cửa chung.
+
+## Điều được chốt chặt nhất ở đây
+
+⛔ **`/ket-qua/` không được trả `job.error` thô.** `job_events.public_message` là
+   câu đã duyệt để hiện cho chủ job; `job.error` là chuỗi ngoại lệ và có thể mang
+   chi tiết nội bộ. Hai thứ đó khác nhau, và chỉ có một cái được ra ngoài.
+
+⛔ **Quyền đọc lọc trong chính câu truy vấn** (`job_history.get_owned`), không
+   phải tra job rồi so chủ ở bước sau — giữa hai bước đó có một khoảng trống mà
+   một bản vá sau này rất dễ quên.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-st.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-voice-studio")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="voice-st@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    login = client.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', login.text)
+    assert m
+    r = client.post("/login", data={"username": "voice-st@test.com",
+                                    "password": "matkhau-tot-12",
+                                    "csrf_token": m.group(1)})
+    assert r.status_code in (200, 302, 303)
+    try:
+        yield client, uid
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _csrf(client) -> str:
+    r = client.get("/ltt-voice")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', r.text)
+    assert m, "khong lay duoc csrf tu trang Studio"
+    return m.group(1)
+
+
+def _tao_job(uid: str, *, status: str, result=None, error: str = "") -> str:
+    """Đặt thẳng một job vào CSDL. Nhanh hơn, và không cần worker."""
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        job = Job(user_id=uid, app_slug="ltt_voice",
+                  job_type="ltt_voice.synthesize",
+                  params={"text": "xin chao"}, status=status,
+                  result=result or {}, error=error, progress=100)
+        db.add(job)
+        db.commit()
+        return str(job.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+# ── Xem trước cách đọc ───────────────────────────────────────────────────────
+
+def test_xem_truoc_hien_dung_thu_may_se_doc(khach):
+    """Ký hiệu phải được nở ra thành chữ — đó là toàn bộ điểm của ô này."""
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "Tang 15% so voi thang truoc.",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["ok"] is True
+    assert "phần trăm" in d["da_chuan_hoa"], (
+        f"'%' khong duoc no ra: {d['da_chuan_hoa']!r}")
+    assert d["doi_khac"] is True
+
+
+def test_xem_truoc_bao_dung_khi_khong_co_gi_de_doi(khach):
+    """Văn bản thuần chữ thì `doi_khac` phải là False.
+
+    ⭐ Nói "không có gì phải chuẩn hoá" là một câu trả lời **có ích**. Hiện một
+       ô xem trước giống hệt ô nhập mà không giải thích thì người dùng sẽ tưởng
+       tính năng hỏng.
+    """
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "Xin chao cac ban",
+                          "csrf_token": _csrf(client)})
+    d = r.json()
+    assert d["ok"] is True and d["doi_khac"] is False
+
+
+def test_uoc_credit_den_tu_CHINH_ham_ra_hoa_don(khach):
+    """🔴 Con số hiện ra phải là con số sẽ bị tạm giữ, không phải ước lượng thứ hai.
+
+    Hai chỗ tính tiền là hai chỗ sẽ lệch nhau. Ở đây `/xem-truoc` và
+    `manifest.credit_cost` phải cho **cùng** một số cho **cùng** một văn bản.
+    """
+    from apps.ltt_voice.manifest import MANIFEST
+
+    client, _uid = khach
+    van_ban = "Doanh thu thang nay tang 15% so voi thang truoc."
+    d = client.post("/ltt-voice/xem-truoc",
+                    data={"text": van_ban, "csrf_token": _csrf(client)}).json()
+    assert d["uoc_credit"] == MANIFEST.credit_cost({"text": van_ban}), (
+        "so credit o o xem truoc LECH khoi so ma cua nop se giu")
+
+
+def test_xem_truoc_tu_choi_van_ban_rong(khach):
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "   ", "csrf_token": _csrf(client)})
+    assert r.status_code == 400
+
+
+def test_xem_truoc_doi_csrf(khach):
+    """Cửa POST nào cũng phải qua CSRF, kể cả cửa chỉ tính toán."""
+    client, _uid = khach
+    r = client.post("/ltt-voice/xem-truoc",
+                    data={"text": "xin chao", "csrf_token": "sai-bet"})
+    assert r.status_code >= 400
+
+
+# ── Theo dõi kết quả ─────────────────────────────────────────────────────────
+
+def test_ket_qua_khi_xong_tra_du_thu_studio_can(khach):
+    client, uid = khach
+    jid = _tao_job(uid, status="done", result={
+        "audio_key": f"voice/out/{uid}/job/tieng.wav",
+        "duration_s": 4.25, "credit_cost": 2, "so_doan": 1})
+
+    d = client.get(f"/ltt-voice/ket-qua/{jid}").json()
+    assert d["trang_thai"] == "done"
+    assert d["giay"] == 4.25
+    assert d["credit"] == 2
+    # URL phát phải đi qua cửa `/audio/` của app, không lộ khoá kho trần.
+    assert d["audio_url"].startswith("/ltt-voice/audio/")
+
+
+def test_ket_qua_khi_dang_chay_khong_tra_tep(khach):
+    client, uid = khach
+    jid = _tao_job(uid, status="running")
+    d = client.get(f"/ltt-voice/ket-qua/{jid}").json()
+    assert d["trang_thai"] == "running"
+    assert d["audio_url"] == ""
+
+
+def test_ket_qua_KHONG_TRA_error_tho(khach):
+    """🔴 Phép kiểm quan trọng nhất tệp này.
+
+    `job.error` là chuỗi ngoại lệ thô. Nó có thể mang đường dẫn nội bộ, tên host,
+    hay một mẩu payload. Cửa này chỉ được trả câu đã duyệt (`public_message`) —
+    và khi không có câu nào, một câu chung chung, **không phải** chuỗi thô.
+    """
+    client, uid = khach
+    bi_mat = "Traceback: C:/LTTPlatform/secrets/app.env line 42 token=abc123"
+    jid = _tao_job(uid, status="error", error=bi_mat)
+
+    r = client.get(f"/ltt-voice/ket-qua/{jid}")
+    d = r.json()
+    assert d["trang_thai"] == "error"
+    assert "loi" in d and d["loi"], "job hong ma khong noi duoc gi cho khach"
+    assert "secrets" not in r.text and "abc123" not in r.text, (
+        "CHUOI LOI THO RO RA NGOAI:\n" + r.text[:400])
+
+
+def test_ket_qua_cua_nguoi_khac_tra_404(khach):
+    """Quyền lọc trong chính câu truy vấn, không so chủ ở bước sau."""
+    client, _uid = khach
+    jid = _tao_job("00000000-0000-0000-0000-000000000000", status="done",
+                   result={"audio_key": "voice/out/x/job/tieng.wav"})
+    assert client.get(f"/ltt-voice/ket-qua/{jid}").status_code == 404
+
+
+def test_ket_qua_job_khong_ton_tai_tra_404(khach):
+    client, _uid = khach
+    assert client.get("/ltt-voice/ket-qua/khong-co-that").status_code == 404
+
+
+# ── Màn Studio dựng đủ thứ nó hứa ────────────────────────────────────────────
+
+def test_studio_liet_ke_du_hai_muoi_giong_mau(khach):
+    """Màn Giọng có nút "Dùng" trỏ sang đây. Một nút dẫn tới một ô chọn thiếu
+    mục đó là một ngõ cụt tệ hơn không có nút."""
+    from apps.ltt_voice import giong_mau
+
+    client, _uid = khach
+    html = client.get("/ltt-voice").text
+    thieu = [g.ma for g in giong_mau.DANH_SACH
+             if f'value="m:{g.ma}"' not in html]
+    assert not thieu, f"bo chon giong thieu: {thieu}"
+
+
+def test_studio_chon_san_giong_tu_tham_so(khach):
+    client, _uid = khach
+    html = client.get("/ltt-voice", params={"giong": "Adam"}).text
+    assert re.search(r'value="m:Adam"[^>]*\schecked', html), (
+        "?giong=Adam khong duoc chon san")
+
+
+def test_studio_bo_qua_giong_bia(khach):
+    """Tham số là chuỗi khách gửi ⇒ không tin. Giá trị lạ thì im lặng bỏ qua."""
+    client, _uid = khach
+    html = client.get("/ltt-voice", params={"giong": "KHONG-CO-THAT"}).text
+    assert 'value=""  checked' in html or re.search(
+        r'value=""[^>]*\schecked', html), "khong roi ve giong mac dinh"
+    assert "KHONG-CO-THAT" not in html, "gia tri la duoc doi lai ra HTML"
+
+
+def test_studio_KHONG_ve_dieu_khien_bi_cam(khach):
+    """⛔ Q119: tốc độ, phong cách, temperature — không cái nào được lên giao diện.
+
+    Và `MODE Fast/Quality` cùng `LANGUAGE VI/EN` thì backend không có, nên vẽ
+    chúng là hứa một thứ không tồn tại.
+    """
+    client, _uid = khach
+    html = client.get("/ltt-voice").text.lower()
+    for cam in ("temperature", "top_k", "top_p", 'name="speed"',
+                'name="toc_do"', 'name="mode"', 'name="language"'):
+        assert cam not in html, f"dieu khien bi cam lo ra giao dien: {cam!r}"
+
+
+# ── CSRF: bánh cóc cho một lỗ đã sống từ ngày phát hành ──────────────────────
+
+#: MỌI cửa POST của app, kèm dữ liệu tối thiểu để nó đi tới bước kiểm CSRF.
+#:
+#: 🔴 Chốt theo DANH SÁCH ĐẦY ĐỦ chứ không theo cửa vừa bắt được. Lỗ này không
+#:    phải một chỗ quên — nó là **cùng một dòng sai chép ra bốn chỗ**, nên phép
+#:    kiểm phải phủ cả bốn. Thêm cửa POST thứ năm mà quên CSRF thì
+#:    `test_moi_cua_post_deu_doi_csrf` vẫn xanh (nó chỉ biết những gì được liệt
+#:    kê) — nên có thêm `test_khong_cua_nao_bo_qua_ket_qua_verify` quét mã nguồn.
+CUA_POST = [
+    ("/ltt-voice/tao", {"text": "xin chao"}),
+    ("/ltt-voice/xem-truoc", {"text": "xin chao"}),
+    ("/ltt-voice/giong/vc_khongcothat/tat", {}),
+]
+
+
+@pytest.mark.parametrize("duong,du_lieu", CUA_POST)
+def test_moi_cua_post_deu_doi_csrf(khach, duong, du_lieu):
+    """Token sai ⇒ phải bị từ chối, không được làm việc rồi trả 200.
+
+    Ba cửa này đều có hậu quả: tiêu credit · tính toán · vô hiệu hoá giọng.
+    """
+    client, _uid = khach
+    r = client.post(duong, data=dict(du_lieu, csrf_token="sai-bet"))
+    assert r.status_code >= 400, (
+        f"{duong} nhan token CSRF SAI ma van tra {r.status_code}")
+
+
+def test_khong_cua_nao_bo_qua_ket_qua_verify():
+    """🔴 Quét mã nguồn, vì phép kiểm theo danh sách không thấy cửa MỚI.
+
+    `verify_csrf_token` **trả `bool`**, nó không ném. Gọi nó rồi vứt kết quả đi
+    là một dòng **trông đúng** — và đó chính xác là cách lỗ này sống sót từ ngày
+    phát hành qua 69 phép kiểm.
+
+    Luật: giá trị trả về phải được **dùng**, tức lời gọi không được đứng một
+    mình như một câu lệnh.
+
+    ⚠️ Đọc bằng AST chứ không quét từng dòng. Bản đầu quét dòng và tự bắt chính
+       **docstring** của mình — vì docstring có in ra dòng sai làm ví dụ. Một
+       bánh cóc báo động vì văn xuôi là một bánh cóc sẽ bị tắt đi. AST chỉ nhìn
+       thấy mã thật: chuỗi và chú thích vô hình với nó.
+    """
+    import ast
+    import inspect
+
+    from apps.ltt_voice import routes
+
+    cay = ast.parse(inspect.getsource(routes))
+    xau = []
+    for nut in ast.walk(cay):
+        # `ast.Expr` = một biểu thức đứng riêng làm câu lệnh, tức giá trị của nó
+        # bị vứt đi. Đó chính xác là hình dạng của lỗi.
+        if not isinstance(nut, ast.Expr) or not isinstance(nut.value, ast.Call):
+            continue
+        ham = nut.value.func
+        ten = getattr(ham, "id", None) or getattr(ham, "attr", None)
+        if ten == "verify_csrf_token":
+            xau.append(f"  dong {nut.lineno}")
+
+    assert not xau, (
+        "Co loi goi `verify_csrf_token` dung MOT MINH, tuc ket qua bi vut di:\n"
+        + "\n".join(xau)
+        + "\n\nHam nay tra `bool`, no KHONG nem. Viet:\n"
+          "    if not verify_csrf_token(request, csrf_token):\n"
+          "        return _het_phien()")

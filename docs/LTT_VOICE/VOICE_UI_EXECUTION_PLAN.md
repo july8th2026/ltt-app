@@ -553,3 +553,79 @@ P2 (Studio) · P4 (Lịch sử) → **vạch MVP**. Rồi P5/P6 (cần chốt Q-
 ⚠️ **Chưa deploy.** Production (`C:\LTTPlatform\app`) vẫn là bản cũ, nên chưa
 chốt được trên `https://app.lttstudios.com` như quy tắc 5b đòi. Deploy cần chủ
 sản phẩm bấm UAC ⇒ gộp **một lần** ở vạch MVP, không deploy sau mỗi pha.
+
+### P2 — Màn Studio · ✅ 2026-08-31
+
+Ba cột · bộ chọn giọng dùng chung (`_voice_chon.html`) · xem trước cách đọc ·
+kết quả **tại chỗ** với sóng âm thật · Gần đây · chi tiết kỹ thuật.
+
+Hai cửa mới: `POST /xem-truoc` (thuần tính toán) và `GET /ket-qua/{job_id}`.
+Cửa thứ hai cần thiết vì `job_history.customer_payload` **cố tình không** trả
+`result` lẫn `error` — nó là gói dùng chung cho mọi app.
+
+**Kiểm thật đầu-tới-cuối, không mô phỏng:** nộp → poll → job hoàn tất → sóng âm
+vẽ **12.448 pixel** từ giải mã WAV bằng Web Audio, 0 thư viện.
+
+🔴 **MỘT LỖ BẢO MẬT ĐANG SỐNG, do một phép kiểm thủ tục bắt được.**
+
+Tôi viết `test_xem_truoc_doi_csrf` như một thủ tục lấy lệ. Nó đỏ:
+`assert 200 >= 400`.
+
+`verify_csrf_token` **trả `bool`, nó không ném**. Và app này gọi nó rồi vứt kết
+quả đi ở **cả bốn** cửa POST — `ltt_voice` là **app duy nhất trong kho** làm vậy;
+mọi app khác đều `if not verify_csrf_token(...)`. Nên CSRF chưa bao giờ được thi
+hành ở đây kể từ ngày phát hành, trên ba cửa có hậu quả: `/tao` tiêu credit,
+`/giong/tao` ghi **cam kết pháp lý**, `/giong/{id}/tat` vô hiệu hoá giọng.
+
+⭐ Vì sao nó sống sót: dòng gọi **trông đúng**, và chú thích đầu tệp còn ghi
+*"kiểm quyền/CSRF"*. Đọc lướt thì mọi thứ ở đúng chỗ. Nó chỉ lộ ra khi có ai gửi
+một token sai và **đòi** một mã lỗi.
+
+⚠️ Mức nguy hiểm thật, nói cho đúng: cookie phiên đặt `same_site="lax"`, nên
+trình duyệt đã chặn phần lớn đường khai thác. Phòng thủ nhiều lớp hụt một lớp,
+không phải cửa mở toang.
+
+⇒ Sửa cả bốn + **hai lớp bánh cóc**: phép kiểm HTTP từng cửa, và một máy quét
+**AST** bắt hình dạng `verify_csrf_token(...)` đứng một mình. Đã chứng minh nó
+đỏ với mã xấu và xanh với mã tốt.
+*(Bản đầu của máy quét đọc từng dòng và tự bắt chính docstring của mình. Một
+bánh cóc báo động vì văn xuôi là một bánh cóc sẽ bị tắt đi.)*
+
+**Và một chỗ tôi tự nói quá, đã sửa.** Tôi viết rằng `1.250.000 đồng` bị tính
+tiền như *"một triệu hai trăm năm mươi nghìn đồng"*. Đo thật: nó thành
+`1250000` — **ngắn đi**. `doc_so_tran` đang **tắt có chủ ý** chờ đo ở V1. Đã sửa
+chú thích ở ba chỗ; §7.2 của tài liệu này cũng nói quá theo cùng cách.
+
+### P4 — Màn Lịch sử · ✅ 2026-08-31 → 🏁 **VẠCH MVP GIAO DIỆN**
+
+Lọc trạng thái · nguồn · giọng, **phía máy chủ** bằng form GET.
+🔄 Khác màn Giọng (lọc phía trình duyệt), và có lý do: lịch sử đọc theo trần,
+nên lọc phía trình duyệt sẽ lọc trên một tập **đã bị cắt** — trả ra ít hơn sự
+thật mà không nói gì. Đổi lại được URL chia sẻ được, và chạy khi không có JS.
+
+Hai chỗ cố ý làm khác cách dễ:
+
+- **Tỉ lệ lỗi tính trên lượt ĐÃ KẾT THÚC**, không trên tổng. Dùng tổng làm mẫu
+  số khiến tỉ lệ lỗi tụt xuống mỗi khi nhiều việc xếp hàng — tức nó đẹp nhất
+  đúng lúc hệ thống tắc nhất.
+- **Trần 500 lượt được NÓI RA.** Test hạ trần xuống 5, gieo 6, đòi câu giải
+  thích xuất hiện — và đòi nó **không** xuất hiện khi chưa cắt gì.
+
+Job cũ hơn P1 không có `nguon` ⇒ hiện rỗng, **không đoán**.
+
+---
+
+## 15. Điều rút ra sau bốn pha
+
+**Năm lỗi đang sống, và không lỗi nào bị bộ test cũ bắt.** Ba lỗi chỉ thấy được
+bằng trình duyệt; một lỗi chỉ thấy khi viết một phép kiểm thủ tục; một lỗi do
+chính bánh cóc của kho bắt.
+
+⭐ Mẫu chung đáng ghi: **cả năm đều là mã "trông đúng".** Không cái nào là một
+dòng sai rõ ràng. `verify_csrf_token(...)` trông như đang kiểm. `class="lv-form"`
+trông như có style. `{{ entry.label }}` trông như đã dịch. `skipif` trông như
+một sự thận trọng. `voice/{uid}/` trông như thư mục của chính khách.
+
+⇒ Audit đọc mã trả lời được *"component nào dùng lại được"*. Nó **không** trả
+lời được *"thứ này có thực sự làm điều nó trông như đang làm không"*. Câu thứ
+hai cần một trình duyệt, hoặc một phép kiểm **đòi** một kết quả cụ thể.

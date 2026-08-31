@@ -1,53 +1,197 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{#
+  Màn Lịch sử. Đối chiếu với ảnh tham chiếu `05_HISTORY.png`:
+
+  GIỮ   danh sách + nghe lại + tải + mở lại · lọc theo trạng thái và nguồn ·
+        thẻ nguồn (Studio · Dự án · Lô · API) · tóm tắt hoạt động · đang xử lý ·
+        panel chi tiết có mã yêu cầu.
+
+  ĐỔI   ảnh lọc thêm `Language`; nền tảng không ghi ngôn ngữ ở đâu cả (engine tự
+        xử VI lẫn EN). Thay bằng lọc theo **giọng**, vốn có thật và hữu ích hơn.
+
+  ⚠️ Thẻ nguồn chỉ hiện được với lượt nộp TỪ P1 trở đi. Job cũ hơn không mang
+     khoá `nguon`, và ta **không đoán** — đoán một nguồn cho dữ liệu lịch sử là
+     bịa ra một sự thật không ai kiểm lại được nữa.
+#}
+
 {% block content %}
-<section class="lv-man lv-lich-su" aria-labelledby="lv-ls-title">
+<section class="lv-man lv-ls" aria-labelledby="lv-ls-title">
   {% with tieu_de = _("Lịch sử tạo tiếng"),
           mo_ta = _("Mọi lượt đọc của bạn, nghe lại và tải về được."),
           id_tieu_de = "lv-ls-title" %}
     {% include "_voice_vo.html" %}
   {% endwith %}
 
-  <table class="lv-bang">
-    <thead><tr>
-      <th>{{ _("Lúc") }}</th><th>{{ _("Văn bản") }}</th>
-      <th>{{ _("Trạng thái") }}</th>
-      <th>{{ _("Thời lượng") }}</th><th>{{ _("Credit") }}</th><th></th>
-    </tr></thead>
-    <tbody>
-    {% for j in lich_su %}
-      <tr>
-        {# `{{ j.created_at }}` in nguyen `2026-08-31 10:03:40.582730+07:00` —
-           dung ky thuat, sai voi nguoi doc, va lech han voi trang job ngay ben
-           canh (`10:03 31/08/2026`). Dung dung khuon do. #}
-        <td><time datetime="{{ j.created_at.isoformat() }}">{{ j.created_at.strftime('%H:%M %d/%m/%Y') }}</time></td>
-        <td>{{ (j.params or {}).get('text', '')[:80] }}</td>
-        <td>{% with tt = j.status %}{% include "_voice_trangthai.html" %}{% endwith %}</td>
-        <td>{% if j.result %}{{ j.result.get('duration_s', '-') }}s{% else %}-{% endif %}</td>
-        <td>{% if j.result %}{{ j.result.get('credit_cost', '-') }}{% else %}-{% endif %}</td>
-        <td>
-          {% if j.result and j.result.get('audio_key') %}
-            <audio controls preload="none"
-                   src="{{ manifest.route_prefix }}/audio/{{ j.result.audio_key }}"></audio>
-          {% endif %}
-        </td>
-      </tr>
-    {% else %}
-      <tr><td colspan="6">
-        {% with tieu_de = _("Chưa có lượt nào"),
-                mo_ta = _("Mỗi lần bạn tạo tiếng nói, lượt đó xuất hiện ở đây để nghe lại và tải về."),
-                nut = _("Tạo tiếng nói"), nut_href = manifest.route_prefix %}
-          {% include "_voice_rong.html" %}
-        {% endwith %}
-      </td></tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <div class="lv-ls-khung">
+    {# ── Cột trái: lọc + danh sách ───────────────────────────────────────── #}
+    <div class="lv-ls-trai">
+      <form class="lv-loc" method="get" role="search">
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Trạng thái') }}">
+          <button type="submit" name="tt" value=""
+                  class="lv-loc-nut {{ 'on' if not f_tt }}">
+            {{ _("Tất cả") }} <span class="dim">{{ tom_tat.tong }}</span></button>
+          <button type="submit" name="tt" value="done"
+                  class="lv-loc-nut {{ 'on' if f_tt == 'done' }}">
+            {{ _("Hoàn tất") }} <span class="dim">{{ tom_tat.dem.done }}</span></button>
+          <button type="submit" name="tt" value="running"
+                  class="lv-loc-nut {{ 'on' if f_tt == 'running' }}">
+            {{ _("Đang tạo") }} <span class="dim">{{ tom_tat.dang_chay }}</span></button>
+          <button type="submit" name="tt" value="error"
+                  class="lv-loc-nut {{ 'on' if f_tt == 'error' }}">
+            {{ _("Lỗi") }} <span class="dim">{{ tom_tat.dem.error }}</span></button>
+        </div>
+
+        {% if nguon_da_dung %}
+          <label class="lv-loc-o">
+            <span class="dim">{{ _("Nguồn") }}</span>
+            <select name="nguon" onchange="this.form.submit()">
+              <option value="">{{ _("Mọi nguồn") }}</option>
+              {% for n in nguon_da_dung %}
+                <option value="{{ n }}"{{ ' selected' if f_nguon == n }}>{{ _(nhan_nguon.get(n, n)) }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        {% endif %}
+
+        {% if giong_da_dung %}
+          <label class="lv-loc-o">
+            <span class="dim">{{ _("Giọng") }}</span>
+            <select name="giong" onchange="this.form.submit()">
+              <option value="">{{ _("Mọi giọng") }}</option>
+              {% for g in giong_da_dung %}
+                <option value="{{ g }}"{{ ' selected' if f_giong == g }}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        {% endif %}
+
+        {% if f_tt or f_nguon or f_giong %}
+          <a class="lv-loc-bo" href="{{ manifest.route_prefix }}/lich-su">{{ _("Bỏ lọc") }}</a>
+        {% endif %}
+      </form>
+
+      <p class="lv-g-dem">{{ dong|length }} {{ _("lượt") }}</p>
+
+      {% if dong %}
+        <div class="lv-ls-ds">
+          {% for d in dong %}
+            <article class="lv-ls-dong" data-id="{{ d.id }}" tabindex="0"
+                     data-audio="{{ d.audio_url }}"
+                     data-giay="{{ d.giay if d.giay is not none else '' }}"
+                     data-credit="{{ d.credit if d.credit is not none else '' }}"
+                     data-giong="{{ d.giong }}" data-nguon="{{ d.nguon }}"
+                     data-luc="{{ d.luc.strftime('%H:%M %d/%m/%Y') }}"
+                     data-tt="{{ d.trang_thai }}">
+              <div class="lv-ls-chinh">
+                <p class="lv-ls-chu">{{ d.text or _("(không có văn bản)") }}</p>
+                <p class="lv-ls-meta">
+                  <time datetime="{{ d.luc.isoformat() }}">{{ d.luc.strftime('%H:%M %d/%m/%Y') }}</time>
+                  {% if d.giong %}· <span class="mono">{{ d.giong }}</span>{% endif %}
+                  {% if d.giay %}· {{ d.giay }}s{% endif %}
+                  {% if d.credit is not none %}· {{ d.credit }} credit{% endif %}
+                </p>
+              </div>
+              <div class="lv-ls-phai">
+                {% if d.nguon %}<span class="chip m">{{ _(nhan_nguon.get(d.nguon, d.nguon)) }}</span>{% endif %}
+                {% with tt = d.trang_thai %}{% include "_voice_trangthai.html" %}{% endwith %}
+              </div>
+              {% if d.audio_url %}
+                <audio class="lv-ls-phat" controls preload="none" src="{{ d.audio_url }}"></audio>
+              {% endif %}
+            </article>
+          {% endfor %}
+        </div>
+
+        {% if bi_cat %}
+          {# ⛔ Một cái trần không nói ra thì tệ hơn không có trần: màn hình sẽ
+             trông như đã liệt kê hết trong khi nó cắt bớt. #}
+          <p class="lv-ls-cat dim">
+            {{ _("Đang hiện {n} lượt gần nhất. Lịch sử cũ hơn không nằm trong danh sách này.").format(n=tran) }}
+          </p>
+        {% endif %}
+      {% else %}
+        {% if f_tt or f_nguon or f_giong %}
+          {% with tieu_de = _("Không có lượt nào khớp"),
+                  mo_ta = _("Thử bỏ bớt một bộ lọc."),
+                  nut = _("Bỏ lọc"), nut_href = manifest.route_prefix + "/lich-su" %}
+            {% include "_voice_rong.html" %}
+          {% endwith %}
+        {% else %}
+          {% with tieu_de = _("Chưa có lượt nào"),
+                  mo_ta = _("Mỗi lần bạn tạo tiếng nói, lượt đó xuất hiện ở đây để nghe lại và tải về."),
+                  nut = _("Tạo tiếng nói"), nut_href = manifest.route_prefix %}
+            {% include "_voice_rong.html" %}
+          {% endwith %}
+        {% endif %}
+      {% endif %}
+    </div>
+
+    {# ── Cột phải: tóm tắt + đang xử lý + chi tiết ───────────────────────── #}
+    <aside class="lv-ls-phai-cot" aria-label="{{ _('Tóm tắt') }}">
+      <div class="ui-card">
+        <span class="eyebrow">{{ _("Tóm tắt hoạt động") }}</span>
+        <ul class="lv-tt">
+          <li><span class="badge b-ok"><span class="dot"></span>{{ _("Hoàn tất") }}</span>
+            <b>{{ tom_tat.dem.done }}</b></li>
+          <li><span class="badge b-warn"><span class="dot"></span>{{ _("Đang chạy") }}</span>
+            <b>{{ tom_tat.dang_chay }}</b></li>
+          <li><span class="badge b-err"><span class="dot"></span>{{ _("Lỗi") }}</span>
+            <b>{{ tom_tat.dem.error }}</b></li>
+        </ul>
+        <div class="lv-ct-so">
+          <div><span>{{ tom_tat.phut }}</span><small>{{ _("phút tiếng") }}</small></div>
+          <div><span>{{ tom_tat.credit }}</span><small>{{ _("credit đã tính") }}</small></div>
+          <div><span>{{ tom_tat.ti_le_loi }}%</span><small>{{ _("tỉ lệ lỗi") }}</small></div>
+        </div>
+        {% if tom_tat.giong_hay_dung %}
+          <p class="dim lv-tt-giong">{{ _("Giọng dùng nhiều nhất") }}:
+            <span class="mono">{{ tom_tat.giong_hay_dung }}</span>
+            ({{ tom_tat.giong_hay_dung_so }})</p>
+        {% endif %}
+        {# Phạm vi của mọi con số trên: nói ra, đừng để người đọc tự suy. #}
+        <p class="dim lv-tt-pham-vi">{{ _("Tính trên {n} lượt gần nhất.").format(n=tom_tat.tong) }}</p>
+      </div>
+
+      <div class="ui-card lv-ct" id="lv-ls-ct" hidden>
+        <div class="lv-ct-dau">
+          <span class="eyebrow">{{ _("Lượt đang chọn") }}</span>
+          <span id="lv-ls-ct-tt"></span>
+        </div>
+        <dl class="lv-ct-bang">
+          <dt>{{ _("Lúc") }}</dt><dd id="lv-ls-ct-luc"></dd>
+          <dt>{{ _("Giọng") }}</dt><dd id="lv-ls-ct-giong"></dd>
+          <dt>{{ _("Thời lượng") }}</dt><dd id="lv-ls-ct-giay"></dd>
+          <dt>{{ _("Credit đã tính") }}</dt><dd id="lv-ls-ct-credit"></dd>
+          <dt>{{ _("Mã yêu cầu") }}</dt>
+          <dd><span class="lv-ma nho"><code class="mono" id="lv-ls-ct-id"></code>
+            <button type="button" class="lv-ma-chep" id="lv-ls-ct-chep"
+                    aria-label="{{ _('Chép mã yêu cầu') }}">⧉</button></span></dd>
+        </dl>
+        <div class="lv-ct-nut">
+          <a class="btn primary sm" id="lv-ls-ct-tai" download hidden>{{ _("Tải WAV") }}</a>
+          <a class="btn ghost sm" id="lv-ls-ct-job" href="#">{{ _("Mở trang việc") }}</a>
+        </div>
+      </div>
+    </aside>
+  </div>
 </section>
 {% endblock %}
 
 {% block scripts %}
 {# `?v=` bat buoc: static di qua Cloudflare co TTL (CLAUDE.md quy tac 6). #}
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
+<script>
+LttVoice.lichSu({
+  chu: {
+    sanSang: {{ _("Hoàn tất") | tojson }},
+    dangTao: {{ _("Đang tạo") | tojson }},
+    dangCho: {{ _("Đang chờ") | tojson }},
+    loi:     {{ _("Lỗi") | tojson }},
+    daHuy:   {{ _("Đã huỷ") | tojson }},
+    khong:   {{ _("—") | tojson }}
+  }
+});
+</script>
 {% endblock %}

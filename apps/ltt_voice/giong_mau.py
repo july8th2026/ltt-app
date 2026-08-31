@@ -39,13 +39,11 @@ giong_mau.py — hai mươi GIỌNG MẪU mà engine dựng sẵn, khai thành h
 """
 from __future__ import annotations
 
+import json
+import pathlib
 from dataclasses import dataclass
 
 from platform_core.i18n import N_
-
-#: Tên preset mà engine dùng khi khách không chọn gì. Khớp `default_voice` trong
-#: `vieneu/assets/voices_v3_turbo.json`.
-MAC_DINH = "Adam"
 
 NHAN_GIOI = {"nam": N_('Nam'), "nu": N_('Nữ')}
 NHAN_VUNG = {"bac": N_('Miền Bắc'), "trung": N_('Miền Trung'), "nam": N_('Miền Nam')}
@@ -89,33 +87,58 @@ class GiongMau:
         return self.ma
 
 
-#: Hai mươi giọng, đọc từ `vieneu/assets/voices_v3_turbo.json` ngày 31/08/2026.
-#: Thứ tự: nam trước nữ, trong mỗi nhóm theo vùng Bắc → Trung → Nam. Không theo
-#: thứ tự của tệp JSON — thứ tự đó không có nghĩa gì với người đọc.
-DANH_SACH: tuple[GiongMau, ...] = (
-    # ── Nam ──
-    GiongMau("Minh Đức", "nam", "bac", "tin_tuc"),
-    GiongMau("Phạm Tuyên", "nam", "bac", "tu_nhien"),
-    GiongMau("Thanh Bình", "nam", "bac", "doc_truyen"),
-    GiongMau("Quang Sơn", "nam", "trung", "tu_nhien"),
-    GiongMau("Minh Triết", "nam", "nam", "tin_tuc"),
-    GiongMau("Xuân Vĩnh", "nam", "nam", "tu_nhien"),
-    GiongMau("Adam", "nam", "nam", "tu_nhien"),
-    GiongMau("Thái Sơn", "nam", "nam", "doc_truyen"),
-    GiongMau("Đức Trí", "nam", "nam", "doc_truyen"),
-    # ── Nữ ──
-    GiongMau("Mai Anh", "nu", "bac", "tin_tuc"),
-    GiongMau("Trúc Ly", "nu", "bac", "tu_nhien"),
-    GiongMau("Đoan Trang", "nu", "bac", "tu_nhien"),
-    GiongMau("Ngọc Huyền", "nu", "bac", "tu_nhien"),
-    GiongMau("Ngọc Linh", "nu", "bac", "doc_truyen"),
-    GiongMau("Quỳnh Anh", "nu", "bac", "doc_truyen"),
-    GiongMau("Ngọc Trân", "nu", "trung", "tu_nhien"),
-    GiongMau("Thùy Dung", "nu", "nam", "tin_tuc"),
-    GiongMau("Thục Đoan", "nu", "nam", "doc_truyen"),
-    GiongMau("Mỹ Duyên", "nu", "nam", "doc_truyen"),
-    GiongMau("Kim Thanh", "nu", "nam", "doc_truyen"),
-)
+#: Ảnh chụp danh sách preset của engine, nằm trong git.
+#: Sinh bằng `tools/sinh_giong_mau_engine.py`; **đừng sửa tay**.
+ANH_CHUP = pathlib.Path(__file__).with_name("giong_mau_engine.json")
+
+_DOI_GIOI = {"male": "nam", "female": "nu"}
+
+
+def _nap() -> tuple:
+    """Dựng `DANH_SACH` từ ảnh chụp, một lần lúc nạp module.
+
+    🔴 VÌ SAO ĐỌC TỆP CHỨ KHÔNG GÕ TAY HAI MƯƠI DÒNG.
+
+       Bản đầu khai thẳng hai mươi `GiongMau("Minh Đức", "nam", …)` trong mã.
+       `tools/check_i18n.py` đỏ ngay: **17 chuỗi chưa bọc `_()`**.
+
+       Và nó đúng theo luật của nó — nhưng bọc `_()` ở đây sẽ **sai một cách
+       nguy hiểm**: tên preset là thứ đi thẳng vào `infer(voice=...)`. Một cái
+       tên "đã dịch" là một cái tên engine không nhận ra, và lỗi chỉ hiện ở
+       worker sau khi khách đã bị giữ credit.
+
+    ⭐ Lối ra không phải là cãi với bánh cóc, mà là **bỏ bản chép**. Tên giọng
+       vốn là dữ liệu của engine, không phải hằng số của ta. Đọc từ ảnh chụp thì:
+         · không còn chuỗi tiếng Việt nào trong tệp `.py` này;
+         · không còn hai chỗ phải khớp nhau bằng tay;
+         · và ngày nâng engine, `sinh_giong_mau_engine.py` là chỗ **duy nhất**
+           phải chạy.
+
+    ⚠️ Đọc tệp lúc import: 2,5 KB, một lần cho cả tiến trình. Không chạm mạng,
+       không nạp model — đó vẫn là toàn bộ lý do tệp này không hỏi `/v1/voices`.
+    """
+    d = json.loads(ANH_CHUP.read_text(encoding="utf-8"))
+    ra = []
+    for ten, v in d.get("presets", {}).items():
+        ra.append(GiongMau(
+            ma=ten,
+            gioi=_DOI_GIOI.get(str(v.get("gender") or ""), ""),
+            vung=str(v.get("vung") or ""),
+            phong_cach=str(v.get("style") or ""),
+        ))
+    # Sắp cho người đọc: nam trước nữ, rồi Bắc → Trung → Nam, rồi theo tên.
+    # Thứ tự trong JSON là thứ tự của engine và không có nghĩa gì với ai.
+    thu_tu_vung = {"bac": 0, "trung": 1, "nam": 2}
+    ra.sort(key=lambda g: (g.gioi != "nam", thu_tu_vung.get(g.vung, 9), g.ma))
+    return tuple(ra)
+
+
+DANH_SACH: tuple[GiongMau, ...] = _nap()
+
+#: Giọng engine dùng khi khách không chọn gì. Lấy từ ảnh chụp, không gõ tay —
+#: gõ tay thì ngày engine đổi mặc định, ta vẫn nói cái cũ.
+MAC_DINH: str = str(
+    json.loads(ANH_CHUP.read_text(encoding="utf-8")).get("default_voice") or "")
 
 #: Tra nhanh theo mã. Dựng một lần lúc nạp module.
 THEO_MA = {g.ma: g for g in DANH_SACH}

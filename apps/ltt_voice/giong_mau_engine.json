@@ -1,0 +1,126 @@
+{
+  "_ghi_chu": "Anh chup danh sach preset cua engine. SINH RA, dung sua tay. Sinh lai bang tools/sinh_giong_mau_engine.py khi nang engine.",
+  "default_voice": "Adam",
+  "presets": {
+    "Adam": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Nam · Giọng đọc tự nhiên",
+      "vung": "nam"
+    },
+    "Kim Thanh": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Nam · Phong cách đọc truyện",
+      "vung": "nam"
+    },
+    "Mai Anh": {
+      "gender": "female",
+      "style": "tin_tuc",
+      "description": "Nữ · Bắc · Phong cách tin tức",
+      "vung": "bac"
+    },
+    "Minh Triết": {
+      "gender": "male",
+      "style": "tin_tuc",
+      "description": "Nam · Nam · Phong cách tin tức",
+      "vung": "nam"
+    },
+    "Minh Đức": {
+      "gender": "male",
+      "style": "tin_tuc",
+      "description": "Nam · Bắc · Phong cách tin tức",
+      "vung": "bac"
+    },
+    "Mỹ Duyên": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Nam · Phong cách đọc truyện",
+      "vung": "nam"
+    },
+    "Ngọc Huyền": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Bắc · Giọng đọc tự nhiên",
+      "vung": "bac"
+    },
+    "Ngọc Linh": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Bắc · Phong cách kể chuyện",
+      "vung": "bac"
+    },
+    "Ngọc Trân": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Trung · Phong cách tự nhiên",
+      "vung": "trung"
+    },
+    "Phạm Tuyên": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Bắc · Phong cách tự nhiên",
+      "vung": "bac"
+    },
+    "Quang Sơn": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Trung · Phong cách tự nhiên",
+      "vung": "trung"
+    },
+    "Quỳnh Anh": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Bắc · Phong cách đọc truyện",
+      "vung": "bac"
+    },
+    "Thanh Bình": {
+      "gender": "male",
+      "style": "doc_truyen",
+      "description": "Nam · Bắc · Phong cách kể chuyện",
+      "vung": "bac"
+    },
+    "Thái Sơn": {
+      "gender": "male",
+      "style": "doc_truyen",
+      "description": "Nam · Nam · Phong cách kể chuyện",
+      "vung": "nam"
+    },
+    "Thùy Dung": {
+      "gender": "female",
+      "style": "tin_tuc",
+      "description": "Nữ · Nam · Phong cách tin tức",
+      "vung": "nam"
+    },
+    "Thục Đoan": {
+      "gender": "female",
+      "style": "doc_truyen",
+      "description": "Nữ · Nam · Phong cách kể chuyện",
+      "vung": "nam"
+    },
+    "Trúc Ly": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Bắc · Phong cách tự nhiên",
+      "vung": "bac"
+    },
+    "Xuân Vĩnh": {
+      "gender": "male",
+      "style": "tu_nhien",
+      "description": "Nam · Nam · Phong cách tự nhiên",
+      "vung": "nam"
+    },
+    "Đoan Trang": {
+      "gender": "female",
+      "style": "tu_nhien",
+      "description": "Nữ · Bắc · Phong cách tự nhiên",
+      "vung": "bac"
+    },
+    "Đức Trí": {
+      "gender": "male",
+      "style": "doc_truyen",
+      "description": "Nam · Nam · Phong cách đọc truyện",
+      "vung": "nam"
+    }
+  }
+}
