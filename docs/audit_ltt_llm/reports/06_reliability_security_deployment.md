@@ -37,7 +37,7 @@ thao tác **NẠP**, không phải thao tác phục vụ. Model đã nạp rồi
 còn từ chối. Chấp nhận được vì `--reserve-vram 3` đã có và VRAM của ta ổn định
 22,4 GB. Nếu một ngày dự án video đổi cách dùng card thì **đọc lại chỗ này**.
 
-`tests/test_366` — 8 phép kiểm, gồm một bánh cóc chốt rằng `api.py` **có nối
+`tests/test_368` — 8 phép kiểm, gồm một bánh cóc chốt rằng `api.py` **có nối
 dây** tín hiệu: sửa `trong_tai.py` mà quên nối thì bản vá không chạy, và triệu
 chứng là 70 % từ chối oan **vẫn nguyên, không dòng đỏ nào**.
 

@@ -1,4 +1,4 @@
-"""test_366 — trọng tài GPU không được nhận nhầm tải của CHÍNH TA thành của người khác.
+"""test_368 — trọng tài GPU không được nhận nhầm tải của CHÍNH TA thành của người khác.
 
 ## Đo được, ngày 31/08/2026
 

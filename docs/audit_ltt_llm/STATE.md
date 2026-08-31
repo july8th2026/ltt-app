@@ -122,7 +122,7 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 | 00 | Cầu hẹp chạy việc kiểm với env production | `setup/chay_voi_env.ps1` | `test_214` 7 passed | xoá tệp |
 | 00 | Ba phép kiểm đổi từ **đếm ký tự** sang **quan hệ cú pháp** | `test_362` · `test_365` | 22 phép kiểm xanh | git revert |
 | 04 | Bộ đánh giá chất lượng + bộ đo hiệu năng | `tools/danh_gia_llm.py` · `tools/bench_llm_hieu_nang.py` | 12/12 trên 8 chiều | xoá tệp |
-| 06 | Trọng tài phân biệt tải của ta | `llm_gateway/trong_tai.py` · `api.py` | `test_366` 8 phép kiểm + A/B 9/12→0/12 | git revert + deploy lại |
+| 06 | Trọng tài phân biệt tải của ta | `llm_gateway/trong_tai.py` · `api.py` | `test_368` 8 phép kiểm + A/B 9/12→0/12 | git revert + deploy lại |
 | 06 | `deploy.ps1` nói khi cấu hình chưa có hiệu lực | `llm_gateway/deploy/deploy.ps1` | cú pháp 5.1 OK, thuần ASCII | git revert |
 
 ## Benchmark summary

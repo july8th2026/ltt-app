@@ -38,7 +38,7 @@ TAB_MONG_DOI = [
     ("/ltt-voice/du-an", vo.NAV_DU_AN, True),
     ("/ltt-voice/lo", vo.NAV_LO, True),
     ("/ltt-voice/lich-su", vo.NAV_LICH_SU, True),
-    ("/ltt-voice/api", vo.NAV_API, False),
+    ("/ltt-voice/api", vo.NAV_API, True),
 ]
 
 
@@ -59,23 +59,25 @@ def test_nav_key_cua_vo_khop_manifest():
         "Sua CA HAI cho, va nho: tab khong sang la mot loi KHONG co trieu chung.")
 
 
-def test_moi_tab_chua_xay_co_noi_dung_trong_CHUA_XAY():
-    """`built=False` và `vo.CHUA_XAY` phải là CÙNG một tập.
+def test_khong_con_tab_nao_chua_xay():
+    """Sau P8 cả sáu màn đều đã xây — và cơ chế giữ chỗ đã gỡ theo.
 
-    Lệch một chiều thì `_trang_chua_xay` ném `KeyError` (tab có, nội dung không);
-    lệch chiều kia thì có nội dung mồ côi không ai đọc — thứ sẽ sống mãi vì
-    không ai dám xoá.
+    ⭐ Phép kiểm này THAY một phép kiểm cũ (`built=False` phải khớp
+       `vo.CHUA_XAY`). Nó không bị xoá vì "không còn dùng": nó đổi việc, vì thứ
+       nó canh đã đổi. Trước P8 rủi ro là *tab có mà nội dung không*; sau P8 rủi
+       ro là *ai đó thêm `built=False` mà quên rằng trang giữ chỗ không còn tồn
+       tại* — tab sẽ dẫn tới 404, đúng thứ cơ chế cũ sinh ra để tránh.
+
+    ⛔ Nên nếu phép kiểm này đỏ: đừng lật `built` về `True` cho xong. Hoặc xây
+       màn đó, hoặc dựng lại trang giữ chỗ. Xem `routes/__init__.py` — nó ghi
+       lại cái bẫy thứ tự đăng ký đi kèm cơ chế ấy.
     """
-    tu_manifest = {e.nav_key for e in MANIFEST.nav if not e.built}
-    assert tu_manifest == set(vo.CHUA_XAY), (
-        f"chi co trong manifest: {tu_manifest - set(vo.CHUA_XAY)}\n"
-        f"chi co trong CHUA_XAY: {set(vo.CHUA_XAY) - tu_manifest}")
-
-    for khoa, man in vo.CHUA_XAY.items():
-        assert man.get("tieu_de"), f"{khoa} thieu tieu_de"
-        assert man.get("mo_ta"), f"{khoa} thieu mo_ta"
-        # Một trang "đang xây" không nói được sẽ có gì thì nó chỉ là một 404 lịch sự.
-        assert man.get("sap_co"), f"{khoa} khong noi duoc se co gi"
+    chua_xay = [e.nav_key for e in MANIFEST.nav if not e.built]
+    assert chua_xay == [], (
+        f"tab chua xay: {chua_xay} — nhung trang giu cho da go o P8, nen bam "
+        f"vao se la 404. Xem docstring.")
+    assert not hasattr(vo, "CHUA_XAY"), (
+        "vo.CHUA_XAY da go o P8; con lai la noi dung mo coi khong ai doc")
 
 
 def test_ngu_canh_bat_buoc_nav_key():
@@ -206,39 +208,40 @@ def test_dung_mot_tab_sang_moi_luot(khach):
         assert so_sang == 1, f"{duong}: co {so_sang} tab sang, phai la 1"
 
 
-def test_ba_man_chua_xay_khong_ve_giao_dien_gia(khach):
-    """Màn chưa xây phải NÓI sẽ có gì, không MÔ PHỎNG cái sẽ có.
+def test_man_api_noi_dung_su_that_ve_cua_dang_dong(khach):
+    """Màn API phải nói cửa đang ĐÓNG khi nó đóng, và không đưa lệnh chép được.
 
-    ⛔ Một màn hình giả trông như đã xong là cách nhanh nhất để một phiên sau
-       tưởng nó đã xong. Tài liệu dự án này đã nói sai **về phía nguy hiểm** hai
-       lần vì đúng lớp nhầm lẫn đó (hàng Public API và hàng VPS trong
-       `CLAUDE.md`).
+    🔴 Đây là chốt quan trọng nhất của màn này, và nó có tiền lệ đắt: `CLAUDE.md`
+       đã hai lần nói sai về chính khu API — cả hai lần **về phía nguy hiểm**
+       (ghi "chưa mở" trong khi máy chủ đang bán). Chốt này canh chiều ngược
+       lại, cũng nguy hiểm không kém: mời khách gọi một cửa chưa mở.
 
-    Cách chốt: trang phải mang badge "đang xây", và **không** được chứa biểu mẫu
-    nào — một `<form>` trên màn chưa xây là một nút bấm không dẫn tới đâu.
+    ⛔ Vì sao "không có lệnh chép được" chứ không chỉ "có một câu cảnh báo": một
+       lệnh curl nằm sẵn trên trang sẽ được chép bất kể câu chữ quanh nó, rồi
+       trả 404 — mà 404 ấy đến từ Cloudflare hoặc từ cổng, không `request_id`,
+       không dòng nào trong `public_api_requests`. Khách đọc thành "khoá sai",
+       đi tạo khoá mới, vẫn 404, và **phía ta không thấy gì cả**.
 
-    ⚠️ Soi trong PHẦN THÂN của màn, không soi cả tài liệu: vỏ nền tảng có sẵn
-       một `<form>` đăng xuất trong menu tài khoản, nên một phép kiểm quét cả
-       trang sẽ đỏ vì một thứ hoàn toàn không liên quan. Bản đầu của phép kiểm
-       này đúng chỗ đó — và đó là đúng loại tín hiệu sai làm người ta mất tin
-       vào bánh cóc.
+    ⚠️ Bộ test chạy với `LTT_PUBLIC_API` không đặt, nên đây là trạng thái đóng —
+       cùng trạng thái production hôm nay (`speech.ltt` không có trong
+       `LTT_PUBLIC_API_TOOLS`).
     """
-    for nav_key in vo.CHUA_XAY:
-        duong = next(e.path for e in MANIFEST.nav if e.nav_key == nav_key)
-        r = khach.get(duong)
-        assert r.status_code == 200
+    from apps.ltt_voice import doc_man_api
+    assert doc_man_api.trang_thai_tool()["tool_mo"] is False, (
+        "phep kiem nay gia dinh cua DONG; moi truong test da doi")
 
-        than = re.search(r'<section class="lv-man[^"]*".*?</section>',
-                         r.text, re.S)
-        assert than, f"{duong} khong co than man `.lv-man`"
-        than = than.group(0)
+    r = khach.get("/ltt-voice/api")
+    assert r.status_code == 200
+    than = re.search(r'<section class="lv-man[^"]*".*?</section>', r.text, re.S)
+    assert than, "khong co than man `.lv-man`"
+    than = than.group(0)
 
-        assert "lv-cx" in than, f"{duong} khong dung template chua xay"
-        assert "<form" not in than.lower(), (
-            f"{duong} co <form> trong than man — man chua xay khong duoc co "
-            f"dieu khien that.")
-        # Và phải nói rõ nó chưa xong, không để khách tự đoán.
-        assert "b-warn" in than, f"{duong} thieu badge 'dang xay'"
+    assert "alert-warn" in than, "cua dong ma khong co canh bao"
+    assert "curl" not in than.lower(), (
+        "cua dang dong ma trang van dua lenh goi chep duoc")
+    # Nhưng thứ dùng được NGAY thì vẫn phải còn: mã giọng và tên giọng dựng sẵn
+    # đúng dù cửa đóng, và một trang trắng trơn thì không giúp được ai.
+    assert "/developers/keys" in than, "mat duong sang khu Lap trinh vien"
 
 
 # ── Nguồn của mỗi lượt sinh ──────────────────────────────────────────────────
