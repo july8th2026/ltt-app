@@ -38,6 +38,7 @@ from .config import Config
 from .don_dep import DonDepGpu
 from .gioi_han import GioiHan, boc_luong
 from .nhip_tim import boc_nhip_tim
+from .to_tien import ToTien
 from .tren_gpu import kiem as kiem_gpu
 from .trong_tai import TrongTai
 
@@ -57,6 +58,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                gioi_han: Optional[GioiHan] = None,
                now=time.monotonic) -> FastAPI:
     app = FastAPI(title="LTT LLM Gateway", version=__version__)
+
+    # Chup to tien MOT LAN o day, luc no chac chan con song. Sau khi vo boc
+    # chet thi duong di len cay khong con nua -- do lai la muon. Xem bay #3
+    # o `to_tien.py`.
+    to_tien = ToTien()
 
     catalog: dict[str, ModelSpec] = nap_catalog(cfg.models_mo)
     la = ten_la(cfg.models_mo)
@@ -160,6 +166,13 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             # 🔴 CHỐT DUY NHẤT NHÌN RA ĐƯỢC SỰ CỐ 23/08. Mọi trường khác ở trên
             #    vẫn XANH khi CUDA hỏng và model bò trên CPU. Xem `tren_gpu`.
             "gpu": _xem_gpu(),
+            # 🔴 CHOT DUY NHAT NHIN RA DUOC "HEALTH XANH GIA" (do 01/09:
+            #    /health tra 200 suot 99 giay trong khi Get-Service = Stopped).
+            #    Moi truong khac o tren van XANH khi tien trinh nay da mo coi,
+            #    vi chung noi ve suc khoe cua CHINH no -- va no that su khoe.
+            #    Cau hoi dung khong phai "anh co khoe khong" ma "anh co NEN
+            #    dang chay khong".
+            "duoi_dich_vu": to_tien.trang_thai(),
         }
 
     def _xem_gpu() -> dict:
