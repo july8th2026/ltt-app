@@ -12795,3 +12795,439 @@ msgstr "All lanes"
 #: apps/ltt_voice/lan_ngon_ngu.py
 msgid "Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng cùng làn."
 msgstr "This voice belongs to the {lan_giong} lane, but the text looks like {lan_text}. You can still generate it — the quality just may not match a voice from the same lane."
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video"
+msgstr "Auto Scan Video"
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video — xử lý GPU"
+msgstr "Auto Scan Video — GPU worker"
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video — xử lý media"
+msgstr "Auto Scan Video — media worker"
+
+#: apps/auto_scan_video
+msgid "Chi phí thực tế sẽ vượt mức đã giữ cho phiên chạy này."
+msgstr "The actual cost would exceed the amount reserved for this run."
+
+#: apps/auto_scan_video
+msgid "Executor nội bộ của Auto Scan Video. Không phải sản phẩm riêng."
+msgstr "Internal executor for Auto Scan Video. Not a separate product."
+
+#: apps/auto_scan_video
+msgid "Giai đoạn đã được cập nhật ở tiến trình khác."
+msgstr "This stage was updated by another process."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy phiên chạy."
+msgstr "Run not found."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy tài nguyên."
+msgstr "Resource not found."
+
+#: apps/auto_scan_video
+msgid "Không đọc được thông tin tệp (quá hạn)."
+msgstr "Could not read the file's information (timed out)."
+
+#: apps/auto_scan_video
+msgid "Không đọc được thông tin tệp."
+msgstr "Could not read the file's information."
+
+#: apps/auto_scan_video
+msgid "Không đọc được thời lượng — tệp có thể đã hỏng."
+msgstr "Could not read the duration — the file may be corrupt."
+
+#: apps/auto_scan_video
+msgid "Không đọc được tệp media."
+msgstr "Could not read the media file."
+
+#: apps/auto_scan_video
+msgid "Lồng tiếng Việt cho video: giữ nguyên hình ảnh và độ dài, thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động."
+msgstr "Vietnamese voice-over for video: the picture and length stay exactly as they were, the original dialogue is replaced by a time-matched Vietnamese voice, and the background music and sound effects are kept."
+
+#: apps/auto_scan_video
+msgid "Phiên chạy không có tệp nguồn."
+msgstr "This run has no source file."
+
+#: apps/auto_scan_video
+msgid "Phiên chạy đã bị huỷ giữa chừng."
+msgstr "The run was cancelled partway through."
+
+#: apps/auto_scan_video
+msgid "Thiếu chủ sở hữu."
+msgstr "Missing owner."
+
+#: apps/auto_scan_video
+msgid "Thiếu tệp nguồn."
+msgstr "Missing source file."
+
+#: apps/auto_scan_video
+msgid "Tách tiếng quá hạn."
+msgstr "Extracting the audio timed out."
+
+#: apps/auto_scan_video
+msgid "Tách tiếng thất bại: {loi}"
+msgstr "Extracting the audio failed: {loi}"
+
+#: apps/auto_scan_video
+msgid "Tách tiếng xong nhưng tệp rỗng."
+msgstr "The audio was extracted but the file is empty."
+
+#: apps/auto_scan_video
+msgid "Tệp không có luồng hình."
+msgstr "The file has no video stream."
+
+#: apps/auto_scan_video
+msgid "Tệp không có luồng tiếng nên không có gì để lồng tiếng."
+msgstr "The file has no audio stream, so there is nothing to dub."
+
+#: apps/auto_scan_video
+msgid "Video"
+msgstr "Video"
+
+#: apps/auto_scan_video
+msgid "Video dài {co} phút, vượt giới hạn {tran} phút."
+msgstr "The video is {co} minutes long, over the {tran}-minute limit."
+
+#: apps/auto_scan_video
+msgid "không rõ"
+msgstr "unknown"
+
+#: apps/auto_scan_video
+msgid "Đang lưu kết quả"
+msgstr "Saving the result"
+
+#: apps/auto_scan_video
+msgid "Đang tách tiếng"
+msgstr "Extracting the audio"
+
+#: apps/auto_scan_video
+msgid "Đang đọc thông tin tệp"
+msgstr "Reading the file's information"
+
+#: apps/auto_scan_video
+msgid "Định dạng hình {codec} chưa hỗ trợ; cần H.264 hoặc HEVC trong MP4/MOV."
+msgstr "Video format {codec} is not supported yet; H.264 or HEVC in MP4/MOV is required."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy phần nhạc nền sau khi tách."
+msgstr "Could not find the background music after separation."
+
+#: apps/auto_scan_video
+msgid "Không đo được âm lượng."
+msgstr "Could not measure the loudness."
+
+#: apps/auto_scan_video
+msgid "Nhạc nền lệch thời lượng so với bản gốc."
+msgstr "The background track's duration does not match the original."
+
+#: apps/auto_scan_video
+msgid "Nhạc nền sai số kênh."
+msgstr "The background track has the wrong channel count."
+
+#: apps/auto_scan_video
+msgid "Nhạc nền sai tần số lấy mẫu."
+msgstr "The background track has the wrong sample rate."
+
+#: apps/auto_scan_video
+msgid "Tách nguồn tiếng quá hạn."
+msgstr "Separating the audio sources timed out."
+
+#: apps/auto_scan_video
+msgid "Tách nguồn tiếng thất bại: {loi}"
+msgstr "Separating the audio sources failed: {loi}"
+
+#: apps/auto_scan_video
+msgid "Tách nguồn tiếng không trả về kết quả đọc được."
+msgstr "Separating the audio sources returned no readable result."
+
+#: apps/auto_scan_video
+msgid "Trộn nhạc nền quá hạn."
+msgstr "Mixing the background track timed out."
+
+#: apps/auto_scan_video
+msgid "Trộn nhạc nền thất bại: {loi}"
+msgstr "Mixing the background track failed: {loi}"
+
+#: apps/auto_scan_video
+msgid "Đang chuẩn bị tiếng"
+msgstr "Preparing the audio"
+
+#: apps/auto_scan_video
+msgid "Đang tách giọng khỏi nhạc nền"
+msgstr "Separating the voice from the background"
+
+#: apps/auto_scan_video
+msgid "Đang trộn nhạc nền"
+msgstr "Mixing the background track"
+
+#: apps/auto_scan_video
+msgid "Bản ghi có hai đoạn chồng thời gian lên nhau."
+msgstr "The transcript has two segments overlapping in time."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có mã đoạn trùng hoặc thiếu."
+msgstr "The transcript has duplicate or missing segment ids."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có từ nằm ngoài đoạn chứa nó."
+msgstr "The transcript has a word outside the segment containing it."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có đoạn rỗng."
+msgstr "The transcript has an empty segment."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có đoạn thiếu mốc thời gian."
+msgstr "The transcript has a segment with no timestamp."
+
+#: apps/auto_scan_video
+msgid "Bản ghi có đoạn với mốc thời gian không hợp lệ."
+msgstr "The transcript has a segment with an invalid timestamp."
+
+#: apps/auto_scan_video
+msgid "Bản ghi dài hơn bản tiếng — mốc thời gian đã trôi."
+msgstr "The transcript runs longer than the audio — the timestamps have drifted."
+
+#: apps/auto_scan_video
+msgid "Bản ghi không có đoạn nào."
+msgstr "The transcript has no segments."
+
+#: apps/auto_scan_video
+msgid "Bản ghi không đúng định dạng."
+msgstr "The transcript is not in a valid format."
+
+#: apps/auto_scan_video
+msgid "Bản ghi thuộc phiên bản cấu trúc khác."
+msgstr "The transcript belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản tiếng để chép lời."
+msgstr "There is no audio track to transcribe yet."
+
+#: apps/auto_scan_video
+msgid "Không nghe được lời nói nào trong tệp."
+msgstr "No speech could be heard in the file."
+
+#: apps/auto_scan_video
+msgid "Đang chép lời"
+msgstr "Transcribing"
+
+#: apps/auto_scan_video
+msgid "Bản ghi nguồn không có đoạn nào."
+msgstr "The source transcript has no segments."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản ghi để dịch."
+msgstr "There is no transcript to translate yet."
+
+#: apps/auto_scan_video
+msgid "Model không trả về JSON đọc được."
+msgstr "The model did not return readable JSON."
+
+#: apps/auto_scan_video
+msgid "Model thiếu bản dịch cho {n}/{tong} đoạn."
+msgstr "The model is missing translations for {n} of {tong} segments."
+
+#: apps/auto_scan_video
+msgid "Model trả về JSON hỏng."
+msgstr "The model returned malformed JSON."
+
+#: apps/auto_scan_video
+msgid "Model trả về JSON sai hình dạng."
+msgstr "The model returned JSON in the wrong shape."
+
+#: apps/auto_scan_video
+msgid "Mã đoạn của bản dịch không khớp với bản ghi gốc."
+msgstr "The translation's segment ids do not match the source transcript."
+
+#: apps/auto_scan_video
+msgid "Thiếu bản dịch cho {n} đoạn."
+msgstr "Missing translations for {n} segments."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có hai mục chồng thời gian."
+msgstr "The processed text has two entries overlapping in time."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có mã đoạn trùng hoặc thiếu."
+msgstr "The processed text has duplicate or missing segment ids."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có mốc thời gian không hợp lệ."
+msgstr "The processed text has an invalid timestamp."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý có mục rỗng."
+msgstr "The processed text has an empty entry."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý không có mục nào."
+msgstr "The processed text has no entries."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý không đúng định dạng."
+msgstr "The processed text is not in a valid format."
+
+#: apps/auto_scan_video
+msgid "Văn bản đã xử lý thuộc phiên bản cấu trúc khác."
+msgstr "The processed text belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Đang dịch"
+msgstr "Translating"
+
+#: apps/auto_scan_video
+msgid "Auto Scan Video — tạo tiếng nói"
+msgstr "Auto Scan Video — voice worker"
+
+#: apps/auto_scan_video
+msgid "Chưa có bản dịch để đọc thành tiếng."
+msgstr "There is no translation to read aloud yet."
+
+#: apps/auto_scan_video
+msgid "Máy tạo tiếng nói chưa được thiết lập trên máy chủ này."
+msgstr "The voice engine is not set up on this server."
+
+#: apps/auto_scan_video
+msgid "Tệp tiếng sinh ra không có luồng tiếng."
+msgstr "The generated audio file has no audio stream."
+
+#: apps/auto_scan_video
+msgid "Tệp tiếng sinh ra quá ngắn ({giay}s)."
+msgstr "The generated audio file is too short ({giay}s)."
+
+#: apps/auto_scan_video
+msgid "Đoạn dài {co} ký tự, vượt trần {tran} của một lượt đọc."
+msgstr "The segment is {co} characters, over the {tran} limit for one reading."
+
+#: apps/auto_scan_video
+msgid "Đoạn rỗng, không có gì để đọc."
+msgstr "The segment is empty — there is nothing to read."
+
+#: apps/auto_scan_video
+msgid "Đang đọc thành tiếng"
+msgstr "Reading aloud"
+
+#: apps/auto_scan_video
+msgid "Bản lồng tiếng dài hơn video và không còn đoạn nào vừa."
+msgstr "The dub is longer than the video and no segment still fits."
+
+#: apps/auto_scan_video
+msgid "Bản lồng tiếng dài hơn video nguồn."
+msgstr "The dub is longer than the source video."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản dịch để lập kế hoạch thời gian."
+msgstr "There is no translation to plan timing from yet."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản kê tiếng để lập kế hoạch thời gian."
+msgstr "There is no voice index to plan timing from yet."
+
+#: apps/auto_scan_video
+msgid "Không biết thời lượng video nguồn."
+msgstr "The source video's duration is unknown."
+
+#: apps/auto_scan_video
+msgid "Không có mục nào để lập kế hoạch thời gian."
+msgstr "There are no entries to plan timing for."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch có hai đoạn chồng lấn quá {ms} ms."
+msgstr "The plan has two segments overlapping by more than {ms} ms."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch có mốc thời gian âm."
+msgstr "The plan has a negative timestamp."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch thời gian không có đoạn nào."
+msgstr "The timing plan has no segments."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch thời gian thuộc phiên bản khác."
+msgstr "The timing plan belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Kế hoạch vượt trần tăng tốc {tran}."
+msgstr "The plan exceeds the {tran} speed-up limit."
+
+#: apps/auto_scan_video
+msgid "Đang lập kế hoạch thời gian"
+msgstr "Planning the timing"
+
+#: apps/auto_scan_video
+msgid "Đoạn {ma} chưa có tiếng."
+msgstr "Segment {ma} has no audio yet."
+
+#: apps/auto_scan_video
+msgid "Bản dựng chứa trường nhạy cảm: {ten}."
+msgstr "The render manifest contains a sensitive field: {ten}."
+
+#: apps/auto_scan_video
+msgid "Bản dựng có hai lớp tiếng chồng quá 200 ms."
+msgstr "The render manifest has two audio layers overlapping by more than 200 ms."
+
+#: apps/auto_scan_video
+msgid "Bản dựng có hệ số tốc độ nhỏ hơn 1."
+msgstr "The render manifest has a speed factor below 1."
+
+#: apps/auto_scan_video
+msgid "Bản dựng có mốc thời gian âm."
+msgstr "The render manifest has a negative timestamp."
+
+#: apps/auto_scan_video
+msgid "Bản dựng khai chế độ hình khác \"copy\" — MVP không mã hoá lại hình."
+msgstr "The render manifest declares a video mode other than \"copy\" — the MVP never re-encodes the picture."
+
+#: apps/auto_scan_video
+msgid "Bản dựng không đúng định dạng."
+msgstr "The render manifest is not in a valid format."
+
+#: apps/auto_scan_video
+msgid "Bản dựng thiếu luồng hình nguồn."
+msgstr "The render manifest has no source video stream."
+
+#: apps/auto_scan_video
+msgid "Bản dựng thiếu nhạc nền."
+msgstr "The render manifest has no background track."
+
+#: apps/auto_scan_video
+msgid "Bản dựng thuộc phiên bản cấu trúc khác."
+msgstr "The render manifest belongs to a different schema version."
+
+#: apps/auto_scan_video
+msgid "Bản dựng trỏ tới {n} tài nguyên không tồn tại."
+msgstr "The render manifest points at {n} resources that no longer exist."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản kê tiếng để dựng."
+msgstr "There is no voice index to compose from yet."
+
+#: apps/auto_scan_video
+msgid "Chưa có kế hoạch thời gian để dựng."
+msgstr "There is no timing plan to compose from yet."
+
+#: apps/auto_scan_video
+msgid "Chưa có nhạc nền để dựng."
+msgstr "There is no background track to compose from yet."
+
+#: apps/auto_scan_video
+msgid "Lớp tiếng {ma} thiếu khoá lưu trữ."
+msgstr "Audio layer {ma} has no storage key."
+
+#: apps/auto_scan_video
+msgid "Đoạn {ma} có trong kế hoạch nhưng không có tệp tiếng."
+msgstr "Segment {ma} is in the plan but has no audio file."
+
+#: apps/auto_scan_video
+msgid "Đang dựng bản dựng"
+msgstr "Building the render manifest"
+
+#: apps/auto_scan_video
+msgid "Đang đối chiếu tài nguyên"
+msgstr "Verifying the resources"
