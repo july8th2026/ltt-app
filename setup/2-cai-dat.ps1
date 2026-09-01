@@ -193,12 +193,89 @@ foreach ($ung in @($venvPy, 'python', 'py')) {
 if ($pyKiem) {
     # compileall: doc va bien dich MOI tep .py trong cay nguon. -q chi in loi.
     # /XD cua robocopy o duoi khong ap dung o day nen loai tay may thu muc lon.
+    # !! KHONG DUNG ONG POWERSHELL O DAY, VA PHAI CO HAN CHO.
+    #
+    #    Ban cu la:
+    #        & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
+    #
+    #    Ngay 01/09 buoc nay TREO hai lan (18:27 va 20:08), moi lan hon 20 phut.
+    #    Do truc tiep tien trinh ket lai luc 20:33:
+    #        pid 11408  powershell.exe  CPU 0,36s  sinh 20:08:41
+    #        tien trinh con: KHONG CO
+    #    Tuc `compileall` DA THOAT, con PowerShell ket trong chinh duong ong.
+    #    Mot thread o `WaitReason=ExecutionDelay`.
+    #
+    # ** Va no khong tai hien duoc theo yeu cau: chay ba bien the (-j 0 co ong /
+    #    -j 0 ra tep / mot luong co ong) tren TOAN cay, dung python cua venv,
+    #    ca ba xong trong ~9 giay. Nen ban va nay KHONG dua tren mot nguyen nhan
+    #    da chung minh -- no bo di ca hai thu dang ngo (ong + khong han cho) va
+    #    doi lay mot buoc khong the treo vo han.
+    #
+    # !! VI SAO HAN CHO QUAN TRONG HON CA NGUYEN NHAN: buoc nay chay SAU khi da
+    #    giu khoa deploy. Mot buoc khong co han cho ma treo thi giu khoa VO HAN
+    #    -- tuc no bien mot loi "cham" thanh mot loi "chan ca nhom". Do la loi
+    #    cua chinh khoa nay neu khong sua.
     $bo = @('-m', 'compileall', '-q', '-j', '0',
             '-x', '(node_modules|\.git|\.venv|venv|__pycache__|dist|build)',
             $src)
-    & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    # !! DUNG .NET Process TRUC TIEP, KHONG DUNG `Start-Process -PassThru`.
+    #
+    #    Do that 01/09: voi `Start-Process -PassThru`, `$tt.ExitCode` tra ve
+    #    RONG ca khi tien trinh thanh cong lan khi that bai. Va trong PowerShell
+    #    `$null -ne 0` la TRUE, nen phep so sanh ngay duoi se NEM O MOI LUOT --
+    #    ke ca tren mot cay hoan toan lanh.
+    #
+    # ** Tuc ban va chong-treo dau tien cua toi se LAM HONG MOI LUOT DEPLOY.
+    #    No bi bat boi `tmp/thu_khoi_bien_dich.ps1`, va chi vi phep thu do doi
+    #    exit code phai BANG 0 chu khong chi doi "khong treo". Mot phep thu chi
+    #    hoi "co treo khong" se cho ban va nay di qua.
+    # !! `StartInfo.ArgumentList` va `Kill($true)` CHI CO tren .NET Core.
+    #    Deploy chay bang Windows PowerShell 5.1 (.NET Framework), noi
+    #    `ArgumentList` la NULL. Ban dau toi dung no; hau qua la python khoi
+    #    dong KHONG DOI SO, vao REPL, va treo dung 300 giay cho stdin --
+    #    tuc toi vua tu tao lai chinh trieu chung dang di sua.
+    #
+    # ** Nen o day dung `.Arguments` (mot chuoi), va moi doi so duoc boc nhay
+    #    kep de duong dan co dau cach va regex co `|` khong bi cat.
+    $tt = New-Object System.Diagnostics.Process
+    $tt.StartInfo.FileName = $pyKiem
+    $tt.StartInfo.Arguments = (($bo | ForEach-Object { '"' + $_ + '"' }) -join ' ')
+    $tt.StartInfo.UseShellExecute = $false
+    $tt.StartInfo.RedirectStandardOutput = $true
+    $tt.StartInfo.RedirectStandardError = $true
+    $null = $tt.Start()
+    # Doc CA HAI luong bang tac vu bat dong bo TRUOC khi cho: doc tuan tu mot
+    # luong roi moi doc luong kia la mot deadlock kinh dien khi luong chua doc
+    # day bo dem cua no.
+    $tOut = $tt.StandardOutput.ReadToEndAsync()
+    $tErr = $tt.StandardError.ReadToEndAsync()
+    if (-not $tt.WaitForExit(300000)) {
+        try { $tt.Kill() } catch { }   # `Kill($true)` la .NET Core, khong co o 5.1
+        throw ("Buoc bien dich .py TREO qua 300 giay va da bi dung. " +
+               "DUNG deploy, dich vu chua bi dung. Khoa deploy khong bi " +
+               "xoa o day, nhung tien trinh nay chet nen luot sau se nhan " +
+               "ra no la khoa CU va tu lay lai.")
+    }
+    $kqKiem = $tOut.Result + $tErr.Result
+    $maKiem = $tt.ExitCode
+    $tt.Dispose()
+    if ($maKiem -ne 0) {
         Write-Host $kqKiem -ForegroundColor Red
+        # !! PHAN BIET "KHONG CO PYTHON" VOI "MA HONG" -- hai thu nay sua o hai
+        #    noi khac han, va thong diep cu goi ca hai la "ma hong".
+        #
+        #    Do that 01/09: chay voi mot -Root chua co venv, `Get-Command python`
+        #    tra ve STUB cua Windows Store, stub in "No installed Python found!"
+        #    roi thoat khac 0 -- va script bao "Co tep .py KHONG bien dich duoc".
+        #    Nguoi doc se di tim mot tep .py hong khong ton tai.
+        #
+        # ** No nguy hiem nhat o LAN CAI DAU TIEN, dung luc chua co venv va dung
+        #    luc nguoi cai it thong tin nhat de cai chinh.
+        if ($kqKiem -match 'No installed Python found|was not found') {
+            throw ("KHONG TIM THAY PYTHON dung duoc (`$pyKiem = $pyKiem). " +
+                   "Tren Windows, `python` co the tro toi stub cua Microsoft Store. " +
+                   "Cai Python that roi chay lai. DAY KHONG PHAI loi ma nguon.")
+        }
         throw "Co tep .py KHONG bien dich duoc. DUNG deploy, dich vu chua bi dung."
     }
     Ok "Toan bo .py bien dich duoc"

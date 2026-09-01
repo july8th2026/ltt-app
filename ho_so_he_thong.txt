@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4d7411c9c62b01ed24400bc223e88128db87981974695e188c89ec9e4c6fd0c5
+Fingerprint   : sha256:ee184f40cfddbd4d1c7270d95f1e1a50a6ee1c91b64e6007f76a3bf2c195f1dc
 Nguồn đã quét : 1457 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3067,7 +3067,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14438163 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14444870 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -24731,7 +24731,7 @@ SHA256=41dec0c162bf5151605b5f6d066042f643c2f7e836a902d82be9351109bf0206 BYTES=24
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/text_pipeline.py
-SHA256=955b323c6cefc95cbacf1e7ced808529085fa8fb75cab8445495a44e9e08b2d9 BYTES=31173 LINES=613
+SHA256=a2cec58a9a1bde81c711d0f61de8e2d37d7634c3d7b164edfa8b39f96d926759 BYTES=32050 LINES=624
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 text_pipeline.py — chuẩn hoá văn bản **cấp sản phẩm** cho VI/EN.
@@ -24957,10 +24957,6 @@ def _doc_so(n: int) -> str:
 
 #: Từ 7 chữ số (≥ 1 triệu) engine bắt đầu đọc rời từng chữ số.
 _SO_LON_TU = 7
-#: Từ 10 chữ số trở lên gần như chắc chắn không phải một lượng: điện thoại, căn
-#: cước, số tài khoản.
-_SO_LON_DEN = 9
-
 #: ⭐ DẤU PHÂN CÁCH LÀ TÍN HIỆU, và suýt nữa ta vứt nó đi trước khi dùng.
 #:
 #:    `1.250.000.000` (mười chữ số) là tiền; `19001234567` (mười một chữ số) là
@@ -25003,7 +24999,22 @@ def _doc_so_lon(text: str) -> str:
     def _tran(m: re.Match) -> str:
         s = m.group(1)
         # Số 0 đứng đầu: mọi đầu số di động Việt Nam. Không bao giờ là một lượng.
-        if s[0] == "0" or not (_SO_LON_TU <= len(s) <= _SO_LON_DEN):
+        #
+        # ⚠️ KHÔNG còn trần độ dài ở đây, và việc gỡ nó là một BẢN SỬA chứ không
+        #    phải nới lỏng. `_SO_LON_DEN = 9` sinh ra hồi luật này còn khớp MỌI
+        #    dãy số trần — lúc ấy nó là thứ duy nhất loại được số điện thoại.
+        #
+        #    Nhưng luật nay đòi dãy số phải đứng ngay trước một TỪ CHỈ TIỀN, và
+        #    điều kiện ấy loại số điện thoại chặt hơn nhiều. Trần độ dài thôi
+        #    bảo vệ gì, và bắt đầu gây hại:
+        #
+        #        1.250.000.000 đồng  ->  "một tỷ hai trăm năm mươi triệu đồng"
+        #        1250000000 đồng     ->  1250000000 đồng   (bi CHAN, roi engine
+        #                                                   doc roi tung chu so)
+        #
+        #    Cùng một số tiền, hai cách viết, hai kết quả — chỉ vì một hằng số
+        #    còn sót lại từ một thiết kế đã đổi.
+        if s[0] == "0" or len(s) < _SO_LON_TU:
             return s
         return _doc_so(int(s)) or s
 
@@ -166486,7 +166497,7 @@ if ($script:Fail -gt 0) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/2-cai-dat.ps1
-SHA256=e5035cade3995280b93f3252c5cfc98caa07536f74672db312af1f1df7608eae BYTES=41103 LINES=816
+SHA256=443b8949ebd82b97281d7b66c791d4aef596acd3214f63ecd7be3adceeb13ad0 BYTES=45450 LINES=893
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -166683,12 +166694,89 @@ foreach ($ung in @($venvPy, 'python', 'py')) {
 if ($pyKiem) {
     # compileall: doc va bien dich MOI tep .py trong cay nguon. -q chi in loi.
     # /XD cua robocopy o duoi khong ap dung o day nen loai tay may thu muc lon.
+    # !! KHONG DUNG ONG POWERSHELL O DAY, VA PHAI CO HAN CHO.
+    #
+    #    Ban cu la:
+    #        & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
+    #
+    #    Ngay 01/09 buoc nay TREO hai lan (18:27 va 20:08), moi lan hon 20 phut.
+    #    Do truc tiep tien trinh ket lai luc 20:33:
+    #        pid 11408  powershell.exe  CPU 0,36s  sinh 20:08:41
+    #        tien trinh con: KHONG CO
+    #    Tuc `compileall` DA THOAT, con PowerShell ket trong chinh duong ong.
+    #    Mot thread o `WaitReason=ExecutionDelay`.
+    #
+    # ** Va no khong tai hien duoc theo yeu cau: chay ba bien the (-j 0 co ong /
+    #    -j 0 ra tep / mot luong co ong) tren TOAN cay, dung python cua venv,
+    #    ca ba xong trong ~9 giay. Nen ban va nay KHONG dua tren mot nguyen nhan
+    #    da chung minh -- no bo di ca hai thu dang ngo (ong + khong han cho) va
+    #    doi lay mot buoc khong the treo vo han.
+    #
+    # !! VI SAO HAN CHO QUAN TRONG HON CA NGUYEN NHAN: buoc nay chay SAU khi da
+    #    giu khoa deploy. Mot buoc khong co han cho ma treo thi giu khoa VO HAN
+    #    -- tuc no bien mot loi "cham" thanh mot loi "chan ca nhom". Do la loi
+    #    cua chinh khoa nay neu khong sua.
     $bo = @('-m', 'compileall', '-q', '-j', '0',
             '-x', '(node_modules|\.git|\.venv|venv|__pycache__|dist|build)',
             $src)
-    & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
-    if ($LASTEXITCODE -ne 0) {
+    # !! DUNG .NET Process TRUC TIEP, KHONG DUNG `Start-Process -PassThru`.
+    #
+    #    Do that 01/09: voi `Start-Process -PassThru`, `$tt.ExitCode` tra ve
+    #    RONG ca khi tien trinh thanh cong lan khi that bai. Va trong PowerShell
+    #    `$null -ne 0` la TRUE, nen phep so sanh ngay duoi se NEM O MOI LUOT --
+    #    ke ca tren mot cay hoan toan lanh.
+    #
+    # ** Tuc ban va chong-treo dau tien cua toi se LAM HONG MOI LUOT DEPLOY.
+    #    No bi bat boi `tmp/thu_khoi_bien_dich.ps1`, va chi vi phep thu do doi
+    #    exit code phai BANG 0 chu khong chi doi "khong treo". Mot phep thu chi
+    #    hoi "co treo khong" se cho ban va nay di qua.
+    # !! `StartInfo.ArgumentList` va `Kill($true)` CHI CO tren .NET Core.
+    #    Deploy chay bang Windows PowerShell 5.1 (.NET Framework), noi
+    #    `ArgumentList` la NULL. Ban dau toi dung no; hau qua la python khoi
+    #    dong KHONG DOI SO, vao REPL, va treo dung 300 giay cho stdin --
+    #    tuc toi vua tu tao lai chinh trieu chung dang di sua.
+    #
+    # ** Nen o day dung `.Arguments` (mot chuoi), va moi doi so duoc boc nhay
+    #    kep de duong dan co dau cach va regex co `|` khong bi cat.
+    $tt = New-Object System.Diagnostics.Process
+    $tt.StartInfo.FileName = $pyKiem
+    $tt.StartInfo.Arguments = (($bo | ForEach-Object { '"' + $_ + '"' }) -join ' ')
+    $tt.StartInfo.UseShellExecute = $false
+    $tt.StartInfo.RedirectStandardOutput = $true
+    $tt.StartInfo.RedirectStandardError = $true
+    $null = $tt.Start()
+    # Doc CA HAI luong bang tac vu bat dong bo TRUOC khi cho: doc tuan tu mot
+    # luong roi moi doc luong kia la mot deadlock kinh dien khi luong chua doc
+    # day bo dem cua no.
+    $tOut = $tt.StandardOutput.ReadToEndAsync()
+    $tErr = $tt.StandardError.ReadToEndAsync()
+    if (-not $tt.WaitForExit(300000)) {
+        try { $tt.Kill() } catch { }   # `Kill($true)` la .NET Core, khong co o 5.1
+        throw ("Buoc bien dich .py TREO qua 300 giay va da bi dung. " +
+               "DUNG deploy, dich vu chua bi dung. Khoa deploy khong bi " +
+               "xoa o day, nhung tien trinh nay chet nen luot sau se nhan " +
+               "ra no la khoa CU va tu lay lai.")
+    }
+    $kqKiem = $tOut.Result + $tErr.Result
+    $maKiem = $tt.ExitCode
+    $tt.Dispose()
+    if ($maKiem -ne 0) {
         Write-Host $kqKiem -ForegroundColor Red
+        # !! PHAN BIET "KHONG CO PYTHON" VOI "MA HONG" -- hai thu nay sua o hai
+        #    noi khac han, va thong diep cu goi ca hai la "ma hong".
+        #
+        #    Do that 01/09: chay voi mot -Root chua co venv, `Get-Command python`
+        #    tra ve STUB cua Windows Store, stub in "No installed Python found!"
+        #    roi thoat khac 0 -- va script bao "Co tep .py KHONG bien dich duoc".
+        #    Nguoi doc se di tim mot tep .py hong khong ton tai.
+        #
+        # ** No nguy hiem nhat o LAN CAI DAU TIEN, dung luc chua co venv va dung
+        #    luc nguoi cai it thong tin nhat de cai chinh.
+        if ($kqKiem -match 'No installed Python found|was not found') {
+            throw ("KHONG TIM THAY PYTHON dung duoc (`$pyKiem = $pyKiem). " +
+                   "Tren Windows, `python` co the tro toi stub cua Microsoft Store. " +
+                   "Cai Python that roi chay lai. DAY KHONG PHAI loi ma nguon.")
+        }
         throw "Co tep .py KHONG bien dich duoc. DUNG deploy, dich vu chua bi dung."
     }
     Ok "Toan bo .py bien dich duoc"
@@ -249604,7 +249692,7 @@ def _khoi_sua_ket() -> list[str]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_366_chuan_hoa_dau_vao.py
-SHA256=4e7fb888b2fd2246d4dff4a7c46cf2f570f0f0241023e5e5034f0d046384e087 BYTES=13807 LINES=277
+SHA256=56a6f700de915044f32047252e909ad6e0afc9b3a997e4f57bb711368feda325 BYTES=15290 LINES=303
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hai lỗi hình dạng đầu vào, tìm ra bằng cách đọc hộp thư lỗi của upstream.
 
@@ -249883,6 +249971,32 @@ def test_KHONG_nuot_dau_cach_o_ca_KHONG_doi():
                 i = ra.index(tu)
                 assert i == 0 or ra[i - 1] == " ", (
                     f"{vao!r} -> {ra!r}: mat dau cach truoc {tu!r}")
+
+
+def test_CUNG_MOT_SO_TIEN_hai_cach_viet_phai_cho_cung_ket_qua():
+    """🔴 Một hằng số sống sót qua một thiết kế đã đổi, rồi bắt đầu gây hại.
+
+    `_SO_LON_DEN = 9` sinh ra hồi luật số-trần còn khớp MỌI dãy số — lúc ấy nó
+    là thứ duy nhất loại được số điện thoại. Sau khi luật đòi thêm bằng chứng
+    ngữ cảnh (phải đứng trước một từ chỉ tiền), trần ấy thôi bảo vệ gì và bắt
+    đầu chặn tiền tỷ viết không dấu chấm:
+
+        1.250.000.000 đồng  ->  "một tỷ hai trăm năm mươi triệu đồng"
+        1250000000 đồng     ->  1250000000 đồng     (bi CHAN)
+
+    ⭐ Phép kiểm này chốt **tính nhất quán**, không chốt một con số. Nên nếu ai
+       đó đổi ngưỡng vì một lý do chính đáng, nó vẫn xanh — nó chỉ đỏ khi hai
+       cách viết cùng một số tiền lại cho hai kết quả khác nhau.
+    """
+    for so, co_nhom in (("1250000", "1.250.000"),
+                        ("12500000", "12.500.000"),
+                        ("1250000000", "1.250.000.000")):
+        a = _ch(f"Gi\u00e1 {so} \u0111\u1ed3ng")
+        b = _ch(f"Gi\u00e1 {co_nhom} \u0111\u1ed3ng")
+        assert a == b, (
+            f"cung mot so tien viet hai cach cho hai ket qua:\n"
+            f"  {so!r:>16} -> {a!r}\n  {co_nhom!r:>16} -> {b!r}")
+        assert so not in a, f"{so} van con la chu so: {a!r}"
 
 @@@LTT_PROFILE_FILE_END@@@
 
