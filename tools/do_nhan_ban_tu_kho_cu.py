@@ -40,7 +40,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 CAU_VI = ("Hôm nay tôi thử đọc một đoạn ngắn để kiểm tra giọng vừa được nhân "
           "bản, xem nó có còn giống người nói ban đầu không.")
