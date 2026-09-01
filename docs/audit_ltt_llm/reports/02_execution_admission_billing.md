@@ -146,8 +146,8 @@ không?* Nó kiểm cả chiều ngược: mốc 8 giờ **chưa** hoàn, khoả
 
 | Mục | Trạng thái |
 |---|---|
-| B16/B17 huỷ và ngắt kết nối — kiểm bằng client thật | **CHƯA** |
-| B14/B15 phạm vi idempotency khi **thử lại** | mới đọc mã, chưa đo |
+| B16/B17 huỷ — client thật qua Cloudflare | ✅ **ĐO XONG 01/09**: `POST /jobs/{id}/cancel` → 200, `status: cancelled`, **trừ 0 credit** |
+| B14/B15 idempotency khi thử lại | ✅ **ĐO XONG 01/09**: cùng khoá + cùng thân → **200, CÙNG job id, trừ 0 credit** |
 | B24 tool-call streaming | **CHƯA** |
 
 ⛔ Không đánh dấu phase này `PASS`. Bảy cửa sổ sự cố là phần **khó nhất** của
@@ -163,3 +163,45 @@ B01–B25, và chúng chưa được chạm.
 | D-02-2 | `reports/04` nói "upstream không gửi usage" | **SỬA** | Giới hạn của bộ đo tôi viết, không của nền tảng |
 | D-02-3 | Thứ tự nhận-vào → giữ tiền → commit → dispatch | **KEEP** | Mỗi bước có lý do ghi rõ và đã trả giá |
 | D-02-4 | `request_id` là khoá idempotency | **KEEP** | Thiếu thì ném, không lặng lẽ đi tiếp |
+
+---
+
+## 6. §B14–B17 đo bằng client thật qua Cloudflare *(01/09)*
+
+`tools/do_duong_tien_api.py`, khoá thật đuôi `.local`, **tiêu tiền thật** — một
+phép đo đường tiền không đi qua đường tiền thì không đo gì.
+
+**Đối chứng trước:** một lượt bình thường phải trừ tiền. Đo được **1 credit**.
+Không có bước này thì mọi kết luận *"không thu hai lần"* đúng một cách tầm
+thường — nếu ta lỡ đo một đường không tính tiền thì hiệu số luôn bằng 0.
+
+| Bài | Kết quả |
+|---|---|
+| gửi lại cùng `Idempotency-Key` + **cùng thân** | **200, CÙNG job id, trừ 0** |
+| huỷ job đang chờ | `POST /cancel` → **200**, `cancelled`, **trừ 0** |
+
+### ⭐ Ba chốt của cửa này mạnh hơn tôi tưởng trước khi đo
+
+1. **`Idempotency-Key` là BẮT BUỘC**, không phải tuỳ chọn — thiếu nó là `400`.
+   *Hỗ trợ* idempotency nghĩa là khách **có thể** tránh nộp trùng; **bắt buộc**
+   nghĩa là khách **không thể** nộp trùng do quên. Với một cửa tiêu tiền thì
+   khác biệt đó là toàn bộ vấn đề.
+2. **Phải có quote token trước** — `400 "A quote token is required."` Khách
+   **thấy giá trước khi cam kết**; không có đường nào để một lượt gọi bất ngờ
+   trừ tiền.
+3. Mọi lỗi mang `retry: never` — một client tự thử lại đọc được rằng thử lại vô
+   ích, thay vì quay vòng và nhân đôi tải.
+
+### ✏️ Lượt chạy đầu cho 2/3, và CẢ HAI chỗ không đạt là lỗi của tôi
+
+| Triệu chứng | Tôi suýt kết luận | Sự thật |
+|---|---|---|
+| `409 idempotency_conflict` | *"không replay, chỉ từ chối"* | Tôi xin **quote mới** cho lượt hai ⇒ thân **thật sự khác**. `409` là phép kiểm làm **đúng việc** |
+| `DELETE /jobs/{id}` → `405` | *"không có đường huỷ"* | Sai động từ. `POST /jobs/{id}/cancel` trả `403` gọi tên scope thiếu |
+
+⛔ Bài học ngược chiều với phần còn lại của đợt này: ở đây dụng cụ cho ra **âm
+tính giả**. Một bộ đo mới ra điểm thấp thì **khả năng cao là bộ đo sai**, cho
+tới khi chứng minh ngược lại — và cái giá của việc tin ngay con số 2/3 là ghi
+hai lỗi không tồn tại vào hồ sơ của một hệ thống đang chạy đúng.
+
+⚠️ Còn **B24 tool-call streaming** — chưa đo.

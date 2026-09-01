@@ -64,11 +64,20 @@ def main(argv=None) -> int:
             # ⭐ Đủ để đi HẾT một vòng nghiệm thu: đọc danh mục, nộp việc, theo
             #   dõi, tải kết quả. Lần đầu tôi chỉ xin `jobs:*` và `/api/v1/tools`
             #   trả `403 missing_scope` — một lỗi tốt, vì nó nói **thiếu scope
-            #   nào** thay vì chỉ "không được phép".
+            #   nào** thay vi chỉ "không được phép".
+            #
+            # ⚠️ LẦN THỨ HAI danh sách này thiếu một scope: 01/09, đo đường huỷ
+            #   job thì `POST /jobs/{id}/cancel` trả `403 missing_scope`, và
+            #   **405 ở các động từ khác** làm nó thoạt trông như "không có
+            #   đường huỷ". Thêm `jobs:cancel`.
+            #
+            # ⭐ Chính vì lỗi 403 gọi tên scope thiếu mà việc này mất 30 giây
+            #   thay vì một buổi. Đó là lập luận cho kiểu lỗi ấy, không phải
+            #   một lời khen suông.
             _, token = devkeys.issue(
                 db, user_id=str(u.id), name=a.ten, mode=a.che_do,
                 scopes=("tools:read", "jobs:create", "jobs:read",
-                        "artifacts:read", "credits:read"))
+                        "jobs:cancel", "artifacts:read", "credits:read"))
         except devkeys.DeveloperKeyError as e:
             # Trần số khoá là một ràng buộc THẬT của sản phẩm, không phải một
             # phiền toái của kịch bản này. Nói ra rồi dừng, đừng đi vòng.
