@@ -98,3 +98,40 @@ def test_NAM_THAM_SO_LAY_MAU_van_khong_ra_hop_dong():
                 "repetition_penalty", "repetition_window"):
         assert not hasattr(yc, cam), (
             f"`{cam}` lot vao YeuCau — Q119 khoa nam tham so lay mau nay")
+
+
+# ═══════════ mọi trường trong form Studio PHẢI được JS gửi đi ════════════════
+
+def test_moi_input_trong_form_studio_deu_duoc_JS_gui():
+    """🔴 Một lỗi đã xảy ra thật, và nó vô hình từ cả hai đầu dây.
+
+    `voice.js` dựng `new FormData()` **RỖNG** rồi thêm từng trường, chứ không
+    phải `new FormData(form)`. Nên một `<input>` mới trong template **không** tự
+    động được gửi — nó phải có một dòng `fd.append(...)` tương ứng.
+
+    01/09/2026: nút tốc độ ghi đúng vào input ẩn; tôi kiểm input ẩn, thấy đúng,
+    và kết luận là xong. Nhưng không ai đọc input ấy. Job chạy ở 1,0× trong khi
+    giao diện sáng đèn nút 1,25× — **không lỗi nào báo, cả hai đầu đều "đúng"**.
+
+    ⭐ Phép kiểm này đọc CẢ HAI tệp và so hai tập hợp, nên nó bắt được cả trường
+       hợp ngược lại: JS gửi một trường mà template đã bỏ.
+    """
+    import pathlib
+    import re
+
+    goc = pathlib.Path(__file__).resolve().parents[1]
+    html = (goc / "apps/ltt_voice/templates/ltt_voice_studio.html").read_text(
+        encoding="utf-8")
+    js = (goc / "server/static/voice.js").read_text(encoding="utf-8")
+
+    # Trường trong form (bỏ `giong`: nó là radio, JS đọc riêng và tách tiền tố).
+    trong_form = {m for m in re.findall(r'<input[^>]*name="([^"]+)"', html)}
+    trong_form -= {"giong"}
+    # Trường JS thật sự gửi. `voice_id`/`preset` sinh ra từ `giong`.
+    js_gui = set(re.findall(r'fd\.append\("([^"]+)"', js))
+
+    thieu = trong_form - js_gui
+    assert not thieu, (
+        f"cac truong nay co trong form Studio nhung JS KHONG gui: {sorted(thieu)}. "
+        "`voice.js` dung `new FormData()` rong roi them tung truong — them mot "
+        "`<input>` thi phai them mot `fd.append` di kem.")

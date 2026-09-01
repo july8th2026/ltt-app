@@ -575,6 +575,15 @@
       // `features.chuan_hoa` TU CHOI neu gui ca hai.
       if (g.indexOf("v:") === 0) fd.append("voice_id", g.slice(2));
       else if (g.indexOf("m:") === 0) fd.append("preset", g.slice(2));
+      /* ⛔ Khoi nay dung `new FormData()` RONG roi them TUNG TRUONG, khong phai
+         `new FormData(form)`. Nen mot `<input>` moi trong form KHONG tu dong
+         duoc gui — no phai co mot dong o day.
+
+         Da tra gia 01/09: nut toc do ghi dung vao input an, toi kiem input an
+         thay dung, va ket luan la xong. Nhung khong ai doc input ay. Job chay
+         o 1,0x trong khi giao dien sang den nut 1,25x — khong loi nao bao. */
+      var oTd = document.getElementById("lv-toc-do");
+      if (oTd) fd.append("toc_do", oTd.value || "1.0");
 
       fetch(duong + "/tao", {method: "POST", body: fd})
         .then(function (r) { return r.json(); })

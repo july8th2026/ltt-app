@@ -189,6 +189,15 @@ def ap_dung(wav_bytes: bytes, toc_do, *, giay_cho: int = 120) -> bytes:
             ra = fh.read()
         if not ra:
             raise RuntimeError("ffmpeg tra tep rong")
+        # ⭐ NÓI RA CẢ KHI THÀNH CÔNG. Nhánh hỏng trả về bản gốc một cách im
+        #    lặng (đúng — xem docstring `ap_dung`), nhưng hệ quả là "không đổi
+        #    tốc độ" và "đổi rồi mà hỏng" nhìn giống hệt nhau trong log.
+        #
+        #    Đã trả giá 01/09: một lượt chạy ra đúng thời lượng gốc, và không có
+        #    dòng nào cho biết là vì tham số chưa tới nơi hay vì ffmpeg hỏng.
+        #    Thủ phạm hoá ra ở tận phía trình duyệt — nhưng log không loại được
+        #    khả năng nào cả, nên nó không giúp thu hẹp gì.
+        log.info("doi toc do %.2fx: %d -> %d byte", t, len(wav_bytes), len(ra))
         return ra
     except Exception:                                  # noqa: BLE001
         log.warning("doi toc do %.2fx that bai — giu nguyen ban goc",
