@@ -292,7 +292,7 @@ bằng một client thật, qua Cloudflare, trên production.
 ### Một mục vận hành MỚI, không có trong tám phát hiện
 
 **Không có gì chặn hai lượt `2-cai-dat.ps1` chạy cùng lúc.** Lúc 18:49–18:50 hai
-phiên deploy chồng nhau vào `C:\LTTPlatformpp`, cách nhau **56 giây**. Lần này
+phiên deploy chồng nhau vào `C:\LTTPlatform\app`, cách nhau **56 giây**. Lần này
 không hỏng tệp nào (đối chiếu SHA256 20 tệp: 19 khớp, 1 lệch và tệp đó là việc
 đang sửa dở của phiên kia) — nhưng đó là **may**, không phải thiết kế.
 
