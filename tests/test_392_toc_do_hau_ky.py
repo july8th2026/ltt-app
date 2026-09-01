@@ -127,11 +127,61 @@ def test_moi_input_trong_form_studio_deu_duoc_JS_gui():
     # Trường trong form (bỏ `giong`: nó là radio, JS đọc riêng và tách tiền tố).
     trong_form = {m for m in re.findall(r'<input[^>]*name="([^"]+)"', html)}
     trong_form -= {"giong"}
-    # Trường JS thật sự gửi. `voice_id`/`preset` sinh ra từ `giong`.
-    js_gui = set(re.findall(r'fd\.append\("([^"]+)"', js))
+    # 🔴 GỠ CHÚ THÍCH TRƯỚC KHI KHỚP, và đây không phải cầu toàn.
+    #
+    #    Một guard viết bằng tìm chuỗi con sẽ XANH vì chính đoạn văn nói về nó.
+    #    Hôm nay `voice.js` tình cờ không có `fd.append("…")` nào trong chú
+    #    thích — nhưng đó là MAY, không phải thiết kế: một chú thích tương lai
+    #    giải thích `fd.append("toc_do", …)` sẽ làm phép kiểm này xanh trong khi
+    #    dòng mã thật đã bị xoá.
+    #
+    # ⭐ Và chiều XANH-GIẢ nguy hơn chiều đỏ-giả: một đèn đỏ thì có người đến
+    #    xem, còn một đèn xanh nối vào sợi dây không nối vào đâu cả thì không.
+    js_khong_chu_thich = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
+    js_khong_chu_thich = re.sub(r"^\s*//.*$", " ", js_khong_chu_thich, flags=re.M)
+    js_gui = set(re.findall(r'fd\.append\("([^"]+)"', js_khong_chu_thich))
 
     thieu = trong_form - js_gui
     assert not thieu, (
         f"cac truong nay co trong form Studio nhung JS KHONG gui: {sorted(thieu)}. "
         "`voice.js` dung `new FormData()` rong roi them tung truong — them mot "
         "`<input>` thi phai them mot `fd.append` di kem.")
+
+
+def test_chot_TREN_do_lam_viec_theo_CA_HAI_CHIEU():
+    """🔴 Một guard tìm-chuỗi-con phải tự chứng minh nó không xanh vì chú thích.
+
+    Bài học từ một lane khác cùng ngày: một guard `shell=True` viết bằng tìm
+    chuỗi con **đỏ vì chính đoạn văn cấm `shell=True`**; sửa sang AST thì nó
+    **xanh vĩnh viễn** vì `shell=True` là `ast.keyword` mà bộ đo không thu.
+
+    ⛔ Và chiều xanh mới là chiều nguy: một đèn đỏ thì có người tới xem, còn một
+       đèn xanh nối vào sợi dây không nối vào đâu cả thì không ai biết. Nó bắt
+       được chỉ vì self-test khẳng định **cả hai chiều** — bắt được mã thật, VÀ
+       tha cho văn bản nói về mã ấy.
+
+    Phép kiểm này làm đúng điều đó cho phép trích `fd.append(...)` ở trên.
+    """
+    import re
+
+    def _trich(js: str) -> set:
+        """Bản sao ĐÚNG logic của phép kiểm trên. Lệch là hỏng ngay ở đây."""
+        t = re.sub(r"/\*.*?\*/", " ", js, flags=re.S)
+        t = re.sub(r"^\s*//.*$", " ", t, flags=re.M)
+        return set(re.findall(r'fd\.append\("([^"]+)"', t))
+
+    # ① BẮT ĐƯỢC mã thật.
+    that = 'function f(){ var fd = new FormData(); fd.append("toc_do", x); }'
+    assert _trich(that) == {"toc_do"}, "khong bat duoc dong ma THAT"
+
+    # ② THA cho chú thích nói về chính nó — cả hai kiểu chú thích.
+    khoi = '/* nho them fd.append("toc_do", ...) o day */\nvar a = 1;'
+    dong = '// vi du: fd.append("toc_do", oTd.value)\nvar a = 1;'
+    assert _trich(khoi) == set(), "xanh gia vi chu thich khoi /* */"
+    assert _trich(dong) == set(), "xanh gia vi chu thich dong //"
+
+    # ③ Và ca hỗn hợp: chú thích nhắc một trường ĐÃ BỊ XOÁ khỏi mã.
+    hon_hop = ('/* truoc day co fd.append("da_xoa", v) */\n'
+               'fd.append("con_lai", v);')
+    assert _trich(hon_hop) == {"con_lai"}, (
+        "chu thich ve mot truong DA XOA van bi tinh la con ton tai")
