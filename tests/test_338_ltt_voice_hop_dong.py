@@ -77,8 +77,23 @@ def test_ngay_khong_hop_le_thi_de_nguyen():
 
 
 def test_phan_cach_hang_nghin_bi_go():
-    """1.500.000 phải thành 1500000, nếu không dấu chấm đọc thành 'chấm'."""
-    assert "1500000" in text_pipeline.chuan_hoa("Giá 1.500.000 đồng")
+    """Dấu chấm hàng nghìn không được sống sót — nếu không nó đọc thành 'chấm'.
+
+    ⚠️ Bản đầu của phép kiểm này chốt `"1500000" in ra`. Từ 01/09/2026 số từ
+       một triệu trở lên được đọc THÀNH CHỮ (engine đọc rời từng chữ số ở
+       ngưỡng ấy — xem `_doc_so_lon`), nên chữ số không còn ở đó nữa.
+
+    ⭐ Nên phép kiểm nay chốt đúng thứ nó vốn muốn canh — **dấu chấm biến mất**
+       — thay vì chốt một dạng biểu diễn trung gian. Chốt vào dạng biểu diễn là
+       lý do nó đỏ khi hành vi được cải thiện.
+    """
+    ra = text_pipeline.chuan_hoa("Giá 1.500.000 đồng")
+    assert "1.500" not in ra and "500.000" not in ra, ra
+    assert "một triệu năm trăm nghìn" in ra, ra
+
+    # Dưới một triệu thì engine đọc đúng, nên ta CHỈ gỡ dấu chấm và để yên.
+    duoi = text_pipeline.chuan_hoa("Giá 990.000 đồng")
+    assert "990000" in duoi, duoi
 
 
 def test_so_thu_tu_dau_dong_thanh_chu():

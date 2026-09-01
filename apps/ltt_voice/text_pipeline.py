@@ -112,18 +112,36 @@ _XUONG_DONG = re.compile(r"\n{3,}")
 _DON_VI = ["", "một", "hai", "ba", "bốn", "năm", "sáu", "bảy", "tám", "chín"]
 
 
-def _doc_so_nho(n: int) -> str:
-    """0-999 sang chữ. Đủ cho ngày/tháng/giờ; số lớn dùng `_doc_so`."""
+def _doc_so_nho(n: int, *, day_du: bool = False) -> str:
+    """0-999 sang chữ. Đủ cho ngày/tháng/giờ; số lớn dùng `_doc_so`.
+
+    `day_du` = nhóm này đứng SAU một nhóm bậc cao hơn, nên hàng trăm rỗng vẫn
+    phải nói ra.
+
+    ⛔ Thiếu nó là một lỗi MƠ HỒ, không phải một lỗi xấu xí — và mơ hồ thì tệ
+       hơn nhiều:
+
+           1.000.005  ->  "một triệu năm"    nghe y het "một triệu năm [trăm
+                                             nghìn]", tuc 1.500.000
+           1.000.001  ->  "một triệu một"
+
+       Với một sản phẩm đọc bảng giá, hai câu trên là hai con số khác nhau gấp
+       một trăm nghìn lần. Tìm ra 01/09/2026 khi đối chiếu với `num2words`.
+    """
     if n == 0:
         return "không"
     ra = []
     tram, du = divmod(n, 100)
     if tram:
         ra += [_DON_VI[tram], "trăm"]
+    elif day_du and du >= 10:
+        # Dưới mười thì dùng "lẻ" (xử lý ngay bên dưới); từ mười trở lên thì
+        # tiếng Việt nói "không trăm" — "một nghìn không trăm mười lăm".
+        ra += ["không", "trăm"]
     chuc, dv = divmod(du, 10)
     if chuc == 0:
         if dv:
-            if tram:
+            if tram or day_du:
                 ra.append("lẻ")
             ra.append(_DON_VI[dv])
     elif chuc == 1:
@@ -161,11 +179,101 @@ def _doc_so(n: int) -> str:
     if len(nhom) > len(_BAC):
         return " ".join(_doc_so_nho(int(c)) for c in str(n))
     phan = []
-    for i in range(len(nhom) - 1, -1, -1):
+    cao_nhat = len(nhom) - 1
+    for i in range(cao_nhat, -1, -1):
         if nhom[i] == 0:
             continue
-        phan.append(_doc_so_nho(nhom[i]) + _BAC[i])
+        # `day_du` cho MỌI nhóm trừ nhóm cao nhất: chỉ nhóm cao nhất mới được
+        # phép bỏ hàng trăm rỗng ("một triệu", không phải "không trăm một
+        # triệu"). Xem docstring `_doc_so_nho` để biết vì sao chỗ này từng sai.
+        phan.append(_doc_so_nho(nhom[i], day_du=i < cao_nhat) + _BAC[i])
     return " ".join(phan)
+
+
+# ── số LỚN: bật theo số đo, không theo cờ ────────────────────────────────────
+#
+# Docstring đầu tệp viết: *"Đọc số trần mặc định TẮT. Không phải vì khó, mà vì
+# **chưa đo**… Đo xong rồi mới bật, và bật bằng cách sửa mặc định ở đây chứ
+# không rải cờ khắp nơi."*
+#
+# ⭐ 01/09/2026 đã đo (`tools/do_engine_doc_so_va_viet_tat.py`, sinh bằng engine
+#    production rồi cho máy nghe lại). Câu "Giá … đồng":
+#
+#        99.000       -> "99 nghìn đồng"              DUNG
+#        990.000      -> "990.000"                    DUNG
+#        1.000.000    -> "1.0.0.0.0.0.0"              HONG — doc TUNG CHU SO
+#        1.250.000    -> "1, 2, 5, 0, 0, 0, 0, 0"     HONG
+#        2.000.000    -> "2-0-0-0-0-0-0-0"            HONG
+#        12.500.000   -> "12.000.000.000"             HONG — sai ca gia tri
+#
+#    Ranh giới ở **một triệu**, tức đúng khoảng giá của mọi bảng giá tiếng Việt.
+#    Dưới ngưỡng ấy `sea-g2p` đọc đúng ⇒ để yên. Đây chính là điều docstring
+#    đòi: sửa một chỗ đã đo là hỏng, không sửa một chỗ chưa đo.
+#
+# 🔴 VÀ ĐÂY LÀ CÁI BẪY ĐẮT NHẤT — SỐ ĐIỆN THOẠI.
+#
+#        0912345678  ->  "chín trăm mười hai triệu ba trăm bốn mươi lăm nghìn
+#                         sáu trăm bảy mươi tám"
+#
+#    Engine đang đọc số điện thoại **ĐÚNG** (từng chữ số — cùng lượt đo, bản
+#    nhận dạng trả lại đủ mười chữ số đúng thứ tự). Nên một luật "≥ 7 chữ số thì
+#    đổi" sẽ phá thứ đang chạy tốt. Hai điều kiện từ chối dưới đây không phải để
+#    cho chặt — chúng là hai hình dạng ĐÃ ĐO là đang đúng.
+
+#: Từ 7 chữ số (≥ 1 triệu) engine bắt đầu đọc rời từng chữ số.
+_SO_LON_TU = 7
+#: Từ 10 chữ số trở lên gần như chắc chắn không phải một lượng: điện thoại, căn
+#: cước, số tài khoản.
+_SO_LON_DEN = 9
+
+#: ⭐ DẤU PHÂN CÁCH LÀ TÍN HIỆU, và suýt nữa ta vứt nó đi trước khi dùng.
+#:
+#:    `1.250.000.000` (mười chữ số) là tiền; `19001234567` (mười một chữ số) là
+#:    tổng đài. Thứ phân biệt chúng **không phải độ dài** mà là người viết đã
+#:    nhóm ba chữ số hay chưa. Nhưng `_NGAN` gỡ dấu chấm ở dòng ngay trên, nên
+#:    một luật đặt sau nó chỉ còn thấy hai dãy số trần giống hệt nhau.
+#:
+#:    ⇒ Luật này phải chạy **TRƯỚC** `_NGAN`. Đổi thứ tự hai dòng ấy là làm hỏng
+#:      trở lại, và hỏng im lặng: số tiền tỷ quay về đọc rời từng chữ số.
+_SO_CO_NHOM = re.compile(r"(?<![\d.,])(\d{1,3}(?:\.\d{3})+)(?![\d.,])")
+
+#: Dãy TRẦN (không phân cách) — và ở đây phải dè dặt hơn hẳn.
+#:
+#: ⛔ "Mã đơn 1234567" mà đọc thành "một triệu hai trăm ba mươi tư nghìn năm
+#:    trăm sáu mươi bảy" là sai, và sai theo kiểu tự tin. Không có cách nào phân
+#:    biệt một mã đơn với một số tiền **chỉ bằng bản thân dãy số**.
+#:
+#: ⭐ Nên đòi thêm một BẰNG CHỨNG NGỮ CẢNH: dãy số phải đứng ngay trước một từ
+#:    chỉ tiền hoặc đơn vị. `1250000 đồng` thì đọc; `1234567` trơ trọi thì không.
+#:    Chính xác cao hơn, và ca bỏ sót chỉ quay về đúng hành vi hôm qua.
+#: ⚠️ Dấu cách nằm TRONG lookahead, không nằm trong phần khớp. Bản đầu viết
+#:    `(\d+)\s+(?=…)` — nó **nuốt** dấu cách, và nhánh "không đủ điều kiện đổi"
+#:    trả về dãy số trần nên dấu cách biến mất: `990000 đồng` -> `990000đồng`.
+#:    Một lỗi chỉ hiện ra ở ca KHÔNG đổi, tức ca mà ta tưởng là an toàn nhất.
+_DAY_SO_TRAN = re.compile(
+    r"(?<![\w.,])(\d+)(?=\s+(?:đồng|đô la|nghìn|triệu|tỷ|USD|VND)\b)",
+    re.IGNORECASE)
+
+
+def _doc_so_lon(text: str) -> str:
+    """Đọc số LỚN thành chữ. Chạy TRƯỚC `_NGAN` — xem chú thích `_SO_CO_NHOM`."""
+    def _co_nhom(m: re.Match) -> str:
+        so = m.group(1).replace(".", "")
+        # Đã nhóm ba chữ số ⇒ chắc chắn là một LƯỢNG, không phải định danh.
+        # Nên không cần trần độ dài ở đây; chỉ cần ngưỡng "engine đọc hỏng".
+        if len(so) < _SO_LON_TU:
+            return so          # dưới ngưỡng: gỡ dấu chấm, để engine tự đọc
+        return _doc_so(int(so)) or so
+
+    def _tran(m: re.Match) -> str:
+        s = m.group(1)
+        # Số 0 đứng đầu: mọi đầu số di động Việt Nam. Không bao giờ là một lượng.
+        if s[0] == "0" or not (_SO_LON_TU <= len(s) <= _SO_LON_DEN):
+            return s
+        return _doc_so(int(s)) or s
+
+    t = _SO_CO_NHOM.sub(_co_nhom, text or "")
+    return _DAY_SO_TRAN.sub(_tran, t)
 
 
 @dataclass
@@ -416,10 +524,22 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
     t = _STT.sub(lambda m: _doc_so_nho(int(m.group(1))).capitalize() + ". ", t)
     t = _NGAY.sub(_thay_ngay, t)
     t = _GIO.sub(_thay_gio, t)
-    t = _NGAN.sub("", t)
-
+    # 🔴 BA DÒNG NÀY PHỤ THUỘC THỨ TỰ, và cả ba lý do đều đã trả giá bằng một
+    #    lần hỏng thật:
+    #
+    #    ① `_KY_HIEU` TRƯỚC — luật `đ` -> " đồng" dùng lookbehind `(?<=\d)`.
+    #       Đặt nó sau `_doc_so_lon` thì chữ số đã thành chữ, lookbehind trượt,
+    #       và `1.250.000đ` ra **"một triệu hai trăm năm mươi nghìnđ"** — một
+    #       chữ `đ` mắc kẹt mà không luật nào còn nhặt được.
+    #    ② `_doc_so_lon` GIỮA — nó cần dấu phân cách hàng nghìn CÒN NGUYÊN, vì
+    #       đó là thứ duy nhất phân biệt tiền với số định danh.
+    #    ③ `_NGAN` SAU CÙNG — dọn nốt dấu phân cách của những số không được đọc
+    #       thành chữ (dưới một triệu), để engine tự đọc.
     for mau, thay in _KY_HIEU:
         t = mau.sub(thay, t)
+
+    t = _doc_so_lon(t)
+    t = _NGAN.sub("", t)
 
     if doc_so_tran:
         t = re.sub(r"\b\d+\b", lambda m: _doc_so(int(m.group(0))), t)
