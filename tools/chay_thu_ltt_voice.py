@@ -25,7 +25,6 @@ chay_thu_ltt_voice.py — chạy LTT VOICE đầu-tới-cuối trên production,
 from __future__ import annotations
 
 import argparse
-import io
 import json
 import os
 import sys
@@ -35,9 +34,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR
 
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Câu thử. Cố ý gồm bốn ô hay hỏng cùng lúc: dấu thanh dày, một cặp `ch`/`tr`
 #: (upstream #168), một con số, và một từ tiếng Anh xen giữa.
