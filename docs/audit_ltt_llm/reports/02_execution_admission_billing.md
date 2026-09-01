@@ -204,4 +204,29 @@ tính giả**. Một bộ đo mới ra điểm thấp thì **khả năng cao là
 tới khi chứng minh ngược lại — và cái giá của việc tin ngay con số 2/3 là ghi
 hai lỗi không tồn tại vào hồ sơ của một hệ thống đang chạy đúng.
 
-⚠️ Còn **B24 tool-call streaming** — chưa đo.
+### B24 tool-call streaming — **4/4**, vòng khép kín qua Cloudflare
+
+```
+tool_use     -> tra_ton_kho {"ma_hang":"ABC-123"}
+tool_result  -> "Ma hang ABC-123 hien co 42 cai trong kho."
+```
+
+Con số **42** không đoán được, nên nó chỉ xuất hiện nếu model **thật sự đọc**
+`tool_result`. Thấy `tool_use` trong luồng chưa chứng minh gì — một model có thể
+phát ra lời gọi đúng khuôn rồi bỏ qua kết quả và bịa câu trả lời cuối.
+
+### ✏️ Và ở đây tôi suýt ghi một khuyết tật NGHIÊM TRỌNG vào hồ sơ
+
+Lượt đầu tôi gửi `tools` **khuôn OpenAI** (`{"type":"function","function":{…}}`)
+vào cửa `/api/v1/messages` — cửa dùng **khuôn Anthropic**. Kết quả: `200`, và
+model trả lời *"Xin lỗi, hiện tại tôi không có tool nào"*.
+
+Tôi đã đi xa tới mức so sánh hai cửa và kết luận *"cửa `/messages` đánh rơi
+trường `tools`"* — một lỗi P1 cho một sản phẩm **đang bán**, vì Claude Code và
+Claude Desktop đều nói giao thức đó. Với khuôn đúng thì nó chạy hoàn hảo ngay
+lần đầu.
+
+⚠️ **Nhưng một quan sát thật vẫn còn lại:** `tools` sai khuôn bị **bỏ qua im
+lặng**, không phải `400`. Khách gõ sai hình dạng nhận một câu trả lời hợp lý mà
+sai. Chỗ này **lệch chuẩn** với phần còn lại của khu API, nơi lỗi gọi tên đúng
+scope thiếu, nói *"A quote token is required"*, và đính `retry: never`.
