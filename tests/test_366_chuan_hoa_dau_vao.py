@@ -139,3 +139,48 @@ def test_khong_pha_doc_so_va_ngay():
     ra = _ch("Ngày 5/9/2026 có 30%")
     assert "phần trăm" in ra
     assert "/" not in ra, f"ngay chua duoc doc thanh chu: {ra!r}"
+
+
+# ═══════════════════════ phân cách hàng nghìn dính hậu tố tiền ══════════════
+#
+# Tìm ra 01/09/2026 bằng cách MỞ BẢNG "MÁY SẼ ĐỌC THÀNH" trên production và đọc
+# nó, chứ không bằng test — vì không phép kiểm nào ở đây từng chạm tới phân cách
+# hàng nghìn. Chuỗi thử là một câu quảng cáo bình thường, và bảng xem trước hiện
+# ra `1250.000 đồng`.
+#
+# ⛔ Lỗi nằm ở đúng cách viết giá THÔNG DỤNG NHẤT ở Việt Nam. `_NGAN` dùng
+#    `(?=\d{3}\b)`, mà `đ` là ký tự chữ trong Unicode nên `\b` không khớp giữa
+#    `0` và `đ`:
+#
+#        990.000đ    -> 990.000 đồng    (dau cham song sot NGUYEN VEN)
+#        1.250.000đ  -> 1250.000 đồng   (bo cai dau, giu cai sau)
+#
+#    Còn `1.250.000 đồng` — có dấu cách — thì ĐÚNG. Nên một phép kiểm viết bằng
+#    văn bản sạch sẽ xanh, và đó chính là lý do lỗi sống sót: dạng hỏng là dạng
+#    khách gõ, dạng đúng là dạng ta gõ khi viết test.
+
+def test_hang_nghin_dinh_hau_to_tien():
+    """Ba dạng viết giá phải ra cùng một con số."""
+    for vao in ("990.000\u0111", "990.000 \u0111\u1ed3ng", "990.000VN\u0110"):
+        ra = _ch(vao)
+        assert "990000" in ra, f"{vao!r} -> {ra!r}: dau cham hang nghin con lai"
+        assert "\u0111\u1ed3ng" in ra, f"{vao!r} -> {ra!r}: mat don vi tien"
+
+
+def test_hang_nghin_NHIEU_nhom_dinh_hau_to():
+    """`1.250.000đ` từng chỉ bỏ dấu chấm ĐẦU rồi giữ dấu chấm sau."""
+    ra = _ch("1.250.000\u0111")
+    assert "1250000" in ra, f"-> {ra!r}"
+    assert "1250.000" not in ra, (
+        f"-> {ra!r}: bo dau cham dau ma giu dau cham sau — te hon ca khong sua, "
+        "vi no ra mot chuoi khong phai so cung khong phai chu")
+
+
+def test_hang_nghin_KHONG_an_dau_cau_va_thap_phan():
+    """Nới `\b` thành `(?!\d)` không được nuốt thêm gì.
+
+    Ba ca này phải GIỮ NGUYÊN dấu chấm — nếu một lượt sửa sau làm chúng đỏ thì
+    luật đã nới quá tay.
+    """
+    assert _ch("3.14") == "3.14", "thap phan hai chu so: khong phai hang nghin"
+    assert "2020. 300" in _ch("nam 2020. 300 nguoi"), "dau cham CAU co dau cach"

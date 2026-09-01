@@ -72,7 +72,24 @@ _KY_HIEU = [
 ]
 
 # ── phân cách hàng nghìn: 1.500.000 -> 1500000 (trước khi đụng tới ngày) ──────
-_NGAN = re.compile(r"(?<=\d)\.(?=\d{3}\b)")
+#
+# ⛔ `(?=\d{3}\b)` là SAI, và nó sai ở đúng cách viết giá thông dụng nhất.
+#    `\b` đòi bên phải ba chữ số phải là ranh giới từ, mà `đ` LÀ ký tự chữ
+#    trong Unicode — nên `990.000đ` không khớp, và khách nghe một chuỗi không
+#    phải số cũng không phải chữ:
+#
+#        1.250.000        -> 1250000         (dung)
+#        1.250.000 đồng   -> 1250000 đồng    (dung — co dau cach nen \b khop)
+#        990.000đ         -> 990.000 đồng    (HONG)
+#        1.250.000đ       -> 1250.000 đồng   (HONG — bo dau cham dau, giu cai sau)
+#
+#    Luật `đ` -> " đồng" nằm ở `_LUAT` phía trên và chạy TRƯỚC, nên nó tách
+#    được dấu cách; nhưng chỉ ở lượt sau, khi `_NGAN` đã chạy xong rồi.
+#
+# ⭐ `(?!\d)` diễn đạt đúng điều cần: "ba chữ số và HẾT nhóm số", không quan tâm
+#    cái đứng sau là chữ hay dấu. Nó là tập cha thực sự của hành vi cũ — chỉ
+#    thêm khớp ở đúng chỗ `\b` trượt, không bỏ chỗ nào đang khớp.
+_NGAN = re.compile(r"(?<=\d)\.(?=\d{3}(?!\d))")
 
 # ── ngày và giờ ──────────────────────────────────────────────────────────────
 _NGAY = re.compile(r"\b(\d{1,2})[/-](\d{1,2})[/-](\d{4})\b")
