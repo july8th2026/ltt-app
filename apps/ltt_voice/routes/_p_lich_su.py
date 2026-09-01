@@ -29,6 +29,20 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
         goi = doc_man_lich_su.doc(db, uid, MANIFEST.slug,
                                   trang_thai=tt, nguon=nguon, giong=giong)
         hang_doi = vo.dem_dang_chay(db, uid)
+        # ── Mã giọng -> tên hiển thị ──────────────────────────────────────
+        #
+        # ⛔ Trước 01/09/2026 màn này in thẳng `vc_fceeabc694124a51921c7558a…`
+        #    ra ba chỗ: ô lọc, dòng của mỗi lượt, và "Giọng dùng nhiều nhất".
+        #    Không có bước tra tên nào cả — kể cả với giọng do CHÍNH khách đặt
+        #    tên. Khách nhìn một chuỗi băm và không biết mình đã đọc bằng giọng
+        #    nào, trong khi cái tên họ gõ đang nằm sẵn trong CSDL.
+        #
+        # ⭐ `gom_dung_chung=True` vì lịch sử có thể trỏ tới một giọng kho chung
+        #    — cửa thi hành (`features.py`) cho phép dùng chúng, nên lịch sử
+        #    chắc chắn có chúng.
+        ten_giong = {g.public_id: g.ten_hien_thi
+                     for g in tham_chieu.danh_sach(db, owner_id=uid,
+                                                   gom_dung_chung=True)}
     finally:
         try:
             next(gen)
@@ -45,7 +59,7 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
                     tran=goi["tran"],
                     giong_da_dung=goi["giong_da_dung"],
                     nguon_da_dung=goi["nguon_da_dung"],
-                    nhan_nguon=NHAN_NGUON,
+                    nhan_nguon=NHAN_NGUON, ten_giong=ten_giong,
                     f_tt=tt, f_nguon=nguon, f_giong=giong))
 
 

@@ -161,16 +161,29 @@
     var oTim = document.getElementById("lv-tim");
     var oSo = document.getElementById("lv-g-so");
     var oKhongHop = document.getElementById("lv-g-khonghop");
+    var oAnMat = document.getElementById("lv-g-anmat");
     var dangLoc = {loai: "", gioi: "", vung: "", phongcach: ""};
 
     function loc() {
       var q = ((oTim && oTim.value) || "").trim().toLowerCase();
       var con = 0;
+      // Bao nhieu the bi an CHI vi no thieu nhan dang duoc loc — khong phai vi
+      // no that su khong khop. Hai thu do rat khac nhau voi nguoi dung, va
+      // truoc 01/09 giao dien khong phan biet chung.
+      var anViThieuNhan = 0;
       for (var i = 0; i < the.length; i++) {
         var t = the[i], d = t.dataset;
         // Giong nhan ban khong co ba mat cua giong mau. Khi mot mat do dang
         // duoc loc thi chung KHONG khop — va do la dung: loc "giong nu mien
         // Bac" ma van tra ve mot giong rieng chua phan loai la tra ket qua sai.
+        //
+        // ⛔ Nhung "dung" khong co nghia la "khong can noi". Do tren production
+        //    01/09: bam "Nam" -> 45 giong con 9, va ca 25 giong cua khach bien
+        //    mat khong mot loi nao. Nen ta van an chung, VA dem chung.
+        var thieuNhan =
+          (dangLoc.gioi && !d.gioi) ||
+          (dangLoc.vung && !d.vung) ||
+          (dangLoc.phongcach && !d.phongcach);
         var hop =
           (!dangLoc.loai || d.loai === dangLoc.loai) &&
           (!dangLoc.gioi || d.gioi === dangLoc.gioi) &&
@@ -178,10 +191,30 @@
           (!dangLoc.phongcach || d.phongcach === dangLoc.phongcach) &&
           (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
         t.hidden = !hop;
-        if (hop) con++;
+        if (hop) {
+          con++;
+        } else if (thieuNhan) {
+          // Chi dem khi cai DUY NHAT chan no la nhan bi thieu. Mot giong bi
+          // loai boi o tim hay boi "Giong mau" thi khong thuoc cau chuyen nay.
+          var hopNeuBoNhan =
+            (!dangLoc.loai || d.loai === dangLoc.loai) &&
+            (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
+          if (hopNeuBoNhan) anViThieuNhan++;
+        }
       }
       if (oSo) oSo.textContent = String(con);
       if (oKhongHop) oKhongHop.hidden = con !== 0;
+      if (oAnMat) {
+        oAnMat.hidden = anViThieuNhan === 0;
+        // Mot goi khong truyen chuoi nay thi im lang chu dung nem — mot loi
+        // JS o day se giet ca bo loc, tuc doi mot khiem khuyet hien thi lay
+        // mot man hinh chet.
+        var mau = (cauHinh.chu && cauHinh.chu.anViThieuNhan) || "";
+        oAnMat.textContent = (anViThieuNhan && mau)
+          ? mau.replace("{n}", String(anViThieuNhan))
+          : "";
+        if (!mau) oAnMat.hidden = true;
+      }
     }
 
     var nutLoc = document.querySelectorAll(".lv-loc-nut");

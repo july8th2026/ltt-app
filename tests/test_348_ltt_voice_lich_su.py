@@ -248,3 +248,106 @@ def test_lich_su_khong_lo_khoa_kho_tran(khach):
     html = client.get("/ltt-voice/lich-su").text
     assert 'src="/ltt-voice/audio/voice/out/' in html
     assert 'src="voice/out/' not in html
+
+
+# ═══════════════════ mã giọng phải hiện thành TÊN, không phải băm ════════════
+#
+# Tìm ra 01/09/2026 bằng cách mở màn Lịch sử trên production: mọi chỗ nhắc tới
+# giọng đều in `vc_fceeabc6…50db7` — ô lọc, dòng của mỗi lượt,
+# và cả dòng "Giọng dùng nhiều nhất".
+#
+# ⛔ Và nó không phải chuyện của kho giọng chung: template in thẳng `{{ d.giong }}`
+#    với class `mono`, tức KHÔNG có bước tra tên nào cả, cho MỌI loại giọng.
+#    Một giọng do chính khách đặt tên cũng hiện ra là một chuỗi băm — trong khi
+#    cái tên ấy đang nằm sẵn trong CSDL, cách đó một câu truy vấn.
+#
+# ⭐ Class `mono` được GIỮ khi không tra được tên. Một mã thô vẫn nên trông như
+#    mã; đổi cả hai thành cùng một kiểu chữ là làm mất thông tin.
+
+def _gieo_giong_va_luot(uid: str, ten: str = "Giong dat ten thu"):
+    """Một giọng nhân bản + một lượt đọc dùng nó."""
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    from apps.ltt_voice.tables import VoiceProfile
+    ma = "vc_lichsuthu0000000000000000000a"
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(VoiceProfile(public_id=ma, owner_id=uid, ten_hien_thi=ten,
+                            ngon_ngu="vi", trang_thai="active"))
+        db.add(Job(user_id=uid, app_slug="ltt_voice",
+                   job_type="ltt_voice.synthesize",
+                   params={"text": "cau thu", "nguon": "studio",
+                           "voice_id": ma},
+                   status="done",
+                   result={"duration_s": 2.0, "credit_cost": 1,
+                           "audio_key": f"voice/out/{uid}/jx/tieng.wav"}))
+        db.commit()
+        return ma, ten
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_lich_su_hien_TEN_giong_o_CA_BA_cho(khach):
+    """Ô lọc · dòng của mỗi lượt · "Giọng dùng nhiều nhất" — cả ba.
+
+    ⛔ Bản đầu của phép kiểm này chỉ hỏi `ten in r.text`, và nó XANH kể cả khi
+       tôi hoàn nguyên phần sửa của DÒNG — vì cái tên vẫn hiện ở ô lọc. Một
+       chốt xanh vì lý do sai còn tệ hơn không có chốt: nó khiến ta tin là đã
+       canh cái mình chưa canh.
+
+    Nên nó đếm `>{ten}<` (tên là NỘI DUNG THẤY ĐƯỢC) và đòi đủ ba lượt, đồng
+    thời cấm mã băm xuất hiện dưới dạng chữ. Mã vẫn được phép nằm trong
+    `value="…"` và `data-giong="…"` — đó là định danh của biểu mẫu, không phải
+    thứ khách đọc.
+    """
+    client, uid = khach
+    ma, ten = _gieo_giong_va_luot(uid)
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert r.text.count(f">{ten}<") >= 3, (
+        f"chi thay ten o {r.text.count(f'>{ten}<')}/3 cho — o loc, dong cua "
+        "moi luot, va 'Giong dung nhieu nhat' deu phai tra ten")
+    assert f">{ma}<" not in r.text, (
+        f"ma bam {ma} van hien ra nhu CHU — khach doc mot chuoi bam thay vi "
+        "cai ten chinh ho dat")
+
+
+def test_ma_KHONG_tra_duoc_van_giu_kieu_chu_ma(khach):
+    """Giọng đã gỡ vẫn còn trong lịch sử — và vẫn phải đọc được LÀ một mã.
+
+    Bút toán trỏ về giọng cũ nên `VoiceProfile` không bao giờ bị xoá thật; nhưng
+    một lượt cũ hoàn toàn có thể trỏ tới một mã không tra được. Khi đó đừng giả
+    vờ nó là một cái tên: giữ kiểu chữ mã để người đọc biết đây là định danh.
+    """
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    mo_coi = "vc_khongcontrongbang00000000000a"
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(Job(user_id=uid, app_slug="ltt_voice",
+                   job_type="ltt_voice.synthesize",
+                   params={"text": "cau mo coi", "nguon": "studio",
+                           "voice_id": mo_coi},
+                   status="done",
+                   result={"duration_s": 1.0, "credit_cost": 1,
+                           "audio_key": f"voice/out/{uid}/jy/tieng.wav"}))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert f'class="mono">{mo_coi}<' in r.text, (
+        "ma khong tra duoc phai VAN hien ra VA giu kieu chu ma — "
+        "khong nuot no, cung khong gia vo no la mot cai ten")

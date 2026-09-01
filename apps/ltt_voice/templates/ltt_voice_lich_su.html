@@ -65,7 +65,7 @@
             <select name="giong" onchange="this.form.submit()">
               <option value="">{{ _("Mọi giọng") }}</option>
               {% for g in giong_da_dung %}
-                <option value="{{ g }}"{{ ' selected' if f_giong == g }}>{{ g }}</option>
+                <option value="{{ g }}"{{ ' selected' if f_giong == g }}>{{ ten_giong.get(g, g) }}</option>
               {% endfor %}
             </select>
           </label>
@@ -92,7 +92,7 @@
                 <p class="lv-ls-chu">{{ d.text or _("(không có văn bản)") }}</p>
                 <p class="lv-ls-meta">
                   <time datetime="{{ d.luc.isoformat() }}">{{ d.luc.strftime('%H:%M %d/%m/%Y') }}</time>
-                  {% if d.giong %}· <span class="mono">{{ d.giong }}</span>{% endif %}
+                  {% if d.giong %}· {%- if d.giong in ten_giong %} <span>{{ ten_giong[d.giong] }}</span>{%- else %} <span class="mono">{{ d.giong }}</span>{% endif %}{% endif %}
                   {% if d.giay %}· {{ d.giay }}s{% endif %}
                   {% if d.credit is not none %}· {{ d.credit }} credit{% endif %}
                 </p>
@@ -151,7 +151,7 @@
         </div>
         {% if tom_tat.giong_hay_dung %}
           <p class="dim lv-tt-giong">{{ _("Giọng dùng nhiều nhất") }}:
-            <span class="mono">{{ tom_tat.giong_hay_dung }}</span>
+            {% if tom_tat.giong_hay_dung in ten_giong %}<span>{{ ten_giong[tom_tat.giong_hay_dung] }}</span>{% else %}<span class="mono">{{ tom_tat.giong_hay_dung }}</span>{% endif %}
             ({{ tom_tat.giong_hay_dung_so }})</p>
         {% endif %}
         {# Phạm vi của mọi con số trên: nói ra, đừng để người đọc tự suy. #}

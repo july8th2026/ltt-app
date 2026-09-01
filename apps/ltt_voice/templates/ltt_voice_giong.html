@@ -65,6 +65,20 @@
 
       <p class="lv-g-dem" role="status" aria-live="polite">
         <span id="lv-g-so">{{ giong_mau|length + giong|length }}</span> {{ _("giọng") }}
+        {#
+          Ba bộ lọc giới/vùng/phong cách là phân loại của GIỌNG MẪU. Giọng nhân
+          bản không mang ba nhãn ấy, nên khi một trong ba đang bật thì chúng
+          không khớp — và `voice.js` cố ý làm vậy, vì trả một giọng chưa phân
+          loại vào kết quả "nữ · miền Bắc" là trả kết quả sai.
+
+          ⛔ Nhưng lặng lẽ thì không được. Đo trên production 01/09: bấm "Nam"
+             thì 45 giọng còn 9, và toàn bộ 25 giọng của khách biến mất mà
+             không một dòng nào nói vì sao. Khách chỉ thấy giọng mình vừa nhân
+             bản không còn ở đó nữa.
+
+          ⭐ Nên chỗ này KHÔNG sửa bộ lọc — nó đúng — mà nói ra hệ quả của nó.
+        #}
+        <span id="lv-g-anmat" class="dim" hidden></span>
       </p>
 
       <div class="lv-luoi" id="lv-luoi">
@@ -187,7 +201,8 @@
       sanSang: {{ _("Sẵn sàng") | tojson }},
       dangGhiDanh: {{ _("Đang ghi danh…") | tojson }},
       daTat: {{ _("Đã tắt") | tojson }},
-      chuaDung: {{ _("chưa dùng") | tojson }}
+      chuaDung: {{ _("chưa dùng") | tojson }},
+      anViThieuNhan: {{ _("· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách") | tojson }}
     }
   });
 
