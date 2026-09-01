@@ -325,6 +325,7 @@ image.ltt        ASYNC_JOB
 text.chat        ASYNC_JOB
 video.subtitle   ASYNC_JOB   <- mo 29/08
 video.upscale    ASYNC_JOB   <- mo 29/08
+speech.ltt       ASYNC_JOB   <- mo truoc 01/09, hang nay KHONG theo kip
 ```
 
 Tức **H35.10 đã đóng** và hai tool video đã bán, trong khi hàng này vẫn ghi là
@@ -378,7 +379,22 @@ người **chép ví dụ**, không cứu người **tự viết**.
 phiên sau bỏ qua — và kéo theo cả những cảnh báo đúng nằm cạnh nó.** Nên viết
 lệnh tái hiện, đừng viết kết luận.
 
-**Trạng thái đúng (đo 30/08):** khu API bật, **bốn tool mở** — `text.chat`,
+🔴 **SỬA LẦN BA 2026-09-01 — VÀ ĐÂY LÀ LẦN THỨ BA CÙNG MỘT HÀNG.**
+
+Hỏi chính máy chủ ngày 01/09 qua Cloudflare bằng khoá thật: **NĂM** tool, không
+phải bốn. `speech.ltt` (LTT VOICE) đã mở và hàng này không theo kịp.
+
+⭐ Ba lần trôi, ba lần cùng một hướng, và lần này nó lộ ra **không phải vì ai đó
+đọc lại tài liệu** mà vì một canary đi hỏi máy chủ. Đó là lý do lệnh ở trên đáng
+giá hơn cả đoạn văn này: **đừng đọc con số ở đây, hỏi máy chủ.**
+
+⚠️ Và con canary ấy suýt nói dối: `tools/api_prod_canary.py` đọc `data`/`tools`
+trong khi API trả `items`, nên nó in *“(rỗng — đúng ý muốn khi
+`LTT_PUBLIC_API_TOOLS` chưa đặt)”* — **một câu trả lời sai mặc một lời giải
+thích nghe hợp lý**. Đã sửa: hình dạng lạ nay phải NÓI RA thay vì lặng lẽ
+thành rỗng.
+
+**Trạng thái đúng (đo 01/09):** khu API bật, **năm tool mở** — `text.chat`,
 `image.ltt`, `video.upscale`, `video.subtitle`. Fail-closed của Q92 vẫn đúng
 việc với mọi tool còn lại. Năm điều kiện §11 đã đóng; còn nợ: **xoay khoá
 provider**.

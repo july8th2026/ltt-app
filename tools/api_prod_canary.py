@@ -171,9 +171,33 @@ def probe(args) -> int:
                         print(f"  CANH BAO: {d} tra 200 nhung khong phai JSON "
                               f"({exc}). Khong ket luan gi ve danh sach tool.")
                         body = {}
-                    muc = body.get("data") or body.get("tools") or []
-                    tool_thay = [t.get("name", "?") if isinstance(t, dict) else str(t)
-                                 for t in muc]
+                    # 🔴 `items` PHẢI CÓ TRONG DANH SÁCH NÀY. Bản cũ đọc
+                    #    `data`/`tools` mà khu API trả về **`items`**, nên nó
+                    #    luôn ra `[]` — và in ra *"(rỗng — đúng ý muốn khi
+                    #    LTT_PUBLIC_API_TOOLS chưa đặt)"* trong khi production
+                    #    đang mở **năm** tool. Đo 01/09.
+                    #
+                    # ⭐ Chú thích ngay trên đã canh đúng cái kết luận sai này,
+                    #    chỉ canh **một** đường tới nó (200 không phải JSON). Câu
+                    #    trả lời sai đến bằng đường khác: một tên khoá lệch.
+                    #
+                    # ⇒ Nên chốt không phải "thêm `items`" mà là: **hình dạng lạ
+                    #   phải NÓI RA**, đừng bao giờ để nó lặng lẽ thành rỗng.
+                    khoa_biet = ("items", "data", "tools")
+                    muc = None
+                    for k in khoa_biet:
+                        if isinstance(body.get(k), list):
+                            muc = body[k]
+                            break
+                    if muc is None:
+                        print(f"  CANH BAO: {d} tra 200 nhung khong co khoa nao "
+                              f"trong {khoa_biet} (co: {sorted(body)}). "
+                              f"KHONG ket luan gi ve danh sach tool.")
+                        muc = []
+                        tool_thay = ["<khong doc duoc hinh dang>"]
+                    else:
+                        tool_thay = [t.get("name", "?") if isinstance(t, dict)
+                                     else str(t) for t in muc]
                 time.sleep(nhip)
 
     print("\n=== trang thai ===")

@@ -28,6 +28,13 @@
       soi-su-co      tools/soi_su_co.py        (doc so request + hoi may B)
       kiem-llm       tools/kiem_ltt_llm.py     (kiem toan tuyen A -> B)
 
+      tao-tk-canary  tools/tai_khoan_thu.py    (tai khoan .local + nap credit)
+      khoa-canary    tools/khoa_thu_api.py     (phat khoa /api/v1 cho tk do)
+      canary-api     tools/api_prod_canary.py  (goi that qua Cloudflare)
+
+    !! `khoa-canary` IN RA MOT KHOA SONG. Ket qua duoc ghi vao `tmp/` (da
+       gitignore) nhung van la mot chung danh tren dia - dung chep no di dau.
+
 .EXAMPLE
     powershell -ExecutionPolicy Bypass -File .\setup\chay_voi_env.ps1 -Viec test-daluong
 
@@ -38,7 +45,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('test-daluong', 'cong-daluong', 'soi-su-co', 'kiem-llm')]
+    [ValidateSet('test-daluong', 'cong-daluong', 'soi-su-co', 'kiem-llm',
+                 'tao-tk-canary', 'khoa-canary', 'canary-api')]
     [string]$Viec,
 
     [string]$Root = 'C:\LTTPlatform',
@@ -97,11 +105,29 @@ if (-not $py) {
 }
 if (-not $py) { throw "Khong tim thay python (da do PATH va cac cho cai dat thong thuong)." }
 
+# !! MOI VIEC LA MOT DANH SACH DOI SO CO DINH. Do la tinh chat quan trong nhat
+#    cua bang nay: khong co cho nao nhan doi so tu ben goi, nen khong co cho de
+#    tiem. Neu mot ngay nao do can tham so, dung them mot `-Tham` chung -- them
+#    MOT DONG MOI voi doi so co dinh, va de nguoi review thay no trong diff.
+#
+#    Email thu la mot HANG SO o day, khong phai tham so, vi dung ly do do. Duoi
+#    `.local` la chot cua `khoa_thu_api.py`: mot khoa API tieu TIEN THAT cua chu
+#    so huu, nen no khong bao gio duoc phat cho tai khoan khach.
+$EMAIL_CANARY = 'canary.api@lttstudios.local'
+
 $viecCuThe = @{
     'test-daluong' = @($py, '-m', 'pytest', 'tests/test_214_multi_process_runtime.py', '-q')
     'cong-daluong' = @($py, 'tools/check_multiproc.py')
     'soi-su-co'    = @($py, 'tools/soi_su_co.py')
     'kiem-llm'     = @($py, 'tools/kiem_ltt_llm.py')
+    # Ba viec duoi cho nghiem thu E15-E17: tai khoan thu -> khoa thu -> canary.
+    # Chung DUNG TIEN THAT cua tai khoan `.local` do -- co y, vi mot canary khong
+    # di qua duong tinh tien la mot canary khong kiem duoc duong tinh tien.
+    'tao-tk-canary' = @($py, 'tools/tai_khoan_thu.py', '--email', $EMAIL_CANARY,
+                        '--ten', 'Canary API', '--nap', '2000')
+    'khoa-canary'   = @($py, 'tools/khoa_thu_api.py', '--email', $EMAIL_CANARY,
+                        '--ten', 'canary-e15')
+    'canary-api'    = @($py, 'tools/api_prod_canary.py')
 }
 $argv = $viecCuThe[$Viec]
 if (-not $argv) { throw "Viec khong co trong danh sach trang: $Viec" }
