@@ -72,7 +72,12 @@ def ma_giong_cua_toi(db, owner_id: str) -> list:
     """
     try:
         from . import tham_chieu
-        cac = tham_chieu.danh_sach(db, owner_id=owner_id)
+        # `gom_dung_chung=True`: kho giong chung goi duoc qua API — chinh
+        # `features.py` mo `cho_dung_chung=True` o cua DUNG. Thieu no o day
+        # thi trang nay noi "Ban chua co giong nhan ban nao" voi mot khach
+        # dang dung duoc 25 giong o man Tao tieng noi.
+        cac = tham_chieu.danh_sach(db, owner_id=owner_id,
+                                   gom_dung_chung=True)
     except Exception:  # noqa: BLE001
         log.exception("khong doc duoc danh sach giong")
         return []

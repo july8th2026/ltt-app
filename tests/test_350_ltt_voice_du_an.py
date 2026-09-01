@@ -438,3 +438,76 @@ def test_khong_co_loai_job_moi():
 
     assert set(MANIFEST.job_types) == {"ltt_voice.synthesize", "ltt_voice.enroll"}, (
         f"job_types da no ra: {MANIFEST.job_types}")
+
+
+# ════════════════════ kho giọng CHUNG phải thấy được ở cửa DÙNG ══════════════
+#
+# Tìm ra 01/09/2026 bằng cách mở màn Dự án trên production và đếm ô chọn giọng
+# của một khối: đúng 21 lựa chọn — "Theo dự án" + 20 giọng mẫu. **Cả 25 giọng
+# kho chung vắng mặt**, ở cả ô chọn mặc định của dự án lẫn ô chọn của từng khối.
+#
+# ⛔ Nó không phải lỗi hiển thị. `tham_chieu.danh_sach` mặc định KHÔNG gồm kho
+#    chung — cố ý, và docstring của nó giải thích vì sao: một cửa "quản lý giọng
+#    của tôi" không nên liệt kê giọng nó không được sửa. Nhưng Dự án là cửa
+#    **DÙNG**, không phải cửa **SỬA**. `_p_tao` và `_p_giong` đều nói ra
+#    `gom_dung_chung=True`; `_p_du_an` quên, ở cả hai chỗ.
+#
+# ⭐ Và hình dạng của lỗi là thứ đáng nhớ: một mặc định AN TOÀN đặt đúng chỗ
+#    (cửa sửa) trở thành một lỗi khi cửa thứ ba quên bật nó. Mặc định fail-closed
+#    không tự bảo vệ được nơi gọi — nó chỉ đổi kiểu lỗi từ "lộ" sang "mất".
+
+def _tao_giong_kho_chung(ten="Giong kho chung thu"):
+    """Một `VoiceProfile` `dung_chung=True` của MỘT CHỦ KHÁC."""
+    import platform_core.db as dbmod
+    from apps.ltt_voice.tables import VoiceProfile
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        g = VoiceProfile(public_id="vc_khochungthu000000000000000000",
+                         owner_id="mot-chu-hoan-toan-khac",
+                         ten_hien_thi=ten, ngon_ngu="vi",
+                         trang_thai="active", dung_chung=True)
+        db.add(g)
+        db.commit()
+        return g.public_id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_kho_chung_HIEN_o_man_du_an(khach):
+    client, _ = khach
+    ten = "Giong kho chung thu"
+    _tao_giong_kho_chung(ten)
+    r = client.get("/ltt-voice/du-an")
+    assert r.status_code == 200
+    assert ten in r.text, (
+        "man DANH SACH du an khong thay kho giong chung — thieu "
+        "`gom_dung_chung=True` o `_p_du_an`")
+
+
+def test_kho_chung_HIEN_o_o_chon_giong_TUNG_KHOI(khach):
+    """Chỗ này mới là chỗ khách mất việc: gán giọng cho một khối."""
+    client, _ = khach
+    ten = "Giong kho chung thu"
+    ma = _tao_giong_kho_chung(ten)
+    pid = _tao(client)
+    r = client.get(f"/ltt-voice/du-an/{pid}")
+    assert r.status_code == 200
+    assert f'value="v:{ma}"' in r.text, (
+        "o chon giong CUA KHOI khong co giong kho chung — khach khong gan duoc "
+        "giong da nhan ban cho mot khoi")
+
+
+def test_kho_chung_HIEN_o_man_API(khach):
+    """Màn API từng nói "Bạn chưa có giọng nhân bản nào" với khách có 25 giọng."""
+    client, _ = khach
+    ten = "Giong kho chung thu"
+    ma = _tao_giong_kho_chung(ten)
+    r = client.get("/ltt-voice/api")
+    assert r.status_code == 200
+    assert ma in r.text, (
+        "man API khong dua ma giong kho chung — trong khi `features.py` MO "
+        "`cho_dung_chung=True` o cua dung, tuc ma ay goi duoc that")

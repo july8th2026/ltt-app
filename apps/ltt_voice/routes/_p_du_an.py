@@ -50,7 +50,13 @@ def trang_du_an(request: Request, user=Depends(user_hien_tai),
         # Đếm khối cho từng dự án trong MỘT vòng, không một truy vấn mỗi thẻ.
         dem = {d.public_id: du_an.tom_tat(du_an.cac_khoi(db, d.id)) for d in ds}
         hang_doi = vo.dem_dang_chay(db, uid)
-        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        # `gom_dung_chung=True`: DU AN la cua DUNG, nen kho giong chung
+        # cua nen tang phai thay duoc — giong nhu `_p_tao` va `_p_giong`.
+        # Thieu no thi o chon giong mac dinh VA o chon giong tung khoi
+        # deu chi con 20 giong mau, va 25 giong kho chung bien mat khong
+        # mot loi giai thich. Cua SUA (`_p_giong` ghi danh) thi van dong.
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid,
+                                       gom_dung_chung=True)
     finally:
         try:
             next(gen)
@@ -141,7 +147,13 @@ def trang_mot_du_an(request: Request, public_id: str,
         duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         tt = du_an.tom_tat(khoi)
         hang_doi = vo.dem_dang_chay(db, uid)
-        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        # `gom_dung_chung=True`: DU AN la cua DUNG, nen kho giong chung
+        # cua nen tang phai thay duoc — giong nhu `_p_tao` va `_p_giong`.
+        # Thieu no thi o chon giong mac dinh VA o chon giong tung khoi
+        # deu chi con 20 giong mau, va 25 giong kho chung bien mat khong
+        # mot loi giai thich. Cua SUA (`_p_giong` ghi danh) thi van dong.
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid,
+                                       gom_dung_chung=True)
         # Bản sao phẳng cho template — tránh chạm ORM trong Jinja.
         ds_khoi = [{
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
