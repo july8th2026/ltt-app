@@ -24,9 +24,10 @@
 > kept for provenance, not as current state.
 
 ## Current phase
-- phase: **14 — Composer & Render Manifest**
-- status: IN_PROGRESS
-- gate: NOT_EVALUATED
+- phase: **15 — next in the pack**
+- status: NOT_STARTED
+- gate: Phase 14 closed at `RESULT: FAIL (2/26)` — **7 failures, none in ASV work**, each traced
+  (see the exit table in [`reports/14_REPORT.md`](reports/14_REPORT.md))
 
 **Invariant regression subset — run after every edit (~2 s):**
 ```bash
@@ -39,10 +40,31 @@ python -m pytest tests/test_400_asv_bat_bien_thi_hanh.py tests/test_401_asv_ranh
 > ⛔ **Never deploy from this worktree** — this machine is production and
 > `setup/2-cai-dat.ps1` copies the whole tree to `C:\LTTPlatform`.
 
-**Frozen baseline (certified, no tree-mutation warning):**
-`python tools/gate.py --phien asv` → `RESULT: FAIL (4/26)`, test step 63 passed / 4 failed.
-A later phase regresses only if it breaks a step **outside**
-`{bo qua im lang, dich thieu ban EN, system profile, bo test::test_306}`.
+**Frozen baseline (re-measured 2026-09-02, AFTER merging `admin-mvp-v3`):**
+`python tools/gate.py --phien asv` → `RESULT: FAIL (2/26)`, **7 test failures**.
+
+⛔ The old baseline (`FAIL (4/26)`) was measured on a tree **37 commits stale** and is void.
+Do not compare against it. Merging first changed the failure count 5 → 34 → 7; the 34 were
+not caused by the merge, they were already true and a stale tree was hiding them.
+
+A later phase regresses only if it breaks something **outside this set**, which is fixed and
+owned elsewhere:
+
+| failure | cause | owner |
+|---|---|---|
+| `test_147::test_platform_core_never_imports_apps` | `platform_core/public_api/dieu_khoan.py` imports `apps.ltt_llm` | peer, `d14431f` |
+| `test_60::test_platform_never_imports_an_app` | same file | peer, `d14431f` |
+| `test_211::test_every_table_has_a_retention_class` | `voice_tu_dien` unclassified | peer |
+| `test_155::…unique_song_con_deu_nam_trong_drill` | `uq_voice_tudien_owner_tu` not in drill | peer |
+| `test_82::test_vendor_engine_co_mat` | `apps/upscalevideo/vendor/` — **0 files in git** | worktree |
+| `test_362::test_cay_chinh_co_dot_git_la_THU_MUC` | `.git` is a *file* in a linked worktree | worktree |
+| `test_362::test_cay_lien_ket_co_dot_git_la_TEP` | inspects main tree, where `.git` is a *dir* | worktree |
+
+⭐ **The last three can never pass inside a linked worktree** (RISK-14-02), and this repo's own
+`tools/cay_rieng.py` creates linked worktrees. Do not spend time "fixing" them here.
+
+⚠️ Also void: `check_i18n` now reads 781 against a baseline of 774 — from the peer's
+`dieu_khoan.py` (6) and `api_dieu_khoan.html` (1), not from ASV.
 
 ## Frozen MVP
 - profile/version: **`auto_scan_mvp_v1` — FROZEN in Phase 02.** Authority:
@@ -151,6 +173,7 @@ Full table with line-level evidence: [`CAPABILITY_MATRIX.md`](CAPABILITY_MATRIX.
 | Phase | Gate | SHA/diff ref | Key evidence | Report |
 |---|---|---|---|---|
 | 00 Repo provenance & read-only audit | **PASS** | `c31b1ae`, docs-only diff under `docs/auto_scan_video/` | 9/9 MVP stages mapped (8 sourced + 1 explicit GAP); execution/money/resource traced end to end; 15 risks + 4 gaps opened | [`reports/00_REPORT.md`](reports/00_REPORT.md) |
+| 14 Composer / render manifest | **CLOSED** (7 external failures) | `0fef74c` + `ban_dung.py`, `giai_doan_ban_dung.py`, 5 test files | Manifest is **data, not a command string** — a tool change must not force re-running the upstream AI chain. Every reference verified before a render slot is spent, re-running `kiem_toan_ven` rather than trusting the stored column. 🔴 **Merged `admin-mvp-v3` (37 commits) before trusting the gate**: failures went 5 → **34** → 7. The 34 were already true; a stale tree was hiding them. 🔴 **MAX_PATH bug**: full sha256 in a filename made paths 262 chars (limit 260) — green alone at 252, red under xdist which adds `popen-gwN\`. ⭐ And the first fix was **not enough**: the test used a 2-char owner while real ones are 36-char UUIDs, so it went green on kind data. Caught 3 guards that fired on their own author. | [`reports/14_REPORT.md`](reports/14_REPORT.md) |
 | 13 Timing / pause / alignment | **PASS** | `c31b1ae` + `thoi_gian.py`, ADR-003, 23 tests | 🔴 **Product owner corrected the design**: people don't speak continuously, so a segment's budget runs **until the next segment starts** — the pause belongs to the sentence. Researched 3 community projects; borrowed SoniTranslate's partial-gap borrowing (70%) and Subdub's drift-debt repayment + 1.15× cap, **added a hard 3-segment cap none of them has**. Measured: Vietnamese 60% longer now needs **zero compression** where the Phase-02 design compressed every line 1.6×. Caught 2 real bugs in my own model. | [`reports/13_REPORT.md`](reports/13_REPORT.md) |
 | 12 Voice provider integration | **PASS** | `c31b1ae` + `giong_noi.py`, `giai_doan_giong.py`, `apps/asv_voice`, 21 tests | **D5 re-checked: delegation fails here too** — one file per request keyed on `job_id`, and no grain to checkpoint. So VOICE calls 3 declared service fns, `giai_giong` (the only ownership check) inside the chain. **Per-segment resume proven twice**: clean re-run = 0 engine calls; delete one file = exactly 1 regeneration. Busy ≠ failed ≠ ambiguous. 4th executor on the `voice` lane. RISK-00-02 reproduced in my own suite. ⚠️ No real synthesis — voice quality and Vietnamese duration-vs-slot unmeasured. | [`reports/12_REPORT.md`](reports/12_REPORT.md) |
 | 11 Content processing / LTT_LLM adapter | **PASS** | `c31b1ae` + `van_ban.py`, `dich_thuat.py`, 23 tests | **RISK-03-01 resolved** — `ltt_llm.chat` does accept external params. **Amended ADR-001 D5**: delegation cannot chunk/merge/detect-partial, so CONTENT calls `platform_core/llm/dieu_phoi` directly; what D5 protected (no 2nd HTTP path, no self-selected key, platform dispatch safety) is kept. Moved to the **api lane**, claims `llm_remote`. Ambiguous dispatch proven terminal **and** proven not to re-enter the queue. Transcript byte-identical after translation. ⚠️ No real model call made — quality/429/timeout unmeasured. | [`reports/11_REPORT.md`](reports/11_REPORT.md) |
@@ -207,13 +230,22 @@ Detail: [`RISK_REGISTER.md`](RISK_REGISTER.md).
 
 ## Exact next action
 
-**1 — Unblock Phase 01 (needs an operator decision).** The tree has live peer sessions and
-the gate refuses to certify any run. Two ways out:
+**Start Phase 15** from the pack. Phases 00–14 are closed.
 
-- **preferred:** run the remaining Auto Scan phases in a dedicated git worktree. This
-  removes the failure mode for *every* remaining phase, not just one run.
-- otherwise: wait for the peer sessions to land their work, then one clean
-  `python tools/gate.py`.
+Before touching anything, know these three, in this order:
+
+1. **The tree is current as of 2026-09-02** (`phien/asv` = `0fef74c`, merged with
+   `admin-mvp-v3` @ `9936473`). If a later session finds itself many commits behind again:
+   **merge before measuring**. A gate run on a stale tree is evidence about a tree that will
+   never be merged, and this phase paid 34-failures' worth of proof for that.
+
+2. **Seven gate failures are expected and owned elsewhere** — the table under "Frozen
+   baseline" above. Three of them can never pass in a worktree at all (RISK-14-02).
+
+3. **Alembic is re-anchored and single-headed.** `20260901_1800_asv_run_va_stage` now sits on
+   `c7b91e4a2f80`. That debt is **paid** — do not redo it at merge time.
+
+⛔ Still true: **never deploy from this worktree.**
 
 Then record the certified result in `reports/01_REPORT.md` §4a and flip its gate to PASS.
 **Do not fix the three baseline debts while doing this** (O21 / V1 finding A09) — they are
