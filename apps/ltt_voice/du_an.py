@@ -366,3 +366,58 @@ def tom_tat(cac: list) -> dict:
         #    thì không — và đó là câu trả lời cho việc có hiện nút đó hay không.
         "mot_giong": len({(k.giong or "") for k in cac}) <= 1 if cac else True,
     }
+
+
+def cac_phien_ban(db, owner_id: str, block_id: int, *, tran: int = 10) -> list:
+    """Mọi lượt sinh ĐÃ XONG của một khối, mới nhất trước.
+
+    ## Vì sao đọc từ lịch sử job chứ KHÔNG dựng bảng `block_version`
+
+    Ảnh tham chiếu 03 vẽ V1/V2/V3 cho mỗi khối, và `tables_du_an.py` đã từ chối
+    một bảng riêng cho chúng — **đúng**, và tệp này giữ nguyên quyết định ấy:
+
+        ⛔ KHÔNG có bảng `block_version`. Lịch sử job đã giữ đủ mọi lượt sinh
+           (mỗi lượt là một `Job` có `result`), nên một bảng phiên bản thứ hai
+           là một nguồn chân lý thứ hai cho cùng một sự thật — và hai nguồn chân
+           lý là một chỗ để chúng lệch nhau.
+
+    ⭐ Nhưng "không có bảng" bị đọc nhầm thành "không có tính năng". Dữ liệu đã
+       nằm sẵn: mỗi job của một khối mang `params["block_id"]`. Cái thiếu chỉ là
+       một phép đọc — và đó là thứ tệp này bổ sung.
+
+    ## ⚠️ Lọc JSON bằng PYTHON, không bằng SQL
+
+    `Job.params` khai kiểu `JSON` (không phải `JSONB`), và cú pháp truy vấn vào
+    trong nó **khác nhau giữa PostgreSQL và SQLite** — production là PostgreSQL
+    còn test chạy SQLite, nên một truy vấn JSON viết cho một bên sẽ xanh ở một
+    bên và đỏ ở bên kia. Đúng lớp lỗi mà `KHOA_CHINH` trong `tables_du_an.py` đã
+    trả giá và ghi lại.
+
+    ⇒ Lọc theo `app_slug` + `owner` ở SQL (có chỉ mục), rồi lọc `block_id` trong
+      Python trên một tập ĐÃ BỊ CHẶN. `tran` nhân với một hệ số nhỏ vì một khối
+      chỉ chiếm một phần các job gần đây.
+    """
+    from platform_core import job_history
+
+    cac, _ = job_history.list_owned(db, owner_id, app_slug="ltt_voice",
+                                    limit=max(tran, 1) * 20)
+    ra = []
+    for j in cac:
+        p = j.params or {}
+        if str(p.get("block_id") or "") != str(block_id):
+            continue
+        if j.status != "done":
+            continue
+        kq = j.result or {}
+        if not kq.get("audio_key"):
+            continue
+        ra.append({
+            "job_id": str(j.id),
+            "giay": float(kq.get("duration_s") or 0.0),
+            "credit": int(kq.get("credit_cost") or 0),
+            "audio_key": str(kq.get("audio_key") or ""),
+            "luc": j.created_at,
+        })
+        if len(ra) >= tran:
+            break
+    return ra

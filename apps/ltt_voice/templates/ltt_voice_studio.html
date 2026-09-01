@@ -7,21 +7,40 @@
   GIỮ   ba cột · chọn giọng hai loại · ô kịch bản + đếm ký tự · xem trước chuẩn
         hoá · kết quả tại chỗ có sóng âm · chi tiết kỹ thuật · danh sách gần đây.
 
+  THÊM 01/09/2026, sau đợt rà soát đối chiếu ảnh:
+    · `Nhập TXT` — đọc ở trình duyệt, không có route tải lên.
+    · `Tốc độ đọc` — hậu kỳ, giữ cao độ.
+    · `Tải MP3` — chuyển đúng lúc tải, cùng cửa `/audio`.
+    · `Lưu vào dự án` — tham chiếu tệp đã có, KHÔNG sinh lại.
+    · Mã giọng + nút chép ngay trong ô chọn giọng.
+
   BỎ, và mỗi cái một lý do khác nhau — xem §9 của
   `docs/LTT_VOICE/VOICE_UI_EXECUTION_PLAN.md`:
-    · `DELIVERY STYLE` (tốc độ + phong cách) — ⛔ Q119 CẤM phơi ra. Hai lý do
-      độc lập: cache CUDA graph khoá theo `(B, temperature, top_k, top_p)`, và
-      upstream #173 lệch tông giữa các đoạn.
     · `MODE Fast / Quality` — không tồn tại ở bất kỳ tầng nào.
     · `LANGUAGE Auto / VI / EN` — engine tự xử VI lẫn EN. Ba nút giả tệ hơn một
       câu thật, nên ở đây là một câu thật.
     · `VERSIONS V1/V2/V3` — phiên bản là khái niệm của **khối** trong một dự án,
-      không phải của một lượt đọc lẻ. Nó thuộc P5.
-    · `Save to Project` — chưa có Dự án. Nút sẽ xuất hiện cùng P5, không sớm hơn.
+      không phải của một lượt đọc lẻ. Nó thuộc màn Dự án.
+    · `Phong cách` (Natural/…) — engine không có tham số ấy.
 
-  ĐỔI  `OUTPUT WAV / MP3 / 48 kHz` từ **ba nút bấm** thành **một dòng sự thật**.
-       Cổng chỉ trả WAV ở một sample rate; ba nút trong đó hai nút không làm gì
-       là ba lời hứa, hai lời sai.
+  ⚠️ HAI DÒNG TRONG CHÚ THÍCH NÀY TỪNG SAI, và sai theo hướng chặn việc:
+
+     ① *"`DELIVERY STYLE` (tốc độ + phong cách) — ⛔ Q119 CẤM phơi ra"* là một
+        **trích dẫn sai**. Q119 ① nêu đích danh năm tham số LẤY MẪU
+        (`temperature`, `top_k`, `top_p`, `repetition_penalty`,
+        `repetition_window`) — không có "tốc độ". Tốc độ bị gom vào theo quán
+        tính, rồi câu ấy sống tiếp như một lệnh cấm. Phong cách thì đúng là
+        không có; tốc độ thì có, và nay đã làm.
+
+     ② *"`Save to Project` — chưa có Dự án"* đúng vào lúc viết, và hết đúng khi
+        Dự án ra đời. Một lời hoãn có điều kiện mà không ai quay lại kiểm điều
+        kiện thì thành một lời từ chối vĩnh viễn.
+
+  ⇒ Khi hoãn một việc, ghi **điều kiện mở lại**, và ghi đủ để người sau kiểm
+    được điều kiện ấy mà không phải tin lời ta.
+
+  ĐỔI  `OUTPUT ... 48 kHz` từ ba nút bấm thành **một dòng sự thật**. Cổng trả
+       đúng một sample rate; một nút chọn 24 kHz không làm gì là một lời hứa sai.
 #}
 
 {% block content %}
@@ -99,6 +118,18 @@
         <div class="lv-st-o-dau">
           <span class="eyebrow" id="lv-nh-text">{{ _("Kịch bản") }}</span>
           <div class="lv-st-o-nut">
+            {#
+              NHẬP TXT — ảnh 01 vẽ nút `Import TXT` cạnh `Normalize Preview`.
+
+              ⭐ Đọc HOÀN TOÀN ở trình duyệt (`FileReader`), không gửi tệp lên
+                 máy chủ. Một tệp `.txt` chỉ là văn bản, và văn bản ấy rồi cũng
+                 đi vào chính ô kịch bản này — nên một route tải lên là một bề
+                 mặt công khai mới đổi lấy đúng con số không.
+            #}
+            <label class="btn sm ghost lv-nhap-nhan">
+              {{ _("Nhập TXT") }}
+              <input type="file" id="lv-nhap-txt" accept=".txt,text/plain" hidden>
+            </label>
             <button type="button" class="btn sm ghost" id="lv-nut-xem">{{ _("Xem trước cách đọc") }}</button>
             <button type="button" class="btn sm ghost" id="lv-nut-xoa">{{ _("Xoá") }}</button>
           </div>
@@ -113,6 +144,10 @@
                   placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
         <p class="lv-dem" id="lv-dem">
           <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
+          {# Cho bao rieng cho phep NHAP TXT. Khong dung `baoLoi`: no
+             chuyen ca khoi ket qua sang trang thai LOI, trong nhu job
+             hong — trong khi day chi la mot ghi chu ve viec cat bot. #}
+          <span id="lv-nhap-bao" class="dim" hidden></span>
         </p>
       </div>
 
@@ -182,7 +217,40 @@
           <audio id="lv-player" controls preload="metadata"></audio>
           <div class="lv-kq-nut">
             <a class="btn primary sm" id="lv-tai" download>{{ _("Tải WAV") }}</a>
+            {# MP3: chuyen dung luc tai, cung cua `/audio` de dung lai
+               nguyen phep kiem so huu. Xem `_p_audio.audio`. #}
+            <a class="btn ghost sm" id="lv-tai-mp3" download>{{ _("Tải MP3") }}</a>
+            <button type="button" class="btn ghost sm" id="lv-luu-mo">{{ _("Lưu vào dự án") }}</button>
             <a class="btn ghost sm" id="lv-mo-job" href="#">{{ _("Mở trang việc") }}</a>
+          </div>
+
+          {#
+            LƯU VÀO DỰ ÁN — ảnh 01 vẽ nút này ở góc dưới bên phải.
+
+            ⭐ Nó là một LỜI HỨA ĐÃ ĐẾN HẠN, không phải tính năng mới. Chú thích
+               đầu tệp này từng ghi: *"`Save to Project` — chưa có Dự án. Nút sẽ
+               xuất hiện cùng P5, không sớm hơn."* Dự án đã có.
+
+            🔴 Nó KHÔNG sinh lại và KHÔNG thu tiền lần hai: khối mới trỏ thẳng
+               vào `audio_key` của job vừa xong. Xem `_p_du_an.luu_tu_studio`.
+          #}
+          <div class="lv-luu-hop" id="lv-luu-hop" hidden>
+            <label class="lv-luu-dong">
+              <span class="dim">{{ _("Dự án") }}</span>
+              <select id="lv-luu-chon">
+                <option value="">{{ _("— Dự án mới —") }}</option>
+                {% for d in du_an_ds %}
+                  <option value="{{ d.public_id }}">{{ d.ten }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <input type="text" id="lv-luu-ten" class="lv-luu-ten"
+                   placeholder="{{ _('Tên dự án mới…') }}" maxlength="200">
+            <div class="lv-kq-nut">
+              <button type="button" class="btn primary sm" id="lv-luu-ok">{{ _("Lưu") }}</button>
+              <button type="button" class="btn ghost sm" id="lv-luu-huy">{{ _("Huỷ") }}</button>
+            </div>
+            <p class="dim lv-luu-bao" id="lv-luu-bao" hidden></p>
           </div>
           <dl class="lv-kq-ct">
             <dt>{{ _("Thời lượng") }}</dt><dd id="lv-ct-giay">—</dd>
@@ -233,7 +301,11 @@ LttVoice.studio({
     matKetNoi: {{ _("Mất kết nối tạm thời. Đang thử lại…") | tojson }},
     khongXem:  {{ _("Không xem trước được lúc này.") | tojson }},
     khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
-    doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }}
+    doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }},
+    daLuuVao:  {{ _("Đã lưu vào") | tojson }},
+    nhapBiCat: {{ _("Tệp dài {n} ký tự, đã cắt còn {t}.") | tojson }},
+    nhapHong:  {{ _("Không đọc được tệp này.") | tojson }},
+    loiMang:   {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }}
   }
 });
 </script>

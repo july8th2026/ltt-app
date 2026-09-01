@@ -5,7 +5,7 @@ from __future__ import annotations
 from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
-                     _t, _uid, doc_man_giong, doc_man_lich_su, features,
+                     _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
                      gia, giong_mau, io, lan_ngon_ngu, require_login,
                      router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
@@ -42,6 +42,12 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.
         gan_day, _cur = job_history.list_owned(
             db, uid, app_slug=MANIFEST.slug, limit=3)
+        # ⚠️ TÍNH Ở ĐÂY, không ở chỗ dựng template. `finally` ngay bên dưới
+        #    đóng phiên CSDL, nên một lời gọi ORM đặt sau đó chạm vào một
+        #    session đã đóng — và nó hỏng ở tận Jinja, một chỗ không ai nghĩ
+        #    tới khi đọc lỗi. Danh sách dự án cho nút `Lưu vào dự án`.
+        du_an_ds = [{"public_id": d.public_id, "ten": d.ten}
+                    for d in du_an.danh_sach(db, uid)]
     finally:
         try:
             next(gen)
@@ -78,6 +84,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép
                     # về giá trị khác — im lặng.
                     cac_nac_toc_do=_toc_do.CAC_NAC,
+                    du_an_ds=du_an_ds,
                     gan_day=gan_day))
 
 

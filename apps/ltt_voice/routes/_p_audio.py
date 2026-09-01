@@ -13,7 +13,8 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
 # ── Phục vụ tệp tiếng ────────────────────────────────────────────────────────
 
 @router.get("/audio/{key:path}")
-def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
+def audio(key: str, mp3: int = 0,
+          user=Depends(user_hien_tai), _=Depends(require_login)):
     """Phục vụ tệp tiếng. **Kiểm sở hữu bằng chính hình dạng khoá.**
 
     Khoá có dạng `voice/out/{owner_id}/{job_id}/tieng.wav`, nên chỉ chủ mới đọc
@@ -81,4 +82,80 @@ def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
     # choi phat, va trieu chung la mot trinh phat im lang chu khong phai mot loi.
     kieu = {"wav": "audio/wav", "mp3": "audio/mpeg", "m4a": "audio/mp4"}.get(
         ten_tep.rsplit(".", 1)[-1].lower(), "application/octet-stream")
+
+    # ── ?mp3=1 — xuất MP3 ────────────────────────────────────────────────────
+    #
+    # ⭐ CÙNG MỘT CỬA, không phải một route thứ hai. Phép kiểm sở hữu ở trên
+    #    dựa vào **hình dạng khoá** và nó là thứ đang giữ an toàn cho cả đường
+    #    này; một route riêng nghĩa là một bản chép thứ hai của phép kiểm ấy, và
+    #    bản chép thứ hai là bản sẽ lệch.
+    #
+    # ⛔ CHỈ cho tệp KẾT QUẢ. Clip gốc của khách vốn đã là wav/mp3/m4a tuỳ họ
+    #    tải lên; chuyển đổi nó không phục vụ ai và chỉ mở thêm một bề mặt.
+    #
+    # ⚠️ Chuyển ĐÚNG LÚC TẢI chứ không lưu sẵn bản thứ hai. Lưu sẵn nghĩa là mỗi
+    #    lượt đọc chiếm gấp đôi kho, và bản MP3 ấy phải được `job_content.py`
+    #    dọn theo — tức một thứ nữa để quên. Một lượt tải là hiếm; một lượt
+    #    chuyển đổi mất dưới một giây.
+    if mp3 and la_ket_qua:
+        chuyen = _sang_mp3(data)
+        if chuyen is not None:
+            return StreamingResponse(
+                io.BytesIO(chuyen), media_type="audio/mpeg",
+                headers={"Content-Disposition":
+                         'attachment; filename="tieng.mp3"'})
+        # Không chuyển được thì trả WAV — khách vẫn có tệp nghe được. Ném ở đây
+        # là biến "thiếu một tiện nghi" thành "không tải được gì".
+
     return StreamingResponse(io.BytesIO(data), media_type=kieu)
+
+
+#: Chất lượng MP3. 192 kbps VBR cho giọng nói ở 48 kHz là dư — nhưng đây là tệp
+#: khách mang đi dựng video, nên đừng tiết kiệm ở chỗ họ không sửa lại được.
+_MP3_BITRATE = "192k"
+
+
+def _sang_mp3(wav: bytes):
+    """WAV -> MP3. Trả `None` nếu không chuyển được, KHÔNG ném.
+
+    ⛔ Không ném vì nơi gọi có một đường lui tử tế (trả WAV). Biến một tiện nghi
+       hỏng thành một lượt tải hỏng là đổi một phiền toái nhỏ lấy một lỗi thật.
+    """
+    import logging
+    import os
+    import subprocess
+    import tempfile
+
+    log = logging.getLogger(__name__)
+    d_vao = d_ra = ""
+    try:
+        from platform_core.media import ffmpeg_bin
+
+        f = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        d_vao = f.name
+        f.write(wav)
+        f.close()
+        f2 = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        d_ra = f2.name
+        f2.close()
+
+        kq = subprocess.run(
+            [ffmpeg_bin(), "-y", "-hide_banner", "-loglevel", "error",
+             "-i", d_vao, "-codec:a", "libmp3lame", "-b:a", _MP3_BITRATE,
+             "-ac", "1", d_ra],
+            capture_output=True, text=True, timeout=120)
+        if kq.returncode != 0:
+            raise RuntimeError((kq.stderr or "")[:300])
+        with open(d_ra, "rb") as fh:
+            ra = fh.read()
+        return ra or None
+    except Exception:  # noqa: BLE001
+        log.warning("khong chuyen duoc sang mp3", exc_info=True)
+        return None
+    finally:
+        for pth in (d_vao, d_ra):
+            if pth:
+                try:
+                    os.unlink(pth)
+                except OSError:
+                    pass

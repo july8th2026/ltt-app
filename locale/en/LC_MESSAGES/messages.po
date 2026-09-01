@@ -12804,3 +12804,45 @@ msgstr "Speech speed"
 
 msgid "Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc."
 msgstr "Applied after generation, pitch preserved. Billed on the original, not on the sped-up file."
+
+msgid "Dự án từ Studio"
+msgstr "Project from Studio"
+
+msgid "Không tìm thấy dự án này."
+msgstr "Project not found."
+
+msgid "Không tìm thấy lượt đọc này, hoặc nó chưa xong."
+msgstr "That generation was not found, or it has not finished."
+
+msgid "Không đọc được tệp này."
+msgstr "Could not read this file."
+
+msgid "Khối này chưa có bản đọc nào."
+msgstr "This block has no takes yet."
+
+msgid "Lưu vào dự án"
+msgstr "Save to project"
+
+msgid "Lượt đọc này không còn văn bản để lưu."
+msgstr "This generation no longer has text to save."
+
+msgid "Nhập TXT"
+msgstr "Import TXT"
+
+msgid "Tên dự án mới…"
+msgstr "New project name…"
+
+msgid "Tải MP3"
+msgstr "Download MP3"
+
+msgid "Tệp dài {n} ký tự, đã cắt còn {t}."
+msgstr "File was {n} characters, trimmed to {t}."
+
+msgid "Đang tải…"
+msgstr "Loading…"
+
+msgid "Đã lưu vào"
+msgstr "Saved to"
+
+msgid "— Dự án mới —"
+msgstr "— New project —"
