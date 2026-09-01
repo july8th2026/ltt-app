@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ee184f40cfddbd4d1c7270d95f1e1a50a6ee1c91b64e6007f76a3bf2c195f1dc
+Fingerprint   : sha256:3f9594ab21cdf35a8a067e4e85676540c3859f4d7b2598cae210db31ccd2a97d
 Nguồn đã quét : 1457 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3067,7 +3067,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14444870 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14445865 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -166497,7 +166497,7 @@ if ($script:Fail -gt 0) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/2-cai-dat.ps1
-SHA256=443b8949ebd82b97281d7b66c791d4aef596acd3214f63ecd7be3adceeb13ad0 BYTES=45450 LINES=893
+SHA256=3962e4ba773415a2d25b5be43acc65f3340976511f7ecd9e98cd18242311e140 BYTES=46445 LINES=910
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -166700,17 +166700,34 @@ if ($pyKiem) {
     #        & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
     #
     #    Ngay 01/09 buoc nay TREO hai lan (18:27 va 20:08), moi lan hon 20 phut.
-    #    Do truc tiep tien trinh ket lai luc 20:33:
-    #        pid 11408  powershell.exe  CPU 0,36s  sinh 20:08:41
-    #        tien trinh con: KHONG CO
-    #    Tuc `compileall` DA THOAT, con PowerShell ket trong chinh duong ong.
-    #    Mot thread o `WaitReason=ExecutionDelay`.
     #
-    # ** Va no khong tai hien duoc theo yeu cau: chay ba bien the (-j 0 co ong /
-    #    -j 0 ra tep / mot luong co ong) tren TOAN cay, dung python cua venv,
-    #    ca ba xong trong ~9 giay. Nen ban va nay KHONG dua tren mot nguyen nhan
-    #    da chung minh -- no bo di ca hai thu dang ngo (ong + khong han cho) va
-    #    doi lay mot buoc khong the treo vo han.
+    #    CO CHE, do duoc day du bang HAI phep do cua hai phien ghep lai:
+    #
+    #      1. PowerShell (11408) goi python (13212), stdout NOI ONG
+    #      2. python 13212 chay `compileall -j 0`, sinh 20 worker
+    #         `multiprocessing` -- chung THUA KE dau ghi cua ong
+    #      3. python 13212 THOAT
+    #         => 11408 khong con tien trinh con python nao
+    #            (do luc 20:33: `tien trinh con: KHONG CO`)
+    #      4. 20 worker MO COI van song va van giu dau ghi ong mo
+    #         (do luc 21:0x: 20 python, deu ppid=13212, va 13212 DA CHET)
+    #      5. `Out-String` cho EOF tren ong -- EOF KHONG BAO GIO TOI
+    #      6. PowerShell cho vinh vien: CPU 0,36s, thread o `ExecutionDelay`
+    #
+    # !! DIEU KIEN KICH HOAT KHONG PHAI `-j 0`. No la **cha chet trong khi con
+    #    con song**. Ai doc den day roi bo `-j 0` de "sua" thi sua nham cho, va
+    #    ai khoi phuc lai duong ong thi mo lai dung cai lo nay.
+    #
+    # ** VA VI SAO NO KHONG TAI HIEN DUOC: toi chay ba bien the (-j 0 co ong /
+    #    -j 0 ra tep / mot luong co ong) tren TOAN cay, dung python cua venv --
+    #    ca ba xong trong ~9 giay. Vi trong phep thu do tien trinh cha KHONG
+    #    chet bat thuong: worker thoat sach, EOF toi, moi thu binh thuong.
+    #    Mot loi chi xuat hien khi mot tien trinh chet SAI CACH thi khong tai
+    #    hien theo y muon duoc -- va do khong phai ly do de khong sua no.
+    #
+    # ** BO ONG LA BAN VA DUNG, va dung vi mot ly do manh hon "ne mot deadlock":
+    #    KHONG CO ONG THI KHONG CO EOF DE CHO, bat ke con co mo coi hay khong.
+    #    Han cho 300 giay lo not moi bien the khac cua cung mot ho.
     #
     # !! VI SAO HAN CHO QUAN TRONG HON CA NGUYEN NHAN: buoc nay chay SAU khi da
     #    giu khoa deploy. Mot buoc khong co han cho ma treo thi giu khoa VO HAN

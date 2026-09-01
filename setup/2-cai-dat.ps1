@@ -199,17 +199,34 @@ if ($pyKiem) {
     #        & $pyKiem @bo 2>&1 | Out-String -OutVariable kqKiem | Out-Null
     #
     #    Ngay 01/09 buoc nay TREO hai lan (18:27 va 20:08), moi lan hon 20 phut.
-    #    Do truc tiep tien trinh ket lai luc 20:33:
-    #        pid 11408  powershell.exe  CPU 0,36s  sinh 20:08:41
-    #        tien trinh con: KHONG CO
-    #    Tuc `compileall` DA THOAT, con PowerShell ket trong chinh duong ong.
-    #    Mot thread o `WaitReason=ExecutionDelay`.
     #
-    # ** Va no khong tai hien duoc theo yeu cau: chay ba bien the (-j 0 co ong /
-    #    -j 0 ra tep / mot luong co ong) tren TOAN cay, dung python cua venv,
-    #    ca ba xong trong ~9 giay. Nen ban va nay KHONG dua tren mot nguyen nhan
-    #    da chung minh -- no bo di ca hai thu dang ngo (ong + khong han cho) va
-    #    doi lay mot buoc khong the treo vo han.
+    #    CO CHE, do duoc day du bang HAI phep do cua hai phien ghep lai:
+    #
+    #      1. PowerShell (11408) goi python (13212), stdout NOI ONG
+    #      2. python 13212 chay `compileall -j 0`, sinh 20 worker
+    #         `multiprocessing` -- chung THUA KE dau ghi cua ong
+    #      3. python 13212 THOAT
+    #         => 11408 khong con tien trinh con python nao
+    #            (do luc 20:33: `tien trinh con: KHONG CO`)
+    #      4. 20 worker MO COI van song va van giu dau ghi ong mo
+    #         (do luc 21:0x: 20 python, deu ppid=13212, va 13212 DA CHET)
+    #      5. `Out-String` cho EOF tren ong -- EOF KHONG BAO GIO TOI
+    #      6. PowerShell cho vinh vien: CPU 0,36s, thread o `ExecutionDelay`
+    #
+    # !! DIEU KIEN KICH HOAT KHONG PHAI `-j 0`. No la **cha chet trong khi con
+    #    con song**. Ai doc den day roi bo `-j 0` de "sua" thi sua nham cho, va
+    #    ai khoi phuc lai duong ong thi mo lai dung cai lo nay.
+    #
+    # ** VA VI SAO NO KHONG TAI HIEN DUOC: toi chay ba bien the (-j 0 co ong /
+    #    -j 0 ra tep / mot luong co ong) tren TOAN cay, dung python cua venv --
+    #    ca ba xong trong ~9 giay. Vi trong phep thu do tien trinh cha KHONG
+    #    chet bat thuong: worker thoat sach, EOF toi, moi thu binh thuong.
+    #    Mot loi chi xuat hien khi mot tien trinh chet SAI CACH thi khong tai
+    #    hien theo y muon duoc -- va do khong phai ly do de khong sua no.
+    #
+    # ** BO ONG LA BAN VA DUNG, va dung vi mot ly do manh hon "ne mot deadlock":
+    #    KHONG CO ONG THI KHONG CO EOF DE CHO, bat ke con co mo coi hay khong.
+    #    Han cho 300 giay lo not moi bien the khac cua cung mot ho.
     #
     # !! VI SAO HAN CHO QUAN TRONG HON CA NGUYEN NHAN: buoc nay chay SAU khi da
     #    giu khoa deploy. Mot buoc khong co han cho ma treo thi giu khoa VO HAN
