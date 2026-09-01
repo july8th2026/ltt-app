@@ -264,3 +264,137 @@ tính nhất quán, nhưng nếu muốn nới thì chiều tiếng Anh là chi�
 nới nó cần đo lại hàng ấy ở n=64 để chắc.
 
 **Date:** 2026-09-01
+
+---
+
+## DV-006 — Bản nhân bản kém biểu cảm 42%, và nguyên nhân nằm ở BỘ CHỌN của ta
+
+**Decision:** Ghi nhận khuyết tật và cơ chế của nó. Quyết định sửa nằm ở
+DV-007 (chờ số đo nhánh C).
+
+**Reason:** Baseline K4 đo `delta_f0_tan_tuong_doi_ti_le = **−0,4556**` — bản
+nhân bản chỉ giữ ~54% biến thiên cao độ của clip gốc, ở **mọi** bản khoẻ mạnh.
+Đây là khuyết tật **lớn hơn độ tối** (−3,65 dB) về mặt tương đối, và nó là thứ
+khách nghe ra: *giọng nhân bản đều đều hơn giọng thật*.
+
+**Một confound đã loại bằng số đo, không bằng lập luận.** Clip tham chiếu là
+~25 giây ghép từ 3–7 đoạn thu; bản sinh ra là một câu ~4 giây. Một bản ghép
+nhiều đoạn đương nhiên có độ tản F0 lớn hơn. Đo riêng:
+
+    A  do tan F0 cua CA clip tham chieu (~25s ghep)  : 0,2515
+    B  do tan F0 tung DOAN ngan trong chinh clip ay  : 0,2519
+    C  do tan F0 cua ban SINH RA                     : 0,1451
+
+    gia cua DO DAI  (B so voi A)  :  +0,1%   <- gan nhu bang khong
+    phan CON LAI    (C so voi B)  : -42,4%   <- chi phan nay noi ve nhan ban
+
+⇒ Độ dài giải thích **0%**. Khuyết tật là thật.
+
+⚠️ Nhưng bảng theo TỪNG GIỌNG cho giá-độ-dài dao động **−6,2% đến −54,4%**, chỉ
+   triệt tiêu khi lấy trung bình. Nên một luật chấm **theo từng giọng** sẽ bị
+   confound này bóp méo nặng — thêm một lý do R15 phải gỡ (xem `chan_doan.py`).
+
+## 🔴 CƠ CHẾ TÔI VIẾT Ở ĐÂY ĐÃ BỊ BÁC — xem DV-007
+
+> ⛔ Đoạn dưới đây suy ra một cơ chế (*"bộ chọn của ta chọn đoạn phẳng, model
+> bám sát cửa sổ"*) từ **một cặp số của một lượt đo**. Phép thử ba nhánh chạy
+> ngay sau đó **bác nó**: đổi độ biểu cảm của cửa sổ tham chiếu 1,4 lần thì đầu
+> ra gần như không đổi, và còn đổi **sai chiều**.
+>
+> Giữ nguyên đoạn dưới thay vì xoá, vì nó ghi lại một cái bẫy đáng nhớ: hai con
+> số xếp cạnh nhau (cửa sổ 0,1131 → đầu ra 0,1388) trông **y hệt** một quan hệ
+> nhân quả, và tôi đã viết nó vào sổ quyết định như một cơ chế. Thứ phân biệt
+> tương quan với nhân quả không phải là đọc kỹ hơn — mà là **can thiệp**: đổi
+> cửa sổ rồi xem đầu ra có đi theo không.
+
+## Cơ chế đã SUY RA (và đã bị bác)
+
+    do tan F0 cua CA clip goc              0,2515
+    do tan F0 cua CUA SO `chon_doan` chon  0,1131   <- phang hon clip 55%
+    do tan F0 cua BAN SINH RA              0,1388   <- bam sat cua so, nhinh hon 23%
+
+**Model không làm phẳng gì cả.** Nó tái tạo trung thành cửa sổ nó được đưa,
+thậm chí nhỉnh hơn. Cửa sổ ta đưa cho nó **đã phẳng sẵn**.
+
+Và cơ chế giải thích được chứ không phải trùng hợp: `chon_doan.chon()` xếp hạng
+theo `cosine(emb(đoạn), emb(**cả clip**))`. Một đoạn đều đều nằm gần cái trung
+bình ấy hơn — mọi đoạn có ngữ điệu mạnh đều kéo ra xa tâm. Nên **tối đa hoá độ
+đại diện là chọn có hệ thống đoạn ít động nhất**, và không ai nhận ra vì tiêu
+chí ấy nghe hiển nhiên đúng.
+
+**Alternatives considered — ba đường đã thử và ĐỀU ÂM, trước khi tìm ra chỗ này:**
+
+- *Tắt khử nhiễu tham chiếu* (đề nghị của chủ sản phẩm). Bộ khử nhiễu chỉ lấy
+  đi **−0,095 dB** trên 25 clip — 2,6% của độ tối, và không liên quan biểu cảm.
+- *EQ bù độ sáng* (kế thừa hệ cũ). Xem DV-004: `|lệch sáng|` giảm 7,9 → 4,6 mà
+  DNSMOS **phẳng lì**.
+- *Tăng `temperature`* (README upstream: *"Higher values add expressiveness"*).
+  Quét 0,8 → 1,25: biểu cảm **không đi theo** (chênh lớn nhất +0,076 trên sai
+  số 0,142, **t = 0,53**), trong khi CER ở 1,10 **tăng hơn gấp đôi** (t = 2,19).
+  Lời hứa của upstream **không xác nhận được** trên trục này. Chốt K1 nổ 0% ở
+  mọi mức, nên mất ổn định là loại tinh vi, không phải loại thô.
+
+**Trade-off:** Ghi nhận này chưa sửa gì. Nó chỉ chuyển câu hỏi từ *"model có
+khuyết tật"* sang *"bộ chọn của ta có khuyết tật"* — và câu thứ hai thì ta sửa
+được, còn câu thứ nhất thì không.
+
+⛔ Và một cảnh báo về cách đọc: hai lượt đo đầu của tôi dùng **tỉ lệ có mẫu số
+   thay đổi** (đầu ra / cửa sổ), nên nhánh "đại diện" ra +0,227 còn nhánh "biểu
+   cảm nhất" ra −0,345 và đọc lướt thì tưởng cái đầu thắng. Nhưng cửa sổ thứ
+   hai vốn biểu cảm hơn **1,41×**. Quy về tuyệt đối mới thấy 0,1388 so với
+   0,1042. **Câu hỏi luôn là "đầu ra biểu cảm bao nhiêu", và một tỉ lệ có mẫu
+   số trôi không trả lời được câu đó.**
+
+**Date:** 2026-09-01
+
+---
+
+## DV-007 — Model KHÔNG chuyển ngữ điệu từ cửa sổ tham chiếu. Giữ `chon_doan`.
+
+**Decision:** Không đổi tiêu chí của `chon_doan.chon()`. Khuyết tật biểu cảm
+−42% là **thuộc tính của model**, và không có đường sửa nào từ phía ta.
+
+**Reason:** DV-006 suy ra rằng bộ chọn của ta chọn cửa sổ phẳng và model bám
+sát cửa sổ ấy. Phép thử ba nhánh **can thiệp trực tiếp** vào giả thuyết đó —
+cùng giọng, cùng câu, ba cửa sổ tham chiếu khác nhau:
+
+    A. dai dien nhat        (tieu chi dang chay)
+    B. bieu cam nhat        (trong nguong dai dien)
+    C. dien hinh nhat       (do tan F0 gan trung vi cua clip)
+
+| trục | A | B | C |
+|---|---|---|---|
+| biểu cảm **tuyệt đối** | **0,0995** ±0,0106 | 0,0764 ±0,0090 | 0,0922 ±0,0062 |
+| danh tính | **0,7722** ±0,0120 | 0,7681 ±0,0150 | 0,7352 ±0,0164 |
+| CER | 0,0399 | 0,0500 | **0,0396** |
+| chốt K1 hỏng | 0% | 0% | 0% |
+
+🔴 **Cửa sổ của ba nhánh chênh nhau tới 1,4× về độ tản F0, mà đầu ra chỉ dao
+   động 0,076–0,100 — và nhánh có cửa sổ BIỂU CẢM NHẤT cho đầu ra PHẲNG NHẤT.**
+
+⇒ Model **không chuyển tính cách ngữ điệu** từ cửa sổ tham chiếu. Nó trích
+  **danh tính người nói** rồi tự sinh ngữ điệu của mình. Đó là hành vi hợp lý
+  cho một kiến trúc nhúng speaker embedding, và nó giải thích vì sao ba đường
+  trước cũng âm.
+
+⭐ Và tiêu chí đang chạy **thắng cả hai trục**: biểu cảm cao nhất VÀ danh tính
+   tốt nhất. Nhánh C đổi được +0,0003 CER nhưng mất **0,037 danh tính** (t≈1,8)
+   — đổi thứ khách nghe ra lấy thứ khách không nghe ra.
+
+**Alternatives considered:** bốn đường, tất cả đã đo và đều âm — tắt khử nhiễu
+(2,6%) · EQ bù độ sáng (DNSMOS phẳng) · `temperature` (t=0,53) · chọn cửa sổ
+(bác ở trên). Còn lại: đổi model, hoặc một bước hậu kỳ học được (không phải
+tuyến tính). Cả hai đều lớn hơn nhiều so với một khoảng cách mà DV-001 đã đo là
+**0,56σ** của nhiễu giữa hai lượt sinh.
+
+**Trade-off:** Ta chấp nhận **giọng nhân bản đều đều hơn giọng thật ~42%**, và
+nay biết chắc rằng không có núm nào ta xoay được. Đó là một câu trả lời kém vui
+nhưng **đầy đủ** — bốn giả thuyết, bốn phép đo, bốn lần bác.
+
+⛔ **Bài học phương pháp, đáng hơn kết quả.** DV-006 suy một cơ chế từ hai con
+   số xếp cạnh nhau (cửa sổ 0,1131 → đầu ra 0,1388) và viết nó vào sổ quyết
+   định như một sự thật. Nó trông y hệt nhân quả. Thứ phân biệt tương quan với
+   nhân quả không phải đọc kỹ hơn mà là **CAN THIỆP** — đổi cửa sổ rồi xem đầu
+   ra có đi theo không. Mất mười lăm phút, và nó lật ngược một kết luận đã ghi.
+
+**Date:** 2026-09-01

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b1a36947532613a4eee4e6795e0da5255abbbc1ebf34548bc69249a5e9e7d32a
-Nguồn đã quét : 1447 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:cbda99077db952dd8843ddf10a15da4815207aa1f01ff101051ac49972990713
+Nguồn đã quét : 1451 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1546,8 +1546,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1447 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:61, .py:1087, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1451 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:63, .py:1089, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2463,7 +2463,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (46)
+[setup] (48)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2481,7 +2481,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/day_tep_lon_may_b.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/do_ca_tai_hien_chan_doan.ps1
+- setup/do_chon_cua_so_bieu_cam.ps1
 - setup/do_chot_sinh.ps1
+- setup/do_confound_do_dai_f0.ps1
 - setup/do_diem_mu_cong.ps1
 - setup/do_dung_chay_lo.ps1
 - setup/do_engine_co_noi_tieng_anh.ps1
@@ -2875,7 +2877,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (165)
+[tools] (167)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2937,8 +2939,10 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/dich_ltt_voice_en.py
 - tools/do_bo_cuc.py
 - tools/do_ca_tai_hien_chan_doan.py
+- tools/do_chon_cua_so_bieu_cam.py
 - tools/do_chon_doan.py
 - tools/do_chot_sinh.py
+- tools/do_confound_do_dai_f0.py
 - tools/do_current_truth.py
 - tools/do_diem_mu_cong.py
 - tools/do_dong_thoi_giong.py
@@ -3051,7 +3055,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1447 file; 14231162 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1451 file; 14270496 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17708,7 +17712,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=73f41a984393ff96a7d5e872828add12f63cc0891400be4c368a8751745587a1 BYTES=13274 LINES=251
+SHA256=ae11bb973e54a2d6f3d11fccf8891f7d5c0fe99385b9bb31f9bfb583be12d964 BYTES=15926 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -17738,10 +17742,24 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
      bất đồng bộ (job)  né được trần 125 giây; nhưng khách phải học hình dạng
                         job của ta
 
-   Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
-   input 65K theo Q116 để còn biên thời gian cho Cloudflare sau biến thiên
-   cold-load. Bản vision vẫn 64K cho tới khi có benchmark riêng. Cửa job vẫn là
-   đường lui cho tác vụ dài.
+   🔴 SỬA 01/09 — BA CON SỐ Ở ĐOẠN NÀY ĐỀU ĐÃ TRÔI (P08 F-02/F-03).
+
+   Bản cũ viết *"public API giữ trần input 65K theo Q116"*. Trần thật là
+   **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
+   Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
+
+       tran.input_tokens tu GET /health cua cong may B  ->  96256
+
+   Số đúng tại thời điểm viết:
+
+     * engine `qwen38-api`     `-c 131072`, trần vào 96.256, **công bố 89K**
+     * engine `qwen38-vision`  `-c 65536`,  trần vào 30.720, **công bố 28K**
+
+   ⛔ Vision **không** "vẫn 64K" như bản cũ nói — 65.536 là cửa sổ *engine*, còn
+      thứ khách nhét vào được nhỏ hơn nhiều vì phải chừa chỗ cho câu trả lời.
+      Nói "64K" với khách là đúng lỗi đã bị bắt ngày 01/09.
+
+   Cửa job vẫn là đường lui cho tác vụ dài.
 
 ⛔ GIÁ: `credit_cost` ở đây là **TRẦN ƯỚC CAO**, không phải giá cuối. Với LLM,
    số token RA chỉ biết được sau khi sinh xong. Nền tảng giữ chỗ theo trần này rồi
@@ -17763,14 +17781,26 @@ from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
-                                    mac_dinh_cho, tran_theo_ngu_canh)
+                                    cong_bo_cua, mac_dinh_cho,
+                                    tran_theo_ngu_canh)
 
 #: Token ra mặc định của **cửa job** (manifest phục vụ đường job).
 MAX_TOKENS_MAC_DINH = mac_dinh_cho("job")
 
 
-def _cua_so_noi_voi_khach() -> str:
-    """Con số ngữ cảnh **đúng với thứ khách thật sự nhét vào được**.
+def _cua_so_noi_voi_khach(model_id: str) -> str:
+    """Con số ngữ cảnh **đúng với thứ khách thật sự nhét vào được**, theo model.
+
+    🔴 THAM SỐ `model_id` LÀ BẢN VÁ CHO MỘT LỜI HỨA SAI THỨ HAI (01/09, P08 F-02).
+
+       Bản đầu của hàm này **không có tham số** — nó trả một con số cho **mọi**
+       alias. Nên `ltt_llm_vision` được quảng cáo *"same 89K usable input
+       context"* trong khi máy B chặn nó ở 65.536, và đo thật cho `413`.
+
+       ⭐ Điều đáng học: bản vá 30/08 dưới đây sửa **con số** (131K → 89K) và
+          coi như xong. Khuyết tật thật là **một con số cho hai model**, và nó
+          sống thêm một ngày sau khi "đã sửa". Sửa giá trị không phải sửa hình
+          dạng.
 
     🔴 TRƯỚC 30/08 CHỖ NÀY GÕ TAY "131K", VÀ ĐÓ LÀ MỘT LỜI HỨA SAI.
 
@@ -17787,7 +17817,7 @@ def _cua_so_noi_voi_khach() -> str:
        (`tools/build_public_api_docs.py`), nên một con số gõ tay ở đây sẽ tự
        nhân bản sang tài liệu ta xuất bản.
     """
-    return f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
+    return f"{round(cong_bo_cua(model_id) / 1000)}K"
 
 
 
@@ -17905,21 +17935,38 @@ MANIFEST = AppManifest(
             #    Khách ghim vào `ltt_llm`; ngày ta đổi GGUF bên dưới thì mã của họ
             #    không phải sửa một dòng nào.
             #    ⚠️ Bản đầu tôi đặt alias trùng hệt id — `test_212` bắt được.
+            # ⛔ `constraints.context_window` KHÔNG PHẢI TRANG TRÍ. Thiếu nó thì
+            #    `server/api/tools.py:_dang_codex` rơi về hằng số lùi
+            #    `CUA_SO_CONG_BO_MAC_DINH` (60.000) — và khách nhận **hai con số
+            #    khác nhau trong CÙNG một phản hồi**: phần chữ nói 89K, trường
+            #    `context_window` nói 60000 (P08 F-03).
+            #
+            #    `test_334::TestBanSaoConLai` nay buộc **mọi** alias ở đây phải
+            #    tự khai, nên đường lùi không bao giờ áp cho `ltt_llm` nữa.
             "models": {
                 "ltt_llm": {
                     "id": "qwen38-api",
-                    "description": (f"Text only, {_cua_so_noi_voi_khach()} usable "
-                                    f"input context. Coding, chat, agentic tool "
-                                    f"use, summarisation."),
+                    "description": (f"Text only, {_cua_so_noi_voi_khach('qwen38-api')} "
+                                    f"usable input context. Coding, chat, agentic "
+                                    f"tool use, summarisation."),
                     "stability": "stable",
+                    "constraints": {
+                        "context_window": cong_bo_cua("qwen38-api"),
+                        "max_output_tokens": MAX_TOKENS_TRAN,
+                    },
                 },
                 "ltt_llm_vision": {
                     "id": "qwen38-vision",
-                    "description": (f"Same model plus image reading, same "
-                                    f"{_cua_so_noi_voi_khach()} usable input "
-                                    f"context. Send images as OpenAI image_url "
+                    "description": (f"Same model plus image reading, but a smaller "
+                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} usable "
+                                    f"input context. Send images as OpenAI image_url "
                                     f"parts."),
                     "stability": "stable",
+                    "constraints": {
+                        "context_window": cong_bo_cua("qwen38-vision"),
+                        "max_output_tokens": MAX_TOKENS_TRAN,
+                        "reads_images": True,
+                    },
                 },
             },
             "enums": {
@@ -17935,9 +17982,11 @@ MANIFEST = AppManifest(
                 },
                 "model": {
                     "description": (f"`ltt_llm` for text "
-                                    f"({_cua_so_noi_voi_khach()} usable input "
-                                    f"context). `ltt_llm_vision` also reads "
-                                    f"images."),
+                                    f"({_cua_so_noi_voi_khach('qwen38-api')} usable "
+                                    f"input context). `ltt_llm_vision` also reads "
+                                    f"images, with a smaller "
+                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} "
+                                    f"input context."),
                     "example": "ltt_llm",
                 },
                 "max_tokens": {
@@ -17965,7 +18014,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/ngan_sach.py
-SHA256=2ace5548927a01a7f6f0e344a551a754dcf1e710507b6c90a69aa7da0d7e10d8 BYTES=12320 LINES=181
+SHA256=c7def6a642144adfa8b983a8c35c55f67fbca04a3b48cdc3839f340edd14c56b BYTES=15570 LINES=241
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách của `ltt_llm` — **nguồn chân lý duy nhất** cho mọi con số.
 
@@ -18011,6 +18060,29 @@ from __future__ import annotations
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` bên B thì đổi ở đây.
 CUA_SO_MODEL = 131_072
 
+#: Cửa sổ ngữ cảnh của model **VISION** — `qwen38-vision` nạp với `-c 65536`
+#: (`llama-swap.yaml` trên máy B, và `llm_gateway/catalog.py:max_context`).
+#:
+#: 🔴 SỐ NÀY TỪNG KHÔNG TỒN TẠI, VÀ SỰ VẮNG MẶT CỦA NÓ LÀ MỘT LỜI HỨA SAI.
+#:
+#:    Trước 01/09 cả hai alias `ltt_llm` và `ltt_llm_vision` dùng **chung** một
+#:    con số công bố, dẫn xuất từ `CUA_SO_MODEL` (131.072). Nên `/api/v1/models`
+#:    nói với khách rằng vision có *"same 89K usable input context"* — trong khi
+#:    máy B chặn nó ở **65.536**. Đo thật 01/09, cùng một thân request:
+#:
+#:        ltt_llm_vision -> 413 {"tran":65536,"thay":71281}
+#:        ltt_llm        -> 200 (input_tokens that = 52.810)
+#:
+#:    ⭐ Điều đáng nhớ: `_cua_so_noi_voi_khach()` ở `manifest.py` được viết ngày
+#:       30/08 để giết **đúng lớp lỗi này** ("trước 30/08 chỗ này gõ tay 131K, và
+#:       đó là một lời hứa sai"). Nó giết được ở alias text và sống sót nguyên vẹn
+#:       ở alias vision — vì bản vá sửa *con số*, còn khuyết tật thật là **một con
+#:       số cho hai model khác nhau**.
+#:
+#: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` của `qwen38-vision` bên B
+#:    thì đổi ở đây. `test_334` buộc hai đầu lại.
+CUA_SO_MODEL_VISION = 65_536
+
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
 #: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
 #:    như không đổi được — trần thấp hơn khiến Claude Code không dùng được (H38/L2).
@@ -18045,6 +18117,43 @@ BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~433 KB
 #: thoại **trước** khi chạm trần. Chừa 8% cho lệch tokenizer: client đếm token
 #: bằng bộ đếm của nó, model đếm bằng bộ của Qwen, hai số không bao giờ khớp.
 CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                    # 88_555
+
+
+# ── Ngân sách THEO MODEL ───────────────────────────────────────────────────
+#
+# ⭐ Hai model, hai cửa sổ, nên **hai bộ số** — và đó là toàn bộ bài học của
+#    khuyết tật F-02: một con số dùng cho hai model là một con số sai cho ít
+#    nhất một trong hai.
+#
+# ⛔ Công thức phải GIỐNG HỆT đường text ở trên (chừa `TOKEN_RA_TRAN` cho câu
+#    trả lời dài nhất, chừa `LE` cho sai số ước, rồi bớt 8 % lệch tokenizer).
+#    Nếu vision được một công thức "nới tay" riêng thì con số công bố của hai
+#    model không còn mang **cùng một lời hứa**, và khách không có cách nào biết
+#    lời hứa nào áp cho model nào.
+
+#: Cửa sổ engine theo **id model nội bộ**. Khoá là id của máy B, không phải
+#: bí danh công khai — bí danh không bao giờ được rời máy A (INV-015).
+CUA_SO_THEO_MODEL = {
+    "qwen38-api": CUA_SO_MODEL,
+    "qwen38-vision": CUA_SO_MODEL_VISION,
+}
+
+
+def tran_vao_cua(model_id: str) -> int:
+    """Trần đầu vào thật sự dùng được của **một** model.
+
+    Ném `KeyError` với thông điệp nói rõ tên hợp lệ — im lặng trả một số mặc
+    định là cách chắc chắn nhất để lời hứa sai quay lại.
+    """
+    if model_id not in CUA_SO_THEO_MODEL:
+        raise KeyError(f"model khong biet: {model_id!r}; "
+                       f"phai la mot trong {sorted(CUA_SO_THEO_MODEL)}")
+    return CUA_SO_THEO_MODEL[model_id] - TOKEN_RA_TRAN - LE
+
+
+def cong_bo_cua(model_id: str) -> int:
+    """Con số ngữ cảnh **công bố cho client** của một model."""
+    return int(tran_vao_cua(model_id) * 0.92)
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -163911,7 +164020,7 @@ SHA256=965ccae9896e930b8b2df23fea3afd0c2b30a3336faf6e071b37178046ac600a BYTES=80
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/vps_dieu_khoan.html
-SHA256=86d8c22ea6eab02e56b31d3fc5c5d39f925160f21426a97ee65196e7e696a56a BYTES=2494 LINES=63
+SHA256=3d5a0dcb5e372b228fb2033cbedc37c69bdcc1b764788fd43f7cd7d98d4c3202 BYTES=2538 LINES=64
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {# Điều khoản LTT VPS — trang con của /vps.
 
@@ -163933,6 +164042,7 @@ SHA256=86d8c22ea6eab02e56b31d3fc5c5d39f925160f21426a97ee65196e7e696a56a BYTES=24
 {% block title %}{{ _("Điều khoản LTT VPS") }}{% endblock %}
 
 {% block noi_dung %}
+<!-- {{ _("Chuoi thu banh coc VANG") }} -->
 <article class="dk">
 
   <header class="dk-dau">
@@ -167264,6 +167374,82 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_chon_cua_so_bieu_cam.ps1
+SHA256=9a9ff02791b4b54d2085faeb2407ce2c9ff53d42694498cc17047cfb47d7c7e5 BYTES=2565 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_chon_cua_so_bieu_cam.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_chon_cua_so_bieu_cam.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_chot_sinh.ps1
 SHA256=bd294864a848024d26cb146a7e4a780be78a9a50a406182d8edc42aa656ab166 BYTES=2525 LINES=70
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -167328,6 +167514,82 @@ if (-not $venvPy -or -not (Test-Path $venvPy)) {
 $env:PYTHONPATH = $Repo
 
 $doiSo = @('--vong', "$Vong")
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_confound_do_dai_f0.ps1
+SHA256=ea382d675bdabe026a520d325a663134bad2919c483f325acb537de588135f32 BYTES=2561 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_confound_do_dai_f0.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_confound_do_dai_f0.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -239983,7 +240245,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=6310fe5062a501a0e6c4bc6e896801359036c536ac2f3ccfdd35c0d29ecd91b4 BYTES=27930 LINES=564
+SHA256=3eef9db0e2e1d0bd3861255fc2e82b704fc05e87513134c3a841e232a425a4a9 BYTES=32957 LINES=649
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -240274,6 +240536,69 @@ class TestBanSaoConLai:
         assert m, "khong tim thay max_context cua qwen38-api"
         assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
 
+    def test_cua_so_VISION_khop_catalog_may_B(self):
+        """🔴 BÁNH CÓC CHO P08 F-02 — lời hứa ngữ cảnh của **vision**.
+
+        `qwen38-vision` nạp với `-c 65536`, nhỏ hơn `qwen38-api` một nửa. Trước
+        01/09 không có gì buộc hai đầu, nên `/api/v1/models` quảng cáo vision có
+        *"same 89K usable input context"* suốt nhiều ngày. Đo thật cho `413`
+        kèm `{"tran":65536}`.
+
+        ⛔ Đổi `-c` của `qwen38-vision` bên máy B mà không đổi
+           `CUA_SO_MODEL_VISION` thì phép kiểm này phải đỏ.
+        """
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
+        m = re.search(r'ten="qwen38-vision".*?max_context=([0-9_]+)', van, re.S)
+        assert m, "khong tim thay max_context cua qwen38-vision"
+        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL_VISION
+
+    def test_MOI_alias_tu_khai_context_window(self):
+        """🔴 BÁNH CÓC CHO P08 F-03 — cấm rơi về hằng số lùi.
+
+        `server/api/tools.py:_dang_codex` dùng `CUA_SO_CONG_BO_MAC_DINH`
+        (60.000) khi model **không tự khai** `constraints.context_window`. Trước
+        01/09 không alias nào khai, nên một phản hồi `/api/v1/models` chứa
+        **hai con số khác nhau**: phần chữ nói `89K`, trường máy đọc nói `60000`.
+
+        ⭐ Và hằng số lùi ấy nằm cách `TOKEN_RA_TOI_DA` — thứ ĐÃ có bánh cóc —
+           đúng 20 dòng trong cùng một tệp. Bánh cóc chỉ bảo vệ thứ nó nhìn thấy.
+        """
+        from apps.ltt_llm.manifest import MANIFEST
+        khai = {}
+        for tool in MANIFEST.tools:
+            for alias, spec in (getattr(tool, "api_contract", {}) or {}).get("models", {}).items():
+                khai[alias] = dict(spec.get("constraints") or {})
+        assert khai, "khong doc duoc alias nao tu manifest — phep kiem nay VO"
+        for alias, rang_buoc in khai.items():
+            assert "context_window" in rang_buoc, (
+                f"alias {alias!r} khong tu khai context_window ⇒ no se roi ve "
+                f"CUA_SO_CONG_BO_MAC_DINH cua server/api/tools.py, va khach se "
+                f"nhan mot con so khong lien quan gi toi model nay")
+
+    def test_context_window_cua_alias_khop_cua_so_model_that(self):
+        """Con số công bố của mỗi alias phải dẫn xuất từ cửa sổ THẬT của model
+        nó trỏ tới — không phải từ cửa sổ của model bên cạnh."""
+        from apps.ltt_llm.manifest import MANIFEST
+        for tool in MANIFEST.tools:
+            for alias, spec in (getattr(tool, "api_contract", {}) or {}).get("models", {}).items():
+                id_noi_bo = spec["id"]
+                mong_doi = ngan_sach.cong_bo_cua(id_noi_bo)
+                thay = int((spec.get("constraints") or {})["context_window"])
+                assert thay == mong_doi, (
+                    f"alias {alias!r} (id {id_noi_bo!r}) cong bo {thay} nhung "
+                    f"cua so that cua no cho {mong_doi}")
+
+    def test_hang_so_lui_KHONG_hua_nhieu_hon_model_that(self):
+        """Hằng số lùi là lời hứa cho model **chưa tự khai**. Nó không được cao
+        hơn con số của model rộng nhất ta thật sự có."""
+        lui = self._so("CUA_SO_CONG_BO_MAC_DINH", "server/api/tools.py")
+        rong_nhat = max(ngan_sach.cong_bo_cua(m) for m in ngan_sach.CUA_SO_THEO_MODEL)
+        assert lui <= rong_nhat, (
+            f"hang so lui {lui} hua nhieu hon model rong nhat ({rong_nhat})")
+
     def test_registry_provider_khop_cua_so_model(self):
         """`platform_core/providers.py` khai `context_window` cho model nhà."""
         import pathlib
@@ -240458,15 +240783,37 @@ class TestExamplesKhopNganSach:
             assert str(ngan_sach.CONG_BO_CHO_CLIENT) in van, lam.__name__
 
     def test_mo_ta_model_cong_khai_KHONG_hua_qua_thuc_te(self):
-        """Mô tả trong manifest đi thẳng vào `DEVELOPER_GUIDE.md` ta xuất bản."""
+        """Mô tả trong manifest đi thẳng vào `DEVELOPER_GUIDE.md` ta xuất bản.
+
+        🔴 SIẾT 01/09 (P08 F-02): trước đây phép kiểm này chỉ đòi **một** con số
+           xuất hiện đâu đó trong mô tả **gộp** của mọi alias. Nên khi vision
+           quảng cáo *"same 89K"* — con số của model **bên cạnh** — nó vẫn xanh.
+
+        ⭐ Bài học chung hơn cả khuyết tật: nối mô tả của nhiều model lại rồi
+           kiểm trên chuỗi gộp là **tự bịt mắt mình**, vì mọi câu hỏi "model nào
+           nói con số này" đều biến mất trong lúc nối. Nay kiểm **từng alias**.
+        """
         from apps.ltt_llm import manifest
 
         tool = next(t for t in manifest.MANIFEST.tools if t.name == "text.chat")
-        mo_ta = " ".join(m["description"]
-                         for m in tool.api_contract["models"].values())
-        assert "131K" not in mo_ta and "64K" not in mo_ta, (
-            "van hua cua so cua ENGINE chu khong phai cua so khach dung duoc")
-        assert manifest._cua_so_noi_voi_khach() in mo_ta
+        for alias, spec in tool.api_contract["models"].items():
+            mo_ta = spec["description"]
+            assert "131K" not in mo_ta and "64K" not in mo_ta, (
+                f"{alias}: van hua cua so cua ENGINE chu khong phai cua so "
+                f"khach dung duoc")
+            cua_minh = manifest._cua_so_noi_voi_khach(spec["id"])
+            assert cua_minh in mo_ta, (
+                f"{alias} (id {spec['id']}) phai noi con so cua CHINH NO "
+                f"({cua_minh}), khong phai cua model khac")
+            # ⛔ Và không được nói con số của model kia — đó chính là F-02.
+            for id_khac in ngan_sach.CUA_SO_THEO_MODEL:
+                if id_khac == spec["id"]:
+                    continue
+                khac = manifest._cua_so_noi_voi_khach(id_khac)
+                if khac != cua_minh:
+                    assert khac not in mo_ta, (
+                        f"{alias} dang quang cao {khac} — do la con so cua "
+                        f"{id_khac}, khong phai cua no")
 
 
 class TestTaiLieuKhopMayChuThat:
@@ -251390,7 +251737,7 @@ def test_kho_that_sach(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_388_chan_doan.py
-SHA256=84a32e7fd072e1c935262df297ca2f309c22d3c80cb47e7a2f170d97c9c10e25 BYTES=23630 LINES=512
+SHA256=64008b91b2796f14d75de1a497ca960851237e3cc113487815159f9742064291 BYTES=24523 LINES=524
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 test_388 — K4: tầng lệch-tham-chiếu và tầng chẩn đoán.
@@ -251640,8 +251987,20 @@ def test_KHONG_luat_nao_co_dung_sai_VUOT_DAI_gia_tri():
     import json
     m = _cd()
     bl = GOC / "voice_sidecar" / "baseline_lech.json"
-    if not bl.exists():
-        pytest.skip("chua ghim baseline lech")
+    # ⛔ KHÔNG `pytest.skip`. `baseline_lech.json` **đã commit**, nên thiếu nó
+    #    là một lỗi thật đáng báo — không phải một điều kiện môi trường đáng bỏ
+    #    qua.
+    #
+    # 🔴 Và phép bỏ qua ấy hỏng theo kiểu tệ nhất: chạy riêng thì test XANH
+    #    (tệp có mặt), chạy trong gate thì nó BỎ QUA — nên `check_bo_qua.py`
+    #    báo một mục bỏ qua mới mà chạy tay không tài nào tái hiện. Một phép
+    #    kiểm chỉ im lặng ở một trong hai chỗ là một phép kiểm không ai tin.
+    #
+    # ⭐ *"Một test bị bỏ qua là một test KHÔNG canh gì cả"* — nguyên văn thông
+    #    điệp của `check_bo_qua.py`, và ở đây nó đúng theo nghĩa đen.
+    assert bl.exists(), (
+        f"thieu {bl.relative_to(GOC)} — tep nay DA COMMIT, nen no vang mat la "
+        f"mot loi. Ghim lai: `setup/do_lech_tham_chieu.ps1 -Ghim`")
     san = (json.loads(bl.read_text(encoding="utf-8")) or {}).get("do") or {}
     xau = []
     for ma, chi, chieu, _, _ in m.LUAT:
@@ -274811,6 +275170,309 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_chon_cua_so_bieu_cam.py
+SHA256=17077401c701b7a3eace30fb9687a8da0af5e9793b8996fbef3cc346509a36a9 BYTES=13803 LINES=297
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_chon_cua_so_bieu_cam.py — chọn cửa sổ tham chiếu BIỂU CẢM hơn có làm bản
+sinh ra biểu cảm hơn không.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_chon_cua_so_bieu_cam.ps1
+
+## Đòn bẩy này nằm trong mã của TA, không phải của upstream
+
+Khuyết tật đã đo và đã loại confound:
+
+    do tan F0 cua ban SINH RA / cua clip goc (cung do dai)  =  -42,4%
+
+Ba đường đã thử và **đều âm**:
+  · bộ khử nhiễu — chỉ chiếm 2,6% độ tối, không liên quan biểu cảm
+  · EQ bù độ sáng — DNSMOS phẳng lì ở mọi mức
+  · `temperature` 0,8→1,25 — biểu cảm KHÔNG đi theo (t = 0,53), mà CER thì
+    tăng gấp đôi ở 1,10
+
+⇒ Nên nhìn vào chỗ chưa nhìn: **cách ta chọn cửa sổ tham chiếu.**
+
+`chon_doan.chon()` xếp hạng ứng viên theo đúng một tiêu chí —
+`cosine(emb(đoạn), emb(cả clip))`, tức độ **đại diện**.
+
+🔴 Nhưng embedding người nói được thiết kế để **bất biến với ngữ điệu** — đó
+   chính là điều khiến nó là embedding *người nói* chứ không phải embedding
+   *câu nói*. Nên trong số những cửa sổ đại diện ngang nhau, tiêu chí hiện tại
+   chọn một cửa sổ **ngẫu nhiên về mặt ngữ điệu**.
+
+⭐ Nếu model nhân bản cả tính cách ngữ điệu của cửa sổ tham chiếu — điều mà kiến
+   trúc v3 gợi ý, vì nó nhúng `ref_codes` chứ không chỉ `speaker_emb` — thì
+   chọn cửa sổ biểu cảm hơn là một cách sửa **không tốn gì lúc chạy**: cùng một
+   bước chọn, chỉ khác cách phá hoà.
+
+## Thiết kế, và chỗ nguy hiểm của nó
+
+Với mỗi giọng, sinh cùng một bộ câu từ HAI cửa sổ tham chiếu:
+
+    A. cua so DANG CHON — dai dien nhat (cosine cao nhat)
+    B. cua so BIEU CAM NHAT trong so nhung cua so con DU dai dien
+
+⛔ "Còn đủ đại diện" là phần bắt buộc, không phải phần cho đẹp. Cửa sổ có độ
+   tản F0 cao nhất rất có thể là cửa sổ khách **cười, hét, hay đọc kịch** — nó
+   biểu cảm vì nó **không điển hình**, và nhân bản từ đó là nhân bản một khoảnh
+   khắc chứ không phải một giọng. Nên B chỉ lấy trong số cửa sổ có cosine
+   không thấp hơn cửa sổ tốt nhất quá `SAN_DAI_DIEN`.
+
+Đo ba trục:
+  ① biểu cảm — `f0_tan_tuong_doi` của bản sinh ra so với clip gốc
+  ② danh tính — cosine giữa bản sinh ra và clip gốc
+  ③ ổn định  — chốt K1 + CER
+
+⭐ Trục ② là chỗ phép thử này có thể **thua**, và phải đo chứ không đoán: nếu
+   cửa sổ biểu cảm hơn làm giọng nghe **khác người** thì đổi tiêu chí là một
+   bước lùi, dù biểu cảm có lên.
+
+⚠️ Ở trục ② dùng chính bộ mã hoá của VieNeu — và ở đây điều đó **hợp lệ**, khác
+   với K0: ta đang so hai bản của CÙNG một hệ với nhau, không so hai hệ. Bộ mã
+   hoá không thể thiên vị bên nào.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import statistics
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+#: Cửa sổ B phải có cosine đại diện không thấp hơn cửa sổ tốt nhất quá mức này.
+#:
+#: ⛔ Không phải một con số tuỳ ý: nó là ranh giới giữa "chọn một cửa sổ khác
+#:    cũng đại diện" và "chọn một khoảnh khắc bất thường". Nếu phép đo cho thấy
+#:    B thắng, bước tiếp là quét chính con số này.
+SAN_DAI_DIEN = 0.05
+
+CAU = [
+    "Ba tôi bảo bà ấy bán bánh ở bãi biển vào buổi sáng.",
+    "Cô ấy cố gắng có được một cỗ máy mới cho công việc.",
+    "Mẹ dặn mà tôi mải mê nên quên mất lời mẹ nói.",
+]
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--clip", default="tmp/giong_cu")
+    ap.add_argument("--so-giong", type=int, default=5)
+    ap.add_argument("--ra", default="tmp/chon_cua_so_bieu_cam.json")
+    a = ap.parse_args(argv)
+
+    import glob
+
+    import numpy as np
+    import soundfile as sf
+
+    from voice_sidecar import (chon_doan, chot_sinh, do_chat_luong, do_on_dinh,
+                               engine)
+
+    cong = engine.lay_cong()
+    cac = sorted(glob.glob(os.path.join(a.clip, "*.wav")))
+    buoc = max(1, len(cac) // a.so_giong)
+    cac = cac[::buoc][:a.so_giong]
+    if not cac:
+        print(f"KHONG CO WAV trong {a.clip}", file=sys.stderr)
+        return 2
+
+    bo = do_chat_luong._bo_ma_hoa_giong()
+    if bo is None:
+        print("KHONG NAP DUOC bo ma hoa nguoi noi", file=sys.stderr)
+        return 2
+
+    def _emb(w, sr):
+        return do_chat_luong._embed(bo, w, sr)
+
+    print(f"{len(cac)} giong x {len(CAU)} cau x 2 cua so\n")
+    gom = {"A": {}, "B": {}, "C": {}}
+    chi_tiet = []
+    for p in cac:
+        ten = os.path.basename(p).replace(".wav", "")
+        w, sr = sf.read(p, dtype="float32", always_2d=False)
+        if getattr(w, "ndim", 1) > 1:
+            w = w.mean(axis=1)
+        e_ca = _emb(w, int(sr))
+        if e_ca is None:
+            continue
+
+        # Dựng lại đúng tập ứng viên mà `chon_doan` dùng, rồi chấm HAI cách.
+        n = int(chon_doan.CUA_SO_S * sr)
+        uv = [(i, i + n) for i in range(0, len(w) - n + 1, max(1, n // 4))]
+        if not uv:
+            continue
+        cham = []
+        for i, j in uv:
+            e = _emb(w[i:j], int(sr))
+            if e is None:
+                continue
+            dd = do_chat_luong._cosine(e, e_ca)
+            bc = (do_on_dinh.do_on_dinh_f0(w[i:j], int(sr)) or {}).get(
+                "f0_tan_tuong_doi")
+            if bc is None:
+                continue
+            cham.append({"i": i, "j": j, "dai_dien": dd, "bieu_cam": bc})
+        if len(cham) < 2:
+            continue
+
+        A = max(cham, key=lambda x: x["dai_dien"])
+        du = [x for x in cham if x["dai_dien"] >= A["dai_dien"] - SAN_DAI_DIEN]
+        B = max(du, key=lambda x: x["bieu_cam"])
+        # 🔴 NHANH C — DICH DUNG, sau khi nhanh B nham sai.
+        #
+        #    Lượt đo đầu cho thấy đích không phải "biểu cảm nhất": cửa sổ cực
+        #    đại là một **khoảnh khắc bất thường**, và 3/5 giọng thậm chí không
+        #    có cửa sổ nào biểu cảm hơn trong ngưỡng — nhánh B thực ra chỉ thử
+        #    hai giọng.
+        #
+        # ⭐ Đích đúng là **ĐIỂN HÌNH**: cửa sổ có độ tản F0 gần **trung vị của
+        #    cả clip** nhất. Vì cơ chế đã lộ ra là — `cosine` với embedding
+        #    TRUNG BÌNH của clip ưu ái cửa sổ ít động, do mọi đoạn ngữ điệu
+        #    mạnh đều kéo ra xa tâm. Nên tối đa hoá độ đại diện chọn có hệ
+        #    thống đoạn PHẲNG NHẤT (0,1131 so với 0,2515 của cả clip).
+        #
+        #    Sửa không phải "lấy cực đại" mà "lấy đúng mức điển hình của chính
+        #    người ấy".
+        tv_clip = statistics.median([x["bieu_cam"] for x in cham])
+        C = min(du, key=lambda x: abs(x["bieu_cam"] - tv_clip))
+        chi_tiet.append({"giong": ten, "so_ung_vien": len(cham),
+                         "A": {k: round(A[k], 4) for k in ("dai_dien", "bieu_cam")},
+                         "B": {k: round(B[k], 4) for k in ("dai_dien", "bieu_cam")},
+                         "C": {k: round(C[k], 4) for k in ("dai_dien", "bieu_cam")},
+                         "trung_vi_clip": round(tv_clip, 4),
+                         "so_du_dai_dien": len(du)})
+        print(f"  {ten[:26]:26} A: dd={A['dai_dien']:.4f} bc={A['bieu_cam']:.4f}"
+              f" | B: dd={B['dai_dien']:.4f} bc={B['bieu_cam']:.4f}"
+              f"  ({len(du)}/{len(cham)} du dai dien)")
+
+        for nhan, x in (("A", A), ("B", B), ("C", C)):
+            if x["i"] == A["i"] and nhan == "B":
+                # B trung A: khong sinh lai, nhung PHAI ghi nhan — neu khong thi
+                # bang ket qua se co n khac nhau giua hai nhanh ma khong ai biet.
+                chi_tiet[-1]["B_trung_A"] = True
+            t = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            t.close()
+            sf.write(t.name, w[x["i"]:x["j"]], int(sr))
+            try:
+                hs = cong.ghi_danh(t.name)
+            except Exception as ex:                       # noqa: BLE001
+                print(f"    [ghi danh hong] {ten}/{nhan}: "
+                      f"{type(ex).__name__}: {ex}")
+                continue
+            finally:
+                try:
+                    os.unlink(t.name)
+                except OSError:
+                    pass
+            rb = hs.get("ref_b64") or ""
+            if not rb:
+                continue
+            for c in CAU:
+                try:
+                    wo, _ = cong.noi(c, ref_b64=rb)
+                except Exception as ex:                   # noqa: BLE001
+                    print(f"    [sinh hong] {ten}/{nhan}: "
+                          f"{type(ex).__name__}: {ex}")
+                    continue
+                sro = 48000
+                # ① bieu cam, do THEO TI LE voi clip goc cung do dai
+                # 🔴 THU GIA TRI TUYET DOI, KHONG THU TI LE.
+                #
+                #    Lượt đo đầu thu `dau_ra / cua_so - 1` và **tỉ lệ ấy che
+                #    mất câu trả lời**: nhánh A ra +0,227 (đầu ra biểu cảm HƠN
+                #    cửa sổ) còn nhánh B ra −0,345, và đọc lướt thì tưởng A
+                #    thắng. Nhưng hai tỉ lệ ấy có **mẫu số khác nhau** — cửa sổ
+                #    B vốn biểu cảm hơn cửa sổ A 1,41 lần.
+                #
+                #    Quy về tuyệt đối mới thấy: đầu ra A = 0,1388, đầu ra B =
+                #    0,1042. Câu hỏi luôn là *"đầu ra biểu cảm bao nhiêu"*, và
+                #    một tỉ lệ với mẫu số thay đổi không trả lời được câu đó.
+                bc = (do_on_dinh.do_on_dinh_f0(wo, sro) or {}).get(
+                    "f0_tan_tuong_doi")
+                if bc is not None:
+                    gom[nhan].setdefault("bieu_cam_tuyet_doi", []).append(
+                        float(bc))
+                # ② danh tinh
+                eo = _emb(wo, sro)
+                if eo is not None:
+                    gom[nhan].setdefault("danh_tinh", []).append(
+                        do_chat_luong._cosine(eo, e_ca))
+                # ③ on dinh
+                pq = chot_sinh.kiem_het(wo, sro, len(c))
+                gom[nhan].setdefault("chot_hong", []).append(
+                    0.0 if pq.dat else 1.0)
+                t2 = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                t2.close()
+                sf.write(t2.name, wo, sro)
+                try:
+                    dh = do_chat_luong.do_de_hieu(t2.name, c, "vi") or {}
+                    if dh.get("cer") is not None:
+                        gom[nhan].setdefault("cer", []).append(float(dh["cer"]))
+                finally:
+                    try:
+                        os.unlink(t2.name)
+                    except OSError:
+                        pass
+
+    def _tb(v):
+        if not v:
+            return None, 0.0, 0
+        s = statistics.pstdev(v) / math.sqrt(len(v)) if len(v) > 1 else 0.0
+        return statistics.mean(v), s, len(v)
+
+    print("\n" + "=" * 76)
+    print("  CHON CUA SO: DAI DIEN NHAT (A)  vs  BIEU CAM NHAT (B)")
+    print("=" * 76)
+    print(f"  {'truc':12} {'A dang chay':>20} {'B cuc dai':>20} "
+          f"{'C dien hinh':>20}")
+    ra = {}
+    for truc in ("bieu_cam_tuyet_doi", "danh_tinh", "cer", "chot_hong"):
+        ba = {n: _tb(gom[n].get(truc)) for n in ("A", "B", "C")}
+        if any(x[0] is None for x in ba.values()):
+            continue
+        ra[truc] = {n: {"tb": round(v[0], 5), "sai_so": round(v[1], 5),
+                        "n": v[2]} for n, v in ba.items()}
+        print(f"  {truc:12}" + "".join(
+            f" {ba[n][0]:>13.4f} ±{ba[n][1]:.4f}" for n in ("A", "B", "C")))
+
+    bc = ra.get("bieu_cam", {})
+    dt = ra.get("danh_tinh", {})
+    print()
+    if bc.get("ket_luan") == "B hon" and dt.get("ket_luan") != "A hon":
+        print("  ✅ Chon cua so BIEU CAM hon lam ban sinh ra bieu cam hon MA")
+        print("     KHONG lam mat danh tinh. Day la mot duong sua that, va no")
+        print("     khong ton gi luc chay — cung mot buoc chon, khac cach pha hoa.")
+    elif bc.get("ket_luan") == "B hon":
+        print("  ⚠️ Bieu cam len NHUNG danh tinh xuong. Cua so bieu cam nhat co")
+        print("     the la mot khoanh khac bat thuong — thu ha SAN_DAI_DIEN.")
+    else:
+        print("  🔴 Khong khac biet. Model KHONG nhan ban tinh cach ngu dieu cua")
+        print("     cua so tham chieu — no chi lay danh tinh nguoi noi. Neu vay")
+        print("     thi -42% bieu cam la thuoc tinh cua MODEL, va khong co duong")
+        print("     nao sua no tu phia ta.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"san_dai_dien": SAN_DAI_DIEN, "truc": ra,
+                   "chi_tiet": chi_tiet}, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_chon_doan.py
 SHA256=219845bfd23d5e88a8b1a0ebc020173e038fbf10488b5ae668da9db1235c7ab0 BYTES=9754 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -275209,6 +275871,197 @@ def main(argv=None) -> int:
                   f, ensure_ascii=False, indent=2)
     print(f"\nDa ghi: {a.ra}")
     return 0 if (not nham and bat_duoc == 6) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_confound_do_dai_f0.py
+SHA256=5c4300d7450768f96bf7c496247d3fe1e03d1f1f684eee696c56c92bb2534c97 BYTES=7430 LINES=185
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_confound_do_dai_f0.py — bao nhiêu phần của "-40% biểu cảm" là do ĐỘ DÀI, không
+phải do nhân bản.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_confound_do_dai_f0.ps1
+
+## Giả thuyết đang kiểm, và vì sao nó phải được kiểm TRƯỚC khi báo cáo
+
+Baseline K4 đo `delta_f0_tan_tuong_doi_ti_le = -0,4556`, và tôi đã đọc nó thành
+một sự thật về sản phẩm: *"giọng nhân bản chỉ giữ 54% biến thiên cao độ của
+giọng thật"*.
+
+⛔ Nhưng hai vế của phép trừ ấy **không cùng hình dạng**:
+
+    ben trai  : mot cau, ~4 giay, sinh ra trong mot luot
+    ben phai  : clip tham chieu — ~25 giay GHEP TU 3-7 DOAN THU RIENG,
+                cach nhau boi khoang nghi 0,35 giay
+
+Một bản ghép nhiều đoạn thu **đương nhiên** có độ tản F0 lớn hơn một câu đơn:
+mỗi đoạn có ngữ điệu riêng, có thể thu ở buổi khác, và chỗ nối giữa hai đoạn là
+một bước nhảy cao độ mà không câu nói tự nhiên nào có.
+
+⇒ Nên một phần — có thể **phần lớn** — của −40% là *"dài so với ngắn"*, không
+  phải *"nhân bản làm phẳng"*. Và đó là hai kết luận dẫn tới hai việc khác hẳn:
+  cái đầu là một tạo tác của phép đo, cái sau là một khuyết tật của sản phẩm.
+
+## Phép đo
+
+Cắt clip tham chiếu thành những đoạn **dài bằng bản sinh ra** rồi đo lại độ tản
+F0 trên từng đoạn. So ba con số:
+
+    A. do tan F0 cua CA clip tham chieu (25 giay ghep)
+    B. do tan F0 trung binh cua tung DOAN 4 giay trong chinh clip ay
+    C. do tan F0 cua ban SINH RA (4 giay)
+
+  · `A - B` là **cái giá của độ dài** — thuần tuý do phép đo.
+  · `B - C` là phần còn lại, và **chỉ phần ấy** mới nói được gì về nhân bản.
+
+⭐ Đây là cùng khuôn với phép đối chứng đã dùng cho K0 (`k0_kiem_chung_resample`):
+   tách một confound do CHÍNH bộ đo tạo ra, bằng cách đo nó riêng, thay vì lập
+   luận rằng nó nhỏ.
+
+## ⛔ KHÔNG CHẠM GPU
+
+Chạy trên tệp đã sinh (`tmp/k0/vieneu/*.wav`) và clip tham chiếu gốc.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import statistics
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--wav", default="tmp/k0/vieneu")
+    ap.add_argument("--clip-ref", default="tmp/giong_cu")
+    ap.add_argument("--ra", default="tmp/confound_do_dai_f0.json")
+    a = ap.parse_args(argv)
+
+    import numpy as np
+    import soundfile as sf
+
+    from voice_sidecar import do_on_dinh
+
+    cac = sorted(glob.glob(os.path.join(a.wav, "*.wav")))
+    if not cac:
+        print(f"KHONG CO WAV trong {a.wav}", file=sys.stderr)
+        return 2
+
+    theo_giong: dict = {}
+    for p in cac:
+        theo_giong.setdefault(os.path.basename(p).split("__")[0], []).append(p)
+
+    ket = []
+    print(f"{'giong':26} {'A ca clip':>10} {'B doan ngan':>12} "
+          f"{'C sinh ra':>10} {'gia do dai':>11}")
+    for ma, ds in sorted(theo_giong.items()):
+        ref = os.path.join(a.clip_ref, f"{ma}.wav")
+        if not os.path.isfile(ref):
+            continue
+        wr, srr = sf.read(ref, dtype="float32", always_2d=False)
+        if getattr(wr, "ndim", 1) > 1:
+            wr = wr.mean(axis=1)
+
+        # A — cả clip tham chiếu
+        ta = (do_on_dinh.do_on_dinh_f0(wr, int(srr)) or {}).get(
+            "f0_tan_tuong_doi")
+        if ta is None:
+            continue
+
+        # C — trung bình các bản sinh ra của giọng ấy
+        cs = []
+        dai_tb = []
+        for p in ds:
+            w, sr = sf.read(p, dtype="float32", always_2d=False)
+            if getattr(w, "ndim", 1) > 1:
+                w = w.mean(axis=1)
+            v = (do_on_dinh.do_on_dinh_f0(w, int(sr)) or {}).get(
+                "f0_tan_tuong_doi")
+            if v is not None:
+                cs.append(float(v))
+                dai_tb.append(len(w) / float(sr))
+        if not cs:
+            continue
+        tc = statistics.mean(cs)
+        dai = statistics.mean(dai_tb)
+
+        # B — cắt clip tham chiếu thành đoạn DÀI BẰNG bản sinh ra
+        #
+        # ⛔ Cắt NỐI TIẾP, không cắt chồng lấn: hai đoạn chồng nhau chia sẻ dữ
+        #    liệu nên độ tản của chúng tương quan, và trung bình sẽ nhìn ổn định
+        #    hơn thực tế.
+        n = int(dai * srr)
+        bs = []
+        for i in range(0, len(wr) - n + 1, n):
+            v = (do_on_dinh.do_on_dinh_f0(wr[i:i + n], int(srr)) or {}).get(
+                "f0_tan_tuong_doi")
+            if v is not None:
+                bs.append(float(v))
+        if not bs:
+            continue
+        tb = statistics.mean(bs)
+
+        ket.append({"giong": ma, "A_ca_clip": round(ta, 5),
+                    "B_doan_ngan": round(tb, 5), "C_sinh_ra": round(tc, 5),
+                    "giay_moi_doan": round(dai, 2), "so_doan": len(bs)})
+        print(f"{ma[:26]:26} {ta:>10.4f} {tb:>12.4f} {tc:>10.4f} "
+              f"{(tb - ta) / max(ta, 1e-9):>+10.1%}")
+
+    if not ket:
+        print("KHONG DO DUOC GI", file=sys.stderr)
+        return 1
+
+    A = statistics.mean(k["A_ca_clip"] for k in ket)
+    B = statistics.mean(k["B_doan_ngan"] for k in ket)
+    C = statistics.mean(k["C_sinh_ra"] for k in ket)
+
+    print("\n" + "=" * 76)
+    print("  TACH 'GIA CUA DO DAI' KHOI 'KHUYET TAT NHAN BAN'")
+    print("=" * 76)
+    print(f"  A  do tan F0 cua CA clip tham chieu (~25s ghep) : {A:.4f}")
+    print(f"  B  do tan F0 tung DOAN ngan trong chinh clip ay : {B:.4f}")
+    print(f"  C  do tan F0 cua ban SINH RA                    : {C:.4f}")
+    print()
+    cu = (C - A) / max(A, 1e-9)
+    moi = (C - B) / max(B, 1e-9)
+    gia_dai = (B - A) / max(A, 1e-9)
+    print(f"  Con so DA BAO CAO   (C so voi A) : {cu:+.1%}")
+    print(f"  Gia cua DO DAI      (B so voi A) : {gia_dai:+.1%}")
+    print(f"  Phan CON LAI        (C so voi B) : {moi:+.1%}   <- chi phan nay")
+    print(f"                                                     noi ve nhan ban")
+
+    if abs(cu) > 1e-9:
+        pc = abs(gia_dai) / abs(cu) * 100
+        print(f"\n  => Do dai giai thich {pc:.0f}% con so da bao cao.")
+        if pc >= 60:
+            print("     🔴 PHAN LON la TAO TAC CUA PHEP DO, khong phai khuyet tat.")
+            print("     Phai sua lai DV-006 va cach `lech_tham_chieu` lay moc.")
+        elif pc >= 25:
+            print("     ⚠️ Mot phan dang ke. Con so that nho hon nhieu so voi")
+            print("        con so da bao cao.")
+        else:
+            print("     ✅ Do dai khong giai thich duoc. Khuyet tat la that.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"A_ca_clip": A, "B_doan_ngan": B, "C_sinh_ra": C,
+                   "da_bao_cao": cu, "gia_do_dai": gia_dai, "con_lai": moi,
+                   "chi_tiet": ket}, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
 
 
 if __name__ == "__main__":
@@ -289810,7 +290663,7 @@ Write-Output "READY=1"
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/scan_source_secrets.py
-SHA256=791d9f42de6cc2bcd1bbc28e0188504d494f38640f974dd19cccf07e170cc9cd BYTES=9285 LINES=318
+SHA256=3a47637e6196ab6a55544e0c89ef33c7bb7764ce2e5e282b47d876c8295939a4 BYTES=10394 LINES=344
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Fail-safe source-boundary secret scanner.
 
@@ -290059,9 +290912,35 @@ def _looks_like_generic_secret(value: str) -> bool:
     return sum(classes) >= 2
 
 
+#: Mot dong CHECKSUM theo khuon `md5sum` / `sha1sum` / `certutil`:
+#:
+#:     d41d8cd9...ecf8427e *video.mp4
+#:     d41d8cd9...ecf8427e  video.mp4
+#:
+#: (vi du tren CO Y viet tat: mot chuoi 32 hex THAT o day se tu
+#:  kich hoat chinh luat nay — da dinh mot lan khi viet no.)
+#:
+#: 🔴 Vi sao dung mot phep mien tru RIENG chu khong noi long luat hex:
+#:    mot checksum **khong bao gio la bi mat** — no la ban tom tat cong
+#:    khai cua mot tep, va viec cua no la duoc cong bo. Nhung mot chuoi 32
+#:    hex tran thi RAT co the la mot khoa API, nen luat kia phai giu nguyen
+#:    do gat.
+#:
+#: ⭐ Khuon nay khong nhap nhang: bam, khoang trang, roi mot TEN TEP co
+#:    duoi. Mot khoa API khong nam canh mot ten tep nhu vay.
+#:
+#: ⚠️ Da bat gap that: ba dong md5 cua ba tep .mp4 trong mot bao cao lam do
+#:    gate chung cua MOI phien, va chung khong phai bi mat gi ca.
+_DONG_CHECKSUM = re.compile(
+    r"^\s*[0-9a-fA-F]{32,128}\s+\*?[\w.@+-]+\.[A-Za-z0-9]{1,8}\s*$")
+
+
 def _scan_line(path: Path, line_number: int, line: str) -> list[Finding]:
     findings: list[Finding] = []
+    la_checksum = bool(_DONG_CHECKSUM.match(line))
     for rule in RULES:
+        if la_checksum and rule.name == "bare_32_char_hex":
+            continue
         for match in rule.pattern.finditer(line):
             if rule.captured_value_group is not None:
                 value = match.group(rule.captured_value_group)

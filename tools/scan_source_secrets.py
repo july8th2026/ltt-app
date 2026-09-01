@@ -245,9 +245,35 @@ def _looks_like_generic_secret(value: str) -> bool:
     return sum(classes) >= 2
 
 
+#: Mot dong CHECKSUM theo khuon `md5sum` / `sha1sum` / `certutil`:
+#:
+#:     d41d8cd9...ecf8427e *video.mp4
+#:     d41d8cd9...ecf8427e  video.mp4
+#:
+#: (vi du tren CO Y viet tat: mot chuoi 32 hex THAT o day se tu
+#:  kich hoat chinh luat nay — da dinh mot lan khi viet no.)
+#:
+#: 🔴 Vi sao dung mot phep mien tru RIENG chu khong noi long luat hex:
+#:    mot checksum **khong bao gio la bi mat** — no la ban tom tat cong
+#:    khai cua mot tep, va viec cua no la duoc cong bo. Nhung mot chuoi 32
+#:    hex tran thi RAT co the la mot khoa API, nen luat kia phai giu nguyen
+#:    do gat.
+#:
+#: ⭐ Khuon nay khong nhap nhang: bam, khoang trang, roi mot TEN TEP co
+#:    duoi. Mot khoa API khong nam canh mot ten tep nhu vay.
+#:
+#: ⚠️ Da bat gap that: ba dong md5 cua ba tep .mp4 trong mot bao cao lam do
+#:    gate chung cua MOI phien, va chung khong phai bi mat gi ca.
+_DONG_CHECKSUM = re.compile(
+    r"^\s*[0-9a-fA-F]{32,128}\s+\*?[\w.@+-]+\.[A-Za-z0-9]{1,8}\s*$")
+
+
 def _scan_line(path: Path, line_number: int, line: str) -> list[Finding]:
     findings: list[Finding] = []
+    la_checksum = bool(_DONG_CHECKSUM.match(line))
     for rule in RULES:
+        if la_checksum and rule.name == "bare_32_char_hex":
+            continue
         for match in rule.pattern.finditer(line):
             if rule.captured_value_group is not None:
                 value = match.group(rule.captured_value_group)

@@ -246,8 +246,20 @@ def test_KHONG_luat_nao_co_dung_sai_VUOT_DAI_gia_tri():
     import json
     m = _cd()
     bl = GOC / "voice_sidecar" / "baseline_lech.json"
-    if not bl.exists():
-        pytest.skip("chua ghim baseline lech")
+    # ⛔ KHÔNG `pytest.skip`. `baseline_lech.json` **đã commit**, nên thiếu nó
+    #    là một lỗi thật đáng báo — không phải một điều kiện môi trường đáng bỏ
+    #    qua.
+    #
+    # 🔴 Và phép bỏ qua ấy hỏng theo kiểu tệ nhất: chạy riêng thì test XANH
+    #    (tệp có mặt), chạy trong gate thì nó BỎ QUA — nên `check_bo_qua.py`
+    #    báo một mục bỏ qua mới mà chạy tay không tài nào tái hiện. Một phép
+    #    kiểm chỉ im lặng ở một trong hai chỗ là một phép kiểm không ai tin.
+    #
+    # ⭐ *"Một test bị bỏ qua là một test KHÔNG canh gì cả"* — nguyên văn thông
+    #    điệp của `check_bo_qua.py`, và ở đây nó đúng theo nghĩa đen.
+    assert bl.exists(), (
+        f"thieu {bl.relative_to(GOC)} — tep nay DA COMMIT, nen no vang mat la "
+        f"mot loi. Ghim lai: `setup/do_lech_tham_chieu.ps1 -Ghim`")
     san = (json.loads(bl.read_text(encoding="utf-8")) or {}).get("do") or {}
     xau = []
     for ma, chi, chieu, _, _ in m.LUAT:
