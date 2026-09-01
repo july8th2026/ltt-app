@@ -577,9 +577,21 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #
     # ⛔ Nó lệch chuẩn với chính khu API này, nơi lỗi gọi đúng tên scope thiếu
     #    và đính `retry: never`. Anthropic thật trả `400` cho tool schema sai.
+    # 🔴 `invalid_request`, KHÔNG PHẢI `executor.parameter_error`.
+    #
+    #    Bản đầu ném `parameter_error` ở đây. Nhưng bộ bắt nó nằm trong `try`
+    #    của `_mot_cuc` — **xa phía dưới**, và chỗ này ở NGOÀI khối đó. Ngoại lệ
+    #    thoát thẳng ra và thành **500**.
+    #
+    # ⛔ Tức bản vá đó làm MỌI THỨ TỆ HƠN: từ "câu trả lời sai im lặng" thành
+    #    "500 không nói gì" — mất luôn cả thông điệp lẽ ra phải giúp khách. Đo
+    #    thật trên production 01/09 trước khi sửa lại.
+    #
+    # ⭐ Ở đây CHƯA giữ tiền nào (trước `policy.resolve`), nên không cần hoàn —
+    #    khác hẳn nhánh `parameter_error` dưới kia, nơi hold đã đặt rồi.
     vi_tool = tool_dich.vi_sao_khong_dung_duoc(than.get("tools"))
     if vi_tool:
-        raise executor.parameter_error(vi_tool)
+        raise invalid_request(vi_tool)
 
     if not than.get("stream"):
         return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
