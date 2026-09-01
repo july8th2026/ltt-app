@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:a03b001537c9c44d65f05a78f78cd0aea7183da38ff860ad16d794d375f0c885
+Fingerprint   : sha256:4d7411c9c62b01ed24400bc223e88128db87981974695e188c89ec9e4c6fd0c5
 Nguồn đã quét : 1457 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3067,7 +3067,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14430910 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14438163 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -24350,7 +24350,7 @@ LttVoice.motDuAn({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_studio.html
-SHA256=058868ecb1169cd4b60370d7e3b3eb7a307de6cc65fe08fd7fa80c82e26c7260 BYTES=16544 LINES=312
+SHA256=f637fe6a8683c461bd1e7ed8829676c9d6382fce515d501e5dfdc7e67dfec083 BYTES=16872 LINES=316
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24598,7 +24598,11 @@ SHA256=058868ecb1169cd4b60370d7e3b3eb7a307de6cc65fe08fd7fa80c82e26c7260 BYTES=16
                 {% endfor %}
               </select>
             </label>
+            {# `aria-label` chứ không chỉ `placeholder`: placeholder biến mất
+               ngay khi khách gõ ký tự đầu, và nhiều trình đọc màn hình không
+               đọc nó. `test_352` chốt điều này cho MỌI ô nhập. #}
             <input type="text" id="lv-luu-ten" class="lv-luu-ten"
+                   aria-label="{{ _('Tên dự án mới') }}"
                    placeholder="{{ _('Tên dự án mới…') }}" maxlength="200">
             <div class="lv-kq-nut">
               <button type="button" class="btn primary sm" id="lv-luu-ok">{{ _("Lưu") }}</button>
@@ -231027,7 +231031,7 @@ def test_duong_thanh_cong_van_quyet_toan_dung_mot_lan(moi_truong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_293_dich_tool_hai_chieu.py
-SHA256=7a17f468ad4869456cd1c5ab3a7d713e3ce20ce0178b0bff1528d7520d3213a5 BYTES=9705 LINES=224
+SHA256=166711c059f22a5cd55ee52b18c497499370237f0bad181a83f759db2f00d4c3 BYTES=11712 LINES=258
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Dịch **công cụ** giữa hợp đồng Anthropic và giao thức OpenAI.
 
@@ -231083,6 +231087,40 @@ def test_thieu_input_schema_van_ra_object_rong_chu_khong_bo_trong():
     """Bỏ trắng `parameters` làm một số bộ giải mã từ chối cả lượt."""
     ra = td.sang_openai_tools([{"name": "khong_tham_so"}])
     assert ra[0]["function"]["parameters"] == {"type": "object", "properties": {}}
+
+
+def test_BA_khuon_dau_vao_va_chi_ba_khuon_do():
+    """🔴 HỢP ĐỒNG HÌNH DẠNG SỐNG Ở ĐÂY — và đó là lý do phép kiểm này tồn tại.
+
+    `sang_openai_tools` nhận đầu vào từ **hai cửa nói hai giao thức khác nhau**,
+    nên "khuôn nào hợp lệ" là một câu hỏi của tệp này, không phải của cửa nào.
+    Ba khuôn, và chỉ ba:
+
+    | Khuôn | Ai gửi | Dấu nhận biết |
+    |---|---|---|
+    | Anthropic | Claude Code / Desktop → `/messages` | `input_schema` |
+    | OpenAI **Responses** (phẳng) | **Codex CLI** → `/responses` | `type:"function"` + `parameters` |
+    | tool phía máy chủ Anthropic | — | `type` khác `function`, không `input_schema` → **bỏ qua** |
+
+    ⛔ Khuôn Responses từng bị bỏ qua như rác, và hậu quả không phải "mất tool"
+       mà là **Codex chết hẳn** — nó luôn khai `shell`/`apply_patch`, nên mọi
+       lượt trả `400`. Đo thật 01/09 bằng Codex CLI 0.145.0 vào production.
+
+    ⭐ VÀ VÌ SAO CHỐT NÀY NẰM Ở ĐÂY chứ không chỉ ở `test_385`: khuyết tật ấy
+       sinh ra vì một chốt viết cho cửa **Anthropic** được đặt vào `_cua` — hàm
+       phục vụ **cả hai** cửa. Đặt hợp đồng hình dạng cạnh phép dịch, thay vì
+       cạnh một cửa, là cách nó không lệch lần nữa.
+    """
+    anthropic = {"name": "a", "input_schema": {"type": "object"}}
+    responses = {"type": "function", "name": "b",
+                 "parameters": {"type": "object", "properties": {"x": {}}}}
+    may_chu = {"type": "web_search_20260209", "name": "c"}
+
+    ra = td.sang_openai_tools([anthropic, responses, may_chu])
+    assert [t["function"]["name"] for t in ra] == ["a", "b"], (
+        "phai nhan CA HAI khuon khach, va bo qua tool phia may chu")
+    assert ra[1]["function"]["parameters"]["properties"] == {"x": {}}, (
+        "mat schema cua khuon Responses => model goi tool sai tham so")
 
 
 def test_bo_qua_tool_PHIA_MAY_CHU_cua_anthropic():
@@ -245641,7 +245679,7 @@ def test_khong_dang_nhap_thi_khong_doc_duoc(tmp_path, monkeypatch, khach):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_347_ltt_voice_studio.py
-SHA256=ee15a6e51a3e9b732dbfd01c10e69384d9f98039b018c29d836bd8aabe3c553d BYTES=16109 LINES=367
+SHA256=41923bb1c1fb60ce9258c896bdcfe0c72cccf62728f8d9b049b93c63b184dade BYTES=17594 LINES=390
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hai cửa mới của màn Studio: xem trước cách đọc, và theo dõi kết quả tại chỗ.
 
@@ -245926,16 +245964,39 @@ def test_studio_bo_qua_giong_bia(khach):
 
 
 def test_studio_KHONG_ve_dieu_khien_bi_cam(khach):
-    """⛔ Q119: tốc độ, phong cách, temperature — không cái nào được lên giao diện.
+    """⛔ Năm tham số LẤY MẪU của Q119 không được lên giao diện.
 
     Và `MODE Fast/Quality` cùng `LANGUAGE VI/EN` thì backend không có, nên vẽ
     chúng là hứa một thứ không tồn tại.
+
+    🔴 BẢN ĐẦU CỦA PHÉP KIỂM NÀY CẤM CẢ `name="toc_do"`, VÀ ĐÓ LÀ MỘT LỖI.
+
+       Nó chép lại cùng một trích dẫn sai với chú thích trong
+       `ltt_voice_studio.html`: Q119 ① nêu ĐÍCH DANH năm tham số —
+       `temperature`, `top_k`, `top_p`, `repetition_penalty`,
+       `repetition_window` — và **không có "tốc độ"**. Cả hai lý do của Q119
+       cũng chỉ nói về đường lấy mẫu: cache CUDA graph khoá theo
+       `(B, temperature, top_k, top_p)`, và tông lệch do `temperature` (#173).
+
+    ⭐ Tốc độ trong sản phẩm là **time-stretch hậu kỳ** trên tệp đã sinh xong
+       (`apps/ltt_voice/toc_do.py`) — nó không chạm một tham số nào trong năm
+       cái ấy, không chạm GPU, và chạy SAU cả cổng chất lượng.
+
+    ⚠️ Bài học đắt hơn bản sửa: **một trích dẫn sai được chốt bằng một phép
+       kiểm sẽ sống lâu hơn một trích dẫn sai nằm trong chú thích** — vì từ đó
+       trở đi, sửa nó làm gate đỏ, và gate đỏ trông y như một lỗi. Nên phép
+       kiểm này nay chốt CẢ HAI CHIỀU: năm tham số kia phải vắng mặt, và tốc độ
+       phải CÓ MẶT.
     """
     client, _uid = khach
     html = client.get("/ltt-voice").text.lower()
-    for cam in ("temperature", "top_k", "top_p", 'name="speed"',
-                'name="toc_do"', 'name="mode"', 'name="language"'):
+    for cam in ("temperature", "top_k", "top_p",
+                "repetition_penalty", "repetition_window",
+                'name="mode"', 'name="language"'):
         assert cam not in html, f"dieu khien bi cam lo ra giao dien: {cam!r}"
+    assert 'name="toc_do"' in html, (
+        "toc do PHAI co tren giao dien — no la hau ky, khong thuoc nam tham so "
+        "lay mau ma Q119 khoa. Doc docstring phep kiem nay truoc khi go no.")
 
 
 # ── CSRF: bánh cóc cho một lỗ đã sống từ ngày phát hành ──────────────────────
@@ -285896,7 +285957,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=8d03ae4a41fecd5f1a5f1174376e5557045b21e4417b903702d889053076ac7e BYTES=252750 LINES=2712
+SHA256=c96322dc2a3ddde08a8e891e514d9440472fd86001ca7e32dd0cad913a6a18b0 BYTES=256183 LINES=2773
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -285979,6 +286040,11 @@ html{background:var(--surface-canvas)}
 .btn.ghost{background:var(--panel2);border-color:var(--line2);color:var(--fg)}
 .btn.ghost:hover{background:var(--panel3)}
 .btn.sm{padding:5px 10px;font-size:12px;border-radius:6px}
+/* Nut VIEN do. Dung khi mot HANH DONG CHINH lap lai nhieu lan tren mot trang:
+ * bon muoi lam nut do dac lam ca trang gao len va khong con cho nao noi hon cho
+ * nao. Anh tham chieu 02 ve "Use" dung kieu nay. */
+.btn.vien{background:transparent;border-color:var(--brand-border);color:var(--accent2)}
+.btn.vien:hover{background:var(--brand-soft);border-color:var(--accent)}
 .btn.danger{background:transparent;border-color:var(--err-line);color:var(--err)}
 .btn.danger:hover{background:var(--err-bg)}
 .btn[disabled]{opacity:.55;cursor:not-allowed}
@@ -288270,8 +288336,13 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   border-radius:50%;background:var(--brand-soft);border:1px solid var(--brand-border)}
 .lv-the-song svg rect{fill:var(--brand-hover)}
 .lv-the-ten{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
-.lv-the-ten b{font-size:13.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;
-  white-space:nowrap;max-width:100%}
+/* ⛔ KHONG `white-space:nowrap`. Ten giong that dai hon o the ("Tam Ly Hoc —
+ * nam, thuyet minh"), nen cat mot dong bang dau ba cham lam mat phan PHAN LOAI
+ * — dung phan giup khach chon. Do tren production 01/09: 9 trong 25 ten bi cat.
+ * Hai dong, roi moi cat. */
+.lv-the-ten b{font-size:13.5px;line-height:1.3;max-width:100%;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden}
 .lv-the-tinh{margin:0 0 9px;color:var(--muted);font-size:11.5px;min-height:16px}
 .lv-the-nut{display:flex;gap:7px;margin-top:10px}
 .lv-the-nut .btn{flex:1;justify-content:center}
@@ -288422,6 +288493,18 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-chon-noi{min-width:0;display:flex;flex-direction:column;gap:2px}
 .lv-chon-noi b{font-size:12.5px;line-height:1.3}
 .lv-chon-noi small{color:var(--dim);font-size:11px}
+/* ⚠️ Ma giong TRONG o chon phai MO hon han o the giong. Do tren production
+ * 01/09: mot muc chiem ba dong (ten / chip+lan / ma+chep) nen danh sach cao
+ * 470px va day Toc do voi Dau ra xuong duoi man hinh. Va o day ma giong khong
+ * phai thu khach doc de CHON — no la thu khach chep khi da chon xong. */
+.lv-chon-muc .lv-ma{margin-top:1px}
+.lv-chon-muc .lv-ma code{font-size:10px;padding:0 5px;background:transparent;
+  border-color:transparent;color:var(--dim);opacity:.75}
+.lv-chon-muc:hover .lv-ma code,
+.lv-chon-muc:has(input:checked) .lv-ma code{opacity:1;background:var(--panel2);
+  border-color:var(--line)}
+.lv-chon-muc .lv-ma-chep{padding:1px 4px;font-size:11px}
+
 .lv-chon-rong{margin:8px 0 0;color:var(--dim);font-size:11.5px;text-align:center}
 
 @media(max-width:1180px){
@@ -288464,7 +288547,46 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-ls-phai{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end;
   align-content:flex-start}
 .lv-ls-phat{grid-column:1 / -1;width:100%;height:32px;margin-top:2px}
+.lv-ls-tai{grid-column:1 / -1;display:flex;gap:6px;margin-top:2px;flex-wrap:wrap}
+/* Nut tao giong day sang phai het co, tach khoi cac nhom loc. */
+.lv-loc-tao{margin-left:auto;white-space:nowrap}
+
 .lv-ls-cat{margin:12px 0 0;font-size:11.5px;text-align:center}
+
+/* ── Trinh phat gon (nang cap tu `<audio>`) ─────────────────────────────────
+ *
+ * 🔴 `<audio controls>` mac dinh la mot thanh TRANG XAM, va no xuat hien o BA
+ *    man. Dat no giua giao dien den/do la pha dung thu ma bo anh tham chieu
+ *    dung lam ngon ngu chung ("audio waveform dung nhu visual language chung").
+ *
+ * ⭐ Song am duoc VE bang canvas nen mau lay tu chinh bang mau — doi `--accent2`
+ *    la doi ca trinh phat, khong phai sua hai cho.
+ */
+.lv-phat{display:flex;align-items:center;gap:9px;width:100%;
+  padding:6px 10px;border:1px solid var(--line);border-radius:var(--radius-md);
+  background:var(--panel2);transition:border-color var(--motion-fast)}
+.lv-phat.dang-phat{border-color:var(--brand-border)}
+.lv-phat audio{display:none}
+
+.lv-phat-nut{flex:0 0 auto;width:30px;height:30px;border-radius:50%;
+  border:1px solid var(--brand-border);background:var(--brand-soft);
+  color:var(--accent2);font-size:12px;line-height:1;cursor:pointer;
+  display:grid;place-items:center;padding:0;
+  transition:background var(--motion-fast),color var(--motion-fast)}
+.lv-phat-nut:hover{background:var(--accent);color:#fff}
+.lv-phat-nut:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.lv-phat.dang-phat .lv-phat-nut{background:var(--accent);color:#fff}
+
+/* `min-width:0` la bat buoc: mot flex item mac dinh khong co xuong duoi kich
+   thuoc noi dung, nen canvas se day ca hang rong ra khoi khung cha. */
+.lv-phat-song{flex:1 1 auto;min-width:0;height:40px;display:block;cursor:pointer}
+.lv-phat-gio{flex:0 0 auto;font-size:11.5px;color:var(--dim);
+  font-variant-numeric:tabular-nums;min-width:34px;text-align:right}
+
+@media (max-width:640px){
+  .lv-phat{padding:5px 8px;gap:7px}
+  .lv-phat-song{height:32px}
+}
 
 /* Tom tat */
 .lv-tt{list-style:none;margin:9px 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
