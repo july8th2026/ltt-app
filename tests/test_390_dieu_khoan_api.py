@@ -59,36 +59,82 @@ def test_KHONG_go_tay_con_so_gia_nao_trong_tep():
         f"khoan phai doi THEO, khong phai doi CUNG LUC o hai cho")
 
 
-def test_tran_ngu_canh_khop_tung_model():
-    """Mỗi alias phải nói trần của **chính nó**.
+def test_gioi_han_model_DOC_tu_ban_khai_khong_import_app():
+    """Mỗi alias phải nói giới hạn của **chính nó**, và phải đọc từ registry.
 
     🔴 Đây đúng lớp lỗi P08 F-02: trước 01/09 `ltt_llm_vision` được quảng cáo
        "same 89K usable input context" trong khi trần thật là 65.536 — một con
        số dùng cho hai model là một con số sai cho ít nhất một trong hai.
-    """
-    from apps.ltt_llm import ngan_sach
-    from apps.ltt_llm.features import ALIAS_SANG_ID
 
-    tran = dk.tran_ngu_canh()
-    assert set(tran) == set(ALIAS_SANG_ID), "thieu alias trong dieu khoan"
-    for alias, noi_bo in ALIAS_SANG_ID.items():
-        assert tran[alias]["cong_bo"] == ngan_sach.cong_bo_cua(noi_bo)
-        assert tran[alias]["tran_vao"] == ngan_sach.tran_vao_cua(noi_bo)
+    ⛔ VÀ BẢN ĐẦU CỦA PHÉP KIỂM NÀY `import apps.ltt_llm` ĐỂ ĐỐI CHIẾU — tức nó
+       chấp nhận một mô-đun `platform_core` cũng làm thế. Hai chốt phân tầng bắt
+       được (`test_147`, `test_60`). Nay đối chiếu với **registry**, đúng đường
+       mà chính nền tảng phải đi.
+    """
+    from platform_core.registry import discover
+
+    khai = {}
+    for it in discover():
+        for tool in it.manifest.tools:
+            for alias, spec in ((getattr(tool, "api_contract", None) or {})
+                                .get("models") or {}).items():
+                rb = (spec or {}).get("constraints") or {}
+                if rb.get("context_window"):
+                    khai[alias] = int(rb["context_window"])
+
+    gh = dk.gioi_han_model()
+    assert set(gh) == set(khai), "dieu khoan lech voi ban khai cua app"
+    for alias, cong_bo in khai.items():
+        assert gh[alias]["cong_bo"] == cong_bo
 
 
 def test_hai_model_KHONG_dung_chung_mot_con_so():
     """Đối chứng cho phép kiểm trên: nếu hai model tình cờ bằng nhau thì phép
     kiểm kia vẫn xanh khi bản vá F-02 bị hoàn nguyên."""
-    tran = dk.tran_ngu_canh()
-    so = {v["cong_bo"] for v in tran.values()}
-    assert len(so) == len(tran), (
+    gh = dk.gioi_han_model()
+    so = {v["cong_bo"] for v in gh.values()}
+    assert len(so) == len(gh), (
         "hai alias dang cong bo CUNG mot con so — hoac mot trong hai dang noi "
         "con so cua model kia")
 
 
-def test_dong_thoi_khop_nguon_chan_ly():
-    from apps.ltt_llm import ngan_sach
-    assert dk.dong_thoi() == ngan_sach.DONG_THOI_MAY_B
+def test_dong_thoi_DOC_tu_admission_slots_cua_ban_khai():
+    """Chỉ nói con số nào **thật sự được cưỡng chế**.
+
+    `admission_slots = 0` nghĩa là tool không khai giới hạn — đưa nó vào điều
+    khoản là hứa một thứ không ai giữ.
+    """
+    from platform_core.registry import discover
+
+    khai = {}
+    for it in discover():
+        for tool in it.manifest.tools:
+            suat = int(getattr(tool, "admission_slots", 0) or 0)
+            if suat > 0 and ((getattr(tool, "api_contract", None) or {})
+                             .get("models")):
+                khai[tool.name] = suat
+    assert dk.dong_thoi() == khai
+    assert all(v > 0 for v in dk.dong_thoi().values())
+
+
+def test_dieu_khoan_KHONG_import_app_nao():
+    """⛔ BẤT BIẾN PHÂN TẦNG, chốt ngay tại tệp thay vì chỉ ở `test_147`.
+
+    Nền tảng biết tên một app cụ thể nghĩa là **gỡ app đó ra sẽ làm nền tảng
+    vỡ**, chứ không phải chỉ mất một app. Kho này đã gỡ `socialbot`, `demo`,
+    `kichban`, `mediatools` — đường ấy còn dùng nữa.
+    """
+    import ast
+    import pathlib
+
+    cay = ast.parse(pathlib.Path(dk.__file__).read_text(encoding="utf-8"))
+    xau = []
+    for n in ast.walk(cay):
+        if isinstance(n, ast.ImportFrom) and (n.module or "").startswith("apps"):
+            xau.append(n.lineno)
+        if isinstance(n, ast.Import):
+            xau += [n.lineno for a in n.names if a.name.startswith("apps")]
+    assert not xau, f"import `apps` o dong {xau} — registry la duong duy nhat"
 
 
 def test_du_lieu_luu_tru_DOC_tu_governance_khong_chep():

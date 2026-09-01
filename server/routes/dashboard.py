@@ -189,7 +189,7 @@ def api_dieu_khoan(request: Request):
         "phien_ban": dk.PHIEN_BAN,
         "dong_moi_credit": dk.DONG_MOI_CREDIT,
         "bang": dk.bang_gia(),
-        "tran": dk.tran_ngu_canh(),
+        "tran": dk.gioi_han_model(),
         "dong_thoi": dk.dong_thoi(),
         "muc": dk.MUC_DA_DO,
         "san_sang": dk.san_sang(),

@@ -13082,3 +13082,12 @@ msgstr "API terms of service — how billing, refunds and limits work"
 
 msgid "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} ký tự cho phép. Hãy rút gọn một mục trong từ điển."
 msgstr "After applying the pronunciation dictionary the text is {n} characters — far beyond the {t} allowed. Shorten one dictionary entry."
+
+msgid "đồng"
+msgstr "VND"
+
+msgid "mỗi tài khoản được phục vụ"
+msgstr "each account is served"
+
+msgid "Từ điển phát âm riêng của khách: từ nào đọc thành gì. Do khách tự soạn cho tên công ty, tên nhân vật, tên sản phẩm — những thứ engine không đoán được. Áp cho MỌI lượt đọc của họ, kể cả khi gọi qua API, nên nó quyết định thứ khách nghe được."
+msgstr "A customer's own pronunciation dictionary: which word is read as what. Written by the customer for company names, character names and product names — the things the engine cannot guess. Applied to EVERY reading they request, including through the API, so it decides what the customer actually hears."

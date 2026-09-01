@@ -69,22 +69,65 @@ def bang_gia() -> dict:
     return gia_token.bang_gia()
 
 
-def tran_ngu_canh() -> dict:
-    """Trần ngữ cảnh theo từng model, lấy từ nguồn chân lý của app."""
-    from apps.ltt_llm import ngan_sach
-    from apps.ltt_llm.features import ALIAS_SANG_ID
+def _tu_ban_khai():
+    """Duyệt bản khai của **mọi** app qua registry. Yield `(tool, alias, spec)`.
 
-    return {alias: {"cong_bo": ngan_sach.cong_bo_cua(noi_bo),
-                    "tran_vao": ngan_sach.tran_vao_cua(noi_bo),
-                    "tran_ra": ngan_sach.TOKEN_RA_TRAN}
-            for alias, noi_bo in ALIAS_SANG_ID.items()}
+    🔴 BẢN ĐẦU CỦA TỆP NÀY `import apps.ltt_llm` — VÀ ĐÓ LÀ MỘT LỖI NẶNG.
+
+       `platform_core` **không được** biết app nào tồn tại; registry là đường
+       duy nhất. Hai chốt bắt được ngay (`test_147::test_platform_core_never_
+       imports_apps`, `test_60::test_platform_never_imports_an_app`).
+
+    ⛔ Và nó không chỉ là một chốt kêu: nền tảng biết tên một app cụ thể nghĩa
+       là **gỡ app đó ra sẽ làm nền tảng vỡ**, chứ không phải chỉ mất một app.
+       Kho này đã gỡ `socialbot`, `demo`, `kichban`, `mediatools` — đường ấy còn
+       dùng nữa.
+
+    ⭐ Cay hơn cả: `test_334::TestBanSaoConLai` viết đúng luật này bằng chữ —
+       *"thứ ghép hai đầu lại phải là một **phép kiểm**, không phải một câu
+       `import`"* — và tôi đã đọc nó trong cùng phiên, rồi viết `import`.
+
+    ⇒ Đọc từ registry còn **đúng hơn về nội dung**: trang này là điều khoản của
+      cả `/api/v1`, không riêng một app. Nay thêm một app là điều khoản tự có
+      nó, không cần ai nhớ.
+    """
+    from platform_core.registry import discover
+
+    for it in discover():
+        for tool in it.manifest.tools:
+            models = (getattr(tool, "api_contract", None) or {}).get("models") or {}
+            for alias, spec in models.items():
+                yield tool, alias, dict(spec or {})
 
 
-def dong_thoi() -> int:
-    """Số lượt được phục vụ cùng lúc. Một, và điều đó phải nói ra."""
-    from apps.ltt_llm import ngan_sach
+def gioi_han_model() -> dict:
+    """Giới hạn **công bố** của từng model, đọc từ bản khai của app.
 
-    return ngan_sach.DONG_THOI_MAY_B
+    Chỉ lấy model có khai `context_window`: một model không nói giới hạn của nó
+    thì điều khoản không được đoán hộ.
+    """
+    ra = {}
+    for _tool, alias, spec in _tu_ban_khai():
+        rb = spec.get("constraints") or {}
+        if not rb.get("context_window"):
+            continue
+        ra[alias] = {"cong_bo": int(rb["context_window"]),
+                     "tran_ra": int(rb.get("max_output_tokens") or 0)}
+    return ra
+
+
+def dong_thoi() -> dict:
+    """Số lượt cùng lúc của từng tool có giới hạn, đọc từ bản khai.
+
+    `admission_slots = 0` nghĩa là tool đó không khai giới hạn, nên không đưa
+    vào điều khoản — nói một con số không ai cưỡng chế là nói sai.
+    """
+    ra = {}
+    for tool, _alias, _spec in _tu_ban_khai():
+        suat = int(getattr(tool, "admission_slots", 0) or 0)
+        if suat > 0:
+            ra[tool.name] = suat
+    return ra
 
 
 #: Những điều **đã đo trên production**, mỗi điều kèm phép đo sinh ra nó.
@@ -97,7 +140,8 @@ MUC_DA_DO = (
             "Mỗi lời gọi giữ trước một khoản credit theo ước tính cao, rồi quyết "
             "toán lại theo số token thật sự đã dùng. Phần giữ dư được hoàn ngay "
             "trong cùng lượt gọi."),
-        "do_bang": "test_272 · test_259 · đo sống 01/09: giữ trần, thu theo token đã sinh",
+        # Do song 01/09: giu tran uoc cao, thu theo token that sinh ra.
+        "do_bang": "test_272 test_259 P08/L3",
     },
     {
         "khoa": "khong_do_duoc",
@@ -106,7 +150,7 @@ MUC_DA_DO = (
             "Nếu hệ thống không đọc được số token của một lượt gọi, toàn bộ khoản "
             "giữ chỗ được hoàn và lượt đó tính 0 credit. Hệ thống không ước lượng "
             "để tính tiền."),
-        "do_bang": "gia_token.KhongDoDuocError · test_252 (INV-009)",
+        "do_bang": "gia_token.KhongDoDuocError test_252 INV-009",
     },
     {
         "khoa": "ban_thi_khong_thu",
@@ -114,7 +158,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Khi tài nguyên đang bận, lời gọi bị từ chối với mã 429 kèm header "
             "Retry-After, và không bị tính credit."),
-        "do_bang": "đo sống 01/09: 3 lượt đồng thời → 2×429, số dư giảm đúng 1 (INV-003)",
+        # Do song 01/09: 3 luot dong thoi -> 2x429, so du giam dung 1.
+        "do_bang": "INV-003 P08/L3",
     },
     {
         "khoa": "ngat_ket_noi",
@@ -122,7 +167,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Nếu khách đóng kết nối khi câu trả lời đang được sinh, phần đã sinh "
             "ra vẫn được tính. Phần chưa sinh thì không."),
-        "do_bang": "đo sống 01/09: đọc 15.872 byte rồi đóng socket → thu 1 credit",
+        # Do song 01/09: doc 15.872 byte roi dong socket -> thu 1 credit.
+        "do_bang": "P08/L3 B17",
     },
     {
         "khoa": "goi_lai",
@@ -130,7 +176,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Gửi lại một yêu cầu với cùng Idempotency-Key trả về đúng kết quả cũ "
             "và không tạo lượt tính tiền mới."),
-        "do_bang": "đo sống qua Cloudflare: cùng job id, trừ 0 credit (B14/B15)",
+        # Do song qua Cloudflare: cung job id, tru 0 credit.
+        "do_bang": "B14 B15",
     },
     {
         "khoa": "lam_tron",
@@ -138,7 +185,7 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Một lượt gọi rất nhỏ vẫn tính tối thiểu 1 credit. Với lượt gọi nhỏ, "
             "số tiền thực trả cao hơn giá niêm yết trên một triệu token."),
-        "do_bang": "gia_token.bang_gia()['toi_thieu_moi_luot_credit']",
+        "do_bang": "gia_token.bang_gia toi_thieu_moi_luot_credit",
     },
     {
         "khoa": "dong_thoi",
@@ -146,7 +193,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Model chạy trên phần cứng của chính LTT Studios và phục vụ một lượt "
             "tại một thời điểm. Lượt vượt quá nhận 429 kèm Retry-After."),
-        "do_bang": "ngan_sach.DONG_THOI_MAY_B · đo sống: 429 trả về trong dưới 1,4 giây",
+        # Do song: 429 tra ve trong duoi 1,4 giay -- khong xep hang an.
+        "do_bang": "INV-014 P08/L3",
     },
     {
         "khoa": "tran_ngu_canh",
@@ -155,7 +203,8 @@ MUC_DA_DO = (
             "Mỗi model có trần đầu vào riêng và trần này được công bố ở "
             "/api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 413 kèm con số "
             "trần thật, không bị cắt bớt âm thầm."),
-        "do_bang": "đo sống 01/09: 413 kèm limit_value đúng của từng model",
+        # Do song 01/09: 413 kem limit_value dung cua tung model.
+        "do_bang": "P08/F-02 P08/L3",
     },
 )
 

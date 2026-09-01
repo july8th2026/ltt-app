@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ceece438556502deaa17ea3e3e5f8ef20014d4719a7090730d5bf2a51822aa33
+Fingerprint   : sha256:f549e92ea0e3a88c2b58c2f2141b007c6891bb54d277b480685a19429b9943ae
 Nguồn đã quét : 1465 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3086,7 +3086,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14561115 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14566802 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -123799,7 +123799,7 @@ def send_delivery(subscription, delivery, *, require_https: bool = True,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/dieu_khoan.py
-SHA256=2df962eedfddc4641177070019c2181bcf7be45be49ae4982ce7cf9f9edbf12a BYTES=12973 LINES=261
+SHA256=f29d02d466fb9512558686cf8e73a67630b667b55a67d24a71b5378086fd8865 BYTES=15059 LINES=310
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Điều khoản dịch vụ `/api/v1` — **dữ liệu, sinh từ hằng số thật**.
 
@@ -123872,22 +123872,65 @@ def bang_gia() -> dict:
     return gia_token.bang_gia()
 
 
-def tran_ngu_canh() -> dict:
-    """Trần ngữ cảnh theo từng model, lấy từ nguồn chân lý của app."""
-    from apps.ltt_llm import ngan_sach
-    from apps.ltt_llm.features import ALIAS_SANG_ID
+def _tu_ban_khai():
+    """Duyệt bản khai của **mọi** app qua registry. Yield `(tool, alias, spec)`.
 
-    return {alias: {"cong_bo": ngan_sach.cong_bo_cua(noi_bo),
-                    "tran_vao": ngan_sach.tran_vao_cua(noi_bo),
-                    "tran_ra": ngan_sach.TOKEN_RA_TRAN}
-            for alias, noi_bo in ALIAS_SANG_ID.items()}
+    🔴 BẢN ĐẦU CỦA TỆP NÀY `import apps.ltt_llm` — VÀ ĐÓ LÀ MỘT LỖI NẶNG.
+
+       `platform_core` **không được** biết app nào tồn tại; registry là đường
+       duy nhất. Hai chốt bắt được ngay (`test_147::test_platform_core_never_
+       imports_apps`, `test_60::test_platform_never_imports_an_app`).
+
+    ⛔ Và nó không chỉ là một chốt kêu: nền tảng biết tên một app cụ thể nghĩa
+       là **gỡ app đó ra sẽ làm nền tảng vỡ**, chứ không phải chỉ mất một app.
+       Kho này đã gỡ `socialbot`, `demo`, `kichban`, `mediatools` — đường ấy còn
+       dùng nữa.
+
+    ⭐ Cay hơn cả: `test_334::TestBanSaoConLai` viết đúng luật này bằng chữ —
+       *"thứ ghép hai đầu lại phải là một **phép kiểm**, không phải một câu
+       `import`"* — và tôi đã đọc nó trong cùng phiên, rồi viết `import`.
+
+    ⇒ Đọc từ registry còn **đúng hơn về nội dung**: trang này là điều khoản của
+      cả `/api/v1`, không riêng một app. Nay thêm một app là điều khoản tự có
+      nó, không cần ai nhớ.
+    """
+    from platform_core.registry import discover
+
+    for it in discover():
+        for tool in it.manifest.tools:
+            models = (getattr(tool, "api_contract", None) or {}).get("models") or {}
+            for alias, spec in models.items():
+                yield tool, alias, dict(spec or {})
 
 
-def dong_thoi() -> int:
-    """Số lượt được phục vụ cùng lúc. Một, và điều đó phải nói ra."""
-    from apps.ltt_llm import ngan_sach
+def gioi_han_model() -> dict:
+    """Giới hạn **công bố** của từng model, đọc từ bản khai của app.
 
-    return ngan_sach.DONG_THOI_MAY_B
+    Chỉ lấy model có khai `context_window`: một model không nói giới hạn của nó
+    thì điều khoản không được đoán hộ.
+    """
+    ra = {}
+    for _tool, alias, spec in _tu_ban_khai():
+        rb = spec.get("constraints") or {}
+        if not rb.get("context_window"):
+            continue
+        ra[alias] = {"cong_bo": int(rb["context_window"]),
+                     "tran_ra": int(rb.get("max_output_tokens") or 0)}
+    return ra
+
+
+def dong_thoi() -> dict:
+    """Số lượt cùng lúc của từng tool có giới hạn, đọc từ bản khai.
+
+    `admission_slots = 0` nghĩa là tool đó không khai giới hạn, nên không đưa
+    vào điều khoản — nói một con số không ai cưỡng chế là nói sai.
+    """
+    ra = {}
+    for tool, _alias, _spec in _tu_ban_khai():
+        suat = int(getattr(tool, "admission_slots", 0) or 0)
+        if suat > 0:
+            ra[tool.name] = suat
+    return ra
 
 
 #: Những điều **đã đo trên production**, mỗi điều kèm phép đo sinh ra nó.
@@ -123900,7 +123943,8 @@ MUC_DA_DO = (
             "Mỗi lời gọi giữ trước một khoản credit theo ước tính cao, rồi quyết "
             "toán lại theo số token thật sự đã dùng. Phần giữ dư được hoàn ngay "
             "trong cùng lượt gọi."),
-        "do_bang": "test_272 · test_259 · đo sống 01/09: giữ trần, thu theo token đã sinh",
+        # Do song 01/09: giu tran uoc cao, thu theo token that sinh ra.
+        "do_bang": "test_272 test_259 P08/L3",
     },
     {
         "khoa": "khong_do_duoc",
@@ -123909,7 +123953,7 @@ MUC_DA_DO = (
             "Nếu hệ thống không đọc được số token của một lượt gọi, toàn bộ khoản "
             "giữ chỗ được hoàn và lượt đó tính 0 credit. Hệ thống không ước lượng "
             "để tính tiền."),
-        "do_bang": "gia_token.KhongDoDuocError · test_252 (INV-009)",
+        "do_bang": "gia_token.KhongDoDuocError test_252 INV-009",
     },
     {
         "khoa": "ban_thi_khong_thu",
@@ -123917,7 +123961,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Khi tài nguyên đang bận, lời gọi bị từ chối với mã 429 kèm header "
             "Retry-After, và không bị tính credit."),
-        "do_bang": "đo sống 01/09: 3 lượt đồng thời → 2×429, số dư giảm đúng 1 (INV-003)",
+        # Do song 01/09: 3 luot dong thoi -> 2x429, so du giam dung 1.
+        "do_bang": "INV-003 P08/L3",
     },
     {
         "khoa": "ngat_ket_noi",
@@ -123925,7 +123970,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Nếu khách đóng kết nối khi câu trả lời đang được sinh, phần đã sinh "
             "ra vẫn được tính. Phần chưa sinh thì không."),
-        "do_bang": "đo sống 01/09: đọc 15.872 byte rồi đóng socket → thu 1 credit",
+        # Do song 01/09: doc 15.872 byte roi dong socket -> thu 1 credit.
+        "do_bang": "P08/L3 B17",
     },
     {
         "khoa": "goi_lai",
@@ -123933,7 +123979,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Gửi lại một yêu cầu với cùng Idempotency-Key trả về đúng kết quả cũ "
             "và không tạo lượt tính tiền mới."),
-        "do_bang": "đo sống qua Cloudflare: cùng job id, trừ 0 credit (B14/B15)",
+        # Do song qua Cloudflare: cung job id, tru 0 credit.
+        "do_bang": "B14 B15",
     },
     {
         "khoa": "lam_tron",
@@ -123941,7 +123988,7 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Một lượt gọi rất nhỏ vẫn tính tối thiểu 1 credit. Với lượt gọi nhỏ, "
             "số tiền thực trả cao hơn giá niêm yết trên một triệu token."),
-        "do_bang": "gia_token.bang_gia()['toi_thieu_moi_luot_credit']",
+        "do_bang": "gia_token.bang_gia toi_thieu_moi_luot_credit",
     },
     {
         "khoa": "dong_thoi",
@@ -123949,7 +123996,8 @@ MUC_DA_DO = (
         "noi_dung": N_(
             "Model chạy trên phần cứng của chính LTT Studios và phục vụ một lượt "
             "tại một thời điểm. Lượt vượt quá nhận 429 kèm Retry-After."),
-        "do_bang": "ngan_sach.DONG_THOI_MAY_B · đo sống: 429 trả về trong dưới 1,4 giây",
+        # Do song: 429 tra ve trong duoi 1,4 giay -- khong xep hang an.
+        "do_bang": "INV-014 P08/L3",
     },
     {
         "khoa": "tran_ngu_canh",
@@ -123958,7 +124006,8 @@ MUC_DA_DO = (
             "Mỗi model có trần đầu vào riêng và trần này được công bố ở "
             "/api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 413 kèm con số "
             "trần thật, không bị cắt bớt âm thầm."),
-        "do_bang": "đo sống 01/09: 413 kèm limit_value đúng của từng model",
+        # Do song 01/09: 413 kem limit_value dung cua tung model.
+        "do_bang": "P08/F-02 P08/L3",
     },
 )
 
@@ -125542,7 +125591,7 @@ def for_tool_name(name: str):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=f2a6a25e34d7bbff0df51b1619ab6734ea1093a7ab9289bacb4ad6cf950a81dd BYTES=23925 LINES=372
+SHA256=c65471cdd5e4e29728fb65a6137d5d878ce1cd8915c9b2348fcf41767d2ef86d BYTES=24968 LINES=385
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -125733,6 +125782,19 @@ STORES: tuple = (
           N_("Từng khối/dòng trong một dự án: văn bản khách gõ, giọng đã chọn, "
           "và khoá tệp tiếng đã sinh. Văn bản là nội dung của khách; khoá tệp "
           "chỉ là con trỏ — tệp thật sống theo hạn của job sinh ra nó.")),
+
+    # ⚠️ `retention_days=None` ở đây KHÔNG phải "giữ mãi bất chấp" mà là "sống
+    #    theo vòng đời tài khoản" — cùng nghĩa với `voice_project`.
+    #
+    #    Và ở bảng này nó là một RÀNG BUỘC ĐÚNG chứ không phải một sự tiện tay:
+    #    hết hạn từ điển sau N ngày nghĩa là một hôm nào đó tên riêng của khách
+    #    **đọc khác đi** mà không ai báo, trên chính những kịch bản họ đã đọc
+    #    đúng hàng trăm lần. Một thay đổi im lặng trong thứ khách nghe được.
+    Store("voice_tu_dien", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từ điển phát âm riêng của khách: từ nào đọc thành gì. Do khách "
+          "tự soạn cho tên công ty, tên nhân vật, tên sản phẩm — những thứ "
+          "engine không đoán được. Áp cho MỌI lượt đọc của họ, kể cả khi gọi "
+          "qua API, nên nó quyết định thứ khách nghe được.")),
 
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
@@ -147850,7 +147912,7 @@ def trang_thai_don(request: Request, order_id: str, user: str = Depends(require_
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/dashboard.py
-SHA256=237b020eac23917e492f61652e683b9ec6610ac71dec6a2a192b56e8b8c13ca6 BYTES=15059 LINES=314
+SHA256=13115a57cea2fdb6893fcbdd2c18b1bc96ee8d11b425b1c2b6df904094ad97e9 BYTES=15060 LINES=314
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Trang chủ — danh sách app, sinh từ apps/*/manifest.py.
 
@@ -148043,7 +148105,7 @@ def api_dieu_khoan(request: Request):
         "phien_ban": dk.PHIEN_BAN,
         "dong_moi_credit": dk.DONG_MOI_CREDIT,
         "bang": dk.bang_gia(),
-        "tran": dk.tran_ngu_canh(),
+        "tran": dk.gioi_han_model(),
         "dong_thoi": dk.dong_thoi(),
         "muc": dk.MUC_DA_DO,
         "san_sang": dk.san_sang(),
@@ -160522,7 +160584,7 @@ SHA256=125fe2828f324a70b3c70b4c55c9ecc5d408b11cdd23ff6ea561f65663943e7a BYTES=45
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/api_dieu_khoan.html
-SHA256=1f7d398d4736b5a3071a736e5aa1436d9aba112b3af602fb42594b3b967139f3 BYTES=3833 LINES=83
+SHA256=5b3bed507a06959d56680c2fc8ac9a9673fbf4048b2027c467cf84f52116b577 BYTES=3789 LINES=84
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base_public.html" %}
 {% block content %}
@@ -160533,7 +160595,7 @@ SHA256=1f7d398d4736b5a3071a736e5aa1436d9aba112b3af602fb42594b3b967139f3 BYTES=38
   <p class="muted">
     {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
     · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code>
-    · 1 credit = {{ dong_moi_credit }}đ
+    · 1 credit = {{ dong_moi_credit }} {{ _("đồng") }}
   </p>
 </div>
 
@@ -160581,7 +160643,6 @@ SHA256=1f7d398d4736b5a3071a736e5aa1436d9aba112b3af602fb42594b3b967139f3 BYTES=38
     <thead><tr>
       <th>{{ _("Model") }}</th>
       <th style="text-align:right;">{{ _("ngữ cảnh công bố") }}</th>
-      <th style="text-align:right;">{{ _("trần đầu vào") }}</th>
       <th style="text-align:right;">{{ _("trần đầu ra") }}</th>
     </tr></thead>
     <tbody>
@@ -160589,14 +160650,16 @@ SHA256=1f7d398d4736b5a3071a736e5aa1436d9aba112b3af602fb42594b3b967139f3 BYTES=38
       <tr>
         <td><code>{{ ten }}</code></td>
         <td style="text-align:right;">{{ "{:,}".format(v.cong_bo) }}</td>
-        <td style="text-align:right;">{{ "{:,}".format(v.tran_vao) }}</td>
         <td style="text-align:right;">{{ "{:,}".format(v.tran_ra) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  <p>{{ _("Mỗi tài khoản được phục vụ") }} <strong>{{ dong_thoi }}</strong>
+  {% for ten, suat in dong_thoi.items() %}
+  <p><code>{{ ten }}</code> — {{ _("mỗi tài khoản được phục vụ") }}
+     <strong>{{ suat }}</strong>
      {{ _("lượt tại một thời điểm. Lượt vượt quá nhận mã 429 kèm Retry-After và không bị tính tiền.") }}</p>
+  {% endfor %}
 </div>
 
 <div class="card">
@@ -256763,7 +256826,7 @@ def test_tai_nguyen_doc_tu_BAN_KHAI_cua_app():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_390_dieu_khoan_api.py
-SHA256=907e05a4ab23f230c747435c9a7f570e9aa3bac2aafcb5a24b7854fb115dae8a BYTES=9465 LINES=186
+SHA256=bf91463346d92911983401c83da4e9cb5b834bbf860048824aa28e5c1fac0ab6 BYTES=11557 LINES=232
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_390 — điều khoản API: mọi con số phải là con số THẬT, và không được bịa.
 
@@ -256826,36 +256889,82 @@ def test_KHONG_go_tay_con_so_gia_nao_trong_tep():
         f"khoan phai doi THEO, khong phai doi CUNG LUC o hai cho")
 
 
-def test_tran_ngu_canh_khop_tung_model():
-    """Mỗi alias phải nói trần của **chính nó**.
+def test_gioi_han_model_DOC_tu_ban_khai_khong_import_app():
+    """Mỗi alias phải nói giới hạn của **chính nó**, và phải đọc từ registry.
 
     🔴 Đây đúng lớp lỗi P08 F-02: trước 01/09 `ltt_llm_vision` được quảng cáo
        "same 89K usable input context" trong khi trần thật là 65.536 — một con
        số dùng cho hai model là một con số sai cho ít nhất một trong hai.
-    """
-    from apps.ltt_llm import ngan_sach
-    from apps.ltt_llm.features import ALIAS_SANG_ID
 
-    tran = dk.tran_ngu_canh()
-    assert set(tran) == set(ALIAS_SANG_ID), "thieu alias trong dieu khoan"
-    for alias, noi_bo in ALIAS_SANG_ID.items():
-        assert tran[alias]["cong_bo"] == ngan_sach.cong_bo_cua(noi_bo)
-        assert tran[alias]["tran_vao"] == ngan_sach.tran_vao_cua(noi_bo)
+    ⛔ VÀ BẢN ĐẦU CỦA PHÉP KIỂM NÀY `import apps.ltt_llm` ĐỂ ĐỐI CHIẾU — tức nó
+       chấp nhận một mô-đun `platform_core` cũng làm thế. Hai chốt phân tầng bắt
+       được (`test_147`, `test_60`). Nay đối chiếu với **registry**, đúng đường
+       mà chính nền tảng phải đi.
+    """
+    from platform_core.registry import discover
+
+    khai = {}
+    for it in discover():
+        for tool in it.manifest.tools:
+            for alias, spec in ((getattr(tool, "api_contract", None) or {})
+                                .get("models") or {}).items():
+                rb = (spec or {}).get("constraints") or {}
+                if rb.get("context_window"):
+                    khai[alias] = int(rb["context_window"])
+
+    gh = dk.gioi_han_model()
+    assert set(gh) == set(khai), "dieu khoan lech voi ban khai cua app"
+    for alias, cong_bo in khai.items():
+        assert gh[alias]["cong_bo"] == cong_bo
 
 
 def test_hai_model_KHONG_dung_chung_mot_con_so():
     """Đối chứng cho phép kiểm trên: nếu hai model tình cờ bằng nhau thì phép
     kiểm kia vẫn xanh khi bản vá F-02 bị hoàn nguyên."""
-    tran = dk.tran_ngu_canh()
-    so = {v["cong_bo"] for v in tran.values()}
-    assert len(so) == len(tran), (
+    gh = dk.gioi_han_model()
+    so = {v["cong_bo"] for v in gh.values()}
+    assert len(so) == len(gh), (
         "hai alias dang cong bo CUNG mot con so — hoac mot trong hai dang noi "
         "con so cua model kia")
 
 
-def test_dong_thoi_khop_nguon_chan_ly():
-    from apps.ltt_llm import ngan_sach
-    assert dk.dong_thoi() == ngan_sach.DONG_THOI_MAY_B
+def test_dong_thoi_DOC_tu_admission_slots_cua_ban_khai():
+    """Chỉ nói con số nào **thật sự được cưỡng chế**.
+
+    `admission_slots = 0` nghĩa là tool không khai giới hạn — đưa nó vào điều
+    khoản là hứa một thứ không ai giữ.
+    """
+    from platform_core.registry import discover
+
+    khai = {}
+    for it in discover():
+        for tool in it.manifest.tools:
+            suat = int(getattr(tool, "admission_slots", 0) or 0)
+            if suat > 0 and ((getattr(tool, "api_contract", None) or {})
+                             .get("models")):
+                khai[tool.name] = suat
+    assert dk.dong_thoi() == khai
+    assert all(v > 0 for v in dk.dong_thoi().values())
+
+
+def test_dieu_khoan_KHONG_import_app_nao():
+    """⛔ BẤT BIẾN PHÂN TẦNG, chốt ngay tại tệp thay vì chỉ ở `test_147`.
+
+    Nền tảng biết tên một app cụ thể nghĩa là **gỡ app đó ra sẽ làm nền tảng
+    vỡ**, chứ không phải chỉ mất một app. Kho này đã gỡ `socialbot`, `demo`,
+    `kichban`, `mediatools` — đường ấy còn dùng nữa.
+    """
+    import ast
+    import pathlib
+
+    cay = ast.parse(pathlib.Path(dk.__file__).read_text(encoding="utf-8"))
+    xau = []
+    for n in ast.walk(cay):
+        if isinstance(n, ast.ImportFrom) and (n.module or "").startswith("apps"):
+            xau.append(n.lineno)
+        if isinstance(n, ast.Import):
+            xau += [n.lineno for a in n.names if a.name.startswith("apps")]
+    assert not xau, f"import `apps` o dong {xau} — registry la duong duy nhat"
 
 
 def test_du_lieu_luu_tru_DOC_tu_governance_khong_chep():
@@ -296356,7 +296465,7 @@ finally {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/restore_drill_schema.py
-SHA256=6745abbb005f5c8a84ab14595de22ef37d4817f7575765a63d6c84de19bb973c BYTES=12168 LINES=235
+SHA256=0732925fc3d607bab22cee13a7ed2ab4d492a547f5800aba5598536bf17a11e8 BYTES=12677 LINES=242
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 restore_drill_schema.py - dien tap khoi phuc tren LUOC DO THAT (H19.8).
@@ -296544,6 +296653,13 @@ def main() -> int:
                     #     Mat no thi mot lan bam hai lan se tinh tien hai lan.
                     "uq_voice_owner_ten",
                     "uq_voice_ref_hash",
+                    #   uq_voice_tudien_owner_tu -> mot khach co HAI muc cho
+                    #     CUNG mot tu. Nghe nhu mot phien toai nho, nhung hau
+                    #     qua la phep thay phu thuoc THU TU DOC TU CSDL — va
+                    #     thu tu ay khong ai bao dam. Cung mot kich ban se doc
+                    #     khac nhau giua hai lan chay, khong loi nao bao, va
+                    #     khach khong co cach nao tai hien de bao loi.
+                    "uq_voice_tudien_owner_tu",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
