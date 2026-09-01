@@ -12798,3 +12798,9 @@ msgstr "This voice belongs to the {lan_giong} lane, but the text looks like {lan
 
 msgid "· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách"
 msgstr "· {n} of your voices hidden: cloned voices carry no gender, region or style label"
+
+msgid "Tốc độ đọc"
+msgstr "Speech speed"
+
+msgid "Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc."
+msgstr "Applied after generation, pitch preserved. Billed on the original, not on the sped-up file."

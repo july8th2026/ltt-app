@@ -46,6 +46,34 @@
     <div class="lv-st-trai">
       {% include "_voice_chon.html" %}
 
+      {#
+        TỐC ĐỘ — và đây là một điều khiển THẬT, không phải một nút giả.
+
+        ⛔ Nó KHÔNG phải tốc độ đọc của model. Chủ sản phẩm nói rõ vì sao hai
+           thứ ấy phải tách: đổi tốc độ lúc sinh là đổi chính giọng đọc. Đây là
+           time-stretch giữ cao độ trên tệp ĐÃ SINH XONG (`apps/ltt_voice/toc_do.py`).
+
+        ⭐ Nên nó không đụng tới năm tham số lấy mẫu mà Q119 khoá — và chú thích
+           cũ ở đầu tệp này từng ghi "Q119 CẤM phơi ra tốc độ" là một TRÍCH DẪN
+           SAI: Q119 nêu đích danh `temperature`/`top_k`/`top_p`/
+           `repetition_penalty`/`repetition_window`, không có tốc độ.
+
+        Các nấc RỜI RẠC, không thanh trượt: một thanh trượt mời khách dừng ở
+        1,07× — chênh lệch không ai nghe ra nhưng vẫn tốn một lượt ffmpeg.
+      #}
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Tốc độ đọc") }}</span>
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Tốc độ đọc') }}">
+          {% for n in cac_nac_toc_do %}
+            <button type="button" class="lv-loc-nut{{ ' on' if n == 1.0 }}"
+                    aria-pressed="{{ 'true' if n == 1.0 else 'false' }}"
+                    data-tocdo="{{ n }}">{{ "%g"|format(n) }}×</button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="toc_do" id="lv-toc-do" value="1.0">
+        <small class="dim">{{ _("Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc.") }}</small>
+      </div>
+
       <div class="lv-st-o">
         <span class="eyebrow">{{ _("Đầu ra") }}</span>
         {# SỰ THẬT, không phải điều khiển. Cổng trả đúng một định dạng. #}

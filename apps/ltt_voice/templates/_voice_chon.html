@@ -83,6 +83,23 @@
               · {{ _(nhan_lan[g.ngon_ngu]) }}
             {% endif %}
           </small>
+          {#
+            MÃ GIỌNG ngay tại chỗ chọn — điều kiện hoàn tất #4 của bộ prompt UI
+            ("Voice ID hiển thị/copy được ở đúng context"), và ảnh 01 vẽ nó nằm
+            dưới tên giọng trong chính danh sách này.
+
+            ⭐ `_voice_ma.html` đã có sẵn từ trước và docstring của nó ghi rõ
+               "Dùng ở Studio, Giọng của tôi, Lịch sử, API" — nhưng Studio thì
+               chưa dùng. Đây là một component đúng bị bỏ quên, không phải một
+               component mới.
+
+            ⚠️ Nút chép nằm TRONG một `<label>`, nên bấm nó cũng chọn luôn giọng
+               ấy. Đó là hành vi hợp lý (chép mã của giọng nào thì thường muốn
+               dùng giọng đó), nhưng phải nói ra vì nó là một tác dụng phụ.
+          #}
+          {% with ma = g.public_id, nho = true %}
+            {% include "_voice_ma.html" %}
+          {% endwith %}
         </span>
       </label>
     {% endfor %}

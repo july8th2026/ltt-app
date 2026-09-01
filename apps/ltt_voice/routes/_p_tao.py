@@ -52,6 +52,13 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     hop_le = (giong_mau.hop_le(xin)
               or any(g.public_id == xin and g.trang_thai == "active"
                      for g in cua_toi))
+    # ⚠️ BÍ DANH `_toc_do`, không phải `toc_do`. Hàm POST ở dưới có một
+    #    THAM SỐ FORM tên `toc_do`, và một cái tên mang hai nghĩa trong
+    #    cùng một tệp là đúng lớp bẫy đã từng ghi SAI một bút toán credit
+    #    (`$So`/`$so` trong PowerShell, 31/08). Ở Python nó không nổ —
+    #    nó chỉ chờ tới lần ai đó cần module trong hàm kia.
+    from .. import toc_do as _toc_do
+
     return templates.TemplateResponse(
         request, "ltt_voice_studio.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_STUDIO, hang_doi=hang_doi,
@@ -66,6 +73,11 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     giong_chon=(xin if hop_le else ""),
                     mac_dinh=giong_mau.MAC_DINH,
+                    # Các nấc tốc độ lấy từ `toc_do.CAC_NAC` chứ không gõ lại
+                    # trong template: một danh sách chép ra hai chỗ sẽ lệch, và
+                    # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép
+                    # về giá trị khác — im lặng.
+                    cac_nac_toc_do=_toc_do.CAC_NAC,
                     gan_day=gan_day))
 
 
@@ -186,7 +198,8 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
 
 @router.post("/tao")
 def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
-        preset: str = Form(""), csrf_token: str = Form(""),
+        preset: str = Form(""), toc_do: str = Form("1.0"),
+        csrf_token: str = Form(""),
         user=Depends(user_hien_tai), _=Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
         return _het_phien()
@@ -195,8 +208,12 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
 
     # Nghiệp vụ ở `features`, kể cả phép kiểm "không được vừa voice_id vừa preset".
     try:
+        # ⛔ KHÔNG kiểm `toc_do` ở đây. `features.chuan_hoa` ép nó về khoảng
+        #    và biến giá trị vô nghĩa thành 1.0 — và phép kiểm ấy phải nằm ở
+        #    `features` vì Public API đi THẲNG xuống job, không qua route này.
         yc = features.chuan_hoa({"text": text, "voice_id": voice_id,
-                                 "preset": preset, "owner_id": _uid(user)})
+                                 "preset": preset, "owner_id": _uid(user),
+                                 "toc_do": toc_do})
     except features.LoiGiongNoi as e:
         return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
 
@@ -242,7 +259,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             #    khuyết mà không lệnh nào vá được.
             params={"text": yc.text, "voice_id": yc.voice_id,
                     "preset": yc.preset, "owner_id": _uid(user),
-                    "nguon": "studio"},
+                    "toc_do": yc.toc_do, "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots)

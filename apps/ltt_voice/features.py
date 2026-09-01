@@ -83,6 +83,10 @@ class YeuCau:
     preset: str = ""
     owner_id: str = ""
     doc_so_tran: bool = False
+    #: Tốc độ HẬU KỲ (time-stretch trên tệp đã sinh), KHÔNG phải tốc độ đọc của
+    #: model. Xem `toc_do.py` để biết vì sao hai thứ đó phải tách bạch, và vì
+    #: sao nó không thuộc năm tham số mà Q119 khoá.
+    toc_do: float = 1.0
 
     @property
     def so_ky_tu(self) -> int:
@@ -130,9 +134,13 @@ def chuan_hoa(params: dict) -> YeuCau:
     #    từng ném rồi bị nuốt, cho ra `owner_id = 0` cho mọi người dùng.
     owner_id = str(p.get("owner_id") or p.get("user_id") or "").strip()
 
+    from . import toc_do as _toc_do
     return YeuCau(text=text, voice_id=voice_id, preset=preset,
                   owner_id=owner_id,
-                  doc_so_tran=bool(p.get("doc_so_tran")))
+                  doc_so_tran=bool(p.get("doc_so_tran")),
+                  # `hop_le` ép về khoảng và biến giá trị vô nghĩa thành 1.0 —
+                  # tức "không đổi". Một tham số hỏng không được làm hỏng job.
+                  toc_do=_toc_do.hop_le(p.get("toc_do", 1.0)))
 
 
 # ── kết quả ──────────────────────────────────────────────────────────────────
@@ -145,6 +153,16 @@ class KetQua:
     text_da_chuan_hoa: str
     so_doan: int = 1
     canh_bao: tuple = field(default_factory=tuple)
+    #: 🔴 HAI THỜI LƯỢNG, và trộn chúng là một lỗi TIỀN.
+    #:
+    #:    `giay`      — thời lượng SINH RA. Cơ sở tính credit, vì đó là lượng
+    #:                  việc GPU đã làm.
+    #:    `giay_phat` — thời lượng TỆP KHÁCH NHẬN, sau khi đổi tốc độ.
+    #:
+    #:    Ở 1,5× tệp ngắn đi một phần ba. Tính tiền theo `giay_phat` là để khách
+    #:    trả ít hơn cho cùng một lượng việc — một lỗ khai thác được, không phải
+    #:    một sự ưu ái. Bằng 0 nghĩa là không đổi tốc độ.
+    giay_phat: float = 0.0
 
     @property
     def credit_that(self) -> int:
@@ -171,6 +189,11 @@ class KetQua:
             "credit_cost": self.credit_that,
             "phien_ban_gia": gia.PHIEN_BAN_GIA,
             "canh_bao": list(self.canh_bao),
+            # Chỉ công bố khi thật sự khác — thêm hai trường luôn-luôn-có vào
+            # mọi bản ghi lịch sử để phục vụ một ca hiếm là làm nặng tất cả.
+            **({"toc_do": self.yeu_cau.toc_do,
+                "duration_played_s": round(self.giay_phat, 3)}
+               if self.giay_phat else {}),
         }
 
 

@@ -87,7 +87,7 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     from platform_core.storage import get_storage
 
-    from . import features, sidecar_client, tham_chieu
+    from . import features, sidecar_client, tham_chieu, toc_do
 
     yc = features.chuan_hoa(params)
 
@@ -146,6 +146,24 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
         except (TypeError, ValueError):
             pass
 
+    # ── TỐC ĐỘ HẬU KỲ ────────────────────────────────────────────────────────
+    #
+    # 🔴 ĐÚNG CHỖ NÀY, KHÔNG SỚM HƠN. Hai lý do độc lập, và cả hai đều hỏng
+    #    theo kiểu im lặng nếu đặt sai:
+    #
+    #    ① `giay` ở trên là cơ sở TÍNH TIỀN. Kéo giãn 1,5× làm tệp ngắn đi một
+    #       phần ba, nên đặt trước phép đo là để khách chọn tốc độ nhanh trả ít
+    #       hơn cho **cùng một lượng việc GPU**. Đó là một lỗ khai thác được.
+    #    ② Chốt chất lượng K1 chạy trong sidecar, trên sóng âm CHƯA kéo giãn.
+    #       Hệ cũ ghi lại bài học này: time-stretch làm lệch MỌI số đo F0, nên
+    #       nó đóng băng `post_speed` vô điều kiện trước khi đọc bất kỳ số nào.
+    #
+    # ⇒ Thứ tự bất biến: sinh → đo → (tính tiền theo `giay`) → kéo giãn → lưu.
+    giay_phat = 0.0
+    if toc_do.can_doi(yc.toc_do):
+        wav_bytes = toc_do.ap_dung(wav_bytes, yc.toc_do)
+        giay_phat = giay / toc_do.hop_le(yc.toc_do)
+
     job_id = str(getattr(ctx, "job_id", "") or "adhoc")
     # 🔴 `{job_id}/` — CÓ dấu gạch chéo sau job id, không phải `{job_id}.wav`.
     #
@@ -165,7 +183,7 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     get_storage().put(khoa, io.BytesIO(wav_bytes), content_type="audio/wav")
 
     ket = features.KetQua(
-        yeu_cau=yc, audio_key=khoa, giay=giay,
+        yeu_cau=yc, audio_key=khoa, giay=giay, giay_phat=giay_phat,
         text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=len(doan))
 
     if giay <= 0:

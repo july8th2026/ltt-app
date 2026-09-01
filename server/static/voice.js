@@ -641,6 +641,22 @@
     }
     if (oTimChon) oTimChon.addEventListener("input", locChon);
 
+    /* ── Toc do hau ky ─────────────────────────────────────────────────────
+       Nut chi ghi vao mot input an; VIEC THAT lam o may chu sau khi tao xong
+       tep (`apps/ltt_voice/toc_do.py`). Day khong phai `playbackRate` cua
+       trinh phat — tep tai ve cung phai doi theo, neu khong thi cai khach
+       nghe va cai khach nhan la hai thu khac nhau. */
+    var oTocDo = document.getElementById("lv-toc-do");
+    var nutTocDo = document.querySelectorAll("[data-tocdo]");
+    for (var k = 0; k < nutTocDo.length; k++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          if (oTocDo) oTocDo.value = nut.dataset.tocdo || "1.0";
+          batNut(nut);
+        });
+      })(nutTocDo[k]);
+    }
+
     chay();
   }
 
