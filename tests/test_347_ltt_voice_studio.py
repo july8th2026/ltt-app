@@ -281,16 +281,39 @@ def test_studio_bo_qua_giong_bia(khach):
 
 
 def test_studio_KHONG_ve_dieu_khien_bi_cam(khach):
-    """⛔ Q119: tốc độ, phong cách, temperature — không cái nào được lên giao diện.
+    """⛔ Năm tham số LẤY MẪU của Q119 không được lên giao diện.
 
     Và `MODE Fast/Quality` cùng `LANGUAGE VI/EN` thì backend không có, nên vẽ
     chúng là hứa một thứ không tồn tại.
+
+    🔴 BẢN ĐẦU CỦA PHÉP KIỂM NÀY CẤM CẢ `name="toc_do"`, VÀ ĐÓ LÀ MỘT LỖI.
+
+       Nó chép lại cùng một trích dẫn sai với chú thích trong
+       `ltt_voice_studio.html`: Q119 ① nêu ĐÍCH DANH năm tham số —
+       `temperature`, `top_k`, `top_p`, `repetition_penalty`,
+       `repetition_window` — và **không có "tốc độ"**. Cả hai lý do của Q119
+       cũng chỉ nói về đường lấy mẫu: cache CUDA graph khoá theo
+       `(B, temperature, top_k, top_p)`, và tông lệch do `temperature` (#173).
+
+    ⭐ Tốc độ trong sản phẩm là **time-stretch hậu kỳ** trên tệp đã sinh xong
+       (`apps/ltt_voice/toc_do.py`) — nó không chạm một tham số nào trong năm
+       cái ấy, không chạm GPU, và chạy SAU cả cổng chất lượng.
+
+    ⚠️ Bài học đắt hơn bản sửa: **một trích dẫn sai được chốt bằng một phép
+       kiểm sẽ sống lâu hơn một trích dẫn sai nằm trong chú thích** — vì từ đó
+       trở đi, sửa nó làm gate đỏ, và gate đỏ trông y như một lỗi. Nên phép
+       kiểm này nay chốt CẢ HAI CHIỀU: năm tham số kia phải vắng mặt, và tốc độ
+       phải CÓ MẶT.
     """
     client, _uid = khach
     html = client.get("/ltt-voice").text.lower()
-    for cam in ("temperature", "top_k", "top_p", 'name="speed"',
-                'name="toc_do"', 'name="mode"', 'name="language"'):
+    for cam in ("temperature", "top_k", "top_p",
+                "repetition_penalty", "repetition_window",
+                'name="mode"', 'name="language"'):
         assert cam not in html, f"dieu khien bi cam lo ra giao dien: {cam!r}"
+    assert 'name="toc_do"' in html, (
+        "toc do PHAI co tren giao dien — no la hau ky, khong thuoc nam tham so "
+        "lay mau ma Q119 khoa. Doc docstring phep kiem nay truoc khi go no.")
 
 
 # ── CSRF: bánh cóc cho một lỗ đã sống từ ngày phát hành ──────────────────────

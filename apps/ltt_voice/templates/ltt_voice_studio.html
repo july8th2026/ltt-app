@@ -244,7 +244,11 @@
                 {% endfor %}
               </select>
             </label>
+            {# `aria-label` chứ không chỉ `placeholder`: placeholder biến mất
+               ngay khi khách gõ ký tự đầu, và nhiều trình đọc màn hình không
+               đọc nó. `test_352` chốt điều này cho MỌI ô nhập. #}
             <input type="text" id="lv-luu-ten" class="lv-luu-ten"
+                   aria-label="{{ _('Tên dự án mới') }}"
                    placeholder="{{ _('Tên dự án mới…') }}" maxlength="200">
             <div class="lv-kq-nut">
               <button type="button" class="btn primary sm" id="lv-luu-ok">{{ _("Lưu") }}</button>
