@@ -184,6 +184,13 @@ def main() -> int:
                     #     Mat no thi mot lan bam hai lan se tinh tien hai lan.
                     "uq_voice_owner_ten",
                     "uq_voice_ref_hash",
+                    #   uq_voice_tudien_owner_tu -> mot khach co HAI muc cho
+                    #     CUNG mot tu. Nghe nhu mot phien toai nho, nhung hau
+                    #     qua la phep thay phu thuoc THU TU DOC TU CSDL — va
+                    #     thu tu ay khong ai bao dam. Cung mot kich ban se doc
+                    #     khac nhau giua hai lan chay, khong loi nao bao, va
+                    #     khach khong co cach nao tai hien de bao loi.
+                    "uq_voice_tudien_owner_tu",
                     # Ten gateway trung -> cau hinh mang tro nham node.
                     "uq_vps_gateway_ten",
                     # Mat rang buoc nay = hai phien ban gia cung nhan cho mot
