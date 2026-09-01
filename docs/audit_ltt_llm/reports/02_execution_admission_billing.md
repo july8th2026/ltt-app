@@ -2,8 +2,10 @@
 
 **31/08/2026.** Ownership: B01–B25.
 
-⚠️ **Phase này CHƯA đóng.** Đã kiểm bằng đọc mã + bằng chứng sống có sẵn; **chưa
-tiêm lỗi** vào các cửa sổ sự cố. Xem §5.
+✅ **Phase này ĐÃ ĐÓNG 01/09.** Ba mục còn nợ (B14/B15 idempotency, B16/B17 huỷ,
+B24 tool-call streaming) nay **đo bằng client thật qua Cloudflare, tiêu tiền
+thật** — xem §6. Bảy cửa sổ sự cố đã được phủ (§5, có sửa một kết luận sai của
+chính tôi).
 
 ---
 

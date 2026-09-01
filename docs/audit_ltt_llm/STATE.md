@@ -201,6 +201,20 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 | P2 | `pillow` 34 advisory · `aiohttp` 28 — đều đòi **nới trần ghim** | 06 | nới `<12` chạm mọi app ảnh ⇒ cần chủ dự án quyết | OPEN |
 | P3 | Công cụ advisory ngoài gate ⇒ **sẽ không ai chạy** | 06 | cần một mục vận hành có chu kỳ | OPEN |
 
+## Đo bằng client thật qua Cloudflare (01/09)
+
+| Bài | Kết quả |
+|---|---|
+| E15–E17 canary `/api/v1` | `tools` 200 · `jobs` 200 · `usage` 403 `missing_scope` (đúng) |
+| B14/B15 idempotency replay | **200, CÙNG job id, trừ 0 credit** |
+| B16/B17 huỷ job | `POST /cancel` **200**, `cancelled`, **trừ 0** |
+| B24 tool-call streaming | **4/4** vòng khép kín, số 42 từ `tool_result` |
+| Vision `qwen38-vision` | **7/8** — trượt: buộc sai màu cho hình được gọi tên |
+
+⭐ Mọi bộ đo trên đều có **đối chứng chạy trước**, và đối chứng trượt thì bộ đo
+**dừng hẳn** thay vì báo một điểm số. Bốn lần trong đợt này dụng cụ chính là thứ
+bị hỏng — xem `reports/06` §7 và `reports/02` §6.
+
 ## Pending live canaries
 - Benchmark Qwen (D30–D36) — máy B rảnh, chưa chạy
 - Canary client thật: Codex CLI · Claude Code · VS Code (E15–E17) — cần một khoá API
