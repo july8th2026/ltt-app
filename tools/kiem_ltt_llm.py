@@ -89,7 +89,13 @@ def main() -> int:
                 messages=[{"role": "user",
                            "content": "Tra loi dung mot tu: thu do Viet Nam?"}],
                 thu_tu_provider=["ltt_llm"],
-                model_theo_provider={"ltt_llm": "ltt_llm"},
+                # ⛔ ID NOI BO, khong phai bi danh cong khai. Ban dau cho
+                #    nay go `"ltt_llm"` -- chep tu mot vi du sai trong
+                #    docstring cua `dieu_phoi.goi` -- nen buoc 3 NEM
+                #    ThieuKeyError o MOI luot chay, va in `[HONG] goi duoc`
+                #    doc len y het "nen tang khong goi duoc may B" trong khi
+                #    production dang phuc vu binh thuong. (P08 F-05)
+                model_theo_provider={"ltt_llm": ten_model[0]} if ten_model else {},
                 max_tokens=200, timeout_s=300.0,
             )
             bao("goi duoc", True, (kq.noi_dung or "")[:60].replace("\n", " "))

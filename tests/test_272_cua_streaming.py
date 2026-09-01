@@ -236,6 +236,140 @@ def test_thu_theo_TOKEN_DA_SINH_khong_theo_tran(api, monkeypatch):
     assert thu2 > thu, "hai luot sinh khac han nhau ma cung gia -> thu theo tran"
 
 
+def _credit_delta_da_ghi(user_id: str):
+    """Cột `credit_delta` trong sổ request — thứ `anomalies.py` cộng để dò tiền."""
+    from sqlalchemy import select
+    from platform_core.public_api.tables import ApiRequestLog
+    gen, db = _session()
+    try:
+        return [r for (r,) in db.execute(
+            select(ApiRequestLog.credit_delta)
+            .where(ApiRequestLog.user_id == user_id)
+            .order_by(ApiRequestLog.id)).all()]
+    finally:
+        _close(gen)
+
+
+def test_so_REQUEST_ghi_dung_so_tien_da_thu_o_cua_stream(api, monkeypatch):
+    """🔴 P08 F-01 — cột này TỪNG luôn bằng 0 ở cửa stream, dù thu bao nhiêu.
+
+    `request.state.api_credit_delta` chỉ được gán ở `server/api/jobs.py`. Cửa
+    stream và cửa đồng bộ không gán lần nào, nên mọi dòng của chúng đọc ra `+0`.
+
+    ⛔ Vì sao nó tệ hơn một cột trống: nó **giả làm bằng chứng**. `reports/06`
+       chứng minh bất biến "bận thì không thu tiền" bằng câu *"89 lượt hỏng,
+       credit=+0 mọi dòng"* — trên đúng cái cửa mà cột ấy không bao giờ khác 0.
+       Một bằng chứng không thể sai thì không chứng minh gì.
+
+    ⭐ Và `platform_core/public_api/anomalies.py` cộng chính cột này để dò bất
+       thường tiền, nên nó mù với hai cửa khách dùng nhiều nhất.
+    """
+    _dat_luong(monkeypatch, _khoi(vao=1_000, ra=200))
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    api.post(MSG, json=_than(max_tokens=8000), headers=_h(token)).read()
+    thu_that = truoc - _so_du(user_id)
+    assert thu_that > 0, "doi chung TRUOT: khong thu gi ca, phep kiem duoi vo nghia"
+
+    ghi = _credit_delta_da_ghi(user_id)
+    assert ghi, "khong co dong nao trong so request"
+    assert ghi[-1] == -thu_that, (
+        f"so ghi {ghi[-1]} nhung so THAT bi tru la {-thu_that} — cot nay dang "
+        f"noi mot dang con so tien noi mot dang khac")
+
+
+def test_tools_sai_khuon_tra_400_QUA_HTTP(api, monkeypatch):
+    """🔴 CÙNG HÌNH DẠNG VỚI `test_385`, NHƯNG ĐI QUA ĐƯỜNG HTTP THẬT.
+
+    `test_385_tools_sai_khuon` kiểm hàm thuần `tool_dich.vi_sao_khong_dung_duoc`.
+    Nó xanh suốt — trong khi bản vá trên production trả **500 thay vì 400**, và
+    bộ test không thấy gì. Hồi quy sống trên máy khách hàng một buổi.
+
+    ⛔ Đây không phải "không ai kiểm HTTP": giàn ngay trong tệp này đã có 25 phép
+       kiểm qua `TestClient`. Khuyết tật hẹp hơn và khó chịu hơn — **hồi quy được
+       chốt ở tầng hàm thuần dù giàn HTTP nằm sẵn bên cạnh**. Prompt 08 tìm thêm
+       ba tệp cùng hình dạng (`test_285`, `test_290`, `test_360`), và cả ba đều
+       canh đúng những lỗi mà *triệu chứng không chỉ về phía nguyên nhân*.
+
+    ⭐ Phép kiểm này chốt **ba** thứ mà tầng hàm thuần không với tới được:
+       mã trạng thái, thông điệp tới tay khách, và **không thu tiền**.
+    """
+    _dat_luong(monkeypatch)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+
+    than = _than()
+    than["tools"] = [{"type": "function", "function": {
+        "name": "tra_ton_kho", "parameters": {"type": "object"}}}]
+    r = api.post(MSG, json=than, headers=_h(token))
+
+    assert r.status_code == 400, (
+        f"khuon OpenAI o cua Anthropic phai la 400, nhan {r.status_code}. "
+        f"200 = tra loi hop ly ma sai; 500 = loi cua khach bi ke thanh loi cua ta")
+    b = r.json()
+    assert b.get("code") == "invalid_request", b
+    assert "input_schema" in b.get("detail", ""), (
+        "thong diep phai chi ra khuon DUNG, khong chi noi 'sai'")
+    assert b.get("retry") == "never", "khuon sai thi thu lai khong bao gio giup"
+    assert _so_du(user_id) == truoc, "yeu cau bi tu choi ma van thu tien"
+
+
+def test_tools_khuon_DUNG_van_qua_HTTP(api, monkeypatch):
+    """⛔ ĐỐI CHỨNG. Không có nó thì phép kiểm trên vẫn xanh khi cửa từ chối
+    **mọi** `tools`, kể cả khuôn đúng — tức một hồi quy nặng hơn hẳn."""
+    goi = _dat_luong(monkeypatch)
+    _u, token = _account()
+    than = _than()
+    than["tools"] = [{"name": "tra_ton_kho", "description": "d",
+                      "input_schema": {"type": "object", "properties": {}}}]
+    r = api.post(MSG, json=than, headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert goi, "khong goi toi model"
+
+
+def test_so_REQUEST_ghi_dung_so_tien_o_nhanh_KHONG_STREAM(api, monkeypatch):
+    """🔴 CÙNG route `/api/v1/messages`, nhưng ĐƯỜNG TIỀN THỨ HAI.
+
+    Bản vá đầu của P08 F-01 chỉ chạm `_quyet_toan` — hàm chốt tiền của
+    *generator*. Nhánh một-cục (`stream` vắng mặt, đường Claude Desktop dùng để
+    thăm dò model) chốt tiền ở một chỗ khác và vẫn ghi `+0`.
+
+    ⛔ Đo thật trên production ngay sau khi deploy bắt được, trong hai dòng liền
+       nhau của cùng một route:
+
+           18:12:29  200  /api/v1/messages   credit=-3   <- stream, DA SUA
+           18:12:37  200  /api/v1/messages   credit=+0   <- mot cuc, CHUA SUA
+
+    ⭐ Bài học đáng hơn khuyết tật: **một route có thể có hai đường tiền**, và
+       đọc dòng log đầu tiên thấy số đúng là đủ để tin rằng đã xong.
+    """
+    # ⚠️ Nhánh một-cục KHÔNG đi qua `luong_vlm.mo` — nó gọi `features.chay`.
+    # Dùng nhầm bộ giả là đo một đường khác và nhận `ThieuKeyError`.
+    from apps.ltt_llm import features
+
+    def _gia(db, params, *, timeout_s=300.0):
+        return features.KetQua(
+            noi_dung="chao ban", suy_nghi="", tool_calls=(), finish_reason="stop",
+            model=params["model"], token_vao=800, token_ra=120,
+            token_vao_cache=0, do_duoc=True)
+
+    monkeypatch.setattr(features, "chay", _gia)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    than = _than(max_tokens=400)
+    than.pop("stream", None)                      # <- KHAC BIET DUY NHAT
+    r = api.post(MSG, json=than, headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"].startswith("application/json"), (
+        "khong phai nhanh mot-cuc -> phep kiem nay dang do nham duong")
+    thu_that = truoc - _so_du(user_id)
+    assert thu_that > 0, "doi chung TRUOT: nhanh mot-cuc khong thu gi"
+
+    ghi = _credit_delta_da_ghi(user_id)
+    assert ghi and ghi[-1] == -thu_that, (
+        f"so ghi {ghi[-1] if ghi else None} != so that {-thu_that}")
+
+
 def test_stream_execution_slot_ban_tra_429_truoc_credit_va_model(api, monkeypatch):
     lease_id = _giu_execution_slot()
     called = _dat_luong(monkeypatch)

@@ -239,7 +239,7 @@ REGISTRY: dict[str, Provider] = {
                     # ⚠️ Giới hạn phải nói ra, không giấu sau giao diện (D-027).
                     "canh_bao": [
                         N_("máy B dùng chung GPU với việc ảnh và video — bận thì trả 429, không phải lỗi"),
-                        N_("engine có cửa sổ 131K; API public giới hạn input 65K để giữ biên Cloudflare"),
+                        N_("engine có cửa sổ 131K; API public giới hạn input 96.256 token để chừa chỗ cho câu trả lời"),
                     ],
                 },
             ),

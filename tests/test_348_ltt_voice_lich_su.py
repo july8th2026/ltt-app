@@ -174,6 +174,14 @@ def khach(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
+def _csrf(client) -> str:
+    import re
+    m = re.search(r'id="lv-ls-csrf" value="([^"]+)"',
+                  client.get("/ltt-voice/lich-su").text)
+    assert m, "trang Lich su khong co csrf_token — nut Doc lai se hong"
+    return m.group(1)
+
+
 def _gieo(uid: str, so: int, **kw) -> None:
     import platform_core.db as dbmod
     from platform_core.models import Job
@@ -248,3 +256,240 @@ def test_lich_su_khong_lo_khoa_kho_tran(khach):
     html = client.get("/ltt-voice/lich-su").text
     assert 'src="/ltt-voice/audio/voice/out/' in html
     assert 'src="voice/out/' not in html
+
+
+# ═══════════════════ mã giọng phải hiện thành TÊN, không phải băm ════════════
+#
+# Tìm ra 01/09/2026 bằng cách mở màn Lịch sử trên production: mọi chỗ nhắc tới
+# giọng đều in `vc_fceeabc6…50db7` — ô lọc, dòng của mỗi lượt,
+# và cả dòng "Giọng dùng nhiều nhất".
+#
+# ⛔ Và nó không phải chuyện của kho giọng chung: template in thẳng `{{ d.giong }}`
+#    với class `mono`, tức KHÔNG có bước tra tên nào cả, cho MỌI loại giọng.
+#    Một giọng do chính khách đặt tên cũng hiện ra là một chuỗi băm — trong khi
+#    cái tên ấy đang nằm sẵn trong CSDL, cách đó một câu truy vấn.
+#
+# ⭐ Class `mono` được GIỮ khi không tra được tên. Một mã thô vẫn nên trông như
+#    mã; đổi cả hai thành cùng một kiểu chữ là làm mất thông tin.
+
+def _gieo_giong_va_luot(uid: str, ten: str = "Giong dat ten thu"):
+    """Một giọng nhân bản + một lượt đọc dùng nó."""
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    from apps.ltt_voice.tables import VoiceProfile
+    ma = "vc_lichsuthu0000000000000000000a"
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(VoiceProfile(public_id=ma, owner_id=uid, ten_hien_thi=ten,
+                            ngon_ngu="vi", trang_thai="active"))
+        db.add(Job(user_id=uid, app_slug="ltt_voice",
+                   job_type="ltt_voice.synthesize",
+                   params={"text": "cau thu", "nguon": "studio",
+                           "voice_id": ma},
+                   status="done",
+                   result={"duration_s": 2.0, "credit_cost": 1,
+                           "audio_key": f"voice/out/{uid}/jx/tieng.wav"}))
+        db.commit()
+        return ma, ten
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_lich_su_hien_TEN_giong_o_CA_BA_cho(khach):
+    """Ô lọc · dòng của mỗi lượt · "Giọng dùng nhiều nhất" — cả ba.
+
+    ⛔ Bản đầu của phép kiểm này chỉ hỏi `ten in r.text`, và nó XANH kể cả khi
+       tôi hoàn nguyên phần sửa của DÒNG — vì cái tên vẫn hiện ở ô lọc. Một
+       chốt xanh vì lý do sai còn tệ hơn không có chốt: nó khiến ta tin là đã
+       canh cái mình chưa canh.
+
+    Nên nó đếm `>{ten}<` (tên là NỘI DUNG THẤY ĐƯỢC) và đòi đủ ba lượt, đồng
+    thời cấm mã băm xuất hiện dưới dạng chữ. Mã vẫn được phép nằm trong
+    `value="…"` và `data-giong="…"` — đó là định danh của biểu mẫu, không phải
+    thứ khách đọc.
+    """
+    client, uid = khach
+    ma, ten = _gieo_giong_va_luot(uid)
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert r.text.count(f">{ten}<") >= 3, (
+        f"chi thay ten o {r.text.count(f'>{ten}<')}/3 cho — o loc, dong cua "
+        "moi luot, va 'Giong dung nhieu nhat' deu phai tra ten")
+    assert f">{ma}<" not in r.text, (
+        f"ma bam {ma} van hien ra nhu CHU — khach doc mot chuoi bam thay vi "
+        "cai ten chinh ho dat")
+
+
+def test_ma_KHONG_tra_duoc_van_giu_kieu_chu_ma(khach):
+    """Giọng đã gỡ vẫn còn trong lịch sử — và vẫn phải đọc được LÀ một mã.
+
+    Bút toán trỏ về giọng cũ nên `VoiceProfile` không bao giờ bị xoá thật; nhưng
+    một lượt cũ hoàn toàn có thể trỏ tới một mã không tra được. Khi đó đừng giả
+    vờ nó là một cái tên: giữ kiểu chữ mã để người đọc biết đây là định danh.
+    """
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    mo_coi = "vc_khongcontrongbang00000000000a"
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(Job(user_id=uid, app_slug="ltt_voice",
+                   job_type="ltt_voice.synthesize",
+                   params={"text": "cau mo coi", "nguon": "studio",
+                           "voice_id": mo_coi},
+                   status="done",
+                   result={"duration_s": 1.0, "credit_cost": 1,
+                           "audio_key": f"voice/out/{uid}/jy/tieng.wav"}))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert f'class="mono">{mo_coi}<' in r.text, (
+        "ma khong tra duoc phai VAN hien ra VA giu kieu chu ma — "
+        "khong nuot no, cung khong gia vo no la mot cai ten")
+
+
+def test_moi_dong_lich_su_deu_TAI_VE_duoc(khach):
+    """🔴 Dòng mô tả trên đầu trang hứa "nghe lại và **tải về** được".
+
+    Trước 01/09 màn này không có một đường tải nào — khách nghe lại được nhưng
+    không lưu được. Một lời hứa trong phần mô tả mà giao diện không giữ.
+
+    ⚠️ Và chốt này chốt cả `d.id`: `dong_cho_trang` đặt tên trường là `id`, chứ
+       không phải `job_id`. Jinja trả RỖNG cho một trường không có, nên gõ nhầm
+       tên cho ra một nút **biến mất** chứ không phải một lỗi — kiểu hỏng im
+       lặng mà chỉ một phép kiểm nhìn vào HTML mới bắt được.
+    """
+    client, uid = khach
+    _gieo(uid, 2)
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert r.text.count('download') >= 4, "moi dong phai co WAV va MP3"
+    assert "?mp3=1" in r.text, "thieu duong tai MP3"
+    assert '/jobs/' in r.text, "thieu duong mo chi tiet job (kiem ca ten truong `d.id`)"
+
+
+# ══════════════════ Lọc theo ngày · Đọc lại — hai việc còn đọng ══════════════
+
+def test_loc_theo_ngay_chay_o_SQL_khong_o_python(khach):
+    """⚠️ Trần `TRAN_DOC` cắt TRƯỚC khi lọc.
+
+    Lọc `so_ngay` trong Python sẽ cho ra "7 ngày qua" tính trên một tập ĐÃ BỊ
+    CẮT — sai theo hướng khó thấy nhất, vì nó chỉ sai với người dùng nhiều.
+    """
+    import inspect
+
+    from apps.ltt_voice import doc_man_lich_su
+
+    src = inspect.getsource(doc_man_lich_su.doc)
+    assert "start=" in src, (
+        "`so_ngay` phai di vao `list_owned(start=...)`, khong loc sau khi da cat")
+
+
+def test_moc_ngay_LA_lua_chon_ROI_RAC(khach):
+    """Giá trị lạ không được thành một truy vấn lạ."""
+    client, uid = khach
+    _gieo(uid, 2)
+    for xau in ("999", "-1", "abc"):
+        r = client.get(f"/ltt-voice/lich-su?ngay={xau}")
+        assert r.status_code == 200, (xau, r.text[:120])
+    r = client.get("/ltt-voice/lich-su?ngay=7")
+    assert r.status_code == 200
+    assert "ngày qua" in r.text
+
+
+def test_doc_lai_NOP_MOT_JOB_MOI(khach):
+    """🔴 Khác hẳn `Lưu vào dự án`: engine chạy lại toàn bộ nên phải tính tiền.
+
+    Cám dỗ ngược cũng có thật ("khách đã trả cho câu này rồi") — nhưng tệp cũ
+    vẫn còn và vẫn nghe được; họ bấm đọc lại là vì muốn một BẢN KHÁC.
+    """
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    _gieo(uid, 1)
+
+    def dem():
+        gen = dbmod.get_session()
+        db = next(gen)
+        try:
+            return db.query(Job).filter(Job.user_id == uid).count()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        jid = str(db.query(Job).filter(Job.user_id == uid).first().id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # ⭐ Nạp credit TRONG phép kiểm, không ở fixture: lượt đầu tiên chạy trước
+    #    khi nạp đã CHỨNG MINH route từ chối đúng khi thiếu tiền, và thông điệp
+    #    ấy tới thẳng khách thay vì thành một lỗi 500 vô nghĩa.
+    from platform_core import credit as _credit
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        thieu = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                            data={"csrf_token": _csrf(client)})
+        assert thieu.status_code == 400 and "credit" in thieu.json()["loi"], (
+            "thieu tien phai bao ro, khong duoc thanh mot loi chung chung")
+        _credit.nap(db, uid, 50, note="test doc lai")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    truoc = dem()
+    r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"], r.text
+    assert dem() == truoc + 1, "doc lai phai NOP mot job moi"
+
+
+def test_doc_lai_job_cua_NGUOI_KHAC_la_404(khach):
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, _uid = khach
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        j = Job(user_id="nguoi-khac", app_slug="ltt_voice",
+                job_type="ltt_voice.synthesize",
+                params={"text": "bi mat", "preset": "Adam"}, status="done",
+                result={"audio_key": "x", "duration_s": 1.0, "credit_cost": 1})
+        db.add(j)
+        db.commit()
+        jid = str(j.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 404, r.text

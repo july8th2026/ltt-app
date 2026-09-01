@@ -98,21 +98,21 @@ thành thứ bán được.
 
 | # | Việc | Đạt khi |
 |---|---|---|
-| 1.1 | Claude Code CLI + Claude Desktop, phiên thật có gọi tool | cần chủ sản phẩm — máy này không có hai công cụ đó |
+| 1.1 | Claude Code CLI + Claude Desktop, phiên thật có gọi tool | 🟡 **MỘT NỬA XONG 01/09.** **Codex CLI 0.145.0** đã chạy thật vào production, **vòng tool khép kín**: gọi `shell` → bị sandbox của chính Codex chặn → tự sửa cú pháp → chạy được → trả lời đúng. Đó là canary client thật **đầu tiên** của cả chương trình (E15 nằm `BLOCKED` từ đầu). 🔴 Và nó bắt ngay một **P1**: cửa `/responses` từ chối khuôn tool native của chính giao thức nó nói, nên Codex **không dùng được một lượt nào** — không phép kiểm nào thấy, vì cả ba lớp bằng chứng đều thử `/messages`. Đã sửa + deploy. Còn Claude Code + Desktop: **chưa cài trên máy này** |
 | 1.2 | **C13** xoay bearer token cổng VLM | token cũ hết hiệu lực |
-| 1.3 | **C15** công cụ tự ghi cấu hình cho ba client | copy–dán không còn cần thiết |
+| ~~1.3~~ | ~~**C15** công cụ tự ghi cấu hình~~ | ✅ **ĐÃ CÓ SẴN, tài liệu chưa theo kịp.** `/huong-dan` phục vụ công cụ cắm tự động: **Tải EXE (24,8 MB)** và **ZIP + BAT (7,5 MB)**, kèm trang `/huong-dan/cong-cu`. Khảo sát bằng trình duyệt thật 01/09 |
 | 1.4 | **C16** thu tường lửa máy B về một IP | `Set-NetFirewallRule ... -RemoteAddress 192.168.2.17` |
-| 1.5 | Chạy `gate.py` **đầy đủ** một lần trọn vẹn | chưa lần nào xong — hai lần bị deploy giết |
+| ~~1.5~~ | ~~Chạy `gate.py` **đầy đủ** một lần trọn vẹn~~ | ✅ **ĐÓNG 01/09 19:1x** — `RESULT: PASS`, 25/26 bước, **0 dòng `CAY DA DOI`**, 5,3 phút. ⚠️ Bốn lượt khác trong cùng buổi **bị vô hiệu** vì cây đổi giữa chừng — cửa sổ yên là thứ hiếm khi ba phiên cùng ghi. Cách bền hơn: `python tools/cay_rieng.py tao <ten>` rồi chạy gate trong đó (đã dùng thật 01/09, và chính nó bắt được một hồi quy mà lượt ở cây chính bỏ sót) |
 
 ### Giai đoạn 2 — Bán thật (2 ngày) 🔴 **việc chưa từng làm**
 
 | # | Việc | Vì sao |
 |---|---|---|
-| 2.1 | Trang giá công khai cho API + ví dụ chi phí thật | khách phải biết giá **trước** khi đăng ký |
-| 2.2 | Điều khoản sử dụng + giới hạn trách nhiệm cho API | bán dịch vụ tính tiền mà không có điều khoản là rủi ro pháp lý |
-| 2.3 | Đường đăng ký → nhận khoá → gọi lần đầu, **đi thử bằng một tài khoản mới toanh** | ta chưa bao giờ đi con đường đó bằng mắt người lạ |
+| ~~2.1~~ | ~~Trang giá công khai + ví dụ chi phí thật~~ | ✅ **ĐÃ CÓ.** `/gia-api` mở cho khách ẩn danh, số lấy thẳng từ `gia_token.bang_gia()` — chính hàm ra hoá đơn — và có ví dụ chi phí thật (*một câu hỏi ngắn 1 credit / 100đ*). Phủ cả text, ảnh, giọng |
+| 2.2 | Điều khoản sử dụng + giới hạn trách nhiệm cho API | 🟡 **CƠ CHẾ XONG + ĐÃ DEPLOY 01/09; SÁU QUYẾT ĐỊNH CHỜ CHỦ SẢN PHẨM.** 🔴 Đo được: `lttstudios.com/terms/` có **21.335 ký tự** và **không nhắc** `API`, `credit`, `hoàn tiền`, `trách nhiệm`, `SLA`, `thanh toán` — trang duy nhất chân trang `/register` trỏ tới. Nay có `/api-dieu-khoan` do **chính app** phục vụ (tiền lệ VPS: bản WordPress trả 404 suốt trong khi clickwrap đã trỏ vào nó), số lấy từ hằng số thật, và **tự khai là chưa đầy đủ**. ⛔ Còn sáu câu hỏi **không có trong mã nên không được bịa**: hạn dùng credit · hoàn tiền credit chưa dùng · SLA · giới hạn trách nhiệm · chấm dứt tài khoản · nội dung cấm |
+| 2.3 | Đường đăng ký → nhận khoá → gọi lần đầu | 🔴 **ĐÂY LÀ VIỆC CỦA NGƯỜI, KHÔNG PHẢI CỦA MÁY.** Thử 01/09: form `/register` có **Cloudflare Turnstile**, và `/login` bị **Cloudflare managed challenge** chặn trình duyệt tự động. Cả hai đang làm đúng việc. ⇒ Không tự động hoá được — cần một người đi thật. ✅ Phần kiểm được đã kiểm: cổng dev chỉ đòi **đăng nhập**, không cần duyệt tay ⇒ đường lấy khoá là **tự phục vụ**; email dùng-một-lần bị chặn; có CSRF + giới hạn theo IP |
 | 2.4 | **Một khách thật** (dù là người quen) gọi API và trả tiền | 🔴 mốc quan trọng nhất của cả dự án |
-| 2.5 | Giám sát lưu lượng thật: cảnh báo hết credit, lỗi 5xx, tồn đọng hàng đợi | hôm nay ta chỉ giám sát máy, chưa giám sát **khách** |
+| 2.5 | Giám sát lưu lượng thật | 🟡 **CƠ CHẾ ĐỦ, CHƯA HIỆU CHUẨN.** Cả ba ngưỡng đã có (`credit_exhausted=3`, `responses_5xx=5`, tồn đọng hàng đợi 60s) + `anomalies.py` dò bất thường tiền, và `LTT_OPS_ALERT_EMAIL` **có đặt** trên production. Nó nằm trong `_mot_luot_bao_tri` **dưới lease** nên chạy đúng một lần toàn cụm — khác hẳn ca F-07 (bộ dò không ai gọi). ⚠️ Hai điều nói thật: ngưỡng **tự khai là chưa hiệu chuẩn** vì chưa có lưu lượng thật; và đầu vào của `anomalies.py` (`credit_delta`) **hỏng cho hai cửa cho tới hôm nay** (P08 F-01). ⛔ Chưa có bằng chứng runtime rằng vòng bảo trì đã tick — log im lặng là *đúng thiết kế* khi không có việc, nên **không suy từ sự vắng mặt**; cần một phép đo dương (dòng `singleton_leases` tên `bao_tri`) |
 
 ### Giai đoạn 3 — H39 bán VPS (P2–P9, ~8 phase) 
 
@@ -159,9 +159,9 @@ sau vì nó đã có doanh thu còn ba việc trên thì chưa.
 | ~~N2~~ | ~~`gate.py` đầy đủ chưa chạy trọn lần nào~~ | ✅ **ĐÓNG 01/09** — `RESULT: PASS`, 5,3 phút, cây đứng yên. Cần một **cửa sổ yên** thoả thuận với phiên kia; ba lượt trước đó bị vô hiệu vì cây đổi giữa chừng |
 | N3 | Cảnh báo mới `ltt_llm:tren_cpu` chưa được thử bằng một sự cố thật | chỉ mới thử trên sự cố tình cờ hôm 23/08 |
 | ~~N4~~ | ~~`AUOptions` máy B ⇒ mốc 01:00~~ | 🗑️ **KHÔNG CÒN LÀ VIỆC** — `CLAUDE.md:420` chốt **không cần** đổi `AUOptions` (nó là thiết lập bảo mật, cái giá lớn hơn thứ nó cứu), và lô đo nay ghi kết quả sau mỗi ảnh nên một lần khởi động lại chỉ mất **đúng một ảnh**. Dòng này mâu thuẫn với quyết định hiện hành |
-| **N7** | **Diễn tập reboot máy A** — F05 mới suy từ cấu hình, chưa quan sát một lần reboot thật | máy A vừa là production vừa chạy phiên làm việc; cần một cửa sổ chủ dự án chọn |
-| **N9** | **Đọc nhật ký khởi động Windows sau khi reboot máy A** — đối chiếu thứ tự dịch vụ lên, thời gian tới lúc `/health/ready` xanh, và có dịch vụ nào phải nhờ `FAILURE_ACTIONS` mới lên không | làm **cùng lượt** với N7; một mình nó không đáng một lần reboot |
-| **N8** | `setup/bat_tu_dung_day.ps1` **chưa chạy** — 5 dịch vụ máy A vẫn không có `FAILURE_ACTIONS` | một lệnh, **cần Administrator**. Chỉ đặt chính sách cho lần hỏng sau, không khởi động lại gì |
+| ~~N7~~ | ~~Diễn tập reboot máy A~~ | ✅ **ĐÓNG 01/09** — reboot thật lúc `15:51:28`. 5/5 dịch vụ tự lên sau **15,7 s**, tunnel đăng ký lại 4 kết nối ở **+20,5 s**, **0** lượt cần `FAILURE_ACTIONS` dựng dậy, cổng không mồ côi. Số đo ở `docs/audit_ltt_llm/evidence/N7_N9_SAU_KHOI_DONG_2026-09-01.md`, bảng F05 ở `reports/06` §12 |
+| ~~N9~~ | ~~Đọc nhật ký khởi động Windows~~ | ✅ **ĐÓNG 01/09, nhưng KHÔNG bằng đường đã định.** Windows trên máy này **không ghi** sự kiện 7036 của Service Control Manager: chạy lại đúng truy vấn đó bằng **LocalSystem** cho **3** sự kiện SCM từ lúc boot và **0** khớp `LTTStudio|cloudflared`. ⛔ Nên `tools/do_sau_khoi_dong.py` §4 kết luận *“KHÔNG ĐỌC ĐƯỢC (cần Administrator)”* là **một câu sai mặc một lời giải thích nghe hợp lý** — cùng lớp lỗi với `api_prod_canary.py`. Thứ tự lên đo được bằng `Win32_Process.CreationDate` + timestamp trong log ứng dụng. ⚠️ Còn thiếu đúng một số: *boot → `/health/ready` xanh lần đầu*; lượt boot này đã tiêu mất cơ hội |
+| ~~N8~~ | ~~`bat_tu_dung_day.ps1` chưa chạy~~ | ✅ **ĐÓNG 01/09 — DÒNG NÀY ĐÃ SAI TỪ TRƯỚC.** `sc.exe qfailure` dưới LocalSystem: **cả 5** dịch vụ đều có `reset=86400` + hành động `RESTART`. Chính sách đã được đặt; chỉ có tài liệu chưa theo kịp |
 | N5 | Codex báo *"Model metadata for `ltt_llm` not found"* | không chặn, nhưng làm ước chi phí của nó sai |
 | N6 | Số test trùng giữa hai phiên — nay **ba lần** (371, 01/09) | ⚠️ Mốc "≥ 274" đã **lỗi thời**: cao nhất hiện là **377**. Và bài học không phải một con số — `ls tests/` là **ảnh chụp** của một cây có hai người ghi. Chạy `tools/check_so_test.py` **ngay trước** khi đặt tên |
 

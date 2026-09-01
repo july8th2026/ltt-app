@@ -162,6 +162,42 @@ def gia_api(request: Request):
     })
 
 
+@router.get("/api-dieu-khoan", response_class=HTMLResponse)
+def api_dieu_khoan(request: Request):
+    """Điều khoản dịch vụ API — **CÔNG KHAI, không cần đăng nhập**.
+
+    🔴 VÌ SAO TRANG NÀY PHẢI DO APP PHỤC VỤ, KHÔNG PHẢI WORDPRESS.
+
+       Đo 01/09: chân trang `/register` trỏ tới `https://lttstudios.com/terms/`,
+       và trang đó có **21.335 ký tự** mà **không nhắc** `API`, `credit`,
+       `hoàn tiền`, `trách nhiệm`, `SLA` hay `thanh toán`. Nền tảng bán một dịch
+       vụ tính tiền theo mức dùng, và điều khoản khách được trỏ tới không mô tả
+       dịch vụ đó.
+
+    ⛔ Tiền lệ đã trả giá, chép từ `apps/vps/dieu_khoan.py`: bản WordPress
+       `/vps-terms/` **trả 404 suốt từ 25/08** trong khi clickwrap đã trỏ vào nó
+       — khách "đồng ý" với một trang không tồn tại, đúng lúc sắp trả tiền. Một
+       trang do chính app phục vụ không thể ở trạng thái đó.
+
+    ⭐ Và nó **tự khai là chưa đầy đủ** khi `san_sang()` còn `False`. Một trang
+       điều khoản im lặng ở đúng chỗ quan trọng tệ hơn một trang nói rõ nó chưa
+       xong: cái thứ nhất đọc lên như một lời hứa, cái thứ hai thì không.
+    """
+    from platform_core.public_api import dieu_khoan as dk
+
+    return templates.TemplateResponse(request, "api_dieu_khoan.html", {
+        "phien_ban": dk.PHIEN_BAN,
+        "dong_moi_credit": dk.DONG_MOI_CREDIT,
+        "bang": dk.bang_gia(),
+        "tran": dk.tran_ngu_canh(),
+        "dong_thoi": dk.dong_thoi(),
+        "muc": dk.MUC_DA_DO,
+        "san_sang": dk.san_sang(),
+        "so_bang": len(dk.du_lieu_luu_gi()),
+        "user": _user_hien_tai(request),
+    })
+
+
 @router.get("/", response_class=HTMLResponse)
 def home(request: Request):
     """Trang chủ = CATALOG (H6/Q30).

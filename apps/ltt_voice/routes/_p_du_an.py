@@ -50,7 +50,13 @@ def trang_du_an(request: Request, user=Depends(user_hien_tai),
         # Đếm khối cho từng dự án trong MỘT vòng, không một truy vấn mỗi thẻ.
         dem = {d.public_id: du_an.tom_tat(du_an.cac_khoi(db, d.id)) for d in ds}
         hang_doi = vo.dem_dang_chay(db, uid)
-        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        # `gom_dung_chung=True`: DU AN la cua DUNG, nen kho giong chung
+        # cua nen tang phai thay duoc — giong nhu `_p_tao` va `_p_giong`.
+        # Thieu no thi o chon giong mac dinh VA o chon giong tung khoi
+        # deu chi con 20 giong mau, va 25 giong kho chung bien mat khong
+        # mot loi giai thich. Cua SUA (`_p_giong` ghi danh) thi van dong.
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid,
+                                       gom_dung_chung=True)
     finally:
         try:
             next(gen)
@@ -141,7 +147,18 @@ def trang_mot_du_an(request: Request, public_id: str,
         duong = du_an.duong_tieng(db, khoi, MANIFEST.route_prefix)
         tt = du_an.tom_tat(khoi)
         hang_doi = vo.dem_dang_chay(db, uid)
-        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        # `gom_dung_chung=True`: DU AN la cua DUNG, nen kho giong chung
+        # cua nen tang phai thay duoc — giong nhu `_p_tao` va `_p_giong`.
+        # Thieu no thi o chon giong mac dinh VA o chon giong tung khoi
+        # deu chi con 20 giong mau, va 25 giong kho chung bien mat khong
+        # mot loi giai thich. Cua SUA (`_p_giong` ghi danh) thi van dong.
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid,
+                                       gom_dung_chung=True)
+        # Cột điều hướng bên trái. CHỈ tên + mã, không đếm khối: đếm khối
+        # cho mọi dự án là một truy vấn cho mỗi dòng, để trang trí một cột điều
+        # hướng. Trang danh sách đã có con số ấy và nó có chỗ ở đó.
+        du_an_ds = [{"public_id": x.public_id, "ten": x.ten}
+                    for x in du_an.danh_sach(db, uid)]
         # Bản sao phẳng cho template — tránh chạm ORM trong Jinja.
         ds_khoi = [{
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
@@ -158,7 +175,7 @@ def trang_mot_du_an(request: Request, public_id: str,
         request, "ltt_voice_mot_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
                     **_ngu_canh_giong(du_an=d, khoi=ds_khoi, tom_tat=tt,
-                                      giong=cua_toi,
+                                      giong=cua_toi, du_an_ds=du_an_ds,
                                       giong_chon=d.giong_mac_dinh)))
 
 
@@ -445,6 +462,149 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
                 "giay": k.giay, "credit": k.credit,
                 "audio_url": duong.get(k.id, ""),
             } for k in khoi],
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/du-an/luu-tu-studio")
+def luu_tu_studio(request: Request, job_id: str = Form(""),
+                  du_an_id: str = Form(""), ten_moi: str = Form(""),
+                  csrf_token: str = Form(""),
+                  user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Lưu một lượt đọc ở Studio thành một khối trong Dự án.
+
+    ## Vì sao nó tồn tại, và vì sao mãi tới giờ mới có
+
+    Ảnh tham chiếu 01 vẽ nút `Save to Project` ở góc dưới bên phải. Chú thích
+    trong `ltt_voice_studio.html` từng ghi lý do hoãn:
+
+        · `Save to Project` — chưa có Dự án. Nút sẽ xuất hiện cùng P5, không
+          sớm hơn.
+
+    Dự án nay đã có. Đây là **một lời hứa đã đến hạn**, không phải một tính năng
+    mới — nên nó không cần một quyết định nào, chỉ cần được làm.
+
+    ## 🔴 KHÔNG SINH LẠI, VÀ KHÔNG THU TIỀN LẦN HAI
+
+    Tiếng đã có rồi. `VoiceBlock` mang sẵn `job_id`/`audio_key`/`giay`/`credit`,
+    và `du_an.gan_ket_qua` chép đúng bốn thứ đó từ job sang khối. Nên thao tác
+    này là một phép **tham chiếu**, không phải một lượt sinh:
+
+      · không nộp job mới        ⇒ không giữ credit, không quyết toán
+      · không chạm GPU
+      · khối vào thẳng trạng thái `xong`, nghe được ngay
+
+    ⛔ Cám dỗ ở đây là gọi lại `submit_with_credit` cho gọn mã. Đừng — nó thu
+       tiền lần thứ hai cho một tệp khách đã trả tiền và đang nghe.
+
+    ## Quyền
+
+    `job_history.get_owned` đã kiểm chủ sở hữu, nên một `job_id` của người khác
+    trả `None` và ta dừng ở đó. Không phân biệt "không có" với "không phải của
+    bạn" — phân biệt hai câu ấy là cho phép dò job nào có thật.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+
+    from platform_core import job_history
+
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        job = job_history.get_owned(db, uid, (job_id or "").strip())
+        if job is None or job.status != "done":
+            return JSONResponse({"ok": False, "loi": _t(
+                "Không tìm thấy lượt đọc này, hoặc nó chưa xong.")},
+                status_code=404)
+
+        kq = job.result or {}
+        p = job.params or {}
+        # Văn bản ĐÃ CHUẨN HOÁ là thứ máy thật sự đọc, và cũng là thứ khối cần
+        # để đọc lại y hệt. `params["text"]` là bản khách gõ.
+        van_ban = str(kq.get("text") or p.get("text") or "").strip()
+        if not van_ban:
+            return JSONResponse({"ok": False, "loi": _t(
+                "Lượt đọc này không còn văn bản để lưu.")}, status_code=400)
+
+        # Giọng: dựng lại chuỗi `v:`/`m:` mà khối dùng, từ params của job.
+        giong = ""
+        if p.get("voice_id"):
+            giong = f"v:{p['voice_id']}"
+        elif p.get("preset"):
+            giong = f"m:{p['preset']}"
+
+        d = None
+        if du_an_id.strip():
+            d = du_an.tim(db, du_an_id.strip(), owner_id=uid)
+            if d is None:
+                return JSONResponse({"ok": False, "loi": _t(
+                    "Không tìm thấy dự án này.")}, status_code=404)
+        else:
+            ten = (ten_moi or "").strip() or _t("Dự án từ Studio")
+            d = du_an.tao(db, owner_id=uid, ten=ten, giong=giong)
+
+        try:
+            khoi = du_an.them_khoi(db, d, text=van_ban, giong=giong)
+        except du_an.LoiDuAn as e:
+            db.rollback()
+            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+
+        du_an.gan_ket_qua(db, khoi, job)
+        db.commit()
+        return JSONResponse({
+            "ok": True, "du_an": d.public_id, "ten": d.ten,
+            "duong": f"{MANIFEST.route_prefix}/du-an/{d.public_id}",
+        })
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.get("/du-an/{public_id}/khoi/{block_id}/phien-ban")
+def phien_ban_khoi(public_id: str, block_id: int,
+                   user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Các lượt sinh đã xong của một khối — V1/V2/V3 trong ảnh 03.
+
+    ⭐ Đọc từ lịch sử job, KHÔNG từ một bảng phiên bản. `tables_du_an.py` từ chối
+       bảng ấy vì nó là nguồn chân lý thứ hai cho cùng một sự thật, và tệp này
+       giữ nguyên quyết định đó. Xem `du_an.cac_phien_ban`.
+
+    ⚠️ Đường nghe đi qua `du_an.duong_tieng`-style, tức cửa `/audio` đã kiểm sở
+       hữu bằng hình dạng khoá. Không trả `audio_key` thô ra ngoài.
+    """
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        d = du_an.tim(db, public_id, owner_id=uid)
+        if d is None:
+            return JSONResponse({"ok": False}, status_code=404)
+        k = du_an.tim_khoi(db, d.id, block_id)
+        if k is None:
+            return JSONResponse({"ok": False}, status_code=404)
+
+        cac = du_an.cac_phien_ban(db, uid, block_id,
+                                  job_hien_tai=k.job_id or "")
+        tien_to = f"{MANIFEST.route_prefix}/audio"
+        return JSONResponse({
+            "ok": True,
+            # Đánh số NGƯỢC: lượt mới nhất là V lớn nhất, đúng như ảnh vẽ.
+            "phien_ban": [{
+                "ten": f"V{len(cac) - i}",
+                "job_id": v["job_id"],
+                "giay": round(v["giay"], 2),
+                "credit": v["credit"],
+                "audio_url": f"{tien_to}/{v['audio_key']}",
+                "luc": v["luc"].isoformat() if v["luc"] else "",
+                "dang_dung": v["job_id"] == (k.job_id or ""),
+            } for i, v in enumerate(cac)],
         })
     finally:
         try:

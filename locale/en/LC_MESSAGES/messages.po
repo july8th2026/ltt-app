@@ -11594,8 +11594,8 @@ msgstr "Used, 30 days"
 msgid "Đặt hai biến này vào môi trường của ứng dụng, rồi mở lại nó:"
 msgstr "Put these two variables in your application's environment, then reopen it:"
 
-msgid "engine có cửa sổ 131K; API public giới hạn input 65K để giữ biên Cloudflare"
-msgstr "The engine has a 131K context window; the public API limits input to 65K to preserve Cloudflare headroom"
+msgid "engine có cửa sổ 131K; API public giới hạn input 96.256 token để chừa chỗ cho câu trả lời"
+msgstr "The engine has a 131K context window; the public API caps input at 96,256 tokens to leave room for the answer"
 
 msgid "Quyền giữ slot thực thi tạm thời; chỉ giữ định danh vận hành để chẩn đoán và tự thu hồi tiến trình đã chết."
 msgstr "Temporary execution-slot ownership; only operational identifiers are retained for diagnosis and automatic recovery from dead processes."
@@ -13231,3 +13231,289 @@ msgstr "Building the render manifest"
 #: apps/auto_scan_video
 msgid "Đang đối chiếu tài nguyên"
 msgstr "Verifying the resources"
+msgid "· ẩn {n} giọng của bạn: giọng nhân bản không có nhãn giới tính, vùng miền hay phong cách"
+msgstr "· {n} of your voices hidden: cloned voices carry no gender, region or style label"
+
+msgid "Tốc độ đọc"
+msgstr "Speech speed"
+
+msgid "Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc."
+msgstr "Applied after generation, pitch preserved. Billed on the original, not on the sped-up file."
+
+msgid "Dự án từ Studio"
+msgstr "Project from Studio"
+
+msgid "Không tìm thấy dự án này."
+msgstr "Project not found."
+
+msgid "Không tìm thấy lượt đọc này, hoặc nó chưa xong."
+msgstr "That generation was not found, or it has not finished."
+
+msgid "Không đọc được tệp này."
+msgstr "Could not read this file."
+
+msgid "Khối này chưa có bản đọc nào."
+msgstr "This block has no takes yet."
+
+msgid "Lưu vào dự án"
+msgstr "Save to project"
+
+msgid "Lượt đọc này không còn văn bản để lưu."
+msgstr "This generation no longer has text to save."
+
+msgid "Nhập TXT"
+msgstr "Import TXT"
+
+msgid "Tên dự án mới…"
+msgstr "New project name…"
+
+msgid "Tải MP3"
+msgstr "Download MP3"
+
+msgid "Tệp dài {n} ký tự, đã cắt còn {t}."
+msgstr "File was {n} characters, trimmed to {t}."
+
+msgid "Đang tải…"
+msgstr "Loading…"
+
+msgid "Đã lưu vào"
+msgstr "Saved to"
+
+msgid "— Dự án mới —"
+msgstr "— New project —"
+
+msgid "WAV"
+msgstr "WAV"
+
+msgid "MP3"
+msgstr "MP3"
+
+msgid "+ Tạo giọng"
+msgstr "+ Create voice"
+
+msgid "Tên dự án mới"
+msgstr "New project name"
+
+msgid "Chép mã mẫu"
+msgstr "Copy sample code"
+
+msgid "Dự án khác"
+msgstr "Other projects"
+
+msgid "Lượt gần nhất"
+msgstr "Latest generation"
+
+msgid "Ngôn ngữ ví dụ"
+msgstr "Example language"
+
+msgid "Chưa có mục nào."
+msgstr "No entries yet."
+
+msgid "Chỉ dùng chữ, số, khoảng trắng và dấu . - ' — không dùng ký tự đặc biệt."
+msgstr "Use only letters, digits, spaces and . - ' — no special characters."
+
+msgid "Cần cả từ cần sửa và cách đọc thay thế."
+msgstr "Both the word and its replacement are required."
+
+msgid "Dạy máy đọc đúng tên riêng của bạn. Áp cho mọi lượt đọc, kể cả khi gọi qua API."
+msgstr "Teach the engine your proper nouns. Applied to every generation, including API calls."
+
+msgid "Máy nên đọc thành"
+msgstr "Should be read as"
+
+msgid "Máy nên đọc thành…"
+msgstr "Should be read as…"
+
+msgid "Thêm"
+msgstr "Add"
+
+msgid "Từ cần sửa"
+msgstr "Word to fix"
+
+msgid "Từ cần sửa…"
+msgstr "Word to fix…"
+
+msgid "Từ tối đa {a} ký tự, cách đọc tối đa {b} ký tự."
+msgstr "Word up to {a} characters, replacement up to {b}."
+
+msgid "Từ và cách đọc thay thế giống hệt nhau."
+msgstr "The word and its replacement are identical."
+
+msgid "Từ điển phát âm"
+msgstr "Pronunciation dictionary"
+
+msgid "Từ điển đã đạt {n} mục — giới hạn hiện tại. Xoá bớt mục cũ trước."
+msgstr "The dictionary has {n} entries — the current limit. Remove old entries first."
+
+msgid "Xoá mục"
+msgstr "Remove entry"
+
+msgid "24 giờ qua"
+msgstr "Last 24 hours"
+
+msgid "Chạy lại engine — tính tiền như một lượt mới."
+msgstr "Runs the engine again — billed as a new generation."
+
+msgid "Không tìm thấy lượt đọc này."
+msgstr "That generation was not found."
+
+msgid "Lượt đọc này không còn văn bản để đọc lại."
+msgstr "That generation no longer has text to read again."
+
+msgid "Mọi lúc"
+msgstr "All time"
+
+msgid "Đọc lại"
+msgstr "Read again"
+
+msgid "Đọc lại sẽ chạy engine một lần nữa và tính tiền như một lượt mới. Tiếp tục?"
+msgstr "Reading again runs the engine once more and is billed as a new generation. Continue?"
+
+msgid "{n} ngày qua"
+msgstr "Last {n} days"
+
+# --- Dieu khoan dich vu API (P08 / giai doan 2 muc 2.2) ---
+
+msgid "Giữ chỗ trước, tính tiền theo mức dùng thật"
+msgstr "Held up front, billed on actual usage"
+
+msgid "Mỗi lời gọi giữ trước một khoản credit theo ước tính cao, rồi quyết toán lại theo số token thật sự đã dùng. Phần giữ dư được hoàn ngay trong cùng lượt gọi."
+msgstr "Each call holds credit against a deliberately high estimate, then settles against the tokens actually used. Whatever was held over is refunded within the same call."
+
+msgid "Không đo được mức dùng thì không thu tiền"
+msgstr "No measurement, no charge"
+
+msgid "Nếu hệ thống không đọc được số token của một lượt gọi, toàn bộ khoản giữ chỗ được hoàn và lượt đó tính 0 credit. Hệ thống không ước lượng để tính tiền."
+msgstr "If the platform cannot read the token count for a call, the entire hold is refunded and the call costs 0 credit. We never estimate in order to bill."
+
+msgid "Bận thì không thu tiền"
+msgstr "Busy is never billed"
+
+msgid "Khi tài nguyên đang bận, lời gọi bị từ chối với mã 429 kèm header Retry-After, và không bị tính credit."
+msgstr "When the resource is busy the call is refused with a 429 and a Retry-After header, and no credit is charged."
+
+msgid "Ngắt kết nối giữa chừng vẫn tính phần đã sinh"
+msgstr "Disconnecting mid-answer still bills what was produced"
+
+msgid "Nếu khách đóng kết nối khi câu trả lời đang được sinh, phần đã sinh ra vẫn được tính. Phần chưa sinh thì không."
+msgstr "If you close the connection while an answer is being generated, the part already produced is billed. The part never produced is not."
+
+msgid "Gọi lại cùng một khoá idempotency không bị tính tiền hai lần"
+msgstr "Replaying an idempotency key is never billed twice"
+
+msgid "Gửi lại một yêu cầu với cùng Idempotency-Key trả về đúng kết quả cũ và không tạo lượt tính tiền mới."
+msgstr "Re-sending a request with the same Idempotency-Key returns the original result and creates no new charge."
+
+msgid "Mỗi lượt gọi làm tròn lên credit nguyên"
+msgstr "Every call rounds up to a whole credit"
+
+msgid "Một lượt gọi rất nhỏ vẫn tính tối thiểu 1 credit. Với lượt gọi nhỏ, số tiền thực trả cao hơn giá niêm yết trên một triệu token."
+msgstr "A very small call still costs at least 1 credit. For small calls the effective price is therefore higher than the per-million-token rate."
+
+msgid "Mỗi tài khoản được phục vụ một lượt tại một thời điểm"
+msgstr "One call at a time per account"
+
+msgid "Model chạy trên phần cứng của chính LTT Studios và phục vụ một lượt tại một thời điểm. Lượt vượt quá nhận 429 kèm Retry-After."
+msgstr "The model runs on LTT Studios' own hardware and serves one call at a time. Calls beyond that receive a 429 with Retry-After."
+
+msgid "Trần ngữ cảnh khác nhau giữa các model"
+msgstr "Context limits differ between models"
+
+msgid "Mỗi model có trần đầu vào riêng và trần này được công bố ở /api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 413 kèm con số trần thật, không bị cắt bớt âm thầm."
+msgstr "Each model has its own input ceiling, published at /api/v1/models. A request over the ceiling is refused with a 413 carrying the real limit; it is never silently truncated."
+
+msgid "Credit đã nạp có hạn sử dụng không?"
+msgstr "Do purchased credits expire?"
+
+msgid "Mã nguồn không cài đặt hạn dùng nào cho credit. Nhưng 'không có mã' không phải một lời hứa — cần một câu trả lời rõ ràng."
+msgstr "The code implements no expiry for credits. But 'no code for it' is not a promise — this needs an explicit answer."
+
+msgid "Credit chưa dùng có hoàn lại được tiền không?"
+msgstr "Can unused credits be refunded to money?"
+
+msgid "Sổ credit là append-only và có đường hoàn, nhưng không có quy trình hoàn tiền mặt nào trong mã."
+msgstr "The credit ledger is append-only and supports refunds in credit, but there is no cash-refund process anywhere in the code."
+
+msgid "Có cam kết mức độ sẵn sàng (SLA) không, và bồi thường ra sao?"
+msgstr "Is there an availability commitment (SLA), and what is the remedy?"
+
+msgid "Không có SLA nào trong mã nguồn. Model chạy trên phần cứng dùng chung, và đã có lần ngừng dịch vụ nhiều giờ."
+msgstr "There is no SLA in the codebase. The model shares hardware, and there has already been a multi-hour outage."
+
+msgid "Giới hạn trách nhiệm tối đa là bao nhiêu?"
+msgstr "What is the maximum liability?"
+
+msgid "Không có điều khoản nào về việc này ở bất kỳ đâu."
+msgstr "No published term covers this anywhere."
+
+msgid "Khi nào LTT Studios được dừng tài khoản, và credit còn lại xử lý thế nào?"
+msgstr "When may LTT Studios suspend an account, and what happens to remaining credit?"
+
+msgid "Tài khoản có cờ vô hiệu hoá và bút toán credit không bị xoá, nhưng không có điều khoản mô tả khi nào việc đó xảy ra."
+msgstr "Accounts can be disabled and credit entries are never deleted, but no term describes when that happens."
+
+msgid "Nội dung nào bị cấm gửi qua API, và hậu quả là gì?"
+msgstr "What content is prohibited through the API, and what follows if it is sent?"
+
+msgid "Không có chính sách sử dụng chấp nhận được nào được công bố."
+msgstr "No acceptable-use policy has been published."
+
+msgid "Điều khoản dịch vụ API"
+msgstr "API terms of service"
+
+msgid "Trang này mô tả cách API tính tiền và phục vụ — bằng đúng những gì hệ thống đang làm."
+msgstr "This page describes how the API bills and serves — stated as what the system actually does."
+
+msgid "phiên bản"
+msgstr "version"
+
+msgid "Bản này CHƯA đầy đủ"
+msgstr "This version is NOT complete"
+
+msgid "Những gì viết dưới đây là chính xác — mỗi mục đều mô tả hành vi đã đo trên hệ thống đang chạy. Nhưng bản điều khoản đầy đủ còn thiếu các phần về giới hạn trách nhiệm, cam kết mức độ sẵn sàng, hoàn tiền phần credit chưa dùng và chấm dứt tài khoản."
+msgstr "What follows is accurate — every item describes behaviour measured on the running system. But the full terms still lack sections on limitation of liability, availability commitments, refunds of unused credit, and account termination."
+
+msgid "Chúng tôi nói ra điều này thay vì để trống, vì một điều khoản im lặng ở đúng chỗ quan trọng thì tệ hơn một điều khoản nói rõ nó chưa xong."
+msgstr "We say so rather than leave a gap, because terms that go silent exactly where it matters read as a promise, and terms that admit they are unfinished do not."
+
+msgid "Xem bảng giá đầy đủ kèm ví dụ chi phí thật"
+msgstr "See the full price list with real cost examples"
+
+msgid "Chúng tôi cam kết những gì"
+msgstr "What we commit to"
+
+msgid "Mỗi mục dưới đây mô tả hành vi đã đo được, không phải ý định."
+msgstr "Each item below describes measured behaviour, not intent."
+
+msgid "Giới hạn kỹ thuật"
+msgstr "Technical limits"
+
+msgid "ngữ cảnh công bố"
+msgstr "published context"
+
+msgid "trần đầu vào"
+msgstr "input ceiling"
+
+msgid "trần đầu ra"
+msgstr "output ceiling"
+
+msgid "Mỗi tài khoản được phục vụ"
+msgstr "Each account is served"
+
+msgid "lượt tại một thời điểm. Lượt vượt quá nhận mã 429 kèm Retry-After và không bị tính tiền."
+msgstr "call at a time. Calls beyond that receive a 429 with Retry-After and are not billed."
+
+msgid "Nền tảng ghi lại dữ liệu vận hành trong"
+msgstr "The platform records operational data across"
+
+msgid "nhóm dữ liệu, mỗi nhóm có một quy tắc lưu trữ riêng."
+msgstr "data groups, each with its own retention rule."
+
+msgid "Xem chi tiết từng nhóm và thời hạn lưu"
+msgstr "See each group and how long it is kept"
+
+msgid "Điều khoản dịch vụ API — cách tính tiền, hoàn tiền và giới hạn"
+msgstr "API terms of service — how billing, refunds and limits work"
+
+msgid "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} ký tự cho phép. Hãy rút gọn một mục trong từ điển."
+msgstr "After applying the pronunciation dictionary the text is {n} characters — far beyond the {t} allowed. Shorten one dictionary entry."

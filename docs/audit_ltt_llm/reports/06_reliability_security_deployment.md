@@ -9,7 +9,7 @@ B (§5) · **phát hiện chính** là `/health` xanh giả (§6) · quét bí m
 (§8) · phong bì năng lực (§9) · soát quan sát (§10) · SSRF, ACL, và **diễn tập
 rollback thật 18,9 s** (§3, §4, §11).
 
-Còn nợ: diễn tập reboot máy A thật (§12).
+Diễn tập reboot máy A: ✅ **XONG 01/09** bằng một lần reboot thật (§12).
 
 🔴 **ĐỌC TÊN CÁC MỤC F NHƯ CÂU HỎI, KHÔNG NHƯ CHẨN ĐOÁN.** *"Tiêm lỗi CUDA"*,
 *"máy A khởi động lại"* là **kịch bản cần dựng để thử**, không phải sự cố đang
@@ -500,37 +500,46 @@ chỉ xác suất giảm. Hệ vẫn không có mức suy giảm ở giữa.
 
 ## 12. §1 F05 — *"nếu máy A khởi động lại thì sao?"*
 
-Đo 01/09. **Máy A không có lỗi nào** — mục này hỏi một giả định.
+Đo 01/09 **lần đầu bằng quan sát**. Máy A đã khởi động lại thật lúc
+`15:51:28`; mọi con số dưới đây lấy từ lượt boot đó, không còn suy từ cấu hình.
 
-| Dịch vụ | Trạng thái | Khởi động | NSSM `AppExit` | SCM failure-actions |
+⭐ **Bảng cũ của mục này đã SAI ở cột cuối, và sai về phía bi quan.** Nó ghi cả
+năm dịch vụ `❌ không có` SCM failure-actions. Đo lại bằng `sc.exe qfailure`
+dưới LocalSystem: **cả năm đều CÓ**, `reset=86400` kèm hành động `RESTART`.
+Tức `setup/bat_tu_dung_day.ps1` đã chạy rồi — thứ mục N8 còn ghi là "chưa chạy".
+
+| Dịch vụ | Trạng thái sau boot | Khởi động | Vỏ bọc sinh lúc | SCM failure-actions |
 |---|---|---|---|---|
-| `LTTStudioWeb` | Running | Automatic | **Restart** | ❌ **không có** |
-| `LTTStudioWorker` | Running | Automatic | **Restart** | ❌ |
-| `LTTStudioVoice` | Running | Automatic | **Restart** | ❌ |
-| `LTTStudioCodex` | Running | Automatic | — | ❌ |
-| `cloudflared` | Running | Automatic | — | ❌ |
+| `LTTStudioWeb` | Running | Automatic | 15:51:44 (+15,7 s) | ✅ reset=86400, RESTART |
+| `LTTStudioWorker` | Running | Automatic | 15:51:44 (+15,7 s) | ✅ |
+| `LTTStudioVoice` | Running | Automatic | 15:51:44 (+15,7 s) | ✅ |
+| `LTTStudioCodex` | Running | Automatic | 15:51:44 (+15,7 s) | ✅ |
+| `cloudflared` | Running | Automatic | 15:51:44 (+15,7 s) | ✅ |
+
+### Mốc thời gian đo được
+
+| Mốc | Từ lúc boot | Nguồn |
+|---|---:|---|
+| Năm vỏ bọc NSSM sinh ra | **+15,7 s** | `Win32_Process.CreationDate` của PID từng dịch vụ |
+| Worker báo `da nang x2` | **+19,7 s** | `logs/ltt-job-worker.jsonl` |
+| cloudflared: 4 tunnel connection registered | **+20,5 s** | `logs/cloudflared-nssm-err.log` |
+| Số dịch vụ phải nhờ `FAILURE_ACTIONS` dựng dậy | **0** | toàn bộ System log từ lúc boot |
+| Cổng tự khai mồ côi | **không** | `mo_coi:false`, vỏ bọc pid 4616 |
 
 ### Trả lời từng chế độ hỏng
 
 | Hỏng | Chuyện gì xảy ra |
 |---|---|
-| **máy reboot** (mất điện, Windows Update) | ✅ cả 5 `Automatic` ⇒ tự lên lại. Job dở dang được nhận lại qua lease hết hạn (`test_215`), khoản giữ treo được tự hoàn (H41.3) |
+| **máy reboot** (mất điện, Windows Update) | ✅ **QUAN SÁT ĐƯỢC 01/09** — cả 5 tự lên trong 15,7 s, phục vụ công khai lại sau ~20,5 s, không ai can thiệp |
 | **tiến trình con chết** | ✅ NSSM `AppExit=Restart` dựng dậy |
-| **vỏ bọc `nssm.exe` chết** | ❌ **không ai dựng dậy** — SCM không có failure-actions |
+| **vỏ bọc `nssm.exe` chết** | ✅ **lỗ này đã bịt** — SCM failure-actions có trên cả năm dịch vụ (đo lại 01/09) |
 
-🔴 **Hàng thứ ba là đúng cái lỗ đã bịt trên máy B đêm nay** — và ở đây nó nằm
-trên máy **đang phục vụ khách thật**. Nếu vỏ bọc chết, tiến trình con sống sót
-mồ côi vẫn giữ cổng, trang web **vẫn trả lời**, còn `Get-Service` nói `Stopped`
-và không có gì dựng nó dậy nữa.
-
-⏳ **Cần Administrator** (ranh giới UAC ta giữ). Lệnh đã soạn sẵn ở phần trả lời
-cho chủ dự án; nó chỉ đặt **chính sách cho lần hỏng sau**, không khởi động lại
-gì, nên chạy được lúc đang phục vụ.
-
-⚠️ **Chưa diễn tập reboot thật.** Máy A là production **và** đang chạy phiên
-làm việc này, nên một lần reboot cắt luôn tay đang gõ. Bảng trên suy từ cấu
-hình đã đo, không phải từ một lần reboot quan sát được — và phải đọc đúng phạm
-vi đó.
+⚠️ **Một thứ vẫn CHƯA đo được, và lượt boot này đã tiêu mất cơ hội:** *boot →
+`/health/ready` xanh lần đầu*. Không có gì thăm dò trong lúc khởi động, và
+`tools/do_sau_khoi_dong.py` §4 **không** đo mốc đó dù nhan đề nói vậy — nó đặt
+`t0` lúc **gọi công cụ**, nên chạy ở boot+7 phút cho `0,5 s` và ở boot+15 phút
+cho `0,6 s`. Cả hai là độ trễ của một request lúc ấy, không phải thời gian phục
+hồi. Chặn trên đã biết: **+19,7 s** (lúc worker báo sẵn sàng).
 
 ---
 
@@ -542,7 +551,7 @@ vi đó.
 | F02 DB chập chờn · F03 worker restart · F04 lease cũ | ✅ **ĐÃ PHỦ** — `pool_pre_ping` + `test_215` ("chủ chết thì lease hết hạn", "worker chết giữa lúc gửi") |
 | F06 máy B không với tới được | ✅ **XONG** — `test_372`, 6 phép kiểm gồm một đối chứng |
 | F07 CUDA hỏng / CPU fallback | ✅ **PHỦ Ở MỨC PHÁT HIỆN** — `test_270` (10 phép, có ca thật 23/08) + `test_378` chốt **mắt xích giữa** mà trước đây không ai kiểm. Không tiêm được lỗi CUDA an toàn, **và không cần**: thứ thật sự hỏng ngày 23/08 không phải CUDA mà là **hơn một giờ không ai biết** |
-| F05 kịch bản *“nếu máy A khởi động lại”* | **MỘT PHẦN** — xem §12. Đã đo cấu hình; chưa diễn tập reboot thật |
+| F05 kịch bản *“nếu máy A khởi động lại”* | ✅ **ĐO XONG 01/09** — reboot thật lúc 15:51:28; 5/5 tự lên (+15,7 s), phục vụ công khai lại +20,5 s, **0** lượt cần `FAILURE_ACTIONS`. Xem §12. Còn thiếu đúng một số: *boot → `/health/ready` xanh lần đầu* |
 | F11–F16 mô hình health + bảng quan sát | ✅ **XONG** — §6 mô hình health, §10 soát metric/cardinality/riêng tư. Kết luận: **không thêm metric nào** |
 | F19 quét bí mật · F20 advisory | ✅ **XONG** |
 | F14 SSRF hồ sơ vision | ✅ **XONG** — `test_373`, 30 phép kiểm, 3 giao thức × 6 đích thật + 7 biến thể lách |

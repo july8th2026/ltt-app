@@ -128,10 +128,170 @@
     });
   }
 
+  /* ── Trinh phat gon: NANG CAP mot the `<audio>` da co ─────────────────────
+   *
+   * 🔴 VI SAO CAN. `<audio controls>` mac dinh cua trinh duyet la mot thanh
+   *    TRANG XAM. Dat no giua mot giao dien den/do la pha dung thu ma ca bo
+   *    anh tham chieu dung lam ngon ngu chung — `VISUAL_REFERENCE_NOTES` viet
+   *    "audio waveform dung nhu visual language chung". No xuat hien o BA man
+   *    (Du an, Lich su, phien ban khoi), nen mot ban sua o day sua ca ba.
+   *
+   * ⭐ NANG CAP chu khong THAY THE. The `<audio>` van la dong co phat, chi bo
+   *    `controls`. Khong co JS thi trang van co mot trinh phat that — dung
+   *    nguyen tac tang cuong dan ma tep nay tuyen bo o dau.
+   *
+   * ⚠️ Song am chi ve khi bam PHAT lan dau. Mot trang Lich su muoi dong ma tai
+   *    truoc ca muoi tep la vai chuc MB cho mot thu khach co the khong bam.
+   */
+  function ganTrinhPhat(au) {
+    if (!au || au.dataset.daNang === "1") return;
+    au.dataset.daNang = "1";
+    au.removeAttribute("controls");
+
+    var hop = document.createElement("div");
+    hop.className = "lv-phat";
+    au.parentNode.insertBefore(hop, au);
+
+    var nut = document.createElement("button");
+    nut.type = "button";
+    nut.className = "lv-phat-nut";
+    nut.setAttribute("aria-label", "Phat");
+    nut.textContent = "▶";
+
+    var song = document.createElement("canvas");
+    song.className = "lv-phat-song";
+    song.height = 40;
+
+    var gio = document.createElement("span");
+    gio.className = "lv-phat-gio";
+    /* `—` chu khong phai `0:00`: voi `preload="none"` ta CHUA BIET do dai, va
+       mot con so cu the ma sai con te hon mot dau gach thanh that. */
+    gio.textContent = "—";
+
+    hop.appendChild(nut);
+    hop.appendChild(song);
+    hop.appendChild(gio);
+    hop.appendChild(au);
+
+    function dinhDang(gy) {
+      if (!isFinite(gy) || gy < 0) return "0:00";
+      var ph = Math.floor(gy / 60), gi = Math.floor(gy % 60);
+      return ph + ":" + (gi < 10 ? "0" : "") + gi;
+    }
+
+    /* ── Song TRANG TRI truoc khi co song THAT ────────────────────────────
+     *
+     * ⛔ `preload="none"` nghia la ta chua co du lieu de ve, nen dai song la
+     *    mot vet TRONG cho toi khi khach bam phat — trong y het mot phan tu
+     *    dung do. Do tren production 01/09: bon dong Lich su, bon vet trong.
+     *
+     * ⭐ Ve mot song GIA, tinh, mo — dung cach `_voice_the.html` da chon cho
+     *    luoi giong va da ghi ly do: "Hinh song chi la NGON NGU THI GIAC, khong
+     *    phai du lieu." No bi thay bang song THAT ngay khi bam phat.
+     *
+     * ⚠️ Hinh dang suy tu chinh URL, khong phai ngau nhien: mot dong Lich su
+     *    phai trong Y HET nhau qua moi lan tai trang. Song nhay mua giua hai
+     *    lan F5 la mot thu khien nguoi ta nghi du lieu doi. */
+    function songGia() {
+      var rong = song.clientWidth || 300;
+      var dpr = window.devicePixelRatio || 1;
+      var cao = song.clientHeight || 40;
+      song.width = Math.round(rong * dpr);
+      song.height = Math.round(cao * dpr);
+      song.getContext("2d").scale(dpr, dpr);
+      var h = 0, src = au.getAttribute("src") || "";
+      for (var i = 0; i < src.length; i++) h = (h * 31 + src.charCodeAt(i)) | 0;
+      var cot = Math.max(1, Math.floor(rong / 3)), d = [];
+      for (var k = 0; k < cot; k++) {
+        h = (h * 1103515245 + 12345) | 0;
+        d.push(0.18 + (Math.abs(h % 1000) / 1000) * 0.55);
+      }
+      song.__dinh = d;
+      veLaiSong(song, 0);
+    }
+    /* Cho mot nhip de canvas co be ngang that trong luoi flex. */
+    setTimeout(songGia, 0);
+
+    var daVe = false;
+    nut.addEventListener("click", function () {
+      if (au.paused) {
+        /* Dung MOI trinh phat khac truoc. Hai ban thu chay chong nhau la mot
+           mo am thanh khong ai nghe ra duoc gi. */
+        var khac = document.querySelectorAll(".lv-phat audio");
+        for (var i = 0; i < khac.length; i++) {
+          if (khac[i] !== au && !khac[i].paused) khac[i].pause();
+        }
+        au.play();
+        if (!daVe) { daVe = true; veSong(song, au.src); }
+      } else {
+        au.pause();
+      }
+    });
+
+    au.addEventListener("play", function () {
+      nut.textContent = "⏸";
+      nut.setAttribute("aria-label", "Tam dung");
+      hop.classList.add("dang-phat");
+    });
+    function dungLai() {
+      nut.textContent = "▶";
+      nut.setAttribute("aria-label", "Phat");
+      hop.classList.remove("dang-phat");
+    }
+    au.addEventListener("pause", dungLai);
+    au.addEventListener("ended", function () { dungLai(); veLaiSong(song, 0); });
+
+    au.addEventListener("timeupdate", function () {
+      gio.textContent = dinhDang(au.currentTime);
+      if (au.duration) veLaiSong(song, au.currentTime / au.duration);
+    });
+    au.addEventListener("loadedmetadata", function () {
+      gio.textContent = dinhDang(au.duration);
+    });
+
+    /* Bam vao song de tua. Khong tua duoc thi mot thanh song chi la trang tri
+       — va mot trinh phat khong tua duoc te hon thanh mac dinh cua trinh duyet
+       du no dep hon. */
+    song.addEventListener("click", function (e) {
+      if (!au.duration) return;
+      var o = song.getBoundingClientRect();
+      au.currentTime = Math.max(0, Math.min(1, (e.clientX - o.left) / o.width))
+                       * au.duration;
+    });
+  }
+
   function chay(goc) {
     var pv = goc || document;
     var ds = pv.querySelectorAll(".lv-ma-chep");
     for (var i = 0; i < ds.length; i++) ganChep(ds[i]);
+    /* Moi `<audio data-nang="1">` deu duoc nang cap — ke ca the chen
+       vao sau (danh sach phien ban), vi `chay()` goi lai voi goc moi. */
+    var au = pv.querySelectorAll('audio[data-nang="1"]');
+    for (var k = 0; k < au.length; k++) ganTrinhPhat(au[k]);
+    ganTabViDu(pv);
+  }
+
+  /* ── Tab ngon ngu vi du (man API) ─────────────────────────────────────────
+   *
+   * ⭐ O trong `chay()` chu khong o mot module rieng: man API co y KHONG co
+   *    module JS rieng (xem chu thich cuoi `ltt_voice_api.html`), va them mot
+   *    module chi de doi hai the la them mot cho de quen nap. */
+  function ganTabViDu(pv) {
+    var nut = (pv || document).querySelectorAll("[data-vidu]");
+    for (var i = 0; i < nut.length; i++) {
+      (function (n) {
+        if (n.dataset.daGan === "1") return;
+        n.dataset.daGan = "1";
+        n.addEventListener("click", function () {
+          var ten = n.dataset.vidu;
+          var hop = document.querySelectorAll("[data-vidu-cho]");
+          for (var j = 0; j < hop.length; j++) {
+            hop[j].hidden = hop[j].dataset.viduCho !== ten;
+          }
+          batNut(n);
+        });
+      })(nut[i]);
+    }
   }
 
   /* ── Luoi giong: loc + chon the + panel chi tiet ──────────────────────────
@@ -161,16 +321,29 @@
     var oTim = document.getElementById("lv-tim");
     var oSo = document.getElementById("lv-g-so");
     var oKhongHop = document.getElementById("lv-g-khonghop");
+    var oAnMat = document.getElementById("lv-g-anmat");
     var dangLoc = {loai: "", gioi: "", vung: "", phongcach: ""};
 
     function loc() {
       var q = ((oTim && oTim.value) || "").trim().toLowerCase();
       var con = 0;
+      // Bao nhieu the bi an CHI vi no thieu nhan dang duoc loc — khong phai vi
+      // no that su khong khop. Hai thu do rat khac nhau voi nguoi dung, va
+      // truoc 01/09 giao dien khong phan biet chung.
+      var anViThieuNhan = 0;
       for (var i = 0; i < the.length; i++) {
         var t = the[i], d = t.dataset;
         // Giong nhan ban khong co ba mat cua giong mau. Khi mot mat do dang
         // duoc loc thi chung KHONG khop — va do la dung: loc "giong nu mien
         // Bac" ma van tra ve mot giong rieng chua phan loai la tra ket qua sai.
+        //
+        // ⛔ Nhung "dung" khong co nghia la "khong can noi". Do tren production
+        //    01/09: bam "Nam" -> 45 giong con 9, va ca 25 giong cua khach bien
+        //    mat khong mot loi nao. Nen ta van an chung, VA dem chung.
+        var thieuNhan =
+          (dangLoc.gioi && !d.gioi) ||
+          (dangLoc.vung && !d.vung) ||
+          (dangLoc.phongcach && !d.phongcach);
         var hop =
           (!dangLoc.loai || d.loai === dangLoc.loai) &&
           (!dangLoc.gioi || d.gioi === dangLoc.gioi) &&
@@ -178,10 +351,30 @@
           (!dangLoc.phongcach || d.phongcach === dangLoc.phongcach) &&
           (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
         t.hidden = !hop;
-        if (hop) con++;
+        if (hop) {
+          con++;
+        } else if (thieuNhan) {
+          // Chi dem khi cai DUY NHAT chan no la nhan bi thieu. Mot giong bi
+          // loai boi o tim hay boi "Giong mau" thi khong thuoc cau chuyen nay.
+          var hopNeuBoNhan =
+            (!dangLoc.loai || d.loai === dangLoc.loai) &&
+            (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
+          if (hopNeuBoNhan) anViThieuNhan++;
+        }
       }
       if (oSo) oSo.textContent = String(con);
       if (oKhongHop) oKhongHop.hidden = con !== 0;
+      if (oAnMat) {
+        oAnMat.hidden = anViThieuNhan === 0;
+        // Mot goi khong truyen chuoi nay thi im lang chu dung nem — mot loi
+        // JS o day se giet ca bo loc, tuc doi mot khiem khuyet hien thi lay
+        // mot man hinh chet.
+        var mau = (cauHinh.chu && cauHinh.chu.anViThieuNhan) || "";
+        oAnMat.textContent = (anViThieuNhan && mau)
+          ? mau.replace("{n}", String(anViThieuNhan))
+          : "";
+        if (!mau) oAnMat.hidden = true;
+      }
     }
 
     var nutLoc = document.querySelectorAll(".lv-loc-nut");
@@ -317,6 +510,28 @@
    *    van de chua ton tai, va no se bao bang mot khoang lag chu khong bang
    *    mot loi im lang.
    */
+  /* Ve lai song da co dinh, to mau theo TIEN DO phat.
+   *
+   * ⭐ Tach khoi `veSong` vi giai ma lai am thanh moi lan `timeupdate` (4 lan
+   *    mot giay) la mot viec ngu ngoc va rat ton. Dinh song tinh MOT LAN roi
+   *    cat vao chinh phan tu canvas; ve lai chi la mot vong `fillRect`. */
+  function veLaiSong(canvas, tienDo) {
+    var dinh = canvas.__dinh;
+    if (!dinh || !dinh.length) return;
+    var rong = canvas.clientWidth || 300, cao = canvas.clientHeight || 40;
+    var g = canvas.getContext("2d");
+    g.clearRect(0, 0, rong, cao);
+    var css = getComputedStyle(document.documentElement);
+    var sang = css.getPropertyValue("--brand-hover").trim() || "#ff514a";
+    var mo = css.getPropertyValue("--line2").trim() || "#63332e";
+    var rongCot = 3, khe = 1, moc = (tienDo || 0) * dinh.length;
+    for (var i = 0; i < dinh.length; i++) {
+      g.fillStyle = i <= moc ? sang : mo;
+      var h = Math.max(2, dinh[i] * cao * 0.92);
+      g.fillRect(i * rongCot, (cao - h) / 2, rongCot - khe, h);
+    }
+  }
+
   function veSong(canvas, url) {
     if (!canvas || !url || !window.AudioContext) return;
     var Ctx = window.AudioContext || window.webkitAudioContext;
@@ -333,6 +548,7 @@
         g.scale(dpr, dpr);
 
         var du = am.getChannelData(0);
+        var cacDinh = [];
         var rongCot = 3, khe = 1;
         var soCot = Math.max(1, Math.floor(rong / rongCot));
         var moiCot = Math.floor(du.length / soCot) || 1;
@@ -350,7 +566,10 @@
           }
           var h = Math.max(2, dinh * cao * 0.92);
           g.fillRect(i * rongCot, (cao - h) / 2, rongCot - khe, h);
+          cacDinh.push(dinh);
         }
+        // Cat lai de `veLaiSong` khong phai giai ma lan nua.
+        canvas.__dinh = cacDinh;
       })
       .catch(function () {
         // Khong ve duoc song thi trinh phat van chay. An canvas di, dung de
@@ -388,6 +607,43 @@
       if (oUoc && n) oUoc.textContent = String(Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)));
     }
     oText.addEventListener("input", dem);
+
+    /* ── Nhap TXT ──────────────────────────────────────────────────────────
+       Doc o trinh duyet, khong gui tep len may chu.
+
+       ⚠️ CAT theo `maxlength` cua chinh o nhap, va NOI RA khi cat. Mot tep dai
+          hon tran ma bi cat lang le la cach de nhat de khach mat mot doan cuoi
+          ma khong biet — va ho chi phat hien khi nghe het ban thu. */
+    var oNhap = document.getElementById("lv-nhap-txt");
+    if (oNhap) {
+      oNhap.addEventListener("change", function () {
+        var f = oNhap.files && oNhap.files[0];
+        if (!f) return;
+        var doc = new FileReader();
+        doc.onload = function () {
+          var s = String(doc.result || "").replace(/\r\n?/g, "\n").trim();
+          var tran = parseInt(oText.getAttribute("maxlength"), 10) || 0;
+          var bicat = tran > 0 && s.length > tran;
+          oText.value = bicat ? s.slice(0, tran) : s;
+          dem();
+          var oBao = document.getElementById("lv-nhap-bao");
+          if (oBao) {
+            oBao.hidden = !bicat;
+            oBao.textContent = bicat && chu.nhapBiCat
+              ? chu.nhapBiCat.replace("{n}", String(s.length))
+                             .replace("{t}", String(tran))
+              : "";
+          }
+          oNhap.value = "";   /* cho phep chon lai DUNG tep vua chon */
+        };
+        doc.onerror = function () {
+          var oBao = document.getElementById("lv-nhap-bao");
+          if (oBao && chu.nhapHong) { oBao.hidden = false; oBao.textContent = chu.nhapHong; }
+          oNhap.value = "";
+        };
+        doc.readAsText(f, "utf-8");
+      });
+    }
     dem();
 
     document.getElementById("lv-nut-xoa").addEventListener("click", function () {
@@ -479,6 +735,13 @@
       var tai = document.getElementById("lv-tai");
       tai.href = d.audio_url;
       tai.setAttribute("download", "ltt-voice-" + jobId.slice(0, 8) + ".wav");
+      var taiMp3 = document.getElementById("lv-tai-mp3");
+      if (taiMp3) {
+        /* `?mp3=1` tren CHINH duong audio — khong ghep mot duong rieng o day.
+           Mot tien to route ghep tay se lech ngay khi ai do doi `route_prefix`. */
+        taiMp3.href = d.audio_url + (d.audio_url.indexOf("?") >= 0 ? "&" : "?") + "mp3=1";
+        taiMp3.setAttribute("download", "ltt-voice-" + jobId.slice(0, 8) + ".mp3");
+      }
       document.getElementById("lv-mo-job").href = "/jobs/" + jobId;
       document.getElementById("lv-ct-giay").textContent =
         d.giay != null ? d.giay + "s" : "-";
@@ -488,9 +751,21 @@
       var nutChep = document.getElementById("lv-ct-job-chep");
       if (nutChep) { nutChep.dataset.ma = jobId; chay(oXong); }
 
-      var canvas = document.getElementById("lv-song");
-      canvas.hidden = false;
-      veSong(canvas, d.audio_url);
+      /* Khong ve song o day nua: `ganTrinhPhat` da nang cap `lv-player`
+         thanh trinh phat co song am rieng, giong ba man kia. Ve them mot
+         canvas thu hai la ve cung mot thu hai lan. */
+      ganTrinhPhat(au);
+
+      /* Luu vao du an: nut chi mo hop, viec that o `/du-an/luu-tu-studio`.
+         Hop DONG LAI moi lan co ket qua moi — de mo tu luot truoc thi bam
+         "Luu" se luu nham job cu, va khong co gi tren man hinh noi ra dieu do. */
+      var hop = document.getElementById("lv-luu-hop");
+      if (hop) {
+        hop.hidden = true;
+        hop.dataset.job = jobId;
+        var bao = document.getElementById("lv-luu-bao");
+        if (bao) bao.hidden = true;
+      }
     }
 
     function theoDoi(jobId, cho) {
@@ -542,6 +817,15 @@
       // `features.chuan_hoa` TU CHOI neu gui ca hai.
       if (g.indexOf("v:") === 0) fd.append("voice_id", g.slice(2));
       else if (g.indexOf("m:") === 0) fd.append("preset", g.slice(2));
+      /* ⛔ Khoi nay dung `new FormData()` RONG roi them TUNG TRUONG, khong phai
+         `new FormData(form)`. Nen mot `<input>` moi trong form KHONG tu dong
+         duoc gui — no phai co mot dong o day.
+
+         Da tra gia 01/09: nut toc do ghi dung vao input an, toi kiem input an
+         thay dung, va ket luan la xong. Nhung khong ai doc input ay. Job chay
+         o 1,0x trong khi giao dien sang den nut 1,25x — khong loi nao bao. */
+      var oTd = document.getElementById("lv-toc-do");
+      if (oTd) fd.append("toc_do", oTd.value || "1.0");
 
       fetch(duong + "/tao", {method: "POST", body: fd})
         .then(function (r) { return r.json(); })
@@ -608,6 +892,163 @@
     }
     if (oTimChon) oTimChon.addEventListener("input", locChon);
 
+    /* ── Toc do hau ky ─────────────────────────────────────────────────────
+       Nut chi ghi vao mot input an; VIEC THAT lam o may chu sau khi tao xong
+       tep (`apps/ltt_voice/toc_do.py`). Day khong phai `playbackRate` cua
+       trinh phat — tep tai ve cung phai doi theo, neu khong thi cai khach
+       nghe va cai khach nhan la hai thu khac nhau. */
+    var oTocDo = document.getElementById("lv-toc-do");
+    var nutTocDo = document.querySelectorAll("[data-tocdo]");
+    for (var k = 0; k < nutTocDo.length; k++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          if (oTocDo) oTocDo.value = nut.dataset.tocdo || "1.0";
+          batNut(nut);
+        });
+      })(nutTocDo[k]);
+    }
+
+    /* ── Tu dien phat am rieng ─────────────────────────────────────────────
+       Nap KHI MO lan dau, khong nap san: hau het khach khong mo no, va no la
+       mot vong mang cho mot thu ho khong nhin. */
+    var tdHop = document.getElementById("lv-td-hop");
+    var tdMo = document.getElementById("lv-td-mo");
+    var tdDs = document.getElementById("lv-td-ds");
+    var tdRong = document.getElementById("lv-td-rong");
+    var tdBao = document.getElementById("lv-td-bao");
+    var tdDaNap = false;
+
+    function tdNoi(cau, la_loi) {
+      if (!tdBao) return;
+      tdBao.hidden = !cau;
+      tdBao.textContent = cau || "";
+      tdBao.classList.toggle("loi", !!la_loi);
+    }
+
+    function tdVe(muc) {
+      if (!tdDs) return;
+      tdDs.textContent = "";
+      if (tdRong) tdRong.hidden = muc.length > 0;
+      muc.forEach(function (m) {
+        var li = document.createElement("li");
+        var chu = document.createElement("span");
+        /* `textContent`, KHONG `innerHTML`: day la chuoi KHACH GO. Dung
+           innerHTML o day la mo mot duong XSS vao chinh trang cua ho. */
+        chu.textContent = m.tu + " → " + m.thay;
+        li.appendChild(chu);
+        var xoa = document.createElement("button");
+        xoa.type = "button";
+        xoa.className = "lv-td-xoa";
+        xoa.setAttribute("aria-label", (chu.xoaMuc || "Xoa") + " " + m.tu);
+        xoa.textContent = "×";
+        xoa.addEventListener("click", function () {
+          xoa.disabled = true;
+          var fdX = new FormData();
+          fdX.append("csrf_token", form.csrf_token.value);
+          fetch(duong + "/tu-dien/" + m.id + "/xoa", {method: "POST", body: fdX})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.ok) { tdNap(); } else { xoa.disabled = false; }
+            })
+            .catch(function () { xoa.disabled = false; tdNoi(chu.khongGui, true); });
+        });
+        li.appendChild(xoa);
+        tdDs.appendChild(li);
+      });
+    }
+
+    function tdNap() {
+      return fetch(duong + "/tu-dien")
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) tdVe(d.muc || []); });
+    }
+
+    if (tdMo) {
+      tdMo.addEventListener("click", function () {
+        var dang_an = tdHop.hidden;
+        tdHop.hidden = !dang_an;
+        tdMo.setAttribute("aria-expanded", dang_an ? "true" : "false");
+        if (dang_an && !tdDaNap) { tdDaNap = true; tdNap(); }
+      });
+    }
+    var tdLuu = document.getElementById("lv-td-luu");
+    if (tdLuu) {
+      tdLuu.addEventListener("click", function () {
+        var oTu = document.getElementById("lv-td-tu");
+        var oThay = document.getElementById("lv-td-thay");
+        tdLuu.disabled = true;
+        tdNoi("");
+        var fd = new FormData();
+        fd.append("csrf_token", form.csrf_token.value);
+        fd.append("tu", oTu.value);
+        fd.append("thay", oThay.value);
+        fetch(duong + "/tu-dien/them", {method: "POST", body: fd})
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            tdLuu.disabled = false;
+            if (!d.ok) { tdNoi(d.loi, true); return; }
+            oTu.value = ""; oThay.value = "";
+            tdNap();
+          })
+          .catch(function () { tdLuu.disabled = false; tdNoi(chu.khongGui, true); });
+      });
+    }
+
+    /* ── Luu ket qua vao mot Du an ─────────────────────────────────────────
+       Khong sinh lai, khong thu tien lan hai: may chu tro khoi moi thang vao
+       `audio_key` cua job vua xong. Xem `_p_du_an.luu_tu_studio`. */
+    var luuHop = document.getElementById("lv-luu-hop");
+    var luuMo = document.getElementById("lv-luu-mo");
+    var luuChon = document.getElementById("lv-luu-chon");
+    var luuTen = document.getElementById("lv-luu-ten");
+    var luuBao = document.getElementById("lv-luu-bao");
+
+    function luuHienTen() {
+      if (luuTen) luuTen.hidden = !!(luuChon && luuChon.value);
+    }
+    if (luuChon) { luuChon.addEventListener("change", luuHienTen); luuHienTen(); }
+    if (luuMo) {
+      luuMo.addEventListener("click", function () {
+        if (luuHop) luuHop.hidden = !luuHop.hidden;
+      });
+    }
+    var luuHuy = document.getElementById("lv-luu-huy");
+    if (luuHuy) {
+      luuHuy.addEventListener("click", function () { luuHop.hidden = true; });
+    }
+    var luuOk = document.getElementById("lv-luu-ok");
+    if (luuOk) {
+      luuOk.addEventListener("click", function () {
+        var job = luuHop ? luuHop.dataset.job : "";
+        if (!job) return;
+        luuOk.disabled = true;
+        var fd = new FormData();
+        fd.append("csrf_token", form.csrf_token.value);
+        fd.append("job_id", job);
+        fd.append("du_an_id", luuChon ? luuChon.value : "");
+        fd.append("ten_moi", luuTen ? luuTen.value : "");
+        fetch(duong + "/du-an/luu-tu-studio", {method: "POST", body: fd})
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            luuOk.disabled = false;
+            if (!luuBao) return;
+            luuBao.hidden = false;
+            if (!d.ok) { luuBao.textContent = d.loi || "?"; return; }
+            /* Duong dan THAT tu may chu, khong ghep chuoi o day: mot tien to
+               route ghep tay se lech ngay khi ai do doi `route_prefix`. */
+            luuBao.innerHTML = "";
+            var a = document.createElement("a");
+            a.href = d.duong;
+            a.textContent = (chu.daLuuVao || "Da luu vao") + " " + d.ten;
+            luuBao.appendChild(a);
+          })
+          .catch(function () {
+            luuOk.disabled = false;
+            if (luuBao) { luuBao.hidden = false; luuBao.textContent = chu.loiMang || "?"; }
+          });
+      });
+    }
+
     chay();
   }
 
@@ -626,6 +1067,33 @@
     if (!ds.length) return;
 
     var chu = (cauHinh || {}).chu || {};
+    var duong = (cauHinh || {}).duong || "";
+    /* ── Doc lai mot luot ──────────────────────────────────────────────────
+       ⛔ NOP MOT JOB MOI va thu tien nhu mot luot moi — engine chay lai toan
+          bo. Khac han `Luu vao du an` (tham chieu tep da co, ton 0). Nut hoi
+          XAC NHAN vi day la mot thao tac TIEU TIEN, va no nam ngay canh cac
+          nut chi doc (tai ve, chi tiet). */
+    var csrfLs = (document.getElementById("lv-ls-csrf") || {}).value || "";
+    var nutDocLai = document.querySelectorAll(".lv-ls-doclai");
+    for (var q = 0; q < nutDocLai.length; q++) {
+      (function (n) {
+        n.addEventListener("click", function () {
+          if (!window.confirm(chu.xacNhanDocLai || "Doc lai?")) return;
+          n.disabled = true;
+          var fd = new FormData();
+          fd.append("csrf_token", csrfLs);
+          fetch(duong + "/lich-su/" + n.dataset.job + "/doc-lai",
+                {method: "POST", body: fd})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.ok) { window.location.reload(); return; }
+              n.disabled = false;
+              window.alert(d.loi || "?");
+            })
+            .catch(function () { n.disabled = false; });
+        });
+      })(nutDocLai[q]);
+    }
     var oCt = document.getElementById("lv-ls-ct");
     if (!oCt) return;
 
@@ -721,6 +1189,7 @@
     var form = document.getElementById("lv-da-moi");
     if (!form) return;
     var cfg = cauHinh || {}, chu = cfg.chu || {}, duong = cfg.duong || "";
+
     var oLoi = document.getElementById("lv-da-loi");
 
     function mo(hien) {
@@ -963,6 +1432,63 @@
         .then(function () { window.location.reload(); })
         .catch(function () { nut.disabled = false; baoLoi(chu.khongGui); });
     });
+
+
+    /* ── Phien ban cua mot khoi (V1/V2/V3) ────────────────────────────────
+       Nap KHI BAM. Mot du an 24 khoi ma nap san la 24 luot tra lich su cho
+       mot thu hau het khach khong mo.
+
+       ⭐ KHONG co bang `block_version` — du lieu doc tu lich su job qua
+          `params.block_id`. Xem `du_an.cac_phien_ban`. */
+    var nutPb = document.querySelectorAll(".lv-khoi-pb");
+    for (var p = 0; p < nutPb.length; p++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          var id = nut.dataset.khoi;
+          var hop = document.querySelector('[data-pb-cho="' + id + '"]');
+          if (!hop) return;
+          if (!hop.hidden) {
+            hop.hidden = true;
+            nut.setAttribute("aria-expanded", "false");
+            return;
+          }
+          hop.hidden = false;
+          nut.setAttribute("aria-expanded", "true");
+          hop.textContent = chu.dangTai || "...";
+          fetch(goc + "/khoi/" + encodeURIComponent(id) + "/phien-ban")
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              hop.textContent = "";
+              if (!d.ok || !d.phien_ban || !d.phien_ban.length) {
+                hop.textContent = chu.chuaCoPb || "-";
+                return;
+              }
+              var ul = document.createElement("ul");
+              ul.className = "lv-pb-ds";
+              d.phien_ban.forEach(function (v) {
+                var li = document.createElement("li");
+                if (v.dang_dung) li.className = "dang-dung";
+                var ten = document.createElement("b");
+                ten.textContent = v.ten;
+                li.appendChild(ten);
+                var meta = document.createElement("span");
+                meta.className = "dim";
+                meta.textContent = " " + v.giay + "s · " + v.credit + " credit";
+                li.appendChild(meta);
+                var au = document.createElement("audio");
+                au.preload = "none";
+                au.src = v.audio_url;
+                au.dataset.nang = "1";
+                li.appendChild(au);
+                ganTrinhPhat(au);
+                ul.appendChild(li);
+              });
+              hop.appendChild(ul);
+            })
+            .catch(function () { hop.textContent = chu.khongGui || "?"; });
+        });
+      })(nutPb[p]);
+    }
 
     chay();
   }

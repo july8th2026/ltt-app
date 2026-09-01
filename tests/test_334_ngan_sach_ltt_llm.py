@@ -287,6 +287,69 @@ class TestBanSaoConLai:
         assert m, "khong tim thay max_context cua qwen38-api"
         assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL
 
+    def test_cua_so_VISION_khop_catalog_may_B(self):
+        """🔴 BÁNH CÓC CHO P08 F-02 — lời hứa ngữ cảnh của **vision**.
+
+        `qwen38-vision` nạp với `-c 65536`, nhỏ hơn `qwen38-api` một nửa. Trước
+        01/09 không có gì buộc hai đầu, nên `/api/v1/models` quảng cáo vision có
+        *"same 89K usable input context"* suốt nhiều ngày. Đo thật cho `413`
+        kèm `{"tran":65536}`.
+
+        ⛔ Đổi `-c` của `qwen38-vision` bên máy B mà không đổi
+           `CUA_SO_MODEL_VISION` thì phép kiểm này phải đỏ.
+        """
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / "llm_gateway" / "catalog.py").read_text(encoding="utf-8")
+        m = re.search(r'ten="qwen38-vision".*?max_context=([0-9_]+)', van, re.S)
+        assert m, "khong tim thay max_context cua qwen38-vision"
+        assert int(m.group(1).replace("_", "")) == ngan_sach.CUA_SO_MODEL_VISION
+
+    def test_MOI_alias_tu_khai_context_window(self):
+        """🔴 BÁNH CÓC CHO P08 F-03 — cấm rơi về hằng số lùi.
+
+        `server/api/tools.py:_dang_codex` dùng `CUA_SO_CONG_BO_MAC_DINH`
+        (60.000) khi model **không tự khai** `constraints.context_window`. Trước
+        01/09 không alias nào khai, nên một phản hồi `/api/v1/models` chứa
+        **hai con số khác nhau**: phần chữ nói `89K`, trường máy đọc nói `60000`.
+
+        ⭐ Và hằng số lùi ấy nằm cách `TOKEN_RA_TOI_DA` — thứ ĐÃ có bánh cóc —
+           đúng 20 dòng trong cùng một tệp. Bánh cóc chỉ bảo vệ thứ nó nhìn thấy.
+        """
+        from apps.ltt_llm.manifest import MANIFEST
+        khai = {}
+        for tool in MANIFEST.tools:
+            for alias, spec in (getattr(tool, "api_contract", {}) or {}).get("models", {}).items():
+                khai[alias] = dict(spec.get("constraints") or {})
+        assert khai, "khong doc duoc alias nao tu manifest — phep kiem nay VO"
+        for alias, rang_buoc in khai.items():
+            assert "context_window" in rang_buoc, (
+                f"alias {alias!r} khong tu khai context_window ⇒ no se roi ve "
+                f"CUA_SO_CONG_BO_MAC_DINH cua server/api/tools.py, va khach se "
+                f"nhan mot con so khong lien quan gi toi model nay")
+
+    def test_context_window_cua_alias_khop_cua_so_model_that(self):
+        """Con số công bố của mỗi alias phải dẫn xuất từ cửa sổ THẬT của model
+        nó trỏ tới — không phải từ cửa sổ của model bên cạnh."""
+        from apps.ltt_llm.manifest import MANIFEST
+        for tool in MANIFEST.tools:
+            for alias, spec in (getattr(tool, "api_contract", {}) or {}).get("models", {}).items():
+                id_noi_bo = spec["id"]
+                mong_doi = ngan_sach.cong_bo_cua(id_noi_bo)
+                thay = int((spec.get("constraints") or {})["context_window"])
+                assert thay == mong_doi, (
+                    f"alias {alias!r} (id {id_noi_bo!r}) cong bo {thay} nhung "
+                    f"cua so that cua no cho {mong_doi}")
+
+    def test_hang_so_lui_KHONG_hua_nhieu_hon_model_that(self):
+        """Hằng số lùi là lời hứa cho model **chưa tự khai**. Nó không được cao
+        hơn con số của model rộng nhất ta thật sự có."""
+        lui = self._so("CUA_SO_CONG_BO_MAC_DINH", "server/api/tools.py")
+        rong_nhat = max(ngan_sach.cong_bo_cua(m) for m in ngan_sach.CUA_SO_THEO_MODEL)
+        assert lui <= rong_nhat, (
+            f"hang so lui {lui} hua nhieu hon model rong nhat ({rong_nhat})")
+
     def test_registry_provider_khop_cua_so_model(self):
         """`platform_core/providers.py` khai `context_window` cho model nhà."""
         import pathlib
@@ -471,15 +534,37 @@ class TestExamplesKhopNganSach:
             assert str(ngan_sach.CONG_BO_CHO_CLIENT) in van, lam.__name__
 
     def test_mo_ta_model_cong_khai_KHONG_hua_qua_thuc_te(self):
-        """Mô tả trong manifest đi thẳng vào `DEVELOPER_GUIDE.md` ta xuất bản."""
+        """Mô tả trong manifest đi thẳng vào `DEVELOPER_GUIDE.md` ta xuất bản.
+
+        🔴 SIẾT 01/09 (P08 F-02): trước đây phép kiểm này chỉ đòi **một** con số
+           xuất hiện đâu đó trong mô tả **gộp** của mọi alias. Nên khi vision
+           quảng cáo *"same 89K"* — con số của model **bên cạnh** — nó vẫn xanh.
+
+        ⭐ Bài học chung hơn cả khuyết tật: nối mô tả của nhiều model lại rồi
+           kiểm trên chuỗi gộp là **tự bịt mắt mình**, vì mọi câu hỏi "model nào
+           nói con số này" đều biến mất trong lúc nối. Nay kiểm **từng alias**.
+        """
         from apps.ltt_llm import manifest
 
         tool = next(t for t in manifest.MANIFEST.tools if t.name == "text.chat")
-        mo_ta = " ".join(m["description"]
-                         for m in tool.api_contract["models"].values())
-        assert "131K" not in mo_ta and "64K" not in mo_ta, (
-            "van hua cua so cua ENGINE chu khong phai cua so khach dung duoc")
-        assert manifest._cua_so_noi_voi_khach() in mo_ta
+        for alias, spec in tool.api_contract["models"].items():
+            mo_ta = spec["description"]
+            assert "131K" not in mo_ta and "64K" not in mo_ta, (
+                f"{alias}: van hua cua so cua ENGINE chu khong phai cua so "
+                f"khach dung duoc")
+            cua_minh = manifest._cua_so_noi_voi_khach(spec["id"])
+            assert cua_minh in mo_ta, (
+                f"{alias} (id {spec['id']}) phai noi con so cua CHINH NO "
+                f"({cua_minh}), khong phai cua model khac")
+            # ⛔ Và không được nói con số của model kia — đó chính là F-02.
+            for id_khac in ngan_sach.CUA_SO_THEO_MODEL:
+                if id_khac == spec["id"]:
+                    continue
+                khac = manifest._cua_so_noi_voi_khach(id_khac)
+                if khac != cua_minh:
+                    assert khac not in mo_ta, (
+                        f"{alias} dang quang cao {khac} — do la con so cua "
+                        f"{id_khac}, khong phai cua no")
 
 
 class TestTaiLieuKhopMayChuThat:

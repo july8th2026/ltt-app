@@ -80,6 +80,42 @@ def sang_openai_tools(tools: Any) -> list | None:
     for t in tools:
         if not isinstance(t, dict) or not t.get("name"):
             continue
+        # 🔴 KHUÔN PHẲNG CỦA OPENAI RESPONSES — KHÔNG PHẢI RÁC, VÀ CHÍNH CODEX
+        #    GỬI NÓ.
+        #
+        #    OpenAI Responses API khai tool **phẳng**:
+        #        {"type":"function","name":"shell","parameters":{...}}
+        #    khác Chat Completions (lồng dưới `function`) và khác Anthropic
+        #    (`input_schema`). Cửa `/api/v1/responses` của ta **nói giao thức
+        #    Responses**, nên đây là khuôn ĐÚNG ở cửa đó.
+        #
+        # ⛔ Đo thật 01/09 bằng Codex CLI 0.145.0 trỏ vào production:
+        #        ERROR: 400 "khong muc nao trong `tools` dung duoc: moi muc phai
+        #                    co `name` va `input_schema`."
+        #    Codex **luôn** khai `shell`/`apply_patch`, nên hệ quả không phải
+        #    "mất tool" mà là **client không dùng được một lượt nào**.
+        #
+        # ⭐ VÀ ĐÂY LÀ BÀI HỌC ĐẮT NHẤT CỦA PROMPT 08: chốt chặn `tools` sai
+        #    khuôn được viết cho nhầm lẫn ở cửa **Anthropic**, rồi đặt trong
+        #    `_cua` — hàm phục vụ **cả hai** cửa. `test_385`, phép kiểm HTTP mới
+        #    ở `test_272`, và cả canary production của tôi đều XANH, vì cả ba
+        #    đều thử cửa `/messages`. Chỉ một **client thật** mới đi qua
+        #    `/responses` kèm tool.
+        # `type == "function"` **cộng** `name` là đủ để phân biệt: tool máy chủ
+        # của Anthropic mang `type` riêng (`web_search_20250305`), không bao giờ
+        # là `"function"`. Nên không cần đòi thêm `parameters` — một tool không
+        # tham số là hợp lệ, và đòi thừa ở đây là dựng lại đúng cái bẫy vừa gỡ.
+        if t.get("type") == "function" and "input_schema" not in t:
+            ra.append({
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t.get("description") or "",
+                    "parameters": t.get("parameters") or {"type": "object",
+                                                          "properties": {}},
+                },
+            })
+            continue
         # ⚠️ Tool phía máy chủ của Anthropic (`type: web_search_…`) khai bằng
         #    `type` chứ không có `input_schema`. Ta không chạy được chúng, nên bỏ
         #    qua thay vì gửi lên một thứ máy B chắc chắn không hiểu.

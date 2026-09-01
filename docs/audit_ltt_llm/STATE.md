@@ -4,7 +4,10 @@
 > chi tiết nằm ở `reports/`, không paste log vào đây.
 
 ## Program
-- **Current phase:** 07 — Integration (XONG). **07/08 phase đã chạy**
+- **Current phase:** 08 — Independent Final Acceptance (XONG). **8/8 phase đã chạy**
+- **VERDICT CHƯƠNG TRÌNH: `CONDITIONAL PASS`** — `reports/08_final_acceptance.md`
+  *(chấm bởi phiên khác, đúng yêu cầu 'independent'; điểm **81/100**, confidence HIGH
+  cho phần đo được / MEDIUM tổng thể)*
 - **Last completed phase:** 00 → 03 → 04 → 06(phần) → 01 → 02(phần) → 05(phần) → 07
 - **Repo revision / branch:** `2ed62d7` → nhánh `admin-mvp-v3`
   *(cây có 38 tệp chưa commit lúc chạy baseline — 34 của phiên `-e7`, xem §WIP)*
@@ -72,7 +75,7 @@ số đo nào trước 31/08. Xem `docs/VLM_NOI_BO/SU_CO_2026-08-31_RO_SUAT.md`.
 |---|---|---|---|---|
 | INV-001 | Nhiều worker không gửi webhook trùng / không nhân đôi cảnh báo / credit khớp | `job_runner` + `leases` | `test_214` **7 passed 134,61 s** (31/08) | **VERIFIED-LIVE** |
 | INV-002 | Suất của cổng VLM không rò; rò thì tự thu hồi và **kêu** | `llm_gateway/gioi_han.py` | `test_363` 13 phép kiểm; `/health` có `giu_lau_nhat_giay`/`da_thu_hoi` | **VERIFIED** |
-| INV-003 | Bận ⇒ khách **không** bị thu tiền, có `Retry-After` | `streaming.py` · `chat.py` | sự cố 31/08: 89 lượt hỏng, `credit=+0` mọi dòng | **VERIFIED-LIVE** |
+| INV-003 | Bận ⇒ khách **không** bị thu tiền, có `Retry-After` | `streaming.py` · `chat.py` | 🔴 **BẰNG CHỨNG CŨ VÔ HIỆU** (`credit_delta` **luôn** =0 ở cửa stream — P08 F-01). **Thay bằng sổ thật 01/09:** 3 lượt đồng thời → 1×200 + 2×429, số dư **1982→1981** (đúng −1, chỉ lượt thành công), header `retry-after: 15` | **VERIFIED-LIVE** *(đo lại P08)* |
 | INV-004 | Bận (429 của B) **không** bị hiểu là provider hỏng ⇒ không disable khoá | `luong_vlm.py` | khoá `ltt_llm` vẫn `active` sau 89 lượt hỏng | **VERIFIED-LIVE** |
 | INV-005 | Ngân sách token có **một** nguồn chân lý, ba tầng không trôi | `apps/ltt_llm/ngan_sach.py` | `test_334` — `TestDoiChieuMayB` · `TestDoiChieuNenTang` · `TestDoiChieuKhoMayB` | **VERIFIED** |
 | INV-006 | Giá không bao giờ suy ra từ con số **khách khai** | `gia_token` + `apply_server_measurements` | Q84 / H35.10 | UNSEEN *(còn nợ)* |
@@ -195,7 +198,15 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 | P2 | `max_dong_thoi = 1` ⇒ một sự cố suất = **100 %** ngừng dịch vụ | 03 | không có mức suy giảm ở giữa | OPEN |
 | P3 | VRAM 22,4/24,6 GiB khi model nạp; ba hộ dùng chung card | 03/04 | benchmark phải kèm ảnh chụp `trong_tai` | OPEN |
 | P3 | Bước gate multiproc vẫn bỏ qua ở đường chạy thường | 06 | cần env production; đã có cầu | MITIGATED |
-| **P1** | **`/health` xanh giả 99 s khi tiến trình cổng mồ côi** — dịch vụ Stopped, không ai dựng dậy, không cảnh báo nào nổi | 06 | đo thật 01/09; `soi_cong_llm.py` phát hiện được **nhưng chưa có lịch chạy** | **MITIGATED** — còn cần chỗ buộc chạy |
+| **P1** | **`/health` xanh giả 99 s khi tiến trình cổng mồ côi** | 06 | 🔴 **P08 MỞ LẠI.** `Get-ScheduledTask` trên máy thật: **không** task nào gọi `soi_cong_llm.py`; không caller nào trong kho ngoài `test_370`. Một bộ dò không ai chạy giảm nhẹ được **0** ⇒ `MITIGATED` là từ quá mạnh | **OPEN** — cần 1 Scheduled Task theo khuôn `LTT_Audit_*` đã có |
+| **P2** | **`credit_delta` không được ghi ở cửa stream + cửa đồng bộ** ⇒ dò bất thường tiền (`anomalies.py`) và báo cáo admin **mù** với hai cửa khách dùng nhiều nhất | 08 | `grep`: gán 0 lần ở `streaming.py`/`chat.py`, chỉ có ở `jobs.py:391,475` | OPEN — P08 F-01 |
+| **P2** | **Công bố cho khách một ngữ cảnh KHÔNG CÓ THẬT**: `/api/v1/models` nói `ltt_llm_vision` có "same 89K usable input context"; trần thật **65.536** | 08 | đo sống: `413 {"tran":65536,"thay":71281}`, đối chứng `ltt_llm` **200**. Máy A **không đọc** `max_context` theo model ở đâu cả | OPEN — P08 F-02, **làm G6 hỏng** |
+| **P2** | **Bản sao ngữ cảnh THỨ NĂM tới tay khách, không ai canh**: `server/api/tools.py:CUA_SO_CONG_BO_MAC_DINH = 60_000` ⇒ một phản hồi có **hai** con số (chữ `89K`, trường `60000`) | 08 | `test_334::TestBanSaoConLai` canh `TOKEN_RA_TOI_DA` **cùng tệp** mà bỏ sót hằng này; chú thích của nó còn ghi trần B là `65.000` (nay 96.256) | OPEN — P08 F-03 |
+| **P2** | **`planner` hứa "model nhà đi trước" nhưng chưa bao giờ dùng được model nhà** — gửi **bí danh** `ltt_llm` thay vì `qwen38-api` ⇒ `ThieuKeyError` ⇒ **mọi** lượt lập kế hoạch rơi xuống Gemini, im lặng | 08 | `kiem_ltt_llm.py`: step 2 (không model) DAT, step 3 (model=`ltt_llm`) HONG. Gốc: docstring `dieu_phoi.goi` dạy sai quy ước, 2 nơi chép theo | OPEN — P08 F-04 |
+| **P2** | **Một đường tới máy B lách `admission`** — `planner.py:63` gọi thẳng `dieu_phoi`. Hiện vô hại vì F-04; **sửa F-04 là kích hoạt nó** | 08 | `grep`: không `acquire`; 3 đường còn lại đều có | OPEN — P08 F-06, ⛔ sửa **cùng lượt** với F-04 |
+| **P2** | **Ba phép kiểm cùng hình dạng `test_385`** — `test_285`, `test_290`, `test_360` đều canh một hỏng hóc **client-facing** nhưng kiểm bằng `importlib`/`inspect`/`re`, không qua HTTP | 08 | giàn HTTP **đã có** (`test_272`, 23 phép qua `TestClient`) ⇒ thuốc rẻ | OPEN |
+| P3 | `tools/kiem_ltt_llm.py` **không bao giờ có thể xanh** và đỏ về phía báo động (cùng lỗi bí danh với F-04) | 08 | production trả 200 cùng lúc công cụ in `[HONG]`. **Không** được trích dẫn ở đâu ⇒ chưa nhiễm kết luận nào | OPEN — P08 F-05 |
+| P3 | `tools/do_sau_khoi_dong.py`: §3 nói sai lý do (`"cần Administrator"` trong khi sự thật là **không có sự kiện nào**), §4 nhãn sai (đo từ lúc gọi, không từ boot) | 08 | chạy lại bằng LocalSystem cho kết quả y hệt: 3 sự kiện SCM, 0 khớp | OPEN — P08 F-08 |
 | P2 | `sc failure` **không đủ**: bản mới không giành được cổng vì mồ côi giữ | 06 | cần diệt mồ côi (Job Object) hoặc chốt cổng khi khởi động | OPEN |
 | P3 | Bản sửa **một nguồn** (cổng tự biết mình mồ côi) chưa làm | 06 | thông tin đã chứng minh là có sẵn; phải neo vào tổ tiên `nssm.exe`, so cả PID+tên+giờ sinh | OPEN |
 | P2 | `pillow` 34 advisory · `aiohttp` 28 — đều đòi **nới trần ghim** | 06 | nới `<12` chạm mọi app ảnh ⇒ cần chủ dự án quyết | OPEN |
@@ -225,6 +236,114 @@ bị hỏng — xem `reports/06` §7 và `reports/02` §6.
 `-e7` giữ 34 tệp chưa commit (LTT VOICE P1–P9). Trong phạm vi audit chỉ có
 **một** tệp: `platform_core/public_api/governance.py` (khai hai bảng
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
+
+## 🚀 BỐN ĐỢT THI HÀNH SAU PROMPT 08 — ĐÃ DEPLOY *(01/09, 18:09 → 19:44)*
+
+Chủ dự án cho chạy cả bốn đợt kèm quyền tự deploy. **Ba lượt deploy**, mỗi lượt
+xác minh trên **URL công khai** chứ không loopback.
+
+| Mã | Việc | Trạng thái | Bằng chứng SỐNG |
+|---|---|---|---|
+| F-02 | vision quảng cáo `89K` mà trần thật `65.536` | ✅ **ĐÓNG** | `/models`: `ltt_llm` 88.555 · `ltt_llm_vision` **28.262**; 413 của vision nay báo `limit_value=30720` (trước: 96256) |
+| F-03 | bản sao ngữ cảnh thứ năm, một phản hồi hai con số | ✅ **ĐÓNG** | mỗi alias tự khai `constraints.context_window`; hằng lùi `60_000` không còn áp cho `ltt_llm` |
+| F-01 | `credit_delta` luôn `+0` ở hai cửa | ✅ **ĐÓNG** | sổ production: `19:03:22 credit=-1` (một cục) · `19:03:33 credit=-1` (stream), khớp số dư thật. Trước deploy cả hai `+0` |
+| F-04 | planner chưa bao giờ dùng được model nhà | ✅ **ĐÓNG** | `kiem-llm` nay **9 DAT / 0 HONG**, gọi thật máy B (`vao=21 ra=58`) |
+| F-06 | planner lách `admission` | ✅ **ĐÓNG cùng lượt** | `test_389` 7 phép kiểm; giành suất → dùng model nhà, hết suất → đi thẳng Gemini |
+| F-05 | `kiem_ltt_llm.py` không thể xanh | ✅ **ĐÓNG** | như trên |
+| F-07 | bộ dò health xanh giả không ai chạy | ✅ **ĐÓNG** | Scheduled Task `LTT_Soi_CongLLM` mỗi 15 phút, SYSTEM. Đối chứng âm: token sai → `exit 2` + một dòng log |
+| F-08 | `do_sau_khoi_dong.py` nói sai lý do, sai nhãn | ✅ **ĐÓNG** | §3 nay ĐẾM sự kiện rồi mới kết luận; §4 đổi tên; thêm §2b tự khai khi số không còn là số đo boot |
+| — | ba phép kiểm cùng hình dạng `test_385` | ✅ **ĐÓNG phần `/messages`** | ca HTTP trong `test_272`; đột biến tái hiện **cả hai** hồi quy lịch sử (500 và 200-im-lặng) → đều đỏ |
+| H15 | diễn tập rollback **máy A** | ✅ **ĐÓNG (phần đổi thư mục)** | root cô lập: đổi đúng chiều, giữ bản hỏng ở `app.failed`, **từ chối** khi không có bản để lui. ⚠️ Phần *dịch vụ lên lại + health xanh* vẫn chưa đo — chỉ đo được bằng một lần cắt thật |
+| **E15** | canary **client thật** | ✅ **ĐÓNG — LẦN ĐẦU** | xem dưới |
+
+### 🔴 Đợt 4 bắt được một P1 mà cả ba lớp bằng chứng của tôi bỏ qua
+
+Chạy **Codex CLI 0.145.0** thật vào production:
+
+    ERROR: 400 "khong muc nao trong `tools` dung duoc: moi muc phai co
+                `name` va `input_schema`."
+
+Codex **luôn** khai `shell`/`apply_patch` ⇒ không phải "mất tool" mà là **client
+chết hẳn**. Nguyên nhân: OpenAI Responses khai tool **phẳng**
+(`{"type":"function","name":…,"parameters":…}`), và `sang_openai_tools` bỏ qua
+mọi mục có `type` mà thiếu `input_schema`. Tức cửa `/responses` **từ chối đúng
+khuôn native của giao thức nó nói**.
+
+⛔ **Chốt chặn đó được viết cho cửa Anthropic rồi đặt trong `_cua` — hàm phục vụ
+CẢ HAI cửa.** `test_385` (hàm thuần), ca HTTP tôi vừa thêm sáng nay, và canary
+production của tôi: cả ba đều xanh, vì cả ba thử `/messages`.
+
+⭐ Đây đúng là câu `test_290` đã viết sẵn trong kho: *API trả 200 ≠ client dùng
+được*. Tôi chép câu đó vào báo cáo Prompt 08 như một bài học, rồi tự mắc nó vài
+giờ sau.
+
+**Sau khi sửa, đo lại bằng chính Codex — vòng tool khép kín:**
+
+```
+user   : dung shell dem so tep .py trong apps/ltt_llm
+codex  : goi tool shell -> bi sandbox cua CHINH Codex chan
+codex  : tu sua cu phap, goi lai -> chay duoc -> "6"
+codex  : "Ket qua: 6 tep .py trong apps/ltt_llm"       (dung: 6)
+```
+
+Tức đóng luôn **D14** (vòng tool nhiều bước) và **D13** (tham số tool hợp lệ)
+bằng một client thật, qua Cloudflare, trên production.
+
+### Một mục vận hành MỚI, không có trong tám phát hiện
+
+**Không có gì chặn hai lượt `2-cai-dat.ps1` chạy cùng lúc.** Lúc 18:49–18:50 hai
+phiên deploy chồng nhau vào `C:\LTTPlatform\app`, cách nhau **56 giây**. Lần này
+không hỏng tệp nào (đối chiếu SHA256 20 tệp: 19 khớp, 1 lệch và tệp đó là việc
+đang sửa dở của phiên kia) — nhưng đó là **may**, không phải thiết kế.
+
+Nay có khoá ghi **ai giữ / từ lúc nào / commit nào**, vì một khoá im lặng chỉ
+biến *"ghi đè nhau"* thành *"treo không rõ vì sao"*. Đã chứng minh bằng đối
+chứng, và `test_362` bắt được khi tôi đặt nó **sai chỗ** (trước chốt cây riêng).
+
+### Còn nợ sau bốn đợt
+
+| P | Nợ | Vì sao chưa làm |
+|---|---|---|
+| P3 | Benchmark D30–D36 · `--lan 5` | nợ Prompt 04/06, cần cửa sổ GPU dài; không mở trong đợt thi hành này |
+| P3 | Canary Claude Code / VS Code (E16–E17) | E15 đã đóng bằng Codex; hai client kia chưa cài trên máy này |
+| P3 | Rollback máy A: phần **dịch vụ lên lại** | chỉ đo được bằng một lần cắt production thật |
+| P2 | Codex báo `Model metadata for ltt_llm not found` | N5 đã biết; không chặn, nhưng làm Codex ước ngữ cảnh sai |
+
+---
+
+## ✅ PROMPT 08 ĐÃ CHẠY — CHƯƠNG TRÌNH ĐÓNG Ở `CONDITIONAL PASS` *(01/09, phiên khác)*
+
+Báo cáo đầy đủ: `reports/08_final_acceptance.md`. Bằng chứng reboot:
+`evidence/N7_N9_SAU_KHOI_DONG_2026-09-01.md`.
+
+**Điểm 87 → 81.** Không phải vì hệ thống xấu đi: 87 do người thi hành tự chấm,
+81 do người nghiệm thu chấm **sau khi loại một bằng chứng vô hiệu** và tìm thêm
+**tám** mục. Phần lớn chênh lệch nằm ở *quan sát*, không ở hỏng mới sinh.
+
+### Bốn chỗ phiên trước tự nêu — kết quả kiểm chứng
+
+| # | Lời khai | Phán quyết |
+|---|---|---|
+| 1 | "dụng cụ đo của tôi hỏng tám lần" | ✅ **ĐÚNG, và phải tăng** — tìm thêm **3**, và người nghiệm thu **tự làm hỏng 2 phép đo của chính mình**, cả hai cho ra "khuyết tật" nghe rất thuyết phục mà không có thật |
+| 2 | "`test_385` xanh trong khi mã hỏng — còn cái nào cùng hình dạng?" | ✅ **CÓ — ít nhất ba** (`test_285`, `test_290`, `test_360`). Nhưng hẹp hơn lo ngại: giàn HTTP **đã có** (`test_272`) nên thuốc rẻ. Và hồi quy 500 **đã sửa thật** (đo sống: 400 + đúng lý do, đối chứng 200) |
+| 3 | "F05 là SUY RA, không phải QUAN SÁT" | ✅ **ĐÃ ĐÓNG BẰNG QUAN SÁT** — reboot thật `15:51:28`; 5/5 tự lên **+15,7 s**, tunnel lại **+20,5 s**, **0** lượt cần `FAILURE_ACTIONS` |
+| 4 | "`--lan 5` A/B chưa chạy" | ⛔ **VẪN CHƯA** — ngoài quyền reviewer mode. `9/12 → 0/12` vẫn phải đọc là **một lượt** |
+
+⭐ **Và danh sách bốn chỗ đó đúng là KHÔNG ĐẦY ĐỦ**, như chính nó cảnh báo. Tám
+phát hiện mới ở mục Open risks (F-01…F-08). Chủ đề chung của cả tám: **phần khó
+của hệ thống thì đúng; thứ sai là những gì hệ thống NÓI VỀ CHÍNH NÓ.**
+
+### Điều kiện lên `FINAL PASS`
+
+1. Đóng **F-02** (công bố ngữ cảnh vision sai — đang làm G6 hỏng);
+2. Đóng **F-07** (bộ dò health xanh giả chưa có lịch chạy);
+3. Thay bằng chứng của **F-01** (INV-003 đã đo lại đúng; cột `credit_delta` vẫn cần sửa);
+4. Chạy **một** canary bằng **client thật** (E15-E17) — `test_290` đã chứng minh
+   *API trả 200* khác *client dùng được*.
+
+⛔ **Không mục nào trong bốn điều trên đòi dừng bán.**
+
+---
 
 ## 🔻 MỐC BÀN GIAO CHO PROMPT 08 *(01/09, phiên `lttstudiosapp-c3`)*
 

@@ -97,8 +97,16 @@ def main(argv=None) -> int:
         return 1
 
     # UTF-8 KHONG BOM — quy tac 1 cua CLAUDE.md.
+    #
+    # ⛔ `newline="\n"` KHONG PHAI TUY CHON. Thieu no, `write_text` dung kieu
+    #    xuong dong mac dinh cua Windows (CRLF) trong khi tep nay o HEAD la LF,
+    #    nen buoc `kieu xuong dong` cua gate do NGAY SAU khi ai do chay `--ghi`.
+    #
+    #    Do 01/09: chap nhan mot thay doi hop dong co y -> gate do vi kieu xuong
+    #    dong, khong phai vi hop dong. Nguoi chay se doc dong do va tuong minh
+    #    lam sai mot viec khac.
     TEP.write_text(json.dumps(moi, ensure_ascii=False, indent=2) + "\n",
-                   encoding="utf-8")
+                   encoding="utf-8", newline="\n")
     print("Da ghi. DUNG QUEN docs/PUBLIC_API/CHANGELOG.md.")
     return 0
 

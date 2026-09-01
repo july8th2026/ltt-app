@@ -36,15 +36,26 @@ def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
 
     ⇒ Hằng vẫn phải bằng mốc đã đo; mô tả thì phải nói con số **khách dùng
       được**, và phải **sinh ra** từ hằng chứ không gõ tay.
+
+    🔴 SỬA LẦN HAI 01/09 (P08 F-02) — VÀ LẦN NÀY LÀ CHÍNH PHÉP KIỂM NÀY SAI.
+
+       Bản trên vòng qua **cả hai** alias nhưng đòi cả hai chứa **một** con số:
+       `CONG_BO_CHO_CLIENT`. Tức nó **cưỡng chế** `ltt_llm_vision` phải quảng
+       cáo `89K` — đúng cái lời hứa sai mà `/api/v1/models` đã nói với khách
+       suốt nhiều ngày, trong khi máy B chặn vision ở 65.536.
+
+       ⭐ Đáng ghi vì nó gọn: phép kiểm sinh ra để **ngăn** một lời hứa sai đã
+          **bắt buộc** một lời hứa sai khác. Nó vòng qua hai model rồi so với
+          một hằng số — vòng lặp làm nó *trông như* kiểm từng model.
     """
-    from apps.ltt_llm.ngan_sach import CONG_BO_CHO_CLIENT
+    from apps.ltt_llm.ngan_sach import cong_bo_cua
 
     assert CUA_SO_NGU_CANH == 131_072
     models = MANIFEST.tools[0].api_contract["models"]
-    cua_so = f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
     for ten in ("ltt_llm", "ltt_llm_vision"):
         mo_ta = models[ten]["description"]
-        assert cua_so in mo_ta, (ten, mo_ta)
+        cua_so = f"{round(cong_bo_cua(models[ten]['id']) / 1000)}K"
+        assert cua_so in mo_ta, (ten, cua_so, mo_ta)
         assert "131K" not in mo_ta, (
             f"`{ten}` van hua cua so cua ENGINE chu khong phai cua so khach "
             f"dung duoc: {mo_ta}")

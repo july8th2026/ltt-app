@@ -134,9 +134,11 @@ class PublicApiGuardMiddleware(BaseHTTPMiddleware):
             "latency_ms": latency_ms,
             "tool": getattr(request.state, "api_tool", "") or "",
             "job_id": getattr(request.state, "api_job_id", "") or "",
-            "credit_delta": getattr(request.state, "api_credit_delta", 0) or 0,
+            # ⛔ CHO TRONG. Gia tri THAT duoc doc LUC CHAY task, khong phai bay
+            #    gio — xem `_write_request_log_muon` ngay duoi.
+            "credit_delta": 0,
         }
-        task = BackgroundTask(_write_request_log, fields)
+        task = BackgroundTask(_write_request_log_muon, fields, request.state)
         if response.background is None:
             response.background = task
         else:
@@ -166,6 +168,33 @@ def _worth_recording(request, status: int) -> bool:
 async def _run_both(first, second) -> None:
     await first()
     await second()
+
+
+def _write_request_log_muon(fields: dict, state) -> None:      # noqa: ANN001
+    """Đọc `credit_delta` **muộn**, rồi mới ghi dòng.
+
+    🔴 VÌ SAO KHÔNG CHỤP SỚM NHƯ MỌI TRƯỜNG KHÁC (P08 F-01).
+
+       Cửa stream quyết toán tiền trong `finally` của generator — tức **sau** khi
+       middleware đã đi qua. Chụp `credit_delta` ở thời điểm dựng `fields` thì
+       với cửa stream nó **luôn** đọc ra `0`, dù khách bị thu bao nhiêu.
+
+       Hệ quả không nằm ở một cột xấu xí, mà ở chỗ nó **giả làm bằng chứng**:
+       `reports/06` từng chứng minh "bận thì không thu tiền" bằng câu *"89 lượt
+       hỏng, credit=+0 mọi dòng"* — trên đúng cửa mà cột ấy không bao giờ khác 0.
+       Một bằng chứng không thể sai thì không chứng minh gì.
+
+       Và `platform_core/public_api/anomalies.py` cộng chính cột này để dò **bất
+       thường tiền**, nên nó mù với hai cửa khách dùng nhiều nhất.
+
+    ⭐ Đọc muộn là đúng cho MỌI cửa, không chỉ cửa stream: task nền chạy sau khi
+       thân phản hồi đã đi hết, nên tới lúc đó cửa nào cũng đã chốt tiền xong.
+    """
+    gia_tri = getattr(state, "api_credit_delta", 0)
+    # Cửa stream đặt `"cho"` lúc trả phản hồi để dòng log VĂN BẢN không nói dối
+    # bằng một số `0`. Tới đây mà vẫn là `"cho"` nghĩa là quyết toán không chạy.
+    fields["credit_delta"] = int(gia_tri) if isinstance(gia_tri, int) else 0
+    _write_request_log(fields)
 
 
 def _write_request_log(fields: dict) -> None:

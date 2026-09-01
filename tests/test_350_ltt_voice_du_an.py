@@ -438,3 +438,327 @@ def test_khong_co_loai_job_moi():
 
     assert set(MANIFEST.job_types) == {"ltt_voice.synthesize", "ltt_voice.enroll"}, (
         f"job_types da no ra: {MANIFEST.job_types}")
+
+
+# ════════════════════ kho giọng CHUNG phải thấy được ở cửa DÙNG ══════════════
+#
+# Tìm ra 01/09/2026 bằng cách mở màn Dự án trên production và đếm ô chọn giọng
+# của một khối: đúng 21 lựa chọn — "Theo dự án" + 20 giọng mẫu. **Cả 25 giọng
+# kho chung vắng mặt**, ở cả ô chọn mặc định của dự án lẫn ô chọn của từng khối.
+#
+# ⛔ Nó không phải lỗi hiển thị. `tham_chieu.danh_sach` mặc định KHÔNG gồm kho
+#    chung — cố ý, và docstring của nó giải thích vì sao: một cửa "quản lý giọng
+#    của tôi" không nên liệt kê giọng nó không được sửa. Nhưng Dự án là cửa
+#    **DÙNG**, không phải cửa **SỬA**. `_p_tao` và `_p_giong` đều nói ra
+#    `gom_dung_chung=True`; `_p_du_an` quên, ở cả hai chỗ.
+#
+# ⭐ Và hình dạng của lỗi là thứ đáng nhớ: một mặc định AN TOÀN đặt đúng chỗ
+#    (cửa sửa) trở thành một lỗi khi cửa thứ ba quên bật nó. Mặc định fail-closed
+#    không tự bảo vệ được nơi gọi — nó chỉ đổi kiểu lỗi từ "lộ" sang "mất".
+
+def _tao_giong_kho_chung(ten="Giong kho chung thu"):
+    """Một `VoiceProfile` `dung_chung=True` của MỘT CHỦ KHÁC."""
+    import platform_core.db as dbmod
+    from apps.ltt_voice.tables import VoiceProfile
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        g = VoiceProfile(public_id="vc_khochungthu000000000000000000",
+                         owner_id="mot-chu-hoan-toan-khac",
+                         ten_hien_thi=ten, ngon_ngu="vi",
+                         trang_thai="active", dung_chung=True)
+        db.add(g)
+        db.commit()
+        return g.public_id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_kho_chung_HIEN_o_man_du_an(khach):
+    client, _ = khach
+    ten = "Giong kho chung thu"
+    _tao_giong_kho_chung(ten)
+    r = client.get("/ltt-voice/du-an")
+    assert r.status_code == 200
+    assert ten in r.text, (
+        "man DANH SACH du an khong thay kho giong chung — thieu "
+        "`gom_dung_chung=True` o `_p_du_an`")
+
+
+def test_kho_chung_HIEN_o_o_chon_giong_TUNG_KHOI(khach):
+    """Chỗ này mới là chỗ khách mất việc: gán giọng cho một khối."""
+    client, _ = khach
+    ten = "Giong kho chung thu"
+    ma = _tao_giong_kho_chung(ten)
+    pid = _tao(client)
+    r = client.get(f"/ltt-voice/du-an/{pid}")
+    assert r.status_code == 200
+    assert f'value="v:{ma}"' in r.text, (
+        "o chon giong CUA KHOI khong co giong kho chung — khach khong gan duoc "
+        "giong da nhan ban cho mot khoi")
+
+
+def test_kho_chung_HIEN_o_man_API(khach):
+    """Màn API từng nói "Bạn chưa có giọng nhân bản nào" với khách có 25 giọng."""
+    client, _ = khach
+    ten = "Giong kho chung thu"
+    ma = _tao_giong_kho_chung(ten)
+    r = client.get("/ltt-voice/api")
+    assert r.status_code == 200
+    assert ma in r.text, (
+        "man API khong dua ma giong kho chung — trong khi `features.py` MO "
+        "`cho_dung_chung=True` o cua dung, tuc ma ay goi duoc that")
+
+
+# ══════════════════ Lưu một lượt Studio thành khối trong Dự án ═══════════════
+#
+# Ảnh 01 vẽ nút `Save to Project`. Chú thích trong `ltt_voice_studio.html` từng
+# ghi lý do hoãn: *"chưa có Dự án. Nút sẽ xuất hiện cùng P5, không sớm hơn."*
+# Dự án đã có ⇒ đây là một **lời hứa đã đến hạn**, không phải tính năng mới.
+
+def _job_xong(uid: str, text="Cau da doc", preset="Adam"):
+    """Một job `done` với đủ `audio_key`/`duration_s`/`credit_cost`."""
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        j = Job(user_id=uid, app_slug="ltt_voice",
+                job_type="ltt_voice.synthesize",
+                params={"text": text, "preset": preset, "nguon": "studio"},
+                status="done",
+                result={"audio_key": f"voice/out/{uid}/jx/tieng.wav",
+                        "duration_s": 4.5, "credit_cost": 2, "text": text})
+        db.add(j)
+        db.commit()
+        return str(j.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_luu_tu_studio_tao_du_an_moi_va_khoi_da_XONG(khach):
+    client, uid = khach
+    jid = _job_xong(uid)
+    r = client.post("/ltt-voice/du-an/luu-tu-studio",
+                    data={"job_id": jid, "du_an_id": "", "ten_moi": "Tu Studio",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    d = r.json()
+    assert d["ok"] and d["ten"] == "Tu Studio", d
+
+    trang = client.get(d["duong"]).text
+    assert "Cau da doc" in trang, "khoi khong mang van ban cua luot doc"
+    assert "1 kh\u1ed1i" in trang or "1 kh" in trang
+
+
+def test_luu_tu_studio_KHONG_nop_job_moi_va_KHONG_thu_tien_lan_hai(khach):
+    """🔴 Ràng buộc TIỀN. Tiếng đã có; đây là một phép THAM CHIẾU.
+
+    Cám dỗ là gọi lại `submit_with_credit` cho gọn mã — nó sẽ thu tiền lần thứ
+    hai cho một tệp khách đã trả tiền và đang nghe.
+    """
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    jid = _job_xong(uid)
+
+    def dem_job():
+        gen = dbmod.get_session()
+        db = next(gen)
+        try:
+            return db.query(Job).filter(Job.user_id == uid).count()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    truoc = dem_job()
+    r = client.post("/ltt-voice/du-an/luu-tu-studio",
+                    data={"job_id": jid, "ten_moi": "X",
+                          "csrf_token": _csrf(client)})
+    assert r.json()["ok"]
+    assert dem_job() == truoc, (
+        "da nop them mot job — luu vao du an phai la mot phep THAM CHIEU, "
+        "khong phai mot luot sinh moi")
+
+
+def test_luu_tu_studio_TU_CHOI_job_cua_nguoi_khac(khach):
+    client, _uid_cua_toi = khach
+    jid = _job_xong("mot-nguoi-hoan-toan-khac")
+    r = client.post("/ltt-voice/du-an/luu-tu-studio",
+                    data={"job_id": jid, "ten_moi": "X",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 404, r.text
+
+
+def test_luu_tu_studio_TU_CHOI_job_chua_xong(khach):
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        j = Job(user_id=uid, app_slug="ltt_voice",
+                job_type="ltt_voice.synthesize",
+                params={"text": "chua xong", "preset": "Adam"},
+                status="running")
+        db.add(j)
+        db.commit()
+        jid = str(j.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    r = client.post("/ltt-voice/du-an/luu-tu-studio",
+                    data={"job_id": jid, "ten_moi": "X",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 404, r.text
+
+
+# ═══════════════ Phiên bản của một khối — đọc từ LỊCH SỬ JOB ════════════════
+#
+# ⭐ KHÔNG có bảng `block_version`, và đó là quyết định cũ được GIỮ NGUYÊN:
+#    `tables_du_an.py` từ chối nó vì lịch sử job đã giữ đủ mọi lượt sinh, nên
+#    một bảng thứ hai là một nguồn chân lý thứ hai cho cùng một sự thật.
+#
+#    Nhưng "không có bảng" từng bị đọc thành "không có tính năng". Dữ liệu nằm
+#    sẵn trong `params.block_id`; cái thiếu chỉ là một phép đọc.
+
+def _job_cho_khoi(uid: str, block_id: int, *, giay=3.0, credit=1, hau_to="a"):
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        j = Job(user_id=uid, app_slug="ltt_voice",
+                job_type="ltt_voice.synthesize",
+                params={"text": "x", "preset": "Adam", "nguon": "du_an",
+                        "block_id": block_id},
+                status="done",
+                result={"audio_key": f"voice/out/{uid}/j{hau_to}/tieng.wav",
+                        "duration_s": giay, "credit_cost": credit})
+        db.add(j)
+        db.commit()
+        return str(j.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def test_phien_ban_doc_duoc_MOI_luot_cua_mot_khoi(khach):
+    client, uid = khach
+    pid = _tao(client)
+    r = client.post(f"/ltt-voice/du-an/{pid}/khoi/them",
+                    data={"csrf_token": _csrf(client), "text": "Cau mot"})
+    assert r.status_code == 200, r.text
+    bid = r.json()["id"]
+
+    for i, h in enumerate("abc"):
+        _job_cho_khoi(uid, bid, giay=3.0 + i, hau_to=h)
+
+    r = client.get(f"/ltt-voice/du-an/{pid}/khoi/{bid}/phien-ban")
+    assert r.status_code == 200, r.text
+    pb = r.json()["phien_ban"]
+    assert len(pb) == 3, pb
+    # Moi nhat truoc, va V lon nhat la moi nhat — dung nhu anh 03 ve.
+    assert [x["ten"] for x in pb] == ["V3", "V2", "V1"], pb
+    assert all("/audio/" in x["audio_url"] for x in pb)
+
+
+def test_phien_ban_KHONG_lan_sang_khoi_khac(khach):
+    """`block_id` lọc trong Python, nên phải chốt rằng nó lọc THẬT."""
+    client, uid = khach
+    pid = _tao(client)
+    r1 = client.post(f"/ltt-voice/du-an/{pid}/khoi/them",
+                     data={"csrf_token": _csrf(client), "text": "Mot"})
+    r2 = client.post(f"/ltt-voice/du-an/{pid}/khoi/them",
+                     data={"csrf_token": _csrf(client), "text": "Hai"})
+    b1, b2 = r1.json()["id"], r2.json()["id"]
+    _job_cho_khoi(uid, b1, hau_to="p")
+    _job_cho_khoi(uid, b2, hau_to="q")
+    _job_cho_khoi(uid, b2, hau_to="r")
+
+    assert len(client.get(
+        f"/ltt-voice/du-an/{pid}/khoi/{b1}/phien-ban").json()["phien_ban"]) == 1
+    assert len(client.get(
+        f"/ltt-voice/du-an/{pid}/khoi/{b2}/phien-ban").json()["phien_ban"]) == 2
+
+
+def test_phien_ban_cua_du_an_nguoi_khac_la_404(khach):
+    client, _ = khach
+    r = client.get("/ltt-voice/du-an/vp_khongtontai00000000000000/khoi/1/phien-ban")
+    assert r.status_code == 404
+
+
+def test_khoi_luu_TU_STUDIO_van_co_MOT_phien_ban(khach):
+    """🔴 Lỗ tìm ra khi bấm thử trên production, không phải khi đọc mã.
+
+    Khối tạo bằng `Lưu vào dự án` mang tệp của một job chạy **trước khi khối
+    tồn tại**, nên job ấy không có `params.block_id`. Bản đầu của
+    `cac_phien_ban` chỉ lọc theo `block_id` ⇒ khối hiện một trình phát nghe
+    được, ngay cạnh dòng "Khối này chưa có bản đọc nào."
+
+    ⭐ Hai câu mâu thuẫn trên cùng một màn hình, và cả hai đều "đúng" theo mã
+       của chúng. Job mà khối đang TRỎ TỚI luôn là một phiên bản của nó.
+    """
+    client, uid = khach
+    jid = _job_xong(uid, text="Cau tu studio")
+    r = client.post("/ltt-voice/du-an/luu-tu-studio",
+                    data={"job_id": jid, "ten_moi": "Tu Studio",
+                          "csrf_token": _csrf(client)})
+    assert r.json()["ok"], r.text
+    pid = r.json()["du_an"]
+
+    trang = client.get(f"/ltt-voice/du-an/{pid}").text
+    import re
+    m = re.search(r'data-khoi="(\d+)"', trang)
+    assert m, "khong thay nut phien ban tren trang du an"
+    bid = int(m.group(1))
+
+    pb = client.get(f"/ltt-voice/du-an/{pid}/khoi/{bid}/phien-ban").json()
+    assert pb["ok"], pb
+    assert len(pb["phien_ban"]) == 1, (
+        f"khoi co tep nghe duoc ma danh sach phien ban rong: {pb}")
+    assert pb["phien_ban"][0]["dang_dung"] is True
+
+
+def test_man_chi_tiet_co_cot_DIEU_HUONG_sang_du_an_khac(khach):
+    """Ảnh 03 vẽ danh sách dự án ở cột ngoài cùng bên trái.
+
+    ⛔ Trước 01/09 màn này chỉ có hai cột, nên đổi sang một dự án khác phải bấm
+       "← Dự án" quay ra rồi bấm vào. Với người dựng podcast nhiều tập — đúng
+       đối tượng của màn này — đó là hai cú bấm cho một việc làm liên tục.
+
+    ⭐ Chốt cả điều kiện `|length > 1`: một dự án duy nhất thì cột ấy chỉ là một
+       liên kết trỏ về chính trang đang mở.
+    """
+    client, _uid = khach
+    p1 = _tao(client, ten="Du an MOT")
+    trang = client.get(f"/ltt-voice/du-an/{p1}").text
+    assert "Du an MOT" in trang
+    assert 'class="lv-mda-ds"' not in trang, (
+        "mot du an duy nhat ma van ve cot dieu huong — mot lien ket tro ve "
+        "chinh trang dang mo")
+
+    p2 = _tao(client, ten="Du an HAI")
+    trang = client.get(f"/ltt-voice/du-an/{p2}").text
+    assert 'class="lv-mda-ds"' in trang, "co hai du an ma khong co cot dieu huong"
+    assert "Du an MOT" in trang, "cot dieu huong khong liet ke du an kia"
+    assert f'/ltt-voice/du-an/{p1}' in trang
+    assert 'aria-current="page"' in trang, (
+        "khong danh dau du an DANG mo — nguoi dung khong biet minh dang o dau")

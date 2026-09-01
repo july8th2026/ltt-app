@@ -97,7 +97,35 @@
       {% if trang_thai.tool_mo %}
         <div class="lv-st-o">
           <span class="eyebrow">{{ _("Gọi thử") }}</span>
-          <div class="lv-api-ma">
+          {#
+            HAI NGÔN NGỮ, và cái thứ hai có lý do nặng hơn "cho đẹp".
+
+            🔴 `urllib` là thư viện CHUẨN của Python. Ai viết mười dòng để thử
+               API sẽ dùng nó — và Cloudflare chặn **tiền tố chuỗi
+               `Python-urllib/`, PHÂN BIỆT HOA-THƯỜNG** bằng 403 `error code:
+               1010`. Đó là 403 **của Cloudflare, không phải của ta**: không
+               `request_id`, không dòng nào trong `public_api_requests`, không
+               tra được bằng `/admin/api-trace`.
+
+            ⛔ Nhìn y hệt khoá sai. Khách sẽ đi tạo khoá mới rồi vẫn 403, và
+               **ta không thấy gì cả**. Nên ví dụ Python ở đây không phải một
+               tiện nghi — dòng `User-Agent` trong nó là dòng quan trọng nhất
+               của cả khối, và nó là thứ duy nhất cứu được người **tự viết** chứ
+               không chép ví dụ của ta.
+
+            ⚠️ Đo 30/08: chuỗi rỗng qua, `curl/8.0` qua, `Python-Requests/` qua,
+               `python-urllib` chữ thường qua — chỉ đúng tiền tố viết hoa chữ P
+               bị chặn. Nên "thiếu UA" KHÔNG phải cách đọc đúng.
+          #}
+          <div class="lv-loc-nhom lv-api-tab" role="group"
+               aria-label="{{ _('Ngôn ngữ ví dụ') }}">
+            <button type="button" class="lv-loc-nut on" aria-pressed="true"
+                    data-vidu="curl">cURL</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false"
+                    data-vidu="python">Python</button>
+          </div>
+
+          <div class="lv-api-ma" data-vidu-cho="curl">
             <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-curl"
                     aria-label="{{ _('Chép lệnh mẫu') }}"
                     title="{{ _('Chép lệnh mẫu') }}">⧉</button>
@@ -107,6 +135,29 @@
   -d '{"tool": "{{ ten_tool }}",
        "params": {"text": "{{ vi_du }}",
                   "preset": "{{ mac_dinh }}"}}'</code></pre>
+          </div>
+
+          <div class="lv-api-ma" data-vidu-cho="python" hidden>
+            <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-py"
+                    aria-label="{{ _('Chép mã mẫu') }}"
+                    title="{{ _('Chép mã mẫu') }}">⧉</button>
+            <pre id="lv-api-py" class="mono"><code>import json, os, urllib.request
+
+req = urllib.request.Request(
+    "https://app.lttstudios.com/api/v1/jobs",
+    data=json.dumps({
+        "tool": "{{ ten_tool }}",
+        "params": {"text": "{{ vi_du }}", "preset": "{{ mac_dinh }}"},
+    }).encode("utf-8"),
+    headers={
+        "Authorization": "Bearer " + os.environ["LTT_API_KEY"],
+        "Content-Type": "application/json",
+        # BAT BUOC. Chuoi urllib tu dien ("Python-urllib/3.x") bi
+        # Cloudflare chan bang 403 truoc khi toi may chu — trong y
+        # het khoa sai. Dat bat cu User-Agent nao khac la qua.
+        "User-Agent": "ltt-client/1.0",
+    })
+print(json.load(urllib.request.urlopen(req)))</code></pre>
           </div>
           <p class="dim"><small>{{ _("Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
         </div>

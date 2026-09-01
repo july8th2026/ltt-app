@@ -26,10 +26,24 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
      bất đồng bộ (job)  né được trần 125 giây; nhưng khách phải học hình dạng
                         job của ta
 
-   Ngữ cảnh 131K là cửa sổ engine đã đo trên RTX 3090; public API giữ trần
-   input 65K theo Q116 để còn biên thời gian cho Cloudflare sau biến thiên
-   cold-load. Bản vision vẫn 64K cho tới khi có benchmark riêng. Cửa job vẫn là
-   đường lui cho tác vụ dài.
+   🔴 SỬA 01/09 — BA CON SỐ Ở ĐOẠN NÀY ĐỀU ĐÃ TRÔI (P08 F-02/F-03).
+
+   Bản cũ viết *"public API giữ trần input 65K theo Q116"*. Trần thật là
+   **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
+   Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
+
+       tran.input_tokens tu GET /health cua cong may B  ->  96256
+
+   Số đúng tại thời điểm viết:
+
+     * engine `qwen38-api`     `-c 131072`, trần vào 96.256, **công bố 89K**
+     * engine `qwen38-vision`  `-c 65536`,  trần vào 30.720, **công bố 28K**
+
+   ⛔ Vision **không** "vẫn 64K" như bản cũ nói — 65.536 là cửa sổ *engine*, còn
+      thứ khách nhét vào được nhỏ hơn nhiều vì phải chừa chỗ cho câu trả lời.
+      Nói "64K" với khách là đúng lỗi đã bị bắt ngày 01/09.
+
+   Cửa job vẫn là đường lui cho tác vụ dài.
 
 ⛔ GIÁ: `credit_cost` ở đây là **TRẦN ƯỚC CAO**, không phải giá cuối. Với LLM,
    số token RA chỉ biết được sau khi sinh xong. Nền tảng giữ chỗ theo trần này rồi
@@ -51,14 +65,26 @@ from apps.ltt_llm.ngan_sach import (CONG_BO_CHO_CLIENT,
                                     CUA_SO_MODEL as CUA_SO_NGU_CANH,
                                     LE as LE_NGU_CANH,
                                     TOKEN_RA_TRAN as MAX_TOKENS_TRAN,
-                                    mac_dinh_cho, tran_theo_ngu_canh)
+                                    cong_bo_cua, mac_dinh_cho,
+                                    tran_theo_ngu_canh)
 
 #: Token ra mặc định của **cửa job** (manifest phục vụ đường job).
 MAX_TOKENS_MAC_DINH = mac_dinh_cho("job")
 
 
-def _cua_so_noi_voi_khach() -> str:
-    """Con số ngữ cảnh **đúng với thứ khách thật sự nhét vào được**.
+def _cua_so_noi_voi_khach(model_id: str) -> str:
+    """Con số ngữ cảnh **đúng với thứ khách thật sự nhét vào được**, theo model.
+
+    🔴 THAM SỐ `model_id` LÀ BẢN VÁ CHO MỘT LỜI HỨA SAI THỨ HAI (01/09, P08 F-02).
+
+       Bản đầu của hàm này **không có tham số** — nó trả một con số cho **mọi**
+       alias. Nên `ltt_llm_vision` được quảng cáo *"same 89K usable input
+       context"* trong khi máy B chặn nó ở 65.536, và đo thật cho `413`.
+
+       ⭐ Điều đáng học: bản vá 30/08 dưới đây sửa **con số** (131K → 89K) và
+          coi như xong. Khuyết tật thật là **một con số cho hai model**, và nó
+          sống thêm một ngày sau khi "đã sửa". Sửa giá trị không phải sửa hình
+          dạng.
 
     🔴 TRƯỚC 30/08 CHỖ NÀY GÕ TAY "131K", VÀ ĐÓ LÀ MỘT LỜI HỨA SAI.
 
@@ -75,7 +101,7 @@ def _cua_so_noi_voi_khach() -> str:
        (`tools/build_public_api_docs.py`), nên một con số gõ tay ở đây sẽ tự
        nhân bản sang tài liệu ta xuất bản.
     """
-    return f"{round(CONG_BO_CHO_CLIENT / 1000)}K"
+    return f"{round(cong_bo_cua(model_id) / 1000)}K"
 
 
 
@@ -193,21 +219,38 @@ MANIFEST = AppManifest(
             #    Khách ghim vào `ltt_llm`; ngày ta đổi GGUF bên dưới thì mã của họ
             #    không phải sửa một dòng nào.
             #    ⚠️ Bản đầu tôi đặt alias trùng hệt id — `test_212` bắt được.
+            # ⛔ `constraints.context_window` KHÔNG PHẢI TRANG TRÍ. Thiếu nó thì
+            #    `server/api/tools.py:_dang_codex` rơi về hằng số lùi
+            #    `CUA_SO_CONG_BO_MAC_DINH` (60.000) — và khách nhận **hai con số
+            #    khác nhau trong CÙNG một phản hồi**: phần chữ nói 89K, trường
+            #    `context_window` nói 60000 (P08 F-03).
+            #
+            #    `test_334::TestBanSaoConLai` nay buộc **mọi** alias ở đây phải
+            #    tự khai, nên đường lùi không bao giờ áp cho `ltt_llm` nữa.
             "models": {
                 "ltt_llm": {
                     "id": "qwen38-api",
-                    "description": (f"Text only, {_cua_so_noi_voi_khach()} usable "
-                                    f"input context. Coding, chat, agentic tool "
-                                    f"use, summarisation."),
+                    "description": (f"Text only, {_cua_so_noi_voi_khach('qwen38-api')} "
+                                    f"usable input context. Coding, chat, agentic "
+                                    f"tool use, summarisation."),
                     "stability": "stable",
+                    "constraints": {
+                        "context_window": cong_bo_cua("qwen38-api"),
+                        "max_output_tokens": MAX_TOKENS_TRAN,
+                    },
                 },
                 "ltt_llm_vision": {
                     "id": "qwen38-vision",
-                    "description": (f"Same model plus image reading, same "
-                                    f"{_cua_so_noi_voi_khach()} usable input "
-                                    f"context. Send images as OpenAI image_url "
+                    "description": (f"Same model plus image reading, but a smaller "
+                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} usable "
+                                    f"input context. Send images as OpenAI image_url "
                                     f"parts."),
                     "stability": "stable",
+                    "constraints": {
+                        "context_window": cong_bo_cua("qwen38-vision"),
+                        "max_output_tokens": MAX_TOKENS_TRAN,
+                        "reads_images": True,
+                    },
                 },
             },
             "enums": {
@@ -223,9 +266,11 @@ MANIFEST = AppManifest(
                 },
                 "model": {
                     "description": (f"`ltt_llm` for text "
-                                    f"({_cua_so_noi_voi_khach()} usable input "
-                                    f"context). `ltt_llm_vision` also reads "
-                                    f"images."),
+                                    f"({_cua_so_noi_voi_khach('qwen38-api')} usable "
+                                    f"input context). `ltt_llm_vision` also reads "
+                                    f"images, with a smaller "
+                                    f"{_cua_so_noi_voi_khach('qwen38-vision')} "
+                                    f"input context."),
                     "example": "ltt_llm",
                 },
                 "max_tokens": {

@@ -5,10 +5,11 @@ from __future__ import annotations
 from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
-                     _t, _uid, doc_man_giong, doc_man_lich_su, features,
+                     _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
                      gia, giong_mau, io, lan_ngon_ngu, require_login,
                      router, templates,
-                     tham_chieu, user_hien_tai, verify_csrf_token, vo,
+                     tham_chieu, tu_dien_rieng, user_hien_tai,
+                     verify_csrf_token, vo,
                      NHAN_NGUON)
 
 
@@ -42,6 +43,12 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.
         gan_day, _cur = job_history.list_owned(
             db, uid, app_slug=MANIFEST.slug, limit=3)
+        # ⚠️ TÍNH Ở ĐÂY, không ở chỗ dựng template. `finally` ngay bên dưới
+        #    đóng phiên CSDL, nên một lời gọi ORM đặt sau đó chạm vào một
+        #    session đã đóng — và nó hỏng ở tận Jinja, một chỗ không ai nghĩ
+        #    tới khi đọc lỗi. Danh sách dự án cho nút `Lưu vào dự án`.
+        du_an_ds = [{"public_id": d.public_id, "ten": d.ten}
+                    for d in du_an.danh_sach(db, uid)]
     finally:
         try:
             next(gen)
@@ -52,6 +59,13 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     hop_le = (giong_mau.hop_le(xin)
               or any(g.public_id == xin and g.trang_thai == "active"
                      for g in cua_toi))
+    # ⚠️ BÍ DANH `_toc_do`, không phải `toc_do`. Hàm POST ở dưới có một
+    #    THAM SỐ FORM tên `toc_do`, và một cái tên mang hai nghĩa trong
+    #    cùng một tệp là đúng lớp bẫy đã từng ghi SAI một bút toán credit
+    #    (`$So`/`$so` trong PowerShell, 31/08). Ở Python nó không nổ —
+    #    nó chỉ chờ tới lần ai đó cần module trong hàm kia.
+    from .. import toc_do as _toc_do
+
     return templates.TemplateResponse(
         request, "ltt_voice_studio.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_STUDIO, hang_doi=hang_doi,
@@ -66,6 +80,12 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     giong_chon=(xin if hop_le else ""),
                     mac_dinh=giong_mau.MAC_DINH,
+                    # Các nấc tốc độ lấy từ `toc_do.CAC_NAC` chứ không gõ lại
+                    # trong template: một danh sách chép ra hai chỗ sẽ lệch, và
+                    # chỗ lệch là chỗ giao diện mời một giá trị mà `hop_le` ép
+                    # về giá trị khác — im lặng.
+                    cac_nac_toc_do=_toc_do.CAC_NAC,
+                    du_an_ds=du_an_ds,
                     gan_day=gan_day))
 
 
@@ -117,7 +137,28 @@ def xem_truoc(request: Request, text: str = Form(""),
             "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
         ).format(n=len(tho), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
 
-    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    # 🔴 TỪ ĐIỂN RIÊNG PHẢI CÓ Ở ĐÂY, và thiếu nó biến bảng xem trước thành
+    #    một lời nói dối.
+    #
+    #    Bảng "Máy sẽ đọc thành" tồn tại để khách thấy trước máy đọc ra sao
+    #    **trước khi trả tiền**. Nếu worker áp từ điển mà xem trước thì không,
+    #    hai bên cho hai kết quả khác nhau — và bên khách nhìn thấy là bên SAI.
+    #
+    # ⚠️ Đây đúng lớp lỗi "một cửa có, cửa kia không" mà `features.py` cảnh báo,
+    #    và tôi vừa mắc nó ngay trong lượt thêm chính tính năng này: nối vào
+    #    `jobs.py` rồi quên `xem_truoc`.
+    gen = _db()
+    db = next(gen)
+    try:
+        tu_rieng = tu_dien_rieng.nhu_dict(db, _uid(user))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                   tu_dien_rieng=tu_rieng)
     da = chuan.da_chuan_hoa
     return JSONResponse({
         "ok": True,
@@ -186,7 +227,8 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
 
 @router.post("/tao")
 def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
-        preset: str = Form(""), csrf_token: str = Form(""),
+        preset: str = Form(""), toc_do: str = Form("1.0"),
+        csrf_token: str = Form(""),
         user=Depends(user_hien_tai), _=Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
         return _het_phien()
@@ -195,8 +237,12 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
 
     # Nghiệp vụ ở `features`, kể cả phép kiểm "không được vừa voice_id vừa preset".
     try:
+        # ⛔ KHÔNG kiểm `toc_do` ở đây. `features.chuan_hoa` ép nó về khoảng
+        #    và biến giá trị vô nghĩa thành 1.0 — và phép kiểm ấy phải nằm ở
+        #    `features` vì Public API đi THẲNG xuống job, không qua route này.
         yc = features.chuan_hoa({"text": text, "voice_id": voice_id,
-                                 "preset": preset, "owner_id": _uid(user)})
+                                 "preset": preset, "owner_id": _uid(user),
+                                 "toc_do": toc_do})
     except features.LoiGiongNoi as e:
         return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
 
@@ -242,7 +288,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             #    khuyết mà không lệnh nào vá được.
             params={"text": yc.text, "voice_id": yc.voice_id,
                     "preset": yc.preset, "owner_id": _uid(user),
-                    "nguon": "studio"},
+                    "toc_do": yc.toc_do, "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
             admission_slots=tool.admission_slots)
@@ -258,3 +304,78 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             pass
 
 
+
+
+# ── Từ điển phát âm riêng ────────────────────────────────────────────────────
+#
+# ⭐ Ở `_p_tao.py` chứ không phải một tệp riêng: nó là một điều khiển của màn
+#    Tạo tiếng nói (ảnh 01 vẽ nó ở mục ⑤ `PRONUNCIATION`, ngay cột trái), và
+#    `AGENTS.md` mục 8 nói route chia theo MÀN, không theo bảng.
+
+@router.get("/tu-dien")
+def xem_tu_dien(request: Request, user=Depends(user_hien_tai),
+                _=Depends(require_login)):
+    """Danh sách mục của khách. Dùng cho hộp từ điển ở màn Tạo tiếng nói."""
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        return JSONResponse({"ok": True, "muc": [
+            {"id": m.id, "tu": m.tu, "thay": m.thay, "ghi_chu": m.ghi_chu}
+            for m in tu_dien_rieng.danh_sach(db, uid)
+        ], "tran": tu_dien_rieng.TRAN_SO_MUC})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/tu-dien/them")
+def them_tu_dien(request: Request, tu: str = Form(""), thay: str = Form(""),
+                 ghi_chu: str = Form(""), csrf_token: str = Form(""),
+                 user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Thêm hoặc SỬA một mục.
+
+    ⭐ Gõ lại cùng một từ = sửa cách đọc, không phải lỗi trùng. Bắt khách xoá
+       rồi thêm lại là một bước thừa cho thao tác họ làm nhiều nhất.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        try:
+            m = tu_dien_rieng.them(db, uid, tu=tu, thay=thay, ghi_chu=ghi_chu)
+        except features.LoiGiongNoi as e:
+            db.rollback()
+            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        db.commit()
+        return JSONResponse({"ok": True, "muc": {
+            "id": m.id, "tu": m.tu, "thay": m.thay, "ghi_chu": m.ghi_chu}})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/tu-dien/{muc_id}/xoa")
+def xoa_tu_dien(request: Request, muc_id: int, csrf_token: str = Form(""),
+                user=Depends(user_hien_tai), _=Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        if not tu_dien_rieng.xoa(db, uid, muc_id):
+            return JSONResponse({"ok": False}, status_code=404)
+        db.commit()
+        return JSONResponse({"ok": True})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass

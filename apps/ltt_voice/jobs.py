@@ -87,7 +87,8 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     from platform_core.storage import get_storage
 
-    from . import features, sidecar_client, tham_chieu
+    from . import (features, sidecar_client, tham_chieu, toc_do,
+                   tu_dien_rieng)
 
     yc = features.chuan_hoa(params)
 
@@ -109,7 +110,51 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     #    người nói qua các lượt gọi riêng (0,9254 — cao hơn cả sàn nhiễu 0,8524
     #    của hai nửa trong cùng một lượt). Xem
     #    `voice_sidecar/do_giu_giong_nhieu_luot.py`.
-    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    # ── TỪ ĐIỂN PHÁT ÂM RIÊNG CỦA KHÁCH ─────────────────────────────────────
+    #
+    # ⭐ `chuan_bi_van_ban(tu_dien_rieng=...)` nhận tham số này từ lâu, qua ba
+    #    tầng xuống tới `tu_dien.ap_dung(them=...)` — và **không ai truyền**.
+    #    Cả chuỗi ấy chưa từng chạy một lần nào cho tới 01/09/2026.
+    #
+    # 🔴 PHẢI Ở ĐÂY, trong worker, KHÔNG ở route. Public API đi thẳng xuống job
+    #    và không qua route nào — đặt phép nạp này ở một cánh cửa thì cánh cửa
+    #    kia không có nó, và khách gọi API sẽ nghe tên riêng của họ đọc sai
+    #    trong khi trên web thì đúng. Cùng cái bẫy `features.py` cảnh báo.
+    tu_rieng = _voi_db(lambda db: tu_dien_rieng.nhu_dict(db, yc.owner_id))         if yc.owner_id else {}
+    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                      tu_dien_rieng=tu_rieng)
+
+    # ── TRẦN SAU CHUẨN HOÁ — chặn một lỗ KHUẾCH ĐẠI CHI PHÍ ─────────────────
+    #
+    # 🔴 `manifest._gia()` ước giá bằng `chuan_hoa(text)` **KHÔNG có từ điển
+    #    riêng** — và nó không được phép có, vì nó chạy ở mọi lượt báo giá nên
+    #    không được chạm CSDL (chú thích của chính nó nói vậy).
+    #
+    #    Nhưng worker thì CÓ áp từ điển. Hai bên đọc hai văn bản khác nhau, và
+    #    khoảng cách ấy do khách kiểm soát:
+    #
+    #        do 01/09, trong pham vi tran hien tai (100 muc, `thay` <= 160):
+    #          tho              1.499 ky tu   <- `_gia()` giu credit theo so nay
+    #          sau tu dien    120.749 ky tu   <- worker doc so nay
+    #          he so no          80,6x
+    #
+    #    Hệ quả không phải "thu thiếu": `credit_held` bé hơn thực tế làm phần
+    #    quyết toán vượt phần giữ, và một lượt chạy đang giữa chừng bị đánh
+    #    hỏng. Khách mất thời gian chờ để nhận một lỗi.
+    #
+    # ⭐ Trần đặt ở 3× độ dài thô: rộng gấp nhiều lần mọi phép nở thật (số →
+    #    chữ nở ~3× **chỉ trên phần là số**; "LTT" → "e lờ tê tê" nở 3,3× chỉ
+    #    trên ba ký tự), nhưng chặn dứt khoát ca 80×.
+    #
+    # ⛔ Ném `LoiGiongNoi` (= `LoiNguoiGoi`) chứ không phải lỗi hạ tầng: nền
+    #    tảng KHÔNG thử lại, và credit đã giữ được hoàn. Một lỗi hạ tầng ở đây
+    #    sẽ thử lại ba lần cho một thứ chắc chắn hỏng cả ba.
+    _tran_sau = len(yc.text) * 3 + 200
+    if len(chuan.da_chuan_hoa) > _tran_sau:
+        raise LoiGiongNoi(_t(
+            "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} "
+            "ký tự cho phép. Hãy rút gọn một mục trong từ điển."
+        ).format(n=len(chuan.da_chuan_hoa), t=_tran_sau))
     doan = chuan.doan or [yc.text]
 
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
@@ -146,6 +191,24 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
         except (TypeError, ValueError):
             pass
 
+    # ── TỐC ĐỘ HẬU KỲ ────────────────────────────────────────────────────────
+    #
+    # 🔴 ĐÚNG CHỖ NÀY, KHÔNG SỚM HƠN. Hai lý do độc lập, và cả hai đều hỏng
+    #    theo kiểu im lặng nếu đặt sai:
+    #
+    #    ① `giay` ở trên là cơ sở TÍNH TIỀN. Kéo giãn 1,5× làm tệp ngắn đi một
+    #       phần ba, nên đặt trước phép đo là để khách chọn tốc độ nhanh trả ít
+    #       hơn cho **cùng một lượng việc GPU**. Đó là một lỗ khai thác được.
+    #    ② Chốt chất lượng K1 chạy trong sidecar, trên sóng âm CHƯA kéo giãn.
+    #       Hệ cũ ghi lại bài học này: time-stretch làm lệch MỌI số đo F0, nên
+    #       nó đóng băng `post_speed` vô điều kiện trước khi đọc bất kỳ số nào.
+    #
+    # ⇒ Thứ tự bất biến: sinh → đo → (tính tiền theo `giay`) → kéo giãn → lưu.
+    giay_phat = 0.0
+    if toc_do.can_doi(yc.toc_do):
+        wav_bytes = toc_do.ap_dung(wav_bytes, yc.toc_do)
+        giay_phat = giay / toc_do.hop_le(yc.toc_do)
+
     job_id = str(getattr(ctx, "job_id", "") or "adhoc")
     # 🔴 `{job_id}/` — CÓ dấu gạch chéo sau job id, không phải `{job_id}.wav`.
     #
@@ -165,7 +228,7 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     get_storage().put(khoa, io.BytesIO(wav_bytes), content_type="audio/wav")
 
     ket = features.KetQua(
-        yeu_cau=yc, audio_key=khoa, giay=giay,
+        yeu_cau=yc, audio_key=khoa, giay=giay, giay_phat=giay_phat,
         text_da_chuan_hoa=chuan.da_chuan_hoa, so_doan=len(doan))
 
     if giay <= 0:

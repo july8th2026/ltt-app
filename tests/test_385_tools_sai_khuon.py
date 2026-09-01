@@ -56,6 +56,42 @@ class TestKhuonDungThiQua:
 
 
 class TestKhuonSaiThiNOI_RA:
+    def test_khuon_RESPONSES_phang_PHAI_qua(self):
+        """🔴 KHUÔN CODEX GỬI. Từ chối nó = client không dùng được lượt nào.
+
+        OpenAI Responses API khai tool **phẳng** — `type` + `name` +
+        `parameters`, không lồng dưới `function`, không `input_schema`. Cửa
+        `/api/v1/responses` của ta nói đúng giao thức đó.
+
+        ⛔ Đo thật 01/09 bằng Codex CLI 0.145.0 trỏ vào production:
+
+            ERROR: 400 "khong muc nao trong `tools` dung duoc: moi muc phai co
+                        `name` va `input_schema`."
+
+        Codex **luôn** khai `shell`/`apply_patch`, nên đây không phải "mất tool"
+        mà là **client chết hẳn**.
+
+        ⭐ Vì sao không phép kiểm nào bắt được: chốt này được viết cho nhầm lẫn ở
+           cửa **Anthropic**, rồi đặt trong `_cua` — hàm phục vụ **cả hai** cửa.
+           `test_385`, phép kiểm HTTP mới ở `test_272`, và canary production đều
+           thử `/messages`. Chỉ một **client thật** mới đi qua `/responses` kèm
+           tool. Đây chính là điều `test_290` đã ghi: *API trả 200 ≠ client chạy được*.
+        """
+        responses_style = {"type": "function", "name": "shell",
+                           "description": "Runs a shell command",
+                           "parameters": {"type": "object",
+                                          "properties": {"command": {"type": "array"}}}}
+        assert tool_dich.vi_sao_khong_dung_duoc([responses_style]) is None
+        ra = tool_dich.sang_openai_tools([responses_style])
+        assert ra and ra[0]["function"]["name"] == "shell"
+        assert ra[0]["function"]["parameters"]["properties"] == {
+            "command": {"type": "array"}}, "mat schema => model goi tool sai tham so"
+
+    def test_khuon_RESPONSES_thieu_parameters_van_qua(self):
+        """Tool không tham số là hợp lệ; thiếu `parameters` không phải lỗi."""
+        assert tool_dich.vi_sao_khong_dung_duoc(
+            [{"type": "function", "name": "khong_tham_so"}]) is None
+
     def test_khuon_OpenAI_bi_tu_choi(self):
         vi = tool_dich.vi_sao_khong_dung_duoc([OPENAI])
         assert vi is not None, (

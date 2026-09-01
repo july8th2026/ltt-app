@@ -32,7 +32,41 @@
   {% endwith %}
 
   <div class="lv-mda-khung">
-    {# ── Cột trái: khối ──────────────────────────────────────────────────── #}
+    {#
+      ── Cột danh sách dự án — ảnh 03 vẽ nó ở ngoài cùng bên trái ───────────
+
+      ⛔ Trước 01/09 màn này chỉ có HAI cột, nên đổi sang một dự án khác phải
+         bấm "← Dự án" quay ra danh sách rồi bấm vào. Với người dựng podcast
+         nhiều tập — đúng đối tượng của màn này — đó là hai cú bấm cho một việc
+         họ làm liên tục.
+
+      ⭐ Chỉ TÊN và số khối, không nạp gì thêm: `du_an.danh_sach` đã được route
+         gọi sẵn cho ô chọn, nên cột này không tốn thêm một truy vấn nào.
+
+      ⚠️ Ẩn dưới 1180px thay vì xếp chồng: ở màn hẹp nó đẩy phần việc chính
+         xuống dưới một danh sách điều hướng, và điều hướng thì đã có ở "← Dự
+         án" trên đầu trang.
+    #}
+    {% if du_an_ds and du_an_ds|length > 1 %}
+      <nav class="lv-mda-ds" aria-label="{{ _('Dự án khác') }}">
+        <span class="eyebrow">{{ _("Dự án") }}</span>
+        <ul>
+          {% for d in du_an_ds %}
+            <li>
+              <a href="{{ manifest.route_prefix }}/du-an/{{ d.public_id }}"
+                 {% if d.public_id == du_an.public_id %}aria-current="page"{% endif %}>
+                {# ⛔ CHỈ tên. Thêm "N khối" thì phải đếm khối cho MỌI dự án
+                   — một truy vấn cho mỗi dòng, để trang trí một cột điều
+                   hướng. Trang danh sách đã có con số ấy và nó có chỗ ở đó. #}
+                <b>{{ d.ten }}</b>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    {% endif %}
+
+    {# ── Cột giữa: khối ──────────────────────────────────────────────────── #}
     <div class="lv-mda-trai">
       <div class="lv-mda-thanh-cong-cu">
         <button class="btn sm primary" type="button" id="lv-doc-tat-ca"
@@ -118,7 +152,27 @@
                   {%- if k.credit %} · {{ k.credit }} credit{% endif %}
                 </span>
                 {% if k.audio_url %}
-                  <audio class="lv-khoi-phat" controls preload="none" src="{{ k.audio_url }}"></audio>
+                  <audio class="lv-khoi-phat" data-nang="1" controls preload="none"
+                         src="{{ k.audio_url }}"></audio>
+                  {#
+                    PHIÊN BẢN — V1/V2/V3 trong ảnh 03.
+
+                    ⭐ KHÔNG có bảng `block_version`, và điều đó là cố ý:
+                       `tables_du_an.py` từ chối nó vì lịch sử job đã giữ đủ mọi
+                       lượt sinh, nên một bảng thứ hai là một nguồn chân lý thứ
+                       hai cho cùng một sự thật.
+
+                       Nhưng "không có bảng" từng bị đọc thành "không có tính
+                       năng". Dữ liệu nằm sẵn trong `params.block_id`; cái thiếu
+                       chỉ là một phép đọc.
+
+                    ⚠️ Nạp KHI BẤM, không nạp sẵn: một dự án 24 khối mà nạp sẵn
+                       là 24 lượt tra lịch sử cho một thứ hầu hết khách không mở.
+                  #}
+                  <button type="button" class="btn ghost sm lv-khoi-pb"
+                          data-khoi="{{ k.id }}"
+                          aria-expanded="false">{{ _("Phiên bản") }}</button>
+                  <div class="lv-pb-hop" data-pb-cho="{{ k.id }}" hidden></div>
                 {% elif k.trang_thai == "xong" %}
                   {# Khoi da doc xong ma khong con tep: job giu noi dung 30 ngay.
                      Phai NOI ra — mot o trong o dung cho trinh phat trong y het
@@ -198,7 +252,9 @@ LttVoice.motDuAn({
     hetKhoi:   {{ _("Mọi khối đã được đọc.") | tojson }},
     daNop:     {{ _("Đã gửi {n} khối vào hàng đợi.") | tojson }},
     baoTienDo: {{ _("Đã đọc {x} trên {y} khối.") | tojson }},
-    baoXong:   {{ _("Đọc xong toàn bộ {y} khối.") | tojson }}
+    baoXong:   {{ _("Đọc xong toàn bộ {y} khối.") | tojson }},
+    dangTai:   {{ _("Đang tải…") | tojson }},
+    chuaCoPb:  {{ _("Khối này chưa có bản đọc nào.") | tojson }}
   }
 });
 </script>

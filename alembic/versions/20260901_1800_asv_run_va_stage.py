@@ -41,12 +41,20 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "e1a7c04b93d2"
-#: Head luc tao: `20260901_0200_voice_dung_chung.py`.
-#: ⚠️ Cay nay ghim o `c31b1ae`; mot lane khac dang them migration song song. Khi
-#:    gop nhanh `phien/asv` ve, kiem `alembic heads` — neu ra HAI head thi noi
-#:    chung bang mot revision hop nhat, dung sua `down_revision` cua ban ghi da
-#:    chay o dau.
-down_revision = "a5f31c07d2b4"
+#: Head luc tao la `a5f31c07d2b4` (20260901_0200_voice_dung_chung.py). Khi gop
+#: `phien/asv` ve ngay 02/09, lane VOICE da them `c7b91e4a2f80`
+#: (20260901_2300_voice_tu_dien.py) NGAY TREN no ⇒ hai head.
+#:
+#: ⭐ Noi lai bang cach doi `down_revision` cua CHINH migration nay, khong bang
+#:    mot revision hop nhat, va do la lua chon dung o day vi mot ly do cu the:
+#:    ca hai migration `asv_*` **chua tung chay o bat cu dau** — khong may nao co
+#:    dong `e1a7c04b93d2` trong `alembic_version`. Voi mot ban ghi da chay thi
+#:    nguoc lai: sua `down_revision` cua no la lam lech lich su that, va luc do
+#:    revision hop nhat moi la duong duy nhat.
+#:
+#: Da kiem `a5f31c07d2b4` la to tien truc tiep cua `c7b91e4a2f80`, nen chuoi
+#: khong mat mat xich nao.
+down_revision = "c7b91e4a2f80"
 branch_labels = None
 depends_on = None
 

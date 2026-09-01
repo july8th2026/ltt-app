@@ -54,6 +54,40 @@ def test_thieu_input_schema_van_ra_object_rong_chu_khong_bo_trong():
     assert ra[0]["function"]["parameters"] == {"type": "object", "properties": {}}
 
 
+def test_BA_khuon_dau_vao_va_chi_ba_khuon_do():
+    """🔴 HỢP ĐỒNG HÌNH DẠNG SỐNG Ở ĐÂY — và đó là lý do phép kiểm này tồn tại.
+
+    `sang_openai_tools` nhận đầu vào từ **hai cửa nói hai giao thức khác nhau**,
+    nên "khuôn nào hợp lệ" là một câu hỏi của tệp này, không phải của cửa nào.
+    Ba khuôn, và chỉ ba:
+
+    | Khuôn | Ai gửi | Dấu nhận biết |
+    |---|---|---|
+    | Anthropic | Claude Code / Desktop → `/messages` | `input_schema` |
+    | OpenAI **Responses** (phẳng) | **Codex CLI** → `/responses` | `type:"function"` + `parameters` |
+    | tool phía máy chủ Anthropic | — | `type` khác `function`, không `input_schema` → **bỏ qua** |
+
+    ⛔ Khuôn Responses từng bị bỏ qua như rác, và hậu quả không phải "mất tool"
+       mà là **Codex chết hẳn** — nó luôn khai `shell`/`apply_patch`, nên mọi
+       lượt trả `400`. Đo thật 01/09 bằng Codex CLI 0.145.0 vào production.
+
+    ⭐ VÀ VÌ SAO CHỐT NÀY NẰM Ở ĐÂY chứ không chỉ ở `test_385`: khuyết tật ấy
+       sinh ra vì một chốt viết cho cửa **Anthropic** được đặt vào `_cua` — hàm
+       phục vụ **cả hai** cửa. Đặt hợp đồng hình dạng cạnh phép dịch, thay vì
+       cạnh một cửa, là cách nó không lệch lần nữa.
+    """
+    anthropic = {"name": "a", "input_schema": {"type": "object"}}
+    responses = {"type": "function", "name": "b",
+                 "parameters": {"type": "object", "properties": {"x": {}}}}
+    may_chu = {"type": "web_search_20260209", "name": "c"}
+
+    ra = td.sang_openai_tools([anthropic, responses, may_chu])
+    assert [t["function"]["name"] for t in ra] == ["a", "b"], (
+        "phai nhan CA HAI khuon khach, va bo qua tool phia may chu")
+    assert ra[1]["function"]["parameters"]["properties"] == {"x": {}}, (
+        "mat schema cua khuon Responses => model goi tool sai tham so")
+
+
 def test_bo_qua_tool_PHIA_MAY_CHU_cua_anthropic():
     """`web_search_…` chạy trên hạ tầng Anthropic — ta không chạy được.
 

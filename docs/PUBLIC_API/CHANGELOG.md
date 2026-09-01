@@ -21,6 +21,42 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-01 — `ltt_llm_vision` KHÔNG có 89K ngữ cảnh, và chưa bao giờ có
+
+**FIXED · Ngữ cảnh công bố nay đúng theo TỪNG model.**
+
+Trước hôm nay `/api/v1/models` nói với bạn rằng `ltt_llm_vision` có
+*"same 89K usable input context"* như `ltt_llm`. **Điều đó sai.** Model đọc ảnh
+chạy trên một cửa sổ engine nhỏ hơn một nửa (`65.536` thay vì `131.072`), nên
+phần bạn thật sự nhét vào được là **~28K**, không phải 89K.
+
+```diff
+  ltt_llm         context_window  88555     (khong doi)
+- ltt_llm_vision  context_window  88555     <- LOI HUA SAI
++ ltt_llm_vision  context_window  28262     <- so that
+```
+
+**ADDED · Mỗi alias nay tự khai `constraints.context_window` và
+`constraints.max_output_tokens`.** Trước đây không alias nào khai, nên trường
+`context_window` trong `/api/v1/models` rơi về một hằng số lùi chung là
+`60000` — và bạn nhận **hai con số khác nhau trong cùng một phản hồi**: phần
+chữ nói `89K`, trường máy đọc được nói `60000`. Nay hai chỗ luôn khớp.
+
+*Có phải sửa gì không?*
+
+- **Nếu bạn dùng `ltt_llm` (văn bản):** **không**. Không con số nào của nó đổi.
+- **Nếu bạn dùng `ltt_llm_vision`:** **không cần sửa để chạy tiếp** — hành vi
+  của máy chủ **không đổi một chút nào**. Nó vẫn luôn từ chối ở `65.536` như
+  trước, và vẫn trả `413` kèm `limit_value` đúng. Thứ đổi là **con số chúng tôi
+  công bố**. Nếu bạn từng chỉnh client theo `89K` cho model này thì bạn đã gặp
+  `413` rồi; nay bạn có con số đúng để chỉnh lại.
+
+⚠️ Bộ kiểm tương thích của chúng tôi đánh dấu thay đổi này là **BREAKING** vì
+`contract_hash` của `text.chat` đổi. Chúng tôi giữ nguyên nhãn đó thay vì hạ
+xuống cho đẹp: một con số công bố đổi **là** thứ tích hợp cảm nhận được. Nhưng
+hướng của nó là **sửa một lời hứa sai**, không phải thu hẹp một năng lực — không
+có lượt gọi nào từng thành công mà nay hỏng.
+
 ## 2026-09-01 — `speech.ltt` MỞ, và `output_schema` nói ra loại tệp
 
 **ADDED · `speech.ltt` phục vụ thật.** Văn bản tiếng Việt thành giọng nói, chế

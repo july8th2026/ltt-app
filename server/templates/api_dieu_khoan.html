@@ -1,0 +1,83 @@
+{% extends "base_public.html" %}
+{% block content %}
+
+<div class="card">
+  <h1 style="margin-top:0;">{{ _("Điều khoản dịch vụ API") }}</h1>
+  <p>{{ _("Trang này mô tả cách API tính tiền và phục vụ — bằng đúng những gì hệ thống đang làm.") }}</p>
+  <p class="muted">
+    {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
+    · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code>
+    · 1 credit = {{ dong_moi_credit }}đ
+  </p>
+</div>
+
+{% if not san_sang %}
+<div class="card" style="border-left:4px solid #d97706;">
+  <h2 style="margin-top:0;">⚠️ {{ _("Bản này CHƯA đầy đủ") }}</h2>
+  <p>
+    {{ _("Những gì viết dưới đây là chính xác — mỗi mục đều mô tả hành vi đã đo trên hệ thống đang chạy. Nhưng bản điều khoản đầy đủ còn thiếu các phần về giới hạn trách nhiệm, cam kết mức độ sẵn sàng, hoàn tiền phần credit chưa dùng và chấm dứt tài khoản.") }}
+  </p>
+  <p class="muted">
+    {{ _("Chúng tôi nói ra điều này thay vì để trống, vì một điều khoản im lặng ở đúng chỗ quan trọng thì tệ hơn một điều khoản nói rõ nó chưa xong.") }}
+  </p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Cách tính tiền") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Loại token") }}</th>
+      <th style="text-align:right;">{{ _("credit / 1 triệu token") }}</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>{{ _("Token vào") }}</td><td style="text-align:right;">{{ bang.token_vao }}</td></tr>
+      <tr><td>{{ _("Token vào lấy lại từ cache") }}</td><td style="text-align:right;">{{ bang.token_vao_cache }}</td></tr>
+      <tr><td>{{ _("Token ra") }}</td><td style="text-align:right;">{{ bang.token_ra }}</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">{{ bang.ghi_chu }}</p>
+  <p><a href="/gia-api">{{ _("Xem bảng giá đầy đủ kèm ví dụ chi phí thật") }}</a></p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Chúng tôi cam kết những gì") }}</h2>
+  <p class="muted">{{ _("Mỗi mục dưới đây mô tả hành vi đã đo được, không phải ý định.") }}</p>
+  {% for m in muc %}
+  <h3 style="margin-bottom:.25rem;">{{ _(m.tieu_de) }}</h3>
+  <p style="margin-top:.25rem;">{{ _(m.noi_dung) }}</p>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Giới hạn kỹ thuật") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Model") }}</th>
+      <th style="text-align:right;">{{ _("ngữ cảnh công bố") }}</th>
+      <th style="text-align:right;">{{ _("trần đầu vào") }}</th>
+      <th style="text-align:right;">{{ _("trần đầu ra") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for ten, v in tran.items() %}
+      <tr>
+        <td><code>{{ ten }}</code></td>
+        <td style="text-align:right;">{{ "{:,}".format(v.cong_bo) }}</td>
+        <td style="text-align:right;">{{ "{:,}".format(v.tran_vao) }}</td>
+        <td style="text-align:right;">{{ "{:,}".format(v.tran_ra) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p>{{ _("Mỗi tài khoản được phục vụ") }} <strong>{{ dong_thoi }}</strong>
+     {{ _("lượt tại một thời điểm. Lượt vượt quá nhận mã 429 kèm Retry-After và không bị tính tiền.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Dữ liệu của bạn") }}</h2>
+  <p>{{ _("Nền tảng ghi lại dữ liệu vận hành trong") }} <strong>{{ so_bang }}</strong>
+     {{ _("nhóm dữ liệu, mỗi nhóm có một quy tắc lưu trữ riêng.") }}</p>
+  <p><a href="/developers/du-lieu">{{ _("Xem chi tiết từng nhóm và thời hạn lưu") }}</a></p>
+</div>
+
+{% endblock %}

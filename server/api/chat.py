@@ -227,10 +227,12 @@ def register_chat_routes(api, config, tag: str) -> None:
         with admission.keep_alive(ticket.id):
             return _finish_chat(
                 db=db, sach=sach, principal=principal, record=record,
-                request_id=request_id, da_giu=da_giu, executor=executor)
+                request_id=request_id, da_giu=da_giu, executor=executor,
+                trang_thai=request.state)
 
 
 def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
+                 trang_thai=None,
                  da_giu: int, executor=None) -> JSONResponse:
     """Chạy model và định đoạt tiền; caller giữ execution lease bằng finally."""
     from platform_core.llm import thanh_toan
@@ -271,6 +273,12 @@ def _finish_chat(*, db, sach: dict, principal, record, request_id: str,
         su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
                        token_vao_cache=kq.token_vao_cache,
                        dang_tin=kq.do_duoc))
+    # ⛔ P08 F-01: cot `credit_delta` cua so request CHI duoc ghi o cua job, nen
+    #    hai cua nay doc ra `+0` bat ke thu bao nhieu — va `anomalies.py` dua vao
+    #    no de do bat thuong tien. Mot so 0 co cau truc trong o "da thu bao nhieu"
+    #    la thu te hon mot o trong: no doc len nhu mot phep do.
+    if trang_thai is not None:
+        trang_thai.api_credit_delta = -int(thu.thu_credit)
     tra_ve = _dang_openai(
         sach, noi_dung=kq.noi_dung, token_vao=kq.token_vao,
         token_ra=kq.token_ra, thu_credit=thu.thu_credit,
