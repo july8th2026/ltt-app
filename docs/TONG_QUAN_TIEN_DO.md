@@ -100,7 +100,7 @@ thành thứ bán được.
 |---|---|---|
 | 1.1 | Claude Code CLI + Claude Desktop, phiên thật có gọi tool | 🟡 **MỘT NỬA XONG 01/09.** **Codex CLI 0.145.0** đã chạy thật vào production, **vòng tool khép kín**: gọi `shell` → bị sandbox của chính Codex chặn → tự sửa cú pháp → chạy được → trả lời đúng. Đó là canary client thật **đầu tiên** của cả chương trình (E15 nằm `BLOCKED` từ đầu). 🔴 Và nó bắt ngay một **P1**: cửa `/responses` từ chối khuôn tool native của chính giao thức nó nói, nên Codex **không dùng được một lượt nào** — không phép kiểm nào thấy, vì cả ba lớp bằng chứng đều thử `/messages`. Đã sửa + deploy. Còn Claude Code + Desktop: **chưa cài trên máy này** |
 | 1.2 | **C13** xoay bearer token cổng VLM | token cũ hết hiệu lực |
-| 1.3 | **C15** công cụ tự ghi cấu hình cho ba client | copy–dán không còn cần thiết |
+| ~~1.3~~ | ~~**C15** công cụ tự ghi cấu hình~~ | ✅ **ĐÃ CÓ SẴN, tài liệu chưa theo kịp.** `/huong-dan` phục vụ công cụ cắm tự động: **Tải EXE (24,8 MB)** và **ZIP + BAT (7,5 MB)**, kèm trang `/huong-dan/cong-cu`. Khảo sát bằng trình duyệt thật 01/09 |
 | 1.4 | **C16** thu tường lửa máy B về một IP | `Set-NetFirewallRule ... -RemoteAddress 192.168.2.17` |
 | ~~1.5~~ | ~~Chạy `gate.py` **đầy đủ** một lần trọn vẹn~~ | ✅ **ĐÓNG 01/09 19:1x** — `RESULT: PASS`, 25/26 bước, **0 dòng `CAY DA DOI`**, 5,3 phút. ⚠️ Bốn lượt khác trong cùng buổi **bị vô hiệu** vì cây đổi giữa chừng — cửa sổ yên là thứ hiếm khi ba phiên cùng ghi. Cách bền hơn: `python tools/cay_rieng.py tao <ten>` rồi chạy gate trong đó (đã dùng thật 01/09, và chính nó bắt được một hồi quy mà lượt ở cây chính bỏ sót) |
 
@@ -108,11 +108,11 @@ thành thứ bán được.
 
 | # | Việc | Vì sao |
 |---|---|---|
-| 2.1 | Trang giá công khai cho API + ví dụ chi phí thật | khách phải biết giá **trước** khi đăng ký |
-| 2.2 | Điều khoản sử dụng + giới hạn trách nhiệm cho API | bán dịch vụ tính tiền mà không có điều khoản là rủi ro pháp lý |
-| 2.3 | Đường đăng ký → nhận khoá → gọi lần đầu, **đi thử bằng một tài khoản mới toanh** | ta chưa bao giờ đi con đường đó bằng mắt người lạ |
+| ~~2.1~~ | ~~Trang giá công khai + ví dụ chi phí thật~~ | ✅ **ĐÃ CÓ.** `/gia-api` mở cho khách ẩn danh, số lấy thẳng từ `gia_token.bang_gia()` — chính hàm ra hoá đơn — và có ví dụ chi phí thật (*một câu hỏi ngắn 1 credit / 100đ*). Phủ cả text, ảnh, giọng |
+| 2.2 | Điều khoản sử dụng + giới hạn trách nhiệm cho API | 🟡 **CƠ CHẾ XONG + ĐÃ DEPLOY 01/09; SÁU QUYẾT ĐỊNH CHỜ CHỦ SẢN PHẨM.** 🔴 Đo được: `lttstudios.com/terms/` có **21.335 ký tự** và **không nhắc** `API`, `credit`, `hoàn tiền`, `trách nhiệm`, `SLA`, `thanh toán` — trang duy nhất chân trang `/register` trỏ tới. Nay có `/api-dieu-khoan` do **chính app** phục vụ (tiền lệ VPS: bản WordPress trả 404 suốt trong khi clickwrap đã trỏ vào nó), số lấy từ hằng số thật, và **tự khai là chưa đầy đủ**. ⛔ Còn sáu câu hỏi **không có trong mã nên không được bịa**: hạn dùng credit · hoàn tiền credit chưa dùng · SLA · giới hạn trách nhiệm · chấm dứt tài khoản · nội dung cấm |
+| 2.3 | Đường đăng ký → nhận khoá → gọi lần đầu | 🔴 **ĐÂY LÀ VIỆC CỦA NGƯỜI, KHÔNG PHẢI CỦA MÁY.** Thử 01/09: form `/register` có **Cloudflare Turnstile**, và `/login` bị **Cloudflare managed challenge** chặn trình duyệt tự động. Cả hai đang làm đúng việc. ⇒ Không tự động hoá được — cần một người đi thật. ✅ Phần kiểm được đã kiểm: cổng dev chỉ đòi **đăng nhập**, không cần duyệt tay ⇒ đường lấy khoá là **tự phục vụ**; email dùng-một-lần bị chặn; có CSRF + giới hạn theo IP |
 | 2.4 | **Một khách thật** (dù là người quen) gọi API và trả tiền | 🔴 mốc quan trọng nhất của cả dự án |
-| 2.5 | Giám sát lưu lượng thật: cảnh báo hết credit, lỗi 5xx, tồn đọng hàng đợi | hôm nay ta chỉ giám sát máy, chưa giám sát **khách** |
+| 2.5 | Giám sát lưu lượng thật | 🟡 **CƠ CHẾ ĐỦ, CHƯA HIỆU CHUẨN.** Cả ba ngưỡng đã có (`credit_exhausted=3`, `responses_5xx=5`, tồn đọng hàng đợi 60s) + `anomalies.py` dò bất thường tiền, và `LTT_OPS_ALERT_EMAIL` **có đặt** trên production. Nó nằm trong `_mot_luot_bao_tri` **dưới lease** nên chạy đúng một lần toàn cụm — khác hẳn ca F-07 (bộ dò không ai gọi). ⚠️ Hai điều nói thật: ngưỡng **tự khai là chưa hiệu chuẩn** vì chưa có lưu lượng thật; và đầu vào của `anomalies.py` (`credit_delta`) **hỏng cho hai cửa cho tới hôm nay** (P08 F-01). ⛔ Chưa có bằng chứng runtime rằng vòng bảo trì đã tick — log im lặng là *đúng thiết kế* khi không có việc, nên **không suy từ sự vắng mặt**; cần một phép đo dương (dòng `singleton_leases` tên `bao_tri`) |
 
 ### Giai đoạn 3 — H39 bán VPS (P2–P9, ~8 phase) 
 
