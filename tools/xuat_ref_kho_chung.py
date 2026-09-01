@@ -66,6 +66,13 @@ def main(argv=None) -> int:
                 continue
             ra.append({"public_id": h.public_id, "ten": h.ten_hien_thi,
                        "ngon_ngu_khai": h.ngon_ngu,
+                       # ⛔ PHẢI kèm `ghi_chu`: nó chứa `ma_cu`, và đó là thứ
+                       #    DUY NHẤT nối một hồ sơ với clip tham chiếu gốc của
+                       #    nó. Bản đầu bỏ trường này, nên
+                       #    `do_lech_tham_chieu.py` ghép được **0 giọng**.
+                       #    Ghép bằng TÊN thì trượt cả bốn giọng đầu tiên (tên
+                       #    đã đổi hoàn toàn: "Ivy" ← `hoathinh_female`).
+                       "ghi_chu": h.ghi_chu or "",
                        "ref_b64": tham_chieu.nap_ref_b64(bd)})
             print(f"  [ok] {h.ten_hien_thi}")
     finally:

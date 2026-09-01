@@ -1,0 +1,47 @@
+{
+  "phien_ban_bo_do": "ltt-voice-do-2026-09-01a",
+  "so_giong": 8,
+  "so_cau": 3,
+  "do": {
+    "delta_dao_dong_khung": {
+      "tb": 0.02623,
+      "lech": 0.03381,
+      "n": 24
+    },
+    "delta_db_dai_cao": {
+      "tb": -3.64883,
+      "lech": 3.38332,
+      "n": 24
+    },
+    "delta_f0_tan_tuong_doi": {
+      "tb": -0.07173,
+      "lech": 0.04214,
+      "n": 22
+    },
+    "delta_f0_trung_vi_hz_ti_le": {
+      "tb": -0.0034,
+      "lech": 0.04713,
+      "n": 24
+    },
+    "delta_lufs": {
+      "tb": -0.11167,
+      "lech": 1.12967,
+      "n": 24
+    },
+    "delta_trong_tam_hz_ti_le": {
+      "tb": -0.15245,
+      "lech": 0.14904,
+      "n": 24
+    },
+    "delta_vat_95_hz_ti_le": {
+      "tb": -0.24912,
+      "lech": 0.18746,
+      "n": 24
+    },
+    "delta_vat_99_hz_ti_le": {
+      "tb": -0.18362,
+      "lech": 0.43213,
+      "n": 24
+    }
+  }
+}

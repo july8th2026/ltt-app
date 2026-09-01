@@ -615,6 +615,16 @@ def phan_quyet(kq: dict) -> dict:
 #:    rồi rơi vào giá trị mặc định cứng. Tức cái ghim vẫn ở đó, vẫn in ra, và
 #:    **không nối vào gì cả**: đổi hẳn cách đo mà baseline cũ vẫn được coi là
 #:    hợp lệ. Cùng lớp lỗi với một bánh cóc chưa từng đỏ.
+#: ⭐ Khi nào PHẢI tăng, và khi nào KHÔNG.
+#:
+#:    TĂNG khi cách đo một chỉ số ĐANG NẰM TRONG baseline đổi — baseline cũ khi
+#:    ấy nói về một phép đo không còn tồn tại.
+#:
+#:    KHÔNG tăng khi chỉ THÊM một mục độc lập. K4 thêm `lech_tham_chieu` (01/09)
+#:    mà không đụng vào cer/wer/rtf/on_dinh_giong/db_dai_cao/khop_cuc_bo_dinh/
+#:    vat_99_hz/trong_tam_hz — tám chỉ số của baseline V10 đo y hệt trước và
+#:    sau. Tăng phiên bản ở đây sẽ bắt ghim lại baseline bằng một lượt GPU,
+#:    và cái giá ấy không mua được gì cả.
 _PHIEN_BAN_BO_DO = "ltt-voice-do-2026-09-01a"
 
 
@@ -636,8 +646,57 @@ def do_tat_ca(duong: str, *, text: str = "", ref: str = "",
     }
     kq["de_hieu"] = ({"co": False, "ly_do": "bo qua theo yeu cau"}
                      if bo_qua_asr else do_de_hieu(duong, text, ngon_ngu))
+    # ── K4: lệch so với chính clip tham chiếu, + chẩn đoán ──────────────────
+    #
+    # ⭐ Một TRỤC KHÁC với mọi thứ ở trên. Những mục trên so bản này với một
+    #    baseline của HỆ THỐNG; mục này so nó với **giọng nó nhận là nhân bản**.
+    #    Và nó độc lập với `giu_giong` — cái đó dùng chính bộ mã hoá của VieNeu
+    #    nên không thấy được chỗ bộ mã hoá ấy mù; các phép ở đây là âm học
+    #    thuần, không đi qua embedding nào.
+    #
+    # ⛔ Chỉ chạy khi CÓ `ref`. Không có thì nói ra, đừng để trống — một mục
+    #    vắng mặt và một mục "đã soi, không thấy gì" trông giống hệt nhau trong
+    #    một dict JSON.
+    kq["lech_tham_chieu"] = _lech_va_chan_doan(wav, sr, ref)
     kq["phan_quyet"] = phan_quyet(kq)
     return kq
+
+
+def _lech_va_chan_doan(wav, sr: int, ref: str) -> dict:
+    if not ref:
+        return {"co": False, "ly_do": "khong truyen --ref"}
+    from voice_sidecar import chan_doan, lech_tham_chieu
+
+    import soundfile as sf
+    w, s = sf.read(ref, dtype="float32", always_2d=False)
+    if getattr(w, "ndim", 1) > 1:
+        w = w.mean(axis=1)
+    lech = lech_tham_chieu.do_lech(wav, sr, w, int(s))
+    return {"co": True, "lech": lech,
+            "chan_doan": chan_doan.chan_doan(lech, _san_lech())}
+
+
+def _san_lech():
+    """Baseline của các chỉ số lệch. `None` khi chưa đo — và đó là một câu trả lời.
+
+    ⛔ KHÔNG trả `{}` khi thiếu tệp: `chan_doan` phân biệt `None` (chưa đo) với
+       một dict rỗng, và cả hai đều dẫn tới `da_do=False` — nhưng chỉ `None`
+       mới in ra đúng lời nhắc chạy công cụ đo.
+    """
+    import json
+    import os
+    d = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                     "baseline_lech.json")
+    if not os.path.isfile(d):
+        return None
+    try:
+        with open(d, encoding="utf-8") as f:
+            return (json.load(f) or {}).get("do") or None
+    except (OSError, ValueError):
+        # Tệp hỏng KHÔNG được đọc thành "không có baseline" một cách im lặng —
+        # nhưng ở đây ta cũng không được ném, vì bộ đo phải chạy được. Trả None
+        # và để `chan_doan` nói ra là chưa đo.
+        return None
 
 
 def _in_dep(kq: dict) -> None:
