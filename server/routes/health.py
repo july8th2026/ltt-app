@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Request, Response
 
+from platform_core import to_tien
+
 try:
     from version import APP_VERSION_SHORT as _APP_VERSION
 except ImportError:
@@ -62,6 +64,20 @@ def ready(request: Request, response: Response) -> dict:
         "status": "ready",
         "environment": environment,
         "database": "ok",
+        # 🔴 "Sẵn sàng" trả lời *"tôi có phục vụ được không"*. Trường này trả lời
+        #    một câu KHÁC: *"tôi có NÊN đang chạy không"* — và hai câu đó tách ra
+        #    khi tiến trình sống sót mồ côi sau khi vỏ bọc NSSM chết.
+        #
+        #    Đo trên máy B 01/09: `/health` trả 200 suốt **99 giây** trong khi
+        #    `Get-Service` nói `Stopped` và không ai dựng dậy nữa. Máy A đo cùng
+        #    ngày có **cùng lỗ** (không dịch vụ nào có `FAILURE_ACTIONS`), chỉ
+        #    khác là ở đây nó nằm trên máy đang phục vụ khách thật.
+        #
+        # ⛔ CỐ Ý KHÔNG đổi `status` thành `not_ready` khi mồ côi. Tiến trình mồ
+        #    côi **vẫn phục vụ được**; trả 503 sẽ khiến proxy ngắt một dịch vụ
+        #    đang chạy tốt và biến một sự cố vận hành thành một sự cố ngừng
+        #    dịch vụ. Việc của trường này là làm sự cố **nhìn thấy được**.
+        "duoi_dich_vu": to_tien.trang_thai(),
     }
 
 

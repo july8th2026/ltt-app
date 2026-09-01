@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:1c4c3a0ad76358cd273024928f7c8fae9147571c75ceed672d2f82d5048cb319
-Nguồn đã quét : 1388 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:a655c991e39144dc00508374f88b1fd6b33daa6651c1570d564cacf463d66524
+Nguồn đã quét : 1393 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -648,9 +648,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
 - [platform] GET    /gia-api → gia_api | auth~unspecified | server/routes/dashboard.py:100
-- [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:16
-- [platform] GET    /health/ready → ready | auth~unspecified | server/routes/health.py:24
-- [platform] GET    /health/version → version | auth~unspecified | server/routes/health.py:92
+- [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:18
+- [platform] GET    /health/ready → ready | auth~unspecified | server/routes/health.py:26
+- [platform] GET    /health/version → version | auth~unspecified | server/routes/health.py:108
 - [platform] GET    /huong-dan → trang_huong_dan | auth~unspecified | server/routes/tai_lieu_api.py:176
 - [platform] GET    /huong-dan/cong-cu → trang_cong_cu | auth~unspecified | server/routes/tai_lieu_api.py:193
 - [platform] GET    /jobs → developer_jobs | auth~unspecified | server/routes/developer/su_dung.py:97
@@ -1172,7 +1172,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (335 file pytest + 3 frontend)
+10. QUALITY GATES (336 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1469,6 +1469,7 @@ Test inventory:
 - tests/test_376_cong_chat_luong_voice.py
 - tests/test_377_sandbox_dung_loai_media.py
 - tests/test_378_noi_day_canh_bao_cpu.py
+- tests/test_379_to_tien_may_a.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -1534,8 +1535,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1388 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:39, .py:1050, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1393 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:41, .py:1053, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2138,7 +2139,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (121)
+[platform_core] (122)
 - platform_core/__init__.py
 - platform_core/admin_console.py
 - platform_core/agent/__init__.py
@@ -2257,6 +2258,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - platform_core/secretbox.py
 - platform_core/settings.py
 - platform_core/storage.py
+- platform_core/to_tien.py
 - platform_core/tokens.py
 - platform_core/upload_sessions.py
 - platform_core/users.py
@@ -2448,12 +2450,13 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (24)
+[setup] (26)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
 - setup/3-cloudflare.ps1
 - setup/4-nghiem-thu.ps1
+- setup/bat_tu_dung_day.ps1
 - setup/cai_dich_vu_giong.ps1
 - setup/chay_thu_ghi_danh.ps1
 - setup/chay_thu_giong.ps1
@@ -2465,6 +2468,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/do_dung_chay_lo.ps1
 - setup/do_gia_von_voice.ps1
 - setup/do_lo_giong.ps1
+- setup/do_nhan_ban_tu_kho_cu.ps1
 - setup/do_troi_tong.ps1
 - setup/khoa_thu_api.ps1
 - setup/nap_lai_env.ps1
@@ -2474,7 +2478,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (352)
+[tests] (353)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2782,6 +2786,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_376_cong_chat_luong_voice.py
 - tests/test_377_sandbox_dung_loai_media.py
 - tests/test_378_noi_day_canh_bao_cpu.py
+- tests/test_379_to_tien_may_a.py
 - tests/test_37_p3_web_foundation.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
@@ -2828,7 +2833,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (141)
+[tools] (142)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2893,6 +2898,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/do_dung_chay_lo.py
 - tools/do_gia_von_voice.py
 - tools/do_lo_giong.py
+- tools/do_nhan_ban_tu_kho_cu.py
 - tools/do_troi_tong.py
 - tools/do_van_ban_dai.py
 - tools/doctor.py
@@ -2980,7 +2986,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1388 file; 13765986 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1393 file; 13795904 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -132424,6 +132430,173 @@ def set_storage(storage: Storage) -> None:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/to_tien.py
+SHA256=e1f755653f208cae773d1da987bd399930ed973d0c06dea4bf74f7e1d3b9e1c5 BYTES=7207 LINES=161
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""to_tien.py — dịch vụ tự biết mình còn nằm dưới NSSM hay đã thành mồ côi.
+
+Bản của **máy A**. Xem `llm_gateway/to_tien.py` cho bản của máy B.
+
+## ⚠️ VÌ SAO CÓ HAI BẢN, VÀ ĐỪNG "GỘP LẠI CHO GỌN"
+
+`llm_gateway` được deploy **sang máy B**, nơi **không có `platform_core`**. Nó
+mang theo `render_gateway` và chỉ hai gói đó. Một lệnh `import platform_core`
+trong `llm_gateway` sẽ chạy tốt trên máy A và **vỡ khi deploy** — và vỡ ở lúc
+khởi động dịch vụ, tức lúc tệ nhất.
+
+⇒ Trùng lặp ở đây là **hệ quả của ranh giới triển khai**, không phải cẩu thả.
+  `test_379` chốt hai bản giữ **cùng một hợp đồng**, nên chúng không âm thầm
+  trôi khỏi nhau.
+
+## Vấn đề nó giải
+
+Đo trên máy B 01/09, sau khi dừng vỏ bọc `nssm.exe`: tiến trình con **sống sót
+mồ côi**, vẫn giữ cổng, `/health` vẫn trả **200** — suốt 99 giây, trong khi
+`Get-Service` nói `Stopped` và **không ai dựng nó dậy nữa**.
+
+Máy A đo 01/09 có **cùng lỗ**: năm dịch vụ đều `Automatic` và NSSM có
+`AppExit=Restart` (con chết thì dựng lại), nhưng **không dịch vụ nào có
+`FAILURE_ACTIONS` của SCM** — vỏ bọc chết thì không ai dựng dậy. Và ở đây nó nằm
+trên máy **đang phục vụ khách thật**: trang web vẫn trả lời, `Get-Service` nói
+`Stopped`.
+
+## Ba cái bẫy, cả ba đã trả giá bằng một phép đo trên máy B
+
+1. **Phải là TỔ TIÊN, không phải CHA.** Cây thật là `nssm → python → python`.
+   Neo vào cha trực tiếp thì mất đúng trường hợp cần bắt.
+2. **Phải so PID + TÊN + GIỜ SINH.** Windows tái sử dụng PID; một phép kiểm chỉ
+   nhìn PID sẽ im lặng đúng lúc nó cần nói.
+3. **Chụp tổ tiên MỘT LẦN lúc khởi động.** Sau khi nó chết thì đường đi lên cây
+   không còn — dò lại là muộn.
+
+## ⛔ Không tự thoát
+
+Chỉ **báo cáo**. Một tiến trình tự sát khi hiểu nhầm hoàn cảnh là một lớp lỗi
+mới, và nó sẽ sát ngay giữa lúc đang phục vụ khách.
+"""
+from __future__ import annotations
+
+import logging
+import os
+import subprocess
+import sys
+
+log = logging.getLogger(__name__)
+
+#: Tên tiến trình vỏ bọc dịch vụ. Đổi nó là mất khả năng phát hiện mồ côi.
+VO_BOC = "nssm"
+
+
+def _cay_len(pid: int, sau_toi_da: int = 8) -> list[dict]:
+    """Chuỗi tổ tiên từ `pid` đi lên: pid + tên + giờ sinh.
+
+    Một lượt gọi PowerShell cho cả cây — gọi từng nút là N lần khởi động
+    PowerShell, mỗi lần ~0,3 s.
+    """
+    if sys.platform != "win32":
+        return []
+    ps = (
+        f"$id = {pid}; $ra = @(); "
+        f"for ($i = 0; $i -lt {sau_toi_da} -and $id -gt 0; $i++) {{ "
+        "  $w = Get-CimInstance Win32_Process -Filter \"ProcessId=$id\" "
+        "       -ErrorAction SilentlyContinue; "
+        "  if (-not $w) { break }; "
+        "  $ra += ('{0}|{1}|{2}' -f $w.ProcessId, $w.Name, "
+        "          $w.CreationDate.ToString('yyyy-MM-ddTHH:mm:ss')); "
+        "  $id = $w.ParentProcessId }; "
+        "$ra -join [Environment]::NewLine"
+    )
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive",
+                            "-Command", ps],
+                           capture_output=True, text=True, timeout=30)
+    except (OSError, subprocess.SubprocessError) as e:
+        log.warning("khong doc duoc cay tien trinh: %s: %s", type(e).__name__, e)
+        return []
+    nut = []
+    for d in (r.stdout or "").splitlines():
+        p = d.strip().split("|")
+        if len(p) == 3 and p[0].isdigit():
+            nut.append({"pid": int(p[0]), "ten": p[1], "sinh": p[2]})
+    return nut
+
+
+class ToTien:
+    """Nhớ tổ tiên `nssm.exe` lúc khởi động, rồi trả lời 'ta còn dưới dịch vụ?'"""
+
+    def __init__(self) -> None:
+        self.moc: dict | None = None
+        self.ly_do_khong_theo_doi = ""
+        cay = _cay_len(os.getpid())
+        for nut in cay:
+            if VO_BOC in nut["ten"].lower():
+                self.moc = nut
+                log.info("to tien dich vu: pid=%s %s sinh=%s",
+                         nut["pid"], nut["ten"], nut["sinh"])
+                return
+        # Chạy tay lúc phát triển là trường hợp BÌNH THƯỜNG, không phải lỗi.
+        # ⛔ Nhưng phải phân biệt với "đang dưới dịch vụ mà không tìm thấy" —
+        #    gộp hai cái thì một lỗi cấu hình thật sẽ đọc lên y hệt một lượt
+        #    chạy tay, và không ai đi tìm.
+        self.ly_do_khong_theo_doi = (
+            f"khong thay {VO_BOC} trong {len(cay)} to tien "
+            f"({' <- '.join(n['ten'] for n in cay) or 'khong doc duoc cay'})")
+        log.info("khong chay duoi %s: %s", VO_BOC, self.ly_do_khong_theo_doi)
+
+    def trang_thai(self) -> dict:
+        if self.moc is None:
+            return {"theo_doi": False, "ly_do": self.ly_do_khong_theo_doi,
+                    "mo_coi": None}
+        con = _cay_len(self.moc["pid"], sau_toi_da=1)
+        # So CẢ BA — xem bẫy #2 ở docstring.
+        song = bool(con) and (con[0]["ten"] == self.moc["ten"]
+                              and con[0]["sinh"] == self.moc["sinh"])
+        return {
+            "theo_doi": True,
+            "vo_boc_pid": self.moc["pid"],
+            "vo_boc_sinh": self.moc["sinh"],
+            "mo_coi": not song,
+            **({} if song else {
+                "canh_bao": (
+                    "TIEN TRINH NAY DA MO COI: vo boc dich vu da chet nhung ta "
+                    "van chay va van giu cong. Khong ai dung ta day neu ta chet. "
+                    "Xu ly: dung tien trinh nay roi Start-Service."),
+            }),
+        }
+
+
+_TO_TIEN: ToTien | None = None
+
+
+def khoi_tao() -> None:
+    """Chụp tổ tiên. Gọi MỘT LẦN lúc ứng dụng khởi động.
+
+    ⛔ **KHÔNG lười khởi tạo.** Một `if _TO_TIEN is None: _TO_TIEN = ToTien()`
+       trong `trang_thai()` trông vô hại và **hỏng đúng lúc cần nhất**: nếu lượt
+       gọi đầu tiên rơi vào *sau* khi vỏ bọc đã chết thì nó chụp được một cây
+       **không có** `nssm`, kết luận "đang chạy tay", và im lặng **mãi mãi** —
+       đúng sự cố nó sinh ra để phát hiện.
+
+       (Tôi đã viết đúng cái bẫy đó ở bản đầu của tệp này, ngay dưới một chú
+       thích cảnh báo về nó.)
+
+    ⛔ Cũng KHÔNG chụp lúc `import`: nó tốn một lượt gọi PowerShell (~0,3 s) cho
+       mọi tiến trình chạm tới `platform_core`, kể cả từng lượt chạy test.
+    """
+    global _TO_TIEN
+    if _TO_TIEN is None:
+        _TO_TIEN = ToTien()
+
+
+def trang_thai() -> dict:
+    """Trạng thái đã chụp. Chưa `khoi_tao()` thì NÓI RA, không tự chụp muộn."""
+    if _TO_TIEN is None:
+        return {"theo_doi": False, "mo_coi": None,
+                "ly_do": "chua goi khoi_tao() luc khoi dong ung dung"}
+    return _TO_TIEN.trang_thai()
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/tokens.py
 SHA256=5797c90b07e601a0f9a15ff23b2d2580e5e23272d665d5ffd18447924ab9dc89 BYTES=3971 LINES=85
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -147090,13 +147263,15 @@ def developer_webhook_resend(request: Request, delivery_id: str,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/health.py
-SHA256=375b22b6d2f6779efebc060ad3df9ab412be9c0d088861da60a7c0fbf15b4aa3 BYTES=3872 LINES=93
+SHA256=3fab7fe4186959b4d8f9a53a9a67c9590ca156dbcc7c1a0e73d931b0bbfb80f3 BYTES=5032 LINES=109
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Health/readiness/version endpoints (P3). No authentication required —
 these are meant to be probed by the reverse proxy / service manager."""
 from __future__ import annotations
 
 from fastapi import APIRouter, Request, Response
+
+from platform_core import to_tien
 
 try:
     from version import APP_VERSION_SHORT as _APP_VERSION
@@ -147156,6 +147331,20 @@ def ready(request: Request, response: Response) -> dict:
         "status": "ready",
         "environment": environment,
         "database": "ok",
+        # 🔴 "Sẵn sàng" trả lời *"tôi có phục vụ được không"*. Trường này trả lời
+        #    một câu KHÁC: *"tôi có NÊN đang chạy không"* — và hai câu đó tách ra
+        #    khi tiến trình sống sót mồ côi sau khi vỏ bọc NSSM chết.
+        #
+        #    Đo trên máy B 01/09: `/health` trả 200 suốt **99 giây** trong khi
+        #    `Get-Service` nói `Stopped` và không ai dựng dậy nữa. Máy A đo cùng
+        #    ngày có **cùng lỗ** (không dịch vụ nào có `FAILURE_ACTIONS`), chỉ
+        #    khác là ở đây nó nằm trên máy đang phục vụ khách thật.
+        #
+        # ⛔ CỐ Ý KHÔNG đổi `status` thành `not_ready` khi mồ côi. Tiến trình mồ
+        #    côi **vẫn phục vụ được**; trả 503 sẽ khiến proxy ngắt một dịch vụ
+        #    đang chạy tốt và biến một sự cố vận hành thành một sự cố ngừng
+        #    dịch vụ. Việc của trường này là làm sự cố **nhìn thấy được**.
+        "duoi_dich_vu": to_tien.trang_thai(),
     }
 
 
@@ -148670,7 +148859,7 @@ async def payos_webhook(request: Request):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/run.py
-SHA256=6e2793b441b84a765d73c2fd39cc76c7756ff79203181e127279cca0833c33aa BYTES=738 LINES=25
+SHA256=2f1b715320dea0f33fc281fb5f838189ec9e2b5277654813cdd833f15d7c349b BYTES=3157 LINES=78
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Uvicorn entrypoint (P3).
@@ -148688,7 +148877,34 @@ import os
 import uvicorn
 
 from server.app import create_app
+from platform_core import to_tien
 from platform_core.observability import configure_logging
+
+
+def _ai_dang_nghe(host: str, port: int) -> str | None:
+    """PID đang nghe `port`, hoặc None nếu cổng trống.
+
+    Dò bằng **connect**, không phải bind: bind rồi đóng để nhường cho uvicorn là
+    một cuộc đua.
+    """
+    import socket
+    import subprocess
+    dich = "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(1.5)
+        if s.connect_ex((dich, port)) != 0:
+            return None
+    try:
+        r = subprocess.run(["netstat", "-ano", "-p", "TCP"],
+                           capture_output=True, text=True, timeout=20)
+        for d in r.stdout.splitlines():
+            p = d.split()
+            if len(p) >= 5 and p[3] == "LISTENING" and p[1].endswith(f":{port}"):
+                return p[4]
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return "?"
+
 
 configure_logging(component="server")
 app = create_app()
@@ -148696,6 +148912,32 @@ app = create_app()
 if __name__ == "__main__":
     host = os.environ.get("LTT_SERVER_HOST", "127.0.0.1")
     port = int(os.environ.get("LTT_SERVER_PORT", "8100"))
+
+    # Chụp tổ tiên NSSM ở ĐÂY chứ không trong `create_app()`: đây là điểm vào của
+    # dịch vụ thật, còn `create_app()` bị mọi phép kiểm gọi — và mỗi lượt chụp là
+    # một lần khởi động PowerShell (~0,3 s).
+    #
+    # ⛔ Và không lười khởi tạo: chụp SAU khi vỏ bọc đã chết sẽ thấy một cây
+    #    không có `nssm`, kết luận "đang chạy tay", rồi im lặng mãi. Xem `to_tien`.
+    to_tien.khoi_tao()
+
+    # 🔴 CỔNG ĐÃ CÓ NGƯỜI GIỮ = DỪNG NGAY, NÓI TO.
+    #
+    #    Đo trên máy B 01/09: vỏ bọc NSSM chết ⇒ tiến trình con sống sót mồ côi,
+    #    giữ cổng, và bản mới không bind được. Dịch vụ đứng ở `Paused` **không
+    #    một lời giải thích**, trong khi `/health` của con mồ côi vẫn trả 200.
+    #
+    #    Chỗ này không sửa được cái xanh giả đó — `/health/ready` lo phần ấy. Nó
+    #    biến một `Paused` câm thành một dòng gọi đúng tên thủ phạm.
+    giu = _ai_dang_nghe(host, port)
+    if giu is not None:
+        raise SystemExit(
+            f"CONG {port} DA CO NGUOI GIU (pid {giu}) -- KHONG khoi dong. "
+            f"Nhieu kha nang la mot tien trinh MO COI song sot sau khi vo boc "
+            f"NSSM chet; /health cua no VAN XANH, dung tin. "
+            f"Xu ly: Stop-Process -Id {giu} -Force  roi  "
+            f"Start-Service LTTStudioWeb")
+
     uvicorn.run(app, host=host, port=port)
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -165290,6 +165532,106 @@ if ($script:Fail -gt 0) {
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/bat_tu_dung_day.ps1
+SHA256=532c388d0922900f93dc654a90d8631cf679dbda26c1b1cd006b6463885f95d7 BYTES=4450 LINES=94
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+# bat_tu_dung_day.ps1 - bat FAILURE_ACTIONS cua SCM cho cac dich vu cua nen tang.
+#
+#     powershell -ExecutionPolicy Bypass -File .\setup\bat_tu_dung_day.ps1
+#
+# CAN QUYEN ADMINISTRATOR. Script tu kiem va bao ro neu thieu.
+# Tep nay THUAN ASCII (quy tac 2 cua CLAUDE.md).
+#
+# ================================ VI SAO ======================================
+#
+# Do 01/09 tren may A:
+#
+#     LTTStudioWeb     Running  Automatic  NSSM AppExit=Restart  FAILURE_ACTIONS: KHONG
+#     LTTStudioWorker  Running  Automatic  NSSM AppExit=Restart  FAILURE_ACTIONS: KHONG
+#     LTTStudioVoice   Running  Automatic  NSSM AppExit=Restart  FAILURE_ACTIONS: KHONG
+#     LTTStudioCodex   Running  Automatic                        FAILURE_ACTIONS: KHONG
+#     cloudflared      Running  Automatic                        FAILURE_ACTIONS: KHONG
+#
+# HAI TANG, MOT LO:
+#
+#   may reboot            -> OK, tat ca Automatic nen tu len lai
+#   tien trinh CON chet   -> OK, NSSM AppExit=Restart dung day
+#   VO BOC nssm.exe chet  -> KHONG AI DUNG DAY
+#
+# Tang thu ba la lo, va no khong chi la "dich vu tat". Do that tren may B ngay
+# 01/09 khi dung vo boc:
+#
+#     + 0.0s   /health=200  Get-Service=Stopped   cong van bi giu
+#     +99.0s   /health=200  Get-Service=Paused    cong van bi giu
+#
+# Tien trinh con SONG SOT MO COI, giu cong, va van tra loi binh thuong. Nguoi
+# truc nhin trang web thay no chay; Get-Service noi da chet; va khong co gi dung
+# no day nua. No chay cho toi khi chet, roi het.
+#
+# ================================ CAI GIA =====================================
+#
+# ! FAILURE_ACTIONS la CAN NHUNG KHONG DU. Do lai tren may B: SCM CO kich hoat
+#    (Stopped -> Paused o giay 62,9) nhung ban moi KHONG GIANH DUOC CONG vi con
+#    mo coi dang giu. Bit mot nua khong bit duoc lo.
+#
+#    Nua con lai da lam trong ma:
+#      - `server/run.py` tu choi khoi dong khi cong da co nguoi giu, va in ra
+#        PID thu pham + cach xu ly
+#      - `/health/ready` khai `duoi_dich_vu.mo_coi` de su co NHIN THAY DUOC
+#
+# ! Do tre lui dan 15s -> 60s -> 120s, va `reset= 86400`: mot dich vu hong lien
+#    tuc se KHONG bi dung day trong mot vong lap chat. Neu no hong ba lan trong
+#    mot ngay thi lan thu tu SCM de yen - va do la co y, vi luc do van de khong
+#    con la "tien trinh chet" ma la mot thu can nguoi nhin vao.
+
+[CmdletBinding()]
+param([string[]]$DichVu = @('LTTStudioWeb', 'LTTStudioWorker', 'LTTStudioVoice',
+                            'LTTStudioCodex', 'cloudflared'))
+
+$ErrorActionPreference = 'Stop'
+
+$id = [Security.Principal.WindowsIdentity]::GetCurrent()
+$nguoi = New-Object Security.Principal.WindowsPrincipal($id)
+if (-not $nguoi.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Host "Can quyen Administrator." -ForegroundColor Red
+    Write-Host "Mo PowerShell bang 'Run as administrator' roi chay lai lenh nay."
+    Write-Host "Script nay chi DAT CHINH SACH cho lan hong sau - no KHONG khoi"
+    Write-Host "dong lai dich vu nao, nen chay duoc luc dang phuc vu khach."
+    exit 1
+}
+
+$doi = 0
+foreach ($n in $DichVu) {
+    $sv = Get-Service $n -ErrorAction SilentlyContinue
+    if (-not $sv) { Write-Host ("  [BO QUA] khong co dich vu {0}" -f $n) -ForegroundColor DarkGray; continue }
+
+    $truoc = ((sc.exe qfailure $n) -join ' ') -match 'RESTART'
+    sc.exe failure $n reset= 86400 actions= restart/15000/restart/60000/restart/120000 | Out-Null
+    # `failureflag 1`: tinh ca lan tien trinh THOAT VOI MA KHAC 0, khong chi lan
+    # no sup do. NSSM thoat sach khi tien trinh con chet, nen thieu co nay thi
+    # SCM coi nhu dich vu dung binh thuong va KHONG lam gi.
+    sc.exe failureflag $n 1 | Out-Null
+
+    $sau = ((sc.exe qfailure $n) -join ' ') -match 'RESTART'
+    if ($sau) {
+        $doi++
+        $nhan = if ($truoc) { 'da co tu truoc' } else { 'VUA BAT' }
+        Write-Host ("  [OK]   {0,-18} {1}" -f $n, $nhan) -ForegroundColor Green
+    } else {
+        # Khong `exit 1`: cac dich vu con lai van nen duoc dat. Nhung phai noi to.
+        Write-Host ("  [LOI]  {0,-18} dat xong ma doc lai VAN KHONG THAY" -f $n) -ForegroundColor Red
+    }
+}
+
+Write-Host ""
+Write-Host ("Xong. {0}/{1} dich vu co FAILURE_ACTIONS." -f $doi, $DichVu.Count)
+Write-Host "Kiem tay:  sc.exe qfailure LTTStudioWeb"
+Write-Host ""
+Write-Host "! Nho: day moi la mot nua. Con mo coi giu cong van chan duoc ban" -ForegroundColor Yellow
+Write-Host "  moi bind. Nua kia nam trong ma (server/run.py + /health/ready)." -ForegroundColor Yellow
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/cai_dich_vu_giong.ps1
 SHA256=af6c69854c9f358b3ad6b8b94344af73a771e5a378831b8eb51c6cd702b7907a BYTES=6616 LINES=150
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -166369,6 +166711,81 @@ $env:PYTHONPATH = $Repo
 
 $doiSo = @('--so-doan', "$SoDoan", '--vong', "$Vong")
 if ($Json) { $doiSo += @('--json', $Json) }
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_nhan_ban_tu_kho_cu.ps1
+SHA256=bd41ab0289e4961e185de3de0af6795cc0bede3bc4c9f80298c2c56cae23e813 BYTES=2504 LINES=69
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Measure whether voices cloned from the old library sound right.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_nhan_ban_tu_kho_cu.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_nhan_ban_tu_kho_cu.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -246543,6 +246960,129 @@ class TestThamMoCoi:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_379_to_tien_may_a.py
+SHA256=47ed394e190ca1d513f5fa697b507d54586b4b4e2639f5127617db5276f77a0e BYTES=5286 LINES=117
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Chốt `platform_core/to_tien.py` (máy A) + hợp đồng khớp bản của máy B.
+
+## Vì sao có HAI bản, và vì sao phải chốt chúng khớp nhau
+
+`llm_gateway/to_tien.py` được deploy **sang máy B**, nơi **không có
+`platform_core`**. Một `import platform_core` trong đó sẽ chạy tốt trên máy A và
+**vỡ khi deploy** — vỡ ở lúc khởi động dịch vụ, tức lúc tệ nhất.
+
+⇒ Trùng lặp là **hệ quả của ranh giới triển khai**, không phải cẩu thả. Nhưng
+  hai bản trùng lặp sẽ **trôi khỏi nhau** nếu không ai giữ, và trôi âm thầm:
+  một bên sửa một cái bẫy, bên kia vẫn dính. Tệp này giữ hợp đồng.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core import to_tien
+
+
+def _moc(pid=100, ten="nssm.exe", sinh="2026-09-01T00:00:00"):
+    return {"pid": pid, "ten": ten, "sinh": sinh}
+
+
+class TestBaCaiBayGiongHetBanMayB:
+    def test_bay1_tim_TO_TIEN_khong_phai_cha(self, monkeypatch):
+        cay = [{"pid": 300, "ten": "python.exe", "sinh": "s3"},
+               {"pid": 200, "ten": "python.exe", "sinh": "s2"},
+               {"pid": 100, "ten": "nssm.exe", "sinh": "s1"}]
+        monkeypatch.setattr(to_tien, "_cay_len", lambda *a, **k: cay)
+        assert to_tien.ToTien().moc["pid"] == 100
+
+    def test_bay2_PID_cap_lai_cho_tien_trinh_khac_van_la_mo_coi(self, monkeypatch):
+        monkeypatch.setattr(to_tien, "_cay_len", lambda *a, **k: [_moc()])
+        tt = to_tien.ToTien()
+        monkeypatch.setattr(to_tien, "_cay_len",
+                            lambda *a, **k: [_moc(ten="chrome.exe")])
+        assert tt.trang_thai()["mo_coi"] is True
+
+    def test_bay2b_cung_ten_khac_GIO_SINH_van_la_mo_coi(self, monkeypatch):
+        monkeypatch.setattr(to_tien, "_cay_len", lambda *a, **k: [_moc()])
+        tt = to_tien.ToTien()
+        monkeypatch.setattr(to_tien, "_cay_len",
+                            lambda *a, **k: [_moc(sinh="2026-09-01T23:59:59")])
+        assert tt.trang_thai()["mo_coi"] is True
+
+    def test_khong_co_nssm_thi_khong_theo_doi_va_noi_ro_vi_sao(self, monkeypatch):
+        monkeypatch.setattr(to_tien, "_cay_len", lambda *a, **k: [
+            {"pid": 200, "ten": "cmd.exe", "sinh": "s"}])
+        tt = to_tien.ToTien()
+        assert tt.trang_thai()["mo_coi"] is None, "None = chua biet, KHAC False"
+        assert "cmd.exe" in tt.ly_do_khong_theo_doi
+
+
+class TestKhongLuoiKhoiTao:
+    """⛔ Bẫy #3, và tôi đã viết đúng nó ở bản đầu — ngay dưới một chú thích cảnh báo.
+
+    Lười khởi tạo hỏng **đúng lúc cần nhất**: nếu lượt gọi đầu tiên rơi vào sau
+    khi vỏ bọc đã chết thì nó chụp một cây **không có** `nssm`, kết luận "chạy
+    tay", và im lặng mãi mãi — đúng sự cố nó sinh ra để phát hiện.
+    """
+
+    def test_chua_khoi_tao_thi_NOI_RA_chu_khong_tu_chup(self, monkeypatch):
+        goi: list = []
+        monkeypatch.setattr(to_tien, "_TO_TIEN", None)
+        monkeypatch.setattr(to_tien, "_cay_len",
+                            lambda *a, **k: goi.append(1) or [_moc()])
+        st = to_tien.trang_thai()
+        assert goi == [], "trang_thai() da TU CHUP -- do la luoi khoi tao"
+        assert st["mo_coi"] is None
+        assert "khoi_tao" in st["ly_do"]
+
+    def test_khoi_tao_hai_lan_chi_chup_MOT_lan(self, monkeypatch):
+        goi: list = []
+        monkeypatch.setattr(to_tien, "_TO_TIEN", None)
+        monkeypatch.setattr(to_tien, "_cay_len",
+                            lambda *a, **k: (goi.append(1), [_moc()])[1])
+        to_tien.khoi_tao()
+        to_tien.khoi_tao()
+        assert len(goi) == 1
+
+
+class TestHaiBanKHONG_TROI_KHOI_NHAU:
+    """Hai bản deploy đi hai máy. Không ai giữ thì chúng trôi, và trôi âm thầm."""
+
+    @pytest.fixture
+    def ban_b(self):
+        from llm_gateway import to_tien as tt_b
+        return tt_b
+
+    def test_cung_ten_vo_boc(self, ban_b):
+        assert to_tien.VO_BOC == ban_b.VO_BOC
+
+    def test_cung_bo_khoa_tra_ve(self, monkeypatch, ban_b):
+        for mod in (to_tien, ban_b):
+            monkeypatch.setattr(mod, "_cay_len", lambda *a, **k: [_moc()])
+        a = to_tien.ToTien().trang_thai()
+        b = ban_b.ToTien().trang_thai()
+        assert set(a) == set(b), "hai ban da troi khoi nhau ve hop dong tra ve"
+
+    def test_cung_hanh_vi_khi_mo_coi(self, monkeypatch, ban_b):
+        ra = []
+        for mod in (to_tien, ban_b):
+            monkeypatch.setattr(mod, "_cay_len", lambda *a, **k: [_moc()])
+            tt = mod.ToTien()
+            monkeypatch.setattr(mod, "_cay_len", lambda *a, **k: [])
+            ra.append(tt.trang_thai())
+        assert ra[0]["mo_coi"] == ra[1]["mo_coi"] is True
+        assert set(ra[0]) == set(ra[1])
+
+    def test_ca_hai_KHONG_TU_THOAT(self, ban_b):
+        from pathlib import Path
+        for duong in ("platform_core/to_tien.py", "llm_gateway/to_tien.py"):
+            ma = Path(duong).read_text(encoding="utf-8")
+            than = "\n".join(d for d in ma.splitlines()
+                             if not d.strip().startswith("#"))
+            for cam in ("os._exit", "Stop-Process", "terminate()", "kill()"):
+                assert cam not in than, f"{duong} KHONG duoc tu thoat/giet: {cam}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_37_p3_web_foundation.py
 SHA256=aacce5c8768946e04dc3f62d4f6ad04c728825d80974e948f90e73dc5d6a93c8 BYTES=15890 LINES=372
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -270002,6 +270542,183 @@ def main(argv=None) -> int:
                    "nhanh_hon": round(nhanh, 3),
                    "dao_dong": round(dao, 4)}, f, ensure_ascii=False, indent=2)
     print(f"\nDa ghi: {a.json}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_nhan_ban_tu_kho_cu.py
+SHA256=7059f8094b5c5dd7b5329c77e757a6db3234a1e9af74cf90545af0981869b640 BYTES=6892 LINES=171
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_nhan_ban_tu_kho_cu.py — giọng nhân bản từ kho cũ có GIỐNG người nói không?
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_nhan_ban_tu_kho_cu.ps1
+
+## Câu hỏi
+
+Ghi danh thành công **không** có nghĩa là nhân bản tốt. `ghi_danh` trả về một
+embedding cho mọi tệp wav hợp lệ; nó không bao giờ nói "giọng này không học
+được". Câu hỏi thật là: bản sinh ra có gần người nói gốc hơn là gần một người
+lạ không?
+
+## Cách đo, và vì sao cần CẢ HAI số
+
+Với mỗi giọng đã ghi danh:
+
+    tuong_dong  = cosine( bản sinh ra , clip gốc của CHÍNH giọng đó )
+    san_nguoi_la = cosine( bản sinh ra , clip gốc của các giọng KHÁC )
+
+⛔ Một mình `tuong_dong` không nói lên gì. Bộ mã hoá người nói cho hai người
+   Việt bất kỳ một cosine khá cao — nó đo giọng, và mọi giọng người đều giống
+   nhau hơn là giống tiếng ồn. Con số có nghĩa là **khoảng cách giữa hai số**:
+   nhân bản đúng thì `tuong_dong` phải cao hơn `san_nguoi_la` rõ rệt.
+
+⭐ Đây đúng là sai lầm mà `chon_doan` từng mắc ở một lớp khác (chọn đoạn nhiễu
+   vì nó "đại diện" cho một clip bẩn), và là sai lầm mà mọi phép đo hôm nay
+   tránh bằng cách dựng một sàn để so.
+
+⚠️ Chạm GPU thật, không chạm sổ tiền (gọi thẳng cổng giọng bằng ref đã lưu).
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import os
+import statistics
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+CAU_VI = ("Hôm nay tôi thử đọc một đoạn ngắn để kiểm tra giọng vừa được nhân "
+          "bản, xem nó có còn giống người nói ban đầu không.")
+CAU_EN = ("Today I am reading a short passage to check whether the cloned "
+          "voice still sounds like the original speaker.")
+
+
+class KhongDoDuoc(RuntimeError):
+    """Không đo được thì VỠ, không lặng lẽ thành một con số."""
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
+    ap.add_argument("--clip-dir", default="tmp/giong_cu")
+    ap.add_argument("--ra", default="tmp/nhan_ban_kho_cu.json")
+    a = ap.parse_args(argv)
+
+    import numpy as np
+    import soundfile as sf
+
+    from apps.ltt_voice import features, sidecar_client
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core import users
+    from platform_core.db import get_session
+    from voice_sidecar.do_chat_luong import _bo_ma_hoa_giong, _cosine, _embed
+
+    bo = _bo_ma_hoa_giong()
+    if bo is None:
+        print("khong nap duoc bo ma hoa nguoi noi", file=sys.stderr)
+        return 2
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, a.email)
+        if u is None:
+            print(f"khong thay {a.email}", file=sys.stderr)
+            return 2
+        hs = db.query(VoiceProfile).filter(
+            VoiceProfile.owner_id == str(u.id),
+            VoiceProfile.trang_thai == "active").all()
+        muc = [{"public_id": h.public_id, "ten": h.ten_hien_thi} for h in hs]
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    if not muc:
+        print("khong co ho so giong nao `active`", file=sys.stderr)
+        return 2
+
+    # Nhúng của MỌI clip gốc — dùng làm sàn "người lạ".
+    goc = {}
+    for f in sorted(os.listdir(a.clip_dir)):
+        if not f.endswith(".wav"):
+            continue
+        w, sr = sf.read(os.path.join(a.clip_dir, f), dtype="float32",
+                        always_2d=False)
+        e = _embed(bo, np.asarray(w, dtype=np.float32), int(sr))
+        if e is not None:
+            goc[f[:-4]] = e
+    if len(goc) < 3:
+        raise KhongDoDuoc(f"chi co {len(goc)} clip goc — khong dung san duoc")
+    print(f"{len(goc)} clip goc lam san so sanh\n")
+
+    ra = []
+    for m in muc:
+        # Tên hiển thị mang tên tệp gốc ở đầu (ta đặt lúc ghi danh).
+        khop = [k for k in goc if k.split("_")[0].lower() in m["ten"].lower()]
+        gen = get_session()
+        db = next(gen)
+        try:
+            yc = features.chuan_hoa({"text": CAU_VI, "voice_id": m["public_id"],
+                                     "owner_id": str(u.id)})
+            ref_b64, preset, _ = features.giai_giong(db, yc)
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+        raw, dau = sidecar_client.noi(CAU_VI, ref_b64=ref_b64, preset=preset)
+        w, sr = sf.read(io.BytesIO(raw), dtype="float32", always_2d=False)
+        e = _embed(bo, np.asarray(w, dtype=np.float32), int(sr))
+        if e is None:
+            raise KhongDoDuoc(f"{m['ten']}: khong nhung duoc ban sinh ra")
+
+        diem = {k: _cosine(e, v) for k, v in goc.items()}
+        ban_than = max(diem[k] for k in khop) if khop else None
+        la = sorted((v for k, v in diem.items() if k not in khop), reverse=True)
+        ra.append({
+            "voice_id": m["public_id"], "ten": m["ten"],
+            "tuong_dong": round(ban_than, 4) if ban_than is not None else None,
+            "san_nguoi_la_cao_nhat": round(la[0], 4) if la else None,
+            "san_nguoi_la_trung_binh": round(statistics.mean(la), 4) if la else None,
+            "gan_nhat": max(diem, key=diem.get),
+        })
+        d = ra[-1]
+        print(f"  {m['ten'][:34]:34} tuong dong {d['tuong_dong']}  "
+              f"san la {d['san_nguoi_la_trung_binh']} "
+              f"(cao nhat {d['san_nguoi_la_cao_nhat']})  gan nhat: {d['gan_nhat']}")
+
+    print("\n" + "=" * 74)
+    print("  NHAN BAN CO GIONG NGUOI NOI KHONG")
+    print("=" * 74)
+    for d in ra:
+        if d["tuong_dong"] is None:
+            print(f"  {d['ten'][:38]:38} — khong khop duoc clip goc")
+            continue
+        bien = d["tuong_dong"] - (d["san_nguoi_la_trung_binh"] or 0)
+        dung = d["gan_nhat"].split("_")[0].lower() in d["ten"].lower()
+        print(f"  {d['ten'][:38]:38} bien {bien:+.4f}  "
+              f"{'DUNG NGUOI' if dung else 'SAI NGUOI'}")
+    print("\n  ⛔ `bien` la thu duy nhat co nghia: tuong dong tru san nguoi la.")
+    print("     Bo ma hoa cho hai giong nguoi bat ky mot cosine kha cao, nen")
+    print("     mot so `tuong_dong` 0,9 tu no khong chung minh dieu gi.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ra, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
     return 0
 
 
