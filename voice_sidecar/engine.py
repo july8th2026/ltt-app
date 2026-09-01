@@ -250,13 +250,58 @@ class CongGiong:
         return None      # -> giọng mặc định của SDK
 
     def noi(self, text: str, *, ref_b64=None, preset=None) -> tuple:
-        """Một lượt sinh. Trả `(wav_float32, giay)`."""
+        """Một lượt sinh, có KIỂM trước khi trả về. Trả `(wav_float32, giay)`.
+
+        🔴 K1 — bốn chốt: toàn vẹn · gần im · lặp đuôi · thời lượng.
+           Hỏng thì sinh lại **một lần**; hỏng lần hai thì trả bản thứ hai kèm
+           một dòng cảnh báo trong log, chứ không ném.
+
+        ⭐ VÌ SAO TRẢ VỀ CHỨ KHÔNG NÉM khi thử lại vẫn hỏng: `chot_thoi_luong`
+           có thể báo động nhầm trên một giọng đọc chậm bất thường, và biến một
+           báo động nhầm thành một job hỏng là **trừ credit cho một việc chưa
+           từng chạy sai**. Chốt ở đây để *sửa* một lượt hỏng, không để *từ chối*
+           phục vụ khách.
+
+        ⚠️ Sinh lại không cần đổi seed: `temperature` 0,8 nên hai lượt cùng
+           tham số vốn đã khác nhau. Cache CUDA graph khoá theo
+           `(batch, temperature, top_k, top_p)` — giữ nguyên bộ tham số thì
+           không tốn thêm graph nào.
+        """
+        from . import chot_sinh
+
         self.nap()
+        n = len(text or "")
         with self.cong:
             t0 = time.perf_counter()
-            wav = self._tts.infer(text, voice=self._voice_arg(ref_b64, preset),
-                                  **tham_so.bo_tham_so())
-            return np.asarray(wav, dtype=np.float32), time.perf_counter() - t0
+            wav = np.asarray(
+                self._tts.infer(text, voice=self._voice_arg(ref_b64, preset),
+                                **tham_so.bo_tham_so()), dtype=np.float32)
+            pq = chot_sinh.kiem_het(wav, self.sample_rate, n)
+
+            # Ghi tương quan đuôi cho MỌI lượt, kể cả lượt đạt.
+            #
+            # ⭐ Đây là cách duy nhất để ngưỡng `0,92` đi từ "mượn của hệ cũ" tới
+            #    "đo trên engine của mình". Số nền hiện có mới là 16 lượt (trung
+            #    bình 0,031 · cao nhất 0,103 · ngưỡng cách 17 σ); một dòng log
+            #    mỗi lượt biến nó thành hàng nghìn mà không tốn gì.
+            tq = (pq.chan_doan or {}).get("tuong_quan")
+            if tq is not None:
+                log.info("[chot] tuong_quan_duoi=%.4f ky_tu=%d", tq, n)
+
+            if not pq.dat:
+                log.warning("[chot] luot 1 HONG: %s | %s", pq.ly_do, pq.chan_doan)
+                wav2 = np.asarray(
+                    self._tts.infer(text, voice=self._voice_arg(ref_b64, preset),
+                                    **tham_so.bo_tham_so()), dtype=np.float32)
+                pq2 = chot_sinh.kiem_het(wav2, self.sample_rate, n)
+                if pq2.dat:
+                    log.info("[chot] sinh lai DAT")
+                    wav = wav2
+                else:
+                    log.error("[chot] sinh lai VAN HONG: %s — tra ban thu hai",
+                              pq2.ly_do)
+                    wav = wav2 if pq2.nhan else wav
+            return wav, time.perf_counter() - t0
 
     def noi_lo(self, texts: list, *, ref_b64=None, preset=None) -> tuple:
         """Một lô. Trả `(danh_sach_wav, giay)`.
