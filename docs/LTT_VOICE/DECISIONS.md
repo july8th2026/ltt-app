@@ -398,3 +398,55 @@ nhưng **đầy đủ** — bốn giả thuyết, bốn phép đo, bốn lần b
    ra có đi theo không. Mất mười lăm phút, và nó lật ngược một kết luận đã ghi.
 
 **Date:** 2026-09-01
+
+---
+
+## DV-008 — Đợt rà soát giao diện đối chiếu ảnh: bảy tính năng, một module
+
+**Date:** 2026-09-01
+
+**Bối cảnh.** Chủ dự án đối chiếu `LTT_VOICE_UI_PROMPT_PACK_V1` với bản đang
+chạy và kết luận *"giao diện thiếu quá nhiều module và tính năng"*. Đúng: một
+phép dò 15 điểm trên DOM thật cho **15/15 thiếu**.
+
+**Cách tìm ra chúng, và đây mới là phần đáng giữ.** Không đọc ảnh rồi liệt kê
+mong muốn, mà **đối chiếu năng lực backend đã có với thứ giao diện phơi ra**.
+Cách ấy tìm được thứ mà đọc ảnh không tìm được:
+
+- `features.chuan_bi_van_ban(tu_dien_rieng=…)` → `text_pipeline.chuan_hoa` →
+  `tu_dien.ap_dung(them=…)` — **ba tầng nhận tham số, không ai truyền**. Một
+  đường ống dựng xong rồi để không. Đó là ⑤ `PRONUNCIATION` của ảnh 01, và nó
+  là một **module** chứ không phải một nút.
+- `job_history.list_owned` đã có `start`/`end`/`cursor` — màn Lịch sử không dùng.
+- Màn Lịch sử hứa *"nghe lại và **tải về** được"* mà **không có đường tải nào**.
+
+**Đã làm:** tốc độ đọc hậu kỳ · mã giọng trong ô chọn · nhập TXT · tải MP3 ·
+lưu vào Dự án · phiên bản khối · ví dụ Python ở màn API · cột dự án · lượt gần
+nhất ở Studio · trình phát sóng âm chung cho bốn màn · từ điển phát âm riêng ·
+lọc theo ngày · đọc lại một lượt.
+
+**Cố ý KHÔNG làm** (không có backend, dựng ra là nút giả): điểm
+Quality/Similarity/Stability % · "Voice Family" · hạn mức Storage ở header ·
+nghe thử cho giọng mẫu (chưa sinh tệp mẫu) · tách theo câu ở Studio (đó là mô
+hình của màn Dự án; làm ở hai nơi là hai chỗ để chúng lệch nhau).
+
+⛔ **Hai lời hoãn cũ hoá ra là hai lời từ chối vĩnh viễn.** Chú thích trong
+   `ltt_voice_studio.html` ghi *"Q119 CẤM phơi ra tốc độ"* — một **trích dẫn
+   sai**: Q119 nêu đích danh năm tham số *lấy mẫu* và không có tốc độ. Và
+   *"`Save to Project` — chưa có Dự án"* đúng lúc viết, hết đúng khi Dự án ra
+   đời, nhưng không ai quay lại kiểm điều kiện.
+
+   ⇒ Khi hoãn một việc, ghi **điều kiện mở lại**, và ghi đủ để người sau kiểm
+     được điều kiện ấy mà không phải tin lời ta.
+
+🔴 **Và một trích dẫn sai được CHỐT BẰNG MỘT PHÉP KIỂM sống dai hơn nhiều.**
+   `test_347` cấm `name="toc_do"` lên giao diện, viện chính Q119. Chú thích sai
+   thì ai cũng dám sửa; một chốt đỏ thì người ta lùi lại — vì gate đỏ trông y
+   hệt một lỗi, và bản năng đúng ("đừng làm gate đỏ") quay ra bảo vệ đúng thứ
+   sai. Phép kiểm ấy vừa **cấm nhầm** một thứ, vừa **quên cấm** hai thứ thật
+   (`repetition_penalty`, `repetition_window`).
+
+**Bài học đo lường.** Chọn tệp test bằng một **mẫu tên tự nghĩ** là tự chọn lấy
+bằng chứng cho mình: tôi báo "243 xanh" từ 11 tệp gõ tay, chạy đủ 26 tệp thì hai
+tệp đỏ — và cả hai đúng chỗ vừa sửa. Liệt kê bằng `ls | grep` rồi chạy cả danh
+sách.
