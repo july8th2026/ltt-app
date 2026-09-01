@@ -111,7 +111,15 @@ def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
     import os
     moi_truong = dict(gpu_env) if gpu_env else dict(os.environ)
     # `-m` can thu muc goc cua kho trong duong import.
-    goc = str(Path(__file__).resolve().parents[2])
+    #
+    # ⛔ KHONG dem cap bang `parents[2]`. Dem cap hong LANG LE khi file doi cho:
+    #    khong loi nao no ra, chi la `PYTHONPATH` tro vao mot thu muc khong phai
+    #    goc kho, roi `-m apps.auto_scan_video.demucs_runner` bao "no module"
+    #    o mot cho hoan toan khac. Dung dung mot thuong quyen cua nen tang, no
+    #    di nguoc len toi thu muc DAU TIEN co `server/static` — khong phu thuoc
+    #    do sau cua file goi.
+    from platform_core.frontend_bundle import REPO_ROOT
+    goc = str(REPO_ROOT)
     moi_truong["PYTHONPATH"] = goc + os.pathsep + moi_truong.get("PYTHONPATH", "")
 
     try:

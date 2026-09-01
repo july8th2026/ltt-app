@@ -13517,3 +13517,15 @@ msgstr "API terms of service — how billing, refunds and limits work"
 
 msgid "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} ký tự cho phép. Hãy rút gọn một mục trong từ điển."
 msgstr "After applying the pronunciation dictionary the text is {n} characters — far beyond the {t} allowed. Shorten one dictionary entry."
+
+#: platform_core/public_api/governance.py
+msgid "Một lần lồng tiếng: video nguồn của khách, ngôn ngữ, giọng đã chọn. Hết hạn cùng lúc với tệp mà nó trỏ tới."
+msgstr "One dubbing run: the customer's source video, language and chosen voice. It expires at the same time as the files it points to."
+
+#: platform_core/public_api/governance.py
+msgid "Trạng thái từng giai đoạn và khoá kết quả của nó. Chứa bản chép lời và bản dịch — tức chính lời nói trong video của khách."
+msgstr "Per-stage status and the storage keys of its results. Holds the transcript and the translation — that is, the actual speech in the customer's video."
+
+#: platform_core/public_api/governance.py
+msgid "Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."
+msgstr "The ledger of generated resources: storage key, fingerprint, and which resource it came from. It holds no bytes, only the paths to them."

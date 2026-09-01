@@ -308,6 +308,32 @@ STORES: tuple = (
     Store("ommi_scene_version", CONTENT, None, N_("chủ tài khoản"),
           N_("Phiên bản một cảnh, kèm góp ý của người dùng.")),
 
+    # ── Auto Scan Video ──────────────────────────────────────────────────────
+    #
+    # Cả ba đều là CONTENT, không phải EVIDENCE, và ranh giới đó đã có sẵn lời
+    # giải thích ở mục `jobs` phía trên: *bằng chứng và nội dung là hai thứ khác
+    # nhau*. Tiền của một lần chạy nằm ở `credit_entries` (EVIDENCE, giữ mãi);
+    # ba bảng này chỉ giữ **tài liệu của khách** và trỏ tới tệp của họ.
+    #
+    # 🔑 Hạn 30 ngày KHỚP CỐ Ý với hạn của `jobs`, và đó là điều đáng nói nhất ở
+    #    đây. LTT VOICE đã trả giá cho việc lệch: `voice_block.audio_key` sống
+    #    mãi cùng dự án còn tệp nó trỏ tới sống 30 ngày theo `jobs`, nên sau 30
+    #    ngày khách mở dự án cũ và thấy một trình phát 404 **không kèm lời giải
+    #    thích nào**. Một hàng dữ liệu sống lâu hơn tệp nó trỏ tới không phải là
+    #    "giữ được nhiều hơn" — nó là một lời hứa hỏng.
+    Store("asv_run", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Một lần lồng tiếng: video nguồn của khách, ngôn ngữ, giọng đã "
+          "chọn. Hết hạn cùng lúc với tệp mà nó trỏ tới."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_stage", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Trạng thái từng giai đoạn và khoá kết quả của nó. Chứa bản chép "
+          "lời và bản dịch — tức chính lời nói trong video của khách."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_asset", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn "
+          "từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."),
+          "job_content.purge_expired (worker)"),
+
     # ── Derived: rebuildable ─────────────────────────────────────────────────
     Store("ho_so_he_thong.txt", DERIVED, None, N_("nội bộ"),
           N_("Bản đồ mã nguồn, sinh lại được bằng một lệnh.")),

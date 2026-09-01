@@ -96,7 +96,23 @@ MANIFEST = AppManifest(
     # ── Chua mo ────────────────────────────────────────────────────────────
     enabled=False,
     public=False,
-    surface="customer",
+
+    #: 🔴 `runtime`, KHONG phai `customer` — va day la mot cai bay da co nan nhan.
+    #:
+    #:    `apps/ltt_llm` khai `surface="customer"` khi chua co `routes.py`. Hau
+    #:    qua: `nav_entries()` **tu sinh** mot dong nav mac dinh (khai `nav=()`
+    #:    KHONG co nghia la "khong co nav"), va moi khach da dang nhap thay mot
+    #:    link chet vao 404 suot nhieu tuan.
+    #:
+    #: ⚠️ Va luu y ky: `enabled=False` **khong** cuu duoc. `visible_on_surface`
+    #:    khong doc `enabled` chut nao (`platform_core/registry.py:863-874`) —
+    #:    no chi doc `surface` va `catalog_parent`. Tat app khong lam dong nav
+    #:    bien mat.
+    #:
+    #: ⇒ Giu `runtime` cho toi khi co `routes.py` that. `tests/test_413` chot
+    #:    hai chieu, nen khong the quen doi lai: co routes ma con `runtime` la
+    #:    do, va `customer` ma khong co routes cung do.
+    surface="runtime",
     lifecycle="development",
     capabilities=("video",),
     notes="Pha 05: mach doc GIA, chua co engine that. Khong mo cho khach.",

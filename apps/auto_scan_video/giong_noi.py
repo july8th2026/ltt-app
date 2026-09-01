@@ -44,8 +44,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 
 from platform_core.i18n import _ as _t
+
+log = logging.getLogger(__name__)
 
 #: Doi khi doi cach goi engine. Vao van tay (O13).
 PHIEN_BAN_GIONG = 1
@@ -79,7 +82,13 @@ def san_sang() -> bool:
     try:
         from apps.ltt_voice import sidecar_client
         return bool(sidecar_client.san_sang())
-    except Exception:      # noqa: BLE001 - app kia co the chua nap
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        # ⛔ Ghi log chu khong nuot. "Chua cai" va "da cai nhung dang hong" tra
+        #    ve CUNG mot `False` o day, va hai thu do doi hoi hai hanh dong khac
+        #    han. Khong co dong log nay thi mot sidecar chet chi hien ra thanh
+        #    "may nay khong co LTT VOICE" — dung mot lan, sai mai ve sau.
+        log.warning("khong hoi duoc sidecar LTT VOICE (%s: %s)",
+                    type(exc).__name__, exc)
         return False
 
 

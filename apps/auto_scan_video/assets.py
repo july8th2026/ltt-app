@@ -91,9 +91,67 @@ def _aware(gia_tri: datetime | None) -> datetime | None:
 #  Dat khoa — khong bao gio tin chuoi cua client
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  NGAN SACH DO DAI DUONG — do duoc, khong phai chon cho dep
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Da hong that ngay 02/09. Khoa mang van tay sha256 **day du** (64 ky tu hex)
+#    lam duong dai **262** tren Windows, va MAX_PATH la **260**:
+#
+#      ...\popen-gw2\test_MOT_tep_cho_MOI_doan0\kho\asv-staging\uA\
+#      asvr_<32 hex>\voice_synthesis\<64 hex>.wav.part20608      <- 262
+#
+#    ⚠️ Hai cho `<...>` o tren tung la hex THAT khi ghi chu nay moi viet, va bo
+#       quet bi mat cua `tests/test_44` bat ngay: mot chuoi 32 ky tu hex tran
+#       trui trong ma nguon **khong phan biet duoc** voi mot khoa that. No dung
+#       — mot bo quet chi tin duoc khi no khong doan y dinh cua nguoi viet.
+#
+#    `Storage.put` nem `FileNotFoundError` ngay o `open(tmp,'wb')` — mot thong
+#    bao noi ve mot tep khong ton tai, cho mot loi that ra la duong qua dai.
+#
+# ⭐ Va no hong theo dung kieu te nhat: chay MOT MINH thi **252, xanh**; chay
+#    trong gate thi xdist chen them `popen-gwN\` (10 ky tu) va thanh **262, do**.
+#    Mot loi that trong ma chi lo ra khi chay song song rat de bi doc nham thanh
+#    "test chap chon" roi chay lai cho toi khi tra xanh.
+#
+# ⛔ Loi KHONG nam o `platform_core/storage.py` — hau to `.part<pid>` chi them 12
+#    ky tu. No nam o cho TA dat ba dinh danh day du canh nhau trong mot duong.
+#
+# 🔑 Va bai hoc dat hon ca lan sua dau: cat rieng van tay xuong 32 van **chua
+#    du**. Phep kiem dau tien cua ta dung `owner_id` la `"uA"` — dai 2 ky tu —
+#    trong khi `owner_id` that la UUID **36 ky tu**. Tuc ban va dau tien xanh vi
+#    du lieu thu qua hien, khong vi loi da het. Chi khi dung dau vao xau nhat
+#    THAT SU (`tests/test_412`) moi lo ra la van con 269.
+#
+# Ngan sach (goc gia dinh 120 = tmpdir cua pytest + xdist; production chi ~28):
+#
+#      asv-staging/                             12
+#      {owner[:16]}/                            17
+#      {run[:24]}/                              25
+#      {stage}/          (dai nhat content_process)   16
+#      {van_tay[:32]}.wav                       36
+#                                              ---
+#                                              106  + 120 goc + 12 `.part` = 238
+#
+#: 16 ky tu dau cua UUID chu so huu. Van giu duoc tinh chat o docstring `dat_khoa`
+#: (khoa mang chu so huu), va tham quyen phan quyen van la cot CSDL chu khong
+#: phai chuoi duong dan.
+DAI_OWNER_TRONG_KHOA = 16
+#: `asvr_` + 19 hex = 76 bit, dac trong pham vi mot chu so huu.
+DAI_RUN_TRONG_KHOA = 24
+#: 32 ky tu hex = 128 bit. Thua suc chong dung cho vai nghin artifact mot lan
+#: chay. Ban DAY DU van nam nguyen trong `AsvAsset.van_tay` — cat o day chi cat
+#: cai TEN, khong cat bang chung.
+DAI_VAN_TAY_TRONG_KHOA = 32
+
+
 def dat_khoa(*, owner_id: str, run_id: str, stage: str, van_tay: str,
              duoi: str) -> str:
     """`asv/{owner}/{run}/{stage}/{van_tay}.{duoi}` — TU DAT, khong nhan tu ngoai.
+
+    Van tay bi cat con `DAI_VAN_TAY_TRONG_KHOA` ky tu trong TEN TEP (xem ghi chu
+    o hang so do). Cat mot cach xac dinh nen tra cuu van khop: cung dau vao ra
+    cung khoa, va ban day du van nam trong CSDL de doi chieu toan ven.
 
     🔴 Day la cho de mot he thong luu tru bi bien thanh mot he thong doc tep tuy
        y. `platform_core/storage.py:181 _safe_key` da chan `../`, va no la lop
@@ -111,8 +169,11 @@ def dat_khoa(*, owner_id: str, run_id: str, stage: str, van_tay: str,
     for ten, gia_tri in manh.items():
         if not gia_tri or not _DOAN_HOP_LE.match(str(gia_tri)):
             raise AssetError(f"manh khoa khong hop le: {ten}={gia_tri!r}")
-    return (f"asv/{manh['owner_id']}/{manh['run_id']}/{manh['stage']}/"
-            f"{manh['van_tay']}.{manh['duoi']}")
+    # ⚠️ Cat SAU khi da kiem tung manh, khong truoc: cat truoc thi mot manh rac
+    #    du dai co the bi xen thanh mot manh trong nhin nhu hop le.
+    return (f"asv/{manh['owner_id'][:DAI_OWNER_TRONG_KHOA]}"
+            f"/{manh['run_id'][:DAI_RUN_TRONG_KHOA]}/{manh['stage']}/"
+            f"{manh['van_tay'][:DAI_VAN_TAY_TRONG_KHOA]}.{manh['duoi']}")
 
 
 def khoa_staging(*, owner_id: str, run_id: str, stage: str, van_tay: str,

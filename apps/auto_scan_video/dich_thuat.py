@@ -34,8 +34,11 @@ do, va `asv_stage` cung chi giu mot `job_id` cho moi giai doan.
 from __future__ import annotations
 
 import json
+import logging
 
 from platform_core.i18n import _ as _t
+
+log = logging.getLogger(__name__)
 
 #: MOT provider. Xem ghi chu dau tep truoc khi them cai thu hai.
 THU_TU_PROVIDER = ("ltt_llm",)
@@ -60,7 +63,16 @@ def _tran_token_ra() -> int:
     try:
         from apps.ltt_llm import ngan_sach
         return int(ngan_sach.mac_dinh_cho("job"))
-    except Exception:      # noqa: BLE001 - app kia co the chua nap; dung so an toan
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        # ⛔ PHAI GHI LOG, va day la mot vi du tu no chung minh vi sao.
+        #
+        #    Ban dau cho nay `return 4096` im lang. Nhung neu `mac_dinh_cho` co
+        #    that su hong — chu khong phai chi la `ltt_llm` chua nap — thi ta
+        #    lang le dich bang mot tran token TU BIA, va moi ban dich dai se cut
+        #    o day. Do dung la loi 1.024-token ma chinh ghi chu ben tren vien
+        #    dan, chi khac la lan nay ta tu gay ra no.
+        log.warning("khong doc duoc tran token cua ltt_llm (%s: %s) — "
+                    "dung so an toan %d", type(exc).__name__, exc, 4096)
         return 4096
 
 

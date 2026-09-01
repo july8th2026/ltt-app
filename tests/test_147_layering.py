@@ -65,7 +65,56 @@ def test_platform_core_never_imports_apps():
 #: ToolSpec handoff như `prompt_ai_ommi` đang dùng. Chưa đổi vì đây là luồng
 #: TRẢ TIỀN đang chạy, và đổi nó cần một cổng kiểm riêng chứ không kèm vào một
 #: đợt sửa mười hạng mục.
-CROSS_APP_ALLOWED = {("taovideo", "upscalevideo")}
+#: ── Auto Scan Video ────────────────────────────────────────────────────────
+#:
+#: Sáu cạnh, nhưng **hai loại khác hẳn nhau**. Gộp chúng làm một dòng ngoại lệ
+#: sẽ giấu mất điều đáng biết: ba cạnh đầu không phải nợ, ba cạnh sau thì có.
+#:
+#: ⭐ LOẠI A — `asv_media` · `asv_gpu` · `asv_voice` → `auto_scan_video`
+#:
+#:    Ba cái này **không phải app độc lập**. Chúng khai `surface="runtime"` +
+#:    `catalog_parent="auto_scan_video"`, không có thẻ catalog, không có mục
+#:    nav, không bán riêng. Chúng tồn tại vì một lý do kỹ thuật duy nhất: quyền
+#:    nhặt job lọc theo **APP** chứ không theo `job_type`
+#:    (`platform_core/jobs.py:158-164`), nên một app khai đủ cả bốn năng lực sẽ
+#:    chỉ chạy được trên worker có đủ cả bốn — tức là không bao giờ.
+#:
+#:    ⇒ Câu "gỡ một app là gãy app kia" **không áp dụng**: gỡ `auto_scan_video`
+#:      không làm gãy một sản phẩm khác, nó gỡ chính sản phẩm này. Đây là import
+#:      TRONG một sản phẩm, chỉ trông giống import chéo vì hợp đồng app buộc mỗi
+#:      làn worker phải là một thư mục riêng.
+#:
+#: ⚠️ LOẠI B — `auto_scan_video` → `ltt_llm` · `autosubvideo` · `ltt_voice`
+#:
+#:    Đây MỚI là nợ, và đúng cùng loại với `taovideo → upscalevideo` ở trên:
+#:    đổi tên hay gỡ một trong ba app kia sẽ làm gãy Auto Scan Video.
+#:
+#:      dich_thuat.py        -> ltt_llm       điều phối model dịch
+#:      giai_doan_chep_loi.py-> autosubvideo  bộ chạy ASR
+#:      giong_noi.py         -> ltt_voice     chuẩn hoá văn bản + TTS
+#:
+#:    Nhưng nó **khác** `taovideo → upscalevideo` ở một điểm quyết định đường
+#:    sửa: ba lời gọi này phần lớn là **hàm thuần**, không phải nộp job. Ví dụ
+#:    `ltt_voice.text_pipeline.chuan_hoa` là chuẩn hoá tiếng Việt — một mối lo
+#:    dùng chung đã bị đặt nhầm chỗ, nó thuộc `platform_core` chứ không thuộc
+#:    một app. Nên đường ra đúng ở đây **không phải** ToolSpec handoff (handoff
+#:    một hàm thuần chỉ thêm một vòng hàng đợi cho một phép biến đổi chuỗi) mà
+#:    là **nâng phần dùng chung lên `platform_core`**.
+#:
+#:    Chưa làm trong pha 14 vì việc đó sửa `platform_core/` VÀ ba app **đang
+#:    phục vụ khách trả tiền** của lane khác — đúng thứ `CLAUDE.md` bảo dừng
+#:    lại và nói rõ thay vì kèm vào một đợt mười hạng mục. Ghi ở RISK-14-01.
+CROSS_APP_ALLOWED = {
+    ("taovideo", "upscalevideo"),
+    # loại A — cùng một sản phẩm, tách vì quyền nhặt job lọc theo app
+    ("asv_media", "auto_scan_video"),
+    ("asv_gpu", "auto_scan_video"),
+    ("asv_voice", "auto_scan_video"),
+    # loại B — nợ thật, đường ra là nâng phần dùng chung lên platform_core
+    ("auto_scan_video", "ltt_llm"),
+    ("auto_scan_video", "autosubvideo"),
+    ("auto_scan_video", "ltt_voice"),
+}
 
 
 def test_apps_never_import_another_app():
