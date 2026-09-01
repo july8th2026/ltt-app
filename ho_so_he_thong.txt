@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:6c85b5d6339e1ae168bfd413f800c04992c14ee98bd225da97e09db5d17ee444
-Nguồn đã quét : 1418 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:19b70a89458cc87d1059c8b86f524f57b3c8b72ec6f4e8e278cec54674452604
+Nguồn đã quét : 1424 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1174,7 +1174,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (342 file pytest + 3 frontend)
+10. QUALITY GATES (344 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1479,6 +1479,8 @@ Test inventory:
 - tests/test_383_do_on_dinh.py
 - tests/test_384_lan_ngon_ngu.py
 - tests/test_385_tools_sai_khuon.py
+- tests/test_386_nhap_kho_giong_cu.py
+- tests/test_387_ps_bien_trung_tham_so.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1543,8 +1545,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1418 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:48, .py:1071, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1424 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:50, .py:1075, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2460,7 +2462,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (33)
+[setup] (35)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2488,14 +2490,16 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/do_nhan_ban_tu_kho_cu.ps1
 - setup/do_troi_tong.ps1
 - setup/khoa_thu_api.ps1
+- setup/nap_credit_tai_khoan_thu.ps1
 - setup/nap_lai_env.ps1
+- setup/nhap_kho_giong_cu.ps1
 - setup/soi_kho_giong_cu.ps1
 - setup/soi_su_co.ps1
 - setup/tai_khoan_thu.ps1
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (359)
+[tests] (361)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2811,6 +2815,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_383_do_on_dinh.py
 - tests/test_384_lan_ngon_ngu.py
 - tests/test_385_tools_sai_khuon.py
+- tests/test_386_nhap_kho_giong_cu.py
+- tests/test_387_ps_bien_trung_tham_so.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -2856,7 +2862,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (152)
+[tools] (154)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2952,10 +2958,12 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/khoa_thu_api.py
 - tools/kiem_ltt_llm.py
 - tools/lint_app_contract.py
+- tools/nap_credit_tai_khoan_thu.py
 - tools/nexus_release_key.py
 - tools/nexus_sign_release.py
 - tools/nghiem_thu_anh_e2e.py
 - tools/nghiem_thu_chat_l1.py
+- tools/nhap_kho_giong_cu.py
 - tools/prepare_agent_canary.py
 - tools/public_api_load_test.py
 - tools/qa/dev_portal_golden.js
@@ -3019,7 +3027,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1418 file; 14019791 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1424 file; 14075579 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -167954,6 +167962,94 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/nap_credit_tai_khoan_thu.ps1
+SHA256=00266bc09215e47d3c068eab0efd758735e39bab5b2dd7ee77e8f11913c7aca2 BYTES=3446 LINES=82
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Enroll one voice on production, going through the real HTTPS door.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    Unlike chay_thu_giong.ps1, the tool posts over HTTPS with the csrf_token it
+    scraped from the rendered page. A script that called submit_with_credit
+    directly would stay green even with CSRF broken -- and CSRF broken is
+    exactly what killed every POST door of this app on 31/08.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup
+hap_kho_giong_cu.ps1 -Xem
+    powershell -ExecutionPolicy Bypass -File .\setup
+hap_kho_giong_cu.ps1 -Nhap
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root  = 'C:\LTTPlatform',
+    [string]$Repo  = '',
+    [Parameter(Mandatory=$true)][string]$Email,
+    # !! TEN PHAI DAI HON `$So`. Than script co mot bo dem bien env ten
+    #    `$so`, va PowerShell KHONG phan biet hoa thuong -- `-So 100` bi
+    #    ghi de thanh 70 (so bien da nap), roi cong cu ghi mot BUT TOAN
+    #    CREDIT SAI SO vao mot cuon so append-only, im lang.
+    #    Chot tinh: tools/check_ps_bien_trung_tham_so.py
+    [int]$SoCredit = 0,
+    [int]$Xem = 0,
+    [string]$GhiChu = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\nap_credit_tai_khoan_thu.py'
+# KHONG kiem $Clip nua: cong cu nay tu tim clip da noi trong tmp/giong_cu
+# va TU BAO neu thieu, kem lenh sinh lai. Kiem o day se chan ca che do
+# --Xem, tuc chan dung cai che do dung de biet minh dang thieu gi.
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # !! KHONG dat ten bien la $ten O DAY. PowerShell khong phan biet hoa
+    #    thuong, nen $ten va tham so -Ten LA MOT BIEN. Vong lap nay se ghi de
+    #    -Ten bang ten bien moi truong CUOI CUNG trong app.env, va giong duoc
+    #    tao ra mang ten "HF_HOME". Da xay ra that 31/08, hai luot lien.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+$env:PYTHONPATH = $Repo
+
+$doiSo = @('--email', $Email, '--so', "$SoCredit")
+if ($Xem)    { $doiSo += @('--xem',     "$Xem") }
+if ($GhiChu) { $doiSo += @('--ghi-chu', $GhiChu) }
+
+# !! Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai
+#    ghi ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/nap_lai_env.ps1
 SHA256=705dd55faf5a628aac8da78a8b73cea76e4a9dbc7b3ab157977d761bc61f086a BYTES=4502 LINES=105
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -168062,6 +168158,91 @@ foreach ($svc in ($Services | Sort-Object -Descending)) {
 Write-Host ""
 Write-Host 'XONG. Kiem lai bang mot thu that, khong tin trang thai dich vu:' -ForegroundColor Cyan
 Write-Host '  curl.exe -s https://app.lttstudios.com/api/v1/health'
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/nhap_kho_giong_cu.ps1
+SHA256=2e8c5a1b42d183c55ebf9d25a63c20c6f8dba2f106422e5ea952ee0e62b3be4b BYTES=3109 LINES=79
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Enroll one voice on production, going through the real HTTPS door.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    Unlike chay_thu_giong.ps1, the tool posts over HTTPS with the csrf_token it
+    scraped from the rendered page. A script that called submit_with_credit
+    directly would stay green even with CSRF broken -- and CSRF broken is
+    exactly what killed every POST door of this app on 31/08.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup
+hap_kho_giong_cu.ps1 -Xem
+    powershell -ExecutionPolicy Bypass -File .\setup
+hap_kho_giong_cu.ps1 -Nhap
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root  = 'C:\LTTPlatform',
+    [string]$Repo  = '',
+    [string]$Email = '',
+    [string]$Chi   = '',
+    [switch]$Xem,
+    [switch]$Nhap,
+    [int]$ChoGiay  = 600
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\nhap_kho_giong_cu.py'
+# KHONG kiem $Clip nua: cong cu nay tu tim clip da noi trong tmp/giong_cu
+# va TU BAO neu thieu, kem lenh sinh lai. Kiem o day se chan ca che do
+# --Xem, tuc chan dung cai che do dung de biet minh dang thieu gi.
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # !! KHONG dat ten bien la $ten O DAY. PowerShell khong phan biet hoa
+    #    thuong, nen $ten va tham so -Ten LA MOT BIEN. Vong lap nay se ghi de
+    #    -Ten bang ten bien moi truong CUOI CUNG trong app.env, va giong duoc
+    #    tao ra mang ten "HF_HOME". Da xay ra that 31/08, hai luot lien.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+$env:PYTHONPATH = $Repo
+
+$doiSo = @('--cho-giay', "$ChoGiay")
+if ($Email) { $doiSo += @('--email', $Email) }
+if ($Chi)   { $doiSo += @('--chi',   $Chi) }
+if ($Nhap)  { $doiSo += '--nhap' }
+
+# !! Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai
+#    ghi ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -249938,6 +250119,404 @@ class TestToolMayChuCuaAnthropicVanBoQuaIM:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_386_nhap_kho_giong_cu.py
+SHA256=eb4e8700554bc544df6b502c141693395dacb1bdacce5c15533037361f535a87 BYTES=9311 LINES=213
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+test_386 — bất biến của `tools/nhap_kho_giong_cu.py`.
+
+Công cụ này phát **dữ liệu giọng của người thật cho mọi tài khoản**, nên những
+thứ nó suy ra phải đúng, và phải sai theo cách ồn ào chứ không lặng lẽ.
+
+Ba bất biến, mỗi cái đến từ một lỗi đã xảy ra:
+
+  ① Làn suy từ **`engine`**, không từ TÊN.
+  ② Tên hiển thị **duy nhất** — trùng là vòng lặp chết giữa chừng.
+  ③ Thiếu tên thì **VỠ**, không sinh tên tự động.
+"""
+from __future__ import annotations
+
+import ast
+import collections
+import pathlib
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+TEP = GOC / "tools" / "nhap_kho_giong_cu.py"
+
+
+def _hang(ten: str):
+    """Đọc một hằng số cấp module bằng AST, KHÔNG import module.
+
+    🔴 `nhap_kho_giong_cu.py` thay `sys.stdout` bằng một `TextIOWrapper` ngay ở
+       cấp module (để đệm theo dòng khi log ra tệp — xem lý do ở chính tệp đó).
+       Import nó trong pytest làm vỡ bộ bắt output của pytest:
+       `ValueError: I/O operation on closed file` ở **mọi** phép kiểm trong tệp,
+       kể cả những phép không đụng tới stdout.
+
+    ⛔ Và nó vỡ ở `tempfile.py` với một thông điệp không nhắc gì tới stdout, nên
+       nguyên nhân thật không nhìn ra được từ dấu vết. Bài học chung: một công
+       cụ đổi trạng thái TOÀN CỤC lúc import thì không import được trong test —
+       đọc mã nguồn của nó thay vì chạy nó.
+
+    ⭐ Và với một phép kiểm về **bất biến của mã nguồn**, đọc AST vốn đã đúng hơn
+       chạy: không phụ thuộc thư viện, không tác dụng phụ, không cần kho cũ.
+    """
+    cay = ast.parse(TEP.read_text(encoding="utf-8"))
+    for n in cay.body:
+        if isinstance(n, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == ten for t in n.targets):
+            return ast.literal_eval(n.value)
+    raise AssertionError(f"khong thay hang so `{ten}` o cap module")
+
+
+def test_lan_suy_tu_ENGINE_chu_khong_tu_ten():
+    """`f5tts` → `vi`, `xtts` → `en`. Không có đường thứ ba.
+
+    🔴 Kho cũ có `hoathinh_female`, `meoquan_men`, `tamlyhoc_men`,
+       `cg_huong_nam` — bốn cái tên tiếng Việt rành mạch, và cả bốn là người nói
+       **tiếng Anh**. Chúng là tên kênh/nhân vật, không phải tên người nói.
+
+    ⛔ Tôi đã đọc những cái tên ấy như dữ liệu một lần và viết vào tài liệu rằng
+       nhãn ngôn ngữ của kho cũ "không đáng tin". Nó đáng tin: cột `engine` bên
+       cạnh mang câu trả lời, và ASR xác nhận **25/25** khớp.
+    """
+    assert _hang("LAN_THEO_ENGINE") == {"f5tts": "vi", "xtts": "en"}
+
+
+def test_KHONG_suy_lan_tu_ten_giong():
+    """Không được có đường nào đọc tên để đoán làn.
+
+    ⛔ Hỏi CÂY CÚ PHÁP, đừng khớp chuỗi — một bánh cóc khớp với chính lời giải
+       thích của nó thì không chốt gì (đã mắc bốn lần trong dự án này).
+    """
+    cay = ast.parse(TEP.read_text(encoding="utf-8"))
+    for n in ast.walk(cay):
+        # `lan = ...` không được lấy từ bất cứ thứ gì tên có "ten"
+        if isinstance(n, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "lan" for t in n.targets):
+            nguon = ast.dump(n.value)
+            assert "'ten'" not in nguon and '"ten"' not in nguon, (
+                f"lan dang duoc suy tu ten: {ast.unparse(n)}")
+
+
+def test_ten_hien_thi_KHONG_TRUNG_NHAU():
+    """Trùng tên = vòng lặp nhập chết ở giữa, sau khi đã thu tiền vài lượt.
+
+    `uq_voice_owner_ten` là ràng buộc DUY NHẤT theo (chủ, tên). Cả 25 giọng nhập
+    dưới **một** tài khoản, nên hai tên giống nhau là cửa ghi danh trả lỗi ở
+    lượt thứ hai — và mười lượt trước đó đã ghi danh xong, đã tính tiền, và đã
+    nằm trong CSDL.
+    """
+    dem = collections.Counter(_hang("TEN").values())
+    trung = {k: v for k, v in dem.items() if v > 1}
+    assert not trung, f"ten hien thi trung nhau: {trung}"
+
+
+def test_ten_khong_lap_lai_ngon_ngu():
+    """Làn đã hiện thành một nhãn riêng — viết "EN" vào tên là nói hai lần.
+
+    Tên cũ của hệ cũ đều đuôi "EN" (`Alex - Male Education EN`) vì hệ ấy không
+    có chỗ nào khác để ghi. Hệ mới có `ngon_ngu` và một chip hiển thị, nên tên
+    phải bỏ phần ấy đi.
+    """
+    xau = [t for t in _hang("TEN").values()
+           if " EN" in t or " VI" in t or t.endswith("EN") or t.endswith("VI")]
+    assert not xau, f"ten con lap lai ngon ngu: {xau}"
+
+
+def test_thieu_ten_thi_VO_chu_khong_sinh_ten_tu_dong():
+    """Một cái tên sinh tự động đi thẳng ra danh mục khách nhìn thấy.
+
+    Và không ai rà lại nó, vì nó trông như đã được ai đó đặt.
+    """
+    src = TEP.read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(src))
+               if isinstance(n, ast.FunctionDef) and n.name == "main")
+    doan = ast.unparse(ham)
+    assert "thieu_ten" in doan, "main() phai kiem giong nao chua dat ten"
+    assert "return 2" in doan
+
+
+def test_chi_nhap_voi_tai_khoan_local():
+    """Nó chạm tiền thật, và sổ credit chỉ ghi thêm."""
+    assert _hang("DUOI_THU") == ".local"
+    src = TEP.read_text(encoding="utf-8")
+    assert "a.nhap and not a.email.endswith(DUOI_THU)" in src
+
+
+def test_mac_dinh_la_XEM_chu_khong_phai_NHAP():
+    """Chạy nhầm không được tạo ra 21 hồ sơ giọng và 21 lần thu tiền."""
+    # đọc thẳng khai báo trong main(): `--nhap` phải là store_true
+    src = TEP.read_text(encoding="utf-8")
+    assert '"--nhap", action="store_true"' in src
+    assert '"--xem"' not in src, (
+        "khong duoc co co `--xem`: XEM la MAC DINH, va mot co rieng cho no se "
+        "khien ai do tuong phai bat gi do de xem")
+
+
+#: Hai mươi lăm mã giọng của kho cũ, ĐÓNG BĂNG.
+#:
+#: ⭐ Đóng băng ở đây thay vì `skipif` khi không có kho cũ, và lý do là một luật
+#:    của chính dự án này: **một test bị bỏ qua là một test không canh gì cả.**
+#:    Một `skipif` sẽ làm phép kiểm này im lặng trên mọi máy phát triển — tức
+#:    trên hầu hết các máy — và chỉ nói ở đúng máy có kho cũ.
+#:
+#: ⇒ Danh sách hằng chạy ở MỌI máy; phần đối chiếu với kho thật chỉ chạy thêm ở
+#:   máy có kho. Không nhánh nào rỗng nghĩa.
+MA_CU = (
+    'Huong_KT',
+    'alex_male_education',
+    'bella_nu',
+    'bietdoi_girl',
+    'cg_huong_nam',
+    'giffen_male_social',
+    'harry_male_adventure',
+    'hoathinh_female',
+    'ht3d_men',
+    'khanh_male_entertainment',
+    'kinhte_nam',
+    'kyan_nam',
+    'lam_male_storytelling',
+    'lego_nu',
+    'lichsu_nam',
+    'lily_nu',
+    'meodang_men',
+    'meoquan_men',
+    'nguyetnga_nu',
+    'ninhdon_nam',
+    'phatgiao_nu',
+    'qtrungg_male_narrator',
+    'quan_male_dialogue',
+    'roger_male_dialogue',
+    'tamlyhoc_men',
+)
+
+
+def test_TEN_phu_het_25_ma_da_dong_bang():
+    """`TEN` phải phủ đúng 25 mã. Chạy ở mọi máy, không cần kho cũ.
+
+    🔴 25, không phải 24. `kyan_nam` từng vắng mặt khỏi mọi phép đếm vì ba clip
+       của nó ở 24000/24000/**22050** Hz và bộ nối từ chối cả giọng, in một dòng
+       "BO:" giữa hai mươi lăm dòng. Con số "24 giọng" đã được báo cho chủ sản
+       phẩm trước khi phát hiện ra.
+    """
+    ten = _hang("TEN")
+    assert len(MA_CU) == 25
+    assert sorted(ten) == sorted(MA_CU), {
+        "thieu_trong_TEN": sorted(set(MA_CU) - set(ten)),
+        "thua_trong_TEN": sorted(set(ten) - set(MA_CU)),
+    }
+
+
+def test_kho_cu_that_van_dung_25_ma():
+    """Nếu máy này CÓ kho cũ thì kho ấy phải khớp danh sách đóng băng.
+
+    ⛔ KHÔNG dùng `skipif`. Khi không có kho, phép kiểm vẫn chạy và vẫn khẳng
+       định một điều thật (danh sách hằng có 25 mã); nó chỉ **thêm** một phép so
+       khi kho có mặt. Một nhánh `if` không làm phép kiểm rỗng nghĩa ở đây —
+       khác hẳn một `skipif`, thứ làm cả phép kiểm biến mất.
+    """
+    kho = pathlib.Path("D:/Voiceclone_TTS/configs/voice_profiles.yaml")
+    assert len(MA_CU) == 25
+    if not kho.exists():
+        return
+    """Mọi giọng trong kho cũ phải có tên soạn tay. 25, không phải 24.
+
+    🔴 `kyan_nam` từng vắng mặt khỏi mọi phép đếm vì ba clip của nó ở
+       24000/24000/**22050** Hz và bộ nối từ chối cả giọng. Con số "24 giọng"
+       đã được báo cho chủ sản phẩm trước khi phát hiện ra.
+    """
+    import yaml
+    d = yaml.safe_load(open(kho, encoding="utf-8")).get("profiles", {})
+    cu = sorted(k for k in d if not str(k).startswith("_"))
+    assert cu == sorted(MA_CU), {
+        "kho_co_ma_moi": sorted(set(cu) - set(MA_CU)),
+        "ma_da_bien_mat": sorted(set(MA_CU) - set(cu)),
+    }
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_387_ps_bien_trung_tham_so.py
+SHA256=554212d04842c2802c395ccf501f8914ac5b7ddd149113d92e3c9f748837b4d7 BYTES=7812 LINES=173
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+test_387 — chốt tĩnh `tools/check_ps_bien_trung_tham_so.py` bắt đúng thứ nó
+sinh ra để bắt.
+
+## Vì sao một chốt tĩnh cũng cần bánh cóc
+
+Chốt này viết ra sau lần đầu bị dính: một trình bọc `.ps1` có tham số `-Ten` và
+một biến cục bộ `$ten`, PowerShell **không phân biệt hoa thường**, nên giá trị
+người dùng truyền vào bị xoá — và một giọng bị đặt tên `HF_HOME`.
+
+⛔ Rồi nó **bỏ sót lần tái diễn thứ hai của chính con bug ấy**, và lần này hậu
+   quả nặng hơn nhiều: `setup/nap_credit_tai_khoan_thu.ps1` có tham số `-So`
+   (số credit nạp) và một bộ đếm biến môi trường `$so` tăng bằng `$so++`. Lệnh
+   `-So 100` đi vào công cụ thành **70** — số biến đã nạp từ `app.env` — và
+   công cụ ghi một **bút toán credit sai số** vào một cuốn sổ **append-only**,
+   không lời cảnh báo nào.
+
+Hai lỗ, mỗi lỗ một bài học:
+
+  ① `_GAN` chỉ khớp `$x = ...`, bỏ qua `$x++` / `$x--` / `$x += ...`.
+     **Một phép tăng cũng là một phép gán.**
+  ② Nó chỉ soi trong **thân vòng lặp**. Nhưng `$so = 0` ở cấp ngoài đã xoá tham
+     số rồi; vòng lặp chỉ là nơi giá trị rác được bồi thêm.
+
+⭐ Và khi mở rộng thì phép miễn trừ cho mẫu hợp lệ (`if (-not $Repo) { $Repo =
+   ... }`) phải đúng ngay, nếu không chốt sẽ báo nhầm và người ta sẽ tắt nó.
+   Bản đầu của phép miễn ấy neo `^` trên một chuỗi đã nối nhiều dòng nên không
+   bao giờ khớp — nó báo nhầm `cai_dich_vu_giong.ps1` ngay lượt chạy đầu.
+"""
+from __future__ import annotations
+
+import importlib.util
+import pathlib
+import sys
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+TEP = GOC / "tools" / "check_ps_bien_trung_tham_so.py"
+
+
+#: Giữ MÃI những `TextIOWrapper` mà module đo tạo ra. Xem `_nap()`.
+_GIU: list = []
+_MODULE = []
+
+
+def _nap():
+    """Nạp module đo mà không giết `sys.stdout` của pytest.
+
+    🔴 Hai tầng, và tầng thứ hai không hiển nhiên chút nào.
+
+       ① Module này — như mọi công cụ đo trong `tools/` — thay `sys.stdout`
+          bằng `TextIOWrapper(sys.stdout.buffer, line_buffering=True)` ngay ở
+          cấp module. Nên sau khi import, `sys.stdout` không còn là của pytest.
+          Khôi phục tham chiếu là đủ để sửa việc ấy.
+
+       ② **Nhưng `TextIOWrapper` NHẬN QUYỀN SỞ HỮU cái buffer nó bọc.** Khi
+          wrapper bị thu gom rác, nó **đóng buffer** — tức đóng luôn stdout thật
+          của tiến trình. Khôi phục tham chiếu KHÔNG cứu được: cái đã khôi phục
+          trỏ tới một buffer sắp bị đóng bởi một đối tượng khác đang chờ chết.
+
+    ⛔ Triệu chứng: pytest chạy hết mọi phép kiểm rồi vỡ ở `terminal.py` khi in
+       dòng tổng kết — `ValueError: I/O operation on closed file` ở
+       `pytest_sessionfinish`, tức **sau** khi mọi thứ đã xong. Dấu vết không
+       nhắc gì tới module đang được kiểm, và nó trông y hệt một lỗi của pytest.
+
+    ⇒ Nên phải GIỮ tham chiếu tới wrapper cho tới hết phiên, và nạp module đúng
+      MỘT lần.
+    """
+    if _MODULE:
+        return _MODULE[0]
+    cu_out, cu_err = sys.stdout, sys.stderr
+    try:
+        sp = importlib.util.spec_from_file_location("check_ps_bien", TEP)
+        m = importlib.util.module_from_spec(sp)
+        sp.loader.exec_module(m)
+        _MODULE.append(m)
+        return m
+    finally:
+        # Giữ wrapper module vừa tạo, RỒI mới trả stdout về cho pytest.
+        for o in (sys.stdout, sys.stderr):
+            if o is not cu_out and o is not cu_err:
+                _GIU.append(o)
+        sys.stdout, sys.stderr = cu_out, cu_err
+
+
+def _kiem(tmp_path, noi_dung: str) -> list:
+    """Chấm một đoạn `.ps1` tổng hợp.
+
+    ⛔ Tệp phải nằm TRONG kho: `kiem()` dựng thông điệp lỗi bằng
+       `tep.relative_to(GOC)`, nên một đường dẫn ngoài kho ném `ValueError` —
+       và nó ném ở chỗ **định dạng thông điệp**, tức chỉ ném khi CÓ lỗi để báo.
+       Một khuôn thử đặt tệp ở `tmp_path` của pytest sẽ xanh ở mọi phép kiểm
+       "không được báo nhầm" và đỏ ở mọi phép kiểm "phải bắt được" — đúng chiều
+       khiến người đọc tưởng chốt đã hỏng.
+
+    ⭐ `tmp/` của kho nằm trong `.gitignore`, nên rác sót lại nếu một lượt bị
+       giết giữa chừng cũng không vào git — khác bài học của
+       `vps_dieu_khoan.html`, nơi dấu tiêm rơi vào một tệp ĐƯỢC theo dõi và
+       lượt gate sau đọc nó thành một thay đổi thật.
+    """
+    thu = GOC / "tmp" / "test387"
+    thu.mkdir(parents=True, exist_ok=True)
+    p = thu / (tmp_path.name + ".ps1")
+    p.write_text(noi_dung, encoding="ascii", newline="\r\n")
+    try:
+        return _nap().kiem(p)
+    finally:
+        try:
+            p.unlink()
+        except OSError:
+            pass
+
+
+DAU = "param(\n    [string]$Root = 'C:\\LTTPlatform',\n    [int]$So = 0\n)\n"
+
+
+def test_bat_phep_TANG_trong_vong_lap(tmp_path):
+    """`$so++` — đúng dạng đã ghi một bút toán credit sai số."""
+    loi = _kiem(tmp_path, DAU + "$so = 0\nforeach ($d in $x) {\n    $so++\n}\n")
+    assert loi, "khong bat duoc `$so++` — `_GAN` co gom `++` khong?"
+
+
+def test_bat_phep_GAN_o_CAP_NGOAI(tmp_path):
+    """`$so = 0` ngoài mọi vòng lặp đã xoá tham số rồi.
+
+    Vòng lặp chỉ là nơi giá trị rác được bồi thêm — nó không phải nguyên nhân,
+    nên giới hạn phép soi vào thân vòng lặp là soi sai chỗ.
+    """
+    loi = _kiem(tmp_path, DAU + "$so = 0\nWrite-Host $so\n")
+    assert loi, "khong bat duoc phep gan o cap ngoai"
+
+
+def test_bat_cong_don(tmp_path):
+    for phep in ("$so += 1", "$so -= 1", "$so--"):
+        loi = _kiem(tmp_path, DAU + f"{phep}\n")
+        assert loi, f"khong bat duoc `{phep}`"
+
+
+def test_KHONG_bao_nham_mau_dien_mac_dinh(tmp_path):
+    """`if (-not $Root) { $Root = ... }` là cách hợp lệ để bỏ trống một tham số.
+
+    🔴 Một chốt tĩnh hay báo nhầm là một chốt tĩnh sẽ bị tắt, và khi nó bị tắt
+       thì nó cũng không còn bắt được thứ nó bắt đúng. Phép miễn trừ này quan
+       trọng ngang phép bắt.
+    """
+    loi = _kiem(tmp_path, DAU + "if (-not $Root) {\n    $Root = 'C:\\x'\n}\n")
+    assert not loi, loi
+
+
+def test_KHONG_bao_nham_khi_if_nam_o_giua_doan(tmp_path):
+    """Phép miễn phải khớp cả khi `if` không đứng đầu đoạn nhìn lui.
+
+    ⛔ Bản đầu neo `^` trên một chuỗi đã NỐI nhiều dòng, nên `^` chỉ khớp đầu
+       chuỗi và phép miễn không bao giờ nổ. Nó báo nhầm ngay
+       `setup/cai_dich_vu_giong.ps1:42` — một mẫu hoàn toàn hợp lệ.
+    """
+    ma = (DAU + "Write-Host 'a'\nWrite-Host 'b'\n"
+          "if (-not $Root) { $Root = $env:X }\n")
+    assert not _kiem(tmp_path, ma), _kiem(tmp_path, ma)
+
+
+def test_khong_bat_phep_DOC(tmp_path):
+    """Đọc `$So` thì không sao — chỉ ghi đè mới là lỗi."""
+    assert not _kiem(tmp_path, DAU + "Write-Host \"$So\"\n$x = $So + 1\n")
+
+
+def test_kho_that_sach(tmp_path):
+    """Toàn kho phải sạch — đây là bánh cóc, không phải một phép đo."""
+    m = _nap()
+    loi = []
+    for thu in m.THU_MUC:
+        for p in (GOC / thu).rglob("*.ps1"):
+            loi += m.kiem(p)
+    assert not loi, "\n".join(loi)
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_43_web_hardening.py
 SHA256=6beaf002832aa9f31503a5de6f6f7a36f495172649838c0e9976fc2a73dd4891 BYTES=8439 LINES=190
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -268961,7 +269540,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_ps_bien_trung_tham_so.py
-SHA256=1c1abfd2155a99365219fdf7e7ed2b483d458c95171a35422159572143797072 BYTES=4977 LINES=132
+SHA256=cb5e5b6f33952606ab6f222afc9c6e3764d15dbdccddb86ddf0455a5371a454b BYTES=7242 LINES=166
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 check_ps_bien_trung_tham_so.py — bien cuc bo trong .ps1 KHONG duoc trung ten mot
@@ -269010,22 +269589,45 @@ mang ten "HF_HOME", va luot thu hai chet vi rang buoc duy nhat `(owner_id, ten)`
 """
 from __future__ import annotations
 
-import io
 import re
 import sys
 from pathlib import Path
 
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+if hasattr(sys.stdout, "reconfigure"):
+    # ⛔ `reconfigure`, KHÔNG phải `io.TextIOWrapper(sys.stdout.buffer, ...)`.
+    #    Một wrapper mới NHẬN QUYỀN SỞ HỮU buffer bên dưới; khi nó bị thu
+    #    gom rác — hoặc khi một module thứ hai bọc đè lên cùng buffer ấy —
+    #    nó ĐÓNG buffer thật, và cả tiến trình chết với `ValueError: I/O
+    #    operation on closed file` ở dòng `print` tiếp theo, một thông
+    #    điệp không nhắc gì tới mã hoá hay tới module nào gây ra.
+    #    `reconfigure()` sửa tại chỗ, gọi nhiều lần vô hại.
+    #    Bánh cóc: `tests/test_353_voice_sidecar_bo_do.py`.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 GOC = Path(__file__).resolve().parents[1]
 THU_MUC = ("setup", "deploy", "tools")
 
 #: `[string]$Ten = '...'` hay `[int]$ChoGiay,` trong khoi param().
 _THAM_SO = re.compile(r"^\s*(?:\[[^\]]+\]\s*)*\$([A-Za-z_]\w*)\s*(?:=|,|\)|$)")
-#: Mot phep GAN — `$ten = ...`. Khong tinh viec doc `$ten`.
-_GAN = re.compile(r"^\s*\$([A-Za-z_]\w*)\s*=[^=]")
+#: Mot phep GAN. Khong tinh viec DOC `$ten`.
+#:
+#: 🔴 PHAI GOM CA `++`, `--`, `+=`, `-=`. Ban dau chi khop `$ten = ...`, va no
+#:    bo sot mot lan tai dien cua DUNG con bug no sinh ra de bat:
+#:    `setup/nap_credit_tai_khoan_thu.ps1` co tham so `-So` (so credit nap) va
+#:    mot bo dem bien env `$so` tang bang `$so++` trong mot vong lap. PowerShell
+#:    khong phan biet hoa thuong, nen `-So 100` bi ghi de thanh 70 (so bien da
+#:    nap), va CONG CU GHI VAO SO CREDIT MOT BUT TOAN SAI SO — im lang, va so
+#:    credit thi append-only.
+_GAN = re.compile(r"^\s*\$([A-Za-z_]\w*)\s*(?:=[^=]|\+\+|--|\+=|-=)")
+
+#: Mot lenh `if` co nhac toi bien — dau hieu cua mau DIEN MAC DINH hop le
+#: (`if (-not $Repo) { $Repo = ... }`). Chi mau nay duoc mien.
+# ⛔ KHONG neo `^`: doan nhin lui la vai dong da NOI LAI thanh mot chuoi, nen
+#    `^` chi khop dau chuoi va mau mien tru khong bao gio no. Bang chung: no bao
+#    dong nham `setup/cai_dich_vu_giong.ps1:42`, mot mau
+#    `if (-not $VenvRoot) { $VenvRoot = ... }` hoan toan hop le.
+_IF_NHAC = re.compile(r"(?:^|[\s}])(?:els)?if\s*\(", re.I)
 #: Mo dau mot vong lap. `do` co than `{...}` truoc `while`/`until`.
 _VONG_LAP = re.compile(r"(^|[^\w-])(foreach|for|while|do)\s*[({]", re.I)
 
@@ -269058,10 +269660,22 @@ def kiem(tep: Path) -> list[str]:
         cho_vong = bool(_VONG_LAP.search(tho))
 
         m = _GAN.match(d)
-        if m and m.group(1).lower() in tso and muc_vong:
-            loi.append(f"{tep.relative_to(GOC)}:{i}: gan ${m.group(1)} trong "
-                       f"than vong lap — trung tham so cua chinh script, va "
-                       f"PowerShell khong phan biet hoa thuong")
+        if m and m.group(1).lower() in tso:
+            ten_b = m.group(1)
+            # ⭐ MIEN mau DIEN MAC DINH: `if (-not $Repo) { $Repo = ... }`.
+            #    Do la cach hop le de bo trong mot tham so khong duoc truyen.
+            #    Nhan ra no bang cach nhin lui vai dong: mot `if` co nhac chinh
+            #    bien ay. Moi phep gan KHAC deu la ghi de mot gia tri nguoi
+            #    dung vua truyen vao.
+            truoc = " ".join(dong[max(0, i - 4):i - 1])
+            duoc_mien = (_IF_NHAC.search(truoc or "") is not None
+                         and f"${ten_b.lower()}" in truoc.lower())
+            if not duoc_mien:
+                cho = "than vong lap" if muc_vong else "cap ngoai"
+                loi.append(
+                    f"{tep.relative_to(GOC)}:{i}: gan ${ten_b} o {cho} — trung "
+                    f"ten tham so cua chinh script, va PowerShell KHONG phan "
+                    f"biet hoa thuong, nen gia tri nguoi dung truyen vao bi xoa")
 
         # Dem ngoac SAU khi cham, de mot dong `foreach (...) {` tinh la mo vong.
         for c in tho:
@@ -269088,8 +269702,7 @@ def main() -> int:
             print(f"  {d}")
         print("\nDoi ten bien cuc bo. Xem docstring cua tep nay.")
         return 1
-    print("[OK] khong tep .ps1 nao gan de len tham so cua chinh no "
-          "tu trong mot vong lap")
+    print("[OK] khong tep .ps1 nao ghi de len tham so cua chinh no")
     return 0
 
 
@@ -282283,6 +282896,181 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/nap_credit_tai_khoan_thu.py
+SHA256=cbdad15e04914d54e4b0d0af41ab1a70b323f8c3c4ae2dcc45742b967b513d0a BYTES=7521 LINES=169
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+nap_credit_tai_khoan_thu.py — nạp credit cho một tài khoản THỬ (`.local`).
+
+    powershell -ExecutionPolicy Bypass -File .\setup\nap_credit_tai_khoan_thu.ps1 `
+        -Email thu.giongnoi@lttstudios.local -So 100 -GhiChu "nhap kho giong cu"
+
+## ⛔ ĐÂY LÀ MỘT BÚT TOÁN TIỀN, VÀ NÓ KHÔNG XOÁ ĐƯỢC
+
+Sổ credit là **append-only** — đó là cả thiết kế của nó, để mọi con số đều truy
+được về một dòng bút toán. Hệ quả: một lần nạp nhầm thì **ở lại vĩnh viễn**, và
+cách "sửa" duy nhất là ghi thêm một bút toán ngược, tức hai dòng sai thay vì
+không dòng nào.
+
+Nên tệp này có hai cái chốt, và cả hai đều cố ý gắt:
+
+  ① **Chỉ tài khoản đuôi `.local`.** Nạp cho một khách thật là cho không tiền,
+     và nó không đảo được.
+  ② **Trần mỗi lượt.** Một con số gõ thừa số 0 là một trăm nghìn credit trong
+     sổ, và không ai đọc lại dòng đó cho tới khi đối soát doanh thu.
+
+⚠️ Công cụ này KHÔNG phải một cửa nạp tiền. Cửa nạp tiền của khách đi qua PayOS
+   + webhook idempotent (`platform_core/thanh_toan/`). Đây là một lối tắt cho
+   tài khoản thử, và nó phải trông đúng như một lối tắt.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    # ⛔ `reconfigure`, KHÔNG phải `io.TextIOWrapper(sys.stdout.buffer, ...)`.
+    #    Một wrapper mới NHẬN QUYỀN SỞ HỮU buffer bên dưới; khi nó bị thu
+    #    gom rác — hoặc khi một module thứ hai bọc đè lên cùng buffer ấy —
+    #    nó ĐÓNG buffer thật, và cả tiến trình chết với `ValueError: I/O
+    #    operation on closed file` ở dòng `print` tiếp theo, một thông
+    #    điệp không nhắc gì tới mã hoá hay tới module nào gây ra.
+    #    `reconfigure()` sửa tại chỗ, gọi nhiều lần vô hại.
+    #    Bánh cóc: `tests/test_353_voice_sidecar_bo_do.py`.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+DUOI_THU = ".local"
+
+#: Trần một lượt. Không phải một con số thiêng — chỉ đủ lớn cho mọi việc thử đã
+#: gặp (nhập 25 giọng ~50 credit, một lô dài ~30) và đủ nhỏ để một lần gõ thừa
+#: chữ số bị chặn thay vì đi vào sổ.
+TRAN_MOI_LUOT = 1000
+
+
+def _xem(email: str, n: int) -> int:
+    """In `n` bút toán gần nhất. Không ghi gì.
+
+    ⭐ Nó ở CÙNG tệp với `nap` chứ không phải một công cụ riêng, và đó là chủ ý:
+       ai vừa nạp xong sẽ muốn xem ngay sổ đã ghi gì, và một câu hỏi phải đi tìm
+       công cụ thứ hai là một câu hỏi sẽ không được hỏi.
+    """
+    from sqlalchemy import desc, select
+
+    from platform_core import users
+    from platform_core.db import get_session
+    from platform_core.models import CreditEntry
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, email)
+        if u is None:
+            print(f"KHONG THAY {email}", file=sys.stderr)
+            return 2
+        cac = list(db.execute(
+            select(CreditEntry).where(CreditEntry.user_id == str(u.id))
+            .order_by(desc(CreditEntry.id)).limit(n)).scalars())
+        from platform_core import credit
+        sd = credit.so_du(db, str(u.id))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    print(f"{email}  so du = {sd}")
+    print(f"{'id':>7} {'delta':>7}  {'kind':16} {'job':12} note")
+    for e in cac:
+        print(f"{e.id:>7} {e.delta:>+7}  {str(e.kind)[:16]:16} "
+              f"{str(e.job_id or '')[:12]:12} {str(e.note or '')[:44]}")
+    return 0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", required=True)
+    ap.add_argument("--so", type=int, default=0,
+                    help="So credit nap. 0 = chi XEM so.")
+    ap.add_argument("--xem", type=int, default=0, metavar="N",
+                    help="In N but toan gan nhat roi thoat.")
+    ap.add_argument("--ghi-chu", default="")
+    a = ap.parse_args(argv)
+
+    if a.xem:
+        return _xem(a.email, a.xem)
+    if not a.email.endswith(DUOI_THU):
+        print(f"TU CHOI: chi nap cho tai khoan duoi '{DUOI_THU}'. "
+              f"So credit la append-only — nap cho khach that khong dao duoc.",
+              file=sys.stderr)
+        return 2
+    if not 0 < a.so <= TRAN_MOI_LUOT:
+        print(f"TU CHOI: `--so` phai trong (0, {TRAN_MOI_LUOT}]. "
+              f"Nhan duoc {a.so}.", file=sys.stderr)
+        return 2
+
+    from platform_core import credit, users
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, a.email)
+        if u is None:
+            print(f"KHONG THAY {a.email}", file=sys.stderr)
+            return 2
+        truoc = credit.so_du(db, str(u.id))
+        but = credit.nap(db, str(u.id), a.so,
+                         note=(a.ghi_chu or "nap noi bo cho tai khoan thu"))
+        db.commit()
+        sau = credit.so_du(db, str(u.id))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # 🔴 IN ĐỘ CHÊNH ĐO ĐƯỢC, KHÔNG IN CON SỐ ĐÃ YÊU CẦU.
+    #
+    #    Lượt chạy đầu tiên yêu cầu 100 và in "+100"; sổ ghi **+70** và số dư đi
+    #    1 → 71. Nguyên nhân KHÔNG phải worker xen vào (tôi đã đoán vậy và đoán
+    #    sai) — trình bọc `.ps1` có tham số `-So` trùng tên với một bộ đếm biến
+    #    môi trường `$so`, PowerShell không phân biệt hoa thường, nên con số đi
+    #    vào công cụ là **70**: số biến đã nạp từ `app.env`.
+    #
+    # ⛔ Một công cụ ghi sổ tiền mà in lại con số nó ĐỊNH ghi thay vì con số nó
+    #    ĐÃ ghi thì không kiểm được gì cả — nó chỉ lặp lại ý định của người gõ.
+    #    Sổ credit là append-only, nên "phát hiện muộn" ở đây nghĩa là không sửa
+    #    được, chỉ ghi thêm.
+    #
+    # ⭐ Nay in ba con số: yêu cầu · bút toán thật · độ chênh số dư. Ba con số
+    #    ấy lệch nhau vì ba lý do khác nhau, và gộp chúng lại là đánh mất đúng
+    #    thông tin cần để phân biệt.
+    chenh = sau - truoc
+    print(f"{a.email}: so du {truoc} -> {sau}")
+    print(f"  yeu cau         : +{a.so}")
+    print(f"  but toan da ghi : {but.delta:+d}   (id {but.id})")
+    print(f"  so du thay doi  : {chenh:+d}")
+    if but.delta != a.so:
+        print(f"  🔴 BUT TOAN LECH YEU CAU {but.delta - a.so:+d} — con so di vao "
+              f"`credit.nap` KHONG phai con so ban go. Kiem trinh boc `.ps1`: "
+              f"mot bien cuc bo trung ten tham so se ghi de no.")
+    if chenh != but.delta:
+        print(f"  ⚠️ so du lech but toan {chenh - but.delta:+d} — co but toan "
+              f"KHAC xen vao giua hai phep doc (vd worker dang quyet toan "
+              f"job). Do la binh thuong tren mot he dang chay.")
+    print(f"ghi chu: {a.ghi_chu or 'nap noi bo cho tai khoan thu'}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/nexus_release_key.py
 SHA256=c502fe48df7e7051e42b5608e3f8699fe55ef1cc7e8211c0b5f800e294d65db1 BYTES=4494 LINES=113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -283129,6 +283917,458 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/nhap_kho_giong_cu.py
+SHA256=76994fa9c99c5953d14997331dd6abb39b630207ee4ff70ffa82018e67260c8b BYTES=19620 LINES=446
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+nhap_kho_giong_cu.py — nhập kho giọng của hệ CŨ (`D:\Voiceclone_TTS`) vào kho
+DÙNG CHUNG của nền tảng, đi đúng cửa HTTPS mà một khách hàng đi.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\nhap_kho_giong_cu.ps1 -Xem
+    powershell -ExecutionPolicy Bypass -File .\setup\nhap_kho_giong_cu.ps1 -Nhap
+
+## Ba việc đường nhập cũ KHÔNG làm, và cả ba đều đã trả giá
+
+① **GHI XUẤT XỨ.** Bốn giọng nhập trước 01/09 đều có `ghi_chu` **rỗng**. Khi
+   hỏi *"Ivy lấy từ clip nào của kho cũ"* thì không ai trả lời được — kể cả
+   `VoiceConsent` cũng chỉ nói *có người đã đồng ý*, không nói *đồng ý cho cái
+   gì*. Với mười bảy giọng nguồn tiếng Anh sắp phát cho **mọi tài khoản**, xuất
+   xứ là thứ phải ghi **lúc nhập**; sau đó thì không truy lại được.
+
+   ⭐ Nhưng bốn giọng ấy vẫn truy được, và cách truy đáng ghi lại: `VoiceRef`
+      giữ `sha256` của **tệp nguồn**, còn `tmp/giong_cu/*.wav` là chính những
+      tệp đã nối ra để nhập. Nên chỉ cần băm lại và so — xuất xứ **suy ra được
+      từ dữ liệu** thay vì phải nhớ. Đó là lý do `--xem` chạy phép so ấy trước
+      khi làm bất cứ việc gì.
+
+② **ĐẶT LÀN.** `ngon_ngu` mặc định `"vi"`, và không ai đặt, nên hai giọng tiếng
+   Anh nằm ở làn tiếng Việt suốt. Ở đây làn suy ra từ **`engine` của hệ cũ** —
+   `f5tts` → `vi`, `xtts` → `en` — vì đó là cách kho cũ được xây (F5 train giọng
+   Việt, XTTS train giọng Anh) và ASR xác nhận **25/25** khớp.
+
+   ⛔ ĐỪNG đoán làn từ TÊN. Kho cũ có `hoathinh_female`, `meoquan_men`,
+      `tamlyhoc_men`, `cg_huong_nam` — tên tiếng Việt rành mạch, người nói
+      **tiếng Anh**. Đó là tên kênh/nhân vật, không phải tên người nói. Tôi đã
+      đọc tên như dữ liệu một lần và kết luận sai.
+
+③ **KHÔNG BỎ SÓT GIỌNG.** Kho có **25** giọng, không phải 24. `kyan_nam` có ba
+   clip ở 24000/24000/**22050** Hz; bộ nối cũ từ chối cả giọng vì hai tần số
+   khác nhau, in một dòng "BO:" giữa hai mươi lăm dòng, và mọi con số sau đó
+   nói "24". Nay `soi_kho_giong_cu._noi_kho` chuyển tần số thay vì từ chối.
+
+## Vì sao đi HTTPS chứ không ghi thẳng vào CSDL
+
+Ghi thẳng sẽ **xanh kể cả khi cửa hỏng**. Ngày 31/08 mọi cửa POST của app này
+chết vì `vo.ngu_canh` không phát `csrf_token`, và một kịch bản gọi thẳng
+`submit_with_credit` sẽ không thấy gì cả. Đường này đọc token khỏi HTML đã
+render rồi nộp kèm — nhập 21 giọng cũng là chạy thử cửa ghi danh 21 lần.
+
+⛔ NÓ CHẠM TIỀN THẬT: mỗi lượt ghi danh giữ chỗ rồi quyết toán trong sổ credit,
+   và sổ credit chỉ ghi thêm. Chỉ chạy với tài khoản đuôi `.local`.
+
+⚠️ Chỉ ĐỌC `D:\Voiceclone_TTS`. Không sửa, không tạo, không xoá gì bên đó.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import time
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    # ⛔ `reconfigure`, KHÔNG phải `io.TextIOWrapper(sys.stdout.buffer, ...)`.
+    #    Một wrapper mới NHẬN QUYỀN SỞ HỮU buffer bên dưới; khi nó bị thu
+    #    gom rác — hoặc khi một module thứ hai bọc đè lên cùng buffer ấy —
+    #    nó ĐÓNG buffer thật, và cả tiến trình chết với `ValueError: I/O
+    #    operation on closed file` ở dòng `print` tiếp theo, một thông
+    #    điệp không nhắc gì tới mã hoá hay tới module nào gây ra.
+    #    `reconfigure()` sửa tại chỗ, gọi nhiều lần vô hại.
+    #    Bánh cóc: `tests/test_353_voice_sidecar_bo_do.py`.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+UA = "ltt-nhap-kho/1.0"
+DUOI_THU = ".local"
+KHO_CU = r"D:\Voiceclone_TTS"
+CLIP_DA_NOI = "tmp/giong_cu"
+
+#: `engine` của hệ cũ -> làn. Đây là bản đồ **duy nhất** đáng tin cho ngôn ngữ.
+LAN_THEO_ENGINE = {"f5tts": "vi", "xtts": "en"}
+
+#: Tên hiển thị, soạn tay cho cả 25 giọng.
+#:
+#: ⭐ Lấy `display_name` của hệ cũ làm gốc chứ không bịa: nó là tên chủ sản phẩm
+#:    đã đặt và đã quen. Chỉ chuẩn hoá ba thứ:
+#:      · thêm dấu tiếng Việt (hệ cũ viết không dấu vì tên tệp);
+#:      · một dấu gạch ngang em (—) ngăn TÊN với MÔ TẢ, để cột tên đọc lướt được;
+#:      · mô tả viết thường, gọn, và **không lặp lại ngôn ngữ** — làn đã hiện
+#:        thành một nhãn riêng ngay cạnh, nên viết "EN" vào tên là nói hai lần.
+#:
+#: ⛔ Tên phải DUY NHẤT trong phạm vi một chủ (`uq_voice_owner_ten`). Trùng thì
+#:    cửa ghi danh trả lỗi, và với một vòng lặp 21 lượt thì nó dừng giữa chừng.
+TEN = {
+    # ── f5tts → làn tiếng Việt ──────────────────────────────────────────────
+    "Huong_KT":                 "Hương KT — nữ, kể chuyện ngôn tình",
+    "kinhte_nam":               "Kinh Tế — nam, tin tức kinh tế",
+    "kyan_nam":                 "Kỳ An — nam, kể chuyện",
+    "lichsu_nam":               "Lịch Sử — nam, kể chuyện lịch sử",
+    "lily_nu":                  "Lily — nữ, tự nhiên",
+    "nguyetnga_nu":             "Nguyệt Nga — nữ, tự nhiên",
+    "ninhdon_nam":              "Ninh Đôn — nam, tự nhiên",
+    "phatgiao_nu":              "Phật Giáo — nữ, kể chuyện",
+    # ── xtts → làn tiếng Anh ────────────────────────────────────────────────
+    "alex_male_education":      "Alex — nam, giảng bài",
+    "bella_nu":                 "Bella — nữ, tự nhiên",
+    "bietdoi_girl":             "Biệt Đội — nữ, hoạt hình",
+    "cg_huong_nam":             "CG Hương — nam, tự nhiên",
+    "giffen_male_social":       "Giffen — nam, mạng xã hội",
+    "harry_male_adventure":     "Harry — nam, phiêu lưu",
+    "hoathinh_female":          "Hoạt Hình — nữ, hoạt hình",
+    "ht3d_men":                 "HT3D — nam, tự nhiên",
+    "khanh_male_entertainment": "Khánh — nam, giải trí",
+    "lam_male_storytelling":    "Lâm — nam, kể chuyện",
+    "lego_nu":                  "Lego — nữ, hoạt hình",
+    "meodang_men":              "Mèo Đang — nam, hoạt hình",
+    "meoquan_men":              "Mèo Quàn — nam, hoạt hình",
+    "qtrungg_male_narrator":    "QTrungg — nam, thuyết minh",
+    "quan_male_dialogue":       "Quân — nam, hội thoại",
+    "roger_male_dialogue":      "Roger — nam, hội thoại",
+    "tamlyhoc_men":             "Tâm Lý Học — nam, thuyết minh",
+}
+
+
+class KhongLam(RuntimeError):
+    """Không làm được thì VỠ, không lặng lẽ bỏ qua một giọng."""
+
+
+def _ho_so_cu() -> dict:
+    import yaml
+    d = yaml.safe_load(open(os.path.join(KHO_CU, "configs",
+                                         "voice_profiles.yaml"),
+                            encoding="utf-8")).get("profiles", {})
+    return {k: v for k, v in d.items() if not str(k).startswith("_")}
+
+
+def _sha(duong: str) -> str:
+    h = hashlib.sha256()
+    with open(duong, "rb") as f:
+        for k in iter(lambda: f.read(1 << 20), b""):
+            h.update(k)
+    return h.hexdigest()
+
+
+def _da_co(db) -> dict:
+    """`{sha256_nguon: (public_id, ten, ngon_ngu, ghi_chu)}` của kho chung.
+
+    Băm tệp NGUỒN là thứ nối một hồ sơ với clip nó sinh ra — và nó là cách duy
+    nhất còn lại để truy xuất xứ của bốn giọng nhập trước khi có `ghi_chu`.
+    """
+    from sqlalchemy import select
+
+    from apps.ltt_voice.tables import VoiceProfile, VoiceRef
+    ra = {}
+    for hs in db.execute(select(VoiceProfile)).scalars():
+        r = db.execute(select(VoiceRef).where(
+            VoiceRef.profile_id == hs.id)).scalars().first()
+        if r is not None and r.sha256:
+            ra[r.sha256] = (hs.public_id, hs.ten_hien_thi, hs.ngon_ngu,
+                            hs.ghi_chu or "")
+    return ra
+
+
+def _xuat_xu(ma: str, hs: dict, so_clip: int, sha: str) -> str:
+    return json.dumps({
+        "nguon": "Voiceclone_TTS",
+        "ma_cu": ma,
+        "engine_cu": hs.get("engine", ""),
+        "lang_khai": hs.get("lang", ""),
+        "gioi": hs.get("gender", ""),
+        "ten_cu": hs.get("display_name", ""),
+        "so_clip_goc": so_clip,
+        "sha256_da_noi": sha,
+    }, ensure_ascii=False)
+
+
+def _ve(email: str, goc: str) -> str:
+    from platform_core import users
+    from platform_core.db import get_session
+    from platform_core.nexus import sso
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        u = users.tim_theo_email(db, email)
+        if u is None:
+            raise KhongLam(f"khong thay tai khoan {email}")
+        ve = sso.tao_ve(db, u, ip="127.0.0.1")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    return f"{goc.rstrip('/')}/nexus-sso?ma={ve}"
+
+
+def _va_xuat_xu(pid: str, ghi_chu: str) -> None:
+    """Điền `ghi_chu` cho một hồ sơ ĐÃ CÓ. Chỉ ghi khi nó đang rỗng.
+
+    ⛔ Không ghi đè một `ghi_chu` đã có nội dung. Nếu ai đó viết tay vào đó thì
+       đó là thông tin ta không có, và một công cụ vá tự động không được quyền
+       xoá thứ nó không hiểu.
+    """
+    from sqlalchemy import select
+
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        hs = db.execute(select(VoiceProfile).where(
+            VoiceProfile.public_id == pid)).scalar_one_or_none()
+        if hs is None or (hs.ghi_chu or "").strip():
+            return
+        hs.ghi_chu = ghi_chu
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _dat_lan_va_chung(public_id: str, ngon_ngu: str, ghi_chu: str) -> None:
+    """Đặt `ngon_ngu` + `ghi_chu` + `dung_chung` sau khi ghi danh xong.
+
+    ⛔ Cửa HTTPS **cố ý** không đặt `dung_chung` (xem `_p_giong.py`): một giọng
+       khách tự tạo mà tự vào kho chung là công khai dữ liệu sinh trắc của họ.
+       Nên bước này tách riêng, và nó chỉ chạy cho đúng những giọng ta nhập.
+    """
+    from sqlalchemy import select
+
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        hs = db.execute(select(VoiceProfile).where(
+            VoiceProfile.public_id == public_id)).scalar_one_or_none()
+        if hs is None:
+            raise KhongLam(f"khong thay ho so {public_id}")
+        if hs.trang_thai != "active":
+            raise KhongLam(f"{public_id} dang `{hs.trang_thai}`, chua the "
+                           f"dua vao kho chung")
+        hs.ngon_ngu = ngon_ngu
+        hs.ghi_chu = ghi_chu
+        hs.dung_chung = True
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _cho_job(job_id, cho_giay: int):
+    from platform_core.db import get_session
+    from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job
+
+    t0 = time.time()
+    while time.time() - t0 < cho_giay:
+        gen = get_session()
+        db = next(gen)
+        try:
+            j = db.get(Job, job_id)
+            tt, res, err = j.status, j.result, j.error
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+        if tt in (JOB_DONE, JOB_ERROR, JOB_CANCELLED):
+            return tt, res, err, time.time() - t0
+        time.sleep(5)
+    return "qua_han", None, None, time.time() - t0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
+    ap.add_argument("--goc", default="https://app.lttstudios.com")
+    ap.add_argument("--clip", default=CLIP_DA_NOI)
+    ap.add_argument("--nhap", action="store_true",
+                    help="Thuc su nhap. Khong co co nay thi chi XEM.")
+    ap.add_argument("--chi", default="", help="Chi nhap mot ma cu (de thu).")
+    ap.add_argument("--cho-giay", type=int, default=600)
+    ap.add_argument("--ra", default="tmp/nhap_kho_giong_cu.json")
+    a = ap.parse_args(argv)
+
+    if a.nhap and not a.email.endswith(DUOI_THU):
+        print(f"TU CHOI: chi nhap voi tai khoan duoi '{DUOI_THU}'.",
+              file=sys.stderr)
+        return 2
+
+    hoso = _ho_so_cu()
+    thieu_ten = sorted(set(hoso) - set(TEN))
+    if thieu_ten:
+        # ⛔ VỠ, đừng bịa tên. Một cái tên sinh tự động sẽ đi thẳng ra danh mục
+        #    khách nhìn thấy, và không ai rà lại nó.
+        print(f"KHO CU CO GIONG CHUA DAT TEN: {thieu_ten}", file=sys.stderr)
+        print("Them vao `TEN` trong tep nay roi chay lai.", file=sys.stderr)
+        return 2
+
+    from platform_core.db import get_session
+    gen = get_session()
+    db = next(gen)
+    try:
+        dacol = _da_co(db)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    ke_hoach, da_co, thieu_clip = [], [], []
+    for ma in sorted(hoso):
+        hs = hoso[ma]
+        lan = LAN_THEO_ENGINE.get(str(hs.get("engine") or ""))
+        if lan is None:
+            print(f"  [bo] {ma}: engine la `{hs.get('engine')}`, khong biet lan")
+            continue
+        duong = os.path.join(a.clip, f"{ma}.wav")
+        if not os.path.isfile(duong):
+            thieu_clip.append(ma)
+            continue
+        sha = _sha(duong)
+        so_clip = len([p for p in os.listdir(
+            os.path.join(KHO_CU, "speakers", ma, "reference"))
+            if p.lower().endswith(".wav")])
+        muc = {"ma": ma, "ten": TEN[ma], "lan": lan, "clip": duong,
+               "sha256": sha,
+               "ghi_chu": _xuat_xu(ma, hs, so_clip, sha)}
+        (da_co if sha in dacol else ke_hoach).append(
+            {**muc, "hien_co": dacol.get(sha)})
+
+    print(f"KHO CU: {len(hoso)} giong  |  da co trong nen tang: {len(da_co)}"
+          f"  |  se nhap: {len(ke_hoach)}")
+    if thieu_clip:
+        print(f"  ⚠️ thieu clip da noi ({len(thieu_clip)}): {thieu_clip}")
+        print(f"     Chay `soi_kho_giong_cu.ps1` de sinh lai vao {a.clip}/")
+
+    if da_co:
+        print("\n── DA CO (truy xuat xu bang sha256 cua tep nguon) ───────────")
+        for m in da_co:
+            pid, ten, nn, gc = m["hien_co"]
+            co_gc = "co" if gc.strip() else "🔴 RONG"
+            dung = "OK" if nn == m["lan"] else f"🔴 SAI (dang `{nn}`)"
+            print(f"  {m['ma']:26} -> {ten[:34]:34} lan={dung:22} ghi_chu={co_gc}")
+
+    if ke_hoach:
+        print("\n── SE NHAP ─────────────────────────────────────────────────")
+        for m in ke_hoach:
+            print(f"  [{m['lan']}] {m['ma']:26} -> {m['ten']}")
+
+    if not a.nhap:
+        print("\n(chi XEM — them `-Nhap` de thuc su nhap)")
+        return 0
+
+    if a.chi:
+        ke_hoach = [m for m in ke_hoach if m["ma"] == a.chi]
+        if not ke_hoach:
+            print(f"KHONG CO GI DE NHAP voi --chi {a.chi}", file=sys.stderr)
+            return 2
+
+    # ── Vá xuất xứ cho giọng ĐÃ CÓ ─────────────────────────────────────────
+    #
+    # Bốn giọng nhập trước 01/09 có `ghi_chu` rỗng, và xuất xứ của chúng chỉ
+    # truy được bằng phép so sha256 ở trên. Vá ngay ở đây, vì lần sau
+    # `tmp/giong_cu/` bị dọn là mất luôn đường truy.
+    va = 0
+    for m in da_co:
+        pid, ten, nn, gc = m["hien_co"]
+        if not gc.strip():
+            _va_xuat_xu(pid, m["ghi_chu"])
+            va += 1
+            print(f"  [va xuat xu] {ten} <- {m['ma']}")
+    if va:
+        print(f"Da va xuat xu cho {va} giong da co.\n")
+
+    import requests
+
+    s = requests.Session()
+    s.headers["User-Agent"] = UA
+    r = s.get(_ve(a.email, a.goc), timeout=60)
+    if r.status_code != 200:
+        print(f"SSO -> {r.status_code}", file=sys.stderr)
+        return 2
+    print(f"\n[SSO] {r.status_code}  {r.url}")
+
+    ket = []
+    for i, m in enumerate(ke_hoach, 1):
+        print(f"\n[{i}/{len(ke_hoach)}] {m['ma']} -> {m['ten']}")
+        rr = s.get(f"{a.goc}/ltt-voice/giong", timeout=60)
+        tok = [t for t in re.findall(
+            r'name="csrf_token"\s+value="([^"]*)"', rr.text) if t.strip()]
+        if not tok:
+            # ⛔ Dừng cả vòng lặp. Token rỗng nghĩa là MỌI cửa POST đang chết;
+            #    nộp tiếp chỉ để nhận 400 và đọc nó thành "lỗi mạng".
+            print("🔴 TOKEN CSRF RONG — moi cua POST dang chet. DUNG.",
+                  file=sys.stderr)
+            break
+        with open(m["clip"], "rb") as f:
+            data = f.read()
+        rr = s.post(f"{a.goc}/ltt-voice/giong/tao",
+                    data={"ten": m["ten"], "dong_y": "1",
+                          "csrf_token": tok[0]},
+                    files={"tep": (f"{m['ma']}.wav", data, "audio/wav")},
+                    timeout=300)
+        if rr.status_code != 200 or not (rr.json() or {}).get("ok"):
+            print(f"  🔴 POST -> {rr.status_code} {rr.text[:200]}")
+            ket.append({**m, "ok": False, "loi": rr.text[:200]})
+            continue
+        kq = rr.json()
+        tt, res, err, giay = _cho_job(kq["job_id"], a.cho_giay)
+        if tt != "done":
+            print(f"  🔴 job {tt} sau {giay:.0f}s  {err or ''}")
+            ket.append({**m, "ok": False, "loi": f"job {tt}: {err}"})
+            continue
+        try:
+            _dat_lan_va_chung(kq["voice_id"], m["lan"], m["ghi_chu"])
+        except KhongLam as e:
+            print(f"  🔴 {e}")
+            ket.append({**m, "ok": False, "voice_id": kq["voice_id"],
+                        "loi": str(e)})
+            continue
+        chon = (res or {}).get("chon_doan") or {}
+        print(f"  ✅ {kq['voice_id']}  lan={m['lan']}  {giay:.0f}s  "
+              f"chon {chon.get('bat_dau_s')}s → {chon.get('ket_thuc_s')}s")
+        ket.append({**m, "ok": True, "voice_id": kq["voice_id"],
+                    "giay": round(giay, 1), "chon_doan": chon})
+
+    ok = sum(1 for k in ket if k.get("ok"))
+    print(f"\n{'=' * 70}\n  NHAP XONG: {ok}/{len(ket)} thanh cong\n{'=' * 70}")
+    for k in ket:
+        if not k.get("ok"):
+            print(f"  🔴 {k['ma']}: {k.get('loi')}")
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ket, f, ensure_ascii=False, indent=2)
+    print(f"Da ghi: {a.ra}")
+    return 0 if ok == len(ket) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -286002,7 +287242,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/soi_kho_giong_cu.py
-SHA256=84b703714315755912eac14862fcf572e14da9069b1d67d07e0696cade330821 BYTES=11978 LINES=268
+SHA256=5638a983eb8042f4292ecb978c5a021ab16170e70fa931e34258b9f416f716aa BYTES=14682 LINES=322
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 soi_kho_giong_cu.py — chấm kho giọng của hệ CŨ (`D:\Voiceclone_TTS`) bằng bộ đo
@@ -286104,6 +287344,19 @@ if hasattr(sys.stdout, "reconfigure"):
 KHO_CU = r"D:\Voiceclone_TTS"
 NGHI_S = 0.35            # khoảng nghỉ chèn giữa hai clip khi nối
 
+#: Trần độ dài clip nối, giây. Phải khớp `apps/ltt_voice/audio_input.GIAY_TOI_DA`
+#: — cửa ghi danh từ chối clip dài hơn, và điều khoản công bố con số ấy.
+#:
+#: 🔴 Không có trần này thì ba giọng (`khanh_male_entertainment`,
+#:    `lam_male_storytelling`, `tamlyhoc_men`) nối ra 32–33 giây và bị cửa ghi
+#:    danh trả 400 ngay giữa một vòng nhập — sau khi mười ba giọng trước đã
+#:    ghi danh xong và đã tính tiền.
+#:
+#: ⛔ Cắt theo TỪNG CLIP, không cắt giữa chừng: bỏ bớt clip cuối cho tới khi
+#:    dưới trần. Cắt ngang một mẫu là để lại nửa từ ở cuối đoạn tham chiếu, và
+#:    `chon_doan` sẽ phải chọn quanh một khuyết tật ta tự tạo ra.
+TRAN_GIAY = 30.0
+
 
 class KhongDoDuoc(RuntimeError):
     """Không đo được thì VỠ, không lặng lẽ thành một con số."""
@@ -286148,26 +287401,67 @@ def _nghe_lai(duong: str) -> dict:
 
 
 def _noi_kho(cac: list):
-    """Nối các clip tham chiếu thành một clip dài. Trả `(wav, sr)`."""
+    """Nối các clip tham chiếu thành một clip dài. Trả `(wav, sr)`.
+
+    🔴 CHUYỂN TẦN SỐ LẤY MẪU, ĐỪNG TỪ CHỐI CẢ GIỌNG. Bản đầu ném `KhongDoDuoc`
+       khi kho có hai `samplerate` khác nhau, và lý do nghe rất hợp lý: trộn hai
+       tần số là tạo ra một tệp không ai nghe đúng.
+
+       Nhưng hậu quả thì không hợp lý chút nào. `kyan_nam` có ba clip ở
+       24000/24000/**22050** Hz — một clip lẻ — và cả giọng ấy **rơi khỏi danh
+       mục**. Nó in một dòng "BO:" giữa hai mươi lăm dòng khác, và mọi con số
+       sau đó nói "24 giọng" trong khi kho có **25**. Tôi đã báo con số 24 ấy
+       cho chủ sản phẩm.
+
+    ⛔ Bài học: từ chối là đúng khi việc **không làm được**; ở đây nó làm được —
+       chuyển tần số là một phép chuẩn, `soxr` có sẵn trong venv. Một cái chốt
+       đúng đặt sai chỗ vẫn là một cái chốt sai, và nó hỏng theo kiểu tệ nhất:
+       **im lặng về phía thiếu**.
+    """
     import numpy as np
     import soundfile as sf
 
-    manh, sr = [], None
+    doc = []
     for p in cac:
         w, s = sf.read(p, dtype="float32", always_2d=False)
         if w.ndim > 1:
             w = w.mean(axis=1)
-        if sr is None:
-            sr = int(s)
-        elif int(s) != sr:
-            # ⛔ Trộn hai tần số lấy mẫu là tạo ra một tệp không ai nghe đúng.
-            raise KhongDoDuoc(f"kho co hai sample rate: {sr} va {s}")
-        if manh:
-            manh.append(np.zeros(int(sr * NGHI_S), dtype="float32"))
-        manh.append(np.asarray(w, dtype="float32"))
-    if not manh:
+        doc.append((np.asarray(w, dtype="float32"), int(s)))
+    if not doc:
         raise KhongDoDuoc("kho rong")
-    return np.concatenate(manh), sr
+
+    # Lấy tần số CAO NHẤT làm đích: nâng lên thì chỉ nội suy, hạ xuống là vứt
+    # dải cao đi vĩnh viễn — và dải cao đúng là thứ `db_dai_cao` đang canh.
+    dich = max(s for _, s in doc)
+
+    # Bỏ bớt clip CUỐI cho tới khi tổng (kể cả các khoảng nghỉ) dưới trần.
+    while len(doc) > 1:
+        tong = sum(len(w) / float(s) for w, s in doc) + NGHI_S * (len(doc) - 1)
+        if tong <= TRAN_GIAY:
+            break
+        doc.pop()
+
+    manh = []
+    for w, s in doc:
+        if s != dich:
+            w = _doi_tan_so(w, s, dich)
+        if manh:
+            manh.append(np.zeros(int(dich * NGHI_S), dtype="float32"))
+        manh.append(np.asarray(w, dtype="float32"))
+    return np.concatenate(manh), dich
+
+
+def _doi_tan_so(w, tu: int, den: int):
+    """Đổi tần số lấy mẫu. `soxr` nếu có, không thì nội suy tuyến tính."""
+    import numpy as np
+    try:
+        import soxr
+        return np.asarray(soxr.resample(w, tu, den), dtype="float32")
+    except ImportError:
+        pass
+    n = int(round(len(w) * den / float(tu)))
+    return np.interp(np.linspace(0, len(w) - 1, n),
+                     np.arange(len(w)), w).astype("float32")
 
 
 def main(argv=None) -> int:

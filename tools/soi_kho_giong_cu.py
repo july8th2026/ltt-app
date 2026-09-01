@@ -98,6 +98,19 @@ if hasattr(sys.stdout, "reconfigure"):
 KHO_CU = r"D:\Voiceclone_TTS"
 NGHI_S = 0.35            # khoảng nghỉ chèn giữa hai clip khi nối
 
+#: Trần độ dài clip nối, giây. Phải khớp `apps/ltt_voice/audio_input.GIAY_TOI_DA`
+#: — cửa ghi danh từ chối clip dài hơn, và điều khoản công bố con số ấy.
+#:
+#: 🔴 Không có trần này thì ba giọng (`khanh_male_entertainment`,
+#:    `lam_male_storytelling`, `tamlyhoc_men`) nối ra 32–33 giây và bị cửa ghi
+#:    danh trả 400 ngay giữa một vòng nhập — sau khi mười ba giọng trước đã
+#:    ghi danh xong và đã tính tiền.
+#:
+#: ⛔ Cắt theo TỪNG CLIP, không cắt giữa chừng: bỏ bớt clip cuối cho tới khi
+#:    dưới trần. Cắt ngang một mẫu là để lại nửa từ ở cuối đoạn tham chiếu, và
+#:    `chon_doan` sẽ phải chọn quanh một khuyết tật ta tự tạo ra.
+TRAN_GIAY = 30.0
+
 
 class KhongDoDuoc(RuntimeError):
     """Không đo được thì VỠ, không lặng lẽ thành một con số."""
@@ -142,26 +155,67 @@ def _nghe_lai(duong: str) -> dict:
 
 
 def _noi_kho(cac: list):
-    """Nối các clip tham chiếu thành một clip dài. Trả `(wav, sr)`."""
+    """Nối các clip tham chiếu thành một clip dài. Trả `(wav, sr)`.
+
+    🔴 CHUYỂN TẦN SỐ LẤY MẪU, ĐỪNG TỪ CHỐI CẢ GIỌNG. Bản đầu ném `KhongDoDuoc`
+       khi kho có hai `samplerate` khác nhau, và lý do nghe rất hợp lý: trộn hai
+       tần số là tạo ra một tệp không ai nghe đúng.
+
+       Nhưng hậu quả thì không hợp lý chút nào. `kyan_nam` có ba clip ở
+       24000/24000/**22050** Hz — một clip lẻ — và cả giọng ấy **rơi khỏi danh
+       mục**. Nó in một dòng "BO:" giữa hai mươi lăm dòng khác, và mọi con số
+       sau đó nói "24 giọng" trong khi kho có **25**. Tôi đã báo con số 24 ấy
+       cho chủ sản phẩm.
+
+    ⛔ Bài học: từ chối là đúng khi việc **không làm được**; ở đây nó làm được —
+       chuyển tần số là một phép chuẩn, `soxr` có sẵn trong venv. Một cái chốt
+       đúng đặt sai chỗ vẫn là một cái chốt sai, và nó hỏng theo kiểu tệ nhất:
+       **im lặng về phía thiếu**.
+    """
     import numpy as np
     import soundfile as sf
 
-    manh, sr = [], None
+    doc = []
     for p in cac:
         w, s = sf.read(p, dtype="float32", always_2d=False)
         if w.ndim > 1:
             w = w.mean(axis=1)
-        if sr is None:
-            sr = int(s)
-        elif int(s) != sr:
-            # ⛔ Trộn hai tần số lấy mẫu là tạo ra một tệp không ai nghe đúng.
-            raise KhongDoDuoc(f"kho co hai sample rate: {sr} va {s}")
-        if manh:
-            manh.append(np.zeros(int(sr * NGHI_S), dtype="float32"))
-        manh.append(np.asarray(w, dtype="float32"))
-    if not manh:
+        doc.append((np.asarray(w, dtype="float32"), int(s)))
+    if not doc:
         raise KhongDoDuoc("kho rong")
-    return np.concatenate(manh), sr
+
+    # Lấy tần số CAO NHẤT làm đích: nâng lên thì chỉ nội suy, hạ xuống là vứt
+    # dải cao đi vĩnh viễn — và dải cao đúng là thứ `db_dai_cao` đang canh.
+    dich = max(s for _, s in doc)
+
+    # Bỏ bớt clip CUỐI cho tới khi tổng (kể cả các khoảng nghỉ) dưới trần.
+    while len(doc) > 1:
+        tong = sum(len(w) / float(s) for w, s in doc) + NGHI_S * (len(doc) - 1)
+        if tong <= TRAN_GIAY:
+            break
+        doc.pop()
+
+    manh = []
+    for w, s in doc:
+        if s != dich:
+            w = _doi_tan_so(w, s, dich)
+        if manh:
+            manh.append(np.zeros(int(dich * NGHI_S), dtype="float32"))
+        manh.append(np.asarray(w, dtype="float32"))
+    return np.concatenate(manh), dich
+
+
+def _doi_tan_so(w, tu: int, den: int):
+    """Đổi tần số lấy mẫu. `soxr` nếu có, không thì nội suy tuyến tính."""
+    import numpy as np
+    try:
+        import soxr
+        return np.asarray(soxr.resample(w, tu, den), dtype="float32")
+    except ImportError:
+        pass
+    n = int(round(len(w) * den / float(tu)))
+    return np.interp(np.linspace(0, len(w) - 1, n),
+                     np.arange(len(w)), w).astype("float32")
 
 
 def main(argv=None) -> int:

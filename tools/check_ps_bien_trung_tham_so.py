@@ -45,22 +45,45 @@ mang ten "HF_HOME", va luot thu hai chet vi rang buoc duy nhat `(owner_id, ten)`
 """
 from __future__ import annotations
 
-import io
 import re
 import sys
 from pathlib import Path
 
-if hasattr(sys.stdout, "buffer"):
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8",
-                                  errors="replace", line_buffering=True)
+if hasattr(sys.stdout, "reconfigure"):
+    # ⛔ `reconfigure`, KHÔNG phải `io.TextIOWrapper(sys.stdout.buffer, ...)`.
+    #    Một wrapper mới NHẬN QUYỀN SỞ HỮU buffer bên dưới; khi nó bị thu
+    #    gom rác — hoặc khi một module thứ hai bọc đè lên cùng buffer ấy —
+    #    nó ĐÓNG buffer thật, và cả tiến trình chết với `ValueError: I/O
+    #    operation on closed file` ở dòng `print` tiếp theo, một thông
+    #    điệp không nhắc gì tới mã hoá hay tới module nào gây ra.
+    #    `reconfigure()` sửa tại chỗ, gọi nhiều lần vô hại.
+    #    Bánh cóc: `tests/test_353_voice_sidecar_bo_do.py`.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 GOC = Path(__file__).resolve().parents[1]
 THU_MUC = ("setup", "deploy", "tools")
 
 #: `[string]$Ten = '...'` hay `[int]$ChoGiay,` trong khoi param().
 _THAM_SO = re.compile(r"^\s*(?:\[[^\]]+\]\s*)*\$([A-Za-z_]\w*)\s*(?:=|,|\)|$)")
-#: Mot phep GAN — `$ten = ...`. Khong tinh viec doc `$ten`.
-_GAN = re.compile(r"^\s*\$([A-Za-z_]\w*)\s*=[^=]")
+#: Mot phep GAN. Khong tinh viec DOC `$ten`.
+#:
+#: 🔴 PHAI GOM CA `++`, `--`, `+=`, `-=`. Ban dau chi khop `$ten = ...`, va no
+#:    bo sot mot lan tai dien cua DUNG con bug no sinh ra de bat:
+#:    `setup/nap_credit_tai_khoan_thu.ps1` co tham so `-So` (so credit nap) va
+#:    mot bo dem bien env `$so` tang bang `$so++` trong mot vong lap. PowerShell
+#:    khong phan biet hoa thuong, nen `-So 100` bi ghi de thanh 70 (so bien da
+#:    nap), va CONG CU GHI VAO SO CREDIT MOT BUT TOAN SAI SO — im lang, va so
+#:    credit thi append-only.
+_GAN = re.compile(r"^\s*\$([A-Za-z_]\w*)\s*(?:=[^=]|\+\+|--|\+=|-=)")
+
+#: Mot lenh `if` co nhac toi bien — dau hieu cua mau DIEN MAC DINH hop le
+#: (`if (-not $Repo) { $Repo = ... }`). Chi mau nay duoc mien.
+# ⛔ KHONG neo `^`: doan nhin lui la vai dong da NOI LAI thanh mot chuoi, nen
+#    `^` chi khop dau chuoi va mau mien tru khong bao gio no. Bang chung: no bao
+#    dong nham `setup/cai_dich_vu_giong.ps1:42`, mot mau
+#    `if (-not $VenvRoot) { $VenvRoot = ... }` hoan toan hop le.
+_IF_NHAC = re.compile(r"(?:^|[\s}])(?:els)?if\s*\(", re.I)
 #: Mo dau mot vong lap. `do` co than `{...}` truoc `while`/`until`.
 _VONG_LAP = re.compile(r"(^|[^\w-])(foreach|for|while|do)\s*[({]", re.I)
 
@@ -93,10 +116,22 @@ def kiem(tep: Path) -> list[str]:
         cho_vong = bool(_VONG_LAP.search(tho))
 
         m = _GAN.match(d)
-        if m and m.group(1).lower() in tso and muc_vong:
-            loi.append(f"{tep.relative_to(GOC)}:{i}: gan ${m.group(1)} trong "
-                       f"than vong lap — trung tham so cua chinh script, va "
-                       f"PowerShell khong phan biet hoa thuong")
+        if m and m.group(1).lower() in tso:
+            ten_b = m.group(1)
+            # ⭐ MIEN mau DIEN MAC DINH: `if (-not $Repo) { $Repo = ... }`.
+            #    Do la cach hop le de bo trong mot tham so khong duoc truyen.
+            #    Nhan ra no bang cach nhin lui vai dong: mot `if` co nhac chinh
+            #    bien ay. Moi phep gan KHAC deu la ghi de mot gia tri nguoi
+            #    dung vua truyen vao.
+            truoc = " ".join(dong[max(0, i - 4):i - 1])
+            duoc_mien = (_IF_NHAC.search(truoc or "") is not None
+                         and f"${ten_b.lower()}" in truoc.lower())
+            if not duoc_mien:
+                cho = "than vong lap" if muc_vong else "cap ngoai"
+                loi.append(
+                    f"{tep.relative_to(GOC)}:{i}: gan ${ten_b} o {cho} — trung "
+                    f"ten tham so cua chinh script, va PowerShell KHONG phan "
+                    f"biet hoa thuong, nen gia tri nguoi dung truyen vao bi xoa")
 
         # Dem ngoac SAU khi cham, de mot dong `foreach (...) {` tinh la mo vong.
         for c in tho:
@@ -123,8 +158,7 @@ def main() -> int:
             print(f"  {d}")
         print("\nDoi ten bien cuc bo. Xem docstring cua tep nay.")
         return 1
-    print("[OK] khong tep .ps1 nao gan de len tham so cua chinh no "
-          "tu trong mot vong lap")
+    print("[OK] khong tep .ps1 nao ghi de len tham so cua chinh no")
     return 0
 
 
