@@ -160,7 +160,7 @@ sau vì nó đã có doanh thu còn ba việc trên thì chưa.
 | N3 | Cảnh báo mới `ltt_llm:tren_cpu` chưa được thử bằng một sự cố thật | chỉ mới thử trên sự cố tình cờ hôm 23/08 |
 | ~~N4~~ | ~~`AUOptions` máy B ⇒ mốc 01:00~~ | 🗑️ **KHÔNG CÒN LÀ VIỆC** — `CLAUDE.md:420` chốt **không cần** đổi `AUOptions` (nó là thiết lập bảo mật, cái giá lớn hơn thứ nó cứu), và lô đo nay ghi kết quả sau mỗi ảnh nên một lần khởi động lại chỉ mất **đúng một ảnh**. Dòng này mâu thuẫn với quyết định hiện hành |
 | **N7** | **Diễn tập reboot máy A** — F05 mới suy từ cấu hình, chưa quan sát một lần reboot thật | máy A vừa là production vừa chạy phiên làm việc; cần một cửa sổ chủ dự án chọn |
-| **N8** | `setupat_tu_dung_day.ps1` **chưa chạy** — 5 dịch vụ máy A vẫn không có `FAILURE_ACTIONS` | một lệnh, **cần Administrator**. Chỉ đặt chính sách cho lần hỏng sau, không khởi động lại gì |
+| **N8** | `setup/bat_tu_dung_day.ps1` **chưa chạy** — 5 dịch vụ máy A vẫn không có `FAILURE_ACTIONS` | một lệnh, **cần Administrator**. Chỉ đặt chính sách cho lần hỏng sau, không khởi động lại gì |
 | N5 | Codex báo *"Model metadata for `ltt_llm` not found"* | không chặn, nhưng làm ước chi phí của nó sai |
 | N6 | Số test trùng giữa hai phiên — nay **ba lần** (371, 01/09) | ⚠️ Mốc "≥ 274" đã **lỗi thời**: cao nhất hiện là **377**. Và bài học không phải một con số — `ls tests/` là **ảnh chụp** của một cây có hai người ghi. Chạy `tools/check_so_test.py` **ngay trước** khi đặt tên |
 
