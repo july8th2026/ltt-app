@@ -2687,6 +2687,22 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 /* Tab ngon ngu vi du o man API. */
 .lv-api-tab{margin-bottom:8px}
 
+/* Tu dien phat am rieng (man Studio, muc ⑤ cua anh 01). */
+.lv-td-ds{list-style:none;margin:9px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:3px;max-height:160px;overflow-y:auto}
+.lv-td-ds li{display:flex;align-items:center;gap:6px;padding:4px 7px;
+  border-radius:var(--radius-sm);background:var(--panel2);font-size:11.5px}
+.lv-td-ds li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--muted)}
+.lv-td-xoa{flex:0 0 auto;background:none;border:none;color:var(--dim);
+  cursor:pointer;font-size:14px;line-height:1;padding:0 3px}
+.lv-td-xoa:hover{color:var(--err)}
+.lv-td-them{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+.lv-td-them input{flex:1 1 100px;min-width:0;font-size:11.5px;padding:5px 8px}
+.lv-td-bao{margin:7px 0 0;font-size:11.5px}
+.lv-td-bao.loi{color:var(--err)}
+
+
 /* Luot gan nhat o cot phai man Studio. */
 .lv-kq-nhan{margin:0 0 6px;font-size:11px;text-transform:uppercase;
   letter-spacing:.05em}

@@ -93,6 +93,47 @@
         <small class="dim">{{ _("Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc.") }}</small>
       </div>
 
+      {#
+        TỪ ĐIỂN PHÁT ÂM — mục ⑤ `PRONUNCIATION` trong ảnh 01.
+
+        🔴 Đây là một MODULE thật, không phải trang trí. Upstream #168: engine
+           đọc `ch` thành `tr` ở một số từ. Từ phổ thông thì bảng chung lo được,
+           nhưng **tên riêng** — tên công ty, tên nhân vật, tên sản phẩm — thì
+           không ai đoán trước, và chúng lặp trong MỌI kịch bản của khách đó.
+
+        ⛔ Không có chỗ sửa thì khách phải **gõ sai chính tả trong kịch bản** để
+           ép engine đọc đúng — và bản chép sai ấy đi vào tài liệu của họ, vào
+           phụ đề, vào mọi chỗ khác. Ta đẩy một khuyết tật của mình sang bản
+           gốc của khách.
+
+        ⭐ Chuỗi tham số cho nó (`tu_dien_rieng` → `tu_dien.ap_dung(them=)`) đã
+           được nối sẵn qua ba tầng từ lâu và **chưa ai truyền** — nên phần
+           thiếu duy nhất là bảng, route, và ô này.
+      #}
+      <div class="lv-st-o">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Từ điển phát âm") }}</span>
+          <button type="button" class="btn sm ghost" id="lv-td-mo"
+                  aria-expanded="false" aria-controls="lv-td-hop">{{ _("Mở") }}</button>
+        </div>
+        <small class="dim">{{ _("Dạy máy đọc đúng tên riêng của bạn. Áp cho mọi lượt đọc, kể cả khi gọi qua API.") }}</small>
+
+        <div id="lv-td-hop" hidden>
+          <ul class="lv-td-ds" id="lv-td-ds"></ul>
+          <p class="dim" id="lv-td-rong" hidden>{{ _("Chưa có mục nào.") }}</p>
+          <div class="lv-td-them">
+            <input type="text" id="lv-td-tu" maxlength="80"
+                   aria-label="{{ _('Từ cần sửa') }}"
+                   placeholder="{{ _('Từ cần sửa…') }}">
+            <input type="text" id="lv-td-thay" maxlength="160"
+                   aria-label="{{ _('Máy nên đọc thành') }}"
+                   placeholder="{{ _('Máy nên đọc thành…') }}">
+            <button type="button" class="btn sm primary" id="lv-td-luu">{{ _("Thêm") }}</button>
+          </div>
+          <p class="dim lv-td-bao" id="lv-td-bao" hidden></p>
+        </div>
+      </div>
+
       <div class="lv-st-o">
         <span class="eyebrow">{{ _("Đầu ra") }}</span>
         {# SỰ THẬT, không phải điều khiển. Cổng trả đúng một định dạng. #}
@@ -352,6 +393,7 @@ LttVoice.studio({
     khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
     doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }},
     daLuuVao:  {{ _("Đã lưu vào") | tojson }},
+    xoaMuc:    {{ _("Xoá mục") | tojson }},
     nhapBiCat: {{ _("Tệp dài {n} ký tự, đã cắt còn {t}.") | tojson }},
     nhapHong:  {{ _("Không đọc được tệp này.") | tojson }},
     loiMang:   {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }}

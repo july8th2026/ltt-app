@@ -212,6 +212,61 @@ class VoiceConsent(Base):
                                                  default=_now)
 
 
+
+class VoiceTuDien(Base):
+    """Từ điển phát âm RIÊNG của một khách.
+
+    ## Vì sao nó là một bảng, không phải một trường JSON
+
+    Ảnh tham chiếu 01 vẽ mục ⑤ `PRONUNCIATION` với nút `Dictionary`. Và điều
+    đáng nói hơn: **chuỗi tham số cho nó đã được nối sẵn từ lâu** —
+    `features.chuan_bi_van_ban(tu_dien_rieng=...)` → `text_pipeline.chuan_hoa`
+    → `tu_dien.ap_dung(them=...)`. Cả ba tầng nhận nó, và **không ai truyền**.
+
+    ⭐ `tu_dien.py` đã ghi rõ ranh giới từ trước: *"Đây là bảng CHUNG cho mọi
+       khách. Từ điển riêng của một người (tên công ty, tên nhân vật) đi qua
+       tham số `them=` — nó không được lẫn vào đây."* Bảng này là đầu kia của
+       câu ấy.
+
+    ## Vì sao khách CẦN nó
+
+    Upstream #168: engine đọc `ch` thành `tr` ở một số từ. Với từ phổ thông thì
+    `BANG_CHUNG` lo được. Nhưng **tên riêng** — tên công ty, tên nhân vật trong
+    truyện, tên sản phẩm — thì không ai đoán trước được, và chúng lặp lại trong
+    **mọi** kịch bản của chính khách đó. Không có chỗ sửa thì họ phải gõ sai
+    chính tả trong kịch bản để ép engine đọc đúng.
+
+    ⛔ KHÔNG dùng để đổi giọng hay chèn lệnh. Nó chỉ là phép thay chuỗi theo
+       BIÊN TỪ, y hệt `tu_dien.BANG_CHUNG`, chạy trước mọi phép chuẩn hoá khác.
+    """
+
+    __tablename__ = "voice_tu_dien"
+    __table_args__ = (
+        # Một khách không thể có hai mục cho cùng một từ — nếu không thì phép
+        # thay phụ thuộc thứ tự đọc từ CSDL, và thứ tự ấy không ai bảo đảm.
+        UniqueConstraint("owner_id", "tu", name="uq_voice_tudien_owner_tu"),
+    )
+
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
+
+    #: Từ cần sửa, đã hạ chữ thường. Khớp theo BIÊN TỪ (`tu_dien._mau`).
+    tu: Mapped[str] = mapped_column(String(80))
+    #: Viết lại thành gì. Đây là VĂN BẢN, không phải phiên âm IPA — ta đưa nó
+    #: cho `sea-g2p` như một chuỗi bình thường.
+    thay: Mapped[str] = mapped_column(String(160))
+    #: Vì sao thêm mục này. `tu_dien.py` đòi lý do cho bảng chung, và lý do ấy
+    #: cũng đúng ở đây: một bảng thay thế không có lý do sẽ không bao giờ xoá
+    #: được, vì không ai dám.
+    ghi_chu: Mapped[str] = mapped_column(String(200), default="")
+
+    tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                              default=_now)
+    sua_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                              default=_now, onupdate=_now)
+
+
 # ── Bảng của màn Dự án ───────────────────────────────────────────────────────
 #
 # 🔴 MỘT DÒNG NÀY LÀ BẮT BUỘC, và thiếu nó hỏng theo kiểu tệ nhất.

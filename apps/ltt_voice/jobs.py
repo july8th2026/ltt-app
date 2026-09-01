@@ -87,7 +87,8 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     from platform_core.storage import get_storage
 
-    from . import features, sidecar_client, tham_chieu, toc_do
+    from . import (features, sidecar_client, tham_chieu, toc_do,
+                   tu_dien_rieng)
 
     yc = features.chuan_hoa(params)
 
@@ -109,7 +110,19 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     #    người nói qua các lượt gọi riêng (0,9254 — cao hơn cả sàn nhiễu 0,8524
     #    của hai nửa trong cùng một lượt). Xem
     #    `voice_sidecar/do_giu_giong_nhieu_luot.py`.
-    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    # ── TỪ ĐIỂN PHÁT ÂM RIÊNG CỦA KHÁCH ─────────────────────────────────────
+    #
+    # ⭐ `chuan_bi_van_ban(tu_dien_rieng=...)` nhận tham số này từ lâu, qua ba
+    #    tầng xuống tới `tu_dien.ap_dung(them=...)` — và **không ai truyền**.
+    #    Cả chuỗi ấy chưa từng chạy một lần nào cho tới 01/09/2026.
+    #
+    # 🔴 PHẢI Ở ĐÂY, trong worker, KHÔNG ở route. Public API đi thẳng xuống job
+    #    và không qua route nào — đặt phép nạp này ở một cánh cửa thì cánh cửa
+    #    kia không có nó, và khách gọi API sẽ nghe tên riêng của họ đọc sai
+    #    trong khi trên web thì đúng. Cùng cái bẫy `features.py` cảnh báo.
+    tu_rieng = _voi_db(lambda db: tu_dien_rieng.nhu_dict(db, yc.owner_id))         if yc.owner_id else {}
+    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                      tu_dien_rieng=tu_rieng)
     doan = chuan.doan or [yc.text]
 
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner

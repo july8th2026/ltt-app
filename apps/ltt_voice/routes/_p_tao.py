@@ -8,7 +8,8 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
                      gia, giong_mau, io, lan_ngon_ngu, require_login,
                      router, templates,
-                     tham_chieu, user_hien_tai, verify_csrf_token, vo,
+                     tham_chieu, tu_dien_rieng, user_hien_tai,
+                     verify_csrf_token, vo,
                      NHAN_NGUON)
 
 
@@ -282,3 +283,78 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             pass
 
 
+
+
+# ── Từ điển phát âm riêng ────────────────────────────────────────────────────
+#
+# ⭐ Ở `_p_tao.py` chứ không phải một tệp riêng: nó là một điều khiển của màn
+#    Tạo tiếng nói (ảnh 01 vẽ nó ở mục ⑤ `PRONUNCIATION`, ngay cột trái), và
+#    `AGENTS.md` mục 8 nói route chia theo MÀN, không theo bảng.
+
+@router.get("/tu-dien")
+def xem_tu_dien(request: Request, user=Depends(user_hien_tai),
+                _=Depends(require_login)):
+    """Danh sách mục của khách. Dùng cho hộp từ điển ở màn Tạo tiếng nói."""
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        return JSONResponse({"ok": True, "muc": [
+            {"id": m.id, "tu": m.tu, "thay": m.thay, "ghi_chu": m.ghi_chu}
+            for m in tu_dien_rieng.danh_sach(db, uid)
+        ], "tran": tu_dien_rieng.TRAN_SO_MUC})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/tu-dien/them")
+def them_tu_dien(request: Request, tu: str = Form(""), thay: str = Form(""),
+                 ghi_chu: str = Form(""), csrf_token: str = Form(""),
+                 user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Thêm hoặc SỬA một mục.
+
+    ⭐ Gõ lại cùng một từ = sửa cách đọc, không phải lỗi trùng. Bắt khách xoá
+       rồi thêm lại là một bước thừa cho thao tác họ làm nhiều nhất.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        try:
+            m = tu_dien_rieng.them(db, uid, tu=tu, thay=thay, ghi_chu=ghi_chu)
+        except features.LoiGiongNoi as e:
+            db.rollback()
+            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        db.commit()
+        return JSONResponse({"ok": True, "muc": {
+            "id": m.id, "tu": m.tu, "thay": m.thay, "ghi_chu": m.ghi_chu}})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/tu-dien/{muc_id}/xoa")
+def xoa_tu_dien(request: Request, muc_id: int, csrf_token: str = Form(""),
+                user=Depends(user_hien_tai), _=Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        if not tu_dien_rieng.xoa(db, uid, muc_id):
+            return JSONResponse({"ok": False}, status_code=404)
+        db.commit()
+        return JSONResponse({"ok": True})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass

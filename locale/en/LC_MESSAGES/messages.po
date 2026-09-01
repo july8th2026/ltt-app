@@ -12870,3 +12870,45 @@ msgstr "Latest generation"
 
 msgid "Ngôn ngữ ví dụ"
 msgstr "Example language"
+
+msgid "Chưa có mục nào."
+msgstr "No entries yet."
+
+msgid "Chỉ dùng chữ, số, khoảng trắng và dấu . - ' — không dùng ký tự đặc biệt."
+msgstr "Use only letters, digits, spaces and . - ' — no special characters."
+
+msgid "Cần cả từ cần sửa và cách đọc thay thế."
+msgstr "Both the word and its replacement are required."
+
+msgid "Dạy máy đọc đúng tên riêng của bạn. Áp cho mọi lượt đọc, kể cả khi gọi qua API."
+msgstr "Teach the engine your proper nouns. Applied to every generation, including API calls."
+
+msgid "Máy nên đọc thành"
+msgstr "Should be read as"
+
+msgid "Máy nên đọc thành…"
+msgstr "Should be read as…"
+
+msgid "Thêm"
+msgstr "Add"
+
+msgid "Từ cần sửa"
+msgstr "Word to fix"
+
+msgid "Từ cần sửa…"
+msgstr "Word to fix…"
+
+msgid "Từ tối đa {a} ký tự, cách đọc tối đa {b} ký tự."
+msgstr "Word up to {a} characters, replacement up to {b}."
+
+msgid "Từ và cách đọc thay thế giống hệt nhau."
+msgstr "The word and its replacement are identical."
+
+msgid "Từ điển phát âm"
+msgstr "Pronunciation dictionary"
+
+msgid "Từ điển đã đạt {n} mục — giới hạn hiện tại. Xoá bớt mục cũ trước."
+msgstr "The dictionary has {n} entries — the current limit. Remove old entries first."
+
+msgid "Xoá mục"
+msgstr "Remove entry"
