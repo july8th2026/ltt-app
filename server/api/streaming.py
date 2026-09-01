@@ -156,7 +156,7 @@ def register_streaming_routes(api, config, tag: str) -> None:
     def messages(request: Request, body: dict = Body(...),
                  principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
                  db: Session = Depends(get_db)) -> StreamingResponse:
-        return _cua("/v1/messages", body or {}, principal, db, config)
+        return _cua("/v1/messages", body or {}, principal, db, config, request)
 
     @api.post("/responses", tags=[tag],
               summary="Chat completion as an OpenAI Responses stream",
@@ -167,11 +167,12 @@ def register_streaming_routes(api, config, tag: str) -> None:
     def responses(request: Request, body: dict = Body(...),
                   principal: Principal = Depends(require_scope(SCOPE_JOBS_CREATE)),
                   db: Session = Depends(get_db)) -> StreamingResponse:
-        return _cua("/v1/responses", body or {}, principal, db, config)
+        return _cua("/v1/responses", body or {}, principal, db, config, request)
 
 
 def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
-             principal: Principal, db: Session, config, tool=None) -> JSONResponse:
+             principal: Principal, db: Session, config, tool=None,
+             trang_thai=None) -> JSONResponse:
     """Tra loi **mot cuc** cho `/messages` va `/responses`, dung hinh dang
     Anthropic Messages.
 
@@ -331,11 +332,20 @@ def _mot_cuc(duong: str, than: dict, tin: list, ten: str,
     #    ke ca `dang_tin=kq.do_duoc` - do la co bao "co do duoc token khong", va
     #    `quyet_toan_hoac_hoan` dua vao no de HOAN DU khi khong do duoc.
     try:
-        thanh_toan.quyet_toan_hoac_hoan(
+        _thu = thanh_toan.quyet_toan_hoac_hoan(
             db, user_id=principal.user_id, request_id=request_id,
             su_dung=SuDung(token_vao=kq.token_vao, token_ra=kq.token_ra,
                            token_vao_cache=kq.token_vao_cache,
                            dang_tin=kq.do_duoc))
+        # ⛔ P08 F-01, NHANH KHONG-STREAM. Ban va dau chi cham `_quyet_toan` cua
+        #    generator, nen cua nay van ghi `+0` — va do that tren production
+        #    ngay sau khi deploy bat duoc: cung mot route `/api/v1/messages`,
+        #    luot stream ghi `credit=-3` con luot mot-cuc ghi `+0`.
+        #
+        # ⭐ Dang nho: mot route, HAI duong tien. Sua mot duong roi doc dong log
+        #    dau tien thay so dung la du de tin rang xong.
+        if trang_thai is not None:
+            trang_thai.api_credit_delta = -int(_thu.thu_credit)
     except BaseException:
         # Cùng một lý do với lưới ở trên: hold đã đặt rồi, nên đường thoát nào
         # cũng phải trả nó lại. Hỏng ở bước quyết toán mà bỏ chạy thì tiền kẹt.
@@ -494,8 +504,17 @@ def _goi_y_ten_la(ten: str) -> str:
         f"for you). We do not alias other vendors' model names.")
 
 
+def _tran_vao_cua_model(alias: str) -> int:
+    """Trần đầu vào thật của một alias. Lùi về trần chung khi tên lạ."""
+    from apps.ltt_llm.features import ALIAS_SANG_ID
+    try:
+        return ngan_sach.tran_vao_cua(ALIAS_SANG_ID[alias])
+    except KeyError:
+        return ngan_sach.TOKEN_VAO_TRAN
+
+
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
-         config) -> StreamingResponse:
+         config, request=None) -> StreamingResponse:
     from platform_core import credit
     from platform_core.llm import admission, thanh_toan
 
@@ -594,7 +613,8 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
         raise invalid_request(vi_tool)
 
     if not than.get("stream"):
-        return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
+        return _mot_cuc(duong, than, tin, ten, principal, db, config, tool,
+                        trang_thai=getattr(request, "state", None))
 
     resolved = policy.resolve(db, config=config, principal=principal,
                               tool_name=TOOL_CHAT)
@@ -711,7 +731,12 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
                 "older turns and retry with a shorter conversation. "
                 f"[{e.ly_do}]",
                 limit_name="input_tokens",
-                limit_value=ngan_sach.TOKEN_VAO_TRAN) from None
+                # ⛔ TRAN THEO MODEL, khong phai tran chung (P08 F-02).
+                #    `qwen38-vision` chay `-c 65536` nen tran vao that cua no
+                #    nho hon `TOKEN_VAO_TRAN` mot nua. Tra so chung o day nghia
+                #    la than loi noi mot dang (`tran: 65536`, nguyen van tu may
+                #    B) con truong may doc duoc noi mot dang khac.
+                limit_value=_tran_vao_cua_model(ten)) from None
         log.warning("khong mo duoc luong cho user=%s: %s",
                     principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
@@ -723,12 +748,14 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     metrics.increment("chat:stream")
     return StreamingResponse(
         _phat(mo, user_id=principal.user_id, request_id=request_id,
-              da_giu=da_giu, lease_id=ticket.id),
+              da_giu=da_giu, lease_id=ticket.id,
+              trang_thai=getattr(request, "state", None)),
         media_type=mo.content_type, headers=_SSE,
         background=BackgroundTask(admission.release_by_id, ticket.id))
 
 
 def _phat(mo, *, user_id: str, request_id: str, da_giu: int,
+          trang_thai=None,
           lease_id: str = "") -> Iterator[bytes]:
     """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
 
@@ -771,14 +798,15 @@ def _phat(mo, *, user_id: str, request_id: str, da_giu: int,
                 request_id[-8:], _dt,
                 (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
                 _n_khoi, dem.token_ra)
-            _quyet_toan(user_id, request_id, dem, da_giu)
+            _quyet_toan(user_id, request_id, dem, da_giu, trang_thai)
             if vo is not None:
                 mo.hong(vo)
             else:
                 mo.xong(tokens=dem.token_ra)
 
 
-def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int) -> None:
+def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int,
+                trang_thai=None) -> None:
     """Chốt tiền, trong một phiên CSDL **mới**.
 
     ⚠️ Phiên của request đã đóng từ lúc phản hồi bắt đầu — generator này chạy sau
@@ -794,6 +822,12 @@ def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int) -> None:
         thu = thanh_toan.quyet_toan_hoac_hoan(
             db, user_id=user_id, request_id=request_id, su_dung=dem.su_dung())
         db.commit()
+        # ⛔ P08 F-01. Doc `server/api/guard.py:_write_request_log_muon` truoc khi
+        #    doi dong nay: task nen ghi so request doc `api_credit_delta` o
+        #    thoi diem NO chay, va no chay SAU generator nay. Dat o day la cach
+        #    duy nhat cua stream ke duoc so tien that vao so.
+        if trang_thai is not None:
+            trang_thai.api_credit_delta = -int(thu.thu_credit)
         log.info("stream %s: giu=%s thu=%s token_ra=%s do_duoc=%s",
                  request_id[-8:], da_giu, thu.thu_credit, dem.token_ra,
                  dem.do_duoc)

@@ -231,6 +231,46 @@ def test_hop_dong_TU_CHOI_SYNC_BILLED_mien_phi():
 
 # ── 2. Tiền: giữ TRẦN, thu THẬT ─────────────────────────────────────────────
 
+def _credit_delta_da_ghi(user_id: str):
+    """Cột `credit_delta` trong sổ request — thứ `anomalies.py` cộng để dò tiền."""
+    from sqlalchemy import select
+    from platform_core.public_api.tables import ApiRequestLog
+    gen, db = _session()
+    try:
+        return [r for (r,) in db.execute(
+            select(ApiRequestLog.credit_delta)
+            .where(ApiRequestLog.user_id == user_id)
+            .order_by(ApiRequestLog.id)).all()]
+    finally:
+        _close(gen)
+
+
+def test_so_REQUEST_ghi_dung_so_tien_da_thu(api, monkeypatch):
+    """🔴 P08 F-01 — cột này TỪNG luôn bằng 0 ở cửa đồng bộ, dù thu bao nhiêu.
+
+    `request.state.api_credit_delta` chỉ được gán ở `server/api/jobs.py`. Cửa
+    này và cửa stream không gán lần nào, nên mọi dòng của chúng đọc ra `+0`.
+
+    ⛔ Vì sao tệ hơn một cột trống: nó **giả làm bằng chứng**. `reports/06`
+       chứng minh bất biến "bận thì không thu tiền" bằng câu *"89 lượt hỏng,
+       credit=+0 mọi dòng"* — trên đúng cái cửa mà cột ấy không bao giờ khác 0.
+       Một bằng chứng không thể sai thì không chứng minh gì.
+    """
+    _dat_model(monkeypatch, token_vao=1_000, token_ra=100)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+    r = api.post(DUONG, json=_than(max_tokens=400), headers=_h(token))
+    assert r.status_code == 200, r.text
+    thu_that = truoc - _so_du(user_id)
+    assert thu_that > 0, "doi chung TRUOT: khong thu gi ca, phep kiem duoi vo nghia"
+
+    ghi = _credit_delta_da_ghi(user_id)
+    assert ghi, "khong co dong nao trong so request"
+    assert ghi[-1] == -thu_that, (
+        f"so ghi {ghi[-1]} nhung so THAT bi tru la {-thu_that} — cot nay dang "
+        f"noi mot dang con so tien noi mot dang khac")
+
+
 def test_lot_binh_thuong_va_thu_theo_TOKEN_DA_DO(api, monkeypatch):
     goi = _dat_model(monkeypatch, token_vao=10_000, token_ra=100)
     user_id, token = _account()

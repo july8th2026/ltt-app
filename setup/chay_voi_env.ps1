@@ -46,7 +46,7 @@
 param(
     [Parameter(Mandatory = $true)]
     [ValidateSet('test-daluong', 'cong-daluong', 'soi-su-co', 'kiem-llm',
-                 'tao-tk-canary', 'khoa-canary', 'canary-api')]
+                 'tao-tk-canary', 'khoa-canary', 'canary-api', 'soi-canary')]
     [string]$Viec,
 
     [string]$Root = 'C:\LTTPlatform',
@@ -128,6 +128,10 @@ $viecCuThe = @{
     'khoa-canary'   = @($py, 'tools/khoa_thu_api.py', '--email', $EMAIL_CANARY,
                         '--ten', 'canary-e15')
     'canary-api'    = @($py, 'tools/api_prod_canary.py')
+    # Soi so request cua CHINH tai khoan canary. Cung cong cu, khac mot
+    # doi so co dinh -- dung khuon ma chu thich o tren mo ta.
+    'soi-canary'    = @($py, 'tools/soi_su_co.py', '--email', $EMAIL_CANARY,
+                        '--gio', '2', '--khong-goi-thu')
 }
 $argv = $viecCuThe[$Viec]
 if (-not $argv) { throw "Viec khong co trong danh sach trang: $Viec" }

@@ -144,11 +144,29 @@ def goi(db, *, messages: list, thu_tu_provider: Sequence[str],
         on_rejected=None) -> KetQuaChat:
     """Gọi model theo **thứ tự provider bên gọi khai**, bỏ qua provider đang bận.
 
-    ⭐ `model_theo_provider` — vì **mỗi provider có id model riêng**. Model nhà tên
-       `ltt_llm`, Gemini tên `gemini-2.5-flash`; gửi nhầm tên sang provider kia thì
-       nó từ chối, và bên gọi sẽ tưởng provider đó "đang hỏng". Khai rõ:
+    ⭐ `model_theo_provider` — vì **mỗi provider có id model riêng**. Gửi nhầm tên
+       sang provider kia thì nó từ chối, và bên gọi sẽ tưởng provider đó "đang
+       hỏng". Khai rõ:
 
-           model_theo_provider={"ltt_llm": "ltt_llm", "gemini": "gemini-2.5-flash"}
+           model_theo_provider={"ltt_llm": "qwen38-api", "gemini": "gemini-2.5-flash"}
+
+    🔴 VÍ DỤ TRÊN TỪNG GHI `{"ltt_llm": "ltt_llm"}`, VÀ NÓ ĐÃ DẠY SAI HAI NƠI.
+
+       `ltt_llm` là **bí danh công khai** của app, không phải id model. Khoá của
+       provider chỉ khai `qwen38-api` / `qwen38-vision`, nên `chon_key` với
+       `model="ltt_llm"` **luôn** ném `ThieuKeyError` — và hàm này đọc đó là
+       "provider không phục vụ được, đi tiếp", tức **im lặng bỏ qua provider**.
+
+       Hai nơi chép theo ví dụ cũ và cả hai đều hỏng suốt nhiều tháng:
+       `platform_core/agent/planner.py` (mọi lượt lập kế hoạch rơi xuống Gemini
+       dù khai "model nhà đi trước") và `tools/kiem_ltt_llm.py` (không bao giờ
+       xanh nổi, và đỏ về phía báo động). Tìm ra ở Prompt 08, 01/09.
+
+    ⭐ Bài học đáng hơn cả hai lỗi: **một ví dụ trong docstring là mã mà người ta
+       chép**. Nó sai thì nó không sai một mình.
+
+    ⛔ Đừng gõ id nội bộ ở bên gọi — hỏi `providers.models_for(...)`. Ngày đổi
+       GGUF bên dưới, registry đổi và bên gọi đi theo.
 
        Thiếu khai cho provider nào thì rơi về `model` chung.
 

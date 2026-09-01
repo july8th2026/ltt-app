@@ -82,7 +82,22 @@ def phan_xu(health: str, gateway: str) -> tuple[int, str]:
 
 
 def _token_nexus() -> str:
-    p = Path.home() / ".nexus" / "claude-code.token"
+    """Token điều khiển Nexus. Ưu tiên đường dẫn khai tường minh.
+
+    ⛔ `Path.home()` KHÔNG DÙNG ĐƯỢC KHI CHẠY THEO LỊCH, và đó là lý do biến môi
+       trường này tồn tại. Một Scheduled Task chạy bằng `SYSTEM` có
+       `USERPROFILE` = `C:\\Windows\\system32\\config\\systemprofile`, nơi không
+       có tệp token nào. Công cụ khi đó trả `KHONG_DO_DUOC` — **thành thật**,
+       nhưng vô dụng: nó chạy mỗi 15 phút để nói rằng nó không đo được.
+
+    ⭐ Đây chính là hình dạng của khuyết tật P08 F-07. Công cụ đã tồn tại, đã có
+       `test_370` chốt phán xử của nó, và **không ai chạy nó** — không task, không
+       vòng bảo trì, không caller nào ngoài phép kiểm. Một bộ dò không ai chạy
+       giảm nhẹ được **0**; năng lực có mà chốt kiểm soát thì không.
+    """
+    from os import environ
+    duong = environ.get("LTT_NEXUS_TOKEN_FILE", "").strip()
+    p = Path(duong) if duong else Path.home() / ".nexus" / "claude-code.token"
     return p.read_text(encoding="utf-8").strip() if p.exists() else ""
 
 

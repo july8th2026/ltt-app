@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Callable, Optional
 
 from sqlalchemy.orm import Session as DbSession
@@ -10,16 +11,70 @@ from platform_core.agent.normalizer import normalize_plan
 from platform_core.agent.tools import discover_tools, resolve_params_schema
 from platform_core.models import APIKEY_CAT_CHAT
 
+log = logging.getLogger(__name__)
+
 PLANNER_MODEL = "gemini-2.5-flash"
 
 #: Thu tu thu provider cho viec lap ke hoach. MODEL NHA DI TRUOC: re hon nhieu,
 #: va prompt khong roi may. May B ban thi `dieu_phoi` tu di tiep sang Gemini.
 PLANNER_PROVIDERS = ("ltt_llm", "gemini")
 
-#: Moi provider co id model rieng. Gui nham ten sang provider kia thi no tu choi,
-#: va ben goi se tuong provider do "dang hong".
-PLANNER_MODEL_THEO_PROVIDER = {"ltt_llm": "ltt_llm", "gemini": PLANNER_MODEL}
 MAX_GOAL_CHARS = 8000
+
+#: Tai nguyen admission cua model nha. Doc tu ban khai cua app chu KHONG go tay,
+#: vi go tay o day la ban sao thu hai cua `admission_resource` trong manifest.
+_TAI_NGUYEN_MAC_DINH = ("llm_remote", 1)
+
+
+def _model_nha() -> str:
+    """Id **noi bo** cua model text nha, hoi thang REGISTRY.
+
+    🔴 DONG NAY TUNG LA `{"ltt_llm": "ltt_llm"}`, VA DO LA MOT LOI IM LANG.
+
+       `ltt_llm` la **bi danh cong khai**, khong phai id model. Duong khach that
+       (`apps/ltt_llm/features.py`) gui `ALIAS_SANG_ID[...]` = `qwen38-api`, con
+       registry chi khai `qwen38-api` / `qwen38-vision`. Nen
+       `api_pool.chon_key(model="ltt_llm")` **luon** nem `ThieuKeyError`,
+       `dieu_phoi` doc do la "provider nay khong phuc vu duoc, di tiep", va
+       **moi** luot lap ke hoach roi xuong Gemini — mot provider ngoai, tra tien.
+
+       Do duoc bang `tools/kiem_ltt_llm.py`, trong MOT tien trinh, MOT phien DB:
+           hoi KHONG kem model  -> cap duoc khoa
+           hoi KEM model="ltt_llm" -> ThieuKeyError
+
+    ⭐ Goc re la mot **chu thich**: docstring cua `dieu_phoi.goi` day sai quy uoc
+       (`model_theo_provider={"ltt_llm": "ltt_llm", ...}`), va hai noi chep theo
+       no — tep nay va `tools/kiem_ltt_llm.py`. Ca hai deu hong.
+
+    ⛔ Dung go lai id o day. Doi GGUF ben duoi thi registry doi, va cho nay
+       phai di theo -- do chinh la viec cua registry.
+    """
+    from platform_core import providers
+    for m in providers.models_for("ltt_llm", APIKEY_CAT_CHAT):
+        if not (getattr(m, "capabilities", None) or {}).get("vision"):
+            return m.id
+    return ""
+
+
+def _tai_nguyen_nha() -> tuple:
+    """`(resource, slots)` cua model nha, lay tu ban khai cua app."""
+    try:
+        from platform_core.registry import discover
+        for it in discover():
+            if it.manifest.slug != "ltt_llm":
+                continue
+            for t in it.manifest.tools:
+                r = getattr(t, "admission_resource", "")
+                if r:
+                    return r, int(getattr(t, "admission_slots", 1) or 1)
+    except Exception:                                          # noqa: BLE001
+        # ⛔ NOI RA. Roi ve mac dinh thi van chay duoc, nhung neu ban khai da doi
+        #    ma cho nay khong doc duoc thi planner se gianh SAI tai nguyen — va
+        #    mot suat gianh sai khong bao ve gi ca. Nuot im lang o day nghia la
+        #    lop bao ve bien mat ma khong ai biet.
+        log.warning("khong doc duoc ban khai ltt_llm; dung mac dinh %s",
+                    _TAI_NGUYEN_MAC_DINH, exc_info=True)
+    return _TAI_NGUYEN_MAC_DINH
 
 
 class PlannerError(RuntimeError):
@@ -59,22 +114,59 @@ def _goi_model(db: DbSession, prompt: str) -> str:
        Máy B bận thì `dieu_phoi` tự đi tiếp sang Gemini — và đó **không** phải
        "đổi model sau lưng khách" (D-010): việc lập kế hoạch là việc nội bộ, khách
        không mua "một kế hoạch do model X sinh ra", và thứ tự được **khai ra ở đây**.
+
+    🔴 VÀ PHẢI GIÀNH SUẤT ADMISSION TRƯỚC KHI CHẠM MÁY B (P08 F-06).
+
+       Trước 01/09 hàm này gọi thẳng `dieu_phoi` — **đường duy nhất** tới máy B
+       không đi qua `admission`. Ba đường còn lại (`streaming`, `chat`,
+       `job_runner`) đều giành suất.
+
+       Nó **vô hại cho tới hôm nay** chỉ vì một lỗi thứ hai che nó: nhánh
+       `ltt_llm` không bao giờ cấp được khoá (xem `_model_nha`). Sửa lỗi kia mà
+       không sửa lỗi này là **kích hoạt** một đường lách — nên hai bản vá đi
+       cùng một lượt, không tách.
+
+    ⭐ Không giành được suất thì **bỏ nhánh model nhà**, không xếp hàng chờ.
+       Việc lập kế hoạch là việc nội bộ; để nó chen chỗ một request khách đang
+       trả tiền là đổi thứ tự ưu tiên sai hướng.
     """
-    from platform_core.llm import dieu_phoi
+    import uuid as _uuid
+
+    from platform_core.llm import admission, dieu_phoi
+
+    thu_tu = list(PLANNER_PROVIDERS)
+    ban_do = {"gemini": PLANNER_MODEL}
+    id_nha = _model_nha()
+    ve = None
+    tai_nguyen, suat = _tai_nguyen_nha()
+
+    if id_nha:
+        ve = admission.acquire(
+            db, resource=tai_nguyen, slots=suat, user_id="he-thong:planner",
+            mode="job", holder_id="planner:" + _uuid.uuid4().hex[:12])
+        if ve is not None:
+            ban_do["ltt_llm"] = id_nha
+    if "ltt_llm" not in ban_do:
+        thu_tu = [p for p in thu_tu if p != "ltt_llm"]
 
     try:
         kq = dieu_phoi.goi(
             db,
             messages=[{"role": "user", "content": prompt}],
             category=APIKEY_CAT_CHAT,
-            thu_tu_provider=PLANNER_PROVIDERS,
-            model_theo_provider=PLANNER_MODEL_THEO_PROVIDER,
+            thu_tu_provider=tuple(thu_tu),
+            model_theo_provider=ban_do,
             timeout_s=120.0,
         )
     except dieu_phoi.KhongCoProviderNao as exc:
         # ⛔ Mọi provider đều bận/không cấp được key. KHÔNG phải lỗi provider —
         #    `dieu_phoi` đã lo việc đánh dấu lỗi cho đúng trường hợp rồi.
         raise PlannerError(f"Planner: {exc}") from None
+    finally:
+        # Nhả suất dù đi đường nào — kể cả khi `dieu_phoi` đã rơi sang Gemini và
+        # máy B không hề được chạm tới. Giữ một suất không dùng đúng bằng chiếm nó.
+        if ve is not None:
+            admission.release_by_id(ve.id)
 
     van = (kq.noi_dung or "").strip()
     if not van:

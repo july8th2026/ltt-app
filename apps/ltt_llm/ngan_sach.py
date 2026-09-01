@@ -42,6 +42,29 @@ from __future__ import annotations
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` bên B thì đổi ở đây.
 CUA_SO_MODEL = 131_072
 
+#: Cửa sổ ngữ cảnh của model **VISION** — `qwen38-vision` nạp với `-c 65536`
+#: (`llama-swap.yaml` trên máy B, và `llm_gateway/catalog.py:max_context`).
+#:
+#: 🔴 SỐ NÀY TỪNG KHÔNG TỒN TẠI, VÀ SỰ VẮNG MẶT CỦA NÓ LÀ MỘT LỜI HỨA SAI.
+#:
+#:    Trước 01/09 cả hai alias `ltt_llm` và `ltt_llm_vision` dùng **chung** một
+#:    con số công bố, dẫn xuất từ `CUA_SO_MODEL` (131.072). Nên `/api/v1/models`
+#:    nói với khách rằng vision có *"same 89K usable input context"* — trong khi
+#:    máy B chặn nó ở **65.536**. Đo thật 01/09, cùng một thân request:
+#:
+#:        ltt_llm_vision -> 413 {"tran":65536,"thay":71281}
+#:        ltt_llm        -> 200 (input_tokens that = 52.810)
+#:
+#:    ⭐ Điều đáng nhớ: `_cua_so_noi_voi_khach()` ở `manifest.py` được viết ngày
+#:       30/08 để giết **đúng lớp lỗi này** ("trước 30/08 chỗ này gõ tay 131K, và
+#:       đó là một lời hứa sai"). Nó giết được ở alias text và sống sót nguyên vẹn
+#:       ở alias vision — vì bản vá sửa *con số*, còn khuyết tật thật là **một con
+#:       số cho hai model khác nhau**.
+#:
+#: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` của `qwen38-vision` bên B
+#:    thì đổi ở đây. `test_334` buộc hai đầu lại.
+CUA_SO_MODEL_VISION = 65_536
+
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
 #: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
 #:    như không đổi được — trần thấp hơn khiến Claude Code không dùng được (H38/L2).
@@ -76,6 +99,43 @@ BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~433 KB
 #: thoại **trước** khi chạm trần. Chừa 8% cho lệch tokenizer: client đếm token
 #: bằng bộ đếm của nó, model đếm bằng bộ của Qwen, hai số không bao giờ khớp.
 CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                    # 88_555
+
+
+# ── Ngân sách THEO MODEL ───────────────────────────────────────────────────
+#
+# ⭐ Hai model, hai cửa sổ, nên **hai bộ số** — và đó là toàn bộ bài học của
+#    khuyết tật F-02: một con số dùng cho hai model là một con số sai cho ít
+#    nhất một trong hai.
+#
+# ⛔ Công thức phải GIỐNG HỆT đường text ở trên (chừa `TOKEN_RA_TRAN` cho câu
+#    trả lời dài nhất, chừa `LE` cho sai số ước, rồi bớt 8 % lệch tokenizer).
+#    Nếu vision được một công thức "nới tay" riêng thì con số công bố của hai
+#    model không còn mang **cùng một lời hứa**, và khách không có cách nào biết
+#    lời hứa nào áp cho model nào.
+
+#: Cửa sổ engine theo **id model nội bộ**. Khoá là id của máy B, không phải
+#: bí danh công khai — bí danh không bao giờ được rời máy A (INV-015).
+CUA_SO_THEO_MODEL = {
+    "qwen38-api": CUA_SO_MODEL,
+    "qwen38-vision": CUA_SO_MODEL_VISION,
+}
+
+
+def tran_vao_cua(model_id: str) -> int:
+    """Trần đầu vào thật sự dùng được của **một** model.
+
+    Ném `KeyError` với thông điệp nói rõ tên hợp lệ — im lặng trả một số mặc
+    định là cách chắc chắn nhất để lời hứa sai quay lại.
+    """
+    if model_id not in CUA_SO_THEO_MODEL:
+        raise KeyError(f"model khong biet: {model_id!r}; "
+                       f"phai la mot trong {sorted(CUA_SO_THEO_MODEL)}")
+    return CUA_SO_THEO_MODEL[model_id] - TOKEN_RA_TRAN - LE
+
+
+def cong_bo_cua(model_id: str) -> int:
+    """Con số ngữ cảnh **công bố cho client** của một model."""
+    return int(tran_vao_cua(model_id) * 0.92)
 
 
 # ══════════════════════════════════════════════════════════════════════════
