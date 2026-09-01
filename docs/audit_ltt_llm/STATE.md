@@ -189,7 +189,8 @@ Hai phase 03+04 có thể nâng đáng kể mà không cần đổi một dòng 
 | ~~P1~~ | Trọng tài GPU từ chối oan 70 % lượt | 06 | **A/B: 9/12 → 0/12 bị 429, chất lượng 12/12 không đổi.** Đã deploy | **ĐÓNG** |
 | ~~P2~~ | `deploy.ps1` im lặng về cấu hình chưa có hiệu lực | 06 | nay phát hiện + nói, không tự restart | **ĐÓNG** |
 | ~~P1~~ | G5 không có chủ sở hữu | 04 | `tools/danh_gia_llm.py` — 12/12 | **ĐÓNG** |
-| P2 | Vision **đang bán** mà chưa có bài đánh giá nào | 05 | thêm bài vision vào bộ đề | OPEN |
+| ~~P2~~ | ~~Vision đang bán mà chưa có bài đánh giá nào~~ | 04 | **`tools/danh_gia_vision.py` — 7/8**, đối chứng đạt. Trượt `vitri-02`: **buộc sai màu cho hình được gọi tên** | **ĐÓNG** |
+| P2 | Vision **buộc sai thuộc tính–hình dạng** | 04 | hỏi màu hình TRÒN, model trả màu hình VUÔNG. Định vị thì đúng (`vitri-01` đạt) | OPEN |
 | P2 | `65K` chết tới tay khách qua `/v1/models` | 01 | sửa 6 chỗ + một nguồn chân lý | OPEN |
 | P2 | `max_dong_thoi = 1` ⇒ một sự cố suất = **100 %** ngừng dịch vụ | 03 | không có mức suy giảm ở giữa | OPEN |
 | P3 | VRAM 22,4/24,6 GiB khi model nạp; ba hộ dùng chung card | 03/04 | benchmark phải kèm ảnh chụp `trong_tai` | OPEN |

@@ -1,0 +1,110 @@
+{
+ "model": "qwen38-vision",
+ "luc": "2026-09-01 07:46:31",
+ "bai": [
+  {
+   "van": "do",
+   "giay": 21.95,
+   "usage": {
+    "completion_tokens": 65,
+    "prompt_tokens": 329,
+    "total_tokens": 394,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "ctrl-01"
+  },
+  {
+   "van": "7",
+   "giay": 2.93,
+   "usage": {
+    "completion_tokens": 70,
+    "prompt_tokens": 337,
+    "total_tokens": 407,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "dem-07"
+  },
+  {
+   "van": "12",
+   "giay": 3.99,
+   "usage": {
+    "completion_tokens": 149,
+    "prompt_tokens": 335,
+    "total_tokens": 484,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "dem-12"
+  },
+  {
+   "van": "K7QX",
+   "giay": 2.81,
+   "usage": {
+    "completion_tokens": 59,
+    "prompt_tokens": 334,
+    "total_tokens": 393,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "chu-01"
+  },
+  {
+   "van": "48372",
+   "giay": 2.48,
+   "usage": {
+    "completion_tokens": 59,
+    "prompt_tokens": 332,
+    "total_tokens": 391,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "chu-02"
+  },
+  {
+   "van": "vuong",
+   "giay": 2.79,
+   "usage": {
+    "completion_tokens": 71,
+    "prompt_tokens": 350,
+    "total_tokens": 421,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "vitri-01"
+  },
+  {
+   "van": "vang",
+   "giay": 2.46,
+   "usage": {
+    "completion_tokens": 45,
+    "prompt_tokens": 332,
+    "total_tokens": 377,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "vitri-02"
+  },
+  {
+   "van": "Không có. Ảnh chỉ là một mảng màu xanh dương đồng nhất, không có con mèo hay bất kỳ đối tượng nào khác.",
+   "giay": 3.59,
+   "usage": {
+    "completion_tokens": 121,
+    "prompt_tokens": 334,
+    "total_tokens": 455,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "ma": "bia-01"
+  }
+ ]
+}
