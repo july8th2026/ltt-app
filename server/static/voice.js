@@ -164,7 +164,9 @@
 
     var gio = document.createElement("span");
     gio.className = "lv-phat-gio";
-    gio.textContent = "0:00";
+    /* `—` chu khong phai `0:00`: voi `preload="none"` ta CHUA BIET do dai, va
+       mot con so cu the ma sai con te hon mot dau gach thanh that. */
+    gio.textContent = "—";
 
     hop.appendChild(nut);
     hop.appendChild(song);
@@ -176,6 +178,39 @@
       var ph = Math.floor(gy / 60), gi = Math.floor(gy % 60);
       return ph + ":" + (gi < 10 ? "0" : "") + gi;
     }
+
+    /* ── Song TRANG TRI truoc khi co song THAT ────────────────────────────
+     *
+     * ⛔ `preload="none"` nghia la ta chua co du lieu de ve, nen dai song la
+     *    mot vet TRONG cho toi khi khach bam phat — trong y het mot phan tu
+     *    dung do. Do tren production 01/09: bon dong Lich su, bon vet trong.
+     *
+     * ⭐ Ve mot song GIA, tinh, mo — dung cach `_voice_the.html` da chon cho
+     *    luoi giong va da ghi ly do: "Hinh song chi la NGON NGU THI GIAC, khong
+     *    phai du lieu." No bi thay bang song THAT ngay khi bam phat.
+     *
+     * ⚠️ Hinh dang suy tu chinh URL, khong phai ngau nhien: mot dong Lich su
+     *    phai trong Y HET nhau qua moi lan tai trang. Song nhay mua giua hai
+     *    lan F5 la mot thu khien nguoi ta nghi du lieu doi. */
+    function songGia() {
+      var rong = song.clientWidth || 300;
+      var dpr = window.devicePixelRatio || 1;
+      var cao = song.clientHeight || 40;
+      song.width = Math.round(rong * dpr);
+      song.height = Math.round(cao * dpr);
+      song.getContext("2d").scale(dpr, dpr);
+      var h = 0, src = au.getAttribute("src") || "";
+      for (var i = 0; i < src.length; i++) h = (h * 31 + src.charCodeAt(i)) | 0;
+      var cot = Math.max(1, Math.floor(rong / 3)), d = [];
+      for (var k = 0; k < cot; k++) {
+        h = (h * 1103515245 + 12345) | 0;
+        d.push(0.18 + (Math.abs(h % 1000) / 1000) * 0.55);
+      }
+      song.__dinh = d;
+      veLaiSong(song, 0);
+    }
+    /* Cho mot nhip de canvas co be ngang that trong luoi flex. */
+    setTimeout(songGia, 0);
 
     var daVe = false;
     nut.addEventListener("click", function () {
