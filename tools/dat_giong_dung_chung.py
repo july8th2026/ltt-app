@@ -76,7 +76,7 @@ def main(argv=None) -> int:
         print(f"  chu so huu : {ho_so.owner_id}")
         print(f"  trang thai : {ho_so.trang_thai}")
         print(f"  dung chung : {ho_so.dung_chung}")
-        print(f"  cam ket    : {'co, ' + str(ck.tao_luc)[:19] if ck else 'KHONG CO'}")
+        print(f"  cam ket    : {'co, ' + str(ck.dong_y_luc)[:19] if ck else 'KHONG CO'}")
 
         if not (a.bat or a.tat):
             print("\n(chi xem — dung `--bat` hoac `--tat` de doi)")
