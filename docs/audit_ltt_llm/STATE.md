@@ -226,6 +226,63 @@ bị hỏng — xem `reports/06` §7 và `reports/02` §6.
 **một** tệp: `platform_core/public_api/governance.py` (khai hai bảng
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
+## 🔻 MỐC BÀN GIAO CHO PROMPT 08 *(01/09, phiên `lttstudiosapp-c3`)*
+
+Prompt 08 chạy ở **reviewer mode**: coi mọi thứ dưới đây là **lời khai cần kiểm
+chứng**, không phải sự thật. Mục này viết để giúp việc đó, không phải để bào chữa.
+
+### Trạng thái đã xác minh
+
+| | |
+|---|---|
+| Mã kho ↔ production máy A | **khớp**, đối chiếu SHA256 5/5 tệp |
+| Mã kho ↔ máy B | **khớp**, `deploy.ps1` đối chiếu 34/34 tệp mỗi lượt |
+| Gate đầy đủ | 🔴 **CHƯA XANH** — xem "Vì sao" dưới |
+
+### 🔴 BỐN CHỖ TÔI NGHĨ NGƯỜI NGHIỆM THU NÊN ĐÀO TRƯỚC
+
+Không phải danh sách lỗi. Là danh sách **chỗ tôi tự tin nhất mà bằng chứng mỏng
+nhất** — nếu tôi phải phá công việc của chính mình, tôi bắt đầu từ đây.
+
+1. **Mọi số đo trong đợt này đều do tôi tự dựng dụng cụ.** Và **tám lần** dụng cụ
+   ấy là thứ bị hỏng (`reports/06` §7, `reports/02` §6). Bảy lần cho ra kết quả
+   *đẹp*, một lần cho ra *âm tính giả* mà tôi suýt công bố thành khuyết tật P1.
+   ⇒ Đừng tin con số; **chạy lại bộ đo** và kiểm cả đối chứng của nó.
+
+2. **`test_385` xanh trong khi mã hỏng.** Nó kiểm hàm thuần `vi_sao_khong_dung_duoc`,
+   không kiểm đường HTTP — nên bản vá trả **500 thay vì 400** sống trên production
+   mà bộ test không thấy. Hỏi: **còn phép kiểm nào khác cùng hình dạng đó?**
+
+3. **F05 (máy A khởi động lại) là SUY RA, không phải QUAN SÁT.** Bảng ở
+   `reports/06` §12 dựng từ cấu hình đã đo, chưa có một lần reboot nào. N7/N9
+   vẫn mở. Đừng đọc nó như đã diễn tập.
+
+4. **`--lan 5` A/B chưa chạy.** Con số A/B `9/12 → 0/12` ở `reports/06` §1 là
+   **một lượt**, không phải một phép thống kê.
+
+### Vì sao gate chưa xanh, và vì sao đó KHÔNG phải khuyết tật
+
+Ba phiên cùng làm trên một cây. Một phiên (`a8`) đang ghi **đều đặn vài phút một
+lần**; bốn lượt gate gần nhất đều tự khai `[CAY DA DOI GIUA CHUNG — KHONG DUNG
+LAM BANG CHUNG]`. Bước đỏ duy nhất còn lại **không thuộc lane này**:
+
+```
+tools/do_ca_tai_hien_chan_doan.py:258   except Exception: continue
+Nuot loi lang le: 64 | moc: 63
+```
+
+⛔ Tôi **không** chạm vào nó. Đã gửi đề xuất cho chủ sở hữu (`a8`).
+
+⭐ Và ghi lại một sai lầm tôi suýt phạm, vì nó là loại hỏng **không hiện ra ở
+   gate**: tôi kết luận phiên trước "đã kết thúc, việc bị bỏ lại" từ **một** tín
+   hiệu (`ENOINBOX` trên địa chỉ pipe của nó), và đã cân nhắc tự sửa dòng đó cho
+   gate xanh. Phiên `lttstudiosapp-7f` đo **nhịp ghi tệp** và cho thấy một tệp
+   mới ra đời **11 giây** trước lượt đo của họ — việc không hề bị bỏ hoang. Làm
+   theo suy đoán của tôi là **xoá việc của một phiên đang sống, giữa chừng**.
+   Một cây xanh sau khi mất một giờ làm việc của người khác vẫn là một cây xanh.
+
+---
+
 ## Next phase — CÒN NỢ, theo thứ tự giá trị
 
 1. ~~`02` — bảy cửa sổ sự cố~~ **ĐÃ PHỦ** — tra kỹ thì cả bảy đều có phép
