@@ -275,3 +275,29 @@ def test_KHONG_nuot_dau_cach_o_ca_KHONG_doi():
                 i = ra.index(tu)
                 assert i == 0 or ra[i - 1] == " ", (
                     f"{vao!r} -> {ra!r}: mat dau cach truoc {tu!r}")
+
+
+def test_CUNG_MOT_SO_TIEN_hai_cach_viet_phai_cho_cung_ket_qua():
+    """🔴 Một hằng số sống sót qua một thiết kế đã đổi, rồi bắt đầu gây hại.
+
+    `_SO_LON_DEN = 9` sinh ra hồi luật số-trần còn khớp MỌI dãy số — lúc ấy nó
+    là thứ duy nhất loại được số điện thoại. Sau khi luật đòi thêm bằng chứng
+    ngữ cảnh (phải đứng trước một từ chỉ tiền), trần ấy thôi bảo vệ gì và bắt
+    đầu chặn tiền tỷ viết không dấu chấm:
+
+        1.250.000.000 đồng  ->  "một tỷ hai trăm năm mươi triệu đồng"
+        1250000000 đồng     ->  1250000000 đồng     (bi CHAN)
+
+    ⭐ Phép kiểm này chốt **tính nhất quán**, không chốt một con số. Nên nếu ai
+       đó đổi ngưỡng vì một lý do chính đáng, nó vẫn xanh — nó chỉ đỏ khi hai
+       cách viết cùng một số tiền lại cho hai kết quả khác nhau.
+    """
+    for so, co_nhom in (("1250000", "1.250.000"),
+                        ("12500000", "12.500.000"),
+                        ("1250000000", "1.250.000.000")):
+        a = _ch(f"Gi\u00e1 {so} \u0111\u1ed3ng")
+        b = _ch(f"Gi\u00e1 {co_nhom} \u0111\u1ed3ng")
+        assert a == b, (
+            f"cung mot so tien viet hai cach cho hai ket qua:\n"
+            f"  {so!r:>16} -> {a!r}\n  {co_nhom!r:>16} -> {b!r}")
+        assert so not in a, f"{so} van con la chu so: {a!r}"

@@ -222,10 +222,6 @@ def _doc_so(n: int) -> str:
 
 #: Từ 7 chữ số (≥ 1 triệu) engine bắt đầu đọc rời từng chữ số.
 _SO_LON_TU = 7
-#: Từ 10 chữ số trở lên gần như chắc chắn không phải một lượng: điện thoại, căn
-#: cước, số tài khoản.
-_SO_LON_DEN = 9
-
 #: ⭐ DẤU PHÂN CÁCH LÀ TÍN HIỆU, và suýt nữa ta vứt nó đi trước khi dùng.
 #:
 #:    `1.250.000.000` (mười chữ số) là tiền; `19001234567` (mười một chữ số) là
@@ -268,7 +264,22 @@ def _doc_so_lon(text: str) -> str:
     def _tran(m: re.Match) -> str:
         s = m.group(1)
         # Số 0 đứng đầu: mọi đầu số di động Việt Nam. Không bao giờ là một lượng.
-        if s[0] == "0" or not (_SO_LON_TU <= len(s) <= _SO_LON_DEN):
+        #
+        # ⚠️ KHÔNG còn trần độ dài ở đây, và việc gỡ nó là một BẢN SỬA chứ không
+        #    phải nới lỏng. `_SO_LON_DEN = 9` sinh ra hồi luật này còn khớp MỌI
+        #    dãy số trần — lúc ấy nó là thứ duy nhất loại được số điện thoại.
+        #
+        #    Nhưng luật nay đòi dãy số phải đứng ngay trước một TỪ CHỈ TIỀN, và
+        #    điều kiện ấy loại số điện thoại chặt hơn nhiều. Trần độ dài thôi
+        #    bảo vệ gì, và bắt đầu gây hại:
+        #
+        #        1.250.000.000 đồng  ->  "một tỷ hai trăm năm mươi triệu đồng"
+        #        1250000000 đồng     ->  1250000000 đồng   (bi CHAN, roi engine
+        #                                                   doc roi tung chu so)
+        #
+        #    Cùng một số tiền, hai cách viết, hai kết quả — chỉ vì một hằng số
+        #    còn sót lại từ một thiết kế đã đổi.
+        if s[0] == "0" or len(s) < _SO_LON_TU:
             return s
         return _doc_so(int(s)) or s
 
