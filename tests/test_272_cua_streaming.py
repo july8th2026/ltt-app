@@ -278,6 +278,55 @@ def test_so_REQUEST_ghi_dung_so_tien_da_thu_o_cua_stream(api, monkeypatch):
         f"noi mot dang con so tien noi mot dang khac")
 
 
+def test_tools_sai_khuon_tra_400_QUA_HTTP(api, monkeypatch):
+    """🔴 CÙNG HÌNH DẠNG VỚI `test_385`, NHƯNG ĐI QUA ĐƯỜNG HTTP THẬT.
+
+    `test_385_tools_sai_khuon` kiểm hàm thuần `tool_dich.vi_sao_khong_dung_duoc`.
+    Nó xanh suốt — trong khi bản vá trên production trả **500 thay vì 400**, và
+    bộ test không thấy gì. Hồi quy sống trên máy khách hàng một buổi.
+
+    ⛔ Đây không phải "không ai kiểm HTTP": giàn ngay trong tệp này đã có 25 phép
+       kiểm qua `TestClient`. Khuyết tật hẹp hơn và khó chịu hơn — **hồi quy được
+       chốt ở tầng hàm thuần dù giàn HTTP nằm sẵn bên cạnh**. Prompt 08 tìm thêm
+       ba tệp cùng hình dạng (`test_285`, `test_290`, `test_360`), và cả ba đều
+       canh đúng những lỗi mà *triệu chứng không chỉ về phía nguyên nhân*.
+
+    ⭐ Phép kiểm này chốt **ba** thứ mà tầng hàm thuần không với tới được:
+       mã trạng thái, thông điệp tới tay khách, và **không thu tiền**.
+    """
+    _dat_luong(monkeypatch)
+    user_id, token = _account()
+    truoc = _so_du(user_id)
+
+    than = _than()
+    than["tools"] = [{"type": "function", "function": {
+        "name": "tra_ton_kho", "parameters": {"type": "object"}}}]
+    r = api.post(MSG, json=than, headers=_h(token))
+
+    assert r.status_code == 400, (
+        f"khuon OpenAI o cua Anthropic phai la 400, nhan {r.status_code}. "
+        f"200 = tra loi hop ly ma sai; 500 = loi cua khach bi ke thanh loi cua ta")
+    b = r.json()
+    assert b.get("code") == "invalid_request", b
+    assert "input_schema" in b.get("detail", ""), (
+        "thong diep phai chi ra khuon DUNG, khong chi noi 'sai'")
+    assert b.get("retry") == "never", "khuon sai thi thu lai khong bao gio giup"
+    assert _so_du(user_id) == truoc, "yeu cau bi tu choi ma van thu tien"
+
+
+def test_tools_khuon_DUNG_van_qua_HTTP(api, monkeypatch):
+    """⛔ ĐỐI CHỨNG. Không có nó thì phép kiểm trên vẫn xanh khi cửa từ chối
+    **mọi** `tools`, kể cả khuôn đúng — tức một hồi quy nặng hơn hẳn."""
+    goi = _dat_luong(monkeypatch)
+    _u, token = _account()
+    than = _than()
+    than["tools"] = [{"name": "tra_ton_kho", "description": "d",
+                      "input_schema": {"type": "object", "properties": {}}}]
+    r = api.post(MSG, json=than, headers=_h(token))
+    assert r.status_code == 200, r.text
+    assert goi, "khong goi toi model"
+
+
 def test_so_REQUEST_ghi_dung_so_tien_o_nhanh_KHONG_STREAM(api, monkeypatch):
     """🔴 CÙNG route `/api/v1/messages`, nhưng ĐƯỜNG TIỀN THỨ HAI.
 

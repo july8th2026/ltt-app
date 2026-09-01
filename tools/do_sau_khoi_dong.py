@@ -97,14 +97,38 @@ def main() -> int:
         timeout=180)
     dong = [d.strip() for d in sk.splitlines() if d.strip()][:40]
     if not dong:
-        ghi(ra, "nhat_ky_khoi_dong", "KHONG DOC DUOC (can Administrator) "
-                                     "-- KHONG phai 'khong co su kien nao'")
-        print("   ⚠️ ĐÂY LÀ PHẦN CHỈ ĐỌC ĐƯỢC MỘT LẦN. Lấy nó bằng LocalSystem:")
-        print("      NexusAgent trên máy A chạy `LocalSystem`, và node của máy A là")
-        print("      286e1065-8eaa-4419-8681-2af26090578d. Gọi `exec` qua controller")
-        print("      https://192.168.2.17:9444 (token: %USERPROFILE%\\.nexus\\")
-        print("      claude-code.token, header `X-Nexus-Protocol: 1`) rồi chạy lại")
-        print("      chính tệp này. Xem `Ket_noi.md` trên Desktop.")
+        # 🔴 ĐỪNG ĐOÁN LÝ DO — ĐO NÓ.
+        #
+        #    Bản trước kết luận thẳng "KHONG DOC DUOC (can Administrator)" và in
+        #    sáu dòng hướng dẫn chạy lại bằng LocalSystem. Ngày 01/09 tôi làm
+        #    đúng y hướng dẫn đó (`whoami` = `nt authority\system`) và nhận kết
+        #    quả **y hệt**. Nguyên nhân thật: Windows máy này KHÔNG ghi sự kiện
+        #    7036 của Service Control Manager. Đo được: 3 sự kiện SCM từ lúc
+        #    boot, 0 khớp `LTTStudio|cloudflared`.
+        #
+        # ⭐ Chú thích ngay trên dặn "đừng trả danh sách rỗng, rỗng đọc lên y hệt
+        #    'không có sự kiện nào'". Bản vá tránh bẫy đó bằng cách nói **một câu
+        #    sai khác** — cùng lớp lỗi với `api_prod_canary.py`. Một cảnh báo
+        #    không tái hiện được sẽ bị phiên sau bỏ qua, và kéo theo cả những
+        #    cảnh báo đúng nằm cạnh nó.
+        tong = ps("$b=(Get-CimInstance Win32_OperatingSystem).LastBootUpTime; "
+                  "try { (Get-WinEvent -FilterHashtable @{LogName='System';"
+                  "ProviderName='Service Control Manager';StartTime=$b} "
+                  "-ErrorAction Stop | Measure-Object).Count } "
+                  "catch { 'LOI: ' + $_.Exception.Message }")
+        if tong.startswith("LOI:") or not tong.isdigit():
+            ghi(ra, "nhat_ky_khoi_dong", f"KHONG DOC DUOC log System -- {tong}")
+            print("   ⚠️ Truy vấn NÉM lỗi ⇒ đây thật sự là vấn đề quyền.")
+            print("      NexusAgent trên máy A chạy `LocalSystem`; node máy A là")
+            print("      286e1065-8eaa-4419-8681-2af26090578d. Xem `Ket_noi.md`.")
+        else:
+            ghi(ra, "nhat_ky_khoi_dong",
+                f"KHONG CO SU KIEN NAO KHOP (doc duoc {tong} su kien SCM tu luc "
+                f"boot, 0 khop LTTStudio|cloudflared) -- KHONG phai thieu quyen")
+            print(f"   ⭐ Đọc ĐƯỢC log ({tong} sự kiện SCM), chỉ là không sự kiện")
+            print("      nào của ta. Windows máy này không ghi 7036 'entered the")
+            print("      running state'. ⇒ Chạy lại bằng LocalSystem KHÔNG giúp.")
+            print("      Thứ tự lên đọc ở mục 2b (`Win32_Process.CreationDate`).")
     elif dong[0].startswith("LOI:"):
         ghi(ra, "nhat_ky_khoi_dong", dong[0])
     else:
@@ -120,7 +144,50 @@ def main() -> int:
             for d in do[:5]:
                 print("     ", d[:120])
 
-    print("\n== 4. Bao lau toi khi /health/ready xanh ==")
+    print("\n== 2b. Thu tu len THAT, do tu tien trinh (khong phu thuoc log) ==")
+    # ⭐ Đường này ĐÃ ĐƯỢC CHỨNG MINH hoạt động ngày 01/09, trong khi đường log
+    #    Windows ở mục 3 không bao giờ hoạt động trên máy này. Nó không cần
+    #    quyền Administrator và không cần sự kiện 7036 nào tồn tại.
+    tt2 = {}
+    for n in DICH_VU:
+        sinh = ps(
+            f"$s = Get-CimInstance Win32_Service -Filter \"Name='{n}'\" "
+            f"-ErrorAction SilentlyContinue; "
+            f"if ($s -and $s.ProcessId -gt 0) {{ "
+            f"$p = Get-CimInstance Win32_Process -Filter \"ProcessId=$($s.ProcessId)\" "
+            f"-ErrorAction SilentlyContinue; "
+            f"$b = (Get-CimInstance Win32_OperatingSystem).LastBootUpTime; "
+            f"if ($p) {{ [math]::Round(($p.CreationDate - $b).TotalSeconds,1) }} }}")
+        tt2[n] = sinh or "?"
+        try:
+            muon = float(sinh) > 300
+        except (TypeError, ValueError):
+            muon = False
+        dau = "  <- KHOI DONG LAI SAU BOOT, KHONG phai so do boot" if muon else ""
+        print(f"   {n:<18} vo boc sinh sau boot: +{sinh or '?'} s{dau}")
+    ghi(ra, "giay_sau_boot_moi_dich_vu", tt2)
+    # ⛔ NÓI RA khi con số không còn là số đo boot nữa. Một dịch vụ được deploy
+    #    khởi động lại lúc boot+3 giờ sẽ hiện `+10760 s` — con số ĐÚNG, nhưng
+    #    đọc lướt thì nó trông như "khởi động cực chậm". Đây chính là thứ mà
+    #    docstring của tệp dặn: "chạy muộn thì trạng thái đã bị các lượt khởi
+    #    động lại thủ công che mất". Nay công cụ tự phát hiện điều đó.
+    tre = [n for n, v in tt2.items()
+           if str(v).replace(".", "", 1).isdigit() and float(v) > 300]
+    ghi(ra, "dich_vu_da_khoi_dong_lai_sau_boot", tre)
+    if tre:
+        print(f"   ⚠️ {len(tre)}/{len(tt2)} dich vu da khoi dong lai SAU boot")
+        print("      ⇒ chung KHONG con lam bang chung cho N7 o luot boot nay.")
+
+    print("\n== 4. Do tre cua /health/ready LUC NAY (KHONG phai boot -> ready) ==")
+    # 🔴 TÊN CŨ CỦA MỤC NÀY LÀ MỘT LỜI NÓI DỐI NHỎ: "Bao lau toi khi
+    #    /health/ready xanh". `t0` đặt lúc **gọi công cụ**, không phải lúc boot.
+    #    Chạy ở boot+7 phút nó in `0,5 s`; chạy lại ở boot+15 phút nó in `0,6 s`.
+    #    Cả hai là độ trễ một request lúc ấy — con số boot→ready **chưa từng
+    #    được đo**, và mỗi lượt boot chỉ cho một cơ hội duy nhất.
+    #
+    # ⇒ Muốn con số thật thì phải có thứ thăm dò TRONG lúc khởi động. Mục 2b ở
+    #    trên cho chặn trên (lúc dịch vụ cuối cùng sinh ra); đó là thứ tốt nhất
+    #    đọc ngược lại được sau khi mọi việc đã xong.
     t0 = time.monotonic()
     xanh = None
     for _ in range(120):
@@ -130,7 +197,10 @@ def main() -> int:
             xanh = round(time.monotonic() - t0, 1)
             break
         time.sleep(2)
-    ghi(ra, "giay_cho_health_ready", xanh if xanh is not None else "QUA 240s")
+    # Ten khoa noi ra DUNG thu no do. Khoa cu `giay_cho_health_ready` doc len
+    # nhu "boot -> ready" va da bi doc nham dung nhu vay.
+    ghi(ra, "giay_do_tre_health_ready_luc_do",
+        xanh if xanh is not None else "QUA 240s")
 
     print("\n== 5. Cong tu khai co mo coi khong ==")
     dd = ps("try { (Invoke-RestMethod http://127.0.0.1:8100/health/ready "

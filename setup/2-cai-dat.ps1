@@ -29,6 +29,7 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
 # --------------------------------------------------------------- Invoke-Ngoai
 # Voi `$ErrorActionPreference = 'Stop'`, MOT EXE NGOAI ghi ra stderr se thanh
 # `NativeCommandError` va KET THUC script -- ngay ca khi exe do tra ve 0.
@@ -79,6 +80,73 @@ $src     = Split-Path -Parent $PSScriptRoot
 $gitPath = Join-Path $src '.git'
 if ((Test-Path $gitPath) -and -not (Test-Path $gitPath -PathType Container)) {
     throw "Dang cai tu mot CAY RIENG (git worktree): $src`nDeploy chi duoc chay tu cay chinh. Xem: python tools\cay_rieng.py liet-ke"
+}
+
+# !! KHOA DEPLOY DAT O DAY, KHONG PHAI O DAU TEP.
+#    `test_362::test_chot_dung_TRUOC_moi_thao_tac_ghi` doi chot cay rieng
+#    chay TRUOC moi `New-Item`, va khoi duoi day co mot cai. Ban dau toi
+#    dat no o dau tep va phep kiem do do NGAY -- dung viec: chan sau khi
+#    da tao thu muc trong production la chan muon.
+# ------------------------------------------------------------------ KHOA DEPLOY
+# !! VI SAO CO KHOI NAY: ngay 01/09 HAI luot deploy chay CHONG NHAU vao
+#    `C:\LTTPlatform\app`, cach nhau 56 giay, tu hai phien khac nhau:
+#
+#        pid=4172   sinh=18:49:39   cha=powershell.exe
+#        pid=16056  sinh=18:50:35   cha=nexus.exe
+#
+#    Khong co gi noi cho ai biet. Ca hai chep cung mot cay nguon nen lan do
+#    khong hong tep nao (da doi chieu SHA256 20 tep: 19 khop, 1 lech va tep do
+#    la viec dang sua do cua mot phien) -- nhung do la MAY, khong phai thiet ke.
+#
+# ** VA THU THIEU KHONG CHI LA MOT KHOA. Mot khoa im lang chi bien "ghi de nhau"
+#    thanh "treo khong ro vi sao". Nen khoa nay ghi AI GIU, TU LUC NAO, COMMIT
+#    NAO -- luot thu hai in duoc cau do ra thay vi doi mu.
+#
+# !! FAIL-SAFE: moi loi cua chinh khoi nay chi CANH BAO roi di tiep. Mot bug o
+#    day khong duoc phep chan moi lan deploy cua ca nhom.
+$khoaTep = Join-Path $Root 'deploy.lock'
+$daGiuKhoa = $false
+try {
+    if (-not (Test-Path $Root)) { New-Item -ItemType Directory -Path $Root -Force | Out-Null }
+    if (Test-Path $khoaTep) {
+        $cu = $null
+        try { $cu = Get-Content $khoaTep -Raw | ConvertFrom-Json } catch { $cu = $null }
+        $songSot = $false
+        if ($cu -and $cu.pid) {
+            $songSot = [bool](Get-Process -Id ([int]$cu.pid) -ErrorAction SilentlyContinue)
+        }
+        if ($songSot) {
+            Write-Host ""
+            Write-Host "  [DUNG] Mot luot deploy KHAC dang chay." -ForegroundColor Red
+            Write-Host "         pid    : $($cu.pid)"
+            Write-Host "         tu luc : $($cu.bat_dau)"
+            Write-Host "         commit : $($cu.commit)"
+            Write-Host "         boi    : $($cu.boi)"
+            Write-Host ""
+            Write-Host "  Doi no xong roi chay lai. Neu chac chan no da chet thi" -ForegroundColor Yellow
+            Write-Host "  xoa $khoaTep roi chay lai." -ForegroundColor Yellow
+            exit 2
+        }
+        Write-Host "  [!] Khoa deploy cu (pid $($cu.pid) khong con song) - lay lai." -ForegroundColor Yellow
+        Remove-Item $khoaTep -Force -ErrorAction SilentlyContinue
+    }
+    $commit = 'khong-doc-duoc'
+    try {
+        $g = & git -C $PSScriptRoot rev-parse --short HEAD 2>$null
+        if ($LASTEXITCODE -eq 0 -and $g) { $commit = $g.Trim() }
+    } catch { $commit = 'khong-doc-duoc' }
+    # Ghi KHONG BOM, va KHONG dung Set-Content: PowerShell 5.1 chen BOM, va
+    # `test_61` chan ca hai ten lenh do trong tep nay. `Write-NoBom` dinh nghia
+    # ben duoi nen chua goi duoc o day.
+    $than = @{ pid = $PID
+               bat_dau = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+               commit = $commit
+               boi = "$env:USERNAME@$env:COMPUTERNAME"
+             } | ConvertTo-Json -Compress
+    [IO.File]::WriteAllText($khoaTep, $than, (New-Object Text.UTF8Encoding($false)))
+    $daGiuKhoa = $true
+} catch {
+    Write-Host "  [!] Khong dat duoc khoa deploy ($_) - di tiep." -ForegroundColor Yellow
 }
 $appDir  = Join-Path $Root 'app'
 $dataDir = Join-Path $Root 'data'
@@ -739,3 +807,10 @@ Write-Host "  3. Chay: .\setup\4-nghiem-thu.ps1"
 Write-Host ""
 Write-Host "QUAN TRONG: sao luu $secrets\app.env ra cho an toan." -ForegroundColor Yellow
 Write-Host "Mat LTT_TOKEN_ENCRYPTION_KEY la mat toan bo token Facebook/TikTok da luu." -ForegroundColor Yellow
+
+# Nha khoa deploy. Loi o day chi canh bao: mot khoa sot lai se duoc luot
+# sau nhan ra la CU (pid khong con song) va lay lai.
+if ($daGiuKhoa) {
+    try { Remove-Item $khoaTep -Force -ErrorAction Stop }
+    catch { Write-Host "  [!] Khong xoa duoc $khoaTep - luot sau se tu lay lai." -ForegroundColor Yellow }
+}
