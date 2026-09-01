@@ -46,19 +46,36 @@ def _ai_dang_nghe(host: str, port: int) -> str | None:
 configure_logging(component="server")
 app = create_app()
 
+# 🔴 PHẢI Ở MỨC MODULE, KHÔNG PHẢI TRONG `if __name__ == "__main__"`.
+#
+#    NSSM khởi động dịch vụ bằng `python -m uvicorn server.run:app`, tức tệp này
+#    được **import** và `__main__` **không bao giờ chạy**. Bản đầu tôi đặt lời
+#    gọi trong `__main__` và nó nằm trong mã chết suốt — production trả về
+#    `"chua goi khoi_tao() luc khoi dong ung dung"` sau khi deploy.
+#
+# ⭐ Và đó chính là lý do `to_tien.trang_thai()` **từ chối tự chụp muộn**: nếu nó
+#    lười khởi tạo thì trường này đã im lặng chụp ở lượt gọi `/health/ready` đầu
+#    tiên, cho ra một câu trả lời **trông hoàn toàn bình thường**, và lỗi wiring
+#    này sẽ không bao giờ lộ ra. Một phép đo thành thật về sự vắng mặt của chính
+#    nó đã bắt được lỗi của người viết ra nó.
+#
+# ⚠️ Cái giá: hai phép kiểm import `server.run` nay trả thêm ~0,3 s cho một lượt
+#    gọi PowerShell. Chấp nhận được — `create_app()` (thứ mọi phép kiểm khác
+#    dùng) vẫn không đụng tới.
+to_tien.khoi_tao()
+
 if __name__ == "__main__":
     host = os.environ.get("LTT_SERVER_HOST", "127.0.0.1")
     port = int(os.environ.get("LTT_SERVER_PORT", "8100"))
 
-    # Chụp tổ tiên NSSM ở ĐÂY chứ không trong `create_app()`: đây là điểm vào của
-    # dịch vụ thật, còn `create_app()` bị mọi phép kiểm gọi — và mỗi lượt chụp là
-    # một lần khởi động PowerShell (~0,3 s).
+    # ⚠️ CHỐT CỔNG NÀY CHỈ CHE ĐƯỜNG `python server/run.py` TRỰC TIẾP.
     #
-    # ⛔ Và không lười khởi tạo: chụp SAU khi vỏ bọc đã chết sẽ thấy một cây
-    #    không có `nssm`, kết luận "đang chạy tay", rồi im lặng mãi. Xem `to_tien`.
-    to_tien.khoi_tao()
-
-    # 🔴 CỔNG ĐÃ CÓ NGƯỜI GIỮ = DỪNG NGAY, NÓI TO.
+    #    Dưới NSSM thì uvicorn là bên bind, và nó tự báo lỗi bind của nó. Không
+    #    đưa chốt này lên mức module được: hai phép kiểm import `server.run`, và
+    #    cổng 8100 lúc đó **đang có production giữ** ⇒ chốt sẽ giết chúng.
+    #
+    #    Nên giá trị của nó ở đây nhỏ hơn bản máy B (nơi cổng tự chạy `main()`).
+    #    Phần bắt mồ côi thật sự nằm ở `/health/ready` → `duoi_dich_vu`.
     #
     #    Đo trên máy B 01/09: vỏ bọc NSSM chết ⇒ tiến trình con sống sót mồ côi,
     #    giữ cổng, và bản mới không bind được. Dịch vụ đứng ở `Paused` **không
