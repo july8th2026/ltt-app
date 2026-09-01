@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:a655c991e39144dc00508374f88b1fd6b33daa6651c1570d564cacf463d66524
-Nguồn đã quét : 1393 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:343f80eaaca176eab77c86e3318face74d6398f452a4b964e2a675ed58d2795b
+Nguồn đã quét : 1397 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -620,12 +620,12 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:413
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:87
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
-- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:45
-- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:121
-- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:129
+- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:46
+- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:122
+- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:130
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
-- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:181
-- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:66
+- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:182
+- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:67
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:181
@@ -897,18 +897,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - upload_sessions → UploadSession | platform_core/models.py:425
 - users → User | platform_core/models.py:73
 - voice_block → VoiceBlock | apps/ltt_voice/tables_du_an.py:162
-- voice_consent → VoiceConsent | apps/ltt_voice/tables.py:152
-- voice_profile → VoiceProfile | apps/ltt_voice/tables.py:63
+- voice_consent → VoiceConsent | apps/ltt_voice/tables.py:192
+- voice_profile → VoiceProfile | apps/ltt_voice/tables.py:75
 - voice_project → VoiceProject | apps/ltt_voice/tables_du_an.py:126
-- voice_ref → VoiceRef | apps/ltt_voice/tables.py:100
-- voice_repr → VoiceRepr | apps/ltt_voice/tables.py:121
+- voice_ref → VoiceRef | apps/ltt_voice/tables.py:138
+- voice_repr → VoiceRepr | apps/ltt_voice/tables.py:160
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
 - vps_gateway → VpsGateway | apps/vps/tables.py:68
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (63)
+6. ALEMBIC MIGRATIONS (64)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -972,6 +972,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - b2c8e41d5a90 ← a1f7c3d90b12 | voice_*: owner_id BigInteger -> String(36) | alembic/versions/20260831_1000_voice_owner_uuid.py
 - c3d9f52a7e18 ← b2c8e41d5a90 | Bang cua man DU AN cua LTT VOICE: voice_project, voice_block. | alembic/versions/20260831_1600_voice_du_an.py
 - d4e0a63b8f29 ← c3d9f52a7e18 | Chay lo dung chung bang voi Du an: them `loai`, `nhan`, `loi`. | alembic/versions/20260831_1800_voice_lo.py
+- a5f31c07d2b4 ← d4e0a63b8f29 | voice_profile.dung_chung — kho giọng dùng chung của nền tảng | alembic/versions/20260901_0200_voice_dung_chung.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1172,7 +1173,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (336 file pytest + 3 frontend)
+10. QUALITY GATES (337 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1471,6 +1472,7 @@ Test inventory:
 - tests/test_378_noi_day_canh_bao_cpu.py
 - tests/test_379_to_tien_may_a.py
 - tests/test_37_p3_web_foundation.py
+- tests/test_380_kho_giong_dung_chung.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1535,8 +1537,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1393 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:41, .py:1053, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1397 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:42, .py:1056, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1549,7 +1551,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 [README.md] (1)
 - README.md
 
-[alembic] (65)
+[alembic] (66)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1615,6 +1617,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - alembic/versions/20260831_1000_voice_owner_uuid.py
 - alembic/versions/20260831_1600_voice_du_an.py
 - alembic/versions/20260831_1800_voice_lo.py
+- alembic/versions/20260901_0200_voice_dung_chung.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2450,7 +2453,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (26)
+[setup] (27)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2464,6 +2467,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/cong_chat_luong_voice.ps1
 - setup/cong_tac_tool_api.ps1
 - setup/dat_bien_env.ps1
+- setup/dat_giong_dung_chung.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/do_dung_chay_lo.ps1
 - setup/do_gia_von_voice.ps1
@@ -2478,7 +2482,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (353)
+[tests] (354)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2788,6 +2792,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_378_noi_day_canh_bao_cpu.py
 - tests/test_379_to_tien_may_a.py
 - tests/test_37_p3_web_foundation.py
+- tests/test_380_kho_giong_dung_chung.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -2833,7 +2838,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (142)
+[tools] (143)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2889,6 +2894,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/create_admin.py
 - tools/cua_so_yen.py
 - tools/danh_gia_llm.py
+- tools/dat_giong_dung_chung.py
 - tools/dev_portal_harness.py
 - tools/dich_ltt_voice_en.py
 - tools/do_bo_cuc.py
@@ -2986,7 +2992,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1393 file; 13795904 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1397 file; 13818945 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -8505,6 +8511,51 @@ def downgrade() -> None:
                     ["owner_id", "trang_thai"])
     op.drop_index("ix_voice_project_loai", table_name="voice_project")
     op.drop_column("voice_project", "loai")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260901_0200_voice_dung_chung.py
+SHA256=f604e90824dff7871bea6cc6a6e6daaed71e49b8df7c7b6f78e49faabb8eaad3 BYTES=1421 LINES=39
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""voice_profile.dung_chung — kho giọng dùng chung của nền tảng
+
+🔴 MẶC ĐỊNH `False`, VÀ MIGRATION NÀY KHÔNG ĐẶT `True` CHO BẤT KỲ DÒNG NÀO.
+
+   Một giọng nhân bản là dữ liệu sinh trắc của một con người. Một migration
+   "tiện tay" bật cột này cho các dòng cũ sẽ **công khai giọng của khách** cho
+   mọi tài khoản khác — và đó là loại lỗi không lấy lại được bằng một bản vá,
+   vì thứ đã bị đọc thì đã bị đọc.
+
+   Bật một giọng lên kho chung là một hành động **có chủ ý, từng cái một**, qua
+   `tools/dat_giong_dung_chung.py`.
+
+Revision ID: a5f31c07d2b4
+Revises: d4e0a63b8f29
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "a5f31c07d2b4"
+down_revision = "d4e0a63b8f29"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.add_column(
+        "voice_profile",
+        sa.Column("dung_chung", sa.Boolean(), nullable=False,
+                  server_default=sa.false()))
+    # Index vì MỌI truy vấn danh sách sẽ lọc theo nó cùng `owner_id`.
+    op.create_index("ix_voice_profile_dung_chung", "voice_profile",
+                    ["dung_chung"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_voice_profile_dung_chung", table_name="voice_profile")
+    op.drop_column("voice_profile", "dung_chung")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -19080,7 +19131,7 @@ def tom_tat(cac: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/features.py
-SHA256=006d22f62e30668f91c0740aced55dcdb0d5c4163ce13349919633f52d7d2cbf BYTES=12127 LINES=260
+SHA256=204c1b93437db720ebbed19ebe54e23e7ce31cccff98ab37826900c289e553c5 BYTES=12365 LINES=263
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — NGHIỆP VỤ của LTT VOICE. Mọi cửa gọi vào đây.
@@ -19275,7 +19326,10 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if not yc.voice_id:
         return None, (yc.preset or None), ()
 
-    ho_so = tham_chieu.tim_profile(db, yc.voice_id, owner_id=yc.owner_id)
+    # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
+    # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
+    ho_so = tham_chieu.tim_profile(db, yc.voice_id, owner_id=yc.owner_id,
+                                   cho_dung_chung=True)
     if ho_so is None:
         # ⛔ Cùng một thông điệp cho "không tồn tại" và "không phải của bạn".
         #    Phân biệt hai câu đó là cho phép dò xem `voice_id` nào có thật.
@@ -21122,7 +21176,7 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_giong.py
-SHA256=a00a874e3d9f15e19f50d7a15aeec575bbc799d9db1850e8f7cef84356816372 BYTES=5999 LINES=142
+SHA256=9db21a566a78d072f23bab37aaf66c6bab58e8b0fbbcc9c0b41fabcbd926c6da BYTES=6604 LINES=148
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Giọng: lưới giọng, ghi danh giọng mới, tắt giọng."""
 from __future__ import annotations
@@ -21145,7 +21199,8 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
     gen = _db()
     db = next(gen)
     try:
-        giong = tham_chieu.danh_sach(db, owner_id=uid)
+        # Kho chung của nền tảng hiện cùng lưới, sau giọng của chính khách.
+        giong = tham_chieu.danh_sach(db, owner_id=uid, gom_dung_chung=True)
         hang_doi = vo.dem_dang_chay(db, uid)
         thong_ke = doc_man_giong.thong_ke_theo_giong(db, uid, MANIFEST.slug)
         chi_tiet = doc_man_giong.chi_tiet_cho_trang(
@@ -21252,8 +21307,13 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
     gen = _db()
     db = next(gen)
     try:
+        # ⛔ KHÔNG `cho_dung_chung` ở đây, và đó là cả ý nghĩa của cửa này.
+        #    Giọng kho chung ai cũng DÙNG được nhưng không ai SỬA được; tìm
+        #    theo chủ sở hữu là thứ giữ điều đó đúng. Nếu một ngày ai thêm
+        #    `cho_dung_chung=True` cho tiện, khách đầu tiên bấm "Tắt giọng này"
+        #    sẽ tắt nó cho toàn bộ nền tảng.
         ho_so = tham_chieu.tim_profile(db, public_id, owner_id=_uid(user))
-        if ho_so is None:
+        if ho_so is None or not tham_chieu.chi_chu_so_huu(ho_so, _uid(user)):
             return JSONResponse({"ok": False, "loi": _t("Không tìm thấy giọng.")},
                                 status_code=404)
         ho_so.trang_thai = "disabled"
@@ -21327,7 +21387,7 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_tao.py
-SHA256=3c86b60d216463a7d854e373d0e6a892b3c5ffffaa1e4f4d9f42a732425d6ff0 BYTES=12415 LINES=253
+SHA256=55a544446aeb5e73ac233f468c11afce7ad5d572d9e3da00ac7fc7dde7f2d758 BYTES=12520 LINES=254
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Tạo tiếng nói: dựng trang, xem trước cách đọc, nộp job,
 theo dõi kết quả."""
@@ -21365,7 +21425,8 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     gen = _db()
     db = next(gen)
     try:
-        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        # Bộ chọn giọng: giọng của khách + kho chung của nền tảng.
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid, gom_dung_chung=True)
         hang_doi = vo.dem_dang_chay(db, uid)
         # "Gần đây" chỉ ba dòng: nó là một lối quay lại, không phải màn Lịch sử
         # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.
@@ -21751,7 +21812,7 @@ def giong_dung_san() -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tables.py
-SHA256=ebcf5aedafddede4d7b05df4955e7e4ced29b86e1f4ca8c123d412480ba2d9e8 BYTES=10613 LINES=192
+SHA256=9054534fc98834ee260d509fef9d7fc9ca13f6b4c757018005688f5240b89c12 BYTES=13247 LINES=233
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của LTT VOICE. Tiền tố `voice_` theo `MANIFEST.table_prefix`.
 
@@ -21801,6 +21862,18 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
 
+#: 🔴 `BigInteger` THUẦN KHÔNG TỰ TĂNG TRÊN SQLITE.
+#:
+#:    Production chạy PostgreSQL nên nó đúng ở đó, và sai **chỉ trong test** —
+#:    tức sai ở đúng chỗ không ai nhìn thấy cho tới khi có người viết một phép
+#:    kiểm chạm bảng này trên SQLite, rồi nhận `NOT NULL constraint failed:
+#:    voice_profile.id` và tưởng mình viết sai fixture.
+#:
+#: ⭐ `tables_du_an.py` đã giải đúng bài này từ trước bằng `with_variant`; đây
+#:    chỉ là mang lời giải ấy sang tệp anh em. Hai tệp cùng dự án mà một tệp
+#:    test được còn tệp kia thì không là một chênh lệch không có lý do nào.
+KHOA_CHINH = BigInteger().with_variant(Integer, "sqlite")
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -21826,7 +21899,8 @@ class VoiceProfile(Base):
         Index("ix_voice_profile_owner", "owner_id", "trang_thai"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     #: Thứ DUY NHẤT khách và API nhìn thấy. Không bao giờ đổi, kể cả khi đổi engine.
     public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True,
                                            default=sinh_public_id)
@@ -21847,6 +21921,31 @@ class VoiceProfile(Base):
     trang_thai: Mapped[str] = mapped_column(String(24), default="dang_ghi_danh",
                                             index=True)
 
+    #: 🔴 GIỌNG NÀY CÓ PHẢI KHO DÙNG CHUNG CỦA NỀN TẢNG KHÔNG.
+    #:
+    #:    Trước 01/09/2026 hệ thống có đúng hai loại giọng, và **không có gì ở
+    #:    giữa**:
+    #:      · "Giọng mẫu"     — preset dựng sẵn của engine, ai cũng dùng được,
+    #:                          nhưng ta không tạo thêm được cái nào;
+    #:      · "Giọng của tôi" — nhân bản, và `giai_giong` kiểm chủ sở hữu ở
+    #:                          **một chỗ duy nhất**, nên nó không thể dùng chung.
+    #:
+    #:    Nghĩa là một giọng nhân bản hay tới đâu cũng chỉ phục vụ được đúng
+    #:    một tài khoản. Cột này mở ra loại thứ ba: giọng **nền tảng sở hữu**,
+    #:    mọi khách đọc được, không khách nào sửa hay tắt được.
+    #:
+    #: ⛔ MẶC ĐỊNH `False`, và điều đó là bắt buộc chứ không phải cẩn thận.
+    #:    Một giọng nhân bản là dữ liệu sinh trắc của một con người. Mặc định
+    #:    `True` — hay một migration đặt `True` cho các dòng cũ — sẽ **công khai
+    #:    giọng của khách** cho mọi tài khoản khác, và đó là loại lỗi không lấy
+    #:    lại được bằng một bản vá.
+    #:
+    #: ⚠️ Bật cột này KHÔNG bỏ qua `VoiceConsent`. Một giọng dùng chung vẫn phải
+    #:    có bút toán cam kết quyền; nó chỉ đổi **ai đọc được**, không đổi **ai
+    #:    chịu trách nhiệm**.
+    dung_chung: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False, index=True)
+
     tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     sua_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                               default=_now, onupdate=_now)
@@ -21862,7 +21961,8 @@ class VoiceRef(Base):
         UniqueConstraint("profile_id", "sha256", name="uq_voice_ref_hash"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
     #: Khoá trong `platform_core.storage`. Bản GỐC, không phải bản đã xử lý.
     storage_key: Mapped[str] = mapped_column(String(512))
@@ -21881,7 +21981,8 @@ class VoiceRepr(Base):
         Index("ix_voice_repr_profile", "profile_id", "trang_thai"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
     ref_id: Mapped[int] = mapped_column(BigInteger, index=True)
 
@@ -21909,7 +22010,8 @@ class VoiceConsent(Base):
 
     __tablename__ = "voice_consent"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
     owner_id: Mapped[str] = mapped_column(String(36), index=True)
 
@@ -24142,7 +24244,7 @@ def chuan_bi(text: str, *, tran_moi_doan: int, doc_so_tran: bool = False,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_chieu.py
-SHA256=38a63fb799c759c59c1b98b89572e89b25bac9e5f2ba32b3aeea09d5d1121e43 BYTES=5089 LINES=125
+SHA256=21e9adc382519ff582f721e8e033d50a557592397344f19c604ad6a37252a0ec BYTES=7563 LINES=170
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_chieu.py — tra cứu và lưu Voice Profile / biểu diễn engine.
@@ -24181,33 +24283,78 @@ def van_tay(data: bytes) -> str:
 
 # ── tra cứu ──────────────────────────────────────────────────────────────────
 
-def tim_profile(db, public_id: str, *, owner_id: str):
+def tim_profile(db, public_id: str, *, owner_id: str, cho_dung_chung: bool = False):
     """Tìm theo `public_id` **và** chủ sở hữu, trong MỘT truy vấn.
 
     ⛔ Đừng tách thành "tìm theo id rồi so owner": hai bước thì có một khoảng
        trống ở giữa mà một bản vá sau này rất dễ quên bước hai. Một truy vấn thì
        không quên được.
+
+    `cho_dung_chung=True` mở thêm các giọng **kho chung của nền tảng**
+    (`dung_chung=True`) — chúng không thuộc ai nhưng ai cũng ĐỌC được.
+
+    🔴 THAM SỐ NÀY MẶC ĐỊNH `False`, VÀ THỨ TỰ ĐÓ QUAN TRỌNG.
+
+       Hàm này là chỗ **duy nhất** kiểm quyền sở hữu giọng, nên nó cũng là chỗ
+       một lỗi ở đây trở thành một lỗ rò dữ liệu sinh trắc. Mặc định đóng nghĩa
+       là mọi lời gọi CŨ giữ nguyên hành vi cũ, và chỉ những cửa **cố ý** mở
+       mới thấy kho chung.
+
+    ⛔ Và nó chỉ mở đường ĐỌC. Sửa, tắt, xoá một giọng dùng chung vẫn đòi đúng
+       chủ — xem `_chi_chu_so_huu`. Gộp "ai dùng được" với "ai sửa được" vào một
+       phép kiểm là cách một khách tắt mất giọng của cả nền tảng.
     """
-    from sqlalchemy import select
+    from sqlalchemy import or_, select
 
     from .tables import VoiceProfile
-    if not public_id or not owner_id:
+    if not public_id:
         return None
-    return db.execute(
-        select(VoiceProfile).where(
-            VoiceProfile.public_id == str(public_id),
-            VoiceProfile.owner_id == str(owner_id))
-    ).scalar_one_or_none()
+    dk = [VoiceProfile.public_id == str(public_id)]
+    if cho_dung_chung:
+        if owner_id:
+            dk.append(or_(VoiceProfile.owner_id == str(owner_id),
+                          VoiceProfile.dung_chung.is_(True)))
+        else:
+            dk.append(VoiceProfile.dung_chung.is_(True))
+    elif owner_id:
+        dk.append(VoiceProfile.owner_id == str(owner_id))
+    else:
+        return None
+    return db.execute(select(VoiceProfile).where(*dk)).scalar_one_or_none()
 
 
-def danh_sach(db, *, owner_id: str, gom_tat: bool = False) -> list:
-    from sqlalchemy import select
+def chi_chu_so_huu(ho_so, owner_id: str) -> bool:
+    """Người này có được **SỬA** hồ sơ đó không (tắt, đổi tên, xoá).
+
+    ⛔ Tách hẳn khỏi "có được DÙNG không". Một giọng dùng chung thì mọi khách
+       đọc được, nhưng chỉ chủ sở hữu — nền tảng — mới đổi được. Không tách thì
+       khách đầu tiên bấm "Tắt giọng này" sẽ tắt nó cho tất cả mọi người.
+    """
+    return bool(ho_so is not None and owner_id
+                and str(ho_so.owner_id) == str(owner_id))
+
+
+def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
+              gom_dung_chung: bool = False) -> list:
+    """Giọng của một người. `gom_dung_chung` thêm kho chung của nền tảng.
+
+    ⛔ Mặc định KHÔNG gồm kho chung, cùng lý do với `tim_profile`: màn nào muốn
+       thấy nó phải nói ra. Một danh sách âm thầm dài thêm là cách một cửa
+       "quản lý giọng của tôi" bỗng liệt kê cả giọng nó không được sửa.
+    """
+    from sqlalchemy import or_, select
 
     from .tables import VoiceProfile
-    q = select(VoiceProfile).where(VoiceProfile.owner_id == str(owner_id))
+    dk = VoiceProfile.owner_id == str(owner_id)
+    if gom_dung_chung:
+        dk = or_(dk, VoiceProfile.dung_chung.is_(True))
+    q = select(VoiceProfile).where(dk)
     if not gom_tat:
         q = q.where(VoiceProfile.trang_thai != "revoked")
-    return list(db.execute(q.order_by(VoiceProfile.tao_luc.desc())).scalars())
+    # Kho chung xuống dưới giọng của chính khách: thứ họ tự tạo là thứ họ đi tìm.
+    return list(db.execute(
+        q.order_by(VoiceProfile.dung_chung.asc(),
+                   VoiceProfile.tao_luc.desc())).scalars())
 
 
 def tim_repr_active(db, profile_id: int):
@@ -166429,6 +166576,81 @@ exit 0
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/dat_giong_dung_chung.ps1
+SHA256=cd2a822aac52c4a5367b5abae519be003f5b6b7450c0691a70618945a2fa5f57 BYTES=2374 LINES=69
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Put one cloned voice into the platform's shared library.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    Writes one row. It never flips more than one voice per run, on purpose:
+    a cloned voice is a person's biometric data.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\dat_giong_dung_chung.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    [string]$VoiceId = '',
+    [switch]$Bat,
+    [switch]$Tat,
+    [switch]$Xem
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\dat_giong_dung_chung.py'
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+if ($VoiceId) { $doiSo += @('--voice-id', $VoiceId) }
+if ($Bat) { $doiSo += '--bat' }
+if ($Tat) { $doiSo += '--tat' }
+if ($Xem) { $doiSo += '--xem' }
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/deploy_nang_quyen.ps1
 SHA256=3a6ef1a5dc77ef3b807e333e950db04dfc42733ba4154ab2fc06d0fe995c4464 BYTES=3217 LINES=80
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -247461,6 +247683,191 @@ def test_status_page_khong_goi_mang_nao(tmp_path):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_380_kho_giong_dung_chung.py
+SHA256=bb2407930b9cc92b6fac6a46671ee175b0a9f7b1c065b99f5200fefc2118133d BYTES=7672 LINES=179
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+Kho giọng **dùng chung của nền tảng** — ai đọc được, và ai KHÔNG sửa được.
+
+Trước 01/09/2026 hệ thống có đúng hai loại giọng và không có gì ở giữa:
+
+  · **Giọng mẫu**     — preset dựng sẵn của engine. Ai cũng dùng, nhưng ta
+                        không tạo thêm được cái nào.
+  · **Giọng của tôi** — nhân bản, và `giai_giong` kiểm chủ sở hữu ở **một chỗ
+                        duy nhất**, nên nó không thể dùng chung.
+
+Nghĩa là một giọng nhân bản hay tới đâu cũng chỉ phục vụ đúng một tài khoản.
+`VoiceProfile.dung_chung` mở loại thứ ba: giọng nền tảng sở hữu, mọi khách đọc
+được, không khách nào sửa được.
+
+🔴 CỘT NÀY CHẠM DỮ LIỆU SINH TRẮC CỦA MỘT CON NGƯỜI, nên mọi phép kiểm ở đây
+   chốt về phía ĐÓNG:
+
+     ① mặc định `False` — một giọng mới không bao giờ tự công khai;
+     ② `tim_profile` mặc định KHÔNG thấy kho chung — cửa nào muốn thấy phải
+        nói ra, nên mọi lời gọi cũ giữ nguyên hành vi cũ;
+     ③ "dùng được" và "sửa được" là hai phép kiểm khác nhau.
+
+⛔ ② quan trọng hơn vẻ ngoài của nó. `tim_profile` là chỗ **duy nhất** kiểm
+   quyền sở hữu giọng; nếu mặc định của nó là mở, thì mọi cửa viết sau này —
+   kể cả cửa xoá — sẽ vô tình nhìn thấy giọng của người khác, và không có phép
+   kiểm thứ hai nào chặn lại.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'voice-chung.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import apps.ltt_voice.tables  # noqa: F401
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+
+    gen = dbmod.get_session()
+    s = next(gen)
+    try:
+        yield s
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+        dbmod.reset_engine()
+
+
+def _ho_so(db, owner: str, ten: str, dung_chung: bool = False):
+    from apps.ltt_voice.tables import VoiceProfile
+
+    h = VoiceProfile(owner_id=owner, ten_hien_thi=ten, trang_thai="active",
+                     dung_chung=dung_chung)
+    db.add(h)
+    db.flush()
+    return h
+
+
+def test_mac_dinh_KHONG_dung_chung(db):
+    """① Một giọng mới không bao giờ tự công khai.
+
+    Không có phép kiểm này thì một lần đổi `default=` sẽ công khai **toàn bộ**
+    giọng khách đã tạo, và triệu chứng đầu tiên là một khách nhìn thấy giọng
+    của người khác trong bộ chọn của mình.
+    """
+    h = _ho_so(db, "u1", "Giong cua khach")
+    assert h.dung_chung is False
+
+
+def test_tim_profile_MAC_DINH_khong_thay_kho_chung(db):
+    """② Mặc định đóng: mọi lời gọi cũ giữ nguyên hành vi cũ."""
+    from apps.ltt_voice import tham_chieu
+
+    chung = _ho_so(db, "nen_tang", "Giong kho chung", dung_chung=True)
+    db.commit()
+
+    # Không khai `cho_dung_chung` -> KHÔNG thấy, dù nó là kho chung.
+    assert tham_chieu.tim_profile(db, chung.public_id, owner_id="u1") is None
+    # Khai rồi thì thấy.
+    assert tham_chieu.tim_profile(db, chung.public_id, owner_id="u1",
+                                  cho_dung_chung=True) is not None
+
+
+def test_giong_RIENG_cua_nguoi_khac_van_KHONG_thay_du_da_mo_kho_chung(db):
+    """⛔ Mở kho chung KHÔNG được mở luôn giọng riêng của người khác.
+
+    Đây là phép kiểm quan trọng nhất tệp này. Một bản vá viết vội rất dễ thành
+    "nếu `cho_dung_chung` thì bỏ điều kiện chủ sở hữu" — và khi đó bất kỳ ai
+    biết một `public_id` đều dùng được giọng của người ta.
+    """
+    from apps.ltt_voice import tham_chieu
+
+    rieng = _ho_so(db, "u2", "Giong rieng cua u2", dung_chung=False)
+    db.commit()
+
+    assert tham_chieu.tim_profile(db, rieng.public_id, owner_id="u1",
+                                  cho_dung_chung=True) is None
+    assert tham_chieu.tim_profile(db, rieng.public_id, owner_id="u2",
+                                  cho_dung_chung=True) is not None
+
+
+def test_DUNG_duoc_khong_phai_SUA_duoc(db):
+    """③ Hai câu hỏi khác nhau, hai phép kiểm khác nhau.
+
+    Gộp chúng lại là cách khách đầu tiên bấm "Tắt giọng này" tắt nó cho **toàn
+    bộ nền tảng**.
+    """
+    from apps.ltt_voice import tham_chieu
+
+    chung = _ho_so(db, "nen_tang", "Giong kho chung", dung_chung=True)
+    db.commit()
+
+    # DÙNG: được.
+    assert tham_chieu.tim_profile(db, chung.public_id, owner_id="u1",
+                                  cho_dung_chung=True) is not None
+    # SỬA: không.
+    assert tham_chieu.chi_chu_so_huu(chung, "u1") is False
+    assert tham_chieu.chi_chu_so_huu(chung, "nen_tang") is True
+
+
+def test_cua_TAT_GIONG_khong_bao_gio_mo_kho_chung():
+    """Bánh cóc đọc thẳng mã nguồn của cửa tắt giọng.
+
+    Ba phép trên chốt *cơ chế*; phép này chốt rằng **cửa thật** dùng đúng cơ
+    chế ấy. Chúng khác nhau: cơ chế có thể đúng trong khi một cửa cụ thể gọi
+    sai, và cửa tắt giọng là cửa mà gọi sai thì hỏng cho tất cả mọi người.
+    """
+    import ast
+    import inspect
+
+    from apps.ltt_voice.routes import _p_giong
+
+    # ⛔ ĐỌC CÂY CÚ PHÁP, KHÔNG TÌM CHUỖI.
+    #
+    #    Bản đầu làm `assert "cho_dung_chung" not in than` trên mã nguồn thô, và
+    #    nó ĐỎ ngay — vì chính lời giải thích trong hàm ấy viết *"KHÔNG
+    #    `cho_dung_chung` ở đây"*. Bánh cóc khớp phải câu văn của chính nó.
+    #
+    # ⭐ Lần thứ ba trong ngày cùng một hình dạng (`test_353` đã dính đúng thế
+    #    với `_asr`). Cách sửa bền không phải "bỏ chữ đó khỏi chú thích" — làm
+    #    vậy là để phép kiểm sai điều khiển cách ta viết chú thích. Là **hỏi
+    #    đúng thứ mình muốn hỏi**: lời gọi ấy truyền tham số nào.
+    cay = ast.parse(inspect.getsource(_p_giong))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "tat_giong"]
+    assert ham, "khong tim thay cua tat giong"
+
+    goi = [n for n in ast.walk(ham[0]) if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute) and n.func.attr == "tim_profile"]
+    assert goi, "cua tat giong khong tra ho so?"
+    for g in goi:
+        khoa = {k.arg for k in g.keywords}
+        assert "cho_dung_chung" not in khoa, (
+            "cua TAT GIONG dang mo kho chung — mot khach se tat duoc giong cua "
+            "ca nen tang")
+        assert "owner_id" in khoa, "cua tat giong khong kiem chu so huu"
+
+
+def test_danh_sach_MAC_DINH_khong_gom_kho_chung(db):
+    """Danh sách cũng mặc định đóng, cùng lý do."""
+    from apps.ltt_voice import tham_chieu
+
+    _ho_so(db, "u1", "Cua toi")
+    _ho_so(db, "nen_tang", "Kho chung", dung_chung=True)
+    db.commit()
+
+    assert len(tham_chieu.danh_sach(db, owner_id="u1")) == 1
+    ca = tham_chieu.danh_sach(db, owner_id="u1", gom_dung_chung=True)
+    assert len(ca) == 2
+    # Giọng của chính khách đứng TRƯỚC kho chung — thứ họ tự tạo là thứ họ tìm.
+    assert ca[0].dung_chung is False
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_43_web_hardening.py
 SHA256=6beaf002832aa9f31503a5de6f6f7a36f495172649838c0e9976fc2a73dd4891 BYTES=8439 LINES=190
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -268807,6 +269214,125 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/dat_giong_dung_chung.py
+SHA256=1ea4c2595df7882367466b746a472c1e166d027d49751fb1ad90872ea74dbade BYTES=4639 LINES=113
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+dat_giong_dung_chung.py — đưa một giọng nhân bản vào KHO CHUNG của nền tảng.
+
+    powershell -File .\setup\dat_giong_dung_chung.ps1 -Xem
+    powershell -File .\setup\dat_giong_dung_chung.ps1 -VoiceId vc_... -Bat
+    powershell -File .\setup\dat_giong_dung_chung.ps1 -VoiceId vc_... -Tat
+
+## Vì sao là một công cụ chứ không phải một nút trên giao diện
+
+Bật một giọng lên kho chung là hành động **không đối xứng**: tắt đi thì giọng
+biến khỏi danh sách, nhưng thứ khách đã nghe thì đã nghe, và bản tiếng họ đã
+tạo thì đã có. Một nút trên giao diện mời người ta bấm thử; một dòng lệnh thì
+không.
+
+⛔ Và nó chạm **dữ liệu sinh trắc của một con người**. Nên công cụ này:
+
+  · làm **từng giọng một** — không có `--tat-ca`, có chủ ý;
+  · **in ra** tên, chủ sở hữu và ngày cam kết trước khi đổi, để người chạy nhìn
+    thấy thứ mình đang công khai;
+  · **từ chối** giọng không có `VoiceConsent` — không có bút toán cam kết quyền
+    thì không có gì để đứng sau khi ai đó hỏi.
+
+⚠️ Bật cột này KHÔNG chuyển quyền sở hữu và KHÔNG chuyển trách nhiệm. Nó chỉ
+   đổi **ai đọc được**. Chủ sở hữu vẫn là chủ sở hữu, và vẫn là người duy nhất
+   sửa hay tắt được giọng đó.
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--voice-id", default="")
+    ap.add_argument("--bat", action="store_true")
+    ap.add_argument("--tat", action="store_true")
+    ap.add_argument("--xem", action="store_true", help="Liet ke kho chung.")
+    a = ap.parse_args(argv)
+
+    from sqlalchemy import select
+
+    from apps.ltt_voice.tables import VoiceConsent, VoiceProfile
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        if a.xem or not a.voice_id:
+            ds = list(db.execute(select(VoiceProfile).where(
+                VoiceProfile.dung_chung.is_(True))
+                .order_by(VoiceProfile.ten_hien_thi)).scalars())
+            print(f"KHO CHUNG — {len(ds)} giong")
+            for h in ds:
+                print(f"  {h.public_id}  {h.trang_thai:10} {h.ten_hien_thi}")
+            if not a.voice_id:
+                return 0
+
+        ho_so = db.execute(select(VoiceProfile).where(
+            VoiceProfile.public_id == a.voice_id)).scalar_one_or_none()
+        if ho_so is None:
+            print(f"KHONG THAY {a.voice_id}", file=sys.stderr)
+            return 2
+
+        ck = db.execute(select(VoiceConsent).where(
+            VoiceConsent.profile_id == ho_so.id)).scalars().first()
+
+        print(f"\n  giong      : {ho_so.ten_hien_thi}")
+        print(f"  public_id  : {ho_so.public_id}")
+        print(f"  chu so huu : {ho_so.owner_id}")
+        print(f"  trang thai : {ho_so.trang_thai}")
+        print(f"  dung chung : {ho_so.dung_chung}")
+        print(f"  cam ket    : {'co, ' + str(ck.tao_luc)[:19] if ck else 'KHONG CO'}")
+
+        if not (a.bat or a.tat):
+            print("\n(chi xem — dung `--bat` hoac `--tat` de doi)")
+            return 0
+
+        if a.bat:
+            if ck is None:
+                # ⛔ Không có bút toán cam kết thì không công khai. Đây là chốt
+                #    pháp lý, không phải một phép kiểm dữ liệu: khi ai đó hỏi
+                #    "giọng này ở đâu ra", `VoiceConsent` là câu trả lời duy
+                #    nhất ta có.
+                print("\nTU CHOI: giong nay khong co ban ghi `VoiceConsent`.",
+                      file=sys.stderr)
+                return 2
+            if ho_so.trang_thai != "active":
+                print(f"\nTU CHOI: giong dang `{ho_so.trang_thai}`, chua the "
+                      f"dua vao kho chung.", file=sys.stderr)
+                return 2
+            ho_so.dung_chung = True
+            print("\n=> DA DUA VAO KHO CHUNG. Moi khach deu se thay giong nay.")
+        else:
+            ho_so.dung_chung = False
+            print("\n=> DA GO KHOI KHO CHUNG. Ban tieng da tao van con nguyen.")
+        db.commit()
+        return 0
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/dev_portal_harness.py
 SHA256=9cf3ef51fb63cb723cbac8d8b1a22f04b078bead0e0db6e5c8d3545d546eefd6 BYTES=8738 LINES=196
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -270551,7 +271077,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_nhan_ban_tu_kho_cu.py
-SHA256=7059f8094b5c5dd7b5329c77e757a6db3234a1e9af74cf90545af0981869b640 BYTES=6892 LINES=171
+SHA256=868e780a0ced32cbe20d8fc51b931fb99fb0de14c52c33010d60cf877663d69c BYTES=7771 LINES=174
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_nhan_ban_tu_kho_cu.py — giọng nhân bản từ kho cũ có GIỐNG người nói không?
@@ -270607,6 +271133,24 @@ class KhongDoDuoc(RuntimeError):
     """Không đo được thì VỠ, không lặng lẽ thành một con số."""
 
 
+def _co_ve_en(ten: str) -> bool:
+    """Giọng này nên đọc câu tiếng Anh hay tiếng Việt.
+
+    Đọc từ kết quả ASR đã đo (`tmp/kho_giong_cu.json`) nếu có, chứ không đoán
+    theo tên: đúng bốn cái tên tiếng Việt (`hoathinh_female`, `meoquan_men`,
+    `tamlyhoc_men`, `cg_huong_nam`) lại là giọng **nói tiếng Anh** — tên ở đó
+    là tên KÊNH nội dung, không phải ngôn ngữ.
+    """
+    try:
+        d = json.load(open("tmp/kho_giong_cu.json", encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    for m in d:
+        if m.get("ten") == ten:
+            return (m.get("nghe_lai") or {}).get("ngon_ngu") == "en"
+    return False
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
@@ -270617,10 +271161,7 @@ def main(argv=None) -> int:
     import numpy as np
     import soundfile as sf
 
-    from apps.ltt_voice import features, sidecar_client
-    from apps.ltt_voice.tables import VoiceProfile
-    from platform_core import users
-    from platform_core.db import get_session
+    from apps.ltt_voice import sidecar_client
     from voice_sidecar.do_chat_luong import _bo_ma_hoa_giong, _cosine, _embed
 
     bo = _bo_ma_hoa_giong()
@@ -270628,26 +271169,15 @@ def main(argv=None) -> int:
         print("khong nap duoc bo ma hoa nguoi noi", file=sys.stderr)
         return 2
 
-    gen = get_session()
-    db = next(gen)
-    try:
-        u = users.tim_theo_email(db, a.email)
-        if u is None:
-            print(f"khong thay {a.email}", file=sys.stderr)
-            return 2
-        hs = db.query(VoiceProfile).filter(
-            VoiceProfile.owner_id == str(u.id),
-            VoiceProfile.trang_thai == "active").all()
-        muc = [{"public_id": h.public_id, "ten": h.ten_hien_thi} for h in hs]
-    finally:
-        try:
-            next(gen)
-        except StopIteration:
-            pass
-
-    if not muc:
-        print("khong co ho so giong nao `active`", file=sys.stderr)
-        return 2
+    # ⛔ KHÔNG đi qua CSDL. Bản đầu đọc `VoiceProfile` rồi `features.giai_giong`,
+    #    và `features` kéo theo `sqlalchemy` — thứ **không có** trong venv giọng
+    #    (nơi duy nhất có `librosa` + bộ mã hoá người nói). Hai venv, hai bộ thư
+    #    viện, và phép đo này cần đúng cái venv không có CSDL.
+    #
+    # ⭐ Hoá ra bỏ CSDL đi lại đo được thứ SẠCH HƠN: ghi danh thẳng từ clip đo
+    #    đúng chuỗi *clip → embedding → sinh tiếng*, không phụ thuộc một hồ sơ
+    #    nào đã lưu. Một ràng buộc kỹ thuật đẩy phép đo về gần hơn với thứ nó
+    #    định hỏi.
 
     # Nhúng của MỌI clip gốc — dùng làm sàn "người lạ".
     goc = {}
@@ -270664,39 +271194,38 @@ def main(argv=None) -> int:
     print(f"{len(goc)} clip goc lam san so sanh\n")
 
     ra = []
-    for m in muc:
-        # Tên hiển thị mang tên tệp gốc ở đầu (ta đặt lúc ghi danh).
-        khop = [k for k in goc if k.split("_")[0].lower() in m["ten"].lower()]
-        gen = get_session()
-        db = next(gen)
-        try:
-            yc = features.chuan_hoa({"text": CAU_VI, "voice_id": m["public_id"],
-                                     "owner_id": str(u.id)})
-            ref_b64, preset, _ = features.giai_giong(db, yc)
-        finally:
-            try:
-                next(gen)
-            except StopIteration:
-                pass
-
-        raw, dau = sidecar_client.noi(CAU_VI, ref_b64=ref_b64, preset=preset)
+    for ten in sorted(goc):
+        # ⛔ ĐƯỜNG DẪN TUYỆT ĐỐI. Cổng giọng chạy như một dịch vụ, thư mục làm
+        #    việc của nó là `C:\LTTPlatform\app` — nên một đường dẫn tương đối
+        #    ở đây trỏ tới một chỗ không tồn tại bên đó.
+        #
+        #    Triệu chứng: `400 khong thay tep: tmp/giong_cu\...`. Đọc lên như
+        #    một lỗi của ta, và nó đúng là lỗi của ta, chỉ không phải lỗi mình
+        #    tưởng: tệp có thật, chỉ là hai tiến trình đứng ở hai chỗ khác nhau.
+        duong = os.path.abspath(os.path.join(a.clip_dir, ten + ".wav"))
+        ghi = sidecar_client.ghi_danh(duong, denoise=True)
+        ref_b64 = ghi.get("ref_b64")
+        if not ref_b64:
+            raise KhongDoDuoc(f"{ten}: ghi_danh khong tra ve ref_b64")
+        cau = CAU_EN if _co_ve_en(ten) else CAU_VI
+        raw, dau = sidecar_client.noi(cau, ref_b64=ref_b64)
         w, sr = sf.read(io.BytesIO(raw), dtype="float32", always_2d=False)
         e = _embed(bo, np.asarray(w, dtype=np.float32), int(sr))
         if e is None:
-            raise KhongDoDuoc(f"{m['ten']}: khong nhung duoc ban sinh ra")
+            raise KhongDoDuoc(f"{ten}: khong nhung duoc ban sinh ra")
 
         diem = {k: _cosine(e, v) for k, v in goc.items()}
-        ban_than = max(diem[k] for k in khop) if khop else None
-        la = sorted((v for k, v in diem.items() if k not in khop), reverse=True)
+        ban_than = diem[ten]
+        la = sorted((v for k, v in diem.items() if k != ten), reverse=True)
         ra.append({
-            "voice_id": m["public_id"], "ten": m["ten"],
+            "ten": ten,
             "tuong_dong": round(ban_than, 4) if ban_than is not None else None,
             "san_nguoi_la_cao_nhat": round(la[0], 4) if la else None,
             "san_nguoi_la_trung_binh": round(statistics.mean(la), 4) if la else None,
             "gan_nhat": max(diem, key=diem.get),
         })
         d = ra[-1]
-        print(f"  {m['ten'][:34]:34} tuong dong {d['tuong_dong']}  "
+        print(f"  {ten[:34]:34} tuong dong {d['tuong_dong']}  "
               f"san la {d['san_nguoi_la_trung_binh']} "
               f"(cao nhat {d['san_nguoi_la_cao_nhat']})  gan nhat: {d['gan_nhat']}")
 
@@ -270708,7 +271237,7 @@ def main(argv=None) -> int:
             print(f"  {d['ten'][:38]:38} — khong khop duoc clip goc")
             continue
         bien = d["tuong_dong"] - (d["san_nguoi_la_trung_binh"] or 0)
-        dung = d["gan_nhat"].split("_")[0].lower() in d["ten"].lower()
+        dung = d["gan_nhat"] == d["ten"]
         print(f"  {d['ten'][:38]:38} bien {bien:+.4f}  "
               f"{'DUNG NGUOI' if dung else 'SAI NGUOI'}")
     print("\n  ⛔ `bien` la thu duy nhat co nghia: tuong dong tru san nguoi la.")

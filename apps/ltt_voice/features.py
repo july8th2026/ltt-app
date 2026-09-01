@@ -191,7 +191,10 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if not yc.voice_id:
         return None, (yc.preset or None), ()
 
-    ho_so = tham_chieu.tim_profile(db, yc.voice_id, owner_id=yc.owner_id)
+    # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
+    # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
+    ho_so = tham_chieu.tim_profile(db, yc.voice_id, owner_id=yc.owner_id,
+                                   cho_dung_chung=True)
     if ho_so is None:
         # ⛔ Cùng một thông điệp cho "không tồn tại" và "không phải của bạn".
         #    Phân biệt hai câu đó là cho phép dò xem `voice_id` nào có thật.

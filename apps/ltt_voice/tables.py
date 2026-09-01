@@ -46,6 +46,18 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from platform_core.db import Base
 
+#: 🔴 `BigInteger` THUẦN KHÔNG TỰ TĂNG TRÊN SQLITE.
+#:
+#:    Production chạy PostgreSQL nên nó đúng ở đó, và sai **chỉ trong test** —
+#:    tức sai ở đúng chỗ không ai nhìn thấy cho tới khi có người viết một phép
+#:    kiểm chạm bảng này trên SQLite, rồi nhận `NOT NULL constraint failed:
+#:    voice_profile.id` và tưởng mình viết sai fixture.
+#:
+#: ⭐ `tables_du_an.py` đã giải đúng bài này từ trước bằng `with_variant`; đây
+#:    chỉ là mang lời giải ấy sang tệp anh em. Hai tệp cùng dự án mà một tệp
+#:    test được còn tệp kia thì không là một chênh lệch không có lý do nào.
+KHOA_CHINH = BigInteger().with_variant(Integer, "sqlite")
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -71,7 +83,8 @@ class VoiceProfile(Base):
         Index("ix_voice_profile_owner", "owner_id", "trang_thai"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     #: Thứ DUY NHẤT khách và API nhìn thấy. Không bao giờ đổi, kể cả khi đổi engine.
     public_id: Mapped[str] = mapped_column(String(40), unique=True, index=True,
                                            default=sinh_public_id)
@@ -92,6 +105,31 @@ class VoiceProfile(Base):
     trang_thai: Mapped[str] = mapped_column(String(24), default="dang_ghi_danh",
                                             index=True)
 
+    #: 🔴 GIỌNG NÀY CÓ PHẢI KHO DÙNG CHUNG CỦA NỀN TẢNG KHÔNG.
+    #:
+    #:    Trước 01/09/2026 hệ thống có đúng hai loại giọng, và **không có gì ở
+    #:    giữa**:
+    #:      · "Giọng mẫu"     — preset dựng sẵn của engine, ai cũng dùng được,
+    #:                          nhưng ta không tạo thêm được cái nào;
+    #:      · "Giọng của tôi" — nhân bản, và `giai_giong` kiểm chủ sở hữu ở
+    #:                          **một chỗ duy nhất**, nên nó không thể dùng chung.
+    #:
+    #:    Nghĩa là một giọng nhân bản hay tới đâu cũng chỉ phục vụ được đúng
+    #:    một tài khoản. Cột này mở ra loại thứ ba: giọng **nền tảng sở hữu**,
+    #:    mọi khách đọc được, không khách nào sửa hay tắt được.
+    #:
+    #: ⛔ MẶC ĐỊNH `False`, và điều đó là bắt buộc chứ không phải cẩn thận.
+    #:    Một giọng nhân bản là dữ liệu sinh trắc của một con người. Mặc định
+    #:    `True` — hay một migration đặt `True` cho các dòng cũ — sẽ **công khai
+    #:    giọng của khách** cho mọi tài khoản khác, và đó là loại lỗi không lấy
+    #:    lại được bằng một bản vá.
+    #:
+    #: ⚠️ Bật cột này KHÔNG bỏ qua `VoiceConsent`. Một giọng dùng chung vẫn phải
+    #:    có bút toán cam kết quyền; nó chỉ đổi **ai đọc được**, không đổi **ai
+    #:    chịu trách nhiệm**.
+    dung_chung: Mapped[bool] = mapped_column(Boolean, default=False,
+                                             nullable=False, index=True)
+
     tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
     sua_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                               default=_now, onupdate=_now)
@@ -107,7 +145,8 @@ class VoiceRef(Base):
         UniqueConstraint("profile_id", "sha256", name="uq_voice_ref_hash"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
     #: Khoá trong `platform_core.storage`. Bản GỐC, không phải bản đã xử lý.
     storage_key: Mapped[str] = mapped_column(String(512))
@@ -126,7 +165,8 @@ class VoiceRepr(Base):
         Index("ix_voice_repr_profile", "profile_id", "trang_thai"),
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
     ref_id: Mapped[int] = mapped_column(BigInteger, index=True)
 
@@ -154,7 +194,8 @@ class VoiceConsent(Base):
 
     __tablename__ = "voice_consent"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
     profile_id: Mapped[int] = mapped_column(BigInteger, index=True)
     owner_id: Mapped[str] = mapped_column(String(36), index=True)
 

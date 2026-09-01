@@ -34,7 +34,8 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
     gen = _db()
     db = next(gen)
     try:
-        cua_toi = tham_chieu.danh_sach(db, owner_id=uid)
+        # Bộ chọn giọng: giọng của khách + kho chung của nền tảng.
+        cua_toi = tham_chieu.danh_sach(db, owner_id=uid, gom_dung_chung=True)
         hang_doi = vo.dem_dang_chay(db, uid)
         # "Gần đây" chỉ ba dòng: nó là một lối quay lại, không phải màn Lịch sử
         # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.

@@ -19,7 +19,8 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
     gen = _db()
     db = next(gen)
     try:
-        giong = tham_chieu.danh_sach(db, owner_id=uid)
+        # Kho chung của nền tảng hiện cùng lưới, sau giọng của chính khách.
+        giong = tham_chieu.danh_sach(db, owner_id=uid, gom_dung_chung=True)
         hang_doi = vo.dem_dang_chay(db, uid)
         thong_ke = doc_man_giong.thong_ke_theo_giong(db, uid, MANIFEST.slug)
         chi_tiet = doc_man_giong.chi_tiet_cho_trang(
@@ -126,8 +127,13 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
     gen = _db()
     db = next(gen)
     try:
+        # ⛔ KHÔNG `cho_dung_chung` ở đây, và đó là cả ý nghĩa của cửa này.
+        #    Giọng kho chung ai cũng DÙNG được nhưng không ai SỬA được; tìm
+        #    theo chủ sở hữu là thứ giữ điều đó đúng. Nếu một ngày ai thêm
+        #    `cho_dung_chung=True` cho tiện, khách đầu tiên bấm "Tắt giọng này"
+        #    sẽ tắt nó cho toàn bộ nền tảng.
         ho_so = tham_chieu.tim_profile(db, public_id, owner_id=_uid(user))
-        if ho_so is None:
+        if ho_so is None or not tham_chieu.chi_chu_so_huu(ho_so, _uid(user)):
             return JSONResponse({"ok": False, "loi": _t("Không tìm thấy giọng.")},
                                 status_code=404)
         ho_so.trang_thai = "disabled"
