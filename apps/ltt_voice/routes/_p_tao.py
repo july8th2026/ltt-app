@@ -137,7 +137,28 @@ def xem_truoc(request: Request, text: str = Form(""),
             "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
         ).format(n=len(tho), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
 
-    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    # 🔴 TỪ ĐIỂN RIÊNG PHẢI CÓ Ở ĐÂY, và thiếu nó biến bảng xem trước thành
+    #    một lời nói dối.
+    #
+    #    Bảng "Máy sẽ đọc thành" tồn tại để khách thấy trước máy đọc ra sao
+    #    **trước khi trả tiền**. Nếu worker áp từ điển mà xem trước thì không,
+    #    hai bên cho hai kết quả khác nhau — và bên khách nhìn thấy là bên SAI.
+    #
+    # ⚠️ Đây đúng lớp lỗi "một cửa có, cửa kia không" mà `features.py` cảnh báo,
+    #    và tôi vừa mắc nó ngay trong lượt thêm chính tính năng này: nối vào
+    #    `jobs.py` rồi quên `xem_truoc`.
+    gen = _db()
+    db = next(gen)
+    try:
+        tu_rieng = tu_dien_rieng.nhu_dict(db, _uid(user))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                   tu_dien_rieng=tu_rieng)
     da = chuan.da_chuan_hoa
     return JSONResponse({
         "ok": True,

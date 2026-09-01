@@ -186,3 +186,49 @@ def test_o_TU_DIEN_hien_tren_man_studio(khach):
     html = client.get("/ltt-voice").text
     assert 'id="lv-td-hop"' in html, "thieu hop tu dien tren man Studio"
     assert 'id="lv-td-luu"' in html
+
+
+def test_XEM_TRUOC_va_LUC_SINH_phai_ap_CUNG_mot_tu_dien(khach):
+    """🔴 Bảng "Máy sẽ đọc thành" mà lệch với lúc sinh là một lời nói dối.
+
+    Bảng ấy tồn tại để khách thấy trước máy đọc ra sao **trước khi trả tiền**.
+    Nếu worker áp từ điển mà xem trước thì không, hai bên cho hai kết quả khác
+    nhau — và bên khách nhìn thấy là bên SAI.
+
+    ⚠️ Tôi mắc đúng lỗi này ngay trong lượt thêm chính tính năng: nối vào
+       `jobs.py` rồi quên `xem_truoc`. Cùng lớp "một cửa có, cửa kia không" mà
+       `features.py` đã cảnh báo — và cảnh báo ấy không cứu được tôi.
+    """
+    import platform_core.db as dbmod
+
+    from apps.ltt_voice import features, tu_dien_rieng
+
+    client, uid = khach
+    csrf = _csrf(client)
+    r = client.post("/ltt-voice/tu-dien/them",
+                    data={"tu": "Chuong", "thay": "Chuwowng", "csrf_token": csrf})
+    assert r.json()["ok"], r.text
+
+    xt = client.post("/ltt-voice/xem-truoc",
+                     data={"text": "Chuong mot", "csrf_token": csrf})
+    assert xt.status_code == 200, xt.text
+    thay_o_xem_truoc = xt.json()["da_chuan_hoa"]
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        rieng = tu_dien_rieng.nhu_dict(db, uid)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    yc = features.chuan_hoa({"text": "Chuong mot", "preset": "Adam"})
+    thay_luc_sinh = features.chuan_bi_van_ban(
+        yc, tran_moi_doan=1500, tu_dien_rieng=rieng).da_chuan_hoa
+
+    assert thay_o_xem_truoc == thay_luc_sinh, (
+        f"xem truoc va luc sinh KHAC NHAU:\n"
+        f"  xem truoc: {thay_o_xem_truoc!r}\n"
+        f"  luc sinh : {thay_luc_sinh!r}")
+    assert "Chuwowng" in thay_o_xem_truoc
