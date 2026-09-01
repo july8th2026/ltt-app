@@ -397,10 +397,14 @@ def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
     #    `stop_reason`, đi tìm khối đó để chạy tool — không thấy thì nó **treo**,
     #    chứ không báo lỗi.
     #
-    # ⚠️ Và hôm nay ta **chưa** dựng được khối đó: `_mot_cuc` không truyền `tools`
-    #    lên model, nên model không có gì để gọi. Hỗ trợ tool cho đúng cần dịch
-    #    HAI CHIỀU (`tools`/`tool_use`/`tool_result` của Anthropic ↔ `tools`/
-    #    `tool_calls`/tin `tool` của OpenAI) — một việc riêng, có test riêng.
+    # ✏️ CHÚ THÍCH CŨ Ở ĐÂY ĐÃ TRÔI. Nó viết *"`_mot_cuc` không truyền `tools`
+    #    lên model, nên model không có gì để gọi"*. Việc dịch hai chiều **đã
+    #    làm xong** từ lúc nào đó và chú thích không theo kịp.
+    #
+    #    Đo thật 01/09 qua Cloudflare, vòng khép kín:
+    #        tool_use    -> tra_ton_kho {"ma_hang":"ABC-123"}
+    #        tool_result -> "Ma hang ABC-123 hien co 42 cai trong kho."
+    #    Con số 42 chỉ nói ra được nếu model thật sự đọc `tool_result`.
     #
     # ⭐ Cho tới lúc đó, thà nói `end_turn` còn hơn hứa một thứ không có. Một câu
     #    trả lời thiếu tool là chuyện khách thấy ngay; một client treo thì không.
@@ -559,6 +563,24 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    Tuc mot dong `if` giu cho hop dong "sach" da lam ca mot ung dung khach
     #    khong dung duoc, va trieu chung ma khach nhin thay ("model khong kha
     #    dung") **khong he chi ve phia nguyen nhan**.
+    # 🔴 KHAI TOOL MÀ KHÔNG MỤC NÀO DÙNG ĐƯỢC ⇒ NÓI RA, ĐỪNG IM LẶNG BỎ.
+    #
+    #    Đặt ở ĐÂY, **trước** chỗ rẽ nhánh, nên nó che cả `stream:false`
+    #    (`_mot_cuc`) lẫn nhánh luồng — hai đường đánh rơi `tools` ở hai nơi
+    #    khác nhau, và một phép kiểm ở một nhánh sẽ bỏ lọt nhánh kia.
+    #
+    #    Đo 01/09: gửi `tools` khuôn **OpenAI** vào cửa Anthropic này cho ra
+    #    `200` và model trả lời *"Xin lỗi, hiện tại tôi không có tool nào"*.
+    #    Khách gõ sai hình dạng nhận một câu trả lời **hợp lý mà sai**, không
+    #    phải một lỗi — và đó là nhầm lẫn dễ mắc nhất ở đây: hai giao thức, hai
+    #    khuôn tool, cùng một tên trường `tools`.
+    #
+    # ⛔ Nó lệch chuẩn với chính khu API này, nơi lỗi gọi đúng tên scope thiếu
+    #    và đính `retry: never`. Anthropic thật trả `400` cho tool schema sai.
+    vi_tool = tool_dich.vi_sao_khong_dung_duoc(than.get("tools"))
+    if vi_tool:
+        raise executor.parameter_error(vi_tool)
+
     if not than.get("stream"):
         return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
 

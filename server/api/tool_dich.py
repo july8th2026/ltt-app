@@ -35,6 +35,43 @@ from typing import Any
 CHON_TOOL = {"auto": "auto", "any": "required", "none": "none"}
 
 
+def vi_sao_khong_dung_duoc(tools: Any) -> str | None:
+    """Vì sao KHÔNG dùng được `tools` này — hoặc `None` nếu dùng được.
+
+    🔴 VÌ SAO CẦN HÀM NÀY. `sang_openai_tools` **bỏ qua im lặng** mọi mục nó
+       không hiểu, và trả `None` khi không còn mục nào. Hệ quả đo được 01/09:
+       gửi `tools` khuôn **OpenAI** vào cửa Anthropic `/api/v1/messages` cho ra
+       `200`, và model trả lời **"Xin lỗi, hiện tại tôi không có tool nào"**.
+
+       Khách gõ sai hình dạng nhận một câu trả lời **hợp lý mà sai**, không phải
+       một lỗi. Và đó là nhầm lẫn dễ mắc nhất ở cửa này: hai giao thức, hai
+       khuôn tool, cùng một tên trường `tools`.
+
+    ⛔ Nó cũng **lệch chuẩn với chính khu API này**, nơi lỗi gọi đúng tên scope
+       thiếu (`missing_scope: usage:read`), nói *"A quote token is required"*, và
+       đính `retry: never`. Anthropic thật trả `400` cho tool schema sai; ta khai
+       tương thích giao thức đó thì phải trả lời như nó.
+
+    ⭐ CHỈ báo lỗi khi khách khai tool mà **không mục nào** dùng được. Hỗn hợp
+       hợp lệ + rác vẫn đi tiếp như cũ — đổi hành vi đó là một hồi quy cho
+       client đang chạy, và cái giá lớn hơn cái lợi.
+    """
+    if not isinstance(tools, list) or not tools:
+        return None                      # không khai gì: bình thường
+    if sang_openai_tools(tools):
+        return None                      # còn ít nhất một mục dùng được
+    kieu_openai = any(
+        isinstance(t, dict) and t.get("type") == "function"
+        and isinstance(t.get("function"), dict) for t in tools)
+    if kieu_openai:
+        return ("`tools` dang o khuon OpenAI "
+                '(`{"type":"function","function":{...}}`). Cua nay dung khuon '
+                'Anthropic: `{"name":..., "description":..., "input_schema":{...}}`. '
+                "Khuon OpenAI dung duoc o `/api/v1/chat/completions`.")
+    return ("khong muc nao trong `tools` dung duoc: moi muc phai co `name` va "
+            "`input_schema`.")
+
+
 def sang_openai_tools(tools: Any) -> list | None:
     """`tools` Anthropic → `tools` OpenAI. `None` khi khách không khai gì."""
     if not isinstance(tools, list) or not tools:
