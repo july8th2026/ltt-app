@@ -19,7 +19,8 @@
 [CmdletBinding()]
 param(
     [string]$Root = 'C:\LTTPlatform',
-    [string]$Repo = ''
+    [string]$Repo = '',
+    [int]$Kho = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,7 +58,7 @@ if (-not $venvPy -or -not (Test-Path $venvPy)) {
 }
 $env:PYTHONPATH = $Repo
 
-$doiSo = @()
+$doiSo = @('--kho', "$Kho")
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.

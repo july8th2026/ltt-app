@@ -75,6 +75,9 @@ def main(argv=None) -> int:
     ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
     ap.add_argument("--clip-dir", default="tmp/giong_cu")
     ap.add_argument("--ra", default="tmp/nhan_ban_kho_cu.json")
+    ap.add_argument("--kho", type=int, default=0,
+                    help="So cua so trong kho tham chieu (K2). 0 = duong cu, "
+                         "mot cua so. >1 = gop speaker_emb qua ca kho.")
     a = ap.parse_args(argv)
 
     import numpy as np
@@ -122,7 +125,8 @@ def main(argv=None) -> int:
         #    một lỗi của ta, và nó đúng là lỗi của ta, chỉ không phải lỗi mình
         #    tưởng: tệp có thật, chỉ là hai tiến trình đứng ở hai chỗ khác nhau.
         duong = os.path.abspath(os.path.join(a.clip_dir, ten + ".wav"))
-        ghi = sidecar_client.ghi_danh(duong, denoise=True)
+        ghi = (sidecar_client.ghi_danh_kho(duong, denoise=True, so_clip=a.kho)
+               if a.kho > 1 else sidecar_client.ghi_danh(duong, denoise=True))
         ref_b64 = ghi.get("ref_b64")
         if not ref_b64:
             raise KhongDoDuoc(f"{ten}: ghi_danh khong tra ve ref_b64")

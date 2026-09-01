@@ -430,3 +430,80 @@ def _bo_ma_hoa_mac_dinh():
         return None if bo is None else (lambda w, s: _embed(bo, w, s))
     except Exception:                       # noqa: BLE001
         return None
+
+
+#: Số cửa sổ tối đa trong một kho tham chiếu. Hệ cũ dùng 5–7 (`pool.count_ideal_range`).
+KHO_TOI_DA = 5
+#: Tỉ lệ chồng lấn cho phép giữa hai cửa sổ trong kho.
+#:
+#: 🔴 ĐÂY LÀ ĐIỀU KIỆN KHIẾN GỘP CÓ NGHĨA. `ung_vien()` sinh **mọi cụm đoạn liên
+#:    tiếp**, nên hai ứng viên điểm cao nhất gần như luôn chồng lấn — chúng là
+#:    cùng một chỗ tốt, cắt lệch nhau một câu. Trung bình hai embedding của cùng
+#:    một đoạn không thêm thông tin nào; nó chỉ làm ta tưởng đã gộp.
+CHONG_LAN_TOI_DA = 0.25
+
+
+def chon_kho(wav, sr: int, *, so_luong: int = KHO_TOI_DA, bo_ma_hoa=None) -> list:
+    r"""Chọn tới `so_luong` cửa sổ **không chồng lấn nhau**, tốt nhất trước.
+
+    Trả `[KetQuaChon, ...]`, phần tử đầu là cửa sổ đại diện nhất — đúng thứ
+    `chon()` trả về, nên đường một-cửa-sổ vẫn là trường hợp `so_luong=1`.
+
+    ## Vì sao một kho chứ không phải một cửa sổ (K2)
+
+    Hệ cũ (`D:\Voiceclone_TTS`) tuyển **5–7 clip** cho mỗi giọng và ghi thẳng
+    vào `configs/ref_quality_rules.yaml` rằng dưới 3 clip thì phép trung bình
+    phổ không còn ý nghĩa. Ta đang lấy **một** cửa sổ 8 giây, nên một bản thu có
+    đúng một chỗ tốt là hết may.
+
+    ⭐ Nhưng kho ở đây **không** dùng như hệ cũ dùng. `prepare_reference` của
+       VieNeu trả hai thứ khác bản chất:
+
+         · `speaker_emb` — vector 192 chiều → **trung bình được**, và trung bình
+           nhiều lượt phát chính là cách hệ nhận dạng người nói vẫn ghi danh;
+         · `ref_codes`   — chuỗi token codec của clip → **không** trung bình
+           được; nó là điều kiện âm học theo ngữ cảnh, phải là một đoạn liền
+           mạch.
+
+       ⇒ Gộp `speaker_emb` qua cả kho, giữ `ref_codes` của cửa sổ tốt nhất.
+         Cùng nước đi mà XTTS làm khi nhận một danh sách `speaker_wav`.
+
+    ⛔ CHƯA CHỨNG MINH LÀ TỐT HƠN. Hàm này chỉ *cho phép* đo; quyết định bật hay
+       không nằm ở số đo biên nhân bản trên 24 giọng
+       (`tools/do_nhan_ban_tu_kho_cu.py`). Một thay đổi nghe hợp lý mà không đo
+       là đúng thứ dự án này đã trả giá nhiều lần.
+    """
+    wav = np.asarray(wav, dtype=np.float32)
+    dau = chon(wav, sr, bo_ma_hoa=bo_ma_hoa)
+    if so_luong <= 1 or not dau.da_chon_that or not dau.bang_diem:
+        return [dau]
+
+    ra = [dau]
+    da_lay = [(dau.bat_dau_s, dau.ket_thuc_s)]
+    for bat_dau_s, ket_thuc_s, diem in dau.bang_diem:
+        if len(ra) >= so_luong:
+            break
+        if any(_chong_lan(bat_dau_s, ket_thuc_s, a, b) > CHONG_LAN_TOI_DA
+               for a, b in da_lay):
+            continue
+        a, b = int(bat_dau_s * sr), int(ket_thuc_s * sr)
+        ra.append(KetQuaChon(
+            bat_dau_s=bat_dau_s, ket_thuc_s=ket_thuc_s,
+            diem_dai_dien=diem, snr_db=_lam_tron(_snr_db(wav[a:b], sr)),
+            so_ung_vien=dau.so_ung_vien,
+            thang_chat_luong=dau.thang_chat_luong,
+            ly_do="cua so bo sung cho kho tham chieu"))
+        da_lay.append((bat_dau_s, ket_thuc_s))
+    return ra
+
+
+def _chong_lan(a1: float, b1: float, a2: float, b2: float) -> float:
+    """Tỉ lệ chồng lấn của hai khoảng, trên khoảng NGẮN hơn.
+
+    Chia cho khoảng ngắn hơn chứ không cho hợp: một cửa sổ 3 giây nằm trọn
+    trong một cửa sổ 8 giây là **chồng hoàn toàn** — nó không thêm gì cả — nhưng
+    tính theo hợp thì chỉ ra 0,375 và lọt qua.
+    """
+    giao = max(0.0, min(b1, b2) - max(a1, a2))
+    ngan = min(b1 - a1, b2 - a2)
+    return giao / ngan if ngan > 0 else 0.0

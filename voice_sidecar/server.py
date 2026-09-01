@@ -122,6 +122,13 @@ class ThanLo(BaseModel):
     preset: str | None = None
 
 
+class ThanGhiDanhKho(BaseModel):
+    duong_wav: str
+    denoise: bool = True
+    #: Số cửa sổ trong kho. `chon_kho` tự cắt xuống nếu clip không đủ chỗ tốt.
+    so_clip: int = 5
+
+
 class ThanGhiDanh(BaseModel):
     #: Đường dẫn tệp **cục bộ**. Cùng máy nên không cần đẩy byte qua HTTP; worker
     #: đã có tệp trong thư mục tạm của nó.
@@ -319,6 +326,19 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
         return StreamingResponse(gen(), media_type="audio/wav")
 
     # ── ghi danh ─────────────────────────────────────────────────────────────
+    @app.post("/v1/enroll-kho")
+    def enroll_kho(body: ThanGhiDanhKho, _: None = Depends(auth)) -> dict:
+        """Ghi danh theo KHO nhiều cửa sổ (K2).
+
+        ⛔ Cửa RIÊNG chứ không phải một tham số của `/v1/enroll`. Hai lý do:
+           nó tốn `so_clip` lần `prepare_reference` nên chi phí khác hẳn, và
+           đường cũ phải giữ nguyên **không đổi một dòng nào** trong lúc còn đo
+           xem đường mới có tốt hơn không.
+        """
+        c = lay()
+        return c.ghi_danh_kho(body.duong_wav, denoise=body.denoise,
+                              so_clip=body.so_clip)
+
     @app.post("/v1/enroll")
     def enroll(body: ThanGhiDanh, _: None = Depends(auth)) -> dict:
         if not os.path.isfile(body.duong_wav):

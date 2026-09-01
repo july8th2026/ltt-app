@@ -147,6 +147,15 @@ def noi_dai(texts: list, *, ref_b64: str | None = None,
                 timeout=timeout, nhi_phan=True)
 
 
+def ghi_danh_kho(duong_wav: str, *, denoise: bool = True, so_clip: int = 5,
+                 timeout: float = 900.0) -> dict:
+    """Ghi danh theo KHO nhiều cửa sổ (K2). Cùng hình dạng trả về với `ghi_danh`."""
+    d, _ = _goi("/v1/enroll-kho",
+                {"duong_wav": duong_wav, "denoise": denoise,
+                 "so_clip": int(so_clip)}, timeout=timeout)
+    return d
+
+
 def ghi_danh(duong_wav: str, *, denoise: bool = True,
              timeout: float = 300.0) -> dict:
     d, _ = _goi("/v1/enroll", {"duong_wav": duong_wav, "denoise": denoise},

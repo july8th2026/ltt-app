@@ -344,6 +344,86 @@ class CongGiong:
                 yield np.asarray(chunk, dtype=np.float32)
 
     # ── ghi danh ─────────────────────────────────────────────────────────────
+    def ghi_danh_kho(self, duong_wav: str, *, denoise: bool = True,
+                     so_clip: int = 5) -> dict:
+        r"""Ghi danh theo KHO nhiều cửa sổ (K2). Trả cùng hình dạng `ghi_danh`.
+
+        Gộp `speaker_emb` qua cả kho, giữ `ref_codes` của **cửa sổ tốt nhất**.
+
+        🔴 HAI THỨ `prepare_reference` TRẢ VỀ CÓ BẢN CHẤT KHÁC NHAU, và đó là
+           toàn bộ thiết kế của hàm này:
+
+             · `speaker_emb` — vector 192 chiều từ bộ mã hoá người nói. Trung
+               bình nhiều lượt phát chính là cách mọi hệ nhận dạng người nói ghi
+               danh; nó kéo điểm về **trọng tâm giọng** thay vì một lát cắt.
+             · `ref_codes`   — chuỗi token codec của một clip. **Không trung
+               bình được**: nó là điều kiện âm học theo ngữ cảnh, và trung bình
+               hai chuỗi token là tạo ra một chuỗi không tương ứng với âm thanh
+               nào cả.
+
+        ⛔ CHUẨN HOÁ SAU KHI CỘNG. Trung bình các vector đơn vị cho một vector
+           **ngắn hơn** 1; đưa thẳng vào model là đưa một biên độ chưa từng có
+           trong dữ liệu huấn luyện.
+
+        ⚠️ Tốn `so_clip` lần `prepare_reference` — ghi danh chậm hơn chừng ấy
+           lần. Đó là lý do nó không phải mặc định cho tới khi có số đo nói rằng
+           biên nhân bản thật sự tốt lên.
+        """
+        import soundfile as sf
+
+        from . import chon_doan
+
+        self.nap()
+        with self.cong:
+            t0 = time.perf_counter()
+            wav, sr = sf.read(duong_wav, dtype="float32", always_2d=False)
+            if getattr(wav, "ndim", 1) > 1:
+                wav = wav.mean(axis=1)
+            wav = np.asarray(wav, dtype=np.float32)
+            kho = chon_doan.chon_kho(wav, int(sr), so_luong=max(1, int(so_clip)))
+
+            embs, codes_tot, ho_so = [], None, []
+            for i, kq in enumerate(kho):
+                a = int(kq.bat_dau_s * sr)
+                b = min(len(wav), int(kq.ket_thuc_s * sr))
+                if b - a < int(0.5 * sr):
+                    continue
+                tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                tmp.close()
+                try:
+                    sf.write(tmp.name, wav[a:b], int(sr))
+                    emb, codes = self._tts.encode_reference(tmp.name,
+                                                            denoise=denoise)
+                finally:
+                    try:
+                        os.unlink(tmp.name)
+                    except OSError:
+                        pass
+                embs.append(np.asarray(emb, dtype=np.float32).ravel())
+                if i == 0:
+                    codes_tot = codes
+                ho_so.append({"bat_dau_s": kq.bat_dau_s,
+                              "ket_thuc_s": kq.ket_thuc_s,
+                              "diem_dai_dien": kq.diem_dai_dien})
+
+            if not embs:
+                raise LoiEngine("khong cua so nao ghi danh duoc")
+            tb = np.mean(np.stack(embs), axis=0)
+            chuan = float(np.linalg.norm(tb))
+            emb_gop = (tb / chuan if chuan else tb).astype(np.float32)
+
+            return {
+                "ref_b64": dong_goi_ref(emb_gop, codes_tot),
+                "emb_dim": int(emb_gop.size),
+                "so_codes": (0 if codes_tot is None
+                             else int(np.asarray(codes_tot).size)),
+                "giay": time.perf_counter() - t0,
+                "chon_doan": {"da_chon": True, "kieu": "kho",
+                              "so_cua_so": len(embs),
+                              "goc_giay": round(len(wav) / float(sr), 2),
+                              "cua_so": ho_so},
+            }
+
     def ghi_danh(self, duong_wav: str, *, denoise: bool = True) -> dict:
         """Clip tham chiếu -> biểu diễn giọng của TA.
 
