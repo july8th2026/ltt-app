@@ -104,6 +104,30 @@
               {% if d.audio_url %}
                 <audio class="lv-ls-phat" data-nang="1" controls preload="none"
                        src="{{ d.audio_url }}"></audio>
+                {#
+                  TẢI VỀ — ảnh 05 vẽ bốn biểu tượng ở mỗi dòng.
+
+                  ⛔ Trước 01/09 màn này KHÔNG có đường tải nào: khách nghe lại
+                     được nhưng không lưu được, dù chính dòng mô tả trên đầu
+                     trang hứa *"nghe lại và tải về được"*. Một lời hứa trong
+                     phần mô tả mà giao diện không giữ.
+
+                  ⭐ MP3 đi qua `?mp3=1` trên chính đường audio — cùng cửa, cùng
+                     phép kiểm sở hữu. Xem `_p_audio.audio`.
+                #}
+                <div class="lv-ls-tai">
+                  <a class="btn sm ghost" download
+                     href="{{ d.audio_url }}">{{ _("WAV") }}</a>
+                  <a class="btn sm ghost" download
+                     href="{{ d.audio_url }}?mp3=1">{{ _("MP3") }}</a>
+                  {# `d.id` — `dong_cho_trang` dat ten truong la `id`, khong
+                     phai `job_id`. Jinja tra rong cho mot truong khong co, nen
+                     go nham ten se cho ra mot nut BIEN MAT chu khong phai mot
+                     loi — kieu hong im lang. #}
+                  {% if d.id %}
+                    <a class="btn sm ghost" href="/jobs/{{ d.id }}">{{ _("Chi tiết") }}</a>
+                  {% endif %}
+                </div>
               {% endif %}
             </article>
           {% endfor %}

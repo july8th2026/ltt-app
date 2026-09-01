@@ -12846,3 +12846,9 @@ msgstr "Saved to"
 
 msgid "— Dự án mới —"
 msgstr "— New project —"
+
+msgid "WAV"
+msgstr "WAV"
+
+msgid "MP3"
+msgstr "MP3"

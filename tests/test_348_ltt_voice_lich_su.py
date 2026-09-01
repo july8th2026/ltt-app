@@ -351,3 +351,23 @@ def test_ma_KHONG_tra_duoc_van_giu_kieu_chu_ma(khach):
     assert f'class="mono">{mo_coi}<' in r.text, (
         "ma khong tra duoc phai VAN hien ra VA giu kieu chu ma — "
         "khong nuot no, cung khong gia vo no la mot cai ten")
+
+
+def test_moi_dong_lich_su_deu_TAI_VE_duoc(khach):
+    """🔴 Dòng mô tả trên đầu trang hứa "nghe lại và **tải về** được".
+
+    Trước 01/09 màn này không có một đường tải nào — khách nghe lại được nhưng
+    không lưu được. Một lời hứa trong phần mô tả mà giao diện không giữ.
+
+    ⚠️ Và chốt này chốt cả `d.id`: `dong_cho_trang` đặt tên trường là `id`, chứ
+       không phải `job_id`. Jinja trả RỖNG cho một trường không có, nên gõ nhầm
+       tên cho ra một nút **biến mất** chứ không phải một lỗi — kiểu hỏng im
+       lặng mà chỉ một phép kiểm nhìn vào HTML mới bắt được.
+    """
+    client, uid = khach
+    _gieo(uid, 2)
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert r.text.count('download') >= 4, "moi dong phai co WAV va MP3"
+    assert "?mp3=1" in r.text, "thieu duong tai MP3"
+    assert '/jobs/' in r.text, "thieu duong mo chi tiet job (kiem ca ten truong `d.id`)"
