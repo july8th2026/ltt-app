@@ -1067,6 +1067,33 @@
     if (!ds.length) return;
 
     var chu = (cauHinh || {}).chu || {};
+    var duong = (cauHinh || {}).duong || "";
+    /* ── Doc lai mot luot ──────────────────────────────────────────────────
+       ⛔ NOP MOT JOB MOI va thu tien nhu mot luot moi — engine chay lai toan
+          bo. Khac han `Luu vao du an` (tham chieu tep da co, ton 0). Nut hoi
+          XAC NHAN vi day la mot thao tac TIEU TIEN, va no nam ngay canh cac
+          nut chi doc (tai ve, chi tiet). */
+    var csrfLs = (document.getElementById("lv-ls-csrf") || {}).value || "";
+    var nutDocLai = document.querySelectorAll(".lv-ls-doclai");
+    for (var q = 0; q < nutDocLai.length; q++) {
+      (function (n) {
+        n.addEventListener("click", function () {
+          if (!window.confirm(chu.xacNhanDocLai || "Doc lai?")) return;
+          n.disabled = true;
+          var fd = new FormData();
+          fd.append("csrf_token", csrfLs);
+          fetch(duong + "/lich-su/" + n.dataset.job + "/doc-lai",
+                {method: "POST", body: fd})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.ok) { window.location.reload(); return; }
+              n.disabled = false;
+              window.alert(d.loi || "?");
+            })
+            .catch(function () { n.disabled = false; });
+        });
+      })(nutDocLai[q]);
+    }
     var oCt = document.getElementById("lv-ls-ct");
     if (!oCt) return;
 
@@ -1162,6 +1189,7 @@
     var form = document.getElementById("lv-da-moi");
     if (!form) return;
     var cfg = cauHinh || {}, chu = cfg.chu || {}, duong = cfg.duong || "";
+
     var oLoi = document.getElementById("lv-da-loi");
 
     function mo(hien) {

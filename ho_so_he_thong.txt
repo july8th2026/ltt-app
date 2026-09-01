@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0df44651dc54e3e9697f9319dd2c4bdfb8be9be6cd1c5d42eb5c84518c617dde
-Nguồn đã quét : 1460 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:20cf0555793511c0861131737d5eff65e5176db9cb4fb0ee46f1fb0f36d123ea
+Nguồn đã quét : 1463 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -168,7 +168,7 @@ Các lớp chính:
   URL=/ltt-voice | surface=customer | lifecycle=released
   enabled=True | public=True | parent=-
   requires=voice | capabilities=audio
-  HTTP routes=28 | table_prefix=voice | manifest_error=-
+  HTTP routes=29 | table_prefix=voice | manifest_error=-
   credit_cost=apps.ltt_voice.manifest._gia
   job_types=ltt_voice.synthesize, ltt_voice.enroll
   gpu_vram_mb=ltt_voice.enroll:2000, ltt_voice.synthesize:2000
@@ -519,7 +519,7 @@ Các lớp chính:
     - apps/vps/tables.py
     - apps/vps/ten_may.py
 
-4. HTTP ROUTE INVENTORY (327)
+4. HTTP ROUTE INVENTORY (329)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -629,6 +629,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:127
 - [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:177
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
+- [ltt_voice] POST   /ltt-voice/lich-su/{job_id}/doc-lai → doc_lai | auth~login | apps/ltt_voice/routes/_p_lich_su.py:79
 - [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:229
 - [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:316
 - [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:335
@@ -643,8 +644,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [nexus] POST   /nexus/phien/{session_id}/ket-thuc → ket_thuc_phien | auth~login | apps/nexus/routes.py:408
 - [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:270
 - [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:214
-- [platform] GET    / → home | auth~optional | server/routes/dashboard.py:166
+- [platform] GET    / → home | auth~optional | server/routes/dashboard.py:202
 - [platform] GET    / → developer_overview | auth~unspecified | server/routes/developer/trang.py:32
+- [platform] GET    /api-dieu-khoan → api_dieu_khoan | auth~unspecified | server/routes/dashboard.py:166
 - [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
 - [platform] GET    /api/jobs/{job_id} → job_api | auth~login | server/routes/jobs.py:241
 - [platform] POST   /budgets → developer_create_budget | auth~unspecified | server/routes/developer/su_dung.py:112
@@ -1184,7 +1186,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (348 file pytest + 3 frontend)
+10. QUALITY GATES (349 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1493,6 +1495,7 @@ Test inventory:
 - tests/test_387_ps_bien_trung_tham_so.py
 - tests/test_388_chan_doan.py
 - tests/test_389_planner_model_nha.py
+- tests/test_390_dieu_khoan_api.py
 - tests/test_390_toc_do_hau_ky.py
 - tests/test_391_tu_dien_rieng.py
 - tests/test_43_web_hardening.py
@@ -1559,8 +1562,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1460 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1096, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1463 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1098, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2168,7 +2171,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (122)
+[platform_core] (123)
 - platform_core/__init__.py
 - platform_core/admin_console.py
 - platform_core/agent/__init__.py
@@ -2251,6 +2254,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - platform_core/public_api/contract.py
 - platform_core/public_api/costing.py
 - platform_core/public_api/delivery.py
+- platform_core/public_api/dieu_khoan.py
 - platform_core/public_api/error_registry.py
 - platform_core/public_api/errors.py
 - platform_core/public_api/examples.py
@@ -2308,7 +2312,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - sdk/python/ltt_public_api.py
 - sdk/typescript/ltt-public-api.ts
 
-[server] (169)
+[server] (170)
 - server/__init__.py
 - server/access_middleware.py
 - server/admin.py
@@ -2422,6 +2426,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templates/admin/nang_cao.html
 - server/templates/admin/tim_kiem.html
 - server/templates/admin/tong_quan.html
+- server/templates/api_dieu_khoan.html
 - server/templates/base.html
 - server/templates/base_plain.html
 - server/templates/base_public.html
@@ -2531,7 +2536,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (365)
+[tests] (366)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2851,6 +2856,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_387_ps_bien_trung_tham_so.py
 - tests/test_388_chan_doan.py
 - tests/test_389_planner_model_nha.py
+- tests/test_390_dieu_khoan_api.py
 - tests/test_390_toc_do_hau_ky.py
 - tests/test_391_tu_dien_rieng.py
 - tests/test_43_web_hardening.py
@@ -3077,7 +3083,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1460 file; 14491595 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1463 file; 14532643 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -18866,7 +18872,7 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/doc_man_lich_su.py
-SHA256=4e8bbcb1deec4120e5409c132e8f8e81d390276d2e671a01841706faa0c9aaa7 BYTES=6037 LINES=147
+SHA256=83d5b7cac1629d75e802207c49f78d31c609026440852ca294dbd8b130c577d1 BYTES=7337 LINES=175
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 doc_man_lich_su.py — số liệu mà MÀN LỊCH SỬ cần.
@@ -18973,14 +18979,42 @@ def tom_tat(job_list) -> dict:
     }
 
 
+#: Các mốc lọc theo ngày. RỜI RẠC, không phải ô chọn ngày tự do: một
+#: khoảng tuỳ ý mời khách chọn một khoảng không có dữ liệu rồi tưởng
+#: màn hình hỏng. `0` = không lọc.
+CAC_MOC_NGAY = (0, 1, 7, 30)
+
+
+def _moc_ngay(so_ngay: int):
+    """`so_ngay` ngày gần nhất -> mốc bắt đầu, hoặc `None` nếu không lọc.
+
+    ⚠️ Dùng `timezone.utc`: `Job.created_at` là `DateTime(timezone=True)`, và so
+       một mốc **không có múi giờ** với một cột **có múi giờ** thì PostgreSQL
+       ném, còn SQLite thì so sai một cách im lặng. Production là PG, test là
+       SQLite — nên lỗi ấy sẽ chỉ hiện ra ở một bên.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    if so_ngay <= 0:
+        return None
+    return datetime.now(timezone.utc) - timedelta(days=so_ngay)
+
+
 def doc(db, owner_id: str, app_slug: str, *, trang_thai: str = "",
-        nguon: str = "", giong: str = "") -> dict:
-    """Một lượt đọc, trả mọi thứ màn Lịch sử cần."""
+        nguon: str = "", giong: str = "", so_ngay: int = 0) -> dict:
+    """Một lượt đọc, trả mọi thứ màn Lịch sử cần.
+
+    ⭐ `so_ngay` lọc ở SQL (`list_owned(start=...)`), không lọc trong Python:
+       trần `TRAN_DOC` cắt TRƯỚC khi lọc, nên lọc sau đó sẽ cho ra "7 ngày qua"
+       tính trên một tập đã bị cắt — và con số ấy sai theo hướng khó thấy nhất
+       (nó chỉ sai với người dùng nhiều).
+    """
     from platform_core import job_history
 
     try:
         tat_ca, _cursor = job_history.list_owned(
-            db, owner_id, app_slug=app_slug, limit=TRAN_DOC)
+            db, owner_id, app_slug=app_slug, limit=TRAN_DOC,
+            start=_moc_ngay(so_ngay))
     except Exception:  # noqa: BLE001 - man hinh khong duoc sap vi mot truy van
         log.warning("khong doc duoc lich su cua %s", owner_id, exc_info=True)
         tat_ca = []
@@ -22107,7 +22141,7 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_lich_su.py
-SHA256=a88a21ba52541406243c15e6d875b853e67f7b54ff74f45f8b965d0301153549 BYTES=3482 LINES=65
+SHA256=5d6e1307a5dc426a7ee46c8e79cef550cc00fdb3a85a941480fa37a02dc0be6b BYTES=7113 LINES=139
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Lịch sử: lọc và liệt kê các lượt đọc."""
 from __future__ import annotations
@@ -22125,8 +22159,8 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
 
 @router.get("/lich-su", response_class=HTMLResponse)
 def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
-                  giong: str = "", user=Depends(user_hien_tai),
-                  _=Depends(require_login)):
+                  giong: str = "", ngay: str = "",
+                  user=Depends(user_hien_tai), _=Depends(require_login)):
     """Lịch sử tạo tiếng, lọc theo trạng thái · nguồn · giọng.
 
     ⛔ Ba tham số lọc là **chuỗi khách gửi**, nhưng chúng không chạm SQL: chúng
@@ -22137,8 +22171,16 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
     gen = _db()
     db = next(gen)
     try:
+        # `ngay` là chuỗi khách gửi ⇒ ép về một trong các mốc đã biết. Một số
+        # lạ không được thành một truy vấn lạ.
+        try:
+            _n = int(ngay or 0)
+        except (TypeError, ValueError):
+            _n = 0
+        ngay_hop_le = _n if _n in doc_man_lich_su.CAC_MOC_NGAY else 0
         goi = doc_man_lich_su.doc(db, uid, MANIFEST.slug,
-                                  trang_thai=tt, nguon=nguon, giong=giong)
+                                  trang_thai=tt, nguon=nguon, giong=giong,
+                                  so_ngay=ngay_hop_le)
         hang_doi = vo.dem_dang_chay(db, uid)
         # ── Mã giọng -> tên hiển thị ──────────────────────────────────────
         #
@@ -22171,9 +22213,75 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
                     giong_da_dung=goi["giong_da_dung"],
                     nguon_da_dung=goi["nguon_da_dung"],
                     nhan_nguon=NHAN_NGUON, ten_giong=ten_giong,
-                    f_tt=tt, f_nguon=nguon, f_giong=giong))
+                    cac_moc_ngay=doc_man_lich_su.CAC_MOC_NGAY,
+                    f_tt=tt, f_nguon=nguon, f_giong=giong,
+                    f_ngay=ngay_hop_le))
 
 
+
+
+@router.post("/lich-su/{job_id}/doc-lai")
+def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
+            user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Đọc lại một lượt cũ — ảnh 05 vẽ biểu tượng này ở mỗi dòng.
+
+    ## 🔴 NỘP MỘT JOB MỚI, VÀ THU TIỀN NHƯ MỘT LƯỢT MỚI
+
+    Đây là chỗ khác hẳn `Lưu vào dự án`: lưu vào dự án chỉ **tham chiếu** tệp
+    đã có nên tốn 0, còn đọc lại thì **chạy engine lần nữa** — GPU làm lại toàn
+    bộ việc, nên nó phải trả tiền như một lượt bình thường.
+
+    ⛔ Cám dỗ ngược lại cũng có thật: "khách đã trả cho câu này rồi". Nhưng tệp
+       cũ vẫn còn và vẫn nghe được — họ bấm đọc lại là vì muốn một BẢN KHÁC
+       (model tự hồi quy cho ra khác nhau mỗi lượt), tức một lượt sinh mới.
+
+    ⭐ Chép nguyên `params` cũ chứ không dựng lại: một bản dựng lại sẽ bỏ sót
+       tham số mới thêm (như `toc_do`), và bỏ sót IM LẶNG — khách bấm đọc lại
+       rồi nghe một bản 1,0× trong khi bản cũ là 1,5×.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+
+    from platform_core import job_history
+    from platform_core.job_submit import submit_with_credit
+
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        cu = job_history.get_owned(db, uid, (job_id or "").strip())
+        if cu is None or cu.app_slug != MANIFEST.slug:
+            return JSONResponse({"ok": False, "loi": _t(
+                "Không tìm thấy lượt đọc này.")}, status_code=404)
+
+        p = dict(cu.params or {})
+        if not str(p.get("text") or "").strip():
+            return JSONResponse({"ok": False, "loi": _t(
+                "Lượt đọc này không còn văn bản để đọc lại.")}, status_code=400)
+        # `nguon` giữ nguyên gốc (`studio`/`du_an`/`api`) chứ không đổi thành
+        # một nguồn mới: bộ lọc nguồn ở màn này dùng để trả lời "lượt ấy đến từ
+        # đâu", và một lượt đọc lại vẫn đến từ chỗ cũ.
+        p["owner_id"] = uid
+
+        tool = MANIFEST.tools[0]
+        try:
+            job = submit_with_credit(
+                db, user_id=uid, app_slug=MANIFEST.slug,
+                job_type="ltt_voice.synthesize", params=p,
+                admission_resource=tool.admission_resource,
+                admission_slots=tool.admission_slots)
+        except Exception as e:  # noqa: BLE001
+            db.rollback()
+            # Thiếu credit là câu trả lời hay gặp nhất ở đây, và nó phải tới
+            # được khách nguyên văn thay vì thành một lỗi 500 vô nghĩa.
+            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        db.commit()
+        return JSONResponse({"ok": True, "job_id": str(job.id)})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -24167,7 +24275,7 @@ SHA256=039fc67072d0ce65f26bda073ee958df72c424f282549ff424881d00efe54deb BYTES=12
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_lich_su.html
-SHA256=cffb3172b9d1499ff65e1290ad51fb1cab056e01b571514be854cef3c61582d9 BYTES=11638 LINES=226
+SHA256=371a3b7a9b1e19591731839b4caf4ae62578de79dc940e6c414175f57920d23a BYTES=14017 LINES=267
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24189,6 +24297,10 @@ SHA256=cffb3172b9d1499ff65e1290ad51fb1cab056e01b571514be854cef3c61582d9 BYTES=11
 
 {% block content %}
 <section class="lv-man lv-ls" aria-labelledby="lv-ls-title">
+  {# Token CUA TRANG cho nut "Doc lai". Khong dat trong vong lap dong:
+     mot trang rong se khong co token, va loi ay chi hien khi khach vua xoa
+     het lich su. #}
+  <input type="hidden" id="lv-ls-csrf" value="{{ csrf_token }}">
   {% with tieu_de = _("Lịch sử tạo tiếng"),
           mo_ta = _("Mọi lượt đọc của bạn, nghe lại và tải về được."),
           id_tieu_de = "lv-ls-title" %}
@@ -24229,6 +24341,30 @@ SHA256=cffb3172b9d1499ff65e1290ad51fb1cab056e01b571514be854cef3c61582d9 BYTES=11
             </select>
           </label>
         {% endif %}
+
+        {#
+          LỌC THEO NGÀY — ảnh 05 vẽ một ô `Date · 7 ngày qua`.
+
+          ⭐ Các mốc RỜI RẠC, không phải ô chọn ngày tự do: một khoảng tuỳ ý
+             mời khách chọn một khoảng không có dữ liệu rồi tưởng màn hình hỏng.
+
+          ⚠️ Lọc ở SQL (`list_owned(start=...)`), KHÔNG lọc trong Python: trần
+             `TRAN_DOC` cắt TRƯỚC, nên lọc sau đó cho ra "7 ngày qua" tính trên
+             một tập đã bị cắt — sai theo hướng khó thấy nhất, vì nó chỉ sai với
+             người dùng nhiều.
+        #}
+        <label class="lv-loc-o">
+          <span class="dim">{{ _("Thời gian") }}</span>
+          <select name="ngay" onchange="this.form.submit()">
+            {% for n in cac_moc_ngay %}
+              <option value="{{ n }}"{{ ' selected' if f_ngay == n }}>
+                {%- if n == 0 %}{{ _("Mọi lúc") }}
+                {%- elif n == 1 %}{{ _("24 giờ qua") }}
+                {%- else %}{{ _("{n} ngày qua").format(n=n) }}{% endif -%}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
 
         {% if giong_da_dung %}
           <label class="lv-loc-o">
@@ -24296,6 +24432,17 @@ SHA256=cffb3172b9d1499ff65e1290ad51fb1cab056e01b571514be854cef3c61582d9 BYTES=11
                      go nham ten se cho ra mot nut BIEN MAT chu khong phai mot
                      loi — kieu hong im lang. #}
                   {% if d.id %}
+                    {#
+                      ĐỌC LẠI — ảnh 05 vẽ biểu tượng này ở mỗi dòng.
+
+                      ⛔ Nó NỘP MỘT JOB MỚI và thu tiền như một lượt mới: engine
+                         chạy lại toàn bộ. Khác hẳn `Lưu vào dự án` (tham chiếu
+                         tệp đã có, tốn 0). Nói ra trong `title` để khách không
+                         bấm nhầm rồi ngạc nhiên vì bị trừ credit.
+                    #}
+                    <button type="button" class="btn sm ghost lv-ls-doclai"
+                            data-job="{{ d.id }}"
+                            title="{{ _('Chạy lại engine — tính tiền như một lượt mới.') }}">{{ _("Đọc lại") }}</button>
                     <a class="btn sm ghost" href="/jobs/{{ d.id }}">{{ _("Chi tiết") }}</a>
                   {% endif %}
                 </div>
@@ -24384,12 +24531,14 @@ SHA256=cffb3172b9d1499ff65e1290ad51fb1cab056e01b571514be854cef3c61582d9 BYTES=11
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 <script>
 LttVoice.lichSu({
+  duong: {{ manifest.route_prefix | tojson }},
   chu: {
     sanSang: {{ _("Hoàn tất") | tojson }},
     dangTao: {{ _("Đang tạo") | tojson }},
     dangCho: {{ _("Đang chờ") | tojson }},
     loi:     {{ _("Lỗi") | tojson }},
     daHuy:   {{ _("Đã huỷ") | tojson }},
+    xacNhanDocLai: {{ _("Đọc lại sẽ chạy engine một lần nữa và tính tiền như một lượt mới. Tiếp tục?") | tojson }},
     khong:   {{ _("—") | tojson }}
   }
 });
@@ -123614,6 +123763,273 @@ def send_delivery(subscription, delivery, *, require_https: bool = True,
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/dieu_khoan.py
+SHA256=2df962eedfddc4641177070019c2181bcf7be45be49ae4982ce7cf9f9edbf12a BYTES=12973 LINES=261
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Điều khoản dịch vụ `/api/v1` — **dữ liệu, sinh từ hằng số thật**.
+
+## Vì sao tệp này tồn tại
+
+Đo 01/09 trên bản đang chạy: `https://lttstudios.com/terms/` có **21.335 ký tự
+văn bản** và **không nhắc một chữ nào** tới `API`, `credit`, `hoàn tiền`,
+`trách nhiệm`, `SLA`, `khoá` hay `thanh toán`. Đó là trang duy nhất mà chân
+trang của `/register` trỏ tới.
+
+⛔ Nghĩa là nền tảng đang **bán một dịch vụ tính tiền theo mức dùng, trả trước
+   bằng credit** — và điều khoản khách được trỏ tới không mô tả dịch vụ đó.
+
+Và biểu mẫu đăng ký **không ghi lại việc khách đã đồng ý điều khoản nào**: không
+có ô tích, không có cột nào lưu. Luồng VPS thì có (clickwrap + `dong_y_luc`), nên
+đây không phải "chưa ai nghĩ tới cơ chế" — chỉ là đường API chưa được nối vào nó.
+
+## Hai luật của tệp này, chép từ tiền lệ đã trả giá
+
+**1. Không con số nào được gõ tay.** `apps/vps/dieu_khoan.py` đã học điều này:
+
+> *"Ở đây con số **không thể lệch**, vì chỉ có một chỗ."*
+
+Nên giá lấy từ `gia_token.bang_gia()` — **chính hàm ra hoá đơn**. Đổi giá trong
+`gia_token.py` là điều khoản đổi theo, cùng lúc, không cần ai nhớ.
+
+**2. Điều khoản phải do CHÍNH APP phục vụ.** Cũng từ tiền lệ VPS, và đây là
+phần đắt nhất:
+
+> *"bản WordPress **chưa bao giờ được xuất bản** (`/vps-terms/` trả 404 suốt từ
+> 25/08), trong khi clickwrap đã trỏ vào đó. Tức khách 'đồng ý' với một trang
+> không tồn tại, đúng lúc họ sắp trả tiền."*
+
+Một trang do app phục vụ không thể ở trạng thái đó — nó sống hay chết cùng phần
+còn lại của app.
+
+## 🔴 RANH GIỚI: cái gì ở đây là SỰ THẬT ĐO ĐƯỢC, cái gì CHƯA AI QUYẾT
+
+Mọi mục trong `MUC_DA_DO` mô tả **hành vi đã đo trên production ngày 01/09**, và
+mỗi mục ghi kèm phép đo. Chúng an toàn vì chúng chỉ nói hệ thống đang làm gì.
+
+`CAN_CHU_SAN_PHAM_QUYET` là chuyện khác hẳn: **giới hạn trách nhiệm, SLA, hoàn
+tiền phần credit chưa dùng, chấm dứt tài khoản** — đó là quyết định kinh doanh
+và pháp lý. Chúng **không** có trong mã, nên không đo được, nên tệp này **không
+bịa ra chúng**. Nó liệt kê chúng thành một danh sách ngắn để chủ sản phẩm điền,
+thay vì để một bản nháp nghe-có-vẻ-đúng trôi lên trang bán hàng.
+
+⛔ Đừng "hoàn thiện" tệp này bằng cách viết giúp mấy mục đó. Một điều khoản do
+   máy đoán ra, đặt trước một ô tích mà khách bấm, là một lời hứa không ai từng
+   đưa ra.
+"""
+from __future__ import annotations
+
+from platform_core.i18n import N_
+
+#: Phiên bản bản điều khoản. **Đổi nội dung ⇒ đổi nhãn**, không sửa nhãn cũ:
+#: bản ghi đồng ý lưu nhãn này, và nếu nhãn được tái sử dụng thì câu hỏi "họ đã
+#: đồng ý với cái gì" không còn trả lời được. Cùng luật với `PHIEN_BAN_GIA`.
+PHIEN_BAN = "api-2026-09-01"
+
+#: Một credit bằng bao nhiêu đồng. Trang `/gia-api` đã dùng đúng phép nhân này
+#: (`credit * 100`); để ở đây một lần thay vì để hai nơi cùng nhân.
+DONG_MOI_CREDIT = 100
+
+
+def bang_gia() -> dict:
+    """Bảng giá **của chính hàm ra hoá đơn**, không phải bản chép."""
+    from platform_core.llm import gia_token
+
+    return gia_token.bang_gia()
+
+
+def tran_ngu_canh() -> dict:
+    """Trần ngữ cảnh theo từng model, lấy từ nguồn chân lý của app."""
+    from apps.ltt_llm import ngan_sach
+    from apps.ltt_llm.features import ALIAS_SANG_ID
+
+    return {alias: {"cong_bo": ngan_sach.cong_bo_cua(noi_bo),
+                    "tran_vao": ngan_sach.tran_vao_cua(noi_bo),
+                    "tran_ra": ngan_sach.TOKEN_RA_TRAN}
+            for alias, noi_bo in ALIAS_SANG_ID.items()}
+
+
+def dong_thoi() -> int:
+    """Số lượt được phục vụ cùng lúc. Một, và điều đó phải nói ra."""
+    from apps.ltt_llm import ngan_sach
+
+    return ngan_sach.DONG_THOI_MAY_B
+
+
+#: Những điều **đã đo trên production**, mỗi điều kèm phép đo sinh ra nó.
+#: Đây là phần an toàn của điều khoản: nó chỉ mô tả hệ thống đang làm gì.
+MUC_DA_DO = (
+    {
+        "khoa": "giu_va_quyet_toan",
+        "tieu_de": N_("Giữ chỗ trước, tính tiền theo mức dùng thật"),
+        "noi_dung": N_(
+            "Mỗi lời gọi giữ trước một khoản credit theo ước tính cao, rồi quyết "
+            "toán lại theo số token thật sự đã dùng. Phần giữ dư được hoàn ngay "
+            "trong cùng lượt gọi."),
+        "do_bang": "test_272 · test_259 · đo sống 01/09: giữ trần, thu theo token đã sinh",
+    },
+    {
+        "khoa": "khong_do_duoc",
+        "tieu_de": N_("Không đo được mức dùng thì không thu tiền"),
+        "noi_dung": N_(
+            "Nếu hệ thống không đọc được số token của một lượt gọi, toàn bộ khoản "
+            "giữ chỗ được hoàn và lượt đó tính 0 credit. Hệ thống không ước lượng "
+            "để tính tiền."),
+        "do_bang": "gia_token.KhongDoDuocError · test_252 (INV-009)",
+    },
+    {
+        "khoa": "ban_thi_khong_thu",
+        "tieu_de": N_("Bận thì không thu tiền"),
+        "noi_dung": N_(
+            "Khi tài nguyên đang bận, lời gọi bị từ chối với mã 429 kèm header "
+            "Retry-After, và không bị tính credit."),
+        "do_bang": "đo sống 01/09: 3 lượt đồng thời → 2×429, số dư giảm đúng 1 (INV-003)",
+    },
+    {
+        "khoa": "ngat_ket_noi",
+        "tieu_de": N_("Ngắt kết nối giữa chừng vẫn tính phần đã sinh"),
+        "noi_dung": N_(
+            "Nếu khách đóng kết nối khi câu trả lời đang được sinh, phần đã sinh "
+            "ra vẫn được tính. Phần chưa sinh thì không."),
+        "do_bang": "đo sống 01/09: đọc 15.872 byte rồi đóng socket → thu 1 credit",
+    },
+    {
+        "khoa": "goi_lai",
+        "tieu_de": N_("Gọi lại cùng một khoá idempotency không bị tính tiền hai lần"),
+        "noi_dung": N_(
+            "Gửi lại một yêu cầu với cùng Idempotency-Key trả về đúng kết quả cũ "
+            "và không tạo lượt tính tiền mới."),
+        "do_bang": "đo sống qua Cloudflare: cùng job id, trừ 0 credit (B14/B15)",
+    },
+    {
+        "khoa": "lam_tron",
+        "tieu_de": N_("Mỗi lượt gọi làm tròn lên credit nguyên"),
+        "noi_dung": N_(
+            "Một lượt gọi rất nhỏ vẫn tính tối thiểu 1 credit. Với lượt gọi nhỏ, "
+            "số tiền thực trả cao hơn giá niêm yết trên một triệu token."),
+        "do_bang": "gia_token.bang_gia()['toi_thieu_moi_luot_credit']",
+    },
+    {
+        "khoa": "dong_thoi",
+        "tieu_de": N_("Mỗi tài khoản được phục vụ một lượt tại một thời điểm"),
+        "noi_dung": N_(
+            "Model chạy trên phần cứng của chính LTT Studios và phục vụ một lượt "
+            "tại một thời điểm. Lượt vượt quá nhận 429 kèm Retry-After."),
+        "do_bang": "ngan_sach.DONG_THOI_MAY_B · đo sống: 429 trả về trong dưới 1,4 giây",
+    },
+    {
+        "khoa": "tran_ngu_canh",
+        "tieu_de": N_("Trần ngữ cảnh khác nhau giữa các model"),
+        "noi_dung": N_(
+            "Mỗi model có trần đầu vào riêng và trần này được công bố ở "
+            "/api/v1/models. Yêu cầu vượt trần bị từ chối bằng mã 413 kèm con số "
+            "trần thật, không bị cắt bớt âm thầm."),
+        "do_bang": "đo sống 01/09: 413 kèm limit_value đúng của từng model",
+    },
+)
+
+#: 🔴 CHƯA AI QUYẾT — và tệp này **cố ý để trống**.
+#:
+#: Mỗi mục dưới đây là một quyết định kinh doanh/pháp lý, không phải một tính
+#: chất của mã. Không đo được thì không viết ra. Danh sách này tồn tại để chủ
+#: sản phẩm điền một lần, chứ không để một bản nháp nghe-hợp-lý trôi lên trang
+#: bán hàng và trở thành lời hứa.
+CAN_CHU_SAN_PHAM_QUYET = (
+    {
+        "khoa": "credit_het_han",
+        "cau_hoi": N_("Credit đã nạp có hạn sử dụng không?"),
+        "hien_trang": N_(
+            "Mã nguồn không cài đặt hạn dùng nào cho credit. Nhưng 'không có mã' "
+            "không phải một lời hứa — cần một câu trả lời rõ ràng."),
+    },
+    {
+        "khoa": "hoan_tien_chua_dung",
+        "cau_hoi": N_("Credit chưa dùng có hoàn lại được tiền không?"),
+        "hien_trang": N_(
+            "Sổ credit là append-only và có đường hoàn, nhưng không có quy trình "
+            "hoàn tiền mặt nào trong mã."),
+    },
+    {
+        "khoa": "sla",
+        "cau_hoi": N_("Có cam kết mức độ sẵn sàng (SLA) không, và bồi thường ra sao?"),
+        "hien_trang": N_(
+            "Không có SLA nào trong mã nguồn. Model chạy trên phần cứng dùng "
+            "chung, và đã có lần ngừng dịch vụ nhiều giờ."),
+    },
+    {
+        "khoa": "gioi_han_trach_nhiem",
+        "cau_hoi": N_("Giới hạn trách nhiệm tối đa là bao nhiêu?"),
+        "hien_trang": N_("Không có điều khoản nào về việc này ở bất kỳ đâu."),
+    },
+    {
+        "khoa": "cham_dut",
+        "cau_hoi": N_("Khi nào LTT Studios được dừng tài khoản, và credit còn lại xử lý thế nào?"),
+        "hien_trang": N_(
+            "Tài khoản có cờ vô hiệu hoá và bút toán credit không bị xoá, nhưng "
+            "không có điều khoản mô tả khi nào việc đó xảy ra."),
+    },
+    {
+        "khoa": "noi_dung_cam",
+        "cau_hoi": N_("Nội dung nào bị cấm gửi qua API, và hậu quả là gì?"),
+        "hien_trang": N_("Không có chính sách sử dụng chấp nhận được nào được công bố."),
+    },
+)
+
+
+def du_lieu_luu_gi() -> list:
+    """Dữ liệu khách bị giữ lại những gì, **đọc từ đăng ký thật**.
+
+    ⛔ KHÔNG chép danh sách bảng vào đây. `governance.py` đã là nguồn chân lý và
+       nó tự nhắc: *"a second copy of a legal promise is a second promise, and
+       the two will differ"*. Hàm này chỉ **đọc** nó.
+    """
+    from platform_core.public_api import governance
+
+    ra = []
+    for s in getattr(governance, "STORES", ()) or ():
+        ra.append({"bang": s.table,
+                   "lop": getattr(s, "klass", ""),
+                   "giu_ngay": s.retention_days})
+    return ra
+
+
+class ChuaDuDeRangBuoc(RuntimeError):
+    """Có người định lấy chữ ký của khách vào một bản điều khoản chưa xong."""
+
+
+def san_sang() -> bool:
+    """Điều khoản đã đủ để **ràng buộc** khách chưa.
+
+    ⭐ Trả `False` chừng nào còn mục trong `CAN_CHU_SAN_PHAM_QUYET`. Đây không
+       phải một cái cờ trang trí: nó là thứ giữ cho ô tích "tôi đồng ý" không
+       xuất hiện trước khi có gì thật để đồng ý.
+    """
+    return not CAN_CHU_SAN_PHAM_QUYET
+
+
+def can_dieu_khoan_san_sang() -> None:
+    """Gọi ở **mọi** chỗ sắp ghi nhận một chữ ký của khách. Ném nếu chưa đủ.
+
+    🔴 VÌ SAO LÀ MỘT HÀM NÉM, KHÔNG PHẢI MỘT CỜ ĐỂ ĐỌC.
+
+       `san_sang()` một mình không có răng: nó chỉ trả về một giá trị, và một
+       giá trị không ai đọc thì không chặn được gì. Phép kiểm cho nó cũng dễ
+       thành tautology — bản đầu của `test_390` đúng là như vậy, và chỉ lộ ra
+       khi bị đột biến.
+
+    ⭐ Hàm này thì khác: nó **ném**, nên chỗ nào quên gọi sẽ hiện ra ở đường thi
+       hành chứ không hiện ra trong một dòng log. Và một phép kiểm cho nó có thể
+       đỏ thật — chỉ cần bỏ danh sách chưa-quyết đi là nó thôi ném.
+    """
+    if not san_sang():
+        con = ", ".join(m["khoa"] for m in CAN_CHU_SAN_PHAM_QUYET)
+        raise ChuaDuDeRangBuoc(
+            "Dieu khoan API chua du de rang buoc khach: con "
+            f"{len(CAN_CHU_SAN_PHAM_QUYET)} cau hoi chua ai tra loi ({con}). "
+            "Xem CAN_CHU_SAN_PHAM_QUYET trong platform_core/public_api/"
+            "dieu_khoan.py — moi muc co san cau hoi va hien trang.")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/error_registry.py
 SHA256=ef4050375f1ebde7583bf601dfa3f0d53d36e57102c5f65054212b84b0403263 BYTES=10402 LINES=196
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -147399,7 +147815,7 @@ def trang_thai_don(request: Request, order_id: str, user: str = Depends(require_
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/dashboard.py
-SHA256=77c9a878ab57ef12311e53bc9ac233ecbc5ba30217db081f95945d15236d0727 BYTES=13244 LINES=278
+SHA256=237b020eac23917e492f61652e683b9ec6610ac71dec6a2a192b56e8b8c13ca6 BYTES=15059 LINES=314
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Trang chủ — danh sách app, sinh từ apps/*/manifest.py.
 
@@ -147561,6 +147977,42 @@ def gia_api(request: Request):
         "bang": bang, "vi_du": vi_du,
         "bang_anh": bang_anh, "vi_du_anh": vi_du_anh,
         "bang_tieng": bang_tieng,
+        "user": _user_hien_tai(request),
+    })
+
+
+@router.get("/api-dieu-khoan", response_class=HTMLResponse)
+def api_dieu_khoan(request: Request):
+    """Điều khoản dịch vụ API — **CÔNG KHAI, không cần đăng nhập**.
+
+    🔴 VÌ SAO TRANG NÀY PHẢI DO APP PHỤC VỤ, KHÔNG PHẢI WORDPRESS.
+
+       Đo 01/09: chân trang `/register` trỏ tới `https://lttstudios.com/terms/`,
+       và trang đó có **21.335 ký tự** mà **không nhắc** `API`, `credit`,
+       `hoàn tiền`, `trách nhiệm`, `SLA` hay `thanh toán`. Nền tảng bán một dịch
+       vụ tính tiền theo mức dùng, và điều khoản khách được trỏ tới không mô tả
+       dịch vụ đó.
+
+    ⛔ Tiền lệ đã trả giá, chép từ `apps/vps/dieu_khoan.py`: bản WordPress
+       `/vps-terms/` **trả 404 suốt từ 25/08** trong khi clickwrap đã trỏ vào nó
+       — khách "đồng ý" với một trang không tồn tại, đúng lúc sắp trả tiền. Một
+       trang do chính app phục vụ không thể ở trạng thái đó.
+
+    ⭐ Và nó **tự khai là chưa đầy đủ** khi `san_sang()` còn `False`. Một trang
+       điều khoản im lặng ở đúng chỗ quan trọng tệ hơn một trang nói rõ nó chưa
+       xong: cái thứ nhất đọc lên như một lời hứa, cái thứ hai thì không.
+    """
+    from platform_core.public_api import dieu_khoan as dk
+
+    return templates.TemplateResponse(request, "api_dieu_khoan.html", {
+        "phien_ban": dk.PHIEN_BAN,
+        "dong_moi_credit": dk.DONG_MOI_CREDIT,
+        "bang": dk.bang_gia(),
+        "tran": dk.tran_ngu_canh(),
+        "dong_thoi": dk.dong_thoi(),
+        "muc": dk.MUC_DA_DO,
+        "san_sang": dk.san_sang(),
+        "so_bang": len(dk.du_lieu_luu_gi()),
         "user": _user_hien_tai(request),
     })
 
@@ -154924,7 +155376,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=a10d71aabe2972f8696469e179b712d930b04dda4510b554507abeb0f0f0f27f BYTES=71401 LINES=1714
+SHA256=00c701429dc5d64896845cc01f3b32589181fb72873ee0445baaa4a618179bc1 BYTES=72798 LINES=1742
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -155995,6 +156447,33 @@ SHA256=a10d71aabe2972f8696469e179b712d930b04dda4510b554507abeb0f0f0f27f BYTES=71
     if (!ds.length) return;
 
     var chu = (cauHinh || {}).chu || {};
+    var duong = (cauHinh || {}).duong || "";
+    /* ── Doc lai mot luot ──────────────────────────────────────────────────
+       ⛔ NOP MOT JOB MOI va thu tien nhu mot luot moi — engine chay lai toan
+          bo. Khac han `Luu vao du an` (tham chieu tep da co, ton 0). Nut hoi
+          XAC NHAN vi day la mot thao tac TIEU TIEN, va no nam ngay canh cac
+          nut chi doc (tai ve, chi tiet). */
+    var csrfLs = (document.getElementById("lv-ls-csrf") || {}).value || "";
+    var nutDocLai = document.querySelectorAll(".lv-ls-doclai");
+    for (var q = 0; q < nutDocLai.length; q++) {
+      (function (n) {
+        n.addEventListener("click", function () {
+          if (!window.confirm(chu.xacNhanDocLai || "Doc lai?")) return;
+          n.disabled = true;
+          var fd = new FormData();
+          fd.append("csrf_token", csrfLs);
+          fetch(duong + "/lich-su/" + n.dataset.job + "/doc-lai",
+                {method: "POST", body: fd})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.ok) { window.location.reload(); return; }
+              n.disabled = false;
+              window.alert(d.loi || "?");
+            })
+            .catch(function () { n.disabled = false; });
+        });
+      })(nutDocLai[q]);
+    }
     var oCt = document.getElementById("lv-ls-ct");
     if (!oCt) return;
 
@@ -156090,6 +156569,7 @@ SHA256=a10d71aabe2972f8696469e179b712d930b04dda4510b554507abeb0f0f0f27f BYTES=71
     var form = document.getElementById("lv-da-moi");
     if (!form) return;
     var cfg = cauHinh || {}, chu = cfg.chu || {}, duong = cfg.duong || "";
+
     var oLoi = document.getElementById("lv-da-loi");
 
     function mo(hien) {
@@ -160003,6 +160483,95 @@ SHA256=125fe2828f324a70b3c70b4c55c9ecc5d408b11cdd23ff6ea561f65663943e7a BYTES=45
     </aside>
   </div>
 </div>
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/api_dieu_khoan.html
+SHA256=1f7d398d4736b5a3071a736e5aa1436d9aba112b3af602fb42594b3b967139f3 BYTES=3833 LINES=83
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base_public.html" %}
+{% block content %}
+
+<div class="card">
+  <h1 style="margin-top:0;">{{ _("Điều khoản dịch vụ API") }}</h1>
+  <p>{{ _("Trang này mô tả cách API tính tiền và phục vụ — bằng đúng những gì hệ thống đang làm.") }}</p>
+  <p class="muted">
+    {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
+    · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code>
+    · 1 credit = {{ dong_moi_credit }}đ
+  </p>
+</div>
+
+{% if not san_sang %}
+<div class="card" style="border-left:4px solid #d97706;">
+  <h2 style="margin-top:0;">⚠️ {{ _("Bản này CHƯA đầy đủ") }}</h2>
+  <p>
+    {{ _("Những gì viết dưới đây là chính xác — mỗi mục đều mô tả hành vi đã đo trên hệ thống đang chạy. Nhưng bản điều khoản đầy đủ còn thiếu các phần về giới hạn trách nhiệm, cam kết mức độ sẵn sàng, hoàn tiền phần credit chưa dùng và chấm dứt tài khoản.") }}
+  </p>
+  <p class="muted">
+    {{ _("Chúng tôi nói ra điều này thay vì để trống, vì một điều khoản im lặng ở đúng chỗ quan trọng thì tệ hơn một điều khoản nói rõ nó chưa xong.") }}
+  </p>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Cách tính tiền") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Loại token") }}</th>
+      <th style="text-align:right;">{{ _("credit / 1 triệu token") }}</th>
+    </tr></thead>
+    <tbody>
+      <tr><td>{{ _("Token vào") }}</td><td style="text-align:right;">{{ bang.token_vao }}</td></tr>
+      <tr><td>{{ _("Token vào lấy lại từ cache") }}</td><td style="text-align:right;">{{ bang.token_vao_cache }}</td></tr>
+      <tr><td>{{ _("Token ra") }}</td><td style="text-align:right;">{{ bang.token_ra }}</td></tr>
+    </tbody>
+  </table>
+  <p class="muted">{{ bang.ghi_chu }}</p>
+  <p><a href="/gia-api">{{ _("Xem bảng giá đầy đủ kèm ví dụ chi phí thật") }}</a></p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Chúng tôi cam kết những gì") }}</h2>
+  <p class="muted">{{ _("Mỗi mục dưới đây mô tả hành vi đã đo được, không phải ý định.") }}</p>
+  {% for m in muc %}
+  <h3 style="margin-bottom:.25rem;">{{ _(m.tieu_de) }}</h3>
+  <p style="margin-top:.25rem;">{{ _(m.noi_dung) }}</p>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Giới hạn kỹ thuật") }}</h2>
+  <table class="table">
+    <thead><tr>
+      <th>{{ _("Model") }}</th>
+      <th style="text-align:right;">{{ _("ngữ cảnh công bố") }}</th>
+      <th style="text-align:right;">{{ _("trần đầu vào") }}</th>
+      <th style="text-align:right;">{{ _("trần đầu ra") }}</th>
+    </tr></thead>
+    <tbody>
+      {% for ten, v in tran.items() %}
+      <tr>
+        <td><code>{{ ten }}</code></td>
+        <td style="text-align:right;">{{ "{:,}".format(v.cong_bo) }}</td>
+        <td style="text-align:right;">{{ "{:,}".format(v.tran_vao) }}</td>
+        <td style="text-align:right;">{{ "{:,}".format(v.tran_ra) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p>{{ _("Mỗi tài khoản được phục vụ") }} <strong>{{ dong_thoi }}</strong>
+     {{ _("lượt tại một thời điểm. Lượt vượt quá nhận mã 429 kèm Retry-After và không bị tính tiền.") }}</p>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0;">{{ _("Dữ liệu của bạn") }}</h2>
+  <p>{{ _("Nền tảng ghi lại dữ liệu vận hành trong") }} <strong>{{ so_bang }}</strong>
+     {{ _("nhóm dữ liệu, mỗi nhóm có một quy tắc lưu trữ riêng.") }}</p>
+  <p><a href="/developers/du-lieu">{{ _("Xem chi tiết từng nhóm và thời hạn lưu") }}</a></p>
+</div>
+
+{% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -246916,7 +247485,7 @@ def test_khong_cua_nao_bo_qua_ket_qua_verify():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_348_ltt_voice_lich_su.py
-SHA256=ed713aba6c29651a164fd4fc36ec2ea0e2917a00c6eacf800b3f1cd42b8cf608 BYTES=15857 LINES=373
+SHA256=a0c73a4c021cbd0090ae01803203fd2485fbaacb6e087bdb4b8b879079e79986 BYTES=20112 LINES=495
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Lịch sử: lọc đúng, đếm đúng, và **nói ra** chỗ nó cắt bớt.
 
@@ -247092,6 +247661,14 @@ def khach(tmp_path, monkeypatch):
         client.close()
         set_storage(None)
         dbmod.reset_engine()
+
+
+def _csrf(client) -> str:
+    import re
+    m = re.search(r'id="lv-ls-csrf" value="([^"]+)"',
+                  client.get("/ltt-voice/lich-su").text)
+    assert m, "trang Lich su khong co csrf_token — nut Doc lai se hong"
+    return m.group(1)
 
 
 def _gieo(uid: str, so: int, **kw) -> None:
@@ -247291,6 +247868,120 @@ def test_moi_dong_lich_su_deu_TAI_VE_duoc(khach):
     assert r.text.count('download') >= 4, "moi dong phai co WAV va MP3"
     assert "?mp3=1" in r.text, "thieu duong tai MP3"
     assert '/jobs/' in r.text, "thieu duong mo chi tiet job (kiem ca ten truong `d.id`)"
+
+
+# ══════════════════ Lọc theo ngày · Đọc lại — hai việc còn đọng ══════════════
+
+def test_loc_theo_ngay_chay_o_SQL_khong_o_python(khach):
+    """⚠️ Trần `TRAN_DOC` cắt TRƯỚC khi lọc.
+
+    Lọc `so_ngay` trong Python sẽ cho ra "7 ngày qua" tính trên một tập ĐÃ BỊ
+    CẮT — sai theo hướng khó thấy nhất, vì nó chỉ sai với người dùng nhiều.
+    """
+    import inspect
+
+    from apps.ltt_voice import doc_man_lich_su
+
+    src = inspect.getsource(doc_man_lich_su.doc)
+    assert "start=" in src, (
+        "`so_ngay` phai di vao `list_owned(start=...)`, khong loc sau khi da cat")
+
+
+def test_moc_ngay_LA_lua_chon_ROI_RAC(khach):
+    """Giá trị lạ không được thành một truy vấn lạ."""
+    client, uid = khach
+    _gieo(uid, 2)
+    for xau in ("999", "-1", "abc"):
+        r = client.get(f"/ltt-voice/lich-su?ngay={xau}")
+        assert r.status_code == 200, (xau, r.text[:120])
+    r = client.get("/ltt-voice/lich-su?ngay=7")
+    assert r.status_code == 200
+    assert "ngày qua" in r.text
+
+
+def test_doc_lai_NOP_MOT_JOB_MOI(khach):
+    """🔴 Khác hẳn `Lưu vào dự án`: engine chạy lại toàn bộ nên phải tính tiền.
+
+    Cám dỗ ngược cũng có thật ("khách đã trả cho câu này rồi") — nhưng tệp cũ
+    vẫn còn và vẫn nghe được; họ bấm đọc lại là vì muốn một BẢN KHÁC.
+    """
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    _gieo(uid, 1)
+
+    def dem():
+        gen = dbmod.get_session()
+        db = next(gen)
+        try:
+            return db.query(Job).filter(Job.user_id == uid).count()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        jid = str(db.query(Job).filter(Job.user_id == uid).first().id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # ⭐ Nạp credit TRONG phép kiểm, không ở fixture: lượt đầu tiên chạy trước
+    #    khi nạp đã CHỨNG MINH route từ chối đúng khi thiếu tiền, và thông điệp
+    #    ấy tới thẳng khách thay vì thành một lỗi 500 vô nghĩa.
+    from platform_core import credit as _credit
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        thieu = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                            data={"csrf_token": _csrf(client)})
+        assert thieu.status_code == 400 and "credit" in thieu.json()["loi"], (
+            "thieu tien phai bao ro, khong duoc thanh mot loi chung chung")
+        _credit.nap(db, uid, 50, note="test doc lai")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    truoc = dem()
+    r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"], r.text
+    assert dem() == truoc + 1, "doc lai phai NOP mot job moi"
+
+
+def test_doc_lai_job_cua_NGUOI_KHAC_la_404(khach):
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, _uid = khach
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        j = Job(user_id="nguoi-khac", app_slug="ltt_voice",
+                job_type="ltt_voice.synthesize",
+                params={"text": "bi mat", "preset": "Adam"}, status="done",
+                result={"audio_key": "x", "duration_s": 1.0, "credit_cost": 1})
+        db.add(j)
+        db.commit()
+        jid = str(j.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 404, r.text
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -256029,6 +256720,198 @@ def test_tai_nguyen_doc_tu_BAN_KHAI_cua_app():
     tool = next(t for t in MANIFEST.tools if t.admission_resource)
     assert planner._tai_nguyen_nha() == (tool.admission_resource,
                                          tool.admission_slots)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_390_dieu_khoan_api.py
+SHA256=907e05a4ab23f230c747435c9a7f570e9aa3bac2aafcb5a24b7854fb115dae8a BYTES=9465 LINES=186
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_390 — điều khoản API: mọi con số phải là con số THẬT, và không được bịa.
+
+🔴 VÌ SAO TỆP NÀY TỒN TẠI. Đo 01/09 trên bản đang chạy: trang điều khoản duy
+nhất mà `/register` trỏ tới (`https://lttstudios.com/terms/`) có **21.335 ký tự**
+và **không nhắc** `API`, `credit`, `hoàn tiền`, `trách nhiệm`, `SLA`, `thanh
+toán`. Nền tảng bán một dịch vụ tính tiền theo mức dùng mà điều khoản không mô
+tả dịch vụ đó.
+
+⭐ Bài học chép từ `apps/vps/dieu_khoan.py`, nơi đã trả giá: bản WordPress
+   `/vps-terms/` **trả 404 suốt** trong khi clickwrap đã trỏ vào nó — khách
+   "đồng ý" với một trang không tồn tại, đúng lúc sắp trả tiền.
+
+⛔ VÀ MỘT LUẬT NỮA, RIÊNG CHO TỆP NÀY: điều khoản **không được chứa lời hứa
+   chưa ai đưa ra**. Phép kiểm cuối cùng ở đây canh đúng chuyện đó — nó bắt
+   `san_sang()` phải `False` chừng nào còn mục chưa quyết, để ô tích "tôi đồng ý"
+   không thể xuất hiện trước khi có gì thật để đồng ý.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core.public_api import dieu_khoan as dk
+
+
+# ── 1. Số trong điều khoản = số ra hoá đơn ──────────────────────────────────
+
+def test_bang_gia_LA_bang_cua_ham_ra_hoa_don():
+    """Không phải một bảng thứ hai — phải là **chính** hàm tính tiền.
+
+    ⛔ Bản chép thứ hai của một bảng giá là một bảng giá thứ hai, và ngày hai
+       bảng lệch nhau thì bảng nào cũng không đáng tin.
+    """
+    from platform_core.llm import gia_token
+
+    assert dk.bang_gia() == gia_token.bang_gia()
+
+
+def test_KHONG_go_tay_con_so_gia_nao_trong_tep():
+    """Bánh cóc: cấm ai đó 'dọn cho gọn' bằng cách gõ số vào điều khoản.
+
+    ⚠️ Đọc **AST**, không quét văn bản — chú thích trong tệp có nêu số làm ví dụ
+       (`21.335 ký tự`, `404`), và một bánh cóc không phân biệt được mã với lời
+       kể về mã sẽ cấm luôn việc ghi lại bài học.
+    """
+    import ast
+    import pathlib
+
+    from platform_core.llm import gia_token
+
+    cam = {gia_token.GIA_VAO_MOI_CREDIT_1M,
+           gia_token.GIA_VAO_CACHE_CREDIT_1M,
+           gia_token.GIA_RA_CREDIT_1M}
+    cay = ast.parse(pathlib.Path(dk.__file__).read_text(encoding="utf-8"))
+    xau = [n.lineno for n in ast.walk(cay)
+           if isinstance(n, ast.Constant) and isinstance(n.value, int)
+           and n.value in cam]
+    assert not xau, (
+        f"so gia bi go tay o dong {xau}. Doi gia trong gia_token.py thi dieu "
+        f"khoan phai doi THEO, khong phai doi CUNG LUC o hai cho")
+
+
+def test_tran_ngu_canh_khop_tung_model():
+    """Mỗi alias phải nói trần của **chính nó**.
+
+    🔴 Đây đúng lớp lỗi P08 F-02: trước 01/09 `ltt_llm_vision` được quảng cáo
+       "same 89K usable input context" trong khi trần thật là 65.536 — một con
+       số dùng cho hai model là một con số sai cho ít nhất một trong hai.
+    """
+    from apps.ltt_llm import ngan_sach
+    from apps.ltt_llm.features import ALIAS_SANG_ID
+
+    tran = dk.tran_ngu_canh()
+    assert set(tran) == set(ALIAS_SANG_ID), "thieu alias trong dieu khoan"
+    for alias, noi_bo in ALIAS_SANG_ID.items():
+        assert tran[alias]["cong_bo"] == ngan_sach.cong_bo_cua(noi_bo)
+        assert tran[alias]["tran_vao"] == ngan_sach.tran_vao_cua(noi_bo)
+
+
+def test_hai_model_KHONG_dung_chung_mot_con_so():
+    """Đối chứng cho phép kiểm trên: nếu hai model tình cờ bằng nhau thì phép
+    kiểm kia vẫn xanh khi bản vá F-02 bị hoàn nguyên."""
+    tran = dk.tran_ngu_canh()
+    so = {v["cong_bo"] for v in tran.values()}
+    assert len(so) == len(tran), (
+        "hai alias dang cong bo CUNG mot con so — hoac mot trong hai dang noi "
+        "con so cua model kia")
+
+
+def test_dong_thoi_khop_nguon_chan_ly():
+    from apps.ltt_llm import ngan_sach
+    assert dk.dong_thoi() == ngan_sach.DONG_THOI_MAY_B
+
+
+def test_du_lieu_luu_tru_DOC_tu_governance_khong_chep():
+    """`governance.py` tự viết: *a second copy of a legal promise is a second
+    promise, and the two will differ*. Nên điều khoản **đọc** nó."""
+    from platform_core.public_api import governance
+
+    ds = dk.du_lieu_luu_gi()
+    assert len(ds) == len(governance.STORES), "so bang lech => co ban chep"
+    assert {d["bang"] for d in ds} == {s.table for s in governance.STORES}
+
+
+# ── 2. Mỗi lời hứa phải có phép đo đứng sau ─────────────────────────────────
+
+@pytest.mark.parametrize("muc", dk.MUC_DA_DO, ids=lambda m: m["khoa"])
+def test_moi_muc_da_do_deu_NEU_phep_do_sinh_ra_no(muc):
+    """Một điều khoản không nói được nó dựa trên đâu là một điều khoản không
+    kiểm chứng được — và nó sẽ sống sót rất lâu sau khi hệ thống đổi."""
+    assert muc["do_bang"].strip(), f"{muc['khoa']}: khong noi duoc do bang gi"
+    assert muc["tieu_de"] and muc["noi_dung"]
+
+
+def test_khoa_cua_cac_muc_la_duy_nhat():
+    khoa = [m["khoa"] for m in dk.MUC_DA_DO]
+    assert len(khoa) == len(set(khoa))
+
+
+# ── 3. 🔴 Không được bịa lời hứa ────────────────────────────────────────────
+
+def test_KHONG_rang_buoc_khach_khi_con_muc_chua_quyet():
+    """⛔ PHÉP KIỂM QUAN TRỌNG NHẤT TỆP NÀY.
+
+    `san_sang()` là thứ giữ cho ô tích "tôi đồng ý" không xuất hiện trước khi
+    có gì thật để đồng ý. Giới hạn trách nhiệm, SLA, hoàn tiền credit chưa
+    dùng, chấm dứt tài khoản — **không cái nào có trong mã**, nên không đo được,
+    nên không được viết ra.
+
+    ⭐ Một điều khoản do máy đoán ra, đặt trước một ô tích mà khách bấm, là một
+       lời hứa không ai từng đưa ra.
+
+    🔴 BẢN ĐẦU CỦA PHÉP KIỂM NÀY LÀ MỘT TAUTOLOGY, và đột biến bắt được:
+
+           assert dk.san_sang() is (len(dk.CAN_CHU_SAN_PHAM_QUYET) == 0)
+
+       `san_sang()` được **định nghĩa** bằng đúng vế phải, nên câu đó đúng ở mọi
+       trạng thái — kể cả khi ai đó xoá sạch danh sách chưa-quyết. Tôi viết nó
+       ngay dưới dòng chữ "phép kiểm quan trọng nhất tệp này", trong chính phiên
+       đi dọn những bằng chứng-không-thể-sai. Nó chỉ lộ ra vì phép đột biến hỏi
+       "phép kiểm này có ĐỎ được không", chứ không hỏi "nó có xanh không".
+
+    ⇒ Nay chốt hai thứ **có thể sai**: sáu câu hỏi pháp lý phải còn nguyên (đừng
+      ai lặng lẽ bỏ bớt một câu), và trạng thái hôm nay là **chưa ràng buộc**.
+      Răng thật nằm ở phía tiêu thụ — mọi chỗ vẽ ô tích phải gọi `san_sang()` —
+      và nó được chốt ở `test_can_dieu_khoan` phía dưới.
+    """
+    phai_co = {"credit_het_han", "hoan_tien_chua_dung", "sla",
+               "gioi_han_trach_nhiem", "cham_dut", "noi_dung_cam"}
+    dang_co = {m["khoa"] for m in dk.CAN_CHU_SAN_PHAM_QUYET}
+    thieu = phai_co - dang_co
+    assert not thieu, (
+        f"cau hoi phap ly bien mat ma khong ai tra loi: {sorted(thieu)}")
+    assert dk.san_sang() is False, (
+        "dieu khoan tu khai da du de RANG BUOC khach. Neu that su da co van ban "
+        "do chu san pham duyet thi cap nhat phep kiem nay CUNG LUC voi van ban, "
+        "va noi ro ai duyet")
+
+
+@pytest.mark.parametrize("muc", dk.CAN_CHU_SAN_PHAM_QUYET, ids=lambda m: m["khoa"])
+def test_moi_muc_chua_quyet_deu_NOI_RO_hien_trang(muc):
+    """Nêu câu hỏi mà không nêu hiện trạng thì người quyết phải đi tra lại từ
+    đầu — và phần lớn sẽ không tra."""
+    assert muc["cau_hoi"] and muc["hien_trang"]
+
+
+def test_phien_ban_co_dinh_dang_truy_duoc():
+    """Bản ghi đồng ý lưu nhãn này. Nhãn tái sử dụng ⇒ câu hỏi 'họ đã đồng ý với
+    cái gì' không còn trả lời được — cùng luật với `PHIEN_BAN_GIA`."""
+    assert dk.PHIEN_BAN.startswith("api-")
+    assert len(dk.PHIEN_BAN) >= len("api-2026-09-01")
+
+
+def test_can_dieu_khoan_NEM_khi_chua_du():
+    """Răng thật: chỗ nào sắp lấy chữ ký của khách phải gọi hàm này, và nó NÉM.
+
+    ⭐ Khác `san_sang()` ở đúng điểm khiến bản đầu thành tautology: một giá trị
+       không ai đọc thì không chặn được gì, còn một ngoại lệ thì hiện ra ngay
+       trên đường thi hành. Và phép kiểm cho nó **đỏ được thật** — bỏ danh sách
+       chưa-quyết đi là nó thôi ném.
+    """
+    with pytest.raises(dk.ChuaDuDeRangBuoc) as e:
+        dk.can_dieu_khoan_san_sang()
+    # Thông điệp phải NÊU TÊN thứ còn thiếu, không chỉ nói "chưa đủ": người đọc
+    # nó đang đứng trước một ô tích không hiện ra và cần biết vì sao.
+    for khoa in ("sla", "gioi_han_trach_nhiem", "cham_dut"):
+        assert khoa in str(e.value), f"thong diep khong neu {khoa}"
 
 @@@LTT_PROFILE_FILE_END@@@
 
