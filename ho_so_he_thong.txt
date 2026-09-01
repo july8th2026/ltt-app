@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9334ede5e17ff52c46dbbe0f1564c432866395708e2ce719440e81dc32a9284c
-Nguồn đã quét : 1405 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:c5cb5b7dc8dea4acf0010a43664d53cbba59788d97fd0a1ec340abd9449a516a
+Nguồn đã quét : 1406 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1538,8 +1538,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1405 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:45, .py:1061, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1406 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:45, .py:1062, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2843,7 +2843,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (147)
+[tools] (148)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2914,6 +2914,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/do_lap_cau_v3.py
 - tools/do_lo_giong.py
 - tools/do_nhan_ban_tu_kho_cu.py
+- tools/do_tool_stream_api.py
 - tools/do_troi_tong.py
 - tools/do_van_ban_dai.py
 - tools/doctor.py
@@ -3001,7 +3002,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1405 file; 13884401 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1406 file; 13893793 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21672,7 +21673,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/sidecar_client.py
-SHA256=48aeb19a869ce05d9828f21b92a70b862d54eee39b4b04a48333b4085c4b1f18 BYTES=6062 LINES=159
+SHA256=cfb8ca3612746eecf4c2c212f22cebfea6d1727f0f7223338d885b3956eb37c4 BYTES=6459 LINES=168
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 sidecar_client.py — gọi cổng giọng ở `127.0.0.1:8120`.
@@ -21821,6 +21822,15 @@ def noi_dai(texts: list, *, ref_b64: str | None = None,
     return _goi("/v1/speech-dai",
                 {"texts": list(texts), "ref_b64": ref_b64, "preset": preset},
                 timeout=timeout, nhi_phan=True)
+
+
+def ghi_danh_kho(duong_wav: str, *, denoise: bool = True, so_clip: int = 5,
+                 timeout: float = 900.0) -> dict:
+    """Ghi danh theo KHO nhiều cửa sổ (K2). Cùng hình dạng trả về với `ghi_danh`."""
+    d, _ = _goi("/v1/enroll-kho",
+                {"duong_wav": duong_wav, "denoise": denoise,
+                 "so_clip": int(so_clip)}, timeout=timeout)
+    return d
 
 
 def ghi_danh(duong_wav: str, *, denoise: bool = True,
@@ -167199,7 +167209,7 @@ exit $ma
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_nhan_ban_tu_kho_cu.ps1
-SHA256=bd41ab0289e4961e185de3de0af6795cc0bede3bc4c9f80298c2c56cae23e813 BYTES=2504 LINES=69
+SHA256=5d480883957083d1501938f5b3449b7b9fbbbfdeb390a4b469a0736905b766e1 BYTES=2538 LINES=70
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -167222,7 +167232,8 @@ SHA256=bd41ab0289e4961e185de3de0af6795cc0bede3bc4c9f80298c2c56cae23e813 BYTES=25
 [CmdletBinding()]
 param(
     [string]$Root = 'C:\LTTPlatform',
-    [string]$Repo = ''
+    [string]$Repo = '',
+    [int]$Kho = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -167260,7 +167271,7 @@ if (-not $venvPy -or -not (Test-Path $venvPy)) {
 }
 $env:PYTHONPATH = $Repo
 
-$doiSo = @()
+$doiSo = @('--kho', "$Kho")
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -272565,7 +272576,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_nhan_ban_tu_kho_cu.py
-SHA256=868e780a0ced32cbe20d8fc51b931fb99fb0de14c52c33010d60cf877663d69c BYTES=7771 LINES=174
+SHA256=51d45bbf6809a06611322bc3222768e10530bab48a0a63f7d2d213338e61b07e BYTES=8072 LINES=178
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_nhan_ban_tu_kho_cu.py — giọng nhân bản từ kho cũ có GIỐNG người nói không?
@@ -272644,6 +272655,9 @@ def main(argv=None) -> int:
     ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
     ap.add_argument("--clip-dir", default="tmp/giong_cu")
     ap.add_argument("--ra", default="tmp/nhan_ban_kho_cu.json")
+    ap.add_argument("--kho", type=int, default=0,
+                    help="So cua so trong kho tham chieu (K2). 0 = duong cu, "
+                         "mot cua so. >1 = gop speaker_emb qua ca kho.")
     a = ap.parse_args(argv)
 
     import numpy as np
@@ -272691,7 +272705,8 @@ def main(argv=None) -> int:
         #    một lỗi của ta, và nó đúng là lỗi của ta, chỉ không phải lỗi mình
         #    tưởng: tệp có thật, chỉ là hai tiến trình đứng ở hai chỗ khác nhau.
         duong = os.path.abspath(os.path.join(a.clip_dir, ten + ".wav"))
-        ghi = sidecar_client.ghi_danh(duong, denoise=True)
+        ghi = (sidecar_client.ghi_danh_kho(duong, denoise=True, so_clip=a.kho)
+               if a.kho > 1 else sidecar_client.ghi_danh(duong, denoise=True))
         ref_b64 = ghi.get("ref_b64")
         if not ref_b64:
             raise KhongDoDuoc(f"{ten}: ghi_danh khong tra ve ref_b64")
@@ -272741,6 +272756,217 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_tool_stream_api.py
+SHA256=83873ece0c942a2ec9150c274cad6e34cfdacd397523a6fc2f9fd5bfa10c23c4 BYTES=8660 LINES=205
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""do_tool_stream_api.py — B24: tool-call qua cửa STREAMING của `/api/v1`.
+
+    python tools/do_tool_stream_api.py --token-file tmp/canary.token
+
+## Vì sao tách khỏi `do_duong_tien_api.py`
+
+Cửa streaming khác hẳn cửa job về hình dạng: không quote token, không
+`Idempotency-Key`, và câu trả lời đi ra theo **sự kiện** chứ không theo một thân
+JSON. Gộp vào một tệp sẽ làm cả hai khó đọc.
+
+## Phép thử thật của một vòng tool là VÒNG KHÉP KÍN
+
+Thấy `tool_use` trong luồng **chưa chứng minh gì**. Một model có thể phát ra một
+lời gọi tool đúng khuôn rồi **bỏ qua kết quả trả về** và bịa câu trả lời cuối.
+
+⇒ Bài `b24-02` gửi lại một `tool_result` chứa **một con số không đoán được**
+  (`ton: 42`) và đòi con số ấy xuất hiện trong câu trả lời cuối. Đó là khác biệt
+  giữa *"model biết gọi tool"* và *"model dùng được kết quả của tool"* — và chỉ
+  cái sau mới có ích cho khách.
+
+## ⛔ Đối chứng: 503 KHÁC "không hỗ trợ"
+
+`/api/v1/responses` trả `503 service_unavailable` ở lượt đo đầu 01/09. Đó **không
+phải** bằng chứng rằng cửa ấy không nhận tool — máy B chỉ nạp được một model tại
+một thời điểm, và lượt trước đó vừa nạp `qwen38-vision`. Bộ đo này **thử lại**
+khi gặp 503 và ghi rõ đã thử mấy lần, thay vì đóng đinh một kết luận vào một
+khoảnh khắc của llama-swap.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+import time
+import urllib.error
+import urllib.request
+from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+GOC = "https://app.lttstudios.com"
+
+#: 🔴 KHUON NATIVE CUA ANTHROPIC: `name`/`description`/`input_schema` o MUC TREN
+#: CUNG. KHONG phai khuon OpenAI (`{"type":"function","function":{...}}`).
+#:
+#: Ban dau toi gui khuon OpenAI vao cua nay. Ket qua: HTTP 200, va model tra loi
+#: **"Xin loi, hien tai toi khong co tool nao"**. Toi suyt ghi mot khuyet tat
+#: nghiem trong ("cua /messages danh roi truong tools") vao ho so cua mot he
+#: thong dang chay DUNG.
+#:
+#: ⚠️ Nhung quan sat con lai VAN dang gia: `tools` sai khuon bi BO QUA IM LANG,
+#:    khong phai `400`. Khach go sai hinh dang se nhan mot cau tra loi hop ly ma
+#:    sai, thay vi mot loi noi ro. Cho nay lech chuan voi phan con lai cua khu
+#:    API, noi ma loi goi ten dung scope thieu va dinh kem `retry: never`.
+TOOLS = [{"name": "tra_ton_kho",
+          "description": "Tra so luong ton kho cua mot ma hang",
+          "input_schema": {"type": "object", "required": ["ma_hang"],
+                           "properties": {"ma_hang": {"type": "string"}}}}]
+
+#: Con số KHÔNG ĐOÁN ĐƯỢC. Model chỉ nói ra được nếu nó thật sự đọc `tool_result`.
+TON_KHO = 42
+
+
+def _stream(duong: str, tok: str, than: dict, timeout=120.0) -> dict:
+    yc = urllib.request.Request(
+        GOC + duong, data=json.dumps(than).encode(), method="POST",
+        headers={"Authorization": f"Bearer {tok}", "User-Agent": "ltt-b24/1.0",
+                 "Content-Type": "application/json"})
+    t0 = time.monotonic()
+    dong, loai = [], []
+    try:
+        with urllib.request.urlopen(yc, timeout=timeout) as r:
+            ct = r.headers.get("content-type", "")
+            for d in r:
+                s = d.decode("utf-8", "replace").strip()
+                if not s or s.startswith(":"):
+                    continue
+                dong.append(s)
+                if s.startswith("event: "):
+                    loai.append(s[7:])
+                elif s.startswith("data: ") and s[6:] != "[DONE]":
+                    try:
+                        t = json.loads(s[6:]).get("type")
+                        if t:
+                            loai.append(t)
+                    except ValueError:
+                        pass
+    except urllib.error.HTTPError as e:
+        return {"ma": e.code,
+                "than": e.read().decode("utf-8", "replace")[:220]}
+    return {"ma": 200, "ct": ct, "dong": dong, "loai": loai,
+            "giay": round(time.monotonic() - t0, 1)}
+
+
+def _thu_lai_503(duong, tok, than, lan=3) -> dict:
+    """503 = llama-swap đang đổi model, KHÔNG phải 'cửa không hỗ trợ'."""
+    for i in range(lan):
+        r = _stream(duong, tok, than)
+        if r.get("ma") != 503:
+            r["so_503"] = i
+            return r
+        print(f"     503 (lan {i + 1}/{lan}) -- may B doi model, cho roi thu lai")
+        time.sleep(20)
+    r["so_503"] = lan
+    return r
+
+
+def _gom_tool(dong: list[str]) -> tuple[str, str, str]:
+    """(ten tool, id, chuoi tham so) gom từ các delta của luồng."""
+    ten = tid = ""
+    tham = []
+    for s in dong:
+        if not s.startswith("data: "):
+            continue
+        try:
+            j = json.loads(s[6:])
+        except ValueError:
+            continue
+        cb = j.get("content_block") or {}
+        if cb.get("type") == "tool_use":
+            ten = cb.get("name", "") or ten
+            tid = cb.get("id", "") or tid
+        d = j.get("delta") or {}
+        if d.get("type") == "input_json_delta":
+            tham.append(d.get("partial_json", ""))
+        if d.get("type") == "tool_use" or d.get("name"):
+            ten = d.get("name", "") or ten
+    return ten, tid, "".join(tham)
+
+
+def main() -> int:
+    global GOC
+    p = argparse.ArgumentParser(description="B24: tool-call qua cua streaming.")
+    p.add_argument("--token-file", type=Path, required=True)
+    p.add_argument("--base-url", default=GOC)
+    a = p.parse_args()
+    GOC = a.base_url.rstrip("/")
+    tok = a.token_file.read_text(encoding="utf-8").strip()
+
+    ket: list[tuple[str, bool, str]] = []
+    hoi = [{"role": "user",
+            "content": "Con bao nhieu cai ma hang ABC-123 trong kho?"}]
+
+    print("== b24-01: cua /api/v1/messages co phat tool_use trong luong khong ==")
+    r = _thu_lai_503("/api/v1/messages", tok, {
+        "model": "ltt_llm", "max_tokens": 300, "stream": True,
+        "tools": TOOLS, "messages": hoi})
+    if r.get("ma") != 200:
+        print(f"  KHONG DO DUOC: {r.get('ma')} {r.get('than', '')[:150]}")
+        return 2
+    ten, tid, tham = _gom_tool(r["dong"])
+    print(f"  {r['giay']}s, {len(r['dong'])} dong, {len(set(r['loai']))} loai su kien")
+    print(f"  tool: ten={ten!r} id={tid!r} tham={tham!r}")
+    ket.append(("b24-01 luong SSE dung dinh dang",
+                "event-stream" in r.get("ct", ""), r.get("ct", "")))
+    ket.append(("b24-01 phat dung ten tool", ten == "tra_ton_kho", f"ten={ten!r}"))
+    ket.append(("b24-01 tham so la JSON hop le va co ma_hang",
+                "ABC-123" in tham, f"tham={tham[:60]!r}"))
+
+    print("\n== b24-02: VONG KHEP KIN -- gui tool_result, doi so 42 trong tra loi ==")
+    if not tid:
+        print("  BO QUA: khong lay duoc tool_use id")
+        ket.append(("b24-02 vong khep kin", False, "khong co tool id"))
+    else:
+        tiep = hoi + [
+            {"role": "assistant", "content": [
+                {"type": "tool_use", "id": tid, "name": ten,
+                 "input": {"ma_hang": "ABC-123"}}]},
+            {"role": "user", "content": [
+                {"type": "tool_result", "tool_use_id": tid,
+                 "content": json.dumps({"ma_hang": "ABC-123", "ton": TON_KHO})}]}]
+        r2 = _thu_lai_503("/api/v1/messages", tok, {
+            "model": "ltt_llm", "max_tokens": 300, "stream": True,
+            "tools": TOOLS, "messages": tiep})
+        if r2.get("ma") != 200:
+            print(f"  KHONG DO DUOC: {r2.get('ma')} {r2.get('than', '')[:150]}")
+            ket.append(("b24-02 vong khep kin", False, f"HTTP {r2.get('ma')}"))
+        else:
+            van = "".join(
+                json.loads(s[6:]).get("delta", {}).get("text", "")
+                for s in r2["dong"] if s.startswith("data: ") and s[6:] != "[DONE]"
+                for _ in (0,) if _kha_json(s[6:]))
+            print(f"  {r2['giay']}s -- tra loi: {van[:150]!r}")
+            ket.append((f"b24-02 tra loi CHUA so {TON_KHO} tu tool_result",
+                        str(TON_KHO) in van, f"van={van[:60]!r}"))
+
+    print("\n" + "=" * 62)
+    dat = sum(1 for _, ok, _ in ket if ok)
+    for ten_b, ok, vi in ket:
+        print(f"  {'DAT ' if ok else 'TRUOT'} {ten_b:<46} {vi}")
+    print(f"\n  {dat}/{len(ket)}")
+    return 0 if dat == len(ket) else 1
+
+
+def _kha_json(s: str) -> bool:
+    try:
+        json.loads(s)
+        return True
+    except ValueError:
+        return False
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 
