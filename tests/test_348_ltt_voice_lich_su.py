@@ -174,6 +174,14 @@ def khach(tmp_path, monkeypatch):
         dbmod.reset_engine()
 
 
+def _csrf(client) -> str:
+    import re
+    m = re.search(r'id="lv-ls-csrf" value="([^"]+)"',
+                  client.get("/ltt-voice/lich-su").text)
+    assert m, "trang Lich su khong co csrf_token — nut Doc lai se hong"
+    return m.group(1)
+
+
 def _gieo(uid: str, so: int, **kw) -> None:
     import platform_core.db as dbmod
     from platform_core.models import Job
@@ -371,3 +379,117 @@ def test_moi_dong_lich_su_deu_TAI_VE_duoc(khach):
     assert r.text.count('download') >= 4, "moi dong phai co WAV va MP3"
     assert "?mp3=1" in r.text, "thieu duong tai MP3"
     assert '/jobs/' in r.text, "thieu duong mo chi tiet job (kiem ca ten truong `d.id`)"
+
+
+# ══════════════════ Lọc theo ngày · Đọc lại — hai việc còn đọng ══════════════
+
+def test_loc_theo_ngay_chay_o_SQL_khong_o_python(khach):
+    """⚠️ Trần `TRAN_DOC` cắt TRƯỚC khi lọc.
+
+    Lọc `so_ngay` trong Python sẽ cho ra "7 ngày qua" tính trên một tập ĐÃ BỊ
+    CẮT — sai theo hướng khó thấy nhất, vì nó chỉ sai với người dùng nhiều.
+    """
+    import inspect
+
+    from apps.ltt_voice import doc_man_lich_su
+
+    src = inspect.getsource(doc_man_lich_su.doc)
+    assert "start=" in src, (
+        "`so_ngay` phai di vao `list_owned(start=...)`, khong loc sau khi da cat")
+
+
+def test_moc_ngay_LA_lua_chon_ROI_RAC(khach):
+    """Giá trị lạ không được thành một truy vấn lạ."""
+    client, uid = khach
+    _gieo(uid, 2)
+    for xau in ("999", "-1", "abc"):
+        r = client.get(f"/ltt-voice/lich-su?ngay={xau}")
+        assert r.status_code == 200, (xau, r.text[:120])
+    r = client.get("/ltt-voice/lich-su?ngay=7")
+    assert r.status_code == 200
+    assert "ngày qua" in r.text
+
+
+def test_doc_lai_NOP_MOT_JOB_MOI(khach):
+    """🔴 Khác hẳn `Lưu vào dự án`: engine chạy lại toàn bộ nên phải tính tiền.
+
+    Cám dỗ ngược cũng có thật ("khách đã trả cho câu này rồi") — nhưng tệp cũ
+    vẫn còn và vẫn nghe được; họ bấm đọc lại là vì muốn một BẢN KHÁC.
+    """
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, uid = khach
+    _gieo(uid, 1)
+
+    def dem():
+        gen = dbmod.get_session()
+        db = next(gen)
+        try:
+            return db.query(Job).filter(Job.user_id == uid).count()
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        jid = str(db.query(Job).filter(Job.user_id == uid).first().id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # ⭐ Nạp credit TRONG phép kiểm, không ở fixture: lượt đầu tiên chạy trước
+    #    khi nạp đã CHỨNG MINH route từ chối đúng khi thiếu tiền, và thông điệp
+    #    ấy tới thẳng khách thay vì thành một lỗi 500 vô nghĩa.
+    from platform_core import credit as _credit
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        thieu = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                            data={"csrf_token": _csrf(client)})
+        assert thieu.status_code == 400 and "credit" in thieu.json()["loi"], (
+            "thieu tien phai bao ro, khong duoc thanh mot loi chung chung")
+        _credit.nap(db, uid, 50, note="test doc lai")
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    truoc = dem()
+    r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 200, r.text
+    assert r.json()["ok"], r.text
+    assert dem() == truoc + 1, "doc lai phai NOP mot job moi"
+
+
+def test_doc_lai_job_cua_NGUOI_KHAC_la_404(khach):
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    client, _uid = khach
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        j = Job(user_id="nguoi-khac", app_slug="ltt_voice",
+                job_type="ltt_voice.synthesize",
+                params={"text": "bi mat", "preset": "Adam"}, status="done",
+                result={"audio_key": "x", "duration_s": 1.0, "credit_cost": 1})
+        db.add(j)
+        db.commit()
+        jid = str(j.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 404, r.text

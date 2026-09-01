@@ -103,14 +103,42 @@ def tom_tat(job_list) -> dict:
     }
 
 
+#: Các mốc lọc theo ngày. RỜI RẠC, không phải ô chọn ngày tự do: một
+#: khoảng tuỳ ý mời khách chọn một khoảng không có dữ liệu rồi tưởng
+#: màn hình hỏng. `0` = không lọc.
+CAC_MOC_NGAY = (0, 1, 7, 30)
+
+
+def _moc_ngay(so_ngay: int):
+    """`so_ngay` ngày gần nhất -> mốc bắt đầu, hoặc `None` nếu không lọc.
+
+    ⚠️ Dùng `timezone.utc`: `Job.created_at` là `DateTime(timezone=True)`, và so
+       một mốc **không có múi giờ** với một cột **có múi giờ** thì PostgreSQL
+       ném, còn SQLite thì so sai một cách im lặng. Production là PG, test là
+       SQLite — nên lỗi ấy sẽ chỉ hiện ra ở một bên.
+    """
+    from datetime import datetime, timedelta, timezone
+
+    if so_ngay <= 0:
+        return None
+    return datetime.now(timezone.utc) - timedelta(days=so_ngay)
+
+
 def doc(db, owner_id: str, app_slug: str, *, trang_thai: str = "",
-        nguon: str = "", giong: str = "") -> dict:
-    """Một lượt đọc, trả mọi thứ màn Lịch sử cần."""
+        nguon: str = "", giong: str = "", so_ngay: int = 0) -> dict:
+    """Một lượt đọc, trả mọi thứ màn Lịch sử cần.
+
+    ⭐ `so_ngay` lọc ở SQL (`list_owned(start=...)`), không lọc trong Python:
+       trần `TRAN_DOC` cắt TRƯỚC khi lọc, nên lọc sau đó sẽ cho ra "7 ngày qua"
+       tính trên một tập đã bị cắt — và con số ấy sai theo hướng khó thấy nhất
+       (nó chỉ sai với người dùng nhiều).
+    """
     from platform_core import job_history
 
     try:
         tat_ca, _cursor = job_history.list_owned(
-            db, owner_id, app_slug=app_slug, limit=TRAN_DOC)
+            db, owner_id, app_slug=app_slug, limit=TRAN_DOC,
+            start=_moc_ngay(so_ngay))
     except Exception:  # noqa: BLE001 - man hinh khong duoc sap vi mot truy van
         log.warning("khong doc duoc lich su cua %s", owner_id, exc_info=True)
         tat_ca = []

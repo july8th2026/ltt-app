@@ -12912,3 +12912,27 @@ msgstr "The dictionary has {n} entries — the current limit. Remove old entries
 
 msgid "Xoá mục"
 msgstr "Remove entry"
+
+msgid "24 giờ qua"
+msgstr "Last 24 hours"
+
+msgid "Chạy lại engine — tính tiền như một lượt mới."
+msgstr "Runs the engine again — billed as a new generation."
+
+msgid "Không tìm thấy lượt đọc này."
+msgstr "That generation was not found."
+
+msgid "Lượt đọc này không còn văn bản để đọc lại."
+msgstr "That generation no longer has text to read again."
+
+msgid "Mọi lúc"
+msgstr "All time"
+
+msgid "Đọc lại"
+msgstr "Read again"
+
+msgid "Đọc lại sẽ chạy engine một lần nữa và tính tiền như một lượt mới. Tiếp tục?"
+msgstr "Reading again runs the engine once more and is billed as a new generation. Continue?"
+
+msgid "{n} ngày qua"
+msgstr "Last {n} days"

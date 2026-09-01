@@ -18,6 +18,10 @@
 
 {% block content %}
 <section class="lv-man lv-ls" aria-labelledby="lv-ls-title">
+  {# Token CUA TRANG cho nut "Doc lai". Khong dat trong vong lap dong:
+     mot trang rong se khong co token, va loi ay chi hien khi khach vua xoa
+     het lich su. #}
+  <input type="hidden" id="lv-ls-csrf" value="{{ csrf_token }}">
   {% with tieu_de = _("Lịch sử tạo tiếng"),
           mo_ta = _("Mọi lượt đọc của bạn, nghe lại và tải về được."),
           id_tieu_de = "lv-ls-title" %}
@@ -58,6 +62,30 @@
             </select>
           </label>
         {% endif %}
+
+        {#
+          LỌC THEO NGÀY — ảnh 05 vẽ một ô `Date · 7 ngày qua`.
+
+          ⭐ Các mốc RỜI RẠC, không phải ô chọn ngày tự do: một khoảng tuỳ ý
+             mời khách chọn một khoảng không có dữ liệu rồi tưởng màn hình hỏng.
+
+          ⚠️ Lọc ở SQL (`list_owned(start=...)`), KHÔNG lọc trong Python: trần
+             `TRAN_DOC` cắt TRƯỚC, nên lọc sau đó cho ra "7 ngày qua" tính trên
+             một tập đã bị cắt — sai theo hướng khó thấy nhất, vì nó chỉ sai với
+             người dùng nhiều.
+        #}
+        <label class="lv-loc-o">
+          <span class="dim">{{ _("Thời gian") }}</span>
+          <select name="ngay" onchange="this.form.submit()">
+            {% for n in cac_moc_ngay %}
+              <option value="{{ n }}"{{ ' selected' if f_ngay == n }}>
+                {%- if n == 0 %}{{ _("Mọi lúc") }}
+                {%- elif n == 1 %}{{ _("24 giờ qua") }}
+                {%- else %}{{ _("{n} ngày qua").format(n=n) }}{% endif -%}
+              </option>
+            {% endfor %}
+          </select>
+        </label>
 
         {% if giong_da_dung %}
           <label class="lv-loc-o">
@@ -125,6 +153,17 @@
                      go nham ten se cho ra mot nut BIEN MAT chu khong phai mot
                      loi — kieu hong im lang. #}
                   {% if d.id %}
+                    {#
+                      ĐỌC LẠI — ảnh 05 vẽ biểu tượng này ở mỗi dòng.
+
+                      ⛔ Nó NỘP MỘT JOB MỚI và thu tiền như một lượt mới: engine
+                         chạy lại toàn bộ. Khác hẳn `Lưu vào dự án` (tham chiếu
+                         tệp đã có, tốn 0). Nói ra trong `title` để khách không
+                         bấm nhầm rồi ngạc nhiên vì bị trừ credit.
+                    #}
+                    <button type="button" class="btn sm ghost lv-ls-doclai"
+                            data-job="{{ d.id }}"
+                            title="{{ _('Chạy lại engine — tính tiền như một lượt mới.') }}">{{ _("Đọc lại") }}</button>
                     <a class="btn sm ghost" href="/jobs/{{ d.id }}">{{ _("Chi tiết") }}</a>
                   {% endif %}
                 </div>
@@ -213,12 +252,14 @@
 <script src="/static/voice.js?v={{ asset_ver }}"></script>
 <script>
 LttVoice.lichSu({
+  duong: {{ manifest.route_prefix | tojson }},
   chu: {
     sanSang: {{ _("Hoàn tất") | tojson }},
     dangTao: {{ _("Đang tạo") | tojson }},
     dangCho: {{ _("Đang chờ") | tojson }},
     loi:     {{ _("Lỗi") | tojson }},
     daHuy:   {{ _("Đã huỷ") | tojson }},
+    xacNhanDocLai: {{ _("Đọc lại sẽ chạy engine một lần nữa và tính tiền như một lượt mới. Tiếp tục?") | tojson }},
     khong:   {{ _("—") | tojson }}
   }
 });
