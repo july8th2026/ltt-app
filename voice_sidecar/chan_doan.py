@@ -76,8 +76,7 @@ SAN = {
     "delta_vat_99_hz_ti_le": 0.15,
     "delta_f0_trung_vi_hz_ti_le": 0.04,
     "delta_db_dai_cao": 2.0,
-    "delta_f0_tan_tuong_doi": 0.03,
-    "delta_dao_dong_khung": 0.05,
+    "delta_f0_tan_tuong_doi_ti_le": 0.25,
     "delta_lufs": 1.5,
 }
 
@@ -105,12 +104,44 @@ LUAT = (
     ("R14", "delta_f0_trung_vi_hz_ti_le", +1,
      "Bản sinh ra CAO hơn tham chiếu",
      "Kiểm clip tham chiếu có đoạn thều thào hoặc hụt hơi không."),
-    ("R15", "delta_f0_tan_tuong_doi", -1,
-     "Bản sinh ra ĐƠN ĐIỆU hơn tham chiếu",
-     "Ngữ điệu bị san phẳng. Thử một clip tham chiếu có nhiều lên xuống hơn."),
-    ("R16", "delta_dao_dong_khung", +1,
-     "Biên độ bản sinh ra DAO ĐỘNG mạnh hơn tham chiếu",
-     "Có thể là rung giọng hoặc nhiễu. Nghe lại trước khi kết luận."),
+    # 🔴 R15 (đơn điệu hơn) ĐÃ GỠ 01/09, và lý do là một phát hiện về SẢN PHẨM
+    #    chứ không phải một trục trặc của luật.
+    #
+    #    Đo trên 8 giọng × 3 câu: `delta_f0_tan_tuong_doi_ti_le` có nền
+    #    **-0,4556**. Tức bản sinh ra chỉ giữ **54% độ biến thiên cao độ** của
+    #    clip gốc — một cách hệ thống, ở MỌI bản khoẻ mạnh.
+    #
+    #    Nên câu hỏi *"bản này có phẳng hơn bình thường không"* là hỏi sai:
+    #    "bình thường" đã là 54%. Và độ lệch của chính chỉ số ấy là 0,2519 —
+    #    hơn một nửa độ lớn của trung bình. Hệ quả số học: một bản **phẳng lì
+    #    hoàn toàn** (giá trị -1,0, cận dưới tuyệt đối của thang tỉ lệ) chỉ
+    #    cách trung bình **2,2σ**, trong khi ngưỡng là 4σ.
+    #
+    # ⛔ Đưa R15 về bằng cách hạ hệ số σ riêng cho nó thì chỉ là chỉnh ngưỡng
+    #    cho tới khi luật chịu nổ — đúng thứ `do_ca_tai_hien_chan_doan.py` sinh
+    #    ra để ngăn. Chỉ số này quá nhiễu cho một luật theo σ, chấm hết.
+    #
+    # ⭐ Nhưng con số -0,4556 KHÔNG bị vứt đi: nó là một sự thật về sản phẩm —
+    #    **giọng nhân bản kém biểu cảm hơn giọng gốc khoảng một nửa** — và nó
+    #    lớn hơn khuyết tật độ sáng về mặt tương đối. Ghi ở `DECISIONS.md`
+    #    DV-006, chỗ dành cho một sự thật ở mức sản phẩm, không phải một luật
+    #    chấm từng bản.
+    # 🔴 R16 (rung biên độ) ĐÃ GỠ 01/09. Không phải vì nó không quan trọng mà
+    #    vì **ta không có phép đo nào thấy được nó**, và điều đó đã được chứng
+    #    minh chứ không phải phỏng đoán.
+    #
+    #    K3 thử BA cơ chế để bắt rung biên độ: năng lượng dải 3–8 Hz · độ nhọn
+    #    đỉnh trên bao tuyến tính · độ nhọn đỉnh trên **log** bao. Cao nhất đạt
+    #    1,7σ, ngưỡng là 4σ. Lý do là vật lý: nhịp rung giọng của người (~5,5 Hz)
+    #    **trùng nhịp âm tiết** tiếng Việt.
+    #
+    #    Rồi ca tái hiện của K4 xác nhận lần nữa: tiêm rung **35%** — mạnh gấp
+    #    sáu lần mức K3 thử — chỉ làm `delta_dao_dong_khung` nhúc nhích −0,005
+    #    trên một dung sai 0,135, tức **sai chiều và bằng 1/27 ngưỡng**.
+    #
+    # ⛔ Giữ một luật không bao giờ nổ thì tệ hơn không có nó: nó tạo ra ảo giác
+    #    rằng rung giọng đang được canh. Ai muốn đưa lại thì phải mang theo một
+    #    phép đo THẤY được nó, không phải mang lại cái tên.
     ("R17", "delta_lufs", 0,
      "Độ to lệch so với tham chiếu",
      "Không phải lỗi chất lượng: đường sinh có chuẩn hoá độ to riêng."),

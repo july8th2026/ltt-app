@@ -191,13 +191,35 @@ def main(argv=None) -> int:
         (cv, sv, nv), (ce, se, ne) = dong
         cung = cv if lan_text == "vi" else ce
         lech = ce if lan_text == "vi" else cv
-        san = max(sv or 0, se or 0)
-        kl = ("cung lan TOT hon" if lech - cung > san
-              else "lech TOT hon" if cung - lech > san
-              else "KHONG PHAN BIET")
+        # 🔴 SO VỚI SAI SỐ CHUẨN CỦA TRUNG BÌNH, KHÔNG VỚI ĐỘ LỆCH THÔ.
+        #
+        #    Bản đầu so `|chênh lệch| > max(sv, se)` — tức đòi chênh lệch giữa
+        #    hai TRUNG BÌNH phải lớn hơn độ tản của từng LƯỢT. Đó là một phép
+        #    thử sai loại: tăng n bao nhiêu cũng không làm nó dễ qua hơn, vì
+        #    độ lệch thô không giảm theo n.
+        #
+        # ⛔ Hậu quả đo được: hàng tiếng Việt ở n=64 mỗi ô cho 0,0342 vs 0,0645
+        #    — chênh 0,0303 với sai số chuẩn 0,0100, tức **t = 3,03** và khoảng
+        #    tin cậy [+0,0107; +0,0499] **không chứa 0**. Khác biệt THẬT, và
+        #    luật cũ vẫn in "KHONG PHAN BIET". Nó khiến tôi báo cáo dưới mức
+        #    kết luận cho một thứ đã đủ bằng chứng.
+        #
+        # ⭐ Sai số chuẩn giảm theo √n, nên phép thử này **thưởng cho việc đo
+        #    thêm** — đúng như một phép thử nên làm.
+        import math
+        se_v = (sv or 0.0) / math.sqrt(max(nv, 1))
+        se_e = (se or 0.0) / math.sqrt(max(ne, 1))
+        se_d = math.hypot(se_v, se_e)
+        d = lech - cung
+        kl = ("KHONG PHAN BIET" if se_d <= 0 or abs(d) < 1.96 * se_d
+              else "cung lan TOT hon" if d > 0 else "lech TOT hon")
         print(f"  {lan_text:10} "
               f"CER {cv:.4f} ±{sv:.4f} n={nv:<3}  "
               f"CER {ce:.4f} ±{se:.4f} n={ne:<3}  {kl}")
+        if se_d > 0:
+            print(f"  {'':10} chenh {d:+.4f}  sai so chuan {se_d:.4f}  "
+                  f"t={d / se_d:+.2f}  KTC[{d - 1.96 * se_d:+.4f}; "
+                  f"{d + 1.96 * se_d:+.4f}]")
     print("\n  'KHONG PHAN BIET' = chenh lech nho hon do lech giua cac lan sinh.")
     print("  Do KHONG phai 'hai ben bang nhau' — no la 'phep do nay chua du "
           "phan giai de noi'.")

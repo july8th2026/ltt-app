@@ -98,7 +98,26 @@ LAY_HIEU = (
 #: vì hiệu tuyệt đối. Lý do: 20 Hz lệch trên một giọng 90 Hz là nhiều, trên một
 #: giọng 220 Hz là ít — cùng một con số tuyệt đối mang hai ý nghĩa khác nhau.
 TUONG_DOI = frozenset({"trong_tam_hz", "vat_95_hz", "vat_99_hz",
-                       "f0_trung_vi_hz"})
+                       "f0_trung_vi_hz",
+                       # 🔴 `f0_tan_tuong_doi` PHẢI ở đây, và lý do là một luật
+                       #    **không bao giờ với tới được** nếu nó ở thang tuyệt
+                       #    đối.
+                       #
+                       #    `f0_tan_tuong_doi` là độ tản F0 chuẩn hoá, giá trị
+                       #    thực tế ~0,15 và **không âm được**. Nên hiệu tuyệt
+                       #    đối `ra − ref` bị chặn dưới ở khoảng **−0,15**: một
+                       #    bản đọc PHẲNG LÌ HOÀN TOÀN cũng chỉ tới đó.
+                       #
+                       #    Dung sai đo được của nó là 4×0,042 = **0,168**.
+                       #    Lớn hơn giá trị cực đại có thể đạt. Tức R15 (đơn
+                       #    điệu hơn) **không thể nổ dưới bất kỳ đầu vào nào** —
+                       #    và một luật như vậy tệ hơn không có luật, vì nó tạo
+                       #    ra ảo giác đã canh.
+                       #
+                       # ⭐ Ở thang tương đối thì "bản sinh ra chỉ còn 40% độ
+                       #    tản của tham chiếu" = −0,6, và "phẳng lì" = −1,0.
+                       #    Dải giá trị mở ra đủ để một dung sai có nghĩa.
+                       "f0_tan_tuong_doi"})
 
 
 def _gop(wav, sr: int) -> dict:

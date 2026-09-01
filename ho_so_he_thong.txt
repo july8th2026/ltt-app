@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d9ba499ef2b7353d8cea1fbfd02adffde338def37206f84c06a2e303199565ce
-Nguồn đã quét : 1436 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:11128ff652c85e31200afedcc5b560d56603c0efa70edf3c5245650f76b227b3
+Nguồn đã quét : 1445 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1546,8 +1546,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1436 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:56, .py:1081, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1445 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:60, .py:1086, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2463,7 +2463,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (41)
+[setup] (45)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2480,12 +2480,16 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/dat_giong_dung_chung.ps1
 - setup/day_tep_lon_may_b.ps1
 - setup/deploy_nang_quyen.ps1
+- setup/do_ca_tai_hien_chan_doan.ps1
 - setup/do_chot_sinh.ps1
 - setup/do_diem_mu_cong.ps1
 - setup/do_dung_chay_lo.ps1
 - setup/do_engine_co_noi_tieng_anh.ps1
+- setup/do_eq_sua_sang.ps1
+- setup/do_gia_cua_khu_nhieu.ps1
 - setup/do_gia_von_voice.ps1
 - setup/do_giong_nguon_ngoai_ngu.ps1
+- setup/do_khu_nhieu_bat_hay_tat.ps1
 - setup/do_lan_cheo.ps1
 - setup/do_lap_cau_v3.ps1
 - setup/do_lech_tham_chieu.ps1
@@ -2870,7 +2874,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (159)
+[tools] (164)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2931,6 +2935,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/dev_portal_harness.py
 - tools/dich_ltt_voice_en.py
 - tools/do_bo_cuc.py
+- tools/do_ca_tai_hien_chan_doan.py
 - tools/do_chon_doan.py
 - tools/do_chot_sinh.py
 - tools/do_current_truth.py
@@ -2939,13 +2944,17 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/do_dung_chay_lo.py
 - tools/do_duong_tien_api.py
 - tools/do_engine_co_noi_tieng_anh.py
+- tools/do_eq_sua_sang.py
+- tools/do_gia_cua_khu_nhieu.py
 - tools/do_gia_von_voice.py
 - tools/do_giong_nguon_ngoai_ngu.py
+- tools/do_khu_nhieu_bat_hay_tat.py
 - tools/do_lan_cheo.py
 - tools/do_lap_cau_v3.py
 - tools/do_lech_tham_chieu.py
 - tools/do_lo_giong.py
 - tools/do_nhan_ban_tu_kho_cu.py
+- tools/do_sau_khoi_dong.py
 - tools/do_tool_stream_api.py
 - tools/do_troi_tong.py
 - tools/do_van_ban_dai.py
@@ -3040,7 +3049,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1436 file; 14147167 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1445 file; 14214962 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -140567,7 +140576,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=37142ffa2cf90e1d461c28f620cb88f35d3c8940429970a41d28f97c456260db BYTES=51470 LINES=969
+SHA256=f5ac3d8667bcb6f8e97d2c37239cfefdfeebdac01dd536db6f8e36f8ca26a45b BYTES=52256 LINES=981
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -141148,9 +141157,21 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #
     # ⛔ Nó lệch chuẩn với chính khu API này, nơi lỗi gọi đúng tên scope thiếu
     #    và đính `retry: never`. Anthropic thật trả `400` cho tool schema sai.
+    # 🔴 `invalid_request`, KHÔNG PHẢI `executor.parameter_error`.
+    #
+    #    Bản đầu ném `parameter_error` ở đây. Nhưng bộ bắt nó nằm trong `try`
+    #    của `_mot_cuc` — **xa phía dưới**, và chỗ này ở NGOÀI khối đó. Ngoại lệ
+    #    thoát thẳng ra và thành **500**.
+    #
+    # ⛔ Tức bản vá đó làm MỌI THỨ TỆ HƠN: từ "câu trả lời sai im lặng" thành
+    #    "500 không nói gì" — mất luôn cả thông điệp lẽ ra phải giúp khách. Đo
+    #    thật trên production 01/09 trước khi sửa lại.
+    #
+    # ⭐ Ở đây CHƯA giữ tiền nào (trước `policy.resolve`), nên không cần hoàn —
+    #    khác hẳn nhánh `parameter_error` dưới kia, nơi hold đã đặt rồi.
     vi_tool = tool_dich.vi_sao_khong_dung_duoc(than.get("tools"))
     if vi_tool:
-        raise executor.parameter_error(vi_tool)
+        raise invalid_request(vi_tool)
 
     if not than.get("stream"):
         return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
@@ -167165,6 +167186,82 @@ exit $p.ExitCode
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_ca_tai_hien_chan_doan.ps1
+SHA256=557183dc597bb31728d96371ce70104f6bb1b7f5e181af91bd6bda55fcdccf36 BYTES=2567 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_ca_tai_hien_chan_doan.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_ca_tai_hien_chan_doan.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_chot_sinh.ps1
 SHA256=bd294864a848024d26cb146a7e4a780be78a9a50a406182d8edc42aa656ab166 BYTES=2525 LINES=70
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -167465,6 +167562,158 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_eq_sua_sang.ps1
+SHA256=6159a97da8403e8bd5df14b7e95eaf7b34dc1717fec1252100787ae574b9ac7b BYTES=2547 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_eq_sua_sang.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_eq_sua_sang.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_gia_cua_khu_nhieu.ps1
+SHA256=c9967c863b7d993b7ad2f64fa3c4bd7ecbd2db55bc894f38ae250381aba93684 BYTES=2559 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_gia_cua_khu_nhieu.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_gia_cua_khu_nhieu.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_gia_von_voice.ps1
 SHA256=a58e7596c5b76ef910e8daa7bb89338254c8e4d00f2fe38ebcb702a22087a3bc BYTES=2358 LINES=65
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -167592,6 +167841,82 @@ Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor 
 $env:PYTHONPATH = $Repo
 
 $doiSo = @('--vong', "$Vong")
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_khu_nhieu_bat_hay_tat.ps1
+SHA256=8cd8ac90c5c95f945812721eafc2dcb6cd95d764add2a5ee1b4d06522d107278 BYTES=2567 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_khu_nhieu_bat_hay_tat.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_khu_nhieu_bat_hay_tat.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -250987,7 +251312,7 @@ def test_kho_that_sach(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_388_chan_doan.py
-SHA256=bd1b6dcf7c1bd02e91db668cdc85b10ffc797be69ec233a3dc7771a965e1d9f1 BYTES=14985 LINES=330
+SHA256=84a32e7fd072e1c935262df297ca2f309c22d3c80cb47e7a2f170d97c9c10e25 BYTES=23630 LINES=512
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 test_388 — K4: tầng lệch-tham-chiếu và tầng chẩn đoán.
@@ -251156,7 +251481,7 @@ def test_moi_luat_deu_co_SAN_tuyet_doi():
 
 
 def test_ma_luat_GIU_NGUYEN_so_cua_he_cu():
-    """R11–R17 giữ nguyên số, có chủ ý.
+    """R12–R17 giữ nguyên số của hệ cũ, có chủ ý.
 
     Ai đọc báo cáo của hệ cũ sẽ nhận ra ngay, và ai đi tìm "R12 là gì" sẽ tìm
     thấy cùng một khái niệm ở cả hai nơi. Đổi số cho gọn là vứt đi phần duy
@@ -251164,8 +251489,92 @@ def test_ma_luat_GIU_NGUYEN_so_cua_he_cu():
     """
     m = _cd()
     ma = {x[0] for x in m.LUAT}
-    assert {"R13", "R14", "R15", "R16", "R17"} <= ma, sorted(ma)
+    assert {"R13", "R14", "R17"} <= ma, sorted(ma)
     assert any(x.startswith("R12") for x in ma), sorted(ma)
+
+
+def test_R16_DA_GO_va_phai_GIU_NGUYEN_nhu_the():
+    """🔴 R16 (rung biên độ) đã gỡ, và việc đưa lại phải kèm một PHÉP ĐO.
+
+    Không gỡ vì nó không quan trọng, mà vì **ta không có phép đo nào thấy được
+    nó** — và điều đó đã chứng minh hai lần:
+
+      · K3 thử BA cơ chế (năng lượng dải 3–8 Hz · độ nhọn trên bao tuyến tính ·
+        độ nhọn trên **log** bao). Cao nhất 1,7σ, ngưỡng 4σ. Lý do là vật lý:
+        nhịp rung giọng người (~5,5 Hz) **trùng nhịp âm tiết** tiếng Việt.
+      · Ca tái hiện của K4 xác nhận lần nữa: rung **35%** — mạnh gấp sáu lần
+        mức K3 thử — chỉ đẩy `delta_dao_dong_khung` đi −0,005 trên dung sai
+        0,135, tức **sai chiều và bằng 1/27 ngưỡng**.
+
+    ⛔ Một luật không bao giờ nổ tệ hơn không có luật: nó tạo ảo giác rằng rung
+       giọng đang được canh. Phép kiểm này đỏ nếu ai đó đưa R16 về — buộc họ
+       đọc lý do và mang theo một phép đo THẤY được nó, chứ không mang lại
+       mỗi cái tên.
+    """
+    m = _cd()
+    assert "R16" not in {x[0] for x in m.LUAT}, (
+        "R16 quay lai — no co kem mot phep do THAY duoc rung bien do khong? "
+        "Neu co thi sua phep kiem nay va ghi so do vao docstring.")
+    assert "delta_dao_dong_khung" not in m.SAN, (
+        "SAN con giu nguong cho mot chi so khong luat nao dung")
+
+
+def test_R15_o_thang_TUONG_DOI_de_no_VOI_TOI_DUOC():
+    """🔴 Ở thang tuyệt đối, R15 **không thể nổ dưới bất kỳ đầu vào nào**.
+
+    `f0_tan_tuong_doi` là độ tản F0 chuẩn hoá, thực tế ~0,15 và không âm được.
+    Nên hiệu tuyệt đối `ra − ref` bị chặn dưới ở khoảng **−0,15**: một bản đọc
+    phẳng lì hoàn toàn cũng chỉ tới đó. Dung sai đo được là 4×0,042 = **0,168**
+    — lớn hơn giá trị cực đại có thể đạt.
+
+    ⭐ Ca tái hiện của K4 phát hiện điều này, và nó là loại lỗi mà đọc mã không
+       thấy: luật đúng, ngưỡng đúng cách tính, chỉ là hai con số không bao giờ
+       gặp nhau.
+
+    🔴 **SỬA 01/09, CÙNG NGÀY: đổi sang thang tỉ lệ VẪN CHƯA ĐỦ, và R15 đã gỡ.**
+
+    Đo lại sau khi đổi thang:
+
+        nen  -0,4556   lech 0,2519   =>  dung sai 4x0,2519 = 1,0077
+        R15 no khi gia tri < -1,4633
+        can duoi TUYET DOI cua thang ti le = -1,0  (ban phang li hoan toan)
+
+    Nền -0,4556 nghĩa là bản sinh ra **chỉ giữ 54% biến thiên cao độ** của clip
+    gốc ở MỌI bản khoẻ mạnh. Nên câu hỏi *"bản này có phẳng hơn bình thường
+    không"* hỏi sai — "bình thường" đã là 54%. Và độ lệch 0,2519 lớn tới mức
+    một bản phẳng lì chỉ cách trung bình **2,2σ**.
+
+    ⛔ Hạ hệ số σ riêng cho R15 chỉ là chỉnh ngưỡng cho tới khi luật chịu nổ.
+    """
+    m = _cd()
+    assert "R15" not in {x[0] for x in m.LUAT}, (
+        "R15 quay lai — dung sai co con vuot can duoi -1,0 khong?")
+
+
+def test_KHONG_luat_nao_co_dung_sai_VUOT_DAI_gia_tri():
+    """Bất biến mà R15 vi phạm hai lần theo hai cách khác nhau.
+
+    Một luật có dung sai vượt dải khả dĩ của chính chỉ số nó đọc thì **không
+    thể nổ** — và nó trông y hệt một luật đang canh tốt. Chốt được cho các chỉ
+    số ở thang **tỉ lệ**, vì chỉ chúng mới có cận dưới biết trước: −1,0, tức
+    bản sinh ra bằng 0 so với tham chiếu.
+    """
+    import json
+    m = _cd()
+    bl = GOC / "voice_sidecar" / "baseline_lech.json"
+    if not bl.exists():
+        pytest.skip("chua ghim baseline lech")
+    san = (json.loads(bl.read_text(encoding="utf-8")) or {}).get("do") or {}
+    xau = []
+    for ma, chi, chieu, _, _ in m.LUAT:
+        if not chi.endswith("_ti_le") or chi not in san:
+            continue
+        s = san[chi]
+        dung = max(m.HE_SO_LECH * float(s["lech"]), m.SAN.get(chi, 0.0))
+        if chieu <= 0 and float(s["tb"]) - dung < -1.0:
+            xau.append(f"{ma}/{chi}: no khi < {float(s['tb']) - dung:.4f}, "
+                       f"nhung can duoi la -1,0")
+    assert not xau, "; ".join(xau)
 
 
 def test_xep_nang_truoc():
@@ -251319,6 +251728,104 @@ def test_chan_doan_KHONG_anh_huong_PHAN_QUYET():
         assert x not in doan, (
             f"`phan_quyet` dang doc `{x}` — chan doan phai la TU VAN. "
             f"Xem chu thich o `chan_doan.LUAT`.")
+
+
+# ── EQ sửa độ sáng: giữ làm BẰNG CHỨNG, không phải tính năng ─────────────────
+
+EQ = GOC / "voice_sidecar" / "eq_sua_sang.py"
+
+
+def _eq():
+    import importlib.util
+    sp = importlib.util.spec_from_file_location("eq_thu", EQ)
+    m = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(m)
+    return m
+
+
+def test_EQ_KHONG_duoc_noi_vao_duong_sinh():
+    """🔴 DV-004: EQ sửa độ sáng KHÔNG đóng được khoảng cách. Đã đo.
+
+    Quét sáu mức 0→4 dB trên 12 bản: `|lệch sáng|` giảm đẹp 7,9 → 4,6 nhưng
+    **DNSMOS phẳng lì** — dao động ±0,003 trên một độ lệch nội tại 0,180.
+
+    Vì sao: codec neural **không suy giảm** dải cao, nó **không mã hoá** dải
+    cao. Bù tuyến tính chỉ nâng phần còn lại — kể cả phần dư nhiễu — chứ không
+    khôi phục thông tin đã bị vứt.
+
+    ⛔ Đây đúng là kiểu hỏng bộ đo sinh ra để bắt: **một con số đẹp lên trong
+       khi tiếng không đổi.** Nếu chỉ nhìn `db_dai_cao` thì EQ trông như một
+       thành công rõ ràng, và ta đã ship một tính năng không làm gì.
+
+    Phép kiểm này đỏ nếu ai đó nối EQ vào — buộc họ đọc DV-004 và mang theo số
+    đo mới, chứ không phải mang lại một ý tưởng nghe hợp lý.
+    """
+    for f in ("engine.py", "server.py", "noi_dai.py"):
+        p = GOC / "voice_sidecar" / f
+        if not p.exists():
+            continue
+        assert "eq_sua_sang" not in p.read_text(encoding="utf-8"), (
+            f"`{f}` dang goi eq_sua_sang — xem DV-004 truoc khi bat no.")
+
+
+def test_EQ_kep_o_TRONG_ham_chu_khong_o_noi_goi():
+    """Chốt an toàn đặt ở nơi gọi là chốt mà nơi gọi thứ hai sẽ quên."""
+    m = _eq()
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    sr = 24000
+    x = (0.2 * np.sin(2 * np.pi * 6000 * np.arange(sr) / sr)).astype("float32")
+    a = m.ap(x, sr, ke_cao_db=4.0)
+    b = m.ap(x, sr, ke_cao_db=40.0)      # vuot tran 10 lan
+    assert float(np.abs(a).max()) == pytest.approx(float(np.abs(b).max()),
+                                                   rel=0.02), (
+        "40 dB va 4 dB cho ket qua khac nhau — phep kep khong nam trong `ap()`")
+
+
+def test_EQ_khong_CAT_NGON_khi_vuot_tran():
+    """Hạ đều cả bản, KHÔNG cắt ngọn.
+
+    ⛔ Cắt ngọn là méo phi tuyến — đúng thứ `chot_toan_ven` của K1 sinh ra để
+       bắt. Một bước "sửa chất lượng" tự tạo ra hỏng hóc mà một chốt khác phải
+       bắt là một bước đi lùi.
+    """
+    m = _eq()
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    sr = 24000
+    # ⛔ KHONG dung 6000 Hz o sr 24000: do la DUNG 4 mau moi chu ky, nen mot
+    #    nua so mau roi chinh xac vao ±dinh va phep dem duoi day bao "da cat
+    #    ngon" cho mot tin hieu hoan toan sach. Khuon thu tu tao ra dung hien
+    #    tuong no dinh bat — cung lop loi voi khuon `_tieng_gia` cua test_383.
+    rng = np.random.default_rng(4)
+    t = np.arange(sr) / sr
+    x = (0.55 * np.sin(2 * np.pi * 5300 * t)
+         + 0.35 * np.sin(2 * np.pi * 1700 * t)
+         + 0.05 * rng.standard_normal(sr)).astype("float32")
+    x = (x / np.abs(x).max() * 0.95).astype("float32")
+    y = m.ap(x, sr, ke_cao_db=4.0)
+    assert float(np.abs(y).max()) <= 1.0
+    # neu cat ngon thi se co nhieu mau NAM DUNG o tran; ha deu thi khong
+    tran = float(np.abs(y).max())
+    dinh = int((np.abs(y) > tran * 0.999).sum())
+    assert dinh < 20, f"{dinh} mau nam sat tran — nhieu kha nang da cat ngon"
+
+
+def test_EQ_0dB_la_di_qua_khong_doi():
+    m = _eq()
+    np = pytest.importorskip("numpy")
+    sr = 24000
+    x = (0.3 * np.sin(2 * np.pi * 800 * np.arange(sr) / sr)).astype("float32")
+    assert np.allclose(m.ap(x, sr, ke_cao_db=0.0), x)
+
+
+def test_TRAN_DB_giu_nguyen_4_nhu_he_cu():
+    """±4 dB kế thừa từ hệ cũ, và nó là chốt AN TOÀN không phải tham số.
+
+    Vượt nó thì tiếng nghe chói và giả, và nhiễu của codec trong dải ấy lên
+    theo cùng một lượng.
+    """
+    assert _eq().TRAN_DB == 4.0
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -273893,6 +274400,339 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_ca_tai_hien_chan_doan.py
+SHA256=7e2d39fc0ea3a2087064bf371eda6b5608ba0f98e3d659e46aa134fd45ebe799 BYTES=15620 LINES=327
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_ca_tai_hien_chan_doan.py — mỗi luật chẩn đoán có một CA TÁI HIỆN ĐƯỢC không.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_ca_tai_hien_chan_doan.ps1
+
+## Điều kiện qua của K4, nguyên văn
+
+    "Qua khi mỗi luật có ít nhất một ca thật tái hiện được, và bộ khuyến nghị
+     đề xuất đúng thay đổi trên ca đó."
+
+Một luật chưa từng nổ là một luật **không ai biết nó có chạy hay không**. Nó
+trông y hệt một luật đang canh tốt — cho tới ngày cần nó.
+
+⭐ Đây là cùng phương pháp với `do_diem_mu_cong.py` của K3, và cố ý: tiêm một
+   hỏng hóc ĐÃ BIẾT rồi xem chỉ số/luật nào phản ứng. Khác một chỗ quan trọng:
+   K3 hỏi *"cổng có THẤY không"*, tệp này hỏi *"luật có nổ ĐÚNG luật không"* —
+   một luật nổ nhầm chỗ còn tệ hơn một luật im, vì nó gửi khách đi sửa nhầm thứ.
+
+## ⛔ KHÔNG CHẠM GPU
+
+Nó tiêm hỏng hóc vào **những tệp K0 đã sinh** (`tmp/k0/vieneu/*.wav`) và so với
+**clip tham chiếu gốc** (`tmp/giong_cu/*.wav`). Không sinh tiếng mới lần nào.
+
+⭐ Nghĩa là nó chạy được trong lúc một lô GPU khác đang chạy, và nó **lặp lại
+   được** — cùng tệp vào, cùng kết quả ra. Một phép kiểm tái hiện mà bản thân nó
+   không tái hiện được thì chứng minh được gì?
+
+## Giới hạn đã biết, ghi ra thay vì giấu
+
+Vài luật khó tiêm sạch bằng xử lý tín hiệu thuần:
+
+  · **R15 (đơn điệu hơn)** cần làm phẳng đường F0 mà giữ nguyên nội dung. Cách
+    làm ở đây — đổi tần số từng cửa sổ để kéo F0 về trung vị — là **thô**, và nó
+    cũng đụng vào nhịp. Nếu R15 không nổ thì đọc là *"phép tiêm chưa đủ sạch"*,
+    KHÔNG phải *"luật hỏng"*.
+  · **R13/R14 (cao độ)** tiêm bằng đổi tần số, nên nó đổi cả **độ dài**. Với
+    `delta_f0_trung_vi_hz_ti_le` thì không sao — phép đo lấy trung vị, không lấy
+    thời lượng. Nhưng đừng dùng cùng tệp ấy để chấm nhịp.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+
+# ── các phép tiêm ───────────────────────────────────────────────────────────
+
+def _loc_thap(w, sr, cat=2500.0):
+    from scipy.signal import butter, sosfilt
+    import numpy as np
+    sos = butter(6, cat / (sr / 2), btype="low", output="sos")
+    return np.asarray(sosfilt(sos, w), dtype="float32")
+
+
+def _day_dai_cao(w, sr, tang_db=14.0):
+    """Nâng dải cao — bản sinh ra 'chói' hơn tham chiếu."""
+    from scipy.signal import butter, sosfilt
+    import numpy as np
+    sos = butter(4, 4000.0 / (sr / 2), btype="high", output="sos")
+    cao = np.asarray(sosfilt(sos, w), dtype="float32")
+    k = 10 ** (tang_db / 20.0) - 1.0
+    return np.asarray(w + k * cao, dtype="float32")
+
+
+def _nghieng_pho(w, sr):
+    """Dịch trọng tâm phổ mà không cắt hẳn dải nào."""
+    from scipy.signal import butter, sosfilt
+    import numpy as np
+    sos = butter(2, 1200.0 / (sr / 2), btype="high", output="sos")
+    return np.asarray(w + 2.0 * np.asarray(sosfilt(sos, w)), dtype="float32")
+
+
+def _doi_cao_do(w, sr, ti_le):
+    """Đổi cao độ bằng đổi tần số. ⚠️ Đổi cả độ dài — xem docstring."""
+    import numpy as np
+    try:
+        import soxr
+        return np.asarray(soxr.resample(w, sr, int(sr / ti_le)),
+                          dtype="float32")
+    except ImportError:
+        n = int(round(len(w) / ti_le))
+        return np.interp(np.linspace(0, len(w) - 1, n),
+                         np.arange(len(w)), w).astype("float32")
+
+
+def _lam_phang_f0(w, sr):
+    """Kéo F0 từng cửa sổ về trung vị chung. THÔ — xem docstring."""
+    import numpy as np
+    from voice_sidecar.do_on_dinh import _f0_khung
+    f0, huu = _f0_khung(np.asarray(w, dtype=np.float64), sr)
+    if huu.sum() < 24:
+        return np.asarray(w, dtype="float32")
+    tv = float(np.median(f0[huu]))
+    n = int(sr * 0.25)
+    manh = []
+    for i in range(0, len(w), n):
+        doan = np.asarray(w[i:i + n], dtype="float32")
+        if doan.size < 64:
+            manh.append(doan)
+            continue
+        f, h = _f0_khung(doan.astype(np.float64), sr)
+        if h.sum() < 4:
+            manh.append(doan)
+            continue
+        cuc_bo = float(np.median(f[h]))
+        if cuc_bo <= 0:
+            manh.append(doan)
+            continue
+        manh.append(_doi_cao_do(doan, sr, tv / cuc_bo))
+    return np.concatenate(manh).astype("float32")
+
+
+def _rung_bien_do(w, sr, sau=0.35, nhip=5.0):
+    import numpy as np
+    t = np.arange(len(w)) / sr
+    return (w * (1.0 + sau * np.sin(2 * np.pi * nhip * t))).astype("float32")
+
+
+def _doi_do_to(w, sr, db=9.0):
+    import numpy as np
+    return np.asarray(w * (10 ** (db / 20.0)), dtype="float32")
+
+
+#: `(ma_luat_mong_doi, ten, ham)`.
+TIEM = [
+    ("R12a", "duc_2k5",        lambda w, sr: _loc_thap(w, sr)),
+    # ⚠️ +30 dB, không phải +14. Lần đo đầu tiêm +14 và luật IM: nó đẩy
+    #    `delta_db_dai_cao` đi +5,36 trên một dung sai **13,53 dB**.
+    #    Dung sai rộng như vậy vì `lech` đo được là 3,38 dB — độ sáng của clip
+    #    tham chiếu **khác nhau rất nhiều giữa các người nói**, và baseline gộp
+    #    chung tám giọng nên nó nuốt cả biến động ấy.
+    #
+    # ⭐ Nên con số đúng để ghi lại KHÔNG phải "R12b có nổ" mà là **R12b chỉ
+    #    thấy được lệch độ sáng cỡ trên +10 dB**. Nó là một luật bắt hỏng hóc
+    #    THÔ, và nói ra điều đó có ích hơn là chỉnh phép tiêm cho tới khi xanh.
+    ("R12b", "choi_+30dB",     lambda w, sr: _day_dai_cao(w, sr, 30.0)),
+    ("R12c", "nghieng_pho",    lambda w, sr: _nghieng_pho(w, sr)),
+    ("R13",  "tram_-25pc",     lambda w, sr: _doi_cao_do(w, sr, 0.75)),
+    ("R14",  "cao_+33pc",      lambda w, sr: _doi_cao_do(w, sr, 1.33)),
+    ("R17",  "to_+9dB",        lambda w, sr: _doi_do_to(w, sr)),
+]
+
+#: Hỏng hóc ta **BIẾT là không bắt được**, giữ lại để nó có tên.
+#:
+#: 🔴 Rung biên độ từng là luật R16, và đã **gỡ 01/09** — không phải vì nó không
+#:    quan trọng mà vì ta không có phép đo nào thấy được nó, và điều đó đã chứng
+#:    minh hai lần:
+#:
+#:      · K3 thử BA cơ chế (năng lượng dải 3–8 Hz · độ nhọn trên bao tuyến tính
+#:        · độ nhọn trên **log** bao). Cao nhất 1,7σ trên ngưỡng 4σ. Lý do là
+#:        vật lý: nhịp rung giọng người (~5,5 Hz) **trùng nhịp âm tiết** tiếng
+#:        Việt, nên không có mốc dải nào tách được chúng.
+#:      · Ca tái hiện của K4: tiêm rung **35%** — gấp sáu lần mức K3 thử — chỉ
+#:        đẩy `delta_dao_dong_khung` đi −0,005 trên dung sai 0,135, tức **sai
+#:        chiều và bằng 1/27 ngưỡng**.
+#:
+#: ⭐ Giữ nó ở đây thay vì xoá, vì một điểm mù **có tên** là một điểm mù người
+#:    sau biết mà tránh; một điểm mù bị xoá khỏi mã thì lần sau có người lại
+#:    khám phá ra nó từ đầu. Và nếu ngày nào đó một chỉ số mới bắt được nó, bộ
+#:    dò sẽ NÓI RA — lúc ấy đưa R16 về là có căn cứ.
+TIEM_MU = [
+    ("(da go R16)", "rung_35pc", lambda w, sr: _rung_bien_do(w, sr)),
+    # 🔴 R15 (đơn điệu hơn) gỡ 01/09 vì một lý do khác hẳn R16: chỉ số ĐO ĐƯỢC
+    #    hiện tượng, nhưng nền của nó là **-0,4556** (bản sinh ra chỉ giữ 54%
+    #    biến thiên cao độ của gốc, ở mọi bản khoẻ mạnh) với độ lệch 0,2519.
+    #    Một bản PHẲNG LÌ HOÀN TOÀN — cận dưới tuyệt đối -1,0 — chỉ cách trung
+    #    bình 2,2σ, dưới ngưỡng 4σ.
+    #
+    # ⭐ Giữ phép tiêm ở đây để nếu ngày nào đó chỉ số bớt nhiễu (vd baseline
+    #    theo TỪNG GIỌNG thay vì gộp 8 giọng) thì bộ dò sẽ NÓI RA ngay.
+    ("(da go R15)", "phang_f0", lambda w, sr: _lam_phang_f0(w, sr)),
+]
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--wav", default="tmp/k0/vieneu")
+    ap.add_argument("--clip-ref", default="tmp/giong_cu")
+    ap.add_argument("--so-mau", type=int, default=6,
+                    help="So ban lay mau cho moi phep tiem.")
+    ap.add_argument("--ra", default="tmp/ca_tai_hien_chan_doan.json")
+    a = ap.parse_args(argv)
+
+    import soundfile as sf
+
+    from voice_sidecar import chan_doan, lech_tham_chieu
+
+    bl = "voice_sidecar/baseline_lech.json"
+    if not os.path.isfile(bl):
+        print(f"THIEU {bl} — chay `do_lech_tham_chieu.ps1 -Ghim` truoc.",
+              file=sys.stderr)
+        return 2
+    san = (json.load(open(bl, encoding="utf-8")) or {}).get("do") or {}
+
+    cac = sorted(glob.glob(os.path.join(a.wav, "*.wav")))
+    if not cac:
+        print(f"KHONG CO WAV trong {a.wav}", file=sys.stderr)
+        return 2
+    buoc = max(1, len(cac) // a.so_mau)
+    cac = cac[::buoc][:a.so_mau]
+
+    print(f"{len(cac)} ban x {len(TIEM)} phep tiem  (KHONG cham GPU)\n")
+
+    ket = {}
+    for ma, ten, ham in TIEM:
+        no_dung, no_nham, im = 0, [], 0
+        for p in cac:
+            goc_ma = os.path.basename(p).split("__")[0]
+            ref = os.path.join(a.clip_ref, f"{goc_ma}.wav")
+            if not os.path.isfile(ref):
+                continue
+            w, sr = sf.read(p, dtype="float32", always_2d=False)
+            wr, srr = sf.read(ref, dtype="float32", always_2d=False)
+            if getattr(w, "ndim", 1) > 1:
+                w = w.mean(axis=1)
+            if getattr(wr, "ndim", 1) > 1:
+                wr = wr.mean(axis=1)
+            try:
+                hong = ham(w, int(sr))
+            except Exception as e:                        # noqa: BLE001
+                print(f"  [tiem hong] {ten}: {type(e).__name__}: {e}")
+                continue
+            lech = lech_tham_chieu.do_lech(hong, int(sr), wr, int(srr))
+            pf = chan_doan.chan_doan(lech, san).get("phat_hien") or []
+            ma_no = {x["ma"] for x in pf}
+            if ma in ma_no:
+                no_dung += 1
+            elif ma_no:
+                no_nham.append(sorted(ma_no))
+            else:
+                im += 1
+        ket[ma] = {"phep_tiem": ten, "no_dung": no_dung,
+                   "no_nham": no_nham, "im": im, "so_ban": len(cac)}
+        dau = "OK  " if no_dung else "🔴 IM"
+        print(f"  {dau} {ma:5} {ten:16} no dung {no_dung}/{len(cac)}"
+              + (f"  | no NHAM: {no_nham[:2]}" if no_nham else "")
+              + (f"  | im {im}" if im else ""))
+
+    # ── điểm mù có tên: KHÔNG được nổ ─────────────────────────────────────
+    print()
+    for nhan, ten_mu, ham_mu in TIEM_MU:
+        no, bo_qua = 0, []
+        for p2 in cac:
+            goc2 = os.path.basename(p2).split("__")[0]
+            ref2 = os.path.join(a.clip_ref, goc2 + ".wav")
+            if not os.path.isfile(ref2):
+                continue
+            w2, sr2 = sf.read(p2, dtype="float32", always_2d=False)
+            wr2, srr2 = sf.read(ref2, dtype="float32", always_2d=False)
+            if getattr(w2, "ndim", 1) > 1:
+                w2 = w2.mean(axis=1)
+            if getattr(wr2, "ndim", 1) > 1:
+                wr2 = wr2.mean(axis=1)
+            try:
+                l2 = lech_tham_chieu.do_lech(ham_mu(w2, int(sr2)), int(sr2),
+                                             wr2, int(srr2))
+            except Exception as ex:                       # noqa: BLE001
+                # 🔴 ĐẾM VÀ NÓI RA, đừng `continue` trần.
+                #
+                #    Trong một bộ đo PHÉP TIÊM, "bỏ qua vì lỗi" và "chạy xong,
+                #    không phát hiện" là **hai sự kiện khác hẳn**. Nuốt lỗi gộp
+                #    chúng làm một: mẫu nhỏ đi mà không ai biết, rồi
+                #    `co_luat_no` đọc lên như kết quả trên mẫu đầy đủ — tức tỉ
+                #    lệ "không tác dụng" bị thổi phồng **theo hướng làm hại**,
+                #    lặng lẽ.
+                #
+                # ⭐ Chỗ này do phiên `lttstudiosapp-c3` chỉ ra khi nó làm gate
+                #    đỏ ở `check_silent_except.py` (64 > mốc 63). Đề xuất của
+                #    họ đúng hơn bản đầu của tôi, và nó hạ bánh cóc một cách
+                #    THẬT chứ không phải bằng cách nâng mốc.
+                #
+                # ⚠️ `# noqa: BLE001` chỉ tắt **ruff**. `check_silent_except.py`
+                #    đọc AST riêng và vẫn đếm — hai cơ chế không liên quan.
+                bo_qua.append(f"{os.path.basename(p2)}: "
+                              f"{type(ex).__name__}: {ex}")
+                continue
+            if chan_doan.chan_doan(l2, san).get("phat_hien"):
+                no += 1
+        ket[nhan] = {"phep_tiem": ten_mu, "diem_mu": True, "co_luat_no": no,
+                     "bo_qua": bo_qua, "so_ban": len(cac),
+                     "so_da_chay": len(cac) - len(bo_qua)}
+        if bo_qua:
+            print(f"  ⚠️ {nhan}: bo qua {len(bo_qua)}/{len(cac)} ban vi loi — "
+                  f"ket qua duoi day tinh tren {len(cac) - len(bo_qua)} ban")
+            for x in bo_qua[:3]:
+                print(f"     {x}")
+        if no:
+            # ⭐ Đây là TIN TỐT, không phải lỗi: một chỉ số nào đó nay thấy được
+            #    thứ trước kia mù. Nhưng nó phải được NÓI RA, không lặng lẽ.
+            print("  ⭐ " + nhan + " " + ten_mu
+                  + " nay CO luat no o " + str(no) + "/" + str(len(cac))
+                  + " ban => co the dua R16 ve, da co can cu.")
+        else:
+            print("  (mu) " + nhan + " " + ten_mu
+                  + " khong luat nao no — dung nhu da biet")
+
+    # ⛔ Bỏ qua các mục ĐIỂM MÙ: chúng không có `no_dung` vì chúng không phải
+    #    một luật đang canh — chúng là một hỏng hóc ta đã biết là không bắt
+    #    được, giữ lại để nó có tên.
+    thieu = sorted(k for k, v in ket.items()
+                   if not v.get("diem_mu") and not v["no_dung"])
+    if thieu:
+        print(f"  🔴 LUAT CHUA CO CA TAI HIEN: {thieu}")
+        print("     Mot luat chua tung no la mot luat khong ai biet no co chay")
+        print("     hay khong — no trong y het mot luat dang canh tot.")
+    else:
+        print("  ✅ MOI LUAT DEU CO IT NHAT MOT CA TAI HIEN DUOC.")
+    print("=" * 72)
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ket, f, ensure_ascii=False, indent=2)
+    print(f"Da ghi: {a.ra}")
+    return 1 if thieu else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_chon_doan.py
 SHA256=219845bfd23d5e88a8b1a0ebc020173e038fbf10488b5ae668da9db1235c7ab0 BYTES=9754 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -275575,6 +276415,373 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_eq_sua_sang.py
+SHA256=317b09317f7a04eeb77a352faaef12a2810a7b5f76f54b28628ed25c867380f4 BYTES=8041 LINES=190
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_eq_sua_sang.py — EQ sửa độ sáng có THẬT SỰ cải thiện không, hay chỉ làm một
+con số đẹp lên.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_eq_sua_sang.ps1
+
+## ⛔ CÂU HỎI PHẢI HỎI, VÀ NÓ KHÔNG PHẢI "db_dai_cao CÓ LÊN KHÔNG"
+
+Tất nhiên nó lên — đó là định nghĩa của việc nâng dải cao. Câu hỏi thật:
+
+  ① **DNSMOS có lên không?** Đây là trọng tài bên thứ ba, và là **đúng trục F5
+     đang thắng ta ở K0** (31–9). Nếu EQ không nâng được nó thì EQ không thu
+     hẹp khoảng cách, dù `db_dai_cao` có đẹp tới đâu.
+  ② **CER có xấu đi không?** EQ nâng cả nhiễu codec trong dải nó nâng. Một bản
+     sáng hơn mà khó nghe hơn là một bước lùi.
+  ③ **Đỉnh thật có vượt trần không?** Nâng thì đỉnh lên theo.
+
+⭐ Một chỉ số đi đúng hướng trong khi hai chỉ số khác đi sai là kết quả **tệ
+   nhất** có thể, vì nó dễ báo cáo thành thành công. Nên cả ba đi cùng nhau
+   trong một bảng.
+
+## Vì sao quét nhiều mức thay vì lấy thẳng 3,65 dB
+
+Trực giác nói: hụt 3,65 dB thì nâng lại 3,65 dB. Nhưng:
+
+  · Hụt đo trên **năng lượng trung bình** của cả dải >4 kHz; một kệ cao ở
+    4 kHz nâng không đều trên dải ấy.
+  · Bù đủ có thể **quá tay về mặt cảm nhận**: khuyết tật của codec không phải
+    một bộ lọc tuyến tính, nên bù tuyến tính không khôi phục được thứ đã mất —
+    nó chỉ nâng những gì còn lại, **kể cả nhiễu**.
+
+⇒ Nên quét, và để DNSMOS chọn. Nếu đỉnh của DNSMOS rơi đúng ở ~3,65 thì đó là
+  một xác nhận; nếu nó rơi ở 1,5 thì trực giác sai và ta biết vì sao.
+
+## ⛔ KHÔNG CHẠM GPU
+
+Chạy trên 40 tệp K0 đã sinh. Nghĩa là nó lặp lại được, và nó không tranh card
+với việc khác.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import statistics
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+#: Mức kệ cao đem quét, dB. 0 là ĐỐI CHỨNG — bản không đụng gì.
+MUC = (0.0, 1.0, 2.0, 3.0, 3.65, 4.0)
+
+#: Tần số gối của kệ cao. 4 kHz vì đó là mốc `do_on_dinh.CAT_SANG_HZ` đang đo,
+#: nên phép đo và phép sửa nói về cùng một dải.
+GOI_HZ = 4000.0
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--wav", default="tmp/k0/vieneu")
+    ap.add_argument("--k0", default="tmp/k0/f5_sinh.json")
+    ap.add_argument("--clip-ref", default="tmp/giong_cu")
+    ap.add_argument("--so-mau", type=int, default=12)
+    ap.add_argument("--ra", default="tmp/eq_sua_sang.json")
+    a = ap.parse_args(argv)
+
+    import soundfile as sf
+
+    from voice_sidecar import (dnsmos, do_chat_luong, do_on_dinh, eq_sua_sang,
+                               lech_tham_chieu)
+
+    cac = sorted(glob.glob(os.path.join(a.wav, "*.wav")))
+    if not cac:
+        print(f"KHONG CO WAV trong {a.wav}", file=sys.stderr)
+        return 2
+    buoc = max(1, len(cac) // a.so_mau)
+    cac = cac[::buoc][:a.so_mau]
+
+    cau = {}
+    if os.path.isfile(a.k0):
+        for m in json.load(open(a.k0, encoding="utf-8"))["ket"]:
+            if m.get("ok"):
+                cau[os.path.basename(m["wav"]).replace(".wav", "")] = m["cau"]
+
+    print(f"{len(cac)} ban x {len(MUC)} muc  (KHONG cham GPU)\n")
+
+    gom = {m: {"ovrl": [], "cer": [], "lech": [], "tp": []} for m in MUC}
+    for i, p in enumerate(cac, 1):
+        ten = os.path.basename(p).replace(".wav", "")
+        goc_ma = ten.split("__")[0]
+        ref = os.path.join(a.clip_ref, f"{goc_ma}.wav")
+        if not os.path.isfile(ref):
+            continue
+        w, sr = sf.read(p, dtype="float32", always_2d=False)
+        wr, srr = sf.read(ref, dtype="float32", always_2d=False)
+        if getattr(w, "ndim", 1) > 1:
+            w = w.mean(axis=1)
+        if getattr(wr, "ndim", 1) > 1:
+            wr = wr.mean(axis=1)
+        c = cau.get(ten, "")
+
+        for m in MUC:
+            x = (w if m == 0.0 else
+                 eq_sua_sang.ap(w, int(sr), ke_cao_db=m, ke_cao_hz=GOI_HZ))
+            d = dnsmos.cham(x, int(sr)) or {}
+            if d.get("ovrl") is not None:
+                gom[m]["ovrl"].append(float(d["ovrl"]))
+            th = do_chat_luong.do_tin_hieu(x, int(sr)) or {}
+            if th.get("true_peak_dbtp") is not None:
+                gom[m]["tp"].append(float(th["true_peak_dbtp"]))
+            lc = lech_tham_chieu.do_lech(x, int(sr), wr, int(srr))
+            if lc.get("delta_db_dai_cao") is not None:
+                gom[m]["lech"].append(abs(float(lc["delta_db_dai_cao"])))
+            if c:
+                t = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                t.close()
+                sf.write(t.name, x, int(sr))
+                try:
+                    dh = do_chat_luong.do_de_hieu(t.name, c, "vi") or {}
+                    if dh.get("cer") is not None:
+                        gom[m]["cer"].append(float(dh["cer"]))
+                finally:
+                    try:
+                        os.unlink(t.name)
+                    except OSError:
+                        pass
+        print(f"  [{i}/{len(cac)}] {ten}")
+
+    def _tb(v):
+        return (statistics.mean(v), statistics.pstdev(v) if len(v) > 1 else 0.0,
+                len(v)) if v else (None, None, 0)
+
+    print("\n" + "=" * 76)
+    print("  QUET MUC KE CAO @ 4 kHz  —  DOC CA BA COT CUNG LUC")
+    print("=" * 76)
+    print(f"  {'ke cao':>8} {'DNSMOS':>18} {'CER':>16} "
+          f"{'|lech sang|':>12} {'true peak':>11}")
+    ra = {}
+    for m in MUC:
+        o, os_, on = _tb(gom[m]["ovrl"])
+        c, cs, cn = _tb(gom[m]["cer"])
+        l, _, _ = _tb(gom[m]["lech"])
+        t, _, _ = _tb(gom[m]["tp"])
+        ra[str(m)] = {"dnsmos_ovrl": o, "cer": c, "lech_sang": l,
+                      "true_peak": t, "n": on}
+        print(f"  {m:>7.2f}dB {(o or 0):>10.4f} ±{(os_ or 0):.3f} "
+              f"{(c if c is not None else -1):>10.4f} ±{(cs or 0):.3f} "
+              f"{(l or 0):>12.3f} {(t or 0):>11.2f}")
+
+    nen = ra["0.0"]
+    tot = max((k for k in ra if ra[k]["dnsmos_ovrl"] is not None),
+              key=lambda k: ra[k]["dnsmos_ovrl"])
+    print(f"\n  Doi chung (0 dB) : DNSMOS {nen['dnsmos_ovrl']:.4f}  "
+          f"CER {nen['cer']:.4f}  |lech| {nen['lech_sang']:.3f}")
+    print(f"  Muc tot nhat     : {tot} dB -> DNSMOS "
+          f"{ra[tot]['dnsmos_ovrl']:.4f}  CER {ra[tot]['cer']:.4f}  "
+          f"|lech| {ra[tot]['lech_sang']:.3f}")
+
+    d_ovrl = ra[tot]["dnsmos_ovrl"] - nen["dnsmos_ovrl"]
+    d_cer = ra[tot]["cer"] - nen["cer"]
+    print(f"\n  DNSMOS doi : {d_ovrl:+.4f}   (F5 hon ta 0,143 o K0)")
+    print(f"  CER doi    : {d_cer:+.4f}   (am = tot hon)")
+    if float(tot) == 0.0:
+        print("\n  🔴 MUC TOT NHAT LA 0 dB — EQ KHONG cai thien gi.")
+        print("     Do toi la that nhung bu tuyen tinh khong khoi phuc duoc no:")
+        print("     codec vut di thong tin, EQ chi nang phan con lai + nhieu.")
+    elif d_cer > 0.005:
+        print("\n  ⚠️ DNSMOS len nhung CER XAU DI. Mot ban sang hon ma kho nghe")
+        print("     hon la mot buoc lui — KHONG bat EQ theo bang nay.")
+    else:
+        pc = d_ovrl / 0.143 * 100
+        print(f"\n  ✅ EQ dong duoc {pc:.0f}% khoang cach DNSMOS voi F5, "
+              f"khong lam xau CER.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"goi_hz": GOI_HZ, "muc": ra, "tot_nhat": tot}, f,
+                  ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_gia_cua_khu_nhieu.py
+SHA256=0130a877ea736963f3513c4a7ba02e905f0a9b5f07b5fe82b62f49248a906605 BYTES=6828 LINES=165
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_gia_cua_khu_nhieu.py — bộ khử nhiễu tham chiếu lấy đi bao nhiêu dải cao.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_gia_cua_khu_nhieu.ps1
+
+## Giả thuyết đang kiểm
+
+Baseline K4 đo được bản sinh ra **tối hơn clip tham chiếu 3,65 dB** trên 4 kHz,
+và con số ấy là thứ duy nhất giải thích được vì sao F5 thắng VieNeu ở trục
+`lech_sang` trong K0 (30–10).
+
+Nhưng đường ghi danh của ta chạy `encode_reference(..., denoise=True)` — mặc
+định của upstream. Và docstring của chính bộ khử nhiễu nói vì sao nó bật:
+
+    "x-vector lands in the training distribution (train data is denoised +
+     LUFS-20)"
+
+⇒ Khử nhiễu **không phải lỗi**: model được train trên dữ liệu đã khử nhiễu, nên
+  đưa clip thô vào là đưa nó **ra ngoài phân bố huấn luyện**.
+
+🔴 NHƯNG NÓ CÓ NGHĨA LÀ PHÉP SO CỦA K4 ĐANG SO NHẦM MỐC. Model nhân bản clip
+   **đã khử nhiễu**; K4 lại so bản sinh ra với clip **thô**. Nếu bộ khử nhiễu
+   cắt dải cao — mà bộ khử nhiễu nào cũng thế, vì nhiễu tập trung ở dải cao —
+   thì một phần của −3,65 dB **không phải khuyết tật của model**, nó là khoảng
+   cách giữa hai mốc khác nhau.
+
+## Phép đo
+
+Với mỗi clip tham chiếu: đo `db_dai_cao` **thô** và `db_dai_cao` **sau khử
+nhiễu**, rồi lấy hiệu.
+
+⛔ Dùng ĐÚNG bộ khử nhiễu mà đường ghi danh dùng (`OnnxDenoiser` của gói
+   `vieneu`, cùng tệp `denoiser.onnx`), không phải một bộ tương đương. Một phép
+   đối chứng dùng công cụ khác thì đo một thứ khác.
+
+## Đọc kết quả
+
+  · Nếu hiệu ≈ **−3,65 dB** ⇒ toàn bộ độ tối đo được là **do so nhầm mốc**.
+    Sửa K4 để so với clip đã khử nhiễu, và khoảng cách với F5 ở trục ấy biến mất.
+  · Nếu hiệu ≈ **0** ⇒ độ tối là thật, do codec. Chấp nhận như DV-002 đã ghi,
+    và hướng vá là hậu kỳ chứ không phải đổi mốc.
+  · Ở giữa ⇒ cả hai, và tỉ lệ nói phần nào đáng vá trước.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import statistics
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+
+def _tim_denoiser() -> str | None:
+    for goc in (r"C:\LTTPlatform\hf-cache", r"D:\LTTPlatform-runtime\hf-cache",
+                os.environ.get("HF_HOME") or ""):
+        if not goc:
+            continue
+        cac = glob.glob(os.path.join(goc, "**", "denoiser.onnx"), recursive=True)
+        if cac:
+            return cac[0]
+    return None
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--clip", default="tmp/giong_cu")
+    ap.add_argument("--ra", default="tmp/gia_cua_khu_nhieu.json")
+    a = ap.parse_args(argv)
+
+    import numpy as np
+    import soundfile as sf
+
+    from voice_sidecar import do_on_dinh
+
+    d = _tim_denoiser()
+    if not d:
+        print("KHONG THAY denoiser.onnx", file=sys.stderr)
+        return 2
+    print(f"denoiser: {d}\n")
+
+    from vieneu._v3_turbo_engine.onnx_denoiser import OnnxDenoiser
+    den = OnnxDenoiser(d)
+
+    cac = sorted(glob.glob(os.path.join(a.clip, "*.wav")))
+    if not cac:
+        print(f"KHONG CO WAV trong {a.clip}", file=sys.stderr)
+        return 2
+
+    hieu_db, hieu_vat, ket = [], [], []
+    print(f"{'clip':26} {'db_dai_cao tho':>15} {'sau khu nhieu':>14} {'hieu':>8}")
+    for p in cac:
+        w, sr = sf.read(p, dtype="float32", always_2d=False)
+        if getattr(w, "ndim", 1) > 1:
+            w = w.mean(axis=1)
+        try:
+            sach = np.asarray(den.denoise(w, int(sr)), dtype="float32")
+        except Exception as e:                            # noqa: BLE001
+            print(f"  [hong] {os.path.basename(p)}: {type(e).__name__}: {e}")
+            continue
+        # ⛔ Bộ khử nhiễu trả 44.1 kHz. Đo `db_dai_cao` ở hai tần số khác nhau
+        #    là so hai thứ khác nhau — mốc 4 kHz thì như nhau, nhưng phần "tổng
+        #    năng lượng" ở mẫu số trải trên hai dải Nyquist khác nhau.
+        #    Hạ bản sạch về đúng tần số của bản thô.
+        try:
+            import soxr
+            sach = np.asarray(soxr.resample(sach, 44100, int(sr)),
+                              dtype="float32")
+        except ImportError:
+            n = int(round(len(sach) * int(sr) / 44100.0))
+            sach = np.interp(np.linspace(0, len(sach) - 1, n),
+                             np.arange(len(sach)), sach).astype("float32")
+
+        a1 = do_on_dinh.do_sang(w, int(sr))
+        a2 = do_on_dinh.do_sang(sach, int(sr))
+        if not a1 or not a2:
+            continue
+        hd = a2["db_dai_cao"] - a1["db_dai_cao"]
+        hv = (a2["vat_95_hz"] - a1["vat_95_hz"]) / max(a1["vat_95_hz"], 1e-6)
+        hieu_db.append(hd)
+        hieu_vat.append(hv)
+        ket.append({"clip": os.path.basename(p),
+                    "db_tho": a1["db_dai_cao"], "db_sach": a2["db_dai_cao"],
+                    "hieu_db": round(hd, 4), "hieu_vat95_ti_le": round(hv, 4)})
+        print(f"{os.path.basename(p)[:26]:26} {a1['db_dai_cao']:>15.3f} "
+              f"{a2['db_dai_cao']:>14.3f} {hd:>+8.3f}")
+
+    if not hieu_db:
+        print("KHONG DO DUOC GI", file=sys.stderr)
+        return 1
+
+    tb = statistics.mean(hieu_db)
+    print("\n" + "=" * 72)
+    print("  GIA CUA BUOC KHU NHIEU THAM CHIEU")
+    print("=" * 72)
+    print(f"  hieu db_dai_cao   : {tb:+.3f} dB  "
+          f"(lech {statistics.pstdev(hieu_db):.3f}, n={len(hieu_db)})")
+    print(f"  hieu vat_95_hz    : {statistics.mean(hieu_vat):+.3f} (ti le)")
+    print(f"\n  Do toi da do o baseline K4: -3,649 dB")
+    if tb <= -1.0:
+        pc = min(100.0, abs(tb) / 3.649 * 100)
+        print(f"  => Buoc khu nhieu giai thich {pc:.0f}% do toi ay.")
+        if pc >= 60:
+            print("     🔴 PHAN LON do toi la do SO NHAM MOC, khong phai codec.")
+            print("     Sua: K4 phai so voi clip DA KHU NHIEU.")
+    else:
+        print("  => Buoc khu nhieu KHONG giai thich duoc do toi.")
+        print("     Do toi la that, do codec. DV-002 dung, va huong va la hau ky.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"hieu_db_trung_binh": round(tb, 5), "chi_tiet": ket}, f,
+                  ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_gia_von_voice.py
 SHA256=7d952e2502db1dccde0b658884936978302ab1ac0d6249f9cafdfad0bfba9ac9 BYTES=12356 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -276037,8 +277244,218 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_khu_nhieu_bat_hay_tat.py
+SHA256=16efedf6a50d6b77156a5c57f90f18834b482e5342e118270045c95382c8967d BYTES=8730 LINES=204
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_khu_nhieu_bat_hay_tat.py — ghi danh với `denoise=True` hay `denoise=False`
+cho giọng nhân bản tốt hơn.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_khu_nhieu_bat_hay_tat.ps1
+
+## Câu hỏi, và vì sao nó đáng đo chứ không đáng tranh luận
+
+Đường ghi danh của ta chạy `encode_reference(..., denoise=True)` — mặc định của
+upstream. Chủ sản phẩm hỏi một câu thẳng: **khử nhiễu bản thân nó là một phép
+méo tiếng; nếu nó không mua được gì thì tắt đi có hơn không?**
+
+Tài liệu của chính bộ khử nhiễu trả lời:
+
+    "x-vector lands in the training distribution (train data is denoised +
+     LUFS-20)"
+
+⛔ Nhưng đó là **đọc tài liệu**, và đọc tài liệu/mã rồi kết luận đã sai **ba
+   lần** trong dự án này chỉ trong một phiên:
+
+     · `voice_profiles.yaml` ghi `lang: en` trên tên tiếng Việt ⇒ tôi viết
+       "nhãn không đáng tin". Sai — cột `engine` mang câu trả lời, ASR khớp 25/25.
+     · `sea_g2p.SUPPORTED_LANGS = ("vi","th","id")` ⇒ tôi viết "engine không nói
+       được tiếng Anh". Sai — nó đọc tiếng Anh đúng từng chữ, `[en 0,996]`.
+     · Sàn nhiễu n=4 ⇒ tôi đuổi theo những con số có sai số 41%.
+
+⇒ Một khẳng định về thứ hệ thống **làm được hay không** phải đến từ việc bắt nó
+  làm thử. Tệp này bắt nó làm thử.
+
+## Cách đo
+
+Cùng giọng, cùng câu, hai đường ghi danh:
+
+    A: encode_reference(..., denoise=True)    <- dang chay
+    B: encode_reference(..., denoise=False)   <- de nghi cua chu san pham
+
+Rồi chấm bằng **đúng bộ chấm trung lập của K0** — không trục nào đi qua bộ mã
+hoá người nói của VieNeu, vì bộ ấy tối ưu chính thứ ta đang hỏi:
+
+  ① CER (Whisper)                — de hieu
+  ② DNSMOS P.835 OVRL            — chat luong cam nhan
+  ③ |lech| vs clip THAM CHIEU GOC — trung thanh am hoc (tang K4)
+
+⛔ Mốc so ở trục ③ là clip **THÔ**, giống nhau cho cả hai nhánh. Nếu lấy mốc là
+   clip đã khử nhiễu thì nhánh A được so với chính đầu vào của nó còn nhánh B
+   thì không — một phép so tự thiên vị.
+
+## Ba kết quả có thể, và chúng dẫn tới ba việc khác nhau
+
+  · **B tốt hơn** ⇒ tắt khử nhiễu. Tài liệu upstream nói quá lời, và ta có số.
+  · **A tốt hơn** ⇒ giữ nguyên, và câu hỏi đã có câu trả lời bằng số thay vì
+    bằng một dòng docstring.
+  · **Hoà** ⇒ chọn theo tiêu chí khác. Khi ấy nghiêng về **tắt**, vì ít xử lý
+    hơn là ít thứ hỏng hơn — nhưng nói rõ đó là lựa chọn theo nguyên tắc, không
+    phải theo số đo.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import io
+import json
+import os
+import statistics
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+CAU = [
+    "Ba tôi bảo bà ấy bán bánh ở bãi biển vào buổi sáng.",
+    "Cô ấy cố gắng có được một cỗ máy mới cho công việc.",
+    "Tôi thấy thầy giáo đứng ở cửa lớp từ sáng sớm.",
+]
+
+
+def _cham(wav, sr, wav_ref, sr_ref, cau, duong):
+    from voice_sidecar import dnsmos, do_chat_luong, lech_tham_chieu
+    ra = {}
+    dh = do_chat_luong.do_de_hieu(duong, cau, "vi") or {}
+    ra["cer"] = dh.get("cer")
+    d = dnsmos.cham(wav, sr) or {}
+    ra["dnsmos_ovrl"] = d.get("ovrl")
+    lc = lech_tham_chieu.do_lech(wav, sr, wav_ref, sr_ref)
+    for k, t in (("lech_sang", "delta_db_dai_cao"),
+                 ("lech_f0", "delta_f0_trung_vi_hz_ti_le")):
+        if lc.get(t) is not None:
+            ra[k] = abs(float(lc[t]))
+    return ra
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--clip", default="tmp/giong_cu")
+    ap.add_argument("--so-giong", type=int, default=6)
+    ap.add_argument("--ra", default="tmp/khu_nhieu_bat_tat.json")
+    a = ap.parse_args(argv)
+
+    import soundfile as sf
+
+    from apps.ltt_voice import sidecar_client
+    from voice_sidecar import engine as eng
+
+    cac = sorted(glob.glob(os.path.join(a.clip, "*.wav")))
+    buoc = max(1, len(cac) // a.so_giong)
+    cac = cac[::buoc][:a.so_giong]
+    if not cac:
+        print(f"KHONG CO WAV trong {a.clip}", file=sys.stderr)
+        return 2
+
+    # ⛔ `ghi_danh` là phương thức của `CongGiong`, lấy qua `lay_cong()` — KHÔNG
+    #    dựng một thể hiện mới. `lay_cong()` giữ MỘT cổng dùng chung, và cổng ấy
+    #    nắm model đã nạp; dựng thêm một cái là nạp model lần thứ hai vào cùng
+    #    một card, tức 641 MB VRAM nữa cho không việc gì.
+    e = eng.lay_cong()
+
+    print(f"{len(cac)} giong x {len(CAU)} cau x 2 nhanh\n")
+    gom = {"bat": {}, "tat": {}}
+    for i, p in enumerate(cac, 1):
+        ten = os.path.basename(p).replace(".wav", "")
+        wr, srr = sf.read(p, dtype="float32", always_2d=False)
+        if getattr(wr, "ndim", 1) > 1:
+            wr = wr.mean(axis=1)
+        for nhan, dn in (("bat", True), ("tat", False)):
+            try:
+                hs = e.ghi_danh(p, denoise=dn)
+            except Exception as ex:                       # noqa: BLE001
+                print(f"  [ghi danh hong] {ten}/{nhan}: "
+                      f"{type(ex).__name__}: {ex}")
+                continue
+            ref_b64 = hs.get("ref_b64") or hs.get("bieu_dien") or ""
+            if not ref_b64:
+                print(f"  [bo] {ten}/{nhan}: ghi_danh khong tra ref_b64 "
+                      f"(khoa co: {sorted(hs)[:6]})")
+                continue
+            for c in CAU:
+                try:
+                    raw, _ = sidecar_client.noi(c, ref_b64=ref_b64)
+                except Exception as ex:                   # noqa: BLE001
+                    print(f"  [sinh hong] {ten}/{nhan}: "
+                          f"{type(ex).__name__}: {ex}")
+                    continue
+                w, sr = sf.read(io.BytesIO(raw), dtype="float32",
+                                always_2d=False)
+                if getattr(w, "ndim", 1) > 1:
+                    w = w.mean(axis=1)
+                t = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+                t.close()
+                sf.write(t.name, w, int(sr))
+                try:
+                    m = _cham(w, int(sr), wr, int(srr), c, t.name)
+                finally:
+                    try:
+                        os.unlink(t.name)
+                    except OSError:
+                        pass
+                for k, v in m.items():
+                    if v is not None:
+                        gom[nhan].setdefault(k, []).append(float(v))
+            print(f"  [{i}/{len(cac)}] {ten:26} denoise={nhan}")
+
+    print("\n" + "=" * 74)
+    print("  KHU NHIEU THAM CHIEU: BAT  vs  TAT")
+    print("=" * 74)
+    print(f"  {'truc':16} {'BAT (dang chay)':>22} {'TAT (de nghi)':>22} {'?':>10}")
+    ra = {}
+    import math
+    for truc in ("cer", "dnsmos_ovrl", "lech_sang", "lech_f0"):
+        A, B = gom["bat"].get(truc) or [], gom["tat"].get(truc) or []
+        if not A or not B:
+            continue
+        ma, mb = statistics.mean(A), statistics.mean(B)
+        sa = statistics.pstdev(A) / math.sqrt(len(A)) if len(A) > 1 else 0.0
+        sb = statistics.pstdev(B) / math.sqrt(len(B)) if len(B) > 1 else 0.0
+        sd = math.hypot(sa, sb)
+        d = mb - ma
+        nho_tot = truc in ("cer", "lech_sang", "lech_f0")
+        if sd <= 0 or abs(d) < 1.96 * sd:
+            kl = "hoa"
+        else:
+            kl = "TAT hon" if (d < 0) == nho_tot else "BAT hon"
+        ra[truc] = {"bat": round(ma, 5), "tat": round(mb, 5),
+                    "chenh": round(d, 5), "sai_so": round(sd, 5),
+                    "ket_luan": kl, "n": min(len(A), len(B))}
+        print(f"  {truc:16} {ma:>15.4f} ±{sa:.4f} {mb:>15.4f} ±{sb:.4f} "
+              f"{kl:>10}")
+
+    print("\n  'hoa' = khoang tin cay 95% cua CHENH LECH co chua 0.")
+    print("  Neu hoa o moi truc: chon theo nguyen tac, va nguyen tac la IT XU LY")
+    print("  HON — nhung phai noi ro do la lua chon, khong phai so do.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ra, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_lan_cheo.py
-SHA256=e1865c72cc11b772293abae71e38ea3e36c1c757163c24d6c8c172bc404398e1 BYTES=9916 LINES=213
+SHA256=892f038f29be7976fb02b233dd0c7876c402839585b8776cfc473cd04850b669 BYTES=11337 LINES=235
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_lan_cheo.py — BẢNG 2×2: giọng nguồn VI/EN × văn bản VI/EN.
@@ -276233,13 +277650,35 @@ def main(argv=None) -> int:
         (cv, sv, nv), (ce, se, ne) = dong
         cung = cv if lan_text == "vi" else ce
         lech = ce if lan_text == "vi" else cv
-        san = max(sv or 0, se or 0)
-        kl = ("cung lan TOT hon" if lech - cung > san
-              else "lech TOT hon" if cung - lech > san
-              else "KHONG PHAN BIET")
+        # 🔴 SO VỚI SAI SỐ CHUẨN CỦA TRUNG BÌNH, KHÔNG VỚI ĐỘ LỆCH THÔ.
+        #
+        #    Bản đầu so `|chênh lệch| > max(sv, se)` — tức đòi chênh lệch giữa
+        #    hai TRUNG BÌNH phải lớn hơn độ tản của từng LƯỢT. Đó là một phép
+        #    thử sai loại: tăng n bao nhiêu cũng không làm nó dễ qua hơn, vì
+        #    độ lệch thô không giảm theo n.
+        #
+        # ⛔ Hậu quả đo được: hàng tiếng Việt ở n=64 mỗi ô cho 0,0342 vs 0,0645
+        #    — chênh 0,0303 với sai số chuẩn 0,0100, tức **t = 3,03** và khoảng
+        #    tin cậy [+0,0107; +0,0499] **không chứa 0**. Khác biệt THẬT, và
+        #    luật cũ vẫn in "KHONG PHAN BIET". Nó khiến tôi báo cáo dưới mức
+        #    kết luận cho một thứ đã đủ bằng chứng.
+        #
+        # ⭐ Sai số chuẩn giảm theo √n, nên phép thử này **thưởng cho việc đo
+        #    thêm** — đúng như một phép thử nên làm.
+        import math
+        se_v = (sv or 0.0) / math.sqrt(max(nv, 1))
+        se_e = (se or 0.0) / math.sqrt(max(ne, 1))
+        se_d = math.hypot(se_v, se_e)
+        d = lech - cung
+        kl = ("KHONG PHAN BIET" if se_d <= 0 or abs(d) < 1.96 * se_d
+              else "cung lan TOT hon" if d > 0 else "lech TOT hon")
         print(f"  {lan_text:10} "
               f"CER {cv:.4f} ±{sv:.4f} n={nv:<3}  "
               f"CER {ce:.4f} ±{se:.4f} n={ne:<3}  {kl}")
+        if se_d > 0:
+            print(f"  {'':10} chenh {d:+.4f}  sai so chuan {se_d:.4f}  "
+                  f"t={d / se_d:+.2f}  KTC[{d - 1.96 * se_d:+.4f}; "
+                  f"{d + 1.96 * se_d:+.4f}]")
     print("\n  'KHONG PHAN BIET' = chenh lech nho hon do lech giua cac lan sinh.")
     print("  Do KHONG phai 'hai ben bang nhau' — no la 'phep do nay chua du "
           "phan giai de noi'.")
@@ -277050,6 +278489,177 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_sau_khoi_dong.py
+SHA256=16c99ad256ec13b48f2b1a877bce25954de165e7eebd0db7c4ca9d15d0673ba9 BYTES=7484 LINES=165
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""do_sau_khoi_dong.py — N7 + N9: đo máy A NGAY SAU khi khởi động lại.
+
+    python tools/do_sau_khoi_dong.py --ra tmp/sau_khoi_dong.json
+
+## ⛔ CHỈ CÓ MỘT LẦN
+
+Nhật ký khởi động, thứ tự dịch vụ lên, và "bao lâu tới lúc `/health/ready` xanh"
+chỉ đọc được **ngay sau một lần boot**. Chạy muộn thì nhật ký vẫn còn nhưng
+trạng thái đã bị các lượt khởi động lại thủ công che mất.
+
+⇒ Chạy nó **trước khi làm bất cứ việc gì khác** sau khi máy lên.
+
+## Nó trả lời gì
+
+`reports/06` §12 dựng bảng F05 *"nếu máy A khởi động lại thì sao"* **từ cấu
+hình**, không từ quan sát — và đã ghi rõ giới hạn đó. Tệp này biến suy luận
+thành số đo:
+
+| Câu hỏi | Suy ra từ cấu hình | Tệp này đo |
+|---|---|---|
+| Dịch vụ có tự lên? | `StartType=Automatic` | **có lên thật không** |
+| Mất bao lâu? | không biết | **giây, từ boot tới `/health/ready`** |
+| Thứ tự có đúng? | `DependsOn` | **thứ tự thật trong nhật ký** |
+| `FAILURE_ACTIONS` có phải đỡ? | vừa bật 01/09 | **có lần nào phải dựng dậy không** |
+| Job dở dang / tiền treo? | lease hết hạn (`test_215`) | **số job `running` mồ côi** |
+
+## ⛔ Không kết luận từ sự vắng mặt
+
+Nhật ký không có dòng lỗi **không** chứng minh mọi thứ tốt — có thể ta lọc sai,
+có thể log chưa flush. Mỗi phép ở đây ghi rõ **đã tìm gì** để người đọc biết
+phạm vi, thay vì đọc một dấu tích xanh trống rỗng.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
+DICH_VU = ("cloudflared", "LTTStudioWeb", "LTTStudioWorker",
+           "LTTStudioVoice", "LTTStudioCodex")
+
+
+def ps(lenh: str, timeout: int = 90) -> str:
+    r = subprocess.run(["powershell", "-NoProfile", "-NonInteractive",
+                        "-Command", lenh], capture_output=True, text=True,
+                       timeout=timeout)
+    return (r.stdout or "").strip()
+
+
+def ghi(ra: dict, khoa: str, gt) -> None:
+    ra[khoa] = gt
+    print(f"  {khoa:<26} {gt if not isinstance(gt, (list, dict)) else json.dumps(gt, ensure_ascii=False)[:150]}")
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="Do may A ngay sau khoi dong.")
+    p.add_argument("--ra", type=Path, default=Path("tmp/sau_khoi_dong.json"))
+    a = p.parse_args()
+    ra: dict = {"luc": time.strftime("%Y-%m-%d %H:%M:%S")}
+
+    print("== 1. May len tu bao gio ==")
+    boot = ps("(Get-CimInstance Win32_OperatingSystem).LastBootUpTime."
+              "ToString('yyyy-MM-ddTHH:mm:ss')")
+    ghi(ra, "boot_luc", boot)
+    tuoi = ps("[int]((Get-Date) - (Get-CimInstance Win32_OperatingSystem)"
+              ".LastBootUpTime).TotalMinutes")
+    ghi(ra, "phut_tu_luc_boot", tuoi)
+    if tuoi.isdigit() and int(tuoi) > 60:
+        print("  ⚠️ May da len hon mot tieng. Cac so 'bao lau toi khi xanh' ben")
+        print("     duoi VAN doc duoc tu nhat ky, nhung trang thai hien tai co")
+        print("     the da bi cac luot khoi dong lai thu cong che mat.")
+
+    print("\n== 2. Nam dich vu co TU LEN khong (N7) ==")
+    tt = {}
+    for n in DICH_VU:
+        tt[n] = ps(f"(Get-Service {n} -ErrorAction SilentlyContinue).Status") or "KHONG CO"
+    ghi(ra, "trang_thai_dich_vu", tt)
+    ghi(ra, "tat_ca_Running", all(v == "Running" for v in tt.values()))
+
+    print("\n== 3. Thu tu len va thoi diem, tu nhat ky Windows (N9) ==")
+    # ⚠️ Cần Administrator để đọc log System. Không có quyền thì NÓI RA, đừng
+    #    trả một danh sách rỗng — rỗng đọc lên y hệt "không có sự kiện nào".
+    sk = ps(
+        "try { Get-WinEvent -FilterHashtable @{LogName='System';"
+        "ProviderName='Service Control Manager';StartTime=(Get-CimInstance "
+        "Win32_OperatingSystem).LastBootUpTime} -ErrorAction Stop | "
+        "Where-Object { $_.Message -match 'LTTStudio|cloudflared' } | "
+        "Sort-Object TimeCreated | ForEach-Object { "
+        "$_.TimeCreated.ToString('HH:mm:ss') + ' | ' + ($_.Message -replace "
+        "'\\s+',' ') } } catch { 'LOI: ' + $_.Exception.Message }",
+        timeout=180)
+    dong = [d.strip() for d in sk.splitlines() if d.strip()][:40]
+    if not dong:
+        ghi(ra, "nhat_ky_khoi_dong", "KHONG DOC DUOC (can Administrator) "
+                                     "-- KHONG phai 'khong co su kien nao'")
+        print("   ⚠️ ĐÂY LÀ PHẦN CHỈ ĐỌC ĐƯỢC MỘT LẦN. Lấy nó bằng LocalSystem:")
+        print("      NexusAgent trên máy A chạy `LocalSystem`, và node của máy A là")
+        print("      286e1065-8eaa-4419-8681-2af26090578d. Gọi `exec` qua controller")
+        print("      https://192.168.2.17:9444 (token: %USERPROFILE%\\.nexus\\")
+        print("      claude-code.token, header `X-Nexus-Protocol: 1`) rồi chạy lại")
+        print("      chính tệp này. Xem `Ket_noi.md` trên Desktop.")
+    elif dong[0].startswith("LOI:"):
+        ghi(ra, "nhat_ky_khoi_dong", dong[0])
+    else:
+        ra["nhat_ky_khoi_dong"] = dong
+        for d in dong[:14]:
+            print("   ", d[:120])
+        # `FAILURE_ACTIONS` phải đỡ = dịch vụ đã chết một lần rồi được dựng dậy.
+        do = [d for d in dong if "terminated unexpectedly" in d
+              or "restart the service" in d.lower()]
+        ghi(ra, "co_lan_phai_dung_day", bool(do))
+        if do:
+            print("   ⚠️ CO dich vu phai nho FAILURE_ACTIONS dung day:")
+            for d in do[:5]:
+                print("     ", d[:120])
+
+    print("\n== 4. Bao lau toi khi /health/ready xanh ==")
+    t0 = time.monotonic()
+    xanh = None
+    for _ in range(120):
+        r = ps("try { (Invoke-RestMethod http://127.0.0.1:8100/health/ready "
+               "-TimeoutSec 5).status } catch { 'chua' }")
+        if r == "ready":
+            xanh = round(time.monotonic() - t0, 1)
+            break
+        time.sleep(2)
+    ghi(ra, "giay_cho_health_ready", xanh if xanh is not None else "QUA 240s")
+
+    print("\n== 5. Cong tu khai co mo coi khong ==")
+    dd = ps("try { (Invoke-RestMethod http://127.0.0.1:8100/health/ready "
+            "-TimeoutSec 10).duoi_dich_vu | ConvertTo-Json -Compress } "
+            "catch { 'khong goi duoc' }")
+    ghi(ra, "duoi_dich_vu", dd)
+
+    print("\n== 6. Job do dang / tien treo ==")
+    print("  (chay bang cau hep vi can app.env:)")
+    print("    powershell -File .\\setup\\chay_voi_env.ps1 -Viec soi-su-co")
+
+    print("\n== 7. May B co bi anh huong khong ==")
+    b = ps("try { (Test-NetConnection 192.168.2.66 -Port 8299 "
+           "-InformationLevel Quiet -WarningAction SilentlyContinue) } "
+           "catch { $false }")
+    ghi(ra, "may_B_cong_8299_song", b)
+    print("  (may B la MAY KHAC -- no khong reboot theo may A)")
+
+    a.ra.parent.mkdir(parents=True, exist_ok=True)
+    a.ra.write_text(json.dumps(ra, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"\nDA LUU: {a.ra}")
+
+    thieu = [k for k in ("tat_ca_Running", "giay_cho_health_ready")
+             if not ra.get(k) or ra.get(k) == "QUA 240s"]
+    if thieu:
+        print(f"⚠️ CHUA DAT: {thieu}")
+        return 1
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

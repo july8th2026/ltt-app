@@ -110,10 +110,15 @@ giá**:
    giọng khách tạo là một lượt huấn luyện GPU — đó **không phải cùng một sản
    phẩm**, nó là một sản phẩm khác mặc cùng một cái tên.
 
-⭐ Và thiếu sót cụ thể của VieNeu **đã biết và rẻ hơn nhiều để vá**: baseline K4
-   đo được bản sinh ra mất **-3,65 dB** trên 4 kHz so với clip nguồn — một
-   khuyết tật của codec neural, có hướng cố định. Một high-shelf ở khâu hậu kỳ
-   đóng được một phần, và nó không phải một đường huấn luyện.
+⭐ Và thiếu sót cụ thể của VieNeu **đã biết**: baseline K4 đo được bản sinh ra
+   mất **-3,65 dB** trên 4 kHz so với clip nguồn — một khuyết tật của codec
+   neural, có hướng cố định.
+
+🔴 **SỬA 01/09, CÙNG NGÀY:** đoạn trên ban đầu viết tiếp *"một high-shelf ở khâu
+   hậu kỳ đóng được một phần"*. **Đã đo, và điều đó SAI** — xem DV-004. Quyết
+   định DV-002 vẫn đứng, nhưng nó đứng **mà không có đường vá rẻ nào**, và nói
+   đúng như vậy quan trọng: một quyết định kèm một lời hứa chưa kiểm là một
+   quyết định người sau sẽ tin nhầm.
 
 **Alternatives considered:**
 
@@ -135,6 +140,10 @@ nguồn một cách hệ thống, đổi lấy nhân bản tức thì. Con số 
 ---
 
 ## DV-003 — Kho giọng tách làn theo ngôn ngữ của clip NGUỒN
+
+> ⚠️ **Hàng tiếng Việt của bảng dưới ĐÃ ĐƯỢC KẾT LUẬN — xem DV-005.** Đo lại ở
+> n=64 mỗi ô cho t = 3,03 và KTC [+0,0107; +0,0499] không chứa 0. Bảng trong
+> mục này giữ nguyên vì nó là số liệu của lượt đo đầu.
 
 **Decision:** `voice_profile.ngon_ngu` là **làn**: clip nguồn tiếng Việt phục vụ
 văn bản tiếng Việt, clip nguồn tiếng Anh phục vụ văn bản tiếng Anh. Làn suy từ
@@ -163,5 +172,95 @@ nếu đo thêm mà hàng tiếng Việt cũng hoà thì nên nới cả hai chi
 `hoathinh_female`, `meoquan_men`, `tamlyhoc_men`, `cg_huong_nam` — tên tiếng
 Việt rành mạch, người nói **tiếng Anh**. Đó là tên kênh/nhân vật. Tôi đã đọc tên
 như dữ liệu một lần và viết một kết luận sai vào tài liệu.
+
+**Date:** 2026-09-01
+
+---
+
+## DV-004 — EQ sửa độ sáng KHÔNG đóng được khoảng cách. Kết quả âm.
+
+**Decision:** Không đưa EQ sửa độ sáng vào đường sinh. Giữ mã và bộ đo lại như
+**bằng chứng**, không như tính năng.
+
+**Reason:** Hệ cũ đã gặp đúng bài này và giải nó —
+`audio_postprocess._apply_clarity_eq_xtts` (2026-04-19), với docstring ghi rõ
+*"Measured delta vs ref (17 speakers): air (8-16kHz) **-3,7 dB**"*. Ta đo
+**-3,65 dB** cho VieNeu. Hai vocoder khác hẳn nhau, hai phép đo độc lập cách
+nhau bốn tháng, cùng một cỡ khuyết tật — mọi codec neural đánh đổi dải cao
+trước tiên, vì tai người ít nhạy ở đó nên hàm mất mát cũng ít phạt ở đó.
+
+Nên hướng đi rất hợp lý. Đã dựng `voice_sidecar/eq_sua_sang.py` (biquad RBJ,
+kẹp ±4 dB như hệ cũ) và quét sáu mức trên 12 bản K0:
+
+| kệ cao @4 kHz | DNSMOS | CER | \|lệch sáng\| |
+|---|---|---|---|
+| 0,00 dB *(đối chứng)* | 3,0258 ±0,180 | 0,0202 | 7,905 |
+| 1,00 dB | 3,0263 ±0,178 | 0,0221 | 7,028 |
+| 2,00 dB | 3,0258 ±0,176 | 0,0220 | 6,137 |
+| 3,65 dB | 3,0245 ±0,176 | 0,0202 | 4,822 |
+| 4,00 dB | 3,0242 ±0,176 | 0,0220 | 4,618 |
+
+⭐ `|lệch sáng|` giảm đẹp 7,9 → 4,6: **EQ làm đúng thứ nó hứa trên chỉ số phổ.**
+   DNSMOS thì phẳng lì — dao động ±0,003 trên một độ lệch nội tại **0,180**.
+   Không đổi gì cả.
+
+🔴 **Vì sao:** codec neural **không suy giảm** dải cao, nó **không mã hoá** dải
+   cao. Bù tuyến tính chỉ nâng phần còn lại — tức nâng cả phần dư nhiễu hình
+   thành trong dải ấy — chứ không khôi phục thông tin đã bị vứt. DNSMOS nhìn
+   xuyên qua điều đó; chỉ số phổ thì không.
+
+⛔ Đây là đúng kiểu hỏng mà bộ đo sinh ra để bắt: **một con số đẹp lên trong khi
+   tiếng không đổi.** Nếu chỉ nhìn `db_dai_cao` thì EQ trông như một thành công
+   rõ ràng, và ta đã ship một tính năng không làm gì.
+
+**Alternatives considered:**
+
+- *Mở rộng băng thông bằng model học* (bandwidth extension). Đây mới là công cụ
+  đúng cho việc khôi phục thông tin đã mất, và EQ tuyến tính thì không. Nhưng nó
+  là một model nữa để nạp, chạy và bảo trì — cho một khoảng cách 0,56σ.
+- *EQ theo TỪNG GIỌNG* như hệ cũ (`clarity_eq_gain_hi_db` khác nhau mỗi giọng).
+  Không cứu được: bảng trên cho thấy DNSMOS phẳng ở **mọi** mức từ 0 đến 4 dB,
+  nên chọn mức riêng cho từng giọng cũng chỉ là chọn giữa những mức đều không
+  đổi gì.
+- *Chấp nhận.* Đã chọn. Khoảng cách DNSMOS với F5 là 0,143 — **0,56 lần** độ
+  lệch giữa hai lượt sinh của cùng một giọng (0,257).
+
+**Trade-off:** Ta giữ một khuyết tật đo được và **không có đường vá rẻ**. Đổi
+lại ta không ship một tính năng chỉ làm đẹp báo cáo. `eq_sua_sang.py` ở lại vì
+ngày ai đó đề xuất lại ý này, bảng trên trả lời trong ba mươi giây.
+
+**Date:** 2026-09-01
+
+---
+
+## DV-005 — Luật tách làn ĐÚNG cho tiếng Việt. Có bằng chứng. Bổ sung DV-003.
+
+**Decision:** Giữ luật tách làn cho văn bản **tiếng Việt**. Với văn bản **tiếng
+Anh** thì luật vẫn chưa có bằng chứng nào đỡ — xem Trade-off.
+
+**Reason:** DV-003 ghi hàng tiếng Việt là *"chưa kết luận được"* ở n=16 mỗi ô.
+Đo lại ở **n=64** mỗi ô (8 giọng mỗi làn × 4 câu × 2 lượt):
+
+    nguon VI : CER 0,0342 ±0,0491   n=64
+    nguon EN : CER 0,0645 ±0,0631   n=64
+    chenh    : +0,0303   sai so chuan 0,0100   t = 3,03
+    KTC 95%  : [+0,0107; +0,0499]   KHONG chua 0
+
+⇒ Giọng nguồn tiếng Anh đọc tiếng Việt kém hơn **1,89×**, và khác biệt ấy
+  **đã đủ bằng chứng**.
+
+🔴 **Và một khuyết tật của chính bộ đo đã lộ ra ở đây.** Luật phán quyết bản đầu
+   so chênh lệch giữa hai **trung bình** với **độ lệch thô** của từng lượt. Đó
+   là sai loại: độ lệch thô **không giảm theo n**, nên tăng số phép đo bao
+   nhiêu cũng không làm phép thử dễ qua hơn. Nó in "KHONG PHAN BIET" cho một
+   khác biệt t=3,03.
+
+   Đã sửa sang **sai số chuẩn của trung bình** — thứ giảm theo √n, tức phép thử
+   **thưởng cho việc đo thêm**, đúng như nó nên làm.
+
+**Trade-off:** Với văn bản tiếng Anh, hai làn vẫn trùng khít (0,0208 vs 0,0198,
+n=16 mỗi ô). Luật đang **chặn một lựa chọn hợp lệ** ở chiều đó. Chấp nhận vì
+tính nhất quán, nhưng nếu muốn nới thì chiều tiếng Anh là chiều nới được — và
+nới nó cần đo lại hàng ấy ở n=64 để chắc.
 
 **Date:** 2026-09-01

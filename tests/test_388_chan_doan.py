@@ -165,7 +165,7 @@ def test_moi_luat_deu_co_SAN_tuyet_doi():
 
 
 def test_ma_luat_GIU_NGUYEN_so_cua_he_cu():
-    """R11–R17 giữ nguyên số, có chủ ý.
+    """R12–R17 giữ nguyên số của hệ cũ, có chủ ý.
 
     Ai đọc báo cáo của hệ cũ sẽ nhận ra ngay, và ai đi tìm "R12 là gì" sẽ tìm
     thấy cùng một khái niệm ở cả hai nơi. Đổi số cho gọn là vứt đi phần duy
@@ -173,8 +173,92 @@ def test_ma_luat_GIU_NGUYEN_so_cua_he_cu():
     """
     m = _cd()
     ma = {x[0] for x in m.LUAT}
-    assert {"R13", "R14", "R15", "R16", "R17"} <= ma, sorted(ma)
+    assert {"R13", "R14", "R17"} <= ma, sorted(ma)
     assert any(x.startswith("R12") for x in ma), sorted(ma)
+
+
+def test_R16_DA_GO_va_phai_GIU_NGUYEN_nhu_the():
+    """🔴 R16 (rung biên độ) đã gỡ, và việc đưa lại phải kèm một PHÉP ĐO.
+
+    Không gỡ vì nó không quan trọng, mà vì **ta không có phép đo nào thấy được
+    nó** — và điều đó đã chứng minh hai lần:
+
+      · K3 thử BA cơ chế (năng lượng dải 3–8 Hz · độ nhọn trên bao tuyến tính ·
+        độ nhọn trên **log** bao). Cao nhất 1,7σ, ngưỡng 4σ. Lý do là vật lý:
+        nhịp rung giọng người (~5,5 Hz) **trùng nhịp âm tiết** tiếng Việt.
+      · Ca tái hiện của K4 xác nhận lần nữa: rung **35%** — mạnh gấp sáu lần
+        mức K3 thử — chỉ đẩy `delta_dao_dong_khung` đi −0,005 trên dung sai
+        0,135, tức **sai chiều và bằng 1/27 ngưỡng**.
+
+    ⛔ Một luật không bao giờ nổ tệ hơn không có luật: nó tạo ảo giác rằng rung
+       giọng đang được canh. Phép kiểm này đỏ nếu ai đó đưa R16 về — buộc họ
+       đọc lý do và mang theo một phép đo THẤY được nó, chứ không mang lại
+       mỗi cái tên.
+    """
+    m = _cd()
+    assert "R16" not in {x[0] for x in m.LUAT}, (
+        "R16 quay lai — no co kem mot phep do THAY duoc rung bien do khong? "
+        "Neu co thi sua phep kiem nay va ghi so do vao docstring.")
+    assert "delta_dao_dong_khung" not in m.SAN, (
+        "SAN con giu nguong cho mot chi so khong luat nao dung")
+
+
+def test_R15_o_thang_TUONG_DOI_de_no_VOI_TOI_DUOC():
+    """🔴 Ở thang tuyệt đối, R15 **không thể nổ dưới bất kỳ đầu vào nào**.
+
+    `f0_tan_tuong_doi` là độ tản F0 chuẩn hoá, thực tế ~0,15 và không âm được.
+    Nên hiệu tuyệt đối `ra − ref` bị chặn dưới ở khoảng **−0,15**: một bản đọc
+    phẳng lì hoàn toàn cũng chỉ tới đó. Dung sai đo được là 4×0,042 = **0,168**
+    — lớn hơn giá trị cực đại có thể đạt.
+
+    ⭐ Ca tái hiện của K4 phát hiện điều này, và nó là loại lỗi mà đọc mã không
+       thấy: luật đúng, ngưỡng đúng cách tính, chỉ là hai con số không bao giờ
+       gặp nhau.
+
+    🔴 **SỬA 01/09, CÙNG NGÀY: đổi sang thang tỉ lệ VẪN CHƯA ĐỦ, và R15 đã gỡ.**
+
+    Đo lại sau khi đổi thang:
+
+        nen  -0,4556   lech 0,2519   =>  dung sai 4x0,2519 = 1,0077
+        R15 no khi gia tri < -1,4633
+        can duoi TUYET DOI cua thang ti le = -1,0  (ban phang li hoan toan)
+
+    Nền -0,4556 nghĩa là bản sinh ra **chỉ giữ 54% biến thiên cao độ** của clip
+    gốc ở MỌI bản khoẻ mạnh. Nên câu hỏi *"bản này có phẳng hơn bình thường
+    không"* hỏi sai — "bình thường" đã là 54%. Và độ lệch 0,2519 lớn tới mức
+    một bản phẳng lì chỉ cách trung bình **2,2σ**.
+
+    ⛔ Hạ hệ số σ riêng cho R15 chỉ là chỉnh ngưỡng cho tới khi luật chịu nổ.
+    """
+    m = _cd()
+    assert "R15" not in {x[0] for x in m.LUAT}, (
+        "R15 quay lai — dung sai co con vuot can duoi -1,0 khong?")
+
+
+def test_KHONG_luat_nao_co_dung_sai_VUOT_DAI_gia_tri():
+    """Bất biến mà R15 vi phạm hai lần theo hai cách khác nhau.
+
+    Một luật có dung sai vượt dải khả dĩ của chính chỉ số nó đọc thì **không
+    thể nổ** — và nó trông y hệt một luật đang canh tốt. Chốt được cho các chỉ
+    số ở thang **tỉ lệ**, vì chỉ chúng mới có cận dưới biết trước: −1,0, tức
+    bản sinh ra bằng 0 so với tham chiếu.
+    """
+    import json
+    m = _cd()
+    bl = GOC / "voice_sidecar" / "baseline_lech.json"
+    if not bl.exists():
+        pytest.skip("chua ghim baseline lech")
+    san = (json.loads(bl.read_text(encoding="utf-8")) or {}).get("do") or {}
+    xau = []
+    for ma, chi, chieu, _, _ in m.LUAT:
+        if not chi.endswith("_ti_le") or chi not in san:
+            continue
+        s = san[chi]
+        dung = max(m.HE_SO_LECH * float(s["lech"]), m.SAN.get(chi, 0.0))
+        if chieu <= 0 and float(s["tb"]) - dung < -1.0:
+            xau.append(f"{ma}/{chi}: no khi < {float(s['tb']) - dung:.4f}, "
+                       f"nhung can duoi la -1,0")
+    assert not xau, "; ".join(xau)
 
 
 def test_xep_nang_truoc():
@@ -328,3 +412,101 @@ def test_chan_doan_KHONG_anh_huong_PHAN_QUYET():
         assert x not in doan, (
             f"`phan_quyet` dang doc `{x}` — chan doan phai la TU VAN. "
             f"Xem chu thich o `chan_doan.LUAT`.")
+
+
+# ── EQ sửa độ sáng: giữ làm BẰNG CHỨNG, không phải tính năng ─────────────────
+
+EQ = GOC / "voice_sidecar" / "eq_sua_sang.py"
+
+
+def _eq():
+    import importlib.util
+    sp = importlib.util.spec_from_file_location("eq_thu", EQ)
+    m = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(m)
+    return m
+
+
+def test_EQ_KHONG_duoc_noi_vao_duong_sinh():
+    """🔴 DV-004: EQ sửa độ sáng KHÔNG đóng được khoảng cách. Đã đo.
+
+    Quét sáu mức 0→4 dB trên 12 bản: `|lệch sáng|` giảm đẹp 7,9 → 4,6 nhưng
+    **DNSMOS phẳng lì** — dao động ±0,003 trên một độ lệch nội tại 0,180.
+
+    Vì sao: codec neural **không suy giảm** dải cao, nó **không mã hoá** dải
+    cao. Bù tuyến tính chỉ nâng phần còn lại — kể cả phần dư nhiễu — chứ không
+    khôi phục thông tin đã bị vứt.
+
+    ⛔ Đây đúng là kiểu hỏng bộ đo sinh ra để bắt: **một con số đẹp lên trong
+       khi tiếng không đổi.** Nếu chỉ nhìn `db_dai_cao` thì EQ trông như một
+       thành công rõ ràng, và ta đã ship một tính năng không làm gì.
+
+    Phép kiểm này đỏ nếu ai đó nối EQ vào — buộc họ đọc DV-004 và mang theo số
+    đo mới, chứ không phải mang lại một ý tưởng nghe hợp lý.
+    """
+    for f in ("engine.py", "server.py", "noi_dai.py"):
+        p = GOC / "voice_sidecar" / f
+        if not p.exists():
+            continue
+        assert "eq_sua_sang" not in p.read_text(encoding="utf-8"), (
+            f"`{f}` dang goi eq_sua_sang — xem DV-004 truoc khi bat no.")
+
+
+def test_EQ_kep_o_TRONG_ham_chu_khong_o_noi_goi():
+    """Chốt an toàn đặt ở nơi gọi là chốt mà nơi gọi thứ hai sẽ quên."""
+    m = _eq()
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    sr = 24000
+    x = (0.2 * np.sin(2 * np.pi * 6000 * np.arange(sr) / sr)).astype("float32")
+    a = m.ap(x, sr, ke_cao_db=4.0)
+    b = m.ap(x, sr, ke_cao_db=40.0)      # vuot tran 10 lan
+    assert float(np.abs(a).max()) == pytest.approx(float(np.abs(b).max()),
+                                                   rel=0.02), (
+        "40 dB va 4 dB cho ket qua khac nhau — phep kep khong nam trong `ap()`")
+
+
+def test_EQ_khong_CAT_NGON_khi_vuot_tran():
+    """Hạ đều cả bản, KHÔNG cắt ngọn.
+
+    ⛔ Cắt ngọn là méo phi tuyến — đúng thứ `chot_toan_ven` của K1 sinh ra để
+       bắt. Một bước "sửa chất lượng" tự tạo ra hỏng hóc mà một chốt khác phải
+       bắt là một bước đi lùi.
+    """
+    m = _eq()
+    np = pytest.importorskip("numpy")
+    pytest.importorskip("scipy")
+    sr = 24000
+    # ⛔ KHONG dung 6000 Hz o sr 24000: do la DUNG 4 mau moi chu ky, nen mot
+    #    nua so mau roi chinh xac vao ±dinh va phep dem duoi day bao "da cat
+    #    ngon" cho mot tin hieu hoan toan sach. Khuon thu tu tao ra dung hien
+    #    tuong no dinh bat — cung lop loi voi khuon `_tieng_gia` cua test_383.
+    rng = np.random.default_rng(4)
+    t = np.arange(sr) / sr
+    x = (0.55 * np.sin(2 * np.pi * 5300 * t)
+         + 0.35 * np.sin(2 * np.pi * 1700 * t)
+         + 0.05 * rng.standard_normal(sr)).astype("float32")
+    x = (x / np.abs(x).max() * 0.95).astype("float32")
+    y = m.ap(x, sr, ke_cao_db=4.0)
+    assert float(np.abs(y).max()) <= 1.0
+    # neu cat ngon thi se co nhieu mau NAM DUNG o tran; ha deu thi khong
+    tran = float(np.abs(y).max())
+    dinh = int((np.abs(y) > tran * 0.999).sum())
+    assert dinh < 20, f"{dinh} mau nam sat tran — nhieu kha nang da cat ngon"
+
+
+def test_EQ_0dB_la_di_qua_khong_doi():
+    m = _eq()
+    np = pytest.importorskip("numpy")
+    sr = 24000
+    x = (0.3 * np.sin(2 * np.pi * 800 * np.arange(sr) / sr)).astype("float32")
+    assert np.allclose(m.ap(x, sr, ke_cao_db=0.0), x)
+
+
+def test_TRAN_DB_giu_nguyen_4_nhu_he_cu():
+    """±4 dB kế thừa từ hệ cũ, và nó là chốt AN TOÀN không phải tham số.
+
+    Vượt nó thì tiếng nghe chói và giả, và nhiễu của codec trong dải ấy lên
+    theo cùng một lượng.
+    """
+    assert _eq().TRAN_DB == 4.0

@@ -4,43 +4,43 @@
   "so_cau": 3,
   "do": {
     "delta_dao_dong_khung": {
-      "tb": 0.02623,
-      "lech": 0.03381,
+      "tb": 0.02659,
+      "lech": 0.02887,
       "n": 24
     },
     "delta_db_dai_cao": {
-      "tb": -3.64883,
-      "lech": 3.38332,
+      "tb": -4.29142,
+      "lech": 3.7789,
       "n": 24
     },
-    "delta_f0_tan_tuong_doi": {
-      "tb": -0.07173,
-      "lech": 0.04214,
-      "n": 22
+    "delta_f0_tan_tuong_doi_ti_le": {
+      "tb": -0.45563,
+      "lech": 0.25192,
+      "n": 20
     },
     "delta_f0_trung_vi_hz_ti_le": {
-      "tb": -0.0034,
-      "lech": 0.04713,
+      "tb": -0.00926,
+      "lech": 0.05913,
       "n": 24
     },
     "delta_lufs": {
-      "tb": -0.11167,
-      "lech": 1.12967,
+      "tb": -0.14375,
+      "lech": 1.27579,
       "n": 24
     },
     "delta_trong_tam_hz_ti_le": {
-      "tb": -0.15245,
-      "lech": 0.14904,
+      "tb": -0.14407,
+      "lech": 0.15026,
       "n": 24
     },
     "delta_vat_95_hz_ti_le": {
-      "tb": -0.24912,
-      "lech": 0.18746,
+      "tb": -0.2521,
+      "lech": 0.17561,
       "n": 24
     },
     "delta_vat_99_hz_ti_le": {
-      "tb": -0.18362,
-      "lech": 0.43213,
+      "tb": -0.29048,
+      "lech": 0.20847,
       "n": 24
     }
   }
