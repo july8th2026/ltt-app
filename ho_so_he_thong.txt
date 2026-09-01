@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:5f4eab3afb5c6e7ffb913168e9df9b43eb28ecbaecc8123d63e489c0fe92c93e
-Nguồn đã quét : 1430 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d9ba499ef2b7353d8cea1fbfd02adffde338def37206f84c06a2e303199565ce
+Nguồn đã quét : 1436 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1546,8 +1546,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1430 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:53, .py:1078, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1436 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:56, .py:1081, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2463,7 +2463,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (38)
+[setup] (41)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2492,6 +2492,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/do_lo_giong.ps1
 - setup/do_nhan_ban_tu_kho_cu.ps1
 - setup/do_troi_tong.ps1
+- setup/k0_cham_mu.ps1
+- setup/k0_kiem_chung_resample.ps1
+- setup/k0_sinh_f5.ps1
 - setup/khoa_thu_api.ps1
 - setup/nap_credit_tai_khoan_thu.ps1
 - setup/nap_lai_env.ps1
@@ -2867,7 +2870,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (156)
+[tools] (159)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2961,6 +2964,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/import_api_keys_from_botgemini.py
 - tools/import_r2_modelark_from_botgemini.py
 - tools/job_retention.py
+- tools/k0_cham_mu.py
+- tools/k0_kiem_chung_resample.py
+- tools/k0_sinh_f5.py
 - tools/khach_gia_lap_anh.py
 - tools/khoa_thu_api.py
 - tools/kiem_ltt_llm.py
@@ -3034,7 +3040,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1430 file; 14115684 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1436 file; 14147167 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -168057,6 +168063,237 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/k0_cham_mu.ps1
+SHA256=55cbd815e3c81bb8b68fb66ab760651e091c67ebc5bbd29cba61a80f3e47dbb3 BYTES=2539 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_cham_mu.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\k0_cham_mu.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/k0_kiem_chung_resample.ps1
+SHA256=519343adb0e17407530ab804b37cdba5f12f420bede23914de862a9f185dd1f0 BYTES=2563 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_kiem_chung_resample.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\k0_kiem_chung_resample.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/k0_sinh_f5.ps1
+SHA256=e37a04e3ac89de9e763e3c5824b43dc04c983e241a1e401f69e54bbd8f457ad7 BYTES=2888 LINES=73
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    K0 buoc 1: sinh tieng bang HE CU (F5-TTS da tinh chinh).
+
+.DESCRIPTION
+    Cung cay cau hep nhu cac wrapper khac: doc app.env vao RIENG tien trinh
+    nay, chay mot cong cu, thoat. Khong bao gio in mot gia tri tu app.env.
+
+    !! KHAC MOI WRAPPER KHAC: no chay PYTHON CUA HE CU
+    (D:\Voiceclone_TTS\venv), khong phai venv nao cua ta. `engine_router` cua
+    ho tu sinh mot tien trinh con chay `venv_f5tts` de nap checkpoint F5.
+
+    !! Cham GPU. Dung chay cung luc voi mot lo anh, mot job video, hay bo do
+    giong -- ca ba deu dung chung card.
+
+    !! Kho cu la CHI DOC. Kich ban dem so tep trong speakers/ truoc va sau,
+    va bao neu lech.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_sinh_f5.ps1
+
+.NOTES
+    Can Administrator (de doc app.env bi khoa ACL).
+    Thuan ASCII (CLAUDE.md quy tac 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# Python cua HE CU. Khong doc tu app.env: no khong phai mot bi mat, va no
+# khong phai mot phan cua nen tang nay.
+$venvPy  = 'D:\Voiceclone_TTS\venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\k0_sinh_f5.py'
+foreach ($p in @($envFile, $tool, $venvPy)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+# !! KHONG dat PYTHONPATH sang kho cua ta. Kich ban tu chen duong dan kho cu
+#    vao sys.path, va tron hai cay import se nap nham module cung ten -- ca hai
+#    kho deu co `src/` va deu co `tools/`.
+$env:PYTHONPATH = ''
+Write-Host '  [!] Kho cu la CHI DOC -- dem so tep truoc/sau, bao neu lech.' -ForegroundColor Yellow
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/khoa_thu_api.ps1
 SHA256=1e3e095f970049802351de206365a1547c6080706c80c11326a9cfe7f68c7c9a BYTES=2239 LINES=64
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -283058,6 +283295,574 @@ def main() -> int:
             next(gen)
         except StopIteration:
             pass
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/k0_cham_mu.py
+SHA256=e1c0b00cfcb7a9a27cfec5ecf253aee1ac9251355271fd4f190a46cb3354f132 BYTES=11193 LINES=263
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+k0_cham_mu.py — BƯỚC 2 của K0: sinh bằng VieNeu rồi chấm CẢ HAI hệ bằng một
+bộ chấm TRUNG LẬP.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_sinh_f5.ps1     (buoc 1)
+    powershell -ExecutionPolicy Bypass -File .\setup\xuat_ref_kho_chung.ps1
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_cham_mu.ps1     (buoc 2)
+
+## 🔴 VẤN ĐỀ PHƯƠNG PHÁP: AI ĐƯỢC LÀM TRỌNG TÀI
+
+Câu hỏi của K0 là *"zero-shot có ngang ngửa fine-tuned không"*, và nó quyết
+định K5 (~7.800 dòng đường huấn luyện) có tồn tại hay không. Nên **trọng tài
+phải trung lập**, và đó không phải chuyện hình thức:
+
+  ⛔ Dùng bộ mã hoá người nói của **VieNeu** thì ta đang hỏi *"VieNeu có nghĩ
+     bản của VieNeu giống người nói không"*. Nó tối ưu đúng thứ ấy.
+  ⛔ Dùng bộ của **F5** thì lệch chiều ngược lại.
+
+⭐ Ba trục dưới đây **không hệ nào tối ưu trực tiếp**, và cả ba đều so với cùng
+   một mốc — chính clip tham chiếu gốc của người nói ấy trong kho cũ:
+
+     ① **Dễ hiểu** — CER của Whisper. Bên thứ ba hoàn toàn.
+     ② **Chất lượng cảm nhận** — DNSMOS P.835 OVRL. Bên thứ ba, CC-BY-4.0.
+     ③ **Trung thành âm học** — |lệch| so với clip tham chiếu ở độ sáng phổ và
+        cao độ (tầng K4). Không đi qua embedding nào của bên nào.
+
+⭐ Trục ③ chính là tầng vừa dựng ở K4, và đây là lý do nó đáng dựng: một phép đo
+   độc lập với embedding là thứ **duy nhất** chấm được hai hệ dùng hai bộ mã hoá
+   khác nhau.
+
+## Đọc kết quả
+
+Mỗi cặp (giọng × câu) cho một phiếu **thắng/thua/hoà** trên từng trục. Điều kiện
+qua của kế hoạch: **≥ 40 cặp** và **khoảng tin cậy không chứa 0,5**.
+
+⛔ "Không chứa 0,5" phải đúng cho **từng trục**, và ba trục hoàn toàn có thể nói
+   ba điều khác nhau — F5 dễ hiểu hơn mà VieNeu trung thành hơn là một kết quả
+   hợp lệ, và nó dẫn tới một quyết định khác hẳn với "một bên thắng cả ba".
+   Gộp ba trục thành một điểm tổng là vứt đi đúng thông tin ấy.
+
+⚠️ Và một cảnh báo về chính phép so: hai hệ chạy ở **hai tần số lấy mẫu khác
+   nhau** (F5 24 kHz, VieNeu 48 kHz). DNSMOS và các phép phổ **có nhạy với điều
+   đó**. Nên bản sinh ra được hạ về cùng một tần số trước khi chấm, và tần số
+   ấy là của bên THẤP hơn — nâng lên chỉ nội suy, còn hạ xuống là vứt dải cao
+   đi thật, nên phải làm cho **cả hai** bên như nhau chứ không chỉ một.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import math
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+#: Trục nào "nhỏ hơn là tốt hơn".
+NHO_LA_TOT = {"cer", "lech_sang", "lech_f0"}
+
+
+def _doi_tan_so(w, tu: int, den: int):
+    import numpy as np
+    if tu == den:
+        return w
+    try:
+        import soxr
+        return np.asarray(soxr.resample(w, tu, den), dtype="float32")
+    except ImportError:
+        n = int(round(len(w) * den / float(tu)))
+        return np.interp(np.linspace(0, len(w) - 1, n),
+                         np.arange(len(w)), w).astype("float32")
+
+
+def _cham(wav, sr: int, wav_ref, sr_ref: int, cau: str, duong: str) -> dict:
+    """Ba trục, không trục nào đi qua bộ mã hoá của bên nào."""
+    from voice_sidecar import dnsmos, do_chat_luong, lech_tham_chieu
+
+    ra = {}
+    dh = do_chat_luong.do_de_hieu(duong, cau, "vi") or {}
+    ra["cer"] = dh.get("cer")
+    d = dnsmos.cham(wav, sr) or {}
+    ra["dnsmos_ovrl"] = d.get("ovrl")
+    lech = lech_tham_chieu.do_lech(wav, sr, wav_ref, sr_ref)
+    # ⛔ Lấy TRỊ TUYỆT ĐỐI: câu hỏi là "lệch bao nhiêu", không phải "lệch phía
+    #    nào". Một hệ tối hơn và một hệ sáng hơn cùng một lượng thì trung thành
+    #    như nhau, và giữ dấu ở đây sẽ cho một bên thắng chỉ vì nó lệch lên.
+    if lech.get("delta_db_dai_cao") is not None:
+        ra["lech_sang"] = abs(float(lech["delta_db_dai_cao"]))
+    if lech.get("delta_f0_trung_vi_hz_ti_le") is not None:
+        ra["lech_f0"] = abs(float(lech["delta_f0_trung_vi_hz_ti_le"]))
+    return ra
+
+
+def _kt_c(thang: int, tong: int) -> tuple:
+    """Khoảng tin cậy Wilson 95% cho tỉ lệ thắng.
+
+    ⭐ Wilson chứ không phải Wald (`p ± 1,96·√(p(1-p)/n)`): với n vài chục và p
+       lệch khỏi 0,5, Wald cho khoảng lệch tâm và có thể tràn ra ngoài [0, 1] —
+       tức một khoảng tin cậy nói những điều bất khả. Cùng phép mà `cham_mu.py`
+       của dự án ảnh dùng, cố ý.
+    """
+    if tong <= 0:
+        return 0.0, 0.0, 0.0
+    z = 1.959963985
+    p = thang / tong
+    n = tong
+    giua = (p + z * z / (2 * n)) / (1 + z * z / n)
+    nua = (z / (1 + z * z / n)) * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))
+    return p, max(0.0, giua - nua), min(1.0, giua + nua)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--f5", default="tmp/k0/f5_sinh.json")
+    ap.add_argument("--ref-kho", default="tmp/ref_kho_chung.json")
+    ap.add_argument("--clip-ref", default="tmp/giong_cu")
+    ap.add_argument("--ra-wav", default="tmp/k0/vieneu")
+    ap.add_argument("--ra", default="tmp/k0/ket_qua.json")
+    a = ap.parse_args(argv)
+
+    for d in (a.f5, a.ref_kho):
+        if not os.path.isfile(d):
+            print(f"THIEU {d}", file=sys.stderr)
+            return 2
+
+    import soundfile as sf
+
+    from apps.ltt_voice import sidecar_client
+
+    f5 = json.load(open(a.f5, encoding="utf-8"))
+    kho = json.load(open(a.ref_kho, encoding="utf-8"))
+
+    # Ghép giọng hệ cũ -> hồ sơ hệ mới qua XUẤT XỨ, không qua tên.
+    theo_ma = {}
+    for g in kho:
+        try:
+            ma = (json.loads(g.get("ghi_chu") or "{}") or {}).get("ma_cu")
+        except ValueError:
+            ma = None
+        if ma:
+            theo_ma[ma] = g
+
+    os.makedirs(a.ra_wav, exist_ok=True)
+    cap, thieu = [], set()
+    for m in f5["ket"]:
+        if not m.get("ok"):
+            continue
+        g = theo_ma.get(m["giong"])
+        if g is None:
+            thieu.add(m["giong"])
+            continue
+        cap.append({**m, "ho_so": g})
+    if thieu:
+        print(f"⚠️ khong ghep duoc {sorted(thieu)} — bo qua")
+    print(f"{len(cap)} cap (giong x cau)\n")
+
+    ket = []
+    for i, c in enumerate(cap, 1):
+        ten = os.path.basename(c["wav"]).replace(".wav", "")
+        # ── bản VieNeu cho cùng giọng, cùng câu ────────────────────────────
+        try:
+            raw, _ = sidecar_client.noi(c["cau"], ref_b64=c["ho_so"]["ref_b64"])
+        except Exception as e:                            # noqa: BLE001
+            print(f"  [hong] {ten}: {type(e).__name__}: {e}")
+            continue
+        d_vn = os.path.join(a.ra_wav, f"{ten}.wav")
+        with open(d_vn, "wb") as f:
+            f.write(raw)
+
+        w_f5, sr_f5 = sf.read(c["wav"], dtype="float32", always_2d=False)
+        w_vn, sr_vn = sf.read(d_vn, dtype="float32", always_2d=False)
+        if getattr(w_f5, "ndim", 1) > 1:
+            w_f5 = w_f5.mean(axis=1)
+        if getattr(w_vn, "ndim", 1) > 1:
+            w_vn = w_vn.mean(axis=1)
+
+        # ⛔ HẠ CẢ HAI về cùng tần số THẤP hơn. Chấm một bản 48 kHz cạnh một bản
+        #    24 kHz là cho bên 48 kHz một lợi thế ở mọi phép phổ mà không liên
+        #    quan gì tới chất lượng nhân bản.
+        dich = min(int(sr_f5), int(sr_vn))
+        w_f5 = _doi_tan_so(w_f5, int(sr_f5), dich)
+        w_vn = _doi_tan_so(w_vn, int(sr_vn), dich)
+
+        ref = os.path.join(a.clip_ref, f"{c['giong']}.wav")
+        if not os.path.isfile(ref):
+            print(f"  [bo] {ten}: khong co clip tham chieu {ref}")
+            continue
+        w_r, sr_r = sf.read(ref, dtype="float32", always_2d=False)
+        if getattr(w_r, "ndim", 1) > 1:
+            w_r = w_r.mean(axis=1)
+
+        # ASR đọc từ TỆP, nên ghi bản đã hạ tần số ra tệp tạm cho công bằng.
+        import tempfile
+        tam = {}
+        for nhan, w in (("f5", w_f5), ("vieneu", w_vn)):
+            t = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+            t.close()
+            sf.write(t.name, w, dich)
+            tam[nhan] = t.name
+        try:
+            m_f5 = _cham(w_f5, dich, w_r, int(sr_r), c["cau"], tam["f5"])
+            m_vn = _cham(w_vn, dich, w_r, int(sr_r), c["cau"], tam["vieneu"])
+        finally:
+            for t in tam.values():
+                try:
+                    os.unlink(t)
+                except OSError:
+                    pass
+
+        ket.append({"ten": ten, "giong": c["giong"], "cau": c["cau"],
+                    "sr_cham": dich, "f5": m_f5, "vieneu": m_vn})
+        print(f"  [{i}/{len(cap)}] {ten:32} "
+              f"CER f5={m_f5.get('cer')} vn={m_vn.get('cer')}")
+
+    if not ket:
+        print("KHONG CHAM DUOC CAP NAO", file=sys.stderr)
+        return 1
+
+    print("\n" + "=" * 76)
+    print("  K0 — F5 tinh chinh  vs  VieNeu zero-shot")
+    print("=" * 76)
+    print(f"  {'truc':16} {'F5 thang':>9} {'VieNeu':>9} {'hoa':>6} "
+          f"{'ti le VieNeu':>14} {'KTC 95%':>18}")
+    tong_ket = {}
+    for truc in ("cer", "dnsmos_ovrl", "lech_sang", "lech_f0"):
+        f5t = vnt = hoa = 0
+        for k in ket:
+            x, y = k["f5"].get(truc), k["vieneu"].get(truc)
+            if x is None or y is None:
+                continue
+            if abs(float(x) - float(y)) < 1e-9:
+                hoa += 1
+            elif (float(y) < float(x)) == (truc in NHO_LA_TOT):
+                vnt += 1
+            else:
+                f5t += 1
+        n = f5t + vnt
+        p, lo, hi = _kt_c(vnt, n)
+        chua = lo <= 0.5 <= hi
+        tong_ket[truc] = {"f5": f5t, "vieneu": vnt, "hoa": hoa, "n": n,
+                          "ti_le_vieneu": round(p, 4),
+                          "ktc": [round(lo, 4), round(hi, 4)],
+                          "ktc_chua_0_5": chua}
+        print(f"  {truc:16} {f5t:>9} {vnt:>9} {hoa:>6} {p:>14.3f} "
+              f"  [{lo:.3f}; {hi:.3f}]{'  (chua 0,5)' if chua else '  ***'}")
+
+    print("\n  *** = khoang tin cay KHONG chua 0,5 => truc do da phan thang bai.")
+    print(f"  So cap: {len(ket)}  (dieu kien ke hoach: >= 40)")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"cap": ket, "tong_ket": tong_ket, "so_cap": len(ket)}, f,
+                  ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/k0_kiem_chung_resample.py
+SHA256=e7ef4a66789356910b57fadb8628d02c799e17dd7a67909101811eca64bc8885 BYTES=6121 LINES=147
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+k0_kiem_chung_resample.py — PHÉP ĐỐI CHỨNG cho K0: bước hạ tần số của chính tôi
+có ăn mất điểm của VieNeu không.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_kiem_chung_resample.ps1
+
+## Vì sao phải có phép này trước khi tin kết quả K0
+
+K0 chấm hai hệ ở **cùng một tần số**, và tần số ấy là 24 kHz — tần số gốc của
+F5. Hệ quả là một **bất đối xứng do chính bộ chấm tạo ra**:
+
+    F5     : 24 kHz  ->  (khong doi)     ->  DNSMOS tu ha ve 16 kHz   = 1 lan
+    VieNeu : 48 kHz  ->  soxr ha ve 24   ->  DNSMOS tu ha ve 16 kHz   = 2 lan
+
+Mỗi lần đổi tần số là một phép lọc, và mỗi phép lọc lấy đi một ít. Nếu bước
+thừa ấy đủ để hạ DNSMOS thì kết quả *"F5 thắng DNSMOS 31–9"* **một phần là kết
+quả của bộ chấm**, không phải của hai model — và K0 sẽ đưa ra một quyết định
+chiến lược (K5, ~7.800 dòng) dựa trên một tạo tác.
+
+⭐ Nâng F5 lên 48 kHz để tránh điều đó thì tệ hơn: nó tặng F5 một dải 12–24 kHz
+   **rỗng** mà DNSMOS có thể đọc thành thiếu độ trong. Hạ xuống là lựa chọn ít
+   sai hơn, nhưng "ít sai hơn" chưa phải "không sai" — nên phải ĐO.
+
+## Cách đo
+
+Chấm CHÍNH những tệp VieNeu đã sinh ở K0, hai lần:
+
+    ① ở 48 kHz gốc  -> DNSMOS ha 48 -> 16   (mot lan)
+    ② ha ve 24 kHz  -> DNSMOS ha 24 -> 16   (hai lan, dung nhu K0 da lam)
+
+Chênh lệch giữa hai cột là **cái giá của bước thừa**, đo trên đúng dữ liệu của
+K0 chứ không phải trên một mẫu khác.
+
+⛔ Nếu chênh lệch ấy lớn hơn khoảng cách DNSMOS giữa hai hệ thì kết luận "F5
+   thắng DNSMOS" **không đứng được**, và phải chấm lại theo cách khác.
+"""
+from __future__ import annotations
+
+import argparse
+import glob
+import json
+import os
+import statistics
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--wav", default="tmp/k0/vieneu")
+    ap.add_argument("--k0", default="tmp/k0/ket_qua.json")
+    ap.add_argument("--ra", default="tmp/k0/kiem_chung_resample.json")
+    a = ap.parse_args(argv)
+
+    import numpy as np
+    import soundfile as sf
+
+    from voice_sidecar import dnsmos
+
+    if not dnsmos.co_san():
+        print("THIEU model DNSMOS", file=sys.stderr)
+        return 2
+
+    try:
+        import soxr
+    except ImportError:
+        print("THIEU soxr — phep doi chung nay can dung BO DOI TAN SO ma K0 da "
+              "dung, khong duoc thay bang mot bo khac.", file=sys.stderr)
+        return 2
+
+    cac = sorted(glob.glob(os.path.join(a.wav, "*.wav")))
+    if not cac:
+        print(f"KHONG CO WAV trong {a.wav} — chay `k0_cham_mu.ps1` truoc.",
+              file=sys.stderr)
+        return 2
+
+    goc, ha = [], []
+    for i, p in enumerate(cac, 1):
+        w, sr = sf.read(p, dtype="float32", always_2d=False)
+        if getattr(w, "ndim", 1) > 1:
+            w = w.mean(axis=1)
+        d1 = dnsmos.cham(w, int(sr)) or {}
+        w24 = np.asarray(soxr.resample(w, int(sr), 24000), dtype="float32")
+        d2 = dnsmos.cham(w24, 24000) or {}
+        if d1.get("ovrl") is None or d2.get("ovrl") is None:
+            continue
+        goc.append(float(d1["ovrl"]))
+        ha.append(float(d2["ovrl"]))
+        print(f"  [{i}/{len(cac)}] {os.path.basename(p):32} "
+              f"{sr} Hz {d1['ovrl']:.4f}  ->  24k {d2['ovrl']:.4f}  "
+              f"({d2['ovrl'] - d1['ovrl']:+.4f})")
+
+    if not goc:
+        print("KHONG CHAM DUOC GI", file=sys.stderr)
+        return 1
+
+    gia = statistics.mean(g - h for g, h in zip(goc, ha))
+    print("\n" + "=" * 72)
+    print("  GIA CUA BUOC HA TAN SO (chi VieNeu phai chiu)")
+    print("=" * 72)
+    print(f"  DNSMOS o 48 kHz goc : {statistics.mean(goc):.4f}")
+    print(f"  DNSMOS sau khi ha   : {statistics.mean(ha):.4f}")
+    print(f"  MAT DI              : {gia:+.4f}  (n={len(goc)})")
+
+    ra = {"n": len(goc), "ovrl_48k": round(statistics.mean(goc), 5),
+          "ovrl_24k": round(statistics.mean(ha), 5), "mat_di": round(gia, 5)}
+
+    if os.path.isfile(a.k0):
+        k0 = json.load(open(a.k0, encoding="utf-8"))
+        f5 = [c["f5"]["dnsmos_ovrl"] for c in k0["cap"]
+              if c["f5"].get("dnsmos_ovrl") is not None]
+        vn = [c["vieneu"]["dnsmos_ovrl"] for c in k0["cap"]
+              if c["vieneu"].get("dnsmos_ovrl") is not None]
+        if f5 and vn:
+            kc = statistics.mean(f5) - statistics.mean(vn)
+            ra["khoang_cach_hai_he"] = round(kc, 5)
+            print(f"\n  Khoang cach DNSMOS giua hai he (F5 - VieNeu): {kc:+.4f}")
+            print(f"  Gia cua buoc ha tan so                      : {gia:+.4f}")
+            if gia >= kc:
+                print("\n  🔴 BUOC HA TAN SO LON HON HOAC BANG KHOANG CACH.")
+                print("     => Ket luan 'F5 thang DNSMOS' KHONG dung duoc.")
+                ra["ket_luan"] = "khong dung duoc"
+            elif gia >= kc * 0.5:
+                print("\n  ⚠️ Buoc ha tan so chiem HON MOT NUA khoang cach.")
+                print("     => Khoang cach that nho hon nhieu so voi bang K0.")
+                ra["ket_luan"] = "phai chiet khau nhieu"
+            else:
+                print(f"\n  ✅ Buoc ha tan so chi chiem "
+                      f"{gia / kc * 100:.0f}% khoang cach.")
+                print("     => Ket luan 'F5 thang DNSMOS' van dung, nhung "
+                      "khoang cach that nho hon.")
+                ra["ket_luan"] = "van dung, co chiet khau"
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ra, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/k0_sinh_f5.py
+SHA256=efdaa98ccb27e631b3c7b956e49056a2e9bf808553ad3cef959348b677a4dbc7 BYTES=6179 LINES=140
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+k0_sinh_f5.py — BƯỚC 1 của K0: sinh tiếng bằng hệ CŨ (F5-TTS đã tinh chỉnh).
+
+    powershell -ExecutionPolicy Bypass -File .\setup\k0_sinh_f5.ps1
+
+⚠️ CHẠY BẰNG PYTHON CỦA HỆ CŨ (`D:\Voiceclone_TTS\venv`), không phải venv nào
+   của ta. Nó gọi `src.inference.engine_router.generate_voice`, và hàm ấy tự
+   sinh một tiến trình con chạy `venv_f5tts` để nạp checkpoint.
+
+## ⛔ CHỈ ĐỌC `D:\Voiceclone_TTS`
+
+Đã kiểm trước khi chạy dòng nào: `f5tts_engine.py` dùng
+`tempfile.TemporaryDirectory(prefix="f5tts_")` cho mọi tệp liên lạc và cho cả
+`worker_stderr.log`, tức chúng nằm ở thư mục tạm của HỆ THỐNG. Đầu ra thì tệp
+này truyền `output_path` tuyệt đối vào `tmp/k0/f5/` của kho ta.
+
+⇒ Không có đường ghi nào vào kho cũ. Nhưng đó là kết luận từ việc **đọc mã**,
+  và đọc mã đã sai hai lần trong phiên này — nên tệp này cũng **đếm số tệp**
+  trong `speakers/` trước và sau, rồi báo nếu lệch.
+
+## Vì sao K0 tồn tại
+
+Kế hoạch kế thừa tự khai K0 là pha **chặn mọi pha sau**:
+
+    Nếu zero-shot ngang ngửa, cả đường huấn luyện (~7.800 dòng) là thứ KHÔNG
+    nên mang sang, và K5 biến mất khỏi kế hoạch. Nếu F5 thắng rõ, K5 thành pha
+    chiến lược. Không đo thì mọi pha sau đều đang đoán.
+
+⭐ Nói cho công bằng với những gì đã làm: K1–K4 hoá ra **không** phụ thuộc câu
+   trả lời ấy — chúng là chốt chất lượng và tầng chẩn đoán, đúng dù engine nào
+   thắng. Nhưng **K5 phụ thuộc hoàn toàn**, và K5 là hạng mục lớn nhất còn lại.
+
+## Tám giọng, và vì sao đúng tám
+
+Hệ cũ có 8 giọng chạy F5 (`engine: f5tts`, `lang: vi`) — và **đúng tám giọng ấy**
+nay đã ở hệ mới sau đợt nhập 01/09. Mười bảy giọng còn lại chạy XTTS; so chúng
+với VieNeu là so hai thứ khác nhau, và K0 không hỏi câu đó.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+KHO_CU = r"D:\Voiceclone_TTS"
+
+#: Cùng bộ câu với `tools/do_lan_cheo.py::CAU_VI` — cố ý.
+#:
+#: ⭐ Dùng chung bộ câu nghĩa là hai phép đo khác nhau vẫn so được với nhau, và
+#:    con số của K0 đọc được cạnh con số của bảng 2×2 mà không phải hỏi "hai
+#:    bên có đọc cùng thứ không". Đổi một câu ở đây là cắt đứt liên hệ ấy.
+CAU = [
+    "Ba tôi bảo bà ấy bán bánh ở bãi biển vào buổi sáng.",
+    "Cô ấy cố gắng có được một cỗ máy mới cho công việc.",
+    "Mẹ dặn mà tôi mải mê nên quên mất lời mẹ nói.",
+    "Tôi thấy thầy giáo đứng ở cửa lớp từ sáng sớm.",
+    "Hôm nay trời hơi lạnh, nhớ mặc áo ấm khi ra ngoài.",
+]
+
+
+def _dem_tep(goc: str) -> int:
+    n = 0
+    for _, _, tep in os.walk(goc):
+        n += len(tep)
+    return n
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ra", default="tmp/k0/f5")
+    ap.add_argument("--so-lieu", default="tmp/k0/f5_sinh.json")
+    a = ap.parse_args(argv)
+
+    sys.path.insert(0, KHO_CU)
+    os.chdir(KHO_CU)          # engine của họ giả định cwd là gốc kho của họ
+
+    import yaml
+    hs = yaml.safe_load(open(os.path.join(KHO_CU, "configs",
+                                          "voice_profiles.yaml"),
+                             encoding="utf-8")).get("profiles", {})
+    giong = sorted(k for k, v in hs.items()
+                   if not str(k).startswith("_")
+                   and str(v.get("engine")) == "f5tts")
+    print(f"{len(giong)} giong f5tts: {giong}\n")
+
+    ra = os.path.abspath(os.path.join(r"D:\LTTSTUDIOSAPP", a.ra))
+    os.makedirs(ra, exist_ok=True)
+
+    canh = os.path.join(KHO_CU, "speakers")
+    truoc = _dem_tep(canh)
+
+    from src.inference.engine_router import generate_voice
+
+    ket = []
+    for i, g in enumerate(giong, 1):
+        for j, c in enumerate(CAU, 1):
+            duong = os.path.join(ra, f"{g}__c{j}.wav")
+            t0 = time.time()
+            try:
+                p, meta = generate_voice(c, g, output_path=duong,
+                                         output_format="wav")
+            except Exception as e:                        # noqa: BLE001
+                # Một câu hỏng là một SỐ ĐO, không phải lý do dừng.
+                print(f"  [hong] {g} c{j}: {type(e).__name__}: {e}")
+                ket.append({"giong": g, "cau": c, "ok": False,
+                            "loi": f"{type(e).__name__}: {e}"})
+                continue
+            giay = time.time() - t0
+            ket.append({"giong": g, "cau": c, "ok": True, "wav": p,
+                        "giay": round(giay, 2),
+                        "meta": {k: v for k, v in dict(meta or {}).items()
+                                 if isinstance(v, (int, float, str, bool))}})
+            print(f"  [{i}/{len(giong)}] {g:24} c{j}  {giay:5.1f}s  "
+                  f"{os.path.basename(p)}")
+
+    sau = _dem_tep(canh)
+    if sau != truoc:
+        # ⛔ NÓI RA. Kho cũ là chỉ-đọc, và một thay đổi ở đó là chuyện phải biết
+        #    ngay, không phải chuyện phát hiện sau ba tuần.
+        print(f"\n🔴 SO TEP TRONG `speakers/` DOI: {truoc} -> {sau}. "
+              f"Kho cu la CHI DOC — xem lai ngay.", file=sys.stderr)
+
+    d = os.path.abspath(os.path.join(r"D:\LTTSTUDIOSAPP", a.so_lieu))
+    os.makedirs(os.path.dirname(d), exist_ok=True)
+    with open(d, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"cau": CAU, "giong": giong, "ket": ket}, f,
+                  ensure_ascii=False, indent=2)
+    ok = sum(1 for k in ket if k.get("ok"))
+    print(f"\n{ok}/{len(ket)} thanh cong. Da ghi: {a.so_lieu}")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":
