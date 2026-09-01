@@ -117,12 +117,44 @@ def test_bao_tin_bo_qua_cau_trung():
     assert "o.textContent === cau" in m.group(1)
 
 
-def test_chi_mot_ham_bat_nut_cho_ca_ba_man():
-    """Ba vòng lặp riêng làm cùng một việc là ba chỗ để quên đồng bộ."""
+def test_moi_nhom_loc_deu_di_qua_batNut():
+    """MỌI nhóm nút lọc phải đi qua `batNut()` — không nhóm nào tự xử.
+
+    🔴 Bản đầu của phép kiểm này chốt `count("batNut(nut);") == 3`, và nó đỏ
+       ngay ngày ai đó thêm một nhóm lọc **thứ tư hợp lệ** (làn ngôn ngữ,
+       01/09/2026). Con số 3 không phải bất biến — nó là số nhóm lọc *tình cờ
+       có* lúc viết.
+
+    ⛔ Bất biến thật là một **tập hợp**: mỗi vòng lặp gắn `click` lên một nhóm
+       nút lọc thì phải gọi `batNut`. Chốt số lượng thì mỗi lần thêm một nhóm
+       đúng luật, gate lại đỏ và người sửa học được rằng cách xử lý là **nâng
+       con số** — tức bánh cóc dạy đúng thói quen nó sinh ra để ngăn.
+       *(Cùng bài học với `banh-coc-cong-chat-luong`: chốt TẬP HỢP, đừng chốt
+       số lượng.)*
+    """
     s = JS.read_text(encoding="utf-8")
-    assert s.count("function batNut(") == 1
-    assert s.count("batNut(nut);") == 3, (
-        "ca ba nhom loc chay o trinh duyet phai di qua batNut()")
+    assert s.count("function batNut(") == 1, "batNut phai la MOT ham duy nhat"
+
+    # Mỗi vòng lặp gắn click lên một nhóm nút lọc, tìm theo cách nó lấy nút.
+    nhom = re.findall(
+        r'var (\w+) = document\.querySelectorAll\('
+        r'"(?:\.lv-loc-nut|\[data-chon-[\w-]+\])"\);', s)
+    assert len(nhom) >= 3, f"chi thay {len(nhom)} nhom loc: {nhom}"
+
+    # ⛔ Hỏi từng KHỐI mã sau mỗi vòng lặp, đừng đếm toàn tệp: đếm toàn tệp
+    #    không phân biệt được "ba nhóm mỗi nhóm một lần" với "một nhóm ba lần".
+    for ten in nhom:
+        i = s.index(f"var {ten} = document.querySelectorAll(")
+        # ⛔ Cắt tới khai báo `var` KẾ TIẾP Ở ĐẦU DÒNG, không phải `var` đầu
+        #    tiên tìm thấy: `for (var i = 0; ...)` nằm ngay trong chính vòng
+        #    lặp cần soi, nên cắt ở đó là cắt mất phần thân — và phép kiểm sẽ
+        #    báo "không gọi batNut" cho một nhóm gọi nó ở dòng sau.
+        j = s.find("\n    var ", i + 1)
+        khoi = s[i:j if j > i else len(s)]
+        assert "batNut(" in khoi, (
+            f"nhom loc `{ten}` khong goi batNut() — trinh doc man hinh se "
+            f"khong biet bo loc nao dang bat")
+
     assert 'setAttribute("aria-pressed"' in s
 
 

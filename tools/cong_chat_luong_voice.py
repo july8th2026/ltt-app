@@ -88,6 +88,11 @@ SAN_DUNG_SAI = {
     "wer": 0.03,
     "on_dinh_giong": 0.02,
     "rtf": 0.05,
+    # K3 — sàn theo đúng thang của từng phép, không dùng chung 0,05:
+    "db_dai_cao": 1.0,          # dB
+    "trong_tam_hz": 20.0,       # Hz
+    "vat_99_hz": 200.0,         # Hz
+    "khop_cuc_bo_dinh": 0.03,   # hệ số tương quan
 }
 
 #: Corpus cố định. ⛔ ĐỔI CORPUS LÀ ĐỔI PHÉP ĐO — baseline cũ không còn so được,
@@ -131,8 +136,11 @@ def _khoa() -> dict:
     bam = hashlib.sha256(chr(10).join(CORPUS).encode()).hexdigest()[:16]
     return {
         "phien_ban_tham_so": tham_so.PHIEN_BAN_THAM_SO,
-        "phien_ban_bo_do": do_chat_luong.do_tat_ca.__globals__.get(
-            "_PHIEN_BAN_BO_DO", "ltt-voice-do-2026-08-31a"),
+        # KHONG co gia tri du phong. Mot cai ghim co duong lui im lang
+        # thi khong phai cai ghim: truoc 01/09 ten `_PHIEN_BAN_BO_DO`
+        # khong ton tai, phep tra luon roi vao mac dinh cung, va
+        # baseline khong bao gio het hieu luc du bo do co doi the nao.
+        "phien_ban_bo_do": do_chat_luong._PHIEN_BAN_BO_DO,
         "bam_corpus": bam,
         "so_cau": len(CORPUS),
     }
@@ -143,7 +151,9 @@ def _do_mot_vong(giu_tep: bool = False) -> dict:
     from apps.ltt_voice import sidecar_client
     from voice_sidecar import do_chat_luong
 
-    ra = {k: [] for k in ("cer", "wer", "on_dinh_giong", "rtf")}
+    ra = {k: [] for k in ("cer", "wer", "on_dinh_giong", "rtf",
+                          "db_dai_cao", "khop_cuc_bo_dinh", "vat_99_hz",
+                          "trong_tam_hz")}
     hong = 0
     for cau in CORPUS:
         try:
@@ -185,6 +195,25 @@ def _do_mot_vong(giu_tep: bool = False) -> dict:
         #    bình có thể **nới lỏng** một bảo đảm tuyệt đối: lô ghim đầu tiên
         #    cho `true_peak` trần +0,0479 dBTP, tức cổng sẽ cho qua một bản
         #    VỠ TIẾNG trong khi hợp đồng nói trần là −1,0.
+        # ── K3: bốn phép bịt điểm mù đã đo được ────────────────────────
+        #
+        # ⛔ CHỈ thu những phép đã CHỨNG MINH bắt được một hỏng hóc thật (vượt
+        #    4σ trên sàn nhiễu n=24, `tools/do_diem_mu_cong.py`):
+        #
+        #        db_dai_cao       đục 8,6σ · nhiễu 6,8σ
+        #        khop_cuc_bo_dinh lặp-ở-giữa 4,4σ
+        #        vat_99_hz        nhiễu 29,4σ
+        #        trong_tam_hz     nhiễu 7,3σ
+        #
+        # ⛔ Và KHÔNG thu `khop_cuc_bo_tai_s`, `khop_cuc_bo_tre_s`, `tre_dinh_s`,
+        #    `nhip_troi_hz`: chúng là **vị trí**, không phải chất lượng. Một vị
+        #    trí không có chiều tốt/xấu, nên một dải dung sai quanh nó vô nghĩa
+        #    — cùng lớp với cái đếm `f0_so_cua_so` đã bị loại khỏi bộ đo vì nó
+        #    tạo ra một phát hiện giả 1.000.000σ.
+        od = kq.get("on_dinh") or {}
+        for ten in ("db_dai_cao", "khop_cuc_bo_dinh", "vat_99_hz", "trong_tam_hz"):
+            if od.get(ten) is not None:
+                ra.setdefault(ten, []).append(float(od[ten]))
         if doc.get("x-rtf"):
             ra["rtf"].append(float(doc["x-rtf"]))
 
@@ -238,7 +267,15 @@ def _gom(vong: list) -> dict:
 
 #: Chiều "xấu đi" của từng phép đo. `-1` = nhỏ hơn là tốt hơn.
 CHIEU = {"cer": -1, "wer": -1, "rtf": -1,
-         "on_dinh_giong": +1, "_ty_le_hong": -1}
+         "on_dinh_giong": +1, "_ty_le_hong": -1,
+         # K3 — bốn phép bịt điểm mù. Ba trong bốn là HAI CHIỀU (`0`), và đó là
+         # điều đúng chứ không phải sự lười: một bản **quá sáng** cũng sai như
+         # một bản **quá đục**. Đo được: bộ lọc thông thấp kéo `db_dai_cao` từ
+         # -31 xuống -49, còn nhiễu trắng đẩy nó LÊN -17. Chặn một phía thì bỏ
+         # lọt đúng một nửa số cách hỏng.
+         "db_dai_cao": 0, "trong_tam_hz": 0, "vat_99_hz": 0,
+         # Khớp cục bộ càng cao càng đáng ngờ — nó là dấu hiệu tự lặp.
+         "khop_cuc_bo_dinh": -1}
 
 
 def _nguong(ten: str, tb: float, lech: float) -> tuple:

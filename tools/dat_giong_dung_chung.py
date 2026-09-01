@@ -42,6 +42,20 @@ def main(argv=None) -> int:
     ap.add_argument("--bat", action="store_true")
     ap.add_argument("--tat", action="store_true")
     ap.add_argument("--xem", action="store_true", help="Liet ke kho chung.")
+    # 🔴 `ngon_ngu` LÀ MỘT LÀN, không phải một ghi chú.
+    #
+    #    Chốt 01/09/2026 (chủ sản phẩm): kho giọng **tách làn theo nguồn** —
+    #    clip nguồn tiếng Việt phục vụ văn bản tiếng Việt, clip nguồn tiếng Anh
+    #    phục vụ văn bản tiếng Anh. Engine song ngữ nên nó KHÔNG phải giới hạn
+    #    kỹ thuật; nó là một chốt **chất lượng**.
+    #
+    # ⛔ Bốn giọng đầu tiên của kho chung đều nằm ở `vi` vì cột này lấy giá trị
+    #    MẶC ĐỊNH và không ai đặt — kể cả hai giọng mà chính tên hiển thị đã ghi
+    #    "EN male" / "EN female". Sai suốt mà không ai thấy, vì cột này khi ấy
+    #    **không nơi nào đọc**: một dữ liệu sai chưa có hậu quả là dữ liệu sai
+    #    trốn được lâu nhất.
+    ap.add_argument("--ngon-ngu", default="", choices=["", "vi", "en"],
+                    help="Dat lan cho giong (vi|en).")
     a = ap.parse_args(argv)
 
     from sqlalchemy import select
@@ -57,8 +71,16 @@ def main(argv=None) -> int:
                 VoiceProfile.dung_chung.is_(True))
                 .order_by(VoiceProfile.ten_hien_thi)).scalars())
             print(f"KHO CHUNG — {len(ds)} giong")
+            # ⛔ IN CẢ `ngon_ngu`. Bảng này trước đây chỉ in tên, và tên là thứ
+            #    duy nhất người đọc có để đoán ngôn ngữ — tức chỗ một giọng gán
+            #    sai ngôn ngữ trốn được lâu nhất. Kho cũ có những giọng mang
+            #    tên tiếng Việt rành mạch (`hoathinh_female`, `meoquan_men`,
+            #    `tamlyhoc_men`, `cg_huong_nam`) nhưng nói **tiếng Anh** — vì
+            #    hệ cũ train F5 bằng giọng Việt và XTTS bằng giọng Anh. Đoán
+            #    theo tên là đoán sai bốn lần.
             for h in ds:
-                print(f"  {h.public_id}  {h.trang_thai:10} {h.ten_hien_thi}")
+                print(f"  {h.public_id}  {h.trang_thai:10} "
+                      f"[{h.ngon_ngu:>3}]  {h.ten_hien_thi}")
             if not a.voice_id:
                 return 0
 
@@ -74,9 +96,21 @@ def main(argv=None) -> int:
         print(f"\n  giong      : {ho_so.ten_hien_thi}")
         print(f"  public_id  : {ho_so.public_id}")
         print(f"  chu so huu : {ho_so.owner_id}")
+        print(f"  ngon ngu   : {ho_so.ngon_ngu}")
+        # Xuat xu: chuoi DUY NHAT noi giong nay tu dau ra. Khong in no thi
+        # cau hoi "giong nay lay tu clip nao" khong ai tra loi duoc.
+        print(f"  ghi chu    : {(ho_so.ghi_chu or chr(40) + chr(41))[:160]}")
         print(f"  trang thai : {ho_so.trang_thai}")
         print(f"  dung chung : {ho_so.dung_chung}")
         print(f"  cam ket    : {'co, ' + str(ck.dong_y_luc)[:19] if ck else 'KHONG CO'}")
+
+        if a.ngon_ngu and a.ngon_ngu != ho_so.ngon_ngu:
+            cu = ho_so.ngon_ngu
+            ho_so.ngon_ngu = a.ngon_ngu
+            db.commit()
+            print(f"\n  DA DOI ngon ngu: {cu} -> {a.ngon_ngu}")
+            if not (a.bat or a.tat):
+                return 0
 
         if not (a.bat or a.tat):
             print("\n(chi xem — dung `--bat` hoac `--tat` de doi)")

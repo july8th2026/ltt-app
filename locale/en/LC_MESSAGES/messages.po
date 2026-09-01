@@ -12779,3 +12779,19 @@ msgstr "how it is billed"
 #: server/templates/gia_api.html
 msgid "Model giọng tiếng Việt chạy trên máy của chúng tôi. Tính theo giây tiếng nói thật sự sinh ra, không theo số ký tự bạn gửi lên."
 msgstr "Our Vietnamese speech model runs on our own machines. You pay per second of speech actually produced, not per character you send."
+
+#: apps/ltt_voice/lan_ngon_ngu.py
+msgid "Tiếng Anh"
+msgstr "English"
+
+#: apps/ltt_voice/templates/_voice_chon.html
+msgid "Làn ngôn ngữ"
+msgstr "Language lane"
+
+#: apps/ltt_voice/templates/_voice_chon.html
+msgid "Mọi làn"
+msgstr "All lanes"
+
+#: apps/ltt_voice/lan_ngon_ngu.py
+msgid "Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng cùng làn."
+msgstr "This voice belongs to the {lan_giong} lane, but the text looks like {lan_text}. You can still generate it — the quality just may not match a voice from the same lane."

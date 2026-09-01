@@ -40,6 +40,23 @@
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
     </div>
+    {#
+      LÀN NGÔN NGỮ — chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip
+      NGUỒN (kho cũ: F5-TTS train giọng Việt, XTTS train giọng Anh).
+
+      ⭐ Đây mới là chỗ làn thật sự làm việc. Có cảnh báo lúc nộp bài, nhưng nếu
+         bộ lọc này làm đúng việc thì cảnh báo ấy **không bao giờ nổ** — khách
+         chọn đúng làn từ đầu.
+
+      ⚠️ Ghi chú trong `giong_mau.py` từng nói nền tảng "không có khái niệm
+         VI/EN" và "không có giọng nào chỉ EN". Đúng khi chỉ có 20 giọng mẫu;
+         hết đúng từ khi 17 giọng nguồn tiếng Anh vào kho chung.
+    #}
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Làn ngôn ngữ') }}">
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-lan="">{{ _("Mọi làn") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="vi">{{ _("Tiếng Việt") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="en">{{ _("Tiếng Anh") }}</button>
+    </div>
   </div>
 
   <div class="lv-chon-ds" role="radiogroup" aria-label="{{ _('Chọn giọng đọc') }}">
@@ -55,18 +72,24 @@
     </label>
 
     {% for g in cua_toi %}
-      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}">
+      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}"
+             data-lan="{{ g.ngon_ngu or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
                {{ 'checked' if giong_chon == g.public_id }}>
         <span class="lv-chon-noi">
           <b>{{ g.ten_hien_thi }}</b>
-          <small><span class="chip v">{{ _("Giọng của tôi") }}</span></small>
+          <small><span class="chip v">{{ _("Giọng của tôi") }}</span>
+            {% if g.ngon_ngu in ('vi', 'en') %}
+              · {{ _(nhan_lan[g.ngon_ngu]) }}
+            {% endif %}
+          </small>
         </span>
       </label>
     {% endfor %}
 
     {% for g in giong_mau %}
-      <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}">
+      <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}"
+             data-lan="vi">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
         <span class="lv-chon-noi">

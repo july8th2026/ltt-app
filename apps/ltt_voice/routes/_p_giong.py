@@ -7,7 +7,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
                      gia, giong_mau, io, require_login, router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON)
+                     NHAN_NGUON, lan_ngon_ngu)
 
 
 # ── Giọng của tôi ────────────────────────────────────────────────────────────
@@ -38,6 +38,11 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
+                    # LÀN: nhãn hiển thị cho `ngon_ngu`. Truyền ở MỌI màn dựng
+                    # `_voice_chon.html` — thiếu một chỗ thì Jinja ném
+                    # `UndefinedError` ngay trên trang đó, và nó chỉ lộ ra khi
+                    # ai đó mở đúng màn ấy.
+                    nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     thong_ke=thong_ke, chi_tiet=chi_tiet,
                     dieu_khoan=cac_dieu(), cam_ket=CAM_KET))
 

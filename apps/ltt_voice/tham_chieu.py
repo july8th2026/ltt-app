@@ -87,7 +87,7 @@ def chi_chu_so_huu(ho_so, owner_id: str) -> bool:
 
 
 def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
-              gom_dung_chung: bool = False) -> list:
+              gom_dung_chung: bool = False, ngon_ngu: str = "") -> list:
     """Giọng của một người. `gom_dung_chung` thêm kho chung của nền tảng.
 
     ⛔ Mặc định KHÔNG gồm kho chung, cùng lý do với `tim_profile`: màn nào muốn
@@ -101,6 +101,17 @@ def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
     if gom_dung_chung:
         dk = or_(dk, VoiceProfile.dung_chung.is_(True))
     q = select(VoiceProfile).where(dk)
+    # LÀN. Chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip NGUỒN.
+    #
+    # ⭐ Đây mới là chỗ làn thật sự làm việc — không phải cảnh báo lúc nộp bài.
+    #    Khách lọc đúng làn từ đầu thì không bao giờ chạm tới cảnh báo, và một
+    #    cảnh báo không bao giờ nổ là dấu hiệu bộ lọc đang làm đúng việc.
+    #
+    # ⛔ Mặc định RỖNG = không lọc. Một bộ lọc bật sẵn sẽ giấu mất giọng của
+    #    chính khách nếu làn của nó chưa được đặt — và `ngon_ngu` từng là một
+    #    cột không ai đọc nên dữ liệu cũ hoàn toàn có thể trống hoặc sai.
+    if ngon_ngu in ("vi", "en"):
+        q = q.where(VoiceProfile.ngon_ngu == ngon_ngu)
     if not gom_tat:
         q = q.where(VoiceProfile.trang_thai != "revoked")
     # Kho chung xuống dưới giọng của chính khách: thứ họ tự tạo là thứ họ đi tìm.

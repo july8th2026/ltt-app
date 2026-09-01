@@ -12,7 +12,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
-                     verify_csrf_token, vo)
+                     verify_csrf_token, vo, lan_ngon_ngu)
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -30,6 +30,8 @@ def _ngu_canh_giong(**them) -> dict:
          "nhan_gioi": giong_mau.NHAN_GIOI,
          "nhan_vung": giong_mau.NHAN_VUNG,
          "nhan_phong_cach": giong_mau.NHAN_PHONG_CACH,
+         # LÀN: nhãn cho `ngon_ngu`, xem chú thích ở `_p_tao.py`.
+         "nhan_lan": lan_ngon_ngu.NHAN_LAN,
          "mac_dinh": giong_mau.MAC_DINH}
     d.update(them)
     return d

@@ -23,7 +23,8 @@ param(
     [string]$VoiceId = '',
     [switch]$Bat,
     [switch]$Tat,
-    [switch]$Xem
+    [switch]$Xem,
+    [string]$NgonNgu = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,6 +59,7 @@ if ($VoiceId) { $doiSo += @('--voice-id', $VoiceId) }
 if ($Bat) { $doiSo += '--bat' }
 if ($Tat) { $doiSo += '--tat' }
 if ($Xem) { $doiSo += '--xem' }
+if ($NgonNgu) { $doiSo += @('--ngon-ngu', $NgonNgu) }
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.

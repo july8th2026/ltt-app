@@ -21,16 +21,39 @@ VieNeu:
   thì không. Nên chấm lại bằng thang của ta, và **so hai bảng** thay vì thay thế
   một bảng bằng bảng kia.
 
-## ⛔ NHÃN `lang` KHÔNG ĐÁNG TIN, VÀ ĐÓ LÀ MỘT PHÁT HIỆN CHỨ KHÔNG PHẢI MỘT NGHI NGỜ
+## ✅ NHÃN `lang` ĐÁNG TIN — VÀ ĐÂY LÀ MỘT PHỎNG ĐOÁN CỦA TÔI ĐÃ BỊ BÁC BỎ
 
-`voice_profiles.yaml` ghi `lang: en` cho `hoathinh_female`, `meoquan_men`,
-`tamlyhoc_men`, `cg_huong_nam` — những cái tên tiếng Việt rành mạch. Nhiều khả
-năng `lang` ở đó có nghĩa *"làn XTTS"* chứ không phải *"ngôn ngữ người nói"*,
-vì hệ cũ chạy tiếng Việt trên F5 và mọi thứ khác trên XTTS.
+⛔ Chỗ này trước 01/09/2026 khẳng định điều ngược lại: rằng `voice_profiles.yaml`
+   ghi `lang: en` cho những cái tên tiếng Việt rành mạch (`hoathinh_female`,
+   `meoquan_men`, `tamlyhoc_men`, `cg_huong_nam`) nên `lang` hẳn có nghĩa *"làn
+   XTTS"* chứ không phải ngôn ngữ người nói. Nó được viết ra như một **phát
+   hiện**. Nó là một **phỏng đoán**, và nó sai.
 
-Nên tệp này **nghe lại** từng giọng bằng ASR và báo ngôn ngữ **đo được**, đặt
-cạnh nhãn đã khai. Chọn giọng mẫu tiếng Việt theo một cái nhãn sai là cách đưa
-một giọng tiếng Anh lên danh mục tiếng Việt.
+Chủ sản phẩm nói thẳng cách hệ cũ được xây: **F5-TTS train bằng giọng tiếng
+Việt, XTTS bằng giọng tiếng Anh.** Chính tệp này đã đo và số liệu khớp tuyệt
+đối — chỉ là tôi đọc nó qua một giả thuyết sai:
+
+    engine   số giọng   nhãn `lang`   ASR đo được   độ tin
+    f5tts        7          vi           vi 7/7      0,987 – 0,998
+    xtts        17          en           en 17/17    0,992 – 1,000
+
+24/24 khớp. Không có một ngoại lệ nào để giả thuyết của tôi bám vào.
+
+⭐ Cái tên tiếng Việt trên một giọng nói tiếng Anh không phải mâu thuẫn: nó là
+   tên **kênh/nhân vật** mà giọng ấy phục vụ, không phải tên người nói. Tôi đã
+   đọc tên như dữ liệu và bỏ qua cột `engine` — cột duy nhất mang câu trả lời.
+
+🔴 Vì sao ghi lại thay vì lặng lẽ xoá: một phiên sau đọc phải đoạn cũ sẽ đi "sửa"
+   những cái nhãn **vốn đúng**, và nó sẽ làm vậy một cách tự tin vì đoạn ấy tự
+   xưng là kết quả đo. Bài học không phải "đừng đoán" mà là: **viết ra thứ đo
+   được, đừng viết ra cách giải thích nó** — số liệu 24/24 ở trên đúng từ đầu,
+   chỉ có câu kết luận cạnh nó là sai.
+
+⚠️ Hệ quả thi hành, và nó không hiển nhiên: engine mới **không nói được tiếng
+   Anh**. `vieneu_utils/phonemize_text.py` khoá cứng `SEAPipeline(lang="vi")` +
+   `G2P(lang="vi")` ở tầng singleton — mọi văn bản đi qua G2P tiếng Việt. Nên 17
+   giọng XTTS chỉ dùng được như **nguồn âm sắc**, không phải như "giọng tiếng
+   Anh của nền tảng".
 
 ## Cách chấm
 

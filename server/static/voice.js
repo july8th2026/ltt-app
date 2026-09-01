@@ -557,6 +557,13 @@
     var oTimChon = document.getElementById("lv-chon-tim");
     var oChonRong = document.getElementById("lv-chon-rong");
     var locLoai = "";
+    /* Lan ngon ngu cua giong (vi | en | "" = moi lan).
+     *
+     * ⭐ Mot bo loc THU HAI tren cung mot danh sach, va no phai la mot bien
+     *    RIENG chu khong phai gop vao `locLoai`. Gop hai mat loc vao mot bien
+     *    la bat khach chon "giong cua toi" HOAC "tieng Anh" thay vi ca hai —
+     *    va dung luc kho giong dong len thi do la luc ho can ca hai nhat. */
+    var locLan = "";
 
     function locChon() {
       var q = ((oTimChon && oTimChon.value) || "").trim().toLowerCase();
@@ -565,8 +572,13 @@
         var m = dsMuc[i], d = m.dataset;
         // Muc mac dinh (data-loai rong) LUON hien: no la loi thoat khi bo loc
         // khong con gi, va la thu khach chon neu ho khong muon nghi.
+        /* ⛔ Muc chua dat lan (`data-lan` rong) KHONG bi loc bo. `ngon_ngu`
+         *    tung la mot cot khong noi nao doc, nen du lieu cu hoan toan co the
+         *    trong — an chung di la khach mat giong cua chinh minh ma khong
+         *    hieu vi sao. Chua biet lan thi hien o moi lan. */
         var hop = d.loai === ""
           || ((!locLoai || d.loai === locLoai)
+              && (!locLan || !d.lan || d.lan === locLan)
               && (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0));
         m.hidden = !hop;
         if (hop && d.loai !== "") con++;
@@ -583,6 +595,16 @@
           locChon();
         });
       })(nutChonLoai[i]);
+    }
+    var nutChonLan = document.querySelectorAll("[data-chon-lan]");
+    for (var j = 0; j < nutChonLan.length; j++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locLan = nut.dataset.chonLan || "";
+          batNut(nut);
+          locChon();
+        });
+      })(nutChonLan[j]);
     }
     if (oTimChon) oTimChon.addEventListener("input", locChon);
 

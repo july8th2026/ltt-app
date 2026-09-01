@@ -33,7 +33,7 @@ from server.deps import user_hien_tai
 from server.templating import templates
 
 from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
-                giong_mau, tham_chieu, vo)
+                giong_mau, lan_ngon_ngu, tham_chieu, vo)
 from ..manifest import MANIFEST
 from ..tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 

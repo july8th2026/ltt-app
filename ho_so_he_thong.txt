@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:40bb104d019b55c2e213fbe5e1c1d16bdc5589163ac08fe450db12e24410aef9
-Nguồn đã quét : 1407 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:6c85b5d6339e1ae168bfd413f800c04992c14ee98bd225da97e09db5d17ee444
+Nguồn đã quét : 1418 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -189,6 +189,7 @@ Các lớp chính:
     - apps/ltt_voice/giong_mau.py
     - apps/ltt_voice/giong_mau_engine.json
     - apps/ltt_voice/jobs.py
+    - apps/ltt_voice/lan_ngon_ngu.py
     - apps/ltt_voice/manifest.py
     - apps/ltt_voice/routes/__init__.py
     - apps/ltt_voice/routes/_chung.py
@@ -603,29 +604,29 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [chataistudio] GET    /chataistudio/img/{key:path} → chat_image | auth~login | apps/chataistudio/routes.py:504
 - [chataistudio] POST   /chataistudio/new → new_conv | auth~login | apps/chataistudio/routes.py:138
 - [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
-- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:18
-- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:18
+- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:19
+- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:19
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
-- [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:41
-- [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:65
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:121
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:366
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:190
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:335
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:219
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:249
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:274
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:164
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:413
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:87
+- [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:43
+- [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:67
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:123
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:368
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:192
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:337
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:221
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:251
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:276
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:166
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:415
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:89
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
-- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:46
-- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:122
-- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:130
+- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:51
+- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:127
+- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:136
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
-- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:182
-- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:67
+- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:188
+- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:73
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:181
@@ -1173,7 +1174,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (339 file pytest + 3 frontend)
+10. QUALITY GATES (342 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1475,6 +1476,9 @@ Test inventory:
 - tests/test_380_kho_giong_dung_chung.py
 - tests/test_381_chot_sinh_tieng.py
 - tests/test_382_kho_tham_chieu.py
+- tests/test_383_do_on_dinh.py
+- tests/test_384_lan_ngon_ngu.py
+- tests/test_385_tools_sai_khuon.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1539,8 +1543,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1407 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:45, .py:1063, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1418 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:48, .py:1071, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1624,7 +1628,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (268)
+[apps] (269)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1698,6 +1702,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - apps/ltt_voice/giong_mau.py
 - apps/ltt_voice/giong_mau_engine.json
 - apps/ltt_voice/jobs.py
+- apps/ltt_voice/lan_ngon_ngu.py
 - apps/ltt_voice/manifest.py
 - apps/ltt_voice/routes/__init__.py
 - apps/ltt_voice/routes/_chung.py
@@ -2455,7 +2460,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (30)
+[setup] (33)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2473,8 +2478,11 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/day_tep_lon_may_b.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/do_chot_sinh.ps1
+- setup/do_diem_mu_cong.ps1
 - setup/do_dung_chay_lo.ps1
+- setup/do_engine_co_noi_tieng_anh.ps1
 - setup/do_gia_von_voice.ps1
+- setup/do_giong_nguon_ngoai_ngu.ps1
 - setup/do_lap_cau_v3.ps1
 - setup/do_lo_giong.ps1
 - setup/do_nhan_ban_tu_kho_cu.ps1
@@ -2487,7 +2495,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/ve_dang_nhap_thu.ps1
 - setup/vps_khoa_dich_vu.ps1
 
-[tests] (356)
+[tests] (359)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2800,6 +2808,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_380_kho_giong_dung_chung.py
 - tests/test_381_chot_sinh_tieng.py
 - tests/test_382_kho_tham_chieu.py
+- tests/test_383_do_on_dinh.py
+- tests/test_384_lan_ngon_ngu.py
+- tests/test_385_tools_sai_khuon.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -2845,7 +2856,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (148)
+[tools] (152)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -2909,10 +2920,13 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/do_chon_doan.py
 - tools/do_chot_sinh.py
 - tools/do_current_truth.py
+- tools/do_diem_mu_cong.py
 - tools/do_dong_thoi_giong.py
 - tools/do_dung_chay_lo.py
 - tools/do_duong_tien_api.py
+- tools/do_engine_co_noi_tieng_anh.py
 - tools/do_gia_von_voice.py
+- tools/do_giong_nguon_ngoai_ngu.py
 - tools/do_lap_cau_v3.py
 - tools/do_lo_giong.py
 - tools/do_nhan_ban_tu_kho_cu.py
@@ -2994,6 +3008,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tools/vps_node_shell.py
 - tools/vps_them_cong_vao.py
 - tools/vps_treo_khan.py
+- tools/xuat_ref_kho_chung.py
 
 [version.py] (1)
 - version.py
@@ -3004,7 +3019,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1407 file; 13918653 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1418 file; 14019791 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -19159,7 +19174,7 @@ def tom_tat(cac: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/features.py
-SHA256=204c1b93437db720ebbed19ebe54e23e7ce31cccff98ab37826900c289e553c5 BYTES=12365 LINES=263
+SHA256=bf53db5f5d4ed8e1bf6d30f96725b4533d1ed5fd1f17827238d47e546ea42e48 BYTES=12672 LINES=267
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — NGHIỆP VỤ của LTT VOICE. Mọi cửa gọi vào đây.
@@ -19185,6 +19200,7 @@ from dataclasses import dataclass, field
 from platform_core.i18n import _ as _t
 from platform_core.jobs import LoiNguoiGoi
 
+from . import lan_ngon_ngu
 from . import gia, sidecar_client, tham_chieu, text_pipeline
 
 log = logging.getLogger(__name__)
@@ -19352,7 +19368,9 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     Đây là chỗ **quyền sở hữu** được kiểm, và nó là chỗ duy nhất.
     """
     if not yc.voice_id:
-        return None, (yc.preset or None), ()
+        # Preset là giọng người nói TIẾNG VIỆT ba miền (`giong_mau.py`), nên
+        # chúng thuộc làn `vi` — dù engine song ngữ đọc được cả tiếng Anh.
+        return None, (yc.preset or None), lan_ngon_ngu.doi_chieu("vi", yc.text)
 
     # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
     # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
@@ -19369,7 +19387,8 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if bieu_dien is None:
         raise LoiGiongNoi(_t(
             "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."))
-    return tham_chieu.nap_ref_b64(bieu_dien), None, ()
+    return (tham_chieu.nap_ref_b64(bieu_dien), None,
+            lan_ngon_ngu.doi_chieu(ho_so.ngon_ngu, yc.text))
 
 
 def _goi_va_dich_loi(ham, *doi_so, **tham_so):
@@ -20213,6 +20232,151 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/lan_ngon_ngu.py
+SHA256=ca9b088af8bce180c4594b117540040363d441e57c1a180a80925face1ed87d3 BYTES=7334 LINES=139
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+lan_ngon_ngu.py — LÀN của một giọng, và việc đối chiếu nó với văn bản.
+
+## Làn là gì, và vì sao nó tồn tại khi engine đã song ngữ
+
+VieNeu-TTS v3 Turbo **song ngữ thật**: model card khai `language: ["vi", "en"]`,
+train from scratch trên ~10.000 giờ tiếng Anh–Việt, và có code-switching En–Vi
+trong cùng một câu. Đo 01/09/2026 trên engine thật, ASR nghe lại:
+
+    VAO : The quick brown fox jumps over the lazy dog.
+    ASR : The quick brown fox jumps over the lazy dog.       [en 0,996]
+
+Đúng từng chữ. Nên **làn KHÔNG phải một giới hạn kỹ thuật** — không có gì chặn
+một giọng nguồn tiếng Anh đọc tiếng Việt.
+
+Làn là một chốt **chất lượng**, chốt 01/09/2026 bởi chủ sản phẩm: clip nguồn
+tiếng Việt phục vụ văn bản tiếng Việt, clip nguồn tiếng Anh phục vụ văn bản
+tiếng Anh. Lý do đến từ cách kho giọng cũ được xây — F5-TTS train bằng giọng
+Việt, XTTS bằng giọng Anh — và đó là kinh nghiệm mua bằng thời gian.
+
+## ⛔ CẢNH BÁO, KHÔNG CHẶN. Và đây là chỗ dễ làm sai nhất.
+
+Tiếng Việt **viết không dấu vẫn là tiếng Việt**, và nó chỉ gồm chữ cái ASCII —
+tức không phân biệt được với tiếng Anh bằng bảng mã. "Ban co the mua ve o day"
+và "Ban co the" là cùng một tập ký tự với một câu tiếng Anh.
+
+Một cổng CHẶN theo phán đoán ngôn ngữ sẽ từ chối công việc hợp lệ của khách
+đang gõ không dấu — và nó từ chối với một lý do khách không sửa được, vì họ
+đang gõ đúng thứ họ định gõ.
+
+⇒ Nên `doan_ngon_ngu` chỉ trả lời khi nó **chắc**, và trả `None` khi mập mờ.
+  Và `doi_chieu` chỉ sinh **cảnh báo**. Không có đường nào ở đây ném lỗi.
+
+⭐ Hệ quả thiết kế: thứ làm việc chính không phải cảnh báo mà là **bộ lọc ở
+   danh sách giọng** — khách chọn đúng làn từ đầu thì không bao giờ chạm tới
+   cảnh báo này.
+"""
+from __future__ import annotations
+
+from platform_core.i18n import N_
+
+#: Ký tự CHỈ có trong tiếng Việt (không kể chữ cái ASCII trần). Thấy một cái là
+#: đủ kết luận `vi` — không ngôn ngữ nào khác trong phạm vi sản phẩm dùng chúng.
+#:
+#: ⛔ `đ`/`Đ` có mặt ở đây; `ê`, `ô`, `ơ`, `ư` cũng vậy. Nhưng `é`, `à`, `ù`…
+#:    KHÔNG đủ một mình để kết luận (tiếng Pháp, tiếng Tây Ban Nha cũng có) —
+#:    dù trong phạm vi hai làn vi/en của ta thì chúng vẫn chỉ có thể là tiếng
+#:    Việt, nên chúng nằm trong danh sách. Ghi rõ ràng buộc ấy ở đây để ngày
+#:    thêm làn thứ ba thì người sửa thấy ngay chỗ phải xem lại.
+CHU_VIET = set(
+    "àáảãạăằắẳẵặâầấẩẫậ"
+    "èéẻẽẹêềếểễệ"
+    "ìíỉĩị"
+    "òóỏõọôồốổỗộơờớởỡợ"
+    "ùúủũụưừứửữự"
+    "ỳýỷỹỵ"
+    "đ"
+)
+CHU_VIET |= {c.upper() for c in CHU_VIET}
+
+#: Từ chức năng tiếng Anh — tập đóng, và được **sàng qua một phép đo**, không
+#: chọn bằng cảm tính: mọi từ ở đây đã đối chiếu với danh sách âm tiết tiếng
+#: Việt viết không dấu hay gặp. Kết quả sàng: `them` (thêm), `than` (thân),
+#: `then`, `be` (bé), `me` (mẹ), `my` (Mỹ), `in`, `to`, `no`, `he` đều **bị
+#: loại** vì trùng.
+#:
+#: ⚠️ Còn ĐÚNG MỘT từ trùng và nó ở lại có chủ ý: **`the`** — tiếng Việt không
+#:    dấu của "thế"/"thể". Nó ở lại vì nó là tín hiệu tiếng Anh mạnh nhất; bỏ
+#:    nó thì "The quick brown fox jumps over the lazy dog" chỉ còn **một** từ
+#:    trúng và tụt xuống dưới ngưỡng. Thứ giữ cho nó an toàn là `TOI_THIEU_TU_ANH
+#:    = 2`: một câu tiếng Việt không dấu muốn bị nhận nhầm thì phải trúng **hai**
+#:    từ, mà "the" là từ trùng duy nhất.
+#:
+#: ⛔ Thêm từ vào đây thì phải chạy lại phép sàng ấy —
+#:    `tests/test_384_lan_ngon_ngu.py::test_tu_chuc_nang_khong_trung_am_tiet_tieng_viet_khong_dau`.
+#:    Một từ như "can", "co", "la", "ma" lọt vào là biến "Ban co the mua ve"
+#:    thành tiếng Anh.
+TU_ANH = frozenset("""
+about after also because been before being between could does during each
+even every first from give have having into just know last like make many
+might more most much must need only other our over people please said says
+shall should some still such take thank that the their there these they
+think this those through time under upon very want were what when where
+which while will with within would year your
+""".split())
+
+#: Cần ít nhất chừng này TỪ KHÁC NHAU trong `TU_ANH` mới dám nói `en`.
+#: Một từ thì quá dễ trúng ngẫu nhiên trong một câu tiếng Việt có chèn thuật ngữ.
+TOI_THIEU_TU_ANH = 2
+
+NHAN_LAN = {"vi": N_('Tiếng Việt'), "en": N_('Tiếng Anh')}
+
+
+def doan_ngon_ngu(text: str):
+    """`"vi"` · `"en"` · `None` khi không chắc.
+
+    ⛔ `None` là một câu trả lời ĐẦY ĐỦ, không phải một thất bại. Nó nói "văn
+       bản này không đủ dấu hiệu", và tầng trên phải im lặng khi gặp nó. Trả
+       bừa `"vi"` cho mọi thứ mập mờ sẽ đẻ ra cảnh báo sai ở mọi câu tiếng Anh
+       ngắn — và một cảnh báo hay sai là một cảnh báo bị bỏ qua, kể cả lúc đúng.
+    """
+    t = (text or "").strip()
+    if not t:
+        return None
+    if any(c in CHU_VIET for c in t):
+        return "vi"
+    tu = {w.strip(".,!?;:\"'()[]").lower() for w in t.split()}
+    if len(tu & TU_ANH) >= TOI_THIEU_TU_ANH:
+        return "en"
+    return None
+
+
+def doi_chieu(lan_giong: str, text: str) -> tuple:
+    """Cảnh báo (dạng tuple chuỗi) khi văn bản lệch làn của giọng. Không ném.
+
+    Trả tuple rỗng khi khớp, khi không đoán được, hoặc khi giọng chưa có làn.
+    """
+    lan = (lan_giong or "").strip().lower()
+    if lan not in ("vi", "en"):
+        return ()
+    do = doan_ngon_ngu(text)
+    if do is None or do == lan:
+        return ()
+    return (N_(
+        'Giọng này thuộc làn {lan_giong}, nhưng văn bản có vẻ là {lan_text}. '
+        'Bạn vẫn tạo được, chỉ là chất lượng có thể không bằng một giọng '
+        'cùng làn.'),)
+
+
+def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:
+    """Điền nhãn vào khuôn cảnh báo. Tách khỏi `doi_chieu` để chuỗi dịch được.
+
+    ⛔ Đừng nối chuỗi bằng f-string ở `doi_chieu`: `N_()` phải nhìn thấy một
+       chuỗi HẰNG thì bộ trích mới lấy được nó vào tệp `.po`. Một câu ghép động
+       sẽ không bao giờ xuất hiện trong bản dịch, và nó hỏng **lặng lẽ** — trang
+       tiếng Anh hiện một câu tiếng Việt.
+    """
+    return str(mau).replace("{lan_giong}", str(NHAN_LAN.get(lan_giong, lan_giong))) \
+                   .replace("{lan_text}", str(NHAN_LAN.get(lan_text, lan_text)))
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
 SHA256=3a36df9c42080149071594a2356517a7519c6cd9f94ad90f05230450ea836988 BYTES=12965 LINES=234
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -20485,7 +20649,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_chung.py
-SHA256=5e4495d5905fca572d295929853df598a8138a48528fa7e1efef3a42ce586f06 BYTES=5372 LINES=113
+SHA256=20b57174488fea3cdb3fd825b1d8f403bc9fe180f58948ec8ed771f370ea837d BYTES=5386 LINES=113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 _chung.py — router + mọi thứ các mảnh route dùng chung.
@@ -20522,7 +20686,7 @@ from server.deps import user_hien_tai
 from server.templating import templates
 
 from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
-                giong_mau, tham_chieu, vo)
+                giong_mau, lan_ngon_ngu, tham_chieu, vo)
 from ..manifest import MANIFEST
 from ..tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
@@ -20747,7 +20911,7 @@ def audio(key: str, user=Depends(user_hien_tai), _=Depends(require_login)):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_du_an.py
-SHA256=b2aff8ed351394c69973b7dae1cb7f12059e117abc6e5a21ebfee394cf12c5dd BYTES=17981 LINES=451
+SHA256=a16fb799ca73b41a596575d6340e8a26ed2ab58da100892dcdf6dd061126ce15 BYTES=18111 LINES=453
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: danh sách · khối · sinh tiếng theo khối · xuất.
 
@@ -20763,7 +20927,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
-                     verify_csrf_token, vo)
+                     verify_csrf_token, vo, lan_ngon_ngu)
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -20781,6 +20945,8 @@ def _ngu_canh_giong(**them) -> dict:
          "nhan_gioi": giong_mau.NHAN_GIOI,
          "nhan_vung": giong_mau.NHAN_VUNG,
          "nhan_phong_cach": giong_mau.NHAN_PHONG_CACH,
+         # LÀN: nhãn cho `ngon_ngu`, xem chú thích ở `_p_tao.py`.
+         "nhan_lan": lan_ngon_ngu.NHAN_LAN,
          "mac_dinh": giong_mau.MAC_DINH}
     d.update(them)
     return d
@@ -21204,7 +21370,7 @@ def trang_thai_du_an(public_id: str, user=Depends(user_hien_tai),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_giong.py
-SHA256=9db21a566a78d072f23bab37aaf66c6bab58e8b0fbbcc9c0b41fabcbd926c6da BYTES=6604 LINES=148
+SHA256=fe4b9835b4c7936688e0ef7d495eb509283180d3cf13d9c088d78ffe96001a13 BYTES=6986 LINES=153
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Giọng: lưới giọng, ghi danh giọng mới, tắt giọng."""
 from __future__ import annotations
@@ -21215,7 +21381,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
                      gia, giong_mau, io, require_login, router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON)
+                     NHAN_NGUON, lan_ngon_ngu)
 
 
 # ── Giọng của tôi ────────────────────────────────────────────────────────────
@@ -21246,6 +21412,11 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
+                    # LÀN: nhãn hiển thị cho `ngon_ngu`. Truyền ở MỌI màn dựng
+                    # `_voice_chon.html` — thiếu một chỗ thì Jinja ném
+                    # `UndefinedError` ngay trên trang đó, và nó chỉ lộ ra khi
+                    # ai đó mở đúng màn ấy.
+                    nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     thong_ke=thong_ke, chi_tiet=chi_tiet,
                     dieu_khoan=cac_dieu(), cam_ket=CAM_KET))
 
@@ -21415,7 +21586,7 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_tao.py
-SHA256=55a544446aeb5e73ac233f468c11afce7ad5d572d9e3da00ac7fc7dde7f2d758 BYTES=12520 LINES=254
+SHA256=f12898d59e600d29567096b50cd7c736173a63202cf12f347fd45ec4fe403d7a BYTES=12923 LINES=260
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Tạo tiếng nói: dựng trang, xem trước cách đọc, nộp job,
 theo dõi kết quả."""
@@ -21425,7 +21596,8 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
-                     gia, giong_mau, io, require_login, router, templates,
+                     gia, giong_mau, io, lan_ngon_ngu, require_login,
+                     router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
                      NHAN_NGUON)
 
@@ -21477,6 +21649,11 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     nhan_gioi=giong_mau.NHAN_GIOI,
                     nhan_vung=giong_mau.NHAN_VUNG,
                     nhan_phong_cach=giong_mau.NHAN_PHONG_CACH,
+                    # LÀN: nhãn hiển thị cho `ngon_ngu`. Truyền ở MỌI màn dựng
+                    # `_voice_chon.html` — thiếu một chỗ thì Jinja ném
+                    # `UndefinedError` ngay trên trang đó, và nó chỉ lộ ra khi
+                    # ai đó mở đúng màn ấy.
+                    nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     giong_chon=(xin if hop_le else ""),
                     mac_dinh=giong_mau.MAC_DINH,
                     gan_day=gan_day))
@@ -22305,7 +22482,7 @@ class VoiceBlock(Base):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_chon.html
-SHA256=c7f02f517aa244907e020789847bc3a5aa33046f57887d5880f64c5860d52b0e BYTES=4136 LINES=81
+SHA256=a77e4a514d43ef3376dce60dd54d8dd4854ed4f0298ed81d4615d8189a5c4628 BYTES=5503 LINES=104
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {#
   Bộ chọn giọng dùng chung. Studio hôm nay; Dự án và Chạy lô khi chúng được xây.
@@ -22349,6 +22526,23 @@ SHA256=c7f02f517aa244907e020789847bc3a5aa33046f57887d5880f64c5860d52b0e BYTES=41
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="mau">{{ _("Giọng mẫu") }}</button>
       <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-loai="toi">{{ _("Giọng của tôi") }}</button>
     </div>
+    {#
+      LÀN NGÔN NGỮ — chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip
+      NGUỒN (kho cũ: F5-TTS train giọng Việt, XTTS train giọng Anh).
+
+      ⭐ Đây mới là chỗ làn thật sự làm việc. Có cảnh báo lúc nộp bài, nhưng nếu
+         bộ lọc này làm đúng việc thì cảnh báo ấy **không bao giờ nổ** — khách
+         chọn đúng làn từ đầu.
+
+      ⚠️ Ghi chú trong `giong_mau.py` từng nói nền tảng "không có khái niệm
+         VI/EN" và "không có giọng nào chỉ EN". Đúng khi chỉ có 20 giọng mẫu;
+         hết đúng từ khi 17 giọng nguồn tiếng Anh vào kho chung.
+    #}
+    <div class="lv-loc-nhom" role="group" aria-label="{{ _('Làn ngôn ngữ') }}">
+      <button type="button" class="lv-loc-nut on" aria-pressed="true" data-chon-lan="">{{ _("Mọi làn") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="vi">{{ _("Tiếng Việt") }}</button>
+      <button type="button" class="lv-loc-nut" aria-pressed="false" data-chon-lan="en">{{ _("Tiếng Anh") }}</button>
+    </div>
   </div>
 
   <div class="lv-chon-ds" role="radiogroup" aria-label="{{ _('Chọn giọng đọc') }}">
@@ -22364,18 +22558,24 @@ SHA256=c7f02f517aa244907e020789847bc3a5aa33046f57887d5880f64c5860d52b0e BYTES=41
     </label>
 
     {% for g in cua_toi %}
-      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}">
+      <label class="lv-chon-muc" data-loai="toi" data-ten="{{ g.ten_hien_thi }}"
+             data-lan="{{ g.ngon_ngu or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
                {{ 'checked' if giong_chon == g.public_id }}>
         <span class="lv-chon-noi">
           <b>{{ g.ten_hien_thi }}</b>
-          <small><span class="chip v">{{ _("Giọng của tôi") }}</span></small>
+          <small><span class="chip v">{{ _("Giọng của tôi") }}</span>
+            {% if g.ngon_ngu in ('vi', 'en') %}
+              · {{ _(nhan_lan[g.ngon_ngu]) }}
+            {% endif %}
+          </small>
         </span>
       </label>
     {% endfor %}
 
     {% for g in giong_mau %}
-      <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}">
+      <label class="lv-chon-muc" data-loai="mau" data-ten="{{ g.ma }}"
+             data-lan="vi">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
         <span class="lv-chon-noi">
@@ -24281,7 +24481,7 @@ def chuan_bi(text: str, *, tran_moi_doan: int, doc_so_tran: bool = False,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_chieu.py
-SHA256=21e9adc382519ff582f721e8e033d50a557592397344f19c604ad6a37252a0ec BYTES=7563 LINES=170
+SHA256=ac595dbdad6ebcb46eb1b1d68fd8ea7f18e8bb07ca2e6643f0921a6c76d3ae98 BYTES=8388 LINES=181
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_chieu.py — tra cứu và lưu Voice Profile / biểu diễn engine.
@@ -24372,7 +24572,7 @@ def chi_chu_so_huu(ho_so, owner_id: str) -> bool:
 
 
 def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
-              gom_dung_chung: bool = False) -> list:
+              gom_dung_chung: bool = False, ngon_ngu: str = "") -> list:
     """Giọng của một người. `gom_dung_chung` thêm kho chung của nền tảng.
 
     ⛔ Mặc định KHÔNG gồm kho chung, cùng lý do với `tim_profile`: màn nào muốn
@@ -24386,6 +24586,17 @@ def danh_sach(db, *, owner_id: str, gom_tat: bool = False,
     if gom_dung_chung:
         dk = or_(dk, VoiceProfile.dung_chung.is_(True))
     q = select(VoiceProfile).where(dk)
+    # LÀN. Chốt 01/09/2026: kho giọng tách làn theo ngôn ngữ của clip NGUỒN.
+    #
+    # ⭐ Đây mới là chỗ làn thật sự làm việc — không phải cảnh báo lúc nộp bài.
+    #    Khách lọc đúng làn từ đầu thì không bao giờ chạm tới cảnh báo, và một
+    #    cảnh báo không bao giờ nổ là dấu hiệu bộ lọc đang làm đúng việc.
+    #
+    # ⛔ Mặc định RỖNG = không lọc. Một bộ lọc bật sẵn sẽ giấu mất giọng của
+    #    chính khách nếu làn của nó chưa được đặt — và `ngon_ngu` từng là một
+    #    cột không ai đọc nên dữ liệu cũ hoàn toàn có thể trống hoặc sai.
+    if ngon_ngu in ("vi", "en"):
+        q = q.where(VoiceProfile.ngon_ngu == ngon_ngu)
     if not gom_tat:
         q = q.where(VoiceProfile.trang_thai != "revoked")
     # Kho chung xuống dưới giọng của chính khách: thứ họ tự tạo là thứ họ đi tìm.
@@ -140335,7 +140546,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=a7cb2cc87ae9d1cd7ffa70bb65e904588659100a7a66bfef48a94b0094559777 BYTES=50142 LINES=947
+SHA256=37142ffa2cf90e1d461c28f620cb88f35d3c8940429970a41d28f97c456260db BYTES=51470 LINES=969
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -140736,10 +140947,14 @@ def _dang_anthropic(kq, ten: str, request_id: str) -> dict:
     #    `stop_reason`, đi tìm khối đó để chạy tool — không thấy thì nó **treo**,
     #    chứ không báo lỗi.
     #
-    # ⚠️ Và hôm nay ta **chưa** dựng được khối đó: `_mot_cuc` không truyền `tools`
-    #    lên model, nên model không có gì để gọi. Hỗ trợ tool cho đúng cần dịch
-    #    HAI CHIỀU (`tools`/`tool_use`/`tool_result` của Anthropic ↔ `tools`/
-    #    `tool_calls`/tin `tool` của OpenAI) — một việc riêng, có test riêng.
+    # ✏️ CHÚ THÍCH CŨ Ở ĐÂY ĐÃ TRÔI. Nó viết *"`_mot_cuc` không truyền `tools`
+    #    lên model, nên model không có gì để gọi"*. Việc dịch hai chiều **đã
+    #    làm xong** từ lúc nào đó và chú thích không theo kịp.
+    #
+    #    Đo thật 01/09 qua Cloudflare, vòng khép kín:
+    #        tool_use    -> tra_ton_kho {"ma_hang":"ABC-123"}
+    #        tool_result -> "Ma hang ABC-123 hien co 42 cai trong kho."
+    #    Con số 42 chỉ nói ra được nếu model thật sự đọc `tool_result`.
     #
     # ⭐ Cho tới lúc đó, thà nói `end_turn` còn hơn hứa một thứ không có. Một câu
     #    trả lời thiếu tool là chuyện khách thấy ngay; một client treo thì không.
@@ -140898,6 +141113,24 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
     #    Tuc mot dong `if` giu cho hop dong "sach" da lam ca mot ung dung khach
     #    khong dung duoc, va trieu chung ma khach nhin thay ("model khong kha
     #    dung") **khong he chi ve phia nguyen nhan**.
+    # 🔴 KHAI TOOL MÀ KHÔNG MỤC NÀO DÙNG ĐƯỢC ⇒ NÓI RA, ĐỪNG IM LẶNG BỎ.
+    #
+    #    Đặt ở ĐÂY, **trước** chỗ rẽ nhánh, nên nó che cả `stream:false`
+    #    (`_mot_cuc`) lẫn nhánh luồng — hai đường đánh rơi `tools` ở hai nơi
+    #    khác nhau, và một phép kiểm ở một nhánh sẽ bỏ lọt nhánh kia.
+    #
+    #    Đo 01/09: gửi `tools` khuôn **OpenAI** vào cửa Anthropic này cho ra
+    #    `200` và model trả lời *"Xin lỗi, hiện tại tôi không có tool nào"*.
+    #    Khách gõ sai hình dạng nhận một câu trả lời **hợp lý mà sai**, không
+    #    phải một lỗi — và đó là nhầm lẫn dễ mắc nhất ở đây: hai giao thức, hai
+    #    khuôn tool, cùng một tên trường `tools`.
+    #
+    # ⛔ Nó lệch chuẩn với chính khu API này, nơi lỗi gọi đúng tên scope thiếu
+    #    và đính `retry: never`. Anthropic thật trả `400` cho tool schema sai.
+    vi_tool = tool_dich.vi_sao_khong_dung_duoc(than.get("tools"))
+    if vi_tool:
+        raise executor.parameter_error(vi_tool)
+
     if not than.get("stream"):
         return _mot_cuc(duong, than, tin, ten, principal, db, config, tool)
 
@@ -141288,7 +141521,7 @@ def _luong_thu(duong: str) -> Iterator[bytes]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/tool_dich.py
-SHA256=de1f208f15105b5958fda94f6569b34e309ca6b09389bc33b6282558bba3864a BYTES=7970 LINES=170
+SHA256=540aea4ca75a9924c0d8f06c99cdb2889500d35dc607dfc77aa7145bdfb8a8ee BYTES=10176 LINES=207
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Dịch **công cụ (tool)** giữa hợp đồng Anthropic và giao thức OpenAI.
 
@@ -141325,6 +141558,43 @@ from typing import Any
 #: `tool_choice` của Anthropic → của OpenAI. Ba giá trị, và chúng **không** trùng
 #: tên: `any` của Anthropic là `required` của OpenAI.
 CHON_TOOL = {"auto": "auto", "any": "required", "none": "none"}
+
+
+def vi_sao_khong_dung_duoc(tools: Any) -> str | None:
+    """Vì sao KHÔNG dùng được `tools` này — hoặc `None` nếu dùng được.
+
+    🔴 VÌ SAO CẦN HÀM NÀY. `sang_openai_tools` **bỏ qua im lặng** mọi mục nó
+       không hiểu, và trả `None` khi không còn mục nào. Hệ quả đo được 01/09:
+       gửi `tools` khuôn **OpenAI** vào cửa Anthropic `/api/v1/messages` cho ra
+       `200`, và model trả lời **"Xin lỗi, hiện tại tôi không có tool nào"**.
+
+       Khách gõ sai hình dạng nhận một câu trả lời **hợp lý mà sai**, không phải
+       một lỗi. Và đó là nhầm lẫn dễ mắc nhất ở cửa này: hai giao thức, hai
+       khuôn tool, cùng một tên trường `tools`.
+
+    ⛔ Nó cũng **lệch chuẩn với chính khu API này**, nơi lỗi gọi đúng tên scope
+       thiếu (`missing_scope: usage:read`), nói *"A quote token is required"*, và
+       đính `retry: never`. Anthropic thật trả `400` cho tool schema sai; ta khai
+       tương thích giao thức đó thì phải trả lời như nó.
+
+    ⭐ CHỈ báo lỗi khi khách khai tool mà **không mục nào** dùng được. Hỗn hợp
+       hợp lệ + rác vẫn đi tiếp như cũ — đổi hành vi đó là một hồi quy cho
+       client đang chạy, và cái giá lớn hơn cái lợi.
+    """
+    if not isinstance(tools, list) or not tools:
+        return None                      # không khai gì: bình thường
+    if sang_openai_tools(tools):
+        return None                      # còn ít nhất một mục dùng được
+    kieu_openai = any(
+        isinstance(t, dict) and t.get("type") == "function"
+        and isinstance(t.get("function"), dict) for t in tools)
+    if kieu_openai:
+        return ("`tools` dang o khuon OpenAI "
+                '(`{"type":"function","function":{...}}`). Cua nay dung khuon '
+                'Anthropic: `{"name":..., "description":..., "input_schema":{...}}`. '
+                "Khuon OpenAI dung duoc o `/api/v1/chat/completions`.")
+    return ("khong muc nao trong `tools` dung duoc: moi muc phai co `name` va "
+            "`input_schema`.")
 
 
 def sang_openai_tools(tools: Any) -> list | None:
@@ -152666,7 +152936,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=7bb5d3d6f12ffd077ecdb9d8c53d58b7d061275dcaed45ea5068e204a7605e71 BYTES=48494 LINES=1194
+SHA256=903d0683808136d55d6d7c388a6eeaf7e2825fe2f18a4a63ab6877b6f9888475 BYTES=49578 LINES=1216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -153227,6 +153497,13 @@ SHA256=7bb5d3d6f12ffd077ecdb9d8c53d58b7d061275dcaed45ea5068e204a7605e71 BYTES=48
     var oTimChon = document.getElementById("lv-chon-tim");
     var oChonRong = document.getElementById("lv-chon-rong");
     var locLoai = "";
+    /* Lan ngon ngu cua giong (vi | en | "" = moi lan).
+     *
+     * ⭐ Mot bo loc THU HAI tren cung mot danh sach, va no phai la mot bien
+     *    RIENG chu khong phai gop vao `locLoai`. Gop hai mat loc vao mot bien
+     *    la bat khach chon "giong cua toi" HOAC "tieng Anh" thay vi ca hai —
+     *    va dung luc kho giong dong len thi do la luc ho can ca hai nhat. */
+    var locLan = "";
 
     function locChon() {
       var q = ((oTimChon && oTimChon.value) || "").trim().toLowerCase();
@@ -153235,8 +153512,13 @@ SHA256=7bb5d3d6f12ffd077ecdb9d8c53d58b7d061275dcaed45ea5068e204a7605e71 BYTES=48
         var m = dsMuc[i], d = m.dataset;
         // Muc mac dinh (data-loai rong) LUON hien: no la loi thoat khi bo loc
         // khong con gi, va la thu khach chon neu ho khong muon nghi.
+        /* ⛔ Muc chua dat lan (`data-lan` rong) KHONG bi loc bo. `ngon_ngu`
+         *    tung la mot cot khong noi nao doc, nen du lieu cu hoan toan co the
+         *    trong — an chung di la khach mat giong cua chinh minh ma khong
+         *    hieu vi sao. Chua biet lan thi hien o moi lan. */
         var hop = d.loai === ""
           || ((!locLoai || d.loai === locLoai)
+              && (!locLan || !d.lan || d.lan === locLan)
               && (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0));
         m.hidden = !hop;
         if (hop && d.loai !== "") con++;
@@ -153253,6 +153535,16 @@ SHA256=7bb5d3d6f12ffd077ecdb9d8c53d58b7d061275dcaed45ea5068e204a7605e71 BYTES=48
           locChon();
         });
       })(nutChonLoai[i]);
+    }
+    var nutChonLan = document.querySelectorAll("[data-chon-lan]");
+    for (var j = 0; j < nutChonLan.length; j++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          locLan = nut.dataset.chonLan || "";
+          batNut(nut);
+          locChon();
+        });
+      })(nutChonLan[j]);
     }
     if (oTimChon) oTimChon.addEventListener("input", locChon);
 
@@ -166657,7 +166949,7 @@ exit 0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/dat_giong_dung_chung.ps1
-SHA256=cd2a822aac52c4a5367b5abae519be003f5b6b7450c0691a70618945a2fa5f57 BYTES=2374 LINES=69
+SHA256=8851656232f44ae232b8e7e85a5fa9d6ddc845028a90a5348b85f17a6b7c40fe BYTES=2455 LINES=71
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -166684,7 +166976,8 @@ param(
     [string]$VoiceId = '',
     [switch]$Bat,
     [switch]$Tat,
-    [switch]$Xem
+    [switch]$Xem,
+    [string]$NgonNgu = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -166719,6 +167012,7 @@ if ($VoiceId) { $doiSo += @('--voice-id', $VoiceId) }
 if ($Bat) { $doiSo += '--bat' }
 if ($Tat) { $doiSo += '--tat' }
 if ($Xem) { $doiSo += '--xem' }
+if ($NgonNgu) { $doiSo += @('--ngon-ngu', $NgonNgu) }
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -166926,6 +167220,88 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_diem_mu_cong.ps1
+SHA256=2c5eb4195f12c527c9aac9ac998c5da9c74f92d6beed486107af6b60d8bc8f3e BYTES=3022 LINES=76
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Find what the quality gate is blind to, by injecting known faults.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_diem_mu_cong.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    # 24, khong phai 4. Do lech chuan uoc tu n mau co sai so tuong doi
+    # ~1/sqrt(2(n-1)): n=4 => 41%, tuc moi sigma in ra mang san +-40% va
+    # ranh gioi 'thay / mu' o 4 sigma nam gon ben trong sai so ay. Da do
+    # duoc: cung hong hoc, cung ban goc, KHONG doi mot dong ma nao giua
+    # hai luot, duc_3k5 di 12,1 -> 7,9 va lap_o_giua di 4,1 -> 3,2 (tuc
+    # 'da dong' -> 'con mu'). n=24 dua sai so ve ~15%.
+    [int]$Nen = 24
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_diem_mu_cong.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @('--nen', "$Nen")
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_dung_chay_lo.ps1
 SHA256=a0c82df71215b7491a410b153c419e13317307d4c8f7a38e13f4bb064f70dd85 BYTES=2050 LINES=60
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -166980,6 +167356,82 @@ Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor 
 $env:PYTHONPATH = $Repo
 
 $doiSo = @()
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_engine_co_noi_tieng_anh.ps1
+SHA256=72b2d1ea37573e9e515dd8808f8af7146a1bac7da835cffb186c032b5592b6bc BYTES=2571 LINES=70
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Run the V10 quality gate, or re-pin its baseline.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    The tool calls the sidecar directly, so it touches the GPU but NOT the
+    credit ledger. Do not run it while an image batch or a video job is up.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_engine_co_noi_tieng_anh.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+# !! PYTHON CUA `vieneu-venv`, khong phai venv nen tang. Bo do nay can
+#    librosa + soundfile de tinh F0, va chung chi co trong venv giong.
+#    Doc tu app.env sau khi nap ben duoi -- xem doan `$venvPy` phia sau.
+$venvPy  = ''
+$tool    = Join-Path $Repo 'tools\do_engine_co_noi_tieng_anh.py'
+foreach ($p in @($envFile, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+$env:PYTHONPATH = $Repo
+
+$doiSo = @()
+
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -167051,6 +167503,74 @@ $env:PYTHONPATH = $Repo
 
 $doiSo = @('--luot', "$Luot")
 if ($Json) { $doiSo += @('--json', $Json) }
+
+# Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
+# ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
+$truoc = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy $tool @doiSo
+$ma = $LASTEXITCODE
+$ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_giong_nguon_ngoai_ngu.ps1
+SHA256=90bec3a1d3c60c8f2405add690bf7db656f0368c23ba7872aba9452a855976e3 BYTES=2250 LINES=62
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Put one cloned voice into the platform's shared library.
+
+.DESCRIPTION
+    Same narrow bridge as chay_thu_giong.ps1: read app.env into THIS process
+    only, run one named tool, exit. Never prints a value from app.env.
+
+    Writes one row. It never flips more than one voice per run, on purpose:
+    a cloned voice is a person's biometric data.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_giong_nguon_ngoai_ngu.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    [int]$Vong = 2
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$tool    = Join-Path $Repo 'tools\do_giong_nguon_ngoai_ngu.py'
+foreach ($p in @($envFile, $venvPy, $tool)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    # Ten bien phai KHONG trung mot tham so nao cua chinh script -- PowerShell
+    # khong phan biet hoa thuong. Xem tools/check_ps_bien_trung_tham_so.py.
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+$env:PYTHONPATH = $Repo
+
+$doiSo = @('--vong', "$Vong")
 
 # Xem chu thich cung ten trong chay_thu_giong.ps1: voi 'Stop', mot exe ngoai ghi
 # ra stderr se ket thuc script truoc khi doc duoc $LASTEXITCODE.
@@ -242935,7 +243455,7 @@ def test_khong_co_loai_job_moi():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_352_ltt_voice_tiep_can.py
-SHA256=a7e4bad10ee5dcd5cd5c8956b182443d358d4f86b46da7ce0c6b28cab6bbf6b6 BYTES=17078 LINES=373
+SHA256=ad7c944a99276b7de001228928c161698453dae2cbab7f1902ff11f6467ad0f0 BYTES=19046 LINES=405
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ba chốt tiếp cận của LTT Voice: trạng thái lọc, tiến độ nói ra, cỡ vùng chạm.
 
@@ -243056,12 +243576,44 @@ def test_bao_tin_bo_qua_cau_trung():
     assert "o.textContent === cau" in m.group(1)
 
 
-def test_chi_mot_ham_bat_nut_cho_ca_ba_man():
-    """Ba vòng lặp riêng làm cùng một việc là ba chỗ để quên đồng bộ."""
+def test_moi_nhom_loc_deu_di_qua_batNut():
+    """MỌI nhóm nút lọc phải đi qua `batNut()` — không nhóm nào tự xử.
+
+    🔴 Bản đầu của phép kiểm này chốt `count("batNut(nut);") == 3`, và nó đỏ
+       ngay ngày ai đó thêm một nhóm lọc **thứ tư hợp lệ** (làn ngôn ngữ,
+       01/09/2026). Con số 3 không phải bất biến — nó là số nhóm lọc *tình cờ
+       có* lúc viết.
+
+    ⛔ Bất biến thật là một **tập hợp**: mỗi vòng lặp gắn `click` lên một nhóm
+       nút lọc thì phải gọi `batNut`. Chốt số lượng thì mỗi lần thêm một nhóm
+       đúng luật, gate lại đỏ và người sửa học được rằng cách xử lý là **nâng
+       con số** — tức bánh cóc dạy đúng thói quen nó sinh ra để ngăn.
+       *(Cùng bài học với `banh-coc-cong-chat-luong`: chốt TẬP HỢP, đừng chốt
+       số lượng.)*
+    """
     s = JS.read_text(encoding="utf-8")
-    assert s.count("function batNut(") == 1
-    assert s.count("batNut(nut);") == 3, (
-        "ca ba nhom loc chay o trinh duyet phai di qua batNut()")
+    assert s.count("function batNut(") == 1, "batNut phai la MOT ham duy nhat"
+
+    # Mỗi vòng lặp gắn click lên một nhóm nút lọc, tìm theo cách nó lấy nút.
+    nhom = re.findall(
+        r'var (\w+) = document\.querySelectorAll\('
+        r'"(?:\.lv-loc-nut|\[data-chon-[\w-]+\])"\);', s)
+    assert len(nhom) >= 3, f"chi thay {len(nhom)} nhom loc: {nhom}"
+
+    # ⛔ Hỏi từng KHỐI mã sau mỗi vòng lặp, đừng đếm toàn tệp: đếm toàn tệp
+    #    không phân biệt được "ba nhóm mỗi nhóm một lần" với "một nhóm ba lần".
+    for ten in nhom:
+        i = s.index(f"var {ten} = document.querySelectorAll(")
+        # ⛔ Cắt tới khai báo `var` KẾ TIẾP Ở ĐẦU DÒNG, không phải `var` đầu
+        #    tiên tìm thấy: `for (var i = 0; ...)` nằm ngay trong chính vòng
+        #    lặp cần soi, nên cắt ở đó là cắt mất phần thân — và phép kiểm sẽ
+        #    báo "không gọi batNut" cho một nhóm gọi nó ở dòng sau.
+        j = s.find("\n    var ", i + 1)
+        khoi = s[i:j if j > i else len(s)]
+        assert "batNut(" in khoi, (
+            f"nhom loc `{ten}` khong goi batNut() — trinh doc man hinh se "
+            f"khong biet bo loc nao dang bat")
+
     assert 'setAttribute("aria-pressed"' in s
 
 
@@ -246904,7 +247456,7 @@ def test_bo_loc_KHOI_CAN_TAO_khong_bao_gio_tra_khoi_DANG_TAO(khach):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_376_cong_chat_luong_voice.py
-SHA256=9a5bf2be92a5f9cd1b0f02c9d68190f1fdc7bc1d29c0e5bbd3babd2c453d26aa BYTES=7421 LINES=155
+SHA256=003c409e775ae1c0e1a131ea839655e38c835a8b62332b3898a264dcf16ffb4e BYTES=12908 LINES=272
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 V10 · bánh cóc cho chính **cổng** chất lượng.
@@ -247061,6 +247613,123 @@ def test_cong_KHONG_chua_phep_do_da_co_nguong_tuyet_doi(ten):
     assert ten not in cong.CHIEU, f"{ten} khong duoc nam trong cong tuong doi"
     assert ten not in (_bl().get("do") or {}), (
         f"baseline con giu {ten} — ghim lai sau khi bo no khoi bo do")
+
+
+def test_ghim_phien_ban_bo_do_THAT_SU_noi_vao_bo_do():
+    """Khoá baseline phải đọc phiên bản **từ bộ đo**, không từ một mặc định cứng.
+
+    🔴 Đây là một cái ghim đã tồn tại và **không nối vào gì cả** suốt từ khi
+       viết. `tools/cong_chat_luong_voice.py` tra
+       `do_chat_luong.do_tat_ca.__globals__.get("_PHIEN_BAN_BO_DO", <mặc định>)`
+       trong khi `do_chat_luong.py` để phiên bản **bên trong dict trả về**, chứ
+       không phải ở cấp module. Tên ấy chưa bao giờ tồn tại, nên phép tra luôn
+       rơi vào giá trị mặc định — và baseline **không bao giờ hết hiệu lực**,
+       dù bộ đo có đổi thế nào.
+
+    ⛔ Cùng lớp lỗi với một bánh cóc chưa từng đỏ: nó chạy, nó in ra một con số
+       đúng đắn, và nó không canh gì. Phép kiểm này bắt cả hai đầu — tên phải
+       tồn tại ở cấp module, VÀ giá trị phải đi tới khoá baseline.
+    """
+    import json
+    import subprocess
+    import sys
+
+    from voice_sidecar import do_chat_luong
+
+    # (1) ten phai ton tai o cap module
+    v = getattr(do_chat_luong, "_PHIEN_BAN_BO_DO", None)
+    assert isinstance(v, str) and v, "thieu _PHIEN_BAN_BO_DO cap module"
+
+    # (2) chinh dict tra ve phai dung no, khong phai mot chuoi thu hai
+    src = (GOC / "voice_sidecar" / "do_chat_luong.py").read_text(encoding="utf-8")
+    assert '"phien_ban_bo_do": _PHIEN_BAN_BO_DO,' in src, (
+        "dict tra ve dang ghi mot chuoi rieng thay vi dung hang cap module")
+
+    # (3) cong phai doc no, KHONG duoc co duong lui
+    cong = (GOC / "tools" / "cong_chat_luong_voice.py").read_text(encoding="utf-8")
+    assert "do_chat_luong._PHIEN_BAN_BO_DO" in cong, cong[:0]
+    assert "__globals__" not in cong, (
+        "cong dang tra bang __globals__.get(...) — mot ten sai se im lang roi "
+        "vao mac dinh thay vi vo")
+
+    # (4) va gia tri phai THUC SU di toi khoa baseline
+    r = subprocess.run(
+        [sys.executable, "-c",
+         "import json,sys;sys.path.insert(0,r'%s');"
+         "from voice_sidecar import do_chat_luong as d;"
+         "print(json.dumps({'v': d._PHIEN_BAN_BO_DO}))" % str(GOC)],
+        capture_output=True, text=True, encoding="utf-8")
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout.strip().splitlines()[-1])["v"] == v
+
+
+#: Bốn phép K3 phải nằm trong cổng — mỗi phép kèm hỏng hóc nó đã CHỨNG MINH bắt
+#: được, đo bằng `tools/do_diem_mu_cong.py` trên sàn nhiễu n = 24.
+K3_TRONG_CONG = {
+    "db_dai_cao": "duc 8,6 sigma / nhieu 6,8 sigma",
+    "khop_cuc_bo_dinh": "lap-o-giua 4,4 sigma",
+    "vat_99_hz": "nhieu 29,4 sigma",
+    "trong_tam_hz": "nhieu 7,3 sigma",
+}
+
+#: Và những thứ TUYỆT ĐỐI KHÔNG được vào cổng tương đối, kèm lý do.
+K3_NGOAI_CONG = {
+    "khop_cuc_bo_tai_s": "vi tri, khong phai chat luong",
+    "khop_cuc_bo_tre_s": "vi tri",
+    "tre_dinh_s": "vi tri",
+    "nhip_troi_hz": "vi tri tren truc tan so",
+    "f0_so_cua_so": "mot CAI DEM — san nhieu bang 0",
+}
+
+
+def test_bon_phep_K3_nam_trong_baseline():
+    """Bốn phép đã chứng minh bắt được hỏng hóc phải thật sự vào cổng.
+
+    ⛔ Không phải chuyện đầy đủ cho đẹp. Lượt ghim đầu tiên sau khi viết bốn
+       phép ấy cho ra một baseline **chỉ có 5 chỉ số cũ**: `_do_mot_vong` chỉ
+       thu những chiều nó biết tên, nên bốn phép mới chạy, trả số, và **rơi ra
+       ngoài cổng trong im lặng**. Mã đã viết mà cổng không dùng thì cổng vẫn
+       mù đúng như trước.
+    """
+    do = (_bl().get("do") or {})
+    thieu = {k: v for k, v in K3_TRONG_CONG.items() if k not in do}
+    assert not thieu, (
+        f"baseline thieu {sorted(thieu)} — ghim lai sau khi them vao "
+        f"`_do_mot_vong`. Ly do tung phep: {thieu}")
+    for k in K3_TRONG_CONG:
+        assert do[k].get("n", 0) >= 3, (k, do[k])
+
+
+def test_chi_so_VI_TRI_khong_duoc_vao_cong_tuong_doi():
+    """Vị trí không có chiều tốt/xấu, nên một dải dung sai quanh nó vô nghĩa.
+
+    🔴 Cùng lớp với `f0_so_cua_so`: một con số thay đổi theo độ dài chứ không
+       theo chất lượng. Nó từng lọt vào bộ dò điểm mù và in ra **1.000.000σ**
+       — một phát hiện giả đủ to để tuyên bố một điểm mù đã đóng trong khi nó
+       còn nguyên.
+    """
+    from tools import cong_chat_luong_voice as cong
+
+    do = (_bl().get("do") or {})
+    for ten, ly_do in K3_NGOAI_CONG.items():
+        assert ten not in do, f"{ten} lot vao baseline ({ly_do})"
+        assert ten not in cong.CHIEU, f"{ten} lot vao CHIEU ({ly_do})"
+
+
+def test_db_dai_cao_phai_chan_CA_HAI_phia():
+    """Quá sáng cũng sai như quá đục — nên chiều phải là 0, không phải ±1.
+
+    Đo được: lọc thông thấp kéo `db_dai_cao` **-31 -> -49**; nhiễu trắng đẩy nó
+    **-31 -> -17**. Chặn một phía là bỏ lọt đúng một nửa số cách hỏng.
+    """
+    from tools import cong_chat_luong_voice as cong
+
+    for ten in ("db_dai_cao", "trong_tam_hz", "vat_99_hz"):
+        assert cong.CHIEU.get(ten, "thieu") == 0, (
+            f"{ten} phai hai chieu")
+        m = (_bl().get("do") or {}).get(ten)
+        if m:
+            assert m.get("thap") is not None and m.get("cao") is not None, (ten, m)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -248637,6 +249306,635 @@ def test_bo_chon_van_dung_MOC_BEN_VUNG_cap_kho():
     assert "_moc_ben_vung" in ten, (
         "`chon()` khong con dung moc ben vung — no dang so voi mot moc khac, va "
         "moc cua CA CLIP la moc da tung chon nham doan nhieu")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_383_do_on_dinh.py
+SHA256=5b75d6b91891f5087221c8f1cf65e04980b257aaad11f0aa1b40a036a9ca6149 BYTES=16671 LINES=320
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+test_383 — bánh cóc cho `voice_sidecar/do_on_dinh.py` (K3).
+
+Bốn phép đo trong module ấy không phải bốn ý hay. Mỗi phép sinh ra để bịt **một
+điểm mù đã đo được** của cổng chất lượng, và mỗi phép đã có **ít nhất một bản
+sai** trước bản hiện tại — bản sai ấy chạy trơn tru, trả ra số đẹp, và mù.
+
+Tệp này chốt đúng những chỗ đã sai, bằng tín hiệu **tổng hợp** (không cần GPU,
+không cần sidecar) nên nó chạy trong gate như mọi test khác:
+
+  · `do_sang`   — đo TRÊN góc cắt, ở thang **dB**
+  · `do_lap_bat_ky` — khớp **cục bộ**, không chỉ tương quan toàn cục
+  · `do_on_dinh_bien_do` — phổ của **log** bao, không phải của bao
+  · `do_on_dinh_f0` — **một** lần pyin cho cả bản, không phải mỗi cửa sổ một lần
+
+⭐ Mỗi phép kiểm dưới đây đã được chứng minh ĐỎ bằng cách hoàn nguyên đúng chỗ
+   đã sửa. Một bánh cóc chưa từng đỏ thì không chốt gì cả.
+"""
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from voice_sidecar import do_on_dinh
+
+SR = 24000
+DAI_NHIP = do_on_dinh.DAI_NHIP_HZ
+
+
+def _tieng_gia(giay=6.0, f0=110.0, sr=SR, seed=7):
+    """Tín hiệu giống tiếng nói: sóng hài có F0, đóng ngắt theo âm tiết KHÔNG ĐỀU.
+
+    ⛔ KHÔNG dùng nhiễu trắng làm bản nền. Ba trong bốn phép ở đây đo **hình
+       dạng** (dốc phổ, chu kỳ nhịp, đường F0); nhiễu trắng không có hình dạng
+       nào, nên chúng sẽ "đạt" trên nhiễu mà vẫn hỏng trên tiếng nói.
+
+    🔴 Và KHÔNG dùng nhịp tuần hoàn. Bản đầu của khuôn này đóng ngắt bằng một
+       hình sin 5 Hz, và hai phép kiểm đỏ ngay: `khop_cuc_bo_dinh` = **1,0** ở
+       bản NỀN (một tín hiệu tuần hoàn hoàn hảo thì mọi cửa sổ khớp mọi cửa sổ),
+       `do_nhon_nhip` = **8503** ở bản nền (một hình sin thì đỉnh phổ vô địch).
+       Tức khuôn thử tự tạo ra đúng hai hỏng hóc mà nó phải phân biệt.
+
+    ⭐ Tránh được nhiễu trắng rồi rơi vào cái bẫy đối xứng của nó. Tiếng nói
+       thật nằm giữa: có cấu trúc, nhưng **không đều**. Nên độ dài âm tiết và
+       quãng nghỉ ở đây đều ngẫu nhiên, và F0 đi bộ ngẫu nhiên nhẹ.
+    """
+    rng = np.random.default_rng(seed)
+    n = int(sr * giay)
+    x = np.zeros(n)
+
+    # 🔴 Dựng TỪNG ÂM TIẾT một, mỗi âm tiết một PHỔ RIÊNG. Bản thứ ba của khuôn
+    #    này dùng chung một bộ sóng hài cho cả bản và chỉ đổi đường bao — nên
+    #    mọi khung có cùng hình phổ, và `khop_cuc_bo_dinh` ở bản NỀN là 0,99.
+    #    Tức khuôn thử lại tự tạo ra đúng hỏng hóc nó phải bắt, lần thứ hai,
+    #    trên một trục khác.
+    #
+    # ⭐ Cái mà tiếng nói có và hai bản trước thiếu là: âm tiết khác nhau nghe
+    #    KHÁC NHAU, không chỉ to nhỏ khác nhau. /ba/ và /ma/ cùng độ to vẫn phân
+    #    biệt được — bằng phổ. Nên biên độ từng sóng hài ở đây ngẫu nhiên theo
+    #    từng âm tiết, đóng vai formant.
+    i = 0
+    while i < n:
+        d = int(sr * rng.uniform(0.12, 0.26))
+        d = min(d, n - i)
+        if d < int(sr * 0.03):
+            break
+        t = np.arange(d) / sr
+        f = f0 * rng.uniform(0.94, 1.06)          # cao độ nhích theo âm tiết
+        bien = rng.uniform(0.2, 1.0, 25) / np.arange(1, 26)
+        am = sum(b * np.sin(2 * np.pi * f * k * t)
+                 for k, b in enumerate(bien, start=1))
+        # phụ âm xát: nhiễu băng rộng ở đầu âm tiết -> năng lượng TẦN CAO thật,
+        # và đó là thứ một bộ lọc thông thấp giết trước tiên.
+        xat = np.zeros(d)
+        nx = int(sr * rng.uniform(0.02, 0.05))
+        xat[:nx] = rng.standard_normal(nx) * rng.uniform(0.1, 0.5)
+        cua = np.hanning(min(d, max(8, int(sr * 0.02))))
+        vo = np.ones(d)
+        vo[:cua.size // 2] = cua[:cua.size // 2]
+        vo[-(cua.size // 2):] = cua[-(cua.size // 2):]
+        x[i:i + d] = (am / max(np.abs(am).max(), 1e-9)
+                      * rng.uniform(0.6, 1.0) + xat) * vo
+        i += d + int(sr * rng.uniform(0.03, 0.12))
+
+    x = x + 0.02 * np.convolve(np.abs(x), np.ones(240) / 240,
+                               mode="same") * rng.standard_normal(n)
+    x += 0.001 * rng.standard_normal(n)
+    return (x / np.abs(x).max() * 0.5).astype("float32")
+
+
+def test_khuon_thu_khong_tu_tao_ra_hong_hoc():
+    """Bản NỀN phải sạch với chính hai phép nó dùng để bắt hỏng hóc.
+
+    Nếu phép kiểm này đỏ thì mọi phép kiểm khác trong tệp vô nghĩa: chúng đang
+    so một hỏng hóc với một bản nền đã hỏng sẵn.
+    """
+    w = _tieng_gia()
+    assert do_on_dinh.do_lap_bat_ky(w, SR)["khop_cuc_bo_dinh"] < 0.9
+    assert do_on_dinh.do_on_dinh_bien_do(w, SR)["do_nhon_nhip"] < 20.0
+
+
+# ── do_sang ─────────────────────────────────────────────────────────────────
+
+def test_db_dai_cao_thay_loc_thong_thap():
+    """Bộ lọc 3,5 kHz phải làm `db_dai_cao` sụt ÍT NHẤT 10 dB.
+
+    🔴 Bản đầu cắt dải ở **2 kHz** — tức HOÀN TOÀN NẰM DƯỚI góc cắt 3,5 kHz,
+       nên bộ lọc không chạm tới nó. Bộ dò điểm mù chấm bản ấy **1,4σ**: mù.
+       `CAT_SANG_HZ` phải nằm TRÊN góc cắt của thứ ta muốn phát hiện.
+    """
+    sos = pytest.importorskip("scipy.signal").butter(
+        6, 3500.0 / (SR / 2), btype="low", output="sos")
+    from scipy.signal import sosfilt
+
+    w = _tieng_gia()
+    a = do_on_dinh.do_sang(w, SR)
+    b = do_on_dinh.do_sang(np.asarray(sosfilt(sos, w), dtype="float32"), SR)
+    assert "db_dai_cao" in a and "db_dai_cao" in b
+    assert a["db_dai_cao"] - b["db_dai_cao"] >= 10.0, (
+        f"loc thong thap 3,5 kHz chi lam db_dai_cao sut "
+        f"{a['db_dai_cao'] - b['db_dai_cao']:.1f} dB — CAT_SANG_HZ "
+        f"({do_on_dinh.CAT_SANG_HZ} Hz) co nam TREN goc cat khong?")
+
+
+def test_cat_sang_nam_tren_goc_loc_thuong_gap():
+    """`CAT_SANG_HZ` phải > 3,5 kHz, và điều đó là một RÀNG BUỘC, không phải sở thích."""
+    assert do_on_dinh.CAT_SANG_HZ > 3500.0
+
+
+def test_db_dai_cao_o_thang_db_khong_phai_ti_le():
+    """Phải là dB (âm, cỡ hàng chục), không phải một tỉ lệ trong [0, 1].
+
+    ⭐ Không phải chuyện thẩm mỹ: năng lượng trên 4 kHz của tiếng nói cỡ 1e-3,
+       và một bộ lọc kéo nó xuống 1e-6. Ở thang tuyến tính hai số ấy cách nhau
+       0,001 — nằm gọn trong sàn nhiễu. Ở thang dB chúng cách nhau 30.
+    """
+    v = do_on_dinh.do_sang(_tieng_gia(), SR)["db_dai_cao"]
+    assert v < 0.0 and v > -200.0
+
+
+# ── do_lap_bat_ky ───────────────────────────────────────────────────────────
+
+def test_khop_cuc_bo_thay_doan_lap_ngan_giua_bai():
+    """Chèn 0,5 s lặp vào GIỮA phải đẩy `khop_cuc_bo_dinh` lên gần 1,0.
+
+    🔴 Đây là phép mà tương quan TOÀN CỤC không làm được, và lý do là số học:
+       0,5 giây trong 6 giây là ~8% tín hiệu, nên phép lấy trung bình pha loãng
+       nó còn vài phần trăm. Phép cục bộ lấy CỰC ĐẠI nên không bị pha loãng.
+    """
+    w = _tieng_gia()
+    n = int(SR * 0.5)
+    i = len(w) // 2
+    lap = np.concatenate([w[:i], w[i - n:i], w[i:]]).astype("float32")
+
+    a = do_on_dinh.do_lap_bat_ky(w, SR)
+    b = do_on_dinh.do_lap_bat_ky(lap, SR)
+    assert "khop_cuc_bo_dinh" in b, "thieu phep khop cuc bo"
+    assert b["khop_cuc_bo_dinh"] > a.get("khop_cuc_bo_dinh", 0.0), (a, b)
+    # ⭐ Tín hiệu MẠNH nhất không phải điểm số mà là ĐỘ TRỄ: đo trên bốn hạt
+    #    giống khác nhau, điểm nhích 0,75-0,80 -> 0,78-0,91 (khác nhau tuỳ hạt),
+    #    nhưng độ trễ chỉ đúng 0,49 s ở **cả bốn**. Một cổng đọc điểm sẽ lung
+    #    lay; một cổng đọc "có một đoạn khớp tại đúng độ trễ X" thì không.
+    assert abs(b["khop_cuc_bo_tre_s"] - 0.5) <= 0.06, b
+
+
+def test_khop_cuc_bo_bo_qua_cua_so_chu_yeu_la_im_lang():
+    """Nhiều quãng nghỉ dài KHÔNG được đẩy `khop_cuc_bo_dinh` lên.
+
+    ⛔ Im lặng khớp im lặng một cách hoàn hảo, và phép lấy CỰC ĐẠI thì cực đại
+       ấy thắng mọi thứ khác. Trên tiếng thật (n=24) bản chưa lọc cho nền
+       **0,9706** — gần kịch trần, nên một đoạn lặp thật không còn chỗ hiện ra.
+
+    ⭐ Phép kiểm này tồn tại vì lần chứng minh-đỏ đầu tiên cho thấy bộ lọc quãng
+       lặng **không được phép kiểm nào che**: gỡ nó ra mà cả tệp vẫn xanh. Một
+       dòng mã không có bánh cóc là một dòng mã sẽ bị ai đó dọn đi.
+    """
+    rng = np.random.default_rng(5)
+    sr = SR
+    manh = []
+    for k in range(6):
+        manh.append(_tieng_gia(giay=0.45, seed=100 + k))
+        manh.append(np.zeros(int(sr * 0.8), dtype="float32"))   # nghỉ DÀI
+    w = np.concatenate(manh).astype("float32")
+    w += (0.0005 * rng.standard_normal(w.size)).astype("float32")
+    r = do_on_dinh.do_lap_bat_ky(w, sr)
+    assert r.get("khop_cuc_bo_dinh", 0.0) < 0.95, (
+        f"im lang dang khop im lang: {r} — bo loc cua so im lang con khong?")
+
+
+def test_khop_cuc_bo_tru_trung_binh_tung_cua_so():
+    """Hai quãng cùng độ to nhưng khác hình dạng KHÔNG được khớp cao.
+
+    ⛔ Nếu bỏ bước trừ trung bình theo từng cửa sổ, mọi bản đọc đều đều sẽ báo
+       động, vì "cùng to" bị đọc thành "giống nhau".
+    """
+    rng = np.random.default_rng(3)
+    t = np.arange(int(SR * 6)) / SR
+    # hai nua cung bien do RMS nhung noi dung ngau nhien doc lap
+    w = (0.3 * rng.standard_normal(t.size)).astype("float32")
+    r = do_on_dinh.do_lap_bat_ky(w, SR)
+    assert r.get("khop_cuc_bo_dinh", 0.0) < 0.9, r
+
+
+# ── do_on_dinh_bien_do ──────────────────────────────────────────────────────
+
+def test_do_nhon_nhip_KHONG_hua_bat_duoc_rung_6_phan_tram():
+    """Ghi lại một điểm mù CÒN NGUYÊN, chứ không giả vờ đã bịt.
+
+    🔴 `run_giong_6pc` — rung biên độ 6% ở 5,5 Hz — là hỏng hóc duy nhất trong
+       bảy hỏng hóc mà cổng **vẫn không thấy**, sau ba lần thử ba cơ chế khác
+       nhau: năng lượng dải 3–8 Hz, độ nhọn đỉnh trên bao tuyến tính, độ nhọn
+       đỉnh trên **log** bao. Cao nhất từng đạt: 1,4σ. Ngưỡng là 4σ.
+
+    Hai lý do, và chỉ một trong hai sửa được:
+
+      ① 5,5 Hz **trùng nhịp âm tiết** tiếng Việt. Trên trục điều biên, rung
+         giọng và nhịp nói ở cùng một chỗ. Lấy log gỡ được phép NHÂN nhưng
+         không gỡ được sự trùng dải — nó là trùng thật.
+      ② Không có bằng chứng nào rằng VieNeu **sinh ra** hỏng hóc này. Nó là
+         hỏng hóc tôi tự nghĩ ra để biện minh cho jitter/shimmer, chứ không
+         phải một lỗi ai đó gặp. Upstream #159 báo lặp và trôi, không báo rung.
+
+    ⇒ Đóng nó ở đây như một **giới hạn đã đo và đã ghi**, không phải một việc
+      còn dở. Đuổi theo một hỏng hóc chưa từng xảy ra bằng một chỉ số không
+      tách được nó khỏi nhịp nói là hai sai lầm nhân với nhau.
+
+    ⛔ Phép kiểm này CHỐT lời hứa đó. Nếu ai đó sau này làm `do_nhon_nhip` tách
+       được rung 6%, phép kiểm sẽ đỏ và buộc họ sửa lại lời văn ở đây thay vì
+       để tài liệu nói sai theo hướng bi quan.
+    """
+    w = _tieng_gia()
+    t = np.arange(len(w)) / SR
+    rung = (w * (1.0 + 0.06 * np.sin(2 * np.pi * 5.5 * t))).astype("float32")
+    a = do_on_dinh.do_on_dinh_bien_do(w, SR)["do_nhon_nhip"]
+    b = do_on_dinh.do_on_dinh_bien_do(rung, SR)["do_nhon_nhip"]
+    assert b < a * 1.5, (
+        f"do_nhon_nhip nay TACH duoc rung 6% ({a} -> {b}). Tot — nhung phai "
+        f"cap nhat lai loi van o day va o do_on_dinh.py, dung de tai lieu noi "
+        f"sai theo huong bi quan.")
+
+
+def test_do_nhon_nhip_van_do_duoc_va_on_dinh():
+    """Vẫn giữ phép đo — nó nhúc nhích cho hỏng hóc khác (lặp: 3,9σ) và rẻ."""
+    for seed in (7, 21, 33):
+        r = do_on_dinh.do_on_dinh_bien_do(_tieng_gia(seed=seed), SR)
+        assert 1.0 < r["do_nhon_nhip"] < 20.0, (seed, r)
+        assert DAI_NHIP[0] <= r["nhip_troi_hz"] <= DAI_NHIP[1], (seed, r)
+
+
+# ── do_on_dinh_f0 ───────────────────────────────────────────────────────────
+
+def test_f0_lech_nua_thay_doi_tong_o_nua_sau():
+    """Nửa sau cao hơn 6% phải hiện ra ở `f0_lech_nua` ≈ 0,06."""
+    a = _tieng_gia(giay=3.0, f0=110.0, seed=11)
+    b = _tieng_gia(giay=3.0, f0=110.0 * 1.06, seed=11)
+    w = np.concatenate([a, b]).astype("float32")
+    r = do_on_dinh.do_on_dinh_f0(w, SR)
+    assert "f0_lech_nua" in r, r
+    assert 0.03 <= r["f0_lech_nua"] <= 0.12, r
+
+
+def test_f0_khong_phu_thuoc_librosa():
+    """Nhánh F0 phải chạy được ở python của GATE, nơi `librosa` không có.
+
+    🔴 Bản đầu gọi `librosa.pyin`. Nó chạy tốt trên máy có GPU và trả `{}` ở
+       gate — im lặng, không lỗi. Hậu quả đo được: `test_khong_tra_ra_cai_dem`
+       XANH ngay cả khi tôi cố tình nhét một cái đếm trở lại vào dict, vì cái
+       đếm ấy nằm trong nhánh không bao giờ chạy.
+
+    ⛔ Một bánh cóc không chạy trông giống hệt một bánh cóc đã đạt.
+    """
+    import sys
+    assert "librosa" not in sys.modules or True     # khong quan tam co hay khong
+    r = do_on_dinh.do_on_dinh_f0(_tieng_gia(giay=6.0, f0=140.0), SR)
+    assert r and "f0_trung_vi_hz" in r, r
+    # tu tuong quan luong tu hoa theo do tre nguyen => lech he thong vai %
+    assert abs(r["f0_trung_vi_hz"] - 140.0) / 140.0 < 0.05, r
+
+
+def test_f0_bam_dung_cao_do_o_nhieu_giong():
+    for dat in (90.0, 110.0, 180.0, 240.0):
+        r = do_on_dinh.do_on_dinh_f0(_tieng_gia(giay=6.0, f0=dat), SR)
+        assert abs(r["f0_trung_vi_hz"] - dat) / dat < 0.05, (dat, r)
+
+
+# ── hợp đồng chung ──────────────────────────────────────────────────────────
+
+def test_khong_tra_ra_cai_dem():
+    """Không chỉ số nào được là một CÁI ĐẾM.
+
+    🔴 `f0_so_cua_so` từng có mặt. Sàn nhiễu của nó bằng 0 (văn bản cố định ⇒
+       độ dài cố định), nên bộ dò điểm mù chia cho ~0 và in **1.000.000σ** cho
+       `lap_o_giua`, tuyên bố đã thấy trong khi vẫn mù hoàn toàn. Một cái đếm
+       không đo chất lượng — nó đo độ dài.
+    """
+    r = do_on_dinh.do_tat_ca(_tieng_gia(), SR)
+    assert r, "khong do duoc gi"
+    for k, v in r.items():
+        assert not isinstance(v, bool)
+        assert float(v) == float(v)
+        assert "so_cua_so" not in k and not k.startswith("so_"), k
+
+
+def test_vang_mat_khac_khong():
+    """Clip quá ngắn ⇒ chỉ số **vắng mặt**, không phải bằng 0.
+
+    ⛔ Cùng bài học với `snr_db` từng bị `or 0.0` biến "không đo được" thành
+       "đo được, bằng 0" — một giá trị giả đi thẳng vào baseline.
+    """
+    r = do_on_dinh.do_tat_ca(np.zeros(300, dtype="float32"), SR)
+    assert "f0_trung_vi_hz" not in r
+    assert "khop_cuc_bo_dinh" not in r
+
+
+def test_mot_phep_hong_khong_lam_hong_ba_phep_kia(monkeypatch):
+    monkeypatch.setattr(do_on_dinh, "do_sang",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("x")))
+    r = do_on_dinh.do_tat_ca(_tieng_gia(), SR)
+    assert "db_dai_cao" not in r
+    assert "khop_cuc_bo_dinh" in r
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_384_lan_ngon_ngu.py
+SHA256=6ff5b5773039386ac380e9fe54438f797a7f1970845b4aa3e8bdcc960185d0fd BYTES=9134 LINES=193
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+test_384 — LÀN ngôn ngữ của giọng: `apps/ltt_voice/lan_ngon_ngu.py` + bộ lọc.
+
+## Vì sao tệp này tồn tại
+
+Cột `voice_profile.ngon_ngu` có từ đầu, và tới 01/09/2026 nó **không nơi nào
+đọc** — khai rồi bỏ đó. Hậu quả đo được trên production: cả **bốn** giọng của
+kho dùng chung đều mang `ngon_ngu = "vi"`, kể cả hai giọng mà chính tên hiển thị
+đã ghi *"EN male"* / *"EN female"*. Chúng lấy giá trị **mặc định** và không ai
+đặt.
+
+⛔ Sai suốt mà không ai thấy, chính xác vì cột ấy không ai đọc. **Một dữ liệu
+   sai chưa có hậu quả là dữ liệu sai trốn được lâu nhất** — nó chỉ nổ vào ngày
+   ai đó bắt đầu tin nó.
+
+⇒ Tệp này chốt hai điều: làn **được đọc** ở những chỗ nó phải được đọc, và nó
+  **cảnh báo chứ không chặn**.
+"""
+from __future__ import annotations
+
+import pathlib
+
+import pytest
+
+from apps.ltt_voice import lan_ngon_ngu as L
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+
+
+# ── đoán ngôn ngữ ───────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("text", [
+    "Bạn có thể mua vé ở đây.",
+    "Hôm nay trời đẹp.",
+    "Đây là một câu.",
+    "Giá cổ phiếu tăng mạnh.",
+])
+def test_co_dau_tieng_viet_thi_chac_chan_vi(text):
+    assert L.doan_ngon_ngu(text) == "vi"
+
+
+@pytest.mark.parametrize("text", [
+    "The quick brown fox jumps over the lazy dog.",
+    "Please confirm that you have received this message.",
+    "Our team delivered the project ahead of schedule.",
+])
+def test_du_tu_chuc_nang_thi_en(text):
+    assert L.doan_ngon_ngu(text) == "en"
+
+
+@pytest.mark.parametrize("text", [
+    "Ban co the mua ve o day.",          # tiếng Việt KHÔNG DẤU
+    "Xin chao moi nguoi.",
+    "Hom nay troi dep.",
+    "OK",
+    "",
+])
+def test_map_mo_thi_tra_None_chu_khong_doan_bua(text):
+    """`None` là một câu trả lời ĐẦY ĐỦ, không phải một thất bại.
+
+    🔴 Tiếng Việt viết không dấu chỉ gồm chữ ASCII — **không phân biệt được**
+       với tiếng Anh bằng bảng mã. Đoán bừa `"vi"` cho mọi thứ mập mờ sẽ đẻ ra
+       cảnh báo sai ở mọi câu tiếng Anh ngắn; đoán bừa `"en"` thì ngược lại.
+       Cả hai đều dẫn tới **một cảnh báo hay sai, tức một cảnh báo bị bỏ qua**
+       — kể cả lúc nó đúng.
+    """
+    assert L.doan_ngon_ngu(text) is None
+
+
+def test_tu_chuc_nang_khong_trung_am_tiet_tieng_viet_khong_dau():
+    """Tập từ tiếng Anh phải tránh mọi âm tiết tiếng Việt viết không dấu.
+
+    ⛔ Thêm "can", "co", "do", "la", "ma", "an", "the" (đã có, nhưng chú ý)…
+       vào `TU_ANH` là biến "Ban co the mua ve" thành tiếng Anh. Phép kiểm này
+       chốt tập từ ấy không lấn sang những âm tiết Việt hay gặp nhất.
+    """
+    va = {"can", "co", "do", "la", "ma", "an", "ba", "ta", "ca", "cua", "va",
+          "vi", "di", "toi", "khong", "mot", "hai", "nam", "cho", "cai"}
+    lan = L.TU_ANH & va
+    assert not lan, f"tu chuc nang tieng Anh trung am tiet Viet khong dau: {lan}"
+
+
+def test_mot_tu_tieng_anh_le_khong_du_de_ket_luan():
+    """Một thuật ngữ tiếng Anh chèn vào câu Việt không dấu KHÔNG làm nó thành EN."""
+    assert L.doan_ngon_ngu("Ban mo file trong that muc nay") is None
+    assert L.TOI_THIEU_TU_ANH >= 2
+
+
+# ── đối chiếu ───────────────────────────────────────────────────────────────
+
+def test_doi_chieu_canh_bao_khi_lech_lan():
+    assert L.doi_chieu("en", "Bạn có thể mua vé ở đây.")
+    assert L.doi_chieu("vi", "The quick brown fox jumps over the lazy dog.")
+
+
+def test_doi_chieu_im_lang_khi_khop_hoac_khong_chac():
+    assert L.doi_chieu("vi", "Bạn có thể mua vé ở đây.") == ()
+    assert L.doi_chieu("en", "The quick brown fox and that dog.") == ()
+    assert L.doi_chieu("vi", "Ban co the mua ve o day.") == ()   # không chắc
+    assert L.doi_chieu("", "Bất cứ gì.") == ()                    # chưa có làn
+    assert L.doi_chieu("xx", "Bất cứ gì.") == ()                  # làn lạ
+
+
+def test_KHONG_BAO_GIO_nem_loi():
+    """Đối chiếu làn phải là một CẢNH BÁO, không bao giờ là một cửa chặn.
+
+    🔴 Chặn theo phán đoán ngôn ngữ sẽ từ chối công việc hợp lệ của khách đang
+       gõ tiếng Việt **không dấu** — và từ chối với một lý do họ không sửa được,
+       vì họ đang gõ đúng thứ họ định gõ.
+    """
+    for lan in ("vi", "en", "", "xx", None):
+        for t in ("", "abc", "Bạn có thể", "The and that", "!!!", "123"):
+            r = L.doi_chieu(lan, t)          # không được ném
+            assert isinstance(r, tuple)
+
+
+def test_chuoi_canh_bao_la_HANG_de_dich_duoc():
+    """`N_()` phải nhìn thấy một chuỗi HẰNG, không phải một câu ghép động.
+
+    ⛔ Ghép bằng f-string thì bộ trích không lấy được chuỗi vào `.po`, và nó
+       hỏng **lặng lẽ**: trang tiếng Anh hiện một câu tiếng Việt. Nên khuôn có
+       chỗ trống `{lan_giong}` / `{lan_text}` và `dien_canh_bao` điền sau.
+    """
+    src = (GOC / "apps" / "ltt_voice" / "lan_ngon_ngu.py").read_text(encoding="utf-8")
+    import ast
+    cay = ast.parse(src)
+    ham = next(n for n in ast.walk(cay)
+               if isinstance(n, ast.FunctionDef) and n.name == "doi_chieu")
+    # ⛔ Hỏi CÂY CÚ PHÁP, đừng khớp chuỗi: một bánh cóc khớp với chính lời giải
+    #    thích của nó thì không chốt gì (đã mắc lỗi ấy bốn lần trong dự án này).
+    for n in ast.walk(ham):
+        assert not isinstance(n, ast.JoinedStr), (
+            "doi_chieu dang ghep f-string — chuoi se khong vao duoc file dich")
+
+
+# ── nối vào ứng dụng ────────────────────────────────────────────────────────
+
+def test_giai_giong_tra_canh_bao_lan():
+    """`features.giai_giong` phải THẬT SỰ gọi đối chiếu làn.
+
+    ⛔ Trước 01/09 nó trả `()` cứng ở cả hai nhánh. Một chỗ trống có sẵn cho
+       cảnh báo mà không ai điền vào trông giống hệt một chỗ đã điền đúng.
+    """
+    import ast
+    src = (GOC / "apps" / "ltt_voice" / "features.py").read_text(encoding="utf-8")
+    ham = next(n for n in ast.walk(ast.parse(src))
+               if isinstance(n, ast.FunctionDef) and n.name == "giai_giong")
+    goi = [n for n in ast.walk(ham)
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+           and n.func.attr == "doi_chieu"]
+    assert len(goi) >= 2, (
+        "giai_giong phai doi chieu lan o CA HAI nhanh (preset va giong nhan ban)")
+
+
+def test_danh_sach_co_bo_loc_lan_va_MAC_DINH_KHONG_LOC():
+    import inspect
+
+    from apps.ltt_voice import tham_chieu
+    ts = inspect.signature(tham_chieu.danh_sach).parameters
+    assert "ngon_ngu" in ts, "thieu bo loc lan o danh_sach()"
+    assert ts["ngon_ngu"].default == "", (
+        "bo loc lan phai MAC DINH TAT: `ngon_ngu` tung la cot khong ai doc nen "
+        "du lieu cu co the trong — bat san la giau mat giong cua chinh khach")
+
+
+def test_muc_chua_dat_lan_KHONG_bi_loc_bo_o_giao_dien():
+    """Giọng chưa có làn phải hiện ở **mọi** làn, không bị ẩn.
+
+    Cùng lý do với phép kiểm trên, nhưng ở phía trình duyệt: dữ liệu cũ có thể
+    trống `ngon_ngu`, và ẩn nó đi là làm khách mất giọng của chính mình mà
+    không có lời giải thích nào.
+    """
+    js = (GOC / "server" / "static" / "voice.js").read_text(encoding="utf-8")
+    assert "!d.lan || d.lan === locLan" in js, (
+        "bo loc lan trong voice.js phai cho qua muc co `data-lan` rong")
+
+
+def test_moi_man_dung_bo_chon_deu_truyen_nhan_lan():
+    """Thiếu `nhan_lan` ở một màn ⇒ Jinja ném `UndefinedError` ĐÚNG TRÊN MÀN ĐÓ.
+
+    ⛔ Và chỉ khi ai đó mở đúng màn ấy. Một lỗi mẫu chỉ nổ ở một trong ba trang
+       là lỗi lọt qua mọi lượt thử tay không đi hết cả ba.
+    """
+    tmpl = GOC / "apps" / "ltt_voice" / "templates"
+    dung = [p.name for p in tmpl.glob("*.html")
+            if '_voice_chon.html' in p.read_text(encoding="utf-8")]
+    assert len(dung) >= 3, dung
+    src = "\n".join(
+        (GOC / "apps" / "ltt_voice" / "routes" / f).read_text(encoding="utf-8")
+        for f in ("_p_tao.py", "_p_giong.py", "_p_du_an.py"))
+    assert src.count("nhan_lan") >= 3, (
+        f"{len(dung)} man dung bo chon giong nhung chi {src.count('nhan_lan')} "
+        f"cho truyen `nhan_lan`")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_385_tools_sai_khuon.py
+SHA256=0fec42815fe2acbcdf596aa3200e813c5b83fbc171331323a8606a9daa19ca58 BYTES=4412 LINES=98
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Cửa Anthropic phải TỪ CHỐI `tools` sai khuôn, không im lặng bỏ qua.
+
+## Đo thật 01/09 qua Cloudflare
+
+Gửi `tools` khuôn **OpenAI** (`{"type":"function","function":{…}}`) vào cửa
+Anthropic `/api/v1/messages`:
+
+    HTTP 200
+    "Xin loi, hien tai toi khong co tool nao de truy van kho hang..."
+
+Khách gõ sai hình dạng nhận một câu trả lời **hợp lý mà sai**, không phải một
+lỗi. Và đó là nhầm lẫn dễ mắc nhất ở cửa này: hai giao thức, hai khuôn tool,
+**cùng một tên trường `tools`**.
+
+⛔ Nó cũng lệch chuẩn với chính khu API này, nơi lỗi gọi đúng tên scope thiếu
+   (`missing_scope: usage:read`), nói *"A quote token is required"*, và đính
+   `retry: never`. Anthropic thật trả `400` cho tool schema sai; ta khai tương
+   thích giao thức đó thì phải trả lời như nó.
+
+## ⭐ Vì sao CHỈ báo lỗi khi KHÔNG mục nào dùng được
+
+Hỗn hợp hợp lệ + rác vẫn đi tiếp như cũ. Biến nó thành `400` là một **hồi quy
+cho client đang chạy**, và cái giá lớn hơn cái lợi — ta đang sửa một *câu trả
+lời sai im lặng*, không phải siết hợp đồng.
+"""
+from __future__ import annotations
+
+import pytest
+
+from server.api import tool_dich
+
+ANTHROPIC = {"name": "tra_ton_kho", "description": "Tra ton kho",
+             "input_schema": {"type": "object",
+                              "properties": {"ma_hang": {"type": "string"}}}}
+OPENAI = {"type": "function", "function": {
+    "name": "tra_ton_kho", "description": "Tra ton kho",
+    "parameters": {"type": "object",
+                   "properties": {"ma_hang": {"type": "string"}}}}}
+
+
+class TestKhongKhaiThiKhongSao:
+    @pytest.mark.parametrize("tools", [None, [], "", 0, {}])
+    def test_khong_khai_tool_KHONG_phai_loi(self, tools):
+        assert tool_dich.vi_sao_khong_dung_duoc(tools) is None
+
+
+class TestKhuonDungThiQua:
+    def test_khuon_anthropic_qua(self):
+        assert tool_dich.vi_sao_khong_dung_duoc([ANTHROPIC]) is None
+        assert tool_dich.sang_openai_tools([ANTHROPIC])
+
+    def test_HON_HOP_hop_le_va_rac_VAN_QUA(self):
+        """Không siết hợp đồng — chỉ chống câu trả lời sai im lặng."""
+        assert tool_dich.vi_sao_khong_dung_duoc([ANTHROPIC, OPENAI]) is None
+        assert tool_dich.vi_sao_khong_dung_duoc([ANTHROPIC, {"rac": 1}]) is None
+
+
+class TestKhuonSaiThiNOI_RA:
+    def test_khuon_OpenAI_bi_tu_choi(self):
+        vi = tool_dich.vi_sao_khong_dung_duoc([OPENAI])
+        assert vi is not None, (
+            "khuon OpenAI bi BO QUA IM LANG -- khach nhan 200 + 'toi khong co "
+            "tool nao', mot cau tra loi hop ly ma sai")
+
+    def test_thong_diep_CHI_RA_khuon_dung(self):
+        """Một lỗi không nói cách làm đúng chỉ đổi một bí ẩn lấy một bí ẩn khác."""
+        vi = tool_dich.vi_sao_khong_dung_duoc([OPENAI])
+        assert "input_schema" in vi, "phai goi ten truong dung"
+        assert "OpenAI" in vi, "phai noi ra khach dang dung khuon nao"
+        assert "chat/completions" in vi, "phai chi cho cua nhan khuon OpenAI"
+
+    @pytest.mark.parametrize("rac", [
+        [{"khong_co_name": 1}],
+        [{"name": ""}],
+        ["mot chuoi"],
+        [123],
+    ])
+    def test_moi_loai_rac_deu_bi_noi_ra(self, rac):
+        assert tool_dich.vi_sao_khong_dung_duoc(rac) is not None
+
+
+class TestToolMayChuCuaAnthropicVanBoQuaIM:
+    """`{"type": "web_search_…"}` không có `input_schema` — ta không chạy được.
+
+    ⚠️ Đây KHÁC với rác: nó là tool hợp lệ của Anthropic mà ta cố ý không hỗ trợ.
+       Bỏ qua im lặng ở đây là **có chủ ý** và đã ghi trong `sang_openai_tools`;
+       biến nó thành 400 sẽ chặn một request mà phần còn lại vẫn phục vụ được.
+    """
+
+    def test_chi_co_tool_may_chu_thi_VAN_bao(self):
+        # Không mục nào dùng được ⇒ vẫn phải nói, nếu không khách lại nhận
+        # "tôi không có tool nào" mà không hiểu vì sao.
+        assert tool_dich.vi_sao_khong_dung_duoc(
+            [{"type": "web_search_20250305", "name": "web_search"}]) is not None
+
+    def test_tool_may_chu_DI_KEM_tool_thuong_thi_qua(self):
+        assert tool_dich.vi_sao_khong_dung_duoc(
+            [ANTHROPIC, {"type": "web_search_20250305", "name": "web_search"}]) is None
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -268885,7 +270183,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cong_chat_luong_voice.py
-SHA256=cd60266e5c76d57acd17c1ffec63f14d5f345dae64cfa197a5a7185492cefbea BYTES=16818 LINES=357
+SHA256=b5b63b683f0340f5daa45da74af148cd7e6a35f210088bc08879559623c32a99 BYTES=19267 LINES=394
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 cong_chat_luong_voice.py — V10 · CỔNG chất lượng, không phải một bản báo cáo.
@@ -268977,6 +270275,11 @@ SAN_DUNG_SAI = {
     "wer": 0.03,
     "on_dinh_giong": 0.02,
     "rtf": 0.05,
+    # K3 — sàn theo đúng thang của từng phép, không dùng chung 0,05:
+    "db_dai_cao": 1.0,          # dB
+    "trong_tam_hz": 20.0,       # Hz
+    "vat_99_hz": 200.0,         # Hz
+    "khop_cuc_bo_dinh": 0.03,   # hệ số tương quan
 }
 
 #: Corpus cố định. ⛔ ĐỔI CORPUS LÀ ĐỔI PHÉP ĐO — baseline cũ không còn so được,
@@ -269020,8 +270323,11 @@ def _khoa() -> dict:
     bam = hashlib.sha256(chr(10).join(CORPUS).encode()).hexdigest()[:16]
     return {
         "phien_ban_tham_so": tham_so.PHIEN_BAN_THAM_SO,
-        "phien_ban_bo_do": do_chat_luong.do_tat_ca.__globals__.get(
-            "_PHIEN_BAN_BO_DO", "ltt-voice-do-2026-08-31a"),
+        # KHONG co gia tri du phong. Mot cai ghim co duong lui im lang
+        # thi khong phai cai ghim: truoc 01/09 ten `_PHIEN_BAN_BO_DO`
+        # khong ton tai, phep tra luon roi vao mac dinh cung, va
+        # baseline khong bao gio het hieu luc du bo do co doi the nao.
+        "phien_ban_bo_do": do_chat_luong._PHIEN_BAN_BO_DO,
         "bam_corpus": bam,
         "so_cau": len(CORPUS),
     }
@@ -269032,7 +270338,9 @@ def _do_mot_vong(giu_tep: bool = False) -> dict:
     from apps.ltt_voice import sidecar_client
     from voice_sidecar import do_chat_luong
 
-    ra = {k: [] for k in ("cer", "wer", "on_dinh_giong", "rtf")}
+    ra = {k: [] for k in ("cer", "wer", "on_dinh_giong", "rtf",
+                          "db_dai_cao", "khop_cuc_bo_dinh", "vat_99_hz",
+                          "trong_tam_hz")}
     hong = 0
     for cau in CORPUS:
         try:
@@ -269074,6 +270382,25 @@ def _do_mot_vong(giu_tep: bool = False) -> dict:
         #    bình có thể **nới lỏng** một bảo đảm tuyệt đối: lô ghim đầu tiên
         #    cho `true_peak` trần +0,0479 dBTP, tức cổng sẽ cho qua một bản
         #    VỠ TIẾNG trong khi hợp đồng nói trần là −1,0.
+        # ── K3: bốn phép bịt điểm mù đã đo được ────────────────────────
+        #
+        # ⛔ CHỈ thu những phép đã CHỨNG MINH bắt được một hỏng hóc thật (vượt
+        #    4σ trên sàn nhiễu n=24, `tools/do_diem_mu_cong.py`):
+        #
+        #        db_dai_cao       đục 8,6σ · nhiễu 6,8σ
+        #        khop_cuc_bo_dinh lặp-ở-giữa 4,4σ
+        #        vat_99_hz        nhiễu 29,4σ
+        #        trong_tam_hz     nhiễu 7,3σ
+        #
+        # ⛔ Và KHÔNG thu `khop_cuc_bo_tai_s`, `khop_cuc_bo_tre_s`, `tre_dinh_s`,
+        #    `nhip_troi_hz`: chúng là **vị trí**, không phải chất lượng. Một vị
+        #    trí không có chiều tốt/xấu, nên một dải dung sai quanh nó vô nghĩa
+        #    — cùng lớp với cái đếm `f0_so_cua_so` đã bị loại khỏi bộ đo vì nó
+        #    tạo ra một phát hiện giả 1.000.000σ.
+        od = kq.get("on_dinh") or {}
+        for ten in ("db_dai_cao", "khop_cuc_bo_dinh", "vat_99_hz", "trong_tam_hz"):
+            if od.get(ten) is not None:
+                ra.setdefault(ten, []).append(float(od[ten]))
         if doc.get("x-rtf"):
             ra["rtf"].append(float(doc["x-rtf"]))
 
@@ -269127,7 +270454,15 @@ def _gom(vong: list) -> dict:
 
 #: Chiều "xấu đi" của từng phép đo. `-1` = nhỏ hơn là tốt hơn.
 CHIEU = {"cer": -1, "wer": -1, "rtf": -1,
-         "on_dinh_giong": +1, "_ty_le_hong": -1}
+         "on_dinh_giong": +1, "_ty_le_hong": -1,
+         # K3 — bốn phép bịt điểm mù. Ba trong bốn là HAI CHIỀU (`0`), và đó là
+         # điều đúng chứ không phải sự lười: một bản **quá sáng** cũng sai như
+         # một bản **quá đục**. Đo được: bộ lọc thông thấp kéo `db_dai_cao` từ
+         # -31 xuống -49, còn nhiễu trắng đẩy nó LÊN -17. Chặn một phía thì bỏ
+         # lọt đúng một nửa số cách hỏng.
+         "db_dai_cao": 0, "trong_tam_hz": 0, "vat_99_hz": 0,
+         # Khớp cục bộ càng cao càng đáng ngờ — nó là dấu hiệu tự lặp.
+         "khop_cuc_bo_dinh": -1}
 
 
 def _nguong(ten: str, tb: float, lech: float) -> tuple:
@@ -270376,7 +271711,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/dat_giong_dung_chung.py
-SHA256=ea8153ddc011e0b35dc2c4f0acf696ded62b8aa2e4a655c4a62509ca0eb1f0ea BYTES=4642 LINES=113
+SHA256=d5a74c295cf73d3e2fa37ddbee0ba8a7cc5c894c3fa0b41ccc9d973afe3c106a BYTES=6869 LINES=147
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 dat_giong_dung_chung.py — đưa một giọng nhân bản vào KHO CHUNG của nền tảng.
@@ -270422,6 +271757,20 @@ def main(argv=None) -> int:
     ap.add_argument("--bat", action="store_true")
     ap.add_argument("--tat", action="store_true")
     ap.add_argument("--xem", action="store_true", help="Liet ke kho chung.")
+    # 🔴 `ngon_ngu` LÀ MỘT LÀN, không phải một ghi chú.
+    #
+    #    Chốt 01/09/2026 (chủ sản phẩm): kho giọng **tách làn theo nguồn** —
+    #    clip nguồn tiếng Việt phục vụ văn bản tiếng Việt, clip nguồn tiếng Anh
+    #    phục vụ văn bản tiếng Anh. Engine song ngữ nên nó KHÔNG phải giới hạn
+    #    kỹ thuật; nó là một chốt **chất lượng**.
+    #
+    # ⛔ Bốn giọng đầu tiên của kho chung đều nằm ở `vi` vì cột này lấy giá trị
+    #    MẶC ĐỊNH và không ai đặt — kể cả hai giọng mà chính tên hiển thị đã ghi
+    #    "EN male" / "EN female". Sai suốt mà không ai thấy, vì cột này khi ấy
+    #    **không nơi nào đọc**: một dữ liệu sai chưa có hậu quả là dữ liệu sai
+    #    trốn được lâu nhất.
+    ap.add_argument("--ngon-ngu", default="", choices=["", "vi", "en"],
+                    help="Dat lan cho giong (vi|en).")
     a = ap.parse_args(argv)
 
     from sqlalchemy import select
@@ -270437,8 +271786,16 @@ def main(argv=None) -> int:
                 VoiceProfile.dung_chung.is_(True))
                 .order_by(VoiceProfile.ten_hien_thi)).scalars())
             print(f"KHO CHUNG — {len(ds)} giong")
+            # ⛔ IN CẢ `ngon_ngu`. Bảng này trước đây chỉ in tên, và tên là thứ
+            #    duy nhất người đọc có để đoán ngôn ngữ — tức chỗ một giọng gán
+            #    sai ngôn ngữ trốn được lâu nhất. Kho cũ có những giọng mang
+            #    tên tiếng Việt rành mạch (`hoathinh_female`, `meoquan_men`,
+            #    `tamlyhoc_men`, `cg_huong_nam`) nhưng nói **tiếng Anh** — vì
+            #    hệ cũ train F5 bằng giọng Việt và XTTS bằng giọng Anh. Đoán
+            #    theo tên là đoán sai bốn lần.
             for h in ds:
-                print(f"  {h.public_id}  {h.trang_thai:10} {h.ten_hien_thi}")
+                print(f"  {h.public_id}  {h.trang_thai:10} "
+                      f"[{h.ngon_ngu:>3}]  {h.ten_hien_thi}")
             if not a.voice_id:
                 return 0
 
@@ -270454,9 +271811,21 @@ def main(argv=None) -> int:
         print(f"\n  giong      : {ho_so.ten_hien_thi}")
         print(f"  public_id  : {ho_so.public_id}")
         print(f"  chu so huu : {ho_so.owner_id}")
+        print(f"  ngon ngu   : {ho_so.ngon_ngu}")
+        # Xuat xu: chuoi DUY NHAT noi giong nay tu dau ra. Khong in no thi
+        # cau hoi "giong nay lay tu clip nao" khong ai tra loi duoc.
+        print(f"  ghi chu    : {(ho_so.ghi_chu or chr(40) + chr(41))[:160]}")
         print(f"  trang thai : {ho_so.trang_thai}")
         print(f"  dung chung : {ho_so.dung_chung}")
         print(f"  cam ket    : {'co, ' + str(ck.dong_y_luc)[:19] if ck else 'KHONG CO'}")
+
+        if a.ngon_ngu and a.ngon_ngu != ho_so.ngon_ngu:
+            cu = ho_so.ngon_ngu
+            ho_so.ngon_ngu = a.ngon_ngu
+            db.commit()
+            print(f"\n  DA DOI ngon ngu: {cu} -> {a.ngon_ngu}")
+            if not (a.bat or a.tat):
+                return 0
 
         if not (a.bat or a.tat):
             print("\n(chi xem — dung `--bat` hoac `--tat` de doi)")
@@ -271669,6 +273038,339 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_diem_mu_cong.py
+SHA256=e94b42bd866690a1da991e431e24b3eaddfd564001c681528c2fe23be33de5a6 BYTES=14328 LINES=327
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_diem_mu_cong.py — cổng chất lượng hiện tại MÙ với những hỏng hóc nào?
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_diem_mu_cong.ps1
+
+## Vì sao đo cái này TRƯỚC khi thêm bất kỳ chỉ số nào (K3)
+
+Pha K3 vốn đặt ra là "mang HNR · jitter · shimmer từ hệ cũ sang". Tra cộng đồng
+xong thì cả tiền đề ấy lung lay:
+
+  · Jitter/shimmer là chỉ số **lâm sàng**, đo trên nguyên âm kéo dài để đánh giá
+    bệnh lý thanh quản. Cộng đồng đo TTS bằng **bộ dự đoán MOS** — UTMOS, NISQA,
+    DNSMOS — chứ không dùng chúng.
+  · Bản của hệ cũ lại **không phải** định nghĩa lâm sàng: nó lấy chu kỳ trên các
+    khung cách nhau 10 ms chứ không phải hai chu kỳ thanh môn liền kề. Gọi nó là
+    "jitter" rồi so với ngưỡng lâm sàng (< 1%) là so hai thứ khác nhau.
+  · `NISQA-TTS` — đúng công cụ cho việc này — có trọng số **CC BY-NC-SA**, tức
+    **không dùng được** trong một sản phẩm thương mại.
+  · `UTMOS` (MIT) dùng được, nhưng trọng số **411 MB** và được huấn luyện trên
+    tiếng Anh, nên giá trị tuyệt đối trên tiếng Việt là một ẩn số.
+
+⇒ Không chỉ số nào trong số đó hiển nhiên đáng thêm. Câu hỏi đúng không phải
+  *"thêm gì"* mà **"cổng đang bỏ sót gì"** — và đó là câu đo được.
+
+## Cách đo
+
+Lấy tiếng THẬT do chính engine sinh, rồi **tiêm từng hỏng hóc đã biết**, mỗi lần
+một loại. Với mỗi loại, chạy toàn bộ bộ đo hiện có và xem chỉ số nào **nhúc
+nhích**.
+
+    hỏng hóc nào làm ít nhất một chỉ số đổi rõ  ->  cổng THẤY
+    hỏng hóc nào không làm chỉ số nào đổi       ->  cổng MÙ  <- chỗ đáng thêm
+
+⭐ Đây là phép đo nói cho ta biết **nên mua gì**, thay vì mua rồi mới hỏi nó
+   dùng làm gì. Ba pha trước đều dạy cùng một điều: thứ mượn được không phải
+   thứ đáng mượn.
+
+⛔ "Đổi rõ" phải so với **nhiễu giữa hai lượt sinh bình thường**, không so với 0.
+   Mọi chỉ số ở đây đều dao động giữa hai lượt; một thay đổi nhỏ hơn dao động ấy
+   không phải một phát hiện.
+
+⚠️ Chạm GPU thật, không chạm sổ tiền.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import math
+import os
+import statistics
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
+
+CAU = ("Hôm nay trời nắng đẹp nên tôi đi bộ ra công viên gần nhà, ngồi ở cái "
+       "ghế quen thuộc dưới gốc cây và đọc nốt mấy trang sách còn dở.")
+
+
+class KhongDoDuoc(RuntimeError):
+    """Không đo được thì VỠ, không lặng lẽ thành một con số."""
+
+
+# ── các kiểu hỏng, mỗi kiểu một hàm thuần ───────────────────────────────────
+def _nhieu(w, sr, snr_db=15.0):
+    """Cộng nhiễu trắng ở SNR cho trước."""
+    import numpy as np
+    cs = float(np.mean(w.astype(np.float64) ** 2))
+    cn = cs / (10 ** (snr_db / 10.0))
+    rng = np.random.default_rng(11)
+    return (w + rng.normal(0, cn ** 0.5, len(w))).astype("float32")
+
+
+def _vo_tieng(w, sr, tran=0.35):
+    """Kẹp cứng — méo hài, thứ tai nghe ra ngay."""
+    import numpy as np
+    return np.clip(w, -tran, tran).astype("float32")
+
+
+def _muffled(w, sr, cat_hz=3500.0):
+    """Lọc thông thấp — mất độ sáng, giọng 'đục'."""
+    import numpy as np
+    from scipy.signal import butter, sosfilt
+    sos = butter(6, cat_hz / (sr / 2), btype="low", output="sos")
+    return np.asarray(sosfilt(sos, w), dtype="float32")
+
+
+def _lap_giua(w, sr, giay=0.5):
+    """Chèn một đoạn lặp vào GIỮA — lỗi mà chốt lặp đuôi không thấy."""
+    import numpy as np
+    n = int(sr * giay)
+    i = len(w) // 2
+    return np.concatenate([w[:i], w[i - n:i], w[i:]]).astype("float32")
+
+
+def _dut_quang(w, sr, giay=1.5):
+    """Chèn im lặng vào giữa — đứt quãng."""
+    import numpy as np
+    i = len(w) // 2
+    return np.concatenate([w[:i], np.zeros(int(sr * giay), "float32"),
+                           w[i:]]).astype("float32")
+
+
+def _run_giong(w, sr, sau=0.06, nhip=5.5):
+    """Rung biên độ đều đặn — 'giọng run'.
+
+    🔴 ĐÂY LÀ HỎNG HÓC MÀ JITTER/SHIMMER SINH RA ĐỂ BẮT. Nếu bộ đo hiện tại
+       thấy nó, thì K3 không cần chúng; nếu mù, đó là lập luận cụ thể để thêm.
+    """
+    import numpy as np
+    t = np.arange(len(w)) / sr
+    return (w * (1.0 + sau * np.sin(2 * np.pi * nhip * t))).astype("float32")
+
+
+def _lech_tong_nua_sau(w, sr, ti_le=1.06):
+    """Nửa sau đổi cao độ — 'trôi giọng' trong một lượt."""
+    import numpy as np
+    i = len(w) // 2
+    a, b = w[:i], w[i:]
+    n = int(len(b) / ti_le)
+    cu = np.linspace(0, len(b) - 1, n)
+    b2 = np.interp(cu, np.arange(len(b)), b)
+    return np.concatenate([a, b2]).astype("float32")
+
+
+HONG = [
+    ("nhieu_15dB", _nhieu),
+    ("vo_tieng", _vo_tieng),
+    ("duc_3k5", _muffled),
+    ("lap_o_giua", _lap_giua),
+    ("dut_quang_1s5", _dut_quang),
+    ("run_giong_6pc", _run_giong),
+    ("lech_tong_nua_sau", _lech_tong_nua_sau),
+]
+
+
+def _do_het(w, sr, text: str) -> dict:
+    """Mọi chỉ số bộ đo hiện có trả về, làm phẳng thành một dict số."""
+    import soundfile as sf
+
+    from voice_sidecar import chot_sinh, dnsmos, do_chat_luong, do_on_dinh
+
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    tmp.close()
+    try:
+        sf.write(tmp.name, w, sr)
+        kq = do_chat_luong.do_tat_ca(tmp.name, text=text)
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+
+    d = dnsmos.cham(w, sr) or {}
+    th = kq.get("tin_hieu") or {}
+    kl = kq.get("khoang_lang") or {}
+    dh = kq.get("de_hieu") or {}
+    tg = kq.get("troi_giong") or {}
+    pq = chot_sinh.kiem_het(w, sr, len(text))
+
+    ra = {
+        "dnsmos_ovrl": d.get("ovrl"), "dnsmos_sig": d.get("sig"),
+        "dnsmos_bak": d.get("bak"),
+        "true_peak_dbtp": th.get("true_peak_dbtp"), "lufs": th.get("lufs"),
+        "ty_le_cham_tran": th.get("ty_le_cham_tran"),
+        "im_giua_dai_nhat_s": kl.get("im_giua_dai_nhat_s"),
+        "cer": dh.get("cer") if dh.get("co") else None,
+        "wer": dh.get("wer") if dh.get("co") else None,
+        "on_dinh_giong": tg.get("cosine_trung_binh"),
+        "lap_duoi": chot_sinh.so_do(pq, "lap_duoi", "tuong_quan"),
+        "chot_bat": 0.0 if pq.dat else 1.0,
+    }
+    # K3: bon phep nham dung bon diem mu da do duoc.
+    ra.update(do_on_dinh.do_tat_ca(w, sr))
+    return {k: (None if v is None else float(v)) for k, v in ra.items()}
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--nen", type=int, default=24,
+                    help="So luot sinh binh thuong de do SAN NHIEU (>=12).")
+    ap.add_argument("--ra", default="tmp/diem_mu_cong.json")
+    a = ap.parse_args(argv)
+
+    for m in ("numpy", "soundfile", "scipy"):
+        try:
+            __import__(m)
+        except ImportError:
+            print(f"THIEU {m} — chay bang python cua `vieneu-venv`.",
+                  file=sys.stderr)
+            return 2
+
+    import soundfile as sf
+
+    from apps.ltt_voice import sidecar_client
+
+    if not sidecar_client.san_sang():
+        print("Cong giong CHUA san sang.", file=sys.stderr)
+        return 2
+
+    sidecar_client.noi("Lam am.")
+
+    # ── 1. sàn nhiễu: N lượt sinh BÌNH THƯỜNG ───────────────────────────────
+    print(f"Do san nhieu — {a.nen} luot sinh binh thuong:")
+    nen = []
+    for i in range(a.nen):
+        raw, _ = sidecar_client.noi(CAU)
+        w, sr = sf.read(io.BytesIO(raw), dtype="float32", always_2d=False)
+        nen.append(_do_het(w, int(sr), CAU))
+        print(f"  luot {i + 1}/{a.nen}")
+    goc_w, goc_sr = w, int(sr)          # lượt cuối làm bản gốc để tiêm lỗi
+
+    san = {}
+    for k in nen[0]:
+        gia = [m[k] for m in nen if m.get(k) is not None]
+        if len(gia) > 1:
+            san[k] = {"tb": statistics.mean(gia),
+                      "lech": statistics.pstdev(gia),
+                      "n": len(gia)}
+
+    # 🔴 SAI SỐ CỦA CHÍNH CÁI THƯỚC. Bài học đắt nhất của K3, và nó không nằm
+    #    ở chỉ số nào cả — nó nằm ở phép đo.
+    #
+    #    Độ lệch chuẩn ước từ n mẫu có sai số tương đối ≈ 1/√(2(n−1)). Với
+    #    **n = 4** — mặc định của ba lượt đo đầu — con số ấy là **41%**. Nên mọi
+    #    σ in ra mang sẵn ±40%, và ranh giới "thấy / mù" ở 4σ nằm gọn bên trong
+    #    sai số ấy.
+    #
+    #    Hậu quả đo được — cùng hỏng hóc, cùng bản gốc, KHÔNG đổi một dòng mã
+    #    nào giữa hai lượt:
+    #
+    #        duc_3k5      12,1σ  ->  7,9σ
+    #        lap_o_giua    4,1σ  ->  3,2σ    tức "đã đóng" -> "còn mù"
+    #        lech_tong     4,2σ  ->  3,1σ
+    #
+    #    Tôi đã sửa chỉ số suốt hai lượt để đuổi theo những con số ấy. Sửa đúng
+    #    hướng hay không thì không biết được, vì cái thước co giãn nhiều hơn thứ
+    #    nó đo.
+    #
+    # ⇒ n = 24 đưa sai số về ~15%. Đắt hơn — mỗi lượt là một lần sinh + DNSMOS +
+    #   ASR — nhưng một kết luận rẻ và sai thì không có giá nào cả.
+    ss = 1.0 / math.sqrt(2.0 * max(1, a.nen - 1))
+    print(f"\n{len(san)} chi so do duoc san nhieu"
+          f"  (n={a.nen}, sai so cua chinh sigma ~{ss * 100:.0f}%)\n")
+    if a.nen < 12:
+        print("!! n < 12: sai so cua sigma qua lon de phan biet 'thay' voi 'mu'.")
+        print("!! Moi ket luan duoi day chi la GOI Y, khong phai bang chung.\n")
+
+    # ── 2. tiêm từng hỏng hóc ───────────────────────────────────────────────
+    ket, mu = {}, []
+    for ten, ham in HONG:
+        hong = ham(goc_w, goc_sr)
+        m = _do_het(hong, goc_sr, CAU)
+        # ⛔ GHI SIGMA CỦA **MỌI** CHỈ SỐ, KHÔNG CHỈ NHỮNG CHỈ SỐ QUA NGƯỠNG.
+        #
+        #    Bản đầu chỉ giữ chỉ số vượt 4σ, nên nó in "0 chi so nhuc nhich"
+        #    **giống hệt nhau** cho hai trạng thái rất khác: mọi chỉ số phẳng
+        #    lì, và mọi chỉ số ở 3,9σ.
+        #
+        #    Hai trạng thái ấy đòi hai hành động khác hẳn: cái đầu cần một chỉ
+        #    số MỚI, cái sau chỉ cần một phép đo **bớt nhiễu hơn** (vd bộ ASR
+        #    lớn hơn). Một bộ đo không phân biệt được chúng thì lời khuyên nó
+        #    đưa ra là một phép đoán.
+        tat_ca, hang_so = {}, []
+        for k, v in m.items():
+            if v is None or k not in san:
+                continue
+            # 🔴 SÀN NHIỄU BẰNG 0 THÌ KHÔNG CÓ SIGMA, KHÔNG PHẢI SIGMA VÔ HẠN.
+            #
+            #    `max(lech, 1e-6)` của bản trước biến mọi chỉ số phương sai 0
+            #    thành một phát hiện giả to đùng: `f0_so_cua_so` (một CÁI ĐẾM)
+            #    hiện ra ở 1.000.000σ chỉ vì clip dài thêm 0,5 giây, và bộ dò
+            #    tuyên bố `lap_o_giua` "đã thấy" trong khi nó vẫn mù hoàn toàn.
+            #    Một bộ đo điểm mù mà tự tạo ra điểm mù là thứ tệ hơn không có.
+            #
+            #    Phương sai 0 giữa các lượt bình thường nghĩa là chỉ số ấy
+            #    KHÔNG phải một phép đo — nó là một hằng số hoặc một cái đếm.
+            #    Loại nó ra và NÓI RA, đừng cho nó bỏ phiếu.
+            if san[k]["lech"] <= 1e-9:
+                hang_so.append(k)
+                continue
+            sigma = abs(v - san[k]["tb"]) / san[k]["lech"]
+            tat_ca[k] = {"nen": round(san[k]["tb"], 4), "hong": round(v, 4),
+                         "sigma": round(sigma, 1)}
+        thay = {k: x for k, x in tat_ca.items() if x["sigma"] >= 4.0}
+        ket[ten] = {"qua_nguong": thay, "tat_ca": tat_ca,
+                    "loai_vi_san_bang_0": sorted(set(hang_so))}
+        if not thay:
+            mu.append(ten)
+        xep = sorted(tat_ca.items(), key=lambda i: -i[1]["sigma"])[:3]
+        print(f"  {ten:20} {len(thay)} chi so qua nguong 4σ"
+              f"{'  🔴 CONG MU' if not thay else ''}")
+        for k, x in xep:
+            print(f"      {k:20} {x['nen']:>9} -> {x['hong']:>9}  "
+                  f"({x['sigma']}σ){'' if x['sigma'] >= 4 else '  (duoi nguong)'}")
+
+    print("\n" + "=" * 70)
+    print("  CONG DANG MU VOI GI")
+    print("=" * 70)
+    if mu:
+        for t in mu:
+            print(f"  🔴 {t}")
+        print("\n  Do la danh sach nhung gi mot chi so MOI phai bat duoc.")
+        print("  Them mot chi so KHONG nam trong danh sach nay la them mot")
+        print("  con so nua vao mot cho da nhin thay roi.")
+    else:
+        print("  ✅ Moi hong hoc tiem vao deu lam it nhat mot chi so nhuc nhich.")
+        print("     Cong khong co diem mu nao trong bo nay — them chi so moi")
+        print("     can mot lap luan KHAC, khong phai lap luan 'do sau hon'.")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump({"san_nhieu": {k: {kk: round(vv, 5) for kk, vv in v.items()}
+                                 for k, v in san.items()},
+                   "hong_hoc": ket, "diem_mu": mu}, f,
+                  ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_dong_thoi_giong.py
 SHA256=4f64ca53463ec48e4dac7c95a3ee5b0206ca22e32f26e680fe2029e4a5977a81 BYTES=9735 LINES=222
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -272276,6 +273978,185 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_engine_co_noi_tieng_anh.py
+SHA256=19c110cdf703b920824608f798e0db88aaa32f2630b214fe3fa3d112d215b140 BYTES=7827 LINES=173
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_engine_co_noi_tieng_anh.py — VieNeu có đọc được tiếng Anh không.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_engine_co_noi_tieng_anh.ps1
+
+## KẾT QUẢ: CÓ. Và tệp này tồn tại vì tôi đã kết luận ngược lại, hai lần.
+
+Đo 01/09/2026, engine thật, ASR nghe lại ở ba chế độ (ép EN · ép VI · tự dò):
+
+    VAO : The quick brown fox jumps over the lazy dog.
+    ASR : The quick brown fox jumps over the lazy dog.          [en 0,996]
+    VAO : Our team delivered the project ahead of schedule this quarter.
+    ASR : Our team delivered the project ahead of schedule this quarter.  [en 0,87]
+
+Đúng từng chữ. Model card cũng nói thẳng: `language: ["vi", "en"]`, tag
+`code-switching`, train **from scratch trên ~10.000 giờ tiếng Anh–tiếng Việt**
+(`pnnbao-ump/VieNeu-TTS-10k-ENVI`).
+
+## 🔴 Vì sao tôi kết luận sai — và vì sao nó đáng ghi lại
+
+Tôi đọc trong `sea_g2p/g2p.py`:
+
+    SUPPORTED_LANGS = ("vi", "th", "id")
+    if lang not in SUPPORTED_LANGS: raise ValueError(...)
+
+rồi kết luận **"engine không nói được tiếng Anh"**. Tiền đề ngầm: `lang` là
+"ngôn ngữ engine phát ra được". Nó không phải. README của chính `sea-g2p` nói:
+
+    "Vietnamese, Thai and Indonesian, all with English code-switching."
+
+`lang` chọn **ngôn ngữ nền Đông Nam Á**; các chuỗi Latin đi qua **một engine
+tiếng Anh dùng chung** bên trong cả ba. Danh sách ấy chưa bao giờ là danh sách
+ngôn ngữ đầu ra — nó là danh sách các front-end SEA.
+
+⛔ Đây là lần **thứ hai trong cùng một phiên** tôi đọc mã rồi tuyên bố một giới
+   hạn sản phẩm. Lần một: `voice_profiles.yaml` ghi `lang: en` trên những cái
+   tên tiếng Việt ⇒ tôi viết rằng nhãn không đáng tin (sai; cột `engine` bên
+   cạnh mang câu trả lời, ASR xác nhận 24/24). Lần hai là đây.
+
+⭐ Cùng một hình dạng ở cả hai lần: **một hằng số đọc rất thuyết phục, cộng một
+   tiền đề ngầm chưa ai kiểm.** Bốn dòng mã thật, một câu kết luận sai. Và cả
+   hai lần, phép đo bác bỏ nó **trong chưa tới năm phút**.
+
+⇒ Luật rút ra, và nó cụ thể hơn "đừng đoán": **một khẳng định về thứ hệ thống
+  LÀM ĐƯỢC hay KHÔNG LÀM ĐƯỢC thì phải đến từ việc bắt nó làm thử.** Đọc mã
+  cho biết nó được viết thế nào, không cho biết nó chạy ra sao.
+
+## Ba kết quả mà tệp này phân biệt được
+
+  · ASR tiếng Anh đọc đúng câu ⇒ engine nói được tiếng Anh. **(đây là thực tế)**
+  · ASR tiếng Việt ra một chuỗi chữ Việt na ná ⇒ engine **đánh vần chữ Anh theo
+    lối Việt**. Dùng được cho từ mượn, không bán được như "giọng tiếng Anh".
+  · Cả hai ra rác ⇒ không dùng được kiểu nào.
+
+⭐ Hai kết quả sau nghe **giống nhau** với người không biết trước, nhưng dẫn tới
+   hai quyết định sản phẩm ngược nhau. Đó là lý do phải ép ASR ở cả hai ngôn ngữ
+   thay vì chỉ nghe thử.
+
+⚠️ Câu tiếng Việt đối chiếu trong `CAU_VI` cố ý viết **không dấu**, và kết quả
+   ra sai thanh điệu ("dây là một cạo tiền viết") — đó là hành vi ĐÚNG, không
+   phải lỗi: tiếng Việt không dấu là văn bản nhập nhằng. Đừng đọc dòng ấy thành
+   một khuyết tật.
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import os
+import subprocess
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
+CAU_EN = [
+    "The quick brown fox jumps over the lazy dog.",
+    "Please confirm your appointment for tomorrow morning at nine.",
+    "Our team delivered the project ahead of schedule this quarter.",
+]
+CAU_VI = "Xin chao, day la mot cau tieng Viet de doi chieu."
+
+
+def _nghe(duong: str, lang: str) -> dict:
+    """ASR một tệp, ÉP ngôn ngữ `lang`. Chạy ở venv NỀN TẢNG."""
+    py = os.environ.get("LTT_PLATFORM_PYTHON",
+                        r"C:\LTTPlatform\venv\Scripts\python.exe")
+    if not os.path.isfile(py):
+        return {"loi": f"khong thay {py}"}
+    ma = (
+        "import sys,json\n"
+        "from faster_whisper import WhisperModel\n"
+        "m=WhisperModel(sys.argv[3], device='cpu', compute_type='int8')\n"
+        "lg=None if sys.argv[2]=='auto' else sys.argv[2]\n"
+        "seg,info=m.transcribe(sys.argv[1], language=lg, beam_size=5,\n"
+        "                      condition_on_previous_text=False)\n"
+        "print(json.dumps({'lang':info.language,\n"
+        "                  'p':info.language_probability,\n"
+        "                  'text':' '.join(s.text for s in seg)}))\n"
+    )
+    try:
+        r = subprocess.run([py, "-c", ma, duong, lang,
+                            os.environ.get("LTT_ASR_MODEL", "small")],
+                           capture_output=True, text=True, encoding="utf-8",
+                           timeout=600)
+    except (subprocess.TimeoutExpired, OSError) as e:
+        return {"loi": f"{type(e).__name__}: {e}"}
+    if r.returncode != 0:
+        return {"loi": (r.stderr or "")[-200:]}
+    try:
+        d = json.loads(r.stdout.strip().splitlines()[-1])
+        return {"ngon_ngu": d["lang"], "do_tin": round(float(d["p"]), 3),
+                "text": (d["text"] or "").strip()}
+    except (ValueError, IndexError, KeyError) as e:
+        return {"loi": f"khong doc duoc ket qua ASR: {e}"}
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ra", default="tmp/engine_tieng_anh.json")
+    a = ap.parse_args(argv)
+
+    from apps.ltt_voice import sidecar_client
+
+    # ── 1. G2P có nhận `lang="en"` không ────────────────────────────────────
+    try:
+        from sea_g2p.g2p import SUPPORTED_LANGS
+        ho_tro = list(SUPPORTED_LANGS)
+    except Exception as e:                                # noqa: BLE001
+        ho_tro = [f"khong doc duoc: {e}"]
+    print(f"sea_g2p ho tro: {ho_tro}")
+    print(f"co 'en' khong : {'CO' if 'en' in ho_tro else 'KHONG'}\n")
+
+    ket = {"sea_g2p_ho_tro": ho_tro, "cau": []}
+    for i, c in enumerate(CAU_EN + [CAU_VI], 1):
+        try:
+            raw, dau = sidecar_client.noi(c)
+        except Exception as e:                            # noqa: BLE001
+            print(f"  [hong] cau {i}: {type(e).__name__}: {e}")
+            continue
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+        tmp.write(raw)
+        tmp.close()
+        try:
+            m = {"vao": c,
+                 "asr_ep_en": _nghe(tmp.name, "en"),
+                 "asr_ep_vi": _nghe(tmp.name, "vi"),
+                 "asr_tu_do": _nghe(tmp.name, "auto")}
+        finally:
+            try:
+                os.unlink(tmp.name)
+            except OSError:
+                pass
+        ket["cau"].append(m)
+        print(f"[{i}] VAO      : {c}")
+        print(f"    ep EN    : {m['asr_ep_en'].get('text')}")
+        print(f"    ep VI    : {m['asr_ep_vi'].get('text')}")
+        td = m["asr_tu_do"]
+        print(f"    tu do    : [{td.get('ngon_ngu')} {td.get('do_tin')}] "
+              f"{td.get('text')}\n")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ket, f, ensure_ascii=False, indent=2)
+    print(f"Da ghi: {a.ra}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_gia_von_voice.py
 SHA256=7d952e2502db1dccde0b658884936978302ab1ac0d6249f9cafdfad0bfba9ac9 BYTES=12356 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -272542,6 +274423,194 @@ def main(argv=None) -> int:
           f"{ra['mcredit_moi_giay_tieng']} mcredit/giay tieng")
     print("  Dang ban: 200 mcredit/giay tieng")
     print(f"  Da ghi: {a.json}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_giong_nguon_ngoai_ngu.py
+SHA256=f7f5586601fbdb80dabfeebdc8cd805b753bdce7ef2cf44c6bce67e935833075 BYTES=8341 LINES=182
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+do_giong_nguon_ngoai_ngu.py — giọng nhân bản từ clip TIẾNG ANH có đọc được
+tiếng Việt không, và tốt kém thế nào so với giọng nhân bản từ clip tiếng Việt.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\do_giong_nguon_ngoai_ngu.ps1
+
+## Vì sao phải đo, chứ không suy
+
+Kho giọng cũ (`D:\Voiceclone_TTS`) có **hai lớp tách bạch**, và cách hệ cũ được
+xây quyết định điều đó: **F5-TTS train bằng giọng tiếng Việt (7 giọng), XTTS
+bằng giọng tiếng Anh (17 giọng)**. Chấm lại bằng ASR: 24/24 khớp nhãn, độ tin
+0,987–1,000. Không có ngoại lệ nào.
+
+Hệ mới thì khác ở chỗ quyết định: **VieNeu không nói được tiếng Anh.**
+`vieneu_utils/phonemize_text.py` khoá cứng `SEAPipeline(lang="vi")` +
+`G2P(lang="vi")` ở tầng singleton, nên mọi văn bản đi qua G2P **tiếng Việt**.
+
+⇒ 17 giọng XTTS không thể trở thành "giọng tiếng Anh của nền tảng". Chúng chỉ
+  có thể là **nguồn âm sắc** cho tiếng Việt. Và câu hỏi *"mượn âm sắc từ một
+  người nói tiếng Anh thì tiếng Việt sinh ra có dùng được không"* là một câu
+  **thực nghiệm**, không phải một câu suy luận:
+
+  · Lập luận nói ĐƯỢC: embedding người nói của VieNeu là một vector 192 chiều
+    mô tả **bộ máy phát âm** (thanh quản, khoang cộng hưởng), không mô tả ngôn
+    ngữ. Về nguyên tắc nó bất biến với thứ tiếng người ấy đang nói.
+  · Lập luận nói KHÔNG: embedding ấy trích từ tiếng nói thật, và tiếng Anh có
+    tập âm vị, nhịp trọng âm, và **không có thanh điệu**. Nếu embedding hấp thụ
+    bất cứ phần nào của những thứ đó, tiếng Việt sinh ra sẽ lệch — và lệch ở
+    đúng chỗ tiếng Việt không tha thứ: **thanh điệu**.
+
+⭐ Thứ phân xử: **CER/WER của một bộ ASR tiếng Việt**. Nếu âm sắc ngoại ngữ làm
+   sai thanh điệu, ASR sẽ nghe ra chữ khác — và CER nói ra điều đó bằng một con
+   số, thay vì để ta tranh luận bằng cảm nhận.
+
+⛔ KHÔNG kết luận từ một câu. Thanh điệu hỏng lộ ra ở những chữ cụ thể, nên phải
+   đủ câu và đủ lượt để phân biệt "giọng này kém" với "câu này khó".
+"""
+from __future__ import annotations
+
+import argparse
+import io
+import json
+import os
+import statistics
+import sys
+import tempfile
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    # Đệm theo DÒNG. Khi stdout ra tệp (mọi lần chạy qua trình bọc PowerShell
+    # với `*> log.txt`) Python chuyển sang đệm KHỐI và tệp log nằm im ở 0 byte
+    # suốt hàng chục phút — "đang chạy" và "đã treo" trông giống hệt nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
+#: Câu thử — chọn để **thanh điệu mang nghĩa**, vì đó là chỗ một âm sắc ngoại
+#: ngữ được cho là sẽ hỏng. Mỗi câu có ít nhất một cặp chữ chỉ khác nhau ở dấu.
+CAU = [
+    "Ba tôi bảo bà ấy bán bánh ở bãi biển vào buổi sáng.",
+    "Cô ấy cố gắng có được một cỗ máy mới cho công việc.",
+    "Mẹ dặn mà tôi mải mê nên quên mất lời mẹ nói.",
+    "Anh ta đánh rơi cái đàn xuống dòng sông lạnh.",
+    "Tôi thấy thầy giáo đứng ở cửa lớp từ sáng sớm.",
+    "Hôm nay trời hơi lạnh, nhớ mặc áo ấm khi ra ngoài.",
+]
+
+
+def _do_mot(ref_b64: str, cau: str) -> dict:
+    from apps.ltt_voice import sidecar_client
+    from voice_sidecar import do_chat_luong
+
+    # ⛔ `noi()` không nhận `voice_id` — nó nhận thẳng biểu diễn tham chiếu.
+    #    Đó là cố ý: sidecar không biết gì về tài khoản, hồ sơ hay quyền, và
+    #    giữ nguyên như vậy là thứ khiến nó không cần CSDL.
+    raw, dau = sidecar_client.noi(cau, ref_b64=ref_b64)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".wav")
+    try:
+        tmp.write(raw)
+        tmp.close()
+        kq = do_chat_luong.do_tat_ca(tmp.name, text=cau)
+    finally:
+        try:
+            os.unlink(tmp.name)
+        except OSError:
+            pass
+    dh = kq.get("de_hieu") or {}
+    return {
+        "cer": dh.get("cer"),
+        "wer": dh.get("wer"),
+        "doc_duoc": (dh.get("text") or "").strip(),
+        "dnsmos_ovrl": ((kq.get("tin_hieu") or {}).get("dnsmos") or {}).get("ovrl"),
+        "on_dinh_giong": (kq.get("troi_giong") or {}).get("cosine_trung_binh"),
+        "rtf": (dict(dau or {}).get("x-rtf")),
+    }
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--vong", type=int, default=2)
+    ap.add_argument("--ra", default="tmp/giong_nguon_ngoai_ngu.json")
+    a = ap.parse_args(argv)
+
+    from sqlalchemy import select
+
+    from apps.ltt_voice import tham_chieu
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        ds = list(db.execute(select(VoiceProfile).where(
+            VoiceProfile.dung_chung.is_(True),
+            VoiceProfile.trang_thai == "active")
+            .order_by(VoiceProfile.ten_hien_thi)).scalars())
+        giong = []
+        for h in ds:
+            bd = tham_chieu.tim_repr_active(db, h.id)
+            if bd is None:
+                print(f"  [bo] {h.ten_hien_thi}: khong co bieu dien active")
+                continue
+            giong.append({"public_id": h.public_id, "ten": h.ten_hien_thi,
+                          "ngon_ngu_khai": h.ngon_ngu,
+                          "ref_b64": tham_chieu.nap_ref_b64(bd)})
+    finally:
+        gen.close()
+
+    if not giong:
+        print("KHO CHUNG RONG", file=sys.stderr)
+        return 2
+
+    print(f"{len(giong)} giong dung chung, {len(CAU)} cau, {a.vong} vong\n")
+    ket = {}
+    for g in giong:
+        gia = []
+        for v in range(a.vong):
+            for i, c in enumerate(CAU, 1):
+                try:
+                    m = _do_mot(g["ref_b64"], c)
+                except Exception as e:                    # noqa: BLE001
+                    # Một câu hỏng là một SỐ ĐO, không phải một lý do dừng.
+                    print(f"  [hong] {g['ten']} v{v + 1} c{i}: "
+                          f"{type(e).__name__}: {e}")
+                    continue
+                gia.append(m)
+                print(f"  {g['ten'][:26]:26} v{v + 1} c{i}  "
+                      f"CER {(m['cer'] if m['cer'] is not None else -1):.4f}  "
+                      f"WER {(m['wer'] if m['wer'] is not None else -1):.4f}  "
+                      f"OVRL {(m['dnsmos_ovrl'] or 0):.3f}")
+        ket[g["public_id"]] = {**{k: v for k, v in g.items()
+                                  if k != "ref_b64"}, "mau": gia}
+
+    def _tb(gia, k):
+        v = [x[k] for x in gia if x.get(k) is not None]
+        return (statistics.mean(v), statistics.pstdev(v), len(v)) if v else (None, None, 0)
+
+    print("\n" + "=" * 76)
+    print("  GIONG NGUON TIENG ANH CO DOC DUOC TIENG VIET KHONG")
+    print("=" * 76)
+    print(f"  {'giong':30} {'CER':>8} {'WER':>8} {'OVRL':>7} {'on_dinh':>8}")
+    for pid, m in ket.items():
+        c = _tb(m["mau"], "cer")
+        w = _tb(m["mau"], "wer")
+        o = _tb(m["mau"], "dnsmos_ovrl")
+        s = _tb(m["mau"], "on_dinh_giong")
+        print(f"  {m['ten'][:30]:30} "
+              f"{(c[0] if c[0] is not None else -1):8.4f} "
+              f"{(w[0] if w[0] is not None else -1):8.4f} "
+              f"{(o[0] if o[0] is not None else -1):7.3f} "
+              f"{(s[0] if s[0] is not None else -1):8.4f}   n={c[2]}")
+
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ket, f, ensure_ascii=False, indent=2)
+    print(f"\nDa ghi: {a.ra}")
+    print("\n⚠️ Doc bang nay canh NHAN NGUON, khong canh cot `ngon_ngu_khai` —")
+    print("   ca bon dong hien dang khai 'vi' vi cot ay lay gia tri mac dinh.")
     return 0
 
 
@@ -283933,7 +286002,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/soi_kho_giong_cu.py
-SHA256=d40b1a7602a68d019ab5b4a16732c5553eecabc0117aaabd11e4edfc2cbc0eaf BYTES=10380 LINES=245
+SHA256=84b703714315755912eac14862fcf572e14da9069b1d67d07e0696cade330821 BYTES=11978 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 soi_kho_giong_cu.py — chấm kho giọng của hệ CŨ (`D:\Voiceclone_TTS`) bằng bộ đo
@@ -283958,16 +286027,39 @@ VieNeu:
   thì không. Nên chấm lại bằng thang của ta, và **so hai bảng** thay vì thay thế
   một bảng bằng bảng kia.
 
-## ⛔ NHÃN `lang` KHÔNG ĐÁNG TIN, VÀ ĐÓ LÀ MỘT PHÁT HIỆN CHỨ KHÔNG PHẢI MỘT NGHI NGỜ
+## ✅ NHÃN `lang` ĐÁNG TIN — VÀ ĐÂY LÀ MỘT PHỎNG ĐOÁN CỦA TÔI ĐÃ BỊ BÁC BỎ
 
-`voice_profiles.yaml` ghi `lang: en` cho `hoathinh_female`, `meoquan_men`,
-`tamlyhoc_men`, `cg_huong_nam` — những cái tên tiếng Việt rành mạch. Nhiều khả
-năng `lang` ở đó có nghĩa *"làn XTTS"* chứ không phải *"ngôn ngữ người nói"*,
-vì hệ cũ chạy tiếng Việt trên F5 và mọi thứ khác trên XTTS.
+⛔ Chỗ này trước 01/09/2026 khẳng định điều ngược lại: rằng `voice_profiles.yaml`
+   ghi `lang: en` cho những cái tên tiếng Việt rành mạch (`hoathinh_female`,
+   `meoquan_men`, `tamlyhoc_men`, `cg_huong_nam`) nên `lang` hẳn có nghĩa *"làn
+   XTTS"* chứ không phải ngôn ngữ người nói. Nó được viết ra như một **phát
+   hiện**. Nó là một **phỏng đoán**, và nó sai.
 
-Nên tệp này **nghe lại** từng giọng bằng ASR và báo ngôn ngữ **đo được**, đặt
-cạnh nhãn đã khai. Chọn giọng mẫu tiếng Việt theo một cái nhãn sai là cách đưa
-một giọng tiếng Anh lên danh mục tiếng Việt.
+Chủ sản phẩm nói thẳng cách hệ cũ được xây: **F5-TTS train bằng giọng tiếng
+Việt, XTTS bằng giọng tiếng Anh.** Chính tệp này đã đo và số liệu khớp tuyệt
+đối — chỉ là tôi đọc nó qua một giả thuyết sai:
+
+    engine   số giọng   nhãn `lang`   ASR đo được   độ tin
+    f5tts        7          vi           vi 7/7      0,987 – 0,998
+    xtts        17          en           en 17/17    0,992 – 1,000
+
+24/24 khớp. Không có một ngoại lệ nào để giả thuyết của tôi bám vào.
+
+⭐ Cái tên tiếng Việt trên một giọng nói tiếng Anh không phải mâu thuẫn: nó là
+   tên **kênh/nhân vật** mà giọng ấy phục vụ, không phải tên người nói. Tôi đã
+   đọc tên như dữ liệu và bỏ qua cột `engine` — cột duy nhất mang câu trả lời.
+
+🔴 Vì sao ghi lại thay vì lặng lẽ xoá: một phiên sau đọc phải đoạn cũ sẽ đi "sửa"
+   những cái nhãn **vốn đúng**, và nó sẽ làm vậy một cách tự tin vì đoạn ấy tự
+   xưng là kết quả đo. Bài học không phải "đừng đoán" mà là: **viết ra thứ đo
+   được, đừng viết ra cách giải thích nó** — số liệu 24/24 ở trên đúng từ đầu,
+   chỉ có câu kết luận cạnh nó là sai.
+
+⚠️ Hệ quả thi hành, và nó không hiển nhiên: engine mới **không nói được tiếng
+   Anh**. `vieneu_utils/phonemize_text.py` khoá cứng `SEAPipeline(lang="vi")` +
+   `G2P(lang="vi")` ở tầng singleton — mọi văn bản đi qua G2P tiếng Việt. Nên 17
+   giọng XTTS chỉ dùng được như **nguồn âm sắc**, không phải như "giọng tiếng
+   Anh của nền tảng".
 
 ## Cách chấm
 
@@ -289134,6 +291226,98 @@ def main() -> int:
         return 0
     finally:
         gen.close()
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/xuat_ref_kho_chung.py
+SHA256=06ad284c70eb0e575d5accf3c1fac443a3368e83ad9b3073bbc2ad0d0b5ac9dc BYTES=3392 LINES=86
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+xuat_ref_kho_chung.py — xuất biểu diễn tham chiếu của kho giọng dùng chung ra
+một tệp JSON, để bộ đo chạy được ở venv KHÁC.
+
+    powershell -ExecutionPolicy Bypass -File .\setup\xuat_ref_kho_chung.ps1
+
+## Vì sao phải tách làm hai bước
+
+Hai venv trên máy này có hai tập thư viện **rời nhau**, và không phải ngẫu
+nhiên:
+
+  · `C:\LTTPlatform\venv`          — có `sqlalchemy`, `faster_whisper`; KHÔNG có
+                                     `soundfile`, `librosa`.
+  · `D:\LTTPlatform-runtime\vieneu-venv` — ngược lại: có `soundfile`,
+                                     `torch`, engine; KHÔNG có `sqlalchemy`.
+
+Bộ đo chất lượng cần venv thứ hai (đọc wav, chấm DNSMOS). Đọc hồ sơ giọng cần
+venv thứ nhất (CSDL). Một bộ đo cần cả hai thì phải đi qua một tệp.
+
+🔴 Đã trả giá cho việc bỏ qua điều này: bản đầu của `do_giong_nguon_ngoai_ngu.py`
+   chạy ở venv nền tảng, và **mọi lượt đều hỏng** với
+   `ModuleNotFoundError: No module named 'soundfile'` — nhưng nó bắt ngoại lệ
+   theo từng câu (đúng, vì một câu hỏng là một số đo) nên nó vẫn in ra một bảng
+   kết quả đầy đủ với `n=0` ở mọi dòng. Một bảng trống trông rất giống một bảng
+   có số nếu không nhìn cột `n`.
+
+⚠️ Tệp sinh ra chứa **biểu diễn giọng của khách**. Nó là dữ liệu sinh trắc:
+   ghi vào `tmp/`, đừng commit, xoá sau khi đo xong.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
+
+def main(argv=None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--ra", default="tmp/ref_kho_chung.json")
+    a = ap.parse_args(argv)
+
+    from sqlalchemy import select
+
+    from apps.ltt_voice import tham_chieu
+    from apps.ltt_voice.tables import VoiceProfile
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        ds = list(db.execute(select(VoiceProfile).where(
+            VoiceProfile.dung_chung.is_(True),
+            VoiceProfile.trang_thai == "active")
+            .order_by(VoiceProfile.ten_hien_thi)).scalars())
+        ra = []
+        for h in ds:
+            bd = tham_chieu.tim_repr_active(db, h.id)
+            if bd is None:
+                print(f"  [bo] {h.ten_hien_thi}: khong co bieu dien active")
+                continue
+            ra.append({"public_id": h.public_id, "ten": h.ten_hien_thi,
+                       "ngon_ngu_khai": h.ngon_ngu,
+                       "ref_b64": tham_chieu.nap_ref_b64(bd)})
+            print(f"  [ok] {h.ten_hien_thi}")
+    finally:
+        gen.close()
+
+    if not ra:
+        print("KHO CHUNG RONG", file=sys.stderr)
+        return 2
+    os.makedirs(os.path.dirname(a.ra) or ".", exist_ok=True)
+    with open(a.ra, "w", encoding="utf-8", newline="\n") as f:
+        json.dump(ra, f, ensure_ascii=False)
+    print(f"\nDa ghi {len(ra)} giong: {a.ra}")
+    print("⚠️ Tep nay chua bieu dien giong — xoa sau khi do xong.")
+    return 0
 
 
 if __name__ == "__main__":

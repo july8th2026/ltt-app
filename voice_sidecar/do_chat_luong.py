@@ -606,17 +606,33 @@ def phan_quyet(kq: dict) -> dict:
 
 # ═══════════════════════════════════════════ chạy ════════════════════════════
 
+#: Phiên bản BỘ ĐO. Baseline của cổng V10 khoá theo `(PHIEN_BAN_THAM_SO, cái
+#: này)` — đổi cách đo là baseline cũ hết hiệu lực, phải đo lại.
+#:
+#: 🔴 Nó phải là một biến **cấp module**. Trước 01/09 con số này nằm thẳng
+#:    trong dict trả về, còn `tools/cong_chat_luong_voice.py` thì tra
+#:    `do_tat_ca.__globals__["_PHIEN_BAN_BO_DO"]` — một tên **không tồn tại** —
+#:    rồi rơi vào giá trị mặc định cứng. Tức cái ghim vẫn ở đó, vẫn in ra, và
+#:    **không nối vào gì cả**: đổi hẳn cách đo mà baseline cũ vẫn được coi là
+#:    hợp lệ. Cùng lớp lỗi với một bánh cóc chưa từng đỏ.
+_PHIEN_BAN_BO_DO = "ltt-voice-do-2026-09-01a"
+
+
 def do_tat_ca(duong: str, *, text: str = "", ref: str = "",
               ngon_ngu: str = "vi", bo_qua_asr: bool = False) -> dict:
+    from voice_sidecar import do_on_dinh
+
     hop_dong, wav, sr = do_hop_dong(duong)
     kq = {
-        "phien_ban_bo_do": "ltt-voice-do-2026-08-31a",
+        "phien_ban_bo_do": _PHIEN_BAN_BO_DO,
         "hop_dong": hop_dong,
         "tin_hieu": do_tin_hieu(wav, sr),
         "khoang_lang": do_khoang_lang(wav, sr),
         "watermark": do_watermark(wav, sr),
         "giu_giong": do_giu_giong(wav, sr, ref or None),
         "troi_giong": do_troi_giong(wav, sr),
+        # K3: bốn phép bịt điểm mù đã đo được — xem `do_on_dinh.py`.
+        "on_dinh": do_on_dinh.do_tat_ca(wav, sr),
     }
     kq["de_hieu"] = ({"co": False, "ly_do": "bo qua theo yeu cau"}
                      if bo_qua_asr else do_de_hieu(duong, text, ngon_ngu))

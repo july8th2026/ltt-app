@@ -153,3 +153,120 @@ def test_cong_KHONG_chua_phep_do_da_co_nguong_tuyet_doi(ten):
     assert ten not in cong.CHIEU, f"{ten} khong duoc nam trong cong tuong doi"
     assert ten not in (_bl().get("do") or {}), (
         f"baseline con giu {ten} — ghim lai sau khi bo no khoi bo do")
+
+
+def test_ghim_phien_ban_bo_do_THAT_SU_noi_vao_bo_do():
+    """Khoá baseline phải đọc phiên bản **từ bộ đo**, không từ một mặc định cứng.
+
+    🔴 Đây là một cái ghim đã tồn tại và **không nối vào gì cả** suốt từ khi
+       viết. `tools/cong_chat_luong_voice.py` tra
+       `do_chat_luong.do_tat_ca.__globals__.get("_PHIEN_BAN_BO_DO", <mặc định>)`
+       trong khi `do_chat_luong.py` để phiên bản **bên trong dict trả về**, chứ
+       không phải ở cấp module. Tên ấy chưa bao giờ tồn tại, nên phép tra luôn
+       rơi vào giá trị mặc định — và baseline **không bao giờ hết hiệu lực**,
+       dù bộ đo có đổi thế nào.
+
+    ⛔ Cùng lớp lỗi với một bánh cóc chưa từng đỏ: nó chạy, nó in ra một con số
+       đúng đắn, và nó không canh gì. Phép kiểm này bắt cả hai đầu — tên phải
+       tồn tại ở cấp module, VÀ giá trị phải đi tới khoá baseline.
+    """
+    import json
+    import subprocess
+    import sys
+
+    from voice_sidecar import do_chat_luong
+
+    # (1) ten phai ton tai o cap module
+    v = getattr(do_chat_luong, "_PHIEN_BAN_BO_DO", None)
+    assert isinstance(v, str) and v, "thieu _PHIEN_BAN_BO_DO cap module"
+
+    # (2) chinh dict tra ve phai dung no, khong phai mot chuoi thu hai
+    src = (GOC / "voice_sidecar" / "do_chat_luong.py").read_text(encoding="utf-8")
+    assert '"phien_ban_bo_do": _PHIEN_BAN_BO_DO,' in src, (
+        "dict tra ve dang ghi mot chuoi rieng thay vi dung hang cap module")
+
+    # (3) cong phai doc no, KHONG duoc co duong lui
+    cong = (GOC / "tools" / "cong_chat_luong_voice.py").read_text(encoding="utf-8")
+    assert "do_chat_luong._PHIEN_BAN_BO_DO" in cong, cong[:0]
+    assert "__globals__" not in cong, (
+        "cong dang tra bang __globals__.get(...) — mot ten sai se im lang roi "
+        "vao mac dinh thay vi vo")
+
+    # (4) va gia tri phai THUC SU di toi khoa baseline
+    r = subprocess.run(
+        [sys.executable, "-c",
+         "import json,sys;sys.path.insert(0,r'%s');"
+         "from voice_sidecar import do_chat_luong as d;"
+         "print(json.dumps({'v': d._PHIEN_BAN_BO_DO}))" % str(GOC)],
+        capture_output=True, text=True, encoding="utf-8")
+    assert r.returncode == 0, r.stderr
+    assert json.loads(r.stdout.strip().splitlines()[-1])["v"] == v
+
+
+#: Bốn phép K3 phải nằm trong cổng — mỗi phép kèm hỏng hóc nó đã CHỨNG MINH bắt
+#: được, đo bằng `tools/do_diem_mu_cong.py` trên sàn nhiễu n = 24.
+K3_TRONG_CONG = {
+    "db_dai_cao": "duc 8,6 sigma / nhieu 6,8 sigma",
+    "khop_cuc_bo_dinh": "lap-o-giua 4,4 sigma",
+    "vat_99_hz": "nhieu 29,4 sigma",
+    "trong_tam_hz": "nhieu 7,3 sigma",
+}
+
+#: Và những thứ TUYỆT ĐỐI KHÔNG được vào cổng tương đối, kèm lý do.
+K3_NGOAI_CONG = {
+    "khop_cuc_bo_tai_s": "vi tri, khong phai chat luong",
+    "khop_cuc_bo_tre_s": "vi tri",
+    "tre_dinh_s": "vi tri",
+    "nhip_troi_hz": "vi tri tren truc tan so",
+    "f0_so_cua_so": "mot CAI DEM — san nhieu bang 0",
+}
+
+
+def test_bon_phep_K3_nam_trong_baseline():
+    """Bốn phép đã chứng minh bắt được hỏng hóc phải thật sự vào cổng.
+
+    ⛔ Không phải chuyện đầy đủ cho đẹp. Lượt ghim đầu tiên sau khi viết bốn
+       phép ấy cho ra một baseline **chỉ có 5 chỉ số cũ**: `_do_mot_vong` chỉ
+       thu những chiều nó biết tên, nên bốn phép mới chạy, trả số, và **rơi ra
+       ngoài cổng trong im lặng**. Mã đã viết mà cổng không dùng thì cổng vẫn
+       mù đúng như trước.
+    """
+    do = (_bl().get("do") or {})
+    thieu = {k: v for k, v in K3_TRONG_CONG.items() if k not in do}
+    assert not thieu, (
+        f"baseline thieu {sorted(thieu)} — ghim lai sau khi them vao "
+        f"`_do_mot_vong`. Ly do tung phep: {thieu}")
+    for k in K3_TRONG_CONG:
+        assert do[k].get("n", 0) >= 3, (k, do[k])
+
+
+def test_chi_so_VI_TRI_khong_duoc_vao_cong_tuong_doi():
+    """Vị trí không có chiều tốt/xấu, nên một dải dung sai quanh nó vô nghĩa.
+
+    🔴 Cùng lớp với `f0_so_cua_so`: một con số thay đổi theo độ dài chứ không
+       theo chất lượng. Nó từng lọt vào bộ dò điểm mù và in ra **1.000.000σ**
+       — một phát hiện giả đủ to để tuyên bố một điểm mù đã đóng trong khi nó
+       còn nguyên.
+    """
+    from tools import cong_chat_luong_voice as cong
+
+    do = (_bl().get("do") or {})
+    for ten, ly_do in K3_NGOAI_CONG.items():
+        assert ten not in do, f"{ten} lot vao baseline ({ly_do})"
+        assert ten not in cong.CHIEU, f"{ten} lot vao CHIEU ({ly_do})"
+
+
+def test_db_dai_cao_phai_chan_CA_HAI_phia():
+    """Quá sáng cũng sai như quá đục — nên chiều phải là 0, không phải ±1.
+
+    Đo được: lọc thông thấp kéo `db_dai_cao` **-31 -> -49**; nhiễu trắng đẩy nó
+    **-31 -> -17**. Chặn một phía là bỏ lọt đúng một nửa số cách hỏng.
+    """
+    from tools import cong_chat_luong_voice as cong
+
+    for ten in ("db_dai_cao", "trong_tam_hz", "vat_99_hz"):
+        assert cong.CHIEU.get(ten, "thieu") == 0, (
+            f"{ten} phai hai chieu")
+        m = (_bl().get("do") or {}).get(ten)
+        if m:
+            assert m.get("thap") is not None and m.get("cao") is not None, (ten, m)

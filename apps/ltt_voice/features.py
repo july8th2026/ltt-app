@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from platform_core.i18n import _ as _t
 from platform_core.jobs import LoiNguoiGoi
 
+from . import lan_ngon_ngu
 from . import gia, sidecar_client, tham_chieu, text_pipeline
 
 log = logging.getLogger(__name__)
@@ -189,7 +190,9 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     Đây là chỗ **quyền sở hữu** được kiểm, và nó là chỗ duy nhất.
     """
     if not yc.voice_id:
-        return None, (yc.preset or None), ()
+        # Preset là giọng người nói TIẾNG VIỆT ba miền (`giong_mau.py`), nên
+        # chúng thuộc làn `vi` — dù engine song ngữ đọc được cả tiếng Anh.
+        return None, (yc.preset or None), lan_ngon_ngu.doi_chieu("vi", yc.text)
 
     # `cho_dung_chung=True`: kho giọng chung của nền tảng đọc được cho mọi
     # khách. Đây là cửa DÙNG, nên nó mở; cửa SỬA (`_p_giong`) thì không.
@@ -206,7 +209,8 @@ def giai_giong(db, yc: YeuCau) -> tuple:
     if bieu_dien is None:
         raise LoiGiongNoi(_t(
             "Giọng này chưa ghi danh xong. Hãy thử lại sau ít phút."))
-    return tham_chieu.nap_ref_b64(bieu_dien), None, ()
+    return (tham_chieu.nap_ref_b64(bieu_dien), None,
+            lan_ngon_ngu.doi_chieu(ho_so.ngon_ngu, yc.text))
 
 
 def _goi_va_dich_loi(ham, *doi_so, **tham_so):
