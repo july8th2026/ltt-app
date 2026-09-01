@@ -237,6 +237,80 @@ bị hỏng — xem `reports/06` §7 và `reports/02` §6.
 **một** tệp: `platform_core/public_api/governance.py` (khai hai bảng
 `voice_project`/`voice_block`) — **không chạm đường thi hành `ltt_llm`**.
 
+## 🚀 BỐN ĐỢT THI HÀNH SAU PROMPT 08 — ĐÃ DEPLOY *(01/09, 18:09 → 19:44)*
+
+Chủ dự án cho chạy cả bốn đợt kèm quyền tự deploy. **Ba lượt deploy**, mỗi lượt
+xác minh trên **URL công khai** chứ không loopback.
+
+| Mã | Việc | Trạng thái | Bằng chứng SỐNG |
+|---|---|---|---|
+| F-02 | vision quảng cáo `89K` mà trần thật `65.536` | ✅ **ĐÓNG** | `/models`: `ltt_llm` 88.555 · `ltt_llm_vision` **28.262**; 413 của vision nay báo `limit_value=30720` (trước: 96256) |
+| F-03 | bản sao ngữ cảnh thứ năm, một phản hồi hai con số | ✅ **ĐÓNG** | mỗi alias tự khai `constraints.context_window`; hằng lùi `60_000` không còn áp cho `ltt_llm` |
+| F-01 | `credit_delta` luôn `+0` ở hai cửa | ✅ **ĐÓNG** | sổ production: `19:03:22 credit=-1` (một cục) · `19:03:33 credit=-1` (stream), khớp số dư thật. Trước deploy cả hai `+0` |
+| F-04 | planner chưa bao giờ dùng được model nhà | ✅ **ĐÓNG** | `kiem-llm` nay **9 DAT / 0 HONG**, gọi thật máy B (`vao=21 ra=58`) |
+| F-06 | planner lách `admission` | ✅ **ĐÓNG cùng lượt** | `test_389` 7 phép kiểm; giành suất → dùng model nhà, hết suất → đi thẳng Gemini |
+| F-05 | `kiem_ltt_llm.py` không thể xanh | ✅ **ĐÓNG** | như trên |
+| F-07 | bộ dò health xanh giả không ai chạy | ✅ **ĐÓNG** | Scheduled Task `LTT_Soi_CongLLM` mỗi 15 phút, SYSTEM. Đối chứng âm: token sai → `exit 2` + một dòng log |
+| F-08 | `do_sau_khoi_dong.py` nói sai lý do, sai nhãn | ✅ **ĐÓNG** | §3 nay ĐẾM sự kiện rồi mới kết luận; §4 đổi tên; thêm §2b tự khai khi số không còn là số đo boot |
+| — | ba phép kiểm cùng hình dạng `test_385` | ✅ **ĐÓNG phần `/messages`** | ca HTTP trong `test_272`; đột biến tái hiện **cả hai** hồi quy lịch sử (500 và 200-im-lặng) → đều đỏ |
+| H15 | diễn tập rollback **máy A** | ✅ **ĐÓNG (phần đổi thư mục)** | root cô lập: đổi đúng chiều, giữ bản hỏng ở `app.failed`, **từ chối** khi không có bản để lui. ⚠️ Phần *dịch vụ lên lại + health xanh* vẫn chưa đo — chỉ đo được bằng một lần cắt thật |
+| **E15** | canary **client thật** | ✅ **ĐÓNG — LẦN ĐẦU** | xem dưới |
+
+### 🔴 Đợt 4 bắt được một P1 mà cả ba lớp bằng chứng của tôi bỏ qua
+
+Chạy **Codex CLI 0.145.0** thật vào production:
+
+    ERROR: 400 "khong muc nao trong `tools` dung duoc: moi muc phai co
+                `name` va `input_schema`."
+
+Codex **luôn** khai `shell`/`apply_patch` ⇒ không phải "mất tool" mà là **client
+chết hẳn**. Nguyên nhân: OpenAI Responses khai tool **phẳng**
+(`{"type":"function","name":…,"parameters":…}`), và `sang_openai_tools` bỏ qua
+mọi mục có `type` mà thiếu `input_schema`. Tức cửa `/responses` **từ chối đúng
+khuôn native của giao thức nó nói**.
+
+⛔ **Chốt chặn đó được viết cho cửa Anthropic rồi đặt trong `_cua` — hàm phục vụ
+CẢ HAI cửa.** `test_385` (hàm thuần), ca HTTP tôi vừa thêm sáng nay, và canary
+production của tôi: cả ba đều xanh, vì cả ba thử `/messages`.
+
+⭐ Đây đúng là câu `test_290` đã viết sẵn trong kho: *API trả 200 ≠ client dùng
+được*. Tôi chép câu đó vào báo cáo Prompt 08 như một bài học, rồi tự mắc nó vài
+giờ sau.
+
+**Sau khi sửa, đo lại bằng chính Codex — vòng tool khép kín:**
+
+```
+user   : dung shell dem so tep .py trong apps/ltt_llm
+codex  : goi tool shell -> bi sandbox cua CHINH Codex chan
+codex  : tu sua cu phap, goi lai -> chay duoc -> "6"
+codex  : "Ket qua: 6 tep .py trong apps/ltt_llm"       (dung: 6)
+```
+
+Tức đóng luôn **D14** (vòng tool nhiều bước) và **D13** (tham số tool hợp lệ)
+bằng một client thật, qua Cloudflare, trên production.
+
+### Một mục vận hành MỚI, không có trong tám phát hiện
+
+**Không có gì chặn hai lượt `2-cai-dat.ps1` chạy cùng lúc.** Lúc 18:49–18:50 hai
+phiên deploy chồng nhau vào `C:\LTTPlatformpp`, cách nhau **56 giây**. Lần này
+không hỏng tệp nào (đối chiếu SHA256 20 tệp: 19 khớp, 1 lệch và tệp đó là việc
+đang sửa dở của phiên kia) — nhưng đó là **may**, không phải thiết kế.
+
+Nay có khoá ghi **ai giữ / từ lúc nào / commit nào**, vì một khoá im lặng chỉ
+biến *"ghi đè nhau"* thành *"treo không rõ vì sao"*. Đã chứng minh bằng đối
+chứng, và `test_362` bắt được khi tôi đặt nó **sai chỗ** (trước chốt cây riêng).
+
+### Còn nợ sau bốn đợt
+
+| P | Nợ | Vì sao chưa làm |
+|---|---|---|
+| P3 | Benchmark D30–D36 · `--lan 5` | nợ Prompt 04/06, cần cửa sổ GPU dài; không mở trong đợt thi hành này |
+| P3 | Canary Claude Code / VS Code (E16–E17) | E15 đã đóng bằng Codex; hai client kia chưa cài trên máy này |
+| P3 | Rollback máy A: phần **dịch vụ lên lại** | chỉ đo được bằng một lần cắt production thật |
+| P2 | Codex báo `Model metadata for ltt_llm not found` | N5 đã biết; không chặn, nhưng làm Codex ước ngữ cảnh sai |
+
+---
+
 ## ✅ PROMPT 08 ĐÃ CHẠY — CHƯƠNG TRÌNH ĐÓNG Ở `CONDITIONAL PASS` *(01/09, phiên khác)*
 
 Báo cáo đầy đủ: `reports/08_final_acceptance.md`. Bằng chứng reboot:

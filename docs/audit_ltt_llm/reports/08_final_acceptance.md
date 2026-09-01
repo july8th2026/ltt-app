@@ -15,6 +15,19 @@
 
 # `CONDITIONAL PASS`
 
+> 🚀 **CẬP NHẬT 01/09 19:44 — BỐN ĐỢT THI HÀNH ĐÃ CHẠY VÀ ĐÃ DEPLOY.**
+> Tám phát hiện dưới đây nay **đóng cả tám**, xác minh trên URL công khai qua ba
+> lượt deploy. Chi tiết + bằng chứng sống: `STATE.md` mục "BỐN ĐỢT THI HÀNH".
+>
+> ⚠️ **Verdict vẫn giữ `CONDITIONAL PASS`, và có lý do.** Đợt 4 chạy canary bằng
+> **client thật** lần đầu (Codex CLI 0.145.0) và nó bắt ngay một **P1 mới**:
+> cửa `/api/v1/responses` từ chối khuôn tool **native của chính giao thức nó
+> nói**, nên Codex không dùng được một lượt nào. Đã sửa và đã chứng minh vòng
+> tool khép kín — nhưng phát hiện đó **xác nhận luận điểm chính của báo cáo
+> này**: `test_385`, ca HTTP tôi vừa thêm, và canary production của tôi đều
+> xanh, vì cả ba thử `/messages`. Bằng chứng sống còn thiếu thì verdict còn
+> `CONDITIONAL` — nay là E16–E17 (Claude Code, VS Code) và benchmark D30–D36.
+
 **Không có P0.** G1–G4 không có gate nào hỏng nghiêm trọng. Nhưng:
 
 - **G6 (protocol truthfulness) HỎNG** — ta công bố cho khách một năng lực
