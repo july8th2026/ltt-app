@@ -75,7 +75,7 @@
     {% if g.trang_thai == 'active' %}
       {# `?giong=` được màn Tạo tiếng nói đọc để chọn sẵn — một cú bấm từ đây
          tới chỗ dùng nó, thay vì bắt khách tự tìm lại trong ô chọn. #}
-      <a class="btn sm primary"
+      <a class="btn sm vien"
          href="{{ manifest.route_prefix }}?giong={{ ma | urlencode }}">{{ _("Dùng") }}</a>
     {% else %}
       {# `.ghost`, KHONG phai `.btn` tran. `.btn` co san `background:var(--accent)`

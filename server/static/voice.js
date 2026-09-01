@@ -128,10 +128,111 @@
     });
   }
 
+  /* ── Trinh phat gon: NANG CAP mot the `<audio>` da co ─────────────────────
+   *
+   * 🔴 VI SAO CAN. `<audio controls>` mac dinh cua trinh duyet la mot thanh
+   *    TRANG XAM. Dat no giua mot giao dien den/do la pha dung thu ma ca bo
+   *    anh tham chieu dung lam ngon ngu chung — `VISUAL_REFERENCE_NOTES` viet
+   *    "audio waveform dung nhu visual language chung". No xuat hien o BA man
+   *    (Du an, Lich su, phien ban khoi), nen mot ban sua o day sua ca ba.
+   *
+   * ⭐ NANG CAP chu khong THAY THE. The `<audio>` van la dong co phat, chi bo
+   *    `controls`. Khong co JS thi trang van co mot trinh phat that — dung
+   *    nguyen tac tang cuong dan ma tep nay tuyen bo o dau.
+   *
+   * ⚠️ Song am chi ve khi bam PHAT lan dau. Mot trang Lich su muoi dong ma tai
+   *    truoc ca muoi tep la vai chuc MB cho mot thu khach co the khong bam.
+   */
+  function ganTrinhPhat(au) {
+    if (!au || au.dataset.daNang === "1") return;
+    au.dataset.daNang = "1";
+    au.removeAttribute("controls");
+
+    var hop = document.createElement("div");
+    hop.className = "lv-phat";
+    au.parentNode.insertBefore(hop, au);
+
+    var nut = document.createElement("button");
+    nut.type = "button";
+    nut.className = "lv-phat-nut";
+    nut.setAttribute("aria-label", "Phat");
+    nut.textContent = "▶";
+
+    var song = document.createElement("canvas");
+    song.className = "lv-phat-song";
+    song.height = 40;
+
+    var gio = document.createElement("span");
+    gio.className = "lv-phat-gio";
+    gio.textContent = "0:00";
+
+    hop.appendChild(nut);
+    hop.appendChild(song);
+    hop.appendChild(gio);
+    hop.appendChild(au);
+
+    function dinhDang(gy) {
+      if (!isFinite(gy) || gy < 0) return "0:00";
+      var ph = Math.floor(gy / 60), gi = Math.floor(gy % 60);
+      return ph + ":" + (gi < 10 ? "0" : "") + gi;
+    }
+
+    var daVe = false;
+    nut.addEventListener("click", function () {
+      if (au.paused) {
+        /* Dung MOI trinh phat khac truoc. Hai ban thu chay chong nhau la mot
+           mo am thanh khong ai nghe ra duoc gi. */
+        var khac = document.querySelectorAll(".lv-phat audio");
+        for (var i = 0; i < khac.length; i++) {
+          if (khac[i] !== au && !khac[i].paused) khac[i].pause();
+        }
+        au.play();
+        if (!daVe) { daVe = true; veSong(song, au.src); }
+      } else {
+        au.pause();
+      }
+    });
+
+    au.addEventListener("play", function () {
+      nut.textContent = "⏸";
+      nut.setAttribute("aria-label", "Tam dung");
+      hop.classList.add("dang-phat");
+    });
+    function dungLai() {
+      nut.textContent = "▶";
+      nut.setAttribute("aria-label", "Phat");
+      hop.classList.remove("dang-phat");
+    }
+    au.addEventListener("pause", dungLai);
+    au.addEventListener("ended", function () { dungLai(); veLaiSong(song, 0); });
+
+    au.addEventListener("timeupdate", function () {
+      gio.textContent = dinhDang(au.currentTime);
+      if (au.duration) veLaiSong(song, au.currentTime / au.duration);
+    });
+    au.addEventListener("loadedmetadata", function () {
+      gio.textContent = dinhDang(au.duration);
+    });
+
+    /* Bam vao song de tua. Khong tua duoc thi mot thanh song chi la trang tri
+       — va mot trinh phat khong tua duoc te hon thanh mac dinh cua trinh duyet
+       du no dep hon. */
+    song.addEventListener("click", function (e) {
+      if (!au.duration) return;
+      var o = song.getBoundingClientRect();
+      au.currentTime = Math.max(0, Math.min(1, (e.clientX - o.left) / o.width))
+                       * au.duration;
+    });
+  }
+
   function chay(goc) {
     var pv = goc || document;
     var ds = pv.querySelectorAll(".lv-ma-chep");
     for (var i = 0; i < ds.length; i++) ganChep(ds[i]);
+    /* Moi `<audio data-nang="1">` deu duoc nang cap — ke ca the chen
+       vao sau (danh sach phien ban), vi `chay()` goi lai voi goc moi. */
+    var au = pv.querySelectorAll('audio[data-nang="1"]');
+    for (var k = 0; k < au.length; k++) ganTrinhPhat(au[k]);
   }
 
   /* ── Luoi giong: loc + chon the + panel chi tiet ──────────────────────────
@@ -350,6 +451,28 @@
    *    van de chua ton tai, va no se bao bang mot khoang lag chu khong bang
    *    mot loi im lang.
    */
+  /* Ve lai song da co dinh, to mau theo TIEN DO phat.
+   *
+   * ⭐ Tach khoi `veSong` vi giai ma lai am thanh moi lan `timeupdate` (4 lan
+   *    mot giay) la mot viec ngu ngoc va rat ton. Dinh song tinh MOT LAN roi
+   *    cat vao chinh phan tu canvas; ve lai chi la mot vong `fillRect`. */
+  function veLaiSong(canvas, tienDo) {
+    var dinh = canvas.__dinh;
+    if (!dinh || !dinh.length) return;
+    var rong = canvas.clientWidth || 300, cao = canvas.clientHeight || 40;
+    var g = canvas.getContext("2d");
+    g.clearRect(0, 0, rong, cao);
+    var css = getComputedStyle(document.documentElement);
+    var sang = css.getPropertyValue("--brand-hover").trim() || "#ff514a";
+    var mo = css.getPropertyValue("--line2").trim() || "#63332e";
+    var rongCot = 3, khe = 1, moc = (tienDo || 0) * dinh.length;
+    for (var i = 0; i < dinh.length; i++) {
+      g.fillStyle = i <= moc ? sang : mo;
+      var h = Math.max(2, dinh[i] * cao * 0.92);
+      g.fillRect(i * rongCot, (cao - h) / 2, rongCot - khe, h);
+    }
+  }
+
   function veSong(canvas, url) {
     if (!canvas || !url || !window.AudioContext) return;
     var Ctx = window.AudioContext || window.webkitAudioContext;
@@ -366,6 +489,7 @@
         g.scale(dpr, dpr);
 
         var du = am.getChannelData(0);
+        var cacDinh = [];
         var rongCot = 3, khe = 1;
         var soCot = Math.max(1, Math.floor(rong / rongCot));
         var moiCot = Math.floor(du.length / soCot) || 1;
@@ -383,7 +507,10 @@
           }
           var h = Math.max(2, dinh * cao * 0.92);
           g.fillRect(i * rongCot, (cao - h) / 2, rongCot - khe, h);
+          cacDinh.push(dinh);
         }
+        // Cat lai de `veLaiSong` khong phai giai ma lan nua.
+        canvas.__dinh = cacDinh;
       })
       .catch(function () {
         // Khong ve duoc song thi trinh phat van chay. An canvas di, dung de
@@ -1175,10 +1302,11 @@
                 meta.textContent = " " + v.giay + "s · " + v.credit + " credit";
                 li.appendChild(meta);
                 var au = document.createElement("audio");
-                au.controls = true;
                 au.preload = "none";
                 au.src = v.audio_url;
+                au.dataset.nang = "1";
                 li.appendChild(au);
+                ganTrinhPhat(au);
                 ul.appendChild(li);
               });
               hop.appendChild(ul);

@@ -118,7 +118,8 @@
                   {%- if k.credit %} · {{ k.credit }} credit{% endif %}
                 </span>
                 {% if k.audio_url %}
-                  <audio class="lv-khoi-phat" controls preload="none" src="{{ k.audio_url }}"></audio>
+                  <audio class="lv-khoi-phat" data-nang="1" controls preload="none"
+                         src="{{ k.audio_url }}"></audio>
                   {#
                     PHIÊN BẢN — V1/V2/V3 trong ảnh 03.
 
