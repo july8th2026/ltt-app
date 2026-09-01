@@ -24,8 +24,42 @@ hai embedding của cùng một đoạn không thêm thông tin nào; nó chỉ 
 Đây là phép kiểm quan trọng nhất tệp này: không có nó, `chon_kho` vẫn trả về đủ
 số cửa sổ, engine vẫn gộp, mọi thứ vẫn chạy — và cả pha K2 thành một phép trung
 bình của một thứ với chính nó.
+
+## 🔴 ĐÃ ĐO — VÀ GỘP LÀM TỆ HƠN RÕ RỆT. ĐƯỜNG NÀY KHÔNG ĐƯỢC BẬT.
+## Số đo (01/09/2026, kho giọng cũ, cùng bộ câu, cùng sàn người lạ)
+
+    cấu hình      biên tb    lệch     nhận đúng người
+    một cửa sổ    +0,4352   0,0441        24/24
+    kho 2         +0,1303   0,1096         7/21
+    kho 5         +0,1304   0,1112         9/24
+
+**0/24** giọng tốt lên. Bốn giọng tụt xuống **âm** — bản nhân bản gần một người
+lạ hơn gần chính người nói.
+
+🔴 `kho 2` **giống hệt** `kho 5`. Đó là con số quyết định: nếu kho tệ vì nó trộn
+   thêm cửa sổ kém thì kho 5 phải tệ hơn kho 2. Nó không. Toàn bộ thiệt hại nằm
+   ở **bước trung bình đầu tiên** — trung bình hai embedding của **cùng một
+   người** đã đủ làm model đọc ra một người khác.
+
+## Vì sao lập luận đúng mà kết quả sai
+
+Trung bình embedding là chuẩn mực ở hệ **nhận dạng**, nơi embedding được huấn
+luyện bằng một hàm mất mát metric nên **trọng tâm của một người là một điểm có
+nghĩa**. Ở đây embedding đi vào một model **sinh**, và model ấy chỉ từng thấy
+embedding của **một lượt phát**. Trung bình rơi vào một vùng nó chưa gặp; chuẩn
+hoá lại chỉ sửa độ dài, không sửa hướng.
+
+⭐ Và đường hiện tại **đã** dùng thông tin cấp kho, chỉ khác cách dùng:
+   `chon_doan.chon()` dựng một **mốc bền vững** từ nửa ứng viên tốt hơn (đó là
+   một ước lượng cấp kho), rồi chọn **một cửa sổ thật** và ghi danh bằng
+   embedding thật của nó. Kho dùng để **chọn**, không để **trung bình**.
+
+   Đó là lý do nó đạt 24/24 trong khi phép trung bình đạt 7/21.
 """
 from __future__ import annotations
+
+import ast
+import inspect
 
 import numpy as np
 
@@ -160,3 +194,58 @@ def test_ghi_danh_kho_KHONG_dung_chung_cua_voi_duong_cu():
 
     assert "so_clip" not in inspect.signature(engine.CongGiong.ghi_danh).parameters
     assert "so_clip" in inspect.signature(engine.CongGiong.ghi_danh_kho).parameters
+
+
+def test_duong_ghi_danh_MAC_DINH_khong_gop_embedding():
+    """`ghi_danh` (đường mặc định, đường khách đi) không được trung bình gì cả."""
+    from voice_sidecar import engine
+
+    cay = ast.parse(inspect.getsource(engine))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "ghi_danh"]
+    assert ham, "khong tim thay `CongGiong.ghi_danh`"
+
+    ten = [n.func.attr for n in ast.walk(ham[0]) if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)]
+    assert "mean" not in ten, (
+        "`ghi_danh` dang trung binh cai gi do — do la duong KHACH DI, va phep "
+        "trung binh embedding da do duoc la lam hong danh tinh (24/24 -> 7/21)")
+    assert "encode_reference" in ten, "`ghi_danh` khong con goi `encode_reference`?"
+
+
+def test_ham_gop_van_CON_de_lan_sau_khong_phai_do_lai():
+    """⛔ Đừng xoá `ghi_danh_kho`.
+
+    Một kết quả âm chỉ có giá trị khi nó **còn chạy lại được**. Xoá hàm đi thì
+    lần sau ai đó muốn thử "gộp nhiều clip" sẽ phải viết lại từ đầu, và nhiều
+    khả năng họ viết lại rồi tin nó — vì lập luận vẫn nghe đúng như hôm nay.
+    """
+    from voice_sidecar import engine
+
+    assert hasattr(engine.CongGiong, "ghi_danh_kho"), (
+        "`ghi_danh_kho` bi xoa — ket qua am mat duong tai hien")
+    tai_lieu = inspect.getdoc(engine.CongGiong.ghi_danh_kho) or ""
+    for phai_co in ("0,4352", "0,1303", "24/24", "kho 2"):
+        assert phai_co in tai_lieu, (
+            f"tai lieu cua `ghi_danh_kho` thieu so do `{phai_co}` — mot canh bao "
+            f"khong co so la mot canh bao se bi bo qua")
+
+
+def test_bo_chon_van_dung_MOC_BEN_VUNG_cap_kho():
+    """Cách dùng ĐÚNG của thông tin cấp kho: dựng mốc để **chọn**, không để trộn.
+
+    Nếu ai đó thay `_moc_ben_vung` bằng embedding của cả clip thì bộ chọn quay
+    lại lỗi đã đo hồi 31/08 — chọn đúng đoạn nhiễu trên một clip bẩn, vì "đại
+    diện nhất cho một clip bẩn" chính là đoạn bẩn.
+    """
+    from voice_sidecar import chon_doan
+
+    cay = ast.parse(inspect.getsource(chon_doan))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "chon"]
+    assert ham, "khong tim thay `chon_doan.chon`"
+    ten = [n.func.id for n in ast.walk(ham[0])
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)]
+    assert "_moc_ben_vung" in ten, (
+        "`chon()` khong con dung moc ben vung — no dang so voi mot moc khac, va "
+        "moc cua CA CLIP la moc da tung chon nham doan nhieu")

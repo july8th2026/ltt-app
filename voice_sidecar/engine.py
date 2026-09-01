@@ -365,9 +365,54 @@ class CongGiong:
            **ngắn hơn** 1; đưa thẳng vào model là đưa một biên độ chưa từng có
            trong dữ liệu huấn luyện.
 
-        ⚠️ Tốn `so_clip` lần `prepare_reference` — ghi danh chậm hơn chừng ấy
-           lần. Đó là lý do nó không phải mặc định cho tới khi có số đo nói rằng
-           biên nhân bản thật sự tốt lên.
+        🔴 ĐÃ ĐO 01/09/2026, VÀ NÓ TỆ HƠN RÕ RỆT. ĐỪNG BẬT.
+
+           Kho giọng cũ, cùng bộ câu, cùng sàn người lạ
+           (`tools/do_nhan_ban_tu_kho_cu.py`):
+
+               cấu hình      biên tb    lệch     nhận đúng người
+               một cửa sổ    +0,4352   0,0441        24/24
+               kho 2         +0,1303   0,1096         7/21
+               kho 5         +0,1304   0,1112         9/24
+
+           **0/24** giọng tốt lên. Bốn giọng tụt xuống **âm** (`bella_nu` −0,076,
+           `bietdoi_girl` −0,093, `hoathinh_female` −0,057,
+           `khanh_male_entertainment` −0,014) — bản nhân bản gần một **người
+           lạ** hơn gần chính người nói.
+
+        🔴 VÀ `kho 2` GIỐNG HỆT `kho 5` (0,1303 so với 0,1304). Đó là con số
+           quan trọng nhất ở đây, vì nó loại một cách giải thích:
+
+           Có thể nghĩ kho tệ vì nó **trộn thêm cửa sổ kém** — kho lấy cửa sổ tốt
+           nhất rồi mới tới các cửa sổ hạng dưới. Nếu vậy thì kho 5 phải tệ hơn
+           kho 2. Nó không. Toàn bộ thiệt hại xảy ra ở **bước trung bình đầu
+           tiên**, và thêm cửa sổ không làm tệ thêm chút nào.
+
+           ⇒ Hỏng nằm ở **phép trung bình**, không ở chất lượng cửa sổ. Trung
+             bình hai embedding của **cùng một người** đã đủ làm model đọc ra
+             một người khác.
+
+        ⭐ Vì sao lập luận nghe đúng mà kết quả sai — và đây là phần đáng nhớ:
+
+           Trung bình embedding người nói là chuẩn mực ở hệ **nhận dạng**, nơi
+           embedding được huấn luyện bằng một hàm mất mát metric nên **trọng tâm
+           của một người là một điểm có nghĩa**. Ở đây embedding đi vào một model
+           **sinh**, và model ấy chỉ từng thấy embedding của **một lượt phát**.
+           Trung bình rơi vào một vùng nó chưa gặp; chuẩn hoá lại chỉ sửa độ
+           dài, không sửa hướng — và hướng ấy đọc lên như một người thứ ba, mờ
+           hơn cả hai.
+
+        ⛔ "Gộp nhiều clip tham chiếu" là một ý **trực giác mạnh** — hệ cũ làm,
+           XTTS làm, mọi tài liệu nhận dạng người nói đều làm. Nên nó sẽ được
+           nghĩ lại. Hàm này ở lại **chính vì thế**: để lần sau ai đó muốn thử,
+           họ có sẵn đường chạy và sẵn con số nói rằng đã thử rồi.
+
+           Muốn mở lại thì phải là một **cơ chế khác**, không phải chạy lại phép
+           cũ: ví dụ chọn cửa sổ theo đồng thuận (lấy cửa sổ gần trọng tâm nhất
+           rồi dùng NGUYÊN embedding của nó, không trung bình) — cách đó giữ
+           được một embedding thật trong khi vẫn dùng thông tin của cả kho.
+
+        ⚠️ Tốn `so_clip` lần `prepare_reference` — ghi danh chậm hơn chừng ấy lần.
         """
         import soundfile as sf
 
