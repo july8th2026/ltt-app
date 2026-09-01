@@ -284,7 +284,16 @@ class CongGiong:
             #    "đo trên engine của mình". Số nền hiện có mới là 16 lượt (trung
             #    bình 0,031 · cao nhất 0,103 · ngưỡng cách 17 σ); một dòng log
             #    mỗi lượt biến nó thành hàng nghìn mà không tốn gì.
-            tq = (pq.chan_doan or {}).get("tuong_quan")
+            # ⛔ Đọc qua `so_do()`, KHÔNG đọc thẳng `pq.chan_doan`.
+            #
+            #    Bản đầu làm `pq.chan_doan.get("tuong_quan")` và dòng log này
+            #    **không bao giờ chạy**: `kiem_het` khi ấy chỉ trả chẩn đoán của
+            #    chốt hỏng đầu tiên, nên trên một lượt KHOẺ nó trả
+            #    `{"chot": "deu_dat"}` — không con số nào.
+            #
+            #    Triệu chứng trên production: log sạch bong, đọc lên y hệt
+            #    "không phát hiện lặp nào", trong khi sự thật là **chưa đo gì**.
+            tq = chot_sinh.so_do(pq, "lap_duoi", "tuong_quan")
             if tq is not None:
                 log.info("[chot] tuong_quan_duoi=%.4f ky_tu=%d", tq, n)
 

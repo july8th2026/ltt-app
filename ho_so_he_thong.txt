@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0419b5c2166a528fce79c73eb101e576e94bb6a20715d4c9d1625160e9b6ce14
+Fingerprint   : sha256:9334ede5e17ff52c46dbbe0f1564c432866395708e2ce719440e81dc32a9284c
 Nguồn đã quét : 1405 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3001,7 +3001,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1405 file; 13878729 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1405 file; 13884401 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -248122,7 +248122,7 @@ def test_danh_sach_MAC_DINH_khong_gom_kho_chung(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_381_chot_sinh_tieng.py
-SHA256=176a6fd08534d52c317d129c4b59107a854f799e94ee8e8451402fc9795c9f47 BYTES=10198 LINES=200
+SHA256=a9481bc724e435864d453b5635ba2dd00453be0a8493b09ab90956dc186ac387 BYTES=12235 LINES=243
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 K1 · bốn chốt kiểm một lượt sinh trước khi trả về cho khách.
@@ -248324,6 +248324,49 @@ def test_engine_GOI_chot_va_co_duong_sinh_lai():
     assert "kiem_het" in ten_goi, "`noi()` khong goi `chot_sinh.kiem_het`"
     assert ten_goi.count("infer") >= 2, (
         "`noi()` chi goi `infer` mot lan — khong co duong sinh lai")
+
+
+def test_luot_DAT_van_mang_du_so_do_de_ghi_telemetry():
+    """🔴 Một bộ đếm bằng 0 vì mọi thứ đều ổn, và một bộ đếm bằng 0 vì nó không
+    chạy, in ra **giống hệt nhau**.
+
+    Bản đầu của `kiem_het` chỉ trả `chan_doan` của chốt hỏng đầu tiên; trên một
+    lượt khoẻ nó trả `{"chot": "deu_dat"}` — không con số nào. Dòng telemetry
+    trong `engine.noi()` đọc `chan_doan["tuong_quan"]` nên **không bao giờ
+    chạy**, và log production sạch bong.
+
+    ⭐ Nó lộ ra chỉ vì tôi đi xem log sau khi deploy để xác nhận telemetry chạy.
+       Nếu tin rằng "code đúng thì log có", chỗ này im lặng mãi mãi — và ngưỡng
+       0,92 sẽ vĩnh viễn là con số mượn của hệ cũ thay vì con số đo trên hàng
+       nghìn lượt của chính ta.
+    """
+    pq = cs.kiem_het(_tieng(8.0), SR, 167)
+    assert pq.dat, "fixture nay phai la mot luot DAT"
+    tq = cs.so_do(pq, "lap_duoi", "tuong_quan")
+    assert tq is not None, "luot DAT khong mang so do lap duoi — telemetry se cam"
+    assert 0.0 <= abs(tq) <= 1.0
+    assert cs.so_do(pq, "thoi_luong", "ti_le") is not None
+    assert cs.so_do(pq, "gan_im", "dinh") is not None
+
+
+def test_engine_doc_so_do_qua_ham_chung_khong_doc_thang():
+    """Bánh cóc cho đúng lỗi trên: engine phải đi qua `so_do()`.
+
+    Đọc thẳng `pq.chan_doan.get(...)` chạy được trên một lượt HỎNG và câm trên
+    một lượt ĐẠT — tức nó hỏng đúng ở 99% số lượt, và im lặng.
+    """
+    import ast
+    import inspect
+
+    from voice_sidecar import engine
+
+    cay = ast.parse(inspect.getsource(engine))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "noi"]
+    assert ham
+    ten = [n.func.attr for n in ast.walk(ham[0]) if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)]
+    assert "so_do" in ten, "`noi()` khong doc so do qua `chot_sinh.so_do`"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -271632,7 +271675,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_duong_tien_api.py
-SHA256=4259aefaad2cf82d651358a2170724cbdc42adf747370d84f468788104fc94b9 BYTES=9097 LINES=210
+SHA256=2fa02ff02214efb8179430c1a1cd865a1127f67ddcd3c544130bee275c5cfcc2 BYTES=12126 LINES=266
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """do_duong_tien_api.py — B14–B17, B24: đo ĐƯỜNG TIỀN của `/api/v1` bằng client thật.
 
@@ -271720,8 +271763,24 @@ def so_du(tok: str) -> int:
     # `/api/v1/credits/balance` mo voi scope `credits:read` (thu ma
     # `khoa_thu_api.py` cap). `/api/v1/usage` doi `usage:read` va tra 403 --
     # mot loi TOT: no goi ten dung scope thieu thay vi chi "khong duoc phep".
+    # ⛔ BÁO CÁO MÃ THẬT ĐÃ THẤY, ĐỪNG ĐOÁN NGUYÊN NHÂN.
+    #
+    #    Bản đầu ném "Khoa co thieu scope khong?" cho MỌI thất bại. Lần chạy
+    #    01/09 nó vỡ vì **429 rate-limit**, và thông điệp đó gửi người đọc đi
+    #    sai hướng hoàn toàn — một câu trả lời sai mặc một lời giải thích nghe
+    #    hợp lý, đúng thứ tệp này tồn tại để chống.
+    da_thay: list[str] = []
     for duong in ("/api/v1/credits/balance", "/api/v1/account", "/api/v1/usage"):
-        ma, d, _ = _goi(duong, tok)
+        for lan in range(4):
+            ma, d, tho = _goi(duong, tok)
+            if ma == 429:
+                # Rate-limit là trạng thái BÌNH THƯỜNG của một cửa đang bảo vệ
+                # mình, không phải một lỗi. Chờ rồi thử lại.
+                da_thay.append(f"{duong}=429(lan {lan + 1})")
+                time.sleep(4 + 4 * lan)
+                continue
+            break
+        da_thay.append(f"{duong}={ma}")
         if ma != 200:
             continue
         for k in ("balance", "credits", "so_du", "credit_balance"):
@@ -271730,31 +271789,52 @@ def so_du(tok: str) -> int:
             if isinstance(d.get("data"), dict) and isinstance(
                     d["data"].get(k), (int, float)):
                 return int(d["data"][k])
+        da_thay.append(f"{duong}=200 nhung khong co khoa so du (co: {sorted(d)})")
     raise KhongDoDuoc(
-        "khong doc duoc so du qua /api/v1 (da thu account, usage, credits). "
-        "Khoa co thieu scope khong? Moi ket luan ve tien deu VO neu thieu no.")
+        "khong doc duoc so du. Ma da thay: " + ", ".join(da_thay) +
+        ". Moi ket luan ve tien deu VO neu thieu no.")
+
+
+def _bao_gia(tok: str, than_vao: dict) -> tuple[int, dict]:
+    ma, d, _ = _goi("/api/v1/quotes", tok, method="POST", than=than_vao)
+    return ma, d
+
+
+#: Thân yêu cầu chuẩn, dùng chung cho báo giá và nộp việc — hai bên PHẢI khớp.
+THAN_VAO = {"tool": "text.chat", "input": {
+    "messages": [{"role": "user", "content": "Noi mot cau ngan ve mua thu."}],
+    "max_tokens": 24}}
 
 
 def _job(tok: str, idem: str | None = None) -> tuple[int, dict]:
-    """Nộp một job. `idem=None` ⇒ sinh khoá MỚI, không phải bỏ trống.
+    """Báo giá rồi nộp việc. `idem=None` ⇒ sinh khoá MỚI, không phải bỏ trống.
 
-    ⭐ `/api/v1/jobs` **BẮT BUỘC** `Idempotency-Key`, không chỉ hỗ trợ:
+    ⭐ HAI CHỐT CỦA CỬA NÀY, cả hai đều mạnh hơn tôi tưởng trước khi đo:
 
-        400 invalid_request
-        "This endpoint requires an Idempotency-Key header."   retry: never
+    1. `Idempotency-Key` là **BẮT BUỘC**, không phải tuỳ chọn:
 
-    Đó mạnh hơn "hỗ trợ idempotency". Hỗ trợ nghĩa là khách *có thể* tránh nộp
-    trùng; **bắt buộc** nghĩa là khách *không thể* nộp trùng do quên. Với một
-    cửa tiêu tiền thì khác biệt đó là toàn bộ vấn đề.
+           400  "This endpoint requires an Idempotency-Key header."   retry: never
 
-    ⚠️ Và `retry: never` là phần đáng khen thứ hai — một client tự thử lại sẽ
-       đọc được rằng thử lại vô ích, thay vì quay vòng.
+       Hỗ trợ idempotency nghĩa là khách *có thể* tránh nộp trùng; **bắt buộc**
+       nghĩa là khách *không thể* nộp trùng do quên. Với một cửa tiêu tiền thì
+       khác biệt đó là toàn bộ vấn đề.
+
+    2. Phải có **quote token** trước:
+
+           400  "A quote token is required."
+
+       Tức khách **thấy giá trước khi cam kết**. Không có đường nào để một lượt
+       gọi bất ngờ trừ tiền.
+
+    ⚠️ `retry: never` trong cả hai lỗi là phần đáng khen thứ ba: một client tự
+       thử lại đọc được rằng thử lại vô ích, thay vì quay vòng và nhân đôi tải.
     """
+    mag, dg = _bao_gia(tok, THAN_VAO)
+    if mag != 200 or not dg.get("quote"):
+        return mag, {"loi_bao_gia": dg}
+    than = dict(THAN_VAO, quote=dg["quote"])
     them = {"Idempotency-Key": idem or f"canary-{uuid.uuid4()}"}
-    ma, d, _ = _goi("/api/v1/jobs", tok, method="POST", them=them, than={
-        "tool": "text.chat", "input": {"messages": [
-            {"role": "user", "content": "Noi mot cau ngan ve mua thu."}],
-            "max_tokens": 24}})
+    ma, d, _ = _goi("/api/v1/jobs", tok, method="POST", them=them, than=than)
     return ma, d
 
 
@@ -271798,12 +271878,25 @@ def main() -> int:
 
     # ── B14/B15 idempotency ──────────────────────────────────────────────────
     print("== B14/B15: gui LAI cung Idempotency-Key ==")
+    # 🔴 PHẢI GỬI LẠI **ĐÚNG THÂN CŨ**, không xin quote mới.
+    #
+    #    Bản đầu của bài này xin một quote mới cho lượt hai, nên thân yêu cầu
+    #    THẬT SỰ khác — và API trả `409 idempotency_conflict: "already used with
+    #    a different request body"`. Tôi suýt ghi đó là "idempotency không
+    #    replay", trong khi hệ thống đang làm **đúng**: cùng khoá + khác thân =
+    #    xung đột, và đó chính là thứ khoá idempotency sinh ra để bắt.
+    #
+    # ⇒ Phép thử thật của replay là: **cùng khoá, cùng thân, từng byte**.
     khoa = f"canary-{uuid.uuid4()}"
     t0 = so_du(tok)
-    ma1, d1 = _job(tok, idem=khoa)
+    mag, dg = _bao_gia(tok, THAN_VAO)
+    than_co_dinh = dict(THAN_VAO, quote=dg.get("quote"))
+    ma1, d1, _ = _goi("/api/v1/jobs", tok, method="POST",
+                      them={"Idempotency-Key": khoa}, than=than_co_dinh)
     time.sleep(6)
     t1 = so_du(tok)
-    ma2, d2 = _job(tok, idem=khoa)
+    ma2, d2, _ = _goi("/api/v1/jobs", tok, method="POST",
+                      them={"Idempotency-Key": khoa}, than=than_co_dinh)
     time.sleep(4)
     t2 = so_du(tok)
     id1 = d1.get("id") or d1.get("job_id")
@@ -271822,13 +271915,19 @@ def main() -> int:
     t3 = so_du(tok)
     ma3, d3 = _job(tok)
     jid = d3.get("id") or d3.get("job_id")
-    mah, dh, _ = _goi(f"/api/v1/jobs/{jid}", tok, method="DELETE")
+    # `POST /jobs/{id}/cancel` -- KHONG phai `DELETE /jobs/{id}` (405) va khong
+    # phai `PATCH` (405). Do 01/09: ba dong tu sai deu tra 405, nen thoat nhin
+    # giong "khong co duong huy"; dong tu DUNG tra 403 goi ten scope thieu.
+    mah, dh, _ = _goi(f"/api/v1/jobs/{jid}/cancel", tok, method="POST",
+                      them={"Idempotency-Key": f"huy-{uuid.uuid4()}"})
     print(f"  tao {ma3} id={jid} -> DELETE {mah}  {json.dumps(dh)[:100]}")
     time.sleep(8)
     t4 = so_du(tok)
     print(f"  so du {t3} -> {t4} (tru {t3 - t4})")
     # Huỷ SỚM thì không nên thu; huỷ MUỘN (job đã chạy) thì thu phần đã sinh là
     # đúng. Nên chốt là "không thu NHIỀU HƠN một lượt bình thường".
+    ket.append(("B16/B17 duong huy TON TAI va nhan lenh", mah in (200, 202, 204),
+                f"POST /cancel -> {mah}"))
     ket.append(("B16/B17 huy KHONG thu qua mot luot binh thuong",
                 (t3 - t4) <= tru, f"tru {t3 - t4}, mot luot binh thuong = {tru}"))
 
@@ -278855,7 +278954,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/khoa_thu_api.py
-SHA256=a952f0b5feae47c62b029390c3956ce41fbb100a458d6306e8f0742bc0d6dbfb BYTES=3610 LINES=89
+SHA256=2f20a6dfde1abfc6804c59c051af502d5d3b23ad6acd184986baa19d1ea880be BYTES=4216 LINES=98
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 khoa_thu_api.py — phát một KHOÁ API cho tài khoản THỬ, để nghiệm thu `/api/v1`
@@ -278923,11 +279022,20 @@ def main(argv=None) -> int:
             # ⭐ Đủ để đi HẾT một vòng nghiệm thu: đọc danh mục, nộp việc, theo
             #   dõi, tải kết quả. Lần đầu tôi chỉ xin `jobs:*` và `/api/v1/tools`
             #   trả `403 missing_scope` — một lỗi tốt, vì nó nói **thiếu scope
-            #   nào** thay vì chỉ "không được phép".
+            #   nào** thay vi chỉ "không được phép".
+            #
+            # ⚠️ LẦN THỨ HAI danh sách này thiếu một scope: 01/09, đo đường huỷ
+            #   job thì `POST /jobs/{id}/cancel` trả `403 missing_scope`, và
+            #   **405 ở các động từ khác** làm nó thoạt trông như "không có
+            #   đường huỷ". Thêm `jobs:cancel`.
+            #
+            # ⭐ Chính vì lỗi 403 gọi tên scope thiếu mà việc này mất 30 giây
+            #   thay vì một buổi. Đó là lập luận cho kiểu lỗi ấy, không phải
+            #   một lời khen suông.
             _, token = devkeys.issue(
                 db, user_id=str(u.id), name=a.ten, mode=a.che_do,
                 scopes=("tools:read", "jobs:create", "jobs:read",
-                        "artifacts:read", "credits:read"))
+                        "jobs:cancel", "artifacts:read", "credits:read"))
         except devkeys.DeveloperKeyError as e:
             # Trần số khoá là một ràng buộc THẬT của sản phẩm, không phải một
             # phiền toái của kịch bản này. Nói ra rồi dừng, đừng đi vòng.

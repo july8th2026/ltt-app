@@ -217,12 +217,39 @@ def kiem_het(wav, sr: int, so_ky_tu: int) -> PhanQuyet:
 
     ⛔ Thứ tự không phải chuyện gọn gàng: `chot_toan_ven` phải chạy trước vì
        `NaN` làm mọi chốt sau im lặng cho qua. Xem docstring của nó.
+
+    🔴 TRẢ VỀ SỐ ĐO CỦA **MỌI** CHỐT ĐÃ CHẠY, kể cả khi tất cả đều đạt.
+
+       Bản đầu chỉ trả `chan_doan` của chốt hỏng đầu tiên, và khi mọi chốt đạt
+       thì trả `{"chot": "deu_dat"}` — không con số nào. Hệ quả đo được ngay
+       trên production: dòng telemetry ghi `tuong_quan_duoi` **không bao giờ
+       chạy**, vì trên một lượt khoẻ `tuong_quan` không có trong `chan_doan`.
+
+    ⛔ Và đó là kiểu hỏng tệ nhất của một phép đo: log rỗng đọc lên y hệt "không
+       phát hiện lặp nào", trong khi sự thật là **chưa đo gì cả**. Một bộ đếm
+       bằng 0 vì mọi thứ đều ổn, và một bộ đếm bằng 0 vì nó không chạy, in ra
+       giống hệt nhau.
     """
+    da_chay: dict = {}
     for ham, doi_so in ((chot_toan_ven, ()),
                         (chot_gan_im, ()),
                         (chot_lap_duoi, (sr,)),
                         (chot_thoi_luong, (sr, so_ky_tu))):
         pq = ham(wav, *doi_so)
+        da_chay[str(pq.chan_doan.get("chot") or ham.__name__)] = pq.chan_doan
         if not pq.dat:
+            pq.chan_doan = {**pq.chan_doan, "da_chay": da_chay}
             return pq
-    return PhanQuyet(False, True, "", {"chot": "deu_dat"})
+    return PhanQuyet(False, True, "", {"chot": "deu_dat", "da_chay": da_chay})
+
+
+def so_do(pq: PhanQuyet, chot: str, ten: str):
+    """Một số đo cụ thể từ một phán quyết, dù chốt ấy đạt hay hỏng.
+
+    Có mặt để người gọi không phải biết `da_chay` nằm ở đâu — và để một bản vá
+    sau này đổi cấu trúc ấy thì chỉ phải sửa một chỗ.
+    """
+    cd = pq.chan_doan or {}
+    if cd.get("chot") == chot and ten in cd:
+        return cd[ten]
+    return ((cd.get("da_chay") or {}).get(chot) or {}).get(ten)

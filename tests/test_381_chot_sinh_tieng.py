@@ -198,3 +198,46 @@ def test_engine_GOI_chot_va_co_duong_sinh_lai():
     assert "kiem_het" in ten_goi, "`noi()` khong goi `chot_sinh.kiem_het`"
     assert ten_goi.count("infer") >= 2, (
         "`noi()` chi goi `infer` mot lan — khong co duong sinh lai")
+
+
+def test_luot_DAT_van_mang_du_so_do_de_ghi_telemetry():
+    """🔴 Một bộ đếm bằng 0 vì mọi thứ đều ổn, và một bộ đếm bằng 0 vì nó không
+    chạy, in ra **giống hệt nhau**.
+
+    Bản đầu của `kiem_het` chỉ trả `chan_doan` của chốt hỏng đầu tiên; trên một
+    lượt khoẻ nó trả `{"chot": "deu_dat"}` — không con số nào. Dòng telemetry
+    trong `engine.noi()` đọc `chan_doan["tuong_quan"]` nên **không bao giờ
+    chạy**, và log production sạch bong.
+
+    ⭐ Nó lộ ra chỉ vì tôi đi xem log sau khi deploy để xác nhận telemetry chạy.
+       Nếu tin rằng "code đúng thì log có", chỗ này im lặng mãi mãi — và ngưỡng
+       0,92 sẽ vĩnh viễn là con số mượn của hệ cũ thay vì con số đo trên hàng
+       nghìn lượt của chính ta.
+    """
+    pq = cs.kiem_het(_tieng(8.0), SR, 167)
+    assert pq.dat, "fixture nay phai la mot luot DAT"
+    tq = cs.so_do(pq, "lap_duoi", "tuong_quan")
+    assert tq is not None, "luot DAT khong mang so do lap duoi — telemetry se cam"
+    assert 0.0 <= abs(tq) <= 1.0
+    assert cs.so_do(pq, "thoi_luong", "ti_le") is not None
+    assert cs.so_do(pq, "gan_im", "dinh") is not None
+
+
+def test_engine_doc_so_do_qua_ham_chung_khong_doc_thang():
+    """Bánh cóc cho đúng lỗi trên: engine phải đi qua `so_do()`.
+
+    Đọc thẳng `pq.chan_doan.get(...)` chạy được trên một lượt HỎNG và câm trên
+    một lượt ĐẠT — tức nó hỏng đúng ở 99% số lượt, và im lặng.
+    """
+    import ast
+    import inspect
+
+    from voice_sidecar import engine
+
+    cay = ast.parse(inspect.getsource(engine))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "noi"]
+    assert ham
+    ten = [n.func.attr for n in ast.walk(ham[0]) if isinstance(n, ast.Call)
+           and isinstance(n.func, ast.Attribute)]
+    assert "so_do" in ten, "`noi()` khong doc so do qua `chot_sinh.so_do`"
