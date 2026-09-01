@@ -735,3 +735,30 @@ def test_khoi_luu_TU_STUDIO_van_co_MOT_phien_ban(khach):
     assert len(pb["phien_ban"]) == 1, (
         f"khoi co tep nghe duoc ma danh sach phien ban rong: {pb}")
     assert pb["phien_ban"][0]["dang_dung"] is True
+
+
+def test_man_chi_tiet_co_cot_DIEU_HUONG_sang_du_an_khac(khach):
+    """Ảnh 03 vẽ danh sách dự án ở cột ngoài cùng bên trái.
+
+    ⛔ Trước 01/09 màn này chỉ có hai cột, nên đổi sang một dự án khác phải bấm
+       "← Dự án" quay ra rồi bấm vào. Với người dựng podcast nhiều tập — đúng
+       đối tượng của màn này — đó là hai cú bấm cho một việc làm liên tục.
+
+    ⭐ Chốt cả điều kiện `|length > 1`: một dự án duy nhất thì cột ấy chỉ là một
+       liên kết trỏ về chính trang đang mở.
+    """
+    client, _uid = khach
+    p1 = _tao(client, ten="Du an MOT")
+    trang = client.get(f"/ltt-voice/du-an/{p1}").text
+    assert "Du an MOT" in trang
+    assert 'class="lv-mda-ds"' not in trang, (
+        "mot du an duy nhat ma van ve cot dieu huong — mot lien ket tro ve "
+        "chinh trang dang mo")
+
+    p2 = _tao(client, ten="Du an HAI")
+    trang = client.get(f"/ltt-voice/du-an/{p2}").text
+    assert 'class="lv-mda-ds"' in trang, "co hai du an ma khong co cot dieu huong"
+    assert "Du an MOT" in trang, "cot dieu huong khong liet ke du an kia"
+    assert f'/ltt-voice/du-an/{p1}' in trang
+    assert 'aria-current="page"' in trang, (
+        "khong danh dau du an DANG mo — nguoi dung khong biet minh dang o dau")

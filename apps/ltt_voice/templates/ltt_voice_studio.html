@@ -200,8 +200,45 @@
           <span id="lv-kq-tt"></span>
         </div>
 
+        {#
+          ── Trạng thái "chưa có gì" — và vì sao nó KHÔNG nên trống ──────────
+
+          Ảnh 01 ghi tiêu đề cột này là **"KẾT QUẢ MỚI NHẤT"**, không phải "kết
+          quả của lượt bạn vừa bấm". Tức ngay khi mở trang nó đã có nội dung.
+
+          ⛔ Đo trên production 01/09: ở trạng thái rỗng, cột phải là một hộp
+             cao 145px chứa đúng một dòng chữ mờ, chiếm 1/3 chiều ngang màn
+             hình. Không sai, nhưng lãng phí đúng chỗ ảnh mẫu dùng nhiều nhất.
+
+          ⭐ Nên khi có một lượt đã xong, hiện luôn nó: mở lại trang là nghe lại
+             được ngay, không phải sang màn Lịch sử. Dữ liệu đã nằm sẵn trong
+             `gan_day` — không thêm một truy vấn nào.
+
+          ⚠️ `data-nang="1"` để `voice.js` nâng cấp thành trình phát sóng âm,
+             giống Lịch sử và Dự án. Ba màn một kiểu.
+        #}
         <div id="lv-kq-cho">
-          <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
+          {% set moi_nhat = (gan_day or []) | selectattr("status", "equalto", "done")
+                                            | selectattr("result") | first %}
+          {% if moi_nhat and moi_nhat.result.get("audio_key") %}
+            {% set duong = manifest.route_prefix ~ "/audio/" ~ moi_nhat.result.get("audio_key") %}
+            <p class="dim lv-kq-nhan">{{ _("Lượt gần nhất") }}</p>
+            <p class="lv-kq-chu">{{ (moi_nhat.params or {}).get('text', '')[:120] }}</p>
+            <audio data-nang="1" controls preload="none" src="{{ duong }}"></audio>
+            <div class="lv-kq-nut">
+              <a class="btn sm ghost" download href="{{ duong }}">{{ _("WAV") }}</a>
+              <a class="btn sm ghost" download href="{{ duong }}?mp3=1">{{ _("MP3") }}</a>
+              <a class="btn sm ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }}</a>
+            </div>
+            <dl class="lv-kq-ct">
+              <dt>{{ _("Thời lượng") }}</dt>
+              <dd>{{ moi_nhat.result.get("duration_s") }}s</dd>
+              <dt>{{ _("Credit đã tính") }}</dt>
+              <dd>{{ moi_nhat.result.get("credit_cost") }}</dd>
+            </dl>
+          {% else %}
+            <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
+          {% endif %}
         </div>
 
         <div id="lv-kq-chay" hidden>

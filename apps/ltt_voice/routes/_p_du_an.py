@@ -154,6 +154,11 @@ def trang_mot_du_an(request: Request, public_id: str,
         # mot loi giai thich. Cua SUA (`_p_giong` ghi danh) thi van dong.
         cua_toi = tham_chieu.danh_sach(db, owner_id=uid,
                                        gom_dung_chung=True)
+        # Cột điều hướng bên trái. CHỈ tên + mã, không đếm khối: đếm khối
+        # cho mọi dự án là một truy vấn cho mỗi dòng, để trang trí một cột điều
+        # hướng. Trang danh sách đã có con số ấy và nó có chỗ ở đó.
+        du_an_ds = [{"public_id": x.public_id, "ten": x.ten}
+                    for x in du_an.danh_sach(db, uid)]
         # Bản sao phẳng cho template — tránh chạm ORM trong Jinja.
         ds_khoi = [{
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
@@ -170,7 +175,7 @@ def trang_mot_du_an(request: Request, public_id: str,
         request, "ltt_voice_mot_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
                     **_ngu_canh_giong(du_an=d, khoi=ds_khoi, tom_tat=tt,
-                                      giong=cua_toi,
+                                      giong=cua_toi, du_an_ds=du_an_ds,
                                       giong_chon=d.giong_mac_dinh)))
 
 

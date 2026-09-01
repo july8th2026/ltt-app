@@ -268,6 +268,30 @@
        vao sau (danh sach phien ban), vi `chay()` goi lai voi goc moi. */
     var au = pv.querySelectorAll('audio[data-nang="1"]');
     for (var k = 0; k < au.length; k++) ganTrinhPhat(au[k]);
+    ganTabViDu(pv);
+  }
+
+  /* ── Tab ngon ngu vi du (man API) ─────────────────────────────────────────
+   *
+   * ⭐ O trong `chay()` chu khong o mot module rieng: man API co y KHONG co
+   *    module JS rieng (xem chu thich cuoi `ltt_voice_api.html`), va them mot
+   *    module chi de doi hai the la them mot cho de quen nap. */
+  function ganTabViDu(pv) {
+    var nut = (pv || document).querySelectorAll("[data-vidu]");
+    for (var i = 0; i < nut.length; i++) {
+      (function (n) {
+        if (n.dataset.daGan === "1") return;
+        n.dataset.daGan = "1";
+        n.addEventListener("click", function () {
+          var ten = n.dataset.vidu;
+          var hop = document.querySelectorAll("[data-vidu-cho]");
+          for (var j = 0; j < hop.length; j++) {
+            hop[j].hidden = hop[j].dataset.viduCho !== ten;
+          }
+          batNut(n);
+        });
+      })(nut[i]);
+    }
   }
 
   /* ── Luoi giong: loc + chon the + panel chi tiet ──────────────────────────

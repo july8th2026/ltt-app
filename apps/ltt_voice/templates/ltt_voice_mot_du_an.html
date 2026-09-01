@@ -32,7 +32,41 @@
   {% endwith %}
 
   <div class="lv-mda-khung">
-    {# ── Cột trái: khối ──────────────────────────────────────────────────── #}
+    {#
+      ── Cột danh sách dự án — ảnh 03 vẽ nó ở ngoài cùng bên trái ───────────
+
+      ⛔ Trước 01/09 màn này chỉ có HAI cột, nên đổi sang một dự án khác phải
+         bấm "← Dự án" quay ra danh sách rồi bấm vào. Với người dựng podcast
+         nhiều tập — đúng đối tượng của màn này — đó là hai cú bấm cho một việc
+         họ làm liên tục.
+
+      ⭐ Chỉ TÊN và số khối, không nạp gì thêm: `du_an.danh_sach` đã được route
+         gọi sẵn cho ô chọn, nên cột này không tốn thêm một truy vấn nào.
+
+      ⚠️ Ẩn dưới 1180px thay vì xếp chồng: ở màn hẹp nó đẩy phần việc chính
+         xuống dưới một danh sách điều hướng, và điều hướng thì đã có ở "← Dự
+         án" trên đầu trang.
+    #}
+    {% if du_an_ds and du_an_ds|length > 1 %}
+      <nav class="lv-mda-ds" aria-label="{{ _('Dự án khác') }}">
+        <span class="eyebrow">{{ _("Dự án") }}</span>
+        <ul>
+          {% for d in du_an_ds %}
+            <li>
+              <a href="{{ manifest.route_prefix }}/du-an/{{ d.public_id }}"
+                 {% if d.public_id == du_an.public_id %}aria-current="page"{% endif %}>
+                {# ⛔ CHỈ tên. Thêm "N khối" thì phải đếm khối cho MỌI dự án
+                   — một truy vấn cho mỗi dòng, để trang trí một cột điều
+                   hướng. Trang danh sách đã có con số ấy và nó có chỗ ở đó. #}
+                <b>{{ d.ten }}</b>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    {% endif %}
+
+    {# ── Cột giữa: khối ──────────────────────────────────────────────────── #}
     <div class="lv-mda-trai">
       <div class="lv-mda-thanh-cong-cu">
         <button class="btn sm primary" type="button" id="lv-doc-tat-ca"

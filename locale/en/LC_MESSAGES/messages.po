@@ -12858,3 +12858,15 @@ msgstr "+ Create voice"
 
 msgid "Tên dự án mới"
 msgstr "New project name"
+
+msgid "Chép mã mẫu"
+msgstr "Copy sample code"
+
+msgid "Dự án khác"
+msgstr "Other projects"
+
+msgid "Lượt gần nhất"
+msgstr "Latest generation"
+
+msgid "Ngôn ngữ ví dụ"
+msgstr "Example language"

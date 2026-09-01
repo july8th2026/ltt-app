@@ -2665,7 +2665,36 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-mda-quay{margin:0 0 6px;font-size:12px}
 .lv-mda-quay a{display:inline-flex;align-items:center;min-height:24px;padding-right:4px;color:var(--muted);text-decoration:none}
 .lv-mda-quay a:hover{color:var(--fg)}
-.lv-mda-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+/* Ba cot: danh sach du an · khoi · cai dat. Anh 03 ve dung hinh nay. */
+.lv-mda-khung{display:grid;grid-template-columns:190px minmax(0,1fr) 300px;
+  gap:18px;align-items:start}
+
+/* Cot dieu huong giua cac du an. */
+.lv-mda-ds{position:sticky;top:72px;min-width:0}
+.lv-mda-ds ul{list-style:none;margin:8px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:2px}
+.lv-mda-ds a{display:flex;flex-direction:column;gap:2px;padding:7px 9px;
+  border-radius:var(--radius-sm);border:1px solid transparent;
+  text-decoration:none;color:var(--fg);
+  transition:background var(--motion-fast)}
+.lv-mda-ds a:hover{background:var(--panel2)}
+.lv-mda-ds a b{font-size:12.5px;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden}
+/* Du an DANG mo: vien do, khong nen do dam — cung ly do voi `.lv-chon-muc`. */
+.lv-mda-ds a[aria-current="page"]{border-color:var(--brand-border);
+  background:var(--brand-soft)}
+
+/* Tab ngon ngu vi du o man API. */
+.lv-api-tab{margin-bottom:8px}
+
+/* Luot gan nhat o cot phai man Studio. */
+.lv-kq-nhan{margin:0 0 6px;font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em}
+.lv-kq-chu{margin:0 0 9px;font-size:12.5px;line-height:1.45;color:var(--muted);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden}
+
 .lv-mda-trai{min-width:0}
 .lv-mda-phai{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
 .lv-mda-phai .lv-chon{border:none;padding:0;background:none;margin-bottom:10px}
@@ -2700,6 +2729,7 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 @media(max-width:1000px){
   .lv-mda-khung{grid-template-columns:1fr}
+  .lv-mda-ds{display:none}
   .lv-mda-phai{position:static}
 }
 @media(max-width:560px){
