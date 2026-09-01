@@ -585,7 +585,8 @@ def phien_ban_khoi(public_id: str, block_id: int,
         if k is None:
             return JSONResponse({"ok": False}, status_code=404)
 
-        cac = du_an.cac_phien_ban(db, uid, block_id)
+        cac = du_an.cac_phien_ban(db, uid, block_id,
+                                  job_hien_tai=k.job_id or "")
         tien_to = f"{MANIFEST.route_prefix}/audio"
         return JSONResponse({
             "ok": True,

@@ -368,7 +368,8 @@ def tom_tat(cac: list) -> dict:
     }
 
 
-def cac_phien_ban(db, owner_id: str, block_id: int, *, tran: int = 10) -> list:
+def cac_phien_ban(db, owner_id: str, block_id: int, *, tran: int = 10,
+                  job_hien_tai: str = "") -> list:
     """Mọi lượt sinh ĐÃ XONG của một khối, mới nhất trước.
 
     ## Vì sao đọc từ lịch sử job chứ KHÔNG dựng bảng `block_version`
@@ -404,7 +405,19 @@ def cac_phien_ban(db, owner_id: str, block_id: int, *, tran: int = 10) -> list:
     ra = []
     for j in cac:
         p = j.params or {}
-        if str(p.get("block_id") or "") != str(block_id):
+        # ⭐ HAI đường vào, và đường thứ hai đã bị bỏ sót ở bản đầu.
+        #
+        #    Một khối tạo bằng `Lưu vào dự án` mang tệp của một job chạy **trước
+        #    khi khối tồn tại**, nên job ấy không có `block_id`. Bản đầu chỉ lọc
+        #    theo `block_id`, và hậu quả đo được trên production: khối hiện một
+        #    trình phát nghe được, ngay bên cạnh dòng "Khối này chưa có bản đọc
+        #    nào." — hai câu mâu thuẫn trên cùng một màn hình.
+        #
+        #    Job mà khối đang TRỎ TỚI luôn là một phiên bản của nó, bất kể job
+        #    ấy có mang `block_id` hay không.
+        cua_khoi = str(p.get("block_id") or "") == str(block_id)
+        la_ban_dang_dung = job_hien_tai and str(j.id) == str(job_hien_tai)
+        if not (cua_khoi or la_ban_dang_dung):
             continue
         if j.status != "done":
             continue

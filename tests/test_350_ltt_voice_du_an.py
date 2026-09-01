@@ -703,3 +703,35 @@ def test_phien_ban_cua_du_an_nguoi_khac_la_404(khach):
     client, _ = khach
     r = client.get("/ltt-voice/du-an/vp_khongtontai00000000000000/khoi/1/phien-ban")
     assert r.status_code == 404
+
+
+def test_khoi_luu_TU_STUDIO_van_co_MOT_phien_ban(khach):
+    """🔴 Lỗ tìm ra khi bấm thử trên production, không phải khi đọc mã.
+
+    Khối tạo bằng `Lưu vào dự án` mang tệp của một job chạy **trước khi khối
+    tồn tại**, nên job ấy không có `params.block_id`. Bản đầu của
+    `cac_phien_ban` chỉ lọc theo `block_id` ⇒ khối hiện một trình phát nghe
+    được, ngay cạnh dòng "Khối này chưa có bản đọc nào."
+
+    ⭐ Hai câu mâu thuẫn trên cùng một màn hình, và cả hai đều "đúng" theo mã
+       của chúng. Job mà khối đang TRỎ TỚI luôn là một phiên bản của nó.
+    """
+    client, uid = khach
+    jid = _job_xong(uid, text="Cau tu studio")
+    r = client.post("/ltt-voice/du-an/luu-tu-studio",
+                    data={"job_id": jid, "ten_moi": "Tu Studio",
+                          "csrf_token": _csrf(client)})
+    assert r.json()["ok"], r.text
+    pid = r.json()["du_an"]
+
+    trang = client.get(f"/ltt-voice/du-an/{pid}").text
+    import re
+    m = re.search(r'data-khoi="(\d+)"', trang)
+    assert m, "khong thay nut phien ban tren trang du an"
+    bid = int(m.group(1))
+
+    pb = client.get(f"/ltt-voice/du-an/{pid}/khoi/{bid}/phien-ban").json()
+    assert pb["ok"], pb
+    assert len(pb["phien_ban"]) == 1, (
+        f"khoi co tep nghe duoc ma danh sach phien ban rong: {pb}")
+    assert pb["phien_ban"][0]["dang_dung"] is True
