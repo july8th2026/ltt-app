@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fd7f9e9ef42f02cdeff9819f1686512749d114a0cb217c5ecdb1f1e631ef4ac4
-Nguồn đã quét : 1457 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:0df44651dc54e3e9697f9319dd2c4bdfb8be9be6cd1c5d42eb5c84518c617dde
+Nguồn đã quét : 1460 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -168,7 +168,7 @@ Các lớp chính:
   URL=/ltt-voice | surface=customer | lifecycle=released
   enabled=True | public=True | parent=-
   requires=voice | capabilities=audio
-  HTTP routes=25 | table_prefix=voice | manifest_error=-
+  HTTP routes=28 | table_prefix=voice | manifest_error=-
   credit_cost=apps.ltt_voice.manifest._gia
   job_types=ltt_voice.synthesize, ltt_voice.enroll
   gpu_vram_mb=ltt_voice.enroll:2000, ltt_voice.synthesize:2000
@@ -220,6 +220,7 @@ Các lớp chính:
     - apps/ltt_voice/tham_so_cong_khai.py
     - apps/ltt_voice/toc_do.py
     - apps/ltt_voice/tu_dien.py
+    - apps/ltt_voice/tu_dien_rieng.py
     - apps/ltt_voice/vo.py
 
 [nexus] LTT Nexus — điều khiển máy từ xa
@@ -518,7 +519,7 @@ Các lớp chính:
     - apps/vps/tables.py
     - apps/vps/ten_may.py
 
-4. HTTP ROUTE INVENTORY (324)
+4. HTTP ROUTE INVENTORY (327)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -605,8 +606,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [chataistudio] GET    /chataistudio/img/{key:path} → chat_image | auth~login | apps/chataistudio/routes.py:504
 - [chataistudio] POST   /chataistudio/new → new_conv | auth~login | apps/chataistudio/routes.py:138
 - [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
-- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:19
-- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:19
+- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:20
+- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:20
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
 - [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:43
@@ -626,10 +627,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:51
 - [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:127
-- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:155
+- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:177
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
-- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:207
-- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:92
+- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:229
+- [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:316
+- [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:335
+- [ltt_voice] POST   /ltt-voice/tu-dien/{muc_id}/xoa → xoa_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:365
+- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:93
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:181
@@ -845,7 +849,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:470
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:636
 
-5. DATA MODEL (65 bảng)
+5. DATA MODEL (66 bảng)
 - agent_runs → AgentRun | platform_core/models.py:458
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:543
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:525
@@ -906,13 +910,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - voice_project → VoiceProject | apps/ltt_voice/tables_du_an.py:126
 - voice_ref → VoiceRef | apps/ltt_voice/tables.py:138
 - voice_repr → VoiceRepr | apps/ltt_voice/tables.py:160
+- voice_tu_dien → VoiceTuDien | apps/ltt_voice/tables.py:216
 - vps_console_ve → VpsConsoleVe | apps/vps/tables.py:241
 - vps_event → VpsEvent | apps/vps/tables.py:292
 - vps_gateway → VpsGateway | apps/vps/tables.py:68
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (64)
+6. ALEMBIC MIGRATIONS (65)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -977,6 +982,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - c3d9f52a7e18 ← b2c8e41d5a90 | Bang cua man DU AN cua LTT VOICE: voice_project, voice_block. | alembic/versions/20260831_1600_voice_du_an.py
 - d4e0a63b8f29 ← c3d9f52a7e18 | Chay lo dung chung bang voi Du an: them `loai`, `nhan`, `loi`. | alembic/versions/20260831_1800_voice_lo.py
 - a5f31c07d2b4 ← d4e0a63b8f29 | voice_profile.dung_chung — kho giọng dùng chung của nền tảng | alembic/versions/20260901_0200_voice_dung_chung.py
+- c7b91e4a2f80 ← a5f31c07d2b4 | voice_tu_dien — từ điển phát âm riêng của từng khách | alembic/versions/20260901_2300_voice_tu_dien.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1178,7 +1184,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (347 file pytest + 3 frontend)
+10. QUALITY GATES (348 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1488,6 +1494,7 @@ Test inventory:
 - tests/test_388_chan_doan.py
 - tests/test_389_planner_model_nha.py
 - tests/test_390_toc_do_hau_ky.py
+- tests/test_391_tu_dien_rieng.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1552,8 +1559,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1457 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1093, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1460 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1096, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1566,7 +1573,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 [README.md] (1)
 - README.md
 
-[alembic] (66)
+[alembic] (67)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1633,11 +1640,12 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - alembic/versions/20260831_1600_voice_du_an.py
 - alembic/versions/20260831_1800_voice_lo.py
 - alembic/versions/20260901_0200_voice_dung_chung.py
+- alembic/versions/20260901_2300_voice_tu_dien.py
 
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (270)
+[apps] (271)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1742,6 +1750,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - apps/ltt_voice/tham_so_cong_khai.py
 - apps/ltt_voice/toc_do.py
 - apps/ltt_voice/tu_dien.py
+- apps/ltt_voice/tu_dien_rieng.py
 - apps/ltt_voice/vo.py
 - apps/nexus/__init__.py
 - apps/nexus/manifest.py
@@ -2522,7 +2531,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (364)
+[tests] (365)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2843,6 +2852,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - tests/test_388_chan_doan.py
 - tests/test_389_planner_model_nha.py
 - tests/test_390_toc_do_hau_ky.py
+- tests/test_391_tu_dien_rieng.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3067,7 +3077,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14459349 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1460 file; 14491595 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -8647,6 +8657,57 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.drop_index("ix_voice_profile_dung_chung", table_name="voice_profile")
     op.drop_column("voice_profile", "dung_chung")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260901_2300_voice_tu_dien.py
+SHA256=7a6686e344b11cfea8be9f0c645a1a376037f959806d7094e1557d43cff2f9c9 BYTES=1839 LINES=45
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""voice_tu_dien — từ điển phát âm riêng của từng khách
+
+⭐ Bảng này là ĐẦU KIA của một đường ống đã dựng sẵn từ lâu:
+   `features.chuan_bi_van_ban(tu_dien_rieng=...)` →
+   `text_pipeline.chuan_hoa(tu_dien_rieng=...)` → `tu_dien.ap_dung(them=...)`.
+   Cả ba tầng nhận tham số ấy, và **không ai truyền** cho tới 01/09/2026.
+
+⛔ RÀNG BUỘC DUY NHẤT `(owner_id, tu)` là bắt buộc, không phải cho gọn. Một
+   khách có hai mục cho cùng một từ thì phép thay phụ thuộc **thứ tự đọc từ
+   CSDL**, và thứ tự ấy không ai bảo đảm — cùng một kịch bản sẽ đọc khác nhau
+   giữa hai lần chạy, không lỗi nào báo.
+
+Revision ID: c7b91e4a2f80
+Revises: a5f31c07d2b4
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "c7b91e4a2f80"
+down_revision = "a5f31c07d2b4"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "voice_tu_dien",
+        sa.Column("id", sa.BigInteger().with_variant(sa.Integer(), "sqlite"),
+                  primary_key=True, autoincrement=True),
+        sa.Column("owner_id", sa.String(36), nullable=False, index=True),
+        sa.Column("tu", sa.String(80), nullable=False),
+        sa.Column("thay", sa.String(160), nullable=False),
+        sa.Column("ghi_chu", sa.String(200), nullable=False, server_default=""),
+        sa.Column("tao_luc", sa.DateTime(timezone=True), nullable=False,
+                  server_default=sa.func.now()),
+        sa.Column("sua_luc", sa.DateTime(timezone=True), nullable=False,
+                  server_default=sa.func.now()),
+        sa.UniqueConstraint("owner_id", "tu", name="uq_voice_tudien_owner_tu"),
+    )
+
+
+def downgrade() -> None:
+    op.drop_table("voice_tu_dien")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -20206,7 +20267,7 @@ SHA256=2b6241a8c8fcd708ef512ff99b34b9842880b65dff90ada258a789767062ac13 BYTES=34
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/jobs.py
-SHA256=e949f26f159e480314c905eaa4bded7e8d4c1063de90a4fd924c02e8bcddfc35 BYTES=13948 LINES=288
+SHA256=59abcb4e782e2aab3af989cfd136a834c8760a6e144d127a6e5cadcefac77cfa BYTES=14987 LINES=301
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker.
@@ -20297,7 +20358,8 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
 
     from platform_core.storage import get_storage
 
-    from . import features, sidecar_client, tham_chieu, toc_do
+    from . import (features, sidecar_client, tham_chieu, toc_do,
+                   tu_dien_rieng)
 
     yc = features.chuan_hoa(params)
 
@@ -20319,7 +20381,19 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     #    người nói qua các lượt gọi riêng (0,9254 — cao hơn cả sàn nhiễu 0,8524
     #    của hai nửa trong cùng một lượt). Xem
     #    `voice_sidecar/do_giu_giong_nhieu_luot.py`.
-    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    # ── TỪ ĐIỂN PHÁT ÂM RIÊNG CỦA KHÁCH ─────────────────────────────────────
+    #
+    # ⭐ `chuan_bi_van_ban(tu_dien_rieng=...)` nhận tham số này từ lâu, qua ba
+    #    tầng xuống tới `tu_dien.ap_dung(them=...)` — và **không ai truyền**.
+    #    Cả chuỗi ấy chưa từng chạy một lần nào cho tới 01/09/2026.
+    #
+    # 🔴 PHẢI Ở ĐÂY, trong worker, KHÔNG ở route. Public API đi thẳng xuống job
+    #    và không qua route nào — đặt phép nạp này ở một cánh cửa thì cánh cửa
+    #    kia không có nó, và khách gọi API sẽ nghe tên riêng của họ đọc sai
+    #    trong khi trên web thì đúng. Cùng cái bẫy `features.py` cảnh báo.
+    tu_rieng = _voi_db(lambda db: tu_dien_rieng.nhu_dict(db, yc.owner_id))         if yc.owner_id else {}
+    chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                      tu_dien_rieng=tu_rieng)
     doan = chuan.doan or [yc.text]
 
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
@@ -20916,7 +20990,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_chung.py
-SHA256=20b57174488fea3cdb3fd825b1d8f403bc9fe180f58948ec8ed771f370ea837d BYTES=5386 LINES=113
+SHA256=51f8968004a072f98f13f177ce621930efe5a8486138ad4cd47b84766cd3aadc BYTES=5401 LINES=113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 _chung.py — router + mọi thứ các mảnh route dùng chung.
@@ -20953,7 +21027,7 @@ from server.deps import user_hien_tai
 from server.templating import templates
 
 from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
-                giong_mau, lan_ngon_ngu, tham_chieu, vo)
+                giong_mau, lan_ngon_ngu, tham_chieu, tu_dien_rieng, vo)
 from ..manifest import MANIFEST
 from ..tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
@@ -22104,7 +22178,7 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_tao.py
-SHA256=6fdb4e542efb2fe5f159bbba591f6b2b3d779c6cc5aee7c76db0eab11a139738 BYTES=14695 LINES=284
+SHA256=32727e60a84643e1ad55eea93bdb08b355f0b6a41595271dbee53df7ac78bb31 BYTES=18486 LINES=381
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Tạo tiếng nói: dựng trang, xem trước cách đọc, nộp job,
 theo dõi kết quả."""
@@ -22116,7 +22190,8 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
                      gia, giong_mau, io, lan_ngon_ngu, require_login,
                      router, templates,
-                     tham_chieu, user_hien_tai, verify_csrf_token, vo,
+                     tham_chieu, tu_dien_rieng, user_hien_tai,
+                     verify_csrf_token, vo,
                      NHAN_NGUON)
 
 
@@ -22244,7 +22319,28 @@ def xem_truoc(request: Request, text: str = Form(""),
             "Văn bản dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
         ).format(n=len(tho), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
 
-    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH)
+    # 🔴 TỪ ĐIỂN RIÊNG PHẢI CÓ Ở ĐÂY, và thiếu nó biến bảng xem trước thành
+    #    một lời nói dối.
+    #
+    #    Bảng "Máy sẽ đọc thành" tồn tại để khách thấy trước máy đọc ra sao
+    #    **trước khi trả tiền**. Nếu worker áp từ điển mà xem trước thì không,
+    #    hai bên cho hai kết quả khác nhau — và bên khách nhìn thấy là bên SAI.
+    #
+    # ⚠️ Đây đúng lớp lỗi "một cửa có, cửa kia không" mà `features.py` cảnh báo,
+    #    và tôi vừa mắc nó ngay trong lượt thêm chính tính năng này: nối vào
+    #    `jobs.py` rồi quên `xem_truoc`.
+    gen = _db()
+    db = next(gen)
+    try:
+        tu_rieng = tu_dien_rieng.nhu_dict(db, _uid(user))
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    chuan = text_pipeline.chuan_bi(tho, tran_moi_doan=TRAN_MOI_LUOT_SINH,
+                                   tu_dien_rieng=tu_rieng)
     da = chuan.da_chuan_hoa
     return JSONResponse({
         "ok": True,
@@ -22390,6 +22486,81 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
             pass
 
 
+
+
+# ── Từ điển phát âm riêng ────────────────────────────────────────────────────
+#
+# ⭐ Ở `_p_tao.py` chứ không phải một tệp riêng: nó là một điều khiển của màn
+#    Tạo tiếng nói (ảnh 01 vẽ nó ở mục ⑤ `PRONUNCIATION`, ngay cột trái), và
+#    `AGENTS.md` mục 8 nói route chia theo MÀN, không theo bảng.
+
+@router.get("/tu-dien")
+def xem_tu_dien(request: Request, user=Depends(user_hien_tai),
+                _=Depends(require_login)):
+    """Danh sách mục của khách. Dùng cho hộp từ điển ở màn Tạo tiếng nói."""
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        return JSONResponse({"ok": True, "muc": [
+            {"id": m.id, "tu": m.tu, "thay": m.thay, "ghi_chu": m.ghi_chu}
+            for m in tu_dien_rieng.danh_sach(db, uid)
+        ], "tran": tu_dien_rieng.TRAN_SO_MUC})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/tu-dien/them")
+def them_tu_dien(request: Request, tu: str = Form(""), thay: str = Form(""),
+                 ghi_chu: str = Form(""), csrf_token: str = Form(""),
+                 user=Depends(user_hien_tai), _=Depends(require_login)):
+    """Thêm hoặc SỬA một mục.
+
+    ⭐ Gõ lại cùng một từ = sửa cách đọc, không phải lỗi trùng. Bắt khách xoá
+       rồi thêm lại là một bước thừa cho thao tác họ làm nhiều nhất.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        try:
+            m = tu_dien_rieng.them(db, uid, tu=tu, thay=thay, ghi_chu=ghi_chu)
+        except features.LoiGiongNoi as e:
+            db.rollback()
+            return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
+        db.commit()
+        return JSONResponse({"ok": True, "muc": {
+            "id": m.id, "tu": m.tu, "thay": m.thay, "ghi_chu": m.ghi_chu}})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+@router.post("/tu-dien/{muc_id}/xoa")
+def xoa_tu_dien(request: Request, muc_id: int, csrf_token: str = Form(""),
+                user=Depends(user_hien_tai), _=Depends(require_login)):
+    if not verify_csrf_token(request, csrf_token):
+        return _het_phien()
+    uid = _uid(user)
+    gen = _db()
+    db = next(gen)
+    try:
+        if not tu_dien_rieng.xoa(db, uid, muc_id):
+            return JSONResponse({"ok": False}, status_code=404)
+        db.commit()
+        return JSONResponse({"ok": True})
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -22568,7 +22739,7 @@ def giong_dung_san() -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tables.py
-SHA256=9054534fc98834ee260d509fef9d7fc9ca13f6b4c757018005688f5240b89c12 BYTES=13247 LINES=233
+SHA256=3821ff6c9d0632a1cf3f29a638f648421b7f4692c15e1f4aa8af41733960a8fe BYTES=16244 LINES=288
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bảng CSDL riêng của LTT VOICE. Tiền tố `voice_` theo `MANIFEST.table_prefix`.
 
@@ -22782,6 +22953,61 @@ class VoiceConsent(Base):
     user_agent: Mapped[str] = mapped_column(String(256), default="")
     dong_y_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
                                                  default=_now)
+
+
+
+class VoiceTuDien(Base):
+    """Từ điển phát âm RIÊNG của một khách.
+
+    ## Vì sao nó là một bảng, không phải một trường JSON
+
+    Ảnh tham chiếu 01 vẽ mục ⑤ `PRONUNCIATION` với nút `Dictionary`. Và điều
+    đáng nói hơn: **chuỗi tham số cho nó đã được nối sẵn từ lâu** —
+    `features.chuan_bi_van_ban(tu_dien_rieng=...)` → `text_pipeline.chuan_hoa`
+    → `tu_dien.ap_dung(them=...)`. Cả ba tầng nhận nó, và **không ai truyền**.
+
+    ⭐ `tu_dien.py` đã ghi rõ ranh giới từ trước: *"Đây là bảng CHUNG cho mọi
+       khách. Từ điển riêng của một người (tên công ty, tên nhân vật) đi qua
+       tham số `them=` — nó không được lẫn vào đây."* Bảng này là đầu kia của
+       câu ấy.
+
+    ## Vì sao khách CẦN nó
+
+    Upstream #168: engine đọc `ch` thành `tr` ở một số từ. Với từ phổ thông thì
+    `BANG_CHUNG` lo được. Nhưng **tên riêng** — tên công ty, tên nhân vật trong
+    truyện, tên sản phẩm — thì không ai đoán trước được, và chúng lặp lại trong
+    **mọi** kịch bản của chính khách đó. Không có chỗ sửa thì họ phải gõ sai
+    chính tả trong kịch bản để ép engine đọc đúng.
+
+    ⛔ KHÔNG dùng để đổi giọng hay chèn lệnh. Nó chỉ là phép thay chuỗi theo
+       BIÊN TỪ, y hệt `tu_dien.BANG_CHUNG`, chạy trước mọi phép chuẩn hoá khác.
+    """
+
+    __tablename__ = "voice_tu_dien"
+    __table_args__ = (
+        # Một khách không thể có hai mục cho cùng một từ — nếu không thì phép
+        # thay phụ thuộc thứ tự đọc từ CSDL, và thứ tự ấy không ai bảo đảm.
+        UniqueConstraint("owner_id", "tu", name="uq_voice_tudien_owner_tu"),
+    )
+
+    id: Mapped[int] = mapped_column(KHOA_CHINH, primary_key=True,
+                                    autoincrement=True)
+    owner_id: Mapped[str] = mapped_column(String(36), index=True)
+
+    #: Từ cần sửa, đã hạ chữ thường. Khớp theo BIÊN TỪ (`tu_dien._mau`).
+    tu: Mapped[str] = mapped_column(String(80))
+    #: Viết lại thành gì. Đây là VĂN BẢN, không phải phiên âm IPA — ta đưa nó
+    #: cho `sea-g2p` như một chuỗi bình thường.
+    thay: Mapped[str] = mapped_column(String(160))
+    #: Vì sao thêm mục này. `tu_dien.py` đòi lý do cho bảng chung, và lý do ấy
+    #: cũng đúng ở đây: một bảng thay thế không có lý do sẽ không bao giờ xoá
+    #: được, vì không ai dám.
+    ghi_chu: Mapped[str] = mapped_column(String(200), default="")
+
+    tao_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                              default=_now)
+    sua_luc: Mapped[datetime] = mapped_column(DateTime(timezone=True),
+                                              default=_now, onupdate=_now)
 
 
 # ── Bảng của màn Dự án ───────────────────────────────────────────────────────
@@ -24440,7 +24666,7 @@ LttVoice.motDuAn({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_studio.html
-SHA256=94aa30c4a1b0546ea6316d1736d39d194a4976a8e25a22e2399b46fdaeb41c74 BYTES=19177 LINES=353
+SHA256=c54fd0fea131c3809f92c580deeef55111ad20c7f9ba9a8feb6664fde6e6adc2 BYTES=21922 LINES=403
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24535,6 +24761,47 @@ SHA256=94aa30c4a1b0546ea6316d1736d39d194a4976a8e25a22e2399b46fdaeb41c74 BYTES=19
         </div>
         <input type="hidden" name="toc_do" id="lv-toc-do" value="1.0">
         <small class="dim">{{ _("Đổi sau khi tạo xong, giữ nguyên cao độ. Tiền tính theo bản gốc, không theo bản đã tăng tốc.") }}</small>
+      </div>
+
+      {#
+        TỪ ĐIỂN PHÁT ÂM — mục ⑤ `PRONUNCIATION` trong ảnh 01.
+
+        🔴 Đây là một MODULE thật, không phải trang trí. Upstream #168: engine
+           đọc `ch` thành `tr` ở một số từ. Từ phổ thông thì bảng chung lo được,
+           nhưng **tên riêng** — tên công ty, tên nhân vật, tên sản phẩm — thì
+           không ai đoán trước, và chúng lặp trong MỌI kịch bản của khách đó.
+
+        ⛔ Không có chỗ sửa thì khách phải **gõ sai chính tả trong kịch bản** để
+           ép engine đọc đúng — và bản chép sai ấy đi vào tài liệu của họ, vào
+           phụ đề, vào mọi chỗ khác. Ta đẩy một khuyết tật của mình sang bản
+           gốc của khách.
+
+        ⭐ Chuỗi tham số cho nó (`tu_dien_rieng` → `tu_dien.ap_dung(them=)`) đã
+           được nối sẵn qua ba tầng từ lâu và **chưa ai truyền** — nên phần
+           thiếu duy nhất là bảng, route, và ô này.
+      #}
+      <div class="lv-st-o">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Từ điển phát âm") }}</span>
+          <button type="button" class="btn sm ghost" id="lv-td-mo"
+                  aria-expanded="false" aria-controls="lv-td-hop">{{ _("Mở") }}</button>
+        </div>
+        <small class="dim">{{ _("Dạy máy đọc đúng tên riêng của bạn. Áp cho mọi lượt đọc, kể cả khi gọi qua API.") }}</small>
+
+        <div id="lv-td-hop" hidden>
+          <ul class="lv-td-ds" id="lv-td-ds"></ul>
+          <p class="dim" id="lv-td-rong" hidden>{{ _("Chưa có mục nào.") }}</p>
+          <div class="lv-td-them">
+            <input type="text" id="lv-td-tu" maxlength="80"
+                   aria-label="{{ _('Từ cần sửa') }}"
+                   placeholder="{{ _('Từ cần sửa…') }}">
+            <input type="text" id="lv-td-thay" maxlength="160"
+                   aria-label="{{ _('Máy nên đọc thành') }}"
+                   placeholder="{{ _('Máy nên đọc thành…') }}">
+            <button type="button" class="btn sm primary" id="lv-td-luu">{{ _("Thêm") }}</button>
+          </div>
+          <p class="dim lv-td-bao" id="lv-td-bao" hidden></p>
+        </div>
       </div>
 
       <div class="lv-st-o">
@@ -24694,8 +24961,16 @@ SHA256=94aa30c4a1b0546ea6316d1736d39d194a4976a8e25a22e2399b46fdaeb41c74 BYTES=19
         <div id="lv-kq-xong" hidden>
           {# Sóng âm THẬT, vẽ từ chính tệp vừa sinh bằng Web Audio + canvas.
              Không thư viện — CSP chặn CDN, và một canvas là đủ. #}
-          <canvas id="lv-song" class="lv-song" height="72" aria-hidden="true"></canvas>
-          <audio id="lv-player" controls preload="metadata"></audio>
+          {#
+            MOT thanh phan trinh phat cho CA BON man.
+
+            ⛔ Truoc 01/09 rieng man nay co canvas song am 72px + mot thanh
+               `<audio controls>` cua trinh duyet nam duoi. Ba man kia thi
+               dung `ganTrinhPhat`. Hai cach ve cung mot thu la hai cho de
+               chung lech nhau — va cai o day con giu lai dung thanh xam ma
+               ca dot nay sinh ra de go.
+          #}
+          <audio id="lv-player" data-nang="1" controls preload="metadata"></audio>
           <div class="lv-kq-nut">
             <a class="btn primary sm" id="lv-tai" download>{{ _("Tải WAV") }}</a>
             {# MP3: chuyen dung luc tai, cung cua `/audio` de dung lai
@@ -24788,6 +25063,7 @@ LttVoice.studio({
     khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
     doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }},
     daLuuVao:  {{ _("Đã lưu vào") | tojson }},
+    xoaMuc:    {{ _("Xoá mục") | tojson }},
     nhapBiCat: {{ _("Tệp dài {n} ký tự, đã cắt còn {t}.") | tojson }},
     nhapHong:  {{ _("Không đọc được tệp này.") | tojson }},
     loiMang:   {{ _("Không gửi được yêu cầu. Thử lại nhé.") | tojson }}
@@ -26040,6 +26316,158 @@ def ap_dung(text: str, *, them: dict | None = None) -> str:
         t = _mau(str(tu)).sub(str(thay), t)
 
     return t
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tu_dien_rieng.py
+SHA256=ff3937ec5cc3e77edb2f4ff869b9303e77e7a474a12c51e8f076e5a118557c26 BYTES=6087 LINES=146
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+tu_dien_rieng.py — từ điển phát âm riêng của từng khách.
+
+## Vì sao module này tồn tại, và vì sao nó đến muộn
+
+`text_pipeline.chuan_hoa(tu_dien_rieng=...)` và `tu_dien.ap_dung(them=...)` đã
+nhận tham số này **từ lâu**, qua ba tầng. Không ai truyền nó, nên cả chuỗi ấy
+chưa từng chạy một lần nào — một đường ống dựng xong rồi để không.
+
+⭐ Và `tu_dien.py` đã vạch sẵn ranh giới: *"Đây là bảng CHUNG cho mọi khách. Từ
+   điển riêng của một người (tên công ty, tên nhân vật) đi qua tham số `them=`
+   — nó không được lẫn vào đây."* Tệp này là đầu kia của câu đó.
+
+## Vì sao khách cần nó, nói bằng một ca thật
+
+Upstream #168: engine đọc `ch` thành `tr` ở một số từ. Từ phổ thông thì bảng
+chung lo được. Nhưng **tên riêng** thì không ai đoán trước: tên công ty, tên
+nhân vật trong truyện dài, tên sản phẩm. Chúng lặp lại trong **mọi** kịch bản
+của chính khách ấy.
+
+⛔ Không có chỗ sửa thì khách phải **gõ sai chính tả trong kịch bản** để ép
+   engine đọc đúng — và bản chép ấy sẽ đi vào tài liệu của họ, vào phụ đề, vào
+   mọi chỗ khác. Ta đẩy một khuyết tật của mình sang bản gốc của khách.
+
+## 🔴 BA GIỚI HẠN, và cả ba là để nó không thành một bề mặt tấn công
+
+**① Trần số mục.** Mỗi phép thay là một lượt quét toàn văn bản. Một từ điển
+   không giới hạn là một cách để một tài khoản làm chậm worker cho mọi người.
+
+**② Trần độ dài.** `tu` ngắn hơn `thay`, và cả hai đều bị chặn — một mục
+   `thay` dài mười nghìn ký tự làm một câu ngắn nở thành một job dài.
+
+**③ KHÔNG regex, không ký tự đặc biệt.** `tu_dien._mau` đã `re.escape`, nên
+   không có đường tiêm biểu thức. Nhưng ta vẫn từ chối ở cửa vào: một chuỗi
+   trông như regex trong danh sách của khách là một thứ họ sẽ tưởng là chạy.
+"""
+from __future__ import annotations
+
+import re
+
+from platform_core.i18n import _ as _t
+
+from .features import LoiGiongNoi
+
+#: Trần số mục mỗi khách. Con số này là một LỰA CHỌN, không phải một số đo —
+#: nói ra để người sau không phải cãi với một hằng số tưởng là kết quả đo.
+#: Nới nó thì đo thời gian `chuan_hoa` trên một văn bản 1.500 ký tự trước.
+TRAN_SO_MUC = 100
+
+TRAN_TU = 80
+TRAN_THAY = 160
+TRAN_GHI_CHU = 200
+
+#: Chỉ chữ, số, khoảng trắng và vài dấu nối. Không dấu ngoặc, không `\`, không
+#: `*+?|` — xem giới hạn ③ ở docstring.
+_CHU_HOP_LE = re.compile(r"^[\w\s.\-']+$", re.UNICODE)
+
+
+def _kiem(tu: str, thay: str) -> tuple:
+    tu = (tu or "").strip()
+    thay = (thay or "").strip()
+    if not tu or not thay:
+        raise LoiGiongNoi(_t("Cần cả từ cần sửa và cách đọc thay thế."))
+    if len(tu) > TRAN_TU or len(thay) > TRAN_THAY:
+        raise LoiGiongNoi(_t(
+            "Từ tối đa {a} ký tự, cách đọc tối đa {b} ký tự."
+        ).format(a=TRAN_TU, b=TRAN_THAY))
+    for s in (tu, thay):
+        if not _CHU_HOP_LE.match(s):
+            raise LoiGiongNoi(_t(
+                "Chỉ dùng chữ, số, khoảng trắng và dấu . - ' — không dùng ký "
+                "tự đặc biệt."))
+    if tu.lower() == thay.lower():
+        # Một mục thay chính nó là một mục không làm gì, và nó chiếm một suất
+        # trong trần. Từ chối rõ ràng thay vì nhận rồi im.
+        raise LoiGiongNoi(_t("Từ và cách đọc thay thế giống hệt nhau."))
+    return tu, thay
+
+
+def danh_sach(db, owner_id: str) -> list:
+    from sqlalchemy import select
+
+    from .tables import VoiceTuDien
+    return list(db.execute(
+        select(VoiceTuDien)
+        .where(VoiceTuDien.owner_id == str(owner_id))
+        .order_by(VoiceTuDien.tu)
+    ).scalars().all())
+
+
+def nhu_dict(db, owner_id: str) -> dict:
+    """Dạng mà `tu_dien.ap_dung(them=...)` nhận.
+
+    ⚠️ Trả `{}` khi không có mục nào — KHÔNG trả `None`. `ap_dung` xử lý được
+       cả hai, nhưng một hàm trả hai kiểu là một chỗ để nơi gọi quên kiểm.
+    """
+    return {g.tu: g.thay for g in danh_sach(db, owner_id)}
+
+
+def them(db, owner_id: str, *, tu: str, thay: str, ghi_chu: str = ""):
+    from sqlalchemy import func, select
+
+    from .tables import VoiceTuDien
+
+    tu, thay = _kiem(tu, thay)
+    so = db.execute(
+        select(func.count()).select_from(VoiceTuDien)
+        .where(VoiceTuDien.owner_id == str(owner_id))
+    ).scalar_one()
+
+    cu = db.execute(
+        select(VoiceTuDien).where(VoiceTuDien.owner_id == str(owner_id),
+                                  VoiceTuDien.tu == tu)
+    ).scalars().first()
+    if cu is not None:
+        # SỬA, không phải lỗi trùng. Khách gõ lại cùng một từ gần như luôn có
+        # nghĩa "đổi cách đọc", và bắt họ xoá rồi thêm lại là một bước thừa.
+        cu.thay = thay
+        cu.ghi_chu = (ghi_chu or "")[:TRAN_GHI_CHU]
+        db.flush()
+        return cu
+
+    if so >= TRAN_SO_MUC:
+        raise LoiGiongNoi(_t(
+            "Từ điển đã đạt {n} mục — giới hạn hiện tại. Xoá bớt mục cũ trước."
+        ).format(n=TRAN_SO_MUC))
+
+    m = VoiceTuDien(owner_id=str(owner_id), tu=tu, thay=thay,
+                    ghi_chu=(ghi_chu or "")[:TRAN_GHI_CHU])
+    db.add(m)
+    db.flush()
+    return m
+
+
+def xoa(db, owner_id: str, muc_id: int) -> bool:
+    from sqlalchemy import select
+
+    from .tables import VoiceTuDien
+    m = db.execute(
+        select(VoiceTuDien).where(VoiceTuDien.id == int(muc_id),
+                                  VoiceTuDien.owner_id == str(owner_id))
+    ).scalars().first()
+    if m is None:
+        return False
+    db.delete(m)
+    return True
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -151545,7 +151973,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=94a9000d765edf9e77cb2625033f80483805c6bea55b27112c7d3ad42a1e44a6 BYTES=257476 LINES=2803
+SHA256=81f4562b66d8b9b8a9704981c9a47f17e68df44cf2397983d475b7060cb5f025 BYTES=258272 LINES=2818
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -154024,7 +154452,6 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 /* Ket qua */
 .lv-kq{min-height:150px}
-.lv-song{display:block;width:100%;height:72px;margin-bottom:9px}
 .lv-kq audio{width:100%;height:36px}
 .lv-kq-nut{display:flex;gap:7px;margin:11px 0}
 .lv-kq-nut .btn{flex:1;justify-content:center}
@@ -154236,6 +154663,22 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 /* Tab ngon ngu vi du o man API. */
 .lv-api-tab{margin-bottom:8px}
+
+/* Tu dien phat am rieng (man Studio, muc ⑤ cua anh 01). */
+.lv-td-ds{list-style:none;margin:9px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:3px;max-height:160px;overflow-y:auto}
+.lv-td-ds li{display:flex;align-items:center;gap:6px;padding:4px 7px;
+  border-radius:var(--radius-sm);background:var(--panel2);font-size:11.5px}
+.lv-td-ds li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--muted)}
+.lv-td-xoa{flex:0 0 auto;background:none;border:none;color:var(--dim);
+  cursor:pointer;font-size:14px;line-height:1;padding:0 3px}
+.lv-td-xoa:hover{color:var(--err)}
+.lv-td-them{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+.lv-td-them input{flex:1 1 100px;min-width:0;font-size:11.5px;padding:5px 8px}
+.lv-td-bao{margin:7px 0 0;font-size:11.5px}
+.lv-td-bao.loi{color:var(--err)}
+
 
 /* Luot gan nhat o cot phai man Studio. */
 .lv-kq-nhan{margin:0 0 6px;font-size:11px;text-transform:uppercase;
@@ -154481,7 +154924,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=22e4538a9909a05f867c8219ccba5e0fd59d7b430f08a07d2023b100850942f9 BYTES=67865 LINES=1627
+SHA256=a10d71aabe2972f8696469e179b712d930b04dda4510b554507abeb0f0f0f27f BYTES=71401 LINES=1714
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -155236,9 +155679,10 @@ SHA256=22e4538a9909a05f867c8219ccba5e0fd59d7b430f08a07d2023b100850942f9 BYTES=67
       var nutChep = document.getElementById("lv-ct-job-chep");
       if (nutChep) { nutChep.dataset.ma = jobId; chay(oXong); }
 
-      var canvas = document.getElementById("lv-song");
-      canvas.hidden = false;
-      veSong(canvas, d.audio_url);
+      /* Khong ve song o day nua: `ganTrinhPhat` da nang cap `lv-player`
+         thanh trinh phat co song am rieng, giong ba man kia. Ve them mot
+         canvas thu hai la ve cung mot thu hai lan. */
+      ganTrinhPhat(au);
 
       /* Luu vao du an: nut chi mo hop, viec that o `/du-an/luu-tu-studio`.
          Hop DONG LAI moi lan co ket qua moi — de mo tu luot truoc thi bam
@@ -155390,6 +155834,92 @@ SHA256=22e4538a9909a05f867c8219ccba5e0fd59d7b430f08a07d2023b100850942f9 BYTES=67
           batNut(nut);
         });
       })(nutTocDo[k]);
+    }
+
+    /* ── Tu dien phat am rieng ─────────────────────────────────────────────
+       Nap KHI MO lan dau, khong nap san: hau het khach khong mo no, va no la
+       mot vong mang cho mot thu ho khong nhin. */
+    var tdHop = document.getElementById("lv-td-hop");
+    var tdMo = document.getElementById("lv-td-mo");
+    var tdDs = document.getElementById("lv-td-ds");
+    var tdRong = document.getElementById("lv-td-rong");
+    var tdBao = document.getElementById("lv-td-bao");
+    var tdDaNap = false;
+
+    function tdNoi(cau, la_loi) {
+      if (!tdBao) return;
+      tdBao.hidden = !cau;
+      tdBao.textContent = cau || "";
+      tdBao.classList.toggle("loi", !!la_loi);
+    }
+
+    function tdVe(muc) {
+      if (!tdDs) return;
+      tdDs.textContent = "";
+      if (tdRong) tdRong.hidden = muc.length > 0;
+      muc.forEach(function (m) {
+        var li = document.createElement("li");
+        var chu = document.createElement("span");
+        /* `textContent`, KHONG `innerHTML`: day la chuoi KHACH GO. Dung
+           innerHTML o day la mo mot duong XSS vao chinh trang cua ho. */
+        chu.textContent = m.tu + " → " + m.thay;
+        li.appendChild(chu);
+        var xoa = document.createElement("button");
+        xoa.type = "button";
+        xoa.className = "lv-td-xoa";
+        xoa.setAttribute("aria-label", (chu.xoaMuc || "Xoa") + " " + m.tu);
+        xoa.textContent = "×";
+        xoa.addEventListener("click", function () {
+          xoa.disabled = true;
+          var fdX = new FormData();
+          fdX.append("csrf_token", form.csrf_token.value);
+          fetch(duong + "/tu-dien/" + m.id + "/xoa", {method: "POST", body: fdX})
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              if (d.ok) { tdNap(); } else { xoa.disabled = false; }
+            })
+            .catch(function () { xoa.disabled = false; tdNoi(chu.khongGui, true); });
+        });
+        li.appendChild(xoa);
+        tdDs.appendChild(li);
+      });
+    }
+
+    function tdNap() {
+      return fetch(duong + "/tu-dien")
+        .then(function (r) { return r.json(); })
+        .then(function (d) { if (d.ok) tdVe(d.muc || []); });
+    }
+
+    if (tdMo) {
+      tdMo.addEventListener("click", function () {
+        var dang_an = tdHop.hidden;
+        tdHop.hidden = !dang_an;
+        tdMo.setAttribute("aria-expanded", dang_an ? "true" : "false");
+        if (dang_an && !tdDaNap) { tdDaNap = true; tdNap(); }
+      });
+    }
+    var tdLuu = document.getElementById("lv-td-luu");
+    if (tdLuu) {
+      tdLuu.addEventListener("click", function () {
+        var oTu = document.getElementById("lv-td-tu");
+        var oThay = document.getElementById("lv-td-thay");
+        tdLuu.disabled = true;
+        tdNoi("");
+        var fd = new FormData();
+        fd.append("csrf_token", form.csrf_token.value);
+        fd.append("tu", oTu.value);
+        fd.append("thay", oThay.value);
+        fetch(duong + "/tu-dien/them", {method: "POST", body: fd})
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            tdLuu.disabled = false;
+            if (!d.ok) { tdNoi(d.loi, true); return; }
+            oTu.value = ""; oThay.value = "";
+            tdNap();
+          })
+          .catch(function () { tdLuu.disabled = false; tdNoi(chu.khongGui, true); });
+      });
     }
 
     /* ── Luu ket qua vao mot Du an ─────────────────────────────────────────
@@ -255645,6 +256175,246 @@ def test_moi_input_trong_form_studio_deu_duoc_JS_gui():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_391_tu_dien_rieng.py
+SHA256=4fb8e7967a7b41be349523b2041c21fa9cbedaa8936ef5b1cd30cf5c0e07b513 BYTES=8605 LINES=234
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Từ điển phát âm RIÊNG của khách — module mà chuỗi tham số đã chờ từ lâu.
+
+## Vì sao nó là một module thật, không phải trang trí
+
+Ảnh 01 vẽ mục ⑤ `PRONUNCIATION`. Nhưng điều đáng nói hơn: `chuan_bi_van_ban(
+tu_dien_rieng=...)` → `text_pipeline.chuan_hoa` → `tu_dien.ap_dung(them=...)`
+đã nhận tham số này qua BA TẦNG, và **không ai truyền** — cả đường ống dựng
+xong rồi để không cho tới 01/09/2026.
+
+⛔ Không có nó thì khách phải **gõ sai chính tả trong kịch bản** để ép engine
+   đọc đúng tên riêng (upstream #168, `ch` -> `tr`) — và bản chép sai ấy đi vào
+   tài liệu của họ, vào phụ đề, vào mọi chỗ khác.
+"""
+from __future__ import annotations
+
+import re
+
+import pytest
+
+
+@pytest.fixture()
+def khach(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'td.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-tu-dien")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "kho")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="td@test.com", password="matkhau-tot-12",
+                           is_verified=True)
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    c = TestClient(create_app(), base_url="https://testserver",
+                   follow_redirects=False)
+    m = re.search(r'name="csrf_token" value="([^"]+)"', c.get("/login").text)
+    assert m
+    c.post("/login", data={"username": "td@test.com",
+                           "password": "matkhau-tot-12",
+                           "csrf_token": m.group(1)})
+    try:
+        yield c, uid
+    finally:
+        c.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+def _csrf(client) -> str:
+    m = re.search(r'name="csrf_token" value="([^"]+)"',
+                  client.get("/ltt-voice").text)
+    assert m
+    return m.group(1)
+
+
+def test_them_roi_ap_vao_chuan_hoa(khach):
+    """🔴 Phép kiểm QUAN TRỌNG NHẤT: mục thêm vào có THẬT SỰ đổi cách đọc không.
+
+    Một bảng + một route + một ô nhập mà không nối tới `chuan_hoa` thì vẫn
+    "chạy" ở mọi phép kiểm CRUD — và không làm gì cả.
+    """
+    import platform_core.db as dbmod
+
+    from apps.ltt_voice import features, tu_dien_rieng
+
+    client, uid = khach
+    r = client.post("/ltt-voice/tu-dien/them",
+                    data={"tu": "Chuong", "thay": "Chuwowng",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 200 and r.json()["ok"], r.text
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        rieng = tu_dien_rieng.nhu_dict(db, uid)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    assert rieng == {"Chuong": "Chuwowng"}
+    yc = features.chuan_hoa({"text": "Chuong mot bat dau", "preset": "Adam"})
+    kq = features.chuan_bi_van_ban(yc, tran_moi_doan=1500,
+                                   tu_dien_rieng=rieng)
+    assert "Chuwowng" in kq.da_chuan_hoa, (
+        f"muc tu dien KHONG duoc ap vao chuan hoa: {kq.da_chuan_hoa!r}")
+
+
+def test_go_lai_cung_mot_tu_la_SUA_khong_phai_loi_trung(khach):
+    client, _uid = khach
+    for thay in ("mot", "hai"):
+        r = client.post("/ltt-voice/tu-dien/them",
+                        data={"tu": "abc", "thay": thay,
+                              "csrf_token": _csrf(client)})
+        assert r.json()["ok"], r.text
+    ds = client.get("/ltt-voice/tu-dien").json()["muc"]
+    assert len(ds) == 1 and ds[0]["thay"] == "hai", ds
+
+
+def test_TU_CHOI_ky_tu_dac_biet(khach):
+    """⛔ `tu_dien._mau` đã `re.escape`, nên không có đường tiêm regex.
+
+    Nhưng vẫn từ chối ở cửa vào: một chuỗi trông như regex trong danh sách của
+    khách là một thứ họ sẽ TƯỞNG là chạy.
+    """
+    client, _uid = khach
+    for xau in (".*", "a|b", "(x)", "a\b", "<script>"):
+        r = client.post("/ltt-voice/tu-dien/them",
+                        data={"tu": xau, "thay": "gi do",
+                              "csrf_token": _csrf(client)})
+        assert r.status_code == 400, f"{xau!r} lot qua: {r.text[:120]}"
+
+
+def test_TU_CHOI_muc_thay_chinh_no(khach):
+    client, _uid = khach
+    r = client.post("/ltt-voice/tu-dien/them",
+                    data={"tu": "Abc", "thay": "abc",
+                          "csrf_token": _csrf(client)})
+    assert r.status_code == 400, "muc thay chinh no chiem mot suat ma khong lam gi"
+
+
+def test_TRAN_so_muc_duoc_ap(khach):
+    """Mỗi phép thay là một lượt quét toàn văn bản. Không trần = một cách để
+    một tài khoản làm chậm worker cho mọi người."""
+    from apps.ltt_voice import tu_dien_rieng
+
+    client, _uid = khach
+    csrf = _csrf(client)
+    for i in range(tu_dien_rieng.TRAN_SO_MUC):
+        r = client.post("/ltt-voice/tu-dien/them",
+                        data={"tu": f"tu{i}", "thay": f"thay{i}",
+                              "csrf_token": csrf})
+        assert r.json()["ok"], (i, r.text[:120])
+    r = client.post("/ltt-voice/tu-dien/them",
+                    data={"tu": "qua-tran", "thay": "gi do", "csrf_token": csrf})
+    assert r.status_code == 400, "vuot tran ma van nhan"
+
+
+def test_xoa_muc_cua_NGUOI_KHAC_la_404(khach):
+    import platform_core.db as dbmod
+
+    from apps.ltt_voice.tables import VoiceTuDien
+
+    client, _uid = khach
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        m = VoiceTuDien(owner_id="mot-nguoi-khac", tu="bimat", thay="bi mat")
+        db.add(m)
+        db.commit()
+        mid = m.id
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    r = client.post(f"/ltt-voice/tu-dien/{mid}/xoa",
+                    data={"csrf_token": _csrf(client)})
+    assert r.status_code == 404, r.text
+
+
+def test_o_TU_DIEN_hien_tren_man_studio(khach):
+    client, _uid = khach
+    html = client.get("/ltt-voice").text
+    assert 'id="lv-td-hop"' in html, "thieu hop tu dien tren man Studio"
+    assert 'id="lv-td-luu"' in html
+
+
+def test_XEM_TRUOC_va_LUC_SINH_phai_ap_CUNG_mot_tu_dien(khach):
+    """🔴 Bảng "Máy sẽ đọc thành" mà lệch với lúc sinh là một lời nói dối.
+
+    Bảng ấy tồn tại để khách thấy trước máy đọc ra sao **trước khi trả tiền**.
+    Nếu worker áp từ điển mà xem trước thì không, hai bên cho hai kết quả khác
+    nhau — và bên khách nhìn thấy là bên SAI.
+
+    ⚠️ Tôi mắc đúng lỗi này ngay trong lượt thêm chính tính năng: nối vào
+       `jobs.py` rồi quên `xem_truoc`. Cùng lớp "một cửa có, cửa kia không" mà
+       `features.py` đã cảnh báo — và cảnh báo ấy không cứu được tôi.
+    """
+    import platform_core.db as dbmod
+
+    from apps.ltt_voice import features, tu_dien_rieng
+
+    client, uid = khach
+    csrf = _csrf(client)
+    r = client.post("/ltt-voice/tu-dien/them",
+                    data={"tu": "Chuong", "thay": "Chuwowng", "csrf_token": csrf})
+    assert r.json()["ok"], r.text
+
+    xt = client.post("/ltt-voice/xem-truoc",
+                     data={"text": "Chuong mot", "csrf_token": csrf})
+    assert xt.status_code == 200, xt.text
+    thay_o_xem_truoc = xt.json()["da_chuan_hoa"]
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        rieng = tu_dien_rieng.nhu_dict(db, uid)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+    yc = features.chuan_hoa({"text": "Chuong mot", "preset": "Adam"})
+    thay_luc_sinh = features.chuan_bi_van_ban(
+        yc, tran_moi_doan=1500, tu_dien_rieng=rieng).da_chuan_hoa
+
+    assert thay_o_xem_truoc == thay_luc_sinh, (
+        f"xem truoc va luc sinh KHAC NHAU:\n"
+        f"  xem truoc: {thay_o_xem_truoc!r}\n"
+        f"  luc sinh : {thay_luc_sinh!r}")
+    assert "Chuwowng" in thay_o_xem_truoc
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_43_web_hardening.py
 SHA256=6beaf002832aa9f31503a5de6f6f7a36f495172649838c0e9976fc2a73dd4891 BYTES=8439 LINES=190
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -286321,7 +287091,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=94a9000d765edf9e77cb2625033f80483805c6bea55b27112c7d3ad42a1e44a6 BYTES=257476 LINES=2803
+SHA256=81f4562b66d8b9b8a9704981c9a47f17e68df44cf2397983d475b7060cb5f025 BYTES=258272 LINES=2818
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -288800,7 +289570,6 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 /* Ket qua */
 .lv-kq{min-height:150px}
-.lv-song{display:block;width:100%;height:72px;margin-bottom:9px}
 .lv-kq audio{width:100%;height:36px}
 .lv-kq-nut{display:flex;gap:7px;margin:11px 0}
 .lv-kq-nut .btn{flex:1;justify-content:center}
@@ -289012,6 +289781,22 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 /* Tab ngon ngu vi du o man API. */
 .lv-api-tab{margin-bottom:8px}
+
+/* Tu dien phat am rieng (man Studio, muc ⑤ cua anh 01). */
+.lv-td-ds{list-style:none;margin:9px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:3px;max-height:160px;overflow-y:auto}
+.lv-td-ds li{display:flex;align-items:center;gap:6px;padding:4px 7px;
+  border-radius:var(--radius-sm);background:var(--panel2);font-size:11.5px}
+.lv-td-ds li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;color:var(--muted)}
+.lv-td-xoa{flex:0 0 auto;background:none;border:none;color:var(--dim);
+  cursor:pointer;font-size:14px;line-height:1;padding:0 3px}
+.lv-td-xoa:hover{color:var(--err)}
+.lv-td-them{display:flex;gap:5px;margin-top:9px;flex-wrap:wrap}
+.lv-td-them input{flex:1 1 100px;min-width:0;font-size:11.5px;padding:5px 8px}
+.lv-td-bao{margin:7px 0 0;font-size:11.5px}
+.lv-td-bao.loi{color:var(--err)}
+
 
 /* Luot gan nhat o cot phai man Studio. */
 .lv-kq-nhan{margin:0 0 6px;font-size:11px;text-transform:uppercase;

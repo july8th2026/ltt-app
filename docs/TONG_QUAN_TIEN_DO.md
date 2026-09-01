@@ -98,11 +98,11 @@ thành thứ bán được.
 
 | # | Việc | Đạt khi |
 |---|---|---|
-| 1.1 | Claude Code CLI + Claude Desktop, phiên thật có gọi tool | cần chủ sản phẩm — máy này không có hai công cụ đó |
+| 1.1 | Claude Code CLI + Claude Desktop, phiên thật có gọi tool | 🟡 **MỘT NỬA XONG 01/09.** **Codex CLI 0.145.0** đã chạy thật vào production, **vòng tool khép kín**: gọi `shell` → bị sandbox của chính Codex chặn → tự sửa cú pháp → chạy được → trả lời đúng. Đó là canary client thật **đầu tiên** của cả chương trình (E15 nằm `BLOCKED` từ đầu). 🔴 Và nó bắt ngay một **P1**: cửa `/responses` từ chối khuôn tool native của chính giao thức nó nói, nên Codex **không dùng được một lượt nào** — không phép kiểm nào thấy, vì cả ba lớp bằng chứng đều thử `/messages`. Đã sửa + deploy. Còn Claude Code + Desktop: **chưa cài trên máy này** |
 | 1.2 | **C13** xoay bearer token cổng VLM | token cũ hết hiệu lực |
 | 1.3 | **C15** công cụ tự ghi cấu hình cho ba client | copy–dán không còn cần thiết |
 | 1.4 | **C16** thu tường lửa máy B về một IP | `Set-NetFirewallRule ... -RemoteAddress 192.168.2.17` |
-| 1.5 | Chạy `gate.py` **đầy đủ** một lần trọn vẹn | chưa lần nào xong — hai lần bị deploy giết |
+| ~~1.5~~ | ~~Chạy `gate.py` **đầy đủ** một lần trọn vẹn~~ | ✅ **ĐÓNG 01/09 19:1x** — `RESULT: PASS`, 25/26 bước, **0 dòng `CAY DA DOI`**, 5,3 phút. ⚠️ Bốn lượt khác trong cùng buổi **bị vô hiệu** vì cây đổi giữa chừng — cửa sổ yên là thứ hiếm khi ba phiên cùng ghi. Cách bền hơn: `python tools/cay_rieng.py tao <ten>` rồi chạy gate trong đó (đã dùng thật 01/09, và chính nó bắt được một hồi quy mà lượt ở cây chính bỏ sót) |
 
 ### Giai đoạn 2 — Bán thật (2 ngày) 🔴 **việc chưa từng làm**
 
