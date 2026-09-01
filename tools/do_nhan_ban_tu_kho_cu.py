@@ -70,6 +70,32 @@ def _co_ve_en(ten: str) -> bool:
     return False
 
 
+def _kien_nhan(ham, *, lan: int = 20):
+    """Chạy `ham`, và **chờ** khi cổng giọng báo bận.
+
+    🔴 BẬN KHÔNG PHẢI HỎNG. Cổng giọng có một suất GPU; hai phép đo chạy chồng
+       nhau thì lượt sau nhận `429` → `SidecarBan`. Bản đầu để nó bay lên, và
+       một lượt đo **24 giọng × 5 cửa sổ** chết ở giọng đầu tiên sau khi đã tiêu
+       hàng chục phút GPU.
+
+    ⭐ Đây đúng là phân biệt mà `features._goi_va_dich_loi` đã phải làm ở tầng
+       job (`SidecarBan` → `DangBanTam`, xếp lại chứ không đánh dấu hỏng). Một
+       công cụ đo cũng cần nó, chỉ là nó tự chờ thay vì nhờ hàng đợi.
+    """
+    import time as _t
+
+    from apps.ltt_voice.sidecar_client import SidecarBan
+
+    for i in range(lan):
+        try:
+            return ham()
+        except SidecarBan as e:
+            cho = max(2.0, float(getattr(e, "retry_after_s", 5.0) or 5.0))
+            print(f"    (cong giong ban, cho {cho:.0f}s — lan {i + 1}/{lan})")
+            _t.sleep(cho)
+    raise KhongDoDuoc(f"cong giong ban suot {lan} lan thu — bo cuoc")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
@@ -125,13 +151,16 @@ def main(argv=None) -> int:
         #    một lỗi của ta, và nó đúng là lỗi của ta, chỉ không phải lỗi mình
         #    tưởng: tệp có thật, chỉ là hai tiến trình đứng ở hai chỗ khác nhau.
         duong = os.path.abspath(os.path.join(a.clip_dir, ten + ".wav"))
-        ghi = (sidecar_client.ghi_danh_kho(duong, denoise=True, so_clip=a.kho)
-               if a.kho > 1 else sidecar_client.ghi_danh(duong, denoise=True))
+        ghi = _kien_nhan(
+            lambda: (sidecar_client.ghi_danh_kho(duong, denoise=True,
+                                                 so_clip=a.kho)
+                     if a.kho > 1
+                     else sidecar_client.ghi_danh(duong, denoise=True)))
         ref_b64 = ghi.get("ref_b64")
         if not ref_b64:
             raise KhongDoDuoc(f"{ten}: ghi_danh khong tra ve ref_b64")
         cau = CAU_EN if _co_ve_en(ten) else CAU_VI
-        raw, dau = sidecar_client.noi(cau, ref_b64=ref_b64)
+        raw, dau = _kien_nhan(lambda: sidecar_client.noi(cau, ref_b64=ref_b64))
         w, sr = sf.read(io.BytesIO(raw), dtype="float32", always_2d=False)
         e = _embed(bo, np.asarray(w, dtype=np.float32), int(sr))
         if e is None:
