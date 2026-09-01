@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:63cffa1ac09f672800e9c477ff5e96e5e15044304c63dee532d1f8b77511db22
-Nguồn đã quét : 1463 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:ceece438556502deaa17ea3e3e5f8ef20014d4719a7090730d5bf2a51822aa33
+Nguồn đã quét : 1465 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1186,7 +1186,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (349 file pytest + 3 frontend)
+10. QUALITY GATES (350 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1498,6 +1498,7 @@ Test inventory:
 - tests/test_390_dieu_khoan_api.py
 - tests/test_391_tu_dien_rieng.py
 - tests/test_392_toc_do_hau_ky.py
+- tests/test_393_kiem_truoc_khi_cam.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1562,8 +1563,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1463 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1098, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1465 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1100, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2536,7 +2537,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (366)
+[tests] (367)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2859,6 +2860,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_390_dieu_khoan_api.py
 - tests/test_391_tu_dien_rieng.py
 - tests/test_392_toc_do_hau_ky.py
+- tests/test_393_kiem_truoc_khi_cam.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -2904,7 +2906,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (168)
+[tools] (169)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -3013,6 +3015,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tools/khach_gia_lap_anh.py
 - tools/khoa_thu_api.py
 - tools/kiem_ltt_llm.py
+- tools/kiem_truoc_khi_cam.py
 - tools/lint_app_contract.py
 - tools/nap_credit_tai_khoan_thu.py
 - tools/nexus_release_key.py
@@ -3083,7 +3086,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1463 file; 14535863 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14561115 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -20301,7 +20304,7 @@ SHA256=2b6241a8c8fcd708ef512ff99b34b9842880b65dff90ada258a789767062ac13 BYTES=34
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/jobs.py
-SHA256=59abcb4e782e2aab3af989cfd136a834c8760a6e144d127a6e5cadcefac77cfa BYTES=14987 LINES=301
+SHA256=8221421f6abae6510ca72aed37d72882e541a86684adac421501050464cc5e66 BYTES=17066 LINES=333
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 jobs.py — handler chạy trong worker.
@@ -20428,6 +20431,38 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     tu_rieng = _voi_db(lambda db: tu_dien_rieng.nhu_dict(db, yc.owner_id))         if yc.owner_id else {}
     chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH,
                                       tu_dien_rieng=tu_rieng)
+
+    # ── TRẦN SAU CHUẨN HOÁ — chặn một lỗ KHUẾCH ĐẠI CHI PHÍ ─────────────────
+    #
+    # 🔴 `manifest._gia()` ước giá bằng `chuan_hoa(text)` **KHÔNG có từ điển
+    #    riêng** — và nó không được phép có, vì nó chạy ở mọi lượt báo giá nên
+    #    không được chạm CSDL (chú thích của chính nó nói vậy).
+    #
+    #    Nhưng worker thì CÓ áp từ điển. Hai bên đọc hai văn bản khác nhau, và
+    #    khoảng cách ấy do khách kiểm soát:
+    #
+    #        do 01/09, trong pham vi tran hien tai (100 muc, `thay` <= 160):
+    #          tho              1.499 ky tu   <- `_gia()` giu credit theo so nay
+    #          sau tu dien    120.749 ky tu   <- worker doc so nay
+    #          he so no          80,6x
+    #
+    #    Hệ quả không phải "thu thiếu": `credit_held` bé hơn thực tế làm phần
+    #    quyết toán vượt phần giữ, và một lượt chạy đang giữa chừng bị đánh
+    #    hỏng. Khách mất thời gian chờ để nhận một lỗi.
+    #
+    # ⭐ Trần đặt ở 3× độ dài thô: rộng gấp nhiều lần mọi phép nở thật (số →
+    #    chữ nở ~3× **chỉ trên phần là số**; "LTT" → "e lờ tê tê" nở 3,3× chỉ
+    #    trên ba ký tự), nhưng chặn dứt khoát ca 80×.
+    #
+    # ⛔ Ném `LoiGiongNoi` (= `LoiNguoiGoi`) chứ không phải lỗi hạ tầng: nền
+    #    tảng KHÔNG thử lại, và credit đã giữ được hoàn. Một lỗi hạ tầng ở đây
+    #    sẽ thử lại ba lần cho một thứ chắc chắn hỏng cả ba.
+    _tran_sau = len(yc.text) * 3 + 200
+    if len(chuan.da_chuan_hoa) > _tran_sau:
+        raise LoiGiongNoi(_t(
+            "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} "
+            "ký tự cho phép. Hãy rút gọn một mục trong từ điển."
+        ).format(n=len(chuan.da_chuan_hoa), t=_tran_sau))
     doan = chuan.doan or [yc.text]
 
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
@@ -256920,7 +256955,7 @@ def test_can_dieu_khoan_NEM_khi_chua_du():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_391_tu_dien_rieng.py
-SHA256=4fb8e7967a7b41be349523b2041c21fa9cbedaa8936ef5b1cd30cf5c0e07b513 BYTES=8605 LINES=234
+SHA256=0ae2f3d0a7a89676c91a971b083fb3a3490136790ab2266048b6f9e3578a6191 BYTES=12066 LINES=307
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Từ điển phát âm RIÊNG của khách — module mà chuỗi tham số đã chờ từ lâu.
 
@@ -257157,6 +257192,79 @@ def test_XEM_TRUOC_va_LUC_SINH_phai_ap_CUNG_mot_tu_dien(khach):
         f"  luc sinh : {thay_luc_sinh!r}")
     assert "Chuwowng" in thay_o_xem_truoc
 
+
+def test_TU_DIEN_khong_the_khuech_dai_chi_phi(khach, monkeypatch):
+    """🔴 LỖ TIỀN, đo được 80× — và chính tính năng từ điển mở ra nó.
+
+    `manifest._gia()` ước giá bằng `chuan_hoa(text)` **KHÔNG có từ điển riêng**
+    (và không được phép có: nó chạy ở mọi lượt báo giá nên không chạm CSDL).
+    Worker thì CÓ áp. Hai bên đọc hai văn bản khác nhau, khoảng cách do khách
+    kiểm soát:
+
+        tho              1.499 ky tu   <- `_gia()` giu credit theo so nay
+        sau tu dien    120.749 ky tu   <- worker doc so nay
+
+    ⛔ Hệ quả không phải "thu thiếu" mà là `credit_held` bé hơn thực tế ⇒ một
+       lượt đang chạy bị đánh hỏng giữa chừng. Khách chờ để nhận một lỗi.
+    """
+    from apps.ltt_voice import features, jobs, text_pipeline, tu_dien_rieng
+
+    _client, _uid = khach
+    tho = ("a " * 750).strip()
+    no = {"a": "x" * tu_dien_rieng.TRAN_THAY}
+
+    # ① Lỗ có THẬT: xác nhận hệ số nở vẫn lớn nếu không có trần.
+    khong = text_pipeline.chuan_hoa(tho)
+    co = text_pipeline.chuan_hoa(tho, tu_dien_rieng=no)
+    assert len(co) > len(khong) * 10, (
+        "phep do nay khong con y nghia — kiem lai tran cua `tu_dien_rieng`")
+
+    # ② Và worker CHẶN nó, bằng một lỗi NGƯỜI GỌI (không thử lại, hoàn credit).
+    import platform_core.db as dbmod
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u2 = tao_nguoi_dung(db, email="no@test.com", password="matkhau-tot-12",
+                            is_verified=True)
+        db.commit()
+        uid2 = str(u2.id)
+        tu_dien_rieng.them(db, uid2, tu="a", thay="x" * tu_dien_rieng.TRAN_THAY)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # ⚠️ Chốt "sidecar sẵn sàng" chạy TRƯỚC trần này, nên không có token thì
+    #    phép kiểm dừng ở đó và không bao giờ chạm thứ nó muốn kiểm — một phép
+    #    kiểm xanh/đỏ vì lý do sai. Đặt token giả để đi tới đúng chỗ; luồng vẫn
+    #    ném TRƯỚC khi gọi cổng, nên không có lượt mạng nào.
+    monkeypatch.setenv("LTT_VOICE_SIDECAR_TOKEN", "thu-nghiem")
+    with pytest.raises(features.LoiGiongNoi) as e:
+        jobs.handle({"text": tho, "preset": "Adam", "owner_id": uid2,
+                     "_job_type": "ltt_voice.synthesize"})
+    assert "từ điển" in str(e.value).lower(), (
+        f"thong diep phai chi ro thu phai sua: {e.value}")
+
+
+def test_TRAN_sau_chuan_hoa_KHONG_chan_van_ban_that(khach):
+    """Trần phải rộng gấp nhiều lần mọi phép nở THẬT.
+
+    ⛔ Một trần chặn nhầm văn bản bình thường còn tệ hơn không có trần: khách
+       không hiểu vì sao một câu hợp lệ bị từ chối, và họ không có gì để sửa.
+    """
+    from apps.ltt_voice import text_pipeline
+
+    for tho in ("Gi\u00e1 1.250.000.000\u0111 v\u00e0 990.000\u0111 m\u1ed7i th\u00e1ng.",
+                "Ng\u00e0y 1/9/2026 l\u00fac 9h30, t\u0103ng 15%.",
+                "D\u00f9ng CPU, GPU, API v\u00e0 USB c\u00f9ng l\u00fac."):
+        da = text_pipeline.chuan_hoa(tho)
+        assert len(da) <= len(tho) * 3 + 200, (
+            f"van ban THAT vuot tran: {tho!r} -> {len(da)} ky tu")
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_392_toc_do_hau_ky.py
@@ -257349,6 +257457,164 @@ def test_chot_TREN_do_lam_viec_theo_CA_HAI_CHIEU():
                'fd.append("con_lai", v);')
     assert _trich(hon_hop) == {"con_lai"}, (
         "chu thich ve mot truong DA XOA van bi tinh la con ton tai")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_393_kiem_truoc_khi_cam.py
+SHA256=f94e7df1533855c57fcdc67941162b54cbb428e6b54a57052860170ef9cd6efd BYTES=7789 LINES=152
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_393 — bộ kiểm `kiem_truoc_khi_cam.py` phải dùng được TRÊN MỘT MÁY TRẮNG.
+
+Tệp công cụ đó tồn tại để **chép sang máy khác** trước khi cắm Codex. Cái giá
+của việc chép đi là: mọi giả định về môi trường đều sai. Nên ba tính chất dưới
+đây không phải chuyện phong cách — chúng quyết định tệp có được chạy hay không.
+
+⛔ VÀ MỘT TÍNH CHẤT THỨ TƯ, ĐẮT NHẤT: **mỗi phép đo phải có đối chứng.** Bài học
+   của đợt 31/08–01/09 là tám lần một dụng cụ cho kết quả đẹp vì nó không đo gì
+   cả. Một bộ kiểm "đường gọi thông" mà không thể báo *không thông* thì tệ hơn
+   không có — nó biến một sự cố thành một dấu tích xanh.
+"""
+from __future__ import annotations
+
+import ast
+import pathlib
+
+import pytest
+
+TEP = pathlib.Path(__file__).resolve().parents[1] / "tools" / "kiem_truoc_khi_cam.py"
+VAN = TEP.read_text(encoding="utf-8")
+CAY = ast.parse(VAN)
+
+
+# ── 1. Chạy được trên một máy chưa cài gì ───────────────────────────────────
+
+def test_CHI_dung_thu_vien_chuan():
+    """Máy đích có thể chưa có `requests`, chưa có kho này, chưa có gì.
+
+    ⛔ Một bộ kiểm đòi `pip install` là một bộ kiểm sẽ không được chạy — người
+       ta sẽ bỏ qua nó và cắm thẳng, rồi gặp lỗi ở chỗ khó chẩn đoán hơn.
+    """
+    chuan = {"argparse", "json", "os", "sys", "time", "urllib", "typing",
+             "__future__", "dataclasses", "pathlib", "ssl", "http", "re"}
+    ngoai = set()
+    for n in ast.walk(CAY):
+        if isinstance(n, ast.Import):
+            ngoai |= {a.name.split(".")[0] for a in n.names}
+        elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
+            ngoai.add(n.module.split(".")[0])
+    la = ngoai - chuan
+    assert not la, f"import ngoai thu vien chuan: {sorted(la)}"
+
+
+def test_KHONG_phu_thuoc_vao_kho_nay():
+    """Nó bị chép đi MỘT MÌNH. Import `platform_core`/`apps` là chép hụt."""
+    for cam in ("platform_core", "apps.", "server."):
+        assert f"import {cam}" not in VAN and f"from {cam}" not in VAN, (
+            f"phu thuoc {cam} — tep nay se vo khi chep sang may khac")
+
+
+def test_KHONG_goi_dia_chi_noi_bo():
+    """Đo ở loopback là đo một thứ khác. `CLAUDE.md` quy tắc 5b đã trả giá:
+    trang đẹp ở `127.0.0.1` mà **vỡ với người dùng thật** vì Cloudflare phục vụ
+    bản cũ. Máy khách không có loopback của ta."""
+    for cam in ("127.0.0.1", "localhost", "192.168."):
+        assert cam not in VAN, f"co dia chi noi bo `{cam}` — may khach khong toi duoc"
+
+
+# ── 2. Nó phải ĐỎ được ──────────────────────────────────────────────────────
+
+def test_moi_phep_do_QUAN_TRONG_deu_co_doi_chung():
+    """Ba đối chứng bắt buộc, mỗi cái chặn một kiểu 'xanh vì lý do sai'.
+
+    - khoá SAI phải bị từ chối  → nếu không, "khoá dùng được" đúng tầm thường
+    - một lượt gọi thật phải TRỪ TIỀN → nếu không, ta đang đo một đường không
+      tính tiền, và mọi kết luận về đường gọi đều vô nghĩa
+    - bẫy `Python-urllib` phải còn → nó là thứ khách tự viết sẽ vấp
+    """
+    for dau in ("doi chung", "CO tru tien", "Python-urllib"):
+        assert dau in VAN, f"thieu doi chung: {dau}"
+
+    # 🔴 VÀ ĐỐI CHỨNG KHOÁ SAI PHẢI LÀ MỘT LỜI GỌI THẬT, không phải một nhãn.
+    #
+    #    Bản đầu của phép kiểm này chỉ tìm chuỗi `"khoa SAI"` trong tệp. Đột
+    #    biến cho thấy nó vô dụng: thay cả lời gọi bằng `ma_sai = 401` thì nhãn
+    #    vẫn còn, phép kiểm vẫn xanh, và đối chứng đã biến mất.
+    #
+    # ⭐ Cùng hình dạng với thứ tệp này sinh ra để chống. Nên nay đọc AST và đòi
+    #    có ít nhất một lời gọi `_goi` mang một khoá **đã bị sửa** — tức thật sự
+    #    hỏi máy chủ bằng một khoá không hợp lệ.
+    goi_khoa_sai = []
+    for n in ast.walk(CAY):
+        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_goi"):
+            continue
+        for tham in n.args[1:2]:
+            # `a.khoa` tran thi la khoa that; bat ky phep toan nao tren no
+            # (noi chuoi, cat bot) deu la mot khoa CO Y lam sai.
+            if isinstance(tham, ast.BinOp):
+                goi_khoa_sai.append(n.lineno)
+    assert goi_khoa_sai, (
+        "khong co loi goi nao dung mot khoa DA BI SUA — doi chung 'khoa sai bi "
+        "tu choi' chi con la mot nhan, khong con la mot phep do")
+
+
+def test_DUNG_HAN_khi_doi_chung_tien_truot():
+    """Nếu khoá đúng và khoá sai **cùng** được nhận, bộ kiểm phải DỪNG chứ không
+    báo đạt — chính nó đang hỏng, và một dụng cụ hỏng nói 'đạt' là ca tệ nhất."""
+    assert "DOI CHUNG TRUOT" in VAN
+    assert "DUNG doc ket qua duoi day" in VAN
+
+
+def test_ba_ma_thoat_phan_biet_duoc():
+    """0 thông · 1 có mục hỏng · 2 không đo được. Một bộ kiểm luôn trả 0 thì
+    không tự động hoá được, và sẽ bị đọc bằng mắt rồi bỏ qua."""
+    ma = {n.value.value for n in ast.walk(CAY)
+          if isinstance(n, ast.Return) and isinstance(n.value, ast.Constant)
+          and isinstance(n.value.value, int)}
+    assert {0, 1, 2} <= ma, f"chi thay ma thoat {sorted(ma)}"
+
+
+# ── 3. Cấu hình nó in ra phải là cấu hình ĐÚNG ──────────────────────────────
+
+def test_cau_hinh_in_ra_khop_hop_dong_that():
+    """🔴 Bộ kiểm in ra một `config.toml` để người ta dán vào máy khác. Nếu bốn
+    giá trị đó sai thì nó vừa nói "đường gọi thông" vừa phát một cấu hình hỏng —
+    và người nhận sẽ tin dòng đầu.
+
+    ⭐ `wire_api = "responses"` là dòng đáng canh nhất: Codex nối `/responses`
+       vào `base_url`, nên base phải tận cùng `/api/v1`. Sai bốn ký tự ở đây cho
+       một `404` không manh mối nào — đúng cái bẫy `CLI_BAY` đã ghi.
+    """
+    assert 'base_url = "{API}"' in VAN or "/api/v1" in VAN
+    assert 'wire_api = "responses"' in VAN
+    assert 'env_key = "LTT_API_KEY"' in VAN
+    assert 'model = "ltt_llm"' in VAN
+
+
+def test_ten_model_khop_ALIAS_that_cua_app():
+    """Tên model in ra phải là bí danh công khai app đang khai, không phải một
+    chuỗi gõ tay đã trôi."""
+    from apps.ltt_llm.features import ALIAS_SANG_ID
+
+    assert 'model = "ltt_llm"' in VAN
+    assert "ltt_llm" in ALIAS_SANG_ID
+
+
+def test_NOI_RO_canh_bao_metadata_cua_Codex():
+    """Codex in `Model metadata for ltt_llm not found` ở **mọi** lượt chạy.
+
+    ⛔ Không nói trước thì người cắm sẽ tưởng mình làm sai và đi sửa cấu hình
+       đang đúng. Đo 01/09: Codex **không gọi** `/api/v1/models` lần nào, nên
+       cảnh báo đó không phải lỗi của khuôn dữ liệu phía ta.
+    """
+    assert "Model metadata" in VAN
+    assert "KHONG goi /api/v1/models" in VAN
+
+
+@pytest.mark.parametrize("muc", ["Mang va Cloudflare", "Khoa API", "Model",
+                                 "/responses", "Tien"])
+def test_phu_du_nam_chang_cua_duong_goi(muc):
+    """Thiếu một chặng thì bộ kiểm nói 'thông' về một đường nó chưa đi hết."""
+    assert muc in VAN
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -292609,6 +292875,255 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_truoc_khi_cam.py
+SHA256=c870d9cb191d72126eb203e8cf025d7645ab541a58a6c43a27a3d0f46d276b04 BYTES=11923 LINES=243
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""kiem_truoc_khi_cam.py — kiểm đường gọi `ltt_llm` TỪ MỘT MÁY KHÁC.
+
+    python kiem_truoc_khi_cam.py --khoa ltt_sk_...
+    python kiem_truoc_khi_cam.py            # đọc khoá từ biến LTT_API_KEY
+
+## Tệp này dùng để chép sang máy khác, nên nó có ba ràng buộc
+
+1. **Chỉ dùng thư viện chuẩn của Python.** Máy đích có thể chưa có `requests`,
+   chưa có kho này, chưa có gì. Một bộ kiểm đòi cài thêm thứ gì đó là một bộ
+   kiểm sẽ không được chạy.
+2. **Một tệp duy nhất.** Chép một tệp thì người ta chép; chép một thư mục thì
+   người ta bỏ qua.
+3. **Không chạm máy chủ nội bộ.** Mọi phép đo đi qua đúng đường mà máy khách sẽ
+   đi: HTTPS công khai, qua Cloudflare. Đo ở loopback là đo một thứ khác —
+   `CLAUDE.md` quy tắc 5b đã trả giá cho bài học đó.
+
+## ⛔ MỖI PHÉP KIỂM ĐỀU CÓ ĐỐI CHỨNG, và đối chứng trượt thì DỪNG
+
+Bài học đắt nhất của đợt kiểm 31/08–01/09: **tám lần một dụng cụ cho ra kết quả
+đẹp vì nó không đo gì cả.** Nên ở đây, phép kiểm "khoá dùng được" đi kèm phép
+kiểm "khoá sai bị từ chối". Nếu cả hai cùng `200` thì bộ kiểm **không** báo
+"đạt" — nó báo là chính nó hỏng.
+
+## 🔴 CÁI BẪY `Python-urllib` — và vì sao tệp này tự thử nó
+
+Cloudflare chặn **đúng tiền tố chuỗi `Python-urllib/`, phân biệt hoa-thường**.
+Ai viết mười dòng Python để thử API sẽ dùng `urllib`, nhận **403 của
+Cloudflare** — không `request_id`, không dòng nào trong sổ, không tra được. Nhìn
+y hệt khoá sai, nên họ đi tạo khoá mới rồi vẫn 403.
+
+Đo 30/08, cùng khoá, cùng đường:
+
+    UA "Python-urllib/3.13"  (HOA chu P)  -> 403 CLOUDFLARE
+    UA "python-urllib/3.13"  (thuong p)   -> 200
+    UA ""  (chuoi RONG)                   -> 200
+    UA "curl/8.0"                         -> 200
+
+⇒ Bộ kiểm này đặt User-Agent riêng, **và thử cả biến thể bị chặn** để người chạy
+thấy tận mắt cái bẫy thay vì đọc một dòng cảnh báo.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import time
+import urllib.error
+import urllib.request
+
+GOC = "https://app.lttstudios.com"
+API = GOC + "/api/v1"
+UA = "ltt-preflight/1.0"
+
+XANH, DO, VANG, TAT = "\033[32m", "\033[31m", "\033[33m", "\033[0m"
+if os.name == "nt" and not os.environ.get("WT_SESSION"):
+    XANH = DO = VANG = TAT = ""
+
+_ket: list = []
+
+
+def _goi(duong, khoa="", than=None, ua=UA, timeout=180, method=None):
+    url = duong if duong.startswith("http") else API + duong
+    data = json.dumps(than).encode() if than is not None else None
+    req = urllib.request.Request(url, data=data,
+                                 method=method or ("POST" if data else "GET"))
+    if khoa:
+        req.add_header("Authorization", "Bearer " + khoa)
+    if ua is not None:
+        req.add_header("User-Agent", ua)
+    if data:
+        req.add_header("Content-Type", "application/json")
+    t = time.time()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return r.status, r.read().decode("utf-8", "replace"), round(time.time() - t, 2)
+    except urllib.error.HTTPError as e:
+        return e.code, e.read().decode("utf-8", "replace"), round(time.time() - t, 2)
+    except Exception as e:                                      # noqa: BLE001
+        return -1, f"{type(e).__name__}: {e}", round(time.time() - t, 2)
+
+
+def bao(ten, dat, chi_tiet="", bat_buoc=True):
+    _ket.append((ten, dat, bat_buoc))
+    dau = f"{XANH}[ĐẠT ]{TAT}" if dat else (f"{DO}[HỎNG]{TAT}" if bat_buoc
+                                            else f"{VANG}[XEM ]{TAT}")
+    print(f"  {dau} {ten}" + (f" — {chi_tiet}" if chi_tiet else ""))
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="Kiem duong goi ltt_llm tu may nay.")
+    p.add_argument("--khoa", default=os.environ.get("LTT_API_KEY", ""))
+    p.add_argument("--bo-qua-tra-tien", action="store_true",
+                   help="bo hai phep kiem co TIEU CREDIT that")
+    a = p.parse_args()
+
+    print(f"\n{'=' * 66}\n  KIEM DUONG GOI ltt_llm — tu chinh may nay\n{'=' * 66}")
+    print(f"  dich: {API}")
+
+    # ── 1. Tới được máy chủ chưa ────────────────────────────────────────────
+    print("\n1. Mang va Cloudflare")
+    ma, than, giay = _goi(GOC + "/gia-api")
+    bao("toi duoc mien cong khai", ma == 200, f"HTTP {ma} trong {giay}s")
+    if ma < 0:
+        print(f"\n  {DO}Khong ra duoc Internet toi {GOC}.{TAT} "
+              f"Kiem DNS, proxy, tuong lua cua may nay.")
+        return 2
+
+    # 🔴 Cái bẫy urllib: thử ĐÚNG chuỗi bị chặn để người chạy thấy tận mắt.
+    ma_bay, _t, _g = _goi(GOC + "/gia-api", ua="Python-urllib/3.13")
+    bao("bay `Python-urllib/` van con (403 la DUNG)", ma_bay == 403,
+        f"HTTP {ma_bay} — dat User-Agent rieng thi qua", bat_buoc=False)
+
+    # ── 2. Khoá ─────────────────────────────────────────────────────────────
+    print("\n2. Khoa API")
+    if not a.khoa:
+        print(f"  {DO}Chua co khoa.{TAT} Dat bien LTT_API_KEY hoac dung --khoa.")
+        return 2
+    if not a.khoa.startswith("ltt_sk_"):
+        print(f"  {VANG}Khoa khong bat dau bang `ltt_sk_` — co the chep thieu.{TAT}")
+
+    ma, than, _g = _goi("/tools", a.khoa)
+    bao("khoa dung duoc", ma == 200, f"HTTP {ma}")
+
+    # ⛔ ĐỐI CHỨNG. Không có nó thì "khoá dùng được" có thể đúng một cách tầm
+    #    thường — ví dụ khi máy chủ đang cho qua mọi thứ.
+    ma_sai, _t, _g = _goi("/tools", a.khoa + "sai")
+    bao("khoa SAI bi tu choi (doi chung)", ma_sai in (401, 403),
+        f"HTTP {ma_sai}")
+    if ma == 200 and ma_sai == 200:
+        print(f"\n  {DO}DOI CHUNG TRUOT: khoa dung va khoa sai deu duoc nhan.{TAT}")
+        print("  Bo kiem nay dang do mot thu khac. DUNG doc ket qua duoi day.")
+        return 2
+
+    # ── 3. Model có mở không ────────────────────────────────────────────────
+    print("\n3. Model")
+    ma, than, _g = _goi("/models", a.khoa)
+    ten_model, vi_sao = [], ""
+    if ma == 200:
+        # !! NOI RA khi than tra ve khong doc duoc. Nuot im lang o day bien
+        #    "may chu doi khuon tra loi" thanh "khong thay ltt_llm" -- hai su co
+        #    khac han nhau, sua o hai noi khac han nhau.
+        try:
+            d = json.loads(than)
+            ten_model = [m.get("name") for m in d.get("items", [])]
+            if not isinstance(d.get("items"), list):
+                vi_sao = "than JSON khong co mang `items`"
+        except ValueError as e:
+            vi_sao = f"than tra ve khong phai JSON ({e})"
+    else:
+        vi_sao = f"HTTP {ma}"
+    bao("ltt_llm co trong danh muc", "ltt_llm" in ten_model,
+        ", ".join(t for t in ten_model if t) or vi_sao)
+
+    # ── 4. Cửa Codex thật sự dùng ───────────────────────────────────────────
+    print("\n4. Cua /responses — dung cua Codex noi")
+    than_thu = {"model": "ltt_llm", "stream": True, "max_output_tokens": 24,
+                "input": "Tra loi dung mot tu: OK"}
+    ma, than, giay = _goi("/responses", a.khoa, than_thu, timeout=300)
+    bao("goi duoc, co luong tra ve", ma == 200, f"HTTP {ma} trong {giay}s")
+    if ma != 200:
+        print("     " + " ".join(than[:300].split()))
+
+    # 🔴 Đây là chỗ Codex CHẾT nếu hỏng: nó LUÔN khai `shell`/`apply_patch`.
+    #    Khuôn Responses phẳng (`type`+`name`+`parameters`), không phải khuôn
+    #    Anthropic. Cua nay tung tu choi dung khuon cua chinh no (P08, 01/09).
+    than_tool = dict(than_thu)
+    than_tool["tools"] = [{"type": "function", "name": "shell",
+                           "description": "Chay mot lenh",
+                           "parameters": {"type": "object",
+                                          "properties": {"cmd": {"type": "string"}}}}]
+    ma_t, than_t, _g = _goi("/responses", a.khoa, than_tool, timeout=300)
+    bao("NHAN khuon tool cua Codex", ma_t == 200,
+        f"HTTP {ma_t}" + ("" if ma_t == 200 else " — Codex se KHONG dung duoc"))
+    if ma_t != 200:
+        print("     " + " ".join(than_t[:300].split()))
+
+    # ── 5. Tiền ─────────────────────────────────────────────────────────────
+    print("\n5. Tien")
+    ma, than, _g = _goi("/credits/balance", a.khoa)
+    so_du, vi_sao = None, f"HTTP {ma}"
+    if ma == 200:
+        try:
+            so_du = json.loads(than).get("balance")
+            vi_sao = "than JSON khong co truong `balance`"
+        except ValueError as e:
+            vi_sao = f"than tra ve khong phai JSON ({e})"
+    bao("doc duoc so du", so_du is not None,
+        f"{so_du} credit" if so_du is not None else vi_sao)
+
+    if not a.bo_qua_tra_tien and so_du is not None:
+        # ⭐ ĐỐI CHỨNG TIỀN: một lượt gọi thật PHẢI làm số dư giảm. Không giảm
+        #    nghĩa là ta đang đo một đường KHÔNG tính tiền, và khi đó mọi kết
+        #    luận về "đường gọi thông" đều đúng một cách tầm thường.
+        ma, _t, _g = _goi("/responses", a.khoa,
+                          {"model": "ltt_llm", "stream": True,
+                           "max_output_tokens": 32,
+                           "input": "Dem tu 1 den 5."}, timeout=300)
+        time.sleep(6)
+        _m, than2, _g = _goi("/credits/balance", a.khoa)
+        try:
+            sau = json.loads(than2).get("balance")
+        except ValueError:
+            # Doc lai that bai => KHONG ket luan duoc ve tien. Do khac han
+            # "khong tru tien", nen phai de `sau = None` va noi ra o nhan.
+            sau = None
+        bao("mot luot goi that CO tru tien (doi chung)",
+            sau is not None and sau < so_du, f"{so_du} -> {sau}")
+
+    # ── Kết ─────────────────────────────────────────────────────────────────
+    hong = [t for t, d, bb in _ket if not d and bb]
+    print(f"\n{'=' * 66}")
+    if hong:
+        print(f"  {DO}CHUA THONG — {len(hong)} muc hong:{TAT}")
+        for t in hong:
+            print(f"    - {t}")
+        print(f"\n  Dung cam vao Codex khi con muc hong. Gui ket qua nay cho\n"
+              f"  nguoi van hanh — no du de chan doan ma khong can vao may nay.")
+        return 1
+
+    print(f"  {XANH}DUONG GOI THONG.{TAT} Cau hinh cho Codex "
+          f"(`~/.codex/config.toml`):\n")
+    print(f'''    model = "ltt_llm"
+    model_provider = "ltt"
+
+    [model_providers.ltt]
+    name = "LTT Studios"
+    base_url = "{API}"
+    wire_api = "responses"
+    env_key = "LTT_API_KEY"
+''')
+    print("  Roi dat khoa o MUC NGUOI DUNG, khong phai trong mot cua so lenh:")
+    print('    setx LTT_API_KEY "ltt_sk_..."      (Windows, roi MO LAI cua so)')
+    print('    export LTT_API_KEY=ltt_sk_...      (macOS/Linux, them vao profile)')
+    print(f"\n  {VANG}Codex se in mot canh bao{TAT} `Model metadata for "
+          f"`ltt_llm` not found`.")
+    print("  Do la Codex khong tra cuu model la trong bang cua no — DO 01/09:")
+    print("  no KHONG goi /api/v1/models lan nao. Canh bao khong chan viec chay.")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 
