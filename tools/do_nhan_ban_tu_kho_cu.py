@@ -112,11 +112,19 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
     ap.add_argument("--clip-dir", default="tmp/giong_cu")
-    ap.add_argument("--ra", default="tmp/nhan_ban_kho_cu.json")
+    # 🔴 TÊN TỆP MANG CẤU HÌNH. Bản đầu để một tên cố định, nên chạy hai cấu
+    #    hình để SO SÁNH thì lượt sau **đè mất** kết quả lượt trước — đúng thứ
+    #    duy nhất mà cả hai lượt sinh ra để làm.
+    #
+    #    Suýt mất đường cơ sở của K2 vì việc này; phải đi trích lại số từ log.
+    ap.add_argument("--ra", default="")
     ap.add_argument("--kho", type=int, default=0,
                     help="So cua so trong kho tham chieu (K2). 0 = duong cu, "
                          "mot cua so. >1 = gop speaker_emb qua ca kho.")
     a = ap.parse_args(argv)
+    if not a.ra:
+        a.ra = (f"tmp/nhan_ban_kho{a.kho}.json" if a.kho > 1
+                else "tmp/nhan_ban_mot_cua_so.json")
 
     import numpy as np
     import soundfile as sf

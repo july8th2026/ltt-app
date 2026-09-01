@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:30229a31c1f092ff4879628f9851a0bde52365c5db4fa4cc2eef58587126f3ec
+Fingerprint   : sha256:0ee260fa5a466d2bbe70f06a8a561e90a1dd5e2f9d829dc200d21265d4fa2f78
 Nguồn đã quét : 1407 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3004,7 +3004,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1407 file; 13902140 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1407 file; 13914047 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -268796,7 +268796,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cong_chat_luong_voice.py
-SHA256=961fcac9bdea1c4c50a5bc3bfea3ef5f8c49a8b6a62d9773250f31fee6288ff0 BYTES=15940 LINES=345
+SHA256=cd60266e5c76d57acd17c1ffec63f14d5f345dae64cfa197a5a7185492cefbea BYTES=16818 LINES=357
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 cong_chat_luong_voice.py — V10 · CỔNG chất lượng, không phải một bản báo cáo.
@@ -268860,7 +268860,19 @@ import tempfile
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 TEP_BASELINE = os.path.join(os.path.dirname(os.path.dirname(
     os.path.abspath(__file__))), "voice_sidecar", "baseline_chat_luong.json")
@@ -271006,7 +271018,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_chon_doan.py
-SHA256=77f5dc1f23183f4b9ce495b33103578f962db394f498e9d4036cc98442ee55d4 BYTES=8876 LINES=204
+SHA256=219845bfd23d5e88a8b1a0ebc020173e038fbf10488b5ae668da9db1235c7ab0 BYTES=9754 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_chon_doan.py — bộ chọn đoạn có THẬT SỰ cho giọng nhân bản giống hơn không?
@@ -271054,7 +271066,19 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Câu đọc để so. Cố định, vì ta đang so ĐOẠN THAM CHIẾU chứ không so văn bản.
 CAU_DOC = ("Hôm nay tôi thử đọc một đoạn ngắn để kiểm tra giọng nói vừa được "
@@ -271216,7 +271240,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_chot_sinh.py
-SHA256=a0729a393c9ae44f0b03512ad7dcb9feff4b23280bef1edd2e794b1feb23bfb9 BYTES=7327 LINES=165
+SHA256=cd78e2829424ed6e0f809e0d490de345494735f79c0033ac2620a5a56bf72d21 BYTES=8205 LINES=177
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_chot_sinh.py — bốn chốt của K1 có báo động nhầm trên tiếng THẬT không?
@@ -271263,7 +271287,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Câu đủ dài để `chot_lap_duoi` chạy (> 2 giây) và đủ khác nhau để không
 #: vô tình đo cùng một ngữ điệu nhiều lần.
@@ -271545,7 +271581,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_dong_thoi_giong.py
-SHA256=a7af2ac62bd57560761f6518df1393460cde1325daec6bb85086d2f631b467df BYTES=8857 LINES=210
+SHA256=4f64ca53463ec48e4dac7c95a3ee5b0206ca22e32f26e680fe2029e4a5977a81 BYTES=9735 LINES=222
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_dong_thoi_giong.py — năm khách bấm cùng lúc thì chuyện gì xảy ra?
@@ -271597,7 +271633,19 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Câu ngắn, cố ý: ta đang đo HÀNG ĐỢI, không đo tốc độ sinh. Câu càng dài thì
 #: thời gian chạy càng át thời gian chờ và phép đo càng mờ.
@@ -271761,7 +271809,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_dung_chay_lo.py
-SHA256=3849e950c735d7af56b65559cbd3f47f478976fbaa477a9578a57b0837f6cf34 BYTES=3476 LINES=89
+SHA256=c14a6a087527e3cce44136037646e46c8a4a965ca67a5146fd0d8d0cb0d96c7a BYTES=4354 LINES=101
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_dung_chay_lo.py — có ai thật sự dùng màn CHẠY LÔ không?
@@ -271788,7 +271836,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 
 def main(argv=None) -> int:
@@ -272128,7 +272188,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_gia_von_voice.py
-SHA256=256a9de96c4c3eb7acd0e0b2244a4ed458a5c80803a686384b3fbbf98b8cc70e BYTES=11478 LINES=256
+SHA256=7d952e2502db1dccde0b658884936978302ab1ac0d6249f9cafdfad0bfba9ac9 BYTES=12356 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_gia_von_voice.py — GIÁ VỐN một giây tiếng nói, đo thật trên máy A.
@@ -272183,7 +272243,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 #    trên một luồng thì thứ tự dòng in ra không còn bảo đảm. `test_353` chốt
 #    việc này — và nó vừa bắt tôi ba lần trong một buổi.
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Giả định giá. Đổi ở đây thì đổi luôn `ghi_chu` trong JSON sinh ra.
 GIA_DIEN_VND_KWH = 3_000.0
@@ -272390,7 +272462,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_lap_cau_v3.py
-SHA256=f6878bb621b8a555991d84a7cfbf52dfd39e31a3693357e71bb7692bdcd69b56 BYTES=6648 LINES=160
+SHA256=f1176c846477fda313e8217691d3f85337e97f8df959ef03ca42c617f5f7c382 BYTES=7526 LINES=172
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_lap_cau_v3.py — v3 Turbo CÒN lặp câu như upstream #159 không?
@@ -272442,7 +272514,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Câu của chính issue #159, giữ nguyên từng ký tự kể cả dấu phẩy cuối.
 CAU_159 = "Người ta thường nói,"
@@ -272556,7 +272640,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_lo_giong.py
-SHA256=8badc1b6bdccccad6785f92cfdae3149f3c0492a7089a1a43deaa08abdd3773c BYTES=8730 LINES=184
+SHA256=ff2bf8a9fa64319e9a3724c159b35d473204e6680f11b2268471e4a5a130e399 BYTES=9608 LINES=196
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_lo_giong.py — gộp lô có THẬT SỰ nhanh hơn gọi lần lượt không?
@@ -272609,7 +272693,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 #    trên một luồng thì thứ tự dòng in ra không còn bảo đảm. `test_353` chốt
 #    việc này — và nó vừa bắt tôi ba lần trong một buổi.
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Mười đoạn như một bài đọc thật: dài ngắn khác nhau, nội dung khác nhau.
 #: ⛔ Đừng dùng cùng một câu lặp N lần — cache và cách chia chunk của model đều
@@ -272746,7 +272842,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_nhan_ban_tu_kho_cu.py
-SHA256=82cb1b7d4ef3344378bcc90ae545721715dc60590a6360e05c80a74c41d560b2 BYTES=9373 LINES=207
+SHA256=670a7796f4dc395ea5ac207216064df8a5892e5f80b236d28c3dc9d480774477 BYTES=10744 LINES=227
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_nhan_ban_tu_kho_cu.py — giọng nhân bản từ kho cũ có GIỐNG người nói không?
@@ -272790,7 +272886,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 CAU_VI = ("Hôm nay tôi thử đọc một đoạn ngắn để kiểm tra giọng vừa được nhân "
           "bản, xem nó có còn giống người nói ban đầu không.")
@@ -272850,11 +272958,19 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--email", default="thu.giongnoi@lttstudios.local")
     ap.add_argument("--clip-dir", default="tmp/giong_cu")
-    ap.add_argument("--ra", default="tmp/nhan_ban_kho_cu.json")
+    # 🔴 TÊN TỆP MANG CẤU HÌNH. Bản đầu để một tên cố định, nên chạy hai cấu
+    #    hình để SO SÁNH thì lượt sau **đè mất** kết quả lượt trước — đúng thứ
+    #    duy nhất mà cả hai lượt sinh ra để làm.
+    #
+    #    Suýt mất đường cơ sở của K2 vì việc này; phải đi trích lại số từ log.
+    ap.add_argument("--ra", default="")
     ap.add_argument("--kho", type=int, default=0,
                     help="So cua so trong kho tham chieu (K2). 0 = duong cu, "
                          "mot cua so. >1 = gop speaker_emb qua ca kho.")
     a = ap.parse_args(argv)
+    if not a.ra:
+        a.ra = (f"tmp/nhan_ban_kho{a.kho}.json" if a.kho > 1
+                else "tmp/nhan_ban_mot_cua_so.json")
 
     import numpy as np
     import soundfile as sf
@@ -273170,7 +273286,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_troi_tong.py
-SHA256=cc361872c7a12cf8b86e542489ec02d74fb019af3849c0253d0093230163984c BYTES=13179 LINES=267
+SHA256=4d88e689137fbda32d3bb524be4fa6228bc753458af2f5200986cad543db4fcd BYTES=14057 LINES=279
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_troi_tong.py — giọng có TRÔI TÔNG qua các đoạn của một bài dài không?
@@ -273229,7 +273345,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 #    trên một luồng thì thứ tự dòng in ra không còn bảo đảm. `test_353` chốt
 #    việc này — và nó vừa bắt tôi ba lần trong một buổi.
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Giọng người lớn nằm gọn trong khoảng này. Đặt hẹp hơn mặc định của librosa để
 #: `pyin` không đi lạc lên hoà âm bậc hai — một lỗi khiến F0 nhảy gấp đôi và đọc
@@ -273443,7 +273571,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/do_van_ban_dai.py
-SHA256=03409427e926b86b4e8caf8eecbe6b42a6e30d8ed1e89af14397b2205d6d5022 BYTES=8489 LINES=190
+SHA256=25bdbcf985bfbb013e677716e135bf21fbe57339a5fe10c668887a827949ab76 BYTES=9367 LINES=202
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 do_van_ban_dai.py — ĐO chất lượng bản GHÉP ở 3.000 và 5.000 ký tự.
@@ -273485,7 +273613,19 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # `voice_sidecar/do_chat_luong.py`. Hai lop boc tren cung mot buffer se dong
 # buffer do khi lop thu nhat bi thu hoi.
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 #: Văn bản nguồn. Câu dài ngắn xen kẽ, có số, có tên riêng, có dấu thanh dày —
 #: giống một bài đọc thật hơn là một câu lặp lại. Một câu lặp lại sẽ cho CER
@@ -283633,7 +283773,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/soi_job.py
-SHA256=4e291fb82ff0e04e1d0d8d1b934baa02bed5c6c0d622ae7e245733eb36495aa6 BYTES=1636 LINES=53
+SHA256=3935afd0d52ef72426ff0fc696296acbca441108c4591bc464c8ba7b4ef2f5b8 BYTES=2514 LINES=65
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""soi_job.py — in trạng thái một job và số dư của chủ nó. Chỉ đọc.
 
@@ -283651,7 +283791,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 
 def main(argv=None) -> int:
@@ -283692,7 +283844,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/soi_kho_giong_cu.py
-SHA256=0da9cb81f88eb47c59f2f600abda0fcc5caa3377f33f5c9591bbce0ca125c8ec BYTES=9502 LINES=233
+SHA256=d40b1a7602a68d019ab5b4a16732c5553eecabc0117aaabd11e4edfc2cbc0eaf BYTES=10380 LINES=245
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 r"""
 soi_kho_giong_cu.py — chấm kho giọng của hệ CŨ (`D:\Voiceclone_TTS`) bằng bộ đo
@@ -283754,7 +283906,19 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    # 🔴 `line_buffering=True` KHÔNG phải chuyện gọn gàng — nó là thứ quyết định
+    #    một phép đo dài có theo dõi được hay không.
+    #
+    #    Khi stdout đi ra MÀN HÌNH, Python tự đệm theo dòng. Khi nó đi ra một
+    #    TỆP — tức mọi lần chạy qua trình bọc PowerShell với `*> log.txt` — nó
+    #    chuyển sang đệm KHỐI, và tệp log nằm im ở 0 byte suốt hàng chục phút.
+    #
+    # ⛔ Hệ quả không phải bất tiện: tôi mất hai lượt chờ vì không phân biệt được
+    #    "đang chạy" với "đã treo", và phải đi hỏi `nvidia-smi` để biết tiến
+    #    trình còn sống. Một công cụ đo mà không nói nó đang ở đâu thì mọi sự cố
+    #    của nó đều trông giống nhau.
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace",
+                           line_buffering=True)
 
 KHO_CU = r"D:\Voiceclone_TTS"
 NGHI_S = 0.35            # khoảng nghỉ chèn giữa hai clip khi nối
