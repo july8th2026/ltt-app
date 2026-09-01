@@ -751,9 +751,10 @@
       var nutChep = document.getElementById("lv-ct-job-chep");
       if (nutChep) { nutChep.dataset.ma = jobId; chay(oXong); }
 
-      var canvas = document.getElementById("lv-song");
-      canvas.hidden = false;
-      veSong(canvas, d.audio_url);
+      /* Khong ve song o day nua: `ganTrinhPhat` da nang cap `lv-player`
+         thanh trinh phat co song am rieng, giong ba man kia. Ve them mot
+         canvas thu hai la ve cung mot thu hai lan. */
+      ganTrinhPhat(au);
 
       /* Luu vao du an: nut chi mo hop, viec that o `/du-an/luu-tu-studio`.
          Hop DONG LAI moi lan co ket qua moi — de mo tu luot truoc thi bam

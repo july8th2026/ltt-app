@@ -250,8 +250,16 @@
         <div id="lv-kq-xong" hidden>
           {# Sóng âm THẬT, vẽ từ chính tệp vừa sinh bằng Web Audio + canvas.
              Không thư viện — CSP chặn CDN, và một canvas là đủ. #}
-          <canvas id="lv-song" class="lv-song" height="72" aria-hidden="true"></canvas>
-          <audio id="lv-player" controls preload="metadata"></audio>
+          {#
+            MOT thanh phan trinh phat cho CA BON man.
+
+            ⛔ Truoc 01/09 rieng man nay co canvas song am 72px + mot thanh
+               `<audio controls>` cua trinh duyet nam duoi. Ba man kia thi
+               dung `ganTrinhPhat`. Hai cach ve cung mot thu la hai cho de
+               chung lech nhau — va cai o day con giu lai dung thanh xam ma
+               ca dot nay sinh ra de go.
+          #}
+          <audio id="lv-player" data-nang="1" controls preload="metadata"></audio>
           <div class="lv-kq-nut">
             <a class="btn primary sm" id="lv-tai" download>{{ _("Tải WAV") }}</a>
             {# MP3: chuyen dung luc tai, cung cua `/audio` de dung lai
