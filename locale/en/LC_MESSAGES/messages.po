@@ -13079,3 +13079,6 @@ msgstr "See each group and how long it is kept"
 
 msgid "Điều khoản dịch vụ API — cách tính tiền, hoàn tiền và giới hạn"
 msgstr "API terms of service — how billing, refunds and limits work"
+
+msgid "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} ký tự cho phép. Hãy rút gọn một mục trong từ điển."
+msgstr "After applying the pronunciation dictionary the text is {n} characters — far beyond the {t} allowed. Shorten one dictionary entry."

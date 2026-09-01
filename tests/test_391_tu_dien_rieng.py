@@ -232,3 +232,76 @@ def test_XEM_TRUOC_va_LUC_SINH_phai_ap_CUNG_mot_tu_dien(khach):
         f"  xem truoc: {thay_o_xem_truoc!r}\n"
         f"  luc sinh : {thay_luc_sinh!r}")
     assert "Chuwowng" in thay_o_xem_truoc
+
+
+def test_TU_DIEN_khong_the_khuech_dai_chi_phi(khach, monkeypatch):
+    """🔴 LỖ TIỀN, đo được 80× — và chính tính năng từ điển mở ra nó.
+
+    `manifest._gia()` ước giá bằng `chuan_hoa(text)` **KHÔNG có từ điển riêng**
+    (và không được phép có: nó chạy ở mọi lượt báo giá nên không chạm CSDL).
+    Worker thì CÓ áp. Hai bên đọc hai văn bản khác nhau, khoảng cách do khách
+    kiểm soát:
+
+        tho              1.499 ky tu   <- `_gia()` giu credit theo so nay
+        sau tu dien    120.749 ky tu   <- worker doc so nay
+
+    ⛔ Hệ quả không phải "thu thiếu" mà là `credit_held` bé hơn thực tế ⇒ một
+       lượt đang chạy bị đánh hỏng giữa chừng. Khách chờ để nhận một lỗi.
+    """
+    from apps.ltt_voice import features, jobs, text_pipeline, tu_dien_rieng
+
+    _client, _uid = khach
+    tho = ("a " * 750).strip()
+    no = {"a": "x" * tu_dien_rieng.TRAN_THAY}
+
+    # ① Lỗ có THẬT: xác nhận hệ số nở vẫn lớn nếu không có trần.
+    khong = text_pipeline.chuan_hoa(tho)
+    co = text_pipeline.chuan_hoa(tho, tu_dien_rieng=no)
+    assert len(co) > len(khong) * 10, (
+        "phep do nay khong con y nghia — kiem lai tran cua `tu_dien_rieng`")
+
+    # ② Và worker CHẶN nó, bằng một lỗi NGƯỜI GỌI (không thử lại, hoàn credit).
+    import platform_core.db as dbmod
+    from platform_core.users import tao_nguoi_dung
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u2 = tao_nguoi_dung(db, email="no@test.com", password="matkhau-tot-12",
+                            is_verified=True)
+        db.commit()
+        uid2 = str(u2.id)
+        tu_dien_rieng.them(db, uid2, tu="a", thay="x" * tu_dien_rieng.TRAN_THAY)
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    # ⚠️ Chốt "sidecar sẵn sàng" chạy TRƯỚC trần này, nên không có token thì
+    #    phép kiểm dừng ở đó và không bao giờ chạm thứ nó muốn kiểm — một phép
+    #    kiểm xanh/đỏ vì lý do sai. Đặt token giả để đi tới đúng chỗ; luồng vẫn
+    #    ném TRƯỚC khi gọi cổng, nên không có lượt mạng nào.
+    monkeypatch.setenv("LTT_VOICE_SIDECAR_TOKEN", "thu-nghiem")
+    with pytest.raises(features.LoiGiongNoi) as e:
+        jobs.handle({"text": tho, "preset": "Adam", "owner_id": uid2,
+                     "_job_type": "ltt_voice.synthesize"})
+    assert "từ điển" in str(e.value).lower(), (
+        f"thong diep phai chi ro thu phai sua: {e.value}")
+
+
+def test_TRAN_sau_chuan_hoa_KHONG_chan_van_ban_that(khach):
+    """Trần phải rộng gấp nhiều lần mọi phép nở THẬT.
+
+    ⛔ Một trần chặn nhầm văn bản bình thường còn tệ hơn không có trần: khách
+       không hiểu vì sao một câu hợp lệ bị từ chối, và họ không có gì để sửa.
+    """
+    from apps.ltt_voice import text_pipeline
+
+    for tho in ("Gi\u00e1 1.250.000.000\u0111 v\u00e0 990.000\u0111 m\u1ed7i th\u00e1ng.",
+                "Ng\u00e0y 1/9/2026 l\u00fac 9h30, t\u0103ng 15%.",
+                "D\u00f9ng CPU, GPU, API v\u00e0 USB c\u00f9ng l\u00fac."):
+        da = text_pipeline.chuan_hoa(tho)
+        assert len(da) <= len(tho) * 3 + 200, (
+            f"van ban THAT vuot tran: {tho!r} -> {len(da)} ky tu")

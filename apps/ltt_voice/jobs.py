@@ -123,6 +123,38 @@ def _tao_tieng(params: dict, ctx=None) -> dict:
     tu_rieng = _voi_db(lambda db: tu_dien_rieng.nhu_dict(db, yc.owner_id))         if yc.owner_id else {}
     chuan = features.chuan_bi_van_ban(yc, tran_moi_doan=TRAN_MOI_LUOT_SINH,
                                       tu_dien_rieng=tu_rieng)
+
+    # ── TRẦN SAU CHUẨN HOÁ — chặn một lỗ KHUẾCH ĐẠI CHI PHÍ ─────────────────
+    #
+    # 🔴 `manifest._gia()` ước giá bằng `chuan_hoa(text)` **KHÔNG có từ điển
+    #    riêng** — và nó không được phép có, vì nó chạy ở mọi lượt báo giá nên
+    #    không được chạm CSDL (chú thích của chính nó nói vậy).
+    #
+    #    Nhưng worker thì CÓ áp từ điển. Hai bên đọc hai văn bản khác nhau, và
+    #    khoảng cách ấy do khách kiểm soát:
+    #
+    #        do 01/09, trong pham vi tran hien tai (100 muc, `thay` <= 160):
+    #          tho              1.499 ky tu   <- `_gia()` giu credit theo so nay
+    #          sau tu dien    120.749 ky tu   <- worker doc so nay
+    #          he so no          80,6x
+    #
+    #    Hệ quả không phải "thu thiếu": `credit_held` bé hơn thực tế làm phần
+    #    quyết toán vượt phần giữ, và một lượt chạy đang giữa chừng bị đánh
+    #    hỏng. Khách mất thời gian chờ để nhận một lỗi.
+    #
+    # ⭐ Trần đặt ở 3× độ dài thô: rộng gấp nhiều lần mọi phép nở thật (số →
+    #    chữ nở ~3× **chỉ trên phần là số**; "LTT" → "e lờ tê tê" nở 3,3× chỉ
+    #    trên ba ký tự), nhưng chặn dứt khoát ca 80×.
+    #
+    # ⛔ Ném `LoiGiongNoi` (= `LoiNguoiGoi`) chứ không phải lỗi hạ tầng: nền
+    #    tảng KHÔNG thử lại, và credit đã giữ được hoàn. Một lỗi hạ tầng ở đây
+    #    sẽ thử lại ba lần cho một thứ chắc chắn hỏng cả ba.
+    _tran_sau = len(yc.text) * 3 + 200
+    if len(chuan.da_chuan_hoa) > _tran_sau:
+        raise LoiGiongNoi(_t(
+            "Sau khi áp từ điển phát âm, văn bản dài {n} ký tự — vượt xa {t} "
+            "ký tự cho phép. Hãy rút gọn một mục trong từ điển."
+        ).format(n=len(chuan.da_chuan_hoa), t=_tran_sau))
     doan = chuan.doan or [yc.text]
 
     # ⛔ BẬN KHÔNG PHẢI HỎNG — để `DangBanTam` bay lên nguyên vẹn cho job_runner
