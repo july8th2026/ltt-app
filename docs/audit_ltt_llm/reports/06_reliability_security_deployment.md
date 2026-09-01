@@ -327,6 +327,37 @@ sinh ra để chặn, và nó xuất hiện hai lần trong một buổi ở hai
 
 Xác minh: **437 passed / 3 skipped** trên các đường upload + token + mã hoá.
 
+### `pillow` — bằng chứng đã đủ để quyết trong một dòng *(01/09)*
+
+`pillow` **10.4.0** đang cài, ghim `>=10,<12`, và 34 advisory chỉ đóng ở
+**12.3.0** — tức **hai bậc major**, không phải một.
+
+Đo trong một **venv cách ly** (không đụng môi trường chung): gọi lại **đúng mọi
+API mà `grep` tìm thấy trong `apps/` + `platform_core/`** — 12 tệp, 10 app.
+
+```
+16/16 DAT, 0 VO   trên pillow 12.3.0
+Image.open · convert RGB/RGBA/L · resize · Resampling.LANCZOS/BICUBIC
+thumbnail · crop · paste · Image.MIME · format+size · save PNG/JPEG
+Image.fromarray(numpy)
+```
+
+Và **pillow 12.3.0 sạch trên OSV: 0 advisory.**
+
+⇒ Mọi API đang dùng đều là API **lõi ổn định**; không cái nào nằm trong phần
+Pillow 11/12 gỡ bỏ. Rủi ro của việc nới trần là **thấp và đã đo**, không còn là
+một ẩn số.
+
+⚠️ Nhưng phép đo này kiểm **API còn tồn tại**, không kiểm **kết quả ảnh có đổi
+không**. Pillow đổi thuật toán resample giữa các major là chuyện đã có tiền lệ;
+một app so ảnh theo hash sẽ thấy khác. Chưa app nào ở đây làm thế (đã tra), nhưng
+đó là giới hạn của phép đo và phải nói ra.
+
+**Đề xuất:** nới `pillow>=12.3.0,<13`. Quyết định vẫn là của chủ dự án vì nó chạm
+mọi app ảnh — nhưng nay là một quyết định **có số liệu**, không phải một câu hỏi mở.
+
+---
+
 **Còn nợ, đều đòi NỚI TRẦN GHIM** ⇒ không tự quyết:
 `pillow` 34 advisory (cần 12.3.0, ghim `<12` — chạm mọi app ảnh) ·
 `aiohttp` 28 (cần 3.14.1, phụ thuộc gián tiếp) · `cryptography` 7 còn lại (cần ≥48) ·
