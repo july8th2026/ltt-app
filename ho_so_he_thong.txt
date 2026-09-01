@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:3f9594ab21cdf35a8a067e4e85676540c3859f4d7b2598cae210db31ccd2a97d
+Fingerprint   : sha256:fd7f9e9ef42f02cdeff9819f1686512749d114a0cb217c5ecdb1f1e631ef4ac4
 Nguồn đã quét : 1457 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -610,18 +610,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
 - [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:43
-- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:469
+- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:474
 - [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:73
 - [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:129
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:380
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:204
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:349
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:566
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:233
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:263
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:288
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:178
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:427
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:385
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:209
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:354
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:571
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:238
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:268
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:293
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:183
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:432
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:95
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:51
@@ -3067,7 +3067,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:120, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14445865 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1457 file; 14459349 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21255,7 +21255,7 @@ def _sang_mp3(wav: bytes):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_du_an.py
-SHA256=4c97afa99804dcea7db15eaeda87a401497f2fa5fb70259d11bb2b28ffec3302 BYTES=25000 LINES=608
+SHA256=f1e06a3922dc8bc6c05888037f30108c0b356ec57816b9517b188d5ce75cff40 BYTES=25426 LINES=613
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: danh sách · khối · sinh tiếng theo khối · xuất.
 
@@ -21413,6 +21413,11 @@ def trang_mot_du_an(request: Request, public_id: str,
         # mot loi giai thich. Cua SUA (`_p_giong` ghi danh) thi van dong.
         cua_toi = tham_chieu.danh_sach(db, owner_id=uid,
                                        gom_dung_chung=True)
+        # Cột điều hướng bên trái. CHỈ tên + mã, không đếm khối: đếm khối
+        # cho mọi dự án là một truy vấn cho mỗi dòng, để trang trí một cột điều
+        # hướng. Trang danh sách đã có con số ấy và nó có chỗ ở đó.
+        du_an_ds = [{"public_id": x.public_id, "ten": x.ten}
+                    for x in du_an.danh_sach(db, uid)]
         # Bản sao phẳng cho template — tránh chạm ORM trong Jinja.
         ds_khoi = [{
             "id": k.id, "thu_tu": k.thu_tu, "text": k.text, "giong": k.giong,
@@ -21429,7 +21434,7 @@ def trang_mot_du_an(request: Request, public_id: str,
         request, "ltt_voice_mot_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
                     **_ngu_canh_giong(du_an=d, khoi=ds_khoi, tom_tat=tt,
-                                      giong=cua_toi,
+                                      giong=cua_toi, du_an_ds=du_an_ds,
                                       giong_chon=d.giong_mac_dinh)))
 
 
@@ -23389,7 +23394,7 @@ SHA256=072299bee32d6e341a5398fd230b8af6d944aff767c11d16e9d63c8535eceeb0 BYTES=32
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_api.html
-SHA256=3a3354bff769981e03ff3a64d4f3808adb23512d9c6021660db76a30aa958b0a BYTES=7304 LINES=138
+SHA256=4655d9b923ede5e9d1ed5e60ca918f0d98977674d98e0e6a3f641e316104311c BYTES=10061 LINES=189
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("API") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -23490,7 +23495,35 @@ SHA256=3a3354bff769981e03ff3a64d4f3808adb23512d9c6021660db76a30aa958b0a BYTES=73
       {% if trang_thai.tool_mo %}
         <div class="lv-st-o">
           <span class="eyebrow">{{ _("Gọi thử") }}</span>
-          <div class="lv-api-ma">
+          {#
+            HAI NGÔN NGỮ, và cái thứ hai có lý do nặng hơn "cho đẹp".
+
+            🔴 `urllib` là thư viện CHUẨN của Python. Ai viết mười dòng để thử
+               API sẽ dùng nó — và Cloudflare chặn **tiền tố chuỗi
+               `Python-urllib/`, PHÂN BIỆT HOA-THƯỜNG** bằng 403 `error code:
+               1010`. Đó là 403 **của Cloudflare, không phải của ta**: không
+               `request_id`, không dòng nào trong `public_api_requests`, không
+               tra được bằng `/admin/api-trace`.
+
+            ⛔ Nhìn y hệt khoá sai. Khách sẽ đi tạo khoá mới rồi vẫn 403, và
+               **ta không thấy gì cả**. Nên ví dụ Python ở đây không phải một
+               tiện nghi — dòng `User-Agent` trong nó là dòng quan trọng nhất
+               của cả khối, và nó là thứ duy nhất cứu được người **tự viết** chứ
+               không chép ví dụ của ta.
+
+            ⚠️ Đo 30/08: chuỗi rỗng qua, `curl/8.0` qua, `Python-Requests/` qua,
+               `python-urllib` chữ thường qua — chỉ đúng tiền tố viết hoa chữ P
+               bị chặn. Nên "thiếu UA" KHÔNG phải cách đọc đúng.
+          #}
+          <div class="lv-loc-nhom lv-api-tab" role="group"
+               aria-label="{{ _('Ngôn ngữ ví dụ') }}">
+            <button type="button" class="lv-loc-nut on" aria-pressed="true"
+                    data-vidu="curl">cURL</button>
+            <button type="button" class="lv-loc-nut" aria-pressed="false"
+                    data-vidu="python">Python</button>
+          </div>
+
+          <div class="lv-api-ma" data-vidu-cho="curl">
             <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-curl"
                     aria-label="{{ _('Chép lệnh mẫu') }}"
                     title="{{ _('Chép lệnh mẫu') }}">⧉</button>
@@ -23500,6 +23533,29 @@ SHA256=3a3354bff769981e03ff3a64d4f3808adb23512d9c6021660db76a30aa958b0a BYTES=73
   -d '{"tool": "{{ ten_tool }}",
        "params": {"text": "{{ vi_du }}",
                   "preset": "{{ mac_dinh }}"}}'</code></pre>
+          </div>
+
+          <div class="lv-api-ma" data-vidu-cho="python" hidden>
+            <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-py"
+                    aria-label="{{ _('Chép mã mẫu') }}"
+                    title="{{ _('Chép mã mẫu') }}">⧉</button>
+            <pre id="lv-api-py" class="mono"><code>import json, os, urllib.request
+
+req = urllib.request.Request(
+    "https://app.lttstudios.com/api/v1/jobs",
+    data=json.dumps({
+        "tool": "{{ ten_tool }}",
+        "params": {"text": "{{ vi_du }}", "preset": "{{ mac_dinh }}"},
+    }).encode("utf-8"),
+    headers={
+        "Authorization": "Bearer " + os.environ["LTT_API_KEY"],
+        "Content-Type": "application/json",
+        # BAT BUOC. Chuoi urllib tu dien ("Python-urllib/3.x") bi
+        # Cloudflare chan bang 403 truoc khi toi may chu — trong y
+        # het khoa sai. Dat bat cu User-Agent nao khac la qua.
+        "User-Agent": "ltt-client/1.0",
+    })
+print(json.load(urllib.request.urlopen(req)))</code></pre>
           </div>
           <p class="dim"><small>{{ _("Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
         </div>
@@ -24117,7 +24173,7 @@ LttVoice.lichSu({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_mot_du_an.html
-SHA256=583a062a8e2bc8f45b3ffb51e393a0831f5f8bb44388ce46b72512ea86035a17 BYTES=12981 LINES=227
+SHA256=8c39814aca6b786adae4a3bf0482aef9e443855a07739dfdb02685c15004166d BYTES=14733 LINES=261
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ du_an.ten }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24153,7 +24209,41 @@ SHA256=583a062a8e2bc8f45b3ffb51e393a0831f5f8bb44388ce46b72512ea86035a17 BYTES=12
   {% endwith %}
 
   <div class="lv-mda-khung">
-    {# ── Cột trái: khối ──────────────────────────────────────────────────── #}
+    {#
+      ── Cột danh sách dự án — ảnh 03 vẽ nó ở ngoài cùng bên trái ───────────
+
+      ⛔ Trước 01/09 màn này chỉ có HAI cột, nên đổi sang một dự án khác phải
+         bấm "← Dự án" quay ra danh sách rồi bấm vào. Với người dựng podcast
+         nhiều tập — đúng đối tượng của màn này — đó là hai cú bấm cho một việc
+         họ làm liên tục.
+
+      ⭐ Chỉ TÊN và số khối, không nạp gì thêm: `du_an.danh_sach` đã được route
+         gọi sẵn cho ô chọn, nên cột này không tốn thêm một truy vấn nào.
+
+      ⚠️ Ẩn dưới 1180px thay vì xếp chồng: ở màn hẹp nó đẩy phần việc chính
+         xuống dưới một danh sách điều hướng, và điều hướng thì đã có ở "← Dự
+         án" trên đầu trang.
+    #}
+    {% if du_an_ds and du_an_ds|length > 1 %}
+      <nav class="lv-mda-ds" aria-label="{{ _('Dự án khác') }}">
+        <span class="eyebrow">{{ _("Dự án") }}</span>
+        <ul>
+          {% for d in du_an_ds %}
+            <li>
+              <a href="{{ manifest.route_prefix }}/du-an/{{ d.public_id }}"
+                 {% if d.public_id == du_an.public_id %}aria-current="page"{% endif %}>
+                {# ⛔ CHỈ tên. Thêm "N khối" thì phải đếm khối cho MỌI dự án
+                   — một truy vấn cho mỗi dòng, để trang trí một cột điều
+                   hướng. Trang danh sách đã có con số ấy và nó có chỗ ở đó. #}
+                <b>{{ d.ten }}</b>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </nav>
+    {% endif %}
+
+    {# ── Cột giữa: khối ──────────────────────────────────────────────────── #}
     <div class="lv-mda-trai">
       <div class="lv-mda-thanh-cong-cu">
         <button class="btn sm primary" type="button" id="lv-doc-tat-ca"
@@ -24350,7 +24440,7 @@ LttVoice.motDuAn({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_studio.html
-SHA256=f637fe6a8683c461bd1e7ed8829676c9d6382fce515d501e5dfdc7e67dfec083 BYTES=16872 LINES=316
+SHA256=94aa30c4a1b0546ea6316d1736d39d194a4976a8e25a22e2399b46fdaeb41c74 BYTES=19177 LINES=353
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24554,8 +24644,45 @@ SHA256=f637fe6a8683c461bd1e7ed8829676c9d6382fce515d501e5dfdc7e67dfec083 BYTES=16
           <span id="lv-kq-tt"></span>
         </div>
 
+        {#
+          ── Trạng thái "chưa có gì" — và vì sao nó KHÔNG nên trống ──────────
+
+          Ảnh 01 ghi tiêu đề cột này là **"KẾT QUẢ MỚI NHẤT"**, không phải "kết
+          quả của lượt bạn vừa bấm". Tức ngay khi mở trang nó đã có nội dung.
+
+          ⛔ Đo trên production 01/09: ở trạng thái rỗng, cột phải là một hộp
+             cao 145px chứa đúng một dòng chữ mờ, chiếm 1/3 chiều ngang màn
+             hình. Không sai, nhưng lãng phí đúng chỗ ảnh mẫu dùng nhiều nhất.
+
+          ⭐ Nên khi có một lượt đã xong, hiện luôn nó: mở lại trang là nghe lại
+             được ngay, không phải sang màn Lịch sử. Dữ liệu đã nằm sẵn trong
+             `gan_day` — không thêm một truy vấn nào.
+
+          ⚠️ `data-nang="1"` để `voice.js` nâng cấp thành trình phát sóng âm,
+             giống Lịch sử và Dự án. Ba màn một kiểu.
+        #}
         <div id="lv-kq-cho">
-          <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
+          {% set moi_nhat = (gan_day or []) | selectattr("status", "equalto", "done")
+                                            | selectattr("result") | first %}
+          {% if moi_nhat and moi_nhat.result.get("audio_key") %}
+            {% set duong = manifest.route_prefix ~ "/audio/" ~ moi_nhat.result.get("audio_key") %}
+            <p class="dim lv-kq-nhan">{{ _("Lượt gần nhất") }}</p>
+            <p class="lv-kq-chu">{{ (moi_nhat.params or {}).get('text', '')[:120] }}</p>
+            <audio data-nang="1" controls preload="none" src="{{ duong }}"></audio>
+            <div class="lv-kq-nut">
+              <a class="btn sm ghost" download href="{{ duong }}">{{ _("WAV") }}</a>
+              <a class="btn sm ghost" download href="{{ duong }}?mp3=1">{{ _("MP3") }}</a>
+              <a class="btn sm ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }}</a>
+            </div>
+            <dl class="lv-kq-ct">
+              <dt>{{ _("Thời lượng") }}</dt>
+              <dd>{{ moi_nhat.result.get("duration_s") }}s</dd>
+              <dt>{{ _("Credit đã tính") }}</dt>
+              <dd>{{ moi_nhat.result.get("credit_cost") }}</dd>
+            </dl>
+          {% else %}
+            <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
+          {% endif %}
         </div>
 
         <div id="lv-kq-chay" hidden>
@@ -151418,7 +151545,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=c96322dc2a3ddde08a8e891e514d9440472fd86001ca7e32dd0cad913a6a18b0 BYTES=256183 LINES=2773
+SHA256=94a9000d765edf9e77cb2625033f80483805c6bea55b27112c7d3ad42a1e44a6 BYTES=257476 LINES=2803
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -154087,7 +154214,36 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-mda-quay{margin:0 0 6px;font-size:12px}
 .lv-mda-quay a{display:inline-flex;align-items:center;min-height:24px;padding-right:4px;color:var(--muted);text-decoration:none}
 .lv-mda-quay a:hover{color:var(--fg)}
-.lv-mda-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+/* Ba cot: danh sach du an · khoi · cai dat. Anh 03 ve dung hinh nay. */
+.lv-mda-khung{display:grid;grid-template-columns:190px minmax(0,1fr) 300px;
+  gap:18px;align-items:start}
+
+/* Cot dieu huong giua cac du an. */
+.lv-mda-ds{position:sticky;top:72px;min-width:0}
+.lv-mda-ds ul{list-style:none;margin:8px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:2px}
+.lv-mda-ds a{display:flex;flex-direction:column;gap:2px;padding:7px 9px;
+  border-radius:var(--radius-sm);border:1px solid transparent;
+  text-decoration:none;color:var(--fg);
+  transition:background var(--motion-fast)}
+.lv-mda-ds a:hover{background:var(--panel2)}
+.lv-mda-ds a b{font-size:12.5px;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden}
+/* Du an DANG mo: vien do, khong nen do dam — cung ly do voi `.lv-chon-muc`. */
+.lv-mda-ds a[aria-current="page"]{border-color:var(--brand-border);
+  background:var(--brand-soft)}
+
+/* Tab ngon ngu vi du o man API. */
+.lv-api-tab{margin-bottom:8px}
+
+/* Luot gan nhat o cot phai man Studio. */
+.lv-kq-nhan{margin:0 0 6px;font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em}
+.lv-kq-chu{margin:0 0 9px;font-size:12.5px;line-height:1.45;color:var(--muted);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden}
+
 .lv-mda-trai{min-width:0}
 .lv-mda-phai{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
 .lv-mda-phai .lv-chon{border:none;padding:0;background:none;margin-bottom:10px}
@@ -154122,6 +154278,7 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 @media(max-width:1000px){
   .lv-mda-khung{grid-template-columns:1fr}
+  .lv-mda-ds{display:none}
   .lv-mda-phai{position:static}
 }
 @media(max-width:560px){
@@ -154324,7 +154481,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=27fc3617bcd2362f37aed9b0f4048e2ad4ee6700dec50f0c9703bfa17901dfd8 BYTES=66884 LINES=1603
+SHA256=22e4538a9909a05f867c8219ccba5e0fd59d7b430f08a07d2023b100850942f9 BYTES=67865 LINES=1627
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -154596,6 +154753,30 @@ SHA256=27fc3617bcd2362f37aed9b0f4048e2ad4ee6700dec50f0c9703bfa17901dfd8 BYTES=66
        vao sau (danh sach phien ban), vi `chay()` goi lai voi goc moi. */
     var au = pv.querySelectorAll('audio[data-nang="1"]');
     for (var k = 0; k < au.length; k++) ganTrinhPhat(au[k]);
+    ganTabViDu(pv);
+  }
+
+  /* ── Tab ngon ngu vi du (man API) ─────────────────────────────────────────
+   *
+   * ⭐ O trong `chay()` chu khong o mot module rieng: man API co y KHONG co
+   *    module JS rieng (xem chu thich cuoi `ltt_voice_api.html`), va them mot
+   *    module chi de doi hai the la them mot cho de quen nap. */
+  function ganTabViDu(pv) {
+    var nut = (pv || document).querySelectorAll("[data-vidu]");
+    for (var i = 0; i < nut.length; i++) {
+      (function (n) {
+        if (n.dataset.daGan === "1") return;
+        n.dataset.daGan = "1";
+        n.addEventListener("click", function () {
+          var ten = n.dataset.vidu;
+          var hop = document.querySelectorAll("[data-vidu-cho]");
+          for (var j = 0; j < hop.length; j++) {
+            hop[j].hidden = hop[j].dataset.viduCho !== ten;
+          }
+          batNut(n);
+        });
+      })(nut[i]);
+    }
   }
 
   /* ── Luoi giong: loc + chon the + panel chi tiet ──────────────────────────
@@ -232354,7 +232535,7 @@ def test_cai_lai_va_xoa_deu_XOA_moc_anh_chup():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_297_vps_khoa_theo_may.py
-SHA256=9d14d41db6ee497ad70e9329167d1a9046c44805f2d196fd7f87c2ab4b076dc2 BYTES=11422 LINES=286
+SHA256=31009dff3399ccb8020e347bd8f3851f0250cac695aa6ae89d9eb78459242918 BYTES=12745 LINES=311
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H39 — khoá theo máy: hai job không được cùng làm việc trên một máy.
 
@@ -232624,7 +232805,32 @@ def test_deploy_CO_chot_bien_dich_va_no_dung_TRUOC_Stop_Service():
                 return i
         return -1
 
-    i_chot = _dong_lenh("& $pyKiem")
+    def _dong_chua(loi: str) -> int:
+        """Dòng LỆNH đầu tiên **chứa** `loi`, bỏ qua chú thích.
+
+        🔴 VÌ SAO CẦN BẢN NÀY chứ không chỉ `_dong_lenh`: bản trước định vị chốt
+           bằng đúng chuỗi mã `"& $pyKiem"`. Ngày 01/09 chốt được viết lại để
+           không thể treo vô hạn (dùng `System.Diagnostics.Process` thay cho toán
+           tử gọi + đường ống), và phép kiểm đỏ — **không phải vì bất biến bị phá
+           mà vì cái thước đo nó đã cũ**.
+
+        ⛔ Đó là một hồi quy của *phép kiểm*, và nó nguy hiểm theo kiểu riêng:
+           một chốt đỏ trông y hệt một lỗi thật, nên phản ứng tự nhiên là hoàn
+           nguyên bản vá — tức khôi phục lại đúng chỗ treo vừa sửa.
+
+        ⭐ Nên nay định vị bằng **thứ bất biến nói tới** (`compileall`), không
+           bằng cách nó được gọi. Đổi cách gọi là việc bình thường; bỏ chốt đi
+           mới là chuyện phải đỏ.
+        """
+        for i, d in enumerate(dong):
+            t = d.strip()
+            if t.startswith("#"):
+                continue
+            if loi in t:
+                return i
+        return -1
+
+    i_chot = _dong_chua("compileall")
     i_dung = _dong_lenh("Stop-Service")
     assert "compileall" in ps, "deploy khong co chot bien dich"
     assert i_chot >= 0 and i_dung >= 0
@@ -246728,7 +246934,7 @@ def test_bao_gia_giam_chu_khong_tang():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_350_ltt_voice_du_an.py
-SHA256=b78949f3156019abea76a923f9e1f368a207276d1c8cf765b3cba47001e05c52 BYTES=29384 LINES=737
+SHA256=669f8070520e9c22a3d72a35612448efb9481bc55a115d09e7bbdc4868fde339 BYTES=30738 LINES=764
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: khối, thứ tự, sinh tiếng, và quyền sở hữu.
 
@@ -247467,6 +247673,33 @@ def test_khoi_luu_TU_STUDIO_van_co_MOT_phien_ban(khach):
     assert len(pb["phien_ban"]) == 1, (
         f"khoi co tep nghe duoc ma danh sach phien ban rong: {pb}")
     assert pb["phien_ban"][0]["dang_dung"] is True
+
+
+def test_man_chi_tiet_co_cot_DIEU_HUONG_sang_du_an_khac(khach):
+    """Ảnh 03 vẽ danh sách dự án ở cột ngoài cùng bên trái.
+
+    ⛔ Trước 01/09 màn này chỉ có hai cột, nên đổi sang một dự án khác phải bấm
+       "← Dự án" quay ra rồi bấm vào. Với người dựng podcast nhiều tập — đúng
+       đối tượng của màn này — đó là hai cú bấm cho một việc làm liên tục.
+
+    ⭐ Chốt cả điều kiện `|length > 1`: một dự án duy nhất thì cột ấy chỉ là một
+       liên kết trỏ về chính trang đang mở.
+    """
+    client, _uid = khach
+    p1 = _tao(client, ten="Du an MOT")
+    trang = client.get(f"/ltt-voice/du-an/{p1}").text
+    assert "Du an MOT" in trang
+    assert 'class="lv-mda-ds"' not in trang, (
+        "mot du an duy nhat ma van ve cot dieu huong — mot lien ket tro ve "
+        "chinh trang dang mo")
+
+    p2 = _tao(client, ten="Du an HAI")
+    trang = client.get(f"/ltt-voice/du-an/{p2}").text
+    assert 'class="lv-mda-ds"' in trang, "co hai du an ma khong co cot dieu huong"
+    assert "Du an MOT" in trang, "cot dieu huong khong liet ke du an kia"
+    assert f'/ltt-voice/du-an/{p1}' in trang
+    assert 'aria-current="page"' in trang, (
+        "khong danh dau du an DANG mo — nguoi dung khong biet minh dang o dau")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -286088,7 +286321,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=c96322dc2a3ddde08a8e891e514d9440472fd86001ca7e32dd0cad913a6a18b0 BYTES=256183 LINES=2773
+SHA256=94a9000d765edf9e77cb2625033f80483805c6bea55b27112c7d3ad42a1e44a6 BYTES=257476 LINES=2803
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -288757,7 +288990,36 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-mda-quay{margin:0 0 6px;font-size:12px}
 .lv-mda-quay a{display:inline-flex;align-items:center;min-height:24px;padding-right:4px;color:var(--muted);text-decoration:none}
 .lv-mda-quay a:hover{color:var(--fg)}
-.lv-mda-khung{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;align-items:start}
+/* Ba cot: danh sach du an · khoi · cai dat. Anh 03 ve dung hinh nay. */
+.lv-mda-khung{display:grid;grid-template-columns:190px minmax(0,1fr) 300px;
+  gap:18px;align-items:start}
+
+/* Cot dieu huong giua cac du an. */
+.lv-mda-ds{position:sticky;top:72px;min-width:0}
+.lv-mda-ds ul{list-style:none;margin:8px 0 0;padding:0;display:flex;
+  flex-direction:column;gap:2px}
+.lv-mda-ds a{display:flex;flex-direction:column;gap:2px;padding:7px 9px;
+  border-radius:var(--radius-sm);border:1px solid transparent;
+  text-decoration:none;color:var(--fg);
+  transition:background var(--motion-fast)}
+.lv-mda-ds a:hover{background:var(--panel2)}
+.lv-mda-ds a b{font-size:12.5px;line-height:1.3;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden}
+/* Du an DANG mo: vien do, khong nen do dam — cung ly do voi `.lv-chon-muc`. */
+.lv-mda-ds a[aria-current="page"]{border-color:var(--brand-border);
+  background:var(--brand-soft)}
+
+/* Tab ngon ngu vi du o man API. */
+.lv-api-tab{margin-bottom:8px}
+
+/* Luot gan nhat o cot phai man Studio. */
+.lv-kq-nhan{margin:0 0 6px;font-size:11px;text-transform:uppercase;
+  letter-spacing:.05em}
+.lv-kq-chu{margin:0 0 9px;font-size:12.5px;line-height:1.45;color:var(--muted);
+  display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;
+  overflow:hidden}
+
 .lv-mda-trai{min-width:0}
 .lv-mda-phai{position:sticky;top:72px;display:flex;flex-direction:column;gap:12px}
 .lv-mda-phai .lv-chon{border:none;padding:0;background:none;margin-bottom:10px}
@@ -288792,6 +289054,7 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 
 @media(max-width:1000px){
   .lv-mda-khung{grid-template-columns:1fr}
+  .lv-mda-ds{display:none}
   .lv-mda-phai{position:static}
 }
 @media(max-width:560px){

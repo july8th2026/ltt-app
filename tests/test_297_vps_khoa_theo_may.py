@@ -266,7 +266,32 @@ def test_deploy_CO_chot_bien_dich_va_no_dung_TRUOC_Stop_Service():
                 return i
         return -1
 
-    i_chot = _dong_lenh("& $pyKiem")
+    def _dong_chua(loi: str) -> int:
+        """Dòng LỆNH đầu tiên **chứa** `loi`, bỏ qua chú thích.
+
+        🔴 VÌ SAO CẦN BẢN NÀY chứ không chỉ `_dong_lenh`: bản trước định vị chốt
+           bằng đúng chuỗi mã `"& $pyKiem"`. Ngày 01/09 chốt được viết lại để
+           không thể treo vô hạn (dùng `System.Diagnostics.Process` thay cho toán
+           tử gọi + đường ống), và phép kiểm đỏ — **không phải vì bất biến bị phá
+           mà vì cái thước đo nó đã cũ**.
+
+        ⛔ Đó là một hồi quy của *phép kiểm*, và nó nguy hiểm theo kiểu riêng:
+           một chốt đỏ trông y hệt một lỗi thật, nên phản ứng tự nhiên là hoàn
+           nguyên bản vá — tức khôi phục lại đúng chỗ treo vừa sửa.
+
+        ⭐ Nên nay định vị bằng **thứ bất biến nói tới** (`compileall`), không
+           bằng cách nó được gọi. Đổi cách gọi là việc bình thường; bỏ chốt đi
+           mới là chuyện phải đỏ.
+        """
+        for i, d in enumerate(dong):
+            t = d.strip()
+            if t.startswith("#"):
+                continue
+            if loi in t:
+                return i
+        return -1
+
+    i_chot = _dong_chua("compileall")
     i_dung = _dong_lenh("Stop-Service")
     assert "compileall" in ps, "deploy khong co chot bien dich"
     assert i_chot >= 0 and i_dung >= 0
