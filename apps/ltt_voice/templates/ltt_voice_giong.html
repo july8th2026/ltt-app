@@ -35,6 +35,18 @@
                placeholder="{{ _('Tìm giọng theo tên…') }}"
                aria-label="{{ _('Tìm giọng theo tên') }}">
 
+        {#
+          + TẠO GIỌNG — ảnh 02 vẽ nút này nổi bật ngay hàng bộ lọc.
+
+          ⛔ Đo trên production 01/09: biểu mẫu tạo giọng nằm ở **y=3300 trên
+             một trang cao 3935px**, tức dưới đáy, sau khi cuộn qua cả 45 thẻ.
+             Đó là HÀNH ĐỘNG CHÍNH của màn "Giọng của tôi", và nó bị chôn.
+
+          ⭐ Một liên kết neo, không phải một bản sao biểu mẫu: hai biểu mẫu cho
+             cùng một việc là hai chỗ để chúng lệch nhau.
+        #}
+        <a class="btn sm primary lv-loc-tao" href="#lv-tao-giong">{{ _("+ Tạo giọng") }}</a>
+
         <div class="lv-loc-nhom" role="group" aria-label="{{ _('Loại giọng') }}">
           <button type="button" class="lv-loc-nut on" aria-pressed="true" data-loc="loai" data-gt="">{{ _("Tất cả") }}</button>
           <button type="button" class="lv-loc-nut" aria-pressed="false" data-loc="loai" data-gt="mau">{{ _("Giọng mẫu") }}</button>
@@ -151,7 +163,7 @@
   </div>
 
   {# ── Tạo giọng mới — BA bước, đúng luồng thật ─────────────────────────── #}
-  <section class="lv-tao-giong" aria-labelledby="lv-tg-title">
+  <section class="lv-tao-giong" id="lv-tao-giong" aria-labelledby="lv-tg-title">
     <h2 id="lv-tg-title">{{ _("Tạo giọng của riêng bạn") }}</h2>
     <ol class="lv-buoc">
       <li><b>{{ _("Đặt tên") }}</b><span>{{ _("Tên để bạn nhận ra giọng này về sau.") }}</span></li>

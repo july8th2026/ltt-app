@@ -2587,6 +2587,9 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   align-content:flex-start}
 .lv-ls-phat{grid-column:1 / -1;width:100%;height:32px;margin-top:2px}
 .lv-ls-tai{grid-column:1 / -1;display:flex;gap:6px;margin-top:2px;flex-wrap:wrap}
+/* Nut tao giong day sang phai het co, tach khoi cac nhom loc. */
+.lv-loc-tao{margin-left:auto;white-space:nowrap}
+
 .lv-ls-cat{margin:12px 0 0;font-size:11.5px;text-align:center}
 
 /* ── Trinh phat gon (nang cap tu `<audio>`) ─────────────────────────────────
