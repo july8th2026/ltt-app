@@ -142,7 +142,60 @@ def main() -> int:
     print("  (chay bang cau hep vi can app.env:)")
     print("    powershell -File .\\setup\\chay_voi_env.ps1 -Viec soi-su-co")
 
-    print("\n== 7. May B co bi anh huong khong ==")
+    print("\n== 7. LTT VOICE (bon phep kiem cua lane do) ==")
+    ghi(ra, "voice_dich_vu", tt.get("LTTStudioVoice", "?"))
+
+    # Sidecar chỉ nghe loopback 8120, KHÔNG đi qua Cloudflare.
+    #
+    # 🔴 ĐƯỜNG LÀ `/health`, KHÔNG PHẢI `/v1/health` — và phép phân biệt quan
+    #    trọng là **401 ≠ 404**:
+    #
+    #        /v1/health -> 404   sai đường
+    #        /health    -> 401   ĐÚNG đường, chỉ thiếu token
+    #
+    # ⭐ `401` tự nó **đã đủ** làm bằng chứng sống: sidecar nghe được, phân tích
+    #    được yêu cầu, và từ chối đúng cách. Đòi thêm token chỉ để thấy `200` là
+    #    đổi một phép kiểm đang chạy lấy một phụ thuộc vào `app.env` (ACL).
+    #
+    # ⚠️ Nạp model lần đầu ~19,4 s (10,5 s khi ấm) — timeout 35 s để một lượt
+    #    nạp nguội KHÔNG bị đọc thành "sidecar chết".
+    ma_sc = ps("try { (Invoke-WebRequest http://127.0.0.1:8120/health "
+               "-TimeoutSec 35 -UseBasicParsing).StatusCode } "
+               "catch { if ($_.Exception.Response) "
+               "{ [int]$_.Exception.Response.StatusCode } else { 0 } }")
+    song = ma_sc in ("200", "401")
+    ghi(ra, "voice_sidecar_8120_ma", ma_sc)
+    ghi(ra, "voice_sidecar_song", song)
+    if not song:
+        print(f"   🔴 sidecar 8120 KHONG song (ma {ma_sc!r}). `0` = khong noi")
+        print("      duoc toi cong; `404` = dich vu len nhung dinh tuyen sai.")
+
+    # 🔴 PHÉP KIỂM ĐẮT NHẤT TRONG NHÓM NÀY.
+    #
+    #    Nếu production đặt `LTT_WORKER_POOLS` mà **thiếu làn `voice`** thì job
+    #    nằm `queued` **vĩnh viễn, không lỗi nào báo** — không log, không cảnh
+    #    báo, khách chỉ thấy một vòng quay không dừng.
+    #
+    # ⇒ Đúng hình dạng mà cả đợt audit này đi săn: một hỏng hóc **không phát ra
+    #   tín hiệu nào**. Và nó chỉ lộ ra nếu có ai đi hỏi thẳng.
+    #
+    # ⚠️ Biến này nằm trong `app.env` (ACL: SYSTEM + Administrators), nên đọc
+    #    được hay không phụ thuộc quyền. Không đọc được thì NÓI RA.
+    pools = ps("if (Test-Path C:\\LTTPlatform\\secrets\\app.env) { "
+               "$d = Get-Content C:\\LTTPlatform\\secrets\\app.env -EA "
+               "SilentlyContinue | Select-String '^LTT_WORKER_POOLS='; "
+               "if ($d) { $d.ToString() } else { 'KHONG DAT (giu hanh vi mac dinh)' } } "
+               "else { 'KHONG DOC DUOC app.env (can Administrator)' }")
+    ghi(ra, "LTT_WORKER_POOLS", pools)
+    if pools.startswith("LTT_WORKER_POOLS=") and "voice" not in pools.lower():
+        print("   🔴 BIEN DA DAT MA THIEU LAN `voice` => JOB GIONG NOI SE NAM")
+        print("      `queued` VINH VIEN, KHONG LOI NAO BAO. Sua ngay.")
+        ra["voice_lan_thieu"] = True
+    elif "KHONG DOC DUOC" in pools:
+        print("   ⚠️ Chua ket luan duoc. Chay lai bang LocalSystem qua Nexus,")
+        print("      hoac: powershell -File .\\setup\\4-nghiem-thu.ps1 (co chot nay).")
+
+    print("\n== 8. May B co bi anh huong khong ==")
     b = ps("try { (Test-NetConnection 192.168.2.66 -Port 8299 "
            "-InformationLevel Quiet -WarningAction SilentlyContinue) } "
            "catch { $false }")
