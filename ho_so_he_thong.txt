@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:33b71f6ba9c5d662752f87b7b8dd89917c123e7c366f9c272551e361f58cbc7c
+Fingerprint   : sha256:2ea80dede08fe1b6fdb9d35e2043775fb0f7f9d80613422266cad9f60e35d34b
 Nguồn đã quét : 1472 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3098,7 +3098,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1472 file; 14771486 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1472 file; 14774801 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -259212,7 +259212,7 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_nen_da_phien.py
-SHA256=84cae74fd10417b83670e779ab59c1bdf06bd197b9c1faa5ad83d1cb8f1855e4 BYTES=18755 LINES=438
+SHA256=efeb5986c7b5217c1f1df3b8fef318c99234d9c97871d1f35948650720196b3f BYTES=20280 LINES=467
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nen tang nhieu phien: so dang ky thanh phan, ho so gate, khoa tai nguyen.
 
@@ -259637,6 +259637,35 @@ def test_kho_ket_qua_KHONG_ghi_bien_moi_truong():
 # ---------------------------------------------------------------------------
 # Cay rieng
 # ---------------------------------------------------------------------------
+
+def test_cap_dai_so_test_dem_tren_MOI_cay():
+    """⛔ Đếm một cây là lặp lại đúng cái lỗi mục này sinh ra để sửa.
+
+    `tools/check_so_test.py` đã ghi đúng gốc từ 23/08: *"mỗi phiên chọn số tiếp
+    theo dựa trên thứ nó nhìn thấy lúc bắt đầu — nên hai phiên bắt đầu cùng buổi
+    chiều sẽ chọn trùng nhau, đều đúng theo cách họ nhìn."*
+
+    Chốt đó **chặn tương lai** (một mốc, không cho tăng) nhưng **không đóng
+    gốc**: hai phiên vẫn chọn trùng, hậu quả chỉ dời sang lúc merge — gate đỏ,
+    rồi một người phải đi đổi tên tệp của người khác. Đo 2026-09-02: đã có
+    **22 số trùng**, và `test_394` va chạm ngay giữa hai phiên đang sống.
+
+    ⭐ Cấp dải lúc TẠO CÂY thì va chạm không xảy ra được. Nhưng chỉ khi phép đếm
+       nhìn **mọi cây** — nếu nó chỉ đếm cây chính thì hai phiên tạo cây cùng
+       lúc lại nhận cùng một dải, và ta quay về đúng chỗ cũ.
+    """
+    import inspect
+
+    from tools import cay_rieng
+
+    than = inspect.getsource(cay_rieng._cap_dai_so_test)
+    assert "_moi_cay_tren_dia()" in than, (
+        "phep dem chi nhin mot cay — do dung la loi 'chon theo tam nhin rieng'")
+
+    # Va `_moi_cay_tren_dia` phai hoi git, khong duoc doan theo duong dan.
+    than2 = inspect.getsource(cay_rieng._moi_cay_tren_dia)
+    assert "worktree" in than2 and "list" in than2
+
 
 def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
     """Mot tham chieu chet trong tai lieu an toan la mot lop bao ve TUONG TUONG.
@@ -276859,7 +276888,7 @@ while ($true) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cay_rieng.py
-SHA256=90ea86cc689a4213156d02f5c48521790c81359907fe7adf483139b661b29ae2 BYTES=11429 LINES=269
+SHA256=c358c1541e447b54bb75694d943f83c564eccd706c1931968626fab0a12a30a6 BYTES=13219 LINES=316
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cay_rieng.py — mot cay lam viec rieng cho moi phien Claude.
 
@@ -276993,6 +277022,52 @@ def _so_voi_origin(nhanh: str) -> str:
     return "  = origin"
 
 
+def _cap_dai_so_test(dich: Path) -> None:
+    """In DAI SO test danh rieng cho cay nay.
+
+    🔴 `tools/check_so_test.py` da ghi dung goc cua van de, va ghi tu 23/08:
+
+       *"Repo nay dang co nhieu phien lam viec song song, moi phien chon so tiep
+       theo dua tren thu no nhin thay luc bat dau — nen hai phien bat dau cung
+       buoi chieu se chon trung nhau, deu dung theo cach ho nhin."*
+
+       Chot do **chan tuong lai** (mot moc, khong cho tang) nhung **khong dong
+       goc**: hai phien van chon trung, va hau qua chi doi sang luc merge — gate
+       do, roi mot nguoi phai di doi ten tep cua nguoi khac.
+
+    ⭐ Cap dai luc TAO CAY thi va cham khong xay ra duoc. Va no khong phai mot
+       luat moi de nho: cong cu tu noi ra, dung luc nguoi ta can biet.
+
+    ⚠️ Dem tren **moi cay**, khong chi cay chinh. Dem mot cay la lap lai dung
+       cai loi "chon theo tam nhin rieng" ma muc nay sinh ra de sua.
+    """
+    import re
+
+    cao_nhat = 0
+    for cay in _moi_cay_tren_dia():
+        thu_muc = cay / "tests"
+        if not thu_muc.is_dir():
+            continue
+        for tep in thu_muc.glob("test_*.py"):
+            m = re.match(r"test_(\d+)_", tep.name)
+            if m:
+                cao_nhat = max(cao_nhat, int(m.group(1)))
+    dau = ((cao_nhat // 100) + 1) * 100
+    print(f"DAI SO TEST cua cay nay: {dau}-{dau + 99}")
+    print(f"  (so cao nhat dang dung tren MOI cay: {cao_nhat})")
+    print("  Dat tep test moi trong dai nay thi khong va cham voi phien khac.\n")
+
+
+def _moi_cay_tren_dia() -> list[Path]:
+    ra = []
+    for d in _git("worktree", "list", "--porcelain").splitlines():
+        if d.startswith("worktree "):
+            p = Path(d[9:])
+            if p.exists():
+                ra.append(p)
+    return ra
+
+
 def _chep_thu_khong_o_trong_git(dich: Path) -> None:
     """Chep thu MA GATE CAN nhung git khong giu.
 
@@ -277090,6 +277165,7 @@ def _tao(ten: str) -> int:
     print(_git("worktree", "add", str(dich), "-b", nhanh))
     _chep_thu_khong_o_trong_git(dich)
     print(f"\nDa tao cay rieng:\n  {dich}\n  nhanh: {nhanh}\n")
+    _cap_dai_so_test(dich)
     print("Buoc tiep:")
     print(f"  cd {dich}")
     print(f"  python tools/gate.py --phien {ten}")
