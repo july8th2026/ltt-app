@@ -1,5 +1,22 @@
 # AUTO SCAN VIDEO — MVP CONTRACT (FROZEN)
 
+> 🔶 **§1 and §4 are SUPERSEDED by
+> [`../auto_scan_video_v4/adr/ADR-V4-001-hop-dong-san-pham.md`](../auto_scan_video_v4/adr/ADR-V4-001-hop-dong-san-pham.md)
+> (V4 Phase 01, 2026-09-03).**
+>
+> The product owner answered the scope fork this document deliberately left open. Auto Scan
+> Video is now a **Vietnamese smart-localization editor with two presets**. The behaviour
+> frozen here survives intact under the preset named `localize_preserve_picture`; a second
+> preset `smart_localize` may remove scenes (keep/cut only, original order, no reframe).
+>
+> **Everything else in this file remains in force** — §2 input policy, §3 output format, §5
+> stage list, §6 settings, §7 tolerances T1–T12, §8 traceability and the ADR-003 timing model.
+> §3's "the video stream is copied" becomes **preset-conditional**: still absolute under
+> `localize_preserve_picture`, relaxed at cut points under `smart_localize`.
+>
+> Nothing below this banner has been edited. Machine-readable form of the new contract:
+> `apps/auto_scan_video/hop_dong_v4.py`.
+
 - **Profile version:** `auto_scan_mvp_v1`
 - **Frozen:** Phase 02, evidence SHA `c31b1ae`, worktree `phien/asv`
 - **Authority:** this file overrides any later convenience. Changing it requires an ADR.
