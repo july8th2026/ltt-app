@@ -8,7 +8,7 @@
 """
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
@@ -365,7 +365,8 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
                 # Hai khoá này để Lịch sử và hỗ trợ truy ngược được về đúng khối.
                 "project_id": du_an_row.public_id, "block_id": khoi.id},
         admission_resource=tool.admission_resource,
-        admission_slots=tool.admission_slots)
+        admission_slots=tool.admission_slots,
+        max_attempts=SO_LAN_THU_JOB)
     khoi.job_id = str(job.id)
     khoi.trang_thai = "dang_tao"
     return str(job.id)

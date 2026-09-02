@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:a04fd63d48dcdcfc06ba06a674e413c25d0a6d524540d71bec78ee90eee2d656
-Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:eceb46a5afc15dadf3a20cf48071952333a03c96d37a3d483533af318d6d9808
+Nguồn đã quét : 1469 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -604,29 +604,29 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
 - [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:62
-- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:495
+- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:496
 - [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:93
 - [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:149
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:406
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:407
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:230
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:375
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:592
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:376
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:593
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:259
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:289
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:314
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:204
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:453
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:454
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:115
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:58
-- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:134
+- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:135
 - [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:186
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
 - [ltt_voice] POST   /ltt-voice/lich-su/{job_id}/doc-lai → doc_lai | auth~login | apps/ltt_voice/routes/_p_lich_su.py:83
 - [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:238
-- [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:325
-- [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:344
-- [ltt_voice] POST   /ltt-voice/tu-dien/{muc_id}/xoa → xoa_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:374
+- [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:329
+- [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:348
+- [ltt_voice] POST   /ltt-voice/tu-dien/{muc_id}/xoa → xoa_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:378
 - [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:102
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
@@ -1179,7 +1179,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (351 file pytest + 3 frontend)
+10. QUALITY GATES (352 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1493,6 +1493,7 @@ Test inventory:
 - tests/test_392_toc_do_hau_ky.py
 - tests/test_393_kiem_truoc_khi_cam.py
 - tests/test_394_ltt_voice_nghe_thu.py
+- tests/test_395_ltt_voice_hong_hoc.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1557,8 +1558,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1468 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1102, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1469 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1103, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2533,7 +2534,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (368)
+[tests] (369)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2858,6 +2859,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_392_toc_do_hau_ky.py
 - tests/test_393_kiem_truoc_khi_cam.py
 - tests/test_394_ltt_voice_nghe_thu.py
+- tests/test_395_ltt_voice_hong_hoc.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3083,7 +3085,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14655051 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1469 file; 14676892 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21372,7 +21374,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_chung.py
-SHA256=d98a28e1da0a425546f2a37aa8df15d8762d3e72a3d5058b4a4ac3d3814759de BYTES=5427 LINES=114
+SHA256=a24704affcca1296784f2f2a9bdf4819e5f105c65b1874537c7ad6b5d27e8148 BYTES=5443 LINES=114
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 _chung.py — router + mọi thứ các mảnh route dùng chung.
@@ -21412,7 +21414,7 @@ from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
                 giong_mau, lan_ngon_ngu, nghe_thu, tham_chieu,
                 tu_dien_rieng, vo)
 from ..manifest import MANIFEST
-from ..tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from ..tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
 
 #: Nhãn người đọc cho `params["nguon"]`. Khai ở đây vì nó là chuyện của **màn
 #: hình**, không phải của nghiệp vụ — worker không quan tâm lượt này đến từ đâu.
@@ -21731,7 +21733,7 @@ def _sang_mp3(wav: bytes):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_du_an.py
-SHA256=f1e785dd8058942db1dafe37fffc0df27967da30f0acabe5ebd78290b76eb145 BYTES=26700 LINES=634
+SHA256=e60e41527c1a307662da74834f103ca32dc3a9dc3d8970327166a4c2f18baa44 BYTES=26753 LINES=635
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: danh sách · khối · sinh tiếng theo khối · xuất.
 
@@ -21743,7 +21745,7 @@ SHA256=f1e785dd8058942db1dafe37fffc0df27967da30f0acabe5ebd78290b76eb145 BYTES=26
 """
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
@@ -22100,7 +22102,8 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
                 # Hai khoá này để Lịch sử và hỗ trợ truy ngược được về đúng khối.
                 "project_id": du_an_row.public_id, "block_id": khoi.id},
         admission_resource=tool.admission_resource,
-        admission_slots=tool.admission_slots)
+        admission_slots=tool.admission_slots,
+        max_attempts=SO_LAN_THU_JOB)
     khoi.job_id = str(job.id)
     khoi.trang_thai = "dang_tao"
     return str(job.id)
@@ -22371,12 +22374,12 @@ def phien_ban_khoi(public_id: str, block_id: int,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_giong.py
-SHA256=c7daa352f0998d56ff20219b1a83d4dd960273462a895524b2eda95da8853154 BYTES=7458 LINES=160
+SHA256=4712e436283d4f160ef1fc85b206a3f2ac7a33f1102aa51c8ce2b27ea28f9d41 BYTES=7515 LINES=161
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Giọng: lưới giọng, ghi danh giọng mới, tắt giọng."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
@@ -22490,7 +22493,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
             params={"owner_id": uid, "voice_id": ho_so.public_id,
                     "source_key": khoa, "ref_id": ref.id,
                     "nguon": "giong",
-                    "_job_type": "ltt_voice.enroll"})
+                    "_job_type": "ltt_voice.enroll"},
+            max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "voice_id": ho_so.public_id,
                              "job_id": str(job.id),
@@ -22537,12 +22541,12 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_lich_su.py
-SHA256=dc2c4cc1f2446b51b67aca502cf7832c7435341d0f0f69bb368241bf7a9bfc3b BYTES=7422 LINES=143
+SHA256=b6cb3a5d12d713c534c8e492dfca4556901549e958a904ce0f6d83297d58b035 BYTES=7483 LINES=144
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Lịch sử: lọc và liệt kê các lượt đọc."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
@@ -22669,7 +22673,8 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
                 db, user_id=uid, app_slug=MANIFEST.slug,
                 job_type="ltt_voice.synthesize", params=p,
                 admission_resource=tool.admission_resource,
-                admission_slots=tool.admission_slots)
+                admission_slots=tool.admission_slots,
+                max_attempts=SO_LAN_THU_JOB)
         except Exception as e:  # noqa: BLE001
             db.rollback()
             # Thiếu credit là câu trả lời hay gặp nhất ở đây, và nó phải tới
@@ -22686,13 +22691,13 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_tao.py
-SHA256=fb831094c8846a960d13528087df487506526ea7f156f7c7132e107e1fbca718 BYTES=19049 LINES=390
+SHA256=d8ae9ddf82ef42fbbb3f8335c2a0ea61cc961def334e2cad6b67f169a4bd216a BYTES=19395 LINES=394
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Tạo tiếng nói: dựng trang, xem trước cách đọc, nộp job,
 theo dõi kết quả."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
@@ -22990,7 +22995,11 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
                     "toc_do": yc.toc_do, "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
-            admission_slots=tool.admission_slots)
+            admission_slots=tool.admission_slots,
+            # ⛔ 5 chứ không phải mặc định 3. Ba lần thử là một cửa sổ ~30 giây,
+            #    còn riêng phần nạp model khi deploy đã đo 39,9–73,1 giây — nên
+            #    mọi lượt đang bay lúc deploy đều chết. Xem `SO_LAN_THU_JOB`.
+            max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "job_id": str(job.id)})
     except Exception as e:  # noqa: BLE001 - thiếu credit cũng đi đường này
@@ -26723,7 +26732,7 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_so_cong_khai.py
-SHA256=93bc27027f1e9a0a3418b97888f13dc26157316372795be63699c22faf07134c BYTES=3784 LINES=59
+SHA256=09426869afaa846ba1c8f5f64807138ca69f711167c713d59f6ae1bf24cb6fb0 BYTES=5515 LINES=87
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_so_cong_khai.py — vài hằng số mà CẢ HAI phía cùng phải biết.
@@ -26784,6 +26793,34 @@ TRAN_MOI_LUOT_SINH = 1500
 #:    dài áp kích thước một lượt gộp lô lên chính người gọi — bài 12 đoạn nhận
 #:    `413`. Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
 TRAN_KY_TU_CONG_KHAI = 1500
+
+
+#: Số lần thử cho một job giọng. **Không phải một con số tuỳ ý.**
+#:
+#: 🔴 ĐO THẬT 02/09/2026, giết cổng giọng rồi nộp một lượt đọc:
+#:
+#:      max_attempts = 3  ->  cua so thu lai ~30 giay  (cho 10s, roi 20s)
+#:      job chet han sau  ~45 giay, trang thai `error`
+#:
+#:    Nhưng **một lần deploy dài hơn thế nhiều**: dừng `LTTStudioVoice`, chép
+#:    `app\`, khởi động lại, và riêng phần **nạp model** đã đo được **39,9 s**
+#:    (nguội) tới **73,1 s**. Tức mọi lượt đọc đang bay khi deploy đều chết.
+#:
+#: ⭐ Bản sửa 31/08 (`LoiHaTang`) làm job **được thử lại** thay vì hỏng ngay —
+#:    đúng, nhưng chưa đủ: nó sửa việc **phân loại** lỗi mà không sửa **kết
+#:    quả**. Ba lần thử trong 30 giây vẫn thua một lần khởi động lại.
+#:
+#: ⚠️ 5 chứ không phải 8. Cửa sổ 5 lần là 10+20+40+80 = **~150 giây**, gấp đôi
+#:    lần nạp model chậm nhất đã đo. Nhiều hơn nữa thì một cổng hỏng THẬT bắt
+#:    khách chờ năm phút mới được báo — và với một job mà đường bình thường chỉ
+#:    mất 12–25 giây, im lặng năm phút là một kiểu hỏng khác.
+#:
+#: ⛔ Đừng đổi nó thành "thử lại mãi". `DangBanTam` (429) đã đi đường
+#:    `defer_resource` — về hàng đợi **không tiêu lượt thử** — và đó là đường
+#:    dành cho *bận*. Một cổng chưa cài mà cứ xếp lại vô hạn thì job nằm
+#:    `queued` mãi mãi, không ai được báo: đúng cái hỏng mà `manifest.py` cảnh
+#:    báo về làn worker `voice`.
+SO_LAN_THU_JOB = 5
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -259341,6 +259378,444 @@ def test_MOI_man_dung_bo_chon_giong_deu_co_nghe_thu(khach, monkeypatch, duong):
     assert "lv-chon-nghe" in r.text, (
         f"{duong} co bo chon giong nhung KHONG co nut nghe thu — "
         f"route quen truyen `duong_nghe`")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_395_ltt_voice_hong_hoc.py
+SHA256=fad6bbed62b8615046382658432e746534c9a6a2d3d00fae0197f30ad76421e6 BYTES=19577 LINES=432
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""LTT VOICE HỎNG THÌ HỎNG NHƯ THẾ NÀO — và ai phải trả tiền cho nó.
+
+## Vì sao tệp này tồn tại
+
+Gói V4 (prompt 10) đòi một mục *Failure tests*: cổng chết, cổng khởi động lại,
+hết giờ, giọng không hợp lệ, kho hỏng, chạy đồng thời, chốt GPU, xác thực API.
+
+Nhưng cái đáng đo ở đây **không phải "có ném lỗi không"** — mà là **lỗi thuộc
+loại nào**, vì loại lỗi quyết định ba thứ mà khách nhìn thấy:
+
+    LoiGiongNoi   -> LoiNguoiGoi  -> nền tảng KHÔNG thử lại, credit hoàn
+    LoiHaTang     -> RuntimeError -> nền tảng THỬ LẠI ba lần
+    DangBanTam    -> xếp lại hàng đợi, KHÔNG tính là hỏng
+
+🔴 Xếp nhầm một lỗi vào ô khác là một hồi quy ĐÃ XẢY RA HAI LẦN ở app này, và
+   cả hai lần đều tốn tiền thật của khách:
+
+   · 31/08 — `LoiGiongNoi` được cho kế thừa `LoiNguoiGoi` để thôi thử lại ba
+     lần cho một lỗi vĩnh viễn. Đúng cho *"giọng này không phải của bạn"*,
+     **sai** cho *"cổng giọng đang khởi động lại"* — bản sửa ấy biến một sự cố
+     mười giây thành một lượt hỏng vĩnh viễn. Sinh ra `LoiHaTang`.
+   · Cùng lỗi ấy **bỏ sót nhánh ghi danh** trong `jobs.py`, sửa sau.
+
+⇒ Nên tệp này đo **hình dạng của lỗi**, không đo thông điệp. Thông điệp đổi
+  được; hình dạng đổi là đổi hành vi tính tiền.
+"""
+from __future__ import annotations
+
+import io
+import re
+
+import pytest
+
+from apps.ltt_voice import features, jobs, sidecar_client
+from platform_core.jobs import LoiNguoiGoi
+
+
+# ── 1. Cổng chết / khởi động lại ─────────────────────────────────────────────
+
+def test_cong_chet_la_LOI_HA_TANG_chu_khong_phai_loi_khach(monkeypatch):
+    """🔴 HỒI QUY ĐÃ XẢY RA. Cổng giọng khởi động lại sau mỗi lần deploy.
+
+    Nếu nhánh này ném `LoiGiongNoi` thì nền tảng **không thử lại**, và mọi lượt
+    đang bay lúc deploy hỏng vĩnh viễn — trong khi thông điệp hứa với khách là
+    *"vui lòng thử lại"*. Mười giây gián đoạn thành một lô lượt chết.
+    """
+    def _chet(*a, **k):
+        raise sidecar_client.LoiSidecar("Khong ket noi duoc toi cong giong")
+
+    monkeypatch.setattr(sidecar_client, "noi", _chet)
+    with pytest.raises(features.LoiHaTang):
+        features.goi_cong("xin chao", preset="Adam")
+
+    assert not issubclass(features.LoiHaTang, LoiNguoiGoi), (
+        "LoiHaTang ma la LoiNguoiGoi thi nen tang THOI thu lai — dung cai no "
+        "sinh ra de sua")
+
+
+def test_cong_BAN_thi_xep_lai_chu_khong_tinh_la_hong(monkeypatch):
+    """⛔ BẬN KHÔNG PHẢI HỎNG. Đây là bài học đắt nhất của H37 (D-005).
+
+    Coi 429 là *hỏng* dẫn tới cooldown rồi vô hiệu hoá cả đường gọi — một buổi
+    tối nhiều việc là đủ để sản phẩm tự tắt.
+    """
+    def _ban(*a, **k):
+        raise sidecar_client.SidecarBan(retry_after_s=7.5)
+
+    monkeypatch.setattr(sidecar_client, "noi", _ban)
+    with pytest.raises(features.DangBanTam) as e:
+        features.goi_cong("xin chao", preset="Adam")
+    assert e.value.retry_after_s == 7.5, "mat retry_after_s thi hang doi doan mu"
+
+    assert not issubclass(features.DangBanTam, LoiNguoiGoi)
+    assert not issubclass(features.DangBanTam, features.LoiHaTang), (
+        "gop BAN vao HA TANG thi mot may ban se dem vao ti le loi ha tang")
+
+
+def test_ghi_danh_khi_cong_chet_CUNG_la_ha_tang(monkeypatch):
+    """⚠️ Nhánh này từng BỊ BỎ SÓT khi `LoiHaTang` được thêm cho nhánh sinh.
+
+    Hai cửa, một quy tắc — và cửa bị quên là cửa sẽ nuốt tiền ghi danh.
+    """
+    import inspect
+    ma = inspect.getsource(jobs._ghi_danh)
+    assert "LoiHaTang" in ma, (
+        "nhanh ghi danh khong con phan biet ha tang voi loi khach")
+
+
+# ── 2. Giọng không hợp lệ — chặn ở CỬA, không để xuống worker ────────────────
+
+def test_preset_bia_bi_chan_va_KHONG_thu_lai():
+    """Một `preset` gõ sai chạy lại y hệt sẽ hỏng y hệt ⇒ không được thử lại."""
+    with pytest.raises(features.LoiGiongNoi):
+        features.chuan_hoa({"text": "xin chao", "preset": "Giong Khong Co That",
+                            "owner_id": "u1"})
+    assert issubclass(features.LoiGiongNoi, LoiNguoiGoi)
+
+
+def test_khong_duoc_vua_voice_id_vua_preset():
+    """Hai danh tính trong một yêu cầu là một yêu cầu không có nghĩa duy nhất."""
+    with pytest.raises(features.LoiGiongNoi):
+        features.chuan_hoa({"text": "xin chao", "preset": "Adam",
+                            "voice_id": "vc_" + "a" * 32, "owner_id": "u1"})
+
+
+def test_van_ban_rong_bi_chan_truoc_khi_giu_credit():
+    with pytest.raises(features.LoiGiongNoi):
+        features.chuan_hoa({"text": "   ", "owner_id": "u1"})
+
+
+# ── 3. Tốc độ: giá trị vô nghĩa KHÔNG được thành một lượt chạy lạ ───────────
+
+@pytest.mark.parametrize("gt", ["abc", "-3", "0", "99", "", None, "1e9"])
+def test_toc_do_vo_nghia_ep_ve_nac_hop_le(gt):
+    """⛔ Ép về, KHÔNG ném.
+
+    `features.chuan_hoa` là cửa CHUNG cho cả web lẫn Public API. Ném ở đây
+    nghĩa là một tích hợp gửi `speed: 0` nhận lỗi thay vì nhận tiếng — trong
+    khi ý định của họ rõ ràng và một mặc định an toàn tồn tại.
+    """
+    yc = features.chuan_hoa({"text": "xin chao", "toc_do": gt, "owner_id": "u1"})
+    from apps.ltt_voice import toc_do
+    assert yc.toc_do in toc_do.CAC_NAC, f"toc_do={gt!r} -> {yc.toc_do!r} khong hop le"
+
+
+# ── 4. Kho hỏng ──────────────────────────────────────────────────────────────
+
+def test_kho_hong_khi_hoi_nghe_thu_thi_NOI_CHUA_CO_chu_khong_no(monkeypatch):
+    """Một kho hỏng và một tệp chưa dựng phải dẫn tới CÙNG hành vi giao diện."""
+    import platform_core.storage as st
+    from apps.ltt_voice import nghe_thu
+
+    class _Hong:
+        def exists(self, key):
+            raise OSError("kho khong voi toi")
+
+    monkeypatch.setattr(st, "get_storage", lambda: _Hong())
+    nghe_thu._DEM.clear()
+    assert nghe_thu.co_san("voice/mau/x/v.wav") is False
+
+
+def test_kho_hong_khi_DUNG_nghe_thu_thi_khong_lam_hong_job(monkeypatch):
+    """⛔ Người gọi là đuôi job GHI DANH — giọng đã ghi danh xong ở trên rồi."""
+    import platform_core.storage as st
+    from apps.ltt_voice import nghe_thu
+
+    class _Hong:
+        def exists(self, key):
+            return False
+
+        def put(self, *a, **k):
+            raise OSError("het cho")
+
+    monkeypatch.setattr(st, "get_storage", lambda: _Hong())
+    monkeypatch.setattr(features, "goi_cong", lambda *a, **k: (b"RIFF", {}))
+    nghe_thu._DEM.clear()
+    assert nghe_thu.dung("voice/mau/x/v.wav", preset="Adam") is False
+
+
+# ── 5. Chốt GPU / đồng thời ──────────────────────────────────────────────────
+
+def test_manifest_khai_chot_MOT_SUAT_cho_ca_ba_cua():
+    """🔴 MỘT GPU = MỘT VIỆC.
+
+    Không khai `admission_resource` thì cửa đồng bộ đi vòng qua hàng đợi và hai
+    lượt cùng đập vào một card (Q114). Đây là hằng số duy nhất giữ điều đó.
+    """
+    from apps.ltt_voice.manifest import MANIFEST
+    t = MANIFEST.tools[0]
+    assert t.admission_resource == "vieneu_gpu"
+    assert t.admission_slots == 1
+
+
+def test_manifest_khai_tran_runtime_de_bat_job_TREO():
+    """Trần tồn tại để bắt job **treo**, không phải job chậm: một job treo mà
+    vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo."""
+    from apps.ltt_voice.manifest import MANIFEST
+    assert MANIFEST.max_runtime_s["ltt_voice.synthesize"] >= 300
+    assert MANIFEST.max_runtime_s["ltt_voice.enroll"] >= 120
+
+
+def test_manifest_khai_lan_worker_rieng():
+    """⛔ Thiếu làn `voice` trong `LTT_WORKER_POOLS` thì job nằm `queued` MÃI
+    MÃI — không lỗi, không cảnh báo, `/health/ready` vẫn 200."""
+    from apps.ltt_voice.manifest import MANIFEST
+    assert "voice" in MANIFEST.requires
+
+
+# ── 6. Hết giờ ───────────────────────────────────────────────────────────────
+
+def test_moi_cua_sidecar_deu_co_TRAN_THOI_GIAN():
+    """⛔ Không có trần thì một cổng treo giữ một worker vĩnh viễn — và trần
+    runtime của job không cứu được, vì worker vẫn đang đập nhịp."""
+    import inspect
+    for ten in ("noi", "noi_dai", "noi_lo", "ghi_danh", "ghi_danh_kho",
+                "nang_luc", "giong_dung_san"):
+        ham = getattr(sidecar_client, ten)
+        nguon = inspect.getsource(ham)
+        assert "timeout" in nguon, f"sidecar_client.{ten} khong dat timeout"
+
+
+def test_probe_song_co_tran_NGAN():
+    """`song()` nằm trên đường dựng trang — trần của nó là trần kiên nhẫn của
+    người dùng, không phải trần của một lượt sinh."""
+    assert sidecar_client.SONG_TIMEOUT_S <= 3.0
+
+
+# ── 7. Xác thực / bề mặt công khai ───────────────────────────────────────────
+
+def test_cong_cu_api_van_fail_closed():
+    """⛔ `api_exposed=True` KHÔNG nghĩa là đang mở.
+
+    Ba cổng độc lập (Q92). Phép kiểm này chốt cổng thứ nhất còn nguyên; hai
+    cổng kia là biến môi trường của máy chủ.
+    """
+    from apps.ltt_voice.manifest import MANIFEST
+    t = MANIFEST.tools[0]
+    assert t.api_exposed is True
+    assert t.name == "speech.ltt"
+    assert "jobs:create" in t.api_contract["scopes"]
+
+
+def test_tham_so_sinh_mau_KHONG_ra_hop_dong_cong_khai():
+    """⛔ Q119: cache CUDA graph khoá theo `(B, temperature, top_k, top_p)`.
+
+    Cho khách chỉnh ba tham số đó là mời họ làm nở cache graph trên GPU của ta
+    cho tới khi hết VRAM. Và `temperature` cao làm lệch tông giữa các đoạn.
+    """
+    from apps.ltt_voice.manifest import MANIFEST
+    khoa = set(MANIFEST.tools[0].params_schema)
+    assert not (khoa & {"temperature", "top_k", "top_p", "repetition_penalty"})
+
+
+def test_cong_bo_nang_luc_khong_lo_GIA_TRI_tham_so():
+    """Lộ `temperature=0.8` là mời một tích hợp coi nó là hợp đồng — rồi ngày
+    ta đổi nó sau một lượt đo là ngày ta phá hợp đồng mà không hề khai."""
+    from voice_sidecar import tham_so
+    cb = tham_so.cong_bo()
+    assert "phien_ban_tham_so" in cb
+    assert not (set(cb) & {"temperature", "top_k", "top_p"})
+
+
+# ── 8. Trần ký tự — hai trần KHÁC NHAU, đừng gộp ────────────────────────────
+
+def test_hai_tran_ky_tu_la_HAI_HANG_SO_RIENG():
+    """`TRAN_MOI_LUOT_SINH` là trần của MỘT lượt `infer` (trần chất lượng).
+    `TRAN_KY_TU_CONG_KHAI` là trần của MỘT YÊU CẦU.
+
+    ⚠️ Hôm nay **cả hai đều bằng 1.500**, và phép kiểm này KHÔNG đòi chúng khác
+       nhau — đòi vậy là ép mở một cổng chưa đo (V10 còn nợ CER/WER, tương đồng
+       người nói, clipping, tỉ lệ hỏng cho bản GHÉP).
+
+    ⭐ Thứ đáng chốt là chúng vẫn là **hai cái tên riêng**. Trước 31/08 chúng là
+       một con số, và hệ quả là văn bản 3.000 ký tự bị *từ chối* trong khi chính
+       thông điệp lỗi đã hứa một con đường long-form. Gộp lại lần nữa là làm
+       mất khả năng nới một trần mà không nới trần kia.
+    """
+    from apps.ltt_voice import tham_so_cong_khai as t
+    assert t.TRAN_MOI_LUOT_SINH == 1500
+    assert t.TRAN_KY_TU_CONG_KHAI >= t.TRAN_MOI_LUOT_SINH
+    import inspect
+    nguon = inspect.getsource(t)
+    assert nguon.count("TRAN_KY_TU_CONG_KHAI = ") == 1
+    assert "TRAN_KY_TU_CONG_KHAI = TRAN_MOI_LUOT_SINH" not in nguon, (
+        "hai tran bi noi lai lam mot bi danh — go duoc kha nang noi rieng tung cai")
+
+
+def test_van_ban_vuot_tran_bi_chan_o_CUA_va_KHONG_tao_job(khach_hong):
+    """🔴 Chặn ở CỬA, và bằng chứng là **không có job nào được tạo**.
+
+    ⛔ Phép kiểm bản đầu hỏi `features.chuan_hoa` và đỏ — vì trần công khai
+       **không** ở đó, nó ở route. Đó là một phép kiểm sai chỗ, không phải một
+       lỗi sản phẩm: `chuan_hoa` là cửa chung cho cả Public API, và ép độ dài ở
+       đó sẽ áp trần của WEB lên một cửa có hợp đồng riêng.
+
+    ⭐ Và "trả 400" chưa đủ. Thứ tốn tiền của khách là một job **được tạo rồi
+       mới hỏng** — nên phép kiểm đếm job, không đọc thông điệp.
+    """
+    from apps.ltt_voice.tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+    client, uid = khach_hong
+
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+    from sqlalchemy import select, func
+
+    def _dem():
+        gen = dbmod.get_session()
+        db = next(gen)
+        try:
+            return db.execute(select(func.count(Job.id))).scalar() or 0
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+
+    truoc = _dem()
+    tok = _csrf(client)
+    r = client.post("/ltt-voice/tao", data={
+        "text": "a" * (TRAN_KY_TU_CONG_KHAI + 1), "csrf_token": tok})
+    assert r.status_code == 400, f"van ban vuot tran ma cua nhan: {r.status_code}"
+    assert _dem() == truoc, "da tao job cho mot yeu cau chac chan hong"
+
+
+def _csrf(client) -> str:
+    m = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/ltt-voice").text)
+    assert m, "khong tim thay csrf_token"
+    return m.group(1)
+
+
+@pytest.fixture()
+def khach_hong(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'hong.db').as_posix()}")
+    monkeypatch.setenv("LTT_ENV", "development")
+    monkeypatch.setenv("LTT_SESSION_SECRET", "test-hong-hoc")
+    monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    import apps.ltt_voice.tables  # noqa: F401
+
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    from platform_core.storage import LocalStorage, set_storage
+    from platform_core.users import tao_nguoi_dung
+    set_storage(LocalStorage(str(tmp_path / "store")))
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        u = tao_nguoi_dung(db, email="hong@test.com",
+                           password="matkhau-tot-12", is_verified=True)
+        db.commit()
+        from platform_core import credit
+        credit.nap(db, user_id=u.id, amount=100, note="test")
+        db.commit()
+        uid = str(u.id)
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from fastapi.testclient import TestClient
+
+    from server.app import create_app
+    client = TestClient(create_app(), base_url="https://testserver",
+                        follow_redirects=False)
+    m = re.search(r'name="csrf_token" value="([^"]+)"', client.get("/login").text)
+    assert m
+    client.post("/login", data={"username": "hong@test.com",
+                                "password": "matkhau-tot-12",
+                                "csrf_token": m.group(1)})
+    try:
+        yield client, uid
+    finally:
+        client.close()
+        set_storage(None)
+        dbmod.reset_engine()
+
+
+# ── 9. Khuếch đại chi phí qua từ điển phát âm ───────────────────────────────
+
+def test_tu_dien_khong_duoc_lam_no_van_ban_qua_TRAN_SAU_CHUAN_HOA():
+    """🔴 Lỗ đã đo: 1.499 ký tự thô -> 120.749 ký tự sau từ điển (80,6x).
+
+    `manifest._gia()` ước giá **không** có từ điển (nó không được chạm CSDL),
+    còn worker thì CÓ áp. Hệ quả không phải "thu thiếu" mà là `credit_held` bé
+    hơn thực tế ⇒ quyết toán vượt phần giữ ⇒ lượt chạy giữa chừng bị đánh hỏng.
+    """
+    import inspect
+    ma = inspect.getsource(jobs._tao_tieng)
+    assert "_tran_sau" in ma, "mat tran sau chuan hoa — lo khuech dai chi phi mo lai"
+    assert "len(yc.text) * 3" in ma, "tran sau chuan hoa doi cong thuc ma khong ai khai"
+
+
+# ── 10. Cửa sổ thử lại phải SỐNG SÓT QUA MỘT LẦN DEPLOY ─────────────────────
+
+def test_MOI_cua_nop_job_deu_khai_SO_LAN_THU_JOB():
+    """🔴 ĐO THẬT 02/09/2026 — giết cổng giọng rồi nộp một lượt đọc:
+
+        max_attempts = 3  ->  attempts=3, status='error' sau ~45 giay
+                              (cua so thu lai chi 10s + 20s = ~30 giay)
+
+    Nhưng riêng phần **nạp model** khi deploy đã đo **39,9–73,1 giây**. Nên bản
+    sửa 31/08 (`LoiHaTang` để job được thử lại) sửa đúng việc **phân loại** lỗi
+    mà **không** sửa kết quả: ba lần thử vẫn thua một lần khởi động lại.
+
+    ⭐ Tiền thì vẫn đúng — sổ ghi `hold -1` rồi `refund +1`, khách không bị thu.
+       Cái mất là công việc và một thông điệp lỗi không đáng có.
+
+    ⛔ Bốn cửa nộp job, và cửa bị quên là cửa sẽ chết lặng lẽ khi deploy.
+    """
+    import pathlib as _p
+    import re as _re
+
+    goc = _p.Path(__file__).resolve().parents[1] / "apps/ltt_voice/routes"
+    thieu = []
+    for tep in goc.glob("_p_*.py"):
+        noi_dung = tep.read_text(encoding="utf-8")
+        for khoi in _re.findall(r"submit_with_credit\((?:[^()]|\([^()]*\))*\)",
+                                noi_dung):
+            if "max_attempts" not in khoi:
+                thieu.append(tep.name)
+    assert not thieu, (
+        f"cua nop job KHONG khai max_attempts: {sorted(set(thieu))} — "
+        f"job o day se chet khi deploy")
+
+
+def test_so_lan_thu_du_song_qua_lan_nap_model_cham_nhat():
+    """Cửa sổ = tổng backoff luỹ thừa của `SO_LAN_THU_JOB - 1` lần chờ.
+
+    Phải rộng hơn **73,1 giây** (lần nạp model chậm nhất đã đo), và có biên.
+    """
+    from apps.ltt_voice.tham_so_cong_khai import SO_LAN_THU_JOB
+    BASE, TRAN = 10, 600          # platform_core/jobs.py
+    cua_so = sum(min(TRAN, BASE * 2 ** (n - 1))
+                 for n in range(1, SO_LAN_THU_JOB))
+    assert cua_so >= 150, (
+        f"cua so thu lai {cua_so}s — hep hon hai lan nap model cham nhat (73,1s)")
+
+
+def test_so_lan_thu_KHONG_qua_lon():
+    """⛔ Đừng đổi thành "thử lại mãi".
+
+    Một cổng hỏng THẬT phải báo cho khách trong thời gian hợp lý. Job này chạy
+    bình thường 12–25 giây; im lặng nhiều phút là một kiểu hỏng khác.
+    """
+    from apps.ltt_voice.tham_so_cong_khai import SO_LAN_THU_JOB
+    assert SO_LAN_THU_JOB <= 6
+
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -1,7 +1,7 @@
 """Màn Giọng: lưới giọng, ghi danh giọng mới, tắt giọng."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
@@ -115,7 +115,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
             params={"owner_id": uid, "voice_id": ho_so.public_id,
                     "source_key": khoa, "ref_id": ref.id,
                     "nguon": "giong",
-                    "_job_type": "ltt_voice.enroll"})
+                    "_job_type": "ltt_voice.enroll"},
+            max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "voice_id": ho_so.public_id,
                              "job_id": str(job.id),

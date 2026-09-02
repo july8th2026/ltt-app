@@ -36,7 +36,7 @@ from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
                 giong_mau, lan_ngon_ngu, nghe_thu, tham_chieu,
                 tu_dien_rieng, vo)
 from ..manifest import MANIFEST
-from ..tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from ..tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
 
 #: Nhãn người đọc cho `params["nguon"]`. Khai ở đây vì nó là chuyện của **màn
 #: hình**, không phải của nghiệp vụ — worker không quan tâm lượt này đến từ đâu.

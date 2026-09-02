@@ -2,7 +2,7 @@
 theo dõi kết quả."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
@@ -300,7 +300,11 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
                     "toc_do": yc.toc_do, "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
-            admission_slots=tool.admission_slots)
+            admission_slots=tool.admission_slots,
+            # ⛔ 5 chứ không phải mặc định 3. Ba lần thử là một cửa sổ ~30 giây,
+            #    còn riêng phần nạp model khi deploy đã đo 39,9–73,1 giây — nên
+            #    mọi lượt đang bay lúc deploy đều chết. Xem `SO_LAN_THU_JOB`.
+            max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "job_id": str(job.id)})
     except Exception as e:  # noqa: BLE001 - thiếu credit cũng đi đường này
