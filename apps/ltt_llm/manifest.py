@@ -56,6 +56,8 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, ToolSpec
 
+from apps.ltt_llm import features as _features
+
 #: ⛔ CÁC HẰNG DƯỚI ĐÂY LÀ **BÍ DANH**, KHÔNG PHẢI ĐỊNH NGHĨA.
 #:
 #:    Nguồn chân lý là `apps/ltt_llm/ngan_sach.py`. Giữ tên cũ ở đây để mã đang
@@ -163,6 +165,9 @@ MANIFEST = AppManifest(
     job_types=("ltt_llm.chat",),
     requires=("api",),          # KHÔNG cần GPU của máy A: việc nặng ở máy B
     credit_cost=_cost,
+    # Sức khoẻ cho catalog của sản phẩm khác (H43 Phase 06): `GET /live` của
+    # cổng máy B, không cần khoá, timeout ngắn. Xem `features.suc_khoe`.
+    suc_khoe=_features.suc_khoe,
 
     enabled=True,
     group="AI",

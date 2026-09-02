@@ -13118,3 +13118,30 @@ msgstr "[{slug}] tool {tool!r} tuy_chon_dong only supports `string` parameters; 
 
 msgid "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là `module:attribute`, nhận {ref!r}"
 msgstr "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] must be `module:attribute`, got {ref!r}"
+
+msgid "Trò chuyện với model của LTT: văn bản, ảnh và giọng nói trong một hội thoại."
+msgstr "Chat with LTT's own models: text, images and voice in one conversation."
+
+msgid "Sản phẩm hội thoại trên model của LTT đang được xây (H43). Trang này là chỗ giữ chỗ để đường dẫn không trả 404."
+msgstr "The conversation product on LTT's models is being built (H43). This page is a placeholder so the path does not return 404."
+
+msgid "ChatLTT cần JavaScript."
+msgstr "ChatLTT needs JavaScript."
+
+msgid "Giao diện chưa được build (thiếu bundle frontend/chatltt). API vẫn hoạt động tại /chatltt/api."
+msgstr "The interface has not been built (frontend/chatltt bundle missing). The API still works at /chatltt/api."
+
+msgid "Hội thoại ChatLTT: tiêu đề, model đang chọn, nhánh đang xem. Xoá là xoá mềm — dọn thật theo hạn giữ dữ liệu."
+msgstr "A ChatLTT conversation: title, selected model, branch in view. Deletion is soft; real removal follows the retention limit."
+
+msgid "Một lượt thi hành: phần chữ đã sinh (kể cả khi bị ngắt), số token đo được và số credit đã giữ/thu — thứ đối chiếu được với sổ tiền."
+msgstr "One execution: the text generated so far (even if interrupted), the tokens measured, and the credit held and charged — what reconciles against the ledger."
+
+msgid "Từng lượt nói trong cây hội thoại, kèm khối nội dung (chữ, suy luận, ảnh, tiếng). Thứ nhạy cảm nhất của sản phẩm này."
+msgstr "Each turn in the conversation tree, with its content blocks (text, reasoning, images, audio). The most sensitive data in this product."
+
+msgid "theo hội thoại chứa nó"
+msgstr "with the conversation that holds it"
+
+msgid "xoá mềm rồi dọn theo hạn giữ dữ liệu"
+msgstr "soft-deleted, then purged at the retention limit"

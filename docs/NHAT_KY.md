@@ -16,6 +16,54 @@
 
 
 
+## 2026-09-03 (chiều) — H43 ChatLTT: Phase 03–08a (text · ảnh · tiếng · catalog · dữ liệu · app)
+
+- **Hạng mục:** H43.3 → H43.8a. Cùng cây riêng, cùng nhánh, **không deploy**.
+- **Phase 03 (text)** — chuẩn hoá chunk OpenAI → sự kiện canonical; SLO text.
+  🔴 Tìm ra một lỗi TIỀN có lợi cho khách bị bỏ sót: `DemToken` chỉ đọc `usage`,
+  còn llama-server để số token trúng cache ở `timings.cache_n` — nên **mọi lượt
+  stream** (cả `/api/v1` lẫn ChatLTT) tính giá token vào đầy đủ 50/1M cho cả
+  phần đã cache lẽ ra 10/1M. Đường không stream đọc đúng từ đầu (`cong_vlm`).
+- **Q120 — đóng mâu thuẫn Q116↔mã.** Q116 chốt cap `65000` (28/08) nhưng mã và
+  production chạy `TOKEN_VAO_TRAN=96.256` / công bố `88.555` từ 30/08. Rà soát
+  30/08 cho thấy 65K là hệ quả của **trần body 256 KB** (256 KB ÷ 4 byte/token ≈
+  64K) và của phép đo trên **đường trả một cục** (đã giải riêng bằng Q113), chứ
+  không phải trần token của model. Q120: trần là số **dẫn xuất** từ
+  `apps/ltt_llm/ngan_sach.py`; Q116 đánh dấu ĐÃ THAY phần con số; `test_604` chốt
+  rằng không tài liệu hiện hành nào còn nói 65K như luật.
+- **Phase 04+05 (ảnh, tiếng)** — chạy bằng tác nhân song song. 🔴 Bận **không**
+  đi đúng đường: `cong_render.BanError` bị bọc thành `LoiTaoAnh` và
+  `DangBanTam` của voice không có trong bảng `_provider_failure_kind`, nên cả hai
+  rơi vào nhánh `retry` và **tiêu một lượt thử** thay vì `resource_wait`. Sửa
+  bằng một tín hiệu nền tảng `platform_core.jobs.DangBan` (đối xứng `LoiNguoiGoi`,
+  không nêu tên app); chứng minh trên worker thật: 6 lần bận > 5 lượt vẫn
+  `queued`, `attempts=0`, không thu tiền.
+- **Phase 06 (catalog)** — `apps/chatltt/services/chinh_sach.py`: allowlist ba
+  năng lực, fail-closed cho tên lạ **và** cho modality lạ. Thêm hợp đồng
+  `AppManifest.suc_khoe` (ba trạng thái) vì một sản phẩm khác muốn nói "giọng nói
+  đang không sẵn sàng" mà không import app — `ltt_voice` khai `trang_thai()` thật
+  chứ không phải `san_sang()` (chip xanh nói dối, bài học 02/09).
+- **Phase 07 (dữ liệu)** — ba bảng `chatltt_*` dạng **cây**, không chạm `chat_*`
+  của Chat AI Studio. Bất biến `created_at(con) > created_at(cha)` ép ở **tầng
+  ghi** (LibreChat phải vá muộn lúc fork). `current_leaf_id` lưu ở CSDL để reload
+  giữa một nhánh cũ quay lại đúng nhánh đó.
+- **Phase 08a (máy chủ)** — app `chatltt` + 4 mảnh route + luồng nền + SSE + Dừng.
+  Hai lỗi THẬT tìm ra khi chạy HTTP thật: (a) SQLite trả `datetime` **không múi
+  giờ** nên bất biến thời gian ném — chỉ hiện trên SQLite, tức chỉ ở máy phát
+  triển; (b) `parent_id: null` và "không khai" bị nuốt thành một, nên **không
+  sửa-gửi-lại được lượt đầu tiên** — cây sai im lặng. Tách bằng sentinel.
+- **Test:** `test_603/604` 12 · `test_606–612` 58 · `test_613/614` 10 ·
+  `test_616–618` 16 · `test_623` 6. Bánh cóc: `check_silent_except` 62/62,
+  `check_i18n` 774/774, `lint_app_contract` 16 app 0/0, `check_dich_thieu` PASS
+  (14 chuỗi EN thêm tay vào `.po`, giữ LF).
+- **Hai bánh cóc khác phải khai thêm** vì có bảng mới: `chatltt_*` vào
+  `governance.STORES` (CONTENT, không tự già đi — `partial_text` là chữ model đã
+  sinh cho khách), và `chatltt` vào bảng phân loại của `APP_API_COVERAGE_FINAL.md`
+  (DEFER: nó là **khách hàng nội bộ** của ba tool đã bán, mở ra API là bán lại
+  cùng một thứ qua hợp đồng thứ hai).
+- **Chưa xong:** bundle React `frontend/chatltt` (08b) — mốc "ChatLTT chỉ-text
+  dùng được độc lập" **chưa đạt**. Bằng chứng LIVE với máy B hoãn tới Phase 12.
+
 ## 2026-09-03 — H43 ChatLTT: Phase 00–02 (bootstrap · LibreChat tham chiếu · cửa runtime nội bộ)
 
 - **Mục tiêu:** chạy gói `LTTCHAT_AUTONOMOUS_DEEP_BUILD_V2` (14 phase tự chủ) — xây ChatLTT trên ba model nhà.

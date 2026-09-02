@@ -125,6 +125,14 @@ class DemToken:
         u = x.get("usage")
         if isinstance(u, dict):
             self._gop(u)
+        # llama-server để số token **trúng cache** ở `timings.cache_n`, NGOÀI
+        # `usage` — cùng chỗ `cong_vlm.doc_su_dung` đọc cho đường không stream.
+        # Trước 03/09 lớp này bỏ qua nó ⇒ mọi lượt stream trả giá token vào
+        # đầy đủ (50/1M) cho cả phần đã cache (10/1M): sai về phía khách, và
+        # sai ở đường duy nhất mà khách agentic (Codex, ChatLTT) dùng.
+        t = x.get("timings")
+        if isinstance(t, dict):
+            self.token_cache = max(self.token_cache, _so(t.get("cache_n")))
         for v in x.values():
             if isinstance(v, (dict, list)):
                 self._quet(v, sau + 1)

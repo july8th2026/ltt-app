@@ -83,6 +83,47 @@ class LoiNguoiGoi(Exception):
     """
 
 
+class DangBan(Exception):
+    """Tài nguyên thi hành đang **bận**. ⛔ KHÔNG PHẢI HỎNG, KHÔNG PHẢI LỖI KHÁCH.
+
+    Đối xứng với `LoiNguoiGoi` ở trên: `LoiNguoiGoi` là "đừng thử lại nữa", còn
+    lớp này là "thử lại, nhưng **đừng tính** lần này". Worker đưa job về hàng đợi
+    bằng `defer_resource` — không tiêu lượt thử, không chạm sổ tiền, và job
+    quay lại sau `retry_after_s` giây (rỗng ⇒ giãn cách mặc định của nền tảng).
+
+    ## Khoảng trống hợp đồng mà lớp này lấp (H43 Phase 04/05, 03/09/2026)
+
+    `job_runner._provider_failure_kind` chỉ nhận ra "bận" qua lớp `BanError`
+    của cổng VLM. Một app bán model khác (cổng render ảnh, cổng giọng) cũng
+    gặp 429 cùng nghĩa, nhưng **không có cách nào nói điều đó** với worker mà
+    không import mô-đun của cổng VLM — thứ chẳng liên quan gì tới nó. Hệ quả
+    đo được ở Phase 02: "máy bận" của hai app đó rơi vào nhánh `retry`, tiêu
+    một trong ba lượt thử, và sau ba lượt bận thì job **hỏng hẳn** kèm hoàn
+    tiền — cho một việc chưa từng chạy.
+
+    ⭐ Đây là tín hiệu **nền tảng** để app nào cũng ném được mà không cần biết
+       app hay cổng nào khác tồn tại. Cổng nào có lớp "bận" riêng thì dịch sang
+       lớp này ở cửa job của app (giữ nguyên thông điệp), hoặc cho lớp đó kế
+       thừa lớp này.
+
+    ⛔ Đừng dùng cho lỗi hạ tầng thật (mạng đứt, cổng trả 5xx). "Bận" là trạng
+       thái có hạn; "hỏng" thì phải **đếm** lượt thử để còn báo cho khách. Xếp
+       lại vô hạn một cổng đã chết là job nằm `queued` mãi mà không ai được báo.
+
+    Cách dùng trong app::
+
+        from platform_core.jobs import DangBan
+
+        except cong.BanError as e:
+            raise DangBan(str(e), retry_after_s=e.eta_s) from e
+    """
+
+    def __init__(self, ly_do: str = "", retry_after_s: Optional[float] = None):
+        super().__init__(ly_do or "tai nguyen dang ban")
+        self.ly_do = ly_do
+        self.retry_after_s = retry_after_s
+
+
 def _bay_gio() -> datetime:
     return datetime.now(timezone.utc)
 

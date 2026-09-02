@@ -44,7 +44,7 @@ class NangLuc:
     tuy_chon: dict = field(default_factory=dict) # tham số → [{value,label}] theo NGƯỜI DÙNG
     gia: dict = field(default_factory=dict)      # `AppManifest.bang_gia()` của app sở hữu
     duong_dan_app: str = ""  # route_prefix của app sở hữu (deep-link "quản lý giọng")
-    san_sang: str = "san_sang"   # "san_sang" | "chua_san_sang"
+    san_sang: str = "san_sang"   # "san_sang" | "ban" | "chua_san_sang" (từ `AppManifest.suc_khoe`)
 
 
 def phuong_thuc_cua(tool) -> str:
@@ -70,6 +70,42 @@ def _tuy_chon(tool, db, user_id: str) -> dict:
             log.exception("khong lay duoc tuy chon %s cua %s", param, tool.name)
             ra[param] = []
     return ra
+
+
+#: Đệm kết quả `suc_khoe()` theo slug: (thời điểm, giá trị). Một trang catalog
+#: không được thăm dò ba dịch vụ mỗi lần vẽ.
+_DEM_SUC_KHOE: dict = {}
+DEM_SUC_KHOE_GIAY = 10.0
+TRANG_THAI_HOP_LE = ("san_sang", "ban", "chua_san_sang")
+
+
+def suc_khoe_cua(manifest, *, now=None) -> str:
+    """`manifest.suc_khoe()` có đệm; không khai ⇒ chỉ biết `enabled`; ném ⇒ `chua_san_sang`.
+
+    Fail-closed có chủ ý: một hook ném hay trả giá trị lạ nghĩa là ta **không
+    biết** dịch vụ sống hay chết — và "không biết" phải hiện ra là "chưa sẵn
+    sàng", không phải chip xanh (bài học `ltt_voice` 02/09).
+    """
+    import time
+
+    if not manifest.enabled:
+        return "chua_san_sang"
+    if manifest.suc_khoe is None:
+        return "san_sang"
+    t = time.monotonic() if now is None else now
+    dem = _DEM_SUC_KHOE.get(manifest.slug)
+    if dem and t - dem[0] < DEM_SUC_KHOE_GIAY:
+        return dem[1]
+    try:
+        gia_tri = str(manifest.suc_khoe() or "")
+    except Exception:                                           # noqa: BLE001
+        log.exception("suc_khoe cua %s nem", manifest.slug)
+        gia_tri = "chua_san_sang"
+    if gia_tri not in TRANG_THAI_HOP_LE:
+        log.warning("suc_khoe cua %s tra gia tri la %r", manifest.slug, gia_tri)
+        gia_tri = "chua_san_sang"
+    _DEM_SUC_KHOE[manifest.slug] = (t, gia_tri)
+    return gia_tri
 
 
 def _gia(manifest) -> dict:
@@ -113,7 +149,7 @@ def danh_muc(db, *, user_id: str, cho_phep: Iterable[str],
                 tuy_chon=_tuy_chon(tool, db, user_id),
                 gia=_gia(m),
                 duong_dan_app=m.route_prefix,
-                san_sang="san_sang" if m.enabled else "chua_san_sang",
+                san_sang=suc_khoe_cua(m),
             ))
     ra.sort(key=lambda n: n.ten)
     return ra

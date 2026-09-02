@@ -34,7 +34,7 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-from . import gia, nghe_thu
+from . import gia, nghe_thu, sidecar_client
 from .tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
 
 
@@ -190,6 +190,12 @@ MANIFEST = AppManifest(
     #    khách chờ mà không có gì giải thích.
     bao_tri=nghe_thu.bao_tri,
     bao_tri_moi_giay=3600,
+
+    # Sức khoẻ cho catalog của sản phẩm khác (H43 Phase 06): hỏi sidecar THẬT
+    # qua `trang_thai()` ba trạng thái — không phải `san_sang()` (chỉ kiểm biến
+    # môi trường; đã hiện chip xanh trên một trang mọi lượt đều hỏng, 02/09).
+    suc_khoe=lambda: ("san_sang" if sidecar_client.trang_thai() == "san_sang"
+                      else "chua_san_sang"),
 
     tools=(
         ToolSpec(

@@ -13,7 +13,8 @@
 - Dải số test: **600–699**
 - Production: `89eb46c` (14:15 02/09) + voice (21:11 02/09), 5 tool bán thật.
   ⛔ Chương trình này **không deploy**.
-- Phase hiện tại: **00 ✅ · 01 ✅ · 02 ✅ → tiếp 03** (04/05 có thể song song)
+- Phase hiện tại: **00 ✅ · 01 ✅ · 02 ✅ · 03 ✅ · 04 ✅ · 05 ✅ · 06 ✅ · 07 ✅ · 08a ✅ → tiếp 08b (bundle React)**
+  (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
 
 ## Ranh giới với phiên khác (02/09)
 | Phiên | Trạng thái | Vùng giữ |
@@ -30,7 +31,13 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 |---|---|---|
 | **00** Bootstrap + nguồn chân lý | PASS — một cây/một gốc SHA, không rủi ro đè mã mới; runtime map + quyết định đã khảo sát | `b8f2845` |
 | **01** LibreChat tham chiếu | PASS — `reports/01_librechat_tham_chieu.md`: 12 hệ con có trích mã/test @ `9e74cc0`; 18 tiêu chí AC-01..AC-18 | (commit phase 02) |
-| **02** Gap runtime nội bộ | PASS — `platform_core/runtime_noi_bo/` (facade mỏng), 2 trường manifest, `streaming.py` gọi facade; 40 + 500 test xanh | (commit phase 02) |
+| **02** Gap runtime nội bộ | PASS — `platform_core/runtime_noi_bo/` (facade mỏng), 2 trường manifest, `streaming.py` gọi facade; 40 + 500 test xanh; gate `20260902T175553Z-19724` | `bdddeae` |
+| **03** Text nội bộ | PASS (deterministic) — chuẩn hoá chunk→sự kiện, `DemToken` đọc `timings.cache_n`, SLO, **Q120**; LIVE hoãn Phase 12 (`reports/03_text_noi_bo.md`) | (commit phase 03–06) |
+| **06** Catalog chính sách | PASS — `apps/chatltt/services/chinh_sach.py` allowlist fail-closed, `AppManifest.suc_khoe` + `danh_muc.suc_khoe_cua`, alias mới chỉ bằng registry (`test_613/614`) | (commit phase 03–07) |
+| **07** Dữ liệu + sự kiện | PASS — `chatltt_*` dạng cây (D4=C), migration `7d2c1e9f4a03`, `hoi_thoai`/`su_kien`, reload từ CSDL (`test_616–618`) | (commit phase 03–08a) |
+| **04** Ảnh nội bộ | PASS (deterministic) — `platform_core/jobs.DangBan` + `_provider_failure_kind` ⇒ bận là `resource_wait` không tiêu lượt thử; `LoiYeuCauAnh` cho lỗi người gọi; hỏi `health()` trước khi dịch prompt (`test_606–608`) | (commit phase 03–08a) |
+| **05** Tiếng nội bộ | PASS (deterministic) — `DangBanTam(DangBan)`; giọng người khác ≡ không tồn tại; trần 1.500 không nới; tiền theo giây `ffprobe`; `so_lan_thu_for=5` (`test_609–612`) | (commit phase 03–08a) |
+| **08a** Text (máy chủ) | PASS — `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại; hai lỗi thật đã sửa (múi giờ SQLite, `parent_id: null`) (`test_623`) | (commit phase 03–08a) |
 
 ## Hợp đồng đã cài ở Phase 02 (các phase sau DÙNG, không dựng lại)
 | Hàm | Ký |
@@ -58,7 +65,7 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | D5 | React island `frontend/chatltt` |
 | D7 | `response.started` + heartbeat ngay sau admission |
 | D8 | allowlist `{text.chat, image.ltt, speech.ltt}` fail-closed |
-| D12 | đóng mâu thuẫn Q116↔`ngan_sach.py` ở Phase 03 bằng số đo |
+| D12 | **ĐÃ ĐÓNG (Q120, 03/09)**: trần vào là số dẫn xuất `ngan_sach.TOKEN_VAO_TRAN`/`CONG_BO_CHO_CLIENT`; Q116 (65000) đã thay phần con số; `test_604` chốt |
 
 ## Chặn ngoài đang mở
 | Chặn | Ảnh hưởng | Khi nào thử lại |
@@ -67,6 +74,17 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | Bằng chứng LIVE với máy B / GPU | Phase 03/04/05/12 | khi máy rảnh; deterministic trước |
 
 ## Next phase
-- Prompt: **01 — LibreChat deep reference** (pin `v0.8.7` @ `9e74cc0e57b395926122bd4062c1fcedc48ed465`, MIT)
-- Bằng chứng cần: ma trận 12 hệ con với trích mã/test upstream; verdict từng hệ con; tiêu chí nghiệm thu kế thừa.
-- Có thể chạy **song song** với Phase 02 (vùng khác nhau).
+- **08b — bundle React `frontend/chatltt`** (D5/D13): React 19 + Vite theo khuôn
+  `frontend/agent-canvas`, primitives `@assistant-ui/react` (MIT), style Carbon LTT.
+- Bằng chứng cần: `npm ci` + `npm test` + `npm run build` trong cây này; kiểm
+  trình duyệt (cổng dev, KHÔNG phải 8100) với ảnh chụp trong `reports/`.
+- Tiêu chí kế thừa phải đạt ngay ở 08b: AC-11 (IME tiếng Việt), AC-12 (Markdown
+  không `rehype-raw`), AC-13 (khối suy luận có `aria-expanded`/`aria-controls`).
+
+## Giao cho phase sau (từ 04/05/08a)
+| Mục | Phase | Việc |
+|---|---|---|
+| `anhnoibo` chưa khai `admission_resource`/`gpu_vram_mb` — chưa đo thấy tranh chấp | 12 | đo tỉ lệ 429 rồi thêm một dòng `ToolSpec` nếu cần |
+| Pre-check sở hữu giọng cho ChatLTT (UI chỉ mời từ `tuy_chon_dong`; không dùng danh sách để từ chối server-side vì bỏ sót kho chung) | 09 | cân hook `ToolSpec.kiem_truoc` nếu đo thấy đáng |
+| Mục "## 2. 23/23 ToolSpec" trong `APP_API_COVERAGE_FINAL.md` đếm sai (thật: 13) — trôi từ Q108/Q109, không thuộc H43 | — | sửa khi ai đó chạm mục đó |
+| Retention purge cho `deleted_at` của `chatltt_*` (Q75) | 12 | vòng bảo trì |

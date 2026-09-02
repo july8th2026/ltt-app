@@ -14,8 +14,11 @@ features.py — quy tắc nghiệp vụ của `ltt_llm`, dùng chung cho CẢ HA
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any, Optional
+
+log = logging.getLogger("apps.ltt_llm.features")
 
 #: Thứ tự nhà cung cấp cho tool này. **Chỉ model nhà.**
 #:
@@ -274,3 +277,30 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
         token_vao=su.token_vao, token_ra=su.token_ra,
         token_vao_cache=su.token_vao_cache, do_duoc=su.dang_tin,
     )
+
+
+def suc_khoe(timeout_s: float = 1.5) -> str:
+    """Sức khoẻ của `text.chat` cho catalog sản phẩm khác (`AppManifest.suc_khoe`).
+
+    Hỏi `GET /live` của cổng máy B — đường **không cần khoá** và cố ý không nói
+    gì thêm (xem `llm_gateway/api.py::live`). Không đọc CSDL, không cần
+    `api_pool`, nên gọi được từ mọi tiến trình. Không bao giờ ném: mọi lỗi mạng
+    đều là "chưa sẵn sàng" — đó chính là câu trả lời đúng cho người dùng.
+
+    Bận (429) không nhìn thấy ở `/live`; "ban" được cửa stream báo lúc gọi thật
+    qua `DangBan` — catalog không đoán trước điều đó.
+    """
+    from platform_core import providers
+
+    prov = providers.get(THU_TU_PROVIDER[0])
+    base = (getattr(prov, "base_url", "") or "").strip()
+    if not base:
+        return "chua_san_sang"
+    import httpx
+
+    try:
+        r = httpx.get(base.rstrip("/") + "/live", timeout=timeout_s)
+    except httpx.HTTPError as e:
+        log.info("suc_khoe: cong LLM khong tra loi (%s)", type(e).__name__)
+        return "chua_san_sang"
+    return "san_sang" if r.status_code == 200 else "chua_san_sang"

@@ -23,6 +23,7 @@ from dataclasses import dataclass, field
 from typing import Sequence
 
 from platform_core.i18n import _ as _t
+from platform_core.jobs import LoiNguoiGoi
 
 from . import gia
 
@@ -41,7 +42,24 @@ MODEL_NOI_BO_MAC_DINH = "hidream-o1"
 
 
 class LoiTaoAnh(Exception):
-    """Lỗi hiện cho người dùng. Không kèm chi tiết hạ tầng."""
+    """Lỗi hiện cho người dùng. Không kèm chi tiết hạ tầng.
+
+    Đây là lỗi **hạ tầng** (cổng render hỏng, kho không cấp được vé, chưa cấu
+    hình) — nền tảng ĐƯỢC thử lại. Lỗi của *yêu cầu* thì dùng `LoiYeuCauAnh`.
+    """
+
+
+class LoiYeuCauAnh(LoiTaoAnh, LoiNguoiGoi):
+    """Yêu cầu sai ngay từ đầu (thiếu mô tả, ảnh tham chiếu của người khác…).
+
+    ⛔ Kế thừa `platform_core.jobs.LoiNguoiGoi` để nền tảng **không thử lại**:
+       chạy lại y hệt sẽ hỏng y hệt. Trước 03/09/2026 mọi lỗi của `chuan_hoa`
+       là `LoiTaoAnh` thường, rơi vào nhánh `retry` — ba lượt thử, ba lần chờ,
+       cho một khoá ảnh mà cửa vào đã biết là của người khác. Cùng lớp lỗi
+       `LoiNguoiGoi` được sinh ra để sửa (job `a49ce0d3`, 31/08).
+
+    Vẫn là `LoiTaoAnh` để mọi chỗ đang `except LoiTaoAnh` không đổi.
+    """
 
 
 @dataclass(frozen=True)
@@ -73,7 +91,7 @@ def _kiem_chu_so_huu(khoa: str, owner_id: str) -> str:
     """
     phan = str(khoa or "").strip("/").split("/")
     if len(phan) < 2 or phan[1] != owner_id:
-        raise LoiTaoAnh(_t('Ảnh tham chiếu không thuộc người dùng hiện tại.'))
+        raise LoiYeuCauAnh(_t('Ảnh tham chiếu không thuộc người dùng hiện tại.'))
     return khoa
 
 
@@ -85,11 +103,11 @@ def chuan_hoa(params: dict) -> YeuCauAnh:
     """
     prompt = str(params.get("prompt") or "").strip()
     if not prompt:
-        raise LoiTaoAnh(_t('Chưa nhập mô tả ảnh.'))
+        raise LoiYeuCauAnh(_t('Chưa nhập mô tả ảnh.'))
 
     che_do = str(params.get("mode") or "t2i")
     if che_do not in CHE_DO_HOP_LE:
-        raise LoiTaoAnh(_t('Chế độ không hợp lệ: {ten}').format(ten=che_do))
+        raise LoiYeuCauAnh(_t('Chế độ không hợp lệ: {ten}').format(ten=che_do))
 
     owner_id = str(params.get("owner_id") or "").strip()
 
@@ -101,16 +119,16 @@ def chuan_hoa(params: dict) -> YeuCauAnh:
         refs.insert(0, mot)
 
     if che_do in gia.CHE_DO_THAM_CHIEU and not refs:
-        raise LoiTaoAnh(_t('Chế độ này cần ít nhất một ảnh tham chiếu.'))
+        raise LoiYeuCauAnh(_t('Chế độ này cần ít nhất một ảnh tham chiếu.'))
     if che_do == "t2i" and refs:
-        raise LoiTaoAnh(_t('Chế độ t2i không nhận ảnh tham chiếu.'))
+        raise LoiYeuCauAnh(_t('Chế độ t2i không nhận ảnh tham chiếu.'))
     if len(refs) > MAX_REF:
         # ⛔ Không tự cắt bớt: cắt bớt là lặng lẽ giao một thứ khác thứ khách
         #    yêu cầu, và khách không có cách nào biết.
-        raise LoiTaoAnh(_t('Tối đa {n} ảnh tham chiếu.').format(n=MAX_REF))
+        raise LoiYeuCauAnh(_t('Tối đa {n} ảnh tham chiếu.').format(n=MAX_REF))
     if refs and not owner_id:
         # Không biết chủ sở hữu thì không kiểm được quyền — từ chối, đừng đoán.
-        raise LoiTaoAnh(_t('Thiếu thông tin người dùng để kiểm ảnh tham chiếu.'))
+        raise LoiYeuCauAnh(_t('Thiếu thông tin người dùng để kiểm ảnh tham chiếu.'))
     refs = [_kiem_chu_so_huu(k, owner_id) for k in refs]
 
     try:

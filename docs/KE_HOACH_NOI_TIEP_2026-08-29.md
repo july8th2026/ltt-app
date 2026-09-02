@@ -31,11 +31,11 @@ Mọi dòng dưới đây kiểm ngày 2026-08-29, ghi kèm cách kiểm.
 | Pha | Trạng thái |
 |---|---|
 | Q0–Q3 (CPU/DB/mock) | ✅ khóa 2026-08-28 |
-| Q4 (cửa sổ GPU, ladder cap) | ✅ chốt cap **65K** (Q116), sau khi 81K không ổn định (Q115) |
+| Q4 (cửa sổ GPU, ladder cap) | ✅ chốt cap **65K** (Q116), sau khi 81K không ổn định (Q115) — ⚠️ con số **đã thay** bởi Q120 (03/09): trần dẫn xuất từ `ngan_sach.py`, công bố 88.555 |
 | Q6 (canary public + telemetry) | ✅ nghiệm thu 2026-08-29 — 7 arm, queue-age p50 `1,062s` / p95 `1,861s`, 450 mẫu GPU/15 phút, over-cap hoàn credit đúng |
 | **Q5** (mở `parallel>1`) | ⏸️ **hoãn có chủ ý** — cần quyết định chủ sản phẩm |
 | **P2** (sống qua reboot máy B) | ⏸️ **hoãn có chủ ý** — cần cửa sổ bảo trì được duyệt |
-| **P7** (mở public rộng) | ⏸️ chưa mở; giữ `parallel=1`, cap `65000` |
+| **P7** (mở public rộng) | ⏸️ chưa mở; giữ `parallel=1`, cap ~~`65000`~~ → theo Q120 (`ngan_sach.CONG_BO_CHO_CLIENT`) |
 
 ⇒ Việc còn lại của kho **không nằm** trong plan Codex. Nó nằm ở H41, H35.10 và
 các khoản nợ cũ liệt kê ở §4.

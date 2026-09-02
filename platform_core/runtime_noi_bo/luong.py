@@ -482,7 +482,8 @@ def _su_kien_tu_goi(goi: dict, trang_thai: dict) -> Iterator[dict]:
 
 def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
              correlation_id: str = "", holder_id: str = "",
-             timeout_s: float = MO_LUONG_GIAY) -> Iterator[dict]:
+             timeout_s: float = MO_LUONG_GIAY,
+             ghi_nhan: Optional[dict] = None) -> Iterator[dict]:
     """Chạy một lượt text và sinh **sự kiện canonical** (§5.3 kế hoạch H43).
 
         response.started {request_id, model, credit_giu}
@@ -504,7 +505,9 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
        tới sớm là thứ giữ kết nối qua Cloudflare không bị 524 (D7 kế hoạch).
 
     Bên tiêu thụ **đóng generator** (`.close()`) để dừng: phần đã sinh vẫn được
-    quyết toán đúng trong `finally` của luồng bên dưới.
+    quyết toán đúng trong `finally` của luồng bên dưới. Vì sau `GeneratorExit`
+    không còn `yield` được, sự kiện `billing.updated` của lượt bị dừng được ghi
+    vào `ghi_nhan` (nếu truyền) để bên tiêu thụ đọc.
     """
     than = dict(params or {})
     than["stream"] = True
@@ -542,6 +545,10 @@ def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
     except GeneratorExit:
         # Bên tiêu thụ dừng. Đóng luồng bên dưới để `finally` của nó quyết toán.
         luot.luong.close()
+        if ghi_nhan is not None:
+            ghi_nhan["billing"] = _billing(cb, luot.ket_qua)
+            ghi_nhan["usage"] = {"token_vao": luot.dem.token_vao, "token_ra": luot.dem.token_ra,
+                                 "token_cache": luot.dem.token_cache, "do_duoc": luot.dem.do_duoc}
         raise
     except Exception as e:                                      # noqa: BLE001
         vo = e

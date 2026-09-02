@@ -3682,10 +3682,13 @@ URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bản
 | H43.0 | 00 | Bootstrap: cây/gốc SHA/dải test 600–699/ranh giới phiên | ✅ 2026-09-02 |
 | H43.1 | 01 | LibreChat `v0.8.7` tham chiếu hành vi — 12 hệ con, 22 ADOPT/8 ADAPT/11 REJECT, 18 tiêu chí nghiệm thu (`docs/CHATLTT/reports/01_librechat_tham_chieu.md`) | [x] 2026-09-03 |
 | H43.2 | 02 | Gap runtime nội bộ → `platform_core/runtime_noi_bo/` (luong/danh_muc/job) + `AppManifest.so_lan_thu` + `ToolSpec.tuy_chon_dong`; `streaming.py` gọi facade; test_600–602 40 pass, 24 tệp ghim 500 pass (`reports/02_runtime_noi_bo.md`) | [x] 2026-09-03 |
-| H43.3–.5 | 03–05 | Text / Ảnh / Tiếng: đường nội bộ + benchmark + SLO; đóng D12 (Q116↔mã) | [ ] |
-| H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed | [ ] |
-| H43.7 | 07 | Bảng `chatltt_*` + sự kiện canonical + reload từ CSDL | [ ] |
-| H43.8 | 08 | ChatLTT chỉ-text dùng được độc lập | [ ] |
+| H43.3 | 03 | Text: chuẩn hoá chunk→sự kiện, `DemToken` đọc `timings.cache_n`, SLO text, **Q120** đóng D12 (Q116↔`ngan_sach.py`); LIVE hoãn Phase 12 (`reports/03_text_noi_bo.md`) | [x] 2026-09-03 (deterministic) |
+| H43.4 | 04 | Ảnh: `platform_core/jobs.DangBan` ⇒ bận là `resource_wait` không tiêu lượt thử; `LoiYeuCauAnh`; hỏi `health()` trước khi dịch prompt (`test_606–608`, `reports/04_anh_noi_bo.md`) | [x] 2026-09-03 (deterministic) |
+| H43.5 | 05 | Tiếng: `DangBanTam(DangBan)`; giọng người khác ≡ không tồn tại; trần 1.500 giữ nguyên; tiền theo giây `ffprobe` (`test_609–612`, `reports/05_tieng_noi_bo.md`) | [x] 2026-09-03 (deterministic) |
+| H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed — `apps/chatltt/services/chinh_sach.py`, `AppManifest.suc_khoe`, alias mới chỉ bằng registry (`test_613/614`, `reports/06_catalog_chinh_sach.md`) | [x] 2026-09-03 |
+| H43.7 | 07 | Bảng `chatltt_*` (cây, `current_leaf_id` ở CSDL, xoá mềm) + migration `7d2c1e9f4a03` + `services/{hoi_thoai,su_kien}.py` + reload từ CSDL (`test_616–618` 16 pass, `reports/07_du_lieu_cay_su_kien.md`) | [x] 2026-09-03 |
+| H43.8a | 08 | Text (máy chủ): `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại, IDOR/CSRF (`test_623`, `reports/08a_text_backend.md`) | [x] 2026-09-03 |
+| H43.8b | 08 | Text (giao diện): bundle React `frontend/chatltt` — **mốc "chỉ-text dùng được độc lập" chưa đạt tới khi xong mục này** | [ ] |
 | H43.9 | 09 | Tạo ảnh / đọc to / tạo giọng trong hội thoại | [ ] |
 | H43.10 | 10 | UX LibreChat-class, Carbon LTT, desktop+mobile | [ ] |
 | H43.11 | 11 | Chứng minh mở rộng bằng fixture | [ ] |

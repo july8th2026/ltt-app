@@ -351,6 +351,21 @@ class AppManifest:
     #:    giá không được làm sập trang giá của mọi app khác.
     bang_gia: Optional[Callable[[], dict]] = None
 
+    #: Sức khoẻ **của năng lực** app cung cấp, cho catalog của sản phẩm khác
+    #: (H43 Phase 06, 2026-09-03). Callable không tham số, trả MỘT trong:
+    #:     "san_sang" · "ban" · "chua_san_sang"
+    #:
+    #: 🔴 VÌ SAO CẦN. `apps/ltt_voice` từng hiện chip "Engine sẵn sàng" xanh trên
+    #:    một trang mà mọi lượt tạo đều hỏng — vì chip đọc `san_sang()` (chỉ kiểm
+    #:    biến môi trường có được đặt) chứ không hỏi sidecar. Một sản phẩm khác
+    #:    (ChatLTT) muốn nói "giọng nói đang không sẵn sàng" thì chỉ có hai
+    #:    đường: import `apps.ltt_voice` (cấm) hoặc app tự khai qua hợp đồng.
+    #:
+    #: ⚠️ Hàm này KHÔNG được ném và phải **nhanh** (thăm dò loopback/LAN với
+    #:    timeout ngắn, ≤ 2 giây); nền tảng đệm kết quả vài giây. Không khai =
+    #:    catalog chỉ biết `enabled`.
+    suc_khoe: Optional[Callable[[], str]] = None
+
     # Ghi chú nội bộ, hiện trên trang chủ cho admin.
     notes: str = ""
 
