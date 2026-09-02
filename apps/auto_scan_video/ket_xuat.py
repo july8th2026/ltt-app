@@ -64,8 +64,17 @@ from .nhap_media import DaHuy, MediaError
 
 log = logging.getLogger(__name__)
 
+#: Am luong dich cua BAN RA. Cung so `tach_tieng` dung cho nhac nen va cung so
+#: `qc` do lai — MOT nguon chan ly, khong phai ba con so tinh co bang nhau.
+from .tach_tieng import DINH_THAT_DB as DINH_THAT_RA_DB
+from .tach_tieng import LUFS_DICH as LUFS_DICH_RA
+
 #: Doi khi doi cach dung lenh. Vao van tay (O13).
-PHIEN_BAN_KET_XUAT = 1
+#:
+#: ⭐ 1 → 2 o pha 18: them `loudnorm` tren ban tron cuoi. Neu khong nang so nay
+#:    thi moi lan chay lai se dung lai tep cu tu cache va ban va **khong bao gio
+#:    chay** — dung mon no ma pha 15 vua tra, va lan nay no duoc tra ngay.
+PHIEN_BAN_KET_XUAT = 2
 
 #: Bien do lech cho phep giua thoi luong MONG DOI (ban dung) va thoi luong DO
 #: DUOC o tep ra. Khong phai mot con so tuy y: `-c:v copy` giu nguyen khung hinh
@@ -127,8 +136,24 @@ def _loc_am(ban: dict, *, so_lop: int) -> str:
         phan.append(f"{vao}{','.join(buoc)}[s{i}]")
         nhan.append(f"[s{i}]")
 
+    # 🔴 `loudnorm` tren BAN TRON CUOI, khong chi tren nhac nen.
+    #
+    #    Cong QC cua pha 18 bat duoc dieu nay ngay lan chay dau: T4 doi ban ra
+    #    dat **-14 LUFS ± 1,0**, va do that la **-12,58** — to hon 1,58 dB.
+    #
+    #    Nguyen nhan don gian va rat de bo sot: `AUDIO_PREPARE` chuan hoa nhac
+    #    nen ve -14, roi RENDER **cong them** N lop tieng vao. Tong cua hai
+    #    nguon deu o muc chuan thi to hon ca hai. Khong cho nao trong chuoi
+    #    chuan hoa lai tong do, nen moi ban long tieng deu to hon chuan — mot
+    #    khiem khuyet khong ai nghe ra thanh "sai 1,58 dB", nguoi ta chi thay
+    #    no "hoi to", va do la loai khiem khuyet khong bao gio duoc bao cao.
+    #
+    # ⚠️ `dual_mono=true`: mot doan tieng mono da qua `aformat` thanh stereo se
+    #    bi `loudnorm` do to hon thuc te 3 dB neu thieu co nay.
     phan.append(f"{''.join(nhan)}amix=inputs={so_lop + 1}"
-                f":normalize=0:dropout_transition=0[ra]")
+                f":normalize=0:dropout_transition=0[tron]")
+    phan.append(f"[tron]loudnorm=I={LUFS_DICH_RA}:TP={DINH_THAT_RA_DB}"
+                f":LRA=11:dual_mono=true[ra]")
     return ";".join(phan)
 
 

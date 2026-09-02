@@ -47,7 +47,10 @@ def test_MOI_giai_doan_deu_khai_mot_phien_ban_engine():
 #: luot sau thay engine gia bang engine that ma quen sua cho nay se lam phep
 #: kiem do, va do la dieu ta muon — no buoc phien ban engine phai doi, tuc moi
 #: ket qua gia da luu bi vo hieu thay vi duoc coi la cache hop le.
-CON_DUNG_ENGINE_GIA = {"qc"}
+#: ⭐ RONG tu pha 18: QC da co engine that (`qc.PHIEN_BAN_QC`). Truoc do tap
+#:    hop nay la `{"qc"}`, va chinh phep kiem duoi day buoc luot thay engine
+#:    phai cap nhat cho nay — dung nhu no duoc thiet ke.
+CON_DUNG_ENGINE_GIA: set[str] = set()
 
 
 def test_tap_hop_giai_doan_con_dung_ENGINE_GIA_dung_nhu_khai_bao():

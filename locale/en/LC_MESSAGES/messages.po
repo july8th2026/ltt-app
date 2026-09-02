@@ -13577,3 +13577,35 @@ msgstr "There is no stage by that name."
 #: apps/auto_scan_video
 msgid "Lần chạy đã kết thúc — hãy tạo một lần chạy mới."
 msgstr "This run has already finished — start a new one instead."
+
+#: apps/auto_scan_video
+msgid "Bản kết xuất không đạt {n} mục kiểm chất lượng: {ds}."
+msgstr "The render failed {n} quality checks: {ds}."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản kết xuất để kiểm."
+msgstr "There is no render to check yet."
+
+#: apps/auto_scan_video
+msgid "Chưa đủ tài liệu thượng nguồn để kiểm chất lượng."
+msgstr "Not enough upstream documents to run the quality check."
+
+#: apps/auto_scan_video
+msgid "Không băm được luồng hình."
+msgstr "Could not hash the video stream."
+
+#: apps/auto_scan_video
+msgid "Đang lưu báo cáo"
+msgstr "Saving the report"
+
+#: apps/auto_scan_video
+msgid "Đang đo bản kết xuất"
+msgstr "Measuring the render"
+
+#: apps/auto_scan_video
+msgid "Đang đo âm lượng"
+msgstr "Measuring loudness"
+
+#: apps/auto_scan_video
+msgid "Đang đối chiếu luồng hình"
+msgstr "Comparing the video stream"

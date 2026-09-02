@@ -26,12 +26,13 @@ import io
 import json
 
 from platform_core.db import get_session
+from platform_core.i18n import _ as _t
 from platform_core.storage import get_storage
 
 from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
-               giai_doan_media, giai_doan_noi_dung, giai_doan_thoi_gian, loi,
-               pipeline)
+               giai_doan_media, giai_doan_noi_dung, giai_doan_qc,
+               giai_doan_thoi_gian, loi, pipeline)
 from .tables import STAGE_SUCCEEDED
 
 #: Chi phi do duoc gia cua mot giai doan o pha 05. Bang 0 vi khong provider nao
@@ -41,6 +42,15 @@ from .tables import STAGE_SUCCEEDED
 #:    don, quyet toan doc tong) — chi con so la 0. Nho vay pha 08+ chi phai doi
 #:    mot con so, khong phai dung mot duong moi.
 CHI_PHI_GIA = 0
+
+
+class QcChan(ValueError):
+    """Ban ra khong qua cong chat luong.
+
+    ⛔ Loi cua **ket qua**, khong phai truot thoang qua: chay lai cung mot ban
+       render cho cung mot phep do. `loi.py` xep no vao `NGUOI_DUNG` de nen tang
+       khong thu lai ba lan mot phep do tat dinh.
+    """
 
 
 #: Phien ban cua ENGINE GIA. Giai doan chua co engine that dung so nay, va no
@@ -94,6 +104,9 @@ def phien_ban_engine(stage_ten: str) -> str:
     if stage_ten == pipeline.RENDER:
         from . import ket_xuat
         return f"ket_xuat/{ket_xuat.PHIEN_BAN_KET_XUAT}"
+    if stage_ten == pipeline.QC:
+        from . import qc
+        return f"qc/{qc.PHIEN_BAN_QC}"
     # ⚠️ Giai doan chua co engine that van phai co MOT phien ban, khong duoc tra
     #    chuoi rong. Tra rong nghia la "khong co gi de lam moi cache", va do la
     #    dung mon no ma ham nay sinh ra de tra — chi doi cho.
@@ -247,6 +260,8 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_ban_dung.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.RENDER:
             ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.QC:
+            ra = giai_doan_qc.chay(db, kho, run=run, ctx=ctx)
         else:
             ra = _engine_gia(kho, run_id=run_id, owner_id=owner_id, ten=ten,
                              van_tay=vt)
@@ -261,12 +276,36 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
                 parent_keys=_khoa_cha(db, run_id, ten))
             khoa_ra.append(asset.storage_key)
 
+        ket_qua = {"stage": ten, "khoa_asset": khoa_ra,
+                   **(ra.get("tom_tat") or {})}
+
+        # 🔑 QC la mot CONG, va mot cong phai CHAN duoc (Prompt 18 muc 2).
+        #
+        # 🔴 Ban dau cho nay goi `danh_dau_xong` roi moi nem. Ket qua: dong
+        #    `asv_stage` ghi `succeeded`, `_advance` dem du chin giai doan, va
+        #    lan chay ve `done` — **du bao cao QC noi `dat: False`**. Tuc cong
+        #    van do va van cho qua. Mot cong khong chan thi khong phai cong, va
+        #    no con te hon khong co cong vi no trong nhu co.
+        #
+        # ⭐ Nhung artifact van duoc promote TRUOC (ngay ben tren), va thu tu do
+        #    la co y: mot lan chay hong phai de lai **bang chung ve vi sao**.
+        #    Nguoi can cau tra loi do nhat la nguoi ho tro, khong phai khach.
+        hong_qc = ra.get("_qc_hong") or []
+        if hong_qc:
+            thong_bao = _t(
+                'Bản kết xuất không đạt {n} mục kiểm chất lượng: {ds}.').format(
+                n=len(hong_qc), ds=", ".join(hong_qc))
+            features.danh_dau_hong(db, stage, thong_bao, cuoi_cung=True)
+            stage.outputs = ket_qua
+            db.commit()
+            raise QcChan(thong_bao)
+
         features.danh_dau_xong(
             db, stage, fingerprint=vt, credit_actual=CHI_PHI_GIA,
-            outputs={"stage": ten, "khoa_asset": khoa_ra,
-                     **(ra.get("tom_tat") or {})})
+            outputs=ket_qua)
         # ── Buoc 5 ────────────────────────────────────────────────────────
         db.commit()
+
         return {"stage": ten, "fingerprint": vt, "credit_cost": CHI_PHI_GIA,
                 "khoa_asset": khoa_ra}
     except Exception as exc:

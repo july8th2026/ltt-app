@@ -105,6 +105,13 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, ThieuNguon):
         return THIEU_THUONG_NGUON
 
+    # ⛔ QC hong la loi cua KET QUA, khong phai truot thoang qua: chay lai cung
+    #    mot ban render cho cung mot phep do. Thu lai ba lan mot phep do tat dinh
+    #    la ba lan cho vo ich.
+    from .thi_hanh import QcChan
+    if isinstance(exc, QcChan):
+        return NGUOI_DUNG
+
     if isinstance(exc, (MediaError, BanGhiError, VanBanError, ThoiGianError,
                         BanDungError)):
         return NGUOI_DUNG

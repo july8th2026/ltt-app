@@ -21,6 +21,9 @@ from apps.auto_scan_video.giai_doan_ban_dung import ThieuDauVao
 from apps.auto_scan_video.giai_doan_chep_loi import ThieuBanTieng
 from apps.auto_scan_video.giai_doan_giong import ThieuBanDich
 from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
+from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
+from apps.auto_scan_video.qc import QcError
+from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
 from apps.auto_scan_video.giai_doan_noi_dung import ThieuBanGhi
 from apps.auto_scan_video.giai_doan_thoi_gian import ThieuDauVao as ThieuDauVaoTG
@@ -47,6 +50,13 @@ BANG = {
     ThieuBanDich: loi.THIEU_THUONG_NGUON,
     ThieuBanDung: loi.THIEU_THUONG_NGUON,
     ThieuBanGhi: loi.THIEU_THUONG_NGUON,
+    ThieuBanRa: loi.THIEU_THUONG_NGUON,
+    #: QC hong = loi cua KET QUA. Chay lai cung mot ban render cho cung mot
+    #: phep do, nen thu lai la ba lan cho vo ich.
+    QcChan: loi.NGUOI_DUNG,
+    #: `QcError` KHAC `QcChan`: khong CHAY duoc phep do (vd ffmpeg tach), chu
+    #: khong phai da do va ket qua hong. Cai dau thu lai duoc, cai sau thi khong.
+    QcError: loi.TAM_THOI,
     BanGhiError: loi.NGUOI_DUNG,
     VanBanError: loi.NGUOI_DUNG,
     ThoiGianError: loi.NGUOI_DUNG,
