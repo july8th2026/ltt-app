@@ -437,3 +437,85 @@ Một phiên khác đã đo và vá: 14/20 lõi, `-n 11`, vitest `--maxWorkers=2
 đọc `CLAUDE.md` nói máy này **là production** ngay đầu phiên, rồi vẫn chạy một
 công cụ nặng mà không hỏi nó tốn bao nhiêu.
 
+---
+
+## 17. ĐÃ DEPLOY — 2026-09-02 21:11
+
+```
+deploy-20260902-211112.ket.txt   EXITCODE=0    (2 phut 06 giay)
+nghiemthu-20260902-211611        EXITCODE=0    "KET QUA: he thong hoan chinh."
+```
+
+**Bằng chứng mã đã lên máy chủ thật** (không suy từ log deploy):
+
+```
+C:\LTTPlatformpppps\ltt_voice
+ghe_thu.py          13.094 byte
+C:\LTTPlatformpp	ests	est_500_ltt_voice_nghe_thu.py  co
+C:\LTTPlatformpp	ests	est_501_ltt_voice_hong_hoc.py  co
+tham_so_cong_khai.py:87  SO_LAN_THU_JOB = 5
+tu_dien.py               6 lan khop HTTPS/MP3/WAV
+```
+
+Nghiệm thu: **15 app nạp**, `ltt_voice /ltt-voice ok`, bản chạy khớp git
+**536 khớp · 0 lệch · 0 thiếu · 0 thừa**, không lỗi trong log gần đây.
+
+### 🔴 Chốt nguy hiểm nhất đã đóng
+
+```
+[OK]  LTT_WORKER_POOLS khong dat - worker da nang, job voice nhat duoc
+```
+
+`manifest.py` cảnh báo: nếu production **đã đặt** `LTT_WORKER_POOLS` mà thiếu
+làn `voice` thì job nằm `queued` **mãi mãi** — không lỗi, không cảnh báo,
+`/health/ready` vẫn 200. Ở đây biến ấy **không được đặt**, nên worker đa năng và
+nhặt được job voice. Cấu hình an toàn.
+
+⚠️ Chốt này chỉ đọc được khi chạy nghiệm thu **có nâng quyền** (`secrets/app.env`
+có ACL). Lượt chạy không nâng quyền báo *"1 lỗi"* — và đó là lỗi của **cách
+chạy**, không phải của hệ thống. Ai đọc kết quả nghiệm thu phải kiểm mình chạy
+ở quyền nào trước khi tin con số.
+
+### Kiểm trên URL công khai (quy tắc 5b), sau Cloudflare
+
+| đường | kết quả |
+|---|---|
+| `https://app.lttstudios.com/health/ready` | **200** |
+| `https://app.lttstudios.com/gia-api` | **200** · 6 bảng · 22 dòng · mục *Giá tạo giọng nói* đầy đủ |
+| `https://app.lttstudios.com/ltt-voice` | **303 → /login** (đúng: cần đăng nhập) |
+
+⭐ Trang `/gia-api` là món nợ của **một phiên khác** (họ đổi `dashboard.py` mà
+chưa kiểm trình duyệt). Tôi kiểm hộ vì đã có sẵn công cụ. Kiểu hỏng họ lo —
+`bang_gia_cong_khai()` trả rỗng, trang vẫn 200 vẫn đẹp nhưng mất một bảng —
+**không xảy ra**: cả ba mục LLM · ảnh · giọng nói đều có số.
+
+### Phạm vi deploy — chủ dự án quyết sau khi được cảnh báo
+
+`deploy_nang_quyen.ps1` chạy từ `D:\LTTSTUDIOSAPP` (nhánh `admin-mvp-v3`),
+**không** từ worktree. Nên đưa LTT Voice lên production nghĩa là merge vào nhánh
+mà một phiên khác đang làm, và deploy **cả cây**.
+
+Tôi đã nêu điều đó cùng ba lựa chọn; chủ dự án chọn *"deploy full, không lo code
+phiên khác"* và nhắc lại một lần nữa. Đã deploy đúng phạm vi ấy.
+
+⭐ Và phiên kia rút ra một điều đáng ghi hơn cả sự việc: *"tôi khai chương trình
+của tôi là **không deploy** — nhưng tôi commit vào nhánh mà người khác deploy từ
+đó, nên mã của tôi vẫn lên production, chỉ là qua tay người khác."*
+
+⇒ **Một lời khai "không deploy" không bảo vệ được gì nếu nó không nói rõ mình
+commit vào nhánh nào.** Ranh giới thật không nằm ở ai bấm nút, mà ở **cây nào
+được deploy** — và điều đó chỉ lộ ra khi có người đi đọc `deploy_nang_quyen.ps1`
+thay vì tin vào lời khai.
+
+### Còn nợ sau deploy
+
+⚠️ **Chưa tạo một lượt tiếng nói THẬT trên production trong phiên này.** Tài
+khoản khách không phải của tôi để dùng. Bằng chứng gián tiếp: dịch vụ
+`LTTStudioVoice` Running, app nạp ok, làn worker an toàn, bản chạy khớp git —
+nhưng đó vẫn là *gián tiếp*, và tài liệu này không nên nói to hơn thứ nó đo.
+
+Việc đầu tiên nên làm khi có người đăng nhập được: mở `/ltt-voice`, bấm một nút
+nghe thử (hai mươi tệp mẫu sẽ dựng dần, **tối đa 3 giọng mỗi giờ**, nên trong
+~7 giờ đầu một số thẻ sẽ nói *"đang chuẩn bị"* — đúng hành vi, không phải lỗi),
+rồi tạo một lượt đọc và đối chiếu credit.
+
