@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c1753de31acdbfd72f119d3c3e6bba399ae9d86efcf6e6a3296de022ed4419e8
-Nguồn đã quét : 1528 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:c88bfdfbce29d45382986c65b2fdb51fcd0f0a7af5f7b455fa0ce7cc0ad335e9
+Nguồn đã quét : 1534 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -133,10 +133,10 @@ Các lớp chính:
     - apps/asv_voice/manifest.py
 
 [auto_scan_video] Auto Scan Video
-  URL=/auto-scan-video | surface=runtime | lifecycle=development
+  URL=/auto-scan-video | surface=customer | lifecycle=development
   enabled=False | public=False | parent=-
   requires=api | capabilities=video
-  HTTP routes=0 | table_prefix=asv | manifest_error=-
+  HTTP routes=7 | table_prefix=asv | manifest_error=-
   credit_cost=apps.auto_scan_video.manifest._gia
   job_types=auto_scan_video.advance, auto_scan_video.content_process
   Agent tools (0):
@@ -149,6 +149,7 @@ Các lớp chính:
     - apps/auto_scan_video/demucs_runner.py
     - apps/auto_scan_video/dich_thuat.py
     - apps/auto_scan_video/features.py
+    - apps/auto_scan_video/gia.py
     - apps/auto_scan_video/giai_doan_am_thanh.py
     - apps/auto_scan_video/giai_doan_ban_dung.py
     - apps/auto_scan_video/giai_doan_chep_loi.py
@@ -167,8 +168,12 @@ Các lớp chính:
     - apps/auto_scan_video/pipeline.py
     - apps/auto_scan_video/qc.py
     - apps/auto_scan_video/quan_sat.py
+    - apps/auto_scan_video/routes.py
     - apps/auto_scan_video/tables.py
     - apps/auto_scan_video/tach_tieng.py
+    - apps/auto_scan_video/templates/asv_chi_tiet.html
+    - apps/auto_scan_video/templates/asv_tien_do.html
+    - apps/auto_scan_video/templates/asv_trang_chinh.html
     - apps/auto_scan_video/thi_hanh.py
     - apps/auto_scan_video/thoi_gian.py
     - apps/auto_scan_video/van_ban.py
@@ -594,7 +599,7 @@ Các lớp chính:
     - apps/vps/tables.py
     - apps/vps/ten_may.py
 
-4. HTTP ROUTE INVENTORY (329)
+4. HTTP ROUTE INVENTORY (336)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -644,6 +649,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] POST   /agent/runs/{run_id}/tick → tick_run | auth~login | apps/agent/routes/legacy_runs.py:129
 - [agent] GET    /agent/shared/{token} → workflow_shared_view | auth~login | apps/agent/routes/sharing.py:60
 - [agent] POST   /agent/shared/{token}/clone → workflow_shared_clone | auth~login | apps/agent/routes/sharing.py:69
+- [auto_scan_video] GET    /auto-scan-video → trang_chinh | auth~login | apps/auto_scan_video/routes.py:117
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id} → chi_tiet | auth~login | apps/auto_scan_video/routes.py:187
+- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/huy → huy | auth~login | apps/auto_scan_video/routes.py:220
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tai → tai_ket_qua | auth~login | apps/auto_scan_video/routes.py:253
+- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/thu-lai → thu_lai | auth~login | apps/auto_scan_video/routes.py:234
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tien-do → tien_do | auth~login | apps/auto_scan_video/routes.py:204
+- [auto_scan_video] POST   /auto-scan-video/tao → tao | auth~login | apps/auto_scan_video/routes.py:132
 - [autosubvideo] GET    /autosubvideo → page | auth~login | apps/autosubvideo/routes.py:111
 - [autosubvideo] GET    /autosubvideo/api/capabilities → studio_capabilities | auth~login | apps/autosubvideo/routes.py:400
 - [autosubvideo] GET    /autosubvideo/api/jobs → studio_jobs | auth~login | apps/autosubvideo/routes.py:599
@@ -1081,7 +1093,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (183 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (184 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1101,6 +1113,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_AUTOSUB_STUDIO_ROLLOUT
 - LTT_AUTOSUB_WHISPER_COMPUTE
 - LTT_AUTOSUB_WHISPER_DEVICE
+- LTT_AUTO_SCAN_VIDEO
 - LTT_BASE_URL
 - LTT_CAM_CLI_OUTPUT
 - LTT_CODEX_SIDECAR_PORT
@@ -1266,7 +1279,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (372 file pytest + 3 frontend)
+10. QUALITY GATES (373 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1601,6 +1614,7 @@ Test inventory:
 - tests/test_420_asv_qc.py
 - tests/test_421_asv_tach_khoi_di_san.py
 - tests/test_422_asv_parity_engine.py
+- tests/test_423_asv_giao_dien.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1665,8 +1679,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1528 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1163, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1534 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1166, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1753,7 +1767,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (310)
+[apps] (315)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1794,6 +1808,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/auto_scan_video/demucs_runner.py
 - apps/auto_scan_video/dich_thuat.py
 - apps/auto_scan_video/features.py
+- apps/auto_scan_video/gia.py
 - apps/auto_scan_video/giai_doan_am_thanh.py
 - apps/auto_scan_video/giai_doan_ban_dung.py
 - apps/auto_scan_video/giai_doan_chep_loi.py
@@ -1812,8 +1827,12 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/auto_scan_video/pipeline.py
 - apps/auto_scan_video/qc.py
 - apps/auto_scan_video/quan_sat.py
+- apps/auto_scan_video/routes.py
 - apps/auto_scan_video/tables.py
 - apps/auto_scan_video/tach_tieng.py
+- apps/auto_scan_video/templates/asv_chi_tiet.html
+- apps/auto_scan_video/templates/asv_tien_do.html
+- apps/auto_scan_video/templates/asv_trang_chinh.html
 - apps/auto_scan_video/thi_hanh.py
 - apps/auto_scan_video/thoi_gian.py
 - apps/auto_scan_video/van_ban.py
@@ -2680,7 +2699,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (390)
+[tests] (391)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -3027,6 +3046,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_420_asv_qc.py
 - tests/test_421_asv_tach_khoi_di_san.py
 - tests/test_422_asv_parity_engine.py
+- tests/test_423_asv_giao_dien.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3251,7 +3271,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1528 file; 15230314 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1534 file; 15277988 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -13241,7 +13261,7 @@ def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/features.py
-SHA256=f4dff3c9282e45713f257595b4625c01407a2409ed5e9f38a4635dd13a250582 BYTES=18917 LINES=393
+SHA256=ef43508fae3779e058fd8925e79a83fde80be65db4a5700fd3d5f420307af6d8 BYTES=22228 LINES=466
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Quy tac nghiep vu cua Auto Scan Video: vong doi run, tien, quyen so huu.
 
@@ -13636,6 +13656,182 @@ def tien_do(db: Session, run: AsvRun) -> dict:
             for s in sorted(ds, key=lambda x: pipeline.TEN_GIAI_DOAN.index(x.stage))
         ],
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Phuc vu giao dien (pha 20)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
+                       ten_tep: str, settings: dict) -> AsvRun:
+    """Nhan bytes tu mot lan tai len -> luu vao kho -> tao run.
+
+    🔑 **Uoc gia phai duoc tinh o day, khong o route.** No can biet thoi luong
+       video, tuc can soi tep — va soi tep cung la cho `MVP_CONTRACT` §2 tu choi
+       mot tep khong co luong tieng. Ca hai deu la quyet dinh nghiep vu.
+
+    ⛔ Khoa luu tru KHONG mang ten tep cua khach. Ten do do khach dat, va mot ten
+       tep di vao khoa la mot chuoi cua client di vao duong dan — dung thu ma
+       `assets.dat_khoa` sinh ra de chan.
+    """
+    import io
+    import tempfile
+    import uuid
+    from pathlib import Path
+
+    from platform_core.storage import get_storage
+
+    from . import gia, nhap_media
+
+    duoi = (Path(ten_tep or "").suffix or ".mp4").lstrip(".").lower()
+    if not duoi.isalnum() or len(duoi) > 5:
+        duoi = "mp4"
+
+    # Soi TRUOC khi luu: mot tep khong dung chinh sach thi khong nen chiem cho
+    # trong kho, va khach nen biet ngay thay vi sau mot vong hang doi.
+    with tempfile.TemporaryDirectory(prefix="asv-nhan-") as tam:
+        tep = Path(tam) / f"nguon.{duoi}"
+        tep.write_bytes(du_lieu)
+        try:
+            tt = nhap_media.soi(str(tep))
+        except nhap_media.MediaError as exc:
+            raise AsvError(str(exc)) from exc
+        try:
+            nhap_media.kiem_chinh_sach(tt)
+        except nhap_media.MediaError as exc:
+            raise AsvError(str(exc)) from exc
+        uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+
+    khoa = f"asv/{owner_id[:16]}/nguon/{uuid.uuid4().hex}.{duoi}"
+    get_storage().put(khoa, io.BytesIO(du_lieu), content_type="video/mp4")
+
+    return tao_run(db, owner_id=owner_id, source_key=khoa,
+                   settings=settings, uoc_luong_credit=uoc)
+
+
+def lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list:
+    """Lan chay CUA CHINH nguoi nay, moi nhat truoc."""
+    return list(db.execute(
+        select(AsvRun).where(AsvRun.owner_id == owner_id)
+        .order_by(AsvRun.created_at.desc()).limit(max(1, int(toi_da)))
+    ).scalars().all())
+
+
+def khoa_ket_qua(db: Session, run: AsvRun) -> str:
+    """Khoa luu tru cua ban long tieng, hoac chuoi rong.
+
+    ⚠️ Doc tu `outputs` cua giai doan RENDER chu khong quet kho theo tien to:
+       mot phep quet tien to se tim thay ca artifact cua mot lan chay lai da bi
+       thay the, va phuc vu nham ban cu.
+    """
+    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    if s is None or s.status != STAGE_SUCCEEDED:
+        return ""
+    return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
+                 if k.endswith(".mp4")), "")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/gia.py
+SHA256=e5f1f61d49cb602721b5e07683f67e5fa1fcab33486f42995bbf60df8ea64ac2 BYTES=3990 LINES=97
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Uoc gia mot lan chay, va lua chon san pham cho giao dien.
+
+## Vi sao uoc theo THOI LUONG chu khong theo so ky tu
+
+Luc khach bam "Bat dau", ta chua co ban chep loi. Chua co ban chep loi thi chua
+biet so ky tu TTS lan so token LLM — hai thu chiem gan het chi phi. Nen uoc luon
+phai dua tren thu **duy nhat** da biet: do dai video.
+
+⚠️ Uoc thua la binh thuong va co chu dinh. `features.quyet_toan` tra lai phan du,
+   nen mot uoc rong rai chi lam khach thay so giu cho lon hon so thu — no khong
+   lam ho mat tien. Uoc THIEU thi nguoc lai: `features.kiem_tran_chi` se **danh
+   hong mot lan chay dang giua chung**, va do la trai nghiem te nhat trong ca
+   san pham (RISK-12-03).
+
+⇒ Khi phan van, uoc cao hon.
+
+## Ba con so nay CHUA DUOC DO
+
+⛔ Chung duoc chon de an toan, khong de dung. Chung se duoc thay bang so do that
+   o pha 21 (nghiem thu dau-cuoi). Ghi ro o day de khong ai doc chung nhu mot
+   bang gia da chot.
+"""
+from __future__ import annotations
+
+import logging
+
+from platform_core.i18n import N_
+
+log = logging.getLogger(__name__)
+
+#: Credit moi PHUT video, cho phan **may** (tach nguon, chep loi, render).
+#: ⚠️ CHUA DO. Chon theo thoi gian may chay chu khong theo gia von.
+GIA_MOI_PHUT_MAY = 2
+
+#: Credit moi PHUT video, cho phan **model** (dich + sinh tieng).
+#: ⚠️ CHUA DO. Day la phan lon chi phi that, va no ti le voi **luong noi** chu
+#:    khong voi do dai video — mot video 10 phut im lang gan nhu khong ton gi.
+#:    Uoc theo do dai la mot xap xi rong rai co chu y.
+GIA_MOI_PHUT_MODEL = 6
+
+#: San toi thieu. Mot video 20 giay van ton mot lan khoi dong model.
+GIA_TOI_THIEU = 5
+
+
+def uoc_credit(thoi_luong_giay: float) -> int:
+    """Uoc chi phi mot lan chay tu do dai video. Luon >= `GIA_TOI_THIEU`."""
+    phut = max(0.0, float(thoi_luong_giay or 0)) / 60.0
+    return max(GIA_TOI_THIEU,
+               int(round(phut * (GIA_MOI_PHUT_MAY + GIA_MOI_PHUT_MODEL))))
+
+
+#: Che do thoi gian, dong bang o `MVP_CONTRACT.md` §6 va sua boi ADR-003.
+#:
+#: ⭐ Nhan viet cho NGUOI DUNG, khong phai cho ky su: khach khong can biet
+#:    "fit_original" nghia la gi, ho can biet ban long tieng se nghe ra sao.
+CHE_DO_THOI_GIAN = (
+    ("fit_original", N_('Bám sát câu gốc'),
+     N_('Mỗi câu bắt đầu đúng lúc người nói bắt đầu. Phù hợp khi hình có khẩu '
+        'hình hoặc chữ chạy theo lời.')),
+    ("natural", N_('Nghe tự nhiên'),
+     N_('Ưu tiên nhịp đọc dễ nghe, chấp nhận lệch nhẹ so với câu gốc. Phù hợp '
+        'với video kể chuyện hoặc thuyết minh.')),
+)
+
+CHE_DO_MAC_DINH = "fit_original"
+
+
+def che_do_hop_le(ma: str) -> bool:
+    return any(ma == x[0] for x in CHE_DO_THOI_GIAN)
+
+
+def giong_cua_toi(db, owner_id: str) -> list[dict]:
+    """Giong ma CHINH chu so huu duoc dung.
+
+    🔑 Danh sach nay do `ltt_voice` so huu, va ta hoi no thay vi tu truy van
+       bang cua no — `test_421` chot dieu do. Mot phep loc `WHERE owner_id` viet
+       tay o day la mot cho de quen menh de do, va quen no la mo duong dung
+       giong nhan ban cua nguoi khac.
+    """
+    try:
+        from apps.ltt_voice.doc_man_api import ma_giong_cua_toi
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        log.warning("khong nap duoc danh sach giong cua ltt_voice (%s: %s)",
+                    type(exc).__name__, exc)
+        return []
+
+    # ⭐ `ma_giong_cua_toi` da loc `owner_id`, da xu ly kho giong dung chung, va
+    #    da bo giong `active=False`. Ba viec do deu de lam sai neu tu viet lai,
+    #    va cai thu nhat lam sai thi hau qua la khach dung giong cua nguoi khac.
+    ra = []
+    for g in ma_giong_cua_toi(db, owner_id) or []:
+        # ⛔ Chi lay HAI truong. Chep nguyen doi tuong cua app kia sang day la de
+        #    mot truong noi bo cua ho lot ra giao dien cua ta o lan doi sau.
+        ma = str((g or {}).get("ma") or "")
+        if ma:
+            ra.append({"ma": ma, "ten": str(g.get("ten") or "") or "—"})
+    return ra
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -15909,7 +16105,7 @@ def dich_sang_loi_nen_tang(exc: BaseException) -> BaseException:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/manifest.py
-SHA256=d29e0bc2479350064b9e7f9da9bc424bec6bdd8d212a40dac7c1269c3a383091 BYTES=5641 LINES=119
+SHA256=2fa0c202f029c8609ddb404371e29aa8de1d2cd75e5fb65e80e461514b770139 BYTES=5523 LINES=117
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ban khai cua Auto Scan Video — san pham KHACH NHIN THAY.
 
@@ -16010,22 +16206,20 @@ MANIFEST = AppManifest(
     enabled=False,
     public=False,
 
-    #: 🔴 `runtime`, KHONG phai `customer` — va day la mot cai bay da co nan nhan.
+    #: ⭐ `customer` tu pha 20 — app da co `routes.py` that.
     #:
-    #:    `apps/ltt_llm` khai `surface="customer"` khi chua co `routes.py`. Hau
-    #:    qua: `nav_entries()` **tu sinh** mot dong nav mac dinh (khai `nav=()`
-    #:    KHONG co nghia la "khong co nav"), va moi khach da dang nhap thay mot
-    #:    link chet vao 404 suot nhieu tuan.
+    #: 🔴 Truoc do no la `runtime`, va ly do van dung nguyen: `apps/ltt_llm` khai
+    #:    `surface="customer"` khi CHUA co `routes.py`, va `nav_entries()` **tu
+    #:    sinh** mot dong nav mac dinh (khai `nav=()` KHONG co nghia la "khong co
+    #:    nav"). Moi khach da dang nhap thay mot link chet vao 404 suot nhieu tuan.
     #:
-    #: ⚠️ Va luu y ky: `enabled=False` **khong** cuu duoc. `visible_on_surface`
-    #:    khong doc `enabled` chut nao (`platform_core/registry.py:863-874`) —
-    #:    no chi doc `surface` va `catalog_parent`. Tat app khong lam dong nav
-    #:    bien mat.
+    #: ⚠️ Va `enabled=False` khong cuu duoc: `visible_on_surface` khong doc
+    #:    `enabled` mot lan nao (`platform_core/registry.py:863-874`).
     #:
-    #: ⇒ Giu `runtime` cho toi khi co `routes.py` that. `tests/test_413` chot
-    #:    hai chieu, nen khong the quen doi lai: co routes ma con `runtime` la
-    #:    do, va `customer` ma khong co routes cung do.
-    surface="runtime",
+    #: `tests/test_413` chot HAI CHIEU — co routes ma con `runtime` la do (san
+    #: pham khong hien o dau, hong IM LANG), va `customer` ma khong co routes
+    #: cung do (link chet).
+    surface="customer",
     lifecycle="development",
     capabilities=("video",),
     notes="Pha 05: mach doc GIA, chua co engine that. Khong mo cho khach.",
@@ -16926,6 +17120,302 @@ def tom_tat_loi_cho_khach(db, run) -> str:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/routes.py
+SHA256=80246919416104352bf24dcbf07733c62dde758df4570f0de9bb968768c07990 BYTES=12029 LINES=290
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Giao dien khach cua Auto Scan Video.
+
+Router KHONG tu viet prefix — nen tang gan tu `MANIFEST.route_prefix`.
+
+## Tep nay CHI lo HTTP
+
+Doc request, kiem quyen + CSRF, goi dich vu, dung phan hoi. Moi quyet dinh
+nghiep vu o `features.py` / `gia.py` / `quan_sat.py`. Tran cung cua hop dong app
+la 900 dong / 30 handler; tep nay co bay handler va o day khong phai vi no be ma
+vi **chuoi la co dinh** — khong co do thi de dung, khong co node de keo tha
+(Prompt 20 cam ro).
+
+## Ba dieu quyet dinh hinh dang cua man hinh nay
+
+1. **Khach khong can biet chin giai doan ten la gi trong ma nguon.** Ho thay
+   chin buoc co nhan tieng Viet. `pipeline.CHUOI` van la nguon chan ly ve thu
+   tu — ta chi dat nhan len tren.
+
+2. **Chi tiet ky thuat mac dinh AN** (muc 6). `quan_sat.dong_thoi_gian` mac dinh
+   tra ban cho khach; ban van hanh nam sau mot `<details>` va chi hien cho
+   operator. Khong co duong dan tep, khong ten worker, khong job id.
+
+3. **Moi truy van deu loc theo chu so huu o TANG DICH VU**, khong o day.
+   `features.lay_run(db, id, owner)` nem neu khong phai cua ho — nen mot handler
+   quen viet menh de loc van khong ro ri. Do la I6, va no duoc chot lai o
+   `test_423` bang hai nguoi dung that.
+"""
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from sqlalchemy.orm import Session
+
+from platform_core.i18n import N_, _ as _t
+from server.auth.csrf import issue_csrf_token, verify_csrf_token
+from server.auth.session import require_login
+from server.deps import get_db, user_hien_tai
+from server.templating import templates
+
+from . import features, gia, pipeline, quan_sat
+from .manifest import MANIFEST
+
+log = logging.getLogger(__name__)
+router = APIRouter(tags=["auto_scan_video"])
+
+#: Co mo app. ⛔ MAC DINH TAT.
+#:
+#: 🔴 `MANIFEST.enabled=False` **KHONG** dong route. `registry.mount_all` gan
+#:    router cho moi app khong loi, bat ke `enabled` — no chi anh huong the
+#:    catalog. Nen mot app "chua mo" van co URL song ngay khi co `routes.py`.
+#:
+#: ⇒ Prompt 20 muc 8 doi giu app khong cong khai toi luc nghiem thu, va thu lam
+#:   duoc dieu do la CO NAY, khong phai `enabled`.
+CO_MO = "LTT_AUTO_SCAN_VIDEO"
+
+
+def _cong_co() -> None:
+    """Co tat -> 404.
+
+    ⚠️ Phai dat TRUOC `require_login` trong MOI chu ky handler. `Depends` chay
+       theo thu tu khai bao, nen dat sau thi mot route "da dong" van 303 ve
+       `/login` — tuc no van thua nhan minh ton tai.
+
+    ⭐ Va 404 chu khong 403: 403 xac nhan co mot thu o day.
+    """
+    import os
+    if str(os.environ.get(CO_MO, "")).strip() != "1":
+        raise HTTPException(status_code=404)
+
+#: Kieu tep nhan o cua vao. `MVP_CONTRACT.md` §2 chot chinh sach; day chi la
+#: lop chan som de khach biet ngay thay vi cho mot job hong.
+KIEU_VIDEO = ("video/mp4", "video/quicktime", "video/x-matroska", "video/webm")
+
+#: Tran tep tai truc tiep. Cloudflare cat o 100 MB truoc khi request toi may
+#: chu, nen dat duoi nguong do la de khach nhan mot cau tieng Viet thay vi mot
+#: trang loi 413 cua Cloudflare.
+TRAN_TAI_LEN = 90 * 1024 * 1024
+
+#: Nhan tieng Viet cho chin giai doan. ⭐ Khoa lay TU `pipeline`, khong go tay:
+#: doi ten mot giai doan ma quen sua cho nay se lam `test_423` do, thay vi de
+#: giao dien hien mot o trong.
+#: ⚠️ `N_` chu khong `_t`: day la mot hang so o cap MODULE, danh dau luc nap.
+#:    Dung `_t` o day se **dong bang ngon ngu cua request dau tien** vao bien
+#:    toan cuc, va moi khach sau do doc nhan bang ngon ngu cua nguoi den truoc.
+#:    Ban dich thuc su xay ra o template, noi `_()` chay trong ngu canh request.
+NHAN_GIAI_DOAN = {
+    pipeline.MEDIA_PREPARE: N_('Chuẩn bị video'),
+    pipeline.AUDIO_PREPARE: N_('Tách nhạc nền khỏi giọng'),
+    pipeline.TRANSCRIBE: N_('Chép lời thoại gốc'),
+    pipeline.CONTENT_PROCESS: N_('Dịch sang tiếng Việt'),
+    pipeline.VOICE_SYNTHESIS: N_('Tạo giọng đọc'),
+    pipeline.TIMING_ALIGN: N_('Khớp thời điểm'),
+    pipeline.COMPOSE: N_('Dựng bản ghép'),
+    pipeline.RENDER: N_('Kết xuất video'),
+    pipeline.QC: N_('Kiểm chất lượng'),
+}
+
+
+def _la_operator(request: Request) -> bool:
+    u = user_hien_tai(request)
+    return bool(u is not None and getattr(u, "is_admin", False))
+
+
+def _dung_trang(request: Request, ten: str, ngu_canh: dict,
+                status_code: int = 200) -> HTMLResponse:
+    return templates.TemplateResponse(request, ten, {
+        "nav": MANIFEST.slug, "app": MANIFEST,
+        "csrf_token": issue_csrf_token(request),
+        "nhan_giai_doan": NHAN_GIAI_DOAN,
+        **ngu_canh,
+    }, status_code=status_code)
+
+
+@router.get("", response_class=HTMLResponse)
+def trang_chinh(request: Request, _g: None = Depends(_cong_co),
+                user: str = Depends(require_login),
+                db: Session = Depends(get_db), loi: str = ""):
+    """Man tao lan chay moi + lich su cua CHINH nguoi dung."""
+    u = user_hien_tai(request)
+    return _dung_trang(request, "asv_trang_chinh.html", {
+        "che_do": gia.CHE_DO_THOI_GIAN,
+        "che_do_mac_dinh": gia.CHE_DO_MAC_DINH,
+        "giong": gia.giong_cua_toi(db, u.id) if u else [],
+        "lich_su": features.lich_su(db, u.id) if u else [],
+        "loi": loi,
+    })
+
+
+@router.post("/tao", response_class=HTMLResponse)
+async def tao(request: Request,
+              video: UploadFile = File(...),
+              che_do: str = Form(gia.CHE_DO_MAC_DINH),
+              giong_id: str = Form(""),
+              csrf_token: str = Form(""),
+              _g: None = Depends(_cong_co),
+                user: str = Depends(require_login),
+              db: Session = Depends(get_db)):
+    """Nhan video, tao lan chay. Moi loi deu tra ve mot cau tieng Viet."""
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    if u is None:
+        raise HTTPException(status_code=401)
+
+    if not gia.che_do_hop_le(che_do):
+        return _lai_voi_loi(request, db, u,
+                            _t('Chế độ thời gian không hợp lệ.'))
+    kieu = (video.content_type or "").split(";")[0].strip().lower()
+    if kieu and kieu not in KIEU_VIDEO:
+        return _lai_voi_loi(request, db, u,
+                            _t('Định dạng video không được hỗ trợ.'))
+
+    du_lieu = await video.read()
+    if not du_lieu:
+        return _lai_voi_loi(request, db, u, _t('Tệp rỗng.'))
+    if len(du_lieu) > TRAN_TAI_LEN:
+        return _lai_voi_loi(request, db, u, _t(
+            'Video vượt quá 90 MB. Hãy cắt ngắn hoặc giảm chất lượng trước.'))
+
+    try:
+        run = features.tao_run_tu_tai_len(
+            db, owner_id=u.id, du_lieu=du_lieu,
+            ten_tep=video.filename or "video.mp4",
+            settings={"timing_mode": che_do, "voice_id": giong_id})
+        db.commit()
+    except features.AsvError as exc:
+        db.rollback()
+        return _lai_voi_loi(request, db, u, str(exc))
+
+    return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run.id}",
+                            status_code=303)
+
+
+def _lai_voi_loi(request: Request, db, u, thong_bao: str) -> HTMLResponse:
+    return _dung_trang(request, "asv_trang_chinh.html", {
+        "che_do": gia.CHE_DO_THOI_GIAN,
+        "che_do_mac_dinh": gia.CHE_DO_MAC_DINH,
+        "giong": gia.giong_cua_toi(db, u.id),
+        "lich_su": features.lich_su(db, u.id),
+        "loi": thong_bao,
+    }, status_code=400)
+
+
+@router.get("/run/{run_id}", response_class=HTMLResponse)
+def chi_tiet(request: Request, run_id: str,
+             _g: None = Depends(_cong_co),
+                user: str = Depends(require_login),
+             db: Session = Depends(get_db)):
+    u = user_hien_tai(request)
+    run = _run_cua_toi(db, run_id, u)
+    return _dung_trang(request, "asv_chi_tiet.html", {
+        "run": run,
+        "dong": quan_sat.dong_thoi_gian(db, run),
+        "van_hanh": (quan_sat.dong_thoi_gian(db, run, cho_van_hanh=True)
+                     if _la_operator(request) else None),
+        "loi_khach": quan_sat.tom_tat_loi_cho_khach(db, run),
+        "co_ket_qua": bool(features.khoa_ket_qua(db, run)),
+    })
+
+
+@router.get("/run/{run_id}/tien-do", response_class=HTMLResponse)
+def tien_do(request: Request, run_id: str,
+            _g: None = Depends(_cong_co),
+                user: str = Depends(require_login),
+            db: Session = Depends(get_db)):
+    """Manh HTML cho htmx hoi lai. Cung du lieu, khong co khung trang."""
+    u = user_hien_tai(request)
+    run = _run_cua_toi(db, run_id, u)
+    return _dung_trang(request, "asv_tien_do.html", {
+        "run": run,
+        "dong": quan_sat.dong_thoi_gian(db, run),
+        "loi_khach": quan_sat.tom_tat_loi_cho_khach(db, run),
+        "co_ket_qua": bool(features.khoa_ket_qua(db, run)),
+    })
+
+
+@router.post("/run/{run_id}/huy")
+def huy(request: Request, run_id: str, csrf_token: str = Form(""),
+        _g: None = Depends(_cong_co),
+                user: str = Depends(require_login), db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    _run_cua_toi(db, run_id, u)         # nem 404 neu khong phai cua ho
+    features.huy_run(db, run_id, u.id)
+    db.commit()
+    return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run_id}",
+                            status_code=303)
+
+
+@router.post("/run/{run_id}/thu-lai")
+def thu_lai(request: Request, run_id: str, giai_doan: str = Form(""),
+            csrf_token: str = Form(""),
+            _g: None = Depends(_cong_co),
+                user: str = Depends(require_login), db: Session = Depends(get_db)):
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    _run_cua_toi(db, run_id, u)
+    try:
+        features.thu_lai_giai_doan(db, run_id, u.id, giai_doan)
+        db.commit()
+    except features.AsvError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from None
+    return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run_id}",
+                            status_code=303)
+
+
+@router.get("/run/{run_id}/tai", response_class=StreamingResponse)
+def tai_ket_qua(request: Request, run_id: str,
+                _g: None = Depends(_cong_co),
+                user: str = Depends(require_login),
+                db: Session = Depends(get_db)):
+    """Phuc vu ban long tieng. Quyen kiem o TANG DICH VU, khong o day.
+
+    ⛔ Khong nhan `key` tu client. Mot route `/tai?key=...` la mot route trong do
+       quyen so huu duoc suy tu mot chuoi khach gui len — va do la dung hinh
+       dang cua mot lo IDOR, ke ca khi hom nay ta co kiem tien to.
+    """
+    from platform_core.storage import get_storage
+
+    u = user_hien_tai(request)
+    run = _run_cua_toi(db, run_id, u)
+    khoa = features.khoa_ket_qua(db, run)
+    if not khoa:
+        raise HTTPException(status_code=404,
+                            detail=_t('Lần chạy này chưa có kết quả.'))
+    f = get_storage().open(khoa)
+    return StreamingResponse(
+        f, media_type="video/mp4",
+        headers={"Content-Disposition":
+                 f'attachment; filename="long-tieng-{run_id[:8]}.mp4"'})
+
+
+def _run_cua_toi(db, run_id: str, u):
+    """Doc run co PHAM VI CHU SO HUU. 404 khi khong phai cua ho.
+
+    ⚠️ 404 chu khong phai 403: mot 403 xac nhan rang `run_id` do co that, va do
+       la mot ro ri nho nhung that — no cho phep do xem ai co lan chay nao.
+    """
+    if u is None:
+        raise HTTPException(status_code=401)
+    try:
+        return features.lay_run(db, run_id, u.id)
+    except features.AsvError:
+        raise HTTPException(status_code=404,
+                            detail=_t('Không tìm thấy lần chạy.')) from None
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/tables.py
 SHA256=9b9f69c6f73217c8b0221fa1c8c3cc7a2ff1a13d8c32a85a1b7d042b163cb584 BYTES=12516 LINES=261
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -17459,6 +17949,221 @@ def do_am_luong(duong: str) -> dict:
         "lufs": float(goc.get("input_i", 0) or 0),
         "dinh_that": float(goc.get("input_tp", 0) or 0),
     }
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/templates/asv_chi_tiet.html
+SHA256=544ce42420800cb17334ec6e1c85170b2a4ffa6b222132579d890b78799223db BYTES=2038 LINES=55
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Lần chạy") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
+
+{% block content %}
+<script src="/static/htmx.min.js"></script>
+<section class="asv-trang" aria-labelledby="asv-ct">
+
+  <header class="asv-dau">
+    <div>
+      <h1 id="asv-ct">{{ _("Tiến độ lồng tiếng") }}</h1>
+      <p class="asv-ghi-chu">
+        {{ _("Bắt đầu") }}: {{ run.created_at.strftime("%d/%m/%Y %H:%M") if run.created_at else "—" }}
+      </p>
+    </div>
+    <a class="btn ghost" href="{{ app.route_prefix }}">{{ _("Về danh sách") }}</a>
+  </header>
+
+  {% include "asv_tien_do.html" %}
+
+  {# ── Chi tiet van hanh: MAC DINH AN, va chi hien cho operator ──────────
+     Prompt 20 muc 6. Khach khong can biet job id hay ten worker; nguoi ho tro
+     thi can, va ho can no o cung trang chu khong o mot cong cu khac. #}
+  {% if van_hanh %}
+    <details class="asv-van-hanh">
+      <summary>{{ _("Chi tiết vận hành") }}</summary>
+      <table class="asv-bang">
+        <thead><tr>
+          <th>{{ _("Bước") }}</th><th>{{ _("Trạng thái") }}</th>
+          <th>{{ _("Lần thử") }}</th><th>{{ _("Làn") }}</th>
+          <th>{{ _("Giây") }}</th><th>{{ _("Lỗi") }}</th>
+        </tr></thead>
+        <tbody>
+        {% for m in van_hanh.giai_doan %}
+          <tr>
+            <td>{{ m.giai_doan }}</td>
+            <td>{{ m.trang_thai }}</td>
+            <td>{{ m.get("so_lan_thu", "—") }}</td>
+            <td>{{ m.get("lan", "—") }}</td>
+            <td>{{ "%.1f"|format(m.giay) if m.giay else "—" }}</td>
+            <td>{{ m.get("loi", "") }}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="asv-ghi-chu">
+        run <code>{{ van_hanh.run_id }}</code> ·
+        {{ _("giữ") }} {{ van_hanh.credit_da_giu }} ·
+        {{ _("tính") }} {{ van_hanh.credit_da_tinh }}
+      </p>
+    </details>
+  {% endif %}
+
+</section>
+{% endblock %}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/templates/asv_tien_do.html
+SHA256=0e8914bf5ff7b7143bfcfa42dcf537e5f265ef095f320fdb9273b764aea1f3c5 BYTES=2734 LINES=59
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{# Manh tien do — dung chung boi trang chi tiet va bo hoi lai cua htmx.
+
+   ⛔ Manh nay KHONG bao gio nhan `van_hanh`. No duoc hoi lai vai giay mot lan,
+      va mot manh chi tiet van hanh bi hoi lai lien tuc la mot cho ro ri lap lai
+      thay vi mot lan. Chi tiet van hanh chi hien o lan dung trang dau tien, cho
+      operator, trong `asv_chi_tiet.html`. #}
+<div id="asv-tien-do"
+     {% if run.status in ("queued", "running") %}
+     hx-get="{{ app.route_prefix }}/run/{{ run.id }}/tien-do"
+     hx-trigger="every 3s" hx-swap="outerHTML"
+     {% endif %}>
+
+  <p class="asv-tom-tat">
+    {% if run.status == "done" %}{{ _("Đã xong.") }}
+    {% elif run.status == "cancelled" %}{{ _("Bạn đã huỷ lần chạy này.") }}
+    {% elif run.status == "error" %}{{ _("Lần chạy dừng lại vì một bước không hoàn tất.") }}
+    {% else %}{{ _("Đang xử lý…") }}{% endif %}
+  </p>
+
+  <ol class="asv-buoc">
+    {% for m in dong.giai_doan %}
+      <li class="asv-buoc-{{ m.trang_thai }}">
+        <span class="asv-buoc-ten">{{ _(nhan_giai_doan.get(m.giai_doan, m.giai_doan)) }}</span>
+        <span class="asv-buoc-tt">
+          {% if m.trang_thai == "succeeded" %}{{ _("xong") }}
+          {% elif m.trang_thai == "running" %}{{ _("đang chạy") }}
+          {% elif m.trang_thai == "queued" %}{{ _("đang chờ") }}
+          {% elif m.trang_thai == "cancelled" %}{{ _("đã huỷ") }}
+          {% elif m.trang_thai.startswith("failed") %}{{ _("không hoàn tất") }}
+          {% else %}{{ _("chưa tới") }}{% endif %}
+        </span>
+        {% if m.giay %}<span class="asv-buoc-giay">{{ "%.1f"|format(m.giay) }}s</span>{% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+
+  {% if loi_khach %}
+    <div class="alert alert-err" role="alert">
+      {{ _("Bước không hoàn tất:") }} {{ _(nhan_giai_doan.get(loi_khach.split(":")[0], loi_khach.split(":")[0])) }}
+    </div>
+    <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/thu-lai">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <input type="hidden" name="giai_doan" value="{{ loi_khach.split(':')[0] }}">
+      <button class="btn" type="submit">{{ _("Thử lại bước này") }}</button>
+    </form>
+  {% endif %}
+
+  {% if co_ket_qua %}
+    <a class="btn primary" href="{{ app.route_prefix }}/run/{{ run.id }}/tai">
+      {{ _("Tải video đã lồng tiếng") }}</a>
+  {% endif %}
+
+  {% if run.status in ("queued", "running") %}
+    <form method="post" action="{{ app.route_prefix }}/run/{{ run.id }}/huy">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <button class="btn ghost" type="submit">{{ _("Huỷ lần chạy") }}</button>
+    </form>
+  {% endif %}
+</div>
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/templates/asv_trang_chinh.html
+SHA256=109c331c572555d09ff5adf1fe864a4640ddd6b4638332110b91df96fab61b15 BYTES=3520 LINES=83
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{% extends "base.html" %}
+{% block title %}{{ _("Lồng tiếng Việt") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="asv-trang" aria-labelledby="asv-title">
+
+  <header class="asv-dau">
+    <div>
+      <h1 id="asv-title">{{ _("Lồng tiếng Việt cho video") }}</h1>
+      <p>{{ _("Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động.") }}</p>
+    </div>
+  </header>
+
+  {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
+
+  <form class="asv-form card" method="post" enctype="multipart/form-data"
+        action="{{ app.route_prefix }}/tao">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="asv-o">
+      <label for="asv-video"><strong>{{ _("Chọn video") }}</strong></label>
+      <input id="asv-video" type="file" name="video" required
+             accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+      <p class="asv-ghi-chu">{{ _("MP4, MOV, MKV hoặc WEBM. Tối đa 90 MB. Video phải có tiếng nói.") }}</p>
+    </div>
+
+    <fieldset class="asv-o">
+      <legend><strong>{{ _("Cách khớp thời gian") }}</strong></legend>
+      {% for ma, ten, mo_ta in che_do %}
+        <label class="asv-chon">
+          <input type="radio" name="che_do" value="{{ ma }}"
+                 {% if ma == che_do_mac_dinh %}checked{% endif %}>
+          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <div class="asv-o">
+      <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
+      {% if giong %}
+        <select id="asv-giong" name="giong_id">
+          <option value="">{{ _("Giọng mặc định") }}</option>
+          {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
+        </select>
+      {% else %}
+        <input type="hidden" name="giong_id" value="">
+        <p class="asv-ghi-chu">{{ _("Đang dùng giọng mặc định. Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
+      {% endif %}
+    </div>
+
+    <div class="asv-o asv-tien">
+      <p class="asv-ghi-chu">
+        {{ _("Chi phí được ước theo độ dài video và giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại khi chạy xong.") }}
+      </p>
+      <button class="btn primary" type="submit">{{ _("Bắt đầu lồng tiếng") }}</button>
+    </div>
+  </form>
+
+  <section class="asv-lich-su" aria-labelledby="asv-ls">
+    <h2 id="asv-ls">{{ _("Lần chạy của tôi") }}</h2>
+    {% if not lich_su %}
+      <p class="asv-ghi-chu">{{ _("Bạn chưa có lần chạy nào.") }}</p>
+    {% else %}
+      <table class="asv-bang">
+        <thead><tr>
+          <th>{{ _("Bắt đầu") }}</th><th>{{ _("Trạng thái") }}</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for r in lich_su %}
+          <tr>
+            <td>{{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}</td>
+            <td><span class="asv-trang-thai asv-tt-{{ r.status }}">{{ r.status }}</span></td>
+            <td><a class="btn ghost" href="{{ app.route_prefix }}/run/{{ r.id }}">{{ _("Xem") }}</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+</section>
+{% endblock %}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -25470,7 +26175,7 @@ def tran_theo_ngu_canh(token_vao_uoc: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/__init__.py
-SHA256=b7cd4991ebdf936b9887d40cc41f9decda7edb93b9eef665ae07b9da8f590234 BYTES=2099 LINES=39
+SHA256=75f5b07905a6b8d4149f381afb8c0e9fc6adb1869ca534dbba11038cb9af80aa BYTES=2626 LINES=46
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """LTT VOICE — giong noi tieng Viet nhan ban, chay tren may A (Q117/Q118)."""
 
@@ -25510,6 +26215,13 @@ BE_MAT_CONG_KHAI = {
     #:    DOAN, va chia mot cau thoai la doi no thanh hai giong doc o giua cau.
     ("apps.ltt_voice.text_pipeline", "chuan_hoa"),
     ("apps.ltt_voice", "text_pipeline"),
+    #: 🔑 Liet ke giong cua CHINH chu so huu, cho man tao lan chay cua Auto Scan.
+    #:    Ham nay da loc `owner_id`, da xu ly kho giong dung chung, va da bo
+    #:    giong khong con `active`. Mo no ra thay vi de app khac tu truy van
+    #:    `VoiceRef`: ba phep loc do deu de lam sai, va lam sai phep dau tien
+    #:    nghia la mot khach chon duoc giong nhan ban CUA NGUOI KHAC.
+    #: ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
+    ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
 }
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -159750,7 +160462,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=81f4562b66d8b9b8a9704981c9a47f17e68df44cf2397983d475b7060cb5f025 BYTES=258272 LINES=2818
+SHA256=f0e7acd1d62e16f38ad47bdaec0e259ee6add73bae9ce7c8e797cd6f9bbcb8e6 BYTES=262382 LINES=2888
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -162569,6 +163281,76 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 @media(max-width:1000px){
   .lv-lo-khung{grid-template-columns:1fr}
   .lv-mlo-xoa{margin-left:0}
+}
+
+/* ── Auto Scan Video (long tieng Viet) ──────────────────────────────────────
+   Dung lai `.card` `.field` `.btn` `.alert` cua he thiet ke. Khoi nay chi them
+   nhung gi he thong chua co: danh sach chin buoc, va mot lua chon radio co mo ta
+   nhieu dong.
+
+   🔴 Khoi nay ton tai vi mot lan SOI BANG TRINH DUYET. Phep kiem cua pha 20 xanh
+      het — chung kiem van ban co mat, khong kiem no nhin ra sao — trong khi trang
+      that hien hai lua chon dinh lien nhau tren mot dong, vi cac lop `.asv-*`
+      chua ton tai o dau ca. Do dung la ly do `CLAUDE.md` muc 5 bat soi that.
+   ───────────────────────────────────────────────────────────────────────── */
+.asv-trang{display:flex;flex-direction:column;gap:22px;max-width:920px}
+.asv-dau{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.asv-dau h1{margin:0 0 6px}
+.asv-ghi-chu{color:var(--muted);font-size:13px;margin:4px 0 0}
+
+.asv-form{display:flex;flex-direction:column;gap:18px;padding:20px}
+.asv-o{display:flex;flex-direction:column;gap:8px;border:0;margin:0;padding:0}
+.asv-o > legend{padding:0;font-size:13px}
+
+/* Mot lua chon = mot hang rieng. Khong co dieu nay thi mo ta cua lua chon nay
+   chay tiep vao nhan cua lua chon sau — dung loi da thay tren trinh duyet. */
+.asv-chon{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer}
+.asv-chon:hover{background:var(--panel2)}
+.asv-chon input{margin-top:3px;flex:none}
+.asv-chon span{display:flex;flex-direction:column;gap:3px}
+.asv-chon small{color:var(--muted);line-height:1.45}
+.asv-chon:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
+
+.asv-tien{flex-direction:row;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap}
+.asv-tien .asv-ghi-chu{flex:1 1 320px;margin:0}
+
+/* ── Chin buoc ───────────────────────────────────────────────────────────── */
+.asv-tom-tat{font-size:15px;margin:0 0 12px}
+.asv-buoc{list-style:none;margin:0 0 16px;padding:0;display:flex;
+  flex-direction:column;gap:2px}
+.asv-buoc li{display:grid;grid-template-columns:1fr auto auto;gap:12px;
+  align-items:center;padding:9px 13px;border-radius:var(--radius-sm);
+  border-left:3px solid var(--line2);background:var(--panel2)}
+.asv-buoc-ten{font-size:14px}
+.asv-buoc-tt{font-size:12px;color:var(--muted)}
+.asv-buoc-giay{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.asv-buoc-succeeded{border-left-color:var(--ok-line)}
+.asv-buoc-running{border-left-color:var(--accent)}
+.asv-buoc-failed_terminal,.asv-buoc-failed_retryable{border-left-color:var(--err-line)}
+.asv-buoc-cancelled{opacity:.6}
+.asv-buoc-pending{opacity:.55}
+
+#asv-tien-do > form{display:inline-block;margin:0 8px 0 0}
+
+/* ── Lich su + bang van hanh ─────────────────────────────────────────────── */
+.asv-bang{width:100%;border-collapse:collapse;font-size:13px}
+.asv-bang th,.asv-bang td{text-align:left;padding:8px 10px;
+  border-bottom:1px solid var(--line)}
+.asv-bang th{color:var(--muted);font-weight:600;font-size:12px}
+.asv-trang-thai{font-size:12px;padding:2px 8px;border-radius:999px;
+  border:1px solid var(--line2)}
+.asv-tt-done{border-color:var(--ok-line);color:var(--ok)}
+.asv-tt-error{border-color:var(--err-line);color:var(--err)}
+
+.asv-van-hanh{margin-top:8px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:12px 14px}
+.asv-van-hanh summary{cursor:pointer;font-size:13px;color:var(--muted)}
+
+@media (max-width:640px){
+  .asv-dau{flex-direction:column}
+  .asv-buoc li{grid-template-columns:1fr auto}
 }
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -272373,7 +273155,7 @@ def test_khong_hong_thi_tom_tat_loi_RONG(run_xong, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_421_asv_tach_khoi_di_san.py
-SHA256=d86be0244b0a2249958794b05e5e18588e4c8ca2ed315238920580a3e5d26047 BYTES=15966 LINES=347
+SHA256=bd20ebde717d2bf7a284a03a19a103c7e4fd560d808bcc78e44c0013519e6f97 BYTES=16702 LINES=358
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 19 — Auto Scan dung ENGINE dung lai duoc, nhung KHONG dung dieu phoi cu.
 
@@ -272680,18 +273462,28 @@ def test_vo_tuong_thich_chi_boc_ENGINE_khong_boc_dieu_phoi(goi, ly_do):
     #    `ltt_voice.features.giai_giong` (ham ta co y goi) tat nhien doc bang
     #    cua chinh no. Luat do qua tho: no cam mot dich vu lam dung viec cua no.
     #
-    # ⇒ Bac cau chi cam `.jobs` / `.routes` / `.manifest`: cham vao chung nghia
-    #   la mot lan chay Auto Scan tro thanh mot lan chay cua app kia, voi tien
-    #   va vong doi cua app kia.
+    # ⇒ Bac cau chi cam `.jobs` / `.routes`: cham vao chung nghia la mot lan
+    #   chay Auto Scan tro thanh mot lan chay cua app kia, voi tien va vong doi
+    #   cua app kia.
+    #
+    # ⚠️ `.manifest` da tung nam trong danh sach nay va bi go o pha 20, vi cung
+    #    ly do da go `.tables` o pha 19: `ltt_voice.doc_man_api.ma_giong_cua_toi`
+    #    (ham ta CO Y goi de lay danh sach giong) doc manifest cua chinh no. Cam
+    #    bac cau la cam mot dich vu tu mo ta minh.
+    #
+    # ⭐ Ranh gioi that: `.jobs`/`.routes` la **dieu phoi**; `.manifest`/`.tables`
+    #    la **khai bao va du lieu**. Import THANG hai cai sau van bi cam (phep
+    #    kiem ngay duoi), vi luc do ta doc gia va job_type cua app khac de tu
+    #    quyet dinh — chu khong phai de ho tu quyet dinh.
     xau = sorted(x for x in cham
-                 if any(k in x for k in (".jobs", ".manifest", ".routes")))
+                 if any(k in x for k in (".jobs", ".routes")))
     assert xau == [], (
         f"Auto Scan cham vao dieu phoi/vong doi cua {goi}: {xau} — chi duoc "
         f"goi ham engine ({ly_do})")
 
 
 @pytest.mark.parametrize("goi,ly_do", sorted(VO_TUONG_THICH.items()))
-def test_KHONG_import_THANG_bang_cua_app_khac(goi, ly_do):
+def test_KHONG_import_THANG_bang_hay_ban_khai_cua_app_khac(goi, ly_do):
     """Chieu con lai, va day moi la chieu nguy hiem.
 
     Cham `ltt_voice.tables` **bac cau** qua `giai_giong` la binh thuong — do la
@@ -272706,11 +273498,12 @@ def test_KHONG_import_THANG_bang_cua_app_khac(goi, ly_do):
     xau: list[str] = []
     for tep in sorted((APP / "auto_scan_video").glob("*.py")):
         for ten in _import_trong(tep):
-            if ten.startswith(goi + ".tables"):
+            if ten.startswith(goi + ".tables") or ten.startswith(goi + ".manifest"):
                 xau.append(f"{tep.name} -> {ten}")
     assert xau == [], (
-        f"Auto Scan import THANG bang cua {goi}: {xau} — phai di qua ham dich "
-        f"vu cua no de phep kiem quyen so huu duoc chay")
+        f"Auto Scan import THANG bang/ban khai cua {goi}: {xau} — bang phai di "
+        f"qua ham dich vu de phep kiem quyen so huu duoc chay, va ban khai la "
+        f"gia + job_type cua ho, khong phai thu ta duoc tu doc de quyet dinh")
 
 
 def test_bang_VO_TUONG_THICH_khop_voi_CROSS_APP_ALLOWED():
@@ -272906,6 +273699,318 @@ def test_bang_parity_nay_KHONG_RONG():
     ma = pathlib.Path(__file__).read_text(encoding="utf-8")
     assert ma.count("def test_") >= 12
     assert ma.count("LECH_CO_Y") >= 6, "so cho lech co y da giam — da go mat?"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_423_asv_giao_dien.py
+SHA256=4a0e8827c69016cae82a1e040d593f274368aa7202117aff5264b3904d7ca6d5 BYTES=14100 LINES=306
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 20 — giao dien khach: route, quyen, IDOR, va co mo app.
+
+Cong thoat: *mot nguoi dung binh thuong hoan thanh duoc MVP ma khong can biet
+FFmpeg / CUDA / Sheets / duong dan noi bo.*
+
+⭐ Do la mot cong thoat ve **thu KHONG hien ra** nhieu bang thu hien ra, nen phan
+   lon tep nay kiem su vang mat: khong duong dan, khong job id, khong ten worker,
+   khong ten giai doan bang tieng Anh trong ma nguon.
+"""
+from __future__ import annotations
+
+import json
+import re
+
+import pytest
+from fastapi.testclient import TestClient
+
+
+@pytest.fixture()
+def moi_truong(tmp_path, monkeypatch):
+    """Hai nguoi dung that, qua HTTP that. Khuon lay tu `test_103`."""
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'asv.db').as_posix()}")
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    monkeypatch.setenv("LTT_AUTO_SCAN_VIDEO", "1")
+    monkeypatch.delenv("LTT_STORAGE", raising=False)
+
+    import platform_core.storage as storage_mod
+    storage_mod.set_storage(storage_mod.LocalStorage(str(tmp_path / "files")))
+    import platform_core.db as dbmod
+    import platform_core.models  # noqa: F401
+    # ⚠️ Phai nap CA bang cua app: `asv_run` chi vao `Base.metadata` khi module
+    #    nay duoc import. Ban dau tep nay khong co dong duoi, va no van xanh khi
+    #    chay CA BO — vi mot phep kiem truoc do da import ho. Chay RIENG thi do
+    #    voi `no such table: asv_run`. Mot phep kiem phu thuoc thu tu import la
+    #    mot phep kiem dang do thu tu import.
+    import apps.auto_scan_video.tables  # noqa: F401
+    dbmod.reset_engine()
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    db = next(dbmod.get_session())
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+    for email in ("asv-a@example.com", "asv-b@example.com"):
+        u = tao_nguoi_dung(db, email=email, password="Strong-pass-123",
+                           is_verified=True)
+        credit.nap(db, u.id, 1000)
+    db.commit()
+    db.close()
+    dbmod.reset_engine()
+
+    cfg = tmp_path / "config.json"
+    cfg.write_text(json.dumps({"job_delay_seconds": 1, "max_retries": 1,
+                               "sheet_id": "test"}), encoding="utf-8")
+    from server.app import create_app
+    app = create_app(env={"LTT_ENV": "local-server-test",
+                          "LTT_CONFIG_PATH": str(cfg),
+                          "LTT_SESSION_SECRET": "asv-ui-test-session",
+                          "LTT_ADMIN_USERNAME": "",
+                          "LTT_ADMIN_PASSWORD_HASH": ""})
+
+    def dang_nhap(email):
+        c = TestClient(app, base_url="https://testserver", follow_redirects=True)
+        page = c.get("/login")
+        tok = re.search(r'name="csrf_token" value="([^"]+)"', page.text).group(1)
+        assert c.post("/login", data={
+            "username": email, "password": "Strong-pass-123",
+            "csrf_token": tok, "next": "/auto-scan-video"}).status_code == 200
+        trang = c.get("/auto-scan-video")
+        csrf = re.search(r'name="csrf_token" value="([^"]+)"', trang.text).group(1)
+        return c, csrf
+
+    a, csrf_a = dang_nhap("asv-a@example.com")
+    b, csrf_b = dang_nhap("asv-b@example.com")
+    yield app, a, csrf_a, b, csrf_b
+    a.close()
+    b.close()
+    dbmod.reset_engine()
+    storage_mod._storage = None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Co mo app — muc 8
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_co_TAT_thi_moi_route_tra_404(moi_truong, monkeypatch):
+    """⛔ `MANIFEST.enabled=False` KHONG dong route — `mount_all` gan router cho
+    moi app khong loi. Co nay la thu duy nhat giu app khong cong khai."""
+    _app, a, csrf, _b, _cb = moi_truong
+    monkeypatch.delenv("LTT_AUTO_SCAN_VIDEO", raising=False)
+    for duong in ("/auto-scan-video", "/auto-scan-video/run/x"):
+        assert a.get(duong).status_code == 404, f"{duong} van song khi co da tat"
+
+
+def test_co_tat_thi_KHONG_303_ve_login(moi_truong, monkeypatch):
+    """⚠️ Bay thu tu `Depends`, va no co that trong kho nay.
+
+    Neu `_cong_co` dat SAU `require_login`, mot khach chua dang nhap se bi day
+    ve `/login` thay vi nhan 404 — tuc route "da dong" van **thua nhan minh ton
+    tai**. Chot bang mot client CHUA dang nhap.
+    """
+    app, *_ = moi_truong
+    monkeypatch.delenv("LTT_AUTO_SCAN_VIDEO", raising=False)
+    la = TestClient(app, base_url="https://testserver", follow_redirects=False)
+    r = la.get("/auto-scan-video")
+    assert r.status_code == 404, (
+        f"nhan {r.status_code} — `_cong_co` dang dat SAU `require_login`")
+    la.close()
+
+
+def test_MANIFEST_van_chua_mo_cho_khach(moi_truong):
+    """Muc 8: vong doi khong cong khai toi luc nghiem thu."""
+    from apps.auto_scan_video.manifest import MANIFEST
+    assert MANIFEST.enabled is False
+    assert MANIFEST.public is False
+    assert MANIFEST.lifecycle == "development"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Quyen + CSRF tren MOI route (muc 7)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_chua_dang_nhap_thi_khong_vao_duoc(moi_truong):
+    app, *_ = moi_truong
+    la = TestClient(app, base_url="https://testserver", follow_redirects=False)
+    r = la.get("/auto-scan-video")
+    assert r.status_code in (302, 303, 307, 401), (
+        "trang cua khach mo cho nguoi chua dang nhap")
+    la.close()
+
+
+def test_MOI_route_ghi_deu_doi_CSRF(moi_truong):
+    """Chot theo TAP HOP route POST, khong theo mot danh sach chep tay.
+
+    ⚠️ Duyet `router.routes` cua CHINH module nay, khong duyet `app.routes`:
+       ban FastAPI o day boc router da include thanh `_IncludedRouter`, nen
+       `getattr(r, "path")` tra ve `None` va phep quet tim duoc **khong route
+       nao** — mot phep kiem xanh vi no khong nhin thay gi.
+    """
+    _app, a, _csrf, _b, _cb = moi_truong
+    from apps.auto_scan_video.manifest import MANIFEST
+    from apps.auto_scan_video.routes import router
+
+    post = [r for r in router.routes
+            if "POST" in (getattr(r, "methods", None) or set())]
+    assert post, "khong tim thay route POST nao — phep kiem vo nghia"
+
+    for r in post:
+        duong = (MANIFEST.route_prefix + r.path).replace("{run_id}", "khong-co")
+        resp = a.post(duong, data={"csrf_token": "sai"})
+        assert resp.status_code in (400, 404, 422), (
+            f"{duong} nhan CSRF sai ma tra {resp.status_code}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  IDOR — hai nguoi dung that
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _tao_run_cho(client, csrf, tmp_path, ten="a.mp4"):
+    from tests.fixtures.asv_media import tiny_mp4
+    tep = tiny_mp4(tmp_path / ten, duration_s=1.0)
+    with open(tep, "rb") as f:
+        return client.post("/auto-scan-video/tao",
+                           data={"csrf_token": csrf, "che_do": "fit_original"},
+                           files={"video": (ten, f, "video/mp4")})
+
+
+def test_nguoi_khac_KHONG_xem_duoc_lan_chay_cua_toi(moi_truong, tmp_path):
+    from tests.fixtures import asv_media as fx
+    fx.require_ffmpeg()
+    _app, a, csrf_a, b, _cb = moi_truong
+
+    r = _tao_run_cho(a, csrf_a, tmp_path)
+    assert r.status_code == 200, r.text[:300]
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    assert run_id and run_id != "auto-scan-video"
+
+    # A xem duoc.
+    assert a.get(f"/auto-scan-video/run/{run_id}").status_code == 200
+    # B thi khong — va nhan 404, khong phai 403.
+    rb = b.get(f"/auto-scan-video/run/{run_id}")
+    assert rb.status_code == 404, (
+        f"B nhan {rb.status_code}; 403 se xac nhan rang run do co that")
+
+
+def test_nguoi_khac_KHONG_tai_duoc_ket_qua(moi_truong, tmp_path):
+    from tests.fixtures import asv_media as fx
+    fx.require_ffmpeg()
+    _app, a, csrf_a, b, _cb = moi_truong
+    r = _tao_run_cho(a, csrf_a, tmp_path)
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    assert b.get(f"/auto-scan-video/run/{run_id}/tai").status_code == 404
+
+
+def test_nguoi_khac_KHONG_huy_duoc_lan_chay_cua_toi(moi_truong, tmp_path):
+    from tests.fixtures import asv_media as fx
+    fx.require_ffmpeg()
+    _app, a, csrf_a, b, csrf_b = moi_truong
+    r = _tao_run_cho(a, csrf_a, tmp_path)
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    rb = b.post(f"/auto-scan-video/run/{run_id}/huy",
+                data={"csrf_token": csrf_b})
+    assert rb.status_code == 404
+
+
+def test_lich_su_chi_hien_lan_chay_CUA_MINH(moi_truong, tmp_path):
+    from tests.fixtures import asv_media as fx
+    fx.require_ffmpeg()
+    _app, a, csrf_a, b, _cb = moi_truong
+    r = _tao_run_cho(a, csrf_a, tmp_path)
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    assert run_id in a.get("/auto-scan-video").text
+    assert run_id not in b.get("/auto-scan-video").text
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  Cong thoat — khach khong phai biet gi ve ben trong
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: ⛔ Chuoi khong bao gio duoc hien cho khach thuong. Chot theo TAP HOP.
+CAM_TREN_TRANG = ("ffmpeg", "ffprobe", "CUDA", "demucs", "whisper",
+                  "C:\\", "/tmp/", "job_id", "worker", "Traceback",
+                  "asv-staging", "storage_key")
+
+
+def test_trang_khach_KHONG_lo_chi_tiet_ky_thuat(moi_truong, tmp_path):
+    from tests.fixtures import asv_media as fx
+    fx.require_ffmpeg()
+    _app, a, csrf_a, _b, _cb = moi_truong
+    r = _tao_run_cho(a, csrf_a, tmp_path)
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+
+    for duong in ("/auto-scan-video",
+                  f"/auto-scan-video/run/{run_id}",
+                  f"/auto-scan-video/run/{run_id}/tien-do"):
+        van = a.get(duong).text
+        for dau in CAM_TREN_TRANG:
+            assert dau not in van, f"{duong} lo `{dau}`"
+
+
+def test_chin_buoc_hien_bang_NHAN_TIENG_VIET(moi_truong, tmp_path):
+    """Khach thay chin buoc, khong thay `voice_synthesis`."""
+    from apps.auto_scan_video import pipeline
+    from apps.auto_scan_video.routes import NHAN_GIAI_DOAN
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf_a, _b, _cb = moi_truong
+    r = _tao_run_cho(a, csrf_a, tmp_path)
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    van = a.get(f"/auto-scan-video/run/{run_id}").text
+
+    for g in pipeline.CHUOI:
+        assert NHAN_GIAI_DOAN[g.ten] in van, f"thieu buoc {g.ten}"
+        assert g.ten not in van, f"lo ten ky thuat `{g.ten}` cho khach"
+
+
+def test_moi_giai_doan_deu_co_NHAN():
+    """Chot theo TAP HOP: them mot giai doan ma quen dat nhan se lam do, thay vi
+    de giao dien hien mot o trong."""
+    from apps.auto_scan_video import pipeline
+    from apps.auto_scan_video.routes import NHAN_GIAI_DOAN
+
+    assert set(NHAN_GIAI_DOAN) == set(pipeline.TEN_GIAI_DOAN)
+
+
+def test_KHONG_co_node_keo_tha_hay_do_thi(moi_truong):
+    """Prompt 20 cam ro: khong drag/drop node, khong do thi tuy y."""
+    _app, a, _csrf, _b, _cb = moi_truong
+    van = a.get("/auto-scan-video").text.lower()
+    for dau in ("draggable", "jsplumb", "reactflow", "canvas", "node-editor"):
+        assert dau not in van, f"trang co dau hieu trinh dung do thi: {dau}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  Nghiep vu KHONG nam trong routes.py
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_routes_chi_lo_HTTP():
+    """Tran cung cua hop dong app: 900 dong / 30 handler.
+
+    ⭐ Va chot them mot dieu `lint_app_contract` khong chot: `routes.py` khong
+       duoc truy van CSDL truc tiep. Mot `select(...)` o day la mot phep loc
+       quyen so huu nam trong handler HTTP — tuc mot bat bien khong ap dung cho
+       worker.
+    """
+    import ast
+    import inspect
+
+    from apps.auto_scan_video import routes
+
+    ma = inspect.getsource(routes)
+    assert len(ma.splitlines()) < 900
+
+    cay = ast.parse(ma)
+    ten = {n.func.id for n in ast.walk(cay)
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "select" not in ten, "routes.py dang truy van CSDL truc tiep"
+
+
+def test_uoc_gia_o_TANG_DICH_VU_khong_o_route():
+    import inspect
+
+    from apps.auto_scan_video import features, routes
+
+    assert "uoc_credit" not in inspect.getsource(routes)
+    assert "uoc_credit" in inspect.getsource(features.tao_run_tu_tai_len)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -308170,7 +309275,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=946ee1cdb344b9bfca2e7e6f4c914fd8c8a5558bafdc16616402dac15bf22e7c BYTES=23023 LINES=461
+SHA256=7e96d886694e7dbc637c2c23b5648ce81001f5f634c248af0c7d4a84f1a6da3e BYTES=23720 LINES=471
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -308360,6 +309465,16 @@ APP_DUOC_DUNG_APP: dict = {
         #    con chia doan, va chia mot cau thoai la doi giong doc giua cau).
         ("apps.ltt_voice.text_pipeline", "chuan_hoa"),
         ("apps.ltt_voice", "text_pipeline"),
+        # ── Pha 20: liet ke giong cho man tao lan chay ──────────────────────
+        #
+        # 🔑 Goi ham cua `ltt_voice` thay vi tu truy van bang cua no. Ham nay da
+        #    loc `owner_id`, da xu ly kho giong dung chung, va da bo giong khong
+        #    con `active` — ba viec deu de lam sai neu viet lai, va cai thu nhat
+        #    lam sai thi hau qua la khach chon duoc giong nhan ban CUA NGUOI KHAC.
+        #
+        # ⚠️ Chi doc, chi cua chinh chu so huu. Auto Scan khong bao gio tao, sua
+        #    hay go mot giong nao — man do thuoc ve LTT VOICE.
+        ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
     },
 }
 

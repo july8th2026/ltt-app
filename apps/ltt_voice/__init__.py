@@ -36,4 +36,11 @@ BE_MAT_CONG_KHAI = {
     #:    DOAN, va chia mot cau thoai la doi no thanh hai giong doc o giua cau.
     ("apps.ltt_voice.text_pipeline", "chuan_hoa"),
     ("apps.ltt_voice", "text_pipeline"),
+    #: 🔑 Liet ke giong cua CHINH chu so huu, cho man tao lan chay cua Auto Scan.
+    #:    Ham nay da loc `owner_id`, da xu ly kho giong dung chung, va da bo
+    #:    giong khong con `active`. Mo no ra thay vi de app khac tu truy van
+    #:    `VoiceRef`: ba phep loc do deu de lam sai, va lam sai phep dau tien
+    #:    nghia la mot khach chon duoc giong nhan ban CUA NGUOI KHAC.
+    #: ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
+    ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
 }

@@ -391,3 +391,76 @@ def tien_do(db: Session, run: AsvRun) -> dict:
             for s in sorted(ds, key=lambda x: pipeline.TEN_GIAI_DOAN.index(x.stage))
         ],
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Phuc vu giao dien (pha 20)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
+                       ten_tep: str, settings: dict) -> AsvRun:
+    """Nhan bytes tu mot lan tai len -> luu vao kho -> tao run.
+
+    🔑 **Uoc gia phai duoc tinh o day, khong o route.** No can biet thoi luong
+       video, tuc can soi tep — va soi tep cung la cho `MVP_CONTRACT` §2 tu choi
+       mot tep khong co luong tieng. Ca hai deu la quyet dinh nghiep vu.
+
+    ⛔ Khoa luu tru KHONG mang ten tep cua khach. Ten do do khach dat, va mot ten
+       tep di vao khoa la mot chuoi cua client di vao duong dan — dung thu ma
+       `assets.dat_khoa` sinh ra de chan.
+    """
+    import io
+    import tempfile
+    import uuid
+    from pathlib import Path
+
+    from platform_core.storage import get_storage
+
+    from . import gia, nhap_media
+
+    duoi = (Path(ten_tep or "").suffix or ".mp4").lstrip(".").lower()
+    if not duoi.isalnum() or len(duoi) > 5:
+        duoi = "mp4"
+
+    # Soi TRUOC khi luu: mot tep khong dung chinh sach thi khong nen chiem cho
+    # trong kho, va khach nen biet ngay thay vi sau mot vong hang doi.
+    with tempfile.TemporaryDirectory(prefix="asv-nhan-") as tam:
+        tep = Path(tam) / f"nguon.{duoi}"
+        tep.write_bytes(du_lieu)
+        try:
+            tt = nhap_media.soi(str(tep))
+        except nhap_media.MediaError as exc:
+            raise AsvError(str(exc)) from exc
+        try:
+            nhap_media.kiem_chinh_sach(tt)
+        except nhap_media.MediaError as exc:
+            raise AsvError(str(exc)) from exc
+        uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+
+    khoa = f"asv/{owner_id[:16]}/nguon/{uuid.uuid4().hex}.{duoi}"
+    get_storage().put(khoa, io.BytesIO(du_lieu), content_type="video/mp4")
+
+    return tao_run(db, owner_id=owner_id, source_key=khoa,
+                   settings=settings, uoc_luong_credit=uoc)
+
+
+def lich_su(db: Session, owner_id: str, *, toi_da: int = 20) -> list:
+    """Lan chay CUA CHINH nguoi nay, moi nhat truoc."""
+    return list(db.execute(
+        select(AsvRun).where(AsvRun.owner_id == owner_id)
+        .order_by(AsvRun.created_at.desc()).limit(max(1, int(toi_da)))
+    ).scalars().all())
+
+
+def khoa_ket_qua(db: Session, run: AsvRun) -> str:
+    """Khoa luu tru cua ban long tieng, hoac chuoi rong.
+
+    ⚠️ Doc tu `outputs` cua giai doan RENDER chu khong quet kho theo tien to:
+       mot phep quet tien to se tim thay ca artifact cua mot lan chay lai da bi
+       thay the, va phuc vu nham ban cu.
+    """
+    s = giai_doan_theo_ten(db, run.id, pipeline.RENDER)
+    if s is None or s.status != STAGE_SUCCEEDED:
+        return ""
+    return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
+                 if k.endswith(".mp4")), "")

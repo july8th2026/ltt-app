@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ _("Lồng tiếng Việt") }} — LTT AI Studio{% endblock %}
+{% block topbar_title %}<strong>{{ _("Lồng tiếng Việt") }}</strong>{% endblock %}
+
+{% block content %}
+<section class="asv-trang" aria-labelledby="asv-title">
+
+  <header class="asv-dau">
+    <div>
+      <h1 id="asv-title">{{ _("Lồng tiếng Việt cho video") }}</h1>
+      <p>{{ _("Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động.") }}</p>
+    </div>
+  </header>
+
+  {% if loi %}<div class="alert alert-err" role="alert">{{ loi }}</div>{% endif %}
+
+  <form class="asv-form card" method="post" enctype="multipart/form-data"
+        action="{{ app.route_prefix }}/tao">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+    <div class="asv-o">
+      <label for="asv-video"><strong>{{ _("Chọn video") }}</strong></label>
+      <input id="asv-video" type="file" name="video" required
+             accept="video/mp4,video/quicktime,video/x-matroska,video/webm">
+      <p class="asv-ghi-chu">{{ _("MP4, MOV, MKV hoặc WEBM. Tối đa 90 MB. Video phải có tiếng nói.") }}</p>
+    </div>
+
+    <fieldset class="asv-o">
+      <legend><strong>{{ _("Cách khớp thời gian") }}</strong></legend>
+      {% for ma, ten, mo_ta in che_do %}
+        <label class="asv-chon">
+          <input type="radio" name="che_do" value="{{ ma }}"
+                 {% if ma == che_do_mac_dinh %}checked{% endif %}>
+          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <div class="asv-o">
+      <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
+      {% if giong %}
+        <select id="asv-giong" name="giong_id">
+          <option value="">{{ _("Giọng mặc định") }}</option>
+          {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
+        </select>
+      {% else %}
+        <input type="hidden" name="giong_id" value="">
+        <p class="asv-ghi-chu">{{ _("Đang dùng giọng mặc định. Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
+      {% endif %}
+    </div>
+
+    <div class="asv-o asv-tien">
+      <p class="asv-ghi-chu">
+        {{ _("Chi phí được ước theo độ dài video và giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại khi chạy xong.") }}
+      </p>
+      <button class="btn primary" type="submit">{{ _("Bắt đầu lồng tiếng") }}</button>
+    </div>
+  </form>
+
+  <section class="asv-lich-su" aria-labelledby="asv-ls">
+    <h2 id="asv-ls">{{ _("Lần chạy của tôi") }}</h2>
+    {% if not lich_su %}
+      <p class="asv-ghi-chu">{{ _("Bạn chưa có lần chạy nào.") }}</p>
+    {% else %}
+      <table class="asv-bang">
+        <thead><tr>
+          <th>{{ _("Bắt đầu") }}</th><th>{{ _("Trạng thái") }}</th><th></th>
+        </tr></thead>
+        <tbody>
+        {% for r in lich_su %}
+          <tr>
+            <td>{{ r.created_at.strftime("%d/%m/%Y %H:%M") if r.created_at else "—" }}</td>
+            <td><span class="asv-trang-thai asv-tt-{{ r.status }}">{{ r.status }}</span></td>
+            <td><a class="btn ghost" href="{{ app.route_prefix }}/run/{{ r.id }}">{{ _("Xem") }}</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+
+</section>
+{% endblock %}

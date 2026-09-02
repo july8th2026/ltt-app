@@ -13609,3 +13609,207 @@ msgstr "Measuring loudness"
 #: apps/auto_scan_video
 msgid "Đang đối chiếu luồng hình"
 msgstr "Comparing the video stream"
+
+#: apps/auto_scan_video
+msgid "Lồng tiếng Việt"
+msgstr "Vietnamese dubbing"
+
+#: apps/auto_scan_video
+msgid "Lồng tiếng Việt cho video"
+msgstr "Vietnamese dubbing for video"
+
+#: apps/auto_scan_video
+msgid "Giữ nguyên hình ảnh và độ dài. Thay lời thoại gốc bằng giọng đọc tiếng Việt khớp thời điểm, giữ lại nhạc nền và tiếng động."
+msgstr "Keeps the picture and the length. Replaces the original dialogue with a time-matched Vietnamese voice, and keeps the music and sound effects."
+
+#: apps/auto_scan_video
+msgid "MP4, MOV, MKV hoặc WEBM. Tối đa 90 MB. Video phải có tiếng nói."
+msgstr "MP4, MOV, MKV or WEBM. Up to 90 MB. The video must contain speech."
+
+#: apps/auto_scan_video
+msgid "Cách khớp thời gian"
+msgstr "Timing style"
+
+#: apps/auto_scan_video
+msgid "Bám sát câu gốc"
+msgstr "Follow the original lines"
+
+#: apps/auto_scan_video
+msgid "Mỗi câu bắt đầu đúng lúc người nói bắt đầu. Phù hợp khi hình có khẩu hình hoặc chữ chạy theo lời."
+msgstr "Each line starts exactly when the speaker starts. Best when the picture shows lip movement or on-screen text follows the speech."
+
+#: apps/auto_scan_video
+msgid "Nghe tự nhiên"
+msgstr "Sound natural"
+
+#: apps/auto_scan_video
+msgid "Ưu tiên nhịp đọc dễ nghe, chấp nhận lệch nhẹ so với câu gốc. Phù hợp với video kể chuyện hoặc thuyết minh."
+msgstr "Favours an easy reading rhythm, accepting a slight drift from the original lines. Best for narration or storytelling."
+
+#: apps/auto_scan_video
+msgid "Đang dùng giọng mặc định. Bạn có thể nhân bản giọng riêng ở LTT VOICE."
+msgstr "Using the default voice. You can clone your own in LTT VOICE."
+
+#: apps/auto_scan_video
+msgid "Chi phí được ước theo độ dài video và giữ chỗ khi bắt đầu. Phần không dùng đến sẽ được hoàn lại khi chạy xong."
+msgstr "The cost is estimated from the video length and held when you start. Whatever is not used is refunded when the run finishes."
+
+#: apps/auto_scan_video
+msgid "Bắt đầu lồng tiếng"
+msgstr "Start dubbing"
+
+#: apps/auto_scan_video
+msgid "Lần chạy của tôi"
+msgstr "My runs"
+
+#: apps/auto_scan_video
+msgid "Bạn chưa có lần chạy nào."
+msgstr "You have no runs yet."
+
+#: apps/auto_scan_video
+msgid "Xem"
+msgstr "View"
+
+#: apps/auto_scan_video
+msgid "Lần chạy"
+msgstr "Run"
+
+#: apps/auto_scan_video
+msgid "Tiến độ lồng tiếng"
+msgstr "Dubbing progress"
+
+#: apps/auto_scan_video
+msgid "Về danh sách"
+msgstr "Back to the list"
+
+#: apps/auto_scan_video
+msgid "Đã xong."
+msgstr "Finished."
+
+#: apps/auto_scan_video
+msgid "Bạn đã huỷ lần chạy này."
+msgstr "You cancelled this run."
+
+#: apps/auto_scan_video
+msgid "Lần chạy dừng lại vì một bước không hoàn tất."
+msgstr "The run stopped because a step did not finish."
+
+#: apps/auto_scan_video
+msgid "Đang xử lý…"
+msgstr "Working…"
+
+#: apps/auto_scan_video
+msgid "đang chạy"
+msgstr "running"
+
+#: apps/auto_scan_video
+msgid "đang chờ"
+msgstr "waiting"
+
+#: apps/auto_scan_video
+msgid "đã huỷ"
+msgstr "cancelled"
+
+#: apps/auto_scan_video
+msgid "không hoàn tất"
+msgstr "did not finish"
+
+#: apps/auto_scan_video
+msgid "chưa tới"
+msgstr "not started"
+
+#: apps/auto_scan_video
+msgid "Bước không hoàn tất:"
+msgstr "Step that did not finish:"
+
+#: apps/auto_scan_video
+msgid "Thử lại bước này"
+msgstr "Retry this step"
+
+#: apps/auto_scan_video
+msgid "Tải video đã lồng tiếng"
+msgstr "Download the dubbed video"
+
+#: apps/auto_scan_video
+msgid "Huỷ lần chạy"
+msgstr "Cancel the run"
+
+#: apps/auto_scan_video
+msgid "Chi tiết vận hành"
+msgstr "Operational details"
+
+#: apps/auto_scan_video
+msgid "Bước"
+msgstr "Step"
+
+#: apps/auto_scan_video
+msgid "Làn"
+msgstr "Lane"
+
+#: apps/auto_scan_video
+msgid "Giây"
+msgstr "Seconds"
+
+#: apps/auto_scan_video
+msgid "giữ"
+msgstr "held"
+
+#: apps/auto_scan_video
+msgid "Chế độ thời gian không hợp lệ."
+msgstr "That timing style is not valid."
+
+#: apps/auto_scan_video
+msgid "Tệp rỗng."
+msgstr "The file is empty."
+
+#: apps/auto_scan_video
+msgid "Video vượt quá 90 MB. Hãy cắt ngắn hoặc giảm chất lượng trước."
+msgstr "The video is larger than 90 MB. Shorten it or lower the quality first."
+
+#: apps/auto_scan_video
+msgid "Không tìm thấy lần chạy."
+msgstr "Run not found."
+
+#: apps/auto_scan_video
+msgid "Lần chạy này chưa có kết quả."
+msgstr "This run has no result yet."
+
+#: apps/auto_scan_video
+msgid "Chuẩn bị video"
+msgstr "Preparing the video"
+
+#: apps/auto_scan_video
+msgid "Tách nhạc nền khỏi giọng"
+msgstr "Separating music from speech"
+
+#: apps/auto_scan_video
+msgid "Chép lời thoại gốc"
+msgstr "Transcribing the original dialogue"
+
+#: apps/auto_scan_video
+msgid "Dịch sang tiếng Việt"
+msgstr "Translating to Vietnamese"
+
+#: apps/auto_scan_video
+msgid "Tạo giọng đọc"
+msgstr "Generating the voice"
+
+#: apps/auto_scan_video
+msgid "Khớp thời điểm"
+msgstr "Aligning the timing"
+
+#: apps/auto_scan_video
+msgid "Dựng bản ghép"
+msgstr "Building the mix"
+
+#: apps/auto_scan_video
+msgid "Kết xuất video"
+msgstr "Rendering the video"
+
+#: apps/auto_scan_video
+msgid "Kiểm chất lượng"
+msgstr "Quality check"
+
+#: apps/auto_scan_video
+msgid "xong"
+msgstr "done"

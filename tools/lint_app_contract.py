@@ -186,6 +186,16 @@ APP_DUOC_DUNG_APP: dict = {
         #    con chia doan, va chia mot cau thoai la doi giong doc giua cau).
         ("apps.ltt_voice.text_pipeline", "chuan_hoa"),
         ("apps.ltt_voice", "text_pipeline"),
+        # ── Pha 20: liet ke giong cho man tao lan chay ──────────────────────
+        #
+        # 🔑 Goi ham cua `ltt_voice` thay vi tu truy van bang cua no. Ham nay da
+        #    loc `owner_id`, da xu ly kho giong dung chung, va da bo giong khong
+        #    con `active` — ba viec deu de lam sai neu viet lai, va cai thu nhat
+        #    lam sai thi hau qua la khach chon duoc giong nhan ban CUA NGUOI KHAC.
+        #
+        # ⚠️ Chi doc, chi cua chinh chu so huu. Auto Scan khong bao gio tao, sua
+        #    hay go mot giong nao — man do thuoc ve LTT VOICE.
+        ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
     },
 }
 

@@ -303,18 +303,28 @@ def test_vo_tuong_thich_chi_boc_ENGINE_khong_boc_dieu_phoi(goi, ly_do):
     #    `ltt_voice.features.giai_giong` (ham ta co y goi) tat nhien doc bang
     #    cua chinh no. Luat do qua tho: no cam mot dich vu lam dung viec cua no.
     #
-    # ⇒ Bac cau chi cam `.jobs` / `.routes` / `.manifest`: cham vao chung nghia
-    #   la mot lan chay Auto Scan tro thanh mot lan chay cua app kia, voi tien
-    #   va vong doi cua app kia.
+    # ⇒ Bac cau chi cam `.jobs` / `.routes`: cham vao chung nghia la mot lan
+    #   chay Auto Scan tro thanh mot lan chay cua app kia, voi tien va vong doi
+    #   cua app kia.
+    #
+    # ⚠️ `.manifest` da tung nam trong danh sach nay va bi go o pha 20, vi cung
+    #    ly do da go `.tables` o pha 19: `ltt_voice.doc_man_api.ma_giong_cua_toi`
+    #    (ham ta CO Y goi de lay danh sach giong) doc manifest cua chinh no. Cam
+    #    bac cau la cam mot dich vu tu mo ta minh.
+    #
+    # ⭐ Ranh gioi that: `.jobs`/`.routes` la **dieu phoi**; `.manifest`/`.tables`
+    #    la **khai bao va du lieu**. Import THANG hai cai sau van bi cam (phep
+    #    kiem ngay duoi), vi luc do ta doc gia va job_type cua app khac de tu
+    #    quyet dinh — chu khong phai de ho tu quyet dinh.
     xau = sorted(x for x in cham
-                 if any(k in x for k in (".jobs", ".manifest", ".routes")))
+                 if any(k in x for k in (".jobs", ".routes")))
     assert xau == [], (
         f"Auto Scan cham vao dieu phoi/vong doi cua {goi}: {xau} — chi duoc "
         f"goi ham engine ({ly_do})")
 
 
 @pytest.mark.parametrize("goi,ly_do", sorted(VO_TUONG_THICH.items()))
-def test_KHONG_import_THANG_bang_cua_app_khac(goi, ly_do):
+def test_KHONG_import_THANG_bang_hay_ban_khai_cua_app_khac(goi, ly_do):
     """Chieu con lai, va day moi la chieu nguy hiem.
 
     Cham `ltt_voice.tables` **bac cau** qua `giai_giong` la binh thuong — do la
@@ -329,11 +339,12 @@ def test_KHONG_import_THANG_bang_cua_app_khac(goi, ly_do):
     xau: list[str] = []
     for tep in sorted((APP / "auto_scan_video").glob("*.py")):
         for ten in _import_trong(tep):
-            if ten.startswith(goi + ".tables"):
+            if ten.startswith(goi + ".tables") or ten.startswith(goi + ".manifest"):
                 xau.append(f"{tep.name} -> {ten}")
     assert xau == [], (
-        f"Auto Scan import THANG bang cua {goi}: {xau} — phai di qua ham dich "
-        f"vu cua no de phep kiem quyen so huu duoc chay")
+        f"Auto Scan import THANG bang/ban khai cua {goi}: {xau} — bang phai di "
+        f"qua ham dich vu de phep kiem quyen so huu duoc chay, va ban khai la "
+        f"gia + job_type cua ho, khong phai thu ta duoc tu doc de quyet dinh")
 
 
 def test_bang_VO_TUONG_THICH_khop_voi_CROSS_APP_ALLOWED():
