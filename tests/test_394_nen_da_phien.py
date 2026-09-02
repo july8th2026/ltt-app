@@ -259,6 +259,30 @@ def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
         f"buoc khai tai nguyen ngoai du kien: {sorted(co_tn)}")
 
 
+def test_chot_bien_dich_KHONG_di_vao_cay_cua_phien_khac():
+    """⛔ `.claude/worktrees/<ten>/` la cay lam viec cua PHIEN KHAC.
+
+    Do 2026-09-02: cay chinh do o `bien dich duoc` vi mot tep dang viet do cua
+    phien khac chua null byte — mot loi ma phien doc thong bao **khong so huu
+    va khong sua duoc**.
+
+    ⛔ `bien dich duoc` la CONG GAC: chay mot minh, truoc het, va khi no do thi
+       ca luot dung lai. Nen mot phien khac go phim la du de chan luot do cua ta.
+
+    ⭐ Cai gia that khong phai thoi gian. Mot chot do vi ly do khong lien quan
+       se day nguoi ta bo qua chinh no — roi toi luc no do vi ly do that thi
+       phan xa da thanh "chac lai chuyen cay rieng".
+
+    Do duoc: 2.647 tep quet -> 1.035. Phan chenh la hai cay long ben trong.
+    """
+    import check_bien_dich as cbd
+
+    assert cbd.bo_qua(cbd.GOC / ".claude" / "worktrees" / "x" / "t.py") is True
+    # Va khong duoc loai tru qua tay: tep that trong kho van phai duoc kiem.
+    assert cbd.bo_qua(cbd.GOC / "tools" / "gate.py") is False
+    assert cbd.bo_qua(cbd.GOC / "apps" / "vps" / "routes.py") is False
+
+
 def test_ho_so_mac_dinh_van_la_day_du():
     """⛔ Tuong thich nguoc: `python tools/gate.py` tran phai khong doi nghia."""
     gate = _nap_gate()

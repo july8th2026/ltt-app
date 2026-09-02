@@ -44,6 +44,26 @@ BO_QUA = {
     ".git", ".venv", "venv", "__pycache__", ".pytest_cache",
     "node_modules", "build", "dist", "data", "logs", "secrets",
     ".backup_", "cutclipshort",          # vendor
+    # 🔴 `.claude/worktrees/<ten>/` la CAY LAM VIEC CUA PHIEN KHAC, long ngay
+    #    ben trong cay chinh. Chot nay la chot duy nhat quet ca cay tu goc, nen
+    #    no la chot duy nhat di lac vao do.
+    #
+    #    Do 2026-09-02: cay chinh do o `bien dich duoc` vi mot tep dang viet do
+    #    cua phien khac chua null byte. Thong bao chi thang mot tep ma phien doc
+    #    no **khong so huu va khong sua duoc**.
+    #
+    # ⛔ Vi sao te hon mot phut mat thi gio: `bien dich duoc` la CONG GAC — no
+    #    chay MOT MINH va truoc het, va khi no do thi ca luot dung lai. Mot
+    #    phien khac go phim la du de chan luot do cua ta.
+    #
+    # ⭐ Va no day dung cai phan xa nguy hiem nhat: mot chot do vi ly do khong
+    #    lien quan se day nguoi ta bo qua chinh no, roi toi luc no do vi ly do
+    #    that thi khong ai con nhin.
+    #
+    # ⚠️ Khong mat che phu: `.claude/` nam trong `.gitignore` (dong 96) VA
+    #    trong danh sach `/XD` cua robocopy, nen khong tep nao o do vao git hay
+    #    len production.
+    ".claude",
 }
 
 

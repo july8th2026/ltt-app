@@ -13,7 +13,7 @@
   moc so sanh cua chuong trinh nay la moc **DANG PHUC VU KHACH THAT**, voi 5 tool
   mo va thu tien. Cai gia cua mot lan xoa nham khong con la "gate do" ma la
   "mot khach 500". ⛔ Chuong trinh nay van **khong deploy**.
-- Current phase: **TAM DUNG o 01 → da chay Phase -1 → se quay lai 01**
+- Current phase: **-1 ✅ · 00 ✅ · 01 ✅ · 02 ✅ → tiep 03**
 - Quyet dinh nhanh (QD-1 SUA): **khong** dung `purification-v1` nua. Moi phien
   mot cay rieng qua `tools/cay_rieng.py`; Phase -1 chay tren
   `phase-minus-1-foundation`. Phase 10 van **khong** dung vao `master`.
@@ -47,6 +47,27 @@ la mot do thi so huu **chay duoc**, va no da lo ra mot vi pham phan tang that:
 `server/routes/dashboard.py:134` import thang `apps.anhnoibo`. Phase 06 nhan
 muc nay.
 
+
+## Phase da dong
+
+| Phase | Ket qua | Commit |
+|---|---|---|
+| **-1** nen da phien | `FOUNDATION PASS` — 37 thanh phan, khoa theo tai nguyen, `--doi`/`--pham-vi`, kho ket qua, 27 chot tu kiem | `65aef31` |
+| **00** baseline & census | `BASELINE PARTIAL` -> da hoan tat khi cay ranh | (trong `65aef31`) |
+| **01** truth/rules/docs | `CLAUDE.md` 496 -> 263 dong; 280 dong trang thai -> luu tru NGUYEN VAN; nguon trang thai = may chu | `0ba995a` |
+| **02** dependency & ownership | 37 thanh phan, 5 canh `server -> app`, 1 canh cheo app, **0 DEAD** | `0ba995a` |
+
+### Giao cho phase sau (tu Phase 02)
+
+| Muc | Phase | Viec |
+|---|---|---|
+| 5 canh `server -> app cu the` | 04 + 06 | dua gia/ngan sach vao `AppManifest`, doc qua registry |
+| `core:tien` chi 9 tep test import truc tiep | 07 | chung minh bat bien tien duoc canh o dau |
+| `app:taovideo -> app:upscalevideo` | 04 | giu (COMPAT da khai) hay dua len `platform_core` |
+| `server:web` phu thuoc 15 thanh phan | 06 | tach theo trach nhiem, khong theo so dong |
+| `qualitylab/routes.py` thieu `require_login` | 04 + 06 | doc that, dung tin linter |
+| ⛔ 8 muc "khong ai tieu thu" | — | **da giai thich**, KHONG mang sang 03 nhu ung vien xoa |
+
 ## DO_NOT_TOUCH
 | Path/change | Reason | Owner |
 |---|---|---|
@@ -60,14 +81,14 @@ muc nay.
 ## Frozen baseline
 | Metric | Value | Evidence |
 |---|---:|---|
-| gate (day du) | ⏳ **chua chay** — cay dang bi ghi | `reports/00_baseline_census.md` §7.1 |
-| pytest | ⏳ chua | |
-| frontend tests | ⏳ chua (3 bo: `agent-canvas`, `autosub-studio`, `prompt-ai-ommi`) | `tools/gate.py:61` |
+| gate (day du) | ✅ **PASS** (0 FAIL, 4 buoc tu khai BO QUA) | luot `P01-FINAL` |
+| pytest | **5.314 passed · 32 skipped · 0 failed** | luot `P01-FINAL` |
+| frontend tests | ✅ 3/3 PASS **tren cay chinh** (o cay rieng: BO QUA, thieu `node_modules`) | luot `MAIN-P01` |
 | silent exceptions | **63** / moc 63 (bien **0**) | `check_silent_except.py` |
 | i18n debt | **774** chuoi / 114 tep, moc 774 (bien **0**) | `check_i18n.py` |
 | app-contract warnings | 15 app · 0 ERROR · **1 WARN** (`qualitylab` thieu `require_login`) | `lint_app_contract.py` |
-| secret findings | ⏳ chua chay | |
-| current rule conflicts | ⏳ Phase 01 dem | |
+| secret findings | **0** | trong gate |
+| current rule conflicts | **0** trong tap dang hieu luc (280 dong trang thai da chuyen sang luu tru) | `reports/01` §6 |
 | `.py` theo doi | 1.169 | `git ls-files` |
 | tep `docs/` | 1.297 (75% o 3 thu muc bang chung) | |
 | Alembic | 65 revision, **1 head** `c7b91e4a2f80` ✅ | |
@@ -127,16 +148,16 @@ muc nay.
 | G5 provider/API | ⏳ | |
 | G6 deployment | ⏳ | |
 | G7 security | ⏳ | ⚠️ ung vien: `qualitylab` thieu `require_login` |
-| G8 app contracts | 🟡 | 15/15 app nap duoc, 0 ERROR, 1 WARN |
+| G8 app contracts | 🟡 | 15/15 app nap duoc, 0 ERROR, 1 WARN (`qualitylab`) |
 | G9 frontend | ⏳ | |
-| G10 current truth | 🔴 | `CLAUDE.md` tu ghi **4 lan noi sai**, 3 lan cung mot hang |
+| G10 current truth | ✅ | `CLAUDE.md` 496→263 dong; trang thai nay **hoi may chu**. Da tim ra lan troi thu **SAU** (31/07) |
 
 ## Open risks
 | Priority | Risk | Owner phase | Next evidence/action |
 |---|---|---|---|
 | **P0** | Phien khac dang ghi vao cay ⇒ moi phep do va moi lan xoa deu co the pha viec ho | 00 | doi ho commit; giu giao uoc |
 | **P0** | Tep tra-bang-chuoi trong mo coi ⇒ phep do tinh se cham CHET nham | 03,04,09 | SP-04 |
-| **P1** | Trang thai runtime chep tay vao `CLAUDE.md` — da troi 4 lan, luon ve phia nguy hiem | 01 | tach TRANG THAI khoi LUAT; sinh tu may chu |
+| ✅ | ~~Trang thai chep tay vao `CLAUDE.md`~~ — **DA XU LY** o Phase 01 | — | `api_prod_canary.py trang-thai` |
 | **P1** | Hai ratchet lon nam **dung tren moc**, bien 0 | 08,09 | ha moc bang cach giam no that |
 | **P2** | `docs/` chua **du lieu hop dong** dang duoc doc luc chay (`route-map.json`) | 01 | di tru truoc khi dung `docs/` la "lich su" |
 | **P2** | `qualitylab/routes.py` khong thay `require_login` | 04,06 | doc that, dung ket luan tu linter |

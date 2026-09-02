@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0c7fe390a1163dc4d1c59858a96773455a173e6e5d0a55e3e1889df2b04fbf30
+Fingerprint   : sha256:dd0db91ce4dbddc667f51928e8e0ea7ffa96145769dc4cfd0455067ca662bc45
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3090,7 +3090,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14632729 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14634880 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -257865,7 +257865,7 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_nen_da_phien.py
-SHA256=7907891fa072dd11c22e41988adf30579c9b135aa2d765d19d42ad6de704b4c2 BYTES=14682 LINES=346
+SHA256=bf164a0fac197a8554117550741b31843ff83497f2102a2ebcfacd821592b557 BYTES=15785 LINES=370
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Nen tang nhieu phien: so dang ky thanh phan, ho so gate, khoa tai nguyen.
 
@@ -258126,6 +258126,30 @@ def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
     co_tn = {s.name for s in gate._steps(quick=False) if s.tai_nguyen}
     assert co_tn == {"bo test (song song)"}, (
         f"buoc khai tai nguyen ngoai du kien: {sorted(co_tn)}")
+
+
+def test_chot_bien_dich_KHONG_di_vao_cay_cua_phien_khac():
+    """⛔ `.claude/worktrees/<ten>/` la cay lam viec cua PHIEN KHAC.
+
+    Do 2026-09-02: cay chinh do o `bien dich duoc` vi mot tep dang viet do cua
+    phien khac chua null byte — mot loi ma phien doc thong bao **khong so huu
+    va khong sua duoc**.
+
+    ⛔ `bien dich duoc` la CONG GAC: chay mot minh, truoc het, va khi no do thi
+       ca luot dung lai. Nen mot phien khac go phim la du de chan luot do cua ta.
+
+    ⭐ Cai gia that khong phai thoi gian. Mot chot do vi ly do khong lien quan
+       se day nguoi ta bo qua chinh no — roi toi luc no do vi ly do that thi
+       phan xa da thanh "chac lai chuyen cay rieng".
+
+    Do duoc: 2.647 tep quet -> 1.035. Phan chenh la hai cay long ben trong.
+    """
+    import check_bien_dich as cbd
+
+    assert cbd.bo_qua(cbd.GOC / ".claude" / "worktrees" / "x" / "t.py") is True
+    # Va khong duoc loai tru qua tay: tep that trong kho van phai duoc kiem.
+    assert cbd.bo_qua(cbd.GOC / "tools" / "gate.py") is False
+    assert cbd.bo_qua(cbd.GOC / "apps" / "vps" / "routes.py") is False
 
 
 def test_ho_so_mac_dinh_van_la_day_du():
@@ -275869,7 +275893,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_bien_dich.py
-SHA256=f87a5a6ff8f5f6febc6d21ebdbe55f566a8f8fcae33e6e7c5d7f4cb683e6b61e BYTES=2733 LINES=81
+SHA256=f3b69d2ebc87782a307920d88abcac581b963fcfeb713d70d364d2902a0dc9cd BYTES=3781 LINES=101
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """check_bien_dich.py - moi tep .py trong cay phai BIEN DICH DUOC.
 
@@ -275917,6 +275941,26 @@ BO_QUA = {
     ".git", ".venv", "venv", "__pycache__", ".pytest_cache",
     "node_modules", "build", "dist", "data", "logs", "secrets",
     ".backup_", "cutclipshort",          # vendor
+    # 🔴 `.claude/worktrees/<ten>/` la CAY LAM VIEC CUA PHIEN KHAC, long ngay
+    #    ben trong cay chinh. Chot nay la chot duy nhat quet ca cay tu goc, nen
+    #    no la chot duy nhat di lac vao do.
+    #
+    #    Do 2026-09-02: cay chinh do o `bien dich duoc` vi mot tep dang viet do
+    #    cua phien khac chua null byte. Thong bao chi thang mot tep ma phien doc
+    #    no **khong so huu va khong sua duoc**.
+    #
+    # ⛔ Vi sao te hon mot phut mat thi gio: `bien dich duoc` la CONG GAC — no
+    #    chay MOT MINH va truoc het, va khi no do thi ca luot dung lai. Mot
+    #    phien khac go phim la du de chan luot do cua ta.
+    #
+    # ⭐ Va no day dung cai phan xa nguy hiem nhat: mot chot do vi ly do khong
+    #    lien quan se day nguoi ta bo qua chinh no, roi toi luc no do vi ly do
+    #    that thi khong ai con nhin.
+    #
+    # ⚠️ Khong mat che phu: `.claude/` nam trong `.gitignore` (dong 96) VA
+    #    trong danh sach `/XD` cua robocopy, nen khong tep nao o do vao git hay
+    #    len production.
+    ".claude",
 }
 
 
