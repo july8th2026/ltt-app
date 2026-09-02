@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:9e9042b7ad91d2817062844cc367a1abcfcc5be1d4aefcc9b0cb32e01683bead
+Fingerprint   : sha256:9bc0aed726ccf0f94e410b9ef0bdaefc1196901d8fbfded6d7cf94f050127242
 Nguồn đã quét : 1465 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3086,7 +3086,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14574035 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14585773 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -136131,7 +136131,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=30b6b5005c0f2aea7c119a95441952b83ce18b47b97cf971faec381eed52557a BYTES=9962 LINES=249
+SHA256=ce3657498f31d14a6f1e4f9d8943d481cd8bb8460db513d5a63e7b09e2a7d432 BYTES=14166 LINES=333
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -136172,6 +136172,77 @@ MAC_DINH_BASE = "https://app.lttstudios.com"
 MODEL = "ltt_llm"
 BIEN_KHOA = "LTT_API_KEY"
 
+#: Cua so ngu canh CONG BO cho client.
+#:
+#: 🔴 KHONG GO SO NAY LAI. Nguon chan ly la `apps/ltt_llm/ngan_sach.py`
+#:    (`CONG_BO_CHO_CLIENT`). Tep nay la mot tep DOC LAP -- chay tren may khach,
+#:    khong co kho ma -- nen no phai chep so, khong import duoc.
+#:
+#:    Vi vay `tests/test_275_cai_dat_cli.py` doi chieu HAI CHIEU: so o day phai
+#:    bang `ngan_sach.CONG_BO_CHO_CLIENT`. Doi mot ben ma quen ben kia => gate do.
+#:
+#:    Truoc 02/09 so nay la 65000 -- da CU tu lau (tran vao tung la 65k, roi 81k,
+#:    nay 96.256 => cong bo 88.555). Khach macOS/Linux tai ban nay ve bi bao
+#:    ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
+CUA_SO_NGU_CANH = 88555
+
+#: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
+#:
+#: Dung khi khach DA CO san bang do: ta khong ghi de (bang cua ho), nhung thieu
+#: khoa thi phai noi ra. Do that 02/09: mot bang thieu `stream_idle_timeout_ms`
+#: lam luong bi cat o 62 giay, suat bi giu, moi luot sau an 429.
+KHOA_PROVIDER_BAT_BUOC = {
+    "base_url": "khong co thi Codex goi nham dich",
+    "env_key": "khong co thi Codex khong biet doc khoa o bien nao",
+    "wire_api": "phai la `responses`",
+    "stream_idle_timeout_ms":
+        "thieu thi Codex CAT luong o ~62 giay trong khi may van sinh",
+}
+
+
+def _catalog() -> str:
+    """Catalog model cho Codex, dung khuon `codex_models_manager` doc duoc.
+
+    ⛔ BON CHO DA LAM CODEX TU CHOI TEP (tim ra 30/08, dung mat cong tim lai):
+       * `web_search_tool_type: null` -- truong nay khong nhan null; bo han.
+       * `effective_context_window_percent` -- CLI doi i64, tien ich VS Code doi
+         chuoi. KHONG so nao lam vua long ca hai => BO HAN. No la tuy chon.
+       * tro `model_catalog_json` toi tep KHONG ton tai -- Codex tu choi khoi dong.
+    """
+    def mot(slug: str, doc_anh: bool = False) -> dict:
+        return {
+            "slug": slug, "display_name": slug,
+            "description": f"{slug} (LTT Studios)",
+            "default_reasoning_level": "medium",
+            "supported_reasoning_levels": [
+                {"effort": "low", "description": "Fast"},
+                {"effort": "medium", "description": "Balanced"},
+                {"effort": "xhigh", "description": "Deepest"}],
+            "shell_type": "unified_exec", "visibility": "list",
+            "supported_in_api": True, "priority": 1,
+            "additional_speed_tiers": [], "service_tiers": [],
+            "base_instructions": "",
+            "include_skills_usage_instructions": False,
+            "include_plugin_usage_instructions": False,
+            "include_apps_usage_instructions": False,
+            "supports_reasoning_summary_parameter": False,
+            "default_reasoning_summary": "none", "support_verbosity": False,
+            "apply_patch_tool_type": "freeform",
+            "truncation_policy": {"mode": "tokens", "limit": CUA_SO_NGU_CANH},
+            "supports_parallel_tool_calls": False,
+            "supports_image_detail_original": False,
+            "context_window": CUA_SO_NGU_CANH,
+            "max_context_window": CUA_SO_NGU_CANH,
+            "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
+            "experimental_supported_tools": [],
+            "input_modalities": ["text", "image"] if doc_anh else ["text"],
+            "supports_search_tool": False, "use_responses_lite": False,
+            "node_repl_auto_review_required": False, "node_repl_disabled": False,
+        }
+
+    return json.dumps({"models": [mot("ltt_llm"), mot("ltt_llm_vision", True)]},
+                      indent=1)
+
 
 def _goc(base: str) -> str:
     return (base or MAC_DINH_BASE).rstrip("/")
@@ -136203,6 +136274,11 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
     cu = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
     if "[model_providers.ltt]" in cu:
         ra.append(f"  = da co [model_providers.ltt] trong {cfg}, giu nguyen")
+        # Bang do la CUA KHACH nen ta khong ghi de. Nhung thieu khoa thi phai
+        # NOI RA -- im lang o day de lai dung cai loi khach dang di sua.
+        for khoa, ly_do in KHOA_PROVIDER_BAT_BUOC.items():
+            if khoa not in cu:
+                ra.append(f"  !! bang san co THIEU `{khoa}` -- {ly_do}")
     else:
         _sao_luu(cfg)
         khoi = (
@@ -136217,6 +136293,13 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
                        encoding="utf-8")
         ra.append(f"  + them [model_providers.ltt] vao {cfg}")
 
+    # Tao tep catalog TRUOC khi tro toi no: Codex TU CHOI KHOI DONG neu
+    # `model_catalog_json` tro toi mot duong dan khong ton tai.
+    cat = goc_codex / "ltt_model_catalog.json"
+    if not cat.exists():
+        cat.write_text(_catalog(), encoding="utf-8")
+        ra.append(f"  + tao {cat}")
+
     pro = goc_codex / "ltt.config.toml"
     if pro.exists():
         ra.append(f"  = da co {pro}, giu nguyen")
@@ -136228,7 +136311,8 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
             "# before it answers.\n"
             'model_reasoning_effort = "low"\n'
             'model_reasoning_summary = "none"\n'
-            "model_context_window = 65000\n", encoding="utf-8")
+            f"model_context_window = {CUA_SO_NGU_CANH}\n"
+            f"model_catalog_json = '{cat}'\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra
 
@@ -227153,7 +227237,7 @@ def test_trang_gia_KHONG_lo_ten_model_anh_noi_bo(web):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_275_cai_dat_cli.py
-SHA256=5bc8976ba5c9747b19c8a1fc8146810483941c0c3570df7b72c2027492ed504d BYTES=7792 LINES=181
+SHA256=4615cd907c3d9e4e8dc7cc602846f1d07d6b5ce8f3f8669f8929e4b2ba465b80 BYTES=12857 LINES=275
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_275_cai_dat_cli — công cụ tự ghi cấu hình cho khách. (H38, C15)
@@ -227336,6 +227420,100 @@ def test_moi_vi_du_dung_urllib_deu_co_User_Agent():
     for nhan, ma in examples.chat_snippets():
         if "urllib" in ma:
             assert "User-Agent" in ma, f"vi du {nhan!r} dung urllib ma thieu UA"
+
+
+# ── Bản `.py` này là ĐƯỜNG DUY NHẤT cho macOS/Linux ─────────────────────────
+#
+# 🔴 VÌ SAO NHÓM NÀY TỒN TẠI. Công cụ chính (`tools/cam_cli.py`) đóng gói thành
+#    `.exe` và `.zip`+`.bat` — **cả hai chỉ chạy Windows**. Khách macOS/Linux chỉ
+#    có tệp này, tải ở `/tai/ltt_cai_dat_cli.py`.
+#
+#    Và nó là tệp **độc lập**: chạy trên máy khách, không có kho mã, nên nó
+#    **phải chép** các con số thay vì import. Chép thì sẽ lệch — đó là quy luật,
+#    không phải rủi ro. Đo 02/09: nó vẫn công bố `model_context_window = 65000`
+#    trong khi trần thật đã qua hai lần nâng (65k → 81k → 96.256 ⇒ công bố
+#    88.555). Khách macOS/Linux bị báo ngữ cảnh **thấp hơn thật 26%**.
+#
+# ⇒ Vì vậy các phép kiểm dưới đây đối chiếu HAI CHIỀU với nguồn chân lý. Đổi một
+#   bên mà quên bên kia là gate đỏ, chứ không phải một khách im lặng dùng số cũ.
+
+def test_cua_so_ngu_canh_KHOP_nguon_chan_ly():
+    """Số chép trong SDK phải bằng `ngan_sach.CONG_BO_CHO_CLIENT`."""
+    from apps.ltt_llm import ngan_sach
+    assert cd.CUA_SO_NGU_CANH == ngan_sach.CONG_BO_CHO_CLIENT, (
+        f"SDK cong bo {cd.CUA_SO_NGU_CANH}, nguon chan ly la "
+        f"{ngan_sach.CONG_BO_CHO_CLIENT}. Sua sdk/ltt_cai_dat_cli.py.")
+
+
+def test_catalog_KHOP_TUNG_TRUONG_voi_ban_chinh():
+    """Catalog của SDK và của `cam_cli` phải giống nhau **từng trường**.
+
+    Không so chuỗi (thứ tự khoá có thể khác) mà so cấu trúc đã phân giải.
+    """
+    import importlib.util
+    duong = pathlib.Path(__file__).resolve().parent.parent / "tools" / "cam_cli.py"
+    dac = importlib.util.spec_from_file_location("_cam_cli_thu", duong)
+    mo = importlib.util.module_from_spec(dac)
+    dac.loader.exec_module(mo)
+    assert json.loads(cd._catalog()) == json.loads(mo._catalog_codex()), (
+        "Catalog cua sdk/ltt_cai_dat_cli.py da lech khoi tools/cam_cli.py.")
+
+
+def test_catalog_KHONG_co_truong_lam_vo_tien_ich_VS_Code():
+    """`effective_context_window_percent`: CLI đòi i64, VS Code đòi chuỗi.
+
+    Không giá trị nào làm vừa lòng cả hai ⇒ phải BỎ HẲN. Đã một lần làm mọi
+    lượt tạo chat trong VS Code hỏng (30/08).
+    """
+    for m in json.loads(cd._catalog())["models"]:
+        assert "effective_context_window_percent" not in m
+        assert "web_search_tool_type" not in m
+
+
+def test_tep_catalog_PHAI_ton_tai_truoc_khi_cau_hinh_tro_toi(tmp_path):
+    """Codex **từ chối khởi động** nếu `model_catalog_json` trỏ vào hư không."""
+    cd.codex("https://vi.du", tmp_path / ".codex")
+    ho_so = (tmp_path / ".codex" / "ltt.config.toml").read_text(encoding="utf-8")
+    duong = [d for d in ho_so.splitlines() if d.startswith("model_catalog_json")]
+    assert len(duong) == 1, ho_so
+    tro_toi = duong[0].split("=", 1)[1].strip().strip().strip(chr(39)).strip(chr(34))
+    assert pathlib.Path(tro_toi).is_file(), tro_toi
+
+
+def test_bang_san_co_THIEU_KHOA_thi_phai_NOI_RA(tmp_path):
+    """Bảng của khách thì không đè — nhưng thiếu khoá thì phải nói.
+
+    🔴 ĐÂY LÀ LỖI ĐÃ XẢY RA THẬT (02/09). Khách có sẵn một bảng thiếu
+       `stream_idle_timeout_ms`; công cụ im lặng giữ nguyên rồi in `[OK]`.
+       Khách đọc `[OK]` và tin là xong — trong khi thiếu đúng khoá đó khiến
+       Codex cắt luồng ở 62 giây, giữ suất, và mọi lượt sau ăn 429.
+    """
+    cx = tmp_path / ".codex"
+    cx.mkdir(parents=True)
+    THIEU = ('[model_providers.ltt]\nname = "LTT Studios"\n'
+             + 'base_url = \"https://vi.du/api/v1\"\nwire_api = \"responses\"\n'
+             + 'env_key = \"LTT_API_KEY\"\n')
+    DU = THIEU + 'stream_idle_timeout_ms = 600000\n'
+    (cx / "config.toml").write_text(THIEU, encoding="utf-8")
+    ra = chr(10).join(cd.codex("https://vi.du", cx))
+    assert "stream_idle_timeout_ms" in ra and "!!" in ra, ra
+    # Đối chứng: bảng ĐỦ khoá thì KHÔNG được kêu.
+    (cx / "config.toml").write_text(DU, encoding="utf-8")
+    assert "!!" not in chr(10).join(cd.codex("https://vi.du", cx))
+
+
+def test_KHOA_BAT_BUOC_khop_dung_thu_cong_cu_that_su_ghi(tmp_path):
+    """Bánh cóc hai chiều: mỗi khoá công cụ tự ghi đều phải nằm trong bảng đòi.
+
+    Thêm một khoá vào khối provider mà quên khai ở `KHOA_PROVIDER_BAT_BUOC` thì
+    nhánh "khách đã có bảng sẵn" sẽ không bao giờ kêu về nó.
+    """
+    cd.codex("https://vi.du", tmp_path / ".codex")
+    van = (tmp_path / ".codex" / "config.toml").read_text(encoding="utf-8")
+    tu_ghi = {d.split("=", 1)[0].strip() for d in van.splitlines()
+              if "=" in d and not d.lstrip().startswith("#")} - {"name"}
+    assert tu_ghi == set(cd.KHOA_PROVIDER_BAT_BUOC), (
+        f"cong cu ghi {sorted(tu_ghi)}, bang doi {sorted(cd.KHOA_PROVIDER_BAT_BUOC)}")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -271367,7 +271545,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=3f3d0d89e59f9ed056378c60e04dabb9340046f296d2483c4d9d22775ba6a02a BYTES=87458 LINES=1980
+SHA256=d32f13c9aa94d35315cbdfdc2acbf79f2517e14e3858e0de026ee6b1f74a7160 BYTES=89927 LINES=2039
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -271957,6 +272135,53 @@ def _co_provider_ltt(van: str) -> bool:
     return any(_RE_PROVIDER_LTT.match(d) for d in van.splitlines())
 
 
+
+#: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do cu the.
+#:
+#: 🔴 VI SAO CAN CAI NAY. Luat so 1 cua cong cu la HOP NHAT, KHONG GHI DE: da co
+#:    `[model_providers.ltt]` thi khong chen lai (`co_prov`). Luat do dung — bang
+#:    do la CUA KHACH.
+#:
+#:    Nhung no co mot he qua khong ai tinh, va he qua ay da xay ra that: neu bang
+#:    san co **thieu** mot khoa, cong cu im lang giu nguyen roi in `[OK]`. Khach
+#:    doc `[OK]` va tin la xong.
+#:
+#:    Do that 02/09 tren chinh cau hinh 7 dong ma cong cu tien-kiem in ra: cam de
+#:    len no cho **6/7 khoa** — thieu dung `stream_idle_timeout_ms`. Va do la khoa
+#:    khien luong bi CAT o 62 giay, tuc dung cai loi khach dang di sua.
+#:
+#:    Cai o day KHONG phai ghi de (van khong duoc pham luat 1) ma la NOI RA.
+KHOA_PROVIDER_BAT_BUOC = {
+    "base_url": "khong co thi Codex goi nham dich",
+    "env_key": "khong co thi Codex khong biet doc khoa o bien nao",
+    "wire_api": "phai la `responses`; thieu thi Codex dung khuon chat cu",
+    "stream_idle_timeout_ms": (
+        "thieu thi Codex CAT luong o ~62 giay trong khi may van sinh — "
+        "suat bi giu, luot sau an 429"),
+}
+
+
+def _soi_bang_provider_cua_khach(van: str) -> list:
+    """Bang `[model_providers.ltt]` san co cua khach thieu khoa nao?
+
+    Chi doc, khong sua. Tra ve danh sach `(khoa, ly_do)` con thieu.
+    """
+    dong = van.splitlines()
+    trong = False
+    thay = set()
+    for d in dong:
+        if _RE_PROVIDER_LTT.match(d):
+            trong = True
+            continue
+        if trong and re.match(r"^\s*\[", d):
+            break
+        if trong:
+            m = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", d)
+            if m:
+                thay.add(m.group(1))
+    return [(k, ly) for k, ly in KHOA_PROVIDER_BAT_BUOC.items() if k not in thay]
+
+
 def _go_bang_provider_ltt(van: str, goc: str, nl: str) -> tuple:
     r"""Cat bang `[model_providers.ltt]` **cua ta** ra khoi `config.toml`.
 
@@ -272103,6 +272328,18 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     _ghi_giu_dong(cfg, moi)
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen"
               + (", da co provider san — khong chen lai" if co_prov else "") + ")")
+
+    # ⚠ Bang provider san co la CUA KHACH nen ta khong ghi de. Nhung neu no
+    #   thieu khoa thi phai NOI RA — im lang o day tung de lai dung cai loi
+    #   khach dang di sua. Xem `KHOA_PROVIDER_BAT_BUOC`.
+    if co_prov:
+        for khoa, ly_do in _soi_bang_provider_cua_khach(van):
+            ra.append(f"  [!!] `[model_providers.ltt]` san co cua ban THIEU "
+                      f"`{khoa}` — {ly_do}.")
+        if _soi_bang_provider_cua_khach(van):
+            ra.append("       Ta KHONG tu sua bang cua ban. Cach don gian nhat: "
+                      "xoa bang `[model_providers.ltt]` trong "
+                      f"{cfg} roi chay lai lenh nay.")
 
     prof = thu_muc / "ltt.config.toml"
     ghi = tt.setdefault("codex", {})

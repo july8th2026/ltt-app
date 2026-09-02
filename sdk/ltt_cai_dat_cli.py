@@ -37,6 +37,77 @@ MAC_DINH_BASE = "https://app.lttstudios.com"
 MODEL = "ltt_llm"
 BIEN_KHOA = "LTT_API_KEY"
 
+#: Cua so ngu canh CONG BO cho client.
+#:
+#: 🔴 KHONG GO SO NAY LAI. Nguon chan ly la `apps/ltt_llm/ngan_sach.py`
+#:    (`CONG_BO_CHO_CLIENT`). Tep nay la mot tep DOC LAP -- chay tren may khach,
+#:    khong co kho ma -- nen no phai chep so, khong import duoc.
+#:
+#:    Vi vay `tests/test_275_cai_dat_cli.py` doi chieu HAI CHIEU: so o day phai
+#:    bang `ngan_sach.CONG_BO_CHO_CLIENT`. Doi mot ben ma quen ben kia => gate do.
+#:
+#:    Truoc 02/09 so nay la 65000 -- da CU tu lau (tran vao tung la 65k, roi 81k,
+#:    nay 96.256 => cong bo 88.555). Khach macOS/Linux tai ban nay ve bi bao
+#:    ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
+CUA_SO_NGU_CANH = 88555
+
+#: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
+#:
+#: Dung khi khach DA CO san bang do: ta khong ghi de (bang cua ho), nhung thieu
+#: khoa thi phai noi ra. Do that 02/09: mot bang thieu `stream_idle_timeout_ms`
+#: lam luong bi cat o 62 giay, suat bi giu, moi luot sau an 429.
+KHOA_PROVIDER_BAT_BUOC = {
+    "base_url": "khong co thi Codex goi nham dich",
+    "env_key": "khong co thi Codex khong biet doc khoa o bien nao",
+    "wire_api": "phai la `responses`",
+    "stream_idle_timeout_ms":
+        "thieu thi Codex CAT luong o ~62 giay trong khi may van sinh",
+}
+
+
+def _catalog() -> str:
+    """Catalog model cho Codex, dung khuon `codex_models_manager` doc duoc.
+
+    ⛔ BON CHO DA LAM CODEX TU CHOI TEP (tim ra 30/08, dung mat cong tim lai):
+       * `web_search_tool_type: null` -- truong nay khong nhan null; bo han.
+       * `effective_context_window_percent` -- CLI doi i64, tien ich VS Code doi
+         chuoi. KHONG so nao lam vua long ca hai => BO HAN. No la tuy chon.
+       * tro `model_catalog_json` toi tep KHONG ton tai -- Codex tu choi khoi dong.
+    """
+    def mot(slug: str, doc_anh: bool = False) -> dict:
+        return {
+            "slug": slug, "display_name": slug,
+            "description": f"{slug} (LTT Studios)",
+            "default_reasoning_level": "medium",
+            "supported_reasoning_levels": [
+                {"effort": "low", "description": "Fast"},
+                {"effort": "medium", "description": "Balanced"},
+                {"effort": "xhigh", "description": "Deepest"}],
+            "shell_type": "unified_exec", "visibility": "list",
+            "supported_in_api": True, "priority": 1,
+            "additional_speed_tiers": [], "service_tiers": [],
+            "base_instructions": "",
+            "include_skills_usage_instructions": False,
+            "include_plugin_usage_instructions": False,
+            "include_apps_usage_instructions": False,
+            "supports_reasoning_summary_parameter": False,
+            "default_reasoning_summary": "none", "support_verbosity": False,
+            "apply_patch_tool_type": "freeform",
+            "truncation_policy": {"mode": "tokens", "limit": CUA_SO_NGU_CANH},
+            "supports_parallel_tool_calls": False,
+            "supports_image_detail_original": False,
+            "context_window": CUA_SO_NGU_CANH,
+            "max_context_window": CUA_SO_NGU_CANH,
+            "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
+            "experimental_supported_tools": [],
+            "input_modalities": ["text", "image"] if doc_anh else ["text"],
+            "supports_search_tool": False, "use_responses_lite": False,
+            "node_repl_auto_review_required": False, "node_repl_disabled": False,
+        }
+
+    return json.dumps({"models": [mot("ltt_llm"), mot("ltt_llm_vision", True)]},
+                      indent=1)
+
 
 def _goc(base: str) -> str:
     return (base or MAC_DINH_BASE).rstrip("/")
@@ -68,6 +139,11 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
     cu = cfg.read_text(encoding="utf-8") if cfg.exists() else ""
     if "[model_providers.ltt]" in cu:
         ra.append(f"  = da co [model_providers.ltt] trong {cfg}, giu nguyen")
+        # Bang do la CUA KHACH nen ta khong ghi de. Nhung thieu khoa thi phai
+        # NOI RA -- im lang o day de lai dung cai loi khach dang di sua.
+        for khoa, ly_do in KHOA_PROVIDER_BAT_BUOC.items():
+            if khoa not in cu:
+                ra.append(f"  !! bang san co THIEU `{khoa}` -- {ly_do}")
     else:
         _sao_luu(cfg)
         khoi = (
@@ -82,6 +158,13 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
                        encoding="utf-8")
         ra.append(f"  + them [model_providers.ltt] vao {cfg}")
 
+    # Tao tep catalog TRUOC khi tro toi no: Codex TU CHOI KHOI DONG neu
+    # `model_catalog_json` tro toi mot duong dan khong ton tai.
+    cat = goc_codex / "ltt_model_catalog.json"
+    if not cat.exists():
+        cat.write_text(_catalog(), encoding="utf-8")
+        ra.append(f"  + tao {cat}")
+
     pro = goc_codex / "ltt.config.toml"
     if pro.exists():
         ra.append(f"  = da co {pro}, giu nguyen")
@@ -93,7 +176,8 @@ def codex(base: str, goc_codex: pathlib.Path) -> list:
             "# before it answers.\n"
             'model_reasoning_effort = "low"\n'
             'model_reasoning_summary = "none"\n'
-            "model_context_window = 65000\n", encoding="utf-8")
+            f"model_context_window = {CUA_SO_NGU_CANH}\n"
+            f"model_catalog_json = '{cat}'\n", encoding="utf-8")
         ra.append(f"  + tao {pro}")
     return ra
 
