@@ -84,6 +84,9 @@ MANIFEST = AppManifest(
     # Worker chỉ gọi HTTP sang máy B — không cần GPU trên máy chạy worker.
     requires=("api",),
     credit_cost=_gia,
+    #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
+    #: import app nay theo ten. Xem `AppManifest.bang_gia`.
+    bang_gia=gia.bang_gia,
 
     tools=(ToolSpec(
         name="image.ltt",

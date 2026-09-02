@@ -1,0 +1,301 @@
+# thanh_phan.toml — SO DANG KY THANH PHAN
+#
+# ## Tep nay KHAI gi, va co y KHONG khai gi
+#
+# Nguyen tac: **chi khai thu khong suy ra duoc.** Moi thu suy ra duoc thi suy,
+# vi mot ban khai tay se troi con mot phep suy thi khong.
+#
+#   suy ra duoc  → KHONG khai o day
+#     · danh sach app          → `apps/*/manifest.py` da la SSOT (registry.py nap)
+#     · test nao thuoc phan nao → suy tu IMPORT trong `tests/*.py`
+#     · phu thuoc giua cac phan → suy tu import
+#     · nguoi tieu thu          → dao nguoc do thi import
+#
+#   KHONG suy ra duoc → khai o day
+#     · ranh gioi cua phan khong-phai-app (platform_core, server chia the nao)
+#     · TAI NGUYEN doc quyen ma test cua phan do can
+#     · muc he trong (criticality)
+#     · **canh DONG ma phep do tinh khong nhin thay** — xem [canh_dong]
+#
+# ## Vi sao TOML chu khong JSON
+#
+# Kho nay dung JSON cho baseline (`i18n_baseline.json`, ...) va do la dung viec:
+# baseline la SO, khong can giai thich. So dang ky nay thi nguoc lai — gia tri
+# cua no nam o **vi sao** moi canh ton tai, va JSON khong giu duoc chu thich.
+# `tomllib` co san trong Python 3.11+, chi doc, khong them phu thuoc.
+
+# =============================================================================
+# TAI NGUYEN — thu chi mot viec duoc dung mot luc, TREN CA MAY
+# =============================================================================
+#
+# 🔴 Vi sao can: do 2026-09-02. Hai phien Claude cung chay gate; luot
+#    `--vong-lap` cua phien nay treo qua 5 phut trong khi binh thuong ~15 giay.
+#    Khong ai sai ca — `--vong-lap` co y **khong** xep hang (`gate.py:main`), va
+#    do la quyet dinh dung: chan mot vong lap ngan sau mot luot day du 6 phut la
+#    giet dung cai lam no huu dung.
+#
+# ⇒ Cai sai khong phai "xep hang hay khong". La **xep hang theo mot khoa duy
+#   nhat cho moi thu**. Hai viec khong dung chung tai nguyen thi khong co ly do
+#   phai doi nhau.
+
+[tai_nguyen.cpu_nhieu]
+mo_ta = "Lay -n auto = MOI loi. Hai luot cung luc chi chia doi cung chiec banh."
+doc_quyen = true
+
+[tai_nguyen.postgres_test]
+mo_ta = "CSDL test dung chung. Hai luot cung luc lam ban du lieu cua nhau."
+doc_quyen = true
+
+[tai_nguyen.cong_8100]
+mo_ta = "Cong web cuc bo. Mot tien trinh mot luc."
+doc_quyen = true
+
+[tai_nguyen.gpu0]
+mo_ta = "GPU may A (5060 Ti). Chia se voi ltt_voice va upscalevideo."
+doc_quyen = true
+
+[tai_nguyen.mang_that]
+mo_ta = "Goi ra Internet that (canary production, Cloudflare). Co han ngach."
+doc_quyen = true
+
+[tai_nguyen.tep_test_ghi]
+mo_ta = """
+Bon tep ma BO TEST ghi vao cay va buoc kiem TINH doc.
+Da gay `OSError: [Errno 22]` tren Windows ngay 2026-08-29 va lam hai phien mat
+gan tron mot ngay. Xem `gate.py::TEP_KHONG_DUOC_DOC_SONG_SONG`."""
+doc_quyen = true
+
+# =============================================================================
+# CANH DONG — phu thuoc that ma AST/grep KHONG nhin thay
+# =============================================================================
+#
+# 🔴 Day la muc quan trong nhat cua tep nay, va la ly do no ton tai duoi dang
+#    du lieu chu khong phai mot doan van trong CLAUDE.md.
+#
+#    Do 2026-09-02: `sdk/ltt_cai_dat_cli.py` khong module nao import, khong
+#    trang nao link, khong route nao goi ham trong no. Moi phep do tinh cham no
+#    la CHET. **No khong chet** — no la duong DUY NHAT cho khach macOS/Linux,
+#    phuc vu qua mot dict tra bang CHUOI.
+#
+# ⇒ Mot canh bao bang van xuoi thi phien sau phai NHO. Mot canh trong tep nay
+#   thi cong cu TU BIET. Do la khac biet giua mot luat va mot phep do.
+
+[[canh_dong]]
+tu = "server/routes/tai_lieu_api.py"
+toi = ["sdk/"]
+co_che = "GOI_TAI — dict tra bang CHUOI, phuc vu o /tai/<ten>"
+bang_chung = "server/routes/tai_lieu_api.py:124"
+
+[[canh_dong]]
+tu = "platform_core/registry.py"
+toi = ["apps/"]
+co_che = "iterdir() + importlib.import_module(f'apps.{ten}.manifest')"
+bang_chung = "platform_core/registry.py:894,927,966"
+
+[[canh_dong]]
+tu = "server/templating.py"
+toi = ["server/templates/", "server/static/"]
+co_che = "BUILT_PAGES / PUBLIC_LINKS — tra bang CHUOI"
+bang_chung = "server/templating.py:119,204"
+
+[[canh_dong]]
+tu = "server/nexus_download.py"
+toi = ["nexus_agent/"]
+co_che = "_CONTENT_TYPE — tra bang CHUOI"
+bang_chung = "server/nexus_download.py:30"
+
+[[canh_dong]]
+tu = "tools/audit_public_web.py"
+toi = ["docs/lttstudios-website/route-map.json"]
+co_che = "doc tep JSON trong docs/ lam HOP DONG"
+bang_chung = "tools/audit_public_web.py:13"
+
+# 🔴 LOP THU BA, VA NO KHO THAY HON HAI LOP TREN.
+#
+#    Hai lop dau (tra bang chuoi, import dong) it nhat con MOT CHUOI trong ma
+#    de ma tim. Lop nay khong co gi ca:
+#
+#      `_goi_moi_nhat()` QUET THU MUC bang regex ten tep roi lay `max()` phien
+#      ban. Khong ban ke, khong hang so, khong ten tep nao ton tai trong kho ma.
+#      Va thu muc do nam trong `data/` — **bi .gitignore**, tuc noi dung khong
+#      o trong git chut nao.
+#
+#    Do 2026-09-02 (phien lttstudiosapp-e6 bao, da xac minh): tha mot tep
+#    `LTTStudios-CamCLI-Setup-1.4.0.exe` vao `data/api_dist/` thi URL cong khai
+#    **doi ngay**, khong deploy, khong commit, khong dong ma nao thay doi.
+#
+# ⇒ Mot tep trong `data/` co the la BE MAT PHUC VU KHACH DANG SONG. Bat cu
+#   phase nao cham `data/` phai coi day la vung khong duoc don "cho sach".
+#
+# ⚠️ Canh nay khong tro toi mot thanh phan duoc — dich cua no khong nam trong
+#    git. No o day de duoc DOC, khong de duoc tinh. Do la gioi han that, va noi
+#    ra thi tot hon la giau.
+
+[[canh_dong]]
+tu = "server/routes/tai_lieu_api.py"
+toi = []
+co_che = """
+_goi_moi_nhat() — QUET THU MUC `data/api_dist/` va `data/nexus_dist/` bang
+regex ten tep, chon phien ban cao nhat. Khong ban ke, khong chuoi, khong tep
+nao trong git. Tha mot tep vao do la doi be mat cong khai."""
+bang_chung = "server/routes/tai_lieu_api.py:63-84"
+
+# =============================================================================
+# THANH PHAN KHONG-PHAI-APP
+# =============================================================================
+#
+# App KHONG khai o day — `apps/<slug>/` tu no la mot thanh phan, va
+# `apps/<slug>/manifest.py` da la ban khai. Khai lai la tao chu so huu thu hai.
+
+# --- platform_core: chia theo MOI QUAN TAM, khong theo tep -------------------
+
+[thanh_phan."core:tien"]
+mo_ta = "So credit: giu cho -> quyet toan -> hoan. But toan append-only."
+duong = ["platform_core/credit.py", "platform_core/billing.py",
+         "platform_core/billing_math.py", "platform_core/to_tien.py",
+         "platform_core/gia_von.py", "platform_core/payments/"]
+he_trong = "tien"
+tai_nguyen = ["postgres_test"]
+
+[thanh_phan."core:job"]
+mo_ta = "Hang doi job, worker, retry, huy, dedupe, lease."
+duong = ["platform_core/jobs.py", "platform_core/job_runner.py",
+         "platform_core/job_submit.py", "platform_core/job_events.py",
+         "platform_core/job_history.py", "platform_core/job_metrics.py",
+         "platform_core/job_content.py", "platform_core/leases.py"]
+he_trong = "thi_hanh"
+tai_nguyen = ["postgres_test"]
+
+[thanh_phan."core:kho"]
+mo_ta = "Luu tru, upload session, tai san, R2/cuc bo."
+duong = ["platform_core/storage.py", "platform_core/upload_sessions.py",
+         "platform_core/media.py", "platform_core/image_input.py"]
+he_trong = "du_lieu"
+
+[thanh_phan."core:nguoi_dung"]
+mo_ta = "Nguoi dung, quyen truy cap app, chong gian lan, bam mat khau, token."
+duong = ["platform_core/users.py", "platform_core/app_access.py",
+         "platform_core/antifraud.py", "platform_core/password_hashing.py",
+         "platform_core/tokens.py", "platform_core/secretbox.py"]
+he_trong = "an_ninh"
+tai_nguyen = ["postgres_test"]
+
+[thanh_phan."core:provider"]
+mo_ta = "Pool khoa API, phan bo, cooldown, cascade da-provider."
+duong = ["platform_core/api_keys.py", "platform_core/api_pool.py",
+         "platform_core/providers.py", "platform_core/providers_live.py",
+         "platform_core/llm/", "platform_core/image_gen/"]
+he_trong = "thi_hanh"
+
+[thanh_phan."core:api_cong_khai"]
+mo_ta = "/api/v1 — lop adapter/policy. KHONG phai mot app."
+duong = ["platform_core/public_api/"]
+he_trong = "an_ninh"
+
+[thanh_phan."core:nen"]
+mo_ta = "Nen tang con lai: models, db, registry, settings, i18n, gpu, quan sat."
+duong = ["platform_core/models.py", "platform_core/db.py",
+         "platform_core/registry.py", "platform_core/settings.py",
+         "platform_core/i18n.py", "platform_core/gpu.py",
+         "platform_core/gpu_claims.py", "platform_core/gpu_lease.py",
+         "platform_core/observability.py", "platform_core/runtime_paths.py",
+         "platform_core/frontend_bundle.py", "platform_core/mailer.py",
+         "platform_core/admin_console.py", "platform_core/app_projects.py",
+         "platform_core/prompt_fragments.py", "platform_core/agent/",
+         "platform_core/nexus/"]
+he_trong = "nen"
+
+# --- server -----------------------------------------------------------------
+
+[thanh_phan."server:auth"]
+mo_ta = "Dang ky, dang nhap, phien, xac thuc email, dat lai mat khau, CSRF."
+duong = ["server/auth/", "server/access_middleware.py"]
+he_trong = "an_ninh"
+tai_nguyen = ["postgres_test"]
+
+[thanh_phan."server:admin"]
+mo_ta = "Trang quan tri. Hai tep lon nhat cua server."
+duong = ["server/admin.py", "server/admin_api.py", "server/admin_templates/"]
+he_trong = "an_ninh"
+
+[thanh_phan."server:api"]
+mo_ta = "Gan /api/v1 vao HTTP: route, streaming, kiem ke 24 route dong bang."
+duong = ["server/api/"]
+he_trong = "an_ninh"
+
+[thanh_phan."server:web"]
+mo_ta = "Vo web: app factory, middleware, route trang, mau, tai san tinh."
+duong = ["server/app.py", "server/deps.py", "server/routes/",
+         "server/templates/", "server/static/", "server/templating.py",
+         "server/i18n_middleware.py", "server/telemetry.py",
+         "server/settings.py", "server/run.py",
+         "server/request_body_limit.py", "server/usage_rate_limit.py",
+         "server/nexus/", "server/nexus_download.py"]
+he_trong = "giao_dien"
+tai_nguyen = ["cong_8100"]
+
+# --- ngoai may A ------------------------------------------------------------
+#
+# ⛔ Ba thu muc nay deploy sang MAY KHAC. "Khong ai import o may A" KHONG phai
+#    bang chung chung chet. Xem `docs/system_purification/STATE.md` SP-03.
+
+[thanh_phan."gateway:render"]
+mo_ta = "Cong render anh tren may B (:8199). Deploy rieng."
+duong = ["render_gateway/"]
+he_trong = "ngoai_may"
+
+[thanh_phan."gateway:llm"]
+mo_ta = "Cong LLM tren may B (:8299). Deploy rieng."
+duong = ["llm_gateway/"]
+he_trong = "ngoai_may"
+
+[thanh_phan."sidecar:voice"]
+mo_ta = "Engine giong noi, chay CUNG may A sau loopback :8120, venv cach ly."
+duong = ["voice_sidecar/", "voice_sidecar_main.py"]
+he_trong = "ngoai_may"
+tai_nguyen = ["gpu0"]
+
+[thanh_phan."sidecar:codex"]
+mo_ta = "Sidecar Codex (dich vu LTTStudioCodex)."
+duong = ["codex_sidecar/", "codex_sidecar_main.py"]
+he_trong = "ngoai_may"
+
+[thanh_phan."agent:nexus"]
+mo_ta = "Agent Nexus chay tren may khach. Co doi da commit chua deploy."
+duong = ["nexus_agent/"]
+he_trong = "ngoai_may"
+
+# --- khac -------------------------------------------------------------------
+
+[thanh_phan."sdk"]
+mo_ta = """
+SDK cho khach. ⛔ MO COI VOI PHEP DO TINH nhung LA BE MAT CONG KHAI —
+phuc vu qua `GOI_TAI`. Xem [[canh_dong]] o tren."""
+duong = ["sdk/"]
+he_trong = "an_ninh"
+
+[thanh_phan."frontend"]
+mo_ta = "Ba bo React/vitest. `npm test` can node_modules — KHONG co trong worktree moi."
+duong = ["frontend/"]
+he_trong = "giao_dien"
+
+[thanh_phan."engine:cutclipshort"]
+mo_ta = "Engine vendor cho app taoclipngan. 30.776 dong."
+duong = ["cutclipshort/"]
+he_trong = "thi_hanh"
+
+[thanh_phan."csdl:migration"]
+mo_ta = "Alembic. 65 revision, 1 head. ⛔ Khong xoa migration cu vi 'old'."
+duong = ["alembic/", "alembic.ini"]
+he_trong = "du_lieu"
+tai_nguyen = ["postgres_test"]
+
+[thanh_phan."cong_cu"]
+mo_ta = "Cong chat luong + CLI. 140/148 tep co diem vao."
+duong = ["tools/"]
+he_trong = "nen"
+
+[thanh_phan."trien_khai"]
+mo_ta = "Cai dat, cap nhat, release, rollback, Cloudflare."
+duong = ["setup/", "deploy/"]
+he_trong = "trien_khai"

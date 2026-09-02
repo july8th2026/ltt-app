@@ -26,6 +26,26 @@ from tests.pg_scratch import scratch_url
 
 PG_URL = scratch_url()
 
+# 🔴 MOT BO KIEM BI BO QUA LA MOT BO KIEM DANG MUC RUONG, va tep nay da chung
+#    minh dieu do bang chinh no.
+#
+#    Ngay 2026-09-02, lan dau bo kiem nay duoc chay tren mot PostgreSQL vut di:
+#    6/7 xanh, 1 do. Cai do KHONG phai mot cuoc dua — no la
+#    `ExecutorError: Tool khong con kha dung: text.script`.
+#
+#    `text.script` la tool cua app `kichban`, **da go tu 2026-08-25 (Q109)**.
+#    Nghia la hai phep kiem o day tro toi mot thu khong con ton tai suot mot
+#    tuan, va khong ai biet — vi thieu `LTT_TEST_DATABASE_URL` thi chung khong
+#    chay, va mot phep kiem khong chay thi khong bao gio do.
+#
+# ⭐ Cai giá that: `tests/test_94_agent_app.py:51` da SUA DUNG loi nay ngay
+#    26/08, kem mot chu thich giai thich day du. Nguoi sua khong the biet o day
+#    con hai cho nua — vi o day khong co gi keu len.
+#
+# ⇒ Bai hoc khong phai "nho sua het moi cho". La: mot phep kiem chi bao ve duoc
+#   thu gi khi no CHAY. Xem `docs/system_purification/reports/07_*.md`.
+
+
 pytestmark = pytest.mark.skipif(
     not PG_URL,
     reason="Can LTT_TEST_DATABASE_URL (PostgreSQL rieng) de kiem dong thoi.",
@@ -303,11 +323,23 @@ def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
     bao_dam_user(s, "executor-user"); credit.cap_tay(s, "executor-user", 100, by="test")
     plan = {
         "version": 1, "budget_max_credit": 20,
-        "steps": [{"id": "s1", "tool": "text.script", "after": [],
-                   "params": {"topic": "PostgreSQL race"}}],
+        "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
+                   "fanout": 1, "max_retry": 0,
+                   "on_fail": "retry_same", "verify": None,
+                   "params": {"title": "PostgreSQL race",
+                              "story": "Mot cau chuyen thu."}}],
     }
     run = runs.create_run(s, user_id="executor-user", goal="scheduler race")
-    budget.set_quote(s, run, plan=plan, validation=ValidationResult(True, (), 3, ()))
+    # ⚠️ Bao gia da duyet phai PHU duoc gia cua tool, khong phai mot so
+    #    tron. Ban cu de 3 — vua du cho `text.script` (da go), va khi doi
+    #    sang mot tool con song thi `ensure_can_spend` chan ngay, checkpoint
+    #    thanh `fault: policy` va KHONG child nao duoc nop. Trieu chung khi
+    #    do (`0 child`) khong he chi vao nguyen nhan (`bao gia qua thap`).
+    #
+    # ⭐ Lay bang `budget_max_credit` de phep kiem nay do dung thu no dinh
+    #    do — cuoc dua giua hai scheduler — chu khong do gia cua mot tool.
+    budget.set_quote(s, run, plan=plan,
+                     validation=ValidationResult(True, (), 20, ()))
     budget.approve(s, run_id=run.id, user_id="executor-user",
                    approved_by="executor-user", expected_version=run.version)
     run_id = run.id
@@ -346,8 +378,11 @@ def test_agent_workflow_hai_save_cung_revision_chi_mot_thanh_cong(Sess):
     from platform_core.agent import workflows
 
     plan = {"version": 1, "goal": "PostgreSQL workflow", "budget_max_credit": 20,
-            "steps": [{"id": "s1", "tool": "text.script", "after": [],
-                       "params": {"topic": "PostgreSQL race"}}]}
+            "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
+                   "fanout": 1, "max_retry": 0,
+                   "on_fail": "retry_same", "verify": None,
+                       "params": {"title": "PostgreSQL race",
+                                 "story": "Mot cau chuyen thu."}}]}
     s = Sess()
     row = workflows.create(s, user_id="workflow-user", name="Gốc",
                            canvas=workflows.plan_to_canvas(plan))

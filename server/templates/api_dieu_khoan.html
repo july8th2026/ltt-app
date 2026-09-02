@@ -7,7 +7,7 @@
   <p class="muted">
     {{ _("phiên bản") }} <code>{{ phien_ban }}</code>
     · {{ _("phiên bản giá") }} <code>{{ bang.phien_ban_gia }}</code>
-    · 1 credit = {{ dong_moi_credit }}đ
+    · 1 credit = {{ dong_moi_credit }} {{ _("đồng") }}
   </p>
 </div>
 
@@ -55,7 +55,6 @@
     <thead><tr>
       <th>{{ _("Model") }}</th>
       <th style="text-align:right;">{{ _("ngữ cảnh công bố") }}</th>
-      <th style="text-align:right;">{{ _("trần đầu vào") }}</th>
       <th style="text-align:right;">{{ _("trần đầu ra") }}</th>
     </tr></thead>
     <tbody>
@@ -63,14 +62,16 @@
       <tr>
         <td><code>{{ ten }}</code></td>
         <td style="text-align:right;">{{ "{:,}".format(v.cong_bo) }}</td>
-        <td style="text-align:right;">{{ "{:,}".format(v.tran_vao) }}</td>
         <td style="text-align:right;">{{ "{:,}".format(v.tran_ra) }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
-  <p>{{ _("Mỗi tài khoản được phục vụ") }} <strong>{{ dong_thoi }}</strong>
+  {% for ten, suat in dong_thoi.items() %}
+  <p><code>{{ ten }}</code> — {{ _("mỗi tài khoản được phục vụ") }}
+     <strong>{{ suat }}</strong>
      {{ _("lượt tại một thời điểm. Lượt vượt quá nhận mã 429 kèm Retry-After và không bị tính tiền.") }}</p>
+  {% endfor %}
 </div>
 
 <div class="card">

@@ -55,10 +55,65 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from cua_so_yen import CuaSoYen  # noqa: E402  (can sys.path o tren)
+from cua_so_yen import MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
+
+# ═══════════════════════════════════════════════════════════════════════════
+# NGAN SACH LOI — mot chu so huu duy nhat cho ca luot gate
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 VI SAO PHAI CO. Do 2026-09-02, sau HAI lan may treo phai reset cung.
+#
+#    Lich chay cu dem TIEN TRINH CON, nhung thu bi tranh la LOI. Va moi tien
+#    trinh con lai la mot BE tien trinh tu no:
+#
+#      `bo test`      -> pytest `-n auto`                          = 20 worker
+#      `frontend` x3  -> vitest 4 tu dat `min(12, numCpus - 1)`    = 36 worker
+#      nhom `tinh`    -> phan con lai cua `j`                      ~ 5
+#                                                          DINH  ~= 61
+#
+#    Tren mot may **20 loi**. Ba buoc frontend nam trong nhom `nhe`, duoc nop
+#    vao CUNG mot `ThreadPoolExecutor` voi `bo test`, nen chung chay **dong
+#    thoi** voi 20 worker pytest.
+#
+# ⛔ Cai gia khong phai "gate cham". May nay LA production: bon dich vu
+#    `LTTStudioWeb`, `LTTStudioWorker`, `LTTStudioVoice`, `LTTStudioCodex` dang
+#    phuc vu khach that tren dung 20 loi do.
+#
+# ⭐ Goc khong phai "song song hoa la sai". Goc la **khong ai so huu ngan sach
+#    CPU**: moi cong cu con tu do minh theo CA MAY, va ba cong cu cung lam the
+#    thi tong la ba lan ca may. Nen thu them o day khong phai mot gioi han moi —
+#    la mot CHU SO HUU cho mot tai nguyen truoc gio vo chu.
+
+#: Loi chua lai cho phan con lai cua may.
+#:
+#: ⚠️ Khong phai con so cho dep. Do 2026-09-02 luc may RANH: CPU nen da 27%
+#:    (~5 loi) cho bon dich vu production + cac phien Claude. De danh it hon
+#:    the la gate an thang vao phan dang phuc vu khach.
+#:
+#: ⭐ Dat 6 chu khong 5: mot phep do o luc ranh la san cua truong hop tot nhat,
+#:    va thu ta dang bao ve la truong hop XAU nhat — luc khach dong.
+LOI_DE_DANH_CHO_MAY = 6
+
+#: Tran cung cho MOT cong cu con. Vitest tu dat `min(12, n-1)`; con so 12 do la
+#: kinh nghiem cua ho ve diem bao hoa, khong co ly do de ta di xa hon.
+LOI_TOI_DA_MOI_CONG_CU = 12
+
+
+def ngan_sach_loi() -> int:
+    """So loi ma CA luot gate duoc dung cung luc.
+
+    Toi thieu 2: mot may hai loi van phai chay duoc gate, chi la cham hon.
+    """
+    return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
+
+
+def _chia_loi(so_viec_nang: int) -> int:
+    """Moi viec nang duoc bao nhieu loi. Toi thieu 1."""
+    return max(1, min(LOI_TOI_DA_MOI_CONG_CU,
+                      ngan_sach_loi() // max(1, so_viec_nang)))
 
 
 #: Nhóm quyết định LỊCH CHẠY, không quyết định ý nghĩa của bước.
@@ -103,12 +158,29 @@ TEP_KHONG_DUOC_DOC_SONG_SONG = {
 
 class Step:
     def __init__(self, name: str, argv: list[str], cwd: Path,
-                 nhom: str = "tinh"):
+                 nhom: str = "tinh", tai_nguyen: tuple[str, ...] = (),
+                 so_loi: int = 1):
         assert nhom in NHOM, nhom
         self.name = name
         self.argv = argv
         self.cwd = cwd
         self.nhom = nhom
+        #: So LOI buoc nay chiem khi chay — khong phai so tien trinh.
+        #:
+        #: 🔴 Day la khac biet da lam treo may hai lan. Lich cu dem tien trinh
+        #:    con (`bo test` = 1, moi `frontend` = 1) va ket luan "10 la vua".
+        #:    Nhung `bo test` la 20 worker va moi `frontend` la 12 — nen "10
+        #:    tien trinh" that ra la ~61 luong tren 20 loi.
+        #:
+        #: ⚠️ Mac dinh 1: mot chot tinh doc tep roi in mot dong, no dung mot
+        #:    loi. Chi thu nao TU SINH be tien trinh moi khai so lon hon.
+        self.so_loi = max(1, int(so_loi))
+        #: Tai nguyen DOC QUYEN CAP MAY ma buoc nay can (`thanh_phan.toml`).
+        #:
+        #: ⚠️ Khong phai "buoc nay dung CPU" — moi buoc deu dung CPU. Chi khai
+        #:    thu ma HAI LUOT SONG SONG lam hong nhau: `-n auto` an het loi,
+        #:    mot CSDL test dung chung, mot cong TCP, mot GPU.
+        self.tai_nguyen = tuple(tai_nguyen)
         self.ok: bool | None = None
         #: Buoc chay xong, tra 0, NHUNG tu khai la no khong lam duoc viec.
         #:
@@ -135,6 +207,23 @@ def _npm() -> str | None:
 
 
 def _steps(quick: bool) -> list[Step]:
+    # ── Chia ngan sach loi TRUOC khi dung danh sach buoc ────────────────────
+    #
+    # Bon viec co the chay dong thoi va MOI viec tu sinh mot be tien trinh:
+    # `bo test` + ba `frontend`. Chia ngan sach cho chung, va moi con so duoc
+    # TRUYEN XUONG cong cu con thay vi de no tu do minh theo ca may.
+    #
+    # ⛔ KHONG chia deu. `bo test` chiem ~85% thoi gian ca luot (~360 giay),
+    #    con ba `frontend` moi cai 5-15 giay. Chia deu bon phan la lay loi cua
+    #    thu quyet dinh tong thoi gian de dua cho thu se xong trong chop mat.
+    #
+    # ⭐ Nen: `bo test` lay phan lon, frontend lay du de khong cham, va **bo dem
+    #    loi** o `_chay_theo_lich` lo phan con lai — neu tong vuot ngan sach thi
+    #    mot frontend doi, chu khong phai ai cung bi cat nho tu dau.
+    loi_moi_viec = min(2, LOI_TOI_DA_MOI_CONG_CU)          # frontend: ngan, 2 la du
+    loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
+                             ngan_sach_loi() - len(FRONTENDS)))
+
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #
     #    Do 30/08: 282 tien trinh con `multiprocessing.spawn` mo coi, cu nhat 55
@@ -325,20 +414,53 @@ def _steps(quick: bool) -> list[Step]:
         # PostgreSQL, nen `pytest` chi in mot chu `s`. Mot chu `s` giua ba
         # nghin dau cham la vo hinh. Buoc rieng nay khong lam gate do khi may
         # khong co PostgreSQL, nhung viec bo qua thi khong bao gio con lang le.
+        # `test_214` dung HAI tien trinh worker — do la ca diem cua no. Khai 2,
+        # khong khai 1: bo dem loi chi dung khi moi buoc noi that ve cai no lay.
         steps.append(Step("bat bien da tien trinh",
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
-                          nhom="nang"))
+                          nhom="nang", so_loi=2))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
         if not (folder / "package.json").exists():
             continue
+        # 🔴 CAY RIENG KHONG CO `node_modules`, va do khong phai mot loi.
+        #
+        #    `node_modules/` khong nam trong git, nen moi worktree moi tao ra
+        #    deu thieu no. Do 2026-09-02: luot gate day du dau tien chay trong
+        #    mot worktree do **ba** buoc frontend voi `'vitest' is not
+        #    recognized` — trong khi khong co gi hong ca.
+        #
+        # ⛔ De no la FAIL thi mot cay rieng **khong bao gio** xanh duoc, va nhu
+        #    the thi ca quy trinh "moi phien mot cay" tu no vo nghia: nguoi ta
+        #    se hoc cach bo qua ba dong do, roi bo qua dong do thu tu.
+        #
+        # ⭐ Nhung cung KHONG duoc lang le cho qua. Day dung la truong hop
+        #    `Step.bo_qua` sinh ra de xu ly: chay xong, tra 0, va TU KHAI rang
+        #    no khong lam duoc viec — nen no hien o dong RESULT.
+        if npm is not None and not (folder / "node_modules").is_dir():
+            steps.append(Step(
+                f"frontend {name}",
+                [sys.executable, "-c",
+                 f"print('{DAU_BO_QUA}: {name} chua cai node_modules "
+                 f"(cay rieng?). Chay `npm ci` trong frontend/{name} "
+                 f"neu can chung minh phan frontend.')"],
+                folder, nhom="frontend"))
+            continue
         if npm is None:
             steps.append(Step(f"frontend {name}", ["npm-khong-tim-thay"], folder,
                               nhom="frontend"))
             continue
-        steps.append(Step(f"frontend {name}", [npm, "test", "--", "--run"], folder,
-                          nhom="frontend"))
+        # ⛔ `--maxWorkers` la BAT BUOC, khong phai toi uu.
+        #
+        #    Vitest 4 tu dat `min(12, numCpus - 1)`. Tren may 20 loi la 12
+        #    worker — cho MOI thu muc, va ba thu muc chay dong thoi voi 20
+        #    worker pytest. Do la 56 luong tren 20 loi, tren mot may dang phuc
+        #    vu khach that.
+        steps.append(Step(f"frontend {name}",
+                          [npm, "test", "--", "--run",
+                           f"--maxWorkers={loi_moi_viec}"],
+                          folder, nhom="frontend", so_loi=loi_moi_viec))
     if not quick:
         # Browser/audit artifacts live under tmp/ and test-results/ by contract;
         # they may contain copied ``tests`` folders and must never be collected
@@ -360,11 +482,85 @@ def _steps(quick: bool) -> list[Step]:
         #
         #    Hai pha: song song `--dist loadfile` cho phan lon, roi noi tiep cho
         #    ba tep ghi vao cay kho (`TEP_NOI_TIEP`). Xem AGENTS.md muc 4b.
+        # ⛔ `-n` tuong minh thay cho `auto`. `auto` = MOI loi cua may, va no
+        #    khong biet gi ve ba vitest dang chay canh no, cung khong biet gi ve
+        #    bon dich vu production tren cung may.
         steps.append(Step("bo test (song song)",
-                          [sys.executable, "tools/test_nhanh.py"], ROOT,
-                          nhom="nang"))
+                          [sys.executable, "tools/test_nhanh.py",
+                           "-n", str(loi_bo_test)], ROOT,
+                          nhom="nang", tai_nguyen=("cpu_nhieu",),
+                          so_loi=loi_bo_test))
     return steps
 
+
+def _steps_pham_vi(tep_test: list[str]) -> list[Step]:
+    """Bo test THU HEP: chi nhung tep `thanh_phan.py` chi ra.
+
+    ⛔ Tra ve RONG khi khong co tep nao — va nguoi goi phai coi do la mot loi,
+       khong phai "khong co gi de chay nen PASS". Mot pham vi khong test nao la
+       mot pham vi chua ai bao ve, va no phai NOI RA thay vi in mot dong xanh.
+    """
+    if not tep_test:
+        return []
+    return [Step("bo test (pham vi)",
+                 [sys.executable, "tools/test_nhanh.py", *sorted(tep_test)],
+                 ROOT, nhom="nang", tai_nguyen=("cpu_nhieu",))]
+
+
+#: HO SO — moi ho so mot HOP DONG viet ra thanh chu.
+#:
+#: 🔴 Vi sao phai viet hop dong chu khong chi dat ten. Truoc do gate co hai che
+#:    do (`--quick`, `--vong-lap`) va ca hai deu phai TU NHAC o dong RESULT rang
+#:    chung khong phai bang chung — vi neu khong, hai phien se doc cung mot dong
+#:    "PASS" theo hai nghia khac nhau. Do da xay ra that (xem `Step.bo_qua`).
+#:
+#: ⇒ Them ho so ma khong them hop dong la nhan doi dung cai loi do. Moi muc
+#:   duoi day phai tra loi: no CHUNG MINH duoc gi, va no KHONG chung minh gi.
+HO_SO: dict[str, dict] = {
+    "nhanh": {
+        "mo_ta": "bo hai buoc nang (~40s) — chinh la co `--quick`",
+        "chung_minh": "moi phep kiem TINH deu xanh",
+        "khong_chung_minh": "KHONG phai bang chung. Moi loi THAT ngay 25/08 "
+                            "deu nam o dung buoc `pytest` ma che do nay bo qua.",
+        "xep_hang": False,
+    },
+    "vong-lap": {
+        "mo_ta": "sau MOI lan sua (~20s)",
+        "chung_minh": "khong co loi tinh moi, va nhung test vua do da xanh lai",
+        "khong_chung_minh": "KHONG phai bang chung. `--lf` chi chay lai test da "
+                            "do; mot test dang xanh ma thay doi nay lam hong "
+                            "thi no khong he chay.",
+        "xep_hang": False,
+    },
+    "pham-vi": {
+        "mo_ta": "mot thanh phan + nguoi tieu thu cua no",
+        "chung_minh": "moi test CHAM TOI cac thanh phan da chon deu xanh",
+        "khong_chung_minh": "KHONG noi gi ve phan con lai cua kho. Chi dung khi "
+                            "thay doi nam gon trong pham vi — `--doi` tu kiem "
+                            "dieu do, con `--pham-vi` thi TIN NGUOI GOI.",
+        "xep_hang": True,
+    },
+    "doi": {
+        "mo_ta": "suy pham vi TU cay hien tai",
+        "chung_minh": "moi test cham toi phan da doi deu xanh",
+        "khong_chung_minh": "KHONG phai bang chung phat hanh. Va no TU HA CAP "
+                            "xuong day du khi khong chac (cham tep dung chung, "
+                            "hoac mot duong dan khong thanh phan nao so huu).",
+        "xep_hang": True,
+    },
+    "day-du": {
+        "mo_ta": "toan kho — mac dinh, giu nguyen hanh vi cu",
+        "chung_minh": "toan bo cong chat luong tren cay nay",
+        "khong_chung_minh": "khong noi gi ve viec deploy hay ve production",
+        "xep_hang": True,
+    },
+    "phat-hanh": {
+        "mo_ta": "day du + cai/cap nhat/rollback + quet bi mat",
+        "chung_minh": "day du, cong them duong cai dat va rollback",
+        "khong_chung_minh": "van khong thay the mot lan nghiem thu that tren may chu",
+        "xep_hang": True,
+    },
+}
 
 #: Buoc nao KHONG lam duoc viec cua no thi mo dau mot dong bang chuoi nay.
 #: Quy uoc, khong phai ma thoat — vi ma thoat 0 o cac buoc do la co chu y.
@@ -381,11 +577,27 @@ def _tu_khai_bo_qua(output: str) -> bool:
     return any(d.lstrip().startswith(DAU_BO_QUA) for d in output.splitlines())
 
 
+#: Chay tien trinh con o uu tien THAP HON binh thuong.
+#:
+#: 🔴 Day la lop bao ve THU HAI, va no can vi lop thu nhat (ngan sach loi) la
+#:    mot phep TINH — con phep tinh thi co the sai. Uu tien thi khong: du gate
+#:    co tinh nham bao nhieu, he dieu hanh van cho `LTTStudioWeb` chay truoc.
+#:
+#: ⭐ Va no gan nhu mien phi: tren mot may RANH, tien trinh uu tien thap van
+#:    duoc dung 100% CPU. No chi nhuong khi co ai do CAN — tuc dung luc ta muon
+#:    no nhuong.
+#:
+#: ⚠️ Chi Windows. `BELOW_NORMAL_PRIORITY_CLASS = 0x00004000`.
+UU_TIEN_THAP = 0x00004000 if os.name == "nt" else 0
+
+
 def _run(step: Step) -> None:
     started = time.monotonic()
+    them = {"creationflags": UU_TIEN_THAP} if UU_TIEN_THAP else {}
     try:
         done = subprocess.run(step.argv, cwd=step.cwd, capture_output=True,
-                              text=True, encoding="utf-8", errors="replace")
+                              text=True, encoding="utf-8", errors="replace",
+                              **them)
         step.ok = done.returncode == 0
         output = (done.stdout or "") + (done.stderr or "")
     except OSError as exc:
@@ -534,11 +746,55 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
     nhe = [s for s in steps if s.nhom in ("tinh", "frontend")]
     sau = [s for s in steps if s.nhom == "sau_test"]
 
-    # `len(nang) + j` luồng: mỗi việc nặng một luồng riêng, phần còn lại chia `j`.
-    with ThreadPoolExecutor(max_workers=len(nang) + max(1, j)) as ex:
-        cho = [ex.submit(chay_va_in, s) for s in nang]      # dài nhất, chạy trước
-        cho += [ex.submit(chay_va_in, s) for s in nhe]
-        for f in cho:
+    # 🔴 NHAN VIEC THEO LOI, KHONG THEO TIEN TRINH — sua 2026-09-02 sau HAI lan
+    #    may treo phai reset cung.
+    #
+    #    Ban cu: `max_workers = len(nang) + j` = 2 + 8 = 10 luong, va tac gia
+    #    suy "10 tien trinh con la vua tren 20 loi". Phep suy do dung cho nhom
+    #    `tinh` — moi buoc do that su la MOT tien trinh. No sai cho hai loai
+    #    khac, va sai rat lon:
+    #
+    #      `bo test`     -> pytest `-n auto`                = 20 worker
+    #      `frontend` x3 -> vitest `min(12, numCpus - 1)`   = 36 worker
+    #
+    #    ⇒ "10 tien trinh" thuc te la ~61 luong tren 20 loi, canh bon dich vu
+    #      production. Ba lan qua tai.
+    #
+    # ⭐ Nen bo dem khong phai `max_workers` ma la NGAN SACH LOI: moi buoc khai
+    #    `so_loi`, va lich chi nhan them viec khi con cho.
+    #
+    # ⚠️ Mot buoc lon hon ca ngan sach van duoc chay — MOT MINH. Tu choi chay
+    #    thi cong chat luong thanh vo dung tren may nho, va do la mot cach hong
+    #    te hon han cham.
+    import threading
+
+    ngan_sach = ngan_sach_loi()
+    con_lai = ngan_sach
+    khoa = threading.Condition()
+
+    def chay_co_ngan_sach(step: Step) -> None:
+        nonlocal con_lai
+        can = min(step.so_loi, ngan_sach)
+        with khoa:
+            khoa.wait_for(lambda: con_lai >= can)
+            con_lai -= can
+        try:
+            chay_va_in(step)
+        finally:
+            with khoa:
+                con_lai += can
+                khoa.notify_all()
+
+    # Viec DAI nop truoc de moi thu khac nap vao bong cua no — giu nguyen y do
+    # cua lich cu; chi doi bo dem.
+    thu_tu = sorted(nang, key=lambda s: -s.so_loi) + nhe
+    # ⚠️ HAI tran cung luc, va ca hai deu can:
+    #      `j`         — bao nhieu BUOC duoc chay cung luc
+    #      `ngan_sach` — bao nhieu LOI duoc dung cung luc
+    #    Bo `j` di thi mot may co 40 buoc tinh se mo 40 luong chi de xep hang;
+    #    bo `ngan_sach` di thi ta quay lai dung cho da lam treo may hai lan.
+    with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
+        for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
             f.result()
 
     # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
@@ -642,6 +898,64 @@ def _ke_cho_da_doi(truoc: dict[str, tuple[int, int]],
         print("       thuc su doi, nhung canh bao nay se keu mai toi khi sua.")
 
 
+def _thu_hep(steps: list[Step], args, ho_so: str
+             ) -> tuple[list[Step] | None, str]:
+    """Thay `bo test` day du bang tap test cua pham vi. `None` = KHONG thu hep duoc.
+
+    ⛔ Moi duong tra ve `None` o day la mot lan **tu ha cap xuong day du**, va
+       do la thiet ke chu khong phai bo cuoc. Mot cong chat luong doan bua khi
+       khong chac thi te hon han mot cong chay lau.
+    """
+    sys.path.insert(0, str(ROOT / "tools"))
+    try:
+        import thanh_phan as tp_mod
+    except ImportError as e:
+        return None, f"  [pham vi] khong nap duoc thanh_phan.py ({e})"
+
+    tat_ca = tp_mod.cac_thanh_phan(ROOT)
+    if ho_so == "pham-vi":
+        chon = {t.strip() for t in args.pham_vi.split(",") if t.strip()}
+        la = sorted(chon - set(tat_ca))
+        if la:
+            return None, f"  [pham vi] khong co thanh phan: {', '.join(la)}"
+        _, tieu_thu = tp_mod.do_thi_phu_thuoc(ROOT, tat_ca)
+        phan = set(chon)
+        for t in chon:
+            phan |= tieu_thu.get(t, set())
+        nguon = f"chon tay: {', '.join(sorted(chon))}"
+    else:
+        try:
+            duong = tp_mod.duong_da_doi(ROOT)
+        except tp_mod.KhongBiet as e:
+            return None, f"  [doi] khong doc duoc cay ({e}) -> chay DAY DU"
+        if not duong:
+            return None, "  [doi] cay khong doi gi -> chay DAY DU"
+        phan = tp_mod.bi_anh_huong(duong, ROOT)
+        if phan is None:
+            return None, ("  [doi] cham tep DUNG CHUNG hoac duong khong ai"
+                          " so huu -> chay DAY DU")
+        nguon = f"{len(duong)} duong dan doi"
+
+    tep_test = tp_mod.test_can_chay(phan, ROOT)
+    if not tep_test:
+        return None, (f"  [pham vi] {len(phan)} thanh phan nhung KHONG test nao"
+                      " cham toi chung -> chay DAY DU")
+
+    # Frontend chi chay khi `frontend` THAT SU nam trong pham vi. Cung phep loc
+    # "affected" ma `_rut_gon_vong_lap` da dung — chi o day co so lieu tot hon:
+    # do thi thanh phan, chu khong phai mot tien to duong dan.
+    ra = [s for s in steps
+          if s.name != "bo test (song song)"
+          and (s.nhom != "frontend" or "frontend" in phan)]
+    ra += _steps_pham_vi(sorted(tep_test))
+    ghi_chu = (f"  [pham vi] {nguon}\n"
+               f"  [pham vi] {len(phan)} thanh phan: "
+               f"{', '.join(sorted(phan)[:6])}"
+               f"{' ...' if len(phan) > 6 else ''}\n"
+               f"  [pham vi] {len(tep_test)} tep test (thay cho bo day du)\n")
+    return ra, ghi_chu
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Chay toan bo cong chat luong.")
     parser.add_argument("--quick", action="store_true",
@@ -658,11 +972,43 @@ def main() -> int:
                         help="chay ngay, khong xep hang cua so yen")
     parser.add_argument("--cho", type=float, default=15.0,
                         help="so phut chiu xep hang truoc khi chay khong khoa")
+    parser.add_argument("--ho-so", default="", choices=["", *HO_SO],
+                        help="ho so chay; xem HO_SO trong tep nay")
+    parser.add_argument("--pham-vi", default="",
+                        help="chi kiem mot thanh phan (vd core:tien, app:vps)")
+    parser.add_argument("--doi", action="store_true",
+                        help="suy pham vi tu cay hien tai")
     args = parser.parse_args()
 
-    steps = _steps(args.quick or args.vong_lap)
-    if args.vong_lap:
+    # 🔴 MOT BANG CHE DO DUY NHAT — `HO_SO`. Khong co "gate cu" va "gate moi".
+    #
+    #    Hai co cu (`--quick`, `--vong-lap`) la **ten goi tat** cua hai muc
+    #    trong bang do, khong phai mot co che thu hai. Chung phai song vi
+    #    `AGENTS.md` muc 4b va `CLAUDE.md` muc 4 day chung, va vi moi phien deu
+    #    da quen tay — bo di la pha hop dong voi nguoi dung, doi lai khong duoc
+    #    gi ngoai mot cai ten ngan hon.
+    #
+    # ⛔ Nhung moi che do PHAI co mot muc trong `HO_SO`. Truoc 02/09 `--quick`
+    #    khong co, nen cau "no chung minh gi" nam rai trong ba chu thich o cuoi
+    #    `main()` thay vi o mot cho tra cuu duoc. Do dung la mam cua chong cheo:
+    #    khong phai hai tep, ma hai NOI dinh nghia cung mot thu.
+    ho_so = (args.ho_so or ("vong-lap" if args.vong_lap else
+                            "nhanh" if args.quick else
+                            "pham-vi" if args.pham_vi else
+                            "doi" if args.doi else "day-du"))
+
+    steps = _steps(ho_so in ("nhanh", "vong-lap"))
+    if ho_so == "vong-lap":
         steps = _rut_gon_vong_lap(steps)
+    elif ho_so in ("pham-vi", "doi"):
+        steps, ghi_chu_pham_vi = _thu_hep(steps, args, ho_so)
+        if steps is None:
+            # `_thu_hep` da giai thich vi sao khong thu hep duoc. Ha cap xuong
+            # day du thay vi chay mot phep do hep ma khong biet no hep sai cho.
+            ho_so = "day-du"
+            steps = _steps(False)
+        else:
+            print(ghi_chu_pham_vi)
     # 🔴 XEP HANG, DUNG CHAY TRANH. Pha `bo test` lay `-n auto` = MOI loi,
     #    nen hai luot cung luc chi chia doi cung mot chiec banh: tong thoi gian
     #    gan y het chay lan luot, nhung tra them gap doi bo nho, gap doi thu muc
@@ -673,17 +1019,34 @@ def main() -> int:
     #    bang chung (xem dong RESULT cua chung), nen tranh chap lam nhieu phep do
     #    cua chung it quan trong hon han. Nguoc lai, chan mot vong lap ngan sau
     #    mot luot day du 6 phut la giet dung cai lam no huu dung.
-    lenh = ("gate --quick" if args.quick else
-            "gate --vong-lap" if args.vong_lap else "gate")
+    #
+    # ⭐ DOI 2026-09-02: xep hang theo TAI NGUYEN, khong theo mot khoa duy nhat.
+    #
+    #    Cai cu xep hang "mot luot gate day du mot luc". Dung, nhung tho: hai
+    #    luot `--pham-vi` cham hai app khac nhau van phai doi nhau du chung chi
+    #    dung chung CPU chu khong dung chung gi khac. Nay moi buoc khai tai
+    #    nguyen no can (`Step.tai_nguyen`) va gate xin dung nhung cai do.
+    lenh = f"gate --ho-so {ho_so}"
     phien = (args.phien or os.environ.get("LTT_PHIEN")
              or f"{socket.gethostname()}:{os.getpid()}")
-    with CuaSoYen(phien, lenh,
-                  bat=not (args.quick or args.vong_lap or args.khong_khoa),
-                  cho_toi_da_s=args.cho * 60):
+    can: set[str] = set()
+    for s in steps:
+        can |= set(s.tai_nguyen)
+    xep_hang = HO_SO[ho_so]["xep_hang"] and not args.khong_khoa and bool(can)
+    with CuaSoYen(phien, lenh, bat=xep_hang,
+                  cho_toi_da_s=args.cho * 60,
+                  tai_nguyen=tuple(sorted(can)) or (MAC_DINH,)) as khoa:
         cay_dau = _anh_chup_cay()
-        print(f"Gate: {len(steps)} buoc"
-              f"{'' if args.tuan_tu else f', {args.j} luong cho buoc tinh'}\n")
+        dong = f"Gate [{ho_so}]: {len(steps)} buoc"
+        if not args.tuan_tu:
+            dong += (f", toi da {args.j} buoc cung luc"
+                     f", ngan sach {ngan_sach_loi()}/{os.cpu_count()} loi")
+        if can:
+            dong += f", tai nguyen: {', '.join(sorted(can))}"
+        print(dong + "\n")
+        t0_chay = time.time()
         _chay_theo_lich(steps, j=args.j, tuan_tu=args.tuan_tu)
+        tong_s = time.time() - t0_chay
 
     print("\n" + "=" * 62)
     failed = [s for s in steps if not s.ok]
@@ -757,9 +1120,84 @@ def main() -> int:
         if not failed:
             print("        Chua phai bang chung day du - moi loi THAT ngay")
             print("        25/08 deu nam o buoc `pytest` ma che do nay bo qua.")
+    elif ho_so in ("pham-vi", "doi"):
+        # 🔴 CUNG LUAT LAN THU BA. Mot luot thu hep KHONG duoc in mot dong
+        #    RESULT trong y het luot day du — do la ca ly do `--quick` va
+        #    `--vong-lap` phai tu khai. Them ho so ma khong them cau tu khai la
+        #    lam song lai chuyen ngay 25/08 duoi mot cai ten moi.
+        print(f"RESULT: {ket}  [--ho-so {ho_so}: bo test THU HEP theo pham vi]")
+        if not failed:
+            print(f"        {HO_SO[ho_so]['khong_chung_minh']}")
+            print("        Chay `python tools/gate.py` truoc khi bao xong.")
     else:
         print("RESULT:", ket)
+
+    _ghi_ket_qua(ho_so, steps, ket, tong_s, khoa, cay_da_doi)
     return 0 if not failed else 1
+
+
+def _ghi_ket_qua(ho_so: str, steps: list[Step], ket: str, tong_s: float,
+                 khoa, cay_da_doi: bool) -> None:
+    """Ghi danh tinh cua luot chay nay vao `test-results/gates/<id>.json`.
+
+    ## Vi sao can
+
+    Ba phien cung mot may, moi phien mot cay. Cau hoi "gate nao da chay tren
+    ma nao" hien khong tra loi duoc bang gi ngoai cuon len doc lai dau ra —
+    va dau ra thi mat khi dong cua so. Ngay 25/08 mot luot 4,4 gio bao loi o
+    mot tep DA DOI TEN tu nhieu gio truoc, va khong ai truy nguoc duoc no do
+    tren cay nao.
+
+    ⛔ KHONG commit tep nay: `test-results/` da nam trong `.gitignore` (dong
+       148). Day la du lieu cua mot lan chay, khong phai cua kho.
+
+    ⚠️ KHONG ghi bien moi truong, dau ra buoc, hay bat cu gi co the chua bi
+       mat. Chi ghi danh tinh va ket qua.
+    """
+    try:
+        import json
+        from datetime import datetime, timezone
+
+        thu_muc = ROOT / "test-results" / "gates"
+        thu_muc.mkdir(parents=True, exist_ok=True)
+        luc = datetime.now(timezone.utc)
+        sha = _git_gon(["git", "rev-parse", "HEAD"])
+        ban_ghi = {
+            "id": f"{luc.strftime('%Y%m%dT%H%M%SZ')}-{os.getpid()}",
+            "luc": luc.isoformat(timespec="seconds"),
+            "ho_so": ho_so,
+            "ket_qua": ket,
+            "tong_giay": round(tong_s, 1),
+            "cho_khoa_giay": round(getattr(khoa, "da_cho_s", 0.0), 1),
+            "tai_nguyen_da_giu": list(getattr(khoa, "da_giu_xong", None)
+                                      or getattr(khoa, "da_giu", [])),
+            "cay": str(ROOT),
+            "la_cay_chinh": (ROOT / ".git").is_dir(),
+            "sha": sha,
+            "nhanh": _git_gon(["git", "rev-parse", "--abbrev-ref", "HEAD"]),
+            "cay_da_doi_giua_chung": cay_da_doi,
+            "buoc": [{"ten": s.name, "ket": ("BOQUA" if s.bo_qua else
+                                             "PASS" if s.ok else "FAIL"),
+                      "giay": round(s.seconds, 1)} for s in steps],
+        }
+        tep = thu_muc / f"{ban_ghi['id']}.json"
+        tep.write_text(json.dumps(ban_ghi, ensure_ascii=False, indent=2),
+                       encoding="utf-8", newline="\n")
+        print(f"        [ket qua] {tep.relative_to(ROOT).as_posix()}")
+    except OSError as e:
+        # ⚠️ Khong ghi duoc thi NOI RA roi di tiep. Mot kho ket qua hong khong
+        #    duoc phep lam do mot luot gate da chay xong — nhung im lang o day
+        #    thi phien sau se tuong no da duoc ghi.
+        print(f"        [ket qua] KHONG ghi duoc: {e}")
+
+
+def _git_gon(argv: list[str]) -> str:
+    try:
+        r = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True,
+                           timeout=15, encoding="utf-8", errors="replace")
+        return r.stdout.strip() if r.returncode == 0 else "?"
+    except (OSError, subprocess.SubprocessError):
+        return "?"
 
 
 if __name__ == "__main__":

@@ -28,8 +28,26 @@ cung khong lot vao phep do cua ta.
 
 3. ⛔ **KHONG BAO GIO DEPLOY TU CAY RIENG.** May nay LA production, va deploy
    chep **ca cay** sang `C:\\LTTPlatform`. Ba cay trong giong het nhau la ba co
-   hoi deploy nham — mot loi im lang, dat, va rat kho phat hien. Xem
-   `tools/check_cay_chinh.py`; no chan chuyen do, va no chay trong gate.
+   hoi deploy nham — mot loi im lang, dat, va rat kho phat hien.
+
+   Chot chan that nam trong `setup/2-cai-dat.ps1`: no doi `.git` la mot THU MUC
+   (cay chinh) chu khong phai mot TEP (cay rieng), va no `throw` **truoc** moi
+   thao tac ghi. Tam bao ve do duoc `tests/test_362_cay_rieng_va_deploy.py` giu
+   bang tam chot rieng.
+
+   ⚠️ Doan nay truoc 2026-09-02 ghi rang chot do nam trong mot cong cu kiem
+      rieng duoi `tools/` "va no chay trong gate". **Cong cu do khong ton tai.**
+      Mot tham chieu chet trong tai lieu an toan la mot lop bao ve TUONG TUONG:
+      nguoi doc tin rang co hai lop trong khi chi co mot, nen se khong di kiem
+      lop con lai. Nay `test_394` chot rang moi duong `tools/*.py` nhac o day
+      phai that su ton tai.
+
+4. ⛔ **Bat cu thu gi con lai trong cay khi ai do deploy deu len production**,
+   ke ca tep CHUA THEO DOI. `robocopy` chep ca cay, chi tru danh sach `/XD`
+   (`data secrets logs .venv venv __pycache__ .pytest_cache .git dist build
+   temp_videos node_modules .playwright-cli .playwright-mcp .claude
+   test-results tmp`). Khong co buoc chon loc theo phien — nen "de tam o day
+   roi don sau" khong phai mot lua chon an toan tren cay chinh.
 """
 from __future__ import annotations
 
@@ -71,8 +89,95 @@ def _dang_do() -> list[str]:
     return [d for d in ra.splitlines() if d.strip()]
 
 
+def _so_voi_origin(nhanh: str) -> str:
+    """`nhanh` di truoc/sau `origin/<nhanh>` bao nhieu commit.
+
+    🔴 VI SAO CO COT NAY. Do 2026-09-02: ba phien commit deu dan suot **bon
+       ngay** va khong ai hoi `origin` dang o dau. Ket qua: `origin` dung o
+       29/08, **nam nhanh chua tung co ban sao nao ngoai may**, va bon commit
+       tren `admin-mvp-v3` — trong do co dung ban **da deploy len production**
+       — ton tai o **mot cho duy nhat tren doi**.
+
+    ⭐ Gia dinh gay ra chuyen do duoc mot phien noi thang: *"toi coi 'da commit'
+       la 'da an toan'"*. Do la mot gia dinh rat de tin va khong bao gio tu keu
+       len. Nen no phai duoc IN RA o cho nguoi ta nhin moi ngay, chu khong nam
+       trong mot luat ai do phai nho.
+    """
+    if not nhanh or nhanh.startswith("("):
+        return ""
+    try:
+        r = subprocess.run(
+            ["git", "rev-list", "--left-right", "--count",
+             f"{nhanh}...origin/{nhanh}"],
+            cwd=str(GOC), capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return "  [khong hoi duoc git]"
+    if r.returncode != 0:
+        # Khong co nhanh tuong ung tren origin — day la truong hop DANG BAO
+        # DONG nhat, khong phai truong hop bo qua.
+        return "  [!] CHUA CO TREN origin"
+    try:
+        truoc, sau = (int(x) for x in r.stdout.split())
+    except ValueError:
+        return ""
+    if truoc and sau:
+        return f"  [!] truoc {truoc}, sau {sau}"
+    if truoc:
+        return f"  [!] CHUA DAY {truoc} commit"
+    if sau:
+        return f"  (sau origin {sau})"
+    return "  = origin"
+
+
+def _chep_thu_khong_o_trong_git(dich: Path) -> None:
+    """Chep thu MA GATE CAN nhung git khong giu.
+
+    🔴 VI SAO. `git worktree` chi dung lai thu **trong git**. Nhung mot so thu
+       gate doi lai bi `.gitignore` — nen mot cay rieng vua tao **khong bao gio
+       xanh duoc**, va no do vi mot ly do khong lien quan gi toi viec dang lam.
+
+    ⛔ Va do la kieu do te nhat. Do 2026-09-02: mot phien mat mot luc de truy
+       ba buoc do trong cay rieng cua no truoc khi nhan ra chung von the.
+       Nguy hiem that su khong phai thoi gian do — la **mot phep kiem do vi ly
+       do sai se day nguoi ta bo qua chinh no**, roi toi luc no do vi ly do
+       that thi phan xa da thanh "chac lai chuyen cay rieng".
+
+    ⚠️ CHI chep thu re. `node_modules/` (~700 MB cho ba thu muc) thi khong —
+       ba buoc frontend se TU KHAI `BO QUA` va hien o dong RESULT, va do la
+       cau tra loi trung thuc hon mot ban sao 700 MB moi lan tao cay.
+    """
+    nguon_vendor = sorted((GOC / "apps").glob("*/vendor"))
+    for nguon in nguon_vendor:
+        if not nguon.is_dir():
+            continue
+        dich_con = dich / nguon.relative_to(GOC)
+        if dich_con.exists():
+            continue
+        mb = sum(f.stat().st_size for f in nguon.rglob("*") if f.is_file()) / 1024 ** 2
+        print(f"  chep {nguon.relative_to(GOC).as_posix()} ({mb:.0f} MB) - "
+              "git khong giu no, ma gate thi doi")
+        shutil.copytree(nguon, dich_con)
+    if nguon_vendor:
+        print("  (node_modules KHONG chep - ~700 MB; buoc frontend se tu khai BO QUA)")
+
+
 def _liet_ke() -> int:
-    print(f"Cay chinh: {GOC}")
+    # 🔴 HOI GIT xem dau la cay chinh, dung so voi `GOC`.
+    #
+    #    `GOC` suy tu `__file__`, tuc no la **cay dang chay**. Chay lenh nay tu
+    #    mot cay rieng thi ban cu in "Cay chinh: <cay rieng>" va danh dau `*`
+    #    vao chinh no — trong khi `*` co nghia la "CHI cay nay duoc deploy".
+    #    Mot dau hieu an toan chi sai o dung noi no can dung nhat.
+    #
+    # ⭐ Cung mot gia dinh do da gay ba trieu chung trong mot ngay: hai chot o
+    #    `test_362` va dong nay. `la_cay_chinh()` ngay ben tren da lam dung —
+    #    no hoi git — nen cho nay chi can goi no.
+    cac_cay = [d[9:] for d in _git("worktree", "list", "--porcelain").splitlines()
+               if d.startswith("worktree ")]
+    chinh = cac_cay[0] if cac_cay else str(GOC)
+    print(f"Cay chinh: {chinh}\n")
+    canh_bao = False
     for khoi in _git("worktree", "list", "--porcelain").split("\n\n"):
         duong = nhanh = ""
         for d in khoi.splitlines():
@@ -83,9 +188,13 @@ def _liet_ke() -> int:
             elif d.strip() == "detached":
                 nhanh = "(khong nhanh)"
         if duong:
-            dau = "*" if Path(duong).resolve() == GOC else " "
-            print(f" {dau} {duong:<44} {nhanh}")
+            dau = "*" if Path(duong).resolve() == Path(chinh).resolve() else " "
+            trang_thai = _so_voi_origin(nhanh)
+            canh_bao = canh_bao or "[!]" in trang_thai
+            print(f" {dau} {duong:<40} {nhanh:<28}{trang_thai}")
     print("\n  * = cay chinh. CHI cay nay duoc deploy.")
+    if canh_bao:
+        print("  [!] = co viec CHI TON TAI TREN MAY NAY. `git push origin <nhanh>`.")
     return 0
 
 
@@ -116,6 +225,7 @@ def _tao(ten: str) -> int:
         print("  Commit truoc neu ban muon mang chung sang.\n")
 
     print(_git("worktree", "add", str(dich), "-b", nhanh))
+    _chep_thu_khong_o_trong_git(dich)
     print(f"\nDa tao cay rieng:\n  {dich}\n  nhanh: {nhanh}\n")
     print("Buoc tiep:")
     print(f"  cd {dich}")

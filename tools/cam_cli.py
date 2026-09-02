@@ -90,7 +90,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.3.0"
+PHIEN_BAN = "1.4.0"
 
 MODEL = "ltt_llm"
 
@@ -586,6 +586,53 @@ def _co_provider_ltt(van: str) -> bool:
     return any(_RE_PROVIDER_LTT.match(d) for d in van.splitlines())
 
 
+
+#: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do cu the.
+#:
+#: 🔴 VI SAO CAN CAI NAY. Luat so 1 cua cong cu la HOP NHAT, KHONG GHI DE: da co
+#:    `[model_providers.ltt]` thi khong chen lai (`co_prov`). Luat do dung — bang
+#:    do la CUA KHACH.
+#:
+#:    Nhung no co mot he qua khong ai tinh, va he qua ay da xay ra that: neu bang
+#:    san co **thieu** mot khoa, cong cu im lang giu nguyen roi in `[OK]`. Khach
+#:    doc `[OK]` va tin la xong.
+#:
+#:    Do that 02/09 tren chinh cau hinh 7 dong ma cong cu tien-kiem in ra: cam de
+#:    len no cho **6/7 khoa** — thieu dung `stream_idle_timeout_ms`. Va do la khoa
+#:    khien luong bi CAT o 62 giay, tuc dung cai loi khach dang di sua.
+#:
+#:    Cai o day KHONG phai ghi de (van khong duoc pham luat 1) ma la NOI RA.
+KHOA_PROVIDER_BAT_BUOC = {
+    "base_url": "khong co thi Codex goi nham dich",
+    "env_key": "khong co thi Codex khong biet doc khoa o bien nao",
+    "wire_api": "phai la `responses`; thieu thi Codex dung khuon chat cu",
+    "stream_idle_timeout_ms": (
+        "thieu thi Codex CAT luong o ~62 giay trong khi may van sinh — "
+        "suat bi giu, luot sau an 429"),
+}
+
+
+def _soi_bang_provider_cua_khach(van: str) -> list:
+    """Bang `[model_providers.ltt]` san co cua khach thieu khoa nao?
+
+    Chi doc, khong sua. Tra ve danh sach `(khoa, ly_do)` con thieu.
+    """
+    dong = van.splitlines()
+    trong = False
+    thay = set()
+    for d in dong:
+        if _RE_PROVIDER_LTT.match(d):
+            trong = True
+            continue
+        if trong and re.match(r"^\s*\[", d):
+            break
+        if trong:
+            m = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", d)
+            if m:
+                thay.add(m.group(1))
+    return [(k, ly) for k, ly in KHOA_PROVIDER_BAT_BUOC.items() if k not in thay]
+
+
 def _go_bang_provider_ltt(van: str, goc: str, nl: str) -> tuple:
     r"""Cat bang `[model_providers.ltt]` **cua ta** ra khoi `config.toml`.
 
@@ -732,6 +779,18 @@ def cam_codex(goc: str, tt: dict, cho_vscode: bool = False) -> list:
     _ghi_giu_dong(cfg, moi)
     ra.append(f"  [OK] {cfg}  (khoi co dau moc, phan con lai giu nguyen"
               + (", da co provider san — khong chen lai" if co_prov else "") + ")")
+
+    # ⚠ Bang provider san co la CUA KHACH nen ta khong ghi de. Nhung neu no
+    #   thieu khoa thi phai NOI RA — im lang o day tung de lai dung cai loi
+    #   khach dang di sua. Xem `KHOA_PROVIDER_BAT_BUOC`.
+    if co_prov:
+        for khoa, ly_do in _soi_bang_provider_cua_khach(van):
+            ra.append(f"  [!!] `[model_providers.ltt]` san co cua ban THIEU "
+                      f"`{khoa}` — {ly_do}.")
+        if _soi_bang_provider_cua_khach(van):
+            ra.append("       Ta KHONG tu sua bang cua ban. Cach don gian nhat: "
+                      "xoa bang `[model_providers.ltt]` trong "
+                      f"{cfg} roi chay lai lenh nay.")
 
     prof = thu_muc / "ltt.config.toml"
     ghi = tt.setdefault("codex", {})

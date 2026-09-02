@@ -26,6 +26,8 @@ gia.py — giá một lượt tạo ảnh bằng model nhà. (H37, chuẩn hoá 
 """
 from __future__ import annotations
 
+from platform_core.i18n import _ as _t
+
 #: Đổi con số nào bên dưới thì **phải** đổi chuỗi này. Không có phiên bản thì
 #: không đối soát được một hoá đơn cũ với bảng giá nào đã sinh ra nó.
 PHIEN_BAN_GIA = "ltt-image-2026-08-24b"
@@ -108,10 +110,29 @@ def bang_gia() -> dict:
 
     Gõ lại vào template là tạo ra một bảng giá thứ hai, và ngày hai bảng lệch
     nhau thì bảng nào cũng không đáng tin.
+
+    ⭐ `vi_du` NẰM Ở ĐÂY từ 2026-09-02, và đó là chỗ đúng của nó.
+
+       Trước đó `server/routes/dashboard.py` tự dựng ba ví dụ rồi gọi
+       `gia.tinh()` cho từng cái — tức tầng route giữ **danh sách ví dụ** còn
+       app giữ **phép tính**. Chính chú thích ngay cạnh nó (phần giọng nói) đã
+       gọi việc ấy là *"tạo đúng cái bảng giá thứ hai"* mà hàm này cảnh báo, và
+       `apps/ltt_voice/gia.py` thì đã làm đúng từ đầu.
+
+       Đưa về đây thì trang giá chỉ còn **đọc**, không còn **tính** — và nền
+       tảng thôi phải biết `anhnoibo` có những chế độ nào.
     """
     return {
         "don_vi": "credit / anh",
         "phien_ban_gia": PHIEN_BAN_GIA,
+        "vi_du": [
+            {"ten": _t("Một ảnh từ mô tả"), "so": 1, "che_do": "t2i",
+             "credit": tinh(so_anh=1, che_do="t2i")},
+            {"ten": _t("Bốn ảnh từ mô tả"), "so": 4, "che_do": "t2i",
+             "credit": tinh(so_anh=4, che_do="t2i")},
+            {"ten": _t("Một ảnh có ảnh tham chiếu"), "so": 1, "che_do": "edit",
+             "credit": tinh(so_anh=1, che_do="edit")},
+        ],
         "anh_thuong": CREDIT_MOI_ANH,
         "anh_tham_chieu": CREDIT_MOI_ANH * HE_SO_THAM_CHIEU,
         "he_so_tham_chieu": HE_SO_THAM_CHIEU,

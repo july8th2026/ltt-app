@@ -188,6 +188,19 @@ STORES: tuple = (
           "và khoá tệp tiếng đã sinh. Văn bản là nội dung của khách; khoá tệp "
           "chỉ là con trỏ — tệp thật sống theo hạn của job sinh ra nó.")),
 
+    # ⚠️ `retention_days=None` ở đây KHÔNG phải "giữ mãi bất chấp" mà là "sống
+    #    theo vòng đời tài khoản" — cùng nghĩa với `voice_project`.
+    #
+    #    Và ở bảng này nó là một RÀNG BUỘC ĐÚNG chứ không phải một sự tiện tay:
+    #    hết hạn từ điển sau N ngày nghĩa là một hôm nào đó tên riêng của khách
+    #    **đọc khác đi** mà không ai báo, trên chính những kịch bản họ đã đọc
+    #    đúng hàng trăm lần. Một thay đổi im lặng trong thứ khách nghe được.
+    Store("voice_tu_dien", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từ điển phát âm riêng của khách: từ nào đọc thành gì. Do khách "
+          "tự soạn cho tên công ty, tên nhân vật, tên sản phẩm — những thứ "
+          "engine không đoán được. Áp cho MỌI lượt đọc của họ, kể cả khi gọi "
+          "qua API, nên nó quyết định thứ khách nghe được.")),
+
     # ── Operational: aged out on a schedule ──────────────────────────────────
     Store("public_api_requests", OPERATIONAL, 30, N_("chủ tài khoản + vận hành"),
           N_("Gỡ lỗi một tích hợp. Không chứa payload, chỉ metadata."),

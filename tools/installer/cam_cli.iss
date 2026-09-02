@@ -24,7 +24,7 @@
 
 #define TenApp      "LTT Studios - Cam cong cu viet ma"
 #define TenNgan     "LTTStudios-CamCLI"
-#define PhienBan    "1.3.0"
+#define PhienBan    "1.4.0"
 #define NhaXB       "LTT Studios"
 #define Web         "https://app.lttstudios.com"
 #define ThuMucNguon "..\..\build\exe\pyinstaller\LTTStudios-CamCLI"
