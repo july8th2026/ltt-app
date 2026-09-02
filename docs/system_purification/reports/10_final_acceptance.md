@@ -481,3 +481,60 @@ Ba lan truoc, phep do bi bo qua. Lan nay **phep do da chay va da tra loi** —
 ⇒ Bai hoc hep hon va sac hon: **mot thong bao loi noi ve cai NHIN THAY cua cong
 cu, khong noi ve THE GIOI.** `does not appear to be` — chinh cau chu cua git da
 noi ro dieu do, va toi van doc no thanh mot khang dinh ve the gioi.
+
+---
+
+## 14. PHAN QUYET CHOT
+
+```
+FINAL PASS
+```
+
+### Bang chung, do tren CAY CHINH tai dung SHA duoc phan quyet
+
+```
+luot : 20260902T144559Z-21084
+sha  : 3a41175   nhanh: admin-mvp-v3   la_cay_chinh: True
+buoc : PASS 25 · BOQUA 1 · FAIL 0      tong 303.0s
+cay_da_doi_giua_chung: False
+```
+
+⭐ Ba dieu lam luot nay khac moi luot truoc:
+
+1. **25/26 buoc co bang chung** — ba buoc frontend chay that (truoc do luon
+   `BOQUA` vi worktree khong co `node_modules`).
+2. **Buoc `BOQUA` duy nhat da duoc dong RIENG**: `test_214` chay 7/7 tren
+   PostgreSQL that (§2.2). Khong con muc nao "khong ai biet no co xanh khong".
+3. `cay_da_doi_giua_chung: False` — khong phien nao ghi vao cay giua luot,
+   nen ket qua noi ve **dung** cay duoc do.
+
+### Dieu kien cua CONDITIONAL da duoc go
+
+§9 dat dieu kien: *"mot **quyet dinh** ve cho treo do — sua, hoac khai no la
+duong chet co bien gioi"*.
+
+⇒ Quyet dinh la **thu ba**: **no khong ton tai**. Da chung minh (§12), da sua
+goc (ngan sach suy ra thay vi go tay), da quet ca `tests/` xem con cho nao thieu
+cung phep cong — khong con.
+
+### Trang thai cuoi
+
+| | |
+|---|---|
+| Phan quyet | **FINAL PASS** |
+| SHA duoc phan quyet | `3a41175` |
+| Gate | PASS 25 · BOQUA 1 (da dong rieng) · FAIL 0 |
+| Deploy | ✅ 21:11, EXITCODE=0, nghiem thu nang quyen 0 loi |
+| Quy tac 5b | ✅ dong tren URL cong khai |
+| STATE | **CLOSED** |
+
+### ⛔ Ba muc no van MO, va chung khong lam phan quyet thay doi
+
+| No | Vi sao khong chan FINAL PASS |
+|---|---|
+| Ban sao luu `D:\LTTBackups` **chua xac minh duoc** | doi nang quyen — ranh gioi khong tu vuot; va da co duong sao luu thu hai (`origin`) **da kiem** |
+| 294 chuoi i18n khach thay | viec **noi dung**, khong phai viec don dep; khong moc nao bi nang |
+| `thanh_phan` mu voi test doc `.ps1` | han che **da do va da ghi**; 10 tep do van chay 250 phep kiem xanh |
+
+⭐ Mot ban `FINAL PASS` khong co nghia la khong con no. No co nghia la **moi mon
+no deu co ten, co pham vi, va co nguoi biet no o do**.
