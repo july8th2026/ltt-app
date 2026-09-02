@@ -341,3 +341,143 @@ chinh no.
 🔴 **Va con no lon nhat gio doi cho:** 29 commit chua day len `origin`, gom ca
 ban **dang phuc vu khach that**. Ma nguon production hien chi ton tai tren **mot
 o dia**. Day khong con la rui ro sao luu chung chung — no la rui ro cu the.
+
+---
+
+## 12. 🔴 RUT LAI P0 — khong co deadlock nao ca. Loi la cua chinh toi.
+
+Bao cao nay (§8, §9) khai mot **P0 mo**: *"cho treo tai hien duoc (>180s), nghi
+deadlock khi hai scheduler tick cung mot agent run"*, va lay chinh no lam ly do
+ha phan quyet xuong `CONDITIONAL PASS`.
+
+⛔ **Sai.** Da do lai bang bon phep do doc lap. Khong co cho treo nao.
+
+### Phep do
+
+```
+tests/test_73_dong_thoi_pg.py   ->  7 passed in 5.58s
+  ...test_agent_executor_hai_scheduler_khong_submit_trung PASSED
+```
+
+Va ban tai hien doc lap (hai luong that, khong qua pytest):
+
+```
+sau 0.1s: ket qua = ['L2:ok', 'L1:ok']
+  L1:vao +0.0s   L1:xong-tick +0.1s
+  L2:vao +0.0s   L2:xong-tick +0.0s
+```
+
+### Nguyen nhan that: mot phep cong bi bo sot, trong commit `03845cb` cua toi
+
+`budget.quote()` cong `PLANNING_COST` vao chi phi thuc thi **truoc** khi so voi
+`budget_max_credit`:
+
+```python
+PLANNING_COST = 4
+maximum = planning_cost + execution        # 4 + 20 = 24
+if limit < maximum: raise BudgetError      # 20 < 24  ->  NEM
+```
+
+O Phase 07 toi go hai lop che (tool `text.script` da bi go, bao gia 3 < gia tool
+6) va nang `estimated_max_credit` tu 3 len 20 — nhung de nguyen
+`budget_max_credit: 20`. Ket qua: `set_quote` nem `BudgetError` **ngay o khau
+dung**, cuoc dua **chua bao gio bat dau**.
+
+```
+BudgetError: Can toi da 24, vuot ngan sach 20.
+```
+
+### ⭐ Va day la LAN THU BA trong ngay cua cung mot co che
+
+Bao cao 09 §7 ghi hai lan; day la lan thu ba, va lan nay nan nhan la **chinh toi
+o vai tro nguoi chan doan**:
+
+| Trieu chung | Loi giai thich "vua van" | Su that |
+|---|---|---|
+| `.git` la mot tep o worktree | *"phep kiem chi dung o cay chinh"* | `GOC` suy tu `__file__` |
+| gate dot CPU | *"frontend nap vao bong cua bo test"* | frontend la mot **be** 12 worker |
+| **luot chay >180s** | ***"deadlock giua hai scheduler"*** | **`BudgetError` o khau dung** |
+
+⛔ "Hai luong + mot khoa hang + chay lau" khop **hoan hao** voi hinh dang cua
+mot deadlock. Khop den muc toi khong do them mot buoc nao nua — toi **viet no
+vao bao cao nghiem thu cuoi nhu mot P0**, va ha phan quyet cua ca chuong trinh
+vi no.
+
+⭐ Phep do go no ra mat **hai muoi phut**, va no khong doi ky nang nao ca: chi
+la chay cai phep kiem do va **doc thong bao loi**. Cai dat gia la chi phi de bat
+dau do, khi ma cau chuyen trong dau da du mach lac.
+
+### Sua — va sua sao cho khong lech lai duoc
+
+```python
+thuc_thi = 20
+"budget_max_credit": thuc_thi + budget.PLANNING_COST,
+...
+validation=ValidationResult(True, (), thuc_thi, ())
+```
+
+⇒ Ngan sach **suy ra**, khong go tay. Doi `PLANNING_COST` thi phep kiem tu dung
+theo. Mot hang so go tay o day la mot hang so se lech lai — no vua lech mot lan.
+
+### Phan quyet cap nhat
+
+```
+FINAL PASS
+```
+
+Dieu kien duy nhat cua `CONDITIONAL PASS` la "mot quyet dinh ve cho treo do".
+Quyet dinh la: **no khong ton tai**. Da chung minh, da sua goc, da co chot.
+
+---
+
+## 13. ⚠️ DINH CHINH LAN THU HAI — va do la LAN THU TU cua cung co che
+
+§12 vua ghi ba lan mot gia thuyet khop-qua-vua ket thuc dieu tra. Lan thu tu xay
+ra **trong chinh doan van do**.
+
+Khi day len remote, toi chay:
+
+```
+git push backup admin-mvp-v3
+fatal: 'D:/LTTBackups/LTTSTUDIOSAPP.git' does not appear to be a git repository
+```
+
+Va toi ket luan: *"kho sao luu khong ton tai"*. Phien `ltt-voice` bat loi, toi
+do lai:
+
+```
+Test-Path D:\LTTBackups                    -> True
+Test-Path D:\LTTBackups\LTTSTUDIOSAPP.git  -> NEM LOI: Access ... is denied
+Get-Acl   D:\LTTBackups                    -> unauthorized operation
+```
+
+⛔ `Test-Path` **nem loi**, khong tra `False`. Tuc duong dan do **khong probe
+duoc** — su ton tai cua no la **chua biet**, khong phai **da bac bo**. Cau
+`does not appear to be a git repository` la cau git noi khi no **khong doc
+duoc**, bat ke co gi o do hay khong.
+
+### Ba he qua khac han nhau
+
+| | "khong ton tai" (toi ket luan) | "khong doc duoc" (do duoc) |
+|---|---|---|
+| Du lieu cu | mat | **co the con nguyen** |
+| Cach chua | `git clone --mirror`, dung lai tu dau | `icacls` — cap quyen |
+| Trang thai hien tai | mot su that | **mot loi khai chua kiem duoc** |
+
+⇒ Cau dung phai la: `git remote -v` liet ke **hai** duong sao luu, mot trong hai
+**khong xac minh duoc bang tai khoan nay**. Khong phai "chi con mot duong".
+
+⚠️ ⛔ Va do la mot rui ro **ton tai doc lap** voi viec push da xong: mot ban sao
+luu khong ai doc duoc noi dung thi khong khac gi mot ban sao luu chua tung duoc
+kiem. Muon biet no con dung khong thi phai nang quyen — **ranh gioi khong tu
+vuot**. Da ghi thanh no.
+
+### ⭐ Vi sao lan nay dang ghi hon ba lan truoc
+
+Ba lan truoc, phep do bi bo qua. Lan nay **phep do da chay va da tra loi** —
+`fatal: ...` la mot ket qua that. Toi doc dung chu, va suy sai **mot buoc**: tu
+"git khong thay kho" sang "kho khong co".
+
+⇒ Bai hoc hep hon va sac hon: **mot thong bao loi noi ve cai NHIN THAY cua cong
+cu, khong noi ve THE GIOI.** `does not appear to be` — chinh cau chu cua git da
+noi ro dieu do, va toi van doc no thanh mot khang dinh ve the gioi.

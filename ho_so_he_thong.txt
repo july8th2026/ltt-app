@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:2ea80dede08fe1b6fdb9d35e2043775fb0f7f9d80613422266cad9f60e35d34b
+Fingerprint   : sha256:698cd946ad83c4cbff8eeeaebf2d4b437ac3ba8fb90e4d21e0fa58ffcab37c19
 Nguồn đã quét : 1472 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3098,7 +3098,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1472 file; 14774801 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1472 file; 14775537 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -266182,7 +266182,7 @@ def test_rate_limit_theo_cf_ip_khong_khoa_lien(client):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_73_dong_thoi_pg.py
-SHA256=dda6d3dab1a5887db1dcf339095e9d2633238ba58088f7eaa3030fca686c469c BYTES=15933 LINES=424
+SHA256=ccb0442bda6faab89c7b9e48e0aec70d2a5aca7a8f3a1cbb4444ab24fec3cf91 BYTES=16669 LINES=437
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 W0.1/W0.2 — kiểm ĐỒNG THỜI trên PostgreSQL thật (SQLite bỏ qua FOR UPDATE và
@@ -266507,8 +266507,21 @@ def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
 
     s = Sess()
     bao_dam_user(s, "executor-user"); credit.cap_tay(s, "executor-user", 100, by="test")
+    # ⭐ NGAN SACH SUY RA, khong go tay. `budget.quote` cong `PLANNING_COST`
+    #    vao chi phi thuc thi TRUOC khi so voi `budget_max_credit`, nen mot so
+    #    go tay bang dung phan thuc thi se **luon** thieu dung phan planning.
+    #
+    # 🔴 Da tra gia that cho dieu do: ban truoc de `budget_max_credit: 20` va
+    #    `estimated_max_credit=20`. 20 + 4 > 20 ⇒ `set_quote` nem `BudgetError`
+    #    **ngay o khau dung**, va cuoc dua nay chua bao gio bat dau. Trieu chung
+    #    luc do bi doc nham thanh "treo o executor" — no khong he treo.
+    #
+    # ⇒ Viet bang bieu thuc thi khong the lech lai: doi `PLANNING_COST` thi phep
+    #    kiem tu dung theo.
+    thuc_thi = 20
     plan = {
-        "version": 1, "budget_max_credit": 20,
+        "version": 1,
+        "budget_max_credit": thuc_thi + budget.PLANNING_COST,
         "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
                    "fanout": 1, "max_retry": 0,
                    "on_fail": "retry_same", "verify": None,
@@ -266525,7 +266538,7 @@ def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
     # ⭐ Lay bang `budget_max_credit` de phep kiem nay do dung thu no dinh
     #    do — cuoc dua giua hai scheduler — chu khong do gia cua mot tool.
     budget.set_quote(s, run, plan=plan,
-                     validation=ValidationResult(True, (), 20, ()))
+                     validation=ValidationResult(True, (), thuc_thi, ()))
     budget.approve(s, run_id=run.id, user_id="executor-user",
                    approved_by="executor-user", expected_version=run.version)
     run_id = run.id
