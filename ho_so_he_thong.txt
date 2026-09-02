@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:29ca7053e5b774f014f1b28193cd56ff1559ebd76cb6d4799ec05b39b7778e0c
+Fingerprint   : sha256:bfff5ae4a691d5465ad5dc142999afb592e4d96ce39b4481f459593b2d56f992
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -603,20 +603,20 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:21
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
-- [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:43
-- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:474
-- [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:73
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:129
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:385
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:209
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:354
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:571
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:238
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:268
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:293
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:183
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:432
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:95
+- [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:62
+- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:495
+- [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:93
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:149
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:406
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:230
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:375
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:592
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:259
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:289
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:314
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:204
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:453
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:115
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:58
 - [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:134
@@ -3083,7 +3083,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14652172 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14654661 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21731,7 +21731,7 @@ def _sang_mp3(wav: bytes):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_du_an.py
-SHA256=f1e06a3922dc8bc6c05888037f30108c0b356ec57816b9517b188d5ce75cff40 BYTES=25426 LINES=613
+SHA256=f1e785dd8058942db1dafe37fffc0df27967da30f0acabe5ebd78290b76eb145 BYTES=26700 LINES=634
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: danh sách · khối · sinh tiếng theo khối · xuất.
 
@@ -21747,7 +21747,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
-                     verify_csrf_token, vo, lan_ngon_ngu)
+                     verify_csrf_token, vo, lan_ngon_ngu, nghe_thu)
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -21759,8 +21759,23 @@ def _mo_du_an(db, request, user, public_id: str):
     return du_an.tim(db, public_id, owner_id=_uid(user))
 
 
-def _ngu_canh_giong(**them) -> dict:
-    """Bộ khoá mà `_voice_chon.html` cần. Ba màn dùng chung nên gom một chỗ."""
+def _ngu_canh_giong(*, owner_id: str = "", **them) -> dict:
+    """Bộ khoá mà `_voice_chon.html` cần. Ba màn dùng chung nên gom một chỗ.
+
+    ⭐ `duong_nghe` TÍNH Ở ĐÂY chứ không để từng route tự gọi.
+
+       Bộ chọn giọng xuất hiện ở ba màn của mảng này cộng màn Tạo tiếng nói.
+       Bản đầu chỉ nối đường nghe thử cho màn Tạo — hệ quả là cùng một bộ chọn
+       có nút nghe ở một màn và không có ở ba màn kia, không lỗi nào báo (partial
+       `_voice_chon_nghe.html` tự im khi thiếu biến).
+
+       Đó đúng là hình dạng lỗi mà `du_an.duong_tieng()` đã trả giá: nhiều chỗ
+       tự dựng đường, và sửa cho đúng nghĩa là phải nhớ đủ mọi chỗ. Gom vào
+       hàm dựng ngữ cảnh thì màn thứ năm sau này **được nối sẵn**.
+
+    ⚠️ `nghe_thu.duong_cho_trang` chỉ hỏi KHO, không chạm CSDL — nên gọi được ở
+       đây, sau khi phiên CSDL đã đóng.
+    """
     d = {"giong_mau": giong_mau.DANH_SACH,
          "nhan_gioi": giong_mau.NHAN_GIOI,
          "nhan_vung": giong_mau.NHAN_VUNG,
@@ -21769,6 +21784,10 @@ def _ngu_canh_giong(**them) -> dict:
          "nhan_lan": lan_ngon_ngu.NHAN_LAN,
          "mac_dinh": giong_mau.MAC_DINH}
     d.update(them)
+    d["duong_nghe"] = nghe_thu.duong_cho_trang(
+        duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=owner_id,
+        ma_mau=[g.ma for g in giong_mau.DANH_SACH],
+        rieng=[g.public_id for g in (d.get("giong") or ())])
     return d
 
 
@@ -21800,7 +21819,8 @@ def trang_du_an(request: Request, user=Depends(user_hien_tai),
     return templates.TemplateResponse(
         request, "ltt_voice_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
-                    **_ngu_canh_giong(du_an_ds=ds, dem=dem, giong=cua_toi,
+                    **_ngu_canh_giong(owner_id=uid, du_an_ds=ds, dem=dem,
+                                      giong=cua_toi,
                                       giong_chon="")))
 
 
@@ -21910,7 +21930,8 @@ def trang_mot_du_an(request: Request, public_id: str,
         request, "ltt_voice_mot_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
                     **_ngu_canh_giong(du_an=d, khoi=ds_khoi, tom_tat=tt,
-                                      giong=cua_toi, du_an_ds=du_an_ds,
+                                      owner_id=uid, giong=cua_toi,
+                                      du_an_ds=du_an_ds,
                                       giong_chon=d.giong_mac_dinh)))
 
 
@@ -258830,7 +258851,7 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_ltt_voice_nghe_thu.py
-SHA256=ce2d499a0f4f74d6bf2d4eb8fa9292a60ed473e58d9e3eb19c09bd9c16ea7638 BYTES=20081 LINES=456
+SHA256=140f775af09cec5e9dd2b9b28deb6ea0666ef89a7d99e75590e8ddc2c0f3b8f3 BYTES=21296 LINES=482
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """NGHE THỬ một giọng — và ba thứ quanh nó phải không gãy.
 
@@ -259288,6 +259309,32 @@ def test_bo_chon_KHONG_lap_lai_ma_cho_giong_mau(khach, monkeypatch):
         "muc giong mau " + ten + " co chip ma — no in lai dung cai ten nam "
         "ngay tren no, vi voi giong mau thi public_id == ten_hien_thi")
     assert "<b>" + ten + "</b>" in mot_muc, "muc mat ten giong"
+
+
+@pytest.mark.parametrize("duong", [
+    "/ltt-voice",            # Tao tieng noi
+    "/ltt-voice/du-an",      # Danh sach du an
+])
+def test_MOI_man_dung_bo_chon_giong_deu_co_nghe_thu(khach, monkeypatch, duong):
+    """🔴 BÁNH CÓC CHO MỘT LỖI ĐÃ XẢY RA THẬT.
+
+    `_voice_chon.html` xuất hiện ở bốn màn. Bản đầu chỉ nối `duong_nghe` cho
+    màn Tạo tiếng nói — ba màn kia có **cùng bộ chọn** nhưng không có nút nghe,
+    và **không lỗi nào báo**: partial `_voice_chon_nghe.html` tự im khi thiếu
+    biến, đúng như nó phải thế.
+
+    ⭐ Một partial im lặng khi thiếu dữ liệu là thiết kế đúng — nhưng nó biến
+       "quên nối" thành một khiếm khuyết vô hình. Nên phép kiểm phải hỏi từng
+       màn, không hỏi partial.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get(duong)
+    assert r.status_code == 200
+    assert "lv-chon-ds" in r.text, f"{duong} khong dung bo chon giong nua?"
+    assert "lv-chon-nghe" in r.text, (
+        f"{duong} co bo chon giong nhung KHONG co nut nghe thu — "
+        f"route quen truyen `duong_nghe`")
 
 @@@LTT_PROFILE_FILE_END@@@
 

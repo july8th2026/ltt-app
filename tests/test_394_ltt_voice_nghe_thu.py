@@ -454,3 +454,29 @@ def test_bo_chon_KHONG_lap_lai_ma_cho_giong_mau(khach, monkeypatch):
         "muc giong mau " + ten + " co chip ma — no in lai dung cai ten nam "
         "ngay tren no, vi voi giong mau thi public_id == ten_hien_thi")
     assert "<b>" + ten + "</b>" in mot_muc, "muc mat ten giong"
+
+
+@pytest.mark.parametrize("duong", [
+    "/ltt-voice",            # Tao tieng noi
+    "/ltt-voice/du-an",      # Danh sach du an
+])
+def test_MOI_man_dung_bo_chon_giong_deu_co_nghe_thu(khach, monkeypatch, duong):
+    """🔴 BÁNH CÓC CHO MỘT LỖI ĐÃ XẢY RA THẬT.
+
+    `_voice_chon.html` xuất hiện ở bốn màn. Bản đầu chỉ nối `duong_nghe` cho
+    màn Tạo tiếng nói — ba màn kia có **cùng bộ chọn** nhưng không có nút nghe,
+    và **không lỗi nào báo**: partial `_voice_chon_nghe.html` tự im khi thiếu
+    biến, đúng như nó phải thế.
+
+    ⭐ Một partial im lặng khi thiếu dữ liệu là thiết kế đúng — nhưng nó biến
+       "quên nối" thành một khiếm khuyết vô hình. Nên phép kiểm phải hỏi từng
+       màn, không hỏi partial.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get(duong)
+    assert r.status_code == 200
+    assert "lv-chon-ds" in r.text, f"{duong} khong dung bo chon giong nua?"
+    assert "lv-chon-nghe" in r.text, (
+        f"{duong} co bo chon giong nhung KHONG co nut nghe thu — "
+        f"route quen truyen `duong_nghe`")
