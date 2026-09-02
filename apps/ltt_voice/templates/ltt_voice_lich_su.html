@@ -120,7 +120,25 @@
                 <p class="lv-ls-chu">{{ d.text or _("(không có văn bản)") }}</p>
                 <p class="lv-ls-meta">
                   <time datetime="{{ d.luc.isoformat() }}">{{ d.luc.strftime('%H:%M %d/%m/%Y') }}</time>
-                  {% if d.giong %}· {%- if d.giong in ten_giong %} <span>{{ ten_giong[d.giong] }}</span>{%- else %} <span class="mono">{{ d.giong }}</span>{% endif %}{% endif %}
+                  {#
+                    GIỌNG của lượt này. Ba nhánh, và nhánh thứ ba mới thêm:
+
+                      · giọng nhân bản  -> tên khách đã đặt (`ten_giong`)
+                      · giọng dựng sẵn  -> chính cái mã, vì mã LÀ tên
+                      · KHÔNG chọn gì   -> "Giọng mặc định (<tên>)"
+
+                    ⛔ Nhánh ba trước đây in **rỗng**. Một ô trống nằm giữa giờ
+                       và thời lượng đọc như *thiếu dữ liệu*, trong khi sự thật
+                       là lượt ấy đã được đọc bằng một giọng xác định — chỉ là
+                       khách không gõ tên nó ra. Với hai mươi giọng trong danh
+                       mục, "lượt này giọng nào" đúng là câu người ta quay lại
+                       lịch sử để hỏi.
+                  #}
+                  {%- if d.giong %}
+                    · {% if d.giong in ten_giong %}<span>{{ ten_giong[d.giong] }}</span>{% else %}<span class="mono">{{ d.giong }}</span>{% endif %}
+                  {%- elif d.giong_mac_dinh %}
+                    · <span class="dim">{{ _("Giọng mặc định") }} ({{ giong_mac_dinh }})</span>
+                  {%- endif %}
                   {% if d.giay %}· {{ d.giay }}s{% endif %}
                   {% if d.credit is not none %}· {{ d.credit }} credit{% endif %}
                 </p>

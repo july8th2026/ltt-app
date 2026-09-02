@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:36cc56ac34ecf198f853a489acec45940f3426574a41fdd3c7129b536c930e84
+Fingerprint   : sha256:29ca7053e5b774f014f1b28193cd56ff1559ebd76cb6d4799ec05b39b7778e0c
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -622,7 +622,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:134
 - [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:186
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
-- [ltt_voice] POST   /ltt-voice/lich-su/{job_id}/doc-lai → doc_lai | auth~login | apps/ltt_voice/routes/_p_lich_su.py:79
+- [ltt_voice] POST   /ltt-voice/lich-su/{job_id}/doc-lai → doc_lai | auth~login | apps/ltt_voice/routes/_p_lich_su.py:83
 - [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:238
 - [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:325
 - [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:344
@@ -3083,7 +3083,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14646055 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14652172 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -18872,7 +18872,7 @@ def chi_tiet_cho_trang(db, giong: list, thong_ke: dict, duong_audio: str) -> dic
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/doc_man_lich_su.py
-SHA256=83d5b7cac1629d75e802207c49f78d31c609026440852ca294dbd8b130c577d1 BYTES=7337 LINES=175
+SHA256=6d297f9c760b0f44932b55f2e99cbd58d5492a0f261f24f4712e74998a09a95e BYTES=8875 LINES=195
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 doc_man_lich_su.py — số liệu mà MÀN LỊCH SỬ cần.
@@ -18918,6 +18918,20 @@ def _nguon_cua(job) -> str:
 
 
 def _giong_cua(job) -> str:
+    """Mã giọng đã đọc lượt này. Rỗng nghĩa là **giọng mặc định**.
+
+    ⛔ RỖNG KHÔNG PHẢI "KHÔNG BIẾT". Khách không chọn gì thì cửa nộp ghi
+       `voice_id=""` và `preset=""`, và engine đọc bằng preset mặc định của nó
+       (`giong_mau.MAC_DINH`). Tức lượt ấy **có** một giọng xác định, chỉ là
+       không ai gõ tên nó ra.
+
+    ⚠️ Nhưng ĐỪNG điền tên mặc định ở đây. Hàm này cũng là thứ `loc()` so bằng
+       và là thứ `tom_tat()` gom nhóm; nhét một cái tên vào sẽ làm các lượt
+       "mặc định" trộn lẫn với các lượt khách CHỌN đúng giọng ấy — hai việc
+       khác nhau, và gộp chúng là bịa ra một con số không ai kiểm được.
+       Việc đặt tên cho ô trống là việc của **màn hình**: `dong_cho_trang`
+       trả thêm `giong_mac_dinh` để khuôn mẫu nói ra, không đoán.
+    """
     p = job.params or {}
     return str(p.get("voice_id") or p.get("preset") or "")
 
@@ -19042,6 +19056,12 @@ def dong_cho_trang(job, duong_audio: str) -> dict:
         "trang_thai": job.status,
         "text": str((job.params or {}).get("text") or "")[:160],
         "giong": _giong_cua(job),
+        # 🔴 Lượt không chọn giọng vẫn ĐƯỢC ĐỌC bằng một giọng có thật. Trước
+        #    02/09/2026 dòng của nó không nói giọng nào cả — một ô trống ở giữa
+        #    thời gian và thời lượng, đọc như "thiếu dữ liệu" chứ không như
+        #    "mặc định". Với hai mươi giọng trong danh mục, đó đúng là câu hỏi
+        #    khách quay lại lịch sử để hỏi: *lượt này đọc bằng giọng nào?*
+        "giong_mac_dinh": not _giong_cua(job),
         "nguon": _nguon_cua(job),
         "giay": kq.get("duration_s"),
         "credit": kq.get("credit_cost"),
@@ -22496,7 +22516,7 @@ def tat_giong(request: Request, public_id: str, csrf_token: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_lich_su.py
-SHA256=5d6e1307a5dc426a7ee46c8e79cef550cc00fdb3a85a941480fa37a02dc0be6b BYTES=7113 LINES=139
+SHA256=dc2c4cc1f2446b51b67aca502cf7832c7435341d0f0f69bb368241bf7a9bfc3b BYTES=7422 LINES=143
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Lịch sử: lọc và liệt kê các lượt đọc."""
 from __future__ import annotations
@@ -22568,6 +22588,10 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
                     giong_da_dung=goi["giong_da_dung"],
                     nguon_da_dung=goi["nguon_da_dung"],
                     nhan_nguon=NHAN_NGUON, ten_giong=ten_giong,
+                    # Tên giọng engine dùng khi khách không chọn gì.
+                    # Lấy từ ảnh chụp preset, KHÔNG gõ tay — gõ tay thì
+                    # ngày engine đổi mặc định, lịch sử vẫn nói cái cũ.
+                    giong_mac_dinh=giong_mau.MAC_DINH,
                     cac_moc_ngay=doc_man_lich_su.CAC_MOC_NGAY,
                     f_tt=tt, f_nguon=nguon, f_giong=giong,
                     f_ngay=ngay_hop_le))
@@ -24835,7 +24859,7 @@ SHA256=1997d70469591f97c35974c59b42d8fda65adab0e9c1113bd3153ebb63a86278 BYTES=14
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_lich_su.html
-SHA256=371a3b7a9b1e19591731839b4caf4ae62578de79dc940e6c414175f57920d23a BYTES=14017 LINES=267
+SHA256=ec24b52078c482db867a541e1377347a2973e35366ede56e6a875e4d32466a9f BYTES=15138 LINES=285
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Lịch sử") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24959,7 +24983,25 @@ SHA256=371a3b7a9b1e19591731839b4caf4ae62578de79dc940e6c414175f57920d23a BYTES=14
                 <p class="lv-ls-chu">{{ d.text or _("(không có văn bản)") }}</p>
                 <p class="lv-ls-meta">
                   <time datetime="{{ d.luc.isoformat() }}">{{ d.luc.strftime('%H:%M %d/%m/%Y') }}</time>
-                  {% if d.giong %}· {%- if d.giong in ten_giong %} <span>{{ ten_giong[d.giong] }}</span>{%- else %} <span class="mono">{{ d.giong }}</span>{% endif %}{% endif %}
+                  {#
+                    GIỌNG của lượt này. Ba nhánh, và nhánh thứ ba mới thêm:
+
+                      · giọng nhân bản  -> tên khách đã đặt (`ten_giong`)
+                      · giọng dựng sẵn  -> chính cái mã, vì mã LÀ tên
+                      · KHÔNG chọn gì   -> "Giọng mặc định (<tên>)"
+
+                    ⛔ Nhánh ba trước đây in **rỗng**. Một ô trống nằm giữa giờ
+                       và thời lượng đọc như *thiếu dữ liệu*, trong khi sự thật
+                       là lượt ấy đã được đọc bằng một giọng xác định — chỉ là
+                       khách không gõ tên nó ra. Với hai mươi giọng trong danh
+                       mục, "lượt này giọng nào" đúng là câu người ta quay lại
+                       lịch sử để hỏi.
+                  #}
+                  {%- if d.giong %}
+                    · {% if d.giong in ten_giong %}<span>{{ ten_giong[d.giong] }}</span>{% else %}<span class="mono">{{ d.giong }}</span>{% endif %}
+                  {%- elif d.giong_mac_dinh %}
+                    · <span class="dim">{{ _("Giọng mặc định") }} ({{ giong_mac_dinh }})</span>
+                  {%- endif %}
                   {% if d.giay %}· {{ d.giay }}s{% endif %}
                   {% if d.credit is not none %}· {{ d.credit }} credit{% endif %}
                 </p>
@@ -248470,7 +248512,7 @@ def test_khong_cua_nao_bo_qua_ket_qua_verify():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_348_ltt_voice_lich_su.py
-SHA256=a0c73a4c021cbd0090ae01803203fd2485fbaacb6e087bdb4b8b879079e79986 BYTES=20112 LINES=495
+SHA256=372013d9e12731f7c5fd54e8413d6a9d8d0a68eb4051cd7b308471bd002b1541 BYTES=23261 LINES=568
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Lịch sử: lọc đúng, đếm đúng, và **nói ra** chỗ nó cắt bớt.
 
@@ -248967,6 +249009,79 @@ def test_doc_lai_job_cua_NGUOI_KHAC_la_404(khach):
     r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
                     data={"csrf_token": _csrf(client)})
     assert r.status_code == 404, r.text
+
+
+# ── Lượt KHÔNG chọn giọng vẫn phải nói nó đọc bằng giọng nào ─────────────────
+
+def test_luot_khong_chon_giong_duoc_danh_dau_la_MAC_DINH():
+    """🔴 Rỗng không phải "không biết".
+
+    Khách không chọn gì thì cửa nộp ghi `voice_id=""` và `preset=""`, còn engine
+    đọc bằng preset mặc định của nó. Tức lượt ấy **có** một giọng xác định — chỉ
+    là không ai gõ tên nó ra.
+
+    Trước 02/09/2026 dòng của nó in một ô trống nằm giữa giờ và thời lượng, đọc
+    như *thiếu dữ liệu*. Với hai mươi giọng trong danh mục, "lượt này giọng nào"
+    đúng là câu người ta quay lại lịch sử để hỏi.
+    """
+    d = dls.dong_cho_trang(_job(params={"text": "x"}), "/a")
+    assert d["giong"] == ""
+    assert d["giong_mac_dinh"] is True
+
+    d2 = dls.dong_cho_trang(_job(params={"text": "x", "preset": "Adam"}), "/a")
+    assert d2["giong"] == "Adam"
+    assert d2["giong_mac_dinh"] is False
+
+
+def test_loc_theo_giong_KHONG_gom_luot_mac_dinh():
+    """⛔ "Dùng mặc định" và "chọn đúng giọng ấy" là HAI việc khác nhau.
+
+    Giọng mặc định hôm nay là `Adam`. Nếu `_giong_cua` điền sẵn tên mặc định cho
+    lượt không chọn, thì lọc theo `Adam` sẽ trả về cả những lượt khách **chưa
+    từng chọn Adam** — một con số không ai kiểm được nữa, và nó sai theo hướng
+    làm một giọng trông phổ biến hơn thực tế.
+
+    Đó là lý do việc đặt tên cho ô trống nằm ở **màn hình** (`giong_mac_dinh`),
+    không ở `_giong_cua`.
+    """
+    ds = [_job(id="a", params={"preset": "Adam"}),
+          _job(id="b", params={}),
+          _job(id="c", params={"preset": "Mai Anh"})]
+    assert [j.id for j in dls.loc(ds, giong="Adam")] == ["a"]
+
+
+def test_man_lich_su_in_ten_giong_mac_dinh(khach):
+    """Bắc cầu route -> khuôn: tên mặc định phải lấy từ ảnh chụp preset.
+
+    ⛔ Gõ tay tên ấy vào khuôn mẫu thì ngày engine đổi mặc định, lịch sử vẫn nói
+       cái cũ — và không có gì báo.
+    """
+    client, uid = khach
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(Job(user_id=uid, app_slug="ltt_voice",
+                   job_type="ltt_voice.synthesize",
+                   params={"text": "khong chon giong", "nguon": "studio"},
+                   status="done",
+                   result={"duration_s": 1.0, "credit_cost": 1,
+                           "audio_key": f"voice/out/{uid}/jx/tieng.wav"}))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from apps.ltt_voice import giong_mau
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert giong_mau.MAC_DINH in r.text, (
+        "man Lich su khong noi ten giong mac dinh — luot khong chon giong se "
+        "hien mot o trong, doc nhu thieu du lieu")
 
 @@@LTT_PROFILE_FILE_END@@@
 

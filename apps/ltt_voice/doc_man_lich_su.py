@@ -42,6 +42,20 @@ def _nguon_cua(job) -> str:
 
 
 def _giong_cua(job) -> str:
+    """Mã giọng đã đọc lượt này. Rỗng nghĩa là **giọng mặc định**.
+
+    ⛔ RỖNG KHÔNG PHẢI "KHÔNG BIẾT". Khách không chọn gì thì cửa nộp ghi
+       `voice_id=""` và `preset=""`, và engine đọc bằng preset mặc định của nó
+       (`giong_mau.MAC_DINH`). Tức lượt ấy **có** một giọng xác định, chỉ là
+       không ai gõ tên nó ra.
+
+    ⚠️ Nhưng ĐỪNG điền tên mặc định ở đây. Hàm này cũng là thứ `loc()` so bằng
+       và là thứ `tom_tat()` gom nhóm; nhét một cái tên vào sẽ làm các lượt
+       "mặc định" trộn lẫn với các lượt khách CHỌN đúng giọng ấy — hai việc
+       khác nhau, và gộp chúng là bịa ra một con số không ai kiểm được.
+       Việc đặt tên cho ô trống là việc của **màn hình**: `dong_cho_trang`
+       trả thêm `giong_mac_dinh` để khuôn mẫu nói ra, không đoán.
+    """
     p = job.params or {}
     return str(p.get("voice_id") or p.get("preset") or "")
 
@@ -166,6 +180,12 @@ def dong_cho_trang(job, duong_audio: str) -> dict:
         "trang_thai": job.status,
         "text": str((job.params or {}).get("text") or "")[:160],
         "giong": _giong_cua(job),
+        # 🔴 Lượt không chọn giọng vẫn ĐƯỢC ĐỌC bằng một giọng có thật. Trước
+        #    02/09/2026 dòng của nó không nói giọng nào cả — một ô trống ở giữa
+        #    thời gian và thời lượng, đọc như "thiếu dữ liệu" chứ không như
+        #    "mặc định". Với hai mươi giọng trong danh mục, đó đúng là câu hỏi
+        #    khách quay lại lịch sử để hỏi: *lượt này đọc bằng giọng nào?*
+        "giong_mac_dinh": not _giong_cua(job),
         "nguon": _nguon_cua(job),
         "giay": kq.get("duration_s"),
         "credit": kq.get("credit_cost"),

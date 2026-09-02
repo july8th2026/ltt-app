@@ -68,6 +68,10 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
                     giong_da_dung=goi["giong_da_dung"],
                     nguon_da_dung=goi["nguon_da_dung"],
                     nhan_nguon=NHAN_NGUON, ten_giong=ten_giong,
+                    # Tên giọng engine dùng khi khách không chọn gì.
+                    # Lấy từ ảnh chụp preset, KHÔNG gõ tay — gõ tay thì
+                    # ngày engine đổi mặc định, lịch sử vẫn nói cái cũ.
+                    giong_mac_dinh=giong_mau.MAC_DINH,
                     cac_moc_ngay=doc_man_lich_su.CAC_MOC_NGAY,
                     f_tt=tt, f_nguon=nguon, f_giong=giong,
                     f_ngay=ngay_hop_le))

@@ -493,3 +493,76 @@ def test_doc_lai_job_cua_NGUOI_KHAC_la_404(khach):
     r = client.post(f"/ltt-voice/lich-su/{jid}/doc-lai",
                     data={"csrf_token": _csrf(client)})
     assert r.status_code == 404, r.text
+
+
+# ── Lượt KHÔNG chọn giọng vẫn phải nói nó đọc bằng giọng nào ─────────────────
+
+def test_luot_khong_chon_giong_duoc_danh_dau_la_MAC_DINH():
+    """🔴 Rỗng không phải "không biết".
+
+    Khách không chọn gì thì cửa nộp ghi `voice_id=""` và `preset=""`, còn engine
+    đọc bằng preset mặc định của nó. Tức lượt ấy **có** một giọng xác định — chỉ
+    là không ai gõ tên nó ra.
+
+    Trước 02/09/2026 dòng của nó in một ô trống nằm giữa giờ và thời lượng, đọc
+    như *thiếu dữ liệu*. Với hai mươi giọng trong danh mục, "lượt này giọng nào"
+    đúng là câu người ta quay lại lịch sử để hỏi.
+    """
+    d = dls.dong_cho_trang(_job(params={"text": "x"}), "/a")
+    assert d["giong"] == ""
+    assert d["giong_mac_dinh"] is True
+
+    d2 = dls.dong_cho_trang(_job(params={"text": "x", "preset": "Adam"}), "/a")
+    assert d2["giong"] == "Adam"
+    assert d2["giong_mac_dinh"] is False
+
+
+def test_loc_theo_giong_KHONG_gom_luot_mac_dinh():
+    """⛔ "Dùng mặc định" và "chọn đúng giọng ấy" là HAI việc khác nhau.
+
+    Giọng mặc định hôm nay là `Adam`. Nếu `_giong_cua` điền sẵn tên mặc định cho
+    lượt không chọn, thì lọc theo `Adam` sẽ trả về cả những lượt khách **chưa
+    từng chọn Adam** — một con số không ai kiểm được nữa, và nó sai theo hướng
+    làm một giọng trông phổ biến hơn thực tế.
+
+    Đó là lý do việc đặt tên cho ô trống nằm ở **màn hình** (`giong_mac_dinh`),
+    không ở `_giong_cua`.
+    """
+    ds = [_job(id="a", params={"preset": "Adam"}),
+          _job(id="b", params={}),
+          _job(id="c", params={"preset": "Mai Anh"})]
+    assert [j.id for j in dls.loc(ds, giong="Adam")] == ["a"]
+
+
+def test_man_lich_su_in_ten_giong_mac_dinh(khach):
+    """Bắc cầu route -> khuôn: tên mặc định phải lấy từ ảnh chụp preset.
+
+    ⛔ Gõ tay tên ấy vào khuôn mẫu thì ngày engine đổi mặc định, lịch sử vẫn nói
+       cái cũ — và không có gì báo.
+    """
+    client, uid = khach
+    import platform_core.db as dbmod
+    from platform_core.models import Job
+
+    gen = dbmod.get_session()
+    db = next(gen)
+    try:
+        db.add(Job(user_id=uid, app_slug="ltt_voice",
+                   job_type="ltt_voice.synthesize",
+                   params={"text": "khong chon giong", "nguon": "studio"},
+                   status="done",
+                   result={"duration_s": 1.0, "credit_cost": 1,
+                           "audio_key": f"voice/out/{uid}/jx/tieng.wav"}))
+        db.commit()
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+    from apps.ltt_voice import giong_mau
+    r = client.get("/ltt-voice/lich-su")
+    assert r.status_code == 200
+    assert giong_mau.MAC_DINH in r.text, (
+        "man Lich su khong noi ten giong mac dinh — luot khong chon giong se "
+        "hien mot o trong, doc nhu thieu du lieu")
