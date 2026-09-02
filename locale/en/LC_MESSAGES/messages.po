@@ -13529,3 +13529,43 @@ msgstr "Per-stage status and the storage keys of its results. Holds the transcri
 #: platform_core/public_api/governance.py
 msgid "Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."
 msgstr "The ledger of generated resources: storage key, fingerprint, and which resource it came from. It holds no bytes, only the paths to them."
+
+#: apps/auto_scan_video
+msgid "Chưa có bản dựng để kết xuất."
+msgstr "There is no render manifest to execute yet."
+
+#: apps/auto_scan_video
+msgid "Kết xuất quá hạn."
+msgstr "The render timed out."
+
+#: apps/auto_scan_video
+msgid "Render xong nhưng không có tệp kết quả."
+msgstr "The render finished but produced no output file."
+
+#: apps/auto_scan_video
+msgid "Số tệp tiếng ({co}) không khớp số lớp trong bản dựng ({can})."
+msgstr "The number of audio files ({co}) does not match the number of layers in the render manifest ({can})."
+
+#: apps/auto_scan_video
+msgid "Tệp kết quả dài {that:.1f}s, bản dựng mong đợi {mong:.1f}s."
+msgstr "The output file is {that:.1f}s long; the render manifest expected {mong:.1f}s."
+
+#: apps/auto_scan_video
+msgid "Tệp kết quả không có luồng hình."
+msgstr "The output file has no video stream."
+
+#: apps/auto_scan_video
+msgid "Tệp kết quả không có luồng tiếng."
+msgstr "The output file has no audio stream."
+
+#: apps/auto_scan_video
+msgid "ffmpeg lỗi (mã {ma})."
+msgstr "ffmpeg failed (exit code {ma})."
+
+#: apps/auto_scan_video
+msgid "Đang kiểm tệp kết quả"
+msgstr "Checking the output file"
+
+#: apps/auto_scan_video
+msgid "Đang kết xuất video"
+msgstr "Rendering the video"

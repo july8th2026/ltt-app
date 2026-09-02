@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7be217f021b7dd7f32ce1c5d4e775282be185f1df4378250d6312bea950a5df8
-Nguồn đã quét : 1513 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:d952147c40b5a727f359c790781caf3f45fedd783294a2c9f0cfe561393465c7
+Nguồn đã quét : 1518 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -153,11 +153,13 @@ Các lớp chính:
     - apps/auto_scan_video/giai_doan_ban_dung.py
     - apps/auto_scan_video/giai_doan_chep_loi.py
     - apps/auto_scan_video/giai_doan_giong.py
+    - apps/auto_scan_video/giai_doan_ket_xuat.py
     - apps/auto_scan_video/giai_doan_media.py
     - apps/auto_scan_video/giai_doan_noi_dung.py
     - apps/auto_scan_video/giai_doan_thoi_gian.py
     - apps/auto_scan_video/giong_noi.py
     - apps/auto_scan_video/jobs.py
+    - apps/auto_scan_video/ket_xuat.py
     - apps/auto_scan_video/manifest.py
     - apps/auto_scan_video/nhap_media.py
     - apps/auto_scan_video/pipeline.py
@@ -1260,7 +1262,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (363 file pytest + 3 frontend)
+10. QUALITY GATES (366 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1586,6 +1588,9 @@ Test inventory:
 - tests/test_411_asv_ban_dung.py
 - tests/test_412_asv_do_dai_khoa.py
 - tests/test_413_asv_be_mat_va_routes.py
+- tests/test_414_asv_ket_xuat.py
+- tests/test_415_asv_cong_thoat_render.py
+- tests/test_416_asv_van_tay_engine.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1650,8 +1655,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1513 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1148, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1518 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1153, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1738,7 +1743,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (304)
+[apps] (306)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1783,11 +1788,13 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/auto_scan_video/giai_doan_ban_dung.py
 - apps/auto_scan_video/giai_doan_chep_loi.py
 - apps/auto_scan_video/giai_doan_giong.py
+- apps/auto_scan_video/giai_doan_ket_xuat.py
 - apps/auto_scan_video/giai_doan_media.py
 - apps/auto_scan_video/giai_doan_noi_dung.py
 - apps/auto_scan_video/giai_doan_thoi_gian.py
 - apps/auto_scan_video/giong_noi.py
 - apps/auto_scan_video/jobs.py
+- apps/auto_scan_video/ket_xuat.py
 - apps/auto_scan_video/manifest.py
 - apps/auto_scan_video/nhap_media.py
 - apps/auto_scan_video/pipeline.py
@@ -2659,7 +2666,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (381)
+[tests] (384)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2997,6 +3004,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_411_asv_ban_dung.py
 - tests/test_412_asv_do_dai_khoa.py
 - tests/test_413_asv_be_mat_va_routes.py
+- tests/test_414_asv_ket_xuat.py
+- tests/test_415_asv_cong_thoat_render.py
+- tests/test_416_asv_van_tay_engine.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3221,7 +3231,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1513 file; 15042341 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1518 file; 15100354 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -14107,6 +14117,226 @@ def _doan_con_dung(db, kho: Storage, run, khoa: str):
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/giai_doan_ket_xuat.py
+SHA256=7134ca71d0b1b7f65df3cad4391613d761cbc17f902c2fac8d7c3fc5263bfebc BYTES=8855 LINES=214
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Giai doan RENDER — thi hanh mot ban dung da luu, va CHI thu do.
+
+Mot artifact ra:
+
+    <van_tay>.mp4    ban long tieng hoan chinh   (kind=video)
+
+## Vi sao giai doan nay khong duoc biet gi ve thuong nguon
+
+⛔ Prompt 15 cam ro: khong goi chep loi, khong goi model, khong goi may sinh
+   tieng. Va no khong chi la mot luat ve pham vi — no la thu lam cho **cong
+   thoat cua pha nay** co nghia: *mot ban dung da luu, MOT MINH, phai tai tao
+   duoc tep ket qua*. Neu trinh render con hoi them mot cau nao o thuong nguon
+   thi menh de do sai, va mot lan render lai sau su co se keo theo mot lan goi
+   model — tuc tra tien lan hai cho cung mot ban dich.
+
+⇒ Dau vao cua giai doan nay dung mot thu: `render_manifest.json` cua COMPOSE.
+
+## Thu tu bat buoc: tam -> ffprobe -> promote (muc 8, muc 10)
+
+Ket qua duoc ghi vao mot thu muc tam **theo tung lan chay**, soi bang ffprobe,
+roi moi promote. Ba buoc do khong doi cho nhau duoc:
+
+  * ghi thang vao kho la de lai mot tep dang do khi bi ngat — va mot tep dang do
+    trong kho **trong y het** mot ket qua that (muc 10);
+  * promote truoc khi soi la cong bo mot ket qua chua ai kiem;
+  * soi ma khong ghi tam thi khong co gi de soi.
+
+Thu muc tam bi xoa **du that bai hay khong** (`TemporaryDirectory`), nen mot lan
+render hong khong de lai vai tram MB rac tren dia may chu.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import subprocess
+import tempfile
+from pathlib import Path
+
+from platform_core.i18n import _ as _t
+from platform_core.storage import Storage
+
+from . import assets, ban_dung, ket_xuat, nhap_media, pipeline
+from .giai_doan_media import ThieuNguon, _duong_doc_duoc
+from .tables import ASSET_OK
+
+log = logging.getLogger(__name__)
+
+#: Tran thoi gian cho MOT lan render. Rong hon tran cua giai doan khac vi day la
+#: buoc duy nhat doc va ghi lai toan bo luong hinh — nhung van huu han: mot lan
+#: `-c:v copy` khong bao gio dang chay hang gio, nen vuot tran nghia la ket.
+TIMEOUT_RENDER = 3600
+
+
+class ThieuBanDung(ThieuNguon):
+    """Chua co ban dung de render."""
+
+
+def _khoa_ban_dung(db, run) -> str:
+    from . import features
+    s = features.giai_doan_theo_ten(db, run.id, pipeline.COMPOSE)
+    return next((k for k in ((s.outputs or {}).get("khoa_asset") or [])
+                 if k.endswith(".json")), "") if s else ""
+
+
+def _tai_ve(kho: Storage, khoa: str, dich: Path) -> str:
+    """Tai mot artifact ve duong cuc bo TA TU DAT TEN.
+
+    ⭐ Ten tep cuc bo la `<so thu tu>.<duoi>`, khong phai ten trong khoa. Hai ly
+       do, ca hai da tra gia o pha truoc:
+
+         * do dai duong — MAX_PATH tren Windows la 260, va mot ten tep 64 ky tu
+           hex nhan them mot goc thu muc tam la du de vuot (xem
+           `assets.DAI_VAN_TAY_TRONG_KHOA`);
+         * argv — khong mot manh nao do khach dat ten duoc di vao dong lenh.
+    """
+    dich.parent.mkdir(parents=True, exist_ok=True)
+    with kho.open(khoa) as f:
+        dich.write_bytes(f.read())
+    return str(dich)
+
+
+def chay(db, kho: Storage, *, run, ctx=None) -> dict:
+    """Ban dung -> tep mp4 da kiem. Khong goi mot giai doan thuong nguon nao."""
+    khoa_ban = _khoa_ban_dung(db, run)
+    if not khoa_ban:
+        raise ThieuBanDung(_t('Chưa có bản dựng để kết xuất.'))
+
+    hoi_huy = None
+    if ctx is not None and getattr(ctx, "is_cancelled", None):
+        hoi_huy = ctx.is_cancelled
+    bao = None
+    if ctx is not None and getattr(ctx, "progress", None):
+        bao = ctx.progress
+
+    # ⛔ KHONG xin GPU (Prompt 15 muc 6). `-c:v copy` khong cham bo ma hoa, va
+    #    ma hoa AAC la viec cua CPU. `pipeline.CHUOI` da xep RENDER vao lan
+    #    `asv_media` va khong khai `tai_nguyen` — cho nay chi la chu thich cho
+    #    dieu do, de mot luot sau khong "them cho day du" mot `ctx.gpu_env()`.
+
+    with kho.open(khoa_ban) as f:
+        ban = json.loads(f.read().decode("utf-8"))
+    # Doc lai thi kiem lai (I8): mot artifact hop le luc ghi van co the da bi
+    # sua, va day la lan cuoi truoc khi no dieu khien mot tien trinh con.
+    ban_dung.kiem(ban)
+
+    if bao:
+        bao(5, _t('Đang đối chiếu tài nguyên'))
+
+    # ── Doi chieu TRUOC khi tai mot byte nao (muc 3) ─────────────────────────
+    hop_le = _khoa_con_dung(db, kho, run)
+    hop_le.add(run.source_key or "")
+    ban_dung.kiem(ban, khoa_hop_le=hop_le)
+
+    lop = ban["tieng"]["lop"]
+    tong_giay = float((ban.get("ra") or {}).get("thoi_luong_giay") or 0)
+
+    # 🔑 Thu muc tam mang `run.id`: hai lan chay song song khong the dam nhau,
+    #    va mot thu muc sot lai truy nguoc duoc ve mot lan chay cu the.
+    #    Cat ngan `run.id` vi cung ly do voi `assets.DAI_*` — MAX_PATH.
+    with tempfile.TemporaryDirectory(
+            prefix=f"asv-render-{str(run.id)[:12]}-") as tam:
+        thu_muc = Path(tam)
+        duong_video = _duong_doc_duoc(kho, run.source_key, thu_muc)
+        duong_nen = _tai_ve(kho, ban["tieng"]["nen"]["khoa"], thu_muc / "nen.wav")
+        duong_lop = [_tai_ve(kho, l["khoa"], thu_muc / f"s{i}.wav")
+                     for i, l in enumerate(lop)]
+
+        duong_ra = str(thu_muc / "ra.mp4")
+        cmd = ket_xuat.dung_lenh(
+            ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
+            duong_video=duong_video, duong_nen=duong_nen,
+            duong_lop=duong_lop, duong_ra=duong_ra)
+
+        if bao:
+            bao(15, _t('Đang kết xuất video'))
+
+        try:
+            duoi = ket_xuat._chay_co_tien_do(
+                cmd, tong_giay=tong_giay, timeout=TIMEOUT_RENDER,
+                hoi_huy=hoi_huy,
+                # Tien do cua ffmpeg (0-100) duoc ep vao khoang 15-95 cua giai
+                # doan: 0-15 la tai tep, 95-100 la soi va promote.
+                bao_tien_do=(lambda p: bao(15 + p * 0.8, _t('Đang kết xuất video')))
+                if bao else None)
+        except subprocess.TimeoutExpired as exc:
+            raise ket_xuat.KetXuatError(_t('Kết xuất quá hạn.')) from exc
+        except ket_xuat.KetXuatError:
+            # 🔑 Ho so chan doan DA CHE, giu lai de tra loi "vi sao lan do hong"
+            #    ma khong lo bo cuc dia hay ten nguoi dung Windows (muc 9).
+            log.warning("render that bai: %s", json.dumps(
+                ket_xuat.ho_so_chan_doan(ban, cmd, goc_tam=str(thu_muc)),
+                ensure_ascii=False))
+            raise
+
+        if bao:
+            bao(95, _t('Đang kiểm tệp kết quả'))
+
+        # ── ffprobe TRUOC khi promote (muc 8) ────────────────────────────────
+        tt = ket_xuat.kiem_tep_ra(duong_ra, ban, soi=nhap_media.soi)
+
+        vt = _van_tay(kho, khoa_ban, ban)
+        khoa = assets.khoa_staging(owner_id=run.owner_id, run_id=run.id,
+                                   stage=pipeline.RENDER, van_tay=vt, duoi="mp4")
+        with open(duong_ra, "rb") as f:
+            kho.put(khoa, f, content_type="video/mp4")
+
+    return {
+        "phan": [{"staging_key": khoa, "kind": "video", "duoi": "mp4",
+                  "van_tay": vt, "parent_keys": [khoa_ban]}],
+        "tom_tat": {
+            "thoi_luong_giay": round(float(tt["thoi_luong"]), 3),
+            "co_byte": int(tt["co_byte"]),
+            "codec_video": tt["codec_video"],
+            "codec_tieng": tt["codec_tieng"],
+            "so_lop_tieng": len(lop),
+            "chan_doan": " | ".join((duoi or "").split(" | ")[-2:]),
+        },
+    }
+
+
+def _van_tay(kho: Storage, khoa_ban: str, ban: dict) -> str:
+    """Van tay cua tep ra. Doi ban dung HAY doi cach dung lenh deu doi no (O13).
+
+    ⭐ `PHIEN_BAN_KET_XUAT` nam trong van tay chinh la thu lam cong thoat cua pha
+       nay dung duoc: doi cach dung lenh ffmpeg ma van tay khong doi thi mot lan
+       chay lai se **dung lai tep cu** va khong ai thay cach dung lenh moi.
+    """
+    import hashlib
+
+    with kho.open(khoa_ban) as f:
+        cs = assets.bam(f.read())
+    goi = json.dumps({"ban_dung": cs,
+                      "ket_xuat": ket_xuat.PHIEN_BAN_KET_XUAT,
+                      "ffmpeg": (ban.get("cong_cu") or {}).get("ffmpeg", "")},
+                     sort_keys=True)
+    return hashlib.sha256(goi.encode("utf-8")).hexdigest()
+
+
+def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
+    """Moi khoa artifact CUA CHINH chu so huu, da kiem toan ven.
+
+    Kiem lai o day thay vi tin cot `integrity`: COMPOSE da kiem, nhung giua
+    COMPOSE va RENDER co the la hang gio xep hang, va mot tep het han trong
+    khoang do se lam ffmpeg hong o phut thu muoi thay vi o day.
+    """
+    from sqlalchemy import select
+
+    from .tables import AsvAsset
+
+    hang = db.execute(select(AsvAsset).where(
+        AsvAsset.run_id == run.id,
+        AsvAsset.owner_id == run.owner_id)).scalars().all()
+    return {a.storage_key for a in hang
+            if assets.kiem_toan_ven(db, kho, a) == ASSET_OK}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/giai_doan_media.py
 SHA256=729250a574ff499680b39c9d3c1a06d42f41e7a5ee0472269dee909de626707c BYTES=5230 LINES=123
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -14855,6 +15085,347 @@ def _nop_giai_doan_san_sang(db, run, theo_ten: dict, da_xong: set[str]) -> list[
             continue
         da_nop.append(g.ten)
     return da_nop
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/ket_xuat.py
+SHA256=73a35b1da4c8b4671f4156b0978abb4e734c807eefea75a38106d052bf26d935 BYTES=15139 LINES=335
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Trinh render: mot BAN DUNG da luu -> mot tep media da kiem.
+
+## Doi chieu ba ban render truoc khi viet (Prompt 15 muc 1)
+
+|  | `DUNGVIDEO-FULL/engine/assemble.py` | `Cut_only/…/ffmpeg_edit_cutonly.py` | `apps/autosubvideo/burn.py` |
+|---|---|---|---|
+| viec | cat clip + xfade + ma hoa lai | thay tieng, giu hinh | dot phu de |
+| hinh | **ma hoa lai** libx264 | **`-c:v copy`** | ma hoa lai (bat buoc, phu de dot vao) |
+| tron nhieu lop tieng theo moc | khong | khong | khong |
+| tien do | khong | nhip 15 giay tu mot luong nen | **`-progress pipe:1`, doc `out_time`** |
+| huy | khong | khong | **co** — `on_progress` nem thi giet tien trinh |
+| chay bang | `subprocess.run`, danh sach doi so | `subprocess.run`, danh sach doi so | `Popen`, danh sach doi so |
+| dung tep tam roi doi ten | khong | khong | khong |
+
+⇒ **Khong ban nao dung nguyen duoc**, va ly do khong phai chat luong:
+
+  * `assemble.py` la duong **cat**, ma `MVP_CONTRACT.md` §4 da hoan (D-ASV-02).
+    Thu lay duoc tu no la chinh sach ma hoa tieng: `-c:a aac -ar 48000 -ac 2`
+    va `-movflags +faststart` (`assemble.py:199-207`).
+  * `replace_audio` (`ffmpeg_edit_cutonly.py:323`) dung **hinh dang** cua MVP —
+    thay tieng, giu hinh — nhung no nhan **mot** tep tieng da tron san. Ta co N
+    lop phai dat vao N moc thoi gian khac nhau, tuc phan kho nhat khong nam
+    trong no.
+  * `burn.py` co dung hai thu ma hai ban kia khong co (tien do that + huy hop
+    tac), nen phan **cach chay** lay tu no.
+
+⇒ Ta muon **chinh sach** cua ban thu nhat, **hinh dang** cua ban thu hai, va
+  **cach chay** cua ban thu ba. Phan tron nhieu lop theo moc la moi.
+
+## Vi sao dung `-c:v copy` — va vi sao dieu do quyet dinh ca lan nay
+
+Hinh khong bi cham toi. Hai he qua that:
+
+  1. **Khong dung GPU.** Prompt 15 muc 6 noi ro: chi xin GPU neu trinh render
+     that su dung. Sao chep luong hinh + ma hoa AAC la viec cua CPU. Vi vay
+     `pipeline.CHUOI` xep RENDER vao lan `asv_media` (ffmpeg) chu khong phai
+     `asv_gpu`, va khong khai `tai_nguyen`. Xin mot suat GPU cho viec nay la
+     giu mot thu khan hiem de khong dung toi.
+  2. **Nhanh, va khong mat chat luong.** Mot video 10 phut xong trong vai chuc
+     giay thay vi vai phut, va hinh cua khach ra dung bang bit no vao.
+
+## Duong dan KHONG BAO GIO den tu chuoi cua khach
+
+⛔ `shell=True` khong xuat hien o day, va do moi la lop phong thu thu hai. Lop
+   thu nhat: moi duong trong argv deu do **ta** dung tu mot khoa luu tru da qua
+   `assets.dat_khoa` (tung manh da kiem bang `_DOAN_HOP_LE`), roi tai ve mot thu
+   muc tam **ta tu dat ten**. Ten tep goc cua khach khong bao gio di vao argv.
+"""
+from __future__ import annotations
+
+import collections
+import json
+import logging
+import re
+import subprocess
+import threading
+import time
+from pathlib import Path
+
+from platform_core.i18n import _ as _t
+
+from . import ban_dung
+from .nhap_media import DaHuy, MediaError
+
+log = logging.getLogger(__name__)
+
+#: Doi khi doi cach dung lenh. Vao van tay (O13).
+PHIEN_BAN_KET_XUAT = 1
+
+#: Bien do lech cho phep giua thoi luong MONG DOI (ban dung) va thoi luong DO
+#: DUOC o tep ra. Khong phai mot con so tuy y: `-c:v copy` giu nguyen khung hinh
+#: nen sai so chi den tu lam tron moc keyframe va do dai goi tieng cuoi.
+LECH_THOI_LUONG_GIAY = 1.0
+
+_OUT_TIME_US = re.compile(r"^out_time_us=(\d+)")
+_OUT_TIME = re.compile(r"^out_time=(\d+):(\d+):([\d.]+)")
+
+
+class KetXuatError(MediaError):
+    """Render that bai."""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  1. Dung lenh — HAM THUAN, kiem duoc ma khong can ffmpeg
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# ⭐ Tach phan nay ra khoi phan chay la thu lam pha 15 kiem duoc that. Mot bo
+#    render chi kiem duoc bang "chay thu roi xem tep ra" thi moi phep kiem deu
+#    can ffmpeg, can vai giay, va khong noi duoc **vi sao** no sai. O day lenh
+#    la mot gia tri: so sanh duoc, in ra duoc, che duoc.
+
+def _loc_am(ban: dict, *, so_lop: int) -> str:
+    """`filter_complex` tron nen + N lop tieng theo moc thoi gian.
+
+    Khuon `amix ... normalize=0` lay tu chinh `tach_tieng.tron_nen` cua ta
+    (von lay tu `Cut_only/nerf_engine/stages/audio.py:95`).
+
+    🔑 `normalize=0` la bat buoc, khong phai tuy chon. Mac dinh `amix` **chia
+       bien do cho so dau vao**, nen mot doan 30 lop tieng se nho hon mot doan
+       3 lop — tuc am luong cua ban long tieng phu thuoc vao **so cau noi**,
+       mot hanh vi khong ai yeu cau va rat kho truy khi nghe thay.
+
+    🔑 `aformat` tren TUNG dau vao, truoc khi tron. Tieng do may TTS sinh ra va
+       nhac nen do demucs tach ra khong cung tan so/so kenh; de `amix` tu xu ly
+       la de no chon gium, va no chon theo dau vao dau tien.
+    """
+    tieng = ban["tieng"]
+    dinh = (f"aformat=sample_rates={int(tieng['tan_so'])}"
+            f":channel_layouts={'stereo' if int(tieng['so_kenh']) == 2 else 'mono'}")
+
+    phan = [f"[1:a]{dinh}[nen]"]
+    nhan = ["[nen]"]
+    for i, lop in enumerate(tieng["lop"]):
+        vao = f"[{i + 2}:a]"
+        buoc = [dinh]
+        he_so = float(lop["he_so_toc"])
+        if he_so > 1.0:
+            # ⛔ Chi ap khi > 1. Ban dung da tu choi he so < 1 (`ban_dung.kiem`),
+            #    nhung `atempo=1.0` van la mot lan xu ly thua tren moi doan.
+            buoc.append(f"atempo={he_so:.6f}")
+        dat = int(lop["dat_tai_ms"])
+        if dat > 0:
+            # `all=1` dat tre cho MOI kenh. Khong co no, `adelay=1200` chi tre
+            # kenh dau va tieng lech hai ben tai — hong theo kieu nghe thay
+            # duoc nhung rat kho goi ten.
+            buoc.append(f"adelay={dat}:all=1")
+        phan.append(f"{vao}{','.join(buoc)}[s{i}]")
+        nhan.append(f"[s{i}]")
+
+    phan.append(f"{''.join(nhan)}amix=inputs={so_lop + 1}"
+                f":normalize=0:dropout_transition=0[ra]")
+    return ";".join(phan)
+
+
+def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str, duong_nen: str,
+              duong_lop: list[str], duong_ra: str,
+              tien_do: bool = True) -> list[str]:
+    """Ban dung + duong dan cuc bo -> argv. Khong cham mot tep nao.
+
+    ⚠️ `duong_lop` phai **cung thu tu** voi `ban["tieng"]["lop"]`. Goi ham nay
+       voi mot danh sach lech thu tu se ra mot ban long tieng trong do moi cau
+       nam o cho cua mot cau khac — va no **khong hong**, no chi sai. Nen ham
+       tu kiem thay vi tin nguoi goi.
+    """
+    lop = ban["tieng"]["lop"]
+    if len(duong_lop) != len(lop):
+        raise KetXuatError(
+            _t('Số tệp tiếng ({co}) không khớp số lớp trong bản dựng ({can}).')
+            .format(co=len(duong_lop), can=len(lop)))
+    if ban["hinh"]["che_do"] != ban_dung.CHE_DO_HINH:
+        raise KetXuatError(
+            _t('Bản dựng khai chế độ hình khác "copy" — MVP không mã hoá lại hình.'))
+
+    ra = ban["ra"]
+    cmd = [ffmpeg_bin, "-y", "-hide_banner", "-loglevel", "error",
+           "-i", duong_video, "-i", duong_nen]
+    for d in duong_lop:
+        cmd += ["-i", d]
+
+    if lop:
+        cmd += ["-filter_complex", _loc_am(ban, so_lop=len(lop)), "-map", "[ra]"]
+    else:
+        # Khong co lop tieng nao (moi doan deu bi cat o TIMING). Van phai ra mot
+        # tep hop le: lay thang nhac nen.
+        cmd += ["-map", "1:a:0"]
+
+    cmd += [
+        "-map", "0:v:0",
+        "-c:v", str(ban["hinh"]["che_do"]),      # copy
+        "-c:a", str(ra["codec_tieng"]),
+        "-b:a", str(ra["bitrate_tieng"]),
+        "-ar", str(ban["tieng"]["tan_so"]),
+        "-ac", str(ban["tieng"]["so_kenh"]),
+    ]
+    if ra.get("faststart"):
+        cmd += ["-movflags", "+faststart"]
+    # `-shortest`: neu tieng dai hon hinh thi cat theo hinh. Khong co no, mot
+    # doan tieng tran qua cuoi video se keo dai tep ra bang mot khung hinh dong
+    # bang — dung nguyen van khuon cua `replace_audio`.
+    cmd.append("-shortest")
+    if tien_do:
+        cmd += ["-progress", "pipe:1", "-nostats"]
+    cmd.append(duong_ra)
+    return cmd
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  2. Ho so chan doan — CHE truoc khi luu (Prompt 15 muc 9)
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Nhung doan duong dan khong duoc ra ngoai. Duong tam mang ten may va ten
+#: nguoi dung Windows (`C:\Users\<ten that>\AppData\...`), va mot ho so chan
+#: doan duoc doc boi nguoi khong phai chu tep do.
+_CHE = "<da-che>"
+
+
+def lenh_da_che(cmd: list[str], *, goc_tam: str = "") -> list[str]:
+    """Lenh de LUU LAI, khong phai lenh de chay.
+
+    ⛔ Giu nguyen ca duong dan la ro ri hai chieu: no lo bo cuc dia cua may chu
+       cho nguoi doc ho so, va no lo ten that cua nguoi dung Windows.
+
+    Giu lai **ten tep** vi do la thu lam ho so chan doan co ich (biet doan nao
+    thieu), bo phan thu muc.
+    """
+    ra = []
+    for x in cmd:
+        s = str(x)
+        if goc_tam and s.startswith(goc_tam):
+            ra.append(f"{_CHE}/{Path(s).name}")
+        elif len(s) > 3 and ("/" in s or "\\" in s) and Path(s).name != s:
+            ra.append(f"{_CHE}/{Path(s).name}")
+        else:
+            ra.append(s)
+    return ra
+
+
+def ho_so_chan_doan(ban: dict, cmd: list[str], *, goc_tam: str = "",
+                    duoi_stderr: str = "") -> dict:
+    """Thu de tra lai mot lan render that bai, KHONG kem bi mat nao."""
+    return {
+        "phien_ban_ket_xuat": PHIEN_BAN_KET_XUAT,
+        "lenh": lenh_da_che(cmd, goc_tam=goc_tam),
+        "tom_tat_ban_dung": ban_dung.tom_tat(ban),
+        # Duoi cua stderr la thu noi ffmpeg khong thich cai gi. Cat ngan de mot
+        # lan hong khong bien thanh mot cot CSDL vai megabyte.
+        "stderr": (duoi_stderr or "")[-2000:],
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  3. Chay — tien do that, huy hop tac, khong bao gio de lai tep dang do
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _chay_co_tien_do(cmd: list[str], *, tong_giay: float, timeout: int,
+                     hoi_huy=None, bao_tien_do=None) -> str:
+    """Chay ffmpeg, doc `-progress`, tra ve duoi cua stderr.
+
+    Khuon lay tu `apps/autosubvideo/burn.py:40 _run_with_cleanup`. Khac mot cho
+    co y: ban do dua vao viec `on_progress` **nem** de huy, nen phep huy chi xay
+    ra khi ffmpeg co in ra mot dong tien do. Mot lan render ket o cho khong in
+    gi (vd doc mot tep hong) se khong huy duoc. O day `hoi_huy` duoc hoi tu mot
+    luong rieng theo dong ho, nen huy khong phu thuoc vao viec ffmpeg co noi gi.
+    """
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            text=True)
+    duoi: collections.deque[str] = collections.deque(maxlen=12)
+    da_huy = threading.Event()
+    han = time.monotonic() + timeout
+
+    def _hut_stderr():
+        try:
+            for dong in proc.stderr:            # type: ignore[union-attr]
+                if dong.strip():
+                    duoi.append(dong.strip())
+        except Exception as exc:      # noqa: BLE001 - luong phu, khong duoc lam sap
+            log.debug("hut stderr cua ffmpeg dut: %s", exc)
+
+    def _canh():
+        """Hoi `hoi_huy` va dong ho moi 0,5 giay, doc lap voi dau ra cua ffmpeg."""
+        while proc.poll() is None:
+            if hoi_huy is not None and hoi_huy():
+                da_huy.set()
+                proc.kill()
+                return
+            if time.monotonic() > han:
+                proc.kill()
+                return
+            time.sleep(0.5)
+
+    t1 = threading.Thread(target=_hut_stderr, daemon=True)
+    t2 = threading.Thread(target=_canh, daemon=True)
+    t1.start()
+    t2.start()
+    try:
+        for tho in proc.stdout:                 # type: ignore[union-attr]
+            dong = tho.strip()
+            giay = None
+            m = _OUT_TIME_US.match(dong)
+            if m:
+                giay = int(m.group(1)) / 1_000_000
+            else:
+                m = _OUT_TIME.match(dong)
+                if m:
+                    giay = (int(m.group(1)) * 3600 + int(m.group(2)) * 60
+                            + float(m.group(3)))
+            if giay is not None and tong_giay > 0 and bao_tien_do:
+                bao_tien_do(min(99.0, round(giay / tong_giay * 100, 1)))
+        proc.wait(timeout=max(1, int(han - time.monotonic()) + 5))
+    except BaseException:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+        raise
+    finally:
+        t1.join(timeout=5)
+        t2.join(timeout=5)
+
+    if da_huy.is_set():
+        raise DaHuy(_t('Phiên chạy đã bị huỷ giữa chừng.'))
+    if time.monotonic() > han and proc.returncode != 0:
+        raise subprocess.TimeoutExpired(cmd, timeout)
+    if proc.returncode != 0:
+        raise KetXuatError(
+            _t('ffmpeg lỗi (mã {ma}).').format(ma=proc.returncode))
+    return " | ".join(duoi)
+
+
+def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
+    """ffprobe tren tep VUA RENDER, truoc khi no duoc coi la ket qua.
+
+    ⛔ Day la cho phan biet "ffmpeg tra ve 0" voi "co mot tep dung duoc". Chung
+       khong bang nhau: ffmpeg tra ve 0 roi de lai mot tep 48 byte khong luong
+       nao la mot ket cuc that su xay ra khi dau vao hong theo dung kieu.
+    """
+    p = Path(duong)
+    if not p.is_file() or p.stat().st_size <= 0:
+        raise KetXuatError(_t('Render xong nhưng không có tệp kết quả.'))
+
+    tt = soi(duong)
+    if not tt.get("co_video"):
+        raise KetXuatError(_t('Tệp kết quả không có luồng hình.'))
+    if not tt.get("co_tieng"):
+        raise KetXuatError(_t('Tệp kết quả không có luồng tiếng.'))
+
+    mong = float((ban.get("ra") or {}).get("thoi_luong_giay") or 0)
+    that = float(tt.get("thoi_luong") or 0)
+    if mong > 0 and abs(that - mong) > LECH_THOI_LUONG_GIAY:
+        # 🔑 Muc 8 doi mot buoc kiem TRUOC khi promote, va day la phep kiem co
+        #    y nghia nhat: mot ban long tieng dai sai la mot ban trong do tieng
+        #    va hinh lech nhau, tuc hong dung thu ma san pham nay ban.
+        raise KetXuatError(
+            _t('Tệp kết quả dài {that:.1f}s, bản dựng mong đợi {mong:.1f}s.')
+            .format(that=that, mong=mong))
+    return tt
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -15981,7 +16552,7 @@ def do_am_luong(duong: str) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/thi_hanh.py
-SHA256=5b7414a1b955e704db4e930cfd78a41b380dce66871ff05b80d0f3a5da171a3a BYTES=9552 LINES=204
+SHA256=d59c0960a522c331325d504d9b3a6c328af985e301dcc72fa25c5f7841170590 BYTES=12843 LINES=270
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Than thi hanh dung chung cua mot giai doan — BE MAT CONG KHAI cua app nay.
 
@@ -16014,8 +16585,9 @@ from platform_core.db import get_session
 from platform_core.storage import get_storage
 
 from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
-               giai_doan_chep_loi, giai_doan_giong, giai_doan_media,
-               giai_doan_noi_dung, giai_doan_thoi_gian, pipeline)
+               giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
+               giai_doan_media, giai_doan_noi_dung, giai_doan_thoi_gian,
+               pipeline)
 from .tables import STAGE_SUCCEEDED
 
 #: Chi phi do duoc gia cua mot giai doan o pha 05. Bang 0 vi khong provider nao
@@ -16027,19 +16599,82 @@ from .tables import STAGE_SUCCEEDED
 CHI_PHI_GIA = 0
 
 
+#: Phien ban cua ENGINE GIA. Giai doan chua co engine that dung so nay, va no
+#: PHAI doi khi engine that thay cho no — neu khong, moi ket qua gia da luu se
+#: duoc coi la cache hop le cho engine moi.
+PHIEN_BAN_ENGINE_GIA = 0
+
+
+def phien_ban_engine(stage_ten: str) -> str:
+    """Phien ban ENGINE cua mot giai doan — phan da thieu trong van tay tu pha 05.
+
+    🔴 `van_tay` ban pha 05 chi gom `(stage, contract, settings, dau_vao)`, va
+       docstring cua chinh no ghi mon no nay: *"Pha 08+ **phai** them chung —
+       thieu chung thi nang model len ban moi se dung lai ket qua cu, im lang."*
+       Mon no do di qua bay pha ma khong ai tra, vi khong co gi bao no thieu.
+
+    ⭐ Cai lam no lo ra la mot phep kiem cua pha 15
+       (`test_415::test_doi_cach_dung_lenh_thi_van_tay_PHAI_doi`): nang
+       `PHIEN_BAN_KET_XUAT` roi chay lai, va ket qua **khong doi** — tuc mot ban
+       va cho trinh render da duoc giao nhung se khong bao gio chay, vi moi lan
+       chay lai deu tra ve tep cu tu cache.
+
+    ⚠️ Import ben trong ham, khong o dau tep: `thi_hanh` duoc ba app vo thi hanh
+       nap, va keo ca cay module engine vao luc import se bat mot worker chi
+       chay lan `api` phai co du moi thu cua lan `gpu`.
+    """
+    if stage_ten == pipeline.MEDIA_PREPARE:
+        from . import nhap_media
+        return f"chuan_hoa/{nhap_media.PHIEN_BAN_CHUAN_HOA}"
+    if stage_ten == pipeline.AUDIO_PREPARE:
+        from . import tach_tieng
+        return f"tach/{tach_tieng.PHIEN_BAN_TACH}"
+    if stage_ten == pipeline.TRANSCRIBE:
+        from . import giai_doan_chep_loi
+        return f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+    if stage_ten == pipeline.CONTENT_PROCESS:
+        from . import dich_thuat, van_ban
+        # Provider + model nam trong nay: doi model dich la doi san pham, va
+        # mot lan doi lang le nghia la khach nhan mot ban dich khac.
+        return (f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC}"
+                f"/{dich_thuat.PROVIDER_CHINH}/{dich_thuat.MODEL_CHINH}")
+    if stage_ten == pipeline.VOICE_SYNTHESIS:
+        from . import giong_noi
+        return f"giong/{giong_noi.PHIEN_BAN_GIONG}"
+    if stage_ten == pipeline.TIMING_ALIGN:
+        from . import thoi_gian
+        return f"thoi_gian/{thoi_gian.PHIEN_BAN_THOI_GIAN}"
+    if stage_ten == pipeline.COMPOSE:
+        from . import ban_dung
+        return f"ban_dung/{ban_dung.PHIEN_BAN_BAN_DUNG}"
+    if stage_ten == pipeline.RENDER:
+        from . import ket_xuat
+        return f"ket_xuat/{ket_xuat.PHIEN_BAN_KET_XUAT}"
+    # ⚠️ Giai doan chua co engine that van phai co MOT phien ban, khong duoc tra
+    #    chuoi rong. Tra rong nghia la "khong co gi de lam moi cache", va do la
+    #    dung mon no ma ham nay sinh ra de tra — chi doi cho.
+    #
+    #    Khi pha 18 thay engine gia cua QC bang engine that, chuoi nay doi tu
+    #    `gia/0` sang mot thu khac, va moi ket qua QC cu bi vo hieu **dung nhu
+    #    mong doi**. `tests/test_416` chot TAP HOP giai doan con dung engine gia,
+    #    nen luot do khong the quen cap nhat cho nay.
+    return f"gia/{PHIEN_BAN_ENGINE_GIA}"
+
+
 def van_tay(stage_ten: str, run, dau_vao: dict) -> str:
     """Van tay hieu luc cua mot giai doan (ADR-001 D8).
 
-    ⚠️ Ban pha 05 co du **hinh dang** dung nhung chua co `engine_id` va phien ban
-       model, vi chua co engine. Pha 08+ **phai** them chung — thieu chung thi
-       nang model len ban moi se dung lai ket qua cu, im lang. Do dung la kieu
-       hong ma O13 sinh ra de chan: "co mot tep ten dung" khong phai la cache hop le.
+    Gom bon thu cua ban pha 05 **cong** phien ban engine (xem `phien_ban_engine`).
+    Thieu manh cuoi thi nang engine len ban moi se dung lai ket qua cu, im lang —
+    dung kieu hong ma O13 sinh ra de chan: "co mot tep ten dung" khong phai la
+    mot cache hop le.
     """
     goi = json.dumps({
         "stage": stage_ten,
         "contract": run.contract_version,
         "settings": run.settings or {},
         "dau_vao": dau_vao,
+        "engine": phien_ban_engine(stage_ten),
     }, sort_keys=True, ensure_ascii=False, default=str)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 
@@ -16140,6 +16775,8 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_thoi_gian.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.COMPOSE:
             ra = giai_doan_ban_dung.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.RENDER:
+            ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
         else:
             ra = _engine_gia(kho, run_id=run_id, owner_id=owner_id, ten=ten,
                              van_tay=vt)
@@ -268704,6 +269341,706 @@ def test_ba_vo_thi_hanh_KHONG_BAO_GIO_hien_ra():
             f"{ten} mat catalog_parent — no se tu moc mot dong nav")
         assert not visible_on_surface(man, authenticated=True)
         assert not visible_on_surface(man, authenticated=False)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_414_asv_ket_xuat.py
+SHA256=ae70831236e8caac72e0a008b1083c0a69c83d0a1175c03bc60eda308dc87de0 BYTES=16641 LINES=344
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 15 — trinh render.
+
+Cong thoat cua pha nay la mot menh de rat cu the: **mot ban dung da luu, MOT
+MINH, phai tai tao duoc mot tep media da kiem.** Moi phep kiem o day phuc vu
+mot trong hai nua cua menh de do: *mot minh* (khong hoi thuong nguon) va *da
+kiem* (khong promote mot thu chua ai soi).
+"""
+from __future__ import annotations
+
+import ast
+import inspect
+import io
+import json
+import subprocess
+import threading
+import time
+from pathlib import Path
+
+import pytest
+
+from apps.auto_scan_video import (ban_dung, giai_doan_ket_xuat, ket_xuat,
+                                  nhap_media, pipeline)
+from tests.fixtures import asv_media as fx
+from tests.test_401_asv_ranh_gioi_va_artifact import _vi_pham
+
+
+def _ban(*, so_lop: int = 2, tong_giay: float = 2.0,
+         he_so: float = 1.0) -> dict:
+    lop = [{"ma": str(i + 1), "khoa": f"k{i}", "dat_tai_ms": i * 500,
+            "he_so_toc": he_so} for i in range(so_lop)]
+    return {
+        "schema": ban_dung.SCHEMA_BAN_DUNG,
+        "phien_ban": ban_dung.PHIEN_BAN_BAN_DUNG,
+        "hinh": {"khoa": "v", "che_do": "copy"},
+        "tieng": {"nen": {"khoa": "n"}, "lop": lop,
+                  "tan_so": ban_dung.TAN_SO_RA, "so_kenh": ban_dung.SO_KENH_RA},
+        "ra": {"container": "mp4", "codec_tieng": ban_dung.CODEC_TIENG,
+               "bitrate_tieng": ban_dung.BITRATE_TIENG, "faststart": True,
+               "thoi_luong_giay": tong_giay},
+        "cong_cu": {"ffmpeg": "ffmpeg version test"},
+    }
+
+
+def _lenh(ban, **kw):
+    n = len(ban["tieng"]["lop"])
+    return ket_xuat.dung_lenh(
+        ban, ffmpeg_bin="ffmpeg", duong_video="/t/v.mp4", duong_nen="/t/n.wav",
+        duong_lop=[f"/t/s{i}.wav" for i in range(n)], duong_ra="/t/o.mp4", **kw)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Parity — chinh sach thua ke tu ban render di san (muc 1, muc 2)
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Khuon `replace_audio` cua `Cut_only ver2/nerf_engine/stages/
+#: ffmpeg_edit_cutonly.py:323`, cong chinh sach ma hoa tieng cua
+#: `DUNGVIDEO-FULL/engine/assemble.py:199-207`.
+#:
+#: ⭐ Day la **khuon doi chieu** ma Prompt 15 muc 2 doi phai dung TRUOC khi rut
+#:    ma. No khong so sanh tep ra (tep ra phu thuoc phien ban ffmpeg va khong
+#:    tai lap duoc giua cac may) ma so sanh **quyet dinh**: doi mot trong nhung
+#:    co nay la doi san pham, va phai la mot lan doi co y.
+PARITY_DI_SAN = [
+    ("-c:v", "copy"),        # khong bao gio ma hoa lai hinh (replace_audio)
+    ("-c:a", "aac"),         # assemble.py:_audio_encode_args
+    ("-b:a", "192k"),        # replace_audio
+    ("-ar", "48000"),        # assemble.py:_audio_encode_args
+    ("-ac", "2"),            # assemble.py:_audio_encode_args
+    ("-movflags", "+faststart"),   # ca hai ban
+]
+
+
+def test_giu_dung_chinh_sach_ma_hoa_cua_ban_di_san():
+    cmd = _lenh(_ban())
+    for co, gt in PARITY_DI_SAN:
+        assert co in cmd, f"mat co {co} so voi khuon di san"
+        assert cmd[cmd.index(co) + 1] == gt, (
+            f"{co} doi tu {gt!r} thanh {cmd[cmd.index(co) + 1]!r} — "
+            f"lech khuon di san, phai la mot lan doi CO Y")
+
+
+def test_co_shortest_de_tieng_tran_khong_keo_dai_video():
+    """`-shortest` cua `replace_audio`: khong co no, mot doan tieng tran qua cuoi
+    se keo dai tep ra bang mot khung hinh dong bang."""
+    assert "-shortest" in _lenh(_ban())
+
+
+def test_KHONG_BAO_GIO_ma_hoa_lai_hinh():
+    ban = _ban()
+    ban["hinh"]["che_do"] = "libx264"
+    with pytest.raises(ket_xuat.KetXuatError):
+        _lenh(ban)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Lenh la HAM THUAN — dung duoc, kiem duoc, khong cham tep
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_khong_bao_gio_shell_true():
+    """⛔ Duong dan di vao argv. `shell=True` bien mot ten tep thanh mot cau lenh.
+
+    ⚠️ Chot bang AST, **khong** bang `"shell=True" not in ma`. Ban dau co ca hai
+       va nhanh quet chuoi do ngay — vi `ket_xuat.py` co mot dong tai lieu noi
+       rang no khong dung `shell=True`. Do la lan thu TU trong dot xay nay mot
+       danh sach dau hieu bat trung chinh tai lieu cua no.
+
+    ⭐ Va bo nhanh quet chuoi khong lam guard yeu di: mot chuoi trong chu thich
+       khong chay, con AST thay MOI cach truyen that — ke ca `shell=co` voi mot
+       bien, ma quet chuoi khong bao gio thay.
+    """
+    for mod in (ket_xuat, giai_doan_ket_xuat):
+        cay = ast.parse(inspect.getsource(mod))
+        for nut in ast.walk(cay):
+            if isinstance(nut, ast.keyword) and nut.arg == "shell":
+                assert isinstance(nut.value, ast.Constant), (
+                    f"{mod.__name__}: `shell=` nhan mot bieu thuc — khong doc "
+                    f"tinh duoc, phai la hang so False")
+                assert not nut.value.value, f"{mod.__name__} dung shell=True"
+
+
+def test_atempo_CHI_ap_khi_he_so_lon_hon_1():
+    assert "atempo" not in " ".join(_lenh(_ban(he_so=1.0)))
+    assert "atempo=1.150000" in " ".join(_lenh(_ban(he_so=1.15)))
+
+
+def test_adelay_dat_tre_cho_MOI_kenh():
+    """Thieu `all=1` thi chi kenh dau bi tre — tieng lech hai ben tai."""
+    loi = " ".join(_lenh(_ban()))
+    assert "adelay=500:all=1" in loi
+
+
+def test_amix_khong_chuan_hoa_bien_do():
+    """`normalize=1` (mac dinh) chia bien do cho so dau vao ⇒ am luong cua ban
+    long tieng phu thuoc vao SO CAU NOI. Khong ai yeu cau hanh vi do."""
+    assert "normalize=0" in " ".join(_lenh(_ban()))
+
+
+def test_moi_dau_vao_duoc_dat_dinh_dang_truoc_khi_tron():
+    """Tieng TTS va nhac nen khong cung tan so; de `amix` tu chon la de no chon
+    theo dau vao dau tien."""
+    loi = " ".join(_lenh(_ban(so_lop=2)))
+    assert loi.count("aformat=sample_rates=48000") == 3   # nen + 2 lop
+
+
+def test_so_tep_lech_so_lop_bi_TU_CHOI():
+    """Lech thu tu/so luong khong lam ffmpeg hong — no chi dat sai cau vao sai
+    cho. Mot loi im lang phai bi bat o day."""
+    with pytest.raises(ket_xuat.KetXuatError):
+        ket_xuat.dung_lenh(_ban(so_lop=2), ffmpeg_bin="ffmpeg",
+                           duong_video="/t/v.mp4", duong_nen="/t/n.wav",
+                           duong_lop=["/t/s0.wav"], duong_ra="/t/o.mp4")
+
+
+def test_khong_lop_tieng_nao_van_ra_lenh_hop_le():
+    """Moi doan bi cat o TIMING la mot ket cuc hop le, khong phai mot loi."""
+    cmd = _lenh(_ban(so_lop=0))
+    assert "-filter_complex" not in cmd
+    assert "1:a:0" in cmd
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  KHONG goi thuong nguon, KHONG xin GPU (muc 6, dieu cam)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_renderer_KHONG_goi_chep_loi_model_hay_may_sinh_tieng():
+    """⛔ Dieu cam cua Prompt 15, va no la thu lam cong thoat co nghia: mot lan
+    render lai khong duoc keo theo mot lan goi model."""
+    cam = ("dich_thuat", "giai_doan_noi_dung", "giong_noi", "giai_doan_giong",
+           "ban_ghi", "giai_doan_chep_loi", "dieu_phoi", "sidecar_client")
+    for mod in (ket_xuat, giai_doan_ket_xuat):
+        assert _vi_pham(inspect.getsource(mod), cam) == [], (
+            f"{mod.__name__} cham vao thuong nguon")
+
+
+def test_renderer_KHONG_xin_GPU():
+    """`-c:v copy` khong cham bo ma hoa. Xin mot suat GPU la giu mot thu khan
+    hiem de khong dung toi (muc 6)."""
+    for mod in (ket_xuat, giai_doan_ket_xuat):
+        assert _vi_pham(inspect.getsource(mod), ("gpu_env", "gpu_lease")) == []
+
+
+def test_RENDER_chay_o_lan_ffmpeg_va_khong_khai_tai_nguyen():
+    g = next(x for x in pipeline.CHUOI if x.ten == pipeline.RENDER)
+    assert g.app_slug == "asv_media", "RENDER phai o lan ffmpeg"
+    assert g.tai_nguyen == "", "RENDER khong duoc dat cho mot tai nguyen nao"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  Ho so chan doan CHE truoc khi luu (muc 9)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ho_so_chan_doan_khong_lo_duong_dan():
+    """Duong tam mang ten may va ten nguoi dung Windows. Mot ho so chan doan
+    duoc doc boi nguoi khong phai chu tep do."""
+    goc = r"C:\Users\NguoiThat\AppData\Local\Temp\asv-render-abc"
+    cmd = ["ffmpeg", "-i", goc + r"\v.mp4", "-i", goc + r"\n.wav",
+           "-c:v", "copy", goc + r"\ra.mp4"]
+    ho_so = ket_xuat.ho_so_chan_doan(_ban(), cmd, goc_tam=goc,
+                                     duoi_stderr="loi gi do")
+    goi = json.dumps(ho_so, ensure_ascii=False)
+    assert "NguoiThat" not in goi
+    assert "AppData" not in goi
+    # Van giu TEN TEP — do la thu lam ho so co ich.
+    assert "v.mp4" in goi and "ra.mp4" in goi
+
+
+def test_ho_so_chan_doan_cat_ngan_stderr():
+    ho_so = ket_xuat.ho_so_chan_doan(_ban(), ["ffmpeg"], duoi_stderr="x" * 9000)
+    assert len(ho_so["stderr"]) <= 2000
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  Render THAT — smoke, va cac ket cuc hong (verification cua Prompt 15)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _tep_tieng(binary: str, dest: Path, giay: float, hz: int = 440) -> Path:
+    subprocess.run([binary, "-hide_banner", "-loglevel", "error", "-y",
+                    "-f", "lavfi", "-i", f"sine=frequency={hz}:duration={giay}",
+                    "-ar", "48000", "-ac", "2", str(dest)],
+                   check=True, capture_output=True)
+    return dest
+
+
+def test_render_that_sinh_ra_tep_co_ca_hinh_va_tieng(tmp_path):
+    binary = fx.require_ffmpeg()
+    video = fx.tiny_mp4(tmp_path / "v.mp4", duration_s=2.0)
+    nen = _tep_tieng(binary, tmp_path / "n.wav", 2.0, hz=220)
+    s0 = _tep_tieng(binary, tmp_path / "s0.wav", 0.5)
+    s1 = _tep_tieng(binary, tmp_path / "s1.wav", 0.5)
+    ra = tmp_path / "ra.mp4"
+
+    ban = _ban(so_lop=2, tong_giay=2.0)
+    cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin=binary, duong_video=str(video),
+                             duong_nen=str(nen),
+                             duong_lop=[str(s0), str(s1)], duong_ra=str(ra))
+    ket_xuat._chay_co_tien_do(cmd, tong_giay=2.0, timeout=120)
+
+    tt = ket_xuat.kiem_tep_ra(str(ra), ban, soi=nhap_media.soi)
+    assert tt["co_video"] and tt["co_tieng"]
+    assert tt["codec_video"] == "h264", "hinh da bi ma hoa lai"
+    assert tt["codec_tieng"] == "aac"
+    assert tt["tan_so"] == 48000 and tt["so_kenh"] == 2
+
+
+def test_tien_do_duoc_bao_ra_trong_luc_render(tmp_path):
+    binary = fx.require_ffmpeg()
+    video = fx.tiny_mp4(tmp_path / "v.mp4", duration_s=3.0)
+    nen = _tep_tieng(binary, tmp_path / "n.wav", 3.0)
+    ra = tmp_path / "ra.mp4"
+    ban = _ban(so_lop=0, tong_giay=3.0)
+    cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin=binary, duong_video=str(video),
+                             duong_nen=str(nen), duong_lop=[], duong_ra=str(ra))
+    thay: list[float] = []
+    ket_xuat._chay_co_tien_do(cmd, tong_giay=3.0, timeout=120,
+                              bao_tien_do=thay.append)
+    assert thay, "khong nhan duoc mot moc tien do nao"
+    assert max(thay) <= 100.0
+
+
+def test_huy_giua_chung_thi_GIET_tien_trinh_va_khong_de_lai_ket_qua(tmp_path):
+    """Huy la HOP TAC: giet tien trinh con roi nem, thay vi de mot lan render
+    dai chay tiep sau khi khach da bam huy va da duoc hoan tien.
+
+    ⭐ Va no phai huy duoc **ke ca khi ffmpeg khong in ra dong tien do nao** —
+       do la cho ban cua `burn.py` khong lam duoc, vi no dua vao `on_progress`.
+    """
+    binary = fx.require_ffmpeg()
+    ra = tmp_path / "ra.mp4"
+
+    # ⭐ `-re` = doc dau vao dung THOI GIAN THUC, nen lenh nay chac chan chay
+    #    30 giay bat ke may nhanh cham. Ban dau cho nay dung `-preset veryslow`
+    #    tren mot video nho va phep kiem do: ffmpeg ma hoa xong truoc khi phep
+    #    huy kip xen vao. Mot phep kiem ve dieu khien ma ket qua phu thuoc toc
+    #    do CPU thi no dang do toc do CPU, khong do dieu khien.
+    cmd = [binary, "-y", "-hide_banner", "-loglevel", "error", "-re",
+           "-f", "lavfi", "-i", "testsrc=size=320x240:rate=10:duration=30",
+           "-c:v", "libx264", "-progress", "pipe:1", "-nostats", str(ra)]
+
+    bat_dau = time.monotonic()
+    with pytest.raises(nhap_media.DaHuy):
+        ket_xuat._chay_co_tien_do(
+            cmd, tong_giay=30.0, timeout=120,
+            hoi_huy=lambda: time.monotonic() - bat_dau > 0.6)
+    assert time.monotonic() - bat_dau < 30, "khong giet duoc tien trinh con"
+
+
+def test_ffmpeg_that_bai_thi_nem_KetXuatError(tmp_path):
+    binary = fx.require_ffmpeg()
+    cmd = [binary, "-y", "-hide_banner", "-loglevel", "error",
+           "-i", str(tmp_path / "khong-ton-tai.mp4"),
+           "-progress", "pipe:1", "-nostats", str(tmp_path / "ra.mp4")]
+    with pytest.raises(ket_xuat.KetXuatError):
+        ket_xuat._chay_co_tien_do(cmd, tong_giay=1.0, timeout=60)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  Kiem TRUOC khi promote (muc 8)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_tep_rong_bi_TU_CHOI(tmp_path):
+    p = tmp_path / "rong.mp4"
+    p.write_bytes(b"")
+    with pytest.raises(ket_xuat.KetXuatError):
+        ket_xuat.kiem_tep_ra(str(p), _ban(), soi=nhap_media.soi)
+
+
+def test_tep_khong_ton_tai_bi_TU_CHOI(tmp_path):
+    with pytest.raises(ket_xuat.KetXuatError):
+        ket_xuat.kiem_tep_ra(str(tmp_path / "khong.mp4"), _ban(),
+                             soi=nhap_media.soi)
+
+
+def test_thieu_luong_tieng_bi_TU_CHOI(tmp_path):
+    """`ffmpeg tra ve 0` KHAC `co mot tep dung duoc`."""
+    def _soi_gia(_d):
+        return {"co_video": True, "co_tieng": False, "thoi_luong": 2.0,
+                "co_byte": 100}
+    p = tmp_path / "x.mp4"
+    p.write_bytes(b"khong rong")
+    with pytest.raises(ket_xuat.KetXuatError):
+        ket_xuat.kiem_tep_ra(str(p), _ban(), soi=_soi_gia)
+
+
+def test_thoi_luong_lech_qua_nguong_bi_TU_CHOI(tmp_path):
+    """Mot ban long tieng dai sai la mot ban trong do tieng va hinh lech nhau —
+    hong dung thu ma san pham nay ban."""
+    def _soi_gia(_d):
+        return {"co_video": True, "co_tieng": True, "thoi_luong": 9.0,
+                "co_byte": 100}
+    p = tmp_path / "x.mp4"
+    p.write_bytes(b"khong rong")
+    with pytest.raises(ket_xuat.KetXuatError):
+        ket_xuat.kiem_tep_ra(str(p), _ban(tong_giay=2.0), soi=_soi_gia)
+
+
+def test_lech_trong_nguong_thi_CHAP_NHAN(tmp_path):
+    """Chieu nguoc lai: `-c:v copy` giu nguyen khung hinh nen sai so nho la
+    binh thuong. Mot nguong qua chat se danh hong moi lan render that."""
+    def _soi_gia(_d):
+        return {"co_video": True, "co_tieng": True, "thoi_luong": 2.4,
+                "co_byte": 100}
+    p = tmp_path / "x.mp4"
+    p.write_bytes(b"khong rong")
+    ket_xuat.kiem_tep_ra(str(p), _ban(tong_giay=2.0), soi=_soi_gia)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_415_asv_cong_thoat_render.py
+SHA256=6026796cd5f4823046d448de4bfbcec249b409a2087b223e2e7dd47c3942cedd BYTES=9181 LINES=224
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 15 — CONG THOAT.
+
+Prompt 15 phat bieu cong thoat bang mot cau: *mot ban dung da luu, MOT MINH,
+phai tai tao duoc mot tep media da kiem.* `test_414` kiem tung manh cua trinh
+render; tep nay kiem dung cau do, va no phai di qua **hang doi that + worker
+that** moi co nghia — mot phep kiem goi thang `giai_doan_ket_xuat.chay` se bo
+qua chinh thu dang duoc khang dinh (rang khong giai doan nao khac bi danh thuc).
+"""
+from __future__ import annotations
+
+import pytest
+from sqlalchemy import select
+
+from platform_core.storage import get_storage
+
+from apps.auto_scan_video import features, ket_xuat, nhap_media, pipeline
+from apps.auto_scan_video.tables import (AsvAsset, RUN_RUNNING, STAGE_PENDING,
+                                          STAGE_SUCCEEDED)
+from tests.fixtures import asv_media as fx
+
+# Dung lai bo do cua pha 05: hang doi that, worker that, chi cong viec ben trong
+# la gia. `noqa` vi pytest can chung o pham vi module de tiem fixture.
+from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
+    _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
+
+NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
+
+
+def _render(db_, run):
+    s = features.giai_doan_theo_ten(db_, run.id, pipeline.RENDER)
+    khoa = ((s.outputs or {}).get("khoa_asset") or [None])[0] if s else None
+    return khoa, s
+
+
+def _ha_render_ve_pending(db_, run):
+    """Xoa ket qua RENDER (ca so lan bytes) va dat giai doan ve `pending`.
+
+    ⚠️ Kho lay qua `get_storage()`, khong qua fixture: `kho_tam` chi CAI DAT kho
+       toan cuc roi `yield` rong, nen nhan gia tri cua no se duoc `None`.
+    """
+    kho = get_storage()
+    khoa, _ = _render(db_, run)
+    assert khoa, "chua co ket qua RENDER de xoa"
+    a = db_.execute(select(AsvAsset).where(
+        AsvAsset.storage_key == khoa)).scalars().one()
+    kho.delete(khoa)
+    db_.delete(a)
+    s = features.giai_doan_theo_ten(db_, run.id, pipeline.RENDER)
+    # ⚠️ Rong = `""` / `{}`, KHONG phai `None`. Bon cot nay deu NOT NULL, va
+    #    `outputs=None` bien thanh chuoi JSON `'null'` chu khong thanh NULL —
+    #    tuc "khong co ket qua" va "ket qua la null" la hai thu khac nhau.
+    s.status = STAGE_PENDING
+    s.fingerprint = ""
+    s.outputs = {}
+    s.job_id = ""
+    s.error = ""
+
+    # 🔑 Va danh thuc lai dieu phoi vien. Ha mot giai doan ve `pending` KHONG tu
+    #    lam viec do: `advance` chi tu nop lai chung nao run con song, va run nay
+    #    da ve `done`. Ban dau phep kiem nay thieu hai dong duoi va no do voi mot
+    #    van tay RONG — tuc RENDER khong chay lai chut nao, chu khong phai chay
+    #    lai rồi ra sai.
+    run_ = features.lay_run(db_, run.id, run.owner_id)
+    run_.status = RUN_RUNNING
+    features._nop_dieu_phoi(db_, run_, ly_do="kiem-render-lai")
+    db_.commit()
+    return khoa
+
+
+@pytest.fixture()
+def run_da_chay(db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia):
+    fx.require_ffmpeg()
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    return run
+
+
+def test_RENDER_that_su_sinh_ra_mot_mp4_PHAT_DUOC(run_da_chay, db, tmp_path):
+    """⛔ Chot rang RENDER chay engine THAT, khong roi vao `_engine_gia`.
+
+    Khong chot bang "giai doan bao succeeded" — engine gia cung bao succeeded,
+    va suot cac pha 05-14 no da bao dung nhu the. Chot bang cach **soi tep ra
+    bang ffprobe**: mot engine gia khong sinh ra duoc mot mp4 co luong hinh
+    h264 va luong tieng aac.
+    """
+    khoa, s = _render(db, run_da_chay)
+    assert s.status == STAGE_SUCCEEDED
+    assert khoa and khoa.endswith(".mp4"), f"RENDER khong ra mp4: {khoa!r}"
+
+    ra = tmp_path / "kiem.mp4"
+    with get_storage().open(khoa) as f:
+        ra.write_bytes(f.read())
+
+    tt = nhap_media.soi(str(ra))
+    assert tt["co_video"] and tt["co_tieng"]
+    assert tt["codec_video"] == "h264", "hinh bi ma hoa lai — mat `-c:v copy`"
+    assert tt["codec_tieng"] == "aac"
+    assert tt["tan_so"] == 48000 and tt["so_kenh"] == 2
+    assert tt["thoi_luong"] > 0 and tt["co_byte"] > 0
+
+
+def test_render_lai_KHONG_danh_thuc_mot_giai_doan_thuong_nguon_nao(
+        run_da_chay, db):
+    """🔑 CHINH LA CONG THOAT.
+
+    Xoa ket qua RENDER roi chay lai. Neu ban dung that su du de tai tao ket qua
+    thi **khong giai doan nao khac** duoc dong vao — dac biet CONTENT (goi
+    model) va VOICE (sinh tieng), vi chay lai chung la tra tien lan hai cho
+    cung mot ban dich.
+    """
+    truoc = {s.stage: (s.status, s.fingerprint)
+             for s in features.cac_giai_doan(db, run_da_chay)}
+    _ha_render_ve_pending(db, run_da_chay)
+
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+
+    khoa_sau, s_sau = _render(db, run_da_chay)
+    assert khoa_sau, "khong tai tao duoc ket qua tu ban dung"
+    assert s_sau.status == STAGE_SUCCEEDED
+
+    sau = {s.stage: (s.status, s.fingerprint)
+           for s in features.cac_giai_doan(db, run_da_chay)}
+    for ten in pipeline.TEN_GIAI_DOAN:
+        if ten == pipeline.RENDER:
+            continue
+        assert sau[ten] == truoc[ten], (
+            f"giai doan {ten} bi dong vao trong mot lan render lai — "
+            f"ban dung chua du de tai tao mot minh")
+
+
+def test_render_lai_ra_DUNG_van_tay_cu(run_da_chay, db):
+    """Van tay giong nhau ⇒ cung dau vao, cung cach dung lenh.
+
+    Neu no doi thi hoac ban dung khong tat dinh, hoac van tay dang bo qua mot
+    dau vao — va ca hai deu lam cache sai: mot lan chay lai se **tinh tien lai**
+    cho mot ket qua khong doi.
+    """
+    _, s_truoc = _render(db, run_da_chay)
+    vt = s_truoc.fingerprint
+    _ha_render_ve_pending(db, run_da_chay)
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    _, s_sau = _render(db, run_da_chay)
+    assert s_sau.fingerprint == vt
+
+
+def test_doi_cach_dung_lenh_thi_van_tay_PHAI_doi(run_da_chay, db, monkeypatch):
+    """Chieu nguoc lai cua phep kiem tren, va la thu de quen han.
+
+    Neu `PHIEN_BAN_KET_XUAT` khong nam trong van tay thi mot lan sua cach dung
+    lenh ffmpeg se **dung lai tep cu tu cache** va khong ai thay cach dung lenh
+    moi — mot ban va da giao nhung chua bao gio chay.
+    """
+    _, s_truoc = _render(db, run_da_chay)
+    vt = s_truoc.fingerprint
+    _ha_render_ve_pending(db, run_da_chay)
+
+    monkeypatch.setattr(ket_xuat, "PHIEN_BAN_KET_XUAT",
+                        ket_xuat.PHIEN_BAN_KET_XUAT + 1)
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+
+    _, s_sau = _render(db, run_da_chay)
+    assert s_sau.fingerprint != vt, (
+        "doi cach dung lenh ma van tay khong doi — mot lan chay lai se dung "
+        "lai tep cu va ban sua khong bao gio chay")
+
+
+def test_render_hong_KHONG_de_lai_ket_qua_dang_do(run_da_chay, db, monkeypatch):
+    """Muc 10: mot lan ngat khong bao gio duoc de lo mot tep dang do.
+
+    Mot tep dang do trong kho **trong y het** mot ket qua that — do moi la ly
+    do phai ghi tam roi promote, chu khong phai vi gon gang.
+    """
+    _ha_render_ve_pending(db, run_da_chay)
+
+    def _no(*_a, **_k):
+        raise ket_xuat.KetXuatError("ep hong giua chung")
+    monkeypatch.setattr(ket_xuat, "_chay_co_tien_do", _no)
+
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+
+    khoa_sau, s_sau = _render(db, run_da_chay)
+    assert not khoa_sau, "mot lan render hong da de lai mot khoa ket qua"
+    assert s_sau.status != STAGE_SUCCEEDED
+    con = db.execute(select(AsvAsset).where(
+        AsvAsset.run_id == run_da_chay.id,
+        AsvAsset.created_by_stage == pipeline.RENDER)).scalars().all()
+    assert con == [], "co artifact RENDER trong so du render that bai"
+
+
+def test_thieu_mot_tep_tieng_thi_DUNG_TRUOC_khi_ton_suat_render(
+        run_da_chay, db, monkeypatch):
+    """Muc 3: doi chieu MOI tham chieu truoc khi chay.
+
+    Mot ban dung tro toi mot artifact khong con la mot lan render that bai o
+    phut thu muoi — sau khi da chiem suat, da tai tep, da giai ma. Phai dung o
+    buoc doi chieu, va phai dung **truoc** khi ffmpeg duoc goi.
+    """
+    from apps.auto_scan_video import giai_doan_giong  # noqa: F401 - chi de dinh vi
+
+    # Xoa mot tep tieng cua VOICE khoi kho, giu nguyen ban ghi trong so.
+    a = db.execute(select(AsvAsset).where(
+        AsvAsset.run_id == run_da_chay.id,
+        AsvAsset.created_by_stage == pipeline.VOICE_SYNTHESIS)).scalars().first()
+    # ⛔ KHONG `pytest.skip`. Bo do nay chay ca chuoi voi `giong_gia`, nen mot
+    #    lan chay khong sinh ra tep tieng nao la mot LOI dang bao, khong phai
+    #    mot dieu kien moi truong dang bo qua. Va mot test bi bo qua la mot test
+    #    khong canh gi ca — no se lam banh coc `check_bo_qua` bao mot muc moi,
+    #    dung nhu no da bao khi ban dau cho nay la mot `skip`.
+    assert a is not None, "chuoi khong sinh ra tep tieng nao — bo do da hong"
+    get_storage().delete(a.storage_key)
+
+    _ha_render_ve_pending(db, run_da_chay)
+
+    da_goi = []
+    that = ket_xuat._chay_co_tien_do
+    monkeypatch.setattr(ket_xuat, "_chay_co_tien_do",
+                        lambda *a_, **k_: (da_goi.append(1), that(*a_, **k_))[1])
+
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+
+    khoa_sau, s_sau = _render(db, run_da_chay)
+    assert not khoa_sau
+    assert s_sau.status != STAGE_SUCCEEDED
+    assert da_goi == [], "ffmpeg da duoc goi du mot tham chieu da hong"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_416_asv_van_tay_engine.py
+SHA256=7c053d3b04ff9301e34663703020ff7606a8f0b4cbdf33e775598d7f36d1d01e BYTES=4906 LINES=114
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Van tay giai doan phai mang PHIEN BAN ENGINE — mon no tu pha 05, tra o pha 15.
+
+## Vi sao tep nay ton tai
+
+`thi_hanh.van_tay` ban pha 05 gom `(stage, contract, settings, dau_vao)`, va
+docstring cua chinh no ghi mon no:
+
+    "Ban pha 05 co du hinh dang dung nhung chua co `engine_id` va phien ban
+     model… Pha 08+ **phai** them chung — thieu chung thi nang model len ban moi
+     se dung lai ket qua cu, im lang."
+
+Mon no do di qua **bay pha** ma khong ai tra. Khong phai vi ai quen doc: vi
+khong co gi bao no thieu. Mot chu thich noi "phai lam X" khong lam X, va no
+cung khong do duoc rang X chua duoc lam.
+
+⭐ Cai lam no lo ra la mot phep kiem cua pha 15 — nang `PHIEN_BAN_KET_XUAT` roi
+   chay lai, va ket qua **khong doi**. Tep nay bien phat hien do thanh mot chot
+   cho **ca chuoi**, thay vi chi cho giai doan tinh co bi soi toi.
+"""
+from __future__ import annotations
+
+import pytest
+
+from apps.auto_scan_video import pipeline, thi_hanh
+
+
+class _RunGia:
+    contract_version = "auto_scan_mvp_v1"
+    settings: dict = {}
+
+
+def test_MOI_giai_doan_deu_khai_mot_phien_ban_engine():
+    """Chot theo TAP HOP giai doan, khong theo mot danh sach chep tay.
+
+    ⇒ Them mot giai doan vao `pipeline.CHUOI` ma quen khai phien ban engine se
+      lam phep kiem nay do NGAY, chu khong doi toi luc ai do nang engine len va
+      thay ket qua khong doi.
+    """
+    thieu = [g.ten for g in pipeline.CHUOI
+             if not thi_hanh.phien_ban_engine(g.ten)]
+    assert thieu == [], (
+        f"giai doan khong khai phien ban engine: {thieu} — nang engine cua "
+        f"chung se KHONG lam moi cache, va ban va se khong bao gio chay")
+
+
+#: Giai doan con dung ENGINE GIA. Chot bang TAP HOP, khong bang so luong: mot
+#: luot sau thay engine gia bang engine that ma quen sua cho nay se lam phep
+#: kiem do, va do la dieu ta muon — no buoc phien ban engine phai doi, tuc moi
+#: ket qua gia da luu bi vo hieu thay vi duoc coi la cache hop le.
+CON_DUNG_ENGINE_GIA = {"qc"}
+
+
+def test_tap_hop_giai_doan_con_dung_ENGINE_GIA_dung_nhu_khai_bao():
+    gia = {g.ten for g in pipeline.CHUOI
+           if thi_hanh.phien_ban_engine(g.ten).startswith("gia/")}
+    assert gia == CON_DUNG_ENGINE_GIA, (
+        f"tap hop giai doan dung engine gia da doi: {gia}. Neu vua thay mot "
+        f"engine gia bang engine that, cap nhat cho nay VA dam bao phien ban "
+        f"engine moi khac `gia/{thi_hanh.PHIEN_BAN_ENGINE_GIA}`")
+
+
+@pytest.mark.parametrize("ten", [g.ten for g in pipeline.CHUOI])
+def test_doi_phien_ban_engine_thi_van_tay_PHAI_doi(ten, monkeypatch):
+    """Chot dieu **thuc su** quan trong, chu khong chi rang chuoi khac rong.
+
+    Mot ban cai dat tra ve mot chuoi hang so cho moi giai doan van qua duoc
+    phep kiem ben tren, nhung khong bao ve gi ca. O day ta doi chinh gia tri
+    va doi hoi van tay doi theo.
+    """
+    run = _RunGia()
+    truoc = thi_hanh.van_tay(ten, run, {})
+    # ⚠️ Chup ham GOC truoc khi va. Ban dau lambda goi
+    #    `thi_hanh.phien_ban_engine(t)`, ma sau khi va thi ten do TRO VAO chinh
+    #    lambda ⇒ RecursionError, va bay phep kiem do vi mot ly do khong lien
+    #    quan gi toi thu dang duoc kiem.
+    goc = thi_hanh.phien_ban_engine
+    monkeypatch.setattr(thi_hanh, "phien_ban_engine", lambda t: goc(t) + "-x")
+    sau = thi_hanh.van_tay(ten, run, {})
+    assert truoc != sau, f"{ten}: doi phien ban engine ma van tay khong doi"
+
+
+def test_hai_giai_doan_KHAC_nhau_khong_dung_chung_van_tay():
+    """Chieu nguoc lai: van tay phai phan biet duoc giai doan.
+
+    Neu khong, cache cua giai doan nay se tra loi cho giai doan kia.
+    """
+    run = _RunGia()
+    vt = {g.ten: thi_hanh.van_tay(g.ten, run, {}) for g in pipeline.CHUOI}
+    assert len(set(vt.values())) == len(vt), "co hai giai doan trung van tay"
+
+
+def test_phien_ban_engine_KHONG_nap_ca_cay_module_luc_import():
+    """`thi_hanh` duoc ca ba app vo thi hanh nap.
+
+    Keo ca cay module engine vao luc import se bat mot worker chi chay lan `api`
+    phai co du moi thu cua lan `gpu` — va no hong o luc **khoi dong worker**,
+    tuc xa cho gay ra no nhat.
+    """
+    import ast
+    import inspect
+
+    cay = ast.parse(inspect.getsource(thi_hanh.phien_ban_engine))
+    o_dau_tep = [n for n in ast.walk(cay)
+                 if isinstance(n, (ast.Import, ast.ImportFrom))]
+    assert o_dau_tep, "ham nay phai import ben trong, khong o dau tep"
+    # Va cac module engine nang KHONG duoc nam o dau `thi_hanh.py`.
+    dau = ast.parse(inspect.getsource(thi_hanh))
+    ten_dau_tep: set[str] = set()
+    for n in dau.body:          # chi than module, khong di vao trong ham
+        if isinstance(n, ast.ImportFrom) and n.level == 1:
+            ten_dau_tep |= {a.name for a in n.names}
+    for nang in ("tach_tieng", "ban_ghi", "dich_thuat", "giong_noi", "ket_xuat"):
+        assert nang not in ten_dau_tep, (
+            f"`{nang}` bi import o dau `thi_hanh.py` — moi worker deu phai nap no")
 
 @@@LTT_PROFILE_FILE_END@@@
 

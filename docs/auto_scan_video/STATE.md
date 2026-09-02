@@ -24,7 +24,7 @@
 > kept for provenance, not as current state.
 
 ## Current phase
-- phase: **15 — next in the pack**
+- phase: **16 — Real Fixed Pipeline Wiring**
 - status: NOT_STARTED
 - gate: Phase 14 closed at `RESULT: FAIL (2/26)` — **7 failures, none in ASV work**, each traced
   (see the exit table in [`reports/14_REPORT.md`](reports/14_REPORT.md))
@@ -41,7 +41,7 @@ python -m pytest tests/test_400_asv_bat_bien_thi_hanh.py tests/test_401_asv_ranh
 > `setup/2-cai-dat.ps1` copies the whole tree to `C:\LTTPlatform`.
 
 **Frozen baseline (re-measured 2026-09-02, AFTER merging `admin-mvp-v3`):**
-`python tools/gate.py --phien asv` → `RESULT: FAIL (2/26)`, **7 test failures**.
+`python tools/gate.py --phien asv` → `RESULT: FAIL (3/26)`, **7 test failures** plus the `chuoi chua dich` step (781 vs 774, from the peer's `dieu_khoan.py`).
 
 ⛔ The old baseline (`FAIL (4/26)`) was measured on a tree **37 commits stale** and is void.
 Do not compare against it. Merging first changed the failure count 5 → 34 → 7; the 34 were
@@ -173,6 +173,7 @@ Full table with line-level evidence: [`CAPABILITY_MATRIX.md`](CAPABILITY_MATRIX.
 | Phase | Gate | SHA/diff ref | Key evidence | Report |
 |---|---|---|---|---|
 | 00 Repo provenance & read-only audit | **PASS** | `c31b1ae`, docs-only diff under `docs/auto_scan_video/` | 9/9 MVP stages mapped (8 sourced + 1 explicit GAP); execution/money/resource traced end to end; 15 risks + 4 gaps opened | [`reports/00_REPORT.md`](reports/00_REPORT.md) |
+| 15 Renderer integration | **CLOSED** (9 external failures) | `ket_xuat.py`, `giai_doan_ket_xuat.py`, 3 test files | Policy from `assemble.py`, shape from `replace_audio`, execution from `burn.py`; the timed multi-layer mix is new. **No GPU** — `-c:v copy` is CPU work. 🔴 **Found a seven-phase-old debt**: `thi_hanh.van_tay` carried **no engine version**, so bumping a renderer/model version would silently serve the cached result. Its own Phase-05 docstring had recorded the debt — nothing measured it. Now every stage contributes a version, and `test_416` parametrises over `pipeline.CHUOI` so stages that don't exist yet are covered. ⚠️ Cancel rebuilt rather than copied: `burn.py` cancels only while ffmpeg prints progress. Exit gate proven through the real queue. | [`reports/15_REPORT.md`](reports/15_REPORT.md) |
 | 14 Composer / render manifest | **CLOSED** (7 external failures) | `0fef74c` + `ban_dung.py`, `giai_doan_ban_dung.py`, 5 test files | Manifest is **data, not a command string** — a tool change must not force re-running the upstream AI chain. Every reference verified before a render slot is spent, re-running `kiem_toan_ven` rather than trusting the stored column. 🔴 **Merged `admin-mvp-v3` (37 commits) before trusting the gate**: failures went 5 → **34** → 7. The 34 were already true; a stale tree was hiding them. 🔴 **MAX_PATH bug**: full sha256 in a filename made paths 262 chars (limit 260) — green alone at 252, red under xdist which adds `popen-gwN\`. ⭐ And the first fix was **not enough**: the test used a 2-char owner while real ones are 36-char UUIDs, so it went green on kind data. Caught 3 guards that fired on their own author. | [`reports/14_REPORT.md`](reports/14_REPORT.md) |
 | 13 Timing / pause / alignment | **PASS** | `c31b1ae` + `thoi_gian.py`, ADR-003, 23 tests | 🔴 **Product owner corrected the design**: people don't speak continuously, so a segment's budget runs **until the next segment starts** — the pause belongs to the sentence. Researched 3 community projects; borrowed SoniTranslate's partial-gap borrowing (70%) and Subdub's drift-debt repayment + 1.15× cap, **added a hard 3-segment cap none of them has**. Measured: Vietnamese 60% longer now needs **zero compression** where the Phase-02 design compressed every line 1.6×. Caught 2 real bugs in my own model. | [`reports/13_REPORT.md`](reports/13_REPORT.md) |
 | 12 Voice provider integration | **PASS** | `c31b1ae` + `giong_noi.py`, `giai_doan_giong.py`, `apps/asv_voice`, 21 tests | **D5 re-checked: delegation fails here too** — one file per request keyed on `job_id`, and no grain to checkpoint. So VOICE calls 3 declared service fns, `giai_giong` (the only ownership check) inside the chain. **Per-segment resume proven twice**: clean re-run = 0 engine calls; delete one file = exactly 1 regeneration. Busy ≠ failed ≠ ambiguous. 4th executor on the `voice` lane. RISK-00-02 reproduced in my own suite. ⚠️ No real synthesis — voice quality and Vietnamese duration-vs-slot unmeasured. | [`reports/12_REPORT.md`](reports/12_REPORT.md) |
@@ -230,7 +231,7 @@ Detail: [`RISK_REGISTER.md`](RISK_REGISTER.md).
 
 ## Exact next action
 
-**Start Phase 15** from the pack. Phases 00–14 are closed.
+**Start Phase 16** from the pack. Phases 00–15 are closed.
 
 Before touching anything, know these three, in this order:
 

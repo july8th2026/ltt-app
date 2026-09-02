@@ -29,8 +29,9 @@ from platform_core.db import get_session
 from platform_core.storage import get_storage
 
 from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
-               giai_doan_chep_loi, giai_doan_giong, giai_doan_media,
-               giai_doan_noi_dung, giai_doan_thoi_gian, pipeline)
+               giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
+               giai_doan_media, giai_doan_noi_dung, giai_doan_thoi_gian,
+               pipeline)
 from .tables import STAGE_SUCCEEDED
 
 #: Chi phi do duoc gia cua mot giai doan o pha 05. Bang 0 vi khong provider nao
@@ -42,19 +43,82 @@ from .tables import STAGE_SUCCEEDED
 CHI_PHI_GIA = 0
 
 
+#: Phien ban cua ENGINE GIA. Giai doan chua co engine that dung so nay, va no
+#: PHAI doi khi engine that thay cho no — neu khong, moi ket qua gia da luu se
+#: duoc coi la cache hop le cho engine moi.
+PHIEN_BAN_ENGINE_GIA = 0
+
+
+def phien_ban_engine(stage_ten: str) -> str:
+    """Phien ban ENGINE cua mot giai doan — phan da thieu trong van tay tu pha 05.
+
+    🔴 `van_tay` ban pha 05 chi gom `(stage, contract, settings, dau_vao)`, va
+       docstring cua chinh no ghi mon no nay: *"Pha 08+ **phai** them chung —
+       thieu chung thi nang model len ban moi se dung lai ket qua cu, im lang."*
+       Mon no do di qua bay pha ma khong ai tra, vi khong co gi bao no thieu.
+
+    ⭐ Cai lam no lo ra la mot phep kiem cua pha 15
+       (`test_415::test_doi_cach_dung_lenh_thi_van_tay_PHAI_doi`): nang
+       `PHIEN_BAN_KET_XUAT` roi chay lai, va ket qua **khong doi** — tuc mot ban
+       va cho trinh render da duoc giao nhung se khong bao gio chay, vi moi lan
+       chay lai deu tra ve tep cu tu cache.
+
+    ⚠️ Import ben trong ham, khong o dau tep: `thi_hanh` duoc ba app vo thi hanh
+       nap, va keo ca cay module engine vao luc import se bat mot worker chi
+       chay lan `api` phai co du moi thu cua lan `gpu`.
+    """
+    if stage_ten == pipeline.MEDIA_PREPARE:
+        from . import nhap_media
+        return f"chuan_hoa/{nhap_media.PHIEN_BAN_CHUAN_HOA}"
+    if stage_ten == pipeline.AUDIO_PREPARE:
+        from . import tach_tieng
+        return f"tach/{tach_tieng.PHIEN_BAN_TACH}"
+    if stage_ten == pipeline.TRANSCRIBE:
+        from . import giai_doan_chep_loi
+        return f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+    if stage_ten == pipeline.CONTENT_PROCESS:
+        from . import dich_thuat, van_ban
+        # Provider + model nam trong nay: doi model dich la doi san pham, va
+        # mot lan doi lang le nghia la khach nhan mot ban dich khac.
+        return (f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC}"
+                f"/{dich_thuat.PROVIDER_CHINH}/{dich_thuat.MODEL_CHINH}")
+    if stage_ten == pipeline.VOICE_SYNTHESIS:
+        from . import giong_noi
+        return f"giong/{giong_noi.PHIEN_BAN_GIONG}"
+    if stage_ten == pipeline.TIMING_ALIGN:
+        from . import thoi_gian
+        return f"thoi_gian/{thoi_gian.PHIEN_BAN_THOI_GIAN}"
+    if stage_ten == pipeline.COMPOSE:
+        from . import ban_dung
+        return f"ban_dung/{ban_dung.PHIEN_BAN_BAN_DUNG}"
+    if stage_ten == pipeline.RENDER:
+        from . import ket_xuat
+        return f"ket_xuat/{ket_xuat.PHIEN_BAN_KET_XUAT}"
+    # ⚠️ Giai doan chua co engine that van phai co MOT phien ban, khong duoc tra
+    #    chuoi rong. Tra rong nghia la "khong co gi de lam moi cache", va do la
+    #    dung mon no ma ham nay sinh ra de tra — chi doi cho.
+    #
+    #    Khi pha 18 thay engine gia cua QC bang engine that, chuoi nay doi tu
+    #    `gia/0` sang mot thu khac, va moi ket qua QC cu bi vo hieu **dung nhu
+    #    mong doi**. `tests/test_416` chot TAP HOP giai doan con dung engine gia,
+    #    nen luot do khong the quen cap nhat cho nay.
+    return f"gia/{PHIEN_BAN_ENGINE_GIA}"
+
+
 def van_tay(stage_ten: str, run, dau_vao: dict) -> str:
     """Van tay hieu luc cua mot giai doan (ADR-001 D8).
 
-    ⚠️ Ban pha 05 co du **hinh dang** dung nhung chua co `engine_id` va phien ban
-       model, vi chua co engine. Pha 08+ **phai** them chung — thieu chung thi
-       nang model len ban moi se dung lai ket qua cu, im lang. Do dung la kieu
-       hong ma O13 sinh ra de chan: "co mot tep ten dung" khong phai la cache hop le.
+    Gom bon thu cua ban pha 05 **cong** phien ban engine (xem `phien_ban_engine`).
+    Thieu manh cuoi thi nang engine len ban moi se dung lai ket qua cu, im lang —
+    dung kieu hong ma O13 sinh ra de chan: "co mot tep ten dung" khong phai la
+    mot cache hop le.
     """
     goi = json.dumps({
         "stage": stage_ten,
         "contract": run.contract_version,
         "settings": run.settings or {},
         "dau_vao": dau_vao,
+        "engine": phien_ban_engine(stage_ten),
     }, sort_keys=True, ensure_ascii=False, default=str)
     return hashlib.sha256(goi.encode("utf-8")).hexdigest()
 
@@ -155,6 +219,8 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_thoi_gian.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.COMPOSE:
             ra = giai_doan_ban_dung.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.RENDER:
+            ra = giai_doan_ket_xuat.chay(db, kho, run=run, ctx=ctx)
         else:
             ra = _engine_gia(kho, run_id=run_id, owner_id=owner_id, ten=ten,
                              van_tay=vt)
