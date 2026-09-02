@@ -3689,7 +3689,7 @@ URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bản
 | H43.7 | 07 | Bảng `chatltt_*` (cây, `current_leaf_id` ở CSDL, xoá mềm) + migration `7d2c1e9f4a03` + `services/{hoi_thoai,su_kien}.py` + reload từ CSDL (`test_616–618` 16 pass, `reports/07_du_lieu_cay_su_kien.md`) | [x] 2026-09-03 |
 | H43.8a | 08 | Text (máy chủ): `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại, IDOR/CSRF (`test_623`, `reports/08a_text_backend.md`) | [x] 2026-09-03 |
 | H43.8b | 08 | Text (giao diện): bundle React `frontend/chatltt` (30 test), gate/build_release biết bundle thứ tư, kiểm trình duyệt thật (stream · tạo lại · chuyển nhánh · nhánh sống qua reload · 390 px) — **mốc "chỉ-text dùng được độc lập" ĐẠT** (`reports/08b_text_giao_dien.md`) | [x] 2026-09-03 |
-| H43.9 | 09 | Tạo ảnh / đọc to / tạo giọng trong hội thoại | [ ] |
+| H43.9 | 09 | Ảnh + tiếng trong hội thoại: báo giá→xác nhận→nộp (Q84), tiến độ 2 s (Q87), khối ảnh/âm, cửa tài sản có kiểm sở hữu; bắt được path traversal và lỗi bố cục đè chân trang (`test_624/625`, `reports/09_anh_tieng_trong_hoi_thoai.md`) | [x] 2026-09-03 |
 | H43.10 | 10 | UX LibreChat-class, Carbon LTT, desktop+mobile | [ ] |
 | H43.11 | 11 | Chứng minh mở rộng bằng fixture | [ ] |
 | H43.12 | 12 | Torture: đồng thời/tiền/bảo mật/dữ liệu/hiệu năng | [ ] |

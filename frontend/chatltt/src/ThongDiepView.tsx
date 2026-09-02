@@ -17,7 +17,7 @@ import { useId, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
-import type { ThongDiep } from './kieu'
+import type { Khoi, ThongDiep } from './kieu'
 
 const NHAN_TRANG_THAI: Record<string, string> = {
   cancelled: 'Đã dừng',
@@ -47,16 +47,43 @@ function KhoiSuyLuan({ chu, dangChay }: { chu: string; dangChay: boolean }) {
   )
 }
 
+/**
+ * Khoi tai san. `duongTaiSan` di qua cua CO KIEM SO HUU cua app, khong phai
+ * `/static` — anh cua khach khong bao gio la tep tinh cong khai.
+ */
+function KhoiTaiSan({ khoi, duongTaiSan }: {
+  khoi: Khoi[]; duongTaiSan: (k: string) => string
+}) {
+  const media = khoi.filter((k) => k.type === 'image' || k.type === 'audio')
+  if (!media.length) return null
+  return (
+    <div className="ltc-taisan">
+      {media.map((k, i) => (k.type === 'image' ? (
+        <a key={i} href={duongTaiSan(String(k.key))} target="_blank" rel="noreferrer">
+          <img className="ltc-taisan__anh" src={duongTaiSan(String(k.key))}
+            alt={`Ảnh ${i + 1} do ChatLTT tạo`} loading="lazy" />
+        </a>
+      ) : (
+        <audio key={i} className="ltc-taisan__am" controls preload="none"
+          src={duongTaiSan(String(k.key))}>
+          Trình duyệt không phát được tệp âm thanh này.
+        </audio>
+      )))}
+    </div>
+  )
+}
+
 export type ThongDiepViewProps = {
   m: ThongDiep
   phang: readonly ThongDiep[]
   onChuyenNhanh: (m: ThongDiep, idx: number) => void
   onTaoLai: (m: ThongDiep) => void
   onSuaGuiLai: (m: ThongDiep) => void
+  duongTaiSan?: (k: string) => string
 }
 
 export function ThongDiepView({
-  m, phang, onChuyenNhanh, onTaoLai, onSuaGuiLai,
+  m, phang, onChuyenNhanh, onTaoLai, onSuaGuiLai, duongTaiSan,
 }: ThongDiepViewProps) {
   const ds = anhEm(phang, m)
   const idx = ds.findIndex((x) => x.id === m.id)
@@ -65,6 +92,8 @@ export function ThongDiepView({
   const suyLuan = suyLuanCuaThongDiep(m)
   const loi = m.blocks.find((k) => k.type === 'error')
   const trangThai = m.blocks.find((k) => k.type === 'status')
+  const dangTaoMedia = dangChay && m.execution?.mode === 'job'
+  const tienDo = (m.execution?.usage as { progress?: number } | undefined)?.progress ?? null
 
   return (
     <article
@@ -86,8 +115,17 @@ export function ThongDiepView({
         ) : (
           <Markdown remarkPlugins={[remarkGfm]}>{chu}</Markdown>
         )}
-        {dangChay && !chu && <span className="ltc-nhipdap" aria-label="Đang trả lời" />}
+        {dangChay && !chu && !dangTaoMedia && (
+          <span className="ltc-nhipdap" aria-label="Đang trả lời" />
+        )}
       </div>
+
+      {dangTaoMedia && (
+        <p className="ltc-tin__nhan" role="status">
+          Đang tạo… {tienDo != null ? `${tienDo}%` : ''}
+        </p>
+      )}
+      {duongTaiSan && <KhoiTaiSan khoi={m.blocks} duongTaiSan={duongTaiSan} />}
 
       {loi && (
         <p className="ltc-tin__loi" role="alert">
@@ -124,7 +162,7 @@ export function ThongDiepView({
             </button>
           </nav>
         )}
-        {m.role === 'assistant' && !dangChay && (
+        {m.role === 'assistant' && !dangChay && m.execution?.mode !== 'job' && (
           <button type="button" className="ltc-nut--nho" onClick={() => onTaoLai(m)}>
             Tạo lại
           </button>

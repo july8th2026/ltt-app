@@ -27,7 +27,11 @@ export type ThiHanh = {
   partial_text: string
   reasoning_text: string
   finish_reason: string
-  usage: { token_vao?: number; token_ra?: number; token_cache?: number; do_duoc?: boolean }
+  /** Text: token. Job: `progress` 0-100. Mot cho, hai hinh — theo `mode`. */
+  usage: {
+    token_vao?: number; token_ra?: number; token_cache?: number; do_duoc?: boolean
+    progress?: number
+  }
   credit: { giu: number; thu: number; hoan: number }
   error_code: string
   error_text: string

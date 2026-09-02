@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Api, docSSE, LoiApi } from './api'
 import { duongToiLa, laKhiChuyenNhanh } from './cay'
 import { SoanThao } from './SoanThao'
+import { TaoMedia } from './TaoMedia'
 import { ThongDiepView } from './ThongDiepView'
 import type { HoiThoai, NangLuc, SuThat, ThongDiep } from './kieu'
 
@@ -78,9 +79,34 @@ export function App({ api }: AppProps) {
   }, [api])
 
   useEffect(() => {
+    api.convHienTai = convId ?? ''
     if (!convId) { datSuThat(null); return }
     napSuThat(convId).catch((e) => datLoi(nhanLoi(e)))
-  }, [convId, napSuThat])
+  }, [api, convId, napSuThat])
+
+  // ── Nhip hoi cho job anh/tieng (Q87: 2 giay khi khoe) ────────────────────
+  //
+  // ⭐ Job KHONG day su kien sang web (khac stream text): worker chay o tien
+  //    trinh khac. Nen tien do den tu viec HOI, va `dong_bo()` phia may chu la
+  //    ham an toan goi nhieu lan.
+  useEffect(() => {
+    const dangCho = (suThat?.messages ?? []).filter(
+      (m) => m.execution?.mode === 'job'
+        && (m.status === 'queued' || m.status === 'streaming'),
+    )
+    if (!dangCho.length || !convId) return
+    let dung = false
+    const h = window.setInterval(async () => {
+      if (dung) return
+      try {
+        await Promise.all(dangCho.map((m) => api.trangThai(m.execution!.id)))
+        await napSuThat(convId)
+      } catch {
+        // Mot nhip hong khong lam hong ca man hinh; nhip sau thu lai.
+      }
+    }, 2000)
+    return () => { dung = true; window.clearInterval(h) }
+  }, [api, convId, suThat, napSuThat])
 
   // Cuon xuong khi co chu moi — TRU khi nguoi dung da tu cuon len.
   // (Ky thuat `abortScroll` cua LibreChat, `useMessageHelpers.tsx:37-53`.)
@@ -237,6 +263,7 @@ export function App({ api }: AppProps) {
               m={m}
               phang={suThat?.messages ?? []}
               onChuyenNhanh={chuyenNhanh}
+              duongTaiSan={(k) => api.duongTaiSan(k)}
               onTaoLai={(x) => guiLuot({ taoLaiCua: x.id })}
               onSuaGuiLai={(x) => {
                 const chu = window.prompt('Sửa câu hỏi',
@@ -249,6 +276,15 @@ export function App({ api }: AppProps) {
           ))}
           <div ref={cuoiLuong} />
         </div>
+
+        {convId && (
+          <TaoMedia
+            api={api}
+            nangLuc={nangLuc}
+            onXong={() => { napSuThat(convId).catch(() => {}) }}
+            onLoi={datLoi}
+          />
+        )}
 
         {loi && <p className="ltc-loi" role="alert">{loi}</p>}
 

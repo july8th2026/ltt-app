@@ -25,6 +25,9 @@ export type BatDauLuot = {
 }
 
 export class Api {
+  /** Hoi thoai dang mo — `taoMedia` gan job vao dung hoi thoai nay. */
+  convHienTai = ''
+
   constructor(private goc: string, private csrf: string) {}
 
   private async goi<T>(duong: string, init?: RequestInit): Promise<T> {
@@ -102,6 +105,34 @@ export class Api {
     return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/luot`, {
       method: 'POST', body: JSON.stringify(body),
     })
+  }
+
+  baoGia(nangLuc: string, thamSo: Record<string, unknown>):
+  Promise<{ nang_luc: string; credit: number; phien_ban_gia: string;
+            tham_so: Record<string, unknown> }> {
+    return this.goi('/bao-gia', {
+      method: 'POST',
+      body: JSON.stringify({ nang_luc: nangLuc, tham_so: thamSo }),
+    })
+  }
+
+  /** `credit` la so nguoi dung DA NHIN THAY — may chu tu choi neu gia da doi. */
+  taoMedia(nangLuc: string, thamSo: Record<string, unknown>, credit: number):
+  Promise<{ message_id: string; execution_id: string; job_id: string; credit: number }> {
+    return this.goi(`/hoi-thoai/${encodeURIComponent(this.convHienTai)}/tao`, {
+      method: 'POST',
+      body: JSON.stringify({ nang_luc: nangLuc, tham_so: thamSo, credit }),
+    })
+  }
+
+  /** Nhip hoi cho mot job (Q87). An toan goi nhieu lan. */
+  trangThai(executionId: string): Promise<{ status: string; seq: number }> {
+    return this.goi(`/luot/${encodeURIComponent(executionId)}/trang-thai`)
+  }
+
+  /** Duong tai mot tai san — di qua cua co kiem so huu, khong phai /static. */
+  duongTaiSan(khoa: string): string {
+    return `${this.goc.replace(/\/api$/, '')}/tai-san/${khoa}`
   }
 
   dung(executionId: string): Promise<{ status: string }> {

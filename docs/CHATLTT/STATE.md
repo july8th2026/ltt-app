@@ -13,7 +13,8 @@
 - Dải số test: **600–699**
 - Production: `89eb46c` (14:15 02/09) + voice (21:11 02/09), 5 tool bán thật.
   ⛔ Chương trình này **không deploy**.
-- Phase hiện tại: **00 ✅ · 01 ✅ · 02 ✅ · 03 ✅ · 04 ✅ · 05 ✅ · 06 ✅ · 07 ✅ · 08 ✅ → tiếp 09**
+- Phase hiện tại: **00–09 ✅ → tiếp 10** (UX)
+  (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
   (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
 
 ## Ranh giới với phiên khác (02/09)
@@ -38,7 +39,8 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | **04** Ảnh nội bộ | PASS (deterministic) — `platform_core/jobs.DangBan` + `_provider_failure_kind` ⇒ bận là `resource_wait` không tiêu lượt thử; `LoiYeuCauAnh` cho lỗi người gọi; hỏi `health()` trước khi dịch prompt (`test_606–608`) | (commit phase 03–08a) |
 | **05** Tiếng nội bộ | PASS (deterministic) — `DangBanTam(DangBan)`; giọng người khác ≡ không tồn tại; trần 1.500 không nới; tiền theo giây `ffprobe`; `so_lan_thu_for=5` (`test_609–612`) | (commit phase 03–08a) |
 | **08a** Text (máy chủ) | PASS — `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại; hai lỗi thật đã sửa (múi giờ SQLite, `parent_id: null`) (`test_623`) | `b77fe83` |
-| **08b** Text (giao diện) | PASS — `frontend/chatltt` (30 test), build 4 bundle, **kiểm trình duyệt thật**: stream, tạo lại, chuyển nhánh, nhánh sống qua reload, 390 px không tràn; sửa 302 của mỗi lệnh GET (`reports/08b_text_giao_dien.md`) | (commit 08b) |
+| **08b** Text (giao diện) | PASS — `frontend/chatltt` (30 test), build 4 bundle, **kiểm trình duyệt thật**: stream, tạo lại, chuyển nhánh, nhánh sống qua reload, 390 px không tràn; sửa 302 của mỗi lệnh GET (`reports/08b_text_giao_dien.md`) | `1abeffc` |
+| **09** Ảnh + tiếng | PASS — báo giá→xác nhận→nộp, tiến độ, khối ảnh/âm, cửa tài sản có kiểm sở hữu; hai lỗi thật đã sửa (**path traversal**, ô soạn đè chân trang) (`test_624/625`, `reports/09_anh_tieng_trong_hoi_thoai.md`) | (commit 09) |
 
 ## Hợp đồng đã cài ở Phase 02 (các phase sau DÙNG, không dựng lại)
 | Hàm | Ký |
@@ -75,13 +77,11 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | Bằng chứng LIVE với máy B / GPU | Phase 03/04/05/12 | khi máy rảnh; deterministic trước |
 
 ## Next phase
-- **09 — ảnh và tiếng trong hội thoại**: nút Tạo ảnh (báo giá → xác nhận → tiến
-  độ → khối ảnh), Đọc to / Tạo giọng (preset + giọng của tôi + link sang Voice
-  Studio), reload/nối lại, thử lại/huỷ. Không planner tự động.
-- Dùng sẵn: `runtime_noi_bo.job.bao_gia/nop_job`, `NangLuc.tuy_chon["voice_id"]`,
-  `platform_core/job_history` cho tiến độ (Q87: 2 s, backoff 4→8→16→30).
-- ⚠️ `anhnoibo.suc_khoe` chưa khai (Phase 06 giao lại) — catalog chưa nói được
-  ảnh có sẵn sàng không.
+- **10 — UX LibreChat-class, Carbon LTT**: ma trận trạng thái × desktop/mobile
+  bằng Playwright, bàn phím/focus, `prefers-reduced-motion` (chỗ ChatLTT phải
+  **hơn** tham chiếu — LibreChat chỉ có 2 chỗ), không lộ job/engine ID thô.
+- Việc đã biết trước: nút "Đọc to" trên một câu trả lời; số dư credit cập nhật
+  không cần tải lại trang; `anhnoibo.suc_khoe` (Phase 06 giao lại).
 
 ## Giao cho phase sau (từ 04/05/08a)
 | Mục | Phase | Việc |
