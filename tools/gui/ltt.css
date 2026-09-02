@@ -2816,3 +2816,73 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   .lv-lo-khung{grid-template-columns:1fr}
   .lv-mlo-xoa{margin-left:0}
 }
+
+/* ── Auto Scan Video (long tieng Viet) ──────────────────────────────────────
+   Dung lai `.card` `.field` `.btn` `.alert` cua he thiet ke. Khoi nay chi them
+   nhung gi he thong chua co: danh sach chin buoc, va mot lua chon radio co mo ta
+   nhieu dong.
+
+   🔴 Khoi nay ton tai vi mot lan SOI BANG TRINH DUYET. Phep kiem cua pha 20 xanh
+      het — chung kiem van ban co mat, khong kiem no nhin ra sao — trong khi trang
+      that hien hai lua chon dinh lien nhau tren mot dong, vi cac lop `.asv-*`
+      chua ton tai o dau ca. Do dung la ly do `CLAUDE.md` muc 5 bat soi that.
+   ───────────────────────────────────────────────────────────────────────── */
+.asv-trang{display:flex;flex-direction:column;gap:22px;max-width:920px}
+.asv-dau{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.asv-dau h1{margin:0 0 6px}
+.asv-ghi-chu{color:var(--muted);font-size:13px;margin:4px 0 0}
+
+.asv-form{display:flex;flex-direction:column;gap:18px;padding:20px}
+.asv-o{display:flex;flex-direction:column;gap:8px;border:0;margin:0;padding:0}
+.asv-o > legend{padding:0;font-size:13px}
+
+/* Mot lua chon = mot hang rieng. Khong co dieu nay thi mo ta cua lua chon nay
+   chay tiep vao nhan cua lua chon sau — dung loi da thay tren trinh duyet. */
+.asv-chon{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer}
+.asv-chon:hover{background:var(--panel2)}
+.asv-chon input{margin-top:3px;flex:none}
+.asv-chon span{display:flex;flex-direction:column;gap:3px}
+.asv-chon small{color:var(--muted);line-height:1.45}
+.asv-chon:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
+
+.asv-tien{flex-direction:row;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap}
+.asv-tien .asv-ghi-chu{flex:1 1 320px;margin:0}
+
+/* ── Chin buoc ───────────────────────────────────────────────────────────── */
+.asv-tom-tat{font-size:15px;margin:0 0 12px}
+.asv-buoc{list-style:none;margin:0 0 16px;padding:0;display:flex;
+  flex-direction:column;gap:2px}
+.asv-buoc li{display:grid;grid-template-columns:1fr auto auto;gap:12px;
+  align-items:center;padding:9px 13px;border-radius:var(--radius-sm);
+  border-left:3px solid var(--line2);background:var(--panel2)}
+.asv-buoc-ten{font-size:14px}
+.asv-buoc-tt{font-size:12px;color:var(--muted)}
+.asv-buoc-giay{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.asv-buoc-succeeded{border-left-color:var(--ok-line)}
+.asv-buoc-running{border-left-color:var(--accent)}
+.asv-buoc-failed_terminal,.asv-buoc-failed_retryable{border-left-color:var(--err-line)}
+.asv-buoc-cancelled{opacity:.6}
+.asv-buoc-pending{opacity:.55}
+
+#asv-tien-do > form{display:inline-block;margin:0 8px 0 0}
+
+/* ── Lich su + bang van hanh ─────────────────────────────────────────────── */
+.asv-bang{width:100%;border-collapse:collapse;font-size:13px}
+.asv-bang th,.asv-bang td{text-align:left;padding:8px 10px;
+  border-bottom:1px solid var(--line)}
+.asv-bang th{color:var(--muted);font-weight:600;font-size:12px}
+.asv-trang-thai{font-size:12px;padding:2px 8px;border-radius:999px;
+  border:1px solid var(--line2)}
+.asv-tt-done{border-color:var(--ok-line);color:var(--ok)}
+.asv-tt-error{border-color:var(--err-line);color:var(--err)}
+
+.asv-van-hanh{margin-top:8px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:12px 14px}
+.asv-van-hanh summary{cursor:pointer;font-size:13px;color:var(--muted)}
+
+@media (max-width:640px){
+  .asv-dau{flex-direction:column}
+  .asv-buoc li{grid-template-columns:1fr auto}
+}

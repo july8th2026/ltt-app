@@ -344,3 +344,41 @@ def test_moi_giai_doan_chi_co_MOT_dong_du_da_thu_lai(run_dang_chay, db):
         AsvStage.run_id == run_dang_chay.id)).scalars().all()
     ten = [s.stage for s in hang]
     assert len(ten) == len(set(ten)) == len(pipeline.CHUOI)
+
+
+def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
+    """🔴 Lo hong that, tim ra o pha 21 va sua o pha 21.
+
+    Ban dau `_dat_lai_giai_doan` chi dat `job_id=""`. Do la mot JOB MO COI: dong
+    giai doan quen no, nhung no van nam trong hang doi va van duoc mot worker
+    nhat len sau do — chay tren dau vao cua mot lan chay DA BI DAT LAI.
+
+    Trieu chung do duoc: thu lai `media_prepare` -> job `audio_prepare` cu van
+    chay -> `transcribe` doc mot ban tieng thuoc lan truoc -> *"Chua co ban tieng
+    de chep loi"*.
+
+    ⚠️ Va no la mot loi CO DIEU KIEN — chi lo ra khi thu tu nhat job doi. No nam
+       san tu pha 16; viec khai `tai_nguyen` cho lan GPU lam doi thu tu va lam no
+       hien hinh. Mot loi chi hong "doi khi" thi truoc do no van hong, chi la
+       chua ai thay.
+    """
+    from platform_core.models import Job
+
+    # Tim mot giai doan dang co job con con song.
+    ds = [s for s in features.cac_giai_doan(db, run_dang_chay)
+          if s.job_id and s.status in ("queued", "running", STAGE_SUCCEEDED)]
+    assert ds, "bo do khong co giai doan nao mang job con — phep kiem vo nghia"
+
+    truoc = {s.stage: s.job_id for s in ds}
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA",
+                               pipeline.MEDIA_PREPARE)
+    db.commit()
+
+    con_song = []
+    for ten, jid in truoc.items():
+        j = db.get(Job, jid)
+        if j is not None and j.status in ("queued", "running"):
+            con_song.append(f"{ten}:{j.status}")
+    assert con_song == [], (
+        f"job con cua giai doan da dat lai VAN CON SONG: {con_song} — chung se "
+        f"duoc nhat len va chay tren dau vao cua mot lan chay da bi dat lai")

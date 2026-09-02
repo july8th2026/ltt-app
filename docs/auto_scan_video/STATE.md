@@ -25,7 +25,27 @@
 
 ## Current phase
 - phase: **21 — End-to-end MVP acceptance**
-- status: NOT_STARTED
+- status: **IN_PROGRESS — STOPPED BY THE PRODUCT OWNER on 2026-09-02** to
+  re-plan the process. Nothing after this line is a closeout claim.
+
+  Done on disk and committed at this SHA:
+  - `tests/test_424_ma_tran_nghiem_thu.py` — G1–G14 → evidence matrix, executable;
+    every cited test verified to exist; `THIEU_BANG_CHUNG_NGOAI` names what
+    cannot be proven on this machine (real provider, real GPU, real customer
+    video, real worker kill).
+  - `tools/asv_nghiem_thu.py` — runs the 13 scenarios of Prompt 21 and records
+    timings; last run **13/13 PASS, 97 s** → `docs/auto_scan_video/nghiem_thu_21.json`.
+  - 🔴 one real defect found and fixed: `features._dat_lai_giai_doan` reset
+    `job_id` without **cancelling the queued child job**, so the orphan was
+    picked up later and ran on already-reset inputs (`transcribe` read a bed
+    from the previous execution). Regression pinned in `test_417`.
+  - `pipeline.CHUOI`: `audio_prepare` and `transcribe` now declare
+    `tai_nguyen="tach_nguon_cuc_bo"` (1 slot, **shared name on purpose**) after
+    peer `lttstudiosapp-a1` traced two hard machine resets to demucs × pytest
+    workers. Enforced by the platform's admission lease, not by the app.
+
+  NOT done: `reports/21_REPORT.md`, gate matrix narrative, phase-history row.
+  ⛔ Do not call the MVP READY — the four PENDING items above are unresolved.
 - gate: Phase 14 closed at `RESULT: FAIL (2/26)` — **7 failures, none in ASV work**, each traced
   (see the exit table in [`reports/14_REPORT.md`](reports/14_REPORT.md))
 
@@ -236,7 +256,7 @@ Detail: [`RISK_REGISTER.md`](RISK_REGISTER.md).
 
 ## Exact next action
 
-**Start Phase 21** from the pack. Phases 00–20 are closed.
+**Resume Phase 21 closeout** (report + STATE row), or re-plan as the product owner decides. Phases 00–20 are closed; 21 is in progress.
 
 Before touching anything, know these three, in this order:
 

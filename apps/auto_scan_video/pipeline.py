@@ -74,8 +74,29 @@ class GiaiDoan:
 #:    `tests/test_402` chot rang moi giai doan roi vao app co dung nang luc.
 CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(MEDIA_PREPARE, "asv_media", "asv_media.media_prepare"),
-    GiaiDoan(AUDIO_PREPARE, "asv_gpu", "asv_gpu.audio_prepare", sau=(MEDIA_PREPARE,)),
-    GiaiDoan(TRANSCRIBE, "asv_gpu", "asv_gpu.transcribe", sau=(AUDIO_PREPARE,)),
+    # 🔴 `tai_nguyen` o day KHONG phai mot chi tiet toi uu — no la mot chot tai.
+    #
+    #    Ngay 02/09 chu du an phai **reset cung may hai lan** vi qua tai CPU, va
+    #    mot phan nguyen nhan la demucs. Phien `lttstudiosapp-a1` truy ra: gate
+    #    chay `pytest -n auto` (20 worker tren may nay), va `test_406` goi demucs
+    #    THAT ben trong mot worker — nen tai khong CONG ma NHAN.
+    #
+    #    O production con ro hon: nen tang mo so worker bang so GPU, nen nhieu
+    #    lan `audio_prepare` chay song song la hanh vi binh thuong. Demucs an het
+    #    loi con lai cua may, va may nay LA production (`LTTStudioWeb`,
+    #    `Worker`, `Voice`, `Codex` deu dang phuc vu khach tren cung 20 loi).
+    #
+    # ⇒ Khai tai nguyen de NEN TANG dieu tiet. Khong tu dem loi trong app: chi
+    #   nen tang moi biet co bao nhieu job dang chay, va them mot bo dem thu hai
+    #   la tao chu so huu thu hai cho cung mot tai nguyen.
+    GiaiDoan(AUDIO_PREPARE, "asv_gpu", "asv_gpu.audio_prepare",
+             sau=(MEDIA_PREPARE,),
+             tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
+    # ⚠️ TRANSCRIBE dung chung MOT ten tai nguyen voi AUDIO_PREPARE, co y: ca hai
+    #    deu la model nang chay cuc bo tren cung may. Khai hai ten khac nhau se
+    #    cho phep chung chay dong thoi — dung dieu vua lam treo may.
+    GiaiDoan(TRANSCRIBE, "asv_gpu", "asv_gpu.transcribe", sau=(AUDIO_PREPARE,),
+             tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
     # 🔑 CONTENT chay o lan `api`, nen no thuoc app KHACH — app duy nhat khai
     #    `requires=("api",)`. Khong phai `asv_media` (ffmpeg): mot lan goi model
     #    khong can ffmpeg, va xep no vao lan ffmpeg la giu mot suat co ffmpeg de

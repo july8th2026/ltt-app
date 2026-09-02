@@ -2,13 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-<<<<<<< HEAD
-Fingerprint   : sha256:c88bfdfbce29d45382986c65b2fdb51fcd0f0a7af5f7b455fa0ce7cc0ad335e9
-Nguồn đã quét : 1534 file repository; không đọc runtime/secrets/log
-=======
-Fingerprint   : sha256:e16624e4f8d1f7992ae73c77e6d15b2faa19b1228c6153b353762f692a43d83d
-Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
->>>>>>> admin-mvp-v3
+Fingerprint   : sha256:5dc6a94e3da397e0d507c3d367e8f21c2fba12c7e0a234d22edcd9e3b7b5cdd7
+Nguồn đã quét : 1541 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1284,11 +1279,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-<<<<<<< HEAD
-10. QUALITY GATES (373 file pytest + 3 frontend)
-=======
-10. QUALITY GATES (351 file pytest + 3 frontend)
->>>>>>> admin-mvp-v3
+10. QUALITY GATES (376 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1600,7 +1591,8 @@ Test inventory:
 - tests/test_390_dieu_khoan_api.py
 - tests/test_391_tu_dien_rieng.py
 - tests/test_392_toc_do_hau_ky.py
-<<<<<<< HEAD
+- tests/test_393_kiem_truoc_khi_cam.py
+- tests/test_394_nen_da_phien.py
 - tests/test_400_asv_bat_bien_thi_hanh.py
 - tests/test_401_asv_ranh_gioi_va_artifact.py
 - tests/test_402_asv_mach_doc_gia.py
@@ -1625,10 +1617,7 @@ Test inventory:
 - tests/test_421_asv_tach_khoi_di_san.py
 - tests/test_422_asv_parity_engine.py
 - tests/test_423_asv_giao_dien.py
-=======
-- tests/test_393_kiem_truoc_khi_cam.py
-- tests/test_394_nen_da_phien.py
->>>>>>> admin-mvp-v3
+- tests/test_424_ma_tran_nghiem_thu.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1693,13 +1682,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-<<<<<<< HEAD
-13. CHỈ MỤC SOURCE (1534 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1166, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
-=======
-13. CHỈ MỤC SOURCE (1468 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1102, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
->>>>>>> admin-mvp-v3
+13. CHỈ MỤC SOURCE (1541 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1172, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2718,11 +2702,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-<<<<<<< HEAD
-[tests] (391)
-=======
-[tests] (368)
->>>>>>> admin-mvp-v3
+[tests] (394)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -3046,7 +3026,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_390_dieu_khoan_api.py
 - tests/test_391_tu_dien_rieng.py
 - tests/test_392_toc_do_hau_ky.py
-<<<<<<< HEAD
+- tests/test_393_kiem_truoc_khi_cam.py
+- tests/test_394_nen_da_phien.py
 - tests/test_400_asv_bat_bien_thi_hanh.py
 - tests/test_401_asv_ranh_gioi_va_artifact.py
 - tests/test_402_asv_mach_doc_gia.py
@@ -3071,10 +3052,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_421_asv_tach_khoi_di_san.py
 - tests/test_422_asv_parity_engine.py
 - tests/test_423_asv_giao_dien.py
-=======
-- tests/test_393_kiem_truoc_khi_cam.py
-- tests/test_394_nen_da_phien.py
->>>>>>> admin-mvp-v3
+- tests/test_424_ma_tran_nghiem_thu.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3120,11 +3098,12 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (171)
+[tools] (172)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
 - tools/api_prod_canary.py
+- tools/asv_nghiem_thu.py
 - tools/audit_public_web.py
 - tools/audit_van_hanh.py
 - tools/autosub_asr_benchmark.py
@@ -3302,11 +3281,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-<<<<<<< HEAD
-15. SNAPSHOT TOÀN BỘ SOURCE (1534 file; 15277988 byte)
-=======
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14663716 byte)
->>>>>>> admin-mvp-v3
+15. SNAPSHOT TOÀN BỘ SOURCE (1541 file; 15428430 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -13103,7 +13078,7 @@ def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/features.py
-SHA256=ef43508fae3779e058fd8925e79a83fde80be65db4a5700fd3d5f420307af6d8 BYTES=22228 LINES=466
+SHA256=13958bde6910a3f95fe31b2d59fb55983830f351d8941284a586a113b1c4d286 BYTES=23262 LINES=486
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Quy tac nghiep vu cua Auto Scan Video: vong doi run, tien, quyen so huu.
 
@@ -13328,7 +13303,27 @@ def _dat_lai_giai_doan(db: Session, stage: AsvStage) -> None:
     ⛔ KHONG dat lai `attempt`. So lan thu la mot su that ve lich su cua lan
        chay, khong phai mot bo dem tien do; xoa no la xoa dung thu can de tra
        loi "vi sao lan chay nay ton nhieu tien the".
+
+    🔴 **PHAI HUY JOB CON TRUOC KHI XOA `job_id`.** Ban dau ham nay chi dat
+       `job_id=""`, va do la mot JOB MO COI: dong giai doan quen no, nhung no
+       van nam trong hang doi va van duoc mot worker nhat len sau do.
+
+       Trieu chung do duoc (02/09, `test_417::test_sau_khi_thu_lai_thi_chuoi_
+       CHAY_TIEP_toi_done`): thu lai `media_prepare` -> job `audio_prepare` cu
+       tu lan truoc van chay -> `transcribe` chay tren mot ban tieng thuoc lan
+       chay TRUOC do -> `Chua co ban tieng de chep loi`.
+
+    ⚠️ Va no la mot loi CO DIEU KIEN: no chi lo ra khi thu tu nhat job doi. Loi
+       nam san tu pha 16; chinh viec khai `tai_nguyen` cho lan GPU o pha 21 lam
+       doi thu tu va lam no hien hinh. Mot loi chi hong "doi khi" thi truoc do
+       no van hong, chi la chua ai thay.
     """
+    if stage.job_id:
+        from platform_core.models import Job
+        job = db.get(Job, stage.job_id)
+        if job is not None and job.status in ("queued", "running"):
+            jobs.cancel(db, job)
+
     cap_nhat_giai_doan(db, stage, status=STAGE_PENDING, fingerprint="",
                        outputs={}, job_id="", error="",
                        started_at=None, finished_at=None)
@@ -16384,7 +16379,7 @@ KIND_BAN_TIENG = KIND_AUDIO
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/pipeline.py
-SHA256=3dcba7e1253d2632e6c2ff063ffa7fd91ec549f276d98b91a1495ff15b26fda6 BYTES=8164 LINES=182
+SHA256=57d5845da93098b0ac99d5e418600e79896356d58c2ee7555c32440c96fc3d2b BYTES=9508 LINES=203
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Chuoi giai doan CO DINH cua Auto Scan Video, va bang phan cong thi hanh.
 
@@ -16462,8 +16457,29 @@ class GiaiDoan:
 #:    `tests/test_402` chot rang moi giai doan roi vao app co dung nang luc.
 CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(MEDIA_PREPARE, "asv_media", "asv_media.media_prepare"),
-    GiaiDoan(AUDIO_PREPARE, "asv_gpu", "asv_gpu.audio_prepare", sau=(MEDIA_PREPARE,)),
-    GiaiDoan(TRANSCRIBE, "asv_gpu", "asv_gpu.transcribe", sau=(AUDIO_PREPARE,)),
+    # 🔴 `tai_nguyen` o day KHONG phai mot chi tiet toi uu — no la mot chot tai.
+    #
+    #    Ngay 02/09 chu du an phai **reset cung may hai lan** vi qua tai CPU, va
+    #    mot phan nguyen nhan la demucs. Phien `lttstudiosapp-a1` truy ra: gate
+    #    chay `pytest -n auto` (20 worker tren may nay), va `test_406` goi demucs
+    #    THAT ben trong mot worker — nen tai khong CONG ma NHAN.
+    #
+    #    O production con ro hon: nen tang mo so worker bang so GPU, nen nhieu
+    #    lan `audio_prepare` chay song song la hanh vi binh thuong. Demucs an het
+    #    loi con lai cua may, va may nay LA production (`LTTStudioWeb`,
+    #    `Worker`, `Voice`, `Codex` deu dang phuc vu khach tren cung 20 loi).
+    #
+    # ⇒ Khai tai nguyen de NEN TANG dieu tiet. Khong tu dem loi trong app: chi
+    #   nen tang moi biet co bao nhieu job dang chay, va them mot bo dem thu hai
+    #   la tao chu so huu thu hai cho cung mot tai nguyen.
+    GiaiDoan(AUDIO_PREPARE, "asv_gpu", "asv_gpu.audio_prepare",
+             sau=(MEDIA_PREPARE,),
+             tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
+    # ⚠️ TRANSCRIBE dung chung MOT ten tai nguyen voi AUDIO_PREPARE, co y: ca hai
+    #    deu la model nang chay cuc bo tren cung may. Khai hai ten khac nhau se
+    #    cho phep chung chay dong thoi — dung dieu vua lam treo may.
+    GiaiDoan(TRANSCRIBE, "asv_gpu", "asv_gpu.transcribe", sau=(AUDIO_PREPARE,),
+             tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
     # 🔑 CONTENT chay o lan `api`, nen no thuoc app KHACH — app duy nhat khai
     #    `requires=("api",)`. Khong phai `asv_media` (ffmpeg): mot lan goi model
     #    khong can ffmpeg, va xep no vao lan ffmpeg la giu mot suat co ffmpeg de
@@ -133412,11 +133428,7 @@ def for_tool_name(name: str):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-<<<<<<< HEAD
-SHA256=241f043d7791c15cd5fa5976869989debafb849e79f2e805bb4202d16a7d9d61 BYTES=25998 LINES=398
-=======
-SHA256=c65471cdd5e4e29728fb65a6137d5d878ce1cd8915c9b2348fcf41767d2ef86d BYTES=24968 LINES=385
->>>>>>> admin-mvp-v3
+SHA256=b939e171ca6e564f674a49dbf915d687e597e13f871be0a24b41f0a981b3b1c8 BYTES=27041 LINES=411
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -189589,11 +189601,7 @@ def test_the_market_search_input_fills_its_box():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_147_layering.py
-<<<<<<< HEAD
-SHA256=d8fb94a1304116b8ab94005ca41d5b53bb075394b1c2d4817806679514c5b2c6 BYTES=11511 LINES=216
-=======
-SHA256=5ebeb5607955771553b39913e318a0669c1a617f20ff564f1f52f0a835154d9c BYTES=10887 LINES=216
->>>>>>> admin-mvp-v3
+SHA256=d424afb059eb3154a46179c51ab82f59bdcf3514a432e16566b709e3c9afa5db BYTES=14115 LINES=265
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phân tầng: `platform_core` không được phụ thuộc vào `server`.
 
@@ -266170,7 +266178,712 @@ def test_chot_TREN_do_lam_viec_theo_CA_HAI_CHIEU():
 
 @@@LTT_PROFILE_FILE_END@@@
 
-<<<<<<< HEAD
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_393_kiem_truoc_khi_cam.py
+SHA256=17f8f39d68eecb680466ad2753c077eca436d82bdf11bd112eb04a5674580bbe BYTES=13080 LINES=256
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""test_393 — bộ kiểm `kiem_truoc_khi_cam.py` phải dùng được TRÊN MỘT MÁY TRẮNG.
+
+Tệp công cụ đó tồn tại để **chép sang máy khác** trước khi cắm Codex. Cái giá
+của việc chép đi là: mọi giả định về môi trường đều sai. Nên ba tính chất dưới
+đây không phải chuyện phong cách — chúng quyết định tệp có được chạy hay không.
+
+⛔ VÀ MỘT TÍNH CHẤT THỨ TƯ, ĐẮT NHẤT: **mỗi phép đo phải có đối chứng.** Bài học
+   của đợt 31/08–01/09 là tám lần một dụng cụ cho kết quả đẹp vì nó không đo gì
+   cả. Một bộ kiểm "đường gọi thông" mà không thể báo *không thông* thì tệ hơn
+   không có — nó biến một sự cố thành một dấu tích xanh.
+"""
+from __future__ import annotations
+
+import ast
+import pathlib
+
+import pytest
+
+TEP = pathlib.Path(__file__).resolve().parents[1] / "tools" / "kiem_truoc_khi_cam.py"
+VAN = TEP.read_text(encoding="utf-8")
+CAY = ast.parse(VAN)
+
+
+# ── 1. Chạy được trên một máy chưa cài gì ───────────────────────────────────
+
+def test_CHI_dung_thu_vien_chuan():
+    """Máy đích có thể chưa có `requests`, chưa có kho này, chưa có gì.
+
+    ⛔ Một bộ kiểm đòi `pip install` là một bộ kiểm sẽ không được chạy — người
+       ta sẽ bỏ qua nó và cắm thẳng, rồi gặp lỗi ở chỗ khó chẩn đoán hơn.
+    """
+    chuan = {"argparse", "json", "os", "sys", "time", "urllib", "typing",
+             "__future__", "dataclasses", "pathlib", "ssl", "http", "re"}
+    ngoai = set()
+    for n in ast.walk(CAY):
+        if isinstance(n, ast.Import):
+            ngoai |= {a.name.split(".")[0] for a in n.names}
+        elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
+            ngoai.add(n.module.split(".")[0])
+    la = ngoai - chuan
+    assert not la, f"import ngoai thu vien chuan: {sorted(la)}"
+
+
+def test_KHONG_phu_thuoc_vao_kho_nay():
+    """Nó bị chép đi MỘT MÌNH. Import `platform_core`/`apps` là chép hụt."""
+    for cam in ("platform_core", "apps.", "server."):
+        assert f"import {cam}" not in VAN and f"from {cam}" not in VAN, (
+            f"phu thuoc {cam} — tep nay se vo khi chep sang may khac")
+
+
+def test_KHONG_goi_dia_chi_noi_bo():
+    """Đo ở loopback là đo một thứ khác. `CLAUDE.md` quy tắc 5b đã trả giá:
+    trang đẹp ở `127.0.0.1` mà **vỡ với người dùng thật** vì Cloudflare phục vụ
+    bản cũ. Máy khách không có loopback của ta."""
+    for cam in ("127.0.0.1", "localhost", "192.168."):
+        assert cam not in VAN, f"co dia chi noi bo `{cam}` — may khach khong toi duoc"
+
+
+# ── 2. Nó phải ĐỎ được ──────────────────────────────────────────────────────
+
+def test_moi_phep_do_QUAN_TRONG_deu_co_doi_chung():
+    """Ba đối chứng bắt buộc, mỗi cái chặn một kiểu 'xanh vì lý do sai'.
+
+    - khoá SAI phải bị từ chối  → nếu không, "khoá dùng được" đúng tầm thường
+    - một lượt gọi thật phải TRỪ TIỀN → nếu không, ta đang đo một đường không
+      tính tiền, và mọi kết luận về đường gọi đều vô nghĩa
+    - bẫy `Python-urllib` phải còn → nó là thứ khách tự viết sẽ vấp
+    """
+    for dau in ("doi chung", "CO tru tien", "Python-urllib"):
+        assert dau in VAN, f"thieu doi chung: {dau}"
+
+    # 🔴 VÀ ĐỐI CHỨNG KHOÁ SAI PHẢI LÀ MỘT LỜI GỌI THẬT, không phải một nhãn.
+    #
+    #    Bản đầu của phép kiểm này chỉ tìm chuỗi `"khoa SAI"` trong tệp. Đột
+    #    biến cho thấy nó vô dụng: thay cả lời gọi bằng `ma_sai = 401` thì nhãn
+    #    vẫn còn, phép kiểm vẫn xanh, và đối chứng đã biến mất.
+    #
+    # ⭐ Cùng hình dạng với thứ tệp này sinh ra để chống. Nên nay đọc AST và đòi
+    #    có ít nhất một lời gọi `_goi` mang một khoá **đã bị sửa** — tức thật sự
+    #    hỏi máy chủ bằng một khoá không hợp lệ.
+    goi_khoa_sai = []
+    for n in ast.walk(CAY):
+        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_goi"):
+            continue
+        for tham in n.args[1:2]:
+            # `a.khoa` tran thi la khoa that; bat ky phep toan nao tren no
+            # (noi chuoi, cat bot) deu la mot khoa CO Y lam sai.
+            if isinstance(tham, ast.BinOp):
+                goi_khoa_sai.append(n.lineno)
+    assert goi_khoa_sai, (
+        "khong co loi goi nao dung mot khoa DA BI SUA — doi chung 'khoa sai bi "
+        "tu choi' chi con la mot nhan, khong con la mot phep do")
+
+
+def test_DUNG_HAN_khi_doi_chung_tien_truot():
+    """Nếu khoá đúng và khoá sai **cùng** được nhận, bộ kiểm phải DỪNG chứ không
+    báo đạt — chính nó đang hỏng, và một dụng cụ hỏng nói 'đạt' là ca tệ nhất."""
+    assert "DOI CHUNG TRUOT" in VAN
+    assert "DUNG doc ket qua duoi day" in VAN
+
+
+def test_ba_ma_thoat_phan_biet_duoc():
+    """0 thông · 1 có mục hỏng · 2 không đo được. Một bộ kiểm luôn trả 0 thì
+    không tự động hoá được, và sẽ bị đọc bằng mắt rồi bỏ qua."""
+    ma = {n.value.value for n in ast.walk(CAY)
+          if isinstance(n, ast.Return) and isinstance(n.value, ast.Constant)
+          and isinstance(n.value.value, int)}
+    assert {0, 1, 2} <= ma, f"chi thay ma thoat {sorted(ma)}"
+
+
+# ── 3. Cấu hình nó in ra phải là cấu hình ĐÚNG ──────────────────────────────
+
+def test_KHONG_phat_ra_mot_ban_sao_cau_hinh():
+    """🔴 BÁNH CÓC CHO MỘT LỖI ĐÃ GÂY HẬU QUẢ THẬT (02/09).
+
+    Bản đầu của bộ kiểm **in ra một khối `config.toml` tự gõ**. Khối đó thiếu
+    `stream_idle_timeout_ms`, `model_reasoning_effort` và `model_catalog_json`
+    — ba thứ mà `platform_core/public_api/examples.py` đã có từ trước, mỗi thứ
+    kèm lý do đã trả giá.
+
+    ⛔ Hậu quả đo được: một khách dùng bản cấu hình đó bị **cắt luồng ở đúng
+       62,0 giây** (`STREAM KHACH-NGAT dur=62.0s`), rồi Codex thử lại và ăn
+       `429/503` vì lượt bị bỏ vẫn đang giữ suất.
+
+    ⭐ Đây đúng luật mà kho này đã viết ra ở chỗ khác: *"a second copy of a legal
+       promise is a second promise, and the two will differ"*. Một cấu hình cũng
+       là một lời hứa. Nên bộ kiểm **đọc** cấu hình, và **chỉ đường** tới công cụ
+       chính thức; nó không được tự phát ra một bản.
+    """
+    for cam in ('[model_providers.', 'wire_api = "responses"',
+                'env_key = "LTT_API_KEY"'):
+        assert cam not in VAN, (
+            f"bo kiem dang PHAT RA cau hinh ({cam!r}). No phai DOC cau hinh va "
+            f"chi duong toi cong cu chinh thuc, khong tao ban sao thu hai")
+
+
+def test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc():
+    """Danh sách khoá bộ kiểm đòi phải là khoá cấu hình chính thức **thật sự có**.
+
+    ⛔ Không import được `examples.py` từ trong công cụ (nó phải chạy trên máy
+       trắng), nên thứ ghép hai đầu là **phép kiểm này** — đúng khuôn
+       `test_334::TestBanSaoConLai` của kho.
+    """
+    import re
+
+    from platform_core.public_api import examples
+
+    chinh_thuc = (examples.codex_config("https://app.lttstudios.com")
+                  + chr(10) + examples.codex_profile())
+    m = re.search("KHOA_BAT_BUOC = " + chr(123) + "(.*?)" + chr(10)
+                  + chr(125), VAN, re.S)
+    assert m, "khong tim thay KHOA_BAT_BUOC"
+    khoa = re.findall(r'"([a-z_]+)":', m.group(1))
+    assert khoa, "danh sach khoa rong"
+    thieu = [k for k in khoa if k not in chinh_thuc]
+    assert not thieu, (
+        f"bo kiem doi khoa {thieu} nhung cau hinh chinh thuc khong he co chung "
+        f"— mot trong hai ben da troi")
+
+
+@pytest.mark.parametrize("khoa", ["stream_idle_timeout_ms", "model_catalog_json"])
+def test_doi_dung_hai_khoa_da_gay_su_co(khoa):
+    """Hai khoá này có mặt vì đã có sự cố thật, không phải vì cho đủ bộ.
+
+    - `stream_idle_timeout_ms`: thiếu ⇒ luồng bị cắt ở ~62 giây (đo 02/09)
+    - `model_catalog_json`: thiếu ⇒ Codex mượn tên một model OpenAI cho lượt
+      phụ, cổng ta từ chối, khách thấy "im lặng"
+    """
+    assert khoa in VAN
+
+
+def test_CHI_DUONG_toi_cong_cu_chinh_thuc():
+    """Bảo người ta "sửa tay cho đúng" là mời lại đúng lỗi vừa xảy ra."""
+    assert "/huong-dan/cong-cu" in VAN
+    assert "dung sua tay" in VAN or "dung go tay" in VAN
+
+
+def test_NOI_DUNG_ve_canh_bao_metadata_cua_Codex():
+    """🔴 SỬA MỘT CÂU TÔI ĐÃ NÓI SAI VỚI KHÁCH (01/09).
+
+    Bản đầu của bộ kiểm in: *"Codex sẽ in `Model metadata not found`… cảnh báo
+    không chặn việc chạy"*, và tôi bảo khách kệ nó. Tôi rút ra kết luận đó từ
+    một phép đo đúng (Codex **không** gọi `/api/v1/models`) nhưng suy sai sang
+    một kết luận rộng hơn: rằng không có cách nào dập.
+
+    ⛔ Có cách, và nền tảng đã có sẵn từ trước: `model_catalog_json` khai model
+       **tại máy khách**. Thiếu nó thì Codex không chỉ cảnh báo — nó **mượn tên
+       một model OpenAI** cho lượt phụ, cổng của ta từ chối (fail-closed), và
+       khách thấy "im lặng" ở hội thoại dài.
+
+    ⭐ Bài học: *"Codex không gọi /models"* và *"cảnh báo không dập được"* là hai
+       mệnh đề khác nhau. Tôi đo được cái thứ nhất rồi công bố cái thứ hai.
+    """
+    assert "model_catalog_json" in VAN
+    assert "MUON TEN" in VAN, (
+        "phai noi ro hau qua THAT (muon ten model OpenAI cho luot phu), "
+        "khong chi noi 'co mot canh bao'")
+
+
+@pytest.mark.parametrize("muc", ["Mang va Cloudflare", "Khoa API", "Model",
+                                 "/responses", "Tien"])
+def test_phu_du_nam_chang_cua_duong_goi(muc):
+    """Thiếu một chặng thì bộ kiểm nói 'thông' về một đường nó chưa đi hết."""
+    assert muc in VAN
+
+# ── 4. Tài liệu công khai phải MANG ĐỦ, không được rụng ─────────────────────
+
+CAU_HINH_PHAI_CO = {
+    "stream_idle_timeout_ms": "luong bi CAT o ~62 giay khi model im tieng (do 02/09)",
+    "model_reasoning_effort": "model tieu phan lon max_tokens de suy nghi truoc khi tra loi",
+    "model_reasoning_summary": "kem theo reasoning_effort",
+    "model_context_window": "khong nen ngu canh kip => 413",
+    "model_catalog_json": "Codex muon ten model OpenAI cho luot phu => cong ta tu choi",
+    "wire_api": "Codex chi hieu `responses`",
+    "base_url": "phai tan cung /api/v1",
+    "env_key": "khoa doc tu bien moi truong, khong nhung vao tep",
+}
+
+
+@pytest.mark.parametrize("khoa", sorted(CAU_HINH_PHAI_CO))
+def test_cau_hinh_CHINH_THUC_khong_duoc_rung_khoa_nao(khoa):
+    """🔴 CHIỀU NGƯỢC LẠI, và nó quan trọng hơn.
+
+    `test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc` chốt rằng bộ kiểm không đòi
+    khoá lạ. Phép kiểm này chốt điều ngược lại: **cấu hình chính thức không được
+    lặng lẽ rụng một khoá**.
+
+    ⛔ Vì sao nó đắt hơn: rụng một khoá thì không có gì đỏ — trang vẫn render,
+       khách vẫn cắm được, và hỏng chỉ hiện ra vài phút sau dưới dạng một luồng
+       bị cắt hoặc một câu "im lặng". Đó đúng là hình dạng sự cố 02/09.
+
+    Mỗi khoá ở đây có một sự cố thật đứng sau; xem giá trị trong `CAU_HINH_PHAI_CO`.
+    """
+    from platform_core.public_api import examples
+
+    ca = (examples.codex_config("https://app.lttstudios.com") + chr(10)
+          + examples.codex_profile())
+    assert khoa in ca, (
+        f"cau hinh chinh thuc da rung `{khoa}`. Hau qua da biet: "
+        f"{CAU_HINH_PHAI_CO[khoa]}")
+
+
+def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
+    """Tiện ích VS Code và CLI là **hai bộ đọc khác nhau** — bài học 30/08.
+
+    ⛔ Bộ mặc định của `cam_cli` **không** gồm Codex-VS-Code, nên ai chạy công cụ
+       với tuỳ chọn mặc định rồi dùng tiện ích sẽ thiếu cấu hình. Phép kiểm này
+       giữ cho lối đi riêng ấy tồn tại.
+    """
+    import pathlib
+
+    van = (pathlib.Path(__file__).resolve().parents[1]
+           / "tools" / "cam_cli.py").read_text(encoding="utf-8")
+    assert "MUC_CODEX_VSCODE" in van
+    assert "--vscode" in van
+
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_nen_da_phien.py
+SHA256=84cae74fd10417b83670e779ab59c1bdf06bd197b9c1faa5ad83d1cb8f1855e4 BYTES=18755 LINES=438
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Nen tang nhieu phien: so dang ky thanh phan, ho so gate, khoa tai nguyen.
+
+## Vi sao bo kiem nay ton tai
+
+Phase -1 them mot phep LOC vao cong chat luong: tu "chay tat ca" sang "chay
+nhung gi lien quan". Mot phep loc sai **khong bao gio keu** — no chi im lang bo
+qua, va dong ket qua van xanh. Do la lop loi dat nhat co the them vao mot cong
+chat luong, nen no phai duoc chot chat hon phan con lai.
+
+⛔ Chot quan trong nhat khong phai chot nao do do dung. La
+   `test_moi_buoc_gate_cu_van_con` — no cam viec **mat che phu** khi doi cau
+   truc gate. Xem `PURIFICATION_GATES`: "Prove new gate coverage >= old".
+"""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+GOC = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(GOC / "tools"))
+
+import cua_so_yen  # noqa: E402
+import thanh_phan as tp  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# So dang ky thanh phan
+# ---------------------------------------------------------------------------
+
+def test_moi_app_deu_thanh_mot_thanh_phan():
+    """App suy tu thu muc, khong tu ban khai — nen khong the quen mot app.
+
+    Day la ly do `_cac_app` doc `apps/*/manifest.py` thay vi doc TOML: mot app
+    moi tu dong co mat, khong cho ai nho cap nhat mot danh sach.
+    """
+    tp_all = tp.cac_thanh_phan(GOC)
+    tren_dia = {d.name for d in (GOC / "apps").iterdir()
+                if d.is_dir() and (d / "manifest.py").is_file()}
+    trong_do_thi = {t.split(":", 1)[1] for t in tp_all if t.startswith("app:")}
+    assert tren_dia == trong_do_thi, (
+        f"lech giua apps/ va do thi: chi tren dia {tren_dia - trong_do_thi}, "
+        f"chi trong do thi {trong_do_thi - tren_dia}")
+
+
+def test_khop_tien_to_dai_nhat_thang():
+    """`platform_core/credit.py` phai ve `core:tien`, khong ve `core:nen`."""
+    assert tp.thanh_phan_cua("platform_core/credit.py") == "core:tien"
+    assert tp.thanh_phan_cua("platform_core/models.py") == "core:nen"
+    assert tp.thanh_phan_cua("apps/vps/routes.py") == "app:vps"
+    assert tp.thanh_phan_cua("server/auth/session.py") == "server:auth"
+
+
+def test_duong_windows_va_posix_cho_cung_ket_qua():
+    """Kho nay chay tren Windows; `git` tra `/`, `Path` tra `\\`."""
+    assert (tp.thanh_phan_cua(r"platform_core\credit.py")
+            == tp.thanh_phan_cua("platform_core/credit.py") == "core:tien")
+
+
+def test_duong_khong_ai_so_huu_thi_KHONG_doan():
+    """Tra `None`, va `bi_anh_huong` phai bien no thanh 'chay tat ca'."""
+    assert tp.thanh_phan_cua("mot/duong/khong/ton/tai.py") is None
+    assert tp.bi_anh_huong({"mot/duong/khong/ton/tai.py"}, GOC) is None
+
+
+def test_cham_tep_dung_chung_thi_chay_TAT_CA():
+    """⛔ Fail-open. `conftest.py` cham moi thu, nen no khong duoc thu hep."""
+    assert tp.bi_anh_huong({"tests/conftest.py"}, GOC) is None
+    assert tp.bi_anh_huong({"tools/gate.py"}, GOC) is None
+
+
+def test_anh_xa_test_suy_tu_IMPORT_chu_khong_tu_TEN_TEP():
+    """🔴 Chot trung tam. Xem docstring `thanh_phan.py`.
+
+    `thumbnail` co 2 tep test mang ten no nhung ~19 tep IMPORT no. Chon theo
+    ten se bo qua 17 phep kiem — im lang, va o dung cho nguy hiem nhat.
+    """
+    bang = tp.test_cua_thanh_phan(GOC)
+    theo_ten = {t for t in bang["app:thumbnail"] if "thumbnail" in t}
+    assert len(bang["app:thumbnail"]) > 3 * max(len(theo_ten), 1), (
+        f"chi thay {len(bang['app:thumbnail'])} tep cho thumbnail "
+        f"({len(theo_ten)} khop ten) - phep suy theo import co ve da hong")
+
+
+def test_chi_lay_module_test_that():
+    """⛔ `tests/__init__.py` lot vao lam ca luot chet bang INTERNALERROR.
+
+    Va INTERNALERROR khong phai mot test do — no la ca bo test KHONG CHAY,
+    trong khi dong ket qua trong y het mot that bai binh thuong.
+    """
+    moi_tep = set()
+    for ds in tp.test_cua_thanh_phan(GOC).values():
+        moi_tep |= ds
+    xau = {t for t in moi_tep if not Path(t).name.startswith("test_")}
+    assert not xau, f"khong phai module test ma van duoc chon: {sorted(xau)}"
+
+
+def test_canh_dong_lam_sdk_het_mo_coi():
+    """`sdk/` khong module nao import — chi `GOI_TAI` tra bang chuoi.
+
+    Neu chot nay do, `sdk/` da tro lai thanh mo coi voi phep do tinh, va lan
+    don dep sau se cham no la CHET. No khong chet: no la duong DUY NHAT cho
+    khach macOS/Linux.
+    """
+    _, tieu_thu = tp.do_thi_phu_thuoc(GOC)
+    assert tieu_thu["sdk"], (
+        "sdk/ khong con nguoi tieu thu nao - canh dong GOI_TAI da mat khoi "
+        "tools/thanh_phan.toml")
+
+
+def test_moi_canh_dong_deu_co_bang_chung():
+    """Mot canh khong chi duoc ra dong ma la mot canh khong ai kiem lai duoc."""
+    for canh in tp.nap_khai().get("canh_dong", []):
+        assert canh.get("bang_chung"), f"canh thieu bang chung: {canh}"
+        assert canh.get("co_che"), f"canh thieu co che: {canh}"
+
+
+def test_mo_rong_nguoi_tieu_thu_khong_bo_sot_chieu_nguoc():
+    """Doi `core:tien` phai keo theo nguoi DUNG no, khong chi ban than no."""
+    phan = tp.bi_anh_huong({"platform_core/credit.py"}, GOC)
+    assert phan is not None and "core:tien" in phan
+    assert len(phan) > 1, "khong mo rong sang nguoi tieu thu"
+
+
+# ---------------------------------------------------------------------------
+# Khoa tai nguyen
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def khoa_sach():
+    """Don moi khoa truoc va sau — bo kiem nay khong duoc de lai rac."""
+    def don():
+        for bg in cua_so_yen.dang_giu():
+            cua_so_yen.nha(ep=True, tai_nguyen=bg.get("tai_nguyen",
+                                                      cua_so_yen.MAC_DINH))
+    don()
+    yield
+    don()
+
+
+def test_hai_tai_nguyen_khac_nhau_KHONG_doi_nhau(khoa_sach):
+    """⭐ Chinh la ly do Phase -1 doi khoa don thanh khoa theo ten.
+
+    Truoc do hai luot khong dung chung gi van phai xep hang sau nhau.
+    """
+    assert cua_so_yen.thu_giu("A", "lenh-A", "postgres_test")
+    assert cua_so_yen.thu_giu("B", "lenh-B", "gpu0")
+    assert {b["tai_nguyen"] for b in cua_so_yen.dang_giu()} >= {
+        "postgres_test", "gpu0"}
+
+
+def test_cung_mot_tai_nguyen_thi_nguoi_thu_hai_TRUOT(khoa_sach):
+    assert cua_so_yen.thu_giu("A", "lenh-A", "postgres_test")
+    assert cua_so_yen.thu_giu("B", "lenh-B", "postgres_test") is False
+
+
+def test_khoa_treo_bi_doat_chu_khong_treo_mai(khoa_sach):
+    """PID chet => khoa phai bi doat, neu khong mot lan Ctrl-C khoa ca may."""
+    tep = cua_so_yen._tep("postgres_test")
+    tep.write_text(json.dumps({
+        "phien": "ma", "pid": 999_999_999, "lenh": "x",
+        "bat_dau_epoch": 0.0}), encoding="utf-8")
+    assert cua_so_yen.thu_giu("moi", "lenh", "postgres_test") is True
+
+
+def test_xin_nhieu_tai_nguyen_la_TAT_CA_hoac_KHONG(khoa_sach):
+    """⛔ Giu mot phan roi doi phan con lai la cong thuc khoa chet."""
+    assert cua_so_yen.thu_giu("nguoi-giu", "lenh", "gpu0")
+    k = cua_so_yen.CuaSoYen("toi", "lenh", bat=False,
+                            tai_nguyen=("gpu0", "postgres_test"))
+    assert k._thu_giu_het() is False
+    assert k.da_giu == [], "giu mot phan roi that bai - se khoa chet"
+    assert cua_so_yen._doc("postgres_test") is None, "chua nha phan da giu"
+
+
+def test_xin_theo_thu_tu_SAP_XEP(khoa_sach):
+    """Hai luot xin cung tap theo hai thu tu khac nhau la khoa chet."""
+    k = cua_so_yen.CuaSoYen("x", "y", bat=False,
+                            tai_nguyen=("gpu0", "cpu_nhieu", "postgres_test"))
+    assert list(k.tai_nguyen) == sorted(k.tai_nguyen)
+
+
+def test_sau_khi_thoat_van_bao_duoc_da_giu_gi(khoa_sach):
+    """🔴 Chot nay lap dung khoang trong ma bo kiem nay tung bo lot.
+
+    Kho ket qua cua gate goi `_ghi_ket_qua` **sau** khoi `with`, ma `__exit__`
+    thi xoa `da_giu` (bat buoc — neu khong, mot lan thoat thu hai se nha khoa
+    cua nguoi khac). Ket qua: ban ghi cua mot luot CO giu `cpu_nhieu` lai viet
+    `tai_nguyen_da_giu: []`.
+
+    ⛔ Va chot cu **khong bat duoc**, vi no dung mot doi tuong khoa gia chua he
+       duoc `__exit__`. Do la kieu khoang trong dien hinh: kiem dung tung manh
+       thay vi kiem doan noi giua chung.
+    """
+    with cua_so_yen.CuaSoYen("toi", "gate", tai_nguyen=("postgres_test",)) as k:
+        assert k.da_giu == ["postgres_test"]
+    assert k.da_giu == [], "phai rong sau khi thoat, neu khong se nha khoa hai lan"
+    assert k.da_giu_xong == ["postgres_test"], (
+        "sau khi thoat phai van bao duoc luot nay da giu gi")
+
+
+def test_tai_nguyen_mac_dinh_giu_DUNG_ten_tep_cu():
+    """Doi ten la mo cua so cho hai ban gate cung tuong minh doc quyen."""
+    assert cua_so_yen._tep(cua_so_yen.MAC_DINH) == cua_so_yen.TEP_KHOA
+
+
+# ---------------------------------------------------------------------------
+# Gate: ho so va che phu
+# ---------------------------------------------------------------------------
+
+def _nap_gate():
+    import importlib
+    return importlib.import_module("gate")
+
+
+def test_moi_ho_so_deu_khai_no_KHONG_chung_minh_gi():
+    """🔴 Cai gia cua mot ho so khong tu khai da duoc tra roi.
+
+    Ngay 25/08 hai phien doc dong `PASS` cua `--quick` thanh "moi thu xanh",
+    trong khi moi loi that hom do nam o dung buoc no bo qua. Them ho so ma
+    khong them cau tu khai la lam song lai chuyen do duoi ten moi.
+    """
+    gate = _nap_gate()
+    for ten, hs in gate.HO_SO.items():
+        assert hs.get("khong_chung_minh"), f"ho so {ten} khong khai gioi han"
+        assert hs.get("chung_minh"), f"ho so {ten} khong khai no chung minh gi"
+
+
+def test_moi_buoc_gate_cu_van_con():
+    """⛔ CHE PHU MOI PHAI >= CHE PHU CU. Chot nay chan viec mat buoc lang le.
+
+    `PURIFICATION_GATES`: "Prove new gate coverage >= old critical coverage."
+    Doi cau truc gate ma lam roi mot buoc thi chot nay do — chu khong phai
+    doi mot su co tren production moi biet.
+    """
+    gate = _nap_gate()
+    ten = {s.name for s in gate._steps(quick=False)}
+    bat_buoc = {
+        "bien dich duoc", "secret scan", "app contract lint", "kieu xuong dong",
+        "kich thuoc route server", "chuong chua treo", "ten chua dinh nghia",
+        "nuot loi lang le", "bien .ps1 trung tham so", "trung so test",
+        "bo qua im lang", "ky tu dieu khien", "chuoi chua dich",
+        "dich thieu ban EN", "system profile", "hop dong API",
+        "anh chup hop dong", "tai lieu sinh ra", "SDK khop hop dong",
+        "tai san GUI", "postman", "bo test (song song)",
+    }
+    assert bat_buoc <= ten, f"buoc da BIEN MAT khoi gate: {sorted(bat_buoc - ten)}"
+
+
+def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
+    """Khai thua tai nguyen lam moi thu xep hang tro lai — mat het cai vua duoc."""
+    gate = _nap_gate()
+    co_tn = {s.name for s in gate._steps(quick=False) if s.tai_nguyen}
+    assert co_tn == {"bo test (song song)"}, (
+        f"buoc khai tai nguyen ngoai du kien: {sorted(co_tn)}")
+
+
+def test_chot_bien_dich_KHONG_di_vao_cay_cua_phien_khac():
+    """⛔ `.claude/worktrees/<ten>/` la cay lam viec cua PHIEN KHAC.
+
+    Do 2026-09-02: cay chinh do o `bien dich duoc` vi mot tep dang viet do cua
+    phien khac chua null byte — mot loi ma phien doc thong bao **khong so huu
+    va khong sua duoc**.
+
+    ⛔ `bien dich duoc` la CONG GAC: chay mot minh, truoc het, va khi no do thi
+       ca luot dung lai. Nen mot phien khac go phim la du de chan luot do cua ta.
+
+    ⭐ Cai gia that khong phai thoi gian. Mot chot do vi ly do khong lien quan
+       se day nguoi ta bo qua chinh no — roi toi luc no do vi ly do that thi
+       phan xa da thanh "chac lai chuyen cay rieng".
+
+    Do duoc: 2.647 tep quet -> 1.035. Phan chenh la hai cay long ben trong.
+    """
+    import check_bien_dich as cbd
+
+    assert cbd.bo_qua(cbd.GOC / ".claude" / "worktrees" / "x" / "t.py") is True
+    # Va khong duoc loai tru qua tay: tep that trong kho van phai duoc kiem.
+    assert cbd.bo_qua(cbd.GOC / "tools" / "gate.py") is False
+    assert cbd.bo_qua(cbd.GOC / "apps" / "vps" / "routes.py") is False
+
+
+def test_gate_khong_duoc_dat_qua_NGAN_SACH_LOI():
+    """🔴 HAI lan may treo phai reset cung, 2026-09-02. Day la chot chan lan ba.
+
+    Lich cu dem TIEN TRINH CON va suy "10 la vua tren 20 loi". Phep suy do dung
+    cho nhom `tinh` — moi buoc do that su la MOT tien trinh. No sai cho hai loai
+    khac, va sai rat lon:
+
+        `bo test`     -> pytest `-n auto`               = 20 worker
+        `frontend` x3 -> vitest `min(12, numCpus - 1)`  = 36 worker
+
+    ⇒ "10 tien trinh" thuc te la ~61 luong tren 20 loi — canh BON dich vu
+      production dang phuc vu khach that tren cung may.
+
+    ⛔ Chot nay do **phep tinh**, khong chay gate: mot chot ve qua tai ma tu no
+       lam qua tai la mot chot khong ai dam chay.
+    """
+    gate = _nap_gate()
+
+    ns = gate.ngan_sach_loi()
+    assert ns >= 2, "ngan sach phai chay duoc ca tren may hai loi"
+    assert ns <= (os.cpu_count() or 4) - gate.LOI_DE_DANH_CHO_MAY, (
+        "ngan sach an vao phan de danh cho dich vu production")
+
+    steps = gate._steps(quick=False)
+
+    # ⛔ Khong buoc nao duoc tu do minh theo CA MAY.
+    for s in steps:
+        assert s.so_loi <= gate.LOI_TOI_DA_MOI_CONG_CU, (
+            f"{s.name} xin {s.so_loi} loi, vuot tran mot cong cu")
+        assert s.so_loi <= ns, f"{s.name} xin nhieu hon ca ngan sach"
+
+    # ⛔ Va han muc phai duoc TRUYEN XUONG, khong chi tinh ra roi bo do.
+    bo_test = [s for s in steps if s.name.startswith("bo test")]
+    assert bo_test, "khong con buoc `bo test` — chot nay dang canh nham cho"
+    argv = " ".join(bo_test[0].argv)
+    assert "-n" in bo_test[0].argv, (
+        "`bo test` khong duoc truyen `-n` tuong minh — pytest se lay `auto` "
+        "tuc MOI loi cua may, va no khong biet gi ve vitest hay production")
+    assert "auto" not in argv, "`-n auto` da quay lai"
+
+    # Frontend: chi kiem khi nhanh THAT duoc chon (cay rieng thieu node_modules
+    # thi buoc do la mot dong tu khai BO QUA, khong phai `npm test`).
+    for s in steps:
+        if s.nhom == "frontend" and any("npm" in a.lower() for a in s.argv[:1]):
+            assert any("--maxWorkers=" in a for a in s.argv), (
+                f"{s.name} khong chan worker — vitest se tu lay min(12, n-1)")
+
+
+def test_tien_trinh_con_chay_o_uu_tien_THAP():
+    """⭐ Lop bao ve THU HAI, va no can vi lop thu nhat la mot PHEP TINH.
+
+    Ngan sach loi co the tinh sai; uu tien thi khong. Du gate co nham bao nhieu,
+    he dieu hanh van cho `LTTStudioWeb` chay truoc mot tien trinh uu tien thap.
+
+    Va no gan nhu mien phi: tren may ranh, tien trinh uu tien thap van dung
+    100% CPU — no chi nhuong khi co ai do CAN.
+    """
+    import inspect
+
+    gate = _nap_gate()
+    if os.name == "nt":
+        assert gate.UU_TIEN_THAP == 0x00004000, "BELOW_NORMAL_PRIORITY_CLASS"
+    than = inspect.getsource(gate._run)
+    assert "creationflags" in than, (
+        "`_run` khong con ha uu tien tien trinh con — production se phai tranh "
+        "CPU ngang hang voi mot luot do")
+
+
+def test_ho_so_mac_dinh_van_la_day_du():
+    """⛔ Tuong thich nguoc: `python tools/gate.py` tran phai khong doi nghia."""
+    gate = _nap_gate()
+    assert gate.HO_SO["day-du"]["xep_hang"] is True
+    assert gate.HO_SO["vong-lap"]["xep_hang"] is False
+
+
+def test_pham_vi_rong_thi_HA_CAP_chu_khong_bao_PASS():
+    """Mot pham vi khong test nao phai keo ve day du, khong duoc in mot dong xanh."""
+    gate = _nap_gate()
+    assert gate._steps_pham_vi([]) == []
+
+
+# ---------------------------------------------------------------------------
+# Kho ket qua
+# ---------------------------------------------------------------------------
+
+def test_kho_ket_qua_nam_ngoai_git_va_ngoai_deploy():
+    """⛔ Du lieu mot lan chay khong duoc len production.
+
+    `test-results/` phai vua o `.gitignore` vua o danh sach `/XD` cua robocopy
+    trong `setup/2-cai-dat.ps1`. Deploy chep CA CAY ke ca tep untracked, nen
+    `.gitignore` mot minh **khong** du.
+    """
+    assert "/test-results/" in (GOC / ".gitignore").read_text(encoding="utf-8")
+    cai_dat = (GOC / "setup" / "2-cai-dat.ps1").read_text(encoding="utf-8",
+                                                          errors="replace")
+    assert "test-results" in cai_dat, (
+        "test-results khong con trong /XD - ket qua gate se len production")
+
+
+def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
+    """Phien sau phai biet 'gate nao da chay tren ma nao'.
+
+    ⛔ Ghi vao `tmp_path`, KHONG vao kho that. Ban dau chot nay goi thang
+       `_ghi_ket_qua` va de lai ba ban ghi `day-du PASS` GIA trong
+       `test-results/gates/` — mot phien sau doc chung se tin rang gate day du
+       da xanh. Do dung la cai bay `AGENTS.md` §10.4 goi ten: rac test lot vao
+       tep that. Mot chot ve tinh trung thuc cua kho ket qua ma tu lam ban kho
+       ket qua thi no dang chung minh dieu nguoc lai.
+    """
+    gate = _nap_gate()
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+
+    class _KhoaGia:
+        da_cho_s = 1.5
+        da_giu = ["cpu_nhieu"]
+
+    gate._ghi_ket_qua("day-du", [], "PASS", 12.3, _KhoaGia(), False)
+    ra = list((tmp_path / "test-results" / "gates").glob("*.json"))
+    assert ra, "khong ghi duoc ban ghi nao"
+    d = json.loads(ra[0].read_text(encoding="utf-8"))
+    for khoa in ("id", "luc", "ho_so", "ket_qua", "sha", "nhanh", "cay",
+                 "la_cay_chinh", "cho_khoa_giay", "tai_nguyen_da_giu"):
+        assert khoa in d, f"ban ghi thieu {khoa}"
+    assert (GOC / "test-results" / "gates" / f"{d['id']}.json").exists() is False, (
+        "chot da ghi vao kho ket qua THAT")
+
+
+def test_kho_ket_qua_KHONG_ghi_bien_moi_truong():
+    """⚠️ Bien moi truong chua bi mat. Mot kho ket qua khong duoc cham vao do."""
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    khuc = ma[ma.index("def _ghi_ket_qua"):ma.index("def _git_gon")]
+    assert "environ" not in khuc, "kho ket qua dang ghi bien moi truong"
+    assert ".tail" not in khuc, "kho ket qua dang ghi dau ra cua buoc"
+
+
+# ---------------------------------------------------------------------------
+# Cay rieng
+# ---------------------------------------------------------------------------
+
+def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
+    """Mot tham chieu chet trong tai lieu an toan la mot lop bao ve TUONG TUONG.
+
+    `cay_rieng.py` tung ghi rang `tools/check_cay_chinh.py` chan viec deploy tu
+    cay rieng "va no chay trong gate". Tep do KHONG TON TAI. Chot chan that nam
+    trong `setup/2-cai-dat.ps1` va duoc `test_362` bao ve.
+    """
+    import re
+    ma = (GOC / "tools" / "cay_rieng.py").read_text(encoding="utf-8")
+    thieu = [t for t in set(re.findall(r"tools/([a-z0-9_]+\.py)", ma))
+             if not (GOC / "tools" / t).is_file()]
+    assert not thieu, (
+        f"cay_rieng.py tro toi tools/{{{', '.join(sorted(thieu))}}} "
+        "nhung tep do khong ton tai")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_400_asv_bat_bien_thi_hanh.py
 SHA256=b6f2ddb7e2835bca7616fa25be4ff2067371df188bd20005537e96b791750818 BYTES=20394 LINES=409
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -266601,302 +267314,16 @@ be four green lights wired to nothing.
 
 **§2 artifact protocol** pins the storage behaviour ADR-001 D7 depends on. That is real
 today and testable today.
-=======
-@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_393_kiem_truoc_khi_cam.py
-SHA256=17f8f39d68eecb680466ad2753c077eca436d82bdf11bd112eb04a5674580bbe BYTES=13080 LINES=256
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""test_393 — bộ kiểm `kiem_truoc_khi_cam.py` phải dùng được TRÊN MỘT MÁY TRẮNG.
-
-Tệp công cụ đó tồn tại để **chép sang máy khác** trước khi cắm Codex. Cái giá
-của việc chép đi là: mọi giả định về môi trường đều sai. Nên ba tính chất dưới
-đây không phải chuyện phong cách — chúng quyết định tệp có được chạy hay không.
-
-⛔ VÀ MỘT TÍNH CHẤT THỨ TƯ, ĐẮT NHẤT: **mỗi phép đo phải có đối chứng.** Bài học
-   của đợt 31/08–01/09 là tám lần một dụng cụ cho kết quả đẹp vì nó không đo gì
-   cả. Một bộ kiểm "đường gọi thông" mà không thể báo *không thông* thì tệ hơn
-   không có — nó biến một sự cố thành một dấu tích xanh.
->>>>>>> admin-mvp-v3
 """
 from __future__ import annotations
 
 import ast
-<<<<<<< HEAD
 import io
-=======
-import pathlib
-
-import pytest
-
-TEP = pathlib.Path(__file__).resolve().parents[1] / "tools" / "kiem_truoc_khi_cam.py"
-VAN = TEP.read_text(encoding="utf-8")
-CAY = ast.parse(VAN)
-
-
-# ── 1. Chạy được trên một máy chưa cài gì ───────────────────────────────────
-
-def test_CHI_dung_thu_vien_chuan():
-    """Máy đích có thể chưa có `requests`, chưa có kho này, chưa có gì.
-
-    ⛔ Một bộ kiểm đòi `pip install` là một bộ kiểm sẽ không được chạy — người
-       ta sẽ bỏ qua nó và cắm thẳng, rồi gặp lỗi ở chỗ khó chẩn đoán hơn.
-    """
-    chuan = {"argparse", "json", "os", "sys", "time", "urllib", "typing",
-             "__future__", "dataclasses", "pathlib", "ssl", "http", "re"}
-    ngoai = set()
-    for n in ast.walk(CAY):
-        if isinstance(n, ast.Import):
-            ngoai |= {a.name.split(".")[0] for a in n.names}
-        elif isinstance(n, ast.ImportFrom) and n.level == 0 and n.module:
-            ngoai.add(n.module.split(".")[0])
-    la = ngoai - chuan
-    assert not la, f"import ngoai thu vien chuan: {sorted(la)}"
-
-
-def test_KHONG_phu_thuoc_vao_kho_nay():
-    """Nó bị chép đi MỘT MÌNH. Import `platform_core`/`apps` là chép hụt."""
-    for cam in ("platform_core", "apps.", "server."):
-        assert f"import {cam}" not in VAN and f"from {cam}" not in VAN, (
-            f"phu thuoc {cam} — tep nay se vo khi chep sang may khac")
-
-
-def test_KHONG_goi_dia_chi_noi_bo():
-    """Đo ở loopback là đo một thứ khác. `CLAUDE.md` quy tắc 5b đã trả giá:
-    trang đẹp ở `127.0.0.1` mà **vỡ với người dùng thật** vì Cloudflare phục vụ
-    bản cũ. Máy khách không có loopback của ta."""
-    for cam in ("127.0.0.1", "localhost", "192.168."):
-        assert cam not in VAN, f"co dia chi noi bo `{cam}` — may khach khong toi duoc"
-
-
-# ── 2. Nó phải ĐỎ được ──────────────────────────────────────────────────────
-
-def test_moi_phep_do_QUAN_TRONG_deu_co_doi_chung():
-    """Ba đối chứng bắt buộc, mỗi cái chặn một kiểu 'xanh vì lý do sai'.
-
-    - khoá SAI phải bị từ chối  → nếu không, "khoá dùng được" đúng tầm thường
-    - một lượt gọi thật phải TRỪ TIỀN → nếu không, ta đang đo một đường không
-      tính tiền, và mọi kết luận về đường gọi đều vô nghĩa
-    - bẫy `Python-urllib` phải còn → nó là thứ khách tự viết sẽ vấp
-    """
-    for dau in ("doi chung", "CO tru tien", "Python-urllib"):
-        assert dau in VAN, f"thieu doi chung: {dau}"
-
-    # 🔴 VÀ ĐỐI CHỨNG KHOÁ SAI PHẢI LÀ MỘT LỜI GỌI THẬT, không phải một nhãn.
-    #
-    #    Bản đầu của phép kiểm này chỉ tìm chuỗi `"khoa SAI"` trong tệp. Đột
-    #    biến cho thấy nó vô dụng: thay cả lời gọi bằng `ma_sai = 401` thì nhãn
-    #    vẫn còn, phép kiểm vẫn xanh, và đối chứng đã biến mất.
-    #
-    # ⭐ Cùng hình dạng với thứ tệp này sinh ra để chống. Nên nay đọc AST và đòi
-    #    có ít nhất một lời gọi `_goi` mang một khoá **đã bị sửa** — tức thật sự
-    #    hỏi máy chủ bằng một khoá không hợp lệ.
-    goi_khoa_sai = []
-    for n in ast.walk(CAY):
-        if not (isinstance(n, ast.Call) and getattr(n.func, "id", "") == "_goi"):
-            continue
-        for tham in n.args[1:2]:
-            # `a.khoa` tran thi la khoa that; bat ky phep toan nao tren no
-            # (noi chuoi, cat bot) deu la mot khoa CO Y lam sai.
-            if isinstance(tham, ast.BinOp):
-                goi_khoa_sai.append(n.lineno)
-    assert goi_khoa_sai, (
-        "khong co loi goi nao dung mot khoa DA BI SUA — doi chung 'khoa sai bi "
-        "tu choi' chi con la mot nhan, khong con la mot phep do")
-
-
-def test_DUNG_HAN_khi_doi_chung_tien_truot():
-    """Nếu khoá đúng và khoá sai **cùng** được nhận, bộ kiểm phải DỪNG chứ không
-    báo đạt — chính nó đang hỏng, và một dụng cụ hỏng nói 'đạt' là ca tệ nhất."""
-    assert "DOI CHUNG TRUOT" in VAN
-    assert "DUNG doc ket qua duoi day" in VAN
-
-
-def test_ba_ma_thoat_phan_biet_duoc():
-    """0 thông · 1 có mục hỏng · 2 không đo được. Một bộ kiểm luôn trả 0 thì
-    không tự động hoá được, và sẽ bị đọc bằng mắt rồi bỏ qua."""
-    ma = {n.value.value for n in ast.walk(CAY)
-          if isinstance(n, ast.Return) and isinstance(n.value, ast.Constant)
-          and isinstance(n.value.value, int)}
-    assert {0, 1, 2} <= ma, f"chi thay ma thoat {sorted(ma)}"
-
-
-# ── 3. Cấu hình nó in ra phải là cấu hình ĐÚNG ──────────────────────────────
-
-def test_KHONG_phat_ra_mot_ban_sao_cau_hinh():
-    """🔴 BÁNH CÓC CHO MỘT LỖI ĐÃ GÂY HẬU QUẢ THẬT (02/09).
-
-    Bản đầu của bộ kiểm **in ra một khối `config.toml` tự gõ**. Khối đó thiếu
-    `stream_idle_timeout_ms`, `model_reasoning_effort` và `model_catalog_json`
-    — ba thứ mà `platform_core/public_api/examples.py` đã có từ trước, mỗi thứ
-    kèm lý do đã trả giá.
-
-    ⛔ Hậu quả đo được: một khách dùng bản cấu hình đó bị **cắt luồng ở đúng
-       62,0 giây** (`STREAM KHACH-NGAT dur=62.0s`), rồi Codex thử lại và ăn
-       `429/503` vì lượt bị bỏ vẫn đang giữ suất.
-
-    ⭐ Đây đúng luật mà kho này đã viết ra ở chỗ khác: *"a second copy of a legal
-       promise is a second promise, and the two will differ"*. Một cấu hình cũng
-       là một lời hứa. Nên bộ kiểm **đọc** cấu hình, và **chỉ đường** tới công cụ
-       chính thức; nó không được tự phát ra một bản.
-    """
-    for cam in ('[model_providers.', 'wire_api = "responses"',
-                'env_key = "LTT_API_KEY"'):
-        assert cam not in VAN, (
-            f"bo kiem dang PHAT RA cau hinh ({cam!r}). No phai DOC cau hinh va "
-            f"chi duong toi cong cu chinh thuc, khong tao ban sao thu hai")
-
-
-def test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc():
-    """Danh sách khoá bộ kiểm đòi phải là khoá cấu hình chính thức **thật sự có**.
-
-    ⛔ Không import được `examples.py` từ trong công cụ (nó phải chạy trên máy
-       trắng), nên thứ ghép hai đầu là **phép kiểm này** — đúng khuôn
-       `test_334::TestBanSaoConLai` của kho.
-    """
-    import re
-
-    from platform_core.public_api import examples
-
-    chinh_thuc = (examples.codex_config("https://app.lttstudios.com")
-                  + chr(10) + examples.codex_profile())
-    m = re.search("KHOA_BAT_BUOC = " + chr(123) + "(.*?)" + chr(10)
-                  + chr(125), VAN, re.S)
-    assert m, "khong tim thay KHOA_BAT_BUOC"
-    khoa = re.findall(r'"([a-z_]+)":', m.group(1))
-    assert khoa, "danh sach khoa rong"
-    thieu = [k for k in khoa if k not in chinh_thuc]
-    assert not thieu, (
-        f"bo kiem doi khoa {thieu} nhung cau hinh chinh thuc khong he co chung "
-        f"— mot trong hai ben da troi")
-
-
-@pytest.mark.parametrize("khoa", ["stream_idle_timeout_ms", "model_catalog_json"])
-def test_doi_dung_hai_khoa_da_gay_su_co(khoa):
-    """Hai khoá này có mặt vì đã có sự cố thật, không phải vì cho đủ bộ.
-
-    - `stream_idle_timeout_ms`: thiếu ⇒ luồng bị cắt ở ~62 giây (đo 02/09)
-    - `model_catalog_json`: thiếu ⇒ Codex mượn tên một model OpenAI cho lượt
-      phụ, cổng ta từ chối, khách thấy "im lặng"
-    """
-    assert khoa in VAN
-
-
-def test_CHI_DUONG_toi_cong_cu_chinh_thuc():
-    """Bảo người ta "sửa tay cho đúng" là mời lại đúng lỗi vừa xảy ra."""
-    assert "/huong-dan/cong-cu" in VAN
-    assert "dung sua tay" in VAN or "dung go tay" in VAN
-
-
-def test_NOI_DUNG_ve_canh_bao_metadata_cua_Codex():
-    """🔴 SỬA MỘT CÂU TÔI ĐÃ NÓI SAI VỚI KHÁCH (01/09).
-
-    Bản đầu của bộ kiểm in: *"Codex sẽ in `Model metadata not found`… cảnh báo
-    không chặn việc chạy"*, và tôi bảo khách kệ nó. Tôi rút ra kết luận đó từ
-    một phép đo đúng (Codex **không** gọi `/api/v1/models`) nhưng suy sai sang
-    một kết luận rộng hơn: rằng không có cách nào dập.
-
-    ⛔ Có cách, và nền tảng đã có sẵn từ trước: `model_catalog_json` khai model
-       **tại máy khách**. Thiếu nó thì Codex không chỉ cảnh báo — nó **mượn tên
-       một model OpenAI** cho lượt phụ, cổng của ta từ chối (fail-closed), và
-       khách thấy "im lặng" ở hội thoại dài.
-
-    ⭐ Bài học: *"Codex không gọi /models"* và *"cảnh báo không dập được"* là hai
-       mệnh đề khác nhau. Tôi đo được cái thứ nhất rồi công bố cái thứ hai.
-    """
-    assert "model_catalog_json" in VAN
-    assert "MUON TEN" in VAN, (
-        "phai noi ro hau qua THAT (muon ten model OpenAI cho luot phu), "
-        "khong chi noi 'co mot canh bao'")
-
-
-@pytest.mark.parametrize("muc", ["Mang va Cloudflare", "Khoa API", "Model",
-                                 "/responses", "Tien"])
-def test_phu_du_nam_chang_cua_duong_goi(muc):
-    """Thiếu một chặng thì bộ kiểm nói 'thông' về một đường nó chưa đi hết."""
-    assert muc in VAN
-
-# ── 4. Tài liệu công khai phải MANG ĐỦ, không được rụng ─────────────────────
-
-CAU_HINH_PHAI_CO = {
-    "stream_idle_timeout_ms": "luong bi CAT o ~62 giay khi model im tieng (do 02/09)",
-    "model_reasoning_effort": "model tieu phan lon max_tokens de suy nghi truoc khi tra loi",
-    "model_reasoning_summary": "kem theo reasoning_effort",
-    "model_context_window": "khong nen ngu canh kip => 413",
-    "model_catalog_json": "Codex muon ten model OpenAI cho luot phu => cong ta tu choi",
-    "wire_api": "Codex chi hieu `responses`",
-    "base_url": "phai tan cung /api/v1",
-    "env_key": "khoa doc tu bien moi truong, khong nhung vao tep",
-}
-
-
-@pytest.mark.parametrize("khoa", sorted(CAU_HINH_PHAI_CO))
-def test_cau_hinh_CHINH_THUC_khong_duoc_rung_khoa_nao(khoa):
-    """🔴 CHIỀU NGƯỢC LẠI, và nó quan trọng hơn.
-
-    `test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc` chốt rằng bộ kiểm không đòi
-    khoá lạ. Phép kiểm này chốt điều ngược lại: **cấu hình chính thức không được
-    lặng lẽ rụng một khoá**.
-
-    ⛔ Vì sao nó đắt hơn: rụng một khoá thì không có gì đỏ — trang vẫn render,
-       khách vẫn cắm được, và hỏng chỉ hiện ra vài phút sau dưới dạng một luồng
-       bị cắt hoặc một câu "im lặng". Đó đúng là hình dạng sự cố 02/09.
-
-    Mỗi khoá ở đây có một sự cố thật đứng sau; xem giá trị trong `CAU_HINH_PHAI_CO`.
-    """
-    from platform_core.public_api import examples
-
-    ca = (examples.codex_config("https://app.lttstudios.com") + chr(10)
-          + examples.codex_profile())
-    assert khoa in ca, (
-        f"cau hinh chinh thuc da rung `{khoa}`. Hau qua da biet: "
-        f"{CAU_HINH_PHAI_CO[khoa]}")
-
-
-def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
-    """Tiện ích VS Code và CLI là **hai bộ đọc khác nhau** — bài học 30/08.
-
-    ⛔ Bộ mặc định của `cam_cli` **không** gồm Codex-VS-Code, nên ai chạy công cụ
-       với tuỳ chọn mặc định rồi dùng tiện ích sẽ thiếu cấu hình. Phép kiểm này
-       giữ cho lối đi riêng ấy tồn tại.
-    """
-    import pathlib
-
-    van = (pathlib.Path(__file__).resolve().parents[1]
-           / "tools" / "cam_cli.py").read_text(encoding="utf-8")
-    assert "MUC_CODEX_VSCODE" in van
-    assert "--vscode" in van
-
-
-@@@LTT_PROFILE_FILE_END@@@
-
-@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_nen_da_phien.py
-SHA256=84cae74fd10417b83670e779ab59c1bdf06bd197b9c1faa5ad83d1cb8f1855e4 BYTES=18755 LINES=438
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-"""Nen tang nhieu phien: so dang ky thanh phan, ho so gate, khoa tai nguyen.
-
-## Vi sao bo kiem nay ton tai
-
-Phase -1 them mot phep LOC vao cong chat luong: tu "chay tat ca" sang "chay
-nhung gi lien quan". Mot phep loc sai **khong bao gio keu** — no chi im lang bo
-qua, va dong ket qua van xanh. Do la lop loi dat nhat co the them vao mot cong
-chat luong, nen no phai duoc chot chat hon phan con lai.
-
-⛔ Chot quan trong nhat khong phai chot nao do do dung. La
-   `test_moi_buoc_gate_cu_van_con` — no cam viec **mat che phu** khi doi cau
-   truc gate. Xem `PURIFICATION_GATES`: "Prove new gate coverage >= old".
-"""
-from __future__ import annotations
-
-import json
-import os
-import subprocess
-import sys
->>>>>>> admin-mvp-v3
 from pathlib import Path
 
 import pytest
 
 GOC = Path(__file__).resolve().parent.parent
-<<<<<<< HEAD
 
 #: Every path Auto Scan will own. Empty entries are normal before Phase 05 — the guards
 #: below start biting the moment a directory appears, with no edit needed here.
@@ -272521,7 +272948,7 @@ def test_phien_ban_engine_KHONG_nap_ca_cay_module_luc_import():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_417_asv_vo_hieu_ha_nguon.py
-SHA256=0a08518d95d1370df85ca58403a6949523f01af00d178a265412c96d0cfb4343 BYTES=16636 LINES=346
+SHA256=7638a15498dd9e7063a77f333735ff22672c6c901cbe908db6d6a97adb91eddc BYTES=18336 LINES=384
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 16 — vo hieu theo phu thuoc, thu lai, lan truyen huy, va QC la cong cuoi.
 
@@ -272869,6 +273296,44 @@ def test_moi_giai_doan_chi_co_MOT_dong_du_da_thu_lai(run_dang_chay, db):
         AsvStage.run_id == run_dang_chay.id)).scalars().all()
     ten = [s.stage for s in hang]
     assert len(ten) == len(set(ten)) == len(pipeline.CHUOI)
+
+
+def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
+    """🔴 Lo hong that, tim ra o pha 21 va sua o pha 21.
+
+    Ban dau `_dat_lai_giai_doan` chi dat `job_id=""`. Do la mot JOB MO COI: dong
+    giai doan quen no, nhung no van nam trong hang doi va van duoc mot worker
+    nhat len sau do — chay tren dau vao cua mot lan chay DA BI DAT LAI.
+
+    Trieu chung do duoc: thu lai `media_prepare` -> job `audio_prepare` cu van
+    chay -> `transcribe` doc mot ban tieng thuoc lan truoc -> *"Chua co ban tieng
+    de chep loi"*.
+
+    ⚠️ Va no la mot loi CO DIEU KIEN — chi lo ra khi thu tu nhat job doi. No nam
+       san tu pha 16; viec khai `tai_nguyen` cho lan GPU lam doi thu tu va lam no
+       hien hinh. Mot loi chi hong "doi khi" thi truoc do no van hong, chi la
+       chua ai thay.
+    """
+    from platform_core.models import Job
+
+    # Tim mot giai doan dang co job con con song.
+    ds = [s for s in features.cac_giai_doan(db, run_dang_chay)
+          if s.job_id and s.status in ("queued", "running", STAGE_SUCCEEDED)]
+    assert ds, "bo do khong co giai doan nao mang job con — phep kiem vo nghia"
+
+    truoc = {s.stage: s.job_id for s in ds}
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA",
+                               pipeline.MEDIA_PREPARE)
+    db.commit()
+
+    con_song = []
+    for ten, jid in truoc.items():
+        j = db.get(Job, jid)
+        if j is not None and j.status in ("queued", "running"):
+            con_song.append(f"{ten}:{j.status}")
+    assert con_song == [], (
+        f"job con cua giai doan da dat lai VAN CON SONG: {con_song} — chung se "
+        f"duoc nhat len va chay tren dau vao cua mot lan chay da bi dat lai")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -274714,422 +275179,273 @@ def test_uoc_gia_o_TANG_DICH_VU_khong_o_route():
 
     assert "uoc_credit" not in inspect.getsource(routes)
     assert "uoc_credit" in inspect.getsource(features.tao_run_tu_tai_len)
-=======
-sys.path.insert(0, str(GOC / "tools"))
 
-import cua_so_yen  # noqa: E402
-import thanh_phan as tp  # noqa: E402
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_424_ma_tran_nghiem_thu.py
+SHA256=8fcb6648208bc4cbfd69c6332c7c474c4dde542d2b076fd9b5b1429b9ac99556 BYTES=15358 LINES=261
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 21 — MA TRAN NGHIEM THU: G1–G14 anh xa toi BANG CHUNG chay duoc.
+
+## Vi sao ma tran nay la MA chu khong phai mot bang trong tai lieu
+
+`MVP_ACCEPTANCE_GATES.md` liet ke muoi bon cong, va cach hien nhien de "danh gia
+tung cong" la viet mot bang trong bao cao pha 21 roi danh dau. Bang do sai ngay
+lan doi ten mot phep kiem dau tien, va no sai **im lang**: khong ai chay mot
+bang.
+
+⇒ O day moi cong tro toi ten phep kiem THAT. Hai phep kiem cuoi tep doi chieu
+  hai chieu voi bo test da thu thap duoc:
+
+    * moi phep kiem duoc vien dan phai TON TAI  -> khong vien dan mot bang chung
+      da bien mat;
+    * moi cong phai co it nhat mot bang chung   -> khong de mot cong trong.
+
+⭐ Va mot cong duoc danh dau **CHUA CO BANG CHUNG** thi phai noi ra bang mot muc
+   `PENDING`, khong duoc de trong roi hy vong khong ai dem.
+
+## Gioi han cua phep nghiem thu nay, noi truoc
+
+⛔ Ba loai bang chung KHONG the co tren may nay, va chung duoc ghi la `PENDING`
+   chu khong duoc goi la dat:
+
+   1. **Provider that.** LLM dich va may sinh tieng deu bi thay bang ban gia
+      trong bo do. Hanh vi loi (429, auth, mo ho) duoc kiem o cap PHAN LOAI
+      (`test_418`) chu khong bang mot lan goi that bi tu choi.
+   2. **GPU that.** Chuoi chay tren CPU o day. Dinh tuyen lan va truyen moi
+      truong card duoc kiem, viec **chay tren card** thi khong.
+   3. **Video that cua khach.** Moi khuon la 1–3 giay do `testsrc` sinh ra.
+"""
+from __future__ import annotations
+
+import pathlib
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parent
+
+#: Muoi bon cong -> bang chung. Moi muc la `("<tep>", "<ten ham>")`.
+#:
+#: ⚠️ Chi ghi ten HAM, khong ghi node id day du: mot phep kiem tham so hoa
+#:    (`@parametrize`) co nhieu node nhung mot ten ham, va chot node id se lam
+#:    ma tran do moi lan them mot tham so.
+MA_TRAN: dict[str, list[tuple[str, str]]] = {
+    # ── G1 Pham vi & tuong thich nen tang ──────────────────────────────────
+    "G1": [
+        ("test_402_asv_mach_doc_gia.py", "test_thu_tu_giai_doan_do_MAY_CHU_quyet_khong_phai_client"),
+        ("test_421_asv_tach_khoi_di_san.py", "test_khong_duong_nao_toi_module_di_san"),
+        ("test_423_asv_giao_dien.py", "test_KHONG_co_node_keo_tha_hay_do_thi"),
+        ("test_190_public_api_coverage.py", "test_the_disposition_document_lists_every_app"),
+    ],
+    # ── G2 Nguon chan ly thi hanh ──────────────────────────────────────────
+    "G2": [
+        ("test_402_asv_mach_doc_gia.py", "test_run_chay_het_CHIN_giai_doan_va_ve_done"),
+        ("test_402_asv_mach_doc_gia.py", "test_thu_tu_giai_doan_do_MAY_CHU_quyet_khong_phai_client"),
+        ("test_402_asv_mach_doc_gia.py", "test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU"),
+        ("test_421_asv_tach_khoi_di_san.py", "test_KHONG_vong_lap_worker_rieng_trong_app"),
+        ("test_417_asv_vo_hieu_ha_nguon.py", "test_moi_giai_doan_chi_co_MOT_dong_du_da_thu_lai"),
+    ],
+    # ── G3 Tinh tien dung ──────────────────────────────────────────────────
+    "G3": [
+        ("test_402_asv_mach_doc_gia.py", "test_KHONG_job_giai_doan_nao_giu_credit"),
+        ("test_402_asv_mach_doc_gia.py", "test_quyet_toan_MOT_LAN_va_hoan_phan_khong_dung"),
+        ("test_402_asv_mach_doc_gia.py", "test_tran_chi_chan_truoc_khi_tieu_vuot_hold"),
+        ("test_419_asv_tiem_loi.py", "test_giu_cho_ve_0_o_moi_ket_cuc"),
+        ("test_419_asv_tiem_loi.py", "test_job_con_KHONG_giu_them_credit_nao"),
+        ("test_419_asv_tiem_loi.py", "test_quyet_toan_KHONG_chay_hai_lan"),
+        ("test_417_asv_vo_hieu_ha_nguon.py", "test_thu_lai_KHONG_giu_them_mot_khoan_credit_nao"),
+    ],
+    # ── G4 Cach ly nguoi dung / thong tin dang nhap ────────────────────────
+    "G4": [
+        ("test_402_asv_mach_doc_gia.py", "test_nguoi_khac_KHONG_doc_duoc_run_du_biet_id"),
+        ("test_404_pham_vi_khoa_api.py", "test_khoa_rieng_cua_A_KHONG_den_tay_B"),
+        ("test_404_pham_vi_khoa_api.py", "test_pool_nen_tang_KHONG_BAO_GIO_cham_khoa_rieng"),
+        ("test_419_asv_tiem_loi.py", "test_hai_nguoi_dung_chay_dong_thoi_khong_lan_du_lieu"),
+        ("test_423_asv_giao_dien.py", "test_nguoi_khac_KHONG_xem_duoc_lan_chay_cua_toi"),
+        ("test_423_asv_giao_dien.py", "test_nguoi_khac_KHONG_tai_duoc_ket_qua"),
+        ("test_423_asv_giao_dien.py", "test_nguoi_khac_KHONG_huy_duoc_lan_chay_cua_toi"),
+    ],
+    # ── G5 Tai nguyen ──────────────────────────────────────────────────────
+    "G5": [
+        ("test_402_asv_mach_doc_gia.py", "test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU"),
+        ("test_419_asv_tiem_loi.py", "test_KHONG_giai_doan_nao_tu_chon_card_GPU"),
+        ("test_419_asv_tiem_loi.py", "test_giai_doan_GPU_xin_moi_truong_qua_ctx_chu_khong_tu_dat"),
+        ("test_419_asv_tiem_loi.py", "test_RENDER_KHONG_xin_GPU_vi_no_khong_dung"),
+        ("test_421_asv_tach_khoi_di_san.py", "test_KHONG_khoa_GPU_di_san"),
+    ],
+    # ── G6 Ben vung / bat bien lap ─────────────────────────────────────────
+    "G6": [
+        ("test_403_asv_vong_doi_artifact.py", "test_lineage_noi_giai_doan_voi_thuong_nguon_cua_no"),
+        ("test_419_asv_tiem_loi.py", "test_artifact_bien_mat_thi_CACHE_khong_dung_lai_no"),
+        ("test_419_asv_tiem_loi.py", "test_checkpoint_HONG_bi_phat_hien_chu_khong_duoc_dung_tiep"),
+        ("test_416_asv_van_tay_engine.py", "test_doi_phien_ban_engine_thi_van_tay_PHAI_doi"),
+        ("test_417_asv_vo_hieu_ha_nguon.py", "test_advance_TU_DAT_LAI_giai_doan_lech_thay_vi_ket_thuc"),
+        ("test_415_asv_cong_thoat_render.py", "test_render_hong_KHONG_de_lai_ket_qua_dang_do"),
+    ],
+    # ── G7 An toan tac dung phu cua provider ───────────────────────────────
+    "G7": [
+        ("test_418_asv_phan_loai_loi.py", "test_mo_ho_thanh_AmbiguousProviderError_KHONG_BAO_GIO_tu_dong_thu_lai"),
+        ("test_418_asv_phan_loai_loi.py", "test_loi_nguoi_dung_thanh_LoiNguoiGoi_KHONG_thu_lai"),
+        ("test_418_asv_phan_loai_loi.py", "test_may_ban_thanh_BanError_XEP_LAI_chu_khong_dot_mot_lan_thu"),
+        ("test_418_asv_phan_loai_loi.py", "test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai"),
+        ("test_419_asv_tiem_loi.py", "test_video_KHONG_CO_TIENG_hong_ngay_va_khong_thu_lai"),
+    ],
+    # ── G8 Media / chep loi / giong / thoi gian ────────────────────────────
+    "G8": [
+        ("test_405_asv_nhap_media.py", "test_video_KHONG_co_tieng_bi_tu_choi"),
+        ("test_407_asv_chep_loi.py", "test_ban_ghi_dai_hon_ban_tieng_bi_TU_CHOI"),
+        ("test_409_asv_giong_noi.py", "test_MOT_tep_cho_MOI_doan"),
+        ("test_410_asv_thoi_gian.py", "test_ngan_sach_keo_toi_luc_doan_SAU_bat_dau"),
+        ("test_422_asv_parity_engine.py", "test_LECH_CO_Y_5_tran_troi_la_CUA_TA"),
+    ],
+    # ── G9 Dung ban / render / QC ──────────────────────────────────────────
+    "G9": [
+        ("test_411_asv_ban_dung.py", "test_composer_KHONG_sinh_media"),
+        ("test_415_asv_cong_thoat_render.py", "test_RENDER_that_su_sinh_ra_mot_mp4_PHAT_DUOC"),
+        ("test_415_asv_cong_thoat_render.py", "test_render_lai_KHONG_danh_thuc_mot_giai_doan_thuong_nguon_nao"),
+        ("test_420_asv_qc.py", "test_QC_hong_thi_RUN_KHONG_ve_done"),
+        ("test_420_asv_qc.py", "test_moi_dung_sai_deu_NO_duoc"),
+        ("test_420_asv_qc.py", "test_lan_chay_that_QUA_duoc_cong"),
+    ],
+    # ── G10 Huy va phuc hoi ────────────────────────────────────────────────
+    "G10": [
+        ("test_419_asv_tiem_loi.py", "test_huy_TRUOC_khi_job_con_chay"),
+        ("test_419_asv_tiem_loi.py", "test_huy_GIUA_CHUNG_khong_bi_mot_job_ve_dich_muon_ghi_de"),
+        ("test_417_asv_vo_hieu_ha_nguon.py", "test_sau_khi_huy_thi_chay_tiep_KHONG_lam_run_song_lai"),
+        ("test_417_asv_vo_hieu_ha_nguon.py", "test_huy_KHONG_de_lai_job_con_dang_song"),
+        ("test_414_asv_ket_xuat.py", "test_huy_giua_chung_thi_GIET_tien_trinh_va_khong_de_lai_ket_qua"),
+    ],
+    # ── G11 An toan di tru ─────────────────────────────────────────────────
+    "G11": [
+        ("test_421_asv_tach_khoi_di_san.py", "test_do_thi_goi_KHONG_RONG"),
+        ("test_421_asv_tach_khoi_di_san.py", "test_khong_duong_nao_toi_goi_dieu_phoi_ngoai"),
+        ("test_421_asv_tach_khoi_di_san.py", "test_moi_tien_trinh_con_deu_la_CONG_CU_da_khai"),
+        ("test_422_asv_parity_engine.py", "test_giu_chinh_sach_ma_hoa_cua_ban_di_san"),
+        ("test_422_asv_parity_engine.py", "test_LECH_CO_Y_6_ban_nen_giu_44k1_cua_htdemucs_chu_khong_48k"),
+    ],
+    # ── G12 Quan sat ───────────────────────────────────────────────────────
+    "G12": [
+        ("test_420_asv_qc.py", "test_dong_thoi_gian_dung_tu_du_lieu_ben_khong_tu_log"),
+        ("test_420_asv_qc.py", "test_ky_su_ho_tro_dinh_vi_duoc_giai_doan_hong_MA_KHONG_doc_thu_muc_tam"),
+        ("test_420_asv_qc.py", "test_ban_cho_KHACH_khong_lo_chi_tiet_van_hanh"),
+        ("test_420_asv_qc.py", "test_mac_dinh_la_ban_CHO_KHACH"),
+        ("test_414_asv_ket_xuat.py", "test_ho_so_chan_doan_khong_lo_duong_dan"),
+    ],
+    # ── G13 Dung duoc (MVP) ────────────────────────────────────────────────
+    "G13": [
+        ("test_423_asv_giao_dien.py", "test_trang_khach_KHONG_lo_chi_tiet_ky_thuat"),
+        ("test_423_asv_giao_dien.py", "test_chin_buoc_hien_bang_NHAN_TIENG_VIET"),
+        ("test_423_asv_giao_dien.py", "test_MOI_route_ghi_deu_doi_CSRF"),
+        ("test_423_asv_giao_dien.py", "test_lich_su_chi_hien_lan_chay_CUA_MINH"),
+        # ⚠️ Nguon THU HAI, doc lap voi tep giao dien: neu ca G13 chi duoc
+        #    chung minh boi `test_423` thi no dang do chinh tep do.
+        ("test_420_asv_qc.py", "test_ban_cho_KHACH_khong_lo_chi_tiet_van_hanh"),
+    ],
+    # ── G14 Bang chung ─────────────────────────────────────────────────────
+    "G14": [
+        ("test_400_asv_bat_bien_thi_hanh.py", "test_worker_chi_nhat_job_cua_app_ma_no_du_nang_luc"),
+        ("test_402_asv_mach_doc_gia.py", "test_run_chay_het_CHIN_giai_doan_va_ve_done"),
+        ("test_415_asv_cong_thoat_render.py", "test_RENDER_that_su_sinh_ra_mot_mp4_PHAT_DUOC"),
+        ("test_424_ma_tran_nghiem_thu.py", "test_moi_cong_deu_co_it_nhat_mot_bang_chung"),
+    ],
+}
+
+#: Cong CHUA co bang chung day du, kem ly do. ⛔ Mot cong o day KHONG duoc goi
+#: la dat, va bao cao pha 21 phai liet ke chung nhu blocker.
+#:
+#: ⭐ Danh sach nay RONG hom nay khong co nghia moi thu da duoc chung minh —
+#:    xem `THIEU_BANG_CHUNG_NGOAI` ngay duoi, la thu that su con thieu.
+CHUA_DU_BANG_CHUNG: dict[str, str] = {}
+
+#: Bang chung KHONG the lay tren may nay. Day la danh sach that cua pha 21.
+THIEU_BANG_CHUNG_NGOAI = {
+    "G7": ("Provider THAT chua bi tu choi lan nao. 429 / auth / quota duoc kiem "
+           "o cap PHAN LOAI (`test_418`), khong bang mot lan goi that. Can mot "
+           "khoa provider that va mot lan bi gioi han that."),
+    "G5": ("GPU THAT chua chay. Dinh tuyen lan va truyen `ctx.gpu_env` / "
+           "`ctx.gpu_uuid` deu duoc kiem, viec **chay tren card** thi khong — "
+           "ca chuoi chay tren CPU o day."),
+    "G8": ("Video THAT cua khach chua chay. Moi khuon la 1-3 giay do `testsrc` "
+           "sinh ra, khong co giong nguoi that, khong co nhac nen that. Dung "
+           "sai thoi gian (T7/T11) chua duoc do tren loi noi that."),
+    "G10": ("Worker chua bi GIET that (RISK-17-01). Ngat duoc mo phong bang "
+            "ngoai le va bang giet tien trinh con, khong bang mot `SIGKILL` "
+            "giua mot transaction."),
+}
 
 
-# ---------------------------------------------------------------------------
-# So dang ky thanh phan
-# ---------------------------------------------------------------------------
+def _cac_ten_ham_trong(tep: str) -> set[str]:
+    import ast
 
-def test_moi_app_deu_thanh_mot_thanh_phan():
-    """App suy tu thu muc, khong tu ban khai — nen khong the quen mot app.
+    p = GOC / tep
+    if not p.is_file():
+        return set()
+    cay = ast.parse(p.read_text(encoding="utf-8"))
+    ra = set()
+    for nut in ast.walk(cay):
+        if isinstance(nut, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            ra.add(nut.name)
+    return ra
 
-    Day la ly do `_cac_app` doc `apps/*/manifest.py` thay vi doc TOML: mot app
-    moi tu dong co mat, khong cho ai nho cap nhat mot danh sach.
+
+@pytest.mark.parametrize("cong", sorted(MA_TRAN))
+def test_moi_cong_deu_co_it_nhat_mot_bang_chung(cong):
+    """⛔ Mot cong khong co bang chung phai NOI RA, khong duoc de trong."""
+    if cong in CHUA_DU_BANG_CHUNG:
+        pytest.fail(f"{cong} khai la chua du bang chung: "
+                    f"{CHUA_DU_BANG_CHUNG[cong]}")
+    assert MA_TRAN[cong], f"{cong} khong co bang chung nao"
+
+
+def test_MOI_bang_chung_duoc_vien_dan_deu_TON_TAI():
+    """🔑 Phep kiem giu cho ma tran nay khoi muc.
+
+    Doi ten mot phep kiem ma quen sua ma tran se lam do NGAY, thay vi de mot
+    bao cao nghiem thu vien dan mot bang chung khong con ton tai.
     """
-    tp_all = tp.cac_thanh_phan(GOC)
-    tren_dia = {d.name for d in (GOC / "apps").iterdir()
-                if d.is_dir() and (d / "manifest.py").is_file()}
-    trong_do_thi = {t.split(":", 1)[1] for t in tp_all if t.startswith("app:")}
-    assert tren_dia == trong_do_thi, (
-        f"lech giua apps/ va do thi: chi tren dia {tren_dia - trong_do_thi}, "
-        f"chi trong do thi {trong_do_thi - tren_dia}")
+    thieu: list[str] = []
+    for cong, muc in MA_TRAN.items():
+        for tep, ham in muc:
+            if ham not in _cac_ten_ham_trong(tep):
+                thieu.append(f"{cong}: {tep}::{ham}")
+    assert thieu == [], (
+        "ma tran nghiem thu vien dan phep kiem KHONG TON TAI:\n  "
+        + "\n  ".join(thieu))
 
 
-def test_khop_tien_to_dai_nhat_thang():
-    """`platform_core/credit.py` phai ve `core:tien`, khong ve `core:nen`."""
-    assert tp.thanh_phan_cua("platform_core/credit.py") == "core:tien"
-    assert tp.thanh_phan_cua("platform_core/models.py") == "core:nen"
-    assert tp.thanh_phan_cua("apps/vps/routes.py") == "app:vps"
-    assert tp.thanh_phan_cua("server/auth/session.py") == "server:auth"
+def test_ma_tran_phu_DU_muoi_bon_cong():
+    """Chot theo TAP HOP. Them mot cong vao `MVP_ACCEPTANCE_GATES.md` ma quen
+    dua vao day se lam do."""
+    assert set(MA_TRAN) == {f"G{i}" for i in range(1, 15)}
 
 
-def test_duong_windows_va_posix_cho_cung_ket_qua():
-    """Kho nay chay tren Windows; `git` tra `/`, `Path` tra `\\`."""
-    assert (tp.thanh_phan_cua(r"platform_core\credit.py")
-            == tp.thanh_phan_cua("platform_core/credit.py") == "core:tien")
+def test_bang_chung_KHONG_tap_trung_vao_mot_tep():
+    """⚠️ Neu ca mot cong chi duoc chung minh boi mot tep, thi cong do dang do
+    chinh tep do chu khong do he thong.
 
-
-def test_duong_khong_ai_so_huu_thi_KHONG_doan():
-    """Tra `None`, va `bi_anh_huong` phai bien no thanh 'chay tat ca'."""
-    assert tp.thanh_phan_cua("mot/duong/khong/ton/tai.py") is None
-    assert tp.bi_anh_huong({"mot/duong/khong/ton/tai.py"}, GOC) is None
-
-
-def test_cham_tep_dung_chung_thi_chay_TAT_CA():
-    """⛔ Fail-open. `conftest.py` cham moi thu, nen no khong duoc thu hep."""
-    assert tp.bi_anh_huong({"tests/conftest.py"}, GOC) is None
-    assert tp.bi_anh_huong({"tools/gate.py"}, GOC) is None
-
-
-def test_anh_xa_test_suy_tu_IMPORT_chu_khong_tu_TEN_TEP():
-    """🔴 Chot trung tam. Xem docstring `thanh_phan.py`.
-
-    `thumbnail` co 2 tep test mang ten no nhung ~19 tep IMPORT no. Chon theo
-    ten se bo qua 17 phep kiem — im lang, va o dung cho nguy hiem nhat.
+    Nguong thap co chu y: muc dich la bat truong hop mot cong co **mot** nguon
+    bang chung duy nhat, khong phai ep phan bo deu.
     """
-    bang = tp.test_cua_thanh_phan(GOC)
-    theo_ten = {t for t in bang["app:thumbnail"] if "thumbnail" in t}
-    assert len(bang["app:thumbnail"]) > 3 * max(len(theo_ten), 1), (
-        f"chi thay {len(bang['app:thumbnail'])} tep cho thumbnail "
-        f"({len(theo_ten)} khop ten) - phep suy theo import co ve da hong")
+    yeu = {cong: sorted({t for t, _ in muc})
+           for cong, muc in MA_TRAN.items()
+           if len({t for t, _ in muc}) < 2}
+    assert yeu == {}, f"cong chi co mot nguon bang chung: {yeu}"
 
 
-def test_chi_lay_module_test_that():
-    """⛔ `tests/__init__.py` lot vao lam ca luot chet bang INTERNALERROR.
+def test_thieu_bang_chung_ngoai_duoc_GHI_RO_chu_khong_giau():
+    """⭐ Pha 21 chi PASS neu moi cong quan trong co bang chung. Nhung "co bang
+    chung" khong bang "da chay tren that", va gop hai thu do lam mot la cach mot
+    ban MVP duoc goi la san sang trong khi chua ai chay no tren du lieu that.
 
-    Va INTERNALERROR khong phai mot test do — no la ca bo test KHONG CHAY,
-    trong khi dong ket qua trong y het mot that bai binh thuong.
+    Danh sach nay ton tai de bao cao pha 21 khong the noi "tat ca deu dat".
     """
-    moi_tep = set()
-    for ds in tp.test_cua_thanh_phan(GOC).values():
-        moi_tep |= ds
-    xau = {t for t in moi_tep if not Path(t).name.startswith("test_")}
-    assert not xau, f"khong phai module test ma van duoc chon: {sorted(xau)}"
-
-
-def test_canh_dong_lam_sdk_het_mo_coi():
-    """`sdk/` khong module nao import — chi `GOI_TAI` tra bang chuoi.
-
-    Neu chot nay do, `sdk/` da tro lai thanh mo coi voi phep do tinh, va lan
-    don dep sau se cham no la CHET. No khong chet: no la duong DUY NHAT cho
-    khach macOS/Linux.
-    """
-    _, tieu_thu = tp.do_thi_phu_thuoc(GOC)
-    assert tieu_thu["sdk"], (
-        "sdk/ khong con nguoi tieu thu nao - canh dong GOI_TAI da mat khoi "
-        "tools/thanh_phan.toml")
-
-
-def test_moi_canh_dong_deu_co_bang_chung():
-    """Mot canh khong chi duoc ra dong ma la mot canh khong ai kiem lai duoc."""
-    for canh in tp.nap_khai().get("canh_dong", []):
-        assert canh.get("bang_chung"), f"canh thieu bang chung: {canh}"
-        assert canh.get("co_che"), f"canh thieu co che: {canh}"
-
-
-def test_mo_rong_nguoi_tieu_thu_khong_bo_sot_chieu_nguoc():
-    """Doi `core:tien` phai keo theo nguoi DUNG no, khong chi ban than no."""
-    phan = tp.bi_anh_huong({"platform_core/credit.py"}, GOC)
-    assert phan is not None and "core:tien" in phan
-    assert len(phan) > 1, "khong mo rong sang nguoi tieu thu"
-
-
-# ---------------------------------------------------------------------------
-# Khoa tai nguyen
-# ---------------------------------------------------------------------------
-
-@pytest.fixture
-def khoa_sach():
-    """Don moi khoa truoc va sau — bo kiem nay khong duoc de lai rac."""
-    def don():
-        for bg in cua_so_yen.dang_giu():
-            cua_so_yen.nha(ep=True, tai_nguyen=bg.get("tai_nguyen",
-                                                      cua_so_yen.MAC_DINH))
-    don()
-    yield
-    don()
-
-
-def test_hai_tai_nguyen_khac_nhau_KHONG_doi_nhau(khoa_sach):
-    """⭐ Chinh la ly do Phase -1 doi khoa don thanh khoa theo ten.
-
-    Truoc do hai luot khong dung chung gi van phai xep hang sau nhau.
-    """
-    assert cua_so_yen.thu_giu("A", "lenh-A", "postgres_test")
-    assert cua_so_yen.thu_giu("B", "lenh-B", "gpu0")
-    assert {b["tai_nguyen"] for b in cua_so_yen.dang_giu()} >= {
-        "postgres_test", "gpu0"}
-
-
-def test_cung_mot_tai_nguyen_thi_nguoi_thu_hai_TRUOT(khoa_sach):
-    assert cua_so_yen.thu_giu("A", "lenh-A", "postgres_test")
-    assert cua_so_yen.thu_giu("B", "lenh-B", "postgres_test") is False
-
-
-def test_khoa_treo_bi_doat_chu_khong_treo_mai(khoa_sach):
-    """PID chet => khoa phai bi doat, neu khong mot lan Ctrl-C khoa ca may."""
-    tep = cua_so_yen._tep("postgres_test")
-    tep.write_text(json.dumps({
-        "phien": "ma", "pid": 999_999_999, "lenh": "x",
-        "bat_dau_epoch": 0.0}), encoding="utf-8")
-    assert cua_so_yen.thu_giu("moi", "lenh", "postgres_test") is True
-
-
-def test_xin_nhieu_tai_nguyen_la_TAT_CA_hoac_KHONG(khoa_sach):
-    """⛔ Giu mot phan roi doi phan con lai la cong thuc khoa chet."""
-    assert cua_so_yen.thu_giu("nguoi-giu", "lenh", "gpu0")
-    k = cua_so_yen.CuaSoYen("toi", "lenh", bat=False,
-                            tai_nguyen=("gpu0", "postgres_test"))
-    assert k._thu_giu_het() is False
-    assert k.da_giu == [], "giu mot phan roi that bai - se khoa chet"
-    assert cua_so_yen._doc("postgres_test") is None, "chua nha phan da giu"
-
-
-def test_xin_theo_thu_tu_SAP_XEP(khoa_sach):
-    """Hai luot xin cung tap theo hai thu tu khac nhau la khoa chet."""
-    k = cua_so_yen.CuaSoYen("x", "y", bat=False,
-                            tai_nguyen=("gpu0", "cpu_nhieu", "postgres_test"))
-    assert list(k.tai_nguyen) == sorted(k.tai_nguyen)
-
-
-def test_sau_khi_thoat_van_bao_duoc_da_giu_gi(khoa_sach):
-    """🔴 Chot nay lap dung khoang trong ma bo kiem nay tung bo lot.
-
-    Kho ket qua cua gate goi `_ghi_ket_qua` **sau** khoi `with`, ma `__exit__`
-    thi xoa `da_giu` (bat buoc — neu khong, mot lan thoat thu hai se nha khoa
-    cua nguoi khac). Ket qua: ban ghi cua mot luot CO giu `cpu_nhieu` lai viet
-    `tai_nguyen_da_giu: []`.
-
-    ⛔ Va chot cu **khong bat duoc**, vi no dung mot doi tuong khoa gia chua he
-       duoc `__exit__`. Do la kieu khoang trong dien hinh: kiem dung tung manh
-       thay vi kiem doan noi giua chung.
-    """
-    with cua_so_yen.CuaSoYen("toi", "gate", tai_nguyen=("postgres_test",)) as k:
-        assert k.da_giu == ["postgres_test"]
-    assert k.da_giu == [], "phai rong sau khi thoat, neu khong se nha khoa hai lan"
-    assert k.da_giu_xong == ["postgres_test"], (
-        "sau khi thoat phai van bao duoc luot nay da giu gi")
-
-
-def test_tai_nguyen_mac_dinh_giu_DUNG_ten_tep_cu():
-    """Doi ten la mo cua so cho hai ban gate cung tuong minh doc quyen."""
-    assert cua_so_yen._tep(cua_so_yen.MAC_DINH) == cua_so_yen.TEP_KHOA
-
-
-# ---------------------------------------------------------------------------
-# Gate: ho so va che phu
-# ---------------------------------------------------------------------------
-
-def _nap_gate():
-    import importlib
-    return importlib.import_module("gate")
-
-
-def test_moi_ho_so_deu_khai_no_KHONG_chung_minh_gi():
-    """🔴 Cai gia cua mot ho so khong tu khai da duoc tra roi.
-
-    Ngay 25/08 hai phien doc dong `PASS` cua `--quick` thanh "moi thu xanh",
-    trong khi moi loi that hom do nam o dung buoc no bo qua. Them ho so ma
-    khong them cau tu khai la lam song lai chuyen do duoi ten moi.
-    """
-    gate = _nap_gate()
-    for ten, hs in gate.HO_SO.items():
-        assert hs.get("khong_chung_minh"), f"ho so {ten} khong khai gioi han"
-        assert hs.get("chung_minh"), f"ho so {ten} khong khai no chung minh gi"
-
-
-def test_moi_buoc_gate_cu_van_con():
-    """⛔ CHE PHU MOI PHAI >= CHE PHU CU. Chot nay chan viec mat buoc lang le.
-
-    `PURIFICATION_GATES`: "Prove new gate coverage >= old critical coverage."
-    Doi cau truc gate ma lam roi mot buoc thi chot nay do — chu khong phai
-    doi mot su co tren production moi biet.
-    """
-    gate = _nap_gate()
-    ten = {s.name for s in gate._steps(quick=False)}
-    bat_buoc = {
-        "bien dich duoc", "secret scan", "app contract lint", "kieu xuong dong",
-        "kich thuoc route server", "chuong chua treo", "ten chua dinh nghia",
-        "nuot loi lang le", "bien .ps1 trung tham so", "trung so test",
-        "bo qua im lang", "ky tu dieu khien", "chuoi chua dich",
-        "dich thieu ban EN", "system profile", "hop dong API",
-        "anh chup hop dong", "tai lieu sinh ra", "SDK khop hop dong",
-        "tai san GUI", "postman", "bo test (song song)",
-    }
-    assert bat_buoc <= ten, f"buoc da BIEN MAT khoi gate: {sorted(bat_buoc - ten)}"
-
-
-def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
-    """Khai thua tai nguyen lam moi thu xep hang tro lai — mat het cai vua duoc."""
-    gate = _nap_gate()
-    co_tn = {s.name for s in gate._steps(quick=False) if s.tai_nguyen}
-    assert co_tn == {"bo test (song song)"}, (
-        f"buoc khai tai nguyen ngoai du kien: {sorted(co_tn)}")
-
-
-def test_chot_bien_dich_KHONG_di_vao_cay_cua_phien_khac():
-    """⛔ `.claude/worktrees/<ten>/` la cay lam viec cua PHIEN KHAC.
-
-    Do 2026-09-02: cay chinh do o `bien dich duoc` vi mot tep dang viet do cua
-    phien khac chua null byte — mot loi ma phien doc thong bao **khong so huu
-    va khong sua duoc**.
-
-    ⛔ `bien dich duoc` la CONG GAC: chay mot minh, truoc het, va khi no do thi
-       ca luot dung lai. Nen mot phien khac go phim la du de chan luot do cua ta.
-
-    ⭐ Cai gia that khong phai thoi gian. Mot chot do vi ly do khong lien quan
-       se day nguoi ta bo qua chinh no — roi toi luc no do vi ly do that thi
-       phan xa da thanh "chac lai chuyen cay rieng".
-
-    Do duoc: 2.647 tep quet -> 1.035. Phan chenh la hai cay long ben trong.
-    """
-    import check_bien_dich as cbd
-
-    assert cbd.bo_qua(cbd.GOC / ".claude" / "worktrees" / "x" / "t.py") is True
-    # Va khong duoc loai tru qua tay: tep that trong kho van phai duoc kiem.
-    assert cbd.bo_qua(cbd.GOC / "tools" / "gate.py") is False
-    assert cbd.bo_qua(cbd.GOC / "apps" / "vps" / "routes.py") is False
-
-
-def test_gate_khong_duoc_dat_qua_NGAN_SACH_LOI():
-    """🔴 HAI lan may treo phai reset cung, 2026-09-02. Day la chot chan lan ba.
-
-    Lich cu dem TIEN TRINH CON va suy "10 la vua tren 20 loi". Phep suy do dung
-    cho nhom `tinh` — moi buoc do that su la MOT tien trinh. No sai cho hai loai
-    khac, va sai rat lon:
-
-        `bo test`     -> pytest `-n auto`               = 20 worker
-        `frontend` x3 -> vitest `min(12, numCpus - 1)`  = 36 worker
-
-    ⇒ "10 tien trinh" thuc te la ~61 luong tren 20 loi — canh BON dich vu
-      production dang phuc vu khach that tren cung may.
-
-    ⛔ Chot nay do **phep tinh**, khong chay gate: mot chot ve qua tai ma tu no
-       lam qua tai la mot chot khong ai dam chay.
-    """
-    gate = _nap_gate()
-
-    ns = gate.ngan_sach_loi()
-    assert ns >= 2, "ngan sach phai chay duoc ca tren may hai loi"
-    assert ns <= (os.cpu_count() or 4) - gate.LOI_DE_DANH_CHO_MAY, (
-        "ngan sach an vao phan de danh cho dich vu production")
-
-    steps = gate._steps(quick=False)
-
-    # ⛔ Khong buoc nao duoc tu do minh theo CA MAY.
-    for s in steps:
-        assert s.so_loi <= gate.LOI_TOI_DA_MOI_CONG_CU, (
-            f"{s.name} xin {s.so_loi} loi, vuot tran mot cong cu")
-        assert s.so_loi <= ns, f"{s.name} xin nhieu hon ca ngan sach"
-
-    # ⛔ Va han muc phai duoc TRUYEN XUONG, khong chi tinh ra roi bo do.
-    bo_test = [s for s in steps if s.name.startswith("bo test")]
-    assert bo_test, "khong con buoc `bo test` — chot nay dang canh nham cho"
-    argv = " ".join(bo_test[0].argv)
-    assert "-n" in bo_test[0].argv, (
-        "`bo test` khong duoc truyen `-n` tuong minh — pytest se lay `auto` "
-        "tuc MOI loi cua may, va no khong biet gi ve vitest hay production")
-    assert "auto" not in argv, "`-n auto` da quay lai"
-
-    # Frontend: chi kiem khi nhanh THAT duoc chon (cay rieng thieu node_modules
-    # thi buoc do la mot dong tu khai BO QUA, khong phai `npm test`).
-    for s in steps:
-        if s.nhom == "frontend" and any("npm" in a.lower() for a in s.argv[:1]):
-            assert any("--maxWorkers=" in a for a in s.argv), (
-                f"{s.name} khong chan worker — vitest se tu lay min(12, n-1)")
-
-
-def test_tien_trinh_con_chay_o_uu_tien_THAP():
-    """⭐ Lop bao ve THU HAI, va no can vi lop thu nhat la mot PHEP TINH.
-
-    Ngan sach loi co the tinh sai; uu tien thi khong. Du gate co nham bao nhieu,
-    he dieu hanh van cho `LTTStudioWeb` chay truoc mot tien trinh uu tien thap.
-
-    Va no gan nhu mien phi: tren may ranh, tien trinh uu tien thap van dung
-    100% CPU — no chi nhuong khi co ai do CAN.
-    """
-    import inspect
-
-    gate = _nap_gate()
-    if os.name == "nt":
-        assert gate.UU_TIEN_THAP == 0x00004000, "BELOW_NORMAL_PRIORITY_CLASS"
-    than = inspect.getsource(gate._run)
-    assert "creationflags" in than, (
-        "`_run` khong con ha uu tien tien trinh con — production se phai tranh "
-        "CPU ngang hang voi mot luot do")
-
-
-def test_ho_so_mac_dinh_van_la_day_du():
-    """⛔ Tuong thich nguoc: `python tools/gate.py` tran phai khong doi nghia."""
-    gate = _nap_gate()
-    assert gate.HO_SO["day-du"]["xep_hang"] is True
-    assert gate.HO_SO["vong-lap"]["xep_hang"] is False
-
-
-def test_pham_vi_rong_thi_HA_CAP_chu_khong_bao_PASS():
-    """Mot pham vi khong test nao phai keo ve day du, khong duoc in mot dong xanh."""
-    gate = _nap_gate()
-    assert gate._steps_pham_vi([]) == []
-
-
-# ---------------------------------------------------------------------------
-# Kho ket qua
-# ---------------------------------------------------------------------------
-
-def test_kho_ket_qua_nam_ngoai_git_va_ngoai_deploy():
-    """⛔ Du lieu mot lan chay khong duoc len production.
-
-    `test-results/` phai vua o `.gitignore` vua o danh sach `/XD` cua robocopy
-    trong `setup/2-cai-dat.ps1`. Deploy chep CA CAY ke ca tep untracked, nen
-    `.gitignore` mot minh **khong** du.
-    """
-    assert "/test-results/" in (GOC / ".gitignore").read_text(encoding="utf-8")
-    cai_dat = (GOC / "setup" / "2-cai-dat.ps1").read_text(encoding="utf-8",
-                                                          errors="replace")
-    assert "test-results" in cai_dat, (
-        "test-results khong con trong /XD - ket qua gate se len production")
-
-
-def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
-    """Phien sau phai biet 'gate nao da chay tren ma nao'.
-
-    ⛔ Ghi vao `tmp_path`, KHONG vao kho that. Ban dau chot nay goi thang
-       `_ghi_ket_qua` va de lai ba ban ghi `day-du PASS` GIA trong
-       `test-results/gates/` — mot phien sau doc chung se tin rang gate day du
-       da xanh. Do dung la cai bay `AGENTS.md` §10.4 goi ten: rac test lot vao
-       tep that. Mot chot ve tinh trung thuc cua kho ket qua ma tu lam ban kho
-       ket qua thi no dang chung minh dieu nguoc lai.
-    """
-    gate = _nap_gate()
-    monkeypatch.setattr(gate, "ROOT", tmp_path)
-
-    class _KhoaGia:
-        da_cho_s = 1.5
-        da_giu = ["cpu_nhieu"]
-
-    gate._ghi_ket_qua("day-du", [], "PASS", 12.3, _KhoaGia(), False)
-    ra = list((tmp_path / "test-results" / "gates").glob("*.json"))
-    assert ra, "khong ghi duoc ban ghi nao"
-    d = json.loads(ra[0].read_text(encoding="utf-8"))
-    for khoa in ("id", "luc", "ho_so", "ket_qua", "sha", "nhanh", "cay",
-                 "la_cay_chinh", "cho_khoa_giay", "tai_nguyen_da_giu"):
-        assert khoa in d, f"ban ghi thieu {khoa}"
-    assert (GOC / "test-results" / "gates" / f"{d['id']}.json").exists() is False, (
-        "chot da ghi vao kho ket qua THAT")
-
-
-def test_kho_ket_qua_KHONG_ghi_bien_moi_truong():
-    """⚠️ Bien moi truong chua bi mat. Mot kho ket qua khong duoc cham vao do."""
-    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
-    khuc = ma[ma.index("def _ghi_ket_qua"):ma.index("def _git_gon")]
-    assert "environ" not in khuc, "kho ket qua dang ghi bien moi truong"
-    assert ".tail" not in khuc, "kho ket qua dang ghi dau ra cua buoc"
-
-
-# ---------------------------------------------------------------------------
-# Cay rieng
-# ---------------------------------------------------------------------------
-
-def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
-    """Mot tham chieu chet trong tai lieu an toan la mot lop bao ve TUONG TUONG.
-
-    `cay_rieng.py` tung ghi rang `tools/check_cay_chinh.py` chan viec deploy tu
-    cay rieng "va no chay trong gate". Tep do KHONG TON TAI. Chot chan that nam
-    trong `setup/2-cai-dat.ps1` va duoc `test_362` bao ve.
-    """
-    import re
-    ma = (GOC / "tools" / "cay_rieng.py").read_text(encoding="utf-8")
-    thieu = [t for t in set(re.findall(r"tools/([a-z0-9_]+\.py)", ma))
-             if not (GOC / "tools" / t).is_file()]
-    assert not thieu, (
-        f"cay_rieng.py tro toi tools/{{{', '.join(sorted(thieu))}}} "
-        "nhung tep do khong ton tai")
->>>>>>> admin-mvp-v3
+    assert THIEU_BANG_CHUNG_NGOAI, (
+        "danh sach thieu-bang-chung RONG — neu that su khong con gi thieu thi "
+        "phai co mot lan chay tren video that, GPU that va provider that de "
+        "chung minh dieu do")
+    for cong, ly_do in THIEU_BANG_CHUNG_NGOAI.items():
+        assert cong in MA_TRAN, f"{cong} khong phai mot cong co that"
+        assert len(ly_do) > 60, f"{cong}: ly do qua ngan de kiem chung"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -286141,6 +286457,124 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/asv_nghiem_thu.py
+SHA256=4c9e9c95e109582d054c594f6211d2bcc3ce697dfca936e30f2978c505af67a9 BYTES=5054 LINES=112
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Chay muoi ba kich ban nghiem thu cua Prompt 21 va GHI SO DO duoc.
+
+    python tools/asv_nghiem_thu.py                # chay het, in bang
+    python tools/asv_nghiem_thu.py --json ra.json # ghi them ket qua ra tep
+
+## Vi sao day la mot TEP THAT chu khong phai mot doan chay mot lan
+
+Pha 21 doi *"ghi lai lenh chinh xac, khuon media, thoi luong tung giai doan"*.
+Mot bang so chep tay vao bao cao la mot bang so khong ai chay lai duoc — va no
+bat dau sai tu lan doi ten phep kiem dau tien.
+
+⭐ Lan chay dau tien cua tep nay (02/09) duoc thuc hien bang mot doan tam, va
+   doan do bi don mat khi phien noi lai. So do van con trong bao cao, nhung
+   **khong tai hien duoc** — dung cai bay ma `CLAUDE.md` canh bao. Nen no thanh
+   mot tep trong `tools/`.
+
+⛔ Day KHONG phai mot phep kiem: no khong khang dinh gi ca, no **do**. Phan
+   khang dinh nam o `tests/test_424_ma_tran_nghiem_thu.py`, va do la cho mot
+   cong thieu bang chung se lam gate do.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import pathlib
+import subprocess
+import sys
+import time
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+
+#: Muoi ba kich ban cua Prompt 21, theo dung thu tu de trong prompt.
+#:
+#: ⚠️ Moi muc tro toi mot node id THAT. `test_424` chot rang moi bang chung
+#:    duoc vien dan deu ton tai, nhung no chot MA TRAN chu khong chot tep nay —
+#:    nen o day co mot phep kiem ton tai rieng ngay truoc khi chay.
+KICH_BAN: list[tuple[str, str, str]] = [
+    ("S1", "duong hanh phuc, mot video dai dien",
+     "tests/test_402_asv_mach_doc_gia.py::test_run_chay_het_CHIN_giai_doan_va_ve_done"),
+    ("S2", "hai nguoi dung: run/asset/output rieng",
+     "tests/test_419_asv_tiem_loi.py::test_hai_nguoi_dung_chay_dong_thoi_khong_lan_du_lieu"),
+    ("S3", "nop trung — dedupe job dieu phoi",
+     "tests/test_402_asv_mach_doc_gia.py::test_moi_dong_giai_doan_deu_mang_chu_so_huu"),
+    ("S4", "provider truot thoang qua -> thu lai an toan",
+     "tests/test_418_asv_phan_loai_loi.py::test_loi_TAM_THOI_duoc_giu_NGUYEN_de_nen_tang_thu_lai"),
+    ("S5", "dispatch MO HO -> khong bao gio tu dong thu lai",
+     "tests/test_418_asv_phan_loai_loi.py::test_mo_ho_thanh_AmbiguousProviderError_KHONG_BAO_GIO_tu_dong_thu_lai"),
+    ("S6", "giong hong sau khi thuong nguon xong -> chay tiep",
+     "tests/test_409_asv_giong_noi.py::TestPhucHoiTungDoan"),
+    ("S7", "render hong -> chay lai TU BAN DUNG",
+     "tests/test_415_asv_cong_thoat_render.py::test_render_lai_KHONG_danh_thuc_mot_giai_doan_thuong_nguon_nao"),
+    ("S8", "ngat worker sau moi giai doan ben vung",
+     "tests/test_403_asv_vong_doi_artifact.py"),
+    ("S9", "huy giua mot giai doan dai",
+     "tests/test_414_asv_ket_xuat.py::test_huy_giua_chung_thi_GIET_tien_trinh_va_khong_de_lai_ket_qua"),
+    ("S10", "dau vao hong / khong ho tro",
+     "tests/test_419_asv_tiem_loi.py::test_video_KHONG_CO_TIENG_hong_ngay_va_khong_thu_lai"),
+    ("S11", "artifact trung gian mat -> vo hieu cache",
+     "tests/test_419_asv_tiem_loi.py::test_artifact_bien_mat_thi_CACHE_khong_dung_lai_no"),
+    ("S12", "tranh chap tai nguyen / dinh tuyen GPU",
+     "tests/test_402_asv_mach_doc_gia.py::test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU"),
+    ("S13", "QC tu choi ban ra hong",
+     "tests/test_420_asv_qc.py::test_QC_hong_thi_RUN_KHONG_ve_done"),
+]
+
+
+def _ton_tai(node: str) -> bool:
+    tep = node.split("::", 1)[0]
+    return (GOC / tep).is_file()
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--json", default="")
+    args = ap.parse_args()
+
+    thieu = [n for _, _, n in KICH_BAN if not _ton_tai(n)]
+    if thieu:
+        print("TEP BANG CHUNG KHONG TON TAI:", *thieu, sep="\n  ")
+        return 2
+
+    ra = []
+    for ma, mo_ta, node in KICH_BAN:
+        t0 = time.monotonic()
+        r = subprocess.run(
+            [sys.executable, "-m", "pytest", node, "-q", "-p", "no:cacheprovider"],
+            capture_output=True, text=True, cwd=str(GOC))
+        giay = round(time.monotonic() - t0, 1)
+        dong = [d for d in r.stdout.splitlines()
+                if " passed" in d or " failed" in d or " error" in d]
+        ra.append({"ma": ma, "mo_ta": mo_ta, "node": node,
+                   "ket_qua": "PASS" if r.returncode == 0 else "FAIL",
+                   "giay": giay,
+                   "tom_tat": dong[-1].strip() if dong else ""})
+        print(f"{ma:4} {ra[-1]['ket_qua']:5} {giay:6.1f}s  {mo_ta}", flush=True)
+
+    dat = sum(1 for x in ra if x["ket_qua"] == "PASS")
+    print(f"\nKICH BAN: {dat}/{len(ra)} PASS"
+          f" | TONG {round(sum(x['giay'] for x in ra), 1)} giay")
+    if args.json:
+        pathlib.Path(args.json).write_text(
+            json.dumps(ra, ensure_ascii=False, indent=2), encoding="utf-8")
+        print("da ghi:", args.json)
+
+    # ⛔ Ma thoat khac 0 khi co bat ky kich ban nao do — de mot lan chay trong
+    #    CI khong the "xanh" trong khi mot kich ban hong.
+    print("RESULT:", "PASS" if dat == len(ra) else "FAIL")
+    return 0 if dat == len(ra) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -306715,7 +307149,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=81f4562b66d8b9b8a9704981c9a47f17e68df44cf2397983d475b7060cb5f025 BYTES=258272 LINES=2818
+SHA256=f0e7acd1d62e16f38ad47bdaec0e259ee6add73bae9ce7c8e797cd6f9bbcb8e6 BYTES=262382 LINES=2888
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -309536,6 +309970,76 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
   .lv-mlo-xoa{margin-left:0}
 }
 
+/* ── Auto Scan Video (long tieng Viet) ──────────────────────────────────────
+   Dung lai `.card` `.field` `.btn` `.alert` cua he thiet ke. Khoi nay chi them
+   nhung gi he thong chua co: danh sach chin buoc, va mot lua chon radio co mo ta
+   nhieu dong.
+
+   🔴 Khoi nay ton tai vi mot lan SOI BANG TRINH DUYET. Phep kiem cua pha 20 xanh
+      het — chung kiem van ban co mat, khong kiem no nhin ra sao — trong khi trang
+      that hien hai lua chon dinh lien nhau tren mot dong, vi cac lop `.asv-*`
+      chua ton tai o dau ca. Do dung la ly do `CLAUDE.md` muc 5 bat soi that.
+   ───────────────────────────────────────────────────────────────────────── */
+.asv-trang{display:flex;flex-direction:column;gap:22px;max-width:920px}
+.asv-dau{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.asv-dau h1{margin:0 0 6px}
+.asv-ghi-chu{color:var(--muted);font-size:13px;margin:4px 0 0}
+
+.asv-form{display:flex;flex-direction:column;gap:18px;padding:20px}
+.asv-o{display:flex;flex-direction:column;gap:8px;border:0;margin:0;padding:0}
+.asv-o > legend{padding:0;font-size:13px}
+
+/* Mot lua chon = mot hang rieng. Khong co dieu nay thi mo ta cua lua chon nay
+   chay tiep vao nhan cua lua chon sau — dung loi da thay tren trinh duyet. */
+.asv-chon{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:var(--radius-sm);cursor:pointer}
+.asv-chon:hover{background:var(--panel2)}
+.asv-chon input{margin-top:3px;flex:none}
+.asv-chon span{display:flex;flex-direction:column;gap:3px}
+.asv-chon small{color:var(--muted);line-height:1.45}
+.asv-chon:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
+
+.asv-tien{flex-direction:row;align-items:center;justify-content:space-between;
+  gap:16px;flex-wrap:wrap}
+.asv-tien .asv-ghi-chu{flex:1 1 320px;margin:0}
+
+/* ── Chin buoc ───────────────────────────────────────────────────────────── */
+.asv-tom-tat{font-size:15px;margin:0 0 12px}
+.asv-buoc{list-style:none;margin:0 0 16px;padding:0;display:flex;
+  flex-direction:column;gap:2px}
+.asv-buoc li{display:grid;grid-template-columns:1fr auto auto;gap:12px;
+  align-items:center;padding:9px 13px;border-radius:var(--radius-sm);
+  border-left:3px solid var(--line2);background:var(--panel2)}
+.asv-buoc-ten{font-size:14px}
+.asv-buoc-tt{font-size:12px;color:var(--muted)}
+.asv-buoc-giay{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.asv-buoc-succeeded{border-left-color:var(--ok-line)}
+.asv-buoc-running{border-left-color:var(--accent)}
+.asv-buoc-failed_terminal,.asv-buoc-failed_retryable{border-left-color:var(--err-line)}
+.asv-buoc-cancelled{opacity:.6}
+.asv-buoc-pending{opacity:.55}
+
+#asv-tien-do > form{display:inline-block;margin:0 8px 0 0}
+
+/* ── Lich su + bang van hanh ─────────────────────────────────────────────── */
+.asv-bang{width:100%;border-collapse:collapse;font-size:13px}
+.asv-bang th,.asv-bang td{text-align:left;padding:8px 10px;
+  border-bottom:1px solid var(--line)}
+.asv-bang th{color:var(--muted);font-weight:600;font-size:12px}
+.asv-trang-thai{font-size:12px;padding:2px 8px;border-radius:999px;
+  border:1px solid var(--line2)}
+.asv-tt-done{border-color:var(--ok-line);color:var(--ok)}
+.asv-tt-error{border-color:var(--err-line);color:var(--err)}
+
+.asv-van-hanh{margin-top:8px;border:1px solid var(--line);
+  border-radius:var(--radius-sm);padding:12px 14px}
+.asv-van-hanh summary{cursor:pointer;font-size:13px;color:var(--muted)}
+
+@media (max-width:640px){
+  .asv-dau{flex-direction:column}
+  .asv-buoc li{grid-template-columns:1fr auto}
+}
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/h26_queue_soak.py
@@ -311601,11 +312105,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-<<<<<<< HEAD
-SHA256=7e96d886694e7dbc637c2c23b5648ce81001f5f634c248af0c7d4a84f1a6da3e BYTES=23720 LINES=471
-=======
-SHA256=564c63fc62e80f063e1f01ee16aeb4a67e15ed76f9f796fc2ccedf3b8dfc751f BYTES=19196 LINES=399
->>>>>>> admin-mvp-v3
+SHA256=032b8fd6567ccaa5abebb46cce4dd6f0bf9320214cff3a54bb6907e9b71c7551 BYTES=25372 LINES=509
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).

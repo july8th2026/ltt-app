@@ -221,7 +221,27 @@ def _dat_lai_giai_doan(db: Session, stage: AsvStage) -> None:
     ⛔ KHONG dat lai `attempt`. So lan thu la mot su that ve lich su cua lan
        chay, khong phai mot bo dem tien do; xoa no la xoa dung thu can de tra
        loi "vi sao lan chay nay ton nhieu tien the".
+
+    🔴 **PHAI HUY JOB CON TRUOC KHI XOA `job_id`.** Ban dau ham nay chi dat
+       `job_id=""`, va do la mot JOB MO COI: dong giai doan quen no, nhung no
+       van nam trong hang doi va van duoc mot worker nhat len sau do.
+
+       Trieu chung do duoc (02/09, `test_417::test_sau_khi_thu_lai_thi_chuoi_
+       CHAY_TIEP_toi_done`): thu lai `media_prepare` -> job `audio_prepare` cu
+       tu lan truoc van chay -> `transcribe` chay tren mot ban tieng thuoc lan
+       chay TRUOC do -> `Chua co ban tieng de chep loi`.
+
+    ⚠️ Va no la mot loi CO DIEU KIEN: no chi lo ra khi thu tu nhat job doi. Loi
+       nam san tu pha 16; chinh viec khai `tai_nguyen` cho lan GPU o pha 21 lam
+       doi thu tu va lam no hien hinh. Mot loi chi hong "doi khi" thi truoc do
+       no van hong, chi la chua ai thay.
     """
+    if stage.job_id:
+        from platform_core.models import Job
+        job = db.get(Job, stage.job_id)
+        if job is not None and job.status in ("queued", "running"):
+            jobs.cancel(db, job)
+
     cap_nhat_giai_doan(db, stage, status=STAGE_PENDING, fingerprint="",
                        outputs={}, job_id="", error="",
                        started_at=None, finished_at=None)
