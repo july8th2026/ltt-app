@@ -13100,3 +13100,6 @@ msgstr "A preview of this voice is being prepared. Check back in a few minutes."
 
 msgid "Nghe thử giọng"
 msgstr "Preview voice"
+
+msgid "Trang việc"
+msgstr "Job page"

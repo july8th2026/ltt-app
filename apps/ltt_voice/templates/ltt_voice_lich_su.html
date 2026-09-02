@@ -182,7 +182,27 @@
                     <button type="button" class="btn sm ghost lv-ls-doclai"
                             data-job="{{ d.id }}"
                             title="{{ _('Chạy lại engine — tính tiền như một lượt mới.') }}">{{ _("Đọc lại") }}</button>
-                    <a class="btn sm ghost" href="/jobs/{{ d.id }}">{{ _("Chi tiết") }}</a>
+                    {#
+                      ⛔ TÊN CŨ LÀ "Chi tiết", VÀ NÓ TRANH VIỆC VỚI CHÍNH TRANG NÀY.
+
+                         Bấm vào **hàng** đã mở panel chi tiết ngay bên phải —
+                         giọng, giờ, thời lượng, credit, mã yêu cầu, tải WAV.
+                         Một nút cũng tên "Chi tiết" ngay trong hàng ấy lại
+                         **rời khỏi app** sang `/jobs/<uuid>`, tức trang việc
+                         chung của nền tảng: một màn cho người vận hành, không
+                         phải cho người đang tìm lại một tệp tiếng.
+
+                         Hai thứ cùng tên làm hai việc khác nhau, và thứ **rời
+                         đi** lại dễ bấm hơn thứ ở lại. Gói V4 nói thẳng về
+                         đúng chỗ này: *"History phải là artifact library cho
+                         user, không phải raw job monitor."*
+
+                      ⭐ Không gỡ liên kết — trang việc có ích thật khi cần tra
+                         một lượt hỏng. Chỉ gọi đúng tên nó, giống hệt nút
+                         trong panel ("Mở trang việc"), để hai đường không còn
+                         hứa cùng một thứ.
+                    #}
+                    <a class="btn sm ghost" href="/jobs/{{ d.id }}">{{ _("Trang việc") }}</a>
                   {% endif %}
                 </div>
               {% endif %}
