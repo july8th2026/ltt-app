@@ -430,3 +430,51 @@ def test_so_lan_thu_KHONG_qua_lon():
     from apps.ltt_voice.tham_so_cong_khai import SO_LAN_THU_JOB
     assert SO_LAN_THU_JOB <= 6
 
+
+# ── 11. Từ điển viết tắt — thêm bằng ĐO, và giữ phần đã LOẠI ────────────────
+
+def test_viet_tat_da_do_duoc_giai_ra():
+    """Bốn mục thêm 02/09/2026 đều có bằng chứng A/B (xem `tu_dien.py`)."""
+    from apps.ltt_voice import tu_dien
+    ra = tu_dien.ap_dung("Tai file WAV hoac MP3 qua HTTPS va HTTP.")
+    for con in ("WAV", "MP3", "HTTPS", "HTTP"):
+        assert con not in ra, f"{con} khong duoc giai ra"
+
+
+def test_HTTPS_khong_bi_HTTP_an_mat_mot_nua():
+    """⛔ `HTTP` là tiền tố của `HTTPS`.
+
+    Nếu phép khớp không chặn biên phải thì `HTTPS` thành `"hát tê tê pê" + "S"`
+    — một chuỗi *gần đúng*, tức kiểu hỏng khó thấy nhất.
+    """
+    from apps.ltt_voice import tu_dien
+    ra = tu_dien.ap_dung("Dung HTTPS nhe.")
+    assert "hát tê tê pê ét" in ra
+    assert "ét" in ra and not ra.endswith("S nhe.")
+
+
+def test_RTX_va_HTML_VAN_de_nguyen():
+    """🔴 BÁNH CÓC CHO MỘT BẢN SỬA SUÝT LÀM HỎNG.
+
+    Đo A/B 02/09/2026: engine đọc `RTX` và `HTML` **đúng sẵn**; giải chúng ra
+    làm ASR nghe thành `AZTX` và `hát, kềm L`. Hai trong năm ứng viên sẽ làm
+    hỏng một thứ đang chạy tốt — và cả hai "trông cần sửa" y hệt ba cái kia.
+
+    ⛔ Phép kiểm này tồn tại để lần sau ai đó thấy `RTX` trong một bản ghi ASR
+       hỏng thì phải ĐO LẠI trước khi thêm, chứ không thêm ngay.
+    """
+    from apps.ltt_voice import tu_dien
+    ra = tu_dien.ap_dung("Card RTX 3090 xuat file HTML.")
+    assert "RTX" in ra and "HTML" in ra
+    for t in tu_dien.DA_THU_VA_LOAI:
+        assert t not in tu_dien.VIET_TAT, (
+            f"{t} da duoc do la TE HON khi giai ra — dung them lai")
+
+
+def test_viet_tat_van_PHAN_BIET_HOA_THUONG():
+    """"AI" là viết tắt; "ai" là đại từ tiếng Việt và tuyệt đối không được đọc
+    thành "ây ai"."""
+    from apps.ltt_voice import tu_dien
+    assert "ây ai" not in tu_dien.ap_dung("ai la nguoi do")
+    assert "ây ai" in tu_dien.ap_dung("mo hinh AI moi")
+
