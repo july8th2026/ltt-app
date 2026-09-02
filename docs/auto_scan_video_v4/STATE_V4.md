@@ -23,8 +23,8 @@
     (`D:\LTTSTUDIOSAPP-asv`), and not the production tree — is satisfied. Recorded here
     rather than silently diverging.
   - ⛔ **This machine IS production** (`C:\LTTPlatform` exists). Never deploy from here.
-- **current_phase**: 03
-- **phase_status**: Phase 02 PASS -> Phase 03 IN_PROGRESS
+- **current_phase**: 04
+- **phase_status**: Phase 03 PASS -> Phase 04 IN_PROGRESS
 - **last_green_invariant_command**: `python -m pytest tests/test_400_asv_bat_bien_thi_hanh.py tests/test_401_asv_ranh_gioi_va_artifact.py -q`
   (V2's subset; V4's own curated suite is Phase 04's deliverable)
 - **last_green_invariant_result**: **24 passed in 2.38 s** (2026-09-03)
@@ -160,6 +160,7 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 
 | Phase | Gate | Report |
 |---|---|---|
+| 03 Rebase classification + architecture ADR | **PASS** | **17 KEEP · 6 EXTEND · 7 REFACTOR · 8 ADD · 0 REMOVE** — the default is KEEP and the exceptions are argued. `ADR-V4-002` designs `AsvWorkItem` with `UNIQUE(run_id, stage, item_key)` and proves it is **not** a queue by naming the 8 columns that would make it one, with a detector that fires on a synthetic queue table and stays quiet on a legitimate checkpoint one. ⭐ Found two guards in `test_421` that read wider than they were: `glob` is not recursive (so the first `services/` directory would leave their view silently) and they never scanned the three executor apps — where a stray thread pool would do the most damage. Widened to `rglob` × 4 apps, with an assertion that the new file set is a **strict superset** so §1 cannot degrade into a re-run under a new name. | [`reports/03_REPORT.md`](reports/03_REPORT.md) |
 | 02 Capability inventory + boundary freeze | **PASS** | 19 apps censused; every V4 need classified with a traced caller. **13 SUFFICIENT, 2 EXTEND, 6 ABSENT** — and no capability recommended as new code without proof of absence (an AST scan, not a text scan). 🔴 **The phase's real output is a retraction**: this platform already implements V4's "stable cross-app boundary" rule via `BE_MAT_CONG_KHAI` + `APP_DUOC_DUNG_APP`, enforced by a linter inside the gate. V4-R02 (P0) and V4-R03 are withdrawn. ⭐ And the thing that actually blocks Phase 09 is not willpower but schema: `speech.ltt` is a fine contract with the wrong granularity, because `asv_stage` holds one `job_id` and per-segment TTS needs many. Phase 05 unblocks Phase 09. | [`reports/02_REPORT.md`](reports/02_REPORT.md) |
 | 01 Product contract supersession | **PASS** | `ADR-V4-001` supersedes `auto_scan_mvp_v1` §1/§4 by banner, not by rewrite. Contract now exists in three forms: prose, constants (`hop_dong_v4.py`), and 20 tests. 🔴 **The pack's stated reason for `vi` is factually wrong** — LTT Voice is bilingual (`lan_ngon_ngu.py:6`, `language: ["vi","en"]`). Decision kept, justification replaced, and a test now goes red on exactly the move a future session would make after reading the wrong reason. One strict-xfail RED target left for Phase 12. | [`reports/01_REPORT.md`](reports/01_REPORT.md) |
 | 00 Provenance and bootstrap | **PASS** | HEAD identical to the pack's SHA (no delta). Baseline certified at `FAIL (1/26)` with **0 ASV-owned failures** — V2's 7 failures were 3 commits stale, `b027e08` merged the peer fixes. 11 V4 risks read from code, 5 of them P0. ⭐ The find that reorders nothing but explains everything: `ltt_voice` **already exports** a stable `ToolSpec("speech.ltt")`; V2 bypassed it into `sidecar_client` only because `asv_stage` holds **one** `job_id` and per-segment TTS needs many. So Phase 09 is not unblocked by willpower — it is unblocked by Phase 05's `AsvWorkItem`. | [`reports/00_REPORT.md`](reports/00_REPORT.md) |
