@@ -24,7 +24,7 @@
 > kept for provenance, not as current state.
 
 ## Current phase
-- phase: **19 — Legacy Decoupling and Parity Audit**
+- phase: **20 — Product UI (no canvas)**
 - status: NOT_STARTED
 - gate: Phase 14 closed at `RESULT: FAIL (2/26)` — **7 failures, none in ASV work**, each traced
   (see the exit table in [`reports/14_REPORT.md`](reports/14_REPORT.md))
@@ -173,6 +173,7 @@ Full table with line-level evidence: [`CAPABILITY_MATRIX.md`](CAPABILITY_MATRIX.
 | Phase | Gate | SHA/diff ref | Key evidence | Report |
 |---|---|---|---|---|
 | 00 Repo provenance & read-only audit | **PASS** | `c31b1ae`, docs-only diff under `docs/auto_scan_video/` | 9/9 MVP stages mapped (8 sourced + 1 explicit GAP); execution/money/resource traced end to end; 15 risks + 4 gaps opened | [`reports/00_REPORT.md`](reports/00_REPORT.md) |
+| 19 Legacy decoupling / parity audit | **CLOSED** | `test_421`, `test_422` | Import-closure traced from the five real entry points (function-body imports included): **no path** reaches Sheets, Drive-as-queue, bot worker loops, bot state machines or legacy GPU locks. Nothing needed fixing. ⭐ The load-bearing test is `test_do_thi_goi_KHONG_RONG` — without it every other check could pass **vacuously**. ⚠️ My cross-app rule was too crude and failed: it forbade `.tables` in the closure, but `ltt_voice.features.giai_giong` legitimately reads its own tables. Split into *transitive = orchestration forbidden* vs *direct import = ownership-check bypass* — told apart by **who imports**, not what is touched. 🔴 Parity compares **decisions, not bytes** (the legacy cannot run here), and found a divergence nobody had written down: the bed stays at **44.1 kHz** (htdemucs' native rate) where legacy writes 48 kHz. Harmless — but an unrecorded divergence is one a later session "fixes". | [`reports/19_REPORT.md`](reports/19_REPORT.md) |
 | 18 QC / observability | **CLOSED** | `qc.py`, `giai_doan_qc.py`, `quan_sat.py`, `test_420`; `ket_xuat` v1→v2 | 🔴 **The gate found a real defect on its first run**: T4 measured **−12.58 LUFS** against −14 ± 1 on *every* run — the bed is normalised, then N voice layers are added on top, and nothing re-normalised the sum. Nobody would have reported that as "1.58 dB out of spec"; they'd have said it sounds *a bit loud*. Fixed with `loudnorm` on the final mix → **−14.0 exactly**. 🔴 **Then it caught itself not gating**: `danh_dau_xong` ran before the raise, so a run with `qc_dat: False` still reached `done`. A gate that doesn't block is worse than none — it looks like one. ⭐ T3 hashes the video stream alone and matched source exactly — direct proof `-c:v copy` preserves the picture. ⚠️ T8/T9/T10 report `khong_ap_dung` **with reason**: ADR-003 removed pause insertion, so they have no subject. | [`reports/18_REPORT.md`](reports/18_REPORT.md) |
 | 17 Failure recovery / resource verification | **CLOSED** (same external failures) | `loi.py`, `test_418`, `test_419` | 🔴 **One real defect**: the platform classifies failures by `isinstance` against the LLM provider's classes, so **all 17** of Auto Scan's typed exceptions fell to the default `"retry"` — retrying a file with no audio 3×, retrying a synthesis call **that may already have been billed**, and burning attempts on "busy". Fixed by a *translation* at the boundary, not a second taxonomy. ⭐ Added `THIEU_THUONG_NGUON` rather than reusing "user error" for missing upstream artifacts — same behaviour, but the name is the only clue a log reader gets. ⚠️ **Five wrong tests before one wrong line of code**, incl. the ledger being append-only (there is no "currently held" number anywhere) and the 5th substring-scan self-match. | [`reports/17_REPORT.md`](reports/17_REPORT.md) |
 | 16 Real fixed pipeline wiring | **CLOSED** (same 9 external failures) | `pipeline.ha_nguon_cua`, `features.thu_lai_giai_doan`, `thi_hanh.giai_doan_lech_van_tay`, `test_417` | Five of nine items were already true and only needed pinning. The missing quarter is the question a start-to-finish pipeline never asks: **what happens when a middle stage must be redone**. 🔑 Fingerprints stop a stale result being *reused*; nothing made the stage *run again* — its row still said `succeeded` and the coordinator only submits non-succeeded stages. Miss either half and the run ends with a dubbing mixing two executions, no error anywhere. ⭐ Drift detector is deliberately **one hop**; the transitive closure is the caller's job. My first test asserted the opposite in both directions and was wrong both times. | [`reports/16_REPORT.md`](reports/16_REPORT.md) |
@@ -234,7 +235,7 @@ Detail: [`RISK_REGISTER.md`](RISK_REGISTER.md).
 
 ## Exact next action
 
-**Start Phase 19** from the pack. Phases 00–18 are closed.
+**Start Phase 20** from the pack. Phases 00–19 are closed.
 
 Before touching anything, know these three, in this order:
 
