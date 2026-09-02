@@ -202,3 +202,55 @@ def test_NOI_DUNG_ve_canh_bao_metadata_cua_Codex():
 def test_phu_du_nam_chang_cua_duong_goi(muc):
     """Thiếu một chặng thì bộ kiểm nói 'thông' về một đường nó chưa đi hết."""
     assert muc in VAN
+
+# ── 4. Tài liệu công khai phải MANG ĐỦ, không được rụng ─────────────────────
+
+CAU_HINH_PHAI_CO = {
+    "stream_idle_timeout_ms": "luong bi CAT o ~62 giay khi model im tieng (do 02/09)",
+    "model_reasoning_effort": "model tieu phan lon max_tokens de suy nghi truoc khi tra loi",
+    "model_reasoning_summary": "kem theo reasoning_effort",
+    "model_context_window": "khong nen ngu canh kip => 413",
+    "model_catalog_json": "Codex muon ten model OpenAI cho luot phu => cong ta tu choi",
+    "wire_api": "Codex chi hieu `responses`",
+    "base_url": "phai tan cung /api/v1",
+    "env_key": "khoa doc tu bien moi truong, khong nhung vao tep",
+}
+
+
+@pytest.mark.parametrize("khoa", sorted(CAU_HINH_PHAI_CO))
+def test_cau_hinh_CHINH_THUC_khong_duoc_rung_khoa_nao(khoa):
+    """🔴 CHIỀU NGƯỢC LẠI, và nó quan trọng hơn.
+
+    `test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc` chốt rằng bộ kiểm không đòi
+    khoá lạ. Phép kiểm này chốt điều ngược lại: **cấu hình chính thức không được
+    lặng lẽ rụng một khoá**.
+
+    ⛔ Vì sao nó đắt hơn: rụng một khoá thì không có gì đỏ — trang vẫn render,
+       khách vẫn cắm được, và hỏng chỉ hiện ra vài phút sau dưới dạng một luồng
+       bị cắt hoặc một câu "im lặng". Đó đúng là hình dạng sự cố 02/09.
+
+    Mỗi khoá ở đây có một sự cố thật đứng sau; xem giá trị trong `CAU_HINH_PHAI_CO`.
+    """
+    from platform_core.public_api import examples
+
+    ca = (examples.codex_config("https://app.lttstudios.com") + chr(10)
+          + examples.codex_profile())
+    assert khoa in ca, (
+        f"cau hinh chinh thuc da rung `{khoa}`. Hau qua da biet: "
+        f"{CAU_HINH_PHAI_CO[khoa]}")
+
+
+def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
+    """Tiện ích VS Code và CLI là **hai bộ đọc khác nhau** — bài học 30/08.
+
+    ⛔ Bộ mặc định của `cam_cli` **không** gồm Codex-VS-Code, nên ai chạy công cụ
+       với tuỳ chọn mặc định rồi dùng tiện ích sẽ thiếu cấu hình. Phép kiểm này
+       giữ cho lối đi riêng ấy tồn tại.
+    """
+    import pathlib
+
+    van = (pathlib.Path(__file__).resolve().parents[1]
+           / "tools" / "cam_cli.py").read_text(encoding="utf-8")
+    assert "MUC_CODEX_VSCODE" in van
+    assert "--vscode" in van
+
