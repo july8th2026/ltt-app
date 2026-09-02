@@ -470,6 +470,15 @@ Các lớp chính:
     - apps/upscalevideo/service.py
     - apps/upscalevideo/telemetry.py
     - apps/upscalevideo/templates/upscalevideo.html
+    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.bin
+    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.param
+    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.bin
+    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.param
+    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.bin
+    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.param
+    - apps/upscalevideo/vendor/engine/realesrgan-ncnn-vulkan.exe
+    - apps/upscalevideo/vendor/engine/vcomp140.dll
+    - apps/upscalevideo/vendor/engine/vcomp140d.dll
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 

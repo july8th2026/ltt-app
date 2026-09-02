@@ -315,3 +315,125 @@ hay outbox, nên rủi ro thấp; nhưng nói ra vẫn hơn để nó im.
 
 **Bộ test của riêng LTT Voice:** `-k "ltt_voice or voice_sidecar"` →
 **307 passed, 1 skipped**, 134 giây.
+
+---
+
+# PHẦN HAI — VÒNG HOÀN THIỆN (cùng ngày, sau khi chủ dự án yêu cầu chạy đủ)
+
+Phần trên viết khi vòng dừng ở ~40 % chương trình gói V4. Chủ dự án yêu cầu
+chạy nốt rồi mới deploy. Dưới đây là phần bổ sung.
+
+## 12. Failure tests — và một lỗi chỉ lộ ra khi THẬT SỰ giết cổng
+
+`tests/test_501_ltt_voice_hong_hoc.py`, 33 phép kiểm. Chúng đo **hình dạng của
+lỗi**, không đo thông điệp: thông điệp đổi được, hình dạng đổi là đổi hành vi
+tính tiền.
+
+### 🔴 Job vẫn CHẾT khi deploy, dù bản sửa 31/08 đã "làm nó thử lại"
+
+Giết cổng giọng rồi nộp một lượt đọc:
+
+```
+max_attempts = 3  ->  attempts=3, status='error' sau ~45 giây
+cửa sổ thử lại thật sự: chờ 10s rồi 20s = ~30 giây
+```
+
+Nhưng riêng phần **nạp model** khi deploy đã đo **39,9 s** (nguội) tới
+**73,1 s**. Cộng dừng dịch vụ, chép `app\`, khởi động lại — **mọi lượt đang bay
+khi deploy đều chết.**
+
+⭐ Bản sửa 31/08 (`LoiHaTang`) sửa đúng việc **phân loại** lỗi mà không sửa
+**kết quả**. Nửa còn thiếu chỉ lộ ra khi có ai thật sự giết cổng.
+
+✅ **Tiền vẫn đúng**: sổ ghi `hold -1` rồi `refund +1`. Khách không bị thu. Cái
+mất là công việc và một thông điệp lỗi không đáng có.
+
+**Sửa**: `SO_LAN_THU_JOB = 5` — cửa sổ 10+20+40+80 = ~150 giây, gấp đôi lần nạp
+model chậm nhất. Bốn cửa nộp job đều khai; có bánh cóc quét
+`submit_with_credit(` để cửa thứ năm không thể quên.
+
+**Đo lại sau khi sửa**: giết cổng → nộp → worker thử 2 lần hỏng → bật cổng lại
+→ **job tự hoàn thành**, `done`, attempts 2/5, thu đúng 1 credit.
+
+## 13. Benchmark âm thanh — bằng ASR, không bằng cảm nhận
+
+Chi tiết ở `10_BENCHMARK_AM_THANH.md`. Ba điểm đáng nhớ:
+
+**① Phép đo lần đầu bị nhiễm, và nhiễm đúng ở ba hạng mục tệ nhất.** So bản ASR
+với văn bản đã chuẩn hoá thì `ngay` 39,6 %, `tien` 26 %, `so` 15,9 % — nhưng cả
+ba **đúng nghĩa**; thứ khác nhau là ASR viết chữ số còn engine đọc ra chữ. Đưa
+cả hai phía qua cùng bộ chuẩn hoá: `so` tụt còn **3,4 %**.
+
+**② Kết quả sau khi chấm công bằng**: tiếng Việt thường 1,7 % · tên riêng 1,9 %
+· tiếng Anh 0,0 % · câu 353 ký tự **5,2 %** (không thấy trôi giọng) · ba mức tốc
+độ 0,0–2,5 %. RTF trung bình **1,273**.
+
+**③ Hai "bản sửa" bị LOẠI, và đó là phần đáng giá nhất.** Bốn viết tắt hỏng thật
+(`HTTPS`, `HTTP`, `MP3`, `WAV`) đã thêm vào `VIET_TAT` sau A/B. Nhưng `RTX` và
+`HTML` **engine vốn đọc đúng** — giải chúng ra làm ASR nghe thành `AZTX` và
+`hát, kềm L`. Hai trong năm ứng viên sẽ làm hỏng một thứ đang chạy tốt, và cả
+hai "trông cần sửa" y hệt bốn cái kia.
+
+⚠️ Một cái bẫy trong chính phép đo: ở câu dài, ASR nghe `RTX` thành `otx`. Dừng
+ở đó thì đã kết tội nó. **Một lần nghe sai trong câu dài không đủ để kết tội một
+từ.**
+
+## 14. Responsive + accessibility
+
+**a11y, cả 5 màn: 0 lỗi** — mọi nút/liên kết có tên đọc được, mọi ô nhập có
+nhãn, không `aria-pressed` đặt sai vai. Nút chép ở màn API đều đã nối (3/3).
+
+Nhưng phép kiểm tự động **không thấy** hai lỗi thật, và cả hai chỉ lộ ra khi thử
+đúng cách:
+
+### 🔴 Enter trên nút NGHE THỬ không phát tiếng
+
+Nút có tên đọc được đúng, focus được, `aria-pressed` đúng — bốn thứ mà một phép
+kiểm tự động hỏi đều đạt. Nhưng bấm Enter thì **panel chi tiết mở ra và tiếng
+không phát**.
+
+`keydown` nổi bọt từ nút lên thẻ giọng; thẻ gọi `e.preventDefault()` cho phím
+của *chính nó*, và cái đó huỷ luôn hành vi mặc định Enter→click **của nút bên
+trong**.
+
+⭐ **Chuột không lộ ra lỗi này** — đường chuột đã có `stopPropagation` từ đầu.
+Chỉ bàn phím mới thấy, vì bàn phím đi qua một **sự kiện khác**.
+
+### Nút "Tạo tiếng nói" nằm TRÊN ô nhập kịch bản ở màn hẹp
+
+Đo ở 375 px: nút chính y=1037, ô nhập bắt buộc y=1164. Màn rộng không ai thấy —
+ba cột đứng cạnh nhau nên `trai` ở **bên cạnh** `giua`, không ở **trên**. Xếp một
+cột thì thứ tự DOM trở thành thứ tự đọc.
+
+Sửa bằng `order` ở breakpoint ≤820 px, **không** đổi thứ tự DOM — thứ tự DOM là
+thứ tự TAB, và nó đang đúng.
+
+## 15. Cổng đầy đủ — LẦN NÀY XANH
+
+```
+RESULT: PASS   [4 buoc tu bo qua: bat bien da tien trinh + 3 frontend]
+bo test (song song): 299 giay
+```
+
+Bốn bước tự bỏ qua vì môi trường (thiếu `node_modules`, và phép kiểm đa tiến
+trình cần CSDL riêng) — cổng **tự khai** chúng thay vì đếm là xanh.
+
+Ba lỗi môi trường của lượt trước đã hết:
+- `test_362` ×2 — hết đỏ nhờ merge `admin-mvp-v3` (`48d8dbd`).
+- `test_82` — chép `apps/upscalevideo/vendor/` (48 MB, bị `.gitignore`) từ cây
+  chính sang. Sau đó 18/18 xanh, và `git status` vẫn rỗng.
+
+## 16. ⚠️ Một việc tôi làm sai với chính cái máy này
+
+Tôi chạy `tools/gate.py` đầy đủ **hai lần** hôm nay. Cây tôi phân nhánh trước
+`03845cb`, nên gate của tôi vẫn `-n auto` = **lấy hết 20 lõi** của một máy đang
+chạy bốn dịch vụ phục vụ khách. Chủ dự án phải reset cứng máy hai lần hôm nay.
+
+Một phiên khác đã đo và vá: 14/20 lõi, `-n 11`, vitest `--maxWorkers=2`,
+`BELOW_NORMAL_PRIORITY_CLASS`. CPU đỉnh từ *treo máy* → **52 %**, và gate còn
+**nhanh hơn 31 %** — vượt điểm bão hoà thì thêm worker chỉ thêm tranh chấp.
+
+⛔ Bài học không phải "công cụ mặc định sai" (nó có sai, và đã vá). Là: tôi đã
+đọc `CLAUDE.md` nói máy này **là production** ngay đầu phiên, rồi vẫn chạy một
+công cụ nặng mà không hỏi nó tốn bao nhiêu.
+
