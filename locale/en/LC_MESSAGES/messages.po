@@ -13103,3 +13103,18 @@ msgstr "Preview voice"
 
 msgid "Trang việc"
 msgstr "Job page"
+
+msgid "[{slug}] so_lan_thu khai job_type không thuộc app: {jt!r}"
+msgstr "[{slug}] so_lan_thu names a job_type that does not belong to this app: {jt!r}"
+
+msgid "[{slug}] so_lan_thu[{jt!r}] phải là số nguyên ≥ 1: {so!r}"
+msgstr "[{slug}] so_lan_thu[{jt!r}] must be an integer >= 1: {so!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong trỏ tới tham số không tồn tại: {param!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong points to a parameter that does not exist: {param!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong chỉ hỗ trợ tham số `string`, {param!r} là {kind!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong only supports `string` parameters; {param!r} is {kind!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là `module:attribute`, nhận {ref!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] must be `module:attribute`, got {ref!r}"

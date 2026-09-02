@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:698cd946ad83c4cbff8eeeaebf2d4b437ac3ba8fb90e4d21e0fa58ffcab37c19
-Nguồn đã quét : 1472 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:4944fac1cad2da2a4c5a4521d45623f8409c32e21ff11164fbf1098b1d959c1f
+Nguồn đã quét : 1480 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1188,7 +1188,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (353 file pytest + 3 frontend)
+10. QUALITY GATES (356 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1508,6 +1508,9 @@ Test inventory:
 - tests/test_46_deploy_realworld_fixes.py
 - tests/test_500_ltt_voice_nghe_thu.py
 - tests/test_501_ltt_voice_hong_hoc.py
+- tests/test_600_runtime_noi_bo_luong.py
+- tests/test_601_runtime_noi_bo_danh_muc_job.py
+- tests/test_602_manifest_so_lan_thu_tuy_chon_dong.py
 - tests/test_60_app_registry.py
 - tests/test_61_setup_scripts.py
 - tests/test_62_khoa_logic.py
@@ -1568,8 +1571,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1472 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1105, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1480 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1113, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2179,7 +2182,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 [job_worker.py] (1)
 - job_worker.py
 
-[platform_core] (123)
+[platform_core] (128)
 - platform_core/__init__.py
 - platform_core/admin_console.py
 - platform_core/agent/__init__.py
@@ -2295,6 +2298,11 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - platform_core/public_api/webhook_console.py
 - platform_core/public_api/webhooks.py
 - platform_core/registry.py
+- platform_core/runtime_noi_bo/__init__.py
+- platform_core/runtime_noi_bo/danh_muc.py
+- platform_core/runtime_noi_bo/job.py
+- platform_core/runtime_noi_bo/luong.py
+- platform_core/runtime_noi_bo/tim.py
 - platform_core/runtime_paths.py
 - platform_core/secretbox.py
 - platform_core/settings.py
@@ -2544,7 +2552,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (370)
+[tests] (373)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2875,6 +2883,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_46_deploy_realworld_fixes.py
 - tests/test_500_ltt_voice_nghe_thu.py
 - tests/test_501_ltt_voice_hong_hoc.py
+- tests/test_600_runtime_noi_bo_luong.py
+- tests/test_601_runtime_noi_bo_danh_muc_job.py
+- tests/test_602_manifest_so_lan_thu_tuy_chon_dong.py
 - tests/test_60_app_registry.py
 - tests/test_61_setup_scripts.py
 - tests/test_62_khoa_logic.py
@@ -3098,7 +3109,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1472 file; 14775537 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1480 file; 14845742 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -20644,7 +20655,7 @@ def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
-SHA256=5269ac347143aa33a67a43efa78a38a0bad801dd1caf888427ffd8e978d63e68 BYTES=14143 LINES=252
+SHA256=9f375671c0588bc674ddefe6baa722cc7b7000fe44446dde5171ef69f66b8caf BYTES=14989 LINES=264
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `ltt_voice` — giọng nói tiếng Việt nhân bản, model chạy trên **máy A** (Q117).
@@ -20683,7 +20694,7 @@ from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
 from . import gia, nghe_thu
-from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from .tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
 
 
 def _gia(params: dict) -> int:
@@ -20795,6 +20806,13 @@ MANIFEST = AppManifest(
     #    dưới ~40 % của một lượt 5 giây mà không biến hàng đợi thành máy bơm.
     cho_tai_nguyen_s={"ltt_voice.synthesize": 3, "ltt_voice.enroll": 3},
 
+    # Số lần thử: nạp model lúc deploy mất 39,9–73,1 giây (đo trong
+    # `tham_so_cong_khai.py`), cửa sổ 3 lượt mặc định ~30 giây là job chết mỗi
+    # lần deploy. Khai ở đây để **mọi** cửa (web, `/api/v1`, client nội bộ) cùng
+    # đọc một số — trước 02/09 chỉ bốn route web truyền tay, API thì không.
+    so_lan_thu={"ltt_voice.synthesize": SO_LAN_THU_JOB,
+                "ltt_voice.enroll": SO_LAN_THU_JOB},
+
     credit_cost=_gia,
     #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
     #: import app nay theo ten. Xem `AppManifest.bang_gia`.
@@ -20854,6 +20872,11 @@ MANIFEST = AppManifest(
             #    và hai lượt cùng đập vào một card (Q114).
             admission_resource="vieneu_gpu",
             admission_slots=1,
+
+            # Giọng nhân bản CỦA NGƯỜI DÙNG cho palette/sản phẩm khác, không
+            # import app này (H43 Phase 02). Gợi ý cho giao diện; sở hữu vẫn do
+            # `features.giai_giong` kiểm lúc thi hành.
+            tuy_chon_dong={"voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"},
 
             api_exposed=True,
             api_contract={
@@ -26422,7 +26445,7 @@ def chuan_bi(text: str, *, tran_moi_doan: int, doc_so_tran: bool = False,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_chieu.py
-SHA256=ac595dbdad6ebcb46eb1b1d68fd8ea7f18e8bb07ca2e6643f0921a6c76d3ae98 BYTES=8388 LINES=181
+SHA256=13cc3b82e6780bf5e2efedbcbbf5d240be0c8897160c7614c2252570719a13f9 BYTES=9326 LINES=201
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_chieu.py — tra cứu và lưu Voice Profile / biểu diễn engine.
@@ -26605,6 +26628,26 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
     khoa = f"{khoa_nguon(owner_id, public_id)}.{duoi}"
     get_storage().put(khoa, io.BytesIO(data), content_type=mime)
     return khoa
+
+
+def tuy_chon_voice_id(db, user_id: str) -> list:
+    """Giọng nhân bản của **chính** người dùng, cho `ToolSpec.tuy_chon_dong`.
+
+    Nền tảng gọi hàm này qua tham chiếu trong manifest (H43 Phase 02) để một
+    sản phẩm web khác (ChatLTT) hay palette Agent mời đúng giọng của họ mà
+    không import app này. Danh sách là **gợi ý cho giao diện**; sở hữu vẫn do
+    `features.giai_giong` kiểm lúc thi hành.
+
+    Không gồm kho chung và không gồm giọng đã thu hồi — cùng mặc định với
+    `danh_sach`: màn nào muốn thấy kho chung phải nói ra.
+    """
+    ra = []
+    for ho_so in danh_sach(db, owner_id=str(user_id)):
+        if getattr(ho_so, "trang_thai", "") != "active":
+            continue
+        ra.append({"value": str(ho_so.public_id),
+                   "label": str(getattr(ho_so, "ten_hien_thi", "") or ho_so.public_id)})
+    return ra
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -85237,7 +85280,7 @@ runtime data vào hồ sơ.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ docs/KE_HOACH_TRIEN_KHAI.md
-SHA256=3833fbbe8ea6fe862581ad344b20b8bd6cf135324a53f624b3b63d5ca150976e BYTES=259929 LINES=3668
+SHA256=ed78561760bedac1e491976cfd76f5d2e05cdc90381eb3204cc40a4004ceba7c BYTES=261950 LINES=3693
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Kế hoạch triển khai
 
@@ -88907,6 +88950,31 @@ deploy trong cùng phiên.
 **Rollback:** code/web dùng `C:\LTTPlatform\app.previous` qua
 `deploy/windows/rollback.ps1`; artifact là dữ liệu ngoài release nên giữ lại
 bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
+
+## H43 — ChatLTT: sản phẩm chat LTT-native trên ba model nhà (2026-09-02)
+
+Gói: `LTTCHAT_AUTONOMOUS_DEEP_BUILD_V2` (14 phase tự chủ). **Kế hoạch + phân tích:
+`docs/CHATLTT/00_PHUONG_AN_VA_LO_TRINH.md`. Trạng thái: `docs/CHATLTT/STATE.md`.**
+
+Hình dạng: app mới `apps/chatltt/` (không sửa `chataistudio`), giao diện
+LibreChat-class bằng React island, gọi `text.chat` / `image.ltt` / `speech.ltt`
+qua **một facade mỏng `platform_core/runtime_noi_bo/`** (không API key, không
+URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bảng riêng `chatltt_*`.
+
+| # | Phase gói | Việc | Trạng thái |
+|---|---|---|---|
+| H43.0 | 00 | Bootstrap: cây/gốc SHA/dải test 600–699/ranh giới phiên | ✅ 2026-09-02 |
+| H43.1 | 01 | LibreChat `v0.8.7` tham chiếu hành vi — 12 hệ con, 22 ADOPT/8 ADAPT/11 REJECT, 18 tiêu chí nghiệm thu (`docs/CHATLTT/reports/01_librechat_tham_chieu.md`) | [x] 2026-09-03 |
+| H43.2 | 02 | Gap runtime nội bộ → `platform_core/runtime_noi_bo/` (luong/danh_muc/job) + `AppManifest.so_lan_thu` + `ToolSpec.tuy_chon_dong`; `streaming.py` gọi facade; test_600–602 40 pass, 24 tệp ghim 500 pass (`reports/02_runtime_noi_bo.md`) | [x] 2026-09-03 |
+| H43.3–.5 | 03–05 | Text / Ảnh / Tiếng: đường nội bộ + benchmark + SLO; đóng D12 (Q116↔mã) | [ ] |
+| H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed | [ ] |
+| H43.7 | 07 | Bảng `chatltt_*` + sự kiện canonical + reload từ CSDL | [ ] |
+| H43.8 | 08 | ChatLTT chỉ-text dùng được độc lập | [ ] |
+| H43.9 | 09 | Tạo ảnh / đọc to / tạo giọng trong hội thoại | [ ] |
+| H43.10 | 10 | UX LibreChat-class, Carbon LTT, desktop+mobile | [ ] |
+| H43.11 | 11 | Chứng minh mở rộng bằng fixture | [ ] |
+| H43.12 | 12 | Torture: đồng thời/tiền/bảo mật/dữ liệu/hiệu năng | [ ] |
+| H43.13 | 13 | Nghiệm thu tươi + gate đầy đủ + báo cáo cuối; **không deploy** | [ ] |
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -107425,7 +107493,7 @@ def child_summary(db: DbSession, run: AgentRun, *, step_id: str = "") -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/agent/tools.py
-SHA256=a653bff9f42d5d4fc122fa35fa5c2661cccb995f4edb2e3b6fe0e1e9edadeb2b BYTES=5846 LINES=136
+SHA256=712cff87479743d8c928019b6148ee607904bbbc653eab0344fc7e4e10b6d840 BYTES=6733 LINES=155
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Discover và resolve ToolSpec qua app registry hiện hữu."""
 from __future__ import annotations
@@ -107434,7 +107502,9 @@ import copy
 from typing import Callable, Iterable, Optional
 
 from platform_core import prompt_fragments, providers
-from platform_core.registry import APPS_DIR, LoadedApp, RegistryError, ToolSpec, discover
+from platform_core import registry as _reg
+from platform_core.registry import (APPS_DIR, LoadedApp, RegistryError, ToolSpec,
+                                    tai_tham_chieu)
 
 
 class ToolParamsError(ValueError):
@@ -107444,7 +107514,7 @@ class ToolParamsError(ValueError):
 def discover_tools(*, apps: Optional[Iterable[LoadedApp]] = None,
                    allowed_slugs: Optional[set[str]] = None) -> dict[str, ToolSpec]:
     """Gom tool từ manifest hợp lệ, không import hay hardcode app cụ thể."""
-    loaded = discover() if apps is None else list(apps)
+    loaded = _reg.discover() if apps is None else list(apps)
     result: dict[str, ToolSpec] = {}
     for item in loaded:
         if item.error or not item.manifest.enabled:
@@ -107471,20 +107541,34 @@ def resolve_params_schema(
     *,
     apps: Optional[Iterable[LoadedApp]] = None,
     model_lookup: Optional[Callable[[str], dict]] = None,
+    db=None,
+    user_id: str = "",
 ) -> dict:
     """Resolve enum động thành ``values`` mà không sửa ToolSpec gốc.
 
     ``model_lookup`` là seam kiểm thử/registry mở rộng; mặc định dùng capability
     tĩnh trong ``platform_core.providers``.
+
+    ``db`` + ``user_id`` (H43 Phase 02): có thì resolve thêm `ToolSpec.tuy_chon_dong`
+    — tuỳ chọn **theo người dùng** (vd giọng nhân bản của chính họ). Không có
+    thì bỏ qua, các caller cũ chạy nguyên.
     """
-    loaded = discover() if apps is None else list(apps)
+    loaded = _reg.discover() if apps is None else list(apps)
     owner = _find_owner(tool_name, loaded)
     tool = next(t for t in owner.manifest.tools if t.name == tool_name)
     resolved = copy.deepcopy(tool.params_schema)
     params = params or {}
     lookup = model_lookup or providers.model_capabilities
+    dong = getattr(tool, "tuy_chon_dong", None) or {}
 
-    for schema in resolved.values():
+    for ten, schema in resolved.items():
+        ref = dong.get(ten)
+        if ref and db is not None:
+            chon = tai_tham_chieu(ref)(db, user_id) or ()
+            schema["options"] = [
+                {"value": str(c["value"]), "label": str(c.get("label", c["value"]))}
+                for c in chon if isinstance(c, dict) and "value" in c]
+            schema["values"] = [o["value"] for o in schema["options"]]
         if schema.get("type") == "model_ref":
             options = providers.model_options(
                 str(schema.get("category", "")), tuple(schema.get("providers", ())))
@@ -107512,15 +107596,18 @@ def validate_tool_params(
     *,
     apps: Optional[Iterable[LoadedApp]] = None,
     model_lookup: Optional[Callable[[str], dict]] = None,
+    db=None,
+    user_id: str = "",
 ) -> dict:
     """Validate nghiêm tham số Agent trước submit; trả bản sao nếu hợp lệ."""
     if not isinstance(params, dict):
         raise ToolParamsError("params phải là object")
-    loaded = discover() if apps is None else list(apps)
+    loaded = _reg.discover() if apps is None else list(apps)
     owner = _find_owner(tool_name, loaded)
     tool = next(t for t in owner.manifest.tools if t.name == tool_name)
     schema = resolve_params_schema(
-        tool_name, params, apps=loaded, model_lookup=model_lookup)
+        tool_name, params, apps=loaded, model_lookup=model_lookup,
+        db=db, user_id=user_id)
     unknown = sorted(set(params) - set(schema))
     if unknown:
         raise ToolParamsError(f"tham số không được phép: {', '.join(unknown)}")
@@ -126694,7 +126781,7 @@ def purge_expired(db, *, days: int = RETENTION_DAYS,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/invocation.py
-SHA256=0e1ae21b3fcebaf1f5f1cd60e7952299488c856ca437c88cd54490665b86b5e4 BYTES=23234 LINES=513
+SHA256=f843bf6111c376354842841c610e4e06678c41ccb2b38696b89500478aefe6de BYTES=24002 LINES=528
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Turning a public tool call into a real job: validate → price → hold → queue.
 
@@ -127176,11 +127263,26 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=lane, params=job_params, dedupe_key=dedupe,
+        # Số lần thử do APP khai (`AppManifest.so_lan_thu`), không phải mặc định
+        # 3 của hàng đợi. Trước 02/09 cửa này không truyền gì, nên một job voice
+        # qua API chết ở mỗi lần deploy trong khi cùng job đó qua web sống sót.
+        max_attempts=_so_lan_thu(tool, lane),
         quoted_credit=int(quote.get("credit", 0)),
         admission_resource=getattr(tool, "admission_resource", "") or "api",
         admission_slots=getattr(tool, "admission_slots", 0),
     )
 
+
+
+def _so_lan_thu(tool, lane: str, *, default: int = 3) -> int:
+    """`AppManifest.so_lan_thu_for(lane)` của app sở hữu tool; không có thì `default`."""
+    from platform_core.registry import discover
+
+    for loaded in discover():
+        if loaded.error or loaded.manifest.slug != getattr(tool, "app_slug", ""):
+            continue
+        return loaded.manifest.so_lan_thu_for(lane, default=default)
+    return default
 
 
 def _lane_for(tool, params: dict) -> str:
@@ -133894,7 +133996,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=b953d9b6dd467b59fa4f76d18eacd540db5f3646f93373053f572b3e55a6d0e5 BYTES=57387 LINES=1095
+SHA256=5d8b723f72435b3e5cbf7a92a4ed7c35079850ea4238799ae01fad9096dbc78d BYTES=62977 LINES=1186
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -133977,6 +134079,23 @@ APP_LIFECYCLES = frozenset({
 })
 _TOOL_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
 _PROMPT_SOURCE_RE = re.compile(r"^prompts/[a-zA-Z0-9_-]+$")
+#: Tham chiếu `module:attribute` do app sở hữu (`sync_executor`, `tuy_chon_dong`).
+_THAM_CHIEU_RE = re.compile(r"^[A-Za-z_][\w.]*:[A-Za-z_]\w*$")
+
+
+def tai_tham_chieu(reference: str):
+    """Resolve một tham chiếu `module:attribute` khai trong manifest.
+
+    Chỉ import **khi được gọi** — không phải lúc `discover()` — để một tiến
+    trình worker/CLI nạp registry không kéo mã của app vào bộ nhớ. Cùng cách
+    `public_api.executor._load` đã làm cho `sync_executor`.
+    """
+    import importlib
+
+    module_name, separator, attribute = str(reference or "").partition(":")
+    if not separator or not module_name or not attribute:
+        raise RegistryError(f"tham chieu phai la module:attribute, nhan {reference!r}")
+    return getattr(importlib.import_module(module_name), attribute)
 
 
 @dataclass(frozen=True)
@@ -134038,6 +134157,26 @@ class ToolSpec:
     # This is a dotted reference owned by the app; the platform resolves it
     # without knowing an app slug or importing app code directly.
     sync_executor: str = ""
+
+    # ── Tuỳ chọn ĐỘNG theo người dùng (H43 Phase 02, 2026-09-02) ───────────
+    #
+    #   tuy_chon_dong={"voice_id": "apps.myapp.kho:tuy_chon_voice_id"}
+    #
+    # `module:callable(db, user_id) -> [{"value": ..., "label": ...}]`. Cùng
+    # khuôn "tham chiếu dotted do app sở hữu, nền tảng resolve lúc CẦN, không
+    # import lúc nạp" của `sync_executor` ở trên.
+    #
+    # 🔴 VÌ SAO CẦN. Ba cơ chế enum động đang có (`model_ref`, `source`,
+    #    `depends_on`) đều thuần tiến trình — không cái nào biết NGƯỜI DÙNG là
+    #    ai. Nên "giọng nhân bản của chính tôi" không có cách nào lên palette
+    #    Agent hay một sản phẩm web khác mà không import `apps.ltt_voice` — thứ
+    #    `test_147`/`test_308` cấm, và cấm đúng.
+    #
+    # ⚠️ Chỉ cho tham số kiểu `string`, và danh sách này là **gợi ý cho giao
+    #    diện**, không phải phép kiểm: app vẫn kiểm sở hữu lúc thi hành (đường
+    #    duy nhất chặn được một id đoán mò). Nền tảng không được biết giá trị
+    #    nào là "của ai" — nó chỉ chuyển câu hỏi cho app.
+    tuy_chon_dong: dict = field(default_factory=dict)
 
     # ── Làn scheduler theo tham số ──────────────────────────────────────────
     #
@@ -134289,9 +134428,30 @@ class AppManifest:
     #    hàng phút. Chỉ app biết việc của nó dài bao lâu — nên nó khai.
     cho_tai_nguyen_s: dict = field(default_factory=dict)
 
+    # Số lần thử tối đa của MỘT job, theo `job_type` (H43 Phase 02, 2026-09-02):
+    #   so_lan_thu = {"myapp.synthesize": 5}
+    # Bỏ trống = mặc định 3 của `jobs.submit`.
+    #
+    # 🔴 VÌ SAO KHAI Ở MANIFEST. `apps/ltt_voice` đo được nạp model lúc deploy mất
+    #    39,9–73,1 giây trong khi cửa sổ thử lại mặc định (3 lượt) chỉ ~30 giây
+    #    ⇒ job chết ở MỌI lần deploy. Nó chữa bằng hằng `SO_LAN_THU_JOB=5` truyền
+    #    tay ở bốn route web — nhưng `/api/v1` (`invocation.submit`) **không**
+    #    biết hằng đó, nên cùng một job qua API vẫn chạy 3 lượt. Hai cửa, hai
+    #    hành vi, cùng một sản phẩm.
+    #
+    # ⭐ Chỉ app biết việc của nó sống sót qua deploy cần mấy lượt — nên nó khai,
+    #    và mọi cửa (web, API, client nội bộ) đọc **một** chỗ qua
+    #    `so_lan_thu_for()`. Cùng hình dạng ba bảng ngay trên.
+    so_lan_thu: dict = field(default_factory=dict)
+
     def cho_tai_nguyen_for(self, job_type: str, *, default: int = 20) -> int:
         """Giãn cách thử lại khi tài nguyên bận, giây. Kẹp sàn 1 giây."""
         khai = int((self.cho_tai_nguyen_s or {}).get(job_type, 0))
+        return max(1, khai) if khai > 0 else max(1, int(default))
+
+    def so_lan_thu_for(self, job_type: str, *, default: int = 3) -> int:
+        """Số lần thử tối đa cho một `job_type`. Không khai ⇒ `default`. Sàn 1."""
+        khai = int((self.so_lan_thu or {}).get(job_type, 0))
         return max(1, khai) if khai > 0 else max(1, int(default))
 
     def vram_for(self, job_type: str) -> int:
@@ -134397,6 +134557,28 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
                 key in schema for key in ("values", "source", "depends_on")):
             raise RegistryError(
                 f"[{manifest.slug}] tool {tool.name!r} enum thiếu nguồn giá trị")
+
+    # `tuy_chon_dong`: tham số phải có thật, phải là `string`, tham chiếu phải
+    # đúng hình `module:attribute`. KHÔNG import module ở đây — `_validate` chạy
+    # lúc `discover()`, và kéo mã app vào mọi tiến trình nạp registry là đúng
+    # thứ `sync_executor` đã cố tránh.
+    for param, ref in (tool.tuy_chon_dong or {}).items():
+        spec = tool.params_schema.get(param)
+        if not isinstance(spec, dict):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tuy_chon_dong trỏ tới tham số không tồn "
+                "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
+                                          param=param))
+        if spec.get("type") != "string":
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tuy_chon_dong chỉ hỗ trợ tham số `string`, "
+                "{param!r} là {kind!r}").format(slug=manifest.slug, tool=tool.name,
+                                                 param=param, kind=spec.get("type")))
+        if not isinstance(ref, str) or not _THAM_CHIEU_RE.fullmatch(ref):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là "
+                "`module:attribute`, nhận {ref!r}").format(
+                    slug=manifest.slug, tool=tool.name, param=param, ref=ref))
 
     _validate_lanes(manifest, tool)
 
@@ -134769,6 +134951,17 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
     for jt in manifest.job_types:
         if jt in seen_job_types:
             raise RegistryError(f"[{manifest.slug}] job_type trùng: {jt!r}")
+    # `so_lan_thu` phải trỏ tới job_type CỦA app và là số nguyên ≥ 1. Một bản
+    # khai lệch tên job_type thì im lặng vô hiệu — đúng loại lỗi phải bắt lúc nạp.
+    for jt, so in (manifest.so_lan_thu or {}).items():
+        if jt not in manifest.job_types:
+            raise RegistryError(_t(
+                "[{slug}] so_lan_thu khai job_type không thuộc app: {jt!r}"
+            ).format(slug=manifest.slug, jt=jt))
+        if not isinstance(so, int) or isinstance(so, bool) or so < 1:
+            raise RegistryError(_t(
+                "[{slug}] so_lan_thu[{jt!r}] phải là số nguyên ≥ 1: {so!r}"
+            ).format(slug=manifest.slug, jt=jt, so=so))
     # Tiền tố bảng trùng nhau thì hai app ghi đè bảng của nhau và Alembic chỉ
     # thấy một cái — mất dữ liệu âm thầm. Chặn ngay lúc discover.
     if manifest.table_prefix:
@@ -134991,6 +135184,897 @@ def credit_for(job_type: str, params: dict, apps: Optional[list] = None) -> int:
                     f"— từ chối chạy để không phát sinh chi phí không kiểm soát")
             return int(fn(params))
     raise RegistryError(f"không app nào nhận job_type {job_type!r}")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/runtime_noi_bo/__init__.py
+SHA256=15ddb74ec87cd61fc86bae60bb16940e109c3727c2fd5ba75df4e6b81cd9bd07 BYTES=2154 LINES=36
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+runtime_noi_bo — cửa gọi năng lực AI **từ bên trong nền tảng**, không cần khoá API.
+
+## Vì sao gói này tồn tại (H43 Phase 02, 2026-09-02)
+
+Một sản phẩm web của chính nền tảng (ChatLTT) cần gọi `text.chat`, `image.ltt`,
+`speech.ltt` cho **người dùng đã đăng nhập**. Khảo sát mã cho thấy mọi mảnh đã
+có — admission, giữ chỗ, mở luồng, đếm token, quyết toán, nộp job, tính giá —
+nhưng chúng chỉ được **lắp ráp** ở hai chỗ, và cả hai đều đòi một `Principal`
+sinh từ khoá API bán ra ngoài (`server/api/streaming.py`, `server/api/jobs.py`).
+
+Ba lựa chọn đã cân:
+
+  · Dựng `Principal` giả cho người dùng web — kéo theo policy/rate/idempotency
+    của khoá API vào một đường không có khoá nào để đo. **Bác.**
+  · Để app tự lắp ráp lại các mảnh — là đường đếm token/quyết toán **thứ hai**,
+    đúng thứ PA-7 cấm và đúng thứ đã gây lỗi tiền ở cửa job trước đây. **Bác.**
+  · Hạ phần lắp ráp xuống đây thành một **facade mỏng**, rồi cho `server/api`
+    gọi lại nó. Một đường, hai cửa. **Chọn.**
+
+## Bốn hàm, và thứ nào KHÔNG ở đây
+
+  `luong.chuan_bi` / `luong.mo_thuong_nguon` / `luong.mo_luong`
+      cửa STREAM: admission → giữ chỗ → commit → mở luồng → đếm → quyết toán.
+      `mo_luong` sinh **sự kiện canonical**; `mo_luong_tho` giữ byte nguyên xi
+      cho `server/api/streaming.py`.
+  `danh_muc.danh_muc`
+      phép chiếu catalog cho một client nội bộ, lọc bằng allowlist của sản phẩm.
+  `job.bao_gia` / `job.nop_job`
+      giá + nộp job có giữ chỗ, qua `job_submit.submit_with_credit` — KHÔNG
+      phải một đường nộp thứ hai.
+
+⛔ Gói này **không** biết tên app nào (test_60 chốt), **không** import `apps.*`
+   hay `server.*` (test_147 chốt), **không** giữ giá, **không** giữ hàng đợi.
+   Nó chỉ gọi tiếp những thứ đã có, theo đúng thứ tự đã được đo là đúng.
+"""
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/runtime_noi_bo/danh_muc.py
+SHA256=dd34079ba83ad1fd1f7dc0c720a3768d7d9573f84f45149ae88ee1566bf39529 BYTES=5449 LINES=119
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+danh_muc.py — catalog cho một client **nội bộ**, lọc bằng allowlist của sản phẩm.
+
+## Ba cổng khác nhau, đừng trộn
+
+  `ToolSpec.customer_visible`   palette Agent/Canvas
+  `ToolSpec.api_exposed` + `LTT_PUBLIC_API_TOOLS`   bán qua `/api/v1`
+  **allowlist của sản phẩm** (tham số `cho_phep`)   thứ MỘT sản phẩm web mời
+
+Hàm này chỉ nhìn cổng thứ ba, và **fail-closed**: tên không có trong `cho_phep`,
+tool của app tắt/lỗi nạp, hay tool chưa có hợp đồng công khai — đều không hiện.
+
+## Vì sao mượn `catalog.project_tool`
+
+Phép chiếu ấy đã làm đúng việc khó: bỏ id model nội bộ, chỉ giữ alias
+(test_212), ẩn tham số máy chủ tự quyết, giữ đúng kiểu số/chuỗi của enum. Viết
+một phép chiếu thứ hai cho sản phẩm web là mời hai bản hợp đồng lệch nhau.
+`project_tool(manifest, tool)` không cần `config` hay `Principal` — chỉ
+`build_catalog`/`require_tool` (ba cổng của `/api/v1`) mới cần.
+"""
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass, field
+from typing import FrozenSet, Iterable, Optional
+
+from platform_core import registry as _reg
+from platform_core.public_api.catalog import project_tool
+from platform_core.registry import tai_tham_chieu
+
+log = logging.getLogger("platform_core.runtime_noi_bo.danh_muc")
+
+
+@dataclass(frozen=True)
+class NangLuc:
+    """Một năng lực như sản phẩm web nhìn thấy. Không có id nội bộ, không có URL máy."""
+
+    ten: str                 # "text.chat"
+    phuong_thuc: str         # "text" | "image" | "audio" | "video"
+    che_do: str              # "stream" (có sync_executor) | "job"
+    nhan: str                # mô tả cho khách (từ api_contract)
+    hop_dong: dict           # `PublicTool.to_public_dict()`: input/output schema…
+    models: dict = field(default_factory=dict)   # alias → {description, stability, constraints}
+    tuy_chon: dict = field(default_factory=dict) # tham số → [{value,label}] theo NGƯỜI DÙNG
+    gia: dict = field(default_factory=dict)      # `AppManifest.bang_gia()` của app sở hữu
+    duong_dan_app: str = ""  # route_prefix của app sở hữu (deep-link "quản lý giọng")
+    san_sang: str = "san_sang"   # "san_sang" | "chua_san_sang"
+
+
+def phuong_thuc_cua(tool) -> str:
+    """Suy phương thức từ **kiểu cổng ra** đã khai, không từ tên app hay tên tool."""
+    kieu = {str(v).rstrip("[]") for v in (tool.returns or {}).values()}
+    for ung_vien in ("audio", "video", "image"):
+        if ung_vien in kieu:
+            return ung_vien
+    return "text"
+
+
+def _tuy_chon(tool, db, user_id: str) -> dict:
+    ra: dict = {}
+    for param, ref in (getattr(tool, "tuy_chon_dong", None) or {}).items():
+        try:
+            chon = tai_tham_chieu(ref)(db, user_id)
+            ra[param] = [{"value": str(c["value"]),
+                          "label": str(c.get("label", c["value"]))}
+                         for c in (chon or ()) if isinstance(c, dict) and "value" in c]
+        except Exception:                                       # noqa: BLE001
+            # Một app hỏng danh sách tuỳ chọn không được làm rỗng catalog của
+            # mọi app khác — cùng luật với `bang_gia`/`bao_tri`. Nhưng phải ồn.
+            log.exception("khong lay duoc tuy chon %s cua %s", param, tool.name)
+            ra[param] = []
+    return ra
+
+
+def _gia(manifest) -> dict:
+    if manifest.bang_gia is None:
+        return {}
+    try:
+        return dict(manifest.bang_gia() or {})
+    except Exception:                                           # noqa: BLE001
+        log.exception("bang_gia cua %s nem", manifest.slug)
+        return {}
+
+
+def danh_muc(db, *, user_id: str, cho_phep: Iterable[str],
+             apps: Optional[Iterable] = None) -> list:
+    """Các `NangLuc` trong `cho_phep` mà người dùng này gọi được, xếp theo tên."""
+    duoc: FrozenSet[str] = frozenset(str(t) for t in cho_phep)
+    ra: list = []
+    for loaded in (_reg.discover() if apps is None else apps):
+        if loaded.error:
+            continue
+        m = loaded.manifest
+        for tool in m.tools:
+            if tool.name not in duoc:
+                continue
+            if not tool.api_contract:
+                # Không có hợp đồng công khai = không có phép chiếu an toàn nào
+                # để đưa ra một bề mặt khách. Fail-closed, và nói ra.
+                log.warning("tool %s trong allowlist nhung chua co api_contract",
+                            tool.name)
+                continue
+            pt = project_tool(m, tool)
+            models = {alias: {k: v for k, v in dict(spec).items() if k != "id"}
+                      for alias, spec in pt.model_aliases.items()}
+            ra.append(NangLuc(
+                ten=tool.name,
+                phuong_thuc=phuong_thuc_cua(tool),
+                che_do="stream" if getattr(tool, "sync_executor", "") else "job",
+                nhan=pt.description,
+                hop_dong=pt.to_public_dict(),
+                models=models,
+                tuy_chon=_tuy_chon(tool, db, user_id),
+                gia=_gia(m),
+                duong_dan_app=m.route_prefix,
+                san_sang="san_sang" if m.enabled else "chua_san_sang",
+            ))
+    ra.sort(key=lambda n: n.ten)
+    return ra
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/runtime_noi_bo/job.py
+SHA256=639a3668e3fee23446e388e540add8c0e12b254119bdd00f1cce0f8a04f46197 BYTES=4468 LINES=98
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+job.py — báo giá và nộp job **có giữ chỗ** cho một client nội bộ.
+
+⛔ KHÔNG PHẢI ĐƯỜNG NỘP THỨ HAI. Cả hai hàm ở đây chỉ gói lại thứ đã có:
+
+    bao_gia()  = agent.tools.validate_tool_params + ToolSpec.lane_for + registry.credit_for
+    nop_job()  = job_submit.submit_with_credit (validate/giá/giữ chỗ/queue một giao dịch)
+
+Phần "quote ký HMAC có hạn" của `/api/v1` cố ý **không** ở đây: nó tồn tại vì
+khách API ở ngoài phiên đăng nhập và có thể gửi một báo giá cũ. Client web
+gọi `bao_gia` rồi `nop_job` trong cùng một phiên; số đã báo đi thẳng vào
+`quoted_credit`, và `credit.quyet_toan` kẹp số thu **không bao giờ vượt** phần
+đã giữ (Q84).
+
+⭐ `owner_id` được **ép** bằng `user_id` — handler của app ảnh/tiếng kiểm sở
+   hữu theo nó, và `invocation.submit` của `/api/v1` cũng ép đúng như vậy.
+"""
+from __future__ import annotations
+
+import logging
+from dataclasses import dataclass
+
+from platform_core.job_submit import dedupe_key_for, submit_with_credit
+from platform_core.registry import credit_for
+from platform_core.runtime_noi_bo.tim import KhongCoNangLuc, tim_tool  # noqa: F401
+
+log = logging.getLogger("platform_core.runtime_noi_bo.job")
+
+
+class ThamSoSai(ValueError):
+    """Tham số không theo `ToolSpec` — lỗi của bên gọi, chưa chạm sổ tiền."""
+
+
+@dataclass(frozen=True)
+class BaoGia:
+    """Giá đã tính cho MỘT bộ tham số đã chuẩn hoá. Đưa nguyên cái này vào `nop_job`."""
+
+    tool_name: str
+    lane: str                 # job_type thật (theo `ToolSpec.lane_for`)
+    credit: int               # số sẽ giữ chỗ
+    phien_ban_gia: str        # từ `bang_gia()` của app, "" nếu app không khai
+    tham_so_sach: dict        # tham số đã validate + điền mặc định
+
+
+def bao_gia(tool_name: str, params: dict, *, db=None, user_id: str = "") -> BaoGia:
+    """Validate theo ToolSpec (kể cả tuỳ chọn động theo người dùng) rồi tính giá."""
+    from platform_core.agent.tools import ToolParamsError, validate_tool_params
+
+    manifest, tool = tim_tool(tool_name)
+    try:
+        sach = validate_tool_params(tool_name, dict(params or {}),
+                                    db=db, user_id=user_id)
+    except ToolParamsError as e:
+        raise ThamSoSai(str(e)) from None
+    lane = tool.lane_for(sach)
+    so = int(credit_for(lane, sach))
+    return BaoGia(tool_name=tool_name, lane=lane, credit=so,
+                  phien_ban_gia=_phien_ban_gia(manifest), tham_so_sach=sach)
+
+
+def _phien_ban_gia(manifest) -> str:
+    """`phien_ban_gia` từ `bang_gia()` của app; app hỏng bảng giá thì "" **và ồn ào**.
+
+    Cùng luật với `bao_tri`/`bang_gia_cong_khai`: một app hỏng không được làm
+    hỏng báo giá của app khác — nhưng phải ghi log, vì nhãn phiên bản giá rỗng
+    trên một báo giá là thứ chỉ lộ ra khi khách đối soát.
+    """
+    if manifest.bang_gia is None:
+        return ""
+    try:
+        return str((manifest.bang_gia() or {}).get("phien_ban_gia") or "")
+    except Exception:                                           # noqa: BLE001
+        log.exception("bang_gia cua %s nem khi bao gia", manifest.slug)
+        return ""
+
+
+def nop_job(db, *, user_id: str, bao_gia: BaoGia, correlation_id: str = "",
+            idempotency_key: str = ""):
+    """Nộp job và giữ chỗ đúng số đã báo. KHÔNG commit — caller commit.
+
+    Ném `credit.ThieuCreditError` (rollback cùng), `registry.RegistryError`.
+    `idempotency_key` rỗng ⇒ khoá dedupe suy từ `(lane, tham số)` như mọi route.
+    """
+    from platform_core.public_api.limits import resource_class
+
+    manifest, tool = tim_tool(bao_gia.tool_name)
+    params = dict(bao_gia.tham_so_sach)
+    params["owner_id"] = user_id
+    dedupe = idempotency_key or dedupe_key_for(bao_gia.lane, params)
+    return submit_with_credit(
+        db, user_id=user_id, app_slug=manifest.slug, job_type=bao_gia.lane,
+        params=params, dedupe_key=dedupe,
+        max_attempts=manifest.so_lan_thu_for(bao_gia.lane),
+        correlation_id=correlation_id,
+        quoted_credit=int(bao_gia.credit),
+        admission_resource=getattr(tool, "admission_resource", "") or resource_class(manifest),
+        admission_slots=int(getattr(tool, "admission_slots", 0) or 0),
+    )
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/runtime_noi_bo/luong.py
+SHA256=fad3ebd8c430454fa69f0b5f2e631d72cceef84eef5b3f03a17166102529bd82 BYTES=25236 LINES=574
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+luong.py — cửa STREAM nội bộ: admission → giữ chỗ → commit → mở luồng → đếm → quyết toán.
+
+## Đây là mã **hạ xuống** từ `server/api/streaming.py`, không phải mã mới
+
+Thứ tự bốn bước dưới đây được đo là đúng trên production (H38, Q107, Q114) và
+đã có mười lăm tệp test ghim hành vi. Gói này chỉ tách phần **không cần HTTP**
+ra khỏi phần cần HTTP, để một client nội bộ (ChatLTT) và cửa `/api/v1` cùng đi
+**một** đường tính tiền. Hai đường là hai chỗ lệch tiền.
+
+    chuan_bi()          kiểm alias → admission → ước token → giữ chỗ → COMMIT
+    mo_thuong_nguon()   mở luồng tới máy B; hỏng thì hoàn + nhả suất
+    LuotLuong.luong     chuyển byte nguyên xi, đếm token, quyết toán ở `finally`
+    mo_luong()          bọc ba thứ trên thành SỰ KIỆN CANONICAL cho sản phẩm
+
+⛔ `chuan_bi` **commit** trước khi chạm model — cùng bài học đã học ở
+   `server/api/chat.py`: generator chạy sau khi phản hồi đã bắt đầu, lúc đó phiên
+   CSDL của request đã đóng. Quyết toán và hoàn tiền vì thế luôn mở phiên MỚI.
+
+⛔ Quyết toán trong `finally`, không phải "sau vòng lặp". Khách đóng kết nối thì
+   `GeneratorExit` ném vào ngay chỗ `yield`; nhánh sau vòng lặp không bao giờ chạy.
+
+⭐ Sự kiện canonical (`mo_luong`) là hợp đồng của **sản phẩm** với luồng; byte
+   thô (`mo_luong_tho`) là hợp đồng của **khách API** với luồng. Cùng một
+   `LuotLuong` bên dưới, nên cùng một cách đếm và cùng một cách thu tiền.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import time
+from contextlib import nullcontext
+from dataclasses import dataclass, field
+from typing import Any, Callable, Iterator, Optional
+
+from platform_core.llm.dem_token_luong import DemToken
+from platform_core.public_api.executor import for_tool
+from platform_core.runtime_noi_bo.tim import KhongCoNangLuc, tim_tool  # noqa: F401
+
+log = logging.getLogger("platform_core.runtime_noi_bo.luong")
+
+#: Ngân sách mở luồng — 75 giây, **dưới** trần 125 giây của Cloudflare, để khi
+#: máy B chậm thì **ta** trả lỗi đọc được chứ không để Cloudflare trả 524.
+#: Đủ rộng cho ca xấu đã đo: `llama-swap` nạp lại model ~25 giây. Nới số này
+#: không mua thêm thời gian — nó chỉ đổi 503 của ta lấy 524 của Cloudflare.
+MO_LUONG_GIAY = 75.0
+
+#: Đường của cổng máy B mà client nội bộ dùng. Hình dạng OpenAI chat chunk là
+#: hình dạng **duy nhất** `_su_kien_tu_goi` biết đọc; hai đường kia
+#: (`/v1/messages`, `/v1/responses`) chỉ đi qua `mo_luong_tho` (byte nguyên xi).
+DUONG_NOI_BO = "/v1/chat/completions"
+
+
+# ── Lỗi trước khi có byte nào ────────────────────────────────────────────────
+
+class LoiCuaLuong(Exception):
+    """Gốc của mọi lỗi phát sinh **trước** khi luồng bắt đầu chảy."""
+
+
+class ThamSoSai(LoiCuaLuong, ValueError):
+    """Alias lạ, thiếu đầu vào… — lỗi của bên gọi, chưa giữ tiền, chưa chạm GPU."""
+
+
+class DangBan(LoiCuaLuong):
+    """Hết suất thực thi (`nguon="suat"`) hoặc máy B trả 429 (`nguon="thuong_nguon"`).
+
+    ⛔ BẬN ≠ HỎNG. Khách không bị thu tiền; bên gọi trả `Retry-After`.
+    """
+
+    def __init__(self, ly_do: str, *, nguon: str = "suat", tai_nguyen: str = "",
+                 thu_lai_sau_s: int = 15):
+        super().__init__(ly_do)
+        self.ly_do = ly_do
+        self.nguon = nguon
+        self.tai_nguyen = tai_nguyen
+        self.thu_lai_sau_s = int(thu_lai_sau_s)
+
+
+class ThieuCredit(LoiCuaLuong):
+    """Không đủ số dư để giữ trần ước. Chốt TRƯỚC khi đốt GPU."""
+
+
+class KhongMoDuoc(LoiCuaLuong):
+    """Không mở được luồng vì lý do khác bận. `qua_dai` = 413 (lỗi của đầu vào)."""
+
+    def __init__(self, ly_do: str, *, qua_dai: bool = False):
+        super().__init__(ly_do)
+        self.ly_do = ly_do
+        self.qua_dai = qua_dai
+
+
+# ── Ước lượng đầu vào / trần đầu ra (hạ từ `server/api/streaming.py`) ────────
+
+def uoc_tin_nhan(than: dict) -> list:
+    """Rút phần văn bản đầu vào, dù client nói giao thức nào.
+
+    Chỉ dùng để **ước** token đầu vào cho phần giữ chỗ, nên không cần chính xác
+    tuyệt đối — nhưng phải ước **CAO**, vì giữ thiếu thì khách tiêu quá số dư.
+    Vì thế nó cố ý sinh ra phần tử **không có `role`** (prompt hệ thống, khối
+    `tools`) — KHÔNG được đem danh sách này đi gọi model.
+    """
+    ra: list = []
+    he_thong = than.get("system")
+    if isinstance(he_thong, str):
+        ra.append({"content": he_thong})
+    elif isinstance(he_thong, list):
+        ra.extend({"content": (m or {}).get("text", "")} for m in he_thong
+                  if isinstance(m, dict))
+
+    tin = than.get("messages")
+    if isinstance(tin, list):
+        ra.extend(m for m in tin if isinstance(m, dict))
+
+    # Responses gọi nó là `input`, và nó có thể là chuỗi trần.
+    vao = than.get("input")
+    if isinstance(vao, str):
+        ra.append({"content": vao})
+    elif isinstance(vao, list):
+        ra.extend(m for m in vao if isinstance(m, dict))
+
+    # Định nghĩa tool đi kèm mỗi lượt và **không hề nhỏ**: đo thật 23/08, prompt
+    # hệ thống của Codex là ~21.936 token. Bỏ qua nó là ước thiếu rất nhiều.
+    cong_cu = than.get("tools")
+    if isinstance(cong_cu, list) and cong_cu:
+        ra.append({"content": json.dumps(cong_cu, ensure_ascii=False)})
+    return ra
+
+
+def tran_token_ra(than: dict, token_vao_uoc: int, executor) -> int:
+    """Trần token ra cho lượt này, đã kẹp theo **chỗ còn lại trong ngữ cảnh**.
+
+    Khách khai `max_tokens`/`max_output_tokens` thì kẹp số đó; không khai thì
+    lấy mặc định của **cửa stream** (`executor.mac_dinh_cho("stream")`) — KHÔNG
+    phải của cửa đồng bộ. Lấy nhầm 1.024 của cửa đồng bộ là gốc của lỗi "hỏi
+    dài thì im lặng" đo được 30/08.
+    """
+    tran = int(executor.context_output_cap(token_vao_uoc))
+    for ten in ("max_tokens", "max_output_tokens"):
+        gt = than.get(ten)
+        if isinstance(gt, (int, float)) and not isinstance(gt, bool):
+            return max(1, min(int(gt), tran))
+    return max(1, min(int(executor.mac_dinh_cho("stream")), tran))
+
+
+# ── Bước 1: chuẩn bị (admission + giữ chỗ + commit) ──────────────────────────
+
+@dataclass
+class ChuanBi:
+    """Mọi thứ đã chốt **trước** khi chạm máy B. Sau `chuan_bi()` tiền đã giữ."""
+
+    db: Any
+    user_id: str
+    tool_name: str
+    duong: str
+    than_gui: dict
+    request_id: str
+    lease_id: str
+    da_giu: int
+    token_vao_uoc: int
+    xin_ra: int
+    model_alias: str
+    executor: Any
+    correlation_id: str = ""
+
+
+def chuan_bi(db, *, user_id: str, tool_name: str, than: dict, duong: str,
+             holder_id: str = "", correlation_id: str = "",
+             tien_to: str = "st",
+             tim: Optional[Callable[[str], tuple]] = None) -> ChuanBi:
+    """Kiểm alias → giành suất → ước token → giữ chỗ → **commit**.
+
+    Ném `ThamSoSai` / `DangBan(nguon="suat")` / `ThieuCredit` — cả ba đều xảy ra
+    **trước** khi có bất kỳ tác dụng phụ nào còn lại (rollback đã dọn).
+    """
+    from platform_core import credit
+    from platform_core.llm import admission, thanh_toan
+    from platform_core.public_api import metrics
+
+    _manifest, tool = (tim or tim_tool)(tool_name)
+    executor = for_tool(tool)
+
+    ten = str(than.get("model") or "")
+    aliases = executor.aliases()
+    if ten not in aliases:
+        raise ThamSoSai(f"`model` phai la mot trong {list(aliases)}")
+    tin = uoc_tin_nhan(than)
+    if not tin:
+        raise ThamSoSai("yeu cau khong mang dau vao nao de tra loi")
+
+    # Dịch alias -> id nội bộ NGAY TRƯỚC KHI ra khỏi nền tảng. Khách không bao
+    # giờ nhìn thấy id thật, và mã của khách không ghim vào nó (test_212).
+    gui = dict(than)
+    gui["model"] = executor.model_id(ten)
+
+    # ⛔ KHÔNG tự ghép chuỗi: `credit_entries.job_id` là VARCHAR(36).
+    request_id = thanh_toan.ma_luot(tien_to)
+
+    lease_id = ""
+    tai_nguyen = str(getattr(tool, "admission_resource", "") or "")
+    so_suat = int(getattr(tool, "admission_slots", 0) or 0)
+    if tai_nguyen and so_suat > 0:
+        ticket = admission.acquire(
+            db, resource=tai_nguyen, slots=so_suat, user_id=user_id,
+            mode="stream", holder_id=holder_id or request_id)
+        if ticket is None:
+            db.rollback()
+            raise DangBan("het suat thuc thi", nguon="suat", tai_nguyen=tai_nguyen,
+                          thu_lai_sau_s=15)
+        lease_id = ticket.id
+
+    vao_uoc = int(executor.estimate_input(tin))
+    xin_ra = tran_token_ra(than, vao_uoc, executor)
+
+    # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN, đúng TÊN TRƯỜNG của cửa.
+    #    Kẹp cái mình thu tiền mà không kẹp cái mình gửi đi ⇒ máy B trả 413
+    #    (H38/L2). Không khai gì thì tên theo cửa: `/responses` chỉ đọc
+    #    `max_output_tokens` — ghi nhầm tên là llama-server dùng mặc định 1.024.
+    ten_tran = "max_output_tokens" if duong.endswith("/responses") else "max_tokens"
+    for _ten in ("max_tokens", "max_output_tokens"):
+        if _ten in gui:
+            gui[_ten] = xin_ra
+            break
+    else:
+        gui[ten_tran] = xin_ra
+
+    try:
+        da_giu = thanh_toan.giu_cho_luot(
+            db, user_id=user_id, request_id=request_id,
+            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
+    except credit.ThieuCreditError as e:
+        # Không đủ tiền thì không đốt GPU. Chốt trước, không phải sau.
+        metrics.increment(metrics.CREDIT_EXHAUSTED)
+        log.info("khach het credit tai %s: user=%s", duong, user_id[:8])
+        db.rollback()
+        # Suất vừa giành nằm trong savepoint của giao dịch vừa cuộn; nhưng
+        # KHÔNG tin điều đó — pysqlite không giữ SAVEPOINT đúng chuẩn, và một
+        # suất mồ côi chỉ tự lành sau ORPHAN_TIMEOUT (20 phút GPU nằm không).
+        # `release_by_id` idempotent: đã cuộn rồi thì nó chỉ trả False.
+        _nha_suat(lease_id)
+        raise ThieuCredit(str(e)) from None
+
+    # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHẠM MODEL (xem docstring module).
+    db.commit()
+    return ChuanBi(db=db, user_id=user_id, tool_name=tool_name, duong=duong,
+                   than_gui=gui, request_id=request_id, lease_id=lease_id,
+                   da_giu=da_giu, token_vao_uoc=vao_uoc, xin_ra=xin_ra,
+                   model_alias=ten, executor=executor,
+                   correlation_id=correlation_id)
+
+
+# ── Bước 2: mở luồng tới máy B ───────────────────────────────────────────────
+
+@dataclass
+class LuotLuong:
+    """Một luồng đang chảy. `luong` chuyển byte nguyên xi và **tự quyết toán**."""
+
+    chuan_bi: ChuanBi
+    content_type: str
+    luong: Iterator[bytes] = field(default=iter(()))
+    dem: DemToken = field(default_factory=DemToken)
+    #: Điền sau khi quyết toán (trong `finally` của `luong`).
+    ket_qua: Any = None
+    #: "xong" | "khach_ngat" | "loi" — điền khi luồng kết thúc.
+    ket_thuc: str = ""
+
+
+def _nha_suat(lease_id: str) -> None:
+    if not lease_id:
+        return
+    from platform_core.llm import admission
+    admission.release_by_id(lease_id)
+
+
+def mo_thuong_nguon(cb: ChuanBi, *, timeout_s: float = MO_LUONG_GIAY,
+                    trang_thai=None) -> LuotLuong:
+    """Mở luồng tới máy B. Hỏng thì **hoàn đủ + nhả suất** rồi ném.
+
+    Ném `DangBan(nguon="thuong_nguon")` khi máy B trả 429, `KhongMoDuoc` khi
+    khác. Cả hai đều đã hoàn tiền trước khi ném — bên gọi không phải hoàn lại.
+    """
+    from platform_core.llm import luong_vlm
+    from platform_core.public_api import metrics
+
+    try:
+        mo = luong_vlm.mo(cb.db, duong=cb.duong, than=cb.than_gui,
+                          timeout_s=timeout_s)
+    except luong_vlm.KhongMoDuocLuong as e:
+        hoan(cb.user_id, cb.request_id)
+        _nha_suat(cb.lease_id)
+        if e.ban:
+            # ⛔ BẬN ≠ HỎNG. Khách KHÔNG bị thu tiền. Đếm vào `CAPACITY_REFUSED`
+            #    để người trực thấy tần suất, không chỉ thấy một dòng log.
+            metrics.increment(metrics.CAPACITY_REFUSED)
+            log.warning("BAN luong: user=%s duong=%s ly_do=%s",
+                        cb.user_id[:8], cb.duong, e.ly_do)
+            raise DangBan(e.ly_do, nguon="thuong_nguon",
+                          thu_lai_sau_s=e.thu_lai_sau_s) from None
+        log.warning("khong mo duoc luong cho user=%s: %s", cb.user_id[:8], e.ly_do)
+        raise KhongMoDuoc(e.ly_do, qua_dai=bool(getattr(e, "qua_dai", False))) from None
+    except BaseException:
+        hoan(cb.user_id, cb.request_id)
+        _nha_suat(cb.lease_id)
+        raise
+
+    metrics.increment("chat:stream")
+    luot = LuotLuong(chuan_bi=cb, content_type=mo.content_type)
+    luot.luong = _phat(mo, luot, trang_thai=trang_thai)
+    return luot
+
+
+def mo_luong_tho(db, *, user_id: str, tool_name: str, than: dict, duong: str,
+                 holder_id: str = "", correlation_id: str = "",
+                 timeout_s: float = MO_LUONG_GIAY, trang_thai=None) -> LuotLuong:
+    """`chuan_bi` + `mo_thuong_nguon` — cho cửa cần **byte nguyên xi** (`/api/v1`)."""
+    cb = chuan_bi(db, user_id=user_id, tool_name=tool_name, than=than,
+                  duong=duong, holder_id=holder_id, correlation_id=correlation_id)
+    return mo_thuong_nguon(cb, timeout_s=timeout_s, trang_thai=trang_thai)
+
+
+# ── Bước 3: chuyển byte, đếm, quyết toán ─────────────────────────────────────
+
+def _phat(mo, luot: LuotLuong, *, trang_thai=None) -> Iterator[bytes]:
+    """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
+
+    ⛔ `finally` chứ không phải "sau vòng lặp" — xem docstring module.
+    """
+    from platform_core.llm import admission
+
+    cb = luot.chuan_bi
+    dem = luot.dem
+    vo: Optional[BaseException] = None
+    khach_ngat = False
+    t0 = time.monotonic()
+    n_khoi = 0
+    t_byte_dau: Optional[float] = None
+    keeper = admission.keep_alive(cb.lease_id) if cb.lease_id else nullcontext()
+    with keeper:
+        try:
+            for khoi in mo.luong:
+                if t_byte_dau is None:
+                    t_byte_dau = time.monotonic() - t0
+                n_khoi += 1
+                dem.nhin(khoi)
+                yield khoi
+        except GeneratorExit:
+            khach_ngat = True
+            raise
+        except BaseException as e:                              # noqa: BLE001
+            vo = e
+            raise
+        finally:
+            dt = time.monotonic() - t0
+            luot.ket_thuc = "khach_ngat" if khach_ngat else ("loi" if vo else "xong")
+            log.warning(
+                "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
+                luot.ket_thuc.upper(), cb.request_id[-8:], dt,
+                (f"{t_byte_dau:.1f}s" if t_byte_dau is not None else "-"),
+                n_khoi, dem.token_ra)
+            luot.ket_qua = quyet_toan(cb.user_id, cb.request_id, dem, cb.da_giu,
+                                      trang_thai)
+            if vo is not None:
+                mo.hong(vo)
+            else:
+                mo.xong(tokens=dem.token_ra)
+
+
+def quyet_toan(user_id: str, request_id: str, dem: DemToken, da_giu: int,
+               trang_thai=None):
+    """Chốt tiền, trong một phiên CSDL **mới**. Trả `KetQuaThu` hoặc `None`.
+
+    ⚠️ Phiên của request đã đóng từ lúc phản hồi bắt đầu — generator này chạy sau
+       đó. Dùng lại phiên cũ là `DetachedInstanceError` hoặc tệ hơn: một giao
+       dịch không bao giờ được commit.
+    """
+    from platform_core.db import get_session
+    from platform_core.llm import thanh_toan
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        thu = thanh_toan.quyet_toan_hoac_hoan(
+            db, user_id=user_id, request_id=request_id, su_dung=dem.su_dung())
+        db.commit()
+        # Sổ request của `/api/v1` đọc `api_credit_delta` SAU generator này
+        # (`server/api/guard.py:_write_request_log_muon`). Client nội bộ truyền
+        # `None` — nó đọc `ket_qua` trực tiếp.
+        if trang_thai is not None:
+            trang_thai.api_credit_delta = -int(thu.thu_credit)
+        log.info("stream %s: giu=%s thu=%s token_ra=%s do_duoc=%s",
+                 request_id[-8:], da_giu, thu.thu_credit, dem.token_ra,
+                 dem.do_duoc)
+        return thu
+    except Exception:                                           # noqa: BLE001
+        db.rollback()
+        # 🔴 Ồn ào có chủ ý. Không quyết toán được nghĩa là phần giữ chỗ nằm lại
+        #    trên tài khoản khách — tiền của họ bị treo, và không có gì khác báo.
+        log.exception("KHONG QUYET TOAN DUOC stream %s user=%s",
+                      request_id[-8:], user_id[:8])
+        return None
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def hoan(user_id: str, request_id: str) -> None:
+    """Hoàn đủ phần đã giữ, trong phiên CSDL mới. Idempotent qua `credit.hoan`."""
+    from platform_core.db import get_session
+    from platform_core.llm import thanh_toan
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        thanh_toan.hoan_luot(db, user_id=user_id, request_id=request_id)
+        db.commit()
+    except Exception:                                           # noqa: BLE001
+        db.rollback()
+        log.exception("khong hoan duoc phan giu cho cua %s", request_id[-8:])
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+# ── Bước 4: sự kiện canonical cho sản phẩm ───────────────────────────────────
+
+class _DocSSE:
+    """Đệm byte cho tới khi đủ một dòng `data:`; trả về JSON đã phân tích.
+
+    `iter_raw()` trả byte theo nhịp mạng, không theo nhịp dòng — một
+    `data: {...}` hoàn toàn có thể tới làm ba khối. Phân tích từng khối rời là
+    hỏng ngẫu nhiên theo tải (cùng bài học của `dem_token_luong`).
+    """
+
+    __slots__ = ("_du",)
+
+    def __init__(self) -> None:
+        self._du = b""
+
+    def nhin(self, khoi: bytes) -> Iterator[dict]:
+        if not khoi:
+            return
+        self._du += khoi
+        *dong, self._du = self._du.split(b"\n")
+        for d in dong:
+            d = d.strip()
+            if not d.startswith(b"data:"):
+                continue
+            than = d[5:].strip()
+            if not than or than == b"[DONE]":
+                continue
+            try:
+                goi = json.loads(than)
+            except (ValueError, TypeError):
+                continue
+            if isinstance(goi, dict):
+                yield goi
+
+
+def _su_kien_tu_goi(goi: dict, trang_thai: dict) -> Iterator[dict]:
+    """Một chunk OpenAI chat → 0..n sự kiện canonical. Ghi `finish_reason` vào `trang_thai`."""
+    for ch in goi.get("choices") or ():
+        if not isinstance(ch, dict):
+            continue
+        delta = ch.get("delta") or {}
+        if isinstance(delta, dict):
+            suy_nghi = delta.get("reasoning_content")
+            if isinstance(suy_nghi, str) and suy_nghi:
+                yield {"type": "reasoning.delta", "text": suy_nghi}
+            chu = delta.get("content")
+            if isinstance(chu, str) and chu:
+                yield {"type": "response.delta", "text": chu}
+            goi_tool = delta.get("tool_calls")
+            if isinstance(goi_tool, list) and goi_tool:
+                yield {"type": "tool_call.delta", "tool_calls": goi_tool}
+        ly_do = ch.get("finish_reason")
+        if isinstance(ly_do, str) and ly_do:
+            trang_thai["finish_reason"] = ly_do
+
+
+def mo_luong(db, *, user_id: str, tool_name: str, params: dict,
+             correlation_id: str = "", holder_id: str = "",
+             timeout_s: float = MO_LUONG_GIAY) -> Iterator[dict]:
+    """Chạy một lượt text và sinh **sự kiện canonical** (§5.3 kế hoạch H43).
+
+        response.started {request_id, model, credit_giu}
+        reasoning.delta  {text}
+        response.delta   {text}
+        tool_call.delta  {tool_calls}
+        usage.updated    {token_vao, token_ra, token_cache, do_duoc}
+        response.completed {finish_reason}
+        response.failed  {code, ly_do, retry_after_s?}
+        billing.updated  {credit_giu, credit_thu, credit_hoan, do_duoc, phien_ban_gia}
+
+    Lỗi **trước** khi giữ tiền (`ThamSoSai`) ném thẳng — chúng là lỗi của bên
+    gọi và chưa có tác dụng phụ nào. Từ `response.started` trở đi, mọi kết cục
+    là **sự kiện**, kể cả bận và không mở được, để sản phẩm luôn nhận được
+    `billing.updated` cuối cùng và biết tiền đã đi đâu.
+
+    ⭐ `response.started` phát **trước** khi mở luồng tới máy B — tức trước
+       prefill. Với prompt dài prefill có thể mất hơn 100 giây, và byte đầu tiên
+       tới sớm là thứ giữ kết nối qua Cloudflare không bị 524 (D7 kế hoạch).
+
+    Bên tiêu thụ **đóng generator** (`.close()`) để dừng: phần đã sinh vẫn được
+    quyết toán đúng trong `finally` của luồng bên dưới.
+    """
+    than = dict(params or {})
+    than["stream"] = True
+    # llama-server chỉ đính `usage` vào chunk cuối khi được xin. Không xin thì
+    # `DemToken` không thấy usage ⇒ hoàn đủ, thu 0 — đúng luật nhưng là cho không.
+    than.setdefault("stream_options", {"include_usage": True})
+
+    cb = chuan_bi(db, user_id=user_id, tool_name=tool_name, than=than,
+                  duong=DUONG_NOI_BO, holder_id=holder_id,
+                  correlation_id=correlation_id, tien_to="cl")
+    yield {"type": "response.started", "request_id": cb.request_id,
+           "model": cb.model_alias, "credit_giu": cb.da_giu}
+
+    try:
+        luot = mo_thuong_nguon(cb, timeout_s=timeout_s)
+    except DangBan as e:
+        yield {"type": "response.failed", "code": "ban", "ly_do": e.ly_do,
+               "retry_after_s": e.thu_lai_sau_s}
+        yield _billing(cb, None)
+        return
+    except KhongMoDuoc as e:
+        yield {"type": "response.failed",
+               "code": "qua_dai" if e.qua_dai else "khong_mo_duoc",
+               "ly_do": e.ly_do}
+        yield _billing(cb, None)
+        return
+
+    doc = _DocSSE()
+    trang_thai: dict = {}
+    vo: Optional[BaseException] = None
+    try:
+        for khoi in luot.luong:
+            for goi in doc.nhin(khoi):
+                yield from _su_kien_tu_goi(goi, trang_thai)
+    except GeneratorExit:
+        # Bên tiêu thụ dừng. Đóng luồng bên dưới để `finally` của nó quyết toán.
+        luot.luong.close()
+        raise
+    except Exception as e:                                      # noqa: BLE001
+        vo = e
+    finally:
+        # Idempotent: generator đã cạn thì `close()` không làm gì.
+        luot.luong.close()
+
+    su = luot.dem
+    yield {"type": "usage.updated", "token_vao": su.token_vao,
+           "token_ra": su.token_ra, "token_cache": su.token_cache,
+           "do_duoc": su.do_duoc}
+    if vo is not None:
+        yield {"type": "response.failed", "code": "luong_vo",
+               "ly_do": type(vo).__name__}
+    else:
+        yield {"type": "response.completed",
+               "finish_reason": trang_thai.get("finish_reason", "")}
+    yield _billing(cb, luot.ket_qua)
+
+
+def _billing(cb: ChuanBi, thu) -> dict:
+    if thu is None:
+        # Chưa chạy hoặc đã hoàn đủ: tiền về đúng chỗ, thu 0.
+        return {"type": "billing.updated", "credit_giu": cb.da_giu,
+                "credit_thu": 0, "credit_hoan": cb.da_giu, "do_duoc": False,
+                "phien_ban_gia": ""}
+    return {"type": "billing.updated", "credit_giu": int(thu.da_giu_credit),
+            "credit_thu": int(thu.thu_credit), "credit_hoan": int(thu.hoan_credit),
+            "do_duoc": bool(getattr(thu, "da_do_duoc", True)),
+            "phien_ban_gia": str(getattr(thu, "phien_ban_gia", ""))}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/runtime_noi_bo/tim.py
+SHA256=618e5d09ff17b83a1fb9c9607d0c0a53050dff84046b4be61c92a3fb37a357bb BYTES=1459 LINES=34
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""tim.py — tra một năng lực theo **tên tool ổn định**, không theo tên app.
+
+Nền tảng không được biết app nào tồn tại (`registry.py` câu mở đầu; test_60
+chốt). Nên đường duy nhất từ một cái tên như `text.chat` tới bản khai của nó
+là đi qua `registry.discover()` và so `ToolSpec.name`.
+"""
+from __future__ import annotations
+
+from typing import Tuple
+
+from platform_core import registry as _reg
+from platform_core.registry import AppManifest, ToolSpec
+
+
+class KhongCoNangLuc(LookupError):
+    """Không có tool nào mang tên này trong một app **đang bật**.
+
+    Fail-closed: một tên lạ, hay tool của một app đã tắt/lỗi nạp, đều là
+    "không có" — không có nhánh nào trả về một tool "gần đúng".
+    """
+
+
+def tim_tool(tool_name: str) -> Tuple[AppManifest, ToolSpec]:
+    """`(manifest, tool)` của tool tên `tool_name`. Ném `KhongCoNangLuc`."""
+    ten = str(tool_name or "")
+    # Tra qua thuộc tính module, không bind tên lúc import: bộ test cắm app thử
+    # bằng `monkeypatch.setattr(registry, "discover", ...)` (khuôn `conftest.app_thu`).
+    for loaded in _reg.discover():
+        if loaded.error or not loaded.manifest.enabled:
+            continue
+        for spec in loaded.manifest.tools:
+            if spec.name == ten:
+                return loaded.manifest, spec
+    raise KhongCoNangLuc(f"khong co nang luc {ten!r}")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -143535,7 +144619,7 @@ def register_job_routes(api, config, tag: str) -> None:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/streaming.py
-SHA256=59322755446a2b3d13720a03b55d4fc94f95711b6f48ebbc5f04a7113cb23c2f BYTES=54180 LINES=1015
+SHA256=fe36b7dd93976c89c2456af39e09123e88ef1dc3468f65622e4c7500de3a3923 BYTES=44507 LINES=809
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``POST /api/v1/messages`` và ``POST /api/v1/responses`` — cửa streaming (Q107).
 
@@ -143585,6 +144669,7 @@ from server.api import tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
+from platform_core.runtime_noi_bo import luong as cua_luong
 
 log = logging.getLogger("server.api.streaming")
 
@@ -143636,7 +144721,7 @@ def _giai_ten_model(ten: str) -> str:
 #: ⛔ NỚI SỐ NÀY KHÔNG MUA THÊM THỜI GIAN. Nó chỉ đổi 503 của ta lấy 524 của
 #:    Cloudflare. Nạp từ đĩa lạnh lâu hơn thì giảm nhẹ bằng `ttl` của llama-swap
 #:    (giữ model thường trú), không bằng đồng hồ này.
-MO_LUONG_GIAY = 75.0
+MO_LUONG_GIAY = cua_luong.MO_LUONG_GIAY   # 75.0 — một hằng, một chỗ
 
 #: ⛔ TOKEN RA MẶC ĐỊNH KHÔNG CÒN Ở ĐÂY.
 #:
@@ -144054,9 +145139,6 @@ def _tran_vao_cua_model(alias: str) -> int:
 
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config, request=None) -> StreamingResponse:
-    from platform_core import credit
-    from platform_core.llm import admission, thanh_toan
-
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
@@ -144169,95 +145251,32 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     # ⛔ KHONG tu ghep chuoi o day: `credit_entries.job_id` la VARCHAR(36) va
     #    PostgreSQL ep do dai trong khi SQLite thi khong. Xem `thanh_toan.ma_luot`.
-    request_id = thanh_toan.ma_luot("st")
-    ticket = admission.acquire(
-        db, resource=tool.admission_resource, slots=tool.admission_slots,
-        user_id=principal.user_id, mode="stream", holder_id=request_id)
-    if ticket is None:
-        db.rollback()
-        raise limits.execution_busy(tool.admission_resource)
-    vao_uoc = executor.estimate_input(tin)
-    xin_ra = _max_tokens(than, vao_uoc)
-
-    # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN. Thiếu dòng này là lỗi thật, tìm
-    #    ra 24/08 khi cắm Claude Code lần đầu (H38/L2).
+    # ── Từ đây là FACADE (H43 Phase 02): admission → giữ chỗ → commit → mở luồng.
     #
-    #    `_max_tokens()` kẹp về `MAX_TOKENS_TRAN`, nhưng kết quả chỉ dùng cho
-    #    phần **giữ tiền**. Thân `gui` vẫn mang con số thô của khách. Nên ta kẹp
-    #    cái mình **thu tiền** mà không kẹp cái mình **gửi đi**, và máy B trả 413.
-    #
-    #    Claude Code gửi `max_tokens: 32000` mặc định — con số khách gần như
-    #    không có cách nào đổi. Nên trước khi sửa, Claude Code **hoàn toàn không
-    #    dùng được**, và triệu chứng là một 503 "thử lại sau" cho một thứ thử lại
-    #    bao nhiêu lần cũng hỏng.
-    #
-    # ⭐ VÌ SAO KẸP CHỨ KHÔNG TỪ CHỐI, khác hẳn `chat.py`. `max_tokens` là một
-    #    **trần**, không phải một lượng đặt hàng: kẹp nó xuống chỉ giới hạn câu
-    #    trả lời có thể dài tới đâu, và tiền vẫn tính theo token **thật sự sinh
-    #    ra** nên khách không trả thêm đồng nào. Còn `chat.py` từ chối là đúng ở
-    #    đó, vì lý do của nó là **thời gian** (trần 125 giây của Cloudflare) —
-    #    kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
-    #
-    # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc
-    #    `max_output_tokens`, hai cửa kia đọc `max_tokens`. Ghi nhầm tên là thêm
-    #    một trường lạ mà thượng nguồn bỏ qua — tức lại gửi đi con số thô.
-    #
-    # 🔴 VÀ KHI KHÁCH KHÔNG KHAI GÌ THÌ TÊN TRƯỜNG PHẢI THEO **CỬA**, KHÔNG ĐƯỢC
-    #    MẶC ĐỊNH `max_tokens`.
-    #
-    #    Bản trước rơi vào `else` là ghi `max_tokens` cho **mọi** cửa. Với
-    #    `/v1/responses` thì thượng nguồn **không đọc** tên đó — nó chỉ đọc
-    #    `max_output_tokens` — nên con số của ta bị bỏ qua và llama-server dùng
-    #    mặc định của chính nó: **1024**.
-    #
-    # ⛔ ĐO ĐƯỢC 29/08, VÀ ĐÂY LÀ GỐC CỦA "HỎI DÀI THÌ IM LẶNG": một yêu cầu
-    #    KHÔNG kèm giới hạn trả về đúng `output_tokens=1024`, `status=completed`,
-    #    sau ~22 giây — tức câu trả lời **bị cắt cụt giữa chừng** chứ không phải
-    #    mất kết nối. Codex không tự khai `max_output_tokens` nên lượt nào của nó
-    #    cũng dính. Câu ngắn (<1024 token) thì không ai thấy gì bất thường.
-    _ten_tran = "max_output_tokens" if duong.endswith("/responses") else "max_tokens"
-    for _ten in ("max_tokens", "max_output_tokens"):
-        if _ten in gui:
-            gui[_ten] = xin_ra
-            break
-    else:
-        gui[_ten_tran] = xin_ra
+    #    Toàn bộ thứ tự cửa đã đo là đúng (Q107/Q114) nay sống ở
+    #    `platform_core/runtime_noi_bo/luong.py`, để client nội bộ (ChatLTT) và
+    #    cửa này đi MỘT đường đếm token và quyết toán. Ở đây chỉ còn việc của
+    #    HTTP: dịch bốn lỗi trước-byte-đầu sang mã trạng thái + `problem+json`.
     try:
-        da_giu = thanh_toan.giu_cho_luot(
-            db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
-    except credit.ThieuCreditError as e:
-        # Không đủ tiền thì không đốt GPU. Chốt trước, không phải sau.
-        #
-        # ⭐ Đếm nó — xem ghi chú cùng chỗ ở `chat.py`.
-        metrics.increment(metrics.CREDIT_EXHAUSTED)
-        log.info("khach het credit tai %s: user=%s", duong, principal.user_id[:8])
-        db.rollback()
+        cb = cua_luong.chuan_bi(
+            db, user_id=principal.user_id, tool_name=TOOL_CHAT,
+            than={**than, "model": ten}, duong=duong)
+        luot = cua_luong.mo_thuong_nguon(
+            cb, timeout_s=MO_LUONG_GIAY,
+            trang_thai=getattr(request, "state", None))
+    except cua_luong.ThamSoSai as e:
+        raise _bao_400(str(e), than) from None
+    except cua_luong.ThieuCredit as e:
         raise insufficient_credit(str(e)) from None
-
-    # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHẠM MODEL. Cùng bài học đã học ở
-    #    `server/api/chat.py`: giữ giao dịch mở suốt lượt gọi thì giữ luôn một
-    #    kết nối CSDL, và tiến trình chết giữa chừng sẽ cuộn mất phần giữ chỗ.
-    #    Với streaming còn nặng hơn: generator chạy **sau khi** phản hồi đã bắt
-    #    đầu, lúc đó `get_db` đã đóng phiên rồi.
-    db.commit()
-
-    from platform_core.llm import luong_vlm
-
-    try:
-        mo = luong_vlm.mo(db, duong=duong, than=gui, timeout_s=MO_LUONG_GIAY)
-    except luong_vlm.KhongMoDuocLuong as e:
-        _hoan(principal.user_id, request_id)
-        admission.release_by_id(ticket.id)
-        if e.ban:
-            # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
-            # Đếm vào `CAPACITY_REFUSED` — lý do đầy đủ ở nhánh bận của `_mot_cuc`.
-            metrics.increment(metrics.CAPACITY_REFUSED)
-            log.warning("BAN luong: user=%s duong=%s ly_do=%s",
-                        principal.user_id[:8], duong, e.ly_do)
-            raise service_unavailable(f"The model is busy right now: {e.ly_do}",
-                                      retry_after=e.thu_lai_sau_s) from None
-        if getattr(e, "qua_dai", False):
+    except cua_luong.DangBan as e:
+        if e.nguon == "suat":
+            raise limits.execution_busy(e.tai_nguyen) from None
+        # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền (facade
+        #    đã hoàn và đã đếm vào `CAPACITY_REFUSED`).
+        raise service_unavailable(f"The model is busy right now: {e.ly_do}",
+                                  retry_after=e.thu_lai_sau_s) from None
+    except cua_luong.KhongMoDuoc as e:
+        if e.qua_dai:
             # 413 context_length_exceeded: ngữ cảnh vượt trần đầu-vào của máy B.
             # KHÔNG phải hỏng tạm — client PHẢI nén/bỏ lượt cũ rồi thử lại; retry
             # nguyên si chỉ tạo bão (đúng cái Codex đã dính: hội thoại/phản hồi
@@ -144272,170 +145291,30 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
                 limit_name="input_tokens",
                 # ⛔ TRAN THEO MODEL, khong phai tran chung (P08 F-02).
                 #    `qwen38-vision` chay `-c 65536` nen tran vao that cua no
-                #    nho hon `TOKEN_VAO_TRAN` mot nua. Tra so chung o day nghia
-                #    la than loi noi mot dang (`tran: 65536`, nguyen van tu may
-                #    B) con truong may doc duoc noi mot dang khac.
+                #    nho hon `TOKEN_VAO_TRAN` mot nua.
                 limit_value=_tran_vao_cua_model(ten)) from None
-        log.warning("khong mo duoc luong cho user=%s: %s",
-                    principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
-    except BaseException:
-        _hoan(principal.user_id, request_id)
-        admission.release_by_id(ticket.id)
-        raise
 
-    metrics.increment("chat:stream")
-    return StreamingResponse(
-        _phat(mo, user_id=principal.user_id, request_id=request_id,
-              da_giu=da_giu, lease_id=ticket.id,
-              trang_thai=getattr(request, "state", None)),
-        media_type=mo.content_type, headers=_SSE,
-        background=BackgroundTask(admission.release_by_id, ticket.id))
-
-
-def _phat(mo, *, user_id: str, request_id: str, da_giu: int,
-          trang_thai=None,
-          lease_id: str = "") -> Iterator[bytes]:
-    """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
-
-    ⛔ `finally` chứ không phải "sau vòng lặp". Khách đóng kết nối thì Starlette
-       ném `GeneratorExit` vào ngay chỗ `yield`, và nhánh sau vòng lặp **không
-       bao giờ chạy** — nghĩa là một lượt đã đốt GPU sẽ không bao giờ được quyết
-       toán, và phần giữ chỗ nằm lại đó mãi.
-    """
-    from platform_core.llm.dem_token_luong import DemToken
-    import time as _time
-
-    dem = DemToken()
-    vo: Optional[BaseException] = None
-    khach_ngat = False
-    _t0 = _time.monotonic()
-    _n_khoi = 0
-    _t_byte_dau: Optional[float] = None
-    from contextlib import nullcontext
     from platform_core.llm import admission
-    keeper = admission.keep_alive(lease_id) if lease_id else nullcontext()
-    with keeper:
-        try:
-            for khoi in mo.luong:
-                if _t_byte_dau is None:
-                    _t_byte_dau = _time.monotonic() - _t0
-                _n_khoi += 1
-                dem.nhin(khoi)
-                yield khoi
-        except GeneratorExit:
-            khach_ngat = True
-            raise
-        except BaseException as e:                              # noqa: BLE001
-            vo = e
-            raise
-        finally:
-            _dt = _time.monotonic() - _t0
-            log.warning(
-                "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
-                "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
-                request_id[-8:], _dt,
-                (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
-                _n_khoi, dem.token_ra)
-            _quyet_toan(user_id, request_id, dem, da_giu, trang_thai)
-            if vo is not None:
-                mo.hong(vo)
-            else:
-                mo.xong(tokens=dem.token_ra)
+    nen = (BackgroundTask(admission.release_by_id, cb.lease_id)
+           if cb.lease_id else None)
+    return StreamingResponse(luot.luong, media_type=luot.content_type,
+                             headers=_SSE, background=nen)
 
 
-def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int,
-                trang_thai=None) -> None:
-    """Chốt tiền, trong một phiên CSDL **mới**.
+# `_phat` / `_quyet_toan` / `_hoan` đã HẠ xuống
+# `platform_core/runtime_noi_bo/luong.py` (H43 Phase 02). Giữ tên ở đây cho
+# ai còn tra theo tên cũ; thân hàm chỉ có MỘT ở nơi mới.
+_quyet_toan = cua_luong.quyet_toan
+_hoan = cua_luong.hoan
 
-    ⚠️ Phiên của request đã đóng từ lúc phản hồi bắt đầu — generator này chạy sau
-       đó. Dùng lại phiên cũ là `DetachedInstanceError` hoặc tệ hơn: một giao
-       dịch không bao giờ được commit.
-    """
-    from platform_core.db import get_session
-    from platform_core.llm import thanh_toan
-
-    gen = get_session()
-    db = next(gen)
-    try:
-        thu = thanh_toan.quyet_toan_hoac_hoan(
-            db, user_id=user_id, request_id=request_id, su_dung=dem.su_dung())
-        db.commit()
-        # ⛔ P08 F-01. Doc `server/api/guard.py:_write_request_log_muon` truoc khi
-        #    doi dong nay: task nen ghi so request doc `api_credit_delta` o
-        #    thoi diem NO chay, va no chay SAU generator nay. Dat o day la cach
-        #    duy nhat cua stream ke duoc so tien that vao so.
-        if trang_thai is not None:
-            trang_thai.api_credit_delta = -int(thu.thu_credit)
-        log.info("stream %s: giu=%s thu=%s token_ra=%s do_duoc=%s",
-                 request_id[-8:], da_giu, thu.thu_credit, dem.token_ra,
-                 dem.do_duoc)
-    except Exception:                                           # noqa: BLE001
-        db.rollback()
-        # 🔴 Ồn ào có chủ ý. Không quyết toán được nghĩa là phần giữ chỗ nằm lại
-        #    trên tài khoản khách — tiền của họ bị treo, và không có gì khác báo.
-        log.exception("KHONG QUYET TOAN DUOC stream %s user=%s",
-                      request_id[-8:], user_id[:8])
-    finally:
-        try:
-            next(gen)
-        except StopIteration:
-            pass
-
-
-def _hoan(user_id: str, request_id: str) -> None:
-    from platform_core.db import get_session
-    from platform_core.llm import thanh_toan
-
-    gen = get_session()
-    db = next(gen)
-    try:
-        thanh_toan.hoan_luot(db, user_id=user_id, request_id=request_id)
-        db.commit()
-    except Exception:                                           # noqa: BLE001
-        db.rollback()
-        log.exception("khong hoan duoc phan giu cho cua %s", request_id[-8:])
-    finally:
-        try:
-            next(gen)
-        except StopIteration:
-            pass
 
 
 # ── Đọc yêu cầu của hai giao thức ────────────────────────────────────────────
 
-def _tin_nhan(than: dict) -> list:
-    """Rút phần văn bản đầu vào, dù client nói giao thức nào.
+# Ước token đầu vào: một hàm, một chỗ — `runtime_noi_bo.luong.uoc_tin_nhan`.
+_tin_nhan = cua_luong.uoc_tin_nhan
 
-    Chỉ dùng để **ước** token đầu vào cho phần giữ chỗ, nên không cần chính xác
-    tuyệt đối — nhưng phải ước **CAO**, vì giữ thiếu thì khách tiêu quá số dư.
-    """
-    ra: list = []
-    he_thong = than.get("system")
-    if isinstance(he_thong, str):
-        ra.append({"content": he_thong})
-    elif isinstance(he_thong, list):
-        ra.extend({"content": (m or {}).get("text", "")} for m in he_thong
-                  if isinstance(m, dict))
-
-    tin = than.get("messages")
-    if isinstance(tin, list):
-        ra.extend(m for m in tin if isinstance(m, dict))
-
-    # Responses gọi nó là `input`, và nó có thể là chuỗi trần.
-    vao = than.get("input")
-    if isinstance(vao, str):
-        ra.append({"content": vao})
-    elif isinstance(vao, list):
-        ra.extend(m for m in vao if isinstance(m, dict))
-
-    # Định nghĩa tool đi kèm mỗi lượt và **không hề nhỏ**: đo thật 23/08, prompt
-    # hệ thống của Codex là ~21.936 token. Bỏ qua nó là ước thiếu rất nhiều.
-    cong_cu = than.get("tools")
-    if isinstance(cong_cu, list) and cong_cu:
-        import json
-        ra.append({"content": json.dumps(cong_cu, ensure_ascii=False)})
-    return ra
 
 
 def _chu_trong(khoi) -> str:
@@ -144516,8 +145395,7 @@ def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
     # ⭐ VÌ SAO ĐỂ RỘNG LÀ AN TOÀN: credit **giữ trước rồi hoàn** về đúng số token
     #    thật sinh ra (`_quyet_toan`), và model tự dừng khi trả lời xong. Nên số
     #    này chỉ quyết định *chỗ để thở*, không quyết định tiền khách trả.
-    from apps.ltt_llm.ngan_sach import mac_dinh_cho
-    return min(mac_dinh_cho("stream"), tran)
+    return min(int(executor.mac_dinh_cho("stream")), tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:
@@ -251328,7 +252206,7 @@ def test_khong_con_module_core(  ):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_360_ban_co_ly_do.py
-SHA256=ef2e3da17a6ffaf3fec9b87469a961a33a4452ff5438961d082ba56892aaa1f3 BYTES=5780 LINES=116
+SHA256=44b3adfa2fe31b910b4d9ac5f88d410af863d3041b845f49cbb614bdbf8a7728 BYTES=6110 LINES=120
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_360 — "bận" phải nói được VÌ SAO, và phải đếm vào đúng bộ đếm.
 
@@ -251439,9 +252317,13 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
 
 def test_ba_nhanh_ban_deu_GHI_LOG():
     """Một sự cố năm giờ không để lại dòng nào là chuyện đã xảy ra thật."""
+    from platform_core.runtime_noi_bo import luong
     from server.api import chat, streaming
 
-    for mod, so_toi_thieu in ((chat, 1), (streaming, 2)):
+    # Từ H43 Phase 02 (2026-09-03) nhánh bận của cửa STREAM sống ở facade
+    # `platform_core/runtime_noi_bo/luong.py` (`mo_thuong_nguon`); `streaming.py`
+    # chỉ còn nhánh bận của `_mot_cuc`. Ba nhánh, ba chỗ — vẫn đủ ba dòng log.
+    for mod, so_toi_thieu in ((chat, 1), (streaming, 1), (luong, 1)):
         ma = inspect.getsource(mod)
         assert ma.count('log.warning("BAN') >= so_toi_thieu, (
             f"{mod.__name__}: nhanh ban phai ghi log — im lang la thu da lam "
@@ -261660,6 +262542,803 @@ def test_viet_tat_van_PHAN_BIET_HOA_THUONG():
     assert "ây ai" not in tu_dien.ap_dung("ai la nguoi do")
     assert "ây ai" in tu_dien.ap_dung("mo hinh AI moi")
 
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_600_runtime_noi_bo_luong.py
+SHA256=3eeca9e869f1b8fcc7f476667a7acfd1a7de78b0e78e906593a2745127ed878b BYTES=15004 LINES=409
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_600 — `platform_core/runtime_noi_bo/luong.py`: cửa STREAM nội bộ. (H43 Phase 02)
+
+Một app THỬ khai `ToolSpec` có `sync_executor` giả; `luong_vlm.mo` bị thay bằng
+luồng SSE OpenAI giả — KHÔNG chạm máy B, KHÔNG cần khoá API, KHÔNG có `Principal`.
+
+Sáu tính chất neo ở đây:
+
+  1. Không Principal, không URL máy: chỉ `user_id` + tên tool + tham số.
+  2. Thứ tự cửa: giữ chỗ TRƯỚC khi mở luồng; `response.started` phát TRƯỚC prefill.
+  3. Sinh ít trả ít: token thật ⇒ thu đúng, hoàn phần dư; `billing.updated` nói đúng số.
+  4. Bận ⇒ `response.failed{code:"ban"}` + hoàn đủ + nhả suất; không ném.
+  5. Dừng giữa chừng (`.close()`) vẫn quyết toán phần đã sinh.
+  6. Alias lạ / thiếu tiền / hết suất là ngoại lệ TRƯỚC byte đầu, chưa giữ tiền.
+"""
+from __future__ import annotations
+
+import json
+import uuid
+
+import pytest
+
+NL = bytes([10])
+TOOL_THU = "text.thu"
+JOB_THU = "appthu6.luong"
+SLUG_THU = "appthu6"
+
+
+# ── Executor giả — cùng bề mặt `apps/ltt_llm/executor.py` ────────────────────
+
+class _ThamSoSai(ValueError):
+    pass
+
+
+class _ExecutorGia:
+    parameter_error = _ThamSoSai
+
+    @staticmethod
+    def mac_dinh_cho(cua):
+        return {"sync": 1024, "stream": 4096, "job": 4096}[cua]
+
+    def aliases(self):
+        return {"thu_alias": "noi-bo-model-1"}
+
+    def model_id(self, alias):
+        return self.aliases()[alias]
+
+    def validate(self, params):
+        return dict(params)
+
+    def estimate_input(self, messages, tools=None):
+        return sum(len(str(m.get("content", ""))) for m in messages) // 2 + 10
+
+    def sync_output_cap(self, token_input, budget_seconds):
+        return 1024
+
+    def context_output_cap(self, token_input):
+        return 40000
+
+
+EXECUTOR_GIA = _ExecutorGia()
+
+
+@pytest.fixture()
+def moi_truong(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       "sqlite:///" + (tmp_path / "l.db").as_posix())
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    Base.metadata.create_all(get_engine())
+    yield
+    dbmod.reset_engine()
+
+
+@pytest.fixture()
+def app_luong(monkeypatch, moi_truong):
+    """App thử có ToolSpec + sync_executor giả, cắm vào registry bằng monkeypatch."""
+    from platform_core import registry as reg
+
+    manifest = reg.AppManifest(
+        slug=SLUG_THU, display_name="App thu luong", route_prefix=f"/{SLUG_THU}",
+        job_types=(JOB_THU,), credit_cost=lambda p: 1,
+        enabled=True, public=False, surface="runtime", lifecycle="internal",
+        tools=(reg.ToolSpec(
+            name=TOOL_THU, job_type=JOB_THU, description="tool thu",
+            params_schema={"messages": {"type": "json[]", "required": True},
+                           "model": {"type": "enum", "values": ["thu_alias"],
+                                     "default": "thu_alias"}},
+            returns={"content": "text"},
+            admission_resource="thu_gpu", admission_slots=1,
+            sync_executor="tests.test_600_runtime_noi_bo_luong:EXECUTOR_GIA",
+        ),),
+    )
+    loaded = reg.LoadedApp(manifest=manifest, router=None)
+    goc = reg.discover
+
+    def discover_kem(apps_dir=None):
+        return list(goc() if apps_dir is None else goc(apps_dir)) + [loaded]
+
+    monkeypatch.setattr(reg, "discover", discover_kem)
+    return manifest
+
+
+def _session():
+    from platform_core.db import get_session
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _user(credits=10_000):
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+    gen, db = _session()
+    try:
+        u = tao_nguoi_dung(db, email="l-" + uuid.uuid4().hex[:8] + "@example.com",
+                           password="a-good-password-12")
+        db.flush()
+        if credits:
+            credit.cap_tay(db, u.id, credits, by="test")
+        db.commit()
+        return u.id
+    finally:
+        _close(gen)
+
+
+def _so_du(user_id):
+    from platform_core import credit
+    gen, db = _session()
+    try:
+        return int(credit.so_du(db, user_id))
+    finally:
+        _close(gen)
+
+
+def _sse(goi):
+    return b"data: " + json.dumps(goi).encode() + NL + NL
+
+
+def _khoi_openai(chu="xin chao", suy_nghi="", vao=100, ra=50, usage=True):
+    ds = []
+    if suy_nghi:
+        ds.append(_sse({"choices": [{"delta": {"reasoning_content": suy_nghi}}]}))
+    for phan in (chu[: len(chu) // 2], chu[len(chu) // 2:]):
+        ds.append(_sse({"choices": [{"delta": {"content": phan}}]}))
+    ds.append(_sse({"choices": [{"delta": {}, "finish_reason": "stop"}]}))
+    if usage:
+        ds.append(_sse({"choices": [], "usage": {"prompt_tokens": vao,
+                                                 "completion_tokens": ra}}))
+    ds.append(b"data: [DONE]" + NL + NL)
+    return ds
+
+
+def _dat_luong(monkeypatch, khoi=None, *, ban=False, nem=None):
+    from platform_core.llm import luong_vlm
+    da_goi = []
+
+    class Gia:
+        def __init__(self, ks):
+            self.ma = 200
+            self.content_type = "text/event-stream"
+            self.luong = iter(ks)
+            self.xong_voi = None
+            self.hong_voi = None
+
+        def xong(self, tokens=0):
+            self.xong_voi = tokens
+
+        def hong(self, exc):
+            self.hong_voi = exc
+
+    def mo(db, *, duong, than, timeout_s=900.0):
+        da_goi.append({"duong": duong, "than": than})
+        if ban:
+            raise luong_vlm.KhongMoDuocLuong("may B dang ban", ban=True,
+                                             thu_lai_sau_s=30)
+        if nem is not None:
+            raise nem
+        return Gia(khoi if khoi is not None else _khoi_openai())
+
+    monkeypatch.setattr(luong_vlm, "mo", mo)
+    return da_goi
+
+
+def _params(**g):
+    d = {"model": "thu_alias", "messages": [{"role": "user", "content": "xin chao ban"}]}
+    d.update(g)
+    return d
+
+
+def _chay(user_id, params, monkeypatch, **kw):
+    from platform_core.runtime_noi_bo import luong
+    gen, db = _session()
+    try:
+        return list(luong.mo_luong(db, user_id=user_id, tool_name=TOOL_THU,
+                                   params=params, **kw))
+    finally:
+        _close(gen)
+
+
+def _dem_lease():
+    from platform_core.models import ExecutionLease
+    gen, db = _session()
+    try:
+        return db.query(ExecutionLease).count()
+    finally:
+        _close(gen)
+
+
+# ── 1+2. Không Principal, đúng thứ tự, đúng sự kiện ─────────────────────────
+
+def test_luong_chay_tron_va_sinh_su_kien_canonical(app_luong, monkeypatch):
+    da_goi = _dat_luong(monkeypatch, _khoi_openai("xin chao", suy_nghi="nghi da"))
+    u = _user(1000)
+    sk = _chay(u, _params(), monkeypatch)
+    loai = [s["type"] for s in sk]
+    assert loai[0] == "response.started"
+    assert loai[-1] == "billing.updated"
+    assert "reasoning.delta" in loai and "response.delta" in loai
+    assert "usage.updated" in loai and "response.completed" in loai
+    assert "".join(s["text"] for s in sk if s["type"] == "response.delta") == "xin chao"
+    assert [s["text"] for s in sk if s["type"] == "reasoning.delta"] == ["nghi da"]
+    xong = next(s for s in sk if s["type"] == "response.completed")
+    assert xong["finish_reason"] == "stop"
+
+    # Thân gửi lên máy B: alias đã dịch sang id nội bộ, xin usage, có stream.
+    than = da_goi[0]["than"]
+    assert da_goi[0]["duong"] == "/v1/chat/completions"
+    assert than["model"] == "noi-bo-model-1"
+    assert than["stream"] is True
+    assert than["stream_options"] == {"include_usage": True}
+    assert than["max_tokens"] == 4096            # mặc định CỬA STREAM của executor
+    # `response.started` không lộ id nội bộ.
+    assert sk[0]["model"] == "thu_alias"
+    assert "noi-bo-model-1" not in json.dumps(sk)
+
+
+def test_response_started_phat_TRUOC_khi_mo_luong(app_luong, monkeypatch):
+    """D7: byte đầu phải tới trước prefill — `started` ra trước `luong_vlm.mo`."""
+    from platform_core.runtime_noi_bo import luong
+    da_goi = _dat_luong(monkeypatch)
+    u = _user(1000)
+    gen, db = _session()
+    try:
+        it = luong.mo_luong(db, user_id=u, tool_name=TOOL_THU, params=_params())
+        dau = next(it)
+        assert dau["type"] == "response.started"
+        assert da_goi == []                     # chưa chạm máy B
+        assert dau["credit_giu"] > 0            # nhưng tiền ĐÃ giữ
+        assert _so_du(u) == 1000 - dau["credit_giu"]
+        list(it)
+    finally:
+        _close(gen)
+
+
+# ── 3. Sinh ít trả ít ────────────────────────────────────────────────────────
+
+def test_thu_dung_theo_usage_va_hoan_phan_du(app_luong, monkeypatch):
+    _dat_luong(monkeypatch, _khoi_openai(vao=100, ra=50))
+    u = _user(1000)
+    # 30.000 token ra ⇒ giữ ~12 credit; sinh 50 ⇒ thu 1 (làm tròn lên). Hai số
+    # phải KHÁC nhau thì phép kiểm "hoàn phần dư" mới có nghĩa.
+    sk = _chay(u, _params(max_tokens=30000), monkeypatch)
+    tien = sk[-1]
+    assert tien["type"] == "billing.updated"
+    assert tien["do_duoc"] is True
+    assert 0 < tien["credit_thu"] < tien["credit_giu"]
+    assert tien["credit_giu"] - tien["credit_thu"] == tien["credit_hoan"]
+    assert _so_du(u) == 1000 - tien["credit_thu"]
+    usage = next(s for s in sk if s["type"] == "usage.updated")
+    assert (usage["token_vao"], usage["token_ra"]) == (100, 50)
+    assert _dem_lease() == 0                    # suất đã nhả
+
+
+def test_khong_do_duoc_usage_thi_hoan_du_thu_0(app_luong, monkeypatch):
+    _dat_luong(monkeypatch, _khoi_openai(usage=False))
+    u = _user(1000)
+    sk = _chay(u, _params(), monkeypatch)
+    tien = sk[-1]
+    assert tien["credit_thu"] == 0 and tien["do_duoc"] is False
+    assert _so_du(u) == 1000
+
+
+# ── 4. Bận ⇒ sự kiện, hoàn đủ, nhả suất ─────────────────────────────────────
+
+def test_may_B_ban_thi_failed_ban_va_hoan_du(app_luong, monkeypatch):
+    _dat_luong(monkeypatch, ban=True)
+    u = _user(1000)
+    sk = _chay(u, _params(), monkeypatch)
+    loai = [s["type"] for s in sk]
+    assert loai == ["response.started", "response.failed", "billing.updated"]
+    assert sk[1]["code"] == "ban" and sk[1]["retry_after_s"] == 30
+    assert sk[2]["credit_thu"] == 0
+    assert _so_du(u) == 1000
+    assert _dem_lease() == 0
+
+
+def test_het_suat_thuc_thi_la_ngoai_le_truoc_byte_dau(app_luong, monkeypatch):
+    from platform_core.llm import admission
+    from platform_core.runtime_noi_bo import luong
+    _dat_luong(monkeypatch)
+    u = _user(1000)
+    gen, db = _session()
+    try:
+        lease = admission.acquire(db, resource="thu_gpu", slots=1, user_id="khac",
+                                  mode="job", holder_id="job-khac")
+        assert lease is not None
+        db.commit()
+        with pytest.raises(luong.DangBan) as ex:
+            next(luong.mo_luong(db, user_id=u, tool_name=TOOL_THU, params=_params()))
+        assert ex.value.nguon == "suat" and ex.value.tai_nguyen == "thu_gpu"
+        assert _so_du(u) == 1000                # chưa giữ tiền
+    finally:
+        _close(gen)
+
+
+# ── 5. Dừng giữa chừng vẫn quyết toán phần đã sinh ──────────────────────────
+
+def test_dong_generator_giua_chung_van_quyet_toan(app_luong, monkeypatch):
+    khoi = [_sse({"choices": [{"delta": {"content": "a"}}],
+                  "usage": {"prompt_tokens": 100, "completion_tokens": 20}})]
+    khoi += [_sse({"choices": [{"delta": {"content": "b"}}]})] * 5
+    _dat_luong(monkeypatch, khoi)
+    from platform_core.runtime_noi_bo import luong
+    u = _user(1000)
+    gen, db = _session()
+    try:
+        it = luong.mo_luong(db, user_id=u, tool_name=TOOL_THU,
+                            params=_params(max_tokens=30000))
+        dau = next(it)
+        giu = dau["credit_giu"]
+        assert next(it)["type"] == "response.delta"
+        it.close()                              # người dùng bấm Dừng
+    finally:
+        _close(gen)
+    thu = 1000 - _so_du(u)
+    assert 0 < thu < giu                        # thu phần đã sinh, hoàn phần dư
+    assert _dem_lease() == 0
+
+
+# ── 6. Lỗi của bên gọi: trước tiền, trước GPU ───────────────────────────────
+
+def test_alias_la_thi_ThamSoSai_chua_giu_tien(app_luong, monkeypatch):
+    from platform_core.runtime_noi_bo import luong
+    da_goi = _dat_luong(monkeypatch)
+    u = _user(1000)
+    gen, db = _session()
+    try:
+        with pytest.raises(luong.ThamSoSai):
+            next(luong.mo_luong(db, user_id=u, tool_name=TOOL_THU,
+                                params=_params(model="qwen-that")))
+    finally:
+        _close(gen)
+    assert da_goi == [] and _so_du(u) == 1000
+
+
+def test_thieu_credit_la_ThieuCredit_chua_cham_GPU(app_luong, monkeypatch):
+    from platform_core.runtime_noi_bo import luong
+    da_goi = _dat_luong(monkeypatch)
+    u = _user(0)
+    gen, db = _session()
+    try:
+        with pytest.raises(luong.ThieuCredit):
+            next(luong.mo_luong(db, user_id=u, tool_name=TOOL_THU, params=_params()))
+    finally:
+        _close(gen)
+    assert da_goi == [] and _dem_lease() == 0
+
+
+def test_ten_tool_la_thi_KhongCoNangLuc(app_luong, monkeypatch):
+    from platform_core.runtime_noi_bo import luong
+    u = _user(10)
+    gen, db = _session()
+    try:
+        with pytest.raises(luong.KhongCoNangLuc):
+            next(luong.mo_luong(db, user_id=u, tool_name="text.khong_co",
+                                params=_params()))
+    finally:
+        _close(gen)
+
+
+# ── Đường byte thô cho `/api/v1` dùng CÙNG lắp ráp ───────────────────────────
+
+def test_mo_luong_tho_chuyen_byte_nguyen_xi_va_quyet_toan(app_luong, monkeypatch):
+    from platform_core.runtime_noi_bo import luong
+    ks = _khoi_openai("nguyen xi", vao=10, ra=5)
+    _dat_luong(monkeypatch, list(ks))
+    u = _user(1000)
+    gen, db = _session()
+    try:
+        luot = luong.mo_luong_tho(db, user_id=u, tool_name=TOOL_THU,
+                                  than=_params(), duong="/v1/messages")
+        ra = list(luot.luong)
+    finally:
+        _close(gen)
+    assert b"".join(ra) == b"".join(ks)         # không sửa một byte
+    assert luot.ket_thuc == "xong"
+    assert luot.ket_qua is not None and luot.ket_qua.thu_credit >= 1
+    assert luot.chuan_bi.than_gui["max_tokens"] == 4096
+    assert _dem_lease() == 0
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_601_runtime_noi_bo_danh_muc_job.py
+SHA256=5ca0ad6dba073970bfdc90c3a6f755e20549be7af45b96ca9c1dd77810f49e17 BYTES=9319 LINES=241
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_601 — `runtime_noi_bo.danh_muc` + `runtime_noi_bo.job`. (H43 Phase 02)
+
+  1. `danh_muc` chỉ trả tool trong allowlist; tên lạ, app tắt, tool không có
+     `api_contract` đều **không hiện** (fail-closed) — và không lộ id nội bộ.
+  2. Tuỳ chọn động theo NGƯỜI DÙNG đi qua `ToolSpec.tuy_chon_dong`.
+  3. `bao_gia` validate theo ToolSpec rồi tính giá đúng làn; `nop_job` giữ đúng
+     số đã báo, ép `owner_id`, truyền `so_lan_thu` của manifest, dedupe.
+"""
+from __future__ import annotations
+
+import uuid
+
+import pytest
+
+SLUG = "appthu601"
+JOB = "appthu601.ve"
+TOOL = "image.thu601"
+TOOL_KHONG_HOP_DONG = "image.thu601_noi_bo"
+
+
+def tuy_chon_thu(db, user_id):
+    """Danh sách "của tôi": phụ thuộc người dùng, không phụ thuộc tiến trình."""
+    return [{"value": f"vc_{user_id[:4]}", "label": "Giong cua toi"}]
+
+
+@pytest.fixture()
+def moi_truong(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       "sqlite:///" + (tmp_path / "j.db").as_posix())
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    Base.metadata.create_all(get_engine())
+    yield
+    dbmod.reset_engine()
+
+
+def _manifest(enabled=True):
+    from platform_core import registry as reg
+    return reg.AppManifest(
+        slug=SLUG, display_name="App thu 601", route_prefix=f"/{SLUG}",
+        job_types=(JOB,), credit_cost=lambda p: 3 * int(p.get("count", 1)),
+        so_lan_thu={JOB: 5},
+        bang_gia=lambda: {"don_vi": "credit / anh", "phien_ban_gia": "thu-2026-09"},
+        enabled=enabled, public=False, surface="runtime", lifecycle="internal",
+        tools=(
+            reg.ToolSpec(
+                name=TOOL, job_type=JOB, description="ve anh thu",
+                params_schema={
+                    "prompt": {"type": "string", "required": True, "max_length": 100},
+                    "count": {"type": "int", "min": 1, "max": 4, "default": 1},
+                    "voice_id": {"type": "string", "required": False},
+                },
+                returns={"image_keys": "image[]"},
+                admission_resource="thu_gpu2", admission_slots=1,
+                tuy_chon_dong={"voice_id": "tests.test_601_runtime_noi_bo_danh_muc_job:tuy_chon_thu"},
+                api_exposed=True,
+                api_contract={
+                    "scopes": ("jobs:create",),
+                    "description": "Ve anh (mo ta cho khach)",
+                    "models": {"thu_std": {"id": "engine-noi-bo-x1",
+                                           "stability": "stable"}},
+                },
+            ),
+            reg.ToolSpec(
+                name=TOOL_KHONG_HOP_DONG, job_type=JOB, description="noi bo",
+                params_schema={"prompt": {"type": "string", "required": True}},
+                returns={"image_keys": "image[]"},
+            ),
+        ),
+    )
+
+
+@pytest.fixture()
+def app_601(monkeypatch, moi_truong):
+    from platform_core import registry as reg
+    m = _manifest()
+    loaded = reg.LoadedApp(manifest=m, router=None)
+    goc = reg.discover
+    monkeypatch.setattr(reg, "discover",
+                        lambda apps_dir=None: list(goc() if apps_dir is None
+                                                   else goc(apps_dir)) + [loaded])
+    return m
+
+
+def _session():
+    from platform_core.db import get_session
+    gen = get_session()
+    return gen, next(gen)
+
+
+def _close(gen):
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+
+
+def _user(credits=100):
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+    gen, db = _session()
+    try:
+        u = tao_nguoi_dung(db, email="j-" + uuid.uuid4().hex[:8] + "@example.com",
+                           password="a-good-password-12")
+        db.flush()
+        if credits:
+            credit.cap_tay(db, u.id, credits, by="test")
+        db.commit()
+        return u.id
+    finally:
+        _close(gen)
+
+
+# ── 1. Catalog fail-closed ───────────────────────────────────────────────────
+
+def test_danh_muc_chi_tra_tool_trong_allowlist_va_khong_lo_id_noi_bo(app_601):
+    from platform_core.runtime_noi_bo.danh_muc import danh_muc
+    gen, db = _session()
+    try:
+        ds = danh_muc(db, user_id="u-1", cho_phep={TOOL, "text.khong_co"})
+    finally:
+        _close(gen)
+    assert [n.ten for n in ds] == [TOOL]
+    n = ds[0]
+    assert n.phuong_thuc == "image" and n.che_do == "job"
+    assert n.nhan == "Ve anh (mo ta cho khach)"
+    assert n.duong_dan_app == f"/{SLUG}"
+    assert n.gia["phien_ban_gia"] == "thu-2026-09"
+    assert list(n.models) == ["thu_std"]
+    import json
+    assert "engine-noi-bo-x1" not in json.dumps(
+        {"hop_dong": n.hop_dong, "models": n.models, "tuy_chon": n.tuy_chon})
+    assert n.hop_dong["input_schema"]["properties"]["count"]["maximum"] == 4
+
+
+def test_tool_khong_co_api_contract_khong_hien(app_601):
+    from platform_core.runtime_noi_bo.danh_muc import danh_muc
+    gen, db = _session()
+    try:
+        ds = danh_muc(db, user_id="u-1", cho_phep={TOOL_KHONG_HOP_DONG})
+    finally:
+        _close(gen)
+    assert ds == []
+
+
+def test_app_tat_thi_san_sang_la_chua_san_sang(monkeypatch, moi_truong):
+    from platform_core import registry as reg
+    from platform_core.runtime_noi_bo.danh_muc import danh_muc
+    loaded = reg.LoadedApp(manifest=_manifest(enabled=False), router=None)
+    gen, db = _session()
+    try:
+        ds = danh_muc(db, user_id="u", cho_phep={TOOL}, apps=[loaded])
+    finally:
+        _close(gen)
+    assert ds[0].san_sang == "chua_san_sang"
+
+
+# ── 2. Tuỳ chọn động theo người dùng ────────────────────────────────────────
+
+def test_tuy_chon_dong_theo_nguoi_dung(app_601):
+    from platform_core.runtime_noi_bo.danh_muc import danh_muc
+    gen, db = _session()
+    try:
+        a = danh_muc(db, user_id="aaaa-1", cho_phep={TOOL})[0]
+        b = danh_muc(db, user_id="bbbb-2", cho_phep={TOOL})[0]
+    finally:
+        _close(gen)
+    assert a.tuy_chon["voice_id"] == [{"value": "vc_aaaa", "label": "Giong cua toi"}]
+    assert b.tuy_chon["voice_id"] == [{"value": "vc_bbbb", "label": "Giong cua toi"}]
+
+
+def test_agent_tools_resolve_tuy_chon_dong_khi_co_db(app_601):
+    from platform_core.agent.tools import resolve_params_schema
+    gen, db = _session()
+    try:
+        co = resolve_params_schema(TOOL, {}, db=db, user_id="cccc-3")
+        khong = resolve_params_schema(TOOL, {})
+    finally:
+        _close(gen)
+    assert co["voice_id"]["values"] == ["vc_cccc"]
+    assert "values" not in khong["voice_id"]     # caller cũ: không đổi gì
+
+
+# ── 3. Báo giá + nộp job ─────────────────────────────────────────────────────
+
+def test_bao_gia_validate_roi_tinh_dung_gia(app_601):
+    from platform_core.runtime_noi_bo import job
+    bg = job.bao_gia(TOOL, {"prompt": "meo", "count": 2})
+    assert (bg.lane, bg.credit, bg.phien_ban_gia) == (JOB, 6, "thu-2026-09")
+    assert bg.tham_so_sach == {"prompt": "meo", "count": 2}
+    with pytest.raises(job.ThamSoSai):
+        job.bao_gia(TOOL, {"prompt": "meo", "count": 9})
+    with pytest.raises(job.ThamSoSai):
+        job.bao_gia(TOOL, {"prompt": "meo", "la": 1})
+    with pytest.raises(job.KhongCoNangLuc):
+        job.bao_gia("image.khong_co", {"prompt": "x"})
+
+
+def test_nop_job_giu_dung_so_bao_ep_owner_va_so_lan_thu(app_601):
+    from platform_core import credit
+    from platform_core.runtime_noi_bo import job
+    u = _user(100)
+    bg = job.bao_gia(TOOL, {"prompt": "meo", "count": 2})
+    gen, db = _session()
+    try:
+        j = job.nop_job(db, user_id=u, bao_gia=bg, correlation_id="corr-1",
+                        idempotency_key="idem-1")
+        db.commit()
+        assert j.params["owner_id"] == u
+        assert j.job_type == JOB and j.app_slug == SLUG
+        assert j.max_attempts == 5                       # từ manifest.so_lan_thu
+        assert j.admission_resource == "thu_gpu2" and j.admission_slots == 1
+        assert j.correlation_id == "corr-1"
+        assert credit.so_da_giu(db, j.id) == 6
+        assert int(credit.so_du(db, u)) == 94
+        # Nộp lại cùng khoá idempotency ⇒ job cũ, KHÔNG giữ lần hai.
+        j2 = job.nop_job(db, user_id=u, bao_gia=bg, idempotency_key="idem-1")
+        db.commit()
+        assert j2.id == j.id and int(credit.so_du(db, u)) == 94
+    finally:
+        _close(gen)
+
+
+def test_nop_job_thieu_credit_nem_va_khong_tao_job(app_601):
+    from platform_core import credit
+    from platform_core.models import Job
+    from platform_core.runtime_noi_bo import job
+    u = _user(2)
+    bg = job.bao_gia(TOOL, {"prompt": "meo", "count": 4})
+    gen, db = _session()
+    try:
+        with pytest.raises(credit.ThieuCreditError):
+            job.nop_job(db, user_id=u, bao_gia=bg)
+        db.rollback()
+        assert db.query(Job).filter(Job.user_id == u).count() == 0
+    finally:
+        _close(gen)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_602_manifest_so_lan_thu_tuy_chon_dong.py
+SHA256=50ce006f53b7278dd05ecef858f39864bcf9f1953168aefc257015cdecf9342b BYTES=5409 LINES=129
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_602 — hai trường hợp đồng mới (H43 Phase 02): `AppManifest.so_lan_thu` và
+`ToolSpec.tuy_chon_dong`, và chỗ chúng được ĐỌC.
+
+  1. Registry từ chối bản khai sai NGAY LÚC NẠP (job_type lạ, số < 1, tham số
+     không tồn tại, kiểu không phải string, tham chiếu sai hình).
+  2. `so_lan_thu_for` mặc định 3, sàn 1.
+  3. `apps/ltt_voice` khai cả hai — và `/api/v1` nay đọc `so_lan_thu` thay vì
+     mặc định 3 (bất đối xứng web↔API đo được ở Phase 02).
+  4. `tai_tham_chieu` không import lúc nạp registry.
+"""
+from __future__ import annotations
+
+import pytest
+
+from platform_core import registry as reg
+
+
+def _m(**g):
+    goc = dict(slug="appthu602", display_name="x", route_prefix="/appthu602",
+               job_types=("appthu602.j",), credit_cost=lambda p: 1)
+    goc.update(g)
+    return reg.AppManifest(**goc)
+
+
+def _tool(**g):
+    goc = dict(name="text.thu602", job_type="appthu602.j", description="d",
+               params_schema={"p": {"type": "string"}, "n": {"type": "int"}},
+               returns={"content": "text"})
+    goc.update(g)
+    return reg.ToolSpec(**goc)
+
+
+def _validate(m):
+    reg._validate(m, set(), set(), set(), set(), set())
+
+
+# ── 1. Từ chối lúc nạp ───────────────────────────────────────────────────────
+
+def test_so_lan_thu_job_type_la_bi_tu_choi():
+    with pytest.raises(reg.RegistryError, match="so_lan_thu"):
+        _validate(_m(so_lan_thu={"khac.j": 5}))
+
+
+@pytest.mark.parametrize("so", [0, -1, True, "5", 2.5])
+def test_so_lan_thu_phai_la_so_nguyen_duong(so):
+    with pytest.raises(reg.RegistryError, match="so_lan_thu"):
+        _validate(_m(so_lan_thu={"appthu602.j": so}))
+
+
+def test_so_lan_thu_hop_le_nap_duoc():
+    _validate(_m(so_lan_thu={"appthu602.j": 5}))
+
+
+def test_tuy_chon_dong_tham_so_khong_ton_tai_bi_tu_choi():
+    with pytest.raises(reg.RegistryError, match="tuy_chon_dong"):
+        _validate(_m(tools=(_tool(tuy_chon_dong={"q": "a.b:c"}),)))
+
+
+def test_tuy_chon_dong_chi_cho_string():
+    with pytest.raises(reg.RegistryError, match="string"):
+        _validate(_m(tools=(_tool(tuy_chon_dong={"n": "a.b:c"}),)))
+
+
+@pytest.mark.parametrize("ref", ["", "a.b", ":c", "a b:c", 5, "a.b:c()"])
+def test_tuy_chon_dong_tham_chieu_sai_hinh(ref):
+    with pytest.raises(reg.RegistryError, match="module:attribute"):
+        _validate(_m(tools=(_tool(tuy_chon_dong={"p": ref}),)))
+
+
+def test_tuy_chon_dong_hop_le_KHONG_import_luc_nap():
+    # Module không tồn tại — nếu `_validate` import nó thì đây phải ném.
+    _validate(_m(tools=(_tool(tuy_chon_dong={"p": "khong.ton_tai.dau:ham"}),)))
+
+
+# ── 2. Accessor ──────────────────────────────────────────────────────────────
+
+def test_so_lan_thu_for_mac_dinh_va_san():
+    m = _m(so_lan_thu={"appthu602.j": 5})
+    assert m.so_lan_thu_for("appthu602.j") == 5
+    assert m.so_lan_thu_for("khac") == 3
+    assert m.so_lan_thu_for("khac", default=0) == 1
+    assert _m().so_lan_thu_for("appthu602.j") == 3
+
+
+# ── 3. App thật đã khai, và `/api/v1` đọc nó ────────────────────────────────
+
+def test_ltt_voice_khai_so_lan_thu_va_tuy_chon_dong():
+    from apps.ltt_voice.manifest import MANIFEST
+    from apps.ltt_voice.tham_so_cong_khai import SO_LAN_THU_JOB
+    assert MANIFEST.so_lan_thu_for("ltt_voice.synthesize") == SO_LAN_THU_JOB
+    assert MANIFEST.so_lan_thu_for("ltt_voice.enroll") == SO_LAN_THU_JOB
+    tool = next(t for t in MANIFEST.tools if t.name == "speech.ltt")
+    assert tool.tuy_chon_dong == {
+        "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"}
+    ham = reg.tai_tham_chieu(tool.tuy_chon_dong["voice_id"])
+    assert callable(ham)
+
+
+def test_invocation_submit_doc_so_lan_thu_cua_manifest(monkeypatch):
+    """`_so_lan_thu(tool, lane)` — thứ `invocation.submit` truyền vào `max_attempts`."""
+    from types import SimpleNamespace
+
+    from platform_core.public_api import invocation
+
+    m = _m(so_lan_thu={"appthu602.j": 7})
+    loaded = reg.LoadedApp(manifest=m, router=None)
+    monkeypatch.setattr(reg, "discover", lambda apps_dir=None: [loaded])
+    tool = SimpleNamespace(app_slug="appthu602", name="text.thu602",
+                           job_type="appthu602.j")
+    assert invocation._so_lan_thu(tool, "appthu602.j") == 7
+    assert invocation._so_lan_thu(tool, "appthu602.khac") == 3
+    assert invocation._so_lan_thu(SimpleNamespace(app_slug="khong_co"), "x") == 3
+
+
+def test_invocation_submit_goi_submit_with_credit_kem_max_attempts(monkeypatch):
+    import inspect
+
+    from platform_core.public_api import invocation
+    nguon = inspect.getsource(invocation.submit)
+    assert "max_attempts=_so_lan_thu(tool, lane)" in nguon
+
+
+# ── 4. `tai_tham_chieu` ─────────────────────────────────────────────────────
+
+def test_tai_tham_chieu_giai_dung_va_tu_choi_sai_hinh():
+    assert reg.tai_tham_chieu("json:dumps") is __import__("json").dumps
+    with pytest.raises(reg.RegistryError):
+        reg.tai_tham_chieu("json")
 
 @@@LTT_PROFILE_FILE_END@@@
 

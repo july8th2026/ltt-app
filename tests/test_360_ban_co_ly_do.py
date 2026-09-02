@@ -107,9 +107,13 @@ def test_MOI_nhanh_ban_deu_nuoi_CAPACITY_REFUSED():
 
 def test_ba_nhanh_ban_deu_GHI_LOG():
     """Một sự cố năm giờ không để lại dòng nào là chuyện đã xảy ra thật."""
+    from platform_core.runtime_noi_bo import luong
     from server.api import chat, streaming
 
-    for mod, so_toi_thieu in ((chat, 1), (streaming, 2)):
+    # Từ H43 Phase 02 (2026-09-03) nhánh bận của cửa STREAM sống ở facade
+    # `platform_core/runtime_noi_bo/luong.py` (`mo_thuong_nguon`); `streaming.py`
+    # chỉ còn nhánh bận của `_mot_cuc`. Ba nhánh, ba chỗ — vẫn đủ ba dòng log.
+    for mod, so_toi_thieu in ((chat, 1), (streaming, 1), (luong, 1)):
         ma = inspect.getsource(mod)
         assert ma.count('log.warning("BAN') >= so_toi_thieu, (
             f"{mod.__name__}: nhanh ban phai ghi log — im lang la thu da lam "

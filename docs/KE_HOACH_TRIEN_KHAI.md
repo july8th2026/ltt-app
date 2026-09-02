@@ -3680,8 +3680,8 @@ URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bản
 | # | Phase gói | Việc | Trạng thái |
 |---|---|---|---|
 | H43.0 | 00 | Bootstrap: cây/gốc SHA/dải test 600–699/ranh giới phiên | ✅ 2026-09-02 |
-| H43.1 | 01 | LibreChat `v0.8.7` tham chiếu hành vi | [ ] |
-| H43.2 | 02 | Gap runtime nội bộ → `platform_core/runtime_noi_bo/` | [ ] |
+| H43.1 | 01 | LibreChat `v0.8.7` tham chiếu hành vi — 12 hệ con, 22 ADOPT/8 ADAPT/11 REJECT, 18 tiêu chí nghiệm thu (`docs/CHATLTT/reports/01_librechat_tham_chieu.md`) | [x] 2026-09-03 |
+| H43.2 | 02 | Gap runtime nội bộ → `platform_core/runtime_noi_bo/` (luong/danh_muc/job) + `AppManifest.so_lan_thu` + `ToolSpec.tuy_chon_dong`; `streaming.py` gọi facade; test_600–602 40 pass, 24 tệp ghim 500 pass (`reports/02_runtime_noi_bo.md`) | [x] 2026-09-03 |
 | H43.3–.5 | 03–05 | Text / Ảnh / Tiếng: đường nội bộ + benchmark + SLO; đóng D12 (Q116↔mã) | [ ] |
 | H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed | [ ] |
 | H43.7 | 07 | Bảng `chatltt_*` + sự kiện canonical + reload từ CSDL | [ ] |

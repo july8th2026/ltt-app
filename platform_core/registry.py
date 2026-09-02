@@ -79,6 +79,23 @@ APP_LIFECYCLES = frozenset({
 })
 _TOOL_NAME_RE = re.compile(r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$")
 _PROMPT_SOURCE_RE = re.compile(r"^prompts/[a-zA-Z0-9_-]+$")
+#: Tham chiếu `module:attribute` do app sở hữu (`sync_executor`, `tuy_chon_dong`).
+_THAM_CHIEU_RE = re.compile(r"^[A-Za-z_][\w.]*:[A-Za-z_]\w*$")
+
+
+def tai_tham_chieu(reference: str):
+    """Resolve một tham chiếu `module:attribute` khai trong manifest.
+
+    Chỉ import **khi được gọi** — không phải lúc `discover()` — để một tiến
+    trình worker/CLI nạp registry không kéo mã của app vào bộ nhớ. Cùng cách
+    `public_api.executor._load` đã làm cho `sync_executor`.
+    """
+    import importlib
+
+    module_name, separator, attribute = str(reference or "").partition(":")
+    if not separator or not module_name or not attribute:
+        raise RegistryError(f"tham chieu phai la module:attribute, nhan {reference!r}")
+    return getattr(importlib.import_module(module_name), attribute)
 
 
 @dataclass(frozen=True)
@@ -140,6 +157,26 @@ class ToolSpec:
     # This is a dotted reference owned by the app; the platform resolves it
     # without knowing an app slug or importing app code directly.
     sync_executor: str = ""
+
+    # ── Tuỳ chọn ĐỘNG theo người dùng (H43 Phase 02, 2026-09-02) ───────────
+    #
+    #   tuy_chon_dong={"voice_id": "apps.myapp.kho:tuy_chon_voice_id"}
+    #
+    # `module:callable(db, user_id) -> [{"value": ..., "label": ...}]`. Cùng
+    # khuôn "tham chiếu dotted do app sở hữu, nền tảng resolve lúc CẦN, không
+    # import lúc nạp" của `sync_executor` ở trên.
+    #
+    # 🔴 VÌ SAO CẦN. Ba cơ chế enum động đang có (`model_ref`, `source`,
+    #    `depends_on`) đều thuần tiến trình — không cái nào biết NGƯỜI DÙNG là
+    #    ai. Nên "giọng nhân bản của chính tôi" không có cách nào lên palette
+    #    Agent hay một sản phẩm web khác mà không import `apps.ltt_voice` — thứ
+    #    `test_147`/`test_308` cấm, và cấm đúng.
+    #
+    # ⚠️ Chỉ cho tham số kiểu `string`, và danh sách này là **gợi ý cho giao
+    #    diện**, không phải phép kiểm: app vẫn kiểm sở hữu lúc thi hành (đường
+    #    duy nhất chặn được một id đoán mò). Nền tảng không được biết giá trị
+    #    nào là "của ai" — nó chỉ chuyển câu hỏi cho app.
+    tuy_chon_dong: dict = field(default_factory=dict)
 
     # ── Làn scheduler theo tham số ──────────────────────────────────────────
     #
@@ -391,9 +428,30 @@ class AppManifest:
     #    hàng phút. Chỉ app biết việc của nó dài bao lâu — nên nó khai.
     cho_tai_nguyen_s: dict = field(default_factory=dict)
 
+    # Số lần thử tối đa của MỘT job, theo `job_type` (H43 Phase 02, 2026-09-02):
+    #   so_lan_thu = {"myapp.synthesize": 5}
+    # Bỏ trống = mặc định 3 của `jobs.submit`.
+    #
+    # 🔴 VÌ SAO KHAI Ở MANIFEST. `apps/ltt_voice` đo được nạp model lúc deploy mất
+    #    39,9–73,1 giây trong khi cửa sổ thử lại mặc định (3 lượt) chỉ ~30 giây
+    #    ⇒ job chết ở MỌI lần deploy. Nó chữa bằng hằng `SO_LAN_THU_JOB=5` truyền
+    #    tay ở bốn route web — nhưng `/api/v1` (`invocation.submit`) **không**
+    #    biết hằng đó, nên cùng một job qua API vẫn chạy 3 lượt. Hai cửa, hai
+    #    hành vi, cùng một sản phẩm.
+    #
+    # ⭐ Chỉ app biết việc của nó sống sót qua deploy cần mấy lượt — nên nó khai,
+    #    và mọi cửa (web, API, client nội bộ) đọc **một** chỗ qua
+    #    `so_lan_thu_for()`. Cùng hình dạng ba bảng ngay trên.
+    so_lan_thu: dict = field(default_factory=dict)
+
     def cho_tai_nguyen_for(self, job_type: str, *, default: int = 20) -> int:
         """Giãn cách thử lại khi tài nguyên bận, giây. Kẹp sàn 1 giây."""
         khai = int((self.cho_tai_nguyen_s or {}).get(job_type, 0))
+        return max(1, khai) if khai > 0 else max(1, int(default))
+
+    def so_lan_thu_for(self, job_type: str, *, default: int = 3) -> int:
+        """Số lần thử tối đa cho một `job_type`. Không khai ⇒ `default`. Sàn 1."""
+        khai = int((self.so_lan_thu or {}).get(job_type, 0))
         return max(1, khai) if khai > 0 else max(1, int(default))
 
     def vram_for(self, job_type: str) -> int:
@@ -499,6 +557,28 @@ def _validate_tool(manifest: AppManifest, tool: ToolSpec,
                 key in schema for key in ("values", "source", "depends_on")):
             raise RegistryError(
                 f"[{manifest.slug}] tool {tool.name!r} enum thiếu nguồn giá trị")
+
+    # `tuy_chon_dong`: tham số phải có thật, phải là `string`, tham chiếu phải
+    # đúng hình `module:attribute`. KHÔNG import module ở đây — `_validate` chạy
+    # lúc `discover()`, và kéo mã app vào mọi tiến trình nạp registry là đúng
+    # thứ `sync_executor` đã cố tránh.
+    for param, ref in (tool.tuy_chon_dong or {}).items():
+        spec = tool.params_schema.get(param)
+        if not isinstance(spec, dict):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tuy_chon_dong trỏ tới tham số không tồn "
+                "tại: {param!r}").format(slug=manifest.slug, tool=tool.name,
+                                          param=param))
+        if spec.get("type") != "string":
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tuy_chon_dong chỉ hỗ trợ tham số `string`, "
+                "{param!r} là {kind!r}").format(slug=manifest.slug, tool=tool.name,
+                                                 param=param, kind=spec.get("type")))
+        if not isinstance(ref, str) or not _THAM_CHIEU_RE.fullmatch(ref):
+            raise RegistryError(_t(
+                "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là "
+                "`module:attribute`, nhận {ref!r}").format(
+                    slug=manifest.slug, tool=tool.name, param=param, ref=ref))
 
     _validate_lanes(manifest, tool)
 
@@ -871,6 +951,17 @@ def _validate(manifest: AppManifest, seen_slugs: set, seen_prefixes: set,
     for jt in manifest.job_types:
         if jt in seen_job_types:
             raise RegistryError(f"[{manifest.slug}] job_type trùng: {jt!r}")
+    # `so_lan_thu` phải trỏ tới job_type CỦA app và là số nguyên ≥ 1. Một bản
+    # khai lệch tên job_type thì im lặng vô hiệu — đúng loại lỗi phải bắt lúc nạp.
+    for jt, so in (manifest.so_lan_thu or {}).items():
+        if jt not in manifest.job_types:
+            raise RegistryError(_t(
+                "[{slug}] so_lan_thu khai job_type không thuộc app: {jt!r}"
+            ).format(slug=manifest.slug, jt=jt))
+        if not isinstance(so, int) or isinstance(so, bool) or so < 1:
+            raise RegistryError(_t(
+                "[{slug}] so_lan_thu[{jt!r}] phải là số nguyên ≥ 1: {so!r}"
+            ).format(slug=manifest.slug, jt=jt, so=so))
     # Tiền tố bảng trùng nhau thì hai app ghi đè bảng của nhau và Alembic chỉ
     # thấy một cái — mất dữ liệu âm thầm. Chặn ngay lúc discover.
     if manifest.table_prefix:
