@@ -30,7 +30,7 @@ from platform_core.storage import get_storage
 
 from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
-               giai_doan_media, giai_doan_noi_dung, giai_doan_thoi_gian,
+               giai_doan_media, giai_doan_noi_dung, giai_doan_thoi_gian, loi,
                pipeline)
 from .tables import STAGE_SUCCEEDED
 
@@ -269,6 +269,18 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         db.commit()
         return {"stage": ten, "fingerprint": vt, "credit_cost": CHI_PHI_GIA,
                 "khoa_asset": khoa_ra}
+    except Exception as exc:
+        # 🔑 BIEN. Day la cho duy nhat biet ca ngon ngu loi cua engine lan phan
+        #    loai cua nen tang, nen phep dich thuoc ve day (xem `loi.py`).
+        #
+        # ⛔ Khong dich la de moi loai loi cua Auto Scan roi xuong nhanh mac
+        #    dinh `"retry"` cua `job_runner._provider_failure_kind` — tuc thu
+        #    lai ba lan mot tep nguon khong co tieng, va thu lai mot lan sinh
+        #    tieng CO THE DA TINH TIEN.
+        moi = loi.dich_sang_loi_nen_tang(exc)
+        if moi is not exc:
+            raise moi from exc
+        raise
     finally:
         db.close()
 
