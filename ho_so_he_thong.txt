@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e16624e4f8d1f7992ae73c77e6d15b2faa19b1228c6153b353762f692a43d83d
+Fingerprint   : sha256:033d99cd3d31b45bf0d0386493cc90ee630a5a2fd5ed48c071d2b4ae64ef37ab
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3090,7 +3090,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14663716 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14667608 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -167053,7 +167053,7 @@ SHA256=86d8c22ea6eab02e56b31d3fc5c5d39f925160f21426a97ee65196e7e696a56a BYTES=24
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templating.py
-SHA256=b59cee459337dc5e549dd2782fd6ee8066fb1a775187fbac000a59a580252ade BYTES=20148 LINES=474
+SHA256=08c185ecf6524651599f55845bfee6daf1f1b13bc14145351c984cab09136d8f BYTES=21982 LINES=510
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 templating.py — the single Jinja2 environment for the whole app.
@@ -167065,9 +167065,12 @@ UndefinedError. One shared instance with globals fixes that at the source.
 """
 from __future__ import annotations
 
+import logging
 import pathlib
 
 from fastapi.templating import Jinja2Templates
+
+log = logging.getLogger(__name__)
 
 # Đường dẫn TUYỆT ĐỐI, suy ra từ vị trí chính file này.
 #
@@ -167115,6 +167118,33 @@ TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
 
 
 def _tinh_asset_ver() -> str:
+    """Bam noi dung moi tai san co version. Doi tep = doi hash = doi URL.
+
+    🔴 KHOI `except` NAY LA CHO NUOT LOI NGUY HIEM NHAT TRONG TEP.
+
+       Muoi ba khoi `except` con lai o day deu suy giam ve phia **an toan**:
+       `_is_admin` tra `False` (coi nhu khong phai admin), `_da_dang_nhap` tra
+       `False` (coi nhu chua dang nhap), sidebar tra `[]` (hien it hon that co).
+       Im lang o do chap nhan duoc — hong thi khach thay **it hon**, khong phai
+       **sai hon**.
+
+       Cho nay nguoc lai. Thieu mot tep thi hash thanh hang so `"0"`, va tu do
+       **moi khach nhan ban tai san CU** tu Cloudflare cho toi khi het TTL.
+       Trang van render dep, khong loi nao o dau ca.
+
+    ⛔ Do dung la su co `CLAUDE.md` quy tac 6 ghi lai: sau khi sua `ltt.css`, CF
+       phuc vu ban CSS **cu** (TTL 4 gio) nen chip hien thanh radio tho, du
+       origin da dung. Co che sinh ra de chan su co do lai co mot duong hong
+       lang le dan thang ve chinh su co do.
+
+    ⚠️ VAN khong duoc nem: ham nay chay luc import, nem thi may chu khong khoi
+       dong. Nen doi khong phai "nem thay vi nuot" ma la **nuot CO TIENG**.
+
+    ⭐ Trong kho thi `tests/test_369_asset_ver_day_du.py:70` da chan: no doi moi
+       tep trong `TAI_SAN_CO_VERSION` phai `is_file()`. Cho con lai la **runtime
+       tren may chu** — mot lan deploy chep thieu thi gate khong biet, vi gate
+       chay tren cay nguon chu khong tren `C:\\LTTPlatform\\app`.
+    """
     import hashlib
     h = hashlib.md5()
     try:
@@ -167122,6 +167152,12 @@ def _tinh_asset_ver() -> str:
             h.update((_STATIC_DIR / ten).read_bytes())
         return h.hexdigest()[:8]
     except Exception:
+        log.warning(
+            "KHONG tinh duoc asset_ver - cache-bust da NGUNG hoat dong. Moi "
+            "khach se nhan ban tai san CU tu Cloudflare cho toi khi het TTL. "
+            "Kiem %s co du %d tep khong: %s",
+            _STATIC_DIR, len(TAI_SAN_CO_VERSION),
+            ", ".join(TAI_SAN_CO_VERSION), exc_info=True)
         return "0"
 
 
@@ -252373,7 +252409,7 @@ def test_api_CO_noi_day_tin_hieu_vao_trong_tai():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_369_asset_ver_day_du.py
-SHA256=b68515750c0ab5183de342cc873c336dc3da9577f056a63a8c1044704d2dd237 BYTES=4515 LINES=100
+SHA256=a76524110ffc295bc02aa8427afd1c2a7d0a8d89b266ab512a20dd3f4e5c1f7c BYTES=6573 LINES=145
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Mọi tài sản tĩnh mang `?v={{ asset_ver }}` phải THAM GIA tính ra chính hash đó.
 
@@ -252475,6 +252511,51 @@ def test_ham_tinh_khong_bao_gio_nem_ra_ngoai():
     khuc = khuc[:khuc.index("\nASSET_VER")]
     assert "except" in khuc and 'return "0"' in khuc, (
         "mat duong lui: mot tai san thieu se lam sap MOI trang")
+
+
+def test_khi_MAT_duong_lui_thi_phai_KEU(caplog):
+    """⛔ Docstring của chốt ngay trên đã hứa *"nhưng phải nói ra"* — và cho tới
+    2026-09-02 nó **không hề kiểm điều đó**. Nó chỉ đòi có `except` và `"0"`.
+
+    🔴 Vì sao lời hứa ấy đáng được cưỡng chế. Mười ba khối `except` khác trong
+       `templating.py` đều suy giảm về phía **an toàn**: `_is_admin` → `False`,
+       `_da_dang_nhap` → `False`, sidebar → `[]`. Hỏng thì khách thấy **ít hơn**.
+
+       Khối này ngược lại. Thiếu một tệp ⇒ hash thành hằng số `"0"` ⇒ **mọi
+       khách nhận bản tài sản CŨ** từ Cloudflare cho tới khi hết TTL. Trang vẫn
+       render đẹp, không lỗi nào ở đâu cả.
+
+       Và đó đúng là sự cố `CLAUDE.md` quy tắc 6 ghi lại: sau khi sửa `ltt.css`,
+       CF phục vụ bản cũ 4 tiếng. Cơ chế sinh ra để chặn sự cố đó lại có một
+       đường hỏng lặng lẽ dẫn thẳng về chính sự cố đó.
+
+    ⚠️ Đo **hành vi**, không đo chuỗi mã nguồn: gọi thật hàm ấy với một tài sản
+       thiếu, rồi đòi thấy tiếng kêu.
+    """
+    import logging
+
+    from server import templating as T
+
+    that = T._STATIC_DIR
+    thieu = T.TAI_SAN_CO_VERSION[0]
+
+    class _ThieuMotTep:
+        def __truediv__(self, ten):
+            return that / ("KHONG_TON_TAI_.js" if ten == thieu else ten)
+
+    try:
+        T._STATIC_DIR = _ThieuMotTep()
+        with caplog.at_level(logging.WARNING, logger=T.log.name):
+            v = T._tinh_asset_ver()
+    finally:
+        T._STATIC_DIR = that
+
+    assert v == "0", "duong lui da doi — cap nhat ca hai chot"
+    assert caplog.records, (
+        "mat tai san ma KHONG keu mot tieng nao: cache-bust ngung hoat dong "
+        "trong im lang, va do dung la su co quy tac 6 mo ta")
+    noi_dung = " ".join(r.getMessage() for r in caplog.records)
+    assert "asset_ver" in noi_dung, "canh bao khong noi ro thu gi hong"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -299086,10 +299167,10 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/silent_except_baseline.json
-SHA256=815c56916c22cee8117dc99ddec2557a3defeec70754989d882ff3071a34ac1b BYTES=19 LINES=3
+SHA256=29ac17710a054ab726fb99139246ebb915765afa720a61c795331e7add9191e3 BYTES=19 LINES=3
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
-  "max": 63
+  "max": 62
 }
 
 @@@LTT_PROFILE_FILE_END@@@
