@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d952147c40b5a727f359c790781caf3f45fedd783294a2c9f0cfe561393465c7
-Nguồn đã quét : 1518 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:3567e8356ff6cc68d35844cc7d71beb40617c3cb3677f6e3982ac10e86c9fb24
+Nguồn đã quét : 1519 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1262,7 +1262,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (366 file pytest + 3 frontend)
+10. QUALITY GATES (367 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1591,6 +1591,7 @@ Test inventory:
 - tests/test_414_asv_ket_xuat.py
 - tests/test_415_asv_cong_thoat_render.py
 - tests/test_416_asv_van_tay_engine.py
+- tests/test_417_asv_vo_hieu_ha_nguon.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1655,8 +1656,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1518 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1153, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1519 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1154, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2666,7 +2667,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (384)
+[tests] (385)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -3007,6 +3008,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - tests/test_414_asv_ket_xuat.py
 - tests/test_415_asv_cong_thoat_render.py
 - tests/test_416_asv_van_tay_engine.py
+- tests/test_417_asv_vo_hieu_ha_nguon.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3231,7 +3233,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1518 file; 15100354 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1519 file; 15125800 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -13221,7 +13223,7 @@ def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/features.py
-SHA256=345a39b39f5f2cdf5cadda6c01ab538b3f1b83123dc8934fbc3bed60f73ced8e BYTES=14762 LINES=307
+SHA256=f4dff3c9282e45713f257595b4625c01407a2409ed5e9f38a4635dd13a250582 BYTES=18917 LINES=393
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Quy tac nghiep vu cua Auto Scan Video: vong doi run, tien, quyen so huu.
 
@@ -13430,6 +13432,92 @@ def danh_dau_hong(db: Session, stage: AsvStage, loi: str, *,
         db, stage,
         status=STAGE_FAILED_TERMINAL if cuoi_cung else STAGE_FAILED_RETRYABLE,
         error=str(loi or "")[:2000], finished_at=_now() if cuoi_cung else None)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Vo hieu ha nguon + thu lai (Prompt 16 muc 4 va 7)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _dat_lai_giai_doan(db: Session, stage: AsvStage) -> None:
+    """Dua mot dong giai doan ve trang thai chua chay.
+
+    ⚠️ Rong la `""` / `{}`, KHONG phai `None`: bon cot nay deu NOT NULL, va
+       `outputs=None` bien thanh chuoi JSON `'null'` chu khong thanh SQL NULL —
+       tuc "chua co ket qua" va "ket qua la null" se khong phan biet duoc.
+
+    ⛔ KHONG dat lai `attempt`. So lan thu la mot su that ve lich su cua lan
+       chay, khong phai mot bo dem tien do; xoa no la xoa dung thu can de tra
+       loi "vi sao lan chay nay ton nhieu tien the".
+    """
+    cap_nhat_giai_doan(db, stage, status=STAGE_PENDING, fingerprint="",
+                       outputs={}, job_id="", error="",
+                       started_at=None, finished_at=None)
+
+
+def vo_hieu_ha_nguon(db: Session, run: AsvRun, ten: str) -> list[str]:
+    """Dat lai moi giai doan an theo `ten`. Tra ve danh sach da dat lai.
+
+    🔑 Vi sao phai lam TAY, du van tay da tu lam moi cache: van tay cua mot giai
+       doan gom van tay cua cac giai doan truoc (`thi_hanh._gom_dau_vao`), nen
+       khi thuong nguon doi thi van tay ha nguon **cung doi** va cache truot.
+       Nhung dong `asv_stage` cua no van ghi `succeeded` — va dieu phoi vien chi
+       nop nhung giai doan **chua** succeeded. Ket qua: no khong bao gio chay
+       lai, va lan chay ket thuc voi mot ban long tieng dung tep cu.
+
+    ⇒ Van tay lo phan "khong dung lai ket qua sai"; ham nay lo phan "chay lai
+      that". Thieu mot trong hai la du de hong.
+    """
+    ra: list[str] = []
+    theo_ten = {s.stage: s for s in cac_giai_doan(db, run)}
+    for sau in pipeline.ha_nguon_cua(ten):
+        s = theo_ten.get(sau)
+        if s is None or s.status == STAGE_PENDING:
+            continue
+        try:
+            _dat_lai_giai_doan(db, s)
+        except XungDot:
+            # Mot worker dang ghi dong nay. Luot advance ke tiep doc lai va thay
+            # van tay da lech, nen no se duoc dat lai o luot do.
+            continue
+        ra.append(sau)
+    return ra
+
+
+def thu_lai_giai_doan(db: Session, run_id: str, owner_id: str,
+                      ten: str) -> dict:
+    """Chay lai MOT giai doan va chi nhung giai doan an theo no (muc 7).
+
+    ⛔ Khong chay lai ca lan chay. Chay lai `media_prepare` khi chi `render`
+       hong la bat khach tra tien lai cho mot lan chep loi, mot lan dich va mot
+       lan sinh tieng — ba thu dat nhat trong chuoi, va khong thu nao lien quan.
+
+    ⛔ Va khong cho thu lai mot lan chay **da ket thuc**: `quyet_toan` da hoan
+       phan credit chua dung, nen mot lan chay tiep sau do se tieu tien ma
+       khong con cho giu. Muon lam lai thi nop mot run moi.
+    """
+    if ten not in pipeline.THEO_TEN:
+        raise AsvError(_t('Không có giai đoạn tên này.'))
+
+    run = lay_run(db, run_id, owner_id, lock=True)
+    if run.status in RUN_TERMINAL:
+        raise AsvError(
+            _t('Lần chạy đã kết thúc — hãy tạo một lần chạy mới.'))
+
+    stage = giai_doan_theo_ten(db, run.id, ten)
+    if stage is None:
+        raise KhongTimThay(_t('Không có giai đoạn tên này.'))
+
+    _dat_lai_giai_doan(db, stage)
+    da_vo_hieu = vo_hieu_ha_nguon(db, run, ten)
+
+    run.error = ""
+    if run.status not in (RUN_QUEUED, RUN_RUNNING):
+        run.status = RUN_RUNNING
+    # `ly_do` mang ten giai doan nen hai lan thu lai hai giai doan khac nhau
+    # khong bi dedupe vao lam mot.
+    _nop_dieu_phoi(db, run, ly_do=f"thu-lai:{ten}")
+    db.flush()
+    return {"run_id": run.id, "da_dat_lai": [ten] + da_vo_hieu}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -14898,7 +14986,7 @@ def kiem_tep_tieng(duong: str, *, toi_thieu_giay: float = 0.05) -> float:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/jobs.py
-SHA256=c738c0402a3e79dea86696e79891bc40d2d9c417b792f630f7755424ea051ea6 BYTES=7987 LINES=185
+SHA256=c8ee3865ff25cf87105d7a28d89bb5e6976fbd8df66c460c67457de0d478fa47 BYTES=9579 LINES=223
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Job dieu phoi cua Auto Scan Video.
 
@@ -14932,7 +15020,7 @@ import logging
 from platform_core.db import get_session
 from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job
 
-from . import features, pipeline
+from . import features, pipeline, thi_hanh
 from .tables import (RUN_DONE, RUN_ERROR, RUN_QUEUED, RUN_RUNNING, RUN_TERMINAL,
                      STAGE_FAILED_TERMINAL, STAGE_PENDING, STAGE_QUEUED,
                      STAGE_RUNNING, STAGE_SUCCEEDED)
@@ -14980,6 +15068,7 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
         run.revision = int(run.revision) + 1
 
     _thu_ket_qua_job_con(db, run)
+    _vo_hieu_giai_doan_da_lech(db, run)
 
     ds = features.cac_giai_doan(db, run)
     theo_ten = {s.stage: s for s in ds}
@@ -15006,6 +15095,43 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
 
     return {"run_id": run.id, "status": run.status,
             "da_nop": da_nop, "da_xong": sorted(da_xong)}
+
+
+def _vo_hieu_giai_doan_da_lech(db, run) -> list[str]:
+    """Giai doan `succeeded` co van tay khong con khop dau vao -> dat lai (muc 4).
+
+    Chay o **dau moi luot advance**, truoc khi tinh `da_xong`, vi neu tinh
+    truoc thi mot giai doan da lech van duoc dem la xong va lan chay co the ket
+    thuc ngay o luot nay.
+
+    ⛔ Vo hieu ca HA NGUON cua no, khong chi rieng no: mot giai doan sap chay
+       lai se cho ket qua khac, nen moi thu an theo cung phai lam lai. Vo hieu
+       thieu la giao mot ban long tieng tron lan hai lan chay.
+    """
+    lech = thi_hanh.giai_doan_lech_van_tay(db, run)
+    if not lech:
+        return []
+
+    theo_ten = {s.stage: s for s in features.cac_giai_doan(db, run)}
+    da_dat_lai: list[str] = []
+    for ten in lech:
+        s = theo_ten.get(ten)
+        if s is None or s.status != STAGE_SUCCEEDED:
+            continue        # mot vong truoc trong chinh luot nay da dat lai roi
+        try:
+            features._dat_lai_giai_doan(db, s)
+        except features.XungDot:
+            continue
+        da_dat_lai.append(ten)
+        da_dat_lai += features.vo_hieu_ha_nguon(db, run, ten)
+        theo_ten = {x.stage: x for x in features.cac_giai_doan(db, run)}
+
+    if da_dat_lai:
+        # Su kien dang chu y, khong phai binh thuong: no nghia la mot giai doan
+        # thuong nguon da chay lai va cho ket qua khac.
+        log.warning("asv: run %s dat lai %d giai doan do lech van tay: %s",
+                    run.id[:8], len(da_dat_lai), ",".join(sorted(set(da_dat_lai))))
+    return da_dat_lai
 
 
 def _thu_ket_qua_job_con(db, run) -> None:
@@ -15869,7 +15995,7 @@ KIND_BAN_TIENG = KIND_AUDIO
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/pipeline.py
-SHA256=b0bb4aacb1afede9dfcf24a9d4c7a064eb765dc00a9482191fa7af8b89a801b3 BYTES=6344 LINES=141
+SHA256=3dcba7e1253d2632e6c2ff063ffa7fd91ec549f276d98b91a1495ff15b26fda6 BYTES=8164 LINES=182
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Chuoi giai doan CO DINH cua Auto Scan Video, va bang phan cong thi hanh.
 
@@ -15991,6 +16117,47 @@ def ke_tiep(da_xong: set[str]) -> list[GiaiDoan]:
     """
     return [g for g in CHUOI
             if g.ten not in da_xong and set(g.sau).issubset(da_xong)]
+
+
+def ha_nguon_cua(ten: str) -> list[str]:
+    """Moi giai doan phu thuoc `ten`, TRUC TIEP hay GIAN TIEP, theo thu tu chuoi.
+
+    Day la quan he **nguoc** cua `GiaiDoan.sau`, va no la thu Prompt 16 muc 4
+    doi: khi mot giai doan chay lai, chi nhung giai doan that su an theo no moi
+    duoc vo hieu.
+
+    ⚠️ **Hom nay ket qua nay TRUNG voi "moi giai doan dung sau trong `CHUOI`"**,
+       va noi khac di la noi sai. Do that:
+
+           media_prepare   -> 8 giai doan con lai
+           audio_prepare   -> 7 giai doan con lai
+           ...
+           render          -> ['qc']
+
+       Do thi hien tai gan nhu mot duong thang. Cho re duy nhat la
+       `timing_align`, phu thuoc CA `voice_synthesis` lan `audio_prepare` — nhung
+       cho re do khong tao ra giai doan nao "dung sau ma khong an theo".
+
+    ⇒ Vay tai sao khong viet `CHUOI[i+1:]` cho gon? Vi hai thu do **bang nhau do
+      hoan canh, khong do dinh nghia**. Them mot nhanh doc lap (vd mot giai doan
+      chi an theo `media_prepare`) la chung tach ra ngay, va phien ban `[i+1:]`
+      se lang le vo hieu — tuc bat khach tra tien lai cho mot viec khong dau vao
+      nao doi. `tests/test_417` chot ca hai chieu, ke ca su trung nhau hom nay,
+      nen luc chung tach ra thi co mot phep kiem noi ra thay vi im lang.
+
+    ⛔ Chieu nguoc lai dat hon: vo hieu **thieu** mot giai doan ha nguon nghia la
+       giao mot ban long tieng tron lan ket qua cua hai lan chay khac nhau —
+       hong theo kieu khong loi nao bao.
+    """
+    ra: list[str] = []
+    bien: set[str] = {ten}
+    for g in CHUOI:                     # `CHUOI` da theo thu tu topo (co chot)
+        if g.ten == ten:
+            continue
+        if set(g.sau) & bien:
+            bien.add(g.ten)
+            ra.append(g.ten)
+    return ra
 
 
 def _kiem_tra_chuoi() -> None:
@@ -16552,7 +16719,7 @@ def do_am_luong(duong: str) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/thi_hanh.py
-SHA256=d59c0960a522c331325d504d9b3a6c328af985e301dcc72fa25c5f7841170590 BYTES=12843 LINES=270
+SHA256=4158718c9e31021ddc2bac8f980bfd42d30527e25ddbf79c0ed4d53f60c44178 BYTES=14086 LINES=296
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Than thi hanh dung chung cua mot giai doan — BE MAT CONG KHAI cua app nay.
 
@@ -16693,6 +16860,32 @@ def _gom_dau_vao(db, run_id: str, ten: str) -> dict:
         s = features.giai_doan_theo_ten(db, run_id, truoc)
         ra[truoc] = {"fingerprint": s.fingerprint if s else "",
                      "outputs": (s.outputs if s else {}) or {}}
+    return ra
+
+
+def giai_doan_lech_van_tay(db, run) -> list[str]:
+    """Giai doan `succeeded` ma van tay da luu KHONG con khop dau vao hien tai.
+
+    🔑 Prompt 16 muc 4 doi vo hieu theo phu thuoc, va day la nua **tu dong** cua
+       no. Nua kia — `features.thu_lai_giai_doan` — la khi nguoi dung chu dong
+       yeu cau. Nua nay bat truong hop khong ai yeu cau gi ca:
+
+       mot giai doan thuong nguon chay lai (vd sau mot lan hong tam thoi) va cho
+       ket qua **khac**. Van tay ha nguon doi theo, nen cache truot va no khong
+       dung lai ket qua sai — nhung dong `asv_stage` cua no van ghi `succeeded`,
+       va dieu phoi vien chi nop nhung giai doan CHUA succeeded. Ket qua: no
+       khong bao gio chay lai, va lan chay ket thuc bang mot ban long tieng
+       tron lan hai lan chay khac nhau.
+
+    ⚠️ Doc, khong ghi. Nguoi goi quyet dinh lam gi — de phep kiem quan sat duoc
+       "lech" tach roi khoi "da xu ly".
+    """
+    ra: list[str] = []
+    for s in features.cac_giai_doan(db, run):
+        if s.status != STAGE_SUCCEEDED or not s.fingerprint:
+            continue
+        if van_tay(s.stage, run, _gom_dau_vao(db, run.id, s.stage)) != s.fingerprint:
+            ra.append(s.stage)
     return ra
 
 
@@ -270041,6 +270234,358 @@ def test_phien_ban_engine_KHONG_nap_ca_cay_module_luc_import():
     for nang in ("tach_tieng", "ban_ghi", "dich_thuat", "giong_noi", "ket_xuat"):
         assert nang not in ten_dau_tep, (
             f"`{nang}` bi import o dau `thi_hanh.py` — moi worker deu phai nap no")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_417_asv_vo_hieu_ha_nguon.py
+SHA256=0a08518d95d1370df85ca58403a6949523f01af00d178a265412c96d0cfb4343 BYTES=16636 LINES=346
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 16 — vo hieu theo phu thuoc, thu lai, lan truyen huy, va QC la cong cuoi.
+
+Bon dieu duoi day de bi tuong la da co san vi chuoi chay duoc tu pha 05. Chung
+khong co san: mot chuoi chay **mot mach tu dau den cuoi** khong bao gio cham
+toi cau hoi "chuyen gi xay ra khi mot giai doan o giua phai lam lai".
+"""
+from __future__ import annotations
+
+import pytest
+from sqlalchemy import select
+
+from apps.auto_scan_video import features, pipeline, thi_hanh
+from apps.auto_scan_video.tables import (RUN_CANCELLED, RUN_DONE, STAGE_PENDING,
+                                         STAGE_SUCCEEDED, AsvStage)
+from tests.fixtures import asv_media as fx
+from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
+    _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
+
+NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Do thi phu thuoc — thuan, khong can CSDL
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ha_nguon_la_BAO_DONG_bac_cau_chu_khong_phai_phu_thuoc_truc_tiep():
+    """`render` an theo `media_prepare` **gian tiep**, qua sau giai doan.
+
+    Mot ban cai dat chi tra ve phu thuoc truc tiep se vo hieu thieu, va thieu
+    o day nghia la giao mot ban long tieng tron lan hai lan chay khac nhau.
+    """
+    assert pipeline.RENDER in pipeline.ha_nguon_cua(pipeline.MEDIA_PREPARE)
+    assert pipeline.QC in pipeline.ha_nguon_cua(pipeline.MEDIA_PREPARE)
+
+
+def test_giai_doan_cuoi_khong_co_ha_nguon():
+    assert pipeline.ha_nguon_cua(pipeline.QC) == []
+
+
+def test_ha_nguon_KHONG_bao_gom_chinh_no():
+    for g in pipeline.CHUOI:
+        assert g.ten not in pipeline.ha_nguon_cua(g.ten)
+
+
+def test_ha_nguon_giu_dung_THU_TU_cua_chuoi():
+    """Dat lai theo thu tu chuoi de mot nguoi doc log thay duoc dong chay."""
+    ds = pipeline.ha_nguon_cua(pipeline.MEDIA_PREPARE)
+    chi_so = [pipeline.TEN_GIAI_DOAN.index(t) for t in ds]
+    assert chi_so == sorted(chi_so)
+
+
+def test_hom_nay_ha_nguon_TRUNG_voi_moi_giai_doan_phia_sau():
+    """⚠️ Chot chinh SU TRUNG NHAU, khong phai chot rang no phai trung.
+
+    Do thi hom nay gan nhu mot duong thang, nen `ha_nguon_cua(x)` bang
+    `CHUOI[i+1:]`. Hai thu do bang nhau **do hoan canh, khong do dinh nghia**.
+
+    ⭐ Phep kiem nay ton tai de luc chung TACH RA thi co mot dong noi ra. Khi no
+       do, dung "sua" bang cach doi `ha_nguon_cua` — hay doc lai: rat co the ai
+       do vua them mot nhanh doc lap, va do dung la luc `CHUOI[i+1:]` tro thanh
+       mot cach vo hieu SAI (bat khach tra tien lai cho viec khong dau vao nao
+       doi). Cap nhat phep kiem nay, dung cap nhat ham.
+    """
+    for i, g in enumerate(pipeline.CHUOI):
+        assert pipeline.ha_nguon_cua(g.ten) == list(pipeline.TEN_GIAI_DOAN[i + 1:])
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Thu lai mot giai doan (muc 7)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@pytest.fixture()
+def run_xong(db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia):
+    fx.require_ffmpeg()
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    return run
+
+
+@pytest.fixture()
+def run_dang_chay(db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia):
+    """Mot run **chua** ket thuc: chay mot so job roi dung.
+
+    Can rieng vi `thu_lai_giai_doan` co y tu choi mot run da ket thuc.
+    """
+    fx.require_ffmpeg()
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    _chay_het_hang_doi(db, nang_luc={"api", "ffmpeg"}, toi_da=6)
+    return run
+
+
+def test_thu_lai_dat_lai_giai_doan_do_VA_ha_nguon_cua_no(run_dang_chay, db):
+    kq = features.thu_lai_giai_doan(db, run_dang_chay.id, "uA",
+                                    pipeline.MEDIA_PREPARE)
+    db.commit()
+    assert kq["da_dat_lai"][0] == pipeline.MEDIA_PREPARE
+    # Moi giai doan an theo deu phai co trong danh sach hoac von da pending.
+    for s in features.cac_giai_doan(db, run_dang_chay):
+        assert s.status == STAGE_PENDING, f"{s.stage} chua duoc dat lai"
+
+
+def test_thu_lai_KHONG_dong_toi_giai_doan_THUONG_NGUON(run_dang_chay, db):
+    """⛔ Chay lai ca lan chay la bat khach tra tien lai cho chep loi, dich va
+    sinh tieng — ba thu dat nhat, va khong thu nao lien quan toi mot loi o cuoi.
+    """
+    truoc = {s.stage: (s.status, s.fingerprint)
+             for s in features.cac_giai_doan(db, run_dang_chay)}
+    xong_truoc = [t for t, (st, _) in truoc.items() if st == STAGE_SUCCEEDED]
+    assert xong_truoc, "bo do khong chay xong giai doan nao — phep kiem vo nghia"
+
+    # Thu lai giai doan cuoi cung DA XONG: khong giai doan nao truoc no bi dong.
+    muc = xong_truoc[-1]
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA", muc)
+    db.commit()
+
+    sau = {s.stage: (s.status, s.fingerprint)
+           for s in features.cac_giai_doan(db, run_dang_chay)}
+    i = pipeline.TEN_GIAI_DOAN.index(muc)
+    for ten in pipeline.TEN_GIAI_DOAN[:i]:
+        assert sau[ten] == truoc[ten], f"{ten} (thuong nguon) bi dong toi"
+
+
+def test_thu_lai_GIU_lai_so_lan_thu(run_dang_chay, db):
+    """`attempt` la su that ve lich su cua lan chay, khong phai bo dem tien do.
+
+    Xoa no la xoa dung thu can de tra loi "vi sao lan chay nay ton nhieu tien".
+    """
+    s = features.giai_doan_theo_ten(db, run_dang_chay.id, pipeline.MEDIA_PREPARE)
+    truoc = int(s.attempt)
+    assert truoc >= 1
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA", pipeline.MEDIA_PREPARE)
+    db.commit()
+    s = features.giai_doan_theo_ten(db, run_dang_chay.id, pipeline.MEDIA_PREPARE)
+    assert int(s.attempt) == truoc
+
+
+def test_thu_lai_mot_run_DA_KET_THUC_bi_tu_choi(run_xong, db):
+    """⛔ `quyet_toan` da hoan phan credit chua dung. Mot lan chay tiep sau do se
+    tieu tien ma khong con cho giu."""
+    assert run_xong.status == RUN_DONE
+    with pytest.raises(features.AsvError):
+        features.thu_lai_giai_doan(db, run_xong.id, "uA", pipeline.RENDER)
+
+
+def test_thu_lai_ten_giai_doan_KHONG_CO_bi_tu_choi(run_dang_chay, db):
+    with pytest.raises(features.AsvError):
+        features.thu_lai_giai_doan(db, run_dang_chay.id, "uA", "khong-co-that")
+
+
+def test_thu_lai_cua_NGUOI_KHAC_bi_tu_choi(run_dang_chay, db):
+    with pytest.raises(features.AsvError):
+        features.thu_lai_giai_doan(db, run_dang_chay.id, "uB",
+                                   pipeline.MEDIA_PREPARE)
+
+
+def test_sau_khi_thu_lai_thi_chuoi_CHAY_TIEP_toi_done(run_dang_chay, db):
+    """Thu lai khong duoc lam ket lan chay: dieu phoi vien phai duoc danh thuc."""
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA", pipeline.MEDIA_PREPARE)
+    db.commit()
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    run = features.lay_run(db, run_dang_chay.id, "uA")
+    assert run.status == RUN_DONE
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  Vo hieu TU DONG khi van tay lech (muc 4)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_khong_lech_thi_khong_dat_lai_gi(run_xong, db):
+    """Chieu am, va no quan trong hon ve mat chi phi: mot bo do lech nham se
+    lam MOI lan chay lap lai toan bo chuoi."""
+    assert thi_hanh.giai_doan_lech_van_tay(db, run_xong) == []
+
+
+def test_bo_do_lech_bat_giai_doan_bi_sua_VA_giai_doan_ke_no(run_xong, db):
+    """Bo do lech la MOT BUOC, va do la thiet ke chu khong phai thieu sot.
+
+    Sua van tay da luu cua `transcribe` roi do:
+
+        lech = ['transcribe', 'content_process']
+
+    ⭐ Hai muc, khong phai bay. `render` **chua** lech, vi van tay cua no doc van
+       tay cua `compose`, ma `compose` chua doi. Song lech lan truyen mot buoc
+       moi luot.
+
+    ⚠️ Ban dau phep kiem nay doi ca `render` phai co trong danh sach, va no do —
+       nhung ma **dung**. Hai suy luan sai trong cung mot dong:
+
+         * cho rang bo do doc bac cau (no khong, va no khong can: khep kin bac
+           cau la viec cua `_vo_hieu_giai_doan_da_lech`, xem phep kiem duoi);
+         * cho rang `transcribe` khong lech — trong khi chinh gia tri da luu cua
+           no vua bi gia mao, nen tinh lai tat nhien khong khop.
+
+    ⇒ Bo do tra loi "dong nao khong con dung voi dau vao cua no", KHONG tra loi
+      "nhung gi can lam lai". Cau thu hai la cua tang tren.
+    """
+    s = features.giai_doan_theo_ten(db, run_xong.id, pipeline.TRANSCRIBE)
+    features.cap_nhat_giai_doan(db, s, fingerprint="doi-roi" + "0" * 50)
+    db.commit()
+
+    lech = thi_hanh.giai_doan_lech_van_tay(db, run_xong)
+    assert pipeline.TRANSCRIBE in lech, "dong bi gia mao phai duoc phat hien"
+    assert pipeline.CONTENT_PROCESS in lech, "giai doan ke ngay phai lech theo"
+    assert pipeline.RENDER not in lech, (
+        "bo do dang doc bac cau — no chi nen doc mot buoc, va tang tren moi lo "
+        "khep kin (xem `test_advance_TU_DAT_LAI_giai_doan_lech...`)")
+
+
+def test_advance_TU_DAT_LAI_giai_doan_lech_thay_vi_ket_thuc(db, kho_tam,
+                                                            tmp_path, asr_gia,
+                                                            dich_gia, giong_gia):
+    """🔑 Cot loi cua muc 4.
+
+    Neu `_advance` khong lam viec nay, mot giai doan da lech van duoc dem la
+    `succeeded`, `len(da_xong) == 9`, va lan chay ket thuc bang mot ban long
+    tieng tron lan hai lan chay khac nhau — khong loi nao bao.
+    """
+    from apps.auto_scan_video import jobs as asv_jobs
+    from apps.auto_scan_video.tables import RUN_RUNNING
+
+    fx.require_ffmpeg()
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    assert features.lay_run(db, run.id, "uA").status == RUN_DONE
+
+    # Dung run day lai va lam lech mot giai doan giua chuoi.
+    run = features.lay_run(db, run.id, "uA")
+    run.status = RUN_RUNNING
+    s = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+    features.cap_nhat_giai_doan(db, s, fingerprint="l" * 58)
+    db.commit()
+
+    da_dat_lai = asv_jobs._vo_hieu_giai_doan_da_lech(db, run)
+    db.commit()
+
+    assert pipeline.TIMING_ALIGN in da_dat_lai
+    assert pipeline.RENDER in da_dat_lai
+    assert pipeline.QC in da_dat_lai
+    for ten in (pipeline.TIMING_ALIGN, pipeline.COMPOSE, pipeline.RENDER,
+                pipeline.QC):
+        assert features.giai_doan_theo_ten(db, run.id, ten).status == STAGE_PENDING
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  QC la cong cuoi, khong phai RENDER (muc 9)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_run_KHONG_ve_done_khi_moi_chi_RENDER_xong(db, kho_tam, tmp_path,
+                                                   asr_gia, dich_gia, giong_gia):
+    """⛔ `render` xong khong phai la lan chay xong. Prompt 16 muc 9.
+
+    Chot bang cach chay het hang doi RỒI ha rieng QC ve pending: neu dieu kien
+    ket thuc chi doc `render` thi run se ve `done` o luot advance ke tiep du QC
+    chua chay.
+    """
+    from apps.auto_scan_video.tables import RUN_RUNNING
+
+    fx.require_ffmpeg()
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+
+    run = features.lay_run(db, run.id, "uA")
+    run.status = RUN_RUNNING
+    s = features.giai_doan_theo_ten(db, run.id, pipeline.QC)
+    features._dat_lai_giai_doan(db, s)
+    features._nop_dieu_phoi(db, run, ly_do="kiem-qc-la-cong-cuoi")
+    db.commit()
+
+    # Worker KHONG co nang luc ffmpeg => QC (lan asv_media) khong chay duoc.
+    _chay_het_hang_doi(db, nang_luc={"api"})
+    run = features.lay_run(db, run.id, "uA")
+    assert run.status != RUN_DONE, (
+        "run ve done khi QC chua chay — dieu kien ket thuc dang doc RENDER")
+
+    # Cho du nang luc: QC chay, va gio moi duoc ve done.
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    assert features.lay_run(db, run.id, "uA").status == RUN_DONE
+
+
+def test_QC_la_giai_doan_CUOI_CUNG_cua_chuoi():
+    """Chot vi tri, de mot luot sau them giai doan sau QC khong lam menh de
+    "run xong khi QC xong" thanh sai mot cach im lang."""
+    assert pipeline.TEN_GIAI_DOAN[-1] == pipeline.QC
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  Huy lan truyen (muc 8)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_huy_dat_moi_giai_doan_CHUA_XONG_ve_cancelled(run_dang_chay, db):
+    features.huy_run(db, run_dang_chay.id, "uA")
+    db.commit()
+    run = features.lay_run(db, run_dang_chay.id, "uA")
+    assert run.status == RUN_CANCELLED
+    for s in features.cac_giai_doan(db, run):
+        assert s.status in (STAGE_SUCCEEDED, "cancelled", "failed_terminal"), (
+            f"{s.stage} con o trang thai {s.status} sau khi huy")
+
+
+def test_sau_khi_huy_thi_chay_tiep_KHONG_lam_run_song_lai(run_dang_chay, db):
+    """I13. Mot job con ve dich muon khong duoc lam song lai mot run da huy."""
+    features.huy_run(db, run_dang_chay.id, "uA")
+    db.commit()
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    assert features.lay_run(db, run_dang_chay.id, "uA").status == RUN_CANCELLED
+
+
+def test_huy_KHONG_de_lai_job_con_dang_song(run_dang_chay, db):
+    from platform_core.models import Job
+
+    features.huy_run(db, run_dang_chay.id, "uA")
+    db.commit()
+    con = db.execute(select(Job).where(
+        Job.plan_id == run_dang_chay.id)).scalars().all()
+    song = [j for j in con if j.status in ("queued", "running")]
+    assert song == [], f"con {len(song)} job con chua bi huy"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  Khong nhan doi giu cho / job / artifact (verification cua Prompt 16)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_thu_lai_KHONG_giu_them_mot_khoan_credit_nao(run_dang_chay, db):
+    """Mot lan chay giu tien DUNG MOT LAN, tren `run.id` (ADR-001 D3).
+
+    Thu lai la mot thao tac dieu khien, khong phai mot lan chay moi.
+    """
+    from platform_core import credit
+
+    truoc = credit.so_du(db, "uA")
+    giu_truoc = int(run_dang_chay.credit_held)
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA", pipeline.MEDIA_PREPARE)
+    db.commit()
+    run = features.lay_run(db, run_dang_chay.id, "uA")
+    assert int(run.credit_held) == giu_truoc
+    assert credit.so_du(db, "uA") == truoc
+
+
+def test_moi_giai_doan_chi_co_MOT_dong_du_da_thu_lai(run_dang_chay, db):
+    features.thu_lai_giai_doan(db, run_dang_chay.id, "uA", pipeline.MEDIA_PREPARE)
+    db.commit()
+    _chay_het_hang_doi(db, nang_luc=NANG_LUC)
+    hang = db.execute(select(AsvStage).where(
+        AsvStage.run_id == run_dang_chay.id)).scalars().all()
+    ten = [s.stage for s in hang]
+    assert len(ten) == len(set(ten)) == len(pipeline.CHUOI)
 
 @@@LTT_PROFILE_FILE_END@@@
 

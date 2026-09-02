@@ -208,6 +208,92 @@ def danh_dau_hong(db: Session, stage: AsvStage, loi: str, *,
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  Vo hieu ha nguon + thu lai (Prompt 16 muc 4 va 7)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _dat_lai_giai_doan(db: Session, stage: AsvStage) -> None:
+    """Dua mot dong giai doan ve trang thai chua chay.
+
+    ⚠️ Rong la `""` / `{}`, KHONG phai `None`: bon cot nay deu NOT NULL, va
+       `outputs=None` bien thanh chuoi JSON `'null'` chu khong thanh SQL NULL —
+       tuc "chua co ket qua" va "ket qua la null" se khong phan biet duoc.
+
+    ⛔ KHONG dat lai `attempt`. So lan thu la mot su that ve lich su cua lan
+       chay, khong phai mot bo dem tien do; xoa no la xoa dung thu can de tra
+       loi "vi sao lan chay nay ton nhieu tien the".
+    """
+    cap_nhat_giai_doan(db, stage, status=STAGE_PENDING, fingerprint="",
+                       outputs={}, job_id="", error="",
+                       started_at=None, finished_at=None)
+
+
+def vo_hieu_ha_nguon(db: Session, run: AsvRun, ten: str) -> list[str]:
+    """Dat lai moi giai doan an theo `ten`. Tra ve danh sach da dat lai.
+
+    🔑 Vi sao phai lam TAY, du van tay da tu lam moi cache: van tay cua mot giai
+       doan gom van tay cua cac giai doan truoc (`thi_hanh._gom_dau_vao`), nen
+       khi thuong nguon doi thi van tay ha nguon **cung doi** va cache truot.
+       Nhung dong `asv_stage` cua no van ghi `succeeded` — va dieu phoi vien chi
+       nop nhung giai doan **chua** succeeded. Ket qua: no khong bao gio chay
+       lai, va lan chay ket thuc voi mot ban long tieng dung tep cu.
+
+    ⇒ Van tay lo phan "khong dung lai ket qua sai"; ham nay lo phan "chay lai
+      that". Thieu mot trong hai la du de hong.
+    """
+    ra: list[str] = []
+    theo_ten = {s.stage: s for s in cac_giai_doan(db, run)}
+    for sau in pipeline.ha_nguon_cua(ten):
+        s = theo_ten.get(sau)
+        if s is None or s.status == STAGE_PENDING:
+            continue
+        try:
+            _dat_lai_giai_doan(db, s)
+        except XungDot:
+            # Mot worker dang ghi dong nay. Luot advance ke tiep doc lai va thay
+            # van tay da lech, nen no se duoc dat lai o luot do.
+            continue
+        ra.append(sau)
+    return ra
+
+
+def thu_lai_giai_doan(db: Session, run_id: str, owner_id: str,
+                      ten: str) -> dict:
+    """Chay lai MOT giai doan va chi nhung giai doan an theo no (muc 7).
+
+    ⛔ Khong chay lai ca lan chay. Chay lai `media_prepare` khi chi `render`
+       hong la bat khach tra tien lai cho mot lan chep loi, mot lan dich va mot
+       lan sinh tieng — ba thu dat nhat trong chuoi, va khong thu nao lien quan.
+
+    ⛔ Va khong cho thu lai mot lan chay **da ket thuc**: `quyet_toan` da hoan
+       phan credit chua dung, nen mot lan chay tiep sau do se tieu tien ma
+       khong con cho giu. Muon lam lai thi nop mot run moi.
+    """
+    if ten not in pipeline.THEO_TEN:
+        raise AsvError(_t('Không có giai đoạn tên này.'))
+
+    run = lay_run(db, run_id, owner_id, lock=True)
+    if run.status in RUN_TERMINAL:
+        raise AsvError(
+            _t('Lần chạy đã kết thúc — hãy tạo một lần chạy mới.'))
+
+    stage = giai_doan_theo_ten(db, run.id, ten)
+    if stage is None:
+        raise KhongTimThay(_t('Không có giai đoạn tên này.'))
+
+    _dat_lai_giai_doan(db, stage)
+    da_vo_hieu = vo_hieu_ha_nguon(db, run, ten)
+
+    run.error = ""
+    if run.status not in (RUN_QUEUED, RUN_RUNNING):
+        run.status = RUN_RUNNING
+    # `ly_do` mang ten giai doan nen hai lan thu lai hai giai doan khac nhau
+    # khong bi dedupe vao lam mot.
+    _nop_dieu_phoi(db, run, ly_do=f"thu-lai:{ten}")
+    db.flush()
+    return {"run_id": run.id, "da_dat_lai": [ten] + da_vo_hieu}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  Tien: tran chi va quyet toan (I2, I3, ADR-001 D4)
 # ══════════════════════════════════════════════════════════════════════════════
 

@@ -140,6 +140,32 @@ def _gom_dau_vao(db, run_id: str, ten: str) -> dict:
     return ra
 
 
+def giai_doan_lech_van_tay(db, run) -> list[str]:
+    """Giai doan `succeeded` ma van tay da luu KHONG con khop dau vao hien tai.
+
+    🔑 Prompt 16 muc 4 doi vo hieu theo phu thuoc, va day la nua **tu dong** cua
+       no. Nua kia — `features.thu_lai_giai_doan` — la khi nguoi dung chu dong
+       yeu cau. Nua nay bat truong hop khong ai yeu cau gi ca:
+
+       mot giai doan thuong nguon chay lai (vd sau mot lan hong tam thoi) va cho
+       ket qua **khac**. Van tay ha nguon doi theo, nen cache truot va no khong
+       dung lai ket qua sai — nhung dong `asv_stage` cua no van ghi `succeeded`,
+       va dieu phoi vien chi nop nhung giai doan CHUA succeeded. Ket qua: no
+       khong bao gio chay lai, va lan chay ket thuc bang mot ban long tieng
+       tron lan hai lan chay khac nhau.
+
+    ⚠️ Doc, khong ghi. Nguoi goi quyet dinh lam gi — de phep kiem quan sat duoc
+       "lech" tach roi khoi "da xu ly".
+    """
+    ra: list[str] = []
+    for s in features.cac_giai_doan(db, run):
+        if s.status != STAGE_SUCCEEDED or not s.fingerprint:
+            continue
+        if van_tay(s.stage, run, _gom_dau_vao(db, run.id, s.stage)) != s.fingerprint:
+            ra.append(s.stage)
+    return ra
+
+
 def _khoa_cha(db, run_id: str, ten: str) -> list[str]:
     """Khoa luu tru cua artifact ma giai doan nay dan xuat tu — LINEAGE that.
 

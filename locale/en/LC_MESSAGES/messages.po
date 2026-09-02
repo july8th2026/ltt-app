@@ -13569,3 +13569,11 @@ msgstr "Checking the output file"
 #: apps/auto_scan_video
 msgid "Đang kết xuất video"
 msgstr "Rendering the video"
+
+#: apps/auto_scan_video
+msgid "Không có giai đoạn tên này."
+msgstr "There is no stage by that name."
+
+#: apps/auto_scan_video
+msgid "Lần chạy đã kết thúc — hãy tạo một lần chạy mới."
+msgstr "This run has already finished — start a new one instead."

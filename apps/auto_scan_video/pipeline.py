@@ -120,6 +120,47 @@ def ke_tiep(da_xong: set[str]) -> list[GiaiDoan]:
             if g.ten not in da_xong and set(g.sau).issubset(da_xong)]
 
 
+def ha_nguon_cua(ten: str) -> list[str]:
+    """Moi giai doan phu thuoc `ten`, TRUC TIEP hay GIAN TIEP, theo thu tu chuoi.
+
+    Day la quan he **nguoc** cua `GiaiDoan.sau`, va no la thu Prompt 16 muc 4
+    doi: khi mot giai doan chay lai, chi nhung giai doan that su an theo no moi
+    duoc vo hieu.
+
+    ⚠️ **Hom nay ket qua nay TRUNG voi "moi giai doan dung sau trong `CHUOI`"**,
+       va noi khac di la noi sai. Do that:
+
+           media_prepare   -> 8 giai doan con lai
+           audio_prepare   -> 7 giai doan con lai
+           ...
+           render          -> ['qc']
+
+       Do thi hien tai gan nhu mot duong thang. Cho re duy nhat la
+       `timing_align`, phu thuoc CA `voice_synthesis` lan `audio_prepare` — nhung
+       cho re do khong tao ra giai doan nao "dung sau ma khong an theo".
+
+    ⇒ Vay tai sao khong viet `CHUOI[i+1:]` cho gon? Vi hai thu do **bang nhau do
+      hoan canh, khong do dinh nghia**. Them mot nhanh doc lap (vd mot giai doan
+      chi an theo `media_prepare`) la chung tach ra ngay, va phien ban `[i+1:]`
+      se lang le vo hieu — tuc bat khach tra tien lai cho mot viec khong dau vao
+      nao doi. `tests/test_417` chot ca hai chieu, ke ca su trung nhau hom nay,
+      nen luc chung tach ra thi co mot phep kiem noi ra thay vi im lang.
+
+    ⛔ Chieu nguoc lai dat hon: vo hieu **thieu** mot giai doan ha nguon nghia la
+       giao mot ban long tieng tron lan ket qua cua hai lan chay khac nhau —
+       hong theo kieu khong loi nao bao.
+    """
+    ra: list[str] = []
+    bien: set[str] = {ten}
+    for g in CHUOI:                     # `CHUOI` da theo thu tu topo (co chot)
+        if g.ten == ten:
+            continue
+        if set(g.sau) & bien:
+            bien.add(g.ten)
+            ra.append(g.ten)
+    return ra
+
+
 def _kiem_tra_chuoi() -> None:
     """Chot luc import: khong co phu thuoc nao tro toi mot giai doan chua ton tai.
 

@@ -30,7 +30,7 @@ import logging
 from platform_core.db import get_session
 from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job
 
-from . import features, pipeline
+from . import features, pipeline, thi_hanh
 from .tables import (RUN_DONE, RUN_ERROR, RUN_QUEUED, RUN_RUNNING, RUN_TERMINAL,
                      STAGE_FAILED_TERMINAL, STAGE_PENDING, STAGE_QUEUED,
                      STAGE_RUNNING, STAGE_SUCCEEDED)
@@ -78,6 +78,7 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
         run.revision = int(run.revision) + 1
 
     _thu_ket_qua_job_con(db, run)
+    _vo_hieu_giai_doan_da_lech(db, run)
 
     ds = features.cac_giai_doan(db, run)
     theo_ten = {s.stage: s for s in ds}
@@ -104,6 +105,43 @@ def _advance(db, *, run_id: str, owner_id: str, ctx=None) -> dict:
 
     return {"run_id": run.id, "status": run.status,
             "da_nop": da_nop, "da_xong": sorted(da_xong)}
+
+
+def _vo_hieu_giai_doan_da_lech(db, run) -> list[str]:
+    """Giai doan `succeeded` co van tay khong con khop dau vao -> dat lai (muc 4).
+
+    Chay o **dau moi luot advance**, truoc khi tinh `da_xong`, vi neu tinh
+    truoc thi mot giai doan da lech van duoc dem la xong va lan chay co the ket
+    thuc ngay o luot nay.
+
+    ⛔ Vo hieu ca HA NGUON cua no, khong chi rieng no: mot giai doan sap chay
+       lai se cho ket qua khac, nen moi thu an theo cung phai lam lai. Vo hieu
+       thieu la giao mot ban long tieng tron lan hai lan chay.
+    """
+    lech = thi_hanh.giai_doan_lech_van_tay(db, run)
+    if not lech:
+        return []
+
+    theo_ten = {s.stage: s for s in features.cac_giai_doan(db, run)}
+    da_dat_lai: list[str] = []
+    for ten in lech:
+        s = theo_ten.get(ten)
+        if s is None or s.status != STAGE_SUCCEEDED:
+            continue        # mot vong truoc trong chinh luot nay da dat lai roi
+        try:
+            features._dat_lai_giai_doan(db, s)
+        except features.XungDot:
+            continue
+        da_dat_lai.append(ten)
+        da_dat_lai += features.vo_hieu_ha_nguon(db, run, ten)
+        theo_ten = {x.stage: x for x in features.cac_giai_doan(db, run)}
+
+    if da_dat_lai:
+        # Su kien dang chu y, khong phai binh thuong: no nghia la mot giai doan
+        # thuong nguon da chay lai va cho ket qua khac.
+        log.warning("asv: run %s dat lai %d giai doan do lech van tay: %s",
+                    run.id[:8], len(da_dat_lai), ",".join(sorted(set(da_dat_lai))))
+    return da_dat_lai
 
 
 def _thu_ket_qua_job_con(db, run) -> None:
