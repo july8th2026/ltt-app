@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:7a6aa6b6eadba12019b75c6dc1d4b1b217911409d423943bc2a7c17b97cf8207
+Fingerprint   : sha256:0c12c4e760ad404d74eb235f2e4e9eb9bec0850cbb9669c1d62a690574aaa7e8
 Nguồn đã quét : 1469 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3085,7 +3085,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1469 file; 14681010 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1469 file; 14686748 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -153265,7 +153265,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=03dd25ec948eb427b0c95566132c20ec41ee13c68523b409bdadffa67c55439e BYTES=261804 LINES=2884
+SHA256=c216add716b57b35990446ec3392051db76ab0bb02c1e24580306595ab48be48 BYTES=262935 LINES=2909
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -155888,6 +155888,31 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   .lv-st{grid-template-columns:1fr}
   .lv-st-phai{grid-column:auto}
   .lv-chon-ds{max-height:240px}
+
+  /* == THU TU TREN MAN HEP: KICH BAN TRUOC, THIET LAP SAU ==================
+   *
+   * 🔴 Do tren mobile 375px (02/09/2026): nut "Tao tieng noi" nam o y=1037,
+   *    con o nhap kich ban o y=1164 -- tuc NUT CHINH DUNG TREN O NHAP BAT
+   *    BUOC, cach 127px.
+   *
+   *    Tren man rong khong ai thay: ba cot dung canh nhau nen `trai` (thiet
+   *    lap + nut) o BEN CANH `giua` (kich ban), khong o TREN. Xep mot cot thi
+   *    thu tu DOM tro thanh thu tu doc, va thu tu DOM duoc chon cho bo cuc
+   *    ngang.
+   *
+   * ⭐ Doi bang `order`, KHONG doi thu tu DOM: thu tu DOM la thu tu TAB cua
+   *    ban phim, va no dang dung -- thiet lap truoc, kich ban sau, ket qua
+   *    cuoi. Doi DOM de sua mat mot man hep se lam hong duong ban phim tren
+   *    moi man.
+   *
+   * ⚠️ Danh doi da biet: thu tu THI GIAC va thu tu TAB nay khac nhau o man
+   *    hep. WCAG 1.3.2 quan tam thu tu DOC hieu duoc, va ca hai thu tu deu
+   *    hieu duoc -- day khong phai mot vi pham, ma la mot lua chon giua hai
+   *    thu deu hop ly.
+   */
+  .lv-st-giua{order:1}
+  .lv-st-trai{order:2}
+  .lv-st-phai{order:3}
 }
 
 /* ── Man Lich su (P4) ──────────────────────────────────────────────────────── */
@@ -156282,7 +156307,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=3ba578df63c17658df435bc858ce11af260b732ee2efe25d3d2dde0b512b714f BYTES=77706 LINES=1862
+SHA256=601b66b4214303f3dfb28669d53018bbb6a609d4846c39ae3046c7a730afb980 BYTES=79040 LINES=1887
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -156882,13 +156907,38 @@ SHA256=3ba578df63c17658df435bc858ce11af260b732ee2efe25d3d2dde0b512b714f BYTES=77
 
     for (var m = 0; m < the.length; m++) {
       (function (t) {
+        /* == The giong LA mot nut, va no CHUA nhung nut khac ==================
+         *
+         * 🔴 LOI DA XAY RA, tim ra bang BAN PHIM ngay 02/09/2026:
+         *
+         *    Bam Enter khi dang focus nut NGHE THU -> panel chi tiet mo ra,
+         *    va tieng KHONG phat. Nut co ten doc duoc dung ("Nghe thu giong
+         *    X"), co focus duoc, nhung lam mot viec khac hoan toan.
+         *
+         *    Vi sao: `keydown` noi bot tu nut len the, the goi
+         *    `e.preventDefault()` -- va cai `preventDefault` ay huy luon hanh
+         *    vi mac dinh Enter->click CUA CHINH NUT. Nen nut khong bao gio
+         *    duoc bam.
+         *
+         * ⭐ Chuot khong lo ra loi nay: duong chuot da co `stopPropagation`
+         *    trong chinh handler cua nut. Chi ban phim moi thay, vi ban phim
+         *    di qua mot su kien KHAC (`keydown`, khong phai `click`).
+         *
+         * ⛔ Nen ca hai duong deu phai bo qua noi dung tuong tac ben trong,
+         *    khong chi duong chuot. `<a>` VA `<button>` -- danh sach cu chi co
+         *    `<a>` vi luc viet no the chua co nut nao ben trong.
+         */
+        var BEN_TRONG = "a, button, input, select, textarea, [role=button]";
+
         t.addEventListener("click", function (e) {
-          // Nut "Dung" la mot lien ket that — dung nuot cu bam cua no.
-          if (e.target.closest("a")) return;
+          if (e.target.closest(BEN_TRONG)) return;
           moChiTiet(t);
         });
         // The mang `role="button"` nen ban phim phai nhan ca Enter lan Space.
         t.addEventListener("keydown", function (e) {
+          // ⛔ Phim go TRONG mot nut/o nhap ben trong la cua no, khong phai
+          //    cua the. Nuot o day la nuot Enter cua chinh nut nghe thu.
+          if (e.target !== t) return;
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             moChiTiet(t);
@@ -258928,7 +258978,7 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_ltt_voice_nghe_thu.py
-SHA256=140f775af09cec5e9dd2b9b28deb6ea0666ef89a7d99e75590e8ddc2c0f3b8f3 BYTES=21296 LINES=482
+SHA256=54567db9aee3fb1a631ac8ae6fd3a26b01a422cf4e59b92ca743b5caa28afd13 BYTES=23438 LINES=525
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """NGHE THỬ một giọng — và ba thứ quanh nó phải không gãy.
 
@@ -259412,6 +259462,49 @@ def test_MOI_man_dung_bo_chon_giong_deu_co_nghe_thu(khach, monkeypatch, duong):
     assert "lv-chon-nghe" in r.text, (
         f"{duong} co bo chon giong nhung KHONG co nut nghe thu — "
         f"route quen truyen `duong_nghe`")
+
+
+# ── 7. Bàn phím: thẻ giọng LÀ một nút, và nó CHỨA những nút khác ────────────
+
+def test_the_giong_khong_duoc_NUOT_phim_cua_nut_ben_trong():
+    """🔴 LỖI ĐÃ XẢY RA, tìm ra bằng BÀN PHÍM ngày 02/09/2026.
+
+    Bấm Enter khi đang focus nút NGHE THỬ thì panel chi tiết mở ra và tiếng
+    **không** phát. Nút có tên đọc được đúng, focus được, nhưng làm một việc
+    khác hẳn.
+
+    Vì sao: `keydown` nổi bọt từ nút lên thẻ; thẻ gọi `e.preventDefault()`, và
+    cái đó huỷ luôn hành vi mặc định Enter→click **của chính nút**.
+
+    ⭐ Chuột KHÔNG lộ ra lỗi này — đường chuột đã có `stopPropagation` trong
+       handler của nút. Chỉ bàn phím mới thấy, vì bàn phím đi qua một sự kiện
+       **khác** (`keydown`, không phải `click`).
+
+    ⇒ Phép kiểm này đọc mã, vì hành vi thật cần một trình duyệt. Nó chốt hai
+      thứ: handler `keydown` phải bỏ qua sự kiện không phát từ chính thẻ, và
+      handler `click` phải bỏ qua **cả `button`**, không chỉ `<a>`.
+    """
+    import pathlib as _p
+    js = (_p.Path(__file__).resolve().parents[1]
+          / "server/static/voice.js").read_text(encoding="utf-8")
+
+    assert "if (e.target !== t) return;" in js, (
+        "handler keydown cua the giong khong con bo qua phim go TRONG mot nut "
+        "ben trong — Enter tren nut nghe thu se lai bi nuot")
+
+    assert "a, button, input, select, textarea, [role=button]" in js, (
+        "handler click cua the chi bo qua <a> — nut nghe thu ben trong se lam "
+        "the mo panel")
+
+
+def test_nut_nghe_thu_la_BUTTON_that_va_co_ten_doc_duoc(khach, monkeypatch):
+    """Focus được và có tên — hai điều kiện tối thiểu để bàn phím dùng được."""
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice/giong")
+    assert '<button type="button" class="lv-the-song lv-nghe"' in r.text
+    assert 'aria-label="Nghe thử giọng' in r.text
+
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -290636,7 +290729,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=03dd25ec948eb427b0c95566132c20ec41ee13c68523b409bdadffa67c55439e BYTES=261804 LINES=2884
+SHA256=c216add716b57b35990446ec3392051db76ab0bb02c1e24580306595ab48be48 BYTES=262935 LINES=2909
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -293259,6 +293352,31 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   .lv-st{grid-template-columns:1fr}
   .lv-st-phai{grid-column:auto}
   .lv-chon-ds{max-height:240px}
+
+  /* == THU TU TREN MAN HEP: KICH BAN TRUOC, THIET LAP SAU ==================
+   *
+   * 🔴 Do tren mobile 375px (02/09/2026): nut "Tao tieng noi" nam o y=1037,
+   *    con o nhap kich ban o y=1164 -- tuc NUT CHINH DUNG TREN O NHAP BAT
+   *    BUOC, cach 127px.
+   *
+   *    Tren man rong khong ai thay: ba cot dung canh nhau nen `trai` (thiet
+   *    lap + nut) o BEN CANH `giua` (kich ban), khong o TREN. Xep mot cot thi
+   *    thu tu DOM tro thanh thu tu doc, va thu tu DOM duoc chon cho bo cuc
+   *    ngang.
+   *
+   * ⭐ Doi bang `order`, KHONG doi thu tu DOM: thu tu DOM la thu tu TAB cua
+   *    ban phim, va no dang dung -- thiet lap truoc, kich ban sau, ket qua
+   *    cuoi. Doi DOM de sua mat mot man hep se lam hong duong ban phim tren
+   *    moi man.
+   *
+   * ⚠️ Danh doi da biet: thu tu THI GIAC va thu tu TAB nay khac nhau o man
+   *    hep. WCAG 1.3.2 quan tam thu tu DOC hieu duoc, va ca hai thu tu deu
+   *    hieu duoc -- day khong phai mot vi pham, ma la mot lua chon giua hai
+   *    thu deu hop ly.
+   */
+  .lv-st-giua{order:1}
+  .lv-st-trai{order:2}
+  .lv-st-phai{order:3}
 }
 
 /* ── Man Lich su (P4) ──────────────────────────────────────────────────────── */

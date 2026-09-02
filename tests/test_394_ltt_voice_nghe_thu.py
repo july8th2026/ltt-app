@@ -480,3 +480,46 @@ def test_MOI_man_dung_bo_chon_giong_deu_co_nghe_thu(khach, monkeypatch, duong):
     assert "lv-chon-nghe" in r.text, (
         f"{duong} co bo chon giong nhung KHONG co nut nghe thu — "
         f"route quen truyen `duong_nghe`")
+
+
+# ── 7. Bàn phím: thẻ giọng LÀ một nút, và nó CHỨA những nút khác ────────────
+
+def test_the_giong_khong_duoc_NUOT_phim_cua_nut_ben_trong():
+    """🔴 LỖI ĐÃ XẢY RA, tìm ra bằng BÀN PHÍM ngày 02/09/2026.
+
+    Bấm Enter khi đang focus nút NGHE THỬ thì panel chi tiết mở ra và tiếng
+    **không** phát. Nút có tên đọc được đúng, focus được, nhưng làm một việc
+    khác hẳn.
+
+    Vì sao: `keydown` nổi bọt từ nút lên thẻ; thẻ gọi `e.preventDefault()`, và
+    cái đó huỷ luôn hành vi mặc định Enter→click **của chính nút**.
+
+    ⭐ Chuột KHÔNG lộ ra lỗi này — đường chuột đã có `stopPropagation` trong
+       handler của nút. Chỉ bàn phím mới thấy, vì bàn phím đi qua một sự kiện
+       **khác** (`keydown`, không phải `click`).
+
+    ⇒ Phép kiểm này đọc mã, vì hành vi thật cần một trình duyệt. Nó chốt hai
+      thứ: handler `keydown` phải bỏ qua sự kiện không phát từ chính thẻ, và
+      handler `click` phải bỏ qua **cả `button`**, không chỉ `<a>`.
+    """
+    import pathlib as _p
+    js = (_p.Path(__file__).resolve().parents[1]
+          / "server/static/voice.js").read_text(encoding="utf-8")
+
+    assert "if (e.target !== t) return;" in js, (
+        "handler keydown cua the giong khong con bo qua phim go TRONG mot nut "
+        "ben trong — Enter tren nut nghe thu se lai bi nuot")
+
+    assert "a, button, input, select, textarea, [role=button]" in js, (
+        "handler click cua the chi bo qua <a> — nut nghe thu ben trong se lam "
+        "the mo panel")
+
+
+def test_nut_nghe_thu_la_BUTTON_that_va_co_ten_doc_duoc(khach, monkeypatch):
+    """Focus được và có tên — hai điều kiện tối thiểu để bàn phím dùng được."""
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice/giong")
+    assert '<button type="button" class="lv-the-song lv-nghe"' in r.text
+    assert 'aria-label="Nghe thử giọng' in r.text
+

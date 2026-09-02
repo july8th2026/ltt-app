@@ -2619,6 +2619,31 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   .lv-st{grid-template-columns:1fr}
   .lv-st-phai{grid-column:auto}
   .lv-chon-ds{max-height:240px}
+
+  /* == THU TU TREN MAN HEP: KICH BAN TRUOC, THIET LAP SAU ==================
+   *
+   * 🔴 Do tren mobile 375px (02/09/2026): nut "Tao tieng noi" nam o y=1037,
+   *    con o nhap kich ban o y=1164 -- tuc NUT CHINH DUNG TREN O NHAP BAT
+   *    BUOC, cach 127px.
+   *
+   *    Tren man rong khong ai thay: ba cot dung canh nhau nen `trai` (thiet
+   *    lap + nut) o BEN CANH `giua` (kich ban), khong o TREN. Xep mot cot thi
+   *    thu tu DOM tro thanh thu tu doc, va thu tu DOM duoc chon cho bo cuc
+   *    ngang.
+   *
+   * ⭐ Doi bang `order`, KHONG doi thu tu DOM: thu tu DOM la thu tu TAB cua
+   *    ban phim, va no dang dung -- thiet lap truoc, kich ban sau, ket qua
+   *    cuoi. Doi DOM de sua mat mot man hep se lam hong duong ban phim tren
+   *    moi man.
+   *
+   * ⚠️ Danh doi da biet: thu tu THI GIAC va thu tu TAB nay khac nhau o man
+   *    hep. WCAG 1.3.2 quan tam thu tu DOC hieu duoc, va ca hai thu tu deu
+   *    hieu duoc -- day khong phai mot vi pham, ma la mot lua chon giua hai
+   *    thu deu hop ly.
+   */
+  .lv-st-giua{order:1}
+  .lv-st-trai{order:2}
+  .lv-st-phai{order:3}
 }
 
 /* ── Man Lich su (P4) ──────────────────────────────────────────────────────── */

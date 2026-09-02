@@ -596,13 +596,38 @@
 
     for (var m = 0; m < the.length; m++) {
       (function (t) {
+        /* == The giong LA mot nut, va no CHUA nhung nut khac ==================
+         *
+         * 🔴 LOI DA XAY RA, tim ra bang BAN PHIM ngay 02/09/2026:
+         *
+         *    Bam Enter khi dang focus nut NGHE THU -> panel chi tiet mo ra,
+         *    va tieng KHONG phat. Nut co ten doc duoc dung ("Nghe thu giong
+         *    X"), co focus duoc, nhung lam mot viec khac hoan toan.
+         *
+         *    Vi sao: `keydown` noi bot tu nut len the, the goi
+         *    `e.preventDefault()` -- va cai `preventDefault` ay huy luon hanh
+         *    vi mac dinh Enter->click CUA CHINH NUT. Nen nut khong bao gio
+         *    duoc bam.
+         *
+         * ⭐ Chuot khong lo ra loi nay: duong chuot da co `stopPropagation`
+         *    trong chinh handler cua nut. Chi ban phim moi thay, vi ban phim
+         *    di qua mot su kien KHAC (`keydown`, khong phai `click`).
+         *
+         * ⛔ Nen ca hai duong deu phai bo qua noi dung tuong tac ben trong,
+         *    khong chi duong chuot. `<a>` VA `<button>` -- danh sach cu chi co
+         *    `<a>` vi luc viet no the chua co nut nao ben trong.
+         */
+        var BEN_TRONG = "a, button, input, select, textarea, [role=button]";
+
         t.addEventListener("click", function (e) {
-          // Nut "Dung" la mot lien ket that — dung nuot cu bam cua no.
-          if (e.target.closest("a")) return;
+          if (e.target.closest(BEN_TRONG)) return;
           moChiTiet(t);
         });
         // The mang `role="button"` nen ban phim phai nhan ca Enter lan Space.
         t.addEventListener("keydown", function (e) {
+          // ⛔ Phim go TRONG mot nut/o nhap ben trong la cua no, khong phai
+          //    cua the. Nuot o day la nuot Enter cua chinh nut nghe thu.
+          if (e.target !== t) return;
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             moChiTiet(t);
