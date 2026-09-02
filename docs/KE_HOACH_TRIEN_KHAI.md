@@ -3666,3 +3666,28 @@ deploy trong cùng phiên.
 **Rollback:** code/web dùng `C:\LTTPlatform\app.previous` qua
 `deploy/windows/rollback.ps1`; artifact là dữ liệu ngoài release nên giữ lại
 bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
+
+## H43 — ChatLTT: sản phẩm chat LTT-native trên ba model nhà (2026-09-02)
+
+Gói: `LTTCHAT_AUTONOMOUS_DEEP_BUILD_V2` (14 phase tự chủ). **Kế hoạch + phân tích:
+`docs/CHATLTT/00_PHUONG_AN_VA_LO_TRINH.md`. Trạng thái: `docs/CHATLTT/STATE.md`.**
+
+Hình dạng: app mới `apps/chatltt/` (không sửa `chataistudio`), giao diện
+LibreChat-class bằng React island, gọi `text.chat` / `image.ltt` / `speech.ltt`
+qua **một facade mỏng `platform_core/runtime_noi_bo/`** (không API key, không
+URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bảng riêng `chatltt_*`.
+
+| # | Phase gói | Việc | Trạng thái |
+|---|---|---|---|
+| H43.0 | 00 | Bootstrap: cây/gốc SHA/dải test 600–699/ranh giới phiên | ✅ 2026-09-02 |
+| H43.1 | 01 | LibreChat `v0.8.7` tham chiếu hành vi | [ ] |
+| H43.2 | 02 | Gap runtime nội bộ → `platform_core/runtime_noi_bo/` | [ ] |
+| H43.3–.5 | 03–05 | Text / Ảnh / Tiếng: đường nội bộ + benchmark + SLO; đóng D12 (Q116↔mã) | [ ] |
+| H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed | [ ] |
+| H43.7 | 07 | Bảng `chatltt_*` + sự kiện canonical + reload từ CSDL | [ ] |
+| H43.8 | 08 | ChatLTT chỉ-text dùng được độc lập | [ ] |
+| H43.9 | 09 | Tạo ảnh / đọc to / tạo giọng trong hội thoại | [ ] |
+| H43.10 | 10 | UX LibreChat-class, Carbon LTT, desktop+mobile | [ ] |
+| H43.11 | 11 | Chứng minh mở rộng bằng fixture | [ ] |
+| H43.12 | 12 | Torture: đồng thời/tiền/bảo mật/dữ liệu/hiệu năng | [ ] |
+| H43.13 | 13 | Nghiệm thu tươi + gate đầy đủ + báo cáo cuối; **không deploy** | [ ] |
