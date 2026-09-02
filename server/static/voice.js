@@ -568,6 +568,12 @@
               hang.className = "lv-ct-clip-hang";
               var au = document.createElement("audio");
               au.controls = true; au.preload = "none"; au.src = ds[j].url;
+              /* `data-nang` de `chay(oCt)` o cuoi ham nang no thanh trinh phat
+                 song am. Khong co no thi panel co HAI trinh phat canh nhau:
+                 ban nghe thu (da nang, nen toi) va clip goc (thanh xam mac
+                 dinh cua trinh duyet) -- dung thu thanh xam ma dot 01/09 da di
+                 go khoi man Studio. */
+              au.dataset.nang = "1";
               var nhan = document.createElement("small");
               nhan.textContent = ds[j].giay ? ds[j].giay + "s" : "";
               hang.appendChild(au); hang.appendChild(nhan);

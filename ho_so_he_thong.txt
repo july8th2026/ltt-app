@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:bfff5ae4a691d5465ad5dc142999afb592e4d96ce39b4481f459593b2d56f992
+Fingerprint   : sha256:a04fd63d48dcdcfc06ba06a674e413c25d0a6d524540d71bec78ee90eee2d656
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3083,7 +3083,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14654661 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14655051 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -156211,7 +156211,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=db31d265e7be820a5d3e596e42057d3e0a5451ae75925105c4ea8a786b3eaeb1 BYTES=77316 LINES=1856
+SHA256=3ba578df63c17658df435bc858ce11af260b732ee2efe25d3d2dde0b512b714f BYTES=77706 LINES=1862
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -156783,6 +156783,12 @@ SHA256=db31d265e7be820a5d3e596e42057d3e0a5451ae75925105c4ea8a786b3eaeb1 BYTES=77
               hang.className = "lv-ct-clip-hang";
               var au = document.createElement("audio");
               au.controls = true; au.preload = "none"; au.src = ds[j].url;
+              /* `data-nang` de `chay(oCt)` o cuoi ham nang no thanh trinh phat
+                 song am. Khong co no thi panel co HAI trinh phat canh nhau:
+                 ban nghe thu (da nang, nen toi) va clip goc (thanh xam mac
+                 dinh cua trinh duyet) -- dung thu thanh xam ma dot 01/09 da di
+                 go khoi man Studio. */
+              au.dataset.nang = "1";
               var nhan = document.createElement("small");
               nhan.textContent = ds[j].giay ? ds[j].giay + "s" : "";
               hang.appendChild(au); hang.appendChild(nhan);
