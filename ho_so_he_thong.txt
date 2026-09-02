@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ebeba9f623ff072facf8e21e10c1630b17069c94208053e32f63649afa1225e2
-Nguồn đã quét : 1467 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:36cc56ac34ecf198f853a489acec45940f3426574a41fdd3c7129b536c930e84
+Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -204,6 +204,7 @@ Các lớp chính:
     - apps/ltt_voice/tables.py
     - apps/ltt_voice/tables_du_an.py
     - apps/ltt_voice/templates/_voice_chon.html
+    - apps/ltt_voice/templates/_voice_chon_nghe.html
     - apps/ltt_voice/templates/_voice_ma.html
     - apps/ltt_voice/templates/_voice_rong.html
     - apps/ltt_voice/templates/_voice_the.html
@@ -598,8 +599,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [chataistudio] GET    /chataistudio/img/{key:path} → chat_image | auth~login | apps/chataistudio/routes.py:504
 - [chataistudio] POST   /chataistudio/new → new_conv | auth~login | apps/chataistudio/routes.py:138
 - [chataistudio] POST   /chataistudio/send → send | auth~login | apps/chataistudio/routes.py:180
-- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:20
-- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:20
+- [ltt_voice] GET    /ltt-voice → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:21
+- [ltt_voice] GET    /ltt-voice/ → trang_tao | auth~login | apps/ltt_voice/routes/_p_tao.py:21
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
 - [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:43
@@ -619,14 +620,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:58
 - [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:134
-- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:177
+- [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:186
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
 - [ltt_voice] POST   /ltt-voice/lich-su/{job_id}/doc-lai → doc_lai | auth~login | apps/ltt_voice/routes/_p_lich_su.py:79
-- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:229
-- [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:316
-- [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:335
-- [ltt_voice] POST   /ltt-voice/tu-dien/{muc_id}/xoa → xoa_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:365
-- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:93
+- [ltt_voice] POST   /ltt-voice/tao → tao | auth~login | apps/ltt_voice/routes/_p_tao.py:238
+- [ltt_voice] GET    /ltt-voice/tu-dien → xem_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:325
+- [ltt_voice] POST   /ltt-voice/tu-dien/them → them_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:344
+- [ltt_voice] POST   /ltt-voice/tu-dien/{muc_id}/xoa → xoa_tu_dien | auth~login | apps/ltt_voice/routes/_p_tao.py:374
+- [ltt_voice] POST   /ltt-voice/xem-truoc → xem_truoc | auth~login | apps/ltt_voice/routes/_p_tao.py:102
 - [nexus] GET    /nexus → trang_chinh | auth~login | apps/nexus/routes.py:133
 - [nexus] POST   /nexus/dieu-khien/{device_id} → bat_dau_dieu_khien | auth~login | apps/nexus/routes.py:292
 - [nexus] POST   /nexus/ma-ghep → tao_ma | auth~login | apps/nexus/routes.py:181
@@ -1556,8 +1557,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1467 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1102, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1468 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1102, .sh:3, .svg:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1642,7 +1643,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (272)
+[apps] (273)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1731,6 +1732,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - apps/ltt_voice/tables.py
 - apps/ltt_voice/tables_du_an.py
 - apps/ltt_voice/templates/_voice_chon.html
+- apps/ltt_voice/templates/_voice_chon_nghe.html
 - apps/ltt_voice/templates/_voice_ma.html
 - apps/ltt_voice/templates/_voice_rong.html
 - apps/ltt_voice/templates/_voice_the.html
@@ -3081,7 +3083,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1467 file; 14635638 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14646055 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -22639,7 +22641,7 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_tao.py
-SHA256=32727e60a84643e1ad55eea93bdb08b355f0b6a41595271dbee53df7ac78bb31 BYTES=18486 LINES=381
+SHA256=fb831094c8846a960d13528087df487506526ea7f156f7c7132e107e1fbca718 BYTES=19049 LINES=390
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Tạo tiếng nói: dựng trang, xem trước cách đọc, nộp job,
 theo dõi kết quả."""
@@ -22649,7 +22651,8 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
-                     gia, giong_mau, io, lan_ngon_ngu, require_login,
+                     gia, giong_mau, io, lan_ngon_ngu, nghe_thu,
+                     require_login,
                      router, templates,
                      tham_chieu, tu_dien_rieng, user_hien_tai,
                      verify_csrf_token, vo,
@@ -22692,6 +22695,13 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         #    tới khi đọc lỗi. Danh sách dự án cho nút `Lưu vào dự án`.
         du_an_ds = [{"public_id": d.public_id, "ten": d.ten}
                     for d in du_an.danh_sach(db, uid)]
+        # Đường nghe thử cho bộ chọn giọng. CÙNG thẩm quyền với màn Giọng
+        # (`nghe_thu.duong_cho_trang`) — hai chỗ tự ghép URL là hai chỗ
+        # sẽ lệch, và bài học đó đã trả giá ở `du_an.duong_tieng()`.
+        duong_nghe = nghe_thu.duong_cho_trang(
+            duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
+            ma_mau=[g.ma for g in giong_mau.DANH_SACH],
+            rieng=[g.public_id for g in cua_toi])
     finally:
         try:
             next(gen)
@@ -22729,6 +22739,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     # về giá trị khác — im lặng.
                     cac_nac_toc_do=_toc_do.CAC_NAC,
                     du_an_ds=du_an_ds,
+                    duong_nghe=duong_nghe,
                     gan_day=gan_day))
 
 
@@ -23781,7 +23792,7 @@ class VoiceBlock(Base):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_chon.html
-SHA256=2dd63648a9f8afe5646001997cb205069b388b24407672cae7beb59fcc807339 BYTES=6530 LINES=121
+SHA256=7cd3391d1c908a30de1821198fda82ce505f59c54af7f70450216839e282702d BYTES=8413 LINES=152
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {#
   Bộ chọn giọng dùng chung. Studio hôm nay; Dự án và Chạy lô khi chúng được xây.
@@ -23861,6 +23872,7 @@ SHA256=2dd63648a9f8afe5646001997cb205069b388b24407672cae7beb59fcc807339 BYTES=65
              data-lan="{{ g.ngon_ngu or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
                {{ 'checked' if giong_chon == g.public_id }}>
+        {% include "_voice_chon_nghe.html" %}
         <span class="lv-chon-noi">
           <b>{{ g.ten_hien_thi }}</b>
           <small><span class="chip v">{{ _("Giọng của tôi") }}</span>
@@ -23878,9 +23890,17 @@ SHA256=2dd63648a9f8afe5646001997cb205069b388b24407672cae7beb59fcc807339 BYTES=65
                chưa dùng. Đây là một component đúng bị bỏ quên, không phải một
                component mới.
 
-            ⚠️ Nút chép nằm TRONG một `<label>`, nên bấm nó cũng chọn luôn giọng
-               ấy. Đó là hành vi hợp lý (chép mã của giọng nào thì thường muốn
-               dùng giọng đó), nhưng phải nói ra vì nó là một tác dụng phụ.
+            ⛔ CHÚ THÍCH CŨ Ở ĐÂY NÓI SAI, đã sửa 02/09/2026. Nó viết: *"Nút
+               chép nằm TRONG một `<label>`, nên bấm nó cũng chọn luôn giọng
+               ấy."* Bấm thật trên trình duyệt: **không**. Radio giữ nguyên.
+
+               Lý do là HTML spec loại trừ **nội dung tương tác** nằm trong
+               `<label>` khỏi việc kích hoạt control — một `<button>` trong
+               label không tick radio, dù không ai gọi `preventDefault()`.
+
+            ⭐ Đáng sửa chứ không đáng bỏ qua: chú thích cũ mô tả một "tác dụng
+               phụ" không tồn tại, nên người đọc sau sẽ đi tìm cách chặn nó, hoặc
+               tệ hơn — dựa vào nó khi thêm một nút thứ ba.
           #}
           {% with ma = g.public_id, nho = true %}
             {% include "_voice_ma.html" %}
@@ -23894,9 +23914,31 @@ SHA256=2dd63648a9f8afe5646001997cb205069b388b24407672cae7beb59fcc807339 BYTES=65
              data-lan="vi">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
+        {% with ma = g.ma %}{% include "_voice_chon_nghe.html" %}{% endwith %}
         <span class="lv-chon-noi">
           <b>{{ g.ma }}</b>
           <small>{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</small>
+          {#
+            ⛔ KHÔNG có chip mã giọng ở đây, và đó là một quyết định đã thử rồi
+               gỡ (02/09/2026).
+
+               Bản đầu thêm nó cho cả hai mươi giọng mẫu, lý do nghe rất hợp
+               lý: tên giọng chính là tham số `preset` khi gọi API, nên khách
+               phải chép được nó.
+
+               Nhưng với giọng mẫu, `public_id == ten_hien_thi`. Chip ấy in ra
+               **đúng chuỗi vừa nằm ngay trên nó**, cách hai chục pixel. Hai
+               mươi dòng, mỗi dòng nói tên giọng hai lần — đúng lỗi mà chính
+               `voice.js::moChiTiet` đã ghi lại: *"panel nói Ready hai lần
+               trong bốn dòng, và lần thứ hai không thêm thông tin nào"*.
+
+            ⭐ Giọng NHÂN BẢN thì ngược lại và vẫn giữ chip: ở đó mã là
+               `vc_<32 hex>`, không đoán được từ tên, nên chip mang thông tin
+               thật.
+
+            Muốn chép tên preset: màn Giọng và màn API đều liệt kê đủ hai mươi
+            cái, ở dạng chép được, cạnh đúng ngữ cảnh dùng chúng.
+          #}
         </span>
       </label>
     {% endfor %}
@@ -23904,6 +23946,51 @@ SHA256=2dd63648a9f8afe5646001997cb205069b388b24407672cae7beb59fcc807339 BYTES=65
 
   <p class="lv-chon-rong" id="lv-chon-rong" hidden>{{ _("Không có giọng nào khớp.") }}</p>
 </div>
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_chon_nghe.html
+SHA256=c228745f27ee161455c5bb61fc2fba6bd74c242d14f27440fa3a6b86a50a4c6f BYTES=2173 LINES=39
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+{#
+  Nút NGHE THỬ cho một mục trong bộ chọn giọng.
+
+  Tham số:
+    ma  — mã giọng. Giọng nhân bản truyền qua `g.public_id` (mặc định dưới
+          đây); giọng mẫu phải truyền tường minh vì `g` là `GiongMau`.
+
+  ⭐ MỘT partial cho cả hai loại, cùng lý do `_voice_the.html` là một: chúng
+     khác nhau ở đúng cách lấy mã và giống nhau ở mọi thứ còn lại.
+
+  ⛔ NÚT NÀY KHÔNG CHỌN GIỌNG, và điều đó ĐÚNG Ý MUỐN.
+
+     Người ta nghe thử NHIỀU giọng liên tiếp rồi mới chọn. Nếu mỗi lượt nghe
+     cũng là một lượt chọn thì giọng được chọn cuối cùng là giọng họ nghe SAU
+     CÙNG chứ không phải giọng họ THÍCH NHẤT — và họ sẽ không nhận ra, vì radio
+     đã chuyển trong lúc họ đang nghe.
+
+  ⭐ Nhưng ĐỪNG tin rằng `preventDefault()` là thứ đang giữ điều đó. Đo trên
+     trình duyệt thật 02/09/2026: **`<button>` nằm trong `<label>` vốn đã không
+     kích hoạt control của label** — HTML spec loại trừ nội dung tương tác nằm
+     trong label. Nút CHÉP MÃ ngay cạnh cũng không chọn giọng, dù nó không gọi
+     `preventDefault()` ở đâu cả.
+
+     *(Chú thích cũ trong `_voice_chon.html` khẳng định ngược lại — rằng bấm nút
+       chép "cũng chọn luôn giọng ấy". Đã kiểm bằng một cú bấm thật: không.
+       Một lời giải thích sai cho một hành vi đúng là thứ sẽ dẫn người sửa sau
+       đi nhầm đường.)*
+
+  Giọng chưa có tệp nghe thử thì **không dựng gì cả** — không nút xám, không ô
+  trống. Một nút bấm được mà không kêu tệ hơn hẳn chỗ trống.
+#}
+{%- set _ma = ma if ma is defined else g.public_id %}
+{%- set _url = duong_nghe.get(_ma) if duong_nghe is defined else none %}
+{%- if _url %}
+<button type="button" class="lv-chon-nghe lv-nghe" data-nghe="{{ _url }}"
+        aria-label="{{ _('Nghe thử giọng') }} {{ _ma }}">
+  <span class="lv-nghe-dau" aria-hidden="true"></span>
+</button>
+{%- endif %}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -153044,7 +153131,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=d4cf3b016f29cb90b56513525cff9906a5e39e24d96209587ef75b36b693e90b BYTES=260098 LINES=2852
+SHA256=03dd25ec948eb427b0c95566132c20ec41ee13c68523b409bdadffa67c55439e BYTES=261804 LINES=2884
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -155610,6 +155697,38 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
    tieng; vien noi du. */
 .lv-chon-muc:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
 .lv-chon-muc:focus-within{outline:2px solid var(--focus-ring);outline-offset:1px}
+
+/* == Nut NGHE THU trong bo chon giong =======================================
+ *
+ * Tron nho (26px) va dat TRUOC ten, sau o radio: thu tu doc thanh
+ * "chon | nghe | ten", tuc dung thu tu nguoi ta lam.
+ *
+ * ⛔ Muc chon cao ~34px nen KHONG the dung o 44px nhu the giong. Vung cham
+ *    nho hon khuyen nghi, nhung no dung ngoai le "khoang cach" cua WCAG 2.5.8
+ *    -- va quan trong hon, ca dong 100% be ngang van bam duoc de CHON giong;
+ *    nut nay chi la mot loi tat, khong phai loi duy nhat.
+ */
+.lv-chon-nghe{flex:0 0 auto;width:26px;height:26px;margin-top:1px;padding:0;
+  position:relative;display:grid;place-items:center;cursor:pointer;
+  border-radius:50%;background:var(--brand-soft);
+  border:1px solid var(--brand-border);
+  transition:background .12s ease,border-color .12s ease}
+.lv-chon-nghe:hover,.lv-chon-nghe:focus-visible{
+  background:var(--brand-hover);border-color:var(--brand-hover)}
+/* Trong bo chon, tam giac play hien LUON -- khac the giong (chi hien khi
+   hover). Ly do: o 26px khong con gi khac trong o ca, nen mot hinh tron trong
+   khong noi duoc no la mot nut. */
+.lv-chon-nghe .lv-nghe-dau{display:grid}
+.lv-chon-nghe .lv-nghe-dau::before{border-left-width:8px;border-top-width:5px;
+  border-bottom-width:5px;margin-left:2px;
+  border-left-color:var(--brand-hover)}
+.lv-chon-nghe:hover .lv-nghe-dau::before,
+.lv-chon-nghe:focus-visible .lv-nghe-dau::before{border-left-color:#fff}
+.lv-chon-nghe.dang-phat{background:var(--brand-hover);
+  border-color:var(--brand-hover)}
+.lv-chon-nghe.dang-phat .lv-nghe-dau::before{width:3px;height:10px;
+  margin-left:0;border:0;background:#fff;box-shadow:5px 0 0 0 #fff;
+  transform:translateX(-2px)}
 .lv-chon-noi{min-width:0;display:flex;flex-direction:column;gap:2px}
 .lv-chon-noi b{font-size:12.5px;line-height:1.3}
 .lv-chon-noi small{color:var(--dim);font-size:11px}
@@ -258596,7 +258715,7 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_ltt_voice_nghe_thu.py
-SHA256=79c5d1f7f37b92bba0ad2859ab9a3a5eb4d1367d71ebaa7b2f350fb40ff9721c BYTES=17695 LINES=413
+SHA256=ce2d499a0f4f74d6bf2d4eb8fa9292a60ed473e58d9e3eb19c09bd9c16ea7638 BYTES=20081 LINES=456
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """NGHE THỬ một giọng — và ba thứ quanh nó phải không gãy.
 
@@ -259011,6 +259130,49 @@ def test_khuon_co_nut_nghe_thi_PHAI_nap_voice_js():
             assert "voice.js" in noi_dung, (
                 f"{trang.name} co nut nghe thu (truc tiep hoac qua "
                 f"{sorted(con)}) nhung KHONG nap voice.js")
+def test_bo_chon_giong_o_studio_co_nut_nghe_thu(khach, monkeypatch):
+    """Bộ chọn giọng dùng chung phải nghe thử được, không chỉ màn Giọng.
+
+    ⭐ Đây là chỗ người ta CHỌN giọng để đọc — tức chỗ câu hỏi *"giọng này nghe
+       thế nào"* được hỏi nhiều nhất. Có nghe thử ở màn Giọng mà không có ở đây
+       là bắt khách rời màn đang soạn để đi nghe rồi quay lại.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice")
+    assert r.status_code == 200
+    assert "lv-chon-nghe" in r.text, "bo chon giong khong co nut nghe thu nao"
+
+
+def test_bo_chon_KHONG_lap_lai_ma_cho_giong_mau(khach, monkeypatch):
+    """⛔ Với giọng mẫu, `public_id == ten_hien_thi`.
+
+    Một chip mã ở đây in đúng chuỗi vừa nằm ngay trên nó — hai mươi dòng, mỗi
+    dòng nói tên giọng hai lần. Bản đầu đã làm vậy rồi gỡ; phép kiểm này giữ
+    cho nó không quay lại.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice")
+
+    from apps.ltt_voice import giong_mau
+    ten = giong_mau.DANH_SACH[0].ma
+    khoi = r.text[r.text.find('class="lv-chon-ds"'):]
+    mot_muc = khoi[khoi.find('data-ten="' + ten + '"'):]
+    mot_muc = mot_muc[:mot_muc.find("</label>")]
+
+    # ⛔ ĐẾM CƠ CHẾ, KHÔNG ĐẾM CHUỖI. Bản đầu của phép kiểm này đếm số lần chuỗi
+    #    tên giọng xuất hiện trong HTML của một mục rồi đòi đúng 1 — nó ĐỎ với
+    #    một kết quả ĐÚNG, vì cái tên còn nằm hợp lệ trong `data-ten`, `value`,
+    #    `aria-label` và trong URL nghe thử. Bốn lần, không lần nào là thứ cấm.
+    #
+    # ⭐ Thứ thật sự bị cấm là **chip mã** (`_voice_ma.html` -> `lv-ma-chep`).
+    #    Hỏi thẳng nó thì phép kiểm nói đúng điều nó định nói, và nó không vỡ
+    #    khi ai đó thêm một thuộc tính mới có chứa tên giọng.
+    assert "lv-ma-chep" not in mot_muc, (
+        "muc giong mau " + ten + " co chip ma — no in lai dung cai ten nam "
+        "ngay tren no, vi voi giong mau thi public_id == ten_hien_thi")
+    assert "<b>" + ten + "</b>" in mot_muc, "muc mat ten giong"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -289749,7 +289911,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=d4cf3b016f29cb90b56513525cff9906a5e39e24d96209587ef75b36b693e90b BYTES=260098 LINES=2852
+SHA256=03dd25ec948eb427b0c95566132c20ec41ee13c68523b409bdadffa67c55439e BYTES=261804 LINES=2884
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -292315,6 +292477,38 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
    tieng; vien noi du. */
 .lv-chon-muc:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
 .lv-chon-muc:focus-within{outline:2px solid var(--focus-ring);outline-offset:1px}
+
+/* == Nut NGHE THU trong bo chon giong =======================================
+ *
+ * Tron nho (26px) va dat TRUOC ten, sau o radio: thu tu doc thanh
+ * "chon | nghe | ten", tuc dung thu tu nguoi ta lam.
+ *
+ * ⛔ Muc chon cao ~34px nen KHONG the dung o 44px nhu the giong. Vung cham
+ *    nho hon khuyen nghi, nhung no dung ngoai le "khoang cach" cua WCAG 2.5.8
+ *    -- va quan trong hon, ca dong 100% be ngang van bam duoc de CHON giong;
+ *    nut nay chi la mot loi tat, khong phai loi duy nhat.
+ */
+.lv-chon-nghe{flex:0 0 auto;width:26px;height:26px;margin-top:1px;padding:0;
+  position:relative;display:grid;place-items:center;cursor:pointer;
+  border-radius:50%;background:var(--brand-soft);
+  border:1px solid var(--brand-border);
+  transition:background .12s ease,border-color .12s ease}
+.lv-chon-nghe:hover,.lv-chon-nghe:focus-visible{
+  background:var(--brand-hover);border-color:var(--brand-hover)}
+/* Trong bo chon, tam giac play hien LUON -- khac the giong (chi hien khi
+   hover). Ly do: o 26px khong con gi khac trong o ca, nen mot hinh tron trong
+   khong noi duoc no la mot nut. */
+.lv-chon-nghe .lv-nghe-dau{display:grid}
+.lv-chon-nghe .lv-nghe-dau::before{border-left-width:8px;border-top-width:5px;
+  border-bottom-width:5px;margin-left:2px;
+  border-left-color:var(--brand-hover)}
+.lv-chon-nghe:hover .lv-nghe-dau::before,
+.lv-chon-nghe:focus-visible .lv-nghe-dau::before{border-left-color:#fff}
+.lv-chon-nghe.dang-phat{background:var(--brand-hover);
+  border-color:var(--brand-hover)}
+.lv-chon-nghe.dang-phat .lv-nghe-dau::before{width:3px;height:10px;
+  margin-left:0;border:0;background:#fff;box-shadow:5px 0 0 0 #fff;
+  transform:translateX(-2px)}
 .lv-chon-noi{min-width:0;display:flex;flex-direction:column;gap:2px}
 .lv-chon-noi b{font-size:12.5px;line-height:1.3}
 .lv-chon-noi small{color:var(--dim);font-size:11px}

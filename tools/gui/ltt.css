@@ -2562,6 +2562,38 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
    tieng; vien noi du. */
 .lv-chon-muc:has(input:checked){border-color:var(--brand-border);background:var(--brand-soft)}
 .lv-chon-muc:focus-within{outline:2px solid var(--focus-ring);outline-offset:1px}
+
+/* == Nut NGHE THU trong bo chon giong =======================================
+ *
+ * Tron nho (26px) va dat TRUOC ten, sau o radio: thu tu doc thanh
+ * "chon | nghe | ten", tuc dung thu tu nguoi ta lam.
+ *
+ * ⛔ Muc chon cao ~34px nen KHONG the dung o 44px nhu the giong. Vung cham
+ *    nho hon khuyen nghi, nhung no dung ngoai le "khoang cach" cua WCAG 2.5.8
+ *    -- va quan trong hon, ca dong 100% be ngang van bam duoc de CHON giong;
+ *    nut nay chi la mot loi tat, khong phai loi duy nhat.
+ */
+.lv-chon-nghe{flex:0 0 auto;width:26px;height:26px;margin-top:1px;padding:0;
+  position:relative;display:grid;place-items:center;cursor:pointer;
+  border-radius:50%;background:var(--brand-soft);
+  border:1px solid var(--brand-border);
+  transition:background .12s ease,border-color .12s ease}
+.lv-chon-nghe:hover,.lv-chon-nghe:focus-visible{
+  background:var(--brand-hover);border-color:var(--brand-hover)}
+/* Trong bo chon, tam giac play hien LUON -- khac the giong (chi hien khi
+   hover). Ly do: o 26px khong con gi khac trong o ca, nen mot hinh tron trong
+   khong noi duoc no la mot nut. */
+.lv-chon-nghe .lv-nghe-dau{display:grid}
+.lv-chon-nghe .lv-nghe-dau::before{border-left-width:8px;border-top-width:5px;
+  border-bottom-width:5px;margin-left:2px;
+  border-left-color:var(--brand-hover)}
+.lv-chon-nghe:hover .lv-nghe-dau::before,
+.lv-chon-nghe:focus-visible .lv-nghe-dau::before{border-left-color:#fff}
+.lv-chon-nghe.dang-phat{background:var(--brand-hover);
+  border-color:var(--brand-hover)}
+.lv-chon-nghe.dang-phat .lv-nghe-dau::before{width:3px;height:10px;
+  margin-left:0;border:0;background:#fff;box-shadow:5px 0 0 0 #fff;
+  transform:translateX(-2px)}
 .lv-chon-noi{min-width:0;display:flex;flex-direction:column;gap:2px}
 .lv-chon-noi b{font-size:12.5px;line-height:1.3}
 .lv-chon-noi small{color:var(--dim);font-size:11px}

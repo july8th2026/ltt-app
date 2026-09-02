@@ -411,3 +411,46 @@ def test_khuon_co_nut_nghe_thi_PHAI_nap_voice_js():
             assert "voice.js" in noi_dung, (
                 f"{trang.name} co nut nghe thu (truc tiep hoac qua "
                 f"{sorted(con)}) nhung KHONG nap voice.js")
+def test_bo_chon_giong_o_studio_co_nut_nghe_thu(khach, monkeypatch):
+    """Bộ chọn giọng dùng chung phải nghe thử được, không chỉ màn Giọng.
+
+    ⭐ Đây là chỗ người ta CHỌN giọng để đọc — tức chỗ câu hỏi *"giọng này nghe
+       thế nào"* được hỏi nhiều nhất. Có nghe thử ở màn Giọng mà không có ở đây
+       là bắt khách rời màn đang soạn để đi nghe rồi quay lại.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice")
+    assert r.status_code == 200
+    assert "lv-chon-nghe" in r.text, "bo chon giong khong co nut nghe thu nao"
+
+
+def test_bo_chon_KHONG_lap_lai_ma_cho_giong_mau(khach, monkeypatch):
+    """⛔ Với giọng mẫu, `public_id == ten_hien_thi`.
+
+    Một chip mã ở đây in đúng chuỗi vừa nằm ngay trên nó — hai mươi dòng, mỗi
+    dòng nói tên giọng hai lần. Bản đầu đã làm vậy rồi gỡ; phép kiểm này giữ
+    cho nó không quay lại.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice")
+
+    from apps.ltt_voice import giong_mau
+    ten = giong_mau.DANH_SACH[0].ma
+    khoi = r.text[r.text.find('class="lv-chon-ds"'):]
+    mot_muc = khoi[khoi.find('data-ten="' + ten + '"'):]
+    mot_muc = mot_muc[:mot_muc.find("</label>")]
+
+    # ⛔ ĐẾM CƠ CHẾ, KHÔNG ĐẾM CHUỖI. Bản đầu của phép kiểm này đếm số lần chuỗi
+    #    tên giọng xuất hiện trong HTML của một mục rồi đòi đúng 1 — nó ĐỎ với
+    #    một kết quả ĐÚNG, vì cái tên còn nằm hợp lệ trong `data-ten`, `value`,
+    #    `aria-label` và trong URL nghe thử. Bốn lần, không lần nào là thứ cấm.
+    #
+    # ⭐ Thứ thật sự bị cấm là **chip mã** (`_voice_ma.html` -> `lv-ma-chep`).
+    #    Hỏi thẳng nó thì phép kiểm nói đúng điều nó định nói, và nó không vỡ
+    #    khi ai đó thêm một thuộc tính mới có chứa tên giọng.
+    assert "lv-ma-chep" not in mot_muc, (
+        "muc giong mau " + ten + " co chip ma — no in lai dung cai ten nam "
+        "ngay tren no, vi voi giong mau thi public_id == ten_hien_thi")
+    assert "<b>" + ten + "</b>" in mot_muc, "muc mat ten giong"

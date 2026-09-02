@@ -170,7 +170,7 @@ Không phải HARD BLOCKER: mâu thuẫn tự phân giải được bằng quy t
 | # | Chênh lệch | Mức |
 |---|---|---|
 | S1 | Bố cục lãng phí bề ngang: cột phải chỉ ~330 px, dưới nó là **~600 px trống**; cột giữa hết nội dung ở nửa trang | P1 |
-| S2 | Không có bộ chọn **ngôn ngữ đầu ra** (Auto/VI/EN). Ba nút `Mọi làn/Tiếng Việt/Tiếng Anh` hiện có là **lọc danh sách giọng**, không phải điều khiển đọc | P1 |
+| S2 | ~~Thiếu bộ chọn ngôn ngữ đầu ra (Auto/VI/EN)~~ → **BỎ, xem §3.1b** | *bỏ* |
 | S3 | Không **nghe thử giọng** trước khi tạo (ảnh có nút play trên từng giọng) | P1 |
 | S4 | Không **chép mã giọng** ngay trong bộ chọn của Studio (Voices có, Studio không) | P2 |
 | S5 | Không có **VERSIONS / phiên bản** của cùng một đoạn văn bản | P2 |
@@ -179,6 +179,26 @@ Không phải HARD BLOCKER: mâu thuẫn tự phân giải được bằng quy t
 | S8 | Không đánh số bước 1–6 như ảnh; thứ tự thị giác yếu | P2 |
 | S9 | MODE Fast/Quality và DELIVERY STYLE trong ảnh **không có backend thật** | *bỏ* |
 | S10 | Ảnh ghi 5000 ký tự; thật là **1500** (trần chất lượng Q118, có lý do) | *giữ 1500* |
+
+### 3.1b ⛔ S2 bị BỎ — một bộ chọn ngôn ngữ đầu ra sẽ là NÚT GIẢ
+
+Ảnh `01_STUDIO.png` vẽ một nhóm `Auto / VI / EN` ở bước 2. Nó không có gì ở
+dưới để nối vào.
+
+`lan_ngon_ngu.py` đã chốt điều này bằng số đo, 01/09/2026: VieNeu-TTS v3 Turbo
+**song ngữ thật** — model card khai `language: ["vi","en"]`, train trên ~10.000
+giờ Anh–Việt, và có code-switching trong cùng một câu. Đo trên engine thật, ASR
+nghe lại đúng từng chữ. Engine **không nhận tham số ngôn ngữ nào cả**; nó đọc
+thứ nó thấy.
+
+⇒ Ba nút ấy sẽ không điều khiển gì. Dựng chúng là vi phạm thẳng mục 8 của hợp
+đồng gói: *"Không tạo control không hoạt động chỉ để giống ảnh."*
+
+⭐ Và thứ **đã có** lại đúng hơn thứ ảnh vẽ: `Mọi làn / Tiếng Việt / Tiếng Anh`
+là bộ lọc **danh sách giọng**, hiện thực một chốt **chất lượng** (clip nguồn
+tiếng Việt phục vụ văn bản tiếng Việt) chứ không phải một giới hạn kỹ thuật.
+Nó có tác dụng thật, đúng chỗ: chọn đúng giọng từ đầu thì không bao giờ chạm
+tới cảnh báo lệch ngôn ngữ.
 
 ### 3.2 Voices (ref `02_VOICES.png`)
 
@@ -257,15 +277,14 @@ dựng mới.
 **P1**
 2. `1.3` Chip "Engine sẵn sàng" nói dối — phải hỏi cổng thật.
 3. `S1` Bố cục Studio lãng phí bề ngang.
-4. `S2` Thiếu điều khiển ngôn ngữ đầu ra.
-5. `S3`/`S7` Nghe thử giọng trong Studio; nút Lưu vào dự án (backend đã có).
-6. `V3`/`V4` Dùng-trong-Studio, luồng tạo giọng.
-7. `H1`–`H4` Lọc, chi tiết, trình phát, dùng lại thiết lập ở History.
-8. `A1` Try API.
+4. `S3`/`S7` Nghe thử giọng trong Studio; nút Lưu vào dự án (backend đã có).
+5. `V3`/`V4` Dùng-trong-Studio, luồng tạo giọng.
+6. `H1`–`H4` Lọc, chi tiết, trình phát, dùng lại thiết lập ở History.
+7. `A1` Try API.
 
 **P2** — S4·S5·S6·S8 · V5·V6 · H5 · A4.
 
-**Bỏ có chủ ý** — MODE Fast/Quality, DELIVERY STYLE slider, trần 5000 ký tự,
+**Bỏ có chủ ý** — MODE Fast/Quality, DELIVERY STYLE slider, bộ chọn ngôn ngữ đầu ra (§3.1b), trần 5000 ký tự,
 Batch, `temperature/top_k/top_p` ra giao diện (Q119).
 
 ---
