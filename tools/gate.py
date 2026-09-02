@@ -60,6 +60,61 @@ from cua_so_yen import MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
 ROOT = Path(__file__).resolve().parent.parent
 FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
 
+# ═══════════════════════════════════════════════════════════════════════════
+# NGAN SACH LOI — mot chu so huu duy nhat cho ca luot gate
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 VI SAO PHAI CO. Do 2026-09-02, sau HAI lan may treo phai reset cung.
+#
+#    Lich chay cu dem TIEN TRINH CON, nhung thu bi tranh la LOI. Va moi tien
+#    trinh con lai la mot BE tien trinh tu no:
+#
+#      `bo test`      -> pytest `-n auto`                          = 20 worker
+#      `frontend` x3  -> vitest 4 tu dat `min(12, numCpus - 1)`    = 36 worker
+#      nhom `tinh`    -> phan con lai cua `j`                      ~ 5
+#                                                          DINH  ~= 61
+#
+#    Tren mot may **20 loi**. Ba buoc frontend nam trong nhom `nhe`, duoc nop
+#    vao CUNG mot `ThreadPoolExecutor` voi `bo test`, nen chung chay **dong
+#    thoi** voi 20 worker pytest.
+#
+# ⛔ Cai gia khong phai "gate cham". May nay LA production: bon dich vu
+#    `LTTStudioWeb`, `LTTStudioWorker`, `LTTStudioVoice`, `LTTStudioCodex` dang
+#    phuc vu khach that tren dung 20 loi do.
+#
+# ⭐ Goc khong phai "song song hoa la sai". Goc la **khong ai so huu ngan sach
+#    CPU**: moi cong cu con tu do minh theo CA MAY, va ba cong cu cung lam the
+#    thi tong la ba lan ca may. Nen thu them o day khong phai mot gioi han moi —
+#    la mot CHU SO HUU cho mot tai nguyen truoc gio vo chu.
+
+#: Loi chua lai cho phan con lai cua may.
+#:
+#: ⚠️ Khong phai con so cho dep. Do 2026-09-02 luc may RANH: CPU nen da 27%
+#:    (~5 loi) cho bon dich vu production + cac phien Claude. De danh it hon
+#:    the la gate an thang vao phan dang phuc vu khach.
+#:
+#: ⭐ Dat 6 chu khong 5: mot phep do o luc ranh la san cua truong hop tot nhat,
+#:    va thu ta dang bao ve la truong hop XAU nhat — luc khach dong.
+LOI_DE_DANH_CHO_MAY = 6
+
+#: Tran cung cho MOT cong cu con. Vitest tu dat `min(12, n-1)`; con so 12 do la
+#: kinh nghiem cua ho ve diem bao hoa, khong co ly do de ta di xa hon.
+LOI_TOI_DA_MOI_CONG_CU = 12
+
+
+def ngan_sach_loi() -> int:
+    """So loi ma CA luot gate duoc dung cung luc.
+
+    Toi thieu 2: mot may hai loi van phai chay duoc gate, chi la cham hon.
+    """
+    return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
+
+
+def _chia_loi(so_viec_nang: int) -> int:
+    """Moi viec nang duoc bao nhieu loi. Toi thieu 1."""
+    return max(1, min(LOI_TOI_DA_MOI_CONG_CU,
+                      ngan_sach_loi() // max(1, so_viec_nang)))
+
 
 #: Nhóm quyết định LỊCH CHẠY, không quyết định ý nghĩa của bước.
 #:
@@ -103,12 +158,23 @@ TEP_KHONG_DUOC_DOC_SONG_SONG = {
 
 class Step:
     def __init__(self, name: str, argv: list[str], cwd: Path,
-                 nhom: str = "tinh", tai_nguyen: tuple[str, ...] = ()):
+                 nhom: str = "tinh", tai_nguyen: tuple[str, ...] = (),
+                 so_loi: int = 1):
         assert nhom in NHOM, nhom
         self.name = name
         self.argv = argv
         self.cwd = cwd
         self.nhom = nhom
+        #: So LOI buoc nay chiem khi chay — khong phai so tien trinh.
+        #:
+        #: 🔴 Day la khac biet da lam treo may hai lan. Lich cu dem tien trinh
+        #:    con (`bo test` = 1, moi `frontend` = 1) va ket luan "10 la vua".
+        #:    Nhung `bo test` la 20 worker va moi `frontend` la 12 — nen "10
+        #:    tien trinh" that ra la ~61 luong tren 20 loi.
+        #:
+        #: ⚠️ Mac dinh 1: mot chot tinh doc tep roi in mot dong, no dung mot
+        #:    loi. Chi thu nao TU SINH be tien trinh moi khai so lon hon.
+        self.so_loi = max(1, int(so_loi))
         #: Tai nguyen DOC QUYEN CAP MAY ma buoc nay can (`thanh_phan.toml`).
         #:
         #: ⚠️ Khong phai "buoc nay dung CPU" — moi buoc deu dung CPU. Chi khai
@@ -141,6 +207,23 @@ def _npm() -> str | None:
 
 
 def _steps(quick: bool) -> list[Step]:
+    # ── Chia ngan sach loi TRUOC khi dung danh sach buoc ────────────────────
+    #
+    # Bon viec co the chay dong thoi va MOI viec tu sinh mot be tien trinh:
+    # `bo test` + ba `frontend`. Chia ngan sach cho chung, va moi con so duoc
+    # TRUYEN XUONG cong cu con thay vi de no tu do minh theo ca may.
+    #
+    # ⛔ KHONG chia deu. `bo test` chiem ~85% thoi gian ca luot (~360 giay),
+    #    con ba `frontend` moi cai 5-15 giay. Chia deu bon phan la lay loi cua
+    #    thu quyet dinh tong thoi gian de dua cho thu se xong trong chop mat.
+    #
+    # ⭐ Nen: `bo test` lay phan lon, frontend lay du de khong cham, va **bo dem
+    #    loi** o `_chay_theo_lich` lo phan con lai — neu tong vuot ngan sach thi
+    #    mot frontend doi, chu khong phai ai cung bi cat nho tu dau.
+    loi_moi_viec = min(2, LOI_TOI_DA_MOI_CONG_CU)          # frontend: ngan, 2 la du
+    loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
+                             ngan_sach_loi() - len(FRONTENDS)))
+
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #
     #    Do 30/08: 282 tien trinh con `multiprocessing.spawn` mo coi, cu nhat 55
@@ -331,9 +414,11 @@ def _steps(quick: bool) -> list[Step]:
         # PostgreSQL, nen `pytest` chi in mot chu `s`. Mot chu `s` giua ba
         # nghin dau cham la vo hinh. Buoc rieng nay khong lam gate do khi may
         # khong co PostgreSQL, nhung viec bo qua thi khong bao gio con lang le.
+        # `test_214` dung HAI tien trinh worker — do la ca diem cua no. Khai 2,
+        # khong khai 1: bo dem loi chi dung khi moi buoc noi that ve cai no lay.
         steps.append(Step("bat bien da tien trinh",
                           [sys.executable, "tools/check_multiproc.py"], ROOT,
-                          nhom="nang"))
+                          nhom="nang", so_loi=2))
     npm = _npm()
     for name in FRONTENDS:
         folder = ROOT / "frontend" / name
@@ -366,8 +451,16 @@ def _steps(quick: bool) -> list[Step]:
             steps.append(Step(f"frontend {name}", ["npm-khong-tim-thay"], folder,
                               nhom="frontend"))
             continue
-        steps.append(Step(f"frontend {name}", [npm, "test", "--", "--run"], folder,
-                          nhom="frontend"))
+        # ⛔ `--maxWorkers` la BAT BUOC, khong phai toi uu.
+        #
+        #    Vitest 4 tu dat `min(12, numCpus - 1)`. Tren may 20 loi la 12
+        #    worker — cho MOI thu muc, va ba thu muc chay dong thoi voi 20
+        #    worker pytest. Do la 56 luong tren 20 loi, tren mot may dang phuc
+        #    vu khach that.
+        steps.append(Step(f"frontend {name}",
+                          [npm, "test", "--", "--run",
+                           f"--maxWorkers={loi_moi_viec}"],
+                          folder, nhom="frontend", so_loi=loi_moi_viec))
     if not quick:
         # Browser/audit artifacts live under tmp/ and test-results/ by contract;
         # they may contain copied ``tests`` folders and must never be collected
@@ -389,9 +482,14 @@ def _steps(quick: bool) -> list[Step]:
         #
         #    Hai pha: song song `--dist loadfile` cho phan lon, roi noi tiep cho
         #    ba tep ghi vao cay kho (`TEP_NOI_TIEP`). Xem AGENTS.md muc 4b.
+        # ⛔ `-n` tuong minh thay cho `auto`. `auto` = MOI loi cua may, va no
+        #    khong biet gi ve ba vitest dang chay canh no, cung khong biet gi ve
+        #    bon dich vu production tren cung may.
         steps.append(Step("bo test (song song)",
-                          [sys.executable, "tools/test_nhanh.py"], ROOT,
-                          nhom="nang", tai_nguyen=("cpu_nhieu",)))
+                          [sys.executable, "tools/test_nhanh.py",
+                           "-n", str(loi_bo_test)], ROOT,
+                          nhom="nang", tai_nguyen=("cpu_nhieu",),
+                          so_loi=loi_bo_test))
     return steps
 
 
@@ -479,11 +577,27 @@ def _tu_khai_bo_qua(output: str) -> bool:
     return any(d.lstrip().startswith(DAU_BO_QUA) for d in output.splitlines())
 
 
+#: Chay tien trinh con o uu tien THAP HON binh thuong.
+#:
+#: 🔴 Day la lop bao ve THU HAI, va no can vi lop thu nhat (ngan sach loi) la
+#:    mot phep TINH — con phep tinh thi co the sai. Uu tien thi khong: du gate
+#:    co tinh nham bao nhieu, he dieu hanh van cho `LTTStudioWeb` chay truoc.
+#:
+#: ⭐ Va no gan nhu mien phi: tren mot may RANH, tien trinh uu tien thap van
+#:    duoc dung 100% CPU. No chi nhuong khi co ai do CAN — tuc dung luc ta muon
+#:    no nhuong.
+#:
+#: ⚠️ Chi Windows. `BELOW_NORMAL_PRIORITY_CLASS = 0x00004000`.
+UU_TIEN_THAP = 0x00004000 if os.name == "nt" else 0
+
+
 def _run(step: Step) -> None:
     started = time.monotonic()
+    them = {"creationflags": UU_TIEN_THAP} if UU_TIEN_THAP else {}
     try:
         done = subprocess.run(step.argv, cwd=step.cwd, capture_output=True,
-                              text=True, encoding="utf-8", errors="replace")
+                              text=True, encoding="utf-8", errors="replace",
+                              **them)
         step.ok = done.returncode == 0
         output = (done.stdout or "") + (done.stderr or "")
     except OSError as exc:
@@ -632,11 +746,55 @@ def _chay_theo_lich(steps: list[Step], *, j: int, tuan_tu: bool) -> None:
     nhe = [s for s in steps if s.nhom in ("tinh", "frontend")]
     sau = [s for s in steps if s.nhom == "sau_test"]
 
-    # `len(nang) + j` luồng: mỗi việc nặng một luồng riêng, phần còn lại chia `j`.
-    with ThreadPoolExecutor(max_workers=len(nang) + max(1, j)) as ex:
-        cho = [ex.submit(chay_va_in, s) for s in nang]      # dài nhất, chạy trước
-        cho += [ex.submit(chay_va_in, s) for s in nhe]
-        for f in cho:
+    # 🔴 NHAN VIEC THEO LOI, KHONG THEO TIEN TRINH — sua 2026-09-02 sau HAI lan
+    #    may treo phai reset cung.
+    #
+    #    Ban cu: `max_workers = len(nang) + j` = 2 + 8 = 10 luong, va tac gia
+    #    suy "10 tien trinh con la vua tren 20 loi". Phep suy do dung cho nhom
+    #    `tinh` — moi buoc do that su la MOT tien trinh. No sai cho hai loai
+    #    khac, va sai rat lon:
+    #
+    #      `bo test`     -> pytest `-n auto`                = 20 worker
+    #      `frontend` x3 -> vitest `min(12, numCpus - 1)`   = 36 worker
+    #
+    #    ⇒ "10 tien trinh" thuc te la ~61 luong tren 20 loi, canh bon dich vu
+    #      production. Ba lan qua tai.
+    #
+    # ⭐ Nen bo dem khong phai `max_workers` ma la NGAN SACH LOI: moi buoc khai
+    #    `so_loi`, va lich chi nhan them viec khi con cho.
+    #
+    # ⚠️ Mot buoc lon hon ca ngan sach van duoc chay — MOT MINH. Tu choi chay
+    #    thi cong chat luong thanh vo dung tren may nho, va do la mot cach hong
+    #    te hon han cham.
+    import threading
+
+    ngan_sach = ngan_sach_loi()
+    con_lai = ngan_sach
+    khoa = threading.Condition()
+
+    def chay_co_ngan_sach(step: Step) -> None:
+        nonlocal con_lai
+        can = min(step.so_loi, ngan_sach)
+        with khoa:
+            khoa.wait_for(lambda: con_lai >= can)
+            con_lai -= can
+        try:
+            chay_va_in(step)
+        finally:
+            with khoa:
+                con_lai += can
+                khoa.notify_all()
+
+    # Viec DAI nop truoc de moi thu khac nap vao bong cua no — giu nguyen y do
+    # cua lich cu; chi doi bo dem.
+    thu_tu = sorted(nang, key=lambda s: -s.so_loi) + nhe
+    # ⚠️ HAI tran cung luc, va ca hai deu can:
+    #      `j`         — bao nhieu BUOC duoc chay cung luc
+    #      `ngan_sach` — bao nhieu LOI duoc dung cung luc
+    #    Bo `j` di thi mot may co 40 buoc tinh se mo 40 luong chi de xep hang;
+    #    bo `ngan_sach` di thi ta quay lai dung cho da lam treo may hai lan.
+    with ThreadPoolExecutor(max_workers=min(len(thu_tu), max(1, j))) as ex:
+        for f in [ex.submit(chay_co_ngan_sach, s) for s in thu_tu]:
             f.result()
 
     # ⛔ SAU khi `bo test` xong hẳn, KHÔNG song song với nó.
@@ -881,7 +1039,8 @@ def main() -> int:
         cay_dau = _anh_chup_cay()
         dong = f"Gate [{ho_so}]: {len(steps)} buoc"
         if not args.tuan_tu:
-            dong += f", {args.j} luong cho buoc tinh"
+            dong += (f", toi da {args.j} buoc cung luc"
+                     f", ngan sach {ngan_sach_loi()}/{os.cpu_count()} loi")
         if can:
             dong += f", tai nguyen: {', '.join(sorted(can))}"
         print(dong + "\n")

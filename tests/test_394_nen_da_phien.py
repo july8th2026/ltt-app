@@ -283,6 +283,74 @@ def test_chot_bien_dich_KHONG_di_vao_cay_cua_phien_khac():
     assert cbd.bo_qua(cbd.GOC / "apps" / "vps" / "routes.py") is False
 
 
+def test_gate_khong_duoc_dat_qua_NGAN_SACH_LOI():
+    """🔴 HAI lan may treo phai reset cung, 2026-09-02. Day la chot chan lan ba.
+
+    Lich cu dem TIEN TRINH CON va suy "10 la vua tren 20 loi". Phep suy do dung
+    cho nhom `tinh` — moi buoc do that su la MOT tien trinh. No sai cho hai loai
+    khac, va sai rat lon:
+
+        `bo test`     -> pytest `-n auto`               = 20 worker
+        `frontend` x3 -> vitest `min(12, numCpus - 1)`  = 36 worker
+
+    ⇒ "10 tien trinh" thuc te la ~61 luong tren 20 loi — canh BON dich vu
+      production dang phuc vu khach that tren cung may.
+
+    ⛔ Chot nay do **phep tinh**, khong chay gate: mot chot ve qua tai ma tu no
+       lam qua tai la mot chot khong ai dam chay.
+    """
+    gate = _nap_gate()
+
+    ns = gate.ngan_sach_loi()
+    assert ns >= 2, "ngan sach phai chay duoc ca tren may hai loi"
+    assert ns <= (os.cpu_count() or 4) - gate.LOI_DE_DANH_CHO_MAY, (
+        "ngan sach an vao phan de danh cho dich vu production")
+
+    steps = gate._steps(quick=False)
+
+    # ⛔ Khong buoc nao duoc tu do minh theo CA MAY.
+    for s in steps:
+        assert s.so_loi <= gate.LOI_TOI_DA_MOI_CONG_CU, (
+            f"{s.name} xin {s.so_loi} loi, vuot tran mot cong cu")
+        assert s.so_loi <= ns, f"{s.name} xin nhieu hon ca ngan sach"
+
+    # ⛔ Va han muc phai duoc TRUYEN XUONG, khong chi tinh ra roi bo do.
+    bo_test = [s for s in steps if s.name.startswith("bo test")]
+    assert bo_test, "khong con buoc `bo test` — chot nay dang canh nham cho"
+    argv = " ".join(bo_test[0].argv)
+    assert "-n" in bo_test[0].argv, (
+        "`bo test` khong duoc truyen `-n` tuong minh — pytest se lay `auto` "
+        "tuc MOI loi cua may, va no khong biet gi ve vitest hay production")
+    assert "auto" not in argv, "`-n auto` da quay lai"
+
+    # Frontend: chi kiem khi nhanh THAT duoc chon (cay rieng thieu node_modules
+    # thi buoc do la mot dong tu khai BO QUA, khong phai `npm test`).
+    for s in steps:
+        if s.nhom == "frontend" and any("npm" in a.lower() for a in s.argv[:1]):
+            assert any("--maxWorkers=" in a for a in s.argv), (
+                f"{s.name} khong chan worker — vitest se tu lay min(12, n-1)")
+
+
+def test_tien_trinh_con_chay_o_uu_tien_THAP():
+    """⭐ Lop bao ve THU HAI, va no can vi lop thu nhat la mot PHEP TINH.
+
+    Ngan sach loi co the tinh sai; uu tien thi khong. Du gate co nham bao nhieu,
+    he dieu hanh van cho `LTTStudioWeb` chay truoc mot tien trinh uu tien thap.
+
+    Va no gan nhu mien phi: tren may ranh, tien trinh uu tien thap van dung
+    100% CPU — no chi nhuong khi co ai do CAN.
+    """
+    import inspect
+
+    gate = _nap_gate()
+    if os.name == "nt":
+        assert gate.UU_TIEN_THAP == 0x00004000, "BELOW_NORMAL_PRIORITY_CLASS"
+    than = inspect.getsource(gate._run)
+    assert "creationflags" in than, (
+        "`_run` khong con ha uu tien tien trinh con — production se phai tranh "
+        "CPU ngang hang voi mot luot do")
+
+
 def test_ho_so_mac_dinh_van_la_day_du():
     """⛔ Tuong thich nguoc: `python tools/gate.py` tran phai khong doi nghia."""
     gate = _nap_gate()
