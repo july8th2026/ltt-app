@@ -272,3 +272,72 @@ ra vi lan dau co nguoi chay phep kiem ay.
 | **Nhanh xa** | `origin/admin-mvp-v3` — **truoc 12 commit, CHUA push** |
 | **Xac minh push** | ⛔ chua thuc hien — phan quyet `CONDITIONAL` |
 | **STATE** | `CONDITIONAL` |
+
+---
+
+## 11. ⚠️ DINH CHINH — nhanh da DI TIEP, va viec nay DA LEN PRODUCTION
+
+Bao cao tren viet luc HEAD la `ea81c7a` va ket luan "CHUA PUSH". Ca hai deu
+dung **luc do**. Trong luc viet, hai su kien xay ra:
+
+| Luc | Viec |
+|---|---|
+| 21:0x | phien `ltt-voice` merge viec cua ho vao `admin-mvp-v3` |
+| **21:11** | chu du an quyet *"deploy full, khong lo code phien khac"* → **deploy** |
+| 21:1x | `1ad85c6` — merge bao cao cuoi cua ho |
+
+```
+deploy-20260902-211112     EXITCODE=0   (2 phut 06)
+nghiem thu co nang quyen   EXITCODE=0   "he thong hoan chinh"
+15 app nap · ban chay khop git 536/0/0/0
+```
+
+⇒ **Viec cua chuong trinh nay dang chay tren production.** Loi hua "chuong
+trinh nay khong deploy" o §7 vua duoc chung minh la yeu dung nhu da mo ta —
+chi khac o cho: no yeu vi **chu du an quyet the**, khong phai vi ai so suat.
+
+### ⭐ Quy tac 5b — **DA DONG**, va do bang phep do cua chinh toi
+
+`https://app.lttstudios.com/gia-api` (qua Cloudflare, khong phai loopback):
+
+```
+HTTP 200
+300đ · 900đ                  <- bang gia anh, di qua registry.bang_gia_cong_khai()
+ltt-voice-2026-08-30a        <- ma phien ban gia tieng
+```
+
+⇒ Cai hong toi lo o §2.4 — `bang_gia_cong_khai()` tra rong, trang **van 200 van
+dep** nhung mat mot bang gia — **khong xay ra o khach that**.
+
+⚠️ Va nen ghi ro thu tu: §2.4 do tren **mot ban co lap o cong 8123**, muc nay do
+tren **URL cong khai that**. Chi muc nay moi dong duoc quy tac 5b. Loopback la
+buoc soi nhanh, khong phai buoc chot.
+
+### Mot phat hien cua phien `ltt-voice`, dang cho vao day
+
+Chay `4-nghiem-thu.ps1` **khong nang quyen** bao *"1 loi"* — nhung do la
+`PermissionDenied` khi doc `secrets/app.env`, tuc loi cua **cach chay**. Chay
+lai co nang quyen: 0 loi, va chot quan trong nhat moi doc duoc:
+
+```
+[OK] LTT_WORKER_POOLS khong dat - worker da nang, job voice nhat duoc
+```
+
+⭐ Hai kieu sai **nguoc chieu trong cung mot luot chay**: bao mot loi **gia**, va
+bo sot chot **that**. Cung ho hang voi §6.1 — mot cong cu kiem tra noi sai ve
+chinh no.
+
+### Trang thai cuoi (thay cho §10)
+
+| | |
+|---|---|
+| HEAD | `1ad85c6` |
+| Chua len `origin` | **29 commit** — trong do co ban **dang chay production** |
+| Deploy | ✅ 21:11, EXITCODE=0, nghiem thu 0 loi |
+| Quy tac 5b | ✅ **dong** tren URL cong khai |
+| Phan quyet | **CONDITIONAL PASS** giu nguyen — P0 agent-executor van mo |
+| STATE | `CONDITIONAL` |
+
+🔴 **Va con no lon nhat gio doi cho:** 29 commit chua day len `origin`, gom ca
+ban **dang phuc vu khach that**. Ma nguon production hien chi ton tai tren **mot
+o dia**. Day khong con la rui ro sao luu chung chung — no la rui ro cu the.
