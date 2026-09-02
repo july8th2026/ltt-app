@@ -228,10 +228,30 @@
       }
     });
 
+    /* == Doi `src` thi phai VE LAI song ==================================
+     *
+     * `daVe` la mot co dat MOT LAN, va no dung khi mot trinh phat gan voi mot
+     * tep suot doi -- dung nhu Studio, Lich su, Du an.
+     *
+     * ⛔ Man Giong pha gia dinh do: mot the <audio> DUNG CHUNG cho hai muoi
+     *    giong, doi `src` moi lan bam mot the. Khong reset thi song am van la
+     *    song cua giong DAU TIEN trong khi tieng phat ra la giong khac -- va
+     *    no khong bao gio bao loi, chi lang le ve sai.
+     *
+     * `loadstart` la su kien dung: no bao mot nguon MOI bat dau nap.
+     */
+    au.addEventListener("loadstart", function () {
+      daVe = false;
+      gio.textContent = "—";
+      veLaiSong(song, 0);
+    });
+
     au.addEventListener("play", function () {
       nut.textContent = "⏸";
       nut.setAttribute("aria-label", "Tam dung");
       hop.classList.add("dang-phat");
+      /* Nguon vua doi thi ve lai ngay o luot phat dau tien sau do. */
+      if (!daVe) { daVe = true; veSong(song, au.src); }
     });
     function dungLai() {
       nut.textContent = "▶";
@@ -269,6 +289,75 @@
     var au = pv.querySelectorAll('audio[data-nang="1"]');
     for (var k = 0; k < au.length; k++) ganTrinhPhat(au[k]);
     ganTabViDu(pv);
+    ganNgheThu(pv);
+  }
+
+  /* == Nghe thu mot giong ====================================================
+   *
+   * MOT the <audio> dung chung cho CA TRANG, khong phai mot the moi nut.
+   *
+   * Hai ly do doc lap:
+   *   1. Hai muoi the <audio> tren mot luoi hai muoi o la hai muoi tai nguyen
+   *      trinh duyet phai giu, cho mot thu ma nguoi dung bam nhieu nhat mot cai
+   *      mot luc.
+   *   2. Quan trong hon: mot the dung chung lam cho "dung cai dang phat" thanh
+   *      chuyen HIEN NHIEN thay vi mot thu phai nho lam. Bam giong thu hai khi
+   *      giong thu nhat dang keu ma ca hai cung keu la loi ai cung gap va khong
+   *      ai bao cao — ho chi thoi bam.
+   *
+   * ⛔ `preload="none"` va chi dat `src` LUC BAM. Dat san hai muoi `src` la moi
+   *    trinh duyet tai truoc hai muoi tep WAV nua meg -- tren mot trang ma
+   *    phan lon nguoi dung khong bam nut nao.
+   */
+  var auNgheThu = null;
+  var nutDangPhat = null;
+
+  function dungNgheThu() {
+    if (nutDangPhat) {
+      nutDangPhat.classList.remove("dang-phat");
+      nutDangPhat.setAttribute("aria-pressed", "false");
+      nutDangPhat = null;
+    }
+  }
+
+  function ganNgheThu(pv) {
+    var ds = (pv || document).querySelectorAll("[data-nghe]");
+    for (var i = 0; i < ds.length; i++) {
+      (function (nut) {
+        if (nut.dataset.daGanNghe === "1") return;
+        nut.dataset.daGanNghe = "1";
+        nut.setAttribute("aria-pressed", "false");
+        nut.addEventListener("click", function (e) {
+          /* The giong bao quanh cung nghe cu bam de mo panel chi tiet. Nghe thu
+             la mot hanh dong RIENG -- chan noi bot, khong thi mot cu bam vua
+             phat vua doi ca panel, va nguoi dung khong biet minh vua lam gi. */
+          e.stopPropagation();
+          e.preventDefault();
+
+          if (!auNgheThu) {
+            auNgheThu = new Audio();
+            auNgheThu.preload = "none";
+            auNgheThu.addEventListener("ended", dungNgheThu);
+            auNgheThu.addEventListener("pause", dungNgheThu);
+            /* Tep 404 hay giai ma hong deu vao day. Phai DUNG trang thai lai,
+               khong thi nut ket o "dang phat" mai mai va trang trong nhu treo. */
+            auNgheThu.addEventListener("error", dungNgheThu);
+          }
+
+          var dangLaNoi = nutDangPhat === nut;
+          auNgheThu.pause();
+          dungNgheThu();
+          if (dangLaNoi) return;      /* bam lan hai = dung */
+
+          auNgheThu.src = nut.dataset.nghe;
+          nutDangPhat = nut;
+          nut.classList.add("dang-phat");
+          nut.setAttribute("aria-pressed", "true");
+          var hua = auNgheThu.play();
+          if (hua && hua.catch) hua.catch(dungNgheThu);
+        });
+      })(ds[i]);
+    }
   }
 
   /* ── Tab ngon ngu vi du (man API) ─────────────────────────────────────────
@@ -315,6 +404,7 @@
     var cfg = cauHinh || {};
     var chu = cfg.chu || {};
     var chiTiet = cfg.chiTiet || {};
+    var duongNghe = cfg.duongNghe || {};
     var duong = cfg.duong || "";
 
     var the = [].slice.call(luoi.querySelectorAll(".lv-the"));
@@ -426,6 +516,30 @@
 
       var nutChep = document.getElementById("lv-ct-chep");
       if (nutChep) nutChep.dataset.ma = d.ma;
+
+      /* Nghe thu trong panel. Hai trang thai, va trang thai "chua co" phai
+         NOI RA -- mot o trong o cho dang le co trinh phat trong y het mot loi
+         hien thi. */
+      var oNghe = document.getElementById("lv-ct-nghe");
+      var oChua = document.getElementById("lv-ct-nghe-chua");
+      var au = document.getElementById("lv-ct-au");
+      var url = duongNghe[d.ma];
+      if (oNghe && oChua && au) {
+        if (url) {
+          /* Dung tep dang phat truoc khi doi giong: khong thi bam sang giong
+             thu hai van nghe giong thu nhat, va do la mot cach rat hieu qua de
+             lam nguoi ta chon nham. */
+          au.pause();
+          au.src = url;
+          oNghe.hidden = false;
+          oChua.hidden = true;
+        } else {
+          au.pause();
+          au.removeAttribute("src");
+          oNghe.hidden = true;
+          oChua.hidden = false;
+        }
+      }
 
       var nutDung = document.getElementById("lv-ct-dung");
       if (nutDung) {

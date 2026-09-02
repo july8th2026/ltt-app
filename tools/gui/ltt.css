@@ -2374,6 +2374,40 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-the-song{flex:0 0 auto;display:grid;place-items:center;width:44px;height:44px;
   border-radius:50%;background:var(--brand-soft);border:1px solid var(--brand-border)}
 .lv-the-song svg rect{fill:var(--brand-hover)}
+
+/* == O song thanh NUT NGHE THU ==============================================
+ *
+ * Cung mot o, hai vai tro. Giong co tep nghe thu thi o song la mot <button>;
+ * giong chua co van la <span> tro. Ca hai trong giong het nhau khi khong cham
+ * vao -- co y: luoi 20 o phai deu, khong duoc lo cho hai loai o.
+ *
+ * ⛔ Dau hieu bam duoc chi hien khi HOVER hoac FOCUS. Ve mot nut play thuong
+ *    truc tren ca hai muoi o la bien mot luoi giong thanh mot bang dieu khien
+ *    -- va o do khong bam duoc se trong nhu hong thay vi trong nhu tinh.
+ */
+button.lv-the-song{cursor:pointer;padding:0;position:relative;
+  transition:background .12s ease,border-color .12s ease}
+button.lv-the-song:hover,button.lv-the-song:focus-visible{
+  background:var(--brand-hover);border-color:var(--brand-hover)}
+button.lv-the-song:hover svg rect,button.lv-the-song:focus-visible svg rect{
+  fill:#fff}
+
+/* Tam giac play / hai vach pause, ve bang border thay vi mot tep icon:
+   khong them mot luot tai, va no doi mau theo `currentColor`. */
+.lv-nghe-dau{position:absolute;inset:0;display:none;place-items:center}
+button.lv-the-song:hover .lv-nghe-dau,
+button.lv-the-song:focus-visible .lv-nghe-dau,
+button.lv-the-song.dang-phat .lv-nghe-dau{display:grid}
+.lv-nghe-dau::before{content:"";width:0;height:0;margin-left:3px;
+  border-left:11px solid #fff;border-top:7px solid transparent;
+  border-bottom:7px solid transparent}
+/* Dang phat: o giu mau dam va doi sang hai vach dung. */
+button.lv-the-song.dang-phat{background:var(--brand-hover);
+  border-color:var(--brand-hover)}
+button.lv-the-song.dang-phat svg rect{fill:rgba(255,255,255,.35)}
+button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
+  margin-left:0;border:0;background:#fff;
+  box-shadow:7px 0 0 0 #fff;transform:translateX(-3px)}
 .lv-the-ten{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 /* ⛔ KHONG `white-space:nowrap`. Ten giong that dai hon o the ("Tam Ly Hoc —
  * nam, thuyet minh"), nen cat mot dong bang dau ba cham lam mat phan PHAN LOAI

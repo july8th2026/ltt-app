@@ -13094,3 +13094,9 @@ msgstr "A customer's own pronunciation dictionary: which word is read as what. W
 
 msgid "Xin chào, đây là giọng đọc của tôi. Hôm nay là ngày mùng hai tháng chín. Rất vui được đồng hành cùng bạn."
 msgstr "Hello, this is my reading voice. Today is the second of September. I am glad to be here with you."
+
+msgid "Bản nghe thử của giọng này đang được chuẩn bị. Quay lại sau ít phút."
+msgstr "A preview of this voice is being prepared. Check back in a few minutes."
+
+msgid "Nghe thử giọng"
+msgstr "Preview voice"

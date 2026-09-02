@@ -127,20 +127,51 @@ def khoa_rieng(owner_id: str, public_id: str) -> str:
     return f"voice/{owner_id}/{public_id}/preview-{PHIEN_BAN}.wav"
 
 
+#: Bộ nhớ đệm `khoá -> (lúc, có)`.
+#:
+#: 🔴 VÌ SAO CẦN, và nó không lộ ra trên máy dev.
+#:
+#:    `LocalStorage.exists` là một `stat()` — rẻ tới mức vô hình. `R2Storage.exists`
+#:    là một **HEAD qua mạng**. Màn Giọng dựng hai mươi thẻ, nên hỏi thẳng kho ở
+#:    mỗi lượt dựng trang là **hai mươi lượt gọi mạng cho một trang** trên
+#:    production, và không một phép kiểm nào trên máy dev nhìn thấy điều đó.
+#:
+#: ⚠️ Cái giá của đệm: một tiến trình khác vừa dựng xong tệp thì tiến trình này
+#:    còn nói "chưa có" tối đa `DEM_TTL_S` giây. Hệ quả là một dòng *"đang chuẩn
+#:    bị"* thừa trong một phút, và nó tự lành. Đổi lại đúng chiều.
+_DEM: dict = {}
+DEM_TTL_S = 60.0
+
+
 def co_san(khoa: str) -> bool:
-    """Tệp nghe thử đã dựng chưa.
+    """Tệp nghe thử đã dựng chưa. **Có đệm** — xem `_DEM`.
 
     ⚠️ Trả `False` khi kho ném **bất cứ lỗi gì**, không chỉ khi thiếu tệp. Một
        kho hỏng và một tệp chưa dựng phải dẫn tới cùng một hành vi ở giao diện
        (nói "chưa có"), vì cả hai đều nghĩa là *không phát được* — và một nút
        phát không kêu là thứ tệ nhất trong ba khả năng.
+
+    ⛔ Chỉ đệm câu trả lời **True**. Một `False` bị đệm là một tệp vừa dựng xong
+       mà trang vẫn giấu; một `True` bị đệm sai chỉ xảy ra khi có ai xoá tệp
+       dưới chân ta, và lúc đó cửa audio trả 404 — thấy được, sửa được. Hai
+       hướng sai này không cân nhau, nên đệm cũng không cân.
     """
+    import time
+
     from platform_core.storage import get_storage
+
+    gio = time.monotonic()
+    luc = _DEM.get(khoa)
+    if luc is not None and (gio - luc) < DEM_TTL_S:
+        return True
     try:
-        return bool(get_storage().exists(khoa))
+        co = bool(get_storage().exists(khoa))
     except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
         log.warning("khong hoi duoc kho ve %s: %s", khoa, e)
         return False
+    if co:
+        _DEM[khoa] = gio
+    return co
 
 
 def dung(khoa: str, *, ref_b64=None, preset=None) -> bool:
@@ -174,6 +205,32 @@ def con_thieu_mau() -> list:
     """Những giọng dựng sẵn chưa có tệp nghe thử."""
     from . import giong_mau
     return [g for g in giong_mau.DANH_SACH if not co_san(khoa_mau(g.ma))]
+
+
+def duong_cho_trang(*, duong_audio: str, owner_id: str,
+                    ma_mau=(), rieng=()) -> dict:
+    """`{public_id: url}` cho mọi giọng một trang sắp dựng.
+
+    🔴 **MỘT thẩm quyền duy nhất dựng đường nghe thử.** Đây là bài học đã trả
+       giá ở `du_an.duong_tieng()`: trước đó **năm** chỗ tự ghép URL bằng
+       `if k.audio_key`, và sửa cho đúng nghĩa là phải nhớ đủ năm. Màn Giọng và
+       màn Tạo tiếng nói đều cần đường này; hai bản ghép là hai bản sẽ lệch.
+
+    ⭐ Giọng **không có tệp** thì **không có khoá trong dict** — không phải một
+       chuỗi rỗng, không phải một URL trỏ vào hư không. Khuôn mẫu hỏi
+       `ma in duong` và hiện *"đang chuẩn bị"*; một URL 404 sẽ cho ra một nút
+       phát bấm được mà không kêu, tức đúng thứ tệ nhất.
+    """
+    ra: dict = {}
+    for ma in ma_mau:
+        khoa = khoa_mau(ma)
+        if co_san(khoa):
+            ra[ma] = f"{duong_audio}/{khoa}"
+    for pid in rieng:
+        khoa = khoa_rieng(owner_id, pid)
+        if co_san(khoa):
+            ra[pid] = f"{duong_audio}/{khoa}"
+    return ra
 
 
 def bao_tri() -> None:

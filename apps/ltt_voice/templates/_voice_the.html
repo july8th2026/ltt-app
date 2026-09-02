@@ -35,7 +35,31 @@
     {# Hình sóng chỉ là NGÔN NGỮ THỊ GIÁC, không phải dữ liệu. Nó là SVG dựng
        sẵn, không phải sóng thật của giọng này — giải mã một tệp tiếng cho mỗi
        ô trong lưới hai mươi ô là trả một cái giá thật cho một thứ trang trí.
-       Waveform THẬT chỉ vẽ ở chỗ có một tệp cụ thể để vẽ (trình phát). #}
+       Waveform THẬT chỉ vẽ ở chỗ có một tệp cụ thể để vẽ (trình phát).
+
+       ⭐ Nhưng nó KHÔNG còn chỉ là trang trí: khi giọng này có tệp nghe thử,
+          chính ô sóng ấy trở thành nút phát. Đặt nút ở đây thay vì thêm một
+          nút thứ ba vào hàng dưới là vì hàng dưới đã có "Dùng" và "Chi tiết" —
+          và thứ người ta muốn làm đầu tiên với một giọng là NGHE nó, không
+          phải đọc về nó.
+
+       ⛔ Giọng chưa có tệp thì ô này vẫn là `<span>` trơ như cũ. Một `<button>`
+          bấm được mà không kêu tệ hơn hẳn một hình tĩnh, vì hình tĩnh không hứa
+          gì cả. #}
+    {%- set url_nghe = duong_nghe.get(ma) if duong_nghe is defined else none %}
+    {%- if url_nghe %}
+    <button type="button" class="lv-the-song lv-nghe" data-nghe="{{ url_nghe }}"
+            aria-label="{{ _('Nghe thử giọng') }} {{ g.ten_hien_thi }}">
+      <svg viewBox="0 0 48 24" width="48" height="24" role="presentation"
+           aria-hidden="true">
+        {%- for h in [6,12,20,9,16,22,11,7,17,13,21,8,15,10,19,6] %}
+        <rect x="{{ loop.index0 * 3 }}" y="{{ (24 - h) // 2 }}" width="2"
+              height="{{ h }}" rx="1"></rect>
+        {%- endfor %}
+      </svg>
+      <span class="lv-nghe-dau" aria-hidden="true"></span>
+    </button>
+    {%- else %}
     <span class="lv-the-song" aria-hidden="true">
       <svg viewBox="0 0 48 24" width="48" height="24" role="presentation">
         {%- for h in [6,12,20,9,16,22,11,7,17,13,21,8,15,10,19,6] %}
@@ -44,6 +68,7 @@
         {%- endfor %}
       </svg>
     </span>
+    {%- endif %}
     <div class="lv-the-ten">
       <b>{{ g.ten_hien_thi }}</b>
       {% if la_mau %}

@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4c96c90a6599dcea5180a63e0a7d4228a83d87e1dc13195b0bfdf41d14332350
+Fingerprint   : sha256:ebeba9f623ff072facf8e21e10c1630b17069c94208053e32f63649afa1225e2
 Nguồn đã quét : 1467 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -617,8 +617,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:432
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:95
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
-- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:51
-- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:127
+- [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:58
+- [ltt_voice] POST   /ltt-voice/giong/{public_id}/tat → tat_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:134
 - [ltt_voice] GET    /ltt-voice/ket-qua/{job_id} → ket_qua | auth~login | apps/ltt_voice/routes/_p_tao.py:177
 - [ltt_voice] GET    /ltt-voice/lich-su → trang_lich_su | auth~login | apps/ltt_voice/routes/_p_lich_su.py:16
 - [ltt_voice] POST   /ltt-voice/lich-su/{job_id}/doc-lai → doc_lai | auth~login | apps/ltt_voice/routes/_p_lich_su.py:79
@@ -3081,7 +3081,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1467 file; 14618002 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1467 file; 14635638 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21055,7 +21055,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/nghe_thu.py
-SHA256=f04b710147e0f55848a937e4cda30a80a2e2fe9549a7a454fd94d14fa2db04c6 BYTES=10368 LINES=201
+SHA256=275608951a20e3469fba1fc03ba8407dcbd258bdad795171b8493bd3216f3547 BYTES=13094 LINES=258
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 nghe_thu.py — NGHE THỬ một giọng trước khi dùng nó.
@@ -21186,20 +21186,51 @@ def khoa_rieng(owner_id: str, public_id: str) -> str:
     return f"voice/{owner_id}/{public_id}/preview-{PHIEN_BAN}.wav"
 
 
+#: Bộ nhớ đệm `khoá -> (lúc, có)`.
+#:
+#: 🔴 VÌ SAO CẦN, và nó không lộ ra trên máy dev.
+#:
+#:    `LocalStorage.exists` là một `stat()` — rẻ tới mức vô hình. `R2Storage.exists`
+#:    là một **HEAD qua mạng**. Màn Giọng dựng hai mươi thẻ, nên hỏi thẳng kho ở
+#:    mỗi lượt dựng trang là **hai mươi lượt gọi mạng cho một trang** trên
+#:    production, và không một phép kiểm nào trên máy dev nhìn thấy điều đó.
+#:
+#: ⚠️ Cái giá của đệm: một tiến trình khác vừa dựng xong tệp thì tiến trình này
+#:    còn nói "chưa có" tối đa `DEM_TTL_S` giây. Hệ quả là một dòng *"đang chuẩn
+#:    bị"* thừa trong một phút, và nó tự lành. Đổi lại đúng chiều.
+_DEM: dict = {}
+DEM_TTL_S = 60.0
+
+
 def co_san(khoa: str) -> bool:
-    """Tệp nghe thử đã dựng chưa.
+    """Tệp nghe thử đã dựng chưa. **Có đệm** — xem `_DEM`.
 
     ⚠️ Trả `False` khi kho ném **bất cứ lỗi gì**, không chỉ khi thiếu tệp. Một
        kho hỏng và một tệp chưa dựng phải dẫn tới cùng một hành vi ở giao diện
        (nói "chưa có"), vì cả hai đều nghĩa là *không phát được* — và một nút
        phát không kêu là thứ tệ nhất trong ba khả năng.
+
+    ⛔ Chỉ đệm câu trả lời **True**. Một `False` bị đệm là một tệp vừa dựng xong
+       mà trang vẫn giấu; một `True` bị đệm sai chỉ xảy ra khi có ai xoá tệp
+       dưới chân ta, và lúc đó cửa audio trả 404 — thấy được, sửa được. Hai
+       hướng sai này không cân nhau, nên đệm cũng không cân.
     """
+    import time
+
     from platform_core.storage import get_storage
+
+    gio = time.monotonic()
+    luc = _DEM.get(khoa)
+    if luc is not None and (gio - luc) < DEM_TTL_S:
+        return True
     try:
-        return bool(get_storage().exists(khoa))
+        co = bool(get_storage().exists(khoa))
     except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
         log.warning("khong hoi duoc kho ve %s: %s", khoa, e)
         return False
+    if co:
+        _DEM[khoa] = gio
+    return co
 
 
 def dung(khoa: str, *, ref_b64=None, preset=None) -> bool:
@@ -21233,6 +21264,32 @@ def con_thieu_mau() -> list:
     """Những giọng dựng sẵn chưa có tệp nghe thử."""
     from . import giong_mau
     return [g for g in giong_mau.DANH_SACH if not co_san(khoa_mau(g.ma))]
+
+
+def duong_cho_trang(*, duong_audio: str, owner_id: str,
+                    ma_mau=(), rieng=()) -> dict:
+    """`{public_id: url}` cho mọi giọng một trang sắp dựng.
+
+    🔴 **MỘT thẩm quyền duy nhất dựng đường nghe thử.** Đây là bài học đã trả
+       giá ở `du_an.duong_tieng()`: trước đó **năm** chỗ tự ghép URL bằng
+       `if k.audio_key`, và sửa cho đúng nghĩa là phải nhớ đủ năm. Màn Giọng và
+       màn Tạo tiếng nói đều cần đường này; hai bản ghép là hai bản sẽ lệch.
+
+    ⭐ Giọng **không có tệp** thì **không có khoá trong dict** — không phải một
+       chuỗi rỗng, không phải một URL trỏ vào hư không. Khuôn mẫu hỏi
+       `ma in duong` và hiện *"đang chuẩn bị"*; một URL 404 sẽ cho ra một nút
+       phát bấm được mà không kêu, tức đúng thứ tệ nhất.
+    """
+    ra: dict = {}
+    for ma in ma_mau:
+        khoa = khoa_mau(ma)
+        if co_san(khoa):
+            ra[ma] = f"{duong_audio}/{khoa}"
+    for pid in rieng:
+        khoa = khoa_rieng(owner_id, pid)
+        if co_san(khoa):
+            ra[pid] = f"{duong_audio}/{khoa}"
+    return ra
 
 
 def bao_tri() -> None:
@@ -21293,7 +21350,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_chung.py
-SHA256=51f8968004a072f98f13f177ce621930efe5a8486138ad4cd47b84766cd3aadc BYTES=5401 LINES=113
+SHA256=d98a28e1da0a425546f2a37aa8df15d8762d3e72a3d5058b4a4ac3d3814759de BYTES=5427 LINES=114
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 _chung.py — router + mọi thứ các mảnh route dùng chung.
@@ -21330,7 +21387,8 @@ from server.deps import user_hien_tai
 from server.templating import templates
 
 from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
-                giong_mau, lan_ngon_ngu, tham_chieu, tu_dien_rieng, vo)
+                giong_mau, lan_ngon_ngu, nghe_thu, tham_chieu,
+                tu_dien_rieng, vo)
 from ..manifest import MANIFEST
 from ..tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
@@ -22270,7 +22328,7 @@ def phien_ban_khoi(public_id: str, block_id: int,
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_giong.py
-SHA256=fe4b9835b4c7936688e0ef7d495eb509283180d3cf13d9c088d78ffe96001a13 BYTES=6986 LINES=153
+SHA256=c7daa352f0998d56ff20219b1a83d4dd960273462a895524b2eda95da8853154 BYTES=7458 LINES=160
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Giọng: lưới giọng, ghi danh giọng mới, tắt giọng."""
 from __future__ import annotations
@@ -22281,7 +22339,7 @@ from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
                      gia, giong_mau, io, require_login, router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON, lan_ngon_ngu)
+                     NHAN_NGUON, lan_ngon_ngu, nghe_thu)
 
 
 # ── Giọng của tôi ────────────────────────────────────────────────────────────
@@ -22299,6 +22357,12 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
         thong_ke = doc_man_giong.thong_ke_theo_giong(db, uid, MANIFEST.slug)
         chi_tiet = doc_man_giong.chi_tiet_cho_trang(
             db, giong, thong_ke, f"{MANIFEST.route_prefix}/audio")
+        # Đường nghe thử — MỘT thẩm quyền, dùng chung với màn Tạo tiếng nói.
+        # Giọng nào chưa có tệp thì **vắng mặt** khỏi dict, không phải rỗng.
+        duong_nghe = nghe_thu.duong_cho_trang(
+            duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
+            ma_mau=[g.ma for g in giong_mau.DANH_SACH],
+            rieng=[g.public_id for g in giong])
     finally:
         try:
             next(gen)
@@ -22318,6 +22382,7 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
                     # ai đó mở đúng màn ấy.
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     thong_ke=thong_ke, chi_tiet=chi_tiet,
+                    duong_nghe=duong_nghe,
                     dieu_khoan=cac_dieu(), cam_ket=CAM_KET))
 
 
@@ -23897,7 +23962,7 @@ SHA256=3c186a57adb50eaee1b5618dd3714e4c7f7ca5320234998e49f46728b541cfd7 BYTES=84
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/_voice_the.html
-SHA256=e4c4824ea9c02ae2377b7877668e618d44f99b857085a13f6b35abd57efef8be BYTES=4368 LINES=89
+SHA256=9bc6fd61c6179055f7ab91114e798ffb04d322061c44c3db382806d326c3be18 BYTES=5719 LINES=114
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {#
   Một thẻ giọng. MỘT partial cho CẢ HAI loại — giọng mẫu và giọng nhân bản.
@@ -23936,7 +24001,31 @@ SHA256=e4c4824ea9c02ae2377b7877668e618d44f99b857085a13f6b35abd57efef8be BYTES=43
     {# Hình sóng chỉ là NGÔN NGỮ THỊ GIÁC, không phải dữ liệu. Nó là SVG dựng
        sẵn, không phải sóng thật của giọng này — giải mã một tệp tiếng cho mỗi
        ô trong lưới hai mươi ô là trả một cái giá thật cho một thứ trang trí.
-       Waveform THẬT chỉ vẽ ở chỗ có một tệp cụ thể để vẽ (trình phát). #}
+       Waveform THẬT chỉ vẽ ở chỗ có một tệp cụ thể để vẽ (trình phát).
+
+       ⭐ Nhưng nó KHÔNG còn chỉ là trang trí: khi giọng này có tệp nghe thử,
+          chính ô sóng ấy trở thành nút phát. Đặt nút ở đây thay vì thêm một
+          nút thứ ba vào hàng dưới là vì hàng dưới đã có "Dùng" và "Chi tiết" —
+          và thứ người ta muốn làm đầu tiên với một giọng là NGHE nó, không
+          phải đọc về nó.
+
+       ⛔ Giọng chưa có tệp thì ô này vẫn là `<span>` trơ như cũ. Một `<button>`
+          bấm được mà không kêu tệ hơn hẳn một hình tĩnh, vì hình tĩnh không hứa
+          gì cả. #}
+    {%- set url_nghe = duong_nghe.get(ma) if duong_nghe is defined else none %}
+    {%- if url_nghe %}
+    <button type="button" class="lv-the-song lv-nghe" data-nghe="{{ url_nghe }}"
+            aria-label="{{ _('Nghe thử giọng') }} {{ g.ten_hien_thi }}">
+      <svg viewBox="0 0 48 24" width="48" height="24" role="presentation"
+           aria-hidden="true">
+        {%- for h in [6,12,20,9,16,22,11,7,17,13,21,8,15,10,19,6] %}
+        <rect x="{{ loop.index0 * 3 }}" y="{{ (24 - h) // 2 }}" width="2"
+              height="{{ h }}" rx="1"></rect>
+        {%- endfor %}
+      </svg>
+      <span class="lv-nghe-dau" aria-hidden="true"></span>
+    </button>
+    {%- else %}
     <span class="lv-the-song" aria-hidden="true">
       <svg viewBox="0 0 48 24" width="48" height="24" role="presentation">
         {%- for h in [6,12,20,9,16,22,11,7,17,13,21,8,15,10,19,6] %}
@@ -23945,6 +24034,7 @@ SHA256=e4c4824ea9c02ae2377b7877668e618d44f99b857085a13f6b35abd57efef8be BYTES=43
         {%- endfor %}
       </svg>
     </span>
+    {%- endif %}
     <div class="lv-the-ten">
       <b>{{ g.ten_hien_thi }}</b>
       {% if la_mau %}
@@ -24387,7 +24477,7 @@ LttVoice.duAnDanhSach({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_giong.html
-SHA256=039fc67072d0ce65f26bda073ee958df72c424f282549ff424881d00efe54deb BYTES=12497 LINES=240
+SHA256=1997d70469591f97c35974c59b42d8fda65adab0e9c1113bd3153ebb63a86278 BYTES=14305 LINES=265
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Giọng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24518,6 +24608,27 @@ SHA256=039fc67072d0ce65f26bda073ee958df72c424f282549ff424881d00efe54deb BYTES=12
         </div>
         <p class="muted lv-ct-tinh" id="lv-ct-tinh"></p>
 
+        {# ── Nghe thử ─────────────────────────────────────────────────────
+           Trình phát ĐẦY ĐỦ ở đây, không phải một nút tròn như trên thẻ: đây
+           là chỗ người ta đã chọn xong một giọng và muốn nghe kỹ — nên phải
+           tua được, nghe lại được, chỉnh âm lượng được.
+
+           ⛔ Hai trạng thái, và trạng thái thứ hai phải NÓI RA. Một ô trống ở
+              chỗ đáng lẽ có trình phát trông y hệt một lỗi hiển thị; cùng bài
+              học với khối tiếng hết hạn ở màn Dự án. #}
+        {# ⚠️ `data-nang="1"` — `voice.js::ganTrinhPhat` nâng nó thành trình phát
+           sóng âm, giống Studio · Lịch sử · Dự án. **Bốn màn một kiểu.**
+
+           Không có nó thì đây là thanh `<audio>` xám mặc định của trình duyệt —
+           đúng thứ mà đợt 01/09 đã đi gỡ khỏi màn Studio, và để nó quay lại ở
+           màn thứ tư là làm lại chính việc vừa dọn. #}
+        <div class="lv-ct-nghe" id="lv-ct-nghe" hidden>
+          <audio data-nang="1" controls preload="none" id="lv-ct-au"></audio>
+        </div>
+        <p class="dim lv-ct-nghe-chua" id="lv-ct-nghe-chua" hidden>
+          {{ _("Bản nghe thử của giọng này đang được chuẩn bị. Quay lại sau ít phút.") }}
+        </p>
+
         <dl class="lv-ct-bang">
           <dt>{{ _("Mã dùng khi gọi") }}</dt>
           <dd><span class="lv-ma"><code class="mono" id="lv-ct-ma"></code>
@@ -24598,6 +24709,10 @@ SHA256=039fc67072d0ce65f26bda073ee958df72c424f282549ff424881d00efe54deb BYTES=12
     // Chi tiet cua giong NHAN BAN: dung so lieu may chu da tinh san, khong goi
     // them mot vong nao khi bam vao mot the.
     chiTiet: {{ chi_tiet | tojson }},
+    // Duong nghe thu. Giong CHUA co tep thi VANG MAT khoi dict -- khong phai
+    // mot chuoi rong. `moChiTiet` hoi `ma in duongNghe`, nen mot chuoi rong se
+    // duoc coi la "co" va dan toi mot trinh phat cam.
+    duongNghe: {{ duong_nghe | tojson }},
     chu: {
       mau: {{ _("Giọng mẫu") | tojson }},
       cuaToi: {{ _("Giọng của tôi") | tojson }},
@@ -152929,7 +153044,7 @@ var htmx=function(){"use strict";const Q={onLoad:null,process:null,on:null,off:n
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/ltt.css
-SHA256=81f4562b66d8b9b8a9704981c9a47f17e68df44cf2397983d475b7060cb5f025 BYTES=258272 LINES=2818
+SHA256=d4cf3b016f29cb90b56513525cff9906a5e39e24d96209587ef75b36b693e90b BYTES=260098 LINES=2852
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -155307,6 +155422,40 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-the-song{flex:0 0 auto;display:grid;place-items:center;width:44px;height:44px;
   border-radius:50%;background:var(--brand-soft);border:1px solid var(--brand-border)}
 .lv-the-song svg rect{fill:var(--brand-hover)}
+
+/* == O song thanh NUT NGHE THU ==============================================
+ *
+ * Cung mot o, hai vai tro. Giong co tep nghe thu thi o song la mot <button>;
+ * giong chua co van la <span> tro. Ca hai trong giong het nhau khi khong cham
+ * vao -- co y: luoi 20 o phai deu, khong duoc lo cho hai loai o.
+ *
+ * ⛔ Dau hieu bam duoc chi hien khi HOVER hoac FOCUS. Ve mot nut play thuong
+ *    truc tren ca hai muoi o la bien mot luoi giong thanh mot bang dieu khien
+ *    -- va o do khong bam duoc se trong nhu hong thay vi trong nhu tinh.
+ */
+button.lv-the-song{cursor:pointer;padding:0;position:relative;
+  transition:background .12s ease,border-color .12s ease}
+button.lv-the-song:hover,button.lv-the-song:focus-visible{
+  background:var(--brand-hover);border-color:var(--brand-hover)}
+button.lv-the-song:hover svg rect,button.lv-the-song:focus-visible svg rect{
+  fill:#fff}
+
+/* Tam giac play / hai vach pause, ve bang border thay vi mot tep icon:
+   khong them mot luot tai, va no doi mau theo `currentColor`. */
+.lv-nghe-dau{position:absolute;inset:0;display:none;place-items:center}
+button.lv-the-song:hover .lv-nghe-dau,
+button.lv-the-song:focus-visible .lv-nghe-dau,
+button.lv-the-song.dang-phat .lv-nghe-dau{display:grid}
+.lv-nghe-dau::before{content:"";width:0;height:0;margin-left:3px;
+  border-left:11px solid #fff;border-top:7px solid transparent;
+  border-bottom:7px solid transparent}
+/* Dang phat: o giu mau dam va doi sang hai vach dung. */
+button.lv-the-song.dang-phat{background:var(--brand-hover);
+  border-color:var(--brand-hover)}
+button.lv-the-song.dang-phat svg rect{fill:rgba(255,255,255,.35)}
+button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
+  margin-left:0;border:0;background:#fff;
+  box-shadow:7px 0 0 0 #fff;transform:translateX(-3px)}
 .lv-the-ten{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 /* ⛔ KHONG `white-space:nowrap`. Ten giong that dai hon o the ("Tam Ly Hoc —
  * nam, thuyet minh"), nen cat mot dong bang dau ba cham lam mat phan PHAN LOAI
@@ -155880,7 +156029,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=00c701429dc5d64896845cc01f3b32589181fb72873ee0445baaa4a618179bc1 BYTES=72798 LINES=1742
+SHA256=db31d265e7be820a5d3e596e42057d3e0a5451ae75925105c4ea8a786b3eaeb1 BYTES=77316 LINES=1856
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -156112,10 +156261,30 @@ SHA256=00c701429dc5d64896845cc01f3b32589181fb72873ee0445baaa4a618179bc1 BYTES=72
       }
     });
 
+    /* == Doi `src` thi phai VE LAI song ==================================
+     *
+     * `daVe` la mot co dat MOT LAN, va no dung khi mot trinh phat gan voi mot
+     * tep suot doi -- dung nhu Studio, Lich su, Du an.
+     *
+     * ⛔ Man Giong pha gia dinh do: mot the <audio> DUNG CHUNG cho hai muoi
+     *    giong, doi `src` moi lan bam mot the. Khong reset thi song am van la
+     *    song cua giong DAU TIEN trong khi tieng phat ra la giong khac -- va
+     *    no khong bao gio bao loi, chi lang le ve sai.
+     *
+     * `loadstart` la su kien dung: no bao mot nguon MOI bat dau nap.
+     */
+    au.addEventListener("loadstart", function () {
+      daVe = false;
+      gio.textContent = "—";
+      veLaiSong(song, 0);
+    });
+
     au.addEventListener("play", function () {
       nut.textContent = "⏸";
       nut.setAttribute("aria-label", "Tam dung");
       hop.classList.add("dang-phat");
+      /* Nguon vua doi thi ve lai ngay o luot phat dau tien sau do. */
+      if (!daVe) { daVe = true; veSong(song, au.src); }
     });
     function dungLai() {
       nut.textContent = "▶";
@@ -156153,6 +156322,75 @@ SHA256=00c701429dc5d64896845cc01f3b32589181fb72873ee0445baaa4a618179bc1 BYTES=72
     var au = pv.querySelectorAll('audio[data-nang="1"]');
     for (var k = 0; k < au.length; k++) ganTrinhPhat(au[k]);
     ganTabViDu(pv);
+    ganNgheThu(pv);
+  }
+
+  /* == Nghe thu mot giong ====================================================
+   *
+   * MOT the <audio> dung chung cho CA TRANG, khong phai mot the moi nut.
+   *
+   * Hai ly do doc lap:
+   *   1. Hai muoi the <audio> tren mot luoi hai muoi o la hai muoi tai nguyen
+   *      trinh duyet phai giu, cho mot thu ma nguoi dung bam nhieu nhat mot cai
+   *      mot luc.
+   *   2. Quan trong hon: mot the dung chung lam cho "dung cai dang phat" thanh
+   *      chuyen HIEN NHIEN thay vi mot thu phai nho lam. Bam giong thu hai khi
+   *      giong thu nhat dang keu ma ca hai cung keu la loi ai cung gap va khong
+   *      ai bao cao — ho chi thoi bam.
+   *
+   * ⛔ `preload="none"` va chi dat `src` LUC BAM. Dat san hai muoi `src` la moi
+   *    trinh duyet tai truoc hai muoi tep WAV nua meg -- tren mot trang ma
+   *    phan lon nguoi dung khong bam nut nao.
+   */
+  var auNgheThu = null;
+  var nutDangPhat = null;
+
+  function dungNgheThu() {
+    if (nutDangPhat) {
+      nutDangPhat.classList.remove("dang-phat");
+      nutDangPhat.setAttribute("aria-pressed", "false");
+      nutDangPhat = null;
+    }
+  }
+
+  function ganNgheThu(pv) {
+    var ds = (pv || document).querySelectorAll("[data-nghe]");
+    for (var i = 0; i < ds.length; i++) {
+      (function (nut) {
+        if (nut.dataset.daGanNghe === "1") return;
+        nut.dataset.daGanNghe = "1";
+        nut.setAttribute("aria-pressed", "false");
+        nut.addEventListener("click", function (e) {
+          /* The giong bao quanh cung nghe cu bam de mo panel chi tiet. Nghe thu
+             la mot hanh dong RIENG -- chan noi bot, khong thi mot cu bam vua
+             phat vua doi ca panel, va nguoi dung khong biet minh vua lam gi. */
+          e.stopPropagation();
+          e.preventDefault();
+
+          if (!auNgheThu) {
+            auNgheThu = new Audio();
+            auNgheThu.preload = "none";
+            auNgheThu.addEventListener("ended", dungNgheThu);
+            auNgheThu.addEventListener("pause", dungNgheThu);
+            /* Tep 404 hay giai ma hong deu vao day. Phai DUNG trang thai lai,
+               khong thi nut ket o "dang phat" mai mai va trang trong nhu treo. */
+            auNgheThu.addEventListener("error", dungNgheThu);
+          }
+
+          var dangLaNoi = nutDangPhat === nut;
+          auNgheThu.pause();
+          dungNgheThu();
+          if (dangLaNoi) return;      /* bam lan hai = dung */
+
+          auNgheThu.src = nut.dataset.nghe;
+          nutDangPhat = nut;
+          nut.classList.add("dang-phat");
+          nut.setAttribute("aria-pressed", "true");
+          var hua = auNgheThu.play();
+          if (hua && hua.catch) hua.catch(dungNgheThu);
+        });
+      })(ds[i]);
+    }
   }
 
   /* ── Tab ngon ngu vi du (man API) ─────────────────────────────────────────
@@ -156199,6 +156437,7 @@ SHA256=00c701429dc5d64896845cc01f3b32589181fb72873ee0445baaa4a618179bc1 BYTES=72
     var cfg = cauHinh || {};
     var chu = cfg.chu || {};
     var chiTiet = cfg.chiTiet || {};
+    var duongNghe = cfg.duongNghe || {};
     var duong = cfg.duong || "";
 
     var the = [].slice.call(luoi.querySelectorAll(".lv-the"));
@@ -156310,6 +156549,30 @@ SHA256=00c701429dc5d64896845cc01f3b32589181fb72873ee0445baaa4a618179bc1 BYTES=72
 
       var nutChep = document.getElementById("lv-ct-chep");
       if (nutChep) nutChep.dataset.ma = d.ma;
+
+      /* Nghe thu trong panel. Hai trang thai, va trang thai "chua co" phai
+         NOI RA -- mot o trong o cho dang le co trinh phat trong y het mot loi
+         hien thi. */
+      var oNghe = document.getElementById("lv-ct-nghe");
+      var oChua = document.getElementById("lv-ct-nghe-chua");
+      var au = document.getElementById("lv-ct-au");
+      var url = duongNghe[d.ma];
+      if (oNghe && oChua && au) {
+        if (url) {
+          /* Dung tep dang phat truoc khi doi giong: khong thi bam sang giong
+             thu hai van nghe giong thu nhat, va do la mot cach rat hieu qua de
+             lam nguoi ta chon nham. */
+          au.pause();
+          au.src = url;
+          oNghe.hidden = false;
+          oChua.hidden = true;
+        } else {
+          au.pause();
+          au.removeAttribute("src");
+          oNghe.hidden = true;
+          oChua.hidden = false;
+        }
+      }
 
       var nutDung = document.getElementById("lv-ct-dung");
       if (nutDung) {
@@ -258333,7 +258596,7 @@ def test_cong_cu_chinh_thuc_biet_lam_rieng_cho_VS_Code():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_394_ltt_voice_nghe_thu.py
-SHA256=5a5a4c655d4d864b3f158d598c6297ed2a583828c78155c8b5bb26d77e99c9dd BYTES=14612 LINES=350
+SHA256=79c5d1f7f37b92bba0ad2859ab9a3a5eb4d1367d71ebaa7b2f350fb40ff9721c BYTES=17695 LINES=413
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """NGHE THỬ một giọng — và ba thứ quanh nó phải không gãy.
 
@@ -258685,6 +258948,69 @@ def test_song_co_bo_nho_dem(monkeypatch):
     for _ in range(5):
         sidecar_client.song()
     assert dem["n"] == 1, f"hoi cong {dem['n']} lan cho 5 luot — mat bo nho dem"
+
+
+# ── 6. Đường nghe thử tới được khuôn mẫu ─────────────────────────────────────
+
+def test_duong_cho_trang_BO_QUA_giong_chua_co_tep(monkeypatch):
+    """⭐ Giọng chưa có tệp thì **vắng mặt khỏi dict**, không phải chuỗi rỗng.
+
+    Khuôn mẫu hỏi `duong_nghe.get(ma)`. Một chuỗi rỗng vẫn là một khoá có mặt,
+    và nếu ai đó đổi phép hỏi thành `ma in duong_nghe` thì nút phát sẽ hiện với
+    `src=""` — một nút bấm được mà không kêu, đúng thứ tệ nhất.
+    """
+    co = {"Adam"}
+    monkeypatch.setattr(nghe_thu, "co_san",
+                        lambda k: any(("/" + t + "/") in k for t in co))
+    ra = nghe_thu.duong_cho_trang(duong_audio="/x/audio", owner_id="u1",
+                                  ma_mau=["Adam", "Minh Đức"])
+    assert set(ra) == {"Adam"}
+    assert ra["Adam"].startswith("/x/audio/voice/mau/")
+
+
+def test_duong_cho_trang_dung_khoa_rieng_cho_giong_nhan_ban(monkeypatch):
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    pid = "vc_" + "e" * 32
+    ra = nghe_thu.duong_cho_trang(duong_audio="/x/audio", owner_id="u9",
+                                  rieng=[pid])
+    assert ra[pid] == "/x/audio/" + nghe_thu.khoa_rieng("u9", pid)
+
+
+def test_man_giong_truyen_duong_nghe_xuong_khuon(khach, monkeypatch):
+    """Bánh cóc bắc cầu: route -> khuôn -> nút thật trong HTML.
+
+    ⛔ Ba tầng, và mỗi tầng đều đã từng hỏng riêng ở app này: route quên truyền
+       biến, khuôn quên đọc, khuôn quên nạp `voice.js`. Một phép kiểm chỉ nhìn
+       một tầng sẽ xanh trong khi trang chết.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice/giong")
+    assert r.status_code == 200
+    assert 'data-nghe="' in r.text, "khong co nut nghe thu nao trong HTML"
+    assert "voice/mau/" in r.text
+
+
+def test_khuon_co_nut_nghe_thi_PHAI_nap_voice_js():
+    """Cùng khuôn bánh cóc với nút chép (`test_364`).
+
+    Bản đầu của màn API quên `{% block scripts %}`: mọi phép kiểm HTTP xanh vì
+    HTML **đúng**, chỉ hành vi sai — nút hiện đầy đủ, bấm được, và không làm gì.
+    `data-nghe` mở đúng cái bẫy ấy lần thứ hai.
+    """
+    import pathlib
+    goc = pathlib.Path(__file__).resolve().parents[1] / "apps/ltt_voice/templates"
+    # Khuôn con không tự nạp script — tìm khuôn TRANG nào include chúng.
+    con = {p.name for p in goc.glob("_*.html")
+           if "data-nghe" in p.read_text(encoding="utf-8")}
+    for trang in goc.glob("ltt_voice_*.html"):
+        noi_dung = trang.read_text(encoding="utf-8")
+        can = ("data-nghe" in noi_dung
+               or any(c in noi_dung for c in con))
+        if can:
+            assert "voice.js" in noi_dung, (
+                f"{trang.name} co nut nghe thu (truc tiep hoac qua "
+                f"{sorted(con)}) nhung KHONG nap voice.js")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -289423,7 +289749,7 @@ $("mokhoa").onclick = (e) => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gui/ltt.css
-SHA256=81f4562b66d8b9b8a9704981c9a47f17e68df44cf2397983d475b7060cb5f025 BYTES=258272 LINES=2818
+SHA256=d4cf3b016f29cb90b56513525cff9906a5e39e24d96209587ef75b36b693e90b BYTES=260098 LINES=2852
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* ============================================================================
    ltt.css — hệ thiết kế dùng chung (Pha UX-1). Một nguồn token + component cho
@@ -291801,6 +292127,40 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-the-song{flex:0 0 auto;display:grid;place-items:center;width:44px;height:44px;
   border-radius:50%;background:var(--brand-soft);border:1px solid var(--brand-border)}
 .lv-the-song svg rect{fill:var(--brand-hover)}
+
+/* == O song thanh NUT NGHE THU ==============================================
+ *
+ * Cung mot o, hai vai tro. Giong co tep nghe thu thi o song la mot <button>;
+ * giong chua co van la <span> tro. Ca hai trong giong het nhau khi khong cham
+ * vao -- co y: luoi 20 o phai deu, khong duoc lo cho hai loai o.
+ *
+ * ⛔ Dau hieu bam duoc chi hien khi HOVER hoac FOCUS. Ve mot nut play thuong
+ *    truc tren ca hai muoi o la bien mot luoi giong thanh mot bang dieu khien
+ *    -- va o do khong bam duoc se trong nhu hong thay vi trong nhu tinh.
+ */
+button.lv-the-song{cursor:pointer;padding:0;position:relative;
+  transition:background .12s ease,border-color .12s ease}
+button.lv-the-song:hover,button.lv-the-song:focus-visible{
+  background:var(--brand-hover);border-color:var(--brand-hover)}
+button.lv-the-song:hover svg rect,button.lv-the-song:focus-visible svg rect{
+  fill:#fff}
+
+/* Tam giac play / hai vach pause, ve bang border thay vi mot tep icon:
+   khong them mot luot tai, va no doi mau theo `currentColor`. */
+.lv-nghe-dau{position:absolute;inset:0;display:none;place-items:center}
+button.lv-the-song:hover .lv-nghe-dau,
+button.lv-the-song:focus-visible .lv-nghe-dau,
+button.lv-the-song.dang-phat .lv-nghe-dau{display:grid}
+.lv-nghe-dau::before{content:"";width:0;height:0;margin-left:3px;
+  border-left:11px solid #fff;border-top:7px solid transparent;
+  border-bottom:7px solid transparent}
+/* Dang phat: o giu mau dam va doi sang hai vach dung. */
+button.lv-the-song.dang-phat{background:var(--brand-hover);
+  border-color:var(--brand-hover)}
+button.lv-the-song.dang-phat svg rect{fill:rgba(255,255,255,.35)}
+button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
+  margin-left:0;border:0;background:#fff;
+  box-shadow:7px 0 0 0 #fff;transform:translateX(-3px)}
 .lv-the-ten{min-width:0;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
 /* ⛔ KHONG `white-space:nowrap`. Ten giong that dai hon o the ("Tam Ly Hoc —
  * nam, thuyet minh"), nen cat mot dong bang dau ba cham lam mat phan PHAN LOAI

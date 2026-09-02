@@ -185,7 +185,7 @@ Không phải HARD BLOCKER: mâu thuẫn tự phân giải được bằng quy t
 | # | Chênh lệch | Mức |
 |---|---|---|
 | V1 | **Không nghe thử được giọng nào** — không route preview, không nút play. Đây là thiếu sót lớn nhất của trang | P0 |
-| V2 | Panel chi tiết bên phải là **khung rỗng** *"Chọn một giọng để xem chi tiết"* — không có gì làm nó đầy | P0 |
+| V2 | ~~Panel chi tiết là khung rỗng~~ → **SAI, đã sửa bên dưới** | ~~P0~~ → P1 |
 | V3 | Không có "Dùng trong Studio" / "Mở API" từ thẻ giọng | P1 |
 | V4 | Biểu mẫu tạo giọng là một khối dài ở **đáy trang**, không phải một luồng | P1 |
 | V5 | Không sắp xếp, không đổi lưới/danh sách, không phân trang | P2 |
@@ -220,20 +220,48 @@ Không phải HARD BLOCKER: mâu thuẫn tự phân giải được bằng quy t
 
 ---
 
+### 3.2b 🔴 SỬA MỘT KẾT LUẬN SAI CỦA CHÍNH BẢN RÀ SOÁT NÀY
+
+Mục `V2` ở trên viết panel chi tiết là *"khung rỗng, không có gì làm nó đầy"*,
+và xếp **P0**. **Sai.**
+
+Panel chạy đầy đủ. Bấm một thẻ giọng thì `voice.js::moChiTiet` điền tên · nhãn
+loại · ba tính chất · mã dùng khi gọi kèm nút chép · trạng thái · nút *"Dùng
+giọng này"*; với giọng nhân bản còn thêm số lượt, số phút, lần dùng cuối, danh
+sách clip gốc phát được, và biểu mẫu tắt giọng. `chi_tiet_cho_trang()` nạp sẵn
+toàn bộ số liệu ấy vào trang nên một cú bấm **không gọi mạng**.
+
+⛔ **Vì sao tôi kết luận sai, và đó mới là điều đáng ghi.** Tôi không bấm. Tôi
+đọc `document.body.innerText` rồi tìm chuỗi *"Chọn một giọng để xem chi tiết"*,
+thấy có, và kết luận panel rỗng. Phép đo ấy sai: chuỗi đó nằm trong một nút
+`[hidden]` vẫn còn trong DOM.
+
+⭐ Đúng cái lớp lỗi mà chính gói V4 dựng lên để bắt — *"Audit đọc mã trả lời được
+component nào dùng lại được; nó không trả lời được thứ này có thực sự làm điều
+nó trông như đang làm không"* (`VOICE_UI_EXECUTION_PLAN.md` §15). Tôi đã thay
+một trình duyệt bằng một phép tìm chuỗi, và nhận đúng thứ một phép tìm chuỗi
+cho: một câu trả lời tự tin về một thứ nó không đo.
+
+**Điều còn đúng sau khi bấm thật:** panel **mỏng** so với ảnh tham chiếu — thiếu
+trình nghe thử, thiếu bảng metadata, thiếu hàng thao tác (Mở API · Sửa · Lưu
+trữ), và với giọng mẫu thì chỉ có năm dòng. Đó là **P1 làm dày**, không phải P0
+dựng mới.
+
+---
+
 ## 4. P0 / P1 / P2 gom lại
 
 **P0 — chặn cổng phát hành**
 1. `V1` Voices không nghe thử được giọng → cần route preview + phát.
-2. `V2` Panel chi tiết giọng rỗng.
 
 **P1**
-3. `1.3` Chip "Engine sẵn sàng" nói dối — phải hỏi cổng thật.
-4. `S1` Bố cục Studio lãng phí bề ngang.
-5. `S2` Thiếu điều khiển ngôn ngữ đầu ra.
-6. `S3`/`S7` Nghe thử giọng trong Studio; nút Lưu vào dự án (backend đã có).
-7. `V3`/`V4` Dùng-trong-Studio, luồng tạo giọng.
-8. `H1`–`H4` Lọc, chi tiết, trình phát, dùng lại thiết lập ở History.
-9. `A1` Try API.
+2. `1.3` Chip "Engine sẵn sàng" nói dối — phải hỏi cổng thật.
+3. `S1` Bố cục Studio lãng phí bề ngang.
+4. `S2` Thiếu điều khiển ngôn ngữ đầu ra.
+5. `S3`/`S7` Nghe thử giọng trong Studio; nút Lưu vào dự án (backend đã có).
+6. `V3`/`V4` Dùng-trong-Studio, luồng tạo giọng.
+7. `H1`–`H4` Lọc, chi tiết, trình phát, dùng lại thiết lập ở History.
+8. `A1` Try API.
 
 **P2** — S4·S5·S6·S8 · V5·V6 · H5 · A4.
 

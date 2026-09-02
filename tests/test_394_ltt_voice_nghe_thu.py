@@ -348,3 +348,66 @@ def test_song_co_bo_nho_dem(monkeypatch):
     for _ in range(5):
         sidecar_client.song()
     assert dem["n"] == 1, f"hoi cong {dem['n']} lan cho 5 luot — mat bo nho dem"
+
+
+# ── 6. Đường nghe thử tới được khuôn mẫu ─────────────────────────────────────
+
+def test_duong_cho_trang_BO_QUA_giong_chua_co_tep(monkeypatch):
+    """⭐ Giọng chưa có tệp thì **vắng mặt khỏi dict**, không phải chuỗi rỗng.
+
+    Khuôn mẫu hỏi `duong_nghe.get(ma)`. Một chuỗi rỗng vẫn là một khoá có mặt,
+    và nếu ai đó đổi phép hỏi thành `ma in duong_nghe` thì nút phát sẽ hiện với
+    `src=""` — một nút bấm được mà không kêu, đúng thứ tệ nhất.
+    """
+    co = {"Adam"}
+    monkeypatch.setattr(nghe_thu, "co_san",
+                        lambda k: any(("/" + t + "/") in k for t in co))
+    ra = nghe_thu.duong_cho_trang(duong_audio="/x/audio", owner_id="u1",
+                                  ma_mau=["Adam", "Minh Đức"])
+    assert set(ra) == {"Adam"}
+    assert ra["Adam"].startswith("/x/audio/voice/mau/")
+
+
+def test_duong_cho_trang_dung_khoa_rieng_cho_giong_nhan_ban(monkeypatch):
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    pid = "vc_" + "e" * 32
+    ra = nghe_thu.duong_cho_trang(duong_audio="/x/audio", owner_id="u9",
+                                  rieng=[pid])
+    assert ra[pid] == "/x/audio/" + nghe_thu.khoa_rieng("u9", pid)
+
+
+def test_man_giong_truyen_duong_nghe_xuong_khuon(khach, monkeypatch):
+    """Bánh cóc bắc cầu: route -> khuôn -> nút thật trong HTML.
+
+    ⛔ Ba tầng, và mỗi tầng đều đã từng hỏng riêng ở app này: route quên truyền
+       biến, khuôn quên đọc, khuôn quên nạp `voice.js`. Một phép kiểm chỉ nhìn
+       một tầng sẽ xanh trong khi trang chết.
+    """
+    client, _uid = khach
+    monkeypatch.setattr(nghe_thu, "co_san", lambda k: True)
+    r = client.get("/ltt-voice/giong")
+    assert r.status_code == 200
+    assert 'data-nghe="' in r.text, "khong co nut nghe thu nao trong HTML"
+    assert "voice/mau/" in r.text
+
+
+def test_khuon_co_nut_nghe_thi_PHAI_nap_voice_js():
+    """Cùng khuôn bánh cóc với nút chép (`test_364`).
+
+    Bản đầu của màn API quên `{% block scripts %}`: mọi phép kiểm HTTP xanh vì
+    HTML **đúng**, chỉ hành vi sai — nút hiện đầy đủ, bấm được, và không làm gì.
+    `data-nghe` mở đúng cái bẫy ấy lần thứ hai.
+    """
+    import pathlib
+    goc = pathlib.Path(__file__).resolve().parents[1] / "apps/ltt_voice/templates"
+    # Khuôn con không tự nạp script — tìm khuôn TRANG nào include chúng.
+    con = {p.name for p in goc.glob("_*.html")
+           if "data-nghe" in p.read_text(encoding="utf-8")}
+    for trang in goc.glob("ltt_voice_*.html"):
+        noi_dung = trang.read_text(encoding="utf-8")
+        can = ("data-nghe" in noi_dung
+               or any(c in noi_dung for c in con))
+        if can:
+            assert "voice.js" in noi_dung, (
+                f"{trang.name} co nut nghe thu (truc tiep hoac qua "
+                f"{sorted(con)}) nhung KHONG nap voice.js")
