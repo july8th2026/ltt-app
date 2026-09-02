@@ -168,6 +168,21 @@ def _doi_chieu_ban_khai(goc: pathlib.Path) -> list:
     return findings
 
 
+#: Guard nao duoc coi la "route nay doi dang nhap".
+#:
+#: ⛔ KHONG phai mot danh sach mien tru. Moi ten o day phai THAT SU bao ham
+#:    dang nhap, va `test_308` DO dieu do chu khong tin loi: no doc than
+#:    `require_operator` va doi thay `require_login(request)` trong do.
+#:
+#: 🔴 Truoc 2026-09-02 cho nay khop dung mot chuoi `require_login`, nen no canh
+#:    bao `apps/qualitylab` — mot app `public=False`, `surface="admin"`, moi
+#:    route deu `Depends(require_operator)`, tuc duoc canh CHAT HON. Do la canh
+#:    bao DUY NHAT tren ca 15 app, va no la DUONG TINH GIA.
+#:
+#: ⭐ Cai gia khong phai mot dong thua: mot canh bao sai ton tai lau se day
+#:    nguoi ta bo qua chinh cong cu phat ra no.
+GUARD_DOI_DANG_NHAP = ("require_login", "require_operator")
+
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
 
@@ -300,8 +315,31 @@ def lint() -> list:
         if route_files:
             # Kiem an toan la thuoc tinh cua CA app -> doc gop.
             rtext = "\n".join(_read(f) for f in route_files)
-            if "require_login" not in rtext:
-                findings.append(Finding(app, "WARN", "routes.py khong thay require_login"))
+            # 🔴 `require_login` KHONG phai cach duy nhat de doi dang nhap.
+            #
+            #    `server/deps.py:99` `require_operator` **goi chinh
+            #    `require_login`** (dong 103) roi them mot chot nua: khong phai
+            #    quan tri vien thi 403. Tuc no MANH HON, khong phai yeu hon.
+            #
+            # ⛔ Truoc 2026-09-02 chot nay khop chuoi `require_login` va bao
+            #    WARN cho `apps/qualitylab` — mot app `public=False`,
+            #    `surface="admin"`, moi route deu `Depends(require_operator)`.
+            #    Do la canh bao DUY NHAT ma linter phat ra tren ca 15 app, va
+            #    no la DUONG TINH GIA.
+            #
+            # ⭐ Cai gia khong phai mot dong thua. Mot canh bao sai ton tai lau
+            #    se day nguoi ta bo qua chinh cong cu phat ra no — roi toi luc
+            #    no dung thi khong ai con nhin.
+            #
+            # ⚠️ Sua bang cach day chot BIET them mot guard, KHONG bang cach
+            #    them ngoai le cho `qualitylab`. Mot ngoai le se song lau hon
+            #    hoan canh sinh ra no; mot mo hinh dung thi khong can ngoai le.
+            #    (`OPERATING_CONTRACT` §8: dung them luat de chua luat.)
+            if not any(g in rtext for g in GUARD_DOI_DANG_NHAP):
+                findings.append(Finding(
+                    app, "WARN",
+                    "routes.py khong thay guard doi dang nhap "
+                    f"({'/'.join(GUARD_DOI_DANG_NHAP)})"))
             if "@router.post" in rtext and "verify_csrf_token" not in rtext:
                 findings.append(Finding(app, "WARN",
                                         "co @router.post nhung khong thay verify_csrf_token (CSRF?)"))

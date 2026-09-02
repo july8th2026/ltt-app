@@ -26,20 +26,57 @@ sys.path.insert(0, str(GOC / "tools"))
 import cay_rieng  # noqa: E402
 
 
-def _cay_lien_ket() -> list[Path]:
-    """Các worktree liên kết đang có thật trên máy."""
+def _moi_cay() -> list[Path]:
+    """Mọi worktree đang có thật. Mục ĐẦU TIÊN luôn là cây chính (git bảo đảm)."""
     ra = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=str(GOC),
                         capture_output=True, text=True, encoding="utf-8")
     duong = [Path(d[9:]) for d in ra.stdout.splitlines() if d.startswith("worktree ")]
-    return [p for p in duong if p.resolve() != GOC.resolve() and p.exists()]
+    return [p for p in duong if p.exists()]
+
+
+def _cay_chinh() -> Path:
+    """Cây chính THẬT, dù bộ test đang chạy ở cây nào.
+
+    🔴 Bản trước lấy `GOC` (suy từ `__file__`) làm cây chính. Điều đó đúng **chỉ
+       khi** pytest được chạy từ cây chính — nên cả hai chốt bên dưới ĐỎ khi bộ
+       test chạy trong một worktree.
+
+    ⛔ Và đó là một mâu thuẫn nằm ngay trong kho: `tools/cay_rieng.py` khuyên
+       mỗi phiên một cây riêng, còn bộ test thì không chạy xanh được ở đó. Đo
+       2026-09-02: lượt gate đầy đủ đầu tiên chạy trong worktree đỏ đúng hai
+       chốt này, và chúng chẳng nói gì về `setup/2-cai-dat.ps1` cả.
+
+    ⭐ Không `skip` khi thiếu `git`. Bản nháp đầu của bản vá này bỏ qua chốt nếu
+       không gọi được git — và `check_bo_qua.py` bắt đúng chỗ đó: **một test bị
+       bỏ qua là một test không canh gì cả**, còn tiền đề này thì đọc được mà
+       không cần git. `.git` của cây liên kết là một TỆP chứa `gitdir: <đường>`,
+       và đường ấy dẫn thẳng về cây chính.
+    """
+    ca = _moi_cay()
+    if ca:
+        return ca[0]
+    dot = GOC / ".git"
+    if dot.is_file():
+        # `gitdir: <main>/.git/worktrees/<ten>` -> lùi ba cấp là `<main>`
+        noi_dung = dot.read_text(encoding="utf-8", errors="replace").strip()
+        duong = Path(noi_dung.split("gitdir:", 1)[-1].strip())
+        return duong.parent.parent.parent
+    return GOC
+
+
+def _cay_lien_ket() -> list[Path]:
+    """Các worktree liên kết (bỏ cây chính), lấy theo git chứ không theo `GOC`."""
+    ca = _moi_cay()
+    return ca[1:]
 
 
 # ── 1. Tiền đề mà chốt chặn dựa vào ────────────────────────────────────────
 
 def test_cay_chinh_co_dot_git_la_THU_MUC():
-    assert (GOC / ".git").is_dir(), (
+    chinh = _cay_chinh()
+    assert (chinh / ".git").is_dir(), (
         "chot chan phan biet cay chinh/cay lien ket bang chinh dieu nay")
-    assert cay_rieng.la_cay_chinh() is True
+    assert cay_rieng.la_cay_chinh(chinh) is True
 
 
 @pytest.mark.parametrize("lien_ket", _cay_lien_ket() or [None])
@@ -133,9 +170,34 @@ def test_chi_luot_DAY_DU_xep_hang():
 
     Cả hai chế độ ấy đã TỰ KHAI rằng chúng không phải bằng chứng, nên nhiễu
     trên phép đo của chúng ít quan trọng hơn hẳn.
+
+    ⭐ SỬA 2026-09-02: chốt này trước đó so **một chuỗi mã nguồn** —
+       `"bat=not (args.quick or args.vong_lap or args.khong_khoa)"`. Khi cửa sổ
+       yên đổi từ một khoá đơn sang khoá theo TÊN TÀI NGUYÊN, chuỗi ấy không
+       còn, và chốt đỏ **dù hành vi không đổi một chút nào**.
+
+       Đó đúng là `IMPLEMENTATION_LOCK`: nó khoá cách làm chứ không khoá điều
+       cần bảo vệ. Nay nó tính **đúng phép tính mà `main()` tính** — và như thế
+       chặt hơn bản cũ, vì bản cũ sẽ xanh với bất kỳ tệp nào chứa chuỗi đó, kể
+       cả khi nó nằm trong một chú thích đã chết.
     """
-    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
-    assert "bat=not (args.quick or args.vong_lap or args.khong_khoa)" in ma
+    import gate
+
+    def xep_hang(ho_so: str) -> bool:
+        steps = gate._steps(ho_so in ("nhanh", "vong-lap"))
+        if ho_so == "vong-lap":
+            steps = gate._rut_gon_vong_lap(steps)
+        can = {t for s in steps for t in s.tai_nguyen}
+        return gate.HO_SO[ho_so]["xep_hang"] and bool(can)
+
+    assert xep_hang("day-du") is True, "lượt đầy đủ PHẢI xếp hàng"
+    assert xep_hang("vong-lap") is False, "`--vong-lap` không được đợi"
+    assert xep_hang("nhanh") is False, "`--quick` không được đợi"
+
+    # ⛔ MỌI chế độ phải có một mục trong `HO_SO` — một bảng duy nhất, không
+    #    hai nơi định nghĩa cùng một thứ. Trước 02/09 `--quick` nằm ngoài bảng,
+    #    nên câu "nó chứng minh gì" nằm rải trong chú thích thay vì tra cứu được.
+    assert {"nhanh", "vong-lap", "day-du"} <= set(gate.HO_SO)
 
 
 def test_gate_van_CHAY_khi_cho_qua_han():

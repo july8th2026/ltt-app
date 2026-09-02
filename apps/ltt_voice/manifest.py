@@ -148,6 +148,9 @@ MANIFEST = AppManifest(
     cho_tai_nguyen_s={"ltt_voice.synthesize": 3, "ltt_voice.enroll": 3},
 
     credit_cost=_gia,
+    #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
+    #: import app nay theo ten. Xem `AppManifest.bang_gia`.
+    bang_gia=gia.bang_gia,
 
     enabled=True,
     public=True,

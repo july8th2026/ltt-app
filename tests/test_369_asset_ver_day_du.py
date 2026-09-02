@@ -98,3 +98,48 @@ def test_ham_tinh_khong_bao_gio_nem_ra_ngoai():
     khuc = khuc[:khuc.index("\nASSET_VER")]
     assert "except" in khuc and 'return "0"' in khuc, (
         "mat duong lui: mot tai san thieu se lam sap MOI trang")
+
+
+def test_khi_MAT_duong_lui_thi_phai_KEU(caplog):
+    """⛔ Docstring của chốt ngay trên đã hứa *"nhưng phải nói ra"* — và cho tới
+    2026-09-02 nó **không hề kiểm điều đó**. Nó chỉ đòi có `except` và `"0"`.
+
+    🔴 Vì sao lời hứa ấy đáng được cưỡng chế. Mười ba khối `except` khác trong
+       `templating.py` đều suy giảm về phía **an toàn**: `_is_admin` → `False`,
+       `_da_dang_nhap` → `False`, sidebar → `[]`. Hỏng thì khách thấy **ít hơn**.
+
+       Khối này ngược lại. Thiếu một tệp ⇒ hash thành hằng số `"0"` ⇒ **mọi
+       khách nhận bản tài sản CŨ** từ Cloudflare cho tới khi hết TTL. Trang vẫn
+       render đẹp, không lỗi nào ở đâu cả.
+
+       Và đó đúng là sự cố `CLAUDE.md` quy tắc 6 ghi lại: sau khi sửa `ltt.css`,
+       CF phục vụ bản cũ 4 tiếng. Cơ chế sinh ra để chặn sự cố đó lại có một
+       đường hỏng lặng lẽ dẫn thẳng về chính sự cố đó.
+
+    ⚠️ Đo **hành vi**, không đo chuỗi mã nguồn: gọi thật hàm ấy với một tài sản
+       thiếu, rồi đòi thấy tiếng kêu.
+    """
+    import logging
+
+    from server import templating as T
+
+    that = T._STATIC_DIR
+    thieu = T.TAI_SAN_CO_VERSION[0]
+
+    class _ThieuMotTep:
+        def __truediv__(self, ten):
+            return that / ("KHONG_TON_TAI_.js" if ten == thieu else ten)
+
+    try:
+        T._STATIC_DIR = _ThieuMotTep()
+        with caplog.at_level(logging.WARNING, logger=T.log.name):
+            v = T._tinh_asset_ver()
+    finally:
+        T._STATIC_DIR = that
+
+    assert v == "0", "duong lui da doi — cap nhat ca hai chot"
+    assert caplog.records, (
+        "mat tai san ma KHONG keu mot tieng nao: cache-bust ngung hoat dong "
+        "trong im lang, va do dung la su co quy tac 6 mo ta")
+    noi_dung = " ".join(r.getMessage() for r in caplog.records)
+    assert "asset_ver" in noi_dung, "canh bao khong noi ro thu gi hong"

@@ -1,0 +1,420 @@
+"""thanh_phan.py — duong dan doi -> THANH PHAN -> test can chay.
+
+    python tools/thanh_phan.py                      # liet ke moi thanh phan
+    python tools/thanh_phan.py --doi                # thanh phan bi anh huong boi cay hien tai
+    python tools/thanh_phan.py --pham-vi core:tien  # phan do + lien quan
+    python tools/thanh_phan.py --test core:tien     # test can chay
+    python tools/thanh_phan.py --do-thi core:tien   # phu thuoc + nguoi tieu thu
+
+## Vi sao no ton tai
+
+`gate.py` hien chay 26 buoc cho MOI thay doi. Sua mot dong CSS trong mot app
+van keo ca bo test 4 phut. Voi mot phien thi do la phien toai; voi ba phien
+cung mot may thi do la ba luot 4 phut tranh nhau 20 loi.
+
+Nhung "chay it di" chi an toan khi biet CHINH XAC thay doi nay cham toi dau.
+Do la viec cua tep nay.
+
+## 🔴 Anh xa test PHAI suy tu IMPORT, khong duoc suy tu TEN TEP
+
+Do 2026-09-02 tren kho nay:
+
+    app            khop TEN TEP    thuc su IMPORT
+    thumbnail            2              20
+    upscalevideo         1              11
+    taoanh               2               8
+    agent               21               4   <- ten khop nham
+
+`thumbnail` co **20** tep test cham toi no, chi 2 tep mang chu "thumbnail".
+Chon ten tep se bo qua 18 phep kiem — im lang, va dung o cho nguy hiem nhat:
+mot phep loc **thieu** trong y het mot phep loc **dung**.
+
+Chieu nguoc lai cung sai: "agent" khop 21 ten tep (`agent_image`, `user_agent`,
+...) nhung chi 4 tep that su import `apps.agent`.
+
+⇒ Khong khai tay danh sach test, va khong doan tu ten. Doc `import`.
+
+## ⛔ Gioi han da biet, noi thang ra thay vi de nguoi dung tu phat hien
+
+1. **Import dong khong nhin thay duoc.** `importlib.import_module(f"apps.{x}")`
+   la vo hinh voi AST. Nhung canh do duoc KHAI trong `thanh_phan.toml` muc
+   `[[canh_dong]]` — do la ly do muc ay ton tai.
+
+2. **Fixture va conftest keo theo ca cum.** `tests/conftest.py` cham gan nhu
+   moi thu, nen no thuoc **moi** thanh phan. Coi no la "dung chung": doi
+   `conftest.py` thi chay TAT CA.
+
+3. **`None` la fail-open.** Khong doc duoc git, khong parse duoc mot tep, hay
+   gap thu chua tung thay ⇒ tra ve "khong biet" va nguoi goi phai chay tat ca.
+   Mot danh sach rong vi doc hong trong y het mot danh sach rong vi khong doi
+   gi — va mot trong hai nghia do dan toi bo qua nham. Cung bay ma
+   `gate._da_doi_so_voi_HEAD` da ghi.
+"""
+from __future__ import annotations
+
+import argparse
+import ast
+import subprocess
+import sys
+import tomllib
+import warnings
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+TEP_KHAI = Path(__file__).resolve().parent / "thanh_phan.toml"
+
+#: Tep cham moi thu. Doi chung => chay tat ca, khong co ngoai le.
+#:
+#: ⚠️ Day KHONG phai mot danh sach "cho chac". Moi muc phai co ly do dung mot
+#:    dong; muc nao khong giai thich duoc thi bo ra, vi moi muc o day lam phep
+#:    loc yeu di dung mot chut.
+DUNG_CHUNG = (
+    "tests/conftest.py",         # fixture goc cua ca bo test
+    "tools/gate.py",             # chinh cong chat luong
+    "tools/test_nhanh.py",       # bo chay test
+    "tools/thanh_phan.py",       # tep nay
+    "tools/thanh_phan.toml",     # so dang ky
+    "requirements.txt",
+    "requirements-server.txt",
+)
+
+
+class KhongBiet(Exception):
+    """Khong du bang chung de thu hep. Nguoi goi phai chay tat ca."""
+
+
+# ---------------------------------------------------------------------------
+# Doc ban khai
+# ---------------------------------------------------------------------------
+
+def nap_khai(tep: Path = TEP_KHAI) -> dict:
+    with tep.open("rb") as f:
+        return tomllib.load(f)
+
+
+def _cac_app(root: Path) -> dict[str, dict]:
+    """App suy tu thu muc, KHONG tu ban khai.
+
+    `apps/<slug>/manifest.py` da la SSOT — chinh `platform_core/registry.py`
+    nap app bang cach quet thu muc nay. Khai lai o `thanh_phan.toml` la tao chu
+    so huu thu hai cho cung mot su that.
+    """
+    ra: dict[str, dict] = {}
+    thu_muc = root / "apps"
+    if not thu_muc.is_dir():
+        return ra
+    for muc in sorted(thu_muc.iterdir()):
+        if not muc.is_dir() or muc.name.startswith(("_", ".")):
+            continue
+        if not (muc / "manifest.py").is_file():
+            continue
+        ra[f"app:{muc.name}"] = {
+            "mo_ta": f"App {muc.name} (suy tu apps/{muc.name}/manifest.py)",
+            "duong": [f"apps/{muc.name}/"],
+            "he_trong": "app",
+            "tai_nguyen": [],
+        }
+    return ra
+
+
+def cac_thanh_phan(root: Path = ROOT) -> dict[str, dict]:
+    """Moi thanh phan: khai tay (khong-phai-app) + suy ra (app)."""
+    khai = nap_khai()
+    ra = dict(khai.get("thanh_phan", {}))
+    for k, v in ra.items():
+        v.setdefault("tai_nguyen", [])
+        v.setdefault("he_trong", "khac")
+    ra.update(_cac_app(root))
+    return ra
+
+
+# ---------------------------------------------------------------------------
+# duong dan -> thanh phan
+# ---------------------------------------------------------------------------
+
+def _chuan(duong: str) -> str:
+    return duong.replace("\\", "/").strip().strip('"')
+
+
+def thanh_phan_cua(duong: str, tp: dict[str, dict] | None = None) -> str | None:
+    """Thanh phan so huu mot duong dan. Khop TIEN TO DAI NHAT.
+
+    Dai nhat chu khong phai dau tien: `platform_core/credit.py` phai ve
+    `core:tien` chu khong ve `core:nen`, du ca hai deu khai duong duoi
+    `platform_core/`.
+    """
+    tp = tp if tp is not None else cac_thanh_phan()
+    d = _chuan(duong)
+    tot_nhat: tuple[int, str] | None = None
+    for ten, v in tp.items():
+        for tien_to in v.get("duong", []):
+            t = _chuan(tien_to)
+            if d == t or d.startswith(t):
+                if tot_nhat is None or len(t) > tot_nhat[0]:
+                    tot_nhat = (len(t), ten)
+    return tot_nhat[1] if tot_nhat else None
+
+
+# ---------------------------------------------------------------------------
+# Do thi import (AST)
+# ---------------------------------------------------------------------------
+
+def _module_duoc_import(tep: Path) -> set[str]:
+    """Moi module duoc import trong mot tep. Doc AST, KHONG import tep.
+
+    ⚠️ Doc AST chu khong `import` — mot cong cu trong `tools/` khi bi import se
+       chay ma o cap module cua no. Kho nay da tra gia mot lan cho dieu do
+       (`cong-cu-tools-doi-stdout-vo-pytest`).
+    """
+    try:
+        # ⚠️ `ast.parse` phat SyntaxWarning cho `"\d"` trong chuoi thuong. Kho
+        #    nay co nhieu chu thich tieng Viet kem duong dan Windows nen dinh
+        #    kha nhieu. Chung khong lien quan gi toi viec dang lam, va de chung
+        #    in ra thi dau ra cua cong cu nay thanh khong doc duoc.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cay = ast.parse(tep.read_text(encoding="utf-8", errors="replace"),
+                            filename=str(tep))
+    except (SyntaxError, ValueError, OSError):
+        return set()
+    ra: set[str] = set()
+    for nut in ast.walk(cay):
+        if isinstance(nut, ast.Import):
+            for a in nut.names:
+                ra.add(a.name)
+        elif isinstance(nut, ast.ImportFrom):
+            if nut.level:          # import tuong doi: trong cung goi, bo qua
+                continue
+            if nut.module:
+                ra.add(nut.module)
+    return ra
+
+
+def _module_sang_duong(mod: str, root: Path) -> str | None:
+    """`apps.taoanh.features` -> `apps/taoanh/features.py` (hoac thu muc goi)."""
+    phan = mod.split(".")
+    for n in range(len(phan), 0, -1):
+        goc = "/".join(phan[:n])
+        if (root / f"{goc}.py").is_file():
+            return f"{goc}.py"
+        if (root / goc / "__init__.py").is_file():
+            return f"{goc}/"
+        if (root / goc).is_dir():
+            return f"{goc}/"
+    return None
+
+
+def test_cua_thanh_phan(root: Path = ROOT,
+                        tp: dict[str, dict] | None = None) -> dict[str, set[str]]:
+    """`thanh_phan -> {tep test}`, suy tu import that trong `tests/`.
+
+    Xem docstring dau tep ve vi sao khong dung ten tep.
+    """
+    tp = tp if tp is not None else cac_thanh_phan(root)
+    ra: dict[str, set[str]] = {ten: set() for ten in tp}
+    thu_muc = root / "tests"
+    if not thu_muc.is_dir():
+        return ra
+    for tep in sorted(thu_muc.rglob("*.py")):
+        # ⛔ CHI module test THAT. `tests/` con chua `__init__.py`, `conftest.py`,
+        #    `pg_scratch.py`, `run_tests.py` va sau tep `tests/fixtures/*.py` —
+        #    chung la ma HO TRO, khong phai module test.
+        #
+        #    Do 2026-09-02: dua ca `tests/__init__.py` cho pytest lam ca luot
+        #    chet bang `INTERNALERROR` trong `import_path`. Va INTERNALERROR
+        #    khong phai mot test do — no la ca bo test **khong chay**, trong khi
+        #    dong ket qua van la mot con so that bai binh thuong. Tuc mot phep
+        #    loc sai o day co the bien "khong chay gi" thanh "chay va do".
+        if not tep.name.startswith("test_"):
+            continue
+        ten_tuong_doi = tep.relative_to(root).as_posix()
+        if ten_tuong_doi in DUNG_CHUNG:
+            continue
+        for mod in _module_duoc_import(tep):
+            duong = _module_sang_duong(mod, root)
+            if duong is None:
+                continue
+            chu = thanh_phan_cua(duong, tp)
+            if chu:
+                ra[chu].add(ten_tuong_doi)
+    return ra
+
+
+def do_thi_phu_thuoc(root: Path = ROOT,
+                     tp: dict[str, dict] | None = None
+                     ) -> tuple[dict[str, set[str]], dict[str, set[str]]]:
+    """(phu_thuoc, nguoi_tieu_thu) giua cac thanh phan.
+
+    Gom ca canh TINH (doc AST) va canh DONG (khai trong `thanh_phan.toml`).
+    Canh dong khong the suy ra duoc — do la ca ly do chung phai duoc khai.
+    """
+    tp = tp if tp is not None else cac_thanh_phan(root)
+    phu_thuoc: dict[str, set[str]] = {ten: set() for ten in tp}
+
+    for ten, v in tp.items():
+        for tien_to in v.get("duong", []):
+            goc = root / _chuan(tien_to)
+            tep_list = ([goc] if goc.is_file() else
+                        sorted(goc.rglob("*.py")) if goc.is_dir() else [])
+            for tep in tep_list:
+                if tep.suffix != ".py":
+                    continue
+                for mod in _module_duoc_import(tep):
+                    duong = _module_sang_duong(mod, root)
+                    if duong is None:
+                        continue
+                    dich = thanh_phan_cua(duong, tp)
+                    if dich and dich != ten:
+                        phu_thuoc[ten].add(dich)
+
+    for canh in nap_khai().get("canh_dong", []):
+        nguon = thanh_phan_cua(canh["tu"], tp)
+        if nguon is None:
+            continue
+        for t in canh.get("toi", []):
+            dich = thanh_phan_cua(t, tp)
+            if dich and dich != nguon:
+                phu_thuoc[nguon].add(dich)
+
+    nguoi_tieu_thu: dict[str, set[str]] = {ten: set() for ten in tp}
+    for ten, ds in phu_thuoc.items():
+        for d in ds:
+            nguoi_tieu_thu[d].add(ten)
+    return phu_thuoc, nguoi_tieu_thu
+
+
+# ---------------------------------------------------------------------------
+# Cay hien tai -> thanh phan bi anh huong
+# ---------------------------------------------------------------------------
+
+def duong_da_doi(root: Path = ROOT, goc_so: str = "") -> set[str]:
+    """Duong dan da doi. Nem `KhongBiet` khi khong chac — KHONG tra rong.
+
+    `goc_so` rong = so voi HEAD va ca phan chua commit.
+    """
+    lenh = [["git", "status", "--porcelain", "-uall"]]
+    lenh.append(["git", "diff", "--name-only", goc_so or "HEAD"])
+    ra: set[str] = set()
+    for lc in lenh:
+        try:
+            kq = subprocess.run(lc, cwd=root, capture_output=True, text=True,
+                                timeout=30, encoding="utf-8", errors="replace")
+        except (OSError, subprocess.SubprocessError) as e:
+            raise KhongBiet(f"git that bai: {e}") from e
+        if kq.returncode != 0:
+            raise KhongBiet(f"git tra {kq.returncode}: {' '.join(lc)}")
+        for dong in kq.stdout.splitlines():
+            d = dong[3:] if lc[1] == "status" else dong
+            d = _chuan(d)
+            if d:
+                ra.add(d)
+    return ra
+
+
+def bi_anh_huong(duong: set[str], root: Path = ROOT, *,
+                 mo_rong_tieu_thu: bool = True) -> set[str] | None:
+    """Thanh phan can kiem cho tap duong dan nay. `None` = phai chay TAT CA.
+
+    ⛔ Tra `None` khi gap mot duong dan **khong thanh phan nao so huu**. Do la
+       fail-open co chu y: mot tep khong ai nhan la mot tep khong ai do duoc
+       anh huong, va doan bua o do la cach bo qua nham.
+    """
+    tp = cac_thanh_phan(root)
+    if any(_chuan(d) in DUNG_CHUNG for d in duong):
+        return None
+    ra: set[str] = set()
+    for d in duong:
+        chu = thanh_phan_cua(d, tp)
+        if chu is None:
+            return None
+        ra.add(chu)
+    if mo_rong_tieu_thu:
+        _, tieu_thu = do_thi_phu_thuoc(root, tp)
+        them: set[str] = set()
+        for t in ra:
+            them |= tieu_thu.get(t, set())
+        ra |= them
+    return ra
+
+
+def test_can_chay(phan: set[str], root: Path = ROOT) -> set[str]:
+    bang = test_cua_thanh_phan(root)
+    ra: set[str] = set()
+    for t in phan:
+        ra |= bang.get(t, set())
+    return ra
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="Do thi thanh phan cua kho.")
+    p.add_argument("--doi", action="store_true", help="thanh phan bi cay hien tai anh huong")
+    p.add_argument("--pham-vi", default="", help="mot thanh phan + nguoi tieu thu")
+    p.add_argument("--test", default="", help="test can chay cho mot thanh phan")
+    p.add_argument("--do-thi", default="", help="phu thuoc va nguoi tieu thu")
+    p.add_argument("--goc-so", default="", help="so voi commit nay thay vi HEAD")
+    a = p.parse_args()
+    tp = cac_thanh_phan()
+
+    if a.do_thi:
+        pt, tt = do_thi_phu_thuoc()
+        if a.do_thi not in tp:
+            print(f"Khong co thanh phan {a.do_thi!r}"); return 2
+        print(f"{a.do_thi}")
+        print(f"  phu thuoc vao : {', '.join(sorted(pt[a.do_thi])) or '(khong)'}")
+        print(f"  duoc dung boi : {', '.join(sorted(tt[a.do_thi])) or '(khong)'}")
+        return 0
+
+    if a.test:
+        if a.test not in tp:
+            print(f"Khong co thanh phan {a.test!r}"); return 2
+        ds = sorted(test_cua_thanh_phan()[a.test])
+        print(f"{a.test}: {len(ds)} tep test")
+        for t in ds:
+            print(f"  {t}")
+        return 0
+
+    if a.pham_vi:
+        if a.pham_vi not in tp:
+            print(f"Khong co thanh phan {a.pham_vi!r}"); return 2
+        _, tt = do_thi_phu_thuoc()
+        ca = {a.pham_vi} | tt[a.pham_vi]
+        print(f"Pham vi {a.pham_vi}: {len(ca)} thanh phan")
+        for t in sorted(ca):
+            print(f"  {t}")
+        print(f"=> {len(test_can_chay(ca))} tep test")
+        return 0
+
+    if a.doi:
+        try:
+            duong = duong_da_doi(goc_so=a.goc_so)
+        except KhongBiet as e:
+            print(f"KHONG BIET ({e}) -> phai chay TAT CA"); return 1
+        if not duong:
+            print("Cay khong doi gi."); return 0
+        phan = bi_anh_huong(duong)
+        print(f"{len(duong)} duong dan doi")
+        if phan is None:
+            print("=> cham tep DUNG CHUNG hoac duong khong ai so huu"
+                  " -> phai chay TAT CA")
+            return 1
+        for t in sorted(phan):
+            print(f"  {t}")
+        print(f"=> {len(test_can_chay(phan))} tep test")
+        return 0
+
+    pt, tt = do_thi_phu_thuoc()
+    bang = test_cua_thanh_phan()
+    print(f"{len(tp)} thanh phan\n")
+    print(f"  {'THANH PHAN':<26} {'HE TRONG':<12} {'TEST':>5}  PHU THUOC")
+    for ten in sorted(tp):
+        print(f"  {ten:<26} {tp[ten].get('he_trong',''):<12} "
+              f"{len(bang[ten]):>5}  {len(pt[ten])}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

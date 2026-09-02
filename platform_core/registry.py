@@ -36,12 +36,15 @@ app THẬT nhỏ gọn thì đọc `apps/anhnoibo/` (chỉ job, không route) ho
 from __future__ import annotations
 
 import importlib
+import logging
 import pathlib
 import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from platform_core.i18n import _ as _t
+
+log = logging.getLogger(__name__)
 
 APPS_DIR = pathlib.Path(__file__).resolve().parent.parent / "apps"
 
@@ -286,6 +289,30 @@ class AppManifest:
     #: Giãn cách giữa hai lượt `bao_tri`. Mặc định một giờ — đủ dày cho chu kỳ
     #: tính bằng ngày, đủ thưa để không thành tải nền.
     bao_tri_moi_giay: int = 3600
+
+    #: Bảng giá CÔNG BỐ của app, cho trang giá công khai `/gia-api`.
+    #:
+    #: 🔴 VÌ SAO Ở ĐÂY chứ không để trang giá tự `import apps.<tên>`.
+    #:
+    #:    Trước 2026-09-02 `server/routes/dashboard.py` import thẳng
+    #:    `apps.anhnoibo.gia` và `apps.ltt_voice.gia`. Hợp đồng app khai chiều
+    #:    `app → server` (`SERVER_APP_CO_THE_DUNG`) và cả chiều `app → app`
+    #:    (`APP_DUOC_DUNG_APP`), nhưng **không khai chiều `server → app`** —
+    #:    nên nền tảng biết tên hai app cụ thể mà không hợp đồng nào nói tới.
+    #:
+    #: ⭐ Và việc import ấy KHÔNG phải cẩu thả: nó là lựa chọn có cân nhắc, để
+    #:    tránh gõ lại số vào template — chính hai `bang_gia()` kia đã cảnh báo
+    #:    rằng gõ lại là tạo "bảng giá thứ hai", và hai bảng lệch nhau thì bảng
+    #:    nào cũng không đáng tin.
+    #:
+    #: ⇒ Nên cách sửa không phải bỏ lời gọi, mà là **bổ sung vào hợp đồng** thứ
+    #:   nó đang thiếu (`CLAUDE.md`: *"buộc phải sửa nền tảng… là dấu hiệu hợp
+    #:   đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không đi vòng"*).
+    #:   App vẫn sở hữu giá của mình; nền tảng chỉ còn **thu thập**.
+    #:
+    #: ⚠️ Hàm này KHÔNG được ném — cùng luật với `bao_tri`. Một app hỏng bảng
+    #:    giá không được làm sập trang giá của mọi app khác.
+    bang_gia: Optional[Callable[[], dict]] = None
 
     # Ghi chú nội bộ, hiện trên trang chủ cho admin.
     notes: str = ""
@@ -1018,6 +1045,35 @@ def viec_bao_tri(apps: Optional[list] = None) -> list[tuple[str, Callable, int]]
         m = item.manifest
         if m.bao_tri is not None and m.enabled:
             ra.append((m.slug, m.bao_tri, max(60, int(m.bao_tri_moi_giay or 0))))
+    return ra
+
+
+def bang_gia_cong_khai(apps: Optional[list] = None) -> dict[str, dict]:
+    """`{slug: bảng_giá}` của các app **đang bật** có khai `bang_gia`.
+
+    Để trang `/gia-api` dựng bảng giá mà **không phải biết tên app nào cả**.
+    Trước 2026-09-02 nó `import apps.anhnoibo.gia` và `apps.ltt_voice.gia` —
+    hai cạnh `server → app` mà không hợp đồng nào khai.
+
+    ⛔ Một app hỏng bảng giá KHÔNG được làm sập trang giá của mọi app khác. Bắt
+       và bỏ qua app đó, **có ghi log**, đúng luật của `bao_tri`.
+
+    ⚠️ Chỉ lấy app đang bật: công bố giá của một app đã tắt là mời khách mua
+       một thứ không bán.
+    """
+    apps = discover() if apps is None else apps
+    ra: dict[str, dict] = {}
+    for item in apps:
+        m = item.manifest
+        if m.bang_gia is None or not m.enabled:
+            continue
+        try:
+            gia = m.bang_gia()
+        except Exception:                      # noqa: BLE001 — xem docstring
+            log.exception("[%s] bang_gia() nem loi — bo qua app nay", m.slug)
+            continue
+        if isinstance(gia, dict) and gia:
+            ra[m.slug] = gia
     return ra
 
 

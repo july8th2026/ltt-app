@@ -1,10 +1,6 @@
 {
   "server/admin.py": {
-    "dong": 1388,
-    "handler": 0
-  },
-  "server/admin_api.py": {
-    "dong": 1897,
+    "dong": 1622,
     "handler": 0
   }
 }

@@ -258,6 +258,105 @@ def cleanup(args) -> int:
         _dong(gen)
 
 
+#: Duong CONG KHAI dung de tra loi "hien gio cai gi dang song".
+#:
+#: ⚠️ Chi duong khach AN DANH goi duoc. Muc dich cua `trang-thai` la mot phien
+#:    bat ky tra loi duoc cau hoi do **ma khong can khoa production** — neu no
+#:    doi khoa thi nguoi ta se quay ve doc tai lieu, va tai lieu thi troi.
+DUONG_CONG_KHAI = (
+    ("/health/ready", "dich vu"),
+    ("/", "trang chu"),
+    ("/vps", "khu VPS (ban may chu ao)"),
+    ("/gia-api", "bang gia API"),
+    ("/developers", "khu lap trinh vien"),
+)
+
+
+def trang_thai(args) -> int:
+    """In MOT man hinh: hien gio cai gi dang song. Hoi thang may chu.
+
+    ## Vi sao lenh nay ton tai
+
+    `CLAUDE.md` co mot bang 280 dong ke he con nao dang o dau. Bang do da noi
+    sai **nam lan da biet**, va **ca nam deu ve phia nguy hiem** — bao mot thu
+    la TAT trong khi no dang BAT va dang thu tien that. Bon lan duoc "sua" bang
+    cach viet lai bang; lan thu nam van xay ra.
+
+    ⭐ Cai sai khong nam o nguoi viet cau chu. No nam o **kien truc**: mot bang
+       chep tay khong co cach nao tu biet no da cu. Nen thu phai doi khong phai
+       cau chu, ma la **noi cau tra loi den tu**.
+
+    ⛔ Va lenh nay chi dung neu no giu ky luat da tra gia mot lan trong chinh
+       tep nay: **hinh dang la thi NOI RA**. Ban cu cua `probe` doc `data`/`tools`
+       trong khi khu API tra `items`, roi in *"rong — dung y muon"*: mot cau tra
+       loi SAI mac mot loi giai thich nghe rat hop ly. Do la kieu hong te nhat
+       cho mot cong cu ma cong dung duy nhat la noi su that.
+    """
+    import httpx
+
+    goc = args.base_url.rstrip("/")
+    print(f"TRANG THAI THAT - hoi {goc} luc "
+          f"{time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+    print("BE MAT CONG KHAI (khach an danh)")
+    with httpx.Client(timeout=25.0, follow_redirects=False,
+                      headers={"User-Agent": "ltt-trang-thai/1.0"}) as c:
+        for duong, ten in DUONG_CONG_KHAI:
+            try:
+                ma = c.get(f"{goc}{duong}").status_code
+            except httpx.HTTPError as e:
+                print(f"  {duong:<16} {ten:<28} LOI MANG: {type(e).__name__}")
+                continue
+            y = ("MO cho khach an danh" if ma == 200 else
+                 "doi dang nhap" if ma in (302, 303, 307) else
+                 "khong co" if ma == 404 else "?")
+            print(f"  {duong:<16} {ten:<28} {ma}  {y}")
+
+    print("\nKHU API `/api/v1` - tool nao DANG MO")
+    khoa = ""
+    if args.token_file:
+        try:
+            khoa = Path(args.token_file).read_text(encoding="utf-8").strip()
+        except OSError as e:
+            print(f"  khong doc duoc token-file: {e}")
+    if not khoa:
+        print("  (bo qua - khong co --token-file. Khu API doi khoa, va do la")
+        print("   FAIL-CLOSED dung y muon, khong phai mot loi.)")
+        return 0
+
+    with httpx.Client(timeout=25.0,
+                      headers={"Authorization": f"Bearer {khoa}",
+                               "User-Agent": "ltt-trang-thai/1.0"}) as c:
+        try:
+            r = c.get(f"{goc}/api/v1/tools")
+        except httpx.HTTPError as e:
+            print(f"  LOI MANG: {type(e).__name__}")
+            return 1
+        if r.status_code != 200:
+            print(f"  HTTP {r.status_code} - khong doc duoc danh sach tool")
+            if r.status_code == 403:
+                print("  [!] 403 co the la CLOUDFLARE chu khong phai khu API: luat")
+                print("     chan tien to `Python-urllib/` PHAN BIET HOA-THUONG.")
+            return 1
+        goi = r.json()
+        # [!!] Hinh dang la thi NOI RA, khong lang le thanh rong. Xem docstring.
+        muc = None
+        for ten_khoa in ("items", "data", "tools"):
+            if isinstance(goi, dict) and ten_khoa in goi:
+                muc = goi[ten_khoa]
+                break
+        if muc is None:
+            print(f"  [!!] HINH DANG LA - khoa cap cao: {sorted(goi)[:8]}")
+            print("     KHONG ket luan 'rong'. Sua cong cu nay truoc.")
+            return 1
+        print(f"  {len(muc)} tool dang mo:")
+        for m in muc:
+            print(f"    {m.get('name', '?'):<18} {m.get('execution_mode', '?')}")
+
+    print("\n[*] So o day den tu may chu, khong tu tai lieu. Neu mot tep .md noi")
+    print("   khac, tep do SAI - dung sua may chu cho khop tai lieu.")
+    return 0
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--env", default=r"C:\LTTPlatform\secrets\app.env")
@@ -278,8 +377,19 @@ def main(argv=None) -> int:
     p = sub.add_parser("cleanup", help="thu hoi khoa + vo hieu tai khoan canary")
     p.set_defaults(func=cleanup)
 
+    p = sub.add_parser("trang-thai",
+                       help="hien gio cai gi dang song (KHONG can khoa)")
+    p.add_argument("--base-url", default=BASE_URL)
+    p.add_argument("--token-file", default="",
+                   help="co thi liet ca tool dang mo o /api/v1")
+    p.set_defaults(func=trang_thai)
+
     args = parser.parse_args(argv)
-    if args.lenh != "probe":
+    # ⚠️ `trang-thai` KHONG nap `app.env`. No phai chay duoc tu mot cay rieng
+    #    hay mot may khac, boi mot phien khong co quyen doc `secrets/`. Doi bi
+    #    mat de tra loi "cai gi dang song" la lam cho cau tra loi do kho lay —
+    #    va mot cau tra loi kho lay thi nguoi ta se doan thay vi hoi.
+    if args.lenh not in ("probe", "trang-thai"):
         nap_env(Path(args.env))
     return args.func(args)
 
