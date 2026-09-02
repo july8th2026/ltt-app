@@ -53,6 +53,55 @@ def test_platform_core_never_imports_apps():
     assert offenders == {}, f"platform_core biết tới apps: {offenders}"
 
 
+#: `server` được phép biết tên app nào — và câu trả lời gần như là KHÔNG.
+#:
+#: 🔴 Hợp đồng app khai chiều `app → server` (`SERVER_APP_CO_THE_DUNG`) và cả
+#:    chiều `app → app` (`APP_DUOC_DUNG_APP`), nhưng trước 2026-09-02 **bỏ
+#:    trống chiều `server → app`**. Đo được năm cạnh, và không cạnh nào vi phạm
+#:    một luật — vì chưa có luật nào.
+#:
+#: ⭐ Hai cạnh của trang giá đã gỡ bằng cách **bổ sung hợp đồng**, không phải
+#:    bằng cách bỏ lời gọi: `AppManifest.bang_gia` + `registry.bang_gia_cong_khai()`.
+#:    App vẫn sở hữu giá của mình; `server` chỉ còn thu thập.
+#:
+#: ⚠️ Ba cạnh còn lại (`server/api/streaming.py` → `apps.ltt_llm`) là NGÂN SÁCH
+#:    TOKEN và ánh xạ tên model — một mối quan tâm khác, chưa có hình dạng hợp
+#:    đồng rõ. Ghi thành nợ CÓ TÊN ở đây thay vì để nó vô hình.
+SERVER_BIET_APP_DUOC_PHEP = {
+    ("server/api/streaming.py", "ltt_llm"),
+}
+
+
+def test_server_khong_biet_ten_app_ngoai_danh_sach_da_khai():
+    """⛔ `registry.py` mở đầu bằng: *"Nền tảng KHÔNG được biết tên app nào tồn tại."*
+
+    Chốt này làm câu đó thành thứ đo được. Mỗi cạnh mới phải được KHAI ở trên —
+    và khai một cạnh là một quyết định kiến trúc, không phải một dòng cho tiện.
+    """
+    import re
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    mau = re.compile(r"(?:from|import)\s+apps\.([a-z_][a-z0-9_]*)")
+    thay = set()
+    for tep in sorted((goc / "server").rglob("*.py")):
+        txt = tep.read_text(encoding="utf-8", errors="replace")
+        for dong in txt.splitlines():
+            d = dong.strip()
+            if d.startswith("#") or d.startswith("*"):
+                continue          # chú thích kể lại chuyện cũ thì không tính
+            for m in mau.finditer(d):
+                thay.add((tep.relative_to(goc).as_posix(), m.group(1)))
+    la = thay - SERVER_BIET_APP_DUOC_PHEP
+    assert not la, (
+        f"server biet ten app ma khong khai: {sorted(la)}. "
+        "Dua thu app cung cap vao `AppManifest` roi doc qua registry — "
+        "hoac khai canh nay vao `SERVER_BIET_APP_DUOC_PHEP` kem ly do.")
+    # Chiều ngược: khai một cạnh rồi gỡ mà quên xoá khai thì danh sách thành
+    # một lời nói dối về hiện trạng.
+    thua = SERVER_BIET_APP_DUOC_PHEP - thay
+    assert not thua, f"khai thua trong SERVER_BIET_APP_DUOC_PHEP: {sorted(thua)}"
+
+
 #: Ngoại lệ ĐƯỢC GHI RÕ, không phải chỗ im lặng cho qua.
 #:
 #: `taovideo` gọi `upscalevideo.service.submit_upscale_job` cho nút "Nâng cấp

@@ -12,6 +12,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
+from platform_core import registry
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.session import current_identity_optional
@@ -131,28 +132,33 @@ def gia_api(request: Request):
                       "dong": cp.tong_credit_lam_tron_len * 100})
     # Ảnh model nhà (H37/L4). Trang này trước chỉ nói LLM, nên khách không có
     # cách nào biết giá ảnh trước khi đăng ký — cùng thứ tự ngược đã nói ở trên.
-    from apps.anhnoibo import gia as gia_anh
+    # ⭐ ĐỌC QUA REGISTRY, không import app theo tên (2026-09-02).
+    #
+    #    Trước đây chỗ này `import apps.anhnoibo.gia` và `apps.ltt_voice.gia` —
+    #    hai cạnh `server → app` mà **không hợp đồng nào khai**: hợp đồng app
+    #    khai chiều `app → server` (`SERVER_APP_CO_THE_DUNG`) và cả chiều
+    #    `app → app` (`APP_DUOC_DUNG_APP`), nhưng bỏ trống chiều này. Nền tảng
+    #    biết tên hai app cụ thể — đúng thứ `registry.py` mở đầu bằng câu cấm:
+    #    *"Nền tảng KHÔNG được biết tên app nào tồn tại."*
+    #
+    # ⛔ Nhưng đừng đọc lời gọi cũ thành cẩu thả: nó CỐ Ý gọi `bang_gia()` để
+    #    tránh gõ lại số vào template. Nên cách sửa không phải bỏ lời gọi, mà là
+    #    bổ sung vào hợp đồng thứ nó đang thiếu (`AppManifest.bang_gia`). App
+    #    vẫn sở hữu giá của mình; nền tảng chỉ còn **thu thập**.
+    #
+    # ⚠️ Đo được cái giá của cạnh cũ: một thay đổi trong `apps/anhnoibo` (3 tệp
+    #    test của riêng nó) kéo theo 134 tệp test, chỉ vì dòng `import` ở đây.
+    bang_gia_app = registry.bang_gia_cong_khai()
+    bang_anh = bang_gia_app.get("anhnoibo") or {}
+    vi_du_anh = [dict(v, dong=int(v.get("credit", 0)) * 100)
+                 for v in bang_anh.get("vi_du", [])]
 
-    bang_anh = gia_anh.bang_gia()
-    vi_du_anh = [
-        {"ten": _t("Một ảnh từ mô tả"), "so": 1, "che_do": "t2i"},
-        {"ten": _t("Bốn ảnh từ mô tả"), "so": 4, "che_do": "t2i"},
-        {"ten": _t("Một ảnh có ảnh tham chiếu"), "so": 1, "che_do": "edit"},
-    ]
-    for v in vi_du_anh:
-        v["credit"] = gia_anh.tinh(so_anh=v["so"], che_do=v["che_do"])
-        v["dong"] = v["credit"] * 100
-
-    # Giọng nói model nhà (V7). `gia.bang_gia()` đã tự viết trong docstring rằng
-    # trang này phải đọc nó — chỉ là chưa ai nối dây, nên khách vẫn không có
-    # cách nào biết giá tiếng nói trước khi đăng ký. Đúng thứ tự ngược đã nói ở
-    # đầu hàm, lặp lại lần thứ ba với một đơn vị đo thứ ba.
-    from apps.ltt_voice import gia as gia_tieng
-
+    # Giọng nói model nhà (V7).
+    #
     # ⛔ KHÔNG dựng thêm một danh sách ví dụ ở đây. `bang_gia()` đã tính sẵn ví
     #    dụ bằng chính `tinh()`, và thêm một danh sách thứ hai ở tầng route là
     #    tạo đúng cái "bảng giá thứ hai" mà cả hàm ấy lẫn đầu hàm này cảnh báo.
-    bang_tieng = gia_tieng.bang_gia()
+    bang_tieng = bang_gia_app.get("ltt_voice") or {}
 
     return templates.TemplateResponse(request, "gia_api.html", {
         "bang": bang, "vi_du": vi_du,

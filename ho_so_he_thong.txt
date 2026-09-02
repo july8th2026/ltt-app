@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:d010d8fcfea1e0bf34145f1e1cb5d5402e39928a196d35ded8fb8e7fe164efcc
+Fingerprint   : sha256:b9f2479a1fea02dfe7a084aa06567c83851d150254b286ebe488c0e57f00a05d
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -644,9 +644,9 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [nexus] POST   /nexus/phien/{session_id}/ket-thuc → ket_thuc_phien | auth~login | apps/nexus/routes.py:408
 - [nexus] GET    /nexus/tai → tai | auth~login | apps/nexus/routes.py:270
 - [nexus] POST   /nexus/thu-hoi/{device_id} → thu_hoi | auth~login | apps/nexus/routes.py:214
-- [platform] GET    / → home | auth~optional | server/routes/dashboard.py:202
+- [platform] GET    / → home | auth~optional | server/routes/dashboard.py:208
 - [platform] GET    / → developer_overview | auth~unspecified | server/routes/developer/trang.py:32
-- [platform] GET    /api-dieu-khoan → api_dieu_khoan | auth~unspecified | server/routes/dashboard.py:166
+- [platform] GET    /api-dieu-khoan → api_dieu_khoan | auth~unspecified | server/routes/dashboard.py:172
 - [platform] GET    /api/jobs → jobs_api | auth~login | server/routes/jobs.py:216
 - [platform] GET    /api/jobs/{job_id} → job_api | auth~login | server/routes/jobs.py:241
 - [platform] POST   /budgets → developer_create_budget | auth~unspecified | server/routes/developer/su_dung.py:112
@@ -657,7 +657,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [platform] GET    /favicon.ico → favicon | auth~unspecified | server/app.py:339
 - [platform] GET    /forgot-password → forgot_form | auth~unspecified | server/routes/register.py:172
 - [platform] POST   /forgot-password → forgot_submit | auth~optional | server/routes/register.py:180
-- [platform] GET    /gia-api → gia_api | auth~unspecified | server/routes/dashboard.py:100
+- [platform] GET    /gia-api → gia_api | auth~unspecified | server/routes/dashboard.py:101
 - [platform] GET    /health/live → live | auth~unspecified | server/routes/health.py:18
 - [platform] GET    /health/ready → ready | auth~unspecified | server/routes/health.py:26
 - [platform] GET    /health/version → version | auth~unspecified | server/routes/health.py:108
@@ -3090,7 +3090,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14638507 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14650916 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -10440,7 +10440,7 @@ class KetQua:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/anhnoibo/gia.py
-SHA256=680f4c160e0ddb0a3365c4b4d89387c04461dc4656d530b09a1c95319a83ca53 BYTES=6544 LINES=124
+SHA256=7121c51b19d30096980b725088556a70dbfc76287404b65ddbc47abbd906103a BYTES=7733 LINES=145
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gia.py — giá một lượt tạo ảnh bằng model nhà. (H37, chuẩn hoá theo `docs/KHUON_BAN_MODEL_NHA.md`)
@@ -10469,6 +10469,8 @@ gia.py — giá một lượt tạo ảnh bằng model nhà. (H37, chuẩn hoá 
    con số thật cần số liệu dùng thật — xem `docs/ANH_NOI_BO/`.
 """
 from __future__ import annotations
+
+from platform_core.i18n import _ as _t
 
 #: Đổi con số nào bên dưới thì **phải** đổi chuỗi này. Không có phiên bản thì
 #: không đối soát được một hoá đơn cũ với bảng giá nào đã sinh ra nó.
@@ -10552,10 +10554,29 @@ def bang_gia() -> dict:
 
     Gõ lại vào template là tạo ra một bảng giá thứ hai, và ngày hai bảng lệch
     nhau thì bảng nào cũng không đáng tin.
+
+    ⭐ `vi_du` NẰM Ở ĐÂY từ 2026-09-02, và đó là chỗ đúng của nó.
+
+       Trước đó `server/routes/dashboard.py` tự dựng ba ví dụ rồi gọi
+       `gia.tinh()` cho từng cái — tức tầng route giữ **danh sách ví dụ** còn
+       app giữ **phép tính**. Chính chú thích ngay cạnh nó (phần giọng nói) đã
+       gọi việc ấy là *"tạo đúng cái bảng giá thứ hai"* mà hàm này cảnh báo, và
+       `apps/ltt_voice/gia.py` thì đã làm đúng từ đầu.
+
+       Đưa về đây thì trang giá chỉ còn **đọc**, không còn **tính** — và nền
+       tảng thôi phải biết `anhnoibo` có những chế độ nào.
     """
     return {
         "don_vi": "credit / anh",
         "phien_ban_gia": PHIEN_BAN_GIA,
+        "vi_du": [
+            {"ten": _t("Một ảnh từ mô tả"), "so": 1, "che_do": "t2i",
+             "credit": tinh(so_anh=1, che_do="t2i")},
+            {"ten": _t("Bốn ảnh từ mô tả"), "so": 4, "che_do": "t2i",
+             "credit": tinh(so_anh=4, che_do="t2i")},
+            {"ten": _t("Một ảnh có ảnh tham chiếu"), "so": 1, "che_do": "edit",
+             "credit": tinh(so_anh=1, che_do="edit")},
+        ],
         "anh_thuong": CREDIT_MOI_ANH,
         "anh_tham_chieu": CREDIT_MOI_ANH * HE_SO_THAM_CHIEU,
         "he_so_tham_chieu": HE_SO_THAM_CHIEU,
@@ -10814,7 +10835,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/anhnoibo/manifest.py
-SHA256=8a6574447d6e4334c783b2a745c323823b27147e9ffdac4d3999fc215e44b34b BYTES=9988 LINES=180
+SHA256=78f3f47136b0c540457c8e7e8b438d8050834c2c832dbdae8bfdece04a5c153c BYTES=10145 LINES=183
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `anhnoibo` — bán model tạo ảnh **nội bộ** (H37, Q102).
@@ -10902,6 +10923,9 @@ MANIFEST = AppManifest(
     # Worker chỉ gọi HTTP sang máy B — không cần GPU trên máy chạy worker.
     requires=("api",),
     credit_cost=_gia,
+    #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
+    #: import app nay theo ten. Xem `AppManifest.bang_gia`.
+    bang_gia=gia.bang_gia,
 
     tools=(ToolSpec(
         name="image.ltt",
@@ -20575,7 +20599,7 @@ def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
-SHA256=3a36df9c42080149071594a2356517a7519c6cd9f94ad90f05230450ea836988 BYTES=12965 LINES=234
+SHA256=9ddc6ff28fc0ecb7372694593d1c41e7e7c9d571704512a9dc3ebd72f8ebb1cd BYTES=13125 LINES=237
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `ltt_voice` — giọng nói tiếng Việt nhân bản, model chạy trên **máy A** (Q117).
@@ -20727,6 +20751,9 @@ MANIFEST = AppManifest(
     cho_tai_nguyen_s={"ltt_voice.synthesize": 3, "ltt_voice.enroll": 3},
 
     credit_cost=_gia,
+    #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
+    #: import app nay theo ten. Xem `AppManifest.bang_gia`.
+    bang_gia=gia.bang_gia,
 
     enabled=True,
     public=True,
@@ -133145,7 +133172,7 @@ def new_event_id() -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/registry.py
-SHA256=33c7698b56d2c68162ff07d7840c82b4540e531f2cb908a92b4100523b2aa3be BYTES=54503 LINES=1039
+SHA256=b953d9b6dd467b59fa4f76d18eacd540db5f3646f93373053f572b3e55a6d0e5 BYTES=57387 LINES=1095
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 registry.py — hợp đồng giữa nền tảng và từng app. Đây là file quan trọng nhất.
@@ -133185,12 +133212,15 @@ app THẬT nhỏ gọn thì đọc `apps/anhnoibo/` (chỉ job, không route) ho
 from __future__ import annotations
 
 import importlib
+import logging
 import pathlib
 import re
 from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from platform_core.i18n import _ as _t
+
+log = logging.getLogger(__name__)
 
 APPS_DIR = pathlib.Path(__file__).resolve().parent.parent / "apps"
 
@@ -133435,6 +133465,30 @@ class AppManifest:
     #: Giãn cách giữa hai lượt `bao_tri`. Mặc định một giờ — đủ dày cho chu kỳ
     #: tính bằng ngày, đủ thưa để không thành tải nền.
     bao_tri_moi_giay: int = 3600
+
+    #: Bảng giá CÔNG BỐ của app, cho trang giá công khai `/gia-api`.
+    #:
+    #: 🔴 VÌ SAO Ở ĐÂY chứ không để trang giá tự `import apps.<tên>`.
+    #:
+    #:    Trước 2026-09-02 `server/routes/dashboard.py` import thẳng
+    #:    `apps.anhnoibo.gia` và `apps.ltt_voice.gia`. Hợp đồng app khai chiều
+    #:    `app → server` (`SERVER_APP_CO_THE_DUNG`) và cả chiều `app → app`
+    #:    (`APP_DUOC_DUNG_APP`), nhưng **không khai chiều `server → app`** —
+    #:    nên nền tảng biết tên hai app cụ thể mà không hợp đồng nào nói tới.
+    #:
+    #: ⭐ Và việc import ấy KHÔNG phải cẩu thả: nó là lựa chọn có cân nhắc, để
+    #:    tránh gõ lại số vào template — chính hai `bang_gia()` kia đã cảnh báo
+    #:    rằng gõ lại là tạo "bảng giá thứ hai", và hai bảng lệch nhau thì bảng
+    #:    nào cũng không đáng tin.
+    #:
+    #: ⇒ Nên cách sửa không phải bỏ lời gọi, mà là **bổ sung vào hợp đồng** thứ
+    #:   nó đang thiếu (`CLAUDE.md`: *"buộc phải sửa nền tảng… là dấu hiệu hợp
+    #:   đồng app còn thiếu, phải bổ sung vào hợp đồng chứ không đi vòng"*).
+    #:   App vẫn sở hữu giá của mình; nền tảng chỉ còn **thu thập**.
+    #:
+    #: ⚠️ Hàm này KHÔNG được ném — cùng luật với `bao_tri`. Một app hỏng bảng
+    #:    giá không được làm sập trang giá của mọi app khác.
+    bang_gia: Optional[Callable[[], dict]] = None
 
     # Ghi chú nội bộ, hiện trên trang chủ cho admin.
     notes: str = ""
@@ -134167,6 +134221,35 @@ def viec_bao_tri(apps: Optional[list] = None) -> list[tuple[str, Callable, int]]
         m = item.manifest
         if m.bao_tri is not None and m.enabled:
             ra.append((m.slug, m.bao_tri, max(60, int(m.bao_tri_moi_giay or 0))))
+    return ra
+
+
+def bang_gia_cong_khai(apps: Optional[list] = None) -> dict[str, dict]:
+    """`{slug: bảng_giá}` của các app **đang bật** có khai `bang_gia`.
+
+    Để trang `/gia-api` dựng bảng giá mà **không phải biết tên app nào cả**.
+    Trước 2026-09-02 nó `import apps.anhnoibo.gia` và `apps.ltt_voice.gia` —
+    hai cạnh `server → app` mà không hợp đồng nào khai.
+
+    ⛔ Một app hỏng bảng giá KHÔNG được làm sập trang giá của mọi app khác. Bắt
+       và bỏ qua app đó, **có ghi log**, đúng luật của `bao_tri`.
+
+    ⚠️ Chỉ lấy app đang bật: công bố giá của một app đã tắt là mời khách mua
+       một thứ không bán.
+    """
+    apps = discover() if apps is None else apps
+    ra: dict[str, dict] = {}
+    for item in apps:
+        m = item.manifest
+        if m.bang_gia is None or not m.enabled:
+            continue
+        try:
+            gia = m.bang_gia()
+        except Exception:                      # noqa: BLE001 — xem docstring
+            log.exception("[%s] bang_gia() nem loi — bo qua app nay", m.slug)
+            continue
+        if isinstance(gia, dict) and gia:
+            ra[m.slug] = gia
     return ra
 
 
@@ -147783,7 +147866,7 @@ def trang_thai_don(request: Request, order_id: str, user: str = Depends(require_
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/routes/dashboard.py
-SHA256=13115a57cea2fdb6893fcbdd2c18b1bc96ee8d11b425b1c2b6df904094ad97e9 BYTES=15060 LINES=314
+SHA256=1286c4dbeab3ec2d034ea6ca602ca968453d019af6b318f1cb45943016b1c3ea BYTES=15670 LINES=320
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Trang chủ — danh sách app, sinh từ apps/*/manifest.py.
 
@@ -147799,6 +147882,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse
 
+from platform_core import registry
 from platform_core.i18n import N_
 from platform_core.i18n import _ as _t
 from server.auth.session import current_identity_optional
@@ -147918,28 +148002,33 @@ def gia_api(request: Request):
                       "dong": cp.tong_credit_lam_tron_len * 100})
     # Ảnh model nhà (H37/L4). Trang này trước chỉ nói LLM, nên khách không có
     # cách nào biết giá ảnh trước khi đăng ký — cùng thứ tự ngược đã nói ở trên.
-    from apps.anhnoibo import gia as gia_anh
+    # ⭐ ĐỌC QUA REGISTRY, không import app theo tên (2026-09-02).
+    #
+    #    Trước đây chỗ này `import apps.anhnoibo.gia` và `apps.ltt_voice.gia` —
+    #    hai cạnh `server → app` mà **không hợp đồng nào khai**: hợp đồng app
+    #    khai chiều `app → server` (`SERVER_APP_CO_THE_DUNG`) và cả chiều
+    #    `app → app` (`APP_DUOC_DUNG_APP`), nhưng bỏ trống chiều này. Nền tảng
+    #    biết tên hai app cụ thể — đúng thứ `registry.py` mở đầu bằng câu cấm:
+    #    *"Nền tảng KHÔNG được biết tên app nào tồn tại."*
+    #
+    # ⛔ Nhưng đừng đọc lời gọi cũ thành cẩu thả: nó CỐ Ý gọi `bang_gia()` để
+    #    tránh gõ lại số vào template. Nên cách sửa không phải bỏ lời gọi, mà là
+    #    bổ sung vào hợp đồng thứ nó đang thiếu (`AppManifest.bang_gia`). App
+    #    vẫn sở hữu giá của mình; nền tảng chỉ còn **thu thập**.
+    #
+    # ⚠️ Đo được cái giá của cạnh cũ: một thay đổi trong `apps/anhnoibo` (3 tệp
+    #    test của riêng nó) kéo theo 134 tệp test, chỉ vì dòng `import` ở đây.
+    bang_gia_app = registry.bang_gia_cong_khai()
+    bang_anh = bang_gia_app.get("anhnoibo") or {}
+    vi_du_anh = [dict(v, dong=int(v.get("credit", 0)) * 100)
+                 for v in bang_anh.get("vi_du", [])]
 
-    bang_anh = gia_anh.bang_gia()
-    vi_du_anh = [
-        {"ten": _t("Một ảnh từ mô tả"), "so": 1, "che_do": "t2i"},
-        {"ten": _t("Bốn ảnh từ mô tả"), "so": 4, "che_do": "t2i"},
-        {"ten": _t("Một ảnh có ảnh tham chiếu"), "so": 1, "che_do": "edit"},
-    ]
-    for v in vi_du_anh:
-        v["credit"] = gia_anh.tinh(so_anh=v["so"], che_do=v["che_do"])
-        v["dong"] = v["credit"] * 100
-
-    # Giọng nói model nhà (V7). `gia.bang_gia()` đã tự viết trong docstring rằng
-    # trang này phải đọc nó — chỉ là chưa ai nối dây, nên khách vẫn không có
-    # cách nào biết giá tiếng nói trước khi đăng ký. Đúng thứ tự ngược đã nói ở
-    # đầu hàm, lặp lại lần thứ ba với một đơn vị đo thứ ba.
-    from apps.ltt_voice import gia as gia_tieng
-
+    # Giọng nói model nhà (V7).
+    #
     # ⛔ KHÔNG dựng thêm một danh sách ví dụ ở đây. `bang_gia()` đã tính sẵn ví
     #    dụ bằng chính `tinh()`, và thêm một danh sách thứ hai ở tầng route là
     #    tạo đúng cái "bảng giá thứ hai" mà cả hàm ấy lẫn đầu hàm này cảnh báo.
-    bang_tieng = gia_tieng.bang_gia()
+    bang_tieng = bang_gia_app.get("ltt_voice") or {}
 
     return templates.TemplateResponse(request, "gia_api.html", {
         "bang": bang, "vi_du": vi_du,
@@ -181245,7 +181334,7 @@ def test_the_market_search_input_fills_its_box():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_147_layering.py
-SHA256=de186a238eba276b50a4acb47f6ecdfc05b394f936e8fe1d007cd5f024b584c5 BYTES=8283 LINES=167
+SHA256=5ebeb5607955771553b39913e318a0669c1a617f20ff564f1f52f0a835154d9c BYTES=10887 LINES=216
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phân tầng: `platform_core` không được phụ thuộc vào `server`.
 
@@ -181300,6 +181389,55 @@ def test_platform_core_never_imports_apps():
         if "apps" in mods
     }
     assert offenders == {}, f"platform_core biết tới apps: {offenders}"
+
+
+#: `server` được phép biết tên app nào — và câu trả lời gần như là KHÔNG.
+#:
+#: 🔴 Hợp đồng app khai chiều `app → server` (`SERVER_APP_CO_THE_DUNG`) và cả
+#:    chiều `app → app` (`APP_DUOC_DUNG_APP`), nhưng trước 2026-09-02 **bỏ
+#:    trống chiều `server → app`**. Đo được năm cạnh, và không cạnh nào vi phạm
+#:    một luật — vì chưa có luật nào.
+#:
+#: ⭐ Hai cạnh của trang giá đã gỡ bằng cách **bổ sung hợp đồng**, không phải
+#:    bằng cách bỏ lời gọi: `AppManifest.bang_gia` + `registry.bang_gia_cong_khai()`.
+#:    App vẫn sở hữu giá của mình; `server` chỉ còn thu thập.
+#:
+#: ⚠️ Ba cạnh còn lại (`server/api/streaming.py` → `apps.ltt_llm`) là NGÂN SÁCH
+#:    TOKEN và ánh xạ tên model — một mối quan tâm khác, chưa có hình dạng hợp
+#:    đồng rõ. Ghi thành nợ CÓ TÊN ở đây thay vì để nó vô hình.
+SERVER_BIET_APP_DUOC_PHEP = {
+    ("server/api/streaming.py", "ltt_llm"),
+}
+
+
+def test_server_khong_biet_ten_app_ngoai_danh_sach_da_khai():
+    """⛔ `registry.py` mở đầu bằng: *"Nền tảng KHÔNG được biết tên app nào tồn tại."*
+
+    Chốt này làm câu đó thành thứ đo được. Mỗi cạnh mới phải được KHAI ở trên —
+    và khai một cạnh là một quyết định kiến trúc, không phải một dòng cho tiện.
+    """
+    import re
+
+    goc = pathlib.Path(__file__).resolve().parent.parent
+    mau = re.compile(r"(?:from|import)\s+apps\.([a-z_][a-z0-9_]*)")
+    thay = set()
+    for tep in sorted((goc / "server").rglob("*.py")):
+        txt = tep.read_text(encoding="utf-8", errors="replace")
+        for dong in txt.splitlines():
+            d = dong.strip()
+            if d.startswith("#") or d.startswith("*"):
+                continue          # chú thích kể lại chuyện cũ thì không tính
+            for m in mau.finditer(d):
+                thay.add((tep.relative_to(goc).as_posix(), m.group(1)))
+    la = thay - SERVER_BIET_APP_DUOC_PHEP
+    assert not la, (
+        f"server biet ten app ma khong khai: {sorted(la)}. "
+        "Dua thu app cung cap vao `AppManifest` roi doc qua registry — "
+        "hoac khai canh nay vao `SERVER_BIET_APP_DUOC_PHEP` kem ly do.")
+    # Chiều ngược: khai một cạnh rồi gỡ mà quên xoá khai thì danh sách thành
+    # một lời nói dối về hiện trạng.
+    thua = SERVER_BIET_APP_DUOC_PHEP - thay
+    assert not thua, f"khai thua trong SERVER_BIET_APP_DUOC_PHEP: {sorted(thua)}"
 
 
 #: Ngoại lệ ĐƯỢC GHI RÕ, không phải chỗ im lặng cho qua.
@@ -237704,7 +237842,7 @@ def test_viec_bao_tri_cua_app_chay_duoi_lease_nen_khong_tru_tien_N_lan():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_308_banh_coc_moi.py
-SHA256=250127d4e744be46ce2e73258514f73bf4bd78af30f9a5b8c1a19fc5da31ee51 BYTES=9308 LINES=206
+SHA256=f948453e6292fcaa03276a2f334c8d0cbf8395c4aee8a005c7ed4fe29699dd33 BYTES=12552 LINES=273
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_308 — hai bánh cóc mới của audit 2026-08-26, và bằng chứng chúng KÊU.
 
@@ -237805,6 +237943,73 @@ def test_hai_noi_thi_hanh_dung_MOT_con_so():
 
     assert check_server_routes.MAX_DONG == lint_app_contract.MAX_ROUTES_LINES
     assert check_server_routes.MAX_HANDLER == lint_app_contract.MAX_ROUTES_HANDLERS
+
+
+def test_banh_coc_route_server_CUONG_CHE_con_so_chu_khong_chi_ghi_ra(tmp_path):
+    """⛔ Một chốt ghi lại thứ nó không cưỡng chế là một chốt nói dối về phạm vi.
+
+    Trước 2026-09-02 chốt này chỉ so **tập hợp** tệp. `dong`/`handler` được ghi
+    vào mốc và được IN RA mỗi lần chạy — nhưng không bao giờ được so. Một tệp đã
+    nằm trong mốc có thể phình vô hạn mà dòng RESULT vẫn là PASS.
+
+    Và nó đã xảy ra: `server/admin.py` đi từ **1.388 → 1.622** dòng (+234) trong
+    khi chốt báo PASS suốt đoạn đường đó.
+
+    ⚠️ Đây không phải luật mới: luật cũ vẫn là "nợ chỉ được giảm". Phần còn
+       thiếu là một nửa phép so.
+
+    ⛔ CHỐT NÀY KHÔNG ĐƯỢC GHI VÀO CÂY, và bản đầu của nó đã phạm đúng điều đó.
+
+       Bản đầu sửa tạm `tools/server_routes_baseline.json` rồi khôi phục. Hai
+       hậu quả, cả hai đều đã xảy ra thật:
+
+         · `gate._anh_chup_cay()` quét `tools/` để phát hiện cây đổi giữa chừng
+           ⇒ mỗi lượt chạy làm gate in "CÂY ĐÃ ĐỔI TRONG LÚC CHẠY", tức chốt
+           **tự phá lượt đo chứa nó**;
+         · bước tĩnh `kich thuoc route server` chạy **song song** với bộ test và
+           đọc đúng tệp ấy ⇒ nó đọc trúng bản đã bị sửa và ĐỎ.
+
+       Điều thứ hai chính là `gate.TEP_KHONG_DUOC_DOC_SONG_SONG` — danh sách đã
+       tồn tại vì ba tệp khác từng gây `OSError [Errno 22]` và làm hai phiên mất
+       gần trọn một ngày. Thêm tệp thứ tư vào danh sách ấy là cách sai: cách
+       đúng là **đừng ghi vào cây**.
+
+    ⭐ Nên chốt này vá `MOC` sang `tmp_path` và gọi thẳng `main()`. Không tiến
+       trình con, không chạm cây, không đua với ai.
+    """
+    import io
+    import json
+    import sys
+    from contextlib import redirect_stdout
+    from unittest.mock import patch
+
+    from tools import check_server_routes as csr
+
+    that = json.loads(csr.MOC.read_text(encoding="utf-8"))
+    assert that, "moc rong — khong kiem duoc gi"
+    ten = sorted(that)[0]
+    that[ten]["dong"] = int(that[ten]["dong"]) - 10     # giả vờ tệp vừa phình
+
+    gia = tmp_path / "moc_gia.json"
+    gia.write_text(json.dumps(that, ensure_ascii=False, indent=2),
+                   encoding="utf-8")
+
+    dau_ra = io.StringIO()
+    cu = csr.MOC
+    try:
+        csr.MOC = gia
+        # `main()` gọi `parse_args()` không tham số ⇒ nó đọc `sys.argv`, mà dưới
+        # pytest `sys.argv` là dòng lệnh của pytest. Không vá thì argparse thoát
+        # với mã 2 và chốt đỏ vì một lý do chẳng liên quan gì tới điều nó đo.
+        with patch.object(sys, "argv", ["check_server_routes.py"]), \
+                redirect_stdout(dau_ra):
+            ma = csr.main()
+    finally:
+        csr.MOC = cu
+
+    assert ma == 1, ("tep da vuot nguong phinh them 10 dong ma chot van PASS — "
+                     "con so trong moc lai chi de trang tri")
+    assert "PHINH" in dau_ra.getvalue().upper()
 
 
 def test_guard_doi_dang_nhap_khong_chi_la_MOT_ten_ham():
@@ -277893,7 +278098,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/check_server_routes.py
-SHA256=119d2ac24ee3ba23509513fd8ada1ae893aa50767919184ffdb2d6b8e3222f4c BYTES=5208 LINES=134
+SHA256=80fb71982b55c244c8cacd16bf702ad3e60afd954a18b291e99b1769eed18ff7 BYTES=6840 LINES=168
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """check_server_routes.py — bánh cóc kích thước cho `server/routes/`.
 
@@ -278022,7 +278227,41 @@ def main() -> int:
         print("RESULT: FAIL")
         return 1
 
-    print(f"\nVuot nguong: {len(hien)} tep | moc: {len(moc)} tep — khong them.")
+    # 🔴 CON SO PHAI DUOC CUONG CHE, khong chi duoc GHI RA.
+    #
+    #    Truoc 2026-09-02 chot nay chi so TAP HOP tep (`set(hien) - set(moc)`).
+    #    `dong`/`handler` duoc ghi vao moc va duoc IN RA moi lan chay — nhung
+    #    khong bao gio duoc so. Mot tep da nam trong moc co the phinh vo han ma
+    #    dong RESULT van la PASS.
+    #
+    #    Va no da xay ra: `server/admin.py` di tu 1.388 -> 1.622 dong (+234)
+    #    trong khi chot nay bao PASS suot ca doan duong do.
+    #
+    # ⛔ Vi sao te hon mot con so sai: cong cu IN con so ra, nen nguoi doc co ly
+    #    do tin rang no dang duoc canh. Mot chot ghi lai thu no khong cuong che
+    #    la mot chot noi doi ve chinh pham vi cua no.
+    #
+    # ⚠️ Day KHONG phai mot luat moi (`OPERATING_CONTRACT` §8). Luat cu van la
+    #    "no ky thuat chi duoc giam"; phan con thieu la mot nua phep so. Bit cho
+    #    thieu do khong them nghia vu cho ai — moc vua duoc ghi lai theo thuc
+    #    te, nen hom nay khong tep nao do.
+    phinh = []
+    for ten in sorted(set(hien) & set(moc)):
+        for khoa in ("dong", "handler"):
+            cu, nay = int(moc[ten].get(khoa, 0)), int(hien[ten][khoa])
+            if nay > cu:
+                phinh.append(f"{ten}: {khoa} {cu} -> {nay} (+{nay - cu})")
+    if phinh:
+        print("\nTEP DA VUOT NGUONG LAI CON PHINH THEM:")
+        for d in phinh:
+            print(f"   {d}")
+        print("\nMot tep da qua nguong thi chi duoc NHO DI. Tach bot; hoac neu")
+        print("that su can thi `--update` — va lan ghi do hien trong diff.")
+        print("RESULT: FAIL")
+        return 1
+
+    print(f"\nVuot nguong: {len(hien)} tep | moc: {len(moc)} tep — khong them, "
+          "khong phinh.")
     print("RESULT: PASS")
     return 0
 
@@ -298483,15 +298722,11 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/server_routes_baseline.json
-SHA256=c79857eff4d0f4d1e9059330c69acc138f9a36f0ddf74e88766ea2af637678bf BYTES=143 LINES=10
+SHA256=b2e97d363e72afc695f897b02b53a5a559f53a9df73e4af7698a0937551265ca BYTES=72 LINES=6
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "server/admin.py": {
-    "dong": 1388,
-    "handler": 0
-  },
-  "server/admin_api.py": {
-    "dong": 1897,
+    "dong": 1622,
     "handler": 0
   }
 }

@@ -125,7 +125,41 @@ def main() -> int:
         print("RESULT: FAIL")
         return 1
 
-    print(f"\nVuot nguong: {len(hien)} tep | moc: {len(moc)} tep — khong them.")
+    # 🔴 CON SO PHAI DUOC CUONG CHE, khong chi duoc GHI RA.
+    #
+    #    Truoc 2026-09-02 chot nay chi so TAP HOP tep (`set(hien) - set(moc)`).
+    #    `dong`/`handler` duoc ghi vao moc va duoc IN RA moi lan chay — nhung
+    #    khong bao gio duoc so. Mot tep da nam trong moc co the phinh vo han ma
+    #    dong RESULT van la PASS.
+    #
+    #    Va no da xay ra: `server/admin.py` di tu 1.388 -> 1.622 dong (+234)
+    #    trong khi chot nay bao PASS suot ca doan duong do.
+    #
+    # ⛔ Vi sao te hon mot con so sai: cong cu IN con so ra, nen nguoi doc co ly
+    #    do tin rang no dang duoc canh. Mot chot ghi lai thu no khong cuong che
+    #    la mot chot noi doi ve chinh pham vi cua no.
+    #
+    # ⚠️ Day KHONG phai mot luat moi (`OPERATING_CONTRACT` §8). Luat cu van la
+    #    "no ky thuat chi duoc giam"; phan con thieu la mot nua phep so. Bit cho
+    #    thieu do khong them nghia vu cho ai — moc vua duoc ghi lai theo thuc
+    #    te, nen hom nay khong tep nao do.
+    phinh = []
+    for ten in sorted(set(hien) & set(moc)):
+        for khoa in ("dong", "handler"):
+            cu, nay = int(moc[ten].get(khoa, 0)), int(hien[ten][khoa])
+            if nay > cu:
+                phinh.append(f"{ten}: {khoa} {cu} -> {nay} (+{nay - cu})")
+    if phinh:
+        print("\nTEP DA VUOT NGUONG LAI CON PHINH THEM:")
+        for d in phinh:
+            print(f"   {d}")
+        print("\nMot tep da qua nguong thi chi duoc NHO DI. Tach bot; hoac neu")
+        print("that su can thi `--update` — va lan ghi do hien trong diff.")
+        print("RESULT: FAIL")
+        return 1
+
+    print(f"\nVuot nguong: {len(hien)} tep | moc: {len(moc)} tep — khong them, "
+          "khong phinh.")
     print("RESULT: PASS")
     return 0
 
