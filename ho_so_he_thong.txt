@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:f549e92ea0e3a88c2b58c2f2141b007c6891bb54d277b480685a19429b9943ae
+Fingerprint   : sha256:aa16ef1f9c904a0b60376034a1f7555b200fcf1b04d08afb1b1920360accd1fd
 Nguồn đã quét : 1465 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3086,7 +3086,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14566802 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1465 file; 14571562 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -257570,7 +257570,7 @@ def test_chot_TREN_do_lam_viec_theo_CA_HAI_CHIEU():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_393_kiem_truoc_khi_cam.py
-SHA256=f94e7df1533855c57fcdc67941162b54cbb428e6b54a57052860170ef9cd6efd BYTES=7789 LINES=152
+SHA256=b1b85fa3415211276df3674dac593a519ce51d7dfdac1039b767f549661ca306 BYTES=10607 LINES=204
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_393 — bộ kiểm `kiem_truoc_khi_cam.py` phải dùng được TRÊN MỘT MÁY TRẮNG.
 
@@ -257684,39 +257684,91 @@ def test_ba_ma_thoat_phan_biet_duoc():
 
 # ── 3. Cấu hình nó in ra phải là cấu hình ĐÚNG ──────────────────────────────
 
-def test_cau_hinh_in_ra_khop_hop_dong_that():
-    """🔴 Bộ kiểm in ra một `config.toml` để người ta dán vào máy khác. Nếu bốn
-    giá trị đó sai thì nó vừa nói "đường gọi thông" vừa phát một cấu hình hỏng —
-    và người nhận sẽ tin dòng đầu.
+def test_KHONG_phat_ra_mot_ban_sao_cau_hinh():
+    """🔴 BÁNH CÓC CHO MỘT LỖI ĐÃ GÂY HẬU QUẢ THẬT (02/09).
 
-    ⭐ `wire_api = "responses"` là dòng đáng canh nhất: Codex nối `/responses`
-       vào `base_url`, nên base phải tận cùng `/api/v1`. Sai bốn ký tự ở đây cho
-       một `404` không manh mối nào — đúng cái bẫy `CLI_BAY` đã ghi.
+    Bản đầu của bộ kiểm **in ra một khối `config.toml` tự gõ**. Khối đó thiếu
+    `stream_idle_timeout_ms`, `model_reasoning_effort` và `model_catalog_json`
+    — ba thứ mà `platform_core/public_api/examples.py` đã có từ trước, mỗi thứ
+    kèm lý do đã trả giá.
+
+    ⛔ Hậu quả đo được: một khách dùng bản cấu hình đó bị **cắt luồng ở đúng
+       62,0 giây** (`STREAM KHACH-NGAT dur=62.0s`), rồi Codex thử lại và ăn
+       `429/503` vì lượt bị bỏ vẫn đang giữ suất.
+
+    ⭐ Đây đúng luật mà kho này đã viết ra ở chỗ khác: *"a second copy of a legal
+       promise is a second promise, and the two will differ"*. Một cấu hình cũng
+       là một lời hứa. Nên bộ kiểm **đọc** cấu hình, và **chỉ đường** tới công cụ
+       chính thức; nó không được tự phát ra một bản.
     """
-    assert 'base_url = "{API}"' in VAN or "/api/v1" in VAN
-    assert 'wire_api = "responses"' in VAN
-    assert 'env_key = "LTT_API_KEY"' in VAN
-    assert 'model = "ltt_llm"' in VAN
+    for cam in ('[model_providers.', 'wire_api = "responses"',
+                'env_key = "LTT_API_KEY"'):
+        assert cam not in VAN, (
+            f"bo kiem dang PHAT RA cau hinh ({cam!r}). No phai DOC cau hinh va "
+            f"chi duong toi cong cu chinh thuc, khong tao ban sao thu hai")
 
 
-def test_ten_model_khop_ALIAS_that_cua_app():
-    """Tên model in ra phải là bí danh công khai app đang khai, không phải một
-    chuỗi gõ tay đã trôi."""
-    from apps.ltt_llm.features import ALIAS_SANG_ID
+def test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc():
+    """Danh sách khoá bộ kiểm đòi phải là khoá cấu hình chính thức **thật sự có**.
 
-    assert 'model = "ltt_llm"' in VAN
-    assert "ltt_llm" in ALIAS_SANG_ID
-
-
-def test_NOI_RO_canh_bao_metadata_cua_Codex():
-    """Codex in `Model metadata for ltt_llm not found` ở **mọi** lượt chạy.
-
-    ⛔ Không nói trước thì người cắm sẽ tưởng mình làm sai và đi sửa cấu hình
-       đang đúng. Đo 01/09: Codex **không gọi** `/api/v1/models` lần nào, nên
-       cảnh báo đó không phải lỗi của khuôn dữ liệu phía ta.
+    ⛔ Không import được `examples.py` từ trong công cụ (nó phải chạy trên máy
+       trắng), nên thứ ghép hai đầu là **phép kiểm này** — đúng khuôn
+       `test_334::TestBanSaoConLai` của kho.
     """
-    assert "Model metadata" in VAN
-    assert "KHONG goi /api/v1/models" in VAN
+    import re
+
+    from platform_core.public_api import examples
+
+    chinh_thuc = (examples.codex_config("https://app.lttstudios.com")
+                  + chr(10) + examples.codex_profile())
+    m = re.search("KHOA_BAT_BUOC = " + chr(123) + "(.*?)" + chr(10)
+                  + chr(125), VAN, re.S)
+    assert m, "khong tim thay KHOA_BAT_BUOC"
+    khoa = re.findall(r'"([a-z_]+)":', m.group(1))
+    assert khoa, "danh sach khoa rong"
+    thieu = [k for k in khoa if k not in chinh_thuc]
+    assert not thieu, (
+        f"bo kiem doi khoa {thieu} nhung cau hinh chinh thuc khong he co chung "
+        f"— mot trong hai ben da troi")
+
+
+@pytest.mark.parametrize("khoa", ["stream_idle_timeout_ms", "model_catalog_json"])
+def test_doi_dung_hai_khoa_da_gay_su_co(khoa):
+    """Hai khoá này có mặt vì đã có sự cố thật, không phải vì cho đủ bộ.
+
+    - `stream_idle_timeout_ms`: thiếu ⇒ luồng bị cắt ở ~62 giây (đo 02/09)
+    - `model_catalog_json`: thiếu ⇒ Codex mượn tên một model OpenAI cho lượt
+      phụ, cổng ta từ chối, khách thấy "im lặng"
+    """
+    assert khoa in VAN
+
+
+def test_CHI_DUONG_toi_cong_cu_chinh_thuc():
+    """Bảo người ta "sửa tay cho đúng" là mời lại đúng lỗi vừa xảy ra."""
+    assert "/huong-dan/cong-cu" in VAN
+    assert "dung sua tay" in VAN or "dung go tay" in VAN
+
+
+def test_NOI_DUNG_ve_canh_bao_metadata_cua_Codex():
+    """🔴 SỬA MỘT CÂU TÔI ĐÃ NÓI SAI VỚI KHÁCH (01/09).
+
+    Bản đầu của bộ kiểm in: *"Codex sẽ in `Model metadata not found`… cảnh báo
+    không chặn việc chạy"*, và tôi bảo khách kệ nó. Tôi rút ra kết luận đó từ
+    một phép đo đúng (Codex **không** gọi `/api/v1/models`) nhưng suy sai sang
+    một kết luận rộng hơn: rằng không có cách nào dập.
+
+    ⛔ Có cách, và nền tảng đã có sẵn từ trước: `model_catalog_json` khai model
+       **tại máy khách**. Thiếu nó thì Codex không chỉ cảnh báo — nó **mượn tên
+       một model OpenAI** cho lượt phụ, cổng của ta từ chối (fail-closed), và
+       khách thấy "im lặng" ở hội thoại dài.
+
+    ⭐ Bài học: *"Codex không gọi /models"* và *"cảnh báo không dập được"* là hai
+       mệnh đề khác nhau. Tôi đo được cái thứ nhất rồi công bố cái thứ hai.
+    """
+    assert "model_catalog_json" in VAN
+    assert "MUON TEN" in VAN, (
+        "phai noi ro hau qua THAT (muon ten model OpenAI cho luot phu), "
+        "khong chi noi 'co mot canh bao'")
 
 
 @pytest.mark.parametrize("muc", ["Mang va Cloudflare", "Khoa API", "Model",
@@ -292988,7 +293040,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_truoc_khi_cam.py
-SHA256=c870d9cb191d72126eb203e8cf025d7645ab541a58a6c43a27a3d0f46d276b04 BYTES=11923 LINES=243
+SHA256=2b5021d5e756c7526f68a0c196a7795a1b21782b5e8bf78f534ea94b0a0d5644 BYTES=13865 LINES=295
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """kiem_truoc_khi_cam.py — kiểm đường gọi `ltt_llm` TỪ MỘT MÁY KHÁC.
 
@@ -293210,24 +293262,76 @@ def main() -> int:
               f"  nguoi van hanh — no du de chan doan ma khong can vao may nay.")
         return 1
 
-    print(f"  {XANH}DUONG GOI THONG.{TAT} Cau hinh cho Codex "
-          f"(`~/.codex/config.toml`):\n")
-    print(f'''    model = "ltt_llm"
-    model_provider = "ltt"
+    print(f"  {XANH}DUONG GOI THONG.{TAT}")
+    _soi_cau_hinh_codex()
+    return 0
 
-    [model_providers.ltt]
-    name = "LTT Studios"
-    base_url = "{API}"
-    wire_api = "responses"
-    env_key = "LTT_API_KEY"
-''')
-    print("  Roi dat khoa o MUC NGUOI DUNG, khong phai trong mot cua so lenh:")
-    print('    setx LTT_API_KEY "ltt_sk_..."      (Windows, roi MO LAI cua so)')
-    print('    export LTT_API_KEY=ltt_sk_...      (macOS/Linux, them vao profile)')
-    print(f"\n  {VANG}Codex se in mot canh bao{TAT} `Model metadata for "
-          f"`ltt_llm` not found`.")
-    print("  Do la Codex khong tra cuu model la trong bang cua no — DO 01/09:")
-    print("  no KHONG goi /api/v1/models lan nao. Canh bao khong chan viec chay.")
+
+#: Khoa BAT BUOC trong `~/.codex/config.toml`, va vi sao tung khoa co mat.
+#:
+#: ⛔ CHI TEN KHOA, KHONG GIA TRI. Bo kiem nay KHONG duoc phat ra mot ban sao
+#:    cua cau hinh -- do dung la loi da xay ra 01/09: no in mot khoi `config.toml`
+#:    tu go, THIEU `stream_idle_timeout_ms` va `model_reasoning_effort`, va nguoi
+#:    cam dung ban do roi gap luong bi cat o 62 giay.
+#:
+#: ⭐ Nguon chan ly la `platform_core/public_api/examples.py` + cong cu chinh
+#:    thuc `cam_cli`. `test_393` buoc danh sach nay khop voi chung.
+KHOA_BAT_BUOC = {
+    "stream_idle_timeout_ms":
+        "thieu no thi Codex CAT luong khi model im tieng -- do that 02/09: "
+        "mot luot bi cat o dung 62,0 giay",
+    "model_reasoning_effort":
+        "de mac dinh thi model tieu phan lon max_tokens de SUY NGHI truoc khi "
+        "tra loi, nen luong im tieng du lau de bi cat",
+    "model_catalog_json":
+        "thieu no thi Codex canh bao `Model metadata not found` roi MUON TEN "
+        "mot model OpenAI cho luot phu -- cong cua ta tu choi, khach thay im lang",
+    "wire_api": "phai la `responses`",
+    "base_url": "phai tan cung /api/v1 -- Codex noi /responses vao sau",
+}
+
+
+def _soi_cau_hinh_codex() -> None:
+    """Doc cau hinh Codex TREN CHINH MAY NAY va noi thieu gi.
+
+    ⭐ Doc thay vi phat: mot bo kiem phat ra cau hinh la mot ban sao thu hai cua
+       mot loi hua, va hai ban se lech. Cong cu chinh thuc moi la thu ghi no.
+    """
+    import pathlib
+
+    nha = pathlib.Path(os.path.expanduser("~")) / ".codex"
+    tep = [nha / "config.toml", nha / "ltt.config.toml"]
+    van = ""
+    thay = []
+    for t in tep:
+        if t.exists():
+            thay.append(t.name)
+            van += t.read_text(encoding="utf-8", errors="replace") + chr(10)
+
+    print()
+    if not van:
+        print(f"  {VANG}Chua thay cau hinh Codex tren may nay.{TAT}")
+        print("  Dung CONG CU CHINH THUC, dung go tay:")
+        print(f"    {GOC}/huong-dan/cong-cu")
+        return
+
+    print(f"  Da doc: {', '.join(thay)}")
+    thieu = [(k, v) for k, v in KHOA_BAT_BUOC.items() if k not in van]
+    if not thieu:
+        print(f"  {XANH}Du ca {len(KHOA_BAT_BUOC)} khoa bat buoc.{TAT}")
+        return
+    print(f"  {DO}THIEU {len(thieu)} khoa:{TAT}")
+    for k, vi_sao in thieu:
+        print(f"    - {k}")
+        print(f"        {vi_sao}")
+    print()
+    print("  ⇒ Dung CONG CU CHINH THUC de ghi lai cho dung, dung sua tay:")
+    print(f"    {GOC}/huong-dan/cong-cu")
+    print("  Cong cu do biet ca khac biet giua Codex CLI va tien ich VS Code —")
+    print("  hai bo doc KHONG cung khuon, va mot cau hinh vua long CLI da tung")
+    print("  lam vo tien ich VS Code o moi lan tao chat.")
+
+
     return 0
 
 

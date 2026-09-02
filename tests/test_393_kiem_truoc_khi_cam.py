@@ -110,39 +110,91 @@ def test_ba_ma_thoat_phan_biet_duoc():
 
 # ── 3. Cấu hình nó in ra phải là cấu hình ĐÚNG ──────────────────────────────
 
-def test_cau_hinh_in_ra_khop_hop_dong_that():
-    """🔴 Bộ kiểm in ra một `config.toml` để người ta dán vào máy khác. Nếu bốn
-    giá trị đó sai thì nó vừa nói "đường gọi thông" vừa phát một cấu hình hỏng —
-    và người nhận sẽ tin dòng đầu.
+def test_KHONG_phat_ra_mot_ban_sao_cau_hinh():
+    """🔴 BÁNH CÓC CHO MỘT LỖI ĐÃ GÂY HẬU QUẢ THẬT (02/09).
 
-    ⭐ `wire_api = "responses"` là dòng đáng canh nhất: Codex nối `/responses`
-       vào `base_url`, nên base phải tận cùng `/api/v1`. Sai bốn ký tự ở đây cho
-       một `404` không manh mối nào — đúng cái bẫy `CLI_BAY` đã ghi.
+    Bản đầu của bộ kiểm **in ra một khối `config.toml` tự gõ**. Khối đó thiếu
+    `stream_idle_timeout_ms`, `model_reasoning_effort` và `model_catalog_json`
+    — ba thứ mà `platform_core/public_api/examples.py` đã có từ trước, mỗi thứ
+    kèm lý do đã trả giá.
+
+    ⛔ Hậu quả đo được: một khách dùng bản cấu hình đó bị **cắt luồng ở đúng
+       62,0 giây** (`STREAM KHACH-NGAT dur=62.0s`), rồi Codex thử lại và ăn
+       `429/503` vì lượt bị bỏ vẫn đang giữ suất.
+
+    ⭐ Đây đúng luật mà kho này đã viết ra ở chỗ khác: *"a second copy of a legal
+       promise is a second promise, and the two will differ"*. Một cấu hình cũng
+       là một lời hứa. Nên bộ kiểm **đọc** cấu hình, và **chỉ đường** tới công cụ
+       chính thức; nó không được tự phát ra một bản.
     """
-    assert 'base_url = "{API}"' in VAN or "/api/v1" in VAN
-    assert 'wire_api = "responses"' in VAN
-    assert 'env_key = "LTT_API_KEY"' in VAN
-    assert 'model = "ltt_llm"' in VAN
+    for cam in ('[model_providers.', 'wire_api = "responses"',
+                'env_key = "LTT_API_KEY"'):
+        assert cam not in VAN, (
+            f"bo kiem dang PHAT RA cau hinh ({cam!r}). No phai DOC cau hinh va "
+            f"chi duong toi cong cu chinh thuc, khong tao ban sao thu hai")
 
 
-def test_ten_model_khop_ALIAS_that_cua_app():
-    """Tên model in ra phải là bí danh công khai app đang khai, không phải một
-    chuỗi gõ tay đã trôi."""
-    from apps.ltt_llm.features import ALIAS_SANG_ID
+def test_khoa_bat_buoc_KHOP_cau_hinh_chinh_thuc():
+    """Danh sách khoá bộ kiểm đòi phải là khoá cấu hình chính thức **thật sự có**.
 
-    assert 'model = "ltt_llm"' in VAN
-    assert "ltt_llm" in ALIAS_SANG_ID
-
-
-def test_NOI_RO_canh_bao_metadata_cua_Codex():
-    """Codex in `Model metadata for ltt_llm not found` ở **mọi** lượt chạy.
-
-    ⛔ Không nói trước thì người cắm sẽ tưởng mình làm sai và đi sửa cấu hình
-       đang đúng. Đo 01/09: Codex **không gọi** `/api/v1/models` lần nào, nên
-       cảnh báo đó không phải lỗi của khuôn dữ liệu phía ta.
+    ⛔ Không import được `examples.py` từ trong công cụ (nó phải chạy trên máy
+       trắng), nên thứ ghép hai đầu là **phép kiểm này** — đúng khuôn
+       `test_334::TestBanSaoConLai` của kho.
     """
-    assert "Model metadata" in VAN
-    assert "KHONG goi /api/v1/models" in VAN
+    import re
+
+    from platform_core.public_api import examples
+
+    chinh_thuc = (examples.codex_config("https://app.lttstudios.com")
+                  + chr(10) + examples.codex_profile())
+    m = re.search("KHOA_BAT_BUOC = " + chr(123) + "(.*?)" + chr(10)
+                  + chr(125), VAN, re.S)
+    assert m, "khong tim thay KHOA_BAT_BUOC"
+    khoa = re.findall(r'"([a-z_]+)":', m.group(1))
+    assert khoa, "danh sach khoa rong"
+    thieu = [k for k in khoa if k not in chinh_thuc]
+    assert not thieu, (
+        f"bo kiem doi khoa {thieu} nhung cau hinh chinh thuc khong he co chung "
+        f"— mot trong hai ben da troi")
+
+
+@pytest.mark.parametrize("khoa", ["stream_idle_timeout_ms", "model_catalog_json"])
+def test_doi_dung_hai_khoa_da_gay_su_co(khoa):
+    """Hai khoá này có mặt vì đã có sự cố thật, không phải vì cho đủ bộ.
+
+    - `stream_idle_timeout_ms`: thiếu ⇒ luồng bị cắt ở ~62 giây (đo 02/09)
+    - `model_catalog_json`: thiếu ⇒ Codex mượn tên một model OpenAI cho lượt
+      phụ, cổng ta từ chối, khách thấy "im lặng"
+    """
+    assert khoa in VAN
+
+
+def test_CHI_DUONG_toi_cong_cu_chinh_thuc():
+    """Bảo người ta "sửa tay cho đúng" là mời lại đúng lỗi vừa xảy ra."""
+    assert "/huong-dan/cong-cu" in VAN
+    assert "dung sua tay" in VAN or "dung go tay" in VAN
+
+
+def test_NOI_DUNG_ve_canh_bao_metadata_cua_Codex():
+    """🔴 SỬA MỘT CÂU TÔI ĐÃ NÓI SAI VỚI KHÁCH (01/09).
+
+    Bản đầu của bộ kiểm in: *"Codex sẽ in `Model metadata not found`… cảnh báo
+    không chặn việc chạy"*, và tôi bảo khách kệ nó. Tôi rút ra kết luận đó từ
+    một phép đo đúng (Codex **không** gọi `/api/v1/models`) nhưng suy sai sang
+    một kết luận rộng hơn: rằng không có cách nào dập.
+
+    ⛔ Có cách, và nền tảng đã có sẵn từ trước: `model_catalog_json` khai model
+       **tại máy khách**. Thiếu nó thì Codex không chỉ cảnh báo — nó **mượn tên
+       một model OpenAI** cho lượt phụ, cổng của ta từ chối (fail-closed), và
+       khách thấy "im lặng" ở hội thoại dài.
+
+    ⭐ Bài học: *"Codex không gọi /models"* và *"cảnh báo không dập được"* là hai
+       mệnh đề khác nhau. Tôi đo được cái thứ nhất rồi công bố cái thứ hai.
+    """
+    assert "model_catalog_json" in VAN
+    assert "MUON TEN" in VAN, (
+        "phai noi ro hau qua THAT (muon ten model OpenAI cho luot phu), "
+        "khong chi noi 'co mot canh bao'")
 
 
 @pytest.mark.parametrize("muc", ["Mang va Cloudflare", "Khoa API", "Model",

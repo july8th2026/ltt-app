@@ -218,24 +218,76 @@ def main() -> int:
               f"  nguoi van hanh — no du de chan doan ma khong can vao may nay.")
         return 1
 
-    print(f"  {XANH}DUONG GOI THONG.{TAT} Cau hinh cho Codex "
-          f"(`~/.codex/config.toml`):\n")
-    print(f'''    model = "ltt_llm"
-    model_provider = "ltt"
+    print(f"  {XANH}DUONG GOI THONG.{TAT}")
+    _soi_cau_hinh_codex()
+    return 0
 
-    [model_providers.ltt]
-    name = "LTT Studios"
-    base_url = "{API}"
-    wire_api = "responses"
-    env_key = "LTT_API_KEY"
-''')
-    print("  Roi dat khoa o MUC NGUOI DUNG, khong phai trong mot cua so lenh:")
-    print('    setx LTT_API_KEY "ltt_sk_..."      (Windows, roi MO LAI cua so)')
-    print('    export LTT_API_KEY=ltt_sk_...      (macOS/Linux, them vao profile)')
-    print(f"\n  {VANG}Codex se in mot canh bao{TAT} `Model metadata for "
-          f"`ltt_llm` not found`.")
-    print("  Do la Codex khong tra cuu model la trong bang cua no — DO 01/09:")
-    print("  no KHONG goi /api/v1/models lan nao. Canh bao khong chan viec chay.")
+
+#: Khoa BAT BUOC trong `~/.codex/config.toml`, va vi sao tung khoa co mat.
+#:
+#: ⛔ CHI TEN KHOA, KHONG GIA TRI. Bo kiem nay KHONG duoc phat ra mot ban sao
+#:    cua cau hinh -- do dung la loi da xay ra 01/09: no in mot khoi `config.toml`
+#:    tu go, THIEU `stream_idle_timeout_ms` va `model_reasoning_effort`, va nguoi
+#:    cam dung ban do roi gap luong bi cat o 62 giay.
+#:
+#: ⭐ Nguon chan ly la `platform_core/public_api/examples.py` + cong cu chinh
+#:    thuc `cam_cli`. `test_393` buoc danh sach nay khop voi chung.
+KHOA_BAT_BUOC = {
+    "stream_idle_timeout_ms":
+        "thieu no thi Codex CAT luong khi model im tieng -- do that 02/09: "
+        "mot luot bi cat o dung 62,0 giay",
+    "model_reasoning_effort":
+        "de mac dinh thi model tieu phan lon max_tokens de SUY NGHI truoc khi "
+        "tra loi, nen luong im tieng du lau de bi cat",
+    "model_catalog_json":
+        "thieu no thi Codex canh bao `Model metadata not found` roi MUON TEN "
+        "mot model OpenAI cho luot phu -- cong cua ta tu choi, khach thay im lang",
+    "wire_api": "phai la `responses`",
+    "base_url": "phai tan cung /api/v1 -- Codex noi /responses vao sau",
+}
+
+
+def _soi_cau_hinh_codex() -> None:
+    """Doc cau hinh Codex TREN CHINH MAY NAY va noi thieu gi.
+
+    ⭐ Doc thay vi phat: mot bo kiem phat ra cau hinh la mot ban sao thu hai cua
+       mot loi hua, va hai ban se lech. Cong cu chinh thuc moi la thu ghi no.
+    """
+    import pathlib
+
+    nha = pathlib.Path(os.path.expanduser("~")) / ".codex"
+    tep = [nha / "config.toml", nha / "ltt.config.toml"]
+    van = ""
+    thay = []
+    for t in tep:
+        if t.exists():
+            thay.append(t.name)
+            van += t.read_text(encoding="utf-8", errors="replace") + chr(10)
+
+    print()
+    if not van:
+        print(f"  {VANG}Chua thay cau hinh Codex tren may nay.{TAT}")
+        print("  Dung CONG CU CHINH THUC, dung go tay:")
+        print(f"    {GOC}/huong-dan/cong-cu")
+        return
+
+    print(f"  Da doc: {', '.join(thay)}")
+    thieu = [(k, v) for k, v in KHOA_BAT_BUOC.items() if k not in van]
+    if not thieu:
+        print(f"  {XANH}Du ca {len(KHOA_BAT_BUOC)} khoa bat buoc.{TAT}")
+        return
+    print(f"  {DO}THIEU {len(thieu)} khoa:{TAT}")
+    for k, vi_sao in thieu:
+        print(f"    - {k}")
+        print(f"        {vi_sao}")
+    print()
+    print("  ⇒ Dung CONG CU CHINH THUC de ghi lai cho dung, dung sua tay:")
+    print(f"    {GOC}/huong-dan/cong-cu")
+    print("  Cong cu do biet ca khac biet giua Codex CLI va tien ich VS Code —")
+    print("  hai bo doc KHONG cung khuon, va mot cau hinh vua long CLI da tung")
+    print("  lam vo tien ich VS Code o moi lan tao chat.")
+
+
     return 0
 
 
