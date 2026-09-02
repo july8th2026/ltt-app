@@ -166,3 +166,73 @@ def ghi_danh(duong_wav: str, *, denoise: bool = True,
 def giong_dung_san() -> list:
     d, _ = _goi("/v1/voices", timeout=180.0)
     return d.get("items", [])
+
+
+# ── SỐNG hay chỉ ĐÃ CẤU HÌNH ─────────────────────────────────────────────────
+#
+# 🔴 `san_sang()` ở trên chỉ trả lời *"biến môi trường có được đặt không"*. Suốt
+#    một thời gian nó là thứ duy nhất giao diện hỏi, và hệ quả đo được ngày
+#    02/09/2026: chip **"Engine sẵn sàng"** màu xanh nằm trên một trang mà mọi
+#    lượt bấm Tạo đều trả *"Máy tạo tiếng nói chưa sẵn sàng"* — vì cổng đã chết.
+#
+#    Hai câu mâu thuẫn trên cùng một màn hình, và câu **to hơn, xanh hơn** là
+#    câu sai. Khách đọc chip trước khi đọc lỗi, nên họ kết luận sai chỗ hỏng.
+#
+# ⚠️ Nhưng đừng đổi `san_sang()` thành phép gọi mạng: nó chạy ở **mọi** lượt
+#    dựng trang của năm màn. Giữ hai hàm tách bạch, và hàm đắt thì có bộ nhớ đệm.
+
+_NHIP_SONG: dict = {"luc": 0.0, "song": False}
+
+#: Bao lâu thì hỏi lại cổng. 5 giây đủ để một lần khởi động lại dịch vụ hiện ra
+#: gần như ngay, mà một trang tải nhiều thành phần vẫn chỉ tốn **một** lượt hỏi.
+SONG_CACHE_S = 5.0
+
+#: ⛔ NGẮN. Đây là phép hỏi nằm trên đường dựng trang, nên trần của nó là trần
+#:    kiên nhẫn của người dùng chứ không phải trần của một lượt sinh. Cổng chết
+#:    thường từ chối nối ngay (`WinError 10061`) nên con số này hiếm khi tới.
+SONG_TIMEOUT_S = 1.5
+
+
+def song(*, buoc: bool = False) -> bool:
+    """Cổng có **thật sự trả lời** không.
+
+    `buoc=True` bỏ qua bộ nhớ đệm — dùng khi vừa làm gì đó có thể đã đổi trạng
+    thái, đừng dùng trên đường dựng trang.
+    """
+    import time
+
+    if not _token():
+        return False
+    gio = time.monotonic()
+    if not buoc and (gio - _NHIP_SONG["luc"]) < SONG_CACHE_S:
+        return bool(_NHIP_SONG["song"])
+    try:
+        d, _ = _goi("/health", timeout=SONG_TIMEOUT_S)
+        ok = bool(d.get("ok"))
+    except Exception as e:  # noqa: BLE001 - moi loai loi deu nghia la "khong song"
+        # ⚠️ DEBUG chứ không phải WARNING, và đó là một lựa chọn chứ không phải
+        #    sự cẩu thả: hàm này chạy ở mọi lượt dựng trang (đệm 5 giây), nên
+        #    một cổng chết sẽ sinh một dòng mỗi năm giây — đủ để dìm nhật ký
+        #    thật. Trạng thái "không trả lời" đã được NÓI RA ở chỗ nó đáng nói:
+        #    trên chính màn hình, bằng `trang_thai()`.
+        #
+        # ⛔ Nhưng vẫn phải ghi. Nuốt trọn là để mất lý do *vì sao* cổng im —
+        #    từ chối nối, hết giờ, và 401 trông giống hệt nhau ở đây.
+        import logging
+        logging.getLogger(__name__).debug("cong giong khong tra loi: %s", e)
+        ok = False
+    _NHIP_SONG["luc"] = gio
+    _NHIP_SONG["song"] = ok
+    return ok
+
+
+def trang_thai() -> str:
+    """Một trong ba: `chua_bat` · `khong_tra_loi` · `san_sang`.
+
+    Ba chứ không phải hai, vì hai trạng thái hỏng cần hai câu trả lời khác nhau:
+    *chưa bật* là việc của người cài đặt, *không trả lời* là một dịch vụ đã cài
+    nhưng đang chết — và người đọc phải phân biệt được để biết đi sửa ở đâu.
+    """
+    if not san_sang():
+        return "chua_bat"
+    return "san_sang" if song() else "khong_tra_loi"

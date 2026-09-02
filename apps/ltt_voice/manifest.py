@@ -34,7 +34,7 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-from . import gia
+from . import gia, nghe_thu
 from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
 
 
@@ -165,6 +165,21 @@ MANIFEST = AppManifest(
     table_prefix="voice",
 
     blocker_titles=(N_('Dịch vụ giọng nói (LTTStudioVoice)'),),
+
+    # ── Việc định kỳ: dựng dần tệp NGHE THỬ cho hai mươi giọng dựng sẵn ──────
+    #
+    # 🔴 QUA HỢP ĐỒNG, KHÔNG TỰ DỰNG VÒNG LẶP. `_mot_luot_bao_tri` chạy dưới
+    #    lease `bao_tri` nên việc này chạy **đúng một lần trên toàn cụm**; một
+    #    vòng lặp app tự dựng sẽ chạy ở MỌI tiến trình worker, và với
+    #    `LTT_WORKER_POOLS` nhiều làn thì cùng một tệp bị sinh N lần trên N card.
+    #    Tiền lệ và lời cảnh báo: `apps/vps/bao_tri.py`.
+    #
+    # ⚠️ Mỗi lượt chỉ dựng tối đa `nghe_thu.MOI_LUOT_TOI_DA` giọng. Hai mươi
+    #    giọng warm đủ sau bảy lượt — chậm có chủ ý, vì vòng bảo trì dùng chung
+    #    tiến trình với worker job và một phút giữ GPU liền là một phút job của
+    #    khách chờ mà không có gì giải thích.
+    bao_tri=nghe_thu.bao_tri,
+    bao_tri_moi_giay=3600,
 
     tools=(
         ToolSpec(

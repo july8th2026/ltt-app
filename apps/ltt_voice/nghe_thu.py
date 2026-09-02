@@ -1,0 +1,201 @@
+"""
+nghe_thu.py — NGHE THỬ một giọng trước khi dùng nó.
+
+🔴 VÌ SAO ĐÂY LÀ P0 CHỨ KHÔNG PHẢI MỘT THỨ TRANG TRÍ.
+
+   Trang Giọng liệt kê hai mươi cái tên kèm ba nhãn (giới · vùng · phong cách).
+   Không có gì trong đó trả lời được câu hỏi duy nhất mà người chọn giọng thật
+   sự hỏi: **giọng này nghe như thế nào.** Cho tới lúc này, cách duy nhất để
+   biết là tạo một lượt đọc thật — tức **trả tiền để xem mình có muốn mua không**.
+
+⭐ BA CÁCH LÀM, VÀ VÌ SAO CHỌN CÁCH THỨ BA.
+
+   ① *Sinh ngay khi bấm, đồng bộ.* Đơn giản nhất, nhưng mỗi cú bấm là một lượt
+      chiếm GPU — và nó đi **vòng qua** chốt `admission_resource="vieneu_gpu"`
+      (một suất) mà manifest dựng lên để ba cửa job/sync/stream không đè nhau.
+      Hai mươi thẻ giọng trên một trang là một lời mời tự DoS.
+
+   ② *Đưa qua hàng đợi job.* Đúng về tài nguyên, sai về trải nghiệm: nghe thử
+      mà phải chờ xếp hàng rồi hỏi lại trạng thái thì không ai bấm lần thứ hai.
+
+   ③ **Dựng sẵn một lần, phục vụ như tệp tĩnh.** Mỗi giọng có đúng một tệp cho
+      một phiên bản tham số. Lượt nghe thứ nhất và lượt thứ mười nghìn tốn như
+      nhau: không GPU, không hàng đợi, không tính tiền.
+
+   Cái giá của ③ là một khoảng *"chưa có"* lúc đầu — và nó được **nói ra** chứ
+   không giấu (xem `co_san`). Một nút phát không kêu tệ hơn hẳn một dòng chữ
+   "đang chuẩn bị".
+
+⛔ KHÔNG TÍNH TIỀN NGHE THỬ. Đây là vật liệu để chọn hàng, không phải hàng.
+   Và vì nó dựng đúng một lần cho mỗi giọng, chi phí thật là hữu hạn và đã biết:
+   hai mươi giọng mẫu nhân một câu ngắn.
+
+⚠️ VÒNG ĐỜI. Tệp nghe thử **không** mang `job_id` trong khoá, nên
+   `platform_core/job_content.py` không dọn nó — đúng ý muốn: nó thuộc về
+   *giọng*, không thuộc về một lượt chạy, và nó phải sống đúng bằng giọng đó.
+   Cùng lý do `tham_chieu.khoa_nguon` nằm ngoài tầm dọn.
+"""
+from __future__ import annotations
+
+import logging
+import re
+
+from platform_core.i18n import N_
+
+log = logging.getLogger(__name__)
+
+
+#: Câu đọc thử. **Cố định**, và cố định là một tính chất chứ không phải sự lười:
+#: hai giọng chỉ so sánh được với nhau khi chúng đọc **cùng một câu**. Cho khách
+#: tự nhập câu nghe thử là bỏ mất đúng cái làm phép so sánh có nghĩa — và mở lại
+#: chính lỗ chi phí mà cách ③ vừa đóng.
+#:
+#: Nội dung chọn có chủ ý: một lời chào (ngữ điệu mở), một câu có **số** và
+#: **đơn vị** (nơi phép chuẩn hoá lộ ra), một câu kết ngắn (nghe được đuôi câu).
+CAU_NGHE_THU = N_('Xin chào, đây là giọng đọc của tôi. '
+                  'Hôm nay là ngày mùng hai tháng chín. '
+                  'Rất vui được đồng hành cùng bạn.')
+
+#: 🔴 ĐỔI CÂU TRÊN THÌ PHẢI ĐỔI CHUỖI NÀY.
+#:
+#:    Khoá tệp mang phiên bản, nên đổi phiên bản = mọi giọng dựng lại tệp mới,
+#:    còn tệp cũ nằm đó tới khi có ai dọn. Không đổi phiên bản = khách nghe câu
+#:    **cũ** trong khi mã nói câu mới, và không ai phát hiện ra vì cả hai đều là
+#:    tiếng nói bình thường.
+#:
+#: ⚠️ Nó cũng phải đổi khi `voice_sidecar/tham_so.py::PHIEN_BAN_THAM_SO` đổi —
+#:    cùng một câu sinh bằng hai bộ tham số là hai tệp khác nhau.
+PHIEN_BAN = "v1-2026-09-02"
+
+#: Trần số giọng dựng trong MỘT lượt bảo trì. Bảo trì chạy mỗi giờ; hai mươi
+#: giọng mẫu warm đủ trong bảy lượt.
+#:
+#: ⛔ Có trần vì vòng bảo trì chạy **cùng tiến trình** với worker job. Dựng cả
+#:    hai mươi tệp trong một lượt là giữ GPU khoảng một phút liền, và trong
+#:    khoảng đó job của khách chờ mà không ai biết vì sao.
+MOI_LUOT_TOI_DA = 3
+
+
+def _slug(ten: str) -> str:
+    """Tên giọng thành một đoạn đường dẫn an toàn.
+
+    ⛔ Tên preset có dấu tiếng Việt và khoảng trắng (`"Minh Đức"`), và nó đi vào
+       **khoá kho** rồi vào **URL**. Không chuẩn hoá thì một khoá hợp lệ trên
+       máy này là một khoá hỏng trên kho khác, và một URL phải mã hoá phần trăm
+       ở mọi chỗ nó xuất hiện.
+
+    ⭐ Nhưng KHÔNG bỏ dấu: `"Minh Đức"` và `"Minh Duc"` phải là hai slug khác
+       nhau nếu engine có cả hai. Giữ dấu, chỉ thay thứ không an toàn.
+    """
+    s = (ten or "").strip()
+    s = re.sub(r"\s+", "-", s)
+    # ⚠️ Dải chữ có dấu viết bằng **mã điểm**, không bằng ký tự `À-ỹ` gõ thẳng.
+    #    Hai lý do, và lý do thứ hai mới là lý do thật:
+    #      ① không phụ thuộc bảng mã của chính tệp này;
+    #      ② `tools/check_i18n.py` đếm mọi chuỗi có dấu tiếng Việt mà không bọc
+    #         `_()`. Một bảng ký tự regex **không phải câu giao diện**, nhưng
+    #         luật trừ của nó chỉ tha chuỗi không có chữ ASCII nào — và chuỗi
+    #         này có `A-Za-z`. Viết bằng mã điểm là cách đúng để nó không kêu:
+    #         bỏ dấu khỏi *mã nguồn*, không bỏ dấu khỏi *hành vi*.
+    #    U+00C0 la chu A hoa co dau huyen, U+1EF9 la chu y co dau nga - dung
+    #    bang dai chu co dau cua tieng Viet.
+    s = re.sub(r"[^0-9A-Za-z\u00C0-\u1EF9_\-]", "", s)
+    return s or "khong-ten"
+
+
+def khoa_mau(ten: str) -> str:
+    """Khoá kho cho một giọng DỰNG SẴN.
+
+    Tiền tố `voice/mau/` là tiền tố **thứ ba** của app, và nó có luật đọc riêng:
+    giọng dựng sẵn không thuộc về ai, nên tệp nghe thử của nó đọc được cho mọi
+    khách đã đăng nhập. Xem `routes/_p_audio.py`.
+    """
+    return f"voice/mau/{_slug(ten)}/{PHIEN_BAN}.wav"
+
+
+def khoa_rieng(owner_id: str, public_id: str) -> str:
+    """Khoá kho cho một giọng NHÂN BẢN của khách.
+
+    ⭐ Nằm trong đúng thư mục giọng đó (`voice/{uid}/{public_id}/`) để dùng lại
+       nguyên phép kiểm sở hữu đã có — phép kiểm ấy dựa vào **hình dạng khoá**,
+       và thêm một thư mục thứ tư là thêm một luật thứ tư sẽ lệch.
+
+    ⛔ Tên tệp bắt đầu bằng `preview-` chứ không phải một tên tuỳ ý: cửa đọc mở
+       theo **TÊN TỆP**, vì cùng thư mục đó còn chứa `repr-*.npz` — biểu diễn
+       người nói, thứ `tables.py` nói thẳng là *"KHÔNG BAO GIỜ ra ngoài"*.
+    """
+    return f"voice/{owner_id}/{public_id}/preview-{PHIEN_BAN}.wav"
+
+
+def co_san(khoa: str) -> bool:
+    """Tệp nghe thử đã dựng chưa.
+
+    ⚠️ Trả `False` khi kho ném **bất cứ lỗi gì**, không chỉ khi thiếu tệp. Một
+       kho hỏng và một tệp chưa dựng phải dẫn tới cùng một hành vi ở giao diện
+       (nói "chưa có"), vì cả hai đều nghĩa là *không phát được* — và một nút
+       phát không kêu là thứ tệ nhất trong ba khả năng.
+    """
+    from platform_core.storage import get_storage
+    try:
+        return bool(get_storage().exists(khoa))
+    except Exception as e:  # noqa: BLE001 - kho co the nem nhieu loai loi
+        log.warning("khong hoi duoc kho ve %s: %s", khoa, e)
+        return False
+
+
+def dung(khoa: str, *, ref_b64=None, preset=None) -> bool:
+    """Sinh MỘT tệp nghe thử rồi cất vào kho. Trả `True` nếu vừa dựng xong.
+
+    ⛔ Không ném ra ngoài. Người gọi là vòng bảo trì và đuôi của job ghi danh —
+       cả hai đều **không được** hỏng vì một tệp nghe thử. Một giọng không nghe
+       thử được vẫn là một giọng dùng được.
+    """
+    import io
+
+    from platform_core.i18n import _ as _t
+    from platform_core.storage import get_storage
+
+    from . import features
+
+    if co_san(khoa):
+        return False
+    try:
+        wav, _ = features.goi_cong(str(_t(CAU_NGHE_THU)),
+                                   ref_b64=ref_b64, preset=preset)
+        get_storage().put(khoa, io.BytesIO(wav), content_type="audio/wav")
+        log.info("da dung nghe thu: %s (%d byte)", khoa, len(wav))
+        return True
+    except Exception as e:  # noqa: BLE001 - xem docstring
+        log.warning("khong dung duoc nghe thu %s: %s", khoa, e)
+        return False
+
+
+def con_thieu_mau() -> list:
+    """Những giọng dựng sẵn chưa có tệp nghe thử."""
+    from . import giong_mau
+    return [g for g in giong_mau.DANH_SACH if not co_san(khoa_mau(g.ma))]
+
+
+def bao_tri() -> None:
+    """Việc định kỳ của app — dựng dần tệp nghe thử còn thiếu.
+
+    🔴 CHẠY DƯỚI LEASE `bao_tri` của nền tảng, nên **đúng một lần trên toàn
+       cụm** dù có bao nhiêu tiến trình worker. Đó chính là lý do nó nằm ở hợp
+       đồng `AppManifest.bao_tri` chứ không phải trong một vòng lặp tự dựng:
+       một vòng tự dựng chạy ở **mọi** tiến trình, và với `LTT_WORKER_POOLS`
+       nhiều làn thì cùng một tệp sẽ được sinh N lần trên N card.
+
+    ⚠️ Im lặng khi cổng chưa bật. Đây là việc nền; sủa mỗi giờ trên một máy
+       chưa cài engine chỉ làm nhật ký khó đọc.
+    """
+    from . import sidecar_client
+
+    if not sidecar_client.san_sang():
+        return
+    thieu = con_thieu_mau()
+    if not thieu:
+        return
+    log.info("nghe thu: con thieu %d giong mau, dung toi da %d luot nay",
+             len(thieu), MOI_LUOT_TOI_DA)
+    for g in thieu[:MOI_LUOT_TOI_DA]:
+        dung(khoa_mau(g.ma), preset=g.ma)

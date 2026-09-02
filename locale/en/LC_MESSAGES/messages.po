@@ -13091,3 +13091,6 @@ msgstr "each account is served"
 
 msgid "Từ điển phát âm riêng của khách: từ nào đọc thành gì. Do khách tự soạn cho tên công ty, tên nhân vật, tên sản phẩm — những thứ engine không đoán được. Áp cho MỌI lượt đọc của họ, kể cả khi gọi qua API, nên nó quyết định thứ khách nghe được."
 msgstr "A customer's own pronunciation dictionary: which word is read as what. Written by the customer for company names, character names and product names — the things the engine cannot guess. Applied to EVERY reading they request, including through the API, so it decides what the customer actually hears."
+
+msgid "Xin chào, đây là giọng đọc của tôi. Hôm nay là ngày mùng hai tháng chín. Rất vui được đồng hành cùng bạn."
+msgstr "Hello, this is my reading voice. Today is the second of September. I am glad to be here with you."
