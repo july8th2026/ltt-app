@@ -130,6 +130,52 @@ def _so_voi_origin(nhanh: str) -> str:
     return "  = origin"
 
 
+def _cap_dai_so_test(dich: Path) -> None:
+    """In DAI SO test danh rieng cho cay nay.
+
+    🔴 `tools/check_so_test.py` da ghi dung goc cua van de, va ghi tu 23/08:
+
+       *"Repo nay dang co nhieu phien lam viec song song, moi phien chon so tiep
+       theo dua tren thu no nhin thay luc bat dau — nen hai phien bat dau cung
+       buoi chieu se chon trung nhau, deu dung theo cach ho nhin."*
+
+       Chot do **chan tuong lai** (mot moc, khong cho tang) nhung **khong dong
+       goc**: hai phien van chon trung, va hau qua chi doi sang luc merge — gate
+       do, roi mot nguoi phai di doi ten tep cua nguoi khac.
+
+    ⭐ Cap dai luc TAO CAY thi va cham khong xay ra duoc. Va no khong phai mot
+       luat moi de nho: cong cu tu noi ra, dung luc nguoi ta can biet.
+
+    ⚠️ Dem tren **moi cay**, khong chi cay chinh. Dem mot cay la lap lai dung
+       cai loi "chon theo tam nhin rieng" ma muc nay sinh ra de sua.
+    """
+    import re
+
+    cao_nhat = 0
+    for cay in _moi_cay_tren_dia():
+        thu_muc = cay / "tests"
+        if not thu_muc.is_dir():
+            continue
+        for tep in thu_muc.glob("test_*.py"):
+            m = re.match(r"test_(\d+)_", tep.name)
+            if m:
+                cao_nhat = max(cao_nhat, int(m.group(1)))
+    dau = ((cao_nhat // 100) + 1) * 100
+    print(f"DAI SO TEST cua cay nay: {dau}-{dau + 99}")
+    print(f"  (so cao nhat dang dung tren MOI cay: {cao_nhat})")
+    print("  Dat tep test moi trong dai nay thi khong va cham voi phien khac.\n")
+
+
+def _moi_cay_tren_dia() -> list[Path]:
+    ra = []
+    for d in _git("worktree", "list", "--porcelain").splitlines():
+        if d.startswith("worktree "):
+            p = Path(d[9:])
+            if p.exists():
+                ra.append(p)
+    return ra
+
+
 def _chep_thu_khong_o_trong_git(dich: Path) -> None:
     """Chep thu MA GATE CAN nhung git khong giu.
 
@@ -227,6 +273,7 @@ def _tao(ten: str) -> int:
     print(_git("worktree", "add", str(dich), "-b", nhanh))
     _chep_thu_khong_o_trong_git(dich)
     print(f"\nDa tao cay rieng:\n  {dich}\n  nhanh: {nhanh}\n")
+    _cap_dai_so_test(dich)
     print("Buoc tiep:")
     print(f"  cd {dich}")
     print(f"  python tools/gate.py --phien {ten}")

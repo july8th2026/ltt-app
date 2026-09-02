@@ -422,6 +422,35 @@ def test_kho_ket_qua_KHONG_ghi_bien_moi_truong():
 # Cay rieng
 # ---------------------------------------------------------------------------
 
+def test_cap_dai_so_test_dem_tren_MOI_cay():
+    """⛔ Đếm một cây là lặp lại đúng cái lỗi mục này sinh ra để sửa.
+
+    `tools/check_so_test.py` đã ghi đúng gốc từ 23/08: *"mỗi phiên chọn số tiếp
+    theo dựa trên thứ nó nhìn thấy lúc bắt đầu — nên hai phiên bắt đầu cùng buổi
+    chiều sẽ chọn trùng nhau, đều đúng theo cách họ nhìn."*
+
+    Chốt đó **chặn tương lai** (một mốc, không cho tăng) nhưng **không đóng
+    gốc**: hai phiên vẫn chọn trùng, hậu quả chỉ dời sang lúc merge — gate đỏ,
+    rồi một người phải đi đổi tên tệp của người khác. Đo 2026-09-02: đã có
+    **22 số trùng**, và `test_394` va chạm ngay giữa hai phiên đang sống.
+
+    ⭐ Cấp dải lúc TẠO CÂY thì va chạm không xảy ra được. Nhưng chỉ khi phép đếm
+       nhìn **mọi cây** — nếu nó chỉ đếm cây chính thì hai phiên tạo cây cùng
+       lúc lại nhận cùng một dải, và ta quay về đúng chỗ cũ.
+    """
+    import inspect
+
+    from tools import cay_rieng
+
+    than = inspect.getsource(cay_rieng._cap_dai_so_test)
+    assert "_moi_cay_tren_dia()" in than, (
+        "phep dem chi nhin mot cay — do dung la loi 'chon theo tam nhin rieng'")
+
+    # Va `_moi_cay_tren_dia` phai hoi git, khong duoc doan theo duong dan.
+    than2 = inspect.getsource(cay_rieng._moi_cay_tren_dia)
+    assert "worktree" in than2 and "list" in than2
+
+
 def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
     """Mot tham chieu chet trong tai lieu an toan la mot lop bao ve TUONG TUONG.
 
