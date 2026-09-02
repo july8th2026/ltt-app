@@ -201,3 +201,68 @@ no troi **bon lan da biet + mot lan moi tim ra**, va deu ve phia nguy hiem.
 ⇒ Sua bang cach **viet lai cho dung** se that bai lan thu sau. Sua dung la **bo
 lop chep tay**: gia tri song trong ma (da vay roi), tai lieu tro toi, trang thai
 hoi may chu.
+
+---
+
+## 6. DA THI HANH (2026-09-02, cay `D:/LTTSTUDIOSAPP-p01`, nhanh `phien/p01`)
+
+### 6.1 Ba viec da lam, dung thu tu thiet ke
+
+| # | Viec | Ket qua do duoc |
+|---|---|---|
+| 1 | **Dung nguon trang thai TRUOC** — `api_prod_canary.py trang-thai` | chay duoc, khong can khoa production |
+| 2 | Chuyen 280 dong §"Viec con do" sang `docs/_luutru/CLAUDE_lich_su_2026-09.md` | **nguyen van, 0 chu bi xoa** |
+| 3 | Thay bang mot bang **con tro** + mot lenh | `CLAUDE.md` **496 -> 263 dong** |
+
+⛔ Thu tu 1 truoc 3 la bat buoc: bo ban ghi cu khi chua co ban ghi moi la lap
+lai dung loi cua sau lan truoc.
+
+### 6.2 Vi sao lenh `trang-thai` **khong doi khoa production**
+
+Neu no doi khoa thi mot phien khong co khoa se quay ve doc tai lieu — va tai
+lieu thi troi. Nen phan cong khai hoi duoc bang tay khong:
+
+```
+/health/ready    dich vu                      200  MO cho khach an danh
+/                trang chu                    200  MO cho khach an danh
+/vps             khu VPS (ban may chu ao)     200  MO cho khach an danh
+/gia-api         bang gia API                 200  MO cho khach an danh
+/developers      khu lap trinh vien           303  doi dang nhap
+```
+
+⇒ Xac nhan **doc lap** cau da sua trong `CLAUDE.md`: `/vps` dang cong khai va
+dang thu tien that.
+
+### 6.3 Hai bay Windows da dinh khi lam viec nay
+
+Ca hai deu bi **chinh cong chat luong** bat, khong phai tu thay:
+
+| Bay | Trieu chung | Cong cu bat |
+|---|---|---|
+| `write_text` tren Windows mac dinh **CRLF** | 2 tep doi kieu xuong dong, `git diff` khong doc duoc | `check_xuong_dong.py` |
+| **Heredoc bash nuot dau gach nguoc** - trong heredoc, hai dau gach nguoc bi rut con MOT, nen Python doc `\a` = **BEL** | mot ky tu dieu khien 0x07 lot vao `CLAUDE.md` | `check_ky_tu_dieu_khien.py` |
+
+⭐ Bay thu hai da nam san trong bo nho du an (`heredoc-bash-nuot-backslash`) va
+toi van dinh. Do la ly do **banh coc dang gia hon mot ghi chu**: ghi chu doi
+nguoi ta nho, banh coc thi khong.
+
+### 6.4 🔴 LAN TROI THU SAU — va no som hon ca nam lan tep tu ghi
+
+Khi quet tham chieu toi muc vua chuyen, tim thay:
+
+```
+docs/AUDIT_MVP_2026-07-31.md:106
+  | Do chinh xac tai lieu | 62 | ... **CLAUDE.md "Viec con do" sai nang**
+    (ghi PostgreSQL/job/credit ❌ du da xong) ...
+docs/NHAT_KY.md:14532
+  - **W0.7 CLAUDE.md drift** — bang "Viec con do" sua lai ...
+```
+
+⇒ Cung mot bang, cung mot benh, **da duoc ghi nhan tu 31/07** — hon MOT THANG
+truoc lan dau tien tep tu thu nhan. Va lan do cung duoc "sua" bang cach viet
+lai bang.
+
+⭐ Do la bang chung manh nhat cho chan doan: **sau lan sua bang cach viet lai,
+sau lan troi lai.** Mot bang chep tay khong the tu biet no da cu, va so lan sua
+no khong doi duoc dieu do.
+
