@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:dd0db91ce4dbddc667f51928e8e0ea7ffa96145769dc4cfd0455067ca662bc45
+Fingerprint   : sha256:d010d8fcfea1e0bf34145f1e1cb5d5402e39928a196d35ded8fb8e7fe164efcc
 Nguồn đã quét : 1468 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3090,7 +3090,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:121, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14634880 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1468 file; 14638507 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -237704,7 +237704,7 @@ def test_viec_bao_tri_cua_app_chay_duoi_lease_nen_khong_tru_tien_N_lan():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_308_banh_coc_moi.py
-SHA256=883863713d405b4c37fcbb2e742f75f4f760181ed2c99633bb5ce4ca34880062 BYTES=7804 LINES=176
+SHA256=250127d4e744be46ce2e73258514f73bf4bd78af30f9a5b8c1a19fc5da31ee51 BYTES=9308 LINES=206
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """test_308 — hai bánh cóc mới của audit 2026-08-26, và bằng chứng chúng KÊU.
 
@@ -237805,6 +237805,36 @@ def test_hai_noi_thi_hanh_dung_MOT_con_so():
 
     assert check_server_routes.MAX_DONG == lint_app_contract.MAX_ROUTES_LINES
     assert check_server_routes.MAX_HANDLER == lint_app_contract.MAX_ROUTES_HANDLERS
+
+
+def test_guard_doi_dang_nhap_khong_chi_la_MOT_ten_ham():
+    """⛔ Một cảnh báo sai lâu ngày dạy người ta bỏ qua chính công cụ phát ra nó.
+
+    Trước 2026-09-02 chốt này khớp đúng chuỗi `require_login`, nên nó cảnh báo
+    `apps/qualitylab` — một app `public=False`, `surface="admin"`, mọi route đều
+    `Depends(require_operator)`. Đó là **cảnh báo duy nhất** linter phát ra trên
+    cả 15 app, và nó là **dương tính giả**.
+
+    ⭐ `server/deps.py:99` `require_operator` gọi chính `require_login` rồi thêm
+       chốt 403 nếu không phải quản trị viên — tức nó MẠNH HƠN, không yếu hơn.
+
+    ⚠️ Sửa bằng cách dạy chốt biết thêm một guard, KHÔNG bằng cách thêm ngoại lệ
+       cho `qualitylab`: một ngoại lệ sống lâu hơn hoàn cảnh sinh ra nó.
+    """
+    import inspect
+
+    from server import deps
+    from tools.lint_app_contract import GUARD_DOI_DANG_NHAP
+
+    assert "require_login" in GUARD_DOI_DANG_NHAP
+    assert "require_operator" in GUARD_DOI_DANG_NHAP
+
+    # Và điều làm `require_operator` hợp lệ phải được ĐO, không phải tin lời:
+    # nó phải thật sự gọi `require_login`.
+    than = inspect.getsource(deps.require_operator)
+    assert "require_login(request)" in than, (
+        "require_operator khong con goi require_login - no khong con du tu cach "
+        "lam guard dang nhap, va GUARD_DOI_DANG_NHAP phai bo no ra")
 
 
 # ── Bánh cóc 3 (đã có từ `db6147e`): app sinh nav phải có trang ──────────────
@@ -294480,7 +294510,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=5bd71769dd6e1d2cb24291b4cc0582da4df111fcd308dedb86ffc8cfe8112e71 BYTES=17073 LINES=361
+SHA256=564c63fc62e80f063e1f01ee16aeb4a67e15ed76f9f796fc2ccedf3b8dfc751f BYTES=19196 LINES=399
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -294652,6 +294682,21 @@ def _doi_chieu_ban_khai(goc: pathlib.Path) -> list:
     return findings
 
 
+#: Guard nao duoc coi la "route nay doi dang nhap".
+#:
+#: ⛔ KHONG phai mot danh sach mien tru. Moi ten o day phai THAT SU bao ham
+#:    dang nhap, va `test_308` DO dieu do chu khong tin loi: no doc than
+#:    `require_operator` va doi thay `require_login(request)` trong do.
+#:
+#: 🔴 Truoc 2026-09-02 cho nay khop dung mot chuoi `require_login`, nen no canh
+#:    bao `apps/qualitylab` — mot app `public=False`, `surface="admin"`, moi
+#:    route deu `Depends(require_operator)`, tuc duoc canh CHAT HON. Do la canh
+#:    bao DUY NHAT tren ca 15 app, va no la DUONG TINH GIA.
+#:
+#: ⭐ Cai gia khong phai mot dong thua: mot canh bao sai ton tai lau se day
+#:    nguoi ta bo qua chinh cong cu phat ra no.
+GUARD_DOI_DANG_NHAP = ("require_login", "require_operator")
+
 MAX_ROUTES_LINES = 900
 MAX_ROUTES_HANDLERS = 30
 
@@ -294784,8 +294829,31 @@ def lint() -> list:
         if route_files:
             # Kiem an toan la thuoc tinh cua CA app -> doc gop.
             rtext = "\n".join(_read(f) for f in route_files)
-            if "require_login" not in rtext:
-                findings.append(Finding(app, "WARN", "routes.py khong thay require_login"))
+            # 🔴 `require_login` KHONG phai cach duy nhat de doi dang nhap.
+            #
+            #    `server/deps.py:99` `require_operator` **goi chinh
+            #    `require_login`** (dong 103) roi them mot chot nua: khong phai
+            #    quan tri vien thi 403. Tuc no MANH HON, khong phai yeu hon.
+            #
+            # ⛔ Truoc 2026-09-02 chot nay khop chuoi `require_login` va bao
+            #    WARN cho `apps/qualitylab` — mot app `public=False`,
+            #    `surface="admin"`, moi route deu `Depends(require_operator)`.
+            #    Do la canh bao DUY NHAT ma linter phat ra tren ca 15 app, va
+            #    no la DUONG TINH GIA.
+            #
+            # ⭐ Cai gia khong phai mot dong thua. Mot canh bao sai ton tai lau
+            #    se day nguoi ta bo qua chinh cong cu phat ra no — roi toi luc
+            #    no dung thi khong ai con nhin.
+            #
+            # ⚠️ Sua bang cach day chot BIET them mot guard, KHONG bang cach
+            #    them ngoai le cho `qualitylab`. Mot ngoai le se song lau hon
+            #    hoan canh sinh ra no; mot mo hinh dung thi khong can ngoai le.
+            #    (`OPERATING_CONTRACT` §8: dung them luat de chua luat.)
+            if not any(g in rtext for g in GUARD_DOI_DANG_NHAP):
+                findings.append(Finding(
+                    app, "WARN",
+                    "routes.py khong thay guard doi dang nhap "
+                    f"({'/'.join(GUARD_DOI_DANG_NHAP)})"))
             if "@router.post" in rtext and "verify_csrf_token" not in rtext:
                 findings.append(Finding(app, "WARN",
                                         "co @router.post nhung khong thay verify_csrf_token (CSRF?)"))

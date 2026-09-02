@@ -99,6 +99,36 @@ def test_hai_noi_thi_hanh_dung_MOT_con_so():
     assert check_server_routes.MAX_HANDLER == lint_app_contract.MAX_ROUTES_HANDLERS
 
 
+def test_guard_doi_dang_nhap_khong_chi_la_MOT_ten_ham():
+    """⛔ Một cảnh báo sai lâu ngày dạy người ta bỏ qua chính công cụ phát ra nó.
+
+    Trước 2026-09-02 chốt này khớp đúng chuỗi `require_login`, nên nó cảnh báo
+    `apps/qualitylab` — một app `public=False`, `surface="admin"`, mọi route đều
+    `Depends(require_operator)`. Đó là **cảnh báo duy nhất** linter phát ra trên
+    cả 15 app, và nó là **dương tính giả**.
+
+    ⭐ `server/deps.py:99` `require_operator` gọi chính `require_login` rồi thêm
+       chốt 403 nếu không phải quản trị viên — tức nó MẠNH HƠN, không yếu hơn.
+
+    ⚠️ Sửa bằng cách dạy chốt biết thêm một guard, KHÔNG bằng cách thêm ngoại lệ
+       cho `qualitylab`: một ngoại lệ sống lâu hơn hoàn cảnh sinh ra nó.
+    """
+    import inspect
+
+    from server import deps
+    from tools.lint_app_contract import GUARD_DOI_DANG_NHAP
+
+    assert "require_login" in GUARD_DOI_DANG_NHAP
+    assert "require_operator" in GUARD_DOI_DANG_NHAP
+
+    # Và điều làm `require_operator` hợp lệ phải được ĐO, không phải tin lời:
+    # nó phải thật sự gọi `require_login`.
+    than = inspect.getsource(deps.require_operator)
+    assert "require_login(request)" in than, (
+        "require_operator khong con goi require_login - no khong con du tu cach "
+        "lam guard dang nhap, va GUARD_DOI_DANG_NHAP phai bo no ra")
+
+
 # ── Bánh cóc 3 (đã có từ `db6147e`): app sinh nav phải có trang ──────────────
 
 def test_bien_apps_toi_server_van_duoc_thi_hanh():
