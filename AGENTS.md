@@ -524,6 +524,22 @@ không chạy — khác hẳn `EXITCODE=0`. Không phân biệt được hai th�
 Chốt 2026-08-27, sau một buổi hai phiên chạy song song (`/developers` và khu VPS)
 với **0 lần đè nhau**.
 
+> ⭐ **CẬP NHẬT 2026-09-02 — quy trình đầy đủ nay ở `docs/DEVELOPMENT_WORKFLOW.md`.**
+>
+> Mục 10 này vẫn đúng và vẫn là luật. Cái đổi là **không còn phải làm bằng tay**:
+>
+> | Việc | Trước | Nay |
+> |---|---|---|
+> | tách cây | tự `git worktree add` | `python tools/cay_rieng.py tao <ten>` |
+> | chạy ít mà vẫn có nghĩa | không có | `gate.py --doi` (suy phạm vi từ cây) |
+> | tránh giành tài nguyên | một khoá cho mọi thứ | khoá theo **tên tài nguyên** |
+> | biết ai đang giữ gì | nhắn hỏi nhau | `python tools/cua_so_yen.py trang-thai` |
+> | "gate nào chạy trên mã nào" | cuộn lên đọc lại | `test-results/gates/<id>.json` |
+>
+> 🔴 Ba sự cố thật ngày 02/09 trong **đúng một giờ** là lý do: một phiên đổi
+> nhánh của phiên kia, một lượt `--vong-lap` treo quá 5 phút vì tranh CPU, và
+> toàn bộ việc chia tệp phải thương lượng bằng tin nhắn.
+
 ### 10.1 Vì sao mục này tồn tại
 
 `D:\LTTSTUDIOSAPP` thường có **nhiều phiên Claude chạy cùng lúc trên cùng một

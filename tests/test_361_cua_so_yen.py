@@ -147,19 +147,25 @@ def test_xep_hang_roi_vao_duoc_khi_nguoi_truoc_nha():
 def test_cho_qua_han_thi_VAN_CHAY_chu_khong_bo_cuoc():
     """Một cổng chất lượng từ chối chạy vì bận là một cổng không ai dùng.
 
-    Nó chỉ phải **nói rõ** rằng lượt này có thể bị nhiễu — và `da_giu=False`
+    Nó chỉ phải **nói rõ** rằng lượt này có thể bị nhiễu — và `da_giu` RỖNG
     chính là thứ bên gọi đọc để nói câu đó.
+
+    ⭐ SỬA 2026-09-02: trước đây `da_giu` là `bool` và chốt này viết `is False`.
+       Khi cửa sổ yên đổi sang khoá theo TÊN tài nguyên, `da_giu` thành **danh
+       sách tài nguyên đang giữ**, nên "không giữ gì" nay là `[]`. Điều được
+       bảo vệ không đổi một chút nào; chỉ phép so `is False` là không còn dùng
+       được. `not k.da_giu` đúng với cả hai kiểu và vẫn đo đúng thứ cần đo.
     """
     _ghi_khoa(os.getpid(), tuoi_s=5)
     with cy.CuaSoYen("nguoi-sau", "gate", cho_toi_da_s=0.2) as k:
-        assert k.da_giu is False
+        assert not k.da_giu, "chờ quá hạn mà vẫn tưởng mình giữ được khoá"
     assert cy.TEP_KHOA.exists(), "khong duoc cuop khoa cua nguoi dang giu"
 
 
 def test_bat_False_thi_khong_dung_toi_khoa():
     _ghi_khoa(os.getpid(), tuoi_s=5)
     with cy.CuaSoYen("A", "gate", bat=False) as k:
-        assert k.da_giu is False
+        assert not k.da_giu, "bat=False mà vẫn giữ khoá"
     assert json.loads(cy.TEP_KHOA.read_text(encoding="utf-8"))["phien"] == "da-chet"
 
 

@@ -1,0 +1,346 @@
+"""Nen tang nhieu phien: so dang ky thanh phan, ho so gate, khoa tai nguyen.
+
+## Vi sao bo kiem nay ton tai
+
+Phase -1 them mot phep LOC vao cong chat luong: tu "chay tat ca" sang "chay
+nhung gi lien quan". Mot phep loc sai **khong bao gio keu** — no chi im lang bo
+qua, va dong ket qua van xanh. Do la lop loi dat nhat co the them vao mot cong
+chat luong, nen no phai duoc chot chat hon phan con lai.
+
+⛔ Chot quan trong nhat khong phai chot nao do do dung. La
+   `test_moi_buoc_gate_cu_van_con` — no cam viec **mat che phu** khi doi cau
+   truc gate. Xem `PURIFICATION_GATES`: "Prove new gate coverage >= old".
+"""
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+GOC = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(GOC / "tools"))
+
+import cua_so_yen  # noqa: E402
+import thanh_phan as tp  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# So dang ky thanh phan
+# ---------------------------------------------------------------------------
+
+def test_moi_app_deu_thanh_mot_thanh_phan():
+    """App suy tu thu muc, khong tu ban khai — nen khong the quen mot app.
+
+    Day la ly do `_cac_app` doc `apps/*/manifest.py` thay vi doc TOML: mot app
+    moi tu dong co mat, khong cho ai nho cap nhat mot danh sach.
+    """
+    tp_all = tp.cac_thanh_phan(GOC)
+    tren_dia = {d.name for d in (GOC / "apps").iterdir()
+                if d.is_dir() and (d / "manifest.py").is_file()}
+    trong_do_thi = {t.split(":", 1)[1] for t in tp_all if t.startswith("app:")}
+    assert tren_dia == trong_do_thi, (
+        f"lech giua apps/ va do thi: chi tren dia {tren_dia - trong_do_thi}, "
+        f"chi trong do thi {trong_do_thi - tren_dia}")
+
+
+def test_khop_tien_to_dai_nhat_thang():
+    """`platform_core/credit.py` phai ve `core:tien`, khong ve `core:nen`."""
+    assert tp.thanh_phan_cua("platform_core/credit.py") == "core:tien"
+    assert tp.thanh_phan_cua("platform_core/models.py") == "core:nen"
+    assert tp.thanh_phan_cua("apps/vps/routes.py") == "app:vps"
+    assert tp.thanh_phan_cua("server/auth/session.py") == "server:auth"
+
+
+def test_duong_windows_va_posix_cho_cung_ket_qua():
+    """Kho nay chay tren Windows; `git` tra `/`, `Path` tra `\\`."""
+    assert (tp.thanh_phan_cua(r"platform_core\credit.py")
+            == tp.thanh_phan_cua("platform_core/credit.py") == "core:tien")
+
+
+def test_duong_khong_ai_so_huu_thi_KHONG_doan():
+    """Tra `None`, va `bi_anh_huong` phai bien no thanh 'chay tat ca'."""
+    assert tp.thanh_phan_cua("mot/duong/khong/ton/tai.py") is None
+    assert tp.bi_anh_huong({"mot/duong/khong/ton/tai.py"}, GOC) is None
+
+
+def test_cham_tep_dung_chung_thi_chay_TAT_CA():
+    """⛔ Fail-open. `conftest.py` cham moi thu, nen no khong duoc thu hep."""
+    assert tp.bi_anh_huong({"tests/conftest.py"}, GOC) is None
+    assert tp.bi_anh_huong({"tools/gate.py"}, GOC) is None
+
+
+def test_anh_xa_test_suy_tu_IMPORT_chu_khong_tu_TEN_TEP():
+    """🔴 Chot trung tam. Xem docstring `thanh_phan.py`.
+
+    `thumbnail` co 2 tep test mang ten no nhung ~19 tep IMPORT no. Chon theo
+    ten se bo qua 17 phep kiem — im lang, va o dung cho nguy hiem nhat.
+    """
+    bang = tp.test_cua_thanh_phan(GOC)
+    theo_ten = {t for t in bang["app:thumbnail"] if "thumbnail" in t}
+    assert len(bang["app:thumbnail"]) > 3 * max(len(theo_ten), 1), (
+        f"chi thay {len(bang['app:thumbnail'])} tep cho thumbnail "
+        f"({len(theo_ten)} khop ten) - phep suy theo import co ve da hong")
+
+
+def test_chi_lay_module_test_that():
+    """⛔ `tests/__init__.py` lot vao lam ca luot chet bang INTERNALERROR.
+
+    Va INTERNALERROR khong phai mot test do — no la ca bo test KHONG CHAY,
+    trong khi dong ket qua trong y het mot that bai binh thuong.
+    """
+    moi_tep = set()
+    for ds in tp.test_cua_thanh_phan(GOC).values():
+        moi_tep |= ds
+    xau = {t for t in moi_tep if not Path(t).name.startswith("test_")}
+    assert not xau, f"khong phai module test ma van duoc chon: {sorted(xau)}"
+
+
+def test_canh_dong_lam_sdk_het_mo_coi():
+    """`sdk/` khong module nao import — chi `GOI_TAI` tra bang chuoi.
+
+    Neu chot nay do, `sdk/` da tro lai thanh mo coi voi phep do tinh, va lan
+    don dep sau se cham no la CHET. No khong chet: no la duong DUY NHAT cho
+    khach macOS/Linux.
+    """
+    _, tieu_thu = tp.do_thi_phu_thuoc(GOC)
+    assert tieu_thu["sdk"], (
+        "sdk/ khong con nguoi tieu thu nao - canh dong GOI_TAI da mat khoi "
+        "tools/thanh_phan.toml")
+
+
+def test_moi_canh_dong_deu_co_bang_chung():
+    """Mot canh khong chi duoc ra dong ma la mot canh khong ai kiem lai duoc."""
+    for canh in tp.nap_khai().get("canh_dong", []):
+        assert canh.get("bang_chung"), f"canh thieu bang chung: {canh}"
+        assert canh.get("co_che"), f"canh thieu co che: {canh}"
+
+
+def test_mo_rong_nguoi_tieu_thu_khong_bo_sot_chieu_nguoc():
+    """Doi `core:tien` phai keo theo nguoi DUNG no, khong chi ban than no."""
+    phan = tp.bi_anh_huong({"platform_core/credit.py"}, GOC)
+    assert phan is not None and "core:tien" in phan
+    assert len(phan) > 1, "khong mo rong sang nguoi tieu thu"
+
+
+# ---------------------------------------------------------------------------
+# Khoa tai nguyen
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def khoa_sach():
+    """Don moi khoa truoc va sau — bo kiem nay khong duoc de lai rac."""
+    def don():
+        for bg in cua_so_yen.dang_giu():
+            cua_so_yen.nha(ep=True, tai_nguyen=bg.get("tai_nguyen",
+                                                      cua_so_yen.MAC_DINH))
+    don()
+    yield
+    don()
+
+
+def test_hai_tai_nguyen_khac_nhau_KHONG_doi_nhau(khoa_sach):
+    """⭐ Chinh la ly do Phase -1 doi khoa don thanh khoa theo ten.
+
+    Truoc do hai luot khong dung chung gi van phai xep hang sau nhau.
+    """
+    assert cua_so_yen.thu_giu("A", "lenh-A", "postgres_test")
+    assert cua_so_yen.thu_giu("B", "lenh-B", "gpu0")
+    assert {b["tai_nguyen"] for b in cua_so_yen.dang_giu()} >= {
+        "postgres_test", "gpu0"}
+
+
+def test_cung_mot_tai_nguyen_thi_nguoi_thu_hai_TRUOT(khoa_sach):
+    assert cua_so_yen.thu_giu("A", "lenh-A", "postgres_test")
+    assert cua_so_yen.thu_giu("B", "lenh-B", "postgres_test") is False
+
+
+def test_khoa_treo_bi_doat_chu_khong_treo_mai(khoa_sach):
+    """PID chet => khoa phai bi doat, neu khong mot lan Ctrl-C khoa ca may."""
+    tep = cua_so_yen._tep("postgres_test")
+    tep.write_text(json.dumps({
+        "phien": "ma", "pid": 999_999_999, "lenh": "x",
+        "bat_dau_epoch": 0.0}), encoding="utf-8")
+    assert cua_so_yen.thu_giu("moi", "lenh", "postgres_test") is True
+
+
+def test_xin_nhieu_tai_nguyen_la_TAT_CA_hoac_KHONG(khoa_sach):
+    """⛔ Giu mot phan roi doi phan con lai la cong thuc khoa chet."""
+    assert cua_so_yen.thu_giu("nguoi-giu", "lenh", "gpu0")
+    k = cua_so_yen.CuaSoYen("toi", "lenh", bat=False,
+                            tai_nguyen=("gpu0", "postgres_test"))
+    assert k._thu_giu_het() is False
+    assert k.da_giu == [], "giu mot phan roi that bai - se khoa chet"
+    assert cua_so_yen._doc("postgres_test") is None, "chua nha phan da giu"
+
+
+def test_xin_theo_thu_tu_SAP_XEP(khoa_sach):
+    """Hai luot xin cung tap theo hai thu tu khac nhau la khoa chet."""
+    k = cua_so_yen.CuaSoYen("x", "y", bat=False,
+                            tai_nguyen=("gpu0", "cpu_nhieu", "postgres_test"))
+    assert list(k.tai_nguyen) == sorted(k.tai_nguyen)
+
+
+def test_sau_khi_thoat_van_bao_duoc_da_giu_gi(khoa_sach):
+    """🔴 Chot nay lap dung khoang trong ma bo kiem nay tung bo lot.
+
+    Kho ket qua cua gate goi `_ghi_ket_qua` **sau** khoi `with`, ma `__exit__`
+    thi xoa `da_giu` (bat buoc — neu khong, mot lan thoat thu hai se nha khoa
+    cua nguoi khac). Ket qua: ban ghi cua mot luot CO giu `cpu_nhieu` lai viet
+    `tai_nguyen_da_giu: []`.
+
+    ⛔ Va chot cu **khong bat duoc**, vi no dung mot doi tuong khoa gia chua he
+       duoc `__exit__`. Do la kieu khoang trong dien hinh: kiem dung tung manh
+       thay vi kiem doan noi giua chung.
+    """
+    with cua_so_yen.CuaSoYen("toi", "gate", tai_nguyen=("postgres_test",)) as k:
+        assert k.da_giu == ["postgres_test"]
+    assert k.da_giu == [], "phai rong sau khi thoat, neu khong se nha khoa hai lan"
+    assert k.da_giu_xong == ["postgres_test"], (
+        "sau khi thoat phai van bao duoc luot nay da giu gi")
+
+
+def test_tai_nguyen_mac_dinh_giu_DUNG_ten_tep_cu():
+    """Doi ten la mo cua so cho hai ban gate cung tuong minh doc quyen."""
+    assert cua_so_yen._tep(cua_so_yen.MAC_DINH) == cua_so_yen.TEP_KHOA
+
+
+# ---------------------------------------------------------------------------
+# Gate: ho so va che phu
+# ---------------------------------------------------------------------------
+
+def _nap_gate():
+    import importlib
+    return importlib.import_module("gate")
+
+
+def test_moi_ho_so_deu_khai_no_KHONG_chung_minh_gi():
+    """🔴 Cai gia cua mot ho so khong tu khai da duoc tra roi.
+
+    Ngay 25/08 hai phien doc dong `PASS` cua `--quick` thanh "moi thu xanh",
+    trong khi moi loi that hom do nam o dung buoc no bo qua. Them ho so ma
+    khong them cau tu khai la lam song lai chuyen do duoi ten moi.
+    """
+    gate = _nap_gate()
+    for ten, hs in gate.HO_SO.items():
+        assert hs.get("khong_chung_minh"), f"ho so {ten} khong khai gioi han"
+        assert hs.get("chung_minh"), f"ho so {ten} khong khai no chung minh gi"
+
+
+def test_moi_buoc_gate_cu_van_con():
+    """⛔ CHE PHU MOI PHAI >= CHE PHU CU. Chot nay chan viec mat buoc lang le.
+
+    `PURIFICATION_GATES`: "Prove new gate coverage >= old critical coverage."
+    Doi cau truc gate ma lam roi mot buoc thi chot nay do — chu khong phai
+    doi mot su co tren production moi biet.
+    """
+    gate = _nap_gate()
+    ten = {s.name for s in gate._steps(quick=False)}
+    bat_buoc = {
+        "bien dich duoc", "secret scan", "app contract lint", "kieu xuong dong",
+        "kich thuoc route server", "chuong chua treo", "ten chua dinh nghia",
+        "nuot loi lang le", "bien .ps1 trung tham so", "trung so test",
+        "bo qua im lang", "ky tu dieu khien", "chuoi chua dich",
+        "dich thieu ban EN", "system profile", "hop dong API",
+        "anh chup hop dong", "tai lieu sinh ra", "SDK khop hop dong",
+        "tai san GUI", "postman", "bo test (song song)",
+    }
+    assert bat_buoc <= ten, f"buoc da BIEN MAT khoi gate: {sorted(bat_buoc - ten)}"
+
+
+def test_chi_buoc_that_su_doc_quyen_moi_khai_tai_nguyen():
+    """Khai thua tai nguyen lam moi thu xep hang tro lai — mat het cai vua duoc."""
+    gate = _nap_gate()
+    co_tn = {s.name for s in gate._steps(quick=False) if s.tai_nguyen}
+    assert co_tn == {"bo test (song song)"}, (
+        f"buoc khai tai nguyen ngoai du kien: {sorted(co_tn)}")
+
+
+def test_ho_so_mac_dinh_van_la_day_du():
+    """⛔ Tuong thich nguoc: `python tools/gate.py` tran phai khong doi nghia."""
+    gate = _nap_gate()
+    assert gate.HO_SO["day-du"]["xep_hang"] is True
+    assert gate.HO_SO["vong-lap"]["xep_hang"] is False
+
+
+def test_pham_vi_rong_thi_HA_CAP_chu_khong_bao_PASS():
+    """Mot pham vi khong test nao phai keo ve day du, khong duoc in mot dong xanh."""
+    gate = _nap_gate()
+    assert gate._steps_pham_vi([]) == []
+
+
+# ---------------------------------------------------------------------------
+# Kho ket qua
+# ---------------------------------------------------------------------------
+
+def test_kho_ket_qua_nam_ngoai_git_va_ngoai_deploy():
+    """⛔ Du lieu mot lan chay khong duoc len production.
+
+    `test-results/` phai vua o `.gitignore` vua o danh sach `/XD` cua robocopy
+    trong `setup/2-cai-dat.ps1`. Deploy chep CA CAY ke ca tep untracked, nen
+    `.gitignore` mot minh **khong** du.
+    """
+    assert "/test-results/" in (GOC / ".gitignore").read_text(encoding="utf-8")
+    cai_dat = (GOC / "setup" / "2-cai-dat.ps1").read_text(encoding="utf-8",
+                                                          errors="replace")
+    assert "test-results" in cai_dat, (
+        "test-results khong con trong /XD - ket qua gate se len production")
+
+
+def test_kho_ket_qua_ghi_du_danh_tinh(tmp_path, monkeypatch):
+    """Phien sau phai biet 'gate nao da chay tren ma nao'.
+
+    ⛔ Ghi vao `tmp_path`, KHONG vao kho that. Ban dau chot nay goi thang
+       `_ghi_ket_qua` va de lai ba ban ghi `day-du PASS` GIA trong
+       `test-results/gates/` — mot phien sau doc chung se tin rang gate day du
+       da xanh. Do dung la cai bay `AGENTS.md` §10.4 goi ten: rac test lot vao
+       tep that. Mot chot ve tinh trung thuc cua kho ket qua ma tu lam ban kho
+       ket qua thi no dang chung minh dieu nguoc lai.
+    """
+    gate = _nap_gate()
+    monkeypatch.setattr(gate, "ROOT", tmp_path)
+
+    class _KhoaGia:
+        da_cho_s = 1.5
+        da_giu = ["cpu_nhieu"]
+
+    gate._ghi_ket_qua("day-du", [], "PASS", 12.3, _KhoaGia(), False)
+    ra = list((tmp_path / "test-results" / "gates").glob("*.json"))
+    assert ra, "khong ghi duoc ban ghi nao"
+    d = json.loads(ra[0].read_text(encoding="utf-8"))
+    for khoa in ("id", "luc", "ho_so", "ket_qua", "sha", "nhanh", "cay",
+                 "la_cay_chinh", "cho_khoa_giay", "tai_nguyen_da_giu"):
+        assert khoa in d, f"ban ghi thieu {khoa}"
+    assert (GOC / "test-results" / "gates" / f"{d['id']}.json").exists() is False, (
+        "chot da ghi vao kho ket qua THAT")
+
+
+def test_kho_ket_qua_KHONG_ghi_bien_moi_truong():
+    """⚠️ Bien moi truong chua bi mat. Mot kho ket qua khong duoc cham vao do."""
+    ma = (GOC / "tools" / "gate.py").read_text(encoding="utf-8")
+    khuc = ma[ma.index("def _ghi_ket_qua"):ma.index("def _git_gon")]
+    assert "environ" not in khuc, "kho ket qua dang ghi bien moi truong"
+    assert ".tail" not in khuc, "kho ket qua dang ghi dau ra cua buoc"
+
+
+# ---------------------------------------------------------------------------
+# Cay rieng
+# ---------------------------------------------------------------------------
+
+def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
+    """Mot tham chieu chet trong tai lieu an toan la mot lop bao ve TUONG TUONG.
+
+    `cay_rieng.py` tung ghi rang `tools/check_cay_chinh.py` chan viec deploy tu
+    cay rieng "va no chay trong gate". Tep do KHONG TON TAI. Chot chan that nam
+    trong `setup/2-cai-dat.ps1` va duoc `test_362` bao ve.
+    """
+    import re
+    ma = (GOC / "tools" / "cay_rieng.py").read_text(encoding="utf-8")
+    thieu = [t for t in set(re.findall(r"tools/([a-z0-9_]+\.py)", ma))
+             if not (GOC / "tools" / t).is_file()]
+    assert not thieu, (
+        f"cay_rieng.py tro toi tools/{{{', '.join(sorted(thieu))}}} "
+        "nhung tep do khong ton tai")
