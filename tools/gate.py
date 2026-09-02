@@ -58,7 +58,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cua_so_yen import MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
-FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
+FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi", "chatltt")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NGAN SACH LOI — mot chu so huu duy nhat cho ca luot gate

@@ -1,7 +1,7 @@
 {
   "program": "LTTCHAT_AUTONOMOUS_DEEP_BUILD_V2",
   "h": "H43",
-  "phase": "08a",
+  "phase": "08",
   "verdict": "PASS",
   "sha": "bdddeae",
   "base_branch": "admin-mvp-v3",
@@ -10,9 +10,10 @@
   "test_range": [600, 699],
   "tests_used": [600, 601, 602, 603, 604, 606, 607, 608, 609, 610, 611, 612, 613, 614, 616, 617, 618, 623],
   "librechat_pin": {"tag": "v0.8.7", "sha": "9e74cc0e57b395926122bd4062c1fcedc48ed465", "license": "MIT"},
-  "phases_done": ["00", "01", "02", "03", "04", "05", "06", "07", "08a"],
+  "phases_done": ["00", "01", "02", "03", "04", "05", "06", "07", "08"],
   "live_evidence_pending": ["03", "04", "05"],
+  "public_url_check_pending": ["08b"],
   "blocking_external": false,
-  "next_phase": "08b",
+  "next_phase": "09",
   "updated": "2026-09-03"
 }

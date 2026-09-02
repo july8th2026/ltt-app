@@ -3688,7 +3688,7 @@ URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bản
 | H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed — `apps/chatltt/services/chinh_sach.py`, `AppManifest.suc_khoe`, alias mới chỉ bằng registry (`test_613/614`, `reports/06_catalog_chinh_sach.md`) | [x] 2026-09-03 |
 | H43.7 | 07 | Bảng `chatltt_*` (cây, `current_leaf_id` ở CSDL, xoá mềm) + migration `7d2c1e9f4a03` + `services/{hoi_thoai,su_kien}.py` + reload từ CSDL (`test_616–618` 16 pass, `reports/07_du_lieu_cay_su_kien.md`) | [x] 2026-09-03 |
 | H43.8a | 08 | Text (máy chủ): `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại, IDOR/CSRF (`test_623`, `reports/08a_text_backend.md`) | [x] 2026-09-03 |
-| H43.8b | 08 | Text (giao diện): bundle React `frontend/chatltt` — **mốc "chỉ-text dùng được độc lập" chưa đạt tới khi xong mục này** | [ ] |
+| H43.8b | 08 | Text (giao diện): bundle React `frontend/chatltt` (30 test), gate/build_release biết bundle thứ tư, kiểm trình duyệt thật (stream · tạo lại · chuyển nhánh · nhánh sống qua reload · 390 px) — **mốc "chỉ-text dùng được độc lập" ĐẠT** (`reports/08b_text_giao_dien.md`) | [x] 2026-09-03 |
 | H43.9 | 09 | Tạo ảnh / đọc to / tạo giọng trong hội thoại | [ ] |
 | H43.10 | 10 | UX LibreChat-class, Carbon LTT, desktop+mobile | [ ] |
 | H43.11 | 11 | Chứng minh mở rộng bằng fixture | [ ] |

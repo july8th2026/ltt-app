@@ -13,7 +13,7 @@
 - Dải số test: **600–699**
 - Production: `89eb46c` (14:15 02/09) + voice (21:11 02/09), 5 tool bán thật.
   ⛔ Chương trình này **không deploy**.
-- Phase hiện tại: **00 ✅ · 01 ✅ · 02 ✅ · 03 ✅ · 04 ✅ · 05 ✅ · 06 ✅ · 07 ✅ · 08a ✅ → tiếp 08b (bundle React)**
+- Phase hiện tại: **00 ✅ · 01 ✅ · 02 ✅ · 03 ✅ · 04 ✅ · 05 ✅ · 06 ✅ · 07 ✅ · 08 ✅ → tiếp 09**
   (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
 
 ## Ranh giới với phiên khác (02/09)
@@ -37,7 +37,8 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | **07** Dữ liệu + sự kiện | PASS — `chatltt_*` dạng cây (D4=C), migration `7d2c1e9f4a03`, `hoi_thoai`/`su_kien`, reload từ CSDL (`test_616–618`) | (commit phase 03–08a) |
 | **04** Ảnh nội bộ | PASS (deterministic) — `platform_core/jobs.DangBan` + `_provider_failure_kind` ⇒ bận là `resource_wait` không tiêu lượt thử; `LoiYeuCauAnh` cho lỗi người gọi; hỏi `health()` trước khi dịch prompt (`test_606–608`) | (commit phase 03–08a) |
 | **05** Tiếng nội bộ | PASS (deterministic) — `DangBanTam(DangBan)`; giọng người khác ≡ không tồn tại; trần 1.500 không nới; tiền theo giây `ffprobe`; `so_lan_thu_for=5` (`test_609–612`) | (commit phase 03–08a) |
-| **08a** Text (máy chủ) | PASS — `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại; hai lỗi thật đã sửa (múi giờ SQLite, `parent_id: null`) (`test_623`) | (commit phase 03–08a) |
+| **08a** Text (máy chủ) | PASS — `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại; hai lỗi thật đã sửa (múi giờ SQLite, `parent_id: null`) (`test_623`) | `b77fe83` |
+| **08b** Text (giao diện) | PASS — `frontend/chatltt` (30 test), build 4 bundle, **kiểm trình duyệt thật**: stream, tạo lại, chuyển nhánh, nhánh sống qua reload, 390 px không tràn; sửa 302 của mỗi lệnh GET (`reports/08b_text_giao_dien.md`) | (commit 08b) |
 
 ## Hợp đồng đã cài ở Phase 02 (các phase sau DÙNG, không dựng lại)
 | Hàm | Ký |
@@ -74,12 +75,13 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | Bằng chứng LIVE với máy B / GPU | Phase 03/04/05/12 | khi máy rảnh; deterministic trước |
 
 ## Next phase
-- **08b — bundle React `frontend/chatltt`** (D5/D13): React 19 + Vite theo khuôn
-  `frontend/agent-canvas`, primitives `@assistant-ui/react` (MIT), style Carbon LTT.
-- Bằng chứng cần: `npm ci` + `npm test` + `npm run build` trong cây này; kiểm
-  trình duyệt (cổng dev, KHÔNG phải 8100) với ảnh chụp trong `reports/`.
-- Tiêu chí kế thừa phải đạt ngay ở 08b: AC-11 (IME tiếng Việt), AC-12 (Markdown
-  không `rehype-raw`), AC-13 (khối suy luận có `aria-expanded`/`aria-controls`).
+- **09 — ảnh và tiếng trong hội thoại**: nút Tạo ảnh (báo giá → xác nhận → tiến
+  độ → khối ảnh), Đọc to / Tạo giọng (preset + giọng của tôi + link sang Voice
+  Studio), reload/nối lại, thử lại/huỷ. Không planner tự động.
+- Dùng sẵn: `runtime_noi_bo.job.bao_gia/nop_job`, `NangLuc.tuy_chon["voice_id"]`,
+  `platform_core/job_history` cho tiến độ (Q87: 2 s, backoff 4→8→16→30).
+- ⚠️ `anhnoibo.suc_khoe` chưa khai (Phase 06 giao lại) — catalog chưa nói được
+  ảnh có sẵn sàng không.
 
 ## Giao cho phase sau (từ 04/05/08a)
 | Mục | Phase | Việc |
