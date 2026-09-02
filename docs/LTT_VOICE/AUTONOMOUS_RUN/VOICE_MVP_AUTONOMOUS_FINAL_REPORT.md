@@ -449,10 +449,9 @@ nghiemthu-20260902-211611        EXITCODE=0    "KET QUA: he thong hoan chinh."
 **Bằng chứng mã đã lên máy chủ thật** (không suy từ log deploy):
 
 ```
-C:\LTTPlatformpppps\ltt_voice
-ghe_thu.py          13.094 byte
-C:\LTTPlatformpp	ests	est_500_ltt_voice_nghe_thu.py  co
-C:\LTTPlatformpp	ests	est_501_ltt_voice_hong_hoc.py  co
+C:\LTTPlatform\app\apps\ltt_voice\nghe_thu.py          13.094 byte
+C:\LTTPlatform\app\tests\test_500_ltt_voice_nghe_thu.py  co
+C:\LTTPlatform\app\tests\test_501_ltt_voice_hong_hoc.py  co
 tham_so_cong_khai.py:87  SO_LAN_THU_JOB = 5
 tu_dien.py               6 lan khop HTTPS/MP3/WAV
 ```
