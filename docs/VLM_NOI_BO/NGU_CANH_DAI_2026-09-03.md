@@ -726,11 +726,82 @@ Và Codex `0.145.0` nuốt được cấu hình đó: `model: ltt_llm`, `provide
 ⭐ Lượt kiểm này cũng là lần đầu bản vá vision (88.555) đi tới **artefact**
 chứ không chỉ tới mã nguồn. Bản `1.4.0` dựng 02/09 vẫn khai `28262`.
 
+## 7e. 🔴 KHUYẾT TẬT SỐNG, TÌM RA VÌ HỎI MÁY CHỦ THAY VÌ ĐỌC TÀI LIỆU
+
+Tôi định chạy canary N-12 và muốn chắc số công bố khớp máy thật, nên hỏi
+`GET /api/v1/models` bằng khoá canary. Ba việc lộ ra cùng lúc.
+
+| | Máy chủ thật nói | Ghi chép của ta nói |
+|---|---|---|
+| `ltt_llm` | **156.385** | N-1: *"máy B vẫn `-c 131072`"* — **sai, đã cũ** |
+| `ltt_llm_vision` | **28.262** | H-4 chưa tới khách — **đúng** |
+| ba trường bắt buộc | **thiếu** | không ai biết |
+
+⭐ Đúng lý do `CLAUDE.md` bắt hỏi máy chủ: một dòng chép tay **không có cách nào
+tự biết nó đã cũ**. N-1 nằm trong bảng nợ của chính tệp này, và nó sai.
+
+### 7e.1 Endpoint không parse nổi một mục nào
+
+`ModelInfo` @ `rust-v0.145.0` có 17 trường không mang `#[serde(default)]`;
+`/api/v1/models` thiếu **tám**. Thiếu một trường bắt buộc là Codex bỏ **cả
+mục** — im lặng — rồi rơi về metadata dự phòng: **272.000** ngữ cảnh, **không
+nén**. Lớn hơn trần thật của ta ⇒ phiên dài **chắc chắn** kết thúc bằng `413`.
+
+⛔ Và bộ cài **che** được lỗi này: `model_catalog_json` thay hẳn catalog. Nên nó
+   không hiện ra ở **bất kỳ** phép đo nào đi qua bộ cài — kể cả canary Codex
+   thật ở §7c. Khách bị là người cấu hình **bằng tay** theo tài liệu của ta,
+   hoặc dùng tiện ích VS Code.
+
+### 7e.2 ⭐ MỘT PHÉP THỬ BÁC BỎ ĐÃ CỨU TÔI KHỎI KẾT LUẬN SAI
+
+Tôi sắp viết *"endpoint thiếu 8 trường bắt buộc, nên nó hỏng"*. Con số đúng,
+suy luận sai, và nó khớp quá vừa — đúng cái bẫy đã ghi ở
+`gia-thuyet-khop-qua-vua-ket-thuc-dieu-tra`.
+
+Trước khi tin, tôi hỏi ngược: **thứ gì đang CHẠY mà lẽ ra phải hỏng?**
+
+Catalog của bộ cài cũng thiếu **năm** trường bắt buộc — và Codex chạy thật với
+nó, đo được ở §7d.8. Nếu *"thiếu trường bắt buộc nào cũng chết"* thì bộ cài đã
+phải chết. Nó không chết ⇒ giả thuyết sai.
+
+Ranh giới thật: **serde tự cho `None` với `Option<T>`**. Năm trường bộ cài
+thiếu đều là `Option`. Ba trường máy chủ thiếu mà **không** phải `Option` mới
+là thứ giết:
+
+```
+support_verbosity: bool                       openai_models.rs:424
+truncation_policy: TruncationPolicyConfig                     :429
+experimental_supported_tools: Vec<String>                     :449
+```
+
+Năm trường `Option` còn lại (`availability_nux`, `upgrade`,
+`default_verbosity`, `tool_mode`, `multi_agent_version`) vô hại ở **cả hai** nơi.
+
+⭐ Nếu tôi tin giả thuyết đầu, bản vá vẫn *chạy* (thêm cả 8 thì cũng đúng) —
+nhưng **lời giải thích** sẽ sai, và lời giải thích sai là thứ phiên sau kế thừa.
+
+### 7e.3 Sửa: suy ra, không gõ thêm hằng số
+
+`server/api/tools.py::_dang_codex` nay khai đủ ba trường + `auto_compact_token_limit`:
+
+```
+nen       = cua_so - max_output      # 156.385 - 32.768 = 123.617
+tran_tool = max_output // 2          #                    16.384
+```
+
+Cùng phép suy với hai bộ cài, nên **ba** nơi ra **một** con số. Có phép kiểm
+chốt điều đó: hai catalog nói hai ngưỡng nén khác nhau thì hành vi của khách
+phụ thuộc vào *cách họ cài*, và đó là loại lỗi không ai tái hiện được.
+
+`nen <= 0` thì **bỏ hẳn** trường, không ghi số bịa — cùng luật với bộ cài. Với
+vision đang chạy thật (28.262) thì đúng là bỏ hẳn.
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
 |---|---|---|
-| N-1 | **Chưa deploy.** Máy B vẫn `-c 131072` | Cần cửa sổ deploy; một phiên khác đang dùng production. Thứ tự ở §7 D-5 |
+| ~~N-1~~ | 🟢 **ĐÓNG 04/09** — máy B **đã** deploy. ~~Máy B vẫn `-c 131072`~~ | Hỏi máy chủ thật: `ltt_llm` công bố **156.385**. Dòng nợ này đã sai trong một thời gian mà không ai biết, vì nó là chữ chép tay. §7e. |
+| **N-13** | ⚠️ **Bản vá `/api/v1/models` chưa deploy** | Ba trường bắt buộc đã thêm (§7e.3, `fa1b8e9`) nhưng khách vẫn nhận bản thiếu cho tới khi deploy. Xếp cùng hàng với H-4 — cùng một lượt `2-cai-dat.ps1`. |
 | ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **ĐÃ CHẠY 04/09** — và **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
 | ~~N-10~~ | 🟢 **ĐÓNG 04/09** (§7d.3). ~~MỘT kết quả tool có thể lớn hơn MỌI khoảng trống~~ | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng".<br><br>✅ **Nhưng nó có trần**, và ta đã tự vứt cái trần đó đi: `truncation_policy.limit` = cả cửa sổ, trong khi mặc định Codex là 2.500 token. Đặt lại `TOKEN_RA_TRAN // 2 = 16.384`. |
 | ~~N-11~~ | 🟢 **ĐÓNG 04/09** (§7d.7). ~~Codex thử lại dù ta đánh `retry: never`~~ | Hai cái sai trong một dòng. `retry` là trường mở rộng của RIÊNG TA, không client nào đọc được. Và `413` của ta **đã** phát trước khi stream mở (`streaming.py:664` trước `return StreamingResponse` ở 678) — vẫn bị retry, vì Codex `0.145` dùng WebSocket nên mọi mã HTTP tới nó dưới dạng lỗi kết nối. Hình dạng phản hồi của ta không điều khiển được việc này. **Không có gì để sửa**; đòn bẩy duy nhất là đừng tạo ra `413`. |
