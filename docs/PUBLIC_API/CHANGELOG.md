@@ -21,6 +21,32 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-04 — bộ cài `1.6.0`: Claude Code cũng nén đúng lúc
+
+**FIXED · Thêm `CLAUDE_CODE_AUTO_COMPACT_WINDOW` và `MAX_MCP_OUTPUT_TOKENS`.**
+
+Nếu bạn dùng **Claude Code**, hãy cài lại bộ cài `1.6.0`.
+
+**Vì sao bản trước chưa đủ.** Chúng tôi đã khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS`
+và tưởng thế là xong. Nhưng biến đó chỉ sửa con số Claude **giả định** — nó
+**không** đặt ngưỡng nén. Tài liệu chính thức của Claude Code nói rõ: không đặt
+cửa sổ nén thì Claude nén khi hội thoại **chạm đúng** cửa sổ ấy, tức **100%**.
+
+Với số của chúng tôi, điều đó chừa lại **13.599** token trước trần cứng, trong
+khi một lượt trả lời dài nhất là **32.768**. Và Claude chỉ kiểm ngưỡng **giữa
+hai lượt**. Nên một lượt có kết quả công cụ lớn vẫn có thể vượt trần và nhận
+`413` — đúng triệu chứng chúng tôi vừa sửa cho Codex, chỉ khác tên khoá.
+
+Bản `1.6.0` đặt cửa sổ nén ở **123.617**, cùng con số Codex đang dùng.
+
+**`MAX_MCP_OUTPUT_TOKENS`:** mặc định của Claude là 25.000 token cho một phản
+hồi MCP — chiếm 76% khoảng trống. Hai phản hồi trong một lượt là tràn. Bản này
+hạ về **16.384**, cùng con số với trần kết quả công cụ của Codex.
+
+**Bạn phải làm gì:** cài lại rồi chạy `cam` như cũ. Nếu bạn tự đặt tay
+`CLAUDE_CODE_MAX_CONTEXT_TOKENS` mà **không** đặt `CLAUDE_CODE_AUTO_COMPACT_WINDOW`,
+hãy thêm biến thứ hai — biến thứ nhất một mình **không** đủ.
+
 ## 2026-09-04 — `GET /api/v1/models` nay Codex đọc được
 
 **FIXED · Thêm ba trường bắt buộc vào mục model: `truncation_policy`,

@@ -670,6 +670,75 @@ class TestCamCliKhopNganSach:
                 f"khoang trong {khoang} — hai ket qua lien tiep trong mot luot "
                 f"la tran")
 
+    def test_Claude_PHAI_duoc_dat_cua_so_nen_rieng(self):
+        """🔴 KHUYẾT TẬT 04/09 TRÊN ĐƯỜNG CLAUDE — cùng họ với Codex, khác tên.
+
+        `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chỉ sửa con số Claude **giả định**. Nó
+        **không** đặt ngưỡng nén. Tài liệu chính thức
+        (`code.claude.com/docs/en/model-config.md`, mục *Default auto-compact
+        thresholds*) nói thẳng:
+
+            "If you don't set an auto-compact window, Claude Code compacts when
+             the conversation reaches the model's context limit"
+            "Sessions on a model ID Claude Code doesn't recognize, such as an
+             LLM gateway alias, compact at the context window Claude Code
+             assumes for the ID"
+
+        ⇒ Không đặt `CLAUDE_CODE_AUTO_COMPACT_WINDOW` thì Claude nén ở **đúng
+          100%** cửa sổ ta khai (156.385), chừa lại 13.599 trên trần cứng —
+          nhỏ hơn một lượt sinh dài nhất (32.768). Và Claude cũng chỉ kiểm
+          ngưỡng **giữa hai lượt**.
+
+        ⛔ Đây đúng là hình dạng lỗi đã ăn `413` ở production phía Codex, chỉ
+           khác tên khoá. Nó sống được vì `MAX_CONTEXT_TOKENS` **trông như** đã
+           giải quyết xong vấn đề.
+        """
+        cc = self._cam_cli()
+        assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in cc.CLAUDE_ENV, (
+            "bo cai khong dat cua so nen cho Claude — Claude se nen o 100% "
+            "cua so khai bao, khong con cho cho mot luot sinh")
+        assert cc.CUA_SO_NEN_CLAUDE == cc.NEN_HOI_THOAI, (
+            f"cua so nen Claude {cc.CUA_SO_NEN_CLAUDE} != nguong nen Codex "
+            f"{cc.NEN_HOI_THOAI} — hai client, mot may chu, phai MOT con so")
+        con = ngan_sach.tran_vao_cua("qwen38-api") - cc.CUA_SO_NEN_CLAUDE
+        assert con >= ngan_sach.TOKEN_RA_TRAN, (
+            f"nen o {cc.CUA_SO_NEN_CLAUDE} tren tran cung "
+            f"{ngan_sach.tran_vao_cua('qwen38-api')} chi chua {con} token — "
+            f"nho hon mot luot sinh dai nhat ({ngan_sach.TOKEN_RA_TRAN})")
+
+    #: Sàn cứng của `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, đọc từ tài liệu chính
+    #: thức: *"Set the auto-compact window in tokens, from `100000` to
+    #: `1000000`"*. Giá trị dưới sàn bị Claude kẹp lên, tức lời hứa của ta im
+    #: lặng thành một lời hứa khác.
+    _SAN_CUA_SO_NEN_CLAUDE = 100_000
+
+    def test_cua_so_nen_Claude_KHONG_duoi_san_Claude_chap_nhan(self):
+        """Một con số bị client kẹp lại là một con số ta không còn kiểm soát."""
+        cc = self._cam_cli()
+        assert cc.CUA_SO_NEN_CLAUDE >= self._SAN_CUA_SO_NEN_CLAUDE, (
+            f"{cc.CUA_SO_NEN_CLAUDE} duoi san {self._SAN_CUA_SO_NEN_CLAUDE} — "
+            f"Claude se kep len va bo cai noi mot dang, client lam mot dang")
+
+    def test_tran_ket_qua_MCP_khop_tran_ket_qua_tool_cua_Codex(self):
+        """Mặc định `MAX_MCP_OUTPUT_TOKENS` là 25.000 — chiếm 76% khoảng trống.
+
+        Hai kết quả MCP trong **một** lượt là tràn, và Claude không kiểm ngưỡng
+        giữa các lần gọi tool. Cùng bài toán với Codex nên cùng con số.
+        """
+        cc = self._cam_cli()
+        assert "MAX_MCP_OUTPUT_TOKENS" in cc.CLAUDE_ENV
+        assert cc.TRAN_KET_QUA_TOOL * 2 <= ngan_sach.TOKEN_RA_TRAN, (
+            f"hai ket qua tool {cc.TRAN_KET_QUA_TOOL} lien tiep vuot khoang "
+            f"trong {ngan_sach.TOKEN_RA_TRAN}")
+
+    def test_hai_bo_cai_khai_CUNG_bo_bien_Claude(self):
+        """Bản `sdk` từng **thiếu** hai biến mà bản Windows có — chú thích ngay
+        trong tệp ấy ghi lại chuyện đó. Phép kiểm này để nó đừng lặp lại."""
+        cc, sdk = self._cam_cli(), self._sdk_cli()
+        for ten in ("CUA_SO_NEN_CLAUDE", "TRAN_KET_QUA_TOOL", "NEN_HOI_THOAI"):
+            assert getattr(cc, ten) == getattr(sdk, ten), (
+                f"{ten}: cam_cli {getattr(cc, ten)} != sdk {getattr(sdk, ten)}")
+
     def test_hai_bo_cai_khai_CUNG_tran_ket_qua_tool(self):
         """Hai bộ cài là hai tệp; một tệp được sửa còn tệp kia thì không, đó là
         cách khuyết tật vision đã sống nhiều ngày."""

@@ -90,7 +90,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.5.0"
+PHIEN_BAN = "1.6.0"
 
 MODEL = "ltt_llm"
 
@@ -155,6 +155,33 @@ NEN_HOI_THOAI = 123617
 #:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
 #:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
 TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
@@ -1390,6 +1417,16 @@ def cam_vscode(goc: str, tt: dict) -> list:
              "value": str(CUA_SO_NGU_CANH)},
             {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
              "value": str(TOKEN_RA_TRAN)},
+            # 🔴 VA HAI DONG NAY THEM 04/09 — cung mot ho loi, mot tang
+            #    sau. `MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+            #    no KHONG dat nguong nen. Khong dat cua so nen thi Claude
+            #    nen khi hoi thoai cham DUNG cua so ay (tai lieu chinh thuc,
+            #    muc "Default auto-compact thresholds"), tuc 100% — chua lai
+            #    13.599 tren tran cung, nho hon mot luot sinh 32.768.
+            {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+             "value": str(CUA_SO_NEN_CLAUDE)},
+            {"name": "MAX_MCP_OUTPUT_TOKENS",
+             "value": str(TRAN_KET_QUA_TOOL)},
         ],
         "claudeCode.disableLoginPrompt": True,
         # * `useTerminal` la duong DA CHUNG MINH CHAY DUOC (T6 tren VM: claude.exe
@@ -1505,7 +1542,9 @@ def _go_vscode_khong_tri_nho(tep: pathlib.Path, tt: dict) -> list:
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
               "ANTHROPIC_DEFAULT_HAIKU_MODEL",
               "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
-              "CLAUDE_CODE_MAX_OUTPUT_TOKENS")
+              "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+              "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+              "MAX_MCP_OUTPUT_TOKENS")
 
 
 def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
@@ -1531,7 +1570,9 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
                "ANTHROPIC_MODEL": MODEL,
                "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
                "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
-               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN)}
+               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+               "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+               "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL)}
     for ten, gt in gia_tri.items():
         ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
 

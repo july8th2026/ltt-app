@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:2078e1959f3ad2aaa616beca250daeb3a5802e6d29c20661c77ff4f184f1cdae
+Fingerprint   : sha256:724df8140c1310549935c503e32e775e9690c40d1609e72a6546e664307d2c29
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3275,7 +3275,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16086678 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16095077 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -148260,7 +148260,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=130c04b5623ea61ef1f06e63e2fd623e5f5054f8a8046b9f40f5b6a870f084ab BYTES=18507 LINES=412
+SHA256=37132abf727aa2dea6b906779f7af37004da51d230da0d24ede1567b93231fcb BYTES=20517 LINES=447
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -148352,6 +148352,33 @@ NEN_HOI_THOAI = 123617
 #:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
 #:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
 TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
 #: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
 #:
@@ -148549,6 +148576,14 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
         #    kip nen va khach an 413 giua phien.
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
         "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+        # 🔴 HAI DONG NAY THEM 04/09, va thieu chung cung la mot loi tien.
+        #    `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+        #    no KHONG dat nguong nen. Tai lieu chinh thuc noi ro: khong dat
+        #    cua so nen thi Claude nen khi hoi thoai **cham dung** cua so ay,
+        #    tuc 100%. Voi ta la 156.385 tren tran cung 169.984 — chi con
+        #    13.599, nho hon mot luot sinh dai nhat (32.768).
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+        "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.
     env.setdefault("ANTHROPIC_AUTH_TOKEN", f"${BIEN_KHOA}")
@@ -257072,7 +257107,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=96a9a1503b963be6b1fdd0cb1010fe0c72c892e8a51098cc86ff65ea8df42def BYTES=51450 LINES=977
+SHA256=5527468573302edb20ecaea78e90d725912093b934152b94e432fd86dc106d6d BYTES=55527 LINES=1046
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -257745,6 +257780,75 @@ class TestCamCliKhopNganSach:
                 f"{m['slug']}: tran ket qua tool {tp['limit']} chiem qua nua "
                 f"khoang trong {khoang} — hai ket qua lien tiep trong mot luot "
                 f"la tran")
+
+    def test_Claude_PHAI_duoc_dat_cua_so_nen_rieng(self):
+        """🔴 KHUYẾT TẬT 04/09 TRÊN ĐƯỜNG CLAUDE — cùng họ với Codex, khác tên.
+
+        `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chỉ sửa con số Claude **giả định**. Nó
+        **không** đặt ngưỡng nén. Tài liệu chính thức
+        (`code.claude.com/docs/en/model-config.md`, mục *Default auto-compact
+        thresholds*) nói thẳng:
+
+            "If you don't set an auto-compact window, Claude Code compacts when
+             the conversation reaches the model's context limit"
+            "Sessions on a model ID Claude Code doesn't recognize, such as an
+             LLM gateway alias, compact at the context window Claude Code
+             assumes for the ID"
+
+        ⇒ Không đặt `CLAUDE_CODE_AUTO_COMPACT_WINDOW` thì Claude nén ở **đúng
+          100%** cửa sổ ta khai (156.385), chừa lại 13.599 trên trần cứng —
+          nhỏ hơn một lượt sinh dài nhất (32.768). Và Claude cũng chỉ kiểm
+          ngưỡng **giữa hai lượt**.
+
+        ⛔ Đây đúng là hình dạng lỗi đã ăn `413` ở production phía Codex, chỉ
+           khác tên khoá. Nó sống được vì `MAX_CONTEXT_TOKENS` **trông như** đã
+           giải quyết xong vấn đề.
+        """
+        cc = self._cam_cli()
+        assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in cc.CLAUDE_ENV, (
+            "bo cai khong dat cua so nen cho Claude — Claude se nen o 100% "
+            "cua so khai bao, khong con cho cho mot luot sinh")
+        assert cc.CUA_SO_NEN_CLAUDE == cc.NEN_HOI_THOAI, (
+            f"cua so nen Claude {cc.CUA_SO_NEN_CLAUDE} != nguong nen Codex "
+            f"{cc.NEN_HOI_THOAI} — hai client, mot may chu, phai MOT con so")
+        con = ngan_sach.tran_vao_cua("qwen38-api") - cc.CUA_SO_NEN_CLAUDE
+        assert con >= ngan_sach.TOKEN_RA_TRAN, (
+            f"nen o {cc.CUA_SO_NEN_CLAUDE} tren tran cung "
+            f"{ngan_sach.tran_vao_cua('qwen38-api')} chi chua {con} token — "
+            f"nho hon mot luot sinh dai nhat ({ngan_sach.TOKEN_RA_TRAN})")
+
+    #: Sàn cứng của `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, đọc từ tài liệu chính
+    #: thức: *"Set the auto-compact window in tokens, from `100000` to
+    #: `1000000`"*. Giá trị dưới sàn bị Claude kẹp lên, tức lời hứa của ta im
+    #: lặng thành một lời hứa khác.
+    _SAN_CUA_SO_NEN_CLAUDE = 100_000
+
+    def test_cua_so_nen_Claude_KHONG_duoi_san_Claude_chap_nhan(self):
+        """Một con số bị client kẹp lại là một con số ta không còn kiểm soát."""
+        cc = self._cam_cli()
+        assert cc.CUA_SO_NEN_CLAUDE >= self._SAN_CUA_SO_NEN_CLAUDE, (
+            f"{cc.CUA_SO_NEN_CLAUDE} duoi san {self._SAN_CUA_SO_NEN_CLAUDE} — "
+            f"Claude se kep len va bo cai noi mot dang, client lam mot dang")
+
+    def test_tran_ket_qua_MCP_khop_tran_ket_qua_tool_cua_Codex(self):
+        """Mặc định `MAX_MCP_OUTPUT_TOKENS` là 25.000 — chiếm 76% khoảng trống.
+
+        Hai kết quả MCP trong **một** lượt là tràn, và Claude không kiểm ngưỡng
+        giữa các lần gọi tool. Cùng bài toán với Codex nên cùng con số.
+        """
+        cc = self._cam_cli()
+        assert "MAX_MCP_OUTPUT_TOKENS" in cc.CLAUDE_ENV
+        assert cc.TRAN_KET_QUA_TOOL * 2 <= ngan_sach.TOKEN_RA_TRAN, (
+            f"hai ket qua tool {cc.TRAN_KET_QUA_TOOL} lien tiep vuot khoang "
+            f"trong {ngan_sach.TOKEN_RA_TRAN}")
+
+    def test_hai_bo_cai_khai_CUNG_bo_bien_Claude(self):
+        """Bản `sdk` từng **thiếu** hai biến mà bản Windows có — chú thích ngay
+        trong tệp ấy ghi lại chuyện đó. Phép kiểm này để nó đừng lặp lại."""
+        cc, sdk = self._cam_cli(), self._sdk_cli()
+        for ten in ("CUA_SO_NEN_CLAUDE", "TRAN_KET_QUA_TOOL", "NEN_HOI_THOAI"):
+            assert getattr(cc, ten) == getattr(sdk, ten), (
+                f"{ten}: cam_cli {getattr(cc, ten)} != sdk {getattr(sdk, ten)}")
 
     def test_hai_bo_cai_khai_CUNG_tran_ket_qua_tool(self):
         """Hai bộ cài là hai tệp; một tệp được sửa còn tệp kia thì không, đó là
@@ -293442,7 +293546,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=eba4c3693d75f1550bb52d413de23d914d94eb17cb12f64c44d210e609dca24d BYTES=95404 LINES=2131
+SHA256=282c97ee8975a89477b50139c709a3322cf8439c6fb3ce488e1e5af37f68181b BYTES=97716 LINES=2172
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -293536,7 +293640,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.5.0"
+PHIEN_BAN = "1.6.0"
 
 MODEL = "ltt_llm"
 
@@ -293601,6 +293705,33 @@ NEN_HOI_THOAI = 123617
 #:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
 #:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
 TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
 
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
@@ -294836,6 +294967,16 @@ def cam_vscode(goc: str, tt: dict) -> list:
              "value": str(CUA_SO_NGU_CANH)},
             {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
              "value": str(TOKEN_RA_TRAN)},
+            # 🔴 VA HAI DONG NAY THEM 04/09 — cung mot ho loi, mot tang
+            #    sau. `MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+            #    no KHONG dat nguong nen. Khong dat cua so nen thi Claude
+            #    nen khi hoi thoai cham DUNG cua so ay (tai lieu chinh thuc,
+            #    muc "Default auto-compact thresholds"), tuc 100% — chua lai
+            #    13.599 tren tran cung, nho hon mot luot sinh 32.768.
+            {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+             "value": str(CUA_SO_NEN_CLAUDE)},
+            {"name": "MAX_MCP_OUTPUT_TOKENS",
+             "value": str(TRAN_KET_QUA_TOOL)},
         ],
         "claudeCode.disableLoginPrompt": True,
         # * `useTerminal` la duong DA CHUNG MINH CHAY DUOC (T6 tren VM: claude.exe
@@ -294951,7 +295092,9 @@ def _go_vscode_khong_tri_nho(tep: pathlib.Path, tt: dict) -> list:
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
               "ANTHROPIC_DEFAULT_HAIKU_MODEL",
               "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
-              "CLAUDE_CODE_MAX_OUTPUT_TOKENS")
+              "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+              "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+              "MAX_MCP_OUTPUT_TOKENS")
 
 
 def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
@@ -294977,7 +295120,9 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
                "ANTHROPIC_MODEL": MODEL,
                "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
                "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
-               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN)}
+               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+               "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+               "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL)}
     for ten, gt in gia_tri.items():
         ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
 
