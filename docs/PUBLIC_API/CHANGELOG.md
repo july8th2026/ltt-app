@@ -112,6 +112,10 @@ cũ vẫn hợp lệ, chỉ là bạn được nhét vào nhiều hơn.
 engine `65.536`, và chưa được đo lại. Đừng suy con số của nó từ con số của
 `ltt_llm` — đó đúng là lỗi đã sửa ở mục 01/09 ngay dưới.
 
+> 🔄 **Câu trên đã được thay thế cùng ngày.** Vision *đã* được đo lại vài giờ
+> sau và lên `88.555` — xem mục **03/09 (khuya)** ở trên. Giữ nguyên câu cũ vì
+> nhật ký ghi *lịch sử*, không ghi *trạng thái*; nhưng đừng hành động theo nó.
+
 **FIXED · Ngưỡng nén (`auto_compact_token_limit`) nay là `cửa sổ − token ra tối
 đa`, không còn là `0,8 × cửa sổ`.**
 
