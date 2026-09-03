@@ -103,16 +103,32 @@ export function dot7({ cho, doiDen, soBai, soDu, hoiThoaiMoi, guiChu, xong, dang
           const trang = await p.evaluate(async () => {
             const c = location.hash.slice(1);
             const s = await fetch('/chatltt/api/hoi-thoai/' + c).then((r) => r.json());
-            const chu = s.messages.map((m) => (m.text || '')).join(' | ');
+            // ⛔ KHONG doc `m.text`. Do 04/09: DOM da hien TABHAI ma phep dem
+            //    tren `m.text` van ra 0 — vi noi dung tin nhan nam trong KHOI
+            //    (`blocks`), con `text` co the rong. Doc dung mot truong roi ket
+            //    luan "khong co du lieu" la cach de nhat de vu khong san pham.
+            //
+            // ⭐ Soi ca ban ghi: phep dem khong nen phu thuoc vao hinh dang
+            //    trong cua mot lop du lieu ma no khong so huu.
+            // ⛔ VA DUNG DEM SO LAN XUAT HIEN TRONG CA BAN GHI: do 04/09 ra
+            //    **11** — dau hieu nam trong cau hoi, trong cau tra loi chep
+            //    lai, trong `text` LAN trong `blocks`, cong ban ghi do dang.
+            //    Toi da chot nguong `<= 3` ma chua he do thang cua chinh no.
+            //
+            // ⭐ Menh de that khong dinh gi toi cach luu: **dung MOT tin nhan
+            //    NGUOI DUNG mang dau hieu do**. Hai tab nhan doi luot thi con
+            //    so nay thanh 2, du du lieu duoc bieu dien kieu gi.
+            const chu = JSON.stringify(
+              s.messages.filter((m) => m.role === 'user'));
             return {
               tong: s.messages.length,
               lan_TABHAI: (chu.match(/TABHAI\s*8829/g) || []).length,
             };
           });
           // Mot dau hieu xuat hien dung hai lan: cau hoi + cau tra loi chep lai.
-          if (trang.lan_TABHAI < 1) throw new Error(`khong thay TABHAI trong hoi thoai: ${JSON.stringify(trang)}`);
-          if (trang.lan_TABHAI > 3) {
-            throw new Error(`TABHAI xuat hien ${trang.lan_TABHAI} lan — nghi luot bi nhan doi`);
+          if (trang.lan_TABHAI !== 1) {
+            throw new Error(`mong DUNG MOT tin nhan nguoi dung mang TABHAI, dem duoc `
+              + `${trang.lan_TABHAI}: ${JSON.stringify(trang)}`);
           }
           return { tong_tin_nhan: trang.tong, lan_dau_hieu: trang.lan_TABHAI };
         } finally {
@@ -198,13 +214,25 @@ export function dot7({ cho, doiDen, soBai, soDu, hoiThoaiMoi, guiChu, xong, dang
         // ⛔ KHONG F5 O DAY. Ca menh de nam o cho do: neu phai tai lai trang
         //    thi con so tren thanh app la mot con so CU, va khach tin vao mot
         //    so du khong con dung nua. LibreChat co dung mot issue y het the.
+        // ⛔ DUNG CHOT "SO DU PHAI GIAM". Lat 04/09 do duoc 921 -> **933**,
+        //    va so tang do dung: mot khoan HOAN cua luot truoc vua ve (giu roi
+        //    tra lai phan du). So tien o day khong don dieu theo thoi gian, vi
+        //    giu/thu/hoan quyet toan khong dong bo voi luot dang chay.
+        //
+        // ⭐ Menh de that khong phai ve HUONG, ma ve DO TUOI: con so tren thanh
+        //    app co bang con so may chu dang giu khong — **ma khong can F5**.
+        //    Do la thu khach tin vao, va no do duoc chinh xac.
         let sau = truoc;
-        await doiDen('so du tu doi', async () => {
+        await doiDen('so du tren thanh app tu doi', async () => {
           sau = await soDu(p);
           return sau !== null && sau !== truoc;
         }, 45);
-        if (sau > truoc) throw new Error(`so du TANG sau mot luot: ${truoc} -> ${sau}`);
-        return { truoc, sau, tru: truoc - sau, khong_F5: true };
+        // Doi chieu voi chinh may chu, khong tai lai trang.
+        const may = await p.evaluate(() =>
+          fetch('/chatltt/api/so-du').then((r) => r.json()).then((d) => d.credit));
+        await doiDen('thanh app bat kip may chu', async () => (await soDu(p)) === may, 30);
+        const cuoi = await soDu(p);
+        return { truoc, sau, may_chu: may, tren_thanh: cuoi, khong_F5: true };
       },
     },
   ];
