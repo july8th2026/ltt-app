@@ -654,6 +654,59 @@ clearing"*). Không có knob nào tương đương `tool_output_token_limit`.
 (`CLAUDE_CODE_MAX_CONTEXT_TOKENS`, `CLAUDE_CODE_MAX_OUTPUT_TOKENS`) là đủ, và
 Claude tự xử phần mà Codex bắt ta tự lo.
 
+### 7d.7 🔴 TÔI ĐÃ MÔ TẢ N-11 SAI, VÀ CÁI SAI ĐỔI CẢ HƯỚNG SỬA
+
+Tôi viết N-11 là *"Codex thử lại 5 lần một lỗi ta đã đánh dấu `retry: never`"* —
+câu đó đổ lỗi cho Codex. Nó sai.
+
+`retry` là **trường mở rộng RFC 9457 của riêng ta**
+(`platform_core/public_api/errors.py:165`, khai trong `error_registry.py`). Nó
+**không** thuộc schema lỗi của Responses API. Không client nào — Codex hay bất
+kỳ ai — có cách biết trường đó tồn tại. Nó dành cho **người** đọc tài liệu của
+ta, không phải cho máy.
+
+Cơ chế thật, đọc ở `codex-client/src/retry.rs` @ `rust-v0.145.0`:
+
+```rust
+TransportError::Http { status, .. } => {
+    (self.retry_429 && status.as_u16() == 429)
+        || (self.retry_5xx && status.is_server_error())
+}
+```
+
+Ở tầng HTTP, Codex retry **chỉ 429 và 5xx**. Không 401, không 413.
+
+Nhưng đo 04/09 với một khoá giả: một `401` bị thử lại **5 lần**, in
+`Reconnecting... 1/5 … 5/5` — chuỗi đó đến từ
+`core/src/responses_retry.rs::handle_retryable_response_stream_error`, tức
+**đường kết nối lại của stream**, không đi qua phân loại mã trạng thái ở trên.
+
+⇒ Hai đường retry khác nhau, và lỗi của ta rơi vào đường không nhìn mã trạng
+thái. Nên hướng sửa **không phải** "làm Codex tôn trọng `retry: never`" — điều
+đó bất khả. Hướng sửa là hỏi: `413` của ta trả về **trước** khi stream mở hay
+**sau**? Trước thì Codex không retry (413 không phải 429/5xx). Sau thì nó nhân
+lên 5 lần, và mỗi lần là một request lớn nữa vào máy chủ ta.
+
+⛔ Chưa đo. Đó là N-11 sau khi viết lại cho đúng.
+
+### 7d.8 ✅ Bộ cài `1.5.0` — đo trên chính binary phát cho khách
+
+Không suy từ *"PyInstaller biên dịch module vào exe"*. Chạy
+`LTTStudios-CamCLI-Console.exe cam` vào một `CODEX_HOME` bỏ đi rồi đọc tệp nó
+ghi ra:
+
+```
+ltt_llm        | ctx 156385 | nen 123617 | trunc {'mode':'tokens','limit': 16384}
+ltt_llm_vision | ctx  88555 | nen  55787 | trunc {'mode':'tokens','limit': 16384}
+```
+
+Và Codex `0.145.0` nuốt được cấu hình đó: `model: ltt_llm`, `provider: ltt`,
+**không** cảnh báo metadata, **không** lỗi cấu hình — rồi `401` vì khoá giả,
+đúng như phải thế.
+
+⭐ Lượt kiểm này cũng là lần đầu bản vá vision (88.555) đi tới **artefact**
+chứ không chỉ tới mã nguồn. Bản `1.4.0` dựng 02/09 vẫn khai `28262`.
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
@@ -661,12 +714,12 @@ Claude tự xử phần mà Codex bắt ta tự lo.
 | N-1 | **Chưa deploy.** Máy B vẫn `-c 131072` | Cần cửa sổ deploy; một phiên khác đang dùng production. Thứ tự ở §7 D-5 |
 | ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **ĐÃ CHẠY 04/09** — và **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
 | ~~N-10~~ | 🟢 **ĐÓNG 04/09** (§7d.3). ~~MỘT kết quả tool có thể lớn hơn MỌI khoảng trống~~ | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng".<br><br>✅ **Nhưng nó có trần**, và ta đã tự vứt cái trần đó đi: `truncation_policy.limit` = cả cửa sổ, trong khi mặc định Codex là 2.500 token. Đặt lại `TOKEN_RA_TRAN // 2 = 16.384`. |
-| **N-11** | Codex thử lại **5 lần** một lỗi ta đã đánh dấu `retry: never`, rồi bỏ cuộc thay vì nén | Ngoài tầm sửa của ta, nhưng nó quyết định trải nghiệm thật. Đáng báo lên upstream. |
+| **N-11** | ⚠️ **VIẾT LẠI 04/09** — `413` của ta trả **trước** hay **sau** khi stream mở? | Bản cũ của dòng này nói *"Codex thử lại dù ta đánh `retry: never`"* và **đổ lỗi nhầm**: `retry` là trường mở rộng của RIÊNG TA, không client nào đọc được (§7d.7). Codex có hai đường retry; đường HTTP chỉ nhận 429/5xx, đường stream thì retry mọi thứ 5 lần. Lỗi của ta rơi vào đường thứ hai. Nếu `413` phát sau khi stream mở thì mỗi lần nghẽn thành **5 request lớn**. Chưa đo. |
 | N-3 | **Lượt sinh dài ở cuối cửa sổ chưa đo sạch.** Lượt 160K/8192 trả `finish_reason: stop` sau 122 token vì đề bài chỉ đòi một dòng | Nó chứng minh request được NHẬN, không chứng minh decode còn khoẻ ở cuối cửa sổ. Đã sửa đề bài trong `bench_ctx.py` nhưng chưa chạy lại |
 | N-4 | **`qwen38-vision` chưa đo lại**, và cửa sổ công bố của nó (28.262) **hẹp hơn** một lượt sinh dài nhất (32.768) | Nó dành hơn nửa cửa sổ cho `TOKEN_RA_TRAN`. Không ngưỡng nén nào giữ được lời hứa ⇒ bộ cài bỏ hẳn trường đó. Sửa thật là đo lại vision hoặc cho nó trần ra riêng |
 | N-5 | **`deploy.ps1` không restart `LTTLlamaSwap`** (D-03-5, audit 31/08) | Chưa chạm tới `deploy.ps1` ngoài ba con số. Cho tới khi sửa, bước 1 của §7 D-5 phải làm tay |
 | N-6 | **Hai bộ đo chất lượng đều hoà ở kịch trần** | Chúng loại trừ một suy giảm đủ lớn để đo thấy. Muốn nhạy hơn thì cần bộ đề khó hơn, và đó là một việc riêng |
 | ~~N-7~~ | ~~`LTT_PUBLIC_API_MAX_BODY_BYTES` thật trên production~~ | ✅ **ĐÓNG 03/09.** Biến **không** được đặt ở đâu cả: `AppEnvironmentExtra` của dịch vụ `LTTStudioWeb` liệt kê 71 biến và không có nó, và service env chính là thứ `2-cai-dat.ps1` nạp từ `app.env`. ⇒ production dùng mặc định **1 MiB**, đủ cho 747 KB cần thiết. *(Đọc TÊN biến từ registry, không đọc giá trị — không có bí mật nào bị in ra.)* |
 | **N-9** | ⚠️ **Hồ sơ chưa nạp thì vẫn phán xử bằng phép ước** | Sau 30 phút rảnh (`ttl: 1800`) model bị unload; một lượt lớn tới ngay lúc đó có thể ăn `413` oan. Không đóng bằng cách hỏi `/tokenize` — làm thế là đánh thức GPU 2,5 phút cho một yêu cầu đang định từ chối. Trong thực tế lượt đầu của một phiên là lượt nhỏ, nhưng *"trong thực tế"* không phải *"luôn luôn"*. |
-| **N-12** | ⚠️ **Chưa kiểm `#16033` trên `0.145.0`** | Có báo cáo rằng nén hỏng *khi và chỉ khi* `model_context_window` + `model_auto_compact_token_limit` được đặt tường minh — đúng cấu hình bộ cài ta. Báo trên `0.117.0`; nén đã viết lại 06/2026. Kiểm bằng cách chạy canary hai lần: có catalog và không catalog. |
+| **N-12** | ⚠️ **Chưa kiểm `#16033` trên `0.145.0`** | Có báo cáo rằng nén hỏng *khi và chỉ khi* `model_context_window` + `model_auto_compact_token_limit` được đặt tường minh — đúng cấu hình bộ cài ta. Báo trên `0.117.0`; nén đã viết lại 06/2026.<br><br>⭐ **Thu hẹp 04/09:** `#16033` cần **cả hai** khoá top-level. Ta phát `model_context_window` (`cam_cli.py:_codex_profile`) nhưng **không** phát `model_auto_compact_token_limit` — ngưỡng nén của ta chỉ nằm trong catalog. Vậy ta nhiều khả năng **không** ở đúng cấu hình hỏng đó. Khớp một phần không phải bằng chứng, nên vẫn phải đo. |
 | **N-8** | 🔴 **Chốt "cây đứng yên" của gate KHÔNG soi `llm_gateway/` và `sdk/`** | Tìm ra 03/09. `gate._anh_chup_cay()` chỉ chụp `apps, platform_core, server, tools, tests, alembic, locale`. Chương trình này sửa **10** thư mục, và **năm** trong số đó (`docs`, `frontend`, `llm_gateway`, `sdk`, `ho_so_he_thong.txt`) nằm ngoài ảnh chụp.<br><br>⛔ Nghĩa là sửa mã **cổng máy B** hoặc **bộ cài khách** ngay giữa một lượt gate thì `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã không còn tồn tại. Cùng một họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`.<br><br>⭐ Và tôi phát hiện nó theo đường ngược: tôi sửa một tệp `docs/` giữa lượt gate, **tưởng** mình vừa làm mất lượt đó, rồi đọc `_anh_chup_cay()` để xác nhận — và thấy điều tệ hơn là thứ tôi lo. |
