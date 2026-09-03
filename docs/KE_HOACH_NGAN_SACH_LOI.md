@@ -124,6 +124,47 @@ python toàn máy:       58 tiến trình      <- gate chỉ là 13/58
    này giữ khi máy ổn định thì hằng số 6 đang **thiếu** — nhưng một phép đo ngay sau reset là
    phép đo của một máy đang khởi động lại dịch vụ, chưa kết luận được.
 
+## Điều tra 03/09 — bot của `D:\FULL AUTO VIDEO`
+
+Chủ dự án nghi bot ở kho tham chiếu chiếm CPU. Kiểm (read-only):
+
+**CÓ chạy** — 8 tiến trình `FULL AUTO VIDEO` + 22 `BOT GEMINI`, tự khởi động lại lúc 13:55
+sau reset:
+```
+cmd.exe /c D:\FULL AUTO VIDEO\start_gui.bat
+python.exe run_master_g...        (DUNGVIDEO-FULLenv)
+pythonw.exe D:\FULL AUTO VIDEO\...
+D:\BOT GEMINIenv\...\python.exe main.py      <- bot production cong 8000
+```
+
+**Nhưng lúc reset nó đang NGỦ** — `DUNGVIDEO-FULL/logs/dungvideo_debug.log`:
+```
+13:46:37  NO JOB (no row matched conditions across all tabs)
+13:46:37  SLEEP 300s (khong job)
+13:48:37  SLEEP 300s — con 180s        <- log dung o day, may reset ~13:52
+```
+Cac bot khac (`Bot_PausePipeline`, `CUT CLIP SHORT`, `Phantichvideo`) **khong co log nao sau
+13:00** ⇒ khong chay. `master_gui/crash.log` sua luc 13:59, tuc SAU reset.
+
+⇒ Theo nhat ky, bot **khong phai thu pham lan nay**. Nhung:
+
+### 🔴 Bot KHONG kiem tai truoc khi chay — rui ro nay la THAT va co CAU TRUC
+
+`grep cpu_percent|virtual_memory` trong `DUNGVIDEO-FULL/engine`, `master_gui`, `bot_logger.py`
+⇒ **khong co dong nao**. Bot nhan job tu Google Sheet va chay ngay.
+
+Nen kich ban chu du an mo ta la co that: **bot nhan job dung luc gate chay thi khong co gi
+ngan ca hai cung chay.** Bot khong biet gate ton tai; gate khong biet bot ton tai;
+`cua_so_yen` khong nhin thay ca hai. Lan nay chi la bot tinh co dang ngu.
+
+### Va buc tranh that: gate chi la mot trong RAT NHIEU
+
+Dem duoc luc dieu tra: 4 phien Claude · Codex · playwright-mcp · node · pwsh ·
+`BOT GEMINI` (22 tien trinh) · `FULL AUTO VIDEO` (8) · 4 dich vu `LTTPlatform` · gate (13).
+
+⇒ Ngan sach loi B0-B3 dieu tiet **13**. Do la thiet ke dung cho pham vi cua no, va pham vi
+  do la thieu so. Khong co co che nao o tam MAY.
+
 ## Nghiệm thu
 
 1. `-n` truyền cho pytest **≤** `psutil.cpu_count(logical=False)` trong mọi cấu hình.
