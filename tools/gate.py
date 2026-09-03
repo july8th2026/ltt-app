@@ -181,6 +181,49 @@ def loi_cong_cu_tu_do() -> int:
     return psutil.cpu_count(logical=False) or psutil.cpu_count() or 1
 
 
+def loi_dang_ban(mau_s: float = 1.0) -> float:
+    """So loi VAT LY dang bi ai do chiem — **do that**, khong doan.
+
+    ⭐ Ham nay den tu phien `lttchat` (`4420b56`), va no tra loi mot cau hoi ma
+       khoa `cua_so_yen` khong the tra loi. Doc nguyen van ly do cua ho:
+
+         `LOI_DE_DANH_VAT_LY` la mot HANG SO, dat tu mot phep do luc may RANH.
+         No dung cho cai no mo ta: nen tai cua bon dich vu production. Nhung
+         hai lan may treo phai reset KHONG do nen tai gay ra — chung do hai thu
+         ma mot hang so khong the biet:
+
+           · mot `pytest -n auto` go tay NGOAI gate: 20 worker, khong ngan
+             sach, khong khoa
+           · mot luot gate THU HAI da het `--cho` va chay de: `cua_so_yen` chi
+             canh bao roi `return self`, no khong tu choi
+
+         Ca hai deu **vo hinh voi khoa** — khoa chi thay ai XIN khoa. Ca hai
+         deu **hien ra o CPU**.
+
+    🔴 Va ngay 03/09 con mot thu thu ba, do duoc trong hop den: **muoi hai tien
+       trinh `demucs`, moi cai 460-984% CPU**, chay ngoai moi khoa. Mot tien
+       trinh chau khong xin khoa va khong nam trong `-n`; no chi hien ra o day.
+
+    ⛔ **Don vi VAT LY.** Ban goc nhan voi `os.cpu_count()` = 20 (LOGIC), con
+       moi phep tinh khac o day dung `loi_cong_cu_tu_do()` = 10 (vat ly). Tron
+       hai don vi la **dung cai loi da khoi dau ca chuyen nay** (`-n 11` lon hon
+       `auto` = 10). Doi don vi khi nhap, khong phai khi dung.
+
+    ⚠️ Tra 0.0 khi khong do duoc: fail-open co chu y. Mot cong chat luong tu
+       choi chay vi khong doc noi CPU la mot cong khong ai dung.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return 0.0
+    try:
+        phan_tram = psutil.cpu_percent(interval=mau_s)
+    except (OSError, RuntimeError) as loi:
+        print(f"  [ngan sach] khong do duoc CPU ({loi}) - coi nhu may ranh")
+        return 0.0
+    return loi_cong_cu_tu_do() * float(phan_tram) / 100.0
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 #  MOT cau hoi, MOT cau tra loi: bo test duoc bao nhieu worker
 # ══════════════════════════════════════════════════════════════════════════════
@@ -209,7 +252,7 @@ LOI_DE_DANH_VAT_LY = 3
 TRAN_WORKER_BO_TEST = 6
 
 
-def loi_cho_bo_test(*, phien: str = "") -> int:
+def loi_cho_bo_test(*, phien: str = "", do_tai: bool = True) -> int:
     """So worker cho `bo test`. **Ham DUY NHAT tra loi cau hoi nay.**
 
     Truoc 03/09 co sau cho cung tra loi no — `ngan_sach_loi`, `_chia_loi`,
@@ -217,26 +260,61 @@ def loi_cho_bo_test(*, phien: str = "") -> int:
     `_ap_ngan_sach_thuc` — tren HAI don vi khac nhau. Chong cheo nhieu tang thi
     khong ai doc noi ca duong, va cho lech nam giua hai tang la cho khong ai soi.
 
-    Mot phep tinh, mot don vi (**loi vat ly**), ba ve:
+    Mot phep tinh, mot don vi (**loi vat ly**), bon ve:
 
-        vat_ly - de_danh - phien_khac      may con bao nhieu cho ta
+        vat_ly - de_danh - chiem           may con bao nhieu cho ta
+        chiem = max(KHAI BAO, DO DUOC)     ai dang giu cho — hai nguon, mot so
         TRAN_WORKER_BO_TEST                tran an toan cung
         max(1, ...)                        khong bao gio tu choi chay
+
+    ## 🔑 `max`, KHONG phai `+` — va day la ca thiet ke
+
+    Hai nguon tin ve "ai dang chiem may", va chung **chong len nhau**:
+
+        KHAI BAO  `cua_so_yen`: phien khac da XIN khoa va khai bao so loi
+        DO DUOC   `loi_dang_ban()`: CPU that dang bi dot, bat ke ai dot
+
+    Mot phien vua khai 6 loi vua dang dung 6 loi **xuat hien o ca hai**. Cong
+    lai la tru 12 cho mot viec dang chiem 6, va ngan sach tut ve 1 — mot co che
+    giam tai tu lam minh vo dung.
+
+    ⇒ `max()` lay **cai lon hon**, tuc dem moi ke chiem cho dung mot lan:
+
+        chi KHAI BAO   phien khac vua giu khoa, chua kip chay  -> khai bao thang
+        chi DO DUOC    `pytest` go tay, bot, tien trinh chau   -> do duoc thang
+        ca hai         cung mot phien                          -> dem MOT lan
+
+    🔴 Ve DO DUOC la thu duy nhat nhin thay muoi hai tien trinh `demucs` cua
+       ngay 03/09 (moi cai 460-984% CPU, khong cai nao xin khoa, khong cai nao
+       nam trong `-n`). Khoa khong thay chung. Hang so khong thay chung.
 
     ⛔ `max(1, ...)`: mot cong chat luong tu choi chay vi ban la mot cong khong
        ai dung, va no se bi go bang mot co `--bo-qua`. Cham thi duoc, dung han
        thi khong.
     """
     vat_ly = loi_cong_cu_tu_do()
-    khac = 0
+
+    khai_bao = 0
     if phien is not None:
         try:
             from cua_so_yen import loi_phien_khac_dang_giu
-            khac = loi_phien_khac_dang_giu(phien)
+            khai_bao = loi_phien_khac_dang_giu(phien)
         except (ImportError, OSError, ValueError) as exc:
             print(f"  [ngan sach] khong doc duoc khoa phien khac "
                   f"({type(exc).__name__}) - bo qua phan tru do")
-    return max(1, min(TRAN_WORKER_BO_TEST, vat_ly - LOI_DE_DANH_VAT_LY - khac))
+
+    do_duoc = 0
+    if do_tai:
+        # Phan VUOT nen: nen da duoc tru rieng bang `LOI_DE_DANH_VAT_LY`, nen
+        # tru them ca nen mot lan nua la tru hai lan cung mot thu.
+        thua = loi_dang_ban() - LOI_DE_DANH_VAT_LY
+        do_duoc = max(0, int(thua + 0.5))
+
+    chiem = max(khai_bao, do_duoc)
+    if chiem:
+        print(f"  [ngan sach] {chiem} loi dang bi chiem "
+              f"(khai bao {khai_bao}, do duoc {do_duoc}) - lay so lon hon")
+    return max(1, min(TRAN_WORKER_BO_TEST, vat_ly - LOI_DE_DANH_VAT_LY - chiem))
 
 
 def _chia_loi(so_viec_nang: int) -> int:

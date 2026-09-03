@@ -356,3 +356,126 @@ def test_tong_toi_da_luon_chua_cho_cho_may(monkeypatch):
         if vl > gate.LOI_DE_DANH_VAT_LY + 2:
             assert vl - ns >= gate.LOI_DE_DANH_VAT_LY, (
                 f"may {vl} loi: chi de lai {vl-ns}, can {gate.LOI_DE_DANH_VAT_LY}")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Hop nhat KHAI BAO + DO DUOC — mot so, hai nguon
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# `loi_dang_ban()` den tu phien `lttchat` (4420b56); `loi_cho_bo_test()` tu phien
+# nay. Hai nhanh, hai nua cua cung mot bai toan, va **khong nhanh nao co ca hai**
+# cho toi 03/09. Cac phep kiem duoi day chot cach chung ghep lai.
+
+def test_hai_nguon_CHONG_len_nhau_thi_dem_MOT_lan(monkeypatch):
+    """🔴 Cho de sai nhat cua ban hop nhat: `+` thay vi `max`.
+
+    Mot phien khac vua KHAI 6 loi vua DANG DUNG 6 loi thi no xuat hien o ca hai
+    nguon. Cong lai la tru 12 cho mot viec chiem 6, ngan sach tut ve 1, va co
+    che giam tai tu lam minh vo dung.
+    """
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    monkeypatch.setattr(gate, "LOI_DE_DANH_VAT_LY", 3)
+    monkeypatch.setattr(gate, "TRAN_WORKER_BO_TEST", 6)
+    # do duoc: 3 (nen) + 2 (phien kia) = 5 loi vat ly dang ban
+    monkeypatch.setattr(gate, "loi_dang_ban", lambda *a, **k: 5.0)
+    import cua_so_yen
+    monkeypatch.setattr(cua_so_yen, "loi_phien_khac_dang_giu", lambda *a, **k: 2)
+
+    # ⛔ Con so phai nam TREN san `max(1, ...)`, neu khong phep kiem vo hieu.
+    #
+    # 🔴 Ban dau cho nay dat khai_bao=6, do_duoc=6. Voi `max` ra 10-3-6=1; voi
+    #    `+` ra 10-3-12=-5, roi `max(1, ...)` keo ve 1. **Ca hai deu ra 1**, nen
+    #    phep kiem xanh ca khi thuat toan sai — do bang mot lan dot bien that,
+    #    khong phai bang suy luan.
+    #
+    # ⇒ 2 va 2: `max` -> 10-3-2 = 5; `+` -> 10-3-4 = 3. Hai so khac nhau, va ca
+    #   hai deu duoi tran 6 nen tran khong che mat khac biet.
+    n = gate.loi_cho_bo_test(phien="toi")
+    assert n == 5, f"phai la 10-3-max(2,2)=5, khong phai 10-3-4=3 -> {n}"
+
+
+def test_chi_DO_DUOC_thi_van_tut_xuong(monkeypatch):
+    """Kich ban 03/09: 12 tien trinh `demucs` ngoai moi khoa.
+
+    ⛔ Khong cai nao xin khoa va khong cai nao nam trong `-n`. Khoa khong thay
+       chung; hang so khong thay chung. Chi phep DO thay.
+    """
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    monkeypatch.setattr(gate, "LOI_DE_DANH_VAT_LY", 3)
+    monkeypatch.setattr(gate, "TRAN_WORKER_BO_TEST", 6)
+    monkeypatch.setattr(gate, "loi_dang_ban", lambda *a, **k: 9.5)
+    import cua_so_yen
+    monkeypatch.setattr(cua_so_yen, "loi_phien_khac_dang_giu", lambda *a, **k: 0)
+
+    assert gate.loi_cho_bo_test(phien="toi") == 1
+
+
+def test_chi_KHAI_BAO_thi_van_tut_xuong(monkeypatch):
+    """Chieu con lai: phien khac vua giu khoa, chua kip dot CPU nao."""
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    monkeypatch.setattr(gate, "LOI_DE_DANH_VAT_LY", 3)
+    monkeypatch.setattr(gate, "TRAN_WORKER_BO_TEST", 6)
+    monkeypatch.setattr(gate, "loi_dang_ban", lambda *a, **k: 0.5)
+    import cua_so_yen
+    monkeypatch.setattr(cua_so_yen, "loi_phien_khac_dang_giu", lambda *a, **k: 5)
+
+    assert gate.loi_cho_bo_test(phien="toi") == 2
+
+
+def test_may_RANH_thi_phep_do_KHONG_lam_tut_ngan_sach(monkeypatch):
+    """Nen may khong duoc tru hai lan.
+
+    `LOI_DE_DANH_VAT_LY` da tru nen roi. Neu ve DO DUOC tru ca nen mot lan nua
+    thi tren mot may khong co ai chay, ngan sach van tut — va khong ai hieu vi
+    sao.
+    """
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    monkeypatch.setattr(gate, "LOI_DE_DANH_VAT_LY", 3)
+    monkeypatch.setattr(gate, "TRAN_WORKER_BO_TEST", 6)
+    monkeypatch.setattr(gate, "loi_dang_ban", lambda *a, **k: 3.0)  # dung bang nen
+    import cua_so_yen
+    monkeypatch.setattr(cua_so_yen, "loi_phien_khac_dang_giu", lambda *a, **k: 0)
+
+    assert gate.loi_cho_bo_test(phien="toi") == 6
+
+
+def test_loi_dang_ban_tra_ve_don_vi_VAT_LY(monkeypatch):
+    """⛔ Ban goc nhan voi `os.cpu_count()` = 20 (LOGIC).
+
+    Tron don vi la **dung cai loi da khoi dau ca chuyen nay** (`-n 11` lon hon
+    `auto` = 10). Doi don vi khi NHAP, khong phai khi dung.
+    """
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+
+    class _Gia:
+        @staticmethod
+        def cpu_percent(interval=None):
+            return 50.0
+    monkeypatch.setitem(sys.modules, "psutil", _Gia)
+
+    # 50% cua 10 loi VAT LY = 5.0. Neu tinh tren 20 loi logic se ra 10.0.
+    assert gate.loi_dang_ban(0.01) == 5.0
+
+
+def test_khong_do_duoc_CPU_thi_FAIL_OPEN(monkeypatch):
+    """⚠️ Mot cong chat luong tu choi chay vi khong doc noi CPU la mot cong
+    khong ai dung — no se bi go bang mot co `--bo-qua`."""
+    def _no(*a, **k):
+        raise OSError("khong doc duoc")
+
+    class _Gia:
+        cpu_percent = staticmethod(_no)
+    monkeypatch.setitem(sys.modules, "psutil", _Gia)
+    assert gate.loi_dang_ban(0.01) == 0.0
+
+
+def test_do_tai_TAT_duoc_de_khong_cham_them_mot_giay(monkeypatch):
+    """`loi_dang_ban` chan 1 giay. Duong goi phai tat duoc no khi khong can."""
+    goi = []
+    monkeypatch.setattr(gate, "loi_dang_ban",
+                        lambda *a, **k: goi.append(1) or 9.0)
+    import cua_so_yen
+    monkeypatch.setattr(cua_so_yen, "loi_phien_khac_dang_giu", lambda *a, **k: 0)
+
+    gate.loi_cho_bo_test(phien="toi", do_tai=False)
+    assert goi == [], "do_tai=False ma van do"
