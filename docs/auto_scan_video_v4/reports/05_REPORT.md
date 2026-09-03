@@ -49,6 +49,34 @@ limit, and seven apps already use underscores.
 `tests/conftest.py:71` sets `APP_THU_SLUG = "appthu"`. So the whole suite exercised this path,
 thousands of times, and never once with a real slug.
 
+### Latent, not live — measured, because a peer asked the right question
+
+Session `lttstudiosapp-73` pointed at a second caller I had missed:
+`server/api/uploads.py:111` passes `app_slug=tool.app_slug` from the **public API**, where
+the slug is derived from the tool the customer called rather than typed by a developer. If any
+tool belonging to those three apps took an upload, this would be a defect customers hit today,
+not a latent one.
+
+Measured against the real registry — every `params_schema` field of every declared tool,
+through `public_api.media.media_kind`:
+
+```
+14 tool-fields accept an upload, across 8 apps:
+  anhnoibo image.ltt · autosubvideo video.subtitle · taoanh image.generate/batch_generate
+  taoclipngan video.short_clips · taovideo video.generate · upscalevideo video/image.upscale
+Belonging to an app with an underscore: NONE
+```
+
+`ltt_llm` (`text.chat`), `ltt_voice` (`speech.ltt`) and `prompt_ai_ommi`
+(`text.prompt_package`, `story.storyboard`) declare **no** media parameter, so
+`create_upload` rejects the field at `_kind_for_tool` before `upload_sessions.create` is ever
+reached. ⇒ **Latent.** No customer is hitting it.
+
+⚠️ It is still worth fixing now, and `ltt_voice` shows why: it already has a
+`ltt_voice.enroll` job type — voice cloning — with no ToolSpec yet. The day that is opened on
+`/api/v1` it needs an audio upload, and it would fail with "Ứng dụng upload không hợp lệ" for
+a reason nobody would look for in a regex about slugs.
+
 The fix widens the character class by one character and is **purely additive**: every
 previously-valid slug is still valid. `test_429` §3 pins both directions — every app in the
 registry must be accepted, and `""`, `-abc`, `_abc`, `ABC`, `a/b`, `a.b`, `a b`, 65 chars must
