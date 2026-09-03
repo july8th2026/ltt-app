@@ -687,7 +687,26 @@ thái. Nên hướng sửa **không phải** "làm Codex tôn trọng `retry: ne
 **sau**? Trước thì Codex không retry (413 không phải 429/5xx). Sau thì nó nhân
 lên 5 lần, và mỗi lần là một request lớn nữa vào máy chủ ta.
 
-⛔ Chưa đo. Đó là N-11 sau khi viết lại cho đúng.
+**Đo xong ngay sau đó, bằng cách đọc mã của chính ta:** `413` phát ở
+`server/api/streaming.py:664`, trong khối `except` bọc lúc **mở** luồng upstream
+— tức **trước** `return StreamingResponse(...)` ở dòng 678. Nó đi ra như một
+phản hồi HTTP thường, chưa có byte SSE nào.
+
+Vậy mà `413` **vẫn** bị thử lại 5 lần (đo H-2), và `401` cũng thế (đo 04/09).
+Lý do: Codex `0.145` đàm phán **WebSocket** cho Responses (xem chuỗi
+`Reconnecting…`, và báo cáo doctor ở
+[#40095](https://github.com/openai/codex/issues/40095) gọi tên
+*"Responses WebSocket handshake"*). Với WebSocket thì một mã trạng thái HTTP
+chỉ có thể tới client dưới dạng **lỗi kết nối**, nên nó rơi vào
+`handle_retryable_response_stream_error` bất kể ta trả gì.
+
+⇒ **Hình dạng phản hồi của ta không điều khiển được việc retry.** Không có gì
+để sửa ở phía máy chủ. Đòn bẩy duy nhất là **đừng tạo ra `413` ngay từ đầu** —
+tức đúng thứ cả chương trình này đang làm.
+
+⭐ Và đó là lý do đáng giữ đoạn này: một món nợ mô tả sai sinh ra một việc phải
+làm **không tồn tại** ("sửa để Codex tôn trọng `retry: never`"). Đóng nó bằng
+một câu trả lời còn quan trọng hơn là mở thêm một việc.
 
 ### 7d.8 ✅ Bộ cài `1.5.0` — đo trên chính binary phát cho khách
 
@@ -714,7 +733,7 @@ chứ không chỉ tới mã nguồn. Bản `1.4.0` dựng 02/09 vẫn khai `282
 | N-1 | **Chưa deploy.** Máy B vẫn `-c 131072` | Cần cửa sổ deploy; một phiên khác đang dùng production. Thứ tự ở §7 D-5 |
 | ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **ĐÃ CHẠY 04/09** — và **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
 | ~~N-10~~ | 🟢 **ĐÓNG 04/09** (§7d.3). ~~MỘT kết quả tool có thể lớn hơn MỌI khoảng trống~~ | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng".<br><br>✅ **Nhưng nó có trần**, và ta đã tự vứt cái trần đó đi: `truncation_policy.limit` = cả cửa sổ, trong khi mặc định Codex là 2.500 token. Đặt lại `TOKEN_RA_TRAN // 2 = 16.384`. |
-| **N-11** | ⚠️ **VIẾT LẠI 04/09** — `413` của ta trả **trước** hay **sau** khi stream mở? | Bản cũ của dòng này nói *"Codex thử lại dù ta đánh `retry: never`"* và **đổ lỗi nhầm**: `retry` là trường mở rộng của RIÊNG TA, không client nào đọc được (§7d.7). Codex có hai đường retry; đường HTTP chỉ nhận 429/5xx, đường stream thì retry mọi thứ 5 lần. Lỗi của ta rơi vào đường thứ hai. Nếu `413` phát sau khi stream mở thì mỗi lần nghẽn thành **5 request lớn**. Chưa đo. |
+| ~~N-11~~ | 🟢 **ĐÓNG 04/09** (§7d.7). ~~Codex thử lại dù ta đánh `retry: never`~~ | Hai cái sai trong một dòng. `retry` là trường mở rộng của RIÊNG TA, không client nào đọc được. Và `413` của ta **đã** phát trước khi stream mở (`streaming.py:664` trước `return StreamingResponse` ở 678) — vẫn bị retry, vì Codex `0.145` dùng WebSocket nên mọi mã HTTP tới nó dưới dạng lỗi kết nối. Hình dạng phản hồi của ta không điều khiển được việc này. **Không có gì để sửa**; đòn bẩy duy nhất là đừng tạo ra `413`. |
 | N-3 | **Lượt sinh dài ở cuối cửa sổ chưa đo sạch.** Lượt 160K/8192 trả `finish_reason: stop` sau 122 token vì đề bài chỉ đòi một dòng | Nó chứng minh request được NHẬN, không chứng minh decode còn khoẻ ở cuối cửa sổ. Đã sửa đề bài trong `bench_ctx.py` nhưng chưa chạy lại |
 | N-4 | **`qwen38-vision` chưa đo lại**, và cửa sổ công bố của nó (28.262) **hẹp hơn** một lượt sinh dài nhất (32.768) | Nó dành hơn nửa cửa sổ cho `TOKEN_RA_TRAN`. Không ngưỡng nén nào giữ được lời hứa ⇒ bộ cài bỏ hẳn trường đó. Sửa thật là đo lại vision hoặc cho nó trần ra riêng |
 | N-5 | **`deploy.ps1` không restart `LTTLlamaSwap`** (D-03-5, audit 31/08) | Chưa chạm tới `deploy.ps1` ngoài ba con số. Cho tới khi sửa, bước 1 của §7 D-5 phải làm tay |

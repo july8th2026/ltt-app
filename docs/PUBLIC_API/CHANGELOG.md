@@ -21,6 +21,25 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-04 — `GET /api/v1/models` nay Codex đọc được
+
+**FIXED · Thêm ba trường bắt buộc vào mục model: `truncation_policy`,
+`support_verbosity`, `experimental_supported_tools`. Kèm `auto_compact_token_limit`.**
+
+**Ai bị ảnh hưởng:** người cấu hình Codex **bằng tay** theo tài liệu, hoặc dùng
+tiện ích VS Code, tức không đi qua bộ cài `cam` của chúng tôi. Ai dùng bộ cài
+thì **không** bị — nó ghi một catalog cục bộ thay hẳn cho endpoint này.
+
+**Triệu chứng cũ:** Codex không parse nổi **một mục nào** ở đây (`ModelInfo` có
+ba trường bắt buộc không phải `Option`, thiếu là hỏng cả mục), nên nó im lặng
+rơi về metadata dự phòng của chính nó — **272.000** token ngữ cảnh và **không
+nén**. Con số đó lớn hơn trần thật của chúng tôi, nên phiên dài **chắc chắn**
+kết thúc bằng `413`, và không có thông báo nào giải thích vì sao.
+
+**Bạn phải làm gì:** không gì cả. Nhưng nếu bạn từng gõ tay `model_context_window`
+để đối phó, hãy bỏ nó đi — nay endpoint tự khai đúng, và một con số gõ tay lệch
+với máy chủ là cách nhanh nhất để gặp lại `413`.
+
 ## 2026-09-04 — bộ cài `1.5.0`: chặn một kết quả tool nuốt trọn ngữ cảnh
 
 **FIXED · Trần cho MỘT kết quả tool: cả cửa sổ (156.385) → 16.384 token.**

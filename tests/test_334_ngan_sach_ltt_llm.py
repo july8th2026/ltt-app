@@ -383,6 +383,74 @@ class TestBanSaoConLai:
                 f"CUA_SO_CONG_BO_MAC_DINH cua server/api/tools.py, va khach se "
                 f"nhan mot con so khong lien quan gi toi model nay")
 
+    #: Trường **bắt buộc** của `ModelInfo` mà `/api/v1/models` phải mang.
+    #:
+    #: 🔴 Đo 04/09 trên `rust-v0.145.0`, không đoán: `ModelInfo` có 17 trường
+    #:    không mang `#[serde(default)]`. Endpoint ta thiếu **tám** — nhưng
+    #:    **năm** trong tám là `Option<T>`, và serde tự cho `None`. Ba cái dưới
+    #:    đây KHÔNG phải `Option`, nên thiếu chúng là Codex bỏ **cả mục**, im
+    #:    lặng, rồi rơi về metadata dự phòng (272.000 ngữ cảnh, KHÔNG nén).
+    #:
+    #: ⭐ Ranh giới `Option`/không-`Option` đến từ một phép thử BÁC BỎ, không
+    #:    từ suy luận: catalog bộ cài cũng thiếu 5 trường mà Codex vẫn chạy
+    #:    thật. Nếu "thiếu trường bắt buộc nào cũng chết" thì nó đã phải chết.
+    _BAT_BUOC_KHONG_OPTION = ("support_verbosity", "truncation_policy",
+                              "experimental_supported_tools")
+
+    def test_models_endpoint_mang_du_truong_Codex_BAT_BUOC(self):
+        """🔴 KHUYẾT TẬT SỐNG TRÊN PRODUCTION, tìm ra 04/09.
+
+        `/api/v1/models` thiếu cả ba trường dưới. Khách nào **không** dùng bộ
+        cài của ta — cấu hình tay theo tài liệu, hoặc dùng tiện ích VS Code —
+        thì Codex không parse nổi một mục nào, rơi về 272.000 ngữ cảnh và
+        **không nén**, tức bảo đảm một `413` giữa phiên.
+
+        ⛔ Bộ cài che được lỗi này (`model_catalog_json` thay cả catalog), nên
+           nó **không hiện ra** ở bất kỳ phép đo nào đi qua bộ cài. Đó chính là
+           lý do phải có phép kiểm riêng cho endpoint.
+        """
+        import types
+        from server.api import tools as sv
+        m = types.SimpleNamespace(name="ltt_llm", description="x")
+        m.constraints = {"context_window": 156_385, "max_output_tokens": 32_768}
+        d = sv._dang_codex(m)
+        for truong in self._BAT_BUOC_KHONG_OPTION:
+            assert truong in d, (
+                f"/api/v1/models thieu {truong!r} — Codex se bo CA MUC va roi ve "
+                f"metadata du phong 272.000 ngu canh khong nen")
+
+    def test_models_endpoint_va_bo_cai_noi_CUNG_mot_con_so(self):
+        """Ba nơi suy ra ngưỡng nén và trần kết quả tool; ba nơi phải trùng.
+
+        ⛔ Bất biến không phải "mỗi nơi có một con số hợp lệ" — nó là *"ba con
+           số ấy là MỘT"*. Hai catalog nói hai ngưỡng nén khác nhau thì hành vi
+           của khách phụ thuộc vào việc họ cài bằng cách nào, và đó là loại lỗi
+           không ai tái hiện được.
+        """
+        import json
+        import types
+        from server.api import tools as sv
+        import importlib.util
+        import pathlib as _pl
+        goc = _pl.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "cam_cli_doi_chieu_sv", goc / "tools" / "cam_cli.py")
+        cc = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cc)
+        bo_cai = {m["slug"]: m for m in json.loads(cc._catalog_codex())["models"]}
+        for slug, bc in bo_cai.items():
+            m = types.SimpleNamespace(name=slug, description="x")
+            m.constraints = {"context_window": bc["context_window"],
+                             "max_output_tokens": ngan_sach.TOKEN_RA_TRAN}
+            sv_d = sv._dang_codex(m)
+            assert sv_d["truncation_policy"] == bc["truncation_policy"], (
+                f"{slug}: may chu {sv_d['truncation_policy']} != bo cai "
+                f"{bc['truncation_policy']}")
+            assert (sv_d.get("auto_compact_token_limit")
+                    == bc.get("auto_compact_token_limit")), (
+                f"{slug}: nguong nen may chu {sv_d.get('auto_compact_token_limit')} "
+                f"!= bo cai {bc.get('auto_compact_token_limit')}")
+
     def test_context_window_cua_alias_khop_cua_so_model_that(self):
         """Con số công bố của mỗi alias phải dẫn xuất từ cửa sổ THẬT của model
         nó trỏ tới — không phải từ cửa sổ của model bên cạnh."""

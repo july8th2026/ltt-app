@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:406e6bca639b45d260d11a46fc0b24fb4c4eafee587a101af21972a5879aeb46
+Fingerprint   : sha256:2078e1959f3ad2aaa616beca250daeb3a5802e6d29c20661c77ff4f184f1cdae
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3275,7 +3275,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16080390 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16086678 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -156215,7 +156215,7 @@ def sang_anthropic_content(noi_dung: str, tool_calls: Any) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/tools.py
-SHA256=cdc8711b841e55f7c5dfb2c8351e328d92c3fd5fc3c15671919efd91eaa583c1 BYTES=8630 LINES=162
+SHA256=ce844ba10fd313b16c2e7d8f49ab8e7f6fbf7bc648cc3b359dd9ee7c32df26c8 BYTES=10940 LINES=194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/tools`` — the public catalog endpoints.
 
@@ -156267,9 +156267,14 @@ def _dang_codex(model) -> dict:
     """
     rang_buoc = dict(getattr(model, "constraints", None) or {})
     cua_so = int(rang_buoc.get("context_window") or CUA_SO_CONG_BO_MAC_DINH)
+    ra = int(rang_buoc.get("max_output_tokens") or TOKEN_RA_TOI_DA)
     doc_anh = bool(rang_buoc.get("reads_images")
                    or "vision" in str(model.name).lower())
-    return {
+    # Ngưỡng nén và trần kết quả tool — **suy ra**, không gõ thêm hằng số.
+    # Cùng phép suy với hai bộ cài (`tools/cam_cli.py`), nên ba nơi không lệch
+    # được: khoảng trống giữa ngưỡng nén và cửa sổ phải chứa trọn một lượt ra.
+    nen = cua_so - ra
+    d = {
         "slug": model.name,
         "display_name": model.name,
         "description": model.description,
@@ -156285,7 +156290,34 @@ def _dang_codex(model) -> dict:
         "visibility": "list",
         "supported_in_api": True,
         "priority": 1,
+        # 🔴 BA TRƯỜNG DƯỚI ĐÂY LÀ **BẮT BUỘC**, và thiếu chúng thì Codex bỏ
+        #    **cả mục** — im lặng, rồi rơi về metadata dự phòng của nó
+        #    (272.000 ngữ cảnh, KHÔNG nén), tức bảo đảm một `413` giữa phiên.
+        #
+        # ⛔ Đo 04/09 trên `rust-v0.145.0`: `ModelInfo` có 17 trường không mang
+        #    `#[serde(default)]`; endpoint này thiếu **tám**. Năm trong tám là
+        #    `Option<T>` — serde tự cho `None`, vô hại. Ba cái còn lại KHÔNG
+        #    phải `Option`, và chính ba cái đó giết cả mục:
+        #      `support_verbosity: bool`               (openai_models.rs:424)
+        #      `truncation_policy: TruncationPolicyConfig`          (:429)
+        #      `experimental_supported_tools: Vec<String>`          (:449)
+        #
+        # ⭐ Phân biệt đó không phải suy luận — nó đến từ một phép thử BÁC BỎ:
+        #    catalog của bộ cài cũng thiếu 5 trường mà Codex vẫn chạy thật. Nếu
+        #    "thiếu bất kỳ trường bắt buộc nào là hỏng" thì bộ cài đã phải hỏng.
+        #    Nó không hỏng ⇒ giả thuyết đầu của tôi sai ⇒ ranh giới thật là
+        #    `Option` hay không.
+        "support_verbosity": False,
+        "truncation_policy": {"mode": "tokens", "limit": max(ra // 2, 1)},
+        "experimental_supported_tools": [],
     }
+    # ⛔ BỎ HẲN khi không ngưỡng nào giữ được lời hứa (`nen <= 0`), thay vì ghi
+    #    một con số trông hợp lệ. Thiếu trường thì Codex dùng mặc định của nó
+    #    (90% cửa sổ); một con số bịa thì nó TIN, và cái giá là `413` giữa
+    #    phiên. Cùng luật với `tools/cam_cli.py`.
+    if nen > 0:
+        d["auto_compact_token_limit"] = nen
+    return d
 
 
 def register_tool_routes(api, config, tag: str) -> None:
@@ -257040,7 +257072,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=ccc0168d44634ad42c3aa23262a2e41178ae734d68aed1e0902d835b07605efe BYTES=47472 LINES=909
+SHA256=96a9a1503b963be6b1fdd0cb1010fe0c72c892e8a51098cc86ff65ea8df42def BYTES=51450 LINES=977
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -257426,6 +257458,74 @@ class TestBanSaoConLai:
                 f"alias {alias!r} khong tu khai context_window ⇒ no se roi ve "
                 f"CUA_SO_CONG_BO_MAC_DINH cua server/api/tools.py, va khach se "
                 f"nhan mot con so khong lien quan gi toi model nay")
+
+    #: Trường **bắt buộc** của `ModelInfo` mà `/api/v1/models` phải mang.
+    #:
+    #: 🔴 Đo 04/09 trên `rust-v0.145.0`, không đoán: `ModelInfo` có 17 trường
+    #:    không mang `#[serde(default)]`. Endpoint ta thiếu **tám** — nhưng
+    #:    **năm** trong tám là `Option<T>`, và serde tự cho `None`. Ba cái dưới
+    #:    đây KHÔNG phải `Option`, nên thiếu chúng là Codex bỏ **cả mục**, im
+    #:    lặng, rồi rơi về metadata dự phòng (272.000 ngữ cảnh, KHÔNG nén).
+    #:
+    #: ⭐ Ranh giới `Option`/không-`Option` đến từ một phép thử BÁC BỎ, không
+    #:    từ suy luận: catalog bộ cài cũng thiếu 5 trường mà Codex vẫn chạy
+    #:    thật. Nếu "thiếu trường bắt buộc nào cũng chết" thì nó đã phải chết.
+    _BAT_BUOC_KHONG_OPTION = ("support_verbosity", "truncation_policy",
+                              "experimental_supported_tools")
+
+    def test_models_endpoint_mang_du_truong_Codex_BAT_BUOC(self):
+        """🔴 KHUYẾT TẬT SỐNG TRÊN PRODUCTION, tìm ra 04/09.
+
+        `/api/v1/models` thiếu cả ba trường dưới. Khách nào **không** dùng bộ
+        cài của ta — cấu hình tay theo tài liệu, hoặc dùng tiện ích VS Code —
+        thì Codex không parse nổi một mục nào, rơi về 272.000 ngữ cảnh và
+        **không nén**, tức bảo đảm một `413` giữa phiên.
+
+        ⛔ Bộ cài che được lỗi này (`model_catalog_json` thay cả catalog), nên
+           nó **không hiện ra** ở bất kỳ phép đo nào đi qua bộ cài. Đó chính là
+           lý do phải có phép kiểm riêng cho endpoint.
+        """
+        import types
+        from server.api import tools as sv
+        m = types.SimpleNamespace(name="ltt_llm", description="x")
+        m.constraints = {"context_window": 156_385, "max_output_tokens": 32_768}
+        d = sv._dang_codex(m)
+        for truong in self._BAT_BUOC_KHONG_OPTION:
+            assert truong in d, (
+                f"/api/v1/models thieu {truong!r} — Codex se bo CA MUC va roi ve "
+                f"metadata du phong 272.000 ngu canh khong nen")
+
+    def test_models_endpoint_va_bo_cai_noi_CUNG_mot_con_so(self):
+        """Ba nơi suy ra ngưỡng nén và trần kết quả tool; ba nơi phải trùng.
+
+        ⛔ Bất biến không phải "mỗi nơi có một con số hợp lệ" — nó là *"ba con
+           số ấy là MỘT"*. Hai catalog nói hai ngưỡng nén khác nhau thì hành vi
+           của khách phụ thuộc vào việc họ cài bằng cách nào, và đó là loại lỗi
+           không ai tái hiện được.
+        """
+        import json
+        import types
+        from server.api import tools as sv
+        import importlib.util
+        import pathlib as _pl
+        goc = _pl.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "cam_cli_doi_chieu_sv", goc / "tools" / "cam_cli.py")
+        cc = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cc)
+        bo_cai = {m["slug"]: m for m in json.loads(cc._catalog_codex())["models"]}
+        for slug, bc in bo_cai.items():
+            m = types.SimpleNamespace(name=slug, description="x")
+            m.constraints = {"context_window": bc["context_window"],
+                             "max_output_tokens": ngan_sach.TOKEN_RA_TRAN}
+            sv_d = sv._dang_codex(m)
+            assert sv_d["truncation_policy"] == bc["truncation_policy"], (
+                f"{slug}: may chu {sv_d['truncation_policy']} != bo cai "
+                f"{bc['truncation_policy']}")
+            assert (sv_d.get("auto_compact_token_limit")
+                    == bc.get("auto_compact_token_limit")), (
+                f"{slug}: nguong nen may chu {sv_d.get('auto_compact_token_limit')} "
+                f"!= bo cai {bc.get('auto_compact_token_limit')}")
 
     def test_context_window_cua_alias_khop_cua_so_model_that(self):
         """Con số công bố của mỗi alias phải dẫn xuất từ cửa sổ THẬT của model
