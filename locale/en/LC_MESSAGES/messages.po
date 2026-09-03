@@ -13953,3 +13953,66 @@ msgstr "Missing dubbed lines for {n} segments."
 
 msgid "Đang viết lời thoại"
 msgstr "Writing dubbed lines"
+
+msgid "Model không trả về câu đã viết lại."
+msgstr "The model did not return a rewritten line."
+
+msgid "Bản phối lệch thời lượng {lech} giây so với dự kiến."
+msgstr "The audio master is {lech} seconds off the expected duration."
+
+msgid "Bản phối sai số kênh."
+msgstr "The audio master has the wrong channel count."
+
+msgid "Bản phối sai tần số lấy mẫu."
+msgstr "The audio master has the wrong sample rate."
+
+msgid "Bản đồ thời gian có hai khoảng chồng lấn."
+msgstr "The time map has two overlapping intervals."
+
+msgid "Bản đồ thời gian có khoảng rỗng hoặc ngược."
+msgstr "The time map has an empty or reversed interval."
+
+msgid "Bản đồ thời gian không giữ lại khoảng nào."
+msgstr "The time map retains no intervals."
+
+msgid "Bản đồ thời gian vượt quá thời lượng nguồn."
+msgstr "The time map extends past the source duration."
+
+msgid "Chưa có bản biên tập để dựng bản đồ thời gian."
+msgstr "No edit plan yet, so the time map cannot be built."
+
+msgid "Chưa có bản nền để trộn bản phối."
+msgstr "No background bed yet, so the audio master cannot be mixed."
+
+msgid "Kế hoạch thời gian không còn đoạn nào có tiếng."
+msgstr "The timing plan has no segments with audio left."
+
+msgid "Đoạn {ma} chưa có tệp tiếng."
+msgstr "Segment {ma} has no audio file."
+
+msgid "Đoạn {ma} thuộc phần đã cắt nhưng vẫn có tiếng."
+msgstr "Segment {ma} belongs to a cut section but still has audio."
+
+msgid "Lô trộn không có đoạn nào."
+msgstr "The mix batch has no segments."
+
+msgid "Số đoạn và số mốc không khớp."
+msgstr "The number of segments does not match the number of marks."
+
+msgid "Hệ số co giãn {h} ngoài khoảng một lần `atempo`."
+msgstr "Stretch factor {h} is outside the range of a single `atempo` pass."
+
+msgid "Trộn lô tiếng quá hạn."
+msgstr "Mixing the voice batch timed out."
+
+msgid "Trộn lô tiếng thất bại: {loi}"
+msgstr "Mixing the voice batch failed: {loi}"
+
+msgid "Trộn bản phối quá hạn."
+msgstr "Mixing the audio master timed out."
+
+msgid "Trộn bản phối thất bại: {loi}"
+msgstr "Mixing the audio master failed: {loi}"
+
+msgid "Đang trộn bản phối"
+msgstr "Mixing the audio master"

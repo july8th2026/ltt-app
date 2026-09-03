@@ -79,16 +79,27 @@ def _ms(giay: float) -> int:
     return int(round(float(giay) * 1000))
 
 
-def ngan_sach_doan(muc: list[dict], i: int, tong_ms: int) -> int:
+def ngan_sach_doan(moc_ms: list[int], i: int, tong_ms: int) -> int:
     """Ngân sách của đoạn `i`: **tới lúc đoạn sau bắt đầu**.
 
     Đoạn cuối lấy tới hết nguồn — phần đuôi sau câu cuối cũng là khoảng lặng dùng
     được, và bỏ nó đi là tự làm chặt chính chỗ dễ thở nhất.
+
+    🔴 **`moc_ms` là các mốc đã đổi sang trục BẢN RA, không phải `muc` gốc.**
+
+       Bản trước nhận `muc` rồi tự đọc `muc[i]["bat"]` — tức giờ **nguồn** — rồi
+       trừ vào `tong_ms`. Khi pha 16 đổi `tong_ms` sang giờ **bản ra**, hàm này
+       lặng lẽ trộn hai đồng hồ: hiệu hai mốc nguồn **không bằng** khoảng cách
+       của chúng ở bản ra khi giữa chúng có một cảnh bị cắt.
+
+    ⭐ Nên nó không được phép tự đọc mốc nữa. Người gọi đã đổi mốc một lần, ở một
+       chỗ, và truyền kết quả xuống — một phép đổi ở một nơi thì kiểm được; một
+       phép đổi rải rác thì sớm muộn có một chỗ bị quên.
     """
-    bat = _ms(muc[i]["bat"])
-    if i + 1 < len(muc):
-        return max(0, _ms(muc[i + 1]["bat"]) - bat)
-    return max(0, tong_ms - bat)
+    bat = int(moc_ms[i])
+    if i + 1 < len(moc_ms):
+        return max(0, int(moc_ms[i + 1]) - bat)
+    return max(0, int(tong_ms) - bat)
 
 
 def _tang_toc_can(dai_ms: int, ngan_sach_ms: int) -> float:
@@ -98,12 +109,26 @@ def _tang_toc_can(dai_ms: int, ngan_sach_ms: int) -> float:
 
 
 def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
-                 tong_giay: float, che_do: str = "fit_original") -> dict:
+                 tong_giay: float, che_do: str = "fit_original",
+                 ban_do=None) -> dict:
     """Dựng kế hoạch đặt từng đoạn. Không chạm tệp nào.
 
     `muc`             các mục của `content.json` (có `ma`, `bat`, `ket`)
     `thoi_luong_tieng` `{ma: giây}` — độ dài THẬT của tệp tiếng đã sinh
     `tong_giay`       thời lượng video nguồn
+    `ban_do`          `BanDoThoiGian` — đổi mốc NGUỒN sang mốc BẢN RA
+
+    🔴 **`ban_do` là thứ pha 16 thêm vào, và thiếu nó thì preset cắt sai âm
+       thầm.** Trước đó hàm này lập kế hoạch trên trục thời gian của **nguồn**:
+       đoạn bắt đầu ở giây 120 thì đặt quanh giây 120. Đúng cho preset giữ hình,
+       nơi luồng hình được sao chép nguyên vẹn.
+
+       Với `smart_localize` thì cảnh bị cắt **biến mất khỏi bản ra**, nên giây
+       120 của nguồn có thể là giây 74 của bản ra — hoặc không tồn tại. Sai số
+       đó **tích luỹ** theo từng cảnh bị cắt.
+
+    ⭐ `ban_do=None` giữ nguyên hành vi cũ (bản đồ đồng nhất), nên preset giữ
+       hình không đổi một mili giây nào.
 
     Trả về kế hoạch: mỗi đoạn có `dat_tai_ms`, `he_so_toc`, `cat_bot_ms`, và
     `troi_sau_ms` để đọc được diễn biến của món nợ.
@@ -113,7 +138,39 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
     if che_do not in ("fit_original", "natural"):
         raise ThoiGianError(f"che do thoi gian khong hop le: {che_do!r}")
 
-    tong_ms = _ms(tong_giay)
+    # ⭐ Không có bản đồ = bản đồ đồng nhất. Viết ra một lần thay vì rải
+    #    `if ban_do` khắp thân hàm: một nhánh điều kiện lặp lại là một nhánh sẽ
+    #    bị quên ở một chỗ.
+    if ban_do is None:
+        from .ban_do_thoi_gian import BanDoThoiGian
+
+        ban_do = BanDoThoiGian.giu_nguyen(tong_giay)
+
+    # ── Đổi mốc sang trục BẢN RA, MỘT lần, ở MỘT chỗ ──────────────────────
+    #
+    # ⛔ `ra()` chứ không `ra_gan_nhat()` cho mốc **bắt đầu**: một câu thoại
+    #    thuộc cảnh đã cắt phải **biến mất**, không được trôi sang cảnh khác. Ép
+    #    nó về mốc gần nhất là đổi một mất mát NHÌN THẤY được thành một lỗi KHÓ
+    #    TÌM — nghe thấy một câu trả lời cho một câu hỏi không còn.
+    bat_ra: list[int] = []
+    ket_ra: list[int] = []
+    for m in muc:
+        rb = ban_do.ra(float(m["bat"]))
+        if rb is None:
+            raise ThoiGianError(
+                _t('Đoạn {ma} thuộc phần đã cắt nhưng vẫn có tiếng.')
+                .format(ma=m.get("ma")))
+        rk = ban_do.ra(float(m["ket"]))
+        if rk is None:
+            # Đoạn bắt đầu trong phần giữ và kết thúc trong phần cắt: khe của nó
+            # kết thúc ở chỗ nối. Ở đây `ra_gan_nhat` là đúng — ta đang cắt ngắn
+            # một khe, không phải di dời một câu.
+            rk = ban_do.ra_gan_nhat(float(m["ket"]))
+        bat_ra.append(_ms(rb))
+        ket_ra.append(_ms(max(rb, rk)))
+
+    # Tổng thời lượng của **BẢN RA**, không phải của nguồn.
+    tong_ms = _ms(ban_do.thoi_luong_ra)
     ke: list[dict] = []
     troi = 0                    # 🔑 nợ trôi, mang theo suốt bài
     so_cat = 0
@@ -126,9 +183,9 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
             raise ThoiGianError(
                 _t('Đoạn {ma} chưa có tiếng.').format(ma=ma))
 
-        bat_goc = _ms(m["bat"])
-        ngan_sach = ngan_sach_doan(muc, i, tong_ms)
-        noi_thoai = max(0, _ms(m["ket"]) - bat_goc)
+        bat_goc = bat_ra[i]
+        ngan_sach = ngan_sach_doan(bat_ra, i, tong_ms)
+        noi_thoai = max(0, ket_ra[i] - bat_goc)
         khoang_lang = max(0, ngan_sach - noi_thoai)
 
         # ── Ngân sách dùng được: thoại + PHẦN khoảng lặng được mượn ────────
@@ -146,7 +203,7 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         dat_tai = max(bat_goc + troi, con_tro - TRAN_CHONG_LAN_MS)
 
         # ── Trần cứng cho nợ (ADR-003 D5) ─────────────────────────────────
-        tran = sum(ngan_sach_doan(muc, j, tong_ms)
+        tran = sum(ngan_sach_doan(bat_ra, j, tong_ms)
                    for j in range(i, min(len(muc), i + TRAN_TROI_SO_DOAN)))
         cat = 0
         if troi > tran:
@@ -221,6 +278,11 @@ def lap_ke_hoach(muc: list[dict], thoi_luong_tieng: dict, *,
         "schema": SCHEMA_KE_HOACH,
         "che_do": che_do,
         "tong_ms": tong_ms,
+        # 🔑 Bản đồ đi **cùng** kế hoạch, không nằm rời: một kế hoạch đặt đoạn ở
+        #    giây 74 vô nghĩa nếu không biết giây 74 của bản ra ứng với đâu
+        #    trong nguồn. Hai nửa tách rời là hai nửa sẽ lệch phiên bản.
+        "ban_do": ban_do.sang_dict(),
+        "thoi_luong_nguon_ms": _ms(tong_giay),
         "ket_cuoi_ms": ket_cuoi,
         "so_doan": len(ke),
         "so_doan_bi_cat": so_cat,

@@ -160,6 +160,35 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Ban do thoi gian va ban phoi am (pha 16) ────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu lai**. Ca hai lop deu
+    #    la ket luan cua mot phep tinh TAT DINH tren du lieu da co: mot ban do
+    #    khong hop le hay mot ban phoi lech thoi luong se cho ra dung ket qua do
+    #    o lan thu hai. Thu lai chi ton them mot suat ffmpeg.
+    #
+    # ⭐ Khac han `MayBan`/`ThieuCard`: nhung cai do la truot cua moi truong.
+    #    Day la mau thuan trong chinh du lieu, va no khong tu lanh.
+    from .am_master import MasterError
+    from .ban_do_thoi_gian import BanDoError
+    if isinstance(exc, (BanDoError, MasterError)):
+        return NGUOI_DUNG
+
+    # ── Nan cho vua (pha 15) ────────────────────────────────────────────────
+    #
+    # ⭐ `TAM_THOI` — va o day thu lai la viec dung chu khong phai mot cho hong
+    #    ve phia an toan: `NanError` chi xay ra khi model tra ve mot cau viet lai
+    #    khong doc duoc. Model la ngau nhien, nen lan sau thuong duoc.
+    #
+    # ⚠️ Nhung trong duong chay that no gan nhu khong bao gio len toi day:
+    #    `giai_doan_giong._viet_lai` bat no ngay tai cho va **dung bac thang**,
+    #    vi mot lan xin viet lai hong khong duoc phep lam hong ca giai doan —
+    #    cau hien tai van doc duoc, chi la khong vua, va con mot nac (co gian)
+    #    nua truoc khi phai bo cuoc.
+    from .nan_cho_vua import NanError
+    if isinstance(exc, NanError):
+        return TAM_THOI
+
     # ── Ban long tieng (pha 14) ───────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu lai**. Mot ban long

@@ -47,10 +47,14 @@ def test_ngan_sach_keo_toi_luc_doan_SAU_bat_dau():
     from apps.auto_scan_video import thoi_gian as tg
 
     muc = _muc(3, cach_giay=2.0, noi_giay=1.0)   # nói 1s, nghỉ 1s
-    assert tg.ngan_sach_doan(muc, 0, tong_ms=10_000) == 2000, (
+    # ⚠️ Pha 16 đổi chữ ký: hàm nhận **mốc đã đổi sang trục bản ra** thay vì
+    #    `muc` gốc, vì nó từng tự đọc giờ NGUỒN rồi trừ vào một `tong_ms` giờ
+    #    BẢN RA — trộn hai đồng hồ. Xem docstring của hàm.
+    moc = [tg._ms(m["bat"]) for m in muc]
+    assert tg.ngan_sach_doan(moc, 0, tong_ms=10_000) == 2000, (
         "ngân sách phải gồm cả khoảng lặng phía sau")
     # Đoạn cuối lấy tới hết nguồn — phần đuôi cũng là khoảng lặng dùng được.
-    assert tg.ngan_sach_doan(muc, 2, tong_ms=10_000) == 6000
+    assert tg.ngan_sach_doan(moc, 2, tong_ms=10_000) == 6000
 
 
 def test_tieng_Viet_dai_hon_60_phan_tram_van_VUA_khi_co_khoang_lang():
