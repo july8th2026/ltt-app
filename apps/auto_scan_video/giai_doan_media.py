@@ -40,9 +40,19 @@ def _duong_doc_duoc(kho: Storage, khoa: str, thu_muc: Path) -> str:
     duong = kho.local_path(khoa) if hasattr(kho, "local_path") else None
     if duong:
         return duong
+    # ⛔ KHONG `dich.write_bytes(f.read())`. Do la ca video nguon nam trong RAM
+    #    cua worker — va o day khong co tran 90 MB nao nhu o route: mot tep 2 GiB
+    #    di qua duong tai len ben vung se toi thang cho nay.
+    #
+    # ⭐ Va no hong theo kieu te nhat: khong loi, khong cham, chi la may bat dau
+    #    swap khi hai lan chay trung nhau.
     dich = thu_muc / "nguon.bin"
-    with kho.open(khoa) as f:
-        dich.write_bytes(f.read())
+    with kho.open(khoa) as f, open(dich, "wb") as ra:
+        while True:
+            khoi = f.read(assets.KHOI_DOC)
+            if not khoi:
+                break
+            ra.write(khoi)
     return str(dich)
 
 
@@ -91,7 +101,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # 🔑 Van tay cua ban tieng dua tren CHECKSUM TEP NGUON, khong phai ten
         #    hay khoa cua no (Prompt 08 muc 8). Hai tep cung ten khac noi dung
         #    phai ra hai van tay; mot ten tep khong noi len dieu gi ve noi dung.
-        checksum_nguon = assets.bam(Path(nguon).read_bytes())
+        checksum_nguon = assets.bam_tep(nguon)
         vt_tieng = nhap_media.van_tay_chuan_hoa(checksum_nguon=checksum_nguon,
                                                 phien_ban_cong_cu=cong_cu)
         wav = str(thu_muc / "audio_full.wav")

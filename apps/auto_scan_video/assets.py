@@ -40,6 +40,7 @@ ve rieng tu, khong phai mot toi uu.
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 import json
 import re
 from datetime import datetime, timedelta, timezone
@@ -200,6 +201,63 @@ def bam(du_lieu: bytes) -> str:
     return hashlib.sha256(du_lieu).hexdigest()
 
 
+#: Doc theo khoi 1 MiB. Du lon de khong ton syscall, du nho de mot tep 4 GB
+#: khong bao gio ton hon 1 MiB RAM cua tien trinh.
+KHOI_DOC = 1024 * 1024
+
+
+def bam_tep(duong: str | Path) -> str:
+    """sha256 cua MOT TEP, doc theo dong chay. **Dung ham nay cho media.**
+
+    ⛔ `bam(Path(x).read_bytes())` nap TOAN BO tep vao RAM chi de bam no. Voi
+       tran 90 MB cua V2 thi con song duoc; voi duong tai len ben vung cua V4
+       (toi 2 GiB, `upload_sessions`) thi mot lan chay lam boc hoi 2 GiB RAM cua
+       worker — va co N worker.
+
+    ⭐ Va no khong hien ra nhu mot loi: tep van bam dung, van tay van khop, chi
+       la may bat dau swap khi hai lan chay trung nhau. Do la ly do
+       `V4_RESOURCE_CPU_GPU_POLICY` goi dich danh viec nay ra:
+       *"never `Path.read_bytes()` multi-GB solely to hash"*.
+
+    Ket qua **bang het** `bam(duong.read_bytes())` cho cung mot tep — hai duong
+    khong the lech, va `tests/test_429` chot dieu do tren nhieu kich thuoc, ke ca
+    tep rong va tep lon hon mot khoi.
+    """
+    h = hashlib.sha256()
+    with open(duong, "rb") as f:
+        while True:
+            khoi = f.read(KHOI_DOC)
+            if not khoi:
+                break
+            h.update(khoi)
+    return h.hexdigest()
+
+
+def do_va_bam(kho: Storage, khoa: str) -> tuple[int, str]:
+    """`(co, checksum)` cua mot artifact, doc THEO KHOI tu kho.
+
+    ⛔ `_doc_het` nap ca artifact vao RAM. Voi `transcript.json` do la vai chuc
+       KB va khong sao; voi `final.mp4` do la ca cuon phim, va no xay ra o MOI
+       lan kiem toan ven cua MOI lan chay.
+
+    ⭐ Va cai gia khong hien ra nhu mot loi: phep kiem van dung, van tay van
+       khop, chi la worker phinh len bang kich thuoc san pham no vua lam ra.
+    """
+    h = hashlib.sha256()
+    co = 0
+    f = kho.open(khoa)
+    try:
+        while True:
+            khoi = f.read(KHOI_DOC)
+            if not khoi:
+                break
+            co += len(khoi)
+            h.update(khoi)
+    finally:
+        f.close()
+    return co, h.hexdigest()
+
+
 def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
     """Kiem noi dung theo `kind`. Tra `(co, checksum)`. Nem neu khong dat.
 
@@ -209,6 +267,25 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
     """
     if kind not in KINDS:
         raise AssetError(f"loai artifact khong biet: {kind!r}")
+
+    # 🔑 Media di duong DONG CHAY, JSON/text doc het.
+    #
+    #    Khac biet khong phai tuy tien: phep kiem cua JSON la `json.loads`, va no
+    #    can toan bo van ban. Phep kiem cua media la ffprobe tren mot TEP, khong
+    #    phai tren mot chuoi bytes — nen nap no vao RAM khong phuc vu phep kiem
+    #    nao ca, chi de bam va do do dai.
+    if kind in ("video", "audio"):
+        try:
+            co, checksum = do_va_bam(kho, khoa)
+        except StorageError as exc:
+            raise AssetError(f"khong doc duoc artifact: {khoa}") from exc
+        except FileNotFoundError as exc:
+            raise AssetError(f"artifact khong ton tai: {khoa}") from exc
+        if not co:
+            raise AssetError(f"artifact rong: {khoa}")
+        _kiem_media(kho, khoa, kind=kind)
+        return co, checksum
+
     try:
         du_lieu = _doc_het(kho, khoa)
     except StorageError as exc:
@@ -224,16 +301,6 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
             json.loads(du_lieu.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise AssetError(f"artifact JSON hong: {khoa}") from exc
-
-    elif kind in ("video", "audio"):
-        # 🔑 Pha 08 tra mon no cua pha 06. Truoc do o day chi kiem "khac rong",
-        #    va ly do da ghi ra: chua engine nao sinh ra media that, nen mot phep
-        #    kiem ffprobe se chi kiem cac tep gia — mot loi hua rong.
-        #
-        # ⛔ Voi media, "doc duoc mot byte" khong dinh nghia duoc dieu gi. Mot
-        #    tep bi cat ngan giua chung van co header, van mo duoc, va van hong.
-        #    Chi ffprobe tra loi duoc cau hoi "trong nay co mot luong that khong".
-        _kiem_media(kho, khoa, kind=kind)
 
     return len(du_lieu), bam(du_lieu)
 
@@ -332,13 +399,14 @@ def kiem_toan_ven(db: Session, kho: Storage, asset: AsvAsset) -> str:
             asset.integrity = ASSET_MISSING
             db.flush()
             return ASSET_MISSING
-        du_lieu = _doc_het(kho, asset.storage_key)
+        # Chi can do dai va checksum, khong can noi dung -> doc theo khoi.
+        co, checksum = do_va_bam(kho, asset.storage_key)
     except (StorageError, FileNotFoundError):
         asset.integrity = ASSET_MISSING
         db.flush()
         return ASSET_MISSING
 
-    if len(du_lieu) != int(asset.size) or bam(du_lieu) != asset.checksum:
+    if co != int(asset.size) or checksum != asset.checksum:
         asset.integrity = ASSET_CORRUPT
         db.flush()
         return ASSET_CORRUPT

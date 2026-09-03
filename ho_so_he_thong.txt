@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0a23155531833d3fe7db12932a84df7a5e530d9d29a368baf3bf1fd2e305b624
-Nguồn đã quét : 1548 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:840ea81b8d631954d52cd18d22e3ea5035b6911147f8ed7a916a50bc691f699a
+Nguồn đã quét : 1551 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -939,7 +939,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [vps] POST   /vps/{instance_id}/tat → tat_may | auth~login | apps/vps/routes.py:470
 - [vps] POST   /vps/{instance_id}/xoa → xoa_may | auth~login | apps/vps/routes.py:636
 
-5. DATA MODEL (69 bảng)
+5. DATA MODEL (70 bảng)
 - agent_runs → AgentRun | platform_core/models.py:458
 - agent_workflow_shares → AgentWorkflowShare | platform_core/models.py:543
 - agent_workflow_snapshots → AgentWorkflowSnapshot | platform_core/models.py:525
@@ -960,6 +960,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - asv_asset → AsvAsset | apps/auto_scan_video/tables.py:184
 - asv_run → AsvRun | apps/auto_scan_video/tables.py:84
 - asv_stage → AsvStage | apps/auto_scan_video/tables.py:126
+- asv_work_item → AsvWorkItem | apps/auto_scan_video/tables.py:280
 - chat_conversations → ChatConversation | platform_core/models.py:796
 - chat_messages → ChatMessage | platform_core/models.py:816
 - credit_entries → CreditEntry | platform_core/models.py:599
@@ -1010,7 +1011,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - vps_instance → VpsInstance | apps/vps/tables.py:163
 - vps_ip → VpsIp | apps/vps/tables.py:131
 
-6. ALEMBIC MIGRATIONS (67)
+6. ALEMBIC MIGRATIONS (68)
 - ? ← None | khoi tao luoc do - bang platform_info | alembic/versions/20260731_0001_khoi_tao_platform_info.py
 - ? ← None | them bang users va sessions | alembic/versions/20260731_0724_them_bang_users_va_sessions.py
 - ? ← None | them cot registration_ip | alembic/versions/20260731_0753_them_cot_registration_ip.py
@@ -1078,6 +1079,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - e1a7c04b93d2 ← c7b91e4a2f80 | Bang cua Auto Scan Video: asv_run, asv_stage. | alembic/versions/20260901_1800_asv_run_va_stage.py
 - f2b8d16e05a3 ← e1a7c04b93d2 | Bang artifact cua Auto Scan Video: asv_asset. | alembic/versions/20260901_1930_asv_asset.py
 - c7b91e4a2f80 ← a5f31c07d2b4 | voice_tu_dien — từ điển phát âm riêng của từng khách | alembic/versions/20260901_2300_voice_tu_dien.py
+- a4c17f9b62d0 ← f2b8d16e05a3 | Bang checkpoint theo don vi viec cua Auto Scan Video: asv_work_item. | alembic/versions/20260903_0300_asv_work_item.py
 
 7. FRONTEND WORKSPACES (3)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
@@ -1281,7 +1283,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (380 file pytest + 3 frontend)
+10. QUALITY GATES (382 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1624,6 +1626,8 @@ Test inventory:
 - tests/test_426_asv_v4_kiem_ke_nang_luc.py
 - tests/test_427_asv_v4_kien_truc.py
 - tests/test_428_asv_v4_rao_chan_nang.py
+- tests/test_429_asv_v4_dau_vao_lon.py
+- tests/test_430_asv_v4_don_vi_viec.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1688,8 +1692,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1548 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1179, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1551 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1182, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1702,7 +1706,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 [README.md] (1)
 - README.md
 
-[alembic] (69)
+[alembic] (70)
 - alembic/README.md
 - alembic/env.py
 - alembic/versions/20260731_0001_khoi_tao_platform_info.py
@@ -1772,6 +1776,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - alembic/versions/20260901_1800_asv_run_va_stage.py
 - alembic/versions/20260901_1930_asv_asset.py
 - alembic/versions/20260901_2300_voice_tu_dien.py
+- alembic/versions/20260903_0300_asv_work_item.py
 
 [alembic.ini] (1)
 - alembic.ini
@@ -2709,7 +2714,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (400)
+[tests] (402)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3066,6 +3071,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - tests/test_426_asv_v4_kiem_ke_nang_luc.py
 - tests/test_427_asv_v4_kien_truc.py
 - tests/test_428_asv_v4_rao_chan_nang.py
+- tests/test_429_asv_v4_dau_vao_lon.py
+- tests/test_430_asv_v4_don_vi_viec.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3294,7 +3301,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1548 file; 15496947 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1551 file; 15535190 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -8947,6 +8954,123 @@ def downgrade() -> None:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ alembic/versions/20260903_0300_asv_work_item.py
+SHA256=18d0f76e9b191c822444e9ce5d35d756139ad2c3930d5a10b7ffbd61426f7777 BYTES=5313 LINES=111
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Bang checkpoint theo don vi viec cua Auto Scan Video: asv_work_item.
+
+Revision ID: a4c17f9b62d0
+Revises: f2b8d16e05a3
+Create Date: 2026-09-03
+
+## VI SAO CAN MOT DON VI NHO HON MOT GIAI DOAN
+
+`AsvStage` giu MOT dong cho moi `(run_id, stage)`, va no da lam dung viec cua no
+suot hai muoi pha. V4 doi ba thu ma mot dong moi giai doan khong dien dat duoc:
+
+  G5   viec dat tien theo doan phai checkpoint va dung lai duoc don vi con hop le
+  G12  vong lap chinh do dai theo doan phai CO CHAN va dung lai doan da dat
+  G14  sua loi phai nham vao pham vi hong NHO NHAT, khong chay lai ca run
+
+Va cai gia cua viec khong co no da do duoc. `apps/ltt_voice` xuat mot hop dong
+cong khai dang hoan chinh (`ToolSpec("speech.ltt")` -> `ltt_voice.synthesize`),
+nhung mot job sinh ra MOT tep khoa theo `job_id`, con `asv_stage` chi giu MOT
+`job_id` cho moi giai doan. Sinh tieng tung doan can N. Nen pha 12 cua V2 khong
+uy quyen duoc, va theo doi tien do bang **su ton tai cua tep tren dia** — mot
+checkpoint khong van tay, khong chi phi, khong so lan thu, khong chu so huu.
+
+⇒ Bang nay la thu mo khoa pha 09 va pha 15. Xem
+   `docs/auto_scan_video_v4/CAPABILITY_INVENTORY_V4.md` muc 3.
+
+## ⛔ VI SAO NO KHONG PHAI MOT HANG DOI THU HAI
+
+`V4_OPERATING_CONTRACT` A.5 cho phep them dong checkpoint va cam them mot hang
+doi worker-claim. Hai thu do khac nhau o **dung nhung cot cho phep mot worker tu
+chon viec**, va khong cot nao trong so do co mat o day:
+
+    claimed_by · worker_id · locked_by · lease_until
+    visible_at · available_at · priority · heartbeat_at
+
+`tests/test_427` chot su vang mat do, kem mot phep tu kiem chay bo do tren mot
+bang gia CO chung — de "khong co cot xau" khong bi nham voi "bo do hong".
+
+Chieu khang dinh: dong o bang nay duoc ghi boi chinh handler cua giai doan, ma
+handler do da dang giu mot `Job` cua nen tang. Khong cho nao doc bang nay de
+quyet dinh chay gi tiep theo.
+
+## RANG BUOC CHIU LUC
+
+`UNIQUE(run_id, stage, item_key)` — hai worker khong tao duoc hai dong cho cung
+mot don vi viec, nen "doan 47 da sinh tieng chua" co dung MOT cau tra loi.
+
+⚠️ Khai NGAY TRONG `create_table`: SQLite khong ALTER duoc rang buoc, va ca bo
+   test cua kho chay tren SQLite. Cung ghi chu voi hai migration ASV truoc.
+
+## ROLLBACK
+
+Them thuan tuy. Khong cot nao cua bang cu doi kieu hay doi y nghia, nen
+`downgrade` la mot `drop_table` va moi dong `asv_run`/`asv_stage`/`asv_asset` da
+co van doc duoc y nguyen. Mot lan chay tao truoc migration nay khong co dong item
+nao, va do la trang thai hop le: giai doan nao chua chia don vi viec thi tu ghi
+`credit_actual` cua chinh no nhu truoc.
+"""
+from __future__ import annotations
+
+import sqlalchemy as sa
+from alembic import op
+
+revision = "a4c17f9b62d0"
+down_revision = "f2b8d16e05a3"
+branch_labels = None
+depends_on = None
+
+
+def upgrade() -> None:
+    op.create_table(
+        "asv_work_item",
+        sa.Column("id", sa.String(length=48), primary_key=True),
+        sa.Column("run_id", sa.String(length=48), nullable=False),
+        # Chu so huu o COT, khong chi trong khoa luu tru: mot phep tra "cua ai"
+        # phai la mot dieu kien WHERE, khong phai mot phep phan tich duong dan.
+        sa.Column("owner_id", sa.String(length=36), nullable=False),
+        sa.Column("stage", sa.String(length=32), nullable=False),
+        sa.Column("item_key", sa.String(length=64), nullable=False),
+        sa.Column("status", sa.String(length=24), nullable=False,
+                  server_default="pending"),
+        sa.Column("attempt", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column("fingerprint", sa.String(length=64), nullable=False,
+                  server_default=""),
+        sa.Column("outputs", sa.JSON(), nullable=False),
+        # DO DUOC, khong tinh lai tu bang gia (ADR-001 D4).
+        sa.Column("credit_actual", sa.Integer(), nullable=False,
+                  server_default="0"),
+        sa.Column("revision", sa.Integer(), nullable=False, server_default="1"),
+        sa.Column("error", sa.Text(), nullable=False, server_default=""),
+        sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("finished_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.UniqueConstraint("run_id", "stage", "item_key",
+                            name="ux_asv_work_item_run_stage_key"),
+    )
+    op.create_index("ix_asv_work_item_run_id", "asv_work_item", ["run_id"])
+    op.create_index("ix_asv_work_item_owner_id", "asv_work_item", ["owner_id"])
+    op.create_index("ix_asv_work_item_status", "asv_work_item", ["status"])
+    op.create_index("ix_asv_work_item_run_stage_status", "asv_work_item",
+                    ["run_id", "stage", "status"])
+    op.create_index("ix_asv_work_item_owner_run", "asv_work_item",
+                    ["owner_id", "run_id"])
+
+
+def downgrade() -> None:
+    op.drop_index("ix_asv_work_item_owner_run", table_name="asv_work_item")
+    op.drop_index("ix_asv_work_item_run_stage_status", table_name="asv_work_item")
+    op.drop_index("ix_asv_work_item_status", table_name="asv_work_item")
+    op.drop_index("ix_asv_work_item_owner_id", table_name="asv_work_item")
+    op.drop_index("ix_asv_work_item_run_id", table_name="asv_work_item")
+    op.drop_table("asv_work_item")
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/__init__.py
 SHA256=58a00ffac19b41911861a0babe09f073aa33fd0dd95378f643b2c2c81ea4543f BYTES=104 LINES=1
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -11858,7 +11982,7 @@ BE_MAT_CONG_KHAI = {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/assets.py
-SHA256=d24cf419f26aa61013aabe1953a2de476789ab8f080addfa5e93bf8ba213b7f5 BYTES=21417 LINES=443
+SHA256=6d632799abbb7ea8e8112f5bec40016b4d9ac8fc307f8c984606df18117d47d3 BYTES=23841 LINES=511
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vong doi artifact cua Auto Scan Video: dat khoa, promote nguyen tu, toan ven.
 
@@ -11902,6 +12026,7 @@ ve rieng tu, khong phai mot toi uu.
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 import json
 import re
 from datetime import datetime, timedelta, timezone
@@ -12062,6 +12187,63 @@ def bam(du_lieu: bytes) -> str:
     return hashlib.sha256(du_lieu).hexdigest()
 
 
+#: Doc theo khoi 1 MiB. Du lon de khong ton syscall, du nho de mot tep 4 GB
+#: khong bao gio ton hon 1 MiB RAM cua tien trinh.
+KHOI_DOC = 1024 * 1024
+
+
+def bam_tep(duong: str | Path) -> str:
+    """sha256 cua MOT TEP, doc theo dong chay. **Dung ham nay cho media.**
+
+    ⛔ `bam(Path(x).read_bytes())` nap TOAN BO tep vao RAM chi de bam no. Voi
+       tran 90 MB cua V2 thi con song duoc; voi duong tai len ben vung cua V4
+       (toi 2 GiB, `upload_sessions`) thi mot lan chay lam boc hoi 2 GiB RAM cua
+       worker — va co N worker.
+
+    ⭐ Va no khong hien ra nhu mot loi: tep van bam dung, van tay van khop, chi
+       la may bat dau swap khi hai lan chay trung nhau. Do la ly do
+       `V4_RESOURCE_CPU_GPU_POLICY` goi dich danh viec nay ra:
+       *"never `Path.read_bytes()` multi-GB solely to hash"*.
+
+    Ket qua **bang het** `bam(duong.read_bytes())` cho cung mot tep — hai duong
+    khong the lech, va `tests/test_429` chot dieu do tren nhieu kich thuoc, ke ca
+    tep rong va tep lon hon mot khoi.
+    """
+    h = hashlib.sha256()
+    with open(duong, "rb") as f:
+        while True:
+            khoi = f.read(KHOI_DOC)
+            if not khoi:
+                break
+            h.update(khoi)
+    return h.hexdigest()
+
+
+def do_va_bam(kho: Storage, khoa: str) -> tuple[int, str]:
+    """`(co, checksum)` cua mot artifact, doc THEO KHOI tu kho.
+
+    ⛔ `_doc_het` nap ca artifact vao RAM. Voi `transcript.json` do la vai chuc
+       KB va khong sao; voi `final.mp4` do la ca cuon phim, va no xay ra o MOI
+       lan kiem toan ven cua MOI lan chay.
+
+    ⭐ Va cai gia khong hien ra nhu mot loi: phep kiem van dung, van tay van
+       khop, chi la worker phinh len bang kich thuoc san pham no vua lam ra.
+    """
+    h = hashlib.sha256()
+    co = 0
+    f = kho.open(khoa)
+    try:
+        while True:
+            khoi = f.read(KHOI_DOC)
+            if not khoi:
+                break
+            co += len(khoi)
+            h.update(khoi)
+    finally:
+        f.close()
+    return co, h.hexdigest()
+
+
 def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
     """Kiem noi dung theo `kind`. Tra `(co, checksum)`. Nem neu khong dat.
 
@@ -12071,6 +12253,25 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
     """
     if kind not in KINDS:
         raise AssetError(f"loai artifact khong biet: {kind!r}")
+
+    # 🔑 Media di duong DONG CHAY, JSON/text doc het.
+    #
+    #    Khac biet khong phai tuy tien: phep kiem cua JSON la `json.loads`, va no
+    #    can toan bo van ban. Phep kiem cua media la ffprobe tren mot TEP, khong
+    #    phai tren mot chuoi bytes — nen nap no vao RAM khong phuc vu phep kiem
+    #    nao ca, chi de bam va do do dai.
+    if kind in ("video", "audio"):
+        try:
+            co, checksum = do_va_bam(kho, khoa)
+        except StorageError as exc:
+            raise AssetError(f"khong doc duoc artifact: {khoa}") from exc
+        except FileNotFoundError as exc:
+            raise AssetError(f"artifact khong ton tai: {khoa}") from exc
+        if not co:
+            raise AssetError(f"artifact rong: {khoa}")
+        _kiem_media(kho, khoa, kind=kind)
+        return co, checksum
+
     try:
         du_lieu = _doc_het(kho, khoa)
     except StorageError as exc:
@@ -12086,16 +12287,6 @@ def kiem_hop_le(kho: Storage, khoa: str, *, kind: str) -> tuple[int, str]:
             json.loads(du_lieu.decode("utf-8"))
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise AssetError(f"artifact JSON hong: {khoa}") from exc
-
-    elif kind in ("video", "audio"):
-        # 🔑 Pha 08 tra mon no cua pha 06. Truoc do o day chi kiem "khac rong",
-        #    va ly do da ghi ra: chua engine nao sinh ra media that, nen mot phep
-        #    kiem ffprobe se chi kiem cac tep gia — mot loi hua rong.
-        #
-        # ⛔ Voi media, "doc duoc mot byte" khong dinh nghia duoc dieu gi. Mot
-        #    tep bi cat ngan giua chung van co header, van mo duoc, va van hong.
-        #    Chi ffprobe tra loi duoc cau hoi "trong nay co mot luong that khong".
-        _kiem_media(kho, khoa, kind=kind)
 
     return len(du_lieu), bam(du_lieu)
 
@@ -12194,13 +12385,14 @@ def kiem_toan_ven(db: Session, kho: Storage, asset: AsvAsset) -> str:
             asset.integrity = ASSET_MISSING
             db.flush()
             return ASSET_MISSING
-        du_lieu = _doc_het(kho, asset.storage_key)
+        # Chi can do dai va checksum, khong can noi dung -> doc theo khoi.
+        co, checksum = do_va_bam(kho, asset.storage_key)
     except (StorageError, FileNotFoundError):
         asset.integrity = ASSET_MISSING
         db.flush()
         return ASSET_MISSING
 
-    if len(du_lieu) != int(asset.size) or bam(du_lieu) != asset.checksum:
+    if co != int(asset.size) or checksum != asset.checksum:
         asset.integrity = ASSET_CORRUPT
         db.flush()
         return ASSET_CORRUPT
@@ -13091,7 +13283,7 @@ def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/features.py
-SHA256=13958bde6910a3f95fe31b2d59fb55983830f351d8941284a586a113b1c4d286 BYTES=23262 LINES=486
+SHA256=c4e7d33e60173e5b39e83ddc5527df3daa2adfd0f8cea7a9f73c17637774dc1e BYTES=27057 LINES=568
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Quy tac nghiep vu cua Auto Scan Video: vong doi run, tien, quyen so huu.
 
@@ -13123,7 +13315,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from platform_core import credit, jobs
@@ -13133,7 +13325,7 @@ from . import pipeline
 from .tables import (RUN_CANCELLED, RUN_DONE, RUN_ERROR, RUN_QUEUED,
                      RUN_RUNNING, RUN_TERMINAL, STAGE_FAILED_TERMINAL,
                      STAGE_PENDING, STAGE_QUEUED, STAGE_SUCCEEDED,
-                     AsvRun, AsvStage)
+                     AsvRun, AsvStage, AsvWorkItem)
 
 SLUG = "auto_scan_video"
 JOB_DIEU_PHOI = "auto_scan_video.advance"
@@ -13412,9 +13604,91 @@ def thu_lai_giai_doan(db: Session, run_id: str, owner_id: str,
 #  Tien: tran chi va quyet toan (I2, I3, ADR-001 D4)
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Don vi viec (ADR-V4-002 D-V4-10/12)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def cac_don_vi(db: Session, run_id: str, stage: str = "") -> list[AsvWorkItem]:
+    """Don vi viec cua mot lan chay, loc theo giai doan neu co."""
+    dk = [AsvWorkItem.run_id == run_id]
+    if stage:
+        dk.append(AsvWorkItem.stage == stage)
+    return list(db.execute(
+        select(AsvWorkItem).where(*dk)
+        .order_by(AsvWorkItem.stage, AsvWorkItem.item_key)).scalars())
+
+
+def don_vi_theo_khoa(db: Session, run_id: str, stage: str,
+                     item_key: str) -> AsvWorkItem | None:
+    return db.execute(select(AsvWorkItem).where(
+        AsvWorkItem.run_id == run_id, AsvWorkItem.stage == stage,
+        AsvWorkItem.item_key == item_key)).scalar_one_or_none()
+
+
+def giai_doan_co_don_vi(db: Session, run_id: str) -> set[str]:
+    """Ten cac giai doan da chia don vi viec. Rong = chua giai doan nao chia.
+
+    ⭐ Tra ve TAP HOP thay vi mot co boolean tren tung giai doan: quy tac cong
+       tien o duoi can biet "giai doan nay co item khong", va suy dieu do tu du
+       lieu that thi khong the lech voi du lieu that.
+    """
+    return {t for (t,) in db.execute(
+        select(AsvWorkItem.stage).where(AsvWorkItem.run_id == run_id).distinct())}
+
+
+def tong_don_vi(db: Session, run_id: str, stage: str) -> int:
+    """Tong chi phi DO DUOC cua cac don vi trong mot giai doan."""
+    tong = db.execute(select(func.coalesce(func.sum(AsvWorkItem.credit_actual), 0))
+                      .where(AsvWorkItem.run_id == run_id,
+                             AsvWorkItem.stage == stage)).scalar_one()
+    return int(tong or 0)
+
+
+class TinhHaiLan(AsvError):
+    """Mot giai doan vua co don vi viec vua tu ghi chi phi cua chinh no."""
+
+
+def _kiem_khong_tinh_hai_lan(db: Session, run: AsvRun) -> None:
+    """⛔ Be mat duy nhat de tinh tien khach hai lan cho mot viec.
+
+    ADR-V4-002 D-V4-12: mot giai doan CO don vi viec thi `credit_actual` cua no
+    la TONG cua cac don vi, va no khong duoc tu ghi them mot so nao nua. Cong ca
+    hai la thu tien hai lan.
+
+    🔴 Day la mot dong ma de viet nham va **khong bao gio lo ra qua mot phep
+       kiem chuc nang**: lan chay van xong, video van dung, chi la so tien lon
+       hon no phai the. Nen cho nay nem, thay vi tin vao ky luat.
+    """
+    co_don_vi = giai_doan_co_don_vi(db, run.id)
+    if not co_don_vi:
+        return
+    xau = [s.stage for s in cac_giai_doan(db, run)
+           if s.stage in co_don_vi and int(s.credit_actual or 0) != 0]
+    if xau:
+        raise TinhHaiLan(
+            f"giai doan {sorted(xau)} vua co don vi viec vua tu ghi credit_actual "
+            f"— xem ADR-V4-002 D-V4-12")
+
+
 def tong_da_dung(db: Session, run: AsvRun) -> int:
-    """Tong chi phi **DO DUOC** cua cac giai doan. Khong tinh lai tu bang gia."""
-    return sum(int(s.credit_actual or 0) for s in cac_giai_doan(db, run))
+    """Tong chi phi **DO DUOC**. Khong tinh lai tu bang gia (ADR-001 D4).
+
+    Hai muc, theo D-V4-12:
+
+        giai doan CO don vi viec  -> tong `credit_actual` cua cac don vi
+        giai doan KHONG co        -> `credit_actual` cua chinh no
+
+    ⚠️ Khong phai `stage.credit_actual + tong_don_vi(...)`. Cong ca hai la loi
+       tinh tien hai lan ma `_kiem_khong_tinh_hai_lan` sinh ra de chan; o day ta
+       CHON mot trong hai, va cho kia nem neu ca hai cung khac 0.
+    """
+    _kiem_khong_tinh_hai_lan(db, run)
+    co_don_vi = giai_doan_co_don_vi(db, run.id)
+    tong = 0
+    for s in cac_giai_doan(db, run):
+        tong += (tong_don_vi(db, run.id, s.stage) if s.stage in co_don_vi
+                 else int(s.credit_actual or 0))
+    return tong
 
 
 def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:
@@ -13686,7 +13960,7 @@ def giong_cua_toi(db, owner_id: str) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/giai_doan_am_thanh.py
-SHA256=94ab973909db48dd72491fd354eaa080b463bfdc78002e60844c95c1081dddba BYTES=4705 LINES=111
+SHA256=0aef168ae267beaedb8b979a76487a13fa6925a2c332e753d71b74e4dbd5213f BYTES=4801 LINES=111
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Giai doan AUDIO_PREPARE — tach giong goc ra khoi nen.
 
@@ -13774,7 +14048,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         am = tach_tieng.do_am_luong(nen)
 
-        checksum_nguon = assets.bam(Path(nguon).read_bytes())
+        checksum_nguon = assets.bam_tep(nguon)
         vt = tach_tieng.van_tay_tach(
             checksum_nguon=checksum_nguon,
             phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg())
@@ -13941,7 +14215,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/giai_doan_chep_loi.py
-SHA256=6278121c14a480e362b15a48e30b624f6b02ff9eec42f355d04986c5136cd0b3 BYTES=5747 LINES=141
+SHA256=150c379203c07641a1fe4c7c323aad5cc5f539be3035561edcd8a8f7355996db BYTES=5873 LINES=141
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Giai doan TRANSCRIBE — chep loi thanh ban ghi chinh tac.
 
@@ -14066,7 +14340,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         goi = json.dumps(ban, sort_keys=True, ensure_ascii=False).encode("utf-8")
         vt = ban_ghi.van_tay_ban_ghi(
-            checksum_tieng=assets.bam(Path(duong).read_bytes()),
+            checksum_tieng=assets.bam_tep(duong),
             model=MODEL_ASR,
             ngon_ngu=str(ban.get("ngon_ngu") or ""),
             phien_ban_ma=PHIEN_BAN_MA)
@@ -14490,7 +14764,7 @@ def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/giai_doan_media.py
-SHA256=729250a574ff499680b39c9d3c1a06d42f41e7a5ee0472269dee909de626707c BYTES=5230 LINES=123
+SHA256=d7d05f13815b6b645b239be422e7e0c697cc576e311d8186bb461b54023f2683 BYTES=5708 LINES=133
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Giai doan MEDIA_PREPARE — noi engine that gap xuong song thi hanh.
 
@@ -14534,9 +14808,19 @@ def _duong_doc_duoc(kho: Storage, khoa: str, thu_muc: Path) -> str:
     duong = kho.local_path(khoa) if hasattr(kho, "local_path") else None
     if duong:
         return duong
+    # ⛔ KHONG `dich.write_bytes(f.read())`. Do la ca video nguon nam trong RAM
+    #    cua worker — va o day khong co tran 90 MB nao nhu o route: mot tep 2 GiB
+    #    di qua duong tai len ben vung se toi thang cho nay.
+    #
+    # ⭐ Va no hong theo kieu te nhat: khong loi, khong cham, chi la may bat dau
+    #    swap khi hai lan chay trung nhau.
     dich = thu_muc / "nguon.bin"
-    with kho.open(khoa) as f:
-        dich.write_bytes(f.read())
+    with kho.open(khoa) as f, open(dich, "wb") as ra:
+        while True:
+            khoi = f.read(assets.KHOI_DOC)
+            if not khoi:
+                break
+            ra.write(khoi)
     return str(dich)
 
 
@@ -14585,7 +14869,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         # 🔑 Van tay cua ban tieng dua tren CHECKSUM TEP NGUON, khong phai ten
         #    hay khoa cua no (Prompt 08 muc 8). Hai tep cung ten khac noi dung
         #    phai ra hai van tay; mot ten tep khong noi len dieu gi ve noi dung.
-        checksum_nguon = assets.bam(Path(nguon).read_bytes())
+        checksum_nguon = assets.bam_tep(nguon)
         vt_tieng = nhap_media.van_tay_chuan_hoa(checksum_nguon=checksum_nguon,
                                                 phien_ban_cong_cu=cong_cu)
         wav = str(thu_muc / "audio_full.wav")
@@ -17507,7 +17791,7 @@ def _run_cua_toi(db, run_id: str, u):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/tables.py
-SHA256=9b9f69c6f73217c8b0221fa1c8c3cc7a2ff1a13d8c32a85a1b7d042b163cb584 BYTES=12516 LINES=261
+SHA256=59ae0d60d2b39d83b275801d8f93ce2c4343c80d595c55a44bc72fb2cb6df1f2 BYTES=18189 LINES=371
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bang CSDL rieng cua Auto Scan Video. Tien to `asv_` theo `MANIFEST.table_prefix`.
 
@@ -17769,6 +18053,116 @@ class AsvAsset(Base):
         UniqueConstraint("storage_key", name="ux_asv_asset_storage_key"),
         Index("ix_asv_asset_run_stage", "run_id", "created_by_stage"),
         Index("ix_asv_asset_owner_run", "owner_id", "run_id"),
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Checkpoint theo DON VI VIEC — ADR-V4-002 D-V4-10
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Trang thai cua mot don vi viec. Co y **trung ten** voi `STAGE_*`: mot item la
+#: mot giai doan thu nho, va dat hai bo tu vung cho cung mot vong doi la buoc
+#: nguoi doc phai dich qua lai.
+ITEM_PENDING = "pending"
+ITEM_RUNNING = "running"
+ITEM_SUCCEEDED = "succeeded"
+ITEM_FAILED_RETRYABLE = "failed_retryable"
+ITEM_FAILED_TERMINAL = "failed_terminal"
+ITEM_INVALIDATED = "invalidated"
+ITEM_TERMINAL = frozenset({ITEM_SUCCEEDED, ITEM_FAILED_TERMINAL})
+
+
+class AsvWorkItem(Base):
+    """MOT don vi viec ben trong mot giai doan: mot doan tieng, mot canh.
+
+    ## Vi sao bang nay ton tai
+
+    V2 theo doi tien do sinh tieng bang **su ton tai cua tep tren dia**. No chay
+    duoc, va no thieu bon thu ma mot checkpoint can:
+
+      * khong co van tay  -> nang phien ban model xong van dung lai tieng cu
+      * khong co chi phi  -> khong the cong len thanh so tien cua giai doan
+      * khong co so lan thu -> "vong lap co chan" phai dem trong bo nho, va mot
+                            worker chet lam bo dem ve 0
+      * khong co cot chu so huu -> quyen so huu chi nam trong duong dan
+
+    ## ⛔ DAY KHONG PHAI MOT HANG DOI, va dieu do duoc cuong che bang SU VANG MAT
+
+    `V4_OPERATING_CONTRACT` A.5: `platform_core.jobs` la hang doi SSOT duy nhat.
+    Mot bang checkpoint khac mot bang hang doi o **dung nhung cot cho phep mot
+    worker tu chon viec**: `claimed_by`, `worker_id`, `locked_by`, `lease_until`,
+    `visible_at`, `available_at`, `priority`, `heartbeat_at`.
+
+    Khong cot nao trong so do co o day, va `tests/test_427` chot dieu do — kem
+    mot phep tu kiem chay bo do tren mot bang gia CO chung, de "khong co cot xau"
+    khong bi nham voi "bo do hong".
+
+    ⭐ Chieu khang dinh: dong item duoc ghi boi chinh handler cua giai doan, ma
+       handler do **da dang giu mot `Job` cua nen tang**. Khong cho nao doc bang
+       nay de quyet dinh chay gi tiep theo. `jobs._nop_giai_doan_san_sang` van la
+       noi duy nhat viec duoc phat, va no phat theo GIAI DOAN.
+
+    ## `revision` — cung ly do nhu `AsvStage`
+
+    Mot item co the bi ghi tu hai cho khi worker cu mat dap nhip va job mo coi
+    duoc nhat lai. `UPDATE ... WHERE revision = :r` bien cuoc dua thanh mot xung
+    dot **nhin thay duoc** thay vi mot ban ghi de.
+    """
+
+    __tablename__ = "asv_work_item"
+
+    id: Mapped[str] = mapped_column(String(48), primary_key=True,
+                                    default=sinh_id)
+    run_id: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+
+    #: ⛔ Chu so huu nam o COT, khong chi trong khoa luu tru. Mot phep tra
+    #:    "item nay co phai cua nguoi dang hoi khong" phai tra loi duoc bang mot
+    #:    dieu kien WHERE, khong bang cach phan tich mot duong dan.
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+
+    #: Giai doan so huu item nay. Khop `pipeline.TEN_GIAI_DOAN`.
+    stage: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    #: Dinh danh cua don vi viec BEN TRONG giai doan — id doan, id canh.
+    #: Duy nhat trong pham vi `(run_id, stage)`, khong duy nhat toan cuc.
+    item_key: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    status: Mapped[str] = mapped_column(String(24), default=ITEM_PENDING,
+                                        nullable=False, index=True)
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: Cung cach dung nhu `AsvStage.fingerprint`: giai doan + hop dong + phien
+    #: ban engine + thiet lap + hash thuong nguon. Mot item hop le va con van tay
+    #: khop thi dung lai duoc, va lan dung lai do ton **0** credit.
+    fingerprint: Mapped[str] = mapped_column(String(64), default="",
+                                             nullable=False)
+
+    outputs: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    #: 🔑 DO DUOC, khong tinh lai tu bang gia (ADR-001 D4, ADR-V4-002 D-V4-12).
+    #:
+    #: ⛔ Mot giai doan CO item thi `AsvStage.credit_actual` cua no la TONG cua
+    #:    cac item, va giai doan do khong duoc tu ghi them mot so nao nua. Cong
+    #:    ca hai la tinh tien khach hai lan cho mot viec.
+    credit_actual: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        #: 🔑 Rang buoc chiu luc. Hai worker khong the tao hai dong cho cung mot
+        #:    don vi viec, nen "doan 47 da sinh tieng chua" co dung MOT cau tra loi.
+        UniqueConstraint("run_id", "stage", "item_key",
+                         name="ux_asv_work_item_run_stage_key"),
+        Index("ix_asv_work_item_run_stage_status", "run_id", "stage", "status"),
+        Index("ix_asv_work_item_owner_run", "owner_id", "run_id"),
     )
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -276947,6 +277341,499 @@ def test_moi_tep_trong_ban_do_deu_nam_trong_vong_DU():
     ngoai = sorted(set(bo.BAT_BIEN.values()) - set(bo.VONG_DU))
     assert ngoai == [], (
         f"bat bien duoc khai nhung khong tep nao trong VONG_DU chay chung: {ngoai}")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_429_asv_v4_dau_vao_lon.py
+SHA256=e84d1d98ff5232cc235e7559224566a8c18745cef1d9b8e58cc884accc195797 BYTES=9716 LINES=244
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Auto Scan Video V4 — large input: streaming hash and the durable upload path.
+
+V2 accepted video through `await video.read()` behind a 90 MB cap (`routes.py:79,155`),
+then held those bytes while *also* writing a temp copy *and* streaming them into storage —
+the whole video resident twice. `V3_TO_V4_CORRECTIONS` §4 makes durable large-video input a
+**critical gate** (G6).
+
+Two halves, and they fail differently:
+
+**§1 streaming hash.** `assets.bam(Path(x).read_bytes())` is correct and cheap to keep
+       believing in, because it never produces a wrong answer — it just makes the machine
+       swap when two runs overlap. A defect with no wrong output is one that survives
+       review.
+
+**§2 the durable path.** `platform_core.upload_sessions` already does this, and already has
+       a live caller (`apps/autosubvideo/services/source_drafts.py`). This is a **reuse**,
+       so the tests here are mostly about not re-implementing it badly: owner resolved
+       server-side, integrity checked, and the request never holding the body.
+"""
+from __future__ import annotations
+
+import hashlib
+from pathlib import Path
+
+import pytest
+
+from apps.auto_scan_video import assets
+
+GOC = Path(__file__).resolve().parent.parent
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Bam theo dong chay
+# ══════════════════════════════════════════════════════════════════════════════
+
+@pytest.mark.parametrize("co", [
+    0,                    # tep rong — hop le voi mot phep bam, va de quen
+    1,
+    assets.KHOI_DOC - 1,  # ngay duoi mot khoi
+    assets.KHOI_DOC,      # dung mot khoi
+    assets.KHOI_DOC + 1,  # ngay tren mot khoi — cho vong lap phai lap lai
+    assets.KHOI_DOC * 2 + 7,
+])
+def test_bam_tep_bang_HET_bam_toan_bo_bytes(tmp_path, co):
+    """Hai duong phai cho cung mot ket qua, o moi kich thuoc quanh bien khoi.
+
+    🔑 Day la ca ly do doi duoc: neu hai duong lech nhau du chi o mot kich thuoc,
+       thi moi van tay sinh truoc ban doi se khong khop van tay sinh sau — va he
+       qua khong phai mot loi, ma la **chay lai toan bo cac giai doan dat tien**
+       cho moi lan chay cu.
+    """
+    tep = tmp_path / "m.bin"
+    du_lieu = bytes((i * 7 + 3) % 256 for i in range(co))
+    tep.write_bytes(du_lieu)
+
+    assert assets.bam_tep(tep) == assets.bam(du_lieu)
+    assert assets.bam_tep(str(tep)) == hashlib.sha256(du_lieu).hexdigest()
+
+
+def test_bam_tep_KHONG_nap_ca_tep_vao_bo_nho(tmp_path, monkeypatch):
+    """Chot HANH VI, khong chot loi hua.
+
+    ⛔ Mot phep kiem chi so sanh ket qua se van xanh neu ai do viet lai
+       `bam_tep` thanh `bam(Path(d).read_bytes())` — cung dau ra, mat het ly do
+       ton tai. Nen o day ta do **kich thuoc lan doc lon nhat**.
+
+    ⭐ Cach do: thay `open` bang mot ban boc ghi lai moi `read(n)`. Neu ham doc
+       ca tep mot lan, se co mot lan doc lon hon KHOI_DOC.
+    """
+    tep = tmp_path / "m.bin"
+    tep.write_bytes(b"x" * (assets.KHOI_DOC * 3 + 11))
+
+    lan_doc: list[int] = []
+    mo_that = open
+
+    class BocDoc:
+        def __init__(self, f):
+            self._f = f
+
+        def read(self, n=-1):
+            khoi = self._f.read(n)
+            lan_doc.append(len(khoi))
+            return khoi
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            self._f.close()
+            return False
+
+    def mo_boc(duong, che_do="r", *a, **kw):
+        return BocDoc(mo_that(duong, che_do, *a, **kw))
+
+    monkeypatch.setattr("builtins.open", mo_boc)
+    ra = assets.bam_tep(tep)
+
+    assert ra == hashlib.sha256(b"x" * (assets.KHOI_DOC * 3 + 11)).hexdigest()
+    assert lan_doc, "khong doc gi ca — phep kiem khong do duoc gi"
+    assert max(lan_doc) <= assets.KHOI_DOC, (
+        f"co mot lan doc {max(lan_doc)} byte — `bam_tep` dang nap ca tep vao RAM")
+
+
+def test_khong_con_module_ASV_nao_bam_bang_read_bytes():
+    """Banh coc: `V4_RESOURCE_CPU_GPU_POLICY` cam bam media bang `read_bytes()`.
+
+    ⭐ Doc AST, khong quet van ban — docstring cua chinh `assets.bam_tep` giai
+       thich khuon xau bang cach viet no ra, va mot bo do quet van ban se bat
+       dung loi giai thich do. (Lan thu tu trong phien nay; xem bao cao pha 04.)
+    """
+    import ast
+
+    xau = []
+    for tep in sorted((GOC / "apps" / "auto_scan_video").rglob("*.py")):
+        if "__pycache__" in tep.parts:
+            continue
+        cay = ast.parse(tep.read_text(encoding="utf-8"))
+        for nut in ast.walk(cay):
+            # Khuon: bam(<gi do>.read_bytes())
+            if not isinstance(nut, ast.Call):
+                continue
+            ten = (nut.func.attr if isinstance(nut.func, ast.Attribute)
+                   else getattr(nut.func, "id", ""))
+            if ten != "bam":
+                continue
+            for con in nut.args:
+                if (isinstance(con, ast.Call)
+                        and isinstance(con.func, ast.Attribute)
+                        and con.func.attr == "read_bytes"):
+                    xau.append(f"{tep.relative_to(GOC)}:{nut.lineno}")
+    assert xau == [], (
+        f"con bam media bang read_bytes(): {xau} — dung `assets.bam_tep(duong)`")
+
+
+def test_bo_do_read_bytes_that_su_bat_duoc():
+    """Bo do tren mot tap gan rong phai tu chung minh no khong phai den xanh."""
+    import ast
+
+    def co_vi_pham(nguon: str) -> bool:
+        cay = ast.parse(nguon)
+        for nut in ast.walk(cay):
+            if not isinstance(nut, ast.Call):
+                continue
+            ten = (nut.func.attr if isinstance(nut.func, ast.Attribute)
+                   else getattr(nut.func, "id", ""))
+            if ten != "bam":
+                continue
+            for con in nut.args:
+                if (isinstance(con, ast.Call)
+                        and isinstance(con.func, ast.Attribute)
+                        and con.func.attr == "read_bytes"):
+                    return True
+        return False
+
+    assert co_vi_pham("x = assets.bam(Path(nguon).read_bytes())")
+    assert co_vi_pham("x = bam(p.read_bytes())")
+    # Ba dang KHONG duoc bao dong:
+    assert not co_vi_pham("x = assets.bam_tep(nguon)")
+    assert not co_vi_pham("x = assets.bam(goi)")          # bam mot bytes co san
+    assert not co_vi_pham("d = Path(x).read_bytes()")     # doc, khong de bam
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1b  Doc tu KHO cung phai theo dong chay
+# ══════════════════════════════════════════════════════════════════════════════
+
+class _KhoGia:
+    """Kho toi thieu, ghi lai moi lan `read(n)` de do duoc kich thuoc lan doc."""
+
+    def __init__(self, du_lieu: bytes):
+        self._du_lieu = du_lieu
+        self.lan_doc: list[int] = []
+
+    def open(self, khoa):
+        kho = self
+
+        class F:
+            def __init__(self):
+                self._i = 0
+
+            def read(self, n=-1):
+                if n is None or n < 0:
+                    khoi = kho._du_lieu[self._i:]
+                else:
+                    khoi = kho._du_lieu[self._i:self._i + n]
+                self._i += len(khoi)
+                kho.lan_doc.append(len(khoi))
+                return khoi
+
+            def close(self):
+                pass
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+
+        return F()
+
+
+def test_do_va_bam_khong_nap_ca_artifact_vao_bo_nho():
+    """`kiem_toan_ven` chay cho MOI artifact cua MOI lan chay.
+
+    ⛔ Truoc pha 05 no goi `_doc_het`, nghia la `final.mp4` — ca cuon phim — nam
+       trong RAM cua worker moi lan doi soat toan ven. Khong loi nao bao: phep
+       kiem van dung, chi la worker phinh len bang kich thuoc san pham no vua lam.
+    """
+    du_lieu = b"z" * (assets.KHOI_DOC * 2 + 5)
+    kho = _KhoGia(du_lieu)
+
+    co, checksum = assets.do_va_bam(kho, "asv/u/r/render/final.mp4")
+
+    assert co == len(du_lieu)
+    assert checksum == hashlib.sha256(du_lieu).hexdigest()
+    assert max(kho.lan_doc) <= assets.KHOI_DOC, (
+        f"co mot lan doc {max(kho.lan_doc)} byte — dang nap ca artifact vao RAM")
+
+
+def test_do_va_bam_dung_voi_artifact_rong():
+    kho = _KhoGia(b"")
+    co, checksum = assets.do_va_bam(kho, "k")
+    assert co == 0
+    assert checksum == hashlib.sha256(b"").hexdigest()
+
+
+def test_tai_nguon_ve_dia_KHONG_nap_ca_video_vao_RAM(tmp_path):
+    """🔴 Cho nguy hiem hon ca route, va no khong co tran nao.
+
+    `routes.py` cat o 90 MB. `giai_doan_media._duong_doc_duoc` thi khong: voi
+    kho R2 no tai nguon ve dia, va truoc pha 05 no lam viec do bang
+    `dich.write_bytes(f.read())` — ca video trong RAM. Duong tai len ben vung
+    cua V4 cho phep 2 GiB, va toan bo 2 GiB do se di thang qua dong do.
+    """
+    from apps.auto_scan_video import giai_doan_media
+
+    du_lieu = b"v" * (assets.KHOI_DOC * 3 + 17)
+    kho = _KhoGia(du_lieu)
+
+    duong = giai_doan_media._duong_doc_duoc(kho, "asv/u/nguon/x.mp4", tmp_path)
+
+    assert Path(duong).read_bytes() == du_lieu
+    assert max(kho.lan_doc) <= assets.KHOI_DOC, (
+        f"co mot lan doc {max(kho.lan_doc)} byte — dang nap ca video vao RAM")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_430_asv_v4_don_vi_viec.py
+SHA256=a1f294d77c8458a717b9ed13aa5a1152f31372804e0ae2d8370cb33e2602acca BYTES=10622 LINES=237
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Auto Scan Video V4 — `AsvWorkItem`: the checkpoint below a stage.
+
+ADR-V4-002 D-V4-10/11/12. Three claims are worth testing and one of them is worth
+testing hard:
+
+**§1 identity** — `UNIQUE(run_id, stage, item_key)` is the load-bearing constraint.
+     Without it "has segment 47 been synthesized" has more than one answer.
+
+**§2 billing** — a stage that owns items must **not** also write its own
+     `credit_actual`. 🔴 This is the only surface in V4 where a customer can be charged
+     twice for one piece of work, and it fails **silently**: the run still finishes, the
+     video is still correct, the ledger still balances. Only the number is wrong.
+
+**§3 not a queue** — the positive half of D-V4-11. `test_427` proves the forbidden
+     columns are absent; here we prove nothing *reads* this table to pick work.
+"""
+from __future__ import annotations
+
+import pytest
+
+from apps.auto_scan_video import features, pipeline
+from apps.auto_scan_video.tables import (ITEM_SUCCEEDED, AsvRun, AsvStage,
+                                         AsvWorkItem)
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    """Temp SQLite, cung khuon voi `tests/test_400`."""
+    url = f"sqlite:///{(tmp_path / 'asv.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        yield s
+    finally:
+        s.close(); dbmod.reset_engine()
+
+
+def _run(db, *, owner="u1", held=1000) -> AsvRun:
+    run = AsvRun(owner_id=owner, source_key="asv/u1/nguon/x.mp4",
+                 settings={}, credit_held=held)
+    db.add(run); db.flush()
+    for g in pipeline.CHUOI:
+        db.add(AsvStage(run_id=run.id, owner_id=owner, stage=g.ten))
+    db.flush()
+    return run
+
+
+def _item(db, run, stage, key, *, credit=0, status=ITEM_SUCCEEDED) -> AsvWorkItem:
+    it = AsvWorkItem(run_id=run.id, owner_id=run.owner_id, stage=stage,
+                     item_key=key, status=status, credit_actual=credit)
+    db.add(it); db.flush()
+    return it
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Danh tinh
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_hai_dong_cho_cung_mot_don_vi_viec_bi_CSDL_tu_choi(db):
+    """Rang buoc chiu luc cua ca thiet ke.
+
+    ⛔ Khong co no, hai worker cung sinh tieng doan 47 tao hai dong, va "doan 47
+       xong chua" co hai cau tra loi. Do chinh la ly do `AsvStage` co
+       `UNIQUE(run_id, stage)` tu ADR-001 D2 — day la cung mot bai hoc, mot cap
+       thap hon.
+    """
+    from sqlalchemy.exc import IntegrityError
+
+    run = _run(db)
+    _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-047")
+    with pytest.raises(IntegrityError):
+        _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-047")
+
+
+def test_cung_item_key_o_HAI_giai_doan_khac_nhau_thi_HOP_LE(db):
+    """`item_key` duy nhat trong pham vi `(run, stage)`, khong duy nhat toan cuc.
+
+    ⭐ Canh nay co that va se den o pha 12/15: canh so 3 co the vua la mot don vi
+       cua `scene_analyze` vua la mot don vi cua `voice_synthesis`. Ep chung duy
+       nhat toan cuc se buoc moi giai doan tu them tien to vao khoa — mot quy uoc
+       khong ai cuong che va se bi quen.
+    """
+    run = _run(db)
+    _item(db, run, pipeline.VOICE_SYNTHESIS, "3")
+    _item(db, run, pipeline.CONTENT_PROCESS, "3")
+    assert len(features.cac_don_vi(db, run.id)) == 2
+
+
+def test_hai_lan_chay_khac_nhau_dung_chung_item_key_thi_HOP_LE(db):
+    run_a, run_b = _run(db), _run(db)
+    _item(db, run_a, pipeline.VOICE_SYNTHESIS, "seg-001")
+    _item(db, run_b, pipeline.VOICE_SYNTHESIS, "seg-001")
+    assert len(features.cac_don_vi(db, run_a.id)) == 1
+    assert len(features.cac_don_vi(db, run_b.id)) == 1
+
+
+def test_chu_so_huu_nam_o_COT_chu_khong_chi_trong_duong_dan(db):
+    """I6 — mot phep tra "cua ai" phai la mot dieu kien WHERE."""
+    run = _run(db, owner="u1")
+    _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-001")
+    cot = {c.name for c in AsvWorkItem.__table__.columns}
+    assert "owner_id" in cot
+    assert AsvWorkItem.__table__.c.owner_id.nullable is False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Tien — be mat tinh hai lan
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_giai_doan_KHONG_co_don_vi_van_tu_ghi_chi_phi_nhu_cu(db):
+    """Tuong thich nguoc: mot lan chay tao truoc pha 05 khong co dong item nao."""
+    run = _run(db)
+    st = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
+    st.credit_actual = 40
+    db.flush()
+    assert features.tong_da_dung(db, run) == 40
+
+
+def test_giai_doan_CO_don_vi_thi_tong_la_tong_cua_cac_don_vi(db):
+    run = _run(db)
+    for i, gia in enumerate([10, 20, 30]):
+        _item(db, run, pipeline.VOICE_SYNTHESIS, f"seg-{i}", credit=gia)
+    assert features.tong_da_dung(db, run) == 60
+
+
+def test_tron_HAI_kieu_giai_doan_trong_MOT_lan_chay(db):
+    """Canh that: mot vai giai doan chia don vi, so con lai thi khong."""
+    run = _run(db)
+    st = features.giai_doan_theo_ten(db, run.id, pipeline.MEDIA_PREPARE)
+    st.credit_actual = 5
+    for i, gia in enumerate([7, 8]):
+        _item(db, run, pipeline.VOICE_SYNTHESIS, f"seg-{i}", credit=gia)
+    db.flush()
+    assert features.tong_da_dung(db, run) == 5 + 15
+
+
+def test_giai_doan_vua_co_don_vi_vua_tu_ghi_chi_phi_thi_NEM(db):
+    """🔴 Phep kiem quan trong nhat trong tep nay.
+
+    Day la be mat duy nhat trong V4 de thu tien khach hai lan cho mot viec, va
+    no hong **im lang**: lan chay van xong, video van dung, so du van can. Chi
+    co con so la sai.
+
+    ⛔ Cho nay nem thay vi tin vao ky luat. `_kiem_khong_tinh_hai_lan` chay ngay
+       trong `tong_da_dung`, tuc **moi** duong doc so tien deu di qua no —
+       khong co duong vong.
+    """
+    run = _run(db)
+    _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-0", credit=10)
+    st = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+    st.credit_actual = 10        # <- dong lam hong moi thu
+    db.flush()
+
+    with pytest.raises(features.TinhHaiLan, match="VOICE|voice_synthesis"):
+        features.tong_da_dung(db, run)
+
+
+def test_quyet_toan_di_qua_cung_mot_cua(db):
+    """`quyet_toan` doc `tong_da_dung`, nen no thua ke chot chong tinh hai lan.
+
+    ⭐ Chot bang cach GOI, khong bang cach doc ma nguon: mot ngay nao do ai do
+       viet lai `quyet_toan` de tu cong lay, va phep kiem doc ma nguon se van
+       xanh neu ho giu nguyen ten bien.
+    """
+    run = _run(db)
+    _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-0", credit=10)
+    st = features.giai_doan_theo_ten(db, run.id, pipeline.VOICE_SYNTHESIS)
+    st.credit_actual = 10
+    db.flush()
+
+    from apps.auto_scan_video.tables import RUN_DONE
+    with pytest.raises(features.TinhHaiLan):
+        features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
+
+
+def test_dung_lai_mot_don_vi_hop_le_ton_0_credit(db):
+    """G5/G12 — thu lai mot don vi con van tay khop khong duoc tinh them tien.
+
+    ⚠️ O day ta chot **phep cong**, khong chot chinh sach dung lai (do la pha 15).
+       Diem can co bay gio: tong khong doi khi khong co don vi nao chay lai.
+    """
+    run = _run(db)
+    _item(db, run, pipeline.VOICE_SYNTHESIS, "seg-0", credit=10)
+    truoc = features.tong_da_dung(db, run)
+
+    it = features.don_vi_theo_khoa(db, run.id, pipeline.VOICE_SYNTHESIS, "seg-0")
+    it.attempt = int(it.attempt) + 1      # chay lai, khong ghi them chi phi
+    db.flush()
+
+    assert features.tong_da_dung(db, run) == truoc == 10
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  Khong phai hang doi — nua KHANG DINH cua D-V4-11
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_KHONG_module_ASV_nao_doc_bang_item_de_quyet_dinh_chay_gi_tiep(db):
+    """`test_427` chung minh cac COT cua mot hang doi vang mat. Day la nua kia.
+
+    ⛔ Mot bang co the khong co mot cot `claimed_by` nao ma van bi dung nhu mot
+       hang doi, neu co ai do truy van no de chon viec. Nen phep kiem nay chot
+       rang `jobs.py` — noi duy nhat phat viec — **khong nhac** toi bang item.
+
+    ⭐ `jobs._nop_giai_doan_san_sang` phat theo GIAI DOAN, va do phai giu nguyen:
+       mot don vi viec la mot checkpoint cua giai doan, khong phai mot thu duoc
+       xep hang doc lap.
+    """
+    import ast
+    from pathlib import Path
+
+    nguon = Path(__file__).resolve().parent.parent / "apps" / "auto_scan_video" / "jobs.py"
+    cay = ast.parse(nguon.read_text(encoding="utf-8"))
+    ten = {n.id for n in ast.walk(cay) if isinstance(n, ast.Name)}
+    ten |= {n.attr for n in ast.walk(cay) if isinstance(n, ast.Attribute)}
+
+    assert "AsvWorkItem" not in ten, (
+        "`jobs.py` nhac toi bang don vi viec — no la noi phat viec, va viec chi "
+        "duoc phat theo GIAI DOAN (ADR-V4-002 D-V4-11)")
+    assert "cac_don_vi" not in ten
+
+
+def test_bang_item_KHONG_co_cot_nao_cua_mot_hang_doi():
+    """Chot lai o day tren BANG THAT (test_427 chot tren ma nguon `tables.py`).
+
+    ⭐ Hai duong do khac nhau: `test_427` doc AST nen bat duoc ca mot cot bi
+       comment lai nham; cho nay doc metadata cua SQLAlchemy nen bat duoc mot cot
+       duoc them qua `__table_args__` hay mot mixin — thu ma doc AST cua mot tep
+       khong thay.
+    """
+    cot = {c.name for c in AsvWorkItem.__table__.columns}
+    cam = {"claimed_by", "worker_id", "locked_by", "lease_until",
+           "visible_at", "available_at", "priority", "heartbeat_at"}
+    assert cot & cam == set()
 
 @@@LTT_PROFILE_FILE_END@@@
 

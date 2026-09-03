@@ -121,7 +121,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         goi = json.dumps(ban, sort_keys=True, ensure_ascii=False).encode("utf-8")
         vt = ban_ghi.van_tay_ban_ghi(
-            checksum_tieng=assets.bam(Path(duong).read_bytes()),
+            checksum_tieng=assets.bam_tep(duong),
             model=MODEL_ASR,
             ngon_ngu=str(ban.get("ngon_ngu") or ""),
             phien_ban_ma=PHIEN_BAN_MA)

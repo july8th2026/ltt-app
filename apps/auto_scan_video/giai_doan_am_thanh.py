@@ -84,7 +84,7 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
         am = tach_tieng.do_am_luong(nen)
 
-        checksum_nguon = assets.bam(Path(nguon).read_bytes())
+        checksum_nguon = assets.bam_tep(nguon)
         vt = tach_tieng.van_tay_tach(
             checksum_nguon=checksum_nguon,
             phien_ban_ffmpeg_=nhap_media.phien_ban_ffmpeg())

@@ -28,7 +28,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from platform_core import credit, jobs
@@ -38,7 +38,7 @@ from . import pipeline
 from .tables import (RUN_CANCELLED, RUN_DONE, RUN_ERROR, RUN_QUEUED,
                      RUN_RUNNING, RUN_TERMINAL, STAGE_FAILED_TERMINAL,
                      STAGE_PENDING, STAGE_QUEUED, STAGE_SUCCEEDED,
-                     AsvRun, AsvStage)
+                     AsvRun, AsvStage, AsvWorkItem)
 
 SLUG = "auto_scan_video"
 JOB_DIEU_PHOI = "auto_scan_video.advance"
@@ -317,9 +317,91 @@ def thu_lai_giai_doan(db: Session, run_id: str, owner_id: str,
 #  Tien: tran chi va quyet toan (I2, I3, ADR-001 D4)
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Don vi viec (ADR-V4-002 D-V4-10/12)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def cac_don_vi(db: Session, run_id: str, stage: str = "") -> list[AsvWorkItem]:
+    """Don vi viec cua mot lan chay, loc theo giai doan neu co."""
+    dk = [AsvWorkItem.run_id == run_id]
+    if stage:
+        dk.append(AsvWorkItem.stage == stage)
+    return list(db.execute(
+        select(AsvWorkItem).where(*dk)
+        .order_by(AsvWorkItem.stage, AsvWorkItem.item_key)).scalars())
+
+
+def don_vi_theo_khoa(db: Session, run_id: str, stage: str,
+                     item_key: str) -> AsvWorkItem | None:
+    return db.execute(select(AsvWorkItem).where(
+        AsvWorkItem.run_id == run_id, AsvWorkItem.stage == stage,
+        AsvWorkItem.item_key == item_key)).scalar_one_or_none()
+
+
+def giai_doan_co_don_vi(db: Session, run_id: str) -> set[str]:
+    """Ten cac giai doan da chia don vi viec. Rong = chua giai doan nao chia.
+
+    ⭐ Tra ve TAP HOP thay vi mot co boolean tren tung giai doan: quy tac cong
+       tien o duoi can biet "giai doan nay co item khong", va suy dieu do tu du
+       lieu that thi khong the lech voi du lieu that.
+    """
+    return {t for (t,) in db.execute(
+        select(AsvWorkItem.stage).where(AsvWorkItem.run_id == run_id).distinct())}
+
+
+def tong_don_vi(db: Session, run_id: str, stage: str) -> int:
+    """Tong chi phi DO DUOC cua cac don vi trong mot giai doan."""
+    tong = db.execute(select(func.coalesce(func.sum(AsvWorkItem.credit_actual), 0))
+                      .where(AsvWorkItem.run_id == run_id,
+                             AsvWorkItem.stage == stage)).scalar_one()
+    return int(tong or 0)
+
+
+class TinhHaiLan(AsvError):
+    """Mot giai doan vua co don vi viec vua tu ghi chi phi cua chinh no."""
+
+
+def _kiem_khong_tinh_hai_lan(db: Session, run: AsvRun) -> None:
+    """⛔ Be mat duy nhat de tinh tien khach hai lan cho mot viec.
+
+    ADR-V4-002 D-V4-12: mot giai doan CO don vi viec thi `credit_actual` cua no
+    la TONG cua cac don vi, va no khong duoc tu ghi them mot so nao nua. Cong ca
+    hai la thu tien hai lan.
+
+    🔴 Day la mot dong ma de viet nham va **khong bao gio lo ra qua mot phep
+       kiem chuc nang**: lan chay van xong, video van dung, chi la so tien lon
+       hon no phai the. Nen cho nay nem, thay vi tin vao ky luat.
+    """
+    co_don_vi = giai_doan_co_don_vi(db, run.id)
+    if not co_don_vi:
+        return
+    xau = [s.stage for s in cac_giai_doan(db, run)
+           if s.stage in co_don_vi and int(s.credit_actual or 0) != 0]
+    if xau:
+        raise TinhHaiLan(
+            f"giai doan {sorted(xau)} vua co don vi viec vua tu ghi credit_actual "
+            f"— xem ADR-V4-002 D-V4-12")
+
+
 def tong_da_dung(db: Session, run: AsvRun) -> int:
-    """Tong chi phi **DO DUOC** cua cac giai doan. Khong tinh lai tu bang gia."""
-    return sum(int(s.credit_actual or 0) for s in cac_giai_doan(db, run))
+    """Tong chi phi **DO DUOC**. Khong tinh lai tu bang gia (ADR-001 D4).
+
+    Hai muc, theo D-V4-12:
+
+        giai doan CO don vi viec  -> tong `credit_actual` cua cac don vi
+        giai doan KHONG co        -> `credit_actual` cua chinh no
+
+    ⚠️ Khong phai `stage.credit_actual + tong_don_vi(...)`. Cong ca hai la loi
+       tinh tien hai lan ma `_kiem_khong_tinh_hai_lan` sinh ra de chan; o day ta
+       CHON mot trong hai, va cho kia nem neu ca hai cung khac 0.
+    """
+    _kiem_khong_tinh_hai_lan(db, run)
+    co_don_vi = giai_doan_co_don_vi(db, run.id)
+    tong = 0
+    for s in cac_giai_doan(db, run):
+        tong += (tong_don_vi(db, run.id, s.stage) if s.stage in co_don_vi
+                 else int(s.credit_actual or 0))
+    return tong
 
 
 def kiem_tran_chi(db: Session, run: AsvRun, them: int) -> None:

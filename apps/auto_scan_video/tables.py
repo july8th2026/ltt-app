@@ -259,3 +259,113 @@ class AsvAsset(Base):
         Index("ix_asv_asset_run_stage", "run_id", "created_by_stage"),
         Index("ix_asv_asset_owner_run", "owner_id", "run_id"),
     )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Checkpoint theo DON VI VIEC — ADR-V4-002 D-V4-10
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Trang thai cua mot don vi viec. Co y **trung ten** voi `STAGE_*`: mot item la
+#: mot giai doan thu nho, va dat hai bo tu vung cho cung mot vong doi la buoc
+#: nguoi doc phai dich qua lai.
+ITEM_PENDING = "pending"
+ITEM_RUNNING = "running"
+ITEM_SUCCEEDED = "succeeded"
+ITEM_FAILED_RETRYABLE = "failed_retryable"
+ITEM_FAILED_TERMINAL = "failed_terminal"
+ITEM_INVALIDATED = "invalidated"
+ITEM_TERMINAL = frozenset({ITEM_SUCCEEDED, ITEM_FAILED_TERMINAL})
+
+
+class AsvWorkItem(Base):
+    """MOT don vi viec ben trong mot giai doan: mot doan tieng, mot canh.
+
+    ## Vi sao bang nay ton tai
+
+    V2 theo doi tien do sinh tieng bang **su ton tai cua tep tren dia**. No chay
+    duoc, va no thieu bon thu ma mot checkpoint can:
+
+      * khong co van tay  -> nang phien ban model xong van dung lai tieng cu
+      * khong co chi phi  -> khong the cong len thanh so tien cua giai doan
+      * khong co so lan thu -> "vong lap co chan" phai dem trong bo nho, va mot
+                            worker chet lam bo dem ve 0
+      * khong co cot chu so huu -> quyen so huu chi nam trong duong dan
+
+    ## ⛔ DAY KHONG PHAI MOT HANG DOI, va dieu do duoc cuong che bang SU VANG MAT
+
+    `V4_OPERATING_CONTRACT` A.5: `platform_core.jobs` la hang doi SSOT duy nhat.
+    Mot bang checkpoint khac mot bang hang doi o **dung nhung cot cho phep mot
+    worker tu chon viec**: `claimed_by`, `worker_id`, `locked_by`, `lease_until`,
+    `visible_at`, `available_at`, `priority`, `heartbeat_at`.
+
+    Khong cot nao trong so do co o day, va `tests/test_427` chot dieu do — kem
+    mot phep tu kiem chay bo do tren mot bang gia CO chung, de "khong co cot xau"
+    khong bi nham voi "bo do hong".
+
+    ⭐ Chieu khang dinh: dong item duoc ghi boi chinh handler cua giai doan, ma
+       handler do **da dang giu mot `Job` cua nen tang**. Khong cho nao doc bang
+       nay de quyet dinh chay gi tiep theo. `jobs._nop_giai_doan_san_sang` van la
+       noi duy nhat viec duoc phat, va no phat theo GIAI DOAN.
+
+    ## `revision` — cung ly do nhu `AsvStage`
+
+    Mot item co the bi ghi tu hai cho khi worker cu mat dap nhip va job mo coi
+    duoc nhat lai. `UPDATE ... WHERE revision = :r` bien cuoc dua thanh mot xung
+    dot **nhin thay duoc** thay vi mot ban ghi de.
+    """
+
+    __tablename__ = "asv_work_item"
+
+    id: Mapped[str] = mapped_column(String(48), primary_key=True,
+                                    default=sinh_id)
+    run_id: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+
+    #: ⛔ Chu so huu nam o COT, khong chi trong khoa luu tru. Mot phep tra
+    #:    "item nay co phai cua nguoi dang hoi khong" phai tra loi duoc bang mot
+    #:    dieu kien WHERE, khong bang cach phan tich mot duong dan.
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+
+    #: Giai doan so huu item nay. Khop `pipeline.TEN_GIAI_DOAN`.
+    stage: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    #: Dinh danh cua don vi viec BEN TRONG giai doan — id doan, id canh.
+    #: Duy nhat trong pham vi `(run_id, stage)`, khong duy nhat toan cuc.
+    item_key: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    status: Mapped[str] = mapped_column(String(24), default=ITEM_PENDING,
+                                        nullable=False, index=True)
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: Cung cach dung nhu `AsvStage.fingerprint`: giai doan + hop dong + phien
+    #: ban engine + thiet lap + hash thuong nguon. Mot item hop le va con van tay
+    #: khop thi dung lai duoc, va lan dung lai do ton **0** credit.
+    fingerprint: Mapped[str] = mapped_column(String(64), default="",
+                                             nullable=False)
+
+    outputs: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    #: 🔑 DO DUOC, khong tinh lai tu bang gia (ADR-001 D4, ADR-V4-002 D-V4-12).
+    #:
+    #: ⛔ Mot giai doan CO item thi `AsvStage.credit_actual` cua no la TONG cua
+    #:    cac item, va giai doan do khong duoc tu ghi them mot so nao nua. Cong
+    #:    ca hai la tinh tien khach hai lan cho mot viec.
+    credit_actual: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    error: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        #: 🔑 Rang buoc chiu luc. Hai worker khong the tao hai dong cho cung mot
+        #:    don vi viec, nen "doan 47 da sinh tieng chua" co dung MOT cau tra loi.
+        UniqueConstraint("run_id", "stage", "item_key",
+                         name="ux_asv_work_item_run_stage_key"),
+        Index("ix_asv_work_item_run_stage_status", "run_id", "stage", "status"),
+        Index("ix_asv_work_item_owner_run", "owner_id", "run_id"),
+    )
