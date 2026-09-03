@@ -40,7 +40,21 @@ async def doc_json(request: Request) -> dict:
     return than if isinstance(than, dict) else {}
 
 
-def kiem_csrf(request: Request, than: dict) -> bool:
-    """CSRF cho JSON: header `X-CSRF-Token` (React) hoặc trường `csrf_token` (form)."""
-    token = request.headers.get("X-CSRF-Token", "") or str(than.get("csrf_token", "") or "")
+def kiem_csrf(request: Request, than: dict | None = None) -> bool:
+    """CSRF cho MỌI cửa ghi: header `X-CSRF-Token` (React), hoặc trường
+    `csrf_token` trong thân (form).
+
+    ⚠️ `than` NHẬN `None`, và đó không phải tiện tay. Cửa tải ảnh
+    (`POST /api/anh-vao`) nhận `multipart/form-data`: thân của nó là một **tệp**,
+    không phải một dict ta đọc được trong khi vẫn còn muốn stream nó. Không có
+    mặc định này thì cửa đó buộc phải gọi thẳng `verify_csrf_token`, tức có
+    **hai** đường kiểm CSRF trong cùng một app.
+
+    ⛔ Và hai đường là hai đường sẽ lệch. `test_628::test_moi_cua_GHI_deu_doi_CSRF`
+       đọc mã nguồn từng route và đòi thấy đúng tên `kiem_csrf` — nó bắt được
+       chính chuyện này ở lượt gate đầu tiên sau khi cửa tải ảnh ra đời. Bánh cóc
+       đúng; cách sửa là gom về một cửa, không phải nới bánh cóc.
+    """
+    token = (request.headers.get("X-CSRF-Token", "")
+             or str((than or {}).get("csrf_token", "") or ""))
     return verify_csrf_token(request, token)

@@ -13,7 +13,7 @@
 - Dải số test: **600–699**
 - Production: `89eb46c` (14:15 02/09) + voice (21:11 02/09), 5 tool bán thật.
   ⛔ Chương trình này **không deploy**.
-- Phase hiện tại: **00–12 ✅ → tiếp 13** (nghiệm thu)
+- Phase hiện tại: **00–13 ✅ — CHƯƠNG TRÌNH ĐÓNG**. `enabled=True, public=True`.
   (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
 
 ## Ranh giới với phiên khác (02/09)
@@ -44,6 +44,7 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | **11** Mở rộng | PASS — ba fixture (alias thứ ba · không khả dụng · phương thức lạ) + hai phép kiểm tĩnh + `11_THEM_MODEL_MOI.md` có test canh (`test_626`, `reports/11_mo_rong.md`) | (commit 10+11) |
 | **12** Tra tấn | PASS — bốn nhóm (đồng thời/tiền · bảo mật · dữ liệu/hiệu năng · sức khoẻ cổng) `test_627–630`; `hoi_thoai.don_da_xoa` + `MANIFEST.bao_tri` 6h. **Và một sự cố cổng chất lượng**: `importlib.reload(platform_core.db)` trong `test_630` làm 16 phép kiểm đỏ ở bảy tệp khác — chốt bằng `test_631` (AST) + sửa ba tệp `create_all` có sẵn (112/174/90); gate thêm hồ sơ `--noi-tiep` (`reports/12_torture.md`) | (commit 12) |
 
+| **13** Nghiệm thu | PASS — tám hành trình A–H chạy **tươi** trên trình duyệt thật (0 lỗi console). Hành trình B (vision) trượt lượt đầu ⇒ **xây xong trong pha**: `services/anh_vao.py`, cửa `POST /api/anh-vao`, `image_url` parts, ô đính ảnh chỉ hiện khi alias khai `reads_images` (`test_633`, 20 phép kiểm). Hai lỗi khác đã sửa: hội thoại không có địa chỉ URL, và `alt` ảnh nói sai ai tạo. `model_mac_dinh` đọc từ hợp đồng thay vì thứ tự dict (`test_632`). Bật `enabled/public` (`reports/13_nghiem_thu.md`) | (commit 13) |
 ## Hợp đồng đã cài ở Phase 02 (các phase sau DÙNG, không dựng lại)
 | Hàm | Ký |
 |---|---|

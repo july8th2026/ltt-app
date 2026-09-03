@@ -212,10 +212,50 @@
 /* ── O soan ────────────────────────────────────────────────────────────── */
 
 .ltc-soan {
-  display: flex; gap: 8px; align-items: flex-end;
+  /* ⛔ `wrap`, khong phai mot hang cung. Hang anh dinh va dong loi la hai phan
+     tu CON cua o soan, nen mot hang cung se day o nhap va nut Gui ra ngoai o
+     390 px. Do la dung loi da sua o Phase 09 (o soan de len chan trang), chi
+     khac cho. */
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end;
   padding: 12px 16px;
   border-top: 1px solid var(--border-subtle);
   background: var(--surface-base);
+}
+
+/* Hang anh da dinh va dong loi chiem TRON be ngang, nam tren o nhap. */
+.ltc-soan__anh, .ltc-soan__loi { flex: 0 0 100%; margin: 0; }
+.ltc-soan__anh {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 0; list-style: none;
+}
+.ltc-soan__anh-mot {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 100%;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: 0.85rem;
+}
+.ltc-soan__anh-ten {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 22ch;
+}
+.ltc-soan__anh-bo {
+  border: 0; background: none; cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 1rem; line-height: 1; padding: 2px 4px;
+}
+.ltc-soan__anh-bo:hover { color: var(--text-primary); }
+.ltc-soan__loi { color: var(--support-error, #da1e28); font-size: 0.85rem; }
+
+/* O chon tep that bi an; nut `📎 Anh` la thu nguoi dung thay va bam.
+   ⛔ `position: absolute` + `opacity: 0` chu KHONG `display: none`: mot input
+      `display:none` khong nhan duoc `.click()` tren mot so trinh duyet, va no
+      cung bien mat khoi cay tro nang. */
+.ltc-soan__tep {
+  position: absolute; width: 1px; height: 1px;
+  opacity: 0; pointer-events: none;
 }
 .ltc-soan__o {
   flex: 1;

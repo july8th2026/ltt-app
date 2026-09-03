@@ -45,7 +45,11 @@ async def gui(request: Request, conv_id: str, _=Depends(require_login), db=Depen
             parent_id=((str(than["parent_id"]) if than["parent_id"] else None)
                        if "parent_id" in than else LUOT.MAC_DINH),
             tao_lai_cua=(str(than["tao_lai_cua"]) if than.get("tao_lai_cua") else None),
-            reasoning_effort=str(than.get("reasoning_effort") or ""))
+            reasoning_effort=str(than.get("reasoning_effort") or ""),
+            # Khoa anh da tai len truoc do. `bat_dau` kiem SO HUU va TRAN;
+            # route khong tu kiem, vi mot ban chep thu hai cua phep kiem
+            # so huu la ban se lech.
+            anh=[str(x) for x in (than.get("anh") or []) if str(x or "").strip()])
     except H.KhongTimThay:
         return loi(404, "khong_tim_thay")
     except (LUOT.ThamSoSai, H.ThamSoSai) as e:

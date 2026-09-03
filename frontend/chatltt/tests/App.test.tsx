@@ -159,3 +159,49 @@ describe('App — Doc to va trang thai nang luc', () => {
     expect(screen.getByLabelText('Nội dung tin nhắn')).toBeDisabled()
   })
 })
+
+describe('App — hoi thoai co DIA CHI trong URL', () => {
+  /**
+   * 🔴 Truoc Phase 13, tai lai trang la MAT CHO DANG DUNG. Danh sach hoi thoai
+   *    con nguyen va `current_leaf_id` giu dung nhanh — nhung man hinh roi ve
+   *    "Bat dau bang mot cau hoi", vi khong co gi trong URL noi ta dang o dau.
+   *
+   * ⭐ Va mat cho dung chi la trieu chung de thay nhat. Thu thuc su thieu la
+   *    hoi thoai KHONG CO DIA CHI: khong danh dau trang duoc, khong gui link
+   *    cho nguoi khac duoc, Back/Forward khong di lai duoc. Ba thao tac nguoi
+   *    ta lam hang ngay voi mot san pham chat.
+   */
+  afterEach(() => { window.location.hash = '' })
+
+  it('mo dung hoi thoai ma hash chi toi, ngay tu luot ve dau', async () => {
+    window.location.hash = '#cv1'
+    datMayChuGia()
+    veApp()
+    await waitFor(() => expect(screen.getByText('trả lời')).toBeTruthy())
+  })
+
+  it('chon mot hoi thoai thi ghi vao hash', async () => {
+    datMayChuGia()
+    veApp()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Thử' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: 'Thử' }))
+    await waitFor(() => expect(window.location.hash).toBe('#cv1'))
+  })
+
+  it('hash tro toi hoi thoai KHONG doc duoc thi bao loi VA thoat ra duoc', async () => {
+    // Link cu, hoi thoai da xoa, hay link cua nguoi khac (may chu tra 404).
+    // Chi hien loi thi trang dung yen va tai lai van the — nguoi dung mac ket.
+    window.location.hash = '#khong-ton-tai'
+    vi.stubGlobal('fetch', vi.fn(async (url: string) => {
+      const u = String(url)
+      const j = (x: unknown) => new Response(JSON.stringify(x), { status: 200 })
+      if (u.endsWith('/so-du')) return j({ credit: 10 })
+      if (u.endsWith('/danh-muc')) return j(NANG_LUC)
+      if (u.includes('/hoi-thoai?') || u.endsWith('/hoi-thoai')) return j({ hoi_thoai: [] })
+      return new Response(JSON.stringify({ detail: 'khong thay' }), { status: 404 })
+    }))
+    veApp()
+    await waitFor(() => expect(window.location.hash).toBe(''), { timeout: 4000 })
+    expect(screen.getByText('Bắt đầu bằng một câu hỏi.')).toBeTruthy()
+  })
+})

@@ -43,6 +43,7 @@ def api_danh_muc(request: Request, _=Depends(require_login), db=Depends(get_db))
     ds = chinh_sach.danh_muc(db, user_id=uid(request))
     return json_ok({"nang_luc": [
         {"ten": n.ten, "phuong_thuc": n.phuong_thuc, "che_do": n.che_do, "nhan": n.nhan,
-         "models": n.models, "tuy_chon": n.tuy_chon, "gia": n.gia,
+         "models": n.models, "model_mac_dinh": n.model_mac_dinh,
+         "tuy_chon": n.tuy_chon, "gia": n.gia,
          "duong_dan_app": n.duong_dan_app, "san_sang": n.san_sang, "hop_dong": n.hop_dong}
         for n in ds]})

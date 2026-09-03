@@ -75,6 +75,9 @@ export type NangLuc = {
   che_do: 'stream' | 'job'
   nhan: string
   models: Record<string, ModelAlias>
+  /** Alias chon san. May chu doc tu `default` cua hop dong, KHONG phai
+   *  thu tu khai trong `models` — xem `runtime_noi_bo/danh_muc.py`. */
+  model_mac_dinh?: string
   tuy_chon: Record<string, { value: string; label: string }[]>
   gia: Record<string, unknown>
   duong_dan_app: string

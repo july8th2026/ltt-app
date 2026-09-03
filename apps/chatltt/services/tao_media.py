@@ -194,4 +194,9 @@ def kiem_so_huu_khoa(khoa: str, user_id: str) -> bool:
         return True
     if len(doan) >= 4 and doan[0] == "voice" and doan[1] == "out" and doan[2] == uid:
         return True
+    # Hinh thu ba (Phase 13): anh nguoi dung GUI VAO cho model vision. Luat o
+    # `anh_vao.la_khoa_anh_vao` — mot cho, khong chep lai vi tay.
+    from apps.chatltt.services import anh_vao
+    if anh_vao.la_khoa_anh_vao(khoa, uid):
+        return True
     return False

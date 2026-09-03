@@ -34,11 +34,51 @@ function nhanLoi(e: unknown): string {
 
 export type AppProps = { api: Api }
 
+//: Hội thoại đang mở nằm ở `#<id>` của URL.
+//
+// 🔴 VÌ SAO CẦN. Không có nó thì **mỗi lần tải lại trang là mất chỗ đang đứng**:
+//    danh sách hội thoại còn nguyên (cây lưu trong CSDL, `current_leaf_id` giữ
+//    đúng nhánh), nhưng màn hình rơi về "Bắt đầu bằng một câu hỏi". Đo trong
+//    hành trình A của Phase 13.
+//
+// ⭐ Và mất chỗ đứng chỉ là triệu chứng dễ thấy nhất. Thứ thực sự thiếu là
+//    **hội thoại không có địa chỉ**: không đánh dấu trang được, không gửi link
+//    cho người khác được, và Back/Forward của trình duyệt không đi lại được
+//    giữa các hội thoại. Đó là ba thao tác người ta làm hàng ngày với một sản
+//    phẩm chat, và MVP đòi "LibreChat-class core ergonomics".
+//
+// ⛔ Dùng `hash` chứ không phải một route `/chatltt/c/<id>`. Một route mới là
+//    một đường máy chủ mới — phải khai, phải kiểm quyền, phải sinh HTML, và
+//    phải nhớ rằng `I18nMiddleware` chèn tiền tố ngôn ngữ vào **mọi** đường.
+//    Hash không đi tới máy chủ nên nó không mua thêm bề mặt nào cả, và nó cho
+//    đủ ba thao tác trên.
+function docHash(): string | null {
+  if (typeof window === 'undefined') return null
+  const h = window.location.hash.replace(/^#/, '').trim()
+  return h || null
+}
+
+//: Go hash NGAY, khong doi vong ve cua React.
+//
+// ⛔ Ban dau cho hieu ung dong bo lo viec nay: `datConvId(null)` roi de hieu ung
+//    `[convId]` xoa hash. No SAI, va cai sai chi lo ra khi do: neu component
+//    gan lai vi bat ky ly do gi truoc khi hieu ung kip chay, `useState(docHash)`
+//    doc lai hash CU va id hong quay tro lai — mot vong lap giua trang thai
+//    React va thanh dia chi trinh duyet, hai nguon chan ly danh nhau.
+//
+// ⭐ Nen thu tac dung phu (URL) duoc lam TRUOC, dong bo, roi moi den trang thai.
+//    Sau do hieu ung `[convId]` chi con viec giu chung khop nhau.
+function xoaHash(): void {
+  if (typeof window === 'undefined') return
+  window.history.replaceState(null, '',
+    window.location.pathname + window.location.search)
+}
+
 export function App({ api }: AppProps) {
   const [nangLuc, datNangLuc] = useState<NangLuc[]>([])
   const [dsHoiThoai, datDsHoiThoai] = useState<HoiThoai[]>([])
   const [tim, datTim] = useState('')
-  const [convId, datConvId] = useState<string | null>(null)
+  const [convId, datConvId] = useState<string | null>(docHash)
   const [suThat, datSuThat] = useState<SuThat | null>(null)
   const [alias, datAlias] = useState('')
   const [loi, datLoi] = useState('')
@@ -63,7 +103,12 @@ export function App({ api }: AppProps) {
       .then((d) => {
         datNangLuc(d.nang_luc)
         const text = d.nang_luc.find((n) => n.ten === 'text.chat')
-        const dau = Object.keys(text?.models ?? {})[0] ?? ''
+        // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
+        //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
+        //    `apps/ltt_llm/manifest.py`. No dung — mot cach tinh co. Dao hai
+        //    dong ben do la ca san pham lang le chuyen sang `ltt_llm_vision`,
+        //    model co ngu canh 28K thay vi 89K.
+        const dau = text?.model_mac_dinh || Object.keys(text?.models ?? {})[0] || ''
         datAlias((a) => a || dau)
       })
       .catch((e) => datLoi(nhanLoi(e)))
@@ -91,8 +136,43 @@ export function App({ api }: AppProps) {
   useEffect(() => {
     api.convHienTai = convId ?? ''
     if (!convId) { datSuThat(null); return }
-    napSuThat(convId).catch((e) => datLoi(nhanLoi(e)))
+    napSuThat(convId).catch((e) => {
+      datLoi(nhanLoi(e))
+      // ⛔ VA TRA VE MAN HINH TRONG, khong dung o mot man hinh loi.
+      //
+      //    Tu khi URL mang `#<id>`, mot id co the den tu mot dau trang cu, tu
+      //    mot hoi thoai da xoa, hay tu link cua NGUOI KHAC (may chu tra 404 —
+      //    dung). Neu chi hien loi thi trang do dung yen, va tai lai van the:
+      //    nguoi dung mac ket o mot man hinh khong co loi thoat nao.
+      //
+      //    Xoa `convId` vua bao loi vua go hash, nen lan tai sau la mot trang
+      //    sach. Thong bao van con — ho biet chuyen gi da xay ra.
+      xoaHash()
+      datConvId(null)
+    })
   }, [api, convId, napSuThat])
+
+  // ── URL <-> hội thoại đang mở, hai chiều ────────────────────────────────
+  //
+  // ⛔ `replaceState` chứ KHÔNG gán `location.hash`. Gán thẳng đẩy một mục vào
+  //    lịch sử cho **mỗi** lần chọn, nên sau mười lần bấm quanh sidebar thì nút
+  //    Back phải bấm mười lần mới rời được trang. Ở đây URL là để **mô tả** chỗ
+  //    đang đứng, không phải để ghi lại từng thao tác.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const muon = convId ? `#${convId}` : ''
+    if (window.location.hash === muon) return
+    window.history.replaceState(null, '',
+      window.location.pathname + window.location.search + muon)
+  }, [convId])
+
+  // Back/Forward của trình duyệt, và người dán một link vào thanh địa chỉ.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const nghe = () => datConvId(docHash())
+    window.addEventListener('hashchange', nghe)
+    return () => window.removeEventListener('hashchange', nghe)
+  }, [])
 
   // ── Nhip hoi cho job anh/tieng (Q87: 2 giay khi khoe) ────────────────────
   //
@@ -196,8 +276,28 @@ export function App({ api }: AppProps) {
     }
   }, [api, napSuThat, napDs, napSoDu])
 
+  // Model dang chon co doc anh khong — theo `constraints.reads_images` DA KHAI
+  // trong hop dong, khong suy tu ten alias. Xem `luot.doc_anh_duoc` phia may
+  // chu: hai ben phai doc CUNG mot cho, neu khong o chon tep se hien cho mot
+  // model se tu choi anh.
+  const docAnh = useMemo(
+    () => Boolean(
+      (nangLucText?.models?.[alias] as { constraints?: { reads_images?: boolean } }
+        | undefined)?.constraints?.reads_images,
+    ),
+    [nangLucText, alias],
+  )
+
+  const taiAnh = useCallback(
+    async (tep: File) => {
+      const kq = await api.taiAnh(tep)
+      return { key: kq.key, ten: tep.name }
+    },
+    [api],
+  )
+
   const guiLuot = useCallback(async (than: {
-    text?: string; parentId?: string | null; taoLaiCua?: string
+    text?: string; parentId?: string | null; taoLaiCua?: string; anh?: string[]
   }) => {
     datLoi('')
     let cid = convId
@@ -350,11 +450,13 @@ export function App({ api }: AppProps) {
 
         <SoanThao
           oRef={oSoan}
-          onGui={(chu) => guiLuot({ text: chu })}
+          onGui={(chu, anh) => guiLuot({ text: chu, anh })}
           dangChay={dangChayEx != null}
           onDung={dung}
           vohieu={chuaSanSang}
           goiY={chuaSanSang ? 'Model chưa sẵn sàng' : undefined}
+          docAnh={docAnh}
+          onTaiAnh={taiAnh}
         />
       </main>
     </div>

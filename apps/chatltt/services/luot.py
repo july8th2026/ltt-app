@@ -60,24 +60,55 @@ class _MacDinh:
 MAC_DINH = _MacDinh()
 
 
-def dung_ngu_canh(duong: list) -> list:
-    """Đường gốc→cha của assistant → `messages` OpenAI. Chỉ khối `text`; khối
-    reasoning/status/error/artifact không đi vào ngữ cảnh."""
-    ra = []
+def dung_ngu_canh(duong: list, *, doc_anh: bool = False) -> list:
+    """Đường gốc→cha của assistant → `messages` OpenAI. Chỉ khối `text` (và
+    khối `image` khi `doc_anh`); khối reasoning/status/error/artifact không đi
+    vào ngữ cảnh.
+
+    ⛔ `doc_anh` MẶC ĐỊNH `False`, và đó là bắt buộc chứ không phải cẩn thận.
+       Gửi `image_url` parts cho một model **không đọc ảnh** thì tuỳ engine mà
+       nó ném lỗi hoặc **lặng lẽ bỏ qua** — trường hợp thứ hai tệ hơn hẳn, vì
+       khách trả tiền cho một lượt mà model chưa từng thấy thứ họ đang hỏi về.
+
+    ⭐ Người gọi quyết định bằng `constraints.reads_images` của alias, tức bằng
+       thứ hợp đồng đã khai, không bằng tên model.
+    """
+    from apps.chatltt.services import anh_vao
+
+    ra: list = []
+    khoi_anh: list = []          # (chỉ số trong `ra`, khoá) — cắt trần ở cuối
     for m in duong:
         if m.role not in ("user", "assistant", "system"):
             continue
         chu = "\n\n".join(str(k.get("text") or "") for k in (m.blocks or [])
                           if k.get("type") == "text")
-        if not chu.strip():
+        anh = ([str(k.get("key") or "") for k in (m.blocks or [])
+                if k.get("type") == "image" and k.get("key")] if doc_anh else [])
+        if not chu.strip() and not anh:
             continue
         ra.append({"role": m.role, "content": chu})
+        for khoa in anh:
+            khoi_anh.append((len(ra) - 1, khoa))
+
+    # Giữ những ảnh MỚI NHẤT. Ảnh cũ hầu như luôn đã được nói thành lời ở các
+    # lượt sau, còn ngữ cảnh của model vision chỉ có 28K — bằng một phần ba
+    # bản text, nên chỗ cho ảnh là chỗ lấy từ chính hội thoại.
+    for chi_so, khoa in khoi_anh[-anh_vao.TOI_DA_TRONG_NGU_CANH:]:
+        uri = anh_vao.data_uri(khoa)
+        if not uri:
+            continue      # ảnh đã bị dọn khỏi kho: bỏ qua, đừng làm hỏng cả lượt
+        tin = ra[chi_so]
+        if isinstance(tin["content"], str):
+            chu = tin["content"]
+            tin["content"] = [{"type": "text", "text": chu}] if chu.strip() else []
+        tin["content"].append({"type": "image_url", "image_url": {"url": uri}})
     return ra
 
 
 def bat_dau(db, *, user_id: str, conv_id: str, van_ban: str = "",
             model_alias: str = "", parent_id=MAC_DINH,
-            tao_lai_cua: Optional[str] = None, reasoning_effort: str = "") -> dict:
+            tao_lai_cua: Optional[str] = None, reasoning_effort: str = "",
+            anh: Optional[list] = None) -> dict:
     """Ghi user message + assistant giữ chỗ + execution rồi COMMIT. Không chạm model.
 
     · gửi mới:      không khai `parent_id` ⇒ nối vào **lá đang xem**
@@ -100,8 +131,10 @@ def bat_dau(db, *, user_id: str, conv_id: str, van_ban: str = "",
         if len(chu) > TRAN_KY_TU_LUOT:
             raise ThamSoSai(f"noi dung qua dai (> {TRAN_KY_TU_LUOT} ky tu)")
         cha = hoi.current_leaf_id if parent_id is MAC_DINH else parent_id
+        khoi = [{"type": "text", "text": chu}] + _khoi_anh(db, anh, user_id=user_id,
+                                                           alias=alias)
         user_msg = H.them_thong_diep(db, user_id=user_id, conv_id=conv_id, role="user",
-                                     blocks=[{"type": "text", "text": chu}], parent_id=cha)
+                                     blocks=khoi, parent_id=cha)
     tra_loi = H.them_thong_diep(db, user_id=user_id, conv_id=conv_id, role="assistant",
                                 blocks=[], parent_id=user_msg.id, status="streaming",
                                 model_alias=alias)
@@ -114,6 +147,46 @@ def bat_dau(db, *, user_id: str, conv_id: str, van_ban: str = "",
     db.commit()
     return {"conversation_id": hoi.id, "user_message_id": user_msg.id,
             "assistant_message_id": tra_loi.id, "execution_id": ex.id}
+
+
+def doc_anh_duoc(db, alias: str) -> bool:
+    """Alias nay co doc anh khong — theo `constraints.reads_images` DA KHAI.
+
+    ⛔ Khong suy tu ten (`"vision" in alias`). Ten la mot quy uoc dat ten; hop
+       dong la mot loi hua. Ngay ai do them `ltt_llm_2` co doc anh ma khong co
+       chu "vision" trong ten, phep suy theo ten se lang le tu choi anh cua ho.
+    """
+    from apps.chatltt.services import chinh_sach
+
+    for n in chinh_sach.danh_muc(db, user_id=""):
+        if n.ten != chinh_sach.NANG_LUC_TEXT:
+            continue
+        rb = (n.models.get(str(alias)) or {}).get("constraints") or {}
+        return bool(rb.get("reads_images"))
+    return False
+
+
+def _khoi_anh(db, anh, *, user_id: str, alias: str) -> list:
+    """Khoa anh -> khoi `image`, sau khi kiem SO HUU va TRAN so luong.
+
+    🔴 Kiem so huu o day chu khong tin giao dien. Khoa di qua than JSON, nen
+       mot nguoi go tay khoa cua nguoi khac se dinh anh cua nguoi khac vao hoi
+       thoai cua minh — va tu do doc duoc noi dung anh do qua cau tra loi cua
+       model. Do la mot duong ro du lieu khong di qua cua `/tai-san` nao ca.
+    """
+    from apps.chatltt.services import anh_vao
+
+    ds = [str(k or "") for k in (anh or []) if str(k or "").strip()]
+    if not ds:
+        return []
+    if not doc_anh_duoc(db, alias):
+        raise ThamSoSai("model nay khong doc anh")
+    if len(ds) > anh_vao.TOI_DA_MOI_LUOT:
+        raise ThamSoSai(f"toi da {anh_vao.TOI_DA_MOI_LUOT} anh moi luot")
+    for khoa in ds:
+        if not anh_vao.la_khoa_anh_vao(khoa, user_id):
+            raise ThamSoSai("anh khong hop le")
+    return [{"type": "image", "key": k} for k in ds]
 
 
 def _tieu_de_tu(user_msg: ChatlttMessage) -> str:
@@ -147,7 +220,9 @@ def chay(execution_id: str, *, user_id: str) -> None:
         tra_loi = db.get(ChatlttMessage, ex.message_id)
         duong = H.duong_toi_la(db, user_id=user_id, conv_id=ex.conversation_id,
                                leaf_id=tra_loi.parent_id)
-        params = {"model": tra_loi.model_alias, "messages": dung_ngu_canh(duong)}
+        params = {"model": tra_loi.model_alias,
+                  "messages": dung_ngu_canh(
+                      duong, doc_anh=doc_anh_duoc(db, tra_loi.model_alias))}
         re_ = (ex.usage or {}).get("reasoning_effort")
         if re_:
             params["reasoning_effort"] = re_

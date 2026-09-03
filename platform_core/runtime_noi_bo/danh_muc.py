@@ -41,10 +41,46 @@ class NangLuc:
     nhan: str                # mô tả cho khách (từ api_contract)
     hop_dong: dict           # `PublicTool.to_public_dict()`: input/output schema…
     models: dict = field(default_factory=dict)   # alias → {description, stability, constraints}
+    #: Alias được chọn sẵn. **Đọc từ `default` đã khai trong `input_schema`**,
+    #: không phải phần tử đầu của `models`.
+    #:
+    #: 🔴 VÌ SAO PHẢI LÀ MỘT TRƯỜNG RIÊNG. Giao diện trước đây lấy
+    #:    `Object.keys(models)[0]` — tức mặc định là **thứ tự khai trong một
+    #:    dict**. Nó cho ra `ltt_llm`, đúng thứ ta muốn, nhưng đúng một cách
+    #:    tình cờ: đảo hai dòng trong `apps/ltt_llm/manifest.py` là mặc định
+    #:    lặng lẽ thành `ltt_llm_vision` — model có ngữ cảnh **28K thay vì 89K**,
+    #:    tức mọi hội thoại dài của mọi khách bỗng chạm trần sớm gấp ba.
+    #:
+    #: ⛔ Và không có gì bắt được: bộ test không đọc thứ tự dict, phép kiểm giao
+    #:    diện chỉ hỏi "có chọn sẵn cái gì không". Một hằng số đúng nhờ may mắn
+    #:    thì không phải một hằng số.
+    #:
+    #: ⭐ Hợp đồng ĐÃ nói mặc định là gì (`input_schema.properties.model.default`).
+    #:    Việc cần làm không phải chọn hộ, mà là **chuyển câu trả lời đã có**
+    #:    tới nơi cần nó.
+    model_mac_dinh: str = ""
     tuy_chon: dict = field(default_factory=dict) # tham số → [{value,label}] theo NGƯỜI DÙNG
     gia: dict = field(default_factory=dict)      # `AppManifest.bang_gia()` của app sở hữu
     duong_dan_app: str = ""  # route_prefix của app sở hữu (deep-link "quản lý giọng")
     san_sang: str = "san_sang"   # "san_sang" | "ban" | "chua_san_sang" (từ `AppManifest.suc_khoe`)
+
+
+def _mac_dinh(pt, models: dict) -> str:
+    """Alias mặc định theo hợp đồng, chỉ lùi về phần tử đầu khi hợp đồng câm.
+
+    ⛔ Lùi về `next(iter(models))` là **có chủ ý**, không phải cẩu thả: một năng
+       lực không khai `default` vẫn phải chọn được một cái gì đó, nếu không giao
+       diện mở ra với ô model trống và không gửi được gì. Nhưng nó chỉ là lưới
+       đỡ — và `test_632` chốt rằng `text.chat` **không** rơi vào lưới đó.
+    """
+    try:
+        cho = ((pt.input_schema or {}).get("properties") or {}).get("model") or {}
+    except AttributeError:
+        cho = {}
+    khai = str(cho.get("default") or "")
+    if khai and khai in models:
+        return khai
+    return next(iter(models), "")
 
 
 def phuong_thuc_cua(tool) -> str:
@@ -140,6 +176,7 @@ def danh_muc(db, *, user_id: str, cho_phep: Iterable[str],
             models = {alias: {k: v for k, v in dict(spec).items() if k != "id"}
                       for alias, spec in pt.model_aliases.items()}
             ra.append(NangLuc(
+                model_mac_dinh=_mac_dinh(pt, models),
                 ten=tool.name,
                 phuong_thuc=phuong_thuc_cua(tool),
                 che_do="stream" if getattr(tool, "sync_executor", "") else "job",

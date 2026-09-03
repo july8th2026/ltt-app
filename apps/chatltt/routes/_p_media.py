@@ -81,6 +81,40 @@ def trang_thai(request: Request, execution_id: str,
         return loi(404, "khong_tim_thay")
 
 
+@router.post("/api/anh-vao")
+async def anh_vao_tai_len(request: Request, _=Depends(require_login)):
+    """Tai mot anh len de gui cho model vision.
+
+    ⛔ `multipart/form-data`, KHONG phai JSON base64. Mot anh 8 MB thanh ~10,7 MB
+       khi base64 hoa, va no phai nam tron trong bo nho ca o phia trinh duyet lan
+       phia may chu truoc khi kiem duoc byte dau tien. `multipart` cho ta doc
+       stream va tu choi som.
+
+    ⚠️ CSRF di qua header `X-CSRF-Token` chu khong qua than JSON: than o day la
+       tep, khong phai mot dict ta doc duoc trong khi van con muon stream no.
+       Van la `kiem_csrf` — MOT cua duy nhat cho ca app (`test_628` chot).
+    """
+    from apps.chatltt.services import anh_vao as AV
+
+    if not kiem_csrf(request):
+        return loi(403, "csrf")
+    try:
+        form = await request.form()
+    except Exception as e:                                      # noqa: BLE001
+        log.info("khong doc duoc form anh-vao: %s", type(e).__name__)
+        return loi(400, "tham_so", "khong doc duoc tep")
+    tep = form.get("anh")
+    if tep is None or not hasattr(tep, "read"):
+        return loi(400, "tham_so", "thieu tep `anh`")
+    data = await tep.read()
+    try:
+        kq = AV.luu(data, str(getattr(tep, "content_type", "") or ""),
+                    user_id=uid(request))
+    except AV.LoiAnhVao as e:
+        return loi(400, "tham_so", str(e))
+    return json_ok(kq, 201)
+
+
 @router.get("/tai-san/{key:path}")
 def tai_san(request: Request, key: str, _=Depends(require_login)):
     """Anh/tieng cua CHINH nguoi dang dang nhap.

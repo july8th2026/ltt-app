@@ -51,8 +51,8 @@ function KhoiSuyLuan({ chu, dangChay }: { chu: string; dangChay: boolean }) {
  * Khoi tai san. `duongTaiSan` di qua cua CO KIEM SO HUU cua app, khong phai
  * `/static` — anh cua khach khong bao gio la tep tinh cong khai.
  */
-function KhoiTaiSan({ khoi, duongTaiSan }: {
-  khoi: Khoi[]; duongTaiSan: (k: string) => string
+function KhoiTaiSan({ khoi, duongTaiSan, cuaNguoiDung }: {
+  khoi: Khoi[]; duongTaiSan: (k: string) => string; cuaNguoiDung?: boolean
 }) {
   const media = khoi.filter((k) => k.type === 'image' || k.type === 'audio')
   if (!media.length) return null
@@ -60,8 +60,16 @@ function KhoiTaiSan({ khoi, duongTaiSan }: {
     <div className="ltc-taisan">
       {media.map((k, i) => (k.type === 'image' ? (
         <a key={i} href={duongTaiSan(String(k.key))} target="_blank" rel="noreferrer">
+          {/*
+            ⛔ `alt` phai noi dung AI tao ra anh. Ban dau dung mot chuoi cho ca
+               hai chieu ("Anh N do ChatLTT tao"), va hau qua chi lo ra khi
+               nghe: nguoi dung dinh ANH CUA CHINH HO va trinh doc man hinh
+               doc "Anh 1 do ChatLTT tao". Mot cau sai, noi rat tu tin, va chi
+               nhung nguoi phu thuoc vao no moi nghe thay.
+          */}
           <img className="ltc-taisan__anh" src={duongTaiSan(String(k.key))}
-            alt={`Ảnh ${i + 1} do ChatLTT tạo`} loading="lazy" />
+            alt={cuaNguoiDung ? `Ảnh ${i + 1} bạn đã gửi`
+                              : `Ảnh ${i + 1} do ChatLTT tạo`} loading="lazy" />
         </a>
       ) : (
         <audio key={i} className="ltc-taisan__am" controls preload="none"
@@ -127,7 +135,8 @@ export function ThongDiepView({
           Đang tạo… {tienDo != null ? `${tienDo}%` : ''}
         </p>
       )}
-      {duongTaiSan && <KhoiTaiSan khoi={m.blocks} duongTaiSan={duongTaiSan} />}
+      {duongTaiSan && <KhoiTaiSan khoi={m.blocks} duongTaiSan={duongTaiSan}
+        cuaNguoiDung={m.role === 'user'} />}
 
       {loi && (
         <p className="ltc-tin__loi" role="alert">

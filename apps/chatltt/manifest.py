@@ -17,9 +17,17 @@ Khai `job_types` ở đây là mời một sổ tiền thứ hai.
 
 ## Trạng thái
 
-`enabled=False`, `public=False` cho tới khi Phase 13 của H43 PASS: không lên
-catalog, không lên header; route vẫn được gắn để trang giữ chỗ trả 200 cho
-người đã đăng nhập (bẫy link 404 trong header — `AGENTS.md` §8.2c).
+`enabled=True`, `public=True` từ **03/09/2026**, khi Phase 13 của H43 PASS.
+
+Trước đó app chạy `enabled=False, public=False`: route vẫn được gắn (để trang
+giữ chỗ trả 200 cho người đã đăng nhập — bẫy link 404 trong header,
+`AGENTS.md` §8.2c) nhưng không lên catalog và không lên header.
+
+⭐ Bằng chứng bật cờ, không phải "thấy chạy được": tám hành trình A–H chạy lại
+   **tươi** trên trình duyệt thật (CSDL mới, hai người dùng, model và worker
+   giả), `docs/CHATLTT/reports/13_nghiem_thu.md`. Hành trình B (vision) trượt ở
+   lượt đầu và được xây xong trong chính pha đó — `MVP_ACCEPTANCE.md` ghi
+   *"vision if advertised"*, và catalog thì đang quảng cáo `reads_images`.
 """
 from __future__ import annotations
 
@@ -40,8 +48,8 @@ MANIFEST = AppManifest(
     requires=(),
     credit_cost=None,
 
-    enabled=False,
-    public=False,
+    enabled=True,
+    public=True,
     surface="customer",
     lifecycle="development",
     group="Chat",

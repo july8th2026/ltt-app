@@ -106,3 +106,31 @@ describe('Khoi tai san', () => {
     expect(container.querySelector('img')).toBeNull()
   })
 })
+
+describe('KhoiTaiSan — alt phai noi dung AI tao ra anh', () => {
+  /**
+   * ⛔ Ban dau `alt` la mot chuoi cho ca hai chieu: "Anh N do ChatLTT tao".
+   *    Hau qua chi lo ra khi NGHE — nguoi dung dinh anh cua chinh ho, va trinh
+   *    doc man hinh doc "Anh 1 do ChatLTT tao". Mot cau sai, noi rat tu tin, va
+   *    chi nhung nguoi phu thuoc vao no moi nghe thay.
+   */
+  const anh = [{ type: 'image' as const, key: 'chatltt/anh-vao/u1/a.png' }]
+
+  function ve(role: 'user' | 'assistant') {
+    const m = tin({ role, blocks: anh, execution: ex() })
+    return render(
+      <ThongDiepView m={m} phang={[m]} onChuyenNhanh={KHONG}
+        onTaoLai={KHONG} onSuaGuiLai={KHONG} duongTaiSan={duong} />,
+    )
+  }
+
+  it('anh nguoi dung gui doc la "ban da gui"', () => {
+    ve('user')
+    expect(screen.getByAltText('Ảnh 1 bạn đã gửi')).toBeTruthy()
+  })
+
+  it('anh ChatLTT tao doc la "do ChatLTT tao"', () => {
+    ve('assistant')
+    expect(screen.getByAltText('Ảnh 1 do ChatLTT tạo')).toBeTruthy()
+  })
+})

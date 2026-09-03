@@ -19,20 +19,41 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 
+export type AnhDinh = { key: string; ten: string }
+
 export type SoanThaoProps = {
   /** Cho phim tat "ve o soan" (Shift+Esc) va cho luc mo hoi thoai moi. */
   oRef?: React.RefObject<HTMLTextAreaElement | null>
-  onGui: (chu: string) => void
+  onGui: (chu: string, anh: string[]) => void
   dangChay: boolean
   onDung: () => void
   vohieu?: boolean
   goiY?: string
+  /**
+   * Model dang chon co doc anh khong — tu `constraints.reads_images` cua hop
+   * dong, KHONG suy tu ten alias.
+   *
+   * ⛔ Khong co co nay thi o chon tep hien voi MOI model, va nguoi dung dinh
+   *    anh vao `ltt_llm` (text-only) roi cho mot cau tra loi ve buc anh ma
+   *    model chua bao gio thay. May chu se tu choi (`bat_dau` kiem lai), nhung
+   *    moi loi tot nhat la loi khong the bam ra duoc.
+   */
+  docAnh?: boolean
+  /** Tai mot tep len, tra ve khoa kho. Nem loi thi o soan hien thong bao. */
+  onTaiAnh?: (tep: File) => Promise<AnhDinh>
+  /** Tran so anh moi luot — may chu chot lai, day chi de bao som. */
+  toiDaAnh?: number
 }
 
 export function SoanThao({
   oRef, onGui, dangChay, onDung, vohieu, goiY,
+  docAnh, onTaiAnh, toiDaAnh = 4,
 }: SoanThaoProps) {
   const [chu, datChu] = useState('')
+  const [anh, datAnh] = useState<AnhDinh[]>([])
+  const [dangTai, datDangTai] = useState(false)
+  const [loiAnh, datLoiAnh] = useState('')
+  const oTep = useRef<HTMLInputElement | null>(null)
   const dangGoIME = useRef(false)
   const oTrong = useRef<HTMLTextAreaElement | null>(null)
   const o = oRef ?? oTrong
@@ -48,10 +69,37 @@ export function SoanThao({
 
   const gui = useCallback(() => {
     const t = chu.trim()
-    if (!t || dangChay || vohieu) return
-    onGui(t)
+    if (!t || dangChay || vohieu || dangTai) return
+    onGui(t, anh.map((a) => a.key))
     datChu('')
-  }, [chu, dangChay, vohieu, onGui])
+    datAnh([])
+    datLoiAnh('')
+  }, [chu, dangChay, vohieu, dangTai, anh, onGui])
+
+  const themTep = useCallback(async (ds: FileList | null) => {
+    if (!ds || !ds.length || !onTaiAnh) return
+    datLoiAnh('')
+    // ⛔ Cat theo cho CON LAI, khong theo so tep vua chon: nguoi dung co the
+    //    dinh hai lan lien tiep, va tran la tran cua ca luot.
+    const con = toiDaAnh - anh.length
+    if (con <= 0) { datLoiAnh(`Tối đa ${toiDaAnh} ảnh mỗi lượt.`); return }
+    const lay = Array.from(ds).slice(0, con)
+    if (lay.length < ds.length) datLoiAnh(`Tối đa ${toiDaAnh} ảnh mỗi lượt.`)
+    datDangTai(true)
+    try {
+      for (const tep of lay) {
+        const a = await onTaiAnh(tep)
+        datAnh((cu2) => [...cu2, a])
+      }
+    } catch (e) {
+      datLoiAnh(e instanceof Error ? e.message : 'Không tải được ảnh.')
+    } finally {
+      datDangTai(false)
+      // Do lai o chon: khong reset thi chon LAI dung tep vua bo di se khong
+      // sinh su kien `change` nao ca, va giao dien trong nhu bi treo.
+      if (oTep.current) oTep.current.value = ''
+    }
+  }, [anh.length, onTaiAnh, toiDaAnh])
 
   const phim = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const dangGo =
@@ -65,6 +113,43 @@ export function SoanThao({
 
   return (
     <div className="ltc-soan">
+      {anh.length > 0 && (
+        <ul className="ltc-soan__anh" aria-label="Ảnh đã đính">
+          {anh.map((a) => (
+            <li key={a.key} className="ltc-soan__anh-mot">
+              <span className="ltc-soan__anh-ten">{a.ten}</span>
+              <button
+                type="button"
+                className="ltc-soan__anh-bo"
+                aria-label={`Bỏ ảnh ${a.ten}`}
+                onClick={() => datAnh((c) => c.filter((x) => x.key !== a.key))}
+              >×</button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {loiAnh && <p className="ltc-soan__loi" role="alert">{loiAnh}</p>}
+      {docAnh && onTaiAnh && (
+        <>
+          <input
+            ref={oTep}
+            type="file"
+            className="ltc-soan__tep"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            aria-label="Đính ảnh"
+            disabled={vohieu || dangTai}
+            onChange={(e) => { void themTep(e.target.files) }}
+          />
+          <button
+            type="button"
+            className="ltc-nut ltc-nut--anh"
+            onClick={() => oTep.current?.click()}
+            disabled={vohieu || dangTai || anh.length >= toiDaAnh}
+            title="Đính ảnh cho model đọc"
+          >{dangTai ? 'Đang tải…' : '📎 Ảnh'}</button>
+        </>
+      )}
       <textarea
         ref={o}
         className="ltc-soan__o"

@@ -100,15 +100,45 @@ export class Api {
     modelAlias?: string
     parentId?: string | null
     taoLaiCua?: string
+    anh?: string[]
   }): Promise<BatDauLuot> {
     const body: Record<string, unknown> = {}
     if (than.text !== undefined) body.text = than.text
     if (than.modelAlias) body.model_alias = than.modelAlias
     if (than.taoLaiCua) body.tao_lai_cua = than.taoLaiCua
+    if (than.anh && than.anh.length) body.anh = than.anh
     if ('parentId' in than) body.parent_id = than.parentId
     return this.goi(`/hoi-thoai/${encodeURIComponent(convId)}/luot`, {
       method: 'POST', body: JSON.stringify(body),
     })
+  }
+
+  /**
+   * Tai mot anh len cho model vision. Tra `{key, mime, rong, cao, bytes}`.
+   *
+   * ⛔ `FormData`, va TUYET DOI khong dat `Content-Type` bang tay: trinh duyet
+   *    phai tu sinh no de kem `boundary`. Dat tay la mot request multipart
+   *    khong co boundary, va may chu tra 400 voi mot thong diep khong lien quan
+   *    gi toi nguyen nhan.
+   */
+  async taiAnh(tep: File): Promise<{ key: string; mime: string;
+    rong: number; cao: number; bytes: number }> {
+    const fd = new FormData()
+    fd.append('anh', tep)
+    const r = await fetch(`${this.goc}/anh-vao`, {
+      method: 'POST', body: fd, headers: { 'X-CSRF-Token': this.csrf },
+      credentials: 'same-origin',
+    })
+    if (!r.ok) {
+      let ma = `http_${r.status}`
+      let tin = ''
+      try {
+        const j = await r.json()
+        ma = String(j.code || ma); tin = String(j.message || j.detail || '')
+      } catch { /* than khong phai JSON: giu ma HTTP */ }
+      throw new LoiApi(ma, tin, r.status)
+    }
+    return r.json()
   }
 
   baoGia(nangLuc: string, thamSo: Record<string, unknown>):
