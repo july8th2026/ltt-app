@@ -38,7 +38,25 @@ from platform_core.i18n import _ as _t
 from . import tach_tieng, thoi_gian
 
 #: Doi khi doi bat ky nguong nao. Vao van tay (O13).
-PHIEN_BAN_QC = 1
+#:
+#: ⭐ 1 → 2 o pha 18: QC tro thanh **biet che do render**. Neu khong nang so nay
+#:    thi mot lan chay lai se dung lai bao cao QC cu tu cache — bao cao duoc lam
+#:    boi mot bo luat khong biet preset cat ton tai.
+PHIEN_BAN_QC = 2
+
+#: T13 — do sang trung binh toi thieu cua ban ra (thang 0-255 tren kenh Y).
+#:
+#: 🔴 Mot tep hop le, dung thoi luong, dung am luong, va **toan mau den** van la
+#:    mot lan giao hong. Truoc pha 18 khong chot nao bat duoc dieu do: T1 chi hoi
+#:    "co luong hinh khong", con luong hinh toan den van la mot luong hinh.
+#:
+#: ⚠️ 2,0 la nguong RAT thap, co y: mot canh dem that co the trung binh duoi 10.
+#:    Ta khong doan chat luong nghe thuat o day — ta chi bat truong hop **khong
+#:    co gi ca**, va bat no bang mot con so khong the nham voi mot canh toi.
+DO_SANG_TOI_THIEU = 2.0
+
+#: T13 — so khung lay mau de do do sang. Trai deu tren ca ban ra.
+SO_KHUNG_DO_SANG = 12
 
 DAT = "dat"
 HONG = "hong"
@@ -86,10 +104,52 @@ def bam_luong_hinh(duong: str, *, timeout: int = 600) -> str:
     return ra.split("=", 1)[1] if "=" in ra else ra
 
 
+def do_sang_trung_binh(duong: str, *, so_khung: int = 0,
+                       thoi_luong: float = 0.0, timeout: int = 600) -> float:
+    """Do sang trung binh cua ban ra, lay mau trai deu. -1 neu khong do duoc.
+
+    🔑 Lay mau chu khong duyet het: mot video 2 gio co 216.000 khung, va cau hoi
+       "ban ra co phai toan mau den khong" khong can 216.000 phep do. Muoi hai
+       diem trai deu tra loi no, va tra loi trong mot phan giay.
+
+    ⛔ Do tren kenh Y (do choi) chu khong tren mau: mot ban ra hong theo kieu
+       "toan den" thi Y ~ 0 bat ke khong gian mau.
+    """
+    so_khung = so_khung or SO_KHUNG_DO_SANG
+    dai = float(thoi_luong or 0.0)
+    if dai <= 0 or so_khung <= 0:
+        return -1.0
+
+    tong, dem = 0.0, 0
+    for i in range(so_khung):
+        # Trai deu, tranh dung sat hai dau (khung dau/cuoi hay la mau den THAT).
+        t = dai * (i + 0.5) / so_khung
+        cmd = [media.ffmpeg_bin(), "-v", "error", "-ss", f"{t:.3f}",
+               "-i", duong, "-frames:v", "1",
+               "-vf", "scale=64:36,format=gray,signalstats",
+               "-f", "null", "-"]
+        try:
+            r = subprocess.run(cmd, capture_output=True, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            continue
+        van = (r.stderr or b"").decode("utf-8", "replace")
+        for khoa in ("lavfi.signalstats.YAVG=", "YAVG:"):
+            if khoa in van:
+                try:
+                    tong += float(van.split(khoa, 1)[1].split()[0])
+                    dem += 1
+                except (IndexError, ValueError):
+                    pass
+                break
+    return round(tong / dem, 3) if dem else -1.0
+
+
 def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
          ban_ke_tieng: dict, ban_dung_lop: list | None = None,
          bam_ra: str = "", bam_nguon: str = "",
-         che_do_thoi_gian: str = "fit_original") -> dict:
+         che_do_thoi_gian: str = "fit_original",
+         che_do_render: str = "", thoi_luong_mong_doi: float = 0.0,
+         do_sang: float | None = None) -> dict:
     """Do het muoi hai dung sai. Tra ve bao cao; KHONG nem khi co muc hong.
 
     ⭐ Khong nem la mot quyet dinh, khong phai mot thieu sot: mot bao cao QC liet
@@ -106,19 +166,55 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
                     co_tieng=bool(tt_ra.get("co_tieng"))))
 
     # ── T2 — thoi luong ────────────────────────────────────────────────────
+    #
+    # 🔴 **So voi cai gi, moi la cau hoi that.**
+    #
+    #    Truoc pha 18 T2 luon so voi NGUON. Dung cho preset giu hinh, noi luong
+    #    hinh duoc sao chep. Voi preset CAT thi sai han: ban ra ngan hon nguon
+    #    dung bang phan da cat — va do la **muc dich cua san pham**, khong phai
+    #    mot khiem khuyet. So voi nguon o do se lam T2 hong o MOI lan chay preset
+    #    cat, tuc QC chan dung cai no phai cho qua.
+    #
+    # ⭐ `thoi_luong_mong_doi` do nguoi goi tinh tu ban do thoi gian. Khong co no
+    #    thi lui ve thoi luong nguon — dung hanh vi cu, cho preset cu.
     d_ra = float(tt_ra.get("thoi_luong") or 0)
     d_nguon = float(tt_nguon.get("thoi_luong") or 0)
-    lech = d_ra - d_nguon
-    # "khong bao gio dai hon nguon" la mot chot RIENG, khong phai he qua cua
+    mong_doi = float(thoi_luong_mong_doi or 0.0) or d_nguon
+    lech = d_ra - mong_doi
+    # "khong bao gio dai hon MONG DOI" la mot chot RIENG, khong phai he qua cua
     # `abs(lech) <= 0.5`: mot ban ra dai hon 0,3 giay van vi pham loi hua §3.
     t2 = abs(lech) <= LECH_THOI_LUONG_S and lech <= 0
     muc.append(_muc("T2", DAT if t2 else HONG,
-                    "thoi luong ban ra so voi nguon",
+                    "thoi luong ban ra so voi MONG DOI cua che do",
                     thoi_luong_ra=round(d_ra, 3), thoi_luong_nguon=round(d_nguon, 3),
+                    mong_doi=round(mong_doi, 3),
                     lech=round(lech, 3), nguong=LECH_THOI_LUONG_S))
 
     # ── T3 — luong hinh giong het nguon tung bit ────────────────────────────
-    if bam_ra and bam_nguon:
+    #
+    # 🔴 **Chi co nghia o preset GIU HINH.**
+    #
+    #    Preset cat **ma hoa lai** luong hinh (bat buoc — xem `che_do_render`:
+    #    cat bang stream copy chi cat duoc tai keyframe, va GOP do duoc la 8,333
+    #    giay). Nen bam KHONG BAO GIO khop, va so no o do la chot mot dieu ta vua
+    #    co y khong lam.
+    #
+    # ⛔ Cong thoat pha 18 goi dich danh dieu nay: QC "khong duoc gia dinh bam
+    #    luong hinh bang nguon o che do cat".
+    #
+    # ⭐ Chi phi bam **da duoc do** truoc khi giu lai: MD5 ca luong hinh cua mot
+    #    tep 154 MB / 10 phut het **0,27 giay** (stream copy, khong giai ma). O
+    #    tran 2 gio uoc ~3,5 giay — canh mot luot render tinh bang phut. Pha 18
+    #    doi "profile roi thay bang cach re hon **neu bang chung ung ho**"; bang
+    #    chung noi khong can thay, va moi cach re hon deu la bang chung YEU HON.
+    from .che_do_render import CAT_MA_HOA_LAI
+
+    if str(che_do_render) == CAT_MA_HOA_LAI:
+        muc.append(_muc("T3", KHONG_AP_DUNG,
+                        "che do CAT ma hoa lai luong hinh — bam khong the bang "
+                        "nguon, va so no la chot mot dieu ta co y khong lam",
+                        che_do_render=str(che_do_render)))
+    elif bam_ra and bam_nguon:
         t3 = bam_ra == bam_nguon
         muc.append(_muc("T3", DAT if t3 else HONG,
                         "luong hinh giong het nguon tung bit",
@@ -216,10 +312,39 @@ def kiem(*, tt_ra: dict, tt_nguon: dict, am_luong: dict, ke_hoach: dict,
     muc.append(_muc("T12", DAT, "so doan bi cat da duoc bao cao",
                     so_doan_bi_cat=bi_cat))
 
+    # ── T13 — ban ra khong RONG, khong TOAN DEN ────────────────────────────
+    #
+    # 🔴 Mot tep hop le, dung thoi luong, dung am luong, va **toan mau den** van
+    #    la mot lan giao hong — va truoc pha 18 khong chot nao bat duoc: T1 chi
+    #    hoi "co luong hinh khong", ma mot luong hinh toan den van la mot luong
+    #    hinh.
+    #
+    # ⚠️ Nguong RAT thap (2,0/255) co y: mot canh dem that co the trung binh
+    #    duoi 10. Ta khong doan chat luong nghe thuat — ta bat truong hop **khong
+    #    co gi ca**, bang mot con so khong the nham voi mot canh toi.
+    if do_sang is None:
+        muc.append(_muc("T13", KHONG_AP_DUNG,
+                        "chua do duoc do sang cua ban ra"))
+    elif float(do_sang) < 0:
+        muc.append(_muc("T13", KHONG_AP_DUNG,
+                        "khong lay duoc khung nao de do do sang"))
+    else:
+        t13 = float(do_sang) >= DO_SANG_TOI_THIEU
+        muc.append(_muc("T13", DAT if t13 else HONG,
+                        "ban ra khong rong, khong toan den",
+                        do_sang=round(float(do_sang), 3),
+                        toi_thieu=DO_SANG_TOI_THIEU,
+                        so_khung=SO_KHUNG_DO_SANG))
+
     hong = [m["ma"] for m in muc if m["trang_thai"] == HONG]
     return {
         "phien_ban": PHIEN_BAN_QC,
         "che_do_thoi_gian": che_do_thoi_gian,
+        # 🔑 Bao cao QC phai noi no da do theo LUAT NAO. Mot bao cao khong ghi
+        #    che do la mot bao cao khong doc lai duoc: "T3 khong ap dung" co
+        #    nghia hoan toan khac giua hai preset.
+        "che_do_render": str(che_do_render or ""),
+        "thoi_luong_mong_doi": round(float(thoi_luong_mong_doi or 0.0), 3),
         "dat": not hong,
         "so_muc_hong": len(hong),
         "muc_hong": hong,

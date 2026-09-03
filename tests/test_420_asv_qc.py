@@ -126,11 +126,22 @@ def test_muc_KHONG_AP_DUNG_khong_bao_gio_duoc_tinh_la_dat():
             assert m["trang_thai"] != qc.DAT
 
 
-def test_bao_cao_liet_ke_DU_muoi_hai_dung_sai():
+def test_bao_cao_liet_ke_DU_cac_dung_sai():
     """Chot theo TAP HOP. Bo sot mot dung sai la mot cong thung mot lo, va lo do
-    khong the thay bang cach nhin bao cao."""
+    khong the thay bang cach nhin bao cao.
+
+    ⚠️ **Pha 18 mo tap hop tu T1-T12 thanh T1-T13, co chu dinh.**
+
+       T13 bat mot truong hop khong chot nao truoc do bat duoc: mot tep **hop le,
+       dung thoi luong, dung am luong, va toan mau den**. T1 chi hoi "co luong
+       hinh khong", ma mot luong hinh toan den van la mot luong hinh.
+
+    ⭐ Mo mot chot theo tap hop la mot hanh dong phai CO Y — do la ca ly do no
+       chot tap hop thay vi chot so luong: doi so luong thi khong ai phai giai
+       thich gi, doi tap hop thi phai noi ra them cai gi va vi sao.
+    """
     bc = qc.kiem(**_dau_vao_dat())
-    assert {m["ma"] for m in bc["muc"]} == {f"T{i}" for i in range(1, 13)}
+    assert {m["ma"] for m in bc["muc"]} == {f"T{i}" for i in range(1, 14)}
 
 
 def test_bao_cao_KHONG_nem_khi_co_muc_hong():

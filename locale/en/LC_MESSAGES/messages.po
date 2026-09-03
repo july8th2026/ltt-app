@@ -14040,3 +14040,6 @@ msgstr "There are no ranges to cut and join."
 
 msgid "Preset không hợp lệ: {p}"
 msgstr "Invalid preset: {p}"
+
+msgid "Đang kiểm bản ra có hình"
+msgstr "Checking the output has picture"

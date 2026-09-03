@@ -102,24 +102,58 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             bao(45, _t('Đang đo âm lượng'))
         am_luong = tach_tieng.do_am_luong(duong_ra)
 
+        # ── Che do render quyet dinh QC do CAI GI ──────────────────────────
+        #
+        # 🔑 Doc tu BAN DUNG, khong suy lai tu `settings`: ban dung la thu da
+        #    thuc su duoc render, va neu hai nguon lech nhau thi cai dung la cai
+        #    da chay. Suy lai o day se cho QC do mot lan chay khac voi lan chay
+        #    that.
+        from . import ban_do_thoi_gian, che_do_render as cdr
+
+        cach = str((ban_dung.get("hinh") or {}).get("cach_render") or cdr.SAO_CHEP)
+
+        # Thoi luong MONG DOI: preset cat ngan hon nguon dung bang phan da cat,
+        # va do la muc dich cua san pham chu khong phai mot khiem khuyet.
+        bdo = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
+        mong_doi = float(bdo.thoi_luong_ra or 0.0)
+
+        bam_ra = bam_nguon = ""
+        if cach != cdr.CAT_MA_HOA_LAI:
+            if bao:
+                bao(70, _t('Đang đối chiếu luồng hình'))
+            # T3 — bam RIENG luong hinh. Neu ffmpeg khong bam duoc thi T3 thanh
+            # `khong_ap_dung` chu khong thanh `hong`: khong do duoc khac voi do
+            # ra sai.
+            #
+            # ⭐ Chi bam o che do SAO CHEP. O che do cat, bam la mot phep tinh
+            #    chac chan khong khop — ton thoi gian de tra loi mot cau hoi ta
+            #    da biet cau tra loi.
+            try:
+                bam_ra = qc.bam_luong_hinh(duong_ra)
+                bam_nguon = qc.bam_luong_hinh(duong_nguon)
+            except Exception as exc:  # noqa: BLE001 - khong do duoc != do ra sai
+                log.warning("qc: khong bam duoc luong hinh (%s: %s)",
+                            type(exc).__name__, exc)
+                bam_ra = bam_nguon = ""
+
         if bao:
-            bao(70, _t('Đang đối chiếu luồng hình'))
-        # T3 — bam RIENG luong hinh. Neu ffmpeg khong bam duoc thi T3 thanh
-        # `khong_ap_dung` chu khong thanh `hong`: khong do duoc khac voi do ra sai.
+            bao(80, _t('Đang kiểm bản ra có hình'))
         try:
-            bam_ra = qc.bam_luong_hinh(duong_ra)
-            bam_nguon = qc.bam_luong_hinh(duong_nguon)
+            do_sang = qc.do_sang_trung_binh(
+                duong_ra, thoi_luong=float(tt_ra.get("thoi_luong") or 0.0))
         except Exception as exc:      # noqa: BLE001 - khong do duoc != do ra sai
-            log.warning("qc: khong bam duoc luong hinh (%s: %s)",
+            log.warning("qc: khong do duoc do sang (%s: %s)",
                         type(exc).__name__, exc)
-            bam_ra = bam_nguon = ""
+            do_sang = None
 
         bao_cao = qc.kiem(
             tt_ra=tt_ra, tt_nguon=tt_nguon, am_luong=am_luong,
             ke_hoach=ke_hoach, ban_ke_tieng=ban_ke,
             ban_dung_lop=(ban_dung.get("tieng") or {}).get("lop") or [],
             bam_ra=bam_ra, bam_nguon=bam_nguon,
-            che_do_thoi_gian=str((run.settings or {}).get("timing_mode") or ""))
+            che_do_thoi_gian=str((run.settings or {}).get("timing_mode") or ""),
+            che_do_render=cach, thoi_luong_mong_doi=mong_doi,
+            do_sang=do_sang)
 
     goi = json.dumps(bao_cao, sort_keys=True, ensure_ascii=False).encode("utf-8")
     vt = _van_tay(kho, khoa_ra, khoa_kh)
