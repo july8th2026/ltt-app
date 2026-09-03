@@ -21,6 +21,32 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-03 (khuya) — `ltt_llm_vision` lên 88K ngữ cảnh dùng được
+
+**ADDED · Cửa sổ ngữ cảnh dùng được của `ltt_llm_vision`: 28K → 88K.**
+
+Bạn **không phải sửa gì**. Nếu bạn đang tự giới hạn số ảnh hoặc độ dài hội thoại
+vì cửa sổ 28K thì nay có thể nới.
+
+```diff
+  ltt_llm_vision  context_window   28262  ->  88555
+  ltt_llm_vision  auto_compact         -  ->  55787
+  ltt_llm         context_window  156385      (KHONG doi)
+```
+
+⭐ **Và trường `auto_compact_token_limit` của `ltt_llm_vision` nay mới xuất hiện
+lần đầu.** Trước đây nó bị bỏ hẳn khỏi catalog Codex, và việc bỏ đó là **có chủ
+ý, không phải sót**: cửa sổ công bố cũ (28.262) **hẹp hơn** một lượt trả lời dài
+nhất (32.768), nên không ngưỡng nén nào giữ được lời hứa "nén trước khi chạm
+trần" — và ghi một con số bịa vào đó thì Codex sẽ tin nó.
+
+Nâng cửa sổ là thứ làm cho ngưỡng ấy **định nghĩa được trở lại**.
+
+⚠️ **Vision vẫn là một hồ sơ khác `ltt_llm`, và hai con số vẫn độc lập.** Hôm nay
+`88.555` tình cờ bằng con số của `ltt_llm` **hôm qua** — đừng đọc sự trùng hợp
+đó thành "hai model dùng chung một cửa sổ". Chúng chạy hai `-c` khác nhau và sẽ
+lệch lại ở lần nâng kế tiếp.
+
 ## 2026-09-03 (tối) — trần đầu vào nay đếm token **thật**, không phải token ước
 
 **FIXED · `413` từng xảy ra ở khoảng một nửa cửa sổ chúng tôi công bố.**
