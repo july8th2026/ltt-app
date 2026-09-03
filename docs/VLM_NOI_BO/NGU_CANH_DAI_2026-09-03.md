@@ -528,13 +528,139 @@ không định giả vờ ngược lại bằng cách hạ cửa sổ công bố
 
 ---
 
+## 7d. 🟢 H-3 — ĐỌC MÃ NGUỒN CODEX THAY VÌ TỰ SUY
+
+Tới đây tôi đã suy ra ba cơ chế từ phép đo của chính mình. Người dùng dừng tôi
+lại: *"phân tích sâu cơ chế vận hành của codex và claude để có thông số chuẩn,
+và cách cộng đồng mạng giải bài toán. Hạn chế tự suy."*
+
+Đó là một hiệu chỉnh đúng, và nó đổi kết luận. Dưới đây là thứ đọc được, kèm
+đường dẫn để ai cũng kiểm lại được.
+
+### 7d.1 Ngưỡng nén là một `min()` — cấu hình chỉ **hạ** được
+
+`codex-rs/protocol/src/openai_models.rs:499`
+
+```rust
+pub fn auto_compact_token_limit(&self) -> Option<i64> {
+    let context_limit = resolved_context_window * 9 / 10;   // 90% cửa sổ THÔ
+    min(config_limit, context_limit)                        // config chỉ hạ
+}
+pub fn usable_context_window(&self) -> Option<i64> {
+    context_window * effective_context_window_percent / 100  // mặc định 95
+}
+```
+
+Test của chính họ chốt: ctx 272.000 → usable 258.400 → nén 244.800.
+
+| | Codex mặc định | Ta (`ltt_llm`) |
+|---|---|---|
+| Cửa sổ thô | 272.000 | 156.385 |
+| Dùng được (95%) | 258.400 | 148.565 |
+| Ngưỡng nén | 244.800 = 90% thô | **123.617** |
+| Trần trên do Codex áp | — | 140.746 = 90% × 156.385 |
+
+Ngưỡng của ta **thấp hơn** trần Codex áp ⇒ nó là cái đang ràng buộc. Dè dặt hơn
+upstream, đúng hướng.
+
+⭐ Và nó đóng một câu hỏi tôi đã để treo: **bỏ hẳn** `auto_compact_token_limit`
+không làm mất nén — Codex rơi về 90% của `context_window`. Chú thích ở
+`tools/cam_cli.py` là đúng, giờ có nguồn.
+
+### 7d.2 🔴 Codex KHÔNG kiểm nén giữa các lần gọi tool trong một lượt
+
+[openai/codex#16033](https://github.com/openai/codex/issues/16033) — người báo
+cáo đọc thẳng mã: kiểm nén chạy **một lần lúc mở lượt**. Trong lượt đó agent gọi
+83 lệnh shell, ngữ cảnh đi từ 0 → 400K, rồi mới vỡ. Có `TODO` của chính OpenAI
+thừa nhận.
+
+⇒ **N-10 không phải phỏng đoán của tôi.** Nó là hạn chế kiến trúc đã biết của
+Codex, và **không sửa được từ phía máy chủ**.
+
+### 7d.3 🔴 Nên hàng phòng thủ duy nhất còn lại — chính là trường ta đặt sai
+
+Mặc định của Codex (`models-manager/src/model_info.rs:174`):
+
+```rust
+truncation_policy: TruncationPolicyConfig::bytes(/*limit*/ 10_000),
+```
+
+với `APPROX_BYTES_PER_TOKEN = 4` (`utils/string/src/truncate.rs:4`) ⇒ **2.500
+token mỗi kết quả tool**.
+
+Catalog ta **thật sự phát cho khách**, đọc từ tệp đã sinh:
+
+```
+ltt_llm | ctx 156385 | nen 123617 | trunc {'mode':'tokens','limit': 156385}
+```
+
+**156.385 — gấp 62 lần mặc định, và bằng cả cửa sổ.** Một kết quả tool được
+phép nuốt trọn ngữ cảnh. Cơ chế phòng thủ duy nhất chống §7d.2 đã bị chính ta
+vô hiệu hoá.
+
+⛔ Và nó không phải một quyết định — nó là một chỗ trống được lấp. Trường
+`truncation_policy` **bắt buộc** trong khuôn (`openai_models.rs:429`, không có
+`serde(default)`); thiếu nó thì cả entry hỏng và Codex rơi về fallback 272K
+không nén. Tôi cần *một* con số, và điền cửa sổ vào.
+
+⭐ Tệ hơn: `tests/test_334` có một dòng `assert tp["limit"] == mong` — tức phép
+kiểm đang **cưỡng chế** khuyết tật. Cùng đúng một hình dạng lỗi với vụ vision
+(một hằng số cho một vòng lặp nhiều model). Đây là lần thứ hai.
+
+**Sửa 04/09** — suy ra, không bịa:
+
+```
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2 = 16.384
+```
+
+Khoảng trống giữa ngưỡng nén và cửa sổ công bố đúng bằng `TOKEN_RA_TRAN`
+(156.385 − 123.617 = 32.768, theo dựng). Một kết quả tool không được chiếm quá
+**nửa** khoảng đó, để sau nó vẫn còn chỗ cho lượt sinh kế tiếp.
+
+⚠️ Đơn vị ở đó là token **ước của Codex** (`len/4`), không phải token thật của
+Qwen. Đo 03/09: tiếng Việt ~3,14 ký tự/token thật ⇒ 16.384 × 4 = 65.536 byte
+≈ **20.872 token thật**, vẫn dưới 32.768.
+
+### 7d.4 Chạm `413` rồi thì Codex không tự thoát ra
+
+[#11440](https://github.com/openai/codex/issues/11440) (đóng) và
+[#30441](https://github.com/openai/codex/issues/30441) (mở), nhiều người độc
+lập: một `413` làm **kẹt luồng vĩnh viễn** — nhắn tiếp `413`, nén cũng `413`.
+
+Từ 2026-06-29 OpenAI chuyển nén về **local, dùng chung endpoint với lượt
+thường**. Với ta điều đó nghĩa là: **request nén không phân biệt được với
+request thường**, nên trần cứng của ta có thể giết chính thao tác cứu nguy.
+
+⇒ Một lập luận **độc lập** ủng hộ khoảng đệm `LE` ở §1. Không phải tôi tự thấy
+nó đẹp; upstream đã trả giá cho đúng chỗ đó.
+
+### 7d.5 ⚠️ Một cảnh báo nhắm thẳng vào cách bộ cài ta làm việc
+
+Vẫn [#16033](https://github.com/openai/codex/issues/16033): lỗi *chỉ* tái hiện
+khi `model_context_window` **và** `model_auto_compact_token_limit` được đặt
+tường minh; bỏ cả hai thì nén chạy đúng.
+
+Báo trên `0.117.0` (03/2026); ta đang `0.145.0`, và nén đã được viết lại
+(06/2026). Nhưng đó **chính xác** là cấu hình bộ cài ta phát ra. Phải **kiểm**,
+không được suy là đã hết. → N-12.
+
+### 7d.6 Claude Code giải bài này bằng cơ chế khác
+
+`docs.claude.com/en/docs/claude-code/costs` nói nó tự làm **hai** việc: nén
+*và* **xoá kết quả tool cũ** khỏi ngữ cảnh (*"compaction or tool-result
+clearing"*). Không có knob nào tương đương `tool_output_token_limit`.
+
+⇒ Phía Claude **không cần thêm trường**. Hai biến môi trường đã đặt
+(`CLAUDE_CODE_MAX_CONTEXT_TOKENS`, `CLAUDE_CODE_MAX_OUTPUT_TOKENS`) là đủ, và
+Claude tự xử phần mà Codex bắt ta tự lo.
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
 |---|---|---|
 | N-1 | **Chưa deploy.** Máy B vẫn `-c 131072` | Cần cửa sổ deploy; một phiên khác đang dùng production. Thứ tự ở §7 D-5 |
 | ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **ĐÃ CHẠY 04/09** — và **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
-| **N-10** | 🔴 **MỘT kết quả tool có thể lớn hơn MỌI khoảng trống có thể chừa** | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng", không phải một hằng số đặt sai. |
+| ~~N-10~~ | 🟢 **ĐÓNG 04/09** (§7d.3). ~~MỘT kết quả tool có thể lớn hơn MỌI khoảng trống~~ | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng".<br><br>✅ **Nhưng nó có trần**, và ta đã tự vứt cái trần đó đi: `truncation_policy.limit` = cả cửa sổ, trong khi mặc định Codex là 2.500 token. Đặt lại `TOKEN_RA_TRAN // 2 = 16.384`. |
 | **N-11** | Codex thử lại **5 lần** một lỗi ta đã đánh dấu `retry: never`, rồi bỏ cuộc thay vì nén | Ngoài tầm sửa của ta, nhưng nó quyết định trải nghiệm thật. Đáng báo lên upstream. |
 | N-3 | **Lượt sinh dài ở cuối cửa sổ chưa đo sạch.** Lượt 160K/8192 trả `finish_reason: stop` sau 122 token vì đề bài chỉ đòi một dòng | Nó chứng minh request được NHẬN, không chứng minh decode còn khoẻ ở cuối cửa sổ. Đã sửa đề bài trong `bench_ctx.py` nhưng chưa chạy lại |
 | N-4 | **`qwen38-vision` chưa đo lại**, và cửa sổ công bố của nó (28.262) **hẹp hơn** một lượt sinh dài nhất (32.768) | Nó dành hơn nửa cửa sổ cho `TOKEN_RA_TRAN`. Không ngưỡng nén nào giữ được lời hứa ⇒ bộ cài bỏ hẳn trường đó. Sửa thật là đo lại vision hoặc cho nó trần ra riêng |
@@ -542,4 +668,5 @@ không định giả vờ ngược lại bằng cách hạ cửa sổ công bố
 | N-6 | **Hai bộ đo chất lượng đều hoà ở kịch trần** | Chúng loại trừ một suy giảm đủ lớn để đo thấy. Muốn nhạy hơn thì cần bộ đề khó hơn, và đó là một việc riêng |
 | ~~N-7~~ | ~~`LTT_PUBLIC_API_MAX_BODY_BYTES` thật trên production~~ | ✅ **ĐÓNG 03/09.** Biến **không** được đặt ở đâu cả: `AppEnvironmentExtra` của dịch vụ `LTTStudioWeb` liệt kê 71 biến và không có nó, và service env chính là thứ `2-cai-dat.ps1` nạp từ `app.env`. ⇒ production dùng mặc định **1 MiB**, đủ cho 747 KB cần thiết. *(Đọc TÊN biến từ registry, không đọc giá trị — không có bí mật nào bị in ra.)* |
 | **N-9** | ⚠️ **Hồ sơ chưa nạp thì vẫn phán xử bằng phép ước** | Sau 30 phút rảnh (`ttl: 1800`) model bị unload; một lượt lớn tới ngay lúc đó có thể ăn `413` oan. Không đóng bằng cách hỏi `/tokenize` — làm thế là đánh thức GPU 2,5 phút cho một yêu cầu đang định từ chối. Trong thực tế lượt đầu của một phiên là lượt nhỏ, nhưng *"trong thực tế"* không phải *"luôn luôn"*. |
+| **N-12** | ⚠️ **Chưa kiểm `#16033` trên `0.145.0`** | Có báo cáo rằng nén hỏng *khi và chỉ khi* `model_context_window` + `model_auto_compact_token_limit` được đặt tường minh — đúng cấu hình bộ cài ta. Báo trên `0.117.0`; nén đã viết lại 06/2026. Kiểm bằng cách chạy canary hai lần: có catalog và không catalog. |
 | **N-8** | 🔴 **Chốt "cây đứng yên" của gate KHÔNG soi `llm_gateway/` và `sdk/`** | Tìm ra 03/09. `gate._anh_chup_cay()` chỉ chụp `apps, platform_core, server, tools, tests, alembic, locale`. Chương trình này sửa **10** thư mục, và **năm** trong số đó (`docs`, `frontend`, `llm_gateway`, `sdk`, `ho_so_he_thong.txt`) nằm ngoài ảnh chụp.<br><br>⛔ Nghĩa là sửa mã **cổng máy B** hoặc **bộ cài khách** ngay giữa một lượt gate thì `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã không còn tồn tại. Cùng một họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`.<br><br>⭐ Và tôi phát hiện nó theo đường ngược: tôi sửa một tệp `docs/` giữa lượt gate, **tưởng** mình vừa làm mất lượt đó, rồi đọc `_anh_chup_cay()` để xác nhận — và thấy điều tệ hơn là thứ tôi lo. |

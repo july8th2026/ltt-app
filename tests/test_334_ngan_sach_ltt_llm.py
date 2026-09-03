@@ -502,6 +502,17 @@ class TestCamCliKhopNganSach:
         spec.loader.exec_module(mod)
         return mod
 
+    @staticmethod
+    def _sdk_cli():
+        import importlib.util
+        import pathlib
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "sdk_cli_doi_chieu", goc / "sdk" / "ltt_cai_dat_cli.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
     #: Bí danh công khai → id nội bộ, để đối chiếu **theo từng model**.
     _THEO_ALIAS = {"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}
 
@@ -551,7 +562,56 @@ class TestCamCliKhopNganSach:
                 assert m[truong] == mong, (
                     f"{m['slug']}.{truong} = {m[truong]} nhung cua so that cua "
                     f"model nay cho {mong}")
-            assert m["truncation_policy"]["limit"] == mong
+            # ⛔ KHONG kiem `truncation_policy` o day. No la mot ĐẠI LƯỢNG
+            #    KHÁC HẲN — trần cho MỘT kết quả tool, không phải cửa sổ — và
+            #    dòng cũ ở chỗ này (`limit == mong`) chính là thứ **cưỡng chế**
+            #    khuyết tật: nó bắt một kết quả tool được phép nuốt trọn ngữ
+            #    cảnh. Bất biến thật ở `test_tran_ket_qua_tool_*` bên dưới.
+
+    def test_tran_ket_qua_tool_KHONG_duoc_bang_ca_cua_so(self):
+        """🔴 PHÉP KIỂM CHO KHUYẾT TẬT 04/09 — và cho một lỗ hổng của Codex.
+
+        Bộ cài từng khai `truncation_policy = {"tokens", cả cửa sổ}`, tức
+        **một kết quả tool được phép nuốt trọn ngữ cảnh**. Mặc định của chính
+        Codex là `TruncationPolicyConfig::bytes(10_000)` với
+        `APPROX_BYTES_PER_TOKEN = 4` — tức 2.500 token. Ta rộng hơn 62 lần.
+
+        ⭐ VÌ SAO ĐIỀU ĐÓ NGUY HIỂM chứ không chỉ lãng phí: Codex kiểm ngưỡng
+           nén **giữa hai lượt**, KHÔNG kiểm giữa các lần gọi tool trong cùng
+           một lượt (openai/codex#16033 — 83 lệnh shell đưa ngữ cảnh 0 → 400K
+           trong một lượt; có TODO của chính họ thừa nhận). Khi một lượt phình
+           ra thì `truncation_policy` là **hàng phòng thủ duy nhất còn lại**.
+           Production đã ăn một kết quả tool **95.901 token trong một lượt**.
+
+        ⛔ Bất biến không phải "limit nhỏ hơn cửa sổ". Nó là: sau một kết quả
+           tool lớn nhất, **vẫn phải còn chỗ cho trọn một lượt sinh kế tiếp**.
+        """
+        cc = self._cam_cli()
+        import json
+        for m in json.loads(cc._catalog_codex())["models"]:
+            tp = m["truncation_policy"]
+            assert tp["mode"] == "tokens", (m["slug"], tp)
+            assert tp["limit"] != m["context_window"], (
+                f"{m['slug']}: tran ket qua tool = ca cua so ngu canh "
+                f"({tp['limit']}) — mot ket qua tool duy nhat nuot tron ngu "
+                f"canh, va Codex khong kiem nen GIUA cac lan goi tool")
+            khoang = m["context_window"] - m.get(
+                "auto_compact_token_limit", m["context_window"])
+            assert tp["limit"] * 2 <= max(khoang, ngan_sach.TOKEN_RA_TRAN), (
+                f"{m['slug']}: tran ket qua tool {tp['limit']} chiem qua nua "
+                f"khoang trong {khoang} — hai ket qua lien tiep trong mot luot "
+                f"la tran")
+
+    def test_hai_bo_cai_khai_CUNG_tran_ket_qua_tool(self):
+        """Hai bộ cài là hai tệp; một tệp được sửa còn tệp kia thì không, đó là
+        cách khuyết tật vision đã sống nhiều ngày."""
+        import json
+        cc, sdk = self._cam_cli(), self._sdk_cli()
+        a = {m["slug"]: m["truncation_policy"]
+             for m in json.loads(cc._catalog_codex())["models"]}
+        b = {m["slug"]: m["truncation_policy"]
+             for m in json.loads(sdk._catalog())["models"]}
+        assert a == b, f"cam_cli {a} != sdk {b}"
 
     def test_nguong_nen_chua_TRON_mot_luot_sinh_dai_nhat(self):
         """🔴 ĐÂY LÀ PHÉP KIỂM CHO ĐÚNG LỖI PRODUCTION 03/09.

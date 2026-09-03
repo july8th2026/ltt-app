@@ -132,6 +132,30 @@ TOKEN_RA_TRAN = 32768
 #:    da an mot `413` o 101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
+#:
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
 #: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. Ban truoc cua tep nay khai **cung mot
@@ -527,7 +551,7 @@ def _catalog_codex() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": cua_so},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
             "context_window": cua_so,

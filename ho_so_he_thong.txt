@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:0e073d92ee83f9ba8660f72a21dfe326ce9c69f173f14f9246d1ff9eaa5f705a
+Fingerprint   : sha256:298d91ab4cae5d038806a6f19203e31d688aecb4be604c1426c5769934f6825f
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3275,7 +3275,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16074022 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16080390 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -148260,7 +148260,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=de74f0ba362e4eae533f5d6ef79a2b10e3994d90e7236079f1dbf26177544a96 BYTES=17085 LINES=388
+SHA256=130c04b5623ea61ef1f06e63e2fd623e5f5054f8a8046b9f40f5b6a870f084ab BYTES=18507 LINES=412
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -148329,6 +148329,30 @@ TOKEN_RA_TRAN = 32768
 #:    101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
+#:
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
 #: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
 #:
 #: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
@@ -148391,7 +148415,7 @@ def _catalog() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": cua_so},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
             "context_window": cua_so,
@@ -257016,7 +257040,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=4c71b6ae0daa3701113c53a05b058caf3be5c419f12cbcf6f49addcf483c092c BYTES=43948 LINES=849
+SHA256=ccc0168d44634ad42c3aa23262a2e41178ae734d68aed1e0902d835b07605efe BYTES=47472 LINES=909
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -257522,6 +257546,17 @@ class TestCamCliKhopNganSach:
         spec.loader.exec_module(mod)
         return mod
 
+    @staticmethod
+    def _sdk_cli():
+        import importlib.util
+        import pathlib
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "sdk_cli_doi_chieu", goc / "sdk" / "ltt_cai_dat_cli.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
     #: Bí danh công khai → id nội bộ, để đối chiếu **theo từng model**.
     _THEO_ALIAS = {"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}
 
@@ -257571,7 +257606,56 @@ class TestCamCliKhopNganSach:
                 assert m[truong] == mong, (
                     f"{m['slug']}.{truong} = {m[truong]} nhung cua so that cua "
                     f"model nay cho {mong}")
-            assert m["truncation_policy"]["limit"] == mong
+            # ⛔ KHONG kiem `truncation_policy` o day. No la mot ĐẠI LƯỢNG
+            #    KHÁC HẲN — trần cho MỘT kết quả tool, không phải cửa sổ — và
+            #    dòng cũ ở chỗ này (`limit == mong`) chính là thứ **cưỡng chế**
+            #    khuyết tật: nó bắt một kết quả tool được phép nuốt trọn ngữ
+            #    cảnh. Bất biến thật ở `test_tran_ket_qua_tool_*` bên dưới.
+
+    def test_tran_ket_qua_tool_KHONG_duoc_bang_ca_cua_so(self):
+        """🔴 PHÉP KIỂM CHO KHUYẾT TẬT 04/09 — và cho một lỗ hổng của Codex.
+
+        Bộ cài từng khai `truncation_policy = {"tokens", cả cửa sổ}`, tức
+        **một kết quả tool được phép nuốt trọn ngữ cảnh**. Mặc định của chính
+        Codex là `TruncationPolicyConfig::bytes(10_000)` với
+        `APPROX_BYTES_PER_TOKEN = 4` — tức 2.500 token. Ta rộng hơn 62 lần.
+
+        ⭐ VÌ SAO ĐIỀU ĐÓ NGUY HIỂM chứ không chỉ lãng phí: Codex kiểm ngưỡng
+           nén **giữa hai lượt**, KHÔNG kiểm giữa các lần gọi tool trong cùng
+           một lượt (openai/codex#16033 — 83 lệnh shell đưa ngữ cảnh 0 → 400K
+           trong một lượt; có TODO của chính họ thừa nhận). Khi một lượt phình
+           ra thì `truncation_policy` là **hàng phòng thủ duy nhất còn lại**.
+           Production đã ăn một kết quả tool **95.901 token trong một lượt**.
+
+        ⛔ Bất biến không phải "limit nhỏ hơn cửa sổ". Nó là: sau một kết quả
+           tool lớn nhất, **vẫn phải còn chỗ cho trọn một lượt sinh kế tiếp**.
+        """
+        cc = self._cam_cli()
+        import json
+        for m in json.loads(cc._catalog_codex())["models"]:
+            tp = m["truncation_policy"]
+            assert tp["mode"] == "tokens", (m["slug"], tp)
+            assert tp["limit"] != m["context_window"], (
+                f"{m['slug']}: tran ket qua tool = ca cua so ngu canh "
+                f"({tp['limit']}) — mot ket qua tool duy nhat nuot tron ngu "
+                f"canh, va Codex khong kiem nen GIUA cac lan goi tool")
+            khoang = m["context_window"] - m.get(
+                "auto_compact_token_limit", m["context_window"])
+            assert tp["limit"] * 2 <= max(khoang, ngan_sach.TOKEN_RA_TRAN), (
+                f"{m['slug']}: tran ket qua tool {tp['limit']} chiem qua nua "
+                f"khoang trong {khoang} — hai ket qua lien tiep trong mot luot "
+                f"la tran")
+
+    def test_hai_bo_cai_khai_CUNG_tran_ket_qua_tool(self):
+        """Hai bộ cài là hai tệp; một tệp được sửa còn tệp kia thì không, đó là
+        cách khuyết tật vision đã sống nhiều ngày."""
+        import json
+        cc, sdk = self._cam_cli(), self._sdk_cli()
+        a = {m["slug"]: m["truncation_policy"]
+             for m in json.loads(cc._catalog_codex())["models"]}
+        b = {m["slug"]: m["truncation_policy"]
+             for m in json.loads(sdk._catalog())["models"]}
+        assert a == b, f"cam_cli {a} != sdk {b}"
 
     def test_nguong_nen_chua_TRON_mot_luot_sinh_dai_nhat(self):
         """🔴 ĐÂY LÀ PHÉP KIỂM CHO ĐÚNG LỖI PRODUCTION 03/09.
@@ -293258,7 +293342,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=8887174bc663998207ce5171c278da1a9dca79f28a17490ad52569efc22970f2 BYTES=93982 LINES=2107
+SHA256=8ce569609e189d1fbff3f019aa3457552c514040c25584245dd35ee65e6477e2 BYTES=95404 LINES=2131
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -293393,6 +293477,30 @@ TOKEN_RA_TRAN = 32768
 #:    Voi 0,8 thi khoang trong chi con 25.412 < 32.768 — thieu, va production
 #:    da an mot `413` o 101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
+
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
+#:
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
 
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
@@ -293789,7 +293897,7 @@ def _catalog_codex() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": cua_so},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
             "context_window": cua_so,
