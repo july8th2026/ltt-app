@@ -76,14 +76,53 @@ nguồn `ConnectionReset` ngẫu nhiên, vì llama-swap giết lượt đang ch�
 
 Trần 169.984 nằm **bên trong** vùng đã chạy thật (179.902 token).
 
-### Còn tồn đọng
+### Deploy — ĐÃ LÊN PRODUCTION 2026-09-03 22:0x–22:26
 
-- **Chưa deploy.** Cần cửa sổ deploy chung với phiên `lttchat`.
+Thứ tự ba bước, **không hoán vị được** (đảo 1 và 2 là cắt ngữ cảnh im lặng):
+
+| # | Việc | Bằng chứng |
+|---|---|---|
+| 1 | `llama-swap.yaml` → `-c 204800` + `Restart-Service LTTLlamaSwap` | `llama-server /slots` → **`n_ctx = 204800`** (tiến trình thật, không phải tệp trên đĩa) |
+| 2 | `deploy.ps1 -BoQuaVenv` → mã cổng + `gateway.env` 169984 + restart gateway | 34 tệp hash khớp hai bên · `/health` → `input_tokens: 169984` |
+| 3 | Máy A: gộp trunk (ff-only → `dc18b58`) rồi `deploy_nang_quyen.ps1` | **`EXITCODE=0`** lúc 22:26:13 · bốn dịch vụ Running · `status=ready` |
+
+Nghiệm thu sau deploy — hai nguồn độc lập khớp nhau:
+
+```
+may A (C:\LTTPlatform\app)   204.800 / 169.984 / 156.385 / 123.617 · vision 28.262
+may B (/health + /slots)     n_ctx 204.800 · input 169.984 · output 32.768
+```
+
+Và **trên URL công khai qua Cloudflare** (quy tắc 5b, không chỉ loopback):
+`https://app.lttstudios.com/huong-dan` render đủ năm con số, kiểm bằng trình
+duyệt thật, **0 lỗi console**.
+
+⛔ Trước khi deploy máy A phải **gộp trunk**: `git log HEAD..admin-mvp-v3` ra 6
+commit của phiên `lttchat`, trong đó có bốn khuyết tật ảnh họ vừa deploy lúc
+21:48. `setup/2-cai-dat.ps1` **xoá và thay toàn bộ** `C:\LTTPlatform\app`, nên
+deploy từ nhánh chưa gộp là xoá sạch chúng.
+
+Đường lùi: máy A `C:\LTTPlatform\app.previous`; máy B
+`H:\LTT_LLM\releases\auto-20260903-220242` + `*.truoc-200k-20260903-220051`.
+
+### Còn tồn đọng
 - Canary Codex/Claude **phiên dài với khoá thật** chưa chạy (thiếu khoá; bộ kiểm
-  đọc tệp khoá bị chặn ở phiên này).
+  đọc tệp khoá bị chặn ở phiên này). Canary **cấu hình** thì đã chạy:
+  `codex-cli 0.145.0` nhận catalog mới, hết cảnh báo metadata.
 - `qwen38-vision` vẫn 65.536, và cửa sổ công bố của nó (28.262) **hẹp hơn** một
   lượt sinh dài nhất ⇒ không có ngưỡng nén nào giữ được lời hứa cho nó.
-- `deploy.ps1` vẫn **không** restart `LTTLlamaSwap` (D-03-5 của audit 31/08).
+- `deploy.ps1` vẫn **không** restart `LTTLlamaSwap` (D-03-5 của audit 31/08) —
+  nay nó *phát hiện và cảnh báo*, nhưng cảnh báo chỉ so **thời điểm khởi động
+  tiến trình với hiện tại**, không so nội dung tệp. Nên nó báo động giả khi ta
+  vừa restart đúng bản mới, và **không** phân biệt được "chạy bản cũ" với
+  "chạy bản mới từ một phút trước". Đừng tin nó thay cho `/slots`.
+- 🔴 **N-8:** chốt `CAY DA DOI TRONG LUC CHAY` của gate chỉ soi bảy thư mục và
+  **không** soi `llm_gateway/`, `sdk/`, `frontend/`, `docs/`. Sửa mã cổng máy B
+  hay bộ cài khách giữa một lượt gate thì `RESULT: PASS` nói về một cây đã không
+  còn tồn tại. Chi tiết ở `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md` §8.
+- Nhánh và trunk **chưa push lên `origin`**: `origin/admin-mvp-v3` còn ở
+  `dac2406` trong khi local đã `dc18b58`. Nhiều phiên cùng đóng góp vào khoảng
+  cách đó, nên push là một quyết định chung, không phải của riêng phiên này.
 
 ## 2026-09-03 (chiều) — H43 ChatLTT: Phase 03–08a (text · ảnh · tiếng · catalog · dữ liệu · app)
 
