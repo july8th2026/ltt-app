@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:724df8140c1310549935c503e32e775e9690c40d1609e72a6546e664307d2c29
+Fingerprint   : sha256:b0d548fa48b2182794c1eade6183e5529dcdfe44710674e2b0d74a391cfe9dce
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3275,7 +3275,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16095077 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16098299 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -135512,7 +135512,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=5c60dac1466ee190ac9c3174a708960a68885c48c5566c3fb3fb61fc2b8e19ea BYTES=47918 LINES=989
+SHA256=a0cf9503246224f833a9078f559b108bd26f182a43c9b0b1d6f395708fdd2082 BYTES=50102 LINES=1021
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -136076,6 +136076,17 @@ TOKEN_RA_TRAN = 32_768
 #: cùng lý do và cùng cách đối chiếu như hai con số trên.
 NEN_CLIENT = 123_617
 
+#: Trần cho **một** kết quả công cụ, công bố vì nó đổi hành vi thấy được.
+#:
+#: ⛔ Không phải một chi tiết nội bộ: khách sẽ **thấy** kết quả một lệnh dài
+#:    bị cắt ở giữa, và nếu trang này không nói trước thì họ báo đó là lỗi.
+#:
+#: 🔴 Và nó là hàng phòng thủ duy nhất chống một sự thật của cả hai client:
+#:    chúng chỉ kiểm ngưỡng nén **giữa hai lượt**, không kiểm giữa các lần
+#:    gọi công cụ trong cùng một lượt. Một kết quả không có trần thì một
+#:    lượt duy nhất vượt được mọi khoảng dự trữ.
+TRAN_KET_QUA_TOOL = 16_384
+
 
 #: Năm con số của một hội thoại dài, và **vì sao chúng khác nhau**.
 #:
@@ -136107,6 +136118,11 @@ NGU_CANH_NAM_SO = (
      "client only checks between turns."),
     ("Max output", f"{TOKEN_RA_TRAN:,}",
      "The most one answer can generate."),
+    ("One tool result", f"{TRAN_KET_QUA_TOOL:,}",
+     "The most a single command or tool result adds to the conversation. "
+     "Longer output is trimmed in the middle, keeping the start and the end. "
+     "Both clients check the compaction threshold only between turns, so "
+     "without this ceiling one turn can outgrow every reserve."),
 )
 
 #: Vì sao một yêu cầu ăn `413`, và **cách sửa đúng chỗ**.
@@ -136120,6 +136136,12 @@ LOI_413 = (
      "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` assumes 200,000 and says so in the "
      "session. Run our `cam` tool (or apply the manual config below) and start "
      "a new session — configuration is read at startup."),
+    ("Claude Code: one variable is not enough",
+     "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` corrects the window Claude Code "
+     "assumes, but it does not set the compaction threshold. Without "
+     "`CLAUDE_CODE_AUTO_COMPACT_WINDOW`, Claude Code compacts only when the "
+     "conversation reaches that window — 156,385 — which leaves less room "
+     "than one full answer (32,768) before our hard limit. Set both."),
     ("Your client compacts, but too late",
      "If you configured the window by hand, check the compaction threshold "
      f"too: it must sit at least {TOKEN_RA_TRAN:,} tokens below the advertised "
@@ -136219,8 +136241,16 @@ def claude_code_env(base_url: str) -> str:
         f'$env:ANTHROPIC_MODEL = "{CLI_MODEL}"\n'
         f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work\n'
         f'# Claude Code does not know `{CLI_MODEL}`, so it ASSUMES a 200,000\n'
-        f'# token window: it never compacts in time and you hit 413 mid-chat.\n'
+        f'# token window and never compacts in time. All four lines matter:\n'
+        f'#   MAX_CONTEXT_TOKENS    corrects the window it assumes\n'
+        f'#   AUTO_COMPACT_WINDOW   sets WHEN it compacts. Without it Claude\n'
+        f'#                         compacts only AT the window above, leaving\n'
+        f'#                         less room than one full answer.\n'
+        f'#   MAX_MCP_OUTPUT_TOKENS caps one MCP result: its default, 25000,\n'
+        f'#                         can outgrow that room in a single turn.\n'
         f'$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "{CUA_SO_CONG_BO}"\n'
+        f'$env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "{NEN_CLIENT}"\n'
+        f'$env:MAX_MCP_OUTPUT_TOKENS = "{TRAN_KET_QUA_TOOL}"\n'
         f'$env:CLAUDE_CODE_MAX_OUTPUT_TOKENS = "{TOKEN_RA_TRAN}"'
     )
 
@@ -136236,6 +136266,8 @@ def claude_code_settings(base_url: str) -> str:
             # Without these two Claude Code assumes a 200,000-token window,
             # never compacts in time, and you hit 413 mid-conversation.
             "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_CONG_BO),
+            "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(NEN_CLIENT),
+            "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
             "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
         }
     })
@@ -176234,7 +176266,7 @@ SHA256=6755102e1a78b495bbe6024bb5438274ce33a83439bc7eb4c45c56dc201730eb BYTES=15
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/huong_dan.html
-SHA256=a5d1a73c2c32ff778c6523d2e6cc9fdc6896c351031a2fe389ca49a5079eec94 BYTES=10610 LINES=176
+SHA256=f112400a7c18afbb714f11dd130988447dbc0a81f15100f13bc3cf9bd8265337 BYTES=10610 LINES=176
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Hướng dẫn cắm API") }} · LTT AI Studio{% endblock %}
@@ -176328,7 +176360,7 @@ SHA256=a5d1a73c2c32ff778c6523d2e6cc9fdc6896c351031a2fe389ca49a5079eec94 BYTES=10
    ⛔ Năm con số phải đứng RIÊNG. Gộp hai cái bất kỳ là dựng lại đúng lớp lỗi
       dự án này đã mắc bốn lần. #}
 <div class="card" id="ngu-canh">
-  <h2 style="margin-top:0;">{{ _("Hội thoại dài: năm con số, và vì sao chúng khác nhau") }}</h2>
+  <h2 style="margin-top:0;">{{ _("Hội thoại dài: sáu con số, và vì sao chúng khác nhau") }}</h2>
   <p>{{ _("Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn.") }}</p>
   <table class="table">
     <thead><tr>
@@ -257107,7 +257139,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=5527468573302edb20ecaea78e90d725912093b934152b94e432fd86dc106d6d BYTES=55527 LINES=1046
+SHA256=fe3c7134aabd96bbfdbf0321147dc97a94c2b4e246766ac0fd662930731d024e BYTES=56565 LINES=1061
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -257932,6 +257964,11 @@ class TestExamplesKhopNganSach:
 
         assert examples.CUA_SO_CONG_BO == ngan_sach.CONG_BO_CHO_CLIENT
         assert examples.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+        # ⛔ HAI DONG NAY THIEU CHO TOI 04/09. `NEN_CLIENT` la con so trang
+        #    cong khai bao khach dat lam nguong nen — no troi khoi nguon chan
+        #    ly thi trang day khach mot nguong sai, va khong gi keu len.
+        assert examples.NEN_CLIENT == ngan_sach.NEN_CHO_CLIENT
+        assert examples.TRAN_KET_QUA_TOOL == ngan_sach.TOKEN_RA_TRAN // 2
 
     def test_KHONG_con_so_ngu_canh_go_tay_nao_trong_doan_ma_mau(self):
         """Bánh cóc: mọi đoạn khách chép phải sinh ra từ hằng, không gõ."""
@@ -257950,6 +257987,16 @@ class TestExamplesKhopNganSach:
         ])
         cho_phep = {str(ngan_sach.CONG_BO_CHO_CLIENT),
                     str(ngan_sach.TOKEN_RA_TRAN),
+                    # Hai con so cua ban 1.6.0 — VAN suy tu SSOT, khong go tay.
+                    str(ngan_sach.NEN_CHO_CLIENT),
+                    str(ngan_sach.TOKEN_RA_TRAN // 2),
+                    # ⚠️ `25000` la HANG SO CUA CLAUDE, khong phai cua ta:
+                    #    mac dinh `MAX_MCP_OUTPUT_TOKENS`, doc 04/09 tu
+                    #    `code.claude.com/docs/en/env-vars.md`. No duoc phep
+                    #    xuat hien vi no khong the troi theo SSOT cua ta —
+                    #    nhung no CO THE troi theo Anthropic, nen neu doan mau
+                    #    con nhac no thi phai doi chieu lai tai lieu.
+                    "25000",
                     "600000",           # stream_idle_timeout_ms
                     "200",              # nhac trong chu thich: "200,000 token"
                     "000", "0", "1", "145", "0.145", "2"}

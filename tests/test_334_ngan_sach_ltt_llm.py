@@ -821,6 +821,11 @@ class TestExamplesKhopNganSach:
 
         assert examples.CUA_SO_CONG_BO == ngan_sach.CONG_BO_CHO_CLIENT
         assert examples.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+        # ⛔ HAI DONG NAY THIEU CHO TOI 04/09. `NEN_CLIENT` la con so trang
+        #    cong khai bao khach dat lam nguong nen — no troi khoi nguon chan
+        #    ly thi trang day khach mot nguong sai, va khong gi keu len.
+        assert examples.NEN_CLIENT == ngan_sach.NEN_CHO_CLIENT
+        assert examples.TRAN_KET_QUA_TOOL == ngan_sach.TOKEN_RA_TRAN // 2
 
     def test_KHONG_con_so_ngu_canh_go_tay_nao_trong_doan_ma_mau(self):
         """Bánh cóc: mọi đoạn khách chép phải sinh ra từ hằng, không gõ."""
@@ -839,6 +844,16 @@ class TestExamplesKhopNganSach:
         ])
         cho_phep = {str(ngan_sach.CONG_BO_CHO_CLIENT),
                     str(ngan_sach.TOKEN_RA_TRAN),
+                    # Hai con so cua ban 1.6.0 — VAN suy tu SSOT, khong go tay.
+                    str(ngan_sach.NEN_CHO_CLIENT),
+                    str(ngan_sach.TOKEN_RA_TRAN // 2),
+                    # ⚠️ `25000` la HANG SO CUA CLAUDE, khong phai cua ta:
+                    #    mac dinh `MAX_MCP_OUTPUT_TOKENS`, doc 04/09 tu
+                    #    `code.claude.com/docs/en/env-vars.md`. No duoc phep
+                    #    xuat hien vi no khong the troi theo SSOT cua ta —
+                    #    nhung no CO THE troi theo Anthropic, nen neu doan mau
+                    #    con nhac no thi phai doi chieu lai tai lieu.
+                    "25000",
                     "600000",           # stream_idle_timeout_ms
                     "200",              # nhac trong chu thich: "200,000 token"
                     "000", "0", "1", "145", "0.145", "2"}
