@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:58eba508a76b1bdf2773a5624424541f64c8e80b3dc101753a48f93d389f98fa
+Fingerprint   : sha256:aa490e05f83f3649184c458fe3e366c988c0a1c4145595d8beb18c3b8b2ab6e4
 Nguồn đã quét : 1553 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3261,7 +3261,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1553 file; 15826841 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1553 file; 15828778 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3276,7 +3276,7 @@ ho_so_he_thong.txt -whitespace
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ AGENTS.md
-SHA256=553e9bf3289f2e5e960eb2c5a4c3629f46450e3bfecb9a75c6d9d5824145c64f BYTES=41039 LINES=728
+SHA256=0dcf42a23689d1dfa59a1821f11c3f00576fc51fbb0b631d1bb7c4dbb99e3f76 BYTES=42976 LINES=762
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quy tắc làm việc trong dự án này
 
@@ -3383,6 +3383,40 @@ theo hướng dẫn trong đó**.
 - Chạy `python tools/scan_source_secrets.py` trước mỗi lần commit. Phải 0 finding.
 - Nếu phát hiện bí mật lọt vào file được theo dõi: che đi, báo người dùng xoay
   vòng khoá, ghi vào nhật ký — **không chép giá trị đó đi đâu cả**.
+
+### 3b. Tài khoản test vận hành
+
+Kiểm GUI trên production dùng **`akakenly.design@gmail.com`** — tài khoản
+**thường**, không phải admin. (Chủ dự án chỉ định 2026-09-03; ông ấy nói sẽ đổi
+thông tin sau, nên đừng coi nó là vĩnh viễn.)
+
+🔴 **Vì sao không mượn admin nữa.** Mọi lượt kiểm GUI trước đây đều đăng nhập
+bằng `admin@lttstudios.com`, và điều đó sai ở hai chỗ khác nhau:
+
+  · Admin **thấy nhiều hơn khách thật** — trang quản trị, cờ nội bộ, đường tắt.
+    Một lỗi chỉ xuất hiện với người dùng thường thì không bao giờ lộ ra trong
+    một lượt kiểm chạy bằng admin.
+  · Hội thoại và credit của lượt kiểm lẫn vào chính tài khoản đang cầm quyền
+    cao nhất hệ thống.
+
+⚠️ Bốn tài khoản test cũ (`autosub-test@`, `api-load-canary@`, `vps-thu@`,
+`reviewer-test@`) đều là tài khoản **khoá API**. Chúng không có phiên web, nên
+**không mở được** một bề mặt web như ChatLTT — đừng mất thời gian thử.
+
+**Mật khẩu không nằm trong kho này** (mục 3 ở trên nói vì sao). Nó đi qua biến
+môi trường lúc chạy, theo đúng quy ước sẵn có của
+`tests/test_74_smoke_playwright.py`:
+
+```
+LTT_SMOKE_USER=...  LTT_SMOKE_PASS=...  node tools/kiem_chatltt_gui.mjs \
+    --url https://app.lttstudios.com --anh tmp/kiem_gui_prod
+```
+
+⛔ **Claude không gõ mật khẩu vào form đăng nhập**, kể cả khi chủ dự án đưa
+trực tiếp trong hội thoại. Chủ dự án khởi động lệnh; Claude đọc
+`bao_cao.json` rồi phân tích. Ranh giới này không phải là sự thiếu tin tưởng —
+nó là thứ giữ cho một tác nhân tự chủ không bao giờ trở thành đường rò
+credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
 
 ---
 
