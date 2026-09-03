@@ -24,6 +24,13 @@ from tests.fixtures import asv_media as fx
 from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
     _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
 
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
+
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
 
 
@@ -291,20 +298,35 @@ def test_KHONG_giai_doan_nao_tu_chon_card_GPU():
 
     Chot bang AST tren MOI module cua app: mot cho gan `CUDA_VISIBLE_DEVICES`
     truc tiep la mot handler dang tu chia GPU sau lung nen tang.
+
+    🔴 **Truoc pha 13 o day co mot BAN SAO rieng cua phep quet, va ban sao do
+       chua hoc bai ma ban goc da hoc.**
+
+       `test_401._vi_pham` tung la mot phep quet chuoi con, va no da bao dong
+       tren chinh nhung dong van giai thich luat — nen no duoc sua thanh doc AST
+       va **mien tru docstring**, kem mot doan ghi ro vi sao: *"mot guard bao loi
+       tren doan van giai thich chinh no day nguoi sau xoa loi giai thich di, va
+       nhu the con te hon la khong co guard"*.
+
+       Ban sao o day thi khong: no duyet MOI `ast.Constant` la chuoi — ke ca
+       docstring. Pha 13 viet mot doan giai thich vi sao tien trinh con **khong
+       duoc** doc bien ghim card, va ban sao nay bao dong tren dung doan do.
+
+    ⭐ Nen cach sua khong phai noi luat ra, ma la **bo ban sao**: mot luat, mot
+       cho cuong che. Hai ban sao cua cung mot luat thi som muon chi mot ban
+       duoc sua.
     """
-    import ast
     import pathlib
 
     from apps.auto_scan_video import loi as _loi
+    from tests.test_401_asv_ranh_gioi_va_artifact import _CAM_GPU, _vi_pham
 
     goc = pathlib.Path(_loi.__file__).resolve().parent
     xau: list[str] = []
     for tep in sorted(goc.glob("*.py")):
-        cay = ast.parse(tep.read_text(encoding="utf-8"))
-        for nut in ast.walk(cay):
-            if isinstance(nut, ast.Constant) and isinstance(nut.value, str):
-                if "CUDA_VISIBLE_DEVICES" in nut.value:
-                    xau.append(f"{tep.name}:{nut.lineno}")
+        con = _vi_pham(tep.read_text(encoding="utf-8"), _CAM_GPU)
+        if con:
+            xau.append(f"{tep.name}: {con}")
     assert xau == [], (
         f"app tu dat CUDA_VISIBLE_DEVICES o {xau} — card do nen tang cap qua "
         f"`ctx.gpu_env()`, handler khong bao gio tu chon (I11/O6)")

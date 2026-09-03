@@ -53,6 +53,7 @@ from pathlib import Path
 from platform_core import media
 from platform_core.i18n import _ as _t
 
+from .demucs_runner import ThieuCard
 from .nhap_media import DaHuy, MediaError, _chay, phien_ban_ffmpeg
 
 #: Dang vao cua htdemucs. 44,1 kHz stereo la dang model duoc huan luyen tren.
@@ -97,16 +98,23 @@ def rut_ban_day_du(nguon: str, dich: str, *, hoi_huy=None,
 
 
 def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
-               hoi_huy=None, timeout: int = 5400) -> dict:
+               buoc_gpu: bool = False, hoi_huy=None, timeout: int = 5400) -> dict:
     """Chay demucs trong TIEN TRINH CON. Tra ve bang duong dan cac stem.
 
     🔑 `gpu_env` phai la ket qua cua `JobContext.gpu_env()` — card do **nen tang**
        cap qua `platform_core.gpu_lease`. Handler khong bao gio tu chon card
        (I11/O6); no chi chuyen tiep moi truong da duoc cap xuong tien trinh con.
+
+    🔑 `buoc_gpu=True` nghia la nen tang DA giu cho mot card. Khi do tien trinh
+       con **khong duoc** tut xuong CPU im lang: xem `demucs_runner.chon_thiet_bi`
+       ve ly do mot lan tut xuong nhu the tac ca hang doi chu khong chi lam cham
+       mot job.
     """
     Path(thu_muc_ra).mkdir(parents=True, exist_ok=True)
     cmd = [sys.executable, "-m", "apps.auto_scan_video.demucs_runner",
            vao_wav, thu_muc_ra]
+    if buoc_gpu:
+        cmd.append("--buoc-gpu")
 
     import os
     moi_truong = dict(gpu_env) if gpu_env else dict(os.environ)
@@ -129,6 +137,19 @@ def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
         raise MediaError(_t('Tách nguồn tiếng quá hạn.')) from exc
 
     if r.returncode != 0:
+        # ⭐ Doc stdout TRUOC khi dung ma thoat de dung mot loi chung: tien trinh
+        #    con phan biet duoc "cap card hong" voi "tieng hong", va san hai thu
+        #    do thanh mot `MediaError` la vut di chinh cai phan biet ay. Mot ben
+        #    nen THU LAI (card khac co the chay); ben kia thu lai bao nhieu lan
+        #    cung the.
+        try:
+            bao = json.loads((r.stdout or b"").decode("utf-8", "replace")
+                             .strip().splitlines()[-1])
+        except (json.JSONDecodeError, IndexError):
+            bao = {}
+        if bao.get("thieu_card"):
+            raise ThieuCard(_t('Nền tảng đã cấp card nhưng tiến trình tách '
+                               'không thấy GPU.'))
         loi = (r.stderr or b"").decode("utf-8", "replace")[-400:]
         raise MediaError(_t('Tách nguồn tiếng thất bại: {loi}').format(loi=loi))
     try:

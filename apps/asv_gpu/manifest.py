@@ -10,11 +10,37 @@ Nen tang dung con so nay lam **san de xep cho**: no loai cac card khong con du
 trong, roi giu cho nguyen tu qua `platform_core.gpu_lease`. Khai thieu thi job
 bi xep vao card chat va OOM; khai thua thi job cho lau hon can thiet.
 
-⚠️ Hai so duoi la **uoc luong tam cua pha 05**, va chung phai duoc do lai truoc
-   khi engine that chay (pha 09/10). Kho nay co mot luat rieng cho viec do —
-   *"CHUA DO THI KHONG CHAY"* — va `render_gateway/ngan_sach.py` tu choi moi cau
-   hinh vuot muc da do **truoc khi cham GPU**. Dat mot con so cho co roi quen
-   la dung cach de mot lo dai chet giua chung.
+✅ **`asv_gpu.audio_prepare` DA DUOC DO** — pha 13, ngay 03/09, tren venv san
+   pham (`torch 2.11.0+cu128`, RTX 5060 Ti 16 GiB), qua nam do dai tu 60 giay
+   den 7.200 giay (dung tran `nhap_media.THOI_LUONG_TOI_DA_S`):
+
+     VRAM dinh do duoc: 1.089 - 1.673 MiB, **khong doi theo do dai dau vao**.
+
+   Khai **2.200** = dinh cao nhat do duoc + ~30% du. Truoc pha 13 cho nay khai
+   4.000 — mot uoc luong chua do, va no thua 2,4 lan, tuc moi lan xep cho lai
+   loai oan nhung card con thua 2 GiB.
+
+⚠️ `asv_gpu.transcribe` VAN chua do — no muon con so cua `autosubvideo.transcribe`.
+
+## 🔴 Va cai KHONG khai duoc o day moi la cai nguy hiem
+
+Pha 13 do ra rang voi demucs, **VRAM la thu KHONG tang theo do dai** — RAM moi
+tang, va tang tuyen tinh:
+
+    truoc pha 13:  RSS ~ 1.253 MB + 3,35 MB moi giay tieng
+                   => mot video 120 phut (HOP LE) can ~24,8 GiB tren mot may
+                      co 31,9 GiB va ~17,8 GiB trong khi dang phuc vu khach
+
+`AppManifest` co `gpu_vram_mb` nhung **khong co truong nao de khai RAM**. Tuc
+tai nguyen duy nhat that su tang theo dau vao la tai nguyen nen tang khong nhin
+thay. Pha 13 xu ly bang cach **chan muc tieu thu trong app** — tach theo khoi,
+xem `demucs_runner.KHOI_GIAY` — nen sau pha 13 RSS phang o ~2,6 GiB o MOI do
+dai (do that: 2.246 MB o 600 s, 2.605 MB o 3.600 s, 2.591 MB o 7.200 s).
+
+⛔ Nhung do la **chua xu ly cai lo hong o hop dong**, chi la khong con di qua no.
+   Ghi ra day thay vi tu them mot truong vao `AppManifest`: sua nen tang nam
+   ngoai pham vi pha 13, va mot lo hong hop dong duoc va lang le trong mot app
+   thi app SAU se lai roi vao no.
 
    Tham chieu de so sanh, deu do that va ghi trong CLAUDE.md:
      `upscalevideo` quality  12.000 MB
@@ -62,7 +88,8 @@ MANIFEST = AppManifest(
     #: 4,3 giay tach. Tuc RTF ~1,4x thoi gian thuc tren CPU; do la ly do giai
     #: doan nay can lan GPU chu khong phai chay chung voi lan ffmpeg.
     gpu_vram_mb={
-        "asv_gpu.audio_prepare": 4000,   # htdemucs — CHUA DO
+        # ✅ DO THAT pha 13 (03/09): dinh 1.673 MiB, khong doi theo do dai.
+        "asv_gpu.audio_prepare": 2200,
         "asv_gpu.transcribe": 6000,      # theo `autosubvideo.transcribe` da do
     },
     max_runtime_s={

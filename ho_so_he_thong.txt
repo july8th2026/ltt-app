@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fdec3a50749c59f2436756e8fe1b55fefea3122e068aaf7353474e816f917844
-Nguồn đã quét : 1655 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:567d44071853d5049b85572f0cc88e8720fcaf94bddf6291d0033ecbe985091b
+Nguồn đã quét : 1656 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -96,7 +96,7 @@ Các lớp chính:
   HTTP routes=0 | table_prefix=- | manifest_error=-
   credit_cost=apps.asv_gpu.manifest._gia
   job_types=asv_gpu.audio_prepare, asv_gpu.transcribe
-  gpu_vram_mb=asv_gpu.audio_prepare:4000, asv_gpu.transcribe:6000
+  gpu_vram_mb=asv_gpu.audio_prepare:2200, asv_gpu.transcribe:6000
   Agent tools (0):
     - none
   File map:
@@ -1170,7 +1170,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (188 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (190 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1206,6 +1206,8 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_DANGKY_MIEN_TIN_CAY
 - LTT_DATABASE_URL
 - LTT_DATA_DIR
+- LTT_DEMUCS_DICH
+- LTT_DEMUCS_KHOI
 - LTT_DEMUCS_LUONG
 - LTT_DISPOSABLE_EXTRA
 - LTT_DNSMOS_DIR
@@ -1360,7 +1362,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (420 file pytest + 4 frontend)
+10. QUALITY GATES (421 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1713,6 +1715,7 @@ Test inventory:
 - tests/test_436_asv_v4_tach_canh.py
 - tests/test_437_asv_v4_hieu_canh.py
 - tests/test_438_asv_v4_ban_bien_tap.py
+- tests/test_439_asv_v4_am_thanh_tai_nguyen.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1807,8 +1810,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1655 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1255, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1656 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1256, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2891,7 +2894,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (440)
+[tests] (441)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3258,6 +3261,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - tests/test_436_asv_v4_tach_canh.py
 - tests/test_437_asv_v4_hieu_canh.py
 - tests/test_438_asv_v4_ban_bien_tap.py
+- tests/test_439_asv_v4_am_thanh_tai_nguyen.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3520,7 +3524,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1655 file; 17095747 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1656 file; 17155446 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -12241,7 +12245,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/asv_gpu/manifest.py
-SHA256=37e84b0871a7238140f5fb7c3d83d9589711a4b11cd5a074e5dbab6f822fe53d BYTES=3312 LINES=77
+SHA256=db4e03f5e6400d2ef899fd7648a4828c306d093444541519942fd244e296c2f5 BYTES=4658 LINES=104
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Executor AN cua Auto Scan Video — lan `gpu`.
 
@@ -12255,11 +12259,37 @@ Nen tang dung con so nay lam **san de xep cho**: no loai cac card khong con du
 trong, roi giu cho nguyen tu qua `platform_core.gpu_lease`. Khai thieu thi job
 bi xep vao card chat va OOM; khai thua thi job cho lau hon can thiet.
 
-⚠️ Hai so duoi la **uoc luong tam cua pha 05**, va chung phai duoc do lai truoc
-   khi engine that chay (pha 09/10). Kho nay co mot luat rieng cho viec do —
-   *"CHUA DO THI KHONG CHAY"* — va `render_gateway/ngan_sach.py` tu choi moi cau
-   hinh vuot muc da do **truoc khi cham GPU**. Dat mot con so cho co roi quen
-   la dung cach de mot lo dai chet giua chung.
+✅ **`asv_gpu.audio_prepare` DA DUOC DO** — pha 13, ngay 03/09, tren venv san
+   pham (`torch 2.11.0+cu128`, RTX 5060 Ti 16 GiB), qua nam do dai tu 60 giay
+   den 7.200 giay (dung tran `nhap_media.THOI_LUONG_TOI_DA_S`):
+
+     VRAM dinh do duoc: 1.089 - 1.673 MiB, **khong doi theo do dai dau vao**.
+
+   Khai **2.200** = dinh cao nhat do duoc + ~30% du. Truoc pha 13 cho nay khai
+   4.000 — mot uoc luong chua do, va no thua 2,4 lan, tuc moi lan xep cho lai
+   loai oan nhung card con thua 2 GiB.
+
+⚠️ `asv_gpu.transcribe` VAN chua do — no muon con so cua `autosubvideo.transcribe`.
+
+## 🔴 Va cai KHONG khai duoc o day moi la cai nguy hiem
+
+Pha 13 do ra rang voi demucs, **VRAM la thu KHONG tang theo do dai** — RAM moi
+tang, va tang tuyen tinh:
+
+    truoc pha 13:  RSS ~ 1.253 MB + 3,35 MB moi giay tieng
+                   => mot video 120 phut (HOP LE) can ~24,8 GiB tren mot may
+                      co 31,9 GiB va ~17,8 GiB trong khi dang phuc vu khach
+
+`AppManifest` co `gpu_vram_mb` nhung **khong co truong nao de khai RAM**. Tuc
+tai nguyen duy nhat that su tang theo dau vao la tai nguyen nen tang khong nhin
+thay. Pha 13 xu ly bang cach **chan muc tieu thu trong app** — tach theo khoi,
+xem `demucs_runner.KHOI_GIAY` — nen sau pha 13 RSS phang o ~2,6 GiB o MOI do
+dai (do that: 2.246 MB o 600 s, 2.605 MB o 3.600 s, 2.591 MB o 7.200 s).
+
+⛔ Nhung do la **chua xu ly cai lo hong o hop dong**, chi la khong con di qua no.
+   Ghi ra day thay vi tu them mot truong vao `AppManifest`: sua nen tang nam
+   ngoai pham vi pha 13, va mot lo hong hop dong duoc va lang le trong mot app
+   thi app SAU se lai roi vao no.
 
    Tham chieu de so sanh, deu do that va ghi trong CLAUDE.md:
      `upscalevideo` quality  12.000 MB
@@ -12307,7 +12337,8 @@ MANIFEST = AppManifest(
     #: 4,3 giay tach. Tuc RTF ~1,4x thoi gian thuc tren CPU; do la ly do giai
     #: doan nay can lan GPU chu khong phai chay chung voi lan ffmpeg.
     gpu_vram_mb={
-        "asv_gpu.audio_prepare": 4000,   # htdemucs — CHUA DO
+        # ✅ DO THAT pha 13 (03/09): dinh 1.673 MiB, khong doi theo do dai.
+        "asv_gpu.audio_prepare": 2200,
         "asv_gpu.transcribe": 6000,      # theo `autosubvideo.transcribe` da do
     },
     max_runtime_s={
@@ -14633,11 +14664,11 @@ def sang_json(ci: ChiMucCanh) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/demucs_runner.py
-SHA256=934dc5a99b545a2091edb7ef9e4ab12b6b5c8cc844de4abe55dd11d6973f1957 BYTES=7755 LINES=200
+SHA256=5d77bf9f6d722836d777302b1cefeeaeb0b174605bebf19b89ba7f673ef38f54 BYTES=26183 LINES=594
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Tien trinh con tach nguon tieng. Chay bang `python -m apps.auto_scan_video.demucs_runner`.
 
-    python -m apps.auto_scan_video.demucs_runner <vao.wav> <thu_muc_ra>
+    python -m apps.auto_scan_video.demucs_runner <vao.wav> <thu_muc_ra> [--buoc-gpu]
 
 ## Vi sao la TIEN TRINH CON chu khong phai mot lan goi ham
 
@@ -14685,7 +14716,11 @@ NGUON_MONG_DOI = ("drums", "bass", "other", "vocals")
 
 
 def doc_wav(duong: str):
-    """WAV PCM 16-bit -> (mang float32 [kenh, mau], tan_so). Khong dung torchaudio."""
+    """WAV PCM 16-bit -> (mang float32 [kenh, mau], tan_so). Khong dung torchaudio.
+
+    ⚠️ Ham nay nap CA TEP vao RAM. No con lai cho phep kiem va cho cac tep ngan;
+       duong chay that di qua `doc_khoi_wav` (xem `KHOI_GIAY`).
+    """
     import numpy as np
 
     with wave.open(duong, "rb") as f:
@@ -14714,6 +14749,169 @@ def ghi_wav(duong: str, mang, tan_so: int) -> None:
         f.setsampwidth(2)
         f.setframerate(int(tan_so))
         f.writeframes(i16.T.tobytes())
+
+
+def them_khung(f: wave.Wave_write, mang) -> None:
+    """Noi them mot khoi (kenh, mau) float32 vao mot WAV dang mo de ghi.
+
+    Cung phep kep bien do nhu `ghi_wav`, cung ly do. Tach ra thay vi goi lai
+    `ghi_wav`: `ghi_wav` **mo va dong** tep, nen goi no nhieu lan la ghi de,
+    khong phai ghi noi.
+    """
+    import numpy as np
+
+    x = np.clip(np.asarray(mang, dtype="float32"), -1.0, 1.0)
+    f.writeframes((x * 32767.0).astype("<i2").T.tobytes())
+
+
+def doc_khoi_wav(f: wave.Wave_read, tu: int, so_mau: int):
+    """Doc `so_mau` mau bat dau tu vi tri `tu` -> (kenh, mau) float32.
+
+    Doc theo khoi thay vi nap ca tep la ca ly do ton tai cua duong chay khoi:
+    xem ghi chu o `KHOI_GIAY`.
+    """
+    import numpy as np
+
+    kenh = f.getnchannels()
+    f.setpos(int(tu))
+    khung = f.readframes(int(so_mau))
+    mau = np.frombuffer(khung, dtype="<i2").astype("float32") / 32768.0
+    return mau.reshape(-1, kenh).T
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Tran BO NHO — thu that su tang theo do dai
+# ══════════════════════════════════════════════════════════════════════════════
+#
+#: 🔴 **Do that 03/09 tren venv san pham (torch 2.11.0+cu128, RTX 5060 Ti), bon
+#:    do dai, va ket qua lat nguoc dieu toi tuong truoc khi do.**
+#:
+#:    | tieng vao | thoi gian | VRAM dinh | RSS dinh |
+#:    |---|---|---|---|
+#:    |   60 s |  5,5 s | 1089 MiB | 1557 MB |
+#:    |  180 s |  9,2 s | 1089 MiB | 1829 MB |
+#:    |  600 s | 21,6 s | 1089 MiB | 3152 MB |
+#:    | 1800 s | 71,9 s | 1089 MiB | 7323 MB |
+#:
+#: ⭐ **VRAM PHANG tuyet doi tren dai 30 lan.** `apply_model` tu chia doan ben
+#:    trong va giu ket qua o phia CPU. Nen thu ta phai chan khong phai VRAM —
+#:    ma la RAM:
+#:
+#:        RSS ~ 1253 MB + 3,35 MB moi giay tieng      (khop tuyen tinh, 4 diem)
+#:
+#: 🔴 Va do la mot MAU THUAN voi mot thu KHAC da khai, khong phai mot cho de
+#:    toi uu: `nhap_media.THOI_LUONG_TOI_DA_S = 7200` — san pham **nhan** video
+#:    120 phut. Theo cong thuc tren, mot lan tach nguon cho dung mot tep hop le
+#:    do can **~24,8 GiB**. May nay co **31,9 GiB tong** va ~17,8 GiB trong khi
+#:    dang phuc vu khach.
+#:
+#:    ⇒ Mot job HOP LE, chay MOT MINH, du giet may. `tai_nguyen_suat=1` khong
+#:      cuu duoc: no chi bao dam co dung mot cai.
+#:
+#: ⭐ Va cho nay khong hien ra o bat cu phep khai bao nao cua nen tang:
+#:    `asv_gpu/manifest.py` khai `gpu_vram_mb`, tuc khai dung cai KHONG tang.
+#:
+#: 🔑 Nen ta khong ha tran san pham (do la lay mot loi ky thuat ra bat khach
+#:    tra) — ta **chan muc tieu thu**: tach theo KHOI, doc vao theo khoi va ghi
+#:    ra theo khoi, nen RSS thanh O(khoi) chu khong con O(do dai).
+#:
+#: 300 giay: du lon de phan phi ton meo dau moi khoi thanh nho (~3% tinh lai o
+#: phan phu), du nho de dinh RSS dung quanh 2,3 GiB o MOI do dai dau vao.
+KHOI_GIAY = 300
+
+#: Phan chong nhau giua hai khoi lien tiep, de tron mem cho noi.
+#:
+#: ⛔ Cat khan tai ranh khoi thi nghe ra: hai khoi duoc tach doc lap nen pha va
+#:    muc nen hai ben mep khong khop tuyet doi, va tai nguoi rat gioi bat cac
+#:    bat thuong DOT NGOT. 10 giay tron tuyen tinh lam cho no khong con dot ngot.
+PHU_GIAY = 10
+
+#: Cho chu may go de: `set LTT_DEMUCS_KHOI=120`.
+BIEN_KHOI = "LTT_DEMUCS_KHOI"
+
+
+#: So lan dich ngau nhien khi goi `apply_model`. **0 = tat.**
+#:
+#: 🔴 Mac dinh cua demucs 4.1.0 la `shifts=1`, va doc ma no ra thi day la mot
+#:    mac dinh chi co mat xau:
+#:
+#:        if shifts:
+#:            for shift_idx in range(shifts):
+#:                offset = random.randint(0, max_shift)   # khong gieo hat
+#:            out /= shifts                               # chia cho 1
+#:
+#:    Mot lan chay o MOT diem dich NGAU NHIEN, roi chia cho 1. Tuc no lay tron
+#:    ven tinh ngau nhien cua phep tang cuong ma **khong lay duoc chut loi ich
+#:    trung binh nao** — trung binh tren mot mau thi khong phai trung binh. No
+#:    con dem them 0,5 giay moi dau de tra tien cho viec do.
+#:
+#: 🔴 Va hau qua khong dung o "ket qua hoi khac": `van_tay_tach` HUA ban nen la
+#:    ham tat dinh cua (nguon, model, chinh sach stem, phien ban cong cu). Voi
+#:    `shifts=1` loi hua do **sai**. Do that 03/09: chay hai lan cung mot tep
+#:    qua cung mot duong ma cho ra hai ket qua khac nhau (bass lech RMS 0,0072,
+#:    tuong quan **-0,99** — doi dau). Mot cache tra ve thu ma tinh lai khong ra
+#:    duoc thi khong con la cache, va ca cau chuyen artifact/lineage cua app dua
+#:    tren dieu do.
+#:
+#: ⭐ Nen o day dat THANG `shifts=0` thay vi dua vao mac dinh. Mot hanh vi quan
+#:    trong khong duoc phep phu thuoc vao mot mac dinh cua thu vien ben thu ba.
+DICH_NGAU_NHIEN = 0
+
+#: Cho phep dung lai hanh vi CU de do doi chieu: `set LTT_DEMUCS_DICH=1`.
+#:
+#: ⭐ Co mat vi mot ly do cu the: cau hoi "tach theo khoi co lam giam chat luong
+#:    khong" chi tra loi duoc khi co MOT MOC de so. Moc dung nhat khong phai mot
+#:    nguong bia ra, ma la **dao dong ma san pham VON DA CO** — tuc chenh lech
+#:    giua hai lan chay cua chinh ban `shifts=1` cu.
+BIEN_DICH = "LTT_DEMUCS_DICH"
+
+#: Phan chong lap giua cac DOAN NOI BO cua `apply_model`. Mac dinh cua demucs
+#: cung la 0,25 — dat thang o day vi `buoc_phan_doan` phai tinh ra **dung** con
+#: so ma `apply_model` dung; hai cho doc hai nguon thi som muon se lech nhau.
+CHONG_LAP = 0.25
+
+
+def _model_goc(model):
+    """Model con thuc su giu tham so. `BagOfModels` khong giu `segment` cua rieng no."""
+    con = list(getattr(model, "models", []) or [])
+    return con[0] if (getattr(model, "segment", None) is None and con) else model
+
+
+def tan_so_model(model) -> int:
+    """Tan so lay mau ma model duoc huan luyen tren. 0 = khong biet."""
+    try:
+        return int(getattr(_model_goc(model), "samplerate", 0) or 0)
+    except (AttributeError, TypeError, ValueError):
+        return 0
+
+
+def buoc_phan_doan(model) -> int:
+    """Buoc luoi phan doan noi bo cua model, tinh bang mau. 0 = khong biet.
+
+    🔴 **Day la cho quyet dinh viec tach theo khoi co lam doi ban ra hay khong,
+       va do that 03/09 chi thang vao no.**
+
+       Khoi DAU trung khit tung mau voi ban tach ca tep (lech dung 0,000). Cac
+       khoi sau lech deu ~-42,7 dBFS. Ly do khong phai cho noi — khong co gai
+       nao o ranh khoi — ma la: `apply_model` chia ben trong theo
+       `offsets = range(0, length, stride)`. Khoi dau bat dau o 0 nen luoi cua
+       no trung luoi cua ban ca tep; khoi thu hai bat dau o mot cho **khong**
+       chia het cho `stride` nen MOI doan trong no lech pha, tu dau den cuoi.
+
+    ⭐ Nen ranh khoi duoc lam tron XUONG boi cua buoc nay. Khi do offset tuyet
+       doi cua moi doan la `(m + j) * stride` — dung bang offset ma ban ca tep
+       dung — va phan ruot cua khoi tro lai trung khit. Chi con hai mep khoi
+       lech, vi o do it doan phu len nhau hon nen `sum_weight` khac; do la dung
+       phan ma `PHU_GIAY` tron len.
+    """
+    try:
+        m = _model_goc(model)
+        doan = int(int(m.samplerate) * float(m.segment))
+        return max(0, int((1.0 - CHONG_LAP) * doan))
+    except (AttributeError, TypeError, ValueError):
+        # ⛔ Tra 0 nghia la "khong biet luoi". Nguoi goi PHAI nem chu khong duoc
+        #    lang le bo qua phep ghim — xem `tach_theo_khoi`.
+        return 0
 
 
 #: So luong torch duoc dung. ⛔ KHONG phai so loi cua may.
@@ -14752,10 +14950,35 @@ def ghi_wav(duong: str, mang, tan_so: int) -> None:
 #: 🔑 Va 4 khong phai mot nua cua 10 lam tron: demucs het gan het loi ich song
 #:    song quanh 4 luong, nen phan tu 4 len 10 mua duoc rat it toc do ma tra ca
 #:    kha nang dap ung cua may.
+#:
+#: ⚠️ Tran nay con an CA KHI chay tren CUDA: phep do 03/09 thay tien trinh dinh
+#:    **413% CPU** o ca bon do dai du toan bo phep tinh nam tren card. Tuc no
+#:    khong phai mot tran "chi cho duong CPU" — go no ra la mo lai dung cai lo
+#:    da lam may chet, ke ca khi co GPU.
 LUONG_TORCH = 4
 
 #: Cho phep chu may go de: `set LTT_DEMUCS_LUONG=6`.
 BIEN_LUONG = "LTT_DEMUCS_LUONG"
+
+
+def _so_tu_moi_truong(ten: str, mac_dinh: int) -> int:
+    import os
+
+    try:
+        n = int(os.environ.get(ten, "") or mac_dinh)
+    except ValueError:
+        n = mac_dinh
+    return max(1, n)
+
+
+def _dich_ngau_nhien() -> int:
+    """So lan dich ngau nhien. 0 tru khi chu may co y bat lai de do doi chieu."""
+    import os
+
+    try:
+        return max(0, int(os.environ.get(BIEN_DICH, "") or DICH_NGAU_NHIEN))
+    except ValueError:
+        return DICH_NGAU_NHIEN
 
 
 def _dat_tran_luong(torch) -> int:
@@ -14764,13 +14987,7 @@ def _dat_tran_luong(torch) -> int:
     ⛔ Dat TRUOC `apply_model`. `torch.set_num_threads` sau khi mot phep tinh
        da bat dau thi khong con tac dung len phep tinh do.
     """
-    import os
-
-    try:
-        n = int(os.environ.get(BIEN_LUONG, "") or LUONG_TORCH)
-    except ValueError:
-        n = LUONG_TORCH
-    n = max(1, n)
+    n = _so_tu_moi_truong(BIEN_LUONG, LUONG_TORCH)
     try:
         torch.set_num_threads(n)
         # Luong lien-phep-tinh: mac dinh cua torch cung la so loi. Mot phep
@@ -14787,49 +15004,257 @@ def _dat_tran_luong(torch) -> int:
     return n
 
 
+class ThieuCard(RuntimeError):
+    """Nen tang da cap card nhung torch khong thay CUDA.
+
+    ⛔ Day KHONG duoc phep thanh mot lan chay CPU im lang. Xem `chon_thiet_bi`.
+    """
+
+
+def chon_thiet_bi(torch, *, buoc_gpu: bool) -> str:
+    """Thiet bi de chay, va mot cho tu choi ro rang thay vi mot cho tut xuong.
+
+    🔴 Ban truoc viet `"cuda" if torch.cuda.is_available() else "cpu"` — mot
+       **cho tut xuong CPU im lang**, dung thu `V4_RESOURCE_CPU_GPU_POLICY` cam
+       ("no silent CPU fallback in production if GPU is required").
+
+    ⭐ Va cai gia cua no khong phai "cham hon mot chut". Do that 03/09: cung mot
+       tep, CUDA 21,6 giay / CPU thi lau hon **hang chuc lan** — trong suot thoi
+       gian do no van giu suat `tach_nguon_cuc_bo`, tuc **moi phien chay cua moi
+       khach khac deu dung lai sau no**. Mot lan hong dieu phoi GPU khong duoc
+       phep bien thanh mot lan tac ca hang doi ma khong ai biet vi sao.
+
+    🔑 Hai truong hop khac han nhau, va phan biet chung la ca y nghia cua tham so:
+
+      * `buoc_gpu=False` — nen tang **khong** cap card (may khong co GPU, hoac
+        lan nay khong xin). CPU la duong da khai, khong phai mot cho tut xuong.
+      * `buoc_gpu=True` — nen tang **da giu cho** mot card qua `gpu_lease` va da
+        ghim no bang `CUDA_VISIBLE_DEVICES`. Torch khong thay CUDA o day nghia
+        la viec cap card da hong. Do la mot **loi**, va no phai keu.
+    """
+    co = bool(torch.cuda.is_available())
+    if co:
+        return "cuda"
+    if buoc_gpu:
+        raise ThieuCard(
+            "nen tang da cap card nhung torch khong thay CUDA — "
+            "khong tu tut xuong CPU (xem chon_thiet_bi)")
+    return "cpu"
+
+
+def bang_chung_thiet_bi(torch, thiet_bi: str) -> dict:
+    """Card NAO da chay — de so ke tai nguyen kiem duoc, khong chi tin duoc.
+
+    ⛔ Chuoi `"cuda"` khong phai bang chung: no khong noi card nao.
+
+    🔑 Nhung tien trinh nay **khong duoc phep** doc bien moi truong ghim card de
+       lay ten do — ke ca chi de ghi lai. Guard I11 (`test_401._CAM_GPU`) cam
+       moi tep cua `auto_scan_video` cham vao co che cap card, va lan dau viet
+       ham nay toi da vi pham no roi bien ho rang "doc de lam bang chung thi
+       khac voi tu chon". Khong khac du: mot tep BIET ten bien do la mot tep chi
+       con thieu mot dong nua la tu ghim duoc card.
+
+    ⭐ Va cho dung han hoa ra gon hon: **cha da biet card nao** — no giu
+       `ctx.gpu_uuid` va chinh no goi `gpu_env()`. Nen con chi bao cai no THAY
+       (`torch.cuda.get_device_name(0)`, luon la thiet bi 0 vi card da bi ghim
+       tu ngoai), con cha ghep cai no CAP vao. Doi chieu hai dau do la phep kiem
+       that; mot dau tu bao cao ca hai thi khong kiem duoc gi.
+    """
+    bc = {"thiet_bi": thiet_bi}
+    if thiet_bi == "cuda":
+        try:
+            bc["ten_card"] = torch.cuda.get_device_name(0)
+        except (AttributeError, RuntimeError):    # driver tra loi -> khong co ten
+            bc["ten_card"] = ""
+    return bc
+
+
+def tach_theo_khoi(model, torch, vao: str, thu_muc: Path, *, thiet_bi: str,
+                   ap=None) -> dict:
+    """Tach ca tep theo tung khoi, ghi noi tiep. RSS thanh O(khoi).
+
+    Moi khoi tinh them `PHU_GIAY` giay o duoi de tron voi dau khoi sau. Vung
+    tron duoc **tinh hai lan** — mot lan la duoi khoi truoc, mot lan la dau khoi
+    sau — roi tron tuyen tinh. Do la ly do phan phi ton tinh lai ~3%.
+
+    ⛔ Ghi theo dong chay, khong gom lai roi ghi mot the: gom lai la dung cai
+       O(do dai) vua bo di quay tro lai bang cua sau.
+    """
+    import numpy as np
+
+    # Ham nay ghi vao `thu_muc`, nen no bao dam thu muc do ton tai. ⛔ Dua vao
+    # nguoi goi da tao san la mot phu thuoc khong ai thay cho toi khi co nguoi
+    # goi thu hai — va o day nguoi goi thu hai chinh la bo test.
+    Path(thu_muc).mkdir(parents=True, exist_ok=True)
+
+    # ⭐ `ap` la duong de phep kiem thay `apply_model` bang mot ham gia. Do la
+    #    ca ly do so hoc chia khoi (phu song, tron cho noi, ghim luoi, do dai ra)
+    #    kiem duoc **ma khong nap mot model that** — dieu ma
+    #    `V4_RESOURCE_CPU_GPU_POLICY` doi thang: "unit tests never launch real
+    #    Demucs". Mot mac dinh `None` chu khong phai mot tham so bat buoc: duong
+    #    chay that khong duoc phep phu thuoc vao viec ai do truyen dung thu vao.
+    if ap is None:
+        from demucs.apply import apply_model as ap
+
+    with wave.open(vao, "rb") as f:
+        if f.getsampwidth() != 2:
+            raise ValueError("chi ho tro WAV PCM 16-bit")
+        tan_so = f.getframerate()
+        tong_mau = f.getnframes()
+        kenh_vao = f.getnchannels()
+
+        # ⛔ Ghim luoi (duoi day) tinh buoc bang tan so cua MODEL, con khoi tinh
+        #    bang tan so cua TEP. Hai tan so lech nhau thi phep ghim tro thanh vo
+        #    nghia mot cach **im lang** — ranh khoi van la boi cua mot con so,
+        #    chi la khong phai con so ma `apply_model` dung. Duong chay that luon
+        #    khop (`rut_ban_day_du` ep 44,1 kHz), nen lech o day la mot loi lap
+        #    trinh va phai keu ngay chu khong hien ra o chat luong ban ra.
+        sr_model = tan_so_model(model)
+        if sr_model and sr_model != tan_so:
+            raise ValueError(
+                f"tan so tep {tan_so} khac tan so model {sr_model} — "
+                "phep ghim luoi phan doan se sai")
+
+        khoi_mau = max(1, _so_tu_moi_truong(BIEN_KHOI, KHOI_GIAY)) * tan_so
+        phu_mau = min(PHU_GIAY * tan_so, max(0, khoi_mau // 2))
+
+        # ⛔ Ghim ranh khoi vao luoi phan doan cua model. Bo doan nay di thi ruot
+        #    cac khoi sau lech pha — xem `buoc_phan_doan`.
+        buoc = buoc_phan_doan(model)
+        if not buoc:
+            # 🔴 Bo qua phep ghim mot cach im lang chinh la loai loi ca pha nay di
+            #    sua: ban ra van "dung", chi la ty so tin/lech tut tu 54,4 dB
+            #    xuong 27,1 dB va khong co dau hieu nao o dau ca.
+            raise ValueError("khong doc duoc buoc phan doan cua model — "
+                             "khong the ghim ranh khoi vao luoi")
+        if khoi_mau >= buoc:
+            khoi_mau = (khoi_mau // buoc) * buoc
+            phu_mau = min(phu_mau, max(0, khoi_mau // 2))
+
+        ten_nguon = list(model.sources)
+        duong_ra = {t: str(thu_muc / f"{t}.wav") for t in ten_nguon}
+        tep_ra = {}
+        try:
+            for t in ten_nguon:
+                w = wave.open(duong_ra[t], "wb")
+                w.setnchannels(2); w.setsampwidth(2); w.setframerate(int(tan_so))
+                tep_ra[t] = w
+
+            len_ra = np.linspace(0.0, 1.0, phu_mau, dtype="float32") if phu_mau else None
+            len_vao = (1.0 - len_ra) if phu_mau else None
+
+            duoi_truoc = None       # (nguon, kenh, phu_mau) — duoi cua khoi truoc
+            bat_dau = 0
+            so_khoi = 0
+            while bat_dau < tong_mau:
+                lay = min(khoi_mau + phu_mau, tong_mau - bat_dau)
+                x = doc_khoi_wav(f, bat_dau, lay)
+                if kenh_vao == 1:
+                    # htdemucs mong doi stereo. Nhan doi kenh thay vi de model tu doan.
+                    x = np.vstack([x, x])
+
+                with torch.no_grad():
+                    ra = ap(model, torch.from_numpy(x).unsqueeze(0),
+                            device=thiet_bi, progress=False,
+                            overlap=CHONG_LAP,
+                            shifts=_dich_ngau_nhien())[0]
+                ra = ra.cpu().numpy()
+                so_khoi += 1
+
+                if duoi_truoc is None:
+                    het = min(khoi_mau, ra.shape[-1])
+                    for i, t in enumerate(ten_nguon):
+                        them_khung(tep_ra[t], ra[i][:, :het])
+                else:
+                    n = min(phu_mau, ra.shape[-1], duoi_truoc.shape[-1])
+                    for i, t in enumerate(ten_nguon):
+                        tron = duoi_truoc[i][:, :n] * len_vao[:n] + ra[i][:, :n] * len_ra[:n]
+                        them_khung(tep_ra[t], tron)
+                        them_khung(tep_ra[t], ra[i][:, n:min(khoi_mau, ra.shape[-1])])
+
+                if phu_mau and ra.shape[-1] > khoi_mau:
+                    duoi_truoc = ra[:, :, khoi_mau:khoi_mau + phu_mau].copy()
+                else:
+                    duoi_truoc = None
+                del ra, x
+                bat_dau += khoi_mau
+        finally:
+            for w in tep_ra.values():
+                w.close()
+
+    return {"nguon": ten_nguon, "duong": duong_ra, "tan_so": int(tan_so),
+            "so_khoi": so_khoi, "khoi_mau": int(khoi_mau), "phu_mau": int(phu_mau),
+            "khoi_giay": round(khoi_mau / tan_so, 2),
+            "phu_giay": round(phu_mau / tan_so, 2)}
+
+
+class ChayTrongBoTest(RuntimeError):
+    """Mot phep kiem cham toi model that ma khong xin phep."""
+
+
+def _chan_nap_model_trong_bo_test() -> None:
+    """Chot an toan dat NGAY TRUOC cho nap model, khong o cho goi.
+
+    🔴 **Vi sao chot nay ton tai — mot lo hong do that trong pha 13.**
+
+       `tests/rao_chan_nang.py` sinh ra de khong phep kiem nao nap model that
+       giua mot luot gate tren may **dang phuc vu khach**. No duoc dan len hai
+       phep kiem GOI THANG demucs. Nhung
+       `test_406::test_cong_thoat_ban_nen_la_artifact_chinh_tac_da_kiem` voi toi
+       demucs **gian tiep** — qua hang doi job — nen no khong bi rao, va no da
+       chay demucs THAT **16 giay moi luot gate**, khong ai biet.
+
+    ⭐ Bai hoc, va ly do chot nam o DAY chu khong o cho khac: **mot rao dat len
+       NGUOI GOI chi chan nhung nguoi goi da biet.** Duong moi toi cung mot cho
+       nguy hiem thi di vong qua no ma khong cham vao. Chot phai nam o chinh cho
+       nguy hiem — cho nap model — vi o do chi co MOT duong.
+
+    🔑 `PYTEST_CURRENT_TEST` do chinh pytest dat trong moi truong tien trinh cha,
+       va `tach_nguon` chuyen ca moi truong xuong tien trinh con, nen no toi day.
+       Worker that khong bao gio co bien nay — chot vo hinh voi production.
+
+    Muon chay that thi noi ra: `set LTT_TEST_NANG=1`.
+    """
+    import os
+
+    if os.environ.get("PYTEST_CURRENT_TEST") and not os.environ.get("LTT_TEST_NANG"):
+        raise ChayTrongBoTest(
+            "mot phep kiem dang nap model demucs THAT. Neu co y thi dat "
+            "LTT_TEST_NANG=1; neu khong thi thay bang gia lap "
+            "(tests/rao_chan_nang.py:gia_lap_demucs)")
+
+
 def main(argv: list[str]) -> int:
-    if len(argv) != 3:
-        print(json.dumps({"loi": "cach dung: <vao.wav> <thu_muc_ra>"}))
+    co = [a for a in argv[1:] if a.startswith("--")]
+    vi_tri = [a for a in argv[1:] if not a.startswith("--")]
+    if len(vi_tri) != 2:
+        print(json.dumps({"loi": "cach dung: <vao.wav> <thu_muc_ra> [--buoc-gpu]"}))
         return 2
-    vao, thu_muc = argv[1], Path(argv[2])
+    vao, thu_muc = vi_tri[0], Path(vi_tri[1])
+    buoc_gpu = "--buoc-gpu" in co
     thu_muc.mkdir(parents=True, exist_ok=True)
 
     import torch
-    from demucs.apply import apply_model
     from demucs.pretrained import get_model
 
-    _dat_tran_luong(torch)
+    luong = _dat_tran_luong(torch)
 
     # Card da duoc nen tang cap qua bien moi truong (xem ghi chu dau tep). Ta
     # chi HOI xem torch thay gi — khong bao gio tu chon.
-    thiet_bi = "cuda" if torch.cuda.is_available() else "cpu"
+    try:
+        thiet_bi = chon_thiet_bi(torch, buoc_gpu=buoc_gpu)
+    except ThieuCard as exc:
+        print(json.dumps({"loi": str(exc), "thieu_card": True}))
+        return 3
 
+    _chan_nap_model_trong_bo_test()
     model = get_model("htdemucs")
     model.eval()
 
-    mau, tan_so = doc_wav(vao)
-    if mau.shape[0] == 1:
-        # htdemucs mong doi stereo. Nhan doi kenh thay vi de model tu doan.
-        import numpy as np
-        mau = np.vstack([mau, mau])
-
-    x = torch.from_numpy(mau).unsqueeze(0)
-    with torch.no_grad():
-        ra = apply_model(model, x, device=thiet_bi, progress=False)[0]
-
-    duong_ra = {}
-    for i, ten in enumerate(model.sources):
-        dich = thu_muc / f"{ten}.wav"
-        ghi_wav(str(dich), ra[i].cpu().numpy(), tan_so)
-        duong_ra[ten] = str(dich)
-
-    print(json.dumps({
-        "nguon": list(model.sources),
-        "duong": duong_ra,
-        "tan_so": int(tan_so),
-        "thiet_bi": thiet_bi,
-        "luong_torch": _dat_tran_luong(__import__("torch")),
-    }))
+    kq = tach_theo_khoi(model, torch, vao, thu_muc, thiet_bi=thiet_bi)
+    kq.update(bang_chung_thiet_bi(torch, thiet_bi))
+    kq["luong_torch"] = luong
+    print(json.dumps(kq))
     return 0
 
 
@@ -15889,7 +16314,7 @@ def giong_cua_toi(db, owner_id: str) -> list[dict]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/giai_doan_am_thanh.py
-SHA256=0aef168ae267beaedb8b979a76487a13fa6925a2c332e753d71b74e4dbd5213f BYTES=4801 LINES=111
+SHA256=d77adc73c2b9707a76547badca9240e739a63ba11296e2a4a87d6d796b138dd4 BYTES=5561 LINES=122
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Giai doan AUDIO_PREPARE — tach giong goc ra khoi nen.
 
@@ -15939,6 +16364,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     gpu_env = None
     if ctx is not None and getattr(ctx, "gpu_env", None):
         gpu_env = ctx.gpu_env(base=dict(os.environ))
+    # 🔑 Card DA duoc giu cho hay chua — cha biet, con khong. Truyen xuong de con
+    #    tu choi thay vi tut xuong CPU im lang (`demucs_runner.chon_thiet_bi`).
+    uuid_cap = str(getattr(ctx, "gpu_uuid", "") or "") if ctx is not None else ""
 
     with tempfile.TemporaryDirectory(prefix="asv-audio-") as tam:
         thu_muc = Path(tam)
@@ -15954,7 +16382,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ctx.progress(30, _t('Đang tách giọng khỏi nhạc nền'))
 
         ket_qua = tach_tieng.tach_nguon(day_du, str(thu_muc / "stem"),
-                                        gpu_env=gpu_env, hoi_huy=hoi_huy)
+                                        gpu_env=gpu_env, buoc_gpu=bool(uuid_cap),
+                                        hoi_huy=hoi_huy)
 
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(75, _t('Đang trộn nhạc nền'))
@@ -15995,7 +16424,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             "phan": [{"staging_key": khoa_nen, "kind": "audio", "duoi": "wav",
                       "van_tay": vt}],
             "tom_tat": {
+                # ⭐ Ba manh, va chung chi co nghia KHI DUNG CANH NHAU:
+                #    `gpu_cap` la card CHA giu cho, `ten_card` la card CON thay.
+                #    Mot dau tu bao cao ca hai thi khong doi chieu duoc gi.
                 "thiet_bi": ket_qua.get("thiet_bi", ""),
+                "gpu_cap": uuid_cap,
+                "ten_card": ket_qua.get("ten_card", ""),
+                "so_khoi": ket_qua.get("so_khoi", 0),
+                "khoi_giay": ket_qua.get("khoi_giay", 0),
                 "stem_giu": list(tach_tieng.STEM_GIU),
                 "lufs": am["lufs"],
                 "dinh_that": am["dinh_that"],
@@ -18753,7 +19189,7 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/loi.py
-SHA256=ccd8501b9491790b37a853683de0c4e0cd00db7d578b035799b03caf60c4a74d BYTES=12782 LINES=255
+SHA256=dae743b6be95b25399279c2f0f305f582190781f44420e8c745997485ede97db BYTES=13814 LINES=272
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phan loai loi cua Auto Scan -> phan loai cua NEN TANG (Prompt 17 muc 1).
 
@@ -18916,6 +19352,23 @@ def phan_loai(exc: BaseException) -> str:
     from .rang_giong import RangGiongError
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
+
+    # ── Cap card GPU (pha 13) ───────────────────────────────────────────────
+    #
+    # ⭐ `TAM_THOI` — tuc **THU LAI**, va o day thu lai la viec dung chu khong
+    #    phai mot cho hong ve phia an toan: nen tang giu cho card qua
+    #    `gpu_lease`, nen lan sau no co the cap mot card KHAC. Mot card vua bi
+    #    reset driver, mot lease dap vao card dang bao tri — deu la nhung thu
+    #    lan thu hai giai quyet duoc.
+    #
+    # 🔴 Va day la ly do lop nay ton tai tach khoi `MediaError`. Truoc pha 13,
+    #    tien trinh con thieu card thi **im lang chay CPU**; sua thanh nem ra
+    #    nhung san vao `MediaError` thi nen tang lai khong phan biet duoc "cap
+    #    card hong" (thu card khac) voi "tieng hong" (thu bao nhieu lan cung
+    #    the). Mot loi keu to ma khong noi duoc gi thi chua phai da sua xong.
+    from .demucs_runner import ThieuCard
+    if isinstance(exc, ThieuCard):
+        return TAM_THOI
 
     # ── Tach canh (pha 10) ──────────────────────────────────────────────────
     #
@@ -19452,7 +19905,7 @@ KIND_BAN_TIENG = KIND_AUDIO
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/pipeline.py
-SHA256=e66fdf10e767fb6a4c30b5b7042170ded68fa2f72cc1176f1b98ee86ebae521b BYTES=10642 LINES=223
+SHA256=50bd30bf3a6ff235eaa563d812276375f87364c194681bfaaaa3253f9c17916f BYTES=11960 LINES=245
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Chuoi giai doan CO DINH cua Auto Scan Video, va bang phan cong thi hanh.
 
@@ -19557,9 +20010,31 @@ CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(AUDIO_PREPARE, "asv_gpu", "asv_gpu.audio_prepare",
              sau=(MEDIA_PREPARE,),
              tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
-    # ⚠️ TRANSCRIBE dung chung MOT ten tai nguyen voi AUDIO_PREPARE, co y: ca hai
-    #    deu la model nang chay cuc bo tren cung may. Khai hai ten khac nhau se
-    #    cho phep chung chay dong thoi — dung dieu vua lam treo may.
+    # ⚠️ TRANSCRIBE dung chung MOT ten tai nguyen voi AUDIO_PREPARE. Ly do CU la
+    #    "khai hai ten khac nhau se cho phep chung chay dong thoi — dung dieu vua
+    #    lam treo may".
+    #
+    # 🔴 **Ly do do da het dung, va pha 13 do ra dieu do.** No dua tren tien de
+    #    "demucs an het loi con lai cua may" — dung o thoi diem viet, khi
+    #    `demucs_runner` chua dat gioi han luong nao. Nay no co
+    #    `LUONG_TORCH = 4`, va do that 03/09 tren chinh may nay:
+    #
+    #        1 lan tach nguon dong thoi: CPU toan may dinh 40%, RAM trong >= 16,4 GiB
+    #        2 lan tach nguon dong thoi: CPU toan may dinh 57%, RAM trong >= 14,4 GiB
+    #                                    (thong luong 1,33 lan so voi chay lan luot)
+    #
+    #    Tuc may **thua suc** hai viec nang cung luc. Giu chung mot suat KHONG con
+    #    duoc bien minh bang "may khong chiu noi".
+    #
+    # ⛔ Nhung van giu — vi mot ly do KHAC, va noi thang ra thay vi de nguyen ly do
+    #    cu cho co ve van dung: phep do tren la demucs + **demucs**. Chua ai do
+    #    demucs + **whisper** chay cung luc, va whisper co ho so khac han (khai
+    #    6.000 MB VRAM, va whisperx con nang CPU o phan gong hang/phan vai).
+    #
+    # 🔑 Dung MOT phep do de tach suat: chay `asv_gpu.audio_prepare` va
+    #    `asv_gpu.transcribe` dong thoi tren mot may dang phuc vu khach, do CPU
+    #    toan may + RAM trong + VRAM moi card. Neu dinh CPU < 70% va RAM trong
+    #    > 8 GiB thi tach ten tai nguyen ra, va thong luong tang ~1,3 lan.
     GiaiDoan(TRANSCRIBE, "asv_gpu", "asv_gpu.transcribe", sau=(AUDIO_PREPARE,),
              tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
     # 🔑 CONTENT chay o lan `api`, nen no thuoc app KHACH — app duy nhat khai
@@ -21635,7 +22110,7 @@ class AsvUsage(Base):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/tach_tieng.py
-SHA256=4937c81f8cea70b9e2db24fb03390125be723a515a79dd5aca4b3387e8db96f4 BYTES=11048 LINES=263
+SHA256=1e23c30dada5e13ffe7d04a6571245cac8906c225926eb57949f1f0644ee6488 BYTES=12163 LINES=284
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Tach nguon tieng va tron nen — chat nen cua giai doan AUDIO_PREPARE.
 
@@ -21692,6 +22167,7 @@ from pathlib import Path
 from platform_core import media
 from platform_core.i18n import _ as _t
 
+from .demucs_runner import ThieuCard
 from .nhap_media import DaHuy, MediaError, _chay, phien_ban_ffmpeg
 
 #: Dang vao cua htdemucs. 44,1 kHz stereo la dang model duoc huan luyen tren.
@@ -21736,16 +22212,23 @@ def rut_ban_day_du(nguon: str, dich: str, *, hoi_huy=None,
 
 
 def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
-               hoi_huy=None, timeout: int = 5400) -> dict:
+               buoc_gpu: bool = False, hoi_huy=None, timeout: int = 5400) -> dict:
     """Chay demucs trong TIEN TRINH CON. Tra ve bang duong dan cac stem.
 
     🔑 `gpu_env` phai la ket qua cua `JobContext.gpu_env()` — card do **nen tang**
        cap qua `platform_core.gpu_lease`. Handler khong bao gio tu chon card
        (I11/O6); no chi chuyen tiep moi truong da duoc cap xuong tien trinh con.
+
+    🔑 `buoc_gpu=True` nghia la nen tang DA giu cho mot card. Khi do tien trinh
+       con **khong duoc** tut xuong CPU im lang: xem `demucs_runner.chon_thiet_bi`
+       ve ly do mot lan tut xuong nhu the tac ca hang doi chu khong chi lam cham
+       mot job.
     """
     Path(thu_muc_ra).mkdir(parents=True, exist_ok=True)
     cmd = [sys.executable, "-m", "apps.auto_scan_video.demucs_runner",
            vao_wav, thu_muc_ra]
+    if buoc_gpu:
+        cmd.append("--buoc-gpu")
 
     import os
     moi_truong = dict(gpu_env) if gpu_env else dict(os.environ)
@@ -21768,6 +22251,19 @@ def tach_nguon(vao_wav: str, thu_muc_ra: str, *, gpu_env: dict | None = None,
         raise MediaError(_t('Tách nguồn tiếng quá hạn.')) from exc
 
     if r.returncode != 0:
+        # ⭐ Doc stdout TRUOC khi dung ma thoat de dung mot loi chung: tien trinh
+        #    con phan biet duoc "cap card hong" voi "tieng hong", va san hai thu
+        #    do thanh mot `MediaError` la vut di chinh cai phan biet ay. Mot ben
+        #    nen THU LAI (card khac co the chay); ben kia thu lai bao nhieu lan
+        #    cung the.
+        try:
+            bao = json.loads((r.stdout or b"").decode("utf-8", "replace")
+                             .strip().splitlines()[-1])
+        except (json.JSONDecodeError, IndexError):
+            bao = {}
+        if bao.get("thieu_card"):
+            raise ThieuCard(_t('Nền tảng đã cấp card nhưng tiến trình tách '
+                               'không thấy GPU.'))
         loi = (r.stderr or b"").decode("utf-8", "replace")[-400:]
         raise MediaError(_t('Tách nguồn tiếng thất bại: {loi}').format(loi=loi))
     try:
@@ -199334,7 +199830,7 @@ def skip_without_postgres():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/rao_chan_nang.py
-SHA256=e5ffde5b98441b57c13939204a2852d8e24fa3bac409caa2deac80dbf559ebc5 BYTES=2935 LINES=78
+SHA256=910745a9ef73d0b6e44bade2e6858bf405bcb8936001f32209abbef367eea629 BYTES=7041 LINES=160
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rao chan cho phep kiem NANG — thu khoi dong mot model that.
 
@@ -199414,6 +199910,88 @@ def bat() -> bool:
 #: `NANG` de chon duoc; `CHI_KHI_BAT` de mac dinh khong chay.
 NANG = pytest.mark.nang
 CHI_KHI_BAT = pytest.mark.skipif(not bat(), reason=LY_DO)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Gia lap demucs — de mot phep kiem chay HET chuoi ma khong nap model
+# ══════════════════════════════════════════════════════════════════════════════
+
+def gia_lap_demucs(monkeypatch):
+    """Thay tien trinh con demucs bang mot ham sinh stem hop le trong tich tac.
+
+    🔴 **Vi sao can:** rao chan o tep nay duoc dan len nhung phep kiem GOI THANG
+       demucs. Pha 13 tim ra `test_406::test_cong_thoat_ban_nen_...` voi toi
+       demucs **gian tiep qua hang doi job**, nen no khong bi rao va da nap model
+       THAT 16 giay moi luot gate.
+
+    ⭐ Nhung cau tra loi khong phai "rao not phep kiem do lai". Phep kiem do dang
+       kiem mot thu THAT SU quan trong — ca chuoi tu hang doi den artifact, tron
+       nen, chuan am luong, dong lineage. Rao no lai la mat phep kiem do.
+
+    ⇒ Nen thay vi bo, ta **thay dung mot mieng**: mieng nang duy nhat (model) la
+      gia, moi thu con lai — ffmpeg that, kho that, CSDL that, worker that — van
+      chay that. Do la cai phep kiem do dinh do ngay tu dau.
+
+    ⛔ Stem gia phai la WAV PCM 16-bit THAT, dung tan so, dung do dai: buoc tron
+       nen va buoc kiem thoi luong o sau no la that va se bat moi cho lam au.
+    """
+    import json
+    import subprocess
+    import wave
+    from pathlib import Path
+
+    from apps.auto_scan_video import demucs_runner, tach_tieng
+
+    def gia(cmd, *, timeout, hoi_huy, moi_truong):
+        vao, thu_muc = cmd[-2], Path(cmd[-1])
+        thu_muc.mkdir(parents=True, exist_ok=True)
+        with wave.open(vao, "rb") as f:
+            kenh, tan_so, so_khung = f.getnchannels(), f.getframerate(), f.getnframes()
+            khung = f.readframes(so_khung)
+        duong = {}
+        for i, ten in enumerate(demucs_runner.NGUON_MONG_DOI):
+            d = thu_muc / f"{ten}.wav"
+            with wave.open(str(d), "wb") as w:
+                w.setnchannels(kenh); w.setsampwidth(2); w.setframerate(tan_so)
+                # Nguon dau giu nguyen tieng, ba nguon sau im lang: tong lai van
+                # dung do dai va dung dinh dang, tuc buoc kiem sau no van co viec.
+                w.writeframes(khung if i == 0 else b"\x00" * len(khung))
+            duong[ten] = str(d)
+        ra = json.dumps({"nguon": list(demucs_runner.NGUON_MONG_DOI),
+                         "duong": duong, "tan_so": tan_so,
+                         "thiet_bi": "gia_lap", "so_khoi": 1})
+        return subprocess.CompletedProcess(cmd, 0, ra.encode("utf-8"), b"")
+
+    monkeypatch.setattr(tach_tieng, "_chay_kem_moi_truong", gia)
+
+
+@pytest.fixture(autouse=True)
+def demucs_gia_lap(monkeypatch):
+    """Fixture AUTOUSE **pham vi tep** — nap vao mot tep test bang mot dong:
+
+        from tests.rao_chan_nang import demucs_gia_lap   # noqa: F401
+
+    ⛔ Co y KHONG dat o `tests/conftest.py`: dau tep do noi thang "dung them
+       `autouse` moi vao day tru khi no that su dung cho MOI test", va no chi ra
+       dung khuon nay — tep test cua mot mien tu boc lay minh. Mot fixture
+       autouse toan cuc la mot khoan thue thu tren ca bo test de phuc vu mot app.
+
+    🔴 **Pha 13 do ra pham vi that cua van de:** khong phai mot phep kiem nap
+       demucs that, ma **31 phep kiem trong 9 tep** — deu la kiem chuoi tu dau
+       den cuoi (QC, vong doi artifact, vo hieu ha nguon, tiem loi...), va
+       **khong tep nao trong so do noi ve demucs**. Chung cham toi model chi vi
+       chuoi di qua `audio_prepare`.
+
+    ⭐ Chung khong bi bat vi rao chan cu duoc dan len hai HAM GOI THANG demucs.
+       Mot rao dat o nguoi goi chi thay nhung nguoi goi no biet.
+
+    Muon chay that: `set LTT_TEST_NANG=1` — khi do fixture nay tu tranh ra.
+    """
+    if bat():
+        yield
+        return
+    gia_lap_demucs(monkeypatch)
+    yield
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -283544,7 +284122,7 @@ def test_fixture_video_cam_khong_co_luong_tieng(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_402_asv_mach_doc_gia.py
-SHA256=1b7f1f524e10508a506fe7feeb0c471838b3ea9e96dd1e9dd65014c088d7cb67 BYTES=24826 LINES=538
+SHA256=58b526ca040ccbf3daf8360cfa5dedcf66ee703d94a2f9515d190d2f23565ae8 BYTES=25263 LINES=545
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — mach doc GIA chay dau toi cuoi (pha 05).
 
@@ -283561,6 +284139,13 @@ from __future__ import annotations
 import pytest
 
 from tests.conftest import bao_dam_user
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 
 @pytest.fixture()
@@ -284088,7 +284673,7 @@ def test_dieu_phoi_KHONG_giu_worker_de_cho_con(db, kho_tam):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_403_asv_vong_doi_artifact.py
-SHA256=595f1cd039f167dd0968a3099a2cf759f2a0509884b496c11fd8475c3e8332cb BYTES=23068 LINES=510
+SHA256=7410d83ef6c3f9727ad7da4f528e4a9db0dbd81c161e7b97bd24f7568f3cb66b BYTES=23505 LINES=517
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — vong doi artifact: promote nguyen tu, lineage, toan ven.
 
@@ -284106,6 +284691,13 @@ import json
 import pytest
 
 from tests.conftest import bao_dam_user
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 
 @pytest.fixture()
@@ -285387,7 +285979,7 @@ def test_video_KHONG_tieng_lam_giai_doan_HONG_HAN_khong_thu_lai(tmp_path, monkey
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_406_asv_tach_tieng.py
-SHA256=ff1db920685e19345416762b631305ec39d21030920cdad0f76798b3f2c4f277 BYTES=21265 LINES=449
+SHA256=7efc1afc55fe04513dba50ffb44f109fa9a77041cc744dc9fd50bb23a62e1288 BYTES=22056 LINES=462
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — AUDIO_PREPARE: tach giong khoi nen, tron, chuan am luong.
 
@@ -285690,8 +286282,17 @@ def test_cong_thoat_ban_nen_la_artifact_chinh_tac_da_kiem(tmp_path, monkeypatch)
     from platform_core import credit, jobs
     from platform_core.job_runner import JobContext
     from platform_core.storage import LocalStorage, set_storage
+    from tests import rao_chan_nang
     from tests.conftest import bao_dam_user
     from tests.fixtures.asv_media import nap_nguon_vao_kho
+
+    # 🔴 Truoc pha 13 dong nay khong co, va phep kiem nay nap **demucs THAT 16
+    #    giay moi luot gate** — no voi toi model GIAN TIEP qua hang doi nen rao
+    #    chan (dan len nhung nguoi goi THANG) khong thay no.
+    #
+    # ⭐ Chi mieng NANG la gia. Hang doi, worker, ffmpeg, kho, CSDL, tron nen,
+    #    chuan am luong, lineage — van that, va do moi la thu phep kiem nay do.
+    rao_chan_nang.gia_lap_demucs(monkeypatch)
 
     monkeypatch.setenv("LTT_DATABASE_URL",
                        f"sqlite:///{(tmp_path / 'p9.db').as_posix()}")
@@ -285830,11 +286431,15 @@ def test_tran_luong_duoc_dat_TRUOC_khi_nap_model():
         if isinstance(n, ast.Call):
             ten = (n.func.id if isinstance(n.func, ast.Name)
                    else getattr(n.func, "attr", ""))
-            if ten in ("_dat_tran_luong", "get_model", "apply_model"):
+            # ⚠️ `tach_theo_khoi` co trong danh sach tu pha 13: `apply_model`
+            #    khong con duoc goi trong `main` nua ma nam trong ham do, nen neu
+            #    chi chot ba ten cu thi phep kiem nay xanh mot cach RONG TUECH.
+            if ten in ("_dat_tran_luong", "get_model", "apply_model",
+                       "tach_theo_khoi"):
                 dong.setdefault(ten, n.lineno)
 
     assert "_dat_tran_luong" in dong, "`main` khong dat tran luong"
-    for sau in ("get_model", "apply_model"):
+    for sau in ("get_model", "apply_model", "tach_theo_khoi"):
         if sau in dong:
             assert dong["_dat_tran_luong"] < dong[sau], (
                 f"dat tran luong SAU `{sau}` thi khong con tac dung")
@@ -285842,7 +286447,7 @@ def test_tran_luong_duoc_dat_TRUOC_khi_nap_model():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_407_asv_chep_loi.py
-SHA256=c6349eb887688ba71831629053157b6ede15222b9a7f71ce90ea49767e969bac BYTES=20685 LINES=458
+SHA256=95ffc3254dc8265168dd526903658fd34db321128228f8b918e3865072ce9bae BYTES=21122 LINES=465
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — TRANSCRIBE: hop dong ban ghi, boc engine, van tay.
 
@@ -285866,6 +286471,13 @@ import pytest
 from tests import rao_chan_nang
 
 from tests.fixtures.asv_media import ban_ghi_gia, require_ffmpeg
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 
 def _wav_16k(dich: Path, *, giay: float = 2.0, hz: int = 300) -> Path:
@@ -286306,7 +286918,7 @@ class TestChoBangChungNgoai:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_408_asv_dich_thuat.py
-SHA256=4b80743a3a13499fbcbae5cbd198297c2dabe459e9039d599bc229d7b6a8860c BYTES=20931 LINES=471
+SHA256=b553cf5b146ce8a334d93c712f4947a2e51df7527a992c0015d73679fc6fc66e BYTES=21368 LINES=478
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — CONTENT_PROCESS: dich, lineage, an toan cuoc goi tra tien.
 
@@ -286329,6 +286941,13 @@ import json
 import pytest
 
 from tests.fixtures.asv_media import ban_ghi_gia
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 
 def _ban_ghi(so_doan: int = 3) -> dict:
@@ -288587,7 +289206,7 @@ def test_lech_trong_nguong_thi_CHAP_NHAN(tmp_path):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_415_asv_cong_thoat_render.py
-SHA256=6026796cd5f4823046d448de4bfbcec249b409a2087b223e2e7dd47c3942cedd BYTES=9181 LINES=224
+SHA256=bb33692a2b4b97fb46c41222ece833f9aa454f9b24e644779e23fe8ac4c2d014 BYTES=9611 LINES=231
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 15 — CONG THOAT.
 
@@ -288613,6 +289232,13 @@ from tests.fixtures import asv_media as fx
 # la gia. `noqa` vi pytest can chung o pham vi module de tiem fixture.
 from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
     _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
 
@@ -288940,7 +289566,7 @@ def test_phien_ban_engine_KHONG_nap_ca_cay_module_luc_import():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_417_asv_vo_hieu_ha_nguon.py
-SHA256=a24ad925233ef43afbe8bc0e6cc0601435a78c41a34c4951f3a16ba8e325b056 BYTES=18577 LINES=387
+SHA256=1dd65ca46e50b1eea824082a268f82688be284a9dbf97816dd9720b626ea8a6e BYTES=19007 LINES=394
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 16 — vo hieu theo phu thuoc, thu lai, lan truyen huy, va QC la cong cuoi.
 
@@ -288959,6 +289585,13 @@ from apps.auto_scan_video.tables import (RUN_CANCELLED, RUN_DONE, STAGE_PENDING,
 from tests.fixtures import asv_media as fx
 from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
     _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
 
@@ -289333,7 +289966,7 @@ def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_418_asv_phan_loai_loi.py
-SHA256=4ed148589511a21eee329d9db1fe10c7bb9c65e62cbf027b742ebdccba8a10e7 BYTES=15803 LINES=312
+SHA256=f34e5aadfc2ccc8f087e88b0bb8d692dcd2ab5d4434bbcb15722bfff06fb7f7a BYTES=16833 LINES=328
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 17 §1 — phan loai loi co kieu, va phep dich sang phan loai cua nen tang.
 
@@ -289362,6 +289995,7 @@ from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
+from apps.auto_scan_video.demucs_runner import ThieuCard
 from apps.auto_scan_video.ban_bien_tap import BanBienTapError
 from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
@@ -289378,6 +290012,13 @@ from apps.auto_scan_video.nhap_media import MediaError
 from apps.auto_scan_video.thoi_gian import ThoiGianError
 from apps.auto_scan_video.van_ban import VanBanError
 
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
+
 #: Moi lop ngoai le co kieu ma Auto Scan nem ra, va loai mong doi.
 #:
 #: ⭐ Chot bang TAP HOP: `test_moi_lop_ngoai_le_deu_co_mat` doi chieu bang nay
@@ -289385,6 +290026,10 @@ from apps.auto_scan_video.van_ban import VanBanError
 #:    chu khong doi toi luc no roi xuong nhanh mac dinh trong production.
 BANG = {
     MayBan: loi.BAN,
+    # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
+    #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
+    #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.
+    ThieuCard: loi.TAM_THOI,
     GiongMoHo: loi.MO_HO,
     DichMoHo: loi.MO_HO,
     MediaError: loi.NGUOI_DUNG,
@@ -289605,6 +290250,10 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         "AsvError", "KhongTimThay", "XungDot",   # tang route, khong len toi bien
         "AssetError",                            # bi doi loai truoc khi len bien
         "DaHuy",                                 # nhanh rieng cua job_runner
+        # 🔑 Chi song trong TIEN TRINH CON demucs. Chot an toan cua pha 13 nem no
+        #    khi mot phep kiem cham toi model that; production khong bao gio co
+        #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.
+        "ChayTrongBoTest",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va
@@ -289651,7 +290300,7 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_419_asv_tiem_loi.py
-SHA256=0bc85b79a5b166c7d9352fec017dfd166e856290bf7f0a848f17c02cd2dbb2fb BYTES=19830 LINES=410
+SHA256=daffc969979fee23538ab1a5aa3e9ca80e92a623d38c8798ad783dbc7c82d209 BYTES=21072 LINES=432
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 17 §2-§8 — tiem loi, va chung minh tien/quyen/tai nguyen/chay tiep con nguyen.
 
@@ -289678,6 +290327,13 @@ from apps.auto_scan_video.tables import (RUN_CANCELLED, RUN_DONE, RUN_ERROR,
 from tests.fixtures import asv_media as fx
 from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
     _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
 
@@ -289946,20 +290602,35 @@ def test_KHONG_giai_doan_nao_tu_chon_card_GPU():
 
     Chot bang AST tren MOI module cua app: mot cho gan `CUDA_VISIBLE_DEVICES`
     truc tiep la mot handler dang tu chia GPU sau lung nen tang.
+
+    🔴 **Truoc pha 13 o day co mot BAN SAO rieng cua phep quet, va ban sao do
+       chua hoc bai ma ban goc da hoc.**
+
+       `test_401._vi_pham` tung la mot phep quet chuoi con, va no da bao dong
+       tren chinh nhung dong van giai thich luat — nen no duoc sua thanh doc AST
+       va **mien tru docstring**, kem mot doan ghi ro vi sao: *"mot guard bao loi
+       tren doan van giai thich chinh no day nguoi sau xoa loi giai thich di, va
+       nhu the con te hon la khong co guard"*.
+
+       Ban sao o day thi khong: no duyet MOI `ast.Constant` la chuoi — ke ca
+       docstring. Pha 13 viet mot doan giai thich vi sao tien trinh con **khong
+       duoc** doc bien ghim card, va ban sao nay bao dong tren dung doan do.
+
+    ⭐ Nen cach sua khong phai noi luat ra, ma la **bo ban sao**: mot luat, mot
+       cho cuong che. Hai ban sao cua cung mot luat thi som muon chi mot ban
+       duoc sua.
     """
-    import ast
     import pathlib
 
     from apps.auto_scan_video import loi as _loi
+    from tests.test_401_asv_ranh_gioi_va_artifact import _CAM_GPU, _vi_pham
 
     goc = pathlib.Path(_loi.__file__).resolve().parent
     xau: list[str] = []
     for tep in sorted(goc.glob("*.py")):
-        cay = ast.parse(tep.read_text(encoding="utf-8"))
-        for nut in ast.walk(cay):
-            if isinstance(nut, ast.Constant) and isinstance(nut.value, str):
-                if "CUDA_VISIBLE_DEVICES" in nut.value:
-                    xau.append(f"{tep.name}:{nut.lineno}")
+        con = _vi_pham(tep.read_text(encoding="utf-8"), _CAM_GPU)
+        if con:
+            xau.append(f"{tep.name}: {con}")
     assert xau == [], (
         f"app tu dat CUDA_VISIBLE_DEVICES o {xau} — card do nen tang cap qua "
         f"`ctx.gpu_env()`, handler khong bao gio tu chon (I11/O6)")
@@ -290067,7 +290738,7 @@ def test_moi_dong_giai_doan_va_asset_deu_mang_chu_so_huu(run_xong, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_420_asv_qc.py
-SHA256=b26a0fab9c1fcc1abee5e95bf8c08792f2e36e9c61e9d2fe6d68256c516f247d BYTES=14453 LINES=322
+SHA256=075febe6e4d0cef78106999990517171c660f6155c01b0bb2092ab8215a38955 BYTES=14883 LINES=329
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 18 — QC la mot CONG that, va chan doan duoc tu du lieu ben.
 
@@ -290089,6 +290760,13 @@ from apps.auto_scan_video.tables import (RUN_DONE, RUN_ERROR, STAGE_SUCCEEDED,
 from tests.fixtures import asv_media as fx
 from tests.test_402_asv_mach_doc_gia import (  # noqa: F401
     _chay_het_hang_doi, _tao_run, asr_gia, db, dich_gia, giong_gia, kho_tam)
+
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
 
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
 
@@ -296690,6 +297368,573 @@ def test_giu_hinh_thi_KHONG_doan_nao_bi_loc_di():
                          "chu": "x"} for i in range(5)]}
     ban = bt.lap_ban(preset=GIU_HINH, chi_muc=ci)
     assert len(bt.doan_giu_lai(ban_ghi, ban, ci)["doan"]) == 5
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_439_asv_v4_am_thanh_tai_nguyen.py
+SHA256=7be33aa1b849fa623005e4c114574486ce98d8a973c661bb63cff264e42adf53 BYTES=25493 LINES=561
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 13 — chat luong tach nguon va chan tai nguyen.
+
+Bon nhom, va moi nhom chot mot menh de da DO duoc chu khong phai mot y dinh:
+
+  A. So hoc chia khoi   — ban ra phu kin, khong ho, khong nhan doi, ghim dung luoi
+  B. Chinh sach thiet bi — khong co cho tut xuong CPU im lang
+  C. Tat dinh           — `van_tay_tach` hua mot ham tat dinh; gio no dung
+  D. Khai bao tai nguyen — con so trong manifest la con so DA DO
+
+⭐ Ca nhom A chay **khong nap demucs**: `tach_theo_khoi` nhan ham goi model qua
+   tham so `ap`. Do la yeu cau thang cua pha 13 ("unit tests never launch real
+   Demucs"), va no cung lam nhom A chay trong vai chuc mili giay.
+"""
+from __future__ import annotations
+
+import ast
+import json
+import subprocess
+import wave
+from pathlib import Path
+
+import numpy as np
+import pytest
+
+from apps.auto_scan_video import demucs_runner
+
+TS = 4000          # tan so nho de phep kiem chay nhanh; MODEL GIA dung cung so
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Do nghe
+# ══════════════════════════════════════════════════════════════════════════════
+
+class ModelGia:
+    """Du tham so de `buoc_phan_doan` va `tan_so_model` lam viec. Khong nap gi."""
+    sources = ("drums", "bass", "other", "vocals")
+    samplerate = TS
+    segment = 39 / 5
+    models = ()
+
+
+def ap_dong_nhat(model, x, **kw):
+    """Model gia: nguon dau la CHINH dau vao, ba nguon sau im lang.
+
+    🔑 Chon ham dong nhat chu khong phai mot phep bien doi bat ky la co y: khi
+       model tra ve dung dau vao, ban ra cua ca duong chia khoi **phai bang dung
+       tep vao**. Mot cho ho, mot doan bi ghi hai lan, hay mot he so tron sai —
+       tat ca deu hien ra ngay tren mot phep so sanh duy nhat.
+    """
+    import torch
+
+    mot = x[0]
+    ra = torch.stack([mot, torch.zeros_like(mot), torch.zeros_like(mot),
+                      torch.zeros_like(mot)])
+    return ra.unsqueeze(0)
+
+
+def tep_song(tmp_path: Path, giay: float, *, ten="vao.wav") -> Path:
+    """WAV stereo 16-bit co cau truc (khong phai im lang) de so sanh co nghia."""
+    n = int(giay * TS)
+    t = np.arange(n, dtype="float32") / TS
+    trai = 0.6 * np.sin(2 * np.pi * 220 * t) + 0.2 * np.sin(2 * np.pi * 57 * t)
+    phai = 0.5 * np.sin(2 * np.pi * 330 * t + 0.7)
+    x = np.vstack([trai, phai]).astype("float32")
+    d = tmp_path / ten
+    demucs_runner.ghi_wav(str(d), x, TS)
+    return d
+
+
+def doc(duong) -> np.ndarray:
+    with wave.open(str(duong), "rb") as f:
+        k, n = f.getnchannels(), f.getnframes()
+        x = np.frombuffer(f.readframes(n), dtype="<i2").astype("float32") / 32768.0
+    return x.reshape(-1, k).T
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  A. So hoc chia khoi
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_ra_dai_DUNG_BANG_ban_vao(tmp_path, monkeypatch):
+    """Khong ho mot mau, khong thua mot mau.
+
+    Lech do dai o day khong dung lai o day: `giai_doan_am_thanh` kiem ban nen
+    lech qua 0,5 giay la nem, va xa hon nua thi moc thoi gian cua ban long tieng
+    troi so voi hinh, **cang ve cuoi cang xa**.
+    """
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+    vao = tep_song(tmp_path, 130.0)
+    ra = tmp_path / "stem"
+    import torch
+    kq = demucs_runner.tach_theo_khoi(ModelGia(), torch, str(vao), ra,
+                                      thiet_bi="cpu", ap=ap_dong_nhat)
+    assert kq["so_khoi"] > 1, "mau thu phai dai hon MOT khoi, khong thi khong do gi"
+    goc = doc(vao)
+    for ten in ModelGia.sources:
+        assert doc(ra / f"{ten}.wav").shape[-1] == goc.shape[-1], f"{ten} lech do dai"
+
+
+def test_model_dong_nhat_thi_ban_ra_TRUNG_KHIT_ban_vao(tmp_path, monkeypatch):
+    """⭐ Phep kiem manh nhat cua nhom A, va no bat duoc CA BA loai loi mot luc.
+
+    Voi mot model tra ve dung dau vao, duong chia khoi la mot phep sao chep vong
+    ve. Neu co mot doan bi bo qua, mot doan bi ghi hai lan, hay he so tron cho
+    noi khong cong lai thanh 1, ket qua lech ngay — va lech o dung cho sai.
+    """
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+    vao = tep_song(tmp_path, 130.0)
+    ra = tmp_path / "stem"
+    import torch
+    demucs_runner.tach_theo_khoi(ModelGia(), torch, str(vao), ra,
+                                 thiet_bi="cpu", ap=ap_dong_nhat)
+    goc, moi = doc(vao), doc(ra / "drums.wav")
+    n = min(goc.shape[-1], moi.shape[-1])
+    lech = float(np.abs(goc[:, :n] - moi[:, :n]).max())
+    # 1/32768 la buoc luong tu hoa cua PCM 16-bit: mot lan lam tron di-ve.
+    assert lech <= 2.0 / 32768.0, f"lech dinh {lech:.6f} — khong phai sao chep vong ve"
+
+
+def test_ranh_khoi_la_BOI_cua_BUOC_PHAN_DOAN(tmp_path, monkeypatch):
+    """🔴 Cho quyet dinh ban tach theo khoi co GIONG ban tach ca tep hay khong.
+
+    Do that 03/09: chua ghim luoi thi bao nen lech -42,7 dBFS tu khoi thu hai
+    tro di (khoi dau trung khit, vi no bat dau o 0). Ghim roi thi 116/119 cua so
+    5 giay trung khit tung mau, va ty so tin/lech di tu 27,1 dB len **54,4 dB**.
+    """
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+    vao = tep_song(tmp_path, 130.0)
+    import torch
+    kq = demucs_runner.tach_theo_khoi(ModelGia(), torch, str(vao), tmp_path / "s",
+                                      thiet_bi="cpu", ap=ap_dong_nhat)
+    buoc = demucs_runner.buoc_phan_doan(ModelGia())
+    assert buoc > 0
+    assert kq["khoi_mau"] % buoc == 0, (
+        f"khoi {kq['khoi_mau']} khong chia het cho buoc phan doan {buoc} — "
+        "ruot cac khoi sau se lech pha voi ban tach ca tep")
+
+
+def test_buoc_phan_doan_khop_CONG_THUC_cua_apply_model():
+    """`stride = int((1 - overlap) * int(sr * segment))` — dung cong thuc do.
+
+    ⛔ Doc hai nguon cho cung mot con so la cach chac chan de mot ngay nao do hai
+       nguon lech nhau. `CHONG_LAP` duoc **truyen thang** vao `apply_model`.
+    """
+    doan = int(ModelGia.samplerate * ModelGia.segment)
+    cho_doi = int((1.0 - demucs_runner.CHONG_LAP) * doan)
+    assert demucs_runner.buoc_phan_doan(ModelGia()) == cho_doi
+
+
+def test_apply_model_nhan_overlap_va_shifts_TUONG_MINH():
+    """Chot bang AST: khong duoc dua vao mac dinh cua thu vien ben thu ba.
+
+    🔴 Mac dinh cua demucs 4.1.0 la `shifts=1` — mot lan chay o diem dich NGAU
+       NHIEN roi chia cho 1. Do la toan bo nguyen nhan khien hai lan chay cung
+       mot tep cho ra hai ket qua (do 03/09: bass tuong quan **-0,99**).
+    """
+    cay = ast.parse(Path(demucs_runner.__file__).read_text(encoding="utf-8"))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "tach_theo_khoi"][0]
+    goi = [n for n in ast.walk(ham)
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+           and n.func.id == "ap"]
+    assert goi, "khong tim thay loi goi model trong `tach_theo_khoi`"
+    ten = {k.arg for k in goi[0].keywords}
+    assert "shifts" in ten, "khong truyen `shifts` — dua vao mac dinh la 1, tuc NGAU NHIEN"
+    assert "overlap" in ten, "khong truyen `overlap` — `buoc_phan_doan` se tinh sai buoc"
+
+
+def test_KHONG_nap_ca_tep_vao_RAM(tmp_path, monkeypatch):
+    """⛔ `doc_wav` nap ca tep. Duong chia khoi khong duoc cham vao no.
+
+    Do chinh la cho ma RSS di tu O(khoi) tro lai O(do dai) ma khong ai thay:
+    ban ra van dung, chi la may bat dau swap voi mot video dai.
+    """
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+
+    def cam(*a, **k):
+        raise AssertionError("duong chia khoi da goi `doc_wav` — nap ca tep vao RAM")
+
+    monkeypatch.setattr(demucs_runner, "doc_wav", cam)
+    import torch
+    demucs_runner.tach_theo_khoi(ModelGia(), torch, str(tep_song(tmp_path, 130.0)),
+                                 tmp_path / "s", thiet_bi="cpu", ap=ap_dong_nhat)
+
+
+def test_moi_lan_doc_bi_CHAN_theo_kich_thuoc_khoi(tmp_path, monkeypatch):
+    """Khong lan doc nao lon hon mot khoi cong phan phu — do la ca co che chan."""
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+    that = demucs_runner.doc_khoi_wav
+    lon_nhat = {"n": 0}
+
+    def theo_doi(f, tu, so_mau):
+        lon_nhat["n"] = max(lon_nhat["n"], int(so_mau))
+        return that(f, tu, so_mau)
+
+    monkeypatch.setattr(demucs_runner, "doc_khoi_wav", theo_doi)
+    import torch
+    kq = demucs_runner.tach_theo_khoi(ModelGia(), torch, str(tep_song(tmp_path, 130.0)),
+                                      tmp_path / "s", thiet_bi="cpu", ap=ap_dong_nhat)
+    assert lon_nhat["n"] <= kq["khoi_mau"] + kq["phu_mau"]
+    assert lon_nhat["n"] < 130 * TS, "mot lan doc da om ca tep"
+
+
+def test_tan_so_TEP_khac_tan_so_MODEL_thi_NEM(tmp_path, monkeypatch):
+    """Lech tan so lam phep ghim luoi vo nghia mot cach im lang — phai keu."""
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+
+    class KhacTanSo(ModelGia):
+        samplerate = TS * 2
+
+    import torch
+    with pytest.raises(ValueError, match="tan so"):
+        demucs_runner.tach_theo_khoi(KhacTanSo(), torch,
+                                     str(tep_song(tmp_path, 40.0)), tmp_path / "s",
+                                     thiet_bi="cpu", ap=ap_dong_nhat)
+
+
+def test_KHOI_GIAY_giu_RSS_duoi_tran_da_do(tmp_path):
+    """🔑 Chot chinh con so, kem phep tinh sinh ra no.
+
+    Do that 03/09 (truoc khi chia khoi):  RSS ~ 1.253 MB + 3,35 MB moi giay.
+    Voi khoi 300 giay thi phan tang them chi ~1,0 GB, va do that sau khi chia
+    khoi cho 2.591 MB o **7.200 giay** — tran cua san pham.
+
+    ⛔ Nang `KHOI_GIAY` len la doi lai chinh dieu vua sua.
+    """
+    du_bao_mb = 1253 + 3.352 * demucs_runner.KHOI_GIAY
+    assert du_bao_mb < 4096, (
+        f"khoi {demucs_runner.KHOI_GIAY}s => du bao {du_bao_mb:.0f} MB, "
+        "vuot muc da do (2.591 MB o tran 7.200 giay)")
+    assert demucs_runner.PHU_GIAY * 4 <= demucs_runner.KHOI_GIAY, (
+        "phan phu qua lon so voi khoi — phi ton tinh lai khong con nho")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B. Chinh sach thiet bi — khong co cho tut xuong im lang
+# ══════════════════════════════════════════════════════════════════════════════
+
+class TorchGia:
+    def __init__(self, co_cuda: bool, ten: str = "CARD GIA"):
+        self._co, self._ten = co_cuda, ten
+        self.cuda = self
+
+    def is_available(self):
+        return self._co
+
+    def get_device_name(self, i):
+        return self._ten
+
+
+def test_co_card_thi_chay_tren_card():
+    assert demucs_runner.chon_thiet_bi(TorchGia(True), buoc_gpu=True) == "cuda"
+    assert demucs_runner.chon_thiet_bi(TorchGia(True), buoc_gpu=False) == "cuda"
+
+
+def test_KHONG_card_va_KHONG_duoc_cap_thi_CPU_la_duong_da_khai():
+    """May khong co GPU thi CPU khong phai cho tut xuong — do la duong duy nhat."""
+    assert demucs_runner.chon_thiet_bi(TorchGia(False), buoc_gpu=False) == "cpu"
+
+
+def test_DA_CAP_card_ma_khong_thay_CUDA_thi_NEM(tmp_path):
+    """🔴 Menh de trung tam cua pha 13.
+
+    ⭐ Cai gia khong phai "cham hon mot chut": do that 03/09, CPU cham hon **9,5
+       lan** (180 giay tieng: 9,2 giay tren card, 86,5 giay tren CPU). O tran
+       7.200 giay do la ~37 phut GIU SUAT `tach_nguon_cuc_bo` — tuc moi phien
+       chay cua moi khach khac dung lai sau no, va khong co loi nao o dau ca.
+    """
+    with pytest.raises(demucs_runner.ThieuCard):
+        demucs_runner.chon_thiet_bi(TorchGia(False), buoc_gpu=True)
+
+
+def test_main_thoat_KHAC_KHONG_khi_thieu_card(tmp_path, monkeypatch, capsys):
+    """Va no phai keu ra ngoai tien trinh, khong chi nem ben trong."""
+    monkeypatch.setattr(demucs_runner, "chon_thiet_bi",
+                        lambda *a, **k: (_ for _ in ()).throw(
+                            demucs_runner.ThieuCard("gia lap")))
+    ma = demucs_runner.main(["x", str(tmp_path / "a.wav"), str(tmp_path / "r"),
+                             "--buoc-gpu"])
+    assert ma != 0
+    assert json.loads(capsys.readouterr().out.strip().splitlines()[-1])["thieu_card"]
+
+
+def test_tach_nguon_them_co_BUOC_GPU_dung_khi_duoc_cap(tmp_path, monkeypatch):
+    from apps.auto_scan_video import tach_tieng
+
+    bat = {}
+
+    def gia(cmd, *, timeout, hoi_huy, moi_truong):
+        bat["cmd"] = list(cmd)
+        return subprocess.CompletedProcess(cmd, 0, b'{"duong":{},"tan_so":44100}', b"")
+
+    monkeypatch.setattr(tach_tieng, "_chay_kem_moi_truong", gia)
+
+    tach_tieng.tach_nguon("a.wav", str(tmp_path / "s1"), buoc_gpu=True)
+    assert "--buoc-gpu" in bat["cmd"]
+    tach_tieng.tach_nguon("a.wav", str(tmp_path / "s2"), buoc_gpu=False)
+    assert "--buoc-gpu" not in bat["cmd"], (
+        "them co khi KHONG duoc cap card se lam hong moi may khong co GPU")
+
+
+def test_giai_doan_bat_BUOC_GPU_theo_dung_card_da_cap(tmp_path, monkeypatch):
+    """Cha biet co card hay khong; con khong. Nen cha phai noi.
+
+    Va `tom_tat` mang **ca hai dau**: card cha CAP va card con THAY. Mot dau tu
+    bao cao ca hai thi khong doi chieu duoc gi.
+    """
+    from apps.auto_scan_video import giai_doan_am_thanh, nhap_media, tach_tieng
+
+    bat = {}
+
+    class CtxGia:
+        def __init__(self, uuid):
+            self.gpu_uuid = uuid
+
+        def gpu_env(self, base=None):
+            return dict(base or {})
+
+    monkeypatch.setattr(tach_tieng, "rut_ban_day_du", lambda *a, **k: a[1])
+    monkeypatch.setattr(tach_tieng, "tron_nen", lambda *a, **k: a[1])
+    monkeypatch.setattr(tach_tieng, "do_am_luong", lambda d: {"lufs": -14.0, "dinh_that": -1.5})
+    monkeypatch.setattr(nhap_media, "soi", lambda d, **k: {
+        "tan_so": tach_tieng.TAN_SO_TACH, "so_kenh": tach_tieng.SO_KENH_TACH,
+        "thoi_luong": 10.0})
+    monkeypatch.setattr(nhap_media, "phien_ban_ffmpeg", lambda: "ff")
+
+    def gia_tach(vao, ra, *, gpu_env=None, buoc_gpu=False, hoi_huy=None, timeout=0):
+        bat["buoc_gpu"] = buoc_gpu
+        return {"duong": {}, "thiet_bi": "cuda", "ten_card": "CARD CON THAY",
+                "so_khoi": 3, "khoi_giay": 298.35}
+
+    monkeypatch.setattr(tach_tieng, "tach_nguon", gia_tach)
+    monkeypatch.setattr(giai_doan_am_thanh, "_duong_doc_duoc",
+                        lambda kho, khoa, tm: str(tm / "n.bin"))
+
+    class AssetsGia:
+        @staticmethod
+        def bam_tep(d):
+            return "abc"
+
+        @staticmethod
+        def khoa_staging(**k):
+            return "k"
+
+    monkeypatch.setattr(giai_doan_am_thanh, "assets", AssetsGia)
+
+    class KhoGia:
+        def put(self, *a, **k):
+            return None
+
+    class RunGia:
+        source_key, owner_id, id = "s", "u", 1
+
+    (tmp_path / "n.bin").write_bytes(b"x")
+    monkeypatch.chdir(tmp_path)
+    import builtins
+    mo_that = builtins.open
+    monkeypatch.setattr(builtins, "open",
+                        lambda f, *a, **k: mo_that(tmp_path / "n.bin", *a, **k)
+                        if str(f).endswith(".wav") else mo_that(f, *a, **k))
+
+    kq = giai_doan_am_thanh.chay(None, KhoGia(), run=RunGia(), ctx=CtxGia("GPU-xyz"))
+    assert bat["buoc_gpu"] is True, "da cap card ma khong noi cho tien trinh con"
+    assert kq["tom_tat"]["gpu_cap"] == "GPU-xyz"
+    assert kq["tom_tat"]["ten_card"] == "CARD CON THAY"
+
+    giai_doan_am_thanh.chay(None, KhoGia(), run=RunGia(), ctx=CtxGia(""))
+    assert bat["buoc_gpu"] is False, "khong duoc cap card ma van bat buoc phai co"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  C. Tat dinh
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_dich_ngau_nhien_TAT():
+    """`van_tay_tach` hua ban nen la ham tat dinh cua nguon. Voi `shifts` bat
+    thi loi hua do SAI — va mot cache tra ve thu ma tinh lai khong ra duoc thi
+    khong con la cache."""
+    assert demucs_runner.DICH_NGAU_NHIEN == 0
+    assert demucs_runner._dich_ngau_nhien() == 0
+
+
+def test_chu_may_van_bat_lai_duoc_de_DOI_CHIEU(monkeypatch):
+    monkeypatch.setenv(demucs_runner.BIEN_DICH, "1")
+    assert demucs_runner._dich_ngau_nhien() == 1
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  D. Khai bao tai nguyen — con so DA DO
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_vram_khai_bang_con_so_DA_DO():
+    """1.673 MiB la dinh do duoc qua nam do dai (60 - 7.200 giay), khong doi.
+
+    ⛔ Khai thua thi job cho lau hon can thiet; khai thieu thi OOM. 4.000 cu la
+       mot uoc luong chua do va no thua 2,4 lan.
+    """
+    from apps.asv_gpu.manifest import MANIFEST
+
+    v = MANIFEST.vram_for("asv_gpu.audio_prepare")
+    assert 1673 < v <= 2500, f"{v} MB khong con bam vao dinh da do (1.673 MiB)"
+
+
+def test_tran_luong_torch_van_con():
+    """⚠️ An CA khi chay tren CUDA: do 03/09 thay tien trinh dinh 413% CPU o ca
+    bon do dai du toan bo phep tinh nam tren card."""
+    assert demucs_runner.LUONG_TORCH <= 4
+
+
+def test_chot_chan_nap_model_that_trong_bo_test(monkeypatch):
+    """🔴 Rao dat len NGUOI GOI chi chan nhung nguoi goi da biet.
+
+    `test_406::test_cong_thoat_ban_nen_...` voi toi demucs gian tiep qua hang doi
+    nen no khong bi rao, va da nap model THAT 16 giay moi luot gate. Chot nay
+    nam o chinh cho nap model — o do chi co MOT duong.
+    """
+    monkeypatch.setenv("PYTEST_CURRENT_TEST", "x")
+    monkeypatch.delenv("LTT_TEST_NANG", raising=False)
+    with pytest.raises(demucs_runner.ChayTrongBoTest):
+        demucs_runner._chan_nap_model_trong_bo_test()
+
+    monkeypatch.setenv("LTT_TEST_NANG", "1")
+    demucs_runner._chan_nap_model_trong_bo_test()      # noi ra thi duoc phep
+
+
+def test_chot_dat_NGAY_TRUOC_cho_nap_model():
+    """AST: `_chan_nap_model_trong_bo_test` phai dung truoc `get_model` trong `main`."""
+    cay = ast.parse(Path(demucs_runner.__file__).read_text(encoding="utf-8"))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "main"][0]
+    dong = {}
+    for n in ast.walk(ham):
+        if isinstance(n, ast.Call):
+            ten = (n.func.id if isinstance(n.func, ast.Name)
+                   else getattr(n.func, "attr", ""))
+            dong.setdefault(ten, n.lineno)
+    assert "_chan_nap_model_trong_bo_test" in dong, "`main` khong co chot"
+    assert dong["_chan_nap_model_trong_bo_test"] < dong["get_model"], (
+        "chot dat SAU khi nap model thi no khong chan duoc gi")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  A-bis. Cho noi — phep kiem ma model DONG NHAT khong the lam duoc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def ap_theo_vi_tri(model, x, **kw):
+    """Model gia tra ve mot DOC TUYEN theo vi tri TRONG KHOI, bo qua dau vao.
+
+    🔑 Ly do phai co model thu hai nay, va no la mot lo hong that trong bo kiem
+       cua chinh pha nay truoc khi kiem dot bien:
+
+       Voi `ap_dong_nhat`, duoi cua khoi truoc va dau cua khoi sau **bang nhau**
+       (ca hai deu la dau vao tai dung nhung mau do). Ma mot to hop loi cua hai
+       so bang nhau thi van ra chinh so do — **voi bat ky he so nao**. Nen moi
+       phep kiem dua tren model dong nhat deu MU truoc loi tron cho noi: bo han
+       phep tron di, doi cho hai he so, hay dung he so 0,3/0,3 — tat ca van xanh.
+
+    ⭐ Model nay lam hai ben mep bat dong y toi da: duoi khoi truoc gan 1, dau
+       khoi sau gan 0. Khi do chi mot phep tron dung moi noi lien duoc chung, va
+       moi loi tron hien ra thanh mot **buoc nhay** — dung cai ma tai nguoi nghe
+       thay la tieng "cach".
+    """
+    import torch
+
+    n = x.shape[-1]
+    doc = torch.linspace(0.0, 1.0, n, dtype=torch.float32).expand(x.shape[1], n)
+    return torch.stack([doc, doc * 0, doc * 0, doc * 0]).unsqueeze(0)
+
+
+def test_KHONG_co_BUOC_NHAY_o_cho_noi_giua_hai_khoi(tmp_path, monkeypatch):
+    """⛔ Do la ca ly do `PHU_GIAY` ton tai: mot buoc nhay o day la tieng "cach".
+
+    Do that 03/09 khang dinh phep tron lam dung viec: quanh ranh khoi 300 giay,
+    cua so 5 giay o dung cho noi co lech **-51,9 dBFS** — THAP hon vung xung
+    quanh (-42,7), tuc khong he co gai nao tai cho noi.
+    """
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+    vao = tep_song(tmp_path, 130.0)
+    ra = tmp_path / "stem"
+    import torch
+    kq = demucs_runner.tach_theo_khoi(ModelGia(), torch, str(vao), ra,
+                                      thiet_bi="cpu", ap=ap_theo_vi_tri)
+    assert kq["so_khoi"] >= 3
+
+    y = doc(ra / "drums.wav")[0]
+    nhay = np.abs(np.diff(y))
+    # Doc tuyen tang deu trong mot khoi => buoc giua hai mau lien tiep rat nho.
+    # Mot cho noi hong se tao ra mot buoc lon gap hang tram lan.
+    nguong = 20.0 / 32768.0
+    xau = np.flatnonzero(nhay > nguong)
+    assert xau.size == 0, (
+        f"co {xau.size} buoc nhay > {nguong:.5f} (lon nhat {nhay.max():.5f}) "
+        f"tai mau {xau[:5].tolist()} — cho noi khong duoc tron muot")
+
+
+def test_cha_NEM_dung_ThieuCard_khi_con_bao_thieu_card(tmp_path, monkeypatch):
+    """🔴 Mat xich ma kiem dot bien tim ra la **chua co ai chot**.
+
+    `loi.phan_loai` xep `ThieuCard` la `TAM_THOI` — dung. Nhung neu `tach_nguon`
+    san moi ma thoat khac 0 thanh mot `MediaError` chung thi phep phan loai do
+    **khong bao gio duoc goi voi `ThieuCard`**, va ca chuoi "tu choi doc duoc"
+    dut ngay o day ma bo test van xanh.
+
+    ⭐ Do la khac biet giua "loi keu to" va "loi noi duoc dieu gi": mot ben lam
+       nen tang thu lai tren card KHAC, ben kia lam no bo cuoc nhu voi mot tep
+       tieng hong.
+    """
+    from apps.auto_scan_video import tach_tieng
+    from apps.auto_scan_video.loi import TAM_THOI, phan_loai
+
+    def con_thieu_card(cmd, *, timeout, hoi_huy, moi_truong):
+        return subprocess.CompletedProcess(
+            cmd, 3, b'{"loi": "khong thay CUDA", "thieu_card": true}', b"")
+
+    monkeypatch.setattr(tach_tieng, "_chay_kem_moi_truong", con_thieu_card)
+    with pytest.raises(demucs_runner.ThieuCard):
+        tach_tieng.tach_nguon("a.wav", str(tmp_path / "s"), buoc_gpu=True)
+
+    # ... va no phai di het duong toi phep phan loai, khong dung o viec duoc nem.
+    try:
+        tach_tieng.tach_nguon("a.wav", str(tmp_path / "s2"), buoc_gpu=True)
+    except demucs_runner.ThieuCard as exc:
+        assert phan_loai(exc) == TAM_THOI, "cap card hong ma khong duoc thu lai"
+
+
+def test_hong_KHAC_van_la_MediaError_chu_khong_phai_ThieuCard(tmp_path, monkeypatch):
+    """Va chieu nguoc lai: dung bien moi loi cua tien trinh con thanh "thieu card".
+
+    Mot tep tieng hong thu lai bao nhieu lan cung the — xep no vao `TAM_THOI` la
+    dot ba lan thu vao mot viec khong bao gio xong.
+    """
+    from apps.auto_scan_video import tach_tieng
+    from apps.auto_scan_video.nhap_media import MediaError
+
+    def con_hong(cmd, *, timeout, hoi_huy, moi_truong):
+        return subprocess.CompletedProcess(cmd, 1, b"", b"loi gi do khac")
+
+    monkeypatch.setattr(tach_tieng, "_chay_kem_moi_truong", con_hong)
+    with pytest.raises(MediaError) as bat:
+        tach_tieng.tach_nguon("a.wav", str(tmp_path / "s"), buoc_gpu=True)
+    assert not isinstance(bat.value, demucs_runner.ThieuCard)
+
+
+def test_KHONG_doc_duoc_luoi_thi_NEM_chu_khong_bo_qua_im_lang(tmp_path, monkeypatch):
+    """⛔ Bo phep ghim mot cach im lang la dung loai loi ca pha 13 di sua.
+
+    Ban ra van "dung" — chi la ty so tin/lech tut tu 54,4 dB xuong 27,1 dB, va
+    khong co dau hieu nao o bat cu dau. Do la mot lan xuong cap **khong quan sat
+    duoc**, te hon mot lan hong.
+    """
+    monkeypatch.setenv(demucs_runner.BIEN_KHOI, "20")
+
+    class KhongCoLuoi(ModelGia):
+        segment = None
+        models = ()
+
+    import torch
+    with pytest.raises(ValueError, match="buoc phan doan"):
+        demucs_runner.tach_theo_khoi(KhongCoLuoi(), torch,
+                                     str(tep_song(tmp_path, 40.0)), tmp_path / "s",
+                                     thiet_bi="cpu", ap=ap_dong_nhat)
 
 @@@LTT_PROFILE_FILE_END@@@
 

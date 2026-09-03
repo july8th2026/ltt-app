@@ -299,8 +299,17 @@ def test_cong_thoat_ban_nen_la_artifact_chinh_tac_da_kiem(tmp_path, monkeypatch)
     from platform_core import credit, jobs
     from platform_core.job_runner import JobContext
     from platform_core.storage import LocalStorage, set_storage
+    from tests import rao_chan_nang
     from tests.conftest import bao_dam_user
     from tests.fixtures.asv_media import nap_nguon_vao_kho
+
+    # 🔴 Truoc pha 13 dong nay khong co, va phep kiem nay nap **demucs THAT 16
+    #    giay moi luot gate** — no voi toi model GIAN TIEP qua hang doi nen rao
+    #    chan (dan len nhung nguoi goi THANG) khong thay no.
+    #
+    # ⭐ Chi mieng NANG la gia. Hang doi, worker, ffmpeg, kho, CSDL, tron nen,
+    #    chuan am luong, lineage — van that, va do moi la thu phep kiem nay do.
+    rao_chan_nang.gia_lap_demucs(monkeypatch)
 
     monkeypatch.setenv("LTT_DATABASE_URL",
                        f"sqlite:///{(tmp_path / 'p9.db').as_posix()}")
@@ -439,11 +448,15 @@ def test_tran_luong_duoc_dat_TRUOC_khi_nap_model():
         if isinstance(n, ast.Call):
             ten = (n.func.id if isinstance(n.func, ast.Name)
                    else getattr(n.func, "attr", ""))
-            if ten in ("_dat_tran_luong", "get_model", "apply_model"):
+            # ⚠️ `tach_theo_khoi` co trong danh sach tu pha 13: `apply_model`
+            #    khong con duoc goi trong `main` nua ma nam trong ham do, nen neu
+            #    chi chot ba ten cu thi phep kiem nay xanh mot cach RONG TUECH.
+            if ten in ("_dat_tran_luong", "get_model", "apply_model",
+                       "tach_theo_khoi"):
                 dong.setdefault(ten, n.lineno)
 
     assert "_dat_tran_luong" in dong, "`main` khong dat tran luong"
-    for sau in ("get_model", "apply_model"):
+    for sau in ("get_model", "apply_model", "tach_theo_khoi"):
         if sau in dong:
             assert dong["_dat_tran_luong"] < dong[sau], (
                 f"dat tran luong SAU `{sau}` thi khong con tac dung")

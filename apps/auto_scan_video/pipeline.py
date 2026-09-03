@@ -101,9 +101,31 @@ CHUOI: tuple[GiaiDoan, ...] = (
     GiaiDoan(AUDIO_PREPARE, "asv_gpu", "asv_gpu.audio_prepare",
              sau=(MEDIA_PREPARE,),
              tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
-    # ⚠️ TRANSCRIBE dung chung MOT ten tai nguyen voi AUDIO_PREPARE, co y: ca hai
-    #    deu la model nang chay cuc bo tren cung may. Khai hai ten khac nhau se
-    #    cho phep chung chay dong thoi — dung dieu vua lam treo may.
+    # ⚠️ TRANSCRIBE dung chung MOT ten tai nguyen voi AUDIO_PREPARE. Ly do CU la
+    #    "khai hai ten khac nhau se cho phep chung chay dong thoi — dung dieu vua
+    #    lam treo may".
+    #
+    # 🔴 **Ly do do da het dung, va pha 13 do ra dieu do.** No dua tren tien de
+    #    "demucs an het loi con lai cua may" — dung o thoi diem viet, khi
+    #    `demucs_runner` chua dat gioi han luong nao. Nay no co
+    #    `LUONG_TORCH = 4`, va do that 03/09 tren chinh may nay:
+    #
+    #        1 lan tach nguon dong thoi: CPU toan may dinh 40%, RAM trong >= 16,4 GiB
+    #        2 lan tach nguon dong thoi: CPU toan may dinh 57%, RAM trong >= 14,4 GiB
+    #                                    (thong luong 1,33 lan so voi chay lan luot)
+    #
+    #    Tuc may **thua suc** hai viec nang cung luc. Giu chung mot suat KHONG con
+    #    duoc bien minh bang "may khong chiu noi".
+    #
+    # ⛔ Nhung van giu — vi mot ly do KHAC, va noi thang ra thay vi de nguyen ly do
+    #    cu cho co ve van dung: phep do tren la demucs + **demucs**. Chua ai do
+    #    demucs + **whisper** chay cung luc, va whisper co ho so khac han (khai
+    #    6.000 MB VRAM, va whisperx con nang CPU o phan gong hang/phan vai).
+    #
+    # 🔑 Dung MOT phep do de tach suat: chay `asv_gpu.audio_prepare` va
+    #    `asv_gpu.transcribe` dong thoi tren mot may dang phuc vu khach, do CPU
+    #    toan may + RAM trong + VRAM moi card. Neu dinh CPU < 70% va RAM trong
+    #    > 8 GiB thi tach ten tai nguyen ra, va thong luong tang ~1,3 lan.
     GiaiDoan(TRANSCRIBE, "asv_gpu", "asv_gpu.transcribe", sau=(AUDIO_PREPARE,),
              tai_nguyen="tach_nguon_cuc_bo", tai_nguyen_suat=1),
     # 🔑 CONTENT chay o lan `api`, nen no thuoc app KHACH — app duy nhat khai

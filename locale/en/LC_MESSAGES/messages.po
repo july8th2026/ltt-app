@@ -13914,3 +13914,6 @@ msgstr "Saving the edit plan"
 #: apps/auto_scan_video/routes.py
 msgid "Chọn phần giữ lại"
 msgstr "Choosing what to keep"
+
+msgid "Nền tảng đã cấp card nhưng tiến trình tách không thấy GPU."
+msgstr "The platform assigned a GPU but the separation process cannot see it."

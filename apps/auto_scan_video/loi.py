@@ -160,6 +160,23 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Cap card GPU (pha 13) ───────────────────────────────────────────────
+    #
+    # ⭐ `TAM_THOI` — tuc **THU LAI**, va o day thu lai la viec dung chu khong
+    #    phai mot cho hong ve phia an toan: nen tang giu cho card qua
+    #    `gpu_lease`, nen lan sau no co the cap mot card KHAC. Mot card vua bi
+    #    reset driver, mot lease dap vao card dang bao tri — deu la nhung thu
+    #    lan thu hai giai quyet duoc.
+    #
+    # 🔴 Va day la ly do lop nay ton tai tach khoi `MediaError`. Truoc pha 13,
+    #    tien trinh con thieu card thi **im lang chay CPU**; sua thanh nem ra
+    #    nhung san vao `MediaError` thi nen tang lai khong phan biet duoc "cap
+    #    card hong" (thu card khac) voi "tieng hong" (thu bao nhieu lan cung
+    #    the). Mot loi keu to ma khong noi duoc gi thi chua phai da sua xong.
+    from .demucs_runner import ThieuCard
+    if isinstance(exc, ThieuCard):
+        return TAM_THOI
+
     # ── Tach canh (pha 10) ──────────────────────────────────────────────────
     #
     # ⭐ `TAM_THOI`, khac han hai lop tren: `CanhError` gan nhu luon la mot lan

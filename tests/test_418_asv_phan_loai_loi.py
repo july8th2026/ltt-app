@@ -25,6 +25,7 @@ from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
+from apps.auto_scan_video.demucs_runner import ThieuCard
 from apps.auto_scan_video.ban_bien_tap import BanBienTapError
 from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
@@ -41,6 +42,13 @@ from apps.auto_scan_video.nhap_media import MediaError
 from apps.auto_scan_video.thoi_gian import ThoiGianError
 from apps.auto_scan_video.van_ban import VanBanError
 
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
+
 #: Moi lop ngoai le co kieu ma Auto Scan nem ra, va loai mong doi.
 #:
 #: ⭐ Chot bang TAP HOP: `test_moi_lop_ngoai_le_deu_co_mat` doi chieu bang nay
@@ -48,6 +56,10 @@ from apps.auto_scan_video.van_ban import VanBanError
 #:    chu khong doi toi luc no roi xuong nhanh mac dinh trong production.
 BANG = {
     MayBan: loi.BAN,
+    # ⭐ THU LAI la viec dung: nen tang co the cap mot card KHAC lan sau. Truoc
+    #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
+    #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.
+    ThieuCard: loi.TAM_THOI,
     GiongMoHo: loi.MO_HO,
     DichMoHo: loi.MO_HO,
     MediaError: loi.NGUOI_DUNG,
@@ -268,6 +280,10 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         "AsvError", "KhongTimThay", "XungDot",   # tang route, khong len toi bien
         "AssetError",                            # bi doi loai truoc khi len bien
         "DaHuy",                                 # nhanh rieng cua job_runner
+        # 🔑 Chi song trong TIEN TRINH CON demucs. Chot an toan cua pha 13 nem no
+        #    khi mot phep kiem cham toi model that; production khong bao gio co
+        #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.
+        "ChayTrongBoTest",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va

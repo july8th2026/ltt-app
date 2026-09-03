@@ -46,6 +46,9 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     gpu_env = None
     if ctx is not None and getattr(ctx, "gpu_env", None):
         gpu_env = ctx.gpu_env(base=dict(os.environ))
+    # 🔑 Card DA duoc giu cho hay chua — cha biet, con khong. Truyen xuong de con
+    #    tu choi thay vi tut xuong CPU im lang (`demucs_runner.chon_thiet_bi`).
+    uuid_cap = str(getattr(ctx, "gpu_uuid", "") or "") if ctx is not None else ""
 
     with tempfile.TemporaryDirectory(prefix="asv-audio-") as tam:
         thu_muc = Path(tam)
@@ -61,7 +64,8 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             ctx.progress(30, _t('Đang tách giọng khỏi nhạc nền'))
 
         ket_qua = tach_tieng.tach_nguon(day_du, str(thu_muc / "stem"),
-                                        gpu_env=gpu_env, hoi_huy=hoi_huy)
+                                        gpu_env=gpu_env, buoc_gpu=bool(uuid_cap),
+                                        hoi_huy=hoi_huy)
 
         if ctx is not None and getattr(ctx, "progress", None):
             ctx.progress(75, _t('Đang trộn nhạc nền'))
@@ -102,7 +106,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             "phan": [{"staging_key": khoa_nen, "kind": "audio", "duoi": "wav",
                       "van_tay": vt}],
             "tom_tat": {
+                # ⭐ Ba manh, va chung chi co nghia KHI DUNG CANH NHAU:
+                #    `gpu_cap` la card CHA giu cho, `ten_card` la card CON thay.
+                #    Mot dau tu bao cao ca hai thi khong doi chieu duoc gi.
                 "thiet_bi": ket_qua.get("thiet_bi", ""),
+                "gpu_cap": uuid_cap,
+                "ten_card": ket_qua.get("ten_card", ""),
+                "so_khoi": ket_qua.get("so_khoi", 0),
+                "khoi_giay": ket_qua.get("khoi_giay", 0),
                 "stem_giu": list(tach_tieng.STEM_GIU),
                 "lufs": am["lufs"],
                 "dinh_that": am["dinh_that"],

@@ -21,6 +21,13 @@ from tests import rao_chan_nang
 
 from tests.fixtures.asv_media import ban_ghi_gia, require_ffmpeg
 
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
+
 
 def _wav_16k(dich: Path, *, giay: float = 2.0, hz: int = 300) -> Path:
     from platform_core import media

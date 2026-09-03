@@ -20,6 +20,13 @@ import pytest
 
 from tests.fixtures.asv_media import ban_ghi_gia
 
+# 🔴 Pha 13: cac phep kiem trong tep nay chay HET chuoi, nen chung cham toi
+#    `audio_prepare` — va truoc pha 13 dieu do co nghia la chung nap
+#    **htdemucs THAT** moi luot gate, tren mot may dang phuc vu khach.
+#    Fixture autouse duoi day thay dung mieng nang do; ffmpeg, kho, CSDL,
+#    hang doi va worker van that.  (`LTT_TEST_NANG=1` de chay model that)
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
+
 
 def _ban_ghi(so_doan: int = 3) -> dict:
     from apps.auto_scan_video import ban_ghi
