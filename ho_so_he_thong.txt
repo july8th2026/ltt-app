@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:bbca53df67aa611c4374bd13d9a789151983fbbac4d503f8aadaf14c244500fb
+Fingerprint   : sha256:f8df322f6e2fe3dc11cc1350967c7c5a2022c3d53269bf1b4397fad69630aa7a
 Nguồn đã quét : 1557 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -499,6 +499,15 @@ Các lớp chính:
     - apps/upscalevideo/service.py
     - apps/upscalevideo/telemetry.py
     - apps/upscalevideo/templates/upscalevideo.html
+    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.bin
+    - apps/upscalevideo/vendor/engine/models/realesr-general-wdn-x4v3.param
+    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.bin
+    - apps/upscalevideo/vendor/engine/models/realesr-general-x4v3.param
+    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.bin
+    - apps/upscalevideo/vendor/engine/models/realesrgan-x4plus.param
+    - apps/upscalevideo/vendor/engine/realesrgan-ncnn-vulkan.exe
+    - apps/upscalevideo/vendor/engine/vcomp140.dll
+    - apps/upscalevideo/vendor/engine/vcomp140d.dll
     - apps/upscalevideo/watch_agent.py
     - apps/upscalevideo/watch_auth.py
 
@@ -3259,7 +3268,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1557 file; 15974613 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1557 file; 15975633 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -20360,7 +20369,7 @@ def handle(params: dict, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/manifest.py
-SHA256=54d7e53b88593e6e77a6750397643c12cc4a2090e7841bae3498f1f2b0499050 BYTES=16179 LINES=301
+SHA256=71a76e2cc77d4ca9225525154c97d2a53864a932beec1eacb0eac3763c95f323 BYTES=16180 LINES=301
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra ngoài. (H38)
@@ -20396,7 +20405,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
    Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
 
-       tran.input_tokens tu GET /health cua cong may B  ->  96256
+       tran.input_tokens tu GET /health cua cong may B  ->  169984
 
    Số đúng tại thời điểm viết:
 
@@ -20667,7 +20676,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/ngan_sach.py
-SHA256=5ef045efe2f291db8bab4fdc4300a0a81045cd47dcb844409613ebd4374b86bd BYTES=19672 LINES=301
+SHA256=483db1aaecfe1b205d84814ceb13238955c9ed898cdd5dd70e9a9eec61635e3c BYTES=19672 LINES=301
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách của `ltt_llm` — **nguồn chân lý duy nhất** cho mọi con số.
 
@@ -20771,7 +20780,7 @@ LE = 2_048
 
 #: Trần đầu vào thật sự dùng được: chừa đủ chỗ cho một câu trả lời dài nhất.
 #: Đây là số máy B phải khai ở `LTT_LLM_MAX_INPUT_TOKENS`.
-TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE            # 96_256
+TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE           # 169_984
 
 #: Số byte JSON cho mỗi token khi hội thoại đi trên dây. Đo 30/08 trên thân
 #: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool).
@@ -20783,12 +20792,12 @@ BYTE_MOI_TOKEN_JSON = 4.5
 #: ⛔ ĐÂY LÀ MỘT LỖI ĐÃ XẢY RA: trần body 256 KB của nền tảng chặn hội thoại dài
 #:    ở khoảng 64.000 token — gần bằng 65.000 nên suốt buổi ta tưởng đang chạm
 #:    trần của máy B. Hai trần không liên quan gì nhau mà cái nhỏ hơn thắng.
-BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~433 KB
+BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~747 KB
 
 #: Cửa sổ **công bố** cho client agentic (Codex, Claude Code) để chúng nén hội
 #: thoại **trước** khi chạm trần. Chừa 8% cho lệch tokenizer: client đếm token
 #: bằng bộ đếm của nó, model đếm bằng bộ của Qwen, hai số không bao giờ khớp.
-CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                    # 88_555
+CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 156_385
 
 
 # ── Ngân sách THEO MODEL ───────────────────────────────────────────────────
@@ -130740,7 +130749,7 @@ def build(prompts_dir, mapping: dict, *, base: str = "base_prompt.txt") -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/providers.py
-SHA256=6a65916ce01ceae879e1259c5382f687b2e3f37cfe229d147f4f826caacad961 BYTES=18545 LINES=359
+SHA256=5fb057a3c346e71bd84c2b542a58785b552c536841f00dd5959a4d588a3b030b BYTES=18833 LINES=362
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 providers.py — Provider Registry (H8): MỘT chỗ khai mọi nhà cung cấp API mà nền
@@ -131002,9 +131011,12 @@ REGISTRY: dict[str, Provider] = {
                     ],
                 },
             ),
-            # `qwen38-ops` (200K) CÓ trong llama-swap nhưng KHÔNG khai ở đây:
-            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ vượt timeout 125
-            # giây mặc định. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
+            # `qwen38-ops` ĐÃ GỠ 03/09. Nó từng bị giữ trong LAN vì lập luận
+            # "200K cần ~195 giây prefill ⇒ vượt timeout 125 giây của Cloudflare" —
+            # đúng cho cửa ĐỒNG BỘ, sai cho cửa STREAM, vì `nhip_tim.py` chèn chú
+            # thích SSE mỗi 15 giây trong lúc prefill nên đồng hồ im-lặng không
+            # bao giờ chạm. Nay `qwen38-api` CHÍNH LÀ hồ sơ 200K, và chỉ có MỘT
+            # hồ sơ text: llama-swap giết một lượt đang chạy để nạp hồ sơ khác.
         ),
         list_models_path="/v1/models",
         notes=("Cổng VLM trên máy B (:8299, bearer token), tương thích OpenAI. "
@@ -186229,7 +186241,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=a1fa95de6406dfe2c1b6a8dca5c1dfdcc6fa41955dcfeef15dfc4af7e6083f77 BYTES=34033 LINES=1113
+SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34034 LINES=1113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -186751,7 +186763,7 @@ SHA256=a1fa95de6406dfe2c1b6a8dca5c1dfdcc6fa41955dcfeef15dfc4af7e6083f77 BYTES=34
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (89K usable input context). `ltt_llm_vision` also reads images, with a smaller 28K input context.",
+            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 28K input context.",
             "examples": [
               "ltt_llm"
             ]
@@ -186818,7 +186830,7 @@ SHA256=a1fa95de6406dfe2c1b6a8dca5c1dfdcc6fa41955dcfeef15dfc4af7e6083f77 BYTES=34
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "126dc3823fc9fcff"
+      "contract_hash": "dcf6aa9d633aaa41"
     },
     {
       "name": "text.prompt_package",
@@ -234918,7 +234930,7 @@ def test_vong_bao_tri_co_goi_pheps_tham():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_258_gioi_han_cong.py
-SHA256=584f936427ba509b77754ac73c069fe5afd88be3663640c9c366c7b98a49bd81 BYTES=11562 LINES=298
+SHA256=d698eec0cca5e7410b15a213259e099d06c93bea7757021f05db77e373ab00ce BYTES=11562 LINES=298
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_258_gioi_han_cong — hàng rào đồng thời/tần suất của cổng VLM. (H38, V9)
@@ -235104,7 +235116,7 @@ def _co_cho(gh) -> bool:
 
 
 def _than(**ghi_de):
-    d = {"model": "qwen38-ops", "messages": [{"role": "user", "content": "xin chao"}]}
+    d = {"model": "qwen38-api", "messages": [{"role": "user", "content": "xin chao"}]}
     d.update(ghi_de)
     return d
 
@@ -238011,7 +238023,7 @@ def test_health_bao_nhip_tim():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_270_tren_gpu.py
-SHA256=32ccd2d4fb402febf2a775f7886d2aac92b87586af96d48470007241d321c10a BYTES=4731 LINES=110
+SHA256=b25c96952f87c2c70eafb08409f5d98f01a0b1af41d5200884c6f50f07045b59 BYTES=4731 LINES=110
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_270_tren_gpu — bắt được ca "model bò trên CPU". (H38, sau sự cố 23/08)
@@ -238107,7 +238119,7 @@ def test_chot_nay_KHONG_tu_choi_yeu_cau():
     try:
         c, up = _client(up=FakeUpstream())
         r = c.post("/v1/chat/completions", json={
-            "model": "qwen38-ops",
+            "model": "qwen38-api",
             "messages": [{"role": "user", "content": "hi"}]})
         assert r.status_code == 200, r.text
         assert up.goi, "da tu choi phuc vu chi vi model dang o CPU"
@@ -271067,7 +271079,7 @@ def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
-SHA256=6fe333d83ab74758bc81cb57d1dba386ddee3f8b8ac5bfa0443056c8b4dc20c1 BYTES=27418 LINES=603
+SHA256=3368764ce6c9e84820d24e5e1caa362c3c95036b42b5450885395859fc3bb33f BYTES=28148 LINES=617
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
 
@@ -271103,8 +271115,22 @@ def _n_truyen_cho_pytest() -> int:
     ⭐ Tu 03/09 chi con MOT ham tra loi cau hoi nay, nen phep kiem goi thang no.
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
+
+    ⛔ `do_tai=False` KHONG PHAI DE CHO DE. Thieu no thi moi phep kiem goi ham
+       nay **do chinh cai may no dang chay tren do**: chay rieng ⇒ may ranh ⇒
+       ra dung tran; chay TRONG mot luot gate ⇒ chinh bo test lam may ban ⇒ nho
+       hon tran ⇒ do. Do duoc 03/09 tren cay nay, trong mot luot gate day du:
+
+           [ngan sach] 4 loi dang bi chiem (khai bao 0, do duoc 4)
+
+       va `test_them_mot_frontend_da_CHE_khuyet_tat_chu_khong_sua_no` do trong
+       khi no XANH khi chay mot minh.
+
+    ⭐ Phan DO DUOC duoc chot rieng, va chot bang BAT DANG THUC chu khong bang
+       mot con so: `test_do_tai_khong_bao_gio_noi_ngan_sach`. Mot con so do duoc
+       thi khong bao gio la mot hang so.
     """
-    return gate.loi_cho_bo_test(phien="")
+    return gate.loi_cho_bo_test(phien="", do_tai=False)
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
