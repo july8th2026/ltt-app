@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:55139dcf0279d5e9f07304acc552e56951afcf893d83471104eb5b4609a61c06
+Fingerprint   : sha256:fac8c3929f22c430886081df2d9b40d3a69db4f4be3300b3a61e390839c6fa13
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -186844,7 +186844,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34034 LINES=1113
+SHA256=7e6e35836d855355287a06409fdc640baaeaf0765e8e10926c2e552403d7d85e BYTES=34034 LINES=1113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -187366,7 +187366,7 @@ SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 28K input context.",
+            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 89K input context.",
             "examples": [
               "ltt_llm"
             ]
@@ -187433,7 +187433,7 @@ SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "dcf6aa9d633aaa41"
+      "contract_hash": "5699a45f6a44d8b6"
     },
     {
       "name": "text.prompt_package",
