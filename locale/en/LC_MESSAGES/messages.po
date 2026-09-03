@@ -13902,3 +13902,15 @@ msgstr "This run has been cancelled."
 #: apps/auto_scan_video/rang_giong.py
 msgid "Chưa chọn được giọng cho lần chạy này — cần hồ sơ nội dung trước khi tự khớp."
 msgstr "No voice has been chosen for this run yet - auto-matching needs the content profile first."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Chưa có bản media để phân tích cảnh."
+msgstr "No prepared media yet to analyse scenes from."
+
+#: apps/auto_scan_video/giai_doan_ban_bien_tap.py
+msgid "Đang lưu bản biên tập"
+msgstr "Saving the edit plan"
+
+#: apps/auto_scan_video/routes.py
+msgid "Chọn phần giữ lại"
+msgstr "Choosing what to keep"

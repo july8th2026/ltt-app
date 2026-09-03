@@ -25,6 +25,8 @@ from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
+from apps.auto_scan_video.ban_bien_tap import BanBienTapError
+from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
@@ -129,6 +131,16 @@ BANG = {
     #:    tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O day ta
     #:    da doc duoc JSON va no MANG MOT GIA TRI SAI.
     HieuCanhError: loi.NGUOI_DUNG,
+    #: 🔑 `BanBienTapError` = ban khong dat chinh sach an toan (cat sach,
+    #:    giu duoi san, thao tac cat lot vao che do giu nguyen hinh). Ba
+    #:    dieu do la ket luan cua mot phep tinh TAT DINH tren cung du lieu —
+    #:    chay lai cho ra dung ket qua cu.
+    BanBienTapError: loi.NGUOI_DUNG,
+    #: ⭐ `ThieuChiMuc` ke thua `ThieuNguon` nen HANH VI da dung san — nhung
+    #:    bang nay chot TAP HOP, khong chot hanh vi. Mot lop khong co trong
+    #:    day la mot lop khong ai quyet dinh so phan, va lan sau ai do doi
+    #:    cay ke thua thi khong gi bao.
+    ThieuChiMuc: loi.THIEU_THUONG_NGUON,
 }
 
 

@@ -90,6 +90,10 @@ NHAN_GIAI_DOAN = {
     pipeline.MEDIA_PREPARE: N_('Chuẩn bị video'),
     pipeline.AUDIO_PREPARE: N_('Tách nhạc nền khỏi giọng'),
     pipeline.TRANSCRIBE: N_('Chép lời thoại gốc'),
+    # ⭐ Nhãn nói cho khách biết **việc gì đang xảy ra**, không nói tên kỹ thuật.
+    #    Ở chế độ giữ nguyên hình bước này gần như tức thì; ở chế độ cắt thông
+    #    minh nó là lúc hệ thống quyết định giữ lại những gì.
+    pipeline.EDIT_PLAN: N_('Chọn phần giữ lại'),
     pipeline.CONTENT_PROCESS: N_('Dịch sang tiếng Việt'),
     pipeline.VOICE_SYNTHESIS: N_('Tạo giọng đọc'),
     pipeline.TIMING_ALIGN: N_('Khớp thời điểm'),

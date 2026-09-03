@@ -30,6 +30,7 @@ from platform_core.i18n import _ as _t
 from platform_core.storage import get_storage
 
 from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
+               giai_doan_ban_bien_tap,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc,
                giai_doan_thoi_gian, loi, pipeline)
@@ -86,6 +87,13 @@ def phien_ban_engine(stage_ten: str) -> str:
     if stage_ten == pipeline.TRANSCRIBE:
         from . import giai_doan_chep_loi
         return f"chep_loi/{giai_doan_chep_loi.PHIEN_BAN_MA}"
+    if stage_ten == pipeline.EDIT_PLAN:
+        from . import ban_bien_tap, canh, giai_doan_ban_bien_tap
+        # 🔑 Ba con so, ba thu doi doc lap: ma cua giai doan, chinh sach cat, va
+        #    nguong tach canh. Thieu bat ky cai nao thi doi no xong cache van
+        #    khop, va lan chay dung lai mot ban bien tap sinh boi luat CU.
+        return (f"ban_bien_tap/{giai_doan_ban_bien_tap.PHIEN_BAN_MA}"
+                f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.NGUONG_DOI_CANH}")
     if stage_ten == pipeline.CONTENT_PROCESS:
         from . import dich_thuat, van_ban
         # Provider + model nam trong nay: doi model dich la doi san pham, va
@@ -250,6 +258,8 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
             ra = giai_doan_am_thanh.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.TRANSCRIBE:
             ra = giai_doan_chep_loi.chay(db, kho, run=run, ctx=ctx)
+        elif ten == pipeline.EDIT_PLAN:
+            ra = giai_doan_ban_bien_tap.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.CONTENT_PROCESS:
             ra = giai_doan_noi_dung.chay(db, kho, run=run, ctx=ctx)
         elif ten == pipeline.VOICE_SYNTHESIS:

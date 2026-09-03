@@ -34,6 +34,15 @@ from dataclasses import dataclass
 MEDIA_PREPARE = "media_prepare"
 AUDIO_PREPARE = "audio_prepare"
 TRANSCRIBE = "transcribe"
+#: 🔑 **Chen o pha 12, TRUOC `content_process` — va do la ca diem.**
+#:
+#: 🔴 `V4-R07` (P0): trong V2, `content_process` (dich ca ban chep loi bang model
+#:    TRA TIEN) chay o vi tri thu **4**, khi chua co ban bien tap nao. Tuc ta
+#:    dich — va tra tien cho — nhung cau thoai thuoc nhung canh se bi **cat bo**.
+#:
+#: ⇒ Ban bien tap la quyet dinh hinh anh CO THAM QUYEN. Moi thu tra tien phia
+#:   sau chi duoc chay tren phan da duoc GIU.
+EDIT_PLAN = "edit_plan"
 CONTENT_PROCESS = "content_process"
 VOICE_SYNTHESIS = "voice_synthesis"
 TIMING_ALIGN = "timing_align"
@@ -109,8 +118,19 @@ CHUOI: tuple[GiaiDoan, ...] = (
     #    moi giai doan. Phan quan trong cua D5 van giu: khong dung duong HTTP
     #    thu hai, khong tu chon khoa, an toan dispatch van la cua nen tang.
     #    Xem bao cao pha 11, muc "Sua doi ADR-001 D5".
+    # ── Ban bien tap: quyet dinh HINH ANH, chot truoc khi tieu tien tieng ──
+    #
+    # ⭐ `llm_remote` cung ten voi `content_process`: doc canh bang VLM va dich
+    #    bang LLM deu la model nha, va chung phai tranh **dung mot suat** thay vi
+    #    dam nhau tren cung mot may.
+    #
+    # ⚠️ `sau=(TRANSCRIBE,)` chu khong `sau=(AUDIO_PREPARE,)`: chinh sach cat can
+    #    biet canh nao CO LOI THOAI (nguong bo cao hon han), va dieu do doi ban
+    #    chep loi da co.
+    GiaiDoan(EDIT_PLAN, "auto_scan_video", "auto_scan_video.edit_plan",
+             sau=(TRANSCRIBE,), tai_nguyen="llm_remote", tai_nguyen_suat=1),
     GiaiDoan(CONTENT_PROCESS, "auto_scan_video",
-             "auto_scan_video.content_process", sau=(TRANSCRIBE,),
+             "auto_scan_video.content_process", sau=(EDIT_PLAN,),
              tai_nguyen="llm_remote", tai_nguyen_suat=1),
     # 🔑 Lan `voice`, khong phai ffmpeg: may sinh tieng la mot DICH VU rieng
     #    (`LTTStudioVoice`, loopback :8120), nen "co ffmpeg" khong keo theo "co

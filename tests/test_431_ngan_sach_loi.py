@@ -359,10 +359,18 @@ def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # Khong phu thuoc `os.cpu_count()` (logic) nua.
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
-    assert gate.loi_cho_bo_test(phien="") == gate.TRAN_WORKER_BO_TEST
+
+    # 🔴 `do_tai=False`, cung ly do voi `_n_truyen_cho_pytest` — va day la cho
+    #    thu HAI cua cung mot loi, tim ra o luot hoi quy cua pha 12.
+    #
+    #    Phep kiem nay do SO HOC cua don vi. De `do_tai` mac dinh (`True`) thi no
+    #    doc CPU that va doi ket qua theo tai may: xanh khi chay mot minh, do
+    #    duoi `-n 4`. Mot phep kiem cong chat luong chap chon day nguoi ta vao
+    #    thoi quen chay lai cho toi khi xanh, va tu do khong ai doc mau do nua.
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == gate.TRAN_WORKER_BO_TEST
 
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
-    assert gate.loi_cho_bo_test(phien="") == min(
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == min(
         gate.TRAN_WORKER_BO_TEST, 8 - gate.LOI_DE_DANH_VAT_LY)
 
 

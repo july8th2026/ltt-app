@@ -198,7 +198,16 @@ def test_run_chay_het_CHIN_giai_doan_va_ve_done(db, kho_tam, tmp_path, asr_gia, 
     ds = features.cac_giai_doan(db, run)
     xong = [s.stage for s in ds if s.status == STAGE_SUCCEEDED]
 
-    assert len(ds) == len(pipeline.CHUOI) == 9
+    # ⚠️ **9 -> 10 o pha 12.** `edit_plan` duoc chen vao TRUOC `content_process`
+    #    de dong `V4-R07` (P0): trong V2, giai doan dich (tra tien) chay o vi tri
+    #    thu 4 khi chua co ban bien tap nao — tuc dich va tra tien cho nhung cau
+    #    thoai thuoc nhung canh se bi cat bo.
+    #
+    # ⭐ Con so o day co chu dinh la mot con so, khong phai `len(pipeline.CHUOI)`
+    #    doi chieu voi chinh no: mot phep kiem so chuoi voi chinh no khong bao
+    #    gio do. Doi chuoi thi phai sua con so nay, va do la luc nguoi sua doc
+    #    lai xem viec chen co dung cho khong.
+    assert len(ds) == len(pipeline.CHUOI) == 10
     assert sorted(xong) == sorted(pipeline.TEN_GIAI_DOAN), (
         f"chua xong het: thieu {set(pipeline.TEN_GIAI_DOAN) - set(xong)}")
     assert run.status == RUN_DONE

@@ -192,6 +192,22 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, HieuCanhError):
         return NGUOI_DUNG
 
+    # ── Ban bien tap (pha 12) ───────────────────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — that bai cuoi cung, dung thu lai.
+    #
+    # 🔑 `BanBienTapError` nem khi ban KHONG DAT chinh sach an toan: cat sach moi
+    #    canh, giu duoi san, hoac mot thao tac cat lot vao che do giu nguyen
+    #    hinh. Ba dieu do la ket luan cua mot phep tinh TAT DINH tren cung du
+    #    lieu — chay lai cho ra dung ket qua cu.
+    #
+    # ⚠️ `ThieuChiMuc` khong can mot nhanh rieng o day: no ke thua `ThieuNguon`
+    #    nen nhanh `THIEU_THUONG_NGUON` o tren da bat. Nhung no VAN phai co
+    #    trong bang cua `test_418` — bang do chot TAP HOP, khong chot hanh vi.
+    from .ban_bien_tap import BanBienTapError
+    if isinstance(exc, BanBienTapError):
+        return NGUOI_DUNG
+
     # ── Cua goi model (pha 08) ──────────────────────────────────────────────
     #
     # ⛔ `AiMoHo` va `AiError` KHONG ke thua nhau, va do la co y: mot phep

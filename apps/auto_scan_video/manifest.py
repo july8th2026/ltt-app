@@ -72,7 +72,8 @@ MANIFEST = AppManifest(
     #: ⭐ CONTENT nam o day chu khong o `asv_media` vi mot lan goi model khong
     #:    can ffmpeg. Xep no vao lan ffmpeg la giu mot suat co ffmpeg de ngoi
     #:    cho mang — mot suat khan hiem dung cho viec khong can no.
-    job_types=("auto_scan_video.advance", "auto_scan_video.content_process"),
+    job_types=("auto_scan_video.advance", "auto_scan_video.edit_plan",
+               "auto_scan_video.content_process"),
     requires=("api",),
     credit_cost=_gia,
 
