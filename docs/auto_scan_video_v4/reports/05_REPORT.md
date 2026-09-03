@@ -61,7 +61,7 @@ Measured against the real registry — every `params_schema` field of every decl
 through `public_api.media.media_kind`:
 
 ```
-14 tool-fields accept an upload, across 8 apps:
+14 tool-fields accept an upload, across 6 apps:
   anhnoibo image.ltt · autosubvideo video.subtitle · taoanh image.generate/batch_generate
   taoclipngan video.short_clips · taovideo video.generate · upscalevideo video/image.upscale
 Belonging to an app with an underscore: NONE
