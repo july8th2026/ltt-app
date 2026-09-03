@@ -249,3 +249,82 @@ def test_ban_do_rebase_ton_tai_va_phu_HET_module_hien_co():
     thieu = [p.stem for p in sorted((APP / "auto_scan_video").glob("*.py"))
              if f"`{p.name}`" not in van_ban]
     assert thieu == [], f"REBASE_MAP_V4.md bo sot: {thieu}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  Chot GIU HINH — phai song sot qua cuoc tach doi cua pha 17
+# ══════════════════════════════════════════════════════════════════════════════
+
+KET_XUAT = APP / "auto_scan_video" / "ket_xuat.py"
+BAN_DUNG = APP / "auto_scan_video" / "ban_dung.py"
+
+
+def test_render_van_TU_CHOI_moi_che_do_hinh_khac_copy_HOAC_da_biet_den_preset():
+    """⛔ Chot nay ton tai vi mot cuoc refactor SAP DIEN RA, khong vi mot loi.
+
+    Hom nay `ket_xuat.py:175-177` tu choi moi ban dung khai che do hinh khac
+    `copy`. Do la mot chot vo dieu kien, va no dung — MVP v1 khong ma hoa lai
+    hinh o dau ca.
+
+    Pha 17 PHAI noi no ra, vi `smart_localize` ma hoa lai tai diem cat. Va cach
+    noi sai la xoa han cau lenh `raise`: luc do `localize_preserve_picture` mat
+    han lop bao ve, va no mat **im lang** — khong phep kiem nao do, chi la mot
+    ngay nao do mot khach chon preset "giu nguyen hinh anh" va nhan ve mot ban
+    da ma hoa lai.
+
+    ⇒ Chot nay chap nhan DUNG HAI trang thai, khong chap nhan trang thai thu ba:
+         (a) chot vo dieu kien con nguyen  — hom nay
+         (b) chot da tro thanh CO DIEU KIEN theo preset — sau pha 17
+       Xoa chot ma khong nhac toi preset nao la trang thai thu ba, va no do.
+
+    ⭐ Doc AST chu khong doc van ban: doan giai thich ngay tren day nhac ca
+       `copy` lan ten preset, va mot bo do quet van ban se tu lam minh xanh.
+    """
+    from apps.auto_scan_video import hop_dong_v4
+
+    nguon = KET_XUAT.read_text(encoding="utf-8")
+    cay = ast.parse(nguon)
+
+    # (a) Chot vo dieu kien: co mot `raise` nam trong mot `if` so sanh che do hinh.
+    con_chot = False
+    for nut in ast.walk(cay):
+        if not isinstance(nut, ast.If):
+            continue
+        so_sanh = any(isinstance(n, ast.Compare) for n in ast.walk(nut.test))
+        nhac_che_do = any(
+            isinstance(n, ast.Attribute) and "CHE_DO_HINH" in n.attr
+            or isinstance(n, ast.Constant) and n.value == "che_do"
+            for n in ast.walk(nut.test))
+        co_raise = any(isinstance(n, ast.Raise) for n in ast.walk(nut))
+        if so_sanh and nhac_che_do and co_raise:
+            con_chot = True
+            break
+
+    # (b) Da tro thanh co dieu kien: ma nguon THAM CHIEU mot ten preset.
+    ten_dinh_danh = {n.attr for n in ast.walk(cay) if isinstance(n, ast.Attribute)}
+    ten_dinh_danh |= {n.id for n in ast.walk(cay) if isinstance(n, ast.Name)}
+    biet_preset = any(
+        p in ten_dinh_danh
+        for p in ("PRESET_GIU_HINH", "PRESET_CAT_THONG_MINH", "preset"))
+
+    assert con_chot or biet_preset, (
+        "`ket_xuat.py` khong con tu choi che do hinh khac copy, VA cung khong "
+        "biet den preset nao. Duong giu-nguyen-hinh dang khong duoc bao ve boi "
+        "thu gi ca. Doc ADR-V4-001 he qua 1 truoc khi di tiep.")
+
+    # Va hop dong san pham phai van noi rang preset giu hinh khong cat duoc.
+    assert hop_dong_v4.THAO_TAC_CHO_PHEP[hop_dong_v4.PRESET_GIU_HINH] == ()
+
+
+def test_ban_dung_van_khai_che_do_hinh_nhu_MOT_TRUONG_DU_LIEU():
+    """`ban_dung` la DU LIEU, khong phai mot chuoi lenh (giu tu V2 pha 14).
+
+    Pha 17 them duong ma hoa lai. Neu che do hinh thoi la mot truong trong ban
+    dung ma thanh mot nhanh `if` trong trinh render, thi mot ban dung da luu
+    khong con mo ta day du mot lan render — va `thi_hanh.van_tay` se coi hai lan
+    render khac nhau la mot.
+    """
+    from apps.auto_scan_video import ban_dung
+
+    assert hasattr(ban_dung, "CHE_DO_HINH")
+    assert ban_dung.CHE_DO_HINH == "copy"

@@ -17,6 +17,8 @@ from pathlib import Path
 
 import pytest
 
+from tests import rao_chan_nang
+
 from tests.fixtures.asv_media import ban_ghi_gia, require_ffmpeg
 
 
@@ -236,6 +238,8 @@ class TestBocEngine:
         assert can in APP_DUOC_DUNG_APP[("auto_scan_video", "autosubvideo")]
 
 
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_engine_ASR_that_chay_duoc(tmp_path):
     """Smoke THAT voi faster-whisper. Model da nam trong cache HF.
 

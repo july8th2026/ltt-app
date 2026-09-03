@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4b2a4d0a76dd13e0a3b68d5d051f69073a21cdefd9b31fdba566a098c79b56da
-Nguồn đã quét : 1545 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:0a23155531833d3fe7db12932a84df7a5e530d9d29a368baf3bf1fd2e305b624
+Nguồn đã quét : 1548 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1094,7 +1094,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (184 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (185 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1233,6 +1233,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_STORAGE
 - LTT_TEMP_VIDEO_DIR
 - LTT_TEST_DATABASE_URL
+- LTT_TEST_NANG
 - LTT_TEST_R2_BUCKET
 - LTT_TEXT_
 - LTT_TEXT_0
@@ -1280,7 +1281,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (379 file pytest + 3 frontend)
+10. QUALITY GATES (380 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1622,6 +1623,7 @@ Test inventory:
 - tests/test_425_asv_v4_hop_dong_san_pham.py
 - tests/test_426_asv_v4_kiem_ke_nang_luc.py
 - tests/test_427_asv_v4_kien_truc.py
+- tests/test_428_asv_v4_rao_chan_nang.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1686,8 +1688,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1545 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1176, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1548 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1179, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2707,8 +2709,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (397)
+[tests] (400)
 - tests/__init__.py
+- tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
 - tests/browser/upscale_h32_batch.js
@@ -2725,6 +2728,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - tests/fixtures/upscale_studio_server.py
 - tests/golden/public_api_catalog_v1.json
 - tests/pg_scratch.py
+- tests/rao_chan_nang.py
 - tests/run_tests.py
 - tests/test_100_agent_telemetry.py
 - tests/test_101_agent_body_limit.py
@@ -3061,6 +3065,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - tests/test_425_asv_v4_hop_dong_san_pham.py
 - tests/test_426_asv_v4_kiem_ke_nang_luc.py
 - tests/test_427_asv_v4_kien_truc.py
+- tests/test_428_asv_v4_rao_chan_nang.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3289,7 +3294,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1545 file; 15473777 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1548 file; 15496947 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -181642,6 +181647,92 @@ SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 BYTES=0 
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/bo_bat_bien_v4.py
+SHA256=bf26ab683cc43781b6c48f6076df07699ea90825acea55d9c9617877c5febb69 BYTES=3893 LINES=80
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Bo BAT BIEN V4 — chay sau moi lan sua, va truoc khi dong mot pha.
+
+`V4_TEST_REVIEW_PROTOCOL.md` tang 2 doi mot bo nhanh phu it nhat muoi hai bat
+bien. Tep nay la **ban khai** cua bo do: dau la bat bien, dau la tep chung minh
+no, va vi sao chia lam hai vong.
+
+## Hai vong, vi mot con so do duoc
+
+    VONG NHANH  ~12,5 giay   chay sau MOI lan sua
+    VONG DU     ~80 giay     chay truoc khi dong mot pha
+
+Do that (2026-09-03, may nay):
+
+    test_400  1,8s   test_401  0,6s   test_404  1,2s   test_416  0,5s
+    test_421  3,2s   test_425  0,2s   test_426  4,1s   test_427  0,6s
+    test_428  1,3s
+    ────────────────────────────────────────────────────────────────
+    test_417  65,9s  <- MOT tep chiem 84% thoi gian cua ca bo
+
+⚠️ `test_417` phu **vo hieu ha nguon**, mot bat bien bat buoc cua tang 2. No
+   khong bi loai; no bi tach. Ly do la mot bai hoc cu cua kho nay: mot bo kiem
+   80 giay khong duoc chay sau moi lan sua, no duoc chay **mot lan cuoi ngay**,
+   va luc do no bao mot loi da nam trong muoi lan sua.
+
+   Mot bo 12 giay duoc chay that. Do la ca khac biet.
+
+⛔ Va chieu nguoc lai phai noi thang: **vong nhanh KHONG phai bang chung day du.**
+   Dong mot pha ma chi chay vong nhanh la bo qua vo hieu ha nguon — dung cho ma
+   pha 16 cua V2 tim ra mot khiem khuyet that (mot giai doan chay lai nhung cac
+   giai doan an theo no van giu ket qua cu, va lan chay ket thuc voi mot ban
+   long tieng tron lan hai lan chay).
+"""
+from __future__ import annotations
+
+#: Bat bien tang 2 -> tep chung minh no. Khoa la ten trong
+#: `V4_TEST_REVIEW_PROTOCOL.md`; gia tri la tep test that.
+#:
+#: ⭐ Ban do nay la mot rang buoc HAI CHIEU: xoa mot tep thi mot bat bien mat
+#:    nguoi chung minh, va `test_428` do. Them mot bat bien ma khong co tep thi
+#:    cung do.
+BAT_BIEN: dict[str, str] = {
+    "queue SSOT":                "tests/test_400_asv_bat_bien_thi_hanh.py",
+    "one billing owner":         "tests/test_400_asv_bat_bien_thi_hanh.py",
+    "owner isolation":           "tests/test_401_asv_ranh_gioi_va_artifact.py",
+    "credential scope":          "tests/test_404_pham_vi_khoa_api.py",
+    "artifact promotion":        "tests/test_401_asv_ranh_gioi_va_artifact.py",
+    "fingerprint/cache":         "tests/test_416_asv_van_tay_engine.py",
+    "cancellation":              "tests/test_400_asv_bat_bien_thi_hanh.py",
+    "downstream invalidation":   "tests/test_417_asv_vo_hieu_ha_nguon.py",
+    "no orphan child":           "tests/test_400_asv_bat_bien_thi_hanh.py",
+    "provider ambiguity":        "tests/test_400_asv_bat_bien_thi_hanh.py",
+    "no private AI client":      "tests/test_421_asv_tach_khoi_di_san.py",
+    "heavy-model test isolation": "tests/test_428_asv_v4_rao_chan_nang.py",
+    # V4 them ba cai nua, deu la hop dong chu khong phai hanh vi runtime.
+    "product contract frozen":   "tests/test_425_asv_v4_hop_dong_san_pham.py",
+    "capability inventory true": "tests/test_426_asv_v4_kiem_ke_nang_luc.py",
+    "no second queue/scheduler": "tests/test_427_asv_v4_kien_truc.py",
+}
+
+#: Chay sau MOI lan sua. ~12,5 giay.
+VONG_NHANH: tuple[str, ...] = (
+    "tests/test_400_asv_bat_bien_thi_hanh.py",
+    "tests/test_401_asv_ranh_gioi_va_artifact.py",
+    "tests/test_404_pham_vi_khoa_api.py",
+    "tests/test_416_asv_van_tay_engine.py",
+    "tests/test_421_asv_tach_khoi_di_san.py",
+    "tests/test_425_asv_v4_hop_dong_san_pham.py",
+    "tests/test_426_asv_v4_kiem_ke_nang_luc.py",
+    "tests/test_427_asv_v4_kien_truc.py",
+    "tests/test_428_asv_v4_rao_chan_nang.py",
+)
+
+#: Chay TRUOC KHI DONG MOT PHA. ~80 giay. Vong nhanh + phan cham.
+VONG_DU: tuple[str, ...] = VONG_NHANH + (
+    "tests/test_417_asv_vo_hieu_ha_nguon.py",
+)
+
+
+def lenh(vong: tuple[str, ...]) -> str:
+    return "python -m pytest " + " ".join(vong) + " -q"
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/browser/autosub_as5.js
 SHA256=ec8a4d35109c508d8ba413c7e9b00ed29110f804f422f61b44fc3ea91bd2ab3d BYTES=990 LINES=18
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -183899,6 +183990,75 @@ def skip_without_postgres():
         not (os.environ.get(ENV) or "").strip(),
         reason=f"Set {ENV} to a scratch PostgreSQL database (name must "
                f"contain 'test').")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/rao_chan_nang.py
+SHA256=b89c64eebf34feda0b214c35b1c1c57f4a1f7976c179c8a0e1011581b2ed0ffc BYTES=2154 LINES=63
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Rao chan cho phep kiem NANG — thu khoi dong mot model that.
+
+## Vi sao tep nay ton tai
+
+`tests/test_406::test_tach_nguon_ra_du_BON_stem` goi **demucs that**, khong
+marker, khong bien moi truong, khong skip. `tools/test_nhanh.py` chay
+`pytest -n auto` = 20 worker tren may nay, va may nay **dang phuc vu khach**
+(`C:\\LTTPlatform` ton tai: LTTStudioWeb, Worker, Voice, Codex deu chay).
+
+Ngay 02/09 chu du an phai **reset cung may hai lan**. Phien `lttstudiosapp-a1`
+truy ra: tai khong CONG ma NHAN, vi mot model nang chay ben trong mot worker cua
+mot bo test da song song.
+
+`pipeline.CHUOI` da khai `tai_nguyen="tach_nguon_cuc_bo"` de nen tang dieu tiet
+— nhung do la o **hang doi**. pytest khong di qua hang doi. Nen o day can mot
+rao khac.
+
+## Rao la BIEN MOI TRUONG, khong phai mot co `-m`
+
+Mot marker chi loc khi co nguoi go `-m "not nang"`. Ai quen go la model that
+chay lai. `skipif` doc bien moi truong thi **mac dinh la bo qua**, va muon chay
+thi phai noi ra:
+
+    set LTT_TEST_NANG=1
+    python -m pytest tests/test_406_asv_tach_tieng.py -q
+
+⭐ Marker `nang` VAN duoc dat kem, nhung de **chon** (`-m nang`) chu khong de
+   **chan**. Hai viec khac nhau, va gop chung lai la cach mat ca hai.
+
+## Cai gi tinh la "nang"
+
+Nap trong so model len RAM/VRAM, hoac goi mot dich vu sinh noi dung that.
+`ffmpeg` KHONG tinh: no la cong cu, chay vai tram mili giay, va moi giai doan
+media deu can no — rao no lai la lam ca bo test vo nghia.
+"""
+from __future__ import annotations
+
+import os
+
+import pytest
+
+#: Bat bang `set LTT_TEST_NANG=1`. Bat ky gia tri khac rong deu tinh la bat.
+BIEN = "LTT_TEST_NANG"
+
+LY_DO = (
+    f"phep kiem NANG (nap model that). Bat bang {BIEN}=1. "
+    "Mac dinh bo qua vi may nay dang phuc vu khach va bo test chay 20 worker "
+    "song song — xem tests/rao_chan_nang.py")
+
+
+def bat() -> bool:
+    return bool(os.environ.get(BIEN, "").strip())
+
+
+#: Dat CA HAI len mot phep kiem nang:
+#:
+#:     @rao_chan_nang.NANG
+#:     @rao_chan_nang.CHI_KHI_BAT
+#:     def test_...():
+#:
+#: `NANG` de chon duoc; `CHI_KHI_BAT` de mac dinh khong chay.
+NANG = pytest.mark.nang
+CHI_KHI_BAT = pytest.mark.skipif(not bat(), reason=LY_DO)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -269696,7 +269856,7 @@ def test_video_KHONG_tieng_lam_giai_doan_HONG_HAN_khong_thu_lai(tmp_path, monkey
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_406_asv_tach_tieng.py
-SHA256=13e70793aef03f2161a760ed70122ba333b9c7871709fc6e1f3f47d9a467ddb5 BYTES=18171 LINES=379
+SHA256=5fcfe599a1873b9e341f03ca146d68a5852a3664f5fd85efa8231cde06b62650 BYTES=18304 LINES=385
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — AUDIO_PREPARE: tach giong khoi nen, tron, chuan am luong.
 
@@ -269712,6 +269872,8 @@ import wave
 from pathlib import Path
 
 import pytest
+
+from tests import rao_chan_nang
 
 from tests.fixtures.asv_media import require_ffmpeg
 
@@ -269813,6 +269975,8 @@ def test_ban_cho_TACH_khac_ban_cho_ASR(tmp_path):
 #  Tach nguon — smoke THAT
 # ══════════════════════════════════════════════════════════════════════════════
 
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_tach_nguon_ra_du_BON_stem(tmp_path):
     """Smoke that voi demucs that. Checkpoint da nam trong cache torch hub.
 
@@ -269838,6 +270002,8 @@ def test_stem_giu_lai_dung_chinh_sach_da_khai(tmp_path):
     assert set(tach_tieng.STEM_GIU) & set(tach_tieng.STEM_BO) == set()
 
 
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_tron_nen_ra_dung_dinh_dang_va_am_luong(tmp_path):
     from apps.auto_scan_video import nhap_media, tach_tieng
 
@@ -270081,7 +270247,7 @@ class TestChoBangChungNgoai:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_407_asv_chep_loi.py
-SHA256=339eb72cbeea3bdd4c18e532bbdf5902615b35229b0cfb92a4289748a6ca8f9e BYTES=20601 LINES=454
+SHA256=c6349eb887688ba71831629053157b6ede15222b9a7f71ce90ea49767e969bac BYTES=20685 LINES=458
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — TRANSCRIBE: hop dong ban ghi, boc engine, van tay.
 
@@ -270101,6 +270267,8 @@ import subprocess
 from pathlib import Path
 
 import pytest
+
+from tests import rao_chan_nang
 
 from tests.fixtures.asv_media import ban_ghi_gia, require_ffmpeg
 
@@ -270321,6 +270489,8 @@ class TestBocEngine:
         assert can in APP_DUOC_DUNG_APP[("auto_scan_video", "autosubvideo")]
 
 
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_engine_ASR_that_chay_duoc(tmp_path):
     """Smoke THAT voi faster-whisper. Model da nam trong cache HF.
 
@@ -276161,7 +276331,7 @@ def test_bo_do_ABSENT_that_su_bat_duoc():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_427_asv_v4_kien_truc.py
-SHA256=13816496a0460e541e9c955ca57cba5022e3247fac63a90851ab25ce8ef29d85 BYTES=12113 LINES=251
+SHA256=4a90c7d7e78e73e7452956a6d8ac5bbf6d1901be2b2fefb0cbddbb3bc013fcb4 BYTES=15994 LINES=330
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video V4 — architecture guards from ADR-V4-002.
 
@@ -276414,6 +276584,369 @@ def test_ban_do_rebase_ton_tai_va_phu_HET_module_hien_co():
     thieu = [p.stem for p in sorted((APP / "auto_scan_video").glob("*.py"))
              if f"`{p.name}`" not in van_ban]
     assert thieu == [], f"REBASE_MAP_V4.md bo sot: {thieu}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  Chot GIU HINH — phai song sot qua cuoc tach doi cua pha 17
+# ══════════════════════════════════════════════════════════════════════════════
+
+KET_XUAT = APP / "auto_scan_video" / "ket_xuat.py"
+BAN_DUNG = APP / "auto_scan_video" / "ban_dung.py"
+
+
+def test_render_van_TU_CHOI_moi_che_do_hinh_khac_copy_HOAC_da_biet_den_preset():
+    """⛔ Chot nay ton tai vi mot cuoc refactor SAP DIEN RA, khong vi mot loi.
+
+    Hom nay `ket_xuat.py:175-177` tu choi moi ban dung khai che do hinh khac
+    `copy`. Do la mot chot vo dieu kien, va no dung — MVP v1 khong ma hoa lai
+    hinh o dau ca.
+
+    Pha 17 PHAI noi no ra, vi `smart_localize` ma hoa lai tai diem cat. Va cach
+    noi sai la xoa han cau lenh `raise`: luc do `localize_preserve_picture` mat
+    han lop bao ve, va no mat **im lang** — khong phep kiem nao do, chi la mot
+    ngay nao do mot khach chon preset "giu nguyen hinh anh" va nhan ve mot ban
+    da ma hoa lai.
+
+    ⇒ Chot nay chap nhan DUNG HAI trang thai, khong chap nhan trang thai thu ba:
+         (a) chot vo dieu kien con nguyen  — hom nay
+         (b) chot da tro thanh CO DIEU KIEN theo preset — sau pha 17
+       Xoa chot ma khong nhac toi preset nao la trang thai thu ba, va no do.
+
+    ⭐ Doc AST chu khong doc van ban: doan giai thich ngay tren day nhac ca
+       `copy` lan ten preset, va mot bo do quet van ban se tu lam minh xanh.
+    """
+    from apps.auto_scan_video import hop_dong_v4
+
+    nguon = KET_XUAT.read_text(encoding="utf-8")
+    cay = ast.parse(nguon)
+
+    # (a) Chot vo dieu kien: co mot `raise` nam trong mot `if` so sanh che do hinh.
+    con_chot = False
+    for nut in ast.walk(cay):
+        if not isinstance(nut, ast.If):
+            continue
+        so_sanh = any(isinstance(n, ast.Compare) for n in ast.walk(nut.test))
+        nhac_che_do = any(
+            isinstance(n, ast.Attribute) and "CHE_DO_HINH" in n.attr
+            or isinstance(n, ast.Constant) and n.value == "che_do"
+            for n in ast.walk(nut.test))
+        co_raise = any(isinstance(n, ast.Raise) for n in ast.walk(nut))
+        if so_sanh and nhac_che_do and co_raise:
+            con_chot = True
+            break
+
+    # (b) Da tro thanh co dieu kien: ma nguon THAM CHIEU mot ten preset.
+    ten_dinh_danh = {n.attr for n in ast.walk(cay) if isinstance(n, ast.Attribute)}
+    ten_dinh_danh |= {n.id for n in ast.walk(cay) if isinstance(n, ast.Name)}
+    biet_preset = any(
+        p in ten_dinh_danh
+        for p in ("PRESET_GIU_HINH", "PRESET_CAT_THONG_MINH", "preset"))
+
+    assert con_chot or biet_preset, (
+        "`ket_xuat.py` khong con tu choi che do hinh khac copy, VA cung khong "
+        "biet den preset nao. Duong giu-nguyen-hinh dang khong duoc bao ve boi "
+        "thu gi ca. Doc ADR-V4-001 he qua 1 truoc khi di tiep.")
+
+    # Va hop dong san pham phai van noi rang preset giu hinh khong cat duoc.
+    assert hop_dong_v4.THAO_TAC_CHO_PHEP[hop_dong_v4.PRESET_GIU_HINH] == ()
+
+
+def test_ban_dung_van_khai_che_do_hinh_nhu_MOT_TRUONG_DU_LIEU():
+    """`ban_dung` la DU LIEU, khong phai mot chuoi lenh (giu tu V2 pha 14).
+
+    Pha 17 them duong ma hoa lai. Neu che do hinh thoi la mot truong trong ban
+    dung ma thanh mot nhanh `if` trong trinh render, thi mot ban dung da luu
+    khong con mo ta day du mot lan render — va `thi_hanh.van_tay` se coi hai lan
+    render khac nhau la mot.
+    """
+    from apps.auto_scan_video import ban_dung
+
+    assert hasattr(ban_dung, "CHE_DO_HINH")
+    assert ban_dung.CHE_DO_HINH == "copy"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_428_asv_v4_rao_chan_nang.py
+SHA256=efb226ed994234caa8b11361a2f47aa799e9c19c24d79af3060360d8c7409ebf BYTES=13025 LINES=278
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Auto Scan Video V4 — a normal test run must not start a real model.
+
+## The thing this prevents
+
+`tools/test_nhanh.py` runs `pytest -n auto` = 20 workers on this machine, and **this
+machine is production** (`C:\\LTTPlatform` exists; LTTStudioWeb, Worker, Voice and Codex
+are all serving). On 2026-09-02 the owner had to **hard-reset the machine twice**. Session
+`lttstudiosapp-a1` traced it: load did not *add*, it *multiplied*, because a heavy model ran
+inside one worker of an already-parallel suite.
+
+`pipeline.CHUOI` declares `tai_nguyen="tach_nguon_cuc_bo"` so the platform throttles it —
+but that governs the **job queue**. pytest does not go through the queue.
+
+Phase 04 put three real-model calls behind `tests/rao_chan_nang` (2 × demucs, 1 ×
+faster-whisper). This file is what stops the fourth from arriving unnoticed.
+
+## Why a ratchet and not a review habit
+
+The three calls it found were written across two phases by an author who knew the rule and
+had written it down. Nobody adds a heavy call on purpose; it arrives as one more line in a
+test that already passes locally, on a machine where it takes four seconds.
+
+## Design notes — both of these cost me a wrong first draft
+
+**`assign_speakers` is not heavy.** My first forbidden-function list included it because it
+lives in `ai_workflows` next to `diarize_file`. It is 12 lines of interval arithmetic
+(`ai_workflows.py:77`) and loads nothing. Proximity is not evidence.
+
+**Three call sites reach a heavy function without ever touching an engine.** `doc_mot_doan`
+raises `GiongError` on an empty or over-long segment *before* it calls `goi_cong`. So the
+detector cannot simply flag every mention; the exemptions are declared as a **set**, with a
+reason each, and adding one is a visible diff — the same shape as
+`test_421::TIEN_TRINH_CON_CHO_PHEP`.
+"""
+from __future__ import annotations
+
+import ast
+from pathlib import Path
+
+import pytest
+
+GOC = Path(__file__).resolve().parent.parent
+TESTS = GOC / "tests"
+
+#: Ham NAP TRONG SO MODEL hoac goi mot dich vu sinh noi dung that.
+#:
+#: ⛔ `ffmpeg`/`ffprobe` khong nam day: chung la cong cu, chay vai tram mili giay,
+#:    va moi giai doan media deu can — rao chung lai la lam ca bo test vo nghia.
+HAM_NANG = {
+    "tach_nguon":     "demucs — 4 stem, nap checkpoint torch hub",
+    "transcribe_file": "faster-whisper / whisperx — nap model ASR",
+    "diarize_file":   "pyannote — nap model phan biet nguoi noi",
+    "goi_cong":       "goi may sinh tieng that qua loopback :8120",
+    "doc_mot_doan":   "duong sinh tieng cua ASV, ket thuc o `goi_cong`",
+}
+
+#: Hai cach hop le de goi mot ham nang trong mot phep kiem:
+#:   `monkeypatch` trong tham so  -> phep kiem tu thay engine bang mot ban gia
+#:   `CHI_KHI_BAT` tren decorator -> phep kiem NANG, mac dinh bo qua
+DAU_HIEU_AN_TOAN = ("monkeypatch", "CHI_KHI_BAT")
+
+#: Ngoai le, khai theo TAP HOP. Moi dong la mot lan doc ma va ket luan rang loi
+#: goi khong bao gio toi duoc engine. Them mot dong la mot QUYET DINH, va no
+#: hien trong diff.
+NGOAI_LE: dict[tuple[str, str], str] = {
+    ("test_409_asv_giong_noi.py",
+     "test_doan_QUA_DAI_bi_tu_choi_chu_KHONG_tu_chia_nho"):
+        "`doc_mot_doan` nem GiongError o phep do do dai, TRUOC `vf.goi_cong` "
+        "(giong_noi.py:160-166). Khong engine nao duoc cham.",
+    ("test_409_asv_giong_noi.py", "test_doan_RONG_bi_tu_choi"):
+        "`doc_mot_doan` nem GiongError ngay dong dau khi chuoi rong "
+        "(giong_noi.py:152). Khong engine nao duoc cham.",
+}
+
+
+def _ten_duoc_goi(nut: ast.AST) -> set[str]:
+    ra: set[str] = set()
+    for n in ast.walk(nut):
+        if isinstance(n, ast.Call):
+            f = n.func
+            if isinstance(f, ast.Attribute):
+                ra.add(f.attr)
+            elif isinstance(f, ast.Name):
+                ra.add(f.id)
+    return ra
+
+
+def _ten_trong_decorator(ham: ast.FunctionDef | ast.AsyncFunctionDef) -> set[str]:
+    ra: set[str] = set()
+    for d in ham.decorator_list:
+        for n in ast.walk(d):
+            if isinstance(n, ast.Attribute):
+                ra.add(n.attr)
+            elif isinstance(n, ast.Name):
+                ra.add(n.id)
+    return ra
+
+
+def _quet(nguon: str, ten_tep: str) -> list[tuple[str, str, list[str]]]:
+    """`(tep, ten_test, ham_nang_bi_goi)` cho moi phep kiem KHONG co rao chan."""
+    import warnings
+
+    try:
+        with warnings.catch_warnings():
+            # ⚠️ `ast.parse` phat lai SyntaxWarning cua tep no doc (vd `\d` trong
+            #    mot docstring regex). Do la canh bao cua TEP KIA; de no noi len
+            #    o day chi lam ban ket qua va khien nguoi doc tuong phep kiem nay
+            #    hong.
+            warnings.simplefilter("ignore", SyntaxWarning)
+            cay = ast.parse(nguon)
+    except SyntaxError:
+        return []
+    vi_pham = []
+    for ham in ast.walk(cay):
+        if not isinstance(ham, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if not ham.name.startswith("test_"):
+            continue
+        nang = sorted(_ten_duoc_goi(ham) & set(HAM_NANG))
+        if not nang:
+            continue
+        an_toan = ({a.arg for a in ham.args.args} | _ten_trong_decorator(ham))
+        if an_toan & set(DAU_HIEU_AN_TOAN):
+            continue
+        if (ten_tep, ham.name) in NGOAI_LE:
+            continue
+        vi_pham.append((ten_tep, ham.name, nang))
+    return vi_pham
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Banh coc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_khong_phep_kiem_nao_goi_engine_nang_ma_khong_co_rao_chan():
+    """G7 — mot lan chay thuong khong duoc khoi dong demucs/whisper/pyannote/TTS."""
+    vi_pham = []
+    for tep in sorted(TESTS.glob("test_*.py")):
+        vi_pham += _quet(tep.read_text(encoding="utf-8"), tep.name)
+
+    assert vi_pham == [], (
+        "phep kiem goi engine NANG ma khong stub va khong rao:\n" +
+        "\n".join(f"  {t}::{h} -> {n}" for t, h, n in vi_pham) +
+        "\n\nSua bang MOT trong ba cach:\n"
+        "  1. nhan `monkeypatch` va thay engine bang ban gia (cach thuong dung);\n"
+        "  2. dat @rao_chan_nang.NANG + @rao_chan_nang.CHI_KHI_BAT neu that su "
+        "can engine that, roi chay `python tools/check_bo_qua.py --accept`;\n"
+        "  3. neu loi goi KHONG BAO GIO toi duoc engine, khai vao `NGOAI_LE` "
+        "kem ly do doc duoc tu ma nguon.")
+
+
+def test_bo_do_THAT_SU_bat_duoc():
+    """Chung minh bo do khong phai mot den xanh noi vao khong.
+
+    ⛔ Khong co phep kiem nay thi `_quet` co the tra `[]` mai mai va banh coc o
+       tren van xanh — dung kieu "guard tren tap rong" ma `test_401` canh bao.
+    """
+    xau = ("def test_x(tmp_path):\n"
+           "    tach_tieng.tach_nguon('a.wav', 'out')\n")
+    assert _quet(xau, "t.py") == [("t.py", "test_x", ["tach_nguon"])]
+
+    # Ba duong thoat, ca ba deu phai lam bo do IM.
+    assert _quet("def test_x(monkeypatch):\n    tach_nguon('a','b')\n", "t.py") == []
+    assert _quet("@rao_chan_nang.CHI_KHI_BAT\n"
+                 "def test_x():\n    tach_nguon('a','b')\n", "t.py") == []
+    ngoai_le_tep, ngoai_le_ham = next(iter(NGOAI_LE))
+    assert _quet(f"def {ngoai_le_ham}():\n    doc_mot_doan('x')\n",
+                 ngoai_le_tep) == []
+
+    # Va mot phep kiem KHONG cham engine phai khong bao gio bi bao.
+    assert _quet("def test_x():\n    assert 1 == 1\n", "t.py") == []
+
+
+def test_ba_phep_kiem_nang_da_biet_deu_dang_duoc_rao():
+    """Chot dich danh ba cho pha 04 vua rao. Doi tuong, khong phai so luong.
+
+    ⭐ `test_401` da hoc bai nay: chot mot con so thi con so do dung ngay ca khi
+       ai do rao nham cai khac. Chot dung ba cai TEN thi khong.
+    """
+    mong_doi = {
+        ("test_406_asv_tach_tieng.py", "test_tach_nguon_ra_du_BON_stem"),
+        ("test_406_asv_tach_tieng.py", "test_tron_nen_ra_dung_dinh_dang_va_am_luong"),
+        ("test_407_asv_chep_loi.py", "test_engine_ASR_that_chay_duoc"),
+    }
+    for ten_tep, ten_ham in mong_doi:
+        cay = ast.parse((TESTS / ten_tep).read_text(encoding="utf-8"))
+        ham = next((f for f in ast.walk(cay)
+                    if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))
+                    and f.name == ten_ham), None)
+        assert ham is not None, f"{ten_tep}::{ten_ham} bien mat"
+        assert "CHI_KHI_BAT" in _ten_trong_decorator(ham), (
+            f"{ten_tep}::{ten_ham} mat rao chan — no goi engine that")
+
+
+def test_rao_chan_MAC_DINH_la_bo_qua():
+    """Bien moi truong chu khong phai co `-m`: mac dinh phai an toan.
+
+    🔴 Mot marker chi loc khi co nguoi go `-m "not nang"`. Ai quen go la model
+       that chay lai, va "ai do quen" chinh la kich ban da lam sap may hai lan.
+    """
+    import os
+
+    from tests import rao_chan_nang
+
+    assert rao_chan_nang.BIEN == "LTT_TEST_NANG"
+    assert rao_chan_nang.bat() == bool(os.environ.get("LTT_TEST_NANG", "").strip())
+    # Marker van co, de CHON (`-m nang`) — nhung no khong phai thu dang chan.
+    assert rao_chan_nang.NANG.name == "nang"
+
+
+def test_marker_nang_da_duoc_khai_trong_pytest_ini():
+    """Marker chua khai sinh `PytestUnknownMarkWarning`, va canh bao thi bi bo qua."""
+    ini = (GOC / "pytest.ini").read_text(encoding="utf-8")
+    assert "nang:" in ini
+    # ⛔ `addopts` an trong ini se doi hanh vi cua `gate.py` va `test_nhanh.py`
+    #    ma khong ai thay trong lenh. Khong duoc co.
+    #
+    # 🔴 Doc theo DONG, khong quet chuoi con. Ban dau day la `"addopts" not in ini`
+    #    va no do — vi chinh dong comment ngay tren chua tu do. Lan thu ba trong
+    #    mot phien mot bo do bat duoc loi van giai thich chinh no; xem pha 02.
+    khai = [d.split("=")[0].strip() for d in ini.splitlines()
+            if d.strip() and not d.lstrip().startswith("#") and "=" in d]
+    assert "addopts" not in khai, f"pytest.ini dat addopts an: {khai}"
+
+
+@pytest.mark.parametrize("ten,ly_do", sorted(HAM_NANG.items()))
+def test_moi_ham_trong_danh_sach_nang_deu_co_ly_do(ten, ly_do):
+    """Mot danh sach cam khong ly do la mot danh sach khong ai dam sua.
+
+    ⚠️ `assign_speakers` da tung nam trong danh sach nay o ban dau, chi vi no o
+       cung tep voi `diarize_file`. No la 12 dong so hoc khoang thoi gian
+       (`ai_workflows.py:77`) va khong nap gi ca. **Gan nhau khong phai bang
+       chung.** Yeu cau mot ly do la thu bat duoc dieu do.
+    """
+    assert len(ly_do) > 20, f"{ten} thieu ly do doc duoc"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Bo bat bien V4 (tang 2 cua V4_TEST_REVIEW_PROTOCOL)
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_moi_bat_bien_tang_2_deu_co_MOT_TEP_chung_minh():
+    """Ban do bat-bien -> tep phai tro toi tep co that.
+
+    ⛔ Mot ban do tro toi mot tep da bi xoa la mot bat bien khong ai chung minh
+       nua, va no im lang: bo test van xanh, chi la no khong con kiem thu do.
+    """
+    from tests import bo_bat_bien_v4 as bo
+
+    thieu = sorted({t for t in bo.BAT_BIEN.values() if not (GOC / t).exists()})
+    assert thieu == [], f"bat bien tro toi tep khong ton tai: {thieu}"
+
+    # `V4_TEST_REVIEW_PROTOCOL` liet ke 12 bat bien bat buoc.
+    assert len(bo.BAT_BIEN) >= 12
+
+
+def test_hai_vong_deu_ton_tai_va_vong_DU_bao_trum_vong_NHANH():
+    """Vong nhanh la mot TAP CON, khong phai mot danh sach khac.
+
+    ⭐ Neu hai vong troi ra khoi nhau, "chay vong nhanh" khong con la mot buoc
+       trung gian tren duong toi vong du — no thanh mot phep do khac han, va hai
+       phep do khac nhau cung goi la "bat bien" la cach chac chan de doc nham
+       mot ket qua xanh.
+    """
+    from tests import bo_bat_bien_v4 as bo
+
+    assert set(bo.VONG_NHANH) < set(bo.VONG_DU)
+    for t in bo.VONG_DU:
+        assert (GOC / t).exists(), f"vong du tro toi tep khong ton tai: {t}"
+
+
+def test_moi_tep_trong_ban_do_deu_nam_trong_vong_DU():
+    """Khai mot bat bien roi khong chay no la mot loi hua, khong phai mot phep kiem."""
+    from tests import bo_bat_bien_v4 as bo
+
+    ngoai = sorted(set(bo.BAT_BIEN.values()) - set(bo.VONG_DU))
+    assert ngoai == [], (
+        f"bat bien duoc khai nhung khong tep nao trong VONG_DU chay chung: {ngoai}")
 
 @@@LTT_PROFILE_FILE_END@@@
 

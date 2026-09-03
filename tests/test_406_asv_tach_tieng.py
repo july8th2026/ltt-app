@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pytest
 
+from tests import rao_chan_nang
+
 from tests.fixtures.asv_media import require_ffmpeg
 
 
@@ -113,6 +115,8 @@ def test_ban_cho_TACH_khac_ban_cho_ASR(tmp_path):
 #  Tach nguon — smoke THAT
 # ══════════════════════════════════════════════════════════════════════════════
 
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_tach_nguon_ra_du_BON_stem(tmp_path):
     """Smoke that voi demucs that. Checkpoint da nam trong cache torch hub.
 
@@ -138,6 +142,8 @@ def test_stem_giu_lai_dung_chinh_sach_da_khai(tmp_path):
     assert set(tach_tieng.STEM_GIU) & set(tach_tieng.STEM_BO) == set()
 
 
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
 def test_tron_nen_ra_dung_dinh_dang_va_am_luong(tmp_path):
     from apps.auto_scan_video import nhap_media, tach_tieng
 

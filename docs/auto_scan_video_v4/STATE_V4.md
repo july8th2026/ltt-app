@@ -23,11 +23,15 @@
     (`D:\LTTSTUDIOSAPP-asv`), and not the production tree — is satisfied. Recorded here
     rather than silently diverging.
   - ⛔ **This machine IS production** (`C:\LTTPlatform` exists). Never deploy from here.
-- **current_phase**: 04
-- **phase_status**: Phase 03 PASS -> Phase 04 IN_PROGRESS
-- **last_green_invariant_command**: `python -m pytest tests/test_400_asv_bat_bien_thi_hanh.py tests/test_401_asv_ranh_gioi_va_artifact.py -q`
-  (V2's subset; V4's own curated suite is Phase 04's deliverable)
-- **last_green_invariant_result**: **24 passed in 2.38 s** (2026-09-03)
+- **current_phase**: 05
+- **phase_status**: Phase 04 PASS -> Phase 05 IN_PROGRESS
+- **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
+  `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
+  `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
+  ⚠️ `test_417` alone is 84 % of the full time. It is **split, not dropped**: it proves
+  downstream invalidation, and an 80-second suite gets run once a day instead of after
+  every edit — which is how a defect ends up ten edits deep.
+- **last_green_invariant_result**: `VONG_DU` → **165 passed, 1 xfailed in 77.49 s** (2026-09-03)
 - **certified_baseline**: `python tools/gate.py --phien asv-v4` -> `RESULT: FAIL (1/26)`, 675 s,
   **2 failed / 5 769 passed / 32 skipped**, no tree-changed warning.
   Both failures proven non-ASV: `test_82` (gitignored `apps/*/vendor/`, every fresh worktree)
@@ -35,6 +39,12 @@
   Raw log: `evidence/00_gate_baseline.txt`
 - **critical_external_evidence_pending**: see table below
 - **open_blockers**: none
+- **debt_carried**: a **full** `tools/gate.py` run has not completed since Phase 00's
+  baseline. The Phase 04 attempt died at step 20/26 with no `RESULT:` line when the
+  previous session exited, and a peer session then announced a production deploy on this
+  machine — restarting a 20-worker suite would have contended with it. `--quick` is PASS
+  but says of itself it is not evidence. **Run the full gate at the next phase boundary**
+  once the peer's deploy is done.
 
 ## Runtime measured on this machine (2026-09-03)
 
@@ -160,6 +170,7 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 
 | Phase | Gate | Report |
 |---|---|---|
+| 04 Regression shield + heavy-test isolation | **PASS** | Found **3 real-model calls with no guard at all** — 2 × demucs (`test_406`), 1 × faster-whisper (`test_407`) — in a repo with **no pytest config to hang a marker on**. Gated behind `LTT_TEST_NANG`, because a marker only filters when somebody types `-m`, and "somebody forgets" is exactly what hard-reset this machine twice. Added a ratchet over every `tests/test_*.py` so the fourth one cannot arrive quietly. ⭐ Three drafts were wrong first: `assign_speakers` is 12 lines of interval arithmetic (proximity is not evidence), three call sites reach a heavy function but raise before the engine, and the ini check flagged its own explanatory comment — **the third text-scanning detector this session to punish the prose documenting it**. ⚠️ Full gate not re-run; debt recorded above rather than folded into the green rows. | [`reports/04_REPORT.md`](reports/04_REPORT.md) |
 | 03 Rebase classification + architecture ADR | **PASS** | **17 KEEP · 6 EXTEND · 7 REFACTOR · 8 ADD · 0 REMOVE** — the default is KEEP and the exceptions are argued. `ADR-V4-002` designs `AsvWorkItem` with `UNIQUE(run_id, stage, item_key)` and proves it is **not** a queue by naming the 8 columns that would make it one, with a detector that fires on a synthetic queue table and stays quiet on a legitimate checkpoint one. ⭐ Found two guards in `test_421` that read wider than they were: `glob` is not recursive (so the first `services/` directory would leave their view silently) and they never scanned the three executor apps — where a stray thread pool would do the most damage. Widened to `rglob` × 4 apps, with an assertion that the new file set is a **strict superset** so §1 cannot degrade into a re-run under a new name. | [`reports/03_REPORT.md`](reports/03_REPORT.md) |
 | 02 Capability inventory + boundary freeze | **PASS** | 19 apps censused; every V4 need classified with a traced caller. **13 SUFFICIENT, 2 EXTEND, 6 ABSENT** — and no capability recommended as new code without proof of absence (an AST scan, not a text scan). 🔴 **The phase's real output is a retraction**: this platform already implements V4's "stable cross-app boundary" rule via `BE_MAT_CONG_KHAI` + `APP_DUOC_DUNG_APP`, enforced by a linter inside the gate. V4-R02 (P0) and V4-R03 are withdrawn. ⭐ And the thing that actually blocks Phase 09 is not willpower but schema: `speech.ltt` is a fine contract with the wrong granularity, because `asv_stage` holds one `job_id` and per-segment TTS needs many. Phase 05 unblocks Phase 09. | [`reports/02_REPORT.md`](reports/02_REPORT.md) |
 | 01 Product contract supersession | **PASS** | `ADR-V4-001` supersedes `auto_scan_mvp_v1` §1/§4 by banner, not by rewrite. Contract now exists in three forms: prose, constants (`hop_dong_v4.py`), and 20 tests. 🔴 **The pack's stated reason for `vi` is factually wrong** — LTT Voice is bilingual (`lan_ngon_ngu.py:6`, `language: ["vi","en"]`). Decision kept, justification replaced, and a test now goes red on exactly the move a future session would make after reading the wrong reason. One strict-xfail RED target left for Phase 12. | [`reports/01_REPORT.md`](reports/01_REPORT.md) |

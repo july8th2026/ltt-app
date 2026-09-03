@@ -1,4 +1,5 @@
 # tap-hop-cho-bo-qua
+rao_chan_nang.py::CHI_KHI_BAT
 test_166_quality_lab_upscale_video.py::_video
 test_179_developer_api_key.py::postgres_only
 test_221_r2_content_deletion.py::r2_that
