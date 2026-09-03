@@ -147,6 +147,36 @@ def noi_dai(texts: list, *, ref_b64: str | None = None,
                 timeout=timeout, nhi_phan=True)
 
 
+def lo_ra_tep(texts: list, duong_ra: list, *, ref_b64: str | None = None,
+              preset: str | None = None, timeout: float = 1800.0) -> dict:
+    """Sinh một lô đoạn -> GHI THẲNG RA TỆP. Trả hồ sơ từng đoạn.
+
+    ⭐ Khác `noi_lo` ở chỗ **không có byte nào đi qua HTTP**. Với đường tài liệu
+       dài thì đó không phải chuyện tiết kiệm: một cuốn sách qua `noi_lo` là
+       hàng trăm MB base64 phải giải mã rồi ghi lại trong tiến trình worker.
+       Sidecar đã cầm sóng âm sẵn, để nó ghi là bỏ được cả một vòng chép.
+    """
+    d, _ = _goi("/v1/lo-ra-tep",
+                {"texts": list(texts), "duong_ra": list(duong_ra),
+                 "ref_b64": ref_b64, "preset": preset},
+                timeout=timeout)
+    return d
+
+
+def ghep_tep(duong_vao: list, duong_ra: str, *, so_cau: list | None = None,
+             timeout: float = 1800.0) -> dict:
+    """Ghép các đoạn ĐÃ CÓ TRÊN ĐĨA thành một bản đọc. Trả hồ sơ phép ghép.
+
+    Cho phép sinh lại **một** đoạn hỏng rồi ghép lại cả bài, thay vì đọc lại
+    toàn bộ tài liệu.
+    """
+    d, _ = _goi("/v1/ghep-tep",
+                {"duong_vao": list(duong_vao), "duong_ra": duong_ra,
+                 "so_cau": None if so_cau is None else [int(x) for x in so_cau]},
+                timeout=timeout)
+    return d
+
+
 def ghi_danh_kho(duong_wav: str, *, denoise: bool = True, so_clip: int = 5,
                  timeout: float = 900.0) -> dict:
     """Ghi danh theo KHO nhiều cửa sổ (K2). Cùng hình dạng trả về với `ghi_danh`."""

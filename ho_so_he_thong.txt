@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b1bc5ba100185768b33a8a837b0284f7fa69d11cc23c0361a55a18e27a89d92a
-Nguồn đã quét : 1474 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:904a469b806bb85b71f7108324459061388ad9f9f35f8b90fc89181d63552794
+Nguồn đã quét : 1475 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1003,7 +1003,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (183 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (184 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1157,6 +1157,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_VOICE_BACKEND
 - LTT_VOICE_SIDECAR_PORT
 - LTT_VOICE_SIDECAR_TOKEN
+- LTT_VOICE_THU_MUC_TAM
 - LTT_VOICE_VENV_ROOT
 - LTT_VPS
 - LTT_VPS_
@@ -1188,7 +1189,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (353 file pytest + 3 frontend)
+10. QUALITY GATES (354 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1483,6 +1484,7 @@ Test inventory:
 - tests/test_374_to_tien_mo_coi.py
 - tests/test_375_ltt_voice_nop_lai_khong_trung.py
 - tests/test_376_cong_chat_luong_voice.py
+- tests/test_377_cong_giong_duong_ghi.py
 - tests/test_377_sandbox_dung_loai_media.py
 - tests/test_378_noi_day_canh_bao_cpu.py
 - tests/test_379_to_tien_may_a.py
@@ -1568,8 +1570,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1474 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:66, .py:1106, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1475 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:66, .py:1107, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2545,7 +2547,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (370)
+[tests] (371)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -2851,6 +2853,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_374_to_tien_mo_coi.py
 - tests/test_375_ltt_voice_nop_lai_khong_trung.py
 - tests/test_376_cong_chat_luong_voice.py
+- tests/test_377_cong_giong_duong_ghi.py
 - tests/test_377_sandbox_dung_loai_media.py
 - tests/test_378_noi_day_canh_bao_cpu.py
 - tests/test_379_to_tien_may_a.py
@@ -3100,7 +3103,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1474 file; 14817404 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1475 file; 14822713 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -22916,7 +22919,7 @@ def xoa_tu_dien(request: Request, muc_id: int, csrf_token: str = Form(""),
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/sidecar_client.py
-SHA256=3d1013bdb0888c676074e420d94dc060d7f31dc513cf926b5e0a79d911799f36 BYTES=10122 LINES=238
+SHA256=3f364dfbd8da686fbaae164179cc28dbf4c56565515f328de764192109d51989 BYTES=11550 LINES=268
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 sidecar_client.py — gọi cổng giọng ở `127.0.0.1:8120`.
@@ -23065,6 +23068,36 @@ def noi_dai(texts: list, *, ref_b64: str | None = None,
     return _goi("/v1/speech-dai",
                 {"texts": list(texts), "ref_b64": ref_b64, "preset": preset},
                 timeout=timeout, nhi_phan=True)
+
+
+def lo_ra_tep(texts: list, duong_ra: list, *, ref_b64: str | None = None,
+              preset: str | None = None, timeout: float = 1800.0) -> dict:
+    """Sinh một lô đoạn -> GHI THẲNG RA TỆP. Trả hồ sơ từng đoạn.
+
+    ⭐ Khác `noi_lo` ở chỗ **không có byte nào đi qua HTTP**. Với đường tài liệu
+       dài thì đó không phải chuyện tiết kiệm: một cuốn sách qua `noi_lo` là
+       hàng trăm MB base64 phải giải mã rồi ghi lại trong tiến trình worker.
+       Sidecar đã cầm sóng âm sẵn, để nó ghi là bỏ được cả một vòng chép.
+    """
+    d, _ = _goi("/v1/lo-ra-tep",
+                {"texts": list(texts), "duong_ra": list(duong_ra),
+                 "ref_b64": ref_b64, "preset": preset},
+                timeout=timeout)
+    return d
+
+
+def ghep_tep(duong_vao: list, duong_ra: str, *, so_cau: list | None = None,
+             timeout: float = 1800.0) -> dict:
+    """Ghép các đoạn ĐÃ CÓ TRÊN ĐĨA thành một bản đọc. Trả hồ sơ phép ghép.
+
+    Cho phép sinh lại **một** đoạn hỏng rồi ghép lại cả bài, thay vì đọc lại
+    toàn bộ tài liệu.
+    """
+    d, _ = _goi("/v1/ghep-tep",
+                {"duong_vao": list(duong_vao), "duong_ra": duong_ra,
+                 "so_cau": None if so_cau is None else [int(x) for x in so_cau]},
+                timeout=timeout)
+    return d
 
 
 def ghi_danh_kho(duong_wav: str, *, denoise: bool = True, so_clip: int = 5,
@@ -255253,6 +255286,109 @@ def test_db_dai_cao_phai_chan_CA_HAI_phia():
         m = (_bl().get("do") or {}).get(ten)
         if m:
             assert m.get("thap") is not None and m.get("cao") is not None, (ten, m)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_377_cong_giong_duong_ghi.py
+SHA256=7b97bb1481a85b82af311ae572c40c68685b6c065314ff56f41bfb793470d576 BYTES=3881 LINES=97
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+🔴 Cổng giọng vừa có cửa GHI đầu tiên, và cửa ghi khác hẳn cửa đọc về rủi ro.
+
+Trước `/v1/lo-ra-tep`, mọi cửa nhận đường dẫn của `voice_sidecar/server.py` đều
+chỉ ĐỌC (`/v1/enroll` nhận `duong_wav` rồi mở nó). Đường tài liệu dài đổi điều
+đó: sidecar phải ghi từng đoạn ra đĩa để worker không phải cầm hàng trăm MB
+base64.
+
+⛔ Một cửa nhận đường dẫn TUỲ Ý để ghi là một cửa ghi đè được `app.env`, ghi đè
+   được chính `server.py`, ghi đè được một tệp hệ thống. Loopback và bearer
+   token vẫn là hàng rào đầu — nhưng *"chỉ máy này gọi được"* không đồng nghĩa
+   với *"mọi thứ chạy trên máy này đều đáng tin"*, và chính đầu tệp `server.py`
+   đã ghi rằng cổng này **không có xác thực nào ngoài một token dùng chung**.
+
+⇒ Đường ghi bị kẹp vào một gốc, fail-closed. Tệp này chốt cái kẹp đó.
+
+⚠️ Chốt `_kiem_duong_ghi` chứ không chốt cửa HTTP: cửa cần engine và GPU, còn
+   phép kẹp thì thuần đường dẫn. Kiểm phần kiểm được, ở chỗ nó không cần model.
+"""
+from __future__ import annotations
+
+import os
+import tempfile
+
+import pytest
+
+
+def _kiem():
+    from voice_sidecar.server import _kiem_duong_ghi
+    return _kiem_duong_ghi
+
+
+def test_cho_phep_ghi_trong_thu_muc_tam():
+    d = os.path.join(tempfile.gettempdir(), "ltt_voice_thu", "doan0.wav")
+    assert _kiem()(d) == os.path.realpath(d)
+
+
+def test_tu_choi_duong_ngoai_goc():
+    from fastapi import HTTPException
+
+    for xau in (r"C:\LTTPlatform\secrets\app.env",
+                r"C:\Windows\System32\drivers\etc\hosts",
+                "/etc/passwd"):
+        with pytest.raises(HTTPException) as e:
+            _kiem()(xau)
+        assert e.value.status_code == 400
+
+
+def test_tu_choi_duong_di_nguoc_bang_dau_cham_cham():
+    """⛔ `..` phải bị chặn SAU khi chuẩn hoá, không phải bằng cách tìm chuỗi "..".
+
+    Tìm chuỗi thì `a..b.wav` bị chặn oan còn `tmp/x/../../../secrets` thì tuỳ
+    cách viết mà lọt. `realpath` rồi so gốc là phép duy nhất không phụ thuộc
+    cách viết.
+    """
+    from fastapi import HTTPException
+
+    xau = os.path.join(tempfile.gettempdir(), "..", "..", "hiem.wav")
+    if os.path.realpath(xau).startswith(os.path.realpath(tempfile.gettempdir())):
+        pytest.skip("thu muc tam nam sat goc o dia, ca thu khong co nghia")
+    with pytest.raises(HTTPException):
+        _kiem()(xau)
+
+
+def test_tu_choi_duong_rong():
+    from fastapi import HTTPException
+
+    for xau in ("", "   ", None):
+        with pytest.raises(HTTPException):
+            _kiem()(xau)
+
+
+def test_khong_dung_startswith_de_so_goc():
+    """🔴 `C:\tmp-khac` bắt đầu bằng `C:\tmp` nhưng KHÔNG nằm trong nó.
+
+    Một phép so chuỗi ở đây là một lỗ đi ra ngoài gốc mà vẫn qua được mọi phép
+    kiểm ngây thơ. Đây là ca chứng minh `commonpath` là bắt buộc.
+    """
+    from fastapi import HTTPException
+
+    goc = os.path.realpath(tempfile.gettempdir())
+    canh = goc + "-khac"
+    if os.path.realpath(canh) == goc:
+        pytest.skip("he tep khong phan biet duoc ca thu nay")
+    with pytest.raises(HTTPException):
+        _kiem()(os.path.join(canh, "x.wav"))
+
+
+def test_goc_them_duoc_bang_bien_moi_truong(monkeypatch):
+    """Gốc phụ khai bằng `LTT_VOICE_THU_MUC_TAM` — vì kho của nền tảng không
+    nhất thiết nằm trong thư mục tạm của hệ thống."""
+    import voice_sidecar.server as sv
+
+    with tempfile.TemporaryDirectory() as tam:
+        monkeypatch.setattr(sv, "_GOC_GHI", tam)
+        d = os.path.join(tam, "kho", "doan1.wav")
+        assert sv._kiem_duong_ghi(d) == os.path.realpath(d)
 
 @@@LTT_PROFILE_FILE_END@@@
 
