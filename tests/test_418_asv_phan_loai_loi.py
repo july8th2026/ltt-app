@@ -23,6 +23,7 @@ from apps.auto_scan_video.giai_doan_giong import ThieuBanDich
 from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
+from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -91,6 +92,17 @@ BANG = {
     #:    Nguoi goi phai bat va di tiep; neu no len toi bien thi ai do da khong
     #:    bat, va thu lai chi lam CSDL tu choi them mot lan nua.
     DaGhiRoi: loi.NGUOI_DUNG,
+    #: ── Cua goi model (pha 08) ──────────────────────────────────────────────
+    #:
+    #: 🔑 `AiMoHo` = mat ket noi SAU khi da gui. Cung nghia voi `DichMoHo`/
+    #:    `GiongMoHo`: khong biet model da chay chua, nen khong duoc thu lai mu.
+    AiMoHo: loi.MO_HO,
+    #: ⭐ `AiError` va con cua no `LuocDoSai` roi vao `TAM_THOI` CO CHU Y: model
+    #:    la ngau nhien, nen mot lan sinh ra JSON sai hinh dang thuong het o lan
+    #:    sau. Khac han `QcChan` — mot phep do TAT DINH chay lai cho ra dung ket
+    #:    qua cu, nen thu lai no la ba lan cho vo ich.
+    AiError: loi.TAM_THOI,
+    LuocDoSai: loi.TAM_THOI,
 }
 
 

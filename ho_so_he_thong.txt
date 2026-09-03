@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fd9826ef89b29bb0a8b753e75c590f97e776f93c017883f3e8e72674d465a45f
-Nguồn đã quét : 1644 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:c1f351490dfcb70eb855b9957906695e9243aee1fbf865e0850e469975532049
+Nguồn đã quét : 1646 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -143,6 +143,7 @@ Các lớp chính:
     - none
   File map:
     - apps/auto_scan_video/__init__.py
+    - apps/auto_scan_video/ai.py
     - apps/auto_scan_video/assets.py
     - apps/auto_scan_video/ban_dung.py
     - apps/auto_scan_video/ban_ghi.py
@@ -1354,7 +1355,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (415 file pytest + 4 frontend)
+10. QUALITY GATES (416 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1702,6 +1703,7 @@ Test inventory:
 - tests/test_431_ngan_sach_loi.py
 - tests/test_432_asv_v4_so_ke_su_dung.py
 - tests/test_433_asv_v4_ranh_gioi_asr.py
+- tests/test_434_asv_v4_ranh_gioi_ai.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1796,8 +1798,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1644 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1244, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1646 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1246, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1887,7 +1889,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (337)
+[apps] (338)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1922,6 +1924,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - apps/asv_voice/jobs.py
 - apps/asv_voice/manifest.py
 - apps/auto_scan_video/__init__.py
+- apps/auto_scan_video/ai.py
 - apps/auto_scan_video/assets.py
 - apps/auto_scan_video/ban_dung.py
 - apps/auto_scan_video/ban_ghi.py
@@ -2874,7 +2877,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (435)
+[tests] (436)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3236,6 +3239,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - tests/test_431_ngan_sach_loi.py
 - tests/test_432_asv_v4_so_ke_su_dung.py
 - tests/test_433_asv_v4_ranh_gioi_asr.py
+- tests/test_434_asv_v4_ranh_gioi_ai.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3498,7 +3502,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1644 file; 16932953 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1646 file; 16967822 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -12566,6 +12570,310 @@ BE_MAT_CONG_KHAI = {
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/ai.py
+SHA256=c03e98e90df520ee576dc11e6c78e13bf5225835c11d41b35ff1e879960b0600 BYTES=13939 LINES=298
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""MOT cua duy nhat de Auto Scan goi model — van ban lan thi giac.
+
+## Vi sao mot tep rieng thay vi moi giai doan tu goi
+
+Tu pha 11 tro di co **nam** thao tac AI khac nhau: doc canh, dung ho so noi
+dung, chuyen loi thoai, rut ngan cho vua, va kiem chat luong ngu nghia. Neu moi
+giai doan tu dung mot loi goi thi ta co nam ban sao cua cung mot quyet dinh —
+chon model, tran token, doc ket qua co cau truc, xu ly dispatch mo ho — va nam
+ban sao la nam cho de chung lech nhau.
+
+⭐ Ranh gioi trach nhiem, ghi ro de khong ai doan:
+
+    ASV  so huu    prompt · lu?c do dau ra · phien ban cua ca hai
+    NEN TANG so huu provider · id model · van chuyen · ngan sach · dispatch mo ho
+
+## 🔴 Loi THU BA cua cung mot khuon, tim ra o pha 08
+
+`platform_core/llm/dieu_phoi.goi` co mot vi du trong docstring:
+
+    model_theo_provider={"ltt_llm": "ltt_llm"}
+
+va chinh docstring do ghi rang vi du nay **SAI**: `ltt_llm` la **bi danh cong
+khai cua app**, khong phai id model. Provider chi khai `qwen38-api` va
+`qwen38-vision` (do duoc: `providers.models_for("ltt_llm")` tra dung hai id do,
+khong co `ltt_llm`). Truyen bi danh vao thi `chon_key` nem `ThieuKeyError`, va
+`goi` doc do la *"provider nay khong phuc vu duoc, di tiep"* — tuc **bo qua
+provider trong im lang** roi nem `KhongCoProviderNao`.
+
+Docstring do ke ten hai nan nhan da biet: `platform_core/agent/planner.py` (moi
+luot lap ke hoach roi xuong Gemini du khai "model nha di truoc") va
+`tools/kiem_ltt_llm.py`. Ca hai hong **suot nhieu thang**.
+
+`apps/auto_scan_video/dich_thuat.py:45` la nan nhan **thu ba**, va no khong bi
+phat hien vi giai doan dich van la engine gia tu pha 05 — no chua tung goi that
+mot lan nao.
+
+⇒ ⛔ **Khong gõ id model o ben goi.** Tep nay hoi nen tang
+  (`providers.model_capabilities`) xem model nao co thi giac, roi truyen dung id
+  do. Ngay ai do doi GGUF ben duoi, registry doi va ta di theo.
+
+## ⛔ Khong co van chuyen AI thu hai
+
+Khong `requests`, khong `httpx`, khong `urllib`, khong doc endpoint may B.
+`tests/test_434` chot dieu do bang AST tren ca thu muc app.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass
+
+from platform_core.i18n import _ as _t
+
+log = logging.getLogger(__name__)
+
+#: Provider duy nhat. Xem `dich_thuat` dau tep: doi model la doi san pham.
+THU_TU_PROVIDER = ("ltt_llm",)
+
+#: 🔑 **Phien ban PROMPT + LU?C DO, di vao van tay.**
+#:
+#: ⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung lai
+#:    ket qua sinh boi prompt CU — mot thay doi san pham khong bao gio toi khach.
+#:    Cung lop loi voi `thi_hanh.PHIEN_BAN_ENGINE_GIA`, o mot tang khac.
+PHIEN_BAN_PROMPT = 1
+PHIEN_BAN_LUOC_DO = 1
+
+
+class AiError(RuntimeError):
+    """Loi khi goi model. Bao gom ca ket qua sai hinh dang."""
+
+
+class AiMoHo(RuntimeError):
+    """Mat ket noi SAU khi da gui — khong biet model da chay chua.
+
+    ⛔ Cung nghia voi `su_dung.MO_HO` (ADR-001 D9), va phai duoc doi xu y het:
+       khong thu lai mu, khong tinh tien, cham mot dau de nguoi quyet dinh.
+    """
+
+
+class LuocDoSai(AiError):
+    """Model tra ve JSON hop le nhung THIEU truong bat buoc, hoac sai kieu."""
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Thao tac co kieu — nam cai, mot bang
+# ══════════════════════════════════════════════════════════════════════════════
+
+@dataclass(frozen=True)
+class ThaoTac:
+    """MOT thao tac AI cua Auto Scan.
+
+    ⭐ `can_thi_giac` la thu DUY NHAT quyet dinh model. Khong giai doan nao duoc
+       tu chon id model; chung chon mot THAO TAC, va bang nay chon phan con lai.
+       Do la khac biet giua "chon theo ngu nghia" va "go mot chuoi".
+    """
+
+    ma: str
+    can_thi_giac: bool
+    #: Truong bat buoc trong JSON model phai tra ve. Rong = khong ep luoc do.
+    truong_bat_buoc: tuple[str, ...] = ()
+    #: Pha nao la nguoi goi dau tien. Chi de tra cuu.
+    pha: str = ""
+
+
+DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
+DOC_CANH = ThaoTac("doc_canh", True, ("canh",), pha="11")
+HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", True, ("the_loai", "nhip"), pha="11")
+CHUYEN_LOI_THOAI = ThaoTac("chuyen_loi_thoai", False, ("doan",), pha="14")
+RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
+QC_NGU_NGHIA = ThaoTac("qc_ngu_nghia", False, ("dat", "ly_do"), pha="19")
+
+THAO_TAC: tuple[ThaoTac, ...] = (
+    DICH_THUAT, DOC_CANH, HO_SO_NOI_DUNG, CHUYEN_LOI_THOAI,
+    RUT_NGAN_CHO_VUA, QC_NGU_NGHIA)
+
+THEO_MA = {t.ma: t for t in THAO_TAC}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Chon model — HOI nen tang, khong go id
+# ══════════════════════════════════════════════════════════════════════════════
+
+def model_cho(thao_tac: ThaoTac, *, provider: str = "") -> str:
+    """Id model that cho mot thao tac. Hoi registry, khong go tay.
+
+    🔑 Ngu nghia la `can_thi_giac`; id la viec cua nen tang. Ngay may B doi tu
+       `qwen38-vision` sang mot ban khac, registry doi va ta di theo — khong tep
+       nao cua Auto Scan phai sua.
+
+    ⛔ Nem `AiError` neu khong tim thay, thay vi roi ve mot mac dinh. Roi ve
+       model van ban cho mot thao tac CAN thi giac se cho ra mot cau tra loi
+       trong nhu that ve mot buc anh model chua bao gio nhin thay.
+    """
+    from platform_core import providers
+
+    pid = provider or THU_TU_PROVIDER[0]
+    hop = []
+    for m in providers.models_for(pid):
+        kn = providers.model_capabilities(m.id) or {}
+        if bool(kn.get("vision")) == thao_tac.can_thi_giac:
+            hop.append(m.id)
+    if not hop:
+        raise AiError(
+            f"{pid} khong co model nao {'co' if thao_tac.can_thi_giac else 'khong'}"
+            f" thi giac cho thao tac {thao_tac.ma!r}")
+    # ⚠️ On dinh: sap xep de hai lan goi cung cho ra mot id, neu khong van tay
+    #    se nhay va cache truot vo co.
+    return sorted(hop)[0]
+
+
+def ban_do_model(thao_tac: ThaoTac) -> dict:
+    """`model_theo_provider` cho `dieu_phoi.goi`. Xem loi thu BA o dau tep."""
+    return {pid: model_cho(thao_tac, provider=pid) for pid in THU_TU_PROVIDER}
+
+
+def tran_token_ra() -> int:
+    """Tran token DAU RA. ⛔ Doc tu `ltt_llm.ngan_sach`, khong go lai con so.
+
+    `apps/ltt_llm/ngan_sach.py` la mot nguon chan ly cho moi ngan sach token cua
+    model nha. CLAUDE.md ghi mot loi da xay ra that vi go lai con so thu hai: cua
+    stream lay nham mot hang `1_024` va **moi cau tra loi dai deu bi cat**.
+    """
+    try:
+        from apps.ltt_llm import ngan_sach
+        return int(ngan_sach.mac_dinh_cho("job"))
+    except Exception as exc:  # noqa: BLE001
+        log.warning("khong doc duoc ngan sach ltt_llm (%s)", type(exc).__name__)
+        raise AiError("khong doc duoc ngan sach token cua model nha") from exc
+
+
+def cua_so_ngu_canh(thao_tac: ThaoTac) -> int:
+    """Cua so ngu canh THAT cua model se dung.
+
+    🔴 Van ban va thi giac **khong bang nhau**: do duoc tu registry, `qwen38-api`
+       co 131 072 con `qwen38-vision` chi **65 536**. Mot lo khung hinh sap theo
+       tran cua model van ban se thanh mot loi 413 luc chay.
+
+    ⚠️ Va `docs/audit_ltt_llm/STATE.md` tung do duoc mot tran **thap hon nhieu**
+       cho ban thi giac (28 262 token). Con so o day la cai registry KHAI; pha 11
+       phai do lai truoc khi sap lo khung hinh theo no.
+    """
+    from platform_core import providers
+
+    kn = providers.model_capabilities(model_cho(thao_tac)) or {}
+    return int(kn.get("context_window") or 0)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Doc ket qua co cau truc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def doc_json(noi_dung: str, thao_tac: ThaoTac) -> dict:
+    """Doc JSON tu phan hoi model va kiem luoc do. Nem `LuocDoSai` neu khong dat.
+
+    ⭐ Model hay boc JSON trong ```json ... ```, hoac them mot cau dan truoc no.
+       Cat den dau ngoac nhon dau tien va dau ngoac nhon cuoi cung la cach chiu
+       duoc ca hai ma khong doan.
+
+    ⛔ Mot truong thieu **phai** thanh loi, khong duoc thanh `None` di tiep. Mot
+       `None` di tiep se lo ra o mot giai doan khac, duoi mot thong bao khong
+       lien quan gi — va nguoi doc se di tim o nham cho.
+    """
+    s = (noi_dung or "").strip()
+    if not s:
+        raise LuocDoSai(f"{thao_tac.ma}: model tra ve rong")
+
+    dau, cuoi = s.find("{"), s.rfind("}")
+    if dau < 0 or cuoi <= dau:
+        raise LuocDoSai(f"{thao_tac.ma}: phan hoi khong chua doi tuong JSON nao")
+    try:
+        ra = json.loads(s[dau:cuoi + 1])
+    except ValueError as exc:
+        raise LuocDoSai(f"{thao_tac.ma}: JSON hong ({exc})") from exc
+    if not isinstance(ra, dict):
+        raise LuocDoSai(f"{thao_tac.ma}: mong mot doi tuong, nhan {type(ra).__name__}")
+
+    thieu = [t for t in thao_tac.truong_bat_buoc if t not in ra]
+    if thieu:
+        raise LuocDoSai(
+            f"{thao_tac.ma}: phan hoi thieu truong bat buoc {thieu}")
+    return ra
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Goi
+# ══════════════════════════════════════════════════════════════════════════════
+
+def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
+        max_tokens: int = 0, temperature: float | None = None,
+        on_dispatch=None, on_rejected=None) -> dict:
+    """MOT cua goi model. Tra ve `{"noi_dung", "provider", "model", "su_dung"}`.
+
+    ⛔ Khong tep nao khac cua Auto Scan duoc goi `dieu_phoi.goi` truc tiep.
+       `tests/test_434` chot dieu do — hai duong toi cung mot provider la hai
+       duong se lech nhau ve tran token, ve chon model, va ve cach doc loi.
+
+    🔑 **Dispatch mo ho khong duoc nuot.** `dieu_phoi` phan biet "provider tu
+       choi" (thu lai duoc) voi "mat ket noi sau khi gui" (khong biet da chay
+       chua). Cai thu hai doi thanh `AiMoHo`, va `su_dung` ghi no o trang thai
+       `mo_ho` — khong tinh tien, khong tu dong thu lai.
+    """
+    from platform_core.llm import dieu_phoi
+
+    huy = getattr(ctx, "is_cancelled", None) if ctx is not None else None
+    if huy is not None and huy():
+        raise AiError(_t('Lần chạy đã bị hủy.'))
+
+    # 🔑 `on_dispatch`/`on_rejected` la ngu nghia dispatch ben vung cua nen tang
+    #    (I5): chung ghi `provider_state` xuong CSDL **ngay truoc** khi goi ra
+    #    ngoai, nen mot lan sap sau do doc ra duoc la "co the da goi" chu khong
+    #    phai "chua goi". Lay tu `ctx` khi ben goi khong tu truyen.
+    if on_dispatch is None and ctx is not None:
+        on_dispatch = getattr(ctx, "provider_dispatched", None)
+    if on_rejected is None and ctx is not None:
+        on_rejected = getattr(ctx, "provider_rejected", None)
+
+    try:
+        kq = dieu_phoi.goi(
+            db, messages=messages,
+            thu_tu_provider=THU_TU_PROVIDER,
+            model_theo_provider=ban_do_model(thao_tac),
+            max_tokens=int(max_tokens) or tran_token_ra(),
+            temperature=temperature,
+            on_dispatch=on_dispatch, on_rejected=on_rejected)
+    except Exception as exc:  # noqa: BLE001
+        if _la_mo_ho(exc):
+            raise AiMoHo(str(exc)) from exc
+        raise AiError(str(exc)) from exc
+
+    return {
+        "noi_dung": getattr(kq, "noi_dung", "") or getattr(kq, "content", ""),
+        "provider": getattr(kq, "provider", "") or THU_TU_PROVIDER[0],
+        "model": getattr(kq, "model", ""),
+        "su_dung": getattr(kq, "su_dung", None) or getattr(kq, "usage", None),
+    }
+
+
+def _la_mo_ho(exc: BaseException) -> bool:
+    """Mat ket noi SAU khi gui — khong biet model da chay chua.
+
+    ⚠️ Nhan dien theo LOP truoc, chuoi sau. Mot phep nhan dien chi dua vao chuoi
+       se doi nghia ngay khi ai do sua mot thong bao loi, va no doi trong im
+       lang ve phia nguy hiem: mot lan mo ho bi doc nham thanh "tu choi" se
+       duoc thu lai — tuc co the tra tien hai lan cho mot viec.
+    """
+    # ⭐ `AmbiguousProviderError` la TIN HIEU CHINH THUC cua nen tang cho tinh
+    #    huong nay — `dieu_phoi` nem no khi da goi `on_dispatch` roi moi hong.
+    #    Nhan dien theo TEN LOP thi khong the doc nham; mot phep do chuoi thi co.
+    ten = type(exc).__name__
+    if ten == "AmbiguousProviderError":
+        return True
+    if ten in ("Timeout", "ReadTimeout", "ConnectionError", "ChunkedEncodingError"):
+        return True
+    # ⚠️ Nhanh chuoi la lop CUOI, khong phai lop dau: no ton tai cho nhung lop
+    #    ngoai le cua thu vien duoi ma ta khong biet ten, va no co the doi nghia
+    #    ngay khi ai do sua mot thong bao. Mot lan mo ho bi doc nham thanh "tu
+    #    choi" se duoc thu lai — tuc co the tra tien hai lan cho mot viec.
+    return "timeout" in str(exc).lower() or "mat ket noi" in str(exc).lower()
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/assets.py
 SHA256=cc89063f217e87527cc675161160b8a59444683a96e2fa709d712f9084620153 BYTES=25273 LINES=543
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -13817,7 +14125,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/dich_thuat.py
-SHA256=0de23fe63ef74d2410cb03c1fcdf1082a72f9dfcc46550a1b57a80a77b0f0ccb BYTES=9308 LINES=218
+SHA256=f0325d1ab66514b0d1c0b75200b322a399260fc28fb2d2b825904116044230e6 BYTES=10046 LINES=230
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Bo chuyen doi dich thuat: ban ghi -> tieng Viet, qua bo dieu phoi LLM nen tang.
 
@@ -13862,10 +14170,34 @@ from platform_core.i18n import _ as _t
 log = logging.getLogger(__name__)
 
 #: MOT provider. Xem ghi chu dau tep truoc khi them cai thu hai.
-THU_TU_PROVIDER = ("ltt_llm",)
-MODEL_THEO_PROVIDER = {"ltt_llm": "ltt_llm"}
+#:
+#: ⭐ Tai xuat tu `ai.py` — mot nguon duy nhat cho ca nam thao tac AI.
+from .ai import THU_TU_PROVIDER  # noqa: E402  (tai xuat co chu dinh)
+
 PROVIDER_CHINH = THU_TU_PROVIDER[0]
-MODEL_CHINH = MODEL_THEO_PROVIDER[PROVIDER_CHINH]
+
+#: 🔴 **`MODEL_THEO_PROVIDER = {"ltt_llm": "ltt_llm"}` DA BI GO — no la mot loi
+#:    dang song, tim ra o pha 08.**
+#:
+#:    `ltt_llm` la **bi danh cong khai cua app**, khong phai id model. Do duoc:
+#:    `providers.models_for("ltt_llm")` tra ve dung `qwen38-api` va
+#:    `qwen38-vision`, khong co `ltt_llm`. Truyen bi danh vao thi `chon_key` nem
+#:    `ThieuKeyError`, va `dieu_phoi.goi` doc do la *"provider nay khong phuc vu
+#:    duoc, di tiep"* — tuc **bo qua provider trong im lang** roi nem
+#:    `KhongCoProviderNao`.
+#:
+#:    Docstring cua `dieu_phoi.goi` da canh bao chinh xac dieu nay va ke ten hai
+#:    nan nhan truoc: `platform_core/agent/planner.py` (moi luot lap ke hoach roi
+#:    xuong Gemini du khai "model nha di truoc") va `tools/kiem_ltt_llm.py`. Ca
+#:    hai hong **suot nhieu thang**. Day la nan nhan thu BA, va no khong bi phat
+#:    hien vi giai doan dich van la engine gia tu pha 05 — chua goi that lan nao.
+#:
+#: ⇒ Nay hoi `ai.ban_do_model(ai.DICH_THUAT)`, tuc hoi registry. Ngay may B doi
+#:   GGUF ben duoi, registry doi va ta di theo.
+#:
+#: ⭐ Bai hoc dang hon ca ba loi: **mot vi du trong docstring la ma ma nguoi ta
+#:    chep**. No sai thi no khong sai mot minh.
+MODEL_CHINH = ""     # ⛔ giu ten de nguoi doc cu tim thay ghi chu nay
 
 #: So doan toi da moi lo. Nho de mot phan hoi hong chi lam mat mot lo, va de
 #: model giu duoc ngu canh; du to de khong bien mot ban ghi 200 doan thanh 200
@@ -13990,31 +14322,19 @@ def dich_mot_lo(db, lo: list[dict], *, ngon_ngu_goc: str, ctx=None) -> dict:
        **ngay truoc** khi goi ra ngoai, nen mot lan sap sau do doc ra duoc la
        "co the da goi" chu khong phai "chua goi".
     """
-    from platform_core.llm import dieu_phoi
+    from . import ai
 
     ma_gui = {d["ma"] for d in lo}
     try:
-        kq = dieu_phoi.goi(
-            db,
-            messages=_loi_nhac(lo, ngon_ngu_goc),
-            thu_tu_provider=THU_TU_PROVIDER,
-            model_theo_provider=MODEL_THEO_PROVIDER,
-            max_tokens=_tran_token_ra(),
-            temperature=0.2,
-            on_dispatch=(getattr(ctx, "provider_dispatched", None)
-                         if ctx is not None else None),
-            on_rejected=(getattr(ctx, "provider_rejected", None)
-                         if ctx is not None else None),
-        )
-    except Exception as exc:      # noqa: BLE001 - phan loai roi nem lai
-        if type(exc).__name__ == "AmbiguousProviderError":
-            # ⛔ Mat ket noi SAU KHI da bat dau gui. Provider co the da nhan va
-            #    da tinh tien. Doi thanh mot loi rieng de tang tren khong bao
-            #    gio thu lai (I5/G7).
-            raise DichMoHo(str(exc)) from exc
-        raise
+        kq = ai.goi(db, ai.DICH_THUAT, _loi_nhac(lo, ngon_ngu_goc),
+                    ctx=ctx, temperature=0.2)
+    except ai.AiMoHo as exc:
+        # ⛔ Mat ket noi SAU KHI da bat dau gui. Provider co the da nhan va da
+        #    tinh tien. Doi thanh loi rieng cua mien dich de tang tren khong bao
+        #    gio thu lai (I5/G7).
+        raise DichMoHo(str(exc)) from exc
 
-    return _doc_ban_dich(getattr(kq, "content", "") or "", ma_gui)
+    return _doc_ban_dich(kq["noi_dung"], ma_gui)
 
 
 def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
@@ -17268,7 +17588,7 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/loi.py
-SHA256=8825174222a582cc7ac6b735653b966845c0c654ebd93a57d9721b9bbdb3d9b4 BYTES=8453 LINES=179
+SHA256=ba09dc2f9fb0583ae406ff49f25b09638b2e1114362e0434af595810ac9eb371 BYTES=9309 LINES=194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phan loai loi cua Auto Scan -> phan loai cua NEN TANG (Prompt 17 muc 1).
 
@@ -17417,6 +17737,21 @@ def phan_loai(exc: BaseException) -> str:
     from .su_dung import SuDungError
     if isinstance(exc, SuDungError):
         return NGUOI_DUNG
+
+    # ── Cua goi model (pha 08) ──────────────────────────────────────────────
+    #
+    # ⛔ `AiMoHo` phai di TRUOC `AiError`? Khong — chung khong ke thua nhau, va
+    #    do la co y: `AiMoHo(RuntimeError)` dung rieng de mot phep `isinstance`
+    #    nham khong the bien mot lan mo ho thanh mot lan thu lai.
+    from .ai import AiError, AiMoHo
+    if isinstance(exc, AiMoHo):
+        return MO_HO
+    if isinstance(exc, AiError):
+        # ⭐ `LuocDoSai` (model tra JSON sai hinh dang) la con cua `AiError` va
+        #    co CHU Y roi vao day: model la ngau nhien, nen mot lan sinh hong
+        #    thuong het o lan sau. Do la khac biet that voi `QcChan` — mot phep
+        #    do tat dinh chay lai cho ra dung ket qua cu.
+        return TAM_THOI
 
     if isinstance(exc, (MediaError, BanGhiError, VanBanError, ThoiGianError,
                         BanDungError)):
@@ -287460,7 +287795,7 @@ def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_418_asv_phan_loai_loi.py
-SHA256=e7745e6713f22e80e6653ad4826ea6166325ee246bb3d7829e9f5e06d19d5a12 BYTES=12659 LINES=262
+SHA256=247916a66e3f121f3c0720e36cf99c0cd67c26955e167e7ae2add22c509844d1 BYTES=13444 LINES=274
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 17 §1 — phan loai loi co kieu, va phep dich sang phan loai cua nen tang.
 
@@ -287487,6 +287822,7 @@ from apps.auto_scan_video.giai_doan_giong import ThieuBanDich
 from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
+from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -287555,6 +287891,17 @@ BANG = {
     #:    Nguoi goi phai bat va di tiep; neu no len toi bien thi ai do da khong
     #:    bat, va thu lai chi lam CSDL tu choi them mot lan nua.
     DaGhiRoi: loi.NGUOI_DUNG,
+    #: ── Cua goi model (pha 08) ──────────────────────────────────────────────
+    #:
+    #: 🔑 `AiMoHo` = mat ket noi SAU khi da gui. Cung nghia voi `DichMoHo`/
+    #:    `GiongMoHo`: khong biet model da chay chua, nen khong duoc thu lai mu.
+    AiMoHo: loi.MO_HO,
+    #: ⭐ `AiError` va con cua no `LuocDoSai` roi vao `TAM_THOI` CO CHU Y: model
+    #:    la ngau nhien, nen mot lan sinh ra JSON sai hinh dang thuong het o lan
+    #:    sau. Khac han `QcChan` — mot phep do TAT DINH chay lai cho ra dung ket
+    #:    qua cu, nen thu lai no la ba lan cho vo ich.
+    AiError: loi.TAM_THOI,
+    LuocDoSai: loi.TAM_THOI,
 }
 
 
@@ -291414,7 +291761,7 @@ def test_bang_item_KHONG_co_cot_nao_cua_mot_hang_doi():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
-SHA256=d51776d66b2788bafcf7f56ff2d3a18279af52faf383d2dde92fc41c29e831b3 BYTES=25955 LINES=575
+SHA256=68668639217cde9f9c59ceb004c3384b813780e5fe5964bd106f2a4d9d17fde4 BYTES=26634 LINES=586
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
 
@@ -291450,8 +291797,19 @@ def _n_truyen_cho_pytest() -> int:
     ⭐ Tu 03/09 chi con MOT ham tra loi cau hoi nay, nen phep kiem goi thang no.
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
+
+    🔴 **`do_tai=False`, va do la mot lan sua that.** Khi ve DO DUOC duoc them
+       vao (hop nhat voi `loi_dang_ban` cua phien lttchat), mac dinh thanh
+       `True` — nen moi phep kiem SO HOC o day bat dau doc CPU that va **doi ket
+       qua theo tai may**. Chung xanh khi chay mot minh va do duoi `-n 4`, do
+       duoc ngay trong luot hoi quy dau tien cua pha 08.
+
+    ⛔ Mot phep kiem cong chat luong chap chon con te hon khong co: no day nguoi
+       ta vao thoi quen chay lai cho toi khi xanh, va tu do khong ai doc mau do
+       nua. Nhung phep kiem CO chu dinh do ve DO DUOC thi tu `monkeypatch`
+       `loi_dang_ban` — chung khong dung ham nay.
     """
-    return gate.loi_cho_bo_test(phien="")
+    return gate.loi_cho_bo_test(phien="", do_tai=False)
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
@@ -293021,6 +293379,391 @@ def test_thuat_toan_chong_lan_o_lai_app_CHU():
     assert "gan(" in ma, "phai goi ham duoc tiem vao"
     for cam in ("overlap", "chong_lan", "max(0.0", "min(end"):
         assert cam not in ma, f"co ve dang tu tinh chong lan: {cam!r}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_434_asv_v4_ranh_gioi_ai.py
+SHA256=1ed34cdbffd1077296f2e0fb3c9b42c5538bf0fa82446071fb52dcd800bb128d BYTES=17872 LINES=379
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Auto Scan Video V4 — MOT cua goi model, van ban lan thi giac (pha 08).
+
+**§1 mot cua duy nhat** — khong tep nao khac cua ASV duoc goi `dieu_phoi.goi`.
+     Hai duong toi cung mot provider la hai duong se lech nhau ve tran token, ve
+     chon model, va ve cach doc loi.
+
+**§2 chon model theo NGU NGHIA** — 🔴 va day la cho mot loi da song. Docstring
+     cua `dieu_phoi.goi` canh bao rang `{"ltt_llm": "ltt_llm"}` la SAI: `ltt_llm`
+     la **bi danh cong khai cua app**, khong phai id model. Truyen no vao thi
+     `chon_key` nem `ThieuKeyError` va `goi` **bo qua provider trong im lang**.
+     Docstring do ke ten hai nan nhan; `dich_thuat.py:45` la nan nhan thu BA.
+
+**§3 tham quyen tran token** — mot nguon duy nhat: `ltt_llm.ngan_sach`. CLAUDE.md
+     ghi mot loi da xay ra that vi go lai con so thu hai.
+
+**§4 dau ra co cau truc** — thieu mot truong bat buoc phai thanh LOI, khong duoc
+     thanh `None` di tiep roi no ra o mot giai doan khac duoi mot thong bao
+     khong lien quan gi.
+
+**§5 khong co van chuyen AI thu hai** — khong `requests`, khong `httpx`, khong
+     `urllib`, khong endpoint may B.
+
+⛔ Khong phep kiem nao goi model that.
+"""
+from __future__ import annotations
+
+import ast
+import pathlib
+
+import pytest
+
+from apps.auto_scan_video import ai
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+APP = GOC / "apps" / "auto_scan_video"
+
+
+def _cay(tep: pathlib.Path) -> ast.Module:
+    return ast.parse(tep.read_text(encoding="utf-8"))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Mot cua duy nhat
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_chi_ai_py_duoc_goi_dieu_phoi():
+    """⛔ Moi tep khac phai di qua `ai.goi`.
+
+    ⭐ Quet AST chu khong quet chuoi: chinh docstring cua `ai.py` nhac ten
+       `dieu_phoi.goi` nhieu lan de giai thich, va mot phep quet chuoi se bao
+       dong tren doan van giai thich no — loi do da xay ra bon lan trong du an.
+    """
+    xau = []
+    for tep in sorted(APP.glob("*.py")):
+        if tep.name == "ai.py":
+            continue
+        for n in ast.walk(_cay(tep)):
+            if isinstance(n, ast.Attribute) and n.attr == "goi" and \
+                    isinstance(n.value, ast.Name) and n.value.id == "dieu_phoi":
+                xau.append(f"{tep.name}:{n.lineno}")
+            # ⚠️ Cam DUNG `dieu_phoi`, khong cam ca `platform_core.llm`.
+            #
+            # 🔴 Ban dau phep kiem nay cam ca goi `platform_core.llm`, va no bat
+            #    `loi.py:182` — noi nhap `cong_vlm.AmbiguousProviderError` va
+            #    `BanError` de DICH mot ngoai le sang loai cua nen tang. Do la
+            #    mot phep doc kieu, khong phai mot duong van chuyen thu hai.
+            #
+            # ⭐ Mot phep kiem qua rong khong chi bao dong gia — no day nguoi ta
+            #    di vong qua chinh no, va luc do no khong con bao ve gi.
+            if isinstance(n, ast.ImportFrom):
+                mod = n.module or ""
+                ten_nhap = {a.name for a in n.names}
+                # 🔴 **Hai dang, va ban dau toi chi chan MOT.** Kiem dot bien
+                #    chen `from platform_core.llm import dieu_phoi` va phep kiem
+                #    van XANH — vi luc do no chi so `mod == "...dieu_phoi"`.
+                #    Mot cua chi khoa mot canh la mot cua khong khoa.
+                if mod == "platform_core.llm.dieu_phoi" or (
+                        mod == "platform_core.llm" and "dieu_phoi" in ten_nhap):
+                    xau.append(f"{tep.name}:{n.lineno} import {mod}")
+    assert xau == [], f"goi thang dieu phoi thay vi qua `ai.goi`: {xau}"
+
+
+def test_nam_thao_tac_deu_co_trong_bang():
+    """Nam thao tac ma pha 08 yeu cau, khong thieu cai nao."""
+    can = {"doc_canh", "ho_so_noi_dung", "chuyen_loi_thoai",
+           "rut_ngan_cho_vua", "qc_ngu_nghia"}
+    assert can <= set(ai.THEO_MA), sorted(can - set(ai.THEO_MA))
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Chon model theo ngu nghia — va chot lai loi bi danh
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_thao_tac_van_ban_va_thi_giac_ra_HAI_model_khac_nhau():
+    van = ai.model_cho(ai.DICH_THUAT)
+    thi = ai.model_cho(ai.DOC_CANH)
+    assert van != thi, "van ban va thi giac phai ra hai model khac nhau"
+
+    from platform_core import providers
+    assert providers.model_capabilities(thi).get("vision") is True
+    assert providers.model_capabilities(van).get("vision") is not True
+
+
+def test_KHONG_go_bi_danh_lam_id_model():
+    """🔴 Loi thu BA cua cung mot khuon, chot lai o day.
+
+    `ltt_llm` la bi danh cong khai cua app. Truyen no lam id model thi
+    `chon_key` nem `ThieuKeyError`, va `dieu_phoi.goi` doc do la "provider nay
+    khong phuc vu duoc, di tiep" — **bo qua provider trong im lang**.
+    """
+    from platform_core import providers
+
+    id_that = {m.id for m in providers.models_for("ltt_llm")}
+    assert "ltt_llm" not in id_that, (
+        "neu registry bat dau khai `ltt_llm` la mot id model that thi doc lai "
+        "docstring cua `dieu_phoi.goi` — phep chot nay dua tren viec no KHONG la")
+
+    for t in ai.THAO_TAC:
+        ban_do = ai.ban_do_model(t)
+        for pid, mid in ban_do.items():
+            assert mid != pid, (
+                f"{t.ma}: truyen bi danh {pid!r} lam id model — dung khuon sai "
+                f"ma docstring cua `dieu_phoi.goi` canh bao")
+            assert mid in id_that, f"{t.ma}: id {mid!r} khong co trong registry"
+
+
+def test_khong_tep_nao_cua_ASV_con_go_id_model_noi_bo():
+    """⛔ Id noi bo la viec cua registry. Go no o ben goi la mot ban sao se troi.
+
+    ⚠️ `ai.py` duoc mien vi no NHAC hai id trong doan van giai thich loi bi danh
+       — nhung no khong duoc GAN chung cho bien nao, va phep kiem duoi day doc
+       AST nen no phan biet duoc hai dieu do.
+    """
+    xau = []
+    for tep in sorted(APP.glob("*.py")):
+        for n in ast.walk(_cay(tep)):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str) and \
+                    n.value in ("qwen38-api", "qwen38-vision"):
+                xau.append(f"{tep.name}:{n.lineno}")
+    assert xau == [], f"go id model noi bo o ben goi: {xau}"
+
+
+def test_model_cho_KHONG_roi_ve_mac_dinh_khi_khong_tim_thay(monkeypatch):
+    """⛔ Roi ve model van ban cho mot thao tac CAN thi giac se cho ra mot cau
+    tra loi trong nhu that ve mot buc anh model chua bao gio nhin thay."""
+    from platform_core import providers
+
+    monkeypatch.setattr(providers, "models_for", lambda *a, **k: [])
+    with pytest.raises(ai.AiError):
+        ai.model_cho(ai.DOC_CANH)
+
+
+def test_chon_model_ON_DINH_giua_hai_lan_goi():
+    """Van tay phu thuoc id model; mot id nhay lam cache truot vo co."""
+    assert ai.model_cho(ai.DOC_CANH) == ai.model_cho(ai.DOC_CANH)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  Tham quyen tran token va cua so ngu canh
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_tran_token_lay_tu_ngan_sach_cua_app_CHU():
+    from apps.ltt_llm import ngan_sach
+
+    assert ai.tran_token_ra() == int(ngan_sach.mac_dinh_cho("job"))
+
+
+def test_ASV_khong_go_lai_mot_con_so_token_nao():
+    """🔴 CLAUDE.md ghi mot loi da xay ra that: mot hang `1_024` go tay lam
+    **moi cau tra loi dai bi cat**. Chot bang su vang mat."""
+    xau = []
+    for tep in sorted(APP.glob("*.py")):
+        for n in ast.walk(_cay(tep)):
+            if isinstance(n, ast.Assign) and isinstance(n.value, ast.Constant) \
+                    and isinstance(n.value.value, int) and n.value.value >= 1024:
+                ten = [t.id for t in n.targets if isinstance(t, ast.Name)]
+                if any("token" in x.lower() for x in ten):
+                    xau.append(f"{tep.name}:{n.lineno} {ten}")
+    assert xau == [], f"go lai hang so token: {xau}"
+
+
+def test_cua_so_ngu_canh_THI_GIAC_nho_hon_van_ban():
+    """🔴 Mot lo khung hinh sap theo tran cua model VAN BAN se thanh 413 luc chay.
+
+    ⚠️ Con so o day la cai registry KHAI. `docs/audit_ltt_llm/STATE.md` tung do
+       duoc mot tran THAP HON NHIEU cho ban thi giac; pha 11 phai do lai truoc
+       khi sap lo khung hinh theo no.
+    """
+    assert 0 < ai.cua_so_ngu_canh(ai.DOC_CANH) < ai.cua_so_ngu_canh(ai.DICH_THUAT)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  Dau ra co cau truc
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_doc_duoc_JSON_boc_trong_markdown():
+    ra = ai.doc_json('day la ket qua:\n```json\n{"doan": [1, 2]}\n```', ai.DICH_THUAT)
+    assert ra == {"doan": [1, 2]}
+
+
+@pytest.mark.parametrize("xau", [
+    "", "   ", "khong co json gi ca", "{ hong", "[1,2,3]", "null",
+])
+def test_phan_hoi_hong_thi_NEM_chu_khong_tra_ve_rong(xau):
+    with pytest.raises(ai.LuocDoSai):
+        ai.doc_json(xau, ai.DICH_THUAT)
+
+
+def test_THIEU_truong_bat_buoc_thi_nem(monkeypatch):
+    """⛔ Mot truong thieu thanh `None` di tiep se lo ra o mot giai doan khac,
+    duoi mot thong bao khong lien quan gi — va nguoi doc se di tim o nham cho."""
+    with pytest.raises(ai.LuocDoSai) as e:
+        ai.doc_json('{"khac": 1}', ai.HO_SO_NOI_DUNG)
+    assert "the_loai" in str(e.value)
+
+
+def test_moi_thao_tac_deu_khai_truong_bat_buoc():
+    """Mot thao tac khong khai luoc do la mot thao tac khong kiem duoc dau ra."""
+    thieu = [t.ma for t in ai.THAO_TAC if not t.truong_bat_buoc]
+    assert thieu == [], f"chua khai truong bat buoc: {thieu}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  Dispatch mo ho
+# ══════════════════════════════════════════════════════════════════════════════
+
+class _Gia:
+    """Doi tuong `dieu_phoi` gia — khong cham mang."""
+
+    def __init__(self, loi=None, noi_dung='{"doan": []}'):
+        self.loi = loi
+        self.noi_dung = noi_dung
+        self.da_goi = {}
+
+    def goi(self, db, **k):
+        self.da_goi = dict(k)
+        if self.loi is not None:
+            raise self.loi
+        class _Kq:
+            content = self.noi_dung
+            provider = "ltt_llm"
+            model = "x"
+        return _Kq()
+
+
+def _tiem(monkeypatch, gia):
+    import platform_core.llm.dieu_phoi as dp
+    monkeypatch.setattr(dp, "goi", gia.goi)
+
+
+class AmbiguousProviderError(RuntimeError):
+    """Cung TEN voi lop cua nen tang — `ai._la_mo_ho` nhan dien theo ten."""
+
+
+def test_dispatch_MO_HO_thanh_AiMoHo_chu_khong_phai_loi_thuong(monkeypatch):
+    """🔑 Hai loai that bai, hai so phan: `tu choi` thu lai duoc, `mo ho` thi
+    khong — vi provider co the da chay va da tinh tien.
+
+    🔴 **Thong diep co y KHONG chua tu khoa nao.** Ban dau no la "mat ket noi
+       sau khi gui", va kiem dot bien cho thay phep kiem van XANH khi tat han
+       nhanh nhan dien theo TEN LOP — vi nhanh do chuoi bat duoc no. Tuc phep
+       kiem dang do lop du phong chu khong do lop chinh.
+
+    ⇒ Mot thong diep trung tinh ep no phai di qua dung nhanh can chot.
+    """
+    gia = _Gia(loi=AmbiguousProviderError("khong noi gi ca"))
+    _tiem(monkeypatch, gia)
+    with pytest.raises(ai.AiMoHo):
+        ai.goi(None, ai.DICH_THUAT, [{"role": "user", "content": "x"}])
+
+
+def test_nhanh_du_phong_theo_CHUOI_van_bat_duoc_mo_ho(monkeypatch):
+    """Chieu con lai: mot lop khong quen ten nhung thong diep noi ro.
+
+    ⚠️ Nhanh nay la lop CUOI. No ton tai cho ngoai le cua thu vien duoi ma ta
+       khong biet ten, va no co the doi nghia ngay khi ai do sua mot thong bao.
+    """
+    gia = _Gia(loi=RuntimeError("read timeout khi doi phan hoi"))
+    _tiem(monkeypatch, gia)
+    with pytest.raises(ai.AiMoHo):
+        ai.goi(None, ai.DICH_THUAT, [{"role": "user", "content": "x"}])
+
+
+def test_that_bai_THUONG_thanh_AiError(monkeypatch):
+    gia = _Gia(loi=RuntimeError("provider tu choi"))
+    _tiem(monkeypatch, gia)
+    with pytest.raises(ai.AiError):
+        ai.goi(None, ai.DICH_THUAT, [{"role": "user", "content": "x"}])
+    # ⛔ Va no KHONG duoc la `AiMoHo` — nham chieu nay se lam mot lan tu choi
+    #    bi treo lai cho nguoi quyet dinh, con nham chieu kia thi tra tien hai lan.
+    gia2 = _Gia(loi=RuntimeError("provider tu choi"))
+    _tiem(monkeypatch, gia2)
+    try:
+        ai.goi(None, ai.DICH_THUAT, [{"role": "user", "content": "x"}])
+    except ai.AiError as exc:
+        assert not isinstance(exc, ai.AiMoHo)
+
+
+def test_goi_truyen_dung_id_model_va_tran_token(monkeypatch):
+    gia = _Gia()
+    _tiem(monkeypatch, gia)
+    ai.goi(None, ai.DOC_CANH, [{"role": "user", "content": "x"}])
+
+    assert gia.da_goi["model_theo_provider"] == {"ltt_llm": ai.model_cho(ai.DOC_CANH)}
+    assert gia.da_goi["max_tokens"] == ai.tran_token_ra()
+    assert gia.da_goi["thu_tu_provider"] == ai.THU_TU_PROVIDER
+
+
+def test_HUY_thi_khong_goi_model(monkeypatch):
+    """⛔ Bam huy roi ma van goi la tieu tien cho mot ket qua se bi vut."""
+    gia = _Gia()
+    _tiem(monkeypatch, gia)
+
+    class Ctx:
+        def is_cancelled(self):
+            return True
+
+    with pytest.raises(ai.AiError):
+        ai.goi(None, ai.DICH_THUAT, [{"role": "user", "content": "x"}], ctx=Ctx())
+    assert gia.da_goi == {}, "da huy ma van goi model"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §6  Khong co van chuyen AI thu hai
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ASV_khong_import_thu_vien_HTTP_nao():
+    """⛔ Khong `requests`, `httpx`, `urllib`, `aiohttp`, `socket`.
+
+    ⚠️ `subprocess` duoc phep — `demucs_runner`/ffmpeg la tien trinh con cuc bo,
+       khong phai mot van chuyen AI thu hai.
+    """
+    cam = {"requests", "httpx", "urllib", "urllib3", "aiohttp", "http.client",
+           "socket", "websocket", "websockets"}
+    xau = []
+    for tep in sorted(APP.rglob("*.py")):
+        for n in ast.walk(_cay(tep)):
+            ten = []
+            if isinstance(n, ast.Import):
+                ten = [a.name for a in n.names]
+            elif isinstance(n, ast.ImportFrom):
+                ten = [n.module or ""]
+            for t in ten:
+                goc = (t or "").split(".")[0]
+                if goc in cam or t in cam:
+                    xau.append(f"{tep.name}:{n.lineno} {t}")
+    assert xau == [], f"van chuyen AI thu hai: {xau}"
+
+
+def test_ASV_khong_go_endpoint_may_B():
+    """Dia chi may B la viec cua registry, khong phai cua mot app."""
+    xau = []
+    for tep in sorted(APP.rglob("*.py")):
+        van = tep.read_text(encoding="utf-8")
+        for dau in ("192.168.2.66", ":8299", ":8199", "http://192.168"):
+            if dau in van:
+                xau.append(f"{tep.name}: {dau}")
+    assert xau == [], f"go endpoint may B: {xau}"
+
+
+def test_bo_do_HTTP_that_su_bat_duoc():
+    """⭐ Chung minh phep kiem tren khong phai mot den xanh noi vao khong."""
+    mau = "import requests\nx = requests.get('http://a')\n"
+    cay = ast.parse(mau)
+    thay = [a.name for n in ast.walk(cay) if isinstance(n, ast.Import)
+            for a in n.names]
+    assert "requests" in thay
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §7  Phien ban prompt/luoc do di vao van tay
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_co_phien_ban_prompt_va_luoc_do():
+    """⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung
+    lai ket qua sinh boi prompt CU — mot thay doi san pham khong bao gio toi
+    khach."""
+    assert isinstance(ai.PHIEN_BAN_PROMPT, int) and ai.PHIEN_BAN_PROMPT >= 1
+    assert isinstance(ai.PHIEN_BAN_LUOC_DO, int) and ai.PHIEN_BAN_LUOC_DO >= 1
 
 @@@LTT_PROFILE_FILE_END@@@
 

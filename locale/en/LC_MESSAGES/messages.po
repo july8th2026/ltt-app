@@ -13894,3 +13894,7 @@ msgstr "Identifying who is speaking"
 #: platform_core/public_api/governance.py
 msgid "Sổ cái từng lượt gọi năng lực: năng lực nào đã chạy, đo bằng đơn vị gì, hết bao nhiêu credit. Đây là thứ trả lời câu hỏi \"tôi trả cho cái gì\" — nên nó phải sống đúng bằng lần chạy mà nó giải thích, không lâu hơn."
 msgstr "Per-call ledger of capability usage: which capability ran, in what unit it was measured, how many credits it cost. This is what answers \"what am I paying for\" - so it must live exactly as long as the run it explains, no longer."
+
+#: apps/auto_scan_video/ai.py
+msgid "Lần chạy đã bị hủy."
+msgstr "This run has been cancelled."

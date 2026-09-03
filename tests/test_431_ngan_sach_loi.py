@@ -32,8 +32,19 @@ def _n_truyen_cho_pytest() -> int:
     ⭐ Tu 03/09 chi con MOT ham tra loi cau hoi nay, nen phep kiem goi thang no.
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
+
+    🔴 **`do_tai=False`, va do la mot lan sua that.** Khi ve DO DUOC duoc them
+       vao (hop nhat voi `loi_dang_ban` cua phien lttchat), mac dinh thanh
+       `True` — nen moi phep kiem SO HOC o day bat dau doc CPU that va **doi ket
+       qua theo tai may**. Chung xanh khi chay mot minh va do duoi `-n 4`, do
+       duoc ngay trong luot hoi quy dau tien cua pha 08.
+
+    ⛔ Mot phep kiem cong chat luong chap chon con te hon khong co: no day nguoi
+       ta vao thoi quen chay lai cho toi khi xanh, va tu do khong ai doc mau do
+       nua. Nhung phep kiem CO chu dinh do ve DO DUOC thi tu `monkeypatch`
+       `loi_dang_ban` — chung khong dung ham nay.
     """
-    return gate.loi_cho_bo_test(phien="")
+    return gate.loi_cho_bo_test(phien="", do_tai=False)
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():

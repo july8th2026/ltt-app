@@ -146,6 +146,21 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, SuDungError):
         return NGUOI_DUNG
 
+    # ── Cua goi model (pha 08) ──────────────────────────────────────────────
+    #
+    # ⛔ `AiMoHo` phai di TRUOC `AiError`? Khong — chung khong ke thua nhau, va
+    #    do la co y: `AiMoHo(RuntimeError)` dung rieng de mot phep `isinstance`
+    #    nham khong the bien mot lan mo ho thanh mot lan thu lai.
+    from .ai import AiError, AiMoHo
+    if isinstance(exc, AiMoHo):
+        return MO_HO
+    if isinstance(exc, AiError):
+        # ⭐ `LuocDoSai` (model tra JSON sai hinh dang) la con cua `AiError` va
+        #    co CHU Y roi vao day: model la ngau nhien, nen mot lan sinh hong
+        #    thuong het o lan sau. Do la khac biet that voi `QcChan` — mot phep
+        #    do tat dinh chay lai cho ra dung ket qua cu.
+        return TAM_THOI
+
     if isinstance(exc, (MediaError, BanGhiError, VanBanError, ThoiGianError,
                         BanDungError)):
         return NGUOI_DUNG

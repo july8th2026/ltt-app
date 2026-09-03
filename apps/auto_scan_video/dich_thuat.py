@@ -41,10 +41,34 @@ from platform_core.i18n import _ as _t
 log = logging.getLogger(__name__)
 
 #: MOT provider. Xem ghi chu dau tep truoc khi them cai thu hai.
-THU_TU_PROVIDER = ("ltt_llm",)
-MODEL_THEO_PROVIDER = {"ltt_llm": "ltt_llm"}
+#:
+#: ⭐ Tai xuat tu `ai.py` — mot nguon duy nhat cho ca nam thao tac AI.
+from .ai import THU_TU_PROVIDER  # noqa: E402  (tai xuat co chu dinh)
+
 PROVIDER_CHINH = THU_TU_PROVIDER[0]
-MODEL_CHINH = MODEL_THEO_PROVIDER[PROVIDER_CHINH]
+
+#: 🔴 **`MODEL_THEO_PROVIDER = {"ltt_llm": "ltt_llm"}` DA BI GO — no la mot loi
+#:    dang song, tim ra o pha 08.**
+#:
+#:    `ltt_llm` la **bi danh cong khai cua app**, khong phai id model. Do duoc:
+#:    `providers.models_for("ltt_llm")` tra ve dung `qwen38-api` va
+#:    `qwen38-vision`, khong co `ltt_llm`. Truyen bi danh vao thi `chon_key` nem
+#:    `ThieuKeyError`, va `dieu_phoi.goi` doc do la *"provider nay khong phuc vu
+#:    duoc, di tiep"* — tuc **bo qua provider trong im lang** roi nem
+#:    `KhongCoProviderNao`.
+#:
+#:    Docstring cua `dieu_phoi.goi` da canh bao chinh xac dieu nay va ke ten hai
+#:    nan nhan truoc: `platform_core/agent/planner.py` (moi luot lap ke hoach roi
+#:    xuong Gemini du khai "model nha di truoc") va `tools/kiem_ltt_llm.py`. Ca
+#:    hai hong **suot nhieu thang**. Day la nan nhan thu BA, va no khong bi phat
+#:    hien vi giai doan dich van la engine gia tu pha 05 — chua goi that lan nao.
+#:
+#: ⇒ Nay hoi `ai.ban_do_model(ai.DICH_THUAT)`, tuc hoi registry. Ngay may B doi
+#:   GGUF ben duoi, registry doi va ta di theo.
+#:
+#: ⭐ Bai hoc dang hon ca ba loi: **mot vi du trong docstring la ma ma nguoi ta
+#:    chep**. No sai thi no khong sai mot minh.
+MODEL_CHINH = ""     # ⛔ giu ten de nguoi doc cu tim thay ghi chu nay
 
 #: So doan toi da moi lo. Nho de mot phan hoi hong chi lam mat mot lo, va de
 #: model giu duoc ngu canh; du to de khong bien mot ban ghi 200 doan thanh 200
@@ -169,31 +193,19 @@ def dich_mot_lo(db, lo: list[dict], *, ngon_ngu_goc: str, ctx=None) -> dict:
        **ngay truoc** khi goi ra ngoai, nen mot lan sap sau do doc ra duoc la
        "co the da goi" chu khong phai "chua goi".
     """
-    from platform_core.llm import dieu_phoi
+    from . import ai
 
     ma_gui = {d["ma"] for d in lo}
     try:
-        kq = dieu_phoi.goi(
-            db,
-            messages=_loi_nhac(lo, ngon_ngu_goc),
-            thu_tu_provider=THU_TU_PROVIDER,
-            model_theo_provider=MODEL_THEO_PROVIDER,
-            max_tokens=_tran_token_ra(),
-            temperature=0.2,
-            on_dispatch=(getattr(ctx, "provider_dispatched", None)
-                         if ctx is not None else None),
-            on_rejected=(getattr(ctx, "provider_rejected", None)
-                         if ctx is not None else None),
-        )
-    except Exception as exc:      # noqa: BLE001 - phan loai roi nem lai
-        if type(exc).__name__ == "AmbiguousProviderError":
-            # ⛔ Mat ket noi SAU KHI da bat dau gui. Provider co the da nhan va
-            #    da tinh tien. Doi thanh mot loi rieng de tang tren khong bao
-            #    gio thu lai (I5/G7).
-            raise DichMoHo(str(exc)) from exc
-        raise
+        kq = ai.goi(db, ai.DICH_THUAT, _loi_nhac(lo, ngon_ngu_goc),
+                    ctx=ctx, temperature=0.2)
+    except ai.AiMoHo as exc:
+        # ⛔ Mat ket noi SAU KHI da bat dau gui. Provider co the da nhan va da
+        #    tinh tien. Doi thanh loi rieng cua mien dich de tang tren khong bao
+        #    gio thu lai (I5/G7).
+        raise DichMoHo(str(exc)) from exc
 
-    return _doc_ban_dich(getattr(kq, "content", "") or "", ma_gui)
+    return _doc_ban_dich(kq["noi_dung"], ma_gui)
 
 
 def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
