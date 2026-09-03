@@ -309,11 +309,23 @@ export function App({ api }: AppProps) {
       }
       const kq = await api.guiLuot(cid, { ...than, modelAlias: alias })
       await napSuThat(cid)
+      // 🔴 NAP LAI DANH SACH. Thieu dong nay thi hoi thoai moi KHONG hien trong
+      //    thanh ben cho toi khi mot thu khac tinh co lam moi no — nguoi dung
+      //    vua tao mot hoi thoai va no khong o dau ca.
+      //
+      // ⛔ Va do dung la issue DANG MO cua LibreChat: *New chat has no label
+      //    until page refresh*. `bat_dau` phia may chu DA dat `hoi.title` tu
+      //    tin nhan dau, nen tieu de co san — chi la khong ai di lay.
+      //
+      // ⭐ Do bang dot 2 tren production: doi 25 giay ma thanh ben khong bao gio
+      //    co muc moi. Toi da TUONG minh thay no hien o hanh trinh A hom nay;
+      //    phep do noi khac, va phep do dung.
+      napDs()
       void theoDoi(kq.execution_id, cid)
     } catch (e) {
       datLoi(nhanLoi(e))
     }
-  }, [api, alias, convId, napSuThat, theoDoi])
+  }, [api, alias, convId, napSuThat, napDs, theoDoi])
 
   // ── Nối lại luồng text sau khi tải lại trang ────────────────────────────
   //
