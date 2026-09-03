@@ -384,3 +384,44 @@
   color: var(--text-secondary);
   white-space: nowrap;
 }
+
+
+/* == Dong trang thai luot =================================================
+ *
+ * DAY LA CHO GIET CU NHAY BO CUC, va co che nam o CSS chu khong o React.
+ *
+ * Do 03/09 tren production: CLS mot luot stream = 0,1642, vuot ca nguong
+ * "kem" (0,1) cua Google. Gan nhu toan bo den tu MOT cu nhay khi khoi
+ * "Suy luan" moc ra o giay thu 3,7 va day moi thu ben duoi xuong.
+ *
+ * Cach LibreChat giai (`progress-text-wrapper` / `progress-text-content`):
+ * khung co CHIEU CAO CO DINH, noi dung ben trong `position: absolute`. Doi
+ * nhan bao nhieu lan cung khong the day gi — vi khung khong bao gio doi
+ * kich thuoc.
+ *
+ * Va an bang `visibility` chu KHONG `display: none`. `display: none` tra lai
+ * chieu cao cho dong chay, tuc dung lai dung cai ta vua tranh.
+ */
+.ltc-trangthai {
+  position: relative;
+  height: 1.5rem;
+  line-height: 1.5rem;
+  margin: 0 0 0.25rem;
+}
+.ltc-trangthai__chu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ltc-trangthai:not([data-trangthai="khong"]) .ltc-trangthai__chu {
+    animation: ltc-tho 1.6s ease-in-out infinite;
+  }
+}
+@keyframes ltc-tho {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}

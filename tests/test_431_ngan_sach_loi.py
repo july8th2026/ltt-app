@@ -33,7 +33,23 @@ def _n_truyen_cho_pytest() -> int:
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
     """
-    return gate.loi_cho_bo_test(phien="")
+    # 🔴 `do_tai=False`, VA DAY LA CA MOT BAI HOC.
+    #
+    #    Ban dau ham nay goi `loi_cho_bo_test(phien="")` — tuc de mac dinh
+    #    `do_tai=True`, va mac dinh do **do CPU that**. Phep kiem ben duoi chot
+    #    mot con so co dinh (`== 6`).
+    #
+    # ⛔ Hai thu do khong the song chung. Khi tep nay chay MOT MINH thi may
+    #    ranh, `chiem` = 0, va con so ra dung 6. Khi no chay TRONG mot luot
+    #    gate thi chinh bo test dang lam may ban — `chiem` lon, con so nho hon
+    #    6, va phep kiem do. Xanh khi chay rieng, do khi chay ca cum: dung cai
+    #    bay `gate tu nhieu vao phep do` da ghi trong bo nho du an.
+    #
+    # ⭐ Phan TAT DINH cua cong thuc thi chot bang `do_tai=False`. Phan DO DUOC
+    #    duoc chot rieng o `test_do_tai_khong_bao_gio_noi_ngan_sach`, va no chot
+    #    mot BAT DANG THUC chu khong mot con so — vi mot con so do duoc thi
+    #    khong bao gio la mot hang so.
+    return gate.loi_cho_bo_test(phien="", do_tai=False)
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
@@ -573,3 +589,15 @@ def test_conftest_van_LAY_MIN_chu_khong_dat_de(monkeypatch):
     doan = _ast.get_source_segment(src, ham) or ""
     assert "min(n, " in doan or "min(n," in doan, (
         "phai LAY MIN voi phep tinh cuc bo, khong duoc gan thang so cua gate")
+
+
+def test_do_tai_khong_bao_gio_noi_ngan_sach():
+    """Do tai chi duoc lam ngan sach NHO DI, khong bao gio lon hon.
+
+    ⭐ Day la cach chot mot ham phu thuoc vao phep do: khong chot GIA TRI cua
+       no (gia tri doi theo tai, va lượt gate nao cung tu lam may ban), ma chot
+       QUAN HE giua hai che do. Bat dang thuc thi dung o may ranh lan may day.
+    """
+    tinh = gate.loi_cho_bo_test(phien="", do_tai=False)
+    do = gate.loi_cho_bo_test(phien="", do_tai=True)
+    assert 1 <= do <= tinh, f"do_tai=True ({do}) khong duoc vuot ban tinh ({tinh})"

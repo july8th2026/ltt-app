@@ -205,3 +205,71 @@ describe('App — hoi thoai co DIA CHI trong URL', () => {
     expect(screen.getByText('Bắt đầu bằng một câu hỏi.')).toBeTruthy()
   })
 })
+
+describe('App — noi lai luong sau khi tai lai trang', () => {
+  /**
+   * 🔴 ĐO ĐƯỢC TRÊN PRODUCTION 03/09. F5 giữa lúc model đang trả lời:
+   *
+   *        giao diện        máy chủ
+   *     t+ 0s   chữ = 0     streaming, partial =    0
+   *     t+25s   chữ = 0     streaming, partial = 3429   ← vẫn đang sinh
+   *
+   *    Máy chủ chạy hoàn hảo. Giao diện trắng cho tới khi người dùng tự F5
+   *    **lần nữa**.
+   *
+   * ⭐ Máy chủ đã dựng sẵn từ Phase 08a: `dang_chay` là sổ fan-out nhiều người
+   *    nghe, và route ghi thẳng "Nối lại = mở lại `stream?after=<seq>`".
+   *    Thiếu đúng một chỗ: client chưa bao giờ gọi.
+   */
+  it('thay mot luot dang streaming thi TU MO lai stream', async () => {
+    const dangChay = {
+      ...SU_THAT,
+      messages: [
+        SU_THAT.messages[0],
+        {
+          ...SU_THAT.messages[1],
+          status: 'streaming',
+          blocks: [],
+          execution: { ...SU_THAT.messages[1].execution, status: 'streaming', mode: 'stream' },
+        },
+      ],
+    }
+    const goi = vi.fn(async (url: string) => {
+      const u = String(url)
+      const j = (x: unknown) => new Response(JSON.stringify(x), { status: 200 })
+      if (u.endsWith('/so-du')) return j({ credit: 10 })
+      if (u.endsWith('/danh-muc')) return j(NANG_LUC)
+      if (u.includes('/hoi-thoai?') || u.endsWith('/hoi-thoai')) {
+        return j({ hoi_thoai: [SU_THAT.conversation] })
+      }
+      if (u.includes('/stream')) {
+        return new Response('event: end\ndata: {"seq":9}\n\n',
+          { status: 200, headers: { 'content-type': 'text/event-stream' } })
+      }
+      if (u.includes('/hoi-thoai/cv1')) return j(dangChay)
+      return j({})
+    })
+    vi.stubGlobal('fetch', goi)
+    window.location.hash = '#cv1'
+    veApp()
+
+    await waitFor(() => {
+      const duong = goi.mock.calls.map((c) => String(c[0]))
+      expect(duong.some((d) => d.includes('/luot/ex1/stream'))).toBe(true)
+    }, { timeout: 4000 })
+    window.location.hash = ''
+  })
+
+  it('luot DA XONG thi KHONG mo stream — khong goi thua', async () => {
+    // ⛔ Thieu dieu kien nay thi moi lan mo mot hoi thoai cu la mot ket noi SSE
+    //    vo ich toi may chu, nhan len theo so lan nguoi dung bam quanh sidebar.
+    datMayChuGia()
+    window.location.hash = '#cv1'
+    const goi = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>)
+    veApp()
+    await waitFor(() => expect(screen.getByText('trả lời')).toBeTruthy())
+    const duong = goi.mock.calls.map((c) => String(c[0]))
+    expect(duong.some((d) => d.includes('/stream'))).toBe(false)
+    window.location.hash = ''
+  })
+})

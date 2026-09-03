@@ -315,6 +315,42 @@ export function App({ api }: AppProps) {
     }
   }, [api, alias, convId, napSuThat, theoDoi])
 
+  // ── Nối lại luồng text sau khi tải lại trang ────────────────────────────
+  //
+  // 🔴 ĐO ĐƯỢC TRÊN PRODUCTION 03/09. F5 giữa lúc model đang trả lời:
+  //
+  //        giao diện          máy chủ
+  //     t+ 0s   chữ = 0       streaming, partial =    0
+  //     t+ 8s   chữ = 0       streaming, partial =  796
+  //     t+25s   chữ = 0       streaming, partial = 3429   ← vẫn đang sinh
+  //
+  //    Máy chủ chạy hoàn hảo. Giao diện không hiện gì: không chữ, không nút
+  //    Dừng, không nút Tạo lại. Người dùng ngồi nhìn một hộp trắng cho tới khi
+  //    họ tự F5 **lần nữa**.
+  //
+  // ⭐ Và phía máy chủ ĐÃ dựng sẵn cho việc này từ Phase 08a: `dang_chay` là
+  //    một sổ fan-out nhiều người nghe, và docstring của route viết thẳng
+  //    "Nối lại = mở lại `stream?after=<seq>` — snapshot đầu tiên mang đủ phần
+  //    đã có". Thiếu đúng một chỗ: **client chưa bao giờ gọi**.
+  //
+  // ⛔ `theoDoi` trước đó chỉ chạy trên đường GỬI. Một luồng chỉ được theo dõi
+  //    bởi chính cú bấm sinh ra nó là một luồng mất hút sau mọi lần tải lại,
+  //    mọi lần đổi hội thoại, mọi lần mở từ một link.
+  //
+  // ⚠️ Điều kiện `dangChayEx !== ex.id` là bắt buộc, không phải tối ưu: thiếu
+  //    nó thì mỗi delta làm `suThat` đổi, hiệu ứng chạy lại, `theoDoi` huỷ
+  //    chính kết nối đang chạy rồi mở lại — một vòng lặp huỷ-mở vô tận.
+  useEffect(() => {
+    if (!convId || !suThat) return
+    const dangSong = suThat.messages.find(
+      (m) => m.role === 'assistant' && m.status === 'streaming'
+        && m.execution?.mode === 'stream' && m.execution.id,
+    )
+    if (!dangSong?.execution) return
+    if (dangChayEx === dangSong.execution.id) return
+    void theoDoi(dangSong.execution.id, convId)
+  }, [convId, suThat, dangChayEx, theoDoi])
+
   const dung = useCallback(async () => {
     if (!dangChayEx) return
     try { await api.dung(dangChayEx) } catch (e) { datLoi(nhanLoi(e)) }

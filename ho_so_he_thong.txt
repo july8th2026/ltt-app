@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:677808747b5b10b769971de8b66fef3a97c32d28b99d4f1c63c8684288768b0a
-Nguồn đã quét : 1557 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:ed5dc8f52eeb93196b41fcccac1e422324a85cd3e089c20756bdd934a90985ee
+Nguồn đã quét : 1562 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1043,7 +1043,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 7. FRONTEND WORKSPACES (4)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
 - autosub-studio: package=ltt-autosub-studio@0.1.0, Node=24.17.0, src=10, tests=2, bundle=assets/main-C1Q3T130.js
-- chatltt: package=ltt-chatltt@0.1.0, Node=24.17.0, src=9, tests=7, bundle=assets/main-BYUL96YO.js
+- chatltt: package=ltt-chatltt@0.1.0, Node=24.17.0, src=10, tests=8, bundle=assets/main-Bq3Tufi5.js
 - prompt-ai-ommi: package=ltt-prompt-ai-ommi@0.1.0, Node=24.17.0, src=11, tests=4, bundle=assets/main-CgVyWR3g.js
 - Sau mọi thay đổi GUI: Playwright render thật + console + failed network + mobile.
 
@@ -1653,8 +1653,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1557 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1160, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1562 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:47, .md:14, .mjs:9, .ps1:65, .py:1160, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:39, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2210,7 +2210,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - docs/SECURITY_CHECKLIST.md
 - docs/quy_tac_audit.md
 
-[frontend] (92)
+[frontend] (94)
 - frontend/agent-canvas/package-lock.json
 - frontend/agent-canvas/package.json
 - frontend/agent-canvas/scripts/write-build-meta.mjs
@@ -2263,6 +2263,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - frontend/chatltt/src/SoanThao.tsx
 - frontend/chatltt/src/TaoMedia.tsx
 - frontend/chatltt/src/ThongDiepView.tsx
+- frontend/chatltt/src/TrangThaiLuot.tsx
 - frontend/chatltt/src/api.ts
 - frontend/chatltt/src/cay.ts
 - frontend/chatltt/src/chatltt.css
@@ -2272,6 +2273,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - frontend/chatltt/tests/SoanThao.test.tsx
 - frontend/chatltt/tests/TaiSan.test.tsx
 - frontend/chatltt/tests/ThongDiepView.test.tsx
+- frontend/chatltt/tests/TrangThaiLuot.test.tsx
 - frontend/chatltt/tests/api.test.ts
 - frontend/chatltt/tests/cay.test.ts
 - frontend/chatltt/tests/setup.ts
@@ -2524,8 +2526,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - server/static/autosub-studio/build-meta.json
 - server/static/cam_chon.js
 - server/static/chatltt/.vite/manifest.json
-- server/static/chatltt/assets/main-BYUL96YO.js
-- server/static/chatltt/assets/main-CC0Jcbpw.css
+- server/static/chatltt/assets/main-Bq3Tufi5.js
+- server/static/chatltt/assets/main-CRSGR5rx.css
 - server/static/chatltt/build-meta.json
 - server/static/chon_tep.js
 - server/static/dev_playground.js
@@ -3082,7 +3084,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (175)
+[tools] (178)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -3191,6 +3193,9 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - tools/k0_sinh_f5.py
 - tools/khach_gia_lap_anh.py
 - tools/khoa_thu_api.py
+- tools/kiem_chatltt/dot1_luong.mjs
+- tools/kiem_chatltt/dot2_hoi_thoai.mjs
+- tools/kiem_chatltt/dot3_markdown.mjs
 - tools/kiem_chatltt_gui.mjs
 - tools/kiem_ltt_llm.py
 - tools/kiem_truoc_khi_cam.py
@@ -3268,7 +3273,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1557 file; 15942212 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1562 file; 15988481 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -105918,7 +105923,7 @@ writeFileSync(join(output, 'build-meta.json'), JSON.stringify({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/src/App.tsx
-SHA256=ec7a83eb35d0940ff2a4abd08998f38969b2f38273844b641f03b6f6a5536119 BYTES=18056 LINES=464
+SHA256=89136cca13c4f2c5beb5cb55797b149a5a65a4cf4af02bc8282a053780916384 BYTES=20162 LINES=500
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * App.tsx — vo ChatLTT: thanh ben (hoi thoai) + luong chinh + o soan.
@@ -106236,6 +106241,42 @@ export function App({ api }: AppProps) {
       datLoi(nhanLoi(e))
     }
   }, [api, alias, convId, napSuThat, theoDoi])
+
+  // ── Nối lại luồng text sau khi tải lại trang ────────────────────────────
+  //
+  // 🔴 ĐO ĐƯỢC TRÊN PRODUCTION 03/09. F5 giữa lúc model đang trả lời:
+  //
+  //        giao diện          máy chủ
+  //     t+ 0s   chữ = 0       streaming, partial =    0
+  //     t+ 8s   chữ = 0       streaming, partial =  796
+  //     t+25s   chữ = 0       streaming, partial = 3429   ← vẫn đang sinh
+  //
+  //    Máy chủ chạy hoàn hảo. Giao diện không hiện gì: không chữ, không nút
+  //    Dừng, không nút Tạo lại. Người dùng ngồi nhìn một hộp trắng cho tới khi
+  //    họ tự F5 **lần nữa**.
+  //
+  // ⭐ Và phía máy chủ ĐÃ dựng sẵn cho việc này từ Phase 08a: `dang_chay` là
+  //    một sổ fan-out nhiều người nghe, và docstring của route viết thẳng
+  //    "Nối lại = mở lại `stream?after=<seq>` — snapshot đầu tiên mang đủ phần
+  //    đã có". Thiếu đúng một chỗ: **client chưa bao giờ gọi**.
+  //
+  // ⛔ `theoDoi` trước đó chỉ chạy trên đường GỬI. Một luồng chỉ được theo dõi
+  //    bởi chính cú bấm sinh ra nó là một luồng mất hút sau mọi lần tải lại,
+  //    mọi lần đổi hội thoại, mọi lần mở từ một link.
+  //
+  // ⚠️ Điều kiện `dangChayEx !== ex.id` là bắt buộc, không phải tối ưu: thiếu
+  //    nó thì mỗi delta làm `suThat` đổi, hiệu ứng chạy lại, `theoDoi` huỷ
+  //    chính kết nối đang chạy rồi mở lại — một vòng lặp huỷ-mở vô tận.
+  useEffect(() => {
+    if (!convId || !suThat) return
+    const dangSong = suThat.messages.find(
+      (m) => m.role === 'assistant' && m.status === 'streaming'
+        && m.execution?.mode === 'stream' && m.execution.id,
+    )
+    if (!dangSong?.execution) return
+    if (dangChayEx === dangSong.execution.id) return
+    void theoDoi(dangSong.execution.id, convId)
+  }, [convId, suThat, dangChayEx, theoDoi])
 
   const dung = useCallback(async () => {
     if (!dangChayEx) return
@@ -106739,7 +106780,7 @@ export function TaoMedia({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/src/ThongDiepView.tsx
-SHA256=be0e6424d568066d57923954e6d882deb7286627c456fd162695f0ae92916e18 BYTES=8206 LINES=216
+SHA256=1703cf1e20c2f74552b1064e2938399458e4ea6351ad9b28a83150c79adc12ee BYTES=8499 LINES=222
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * ThongDiepView.tsx — mot luot noi: chu, suy luan, trang thai, chuyen nhanh.
@@ -106762,6 +106803,7 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
 import type { Khoi, ThongDiep } from './kieu'
+import { TrangThaiLuot } from './TrangThaiLuot'
 
 const NHAN_TRANG_THAI: Record<string, string> = {
   cancelled: 'Đã dừng',
@@ -106887,8 +106929,13 @@ export function ThongDiepView({
         ) : (
           <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{chu}</Markdown>
         )}
-        {dangChay && !chu && !dangTaoMedia && (
-          <span className="ltc-nhipdap" aria-label="Đang trả lời" />
+        {/*
+          ⛔ Thay cho mot cham nhip cam. Mot cham tra loi duoc "con song khong";
+             no khong tra loi duoc "dang lam gi" — va do moi la cau nguoi dung
+             thuc su hoi sau ba giay im lang. Xem `TrangThaiLuot.tsx`.
+        */}
+        {!dangTaoMedia && (
+          <TrangThaiLuot ex={m.execution} daCoChu={!!chu} dangChay={dangChay} />
         )}
       </div>
 
@@ -106955,6 +107002,117 @@ export function ThongDiepView({
         )}
       </div>
     </article>
+  )
+}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/src/TrangThaiLuot.tsx
+SHA256=17fffee30690ecb6bf03570b907748e33378a2785e7643faed4cb55e7b702257 BYTES=4605 LINES=105
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+/**
+ * TrangThaiLuot.tsx — dòng "đang làm gì" trong lúc model chưa trả chữ nào.
+ *
+ * ## Vì sao có tệp này
+ *
+ * 🔴 Đo trên production 03/09, một lượt hỏi bình thường:
+ *
+ *      t+0,5s  một chấm nhịp nhỏ, không chữ
+ *      t+3,7s  khối "Suy luận" ĐỘT NGỘT hiện ra, đẩy mọi thứ xuống
+ *      t+6,0s  chữ trả lời bắt đầu
+ *
+ *      CLS = 0,1642   (ngưỡng "kém" của Google là 0,1)
+ *
+ *    Ba giây rưỡi im lặng còn tệ hơn cú nhảy: một chấm nhịp trả lời được câu
+ *    "còn sống không", nhưng không trả lời được câu "đang làm gì".
+ *
+ * ## Năm nguyên tắc, rút từ LibreChat @ 9e74cc0
+ *
+ * Họ có hẳn một họ thành phần cho đúng khoảng thời gian này (`ProgressText`,
+ * `PendingSkillCall`, `Summary`). Chú thích đầu `PendingSkillCall.tsx` nói
+ * thẳng ý đồ: một chỗ giữ chỗ cho *"the interim window between submit and the
+ * backend's real content part landing"*, với *"same icon, same shimmer, same
+ * label strings so the visual language matches the real card it'll be replaced
+ * by"*.
+ *
+ *   1. Khoảng chờ LUÔN có người ở — không bao giờ để hộp trống.
+ *   2. Chỗ giữ chỗ trông GIỐNG thứ sẽ thay nó.
+ *   3. Chiều cao CỐ ĐỊNH, nội dung `absolute`.
+ *   4. Đổi trạng thái theo SỰ KIỆN THẬT, không theo hẹn giờ.
+ *   5. Không bày nút bấm chưa dùng được.
+ *
+ * ⭐ Nguyên tắc 3 là thứ thật sự giết cú nhảy 0,0749 — nó là về **hình học**,
+ *    còn bốn cái kia về **thông tin**. Xem `.ltc-trangthai` trong `chatltt.css`.
+ *
+ * ⛔ VÀ KHÔNG BỊA RA PHA NÀO TA KHÔNG CÓ SỰ KIỆN CHO NÓ. "Đang tìm tài liệu"
+ *    nghe hay nhưng ChatLTT không có bước tìm tài liệu; hiển thị nó là mô tả
+ *    một tiến trình không tồn tại. Và ngày nào ta thêm RAG thật, sẽ không ai
+ *    còn tin dòng trạng thái này nữa.
+ */
+import { useEffect, useState } from 'react'
+import type { ThiHanh } from './kieu'
+
+export type TrangThaiLuotProps = {
+  ex: ThiHanh | null | undefined
+  /** Đã có chữ trả lời chưa — khi có thì dòng này nhường chỗ. */
+  daCoChu: boolean
+  dangChay: boolean
+}
+
+/**
+ * Pha suy ra từ **thứ đã có trong `ThiHanh`**, không từ một trường mới.
+ *
+ * ⭐ Không phải thêm cột CSDL, không phải thêm sự kiện SSE: `seq`,
+ *    `reasoning_text` và `partial_text` đã đủ kể lại câu chuyện.
+ *
+ *   seq === 0                    → chưa có sự kiện nào ⇒ đang xếp hàng
+ *   seq > 0, chưa gì khác        → `response.started` đã tới ⇒ đang chuẩn bị
+ *   reasoning_text có chữ        → `reasoning.delta` đang chảy ⇒ đang suy nghĩ
+ *   partial_text có chữ          → hết việc của dòng này
+ */
+export function phaCua(ex: ThiHanh | null | undefined, daCoChu: boolean): string {
+  if (daCoChu) return ''
+  if (!ex) return 'xep_hang'
+  if ((ex.reasoning_text ?? '').length > 0) return 'suy_nghi'
+  if ((ex.seq ?? 0) > 0) return 'chuan_bi'
+  return 'xep_hang'
+}
+
+const NHAN: Record<string, string> = {
+  xep_hang: 'Đang xếp hàng…',
+  chuan_bi: 'Đang chuẩn bị…',
+  suy_nghi: 'Đang suy nghĩ',
+}
+
+export function TrangThaiLuot({ ex, daCoChu, dangChay }: TrangThaiLuotProps) {
+  const pha = dangChay ? phaCua(ex, daCoChu) : ''
+  const [giay, datGiay] = useState(0)
+
+  // Đồng hồ CHỈ chạy ở pha suy nghĩ, và nó là thứ **mô tả** một sự kiện có
+  // thật (reasoning đang chảy), không phải thứ **quyết định** pha.
+  useEffect(() => {
+    if (pha !== 'suy_nghi') { datGiay(0); return }
+    const bd = Date.now()
+    const h = window.setInterval(() => datGiay(Math.floor((Date.now() - bd) / 1000)), 1000)
+    return () => window.clearInterval(h)
+  }, [pha])
+
+  // ⛔ LUÔN vẽ khung, kể cả khi không có pha nào. Đó chính là nguyên tắc 3:
+  //    chỗ này chiếm sẵn chiều cao của nó từ đầu, nên lúc chữ trả lời tới thì
+  //    không có gì bị đẩy. Ẩn bằng `visibility` chứ không bằng `display`.
+  return (
+    <div
+      className="ltc-trangthai"
+      data-trangthai={pha || 'khong'}
+      style={{ visibility: pha ? 'visible' : 'hidden' }}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="ltc-trangthai__chu">
+        {pha ? NHAN[pha] : ''}
+        {pha === 'suy_nghi' && giay > 0 ? ` ${giay} giây…` : ''}
+      </span>
+    </div>
   )
 }
 
@@ -107323,7 +107481,7 @@ export function suyLuanCuaThongDiep(m: ThongDiep): string {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/src/chatltt.css
-SHA256=2d45215acc564f19f55c4d8126ace743585c89f8624cfeefffdcd3dabf5627e2 BYTES=12971 LINES=386
+SHA256=2e8883ab4325a1ccd611d2d26721c9cdc3989408d388847cd00810ed5e37e339 BYTES=14237 LINES=427
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /*
  * chatltt.css — chi bo cuc va sac thai rieng cua ChatLTT.
@@ -107712,6 +107870,47 @@ SHA256=2d45215acc564f19f55c4d8126ace743585c89f8624cfeefffdcd3dabf5627e2 BYTES=12
   white-space: nowrap;
 }
 
+
+/* == Dong trang thai luot =================================================
+ *
+ * DAY LA CHO GIET CU NHAY BO CUC, va co che nam o CSS chu khong o React.
+ *
+ * Do 03/09 tren production: CLS mot luot stream = 0,1642, vuot ca nguong
+ * "kem" (0,1) cua Google. Gan nhu toan bo den tu MOT cu nhay khi khoi
+ * "Suy luan" moc ra o giay thu 3,7 va day moi thu ben duoi xuong.
+ *
+ * Cach LibreChat giai (`progress-text-wrapper` / `progress-text-content`):
+ * khung co CHIEU CAO CO DINH, noi dung ben trong `position: absolute`. Doi
+ * nhan bao nhieu lan cung khong the day gi — vi khung khong bao gio doi
+ * kich thuoc.
+ *
+ * Va an bang `visibility` chu KHONG `display: none`. `display: none` tra lai
+ * chieu cao cho dong chay, tuc dung lai dung cai ta vua tranh.
+ */
+.ltc-trangthai {
+  position: relative;
+  height: 1.5rem;
+  line-height: 1.5rem;
+  margin: 0 0 0.25rem;
+}
+.ltc-trangthai__chu {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ltc-trangthai:not([data-trangthai="khong"]) .ltc-trangthai__chu {
+    animation: ltc-tho 1.6s ease-in-out infinite;
+  }
+}
+@keyframes ltc-tho {
+  0%, 100% { opacity: 0.55; }
+  50%      { opacity: 1; }
+}
+
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/src/kieu.ts
@@ -107872,7 +108071,7 @@ if (goc) {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/tests/App.test.tsx
-SHA256=4e04989b7613ca9c9450d7787e89148bb8267f53cc5db559d9ed70d251e962c4 BYTES=8445 LINES=207
+SHA256=24f9bc0097b97b055c1af4507ace71737eaabfd25499cb29bdb0a4f5677363eb BYTES=11137 LINES=275
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * Vo ChatLTT: phim tat, so du, "Doc to", va trang thai "chua san sang".
@@ -108079,6 +108278,74 @@ describe('App — hoi thoai co DIA CHI trong URL', () => {
     veApp()
     await waitFor(() => expect(window.location.hash).toBe(''), { timeout: 4000 })
     expect(screen.getByText('Bắt đầu bằng một câu hỏi.')).toBeTruthy()
+  })
+})
+
+describe('App — noi lai luong sau khi tai lai trang', () => {
+  /**
+   * 🔴 ĐO ĐƯỢC TRÊN PRODUCTION 03/09. F5 giữa lúc model đang trả lời:
+   *
+   *        giao diện        máy chủ
+   *     t+ 0s   chữ = 0     streaming, partial =    0
+   *     t+25s   chữ = 0     streaming, partial = 3429   ← vẫn đang sinh
+   *
+   *    Máy chủ chạy hoàn hảo. Giao diện trắng cho tới khi người dùng tự F5
+   *    **lần nữa**.
+   *
+   * ⭐ Máy chủ đã dựng sẵn từ Phase 08a: `dang_chay` là sổ fan-out nhiều người
+   *    nghe, và route ghi thẳng "Nối lại = mở lại `stream?after=<seq>`".
+   *    Thiếu đúng một chỗ: client chưa bao giờ gọi.
+   */
+  it('thay mot luot dang streaming thi TU MO lai stream', async () => {
+    const dangChay = {
+      ...SU_THAT,
+      messages: [
+        SU_THAT.messages[0],
+        {
+          ...SU_THAT.messages[1],
+          status: 'streaming',
+          blocks: [],
+          execution: { ...SU_THAT.messages[1].execution, status: 'streaming', mode: 'stream' },
+        },
+      ],
+    }
+    const goi = vi.fn(async (url: string) => {
+      const u = String(url)
+      const j = (x: unknown) => new Response(JSON.stringify(x), { status: 200 })
+      if (u.endsWith('/so-du')) return j({ credit: 10 })
+      if (u.endsWith('/danh-muc')) return j(NANG_LUC)
+      if (u.includes('/hoi-thoai?') || u.endsWith('/hoi-thoai')) {
+        return j({ hoi_thoai: [SU_THAT.conversation] })
+      }
+      if (u.includes('/stream')) {
+        return new Response('event: end\ndata: {"seq":9}\n\n',
+          { status: 200, headers: { 'content-type': 'text/event-stream' } })
+      }
+      if (u.includes('/hoi-thoai/cv1')) return j(dangChay)
+      return j({})
+    })
+    vi.stubGlobal('fetch', goi)
+    window.location.hash = '#cv1'
+    veApp()
+
+    await waitFor(() => {
+      const duong = goi.mock.calls.map((c) => String(c[0]))
+      expect(duong.some((d) => d.includes('/luot/ex1/stream'))).toBe(true)
+    }, { timeout: 4000 })
+    window.location.hash = ''
+  })
+
+  it('luot DA XONG thi KHONG mo stream — khong goi thua', async () => {
+    // ⛔ Thieu dieu kien nay thi moi lan mo mot hoi thoai cu la mot ket noi SSE
+    //    vo ich toi may chu, nhan len theo so lan nguoi dung bam quanh sidebar.
+    datMayChuGia()
+    window.location.hash = '#cv1'
+    const goi = (globalThis.fetch as unknown as ReturnType<typeof vi.fn>)
+    veApp()
+    await waitFor(() => expect(screen.getByText('trả lời')).toBeTruthy())
+    const duong = goi.mock.calls.map((c) => String(c[0]))
+    expect(duong.some((d) => d.includes('/stream'))).toBe(false)
+    window.location.hash = ''
   })
 })
 
@@ -108548,6 +108815,94 @@ describe('Markdown — mot xuong dong don phai la mot xuong dong', () => {
     )
     expect(container.querySelector('img')).toBeNull()
     expect(container.textContent).toContain('onerror')   // hien thanh CHU, khong chay
+  })
+})
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/tests/TrangThaiLuot.test.tsx
+SHA256=ca8ceb834b47ce5a3a5e126f1d4b6a8c007293a1ac0e1f8c60fb8be7d98d9c1c BYTES=3275 LINES=82
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+/**
+ * Dong trang thai luot: pha suy tu SU KIEN THAT, va khung KHONG DOI kich thuoc.
+ *
+ * 🔴 Do 03/09 tren production: ba giay ruoi im lang, roi mot cu nhay bo cuc
+ *    0,0749 khi khoi "Suy luan" moc ra. CLS ca luot = 0,1642 — vuot nguong
+ *    "kem" (0,1) cua Google.
+ */
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import { phaCua, TrangThaiLuot } from '../src/TrangThaiLuot'
+import type { ThiHanh } from '../src/kieu'
+
+function ex(g: Partial<ThiHanh> = {}): ThiHanh {
+  return {
+    id: 'ex1', status: 'streaming', mode: 'stream', tool_name: 'text.chat',
+    partial_text: '', reasoning_text: '', finish_reason: '', usage: {},
+    credit: { giu: 0, thu: 0, hoan: 0 }, error_code: '', error_text: '',
+    job_id: null, seq: 0, ...g,
+  }
+}
+
+describe('phaCua — suy tu thu DA CO, khong tu mot truong moi', () => {
+  it('chua mot su kien nao ⇒ dang xep hang', () => {
+    expect(phaCua(ex({ seq: 0 }), false)).toBe('xep_hang')
+    expect(phaCua(null, false)).toBe('xep_hang')
+  })
+
+  it('`response.started` da toi ⇒ dang chuan bi', () => {
+    expect(phaCua(ex({ seq: 3 }), false)).toBe('chuan_bi')
+  })
+
+  it('reasoning dang chay ⇒ dang suy nghi', () => {
+    expect(phaCua(ex({ seq: 9, reasoning_text: 'hm...' }), false)).toBe('suy_nghi')
+  })
+
+  it('da co chu tra loi ⇒ dong nay het viec', () => {
+    expect(phaCua(ex({ seq: 40, reasoning_text: 'x', partial_text: 'y' }), true)).toBe('')
+  })
+})
+
+describe('TrangThaiLuot — khung khong bao gio doi kich thuoc', () => {
+  /**
+   * ⛔ An bang `visibility`, KHONG `display: none`. `display: none` tra lai
+   *    chieu cao cho dong chay — tuc dung lai dung cai cu nhay ta vua tranh.
+   *    Day la nguyen tac 3 cua LibreChat, va no la nguyen tac HINH HOC chu
+   *    khong phai tham my.
+   */
+  it('khong co pha nao thi VAN ve khung, chi an di', () => {
+    const { container } = render(
+      <TrangThaiLuot ex={ex({ seq: 0 })} daCoChu dangChay={false} />,
+    )
+    const el = container.querySelector('.ltc-trangthai') as HTMLElement
+    expect(el).toBeTruthy()
+    expect(el.style.visibility).toBe('hidden')
+    expect(el.style.display).not.toBe('none')
+  })
+
+  it('doc len cho trinh doc man hinh, va noi dung pha', () => {
+    render(<TrangThaiLuot ex={ex({ seq: 5 })} daCoChu={false} dangChay />)
+    const el = screen.getByRole('status')
+    expect(el.getAttribute('aria-live')).toBe('polite')
+    expect(el.textContent).toContain('Đang chuẩn bị')
+  })
+
+  it('pha suy nghi noi ro la dang suy nghi', () => {
+    render(<TrangThaiLuot ex={ex({ seq: 9, reasoning_text: 'a' })} daCoChu={false} dangChay />)
+    expect(screen.getByRole('status').textContent).toContain('Đang suy nghĩ')
+  })
+
+  it('khong bia ra pha nao ta khong co su kien cho no', () => {
+    // "Dang tim tai lieu" nghe hay, nhung ChatLTT khong co buoc do. Bia mot
+    // tien trinh khong ton tai thi ngay nao them RAG that se khong ai con tin
+    // dong trang thai nay nua.
+    const { container } = render(
+      <TrangThaiLuot ex={ex({ seq: 5 })} daCoChu={false} dangChay />,
+    )
+    const chu = container.textContent || ''
+    for (const bia of ['tài liệu', 'tìm kiếm', 'web', 'công cụ']) {
+      expect(chu.toLowerCase()).not.toContain(bia)
+    }
   })
 })
 
@@ -163458,24 +163813,24 @@ SHA256=b23e783edc8870a5e8cdf10afb4d0f5a20ae33d37964208390d3a486409b95f6 BYTES=30
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/.vite/manifest.json
-SHA256=05a6f71abb7df390b3e496492cf9a9b699c4a8eff9b2e3c3beb9532986382610 BYTES=186 LINES=11
+SHA256=09ea2e640d75100439d0b68732cc592d429bcd6b8a8615995beb38d1cdbe0221 BYTES=186 LINES=11
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "src/main.tsx": {
-    "file": "assets/main-BYUL96YO.js",
+    "file": "assets/main-Bq3Tufi5.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
     "css": [
-      "assets/main-CC0Jcbpw.css"
+      "assets/main-CRSGR5rx.css"
     ]
   }
 }
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-BYUL96YO.js
-SHA256=db66e1270da3bd3949edf5d53091e1580f07cc177f8895e7ec59da52454dfdaf BYTES=363994 LINES=43
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-Bq3Tufi5.js
+SHA256=dbe4732a39ccbd71d12a04c00554a63168f53fb3588dd2840593c445eece0160 BYTES=364952 LINES=43
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=Object.getOwnPropertyNames,i=Object.getPrototypeOf,a=Object.prototype.hasOwnProperty,o=(e,t)=>()=>(t||(e((t={exports:{}}).exports,t),e=null),t.exports),s=(e,n)=>{let r={};for(var i in e)t(r,i,{get:e[i],enumerable:!0});return n||t(r,Symbol.toStringTag,{value:`Module`}),r},c=(e,i,o,s)=>{if(i&&typeof i==`object`||typeof i==`function`)for(var c=r(i),l=0,u=c.length,d;l<u;l++)d=c[l],!a.call(e,d)&&d!==o&&t(e,d,{get:(e=>i[e]).bind(null,d),enumerable:!(s=n(i,d))||s.enumerable});return e},l=(n,r,o)=>(o=n==null?{}:e(i(n)),c(r||!n||!n.__esModule||!a.call(n,`default`)?t(o,`default`,{value:n,enumerable:!0}):o,n)),u=o((e=>{var t=Symbol.for(`react.transitional.element`),n=Symbol.for(`react.portal`),r=Symbol.for(`react.fragment`),i=Symbol.for(`react.strict_mode`),a=Symbol.for(`react.profiler`),o=Symbol.for(`react.consumer`),s=Symbol.for(`react.context`),c=Symbol.for(`react.forward_ref`),l=Symbol.for(`react.suspense`),u=Symbol.for(`react.memo`),d=Symbol.for(`react.lazy`),f=Symbol.for(`react.activity`),p=Symbol.iterator;function m(e){return typeof e!=`object`||!e?null:(e=p&&e[p]||e[`@@iterator`],typeof e==`function`?e:null)}var h={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},g=Object.assign,_={};function v(e,t,n){this.props=e,this.context=t,this.refs=_,this.updater=n||h}v.prototype.isReactComponent={},v.prototype.setState=function(e,t){if(typeof e!=`object`&&typeof e!=`function`&&e!=null)throw Error(`takes an object of state variables to update or a function which returns an object of state variables.`);this.updater.enqueueSetState(this,e,t,`setState`)},v.prototype.forceUpdate=function(e){this.updater.enqueueForceUpdate(this,e,`forceUpdate`)};function y(){}y.prototype=v.prototype;function b(e,t,n){this.props=e,this.context=t,this.refs=_,this.updater=n||h}var x=b.prototype=new y;x.constructor=b,g(x,v.prototype),x.isPureReactComponent=!0;var S=Array.isArray;function C(){}var w={H:null,A:null,T:null,S:null},T=Object.prototype.hasOwnProperty;function E(e,n,r){var i=r.ref;return{$$typeof:t,type:e,key:n,ref:i===void 0?null:i,props:r}}function ee(e,t){return E(e.type,t,e.props)}function D(e){return typeof e==`object`&&!!e&&e.$$typeof===t}function te(e){var t={"=":`=0`,":":`=2`};return`$`+e.replace(/[=:]/g,function(e){return t[e]})}var O=/\/+/g;function ne(e,t){return typeof e==`object`&&e&&e.key!=null?te(``+e.key):t.toString(36)}function re(e){switch(e.status){case`fulfilled`:return e.value;case`rejected`:throw e.reason;default:switch(typeof e.status==`string`?e.then(C,C):(e.status=`pending`,e.then(function(t){e.status===`pending`&&(e.status=`fulfilled`,e.value=t)},function(t){e.status===`pending`&&(e.status=`rejected`,e.reason=t)})),e.status){case`fulfilled`:return e.value;case`rejected`:throw e.reason}}throw e}function ie(e,r,i,a,o){var s=typeof e;(s===`undefined`||s===`boolean`)&&(e=null);var c=!1;if(e===null)c=!0;else switch(s){case`bigint`:case`string`:case`number`:c=!0;break;case`object`:switch(e.$$typeof){case t:case n:c=!0;break;case d:return c=e._init,ie(c(e._payload),r,i,a,o)}}if(c)return o=o(e),c=a===``?`.`+ne(e,0):a,S(o)?(i=``,c!=null&&(i=c.replace(O,`$&/`)+`/`),ie(o,r,i,``,function(e){return e})):o!=null&&(D(o)&&(o=ee(o,i+(o.key==null||e&&e.key===o.key?``:(``+o.key).replace(O,`$&/`)+`/`)+c)),r.push(o)),1;c=0;var l=a===``?`.`:a+`:`;if(S(e))for(var u=0;u<e.length;u++)a=e[u],s=l+ne(a,u),c+=ie(a,r,i,s,o);else if(u=m(e),typeof u==`function`)for(e=u.call(e),u=0;!(a=e.next()).done;)a=a.value,s=l+ne(a,u++),c+=ie(a,r,i,s,o);else if(s===`object`){if(typeof e.then==`function`)return ie(re(e),r,i,a,o);throw r=String(e),Error(`Objects are not valid as a React child (found: `+(r===`[object Object]`?`object with keys {`+Object.keys(e).join(`, `)+`}`:r)+`). If you meant to render a collection of children, use an array instead.`)}return c}function ae(e,t,n){if(e==null)return e;var r=[],i=0;return ie(e,r,``,``,function(e){return t.call(n,e,i++)}),r}function oe(e){if(e._status===-1){var t=e._result;t=t(),t.then(function(t){(e._status===0||e._status===-1)&&(e._status=1,e._result=t)},function(t){(e._status===0||e._status===-1)&&(e._status=2,e._result=t)}),e._status===-1&&(e._status=0,e._result=t)}if(e._status===1)return e._result.default;throw e._result}var k=typeof reportError==`function`?reportError:function(e){if(typeof window==`object`&&typeof window.ErrorEvent==`function`){var t=new window.ErrorEvent(`error`,{bubbles:!0,cancelable:!0,message:typeof e==`object`&&e&&typeof e.message==`string`?String(e.message):String(e),error:e});if(!window.dispatchEvent(t))return}else if(typeof process==`object`&&typeof process.emit==`function`){process.emit(`uncaughtException`,e);return}console.error(e)},A={map:ae,forEach:function(e,t,n){ae(e,function(){t.apply(this,arguments)},n)},count:function(e){var t=0;return ae(e,function(){t++}),t},toArray:function(e){return ae(e,function(e){return e})||[]},only:function(e){if(!D(e))throw Error(`React.Children.only expected to receive a single React element child.`);return e}};e.Activity=f,e.Children=A,e.Component=v,e.Fragment=r,e.Profiler=a,e.PureComponent=b,e.StrictMode=i,e.Suspense=l,e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=w,e.__COMPILER_RUNTIME={__proto__:null,c:function(e){return w.H.useMemoCache(e)}},e.cache=function(e){return function(){return e.apply(null,arguments)}},e.cacheSignal=function(){return null},e.cloneElement=function(e,t,n){if(e==null)throw Error(`The argument must be a React element, but you passed `+e+`.`);var r=g({},e.props),i=e.key;if(t!=null)for(a in t.key!==void 0&&(i=``+t.key),t)!T.call(t,a)||a===`key`||a===`__self`||a===`__source`||a===`ref`&&t.ref===void 0||(r[a]=t[a]);var a=arguments.length-2;if(a===1)r.children=n;else if(1<a){for(var o=Array(a),s=0;s<a;s++)o[s]=arguments[s+2];r.children=o}return E(e.type,i,r)},e.createContext=function(e){return e={$$typeof:s,_currentValue:e,_currentValue2:e,_threadCount:0,Provider:null,Consumer:null},e.Provider=e,e.Consumer={$$typeof:o,_context:e},e},e.createElement=function(e,t,n){var r,i={},a=null;if(t!=null)for(r in t.key!==void 0&&(a=``+t.key),t)T.call(t,r)&&r!==`key`&&r!==`__self`&&r!==`__source`&&(i[r]=t[r]);var o=arguments.length-2;if(o===1)i.children=n;else if(1<o){for(var s=Array(o),c=0;c<o;c++)s[c]=arguments[c+2];i.children=s}if(e&&e.defaultProps)for(r in o=e.defaultProps,o)i[r]===void 0&&(i[r]=o[r]);return E(e,a,i)},e.createRef=function(){return{current:null}},e.forwardRef=function(e){return{$$typeof:c,render:e}},e.isValidElement=D,e.lazy=function(e){return{$$typeof:d,_payload:{_status:-1,_result:e},_init:oe}},e.memo=function(e,t){return{$$typeof:u,type:e,compare:t===void 0?null:t}},e.startTransition=function(e){var t=w.T,n={};w.T=n;try{var r=e(),i=w.S;i!==null&&i(n,r),typeof r==`object`&&r&&typeof r.then==`function`&&r.then(C,k)}catch(e){k(e)}finally{t!==null&&n.types!==null&&(t.types=n.types),w.T=t}},e.unstable_useCacheRefresh=function(){return w.H.useCacheRefresh()},e.use=function(e){return w.H.use(e)},e.useActionState=function(e,t,n){return w.H.useActionState(e,t,n)},e.useCallback=function(e,t){return w.H.useCallback(e,t)},e.useContext=function(e){return w.H.useContext(e)},e.useDebugValue=function(){},e.useDeferredValue=function(e,t){return w.H.useDeferredValue(e,t)},e.useEffect=function(e,t){return w.H.useEffect(e,t)},e.useEffectEvent=function(e){return w.H.useEffectEvent(e)},e.useId=function(){return w.H.useId()},e.useImperativeHandle=function(e,t,n){return w.H.useImperativeHandle(e,t,n)},e.useInsertionEffect=function(e,t){return w.H.useInsertionEffect(e,t)},e.useLayoutEffect=function(e,t){return w.H.useLayoutEffect(e,t)},e.useMemo=function(e,t){return w.H.useMemo(e,t)},e.useOptimistic=function(e,t){return w.H.useOptimistic(e,t)},e.useReducer=function(e,t,n){return w.H.useReducer(e,t,n)},e.useRef=function(e){return w.H.useRef(e)},e.useState=function(e){return w.H.useState(e)},e.useSyncExternalStore=function(e,t,n){return w.H.useSyncExternalStore(e,t,n)},e.useTransition=function(){return w.H.useTransition()},e.version=`19.2.8`})),d=o(((e,t)=>{t.exports=u()})),f=o((e=>{function t(e,t){var n=e.length;e.push(t);a:for(;0<n;){var r=n-1>>>1,a=e[r];if(0<i(a,t))e[r]=t,e[n]=a,n=r;else break a}}function n(e){return e.length===0?null:e[0]}function r(e){if(e.length===0)return null;var t=e[0],n=e.pop();if(n!==t){e[0]=n;a:for(var r=0,a=e.length,o=a>>>1;r<o;){var s=2*(r+1)-1,c=e[s],l=s+1,u=e[l];if(0>i(c,n))l<a&&0>i(u,c)?(e[r]=u,e[l]=n,r=l):(e[r]=c,e[s]=n,r=s);else if(l<a&&0>i(u,n))e[r]=u,e[l]=n,r=l;else break a}}return t}function i(e,t){var n=e.sortIndex-t.sortIndex;return n===0?e.id-t.id:n}if(e.unstable_now=void 0,typeof performance==`object`&&typeof performance.now==`function`){var a=performance;e.unstable_now=function(){return a.now()}}else{var o=Date,s=o.now();e.unstable_now=function(){return o.now()-s}}var c=[],l=[],u=1,d=null,f=3,p=!1,m=!1,h=!1,g=!1,_=typeof setTimeout==`function`?setTimeout:null,v=typeof clearTimeout==`function`?clearTimeout:null,y=typeof setImmediate<`u`?setImmediate:null;function b(e){for(var i=n(l);i!==null;){if(i.callback===null)r(l);else if(i.startTime<=e)r(l),i.sortIndex=i.expirationTime,t(c,i);else break;i=n(l)}}function x(e){if(h=!1,b(e),!m){if(n(c)!==null)m=!0,S||(S=!0,D());else{var t=n(l);t!==null&&ne(x,t.startTime-e)}}}var S=!1,C=-1,w=5,T=-1;function E(){return g?!0:!(e.unstable_now()-T<w)}function ee(){if(g=!1,S){var t=e.unstable_now();T=t;var i=!0;try{a:{m=!1,h&&(h=!1,v(C),C=-1),p=!0;var a=f;try{b:{for(b(t),d=n(c);d!==null&&!(d.expirationTime>t&&E());){var o=d.callback;if(typeof o==`function`){d.callback=null,f=d.priorityLevel;var s=o(d.expirationTime<=t);if(t=e.unstable_now(),typeof s==`function`){d.callback=s,b(t),i=!0;break b}d===n(c)&&r(c),b(t)}else r(c);d=n(c)}if(d!==null)i=!0;else{var u=n(l);u!==null&&ne(x,u.startTime-t),i=!1}}break a}finally{d=null,f=a,p=!1}i=void 0}}finally{i?D():S=!1}}}var D;if(typeof y==`function`)D=function(){y(ee)};else if(typeof MessageChannel<`u`){var te=new MessageChannel,O=te.port2;te.port1.onmessage=ee,D=function(){O.postMessage(null)}}else D=function(){_(ee,0)};function ne(t,n){C=_(function(){t(e.unstable_now())},n)}e.unstable_IdlePriority=5,e.unstable_ImmediatePriority=1,e.unstable_LowPriority=4,e.unstable_NormalPriority=3,e.unstable_Profiling=null,e.unstable_UserBlockingPriority=2,e.unstable_cancelCallback=function(e){e.callback=null},e.unstable_forceFrameRate=function(e){0>e||125<e?console.error(`forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported`):w=0<e?Math.floor(1e3/e):5},e.unstable_getCurrentPriorityLevel=function(){return f},e.unstable_next=function(e){switch(f){case 1:case 2:case 3:var t=3;break;default:t=f}var n=f;f=t;try{return e()}finally{f=n}},e.unstable_requestPaint=function(){g=!0},e.unstable_runWithPriority=function(e,t){switch(e){case 1:case 2:case 3:case 4:case 5:break;default:e=3}var n=f;f=e;try{return t()}finally{f=n}},e.unstable_scheduleCallback=function(r,i,a){var o=e.unstable_now();switch(typeof a==`object`&&a?(a=a.delay,a=typeof a==`number`&&0<a?o+a:o):a=o,r){case 1:var s=-1;break;case 2:s=250;break;case 5:s=1073741823;break;case 4:s=1e4;break;default:s=5e3}return s=a+s,r={id:u++,callback:i,priorityLevel:r,startTime:a,expirationTime:s,sortIndex:-1},a>o?(r.sortIndex=a,t(l,r),n(c)===null&&r===n(l)&&(h?(v(C),C=-1):h=!0,ne(x,a-o))):(r.sortIndex=s,t(c,r),m||p||(m=!0,S||(S=!0,D()))),r},e.unstable_shouldYield=E,e.unstable_wrapCallback=function(e){var t=f;return function(){var n=f;f=t;try{return e.apply(this,arguments)}finally{f=n}}}})),p=o(((e,t)=>{t.exports=f()})),m=o((e=>{var t=d();function n(e){var t=`https://react.dev/errors/`+e;if(1<arguments.length){t+=`?args[]=`+encodeURIComponent(arguments[1]);for(var n=2;n<arguments.length;n++)t+=`&args[]=`+encodeURIComponent(arguments[n])}return`Minified React error #`+e+`; visit `+t+` for the full message or use the non-minified dev environment for full errors and additional helpful warnings.`}function r(){}var i={d:{f:r,r:function(){throw Error(n(522))},D:r,C:r,L:r,m:r,X:r,S:r,M:r},p:0,findDOMNode:null},a=Symbol.for(`react.portal`);function o(e,t,n){var r=3<arguments.length&&arguments[3]!==void 0?arguments[3]:null;return{$$typeof:a,key:r==null?null:``+r,children:e,containerInfo:t,implementation:n}}var s=t.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;function c(e,t){if(e===`font`)return``;if(typeof t==`string`)return t===`use-credentials`?t:``}e.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=i,e.createPortal=function(e,t){var r=2<arguments.length&&arguments[2]!==void 0?arguments[2]:null;if(!t||t.nodeType!==1&&t.nodeType!==9&&t.nodeType!==11)throw Error(n(299));return o(e,t,null,r)},e.flushSync=function(e){var t=s.T,n=i.p;try{if(s.T=null,i.p=2,e)return e()}finally{s.T=t,i.p=n,i.d.f()}},e.preconnect=function(e,t){typeof e==`string`&&(t?(t=t.crossOrigin,t=typeof t==`string`?t===`use-credentials`?t:``:void 0):t=null,i.d.C(e,t))},e.prefetchDNS=function(e){typeof e==`string`&&i.d.D(e)},e.preinit=function(e,t){if(typeof e==`string`&&t&&typeof t.as==`string`){var n=t.as,r=c(n,t.crossOrigin),a=typeof t.integrity==`string`?t.integrity:void 0,o=typeof t.fetchPriority==`string`?t.fetchPriority:void 0;n===`style`?i.d.S(e,typeof t.precedence==`string`?t.precedence:void 0,{crossOrigin:r,integrity:a,fetchPriority:o}):n===`script`&&i.d.X(e,{crossOrigin:r,integrity:a,fetchPriority:o,nonce:typeof t.nonce==`string`?t.nonce:void 0})}},e.preinitModule=function(e,t){if(typeof e==`string`){if(typeof t==`object`&&t){if(t.as==null||t.as===`script`){var n=c(t.as,t.crossOrigin);i.d.M(e,{crossOrigin:n,integrity:typeof t.integrity==`string`?t.integrity:void 0,nonce:typeof t.nonce==`string`?t.nonce:void 0})}}else t??i.d.M(e)}},e.preload=function(e,t){if(typeof e==`string`&&typeof t==`object`&&t&&typeof t.as==`string`){var n=t.as,r=c(n,t.crossOrigin);i.d.L(e,n,{crossOrigin:r,integrity:typeof t.integrity==`string`?t.integrity:void 0,nonce:typeof t.nonce==`string`?t.nonce:void 0,type:typeof t.type==`string`?t.type:void 0,fetchPriority:typeof t.fetchPriority==`string`?t.fetchPriority:void 0,referrerPolicy:typeof t.referrerPolicy==`string`?t.referrerPolicy:void 0,imageSrcSet:typeof t.imageSrcSet==`string`?t.imageSrcSet:void 0,imageSizes:typeof t.imageSizes==`string`?t.imageSizes:void 0,media:typeof t.media==`string`?t.media:void 0})}},e.preloadModule=function(e,t){if(typeof e==`string`){if(t){var n=c(t.as,t.crossOrigin);i.d.m(e,{as:typeof t.as==`string`&&t.as!==`script`?t.as:void 0,crossOrigin:n,integrity:typeof t.integrity==`string`?t.integrity:void 0})}else i.d.m(e)}},e.requestFormReset=function(e){i.d.r(e)},e.unstable_batchedUpdates=function(e,t){return e(t)},e.useFormState=function(e,t,n){return s.H.useFormState(e,t,n)},e.useFormStatus=function(){return s.H.useHostTransitionStatus()},e.version=`19.2.8`})),h=o(((e,t)=>{function n(){if(!(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__>`u`||typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE!=`function`))try{__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE(n)}catch(e){console.error(e)}}n(),t.exports=m()})),g=o((e=>{var t=p(),n=d(),r=h();function i(e){var t=`https://react.dev/errors/`+e;if(1<arguments.length){t+=`?args[]=`+encodeURIComponent(arguments[1]);for(var n=2;n<arguments.length;n++)t+=`&args[]=`+encodeURIComponent(arguments[n])}return`Minified React error #`+e+`; visit `+t+` for the full message or use the non-minified dev environment for full errors and additional helpful warnings.`}function a(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11)}function o(e){var t=e,n=e;if(e.alternate)for(;t.return;)t=t.return;else{e=t;do t=e,t.flags&4098&&(n=t.return),e=t.return;while(e)}return t.tag===3?n:null}function s(e){if(e.tag===13){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function c(e){if(e.tag===31){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function l(e){if(o(e)!==e)throw Error(i(188))}function u(e){var t=e.alternate;if(!t){if(t=o(e),t===null)throw Error(i(188));return t===e?e:null}for(var n=e,r=t;;){var a=n.return;if(a===null)break;var s=a.alternate;if(s===null){if(r=a.return,r!==null){n=r;continue}break}if(a.child===s.child){for(s=a.child;s;){if(s===n)return l(a),e;if(s===r)return l(a),t;s=s.sibling}throw Error(i(188))}if(n.return!==r.return)n=a,r=s;else{for(var c=!1,u=a.child;u;){if(u===n){c=!0,n=a,r=s;break}if(u===r){c=!0,r=a,n=s;break}u=u.sibling}if(!c){for(u=s.child;u;){if(u===n){c=!0,n=s,r=a;break}if(u===r){c=!0,r=s,n=a;break}u=u.sibling}if(!c)throw Error(i(189))}}if(n.alternate!==r)throw Error(i(190))}if(n.tag!==3)throw Error(i(188));return n.stateNode.current===n?e:t}function f(e){var t=e.tag;if(t===5||t===26||t===27||t===6)return e;for(e=e.child;e!==null;){if(t=f(e),t!==null)return t;e=e.sibling}return null}var m=Object.assign,g=Symbol.for(`react.element`),_=Symbol.for(`react.transitional.element`),v=Symbol.for(`react.portal`),y=Symbol.for(`react.fragment`),b=Symbol.for(`react.strict_mode`),x=Symbol.for(`react.profiler`),S=Symbol.for(`react.consumer`),C=Symbol.for(`react.context`),w=Symbol.for(`react.forward_ref`),T=Symbol.for(`react.suspense`),E=Symbol.for(`react.suspense_list`),ee=Symbol.for(`react.memo`),D=Symbol.for(`react.lazy`),te=Symbol.for(`react.activity`),O=Symbol.for(`react.memo_cache_sentinel`),ne=Symbol.iterator;function re(e){return typeof e!=`object`||!e?null:(e=ne&&e[ne]||e[`@@iterator`],typeof e==`function`?e:null)}var ie=Symbol.for(`react.client.reference`);function ae(e){if(e==null)return null;if(typeof e==`function`)return e.$$typeof===ie?null:e.displayName||e.name||null;if(typeof e==`string`)return e;switch(e){case y:return`Fragment`;case x:return`Profiler`;case b:return`StrictMode`;case T:return`Suspense`;case E:return`SuspenseList`;case te:return`Activity`}if(typeof e==`object`)switch(e.$$typeof){case v:return`Portal`;case C:return e.displayName||`Context`;case S:return(e._context.displayName||`Context`)+`.Consumer`;case w:var t=e.render;return e=e.displayName,e||=(e=t.displayName||t.name||``,e===``?`ForwardRef`:`ForwardRef(`+e+`)`),e;case ee:return t=e.displayName||null,t===null?ae(e.type)||`Memo`:t;case D:t=e._payload,e=e._init;try{return ae(e(t))}catch{}}return null}var oe=Array.isArray,k=n.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,A=r.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,se={pending:!1,data:null,method:null,action:null},ce=[],le=-1;function ue(e){return{current:e}}function de(e){0>le||(e.current=ce[le],ce[le]=null,le--)}function j(e,t){le++,ce[le]=e.current,e.current=t}var M=ue(null),fe=ue(null),pe=ue(null),N=ue(null);function me(e,t){switch(j(pe,t),j(fe,e),j(M,null),t.nodeType){case 9:case 11:e=(e=t.documentElement)&&(e=e.namespaceURI)?Vd(e):0;break;default:if(e=t.tagName,t=t.namespaceURI)t=Vd(t),e=Hd(t,e);else switch(e){case`svg`:e=1;break;case`math`:e=2;break;default:e=0}}de(M),j(M,e)}function he(){de(M),de(fe),de(pe)}function P(e){e.memoizedState!==null&&j(N,e);var t=M.current,n=Hd(t,e.type);t!==n&&(j(fe,e),j(M,n))}function F(e){fe.current===e&&(de(M),de(fe)),N.current===e&&(de(N),Qf._currentValue=se)}var ge,_e;function ve(e){if(ge===void 0)try{throw Error()}catch(e){var t=e.stack.trim().match(/\n( *(at )?)/);ge=t&&t[1]||``,_e=-1<e.stack.indexOf(`
     at`)?` (<anonymous>)`:-1<e.stack.indexOf(`@`)?`@unknown:0:0`:``}return`
@@ -163518,22 +163873,22 @@ Error generating stack: `+e.message+`
 `))+1))}let o=`#`.repeat(i),s=n.enter(`headingAtx`),c=n.enter(`phrasing`);a.move(o+` `);let l=n.containerPhrasing(e,{before:`# `,after:`
 `,...a.current()});return/^[\t ]/.test(l)&&(l=Ws(l.charCodeAt(0))+l.slice(1)),l=l?o+` `+l:o,n.options.closeAtx&&(l+=` `+o),c(),s(),l}Xs.peek=Zs;function Xs(e){return e.value||``}function Zs(){return`<`}Qs.peek=$s;function Qs(e,t,n,r){let i=Vs(n),a=i===`"`?`Quote`:`Apostrophe`,o=n.enter(`image`),s=n.enter(`label`),c=n.createTracker(r),l=c.move(`![`);return l+=c.move(n.safe(e.alt,{before:l,after:`]`,...c.current()})),l+=c.move(`](`),s(),!e.url&&e.title||/[\0- \u007F]/.test(e.url)?(s=n.enter(`destinationLiteral`),l+=c.move(`<`),l+=c.move(n.safe(e.url,{before:l,after:`>`,...c.current()})),l+=c.move(`>`)):(s=n.enter(`destinationRaw`),l+=c.move(n.safe(e.url,{before:l,after:e.title?` `:`)`,...c.current()}))),s(),e.title&&(s=n.enter(`title${a}`),l+=c.move(` `+i),l+=c.move(n.safe(e.title,{before:l,after:i,...c.current()})),l+=c.move(i),s()),l+=c.move(`)`),o(),l}function $s(){return`!`}ec.peek=tc;function ec(e,t,n,r){let i=e.referenceType,a=n.enter(`imageReference`),o=n.enter(`label`),s=n.createTracker(r),c=s.move(`![`),l=n.safe(e.alt,{before:c,after:`]`,...s.current()});c+=s.move(l+`][`),o();let u=n.stack;n.stack=[],o=n.enter(`reference`);let d=n.safe(n.associationId(e),{before:c,after:`]`,...s.current()});return o(),n.stack=u,a(),i===`full`||!l||l!==d?c+=s.move(d+`]`):i===`shortcut`?c=c.slice(0,-1):c+=s.move(`]`),c}function tc(){return`!`}nc.peek=rc;function nc(e,t,n){let r=e.value||``,i="`",a=-1;for(;RegExp("(^|[^`])"+i+"([^`]|$)").test(r);)i+="`";for(/[^ \r\n]/.test(r)&&(/^[ \r\n]/.test(r)&&/[ \r\n]$/.test(r)||/^`|`$/.test(r))&&(r=` `+r+` `);++a<n.unsafe.length;){let e=n.unsafe[a],t=n.compilePattern(e),i;if(e.atBreak)for(;i=t.exec(r);){let e=i.index;r.charCodeAt(e)===10&&r.charCodeAt(e-1)===13&&e--,r=r.slice(0,e)+` `+r.slice(i.index+1)}}return i+r+i}function rc(){return"`"}function ic(e,t){let n=jt(e);return!(t.options.resourceLink||!e.url||e.title||!e.children||e.children.length!==1||e.children[0].type!==`text`||n!==e.url&&`mailto:`+n!==e.url||!/^[a-z][a-z+.-]+:/i.test(e.url)||/[\0- <>\u007F]/.test(e.url))}ac.peek=oc;function ac(e,t,n,r){let i=Vs(n),a=i===`"`?`Quote`:`Apostrophe`,o=n.createTracker(r),s,c;if(ic(e,n)){let t=n.stack;n.stack=[],s=n.enter(`autolink`);let r=o.move(`<`);return r+=o.move(n.containerPhrasing(e,{before:r,after:`>`,...o.current()})),r+=o.move(`>`),s(),n.stack=t,r}s=n.enter(`link`),c=n.enter(`label`);let l=o.move(`[`);return l+=o.move(n.containerPhrasing(e,{before:l,after:`](`,...o.current()})),l+=o.move(`](`),c(),!e.url&&e.title||/[\0- \u007F]/.test(e.url)?(c=n.enter(`destinationLiteral`),l+=o.move(`<`),l+=o.move(n.safe(e.url,{before:l,after:`>`,...o.current()})),l+=o.move(`>`)):(c=n.enter(`destinationRaw`),l+=o.move(n.safe(e.url,{before:l,after:e.title?` `:`)`,...o.current()}))),c(),e.title&&(c=n.enter(`title${a}`),l+=o.move(` `+i),l+=o.move(n.safe(e.title,{before:l,after:i,...o.current()})),l+=o.move(i),c()),l+=o.move(`)`),s(),l}function oc(e,t,n){return ic(e,n)?`<`:`[`}sc.peek=cc;function sc(e,t,n,r){let i=e.referenceType,a=n.enter(`linkReference`),o=n.enter(`label`),s=n.createTracker(r),c=s.move(`[`),l=n.containerPhrasing(e,{before:c,after:`]`,...s.current()});c+=s.move(l+`][`),o();let u=n.stack;n.stack=[],o=n.enter(`reference`);let d=n.safe(n.associationId(e),{before:c,after:`]`,...s.current()});return o(),n.stack=u,a(),i===`full`||!l||l!==d?c+=s.move(d+`]`):i===`shortcut`?c=c.slice(0,-1):c+=s.move(`]`),c}function cc(){return`[`}function lc(e){let t=e.options.bullet||`*`;if(t!==`*`&&t!==`+`&&t!==`-`)throw Error("Cannot serialize items with `"+t+"` for `options.bullet`, expected `*`, `+`, or `-`");return t}function uc(e){let t=lc(e),n=e.options.bulletOther;if(!n)return t===`*`?`-`:`*`;if(n!==`*`&&n!==`+`&&n!==`-`)throw Error("Cannot serialize items with `"+n+"` for `options.bulletOther`, expected `*`, `+`, or `-`");if(n===t)throw Error("Expected `bullet` (`"+t+"`) and `bulletOther` (`"+n+"`) to be different");return n}function dc(e){let t=e.options.bulletOrdered||`.`;if(t!==`.`&&t!==`)`)throw Error("Cannot serialize items with `"+t+"` for `options.bulletOrdered`, expected `.` or `)`");return t}function fc(e){let t=e.options.rule||`*`;if(t!==`*`&&t!==`-`&&t!==`_`)throw Error("Cannot serialize rules with `"+t+"` for `options.rule`, expected `*`, `-`, or `_`");return t}function pc(e,t,n,r){let i=n.enter(`list`),a=n.bulletCurrent,o=e.ordered?dc(n):lc(n),s=e.ordered?o===`.`?`)`:`.`:uc(n),c=t&&n.bulletLastUsed?o===n.bulletLastUsed:!1;if(!e.ordered){let t=e.children?e.children[0]:void 0;if((o===`*`||o===`-`)&&t&&(!t.children||!t.children[0])&&n.stack[n.stack.length-1]===`list`&&n.stack[n.stack.length-2]===`listItem`&&n.stack[n.stack.length-3]===`list`&&n.stack[n.stack.length-4]===`listItem`&&n.indexStack[n.indexStack.length-1]===0&&n.indexStack[n.indexStack.length-2]===0&&n.indexStack[n.indexStack.length-3]===0&&(c=!0),fc(n)===o&&t){let t=-1;for(;++t<e.children.length;){let n=e.children[t];if(n&&n.type===`listItem`&&n.children&&n.children[0]&&n.children[0].type===`thematicBreak`){c=!0;break}}}}c&&(o=s),n.bulletCurrent=o;let l=n.containerFlow(e,r);return n.bulletLastUsed=o,n.bulletCurrent=a,i(),l}function mc(e){let t=e.options.listItemIndent||`one`;if(t!==`tab`&&t!==`one`&&t!==`mixed`)throw Error("Cannot serialize items with `"+t+"` for `options.listItemIndent`, expected `tab`, `one`, or `mixed`");return t}function hc(e,t,n,r){let i=mc(n),a=n.bulletCurrent||lc(n);t&&t.type===`list`&&t.ordered&&(a=(typeof t.start==`number`&&t.start>-1?t.start:1)+(n.options.incrementListMarker===!1?0:t.children.indexOf(e))+a);let o=a.length+1;(i===`tab`||i===`mixed`&&(t&&t.type===`list`&&t.spread||e.spread))&&(o=Math.ceil(o/4)*4);let s=n.createTracker(r);s.move(a+` `.repeat(o-a.length)),s.shift(o);let c=n.enter(`listItem`),l=n.indentLines(n.containerFlow(e,s.current()),u);return c(),l;function u(e,t,n){return t?(n?``:` `.repeat(o))+e:(n?a:a+` `.repeat(o-a.length))+e}}function gc(e,t,n,r){let i=n.enter(`paragraph`),a=n.enter(`phrasing`),o=n.containerPhrasing(e,r);return a(),i(),o}var _c=Sa([`break`,`delete`,`emphasis`,`footnote`,`footnoteReference`,`image`,`imageReference`,`inlineCode`,`inlineMath`,`link`,`linkReference`,`mdxJsxTextElement`,`mdxTextExpression`,`strong`,`text`,`textDirective`]);function vc(e,t,n,r){return(e.children.some(function(e){return _c(e)})?n.containerPhrasing:n.containerFlow).call(n,e,r)}function yc(e){let t=e.options.strong||`*`;if(t!==`*`&&t!==`_`)throw Error("Cannot serialize strong with `"+t+"` for `options.strong`, expected `*`, or `_`");return t}bc.peek=xc;function bc(e,t,n,r){let i=yc(n),a=n.enter(`strong`),o=n.createTracker(r),s=o.move(i+i),c=o.move(n.containerPhrasing(e,{after:i,before:s,...o.current()})),l=c.charCodeAt(0),u=Gs(r.before.charCodeAt(r.before.length-1),l,i);u.inside&&(c=Ws(l)+c.slice(1));let d=c.charCodeAt(c.length-1),f=Gs(r.after.charCodeAt(0),d,i);f.inside&&(c=c.slice(0,-1)+Ws(d));let p=o.move(i+i);return a(),n.attentionEncodeSurroundingInfo={after:f.outside,before:u.outside},s+c+p}function xc(e,t,n){return n.options.strong||`*`}function Sc(e,t,n,r){return n.safe(e.value,r)}function Cc(e){let t=e.options.ruleRepetition||3;if(t<3)throw Error("Cannot serialize rules with repetition `"+t+"` for `options.ruleRepetition`, expected `3` or more");return t}function wc(e,t,n){let r=(fc(n)+(n.options.ruleSpaces?` `:``)).repeat(Cc(n));return n.options.ruleSpaces?r.slice(0,-1):r}var Tc={blockquote:js,break:Fs,code:zs,definition:Hs,emphasis:Ks,hardBreak:Fs,heading:Ys,html:Xs,image:Qs,imageReference:ec,inlineCode:nc,link:ac,linkReference:sc,list:pc,listItem:hc,paragraph:gc,root:vc,strong:bc,text:Sc,thematicBreak:wc};function Ec(){return{enter:{table:Dc,tableData:jc,tableHeader:jc,tableRow:kc},exit:{codeText:Mc,table:Oc,tableData:Ac,tableHeader:Ac,tableRow:Ac}}}function Dc(e){let t=e._align;this.enter({type:`table`,align:t.map(function(e){return e===`none`?null:e}),children:[]},e),this.data.inTable=!0}function Oc(e){this.exit(e),this.data.inTable=void 0}function kc(e){this.enter({type:`tableRow`,children:[]},e)}function Ac(e){this.exit(e)}function jc(e){this.enter({type:`tableCell`,children:[]},e)}function Mc(e){let t=this.resume();this.data.inTable&&(t=t.replace(/\\([\\|])/g,Nc));let n=this.stack[this.stack.length-1];n.type,n.value=t,this.exit(e)}function Nc(e,t){return t===`|`?t:e}function Pc(e){let t=e||{},n=t.tableCellPadding,r=t.tablePipeAlign,i=t.stringLength,a=n?` `:`|`;return{unsafe:[{character:`\r`,inConstruct:`tableCell`},{character:`
 `,inConstruct:`tableCell`},{atBreak:!0,character:`|`,after:`[	 :-]`},{character:`|`,inConstruct:`tableCell`},{atBreak:!0,character:`:`,after:`-`},{atBreak:!0,character:`-`,after:`[:|-]`}],handlers:{inlineCode:f,table:o,tableCell:c,tableRow:s}};function o(e,t,n,r){return l(u(e,n,r),e.align)}function s(e,t,n,r){let i=l([d(e,n,r)]);return i.slice(0,i.indexOf(`
-`))}function c(e,t,n,r){let i=n.enter(`tableCell`),o=n.enter(`phrasing`),s=n.containerPhrasing(e,{...r,before:a,after:a});return o(),i(),s}function l(e,t){return Os(e,{align:t,alignDelimiters:r,padding:n,stringLength:i})}function u(e,t,n){let r=e.children,i=-1,a=[],o=t.enter(`table`);for(;++i<r.length;)a[i]=d(r[i],t,n);return o(),a}function d(e,t,n){let r=e.children,i=-1,a=[],o=t.enter(`tableRow`);for(;++i<r.length;)a[i]=c(r[i],e,t,n);return o(),a}function f(e,t,n){let r=Tc.inlineCode(e,t,n);return n.stack.includes(`tableCell`)&&(r=r.replace(/\|/g,`\\$&`)),r}}function Fc(){return{exit:{taskListCheckValueChecked:Lc,taskListCheckValueUnchecked:Lc,paragraph:W}}}function Ic(){return{unsafe:[{atBreak:!0,character:`-`,after:`[:|-]`}],handlers:{listItem:Rc}}}function Lc(e){let t=this.stack[this.stack.length-2];t.type,t.checked=e.type===`taskListCheckValueChecked`}function W(e){let t=this.stack[this.stack.length-2];if(t&&t.type===`listItem`&&typeof t.checked==`boolean`){let e=this.stack[this.stack.length-1];e.type;let n=e.children[0];if(n&&n.type===`text`){let r=t.children,i=-1,a;for(;++i<r.length;){let e=r[i];if(e.type===`paragraph`){a=e;break}}a===e&&(n.value=n.value.slice(1),n.value.length===0?e.children.shift():e.position&&n.position&&typeof n.position.start.offset==`number`&&(n.position.start.column++,n.position.start.offset++,e.position.start=Object.assign({},n.position.start)))}}this.exit(e)}function Rc(e,t,n,r){let i=e.children[0],a=typeof e.checked==`boolean`&&i&&i.type===`paragraph`,o=`[`+(e.checked?`x`:` `)+`] `,s=n.createTracker(r);a&&s.move(o);let c=Tc.listItem(e,t,n,{...r,...s.current()});return a&&(c=c.replace(/^(?:[*+-]|\d+\.)([\r\n]| {1,3})/,l)),c;function l(e){return e+o}}function zc(){return[Ko(),gs(),xs(),Ec(),Fc()]}function Bc(e){return{extensions:[qo(),_s(e),Ss(),Pc(e),Ic()]}}var Vc={tokenize:tl,partial:!0},Hc={tokenize:nl,partial:!0},Uc={tokenize:rl,partial:!0},Wc={tokenize:il,partial:!0},Gc={tokenize:al,partial:!0},Kc={name:`wwwAutolink`,tokenize:$c,previous:ol},qc={name:`protocolAutolink`,tokenize:el,previous:sl},Jc={name:`emailAutolink`,tokenize:Qc,previous:G},Yc={};function Xc(){return{text:Yc}}for(var Zc=48;Zc<123;)Yc[Zc]=Jc,Zc++,Zc===58?Zc=65:Zc===91&&(Zc=97);Yc[43]=Jc,Yc[45]=Jc,Yc[46]=Jc,Yc[95]=Jc,Yc[72]=[Jc,qc],Yc[104]=[Jc,qc],Yc[87]=[Jc,Kc],Yc[119]=[Jc,Kc];function Qc(e,t,n){let r=this,i,a;return o;function o(t){return!cl(t)||!G.call(r,r.previous)||ll(r.events)?n(t):(e.enter(`literalAutolink`),e.enter(`literalAutolinkEmail`),s(t))}function s(t){return cl(t)?(e.consume(t),s):t===64?(e.consume(t),c):n(t)}function c(t){return t===46?e.check(Gc,u,l)(t):t===45||t===95||Kt(t)?(a=!0,e.consume(t),c):u(t)}function l(t){return e.consume(t),i=!0,c}function u(o){return a&&i&&Gt(r.previous)?(e.exit(`literalAutolinkEmail`),e.exit(`literalAutolink`),t(o)):n(o)}}function $c(e,t,n){let r=this;return i;function i(t){return t!==87&&t!==119||!ol.call(r,r.previous)||ll(r.events)?n(t):(e.enter(`literalAutolink`),e.enter(`literalAutolinkWww`),e.check(Vc,e.attempt(Hc,e.attempt(Uc,a),n),n)(t))}function a(n){return e.exit(`literalAutolinkWww`),e.exit(`literalAutolink`),t(n)}}function el(e,t,n){let r=this,i=``,a=!1;return o;function o(t){return(t===72||t===104)&&sl.call(r,r.previous)&&!ll(r.events)?(e.enter(`literalAutolink`),e.enter(`literalAutolinkHttp`),i+=String.fromCodePoint(t),e.consume(t),s):n(t)}function s(t){if(Gt(t)&&i.length<5)return i+=String.fromCodePoint(t),e.consume(t),s;if(t===58){let n=i.toLowerCase();if(n===`http`||n===`https`)return e.consume(t),c}return n(t)}function c(t){return t===47?(e.consume(t),a?l:(a=!0,c)):n(t)}function l(t){return t===null||Jt(t)||L(t)||$t(t)||Qt(t)?n(t):e.attempt(Hc,e.attempt(Uc,u),n)(t)}function u(n){return e.exit(`literalAutolinkHttp`),e.exit(`literalAutolink`),t(n)}}function tl(e,t,n){let r=0;return i;function i(t){return(t===87||t===119)&&r<3?(r++,e.consume(t),i):t===46&&r===3?(e.consume(t),a):n(t)}function a(e){return e===null?n(e):t(e)}}function nl(e,t,n){let r,i,a;return o;function o(t){return t===46||t===95?e.check(Wc,c,s)(t):t===null||L(t)||$t(t)||t!==45&&Qt(t)?c(t):(a=!0,e.consume(t),o)}function s(t){return t===95?r=!0:(i=r,r=void 0),e.consume(t),o}function c(e){return i||r||!a?n(e):t(e)}}function rl(e,t){let n=0,r=0;return i;function i(o){return o===40?(n++,e.consume(o),i):o===41&&r<n?a(o):o===33||o===34||o===38||o===39||o===41||o===42||o===44||o===46||o===58||o===59||o===60||o===63||o===93||o===95||o===126?e.check(Wc,t,a)(o):o===null||L(o)||$t(o)?t(o):(e.consume(o),i)}function a(t){return t===41&&r++,e.consume(t),i}}function il(e,t,n){return r;function r(o){return o===33||o===34||o===39||o===41||o===42||o===44||o===46||o===58||o===59||o===63||o===95||o===126?(e.consume(o),r):o===38?(e.consume(o),a):o===93?(e.consume(o),i):o===60||o===null||L(o)||$t(o)?t(o):n(o)}function i(e){return e===null||e===40||e===91||L(e)||$t(e)?t(e):r(e)}function a(e){return Gt(e)?o(e):n(e)}function o(t){return t===59?(e.consume(t),r):Gt(t)?(e.consume(t),o):n(t)}}function al(e,t,n){return r;function r(t){return e.consume(t),i}function i(e){return Kt(e)?n(e):t(e)}}function ol(e){return e===null||e===40||e===42||e===95||e===91||e===93||e===126||L(e)}function sl(e){return!Gt(e)}function G(e){return!(e===47||cl(e))}function cl(e){return e===43||e===45||e===46||e===95||Kt(e)}function ll(e){let t=e.length,n=!1;for(;t--;){let r=e[t][1];if((r.type===`labelLink`||r.type===`labelImage`)&&!r._balanced){n=!0;break}if(r._gfmAutolinkLiteralWalkedInto){n=!1;break}}return e.length>0&&!n&&(e[e.length-1][1]._gfmAutolinkLiteralWalkedInto=!0),n}var ul={tokenize:vl,partial:!0};function dl(){return{document:{91:{name:`gfmFootnoteDefinition`,tokenize:hl,continuation:{tokenize:gl},exit:_l}},text:{91:{name:`gfmFootnoteCall`,tokenize:ml},93:{name:`gfmPotentialFootnoteCall`,add:`after`,tokenize:fl,resolveTo:pl}}}}function fl(e,t,n){let r=this,i=r.events.length,a=r.parser.gfmFootnotes||(r.parser.gfmFootnotes=[]),o;for(;i--;){let e=r.events[i][1];if(e.type===`labelImage`){o=e;break}if(e.type===`gfmFootnoteCall`||e.type===`labelLink`||e.type===`label`||e.type===`image`||e.type===`link`)break}return s;function s(i){if(!o||!o._balanced)return n(i);let s=Wt(r.sliceSerialize({start:o.end,end:r.now()}));return s.codePointAt(0)!==94||!a.includes(s.slice(1))?n(i):(e.enter(`gfmFootnoteCallLabelMarker`),e.consume(i),e.exit(`gfmFootnoteCallLabelMarker`),t(i))}}function pl(e,t){let n=e.length;for(;n--;)if(e[n][1].type===`labelImage`&&e[n][0]===`enter`){e[n][1];break}e[n+1][1].type=`data`,e[n+3][1].type=`gfmFootnoteCallLabelMarker`;let r={type:`gfmFootnoteCall`,start:Object.assign({},e[n+3][1].start),end:Object.assign({},e[e.length-1][1].end)},i={type:`gfmFootnoteCallMarker`,start:Object.assign({},e[n+3][1].end),end:Object.assign({},e[n+3][1].end)};i.end.column++,i.end.offset++,i.end._bufferIndex++;let a={type:`gfmFootnoteCallString`,start:Object.assign({},i.end),end:Object.assign({},e[e.length-1][1].start)},o={type:`chunkString`,contentType:`string`,start:Object.assign({},a.start),end:Object.assign({},a.end)},s=[e[n+1],e[n+2],[`enter`,r,t],e[n+3],e[n+4],[`enter`,i,t],[`exit`,i,t],[`enter`,a,t],[`enter`,o,t],[`exit`,o,t],[`exit`,a,t],e[e.length-2],e[e.length-1],[`exit`,r,t]];return e.splice(n,e.length-n+1,...s),e}function ml(e,t,n){let r=this,i=r.parser.gfmFootnotes||(r.parser.gfmFootnotes=[]),a=0,o;return s;function s(t){return e.enter(`gfmFootnoteCall`),e.enter(`gfmFootnoteCallLabelMarker`),e.consume(t),e.exit(`gfmFootnoteCallLabelMarker`),c}function c(t){return t===94?(e.enter(`gfmFootnoteCallMarker`),e.consume(t),e.exit(`gfmFootnoteCallMarker`),e.enter(`gfmFootnoteCallString`),e.enter(`chunkString`).contentType=`string`,l):n(t)}function l(s){if(a>999||s===93&&!o||s===null||s===91||L(s))return n(s);if(s===93){e.exit(`chunkString`);let a=e.exit(`gfmFootnoteCallString`);return i.includes(Wt(r.sliceSerialize(a)))?(e.enter(`gfmFootnoteCallLabelMarker`),e.consume(s),e.exit(`gfmFootnoteCallLabelMarker`),e.exit(`gfmFootnoteCall`),t):n(s)}return L(s)||(o=!0),a++,e.consume(s),s===92?u:l}function u(t){return t===91||t===92||t===93?(e.consume(t),a++,l):l(t)}}function hl(e,t,n){let r=this,i=r.parser.gfmFootnotes||(r.parser.gfmFootnotes=[]),a,o=0,s;return c;function c(t){return e.enter(`gfmFootnoteDefinition`)._container=!0,e.enter(`gfmFootnoteDefinitionLabel`),e.enter(`gfmFootnoteDefinitionLabelMarker`),e.consume(t),e.exit(`gfmFootnoteDefinitionLabelMarker`),l}function l(t){return t===94?(e.enter(`gfmFootnoteDefinitionMarker`),e.consume(t),e.exit(`gfmFootnoteDefinitionMarker`),e.enter(`gfmFootnoteDefinitionLabelString`),e.enter(`chunkString`).contentType=`string`,u):n(t)}function u(t){if(o>999||t===93&&!s||t===null||t===91||L(t))return n(t);if(t===93){e.exit(`chunkString`);let n=e.exit(`gfmFootnoteDefinitionLabelString`);return a=Wt(r.sliceSerialize(n)),e.enter(`gfmFootnoteDefinitionLabelMarker`),e.consume(t),e.exit(`gfmFootnoteDefinitionLabelMarker`),e.exit(`gfmFootnoteDefinitionLabel`),f}return L(t)||(s=!0),o++,e.consume(t),t===92?d:u}function d(t){return t===91||t===92||t===93?(e.consume(t),o++,u):u(t)}function f(t){return t===58?(e.enter(`definitionMarker`),e.consume(t),e.exit(`definitionMarker`),i.includes(a)||i.push(a),z(e,p,`gfmFootnoteDefinitionWhitespace`)):n(t)}function p(e){return t(e)}}function gl(e,t,n){return e.check(_n,t,e.attempt(ul,t,n))}function _l(e){e.exit(`gfmFootnoteDefinition`)}function vl(e,t,n){let r=this;return z(e,i,`gfmFootnoteDefinitionIndent`,5);function i(e){let i=r.events[r.events.length-1];return i&&i[1].type===`gfmFootnoteDefinitionIndent`&&i[2].sliceSerialize(i[1],!0).length===4?t(e):n(e)}}function yl(e){let t=(e||{}).singleTilde,n={name:`strikethrough`,tokenize:i,resolveAll:r};return t??=!0,{text:{126:n},insideSpan:{null:[n]},attentionMarkers:{null:[126]}};function r(e,t){let n=-1;for(;++n<e.length;)if(e[n][0]===`enter`&&e[n][1].type===`strikethroughSequenceTemporary`&&e[n][1]._close){let r=n;for(;r--;)if(e[r][0]===`exit`&&e[r][1].type===`strikethroughSequenceTemporary`&&e[r][1]._open&&e[n][1].end.offset-e[n][1].start.offset===e[r][1].end.offset-e[r][1].start.offset){e[n][1].type=`strikethroughSequence`,e[r][1].type=`strikethroughSequence`;let i={type:`strikethrough`,start:Object.assign({},e[r][1].start),end:Object.assign({},e[n][1].end)},a={type:`strikethroughText`,start:Object.assign({},e[r][1].end),end:Object.assign({},e[n][1].start)},o=[[`enter`,i,t],[`enter`,e[r][1],t],[`exit`,e[r][1],t],[`enter`,a,t]],s=t.parser.constructs.insideSpan.null;s&&Lt(o,o.length,0,un(s,e.slice(r+1,n),t)),Lt(o,o.length,0,[[`exit`,a,t],[`enter`,e[n][1],t],[`exit`,e[n][1],t],[`exit`,i,t]]),Lt(e,r-1,n-r+3,o),n=r+o.length-2;break}}for(n=-1;++n<e.length;)e[n][1].type===`strikethroughSequenceTemporary`&&(e[n][1].type=`data`);return e}function i(e,n,r){let i=this.previous,a=this.events,o=0;return s;function s(t){return i===126&&a[a.length-1][1].type!==`characterEscape`?r(t):(e.enter(`strikethroughSequenceTemporary`),c(t))}function c(a){let s=ln(i);if(a===126)return o>1?r(a):(e.consume(a),o++,c);if(o<2&&!t)return r(a);let l=e.exit(`strikethroughSequenceTemporary`),u=ln(a);return l._open=!u||u===2&&!!s,l._close=!s||s===2&&!!u,n(a)}}}var bl=class{constructor(){this.map=[]}add(e,t,n){xl(this,e,t,n)}consume(e){if(this.map.sort(function(e,t){return e[0]-t[0]}),this.map.length===0)return;let t=this.map.length,n=[];for(;t>0;)--t,n.push(e.slice(this.map[t][0]+this.map[t][1]),this.map[t][2]),e.length=this.map[t][0];n.push(e.slice()),e.length=0;let r=n.pop();for(;r;){for(let t of r)e.push(t);r=n.pop()}this.map.length=0}};function xl(e,t,n,r){let i=0;if(n!==0||r.length!==0){for(;i<e.map.length;){if(e.map[i][0]===t){e.map[i][1]+=n,e.map[i][2].push(...r);return}i+=1}e.map.push([t,n,r])}}function Sl(e,t){let n=!1,r=[];for(;t<e.length;){let i=e[t];if(n){if(i[0]===`enter`)i[1].type===`tableContent`&&r.push(e[t+1][1].type===`tableDelimiterMarker`?`left`:`none`);else if(i[1].type===`tableContent`){if(e[t-1][1].type===`tableDelimiterMarker`){let e=r.length-1;r[e]=r[e]===`left`?`center`:`right`}}else if(i[1].type===`tableDelimiterRow`)break}else i[0]===`enter`&&i[1].type===`tableDelimiterRow`&&(n=!0);t+=1}return r}function Cl(){return{flow:{null:{name:`table`,tokenize:wl,resolveAll:Tl}}}}function wl(e,t,n){let r=this,i=0,a=0,o;return s;function s(e){let t=r.events.length-1;for(;t>-1;){let e=r.events[t][1].type;if(e===`lineEnding`||e===`linePrefix`)t--;else break}let i=t>-1?r.events[t][1].type:null,a=i===`tableHead`||i===`tableRow`?S:c;return a===S&&r.parser.lazy[r.now().line]?n(e):a(e)}function c(t){return e.enter(`tableHead`),e.enter(`tableRow`),l(t)}function l(e){return e===124?u(e):(o=!0,a+=1,u(e))}function u(t){return t===null?n(t):I(t)?a>1?(a=0,r.interrupt=!0,e.exit(`tableRow`),e.enter(`lineEnding`),e.consume(t),e.exit(`lineEnding`),p):n(t):R(t)?z(e,u,`whitespace`)(t):(a+=1,o&&(o=!1,i+=1),t===124?(e.enter(`tableCellDivider`),e.consume(t),e.exit(`tableCellDivider`),o=!0,u):(e.enter(`data`),d(t)))}function d(t){return t===null||t===124||L(t)?(e.exit(`data`),u(t)):(e.consume(t),t===92?f:d)}function f(t){return t===92||t===124?(e.consume(t),d):d(t)}function p(t){return r.interrupt=!1,r.parser.lazy[r.now().line]?n(t):(e.enter(`tableDelimiterRow`),o=!1,R(t)?z(e,m,`linePrefix`,r.parser.constructs.disable.null.includes(`codeIndented`)?void 0:4)(t):m(t))}function m(t){return t===45||t===58?g(t):t===124?(o=!0,e.enter(`tableCellDivider`),e.consume(t),e.exit(`tableCellDivider`),h):x(t)}function h(t){return R(t)?z(e,g,`whitespace`)(t):g(t)}function g(t){return t===58?(a+=1,o=!0,e.enter(`tableDelimiterMarker`),e.consume(t),e.exit(`tableDelimiterMarker`),_):t===45?(a+=1,_(t)):t===null||I(t)?b(t):x(t)}function _(t){return t===45?(e.enter(`tableDelimiterFiller`),v(t)):x(t)}function v(t){return t===45?(e.consume(t),v):t===58?(o=!0,e.exit(`tableDelimiterFiller`),e.enter(`tableDelimiterMarker`),e.consume(t),e.exit(`tableDelimiterMarker`),y):(e.exit(`tableDelimiterFiller`),y(t))}function y(t){return R(t)?z(e,b,`whitespace`)(t):b(t)}function b(n){return n===124?m(n):n===null||I(n)?!o||i!==a?x(n):(e.exit(`tableDelimiterRow`),e.exit(`tableHead`),t(n)):x(n)}function x(e){return n(e)}function S(t){return e.enter(`tableRow`),C(t)}function C(n){return n===124?(e.enter(`tableCellDivider`),e.consume(n),e.exit(`tableCellDivider`),C):n===null||I(n)?(e.exit(`tableRow`),t(n)):R(n)?z(e,C,`whitespace`)(n):(e.enter(`data`),w(n))}function w(t){return t===null||t===124||L(t)?(e.exit(`data`),C(t)):(e.consume(t),t===92?T:w)}function T(t){return t===92||t===124?(e.consume(t),w):w(t)}}function Tl(e,t){let n=-1,r=!0,i=0,a=[0,0,0,0],o=[0,0,0,0],s=!1,c=0,l,u,d,f=new bl;for(;++n<e.length;){let p=e[n],m=p[1];p[0]===`enter`?m.type===`tableHead`?(s=!1,c!==0&&(Dl(f,t,c,l,u),u=void 0,c=0),l={type:`table`,start:Object.assign({},m.start),end:Object.assign({},m.end)},f.add(n,0,[[`enter`,l,t]])):m.type===`tableRow`||m.type===`tableDelimiterRow`?(r=!0,d=void 0,a=[0,0,0,0],o=[0,n+1,0,0],s&&(s=!1,u={type:`tableBody`,start:Object.assign({},m.start),end:Object.assign({},m.end)},f.add(n,0,[[`enter`,u,t]])),i=m.type===`tableDelimiterRow`?2:u?3:1):i&&(m.type===`data`||m.type===`tableDelimiterMarker`||m.type===`tableDelimiterFiller`)?(r=!1,o[2]===0&&(a[1]!==0&&(o[0]=o[1],d=El(f,t,a,i,void 0,d),a=[0,0,0,0]),o[2]=n)):m.type===`tableCellDivider`&&(r?r=!1:(a[1]!==0&&(o[0]=o[1],d=El(f,t,a,i,void 0,d)),a=o,o=[a[1],n,0,0])):m.type===`tableHead`?(s=!0,c=n):m.type===`tableRow`||m.type===`tableDelimiterRow`?(c=n,a[1]===0?o[1]!==0&&(d=El(f,t,o,i,n,d)):(o[0]=o[1],d=El(f,t,a,i,n,d)),i=0):i&&(m.type===`data`||m.type===`tableDelimiterMarker`||m.type===`tableDelimiterFiller`)&&(o[3]=n)}for(c!==0&&Dl(f,t,c,l,u),f.consume(t.events),n=-1;++n<t.events.length;){let e=t.events[n];e[0]===`enter`&&e[1].type===`table`&&(e[1]._align=Sl(t.events,n))}return e}function El(e,t,n,r,i,a){let o=r===1?`tableHeader`:r===2?`tableDelimiter`:`tableData`;n[0]!==0&&(a.end=Object.assign({},Ol(t.events,n[0])),e.add(n[0],0,[[`exit`,a,t]]));let s=Ol(t.events,n[1]);if(a={type:o,start:Object.assign({},s),end:Object.assign({},s)},e.add(n[1],0,[[`enter`,a,t]]),n[2]!==0){let i=Ol(t.events,n[2]),a=Ol(t.events,n[3]),o={type:`tableContent`,start:Object.assign({},i),end:Object.assign({},a)};if(e.add(n[2],0,[[`enter`,o,t]]),r!==2){let r=t.events[n[2]],i=t.events[n[3]];if(r[1].end=Object.assign({},i[1].end),r[1].type=`chunkText`,r[1].contentType=`text`,n[3]>n[2]+1){let t=n[2]+1,r=n[3]-n[2]-1;e.add(t,r,[])}}e.add(n[3]+1,0,[[`exit`,o,t]])}return i!==void 0&&(a.end=Object.assign({},Ol(t.events,i)),e.add(i,0,[[`exit`,a,t]]),a=void 0),a}function Dl(e,t,n,r,i){let a=[],o=Ol(t.events,n);i&&(i.end=Object.assign({},o),a.push([`exit`,i,t])),r.end=Object.assign({},o),a.push([`exit`,r,t]),e.add(n+1,0,a)}function Ol(e,t){let n=e[t],r=n[0]===`enter`?`start`:`end`;return n[1][r]}var kl={name:`tasklistCheck`,tokenize:jl};function Al(){return{text:{91:kl}}}function jl(e,t,n){let r=this;return i;function i(t){return r.previous!==null||!r._gfmTasklistFirstContentOfListItem?n(t):(e.enter(`taskListCheck`),e.enter(`taskListCheckMarker`),e.consume(t),e.exit(`taskListCheckMarker`),a)}function a(t){return L(t)?(e.enter(`taskListCheckValueUnchecked`),e.consume(t),e.exit(`taskListCheckValueUnchecked`),o):t===88||t===120?(e.enter(`taskListCheckValueChecked`),e.consume(t),e.exit(`taskListCheckValueChecked`),o):n(t)}function o(t){return t===93?(e.enter(`taskListCheckMarker`),e.consume(t),e.exit(`taskListCheckMarker`),e.exit(`taskListCheck`),s):n(t)}function s(r){return I(r)?t(r):R(r)?e.check({tokenize:Ml},t,n)(r):n(r)}}function Ml(e,t,n){return z(e,r,`whitespace`);function r(e){return e===null?n(e):t(e)}}function Nl(e){return Bt([Xc(),dl(),yl(e),Cl(),Al()])}var Pl={};function Fl(e){let t=this,n=e||Pl,r=t.data(),i=r.micromarkExtensions||=[],a=r.fromMarkdownExtensions||=[],o=r.toMarkdownExtensions||=[];i.push(Nl(n)),a.push(zc()),o.push(Bc(n))}var Il={cancelled:`Đã dừng`,length:`Bị cắt ở trần độ dài`};function Ll({chu:e,dangChay:t}){let[n,r]=(0,v.useState)(!1),i=(0,v.useId)();return e.trim()?(0,O.jsxs)(`div`,{className:`ltc-suyluan`,children:[(0,O.jsxs)(`button`,{type:`button`,className:`ltc-suyluan__nut`,"aria-expanded":n,"aria-controls":i,onClick:()=>r(e=>!e),children:[(0,O.jsx)(`span`,{"aria-hidden":`true`,children:n?`▾`:`▸`}),` `,t?`Đang suy nghĩ…`:`Suy luận`]}),(0,O.jsx)(`div`,{id:i,role:`group`,"aria-label":`Suy luận`,hidden:!n,children:(0,O.jsx)(`pre`,{className:`ltc-suyluan__chu`,children:e})})]}):null}function Rl({khoi:e,duongTaiSan:t,cuaNguoiDung:n}){let r=e.filter(e=>e.type===`image`||e.type===`audio`);return r.length?(0,O.jsx)(`div`,{className:`ltc-taisan`,children:r.map((e,r)=>e.type===`image`?(0,O.jsx)(`a`,{href:t(String(e.key)),target:`_blank`,rel:`noreferrer`,children:(0,O.jsx)(`img`,{className:`ltc-taisan__anh`,src:t(String(e.key)),alt:n?`Ảnh ${r+1} bạn đã gửi`:`Ảnh ${r+1} do ChatLTT tạo`,loading:`lazy`})},r):(0,O.jsx)(`audio`,{className:`ltc-taisan__am`,controls:!0,preload:`none`,src:t(String(e.key)),children:`Trình duyệt không phát được tệp âm thanh này.`},r))}):null}function K({m:e,phang:t,onChuyenNhanh:n,onTaoLai:r,onSuaGuiLai:i,duongTaiSan:a,onDocTo:o}){let s=T(t,e),c=s.findIndex(t=>t.id===e.id),l=e.status===`streaming`||e.status===`queued`,u=ee(e),d=D(e),f=e.blocks.find(e=>e.type===`error`),p=e.blocks.find(e=>e.type===`status`),m=l&&e.execution?.mode===`job`,h=e.execution?.usage?.progress??null;return(0,O.jsxs)(`article`,{className:`ltc-tin ltc-tin--${e.role}`,"data-trang-thai":e.status,"aria-label":`${e.role===`user`?`Bạn`:`ChatLTT`} nói`,children:[(0,O.jsx)(`div`,{className:`ltc-tin__vai`,"aria-hidden":`true`,children:e.role===`user`?`Bạn`:`ChatLTT`}),e.role===`assistant`&&(0,O.jsx)(Ll,{chu:d,dangChay:l}),(0,O.jsxs)(`div`,{className:`ltc-tin__chu`,children:[e.role===`user`?(0,O.jsx)(`p`,{className:`ltc-tin__tho`,children:u}):(0,O.jsx)(Ao,{remarkPlugins:[Fl,Ho],children:u}),l&&!u&&!m&&(0,O.jsx)(`span`,{className:`ltc-nhipdap`,"aria-label":`Đang trả lời`})]}),m&&(0,O.jsxs)(`p`,{className:`ltc-tin__nhan`,role:`status`,children:[`Đang tạo… `,h==null?``:`${h}%`]}),a&&(0,O.jsx)(Rl,{khoi:e.blocks,duongTaiSan:a,cuaNguoiDung:e.role===`user`}),f&&(0,O.jsx)(`p`,{className:`ltc-tin__loi`,role:`alert`,children:String(f.text||f.code||`Có lỗi xảy ra.`)}),p&&(0,O.jsx)(`p`,{className:`ltc-tin__nhan`,children:Il[String(p.code)]??String(p.code)}),(0,O.jsxs)(`div`,{className:`ltc-tin__thanhcong`,children:[s.length>1&&(0,O.jsxs)(`nav`,{className:`ltc-nhanh`,"aria-label":`Chuyển nhánh`,children:[(0,O.jsx)(`button`,{type:`button`,"aria-label":`Nhánh trước`,disabled:c<=0,onClick:()=>n(e,c-1),children:`‹`}),(0,O.jsxs)(`span`,{role:`status`,"aria-live":`polite`,"aria-atomic":`true`,children:[c+1,` / `,s.length]}),(0,O.jsx)(`button`,{type:`button`,"aria-label":`Nhánh sau`,disabled:c>=s.length-1,onClick:()=>n(e,c+1),children:`›`})]}),e.role===`assistant`&&!l&&e.execution?.mode!==`job`&&(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut--nho`,onClick:()=>r(e),children:`Tạo lại`}),e.role===`assistant`&&!l&&o&&u.trim()&&(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut--nho`,onClick:()=>o(e,u),children:`Đọc to`}),e.role===`user`&&(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut--nho`,onClick:()=>i(e),children:`Sửa và gửi lại`})]})]})}var q={ban:`Model đang bận. Thử lại sau ít giây.`,het_credit:`Không đủ credit cho lượt này.`,qua_dai:`Hội thoại vượt trần ngữ cảnh. Bắt đầu hội thoại mới hoặc rút ngắn câu hỏi.`,khong_mo_duoc:`Không gọi được model lúc này.`,khong_tim_thay:`Không tìm thấy.`,csrf:`Phiên đã cũ. Tải lại trang.`,tham_so:`Nội dung không hợp lệ.`};function J(e){return e instanceof b?q[e.code]??e.message??e.code:`Có lỗi xảy ra.`}function Y(){return typeof window>`u`?null:window.location.hash.replace(/^#/,``).trim()||null}function X(){typeof window>`u`||window.history.replaceState(null,``,window.location.pathname+window.location.search)}function zl({api:e}){let[t,n]=(0,v.useState)([]),[r,i]=(0,v.useState)([]),[a,o]=(0,v.useState)(``),[s,c]=(0,v.useState)(Y),[l,u]=(0,v.useState)(null),[d,f]=(0,v.useState)(``),[p,m]=(0,v.useState)(``),[h,g]=(0,v.useState)(null),[_,y]=(0,v.useState)(null),[b,x]=(0,v.useState)(``),C=(0,v.useRef)(null),T=(0,v.useRef)(null),ee=(0,v.useRef)(null),D=(0,v.useRef)(null),te=(0,v.useRef)(!1),ie=(0,v.useMemo)(()=>t.find(e=>e.ten===`text.chat`),[t]),ae=(0,v.useMemo)(()=>Object.keys(ie?.models??{}),[ie]);(0,v.useEffect)(()=>{e.danhMuc().then(e=>{n(e.nang_luc);let t=e.nang_luc.find(e=>e.ten===`text.chat`),r=t?.model_mac_dinh||Object.keys(t?.models??{})[0]||``;f(e=>e||r)}).catch(e=>m(J(e)))},[e]);let oe=(0,v.useCallback)(()=>{e.soDu().then(e=>y(e.credit)).catch(()=>{})},[e]);(0,v.useEffect)(()=>{oe()},[oe]);let k=(0,v.useCallback)(()=>{e.lietKe(a).then(e=>i(e.hoi_thoai)).catch(()=>{})},[e,a]);(0,v.useEffect)(()=>{k()},[k]);let A=(0,v.useCallback)(async t=>{let n=await e.suThat(t);return u(n),n.conversation.model_alias&&f(n.conversation.model_alias),n},[e]);(0,v.useEffect)(()=>{if(e.convHienTai=s??``,!s){u(null);return}A(s).catch(e=>{m(J(e)),X(),c(null)})},[e,s,A]),(0,v.useEffect)(()=>{if(typeof window>`u`)return;let e=s?`#${s}`:``;window.location.hash!==e&&window.history.replaceState(null,``,window.location.pathname+window.location.search+e)},[s]),(0,v.useEffect)(()=>{if(typeof window>`u`)return;let e=()=>c(Y());return window.addEventListener(`hashchange`,e),()=>window.removeEventListener(`hashchange`,e)},[]),(0,v.useEffect)(()=>{let t=(l?.messages??[]).filter(e=>e.execution?.mode===`job`&&(e.status===`queued`||e.status===`streaming`));if(!t.length||!s)return;let n=!1,r=window.setInterval(async()=>{if(!n)try{await Promise.all(t.map(t=>e.trangThai(t.execution.id))),await A(s),oe()}catch{}},2e3);return()=>{n=!0,window.clearInterval(r)}},[e,s,l,A,oe]),(0,v.useEffect)(()=>{let e=e=>{let t=e.ctrlKey||e.metaKey;if(t&&e.shiftKey&&(e.key===`o`||e.key===`O`)){e.preventDefault(),c(null),u(null),C.current?.focus();return}if(t&&e.shiftKey&&(e.key===`x`||e.key===`X`)){if(!h)return;e.preventDefault(),T.current?.();return}e.shiftKey&&e.key===`Escape`&&(e.preventDefault(),C.current?.focus())};return window.addEventListener(`keydown`,e),()=>window.removeEventListener(`keydown`,e)},[h]),(0,v.useEffect)(()=>{te.current||D.current?.scrollIntoView({behavior:`instant`,block:`end`})},[l]);let se=(0,v.useCallback)(async(t,n)=>{ee.current?.abort();let r=new AbortController;ee.current=r,g(t),te.current=!1;try{await S(e.duongStream(t),e=>{e.type!==`snapshot`&&e.type!==`end`&&u(n=>{if(!n)return n;let r=n.messages.map(n=>{if(n.execution_id!==t||!n.execution)return n;let r={...n.execution};return e.type===`response.delta`?r.partial_text+=String(e.data.text??``):e.type===`reasoning.delta`&&(r.reasoning_text+=String(e.data.text??``)),{...n,execution:r}});return{...n,messages:r}})},r.signal)}catch(e){r.signal.aborted||m(J(e))}finally{g(null),await A(n).catch(()=>{}),k(),oe()}},[e,A,k,oe]),ce=(0,v.useMemo)(()=>!!(ie?.models?.[d])?.constraints?.reads_images,[ie,d]),le=(0,v.useCallback)(async t=>({key:(await e.taiAnh(t)).key,ten:t.name}),[e]),ue=(0,v.useCallback)(async t=>{m(``);let n=s;try{if(!n){let t=await e.taoHoiThoai(d);n=t.id,c(t.id)}let r=await e.guiLuot(n,{...t,modelAlias:d});await A(n),se(r.execution_id,n)}catch(e){m(J(e))}},[e,d,s,A,se]),de=(0,v.useCallback)(async()=>{if(h){try{await e.dung(h)}catch(e){m(J(e))}ee.current?.abort()}},[e,h]);(0,v.useEffect)(()=>{T.current=de},[de]);let j=(0,v.useCallback)(async(t,n)=>{if(!s||!l)return;let r=E(l.messages,t,n);if(r)try{await e.chonLa(s,r),await A(s)}catch(e){m(J(e))}},[e,s,l,A,oe]),M=(0,v.useMemo)(()=>l?w(l.messages,l.conversation.current_leaf_id):[],[l]),fe=ie?.san_sang!==`san_sang`,pe=t.some(e=>e.phuong_thuc===`audio`&&e.san_sang===`san_sang`);return(0,O.jsxs)(`div`,{className:`ltc`,children:[(0,O.jsxs)(`aside`,{className:`ltc-ben`,"aria-label":`Hội thoại`,children:[(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut ltc-nut--moi`,onClick:()=>{c(null),u(null)},children:`+ Hội thoại mới`}),(0,O.jsx)(`input`,{className:`ltc-tim`,type:`search`,value:a,placeholder:`Tìm hội thoại…`,"aria-label":`Tìm hội thoại`,onChange:e=>o(e.target.value)}),(0,O.jsx)(`ul`,{className:`ltc-ds`,children:r.map(e=>(0,O.jsx)(`li`,{children:(0,O.jsx)(`button`,{type:`button`,className:`ltc-ds__muc${e.id===s?` la-dang-xem`:``}`,"aria-current":e.id===s?`true`:void 0,onClick:()=>c(e.id),children:e.title||`Hội thoại mới`})},e.id))})]}),(0,O.jsxs)(`main`,{className:`ltc-chinh`,children:[(0,O.jsxs)(`header`,{className:`ltc-dinh`,children:[(0,O.jsxs)(`label`,{className:`ltc-model`,children:[(0,O.jsx)(`span`,{children:`Model`}),(0,O.jsx)(`select`,{value:d,"aria-label":`Chọn model`,onChange:e=>f(e.target.value),children:ae.map(e=>(0,O.jsx)(`option`,{value:e,children:e},e))})]}),fe&&(0,O.jsx)(`span`,{className:`ltc-chip ltc-chip--tat`,role:`status`,children:`Model chưa sẵn sàng`}),_!=null&&(0,O.jsxs)(`span`,{className:`ltc-sodu`,role:`status`,"aria-live":`polite`,"aria-label":`Số dư ${_} credit`,children:[`💎 `,_.toLocaleString(`vi-VN`),` credit`]})]}),(0,O.jsxs)(`div`,{className:`ltc-luong`,onScroll:e=>{let t=e.currentTarget;te.current=t.scrollHeight-t.scrollTop-t.clientHeight>120},children:[M.length===0&&(0,O.jsx)(`p`,{className:`ltc-trong`,children:`Bắt đầu bằng một câu hỏi.`}),M.map(t=>(0,O.jsx)(K,{m:t,phang:l?.messages??[],onChuyenNhanh:j,duongTaiSan:t=>e.duongTaiSan(t),onDocTo:pe?(e,t)=>x(t):void 0,onTaoLai:e=>ue({taoLaiCua:e.id}),onSuaGuiLai:e=>{let t=window.prompt(`Sửa câu hỏi`,e.blocks.filter(e=>e.type===`text`).map(e=>e.text).join(`
-`));t!=null&&t.trim()&&ue({text:t,parentId:e.parent_id})}},t.id)),(0,O.jsx)(`div`,{ref:D})]}),s&&(0,O.jsx)(re,{api:e,nangLuc:t,onXong:()=>{A(s).catch(()=>{}),oe()},onLoi:m,chuDocTo:b,onDaNhanChuDocTo:()=>x(``)}),p&&(0,O.jsx)(`p`,{className:`ltc-loi`,role:`alert`,children:p}),(0,O.jsx)(ne,{oRef:C,onGui:(e,t)=>ue({text:e,anh:t}),dangChay:h!=null,onDung:de,vohieu:fe,goiY:fe?`Model chưa sẵn sàng`:void 0,docAnh:ce,onTaiAnh:le})]})]})}function Bl(e,t){let n=t.split(`/`)[1]??``,r=e.indexOf(`/${n}`);return r>0?e.slice(0,r):``}var Vl=document.getElementById(`chatltt-root`);if(Vl){let e=Vl.dataset.api??`/chatltt/api`,t=new x(Bl(window.location.pathname,e)+e,Vl.dataset.csrf??``);(0,y.createRoot)(Vl).render((0,O.jsx)(v.StrictMode,{children:(0,O.jsx)(zl,{api:t})}))}
+`))}function c(e,t,n,r){let i=n.enter(`tableCell`),o=n.enter(`phrasing`),s=n.containerPhrasing(e,{...r,before:a,after:a});return o(),i(),s}function l(e,t){return Os(e,{align:t,alignDelimiters:r,padding:n,stringLength:i})}function u(e,t,n){let r=e.children,i=-1,a=[],o=t.enter(`table`);for(;++i<r.length;)a[i]=d(r[i],t,n);return o(),a}function d(e,t,n){let r=e.children,i=-1,a=[],o=t.enter(`tableRow`);for(;++i<r.length;)a[i]=c(r[i],e,t,n);return o(),a}function f(e,t,n){let r=Tc.inlineCode(e,t,n);return n.stack.includes(`tableCell`)&&(r=r.replace(/\|/g,`\\$&`)),r}}function Fc(){return{exit:{taskListCheckValueChecked:Lc,taskListCheckValueUnchecked:Lc,paragraph:W}}}function Ic(){return{unsafe:[{atBreak:!0,character:`-`,after:`[:|-]`}],handlers:{listItem:Rc}}}function Lc(e){let t=this.stack[this.stack.length-2];t.type,t.checked=e.type===`taskListCheckValueChecked`}function W(e){let t=this.stack[this.stack.length-2];if(t&&t.type===`listItem`&&typeof t.checked==`boolean`){let e=this.stack[this.stack.length-1];e.type;let n=e.children[0];if(n&&n.type===`text`){let r=t.children,i=-1,a;for(;++i<r.length;){let e=r[i];if(e.type===`paragraph`){a=e;break}}a===e&&(n.value=n.value.slice(1),n.value.length===0?e.children.shift():e.position&&n.position&&typeof n.position.start.offset==`number`&&(n.position.start.column++,n.position.start.offset++,e.position.start=Object.assign({},n.position.start)))}}this.exit(e)}function Rc(e,t,n,r){let i=e.children[0],a=typeof e.checked==`boolean`&&i&&i.type===`paragraph`,o=`[`+(e.checked?`x`:` `)+`] `,s=n.createTracker(r);a&&s.move(o);let c=Tc.listItem(e,t,n,{...r,...s.current()});return a&&(c=c.replace(/^(?:[*+-]|\d+\.)([\r\n]| {1,3})/,l)),c;function l(e){return e+o}}function zc(){return[Ko(),gs(),xs(),Ec(),Fc()]}function Bc(e){return{extensions:[qo(),_s(e),Ss(),Pc(e),Ic()]}}var Vc={tokenize:tl,partial:!0},Hc={tokenize:nl,partial:!0},Uc={tokenize:rl,partial:!0},Wc={tokenize:il,partial:!0},Gc={tokenize:al,partial:!0},Kc={name:`wwwAutolink`,tokenize:$c,previous:ol},qc={name:`protocolAutolink`,tokenize:el,previous:sl},Jc={name:`emailAutolink`,tokenize:Qc,previous:G},Yc={};function Xc(){return{text:Yc}}for(var Zc=48;Zc<123;)Yc[Zc]=Jc,Zc++,Zc===58?Zc=65:Zc===91&&(Zc=97);Yc[43]=Jc,Yc[45]=Jc,Yc[46]=Jc,Yc[95]=Jc,Yc[72]=[Jc,qc],Yc[104]=[Jc,qc],Yc[87]=[Jc,Kc],Yc[119]=[Jc,Kc];function Qc(e,t,n){let r=this,i,a;return o;function o(t){return!cl(t)||!G.call(r,r.previous)||ll(r.events)?n(t):(e.enter(`literalAutolink`),e.enter(`literalAutolinkEmail`),s(t))}function s(t){return cl(t)?(e.consume(t),s):t===64?(e.consume(t),c):n(t)}function c(t){return t===46?e.check(Gc,u,l)(t):t===45||t===95||Kt(t)?(a=!0,e.consume(t),c):u(t)}function l(t){return e.consume(t),i=!0,c}function u(o){return a&&i&&Gt(r.previous)?(e.exit(`literalAutolinkEmail`),e.exit(`literalAutolink`),t(o)):n(o)}}function $c(e,t,n){let r=this;return i;function i(t){return t!==87&&t!==119||!ol.call(r,r.previous)||ll(r.events)?n(t):(e.enter(`literalAutolink`),e.enter(`literalAutolinkWww`),e.check(Vc,e.attempt(Hc,e.attempt(Uc,a),n),n)(t))}function a(n){return e.exit(`literalAutolinkWww`),e.exit(`literalAutolink`),t(n)}}function el(e,t,n){let r=this,i=``,a=!1;return o;function o(t){return(t===72||t===104)&&sl.call(r,r.previous)&&!ll(r.events)?(e.enter(`literalAutolink`),e.enter(`literalAutolinkHttp`),i+=String.fromCodePoint(t),e.consume(t),s):n(t)}function s(t){if(Gt(t)&&i.length<5)return i+=String.fromCodePoint(t),e.consume(t),s;if(t===58){let n=i.toLowerCase();if(n===`http`||n===`https`)return e.consume(t),c}return n(t)}function c(t){return t===47?(e.consume(t),a?l:(a=!0,c)):n(t)}function l(t){return t===null||Jt(t)||L(t)||$t(t)||Qt(t)?n(t):e.attempt(Hc,e.attempt(Uc,u),n)(t)}function u(n){return e.exit(`literalAutolinkHttp`),e.exit(`literalAutolink`),t(n)}}function tl(e,t,n){let r=0;return i;function i(t){return(t===87||t===119)&&r<3?(r++,e.consume(t),i):t===46&&r===3?(e.consume(t),a):n(t)}function a(e){return e===null?n(e):t(e)}}function nl(e,t,n){let r,i,a;return o;function o(t){return t===46||t===95?e.check(Wc,c,s)(t):t===null||L(t)||$t(t)||t!==45&&Qt(t)?c(t):(a=!0,e.consume(t),o)}function s(t){return t===95?r=!0:(i=r,r=void 0),e.consume(t),o}function c(e){return i||r||!a?n(e):t(e)}}function rl(e,t){let n=0,r=0;return i;function i(o){return o===40?(n++,e.consume(o),i):o===41&&r<n?a(o):o===33||o===34||o===38||o===39||o===41||o===42||o===44||o===46||o===58||o===59||o===60||o===63||o===93||o===95||o===126?e.check(Wc,t,a)(o):o===null||L(o)||$t(o)?t(o):(e.consume(o),i)}function a(t){return t===41&&r++,e.consume(t),i}}function il(e,t,n){return r;function r(o){return o===33||o===34||o===39||o===41||o===42||o===44||o===46||o===58||o===59||o===63||o===95||o===126?(e.consume(o),r):o===38?(e.consume(o),a):o===93?(e.consume(o),i):o===60||o===null||L(o)||$t(o)?t(o):n(o)}function i(e){return e===null||e===40||e===91||L(e)||$t(e)?t(e):r(e)}function a(e){return Gt(e)?o(e):n(e)}function o(t){return t===59?(e.consume(t),r):Gt(t)?(e.consume(t),o):n(t)}}function al(e,t,n){return r;function r(t){return e.consume(t),i}function i(e){return Kt(e)?n(e):t(e)}}function ol(e){return e===null||e===40||e===42||e===95||e===91||e===93||e===126||L(e)}function sl(e){return!Gt(e)}function G(e){return!(e===47||cl(e))}function cl(e){return e===43||e===45||e===46||e===95||Kt(e)}function ll(e){let t=e.length,n=!1;for(;t--;){let r=e[t][1];if((r.type===`labelLink`||r.type===`labelImage`)&&!r._balanced){n=!0;break}if(r._gfmAutolinkLiteralWalkedInto){n=!1;break}}return e.length>0&&!n&&(e[e.length-1][1]._gfmAutolinkLiteralWalkedInto=!0),n}var ul={tokenize:vl,partial:!0};function dl(){return{document:{91:{name:`gfmFootnoteDefinition`,tokenize:hl,continuation:{tokenize:gl},exit:_l}},text:{91:{name:`gfmFootnoteCall`,tokenize:ml},93:{name:`gfmPotentialFootnoteCall`,add:`after`,tokenize:fl,resolveTo:pl}}}}function fl(e,t,n){let r=this,i=r.events.length,a=r.parser.gfmFootnotes||(r.parser.gfmFootnotes=[]),o;for(;i--;){let e=r.events[i][1];if(e.type===`labelImage`){o=e;break}if(e.type===`gfmFootnoteCall`||e.type===`labelLink`||e.type===`label`||e.type===`image`||e.type===`link`)break}return s;function s(i){if(!o||!o._balanced)return n(i);let s=Wt(r.sliceSerialize({start:o.end,end:r.now()}));return s.codePointAt(0)!==94||!a.includes(s.slice(1))?n(i):(e.enter(`gfmFootnoteCallLabelMarker`),e.consume(i),e.exit(`gfmFootnoteCallLabelMarker`),t(i))}}function pl(e,t){let n=e.length;for(;n--;)if(e[n][1].type===`labelImage`&&e[n][0]===`enter`){e[n][1];break}e[n+1][1].type=`data`,e[n+3][1].type=`gfmFootnoteCallLabelMarker`;let r={type:`gfmFootnoteCall`,start:Object.assign({},e[n+3][1].start),end:Object.assign({},e[e.length-1][1].end)},i={type:`gfmFootnoteCallMarker`,start:Object.assign({},e[n+3][1].end),end:Object.assign({},e[n+3][1].end)};i.end.column++,i.end.offset++,i.end._bufferIndex++;let a={type:`gfmFootnoteCallString`,start:Object.assign({},i.end),end:Object.assign({},e[e.length-1][1].start)},o={type:`chunkString`,contentType:`string`,start:Object.assign({},a.start),end:Object.assign({},a.end)},s=[e[n+1],e[n+2],[`enter`,r,t],e[n+3],e[n+4],[`enter`,i,t],[`exit`,i,t],[`enter`,a,t],[`enter`,o,t],[`exit`,o,t],[`exit`,a,t],e[e.length-2],e[e.length-1],[`exit`,r,t]];return e.splice(n,e.length-n+1,...s),e}function ml(e,t,n){let r=this,i=r.parser.gfmFootnotes||(r.parser.gfmFootnotes=[]),a=0,o;return s;function s(t){return e.enter(`gfmFootnoteCall`),e.enter(`gfmFootnoteCallLabelMarker`),e.consume(t),e.exit(`gfmFootnoteCallLabelMarker`),c}function c(t){return t===94?(e.enter(`gfmFootnoteCallMarker`),e.consume(t),e.exit(`gfmFootnoteCallMarker`),e.enter(`gfmFootnoteCallString`),e.enter(`chunkString`).contentType=`string`,l):n(t)}function l(s){if(a>999||s===93&&!o||s===null||s===91||L(s))return n(s);if(s===93){e.exit(`chunkString`);let a=e.exit(`gfmFootnoteCallString`);return i.includes(Wt(r.sliceSerialize(a)))?(e.enter(`gfmFootnoteCallLabelMarker`),e.consume(s),e.exit(`gfmFootnoteCallLabelMarker`),e.exit(`gfmFootnoteCall`),t):n(s)}return L(s)||(o=!0),a++,e.consume(s),s===92?u:l}function u(t){return t===91||t===92||t===93?(e.consume(t),a++,l):l(t)}}function hl(e,t,n){let r=this,i=r.parser.gfmFootnotes||(r.parser.gfmFootnotes=[]),a,o=0,s;return c;function c(t){return e.enter(`gfmFootnoteDefinition`)._container=!0,e.enter(`gfmFootnoteDefinitionLabel`),e.enter(`gfmFootnoteDefinitionLabelMarker`),e.consume(t),e.exit(`gfmFootnoteDefinitionLabelMarker`),l}function l(t){return t===94?(e.enter(`gfmFootnoteDefinitionMarker`),e.consume(t),e.exit(`gfmFootnoteDefinitionMarker`),e.enter(`gfmFootnoteDefinitionLabelString`),e.enter(`chunkString`).contentType=`string`,u):n(t)}function u(t){if(o>999||t===93&&!s||t===null||t===91||L(t))return n(t);if(t===93){e.exit(`chunkString`);let n=e.exit(`gfmFootnoteDefinitionLabelString`);return a=Wt(r.sliceSerialize(n)),e.enter(`gfmFootnoteDefinitionLabelMarker`),e.consume(t),e.exit(`gfmFootnoteDefinitionLabelMarker`),e.exit(`gfmFootnoteDefinitionLabel`),f}return L(t)||(s=!0),o++,e.consume(t),t===92?d:u}function d(t){return t===91||t===92||t===93?(e.consume(t),o++,u):u(t)}function f(t){return t===58?(e.enter(`definitionMarker`),e.consume(t),e.exit(`definitionMarker`),i.includes(a)||i.push(a),z(e,p,`gfmFootnoteDefinitionWhitespace`)):n(t)}function p(e){return t(e)}}function gl(e,t,n){return e.check(_n,t,e.attempt(ul,t,n))}function _l(e){e.exit(`gfmFootnoteDefinition`)}function vl(e,t,n){let r=this;return z(e,i,`gfmFootnoteDefinitionIndent`,5);function i(e){let i=r.events[r.events.length-1];return i&&i[1].type===`gfmFootnoteDefinitionIndent`&&i[2].sliceSerialize(i[1],!0).length===4?t(e):n(e)}}function yl(e){let t=(e||{}).singleTilde,n={name:`strikethrough`,tokenize:i,resolveAll:r};return t??=!0,{text:{126:n},insideSpan:{null:[n]},attentionMarkers:{null:[126]}};function r(e,t){let n=-1;for(;++n<e.length;)if(e[n][0]===`enter`&&e[n][1].type===`strikethroughSequenceTemporary`&&e[n][1]._close){let r=n;for(;r--;)if(e[r][0]===`exit`&&e[r][1].type===`strikethroughSequenceTemporary`&&e[r][1]._open&&e[n][1].end.offset-e[n][1].start.offset===e[r][1].end.offset-e[r][1].start.offset){e[n][1].type=`strikethroughSequence`,e[r][1].type=`strikethroughSequence`;let i={type:`strikethrough`,start:Object.assign({},e[r][1].start),end:Object.assign({},e[n][1].end)},a={type:`strikethroughText`,start:Object.assign({},e[r][1].end),end:Object.assign({},e[n][1].start)},o=[[`enter`,i,t],[`enter`,e[r][1],t],[`exit`,e[r][1],t],[`enter`,a,t]],s=t.parser.constructs.insideSpan.null;s&&Lt(o,o.length,0,un(s,e.slice(r+1,n),t)),Lt(o,o.length,0,[[`exit`,a,t],[`enter`,e[n][1],t],[`exit`,e[n][1],t],[`exit`,i,t]]),Lt(e,r-1,n-r+3,o),n=r+o.length-2;break}}for(n=-1;++n<e.length;)e[n][1].type===`strikethroughSequenceTemporary`&&(e[n][1].type=`data`);return e}function i(e,n,r){let i=this.previous,a=this.events,o=0;return s;function s(t){return i===126&&a[a.length-1][1].type!==`characterEscape`?r(t):(e.enter(`strikethroughSequenceTemporary`),c(t))}function c(a){let s=ln(i);if(a===126)return o>1?r(a):(e.consume(a),o++,c);if(o<2&&!t)return r(a);let l=e.exit(`strikethroughSequenceTemporary`),u=ln(a);return l._open=!u||u===2&&!!s,l._close=!s||s===2&&!!u,n(a)}}}var bl=class{constructor(){this.map=[]}add(e,t,n){xl(this,e,t,n)}consume(e){if(this.map.sort(function(e,t){return e[0]-t[0]}),this.map.length===0)return;let t=this.map.length,n=[];for(;t>0;)--t,n.push(e.slice(this.map[t][0]+this.map[t][1]),this.map[t][2]),e.length=this.map[t][0];n.push(e.slice()),e.length=0;let r=n.pop();for(;r;){for(let t of r)e.push(t);r=n.pop()}this.map.length=0}};function xl(e,t,n,r){let i=0;if(n!==0||r.length!==0){for(;i<e.map.length;){if(e.map[i][0]===t){e.map[i][1]+=n,e.map[i][2].push(...r);return}i+=1}e.map.push([t,n,r])}}function Sl(e,t){let n=!1,r=[];for(;t<e.length;){let i=e[t];if(n){if(i[0]===`enter`)i[1].type===`tableContent`&&r.push(e[t+1][1].type===`tableDelimiterMarker`?`left`:`none`);else if(i[1].type===`tableContent`){if(e[t-1][1].type===`tableDelimiterMarker`){let e=r.length-1;r[e]=r[e]===`left`?`center`:`right`}}else if(i[1].type===`tableDelimiterRow`)break}else i[0]===`enter`&&i[1].type===`tableDelimiterRow`&&(n=!0);t+=1}return r}function Cl(){return{flow:{null:{name:`table`,tokenize:wl,resolveAll:Tl}}}}function wl(e,t,n){let r=this,i=0,a=0,o;return s;function s(e){let t=r.events.length-1;for(;t>-1;){let e=r.events[t][1].type;if(e===`lineEnding`||e===`linePrefix`)t--;else break}let i=t>-1?r.events[t][1].type:null,a=i===`tableHead`||i===`tableRow`?S:c;return a===S&&r.parser.lazy[r.now().line]?n(e):a(e)}function c(t){return e.enter(`tableHead`),e.enter(`tableRow`),l(t)}function l(e){return e===124?u(e):(o=!0,a+=1,u(e))}function u(t){return t===null?n(t):I(t)?a>1?(a=0,r.interrupt=!0,e.exit(`tableRow`),e.enter(`lineEnding`),e.consume(t),e.exit(`lineEnding`),p):n(t):R(t)?z(e,u,`whitespace`)(t):(a+=1,o&&(o=!1,i+=1),t===124?(e.enter(`tableCellDivider`),e.consume(t),e.exit(`tableCellDivider`),o=!0,u):(e.enter(`data`),d(t)))}function d(t){return t===null||t===124||L(t)?(e.exit(`data`),u(t)):(e.consume(t),t===92?f:d)}function f(t){return t===92||t===124?(e.consume(t),d):d(t)}function p(t){return r.interrupt=!1,r.parser.lazy[r.now().line]?n(t):(e.enter(`tableDelimiterRow`),o=!1,R(t)?z(e,m,`linePrefix`,r.parser.constructs.disable.null.includes(`codeIndented`)?void 0:4)(t):m(t))}function m(t){return t===45||t===58?g(t):t===124?(o=!0,e.enter(`tableCellDivider`),e.consume(t),e.exit(`tableCellDivider`),h):x(t)}function h(t){return R(t)?z(e,g,`whitespace`)(t):g(t)}function g(t){return t===58?(a+=1,o=!0,e.enter(`tableDelimiterMarker`),e.consume(t),e.exit(`tableDelimiterMarker`),_):t===45?(a+=1,_(t)):t===null||I(t)?b(t):x(t)}function _(t){return t===45?(e.enter(`tableDelimiterFiller`),v(t)):x(t)}function v(t){return t===45?(e.consume(t),v):t===58?(o=!0,e.exit(`tableDelimiterFiller`),e.enter(`tableDelimiterMarker`),e.consume(t),e.exit(`tableDelimiterMarker`),y):(e.exit(`tableDelimiterFiller`),y(t))}function y(t){return R(t)?z(e,b,`whitespace`)(t):b(t)}function b(n){return n===124?m(n):n===null||I(n)?!o||i!==a?x(n):(e.exit(`tableDelimiterRow`),e.exit(`tableHead`),t(n)):x(n)}function x(e){return n(e)}function S(t){return e.enter(`tableRow`),C(t)}function C(n){return n===124?(e.enter(`tableCellDivider`),e.consume(n),e.exit(`tableCellDivider`),C):n===null||I(n)?(e.exit(`tableRow`),t(n)):R(n)?z(e,C,`whitespace`)(n):(e.enter(`data`),w(n))}function w(t){return t===null||t===124||L(t)?(e.exit(`data`),C(t)):(e.consume(t),t===92?T:w)}function T(t){return t===92||t===124?(e.consume(t),w):w(t)}}function Tl(e,t){let n=-1,r=!0,i=0,a=[0,0,0,0],o=[0,0,0,0],s=!1,c=0,l,u,d,f=new bl;for(;++n<e.length;){let p=e[n],m=p[1];p[0]===`enter`?m.type===`tableHead`?(s=!1,c!==0&&(Dl(f,t,c,l,u),u=void 0,c=0),l={type:`table`,start:Object.assign({},m.start),end:Object.assign({},m.end)},f.add(n,0,[[`enter`,l,t]])):m.type===`tableRow`||m.type===`tableDelimiterRow`?(r=!0,d=void 0,a=[0,0,0,0],o=[0,n+1,0,0],s&&(s=!1,u={type:`tableBody`,start:Object.assign({},m.start),end:Object.assign({},m.end)},f.add(n,0,[[`enter`,u,t]])),i=m.type===`tableDelimiterRow`?2:u?3:1):i&&(m.type===`data`||m.type===`tableDelimiterMarker`||m.type===`tableDelimiterFiller`)?(r=!1,o[2]===0&&(a[1]!==0&&(o[0]=o[1],d=El(f,t,a,i,void 0,d),a=[0,0,0,0]),o[2]=n)):m.type===`tableCellDivider`&&(r?r=!1:(a[1]!==0&&(o[0]=o[1],d=El(f,t,a,i,void 0,d)),a=o,o=[a[1],n,0,0])):m.type===`tableHead`?(s=!0,c=n):m.type===`tableRow`||m.type===`tableDelimiterRow`?(c=n,a[1]===0?o[1]!==0&&(d=El(f,t,o,i,n,d)):(o[0]=o[1],d=El(f,t,a,i,n,d)),i=0):i&&(m.type===`data`||m.type===`tableDelimiterMarker`||m.type===`tableDelimiterFiller`)&&(o[3]=n)}for(c!==0&&Dl(f,t,c,l,u),f.consume(t.events),n=-1;++n<t.events.length;){let e=t.events[n];e[0]===`enter`&&e[1].type===`table`&&(e[1]._align=Sl(t.events,n))}return e}function El(e,t,n,r,i,a){let o=r===1?`tableHeader`:r===2?`tableDelimiter`:`tableData`;n[0]!==0&&(a.end=Object.assign({},Ol(t.events,n[0])),e.add(n[0],0,[[`exit`,a,t]]));let s=Ol(t.events,n[1]);if(a={type:o,start:Object.assign({},s),end:Object.assign({},s)},e.add(n[1],0,[[`enter`,a,t]]),n[2]!==0){let i=Ol(t.events,n[2]),a=Ol(t.events,n[3]),o={type:`tableContent`,start:Object.assign({},i),end:Object.assign({},a)};if(e.add(n[2],0,[[`enter`,o,t]]),r!==2){let r=t.events[n[2]],i=t.events[n[3]];if(r[1].end=Object.assign({},i[1].end),r[1].type=`chunkText`,r[1].contentType=`text`,n[3]>n[2]+1){let t=n[2]+1,r=n[3]-n[2]-1;e.add(t,r,[])}}e.add(n[3]+1,0,[[`exit`,o,t]])}return i!==void 0&&(a.end=Object.assign({},Ol(t.events,i)),e.add(i,0,[[`exit`,a,t]]),a=void 0),a}function Dl(e,t,n,r,i){let a=[],o=Ol(t.events,n);i&&(i.end=Object.assign({},o),a.push([`exit`,i,t])),r.end=Object.assign({},o),a.push([`exit`,r,t]),e.add(n+1,0,a)}function Ol(e,t){let n=e[t],r=n[0]===`enter`?`start`:`end`;return n[1][r]}var kl={name:`tasklistCheck`,tokenize:jl};function Al(){return{text:{91:kl}}}function jl(e,t,n){let r=this;return i;function i(t){return r.previous!==null||!r._gfmTasklistFirstContentOfListItem?n(t):(e.enter(`taskListCheck`),e.enter(`taskListCheckMarker`),e.consume(t),e.exit(`taskListCheckMarker`),a)}function a(t){return L(t)?(e.enter(`taskListCheckValueUnchecked`),e.consume(t),e.exit(`taskListCheckValueUnchecked`),o):t===88||t===120?(e.enter(`taskListCheckValueChecked`),e.consume(t),e.exit(`taskListCheckValueChecked`),o):n(t)}function o(t){return t===93?(e.enter(`taskListCheckMarker`),e.consume(t),e.exit(`taskListCheckMarker`),e.exit(`taskListCheck`),s):n(t)}function s(r){return I(r)?t(r):R(r)?e.check({tokenize:Ml},t,n)(r):n(r)}}function Ml(e,t,n){return z(e,r,`whitespace`);function r(e){return e===null?n(e):t(e)}}function Nl(e){return Bt([Xc(),dl(),yl(e),Cl(),Al()])}var Pl={};function Fl(e){let t=this,n=e||Pl,r=t.data(),i=r.micromarkExtensions||=[],a=r.fromMarkdownExtensions||=[],o=r.toMarkdownExtensions||=[];i.push(Nl(n)),a.push(zc()),o.push(Bc(n))}function Il(e,t){return t?``:e?(e.reasoning_text??``).length>0?`suy_nghi`:(e.seq??0)>0?`chuan_bi`:`xep_hang`:`xep_hang`}var Ll={xep_hang:`Đang xếp hàng…`,chuan_bi:`Đang chuẩn bị…`,suy_nghi:`Đang suy nghĩ`};function Rl({ex:e,daCoChu:t,dangChay:n}){let r=n?Il(e,t):``,[i,a]=(0,v.useState)(0);return(0,v.useEffect)(()=>{if(r!==`suy_nghi`){a(0);return}let e=Date.now(),t=window.setInterval(()=>a(Math.floor((Date.now()-e)/1e3)),1e3);return()=>window.clearInterval(t)},[r]),(0,O.jsx)(`div`,{className:`ltc-trangthai`,"data-trangthai":r||`khong`,style:{visibility:r?`visible`:`hidden`},role:`status`,"aria-live":`polite`,children:(0,O.jsxs)(`span`,{className:`ltc-trangthai__chu`,children:[r?Ll[r]:``,r===`suy_nghi`&&i>0?` ${i} giây…`:``]})})}var K={cancelled:`Đã dừng`,length:`Bị cắt ở trần độ dài`};function q({chu:e,dangChay:t}){let[n,r]=(0,v.useState)(!1),i=(0,v.useId)();return e.trim()?(0,O.jsxs)(`div`,{className:`ltc-suyluan`,children:[(0,O.jsxs)(`button`,{type:`button`,className:`ltc-suyluan__nut`,"aria-expanded":n,"aria-controls":i,onClick:()=>r(e=>!e),children:[(0,O.jsx)(`span`,{"aria-hidden":`true`,children:n?`▾`:`▸`}),` `,t?`Đang suy nghĩ…`:`Suy luận`]}),(0,O.jsx)(`div`,{id:i,role:`group`,"aria-label":`Suy luận`,hidden:!n,children:(0,O.jsx)(`pre`,{className:`ltc-suyluan__chu`,children:e})})]}):null}function J({khoi:e,duongTaiSan:t,cuaNguoiDung:n}){let r=e.filter(e=>e.type===`image`||e.type===`audio`);return r.length?(0,O.jsx)(`div`,{className:`ltc-taisan`,children:r.map((e,r)=>e.type===`image`?(0,O.jsx)(`a`,{href:t(String(e.key)),target:`_blank`,rel:`noreferrer`,children:(0,O.jsx)(`img`,{className:`ltc-taisan__anh`,src:t(String(e.key)),alt:n?`Ảnh ${r+1} bạn đã gửi`:`Ảnh ${r+1} do ChatLTT tạo`,loading:`lazy`})},r):(0,O.jsx)(`audio`,{className:`ltc-taisan__am`,controls:!0,preload:`none`,src:t(String(e.key)),children:`Trình duyệt không phát được tệp âm thanh này.`},r))}):null}function Y({m:e,phang:t,onChuyenNhanh:n,onTaoLai:r,onSuaGuiLai:i,duongTaiSan:a,onDocTo:o}){let s=T(t,e),c=s.findIndex(t=>t.id===e.id),l=e.status===`streaming`||e.status===`queued`,u=ee(e),d=D(e),f=e.blocks.find(e=>e.type===`error`),p=e.blocks.find(e=>e.type===`status`),m=l&&e.execution?.mode===`job`,h=e.execution?.usage?.progress??null;return(0,O.jsxs)(`article`,{className:`ltc-tin ltc-tin--${e.role}`,"data-trang-thai":e.status,"aria-label":`${e.role===`user`?`Bạn`:`ChatLTT`} nói`,children:[(0,O.jsx)(`div`,{className:`ltc-tin__vai`,"aria-hidden":`true`,children:e.role===`user`?`Bạn`:`ChatLTT`}),e.role===`assistant`&&(0,O.jsx)(q,{chu:d,dangChay:l}),(0,O.jsxs)(`div`,{className:`ltc-tin__chu`,children:[e.role===`user`?(0,O.jsx)(`p`,{className:`ltc-tin__tho`,children:u}):(0,O.jsx)(Ao,{remarkPlugins:[Fl,Ho],children:u}),!m&&(0,O.jsx)(Rl,{ex:e.execution,daCoChu:!!u,dangChay:l})]}),m&&(0,O.jsxs)(`p`,{className:`ltc-tin__nhan`,role:`status`,children:[`Đang tạo… `,h==null?``:`${h}%`]}),a&&(0,O.jsx)(J,{khoi:e.blocks,duongTaiSan:a,cuaNguoiDung:e.role===`user`}),f&&(0,O.jsx)(`p`,{className:`ltc-tin__loi`,role:`alert`,children:String(f.text||f.code||`Có lỗi xảy ra.`)}),p&&(0,O.jsx)(`p`,{className:`ltc-tin__nhan`,children:K[String(p.code)]??String(p.code)}),(0,O.jsxs)(`div`,{className:`ltc-tin__thanhcong`,children:[s.length>1&&(0,O.jsxs)(`nav`,{className:`ltc-nhanh`,"aria-label":`Chuyển nhánh`,children:[(0,O.jsx)(`button`,{type:`button`,"aria-label":`Nhánh trước`,disabled:c<=0,onClick:()=>n(e,c-1),children:`‹`}),(0,O.jsxs)(`span`,{role:`status`,"aria-live":`polite`,"aria-atomic":`true`,children:[c+1,` / `,s.length]}),(0,O.jsx)(`button`,{type:`button`,"aria-label":`Nhánh sau`,disabled:c>=s.length-1,onClick:()=>n(e,c+1),children:`›`})]}),e.role===`assistant`&&!l&&e.execution?.mode!==`job`&&(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut--nho`,onClick:()=>r(e),children:`Tạo lại`}),e.role===`assistant`&&!l&&o&&u.trim()&&(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut--nho`,onClick:()=>o(e,u),children:`Đọc to`}),e.role===`user`&&(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut--nho`,onClick:()=>i(e),children:`Sửa và gửi lại`})]})]})}var X={ban:`Model đang bận. Thử lại sau ít giây.`,het_credit:`Không đủ credit cho lượt này.`,qua_dai:`Hội thoại vượt trần ngữ cảnh. Bắt đầu hội thoại mới hoặc rút ngắn câu hỏi.`,khong_mo_duoc:`Không gọi được model lúc này.`,khong_tim_thay:`Không tìm thấy.`,csrf:`Phiên đã cũ. Tải lại trang.`,tham_so:`Nội dung không hợp lệ.`};function zl(e){return e instanceof b?X[e.code]??e.message??e.code:`Có lỗi xảy ra.`}function Bl(){return typeof window>`u`?null:window.location.hash.replace(/^#/,``).trim()||null}function Vl(){typeof window>`u`||window.history.replaceState(null,``,window.location.pathname+window.location.search)}function Hl({api:e}){let[t,n]=(0,v.useState)([]),[r,i]=(0,v.useState)([]),[a,o]=(0,v.useState)(``),[s,c]=(0,v.useState)(Bl),[l,u]=(0,v.useState)(null),[d,f]=(0,v.useState)(``),[p,m]=(0,v.useState)(``),[h,g]=(0,v.useState)(null),[_,y]=(0,v.useState)(null),[b,x]=(0,v.useState)(``),C=(0,v.useRef)(null),T=(0,v.useRef)(null),ee=(0,v.useRef)(null),D=(0,v.useRef)(null),te=(0,v.useRef)(!1),ie=(0,v.useMemo)(()=>t.find(e=>e.ten===`text.chat`),[t]),ae=(0,v.useMemo)(()=>Object.keys(ie?.models??{}),[ie]);(0,v.useEffect)(()=>{e.danhMuc().then(e=>{n(e.nang_luc);let t=e.nang_luc.find(e=>e.ten===`text.chat`),r=t?.model_mac_dinh||Object.keys(t?.models??{})[0]||``;f(e=>e||r)}).catch(e=>m(zl(e)))},[e]);let oe=(0,v.useCallback)(()=>{e.soDu().then(e=>y(e.credit)).catch(()=>{})},[e]);(0,v.useEffect)(()=>{oe()},[oe]);let k=(0,v.useCallback)(()=>{e.lietKe(a).then(e=>i(e.hoi_thoai)).catch(()=>{})},[e,a]);(0,v.useEffect)(()=>{k()},[k]);let A=(0,v.useCallback)(async t=>{let n=await e.suThat(t);return u(n),n.conversation.model_alias&&f(n.conversation.model_alias),n},[e]);(0,v.useEffect)(()=>{if(e.convHienTai=s??``,!s){u(null);return}A(s).catch(e=>{m(zl(e)),Vl(),c(null)})},[e,s,A]),(0,v.useEffect)(()=>{if(typeof window>`u`)return;let e=s?`#${s}`:``;window.location.hash!==e&&window.history.replaceState(null,``,window.location.pathname+window.location.search+e)},[s]),(0,v.useEffect)(()=>{if(typeof window>`u`)return;let e=()=>c(Bl());return window.addEventListener(`hashchange`,e),()=>window.removeEventListener(`hashchange`,e)},[]),(0,v.useEffect)(()=>{let t=(l?.messages??[]).filter(e=>e.execution?.mode===`job`&&(e.status===`queued`||e.status===`streaming`));if(!t.length||!s)return;let n=!1,r=window.setInterval(async()=>{if(!n)try{await Promise.all(t.map(t=>e.trangThai(t.execution.id))),await A(s),oe()}catch{}},2e3);return()=>{n=!0,window.clearInterval(r)}},[e,s,l,A,oe]),(0,v.useEffect)(()=>{let e=e=>{let t=e.ctrlKey||e.metaKey;if(t&&e.shiftKey&&(e.key===`o`||e.key===`O`)){e.preventDefault(),c(null),u(null),C.current?.focus();return}if(t&&e.shiftKey&&(e.key===`x`||e.key===`X`)){if(!h)return;e.preventDefault(),T.current?.();return}e.shiftKey&&e.key===`Escape`&&(e.preventDefault(),C.current?.focus())};return window.addEventListener(`keydown`,e),()=>window.removeEventListener(`keydown`,e)},[h]),(0,v.useEffect)(()=>{te.current||D.current?.scrollIntoView({behavior:`instant`,block:`end`})},[l]);let se=(0,v.useCallback)(async(t,n)=>{ee.current?.abort();let r=new AbortController;ee.current=r,g(t),te.current=!1;try{await S(e.duongStream(t),e=>{e.type!==`snapshot`&&e.type!==`end`&&u(n=>{if(!n)return n;let r=n.messages.map(n=>{if(n.execution_id!==t||!n.execution)return n;let r={...n.execution};return e.type===`response.delta`?r.partial_text+=String(e.data.text??``):e.type===`reasoning.delta`&&(r.reasoning_text+=String(e.data.text??``)),{...n,execution:r}});return{...n,messages:r}})},r.signal)}catch(e){r.signal.aborted||m(zl(e))}finally{g(null),await A(n).catch(()=>{}),k(),oe()}},[e,A,k,oe]),ce=(0,v.useMemo)(()=>!!(ie?.models?.[d])?.constraints?.reads_images,[ie,d]),le=(0,v.useCallback)(async t=>({key:(await e.taiAnh(t)).key,ten:t.name}),[e]),ue=(0,v.useCallback)(async t=>{m(``);let n=s;try{if(!n){let t=await e.taoHoiThoai(d);n=t.id,c(t.id)}let r=await e.guiLuot(n,{...t,modelAlias:d});await A(n),se(r.execution_id,n)}catch(e){m(zl(e))}},[e,d,s,A,se]);(0,v.useEffect)(()=>{if(!s||!l)return;let e=l.messages.find(e=>e.role===`assistant`&&e.status===`streaming`&&e.execution?.mode===`stream`&&e.execution.id);e?.execution&&h!==e.execution.id&&se(e.execution.id,s)},[s,l,h,se]);let de=(0,v.useCallback)(async()=>{if(h){try{await e.dung(h)}catch(e){m(zl(e))}ee.current?.abort()}},[e,h]);(0,v.useEffect)(()=>{T.current=de},[de]);let j=(0,v.useCallback)(async(t,n)=>{if(!s||!l)return;let r=E(l.messages,t,n);if(r)try{await e.chonLa(s,r),await A(s)}catch(e){m(zl(e))}},[e,s,l,A,oe]),M=(0,v.useMemo)(()=>l?w(l.messages,l.conversation.current_leaf_id):[],[l]),fe=ie?.san_sang!==`san_sang`,pe=t.some(e=>e.phuong_thuc===`audio`&&e.san_sang===`san_sang`);return(0,O.jsxs)(`div`,{className:`ltc`,children:[(0,O.jsxs)(`aside`,{className:`ltc-ben`,"aria-label":`Hội thoại`,children:[(0,O.jsx)(`button`,{type:`button`,className:`ltc-nut ltc-nut--moi`,onClick:()=>{c(null),u(null)},children:`+ Hội thoại mới`}),(0,O.jsx)(`input`,{className:`ltc-tim`,type:`search`,value:a,placeholder:`Tìm hội thoại…`,"aria-label":`Tìm hội thoại`,onChange:e=>o(e.target.value)}),(0,O.jsx)(`ul`,{className:`ltc-ds`,children:r.map(e=>(0,O.jsx)(`li`,{children:(0,O.jsx)(`button`,{type:`button`,className:`ltc-ds__muc${e.id===s?` la-dang-xem`:``}`,"aria-current":e.id===s?`true`:void 0,onClick:()=>c(e.id),children:e.title||`Hội thoại mới`})},e.id))})]}),(0,O.jsxs)(`main`,{className:`ltc-chinh`,children:[(0,O.jsxs)(`header`,{className:`ltc-dinh`,children:[(0,O.jsxs)(`label`,{className:`ltc-model`,children:[(0,O.jsx)(`span`,{children:`Model`}),(0,O.jsx)(`select`,{value:d,"aria-label":`Chọn model`,onChange:e=>f(e.target.value),children:ae.map(e=>(0,O.jsx)(`option`,{value:e,children:e},e))})]}),fe&&(0,O.jsx)(`span`,{className:`ltc-chip ltc-chip--tat`,role:`status`,children:`Model chưa sẵn sàng`}),_!=null&&(0,O.jsxs)(`span`,{className:`ltc-sodu`,role:`status`,"aria-live":`polite`,"aria-label":`Số dư ${_} credit`,children:[`💎 `,_.toLocaleString(`vi-VN`),` credit`]})]}),(0,O.jsxs)(`div`,{className:`ltc-luong`,onScroll:e=>{let t=e.currentTarget;te.current=t.scrollHeight-t.scrollTop-t.clientHeight>120},children:[M.length===0&&(0,O.jsx)(`p`,{className:`ltc-trong`,children:`Bắt đầu bằng một câu hỏi.`}),M.map(t=>(0,O.jsx)(Y,{m:t,phang:l?.messages??[],onChuyenNhanh:j,duongTaiSan:t=>e.duongTaiSan(t),onDocTo:pe?(e,t)=>x(t):void 0,onTaoLai:e=>ue({taoLaiCua:e.id}),onSuaGuiLai:e=>{let t=window.prompt(`Sửa câu hỏi`,e.blocks.filter(e=>e.type===`text`).map(e=>e.text).join(`
+`));t!=null&&t.trim()&&ue({text:t,parentId:e.parent_id})}},t.id)),(0,O.jsx)(`div`,{ref:D})]}),s&&(0,O.jsx)(re,{api:e,nangLuc:t,onXong:()=>{A(s).catch(()=>{}),oe()},onLoi:m,chuDocTo:b,onDaNhanChuDocTo:()=>x(``)}),p&&(0,O.jsx)(`p`,{className:`ltc-loi`,role:`alert`,children:p}),(0,O.jsx)(ne,{oRef:C,onGui:(e,t)=>ue({text:e,anh:t}),dangChay:h!=null,onDung:de,vohieu:fe,goiY:fe?`Model chưa sẵn sàng`:void 0,docAnh:ce,onTaiAnh:le})]})]})}function Ul(e,t){let n=t.split(`/`)[1]??``,r=e.indexOf(`/${n}`);return r>0?e.slice(0,r):``}var Wl=document.getElementById(`chatltt-root`);if(Wl){let e=Wl.dataset.api??`/chatltt/api`,t=new x(Ul(window.location.pathname,e)+e,Wl.dataset.csrf??``);(0,y.createRoot)(Wl).render((0,O.jsx)(v.StrictMode,{children:(0,O.jsx)(Hl,{api:t})}))}
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-CC0Jcbpw.css
-SHA256=3b973d24d97667d1082c51302d193dcf99af5ff7eef57981959b8c8f110aaf9f BYTES=7714 LINES=1
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-CRSGR5rx.css
+SHA256=e49861e1be5c2e63a34f21c8fb84fbea0a8729d5813c3aad09257881c4011a3b BYTES=8117 LINES=1
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-.ltc{height:calc(100vh - 190px);min-height:420px;max-height:1000px;color:var(--text-primary);font-family:var(--font);grid-template-rows:minmax(0,1fr);grid-template-columns:280px minmax(0,1fr);gap:0;display:grid}.ltc-ben{border-right:1px solid var(--border-subtle);background:var(--surface-base);flex-direction:column;gap:8px;min-width:0;min-height:0;padding:12px;display:flex}.ltc-tim{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);width:100%;color:var(--text-primary);font:inherit;padding:8px 10px}.ltc-ds{min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto}.ltc-ds__muc{text-align:left;border-radius:var(--radius-sm);width:100%;color:var(--text-secondary);font:inherit;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;background:0 0;border:1px solid #0000;padding:8px 10px;overflow:hidden}.ltc-ds__muc:hover{background:var(--surface-raised);color:var(--text-primary)}.ltc-ds__muc.la-dang-xem{background:var(--surface-interactive);border-color:var(--border-strong);color:var(--text-primary)}.ltc-chinh{background:var(--surface-canvas);grid-template-rows:auto minmax(0,1fr) auto auto auto;min-width:0;min-height:0;display:grid}.ltc-dinh{border-bottom:1px solid var(--border-subtle);align-items:center;gap:12px;padding:10px 16px;display:flex}.ltc-model{color:var(--text-secondary);align-items:center;gap:8px;display:flex}.ltc-model select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-chip{border:1px solid var(--status-warning-border);background:var(--status-warning-soft);color:var(--status-warning);border-radius:999px;padding:3px 10px;font-size:12px}.ltc-luong{scroll-behavior:smooth;flex-direction:column;gap:16px;min-height:0;padding:16px;display:flex;overflow-y:auto}.ltc-trong{color:var(--text-muted);text-align:center;margin-top:15vh}.ltc-tin{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);width:100%;max-width:760px;margin:0 auto;padding:12px 14px}.ltc-tin--user{background:var(--surface-overlay)}.ltc-tin__vai{color:var(--text-muted);margin-bottom:6px;font-size:12px}.ltc-tin__tho{white-space:pre-wrap;margin:0}.ltc-tin__chu{overflow-wrap:anywhere;line-height:1.6}.ltc-tin__chu>:first-child{margin-top:0}.ltc-tin__chu>:last-child{margin-bottom:0}.ltc-tin__chu pre{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px;overflow-x:auto}.ltc-tin__chu code{font-family:var(--mono);font-size:.92em}.ltc-tin__chu table{border-collapse:collapse;display:block;overflow-x:auto}.ltc-tin__chu th,.ltc-tin__chu td{border:1px solid var(--border-subtle);padding:4px 8px}.ltc-tin__loi{border:1px solid var(--status-danger-border);background:var(--status-danger-soft);color:var(--status-danger);border-radius:var(--radius-sm);margin:8px 0 0;padding:8px 10px}.ltc-tin__nhan{color:var(--text-muted);margin:8px 0 0;font-size:13px}.ltc-tin__thanhcong{align-items:center;gap:12px;min-height:24px;margin-top:10px;display:flex}.ltc-nhanh{color:var(--text-secondary);align-items:center;gap:4px;display:flex}.ltc-nhanh button{border:1px solid var(--border-subtle);background:var(--surface-overlay);color:var(--text-primary);border-radius:var(--radius-sm);cursor:pointer;min-width:28px;min-height:28px}.ltc-nhanh button:disabled{opacity:.4;cursor:default}.ltc-nhanh span{text-align:center;min-width:44px;font-size:12px}.ltc-suyluan{margin-bottom:10px}.ltc-suyluan__nut{color:var(--text-muted);font:inherit;cursor:pointer;background:0 0;border:none;padding:0}.ltc-suyluan__chu{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-secondary);white-space:pre-wrap;font-family:var(--mono);margin:6px 0 0;padding:8px 10px;font-size:13px}.ltc-soan{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:flex-end;gap:8px;padding:12px 16px;display:flex}.ltc-soan__anh,.ltc-soan__loi{flex:0 0 100%;margin:0}.ltc-soan__anh{flex-wrap:wrap;gap:6px;padding:0;list-style:none;display:flex}.ltc-soan__anh-mot{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);align-items:center;gap:6px;max-width:100%;padding:4px 6px 4px 10px;font-size:.85rem;display:inline-flex}.ltc-soan__anh-ten{text-overflow:ellipsis;white-space:nowrap;max-width:22ch;overflow:hidden}.ltc-soan__anh-bo{cursor:pointer;color:var(--text-secondary);background:0 0;border:0;padding:2px 4px;font-size:1rem;line-height:1}.ltc-soan__anh-bo:hover{color:var(--text-primary)}.ltc-soan__loi{color:var(--support-error,#da1e28);font-size:.85rem}.ltc-soan__tep{opacity:0;pointer-events:none;width:1px;height:1px;position:absolute}.ltc-soan__o{resize:none;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);color:var(--text-primary);font:inherit;flex:1;max-height:320px;padding:10px 12px;line-height:1.5}.ltc-nut{border:1px solid var(--brand-border);border-radius:var(--radius-md);background:var(--brand-primary);color:#fff;font:inherit;cursor:pointer;padding:10px 16px}.ltc-nut:disabled{opacity:.45;cursor:default}.ltc-nut--dung{background:var(--surface-interactive);border-color:var(--border-strong)}.ltc-nut--moi{width:100%}.ltc-nut--nho{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-overlay);color:var(--text-secondary);font:inherit;cursor:pointer;padding:4px 10px;font-size:13px}.ltc-loi{background:var(--status-danger-soft);color:var(--status-danger);border-top:1px solid var(--status-danger-border);margin:0;padding:8px 16px}.ltc-nhipdap{background:var(--text-muted);width:8px;height:16px;animation:1s steps(2,start) infinite ltc-nhap;display:inline-block}@keyframes ltc-nhap{to{opacity:0}}@media (width<=860px){.ltc{grid-template-rows:auto;grid-template-columns:minmax(0,1fr);height:auto;max-height:none}.ltc-ben{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:220px}.ltc-luong{padding:12px 10px}.ltc-tin{padding:10px 12px}}@media (prefers-reduced-motion:reduce){.ltc-luong{scroll-behavior:auto}.ltc-nhipdap{opacity:.6;animation:none}}.ltc-media{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 16px;display:flex}.ltc-media__o{flex-wrap:wrap;align-items:flex-end;gap:8px;width:100%;display:flex}.ltc-media__o textarea{resize:vertical;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);min-width:220px;color:var(--text-primary);font:inherit;flex:1;padding:8px 10px}.ltc-media__giong{color:var(--text-secondary);align-items:center;gap:6px;display:flex}.ltc-media__giong select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-media__gia{border:1px solid var(--brand-border);background:var(--brand-soft);border-radius:var(--radius-sm);flex-wrap:wrap;align-items:center;gap:10px;width:100%;padding:8px 10px;display:flex}.ltc-lien{color:var(--text-muted);font-size:13px}.ltc-taisan{flex-wrap:wrap;gap:8px;margin-top:10px;display:flex}.ltc-taisan__anh{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-canvas);width:auto;max-width:100%;max-height:45vh;display:block}.ltc-taisan__am{width:100%;max-width:420px}.ltc-sodu{border:1px solid var(--border-subtle);background:var(--surface-raised);color:var(--text-secondary);white-space:nowrap;border-radius:999px;margin-left:auto;padding:3px 10px;font-size:13px}
+.ltc{height:calc(100vh - 190px);min-height:420px;max-height:1000px;color:var(--text-primary);font-family:var(--font);grid-template-rows:minmax(0,1fr);grid-template-columns:280px minmax(0,1fr);gap:0;display:grid}.ltc-ben{border-right:1px solid var(--border-subtle);background:var(--surface-base);flex-direction:column;gap:8px;min-width:0;min-height:0;padding:12px;display:flex}.ltc-tim{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);width:100%;color:var(--text-primary);font:inherit;padding:8px 10px}.ltc-ds{min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto}.ltc-ds__muc{text-align:left;border-radius:var(--radius-sm);width:100%;color:var(--text-secondary);font:inherit;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;background:0 0;border:1px solid #0000;padding:8px 10px;overflow:hidden}.ltc-ds__muc:hover{background:var(--surface-raised);color:var(--text-primary)}.ltc-ds__muc.la-dang-xem{background:var(--surface-interactive);border-color:var(--border-strong);color:var(--text-primary)}.ltc-chinh{background:var(--surface-canvas);grid-template-rows:auto minmax(0,1fr) auto auto auto;min-width:0;min-height:0;display:grid}.ltc-dinh{border-bottom:1px solid var(--border-subtle);align-items:center;gap:12px;padding:10px 16px;display:flex}.ltc-model{color:var(--text-secondary);align-items:center;gap:8px;display:flex}.ltc-model select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-chip{border:1px solid var(--status-warning-border);background:var(--status-warning-soft);color:var(--status-warning);border-radius:999px;padding:3px 10px;font-size:12px}.ltc-luong{scroll-behavior:smooth;flex-direction:column;gap:16px;min-height:0;padding:16px;display:flex;overflow-y:auto}.ltc-trong{color:var(--text-muted);text-align:center;margin-top:15vh}.ltc-tin{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);width:100%;max-width:760px;margin:0 auto;padding:12px 14px}.ltc-tin--user{background:var(--surface-overlay)}.ltc-tin__vai{color:var(--text-muted);margin-bottom:6px;font-size:12px}.ltc-tin__tho{white-space:pre-wrap;margin:0}.ltc-tin__chu{overflow-wrap:anywhere;line-height:1.6}.ltc-tin__chu>:first-child{margin-top:0}.ltc-tin__chu>:last-child{margin-bottom:0}.ltc-tin__chu pre{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px;overflow-x:auto}.ltc-tin__chu code{font-family:var(--mono);font-size:.92em}.ltc-tin__chu table{border-collapse:collapse;display:block;overflow-x:auto}.ltc-tin__chu th,.ltc-tin__chu td{border:1px solid var(--border-subtle);padding:4px 8px}.ltc-tin__loi{border:1px solid var(--status-danger-border);background:var(--status-danger-soft);color:var(--status-danger);border-radius:var(--radius-sm);margin:8px 0 0;padding:8px 10px}.ltc-tin__nhan{color:var(--text-muted);margin:8px 0 0;font-size:13px}.ltc-tin__thanhcong{align-items:center;gap:12px;min-height:24px;margin-top:10px;display:flex}.ltc-nhanh{color:var(--text-secondary);align-items:center;gap:4px;display:flex}.ltc-nhanh button{border:1px solid var(--border-subtle);background:var(--surface-overlay);color:var(--text-primary);border-radius:var(--radius-sm);cursor:pointer;min-width:28px;min-height:28px}.ltc-nhanh button:disabled{opacity:.4;cursor:default}.ltc-nhanh span{text-align:center;min-width:44px;font-size:12px}.ltc-suyluan{margin-bottom:10px}.ltc-suyluan__nut{color:var(--text-muted);font:inherit;cursor:pointer;background:0 0;border:none;padding:0}.ltc-suyluan__chu{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-secondary);white-space:pre-wrap;font-family:var(--mono);margin:6px 0 0;padding:8px 10px;font-size:13px}.ltc-soan{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:flex-end;gap:8px;padding:12px 16px;display:flex}.ltc-soan__anh,.ltc-soan__loi{flex:0 0 100%;margin:0}.ltc-soan__anh{flex-wrap:wrap;gap:6px;padding:0;list-style:none;display:flex}.ltc-soan__anh-mot{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);align-items:center;gap:6px;max-width:100%;padding:4px 6px 4px 10px;font-size:.85rem;display:inline-flex}.ltc-soan__anh-ten{text-overflow:ellipsis;white-space:nowrap;max-width:22ch;overflow:hidden}.ltc-soan__anh-bo{cursor:pointer;color:var(--text-secondary);background:0 0;border:0;padding:2px 4px;font-size:1rem;line-height:1}.ltc-soan__anh-bo:hover{color:var(--text-primary)}.ltc-soan__loi{color:var(--support-error,#da1e28);font-size:.85rem}.ltc-soan__tep{opacity:0;pointer-events:none;width:1px;height:1px;position:absolute}.ltc-soan__o{resize:none;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);color:var(--text-primary);font:inherit;flex:1;max-height:320px;padding:10px 12px;line-height:1.5}.ltc-nut{border:1px solid var(--brand-border);border-radius:var(--radius-md);background:var(--brand-primary);color:#fff;font:inherit;cursor:pointer;padding:10px 16px}.ltc-nut:disabled{opacity:.45;cursor:default}.ltc-nut--dung{background:var(--surface-interactive);border-color:var(--border-strong)}.ltc-nut--moi{width:100%}.ltc-nut--nho{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-overlay);color:var(--text-secondary);font:inherit;cursor:pointer;padding:4px 10px;font-size:13px}.ltc-loi{background:var(--status-danger-soft);color:var(--status-danger);border-top:1px solid var(--status-danger-border);margin:0;padding:8px 16px}.ltc-nhipdap{background:var(--text-muted);width:8px;height:16px;animation:1s steps(2,start) infinite ltc-nhap;display:inline-block}@keyframes ltc-nhap{to{opacity:0}}@media (width<=860px){.ltc{grid-template-rows:auto;grid-template-columns:minmax(0,1fr);height:auto;max-height:none}.ltc-ben{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:220px}.ltc-luong{padding:12px 10px}.ltc-tin{padding:10px 12px}}@media (prefers-reduced-motion:reduce){.ltc-luong{scroll-behavior:auto}.ltc-nhipdap{opacity:.6;animation:none}}.ltc-media{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 16px;display:flex}.ltc-media__o{flex-wrap:wrap;align-items:flex-end;gap:8px;width:100%;display:flex}.ltc-media__o textarea{resize:vertical;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);min-width:220px;color:var(--text-primary);font:inherit;flex:1;padding:8px 10px}.ltc-media__giong{color:var(--text-secondary);align-items:center;gap:6px;display:flex}.ltc-media__giong select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-media__gia{border:1px solid var(--brand-border);background:var(--brand-soft);border-radius:var(--radius-sm);flex-wrap:wrap;align-items:center;gap:10px;width:100%;padding:8px 10px;display:flex}.ltc-lien{color:var(--text-muted);font-size:13px}.ltc-taisan{flex-wrap:wrap;gap:8px;margin-top:10px;display:flex}.ltc-taisan__anh{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-canvas);width:auto;max-width:100%;max-height:45vh;display:block}.ltc-taisan__am{width:100%;max-width:420px}.ltc-sodu{border:1px solid var(--border-subtle);background:var(--surface-raised);color:var(--text-secondary);white-space:nowrap;border-radius:999px;margin-left:auto;padding:3px 10px;font-size:13px}.ltc-trangthai{height:1.5rem;margin:0 0 .25rem;line-height:1.5rem;position:relative}.ltc-trangthai__chu{white-space:nowrap;color:var(--text-secondary);font-size:.9em;position:absolute;top:0;left:0}@media (prefers-reduced-motion:no-preference){.ltc-trangthai:not([data-trangthai=khong]) .ltc-trangthai__chu{animation:1.6s ease-in-out infinite ltc-tho}}@keyframes ltc-tho{0%,to{opacity:.55}50%{opacity:1}}
 
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/build-meta.json
-SHA256=c9a57aab8ae404bbe849fb82570f08ffb887881c3d5f5c567fddc368f9b3034d BYTES=131 LINES=1
+SHA256=ace0c3f97801ef669799d0ebae10abfa52ddfe8b951292a397a73e83dad76589 BYTES=131 LINES=1
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-{"schema":1,"source_sha256":"40921d5c2a98cc572a186186b114debf1fb0eeb528c84504234beeb3ad38ecdf","node":"24.17.0","sourcemap":false}
+{"schema":1,"source_sha256":"f40bb4aef588cb407fa0613be5ae7f5aebd6890f3209d5923a3123df299d914a","node":"24.17.0","sourcemap":false}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -270539,7 +270894,7 @@ def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
-SHA256=d51776d66b2788bafcf7f56ff2d3a18279af52faf383d2dde92fc41c29e831b3 BYTES=25955 LINES=575
+SHA256=7547a7cb6801897d39dccdefe7f914d21944a6420c15ebfe6706be39cffddc2a BYTES=27455 LINES=603
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
 
@@ -270576,7 +270931,23 @@ def _n_truyen_cho_pytest() -> int:
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
     """
-    return gate.loi_cho_bo_test(phien="")
+    # 🔴 `do_tai=False`, VA DAY LA CA MOT BAI HOC.
+    #
+    #    Ban dau ham nay goi `loi_cho_bo_test(phien="")` — tuc de mac dinh
+    #    `do_tai=True`, va mac dinh do **do CPU that**. Phep kiem ben duoi chot
+    #    mot con so co dinh (`== 6`).
+    #
+    # ⛔ Hai thu do khong the song chung. Khi tep nay chay MOT MINH thi may
+    #    ranh, `chiem` = 0, va con so ra dung 6. Khi no chay TRONG mot luot
+    #    gate thi chinh bo test dang lam may ban — `chiem` lon, con so nho hon
+    #    6, va phep kiem do. Xanh khi chay rieng, do khi chay ca cum: dung cai
+    #    bay `gate tu nhieu vao phep do` da ghi trong bo nho du an.
+    #
+    # ⭐ Phan TAT DINH cua cong thuc thi chot bang `do_tai=False`. Phan DO DUOC
+    #    duoc chot rieng o `test_do_tai_khong_bao_gio_noi_ngan_sach`, va no chot
+    #    mot BAT DANG THUC chu khong mot con so — vi mot con so do duoc thi
+    #    khong bao gio la mot hang so.
+    return gate.loi_cho_bo_test(phien="", do_tai=False)
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
@@ -271116,6 +271487,18 @@ def test_conftest_van_LAY_MIN_chu_khong_dat_de(monkeypatch):
     doan = _ast.get_source_segment(src, ham) or ""
     assert "min(n, " in doan or "min(n," in doan, (
         "phai LAY MIN voi phep tinh cuc bo, khong duoc gan thang so cua gate")
+
+
+def test_do_tai_khong_bao_gio_noi_ngan_sach():
+    """Do tai chi duoc lam ngan sach NHO DI, khong bao gio lon hon.
+
+    ⭐ Day la cach chot mot ham phu thuoc vao phep do: khong chot GIA TRI cua
+       no (gia tri doi theo tai, va lượt gate nao cung tu lam may ban), ma chot
+       QUAN HE giua hai che do. Bat dang thuc thi dung o may ranh lan may day.
+    """
+    tinh = gate.loi_cho_bo_test(phien="", do_tai=False)
+    do = gate.loi_cho_bo_test(phien="", do_tai=True)
+    assert 1 <= do <= tinh, f"do_tai=True ({do}) khong duoc vuot ban tinh ({tinh})"
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -315551,8 +315934,598 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt/dot1_luong.mjs
+SHA256=821326d1b9d25e5329bdb8b310e803902803301a04dc4a1d7e38385526e4de61 BYTES=8820 LINES=178
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+/**
+ * Đợt 1 — TOÀN VẸN LUỒNG. Rủi ro cao nhất trong bảy đợt.
+ *
+ * 🔴 VÌ SAO ĐỢT NÀY ĐỨNG ĐẦU. Trong 150+ issue `🐛 bug` của LibreChat, nhóm
+ *    đông nhất và dai nhất là nhóm luồng: *Garbled Characters in Chinese
+ *    Outputs*, *Failed to parse stream*, *JSON.parse: unexpected end of data*,
+ *    *response flashes blank*, *The response stream has expired*.
+ *
+ * ⛔ Và ChatLTT phơi ra **nhiều hơn** họ ở đúng chỗ đau nhất. Tiếng Việt có dấu
+ *    là UTF-8 ba byte; SSE cắt chunk theo BYTE, không theo ký tự. Một chunk cắt
+ *    giữa "ế" thì hai nửa ghép lại phải ra "ế" — nếu tầng nào decode từng chunk
+ *    riêng, ta được `U+FFFD`. Tiếng Anh gần như không bao giờ chạm vào lỗi này.
+ *
+ * ⭐ Mỗi hạng mục ở đây là một CÂU HỎI CÓ THỂ SAI, không phải một thao tác.
+ */
+
+export function dot1({ cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong, hoiThoaiMoi }) {
+  return [
+    {
+      dot: 1,
+      ten: '1.1-tieng-viet-qua-luong-dai',
+      hoi: 'Chữ có dấu đi qua hàng trăm chunk SSE có nguyên vẹn không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Viet mot doan van 12 cau ve am thuc Ha Noi. '
+          + 'Dung nhieu tu co dau: pho, bun cha, che, banh cuon, ca phe trung, '
+          + 'nem ran, xoi xeo, banh mi, mien luon, bun thang.');
+        await xong(p);
+        const chu = await chuBaiCuoi(p);
+        if (/�/.test(chu)) {
+          const i = chu.indexOf('�');
+          throw new Error(`co U+FFFD o vi tri ${i}: ${JSON.stringify(chu.slice(Math.max(0, i - 40), i + 40))}`);
+        }
+        // Phai THAT SU co dau — mot cau tra loi khong dau cung "khong co FFFD".
+        const soDau = (chu.match(/[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/gi) || []).length;
+        if (soDau < 40) throw new Error(`chi ${soDau} ky tu co dau — nghi ngo mat dau`);
+        return { ky_tu: chu.length, ky_tu_co_dau: soDau };
+      },
+    },
+    {
+      dot: 1,
+      ten: '1.2-emoji-va-ky-tu-ngoai-BMP',
+      hoi: 'Emoji (4 byte, cặp surrogate) có bị cắt đôi giữa hai chunk không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Viet lai chinh xac day nay, khong them gi: '
+          + '🎉 🇻🇳 👨‍👩‍👧‍👦 ✅ 数学 α β γ ∑ ∫ 𝕏');
+        await xong(p);
+        const chu = await chuBaiCuoi(p);
+        if (/�/.test(chu)) throw new Error('co U+FFFD — surrogate bi cat');
+        // Surrogate le la dau hieu chac chan cua mot cap bi xe doi.
+        const le = [...chu].some((c) => {
+          const m = c.codePointAt(0);
+          return m >= 0xD800 && m <= 0xDFFF;
+        });
+        if (le) throw new Error('co surrogate LE — mot cap emoji da bi xe doi');
+        return { co_emoji: /[\u{1F300}-\u{1FAFF}]/u.test(chu), ky_tu: chu.length };
+      },
+    },
+    {
+      dot: 1,
+      ten: '1.3-suy-luan-khong-lan-vao-tra-loi',
+      hoi: 'Nội dung suy luận có rò vào phần trả lời không?',
+      async chay(p) {
+        // ⛔ LibreChat dinh dung loi nay hai lan: *o4-mini thinking output mixed
+        //    with response* va *Think tags still displayed, not properly
+        //    rendered*. Ta co khoi suy luan rieng nen cung phoi ra y het.
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Mot cai ao gia 250 nghin, giam 20%. Con bao nhieu? '
+          + 'Suy nghi ky roi tra loi.');
+        await xong(p);
+        const r = await p.evaluate(() => {
+          const a = [...document.querySelectorAll('article')].pop();
+          const suy = a.querySelector('.ltc-suyluan__chu');
+          const noi = a.querySelector('.ltc-tin__chu');
+          return { suyLuan: (suy?.innerText || '').slice(0, 4000),
+                   traLoi: (noi?.innerText || '').slice(0, 4000) };
+        });
+        for (const the of ['<think>', '</think>', ':::thinking']) {
+          if (r.traLoi.includes(the)) throw new Error(`the "${the}" lot vao phan tra loi`);
+        }
+        if (r.suyLuan && r.traLoi && r.suyLuan.length > 80
+            && r.traLoi.includes(r.suyLuan.slice(0, 80))) {
+          throw new Error('80 ky tu dau cua SUY LUAN xuat hien nguyen van trong TRA LOI');
+        }
+        return { suy_luan: r.suyLuan.length, tra_loi: r.traLoi.length };
+      },
+    },
+    {
+      dot: 1,
+      ten: '1.4-dong-tab-giua-luong-tien-van-dung',
+      hoi: 'Rời trang giữa lúc đang stream thì lượt có được quyết toán không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Viet mot doan 10 cau ve mua dong.');
+        await doiDen('luong da chay', () => dangChay(p), 30);
+        await cho(1500);
+        const hash = await p.evaluate(() => location.hash);
+        // Roi trang giua chung — dung nhu nguoi dung dong tab.
+        await p.goto(p.url().split('#')[0].replace(/\/chatltt.*$/, '/chatltt'),
+          { waitUntil: 'domcontentloaded' });
+        await cho(6000);
+        await p.goto(p.url().split('#')[0] + hash, { waitUntil: 'domcontentloaded' });
+        await doiDen('hoi thoai hien lai', async () => (await soBai(p)) >= 2, 30);
+        await doiDen('luot khong con treo o trang thai dang chay', async () => {
+          const cuoi = p.locator('article').last();
+          return (await cuoi.getByRole('button', { name: 'Tạo lại' }).count()) > 0;
+        }, 60);
+        const chu = (await chuBaiCuoi(p)).replace(/\s/g, '');
+        if (chu.length < 30) throw new Error(`mat phan da sinh: chi con ${chu.length} ky tu`);
+        return { con_lai_ky_tu: chu.length };
+      },
+    },
+    {
+      dot: 1,
+      ten: '1.5-khoi-ma-rat-lon-khong-treo',
+      hoi: 'Một khối mã lớn có làm trình duyệt treo hay vỡ bố cục không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Viet mot ham Python in ra bang cuu chuong, '
+          + 'trong mot khoi ma markdown. Them chu thich cho tung dong.');
+        await xong(p);
+        const r = await p.evaluate(() => {
+          const a = [...document.querySelectorAll('article')].pop();
+          const pre = a.querySelector('pre, code');
+          const doc = document.documentElement;
+          return { coKhoiMa: !!pre,
+                   tranNgang: doc.scrollWidth - doc.clientWidth,
+                   maCuonDuoc: pre ? getComputedStyle(pre.closest('pre') || pre).overflowX : '' };
+        });
+        if (!r.coKhoiMa) throw new Error('khong ve ra khoi ma nao');
+        if (r.tranNgang > 1) throw new Error(`khoi ma lam CA TRANG cuon ngang ${r.tranNgang}px`);
+        return r;
+      },
+    },
+    {
+      dot: 1,
+      ten: '1.6-markdown-chua-dong-the-giua-luong',
+      hoi: 'Giữa luồng, một ``` chưa đóng có làm vỡ bố cục không?',
+      async chay(p) {
+        // ⭐ Day la trang thai TAM THOI ma moi cau tra loi co khoi ma deu di qua:
+        //    co ``` mo, chua co ``` dong. Neu bo cuc vo o day thi no vo o MOI
+        //    luot, chi la vo trong nua giay nen khong ai bao cao.
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Viet mot doan ma JavaScript dai khoang 25 dong trong khoi markdown.');
+        await doiDen('luong da chay', () => dangChay(p), 30);
+        let tranMax = 0;
+        for (let i = 0; i < 24; i += 1) {
+          await cho(500);
+          const t = await p.evaluate(() =>
+            document.documentElement.scrollWidth - document.documentElement.clientWidth);
+          tranMax = Math.max(tranMax, t);
+          if (!(await dangChay(p))) break;
+        }
+        if (tranMax > 1) throw new Error(`GIUA luong, trang cuon ngang toi ${tranMax}px`);
+        return { tran_ngang_lon_nhat: tranMax };
+      },
+    },
+    {
+      dot: 1,
+      ten: '1.7-hai-luot-lien-tiep-khong-lan-noi-dung',
+      hoi: 'Gửi lượt thứ hai ngay sau lượt thứ nhất, nội dung có lẫn không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Tra loi dung mot tu: thu do cua Nhat Ban?');
+        await xong(p);
+        const mot = (await chuBaiCuoi(p)).toLowerCase();
+        await guiChu(p, 'Tra loi dung mot tu: thu do cua Han Quoc?');
+        await xong(p);
+        const hai = (await chuBaiCuoi(p)).toLowerCase();
+        if (!/tokyo|đông kinh/.test(mot)) throw new Error(`luot 1 sai: ${JSON.stringify(mot.slice(0, 120))}`);
+        if (!/seoul|hán thành|hàn thành/.test(hai)) throw new Error(`luot 2 sai: ${JSON.stringify(hai.slice(0, 120))}`);
+        if (hai.includes('tokyo')) throw new Error('luot 2 con dinh noi dung cua luot 1');
+        return { luot1: 'tokyo', luot2: 'seoul', bai: await soBai(p) };
+      },
+    },
+  ];
+}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt/dot2_hoi_thoai.mjs
+SHA256=6be4a3bb1e86058f5595642f1f36c8317dea8461abd2a20952e0340c25df2f4b BYTES=8391 LINES=183
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+/**
+ * Đợt 2 — TRẠNG THÁI HỘI THOẠI VÀ CÂY NHÁNH.
+ *
+ * 🔴 VÌ SAO ĐỢT NÀY ĐỨNG THỨ HAI. URL hash mới thêm **ngày 03/09**, và mã mới
+ *    nhất là mã ít mắt nhìn nhất. Cộng đồng đã dính đúng vùng này ba lần:
+ *
+ *      · *New chat has no label until page refresh and improper handling of
+ *        back button* — **VẪN ĐANG MỞ** trong kho họ.
+ *      · *Switching to another conversation and then switching back causes
+ *        confusion in the messages.*
+ *      · *Saved conversation structure collapse.*
+ *
+ * ⛔ Cây hội thoại là chỗ một lỗi KHÔNG mất dữ liệu ngay mà làm **hỏng nghĩa**:
+ *    một nhánh gắn nhầm cha thì hội thoại vẫn đầy đủ, chỉ là kể sai chuyện. Loại
+ *    hỏng đó không có thông báo lỗi nào, và người dùng phát hiện ra sau nhiều
+ *    ngày — khi không còn khôi phục được nữa.
+ */
+
+export function dot2({ cho, doiDen, soBai, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
+  const hash = (p) => p.evaluate(() => location.hash);
+
+  return [
+    {
+      dot: 2,
+      ten: '2.1-nut-Back-cua-trinh-duyet',
+      hoi: 'Nút Back đi được giữa các hội thoại, hay nhảy ra khỏi trang?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Ghi nho tu khoa: CAMAP');
+        await xong(p);
+        const a = await hash(p);
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Ghi nho tu khoa: HUOUCAO');
+        await xong(p);
+        const b = await hash(p);
+        if (a === b || !a || !b) throw new Error(`hai hoi thoai cung hash: ${a} / ${b}`);
+
+        await p.goBack({ waitUntil: 'domcontentloaded' });
+        await cho(2500);
+        const sau = await hash(p);
+        if (sau !== a) {
+          throw new Error(`Back khong ve hoi thoai truoc: mong ${a}, nhan "${sau}"`);
+        }
+        await doiDen('noi dung hoi thoai truoc hien lai', async () => {
+          const t = await p.locator('article').first().innerText().catch(() => '');
+          return /CAMAP/i.test(t);
+        }, 25);
+        return { hash_a: a, hash_b: b, sau_back: sau };
+      },
+    },
+    {
+      dot: 2,
+      ten: '2.2-doi-hoi-thoai-A-B-A',
+      hoi: 'Đi A→B→A thì nội dung có lẫn giữa hai hội thoại không?',
+      async chay(p) {
+        const ds = p.locator('aside li button');
+        if ((await ds.count()) < 2) throw new Error('can it nhat hai hoi thoai — chay 2.1 truoc');
+        const tenA = (await ds.nth(0).innerText()).trim();
+        const tenB = (await ds.nth(1).innerText()).trim();
+
+        await ds.nth(0).click(); await cho(1800);
+        const a1 = await p.locator('article').first().innerText();
+        await ds.nth(1).click(); await cho(1800);
+        const b1 = await p.locator('article').first().innerText();
+        await ds.nth(0).click(); await cho(1800);
+        const a2 = await p.locator('article').first().innerText();
+
+        if (a1.trim() !== a2.trim()) {
+          throw new Error(`quay lai A thi noi dung DOI:\n  lan 1: ${JSON.stringify(a1.slice(0, 90))}\n  lan 2: ${JSON.stringify(a2.slice(0, 90))}`);
+        }
+        if (a1.trim() === b1.trim()) throw new Error('A va B hien cung noi dung');
+        return { A: tenA.slice(0, 30), B: tenB.slice(0, 30), on_dinh: true };
+      },
+    },
+    {
+      dot: 2,
+      ten: '2.3-tieu-de-hien-ngay-khong-can-F5',
+      hoi: 'Hội thoại mới có tên trong thanh bên ngay, hay phải tải lại trang?',
+      async chay(p) {
+        // ⛔ Day la issue DANG MO cua LibreChat: "New chat has no label until
+        //    page refresh". Neu ta cung the, no chi lo ra khi ai do dung that.
+        await hoiThoaiMoi(p);
+        const truoc = await p.locator('aside li button').count();
+        await guiChu(p, 'Tra loi ngan: mot cong mot bang may?');
+        await xong(p);
+        await doiDen('thanh ben co them muc VA muc do co ten', async () => {
+          const ds = p.locator('aside li button');
+          if ((await ds.count()) <= truoc) return false;
+          const ten = (await ds.first().innerText()).trim();
+          return ten.length > 3;
+        }, 25);
+        const ten = (await p.locator('aside li button').first().innerText()).trim();
+        return { tieu_de: ten.slice(0, 50) };
+      },
+    },
+    {
+      dot: 2,
+      ten: '2.4-sua-gui-lai-o-LUOT-DAU-TIEN',
+      hoi: 'Sửa lượt đầu tiên tạo anh em ở gốc, hay đẻ ra một hội thoại mới?',
+      async chay(p) {
+        // 🔴 `parent_id = null` (gan o GOC) khac `parent_id` VANG MAT (noi vao
+        //    la dang xem). Hai nghia khac nhau di qua cung mot khoa JSON — dung
+        //    cho `luot.MAC_DINH` sinh ra de phan biet, va dung cho mot lan sua
+        //    vo y se lam hong lang le.
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Cau hoi GOC ban dau.');
+        await xong(p);
+        const hashTruoc = await hash(p);
+        const baiTruoc = await soBai(p);
+
+        p.once('dialog', (d) => d.accept('Cau hoi GOC da SUA.'));
+        await p.getByRole('button', { name: 'Sửa và gửi lại' }).first().click();
+        await xong(p);
+
+        const hashSau = await hash(p);
+        if (hashSau !== hashTruoc) {
+          throw new Error(`sua lat dau da tao HOI THOAI MOI: ${hashTruoc} -> ${hashSau}`);
+        }
+        await doiDen('co dieu huong nhanh o goc', () =>
+          p.getByRole('button', { name: 'Nhánh trước' }).count(), 20);
+        const nhan = await p.locator('article').first().innerText();
+        if (!/2\s*\/\s*2/.test(nhan)) {
+          throw new Error(`mong "2 / 2" o nut goc, nhan: ${JSON.stringify(nhan.replace(/\n+/g, ' | ').slice(0, 120))}`);
+        }
+        return { bai_truoc: baiTruoc, hash_giu_nguyen: true };
+      },
+    },
+    {
+      dot: 2,
+      ten: '2.5-nhanh-song-qua-F5-va-dung-nhanh-dang-chon',
+      hoi: 'Chọn nhánh 1/2 rồi F5 — có về đúng nhánh đó không?',
+      async chay(p) {
+        const truoc = p.getByRole('button', { name: 'Nhánh trước' }).first();
+        if (!(await truoc.count())) throw new Error('khong co dieu huong nhanh — chay 2.4 truoc');
+        await truoc.click();
+        await cho(1800);
+        const chuTruoc = (await p.locator('article').first().innerText()).replace(/\s+/g, ' ');
+        if (!/1\s*\/\s*2/.test(chuTruoc)) throw new Error(`chua ve nhanh 1: ${chuTruoc.slice(0, 90)}`);
+
+        await p.reload({ waitUntil: 'domcontentloaded' });
+        await doiDen('hoi thoai hien lai', async () => (await soBai(p)) >= 2, 30);
+        const chuSau = (await p.locator('article').first().innerText()).replace(/\s+/g, ' ');
+        if (!/1\s*\/\s*2/.test(chuSau)) {
+          throw new Error(`F5 lam mat nhanh dang chon: ${chuSau.slice(0, 110)}`);
+        }
+        return { truoc_F5: '1/2', sau_F5: '1/2' };
+      },
+    },
+    {
+      dot: 2,
+      ten: '2.6-hash-la-khong-lam-mac-ket',
+      hoi: 'Một link hội thoại không tồn tại có làm người dùng mắc kẹt không?',
+      async chay(p) {
+        const goc = p.url().split('#')[0];
+        await p.goto(`${goc}#cv_khong_he_ton_tai_0000`, { waitUntil: 'domcontentloaded' });
+        await doiDen('hash duoc go va ve man hinh trong', async () =>
+          (await p.evaluate(() => location.hash)) === '', 25);
+        const coOSoan = await p.getByLabel('Nội dung tin nhắn').count();
+        if (!coOSoan) throw new Error('khong ve duoc man hinh soan');
+        return { hash_da_go: true };
+      },
+    },
+    {
+      dot: 2,
+      ten: '2.7-tim-hoi-thoai-loc-dung',
+      hoi: 'Ô tìm có lọc đúng, và xoá từ khoá có trả lại danh sách đầy đủ không?',
+      async chay(p) {
+        const o = p.getByRole('searchbox', { name: 'Tìm hội thoại' });
+        if (!(await o.count())) throw new Error('khong co o tim');
+        const tong = await p.locator('aside li button').count();
+        await o.fill('CAMAP');
+        await cho(1500);
+        const loc = await p.locator('aside li button').count();
+        await o.fill('');
+        await cho(1500);
+        const lai = await p.locator('aside li button').count();
+        if (loc >= tong) throw new Error(`tim khong loc gi: ${tong} -> ${loc}`);
+        if (lai !== tong) throw new Error(`xoa tu khoa khong tra lai day du: ${tong} -> ${lai}`);
+        return { tong, khi_loc: loc, sau_khi_xoa: lai };
+      },
+    },
+  ];
+}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt/dot3_markdown.mjs
+SHA256=50ecda1c8d233c1d59a1792f3c1ba44c91ae73b3bb66ba0dbfe346dcdf456dea BYTES=10026 LINES=211
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+/**
+ * Đợt 3 — KẾT XUẤT MARKDOWN, và Đợt A — TRẠNG THÁI NGỮ CẢNH.
+ *
+ * 🔴 Đợt 3 đứng cao hơn vị trí "rủi ro" thông thường vì ngày 03/09 ta vừa tìm
+ *    ra một lỗi thật ở đây (**xuống dòng đơn bị nuốt**) — và một vùng vừa cho
+ *    ra một lỗi thì gần như luôn còn nữa. Cộng đồng dính đúng vùng này ở
+ *    *Numbered Lists are cut off*, *Numbers Displayed as "a" Character*,
+ *    *Copying in dark mode copies the dark style*.
+ *
+ * ⭐ Nhóm A ở cuối tệp này là **phép kiểm ĐI TRƯỚC tính năng**. Nó sẽ ĐỎ cho tới
+ *    khi dòng trạng thái ngữ cảnh được xây (`14_KE_HOACH_KIEM_SAU.md` phần A).
+ *    Đó là chủ ý: một chỉ tiêu viết trong tài liệu là một lời hứa, một chỉ tiêu
+ *    làm gate đỏ là một ràng buộc.
+ */
+
+export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoaiMoi }) {
+  return [
+    {
+      dot: 3,
+      ten: '3.1-xuong-dong-don-la-mot-xuong-dong',
+      hoi: 'Model trả về mỗi ý một dòng — có dính thành một đoạn không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Liet ke dung 4 loai qua, moi loai mot dong, '
+          + 'khong danh so, khong gach dau dong, khong giai thich.');
+        await xong(p);
+        const br = await p.evaluate(() => {
+          const a = [...document.querySelectorAll('article')].pop();
+          return (a.querySelector('.ltc-tin__chu')?.querySelectorAll('br') || []).length;
+        });
+        if (br < 2) throw new Error(`chi ${br} the <br> — xuong dong don dang bi nuot`);
+        return { so_br: br };
+      },
+    },
+    {
+      dot: 3,
+      ten: '3.2-danh-sach-danh-so-o-390px',
+      hoi: 'Danh sách đánh số có bị cắt ở bề rộng điện thoại không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Liet ke 5 buoc pha mot tach ca phe, danh so 1 den 5, '
+          + 'moi buoc mot cau ngan.');
+        await xong(p);
+        await p.setViewportSize({ width: 390, height: 844 });
+        await cho(900);
+        const r = await p.evaluate(() => {
+          const a = [...document.querySelectorAll('article')].pop();
+          const ol = a.querySelector('ol');
+          const li = ol ? [...ol.querySelectorAll('li')] : [];
+          const vo = a.getBoundingClientRect();
+          return {
+            coOl: !!ol, soLi: li.length,
+            // Mot `li` bi cat khi so thu tu nam NGOAI khung cha.
+            traiNhoNhat: li.length ? Math.min(...li.map((x) => Math.round(x.getBoundingClientRect().left))) : null,
+            voTrai: Math.round(vo.left),
+            tranNgang: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+          };
+        });
+        await p.setViewportSize({ width: 1280, height: 900 });
+        if (!r.coOl) throw new Error('model khong tra ve danh sach danh so — doi cau hoi');
+        if (r.tranNgang > 1) throw new Error(`390px: trang cuon ngang ${r.tranNgang}px`);
+        if (r.traiNhoNhat !== null && r.traiNhoNhat < r.voTrai - 1) {
+          throw new Error(`so thu tu bi cat: li.left=${r.traiNhoNhat} < vo.left=${r.voTrai}`);
+        }
+        return r;
+      },
+    },
+    {
+      dot: 3,
+      ten: '3.3-bang-rong-cuon-trong-bang',
+      hoi: 'Bảng rộng hơn màn hình — cuộn trong bảng hay cuộn cả trang?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Tao mot bang markdown 6 cot: ten, mo ta dai, gia, ngay, '
+          + 'ghi chu dai, trang thai. Dien 3 dong voi noi dung dai.');
+        await xong(p);
+        await p.setViewportSize({ width: 390, height: 844 });
+        await cho(900);
+        const r = await p.evaluate(() => {
+          const a = [...document.querySelectorAll('article')].pop();
+          const t = a.querySelector('table');
+          if (!t) return { coBang: false };
+          let el = t.parentElement, cuonDuoc = false;
+          for (let i = 0; i < 4 && el; i += 1) {
+            const ox = getComputedStyle(el).overflowX;
+            if (ox === 'auto' || ox === 'scroll') { cuonDuoc = true; break; }
+            el = el.parentElement;
+          }
+          return { coBang: true, cuonDuoc,
+                   tranNgang: document.documentElement.scrollWidth - document.documentElement.clientWidth };
+        });
+        await p.setViewportSize({ width: 1280, height: 900 });
+        if (!r.coBang) throw new Error('model khong tra ve bang — doi cau hoi');
+        if (r.tranNgang > 1) throw new Error(`bang lam CA TRANG cuon ngang ${r.tranNgang}px`);
+        if (!r.cuonDuoc) throw new Error('bang khong nam trong vung cuon ngang rieng nao');
+        return r;
+      },
+    },
+    {
+      dot: 3,
+      ten: '3.4-HTML-tho-van-bi-escape',
+      hoi: 'Sau khi thêm remark-breaks, HTML thô có bị bật lại không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Viet lai chinh xac chuoi nay trong mot khoi ma, '
+          + 'roi viet lai lan nua ngoai khoi ma: <img src=x onerror=alert(1)>');
+        await xong(p);
+        const r = await p.evaluate(() => {
+          const a = [...document.querySelectorAll('article')].pop();
+          const noi = a.querySelector('.ltc-tin__chu');
+          return { anhLa: noi ? noi.querySelectorAll('img[src="x"]').length : 0,
+                   coChu: (noi?.innerText || '').includes('onerror') };
+        });
+        if (r.anhLa > 0) throw new Error('HTML tho da duoc DUNG THANH THE — lo hong XSS');
+        return { the_img_tao_ra: r.anhLa, hien_thanh_chu: r.coChu };
+      },
+    },
+    {
+      dot: 3,
+      ten: '3.5-che-do-toi-doc-duoc',
+      hoi: 'Ở chế độ tối, chữ có đủ tương phản để đọc không?',
+      async chay(p) {
+        await p.emulateMedia({ colorScheme: 'dark' });
+        await cho(1200);
+        const r = await p.evaluate(() => {
+          const doi = (s) => {
+            const m = s.match(/[\d.]+/g) || [];
+            const [r2, g, b] = m.map(Number);
+            const f = (c) => { const x = c / 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; };
+            return 0.2126 * f(r2) + 0.7152 * f(g) + 0.0722 * f(b);
+          };
+          const a = [...document.querySelectorAll('article')].pop();
+          const el = a?.querySelector('.ltc-tin__chu') || document.body;
+          const cs = getComputedStyle(el);
+          let nen = cs.backgroundColor, n = el;
+          while (n && (nen === 'rgba(0, 0, 0, 0)' || nen === 'transparent')) {
+            n = n.parentElement; if (!n) break; nen = getComputedStyle(n).backgroundColor;
+          }
+          const L1 = doi(cs.color), L2 = doi(nen || 'rgb(255,255,255)');
+          const tp = (Math.max(L1, L2) + 0.05) / (Math.min(L1, L2) + 0.05);
+          return { chu: cs.color, nen, tuong_phan: +tp.toFixed(2) };
+        });
+        await p.emulateMedia({ colorScheme: 'light' });
+        // WCAG AA cho chu thuong: 4,5:1.
+        if (r.tuong_phan < 4.5) {
+          throw new Error(`tuong phan che do toi ${r.tuong_phan}:1 < 4,5:1 (WCAG AA) — ${r.chu} tren ${r.nen}`);
+        }
+        return r;
+      },
+    },
+
+    // ── Đợt A — trạng thái ngữ cảnh (phép kiểm ĐI TRƯỚC tính năng) ──────────
+    {
+      dot: 'A',
+      ten: 'A.1-khong-de-nguoi-dung-cho-trong-im-lang',
+      hoi: 'Có khoảng nào dài hơn 1,5s mà màn hình không nói đang làm gì không?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Giai thich ngan gon vi sao nuoc bien man.');
+        const bd = Date.now();
+        let imLangDaiNhat = 0, imLangTu = Date.now();
+        for (let i = 0; i < 120; i += 1) {
+          await cho(250);
+          const noi = await p.evaluate(() => {
+            const a = [...document.querySelectorAll('article')].pop();
+            if (!a) return '';
+            const tt = a.querySelector('.ltc-trangthai, [data-trangthai]');
+            const chu = a.querySelector('.ltc-tin__chu');
+            return ((tt?.innerText || '') + (chu?.innerText || '')).trim();
+          });
+          if (noi.length > 0) { imLangDaiNhat = Math.max(imLangDaiNhat, Date.now() - imLangTu); imLangTu = Date.now(); }
+          if (!(await dangChay(p)) && i > 4) break;
+        }
+        const tong = ((Date.now() - bd) / 1000).toFixed(1);
+        if (imLangDaiNhat > 1500) {
+          throw new Error(`co ${(imLangDaiNhat / 1000).toFixed(1)}s khong mot chu nao noi dang lam gi `
+            + '(can dong trang thai: Dang xep hang / Dang chuan bi / Dang suy nghi)');
+        }
+        return { im_lang_dai_nhat_ms: imLangDaiNhat, tong_giay: tong };
+      },
+    },
+    {
+      dot: 'A',
+      ten: 'A.2-CLS-cua-mot-luot-stream',
+      hoi: 'Một lượt trả lời làm bố cục nhảy bao nhiêu?',
+      async chay(p) {
+        await hoiThoaiMoi(p);
+        await p.evaluate(() => {
+          window.__cls = 0; window.__max = 0;
+          new PerformanceObserver((l) => {
+            for (const e of l.getEntries()) if (!e.hadRecentInput) {
+              window.__cls += e.value; window.__max = Math.max(window.__max, e.value);
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+        });
+        await guiChu(p, 'Viet mot doan 4 cau ve mua xuan, kem mot danh sach 3 gach dau dong.');
+        await xong(p);
+        await cho(1200);
+        const r = await p.evaluate(() => ({ cls: +window.__cls.toFixed(4), lon_nhat: +window.__max.toFixed(4) }));
+        // ⭐ 0,02 chu khong 0,1. Chuan Google la nguong "kem" cho CA MOT TRANG;
+        //    day chi la MOT luot tra loi trong mot trang da tai xong, nen no
+        //    phai chat hon han. Do 03/09 truoc khi sua: 0,0791.
+        if (r.cls > 0.02) {
+          throw new Error(`CLS ${r.cls} > 0,02 (cu nhay lon nhat ${r.lon_nhat}) — `
+            + 'khoi suy luan/trang thai dang moc ra giua chung thay vi chiem cho san');
+        }
+        return r;
+      },
+    },
+  ];
+}
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt_gui.mjs
-SHA256=19708bc589eaa942def2a911f43a8746a5b8c6ceb3035ce80a1b10b456e98c72 BYTES=32511 LINES=684
+SHA256=4aee1f190b71c53da5b5ba4b85e7c88b4767f527b47f3a11d293520203a1ea56 BYTES=34445 LINES=722
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * kiem_chatltt_gui.mjs — bo kiem GIAO DIEN ChatLTT tren mot trinh duyet that.
@@ -315634,6 +316607,8 @@ const MAT_KHAU = co('--pass', process.env.LTT_SMOKE_PASS || '');
 const HIEN = argv.includes('--hien');          // mo cua so that de nguoi xem
 const THU_MUC_ANH = co('--anh', 'tmp/kiem_gui');
 const CHI = co('--chi', '');                   // chay mot hang muc theo ten
+/** `--dot 1,2,A` — chi chay nhung dot duoc goi ten. Rong = tat ca. */
+const DOT = co('--dot', '').split(',').map((x) => x.trim()).filter(Boolean);
 
 /**
  * `--phien <tep>` — dung mot PHIEN DA DANG NHAP (Playwright storageState).
@@ -315744,12 +316719,24 @@ async function xong(p, hanS = 150) {
   }, hanS);
 }
 
+/**
+ * Mo mot hoi thoai moi VA doi cho no rong han.
+ *
+ * ⛔ `cho(600)` khong du, va do la mot loi da xay ra: bam Gui som hon mot nhip
+ *    thi tin nhan di vao hoi thoai CU, roi hang muc doc phai cau tra loi cua
+ *    mot cau hoi khac va bao "model tra loi sai".
+ */
+async function hoiThoaiMoi(p) {
+  await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
+  await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 25);
+}
+
 // ── Cac hang muc ───────────────────────────────────────────────────────────
 //
 // Moi hang muc: mot cau hoi CO THE SAI, va mot phep do tra loi no.
 const HANG_MUC = [
   {
-    ten: 'trang-mo-duoc',
+    dot: 0, ten: 'trang-mo-duoc',
     hoi: 'Trang ChatLTT co dung duoc cac phan chinh khong (thanh ben, chon model, o soan)?',
     async chay(p) {
       await doiDen('sidebar', () => p.getByRole('button', { name: '+ Hội thoại mới' }).count());
@@ -315760,7 +316747,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'chua-co-model-thi-khong-gui-duoc',
+    dot: 0, ten: 'chua-co-model-thi-khong-gui-duoc',
     hoi: 'Trong giay dau khi catalog chua ve, nguoi dung co bam Gui duoc khong?',
     async chay(p) {
       // ⭐ Do duoc 03/09: o t+0ms danh sach model RONG. Neu o soan van bat thi
@@ -315781,7 +316768,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'model-mac-dinh-la-ltt_llm',
+    dot: 0, ten: 'model-mac-dinh-la-ltt_llm',
     hoi: 'Model chon san co phai `ltt_llm` khong — hay la vision (ngu canh 28K thay vi 89K)?',
     async chay(p) {
       // ⛔ Doi CATALOG ve truoc khi doc. Ban dau doc ngay va nhan "", roi bao
@@ -315795,7 +316782,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'stream-tra-loi',
+    dot: 0, ten: 'stream-tra-loi',
     hoi: 'Gui mot cau thi co cau tra loi chay ve khong, va no co noi dung that khong?',
     async chay(p) {
       const truoc = await soBai(p);
@@ -315808,7 +316795,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tra-loi-DUNG-CAU-DUOC-HOI',
+    dot: 0, ten: 'tra-loi-DUNG-CAU-DUOC-HOI',
     hoi: 'Cau tra loi co lien quan den cau hoi khong — hay chi la "co chu chay ve"?',
     async chay(p) {
       // 🔴 HANG MUC NAY LAP MOT LO HONG THAT trong chinh bo kiem. `stream-tra-loi`
@@ -315832,7 +316819,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'lam-theo-rang-buoc-cua-lenh',
+    dot: 0, ten: 'lam-theo-rang-buoc-cua-lenh',
     hoi: 'Model co ton trong rang buoc dinh dang trong lenh khong?',
     async chay(p) {
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
@@ -315856,7 +316843,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tieng-viet-co-dau-khong-vo',
+    dot: 0, ten: 'tieng-viet-co-dau-khong-vo',
     hoi: 'Chu tieng Viet co dau di tron ven qua SSE va qua Cloudflare khong?',
     async chay(p) {
       // ⛔ Day la cho ma mot loi encoding se lo ra, va no chi lo ra tren ĐUONG
@@ -315878,7 +316865,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'hoi-thoai-co-dia-chi',
+    dot: 0, ten: 'hoi-thoai-co-dia-chi',
     hoi: 'Hoi thoai co nam trong URL khong — F5 co quay lai dung cho khong?',
     async chay(p) {
       const hash = await p.evaluate(() => location.hash);
@@ -315892,7 +316879,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tao-lai-sinh-nhanh-moi',
+    dot: 0, ten: 'tao-lai-sinh-nhanh-moi',
     hoi: 'Bam "Tao lai" co sinh mot nhanh anh em moi khong, va dieu huong nhanh co chay khong?',
     async chay(p) {
       await p.getByRole('button', { name: 'Tạo lại' }).last().click();
@@ -315903,7 +316890,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'dung-giua-chung',
+    dot: 0, ten: 'dung-giua-chung',
     hoi: 'Bam "Dung" co that su dung khong — hay chu van chay tiep sau khi nut bien mat?',
     async chay(p) {
       await guiChu(p, 'Viet mot doan that dai ve lich su Viet Nam, cang dai cang tot.');
@@ -315949,7 +316936,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'o-soan-khong-de-chan-trang',
+    dot: 0, ten: 'o-soan-khong-de-chan-trang',
     hoi: 'O soan co nam tron trong vung cua no khong, hay tran ra de len phan duoi?',
     async chay(p) {
       const r = await p.evaluate(() => {
@@ -315967,7 +316954,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'khong-cuon-ngang',
+    dot: 0, ten: 'khong-cuon-ngang',
     hoi: 'Trang co bi cuon ngang o be rong nao khong (390 / 768 / 1920)?',
     async chay(p) {
       const xau = [];
@@ -315983,7 +316970,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'vision-o-dinh-anh-theo-hop-dong',
+    dot: 0, ten: 'vision-o-dinh-anh-theo-hop-dong',
     hoi: 'O dinh anh co hien DUNG khi model doc anh, va BIEN MAT khi model khong doc anh?',
     async chay(p) {
       const sel = p.locator('select[aria-label="Chọn model"]');
@@ -316003,7 +316990,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'nut-media-co-mat',
+    dot: 0, ten: 'nut-media-co-mat',
     hoi: 'Hai nut Tao anh / Tao giong co mat trong hoi thoai khong?',
     async chay(p) {
       const anh = await p.getByRole('button', { name: 'Tạo ảnh' }).count();
@@ -316013,7 +317000,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'bao-gia-truoc-khi-thu-tien',
+    dot: 0, ten: 'bao-gia-truoc-khi-thu-tien',
     hoi: 'Bam Tao anh co hoi gia TRUOC khi thu tien khong, va co Huy duoc khong?',
     async chay(p) {
       await p.getByRole('button', { name: 'Tạo ảnh' }).click();
@@ -316033,7 +317020,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'khong-lo-id-noi-bo',
+    dot: 0, ten: 'khong-lo-id-noi-bo',
     hoi: 'Giao dien co lo ten model that / URL may B / khoa API ra khong?',
     async chay(p) {
       const t = await p.evaluate(() => document.body.innerText);
@@ -316055,7 +317042,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'phim-tat-va-focus',
+    dot: 0, ten: 'phim-tat-va-focus',
     hoi: 'Ctrl+Shift+O co mo hoi thoai moi va dua con tro ve o soan khong?',
     async chay(p) {
       await p.keyboard.press('Control+Shift+O');
@@ -316068,7 +317055,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'nhan-doc-duoc-cho-trinh-doc-man-hinh',
+    dot: 0, ten: 'nhan-doc-duoc-cho-trinh-doc-man-hinh',
     hoi: 'Cac dieu khien chinh co nhan doc duoc khong (nut khong nhan la nut cam)?',
     async chay(p) {
       const xau = await p.evaluate(() => {
@@ -316085,6 +317072,29 @@ const HANG_MUC = [
     },
   },
 ];
+
+// ── Nap cac dot ────────────────────────────────────────────────────────────
+//
+// ⭐ Tach ra module rieng vi bo kiem se lon toi ~60 hang muc. Mot tep 2.000
+//    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
+//    khong ai sua khi no sai.
+const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong, hoiThoaiMoi, soDu };
+{
+  const nap = async (ten, ham) => {
+    try {
+      const m = await import(pathToFileURL(
+        join(new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
+             'kiem_chatltt', ten)).href);
+      HANG_MUC.push(...m[ham](TRO_GIUP));
+    } catch (e) {
+      console.log(`  [!] khong nap duoc ${ten}: ${e.message}`);
+      process.exitCode = 2;
+    }
+  };
+  await nap('dot1_luong.mjs', 'dot1');
+  await nap('dot2_hoi_thoai.mjs', 'dot2');
+  await nap('dot3_markdown.mjs', 'dot3');
+}
 
 // ── Chay ───────────────────────────────────────────────────────────────────
 async function dangNhap(page) {
@@ -316184,17 +317194,18 @@ try {
   await dangNhap(page);
   for (const hm of HANG_MUC) {
     if (CHI && hm.ten !== CHI) continue;
+    if (DOT.length && !DOT.includes(String(hm.dot ?? '0'))) continue;
     const t0 = Date.now();
     try {
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
-      ketQua.push({ ten: hm.ten, dat: !bo, bo_qua: !!bo,
+      ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,
                     giay: (Date.now() - t0) / 1000, chi_tiet: ct });
-      console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${hm.ten}  ${JSON.stringify(ct)}`);
+      console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${JSON.stringify(ct)}`);
     } catch (e) {
       maThoat = 1;
-      ketQua.push({ ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
-      console.log(`  [HONG] ${hm.ten}  ${e.message}`);
+      ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
+      console.log(`  [HONG ] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${e.message}`);
       await page.screenshot({ path: join(THU_MUC_ANH, `hong-${hm.ten}.png`), fullPage: true }).catch(() => {});
     }
   }
