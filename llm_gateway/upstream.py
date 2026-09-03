@@ -129,10 +129,42 @@ class LuongUpstream:
            `list_iterator` — tức nó chỉ chạy được với đúng generator thật, và
            mọi bản giả trong bộ test sẽ ném `AttributeError` **từ trong đường
            dọn dẹp**, nơi một ngoại lệ dễ nuốt mất cả việc đóng thượng nguồn.
+
+        🔴 VÀ MỘT NGOẠI LỆ NỮA, ĐO ĐƯỢC TRÊN MÁY B 03/09:
+
+               Exception ignored in: <generator object _di at 0x...>
+                 File "llm_gateway/nhip_tim.py", line 110, in _di
+                   dong()
+                 File "llm_gateway/upstream.py", line 136, in close
+                   dong_it()
+               ValueError: generator already executing
+
+           `nhip_tim` lặp generator này trong **một luồng phụ** (`bom`), nên khi
+           đường dọn dẹp gọi `close()` từ luồng khác, luồng phụ có thể đang đứng
+           **bên trong** `next()`. Đóng một generator đang chạy là bất hợp lệ, và
+           Python ném `ValueError`.
+
+        ⚠️ NÓI ĐÚNG MỨC ĐỘ: **suất KHÔNG bị rò vì chuyện này.** `dong()` nằm
+           trong `finally` nên nó vẫn chạy dù `dong_it()` ném. Bản đầu của mục
+           chú thích này viết rằng lỗi ấy "để lại một lượt chạy trên GPU" —
+           **sai**, và sai theo hướng kịch tính hoá. Hậu quả thật hẹp hơn nhiều:
+           một dòng `Exception ignored` vào log mỗi lần khách ngắt giữa chừng.
+
+        ⭐ Vẫn đáng sửa, vì hai lý do đo được chứ không phải vì gọn mắt:
+           một đường **dọn dẹp** mà ném thì lần sau ai thêm việc phía sau
+           `dong_it()` sẽ mất việc đó mà không có cảnh báo; và dòng nhiễu ấy
+           trông y hệt một sự cố thật trong `gateway_err.log` — nó đã làm mất
+           thời gian của đúng phiên này ngày 03/09.
+
+        ⛔ Nuốt đúng `ValueError`, và **chỉ** nó. Một `RuntimeError` từ đường dọn
+           là một khuyết tật khác và phải nổi lên.
         """
         dong_it = getattr(self._it, "close", None)
         try:
             if dong_it is not None:
                 dong_it()
+        except ValueError:
+            # Luồng phụ đang ở trong generator. `dong()` bên dưới vẫn dọn đủ.
+            pass
         finally:
             self.dong()

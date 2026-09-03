@@ -211,6 +211,74 @@ def test_dong_GOI_HAI_LAN_van_vo_hai():
     assert da == [1]
 
 
+def test_close_van_DON_khi_generator_dang_chay_o_luong_khac():
+    """🔴 ĐO ĐƯỢC TRÊN MÁY B 03/09, trong `gateway_err.log`:
+
+        Exception ignored in: <generator object _di at 0x...>
+          File "llm_gateway/nhip_tim.py", line 110, in _di
+            dong()
+          File "llm_gateway/upstream.py", line 136, in close
+            dong_it()
+        ValueError: generator already executing
+
+    `nhip_tim` lặp luồng thượng nguồn trong **một luồng phụ**, nên `close()` gọi
+    từ luồng chính có thể rơi đúng lúc luồng phụ đang ở trong `next()`. Đóng một
+    generator đang chạy là bất hợp lệ và Python ném `ValueError`.
+
+    ⚠️ ĐỪNG ĐỌC PHÉP KIỂM NÀY TO HƠN NÓ. Suất **không** bị rò vì lỗi đó:
+       `dong()` nằm trong `finally` nên nó vẫn chạy. Thứ phép kiểm này chốt là
+       *`close()` không được ném ra ngoài* — để lần sau ai thêm một việc dọn nữa
+       phía sau `dong_it()` thì việc đó không biến mất trong im lặng.
+
+    ⭐ Và phép kiểm này **đỏ được**: bỏ `except ValueError` trong `close()` thì
+       `lu.close()` ném và phép kiểm dừng trước khi tới `assert`.
+    """
+    da = []
+
+    class _DangChay:
+        """Iterator giả lập một generator đang bị luồng khác thực thi."""
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            raise StopIteration
+
+        def close(self):
+            raise ValueError("generator already executing")
+
+    lu = LuongUpstream(_DangChay(), lambda: da.append(1))
+    lu.close()
+    assert da == [1], (
+        "close() de ValueError nuot mat dong() -> thuong nguon khong duoc bao "
+        "dung, va GPU giu mot luot khong ai doc")
+
+
+def test_close_KHONG_nuot_loi_khac_cua_duong_don():
+    """Nuốt đúng một `ValueError`, không nuốt cả họ.
+
+    Một `RuntimeError` từ đường dọn là một khuyết tật khác, và nó phải nổi lên
+    chứ không được biến mất cùng chỗ.
+    """
+    da = []
+
+    class _Vo:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            raise StopIteration
+
+        def close(self):
+            raise RuntimeError("mot khuyet tat khac han")
+
+    lu = LuongUpstream(_Vo(), lambda: da.append(1))
+    with pytest.raises(RuntimeError):
+        lu.close()
+    # Van phai don, ke ca khi loi noi len: `dong()` nam trong `finally`.
+    assert da == [1]
+
+
 def test_cua_stream_PHAI_mang_background_task():
     """🔴 Bánh cóc cho **lớp lỗi**, không cho một dòng mã.
 
