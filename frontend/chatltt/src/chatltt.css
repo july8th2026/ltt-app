@@ -368,6 +368,24 @@
   color: var(--text-primary);
   font: inherit;
 }
+/* Anh tham chieu cho `mode=edit`.
+   ⛔ KHONG dung `.ltc-chip`: chip do la chip CANH BAO (nen vang, chu vang), nen
+      mot anh dinh kem binh thuong se trong nhu mot loi. Theo khuon chip dinh
+      kem cua o soan — cung y nghia thi cung hinh. */
+.ltc-media__ref { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.ltc-media__ref .ltc-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--border-subtle); background: var(--surface-raised);
+  color: var(--text-secondary); border-radius: var(--radius-md);
+  padding: 4px 6px 4px 10px; font-size: .85rem; max-width: 22ch;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ltc-media__ref .ltc-chip button {
+  background: none; border: 0; padding: 2px 4px; font-size: 1rem; line-height: 1;
+  cursor: pointer; color: var(--text-secondary);
+}
+.ltc-media__ref .ltc-chip button:hover { color: var(--text-primary); }
+
 .ltc-media__giong { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
 .ltc-media__giong select {
   padding: 6px 8px;

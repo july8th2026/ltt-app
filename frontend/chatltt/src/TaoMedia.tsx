@@ -36,6 +36,10 @@ export function TaoMedia({
   const [mo, datMo] = useState<'image' | 'audio' | null>(null)
   const [chu, datChu] = useState('')
   const [giong, datGiong] = useState('')
+  // Anh THAM CHIEU cho `mode=edit`. Khac han anh dinh kem cua o soan chat: cai
+  // kia la NGU CANH cho model doc, cai nay la DAU VAO cua mot lan tao anh.
+  const [thamChieu, datThamChieu] = useState<{ key: string; ten: string }[]>([])
+  const [dangTai, datDangTai] = useState(false)
   const [cho, datCho] = useState<Cho>(null)
   const [dangNop, datDangNop] = useState(false)
 
@@ -50,6 +54,26 @@ export function TaoMedia({
     datCho(null)
     onDaNhanChuDocTo?.()
   }, [chuDocTo, onDaNhanChuDocTo])
+
+  async function themThamChieu(ds: FileList | null) {
+    if (!ds || !ds.length) return
+    datDangTai(true)
+    try {
+      for (const tep of Array.from(ds).slice(0, 2 - thamChieu.length)) {
+        // ⛔ Tung tep mot, va bat loi RIENG tung tep. Mot tep hong khong duoc
+        //    giet ca lo — cung bai hoc da chot o `4.1` cua bo kiem giao dien.
+        try {
+          const kq = await api.taiAnh(tep)
+          datThamChieu((cu2) => [...cu2, { key: kq.key, ten: tep.name }])
+        } catch (e) {
+          onLoi(`Không tải được ${tep.name}: `
+            + (e instanceof Error ? e.message : 'lỗi không rõ'))
+        }
+      }
+    } finally {
+      datDangTai(false)
+    }
+  }
 
   async function hoiGia(ten: string, tham_so: Record<string, unknown>) {
     try {
@@ -68,6 +92,7 @@ export function TaoMedia({
       datCho(null)
       datMo(null)
       datChu('')
+      datThamChieu([])
       onXong()
     } catch (e) {
       onLoi(e instanceof Error ? e.message : 'Không tạo được.')
@@ -113,6 +138,29 @@ export function TaoMedia({
             value={chu}
             onChange={(e) => datChu(e.target.value)}
           />
+          {mo === 'image' && (
+            <div className="ltc-media__ref">
+              <label className="ltc-nut--nho">
+                {dangTai ? 'Đang tải…' : '+ Ảnh tham chiếu'}
+                <input
+                  type="file" accept="image/png,image/jpeg,image/webp" multiple
+                  aria-label="Ảnh tham chiếu"
+                  style={{ display: 'none' }}
+                  disabled={dangTai || thamChieu.length >= 2}
+                  onChange={(e) => { void themThamChieu(e.target.files); e.target.value = '' }}
+                />
+              </label>
+              {thamChieu.map((a, i) => (
+                <span key={a.key} className="ltc-chip">
+                  {a.ten}
+                  <button type="button" aria-label={`Bỏ ${a.ten}`}
+                    onClick={() => datThamChieu((cu2) => cu2.filter((_, j) => j !== i))}>
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           {mo === 'audio' && giongCoThe.length > 0 && (
             <label className="ltc-media__giong">
               <span>Giọng</span>
@@ -132,7 +180,14 @@ export function TaoMedia({
             onClick={() => hoiGia(
               mo === 'image' ? (anh?.ten ?? '') : (tieng?.ten ?? ''),
               mo === 'image'
-                ? { prompt: chu.trim() }
+                // ⭐ Co anh tham chieu ⇒ `edit`; khong co ⇒ `t2i`. Khong de
+                //    nguoi dung tu chon che do: `anhnoibo` TU CHOI `t2i` kem
+                //    anh va tu choi `edit` khong anh, nen mot o chon che do chi
+                //    tao ra mot cach bam sai.
+                ? (thamChieu.length
+                  ? { prompt: chu.trim(), mode: 'edit',
+                      image_keys: thamChieu.map((a) => a.key) }
+                  : { prompt: chu.trim(), mode: 't2i' })
                 : { text: chu.trim(), ...(giong ? { voice_id: giong } : {}) },
             )}
           >

@@ -20,6 +20,8 @@
  *    credit trước/sau**. Một artifact hiện ra mà sổ tiền sai thì vẫn là hỏng.
  */
 
+import { anhHopLe } from './dot4_dinh_kem.mjs';
+
 export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) {
   const nutAnh = (p) => p.getByRole('button', { name: 'Tạo ảnh' });
   const oMoTa = (p) => p.getByLabel('Mô tả ảnh');
@@ -229,6 +231,84 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) 
         if (r.status === 200) throw new Error('may chu BAO GIA cho mot nang luc ngoai allowlist');
         if (r.status >= 500) throw new Error(`may chu 5xx thay vi tu choi sach: ${r.status}`);
         return r;
+      },
+    },
+    {
+      dot: 5,
+      ten: '5.6-KHONG-co-anh-tham-chieu-thi-che-do-la-t2i',
+      hoi: 'Không đính ảnh — yêu cầu gửi đi có đúng `mode=t2i` không?',
+      async chay(p) {
+        const bq = await moPanelAnh(p);
+        if (bq) return bq;
+        const batDuoc = [];
+        const nghe = (req) => {
+          if (req.url().includes('/api/bao-gia')) batDuoc.push(req.postData() || '');
+        };
+        p.on('request', nghe);
+        try {
+          await xemGia(p, 'mot chiec la phong tren mat ho luc sang som');
+          await doiDen('bao gia da di ra', () => batDuoc.length > 0, 25);
+          const than = JSON.parse(batDuoc[0]);
+          const ts = than.tham_so || {};
+          if (ts.mode !== 't2i') throw new Error(`mong mode=t2i, nhan ${JSON.stringify(ts.mode)}`);
+          if (ts.image_keys && ts.image_keys.length) {
+            throw new Error(`t2i ma van kem anh: ${JSON.stringify(ts.image_keys)}`);
+          }
+          await p.getByRole('button', { name: 'Huỷ' }).click().catch(() => {});
+          return { mode: ts.mode, khong_kem_anh: true };
+        } finally {
+          p.off('request', nghe);
+        }
+      },
+    },
+    {
+      dot: 5,
+      ten: '5.7-tao-anh-TU-ANH-tham-chieu-di-dung-vao-yeu-cau',
+      hoi: 'Đính một ảnh tham chiếu — nó có thật sự đi theo yêu cầu, đúng chế độ?',
+      async chay(p) {
+        // 🔴 HANG MUC NAY DO MOT THU DA TUNG KHONG THE CHAY DUOC.
+        //
+        //    Khoa anh cua ChatLTT truoc 04/09 la `chatltt/anh-vao/<uid>/...`,
+        //    nen doan thu HAI la `"anh-vao"` chu khong phai id nguoi dung. Ma
+        //    `anhnoibo/features._kiem_chu_so_huu` kiem dung doan thu hai. Ket
+        //    qua: MOI anh khach tai len trong chat deu bi tu choi voi cau "Anh
+        //    tham chieu khong thuoc nguoi dung hien tai".
+        //
+        // ⭐ Mot hang rao an toan DUNG, chan mot thao tac HOP LE, chi vi mot dau
+        //    `/` dat sai cho — va no khong bao gi ca, no chi lam tinh nang
+        //    trong nhu chua duoc xay. Hang muc nay la thu ngan no quay lai.
+        const bq = await moPanelAnh(p);
+        if (bq) return bq;
+        const o = p.getByLabel('Ảnh tham chiếu');
+        if (!(await o.count())) throw new Error('khong co o dinh anh tham chieu');
+        await o.setInputFiles([anhHopLe(64, 64)]);
+        await doiDen('chip anh tham chieu hien ra', async () =>
+          (await p.locator('.ltc-media__ref .ltc-chip').count()) > 0, 30);
+
+        const batDuoc = [];
+        const nghe = (req) => {
+          if (req.url().includes('/api/bao-gia')) batDuoc.push(req.postData() || '');
+        };
+        p.on('request', nghe);
+        try {
+          const { gia } = await xemGia(p, 'doi bau troi trong anh thanh mau tim');
+          await doiDen('bao gia da di ra', () => batDuoc.length > 0, 25);
+          const ts = (JSON.parse(batDuoc[0]).tham_so) || {};
+          if (ts.mode !== 'edit') throw new Error(`mong mode=edit, nhan ${JSON.stringify(ts.mode)}`);
+          const khoa = ts.image_keys || [];
+          if (khoa.length !== 1) throw new Error(`mong 1 anh tham chieu, nhan ${khoa.length}`);
+          // ⛔ VA KHOA PHAI DUNG HINH: id nguoi dung o DOAN THU HAI. Doc chinh
+          //    cai chuoi do la cach duy nhat phat hien lai loi cu tu ngoai vao.
+          const doan = String(khoa[0]).split('/');
+          if (doan[0] !== 'chatltt' || doan[2] !== 'anh-vao') {
+            throw new Error(`khoa sai hinh (uid phai o doan 2): ${khoa[0]}`);
+          }
+          await p.getByRole('button', { name: 'Huỷ' }).click().catch(() => {});
+          return { mode: ts.mode, so_anh_tham_chieu: khoa.length,
+                   hinh_khoa: `${doan[0]}/<uid>/${doan[2]}/…`, gia_bao: gia };
+        } finally {
+          p.off('request', nghe);
+        }
       },
     },
   ];

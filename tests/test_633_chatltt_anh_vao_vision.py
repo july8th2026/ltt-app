@@ -82,7 +82,22 @@ def test_luu_anh_that_tra_ve_khoa_mang_chu_so_huu(moi_truong):
     kq = AV.luu(ANH, "image/png", user_id="u-anh")
     assert kq["mime"] == "image/png"
     assert kq["rong"] == 64 and kq["cao"] == 64
-    assert kq["key"].startswith("chatltt/anh-vao/u-anh/")
+    # 🔴 HINH KHOA DOI 04/09: `chatltt/<uid>/anh-vao/...`, uid o DOAN THU HAI.
+    #
+    #    Ban cu la `chatltt/anh-vao/<uid>/...`, va hau qua do duoc: moi anh khach
+    #    tai len trong chat bi `image.ltt` TU CHOI voi cau "Anh tham chieu khong
+    #    thuoc nguoi dung hien tai" — vi `anhnoibo._kiem_chu_so_huu` kiem dung
+    #    doan thu hai. Tao-anh-tu-anh khong chay duoc, du ca hai dau da san sang.
+    #
+    # ⭐ Nen chot MENH DE (uid o dung cho quy uoc doi) chu khong chot mot chuoi:
+    #    mot chuoi chi noi "no la the nay", con menh de noi "no phai the nay vi
+    #    app khac doc no o do".
+    assert kq["key"].split("/")[:1] == ["chatltt"]
+    assert kq["key"].split("/")[1] == "u-anh", "uid phai o doan thu hai (quy uoc kho)"
+    assert kq["key"].split("/")[2] == "anh-vao"
+    from apps.anhnoibo import features as _F
+    assert _F._kiem_chu_so_huu(kq["key"], "u-anh") == kq["key"], (
+        "khoa moi phai qua duoc cua kiem so huu cua `image.ltt`")
     assert kq["key"].endswith(".png")
 
 

@@ -53,7 +53,7 @@ function pngBuffer(w, h) {
   ]);
 }
 
-const anhHopLe = (w = 64, h = 64) => ({
+export const anhHopLe = (w = 64, h = 64) => ({
   name: `thu-${w}x${h}.png`, mimeType: 'image/png', buffer: pngBuffer(w, h),
 });
 
