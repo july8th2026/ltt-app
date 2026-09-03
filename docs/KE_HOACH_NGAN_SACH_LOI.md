@@ -265,6 +265,43 @@ Nhưng nền **biến động ~10 lần trong ngày**, đo được ở bốn th
   `lttchat-…-49`: `loi_dang_ban()` + `ngan_sach_loi(do_tai=True)` trừ phần tải **vượt nền**.
   Việc còn lại là hợp nhất nó với `tru_phien_khac` của B2 thành **một** tham số.
 
+## Đo tỉ lệ tệp nặng — và tôi đã lo sai chỗ
+
+```
+383 tệp test | 8 tệp gọi ffmpeg thật → p = 2,1%
+```
+
+Xác suất ≥2 worker cùng chạy tệp nặng (với `--dist loadfile`, mỗi worker nhận trọn một tệp):
+`-n 5` 0,4% · `-n 6` 0,6% · `-n 7` 0,9% · `-n 10` 1,8%. ⇒ Kịch bản *"vài worker cùng gọi
+ffmpeg"* mà tôi lo ở lượt trước **không phải nguyên nhân**.
+
+### Con số thật sự quan trọng: còn bao nhiêu lõi cho nền
+
+Máy **10 lõi vật lý**. Ước lượng đỉnh `n + 2×(n×p)`:
+
+| `-n` | lõi đỉnh | còn cho nền | chịu được nền tới |
+|---:|---:|---:|---|
+| 5 | 5,2 | 4,8 | 48% |
+| **6** | **6,3** | **3,7** | **37%** — bằng đỉnh xấu nhất từng đo |
+| 7 | 7,3 | 2,7 | 27% — bằng nền lúc 13h |
+| 10 | 10,4 | **−0,4** | **vượt trần TRƯỚC cả khi tính nền** |
+
+⇒ `-n 10` (sau B0) không phải một rủi ro xác suất — nó là một lỗi rõ ràng.
+
+### ⚠️ Nhưng cái giá không nhỏ, và đó là dữ liệu chưa có khi tôi đề nghị 6
+
+Đo thật ngày 03/09: `bo test` với `-n 11` mất **326,9 s**. Với **`-n 6` chạy quá 10 phút**
+(timeout, chưa xong) ⇒ chậm **ít nhất 1,8×**.
+
+⛔ Nghiệm thu của chính tài liệu này ghi: *"gate xanh VÀ thời gian không tăng — nếu chậm hơn
+   thì trần đang đặt sai chỗ."* Một lượt gate 12 phút thành 20+ phút sẽ bị nới lại, đúng như
+   `CPU_MAX_PERCENT` 92→98 ở bot.
+
+⇒ **Đừng chốt một con số cố định.** Trần cứng nên nằm ở mức chịu được nền *thường* (7–8), còn
+  phần co giãn theo nền *thật* mới là thứ bảo vệ lúc máy bận — `loi_dang_ban()` của
+  `lttchat-…-49`. Một con số duy nhất phải vừa nhanh lúc rảnh vừa an toàn lúc bận, và không
+  con số nào làm được cả hai.
+
 ## Nghiệm thu
 
 1. `-n` truyền cho pytest **≤** `psutil.cpu_count(logical=False)` trong mọi cấu hình.
