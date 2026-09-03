@@ -499,6 +499,118 @@ def tien_do(db: Session, run: AsvRun) -> dict:
 #  Phuc vu giao dien (pha 20)
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Duong dau vao BEN VUNG (G6)
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: MIME duoc nhan. Ke thua `MVP_CONTRACT.md` muc 2; `video/webm` co y vang mat
+#: (VP8/VP9 khong copy duoc vao MP4, va preset giu hinh la mot phep copy).
+KIEU_VIDEO_HOP_LE = ("video/mp4", "video/quicktime", "video/x-m4v")
+
+#: Tran cua duong ben vung. Bang tran cua `upload_sessions` (2 GiB) chu khong
+#: phai tran 90 MB cua Cloudflare — vi tep KHONG di qua Cloudflare nua.
+TRAN_BEN_VUNG = 2 * 1024 * 1024 * 1024
+
+
+def tao_ve_tai_len(db: Session, kho, *, owner_id: str, ten_tep: str,
+                   kieu: str, co_du_kien: int) -> dict:
+    """Ve tai len TRUC TIEP browser -> kho. Tra ve mo ta de client tu PUT.
+
+    🔑 Toan bo diem cua ham nay: **tep khong bao gio di qua tien trinh app**.
+       V2 doc `await video.read()` roi giu bytes do trong khi vua ghi mot ban
+       tam vua day len kho — ca video nam trong RAM hai lan, va tran 90 MB ton
+       tai chinh vi dieu do.
+
+    ⭐ Khong co gi moi duoc xay o day. `platform_core.upload_sessions` da lam
+       viec nay, da co mot nguoi goi that (`apps/autosubvideo/services/
+       source_drafts.py:33-49`), va da mang san han muc chong lam dung (20 phien,
+       2 GiB dang bay, 12 ve/phut) cung phep kiem chu ky magic byte.
+
+    Tra `{"mode": "direct", ...}` khi kho cap duoc ve, `{"mode": "local"}` khi
+    khong — luc do client quay ve duong multipart nho.
+    """
+    from platform_core import upload_sessions
+
+    phien = upload_sessions.create(
+        db, user_id=owner_id, app_slug=SLUG, filename=ten_tep,
+        content_type=kieu, expected_size=int(co_du_kien),
+        max_size=TRAN_BEN_VUNG, allowed_types=KIEU_VIDEO_HOP_LE)
+    dich = upload_sessions.upload_target(kho, phien)
+    if dich is None:
+        # Kho khong cap duoc presigned PUT (LocalStorage). Bo ve di thay vi de
+        # lai mot dong `pending` khong bao gio duoc dung.
+        db.delete(phien)
+        db.flush()
+        return {"mode": "local"}
+    return {"mode": "direct", "upload_id": phien.id, "url": dich.url,
+            "method": dich.method, "headers": dich.headers or {}}
+
+
+def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
+                  settings: dict) -> AsvRun:
+    """Ve da tai xong -> soi -> chuyen sang khoa ben -> tao run.
+
+    ## Chu so huu duoc giai o PHIA MAY CHU
+
+    `upload_sessions.owned(...)` loc theo `user_id` VA `app_slug` ngay trong cau
+    truy van, nen mot `upload_id` cua nguoi khac khong tra ve dong nao — no
+    khong the tro thanh mot loi "khong co quyen" ma ke goi doan duoc tu.
+
+    ## Soi TRUOC khi chuyen, va soi ma KHONG tai ve
+
+    `assets.nguon_soi_duoc` cho ra mot presigned URL (R2) hoac mot duong dan
+    (local). ffprobe doc vai khoi dau bang range request. Mot tep khong dat
+    chinh sach thi bi tu choi truoc khi chiem mot khoa ben trong kho.
+
+    ## ⚠️ Vi sao KHONG dung `upload_sessions.promote`
+
+    Ham do doi `credit.so_da_giu(db, job.id) > 0` — no gia dinh tien duoc giu
+    tren MOT JOB. Auto Scan giu **mot lan tren `run.id`** va moi job con cua no
+    co gia 0 (ADR-001 D4), nen dieu kien do khong bao gio dung o day.
+
+    ⇒ Ta dung `kho.promote()` — chinh API `platform_core` ma `assets.py` da dung
+      cho artifact. Khong nhan ban gi: phan `upload_sessions` lam tot (ve, han
+      muc, chu ky magic byte, quyen so huu) van duoc dung nguyen.
+
+    ⛔ Ghi lai o day vi day la mot **lech ngu nghia that** giua hai mo hinh tinh
+       tien, khong phai mot cho di tat. Neu sau nay platform_core mo mot duong
+       promote cho "chu giu tien khong phai job", ta nen chuyen sang no.
+    """
+    import uuid
+    from pathlib import Path
+
+    from platform_core import upload_sessions
+
+    from . import assets, gia, nhap_media
+
+    phien = upload_sessions.owned(db, session_id=str(upload_id or ""),
+                                  user_id=owner_id, app_slug=SLUG)
+    if phien is None:
+        raise KhongTimThay(_t('Không tìm thấy lượt tải lên.'))
+
+    try:
+        phien = upload_sessions.confirm(db, kho, phien)
+    except upload_sessions.UploadSessionError as exc:
+        raise AsvError(str(exc)) from exc
+
+    # Soi TAI CHO. Khong tai ve.
+    try:
+        tt = nhap_media.soi(assets.nguon_soi_duoc(kho, phien.staging_key))
+        nhap_media.kiem_chinh_sach(tt)
+    except nhap_media.MediaError as exc:
+        raise AsvError(str(exc)) from exc
+    uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+
+    duoi = (Path(phien.filename or "").suffix or ".mp4").lstrip(".").lower()
+    if not duoi.isalnum() or len(duoi) > 5:
+        duoi = "mp4"
+    khoa = f"asv/{owner_id[:16]}/nguon/{uuid.uuid4().hex}.{duoi}"
+    kho.promote(phien.staging_key, khoa, content_type=phien.content_type)
+
+    return tao_run(db, owner_id=owner_id, source_key=khoa,
+                   settings=settings, uoc_luong_credit=uoc)
+
+
 def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
                        ten_tep: str, settings: dict) -> AsvRun:
     """Nhan bytes tu mot lan tai len -> luu vao kho -> tao run.

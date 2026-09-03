@@ -242,3 +242,193 @@ def test_tai_nguon_ve_dia_KHONG_nap_ca_video_vao_RAM(tmp_path):
     assert Path(duong).read_bytes() == du_lieu
     assert max(kho.lan_doc) <= assets.KHOI_DOC, (
         f"co mot lan doc {max(kho.lan_doc)} byte — dang nap ca video vao RAM")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Duong tai len BEN VUNG (G6)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'asv.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        yield s
+    finally:
+        s.close(); dbmod.reset_engine()
+
+
+class _KhoR2Gia:
+    """Kho GIONG R2: cap presigned, KHONG cho duong dan tren dia.
+
+    ⭐ Hinh dang nay moi la hinh dang cua production. `LocalStorage` co
+       `local_path`, nen mot phep kiem chi chay tren no se **khong bao gio** di
+       vao nhanh presigned — va nhanh do chinh la thu G6 doi.
+    """
+
+    def __init__(self, tmp):
+        self.goc = Path(tmp)
+        self.da_mo: list[str] = []
+
+    def _p(self, khoa):
+        d = self.goc / khoa.replace("/", "__")
+        return d
+
+    def put(self, khoa, f, content_type=""):
+        self._p(khoa).write_bytes(f.read())
+
+    def exists(self, khoa):
+        return self._p(khoa).exists()
+
+    def size(self, khoa):
+        return self._p(khoa).stat().st_size
+
+    def open(self, khoa):
+        self.da_mo.append(khoa)
+        return open(self._p(khoa), "rb")
+
+    def url_for(self, khoa, ttl_s=3600):
+        return f"https://r2.vi-du/{khoa}?ky=gia"
+
+    def local_path(self, khoa):
+        return None                      # <- dung nhu R2
+
+    def promote(self, staging_key, final_key, content_type=""):
+        from platform_core.storage import StoredFile
+        nguon = self._p(staging_key)
+        dich = self._p(final_key)
+        dich.write_bytes(nguon.read_bytes())
+        nguon.unlink()
+        return StoredFile(key=final_key, size=dich.stat().st_size,
+                          content_type=content_type)
+
+
+def test_nguon_soi_duoc_tra_URL_khi_kho_khong_co_dia(tmp_path):
+    """Voi R2, ffprobe phai nhan mot URL — khong phai mot ban sao tren dia.
+
+    🔑 `platform_core/media.py:81` da giai thich cai gia: mot video 2 GB di qua
+       tunnel chi de doc mot con so.
+    """
+    kho = _KhoR2Gia(tmp_path)
+    ra = assets.nguon_soi_duoc(kho, "asv/u/nguon/x.mp4")
+    assert ra.startswith("https://")
+    assert kho.da_mo == [], "da mo tep de doc — dang tai ve thay vi soi tai cho"
+
+
+def test_nguon_soi_duoc_NEM_khi_kho_khong_tra_loi_duoc():
+    """Im lang tai ca tep ve la dung hanh vi ham nay ton tai de khong lam."""
+    class KhoCam:
+        def local_path(self, k): return None
+        def url_for(self, k, ttl_s=3600): return None
+
+    with pytest.raises(assets.AssetError, match="khong soi duoc"):
+        assets.nguon_soi_duoc(KhoCam(), "k")
+
+
+def test_ve_cua_NGUOI_KHAC_khong_dung_duoc(db, tmp_path):
+    """I6 — chu so huu duoc giai o PHIA MAY CHU, trong cau truy van.
+
+    ⛔ Neu `upload_id` duoc tin, mot nguoi doan duoc ma ve cua nguoi khac se tao
+       duoc mot lan chay tren video cua ho — va hoa don ve tay nguoi doan.
+    """
+    from apps.auto_scan_video import features
+    from platform_core import upload_sessions
+    from tests.conftest import bao_dam_user
+
+    bao_dam_user(db, "u1")
+    bao_dam_user(db, "u2")
+    kho = _KhoR2Gia(tmp_path)
+    phien = upload_sessions.create(
+        db, user_id="u1", app_slug=features.SLUG, filename="a.mp4",
+        content_type="video/mp4", expected_size=10,
+        max_size=features.TRAN_BEN_VUNG,
+        allowed_types=features.KIEU_VIDEO_HOP_LE)
+    db.flush()
+
+    with pytest.raises(features.KhongTimThay):
+        features.tao_run_tu_ve(db, kho, owner_id="u2", upload_id=phien.id,
+                               settings={})
+
+
+def test_ve_khong_ton_tai_bao_KHONG_TIM_THAY_chu_khong_no(db, tmp_path):
+    from apps.auto_scan_video import features
+    from tests.conftest import bao_dam_user
+
+    bao_dam_user(db, "u1")
+    with pytest.raises(features.KhongTimThay):
+        features.tao_run_tu_ve(db, _KhoR2Gia(tmp_path), owner_id="u1",
+                               upload_id="khong-co-that", settings={})
+
+
+def test_route_tao_UU_TIEN_duong_ben_vung_khi_co_ca_hai():
+    """⚠️ Thu tu hai nhanh trong `tao` la mot quyet dinh, khong phai tinh co.
+
+    Neu nhanh multipart dung truoc, mot client cu gui kem ca `upload_id` lan mot
+    tep se lang le keo ca lan chay ve duong co tran 90 MB — dung dieu G6 cam.
+    """
+    import ast
+
+    nguon = (GOC / "apps" / "auto_scan_video" / "routes.py").read_text(encoding="utf-8")
+    cay = ast.parse(nguon)
+    ham = next(f for f in ast.walk(cay)
+               if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and f.name == "tao")
+
+    dong_ben_vung = dong_multipart = None
+    for nut in ast.walk(ham):
+        if isinstance(nut, ast.Attribute) and nut.attr == "tao_run_tu_ve":
+            dong_ben_vung = nut.lineno
+        if isinstance(nut, ast.Attribute) and nut.attr == "tao_run_tu_tai_len":
+            dong_multipart = nut.lineno
+
+    assert dong_ben_vung is not None, "route khong con goi duong ben vung"
+    assert dong_multipart is not None
+    assert dong_ben_vung < dong_multipart, (
+        "nhanh multipart dung TRUOC nhanh ben vung — mot client gui ca hai se bi "
+        "keo ve duong co tran 90 MB")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  `upload_sessions` phai nhan slug co DAU GACH DUOI
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_moi_app_trong_kho_deu_tao_duoc_ve_tai_len():
+    """🔴 Truoc 2026-09-03, BAY app bi `create()` tu choi thang.
+
+    `_SLUG` la `^[a-z0-9][a-z0-9-]{0,63}$` — khong co `_`. Nen `auto_scan_video`,
+    `ltt_voice` (dang BAN), `ltt_llm`, `prompt_ai_ommi` va ba executor ASV deu
+    khong dung duoc duong tai len ben vung cua nen tang.
+
+    ⭐ Vi sao no khong lo ra: app duy nhat dang goi `upload_sessions` la
+       `autosubvideo` — mot trong so it slug khong co gach duoi — con
+       `tests/conftest.py:71` dat `APP_THU_SLUG="appthu"`, nen ca bo test chua
+       bao gio di qua nhanh nay voi mot slug that.
+
+    ⇒ Phep kiem nay chay tren **danh sach app that**, khong tren mot slug mau.
+      Do la khac biet duy nhat khien no bat duoc thu ma `test_173` khong bat.
+    """
+    from platform_core.registry import discover
+    from platform_core.upload_sessions import _SLUG
+
+    tu_choi = sorted(a.manifest.slug for a in discover()
+                     if not _SLUG.fullmatch(a.manifest.slug))
+    assert tu_choi == [], (
+        f"{len(tu_choi)} app khong tao duoc ve tai len: {tu_choi}. "
+        f"`AppManifest` khong cam gach duoi, nen day la mot khiem khuyet cua "
+        f"`upload_sessions._SLUG`, khong phai mot han che co chu y.")
+
+
+def test_noi_rong_slug_KHONG_lam_hong_slug_hop_le_cu():
+    """Doi chi duoc NOI RONG: moi slug hop le truoc day van phai hop le."""
+    from platform_core.upload_sessions import _SLUG
+
+    for hop_le in ("autosubvideo", "taoanh", "a", "a-b-c", "x9", "auto_scan_video"):
+        assert _SLUG.fullmatch(hop_le), hop_le
+    # Va nhung thu VAN phai bi tu choi — noi rong khong phai mo toang.
+    for xau in ("", "-abc", "_abc", "ABC", "a/b", "a.b", "a b", "a" * 65):
+        assert not _SLUG.fullmatch(xau), xau

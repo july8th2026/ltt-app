@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:840ea81b8d631954d52cd18d22e3ea5035b6911147f8ed7a916a50bc691f699a
+Fingerprint   : sha256:70d8cce4df8558f6052b83743a410e148cf0b241f01b9d853c8ded05fe2af246
 Nguồn đã quét : 1551 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -136,7 +136,7 @@ Các lớp chính:
   URL=/auto-scan-video | surface=customer | lifecycle=development
   enabled=False | public=False | parent=-
   requires=api | capabilities=video
-  HTTP routes=7 | table_prefix=asv | manifest_error=-
+  HTTP routes=8 | table_prefix=asv | manifest_error=-
   credit_cost=apps.auto_scan_video.manifest._gia
   job_types=auto_scan_video.advance, auto_scan_video.content_process
   Agent tools (0):
@@ -600,7 +600,7 @@ Các lớp chính:
     - apps/vps/tables.py
     - apps/vps/ten_may.py
 
-4. HTTP ROUTE INVENTORY (336)
+4. HTTP ROUTE INVENTORY (337)
 Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent → page | auth~login | apps/agent/routes/legacy_runs.py:31
 - [agent] GET    /agent/api/admin/metrics → agent_admin_metrics | auth~login | apps/agent/routes/admin.py:35
@@ -650,13 +650,14 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] POST   /agent/runs/{run_id}/tick → tick_run | auth~login | apps/agent/routes/legacy_runs.py:129
 - [agent] GET    /agent/shared/{token} → workflow_shared_view | auth~login | apps/agent/routes/sharing.py:60
 - [agent] POST   /agent/shared/{token}/clone → workflow_shared_clone | auth~login | apps/agent/routes/sharing.py:69
-- [auto_scan_video] GET    /auto-scan-video → trang_chinh | auth~login | apps/auto_scan_video/routes.py:117
-- [auto_scan_video] GET    /auto-scan-video/run/{run_id} → chi_tiet | auth~login | apps/auto_scan_video/routes.py:187
-- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/huy → huy | auth~login | apps/auto_scan_video/routes.py:220
-- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tai → tai_ket_qua | auth~login | apps/auto_scan_video/routes.py:253
-- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/thu-lai → thu_lai | auth~login | apps/auto_scan_video/routes.py:234
-- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tien-do → tien_do | auth~login | apps/auto_scan_video/routes.py:204
-- [auto_scan_video] POST   /auto-scan-video/tao → tao | auth~login | apps/auto_scan_video/routes.py:132
+- [auto_scan_video] GET    /auto-scan-video → trang_chinh | auth~login | apps/auto_scan_video/routes.py:118
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id} → chi_tiet | auth~login | apps/auto_scan_video/routes.py:248
+- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/huy → huy | auth~login | apps/auto_scan_video/routes.py:281
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tai → tai_ket_qua | auth~login | apps/auto_scan_video/routes.py:314
+- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/thu-lai → thu_lai | auth~login | apps/auto_scan_video/routes.py:295
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tien-do → tien_do | auth~login | apps/auto_scan_video/routes.py:265
+- [auto_scan_video] POST   /auto-scan-video/tao → tao | auth~login | apps/auto_scan_video/routes.py:166
+- [auto_scan_video] POST   /auto-scan-video/ve → cap_ve | auth~login | apps/auto_scan_video/routes.py:133
 - [autosubvideo] GET    /autosubvideo → page | auth~login | apps/autosubvideo/routes.py:111
 - [autosubvideo] GET    /autosubvideo/api/capabilities → studio_capabilities | auth~login | apps/autosubvideo/routes.py:400
 - [autosubvideo] GET    /autosubvideo/api/jobs → studio_jobs | auth~login | apps/autosubvideo/routes.py:599
@@ -3301,7 +3302,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1551 file; 15535190 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1551 file; 15553977 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -11982,7 +11983,7 @@ BE_MAT_CONG_KHAI = {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/assets.py
-SHA256=6d632799abbb7ea8e8112f5bec40016b4d9ac8fc307f8c984606df18117d47d3 BYTES=23841 LINES=511
+SHA256=cc89063f217e87527cc675161160b8a59444683a96e2fa709d712f9084620153 BYTES=25273 LINES=543
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Vong doi artifact cua Auto Scan Video: dat khoa, promote nguyen tu, toan ven.
 
@@ -12217,6 +12218,38 @@ def bam_tep(duong: str | Path) -> str:
                 break
             h.update(khoi)
     return h.hexdigest()
+
+
+def nguon_soi_duoc(kho: Storage, khoa: str, *, ttl_s: int = 3600) -> str:
+    """Mot thu `ffprobe` doc duoc, **khong tai tep ve**.
+
+    Hai backend, hai cau tra loi, va ca hai deu da co san o `platform_core`:
+
+        LocalStorage -> `local_path()`  duong dan tren dia
+        R2Storage    -> `url_for()`     presigned GET; ffprobe doc bang range request
+
+    🔑 `platform_core/media.py:81 is_remote_source` va docstring cua no da ghi ro
+       vi sao dieu nay dang lam: *"voi R2, nguon LA mot presigned URL va ffprobe
+       chi tai vai khoi dau bang range request. Vong qua no bang cach tai ca tep
+       ve la dung thu H10 sinh ra de tranh — mot video 2 GB di qua tunnel chi de
+       doc mot con so."*
+
+    ⇒ Day khong phai nang luc moi. Day la mot nang luc da co ma Auto Scan chua
+      dung, va `nhap_media.soi` von da truyen thang tham so cho `ffprobe` nen no
+      nhan URL ma khong can sua mot dong nao.
+
+    ⛔ Nem neu khong backend nao tra loi duoc. Im lang tai ca tep ve la dung
+       hanh vi ma ham nay ton tai de khong lam.
+    """
+    duong = kho.local_path(khoa) if hasattr(kho, "local_path") else None
+    if duong:
+        return duong
+    url = kho.url_for(khoa, ttl_s=ttl_s) if hasattr(kho, "url_for") else None
+    if url:
+        return url
+    raise AssetError(
+        f"kho khong cho ra duong dan lan URL cho {khoa} — khong soi duoc ma "
+        f"khong tai ve")
 
 
 def do_va_bam(kho: Storage, khoa: str) -> tuple[int, str]:
@@ -13283,7 +13316,7 @@ def dich_ban_ghi(db, ban_ghi_goc: dict, *, ctx=None) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/features.py
-SHA256=c4e7d33e60173e5b39e83ddc5527df3daa2adfd0f8cea7a9f73c17637774dc1e BYTES=27057 LINES=568
+SHA256=ba988a001c0dcaa704cc586d07bcef1512396b3aaf45847174715be74bb58b5e BYTES=32436 LINES=680
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Quy tac nghiep vu cua Auto Scan Video: vong doi run, tien, quyen so huu.
 
@@ -13785,6 +13818,118 @@ def tien_do(db: Session, run: AsvRun) -> dict:
 # ══════════════════════════════════════════════════════════════════════════════
 #  Phuc vu giao dien (pha 20)
 # ══════════════════════════════════════════════════════════════════════════════
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Duong dau vao BEN VUNG (G6)
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: MIME duoc nhan. Ke thua `MVP_CONTRACT.md` muc 2; `video/webm` co y vang mat
+#: (VP8/VP9 khong copy duoc vao MP4, va preset giu hinh la mot phep copy).
+KIEU_VIDEO_HOP_LE = ("video/mp4", "video/quicktime", "video/x-m4v")
+
+#: Tran cua duong ben vung. Bang tran cua `upload_sessions` (2 GiB) chu khong
+#: phai tran 90 MB cua Cloudflare — vi tep KHONG di qua Cloudflare nua.
+TRAN_BEN_VUNG = 2 * 1024 * 1024 * 1024
+
+
+def tao_ve_tai_len(db: Session, kho, *, owner_id: str, ten_tep: str,
+                   kieu: str, co_du_kien: int) -> dict:
+    """Ve tai len TRUC TIEP browser -> kho. Tra ve mo ta de client tu PUT.
+
+    🔑 Toan bo diem cua ham nay: **tep khong bao gio di qua tien trinh app**.
+       V2 doc `await video.read()` roi giu bytes do trong khi vua ghi mot ban
+       tam vua day len kho — ca video nam trong RAM hai lan, va tran 90 MB ton
+       tai chinh vi dieu do.
+
+    ⭐ Khong co gi moi duoc xay o day. `platform_core.upload_sessions` da lam
+       viec nay, da co mot nguoi goi that (`apps/autosubvideo/services/
+       source_drafts.py:33-49`), va da mang san han muc chong lam dung (20 phien,
+       2 GiB dang bay, 12 ve/phut) cung phep kiem chu ky magic byte.
+
+    Tra `{"mode": "direct", ...}` khi kho cap duoc ve, `{"mode": "local"}` khi
+    khong — luc do client quay ve duong multipart nho.
+    """
+    from platform_core import upload_sessions
+
+    phien = upload_sessions.create(
+        db, user_id=owner_id, app_slug=SLUG, filename=ten_tep,
+        content_type=kieu, expected_size=int(co_du_kien),
+        max_size=TRAN_BEN_VUNG, allowed_types=KIEU_VIDEO_HOP_LE)
+    dich = upload_sessions.upload_target(kho, phien)
+    if dich is None:
+        # Kho khong cap duoc presigned PUT (LocalStorage). Bo ve di thay vi de
+        # lai mot dong `pending` khong bao gio duoc dung.
+        db.delete(phien)
+        db.flush()
+        return {"mode": "local"}
+    return {"mode": "direct", "upload_id": phien.id, "url": dich.url,
+            "method": dich.method, "headers": dich.headers or {}}
+
+
+def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
+                  settings: dict) -> AsvRun:
+    """Ve da tai xong -> soi -> chuyen sang khoa ben -> tao run.
+
+    ## Chu so huu duoc giai o PHIA MAY CHU
+
+    `upload_sessions.owned(...)` loc theo `user_id` VA `app_slug` ngay trong cau
+    truy van, nen mot `upload_id` cua nguoi khac khong tra ve dong nao — no
+    khong the tro thanh mot loi "khong co quyen" ma ke goi doan duoc tu.
+
+    ## Soi TRUOC khi chuyen, va soi ma KHONG tai ve
+
+    `assets.nguon_soi_duoc` cho ra mot presigned URL (R2) hoac mot duong dan
+    (local). ffprobe doc vai khoi dau bang range request. Mot tep khong dat
+    chinh sach thi bi tu choi truoc khi chiem mot khoa ben trong kho.
+
+    ## ⚠️ Vi sao KHONG dung `upload_sessions.promote`
+
+    Ham do doi `credit.so_da_giu(db, job.id) > 0` — no gia dinh tien duoc giu
+    tren MOT JOB. Auto Scan giu **mot lan tren `run.id`** va moi job con cua no
+    co gia 0 (ADR-001 D4), nen dieu kien do khong bao gio dung o day.
+
+    ⇒ Ta dung `kho.promote()` — chinh API `platform_core` ma `assets.py` da dung
+      cho artifact. Khong nhan ban gi: phan `upload_sessions` lam tot (ve, han
+      muc, chu ky magic byte, quyen so huu) van duoc dung nguyen.
+
+    ⛔ Ghi lai o day vi day la mot **lech ngu nghia that** giua hai mo hinh tinh
+       tien, khong phai mot cho di tat. Neu sau nay platform_core mo mot duong
+       promote cho "chu giu tien khong phai job", ta nen chuyen sang no.
+    """
+    import uuid
+    from pathlib import Path
+
+    from platform_core import upload_sessions
+
+    from . import assets, gia, nhap_media
+
+    phien = upload_sessions.owned(db, session_id=str(upload_id or ""),
+                                  user_id=owner_id, app_slug=SLUG)
+    if phien is None:
+        raise KhongTimThay(_t('Không tìm thấy lượt tải lên.'))
+
+    try:
+        phien = upload_sessions.confirm(db, kho, phien)
+    except upload_sessions.UploadSessionError as exc:
+        raise AsvError(str(exc)) from exc
+
+    # Soi TAI CHO. Khong tai ve.
+    try:
+        tt = nhap_media.soi(assets.nguon_soi_duoc(kho, phien.staging_key))
+        nhap_media.kiem_chinh_sach(tt)
+    except nhap_media.MediaError as exc:
+        raise AsvError(str(exc)) from exc
+    uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+
+    duoi = (Path(phien.filename or "").suffix or ".mp4").lstrip(".").lower()
+    if not duoi.isalnum() or len(duoi) > 5:
+        duoi = "mp4"
+    khoa = f"asv/{owner_id[:16]}/nguon/{uuid.uuid4().hex}.{duoi}"
+    kho.promote(phien.staging_key, khoa, content_type=phien.content_type)
+
+    return tao_run(db, owner_id=owner_id, source_key=khoa,
+                   settings=settings, uoc_luong_credit=uoc)
+
 
 def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
                        ten_tep: str, settings: dict) -> AsvRun:
@@ -17495,7 +17640,7 @@ def tom_tat_loi_cho_khach(db, run) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/routes.py
-SHA256=80246919416104352bf24dcbf07733c62dde758df4570f0de9bb968768c07990 BYTES=12029 LINES=290
+SHA256=8931c02a87e693dba1c58d9732899e143fa75ef77163fff6d06d960f6d17702c BYTES=14836 LINES=351
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Giao dien khach cua Auto Scan Video.
 
@@ -17529,7 +17674,8 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (HTMLResponse, JSONResponse,
+                               RedirectResponse, StreamingResponse)
 from sqlalchemy.orm import Session
 
 from platform_core.i18n import N_, _ as _t
@@ -17627,9 +17773,43 @@ def trang_chinh(request: Request, _g: None = Depends(_cong_co),
     })
 
 
+@router.post("/ve")
+async def cap_ve(request: Request,
+                 ten_tep: str = Form(...),
+                 kieu: str = Form(...),
+                 co: int = Form(...),
+                 csrf_token: str = Form(""),
+                 _g: None = Depends(_cong_co),
+                 user: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    """Cap mot ve tai len TRUC TIEP browser -> kho (G6).
+
+    🔑 Tep khong di qua tien trinh nay, va khong di qua Cloudflare. Do la ca ly
+       do tran 90 MB bien mat: `routes.py:79 TRAN_TAI_LEN` ton tai vi Cloudflare
+       cat o 100 MB **tren duong vao may chu** — mot duong ma tep khong con di.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    if u is None:
+        raise HTTPException(status_code=401)
+    from platform_core import upload_sessions
+    from platform_core.storage import get_storage
+    try:
+        ra = features.tao_ve_tai_len(
+            db, get_storage(), owner_id=u.id, ten_tep=ten_tep, kieu=kieu,
+            co_du_kien=co)
+        db.commit()
+    except upload_sessions.UploadSessionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JSONResponse(ra)
+
+
 @router.post("/tao", response_class=HTMLResponse)
 async def tao(request: Request,
-              video: UploadFile = File(...),
+              upload_id: str = Form(""),
+              video: UploadFile | None = File(None),
               che_do: str = Form(gia.CHE_DO_MAC_DINH),
               giong_id: str = Form(""),
               csrf_token: str = Form(""),
@@ -17646,6 +17826,32 @@ async def tao(request: Request,
     if not gia.che_do_hop_le(che_do):
         return _lai_voi_loi(request, db, u,
                             _t('Chế độ thời gian không hợp lệ.'))
+    # ── Duong BEN VUNG: tep da nam trong kho, ta chi nhan mot ma ve ───────────
+    #
+    # ⭐ Dat truoc duong multipart co chu y. Khi ca hai cung co mat, duong ben
+    #    vung phai thang — nguoc lai mot client cu gui kem ca hai se lang le keo
+    #    ca lan chay ve duong co tran 90 MB.
+    if upload_id:
+        from platform_core.storage import get_storage
+        try:
+            run = features.tao_run_tu_ve(
+                db, get_storage(), owner_id=u.id, upload_id=upload_id,
+                settings={"timing_mode": che_do, "voice_id": giong_id})
+            db.commit()
+        except features.AsvError as exc:
+            db.rollback()
+            return _lai_voi_loi(request, db, u, str(exc))
+        return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run.id}",
+                                status_code=303)
+
+    # ── Duong multipart NHO: chi con cho tep duoi tran, va tran do la co y ────
+    #
+    # ⚠️ Pha 05 giu duong nay co chu dinh (Prompt 05 muc 4 cho phep "a tiny dev
+    #    upload path only if explicitly bounded"). No la duong duy nhat chay
+    #    duoc khi kho la `LocalStorage` — tuc tren may phat trien va trong ca bo
+    #    test — vi backend cuc bo khong cap presigned PUT.
+    if video is None:
+        return _lai_voi_loi(request, db, u, _t('Chưa chọn video.'))
     kieu = (video.content_type or "").split(";")[0].strip().lower()
     if kieu and kieu not in KIEU_VIDEO:
         return _lai_voi_loi(request, db, u,
@@ -143905,7 +144111,7 @@ def _doc(token: str, salt: str, max_age: int) -> Optional[str]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/upload_sessions.py
-SHA256=d15f8d1deb3295c416f7705523912762b3836be69c1947d4481ef4d5c06af5cb BYTES=17238 LINES=400
+SHA256=9221a9595e9e99d849e705c738b93bb8095a0a3a83bca71c6c8427a9b123bea7 BYTES=18409 LINES=422
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Upload staging lifecycle dùng chung cho app file/media.
 
@@ -143937,7 +144143,29 @@ DRAFT_RETENTION_DAYS = 30
 MAX_ACTIVE_SESSIONS = 20
 MAX_ACTIVE_BYTES = 2 * 1024 * 1024 * 1024
 MAX_CREATED_PER_MINUTE = 12
-_SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+#: Slug app hop le cho mot khoa staging.
+#:
+#: 🔴 **DAU GACH DUOI DUOC THEM 2026-09-03, va truoc do no la mot loi that.**
+#:
+#:    Ban cu la `^[a-z0-9][a-z0-9-]{0,63}$` — khong co `_`. Ket qua: **7 trong 19
+#:    app** cua kho bi `create()` tu choi thang, trong do co `ltt_voice`
+#:    (`lifecycle="released"`, dang ban) va `ltt_llm`:
+#:
+#:        bi tu choi: asv_gpu, asv_media, asv_voice, auto_scan_video,
+#:                    ltt_llm, ltt_voice, prompt_ai_ommi
+#:
+#:    Va no khong lo ra suot mot thoi gian dai vi hai ly do cong lai: app duy
+#:    nhat dang goi `upload_sessions` la `autosubvideo` — mot trong so it slug
+#:    khong co gach duoi — con `tests/conftest.py:71` dat `APP_THU_SLUG="appthu"`,
+#:    nen ca bo test chua bao gio di qua nhanh nay voi mot slug that.
+#:
+#: ⭐ Day khong phai mot han che co chu y: `AppManifest` khong cam gach duoi o
+#:    dau ca, va bay app dang dung no. Trong mot duong dan luu tru, `_` an toan
+#:    ngang `-`, va `storage._safe_key` van la lop chan cuoi.
+#:
+#: ⛔ Doi nay CHI NOI RONG: moi slug hop le truoc day van hop le. Khong nguoi goi
+#:    nao doi hanh vi. Xem `tests/test_429_asv_v4_dau_vao_lon.py` muc 3.
+_SLUG = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
 log = logging.getLogger(__name__)
 
 
@@ -277345,7 +277573,7 @@ def test_moi_tep_trong_ban_do_deu_nam_trong_vong_DU():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_429_asv_v4_dau_vao_lon.py
-SHA256=e84d1d98ff5232cc235e7559224566a8c18745cef1d9b8e58cc884accc195797 BYTES=9716 LINES=244
+SHA256=68d108984131f505f7f337f698f5aabeb60054ad2c6e14b34b48891d8be66569 BYTES=17714 LINES=434
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video V4 — large input: streaming hash and the durable upload path.
 
@@ -277591,6 +277819,196 @@ def test_tai_nguon_ve_dia_KHONG_nap_ca_video_vao_RAM(tmp_path):
     assert Path(duong).read_bytes() == du_lieu
     assert max(kho.lan_doc) <= assets.KHOI_DOC, (
         f"co mot lan doc {max(kho.lan_doc)} byte — dang nap ca video vao RAM")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Duong tai len BEN VUNG (G6)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'asv.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        yield s
+    finally:
+        s.close(); dbmod.reset_engine()
+
+
+class _KhoR2Gia:
+    """Kho GIONG R2: cap presigned, KHONG cho duong dan tren dia.
+
+    ⭐ Hinh dang nay moi la hinh dang cua production. `LocalStorage` co
+       `local_path`, nen mot phep kiem chi chay tren no se **khong bao gio** di
+       vao nhanh presigned — va nhanh do chinh la thu G6 doi.
+    """
+
+    def __init__(self, tmp):
+        self.goc = Path(tmp)
+        self.da_mo: list[str] = []
+
+    def _p(self, khoa):
+        d = self.goc / khoa.replace("/", "__")
+        return d
+
+    def put(self, khoa, f, content_type=""):
+        self._p(khoa).write_bytes(f.read())
+
+    def exists(self, khoa):
+        return self._p(khoa).exists()
+
+    def size(self, khoa):
+        return self._p(khoa).stat().st_size
+
+    def open(self, khoa):
+        self.da_mo.append(khoa)
+        return open(self._p(khoa), "rb")
+
+    def url_for(self, khoa, ttl_s=3600):
+        return f"https://r2.vi-du/{khoa}?ky=gia"
+
+    def local_path(self, khoa):
+        return None                      # <- dung nhu R2
+
+    def promote(self, staging_key, final_key, content_type=""):
+        from platform_core.storage import StoredFile
+        nguon = self._p(staging_key)
+        dich = self._p(final_key)
+        dich.write_bytes(nguon.read_bytes())
+        nguon.unlink()
+        return StoredFile(key=final_key, size=dich.stat().st_size,
+                          content_type=content_type)
+
+
+def test_nguon_soi_duoc_tra_URL_khi_kho_khong_co_dia(tmp_path):
+    """Voi R2, ffprobe phai nhan mot URL — khong phai mot ban sao tren dia.
+
+    🔑 `platform_core/media.py:81` da giai thich cai gia: mot video 2 GB di qua
+       tunnel chi de doc mot con so.
+    """
+    kho = _KhoR2Gia(tmp_path)
+    ra = assets.nguon_soi_duoc(kho, "asv/u/nguon/x.mp4")
+    assert ra.startswith("https://")
+    assert kho.da_mo == [], "da mo tep de doc — dang tai ve thay vi soi tai cho"
+
+
+def test_nguon_soi_duoc_NEM_khi_kho_khong_tra_loi_duoc():
+    """Im lang tai ca tep ve la dung hanh vi ham nay ton tai de khong lam."""
+    class KhoCam:
+        def local_path(self, k): return None
+        def url_for(self, k, ttl_s=3600): return None
+
+    with pytest.raises(assets.AssetError, match="khong soi duoc"):
+        assets.nguon_soi_duoc(KhoCam(), "k")
+
+
+def test_ve_cua_NGUOI_KHAC_khong_dung_duoc(db, tmp_path):
+    """I6 — chu so huu duoc giai o PHIA MAY CHU, trong cau truy van.
+
+    ⛔ Neu `upload_id` duoc tin, mot nguoi doan duoc ma ve cua nguoi khac se tao
+       duoc mot lan chay tren video cua ho — va hoa don ve tay nguoi doan.
+    """
+    from apps.auto_scan_video import features
+    from platform_core import upload_sessions
+    from tests.conftest import bao_dam_user
+
+    bao_dam_user(db, "u1")
+    bao_dam_user(db, "u2")
+    kho = _KhoR2Gia(tmp_path)
+    phien = upload_sessions.create(
+        db, user_id="u1", app_slug=features.SLUG, filename="a.mp4",
+        content_type="video/mp4", expected_size=10,
+        max_size=features.TRAN_BEN_VUNG,
+        allowed_types=features.KIEU_VIDEO_HOP_LE)
+    db.flush()
+
+    with pytest.raises(features.KhongTimThay):
+        features.tao_run_tu_ve(db, kho, owner_id="u2", upload_id=phien.id,
+                               settings={})
+
+
+def test_ve_khong_ton_tai_bao_KHONG_TIM_THAY_chu_khong_no(db, tmp_path):
+    from apps.auto_scan_video import features
+    from tests.conftest import bao_dam_user
+
+    bao_dam_user(db, "u1")
+    with pytest.raises(features.KhongTimThay):
+        features.tao_run_tu_ve(db, _KhoR2Gia(tmp_path), owner_id="u1",
+                               upload_id="khong-co-that", settings={})
+
+
+def test_route_tao_UU_TIEN_duong_ben_vung_khi_co_ca_hai():
+    """⚠️ Thu tu hai nhanh trong `tao` la mot quyet dinh, khong phai tinh co.
+
+    Neu nhanh multipart dung truoc, mot client cu gui kem ca `upload_id` lan mot
+    tep se lang le keo ca lan chay ve duong co tran 90 MB — dung dieu G6 cam.
+    """
+    import ast
+
+    nguon = (GOC / "apps" / "auto_scan_video" / "routes.py").read_text(encoding="utf-8")
+    cay = ast.parse(nguon)
+    ham = next(f for f in ast.walk(cay)
+               if isinstance(f, (ast.FunctionDef, ast.AsyncFunctionDef))
+               and f.name == "tao")
+
+    dong_ben_vung = dong_multipart = None
+    for nut in ast.walk(ham):
+        if isinstance(nut, ast.Attribute) and nut.attr == "tao_run_tu_ve":
+            dong_ben_vung = nut.lineno
+        if isinstance(nut, ast.Attribute) and nut.attr == "tao_run_tu_tai_len":
+            dong_multipart = nut.lineno
+
+    assert dong_ben_vung is not None, "route khong con goi duong ben vung"
+    assert dong_multipart is not None
+    assert dong_ben_vung < dong_multipart, (
+        "nhanh multipart dung TRUOC nhanh ben vung — mot client gui ca hai se bi "
+        "keo ve duong co tran 90 MB")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  `upload_sessions` phai nhan slug co DAU GACH DUOI
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_moi_app_trong_kho_deu_tao_duoc_ve_tai_len():
+    """🔴 Truoc 2026-09-03, BAY app bi `create()` tu choi thang.
+
+    `_SLUG` la `^[a-z0-9][a-z0-9-]{0,63}$` — khong co `_`. Nen `auto_scan_video`,
+    `ltt_voice` (dang BAN), `ltt_llm`, `prompt_ai_ommi` va ba executor ASV deu
+    khong dung duoc duong tai len ben vung cua nen tang.
+
+    ⭐ Vi sao no khong lo ra: app duy nhat dang goi `upload_sessions` la
+       `autosubvideo` — mot trong so it slug khong co gach duoi — con
+       `tests/conftest.py:71` dat `APP_THU_SLUG="appthu"`, nen ca bo test chua
+       bao gio di qua nhanh nay voi mot slug that.
+
+    ⇒ Phep kiem nay chay tren **danh sach app that**, khong tren mot slug mau.
+      Do la khac biet duy nhat khien no bat duoc thu ma `test_173` khong bat.
+    """
+    from platform_core.registry import discover
+    from platform_core.upload_sessions import _SLUG
+
+    tu_choi = sorted(a.manifest.slug for a in discover()
+                     if not _SLUG.fullmatch(a.manifest.slug))
+    assert tu_choi == [], (
+        f"{len(tu_choi)} app khong tao duoc ve tai len: {tu_choi}. "
+        f"`AppManifest` khong cam gach duoi, nen day la mot khiem khuyet cua "
+        f"`upload_sessions._SLUG`, khong phai mot han che co chu y.")
+
+
+def test_noi_rong_slug_KHONG_lam_hong_slug_hop_le_cu():
+    """Doi chi duoc NOI RONG: moi slug hop le truoc day van phai hop le."""
+    from platform_core.upload_sessions import _SLUG
+
+    for hop_le in ("autosubvideo", "taoanh", "a", "a-b-c", "x9", "auto_scan_video"):
+        assert _SLUG.fullmatch(hop_le), hop_le
+    # Va nhung thu VAN phai bi tu choi — noi rong khong phai mo toang.
+    for xau in ("", "-abc", "_abc", "ABC", "a/b", "a.b", "a b", "a" * 65):
+        assert not _SLUG.fullmatch(xau), xau
 
 @@@LTT_PROFILE_FILE_END@@@
 

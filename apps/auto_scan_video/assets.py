@@ -233,6 +233,38 @@ def bam_tep(duong: str | Path) -> str:
     return h.hexdigest()
 
 
+def nguon_soi_duoc(kho: Storage, khoa: str, *, ttl_s: int = 3600) -> str:
+    """Mot thu `ffprobe` doc duoc, **khong tai tep ve**.
+
+    Hai backend, hai cau tra loi, va ca hai deu da co san o `platform_core`:
+
+        LocalStorage -> `local_path()`  duong dan tren dia
+        R2Storage    -> `url_for()`     presigned GET; ffprobe doc bang range request
+
+    🔑 `platform_core/media.py:81 is_remote_source` va docstring cua no da ghi ro
+       vi sao dieu nay dang lam: *"voi R2, nguon LA mot presigned URL va ffprobe
+       chi tai vai khoi dau bang range request. Vong qua no bang cach tai ca tep
+       ve la dung thu H10 sinh ra de tranh — mot video 2 GB di qua tunnel chi de
+       doc mot con so."*
+
+    ⇒ Day khong phai nang luc moi. Day la mot nang luc da co ma Auto Scan chua
+      dung, va `nhap_media.soi` von da truyen thang tham so cho `ffprobe` nen no
+      nhan URL ma khong can sua mot dong nao.
+
+    ⛔ Nem neu khong backend nao tra loi duoc. Im lang tai ca tep ve la dung
+       hanh vi ma ham nay ton tai de khong lam.
+    """
+    duong = kho.local_path(khoa) if hasattr(kho, "local_path") else None
+    if duong:
+        return duong
+    url = kho.url_for(khoa, ttl_s=ttl_s) if hasattr(kho, "url_for") else None
+    if url:
+        return url
+    raise AssetError(
+        f"kho khong cho ra duong dan lan URL cho {khoa} — khong soi duoc ma "
+        f"khong tai ve")
+
+
 def do_va_bam(kho: Storage, khoa: str) -> tuple[int, str]:
     """`(co, checksum)` cua mot artifact, doc THEO KHOI tu kho.
 

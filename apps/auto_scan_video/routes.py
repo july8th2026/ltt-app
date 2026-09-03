@@ -30,7 +30,8 @@ from __future__ import annotations
 import logging
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (HTMLResponse, JSONResponse,
+                               RedirectResponse, StreamingResponse)
 from sqlalchemy.orm import Session
 
 from platform_core.i18n import N_, _ as _t
@@ -128,9 +129,43 @@ def trang_chinh(request: Request, _g: None = Depends(_cong_co),
     })
 
 
+@router.post("/ve")
+async def cap_ve(request: Request,
+                 ten_tep: str = Form(...),
+                 kieu: str = Form(...),
+                 co: int = Form(...),
+                 csrf_token: str = Form(""),
+                 _g: None = Depends(_cong_co),
+                 user: str = Depends(require_login),
+                 db: Session = Depends(get_db)):
+    """Cap mot ve tai len TRUC TIEP browser -> kho (G6).
+
+    🔑 Tep khong di qua tien trinh nay, va khong di qua Cloudflare. Do la ca ly
+       do tran 90 MB bien mat: `routes.py:79 TRAN_TAI_LEN` ton tai vi Cloudflare
+       cat o 100 MB **tren duong vao may chu** — mot duong ma tep khong con di.
+    """
+    if not verify_csrf_token(request, csrf_token):
+        raise HTTPException(status_code=400, detail=_t('Phiên đã hết hạn.'))
+    u = user_hien_tai(request)
+    if u is None:
+        raise HTTPException(status_code=401)
+    from platform_core import upload_sessions
+    from platform_core.storage import get_storage
+    try:
+        ra = features.tao_ve_tai_len(
+            db, get_storage(), owner_id=u.id, ten_tep=ten_tep, kieu=kieu,
+            co_du_kien=co)
+        db.commit()
+    except upload_sessions.UploadSessionError as exc:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return JSONResponse(ra)
+
+
 @router.post("/tao", response_class=HTMLResponse)
 async def tao(request: Request,
-              video: UploadFile = File(...),
+              upload_id: str = Form(""),
+              video: UploadFile | None = File(None),
               che_do: str = Form(gia.CHE_DO_MAC_DINH),
               giong_id: str = Form(""),
               csrf_token: str = Form(""),
@@ -147,6 +182,32 @@ async def tao(request: Request,
     if not gia.che_do_hop_le(che_do):
         return _lai_voi_loi(request, db, u,
                             _t('Chế độ thời gian không hợp lệ.'))
+    # ── Duong BEN VUNG: tep da nam trong kho, ta chi nhan mot ma ve ───────────
+    #
+    # ⭐ Dat truoc duong multipart co chu y. Khi ca hai cung co mat, duong ben
+    #    vung phai thang — nguoc lai mot client cu gui kem ca hai se lang le keo
+    #    ca lan chay ve duong co tran 90 MB.
+    if upload_id:
+        from platform_core.storage import get_storage
+        try:
+            run = features.tao_run_tu_ve(
+                db, get_storage(), owner_id=u.id, upload_id=upload_id,
+                settings={"timing_mode": che_do, "voice_id": giong_id})
+            db.commit()
+        except features.AsvError as exc:
+            db.rollback()
+            return _lai_voi_loi(request, db, u, str(exc))
+        return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run.id}",
+                                status_code=303)
+
+    # ── Duong multipart NHO: chi con cho tep duoi tran, va tran do la co y ────
+    #
+    # ⚠️ Pha 05 giu duong nay co chu dinh (Prompt 05 muc 4 cho phep "a tiny dev
+    #    upload path only if explicitly bounded"). No la duong duy nhat chay
+    #    duoc khi kho la `LocalStorage` — tuc tren may phat trien va trong ca bo
+    #    test — vi backend cuc bo khong cap presigned PUT.
+    if video is None:
+        return _lai_voi_loi(request, db, u, _t('Chưa chọn video.'))
     kieu = (video.content_type or "").split(";")[0].strip().lower()
     if kieu and kieu not in KIEU_VIDEO:
         return _lai_voi_loi(request, db, u,
