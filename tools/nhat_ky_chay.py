@@ -68,14 +68,38 @@ NHIP_S = 8.0
 
 
 def _anh_chup_nhe() -> dict:
-    """Ba con so cua TOAN MAY. Khong duyet tien trinh."""
+    """Ba con so cua TOAN MAY. Khong duyet tien trinh.
+
+    🔴 **Thu tep nay ngay khi viet xong, va no ra HAI loi lien tiep** — ca hai
+       deu khien nhat ky ghi `0%` cho mot may dang chay 100%:
+
+         1. `interval=None` lan goi DAU tra 0.0 (khong co moc so sanh)
+         2. `interval=None` giu trang thai TOAN CUC, ma ham nay duoc goi tu HAI
+            luong — chung giam moc cua nhau, nen mau o GIUA cung ra 0%
+
+    ⇒ `interval=0.2`: tu do trong khoang do, khong phu thuoc lan goi truoc, an
+      toan voi nhieu luong. Gia la chan 0,2s moi mau (2,5% cua nhip 8s).
+
+    ⚠️ Mot ham do tra ve 0.0 trong y het mot may dang ranh. Neu khong thu, ca
+       hai loi nay chi lo ra **sau mot lan treo** — dung luc khong sua duoc nua.
+    """
     try:
         import psutil
     except ImportError:
         return {}
     try:
         m = psutil.virtual_memory()
-        return {"cpu": psutil.cpu_percent(interval=None),
+        # ⛔ `interval=0.2`, KHONG phai `None`.
+        #
+        # 🔴 Loi thu HAI tim ra khi thu tep nay: `interval=None` giu trang thai
+        #    TOAN CUC trong psutil, va ham nay duoc goi tu HAI luong — luong
+        #    chinh (`bat_dau`/`ket_thuc`) va luong lay mau. Hai luong giam moc
+        #    cua nhau ⇒ mau o giua ra `0%` cho mot may dang chay 100%.
+        #
+        # ⭐ `interval=0.2` tu do trong khoang do, khong phu thuoc lan goi truoc,
+        #    nen an toan voi nhieu luong. Gia: chan 0,2s moi mau — voi nhip 8s
+        #    thi la 2,5%, doi lay mot con so dung.
+        return {"cpu": psutil.cpu_percent(interval=0.2),
                 "ram_trong_gib": round(m.available / 2**30, 2),
                 "so_tien_trinh": len(psutil.pids())}
     except Exception as exc:  # noqa: BLE001 - do tai khong duoc lam hong lan chay
