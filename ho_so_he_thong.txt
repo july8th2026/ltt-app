@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b9d953db54b967e628b8247f9b7cec00fd9e4265b0824b538390758a9d4c5fd4
+Fingerprint   : sha256:677808747b5b10b769971de8b66fef3a97c32d28b99d4f1c63c8684288768b0a
 Nguồn đã quét : 1557 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3268,7 +3268,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1557 file; 15941587 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1557 file; 15942212 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -315552,7 +315552,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt_gui.mjs
-SHA256=043001c884153e762478d9ec333095013d70f53dd99ff357ae52c3291e5bc8ae BYTES=31886 LINES=673
+SHA256=19708bc589eaa942def2a911f43a8746a5b8c6ceb3035ce80a1b10b456e98c72 BYTES=32511 LINES=684
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * kiem_chatltt_gui.mjs — bo kiem GIAO DIEN ChatLTT tren mot trinh duyet that.
@@ -316037,7 +316037,18 @@ const HANG_MUC = [
     hoi: 'Giao dien co lo ten model that / URL may B / khoa API ra khong?',
     async chay(p) {
       const t = await p.evaluate(() => document.body.innerText);
-      const cam = [/qwen\s*3?8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
+      // ⭐ CAM la ID NOI BO va HA TANG, khong phai ten model.
+      //
+      //    Chu du an chot 03/09: **de model tra loi dung no la Qwen**. Khi
+      //    duoc chao, no noi "toi khong phai ChatLTT, toi la Qwen" — va do la
+      //    hanh vi MONG MUON, khong phai ro ri. Giau di can mot system prompt
+      //    day model noi sai ve chinh no, tuc doi mot su that lay mot cau
+      //    quang cao.
+      //
+      // ⛔ Thu VAN cam: `qwen38` (id noi bo, khac ten thuong goi), cong LAN cua
+      //    may B, tien to khoa API. Do la nhung thu cho ai do di tiep mot buoc
+      //    — mot cai ten model thi khong.
+      const cam = [/qwen\s*3\s*8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
       const dinh = cam.filter((r) => r.test(t)).map(String);
       if (dinh.length) throw new Error(`lo ra: ${dinh.join(', ')}`);
       return { da_quet_ky_tu: t.length };

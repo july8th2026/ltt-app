@@ -481,7 +481,18 @@ const HANG_MUC = [
     hoi: 'Giao dien co lo ten model that / URL may B / khoa API ra khong?',
     async chay(p) {
       const t = await p.evaluate(() => document.body.innerText);
-      const cam = [/qwen\s*3?8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
+      // ⭐ CAM la ID NOI BO va HA TANG, khong phai ten model.
+      //
+      //    Chu du an chot 03/09: **de model tra loi dung no la Qwen**. Khi
+      //    duoc chao, no noi "toi khong phai ChatLTT, toi la Qwen" — va do la
+      //    hanh vi MONG MUON, khong phai ro ri. Giau di can mot system prompt
+      //    day model noi sai ve chinh no, tuc doi mot su that lay mot cau
+      //    quang cao.
+      //
+      // ⛔ Thu VAN cam: `qwen38` (id noi bo, khac ten thuong goi), cong LAN cua
+      //    may B, tien to khoa API. Do la nhung thu cho ai do di tiep mot buoc
+      //    — mot cai ten model thi khong.
+      const cam = [/qwen\s*3\s*8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
       const dinh = cam.filter((r) => r.test(t)).map(String);
       if (dinh.length) throw new Error(`lo ra: ${dinh.join(', ')}`);
       return { da_quet_ky_tu: t.length };
