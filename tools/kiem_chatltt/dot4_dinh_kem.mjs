@@ -104,6 +104,8 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
     {
       dot: 4,
       ten: '4.1-mot-tep-xau-KHONG-giet-ca-lo',
+      // Hang muc nay CO Y gui dau vao xau; 400 la ket qua DUNG.
+      loi_mong_doi: [/400 POST .*\/api\/anh-vao/, /Failed to load resource/],
       hoi: 'Chọn 3 ảnh trong đó 1 ảnh hỏng — hai ảnh kia có lên được không?',
       async chay(p) {
         // 🔴 LibreChat dinh dung loi nay: *Uploading multiple files fails
@@ -132,15 +134,12 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
     {
       dot: 4,
       ten: '4.2-tu-choi-theo-BYTE-khong-theo-duoi-tep',
+      // Hang muc nay CO Y gui dau vao xau; 400 la ket qua DUNG.
+      loi_mong_doi: [/400 POST .*\/api\/anh-vao/, /Failed to load resource/],
       hoi: 'Một tệp văn bản đổi đuôi thành .png có lọt không?',
       async chay(p) {
+        // `hoiThoaiMoi` da don chip va o soan — xem `donOSoan` trong bo chay.
         await hoiThoaiMoi(p);
-        // ⚠️ 4.1 de lai mot chip. Bo tay truoc khi do, neu khong hang muc nay
-        //    dem chip cua hang muc TRUOC roi ket luan "tep gia vo da duoc nhan".
-        for (const nut of await p.getByRole('button', { name: /^Bỏ ảnh / }).all()) {
-          await nut.click().catch(() => {});
-        }
-        await cho(400);
         if (!(await chonVision(p))) return { bo_qua: 'khong co alias vision' };
         await p.locator('input[type=file]').setInputFiles([{
           name: 'giavo.png', mimeType: 'image/png',
@@ -149,9 +148,13 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
         await choTaiXong(p);
         const r = await p.evaluate(() => ({
           chip: [...document.querySelectorAll('.ltc-soan__anh-ten')].length,
+          ten: [...document.querySelectorAll('.ltc-soan__anh-ten')].map((e) => e.textContent),
           loi: document.querySelector('.ltc-soan__loi')?.textContent || '',
         }));
-        if (r.chip > 0) throw new Error('tep GIA VO la anh da duoc nhan — kiem theo ten, khong theo byte');
+        if (r.chip > 0) {
+          throw new Error('tep GIA VO la anh da duoc nhan — kiem theo ten, khong theo byte. '
+            + `Chip dang co: ${JSON.stringify(r.ten)}`);
+        }
         if (!r.loi) throw new Error('tu choi MA KHONG noi ly do');
         return r;
       },
@@ -166,23 +169,53 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
         await p.locator('input[type=file]').setInputFiles([anhHopLe(96, 72)]);
         await doiDen('anh da tai len', async () =>
           (await p.locator('.ltc-soan__anh-ten').count()) > 0, 25);
-        await guiChu(p, 'Anh nay mau gi? Tra loi ngan.');
+        try {
+          await guiChu(p, 'Anh nay mau gi? Tra loi ngan.');
+        } catch (e) {
+          const tt = await p.evaluate(() => ({
+            guiBat: !([...document.querySelectorAll('button')]
+              .find((b) => b.textContent.trim() === 'Gửi')?.disabled ?? true),
+            oSoanBat: !document.querySelector('textarea[aria-label="Nội dung tin nhắn"]')?.disabled,
+            chu: (document.querySelector('textarea[aria-label="Nội dung tin nhắn"]') || {}).value || '',
+            chip: [...document.querySelectorAll('.ltc-soan__anh-ten')].map((x) => x.textContent),
+            loiSoan: document.querySelector('.ltc-soan__loi')?.textContent || '',
+            bang: document.querySelector('[role=alert]')?.textContent || '',
+            bai: document.querySelectorAll('article').length,
+          }));
+          throw new Error(`${e.message} | trang thai o soan: ${JSON.stringify(tt)}`);
+        }
         await xong(p);
 
         await p.reload({ waitUntil: 'domcontentloaded' });
         await doiDen('hoi thoai hien lai', async () => (await p.locator('article').count()) >= 2, 30);
-        const r = await p.evaluate(async () => {
+        // ⛔ DOI ANH TAI XONG, va KHONG `fetch()` no.
+        //
+        //    Hai bai hoc trong mot cho:
+        //
+        //    1. Production dung R2. `/tai-san` tra **302** roi trinh duyet di
+        //       tiep mot chang nua toi URL da ky — nen anh tai lau hon han mot
+        //       lan doc cuc bo. Doc `naturalWidth` ngay se thay 0, va bao "anh
+        //       khong tai duoc" trong khi no dang tren duong ve.
+        //
+        //    2. `fetch()` toi R2 bi CORS chan (`net::ERR_FAILED`) — R2 khong
+        //       khai CORS cho goc nay. Nhung the `<img>` thi KHONG bi CORS chi
+        //       phoi, va san pham chi dung `<img>` voi `<a href>`. Nen phep
+        //       kiem `fetch` do mot thu khong ai dung, roi bao mot loi khong ai
+        //       gap. Da xoa.
+        await doiDen('anh tai xong (qua 302 -> R2)', async () => p.evaluate(() => {
           const im = document.querySelector('article img');
-          if (!im) return { coAnh: false };
-          const ok = await fetch(im.getAttribute('src')).then((x) => x.status).catch(() => 0);
-          return { coAnh: true, rong: im.naturalWidth, cao: im.naturalHeight,
-                   alt: im.alt, http: ok, src: im.getAttribute('src') };
+          return !!im && im.complete && im.naturalWidth > 0;
+        }), 40);
+        const r = await p.evaluate(() => {
+          const im = document.querySelector('article img');
+          return { coAnh: !!im, rong: im.naturalWidth, cao: im.naturalHeight,
+                   alt: im.alt, src: im.getAttribute('src') };
         });
         if (!r.coAnh) throw new Error('anh bien mat sau F5');
-        if (r.rong !== 96) throw new Error(`anh khong tai duoc (naturalWidth=${r.rong})`);
+        if (r.rong !== 96) throw new Error(`anh tai sai kich thuoc (naturalWidth=${r.rong})`);
         if (!/bạn đã gửi/i.test(r.alt)) throw new Error(`alt sai cho anh NGUOI DUNG gui: ${JSON.stringify(r.alt)}`);
         if (!String(r.src).includes('/tai-san/')) throw new Error('anh khong di qua cua kiem so huu');
-        return { rong: r.rong, cao: r.cao, http: r.http };
+        return { rong: r.rong, cao: r.cao, qua_R2: true };
       },
     },
     {
@@ -222,6 +255,8 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
     {
       dot: 4,
       ten: '4.5-anh-KHONG-gui-cho-model-text-only',
+      // Hang muc nay CO Y gui dau vao xau; 400 la ket qua DUNG.
+      loi_mong_doi: [/400 POST .*\/luot/, /Failed to load resource/],
       hoi: 'Máy chủ có thật sự từ chối ảnh cho model text-only không?',
       async chay(p) {
         // Kiem o TANG MAY CHU, khong tin giao dien: khoa anh di qua than JSON,

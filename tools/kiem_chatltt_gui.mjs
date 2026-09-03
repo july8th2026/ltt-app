@@ -125,6 +125,33 @@ mkdirSync(THU_MUC_ANH, { recursive: true });
 const loiConsole = [];
 const requestHong = [];
 
+/**
+ * Hang muc dang chay, va nhung loi no DA KHAI TRUOC la co y.
+ *
+ * 🔴 VI SAO CAN. Ba hang muc cua dot 4 co y gui dau vao XAU de kiem rang may
+ *    chu tu choi — va may chu tu choi dung, bang HTTP 400. Nhung bo chay dem
+ *    moi 4xx la mot loi, nen mot luot 5/5 DAT van in `RESULT: FAIL`.
+ *
+ * ⛔ Va do khong phai mot su bat tien. Mot dong canh bao LUON do la mot dong
+ *    nguoi ta hoc cach bo qua — roi mot loi console THAT se di qua ma khong ai
+ *    thay. Cai gia khong phai bao cao sai, la cai canh bao mat gia tri.
+ *
+ * ⭐ Nen: hang muc phai KHAI TRUOC (`loi_mong_doi`). Khai truoc thi no la mot
+ *    loi DUOC CHO DOI; khong khai thi no van la mot loi. Va viec khai nam
+ *    trong chinh hang muc, canh cau hoi no dat ra.
+ */
+let hangMucHienTai = null;
+const loiDaKhai = [];
+
+function ghiLoi(bo, dong) {
+  const mong = hangMucHienTai?.loi_mong_doi ?? [];
+  if (mong.some((re) => re.test(dong))) {
+    loiDaKhai.push(`${hangMucHienTai.ten}: ${dong}`);
+    return;
+  }
+  bo.push(dong);
+}
+
 // ── Tro giup ───────────────────────────────────────────────────────────────
 const cho = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -162,6 +189,14 @@ async function guiChu(p, chu) {
   await p.getByRole('button', { name: 'Gửi', exact: true }).click();
   await doiDen('luot da bat dau',
     async () => (await soBai(p)) >= truoc + 2 || (await dangChay(p)), 40);
+  // ⭐ VA DOI HOI THOAI CO DIA CHI. Mot hoi thoai da co tin nhan thi PHAI co
+  //    `#<id>` trong URL — do la bat bien ta vua xay. Doi no o day vua la mot
+  //    phep kiem mien phi, vua go mot cuoc dua: `2.1` tung doc hash NGAY sau
+  //    `xong()` va nhan chuoi rong, roi bao "hai hoi thoai cung hash". Do tay
+  //    thi hash duoc dat sau ~800ms va luon khac nhau — san pham dung, phep do
+  //    voi.
+  await doiDen('hoi thoai da co dia chi trong URL',
+    async () => (await p.evaluate(() => location.hash)).length > 4, 25);
 }
 
 async function xong(p, hanS = 150) {
@@ -200,6 +235,33 @@ async function xong(p, hanS = 150) {
 async function hoiThoaiMoi(p) {
   await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
   await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 25);
+  await donOSoan(p);
+}
+
+/**
+ * Bo MOI anh dang dinh va xoa o soan.
+ *
+ * 🔴 VI SAO CAN. Cac hang muc lam ban lan nhau: 4.1 de lai hai chip, nen 4.2
+ *    dem chip cua 4.1 roi ket luan "tep gia vo da duoc nhan", va 4.3 gui mot
+ *    luot mang theo anh cua hang muc truoc. Hai bao cao SAI ve san pham tu mot
+ *    thu duy nhat — trang thai khong duoc don giua cac hang muc.
+ *
+ * ⛔ Va vong bam dau tien cua toi cung sai: `getByRole(...).all()` lay mot
+ *    SNAPSHOT, bam cai dau lam React ve lai, va cac handle con lai thanh cu —
+ *    `.catch(() => {})` nuot loi nen chi mot chip duoc bo. Phai bam CAI DAU
+ *    TIEN, lap lai, doc lai moi vong.
+ */
+async function donOSoan(p) {
+  for (let i = 0; i < 12; i += 1) {
+    const nut = p.getByRole('button', { name: /^Bỏ ảnh / }).first();
+    if (!(await nut.count())) break;
+    await nut.click();
+    await doiDen('chip da bo', async () =>
+      (await p.getByRole('button', { name: /^Bỏ ảnh / }).count()) < (i + 12), 10)
+      .catch(() => {});
+  }
+  const o = p.getByLabel('Nội dung tin nhắn');
+  if (await o.count()) await o.fill('');
 }
 
 // ── Cac hang muc ───────────────────────────────────────────────────────────
@@ -549,7 +611,8 @@ const HANG_MUC = [
 // ⭐ Tach ra module rieng vi bo kiem se lon toi ~60 hang muc. Mot tep 2.000
 //    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
 //    khong ai sua khi no sai.
-const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong, hoiThoaiMoi, soDu };
+const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
+                   hoiThoaiMoi, donOSoan, soDu };
 {
   const nap = async (ten, ham) => {
     try {
@@ -637,9 +700,9 @@ if (PROFILE) {
 const page = boi_canh.pages()[0] || await boi_canh.newPage();
 
 page.on('console', (m) => {
-  if (m.type() === 'error') loiConsole.push(m.text().slice(0, 300));
+  if (m.type() === 'error') ghiLoi(loiConsole, m.text().slice(0, 300));
 });
-page.on('pageerror', (e) => loiConsole.push('pageerror: ' + String(e).slice(0, 300)));
+page.on('pageerror', (e) => ghiLoi(loiConsole, 'pageerror: ' + String(e).slice(0, 300)));
 // ⛔ MOT SSE BI HUY KHONG PHAI MOT LOI. Khi trang reload hay component ro ra,
 //    trinh duyet huy ket noi `/stream` dang mo — do la hanh vi DUNG, va no xay
 //    ra o moi hang muc co reload.
@@ -654,10 +717,12 @@ page.on('requestfailed', (r) => {
     sseHuy.push(dong);
     return;
   }
-  requestHong.push(dong);
+  ghiLoi(requestHong, dong);
 });
 page.on('response', (r) => {
-  if (r.status() >= 400) requestHong.push(`${r.status()} ${r.request().method()} ${r.url().slice(0, 140)}`);
+  if (r.status() >= 400) {
+    ghiLoi(requestHong, `${r.status()} ${r.request().method()} ${r.url().slice(0, 140)}`);
+  }
 });
 
 const ketQua = [];
@@ -668,7 +733,22 @@ try {
     if (CHI && hm.ten !== CHI) continue;
     if (DOT.length && !DOT.includes(String(hm.dot ?? '0'))) continue;
     const t0 = Date.now();
+    hangMucHienTai = hm;
     try {
+      // ⛔ BAO DAM DANG O DUNG TRANG TRUOC MOI HANG MUC.
+      //
+      //    Do 03/09: hang muc `2.1` goi `goBack()`, va vi giao dien dung
+      //    `replaceState` nen lich su chi co MOT muc — trinh duyet **roi khoi
+      //    trang**. Sau muc do, sau hang muc con lai chay tren mot trang khong
+      //    phai ChatLTT va bao nhung loi vo nghia ("khong co o tim").
+      //
+      // ⭐ Mot hang muc duoc phep dieu huong; no khong duoc phep lam do ca dot.
+      //    Bay dong nay tach "mot phep kiem do" khoi "ca lo mat nghia".
+      if (!(await page.getByLabel('Nội dung tin nhắn').count())) {
+        await page.goto(`${URL_GOC}/chatltt`, { waitUntil: 'domcontentloaded' });
+        await doiDen('ve lai duoc ChatLTT',
+          async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
+      }
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
       ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,
@@ -679,6 +759,8 @@ try {
       ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
       console.log(`  [HONG ] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${e.message}`);
       await page.screenshot({ path: join(THU_MUC_ANH, `hong-${hm.ten}.png`), fullPage: true }).catch(() => {});
+    } finally {
+      hangMucHienTai = null;
     }
   }
   await page.screenshot({ path: join(THU_MUC_ANH, 'cuoi.png'), fullPage: true }).catch(() => {});
@@ -705,6 +787,7 @@ const bao_cao = {
   loi_console: loiConsole,
   request_hong: requestHong,
   sse_bi_huy_binh_thuong: sseHuy,
+  loi_da_khai_truoc: loiDaKhai,
 };
 const duong = join(THU_MUC_ANH, 'bao_cao.json');
 mkdirSync(dirname(duong), { recursive: true });
@@ -714,7 +797,8 @@ console.log('\n' + '='.repeat(64));
 console.log(`  ${URL_GOC}`);
 console.log(`  DAT ${bao_cao.dat} / BO QUA ${bao_cao.bo_qua} / HONG ${bao_cao.hong}`);
 console.log(`  loi console: ${loiConsole.length}   request hong: ${requestHong.length}`
-  + `   (SSE bi huy binh thuong: ${sseHuy.length})`);
+  + `   (SSE bi huy: ${sseHuy.length}, loi DA KHAI TRUOC: ${loiDaKhai.length})`);
+for (const l of loiDaKhai.slice(0, 6)) console.log(`    (da khai) ${l}`);
 for (const l of loiConsole.slice(0, 8)) console.log(`    console: ${l}`);
 for (const r of requestHong.slice(0, 8)) console.log(`    request: ${r}`);
 console.log(`  bao cao: ${duong}`);
