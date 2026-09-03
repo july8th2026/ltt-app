@@ -153,6 +153,46 @@ def do() -> dict:
             "ram_trong_gib": trong, "loi": loi}
 
 
+def ai_chiem_cho(toi_da: int = 8) -> list[dict]:
+    """Tien trinh python dang chay, KEM tuoi va cay cha. De biet AI chiem cho.
+
+    🔴 **Ham nay sinh ra tu mot lan reset may 03/09 ma toi khong dieu tra duoc.**
+
+       Do ngay truoc luc do: cay `gate.py` co 13 tien trinh (dung ngan sach 10
+       worker), nhung toan may co **58** tien trinh python. Tuc gate chi la 13/58,
+       va ngan sach loi — thu toi vua bo cong sua — chi dieu tiet duoc dung phan
+       do. 45 cai con lai khong di qua co che nao.
+
+    ⛔ Khi may reset, bang chung mat het. Khong co ban chup nao truoc do, nen ba
+       ung vien (gate / 45 tien trinh kia / chinh phep do) khong phan biet duoc,
+       va doan la vo ich.
+
+    ⇒ Ham nay khong sua duoc gi. No chi de lan sau co **du lieu** thay vi mot gia
+      thuyet. Chay no TRUOC mot luot nang, va giu ket qua.
+
+    ⚠️ Chinh no cung ton CPU (`process_iter` + `cpu_percent`), nen no lay MOT lat
+       cat roi thoi — khong lap, khong theo doi lien tuc.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return []
+    ra = []
+    for p in psutil.process_iter(["pid", "ppid", "name", "create_time", "cmdline"]):
+        ten = (p.info["name"] or "").lower()
+        if not ten.startswith("python"):
+            continue
+        cl = " ".join(p.info["cmdline"] or [])
+        ra.append({
+            "pid": p.info["pid"], "ppid": p.info["ppid"],
+            "tuoi_phut": max(0.0, (time.time() - p.info["create_time"]) / 60),
+            "lenh": cl[:70] or "(khong doc duoc)",
+        })
+    # Gia nhat truoc: mot tien trinh python song hang gio thuong la XAC mo coi.
+    ra.sort(key=lambda x: -x["tuoi_phut"])
+    return ra[:toi_da]
+
+
 def _in(k: dict) -> None:
     if k["phan_quyet"] is None:
         print(f"KHONG DO DUOC: {k['ly_do']}")
@@ -167,7 +207,17 @@ def main() -> int:
     p.add_argument("--cho", type=float, default=0.0,
                    help="doi toi khi RANH, toi da bao nhieu giay (0 = do mot lan)")
     p.add_argument("--nhip", type=float, default=20.0, help="giay giua hai lan do")
+    p.add_argument("--ai", action="store_true",
+                   help="liet ke tien trinh python gia nhat - de biet AI chiem cho")
     a = p.parse_args()
+
+    if a.ai:
+        ds = ai_chiem_cho()
+        print(f"{len(ds)} tien trinh python gia nhat:")
+        for x in ds:
+            print(f"  pid {x['pid']:6d} ppid {x['ppid']:6d} "
+                  f"{x['tuoi_phut']:7.1f} phut  {x['lenh']}")
+        print()
 
     bat_dau = time.time()
     while True:

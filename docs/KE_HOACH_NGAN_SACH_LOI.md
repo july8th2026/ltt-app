@@ -98,6 +98,32 @@ Nên mọi hằng số suy từ một lần đo đều là hằng số của *m�
   `xdist/plugin.py:32` hỏi **psutil**, không hỏi `os` — nên nó không với tới. (Suýt kết luận
   ngược; phép đo đúng, đo nhầm thứ.)
 
+## 🔴 CẬP NHẬT 03/09 — máy vẫn reset SAU KHI B0–B3 đã áp dụng
+
+Chủ dự án phải reset máy trong lúc gate chạy với B0–B3 đã có. **Cơ chế đúng phạm vi,
+nhưng phạm vi đó là thiểu số.** Số đo lấy ngay trước khi reset:
+
+```
+cây gate (pid 12720):  13 tiến trình  — 1 test_nhanh + 2 pytest + 10 worker  ✓ đúng ngân sách
+CPU cây gate:          41–48% máy
+CPU toàn máy:          58–69%, có mẫu 95–100%
+python toàn máy:       58 tiến trình      <- gate chỉ là 13/58
+```
+
+⇒ B0–B3 điều tiết đúng 13 tiến trình đó. **45 cái còn lại không đi qua cơ chế nào.**
+
+⛔ **Ba ứng viên, và tôi KHÔNG phân biệt được** — máy reset nên bằng chứng mất hết:
+   gate (13 tiến trình, đúng ngân sách) · 45 tiến trình python ngoài gate · **chính phép đo
+   của tôi** (`process_iter` quét 58 tiến trình, `cpu_percent` từng cái, lặp 5 lần).
+
+⇒ Đoán bây giờ là vô ích. Thêm `tai_may.py --ai` để **lần sau có dữ liệu** thay vì một giả
+  thuyết. Chạy nó TRƯỚC mỗi lượt nặng và giữ kết quả.
+
+⚠️ Và một số đo mới, sau reset, khi không chạy gì: **19 tiến trình python nền, CPU 37%**.
+   `LOI_DE_DANH_CHO_MAY = 6` được đặt từ giả định nền 27% ≈ 5 lõi. 37% ≈ 7,4 lõi. Nếu con số
+   này giữ khi máy ổn định thì hằng số 6 đang **thiếu** — nhưng một phép đo ngay sau reset là
+   phép đo của một máy đang khởi động lại dịch vụ, chưa kết luận được.
+
 ## Nghiệm thu
 
 1. `-n` truyền cho pytest **≤** `psutil.cpu_count(logical=False)` trong mọi cấu hình.

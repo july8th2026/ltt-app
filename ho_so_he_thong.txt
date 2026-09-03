@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e4b1a752598eb15da43e6423f8f8604a3d729929b7bdfd5f04e11ed4cb47bef0
+Fingerprint   : sha256:da338383a60745dad357ce598c1016df5e0d7642c0be3e082fa35dbddd080428
 Nguồn đã quét : 1554 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3307,7 +3307,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15591154 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15593238 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -321994,7 +321994,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/tai_may.py
-SHA256=12560fb1a93812782150b3b3b621839eca05c64269cd30bd7bc19a2ae1261be1 BYTES=7863 LINES=191
+SHA256=6eace192416b17b6738e82792b82e1325dd62da4e11867501002cd5cfb4a2ff0 BYTES=9947 LINES=241
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """tai_may.py — may con cho mot luot do dat tien khong.
 
@@ -322151,6 +322151,46 @@ def do() -> dict:
             "ram_trong_gib": trong, "loi": loi}
 
 
+def ai_chiem_cho(toi_da: int = 8) -> list[dict]:
+    """Tien trinh python dang chay, KEM tuoi va cay cha. De biet AI chiem cho.
+
+    🔴 **Ham nay sinh ra tu mot lan reset may 03/09 ma toi khong dieu tra duoc.**
+
+       Do ngay truoc luc do: cay `gate.py` co 13 tien trinh (dung ngan sach 10
+       worker), nhung toan may co **58** tien trinh python. Tuc gate chi la 13/58,
+       va ngan sach loi — thu toi vua bo cong sua — chi dieu tiet duoc dung phan
+       do. 45 cai con lai khong di qua co che nao.
+
+    ⛔ Khi may reset, bang chung mat het. Khong co ban chup nao truoc do, nen ba
+       ung vien (gate / 45 tien trinh kia / chinh phep do) khong phan biet duoc,
+       va doan la vo ich.
+
+    ⇒ Ham nay khong sua duoc gi. No chi de lan sau co **du lieu** thay vi mot gia
+      thuyet. Chay no TRUOC mot luot nang, va giu ket qua.
+
+    ⚠️ Chinh no cung ton CPU (`process_iter` + `cpu_percent`), nen no lay MOT lat
+       cat roi thoi — khong lap, khong theo doi lien tuc.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return []
+    ra = []
+    for p in psutil.process_iter(["pid", "ppid", "name", "create_time", "cmdline"]):
+        ten = (p.info["name"] or "").lower()
+        if not ten.startswith("python"):
+            continue
+        cl = " ".join(p.info["cmdline"] or [])
+        ra.append({
+            "pid": p.info["pid"], "ppid": p.info["ppid"],
+            "tuoi_phut": max(0.0, (time.time() - p.info["create_time"]) / 60),
+            "lenh": cl[:70] or "(khong doc duoc)",
+        })
+    # Gia nhat truoc: mot tien trinh python song hang gio thuong la XAC mo coi.
+    ra.sort(key=lambda x: -x["tuoi_phut"])
+    return ra[:toi_da]
+
+
 def _in(k: dict) -> None:
     if k["phan_quyet"] is None:
         print(f"KHONG DO DUOC: {k['ly_do']}")
@@ -322165,7 +322205,17 @@ def main() -> int:
     p.add_argument("--cho", type=float, default=0.0,
                    help="doi toi khi RANH, toi da bao nhieu giay (0 = do mot lan)")
     p.add_argument("--nhip", type=float, default=20.0, help="giay giua hai lan do")
+    p.add_argument("--ai", action="store_true",
+                   help="liet ke tien trinh python gia nhat - de biet AI chiem cho")
     a = p.parse_args()
+
+    if a.ai:
+        ds = ai_chiem_cho()
+        print(f"{len(ds)} tien trinh python gia nhat:")
+        for x in ds:
+            print(f"  pid {x['pid']:6d} ppid {x['ppid']:6d} "
+                  f"{x['tuoi_phut']:7.1f} phut  {x['lenh']}")
+        print()
 
     bat_dau = time.time()
     while True:

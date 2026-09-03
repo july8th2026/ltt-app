@@ -15,3 +15,8 @@ Gate [day-du]: 26 buoc, toi da 8 buoc cung luc, ngan sach 14/20 loi, tai nguyen:
   [ok  ] frontend autosub-studio         0.0s (13/26)
   [ok  ] frontend prompt-ai-ommi         0.0s (14/26)
   [ok  ] tai lieu sinh ra                2.4s (15/26)
+  [ok  ] nuot loi lang le                2.2s (16/26)
+  [ok  ] system profile                  7.6s (17/26)
+  [ok  ] secret scan                     8.6s (18/26)
+  [ok  ] chuong chua treo                1.7s (19/26)
+  [ok  ] ten chua dinh nghia             4.7s (20/26)
