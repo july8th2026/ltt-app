@@ -871,11 +871,55 @@ Chuỗi thứ hai là câu **tôi tự viết** làm dữ liệu thử. Sửa: l
 xanh phải kèm được CON SỐ NÓ ĐÃ SO, không chỉ kèm mã thoát.** `-Tail 5` của
 tôi và `manh_doi_chieu: ""` của họ là cùng một lỗi.
 
+## 7g. ✅ PHÉP KIỂM CHẶN DEPLOY: máy B đã sẵn sàng cho H-4
+
+D-5 nói máy B phải **rộng hơn hoặc bằng** máy A, và đảo thứ tự thì hỏng **im
+lặng** — không lỗi, không `413`, chỉ là câu trả lời thiếu mất phần đầu prompt.
+Commit `4c5c327` đổi **cả hai** phía (`llama-swap.yaml` máy B + `ngan_sach.py`
+máy A), còn máy A đang chạy một bản **ở giữa** — text mới, vision cũ. Nên câu
+hỏi chặn là: máy B đã nhận phần vision chưa?
+
+Hỏi qua Nexus (`command.run`, chỉ đọc, có `reason` ghi vào nhật ký kiểm toán):
+
+```
+llama-swap:  H:/LTT_LLM/bin/llamaswap/llama-swap.exe
+             --config H:/LTT_LLM/gateway/llama-swap.yaml --listen 127.0.0.1:8280
+
+yaml ghi luc          2026-09-03 23:40
+llama-swap khoi dong  2026-09-03 23:41:10      <- SAU khi yaml duoc ghi
+
+trong yaml:  qwen38-api    -c 204800
+             qwen38-vision -c 131072
+/running  :  qwen38-api    -c 204800           <- khop yaml
+```
+
+⭐ **Phép so THỜI ĐIỂM mới là thứ kết luận được, không phải nội dung tệp.** D-5
+cảnh báo `deploy.ps1` chép yaml mà **không** restart `LTTLlamaSwap` (nợ N-5),
+nên một tệp đúng trên đĩa vẫn có thể đi kèm một tiến trình đang giữ cấu hình
+cũ. Tiến trình khởi động **sau** tệp một phút ⇒ cấu hình trong bộ nhớ là bản
+mới. Và `/running` khớp yaml ở model đang nạp, là đối chứng độc lập.
+
+⇒ **Máy B đã có `qwen38-vision -c 131072`. Deploy máy A an toàn.**
+
+### 7g.1 ⚠️ Một cạnh tiềm ẩn thấy dọc đường
+
+`llm_gateway/api.py:329` kẹp `min(cfg.max_input_tokens, spec.max_context)` ⇒
+vision được nhận **131.072 token vào** trên một engine `-c 131072`. Tức ở đúng
+biên, đầu vào chiếm trọn cửa sổ và **không còn chỗ nào để sinh**.
+
+Hôm nay điều đó vô hại vì máy A kẹp vision ở **96.256** (`tran_vao_cua`), nên
+không yêu cầu nào tới được biên ấy. Nhưng đó là *"đúng nhờ một bất biến ở máy
+khác"*, không phải *"đúng tự thân"* — cùng hình dạng với `truncation_policy`,
+thứ cũng "chạy được" cho tới khi có người đưa vào một kết quả tool đủ lớn.
+
+⛔ Không sửa trong lượt này (mã máy B, cần một lượt deploy riêng). → N-14.
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
 |---|---|---|
 | ~~N-1~~ | 🟢 **ĐÓNG 04/09** — máy B **đã** deploy. ~~Máy B vẫn `-c 131072`~~ | Hỏi máy chủ thật: `ltt_llm` công bố **156.385**. Dòng nợ này đã sai trong một thời gian mà không ai biết, vì nó là chữ chép tay. §7e. |
+| **N-14** | ⚠️ **Cổng máy B cho vision nhận đầu vào bằng TRỌN cửa sổ engine** | `min(cfg.max_input_tokens, spec.max_context)` = 131.072 trên `-c 131072` ⇒ ở biên không còn chỗ sinh. Vô hại hôm nay vì máy A kẹp ở 96.256, nhưng đó là đúng nhờ bất biến ở **máy khác**. Sửa đúng: `spec.max_context - TOKEN_RA_TRAN`. §7g.1 |
 | **N-13** | ⚠️ **Bản vá `/api/v1/models` chưa deploy** | Ba trường bắt buộc đã thêm (§7e.3, `fa1b8e9`) nhưng khách vẫn nhận bản thiếu cho tới khi deploy. Xếp cùng hàng với H-4 — cùng một lượt `2-cai-dat.ps1`. |
 | ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **XANH 04/09 (H-5, §7f)** — 14/14 tệp, 4,2 MB kết quả tool, `context compacted` ×2, **zero 413**. Lượt trước (H-2) **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
 | ~~N-10~~ | 🟢 **ĐÓNG 04/09** (§7d.3). ~~MỘT kết quả tool có thể lớn hơn MỌI khoảng trống~~ | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng".<br><br>✅ **Nhưng nó có trần**, và ta đã tự vứt cái trần đó đi: `truncation_policy.limit` = cả cửa sổ, trong khi mặc định Codex là 2.500 token. Đặt lại `TOKEN_RA_TRAN // 2 = 16.384`. |
