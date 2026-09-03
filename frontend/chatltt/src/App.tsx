@@ -493,6 +493,7 @@ export function App({ api }: AppProps) {
           goiY={chuaSanSang ? 'Model chưa sẵn sàng' : undefined}
           docAnh={docAnh}
           onTaiAnh={taiAnh}
+          hoiThoai={convId}
         />
       </main>
     </div>
