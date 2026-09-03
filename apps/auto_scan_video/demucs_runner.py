@@ -79,6 +79,77 @@ def ghi_wav(duong: str, mang, tan_so: int) -> None:
         f.writeframes(i16.T.tobytes())
 
 
+#: So luong torch duoc dung. ⛔ KHONG phai so loi cua may.
+#:
+#: 🔴 **Do duoc 03/09, va no la nguyen nhan gan nhat cua mot lan may chet.**
+#:    Hop den ghi lai **muoi hai tien trinh nay chay trong 4 phut 12 giay, moi
+#:    cai dinh 462-984% CPU** — tuc moi tien trinh mot minh doi 5 den 10 loi
+#:    logic. Luc 16:51:09 CPU cham 100%, RAM trong tut tu 17,7 xuong 14,1 GB,
+#:    va may khong ghi them dong nao nua.
+#:
+#: ⚠️ Truoc ban nay tep nay **khong dat gioi han nao**. Torch tren CPU mac dinh
+#:    lay het loi vat ly, va `apply_model` cua demucs song song rat sau.
+#:
+#: 🔑 Va day la cho ma ngan sach cua gate **khong voi toi duoc**: `-n 6` dem
+#:    WORKER PYTEST, khong dem thu moi worker sinh ra. Sau worker, moi worker
+#:    mot demucs, moi demucs muoi luong = 60 luong tren 10 loi. Mot tien trinh
+#:    chau khong xin khoa, khong khai bao, va khong nam trong bat cu phep tinh
+#:    nao — no chi hien ra o phep DO tai (`gate.loi_dang_ban`).
+#:
+#: ⭐ **4, khong phai 2 va khong phai 10** — va con so nay dua tren MOT dU KIEN
+#:    do duoc, khong phai mot cam giac an toan:
+#:
+#:    Trong PRODUCTION chi co **MOT** demucs chay tai mot thoi diem.
+#:    `pipeline.CHUOI` khai `AUDIO_PREPARE` va `TRANSCRIBE` dung **chung mot ten
+#:    tai nguyen** `tach_nguon_cuc_bo` voi `tai_nguyen_suat=1`, va nen tang
+#:    cuong che that bang lease (`job_runner._cho_tai_nguyen` + `leases`).
+#:
+#:    ⇒ Chan xuong 2 se lam mot job cua khach that cham gap ~5 lan de doi lay
+#:      mot thu khong xay ra. Mot tran an toan phai bao ve truoc mot moi nguy CO
+#:      THAT, khong phai truoc mot moi nguy tuong tuong.
+#:
+#: ⚠️ Truong hop NHIEU demucs cung luc chi ton tai trong BO TEST (sau `-n 6`),
+#:    va no da nam sau rao chan `LTT_TEST_NANG`. O do 6 x 4 la vuot suat, nhung
+#:    moi tien trinh van co tran — khac han voi truoc, khi moi cai lay het may.
+#:
+#: 🔑 Va 4 khong phai mot nua cua 10 lam tron: demucs het gan het loi ich song
+#:    song quanh 4 luong, nen phan tu 4 len 10 mua duoc rat it toc do ma tra ca
+#:    kha nang dap ung cua may.
+LUONG_TORCH = 4
+
+#: Cho phep chu may go de: `set LTT_DEMUCS_LUONG=6`.
+BIEN_LUONG = "LTT_DEMUCS_LUONG"
+
+
+def _dat_tran_luong(torch) -> int:
+    """Chan so luong torch. Tra ve so da dat, de ghi vao ket qua.
+
+    ⛔ Dat TRUOC `apply_model`. `torch.set_num_threads` sau khi mot phep tinh
+       da bat dau thi khong con tac dung len phep tinh do.
+    """
+    import os
+
+    try:
+        n = int(os.environ.get(BIEN_LUONG, "") or LUONG_TORCH)
+    except ValueError:
+        n = LUONG_TORCH
+    n = max(1, n)
+    try:
+        torch.set_num_threads(n)
+        # Luong lien-phep-tinh: mac dinh cua torch cung la so loi. Mot phep
+        # `set_num_threads` khong cham toi no.
+        if hasattr(torch, "set_num_interop_threads"):
+            try:
+                torch.set_num_interop_threads(1)
+            except RuntimeError:
+                # Chi dat duoc TRUOC phep tinh dau tien cua tien trinh. Neu da
+                # muon thi bo qua — `set_num_threads` da lo phan lon.
+                pass
+    except (AttributeError, RuntimeError):
+        return 0
+    return n
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print(json.dumps({"loi": "cach dung: <vao.wav> <thu_muc_ra>"}))
@@ -89,6 +160,8 @@ def main(argv: list[str]) -> int:
     import torch
     from demucs.apply import apply_model
     from demucs.pretrained import get_model
+
+    _dat_tran_luong(torch)
 
     # Card da duoc nen tang cap qua bien moi truong (xem ghi chu dau tep). Ta
     # chi HOI xem torch thay gi — khong bao gio tu chon.
@@ -118,6 +191,7 @@ def main(argv: list[str]) -> int:
         "duong": duong_ra,
         "tan_so": int(tan_so),
         "thiet_bi": thiet_bi,
+        "luong_torch": _dat_tran_luong(__import__("torch")),
     }))
     return 0
 

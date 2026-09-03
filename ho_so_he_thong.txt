@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:bfbb20632cd45675255d785840d16281fe388aa55d353d7cb4b86d7ffddcdf98
+Fingerprint   : sha256:b561f9f561feeba2ccebd9d29298e10fcfe15cc71391d6b0a64b42c54ee2f8d1
 Nguồn đã quét : 1643 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -1155,7 +1155,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (187 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (188 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1191,6 +1191,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_DANGKY_MIEN_TIN_CAY
 - LTT_DATABASE_URL
 - LTT_DATA_DIR
+- LTT_DEMUCS_LUONG
 - LTT_DISPOSABLE_EXTRA
 - LTT_DNSMOS_DIR
 - LTT_ENV
@@ -3486,7 +3487,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1643 file; 16893914 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1643 file; 16900100 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -13521,7 +13522,7 @@ def tom_tat(ban: dict) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/demucs_runner.py
-SHA256=a08d5cc8d3d392637155d9f5beb58517f097d3c156eefdaf7345a1e863d51dfa BYTES=4530 LINES=126
+SHA256=934dc5a99b545a2091edb7ef9e4ab12b6b5c8cc844de4abe55dd11d6973f1957 BYTES=7755 LINES=200
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Tien trinh con tach nguon tieng. Chay bang `python -m apps.auto_scan_video.demucs_runner`.
 
@@ -13604,6 +13605,77 @@ def ghi_wav(duong: str, mang, tan_so: int) -> None:
         f.writeframes(i16.T.tobytes())
 
 
+#: So luong torch duoc dung. ⛔ KHONG phai so loi cua may.
+#:
+#: 🔴 **Do duoc 03/09, va no la nguyen nhan gan nhat cua mot lan may chet.**
+#:    Hop den ghi lai **muoi hai tien trinh nay chay trong 4 phut 12 giay, moi
+#:    cai dinh 462-984% CPU** — tuc moi tien trinh mot minh doi 5 den 10 loi
+#:    logic. Luc 16:51:09 CPU cham 100%, RAM trong tut tu 17,7 xuong 14,1 GB,
+#:    va may khong ghi them dong nao nua.
+#:
+#: ⚠️ Truoc ban nay tep nay **khong dat gioi han nao**. Torch tren CPU mac dinh
+#:    lay het loi vat ly, va `apply_model` cua demucs song song rat sau.
+#:
+#: 🔑 Va day la cho ma ngan sach cua gate **khong voi toi duoc**: `-n 6` dem
+#:    WORKER PYTEST, khong dem thu moi worker sinh ra. Sau worker, moi worker
+#:    mot demucs, moi demucs muoi luong = 60 luong tren 10 loi. Mot tien trinh
+#:    chau khong xin khoa, khong khai bao, va khong nam trong bat cu phep tinh
+#:    nao — no chi hien ra o phep DO tai (`gate.loi_dang_ban`).
+#:
+#: ⭐ **4, khong phai 2 va khong phai 10** — va con so nay dua tren MOT dU KIEN
+#:    do duoc, khong phai mot cam giac an toan:
+#:
+#:    Trong PRODUCTION chi co **MOT** demucs chay tai mot thoi diem.
+#:    `pipeline.CHUOI` khai `AUDIO_PREPARE` va `TRANSCRIBE` dung **chung mot ten
+#:    tai nguyen** `tach_nguon_cuc_bo` voi `tai_nguyen_suat=1`, va nen tang
+#:    cuong che that bang lease (`job_runner._cho_tai_nguyen` + `leases`).
+#:
+#:    ⇒ Chan xuong 2 se lam mot job cua khach that cham gap ~5 lan de doi lay
+#:      mot thu khong xay ra. Mot tran an toan phai bao ve truoc mot moi nguy CO
+#:      THAT, khong phai truoc mot moi nguy tuong tuong.
+#:
+#: ⚠️ Truong hop NHIEU demucs cung luc chi ton tai trong BO TEST (sau `-n 6`),
+#:    va no da nam sau rao chan `LTT_TEST_NANG`. O do 6 x 4 la vuot suat, nhung
+#:    moi tien trinh van co tran — khac han voi truoc, khi moi cai lay het may.
+#:
+#: 🔑 Va 4 khong phai mot nua cua 10 lam tron: demucs het gan het loi ich song
+#:    song quanh 4 luong, nen phan tu 4 len 10 mua duoc rat it toc do ma tra ca
+#:    kha nang dap ung cua may.
+LUONG_TORCH = 4
+
+#: Cho phep chu may go de: `set LTT_DEMUCS_LUONG=6`.
+BIEN_LUONG = "LTT_DEMUCS_LUONG"
+
+
+def _dat_tran_luong(torch) -> int:
+    """Chan so luong torch. Tra ve so da dat, de ghi vao ket qua.
+
+    ⛔ Dat TRUOC `apply_model`. `torch.set_num_threads` sau khi mot phep tinh
+       da bat dau thi khong con tac dung len phep tinh do.
+    """
+    import os
+
+    try:
+        n = int(os.environ.get(BIEN_LUONG, "") or LUONG_TORCH)
+    except ValueError:
+        n = LUONG_TORCH
+    n = max(1, n)
+    try:
+        torch.set_num_threads(n)
+        # Luong lien-phep-tinh: mac dinh cua torch cung la so loi. Mot phep
+        # `set_num_threads` khong cham toi no.
+        if hasattr(torch, "set_num_interop_threads"):
+            try:
+                torch.set_num_interop_threads(1)
+            except RuntimeError:
+                # Chi dat duoc TRUOC phep tinh dau tien cua tien trinh. Neu da
+                # muon thi bo qua — `set_num_threads` da lo phan lon.
+                pass
+    except (AttributeError, RuntimeError):
+        return 0
+    return n
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 3:
         print(json.dumps({"loi": "cach dung: <vao.wav> <thu_muc_ra>"}))
@@ -13614,6 +13686,8 @@ def main(argv: list[str]) -> int:
     import torch
     from demucs.apply import apply_model
     from demucs.pretrained import get_model
+
+    _dat_tran_luong(torch)
 
     # Card da duoc nen tang cap qua bien moi truong (xem ghi chu dau tep). Ta
     # chi HOI xem torch thay gi — khong bao gio tu chon.
@@ -13643,6 +13717,7 @@ def main(argv: list[str]) -> int:
         "duong": duong_ra,
         "tan_so": int(tan_so),
         "thiet_bi": thiet_bi,
+        "luong_torch": _dat_tran_luong(__import__("torch")),
     }))
     return 0
 
@@ -283229,7 +283304,7 @@ def test_video_KHONG_tieng_lam_giai_doan_HONG_HAN_khong_thu_lai(tmp_path, monkey
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_406_asv_tach_tieng.py
-SHA256=5fcfe599a1873b9e341f03ca146d68a5852a3664f5fd85efa8231cde06b62650 BYTES=18304 LINES=385
+SHA256=ff1db920685e19345416762b631305ec39d21030920cdad0f76798b3f2c4f277 BYTES=21265 LINES=449
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video — AUDIO_PREPARE: tach giong khoi nen, tron, chuan am luong.
 
@@ -283616,6 +283691,70 @@ class TestChoBangChungNgoai:
         assert not torch.cuda.is_available(), (
             "May nay da co CUDA — hay DO VRAM that cua demucs va cap nhat "
             "`apps/asv_gpu/manifest.py:gpu_vram_mb`, roi xoa phep kiem nay.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Tran luong torch — cho ma ngan sach cua gate khong voi toi
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_demucs_runner_CHAN_so_luong_torch():
+    """🔴 Nguyen nhan gan nhat cua mot lan may chet, do duoc trong hop den 03/09.
+
+    Muoi hai tien trinh `demucs_runner` chay trong 4 phut 12 giay, moi cai dinh
+    **462-984% CPU** — moi tien trinh mot minh doi 5 den 10 loi logic. Luc
+    16:51:09 CPU cham 100%, RAM trong tut tu 17,7 xuong 14,1 GB, va may khong
+    ghi them dong nao nua.
+
+    🔑 Day la cho ma `-n 6` **khong voi toi duoc**: no dem WORKER PYTEST, khong
+       dem thu moi worker sinh ra. Sau worker, moi worker mot demucs, moi demucs
+       muoi luong = 60 luong tren 10 loi. Mot tien trinh chau khong xin khoa,
+       khong khai bao, va khong nam trong bat cu phep tinh nao cua gate.
+    """
+    import torch
+
+    from apps.auto_scan_video import demucs_runner
+
+    assert demucs_runner.LUONG_TORCH <= 4, (
+        "tran luong torch phai NHO - mot lan tach nguon la viec nen, khong gap")
+
+    cu = torch.get_num_threads()
+    try:
+        n = demucs_runner._dat_tran_luong(torch)
+        assert n == demucs_runner.LUONG_TORCH
+        assert torch.get_num_threads() == demucs_runner.LUONG_TORCH, (
+            "goi ham ma so luong khong doi - `set_num_threads` khong an")
+    finally:
+        torch.set_num_threads(cu)
+
+
+def test_tran_luong_duoc_dat_TRUOC_khi_nap_model():
+    """⛔ `torch.set_num_threads` sau khi mot phep tinh da bat dau thi khong con
+    tac dung len phep tinh do.
+
+    Chot bang AST: trong `main`, loi goi `_dat_tran_luong` phai dung TRUOC
+    `get_model` va `apply_model`.
+    """
+    import ast
+
+    from apps.auto_scan_video import demucs_runner
+
+    cay = ast.parse(Path(demucs_runner.__file__).read_text(encoding="utf-8"))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "main"][0]
+
+    dong = {}
+    for n in ast.walk(ham):
+        if isinstance(n, ast.Call):
+            ten = (n.func.id if isinstance(n.func, ast.Name)
+                   else getattr(n.func, "attr", ""))
+            if ten in ("_dat_tran_luong", "get_model", "apply_model"):
+                dong.setdefault(ten, n.lineno)
+
+    assert "_dat_tran_luong" in dong, "`main` khong dat tran luong"
+    for sau in ("get_model", "apply_model"):
+        if sau in dong:
+            assert dong["_dat_tran_luong"] < dong[sau], (
+                f"dat tran luong SAU `{sau}` thi khong con tac dung")
 
 @@@LTT_PROFILE_FILE_END@@@
 

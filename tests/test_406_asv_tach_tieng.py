@@ -383,3 +383,67 @@ class TestChoBangChungNgoai:
         assert not torch.cuda.is_available(), (
             "May nay da co CUDA — hay DO VRAM that cua demucs va cap nhat "
             "`apps/asv_gpu/manifest.py:gpu_vram_mb`, roi xoa phep kiem nay.")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Tran luong torch — cho ma ngan sach cua gate khong voi toi
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_demucs_runner_CHAN_so_luong_torch():
+    """🔴 Nguyen nhan gan nhat cua mot lan may chet, do duoc trong hop den 03/09.
+
+    Muoi hai tien trinh `demucs_runner` chay trong 4 phut 12 giay, moi cai dinh
+    **462-984% CPU** — moi tien trinh mot minh doi 5 den 10 loi logic. Luc
+    16:51:09 CPU cham 100%, RAM trong tut tu 17,7 xuong 14,1 GB, va may khong
+    ghi them dong nao nua.
+
+    🔑 Day la cho ma `-n 6` **khong voi toi duoc**: no dem WORKER PYTEST, khong
+       dem thu moi worker sinh ra. Sau worker, moi worker mot demucs, moi demucs
+       muoi luong = 60 luong tren 10 loi. Mot tien trinh chau khong xin khoa,
+       khong khai bao, va khong nam trong bat cu phep tinh nao cua gate.
+    """
+    import torch
+
+    from apps.auto_scan_video import demucs_runner
+
+    assert demucs_runner.LUONG_TORCH <= 4, (
+        "tran luong torch phai NHO - mot lan tach nguon la viec nen, khong gap")
+
+    cu = torch.get_num_threads()
+    try:
+        n = demucs_runner._dat_tran_luong(torch)
+        assert n == demucs_runner.LUONG_TORCH
+        assert torch.get_num_threads() == demucs_runner.LUONG_TORCH, (
+            "goi ham ma so luong khong doi - `set_num_threads` khong an")
+    finally:
+        torch.set_num_threads(cu)
+
+
+def test_tran_luong_duoc_dat_TRUOC_khi_nap_model():
+    """⛔ `torch.set_num_threads` sau khi mot phep tinh da bat dau thi khong con
+    tac dung len phep tinh do.
+
+    Chot bang AST: trong `main`, loi goi `_dat_tran_luong` phai dung TRUOC
+    `get_model` va `apply_model`.
+    """
+    import ast
+
+    from apps.auto_scan_video import demucs_runner
+
+    cay = ast.parse(Path(demucs_runner.__file__).read_text(encoding="utf-8"))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "main"][0]
+
+    dong = {}
+    for n in ast.walk(ham):
+        if isinstance(n, ast.Call):
+            ten = (n.func.id if isinstance(n.func, ast.Name)
+                   else getattr(n.func, "attr", ""))
+            if ten in ("_dat_tran_luong", "get_model", "apply_model"):
+                dong.setdefault(ten, n.lineno)
+
+    assert "_dat_tran_luong" in dong, "`main` khong dat tran luong"
+    for sau in ("get_model", "apply_model"):
+        if sau in dong:
+            assert dong["_dat_tran_luong"] < dong[sau], (
+                f"dat tran luong SAU `{sau}` thi khong con tac dung")
