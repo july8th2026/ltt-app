@@ -52,6 +52,26 @@
     A. `thu_giu()` ghi them `so_loi` (mac dinh 0 -> caller cu khong doi hanh vi)
     B. `ngan_sach_loi()` tru Sigma loi cac phien KHAC dang giu; giu `max(2, ...)`
        ⚠️ phai lay so **sau khi da giu khoa**, khong phai o `gate.py:224` luc dung danh sach buoc
+  🔴 **BA SUA CHUA tu `lttchat-...-49` sau khi doc thiet ke — diem 2 la mot LOI THAT:**
+    1. **Tinh lai con so thoi thi VO NGHIA.** `gate.py:224` dung `argv` cua buoc `bo test`
+       voi `-n <so>` **da co dinh** truoc khi `CuaSoYen.__enter__` chay. Lay so moi sau khi
+       giu khoa ma khong dung lai `argv` thi no tru dung va **van chay 11 worker**. Cho sach
+       nhat: cho `Step` giu mot HAM dung argv tre, thay vi mot list co dinh.
+    2. ⛔ **`so_loi = 0` cho ban ghi cu la FAIL-OPEN.** Toi thiet ke mac dinh 0 de caller cu
+       khong doi hanh vi — nhung 0 co nghia "khong khai", khong phai "khong dung loi nao".
+       Mot luot gate CU dang giu khoa se doc ra 0 loi => ngan sach khong bi tru => **dung cai
+       qua tai ta muon chan, chi khac la im lang**. Sua: doc ra 0 ma ban ghi CO tai nguyen
+       `cpu_nhieu` thi tinh bang mot gia tri de dat (vd `ngan_sach_loi()` mac dinh), tuc
+       fail-CLOSED o dung cho no re.
+    3. Hop nhat chu ky: ho da them `ngan_sach_loi(do_tai=False)`. Ba co cho cung mot cau hoi
+       "toi duoc dung bao nhieu loi" la ba cau tra loi khac nhau cho cung mot cau hoi — gop
+       thanh MOT tham so.
+  ⭐ Va mot bai hoc ho tra gia de co, ap thang vao day: ban dau ho lay `cpu_count() - 6` = 14
+     lam **tran** cho `-n`. Sai — xdist tu tra loi **10** (loi vat ly), nen cai "tran" 14 lai
+     **NANG** so worker len, nguoc han chieu no ton tai. Phai la `min` voi cau tra loi cua
+     chinh cong cu, khong phai mot phep gan. Ngan sach nay se gap dung hinh dang do o **moi**
+     cong cu con biet tu do.
+
     C. **PHAN CUA PHIEN NAY, lam sau khi A+B merge:** het `--cho` ma chay de thi ngan sach
        = phan CON LAI, khong phai full 14. Giu nguyen quyet dinh "khong tu choi chay" —
        chi la khi biet minh dang chen thi tu thu nho. Can mot chot rieng chung minh ngan
