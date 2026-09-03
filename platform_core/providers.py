@@ -258,9 +258,12 @@ REGISTRY: dict[str, Provider] = {
                     ],
                 },
             ),
-            # `qwen38-ops` (200K) CÓ trong llama-swap nhưng KHÔNG khai ở đây:
-            # cửa sổ 200K cần ~195 giây prefill khi lấp đầy ⇒ vượt timeout 125
-            # giây mặc định. Nó chỉ dùng được trong LAN, và nền tảng đi qua Cloudflare.
+            # `qwen38-ops` ĐÃ GỠ 03/09. Nó từng bị giữ trong LAN vì lập luận
+            # "200K cần ~195 giây prefill ⇒ vượt timeout 125 giây của Cloudflare" —
+            # đúng cho cửa ĐỒNG BỘ, sai cho cửa STREAM, vì `nhip_tim.py` chèn chú
+            # thích SSE mỗi 15 giây trong lúc prefill nên đồng hồ im-lặng không
+            # bao giờ chạm. Nay `qwen38-api` CHÍNH LÀ hồ sơ 200K, và chỉ có MỘT
+            # hồ sơ text: llama-swap giết một lượt đang chạy để nạp hồ sơ khác.
         ),
         list_models_path="/v1/models",
         notes=("Cổng VLM trên máy B (:8299, bearer token), tương thích OpenAI. "

@@ -100,7 +100,7 @@ LE = 2_048
 
 #: Trần đầu vào thật sự dùng được: chừa đủ chỗ cho một câu trả lời dài nhất.
 #: Đây là số máy B phải khai ở `LTT_LLM_MAX_INPUT_TOKENS`.
-TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE            # 96_256
+TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE           # 169_984
 
 #: Số byte JSON cho mỗi token khi hội thoại đi trên dây. Đo 30/08 trên thân
 #: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool).
@@ -112,12 +112,12 @@ BYTE_MOI_TOKEN_JSON = 4.5
 #: ⛔ ĐÂY LÀ MỘT LỖI ĐÃ XẢY RA: trần body 256 KB của nền tảng chặn hội thoại dài
 #:    ở khoảng 64.000 token — gần bằng 65.000 nên suốt buổi ta tưởng đang chạm
 #:    trần của máy B. Hai trần không liên quan gì nhau mà cái nhỏ hơn thắng.
-BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~433 KB
+BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~747 KB
 
 #: Cửa sổ **công bố** cho client agentic (Codex, Claude Code) để chúng nén hội
 #: thoại **trước** khi chạm trần. Chừa 8% cho lệch tokenizer: client đếm token
 #: bằng bộ đếm của nó, model đếm bằng bộ của Qwen, hai số không bao giờ khớp.
-CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                    # 88_555
+CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 156_385
 
 
 # ── Ngân sách THEO MODEL ───────────────────────────────────────────────────

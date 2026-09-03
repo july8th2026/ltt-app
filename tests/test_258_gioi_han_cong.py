@@ -182,7 +182,7 @@ def _co_cho(gh) -> bool:
 
 
 def _than(**ghi_de):
-    d = {"model": "qwen38-ops", "messages": [{"role": "user", "content": "xin chao"}]}
+    d = {"model": "qwen38-api", "messages": [{"role": "user", "content": "xin chao"}]}
     d.update(ghi_de)
     return d
 

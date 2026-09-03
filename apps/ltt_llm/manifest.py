@@ -32,7 +32,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
    Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
 
-       tran.input_tokens tu GET /health cua cong may B  ->  96256
+       tran.input_tokens tu GET /health cua cong may B  ->  169984
 
    Số đúng tại thời điểm viết:
 
