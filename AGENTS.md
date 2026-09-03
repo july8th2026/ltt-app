@@ -165,6 +165,22 @@ credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
 | `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
 | `python tools\gate.py --noi-tiep` | khi nghi kết quả bị **nhiễu** bởi song song hoặc tải máy | ~25–30 phút |
 
+⚠️ **`npm run build` phải là việc CUỐI trước gate, sau cả việc sửa test.**
+
+`build_release._frontend_source_sha256` băm **cả** thư mục frontend — gồm cả
+`tests/`. Nên thêm một phép kiểm vitest cũng làm bundle bị coi là **cũ**, và
+gate đỏ ở ba chỗ chẳng liên quan gì tới thứ vừa sửa:
+
+```
+test_44_release_build · test_95_agent_canvas_build · test_103_autosub_projects
+       -> "frontend/<ten> bundle is stale or built with the wrong Node"
+```
+
+⭐ Ba lần trong một ngày 03/09. Không phải vì luật khó nhớ, mà vì thứ tự tự
+nhiên khi làm việc là *sửa mã → build → viết test* — và bước cuối lại làm hỏng
+bước giữa. Chỉ có một cách không quên: **build ngay trước khi gõ `gate.py`**,
+không phải "sau khi sửa mã".
+
 ⛔ **`--tuan-tu` KHÔNG phải `--noi-tiep`, và nhầm hai cái này rất dễ.**
 `--tuan-tu` xếp hàng các **bước**; bước `bo test` bên trong nó vẫn tự mở 10–14
 worker pytest. `--noi-tiep` hạ **cả hai** mức: một bước một lúc, **và** một tiến

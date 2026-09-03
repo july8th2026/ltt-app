@@ -21,6 +21,46 @@ import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
 import type { Khoi, ThongDiep } from './kieu'
 import { TrangThaiLuot } from './TrangThaiLuot'
 
+/**
+ * Mã lỗi của máy chủ → một câu người đọc được.
+ *
+ * 🔴 ĐO TRÊN PRODUCTION 03/09. Chạy 45 lượt liên tiếp làm cạn suất admission,
+ *    và ô trả lời hiện đúng chuỗi:
+ *
+ *        het suat thuc thi
+ *
+ *    Đó là văn bản NỘI BỘ — tiếng Việt không dấu, viết cho người đọc log —
+ *    đặt vào đúng chỗ câu trả lời của model. Người dùng không biết "suất" là
+ *    gì, không biết phải chờ hay phải làm lại, và không biết mình có mất tiền
+ *    không.
+ *
+ * ⛔ Bản cũ là `loi.text || loi.code || 'Có lỗi xảy ra.'` — nó ưu tiên chuỗi
+ *    nội bộ TRƯỚC. Nghĩa là càng nhiều thông tin chẩn đoán ở tầng dưới thì
+ *    người dùng càng thấy nhiều thứ khó hiểu. Đúng chiều ngược lại.
+ *
+ * ⭐ Nay MÃ đi trước: mã là hợp đồng, còn `text` là chẩn đoán. Chỉ khi không
+ *    có mã nào khớp mới rơi về `text`, và khi ấy nó vẫn tốt hơn một dòng
+ *    trống.
+ */
+const LOI_DOC_DUOC: Record<string, string> = {
+  ban: 'Model đang bận. Thử lại sau ít giây — lượt này không bị tính tiền.',
+  suat: 'Model đang bận. Thử lại sau ít giây — lượt này không bị tính tiền.',
+  het_credit: 'Không đủ credit cho lượt này.',
+  qua_dai: 'Hội thoại vượt trần ngữ cảnh. Bắt đầu hội thoại mới hoặc rút ngắn câu hỏi.',
+  khong_mo_duoc: 'Không gọi được model lúc này. Thử lại sau ít phút.',
+  tham_so: 'Nội dung không hợp lệ.',
+  huy: 'Đã dừng theo yêu cầu.',
+}
+
+function loiDocDuoc(ma: string, chu: string): string {
+  if (LOI_DOC_DUOC[ma]) return LOI_DOC_DUOC[ma]
+  // ⚠️ Chuỗi chẩn đoán chỉ được hiện khi nó KHÔNG phải văn bản nội bộ. Dấu
+  //    hiệu rẻ và đủ tốt: một câu cho người dùng Việt thì có dấu.
+  const coDau = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i
+  if (chu && coDau.test(chu)) return chu
+  return 'Không hoàn thành được lượt này. Thử lại giúp tôi.'
+}
+
 const NHAN_TRANG_THAI: Record<string, string> = {
   cancelled: 'Đã dừng',
   length: 'Bị cắt ở trần độ dài',
@@ -165,7 +205,7 @@ export function ThongDiepView({
 
       {loi && (
         <p className="ltc-tin__loi" role="alert">
-          {String(loi.text || loi.code || 'Có lỗi xảy ra.')}
+          {loiDocDuoc(String(loi.code || ''), String(loi.text || ''))}
         </p>
       )}
       {trangThai && (

@@ -185,6 +185,17 @@ async function guiChu(p, chu) {
   //    va no chi khop khi hoi thoai DA CO tin nhan, tuc lo ra o hang muc thu
   //    nam chu khong phai thu nhat. Mot locator mo la mot loi biet cho luc.
   const truoc = await soBai(p);
+  // ⛔ DOI O SOAN MO KHOA. Sau ~40 luot lien tiep, model bao "chua san sang"
+  //    va giao dien khoa o soan — do la hanh vi DUNG (fail-closed), khong phai
+  //    loi. Nhung `fill()` vao mot `<textarea disabled>` thi treo 30 giay roi
+  //    bao "locator.fill: Timeout", va SAU hang muc do lien tiep nhau.
+  //
+  // ⭐ Mot bo kiem chay 45 luot that phai chiu duoc chinh co che chong qua tai
+  //    cua san pham no dang kiem. Doi la dung; bao san pham hong la sai.
+  await doiDen('o soan mo khoa (model san sang)', async () => {
+    const o = p.getByLabel('Nội dung tin nhắn');
+    return (await o.count()) > 0 && !(await o.isDisabled());
+  }, 180);
   await p.getByLabel('Nội dung tin nhắn').fill(chu);
   await p.getByRole('button', { name: 'Gửi', exact: true }).click();
   await doiDen('luot da bat dau',

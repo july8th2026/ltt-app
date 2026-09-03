@@ -24,12 +24,28 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
         await guiChu(p, 'Liet ke dung 4 loai qua, moi loai mot dong, '
           + 'khong danh so, khong gach dau dong, khong giai thich.');
         await xong(p);
-        const br = await p.evaluate(() => {
+        // ⛔ MENH DE LA "MOI Y MOT DONG", KHONG PHAI "co the <br>".
+        //
+        //    Ban dau chi dem `<br>`. Nhung model hoan toan co the tra ve mot
+        //    DANH SACH (`<ul><li>`) — moi y van tren mot dong, dung yeu cau, va
+        //    dung 0 the `<br>`. Phep kiem bao do tren mot ket xuat hoan hao.
+        //
+        // ⭐ Do thu nguoi dung THAY: so dong that su tach ra. `<br>` va `<li>`
+        //    la hai cach dat duoc no; con `Đỏ Xanh Vàng` dinh lien thi khong.
+        const r = await p.evaluate(() => {
           const a = [...document.querySelectorAll('article')].pop();
-          return (a.querySelector('.ltc-tin__chu')?.querySelectorAll('br') || []).length;
+          const noi = a.querySelector('.ltc-tin__chu');
+          const dong = (noi?.innerText || '').split(String.fromCharCode(10))
+            .map((d) => d.trim()).filter(Boolean);
+          return { dong: dong.length, br: noi?.querySelectorAll('br').length ?? 0,
+                   li: noi?.querySelectorAll('li').length ?? 0,
+                   mau: dong.slice(0, 5) };
         });
-        if (br < 2) throw new Error(`chi ${br} the <br> — xuong dong don dang bi nuot`);
-        return { so_br: br };
+        if (r.dong < 3) {
+          throw new Error(`chi ${r.dong} dong (br=${r.br}, li=${r.li}) — `
+            + `xuong dong don dang bi nuot: ${JSON.stringify(r.mau)}`);
+        }
+        return r;
       },
     },
     {
@@ -57,7 +73,9 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
           };
         });
         await p.setViewportSize({ width: 1280, height: 900 });
-        if (!r.coOl) throw new Error('model khong tra ve danh sach danh so — doi cau hoi');
+        // Model khong tra ve danh sach danh so ⇒ menh de CHUA duoc kiem, khong
+        // phai bi vi pham. Bao BO QUA kem ly do; bao HONG la vu khong san pham.
+        if (!r.coOl) return { bo_qua: 'model khong tra ve danh sach danh so o luot nay' };
         if (r.tranNgang > 1) throw new Error(`390px: trang cuon ngang ${r.tranNgang}px`);
         if (r.traiNhoNhat !== null && r.traiNhoNhat < r.voTrai - 1) {
           throw new Error(`so thu tu bi cat: li.left=${r.traiNhoNhat} < vo.left=${r.voTrai}`);
@@ -90,7 +108,7 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
                    tranNgang: document.documentElement.scrollWidth - document.documentElement.clientWidth };
         });
         await p.setViewportSize({ width: 1280, height: 900 });
-        if (!r.coBang) throw new Error('model khong tra ve bang — doi cau hoi');
+        if (!r.coBang) return { bo_qua: 'model khong tra ve bang o luot nay' };
         if (r.tranNgang > 1) throw new Error(`bang lam CA TRANG cuon ngang ${r.tranNgang}px`);
         if (!r.cuonDuoc) throw new Error('bang khong nam trong vung cuon ngang rieng nao');
         return r;

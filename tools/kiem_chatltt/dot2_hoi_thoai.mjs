@@ -41,10 +41,20 @@ export function dot2({ cho, doiDen, soBai, chuBaiCuoi, guiChu, xong, hoiThoaiMoi
         if (sau !== a) {
           throw new Error(`Back khong ve hoi thoai truoc: mong ${a}, nhan "${sau}"`);
         }
-        await doiDen('noi dung hoi thoai truoc hien lai', async () => {
-          const t = await p.locator('article').first().innerText().catch(() => '');
-          return /CAMAP/i.test(t);
-        }, 25);
+        try {
+          await doiDen('noi dung hoi thoai truoc hien lai', async () => {
+            const t = await p.locator('article').first().innerText().catch(() => '');
+            return /CAMAP/i.test(t);
+          }, 25);
+        } catch (e) {
+          const tt = await p.evaluate(() => ({
+            hash: location.hash,
+            bai: document.querySelectorAll('article').length,
+            dau: (document.querySelector('article')?.innerText || '(khong co bai)')
+              .replace(/\s+/g, ' ').slice(0, 130),
+          }));
+          throw new Error(`${e.message} | ${JSON.stringify(tt)}`);
+        }
         return { hash_a: a, hash_b: b, sau_back: sau };
       },
     },
@@ -79,18 +89,25 @@ export function dot2({ cho, doiDen, soBai, chuBaiCuoi, guiChu, xong, hoiThoaiMoi
       async chay(p) {
         // ⛔ Day la issue DANG MO cua LibreChat: "New chat has no label until
         //    page refresh". Neu ta cung the, no chi lo ra khi ai do dung that.
+        // ⛔ KHONG dem so muc tang len. `hoi_thoai.liet_ke` gioi han **50**
+        //    (`hoi_thoai.py:79`), nen tren mot tai khoan da co 50 hoi thoai thi
+        //    them mot cai nua KHONG lam con so doi — va phep kiem se do mai
+        //    mai tren mot san pham dung. Da dinh that: tai khoan kiem cua toi
+        //    co dung 50.
+        //
+        // ⭐ Menh de that la: hoi thoai VUA TAO nam **dau danh sach** va mang
+        //    **tieu de suy tu tin nhan dau**. Do la thu nguoi dung thay, va no
+        //    dung o moi so luong hoi thoai.
         await hoiThoaiMoi(p);
-        const truoc = await p.locator('aside li button').count();
-        await guiChu(p, 'Tra loi ngan: mot cong mot bang may?');
+        const cau = 'Thu do cua Y la gi? Tra loi mot tu.';
+        await guiChu(p, cau);
         await xong(p);
-        await doiDen('thanh ben co them muc VA muc do co ten', async () => {
-          const ds = p.locator('aside li button');
-          if ((await ds.count()) <= truoc) return false;
-          const ten = (await ds.first().innerText()).trim();
-          return ten.length > 3;
+        await doiDen('hoi thoai moi nam dau danh sach, co tieu de', async () => {
+          const ten = (await p.locator('aside li button').first().innerText().catch(() => '')).trim();
+          return ten.length > 3 && cau.slice(0, 18).includes(ten.slice(0, 18).replace(/…$/, ''));
         }, 25);
         const ten = (await p.locator('aside li button').first().innerText()).trim();
-        return { tieu_de: ten.slice(0, 50) };
+        return { tieu_de: ten.slice(0, 50), tong_muc: await p.locator('aside li button').count() };
       },
     },
     {
@@ -149,6 +166,8 @@ export function dot2({ cho, doiDen, soBai, chuBaiCuoi, guiChu, xong, hoiThoaiMoi
     {
       dot: 2,
       ten: '2.6-hash-la-khong-lam-mac-ket',
+      // Hang muc nay CO Y mo mot hoi thoai khong ton tai; 404 la ket qua dung.
+      loi_mong_doi: [/404 GET .*\/api\/hoi-thoai\//, /Failed to load resource/],
       hoi: 'Một link hội thoại không tồn tại có làm người dùng mắc kẹt không?',
       async chay(p) {
         const goc = p.url().split('#')[0];
@@ -167,6 +186,18 @@ export function dot2({ cho, doiDen, soBai, chuBaiCuoi, guiChu, xong, hoiThoaiMoi
       async chay(p) {
         const o = p.getByRole('searchbox', { name: 'Tìm hội thoại' });
         if (!(await o.count())) throw new Error('khong co o tim');
+        // ⛔ DOI DANH SACH VE. Ban dau doc `count()` ngay va nhan **0** — hang
+        //    muc truoc vua dieu huong, danh sach chua nap xong. Roi "loc" ra 7,
+        //    va no bao "tim khong loc gi: 0 -> 7" tren mot o tim hoan toan dung.
+        //
+        //    Lan thu NAM trong mot buoi, cung mot goc: doc truoc khi du lieu
+        //    toi. Toi da sua no o mac dinh model, o mo hoi thoai moi, o danh
+        //    sach vision, o anh qua R2 — va van lap lai. Mot loai loi ma minh
+        //    da biet ten van cu tai dien thi cai thieu khong phai kien thuc,
+        //    la mot THOI QUEN: moi phep do bat dau bang mot cau hoi "du lieu
+        //    nay da toi chua".
+        await doiDen('danh sach hoi thoai da nap', async () =>
+          (await p.locator('aside li button').count()) > 0, 25);
         const tong = await p.locator('aside li button').count();
         await o.fill('CAMAP');
         await cho(1500);
