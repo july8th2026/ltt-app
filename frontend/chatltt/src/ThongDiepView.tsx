@@ -19,6 +19,7 @@ import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
 import type { Khoi, ThongDiep } from './kieu'
+import { TrangThaiLuot } from './TrangThaiLuot'
 
 const NHAN_TRANG_THAI: Record<string, string> = {
   cancelled: 'Đã dừng',
@@ -144,8 +145,13 @@ export function ThongDiepView({
         ) : (
           <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{chu}</Markdown>
         )}
-        {dangChay && !chu && !dangTaoMedia && (
-          <span className="ltc-nhipdap" aria-label="Đang trả lời" />
+        {/*
+          ⛔ Thay cho mot cham nhip cam. Mot cham tra loi duoc "con song khong";
+             no khong tra loi duoc "dang lam gi" — va do moi la cau nguoi dung
+             thuc su hoi sau ba giay im lang. Xem `TrangThaiLuot.tsx`.
+        */}
+        {!dangTaoMedia && (
+          <TrangThaiLuot ex={m.execution} daCoChu={!!chu} dangChay={dangChay} />
         )}
       </div>
 

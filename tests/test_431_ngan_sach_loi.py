@@ -46,6 +46,16 @@ def _n_truyen_cho_pytest() -> int:
     ⭐ Phan DO DUOC duoc chot rieng, va chot bang BAT DANG THUC chu khong bang
        mot con so: `test_do_tai_khong_bao_gio_noi_ngan_sach`. Mot con so do duoc
        thi khong bao gio la mot hang so.
+
+    ⭐ VA MOT GHI CHU VE VIEC HOP NHAT. Hai phien doc lap (`lttchat` va
+       `ltt-llm-context-200k`) tim ra khuyet tat nay trong cung mot buoi va sua
+       no **y het nhau** — cung `do_tai=False`, cung y tuong tach menh de tat
+       dinh khoi menh de do duoc. Xung dot merge o day chi la hai khoi chu thich
+       noi cung mot dieu.
+
+       Do la mot dau hieu tot ve chinh cai luat nay: no la thu hai nguoi doc lap
+       cung suy ra. Va no la truong hop cu the cua bay `gate-tu-nhieu-vao-phep-do`
+       da ghi trong bo nho du an.
     """
     return gate.loi_cho_bo_test(phien="", do_tai=False)
 
@@ -375,6 +385,9 @@ def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # Khong phu thuoc `os.cpu_count()` (logic) nua.
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
+    # ⛔ `do_tai=False` — CUNG LY DO nhu `_n_truyen_cho_pytest`. Hai phien sua
+    #    hai phep kiem nay doc lap trong cung mot buoi (`9b6bef0` va ban tren
+    #    nhanh `admin-mvp-v3`), va hai ban sua trung nhau tung chu.
     assert gate.loi_cho_bo_test(phien="", do_tai=False) == gate.TRAN_WORKER_BO_TEST
 
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
@@ -403,7 +416,7 @@ def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
         {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 4}])
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # 10 - 3 - 4 = 3, nho hon tran 6 -> 3 thang
-    assert gate.loi_cho_bo_test(phien="toi") == 3
+    assert gate.loi_cho_bo_test(phien="toi", do_tai=False) == 3
 
 
 def test_bo_dem_LICH_cung_dung_don_vi_VAT_LY(monkeypatch):
@@ -615,3 +628,15 @@ def test_conftest_van_LAY_MIN_chu_khong_dat_de(monkeypatch):
     doan = _ast.get_source_segment(src, ham) or ""
     assert "min(n, " in doan or "min(n," in doan, (
         "phai LAY MIN voi phep tinh cuc bo, khong duoc gan thang so cua gate")
+
+
+def test_do_tai_khong_bao_gio_noi_ngan_sach():
+    """Do tai chi duoc lam ngan sach NHO DI, khong bao gio lon hon.
+
+    ⭐ Day la cach chot mot ham phu thuoc vao phep do: khong chot GIA TRI cua
+       no (gia tri doi theo tai, va lượt gate nao cung tu lam may ban), ma chot
+       QUAN HE giua hai che do. Bat dang thuc thi dung o may ranh lan may day.
+    """
+    tinh = gate.loi_cho_bo_test(phien="", do_tai=False)
+    do = gate.loi_cho_bo_test(phien="", do_tai=True)
+    assert 1 <= do <= tinh, f"do_tai=True ({do}) khong duoc vuot ban tinh ({tinh})"

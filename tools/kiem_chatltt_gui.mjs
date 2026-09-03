@@ -78,6 +78,8 @@ const MAT_KHAU = co('--pass', process.env.LTT_SMOKE_PASS || '');
 const HIEN = argv.includes('--hien');          // mo cua so that de nguoi xem
 const THU_MUC_ANH = co('--anh', 'tmp/kiem_gui');
 const CHI = co('--chi', '');                   // chay mot hang muc theo ten
+/** `--dot 1,2,A` — chi chay nhung dot duoc goi ten. Rong = tat ca. */
+const DOT = co('--dot', '').split(',').map((x) => x.trim()).filter(Boolean);
 
 /**
  * `--phien <tep>` — dung mot PHIEN DA DANG NHAP (Playwright storageState).
@@ -162,24 +164,42 @@ async function guiChu(p, chu) {
     async () => (await soBai(p)) >= truoc + 2 || (await dangChay(p)), 40);
 }
 
-async function xong(p, hanS = 120) {
-  // 🔴 HAI DIEU KIEN, VA THIEU DIEU KIEN THU HAI LA MOT LO HONG THAT.
+async function xong(p, hanS = 150) {
+  // 🔴 DOC DAU HIEU CUA SAN PHAM, DUNG DOAN BANG DO DAI CHUOI.
   //
-  //    Ban dau `xong` chi doi "khong con nut Dung". Nhung ngay sau khi bam Gui,
-  //    nut Dung CHUA KIP hien — nen `xong` tra ve ngay lap tuc, va hang muc ke
-  //    tiep doc mot bai TRONG roi ket luan "model tra loi sai".
+  //    Ban truoc doi hai thu: "khong con nut Dung" va "chu dai hon 15 ky tu".
+  //    Ca hai deu SAI kieu:
   //
-  // ⛔ Do khong phai mot bao cao sai vo hai: no bao SAN PHAM hong trong khi
-  //    phep do moi la thu hong. Va o chieu nguoc lai no con te hon — mot cau
-  //    tra loi RONG that su cung se di qua, vi khong ai kiem noi dung.
+  //      · `dangChay` co mot khoang FALSE ngay sau khi bam Gui — tin nhan da
+  //        tao nhung luong chua mo. `xong` tra ve trong khoang do.
+  //      · "dai hon 15 ky tu" duoc thoa boi CHINH nhan vai: mot bai chi co
+  //        "ChatLTT" + "▸ Đang suy nghĩ…" da 24 ky tu, khong mot chu tra loi
+  //        nao.
   //
-  // ⭐ Nen: doi luot ket thuc, ROI doi noi dung that su co mat.
-  await doiDen('luot chay xong', async () => !(await dangChay(p)), hanS);
-  await doiDen('cau tra loi co noi dung', async () => {
-    const chu = (await chuBaiCuoi(p)).replace(/\s/g, '');
-    // "ChatLTT" la nhan vai, khong phai noi dung.
-    return chu.length > 'ChatLTT'.length + 8;
-  }, 30);
+  // ⛔ Hau qua do that tren production: hang muc hoi "thu do nuoc Phap" doc
+  //    phai cau tra loi cua luot TRUOC (mot loi chao), roi bao "model tra loi
+  //    sai". Chay tay cung cau hoi ay: "Paris". Bao cao vu khong san pham
+  //    trong khi phep do moi la thu hong — lan thu ba trong cung mot buoi.
+  //
+  // ⭐ Nut "Tạo lại" chi hien tren mot bai DA XONG. Do la dau hieu chinh san
+  //    pham dung de noi "luot nay ket thuc roi" — muon no thi khong phai doan.
+  await doiDen('luot ket thuc (bai cuoi co nut "Tạo lại")', async () => {
+    if (await dangChay(p)) return false;
+    const cuoi = p.locator('article').last();
+    return (await cuoi.getByRole('button', { name: 'Tạo lại' }).count()) > 0;
+  }, hanS);
+}
+
+/**
+ * Mo mot hoi thoai moi VA doi cho no rong han.
+ *
+ * ⛔ `cho(600)` khong du, va do la mot loi da xay ra: bam Gui som hon mot nhip
+ *    thi tin nhan di vao hoi thoai CU, roi hang muc doc phai cau tra loi cua
+ *    mot cau hoi khac va bao "model tra loi sai".
+ */
+async function hoiThoaiMoi(p) {
+  await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
+  await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 25);
 }
 
 // ── Cac hang muc ───────────────────────────────────────────────────────────
@@ -187,7 +207,7 @@ async function xong(p, hanS = 120) {
 // Moi hang muc: mot cau hoi CO THE SAI, va mot phep do tra loi no.
 const HANG_MUC = [
   {
-    ten: 'trang-mo-duoc',
+    dot: 0, ten: 'trang-mo-duoc',
     hoi: 'Trang ChatLTT co dung duoc cac phan chinh khong (thanh ben, chon model, o soan)?',
     async chay(p) {
       await doiDen('sidebar', () => p.getByRole('button', { name: '+ Hội thoại mới' }).count());
@@ -198,7 +218,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'chua-co-model-thi-khong-gui-duoc',
+    dot: 0, ten: 'chua-co-model-thi-khong-gui-duoc',
     hoi: 'Trong giay dau khi catalog chua ve, nguoi dung co bam Gui duoc khong?',
     async chay(p) {
       // ⭐ Do duoc 03/09: o t+0ms danh sach model RONG. Neu o soan van bat thi
@@ -219,7 +239,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'model-mac-dinh-la-ltt_llm',
+    dot: 0, ten: 'model-mac-dinh-la-ltt_llm',
     hoi: 'Model chon san co phai `ltt_llm` khong — hay la vision (ngu canh 28K thay vi 89K)?',
     async chay(p) {
       // ⛔ Doi CATALOG ve truoc khi doc. Ban dau doc ngay va nhan "", roi bao
@@ -233,7 +253,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'stream-tra-loi',
+    dot: 0, ten: 'stream-tra-loi',
     hoi: 'Gui mot cau thi co cau tra loi chay ve khong, va no co noi dung that khong?',
     async chay(p) {
       const truoc = await soBai(p);
@@ -246,7 +266,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tra-loi-DUNG-CAU-DUOC-HOI',
+    dot: 0, ten: 'tra-loi-DUNG-CAU-DUOC-HOI',
     hoi: 'Cau tra loi co lien quan den cau hoi khong — hay chi la "co chu chay ve"?',
     async chay(p) {
       // 🔴 HANG MUC NAY LAP MOT LO HONG THAT trong chinh bo kiem. `stream-tra-loi`
@@ -256,7 +276,10 @@ const HANG_MUC = [
       // ⭐ Chon mot cau co dap an mot tu, kiem duoc bang chuoi con: khong can
       //    hieu ngu nghia, khong phu thuoc model "gioi" den dau.
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Thu do cua nuoc Phap ten la gi? Tra loi dung mot tu.');
       await xong(p);
       const chu = (await chuBaiCuoi(p)).toLowerCase();
@@ -267,11 +290,14 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'lam-theo-rang-buoc-cua-lenh',
+    dot: 0, ten: 'lam-theo-rang-buoc-cua-lenh',
     hoi: 'Model co ton trong rang buoc dinh dang trong lenh khong?',
     async chay(p) {
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Liet ke dung 3 mau sac, moi mau mot dong, khong giai thich gi them.');
       await xong(p);
       const chu = await chuBaiCuoi(p);
@@ -288,14 +314,17 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tieng-viet-co-dau-khong-vo',
+    dot: 0, ten: 'tieng-viet-co-dau-khong-vo',
     hoi: 'Chu tieng Viet co dau di tron ven qua SSE va qua Cloudflare khong?',
     async chay(p) {
       // ⛔ Day la cho ma mot loi encoding se lo ra, va no chi lo ra tren ĐUONG
       //    THAT: SSE cat chunk giua mot ky tu UTF-8 nhieu byte, hoac mot lop
       //    minify/proxy doi charset. jsdom khong the do duoc dieu do.
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Viet lai chinh xac cau nay, khong doi gi: "Nghiêng nước nghiêng thành."');
       await xong(p);
       const chu = await chuBaiCuoi(p);
@@ -307,7 +336,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'hoi-thoai-co-dia-chi',
+    dot: 0, ten: 'hoi-thoai-co-dia-chi',
     hoi: 'Hoi thoai co nam trong URL khong — F5 co quay lai dung cho khong?',
     async chay(p) {
       const hash = await p.evaluate(() => location.hash);
@@ -321,7 +350,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'tao-lai-sinh-nhanh-moi',
+    dot: 0, ten: 'tao-lai-sinh-nhanh-moi',
     hoi: 'Bam "Tao lai" co sinh mot nhanh anh em moi khong, va dieu huong nhanh co chay khong?',
     async chay(p) {
       await p.getByRole('button', { name: 'Tạo lại' }).last().click();
@@ -332,7 +361,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'dung-giua-chung',
+    dot: 0, ten: 'dung-giua-chung',
     hoi: 'Bam "Dung" co that su dung khong — hay chu van chay tiep sau khi nut bien mat?',
     async chay(p) {
       await guiChu(p, 'Viet mot doan that dai ve lich su Viet Nam, cang dai cang tot.');
@@ -378,7 +407,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'o-soan-khong-de-chan-trang',
+    dot: 0, ten: 'o-soan-khong-de-chan-trang',
     hoi: 'O soan co nam tron trong vung cua no khong, hay tran ra de len phan duoi?',
     async chay(p) {
       const r = await p.evaluate(() => {
@@ -396,7 +425,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'khong-cuon-ngang',
+    dot: 0, ten: 'khong-cuon-ngang',
     hoi: 'Trang co bi cuon ngang o be rong nao khong (390 / 768 / 1920)?',
     async chay(p) {
       const xau = [];
@@ -412,7 +441,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'vision-o-dinh-anh-theo-hop-dong',
+    dot: 0, ten: 'vision-o-dinh-anh-theo-hop-dong',
     hoi: 'O dinh anh co hien DUNG khi model doc anh, va BIEN MAT khi model khong doc anh?',
     async chay(p) {
       const sel = p.locator('select[aria-label="Chọn model"]');
@@ -432,7 +461,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'nut-media-co-mat',
+    dot: 0, ten: 'nut-media-co-mat',
     hoi: 'Hai nut Tao anh / Tao giong co mat trong hoi thoai khong?',
     async chay(p) {
       const anh = await p.getByRole('button', { name: 'Tạo ảnh' }).count();
@@ -442,7 +471,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'bao-gia-truoc-khi-thu-tien',
+    dot: 0, ten: 'bao-gia-truoc-khi-thu-tien',
     hoi: 'Bam Tao anh co hoi gia TRUOC khi thu tien khong, va co Huy duoc khong?',
     async chay(p) {
       await p.getByRole('button', { name: 'Tạo ảnh' }).click();
@@ -462,18 +491,29 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'khong-lo-id-noi-bo',
+    dot: 0, ten: 'khong-lo-id-noi-bo',
     hoi: 'Giao dien co lo ten model that / URL may B / khoa API ra khong?',
     async chay(p) {
       const t = await p.evaluate(() => document.body.innerText);
-      const cam = [/qwen\s*3?8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
+      // ⭐ CAM la ID NOI BO va HA TANG, khong phai ten model.
+      //
+      //    Chu du an chot 03/09: **de model tra loi dung no la Qwen**. Khi
+      //    duoc chao, no noi "toi khong phai ChatLTT, toi la Qwen" — va do la
+      //    hanh vi MONG MUON, khong phai ro ri. Giau di can mot system prompt
+      //    day model noi sai ve chinh no, tuc doi mot su that lay mot cau
+      //    quang cao.
+      //
+      // ⛔ Thu VAN cam: `qwen38` (id noi bo, khac ten thuong goi), cong LAN cua
+      //    may B, tien to khoa API. Do la nhung thu cho ai do di tiep mot buoc
+      //    — mot cai ten model thi khong.
+      const cam = [/qwen\s*3\s*8/i, /8299/, /8199/, /8120/, /ltt_sk_/, /192\.168\./];
       const dinh = cam.filter((r) => r.test(t)).map(String);
       if (dinh.length) throw new Error(`lo ra: ${dinh.join(', ')}`);
       return { da_quet_ky_tu: t.length };
     },
   },
   {
-    ten: 'phim-tat-va-focus',
+    dot: 0, ten: 'phim-tat-va-focus',
     hoi: 'Ctrl+Shift+O co mo hoi thoai moi va dua con tro ve o soan khong?',
     async chay(p) {
       await p.keyboard.press('Control+Shift+O');
@@ -486,7 +526,7 @@ const HANG_MUC = [
     },
   },
   {
-    ten: 'nhan-doc-duoc-cho-trinh-doc-man-hinh',
+    dot: 0, ten: 'nhan-doc-duoc-cho-trinh-doc-man-hinh',
     hoi: 'Cac dieu khien chinh co nhan doc duoc khong (nut khong nhan la nut cam)?',
     async chay(p) {
       const xau = await p.evaluate(() => {
@@ -503,6 +543,30 @@ const HANG_MUC = [
     },
   },
 ];
+
+// ── Nap cac dot ────────────────────────────────────────────────────────────
+//
+// ⭐ Tach ra module rieng vi bo kiem se lon toi ~60 hang muc. Mot tep 2.000
+//    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
+//    khong ai sua khi no sai.
+const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong, hoiThoaiMoi, soDu };
+{
+  const nap = async (ten, ham) => {
+    try {
+      const m = await import(pathToFileURL(
+        join(new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
+             'kiem_chatltt', ten)).href);
+      HANG_MUC.push(...m[ham](TRO_GIUP));
+    } catch (e) {
+      console.log(`  [!] khong nap duoc ${ten}: ${e.message}`);
+      process.exitCode = 2;
+    }
+  };
+  await nap('dot1_luong.mjs', 'dot1');
+  await nap('dot2_hoi_thoai.mjs', 'dot2');
+  await nap('dot3_markdown.mjs', 'dot3');
+  await nap('dot4_dinh_kem.mjs', 'dot4');
+}
 
 // ── Chay ───────────────────────────────────────────────────────────────────
 async function dangNhap(page) {
@@ -602,17 +666,18 @@ try {
   await dangNhap(page);
   for (const hm of HANG_MUC) {
     if (CHI && hm.ten !== CHI) continue;
+    if (DOT.length && !DOT.includes(String(hm.dot ?? '0'))) continue;
     const t0 = Date.now();
     try {
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
-      ketQua.push({ ten: hm.ten, dat: !bo, bo_qua: !!bo,
+      ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,
                     giay: (Date.now() - t0) / 1000, chi_tiet: ct });
-      console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${hm.ten}  ${JSON.stringify(ct)}`);
+      console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${JSON.stringify(ct)}`);
     } catch (e) {
       maThoat = 1;
-      ketQua.push({ ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
-      console.log(`  [HONG] ${hm.ten}  ${e.message}`);
+      ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
+      console.log(`  [HONG ] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${e.message}`);
       await page.screenshot({ path: join(THU_MUC_ANH, `hong-${hm.ten}.png`), fullPage: true }).catch(() => {});
     }
   }

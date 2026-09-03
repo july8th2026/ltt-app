@@ -21,6 +21,26 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type AnhDinh = { key: string; ten: string }
 
+/**
+ * Mã lỗi của máy chủ → một câu người đọc được.
+ *
+ * ⛔ Đo trên production: người dùng chọn một tệp hỏng và nhận đúng chuỗi
+ *    `http_400`. Đó là mã trạng thái HTTP đặt trước mặt một người đang cố gửi
+ *    một bức ảnh — nó không nói họ làm sai gì, cũng không nói phải làm gì tiếp.
+ */
+function doiLoiAnh(e: unknown): string {
+  const ma = (e as { code?: string } | null)?.code ?? ''
+  const theoMa: Record<string, string> = {
+    tham_so: 'tệp không phải ảnh hợp lệ',
+    http_400: 'tệp không phải ảnh hợp lệ',
+    http_413: 'ảnh quá lớn',
+    csrf: 'phiên đã cũ, tải lại trang',
+  }
+  if (theoMa[ma]) return theoMa[ma]
+  const tin = e instanceof Error ? e.message : ''
+  return tin && !/^http_\d+$/.test(tin) ? tin : 'không tải lên được'
+}
+
 export type SoanThaoProps = {
   /** Cho phim tat "ve o soan" (Shift+Esc) va cho luc mo hoi thoai moi. */
   oRef?: React.RefObject<HTMLTextAreaElement | null>
@@ -39,6 +59,14 @@ export type SoanThaoProps = {
    *    moi loi tot nhat la loi khong the bam ra duoc.
    */
   docAnh?: boolean
+  /**
+   * Hội thoại đang mở. Đổi giá trị này ⇒ bỏ mọi ảnh đang đính.
+   *
+   * 🔴 Đo trên production: bấm "+ Hội thoại mới" mà ảnh đính **vẫn còn**. Lượt
+   *    sau người dùng gõ một câu chẳng liên quan và bức ảnh của hội thoại
+   *    trước lặng lẽ đi theo — họ trả tiền cho một ngữ cảnh họ không hề chọn.
+   */
+  hoiThoai?: string | null
   /** Tai mot tep len, tra ve khoa kho. Nem loi thi o soan hien thong bao. */
   onTaiAnh?: (tep: File) => Promise<AnhDinh>
   /** Tran so anh moi luot — may chu chot lai, day chi de bao som. */
@@ -47,7 +75,7 @@ export type SoanThaoProps = {
 
 export function SoanThao({
   oRef, onGui, dangChay, onDung, vohieu, goiY,
-  docAnh, onTaiAnh, toiDaAnh = 4,
+  docAnh, onTaiAnh, toiDaAnh = 4, hoiThoai,
 }: SoanThaoProps) {
   const [chu, datChu] = useState('')
   const [anh, datAnh] = useState<AnhDinh[]>([])
@@ -86,13 +114,29 @@ export function SoanThao({
     const lay = Array.from(ds).slice(0, con)
     if (lay.length < ds.length) datLoiAnh(`Tối đa ${toiDaAnh} ảnh mỗi lượt.`)
     datDangTai(true)
+    // 🔴 TRY NAM TRONG VONG LAP, KHONG BAO NGOAI NO.
+    //
+    //    Ban dau `try` bao ca vong: tep thu hai hong thi `await` nem, vong lap
+    //    thoat, va tep thu BA khong bao gio duoc thu. Do tren production 03/09:
+    //    chon 3 anh, mot cai hong ⇒ chi con **1/3**.
+    //
+    // ⛔ Va day dung la loi LibreChat da dinh: *Uploading multiple files fails
+    //    ENTIRELY if any single file exceeds fileSizeLimit*. Nguoi dung chon
+    //    muoi anh, mot cai qua co, mat het — va khong biet cai nao co loi.
+    //
+    // ⭐ Nen: moi tep mot `try`, gom loi lai, va noi TEN tep hong. Nhung tep
+    //    tot van len.
+    const hong: string[] = []
     try {
       for (const tep of lay) {
-        const a = await onTaiAnh(tep)
-        datAnh((cu2) => [...cu2, a])
+        try {
+          const a = await onTaiAnh(tep)
+          datAnh((cu2) => [...cu2, a])
+        } catch (e) {
+          hong.push(`${tep.name}: ${doiLoiAnh(e)}`)
+        }
       }
-    } catch (e) {
-      datLoiAnh(e instanceof Error ? e.message : 'Không tải được ảnh.')
+      if (hong.length) datLoiAnh(`Không tải được ${hong.length} ảnh — ${hong.join('; ')}`)
     } finally {
       datDangTai(false)
       // Do lai o chon: khong reset thi chon LAI dung tep vua bo di se khong
@@ -100,6 +144,23 @@ export function SoanThao({
       if (oTep.current) oTep.current.value = ''
     }
   }, [anh.length, onTaiAnh, toiDaAnh])
+
+  // Đổi hội thoại ⇒ ảnh của hội thoại cũ không được đi theo.
+  useEffect(() => { datAnh([]); datLoiAnh('') }, [hoiThoai])
+
+  // ⛔ Đổi sang model KHÔNG đọc ảnh ⇒ bỏ ảnh, VÀ NÓI RA.
+  //
+  //    Đo trên production: ảnh vẫn đính, ô chọn tệp biến mất, và không một
+  //    cảnh báo nào. Máy chủ từ chối đúng (`tham_so: model nay khong doc anh`)
+  //    nên tiền không mất — nhưng người dùng nhận một lỗi kỹ thuật cho một
+  //    việc họ không biết mình đã làm.
+  useEffect(() => {
+    if (docAnh) return
+    datAnh((cu2) => {
+      if (cu2.length) datLoiAnh('Model này không đọc ảnh — đã bỏ ảnh đính kèm.')
+      return []
+    })
+  }, [docAnh])
 
   const phim = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     const dangGo =
