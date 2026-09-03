@@ -66,7 +66,25 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 
-THU_MUC = Path(tempfile.gettempdir()) / "ltt_hop_den"
+#: Noi ghi. Mac dinh `%TEMP%`, nhung **ban dat o `Desktop\HOP DEN` tu ghi canh
+#: chinh no** — vi mot hop den nam trong `%TEMP%` la mot hop den co the bi don
+#: dep, va nam trong mot worktree la mot hop den bien mat khi worktree bi go.
+#:
+#: Thu tu uu tien:
+#:   1. bien moi truong `LTT_HOP_DEN`
+#:   2. thu muc `du_lieu` canh script, NEU thu muc cha ten co "HOP DEN"
+#:   3. `%TEMP%/ltt_hop_den`
+def _thu_muc_ghi() -> Path:
+    tu_env = os.environ.get("LTT_HOP_DEN", "").strip()
+    if tu_env:
+        return Path(tu_env)
+    canh = Path(__file__).resolve().parent
+    if "HOP DEN" in canh.name.upper():
+        return canh / "du_lieu"
+    return Path(tempfile.gettempdir()) / "ltt_hop_den"
+
+
+THU_MUC = _thu_muc_ghi()
 
 #: Nhip ghi. Thua co y — xem rang buoc 1 dau tep.
 NHIP_S = 15.0
