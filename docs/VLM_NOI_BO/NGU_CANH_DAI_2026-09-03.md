@@ -463,12 +463,79 @@ thực tế" không phải "luôn luôn", và đây là chỗ nó có thể tr�
 
 ---
 
+## 7c. 🔴 H-2 — CANARY NÉN THẬT: **THẤT BẠI**, và nó chỉ ra một cơ chế thứ ba
+
+Codex thật (`codex-cli 0.145.0`), khoá thật, production thật, bốn tệp mỗi tệp
+~96.000 token Qwen. Bài được dựng để **không có kết quả vô nghĩa**: đọc 2 tệp
+vượt ngưỡng nén, đọc 3 tệp vượt trần cứng. Nén được thì đọc hết bốn; không nén
+được thì `413`.
+
+**Kết quả: `413` sau tệp thứ hai. Codex không nén.**
+
+```
+Codex tu dem   : 100.450   <- KHOP usage may chu tra ve
+nguong nen     : 123.617   <- con 23.167 token, khong co ly do de nen
+doc them tep2  : +95.901 token trong MOT luot
+tong           : 194.179   >  tran 169.984   ->  413
+```
+
+### ⭐ Nhưng con số đầu tiên là một tin TỐT, và nó lớn
+
+**Codex đếm 100.450; máy chủ đếm 100.450.** Trước H-1 hai bên ở hai đơn vị khác
+nhau và lệch tới 2×. Nay Codex dùng `usage.input_tokens` máy chủ trả về, nên
+**hai bên đã cùng một đơn vị** — đó chính là thứ H-1 sinh ra để làm, và nó làm
+được. Chính vì cùng đơn vị mà chẩn đoán dưới đây mới sạch sẽ như vậy.
+
+### 🔴 Cơ chế thứ ba: khoảng trống tôi chừa là cho SAI LOẠI TĂNG TRƯỞNG
+
+Quy tắc ở §1 chừa `TOKEN_RA_TRAN` = 32.768 — **một lượt sinh dài nhất của
+model**. Khoảng trống thật từ ngưỡng nén lên trần là 46.367.
+
+Nhưng với một agent lập trình, thứ làm ngữ cảnh nhảy vọt trong một lượt **không
+phải câu trả lời của model** — nó là **kết quả tool**. Một lệnh
+`Get-Content tep2.txt` thêm **95.901 token**, tức **2,1 lần** khoảng trống đó.
+
+⛔ Và không có con số nào chừa đủ: kết quả tool **không có trần trên**. Đọc một
+tệp 5 MB thì nó là 1,5 triệu token. Nên đây **không phải một hằng số đặt sai** —
+nó là một giới hạn kiến trúc của việc "client tự nén theo ngưỡng".
+
+### ⚠️ Và Codex thử lại một lỗi ta đã đánh dấu `retry: never`
+
+```
+ERROR: Reconnecting... 1/5 ... 5/5
+ERROR: unexpected status 413 Payload Too Large ... "retry":"never"
+```
+
+Năm lần, rồi bỏ cuộc — thay vì nén rồi thử lại. Ta đã nói đúng thứ cần nói
+trong thân lỗi; client không hành động theo. Đó là hành vi của Codex, **không
+nằm trong tầm sửa của ta**, nhưng nó quyết định trải nghiệm thật của khách.
+
+### Vậy phía ta đúng được đến đâu
+
+| | |
+|---|---|
+| Đếm đúng đơn vị | ✅ số thật, khớp với số client đếm |
+| Fail-closed | ✅ `413`, không cắt ngữ cảnh im lặng |
+| Thông điệp hành động được | ✅ nêu trần, nêu số thấy, `retry: never` |
+| Không thu tiền lượt hỏng | ✅ |
+| **Khách không gặp `413` trong vận hành bình thường** | ❌ **CHƯA** |
+
+⭐ Đây là chỗ tôi phải nói thẳng: **mục tiêu của cả chương trình chưa đạt.** Ba
+lớp đã sửa (ngưỡng nén sai công thức · bộ cài nói sai cửa sổ · hai bên đếm hai
+đơn vị) đều là lỗi thật và đều đã đóng. Lớp thứ tư — *một kết quả tool lớn hơn
+mọi khoảng trống có thể chừa* — **không đóng được bằng một con số**, và tôi
+không định giả vờ ngược lại bằng cách hạ cửa sổ công bố xuống một mức tuỳ tiện.
+
+---
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
 |---|---|---|
 | N-1 | **Chưa deploy.** Máy B vẫn `-c 131072` | Cần cửa sổ deploy; một phiên khác đang dùng production. Thứ tự ở §7 D-5 |
-| N-2 | **Canary phiên dài với khoá thật** — Codex/Claude chạy tới ngưỡng nén rồi nén, quan sát bằng log | Cần một khoá API sống. Bộ kiểm đọc tệp khoá bị chặn ở phiên này ⇒ chỉ chạy được canary **cấu hình** (§4c), không chạy được canary **hành vi** |
+| ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **ĐÃ CHẠY 04/09** — và **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
+| **N-10** | 🔴 **MỘT kết quả tool có thể lớn hơn MỌI khoảng trống có thể chừa** | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng", không phải một hằng số đặt sai. |
+| **N-11** | Codex thử lại **5 lần** một lỗi ta đã đánh dấu `retry: never`, rồi bỏ cuộc thay vì nén | Ngoài tầm sửa của ta, nhưng nó quyết định trải nghiệm thật. Đáng báo lên upstream. |
 | N-3 | **Lượt sinh dài ở cuối cửa sổ chưa đo sạch.** Lượt 160K/8192 trả `finish_reason: stop` sau 122 token vì đề bài chỉ đòi một dòng | Nó chứng minh request được NHẬN, không chứng minh decode còn khoẻ ở cuối cửa sổ. Đã sửa đề bài trong `bench_ctx.py` nhưng chưa chạy lại |
 | N-4 | **`qwen38-vision` chưa đo lại**, và cửa sổ công bố của nó (28.262) **hẹp hơn** một lượt sinh dài nhất (32.768) | Nó dành hơn nửa cửa sổ cho `TOKEN_RA_TRAN`. Không ngưỡng nén nào giữ được lời hứa ⇒ bộ cài bỏ hẳn trường đó. Sửa thật là đo lại vision hoặc cho nó trần ra riêng |
 | N-5 | **`deploy.ps1` không restart `LTTLlamaSwap`** (D-03-5, audit 31/08) | Chưa chạm tới `deploy.ps1` ngoài ba con số. Cho tới khi sửa, bước 1 của §7 D-5 phải làm tay |
