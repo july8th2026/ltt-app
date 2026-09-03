@@ -385,6 +385,84 @@ trần về cũ.
 
 ---
 
+## 7b. 🔴 H-1: GỐC THẬT CỦA `413`, tìm ra SAU khi đã deploy
+
+Phép ước của cổng máy B (`len(text) / 2,5`) không chỉ "hơi cao". Đo bằng
+`/tokenize` của chính model đang nạp:
+
+| nội dung | ước/thật | ký tự/token thật |
+|---|---:|---:|
+| tiếng Anh văn xuôi | **2,00×** | 5,00 |
+| trộn — gần một phiên agent | **1,55×** | 3,87 |
+| JSON kiểu Codex gửi | 1,42× | 3,55 |
+| mã Python (kho này) | 1,27× | 3,17 |
+| tiếng Việt có dấu | 1,26× | 3,14 |
+
+⛔ Và chú thích cũ chọn `2,5` vì *"tiếng Việt có dấu ít hơn hẳn"*. **Tiếng Việt
+là 3,14** — lý lẽ đó sai, và 2,5 bảo thủ quá cho *mọi* loại nội dung.
+
+⛔ CHỖ NÓ THÀNH LỖI: cổng cưỡng chế bằng token **ƯỚC**, client đếm token
+**THẬT**. Nên con số ta công bố — và ngưỡng nén client tính ra từ nó — **nằm ở
+một đơn vị khác** với thứ ta từ chối. Với 1,55× ta từ chối ở khoảng 110.000
+token thật trong khi nói với client rằng nó có 156.385.
+
+⭐ **Không ngưỡng nén nào ở phía client ngăn được `413` khi hai bên đếm bằng hai
+   đơn vị.** Bản vá ngưỡng nén (§1) sửa một khuyết tật **thật nhưng thứ cấp**.
+
+### Bản vá: đếm thật khi phép ước đã vượt
+
+```
+uoc <= tran                    -> NHAN ngay (khong round-trip nao)
+uoc >  tran, ho so DA NAP      -> /upstream/<model>/tokenize, quyet theo so THAT
+uoc >  tran, ho so CHUA NAP    -> tu choi theo uoc (khong danh thuc GPU)
+```
+
+`/tokenize` **không chạy inference** — chú thích cũ gộp nó với
+`/v1/chat/completions/input_tokens`, và sự nhập nhằng đó là lý do phép đếm chính
+xác bị loại từ đầu.
+
+### 🔴 VÀ TÔI TỰ TẠO RA ĐÚNG CÁI KHUYẾT TẬT ĐANG ĐI SỬA
+
+Bản đầu gọi `/tokenize` trần. `llama-swap` định tuyến theo trường `model`
+**trong thân**, nên nó trả **404**:
+
+```
+POST /tokenize                       -> 404
+POST /upstream/qwen38-api/tokenize    -> 200 {"tokens":[...]}
+```
+
+Hàm nhận 404, `ma != 200`, trả `None`, cổng **lặng lẽ lùi về phép ước**. Bản vá
+đã lên production và **không làm gì cả**, không một dòng nào nói ra. Canary vẫn
+trả `thay: 175005` — con số ƯỚC — và đó là cách tôi phát hiện.
+
+⭐ Nên lần lùi bây giờ **kêu**, và nó phân biệt hai thứ khác hẳn nhau: *"chưa nạp
+   nên không hỏi"* là đường bình thường; *"đã hỏi mà thất bại"* là một khuyết
+   tật và ra log `WARNING`.
+
+### Nghiệm thu trên production, cùng một thân request
+
+| lượt | ước | thật | HTTP | số dư |
+|---|---:|---:|---|---:|
+| trước H-1 | 175.005 | — | **413** | 3939 → 3939 |
+| vừa trần | 150.001 | 73.385 | 200 | 3939 → 3935 |
+| **cùng lượt, sau H-1** | 175.005 | **85.613** | **200** | 3935 → 3930 |
+| vượt thật | 360.001 | **176.092** | **413** | 3930 → 3930 |
+
+`413` thu **0** credit; `200` thu theo token đo được. Và con số trong `413` nay
+là con số ta **phán xử bằng** — client đối chiếu được với tokenizer của nó.
+
+⭐ Sau H-1, `LE` và hệ số `0,92` lấy lại **đúng ý nghĩa ban đầu**: chúng chừa cho
+lệch giữa tokenizer của *client* và của *Qwen* (~5–15%), thôi phải gánh thêm sai
+số của một phép ước dao động 1,26×–2,00×. Nên `156.385` và `123.617` **bây giờ
+mới** là những con số đúng đơn vị.
+
+⚠️ **Còn một ca chưa đóng:** hồ sơ **chưa nạp** (sau 30 phút rảnh, `ttl: 1800`)
+thì cổng vẫn phán xử bằng ước. Trong thực tế lượt đầu của một phiên là lượt
+*nhỏ*, và ngữ cảnh chỉ lớn khi phiên đã sâu — lúc đó model đã nạp. Nhưng "trong
+thực tế" không phải "luôn luôn", và đây là chỗ nó có thể trả một `413` oan.
+
+---
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
@@ -396,4 +474,5 @@ trần về cũ.
 | N-5 | **`deploy.ps1` không restart `LTTLlamaSwap`** (D-03-5, audit 31/08) | Chưa chạm tới `deploy.ps1` ngoài ba con số. Cho tới khi sửa, bước 1 của §7 D-5 phải làm tay |
 | N-6 | **Hai bộ đo chất lượng đều hoà ở kịch trần** | Chúng loại trừ một suy giảm đủ lớn để đo thấy. Muốn nhạy hơn thì cần bộ đề khó hơn, và đó là một việc riêng |
 | ~~N-7~~ | ~~`LTT_PUBLIC_API_MAX_BODY_BYTES` thật trên production~~ | ✅ **ĐÓNG 03/09.** Biến **không** được đặt ở đâu cả: `AppEnvironmentExtra` của dịch vụ `LTTStudioWeb` liệt kê 71 biến và không có nó, và service env chính là thứ `2-cai-dat.ps1` nạp từ `app.env`. ⇒ production dùng mặc định **1 MiB**, đủ cho 747 KB cần thiết. *(Đọc TÊN biến từ registry, không đọc giá trị — không có bí mật nào bị in ra.)* |
+| **N-9** | ⚠️ **Hồ sơ chưa nạp thì vẫn phán xử bằng phép ước** | Sau 30 phút rảnh (`ttl: 1800`) model bị unload; một lượt lớn tới ngay lúc đó có thể ăn `413` oan. Không đóng bằng cách hỏi `/tokenize` — làm thế là đánh thức GPU 2,5 phút cho một yêu cầu đang định từ chối. Trong thực tế lượt đầu của một phiên là lượt nhỏ, nhưng *"trong thực tế"* không phải *"luôn luôn"*. |
 | **N-8** | 🔴 **Chốt "cây đứng yên" của gate KHÔNG soi `llm_gateway/` và `sdk/`** | Tìm ra 03/09. `gate._anh_chup_cay()` chỉ chụp `apps, platform_core, server, tools, tests, alembic, locale`. Chương trình này sửa **10** thư mục, và **năm** trong số đó (`docs`, `frontend`, `llm_gateway`, `sdk`, `ho_so_he_thong.txt`) nằm ngoài ảnh chụp.<br><br>⛔ Nghĩa là sửa mã **cổng máy B** hoặc **bộ cài khách** ngay giữa một lượt gate thì `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã không còn tồn tại. Cùng một họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`.<br><br>⭐ Và tôi phát hiện nó theo đường ngược: tôi sửa một tệp `docs/` giữa lượt gate, **tưởng** mình vừa làm mất lượt đó, rồi đọc `_anh_chup_cay()` để xác nhận — và thấy điều tệ hơn là thứ tôi lo. |
