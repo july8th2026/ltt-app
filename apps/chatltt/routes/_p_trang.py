@@ -22,6 +22,21 @@ def trang(request: Request, _=Depends(require_login)):
     })
 
 
+@router.get("/api/so-du")
+def api_so_du(request: Request, _=Depends(require_login), db=Depends(get_db)):
+    """So du credit hien tai.
+
+    ⭐ Vi sao mot duong rieng chu khong nhet vao `su_that()`: so du doi vi
+       NHUNG VIEC KHAC nua (app khac, nap tien), khong chi vi hoi thoai nay.
+       Gop vao thi giao dien chi thay so moi khi hoi thoai doi — va do la luc
+       no da sai roi. Thanh tren cua nen tang la HTML dung, chi doi khi tai
+       lai trang; day la duong de ChatLTT noi so that ma khong bat tai lai.
+    """
+    from platform_core import credit
+
+    return json_ok({"credit": int(credit.so_du(db, uid(request)))})
+
+
 @router.get("/api/danh-muc")
 def api_danh_muc(request: Request, _=Depends(require_login), db=Depends(get_db)):
     """Catalog ChatLTT cho người dùng hiện tại — chỉ thứ chính sách sản phẩm mời."""

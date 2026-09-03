@@ -39,7 +39,7 @@ from platform_core.registry import AppManifest, ToolSpec
 #: ⛔ GIÁ KHÔNG Ở ĐÂY NỮA — nó ở `apps/anhnoibo/gia.py`, một chỗ duy nhất, có
 #:    phiên bản, và có `bang_gia()` để trang công khai đọc. Đừng khai lại con số
 #:    nào ở đây: hai bảng giá lệch nhau thì bảng nào cũng không đáng tin.
-from . import gia
+from . import features as _features, gia
 
 
 def _gia(params: dict) -> int:
@@ -87,6 +87,9 @@ MANIFEST = AppManifest(
     #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
     #: import app nay theo ten. Xem `AppManifest.bang_gia`.
     bang_gia=gia.bang_gia,
+    # Suc khoe cho catalog cua san pham khac (H43 Phase 06/10): `GET /live`
+    # cua cong render, khong can khoa, timeout ngan. Xem `features.suc_khoe`.
+    suc_khoe=_features.suc_khoe,
 
     tools=(ToolSpec(
         name="image.ltt",

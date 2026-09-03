@@ -20,6 +20,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 export type SoanThaoProps = {
+  /** Cho phim tat "ve o soan" (Shift+Esc) va cho luc mo hoi thoai moi. */
+  oRef?: React.RefObject<HTMLTextAreaElement | null>
   onGui: (chu: string) => void
   dangChay: boolean
   onDung: () => void
@@ -27,10 +29,13 @@ export type SoanThaoProps = {
   goiY?: string
 }
 
-export function SoanThao({ onGui, dangChay, onDung, vohieu, goiY }: SoanThaoProps) {
+export function SoanThao({
+  oRef, onGui, dangChay, onDung, vohieu, goiY,
+}: SoanThaoProps) {
   const [chu, datChu] = useState('')
   const dangGoIME = useRef(false)
-  const o = useRef<HTMLTextAreaElement | null>(null)
+  const oTrong = useRef<HTMLTextAreaElement | null>(null)
+  const o = oRef ?? oTrong
 
   // Cao tu dong: dat lai ve `auto` truoc khi do `scrollHeight`, neu khong o chi
   // to ra chu khong bao gio nho lai.

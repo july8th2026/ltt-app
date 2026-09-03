@@ -13,8 +13,7 @@
 - Dải số test: **600–699**
 - Production: `89eb46c` (14:15 02/09) + voice (21:11 02/09), 5 tool bán thật.
   ⛔ Chương trình này **không deploy**.
-- Phase hiện tại: **00–09 ✅ → tiếp 10** (UX)
-  (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
+- Phase hiện tại: **00–11 ✅ → tiếp 12** (torture)
   (03/04/05 PASS ở mức deterministic; bằng chứng LIVE với máy B/GPU hoãn tới Phase 12)
 
 ## Ranh giới với phiên khác (02/09)
@@ -40,7 +39,9 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | **05** Tiếng nội bộ | PASS (deterministic) — `DangBanTam(DangBan)`; giọng người khác ≡ không tồn tại; trần 1.500 không nới; tiền theo giây `ffprobe`; `so_lan_thu_for=5` (`test_609–612`) | (commit phase 03–08a) |
 | **08a** Text (máy chủ) | PASS — `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại; hai lỗi thật đã sửa (múi giờ SQLite, `parent_id: null`) (`test_623`) | `b77fe83` |
 | **08b** Text (giao diện) | PASS — `frontend/chatltt` (30 test), build 4 bundle, **kiểm trình duyệt thật**: stream, tạo lại, chuyển nhánh, nhánh sống qua reload, 390 px không tràn; sửa 302 của mỗi lệnh GET (`reports/08b_text_giao_dien.md`) | `1abeffc` |
-| **09** Ảnh + tiếng | PASS — báo giá→xác nhận→nộp, tiến độ, khối ảnh/âm, cửa tài sản có kiểm sở hữu; hai lỗi thật đã sửa (**path traversal**, ô soạn đè chân trang) (`test_624/625`, `reports/09_anh_tieng_trong_hoi_thoai.md`) | (commit 09) |
+| **09** Ảnh + tiếng | PASS — báo giá→xác nhận→nộp, tiến độ, khối ảnh/âm, cửa tài sản có kiểm sở hữu; hai lỗi thật đã sửa (**path traversal**, ô soạn đè chân trang) (`test_624/625`) | `f2b58a5` |
+| **10** UX | PASS — trả ba nợ (Đọc to · số dư tự cập nhật · `anhnoibo.suc_khoe`), ba phím tắt, focus/tên đọc được, **reduced-motion**, ma trận 390–1920 px, không lộ ID thô (`App.test.tsx`, `reports/10_ux.md`) | (commit 10+11) |
+| **11** Mở rộng | PASS — ba fixture (alias thứ ba · không khả dụng · phương thức lạ) + hai phép kiểm tĩnh + `11_THEM_MODEL_MOI.md` có test canh (`test_626`, `reports/11_mo_rong.md`) | (commit 10+11) |
 
 ## Hợp đồng đã cài ở Phase 02 (các phase sau DÙNG, không dựng lại)
 | Hàm | Ký |
@@ -77,11 +78,13 @@ trong manifest; không `pytest -n auto` tay; `git add` tường minh.
 | Bằng chứng LIVE với máy B / GPU | Phase 03/04/05/12 | khi máy rảnh; deterministic trước |
 
 ## Next phase
-- **10 — UX LibreChat-class, Carbon LTT**: ma trận trạng thái × desktop/mobile
-  bằng Playwright, bàn phím/focus, `prefers-reduced-motion` (chỗ ChatLTT phải
-  **hơn** tham chiếu — LibreChat chỉ có 2 chỗ), không lộ job/engine ID thô.
-- Việc đã biết trước: nút "Đọc to" trên một câu trả lời; số dư credit cập nhật
-  không cần tải lại trang; `anhnoibo.suc_khoe` (Phase 06 giao lại).
+- **12 — Torture**: đồng thời (đa tab, nối lại, đua dừng/xong, nộp trùng) · tiền
+  (hỏng trước/sau giữ chỗ, kết quả một phần, thử lại, idempotency) · bảo mật
+  (IDOR hội thoại/message/job/artifact, giọng người khác, XSS, body quá cỡ, rò
+  alias/bí mật) · dữ liệu (xoá khi đang chạy, artifact mồ côi, retention,
+  migration lên/xuống) · hiệu năng (thread dài, stream dài, mã lớn).
+- Thử lại LIVE với máy B nếu máy rảnh.
+- Nợ đã biết: chưa có test **axe** (a11y tự động) — Phase 12 nhận.
 
 ## Giao cho phase sau (từ 04/05/08a)
 | Mục | Phase | Việc |

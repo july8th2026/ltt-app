@@ -43,6 +43,10 @@ export function App({ api }: AppProps) {
   const [alias, datAlias] = useState('')
   const [loi, datLoi] = useState('')
   const [dangChayEx, datDangChayEx] = useState<string | null>(null)
+  const [soDu, datSoDu] = useState<number | null>(null)
+  const [chuDocTo, datChuDocTo] = useState('')
+  const oSoan = useRef<HTMLTextAreaElement | null>(null)
+  const dungRef = useRef<(() => Promise<void>) | null>(null)
   const huy = useRef<AbortController | null>(null)
   const cuoiLuong = useRef<HTMLDivElement | null>(null)
   const nguoiDungDaCuon = useRef(false)
@@ -64,6 +68,12 @@ export function App({ api }: AppProps) {
       })
       .catch((e) => datLoi(nhanLoi(e)))
   }, [api])
+
+  const napSoDu = useCallback(() => {
+    api.soDu().then((d) => datSoDu(d.credit)).catch(() => {})
+  }, [api])
+
+  useEffect(() => { napSoDu() }, [napSoDu])
 
   const napDs = useCallback(() => {
     api.lietKe(tim).then((d) => datDsHoiThoai(d.hoi_thoai)).catch(() => {})
@@ -101,12 +111,47 @@ export function App({ api }: AppProps) {
       try {
         await Promise.all(dangCho.map((m) => api.trangThai(m.execution!.id)))
         await napSuThat(convId)
+        napSoDu()
       } catch {
         // Mot nhip hong khong lam hong ca man hinh; nhip sau thu lai.
       }
     }, 2000)
     return () => { dung = true; window.clearInterval(h) }
-  }, [api, convId, suThat, napSuThat])
+  }, [api, convId, suThat, napSuThat, napSoDu])
+
+  // ── Phim tat ────────────────────────────────────────────────────────────
+  //
+  // ⭐ Tap TOI THIEU, va moi phim deu co ly do: hai viec lam nhieu nhat (mo hoi
+  //    thoai moi, quay ve o soan) va mot viec KHAN (dung mot luot dang chay).
+  //    Bang phim tat dai la bang khong ai nho — bao cao Phase 01 §11.3 liet ke
+  //    12 phim cua LibreChat, va phan lon chung khong ai dung.
+  //
+  // ⛔ Khong `preventDefault` khi khong lam gi: chan mot phim goc ma khong thay
+  //    the no la lay mat mot thao tac cua trinh duyet, im lang.
+  useEffect(() => {
+    const nghe = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey
+      if (mod && e.shiftKey && (e.key === 'o' || e.key === 'O')) {
+        e.preventDefault()
+        datConvId(null); datSuThat(null)
+        oSoan.current?.focus()
+        return
+      }
+      if (mod && e.shiftKey && (e.key === 'x' || e.key === 'X')) {
+        if (!dangChayEx) return               // khong co gi de dung: de phim di
+        e.preventDefault()
+        void dungRef.current?.()
+        return
+      }
+      // Shift+Esc: ve o soan. Cung phim LibreChat dung (`focusChat`).
+      if (e.shiftKey && e.key === 'Escape') {
+        e.preventDefault()
+        oSoan.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', nghe)
+    return () => window.removeEventListener('keydown', nghe)
+  }, [dangChayEx])
 
   // Cuon xuong khi co chu moi — TRU khi nguoi dung da tu cuon len.
   // (Ky thuat `abortScroll` cua LibreChat, `useMessageHelpers.tsx:37-53`.)
@@ -147,8 +192,9 @@ export function App({ api }: AppProps) {
       // Luon doc lai su that: delta o tren chi de nhin, khong phai de tin.
       await napSuThat(cid).catch(() => {})
       napDs()
+      napSoDu()
     }
-  }, [api, napSuThat, napDs])
+  }, [api, napSuThat, napDs, napSoDu])
 
   const guiLuot = useCallback(async (than: {
     text?: string; parentId?: string | null; taoLaiCua?: string
@@ -175,6 +221,8 @@ export function App({ api }: AppProps) {
     huy.current?.abort()
   }, [api, dangChayEx])
 
+  useEffect(() => { dungRef.current = dung }, [dung])
+
   const chuyenNhanh = useCallback(async (m: ThongDiep, idx: number) => {
     if (!convId || !suThat) return
     const la = laKhiChuyenNhanh(suThat.messages, m, idx)
@@ -183,13 +231,16 @@ export function App({ api }: AppProps) {
       await api.chonLa(convId, la)
       await napSuThat(convId)
     } catch (e) { datLoi(nhanLoi(e)) }
-  }, [api, convId, suThat, napSuThat])
+  }, [api, convId, suThat, napSuThat, napSoDu])
 
   const duong = useMemo(
     () => (suThat ? duongToiLa(suThat.messages, suThat.conversation.current_leaf_id) : []),
     [suThat],
   )
   const chuaSanSang = nangLucText?.san_sang !== 'san_sang'
+  const coTieng = nangLuc.some(
+    (n) => n.phuong_thuc === 'audio' && n.san_sang === 'san_sang',
+  )
 
   return (
     <div className="ltc">
@@ -244,6 +295,12 @@ export function App({ api }: AppProps) {
               Model chưa sẵn sàng
             </span>
           )}
+          {soDu != null && (
+            <span className="ltc-sodu" role="status" aria-live="polite"
+              aria-label={`Số dư ${soDu} credit`}>
+              💎 {soDu.toLocaleString('vi-VN')} credit
+            </span>
+          )}
         </header>
 
         <div
@@ -264,6 +321,7 @@ export function App({ api }: AppProps) {
               phang={suThat?.messages ?? []}
               onChuyenNhanh={chuyenNhanh}
               duongTaiSan={(k) => api.duongTaiSan(k)}
+              onDocTo={coTieng ? (_m, c) => datChuDocTo(c) : undefined}
               onTaoLai={(x) => guiLuot({ taoLaiCua: x.id })}
               onSuaGuiLai={(x) => {
                 const chu = window.prompt('Sửa câu hỏi',
@@ -281,14 +339,17 @@ export function App({ api }: AppProps) {
           <TaoMedia
             api={api}
             nangLuc={nangLuc}
-            onXong={() => { napSuThat(convId).catch(() => {}) }}
+            onXong={() => { napSuThat(convId).catch(() => {}); napSoDu() }}
             onLoi={datLoi}
+            chuDocTo={chuDocTo}
+            onDaNhanChuDocTo={() => datChuDocTo('')}
           />
         )}
 
         {loi && <p className="ltc-loi" role="alert">{loi}</p>}
 
         <SoanThao
+          oRef={oSoan}
           onGui={(chu) => guiLuot({ text: chu })}
           dangChay={dangChayEx != null}
           onDung={dung}

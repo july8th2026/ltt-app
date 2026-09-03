@@ -55,6 +55,10 @@ export class Api {
     return (await r.json()) as T
   }
 
+  soDu(): Promise<{ credit: number }> {
+    return this.goi('/so-du')
+  }
+
   danhMuc(): Promise<{ nang_luc: NangLuc[] }> {
     return this.goi('/danh-muc')
   }

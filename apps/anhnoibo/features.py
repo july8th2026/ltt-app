@@ -19,6 +19,7 @@ features.py — quy tắc nghiệp vụ của `anhnoibo`, dùng chung cho MỌI 
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Sequence
 
@@ -26,6 +27,8 @@ from platform_core.i18n import _ as _t
 from platform_core.jobs import LoiNguoiGoi
 
 from . import gia
+
+log = logging.getLogger("apps.anhnoibo.features")
 
 #: Tối đa hai ảnh tham chiếu. Thêm nữa thì mỗi ảnh bị thu nhỏ và chất lượng giảm
 #: — cổng render cũng chốt cùng con số này (`spec.max_refs`).
@@ -187,3 +190,34 @@ class KetQua:
                 {"model": MODEL_NOI_BO_MAC_DINH, "count": self.so_anh_that,
                  "tham_chieu": self.yeu_cau.dung_tham_chieu}],
         }
+
+
+def suc_khoe(timeout_s: float = 1.5) -> str:
+    """Suc khoe cua `image.ltt` cho catalog san pham khac (`AppManifest.suc_khoe`).
+
+    Hoi `GET /live` cua cong render tren may B — duong **khong can khoa**, cung
+    khuon `llm_gateway` (xem `render_gateway/api.py::live`). Khong doc CSDL,
+    khong can `api_pool`, nen goi duoc tu moi tien trinh.
+
+    ⛔ Khong bao gio nem: moi loi mang deu la "chua san sang", va do chinh la
+       cau tra loi dung cho nguoi dung. Chua dat `LTT_RENDER_BASE_URL` cung vay
+       (fail-closed, cung luat voi `jobs._dieu_phoi`).
+
+    ⚠️ BAN (429) khong nhin thay o `/live`, va do la CO Y: bận là trạng thái của
+       một lượt gọi thật, không phải của cổng. Cửa job báo bận qua `DangBan`;
+       catalog không đoán trước điều đó.
+    """
+    from platform_core import providers
+
+    prov = providers.get("ltt_image")
+    base = (getattr(prov, "base_url", "") or "").strip()
+    if not base:
+        return "chua_san_sang"
+    import httpx
+
+    try:
+        r = httpx.get(base.rstrip("/") + "/live", timeout=timeout_s)
+    except httpx.HTTPError as e:
+        log.info("suc_khoe: cong render khong tra loi (%s)", type(e).__name__)
+        return "chua_san_sang"
+    return "san_sang" if r.status_code == 200 else "chua_san_sang"

@@ -332,3 +332,15 @@
   display: block;
 }
 .ltc-taisan__am { width: 100%; max-width: 420px; }
+
+/* So du: mot con so, khong phai mot cai nut — no la thong tin, khong phai loi mòi. */
+.ltc-sodu {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

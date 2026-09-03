@@ -80,10 +80,12 @@ export type ThongDiepViewProps = {
   onTaoLai: (m: ThongDiep) => void
   onSuaGuiLai: (m: ThongDiep) => void
   duongTaiSan?: (k: string) => string
+  /** Doc to chinh cau tra loi nay. Vang mat = nang luc tieng khong san sang. */
+  onDocTo?: (m: ThongDiep, chu: string) => void
 }
 
 export function ThongDiepView({
-  m, phang, onChuyenNhanh, onTaoLai, onSuaGuiLai, duongTaiSan,
+  m, phang, onChuyenNhanh, onTaoLai, onSuaGuiLai, duongTaiSan, onDocTo,
 }: ThongDiepViewProps) {
   const ds = anhEm(phang, m)
   const idx = ds.findIndex((x) => x.id === m.id)
@@ -165,6 +167,14 @@ export function ThongDiepView({
         {m.role === 'assistant' && !dangChay && m.execution?.mode !== 'job' && (
           <button type="button" className="ltc-nut--nho" onClick={() => onTaoLai(m)}>
             Tạo lại
+          </button>
+        )}
+        {/* Doc to CHINH cau tra loi nay — khac nut "Tao giong" o thanh chung,
+            von bat nguoi dung go lai van ban. Van phai qua o xac nhan gia. */}
+        {m.role === 'assistant' && !dangChay && onDocTo && chu.trim() && (
+          <button type="button" className="ltc-nut--nho"
+            onClick={() => onDocTo(m, chu)}>
+            Đọc to
           </button>
         )}
         {m.role === 'user' && (

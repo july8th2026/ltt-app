@@ -10,7 +10,7 @@
  *    ho, may chu tra ve qua `ToolSpec.tuy_chon_dong`. Giao dien khong biet
  *    giong nao ton tai; no chi hien thu duoc moi.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Api } from './api'
 import type { NangLuc } from './kieu'
 
@@ -19,11 +19,16 @@ export type TaoMediaProps = {
   nangLuc: NangLuc[]
   onXong: () => void
   onLoi: (chu: string) => void
+  /** Van ban do "Doc to" dat vao — mo san o tieng voi noi dung ay. */
+  chuDocTo?: string
+  onDaNhanChuDocTo?: () => void
 }
 
 type Cho = { nang_luc: string; credit: number; tham_so: Record<string, unknown> } | null
 
-export function TaoMedia({ api, nangLuc, onXong, onLoi }: TaoMediaProps) {
+export function TaoMedia({
+  api, nangLuc, onXong, onLoi, chuDocTo, onDaNhanChuDocTo,
+}: TaoMediaProps) {
   const anh = nangLuc.find((n) => n.phuong_thuc === 'image')
   const tieng = nangLuc.find((n) => n.phuong_thuc === 'audio')
   const [mo, datMo] = useState<'image' | 'audio' | null>(null)
@@ -33,6 +38,16 @@ export function TaoMedia({ api, nangLuc, onXong, onLoi }: TaoMediaProps) {
   const [dangNop, datDangNop] = useState(false)
 
   const giongCoThe = tieng?.tuy_chon?.voice_id ?? []
+
+  // "Doc to" tren mot cau tra loi: mo san o tieng, dien san van ban. Nguoi dung
+  // VAN phai bam "Xem gia" roi "Dong y" — mot lan doc to la mot lan tra tien.
+  useEffect(() => {
+    if (!chuDocTo) return
+    datMo('audio')
+    datChu(chuDocTo)
+    datCho(null)
+    onDaNhanChuDocTo?.()
+  }, [chuDocTo, onDaNhanChuDocTo])
 
   async function hoiGia(ten: string, tham_so: Record<string, unknown>) {
     try {
