@@ -13898,3 +13898,7 @@ msgstr "Per-call ledger of capability usage: which capability ran, in what unit 
 #: apps/auto_scan_video/ai.py
 msgid "Lần chạy đã bị hủy."
 msgstr "This run has been cancelled."
+
+#: apps/auto_scan_video/rang_giong.py
+msgid "Chưa chọn được giọng cho lần chạy này — cần hồ sơ nội dung trước khi tự khớp."
+msgstr "No voice has been chosen for this run yet - auto-matching needs the content profile first."

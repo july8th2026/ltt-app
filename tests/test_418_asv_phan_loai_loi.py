@@ -24,6 +24,7 @@ from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
+from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -103,6 +104,15 @@ BANG = {
     #:    qua cu, nen thu lai no la ba lan cho vo ich.
     AiError: loi.TAM_THOI,
     LuocDoSai: loi.TAM_THOI,
+    #: ── Rang giong (pha 09) ─────────────────────────────────────────────
+    #:
+    #: 🔑 Ca hai la that bai CUOI CUNG. `RangGiongError` = yeu cau khong hop
+    #:    le (che do bia ra, USER_SELECTED de trong ma giong) — chay lai cung
+    #:    mot thiet lap se hong y het. `ChuaRangError` = doc giong tu mot rang
+    #:    buoc chua chot, tuc mot loi LAP TRINH o tang goi: thu lai khong lam
+    #:    `HoSoNoiDung` xuat hien.
+    RangGiongError: loi.NGUOI_DUNG,
+    ChuaRangError: loi.NGUOI_DUNG,
 }
 
 

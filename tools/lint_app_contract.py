@@ -201,6 +201,22 @@ APP_DUOC_DUNG_APP: dict = {
         # ⚠️ Chi doc, chi cua chinh chu so huu. Auto Scan khong bao gio tao, sua
         #    hay go mot giong nao — man do thuoc ve LTT VOICE.
         ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
+        # ── Pha 09: catalog giong mau, thu ma AUTO_MATCH khop VAO ───────────
+        #
+        # 🔑 Khong co no thi "tu khop giong" khong con gi de khop va se thoai
+        #    hoa thanh "lay giong mac dinh" — dung dieu `ADR-V4-001` D-V4-04 cam.
+        #
+        # ⭐ Goi `loc` chu khong tu duyet `DANH_SACH`: phep loc la mot QUY TAC,
+        #    va hai ban cua mot quy tac la hai ban se lech nhau.
+        #
+        # ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
+        ("apps.ltt_voice.giong_mau", "loc"),
+        ("apps.ltt_voice.giong_mau", "tim"),
+        ("apps.ltt_voice.giong_mau", "hop_le"),
+        ("apps.ltt_voice.giong_mau", "DANH_SACH"),
+        ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
+        ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
+        ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
     },
 }
 

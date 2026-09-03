@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c1f351490dfcb70eb855b9957906695e9243aee1fbf865e0850e469975532049
-Nguồn đã quét : 1646 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:3657b5117dee1cd44933fd8c50d42bad4f2db74a3f57b9a60c9f14c199c8f782
+Nguồn đã quét : 1648 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -170,6 +170,7 @@ Các lớp chính:
     - apps/auto_scan_video/pipeline.py
     - apps/auto_scan_video/qc.py
     - apps/auto_scan_video/quan_sat.py
+    - apps/auto_scan_video/rang_giong.py
     - apps/auto_scan_video/routes.py
     - apps/auto_scan_video/su_dung.py
     - apps/auto_scan_video/tables.py
@@ -1355,7 +1356,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (416 file pytest + 4 frontend)
+10. QUALITY GATES (417 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1704,6 +1705,7 @@ Test inventory:
 - tests/test_432_asv_v4_so_ke_su_dung.py
 - tests/test_433_asv_v4_ranh_gioi_asr.py
 - tests/test_434_asv_v4_ranh_gioi_ai.py
+- tests/test_435_asv_v4_rang_giong.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1798,8 +1800,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1646 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1246, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1648 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1248, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1889,7 +1891,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (338)
+[apps] (339)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1951,6 +1953,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - apps/auto_scan_video/pipeline.py
 - apps/auto_scan_video/qc.py
 - apps/auto_scan_video/quan_sat.py
+- apps/auto_scan_video/rang_giong.py
 - apps/auto_scan_video/routes.py
 - apps/auto_scan_video/su_dung.py
 - apps/auto_scan_video/tables.py
@@ -2877,7 +2880,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (436)
+[tests] (437)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3240,6 +3243,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - tests/test_432_asv_v4_so_ke_su_dung.py
 - tests/test_433_asv_v4_ranh_gioi_asr.py
 - tests/test_434_asv_v4_ranh_gioi_ai.py
+- tests/test_435_asv_v4_rang_giong.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3502,7 +3506,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1646 file; 16967822 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1648 file; 16993347 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17588,7 +17592,7 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/loi.py
-SHA256=ba09dc2f9fb0583ae406ff49f25b09638b2e1114362e0434af595810ac9eb371 BYTES=9309 LINES=194
+SHA256=618829d9afd636ffbe248f0702f8c4450c64bb3a7470640c581d05b3de37d92f BYTES=10033 LINES=208
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phan loai loi cua Auto Scan -> phan loai cua NEN TANG (Prompt 17 muc 1).
 
@@ -17743,6 +17747,20 @@ def phan_loai(exc: BaseException) -> str:
     # ⛔ `AiMoHo` phai di TRUOC `AiError`? Khong — chung khong ke thua nhau, va
     #    do la co y: `AiMoHo(RuntimeError)` dung rieng de mot phep `isinstance`
     #    nham khong the bien mot lan mo ho thanh mot lan thu lai.
+    # ── Rang giong (pha 09) ─────────────────────────────────────────────────
+    #
+    # 🔑 Ca hai deu la that bai CUOI CUNG, dung thu lai:
+    #
+    #    `RangGiongError` — yeu cau khong hop le (che do bia ra, USER_SELECTED
+    #      de trong ma giong). Chay lai cung mot thiet lap se hong y het.
+    #
+    #    `ChuaRangError` — doc giong tu mot rang buoc chua chot. Do la mot loi
+    #      LAP TRINH o tang goi, khong phai mot truot thoang qua: thu lai khong
+    #      lam `HoSoNoiDung` xuat hien.
+    from .rang_giong import RangGiongError
+    if isinstance(exc, RangGiongError):
+        return NGUOI_DUNG
+
     from .ai import AiError, AiMoHo
     if isinstance(exc, AiMoHo):
         return MO_HO
@@ -18821,6 +18839,229 @@ def tom_tat_loi_cho_khach(db, run) -> str:
         return ""
     ten = hong[0].stage
     return f"{ten}: {LOI_CHUNG}"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/rang_giong.py
+SHA256=946c377c8027a0875c3fcf49d4803178f210d468bf042f6bc7a82e26e2c66e0a BYTES=8530 LINES=217
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""RANG GIONG — Auto Scan quyet dinh CHON giong nao; LTT Voice so huu giong do.
+
+## Ranh gioi, viet ra de khong ai phai doan
+
+    ASV so huu        chinh sach chon: che do, dac diem mong muon, luc nao chot
+    LTT VOICE so huu  chinh giong, quyen so huu, tong hop, GPU, chuan hoa van ban
+
+⇒ Tep nay **khong sinh mot mili-giay tieng nao**. No tra loi dung mot cau hoi:
+  *lan chay nay se doc bang giong nao, va can cu vao dau.*
+
+## 🔴 `AUTO_MATCH` khong duoc thoai hoa thanh "giong mac dinh"
+
+`ADR-V4-001` D-V4-04 cam dieu do bang ten, va V2 da mac dung loi ay:
+`routes.py:135` khai `giong_id: str = Form("")` roi de trong thi lay mac dinh.
+Do la mot thu KHAC han: mot gia tri mac dinh **khong doc gi tu video ca**.
+
+Cho nen o day, `AUTO_MATCH` ma chua co `HoSoNoiDung` thi ket qua la
+**`CHUA_RANG`** — mot trang thai hop le, khong phai mot that bai va cung khong
+phai mot giong. Tang tren phai hoi lai sau khi pha 11 dung xong ho so.
+
+⛔ Va `ma_giong()` **nem** neu goi tren mot rang buoc chua chot. Mot ham tra ve
+   `""` o day se cho ra mot lan tong hop bang giong mac dinh ma khong ai bam
+   nut — tuc dung ket qua ma ca thiet ke nay dung de tranh.
+
+## Vi sao "hoan lai" chu khong "chon tam roi sua"
+
+Chon tam mot giong roi doi sau nghe co ve mem hon, nhung no tao ra mot cua so
+trong do lan chay **da co mot giong** va bat cu buoc nao chay som deu dung phai
+giong tam do. Pha 14 (chuyen loi thoai) phu thuoc vao giong that — no doi do dai
+cau theo toc do doc cua giong — nen mot giong tam se sinh ra mot ban chuyen loi
+phai lam lai. Mot trang thai "chua co" doc duoc thi chan viec do; mot gia tri
+tam thi khong.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from platform_core.i18n import _ as _t
+
+from .hop_dong_v4 import (CHE_DO_GIONG, CHE_DO_GIONG_MAC_DINH,
+                          CHE_DO_GIONG_TU_CHON, CHE_DO_GIONG_TU_KHOP)
+
+#: Trang thai cua mot rang buoc giong.
+CHUA_RANG = "chua_rang"
+DA_RANG = "da_rang"
+TRANG_THAI: tuple[str, ...] = (CHUA_RANG, DA_RANG)
+
+#: Nguon cua quyet dinh — de hoa don va man ho tro noi duoc "vi sao giong nay".
+NGUON_KHACH_CHON = "khach_chon"
+NGUON_TU_KHOP = "tu_khop"
+
+
+class RangGiongError(ValueError):
+    """Yeu cau rang giong khong hop le."""
+
+
+class ChuaRangError(RangGiongError):
+    """Doc giong tu mot rang buoc chua chot.
+
+    ⛔ La mot loi, khong phai mot chuoi rong. Xem docstring dau tep.
+    """
+
+
+@dataclass(frozen=True)
+class DacDiemMongMuon:
+    """Dac diem nguoi noi ma `AUTO_MATCH` muon khop.
+
+    ⭐ Ba mat nay **khong phai do ASV nghi ra** — chung la dung ba mat ma
+       `ltt_voice.giong_mau` da phan loai catalog cua no (`NHAN_GIOI`,
+       `NHAN_VUNG`, `NHAN_PHONG_CACH`). Bia them mot mat thu tu se cho ra mot bo
+       loc khong bao gio khop.
+
+    ⚠️ Chuoi rong = **khong rang buoc mat do**, khong phai "khong biet". Hai
+       nghia do khac nhau, va `co_du_de_khop` phan biet chung.
+    """
+
+    gioi: str = ""
+    vung: str = ""
+    phong_cach: str = ""
+
+    @property
+    def co_du_de_khop(self) -> bool:
+        """It nhat MOT mat co rang buoc.
+
+        ⛔ Khong mat nao rang buoc thi `loc()` tra ve ca catalog, va "lay cai
+           dau tien" cua ca catalog chinh la giong mac dinh doi ten.
+        """
+        return bool(self.gioi or self.vung or self.phong_cach)
+
+
+@dataclass(frozen=True)
+class YeuCau:
+    """Yeu cau rang giong. ASV dung xong pha 09; pha 11 dien not `dac_diem`."""
+
+    che_do: str = CHE_DO_GIONG_MAC_DINH
+    #: Chi cho `USER_SELECTED`. Ma giong cua khach hoac ma giong mau.
+    giong_id: str = ""
+    #: Chi cho `AUTO_MATCH`. Rong o pha 09; pha 11 dien tu `HoSoNoiDung`.
+    dac_diem: DacDiemMongMuon = field(default_factory=DacDiemMongMuon)
+
+    def __post_init__(self) -> None:
+        if self.che_do not in CHE_DO_GIONG:
+            raise RangGiongError(f"che do giong khong biet: {self.che_do!r}")
+        if self.che_do == CHE_DO_GIONG_TU_CHON and not self.giong_id:
+            raise RangGiongError(
+                "USER_SELECTED phai kem ma giong — de trong roi lay mac dinh la "
+                "dung loi ma ADR-V4-001 D-V4-04 cam")
+
+
+@dataclass(frozen=True)
+class KetQua:
+    """Ket qua rang giong. `trang_thai == CHUA_RANG` la mot ket qua HOP LE."""
+
+    trang_thai: str
+    giong_id: str = ""
+    nguon: str = ""
+    #: Vi sao lai la giong nay — cho man ho tro va cho hoa don.
+    can_cu: dict = field(default_factory=dict)
+
+    @property
+    def da_chot(self) -> bool:
+        return self.trang_thai == DA_RANG
+
+    def ma_giong(self) -> str:
+        """⛔ Nem neu chua chot. Xem docstring dau tep."""
+        if not self.da_chot:
+            raise ChuaRangError(
+                _t('Chưa chọn được giọng cho lần chạy này — cần hồ sơ nội dung '
+                   'trước khi tự khớp.'))
+        return self.giong_id
+
+
+def tu_thiet_lap(settings: dict) -> YeuCau:
+    """Doc yeu cau tu `AsvRun.settings`. Khong cham CSDL."""
+    s = dict(settings or {})
+    che_do = str(s.get("che_do_giong") or CHE_DO_GIONG_MAC_DINH)
+    dd = s.get("dac_diem_giong") or {}
+    return YeuCau(
+        che_do=che_do,
+        giong_id=str(s.get("giong_id") or ""),
+        dac_diem=DacDiemMongMuon(
+            gioi=str(dd.get("gioi") or ""),
+            vung=str(dd.get("vung") or ""),
+            phong_cach=str(dd.get("phong_cach") or "")))
+
+
+def rang(db, *, owner_id: str, yeu_cau: YeuCau) -> KetQua:
+    """Chot giong neu chot duoc. Tra `CHUA_RANG` neu con thieu can cu.
+
+    🔑 **Quyen so huu do LTT VOICE kiem, khong phai o day.**
+       `features.giai_giong` da loc `owner_id`, da xu ly kho giong dung chung, va
+       da bo giong khong con `active`. Viet lai ba phep do o ASV la ba cho de
+       lam sai, va cai thu nhat lam sai thi hau qua la mot khach doc video bang
+       **giong nhan ban cua nguoi khac**.
+
+    ⛔ Nen o nhanh `USER_SELECTED`, ta goi thang ham cua ho va de no nem.
+    """
+    if yeu_cau.che_do == CHE_DO_GIONG_TU_CHON:
+        return _rang_khach_chon(db, owner_id=owner_id, giong_id=yeu_cau.giong_id)
+    return _rang_tu_khop(yeu_cau.dac_diem)
+
+
+def _rang_khach_chon(db, *, owner_id: str, giong_id: str) -> KetQua:
+    from apps.ltt_voice.giong_mau import hop_le as la_giong_mau
+
+    # Giong MAU thi ai cung dung duoc — khong co chu so huu de kiem.
+    if la_giong_mau(giong_id):
+        return KetQua(DA_RANG, giong_id, NGUON_KHACH_CHON,
+                      {"loai": "giong_mau"})
+
+    # Con lai la giong CUA KHACH: de app chu kiem quyen so huu.
+    from . import giong_noi
+
+    ref, preset = giong_noi.giai_giong(db, owner_id=owner_id, voice_id=giong_id)
+    return KetQua(DA_RANG, giong_id, NGUON_KHACH_CHON,
+                  {"loai": "giong_cua_khach", "preset": preset,
+                   "co_ref": bool(ref)})
+
+
+def _rang_tu_khop(dac_diem: DacDiemMongMuon) -> KetQua:
+    """`AUTO_MATCH`. Thieu dac diem => CHUA_RANG, khong phai giong mac dinh."""
+    if not dac_diem.co_du_de_khop:
+        # 🔴 Day la ca diem cua pha nay. Xem docstring dau tep.
+        return KetQua(CHUA_RANG, can_cu={"ly_do": "chua co ho so noi dung"})
+
+    from apps.ltt_voice.giong_mau import loc
+
+    ung_vien = loc(gioi=dac_diem.gioi, vung=dac_diem.vung,
+                   phong_cach=dac_diem.phong_cach)
+    if not ung_vien:
+        # ⚠️ Khong ung vien nao thi cung la CHUA_RANG, khong phai "lay dai mot
+        #    cai". Noi long dieu kien la viec cua tang tren — no biet mat nao
+        #    dang gia nhat, con o day ta khong biet.
+        return KetQua(CHUA_RANG, can_cu={
+            "ly_do": "khong giong nao khop",
+            "dac_diem": {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
+                         "phong_cach": dac_diem.phong_cach}})
+
+    # ⭐ On dinh: sap theo ma roi lay cai dau. Hai lan chay cung dac diem phai
+    #    ra cung mot giong, neu khong van tay nhay va cache truot vo co.
+    chon = sorted(ung_vien, key=lambda g: g.ma)[0]
+    return KetQua(DA_RANG, chon.ma, NGUON_TU_KHOP, {
+        "loai": "giong_mau",
+        "so_ung_vien": len(ung_vien),
+        "dac_diem": {"gioi": dac_diem.gioi, "vung": dac_diem.vung,
+                     "phong_cach": dac_diem.phong_cach}})
+
+
+def can_cho_ho_so(yeu_cau: YeuCau) -> bool:
+    """Lan chay nay co phai doi `HoSoNoiDung` truoc khi chot giong khong?
+
+    Dung o dieu phoi vien: mot lan chay `AUTO_MATCH` khong duoc di toi buoc
+    chuyen loi thoai truoc khi giong da chot, vi do dai cau phu thuoc toc do doc
+    cua giong that.
+    """
+    return (yeu_cau.che_do == CHE_DO_GIONG_TU_KHOP
+            and not yeu_cau.dac_diem.co_du_de_khop)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -30986,7 +31227,7 @@ def tran_theo_ngu_canh(token_vao_uoc: int) -> int:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/__init__.py
-SHA256=75f5b07905a6b8d4149f381afb8c0e9fc6adb1869ca534dbba11038cb9af80aa BYTES=2626 LINES=46
+SHA256=565969cf3548528c1177642724e472a55766e4d2f66df71831482901bbceb9c3 BYTES=3828 LINES=66
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """LTT VOICE — giong noi tieng Viet nhan ban, chay tren may A (Q117/Q118)."""
 
@@ -31033,6 +31274,26 @@ BE_MAT_CONG_KHAI = {
     #:    nghia la mot khach chon duoc giong nhan ban CUA NGUOI KHAC.
     #: ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
     ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
+
+    # ── Catalog giọng mẫu (pha 09 của Auto Scan V4) ─────────────────────────
+    #
+    # 🔑 Đây là thứ `AUTO_MATCH` **khớp VÀO**. Không có nó thì "tự khớp giọng"
+    #    không còn gì để khớp và sẽ thoái hoá thành "lấy giọng mặc định" — đúng
+    #    điều `ADR-V4-001` D-V4-04 cấm bằng tên.
+    #
+    # ⚠️ CHỈ ĐỌC, và ba nhãn đi kèm bốn hàm tra cứu. Tạo/sửa/gỡ giọng vẫn chỉ
+    #    làm được ở màn của LTT VOICE. Một app khác đọc được catalog không có
+    #    nghĩa nó ghi được vào đó.
+    #
+    # ⭐ Xuất `loc` chứ không bắt bên gọi tự duyệt `DANH_SACH`: phép lọc là một
+    #    quy tắc, và hai bản của một quy tắc là hai bản sẽ lệch nhau.
+    ("apps.ltt_voice.giong_mau", "loc"),
+    ("apps.ltt_voice.giong_mau", "tim"),
+    ("apps.ltt_voice.giong_mau", "hop_le"),
+    ("apps.ltt_voice.giong_mau", "DANH_SACH"),
+    ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
+    ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
+    ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
 }
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -287795,7 +288056,7 @@ def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_418_asv_phan_loai_loi.py
-SHA256=247916a66e3f121f3c0720e36cf99c0cd67c26955e167e7ae2add22c509844d1 BYTES=13444 LINES=274
+SHA256=5c9c35f295791fcaaacd56188a2df72adfebd6b3a2f8c1a1e2782744f13678e3 BYTES=14117 LINES=284
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 17 §1 — phan loai loi co kieu, va phep dich sang phan loai cua nen tang.
 
@@ -287823,6 +288084,7 @@ from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
+from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
@@ -287902,6 +288164,15 @@ BANG = {
     #:    qua cu, nen thu lai no la ba lan cho vo ich.
     AiError: loi.TAM_THOI,
     LuocDoSai: loi.TAM_THOI,
+    #: ── Rang giong (pha 09) ─────────────────────────────────────────────
+    #:
+    #: 🔑 Ca hai la that bai CUOI CUNG. `RangGiongError` = yeu cau khong hop
+    #:    le (che do bia ra, USER_SELECTED de trong ma giong) — chay lai cung
+    #:    mot thiet lap se hong y het. `ChuaRangError` = doc giong tu mot rang
+    #:    buoc chua chot, tuc mot loi LAP TRINH o tang goi: thu lai khong lam
+    #:    `HoSoNoiDung` xuat hien.
+    RangGiongError: loi.NGUOI_DUNG,
+    ChuaRangError: loi.NGUOI_DUNG,
 }
 
 
@@ -293764,6 +294035,299 @@ def test_co_phien_ban_prompt_va_luoc_do():
     khach."""
     assert isinstance(ai.PHIEN_BAN_PROMPT, int) and ai.PHIEN_BAN_PROMPT >= 1
     assert isinstance(ai.PHIEN_BAN_LUOC_DO, int) and ai.PHIEN_BAN_LUOC_DO >= 1
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_435_asv_v4_rang_giong.py
+SHA256=8f6512b5df75554f7ae53698eb4343239549e4899551eac5250c660f363506c2 BYTES=13522 LINES=287
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Auto Scan Video V4 — RANG GIONG (VoiceBinding), pha 09.
+
+**§1 `AUTO_MATCH` khong duoc thoai hoa thanh "giong mac dinh"** — `ADR-V4-001`
+     D-V4-04 cam bang ten, va V2 da mac dung loi ay (`routes.py:135`
+     `giong_id: str = Form("")` roi de trong thi lay mac dinh). Mot gia tri mac
+     dinh **khong doc gi tu video ca**.
+
+**§2 quyen so huu do LTT VOICE kiem** — `features.giai_giong` da loc `owner_id`,
+     da xu ly kho giong dung chung, da bo giong het `active`. Viet lai ba phep do
+     o ASV la ba cho de lam sai, va cai thu nhat lam sai thi hau qua la mot khach
+     doc video bang **giong nhan ban cua nguoi khac**.
+
+**§3 ranh gioi** — ASV so huu CHINH SACH chon giong; LTT Voice so huu giong,
+     tong hop, GPU, chuan hoa. Tep `rang_giong.py` khong sinh mot mili-giay
+     tieng nao.
+
+**§4 hoan lai, khong chon tam** — mot giong tam se lam pha 14 (chuyen loi thoai)
+     sinh ra ban chuyen phai lam lai, vi do dai cau phu thuoc toc do doc cua
+     giong THAT.
+"""
+from __future__ import annotations
+
+import ast
+import pathlib
+
+import pytest
+
+from apps.auto_scan_video import rang_giong as rg
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+APP = GOC / "apps" / "auto_scan_video"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  AUTO_MATCH khong duoc thanh "giong mac dinh"
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_AUTO_MATCH_chua_co_ho_so_thi_CHUA_RANG_chu_khong_lay_mac_dinh():
+    """🔴 Ca diem cua pha 09.
+
+    `CHUA_RANG` la mot ket qua **hop le** — khong phai that bai, va cung khong
+    phai mot giong. Tang tren hoi lai sau khi pha 11 dung xong ho so.
+    """
+    kq = rg.rang(None, owner_id="u1", yeu_cau=rg.YeuCau(che_do="AUTO_MATCH"))
+    assert kq.trang_thai == rg.CHUA_RANG
+    assert kq.giong_id == "", "chua rang ma da co giong la da lay mac dinh"
+    assert not kq.da_chot
+
+
+def test_doc_giong_tu_rang_buoc_CHUA_CHOT_thi_NEM(  ):
+    """⛔ Mot ham tra ve chuoi rong o day se cho ra mot lan tong hop bang giong
+    mac dinh **ma khong ai bam nut** — dung ket qua ca thiet ke nay de tranh."""
+    kq = rg.rang(None, owner_id="u1", yeu_cau=rg.YeuCau(che_do="AUTO_MATCH"))
+    with pytest.raises(rg.ChuaRangError):
+        kq.ma_giong()
+
+
+def test_USER_SELECTED_de_TRONG_bi_tu_choi_ngay_tu_YEU_CAU():
+    """V2 khai `giong_id: str = Form("")`. Chan o ngay hinh dang yeu cau thi
+    khong lop nao phia sau phai nho kiem lai."""
+    with pytest.raises(rg.RangGiongError):
+        rg.YeuCau(che_do="USER_SELECTED")
+
+
+def test_KHONG_mat_nao_rang_buoc_thi_van_CHUA_RANG():
+    """⛔ Khong mat nao rang buoc thi `loc()` tra ve CA catalog, va "lay cai dau
+    tien" cua ca catalog chinh la giong mac dinh doi ten."""
+    yc = rg.YeuCau(che_do="AUTO_MATCH", dac_diem=rg.DacDiemMongMuon())
+    assert rg.rang(None, owner_id="u1", yeu_cau=yc).trang_thai == rg.CHUA_RANG
+
+
+def test_khong_ung_vien_nao_khop_thi_CHUA_RANG_chu_khong_lay_dai():
+    """⚠️ Noi long dieu kien la viec cua tang tren — no biet mat nao dang gia
+    nhat, con o day ta khong biet."""
+    yc = rg.YeuCau(che_do="AUTO_MATCH",
+                   dac_diem=rg.DacDiemMongMuon(gioi="khong_ton_tai"))
+    kq = rg.rang(None, owner_id="u1", yeu_cau=yc)
+    assert kq.trang_thai == rg.CHUA_RANG
+    assert "khong giong nao khop" in str(kq.can_cu.get("ly_do", ""))
+
+
+def test_co_dac_diem_thi_CHOT_duoc_va_ghi_lai_CAN_CU():
+    yc = rg.YeuCau(che_do="AUTO_MATCH",
+                   dac_diem=rg.DacDiemMongMuon(gioi="nu", vung="bac"))
+    kq = rg.rang(None, owner_id="u1", yeu_cau=yc)
+    assert kq.da_chot and kq.nguon == rg.NGUON_TU_KHOP
+    assert kq.ma_giong()
+    # Can cu phai du de mot nguoi ho tro tra loi "vi sao lai giong nay".
+    assert kq.can_cu["so_ung_vien"] >= 1
+    assert kq.can_cu["dac_diem"]["gioi"] == "nu"
+
+
+def test_cung_dac_diem_thi_ra_CUNG_mot_giong():
+    """Van tay phu thuoc giong; mot lua chon nhay lam cache truot vo co."""
+    yc = rg.YeuCau(che_do="AUTO_MATCH",
+                   dac_diem=rg.DacDiemMongMuon(gioi="nam", phong_cach="tin_tuc"))
+    a = rg.rang(None, owner_id="u1", yeu_cau=yc)
+    b = rg.rang(None, owner_id="u1", yeu_cau=yc)
+    assert a.giong_id == b.giong_id
+
+
+def test_dieu_phoi_biet_luc_nao_phai_DOI_ho_so():
+    """Mot lan chay `AUTO_MATCH` khong duoc di toi buoc chuyen loi thoai truoc
+    khi giong da chot — do dai cau phu thuoc toc do doc cua giong that."""
+    assert rg.can_cho_ho_so(rg.YeuCau(che_do="AUTO_MATCH")) is True
+    assert rg.can_cho_ho_so(rg.YeuCau(
+        che_do="AUTO_MATCH",
+        dac_diem=rg.DacDiemMongMuon(gioi="nu"))) is False
+    assert rg.can_cho_ho_so(rg.YeuCau(
+        che_do="USER_SELECTED", giong_id="x")) is False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Quyen so huu — do LTT VOICE kiem, khong phai o day
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_giong_CUA_KHACH_di_qua_ham_kiem_quyen_cua_app_CHU(monkeypatch):
+    goi = {}
+
+    def _giai(db, *, owner_id, voice_id="", preset=""):
+        goi.update(owner_id=owner_id, voice_id=voice_id)
+        return ("ref-b64", "preset-x")
+
+    from apps.auto_scan_video import giong_noi
+    monkeypatch.setattr(giong_noi, "giai_giong", _giai)
+
+    kq = rg.rang(None, owner_id="u1",
+                 yeu_cau=rg.YeuCau(che_do="USER_SELECTED", giong_id="voice-cua-u1"))
+    assert goi == {"owner_id": "u1", "voice_id": "voice-cua-u1"}
+    assert kq.da_chot and kq.nguon == rg.NGUON_KHACH_CHON
+
+
+def test_giong_cua_NGUOI_KHAC_bi_tu_choi(monkeypatch):
+    """🔴 Hau qua neu khong kiem: mot khach doc video bang **giong nhan ban cua
+    nguoi khac**. Phep kiem quyen o app CHU, va ta de no nem len."""
+    def _giai(db, *, owner_id, voice_id="", preset=""):
+        raise PermissionError("giong nay khong phai cua ban")
+
+    from apps.auto_scan_video import giong_noi
+    monkeypatch.setattr(giong_noi, "giai_giong", _giai)
+
+    with pytest.raises(PermissionError):
+        rg.rang(None, owner_id="u-khac",
+                yeu_cau=rg.YeuCau(che_do="USER_SELECTED", giong_id="voice-cua-u1"))
+
+
+def test_giong_MAU_thi_ai_cung_dung_duoc_va_KHONG_goi_kiem_quyen(monkeypatch):
+    """Giong mau khong co chu so huu — goi phep kiem quyen cho no la mot luot
+    tra CSDL cho mot cau hoi khong ton tai."""
+    from apps.ltt_voice import giong_mau
+
+    ma = giong_mau.DANH_SACH[0].ma
+    goi = []
+    from apps.auto_scan_video import giong_noi
+    monkeypatch.setattr(giong_noi, "giai_giong",
+                        lambda *a, **k: goi.append(1) or ("", ""))
+
+    kq = rg.rang(None, owner_id="bat_ky",
+                 yeu_cau=rg.YeuCau(che_do="USER_SELECTED", giong_id=ma))
+    assert kq.da_chot and kq.can_cu["loai"] == "giong_mau"
+    assert goi == [], "goi kiem quyen cho mot giong mau"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  Ranh gioi: ASV chi so huu CHINH SACH
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_rang_giong_KHONG_tong_hop_mot_mili_giay_nao():
+    """⛔ Tep nay tra loi "giong nao", khong tra loi "tieng ra sao"."""
+    cay = ast.parse((APP / "rang_giong.py").read_text(encoding="utf-8"))
+    goi = set()
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Call):
+            f = n.func
+            goi.add(f.id if isinstance(f, ast.Name) else getattr(f, "attr", ""))
+    for cam in ("sinh", "tong_hop", "synthesize", "goi_cong", "san_sang"):
+        assert cam not in goi, f"rang_giong.py goi {cam!r} — do la viec cua LTT Voice"
+
+
+def test_ASV_KHONG_go_lai_bo_loc_cua_app_chu():
+    """⭐ Phep loc la mot QUY TAC. Hai ban cua mot quy tac la hai ban se lech."""
+    van = (APP / "rang_giong.py").read_text(encoding="utf-8")
+    assert "giong_mau import loc" in van or "giong_mau.loc" in van
+    for dau_hieu in ("g.gioi ==", "g.vung ==", "g.phong_cach =="):
+        assert dau_hieu not in van, f"chep lai phep loc: {dau_hieu}"
+
+
+def test_ba_mat_dac_diem_KHOP_voi_catalog_cua_app_chu():
+    """🔴 Bia them mot mat thu tu se cho ra mot bo loc khong bao gio khop."""
+    import dataclasses as dc
+
+    from apps.ltt_voice import giong_mau
+
+    mat_asv = {f.name for f in dc.fields(rg.DacDiemMongMuon)}
+    mat_chu = {f.name for f in dc.fields(giong_mau.GiongMau)} - {"ma"}
+    assert mat_asv == mat_chu, (
+        f"ASV mong {sorted(mat_asv)}, catalog phan loai theo {sorted(mat_chu)}")
+
+
+def test_gia_tri_hop_le_lay_tu_NHAN_cua_app_chu():
+    """Neu app chu them mot vung/gioi moi, ASV khong phai sua gi."""
+    from apps.ltt_voice import giong_mau
+
+    assert set(giong_mau.NHAN_GIOI) == {"nam", "nu"}
+    assert set(giong_mau.NHAN_VUNG) == {"bac", "trung", "nam"}
+    assert giong_mau.NHAN_PHONG_CACH
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  Be mat: THEM, khong SUA
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_bay_ten_catalog_nam_trong_BE_MAT_CONG_KHAI():
+    from apps.ltt_voice import BE_MAT_CONG_KHAI
+
+    for ten in ("loc", "tim", "hop_le", "DANH_SACH",
+                "NHAN_GIOI", "NHAN_VUNG", "NHAN_PHONG_CACH"):
+        assert ("apps.ltt_voice.giong_mau", ten) in BE_MAT_CONG_KHAI, ten
+
+
+def test_linter_khop_be_mat_khong_rong_hon():
+    """Mot ten trong danh sach cho phep ma app chu KHONG khai la mot canh voi
+    qua rao co giay phep — te hon khong co giay phep, vi no trong nhu hop le."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "_lint9", GOC / "tools" / "lint_app_contract.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+
+    from apps.ltt_voice import BE_MAT_CONG_KHAI
+
+    duoc = m.APP_DUOC_DUNG_APP[("auto_scan_video", "ltt_voice")]
+    thua = duoc - set(BE_MAT_CONG_KHAI)
+    assert thua == set(), f"cho phep nhung app chu khong khai: {sorted(thua)}"
+
+
+def test_speech_ltt_van_con_nguyen():
+    """⛔ Hop dong CU cua app chu khong duoc dong toi. Pha nay chi THEM."""
+    from apps.ltt_voice.manifest import MANIFEST
+
+    ten = {getattr(t, "name", "") for t in (MANIFEST.tools or ())}
+    assert "speech.ltt" in ten, "pha 09 lam mat ToolSpec cong khai cua app chu"
+
+
+def test_ASV_chi_cham_nhung_ten_da_khai():
+    """Chieu khang dinh, quet AST ca thu muc app."""
+    from apps.ltt_voice import BE_MAT_CONG_KHAI
+
+    cho_phep = {ten for _m, ten in BE_MAT_CONG_KHAI}
+    xau = []
+    for tep in sorted(APP.rglob("*.py")):
+        for n in ast.walk(ast.parse(tep.read_text(encoding="utf-8"))):
+            if isinstance(n, ast.ImportFrom) and \
+                    (n.module or "").startswith("apps.ltt_voice"):
+                for a in n.names:
+                    if a.name not in cho_phep:
+                        xau.append(f"{tep.name}: {n.module}.{a.name}")
+    assert xau == [], xau
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  Doc yeu cau tu thiet lap cua lan chay
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_doc_duoc_ca_hai_che_do_tu_settings():
+    yc = rg.tu_thiet_lap({"che_do_giong": "USER_SELECTED", "giong_id": "v1"})
+    assert yc.che_do == "USER_SELECTED" and yc.giong_id == "v1"
+
+    yc2 = rg.tu_thiet_lap({"che_do_giong": "AUTO_MATCH",
+                           "dac_diem_giong": {"gioi": "nu", "vung": "nam"}})
+    assert yc2.dac_diem.gioi == "nu" and yc2.dac_diem.vung == "nam"
+
+
+def test_settings_rong_thi_ra_che_do_MAC_DINH_hop_le():
+    from apps.auto_scan_video import hop_dong_v4
+
+    # ⚠️ Mac dinh la USER_SELECTED, va no doi `giong_id` — nen settings rong
+    #    phai NEM chu khong duoc lang le thanh AUTO_MATCH.
+    assert hop_dong_v4.CHE_DO_GIONG_MAC_DINH == "USER_SELECTED"
+    with pytest.raises(rg.RangGiongError):
+        rg.tu_thiet_lap({})
+
+
+def test_che_do_bia_ra_bi_tu_choi():
+    with pytest.raises(rg.RangGiongError):
+        rg.tu_thiet_lap({"che_do_giong": "MOT_CHE_DO_KHONG_CO"})
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -339520,7 +340084,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/lint_app_contract.py
-SHA256=cba78527943afd03977847c976df51af744283ba45d51bf1078006c8ff5425e3 BYTES=25713 LINES=514
+SHA256=83190849b56223474a35cb0122c34994d6db3b8401332770f4390d0eb5afff1c BYTES=26587 LINES=530
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 lint_app_contract.py - kiem CO HOC hop dong app (audit tai dung).
@@ -339725,6 +340289,22 @@ APP_DUOC_DUNG_APP: dict = {
         # ⚠️ Chi doc, chi cua chinh chu so huu. Auto Scan khong bao gio tao, sua
         #    hay go mot giong nao — man do thuoc ve LTT VOICE.
         ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
+        # ── Pha 09: catalog giong mau, thu ma AUTO_MATCH khop VAO ───────────
+        #
+        # 🔑 Khong co no thi "tu khop giong" khong con gi de khop va se thoai
+        #    hoa thanh "lay giong mac dinh" — dung dieu `ADR-V4-001` D-V4-04 cam.
+        #
+        # ⭐ Goi `loc` chu khong tu duyet `DANH_SACH`: phep loc la mot QUY TAC,
+        #    va hai ban cua mot quy tac la hai ban se lech nhau.
+        #
+        # ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
+        ("apps.ltt_voice.giong_mau", "loc"),
+        ("apps.ltt_voice.giong_mau", "tim"),
+        ("apps.ltt_voice.giong_mau", "hop_le"),
+        ("apps.ltt_voice.giong_mau", "DANH_SACH"),
+        ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
+        ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
+        ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
     },
 }
 

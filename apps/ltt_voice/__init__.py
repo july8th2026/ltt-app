@@ -43,4 +43,24 @@ BE_MAT_CONG_KHAI = {
     #:    nghia la mot khach chon duoc giong nhan ban CUA NGUOI KHAC.
     #: ⚠️ Chi DOC. Tao/sua/go giong van chi lam duoc o man cua LTT VOICE.
     ("apps.ltt_voice.doc_man_api", "ma_giong_cua_toi"),
+
+    # ── Catalog giọng mẫu (pha 09 của Auto Scan V4) ─────────────────────────
+    #
+    # 🔑 Đây là thứ `AUTO_MATCH` **khớp VÀO**. Không có nó thì "tự khớp giọng"
+    #    không còn gì để khớp và sẽ thoái hoá thành "lấy giọng mặc định" — đúng
+    #    điều `ADR-V4-001` D-V4-04 cấm bằng tên.
+    #
+    # ⚠️ CHỈ ĐỌC, và ba nhãn đi kèm bốn hàm tra cứu. Tạo/sửa/gỡ giọng vẫn chỉ
+    #    làm được ở màn của LTT VOICE. Một app khác đọc được catalog không có
+    #    nghĩa nó ghi được vào đó.
+    #
+    # ⭐ Xuất `loc` chứ không bắt bên gọi tự duyệt `DANH_SACH`: phép lọc là một
+    #    quy tắc, và hai bản của một quy tắc là hai bản sẽ lệch nhau.
+    ("apps.ltt_voice.giong_mau", "loc"),
+    ("apps.ltt_voice.giong_mau", "tim"),
+    ("apps.ltt_voice.giong_mau", "hop_le"),
+    ("apps.ltt_voice.giong_mau", "DANH_SACH"),
+    ("apps.ltt_voice.giong_mau", "NHAN_GIOI"),
+    ("apps.ltt_voice.giong_mau", "NHAN_VUNG"),
+    ("apps.ltt_voice.giong_mau", "NHAN_PHONG_CACH"),
 }

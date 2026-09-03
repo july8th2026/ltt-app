@@ -151,6 +151,20 @@ def phan_loai(exc: BaseException) -> str:
     # ⛔ `AiMoHo` phai di TRUOC `AiError`? Khong — chung khong ke thua nhau, va
     #    do la co y: `AiMoHo(RuntimeError)` dung rieng de mot phep `isinstance`
     #    nham khong the bien mot lan mo ho thanh mot lan thu lai.
+    # ── Rang giong (pha 09) ─────────────────────────────────────────────────
+    #
+    # 🔑 Ca hai deu la that bai CUOI CUNG, dung thu lai:
+    #
+    #    `RangGiongError` — yeu cau khong hop le (che do bia ra, USER_SELECTED
+    #      de trong ma giong). Chay lai cung mot thiet lap se hong y het.
+    #
+    #    `ChuaRangError` — doc giong tu mot rang buoc chua chot. Do la mot loi
+    #      LAP TRINH o tang goi, khong phai mot truot thoang qua: thu lai khong
+    #      lam `HoSoNoiDung` xuat hien.
+    from .rang_giong import RangGiongError
+    if isinstance(exc, RangGiongError):
+        return NGUOI_DUNG
+
     from .ai import AiError, AiMoHo
     if isinstance(exc, AiMoHo):
         return MO_HO
