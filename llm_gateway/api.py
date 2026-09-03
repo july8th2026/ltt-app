@@ -179,14 +179,37 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
            vòng loopback, và với một phiên agent thì `n` lên tới hàng trăm.
            Sai số của việc nối (vài token ranh giới) nhỏ hơn hai bậc so với
            chỗ `LE` đã chừa.
+
+        🔴 ĐƯỜNG PHẢI LÀ `/upstream/<model>/tokenize`, KHÔNG PHẢI `/tokenize`.
+           `llama-swap` định tuyến theo trường `model` **trong thân**; `/tokenize`
+           không có trường đó nên nó trả **404**. Đo 03/09 trên máy B:
+
+               POST /tokenize                        -> 404
+               POST /upstream/qwen38-api/tokenize     -> 200 {"tokens":[...]}
+               POST 127.0.0.1:8281/tokenize (thang)   -> 200
+
+        ⛔ VÀ BẢN ĐẦU CỦA HÀM NÀY DÙNG `/tokenize`. Nó nhận 404, `ma != 200`,
+           trả `None`, và cổng **lặng lẽ lùi về phép ước** — tức bản vá đã
+           deploy lên production và **không làm gì cả**, không một dòng nào nói
+           ra. Đúng lớp khuyết tật mà cả chương trình này đi sửa: một năng lực
+           có, được nối dây, và im lặng không hoạt động.
+
+        ⭐ Nên lần lùi bây giờ **kêu**. Phân biệt hai thứ khác hẳn nhau:
+           *"chưa nạp nên không hỏi"* là đường bình thường, không log;
+           *"đã hỏi mà thất bại"* là một khuyết tật, và nó phải ra log.
         """
-        if not van or not _ho_so_dang_nap(ten):
+        if not van:
             return None
+        if not _ho_so_dang_nap(ten):
+            return None                      # binh thuong: khong log
         ma, than = upstream.json(
-            "POST", "/tokenize",
+            "POST", "/upstream/" + ten + "/tokenize",
             body={"content": chr(10).join(str(s) for s in van)},
             timeout=30.0)
         if ma != 200:
+            log.warning("dem token that THAT BAI ma=%s model=%s - lui ve phep uoc "
+                        "(neu thay dong nay lien tuc thi duong /tokenize da doi)",
+                        ma, ten)
             return None
         try:
             import json as _json
@@ -194,7 +217,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
         except (ValueError, TypeError):
             return None
         toks = d.get("tokens")
-        return len(toks) if isinstance(toks, list) else None
+        if not isinstance(toks, list):
+            log.warning("dem token that: than khong co `tokens` (model=%s) - "
+                        "lui ve phep uoc", ten)
+            return None
+        return len(toks)
 
     def auth(authorization: str = Header(default="")) -> None:
         if not cfg.token:

@@ -78,7 +78,9 @@ def _chi_sieu_du_lieu(up) -> None:
     duong = [g[1] for g in up.goi]
     cham = [d for d in duong if any(d.startswith(x) for x in DUONG_CHAM_MODEL)]
     assert cham == [], f"da cham model tren duong tu choi: {cham}"
-    la = [d for d in duong if d not in ("/running", "/tokenize", "/v1/models")]
+    la = [d for d in duong
+          if d not in ("/running", "/v1/models")
+          and not (d.startswith("/upstream/") and d.endswith("/tokenize"))]
     assert la == [], f"loi goi upstream ngoai bang sieu du lieu: {la}"
 
 
@@ -122,8 +124,12 @@ class FakeUpstream:
     def dat_tokenize(self, so_token: int) -> None:
         """Khai `/tokenize` trả về đúng `so_token` token."""
         import json as _json
-        self.rieng["/tokenize"] = _json.dumps(
-            {"tokens": list(range(so_token))}).encode()
+        # ⛔ Khai theo dung duong THAT: `/upstream/<model>/tokenize`. Khai
+        #    `/tokenize` tran thi bo gia se tra loi mot duong ma llama-swap
+        #    THAT tra 404 — va phep kiem se xanh cho mot ban va da chet.
+        for ten in ("qwen38-api", "qwen38-vision"):
+            self.rieng["/upstream/" + ten + "/tokenize"] = _json.dumps(
+                {"tokens": list(range(so_token))}).encode()
 
     def json(self, method, path, *, body=None, timeout=60.0):
         self.goi.append((method, path, body or {}))
@@ -265,7 +271,38 @@ def test_uoc_vuot_nhung_THAT_vua_thi_duoc_nhan():
         "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})   # uoc 40.001
     assert r.status_code == 200, r.text
-    assert "/tokenize" in [g[1] for g in up.goi]
+    assert "/upstream/qwen38-api/tokenize" in [g[1] for g in up.goi]
+
+
+def test_duong_tokenize_PHAI_qua_upstream_cua_tung_model():
+    """🔴 BÁNH CÓC CHO MỘT BẢN VÁ ĐÃ LÊN PRODUCTION VÀ KHÔNG LÀM GÌ CẢ.
+
+    `llama-swap` định tuyến theo trường `model` **trong thân**. `/tokenize`
+    không có trường đó, nên nó trả **404**. Đo 03/09 trên máy B:
+
+        POST /tokenize                       -> 404
+        POST /upstream/qwen38-api/tokenize    -> 200 {"tokens":[...]}
+
+    ⛔ Bản đầu của `_dem_token_that` gọi `/tokenize`. Nó nhận 404, trả `None`,
+       và cổng lặng lẽ lùi về phép ước — bản vá đã deploy và **không làm gì**,
+       không một dòng nào nói ra. Phép kiểm cũ (`"/tokenize" in duong`) sẽ
+       **xanh** với đường sai, vì `"/upstream/x/tokenize"` cũng chứa chuỗi đó.
+
+    ⭐ Nên chốt phải là đường ĐẦY ĐỦ, không phải một chuỗi con.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")
+    up.dat_tokenize(5_000)
+    c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    tok = [g for g in up.goi if "tokenize" in g[1]]
+    assert tok, "khong goi tokenize lan nao"
+    for method, duong, _than in tok:
+        assert method == "POST", (method, duong)
+        assert duong == "/upstream/qwen38-api/tokenize", (
+            f"duong tokenize sai: {duong!r}. llama-swap tra 404 cho `/tokenize` "
+            f"tran, va mot 404 o day bi nuot thanh mot lan lui ve phep uoc.")
 
 
 def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
