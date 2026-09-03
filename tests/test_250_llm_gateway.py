@@ -50,6 +50,38 @@ def test_config_mac_dinh_khoa_public_input_KHOP_NGAN_SACH(monkeypatch):
         "parallel=1 thi gateway khong duoc tao hidden queue")
 
 
+#: Đường dẫn upstream **chạm model**. Mọi thứ khác (`/running`, `/tokenize`,
+#: `/v1/models`) là siêu dữ liệu hoặc CPU: llama-swap và llama-server trả lời
+#: chúng mà không sinh một token nào.
+#:
+#: 🔴 VÌ SAO CẦN PHÂN BIỆT NÀY, thay vì `assert up.goi == []` như trước 03/09.
+#:
+#:    Hai phép kiểm dưới đây từng chốt "KHÔNG một lời gọi upstream nào". Câu đó
+#:    chặt hơn thứ nó muốn bảo vệ, và cái nó thật sự bảo vệ là *một yêu cầu quá
+#:    to không được tiêu GPU* (đo 03/09: 413 trong ≤0,02 s, trước cả hàng rào
+#:    đồng thời).
+#:
+#:    Khi cổng bắt đầu đếm token THẬT bằng `/tokenize` — để con số ta từ chối
+#:    nằm cùng đơn vị với con số client đếm — thì đường từ chối buộc phải hỏi
+#:    `/running` một lần. Giữ nguyên `== []` nghĩa là cấm hẳn bản vá đó.
+#:
+#: ⭐ Nên chốt được viết lại cho ĐÚNG thứ cần chốt, và nó **mạnh hơn** bản cũ ở
+#:    một điểm: bản cũ chỉ nói "không gọi gì", bản này nói rõ **không gọi suy
+#:    luận** *và* liệt kê được đường nào được phép xuất hiện. Một lời gọi
+#:    `/v1/chat/completions` lọt vào đây sẽ đỏ ở cả hai bản; một `/running` chỉ
+#:    đỏ ở bản cũ, và đỏ vì lý do sai.
+DUONG_CHAM_MODEL = ("/v1/chat/completions", "/v1/responses", "/v1/messages")
+
+
+def _chi_sieu_du_lieu(up) -> None:
+    """Chốt: không lời gọi nào chạm model, và mọi lời gọi đều nằm trong bảng."""
+    duong = [g[1] for g in up.goi]
+    cham = [d for d in duong if any(d.startswith(x) for x in DUONG_CHAM_MODEL)]
+    assert cham == [], f"da cham model tren duong tu choi: {cham}"
+    la = [d for d in duong if d not in ("/running", "/tokenize", "/v1/models")]
+    assert la == [], f"loi goi upstream ngoai bang sieu du lieu: {la}"
+
+
 def test_public_cap_chan_TRUOC_thuong_nguon():
     """Q116: vượt trần theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
     c, up = _client(_cfg(max_input_tokens=65_000))
@@ -59,7 +91,7 @@ def test_public_cap_chan_TRUOC_thuong_nguon():
     })
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
-    assert up.goi == []
+    _chi_sieu_du_lieu(up)
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
@@ -73,9 +105,30 @@ class FakeUpstream:
         self.than = than
         self.khoi_stream = khoi_stream or [b"data: a\n\n", b"data: b\n\n"]
         self.goi: list[tuple[str, str, dict]] = []
+        #: Trả lời riêng cho từng đường, khi test cần. `None` = dùng `self.than`.
+        #:
+        #: ⭐ Cần vì `/running` và `/tokenize` KHÔNG thể dùng chung một thân với
+        #:    `/v1/chat/completions`: cổng phân giải `tokens` và `running` từ
+        #:    thân, nên một thân `{"ok":true}` làm cả hai nhánh trả `None` và
+        #:    phép kiểm xanh vì lý do sai.
+        self.rieng: dict[str, bytes] = {}
+
+    def dat_running(self, ten: str) -> None:
+        """Khai hồ sơ nào đang `ready`. Chuỗi rỗng = không hồ sơ nào."""
+        import json as _json
+        d = {"running": [{"model": ten, "state": "ready"}]} if ten else {"running": []}
+        self.rieng["/running"] = _json.dumps(d).encode()
+
+    def dat_tokenize(self, so_token: int) -> None:
+        """Khai `/tokenize` trả về đúng `so_token` token."""
+        import json as _json
+        self.rieng["/tokenize"] = _json.dumps(
+            {"tokens": list(range(so_token))}).encode()
 
     def json(self, method, path, *, body=None, timeout=60.0):
         self.goi.append((method, path, body or {}))
+        if path in self.rieng:
+            return 200, self.rieng[path]
         return self.ma, self.than
 
     def stream(self, method, path, *, body=None, timeout=900.0):
@@ -178,7 +231,90 @@ def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
-    assert up.goi == []
+    _chi_sieu_du_lieu(up)
+
+
+def test_dem_that_KHONG_chay_o_duong_nhanh():
+    """⭐ Điều kiện để bản vá "đếm thật" không phải một cái giá trả mỗi lượt.
+
+    Ước **vừa** trần ⇒ nhận ngay, và cổng KHÔNG được hỏi `/running` hay
+    `/tokenize`. Ước là số cao, nên ước vừa thì thật chắc chắn vừa — không có
+    gì để đếm lại.
+    """
+    c, up = _client()
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "xin chao"}]})
+    assert r.status_code == 200
+    duong = [g[1] for g in up.goi]
+    assert "/tokenize" not in duong, "duong nhanh da goi /tokenize"
+    assert "/running" not in duong, "duong nhanh da goi /running"
+
+
+def test_uoc_vuot_nhung_THAT_vua_thi_duoc_nhan():
+    """🔴 CHÍNH BẢN VÁ. Ước 40.000 vượt trần 20.000, nhưng thật chỉ 5.000.
+
+    Trước 03/09 lượt này ăn `413` — và client, đếm token THẬT bằng tokenizer
+    của nó, không có cách nào biết vì sao: nó thấy 5.000 token trên một cửa sổ
+    ta công bố rộng hơn thế nhiều.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")          # ho so DA nap => dem that duoc
+    up.dat_tokenize(5_000)
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})   # uoc 40.001
+    assert r.status_code == 200, r.text
+    assert "/tokenize" in [g[1] for g in up.goi]
+
+
+def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
+    """Số trong `413` phải là số ta **phán xử bằng**, không phải số ước.
+
+    ⛔ Trả về số ước ở đây thì khách đọc một con số không khớp với bất cứ thứ gì
+       họ đo được, và không có đường nào lần ra.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")
+    up.dat_tokenize(30_000)
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    d = r.json()["detail"]
+    assert d["thay"] == 30_000, d
+    assert d["tran"] == 20_000, d
+
+
+def test_ho_so_CHUA_nap_thi_khong_hoi_tokenize():
+    """Nhánh ba: chưa nạp ⇒ từ chối theo ước, KHÔNG đánh thức GPU.
+
+    Hỏi `/tokenize` cho một hồ sơ chưa nạp thì llama-swap sẽ **đổi model** để
+    phục vụ nó — 2,5 phút và một lần chiếm card, cho một yêu cầu ta đang định
+    từ chối.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("")                    # khong ho so nao ready
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    assert "/tokenize" not in [g[1] for g in up.goi]
+
+
+def test_thuong_nguon_chet_thi_van_413_theo_uoc():
+    """llama-swap chết không được biến một `413` thành một lỗi khác.
+
+    ⛔ Và không được biến nó thành một lần **chờ**: đường từ chối gọi `/running`
+       với `timeout=2.0` chứ không phải 5, vì năm giây cho một yêu cầu chắc chắn
+       bị từ chối là một hồi quy so với bản trước.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000), up=FakeUpstream(ma=599))
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    assert r.json()["detail"]["thay"] == 40_001      # so UOC, vi khong dem duoc
 
 
 def test_anh_gui_vao_ho_so_khong_vision_thi_413():

@@ -116,6 +116,86 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
             return False
         return any(isinstance(m, dict) and m.get("model") for m in (d.get("running") or []))
 
+    #: Nhớ tên hồ sơ đang nạp trong ít giây, để một phiên agent gửi liên tiếp
+    #: không sinh một `/running` cho mỗi lượt.
+    #:
+    #: ⭐ 2 giây là đủ: thứ ta hỏi chỉ quyết định *đếm chính xác có rẻ không*.
+    #:    Sai trong 2 giây thì hậu quả xấu nhất là một lần lùi về phép ước
+    #:    (từ chối oan một yêu cầu lẽ ra vừa) hoặc một `/tokenize` bị llama-swap
+    #:    trả lời bằng hồ sơ khác — cả hai đều không chạm tiền và không sai
+    #:    chiều nguy hiểm.
+    _nho_nap: dict = {"luc": None, "ten": ""}
+    _TTL_NHO_NAP_S = 2.0
+
+    def _ho_so_dang_nap(ten: str) -> bool:
+        """Đúng **hồ sơ này** có đang nằm trong VRAM không.
+
+        ⛔ KHÁC `_co_model_cua_ta_dang_chay()` ở trên, và khác một cách có chủ ý.
+           Ở đó câu hỏi là *"llama-swap có đang giữ BẤT KỲ model nào của ta"* —
+           để trọng tài biết tải cao trên card là của ai. Ở đây câu hỏi là
+           *"đếm token bằng `/tokenize` có RẺ không"*, và nó chỉ rẻ khi **đúng
+           hồ sơ này** đã nạp: hỏi `/tokenize` cho một hồ sơ khác thì llama-swap
+           sẽ ĐỔI model để phục vụ nó — tức đánh thức GPU, mất 2,5 phút, và làm
+           đúng cái điều mà phép ước sinh ra để tránh.
+
+        ⚠️ `timeout=2.0`, KHÔNG phải 5. Lời gọi này nằm trên đường **từ chối**:
+           nếu llama-swap chết thì bản cũ trả `413` tức thì, còn bản này sẽ chờ
+           hết timeout trước khi từ chối. Năm giây cho một yêu cầu chắc chắn bị
+           từ chối là một hồi quy; hai giây là cái giá tối thiểu còn đọc được.
+        """
+        luc = _nho_nap["luc"]
+        if luc is not None and (now() - luc) < _TTL_NHO_NAP_S:
+            return _nho_nap["ten"] == ten
+        ma, than = upstream.json("GET", "/running", timeout=2.0)
+        if ma != 200:
+            return False
+        try:
+            import json as _json
+            d = _json.loads(than or b"{}")
+        except (ValueError, TypeError):
+            return False
+        dang = ""
+        for m in (d.get("running") or []):
+            if isinstance(m, dict) and str(m.get("state") or "") == "ready":
+                dang = str(m.get("model") or "")
+                break
+        _nho_nap["luc"] = now()
+        _nho_nap["ten"] = dang
+        return dang == ten
+
+    def _dem_token_that(ten: str, van: list) -> "int | None":
+        """Số token THẬT của các đoạn văn bản, qua `/tokenize` của llama-server.
+
+        Trả `None` khi không đếm được — hồ sơ chưa nạp, hoặc thượng nguồn không
+        trả lời. `None` **không phải** 0: bên gọi phải lùi về phép ước, không
+        được coi như một yêu cầu rỗng.
+
+        ⭐ `/tokenize` KHÔNG chạy inference. Nó cần từ vựng của model đang nạp,
+           không cần một lượt sinh. Đo 03/09: gọi hàng chục lần trên prompt
+           130K–180K, không sinh một token nào.
+
+        ⛔ MỘT LỜI GỌI CHO CẢ HỘI THOẠI, không phải một lời gọi mỗi đoạn. Nối
+           bằng `chr(10)` rồi đếm một lần: `n` lời gọi cho `n` tin nhắn là `n`
+           vòng loopback, và với một phiên agent thì `n` lên tới hàng trăm.
+           Sai số của việc nối (vài token ranh giới) nhỏ hơn hai bậc so với
+           chỗ `LE` đã chừa.
+        """
+        if not van or not _ho_so_dang_nap(ten):
+            return None
+        ma, than = upstream.json(
+            "POST", "/tokenize",
+            body={"content": chr(10).join(str(s) for s in van)},
+            timeout=30.0)
+        if ma != 200:
+            return None
+        try:
+            import json as _json
+            d = _json.loads(than or b"{}")
+        except (ValueError, TypeError):
+            return None
+        toks = d.get("tokens")
+        return len(toks) if isinstance(toks, list) else None
+
     def auth(authorization: str = Header(default="")) -> None:
         if not cfg.token:
             return          # dev: chưa đặt token → không chặn (giống render_gateway)
@@ -225,6 +305,9 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
                 max_image_bytes=cfg.max_image_bytes,
                 max_context=spec.max_context,
                 co_vision=spec.co_vision,
+                # ⭐ Chỉ được gọi khi phép ƯỚC đã vượt trần — xem `NS.kiem_tra`.
+                #    Đường nhanh không thêm round-trip nào.
+                dem_that=lambda van: _dem_token_that(ten, van),
             )
         except NS.VuotNganSach as e:
             # 413 chứ không phải 400: đây là "to quá", không phải "sai cú pháp".
