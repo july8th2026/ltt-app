@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:595cbfe3e985b5e27b1b53644307f340fd4c4a7f08224ca0d0483ea36023e751
-Nguồn đã quét : 1563 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:fffc6186b329b630832b0d4658a576187914f65d0fa8b74e0a0aadd4b70297db
+Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1653,8 +1653,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1563 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:47, .md:14, .mjs:10, .ps1:65, .py:1160, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:39, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1564 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:47, .md:14, .mjs:10, .ps1:66, .py:1160, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:39, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2631,7 +2631,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (50)
+[setup] (51)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2672,6 +2672,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - setup/k0_cham_mu.ps1
 - setup/k0_kiem_chung_resample.ps1
 - setup/k0_sinh_f5.ps1
+- setup/khoa_canary_nang_quyen.ps1
 - setup/khoa_thu_api.ps1
 - setup/nap_credit_tai_khoan_thu.ps1
 - setup/nap_lai_env.ps1
@@ -3274,7 +3275,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1563 file; 16046728 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16058479 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -184687,6 +184688,88 @@ exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/khoa_canary_nang_quyen.ps1
+SHA256=604aa09f96dfd82bec8508b32b0490025fc8c072c6c27f22b245b47dea84901d BYTES=2953 LINES=76
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+# khoa_canary_nang_quyen.ps1 - LOP TRONG cua viec phat khoa canary (AGENTS.md 9.3).
+#
+# KHONG CHAY TAY TEP NAY. No duoc goi boi lop ngoai:
+#
+#     Start-Process powershell -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass',
+#       '-File','"D:\LTTSTUDIOSAPP\setup\khoa_canary_nang_quyen.ps1"' -Verb RunAs
+#
+# Tep nay THUAN ASCII (quy tac 2 cua CLAUDE.md).
+#
+# !! VI SAO CAN LOP THU HAI. `Start-Process -Verb RunAs` KHONG dung chung duoc
+#    voi `-RedirectStandardOutput`, va no hong IM LANG. Ma khoa thi in ra
+#    stdout MOT LAN duy nhat - khong bat duoc stdout la mat khoa, va phai phat
+#    lai mot khoa nua (moi khoa la mot chung danh song, dung rai chung ra).
+#
+# !! KHOA DI VAO `tmp/` CHU KHONG RA MAN HINH LOG.
+#    `tmp/` da nam trong .gitignore (dong 147). Day van la mot chung danh tren
+#    dia - dung chep no di dau, va xoa khi xong.
+#
+# !! `EXITCODE` RONG KHAC HAN `EXITCODE=0`. Rong nghia la tien trinh khong chay.
+
+[CmdletBinding()]
+param(
+    [string]$Repo = 'D:\LTTSTUDIOSAPP',
+    [ValidateSet('tao-tk-canary', 'khoa-canary')]
+    [string]$Viec = 'khoa-canary'
+)
+
+$ErrorActionPreference = 'Stop'
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+$tmp = Join-Path $Repo 'tmp'
+if (-not (Test-Path $tmp)) { New-Item -ItemType Directory -Path $tmp -Force | Out-Null }
+$stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
+$out = Join-Path $tmp "canary-$Viec-$stamp.out.txt"
+$err = Join-Path $tmp "canary-$Viec-$stamp.err.txt"
+$sum = Join-Path $tmp "canary-$Viec-$stamp.ket.txt"
+
+"BAT DAU=$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Set-Content $sum -Encoding utf8
+"VIEC=$Viec"  | Add-Content $sum -Encoding utf8
+"ADMIN=$isAdmin" | Add-Content $sum -Encoding utf8
+"OUT=$out"    | Add-Content $sum -Encoding utf8
+
+if (-not $isAdmin) {
+    "EXITCODE=-1" | Add-Content $sum -Encoding utf8
+    "LY_DO=khong co quyen Administrator - lop ngoai phai dung -Verb RunAs" |
+        Add-Content $sum -Encoding utf8
+    exit 1
+}
+
+$script = Join-Path $Repo 'setup\chay_voi_env.ps1'
+if (-not (Test-Path $script)) {
+    "EXITCODE=-2" | Add-Content $sum -Encoding utf8
+    "LY_DO=khong thay $script" | Add-Content $sum -Encoding utf8
+    exit 1
+}
+
+$p = Start-Process powershell `
+        -ArgumentList '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', "`"$script`"",
+                      '-Viec', $Viec, '-Repo', "`"$Repo`"" `
+        -RedirectStandardOutput $out -RedirectStandardError $err `
+        -Wait -PassThru
+
+"EXITCODE=$($p.ExitCode)" | Add-Content $sum -Encoding utf8
+"KET THUC=$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')" | Add-Content $sum -Encoding utf8
+
+if ($p.ExitCode -eq 0) {
+    Write-Host ''
+    Write-Host "XONG (EXITCODE=0). Ket qua o: $out" -ForegroundColor Green
+} else {
+    Write-Host ''
+    Write-Host "HONG - EXITCODE=$($p.ExitCode). Xem $err" -ForegroundColor Red
+}
+Start-Sleep -Seconds 4
+exit $p.ExitCode
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/khoa_thu_api.ps1
 SHA256=1e3e095f970049802351de206365a1547c6080706c80c11326a9cfe7f68c7c9a BYTES=2239 LINES=64
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -230187,7 +230270,7 @@ def test_them_provider_khong_lam_vo_registry_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_250_llm_gateway.py
-SHA256=1fbd3cf264633474bb805486b373a0b338080f62e1c6337ac319576a1fe7c0ee BYTES=21873 LINES=484
+SHA256=6b264062cb03086fd19fdee3702d711f0f85190dc0b8f5659fd7b358bcba0097 BYTES=30671 LINES=657
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_250_llm_gateway — hợp đồng của cổng VLM (H38, P7).
@@ -230241,6 +230324,40 @@ def test_config_mac_dinh_khoa_public_input_KHOP_NGAN_SACH(monkeypatch):
         "parallel=1 thi gateway khong duoc tao hidden queue")
 
 
+#: Đường dẫn upstream **chạm model**. Mọi thứ khác (`/running`, `/tokenize`,
+#: `/v1/models`) là siêu dữ liệu hoặc CPU: llama-swap và llama-server trả lời
+#: chúng mà không sinh một token nào.
+#:
+#: 🔴 VÌ SAO CẦN PHÂN BIỆT NÀY, thay vì `assert up.goi == []` như trước 03/09.
+#:
+#:    Hai phép kiểm dưới đây từng chốt "KHÔNG một lời gọi upstream nào". Câu đó
+#:    chặt hơn thứ nó muốn bảo vệ, và cái nó thật sự bảo vệ là *một yêu cầu quá
+#:    to không được tiêu GPU* (đo 03/09: 413 trong ≤0,02 s, trước cả hàng rào
+#:    đồng thời).
+#:
+#:    Khi cổng bắt đầu đếm token THẬT bằng `/tokenize` — để con số ta từ chối
+#:    nằm cùng đơn vị với con số client đếm — thì đường từ chối buộc phải hỏi
+#:    `/running` một lần. Giữ nguyên `== []` nghĩa là cấm hẳn bản vá đó.
+#:
+#: ⭐ Nên chốt được viết lại cho ĐÚNG thứ cần chốt, và nó **mạnh hơn** bản cũ ở
+#:    một điểm: bản cũ chỉ nói "không gọi gì", bản này nói rõ **không gọi suy
+#:    luận** *và* liệt kê được đường nào được phép xuất hiện. Một lời gọi
+#:    `/v1/chat/completions` lọt vào đây sẽ đỏ ở cả hai bản; một `/running` chỉ
+#:    đỏ ở bản cũ, và đỏ vì lý do sai.
+DUONG_CHAM_MODEL = ("/v1/chat/completions", "/v1/responses", "/v1/messages")
+
+
+def _chi_sieu_du_lieu(up) -> None:
+    """Chốt: không lời gọi nào chạm model, và mọi lời gọi đều nằm trong bảng."""
+    duong = [g[1] for g in up.goi]
+    cham = [d for d in duong if any(d.startswith(x) for x in DUONG_CHAM_MODEL)]
+    assert cham == [], f"da cham model tren duong tu choi: {cham}"
+    la = [d for d in duong
+          if d not in ("/running", "/v1/models")
+          and not (d.startswith("/upstream/") and d.endswith("/tokenize"))]
+    assert la == [], f"loi goi upstream ngoai bang sieu du lieu: {la}"
+
+
 def test_public_cap_chan_TRUOC_thuong_nguon():
     """Q116: vượt trần theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
     c, up = _client(_cfg(max_input_tokens=65_000))
@@ -230250,7 +230367,7 @@ def test_public_cap_chan_TRUOC_thuong_nguon():
     })
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
-    assert up.goi == []
+    _chi_sieu_du_lieu(up)
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
@@ -230264,9 +230381,34 @@ class FakeUpstream:
         self.than = than
         self.khoi_stream = khoi_stream or [b"data: a\n\n", b"data: b\n\n"]
         self.goi: list[tuple[str, str, dict]] = []
+        #: Trả lời riêng cho từng đường, khi test cần. `None` = dùng `self.than`.
+        #:
+        #: ⭐ Cần vì `/running` và `/tokenize` KHÔNG thể dùng chung một thân với
+        #:    `/v1/chat/completions`: cổng phân giải `tokens` và `running` từ
+        #:    thân, nên một thân `{"ok":true}` làm cả hai nhánh trả `None` và
+        #:    phép kiểm xanh vì lý do sai.
+        self.rieng: dict[str, bytes] = {}
+
+    def dat_running(self, ten: str) -> None:
+        """Khai hồ sơ nào đang `ready`. Chuỗi rỗng = không hồ sơ nào."""
+        import json as _json
+        d = {"running": [{"model": ten, "state": "ready"}]} if ten else {"running": []}
+        self.rieng["/running"] = _json.dumps(d).encode()
+
+    def dat_tokenize(self, so_token: int) -> None:
+        """Khai `/tokenize` trả về đúng `so_token` token."""
+        import json as _json
+        # ⛔ Khai theo dung duong THAT: `/upstream/<model>/tokenize`. Khai
+        #    `/tokenize` tran thi bo gia se tra loi mot duong ma llama-swap
+        #    THAT tra 404 — va phep kiem se xanh cho mot ban va da chet.
+        for ten in ("qwen38-api", "qwen38-vision"):
+            self.rieng["/upstream/" + ten + "/tokenize"] = _json.dumps(
+                {"tokens": list(range(so_token))}).encode()
 
     def json(self, method, path, *, body=None, timeout=60.0):
         self.goi.append((method, path, body or {}))
+        if path in self.rieng:
+            return 200, self.rieng[path]
         return self.ma, self.than
 
     def stream(self, method, path, *, body=None, timeout=900.0):
@@ -230369,7 +230511,121 @@ def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
-    assert up.goi == []
+    _chi_sieu_du_lieu(up)
+
+
+def test_dem_that_KHONG_chay_o_duong_nhanh():
+    """⭐ Điều kiện để bản vá "đếm thật" không phải một cái giá trả mỗi lượt.
+
+    Ước **vừa** trần ⇒ nhận ngay, và cổng KHÔNG được hỏi `/running` hay
+    `/tokenize`. Ước là số cao, nên ước vừa thì thật chắc chắn vừa — không có
+    gì để đếm lại.
+    """
+    c, up = _client()
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "xin chao"}]})
+    assert r.status_code == 200
+    duong = [g[1] for g in up.goi]
+    assert "/tokenize" not in duong, "duong nhanh da goi /tokenize"
+    assert "/running" not in duong, "duong nhanh da goi /running"
+
+
+def test_uoc_vuot_nhung_THAT_vua_thi_duoc_nhan():
+    """🔴 CHÍNH BẢN VÁ. Ước 40.000 vượt trần 20.000, nhưng thật chỉ 5.000.
+
+    Trước 03/09 lượt này ăn `413` — và client, đếm token THẬT bằng tokenizer
+    của nó, không có cách nào biết vì sao: nó thấy 5.000 token trên một cửa sổ
+    ta công bố rộng hơn thế nhiều.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")          # ho so DA nap => dem that duoc
+    up.dat_tokenize(5_000)
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})   # uoc 40.001
+    assert r.status_code == 200, r.text
+    assert "/upstream/qwen38-api/tokenize" in [g[1] for g in up.goi]
+
+
+def test_duong_tokenize_PHAI_qua_upstream_cua_tung_model():
+    """🔴 BÁNH CÓC CHO MỘT BẢN VÁ ĐÃ LÊN PRODUCTION VÀ KHÔNG LÀM GÌ CẢ.
+
+    `llama-swap` định tuyến theo trường `model` **trong thân**. `/tokenize`
+    không có trường đó, nên nó trả **404**. Đo 03/09 trên máy B:
+
+        POST /tokenize                       -> 404
+        POST /upstream/qwen38-api/tokenize    -> 200 {"tokens":[...]}
+
+    ⛔ Bản đầu của `_dem_token_that` gọi `/tokenize`. Nó nhận 404, trả `None`,
+       và cổng lặng lẽ lùi về phép ước — bản vá đã deploy và **không làm gì**,
+       không một dòng nào nói ra. Phép kiểm cũ (`"/tokenize" in duong`) sẽ
+       **xanh** với đường sai, vì `"/upstream/x/tokenize"` cũng chứa chuỗi đó.
+
+    ⭐ Nên chốt phải là đường ĐẦY ĐỦ, không phải một chuỗi con.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")
+    up.dat_tokenize(5_000)
+    c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    tok = [g for g in up.goi if "tokenize" in g[1]]
+    assert tok, "khong goi tokenize lan nao"
+    for method, duong, _than in tok:
+        assert method == "POST", (method, duong)
+        assert duong == "/upstream/qwen38-api/tokenize", (
+            f"duong tokenize sai: {duong!r}. llama-swap tra 404 cho `/tokenize` "
+            f"tran, va mot 404 o day bi nuot thanh mot lan lui ve phep uoc.")
+
+
+def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
+    """Số trong `413` phải là số ta **phán xử bằng**, không phải số ước.
+
+    ⛔ Trả về số ước ở đây thì khách đọc một con số không khớp với bất cứ thứ gì
+       họ đo được, và không có đường nào lần ra.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")
+    up.dat_tokenize(30_000)
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    d = r.json()["detail"]
+    assert d["thay"] == 30_000, d
+    assert d["tran"] == 20_000, d
+
+
+def test_ho_so_CHUA_nap_thi_khong_hoi_tokenize():
+    """Nhánh ba: chưa nạp ⇒ từ chối theo ước, KHÔNG đánh thức GPU.
+
+    Hỏi `/tokenize` cho một hồ sơ chưa nạp thì llama-swap sẽ **đổi model** để
+    phục vụ nó — 2,5 phút và một lần chiếm card, cho một yêu cầu ta đang định
+    từ chối.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("")                    # khong ho so nao ready
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    assert "/tokenize" not in [g[1] for g in up.goi]
+
+
+def test_thuong_nguon_chet_thi_van_413_theo_uoc():
+    """llama-swap chết không được biến một `413` thành một lỗi khác.
+
+    ⛔ Và không được biến nó thành một lần **chờ**: đường từ chối gọi `/running`
+       với `timeout=2.0` chứ không phải 5, vì năm giây cho một yêu cầu chắc chắn
+       bị từ chối là một hồi quy so với bản trước.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000), up=FakeUpstream(ma=599))
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    assert r.json()["detail"]["thay"] == 40_001      # so UOC, vi khong dem duoc
 
 
 def test_anh_gui_vao_ho_so_khong_vision_thi_413():
