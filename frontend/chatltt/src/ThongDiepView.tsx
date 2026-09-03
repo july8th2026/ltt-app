@@ -15,6 +15,7 @@
  */
 import { useId, useState } from 'react'
 import Markdown from 'react-markdown'
+import remarkBreaks from 'remark-breaks'
 import remarkGfm from 'remark-gfm'
 import { anhEm, chuCuaThongDiep, suyLuanCuaThongDiep } from './cay'
 import type { Khoi, ThongDiep } from './kieu'
@@ -119,11 +120,29 @@ export function ThongDiepView({
         <KhoiSuyLuan chu={suyLuan} dangChay={dangChay} />
       )}
 
+      {/*
+        🔴 `remarkBreaks` KHONG PHAI mot lua chon tham my. Do 03/09 tren
+           PRODUCTION: hoi "liet ke 3 mau, moi mau mot dong" thi model tra ve
+           dung ba dong, va giao dien ve ra MOT doan lien "Do Xanh duong Vang"
+           — mot `<p>`, khong mot `<br>` nao.
+
+           Nguyen nhan la CommonMark: mot xuong dong DON la soft break, hien
+           thi thanh dau CACH. Dung theo dac ta, va sai theo ky vong cua moi
+           nguoi dung mot san pham chat.
+
+        ⛔ Va no khong hiem. Model xuong dong don o khap noi: danh sach khong
+           gach dau dong, dia chi, tho, cac buoc lam theo thu tu. Tat ca deu
+           dinh thanh mot doan chay dai.
+
+        ⭐ Day cung la cach LibreChat lam. `remark-breaks` CHI doi soft break
+           thanh `<br>`; no khong bat HTML tho, nen mo hinh chong XSS o dau tep
+           nay khong doi mot chut nao. `test_ThongDiepView` chot ca hai ve.
+      */}
       <div className="ltc-tin__chu">
         {m.role === 'user' ? (
           <p className="ltc-tin__tho">{chu}</p>
         ) : (
-          <Markdown remarkPlugins={[remarkGfm]}>{chu}</Markdown>
+          <Markdown remarkPlugins={[remarkGfm, remarkBreaks]}>{chu}</Markdown>
         )}
         {dangChay && !chu && !dangTaoMedia && (
           <span className="ltc-nhipdap" aria-label="Đang trả lời" />

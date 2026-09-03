@@ -132,3 +132,35 @@ describe('ThongDiepView — suy luan va nhanh', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('may B dang ban')
   })
 })
+
+describe('Markdown — mot xuong dong don phai la mot xuong dong', () => {
+  /**
+   * 🔴 Do 03/09 tren PRODUCTION. Hoi "liet ke 3 mau, moi mau mot dong": model
+   *    tra ve dung ba dong, giao dien ve ra MOT doan lien "Đỏ Xanh dương Vàng"
+   *    — mot `<p>`, khong `<br>` nao.
+   *
+   *    CommonMark coi xuong dong DON la soft break va hien thi thanh dau CACH.
+   *    Dung theo dac ta; sai theo ky vong cua moi nguoi dung mot san pham chat.
+   *
+   * ⛔ Va khong hiem: danh sach khong gach dau dong, dia chi, tho, cac buoc
+   *    lam theo thu tu — tat ca deu dinh thanh mot doan chay dai.
+   */
+  it('ba dong thanh ba dong, khong dinh lien', () => {
+    const m = tin({ blocks: [{ type: 'text', text: 'Đỏ\nXanh dương\nVàng' }] })
+    const { container } = render(
+      <ThongDiepView m={m} phang={[m]} onChuyenNhanh={KHONG}
+        onTaoLai={KHONG} onSuaGuiLai={KHONG} />,
+    )
+    expect(container.querySelectorAll('br').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('van KHONG bat HTML tho — mo hinh chong XSS khong doi', () => {
+    const m = tin({ blocks: [{ type: 'text', text: 'a\n<img src=x onerror="alert(1)">' }] })
+    const { container } = render(
+      <ThongDiepView m={m} phang={[m]} onChuyenNhanh={KHONG}
+        onTaoLai={KHONG} onSuaGuiLai={KHONG} />,
+    )
+    expect(container.querySelector('img')).toBeNull()
+    expect(container.textContent).toContain('onerror')   // hien thanh CHU, khong chay
+  })
+})
