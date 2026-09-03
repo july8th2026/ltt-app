@@ -21,6 +21,53 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-03 (tối) — trần đầu vào nay đếm token **thật**, không phải token ước
+
+**FIXED · `413` từng xảy ra ở khoảng một nửa cửa sổ chúng tôi công bố.**
+
+Bạn **không phải sửa gì**. Nhiều yêu cầu trước đây bị từ chối nay được nhận.
+
+Cổng của chúng tôi từ chối một yêu cầu **trước khi** nó chạm GPU — đánh thức
+model chỉ để đếm token thì đã chạm GPU rồi. Phép chặn ấy dùng một phép **ước**
+(`số ký tự / 2,5`), và phép ước đó lệch nhiều hơn chúng tôi tưởng:
+
+| nội dung | ước/thật |
+|---|---:|
+| tiếng Anh văn xuôi | **2,00×** |
+| trộn — gần một phiên agent | **1,55×** |
+| JSON kiểu Codex gửi | 1,42× |
+| mã nguồn | 1,27× |
+| tiếng Việt có dấu | 1,26× |
+
+⛔ **Và vì sao nó là một lỗi, không chỉ một sự lãng phí:** chúng tôi cưỡng chế
+bằng token **ước**, còn client của bạn đếm token **thật**. Nên con số chúng tôi
+công bố — và ngưỡng nén Codex/Claude Code tính ra từ nó — **nằm ở một đơn vị
+khác** với thứ chúng tôi từ chối. Không ngưỡng nén nào ở phía bạn ngăn được
+`413` khi hai bên đếm bằng hai đơn vị khác nhau.
+
+⇒ Nay khi phép ước vượt trần, cổng hỏi tokenizer **thật của model** rồi mới
+quyết. Đo trên production, **cùng một thân request**:
+
+```
+truoc:  uoc 175.005  ->  413
+sau :   uoc 175.005, that 85.613  ->  200
+```
+
+Và chiều còn lại vẫn khoá: một yêu cầu **thật sự** vượt trần vẫn `413`, và con
+số trong lỗi nay là con số bạn đối chiếu được với tokenizer của mình:
+
+```
+uoc 360.001, that 176.092  ->  413  limit_value 169.984
+```
+
+⭐ **Hệ quả cho ai đọc `413`:** trường `thay` trong thân lỗi bây giờ là số token
+**thật**, không phải số ước — nên nó khớp với thứ client của bạn đếm được.
+
+⚠️ **Một ca còn lại:** nếu model vừa bị dỡ khỏi GPU (sau ~30 phút không ai gọi),
+lượt kế tiếp vẫn được phán xử bằng phép ước — hỏi tokenizer lúc đó sẽ phải nạp
+lại model, tức 2,5 phút cho một yêu cầu đang định từ chối. Trong thực tế lượt
+đầu của một phiên là lượt nhỏ, nên ca này hiếm; nhưng nó có thật.
+
 ## 2026-09-03 — `ltt_llm` lên 156K ngữ cảnh dùng được, và ngưỡng nén đổi công thức
 
 **ADDED · Cửa sổ ngữ cảnh dùng được của `ltt_llm`: 89K → 156K.**
