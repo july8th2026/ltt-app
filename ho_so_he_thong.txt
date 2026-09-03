@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:fffc6186b329b630832b0d4658a576187914f65d0fa8b74e0a0aadd4b70297db
+Fingerprint   : sha256:55139dcf0279d5e9f07304acc552e56951afcf893d83471104eb5b4609a61c06
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3275,7 +3275,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16058479 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1564 file; 16065904 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -20683,7 +20683,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/ngan_sach.py
-SHA256=483db1aaecfe1b205d84814ceb13238955c9ed898cdd5dd70e9a9eec61635e3c BYTES=19672 LINES=301
+SHA256=6603d1856d74218092059db9fcd5e29dda4f12a54317ec53a81210863fcdebe9 BYTES=19673 LINES=301
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách của `ltt_llm` — **nguồn chân lý duy nhất** cho mọi con số.
 
@@ -20769,7 +20769,7 @@ CUA_SO_MODEL = 204_800
 #:
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` của `qwen38-vision` bên B
 #:    thì đổi ở đây. `test_334` buộc hai đầu lại.
-CUA_SO_MODEL_VISION = 65_536
+CUA_SO_MODEL_VISION = 131_072
 
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
 #: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
@@ -148219,7 +148219,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=a715f7ca252260e6316006ddcb0809775af74923fd707674635325a26a47b324 BYTES=16428 LINES=378
+SHA256=de74f0ba362e4eae533f5d6ef79a2b10e3994d90e7236079f1dbf26177544a96 BYTES=17085 LINES=388
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -148288,15 +148288,25 @@ TOKEN_RA_TRAN = 32768
 #:    101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
-#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 65536` — mot NUA
-#: model text — nen no KHONG duoc dung chung con so voi `ltt_llm`.
+#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
 #:
-#: ⛔ Ban truoc khai 88.555 cho ca hai, tuc hua cho `ltt_llm_vision` mot ngu
-#:    canh **gap 3,1 lan** su that.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `nen_cua("qwen38-vision")` = 0: cua so cong bo cua vision hep hon mot luot
-#: sinh dai nhat, nen khong nguong nen nao giu duoc loi hua. 0 = bo han truong.
-NEN_HOI_THOAI_VISION = 0
+#: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
+#:    Ban truoc 01/09 khai 88.555 cho CA HAI model va do la mot loi hua sai
+#:    (luc do vision chay `-c 65536`, cua so that cua no la 28.262). Su trung
+#:    hop hom nay khong xoa duoc ly do phai tach: hai model, hai `-c`, hai con
+#:    so — va chung se lech lai ngay lan nang cua so ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
+#:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
+#:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
+#:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
+#:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
+#:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
@@ -193448,7 +193458,7 @@ def test_the_workspace_alias_still_answers(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_145_gate_covers_everything.py
-SHA256=60f62fd9c714fff6516a46e32ba3212881fc39e853984fbc8abeafd317fc1317 BYTES=22133 LINES=455
+SHA256=98d84ccc1581b68f3241185135d36313d3ab8512ba53f82c50145d975db1ee87 BYTES=24810 LINES=506
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/gate.py` phải phủ MỌI thứ cần chạy trước khi báo xong.
 
@@ -193855,6 +193865,57 @@ def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():
     xau = [(i, dong.strip()) for i, dong in enumerate(nguon.splitlines(), 1)
            if "print(" in dong and any(ord(c) > 127 for c in dong)]
     assert not xau, f"dong print co ky tu ngoai ASCII: {xau}"
+
+
+def test_anh_chup_cay_phu_MA_DEPLOY_DI_XA_khoi_kho():
+    """🔴 CHỐT "CÂY ĐỨNG YÊN" TỪNG KHÔNG SOI BA THỨ QUAN TRỌNG NHẤT.
+
+    Trước 03/09, `_anh_chup_cay()` chỉ chụp bảy thư mục và **bỏ qua**
+    `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy trên máy khách) và
+    `frontend/`.
+
+    ⛔ Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì `CAY DA DOI
+       TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã
+       không còn tồn tại. Với hai phiên làm việc song song trên cùng một kho,
+       đó không phải rủi ro lý thuyết.
+
+    ⭐ Ba thư mục ấy đáng canh **hơn** phần còn lại, không kém: mã trong chúng
+       **rời khỏi kho này** — chạy trên máy B, hoặc tải về máy khách. Một lần
+       sai ở đó không lộ ra trong bất kỳ phép kiểm nào chạy tại chỗ.
+    """
+    from tools.gate import THU_MUC_CHUP
+
+    for phai_co in ("llm_gateway", "sdk", "frontend"):
+        assert phai_co in THU_MUC_CHUP, (
+            f"`{phai_co}` khong nam trong anh chup cay. Ma o do DEPLOY DI XA "
+            f"khoi kho nay, nen sua no giua mot luot gate se khong bi phat hien.")
+
+
+def test_anh_chup_cay_CAT_node_modules_nhung_GIU_bundle_da_commit():
+    """Cắt phải cắt đúng thứ vô nghĩa, và **chỉ** thứ vô nghĩa.
+
+    ⭐ Cắt `node_modules` là lý do ảnh chụp rộng gấp đôi mà lại **nhanh hơn**:
+       `os.walk` cắt `dirnames` tại chỗ nên nó không đi xuống 12.255 tệp, khác
+       hẳn `rglob` (đi xuống rồi mới lọc). Đo 03/09: 1.321 tệp/0,143 s → 1.491
+       tệp/0,047 s.
+
+    ⛔ NHƯNG `.vite`, `dist`, `coverage` thì KHÔNG được cắt. Bốn tệp
+       `server/static/*/.vite/manifest.json` là bundle production **đã commit**
+       — chúng chính là thứ máy chủ phục vụ. Cắt chúng khỏi ảnh chụp là mất
+       đúng thứ cần canh, và mất một cách im lặng.
+    """
+    from tools.gate import _BO_QUA_THU_MUC, _anh_chup_cay
+
+    assert "node_modules" in _BO_QUA_THU_MUC
+    for khong_duoc_cat in (".vite", "dist", "coverage"):
+        assert khong_duoc_cat not in _BO_QUA_THU_MUC, (
+            f"`{khong_duoc_cat}` bi cat khoi anh chup — bundle da commit nam "
+            f"trong do, va mat chung la mat dung thu can canh")
+
+    cay = _anh_chup_cay()
+    assert not [p for p in cay if "node_modules" in p], "node_modules lot vao anh chup"
+    manifest = [p for p in cay if p.endswith(".vite/manifest.json")]
+    assert manifest, "khong con manifest bundle nao trong anh chup"
 
 
 def test_canh_bao_cay_doi_phai_KE_TEN_chu_khong_chi_bao_co_doi():
@@ -230270,7 +230331,7 @@ def test_them_provider_khong_lam_vo_registry_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_250_llm_gateway.py
-SHA256=6b264062cb03086fd19fdee3702d711f0f85190dc0b8f5659fd7b358bcba0097 BYTES=30671 LINES=657
+SHA256=abf5a8bb95de832acbb33c60b424c4f715ba07fdfb0d8c69d5905ae7b4075f15 BYTES=31758 LINES=679
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_250_llm_gateway — hợp đồng của cổng VLM (H38, P7).
@@ -230678,14 +230739,36 @@ def test_xin_sinh_qua_nhieu_token_thi_413():
 
 
 def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
-    """Chốt bắt được cái mà hai chốt kia bỏ lọt: mỗi cái vừa, cộng lại thì tràn."""
-    c, _ = _client(_cfg(max_input_tokens=200_000, max_output_tokens=60_000))
+    """Chốt bắt được cái mà hai chốt kia bỏ lọt: mỗi cái vừa, cộng lại thì tràn.
+
+    ⛔ MỌI CON SỐ Ở ĐÂY **DẪN XUẤT** TỪ CỬA SỔ THẬT CỦA HỒ SƠ, không gõ tay.
+
+       Bản trước gõ một kịch bản chỉnh riêng cho cửa sổ 65.536 của vision
+       (~40.000 vào + 50.000 ra). Ngày 03/09 vision lên `-c 131072` và kịch bản
+       ấy **thôi tràn** — phép kiểm chuyển sang xanh-vì-lý-do-sai, tức nó không
+       còn kiểm cái nó nói là kiểm.
+
+    ⭐ Một phép kiểm về "vào + ra vượt cửa sổ" mà gõ tay hai con số thì nó
+       thật ra đang chốt *một cửa sổ cụ thể*, không phải *bất biến*. Dẫn xuất
+       thì lần nâng cửa sổ kế tiếp không ai phải sửa nó.
+    """
+    from llm_gateway.catalog import HO_SO
+
+    cua_so = {m.ten: m.max_context for m in HO_SO}["qwen38-vision"]
+    # Vào ~55 % cửa sổ, ra ~55 % cửa sổ: mỗi cái vừa trần của nó, cộng lại tràn.
+    token_vao = int(cua_so * 0.55)
+    token_ra = int(cua_so * 0.55)
+    ky_tu = int(token_vao * 2.5)               # KY_TU_MOI_TOKEN cua ngan_sach
+
+    c, _ = _client(_cfg(max_input_tokens=cua_so * 2, max_output_tokens=cua_so))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",              # cửa sổ 65.536
-        "messages": [{"role": "user", "content": "x" * 100_000}],  # ~40.000 token
-        "max_tokens": 50_000})
-    assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "context"
+        "model": "qwen38-vision",
+        "messages": [{"role": "user", "content": "x" * ky_tu}],
+        "max_tokens": token_ra})
+    assert r.status_code == 413, r.text
+    d = r.json()["detail"]
+    assert d["truong"] == "context", d
+    assert d["tran"] == cua_so, d
 
 
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
@@ -293134,7 +293217,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=f4befdd040a656d19b189bbf8a6768929967386bca57be6808b8ef18a24bfe36 BYTES=93259 LINES=2094
+SHA256=8887174bc663998207ce5171c278da1a9dca79f28a17490ad52569efc22970f2 BYTES=93982 LINES=2107
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -293272,21 +293355,34 @@ NEN_HOI_THOAI = 123617
 
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
-#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. `qwen38-vision` nap `-c 65536`, mot nua
-#:    model text, nen cua so cong bo cua no la 28.262 chu khong phai 88.555.
-#:    Ban truoc cua tep nay khai **cung mot con so cho ca hai model**, tuc noi
-#:    voi Codex rang `ltt_llm_vision` co ngu canh **gap 3,1 lan** su that; hoi
-#:    thoai anh dai vua phai la an 413 ma khong hieu vi sao.
+#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. Ban truoc cua tep nay khai **cung mot
+#:    con so cho ca hai model**, tuc noi voi Codex rang `ltt_llm_vision` co ngu
+#:    canh **gap 3,1 lan** su that (88.555 trong khi that la 28.262, vi luc do
+#:    `qwen38-vision` nap `-c 65536`); hoi thoai anh dai vua phai la an 413 ma
+#:    khong hieu vi sao.
 #:
 #: ⭐ Va day dung la khuyet tat F-02 — mot con so cho hai model — thu ma
 #:    `ngan_sach.cong_bo_cua()` sinh ra de giet. No chet o `/api/v1/models` va
 #:    **song sot nguyen ven o day**, vi ban va sua *con so* chu khong sua *hinh
 #:    dang*: chung nao con MOT hang so cho HAI model thi loi nay con quay lai.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `ngan_sach.nen_cua("qwen38-vision")` tra **0**: cua so cong bo cua vision
-#: (28.262) hep hon mot luot sinh dai nhat (32.768), nen khong nguong nen nao
-#: giu duoc loi hua. 0 = **bo han truong do**, dung ghi mot con so bia.
-NEN_HOI_THOAI_VISION = 0
+#:
+#: ⚠️ VA HOM NAY NO TINH CO BANG con so text CU — dung doc su trung hop do
+#:    thanh "hai model dung chung mot so". Vision len `-c 131072` (03/09) nen
+#:    cua so cong bo cua no la 88.555; text len `-c 204800` nen cua so cua text
+#:    la 156.385. Hai duong doc lap, va chung se lech lai o lan nang ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555. Do that tren mot ho so thu rieng: 89.868 token
+#:    vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi ho so 65K),
+#:    va A/B doc anh tren cung mot anh — ca hai ho so tra dung moc ngau nhien.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that chu khong
+#:    phai mot cho trong: cua so cong bo cua vision khi ay (28.262) HEP HON mot
+#:    luot sinh dai nhat (32.768), nen khong nguong nen nao giu duoc loi hua va
+#:    bo cai phai bo han truong do. Nang cua so len 131K la thu lam cho no
+#:    dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -309703,7 +309799,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=bca385c50a61f05c9c7342d5aedc872ee97d1836af7cd6216613bd0b9daec5af BYTES=80014 LINES=1543
+SHA256=454f7e279f08dbed6ddf975bf775f63fbe8512023071af4c014946c0aff095f8 BYTES=82294 LINES=1583
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -310829,6 +310925,44 @@ def _console_text(value: str, encoding: str | None = None) -> str:
 BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "bo test (song song)")
 
 
+#: Thư mục nằm trong ảnh chụp "cây đứng yên".
+#:
+#: 🔴 TRƯỚC 03/09 DANH SÁCH NÀY THIẾU BA THỨ QUAN TRỌNG NHẤT VỚI HAI PHIÊN
+#:    LÀM VIỆC SONG SONG: `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy
+#:    trên máy khách) và `frontend/`.
+#:
+#:    Một chương trình sửa 10 thư mục — đo thật 03/09 — có **năm** thư mục nằm
+#:    ngoài ảnh chụp. Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì
+#:    `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về
+#:    một cây đã không còn tồn tại.
+#:
+#: ⭐ Cùng họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`: chốt có, và nó chỉ
+#:    canh phần nó được kể tên.
+THU_MUC_CHUP = (
+    "apps", "platform_core", "server", "tools", "tests", "alembic", "locale",
+    # Mã chạy trên máy B và bộ cài chạy trên máy khách. Cả hai deploy đi xa
+    # khỏi kho này, nên một lần sửa giữa lượt gate là một lần sai không ai thấy.
+    "llm_gateway", "render_gateway", "sdk", "nexus_agent", "codex_sidecar",
+    # Nguồn frontend. `node_modules` bị cắt ở `_BO_QUA_THU_MUC`.
+    "frontend",
+)
+
+#: Thư mục **cắt ngay lúc duyệt**, không phải lọc sau.
+#:
+#: ⭐ VÀ ĐÓ LÀ TOÀN BỘ LÝ DO ẢNH CHỤP RỘNG HƠN MÀ LẠI NHANH HƠN. Bản `rglob`
+#:    trước vẫn **đi xuống** `node_modules` (12.255 tệp) rồi mới bỏ; `os.walk`
+#:    cắt `dirnames` tại chỗ nên nó không xuống. Đo 03/09 trên cây này:
+#:
+#:        rglob,   7 thu muc, loc sau   1.321 tep   0,143 s
+#:        os.walk, 13 thu muc, cat nhanh 1.491 tep   0,047 s
+#:
+#: ⛔ VÀ KHÔNG CẮT `.vite`. Bốn tệp `server/static/*/.vite/manifest.json` là
+#:    bundle production **đã commit** — chúng chính là thứ máy chủ phục vụ, nên
+#:    mất chúng khỏi ảnh chụp là mất đúng thứ cần canh. Cắt `dist`/`coverage`
+#:    cũng cùng rủi ro; chỉ cắt hai thứ chắc chắn vô nghĩa.
+_BO_QUA_THU_MUC = frozenset({"__pycache__", "node_modules"})
+
+
 def _anh_chup_cay() -> dict[str, tuple[int, int]]:
     """Ảnh chụp cây nguồn: đường dẫn → (kích thước, thời điểm sửa).
 
@@ -310840,19 +310974,21 @@ def _anh_chup_cay() -> dict[str, tuple[int, int]]:
        nhau không nói được gì ngoài "khác nhau". Xem `_ke_cho_da_doi`.
     """
     ra: dict[str, tuple[int, int]] = {}
-    for thu_muc in ("apps", "platform_core", "server", "tools", "tests",
-                    "alembic", "locale"):
+    for thu_muc in THU_MUC_CHUP:
         goc = ROOT / thu_muc
-        if not goc.exists():
+        if not goc.is_dir():
             continue
-        for f in sorted(goc.rglob("*")):
-            if not f.is_file() or "__pycache__" in f.parts:
-                continue
-            try:
-                st = f.stat()
-            except OSError:
-                continue
-            ra[f.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
+        for thu, con, tep in os.walk(goc):
+            # Cắt tại chỗ: `os.walk` đọc lại `con` sau mỗi vòng, nên gán vào
+            # `con[:]` là bảo nó **không đi xuống** những nhánh đó.
+            con[:] = [d for d in con if d not in _BO_QUA_THU_MUC]
+            for ten in tep:
+                p = Path(thu) / ten
+                try:
+                    st = p.stat()
+                except OSError:
+                    continue
+                ra[p.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
     return ra
 
 
