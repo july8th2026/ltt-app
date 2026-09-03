@@ -39,6 +39,23 @@
   Raw log: `evidence/00_gate_baseline.txt`
 - **critical_external_evidence_pending**: see table below
 - **open_blockers**: none
+- **cong_viec_ha_tang_dang_cho** (ngoai pham vi ASV, nhung chan lai viec do dac tien):
+  **ngan sach loi cua `gate.py` la per-RUN, khong per-MAY.** `ngan_sach_loi()` chi doc
+  `os.cpu_count()`, nen moi luot tu tin no co 14 loi va **ca hai deu dung theo cach tinh cua
+  rieng minh**. Do duoc: 1 luot + nen production = 19/20 loi (OK); **2 luot = 33/20 (qua tai
+  13 luong)**; 3 luot = 47/20.
+  ⚠️ `BELOW_NORMAL_PRIORITY_CLASS` khong che duoc ca nay — no cuu `LTTStudioWeb` khoi gate,
+  nhung hai gate deu uu tien thap **bang nhau** nen tranh nhau song phang.
+  ⛔ Mau chot: `cua_so_yen.thu_giu():134` **khong ghi `so_loi`** vao ban ghi khoa, nen mot
+  phien thay phien khac dang giu van khong biet phien kia dung bao nhieu.
+  Ba thay doi cong them, da gui `lttchat-...-49` (ho dang mo `gate.py`):
+    A. `thu_giu()` ghi them `so_loi` (mac dinh 0 -> caller cu khong doi hanh vi)
+    B. `ngan_sach_loi()` tru Sigma loi cac phien KHAC dang giu; giu `max(2, ...)`
+       ⚠️ phai lay so **sau khi da giu khoa**, khong phai o `gate.py:224` luc dung danh sach buoc
+    C. **PHAN CUA PHIEN NAY, lam sau khi A+B merge:** het `--cho` ma chay de thi ngan sach
+       = phan CON LAI, khong phai full 14. Giu nguyen quyet dinh "khong tu choi chay" —
+       chi la khi biet minh dang chen thi tu thu nho. Can mot chot rieng chung minh ngan
+       sach THAT SU thu nho, khong phai mot co bao rang no thu nho.
 - **debt_carried**: a **full** `tools/gate.py` run has not completed since Phase 00's
   baseline. The Phase 04 attempt died at step 20/26 with no `RESULT:` line when the
   previous session exited, and a peer session then announced a production deploy on this
