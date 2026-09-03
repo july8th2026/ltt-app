@@ -52,6 +52,28 @@
     A. `thu_giu()` ghi them `so_loi` (mac dinh 0 -> caller cu khong doi hanh vi)
     B. `ngan_sach_loi()` tru Sigma loi cac phien KHAC dang giu; giu `max(2, ...)`
        ⚠️ phai lay so **sau khi da giu khoa**, khong phai o `gate.py:224` luc dung danh sach buoc
+  🔴🔴 **DO DUOC TRUOC KHI SUA — NGAN SACH HIEN TAI DANG LAM DIEU NGUOC LAI:**
+
+        os.cpu_count()            = 20   (loi LOGIC)
+        psutil.cpu_count(False)   = 10   (loi VAT LY  <- xdist `auto` dung so nay)
+        gate truyen  -n           = 11
+
+     `loi_bo_test = min(12, ngan_sach_loi() - len(FRONTENDS)) = min(12, 14-3) = 11`.
+
+     ⇒ **Gate dang chay 11 worker trong khi `-n auto` chi mo 10.** Co che "ngan sach loi"
+       sinh ra de GIAM tai, va tren may nay no dang TANG — dung lop loi ma `-49` mo ta
+       (mot ngan sach la GIOI HAN TREN, khong phai mot phep gan), chi khac la no dang song
+       trong ma chu khong phai trong mot ban nhap.
+
+     ⭐ Nguyen nhan goc: `ngan_sach_loi()` tinh tren `os.cpu_count()` = loi **logic** (20),
+       con xdist `auto` tinh tren loi **vat ly** (10). Hai don vi khac nhau bi tru cung mot
+       hang so `LOI_DE_DANH_CHO_MAY = 6`. Tren mot may khong SMT thi hai so trung nhau va
+       loi nay khong ton tai — nen no chi lo ra o dung loai may nay.
+
+     ⇒ Sua bat buoc phai la `min(<ngan sach cua ta>, <cau tra loi cua chinh cong cu>)`.
+       Va `test_nhanh.py:219` truyen thang `-n` cho pytest, khong kep gi — nen khong co
+       lop nao ben duoi bat lai giup.
+
   🔴 **BA SUA CHUA tu `lttchat-...-49` sau khi doc thiet ke — diem 2 la mot LOI THAT:**
     1. **Tinh lai con so thoi thi VO NGHIA.** `gate.py:224` dung `argv` cua buoc `bo test`
        voi `-n <so>` **da co dinh** truoc khi `CuaSoYen.__enter__` chay. Lay so moi sau khi
