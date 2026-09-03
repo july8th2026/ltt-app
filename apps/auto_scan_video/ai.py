@@ -275,6 +275,83 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
     }
 
 
+def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
+                  stage: str, item_key: str, uoc_credit: int = 0,
+                  ctx=None, temperature: float | None = None) -> dict:
+    """`goi` + cua chan ngan sach TRUOC + ghi so cai SAU. Duong tra tien duy nhat.
+
+    🔑 **Day la cho pha 06 va pha 08 cung ghi no.** Ca hai deu ket luan rang ghi
+       mot but toan vao mot duong khong bao gio chay la mot loi khai khong co
+       nguoi lam chung; pha 11 la nguoi goi tra tien dau tien, nen no la cho nay.
+
+    Bon buoc, va thu tu la mot phan cua hop dong:
+
+        1. `cua_chan_truoc_khi_tieu`   truoc khi gui — het ngan sach thi hong
+                                       SACH SE, khong phai mot hoa don bat ngo
+        2. `goi`                       goi that
+        3. ghi so cai                  **du ket qua the nao**
+        4. tra ket qua / nem lai
+
+    ⛔ Buoc 3 chay o CA ba nhanh (da giao / tu choi / mo ho). Chi ghi khi thanh
+       cong la de mot lan mo ho bien mat khoi so sach — dung luc no can duoc
+       nhin thay nhat.
+
+    ⚠️ `su_dung.ghi` co the nem `DaGhiRoi` neu ma dispatch trung. Do la RANG BUOC
+       LAM DUNG VIEC, khong phai su co: no vua chan mot lan tinh tien thu hai.
+       Ta bat va di tiep voi ket qua da co.
+    """
+    from . import su_dung as sd
+
+    # ── 1. Cua chan TRUOC khi tieu ─────────────────────────────────────────
+    if run is not None and uoc_credit:
+        sd.cua_chan_truoc_khi_tieu(db, run, uoc_them=int(uoc_credit))
+
+    ma_dispatch = f"{thao_tac.ma}:{stage}:{item_key}"
+
+    def _ghi(trang_thai: str, don_vi: str = "", so_luong: float = 0.0,
+             credit: int = 0, **ghi_chu) -> None:
+        if db is None or run is None:
+            return
+        try:
+            sd.ghi(db, run, stage=stage, item_key=item_key,
+                   su_dung=sd.SuDung(
+                       nang_luc=thao_tac.ma, app_chu="ltt_llm",
+                       trang_thai=trang_thai, don_vi=don_vi, so_luong=so_luong,
+                       credit=credit, ma_dispatch=ma_dispatch,
+                       ghi_chu=dict(ghi_chu)))
+        except sd.DaGhiRoi:
+            # ⭐ Rang buoc `UNIQUE(run_id, ma_dispatch)` vua chan mot lan tinh
+            #    tien thu hai. Do la thanh cong, khong phai loi.
+            log.info("so cai da co %s - bo qua lan ghi trung", ma_dispatch)
+
+    # ── 2. Goi ────────────────────────────────────────────────────────────
+    try:
+        kq = goi(db, thao_tac, messages, ctx=ctx, temperature=temperature)
+    except AiMoHo as exc:
+        _ghi(sd.MO_HO, ly_do=str(exc)[:200])
+        raise
+    except AiError as exc:
+        _ghi(sd.TU_CHOI, ly_do=str(exc)[:200])
+        raise
+
+    # ── 3. Ghi so cai voi thu DO DUOC ─────────────────────────────────────
+    do = kq.get("su_dung")
+    tin = bool(getattr(do, "dang_tin", False))
+    if tin:
+        tong = int(getattr(do, "token_vao", 0)) + int(getattr(do, "token_ra", 0))
+        _ghi(sd.DA_GIAO, sd.TOKEN, float(max(1, tong)), 0,
+             token_vao=int(getattr(do, "token_vao", 0)),
+             token_ra=int(getattr(do, "token_ra", 0)),
+             model=kq.get("model", ""))
+    else:
+        # 🔴 Provider khong tra so do. Xem ghi chu dai o `su_dung.LUOT`: bia mot
+        #    so token la noi doi, ghi `TU_CHOI` cung la noi doi. Thu do duoc la
+        #    **mot luot da giao**, va ta ghi dung cai do.
+        _ghi(sd.DA_GIAO, sd.LUOT, 1.0, 0, khong_do_duoc=True,
+             model=kq.get("model", ""))
+    return kq
+
+
 def _la_mo_ho(exc: BaseException) -> bool:
     """Mat ket noi SAU khi gui — khong biet model da chay chua.
 

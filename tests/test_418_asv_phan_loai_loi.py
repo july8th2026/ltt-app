@@ -25,6 +25,7 @@ from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
+from apps.auto_scan_video.hieu_canh import HieuCanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
@@ -120,6 +121,14 @@ BANG = {
     #:    `TAM_THOI` la hong ve phia ton them mot lan thu chu khong phai ve
     #:    phia lam khach mat viec.
     CanhError: loi.TAM_THOI,
+    #: 🔴 Cho de xep nham nhat trong bang. `HieuCanhError` nghia la model
+    #:    DA CHAY, DA tinh tien, va tra ve phan hoi sai luoc do. Thu lai la
+    #:    **tra tien lan hai cho mot canh da tra tien**.
+    #:
+    #: ⚠️ Khac han `ai.LuocDoSai` (TAM_THOI): o do phep doc JSON that bai o
+    #:    tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O day ta
+    #:    da doc duoc JSON va no MANG MOT GIA TRI SAI.
+    HieuCanhError: loi.NGUOI_DUNG,
 }
 
 

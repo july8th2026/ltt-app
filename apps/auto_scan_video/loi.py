@@ -175,6 +175,23 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, CanhError):
         return TAM_THOI
 
+    # ── Hieu canh (pha 11) ──────────────────────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu lai**.
+    #
+    # 🔴 Va day la cho de xep nham nhat trong ca bang. `HieuCanhError` nghia la
+    #    model DA CHAY, DA tinh tien, va tra ve mot phan hoi sai luoc do. Thu lai
+    #    la goi model LAN NUA cho cung mot canh — tuc **tra tien lan hai cho mot
+    #    canh da tra tien**, va lan nay cung khong co gi bao dam ket qua khac.
+    #
+    # ⚠️ Khac han `ai.LuocDoSai` (pha 08), von la `TAM_THOI`: o do phep doc JSON
+    #    that bai o tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O
+    #    day ta da doc duoc JSON va no **mang mot gia tri sai** — vd `de_xuat`
+    #    la mot tu bia ra. Hai tinh huong khac nhau, hai so phan khac nhau.
+    from .hieu_canh import HieuCanhError
+    if isinstance(exc, HieuCanhError):
+        return NGUOI_DUNG
+
     # ── Cua goi model (pha 08) ──────────────────────────────────────────────
     #
     # ⛔ `AiMoHo` va `AiError` KHONG ke thua nhau, va do la co y: mot phep

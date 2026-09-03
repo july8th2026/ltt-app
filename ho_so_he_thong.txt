@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ee86ea69a9b2291a032718b7fffb4c64026fbeb305cd0a0d65e2b94c19fde5f2
-Nguồn đã quét : 1650 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:27cbf48667ec889920d73352febea17a23ea8e3f63e4b76b5f53935d669e05c6
+Nguồn đã quét : 1652 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -162,6 +162,7 @@ Các lớp chính:
     - apps/auto_scan_video/giai_doan_qc.py
     - apps/auto_scan_video/giai_doan_thoi_gian.py
     - apps/auto_scan_video/giong_noi.py
+    - apps/auto_scan_video/hieu_canh.py
     - apps/auto_scan_video/hop_dong_v4.py
     - apps/auto_scan_video/jobs.py
     - apps/auto_scan_video/ket_xuat.py
@@ -1357,7 +1358,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (418 file pytest + 4 frontend)
+10. QUALITY GATES (419 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1708,6 +1709,7 @@ Test inventory:
 - tests/test_434_asv_v4_ranh_gioi_ai.py
 - tests/test_435_asv_v4_rang_giong.py
 - tests/test_436_asv_v4_tach_canh.py
+- tests/test_437_asv_v4_hieu_canh.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1802,8 +1804,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1650 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1250, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1652 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1252, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1893,7 +1895,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (340)
+[apps] (341)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1947,6 +1949,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - apps/auto_scan_video/giai_doan_qc.py
 - apps/auto_scan_video/giai_doan_thoi_gian.py
 - apps/auto_scan_video/giong_noi.py
+- apps/auto_scan_video/hieu_canh.py
 - apps/auto_scan_video/hop_dong_v4.py
 - apps/auto_scan_video/jobs.py
 - apps/auto_scan_video/ket_xuat.py
@@ -2883,7 +2886,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (438)
+[tests] (439)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3248,6 +3251,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - tests/test_434_asv_v4_ranh_gioi_ai.py
 - tests/test_435_asv_v4_rang_giong.py
 - tests/test_436_asv_v4_tach_canh.py
+- tests/test_437_asv_v4_hieu_canh.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3510,7 +3514,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1650 file; 17022372 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1652 file; 17058110 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -12579,7 +12583,7 @@ BE_MAT_CONG_KHAI = {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/ai.py
-SHA256=c03e98e90df520ee576dc11e6c78e13bf5225835c11d41b35ff1e879960b0600 BYTES=13939 LINES=298
+SHA256=4837e2673e041fc7a7778d304bb423be828099635e73626eaa1a906d756e8fe6 BYTES=17721 LINES=375
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """MOT cua duy nhat de Auto Scan goi model — van ban lan thi giac.
 
@@ -12856,6 +12860,83 @@ def goi(db, thao_tac: ThaoTac, messages: list, *, ctx=None,
         "model": getattr(kq, "model", ""),
         "su_dung": getattr(kq, "su_dung", None) or getattr(kq, "usage", None),
     }
+
+
+def goi_tinh_tien(db, run, thao_tac: ThaoTac, messages: list, *,
+                  stage: str, item_key: str, uoc_credit: int = 0,
+                  ctx=None, temperature: float | None = None) -> dict:
+    """`goi` + cua chan ngan sach TRUOC + ghi so cai SAU. Duong tra tien duy nhat.
+
+    🔑 **Day la cho pha 06 va pha 08 cung ghi no.** Ca hai deu ket luan rang ghi
+       mot but toan vao mot duong khong bao gio chay la mot loi khai khong co
+       nguoi lam chung; pha 11 la nguoi goi tra tien dau tien, nen no la cho nay.
+
+    Bon buoc, va thu tu la mot phan cua hop dong:
+
+        1. `cua_chan_truoc_khi_tieu`   truoc khi gui — het ngan sach thi hong
+                                       SACH SE, khong phai mot hoa don bat ngo
+        2. `goi`                       goi that
+        3. ghi so cai                  **du ket qua the nao**
+        4. tra ket qua / nem lai
+
+    ⛔ Buoc 3 chay o CA ba nhanh (da giao / tu choi / mo ho). Chi ghi khi thanh
+       cong la de mot lan mo ho bien mat khoi so sach — dung luc no can duoc
+       nhin thay nhat.
+
+    ⚠️ `su_dung.ghi` co the nem `DaGhiRoi` neu ma dispatch trung. Do la RANG BUOC
+       LAM DUNG VIEC, khong phai su co: no vua chan mot lan tinh tien thu hai.
+       Ta bat va di tiep voi ket qua da co.
+    """
+    from . import su_dung as sd
+
+    # ── 1. Cua chan TRUOC khi tieu ─────────────────────────────────────────
+    if run is not None and uoc_credit:
+        sd.cua_chan_truoc_khi_tieu(db, run, uoc_them=int(uoc_credit))
+
+    ma_dispatch = f"{thao_tac.ma}:{stage}:{item_key}"
+
+    def _ghi(trang_thai: str, don_vi: str = "", so_luong: float = 0.0,
+             credit: int = 0, **ghi_chu) -> None:
+        if db is None or run is None:
+            return
+        try:
+            sd.ghi(db, run, stage=stage, item_key=item_key,
+                   su_dung=sd.SuDung(
+                       nang_luc=thao_tac.ma, app_chu="ltt_llm",
+                       trang_thai=trang_thai, don_vi=don_vi, so_luong=so_luong,
+                       credit=credit, ma_dispatch=ma_dispatch,
+                       ghi_chu=dict(ghi_chu)))
+        except sd.DaGhiRoi:
+            # ⭐ Rang buoc `UNIQUE(run_id, ma_dispatch)` vua chan mot lan tinh
+            #    tien thu hai. Do la thanh cong, khong phai loi.
+            log.info("so cai da co %s - bo qua lan ghi trung", ma_dispatch)
+
+    # ── 2. Goi ────────────────────────────────────────────────────────────
+    try:
+        kq = goi(db, thao_tac, messages, ctx=ctx, temperature=temperature)
+    except AiMoHo as exc:
+        _ghi(sd.MO_HO, ly_do=str(exc)[:200])
+        raise
+    except AiError as exc:
+        _ghi(sd.TU_CHOI, ly_do=str(exc)[:200])
+        raise
+
+    # ── 3. Ghi so cai voi thu DO DUOC ─────────────────────────────────────
+    do = kq.get("su_dung")
+    tin = bool(getattr(do, "dang_tin", False))
+    if tin:
+        tong = int(getattr(do, "token_vao", 0)) + int(getattr(do, "token_ra", 0))
+        _ghi(sd.DA_GIAO, sd.TOKEN, float(max(1, tong)), 0,
+             token_vao=int(getattr(do, "token_vao", 0)),
+             token_ra=int(getattr(do, "token_ra", 0)),
+             model=kq.get("model", ""))
+    else:
+        # 🔴 Provider khong tra so do. Xem ghi chu dai o `su_dung.LUOT`: bia mot
+        #    so token la noi doi, ghi `TU_CHOI` cung la noi doi. Thu do duoc la
+        #    **mot luot da giao**, va ta ghi dung cai do.
+        _ghi(sd.DA_GIAO, sd.LUOT, 1.0, 0, khong_do_duoc=True,
+             model=kq.get("model", ""))
+    return kq
 
 
 def _la_mo_ho(exc: BaseException) -> bool:
@@ -17087,6 +17168,311 @@ def kiem_tep_tieng(duong: str, *, toi_thieu_giay: float = 0.05) -> float:
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/hieu_canh.py
+SHA256=0f02bde0956d3322473a1f20094068a90c2b47cb35583dbd0a2044b1051f45c5 BYTES=12987 LINES=299
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""HIEU CANH (VLM) va HO SO NOI DUNG (LLM) — bang chung cho moi quyet dinh sau.
+
+## Vi sao hai buoc chu khong mot
+
+Doc CANH la mot cau hoi **cuc bo**: canh nay co gi, ai dang noi, co quan trong
+khong. Dung HO SO la mot cau hoi **toan cuc**: ca video nay thuoc the loai gi,
+nhip the nao, giong nao hop.
+
+⛔ Hoi ca hai trong mot luot goi thi mot canh hong lam hong ca ho so, va mot ho
+   so muon sua phai doc lai toan bo canh. Tach ra thi mot canh hong chi lam hong
+   chinh no — va do la dieu `checkpoint per scene` cua pha nay doi.
+
+## 🔑 Checkpoint theo CANH, khong theo giai doan
+
+Moi canh la mot `AsvWorkItem` voi `item_key = ma canh`. Mot lan VLM hong o canh
+thu 47 khong duoc bat 46 canh truoc chay lai — chung da tra tien roi.
+
+`ADR-V4-002` D-V4-10 dung cho viec nay, va pha 05 dung bang do cho no.
+
+## ⛔ Phan hoi sai luoc do KHONG phai mot artifact thanh cong
+
+Yeu cau 5 cua pha 11, va no la mot phan biet dat gia: mot canh **da doc va tra
+ve rac** khac han mot canh **chua doc**. Cai dau da ton tien va phai duoc ghi so
+cai; cai sau thi chua. Nen `LuocDoSai` van di kem mot but toan `da_giao`.
+
+## Ranh gioi chu so huu
+
+Van tay cua moi item gom `run_id`, va `AsvWorkItem` co cot `owner_id` rieng. Hai
+khach co cung video se co hai `run_id`, nen khong lan chay nao doc duoc cache cua
+lan chay kia — bat bien do da co tu pha 05, va pha nay chi khong pha no.
+"""
+from __future__ import annotations
+
+import json
+import logging
+from dataclasses import dataclass, field
+
+from . import ai
+from .canh import ChiMucCanh
+
+log = logging.getLogger(__name__)
+
+#: 🔑 Phien ban PROMPT + LUOC DO cua rieng pha nay, di vao van tay.
+#:
+#: ⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung lai
+#:    ket qua sinh boi prompt CU. `ai.PHIEN_BAN_PROMPT` la phien ban cua CUA
+#:    GOI; day la phien ban cua NOI DUNG cau hoi — hai thu doi doc lap voi nhau.
+PHIEN_BAN_HIEU_CANH = 1
+PHIEN_BAN_HO_SO = 1
+
+#: Toi da bao nhieu ky tu ban chep loi gui kem MOT canh.
+#:
+#: 🔴 Cua so thi giac do duoc **65.536 token** — mot nua ban van ban. Gui ca ban
+#:    chep loi kem moi canh la cach chac chan nhat de cham tran do, va no cham
+#:    theo cach te nhat: thanh cong o canh 1, 413 o canh 40, sau khi da tra tien
+#:    cho 39 canh.
+NGU_CANH_MOI_CANH = 1200
+
+#: Quyet dinh giu/bo ma VLM de xuat. ⚠️ **De xuat**, khong phai lenh: pha 12 moi
+#: la noi quyet dinh, va no can biet do tin cay.
+GIU = "giu"
+BO = "bo"
+KHONG_CHAC = "khong_chac"
+DE_XUAT = (GIU, BO, KHONG_CHAC)
+
+
+class HieuCanhError(ValueError):
+    """Khong doc duoc canh, hoac ket qua sai hinh dang."""
+
+
+@dataclass(frozen=True)
+class HieuCanh:
+    """Ket qua doc MOT canh. Moi truong deu la thu VLM tra ve, da kiem."""
+
+    ma_canh: str
+    loai: str = ""
+    chu_the: tuple[str, ...] = ()
+    hanh_dong: str = ""
+    cam_xuc: str = ""
+    #: 0..1 — canh nay quan trong the nao voi mach truyen.
+    quan_trong: float = 0.0
+    de_xuat: str = KHONG_CHAC
+    #: 0..1 — VLM tin ket luan cua no den dau.
+    do_tin: float = 0.0
+    ly_do: str = ""
+    canh_bao: tuple[str, ...] = ()
+
+    def sang_dict(self) -> dict:
+        return {
+            "ma_canh": self.ma_canh, "loai": self.loai,
+            "chu_the": list(self.chu_the), "hanh_dong": self.hanh_dong,
+            "cam_xuc": self.cam_xuc, "quan_trong": round(self.quan_trong, 3),
+            "de_xuat": self.de_xuat, "do_tin": round(self.do_tin, 3),
+            "ly_do": self.ly_do, "canh_bao": list(self.canh_bao),
+        }
+
+
+@dataclass(frozen=True)
+class HoSoNoiDung:
+    """Ho so cua CA video. Pha 12 dung no de chon preset; pha 09 de rang giong."""
+
+    the_loai: str = ""
+    giong_dieu: str = ""
+    khan_gia: str = ""
+    nhip: str = ""
+    #: Dac diem giong mong muon — dung ba mat cua `ltt_voice.giong_mau`.
+    dac_diem_giong: dict = field(default_factory=dict)
+    tom_tat: str = ""
+
+    def sang_dict(self) -> dict:
+        return {
+            "the_loai": self.the_loai, "giong_dieu": self.giong_dieu,
+            "khan_gia": self.khan_gia, "nhip": self.nhip,
+            "dac_diem_giong": dict(self.dac_diem_giong),
+            "tom_tat": self.tom_tat,
+        }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Ngu canh gui kem — CO CHAN
+# ══════════════════════════════════════════════════════════════════════════════
+
+def ngu_canh_cho_canh(ban_ghi: dict, bat: float, ket: float,
+                      *, toi_da: int = NGU_CANH_MOI_CANH) -> str:
+    """Loi thoai nam TRONG canh, cat theo tran ky tu.
+
+    ⭐ Chi lay doan chong lan voi canh, khong gui ca ban chep loi. Mot canh 4
+       giay khong can biet phut thu 30 noi gi — va gui no la tra tien token cho
+       mot thu model se bo qua.
+    """
+    ra = []
+    for d in (ban_ghi or {}).get("doan") or []:
+        try:
+            b, k = float(d.get("bat", 0)), float(d.get("ket", 0))
+        except (TypeError, ValueError):
+            continue
+        if k <= bat or b >= ket:
+            continue
+        ra.append(str(d.get("chu") or "").strip())
+    van = " ".join(x for x in ra if x)
+    if len(van) <= toi_da:
+        return van
+    # ⚠️ Cat o dau CAU gan nhat, khong cat giua tu: mot cau cut lam model doan
+    #    tiep phan thieu, va no doan bang token cua khach.
+    cat = van[:toi_da]
+    dau = max(cat.rfind(". "), cat.rfind("! "), cat.rfind("? "))
+    return (cat[:dau + 1] if dau > toi_da // 2 else cat).strip()
+
+
+def loi_nhac_canh(ma_canh: str, ngu_canh: str, so_khung: int,
+                  tin_hieu: dict | None = None) -> list:
+    """Loi nhac cho MOT canh. ASV so huu prompt nay (pha 08 §ranh gioi)."""
+    tin = json.dumps(tin_hieu or {}, ensure_ascii=False, sort_keys=True)
+    return [{
+        "role": "user",
+        "content": (
+            f"Doc canh {ma_canh} cua mot video tieng Viet. "
+            f"Co {so_khung} khung hinh dai dien. "
+            f"Tin hieu do duoc: {tin}. "
+            f"Loi thoai trong canh: {ngu_canh or '(khong co loi thoai)'}\n\n"
+            "Tra ve DUNG mot doi tuong JSON voi cac khoa: "
+            "loai, chu_the (mang), hanh_dong, cam_xuc, quan_trong (0..1), "
+            "de_xuat (giu|bo|khong_chac), do_tin (0..1), ly_do, "
+            "canh_bao (mang). Khong them van ban nao ngoai JSON."),
+    }]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Doc phan hoi — KIEM NGHIEM NGAT
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _so_trong_khoang(gt, ten: str) -> float:
+    try:
+        x = float(gt)
+    except (TypeError, ValueError) as exc:
+        raise HieuCanhError(f"{ten} khong phai so: {gt!r}") from exc
+    if not (0.0 <= x <= 1.0):
+        raise HieuCanhError(f"{ten} phai trong [0,1], nhan {x}")
+    return x
+
+
+def doc_hieu_canh(noi_dung: str, ma_canh: str) -> HieuCanh:
+    """Phan hoi VLM -> `HieuCanh`. Nem `HieuCanhError` neu sai luoc do.
+
+    ⛔ **Mot phan hoi sai luoc do khong phai mot artifact thanh cong** (yeu cau 5).
+       Mot truong thieu thanh `None` di tiep se lo ra o pha 12 duoi dang "khong
+       canh nao duoc giu" — mot thong bao khong lien quan gi den nguyen nhan.
+    """
+    ra = ai.doc_json(noi_dung, ai.DOC_CANH)
+
+    # `ai.doc_json` da chot `canh` la truong bat buoc cua `DOC_CANH`; o day ta
+    # doc luoc do CHI TIET cua rieng pha 11.
+    goc = ra.get("canh") if isinstance(ra.get("canh"), dict) else ra
+
+    de_xuat = str(goc.get("de_xuat") or "").strip().lower()
+    if de_xuat not in DE_XUAT:
+        raise HieuCanhError(
+            f"{ma_canh}: de_xuat phai la mot trong {DE_XUAT}, nhan {de_xuat!r}")
+
+    chu_the = goc.get("chu_the") or []
+    if not isinstance(chu_the, list):
+        raise HieuCanhError(f"{ma_canh}: chu_the phai la mang")
+
+    canh_bao = goc.get("canh_bao") or []
+    if not isinstance(canh_bao, list):
+        raise HieuCanhError(f"{ma_canh}: canh_bao phai la mang")
+
+    return HieuCanh(
+        ma_canh=ma_canh,
+        loai=str(goc.get("loai") or "")[:64],
+        chu_the=tuple(str(x)[:64] for x in chu_the[:12]),
+        hanh_dong=str(goc.get("hanh_dong") or "")[:300],
+        cam_xuc=str(goc.get("cam_xuc") or "")[:64],
+        quan_trong=_so_trong_khoang(goc.get("quan_trong", 0), "quan_trong"),
+        de_xuat=de_xuat,
+        do_tin=_so_trong_khoang(goc.get("do_tin", 0), "do_tin"),
+        ly_do=str(goc.get("ly_do") or "")[:500],
+        canh_bao=tuple(str(x)[:120] for x in canh_bao[:8]))
+
+
+def doc_ho_so(noi_dung: str) -> HoSoNoiDung:
+    """Phan hoi LLM -> `HoSoNoiDung`. Nem neu thieu truong bat buoc."""
+    ra = ai.doc_json(noi_dung, ai.HO_SO_NOI_DUNG)
+    dd = ra.get("dac_diem_giong") or {}
+    if not isinstance(dd, dict):
+        raise HieuCanhError("dac_diem_giong phai la doi tuong")
+
+    # ⚠️ Loc ve DUNG ba mat cua `ltt_voice.giong_mau`. Mot mat thu tu se cho ra
+    #    mot bo loc khong bao gio khop — cung ly do voi `rang_giong` pha 09.
+    return HoSoNoiDung(
+        the_loai=str(ra.get("the_loai") or "")[:64],
+        giong_dieu=str(ra.get("giong_dieu") or "")[:64],
+        khan_gia=str(ra.get("khan_gia") or "")[:64],
+        nhip=str(ra.get("nhip") or "")[:32],
+        dac_diem_giong={k: str(dd.get(k) or "")[:32]
+                        for k in ("gioi", "vung", "phong_cach")
+                        if dd.get(k)},
+        tom_tat=str(ra.get("tom_tat") or "")[:1000])
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Van tay
+# ══════════════════════════════════════════════════════════════════════════════
+
+def van_tay_canh(ma_canh: str, ngu_canh: str, so_khung: int,
+                 nguong_canh: float) -> str:
+    """Van tay cua MOT canh. Gom prompt/luoc do, nen doi prompt = mat cache."""
+    import hashlib
+
+    kh = json.dumps({
+        "v_prompt": PHIEN_BAN_HIEU_CANH,
+        "v_cua_goi": ai.PHIEN_BAN_PROMPT,
+        "v_luoc_do": ai.PHIEN_BAN_LUOC_DO,
+        "ma": ma_canh, "so_khung": so_khung,
+        "nguong": nguong_canh,
+        "ngu_canh": ngu_canh,
+    }, ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(kh.encode("utf-8")).hexdigest()[:32]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Gop ho so
+# ══════════════════════════════════════════════════════════════════════════════
+
+def loi_nhac_ho_so(cac_canh, tom_tat_ban_ghi: str) -> list:
+    """Loi nhac dung ho so tu bang chung canh + ban chep loi.
+
+    ⭐ Gui **tom tat** cua tung canh, khong gui lai khung hinh: khung da duoc doc
+       roi, va gui lai chung la tra tien lan hai cho cung mot buc anh.
+    """
+    bang = [{"ma": c.ma_canh, "loai": c.loai, "hanh_dong": c.hanh_dong,
+             "cam_xuc": c.cam_xuc, "quan_trong": round(c.quan_trong, 2)}
+            for c in cac_canh]
+    return [{
+        "role": "user",
+        "content": (
+            "Duoi day la bang chung doc tu mot video tieng Viet.\n"
+            f"Cac canh: {json.dumps(bang, ensure_ascii=False)}\n"
+            f"Loi thoai (tom tat): {tom_tat_ban_ghi}\n\n"
+            "Tra ve DUNG mot doi tuong JSON voi cac khoa: the_loai, giong_dieu, "
+            "khan_gia, nhip, tom_tat, va dac_diem_giong la mot doi tuong co "
+            "gioi (nam|nu), vung (bac|trung|nam), phong_cach. "
+            "Khong them van ban nao ngoai JSON."),
+    }]
+
+
+def tom_tat_chi_muc(ci: ChiMucCanh, cac_canh) -> dict:
+    """So lieu de nguoi doc bao cao hieu vi sao ho so lai la the nay."""
+    theo_de_xuat: dict = {}
+    for c in cac_canh:
+        theo_de_xuat[c.de_xuat] = theo_de_xuat.get(c.de_xuat, 0) + 1
+    return {
+        "so_canh_chi_muc": len(ci.canh),
+        "so_canh_da_doc": len(list(cac_canh)),
+        "theo_de_xuat": theo_de_xuat,
+        "do_tin_trung_binh": (
+            round(sum(c.do_tin for c in cac_canh) / len(list(cac_canh)), 3)
+            if cac_canh else 0.0),
+    }
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/hop_dong_v4.py
 SHA256=4a232f9fe34d48980f482f7125c3d2f78066bb507cb984b5cf5fada36c1acae6 BYTES=10232 LINES=213
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -17902,7 +18288,7 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/loi.py
-SHA256=64d27a753065495d5ecdca6e6bb64143dc950d2ae43097d4fa41e956ab77d846 BYTES=10857 LINES=222
+SHA256=e79dc402edacd83bd97b282cff032b83affc30bdb281b059b35d69d979f464f7 BYTES=11881 LINES=239
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phan loai loi cua Auto Scan -> phan loai cua NEN TANG (Prompt 17 muc 1).
 
@@ -18080,6 +18466,23 @@ def phan_loai(exc: BaseException) -> str:
     from .canh import CanhError
     if isinstance(exc, CanhError):
         return TAM_THOI
+
+    # ── Hieu canh (pha 11) ──────────────────────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu lai**.
+    #
+    # 🔴 Va day la cho de xep nham nhat trong ca bang. `HieuCanhError` nghia la
+    #    model DA CHAY, DA tinh tien, va tra ve mot phan hoi sai luoc do. Thu lai
+    #    la goi model LAN NUA cho cung mot canh — tuc **tra tien lan hai cho mot
+    #    canh da tra tien**, va lan nay cung khong co gi bao dam ket qua khac.
+    #
+    # ⚠️ Khac han `ai.LuocDoSai` (pha 08), von la `TAM_THOI`: o do phep doc JSON
+    #    that bai o tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O
+    #    day ta da doc duoc JSON va no **mang mot gia tri sai** — vd `de_xuat`
+    #    la mot tu bia ra. Hai tinh huong khac nhau, hai so phan khac nhau.
+    from .hieu_canh import HieuCanhError
+    if isinstance(exc, HieuCanhError):
+        return NGUOI_DUNG
 
     # ── Cua goi model (pha 08) ──────────────────────────────────────────────
     #
@@ -19747,7 +20150,7 @@ def _run_cua_toi(db, run_id: str, u):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/su_dung.py
-SHA256=eef180c6d299a01a27a20f22b74f60ac71cb28d7eaefa21fde185b60c2a40d6c BYTES=21926 LINES=457
+SHA256=99a07f464739f12145097a5150c3fd8a0c2965f8925003f1f8231094149a3fde BYTES=22891 LINES=479
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """So cai SU DUNG DA GIAO — bang chung dang sau moi con so credit.
 
@@ -19832,7 +20235,29 @@ TOKEN = "token"
 GIAY = "giay"
 KY_TU = "ky_tu"
 KHUNG_HINH = "khung_hinh"
-DON_VI = (TOKEN, GIAY, KY_TU, KHUNG_HINH)
+
+#: MOT luot goi. Dung khi provider **khong tra so do**.
+#:
+#: 🔴 Them o pha 11, va ly do dang ghi lai vi no la mot mau thuan that giua luat
+#:    cua pha 06 va thuc te cua nen tang.
+#:
+#:    `platform_core.llm.cong_vlm.SuDung` co co `dang_tin`, va docstring cua no
+#:    ghi: *"False khi thuong nguon khong tra `usage`. Ben goi PHAI xu ly rieng.
+#:    Dung coi 0 token la mien phi."*
+#:
+#:    Luat cua pha 06 doi mot ban ghi DA_GIAO phai co don vi do va so luong > 0.
+#:    Khi `dang_tin=False` ta khong co so token. Hai cach gian nhat deu la noi
+#:    doi mot chieu:
+#:
+#:      · ghi `DA_GIAO` voi `so_luong=0`   -> bia rang no mien phi
+#:      · ghi `TU_CHOI`                    -> bia rang no chua chay
+#:
+#: ⭐ Nhung co MOT thu van do duoc va van dung: **mot luot goi da duoc giao**.
+#:    Do la mot phep do that, kiem duoc, va no khong gia vo biet so token.
+#:    Bang gia cho don vi nay thuoc pha 21; o day no ghi dung cai no biet.
+LUOT = "luot"
+
+DON_VI = (TOKEN, GIAY, KY_TU, KHUNG_HINH, LUOT)
 
 
 class SuDungError(ValueError):
@@ -288380,7 +288805,7 @@ def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_418_asv_phan_loai_loi.py
-SHA256=d7ececaecc0f153bcaa3fa32f80555b2ad75fa12abf132a0a858f8ced9fcaeb2 BYTES=14534 LINES=291
+SHA256=ce9761721b2192e3b692aa9753a45758022d74d9b89066351e75016bea96a209 BYTES=15053 LINES=300
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 17 §1 — phan loai loi co kieu, va phep dich sang phan loai cua nen tang.
 
@@ -288409,6 +288834,7 @@ from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
+from apps.auto_scan_video.hieu_canh import HieuCanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
@@ -288504,6 +288930,14 @@ BANG = {
     #:    `TAM_THOI` la hong ve phia ton them mot lan thu chu khong phai ve
     #:    phia lam khach mat viec.
     CanhError: loi.TAM_THOI,
+    #: 🔴 Cho de xep nham nhat trong bang. `HieuCanhError` nghia la model
+    #:    DA CHAY, DA tinh tien, va tra ve phan hoi sai luoc do. Thu lai la
+    #:    **tra tien lan hai cho mot canh da tra tien**.
+    #:
+    #: ⚠️ Khac han `ai.LuocDoSai` (TAM_THOI): o do phep doc JSON that bai o
+    #:    tang VAN CHUYEN, truoc khi ta biet noi dung co nghia gi. O day ta
+    #:    da doc duoc JSON va no MANG MOT GIA TRI SAI.
+    HieuCanhError: loi.NGUOI_DUNG,
 }
 
 
@@ -295024,6 +295458,377 @@ def test_pha_10_KHONG_goi_VLM_va_KHONG_cat_gi():
             goi.add(f.id if isinstance(f, ast.Name) else getattr(f, "attr", ""))
     for cam in ("goi", "doc_json", "model_cho", "cat", "reframe"):
         assert cam not in goi, f"canh.py goi {cam!r} — ngoai pham vi pha 10"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_437_asv_v4_hieu_canh.py
+SHA256=9c186af4b8ff314a20a1fecf0fd01316b758aca25de8d310ac9089964a939d53 BYTES=16461 LINES=365
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Auto Scan Video V4 — hieu canh (VLM) + ho so noi dung, va DUONG TINH TIEN
+lan dau chay that (pha 11).
+
+**§1 phan hoi sai luoc do KHONG phai artifact thanh cong** — yeu cau 5. Va mot
+     phan biet dat gia: mot canh **da doc va tra ve rac** khac han mot canh
+     **chua doc**. Cai dau da ton tien va phai vao so cai; cai sau thi chua.
+
+**§2 checkpoint theo CANH** — mot lan VLM hong o canh 47 khong duoc bat 46 canh
+     truoc chay lai; chung da tra tien roi.
+
+**§3 ngu canh CO CHAN** — cua so thi giac do duoc 65.536 token. Gui ca ban chep
+     loi kem moi canh cham tran do theo cach te nhat: xanh o canh 1, 413 o canh
+     40, sau khi da tra tien cho 39 canh.
+
+**§4 duong tinh tien DANG SONG** — 🔑 pha 06 va pha 08 deu ghi no rang "chua co
+     gi goi `su_dung.ghi`". Pha 11 la nguoi goi tra tien dau tien, nen day la
+     cho tra no do. So cai phai ghi o **ca ba** nhanh: da giao, tu choi, mo ho.
+
+⛔ Khong phep kiem nao goi model that.
+"""
+from __future__ import annotations
+
+import ast
+import json
+import pathlib
+
+import pytest
+
+from apps.auto_scan_video import ai, hieu_canh as hc, su_dung as sd
+from apps.auto_scan_video import features, pipeline
+from apps.auto_scan_video.tables import AsvRun, AsvStage
+
+GOC = pathlib.Path(__file__).resolve().parents[1]
+APP = GOC / "apps" / "auto_scan_video"
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    url = f"sqlite:///{(tmp_path / 'asv.db').as_posix()}"
+    monkeypatch.setenv("LTT_DATABASE_URL", url)
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    gen = dbmod.get_session(); s = next(gen)
+    try:
+        yield s
+    finally:
+        s.close(); dbmod.reset_engine()
+
+
+def _run(db, *, owner="u1", held=1000) -> AsvRun:
+    r = AsvRun(owner_id=owner, source_key="asv/u1/x.mp4", settings={},
+               credit_held=held)
+    db.add(r); db.flush()
+    for g in pipeline.CHUOI:
+        db.add(AsvStage(run_id=r.id, owner_id=owner, stage=g.ten))
+    db.flush()
+    return r
+
+
+def _canh_ok(**k) -> str:
+    d = {"loai": "phong van", "chu_the": ["nguoi dan"], "hanh_dong": "noi",
+         "cam_xuc": "binh tinh", "quan_trong": 0.8, "de_xuat": "giu",
+         "do_tin": 0.9, "ly_do": "co loi thoai chinh", "canh_bao": []}
+    d.update(k)
+    return json.dumps({"canh": d}, ensure_ascii=False)
+
+
+class _Do:
+    """`SuDung` cua nen tang, gia."""
+
+    def __init__(self, vao=100, ra=50, tin=True):
+        self.token_vao, self.token_ra, self.dang_tin = vao, ra, tin
+
+
+def _tiem_goi(monkeypatch, *, noi_dung="", loi=None, do=None):
+    def _gia(db, thao_tac, messages, **k):
+        if loi is not None:
+            raise loi
+        return {"noi_dung": noi_dung, "provider": "ltt_llm",
+                "model": "qwen38-vision", "su_dung": do or _Do()}
+    monkeypatch.setattr(ai, "goi", _gia)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §1  Luoc do nghiem ngat
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_doc_duoc_phan_hoi_dung_luoc_do():
+    h = hc.doc_hieu_canh(_canh_ok(), "canh_0001")
+    assert h.ma_canh == "canh_0001" and h.de_xuat == hc.GIU
+    assert h.quan_trong == 0.8 and h.do_tin == 0.9
+    assert h.chu_the == ("nguoi dan",)
+
+
+@pytest.mark.parametrize("xau, vi_sao", [
+    (_canh_ok(de_xuat="bia_ra"), "de_xuat ngoai tap hop"),
+    (_canh_ok(quan_trong=5), "quan_trong ngoai [0,1]"),
+    (_canh_ok(quan_trong=-1), "quan_trong am"),
+    (_canh_ok(do_tin="rat tin"), "do_tin khong phai so"),
+    (_canh_ok(chu_the="mot chuoi"), "chu_the khong phai mang"),
+    (_canh_ok(canh_bao={"a": 1}), "canh_bao khong phai mang"),
+    ('{"canh": {}}', "thieu de_xuat"),
+    ("khong phai json", "khong co JSON nao"),
+])
+def test_phan_hoi_sai_luoc_do_thi_NEM(xau, vi_sao):
+    """⛔ Mot truong thieu thanh `None` di tiep se lo ra o pha 12 duoi dang
+    "khong canh nao duoc giu" — mot thong bao khong lien quan gi den nguyen
+    nhan, va nguoi doc se di tim o nham cho."""
+    with pytest.raises((hc.HieuCanhError, ai.LuocDoSai)):
+        hc.doc_hieu_canh(xau, "canh_0001")
+
+
+def test_truong_qua_dai_bi_CAT_chu_khong_bi_tu_choi():
+    """⭐ Mot cau `ly_do` 5.000 ky tu khong lam hong ket qua — no chi la mot
+    model noi nhieu. Cat va di tiep; tu choi o day la vut ca canh."""
+    h = hc.doc_hieu_canh(_canh_ok(ly_do="x" * 5000), "c1")
+    assert len(h.ly_do) <= 500
+
+
+def test_ho_so_LOC_ve_dung_ba_mat_cua_catalog():
+    """🔴 Mot mat thu tu se cho ra mot bo loc khong bao gio khop — cung ly do
+    voi `rang_giong` pha 09."""
+    van = json.dumps({"the_loai": "tai lieu", "nhip": "cham",
+                      "dac_diem_giong": {"gioi": "nu", "vung": "bac",
+                                         "tuoi": "30", "mau_toc": "den"}})
+    hs = hc.doc_ho_so(van)
+    assert set(hs.dac_diem_giong) <= {"gioi", "vung", "phong_cach"}
+    assert hs.dac_diem_giong["gioi"] == "nu"
+
+
+def test_ho_so_thieu_truong_bat_buoc_thi_NEM():
+    with pytest.raises((hc.HieuCanhError, ai.LuocDoSai)):
+        hc.doc_ho_so('{"the_loai": "tai lieu"}')      # thieu `nhip`
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §2  Ngu canh co chan
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_chi_lay_loi_thoai_TRONG_canh():
+    """⭐ Mot canh 4 giay khong can biet phut thu 30 noi gi — gui no la tra tien
+    token cho mot thu model se bo qua."""
+    bg = {"doan": [{"bat": 0, "ket": 3, "chu": "trong canh."},
+                   {"bat": 50, "ket": 52, "chu": "xa lac."}]}
+    assert hc.ngu_canh_cho_canh(bg, 0.0, 5.0) == "trong canh."
+
+
+def test_ngu_canh_bi_CHAN_do_dai():
+    bg = {"doan": [{"bat": 0, "ket": 100, "chu": "cau. " * 2000}]}
+    ra = hc.ngu_canh_cho_canh(bg, 0.0, 100.0)
+    assert len(ra) <= hc.NGU_CANH_MOI_CANH
+
+
+def test_cat_o_dau_CAU_chu_khong_giua_tu():
+    """⚠️ Mot cau cut lam model doan tiep phan thieu, va no doan bang token cua
+    khach."""
+    bg = {"doan": [{"bat": 0, "ket": 9, "chu": ("mot cau hoan chinh. " * 200)}]}
+    ra = hc.ngu_canh_cho_canh(bg, 0.0, 9.0, toi_da=100)
+    assert ra.endswith("."), f"cat giua chung: {ra[-30:]!r}"
+
+
+def test_tran_ngu_canh_hop_ly_so_voi_cua_so_THI_GIAC():
+    assert hc.NGU_CANH_MOI_CANH <= 4000
+    assert ai.cua_so_ngu_canh(ai.DOC_CANH) < ai.cua_so_ngu_canh(ai.DICH_THUAT)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §3  Van tay: doi prompt = mat cache
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_van_tay_ON_DINH_voi_cung_dau_vao():
+    a = hc.van_tay_canh("c1", "ngu canh", 2, 0.4)
+    assert a == hc.van_tay_canh("c1", "ngu canh", 2, 0.4)
+
+
+@pytest.mark.parametrize("doi", [
+    {"ma_canh": "c2"}, {"ngu_canh": "khac"}, {"so_khung": 3}, {"nguong": 0.5},
+])
+def test_doi_bat_ky_dau_vao_nao_thi_van_tay_DOI(doi):
+    goc = dict(ma_canh="c1", ngu_canh="x", so_khung=2, nguong_canh=0.4)
+    moi = dict(goc)
+    moi.update({("nguong_canh" if k == "nguong" else k): v
+                for k, v in doi.items()})
+    assert hc.van_tay_canh(**goc) != hc.van_tay_canh(**moi)
+
+
+def test_doi_PHIEN_BAN_PROMPT_thi_van_tay_DOI(monkeypatch):
+    """⛔ Thieu no thi doi mot cau prompt xong, cache van khop, va lan chay dung
+    lai ket qua sinh boi prompt CU — mot thay doi san pham khong bao gio toi
+    khach."""
+    a = hc.van_tay_canh("c1", "x", 2, 0.4)
+    monkeypatch.setattr(hc, "PHIEN_BAN_HIEU_CANH", hc.PHIEN_BAN_HIEU_CANH + 1)
+    assert hc.van_tay_canh("c1", "x", 2, 0.4) != a
+
+
+def test_van_tay_gom_CA_phien_ban_cua_cua_goi(monkeypatch):
+    """Hai phien ban doi doc lap: cau hoi (pha 11) va cua goi (pha 08)."""
+    a = hc.van_tay_canh("c1", "x", 2, 0.4)
+    monkeypatch.setattr(ai, "PHIEN_BAN_LUOC_DO", ai.PHIEN_BAN_LUOC_DO + 1)
+    assert hc.van_tay_canh("c1", "x", 2, 0.4) != a
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §4  DUONG TINH TIEN — no cua pha 06 va pha 08, tra o day
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_luot_DA_GIAO_ghi_so_cai_voi_so_TOKEN_do_duoc(db, monkeypatch):
+    run = _run(db)
+    _tiem_goi(monkeypatch, noi_dung=_canh_ok(), do=_Do(120, 80, True))
+
+    ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                     stage=pipeline.CONTENT_PROCESS, item_key="canh_0001")
+
+    dong = sd.cac_dong(db, run)
+    assert len(dong) == 1
+    assert dong[0].trang_thai == sd.DA_GIAO
+    assert dong[0].don_vi == sd.TOKEN and dong[0].so_luong == 200
+    assert dong[0].ghi_chu["token_vao"] == 120
+
+
+def test_provider_KHONG_tra_so_do_thi_ghi_don_vi_LUOT(db, monkeypatch):
+    """🔴 `cong_vlm.SuDung.dang_tin` = False. Hai cach gian nhat deu la noi doi:
+    ghi `so_luong=0` la bia rang no mien phi; ghi `TU_CHOI` la bia rang no chua
+    chay. Thu do duoc la **mot luot da giao**."""
+    run = _run(db)
+    _tiem_goi(monkeypatch, noi_dung=_canh_ok(), do=_Do(0, 0, False))
+
+    ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                     stage=pipeline.CONTENT_PROCESS, item_key="c1")
+
+    d = sd.cac_dong(db, run)[0]
+    assert d.trang_thai == sd.DA_GIAO
+    assert d.don_vi == sd.LUOT and d.so_luong == 1.0
+    assert d.ghi_chu.get("khong_do_duoc") is True
+
+
+def test_luot_TU_CHOI_van_duoc_ghi_va_KHONG_mang_credit(db, monkeypatch):
+    run = _run(db)
+    _tiem_goi(monkeypatch, loi=ai.AiError("provider tu choi"))
+
+    with pytest.raises(ai.AiError):
+        ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                         stage=pipeline.CONTENT_PROCESS, item_key="c1")
+
+    d = sd.cac_dong(db, run)[0]
+    assert d.trang_thai == sd.TU_CHOI and d.credit == 0
+    assert features.tong_da_dung(db, run) == 0
+
+
+def test_luot_MO_HO_duoc_ghi_va_CHAN_duong_thu_lai(db, monkeypatch):
+    """⛔ Chi ghi khi thanh cong la de mot lan mo ho bien mat khoi so sach —
+    dung luc no can duoc nhin thay nhat."""
+    run = _run(db)
+    _tiem_goi(monkeypatch, loi=ai.AiMoHo("mat ket noi"))
+
+    with pytest.raises(ai.AiMoHo):
+        ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                         stage=pipeline.CONTENT_PROCESS, item_key="c1")
+
+    assert len(sd.cac_mo_ho(db, run)) == 1
+    with pytest.raises(features.AsvError):
+        features.thu_lai_giai_doan(db, run.id, run.owner_id,
+                                   pipeline.CONTENT_PROCESS)
+
+
+def test_cua_chan_ngan_sach_chay_TRUOC_khi_goi(db, monkeypatch):
+    """🔑 Het ngan sach thi hong SACH SE truoc khi tieu, khong phai mot hoa don
+    bat ngo sau khi tieu."""
+    run = _run(db, held=5)
+    da_goi = []
+    monkeypatch.setattr(ai, "goi", lambda *a, **k: da_goi.append(1))
+
+    with pytest.raises(features.AsvError):
+        ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                         stage=pipeline.CONTENT_PROCESS, item_key="c1",
+                         uoc_credit=999)
+    assert da_goi == [], "da goi model du ngan sach khong du"
+
+
+def test_lap_lai_CUNG_canh_khong_ghi_so_cai_hai_lan(db, monkeypatch):
+    """⭐ `ma_dispatch` gom (thao tac, giai doan, ma canh) nen mot lan chay lai
+    cung canh bi rang buoc `UNIQUE(run_id, ma_dispatch)` chan — va do la mot
+    THANH CONG, khong phai loi: no vua chan mot lan tinh tien thu hai."""
+    run = _run(db)
+    _tiem_goi(monkeypatch, noi_dung=_canh_ok(), do=_Do(10, 10, True))
+
+    for _ in range(3):
+        ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                         stage=pipeline.CONTENT_PROCESS, item_key="canh_0001")
+
+    assert len(sd.cac_dong(db, run)) == 1, "ghi so cai nhieu lan cho mot canh"
+    sd.doi_soat(db, run)
+
+
+def test_moi_canh_la_MOT_don_vi_viec_rieng(db, monkeypatch):
+    """§2: mot lan VLM hong o canh 47 khong duoc bat 46 canh truoc chay lai."""
+    run = _run(db)
+    _tiem_goi(monkeypatch, noi_dung=_canh_ok(), do=_Do(10, 10, True))
+
+    for i in range(1, 4):
+        ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                         stage=pipeline.CONTENT_PROCESS, item_key=f"canh_{i:04d}")
+
+    assert len(features.cac_don_vi(db, run.id, pipeline.CONTENT_PROCESS)) == 3
+    assert len(sd.cac_dong(db, run)) == 3
+    sd.doi_soat(db, run)
+
+
+def test_hai_khach_KHONG_dung_chung_so_cai(db, monkeypatch):
+    """Yeu cau 6: mot canh hong cua khach nay khong duoc cham so cua khach kia."""
+    a, b = _run(db, owner="u-a"), _run(db, owner="u-b")
+    _tiem_goi(monkeypatch, noi_dung=_canh_ok(), do=_Do(10, 10, True))
+
+    ai.goi_tinh_tien(db, a, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                     stage=pipeline.CONTENT_PROCESS, item_key="canh_0001")
+    ai.goi_tinh_tien(db, b, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                     stage=pipeline.CONTENT_PROCESS, item_key="canh_0001")
+
+    assert {d.owner_id for d in sd.cac_dong(db, a)} == {"u-a"}
+    assert {d.owner_id for d in sd.cac_dong(db, b)} == {"u-b"}
+    assert len(sd.cac_dong(db, a)) == len(sd.cac_dong(db, b)) == 1
+
+
+def test_so_ke_gom_duoc_chi_phi_theo_nang_luc(db, monkeypatch):
+    """`cost aggregation evidence` cua pha nay."""
+    run = _run(db)
+    _tiem_goi(monkeypatch, noi_dung=_canh_ok(), do=_Do(100, 100, True))
+    for i in range(1, 4):
+        ai.goi_tinh_tien(db, run, ai.DOC_CANH, [{"role": "user", "content": "x"}],
+                         stage=pipeline.CONTENT_PROCESS, item_key=f"c{i}")
+
+    ke = sd.so_ke(db, run)
+    theo = {m["nang_luc"]: m for m in ke["theo_nang_luc"]}
+    assert theo["doc_canh"]["don_vi"] == sd.TOKEN
+    assert theo["doc_canh"]["so_luong"] == 600
+    assert ke["tong"]["da_giao"] == 3
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §5  Pham vi: chua cat, chua render, chua TTS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_pha_11_KHONG_cat_render_hay_sinh_tieng():
+    cay = ast.parse((APP / "hieu_canh.py").read_text(encoding="utf-8"))
+    goi = set()
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Call):
+            f = n.func
+            goi.add(f.id if isinstance(f, ast.Name) else getattr(f, "attr", ""))
+    for cam in ("cat", "render", "ket_xuat", "goi_cong", "tong_hop", "sinh"):
+        assert cam not in goi, f"hieu_canh.py goi {cam!r} — ngoai pham vi pha 11"
+
+
+def test_hieu_canh_di_qua_CUA_GOI_chu_khong_tu_goi_dieu_phoi():
+    van = (APP / "hieu_canh.py").read_text(encoding="utf-8")
+    assert "dieu_phoi" not in van
+    assert "from . import ai" in van
+
+
+def test_prompt_thuoc_ve_ASV_khong_phai_nen_tang():
+    """§ranh gioi pha 08: ASV so huu prompt/luoc do; nen tang so huu van chuyen."""
+    van = (APP / "hieu_canh.py").read_text(encoding="utf-8")
+    assert "def loi_nhac_canh" in van and "def loi_nhac_ho_so" in van
 
 @@@LTT_PROFILE_FILE_END@@@
 

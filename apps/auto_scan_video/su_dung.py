@@ -81,7 +81,29 @@ TOKEN = "token"
 GIAY = "giay"
 KY_TU = "ky_tu"
 KHUNG_HINH = "khung_hinh"
-DON_VI = (TOKEN, GIAY, KY_TU, KHUNG_HINH)
+
+#: MOT luot goi. Dung khi provider **khong tra so do**.
+#:
+#: 🔴 Them o pha 11, va ly do dang ghi lai vi no la mot mau thuan that giua luat
+#:    cua pha 06 va thuc te cua nen tang.
+#:
+#:    `platform_core.llm.cong_vlm.SuDung` co co `dang_tin`, va docstring cua no
+#:    ghi: *"False khi thuong nguon khong tra `usage`. Ben goi PHAI xu ly rieng.
+#:    Dung coi 0 token la mien phi."*
+#:
+#:    Luat cua pha 06 doi mot ban ghi DA_GIAO phai co don vi do va so luong > 0.
+#:    Khi `dang_tin=False` ta khong co so token. Hai cach gian nhat deu la noi
+#:    doi mot chieu:
+#:
+#:      · ghi `DA_GIAO` voi `so_luong=0`   -> bia rang no mien phi
+#:      · ghi `TU_CHOI`                    -> bia rang no chua chay
+#:
+#: ⭐ Nhung co MOT thu van do duoc va van dung: **mot luot goi da duoc giao**.
+#:    Do la mot phep do that, kiem duoc, va no khong gia vo biet so token.
+#:    Bang gia cho don vi nay thuoc pha 21; o day no ghi dung cai no biet.
+LUOT = "luot"
+
+DON_VI = (TOKEN, GIAY, KY_TU, KHUNG_HINH, LUOT)
 
 
 class SuDungError(ValueError):
