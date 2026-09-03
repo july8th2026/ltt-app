@@ -90,7 +90,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.4.0"
+PHIEN_BAN = "1.5.0"
 
 MODEL = "ltt_llm"
 

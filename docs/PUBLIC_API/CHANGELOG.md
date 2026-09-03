@@ -21,6 +21,29 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-04 — bộ cài `1.5.0`: chặn một kết quả tool nuốt trọn ngữ cảnh
+
+**FIXED · Trần cho MỘT kết quả tool: cả cửa sổ (156.385) → 16.384 token.**
+
+Nếu bạn dùng `cam` hoặc `ltt_cai_dat_cli.py` để cấu hình Codex, **hãy cài lại
+bộ cài `1.5.0`**. Bản `1.4.0` khai `truncation_policy.limit` bằng cả cửa sổ ngữ
+cảnh, tức cho phép **một** kết quả lệnh (đọc tệp, chạy test, `grep` một kho lớn)
+chiếm trọn ngữ cảnh trong một lượt.
+
+**Vì sao điều đó dẫn tới `413`:** Codex chỉ kiểm ngưỡng nén **giữa hai lượt**,
+không kiểm giữa các lần gọi công cụ trong cùng một lượt
+([openai/codex#16033](https://github.com/openai/codex/issues/16033)). Khi một
+lượt phình ra, `truncation_policy` là hàng phòng thủ duy nhất còn lại. Để so
+sánh: mặc định của chính Codex là 10.000 byte ≈ **2.500 token**.
+
+**Bạn sẽ thấy gì khác:** kết quả một lệnh dài hơn ~64 KB nay bị cắt ở giữa
+(giữ đầu và cuối) kèm dòng báo đã cắt, thay vì vào trọn ngữ cảnh. Đọc tệp lớn
+thì chia nhỏ — và đó vốn là cách làm việc rẻ hơn.
+
+**Muốn nới:** đặt `tool_output_token_limit` trong `config.toml` của bạn; nó
+**đè** giá trị trong catalog của chúng tôi. Nới cao thì bạn nhận lại rủi ro
+`413` giữa phiên.
+
 ## 2026-09-03 (khuya) — `ltt_llm_vision` lên 88K ngữ cảnh dùng được
 
 **ADDED · Cửa sổ ngữ cảnh dùng được của `ltt_llm_vision`: 28K → 88K.**

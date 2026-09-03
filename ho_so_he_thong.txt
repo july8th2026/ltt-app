@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:298d91ab4cae5d038806a6f19203e31d688aecb4be604c1426c5769934f6825f
+Fingerprint   : sha256:406e6bca639b45d260d11a46fc0b24fb4c4eafee587a101af21972a5879aeb46
 Nguồn đã quét : 1564 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -293342,7 +293342,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=8ce569609e189d1fbff3f019aa3457552c514040c25584245dd35ee65e6477e2 BYTES=95404 LINES=2131
+SHA256=eba4c3693d75f1550bb52d413de23d914d94eb17cb12f64c44d210e609dca24d BYTES=95404 LINES=2131
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -293436,7 +293436,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.4.0"
+PHIEN_BAN = "1.5.0"
 
 MODEL = "ltt_llm"
 
