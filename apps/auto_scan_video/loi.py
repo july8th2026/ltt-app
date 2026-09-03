@@ -146,11 +146,6 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, SuDungError):
         return NGUOI_DUNG
 
-    # ── Cua goi model (pha 08) ──────────────────────────────────────────────
-    #
-    # ⛔ `AiMoHo` phai di TRUOC `AiError`? Khong — chung khong ke thua nhau, va
-    #    do la co y: `AiMoHo(RuntimeError)` dung rieng de mot phep `isinstance`
-    #    nham khong the bien mot lan mo ho thanh mot lan thu lai.
     # ── Rang giong (pha 09) ─────────────────────────────────────────────────
     #
     # 🔑 Ca hai deu la that bai CUOI CUNG, dung thu lai:
@@ -165,6 +160,25 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Tach canh (pha 10) ──────────────────────────────────────────────────
+    #
+    # ⭐ `TAM_THOI`, khac han hai lop tren: `CanhError` gan nhu luon la mot lan
+    #    ffmpeg khong chay duoc (het cho dia, tien trinh con bi giet, tep dang
+    #    duoc ghi do) — dung loai truot thoang qua ma mot lan thu lai chua duoc.
+    #
+    # ⚠️ No CUNG duoc dung cho "chi muc sai hinh dang", va truong hop do thu lai
+    #    vo ich. Nhung hai truong hop khong tach duoc bang mot lop, va chon
+    #    `TAM_THOI` la chon hong ve phia TON THEM MOT LAN THU chu khong phai ve
+    #    phia lam khach mat viec — dung huong ma `test_ngoai_le_la_hoac_mac_dinh`
+    #    da chot cho mac dinh cua ca bang.
+    from .canh import CanhError
+    if isinstance(exc, CanhError):
+        return TAM_THOI
+
+    # ── Cua goi model (pha 08) ──────────────────────────────────────────────
+    #
+    # ⛔ `AiMoHo` va `AiError` KHONG ke thua nhau, va do la co y: mot phep
+    #    `isinstance` nham khong the bien mot lan mo ho thanh mot lan thu lai.
     from .ai import AiError, AiMoHo
     if isinstance(exc, AiMoHo):
         return MO_HO

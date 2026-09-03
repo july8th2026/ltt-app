@@ -24,6 +24,7 @@ from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
+from apps.auto_scan_video.canh import CanhError
 from apps.auto_scan_video.rang_giong import ChuaRangError, RangGiongError
 from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
@@ -113,6 +114,12 @@ BANG = {
     #:    `HoSoNoiDung` xuat hien.
     RangGiongError: loi.NGUOI_DUNG,
     ChuaRangError: loi.NGUOI_DUNG,
+    #: ⭐ `CanhError` la `TAM_THOI`: gan nhu luon la mot lan ffmpeg khong
+    #:    chay duoc. No cung dung cho "chi muc sai hinh dang" — thu lai vo
+    #:    ich — nhung hai truong hop khong tach duoc bang mot lop, va chon
+    #:    `TAM_THOI` la hong ve phia ton them mot lan thu chu khong phai ve
+    #:    phia lam khach mat viec.
+    CanhError: loi.TAM_THOI,
 }
 
 
