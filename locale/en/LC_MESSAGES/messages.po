@@ -14043,3 +14043,21 @@ msgstr "Invalid preset: {p}"
 
 msgid "Đang kiểm bản ra có hình"
 msgstr "Checking the output has picture"
+
+msgid "Không có khung hình nào để hỏi."
+msgstr "There are no frames to ask about."
+
+msgid "Loại khiếm khuyết không hợp lệ: {l}"
+msgstr "Invalid defect type: {l}"
+
+msgid "Model không trả về bảng phán đoán."
+msgstr "The model did not return a verdict table."
+
+msgid "Model không trả về phán đoán hình."
+msgstr "The model did not return a visual verdict."
+
+msgid "Tiếng đọc ra không khớp lời đã viết."
+msgstr "The spoken audio does not match the written line."
+
+msgid "Đoạn không vừa khe kể cả sau khi co giãn."
+msgstr "The segment does not fit its slot even after time-stretching."

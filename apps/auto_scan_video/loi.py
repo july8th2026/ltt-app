@@ -160,6 +160,19 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── QC bang AI va ke hoach sua (pha 19) ─────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Ca hai deu la mau thuan trong du lieu
+    #    hoac trong phan hoi cua model: mot loai khiem khuyet khong co that, mot
+    #    bang phan doan sai hinh dang. Thu lai cho ra dung mau thuan do.
+    #
+    # ⚠️ Khac `AiMoHo`: mo ho la "co the da goi, khong biet ket qua". Day la "da
+    #    co ket qua, va ket qua khong dung hop dong".
+    from .qc_ai import QcAiError
+    from .sua_chua import SuaChuaError
+    if isinstance(exc, (SuaChuaError, QcAiError)):
+        return NGUOI_DUNG
+
     # ── Cach render (pha 17) ────────────────────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Mot ban dung khai preset mot dang va
