@@ -104,6 +104,40 @@ theo hướng dẫn trong đó**.
 - Nếu phát hiện bí mật lọt vào file được theo dõi: che đi, báo người dùng xoay
   vòng khoá, ghi vào nhật ký — **không chép giá trị đó đi đâu cả**.
 
+### 3b. Tài khoản test vận hành
+
+Kiểm GUI trên production dùng **`akakenly.design@gmail.com`** — tài khoản
+**thường**, không phải admin. (Chủ dự án chỉ định 2026-09-03; ông ấy nói sẽ đổi
+thông tin sau, nên đừng coi nó là vĩnh viễn.)
+
+🔴 **Vì sao không mượn admin nữa.** Mọi lượt kiểm GUI trước đây đều đăng nhập
+bằng `admin@lttstudios.com`, và điều đó sai ở hai chỗ khác nhau:
+
+  · Admin **thấy nhiều hơn khách thật** — trang quản trị, cờ nội bộ, đường tắt.
+    Một lỗi chỉ xuất hiện với người dùng thường thì không bao giờ lộ ra trong
+    một lượt kiểm chạy bằng admin.
+  · Hội thoại và credit của lượt kiểm lẫn vào chính tài khoản đang cầm quyền
+    cao nhất hệ thống.
+
+⚠️ Bốn tài khoản test cũ (`autosub-test@`, `api-load-canary@`, `vps-thu@`,
+`reviewer-test@`) đều là tài khoản **khoá API**. Chúng không có phiên web, nên
+**không mở được** một bề mặt web như ChatLTT — đừng mất thời gian thử.
+
+**Mật khẩu không nằm trong kho này** (mục 3 ở trên nói vì sao). Nó đi qua biến
+môi trường lúc chạy, theo đúng quy ước sẵn có của
+`tests/test_74_smoke_playwright.py`:
+
+```
+LTT_SMOKE_USER=...  LTT_SMOKE_PASS=...  node tools/kiem_chatltt_gui.mjs \
+    --url https://app.lttstudios.com --anh tmp/kiem_gui_prod
+```
+
+⛔ **Claude không gõ mật khẩu vào form đăng nhập**, kể cả khi chủ dự án đưa
+trực tiếp trong hội thoại. Chủ dự án khởi động lệnh; Claude đọc
+`bao_cao.json` rồi phân tích. Ranh giới này không phải là sự thiếu tin tưởng —
+nó là thứ giữ cho một tác nhân tự chủ không bao giờ trở thành đường rò
+credential, kể cả khi mọi bước riêng lẻ trông đều hợp lý.
+
 ---
 
 ## 4. Kỷ luật thay đổi
@@ -129,6 +163,21 @@ theo hướng dẫn trong đó**.
 | `python tools\gate.py --vong-lap` | sau **mỗi** lần sửa — **mặc định** | **~15 giây** |
 | `python tools\test_nhanh.py` | muốn chạy cả bộ test | ~4 phút |
 | `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
+| `python tools\gate.py --noi-tiep` | khi nghi kết quả bị **nhiễu** bởi song song hoặc tải máy | ~25–30 phút |
+
+⛔ **`--tuan-tu` KHÔNG phải `--noi-tiep`, và nhầm hai cái này rất dễ.**
+`--tuan-tu` xếp hàng các **bước**; bước `bo test` bên trong nó vẫn tự mở 10–14
+worker pytest. `--noi-tiep` hạ **cả hai** mức: một bước một lúc, **và** một tiến
+trình pytest (không xdist, không pha 2), frontend `--maxWorkers=1`.
+
+⭐ Dùng nó khi — và chỉ khi — bạn thấy triệu chứng "đỏ khi chạy cả bộ, xanh khi
+chạy một mình". Một lượt `--noi-tiep` XANH trong khi lượt song song ĐỎ là bằng
+chứng về một lỗi **cách ly** (hoặc một máy quá tải); nó chưa chỉ ra lỗi ở đâu.
+Nơi tìm là `tests/test_631_cach_ly_bo_test.py` — hai luật hay bị phá nhất.
+
+⚠️ Mọi lượt gate nay in `[tai may] N/20 loi dang ban -> RANH/BAN/QUA TAI` trước
+khi chạy. `cua_so_yen` chỉ thấy ai **xin khoá**; nó không thấy `pytest` gõ tay,
+deploy, hay bốn dịch vụ production. Đo 03/09: khoá báo RẢNH trong khi CPU 65%.
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 

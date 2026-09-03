@@ -297,6 +297,29 @@ STORES: tuple = (
           N_("Hội thoại người dùng.")),
     Store("chat_messages", CONTENT, None, N_("chủ tài khoản"),
           N_("Nội dung tin nhắn — thứ nhạy cảm nhất trong nhóm này.")),
+    # ── ChatLTT (H43) ────────────────────────────────────────────────────────
+    #
+    # ⚠️ BA BẢNG RIÊNG, không phải `chat_*` ở trên. `chat_*` là của Chat AI
+    #    Studio (hội thoại tuyến tính qua sidecar Codex); ChatLTT lưu một CÂY
+    #    hội thoại trên model của nhà. Hai sản phẩm, hai lời hứa — gộp bảng là
+    #    gộp cả chính sách giữ dữ liệu của chúng.
+    #
+    # 🔴 `chatltt_execution` giữ `partial_text`: **đúng những chữ model đã sinh
+    #    ra cho khách**, kể cả lượt bị ngắt. Nó cùng hạng nhạy cảm với nội dung
+    #    tin nhắn, không phải một bản ghi kỹ thuật — nên CONTENT, không
+    #    OPERATIONAL, và không tự già đi.
+    Store("chatltt_conversation", CONTENT, None, N_("chủ tài khoản"),
+          N_("Hội thoại ChatLTT: tiêu đề, model đang chọn, nhánh đang xem. Xoá "
+             "là xoá mềm — dọn thật theo hạn giữ dữ liệu."),
+          purged_by=N_("xoá mềm rồi dọn theo hạn giữ dữ liệu")),
+    Store("chatltt_message", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng lượt nói trong cây hội thoại, kèm khối nội dung (chữ, suy "
+             "luận, ảnh, tiếng). Thứ nhạy cảm nhất của sản phẩm này."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    Store("chatltt_execution", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một lượt thi hành: phần chữ đã sinh (kể cả khi bị ngắt), số token "
+             "đo được và số credit đã giữ/thu — thứ đối chiếu được với sổ tiền."),
+          purged_by=N_("theo hội thoại chứa nó")),
     Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
           N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
     Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),

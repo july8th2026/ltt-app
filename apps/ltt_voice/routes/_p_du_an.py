@@ -8,11 +8,11 @@
 """
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
-                     verify_csrf_token, vo, lan_ngon_ngu)
+                     verify_csrf_token, vo, lan_ngon_ngu, nghe_thu)
 
 
 def _mo_du_an(db, request, user, public_id: str):
@@ -24,8 +24,23 @@ def _mo_du_an(db, request, user, public_id: str):
     return du_an.tim(db, public_id, owner_id=_uid(user))
 
 
-def _ngu_canh_giong(**them) -> dict:
-    """Bộ khoá mà `_voice_chon.html` cần. Ba màn dùng chung nên gom một chỗ."""
+def _ngu_canh_giong(*, owner_id: str = "", **them) -> dict:
+    """Bộ khoá mà `_voice_chon.html` cần. Ba màn dùng chung nên gom một chỗ.
+
+    ⭐ `duong_nghe` TÍNH Ở ĐÂY chứ không để từng route tự gọi.
+
+       Bộ chọn giọng xuất hiện ở ba màn của mảng này cộng màn Tạo tiếng nói.
+       Bản đầu chỉ nối đường nghe thử cho màn Tạo — hệ quả là cùng một bộ chọn
+       có nút nghe ở một màn và không có ở ba màn kia, không lỗi nào báo (partial
+       `_voice_chon_nghe.html` tự im khi thiếu biến).
+
+       Đó đúng là hình dạng lỗi mà `du_an.duong_tieng()` đã trả giá: nhiều chỗ
+       tự dựng đường, và sửa cho đúng nghĩa là phải nhớ đủ mọi chỗ. Gom vào
+       hàm dựng ngữ cảnh thì màn thứ năm sau này **được nối sẵn**.
+
+    ⚠️ `nghe_thu.duong_cho_trang` chỉ hỏi KHO, không chạm CSDL — nên gọi được ở
+       đây, sau khi phiên CSDL đã đóng.
+    """
     d = {"giong_mau": giong_mau.DANH_SACH,
          "nhan_gioi": giong_mau.NHAN_GIOI,
          "nhan_vung": giong_mau.NHAN_VUNG,
@@ -34,6 +49,10 @@ def _ngu_canh_giong(**them) -> dict:
          "nhan_lan": lan_ngon_ngu.NHAN_LAN,
          "mac_dinh": giong_mau.MAC_DINH}
     d.update(them)
+    d["duong_nghe"] = nghe_thu.duong_cho_trang(
+        duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=owner_id,
+        ma_mau=[g.ma for g in giong_mau.DANH_SACH],
+        rieng=[g.public_id for g in (d.get("giong") or ())])
     return d
 
 
@@ -65,7 +84,8 @@ def trang_du_an(request: Request, user=Depends(user_hien_tai),
     return templates.TemplateResponse(
         request, "ltt_voice_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
-                    **_ngu_canh_giong(du_an_ds=ds, dem=dem, giong=cua_toi,
+                    **_ngu_canh_giong(owner_id=uid, du_an_ds=ds, dem=dem,
+                                      giong=cua_toi,
                                       giong_chon="")))
 
 
@@ -175,7 +195,8 @@ def trang_mot_du_an(request: Request, public_id: str,
         request, "ltt_voice_mot_du_an.html",
         vo.ngu_canh(request, user, nav_key=vo.NAV_DU_AN, hang_doi=hang_doi,
                     **_ngu_canh_giong(du_an=d, khoi=ds_khoi, tom_tat=tt,
-                                      giong=cua_toi, du_an_ds=du_an_ds,
+                                      owner_id=uid, giong=cua_toi,
+                                      du_an_ds=du_an_ds,
                                       giong_chon=d.giong_mac_dinh)))
 
 
@@ -344,7 +365,8 @@ def _nop_mot_khoi(db, user, du_an_row, khoi) -> str:
                 # Hai khoá này để Lịch sử và hỗ trợ truy ngược được về đúng khối.
                 "project_id": du_an_row.public_id, "block_id": khoi.id},
         admission_resource=tool.admission_resource,
-        admission_slots=tool.admission_slots)
+        admission_slots=tool.admission_slots,
+        max_attempts=SO_LAN_THU_JOB)
     khoi.job_id = str(job.id)
     khoi.trang_thai = "dang_tao"
     return str(job.id)

@@ -46,7 +46,41 @@ VIET_TAT: dict = {
     "URL": "diu a eo",
     "TV": "ti vi",
     "OK": "ô kê",
+
+    # ── Thêm 02/09/2026, sau một phép ĐO A/B, không phải theo linh cảm ──────
+    #
+    # Cách đo: sinh CÙNG một câu hai lần — một lần để nguyên viết tắt, một lần
+    # tự tay giải ra — rồi cho ASR (faster-whisper `small`) nghe lại cả hai.
+    # Viết tắt nào mà bản ĐỂ NGUYÊN bị nghe ra rác, còn bản ĐÃ GIẢI được nghe
+    # đúng, thì mới vào bảng này.
+    #
+    #   HTTPS   de nguyen -> "hat TTFS"          da giai -> "HTTPS"      ✓
+    #   MP3     de nguyen -> "muu phe 3"         da giai -> "MP3"        ✓
+    #   WAV     de nguyen -> "5v kep AV"         da giai -> "Quap"       ✓
+    #   HTTP    de nguyen -> "hat tro tim bi"    da giai -> "hat te te be" ✓
+    "HTTPS": "hát tê tê pê ét",
+    "HTTP": "hát tê tê pê",
+    "MP3": "em pê ba",
+    "WAV": "quáp",
 }
+
+#: 🔴 ĐÃ THỬ VÀ **LOẠI** — ghi lại để không ai "sửa" chúng lần nữa.
+#:
+#:    Cùng phép đo A/B ngày 02/09/2026, hai ứng viên dưới đây khiến kết quả
+#:    **TỆ ĐI**, vì engine vốn đã đọc chúng đúng:
+#:
+#:      RTX    de nguyen -> "RTX 3090"  ✓     da giai ("a ro te ich") -> "AZTX"     ✗
+#:      HTML   de nguyen -> "html"      ✓     da giai ("hat te em eo") -> "hat, kem L" ✗
+#:
+#: ⭐ Đây chính là lý do luật 1 tồn tại. Năm ứng viên, **hai** trong số đó sẽ
+#:    làm hỏng một thứ đang chạy tốt — và cả hai đều "trông cần sửa" y hệt bốn
+#:    cái kia. Không có phép đo thì không cách nào phân biệt.
+#:
+#: ⚠️ Và một cái bẫy của phép đo: ở bài `thuat_ngu` trong bộ đo tổng, ASR nghe
+#:    `RTX` thành "otx" — nếu dừng ở đó thì đã kết luận RTX hỏng. Đo riêng một
+#:    câu ngắn thì nó đúng. **Một lần nghe sai trong câu dài không đủ để kết
+#:    tội một từ.**
+DA_THU_VA_LOAI = ("RTX", "HTML")
 
 _CACHE: dict = {}
 

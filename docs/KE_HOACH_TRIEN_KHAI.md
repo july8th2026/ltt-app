@@ -3666,3 +3666,31 @@ deploy trong cùng phiên.
 **Rollback:** code/web dùng `C:\LTTPlatform\app.previous` qua
 `deploy/windows/rollback.ps1`; artifact là dữ liệu ngoài release nên giữ lại
 bản 1.0.0 và chỉ gỡ bản 1.1.0 nếu xác định chính artifact lỗi.
+
+## H43 — ChatLTT: sản phẩm chat LTT-native trên ba model nhà (2026-09-02)
+
+Gói: `LTTCHAT_AUTONOMOUS_DEEP_BUILD_V2` (14 phase tự chủ). **Kế hoạch + phân tích:
+`docs/CHATLTT/00_PHUONG_AN_VA_LO_TRINH.md`. Trạng thái: `docs/CHATLTT/STATE.md`.**
+
+Hình dạng: app mới `apps/chatltt/` (không sửa `chataistudio`), giao diện
+LibreChat-class bằng React island, gọi `text.chat` / `image.ltt` / `speech.ltt`
+qua **một facade mỏng `platform_core/runtime_noi_bo/`** (không API key, không
+URL máy, không engine song song). Dữ liệu hội thoại dạng cây, bảng riêng `chatltt_*`.
+
+| # | Phase gói | Việc | Trạng thái |
+|---|---|---|---|
+| H43.0 | 00 | Bootstrap: cây/gốc SHA/dải test 600–699/ranh giới phiên | ✅ 2026-09-02 |
+| H43.1 | 01 | LibreChat `v0.8.7` tham chiếu hành vi — 12 hệ con, 22 ADOPT/8 ADAPT/11 REJECT, 18 tiêu chí nghiệm thu (`docs/CHATLTT/reports/01_librechat_tham_chieu.md`) | [x] 2026-09-03 |
+| H43.2 | 02 | Gap runtime nội bộ → `platform_core/runtime_noi_bo/` (luong/danh_muc/job) + `AppManifest.so_lan_thu` + `ToolSpec.tuy_chon_dong`; `streaming.py` gọi facade; test_600–602 40 pass, 24 tệp ghim 500 pass (`reports/02_runtime_noi_bo.md`) | [x] 2026-09-03 |
+| H43.3 | 03 | Text: chuẩn hoá chunk→sự kiện, `DemToken` đọc `timings.cache_n`, SLO text, **Q120** đóng D12 (Q116↔`ngan_sach.py`); LIVE hoãn Phase 12 (`reports/03_text_noi_bo.md`) | [x] 2026-09-03 (deterministic) |
+| H43.4 | 04 | Ảnh: `platform_core/jobs.DangBan` ⇒ bận là `resource_wait` không tiêu lượt thử; `LoiYeuCauAnh`; hỏi `health()` trước khi dịch prompt (`test_606–608`, `reports/04_anh_noi_bo.md`) | [x] 2026-09-03 (deterministic) |
+| H43.5 | 05 | Tiếng: `DangBanTam(DangBan)`; giọng người khác ≡ không tồn tại; trần 1.500 giữ nguyên; tiền theo giây `ffprobe` (`test_609–612`, `reports/05_tieng_noi_bo.md`) | [x] 2026-09-03 (deterministic) |
+| H43.6 | 06 | Catalog theo chính sách sản phẩm, fail-closed — `apps/chatltt/services/chinh_sach.py`, `AppManifest.suc_khoe`, alias mới chỉ bằng registry (`test_613/614`, `reports/06_catalog_chinh_sach.md`) | [x] 2026-09-03 |
+| H43.7 | 07 | Bảng `chatltt_*` (cây, `current_leaf_id` ở CSDL, xoá mềm) + migration `7d2c1e9f4a03` + `services/{hoi_thoai,su_kien}.py` + reload từ CSDL (`test_616–618` 16 pass, `reports/07_du_lieu_cay_su_kien.md`) | [x] 2026-09-03 |
+| H43.8a | 08 | Text (máy chủ): `apps/chatltt/routes/*`, `services/{luot,dang_chay}`, SSE + Dừng + nối lại, IDOR/CSRF (`test_623`, `reports/08a_text_backend.md`) | [x] 2026-09-03 |
+| H43.8b | 08 | Text (giao diện): bundle React `frontend/chatltt` (30 test), gate/build_release biết bundle thứ tư, kiểm trình duyệt thật (stream · tạo lại · chuyển nhánh · nhánh sống qua reload · 390 px) — **mốc "chỉ-text dùng được độc lập" ĐẠT** (`reports/08b_text_giao_dien.md`) | [x] 2026-09-03 |
+| H43.9 | 09 | Ảnh + tiếng trong hội thoại: báo giá→xác nhận→nộp (Q84), tiến độ 2 s (Q87), khối ảnh/âm, cửa tài sản có kiểm sở hữu; bắt được path traversal và lỗi bố cục đè chân trang (`test_624/625`, `reports/09_anh_tieng_trong_hoi_thoai.md`) | [x] 2026-09-03 |
+| H43.10 | 10 | UX: Đọc to · số dư tự cập nhật · `anhnoibo.suc_khoe` · ba phím tắt · focus/aria · **reduced-motion** · ma trận 390–1920 px · không lộ ID thô (`reports/10_ux.md`) | [x] 2026-09-03 |
+| H43.11 | 11 | Mở rộng: ba fixture + hai phép kiểm tĩnh (không `if <tên model>`, không import provider) + `docs/CHATLTT/11_THEM_MODEL_MOI.md` có test canh (`test_626`, `reports/11_mo_rong.md`) | [x] 2026-09-03 |
+| H43.12 | 12 | Torture: đồng thời/tiền/bảo mật/dữ liệu/hiệu năng | [ ] |
+| H43.13 | 13 | Nghiệm thu tươi + gate đầy đủ + báo cáo cuối; **không deploy** | [ ] |

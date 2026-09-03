@@ -8,9 +8,12 @@ UndefinedError. One shared instance with globals fixes that at the source.
 """
 from __future__ import annotations
 
+import logging
 import pathlib
 
 from fastapi.templating import Jinja2Templates
+
+log = logging.getLogger(__name__)
 
 # Đường dẫn TUYỆT ĐỐI, suy ra từ vị trí chính file này.
 #
@@ -58,6 +61,33 @@ TAI_SAN_CO_VERSION = ("ltt.css", "sao_chep.js", "cam_chon.js", "chon_tep.js",
 
 
 def _tinh_asset_ver() -> str:
+    """Bam noi dung moi tai san co version. Doi tep = doi hash = doi URL.
+
+    🔴 KHOI `except` NAY LA CHO NUOT LOI NGUY HIEM NHAT TRONG TEP.
+
+       Muoi ba khoi `except` con lai o day deu suy giam ve phia **an toan**:
+       `_is_admin` tra `False` (coi nhu khong phai admin), `_da_dang_nhap` tra
+       `False` (coi nhu chua dang nhap), sidebar tra `[]` (hien it hon that co).
+       Im lang o do chap nhan duoc — hong thi khach thay **it hon**, khong phai
+       **sai hon**.
+
+       Cho nay nguoc lai. Thieu mot tep thi hash thanh hang so `"0"`, va tu do
+       **moi khach nhan ban tai san CU** tu Cloudflare cho toi khi het TTL.
+       Trang van render dep, khong loi nao o dau ca.
+
+    ⛔ Do dung la su co `CLAUDE.md` quy tac 6 ghi lai: sau khi sua `ltt.css`, CF
+       phuc vu ban CSS **cu** (TTL 4 gio) nen chip hien thanh radio tho, du
+       origin da dung. Co che sinh ra de chan su co do lai co mot duong hong
+       lang le dan thang ve chinh su co do.
+
+    ⚠️ VAN khong duoc nem: ham nay chay luc import, nem thi may chu khong khoi
+       dong. Nen doi khong phai "nem thay vi nuot" ma la **nuot CO TIENG**.
+
+    ⭐ Trong kho thi `tests/test_369_asset_ver_day_du.py:70` da chan: no doi moi
+       tep trong `TAI_SAN_CO_VERSION` phai `is_file()`. Cho con lai la **runtime
+       tren may chu** — mot lan deploy chep thieu thi gate khong biet, vi gate
+       chay tren cay nguon chu khong tren `C:\\LTTPlatform\\app`.
+    """
     import hashlib
     h = hashlib.md5()
     try:
@@ -65,6 +95,12 @@ def _tinh_asset_ver() -> str:
             h.update((_STATIC_DIR / ten).read_bytes())
         return h.hexdigest()[:8]
     except Exception:
+        log.warning(
+            "KHONG tinh duoc asset_ver - cache-bust da NGUNG hoat dong. Moi "
+            "khach se nhan ban tai san CU tu Cloudflare cho toi khi het TTL. "
+            "Kiem %s co du %d tep khong: %s",
+            _STATIC_DIR, len(TAI_SAN_CO_VERSION),
+            ", ".join(TAI_SAN_CO_VERSION), exc_info=True)
         return "0"
 
 

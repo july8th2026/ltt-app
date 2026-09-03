@@ -127,6 +127,27 @@
         </div>
         <p class="muted lv-ct-tinh" id="lv-ct-tinh"></p>
 
+        {# ── Nghe thử ─────────────────────────────────────────────────────
+           Trình phát ĐẦY ĐỦ ở đây, không phải một nút tròn như trên thẻ: đây
+           là chỗ người ta đã chọn xong một giọng và muốn nghe kỹ — nên phải
+           tua được, nghe lại được, chỉnh âm lượng được.
+
+           ⛔ Hai trạng thái, và trạng thái thứ hai phải NÓI RA. Một ô trống ở
+              chỗ đáng lẽ có trình phát trông y hệt một lỗi hiển thị; cùng bài
+              học với khối tiếng hết hạn ở màn Dự án. #}
+        {# ⚠️ `data-nang="1"` — `voice.js::ganTrinhPhat` nâng nó thành trình phát
+           sóng âm, giống Studio · Lịch sử · Dự án. **Bốn màn một kiểu.**
+
+           Không có nó thì đây là thanh `<audio>` xám mặc định của trình duyệt —
+           đúng thứ mà đợt 01/09 đã đi gỡ khỏi màn Studio, và để nó quay lại ở
+           màn thứ tư là làm lại chính việc vừa dọn. #}
+        <div class="lv-ct-nghe" id="lv-ct-nghe" hidden>
+          <audio data-nang="1" controls preload="none" id="lv-ct-au"></audio>
+        </div>
+        <p class="dim lv-ct-nghe-chua" id="lv-ct-nghe-chua" hidden>
+          {{ _("Bản nghe thử của giọng này đang được chuẩn bị. Quay lại sau ít phút.") }}
+        </p>
+
         <dl class="lv-ct-bang">
           <dt>{{ _("Mã dùng khi gọi") }}</dt>
           <dd><span class="lv-ma"><code class="mono" id="lv-ct-ma"></code>
@@ -207,6 +228,10 @@
     // Chi tiet cua giong NHAN BAN: dung so lieu may chu da tinh san, khong goi
     // them mot vong nao khi bam vao mot the.
     chiTiet: {{ chi_tiet | tojson }},
+    // Duong nghe thu. Giong CHUA co tep thi VANG MAT khoi dict -- khong phai
+    // mot chuoi rong. `moChiTiet` hoi `ma in duongNghe`, nen mot chuoi rong se
+    // duoc coi la "co" va dan toi mot trinh phat cam.
+    duongNghe: {{ duong_nghe | tojson }},
     chu: {
       mau: {{ _("Giọng mẫu") | tojson }},
       cuaToi: {{ _("Giọng của tôi") | tojson }},

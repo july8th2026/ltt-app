@@ -25,7 +25,7 @@ xuống một tầng: **từng tool, từng alias model, từng chế độ ch�
 
 ---
 
-## 1. 17/17 app
+## 1. 16/16 app
 
 Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực bị chặn mà không nói
 được nó sẽ về đâu thì chưa phải một kế hoạch, chỉ là một mục backlog đội lốt.
@@ -46,6 +46,7 @@ Cột **Nhà mới** chỉ bắt buộc với `MIGRATE_*`: một năng lực b�
 | `agent` | DEFER | — | không có hợp đồng job | Là runtime điều phối chứ không phải một tool; mở nó là mở cả một cơ chế chạy. |
 | `qualitylab` | INTERNAL_ONLY | — | ASYNC_JOB nội bộ | `surface=admin`, chỉ dành cho người vận hành (Q83). |
 | `nexus` | DEFER | — | không có hợp đồng job | Không sinh Job và không có `ToolSpec`: đây là bề mặt **quản lý thiết bị** (ghép máy, thu hồi, nhật ký phiên) chứ không phải một tool tính tiền. Mở nó ra API nghĩa là công bố một hợp đồng về **danh tính thiết bị**, và điều đó phải chờ hạ tầng relay (D2) cùng legal review AGPL — xem `docs/nexus/`. Q93. |
+| `chatltt` | DEFER | — | không có hợp đồng job | Sản phẩm hội thoại trên ba model nhà (H43). Không khai `ToolSpec` nào và **cố ý**: nó là **khách hàng nội bộ** của `text.chat` / `image.ltt` / `speech.ltt` qua `platform_core/runtime_noi_bo`, không phải một năng lực mới để bán. Mở nó ra `/api/v1` sẽ là bán lại đúng ba tool đã bán, qua một hợp đồng thứ hai — và hợp đồng thứ hai là chỗ hai bảng giá bắt đầu lệch nhau. App còn **TẮT** (`enabled=False`) tới khi H43 Phase 13 PASS. |
 | `vps` | DEFER | — | không có hợp đồng job | Bán **máy chủ ảo** (H39). Không khai `ToolSpec` nào, và đó không phải thiếu sót: một máy ảo là một **hợp đồng thuê** có thời hạn, không phải một lượt chạy tính tiền một lần. Quote → giữ chỗ → quyết toán không mô tả được nó. ⚠️ Dòng này ghi lại **trạng thái thật** (không có ToolSpec), không phải một quyết định sản phẩm — chủ H39 muốn bán qua `/api/v1` thì phải nói được hợp đồng là gì trước. App vẫn **TẮT** (`LTT_VPS` chưa đặt). |
 
 | `auto_scan_video` | DEFER | — | chuỗi 9 giai đoạn, không phải một lượt gọi | **Lồng tiếng Việt cho video** (pha 00–14). Một lần chạy là **chín giai đoạn**, mỗi giai đoạn một job riêng, bốn trong số đó chạy lại độc lập được. Ép vào `ToolSpec` một-vào-một-ra thì hoặc mất khả năng chạy lại một giai đoạn, hoặc bịa ra một hợp đồng mà chuỗi thật không có. ⛔ App còn `enabled=False` và `surface="runtime"` (chưa có `routes.py`) — chưa mở cho khách trên web, nên bàn mở qua API là bàn trước một bước. |

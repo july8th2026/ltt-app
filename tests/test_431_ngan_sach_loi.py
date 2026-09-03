@@ -78,14 +78,55 @@ def test_chot_nay_THAT_SU_bat_duoc_ban_gan_thang(monkeypatch):
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
 
-    # ⚠️ Tai hien bang CONG THUC CU tuong minh (20 loi LOGIC - 6 - 3 frontend),
+    # ⚠️ Tai hien bang CONG THUC CU tuong minh (20 loi LOGIC - 6 - so frontend),
     #    khong goi `ngan_sach_loi()` — ham do nay da sang don vi vat ly, nen goi
     #    no se do mot thu KHAC va phep kiem mat y nghia lich su cua no.
+    #
+    # 🔴 **`3` la mot HANG SO LICH SU, khong phai `len(gate.FRONTENDS)`.** Con so
+    #    11 duoc do ngay 03/09 khi kho co BA frontend. Phien `lttchat` sau do
+    #    them frontend thu tu (`chatltt`), va neu doan nay doc so frontend HIEN
+    #    TAI thi phep kiem se tu doi cau chuyen lich su cua chinh no moi lan ai
+    #    do them mot frontend.
+    FRONTEND_LUC_DO = 3
     ban_cu = max(1, min(gate.LOI_TOI_DA_MOI_CONG_CU,
-                        20 - 6 - len(gate.FRONTENDS)))
+                        20 - 6 - FRONTEND_LUC_DO))
     assert ban_cu == 11, "ban cu phai tai hien dung con so 11 da do duoc"
     assert ban_cu > gate.loi_cong_cu_tu_do(), (
         "ban cu phai VUOT tran — neu khong thi khong co gi de sua")
+
+
+def test_them_mot_frontend_da_CHE_khuyet_tat_chu_khong_sua_no():
+    """🔴 Phat hien luc hop nhat hai nhanh, va no la mot bai hoc ve phep do.
+
+    Cong thuc CU la `cpu_count() - 6 - len(FRONTENDS)`. Voi BA frontend no ra
+    **11** — lon hon `auto` = 10, tuc thua tai. Phien `lttchat` them frontend
+    thu tu vi mot ly do khong lien quan gi, va cong thuc do lien ra **10**.
+
+    ⛔ Nhin qua thi "het loi". Thuc te khong co gi duoc sua: 10 worker pytest
+       cong 4 frontend cong OS cong bon dich vu production van la **khong con
+       cho nao de danh cho may**. Khuyet tat chi bi day tu "thua ro rang" sang
+       "vua khit" — va mot con so vua khit thi lan sau ai them mot frontend nua
+       la no lai tu "dung" thanh "sai" ma khong ai cham vao ngan sach.
+
+    ⭐ Do la ly do ban sua that khong dieu chinh cong thuc do, ma thay bang HAI
+       thu doc lap voi so frontend: mot phan DE DANH cho may
+       (`LOI_DE_DANH_VAT_LY`) va mot TRAN cung (`TRAN_WORKER_BO_TEST`).
+    """
+    cu_ba_frontend = max(1, min(gate.LOI_TOI_DA_MOI_CONG_CU, 20 - 6 - 3))
+    cu_hom_nay = max(1, min(gate.LOI_TOI_DA_MOI_CONG_CU,
+                            20 - 6 - len(gate.FRONTENDS)))
+    assert cu_ba_frontend == 11
+    # Khong chot con so hom nay — no doi theo so frontend, va do chinh la van de.
+    assert cu_hom_nay <= cu_ba_frontend, "them frontend chi lam so nay nho di"
+
+    # ⛔ Cai duoc chot: cong thuc cu KHONG BAO GIO de lai cho cho may, du so
+    #    frontend co la bao nhieu — no khong co khai niem "de danh".
+    assert cu_hom_nay > gate.loi_cong_cu_tu_do() - gate.LOI_DE_DANH_VAT_LY, (
+        "cong thuc cu phai luon vuot phan con lai sau khi de danh cho may")
+
+    # Va ban moi thi co, bat ke so frontend.
+    assert _n_truyen_cho_pytest() <= (gate.loi_cong_cu_tu_do()
+                                      - gate.LOI_DE_DANH_VAT_LY)
 
     # Ban moi: bi tran cung keo xuong 6, va con chua 3 loi cho may.
     assert _n_truyen_cho_pytest() == gate.TRAN_WORKER_BO_TEST == 6
@@ -479,3 +520,56 @@ def test_do_tai_TAT_duoc_de_khong_cham_them_mot_giay(monkeypatch):
 
     gate.loi_cho_bo_test(phien="toi", do_tai=False)
     assert goi == [], "do_tai=False ma van do"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Tang thu BA: `-n auto` go tay ngoai gate
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_conftest_hoi_CHINH_gate_chu_khong_tu_tinh():
+    """⛔ Duong `pytest -n auto` **go tay, ngoai gate** phai chung tran voi gate.
+
+    🔴 Truoc 03/09 `conftest.pytest_xdist_auto_num_workers` co phep tinh RIENG,
+       va no ra 10 — toan bo loi vat ly, khong chua mot loi nao cho OS lan bon
+       dich vu production. Docstring cua chinh no ghi lai rang phien viet no da
+       go `pytest -n auto` ngoai gate **ba lan trong mot ngay** 03/09.
+
+    ⇒ Mot lenh go tay khong duoc di duong khac. Chot bang AST: ham do phai goi
+      `loi_cho_bo_test`.
+    """
+    import ast as _ast
+
+    tep = Path(__file__).resolve().parent / "conftest.py"
+    cay = _ast.parse(tep.read_text(encoding="utf-8"))
+    ham = [n for n in _ast.walk(cay)
+           if isinstance(n, _ast.FunctionDef)
+           and n.name == "pytest_xdist_auto_num_workers"]
+    assert ham, "mat moc `pytest_xdist_auto_num_workers`"
+
+    goi = {c.func.attr for c in _ast.walk(ham[0])
+           if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Attribute)}
+    goi |= {c.func.id for c in _ast.walk(ham[0])
+            if isinstance(c, _ast.Call) and isinstance(c.func, _ast.Name)}
+    assert "loi_cho_bo_test" in goi, (
+        "conftest tu tinh so worker cho `-n auto` thay vi hoi gate - "
+        "xem test_431 muc 'Tang thu BA'")
+
+
+def test_conftest_van_LAY_MIN_chu_khong_dat_de(monkeypatch):
+    """Neu gate tra ve mot so LON hon phep tinh cuc bo thi van lay so nho.
+
+    ⭐ Cung bai hoc voi `loi_cong_cu_tu_do`: mot tran la GIOI HAN TREN, khong
+       phai mot phep gan. Dat de thi khi ben kia rong rai hon, cai "tran" thanh
+       SAN.
+    """
+    import ast as _ast
+
+    tep = Path(__file__).resolve().parent / "conftest.py"
+    src = tep.read_text(encoding="utf-8")
+    cay = _ast.parse(src)
+    ham = [n for n in _ast.walk(cay)
+           if isinstance(n, _ast.FunctionDef)
+           and n.name == "pytest_xdist_auto_num_workers"][0]
+    doan = _ast.get_source_segment(src, ham) or ""
+    assert "min(n, " in doan or "min(n," in doan, (
+        "phai LAY MIN voi phep tinh cuc bo, khong duoc gan thang so cua gate")

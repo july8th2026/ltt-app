@@ -321,8 +321,21 @@ def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
 
     s = Sess()
     bao_dam_user(s, "executor-user"); credit.cap_tay(s, "executor-user", 100, by="test")
+    # ⭐ NGAN SACH SUY RA, khong go tay. `budget.quote` cong `PLANNING_COST`
+    #    vao chi phi thuc thi TRUOC khi so voi `budget_max_credit`, nen mot so
+    #    go tay bang dung phan thuc thi se **luon** thieu dung phan planning.
+    #
+    # 🔴 Da tra gia that cho dieu do: ban truoc de `budget_max_credit: 20` va
+    #    `estimated_max_credit=20`. 20 + 4 > 20 ⇒ `set_quote` nem `BudgetError`
+    #    **ngay o khau dung**, va cuoc dua nay chua bao gio bat dau. Trieu chung
+    #    luc do bi doc nham thanh "treo o executor" — no khong he treo.
+    #
+    # ⇒ Viet bang bieu thuc thi khong the lech lai: doi `PLANNING_COST` thi phep
+    #    kiem tu dung theo.
+    thuc_thi = 20
     plan = {
-        "version": 1, "budget_max_credit": 20,
+        "version": 1,
+        "budget_max_credit": thuc_thi + budget.PLANNING_COST,
         "steps": [{"id": "s1", "tool": "text.prompt_package", "after": [],
                    "fanout": 1, "max_retry": 0,
                    "on_fail": "retry_same", "verify": None,
@@ -339,7 +352,7 @@ def test_agent_executor_hai_scheduler_khong_submit_trung(Sess):
     # ⭐ Lay bang `budget_max_credit` de phep kiem nay do dung thu no dinh
     #    do — cuoc dua giua hai scheduler — chu khong do gia cua mot tool.
     budget.set_quote(s, run, plan=plan,
-                     validation=ValidationResult(True, (), 20, ()))
+                     validation=ValidationResult(True, (), thuc_thi, ()))
     budget.approve(s, run_id=run.id, user_id="executor-user",
                    approved_by="executor-user", expected_version=run.version)
     run_id = run.id

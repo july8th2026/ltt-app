@@ -1,7 +1,7 @@
 """Màn Lịch sử: lọc và liệt kê các lượt đọc."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
@@ -68,6 +68,10 @@ def trang_lich_su(request: Request, tt: str = "", nguon: str = "",
                     giong_da_dung=goi["giong_da_dung"],
                     nguon_da_dung=goi["nguon_da_dung"],
                     nhan_nguon=NHAN_NGUON, ten_giong=ten_giong,
+                    # Tên giọng engine dùng khi khách không chọn gì.
+                    # Lấy từ ảnh chụp preset, KHÔNG gõ tay — gõ tay thì
+                    # ngày engine đổi mặc định, lịch sử vẫn nói cái cũ.
+                    giong_mac_dinh=giong_mau.MAC_DINH,
                     cac_moc_ngay=doc_man_lich_su.CAC_MOC_NGAY,
                     f_tt=tt, f_nguon=nguon, f_giong=giong,
                     f_ngay=ngay_hop_le))
@@ -124,7 +128,8 @@ def doc_lai(request: Request, job_id: str, csrf_token: str = Form(""),
                 db, user_id=uid, app_slug=MANIFEST.slug,
                 job_type="ltt_voice.synthesize", params=p,
                 admission_resource=tool.admission_resource,
-                admission_slots=tool.admission_slots)
+                admission_slots=tool.admission_slots,
+                max_attempts=SO_LAN_THU_JOB)
         except Exception as e:  # noqa: BLE001
             db.rollback()
             # Thiếu credit là câu trả lời hay gặp nhất ở đây, và nó phải tới

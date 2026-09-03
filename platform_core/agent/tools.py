@@ -5,7 +5,9 @@ import copy
 from typing import Callable, Iterable, Optional
 
 from platform_core import prompt_fragments, providers
-from platform_core.registry import APPS_DIR, LoadedApp, RegistryError, ToolSpec, discover
+from platform_core import registry as _reg
+from platform_core.registry import (APPS_DIR, LoadedApp, RegistryError, ToolSpec,
+                                    tai_tham_chieu)
 
 
 class ToolParamsError(ValueError):
@@ -15,7 +17,7 @@ class ToolParamsError(ValueError):
 def discover_tools(*, apps: Optional[Iterable[LoadedApp]] = None,
                    allowed_slugs: Optional[set[str]] = None) -> dict[str, ToolSpec]:
     """Gom tool từ manifest hợp lệ, không import hay hardcode app cụ thể."""
-    loaded = discover() if apps is None else list(apps)
+    loaded = _reg.discover() if apps is None else list(apps)
     result: dict[str, ToolSpec] = {}
     for item in loaded:
         if item.error or not item.manifest.enabled:
@@ -42,20 +44,34 @@ def resolve_params_schema(
     *,
     apps: Optional[Iterable[LoadedApp]] = None,
     model_lookup: Optional[Callable[[str], dict]] = None,
+    db=None,
+    user_id: str = "",
 ) -> dict:
     """Resolve enum động thành ``values`` mà không sửa ToolSpec gốc.
 
     ``model_lookup`` là seam kiểm thử/registry mở rộng; mặc định dùng capability
     tĩnh trong ``platform_core.providers``.
+
+    ``db`` + ``user_id`` (H43 Phase 02): có thì resolve thêm `ToolSpec.tuy_chon_dong`
+    — tuỳ chọn **theo người dùng** (vd giọng nhân bản của chính họ). Không có
+    thì bỏ qua, các caller cũ chạy nguyên.
     """
-    loaded = discover() if apps is None else list(apps)
+    loaded = _reg.discover() if apps is None else list(apps)
     owner = _find_owner(tool_name, loaded)
     tool = next(t for t in owner.manifest.tools if t.name == tool_name)
     resolved = copy.deepcopy(tool.params_schema)
     params = params or {}
     lookup = model_lookup or providers.model_capabilities
+    dong = getattr(tool, "tuy_chon_dong", None) or {}
 
-    for schema in resolved.values():
+    for ten, schema in resolved.items():
+        ref = dong.get(ten)
+        if ref and db is not None:
+            chon = tai_tham_chieu(ref)(db, user_id) or ()
+            schema["options"] = [
+                {"value": str(c["value"]), "label": str(c.get("label", c["value"]))}
+                for c in chon if isinstance(c, dict) and "value" in c]
+            schema["values"] = [o["value"] for o in schema["options"]]
         if schema.get("type") == "model_ref":
             options = providers.model_options(
                 str(schema.get("category", "")), tuple(schema.get("providers", ())))
@@ -83,15 +99,18 @@ def validate_tool_params(
     *,
     apps: Optional[Iterable[LoadedApp]] = None,
     model_lookup: Optional[Callable[[str], dict]] = None,
+    db=None,
+    user_id: str = "",
 ) -> dict:
     """Validate nghiêm tham số Agent trước submit; trả bản sao nếu hợp lệ."""
     if not isinstance(params, dict):
         raise ToolParamsError("params phải là object")
-    loaded = discover() if apps is None else list(apps)
+    loaded = _reg.discover() if apps is None else list(apps)
     owner = _find_owner(tool_name, loaded)
     tool = next(t for t in owner.manifest.tools if t.name == tool_name)
     schema = resolve_params_schema(
-        tool_name, params, apps=loaded, model_lookup=model_lookup)
+        tool_name, params, apps=loaded, model_lookup=model_lookup,
+        db=db, user_id=user_id)
     unknown = sorted(set(params) - set(schema))
     if unknown:
         raise ToolParamsError(f"tham số không được phép: {', '.join(unknown)}")

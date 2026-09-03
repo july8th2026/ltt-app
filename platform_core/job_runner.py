@@ -581,8 +581,12 @@ def _provider_failure_kind(exc: Exception, *, provider_state: str) -> tuple[str,
     #    thử lại ba lần một việc không bao giờ thành công (xem `LoiNguoiGoi`).
     if isinstance(exc, jobq.LoiNguoiGoi):
         return "loi_nguoi_goi", 0
-    if isinstance(exc, BanError):
-        return "resource_wait", max(1, int(exc.retry_after_s or 20))
+    # "Bận" có HAI cửa nói: `jobq.DangBan` là tín hiệu nền tảng mà app nào
+    # cũng ném được (H43 Phase 04/05); `BanError` là lớp riêng của cổng VLM,
+    # giữ nguyên để không đụng đường text đang bán. Cùng một nhánh, cùng một
+    # số: về hàng đợi, không tiêu lượt thử, không chạm tiền.
+    if isinstance(exc, (jobq.DangBan, BanError)):
+        return "resource_wait", _cho_lai_s(exc)
     if isinstance(exc, KhongCoProviderNao) and exc.busy_only:
         return "resource_wait", 20
     if isinstance(exc, (VuotNganSachError, ProviderOomError)):
@@ -591,6 +595,20 @@ def _provider_failure_kind(exc: Exception, *, provider_state: str) -> tuple[str,
             or provider_state == jobq.PROVIDER_DISPATCHED):
         return "ambiguous", 0
     return "retry", 0
+
+
+def _cho_lai_s(exc: Exception) -> int:
+    """Giây chờ trước khi hỏi lại một tài nguyên bận. Sàn 1; không khai ⇒ 20.
+
+    `retry_after_s` rỗng nghĩa là cổng **không biết** còn bao lâu — và không
+    biết thì không đoán lạc quan: 20 giây là giãn cách mặc định của nền tảng,
+    đủ thưa để không thành máy bơm hỏi, đủ dày để một suất vừa nhả được nhặt.
+    """
+    try:
+        cho = float(getattr(exc, "retry_after_s", None) or 0)
+    except (TypeError, ValueError):
+        cho = 0.0
+    return max(1, int(cho or 20))
 
 
 def _orphan_terminal(db, job) -> None:

@@ -30,6 +30,9 @@ def _client(tmp_path, monkeypatch, *, credit_amount=100):
     monkeypatch.setenv("LTT_SESSION_SECRET", "upload-route-contract")
     monkeypatch.setenv("LTT_ADMIN_USERNAME", "admin")
     monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    # PHAI import truoc `create_all`: `Base.metadata` rong cho toi khi module
+    # nay duoc nap, va `create_all` tren metadata rong tao ZERO bang, im lang.
+    import platform_core.models  # noqa: F401
     dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
     storage = LocalStorage(str(tmp_path / "storage")); set_storage(storage)
     gen = dbmod.get_session(); db = next(gen)

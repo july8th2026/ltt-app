@@ -27,7 +27,7 @@ cái đang xây là cửa hàng công cụ, người dùng bấm nút và trả 
 
 ---
 
-## 1. Quyết định đã chốt (đến Q116; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91 đã thay)
+## 1. Quyết định đã chốt (đến Q120; Q10→Q108, Q13→Q26, Q14→Q24, Q18→Q38→Q49, Q22→Q27, Q63/Q64→Q66→Q67→Q68, Q90→Q91, Q116→Q120 (phần con số) đã thay)
 
 | # | Vấn đề | Quyết định | Lý do / hệ quả |
 |---|---|---|---|
@@ -156,7 +156,11 @@ là hàng rào vận hành bảo thủ để mở bước kế tiếp mà không
 hiện tại là exact tokenizer. Trước public canary vẫn phải có regression
 code-like/tools và chứng minh 413 trước GPU/credit.
 
-### Q116 — Chốt mốc public vận hành sau kiểm tra Q115 (2026-08-28)
+### Q116 — Chốt mốc public vận hành sau kiểm tra Q115 (2026-08-28) — ~~ĐÃ THAY~~ phần con số bởi **Q120** (2026-09-03)
+
+> ~~Con số `65000` không còn hiệu lực~~ — xem Q120. Phần còn lại (engine
+> `131072`, output `32768`, reserve `2048`, vision `65536`, `parallel=1`, "request
+> vượt cap phải bị chặn trước GPU/credit") **vẫn giữ**.
 
 Q116 **thay Q115**: public input cap hiệu lực là **`65000` token**. Engine
 `131072`, output `32768`, reserve app `2048`, vision `65536` và `parallel=1`
@@ -278,6 +282,39 @@ khai `perth>=0.2.0`, nhưng gói tên `perth` trên PyPI là *"Wrapper for
 có watermark trong khi mặc định `apply_watermark=True` (upstream #191).
 ⇒ Bộ cài **gỡ `perth`, cài `resemble-perth`**; sidecar **từ chối khởi động** nếu
 `watermarker is None`. Không đi tiếp trong im lặng như upstream.
+
+### Q120 — Trần đầu vào công bố của `ltt_llm` là số DẪN XUẤT từ `ngan_sach.py`, không phải một hằng chốt tay (2026-09-03, H43 Phase 03)
+
+**Chốt:** một câu hỏi "khách được gửi bao nhiêu token vào" chỉ có **một** câu
+trả lời đang hiệu lực, và nó nằm trong **mã**: `apps/ltt_llm/ngan_sach.py` —
+`TOKEN_VAO_TRAN = CUA_SO_MODEL − TOKEN_RA_TRAN − LE` (= 96.256), **công bố cho
+client** `CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN × 0,92)` (= 88.555, "89K") để
+chừa lệch tokenizer. Cổng máy B phải khai **đúng `TOKEN_VAO_TRAN`** ở
+`LTT_LLM_MAX_INPUT_TOKENS` (mặc định mã `llm_gateway/config.py:124` đã là
+96.256); `test_334` so hai bên, lệch là đỏ. Mọi bề mặt (catalog, `/api/v1/models`,
+trang tài liệu, ChatLTT) **đọc từ đó**, không gõ số.
+
+**Vì sao đổi:** Q116 chốt `65000` ngày 28/08 từ hai quan sát mà rà soát 30/08
+(`docs/VLM_NOI_BO/RA_SOAT_THAM_SO_LTT_LLM.md` §C, §D, §G) cho thấy **không phải
+trần token của model**: (1) hội thoại "chạm trần ở ~64K" thực ra bị **trần body
+256 KB** của nền tảng chặn trước khi ai đếm token (256 KB ÷ ~4 byte/token ≈ 64K —
+trùng hợp gần 65K); (2) "80K mất 120 s" là số đo của **đường trả một cục**, nơi
+Cloudflare tính giờ tới byte đầu — mà Q113 đã giải riêng bằng ngân sách 90 s
+động (gần 90K vào ⇒ non-stream bị 400 trước GPU, chỉ sang stream/job). Đường
+**stream** không bị đồng hồ đó: byte đầu tới sớm (`response.started` phát trước
+prefill — D7 của H43), và canary Q111 đã chạy **86.101 token vào trong 102 s**
+trên cổng thật, đúng đầu-cuối. Từ 30/08 mã và catalog đã công bố 88.555 và
+production đã chạy số đó (deploy `89eb46c` 02/09); giữ Q116 là giữ **hai quy
+tắc mâu thuẫn** — đúng lỗi "tài liệu trạng thái nói sai về mã thật" đã lặp bốn
+lần trong nhật ký 29/08.
+
+**Còn mở (việc vận hành, không đổi quyết định):** `RA_SOAT` §G ghi tiến trình
+đang chạy trên máy B từng đặt `LTT_LLM_MAX_INPUT_TOKENS=65000` qua `gateway.env`
+(nguồn thứ ba, do `deploy.ps1` sinh). Chừng nào chưa xác nhận bằng
+`GET /health` của B (phép kiểm live trong `test_334`), khách gửi 66K–88K có thể
+nhận 413 **do cấu hình máy B**, không phải do trần. Việc này thuộc lần deploy
+máy B kế tiếp của chủ sản phẩm; ChatLTT hiển thị trần đọc từ catalog và dịch
+413 thành "vượt trần ngữ cảnh" kèm số, không đoán.
 
 ## 2. Ràng buộc bất biến
 

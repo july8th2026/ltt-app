@@ -1612,3 +1612,80 @@ Copy this template to the top of the change log for every material session:
   chưa hiện máy + thuê bao; macOS `.dmg` chưa build; iOS chờ Apple Developer.
 - **Next actions:** C1 dời relay khỏi Windows Server 2016 Eval (hết hạn 15/12/2026) ·
   C2 relay thứ hai · C3 đặt `LTT_NEXUS_RELAY_HOST` · C4 đổi mật khẩu relay + đóng RDP.
+
+
+## 2026-09-02 — System Purification V1 (Phase -1 … 10) · FINAL PASS
+
+- **Pham vi:** chuong trinh 11 phase don dep/dong nhat ma nguon + quy tac. **Khong
+  deploy** (nhung xem "loi hua yeu" ben duoi). Nhanh `admin-mvp-v3`.
+- **Ket qua gate cuoi:** `20260902T144559Z-21084` — **PASS 25 · BOQUA 1 · FAIL 0**,
+  303s, tren cay chinh, `cay_da_doi_giua_chung: False`. Buoc BOQUA duy nhat
+  (`test_214`) da dong **rieng**: 7/7 tren PostgreSQL that.
+- **Push da xac minh:** `origin/admin-mvp-v3` = `01c23a5`, 0 commit con lai. Ca 13
+  SHA moc kiem bang `merge-base --is-ancestor`, gom `89eb46c` — ban **dang chay
+  production** ma truoc do khong nam tren remote nao.
+
+### Lam duoc
+
+- **Ngan sach CPU cho gate** (bao cao 08b). Goc: gate dem **tien trinh**, thu bi
+  tranh la **loi**. `pytest -n auto` + 3×vitest 12 worker = ~61 luong / 20 loi,
+  tren mot may **la production**. Nay `Step.so_loi` khai LOI, lich nhan viec theo
+  loi, han muc truyen XUONG cong cu con, cong `BELOW_NORMAL_PRIORITY_CLASS`.
+  ⇒ dinh ≤14 luong, va gate **nhanh hon 31%** (430s → ~300s).
+- **`CLAUDE.md` 496 → 263 dong.** Bang trang thai chep tay (280 dong, 56% tep) da
+  noi sai **nam lan**, ca nam ve phia nguy hiem. Thay bang mot **lenh**:
+  `python tools\api_prod_canary.py trang-thai`.
+- **Nen da phien:** `tools/thanh_phan.py` (so dang ky thanh phan, quan he suy tu
+  **import** chu khong tu ten tep) · khoa theo **ten tai nguyen** (`cua_so_yen`) ·
+  `cay_rieng.py` cap **dai so test** luc tao cay, **dem tren MOI cay**.
+- **Banh coc:** nuot loi 63→62 · route server 2→1 tep · app-contract WARN 1→0.
+  **Khong moc nao bi NANG.** `check_server_routes` truoc chi GHI so luong — nay so
+  gia tri.
+- **Hop dong app nhan them `bang_gia`**: `dashboard.py` thoi `import apps.anhnoibo`
+  / `apps.ltt_voice` theo ten. Da kiem tren **URL cong khai** sau deploy.
+
+### Nam cai bay da dinh, ghi de khoi dinh lai
+
+1. **Gia thuyet khop qua vua KET THUC dieu tra** — 4 lan trong mot ngay:
+   `.git` la tep o worktree → *"phep kiem chi dung o cay chinh"* (3 phien xep nham)
+   · gate dot CPU → *"frontend nap vao bong bo test"* (2 lan treo may)
+   · chay >180s → *"deadlock"* (that ra `BudgetError` o khau **dung**)
+   · `fatal: does not appear to be a git repository` → *"kho sao luu khong ton
+   tai"* (that ra **ACL chan doc**; `Test-Path` **nem loi** chu khong tra `False`).
+   ⭐ Bai hoc: **mot thong bao loi noi ve cai NHIN THAY cua cong cu, khong noi ve
+   THE GIOI.** Git da cai san su de dat — *"does NOT APPEAR TO be"* — va van bi doc
+   thanh khang dinh ve the gioi.
+2. **Cong cu kiem tra noi sai ve chinh no, theo huong nghe nhu tin tot.** Canh gac
+   CPU in *"da xong, CPU dinh 0%"* suot ca ngay — no thoat o giay thu 2 cua moi
+   luot 300 giay, vi `$!` cua bash **khong phai** PID cua Windows. Neu no im lang
+   thi co nguoi hoi; vi no noi "da xong" nen khong ai hoi.
+3. **`git add -A` khong biet ranh gioi nao ca.** No quet 7 tep chua theo doi cua
+   mot phien khac. Giao uoc ranh gioi tep song trong dau nguoi, con lenh thi quet
+   ca cay. ⇒ liet ke duong dan tuong minh, hoac `git add -u`.
+4. **Heredoc nuot backslash** — dinh 3 lan, lan hai trong luc dang viet tai lieu
+   canh bao ve chinh no. `\a` → BEL, `\t` → TAB. Ghi bang `Write`, va **doc
+   `SyntaxWarning`**: mot canh bao khong lam lenh that bai **van la mot phep do**.
+5. **Hang so go tay canh mot hang so khac se lech.** `budget_max_credit: 20` +
+   `estimated 20` thieu mat `PLANNING_COST = 4`. Nay **suy ra**.
+
+### No con lai — co ten, co pham vi
+
+- 🔴 **Ban sao luu `D:\LTTBackups` CHUA XAC MINH DUOC** (khong phai "da mat") —
+  ACL chan, `Get-Acl` cung tu choi. Chua `icacls` thi khong biet noi dung con dung
+  khong. **Can nang quyen.**
+- **294/774 chuoi i18n khach thay** (149 route app + 145 template) — viec **noi
+  dung**, khong dich may.
+- **`thanh_phan` mu voi test doc `.ps1`**: `--test trien_khai` tra **0 tep**, trong
+  khi 10 tep test trien khai that chay **250 phep kiem xanh**. Do thi **import**
+  khong thay canh do — va no mu dung o cho da tung lam sap production (BOM).
+- **Ngan sach CPU la per-RUN, khong per-MAY**: hai phien moi phien 14 loi "dung
+  luat" van la 28 tren 20.
+- 22 so tep test trung san co (⛔ khong doi ten — chay theo duoi); dai so chan
+  tuong lai.
+- Chua tao mot **luot tieng noi that tren production** (khong co tai khoan khach).
+
+### Tai lieu
+
+`docs/system_purification/reports/` — 13 bao cao (`00`…`10`, `01b`, `08b`,
+`phase_minus_1`). Bao cao `10_final_acceptance.md` chua ca hai **dinh chinh** va
+phan quyet chot.

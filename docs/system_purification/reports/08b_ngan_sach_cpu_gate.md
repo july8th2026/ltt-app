@@ -189,3 +189,57 @@ qua tai la mot chot khong ai dam chay.
 | `LOI_DE_DANH_CHO_MAY = 6` do tren may **nay** (20 loi) | may khac thi con so nen do lai; cong thuc thi khong doi |
 | `check_multiproc` khai 2 loi | dung: `test_214` dung hai tien trinh worker |
 | Ba thu muc frontend van khong co `vitest.config` gioi han | co y — han muc den tu **gate**, mot chu so huu, khong rai ra ba tep cau hinh |
+
+---
+
+## 7. ⚠️ DINH CHINH — ngan sach nay la PER-RUN, khong phai per-MAY
+
+Do 18:2x cung ngay, **sau** khi ban va da vao `admin-mvp-v3`: CPU van cham
+**100%** lien tuc. Watchdog ngat luot cua toi, va dieu tra cho thay:
+
+| Nguon tai | Ghi chu |
+|---|---|
+| phien `asv` chay `gate.py --phien asv` | cay `phien/asv` o `cedf218`, **phan nhanh TRUOC** ban va ⇒ van `-n auto` = 20 worker |
+| `apps.auto_scan_video.demucs_runner` | job tach am thanh, cuc nang, **khong hoi khoa nao** |
+| `gpu_recorder.py` (`D:\FULL AUTO VIDEO`) | tien trinh ngoai kho |
+
+### Ba dieu phai noi cho dung
+
+**① Ban va DUNG va dang chay.** Luot gate cua chinh toi truoc do dat dinh
+**52 %**. Con so 100 % khong phai cua no.
+
+**② Khoa `cua_so_yen` HOAT DONG.** Luot cua toi **da xep hang** sau khoa cua
+`asv` — watchdog cua toi giet dung mot luot dang **cho**. Ghi ro de lan sau
+khong ai di truy nham.
+
+**③ 🔴 Va day moi la lo hong that.** Khoa tuan tu hoa duoc cac luot **gate**.
+No khong biet gi ve:
+
+- mot cay khac **chua merge** ban va (van `-n auto`);
+- mot job ML chay tay (`demucs_runner`) khong di qua gate;
+- tien trinh ngoai kho.
+
+⇒ Ngan sach loi la **cua mot luot**, khong phai cua **ca may**. Hai phien, moi
+phien 14 loi "dung luat", van la 28 tren 20.
+
+### Cai da co, va cai chua co
+
+⭐ `BELOW_NORMAL_PRIORITY_CLASS` **da** giai quyet phan quan trong nhat: gate
+luon nhuong **production**. Do la thu phai bao ve truoc tien, va no duoc bao ve
+khong phu thuoc vao phep tinh nao.
+
+⛔ Cai chua co: hai **cong viec phat trien** nang chay song song van cong don.
+Sua triet de doi mot ngan sach **cap may** — mot bo dem lien tien trinh ma moi
+viec nang phai xin, khong chi gate. Hien `cua_so_yen` da co dung hinh dang cho
+viec do (khoa theo ten tai nguyen, ngoai cay kho, co chu va co phat hien treo),
+nhung **chi gate goi no**.
+
+⇒ Ghi thanh no CO TEN, khong sua trong dot nay: no doi moi cong cu nang trong
+kho phai di qua mot cua, va do la mot thay doi hop dong chu khong phai mot ban va.
+
+### Viec truoc mat, re va co that
+
+Ban va chi co tac dung o cay nao **da merge** no. Cay `phien/asv` chua. Mot ban
+va ve tai nguyen toan may chi dung khi **moi cay** deu co no — nen buoc tiep
+theo khong phai viet them ma la **lan toa ban va**.
+

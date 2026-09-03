@@ -2,11 +2,12 @@
 theo dõi kết quả."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, du_an, features,
-                     gia, giong_mau, io, lan_ngon_ngu, require_login,
+                     gia, giong_mau, io, lan_ngon_ngu, nghe_thu,
+                     require_login,
                      router, templates,
                      tham_chieu, tu_dien_rieng, user_hien_tai,
                      verify_csrf_token, vo,
@@ -49,6 +50,13 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         #    tới khi đọc lỗi. Danh sách dự án cho nút `Lưu vào dự án`.
         du_an_ds = [{"public_id": d.public_id, "ten": d.ten}
                     for d in du_an.danh_sach(db, uid)]
+        # Đường nghe thử cho bộ chọn giọng. CÙNG thẩm quyền với màn Giọng
+        # (`nghe_thu.duong_cho_trang`) — hai chỗ tự ghép URL là hai chỗ
+        # sẽ lệch, và bài học đó đã trả giá ở `du_an.duong_tieng()`.
+        duong_nghe = nghe_thu.duong_cho_trang(
+            duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
+            ma_mau=[g.ma for g in giong_mau.DANH_SACH],
+            rieng=[g.public_id for g in cua_toi])
     finally:
         try:
             next(gen)
@@ -86,6 +94,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     # về giá trị khác — im lặng.
                     cac_nac_toc_do=_toc_do.CAC_NAC,
                     du_an_ds=du_an_ds,
+                    duong_nghe=duong_nghe,
                     gan_day=gan_day))
 
 
@@ -291,7 +300,11 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
                     "toc_do": yc.toc_do, "nguon": "studio"},
             # Một GPU = một việc, và cả ba cửa giành cùng một slot (Q114).
             admission_resource=tool.admission_resource,
-            admission_slots=tool.admission_slots)
+            admission_slots=tool.admission_slots,
+            # ⛔ 5 chứ không phải mặc định 3. Ba lần thử là một cửa sổ ~30 giây,
+            #    còn riêng phần nạp model khi deploy đã đo 39,9–73,1 giây — nên
+            #    mọi lượt đang bay lúc deploy đều chết. Xem `SO_LAN_THU_JOB`.
+            max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "job_id": str(job.id)})
     except Exception as e:  # noqa: BLE001 - thiếu credit cũng đi đường này

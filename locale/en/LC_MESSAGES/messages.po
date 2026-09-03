@@ -13833,3 +13833,56 @@ msgstr "Per-segment checkpoints inside a stage: which segment has been spoken, w
 #: apps/auto_scan_video/su_dung.py
 msgid "Còn {n} lần gọi chưa rõ đã chạy hay chưa — cần xác nhận trước khi chạy lại để tránh trả tiền hai lần."
 msgstr "{n} call(s) may or may not have run - confirm before retrying so you are not charged twice."
+msgid "Xin chào, đây là giọng đọc của tôi. Hôm nay là ngày mùng hai tháng chín. Rất vui được đồng hành cùng bạn."
+msgstr "Hello, this is my reading voice. Today is the second of September. I am glad to be here with you."
+
+msgid "Bản nghe thử của giọng này đang được chuẩn bị. Quay lại sau ít phút."
+msgstr "A preview of this voice is being prepared. Check back in a few minutes."
+
+msgid "Nghe thử giọng"
+msgstr "Preview voice"
+
+msgid "Trang việc"
+msgstr "Job page"
+
+msgid "[{slug}] so_lan_thu khai job_type không thuộc app: {jt!r}"
+msgstr "[{slug}] so_lan_thu names a job_type that does not belong to this app: {jt!r}"
+
+msgid "[{slug}] so_lan_thu[{jt!r}] phải là số nguyên ≥ 1: {so!r}"
+msgstr "[{slug}] so_lan_thu[{jt!r}] must be an integer >= 1: {so!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong trỏ tới tham số không tồn tại: {param!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong points to a parameter that does not exist: {param!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong chỉ hỗ trợ tham số `string`, {param!r} là {kind!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong only supports `string` parameters; {param!r} is {kind!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là `module:attribute`, nhận {ref!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] must be `module:attribute`, got {ref!r}"
+
+msgid "Trò chuyện với model của LTT: văn bản, ảnh và giọng nói trong một hội thoại."
+msgstr "Chat with LTT's own models: text, images and voice in one conversation."
+
+msgid "Sản phẩm hội thoại trên model của LTT đang được xây (H43). Trang này là chỗ giữ chỗ để đường dẫn không trả 404."
+msgstr "The conversation product on LTT's models is being built (H43). This page is a placeholder so the path does not return 404."
+
+msgid "ChatLTT cần JavaScript."
+msgstr "ChatLTT needs JavaScript."
+
+msgid "Giao diện chưa được build (thiếu bundle frontend/chatltt). API vẫn hoạt động tại /chatltt/api."
+msgstr "The interface has not been built (frontend/chatltt bundle missing). The API still works at /chatltt/api."
+
+msgid "Hội thoại ChatLTT: tiêu đề, model đang chọn, nhánh đang xem. Xoá là xoá mềm — dọn thật theo hạn giữ dữ liệu."
+msgstr "A ChatLTT conversation: title, selected model, branch in view. Deletion is soft; real removal follows the retention limit."
+
+msgid "Một lượt thi hành: phần chữ đã sinh (kể cả khi bị ngắt), số token đo được và số credit đã giữ/thu — thứ đối chiếu được với sổ tiền."
+msgstr "One execution: the text generated so far (even if interrupted), the tokens measured, and the credit held and charged — what reconciles against the ledger."
+
+msgid "Từng lượt nói trong cây hội thoại, kèm khối nội dung (chữ, suy luận, ảnh, tiếng). Thứ nhạy cảm nhất của sản phẩm này."
+msgstr "Each turn in the conversation tree, with its content blocks (text, reasoning, images, audio). The most sensitive data in this product."
+
+msgid "theo hội thoại chứa nó"
+msgstr "with the conversation that holds it"
+
+msgid "xoá mềm rồi dọn theo hạn giữ dữ liệu"
+msgstr "soft-deleted, then purged at the retention limit"

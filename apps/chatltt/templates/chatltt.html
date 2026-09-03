@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}ChatLTT{% endblock %}
+{% block page_mode %}immersive{% endblock %}
+{% block content %}
+{% for href in chatltt_css %}<link rel="stylesheet" href="{{ href }}">{% endfor %}
+<div id="chatltt-root"
+     data-csrf="{{ csrf_token }}"
+     data-api="/chatltt/api"
+     class="chatltt-root">
+  <noscript>{{ _('ChatLTT cần JavaScript.') }}</noscript>
+  {% if not chatltt_js %}
+  <section class="ltt-card" style="max-width:720px;margin:2rem auto">
+    <h1>ChatLTT</h1>
+    <p>{{ _('Giao diện chưa được build (thiếu bundle frontend/chatltt). API vẫn hoạt động tại /chatltt/api.') }}</p>
+  </section>
+  {% endif %}
+</div>
+{% for src in chatltt_js %}<script type="module" src="{{ src }}"></script>{% endfor %}
+{% endblock %}

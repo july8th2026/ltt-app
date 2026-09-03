@@ -1,0 +1,39 @@
+{#
+  Nút NGHE THỬ cho một mục trong bộ chọn giọng.
+
+  Tham số:
+    ma  — mã giọng. Giọng nhân bản truyền qua `g.public_id` (mặc định dưới
+          đây); giọng mẫu phải truyền tường minh vì `g` là `GiongMau`.
+
+  ⭐ MỘT partial cho cả hai loại, cùng lý do `_voice_the.html` là một: chúng
+     khác nhau ở đúng cách lấy mã và giống nhau ở mọi thứ còn lại.
+
+  ⛔ NÚT NÀY KHÔNG CHỌN GIỌNG, và điều đó ĐÚNG Ý MUỐN.
+
+     Người ta nghe thử NHIỀU giọng liên tiếp rồi mới chọn. Nếu mỗi lượt nghe
+     cũng là một lượt chọn thì giọng được chọn cuối cùng là giọng họ nghe SAU
+     CÙNG chứ không phải giọng họ THÍCH NHẤT — và họ sẽ không nhận ra, vì radio
+     đã chuyển trong lúc họ đang nghe.
+
+  ⭐ Nhưng ĐỪNG tin rằng `preventDefault()` là thứ đang giữ điều đó. Đo trên
+     trình duyệt thật 02/09/2026: **`<button>` nằm trong `<label>` vốn đã không
+     kích hoạt control của label** — HTML spec loại trừ nội dung tương tác nằm
+     trong label. Nút CHÉP MÃ ngay cạnh cũng không chọn giọng, dù nó không gọi
+     `preventDefault()` ở đâu cả.
+
+     *(Chú thích cũ trong `_voice_chon.html` khẳng định ngược lại — rằng bấm nút
+       chép "cũng chọn luôn giọng ấy". Đã kiểm bằng một cú bấm thật: không.
+       Một lời giải thích sai cho một hành vi đúng là thứ sẽ dẫn người sửa sau
+       đi nhầm đường.)*
+
+  Giọng chưa có tệp nghe thử thì **không dựng gì cả** — không nút xám, không ô
+  trống. Một nút bấm được mà không kêu tệ hơn hẳn chỗ trống.
+#}
+{%- set _ma = ma if ma is defined else g.public_id %}
+{%- set _url = duong_nghe.get(_ma) if duong_nghe is defined else none %}
+{%- if _url %}
+<button type="button" class="lv-chon-nghe lv-nghe" data-nghe="{{ _url }}"
+        aria-label="{{ _('Nghe thử giọng') }} {{ _ma }}">
+  <span class="lv-nghe-dau" aria-hidden="true"></span>
+</button>
+{%- endif %}

@@ -478,11 +478,26 @@ def submit(db, *, principal, tool, params: dict, quote: dict,
     return submit_with_credit(
         db, user_id=principal.user_id, app_slug=tool.app_slug,
         job_type=lane, params=job_params, dedupe_key=dedupe,
+        # Số lần thử do APP khai (`AppManifest.so_lan_thu`), không phải mặc định
+        # 3 của hàng đợi. Trước 02/09 cửa này không truyền gì, nên một job voice
+        # qua API chết ở mỗi lần deploy trong khi cùng job đó qua web sống sót.
+        max_attempts=_so_lan_thu(tool, lane),
         quoted_credit=int(quote.get("credit", 0)),
         admission_resource=getattr(tool, "admission_resource", "") or "api",
         admission_slots=getattr(tool, "admission_slots", 0),
     )
 
+
+
+def _so_lan_thu(tool, lane: str, *, default: int = 3) -> int:
+    """`AppManifest.so_lan_thu_for(lane)` của app sở hữu tool; không có thì `default`."""
+    from platform_core.registry import discover
+
+    for loaded in discover():
+        if loaded.error or loaded.manifest.slug != getattr(tool, "app_slug", ""):
+            continue
+        return loaded.manifest.so_lan_thu_for(lane, default=default)
+    return default
 
 
 def _lane_for(tool, params: dict) -> str:

@@ -179,3 +179,23 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
     khoa = f"{khoa_nguon(owner_id, public_id)}.{duoi}"
     get_storage().put(khoa, io.BytesIO(data), content_type=mime)
     return khoa
+
+
+def tuy_chon_voice_id(db, user_id: str) -> list:
+    """Giọng nhân bản của **chính** người dùng, cho `ToolSpec.tuy_chon_dong`.
+
+    Nền tảng gọi hàm này qua tham chiếu trong manifest (H43 Phase 02) để một
+    sản phẩm web khác (ChatLTT) hay palette Agent mời đúng giọng của họ mà
+    không import app này. Danh sách là **gợi ý cho giao diện**; sở hữu vẫn do
+    `features.giai_giong` kiểm lúc thi hành.
+
+    Không gồm kho chung và không gồm giọng đã thu hồi — cùng mặc định với
+    `danh_sach`: màn nào muốn thấy kho chung phải nói ra.
+    """
+    ra = []
+    for ho_so in danh_sach(db, owner_id=str(user_id)):
+        if getattr(ho_so, "trang_thai", "") != "active":
+            continue
+        ra.append({"value": str(ho_so.public_id),
+                   "label": str(getattr(ho_so, "ten_hien_thi", "") or ho_so.public_id)})
+    return ra

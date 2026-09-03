@@ -123,6 +123,9 @@
                     data-vidu="curl">cURL</button>
             <button type="button" class="lv-loc-nut" aria-pressed="false"
                     data-vidu="python">Python</button>
+            <button type="button" class="lv-loc-nut"
+                    aria-pressed="false"
+                    data-vidu="js">JavaScript</button>
           </div>
 
           <div class="lv-api-ma" data-vidu-cho="curl">
@@ -158,6 +161,37 @@ req = urllib.request.Request(
         "User-Agent": "ltt-client/1.0",
     })
 print(json.load(urllib.request.urlopen(req)))</code></pre>
+          </div>
+
+          {#
+            JavaScript — `fetch` co san trong Node 18+ va trong moi trinh duyet.
+
+            ⛔ VA MOT CANH BAO PHAI CO O DAY, khong o hai vi du kia: dan doan ma
+               nay vao mot trang web la **lo khoa API cho moi nguoi xem trang**.
+               `fetch` chay duoc ca hai phia, nen doan nay trong y het mot doan
+               dung o trinh duyet — va do dung la cach mot khoa bi lo.
+
+            ⚠️ Khong can meo `User-Agent` nhu ban Python: luat cua Cloudflare
+               chan tien to chuoi `Python-urllib/`, con `node`/trinh duyet tu
+               dat mot UA khac.
+          #}
+          <div class="lv-api-ma" data-vidu-cho="js" hidden>
+            <button type="button" class="lv-ma-chep" data-chep-tu="lv-api-js"
+                    aria-label="{{ _('Chép mã mẫu') }}"
+                    title="{{ _('Chép mã mẫu') }}">⧉</button>
+            <pre id="lv-api-js" class="mono"><code>// Chay o PHIA MAY CHU (Node 18+). Dung dat khoa trong ma trinh duyet.
+const r = await fetch("https://app.lttstudios.com/api/v1/jobs", {
+  method: "POST",
+  headers: {
+    "Authorization": `Bearer ${process.env.LTT_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    tool: "{{ ten_tool }}",
+    params: { text: "{{ vi_du }}", preset: "{{ mac_dinh }}" },
+  }),
+});
+console.log(await r.json());</code></pre>
           </div>
           <p class="dim"><small>{{ _("Lượt gọi trả về một job. Hỏi lại trạng thái ở /api/v1/jobs/{id} cho tới khi xong, hoặc đăng ký webhook.") }}</small></p>
         </div>

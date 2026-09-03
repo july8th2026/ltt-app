@@ -76,6 +76,7 @@
              data-lan="{{ g.ngon_ngu or '' }}">
         <input type="radio" name="giong" value="v:{{ g.public_id }}"
                {{ 'checked' if giong_chon == g.public_id }}>
+        {% include "_voice_chon_nghe.html" %}
         <span class="lv-chon-noi">
           <b>{{ g.ten_hien_thi }}</b>
           <small><span class="chip v">{{ _("Giọng của tôi") }}</span>
@@ -93,9 +94,17 @@
                chưa dùng. Đây là một component đúng bị bỏ quên, không phải một
                component mới.
 
-            ⚠️ Nút chép nằm TRONG một `<label>`, nên bấm nó cũng chọn luôn giọng
-               ấy. Đó là hành vi hợp lý (chép mã của giọng nào thì thường muốn
-               dùng giọng đó), nhưng phải nói ra vì nó là một tác dụng phụ.
+            ⛔ CHÚ THÍCH CŨ Ở ĐÂY NÓI SAI, đã sửa 02/09/2026. Nó viết: *"Nút
+               chép nằm TRONG một `<label>`, nên bấm nó cũng chọn luôn giọng
+               ấy."* Bấm thật trên trình duyệt: **không**. Radio giữ nguyên.
+
+               Lý do là HTML spec loại trừ **nội dung tương tác** nằm trong
+               `<label>` khỏi việc kích hoạt control — một `<button>` trong
+               label không tick radio, dù không ai gọi `preventDefault()`.
+
+            ⭐ Đáng sửa chứ không đáng bỏ qua: chú thích cũ mô tả một "tác dụng
+               phụ" không tồn tại, nên người đọc sau sẽ đi tìm cách chặn nó, hoặc
+               tệ hơn — dựa vào nó khi thêm một nút thứ ba.
           #}
           {% with ma = g.public_id, nho = true %}
             {% include "_voice_ma.html" %}
@@ -109,9 +118,31 @@
              data-lan="vi">
         <input type="radio" name="giong" value="m:{{ g.ma }}"
                {{ 'checked' if giong_chon == g.ma }}>
+        {% with ma = g.ma %}{% include "_voice_chon_nghe.html" %}{% endwith %}
         <span class="lv-chon-noi">
           <b>{{ g.ma }}</b>
           <small>{{ _(nhan_gioi[g.gioi]) }} · {{ _(nhan_vung[g.vung]) }} · {{ _(nhan_phong_cach[g.phong_cach]) }}</small>
+          {#
+            ⛔ KHÔNG có chip mã giọng ở đây, và đó là một quyết định đã thử rồi
+               gỡ (02/09/2026).
+
+               Bản đầu thêm nó cho cả hai mươi giọng mẫu, lý do nghe rất hợp
+               lý: tên giọng chính là tham số `preset` khi gọi API, nên khách
+               phải chép được nó.
+
+               Nhưng với giọng mẫu, `public_id == ten_hien_thi`. Chip ấy in ra
+               **đúng chuỗi vừa nằm ngay trên nó**, cách hai chục pixel. Hai
+               mươi dòng, mỗi dòng nói tên giọng hai lần — đúng lỗi mà chính
+               `voice.js::moChiTiet` đã ghi lại: *"panel nói Ready hai lần
+               trong bốn dòng, và lần thứ hai không thêm thông tin nào"*.
+
+            ⭐ Giọng NHÂN BẢN thì ngược lại và vẫn giữ chip: ở đó mã là
+               `vc_<32 hex>`, không đoán được từ tên, nên chip mang thông tin
+               thật.
+
+            Muốn chép tên preset: màn Giọng và màn API đều liệt kê đủ hai mươi
+            cái, ở dạng chép được, cạnh đúng ngữ cảnh dùng chúng.
+          #}
         </span>
       </label>
     {% endfor %}

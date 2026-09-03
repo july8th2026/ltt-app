@@ -63,7 +63,26 @@ def audio(key: str, mp3: int = 0,
     la_ket_qua = key.startswith(f"voice/out/{uid}/")
     la_clip_goc = (key.startswith(f"voice/{uid}/")
                    and ten_tep.startswith("source."))
-    if not (la_ket_qua or la_clip_goc):
+
+    # ── NGHE THỬ — tiền tố thứ ba, và nó có luật đọc RIÊNG ────────────────────
+    #
+    # ⭐ `voice/mau/…` KHÔNG mang `owner_id`, và đó là chủ ý chứ không phải sơ
+    #    suất: giọng dựng sẵn không thuộc về ai. Hai mươi tệp ấy là **cùng một
+    #    tệp cho mọi khách** — nhân bản chúng theo từng chủ sở hữu là nhân hai
+    #    mươi lượt chiếm GPU lên bằng số người dùng, để bảo vệ một thứ không có
+    #    gì riêng tư: một câu chào cố định đọc bằng một giọng đăng trong tài liệu.
+    #
+    # ⛔ Nhưng vẫn **đòi đăng nhập** (`require_login` ở chữ ký). Không phải để
+    #    giấu nội dung, mà để đường này không thành một CDN mở cho người lạ.
+    la_nghe_thu_mau = key.startswith("voice/mau/") and ten_tep.endswith(".wav")
+
+    # Nghe thử giọng nhân bản thì NGƯỢC LẠI — nó là giọng của một người thật,
+    # nên nó đi qua đúng phép kiểm sở hữu của clip gốc: cùng thư mục, và cửa mở
+    # theo TÊN TỆP để `repr-*.npz` nằm cạnh đó không bao giờ lọt ra.
+    la_nghe_thu_rieng = (key.startswith(f"voice/{uid}/")
+                         and ten_tep.startswith("preview-"))
+
+    if not (la_ket_qua or la_clip_goc or la_nghe_thu_mau or la_nghe_thu_rieng):
         return Response(status_code=404)
     from platform_core.storage import get_storage
     try:

@@ -1,0 +1,386 @@
+/*
+ * chatltt.css — chi bo cuc va sac thai rieng cua ChatLTT.
+ *
+ * ⛔ KHONG dinh nghia lai mau. Moi mau doc tu bien cua `server/static/ltt.css`
+ *    (`--surface-*`, `--text-*`, `--brand-*`, `--radius-*`). Dinh nghia lai la
+ *    tao bang mau thu hai, va ngay doi thuong hieu se co hai noi phai sua —
+ *    dung cai bay ma `DESIGN_SYSTEM_LTT.md` canh.
+ *
+ * ⭐ `prefers-reduced-motion` duoc ton trong o day chu khong chi trong ltt.css:
+ *    Phase 10 doi dieu do, va LibreChat lam thieu (chi 2 cho) — bao cao Phase 01
+ *    §11.5 ghi ro. Nen no la mot cho ChatLTT phai HON tham chieu.
+ */
+
+/*
+ * 🔴 `min-height: 0` KHONG PHAI TRANG TRI — thieu no thi o soan tran RA NGOAI
+ *    khung cha va de len chan trang. Do duoc tren trinh duyet 03/09 o 1280x900:
+ *    day cua `.ltc` la 758px trong khi o soan nam o 801-900px.
+ *
+ *    Ly do: mot vung grid mac dinh co `min-height: auto`, nghia la no **khong
+ *    duoc nho hon noi dung cua no**. Nen khi tong cac hang vuot chieu cao da
+ *    dat cua `.ltc`, chung khong co lai — chung trao ra. Phai go rang buoc do o
+ *    TUNG tang: `.ltc` -> `.ltc-chinh` -> `.ltc-luong`.
+ *
+ * ⭐ Chieu cao: trang co header (61px) + padding (16+32) + chan trang (61px) —
+ *    do that 03/09. Tru 190px de ca ung dung nam gon trong mot man hinh, va
+ *    `min-height` giu no dung duoc tren man rat thap; vung tin nhan tu cuon nen
+ *    khong bao giờ co gi khong voi toi duoc.
+ */
+.ltc {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
+  height: calc(100vh - 190px);
+  min-height: 420px;
+  max-height: 1000px;
+  color: var(--text-primary);
+  font-family: var(--font);
+}
+
+/* ── Thanh ben ─────────────────────────────────────────────────────────── */
+
+.ltc-ben {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;              /* xem ghi chu o `.ltc` */
+  gap: 8px;
+  padding: 12px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+  min-width: 0;
+}
+
+.ltc-tim {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.ltc-ds { list-style: none; margin: 0; padding: 0; overflow-y: auto; min-height: 0; }
+
+.ltc-ds__muc {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ltc-ds__muc:hover { background: var(--surface-raised); color: var(--text-primary); }
+.ltc-ds__muc.la-dang-xem {
+  background: var(--surface-interactive);
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+
+/* ── Luong chinh ───────────────────────────────────────────────────────── */
+
+.ltc-chinh {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto auto;
+  min-width: 0;
+  min-height: 0;              /* xem ghi chu o `.ltc` */
+  background: var(--surface-canvas);
+}
+
+.ltc-dinh {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.ltc-model { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
+.ltc-model select {
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.ltc-chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--status-warning-border);
+  background: var(--status-warning-soft);
+  color: var(--status-warning);
+}
+
+.ltc-luong {
+  min-height: 0;              /* xem ghi chu o `.ltc` */
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+.ltc-trong { color: var(--text-muted); text-align: center; margin-top: 15vh; }
+
+/* ── Mot luot noi ──────────────────────────────────────────────────────── */
+
+.ltc-tin {
+  max-width: 760px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+}
+.ltc-tin--user { background: var(--surface-overlay); }
+.ltc-tin__vai { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+.ltc-tin__tho { white-space: pre-wrap; margin: 0; }
+.ltc-tin__chu { line-height: 1.6; overflow-wrap: anywhere; }
+.ltc-tin__chu > :first-child { margin-top: 0; }
+.ltc-tin__chu > :last-child { margin-bottom: 0; }
+.ltc-tin__chu pre {
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  overflow-x: auto;
+}
+.ltc-tin__chu code { font-family: var(--mono); font-size: 0.92em; }
+.ltc-tin__chu table { border-collapse: collapse; display: block; overflow-x: auto; }
+.ltc-tin__chu th, .ltc-tin__chu td {
+  border: 1px solid var(--border-subtle); padding: 4px 8px;
+}
+
+.ltc-tin__loi {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--status-danger-border);
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+  border-radius: var(--radius-sm);
+}
+.ltc-tin__nhan { margin: 8px 0 0; color: var(--text-muted); font-size: 13px; }
+
+.ltc-tin__thanhcong {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 10px; min-height: 24px;
+}
+
+.ltc-nhanh { display: flex; align-items: center; gap: 4px; color: var(--text-secondary); }
+.ltc-nhanh button {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-overlay);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  min-width: 28px; min-height: 28px;
+  cursor: pointer;
+}
+.ltc-nhanh button:disabled { opacity: .4; cursor: default; }
+.ltc-nhanh span { font-size: 12px; min-width: 44px; text-align: center; }
+
+/* ── Suy luan ──────────────────────────────────────────────────────────── */
+
+.ltc-suyluan { margin-bottom: 10px; }
+.ltc-suyluan__nut {
+  background: none; border: none; padding: 0;
+  color: var(--text-muted); font: inherit; cursor: pointer;
+}
+.ltc-suyluan__chu {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  background: var(--surface-canvas);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+/* ── O soan ────────────────────────────────────────────────────────────── */
+
+.ltc-soan {
+  /* ⛔ `wrap`, khong phai mot hang cung. Hang anh dinh va dong loi la hai phan
+     tu CON cua o soan, nen mot hang cung se day o nhap va nut Gui ra ngoai o
+     390 px. Do la dung loi da sua o Phase 09 (o soan de len chan trang), chi
+     khac cho. */
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+}
+
+/* Hang anh da dinh va dong loi chiem TRON be ngang, nam tren o nhap. */
+.ltc-soan__anh, .ltc-soan__loi { flex: 0 0 100%; margin: 0; }
+.ltc-soan__anh {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 0; list-style: none;
+}
+.ltc-soan__anh-mot {
+  display: inline-flex; align-items: center; gap: 6px;
+  max-width: 100%;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  font-size: 0.85rem;
+}
+.ltc-soan__anh-ten {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 22ch;
+}
+.ltc-soan__anh-bo {
+  border: 0; background: none; cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 1rem; line-height: 1; padding: 2px 4px;
+}
+.ltc-soan__anh-bo:hover { color: var(--text-primary); }
+.ltc-soan__loi { color: var(--support-error, #da1e28); font-size: 0.85rem; }
+
+/* O chon tep that bi an; nut `📎 Anh` la thu nguoi dung thay va bam.
+   ⛔ `position: absolute` + `opacity: 0` chu KHONG `display: none`: mot input
+      `display:none` khong nhan duoc `.click()` tren mot so trinh duyet, va no
+      cung bien mat khoi cay tro nang. */
+.ltc-soan__tep {
+  position: absolute; width: 1px; height: 1px;
+  opacity: 0; pointer-events: none;
+}
+.ltc-soan__o {
+  flex: 1;
+  resize: none;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+  line-height: 1.5;
+  max-height: 320px;
+}
+
+.ltc-nut {
+  padding: 10px 16px;
+  border: 1px solid var(--brand-border);
+  border-radius: var(--radius-md);
+  background: var(--brand-primary);
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.ltc-nut:disabled { opacity: .45; cursor: default; }
+.ltc-nut--dung { background: var(--surface-interactive); border-color: var(--border-strong); }
+.ltc-nut--moi { width: 100%; }
+.ltc-nut--nho {
+  padding: 4px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-overlay);
+  color: var(--text-secondary);
+  font: inherit; font-size: 13px; cursor: pointer;
+}
+
+.ltc-loi {
+  margin: 0; padding: 8px 16px;
+  background: var(--status-danger-soft);
+  color: var(--status-danger);
+  border-top: 1px solid var(--status-danger-border);
+}
+
+/* Nhip dap khi chua co chu nao: dau hieu duy nhat rang luot DA bat dau. */
+.ltc-nhipdap {
+  display: inline-block; width: 8px; height: 16px;
+  background: var(--text-muted);
+  animation: ltc-nhap 1s steps(2, start) infinite;
+}
+@keyframes ltc-nhap { to { opacity: 0 } }
+
+/* ── Man hep ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 860px) {
+  .ltc { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto;
+         height: auto; max-height: none; }
+  .ltc-ben {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    max-height: 220px;
+  }
+  .ltc-luong { padding: 12px 10px; }
+  .ltc-tin { padding: 10px 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ltc-luong { scroll-behavior: auto; }
+  .ltc-nhipdap { animation: none; opacity: .6; }
+}
+
+/* ── Tao anh / tieng ───────────────────────────────────────────────────── */
+
+.ltc-media {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-base);
+}
+.ltc-media__o { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; align-items: flex-end; }
+.ltc-media__o textarea {
+  flex: 1; min-width: 220px; resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+.ltc-media__giong { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+.ltc-media__giong select {
+  padding: 6px 8px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-raised);
+  color: var(--text-primary);
+  font: inherit;
+}
+/* O gia: khong bao gio nop ma khong hoi — nen no phai NOI BAT. */
+.ltc-media__gia {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--brand-border);
+  background: var(--brand-soft);
+  border-radius: var(--radius-sm);
+}
+.ltc-lien { color: var(--text-muted); font-size: 13px; }
+
+.ltc-taisan { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+/* Chieu cao dat truoc: anh tai xong khong day chu xuong (bai hoc Image.tsx). */
+.ltc-taisan__anh {
+  max-width: 100%; max-height: 45vh; width: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-canvas);
+  display: block;
+}
+.ltc-taisan__am { width: 100%; max-width: 420px; }
+
+/* So du: mot con so, khong phai mot cai nut — no la thong tin, khong phai loi mòi. */
+.ltc-sodu {
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-raised);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

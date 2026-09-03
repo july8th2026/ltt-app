@@ -57,3 +57,31 @@ TRAN_MOI_LUOT_SINH = 1500
 #:    dài áp kích thước một lượt gộp lô lên chính người gọi — bài 12 đoạn nhận
 #:    `413`. Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
 TRAN_KY_TU_CONG_KHAI = 1500
+
+
+#: Số lần thử cho một job giọng. **Không phải một con số tuỳ ý.**
+#:
+#: 🔴 ĐO THẬT 02/09/2026, giết cổng giọng rồi nộp một lượt đọc:
+#:
+#:      max_attempts = 3  ->  cua so thu lai ~30 giay  (cho 10s, roi 20s)
+#:      job chet han sau  ~45 giay, trang thai `error`
+#:
+#:    Nhưng **một lần deploy dài hơn thế nhiều**: dừng `LTTStudioVoice`, chép
+#:    `app\`, khởi động lại, và riêng phần **nạp model** đã đo được **39,9 s**
+#:    (nguội) tới **73,1 s**. Tức mọi lượt đọc đang bay khi deploy đều chết.
+#:
+#: ⭐ Bản sửa 31/08 (`LoiHaTang`) làm job **được thử lại** thay vì hỏng ngay —
+#:    đúng, nhưng chưa đủ: nó sửa việc **phân loại** lỗi mà không sửa **kết
+#:    quả**. Ba lần thử trong 30 giây vẫn thua một lần khởi động lại.
+#:
+#: ⚠️ 5 chứ không phải 8. Cửa sổ 5 lần là 10+20+40+80 = **~150 giây**, gấp đôi
+#:    lần nạp model chậm nhất đã đo. Nhiều hơn nữa thì một cổng hỏng THẬT bắt
+#:    khách chờ năm phút mới được báo — và với một job mà đường bình thường chỉ
+#:    mất 12–25 giây, im lặng năm phút là một kiểu hỏng khác.
+#:
+#: ⛔ Đừng đổi nó thành "thử lại mãi". `DangBanTam` (429) đã đi đường
+#:    `defer_resource` — về hàng đợi **không tiêu lượt thử** — và đó là đường
+#:    dành cho *bận*. Một cổng chưa cài mà cứ xếp lại vô hạn thì job nằm
+#:    `queued` mãi mãi, không ai được báo: đúng cái hỏng mà `manifest.py` cảnh
+#:    báo về làn worker `voice`.
+SO_LAN_THU_JOB = 5

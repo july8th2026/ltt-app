@@ -11,7 +11,7 @@ chỉ để tìm hai byte `0x0b` trong một tệp markdown.
 Câu hỏi đó trả lời được bằng **một lệnh tức thì**:
 
 ```python
-b = Path("docs/X.md").read_bytes(); b.count(b"\x0b")
+b = Path("tep_can_kiem.md").read_bytes(); b.count(b"\x0b")
 ```
 
 Tôi có ba lượt gate để nhận ra điều đó và không nhận ra lượt nào. `CLAUDE.md` của kho đã ghi

@@ -14,8 +14,11 @@ features.py — quy tắc nghiệp vụ của `ltt_llm`, dùng chung cho CẢ HA
 """
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any, Optional
+
+log = logging.getLogger("apps.ltt_llm.features")
 
 #: Thứ tự nhà cung cấp cho tool này. **Chỉ model nhà.**
 #:
@@ -274,3 +277,71 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
         token_vao=su.token_vao, token_ra=su.token_ra,
         token_vao_cache=su.token_vao_cache, do_duoc=su.dang_tin,
     )
+
+
+def _dia_chi_cong() -> str:
+    """Dia chi cong may B, giai theo ĐÚNG thu tu ma duong goi that dung.
+
+    🔴 `luong_vlm.mo` lay `base_url` cua **KHOA** truoc, roi moi den registry
+       (`luong_vlm.py:136-137`). Ban dau ham nay chi doc registry — va do LIVE
+       03/09 cho thay hau qua: cong may B tra 200 o `/live`, nhung hook bao
+       `chua_san_sang` vi registry rong tren may nay.
+
+    ⛔ Mot chip "chua san sang" SAI lam o soan bi tat cho **moi** nguoi trong
+       khi model chay tot. No la mat ngoai kia cua dung cai loi ma Phase 06
+       sinh ra de chan (chip xanh noi doi) — chi khac chieu, va chieu nay lam
+       mat ca san pham chu khong chi lam nguoi dung buc minh.
+
+    Doc CSDL chi de lay `base_url` — **khong** giai ma credential.
+    """
+    from platform_core import providers
+
+    prov = providers.get(THU_TU_PROVIDER[0])
+    tu_registry = (getattr(prov, "base_url", "") or "").strip()
+    if tu_registry:
+        return tu_registry
+    try:
+        from platform_core.db import get_session
+        from platform_core.models import ApiKey
+
+        gen = get_session()
+        db = next(gen)
+        try:
+            # Loc theo `provider` (mot cot that); `categories` la chuoi gop nen
+            # khong loc trong SQL — va khong can: mot provider `ltt_llm` chi
+            # phuc vu mot thu.
+            hang = db.query(ApiKey.base_url).filter(
+                ApiKey.provider == THU_TU_PROVIDER[0],
+                ApiKey.base_url != "").first()
+            return (hang[0] or "").strip() if hang else ""
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception as e:                                      # noqa: BLE001
+        log.info("suc_khoe: khong doc duoc base_url tu khoa (%s)", type(e).__name__)
+        return ""
+
+
+def suc_khoe(timeout_s: float = 1.5) -> str:
+    """Suc khoe cua `text.chat` cho catalog san pham khac (`AppManifest.suc_khoe`).
+
+    Hoi `GET /live` cua cong may B — duong **khong can khoa** va co y khong noi
+    gi them (xem `llm_gateway/api.py::live`). Khong bao gio nem: moi loi mang
+    deu la "chua san sang", va do chinh la cau tra loi dung cho nguoi dung.
+
+    Ban (429) khong nhin thay o `/live`; "ban" duoc cua stream bao luc goi that
+    qua `DangBan` — catalog khong doan truoc dieu do.
+    """
+    base = _dia_chi_cong()
+    if not base:
+        return "chua_san_sang"
+    import httpx
+
+    try:
+        r = httpx.get(base.rstrip("/") + "/live", timeout=timeout_s)
+    except httpx.HTTPError as e:
+        log.info("suc_khoe: cong LLM khong tra loi (%s)", type(e).__name__)
+        return "chua_san_sang"
+    return "san_sang" if r.status_code == 200 else "chua_san_sang"

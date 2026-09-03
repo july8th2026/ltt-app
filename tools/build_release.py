@@ -72,6 +72,10 @@ REQUIRED_ENTRIES = (
     "frontend/prompt-ai-ommi/package-lock.json",
     "server/static/prompt-ai-ommi/.vite/manifest.json",
     "server/static/prompt-ai-ommi/build-meta.json",
+    "frontend/chatltt/package.json",
+    "frontend/chatltt/package-lock.json",
+    "server/static/chatltt/.vite/manifest.json",
+    "server/static/chatltt/build-meta.json",
 )
 
 CANVAS_SOURCE = "frontend/agent-canvas"
@@ -80,6 +84,8 @@ AUTOSUB_SOURCE = "frontend/autosub-studio"
 AUTOSUB_OUTPUT = "server/static/autosub-studio"
 OMMI_SOURCE = "frontend/prompt-ai-ommi"
 OMMI_OUTPUT = "server/static/prompt-ai-ommi"
+CHATLTT_SOURCE = "frontend/chatltt"
+CHATLTT_OUTPUT = "server/static/chatltt"
 
 #: Node pin cho MOI bundle. Doi o day thi doi luon .nvmrc va package.json cua
 #: tung frontend — ba cho phai khop, va test_95 chot dieu do.
@@ -123,6 +129,10 @@ def autosub_source_sha256(root: str) -> str:
     return _frontend_source_sha256(root, AUTOSUB_SOURCE)
 
 
+def chatltt_source_sha256(root: str) -> str:
+    return _frontend_source_sha256(root, CHATLTT_SOURCE)
+
+
 def _verify_one_frontend(root: str, *, source: str, output: str,
                          node: str, digest: str) -> None:
     meta_path = os.path.join(root, output, "build-meta.json")
@@ -160,6 +170,8 @@ def verify_frontend_bundle(root: str) -> None:
                          node=PINNED_NODE, digest=autosub_source_sha256(root))
     _verify_one_frontend(root, source=OMMI_SOURCE, output=OMMI_OUTPUT,
                          node=PINNED_NODE, digest=ommi_source_sha256(root))
+    _verify_one_frontend(root, source=CHATLTT_SOURCE, output=CHATLTT_OUTPUT,
+                         node=PINNED_NODE, digest=chatltt_source_sha256(root))
 
 
 def _version() -> str:

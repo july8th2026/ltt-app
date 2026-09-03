@@ -1,13 +1,13 @@
 """Màn Giọng: lưới giọng, ghi danh giọng mới, tắt giọng."""
 from __future__ import annotations
 
-from ._chung import (MANIFEST, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, File, Form,
                      HTMLResponse, JSONResponse, Request, Response,
                      StreamingResponse, UploadFile, _db, _het_phien,
                      _t, _uid, doc_man_giong, doc_man_lich_su, features,
                      gia, giong_mau, io, require_login, router, templates,
                      tham_chieu, user_hien_tai, verify_csrf_token, vo,
-                     NHAN_NGUON, lan_ngon_ngu)
+                     NHAN_NGUON, lan_ngon_ngu, nghe_thu)
 
 
 # ── Giọng của tôi ────────────────────────────────────────────────────────────
@@ -25,6 +25,12 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
         thong_ke = doc_man_giong.thong_ke_theo_giong(db, uid, MANIFEST.slug)
         chi_tiet = doc_man_giong.chi_tiet_cho_trang(
             db, giong, thong_ke, f"{MANIFEST.route_prefix}/audio")
+        # Đường nghe thử — MỘT thẩm quyền, dùng chung với màn Tạo tiếng nói.
+        # Giọng nào chưa có tệp thì **vắng mặt** khỏi dict, không phải rỗng.
+        duong_nghe = nghe_thu.duong_cho_trang(
+            duong_audio=f"{MANIFEST.route_prefix}/audio", owner_id=uid,
+            ma_mau=[g.ma for g in giong_mau.DANH_SACH],
+            rieng=[g.public_id for g in giong])
     finally:
         try:
             next(gen)
@@ -44,6 +50,7 @@ def trang_giong(request: Request, user=Depends(user_hien_tai),
                     # ai đó mở đúng màn ấy.
                     nhan_lan=lan_ngon_ngu.NHAN_LAN,
                     thong_ke=thong_ke, chi_tiet=chi_tiet,
+                    duong_nghe=duong_nghe,
                     dieu_khoan=cac_dieu(), cam_ket=CAM_KET))
 
 
@@ -108,7 +115,8 @@ async def tao_giong(request: Request, ten: str = Form(""),
             params={"owner_id": uid, "voice_id": ho_so.public_id,
                     "source_key": khoa, "ref_id": ref.id,
                     "nguon": "giong",
-                    "_job_type": "ltt_voice.enroll"})
+                    "_job_type": "ltt_voice.enroll"},
+            max_attempts=SO_LAN_THU_JOB)
         db.commit()
         return JSONResponse({"ok": True, "voice_id": ho_so.public_id,
                              "job_id": str(job.id),

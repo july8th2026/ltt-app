@@ -323,6 +323,23 @@ def _ghi_danh(params: dict, ctx=None) -> dict:
 
     _voi_db(_ghi)
 
+    # ── TỆP NGHE THỬ, dựng ngay ở ĐUÔI job ghi danh ─────────────────────────
+    #
+    # ⭐ ĐÚNG CHỖ NÀY, và lý do là kinh tế chứ không phải tiện tay: job này vừa
+    #    giành GPU, vừa nạp model, và vừa có `ref_b64` trong tay. Một câu chào
+    #    ba dòng thêm chưa tới hai giây vào một lượt đã chạy hàng chục giây.
+    #
+    #    Đẩy nó sang vòng bảo trì thì phải giành GPU **lần thứ hai**, nạp model
+    #    **lần thứ hai**, và giữa hai lần đó khách nhìn thấy giọng vừa tạo của
+    #    mình là giọng duy nhất trong danh sách không nghe thử được.
+    #
+    # ⛔ KHÔNG tính thêm tiền, và không được phép làm job hỏng: `nghe_thu.dung`
+    #    nuốt mọi lỗi và trả `False`. Giọng đã ghi danh xong ở trên rồi — để một
+    #    tệp nghe thử đánh hỏng nó là đánh đổi sai chiều.
+    from . import nghe_thu
+    nghe_thu.dung(nghe_thu.khoa_rieng(owner_id, public_id),
+                  ref_b64=kq["ref_b64"])
+
     return {
         "voice_id": public_id,
         "fingerprint": vt,
