@@ -375,3 +375,17 @@ và phải xác minh bằng `/running` chứ không bằng tệp trên đĩa.
 tay. `test_334::test_deploy_ps1_KHONG_lui_tran_cua_may_B` nay chốt điều đó —
 trước 03/09 không có gì chốt, nên một lần deploy không liên quan sẽ lặng lẽ lùi
 trần về cũ.
+
+---
+
+## 8. Còn nợ — nói ra, không giấu
+
+| # | Nợ | Vì sao chưa đóng |
+|---|---|---|
+| N-1 | **Chưa deploy.** Máy B vẫn `-c 131072` | Cần cửa sổ deploy; một phiên khác đang dùng production. Thứ tự ở §7 D-5 |
+| N-2 | **Canary phiên dài với khoá thật** — Codex/Claude chạy tới ngưỡng nén rồi nén, quan sát bằng log | Cần một khoá API sống. Bộ kiểm đọc tệp khoá bị chặn ở phiên này ⇒ chỉ chạy được canary **cấu hình** (§4c), không chạy được canary **hành vi** |
+| N-3 | **Lượt sinh dài ở cuối cửa sổ chưa đo sạch.** Lượt 160K/8192 trả `finish_reason: stop` sau 122 token vì đề bài chỉ đòi một dòng | Nó chứng minh request được NHẬN, không chứng minh decode còn khoẻ ở cuối cửa sổ. Đã sửa đề bài trong `bench_ctx.py` nhưng chưa chạy lại |
+| N-4 | **`qwen38-vision` chưa đo lại**, và cửa sổ công bố của nó (28.262) **hẹp hơn** một lượt sinh dài nhất (32.768) | Nó dành hơn nửa cửa sổ cho `TOKEN_RA_TRAN`. Không ngưỡng nén nào giữ được lời hứa ⇒ bộ cài bỏ hẳn trường đó. Sửa thật là đo lại vision hoặc cho nó trần ra riêng |
+| N-5 | **`deploy.ps1` không restart `LTTLlamaSwap`** (D-03-5, audit 31/08) | Chưa chạm tới `deploy.ps1` ngoài ba con số. Cho tới khi sửa, bước 1 của §7 D-5 phải làm tay |
+| N-6 | **Hai bộ đo chất lượng đều hoà ở kịch trần** | Chúng loại trừ một suy giảm đủ lớn để đo thấy. Muốn nhạy hơn thì cần bộ đề khó hơn, và đó là một việc riêng |
+| N-7 | `LTT_PUBLIC_API_MAX_BODY_BYTES` **thật** trên production chưa kiểm | Mặc định 1 MiB ≥ 765 KB cần thiết, nhưng biến môi trường có thể bị đặt khác. Phải kiểm lúc deploy |
