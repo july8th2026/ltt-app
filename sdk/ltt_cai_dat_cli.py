@@ -65,15 +65,25 @@ TOKEN_RA_TRAN = 32768
 #:    101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
-#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 65536` — mot NUA
-#: model text — nen no KHONG duoc dung chung con so voi `ltt_llm`.
+#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
 #:
-#: ⛔ Ban truoc khai 88.555 cho ca hai, tuc hua cho `ltt_llm_vision` mot ngu
-#:    canh **gap 3,1 lan** su that.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `nen_cua("qwen38-vision")` = 0: cua so cong bo cua vision hep hon mot luot
-#: sinh dai nhat, nen khong nguong nen nao giu duoc loi hua. 0 = bo han truong.
-NEN_HOI_THOAI_VISION = 0
+#: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
+#:    Ban truoc 01/09 khai 88.555 cho CA HAI model va do la mot loi hua sai
+#:    (luc do vision chay `-c 65536`, cua so that cua no la 28.262). Su trung
+#:    hop hom nay khong xoa duoc ly do phai tach: hai model, hai `-c`, hai con
+#:    so — va chung se lech lai ngay lan nang cua so ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
+#:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
+#:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
+#:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
+#:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
+#:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:

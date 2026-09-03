@@ -134,21 +134,34 @@ NEN_HOI_THOAI = 123617
 
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
-#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. `qwen38-vision` nap `-c 65536`, mot nua
-#:    model text, nen cua so cong bo cua no la 28.262 chu khong phai 88.555.
-#:    Ban truoc cua tep nay khai **cung mot con so cho ca hai model**, tuc noi
-#:    voi Codex rang `ltt_llm_vision` co ngu canh **gap 3,1 lan** su that; hoi
-#:    thoai anh dai vua phai la an 413 ma khong hieu vi sao.
+#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. Ban truoc cua tep nay khai **cung mot
+#:    con so cho ca hai model**, tuc noi voi Codex rang `ltt_llm_vision` co ngu
+#:    canh **gap 3,1 lan** su that (88.555 trong khi that la 28.262, vi luc do
+#:    `qwen38-vision` nap `-c 65536`); hoi thoai anh dai vua phai la an 413 ma
+#:    khong hieu vi sao.
 #:
 #: ⭐ Va day dung la khuyet tat F-02 — mot con so cho hai model — thu ma
 #:    `ngan_sach.cong_bo_cua()` sinh ra de giet. No chet o `/api/v1/models` va
 #:    **song sot nguyen ven o day**, vi ban va sua *con so* chu khong sua *hinh
 #:    dang*: chung nao con MOT hang so cho HAI model thi loi nay con quay lai.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `ngan_sach.nen_cua("qwen38-vision")` tra **0**: cua so cong bo cua vision
-#: (28.262) hep hon mot luot sinh dai nhat (32.768), nen khong nguong nen nao
-#: giu duoc loi hua. 0 = **bo han truong do**, dung ghi mot con so bia.
-NEN_HOI_THOAI_VISION = 0
+#:
+#: ⚠️ VA HOM NAY NO TINH CO BANG con so text CU — dung doc su trung hop do
+#:    thanh "hai model dung chung mot so". Vision len `-c 131072` (03/09) nen
+#:    cua so cong bo cua no la 88.555; text len `-c 204800` nen cua so cua text
+#:    la 156.385. Hai duong doc lap, va chung se lech lai o lan nang ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555. Do that tren mot ho so thu rieng: 89.868 token
+#:    vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi ho so 65K),
+#:    va A/B doc anh tren cung mot anh — ca hai ho so tra dung moc ngau nhien.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that chu khong
+#:    phai mot cho trong: cua so cong bo cua vision khi ay (28.262) HEP HON mot
+#:    luot sinh dai nhat (32.768), nen khong nguong nen nao giu duoc loi hua va
+#:    bo cai phai bo han truong do. Nang cua so len 131K la thu lam cho no
+#:    dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"

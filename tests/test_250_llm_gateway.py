@@ -404,14 +404,36 @@ def test_xin_sinh_qua_nhieu_token_thi_413():
 
 
 def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
-    """Chốt bắt được cái mà hai chốt kia bỏ lọt: mỗi cái vừa, cộng lại thì tràn."""
-    c, _ = _client(_cfg(max_input_tokens=200_000, max_output_tokens=60_000))
+    """Chốt bắt được cái mà hai chốt kia bỏ lọt: mỗi cái vừa, cộng lại thì tràn.
+
+    ⛔ MỌI CON SỐ Ở ĐÂY **DẪN XUẤT** TỪ CỬA SỔ THẬT CỦA HỒ SƠ, không gõ tay.
+
+       Bản trước gõ một kịch bản chỉnh riêng cho cửa sổ 65.536 của vision
+       (~40.000 vào + 50.000 ra). Ngày 03/09 vision lên `-c 131072` và kịch bản
+       ấy **thôi tràn** — phép kiểm chuyển sang xanh-vì-lý-do-sai, tức nó không
+       còn kiểm cái nó nói là kiểm.
+
+    ⭐ Một phép kiểm về "vào + ra vượt cửa sổ" mà gõ tay hai con số thì nó
+       thật ra đang chốt *một cửa sổ cụ thể*, không phải *bất biến*. Dẫn xuất
+       thì lần nâng cửa sổ kế tiếp không ai phải sửa nó.
+    """
+    from llm_gateway.catalog import HO_SO
+
+    cua_so = {m.ten: m.max_context for m in HO_SO}["qwen38-vision"]
+    # Vào ~55 % cửa sổ, ra ~55 % cửa sổ: mỗi cái vừa trần của nó, cộng lại tràn.
+    token_vao = int(cua_so * 0.55)
+    token_ra = int(cua_so * 0.55)
+    ky_tu = int(token_vao * 2.5)               # KY_TU_MOI_TOKEN cua ngan_sach
+
+    c, _ = _client(_cfg(max_input_tokens=cua_so * 2, max_output_tokens=cua_so))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",              # cửa sổ 65.536
-        "messages": [{"role": "user", "content": "x" * 100_000}],  # ~40.000 token
-        "max_tokens": 50_000})
-    assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "context"
+        "model": "qwen38-vision",
+        "messages": [{"role": "user", "content": "x" * ky_tu}],
+        "max_tokens": token_ra})
+    assert r.status_code == 413, r.text
+    d = r.json()["detail"]
+    assert d["truong"] == "context", d
+    assert d["tran"] == cua_so, d
 
 
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
