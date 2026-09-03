@@ -47,6 +47,16 @@ Nâng cửa sổ là thứ làm cho ngưỡng ấy **định nghĩa được tr�
 đó thành "hai model dùng chung một cửa sổ". Chúng chạy hai `-c` khác nhau và sẽ
 lệch lại ở lần nâng kế tiếp.
 
+### `contract_hash` của `text.chat`: `dcf6aa9d…` → `5699a45f…`
+
+Cùng loại với lần đổi trước trong ngày: thứ đổi là **một chuỗi mô tả**
+(`smaller 28K` → `smaller 89K`). Không trường nào bị bỏ, không ràng buộc nào
+siết vào — một tích hợp đang chạy không hỏng, nó chỉ được phép gửi nhiều hơn.
+
+⚠️ **Hai lần đổi hash trong một ngày là nhiều.** Nếu bạn ghim `contract_hash`
+để phát hiện thay đổi hợp đồng thì hôm nay bạn sẽ thấy hai lần báo — cả hai đều
+là **nới rộng**, không có lần nào thu hẹp.
+
 ## 2026-09-03 (tối) — trần đầu vào nay đếm token **thật**, không phải token ước
 
 **FIXED · `413` từng xảy ra ở khoảng một nửa cửa sổ chúng tôi công bố.**
