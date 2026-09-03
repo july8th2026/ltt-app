@@ -1150,6 +1150,9 @@ def main() -> int:
         #
         # ⛔ Tinh lai CON SO thoi thi vo nghia: no tru dung va van chay dung so
         #    worker cu. Phai sua ca `argv`.
+        if getattr(khoa, "chay_khong_khoa", False):
+            print("  [cua so yen] dang CHEN - ngan sach se tu tut xuong theo "
+                  "phan luot kia dang giu (B3, xem cua_so_yen.chay_khong_khoa)")
         _ap_ngan_sach_thuc(steps, phien)
 
         cay_dau = _anh_chup_cay()

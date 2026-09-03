@@ -204,3 +204,59 @@ def test_khong_do_duoc_thi_GIU_NGUYEN_ngan_sach_chu_khong_doan(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", no)
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
     assert gate.ngan_sach_loi(tru_phien_khac=True) == gate.ngan_sach_loi()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B3 — chen thi chay nho
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_chen_thi_ngan_sach_TU_TUT_XUONG(monkeypatch):
+    """🔑 B3 roi ra tu B2, khong can mot nhanh rieng.
+
+    Khi het `--cho` ma khoa van bi giu, `cua_so_yen` **van chay** (quyet dinh
+    thiet ke co luan cu: tu choi chay la kieu hong te hon cham). Nhung luot kia
+    VAN dang giu khoa, nen ban ghi cua no van nam do va phep tru per-MAY tu dong
+    ap vao.
+
+    ⇒ Khong viet mot nhanh "neu dang chen thi giam". Hai duong toi cung mot con
+      so la hai cho de chung lech nhau.
+    """
+    import cua_so_yen as c
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 10}])
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+
+    day_du = gate.ngan_sach_loi()                                   # per-RUN
+    khi_chen = gate.ngan_sach_loi(phien="toi", tru_phien_khac=True)  # per-MAY
+
+    assert day_du == 14
+    assert khi_chen == 4, "chen ma ngan sach khong tut => B3 khong hoat dong"
+    assert khi_chen < day_du
+
+
+def test_co_chay_khong_khoa_chi_de_NOI_RA_khong_tham_gia_phep_tinh():
+    """Mot co bao trang thai khong duoc tro thanh mot nhanh logic thu hai."""
+    import inspect
+
+    import cua_so_yen as c
+
+    nguon = inspect.getsource(c.CuaSoYen.chay_khong_khoa.fget)
+    assert "self.da_giu" in nguon
+    # ⛔ Neu no bat dau tinh toan ngan sach thi da co hai nguon su that.
+    for cam in ("ngan_sach", "cpu_count", "so_loi"):
+        assert cam not in nguon.split('"""')[-1], (
+            f"`chay_khong_khoa` dang tinh {cam} — no chi duoc BAO trang thai")
+
+
+def test_khong_giu_duoc_khoa_thi_chay_khong_khoa_la_True():
+    import cua_so_yen as c
+
+    k = c.CuaSoYen("toi", "lenh", bat=True, tai_nguyen=(c.MAC_DINH,))
+    k.da_giu = []
+    assert k.chay_khong_khoa is True
+    k.da_giu = [c.MAC_DINH]
+    assert k.chay_khong_khoa is False
+    # Tat xep hang thi khong phai "chen", chi la khong xep hang.
+    k2 = c.CuaSoYen("toi", "lenh", bat=False, tai_nguyen=(c.MAC_DINH,))
+    assert k2.chay_khong_khoa is False

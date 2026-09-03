@@ -1,0 +1,17 @@
+Gate [day-du]: 26 buoc, toi da 8 buoc cung luc, ngan sach 14/20 loi, tai nguyen: cpu_nhieu
+
+  [ok  ] bien dich duoc                  2.3s (1/26)
+  [ok  ] bat bien da tien trinh          0.1s (2/26)
+  [ok  ] kich thuoc route server         0.1s (3/26)
+  [ok  ] bien .ps1 trung tham so         0.1s (4/26)
+  [ok  ] app contract lint               0.2s (5/26)
+  [ok  ] trung so test                   0.1s (6/26)
+  [ok  ] ky tu dieu khien                0.6s (7/26)
+  [ok  ] chuoi chua dich                 2.3s (8/26)
+  [ok  ] bo qua im lang                  2.6s (9/26)
+  [ok  ] anh chup hop dong               2.4s (10/26)
+  [ok  ] tai san GUI                     0.1s (11/26)
+  [ok  ] frontend agent-canvas           0.0s (12/26)
+  [ok  ] frontend autosub-studio         0.0s (13/26)
+  [ok  ] frontend prompt-ai-ommi         0.0s (14/26)
+  [ok  ] tai lieu sinh ra                2.4s (15/26)

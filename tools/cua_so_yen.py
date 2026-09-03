@@ -294,6 +294,25 @@ class CuaSoYen:
             self.da_giu.append(tn)
         return True
 
+    @property
+    def chay_khong_khoa(self) -> bool:
+        """Luot nay dang CHEN: da het gio cho ma khoa van bi giu.
+
+        ⭐ **B3 khong can mot nhanh ngan sach rieng, va do la ket qua chu khong
+           phai su tinh co.** Khi chen, luot kia VAN dang giu khoa, nen ban ghi
+           cua no van nam do — va `ngan_sach_loi(tru_phien_khac=True)` (goi SAU
+           khoi `with`) tu dong tru phan cua no. Do that: mot luot kia giu 10 loi
+           thi ngan sach cua ta tu 14 tut xuong 4.
+
+        ⇒ "Chen thi chay nho" roi ra tu chinh phep tru per-MAY. Viet them mot
+          nhanh `neu dang chen thi giam` se la mot duong thu hai toi cung mot
+          ket qua — va hai duong toi cung mot so la hai cho de chung lech nhau.
+
+        Thuoc tinh nay chi de **noi ra** dieu do o dong ket qua. No khong tham
+        gia phep tinh nao.
+        """
+        return self.bat and bool(self.tai_nguyen) and not self.da_giu
+
     def _ai_giu(self) -> str:
         for tn in self.tai_nguyen:
             cu = _doc(tn)

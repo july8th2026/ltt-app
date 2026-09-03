@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:b8dae36024667d54765ee063e18539b512a3f539987ac70df7e731f4848045c1
+Fingerprint   : sha256:e4b1a752598eb15da43e6423f8f8604a3d729929b7bdfd5f04e11ed4cb47bef0
 Nguồn đã quét : 1554 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3307,7 +3307,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15587511 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15591154 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -278487,7 +278487,7 @@ def test_bang_item_KHONG_co_cot_nao_cua_mot_hang_doi():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
-SHA256=f218209ee847521270fae0257f0c35ab112860ca5551169f93c9adf3786f7baf BYTES=8249 LINES=206
+SHA256=1c5566bc33cd96eb15605c7eb215906e8e88a9de7e2ba0fbc4a64e221e2bf82f BYTES=10753 LINES=262
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
 
@@ -278695,6 +278695,62 @@ def test_khong_do_duoc_thi_GIU_NGUYEN_ngan_sach_chu_khong_doan(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", no)
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
     assert gate.ngan_sach_loi(tru_phien_khac=True) == gate.ngan_sach_loi()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B3 — chen thi chay nho
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_chen_thi_ngan_sach_TU_TUT_XUONG(monkeypatch):
+    """🔑 B3 roi ra tu B2, khong can mot nhanh rieng.
+
+    Khi het `--cho` ma khoa van bi giu, `cua_so_yen` **van chay** (quyet dinh
+    thiet ke co luan cu: tu choi chay la kieu hong te hon cham). Nhung luot kia
+    VAN dang giu khoa, nen ban ghi cua no van nam do va phep tru per-MAY tu dong
+    ap vao.
+
+    ⇒ Khong viet mot nhanh "neu dang chen thi giam". Hai duong toi cung mot con
+      so la hai cho de chung lech nhau.
+    """
+    import cua_so_yen as c
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 10}])
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+
+    day_du = gate.ngan_sach_loi()                                   # per-RUN
+    khi_chen = gate.ngan_sach_loi(phien="toi", tru_phien_khac=True)  # per-MAY
+
+    assert day_du == 14
+    assert khi_chen == 4, "chen ma ngan sach khong tut => B3 khong hoat dong"
+    assert khi_chen < day_du
+
+
+def test_co_chay_khong_khoa_chi_de_NOI_RA_khong_tham_gia_phep_tinh():
+    """Mot co bao trang thai khong duoc tro thanh mot nhanh logic thu hai."""
+    import inspect
+
+    import cua_so_yen as c
+
+    nguon = inspect.getsource(c.CuaSoYen.chay_khong_khoa.fget)
+    assert "self.da_giu" in nguon
+    # ⛔ Neu no bat dau tinh toan ngan sach thi da co hai nguon su that.
+    for cam in ("ngan_sach", "cpu_count", "so_loi"):
+        assert cam not in nguon.split('"""')[-1], (
+            f"`chay_khong_khoa` dang tinh {cam} — no chi duoc BAO trang thai")
+
+
+def test_khong_giu_duoc_khoa_thi_chay_khong_khoa_la_True():
+    import cua_so_yen as c
+
+    k = c.CuaSoYen("toi", "lenh", bat=True, tai_nguyen=(c.MAC_DINH,))
+    k.da_giu = []
+    assert k.chay_khong_khoa is True
+    k.da_giu = [c.MAC_DINH]
+    assert k.chay_khong_khoa is False
+    # Tat xep hang thi khong phai "chen", chi la khong xep hang.
+    k2 = c.CuaSoYen("toi", "lenh", bat=False, tai_nguyen=(c.MAC_DINH,))
+    assert k2.chay_khong_khoa is False
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -299949,7 +300005,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cua_so_yen.py
-SHA256=8c0d9ef3190b87aeb712a1599c53cbaec30ba45ea80f9a01bab7369f0c48d4d7 BYTES=14807 LINES=383
+SHA256=623a4f1db2cf7a72a8335da297b68cdb888227ffb6707730751f4b7e35a67799 BYTES=15734 LINES=402
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cua_so_yen.py — mot khoa cap may cho cac luot do dat tien.
 
@@ -300246,6 +300302,25 @@ class CuaSoYen:
                 return False
             self.da_giu.append(tn)
         return True
+
+    @property
+    def chay_khong_khoa(self) -> bool:
+        """Luot nay dang CHEN: da het gio cho ma khoa van bi giu.
+
+        ⭐ **B3 khong can mot nhanh ngan sach rieng, va do la ket qua chu khong
+           phai su tinh co.** Khi chen, luot kia VAN dang giu khoa, nen ban ghi
+           cua no van nam do — va `ngan_sach_loi(tru_phien_khac=True)` (goi SAU
+           khoi `with`) tu dong tru phan cua no. Do that: mot luot kia giu 10 loi
+           thi ngan sach cua ta tu 14 tut xuong 4.
+
+        ⇒ "Chen thi chay nho" roi ra tu chinh phep tru per-MAY. Viet them mot
+          nhanh `neu dang chen thi giam` se la mot duong thu hai toi cung mot
+          ket qua — va hai duong toi cung mot so la hai cho de chung lech nhau.
+
+        Thuoc tinh nay chi de **noi ra** dieu do o dong ket qua. No khong tham
+        gia phep tinh nao.
+        """
+        return self.bat and bool(self.tai_nguyen) and not self.da_giu
 
     def _ai_giu(self) -> str:
         for tn in self.tai_nguyen:
@@ -308945,7 +309020,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=7aa6c1258ba4e3ab0f9bc605e09b20c4355a259156bd25188f9debeae1eee376 BYTES=68438 LINES=1320
+SHA256=d7dac994a64009da5f12cc560e46c8bb6551ee68071304a4f745f70c1979203a BYTES=68650 LINES=1323
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -310099,6 +310174,9 @@ def main() -> int:
         #
         # ⛔ Tinh lai CON SO thoi thi vo nghia: no tru dung va van chay dung so
         #    worker cu. Phai sua ca `argv`.
+        if getattr(khoa, "chay_khong_khoa", False):
+            print("  [cua so yen] dang CHEN - ngan sach se tu tut xuong theo "
+                  "phan luot kia dang giu (B3, xem cua_so_yen.chay_khong_khoa)")
         _ap_ngan_sach_thuc(steps, phien)
 
         cay_dau = _anh_chup_cay()
