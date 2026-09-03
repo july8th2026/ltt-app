@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:66622edab0771461636d662c4097b4b56a31930ff33387d9bb70324de995bd5d
-Nguồn đã quét : 1477 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:da5678dfee25bccb951a16c05d1ec02b491d309782dd9ba6bca47125c1fe96c0
+Nguồn đã quét : 1478 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -614,18 +614,18 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [ltt_voice] GET    /ltt-voice/api → trang_api | auth~login | apps/ltt_voice/routes/_p_api.py:20
 - [ltt_voice] GET    /ltt-voice/audio/{key:path} → audio | auth~login | apps/ltt_voice/routes/_p_audio.py:16
 - [ltt_voice] GET    /ltt-voice/du-an → trang_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:62
-- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:496
+- [ltt_voice] POST   /ltt-voice/du-an/luu-tu-studio → luu_tu_studio | auth~login | apps/ltt_voice/routes/_p_du_an.py:513
 - [ltt_voice] POST   /ltt-voice/du-an/tao → tao_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:93
 - [ltt_voice] GET    /ltt-voice/du-an/{public_id} → trang_mot_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:149
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:407
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/doc-tat-ca → doc_tat_ca | auth~login | apps/ltt_voice/routes/_p_du_an.py:424
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/them → them_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:230
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:376
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:593
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/doc → doc_mot_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:393
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/khoi/{block_id}/phien-ban → phien_ban_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:610
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/sua → sua_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:259
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:289
-- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:314
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/khoi/{block_id}/xoa → xoa_khoi | auth~login | apps/ltt_voice/routes/_p_du_an.py:305
+- [ltt_voice] POST   /ltt-voice/du-an/{public_id}/nhap → nhap_van_ban | auth~login | apps/ltt_voice/routes/_p_du_an.py:330
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/sua → sua_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:204
-- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:454
+- [ltt_voice] GET    /ltt-voice/du-an/{public_id}/trang-thai → trang_thai_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:471
 - [ltt_voice] POST   /ltt-voice/du-an/{public_id}/xoa → xoa_du_an | auth~login | apps/ltt_voice/routes/_p_du_an.py:115
 - [ltt_voice] GET    /ltt-voice/giong → trang_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:16
 - [ltt_voice] POST   /ltt-voice/giong/tao → tao_giong | auth~login | apps/ltt_voice/routes/_p_giong.py:58
@@ -1572,8 +1572,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1477 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:66, .py:1109, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1478 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:67, .py:1109, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2497,7 +2497,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - server/templating.py
 - server/usage_rate_limit.py
 
-[setup] (51)
+[setup] (52)
 - setup/0-kiem-tra-truoc-khi-chuyen.py
 - setup/1-kiem-tra-may.ps1
 - setup/2-cai-dat.ps1
@@ -2516,6 +2516,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - setup/day_tep_lon_may_b.ps1
 - setup/deploy_nang_quyen.ps1
 - setup/do_bai_dai.ps1
+- setup/do_bai_dai_worktree.ps1
 - setup/do_ca_tai_hien_chan_doan.ps1
 - setup/do_chon_cua_so_bieu_cam.ps1
 - setup/do_chot_sinh.ps1
@@ -3107,7 +3108,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1477 file; 14854233 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1478 file; 14860087 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21479,7 +21480,7 @@ __all__ = ["router"]
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_chung.py
-SHA256=a24704affcca1296784f2f2a9bdf4819e5f105c65b1874537c7ad6b5d27e8148 BYTES=5443 LINES=114
+SHA256=06195eed7c1d52cedb6d46c82a7abdd691027a5081adad1837ecb2c58bb4032d BYTES=5498 LINES=115
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 _chung.py — router + mọi thứ các mảnh route dùng chung.
@@ -21519,7 +21520,8 @@ from .. import (doc_man_giong, doc_man_lich_su, du_an, features, gia,
                 giong_mau, lan_ngon_ngu, nghe_thu, tham_chieu,
                 tu_dien_rieng, vo)
 from ..manifest import MANIFEST
-from ..tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
+from ..tham_so_cong_khai import (SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI,
+                                 TRAN_MOI_LUOT_SINH)
 
 #: Nhãn người đọc cho `params["nguon"]`. Khai ở đây vì nó là chuyện của **màn
 #: hình**, không phải của nghiệp vụ — worker không quan tâm lượt này đến từ đâu.
@@ -21838,7 +21840,7 @@ def _sang_mp3(wav: bytes):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/routes/_p_du_an.py
-SHA256=e60e41527c1a307662da74834f103ca32dc3a9dc3d8970327166a4c2f18baa44 BYTES=26753 LINES=635
+SHA256=e970e5a107857b38c4e6ed2fd7e21508d39c386399c15d3cd054a341a0d1f701 BYTES=28070 LINES=652
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Màn Dự án: danh sách · khối · sinh tiếng theo khối · xuất.
 
@@ -21850,7 +21852,7 @@ SHA256=e60e41527c1a307662da74834f103ca32dc3a9dc3d8970327166a4c2f18baa44 BYTES=26
 """
 from __future__ import annotations
 
-from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI, Depends, Form,
+from ._chung import (MANIFEST, SO_LAN_THU_JOB, TRAN_MOI_LUOT_SINH, Depends, Form,
                      HTMLResponse, JSONResponse, Request, _db, _het_phien,
                      _t, _uid, du_an, features, giong_mau, require_login,
                      router, templates, tham_chieu, user_hien_tai,
@@ -22113,10 +22115,26 @@ def sua_khoi(request: Request, public_id: str, block_id: int,
         k = du_an.tim_khoi(db, d.id, block_id)
         if k is None:
             return JSONResponse({"ok": False}, status_code=404)
-        if text is not None and len(text) > TRAN_KY_TU_CONG_KHAI:
+        # 🔴 `TRAN_MOI_LUOT_SINH`, KHÔNG phải `TRAN_KY_TU_CONG_KHAI`.
+        #
+        #    Một KHỐI là một lượt đọc — đúng một lượt `infer`. Nên trần của nó
+        #    là trần CHẤT LƯỢNG của một lượt sinh, không phải trần của một yêu
+        #    cầu khách gửi lên. Hai con số ấy đang bằng nhau, nên đổi chỗ này
+        #    không đổi hành vi hôm nay.
+        #
+        # ⛔ Nhưng ngày trần yêu cầu được nới (tài liệu dài đi đường
+        #    `ban_doc_dai`), một khối vẫn phải nằm trong một lượt sinh. Neo nhầm
+        #    hằng số ở đây thì khối phình theo, và mỗi khối lại vượt đúng cái
+        #    ngưỡng trôi giọng mà `tham_so.py` dựng trần lên để tránh — hỏng im
+        #    lặng, chỉ nghe thấy chứ không đỏ ở đâu cả.
+        #
+        # ⭐ Cùng lớp lỗi `du_an.TRAN_KHOI_KHI_NHAP` đã ghi: 1.500 trả lời "một
+        #    lượt đọc gánh được bao nhiêu", không trả lời "một đơn vị biên tập
+        #    nên to bằng nào". Một hằng số đi lạc sang chỗ nó không thuộc về.
+        if text is not None and len(text) > TRAN_MOI_LUOT_SINH:
             return JSONResponse({"ok": False, "loi": _t(
                 "Khối dài {n} ký tự, vượt giới hạn {t} cho một lượt đọc."
-            ).format(n=len(text), t=TRAN_KY_TU_CONG_KHAI)}, status_code=400)
+            ).format(n=len(text), t=TRAN_MOI_LUOT_SINH)}, status_code=400)
         du_an.sua_khoi(db, k, text=text, giong=giong)
         db.commit()
         return JSONResponse({"ok": True, "trang_thai": k.trang_thai})
@@ -22165,8 +22183,9 @@ def nhap_van_ban(request: Request, public_id: str, text: str = Form(""),
         d = _mo_du_an(db, request, user, public_id)
         if d is None:
             return JSONResponse({"ok": False}, status_code=404)
+        # Cùng lý do ở `sua_khoi` phía trên: cỡ một khối là cỡ một LƯỢT ĐỌC.
         so = du_an.nhap_van_ban(db, d, text,
-                                tran_moi_khoi=TRAN_KY_TU_CONG_KHAI)
+                                tran_moi_khoi=TRAN_MOI_LUOT_SINH)
         db.commit()
         return JSONResponse({"ok": True, "so_khoi": so})
     except du_an.LoiDuAn as e:
@@ -172049,6 +172068,128 @@ $ErrorActionPreference = 'Continue'
 & $venvPy $tool @doiSo
 $ma = $LASTEXITCODE
 $ErrorActionPreference = $truoc
+exit $ma
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_bai_dai_worktree.ps1
+SHA256=e2af1afaa7c3d850a683846a5e5d20460ebb0f6bfa5785a4e3734415122f061c BYTES=4482 LINES=116
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+<#
+.SYNOPSIS
+    Measure the long-form path using a SECOND sidecar started from THIS tree.
+
+.DESCRIPTION
+    Why this exists instead of just running setup\do_bai_dai.ps1:
+
+    The running LTTStudioVoice service is the DEPLOYED copy under
+    C:\LTTPlatform\app. New sidecar endpoints that live only in a worktree are
+    simply not there -- the measurement gets HTTP 404 and reports every joined
+    document as failed. That is exactly what happened on 2026-09-03.
+
+    Deploying to production just to take a measurement is the wrong trade: it
+    replaces the whole app tree, and other sessions have unmerged work. So this
+    script starts a SECOND sidecar from the worktree on a spare port, points the
+    measurement at it, and stops it again. Production is never touched.
+
+    The second sidecar loads its own copy of the model (~320 MB of weights), so
+    it needs a GPU with room -- check nvidia-smi first if unsure.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\do_bai_dai_worktree.ps1
+
+.NOTES
+    Needs Administrator (to read the ACL-locked app.env).
+    Pure ASCII (CLAUDE.md rule 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root  = 'C:\LTTPlatform',
+    [string]$Repo  = '',
+    [int]$Port     = 8121,
+    [string]$DoDai = '',
+    [switch]$BoAsr,
+    [string]$Json  = 'tmp\do_bai_dai.json',
+    [int]$ChoGiay  = 180
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$tool    = Join-Path $Repo 'tools\do_bai_dai.py'
+$entry   = Join-Path $Repo 'voice_sidecar_main.py'
+foreach ($p in @($envFile, $tool, $entry)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) { throw "Can quyen Administrator de doc $envFile" }
+
+$so = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    $bienEnv = $d.Substring(0, $i).Trim()
+    if ($bienEnv) { Set-Item -Path "Env:$bienEnv" -Value $d.Substring($i + 1); $so++ }
+}
+Write-Host "  [OK] Nap $so bien tu app.env (khong in gia tri)" -ForegroundColor Green
+
+$venvPy = $env:LTT_VIENEU_PYTHON
+if (-not $venvPy -or -not (Test-Path $venvPy)) {
+    throw "Khong thay python cua vieneu-venv (LTT_VIENEU_PYTHON=$venvPy)"
+}
+
+# Cong RIENG cho ban worktree. Dich vu that van o cong cu, khong bi dung toi.
+$env:LTT_VOICE_SIDECAR_PORT = "$Port"
+$env:PYTHONPATH = $Repo
+
+$logOut = Join-Path $Repo 'tmp\sidecar-worktree-out.log'
+$logErr = Join-Path $Repo 'tmp\sidecar-worktree-err.log'
+New-Item -ItemType Directory -Force -Path (Join-Path $Repo 'tmp') | Out-Null
+
+Write-Host "  Khoi dong sidecar tu worktree tren cong $Port ..." -ForegroundColor Cyan
+$sc = Start-Process -FilePath $venvPy -ArgumentList $entry -WorkingDirectory $Repo `
+    -RedirectStandardOutput $logOut -RedirectStandardError $logErr `
+    -PassThru -WindowStyle Hidden
+
+$ma = 1
+try {
+    $san = $false
+    for ($i = 0; $i -lt $ChoGiay; $i++) {
+        Start-Sleep -Seconds 1
+        if ($sc.HasExited) { throw "Sidecar worktree chet ngay: xem $logErr" }
+        try {
+            $r = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/live" -TimeoutSec 3 `
+                 -UseBasicParsing -ErrorAction Stop
+            if ($r.StatusCode -eq 200) { $san = $true; break }
+        } catch { }
+    }
+    if (-not $san) { throw "Sidecar worktree khong san sang sau $ChoGiay giay" }
+    Write-Host "  [OK] Sidecar worktree san sang (PID $($sc.Id))" -ForegroundColor Green
+
+    $doiSo = @('--json', $Json)
+    if ($DoDai) { $doiSo += @('--do-dai', $DoDai) }
+    if ($BoAsr) { $doiSo += '--bo-asr' }
+
+    # Xem chu thich cung ten trong cong_chat_luong_voice.ps1.
+    $truoc = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & $venvPy $tool @doiSo
+    $ma = $LASTEXITCODE
+    $ErrorActionPreference = $truoc
+}
+finally {
+    # !! LUON dung sidecar worktree, ke ca khi phep do nem loi. Mot ban thu hai
+    #    con song la mot ban giu VRAM va giu cong, va lan chay sau se thay mot
+    #    cong "da co san" ma khong biet no chay ma nao.
+    if ($sc -and -not $sc.HasExited) {
+        Write-Host '  Dung sidecar worktree ...' -ForegroundColor Cyan
+        Stop-Process -Id $sc.Id -Force -ErrorAction SilentlyContinue
+    }
+}
 exit $ma
 
 @@@LTT_PROFILE_FILE_END@@@

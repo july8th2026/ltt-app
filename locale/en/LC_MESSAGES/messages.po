@@ -13103,3 +13103,21 @@ msgstr "Preview voice"
 
 msgid "Trang việc"
 msgstr "Job page"
+
+msgid "Không có đoạn nào để đọc."
+msgstr "There is nothing to read."
+
+msgid "Chuẩn bị {n} đoạn"
+msgstr "Preparing {n} segments"
+
+msgid "Đã đọc {a}/{b} đoạn"
+msgstr "Read {a}/{b} segments"
+
+msgid "Thiếu {n} đoạn sau khi sinh."
+msgstr "{n} segments are missing after generation."
+
+msgid "Đang ghép {n} đoạn"
+msgstr "Joining {n} segments"
+
+msgid "Ghép xong nhưng không thấy tệp kết quả."
+msgstr "Joining finished but the result file is missing."
