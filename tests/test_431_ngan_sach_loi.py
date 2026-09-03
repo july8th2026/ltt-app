@@ -344,15 +344,43 @@ def test_chi_MOT_ham_quyet_dinh_so_worker_cua_bo_test():
 
 
 def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
-    """Mot don vi duy nhat. Lech don vi la loi da song 5 thang o kho nay."""
+    """Mot don vi duy nhat. Lech don vi la loi da song 5 thang o kho nay.
+
+    ⛔ `do_tai=False` KHONG PHAI DE "cho de". Thieu no thi phep kiem nay **do
+       chinh cai may no dang chay tren do**: chay rieng ⇒ may ranh ⇒ `chiem = 0`
+       ⇒ ra dung `TRAN_WORKER_BO_TEST`; chay TRONG mot luot gate ⇒ chinh bo test
+       lam may ban ⇒ `chiem` lon ⇒ nho hon ⇒ do. Quan sat that 03/09 tren cay
+       nay: `4 loi dang bi chiem (khai bao 0, do duoc 4)`.
+
+    ⭐ Day la bay `gate-tu-nhieu-vao-phep-do` o dang tinh vi hon: khong phai hai
+       buoc gate giam nhau, ma **mot phep kiem do chinh moi truong no dang o
+       trong**. Mot menh de TAT DINH phai duoc chot bang dau vao TAT DINH; phan
+       do duoc thi chot bang BAT DANG THUC, o
+       `test_do_tai_khong_bao_gio_noi_ngan_sach`.
+    """
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # Khong phu thuoc `os.cpu_count()` (logic) nua.
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
-    assert gate.loi_cho_bo_test(phien="") == gate.TRAN_WORKER_BO_TEST
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == gate.TRAN_WORKER_BO_TEST
 
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
-    assert gate.loi_cho_bo_test(phien="") == min(
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == min(
         gate.TRAN_WORKER_BO_TEST, 8 - gate.LOI_DE_DANH_VAT_LY)
+
+
+def test_do_tai_khong_bao_gio_noi_ngan_sach(monkeypatch):
+    """Phan DO DUOC chot bang bat dang thuc, khong bang mot con so.
+
+    Mot con so do duoc thi khong bao gio la mot hang so — no dung o may ranh va
+    sai o may day. Bat dang thuc nay dung o ca hai, va no van chot dung tinh
+    chat can chot: **do tai chi lam ngan sach nho di, khong bao gio noi ra**.
+    """
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
+    tinh = gate.loi_cho_bo_test(phien="", do_tai=False)
+    do = gate.loi_cho_bo_test(phien="", do_tai=True)
+    assert 1 <= do <= tinh, (
+        f"do tai cho {do} worker nhung ngan sach tinh la {tinh}")
 
 
 def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
