@@ -6,9 +6,15 @@ do_bai_dai.py — BẢN ĐỌC GHÉP có giữ được chất lượng của b�
 ## Câu hỏi, và vì sao nó là điều kiện DUY NHẤT còn lại
 
 `apps/ltt_voice/tham_so_cong_khai.py` nói thẳng: đường văn bản dài **đã xây
-xong** — `chia_doan` chia, `/v1/speech-dai` sinh nhiều lượt rồi ghép — nhưng
+xong** — `chia_doan` chia, sidecar sinh nhiều lượt rồi ghép — nhưng
 `TRAN_KY_TU_CONG_KHAI` vẫn giữ 1.500 *"cho tới khi đo được chất lượng bản GHÉP ở
 3.000 và 5.000 ký tự"*. Hạ tầng sẵn sàng không phải bằng chứng chất lượng.
+
+⚠️ ĐO ĐÚNG ĐƯỜNG ĐANG BÁN, và đường ấy vừa đổi (03/09): bài nhiều đoạn nay đi
+   `/v1/lo-ra-tep` + `/v1/ghep-tep` qua `apps/ltt_voice/ban_doc_dai.py`, không
+   còn đi `/v1/speech-dai` nữa. Tệp này gọi đúng hai cửa mới. Cửa cũ vẫn còn ở
+   sidecar và `tools/do_troi_tong.py` vẫn dùng nó làm đường đối chứng — nhưng
+   không sản phẩm nào gọi nó.
 
 Một chiều đã đo (01/09, `tools/do_troi_tong.py`): **trôi tông không có**. Nhưng
 chính tệp ấy cảnh báo đừng đọc điều đó thành "nới được rồi" — V10 còn CER/WER,
@@ -50,6 +56,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import statistics
 import sys
 import tempfile
@@ -144,11 +151,9 @@ def dung_bai(muc_tieu: int) -> str:
     return " ".join(manh)
 
 
-def _doc_wav(raw: bytes):
-    import io
-
+def _doc_wav_tep(duong: str):
     import soundfile as sf
-    w, sr = sf.read(io.BytesIO(raw), dtype="float32", always_2d=False)
+    w, sr = sf.read(duong, dtype="float32", always_2d=False)
     if getattr(w, "ndim", 1) > 1:
         w = w.mean(axis=1)
     return w, int(sr)
@@ -233,37 +238,53 @@ def do_mot_bai(muc_tieu: int, *, giu_asr: bool = True) -> dict:
     print(f"  duong: {duong}")
 
     hong = 0
+    doc: dict = {}
+    tam = tempfile.mkdtemp(prefix="dobaidai-")
     try:
+        # ⭐ ĐÚNG ĐƯỜNG SẢN PHẨM, và nó vừa đổi (03/09): bài nhiều đoạn nay đi
+        #    `lo-ra-tep` + `ghep-tep` (`apps/ltt_voice/ban_doc_dai.py`), KHÔNG
+        #    còn đi `/v1/speech-dai`. Đo đường cũ là đo một thứ không ai bán.
         if len(doan) == 1:
             raw, dau = sidecar_client.noi(doan[0])
+            duong_ra = os.path.join(tam, "tieng.wav")
+            with open(duong_ra, "wb") as f:
+                f.write(raw)
+            doc = {str(k).lower(): v for k, v in dict(dau or {}).items()}
+            w, sr = _doc_wav_tep(duong_ra)
+            moc = [0.0, len(w) / float(sr)]
         else:
-            raw, dau = sidecar_client.noi_dai(list(doan))
+            duong_doan = [os.path.join(tam, f"{i:04d}.wav")
+                          for i in range(len(doan))]
+            lo = sidecar_client.lo_ra_tep(list(doan), duong_doan)
+            duong_ra = os.path.join(tam, "tieng.wav")
+            ho_so = sidecar_client.ghep_tep(
+                duong_doan, duong_ra,
+                so_cau=[text_pipeline.dem_cau(t) for t in doan])
+            doc = {"x-gen-s": lo.get("gen_s"), "x-rtf": lo.get("rtf"),
+                   "x-nghi-s": ho_so.get("nghi_s"),
+                   "x-nguon-nghi": ho_so.get("nguon_nghi")}
+            w, sr = _doc_wav_tep(duong_ra)
+
+            # ⛔ KHÔNG lui về chia đều khi thiếu mốc. Bản ghép chèn nghỉ giữa
+            #    các đoạn, nên chia đều sai LUỸ TIẾN và tự sinh ra một xu hướng
+            #    đơn điệu — đúng hình dạng của thứ ta đang đi tìm.
+            #    `do_troi_tong.py` đã dính đúng bẫy này ngày 01/09 và cho ra một
+            #    "phát hiện" rất thuyết phục nhưng là giả.
+            moc = [float(x) for x in (ho_so.get("moc_s") or [])]
+            if len(moc) != len(doan) + 1:
+                raise ThieuTruong(
+                    f"ho so ghep co {len(moc)} moc cho {len(doan)} doan; can "
+                    f"{len(doan) + 1}")
+    except ThieuTruong:
+        shutil.rmtree(tam, ignore_errors=True)
+        raise
     except Exception as e:                              # noqa: BLE001
+        shutil.rmtree(tam, ignore_errors=True)
         print(f"  [HONG] {type(e).__name__}: {e}")
-        return {"muc_tieu": muc_tieu, "hong": True, "loi": f"{type(e).__name__}: {e}"}
+        return {"muc_tieu": muc_tieu, "hong": True,
+                "loi": f"{type(e).__name__}: {e}"}
 
-    w, sr = _doc_wav(raw)
-    doc = {str(k).lower(): v for k, v in dict(dau or {}).items()}
-
-    # ── cắt lại theo MỐC THẬT ───────────────────────────────────────────────
-    #
-    # ⛔ KHÔNG lui về chia đều khi thiếu mốc. Bản ghép chèn nghỉ giữa các đoạn,
-    #    nên chia đều sai LUỸ TIẾN và tự sinh ra một xu hướng đơn điệu — đúng
-    #    hình dạng của thứ ta đang đi tìm. `do_troi_tong.py` đã dính đúng bẫy
-    #    này ngày 01/09 và cho ra một "phát hiện" rất thuyết phục nhưng là giả.
-    if len(doan) == 1:
-        moc = [0.0, len(w) / float(sr)]
-    else:
-        raw_moc = (doc.get("x-moc-s") or "").strip()
-        if not raw_moc:
-            raise ThieuTruong(
-                "dau phan hoi thieu X-Moc-S. Chia deu se cat lech luy tien va "
-                f"sinh ra mot xu huong GIA. Dau co: {sorted(doc)}")
-        moc = [float(x) for x in raw_moc.split(",") if x.strip()]
-        if len(moc) != len(doan) + 1:
-            raise ThieuTruong(
-                f"X-Moc-S co {len(moc)} moc cho {len(doan)} doan; can "
-                f"{len(doan) + 1}")
+    shutil.rmtree(tam, ignore_errors=True)
 
     bo = do_chat_luong._bo_ma_hoa_giong()
     if bo is None:

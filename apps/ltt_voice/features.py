@@ -270,10 +270,21 @@ def goi_cong(text: str, *, ref_b64=None, preset=None) -> tuple:
                             ref_b64=ref_b64, preset=preset)
 
 
-def goi_cong_dai(doan: list, *, ref_b64=None, preset=None) -> tuple:
-    """Nhiều đoạn -> MỘT tệp liền mạch. Cùng hình dạng trả về với `goi_cong`."""
-    return _goi_va_dich_loi(sidecar_client.noi_dai, list(doan),
-                            ref_b64=ref_b64, preset=preset)
+#: 🔴 `goi_cong_dai` ĐÃ GỠ 03/09/2026, và chỗ này ghi lại vì sao — không phải để
+#:    tiếc nó, mà để lần sau ai đó định thêm lại thì đọc được lý do nó đi.
+#:
+#:    Nó gọi `/v1/speech-dai`: sinh **và** ghép cả bài trong MỘT lượt HTTP. Đúng
+#:    cho bài vừa phải, và nó không sai — nhưng nó không ghi lại gì giữa chừng,
+#:    nên một đoạn hỏng ở phút thứ 18 làm mất cả lượt, và cả bản đọc phải nằm
+#:    trong RAM sidecar cùng lúc.
+#:
+#: ⭐ Đường bản đọc dài nay đi qua `ban_doc_dai.dung` — từng đoạn có một chỗ
+#:    đứng riêng trên đĩa, nên "đọc tiếp" và "chỉ sinh lại đoạn hỏng" là hệ quả
+#:    tự nhiên chứ không phải tính năng phải xây thêm.
+#:
+#: ⚠️ Cửa `/v1/speech-dai` thì VẪN CÒN ở sidecar: `tools/do_troi_tong.py` gọi
+#:    thẳng nó, và nó là đường đối chứng của phép đo. Gỡ ở đây là gỡ **người gọi
+#:    trong sản phẩm**, không phải gỡ cửa.
 
 
 def hash_noi_dung(data: bytes) -> str:

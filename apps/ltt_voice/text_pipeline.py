@@ -563,6 +563,33 @@ def chuan_hoa(text: str, *, doc_so_tran: bool = False,
 # ── chia đoạn ────────────────────────────────────────────────────────────────
 _CAU = re.compile(r"(?<=[.!?…])\s+|\n+")
 
+#: Dấu kết câu. **Bản sao của `voice_sidecar.server._KET_CAU`**, và
+#: `tests/test_338` chốt hai bên khớp nhau.
+#:
+#: 🔴 Vì sao phải có bản sao thay vì import: cùng lý do `tham_so_cong_khai.py`
+#:    tồn tại — `apps/ltt_voice` chạy trong venv nền tảng, `voice_sidecar` chạy
+#:    trong venv cách ly có torch. Một `import voice_sidecar.server` từ worker
+#:    kéo cả cây phụ thuộc ấy vào đúng tiến trình mà venv cách ly sinh ra để
+#:    tránh. Hai bản sao không có phép kiểm là hai bản sao sẽ lệch; hai bản sao
+#:    **có** phép kiểm là một hợp đồng.
+_KET_CAU = re.compile(r"[.!?…]+(?:\s|$)")
+
+
+def dem_cau(text: str) -> int:
+    """Số câu của một đoạn, tối thiểu 1.
+
+    ⭐ Bộ ghép CẦN con số này: nó phân biệt ranh giới CÂU với hằng trăm khe TỪ
+       khi đo nhịp nghỉ. `noi_dai.nhip_nghi` đã ghi lại cái giá của việc thiếu
+       nó — trung vị mọi khoảng lặng cho 0,04 giây, tức khe giữa hai từ, và đặt
+       0,04 s ở mối nối là nối gần như dính liền.
+
+    ⚠️ Đường `/v1/speech-dai` đếm câu ở phía sidecar vì nó có sẵn văn bản. Đường
+       đoạn-rời thì KHÔNG: `/v1/ghep-tep` chỉ nhận đường dẫn tệp, và một đoạn
+       lấy lại từ kho sau khi máy chủ khởi động lại thì văn bản của nó chỉ còn ở
+       phía worker. Nên phép đếm phải làm được ở đây.
+    """
+    return max(1, len(_KET_CAU.findall(text or "")) or 1)
+
 
 def chia_doan(text: str, *, tran_moi_doan: int, can_bang: bool = False) -> list:
     """Chia theo RANH GIỚI NGỮ NGHĨA, không cắt giữa câu.

@@ -503,3 +503,22 @@ def test_check_i18n_van_dem_hai_tep_co_thong_diep_nguoi_dung():
     for phai_dem in ("apps/ltt_voice/features.py", "apps/ltt_voice/audio_input.py",
                      "apps/ltt_voice/routes.py", "apps/ltt_voice/gia.py"):
         assert not any(phai_dem.startswith(b) for b in bo_qua), phai_dem
+
+
+def test_dem_cau_khop_voi_bo_ghep_o_sidecar():
+    """🔴 Hai bản sao của MỘT luật đếm câu, và đây là phép kiểm giữ chúng khớp.
+
+    `text_pipeline._KET_CAU` (venv nền tảng) và `voice_sidecar.server._KET_CAU`
+    (venv cách ly) phải cùng một biểu thức. Lệch nhau thì `/v1/speech-dai` và
+    đường đoạn-rời tính ra hai nhịp nghỉ khác nhau cho cùng một bài — và triệu
+    chứng là mối nối nghe khác nhau tuỳ đường đi, thứ không phép đo hợp đồng
+    nào bắt được.
+    """
+    from voice_sidecar.server import _KET_CAU as O_SIDECAR
+
+    assert text_pipeline._KET_CAU.pattern == O_SIDECAR.pattern
+
+    for t, n in (("Mot cau.", 1), ("Mot. Hai! Ba?", 3), ("Khong co dau ket", 1),
+                 ("", 1), ("A... B.", 2)):
+        assert text_pipeline.dem_cau(t) == n, t
+        assert text_pipeline.dem_cau(t) == max(1, len(O_SIDECAR.findall(t)) or 1)
