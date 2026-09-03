@@ -326,6 +326,19 @@ export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi,
           //    nhat duoc tu giao dien: nguon doi chieu phai doc lap voi thu
           //    dang do.
           const manh = 'CANHCUT DOCTO 4471';
+          // ⛔ DAU HIEU NAY NAM TRONG CHINH CAU TOI GUI DI, nen "o soan co
+          //    chua no" KHONG phan biet duoc hai truong hop:
+          //      · dien cau TRA LOI cua model  (dung)
+          //      · dien lai cau HOI cua nguoi dung (sai, va la mot loại sai
+          //        that: doc to cau cua chinh minh, va tra tien theo giay)
+          //
+          // ⭐ Nen doi chieu them mot manh chi co o PHIA NGUOI DUNG. Cau lenh
+          //    ("Chep lai dung mot dong nay") khong bao gio xuat hien trong mot
+          //    cau tra loi dung, nen su vang mat cua no la bang chung phan biet.
+          if (/Chep lai dung mot dong nay/i.test(daDien)) {
+            throw new Error(`"Doc to" dien lai CAU HOI chu khong phai cau tra loi: `
+              + daDien.slice(0, 200));
+          }
           if (!chuBai.includes(manh)) {
             throw new Error(`model khong chep lai dau hieu (${manh}) — khong doi chieu duoc: `
               + JSON.stringify(chuBai.slice(0, 200)));

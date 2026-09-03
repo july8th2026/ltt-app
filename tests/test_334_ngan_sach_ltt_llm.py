@@ -36,6 +36,54 @@ class TestNguonChanLy:
         assert (ngan_sach.TOKEN_VAO_TRAN + ngan_sach.TOKEN_RA_TRAN
                 <= ngan_sach.CUA_SO_MODEL)
 
+    def test_moi_model_deu_chua_tron_mot_luot_sinh_dai_nhat(self):
+        """Bat bien nay phai dung cho **moi** model, khong chi model text.
+
+        🔴 VI SAO CAN. `tran_theo_ngu_canh()` — cho kep tran RA cua cua
+           stream — dung `CUA_SO_MODEL` (204.800) **vo dieu kien**, khong theo
+           model dang goi. Voi `qwen38-vision` (65.536) do la mot cua so gap ba
+           lan that.
+
+        ⛔ No van dung, nhung dung **nho mot bat bien o noi khac**:
+           `tran_vao_cua()` da tru san `TOKEN_RA_TRAN`, nen dau vao hop le lon
+           nhat cua vision la 30.720 va 30.720 + 32.768 = 63.488 <= 65.536.
+
+        ⭐ Do la loai "dung nho hang so ben canh" — nang `TOKEN_RA_TRAN` hay
+           ha `LE` mot lan la bien do bien mat, va **khong co gi keu**. Phep kiem
+           nay chinh la cai keu.
+        """
+        # ⛔ DANG THUC, KHONG PHAI `<=`. Ban dau toi viet `<=` va no la mot
+        #    TAUTOLOGY: vi `tran_vao_cua` tru dung `TOKEN_RA_TRAN + LE`, tong
+        #    luon bang `cua_so - LE`, nen ve trai KHONG BAO GIO vuot. Thu nang
+        #    `TOKEN_RA_TRAN` len 40.000: tong van 63.488. Mot phep kiem khong
+        #    the do duoc la mot phep kiem khong canh gi.
+        #
+        # ⭐ Dang thuc moi chot dung thu `tran_theo_ngu_canh()` dang DUA VAO:
+        #    dau vao hop le lon nhat cua MOI model da chua san tron mot luot
+        #    sinh dai nhat cong `LE`. Bo phan tru do di — theo bat ky chieu nao
+        #    — la phep kiem nay do ngay.
+        for model_id, cua_so in ngan_sach.CUA_SO_THEO_MODEL.items():
+            assert (ngan_sach.tran_vao_cua(model_id) + ngan_sach.TOKEN_RA_TRAN
+                    + ngan_sach.LE == cua_so), (
+                f"{model_id}: vao {ngan_sach.tran_vao_cua(model_id)} + ra "
+                f"{ngan_sach.TOKEN_RA_TRAN} + le {ngan_sach.LE} != cua so {cua_so}")
+
+    def test_tran_ra_khong_tran_cua_so_cua_model_NHO_NHAT(self):
+        """Chay that `tran_theo_ngu_canh()` o bien, tren model cua so be nhat.
+
+        ⛔ Phep kiem tren doc cac HANG SO; phep kiem nay goi chinh cai HAM
+           dang dung `CUA_SO_MODEL` vo dieu kien. Hai thu do hong theo hai cach
+           khac nhau, nen chung khong thay the nhau duoc.
+        """
+        be_nhat = min(ngan_sach.CUA_SO_THEO_MODEL, key=ngan_sach.CUA_SO_THEO_MODEL.get)
+        cua_so = ngan_sach.CUA_SO_THEO_MODEL[be_nhat]
+        vao_toi_da = ngan_sach.tran_vao_cua(be_nhat)
+        for vao in (0, 1, vao_toi_da // 2, vao_toi_da - 1, vao_toi_da):
+            ra = ngan_sach.tran_theo_ngu_canh(vao)
+            assert ra >= 1
+            assert vao + ra <= cua_so, (
+                f"model {be_nhat}: vao {vao} + tran ra {ra} vuot cua so {cua_so}")
+
     def test_cong_bo_cho_client_thap_hon_tran_that(self):
         """Client phải nén **trước** khi chạm trần, không phải lúc đã chạm.
 
