@@ -796,13 +796,88 @@ phụ thuộc vào *cách họ cài*, và đó là loại lỗi không ai tái h
 `nen <= 0` thì **bỏ hẳn** trường, không ghi số bịa — cùng luật với bộ cài. Với
 vision đang chạy thật (28.262) thì đúng là bỏ hẳn.
 
+## 7f. ✅ H-5 — CANARY NÉN THẬT: **THÀNH CÔNG**, sau một phép đo tự hỏng
+
+§7c (H-2) thất bại. Đây là lượt sau bản vá `truncation_policy`, và nó xanh —
+nhưng phần đáng đọc của mục này là **lượt đo hỏng ở giữa**.
+
+### 7f.1 🔴 Canary v2 ra "xanh" mà không đo gì cả
+
+Đề bài: *"đọc từng tệp, in dòng `MOC` ở CUỐI tệp"*. Kết quả: **14/14 mốc, mã
+thoát 0**. Tôi suýt báo cáo nó là bằng chứng.
+
+Đọc bản ghi thì:
+
+```
+so lenh -Tail 5      : 13
+so lenh doc TRON     :  1
+```
+
+Model đọc `tep01.txt` trọn **một** lần, rồi **tự học**: 13 lượt còn lại chạy
+`Get-Content -Tail 5`, chỉ lấy 5 dòng cuối. Hợp lý về phía nó — đề bài chỉ đòi
+cái mốc. Nhưng ngữ cảnh không phình, nên phép đo **không bao giờ chạm** ngưỡng
+nén 123.617.
+
+⛔ Nếu tôi nhìn **mã thoát**, tôi đã kết luận sai. Bằng chứng nằm trong bản ghi.
+
+⭐ Và nó lộ một sự thật về sản phẩm đáng giữ: **một agent giỏi thì TỰ NÓ tránh
+nạp tệp lớn.** Sự cố production 04/09 (95.901 token một lượt) không phải hành
+vi thường — nó là trường hợp agent **không lách được**. Nên canary phải *cấm
+lách*, và một canary không cấm lách sẽ luôn xanh mà không nói gì.
+
+### 7f.2 v3: cấm lách bằng đề bài
+
+Đề bài v3 nói thẳng: mỗi tệp đúng một lệnh `Get-Content "tepNN.txt"`, **không**
+`-Tail`/`-Head`/`-TotalCount`/`Select-String`/`Select-Object`. Kiểm lại bản
+ghi: **cả 14 lệnh đều là `Get-Content "tepNN.txt"` trần.** Ràng buộc giữ được.
+
+### 7f.3 Kết quả — ba mệnh đề, cả ba xanh
+
+```
+14/14 moc  |  14 lenh doc TRON  |  4.208.425 byte ket qua tool
+Payload Too Large : 0        ran out of room : 0
+ERROR             : 0        Reconnecting    : 0
+context compacted : 2
+```
+
+| Mệnh đề | Bằng chứng |
+|---|---|
+| **Trần kết quả tool có hiệu lực** | Không cắt thì 14 tệp × 300.000 ký tự ≈ **840.000** token thật (5,00 ký tự/token, §7b). Trần cứng **169.984** ⇒ **tệp thứ ba đã phải vỡ**. Nó không vỡ. |
+| **Nén tự kích hoạt** | `context compacted` **hai lần**, không ai bảo. |
+| **Không còn `413`** | Zero, trên 4,2 MB kết quả tool. |
+
+⭐ Và một dự đoán ở §7d.4 được xác nhận ngoài ý muốn: cảnh báo Codex in ra sau
+mỗi lần nén là *"Long threads and multiple compactions can cause the model to be
+less accurate"* — đúng thông điệp **Local Compact** mô tả ở
+[#42313](https://github.com/openai/codex/issues/42313). Ta khai
+`name = "LTT Studios"`, và `is_openai()` là so chuỗi `name == "OpenAI"`, nên
+provider của ta **không bao giờ** được nén remote. Request nén đi thẳng vào
+`/api/v1/responses` của chính ta.
+
+### 7f.4 ⚠️ Hai lần tôi `grep` phải dữ liệu thử của chính mình
+
+Cùng một phiên, cùng một cái bẫy, hai lần:
+
+```
+grep -c "413"      -> duong tinh gia: bo de chua `[01.00413]` (so dong)
+grep -c "compact"  -> 2.116: bo de chua "Compaction happens between turns"
+```
+
+Chuỗi thứ hai là câu **tôi tự viết** làm dữ liệu thử. Sửa: lọc bỏ dòng khớp
+`^\[\d\d\.\d{5}\]` trước khi đếm — còn **77 dòng điều khiển**, và đếm trên
+đó thì con số nói đúng.
+
+⛔ Bài học tổng quát hơn, mượn cách diễn đạt của phiên `lttchat`: **một lượt
+xanh phải kèm được CON SỐ NÓ ĐÃ SO, không chỉ kèm mã thoát.** `-Tail 5` của
+tôi và `manh_doi_chieu: ""` của họ là cùng một lỗi.
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
 |---|---|---|
 | ~~N-1~~ | 🟢 **ĐÓNG 04/09** — máy B **đã** deploy. ~~Máy B vẫn `-c 131072`~~ | Hỏi máy chủ thật: `ltt_llm` công bố **156.385**. Dòng nợ này đã sai trong một thời gian mà không ai biết, vì nó là chữ chép tay. §7e. |
 | **N-13** | ⚠️ **Bản vá `/api/v1/models` chưa deploy** | Ba trường bắt buộc đã thêm (§7e.3, `fa1b8e9`) nhưng khách vẫn nhận bản thiếu cho tới khi deploy. Xếp cùng hàng với H-4 — cùng một lượt `2-cai-dat.ps1`. |
-| ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **ĐÃ CHẠY 04/09** — và **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
+| ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **XANH 04/09 (H-5, §7f)** — 14/14 tệp, 4,2 MB kết quả tool, `context compacted` ×2, **zero 413**. Lượt trước (H-2) **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
 | ~~N-10~~ | 🟢 **ĐÓNG 04/09** (§7d.3). ~~MỘT kết quả tool có thể lớn hơn MỌI khoảng trống~~ | Đo 04/09: một lệnh đọc tệp thêm **95.901** token trong một lượt, gấp **2,1 lần** khoảng trống 46.367. Kết quả tool không có trần trên, nên **không con số nào chừa đủ** — đây là giới hạn kiến trúc của việc "client tự nén theo ngưỡng".<br><br>✅ **Nhưng nó có trần**, và ta đã tự vứt cái trần đó đi: `truncation_policy.limit` = cả cửa sổ, trong khi mặc định Codex là 2.500 token. Đặt lại `TOKEN_RA_TRAN // 2 = 16.384`. |
 | ~~N-11~~ | 🟢 **ĐÓNG 04/09** (§7d.7). ~~Codex thử lại dù ta đánh `retry: never`~~ | Hai cái sai trong một dòng. `retry` là trường mở rộng của RIÊNG TA, không client nào đọc được. Và `413` của ta **đã** phát trước khi stream mở (`streaming.py:664` trước `return StreamingResponse` ở 678) — vẫn bị retry, vì Codex `0.145` dùng WebSocket nên mọi mã HTTP tới nó dưới dạng lỗi kết nối. Hình dạng phản hồi của ta không điều khiển được việc này. **Không có gì để sửa**; đòn bẩy duy nhất là đừng tạo ra `413`. |
 | N-3 | **Lượt sinh dài ở cuối cửa sổ chưa đo sạch.** Lượt 160K/8192 trả `finish_reason: stop` sau 122 token vì đề bài chỉ đòi một dòng | Nó chứng minh request được NHẬN, không chứng minh decode còn khoẻ ở cuối cửa sổ. Đã sửa đề bài trong `bench_ctx.py` nhưng chưa chạy lại |
@@ -811,5 +886,5 @@ vision đang chạy thật (28.262) thì đúng là bỏ hẳn.
 | N-6 | **Hai bộ đo chất lượng đều hoà ở kịch trần** | Chúng loại trừ một suy giảm đủ lớn để đo thấy. Muốn nhạy hơn thì cần bộ đề khó hơn, và đó là một việc riêng |
 | ~~N-7~~ | ~~`LTT_PUBLIC_API_MAX_BODY_BYTES` thật trên production~~ | ✅ **ĐÓNG 03/09.** Biến **không** được đặt ở đâu cả: `AppEnvironmentExtra` của dịch vụ `LTTStudioWeb` liệt kê 71 biến và không có nó, và service env chính là thứ `2-cai-dat.ps1` nạp từ `app.env`. ⇒ production dùng mặc định **1 MiB**, đủ cho 747 KB cần thiết. *(Đọc TÊN biến từ registry, không đọc giá trị — không có bí mật nào bị in ra.)* |
 | **N-9** | ⚠️ **Hồ sơ chưa nạp thì vẫn phán xử bằng phép ước** | Sau 30 phút rảnh (`ttl: 1800`) model bị unload; một lượt lớn tới ngay lúc đó có thể ăn `413` oan. Không đóng bằng cách hỏi `/tokenize` — làm thế là đánh thức GPU 2,5 phút cho một yêu cầu đang định từ chối. Trong thực tế lượt đầu của một phiên là lượt nhỏ, nhưng *"trong thực tế"* không phải *"luôn luôn"*. |
-| **N-12** | ⚠️ **Chưa kiểm `#16033` trên `0.145.0`** | Có báo cáo rằng nén hỏng *khi và chỉ khi* `model_context_window` + `model_auto_compact_token_limit` được đặt tường minh — đúng cấu hình bộ cài ta. Báo trên `0.117.0`; nén đã viết lại 06/2026.<br><br>⭐ **Thu hẹp 04/09:** `#16033` cần **cả hai** khoá top-level. Ta phát `model_context_window` (`cam_cli.py:_codex_profile`) nhưng **không** phát `model_auto_compact_token_limit` — ngưỡng nén của ta chỉ nằm trong catalog. Vậy ta nhiều khả năng **không** ở đúng cấu hình hỏng đó. Khớp một phần không phải bằng chứng, nên vẫn phải đo. |
+| ~~N-12~~ | 🟢 **ĐÓNG 04/09** (§7f.3). ~~Chưa kiểm `#16033` trên `0.145.0`~~ | Nén **có** chạy — `context compacted` hai lần — với đúng cấu hình bộ cài ta phát ra (`model_context_window` top-level + ngưỡng nén trong catalog). `#16033` không tái hiện. Phù hợp với thu hẹp trước đó: ta chỉ phát **một** trong hai khoá top-level mà issue ấy cần. |
 | **N-8** | 🔴 **Chốt "cây đứng yên" của gate KHÔNG soi `llm_gateway/` và `sdk/`** | Tìm ra 03/09. `gate._anh_chup_cay()` chỉ chụp `apps, platform_core, server, tools, tests, alembic, locale`. Chương trình này sửa **10** thư mục, và **năm** trong số đó (`docs`, `frontend`, `llm_gateway`, `sdk`, `ho_so_he_thong.txt`) nằm ngoài ảnh chụp.<br><br>⛔ Nghĩa là sửa mã **cổng máy B** hoặc **bộ cài khách** ngay giữa một lượt gate thì `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã không còn tồn tại. Cùng một họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`.<br><br>⭐ Và tôi phát hiện nó theo đường ngược: tôi sửa một tệp `docs/` giữa lượt gate, **tưởng** mình vừa làm mất lượt đó, rồi đọc `_anh_chup_cay()` để xác nhận — và thấy điều tệ hơn là thứ tôi lo. |
