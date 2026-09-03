@@ -92,8 +92,32 @@ export function dot1({ cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong, h
       hoi: 'Rời trang giữa lúc đang stream thì lượt có được quyết toán không?',
       async chay(p) {
         await hoiThoaiMoi(p);
-        await guiChu(p, 'Viet mot doan 10 cau ve mua dong.');
-        await doiDen('luong da chay', () => dangChay(p), 30);
+        // Cau hoi DAI han, de con kip roi trang giua chung.
+        await guiChu(p, 'Viet mot doan van 15 cau ve mua dong o mien Bac, '
+          + 'moi cau tren mot dong rieng.');
+        // ⛔ LUAT ② CUA CHINH KE HOACH NAY, VA TOI VUA VI PHAM NO.
+        //
+        //    `guiChu` da doi luot BAT DAU roi moi tra ve. Neu model tra loi
+        //    nhanh, luot co the KET THUC truoc khi dong duoi day kip nhin —
+        //    va `doiDen('luong da chay')` bao HONG mot san pham dang chay dung.
+        //    Do la "khong quan sat duoc", khong phai "bi vi pham".
+        //
+        // ⭐ Nen phan biet hai kha nang: van dang chay (do tiep), hay da xong
+        //    (bo qua, kem ly do). Dung de mot cai bien thanh cai kia.
+        let kipNhin = false;
+        try {
+          await doiDen('luong da chay', () => dangChay(p), 30);
+          kipNhin = true;
+        } catch (e) {
+          const xongRoi = await p.locator('article').last()
+            .getByRole('button', { name: 'Tạo lại' }).count();
+          if (xongRoi > 0) {
+            return { bo_qua: 'luot ket thuc truoc khi kip roi trang — menh de nay '
+              + 'chua kiem duoc o lan chay nay' };
+          }
+          throw e;
+        }
+        if (!kipNhin) return { bo_qua: 'khong quan sat duoc luong' };
         await cho(1500);
         const hash = await p.evaluate(() => location.hash);
         // Roi trang giua chung — dung nhu nguoi dung dong tab.

@@ -662,6 +662,7 @@ const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
   await nap('dot4_dinh_kem.mjs', 'dot4');
   await nap('dot5_tao_anh.mjs', 'dot5');
   await nap('dot6_tao_giong.mjs', 'dot6');
+  await nap('dot7_tien_dong_thoi.mjs', 'dot7');
 }
 
 // ── Chay ───────────────────────────────────────────────────────────────────
@@ -788,6 +789,36 @@ try {
                     giay: (Date.now() - t0) / 1000, chi_tiet: ct });
       console.log(`  [${bo ? 'BOQUA' : 'DAT  '}] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${JSON.stringify(ct)}`);
     } catch (e) {
+      // 🔴 TRUOC KHI GOI DAY LA MOT LOI: NHIN MAN HINH DA.
+      //
+      //    Do 04/09, dot 0 chay rieng: BA hang muc bao HONG, va ca ba deu dang
+      //    hien dung mot cau — cau cua CHINH SAN PHAM:
+      //
+      //      "Model dang ban. Thu lai sau it giay — luot nay khong bi tinh tien."
+      //
+      //    Do khong phai san pham hong. Do la san pham xu ly DUNG mot may ban,
+      //    noi ro bang tieng Viet, va tu tuyen bo khong thu tien. Menh de ma ba
+      //    hang muc kia dat ra (tra dung cau hoi, giu rang buoc dinh dang, chu
+      //    co dau khong vo) — khong cai nao **duoc kiem** o lat chay do.
+      //
+      // ⛔ Va day khong phai mot ngoai le cho de bao cao dep hon. Bao HONG o
+      //    day la vu khong, dung nghia luat ② cua ke hoach; ba dong do se lam
+      //    nguoi doc di tim mot loi khong ton tai, roi lan sau ho bo qua ca ba
+      //    — ke ca khi mot trong so do do that.
+      //
+      // ⭐ Chi bo qua khi chinh SAN PHAM noi cau do tren man hinh. Do la bang
+      //    chung quan sat duoc, khong phai mot phong doan cua bo kiem. Va cau
+      //    ay tu no da hua "khong bi tinh tien" — tuc so tien khong lien can.
+      const manHinh = await page.locator('article').last().innerText().catch(() => '');
+      if (/Model đang bận/i.test(manHinh) && /không bị tính tiền/i.test(manHinh)) {
+        const ct = { bo_qua: 'model bao BAN ngay tren man hinh — menh de chua kiem duoc',
+                     man_hinh: manHinh.replace(/\s+/g, ' ').slice(0, 120),
+                     loi_goc: e.message.slice(0, 160) };
+        ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, bo_qua: true,
+                      giay: (Date.now() - t0) / 1000, chi_tiet: ct });
+        console.log(`  [BOQUA] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${JSON.stringify(ct)}`);
+        continue;
+      }
       maThoat = 1;
       ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: false, giay: (Date.now() - t0) / 1000, chi_tiet: e.message });
       console.log(`  [HONG ] ${String(hm.dot ?? '0').padStart(2)} ${hm.ten}  ${e.message}`);

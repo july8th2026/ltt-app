@@ -234,9 +234,20 @@ Xếp theo **rủi ro × khả năng lọt**, không theo độ dễ.
 | **2** Hội thoại | **L** | URL hash vừa thêm tuần này, chưa ai kiểm nút Back |
 | **4** Vision | M | vừa xây, mã mới nhất = mã ít mắt nhìn nhất |
 | **3** Markdown | M | vừa tìm ra một lỗi thật ở đây, khả năng còn nữa |
-| **5** Di động | M | cần thiết bị/emulator, chậm hơn |
-| **6** Model | S | |
+| **5** Tạo ảnh | M | đường tiêu tiền theo job, trước đó không hạng mục nào chạm |
+| **6** Tạo giọng | M | như trên, cộng dữ liệu sinh trắc |
 | **7** Tiền/đồng thời | M | đã có `test_627` ở tầng dịch vụ; đây là tầng GUI |
+| **8** Di động | M | cần thiết bị/emulator, chậm hơn |
+| **9** Model | S | |
+
+⚠️ **Số hiệu đợt trong bảng này đã đổi ngày 04/09.** Bản đầu đặt 5 = Di động,
+6 = Model. Khi chủ dự án yêu cầu kiểm tạo ảnh và tạo giọng, hai đợt đó chiếm
+số 5 và 6 **trong mã** (`tools/kiem_chatltt/dot5_*.mjs`, `dot6_*.mjs`), còn tài
+liệu vẫn giữ nghĩa cũ trong một thời gian.
+
+⛔ Đó đúng là cơ chế đã làm bảng "app nào đang bật" trong `CLAUDE.md` nói sai
+**năm lần**: một con số chép ở hai nơi, rồi một nơi đổi. Ở đây nguồn chân lý là
+**tên tệp trong `tools/kiem_chatltt/`**, không phải bảng này.
 
 ### B5. Hai luật cho mọi hạng mục mới
 
