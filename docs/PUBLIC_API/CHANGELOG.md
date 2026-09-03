@@ -21,6 +21,69 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-03 — `ltt_llm` lên 156K ngữ cảnh dùng được, và ngưỡng nén đổi công thức
+
+**ADDED · Cửa sổ ngữ cảnh dùng được của `ltt_llm`: 89K → 156K.**
+
+Cửa sổ engine lên `204.800` (đo thật trên card đang phục vụ; bằng chứng ở
+`docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md`). Bạn **không phải sửa gì** — trần
+cũ vẫn hợp lệ, chỉ là bạn được nhét vào nhiều hơn.
+
+```diff
+  ltt_llm         context_window   88555  ->  156385
+  ltt_llm         tran dau vao     96256  ->  169984
+  ltt_llm_vision  context_window   28262      (KHONG doi)
+```
+
+⚠️ **`ltt_llm_vision` giữ nguyên 28K.** Nó chạy trên một hồ sơ khác, cửa sổ
+engine `65.536`, và chưa được đo lại. Đừng suy con số của nó từ con số của
+`ltt_llm` — đó đúng là lỗi đã sửa ở mục 01/09 ngay dưới.
+
+**FIXED · Ngưỡng nén (`auto_compact_token_limit`) nay là `cửa sổ − token ra tối
+đa`, không còn là `0,8 × cửa sổ`.**
+
+Nếu bạn tự cấu hình Codex/Claude Code bằng tay thay vì dùng công cụ `cam`, hãy
+đọc mục này. Công thức `0,8` chừa lại **ít hơn một lượt trả lời dài nhất** giữa
+ngưỡng nén và cửa sổ công bố — mà client chỉ kiểm ngưỡng **giữa hai lượt**. Đo
+được trên production: một lượt ăn `413` với **101.938** token vào trên trần
+**96.256** khi đó, dù client có bật auto-compact.
+
+```diff
+- auto_compact_token_limit = 0.8 * cua_so
++ auto_compact_token_limit = cua_so - max_output_tokens
+```
+
+Với cấu hình hiện tại: `156385 − 32768 = 123617`.
+
+**FIXED · Bộ cài khai `ltt_llm_vision` bằng cửa sổ của model text.** Cả bản
+Windows lẫn bản một-tệp đều ghi `88555` cho **cả hai** model vào catalog của
+Codex — tức hứa cho vision gấp **3,1 lần** thật. Nay mỗi model khai cửa sổ của
+nó. Cùng lớp lỗi với mục 01/09, chỉ ở một tệp khác.
+
+**FIXED · Bản một-tệp (macOS/Linux) nay đặt `CLAUDE_CODE_MAX_CONTEXT_TOKENS`.**
+Bản Windows đã đặt từ 30/08; bản một-tệp thì không, nên khách macOS/Linux nhận
+một bộ cài yếu hơn mà không có gì nói ra.
+
+⇒ **Chạy lại công cụ `cam` (hoặc `ltt_cai_dat_cli.py`) rồi mở phiên mới.** Cấu
+hình được đọc lúc khởi động, nên phiên đang chạy không tự nhận số mới.
+
+### Về `contract_hash` của `text.chat`: `126dc382…` → `dcf6aa9d…`
+
+`check_api_compat.py` gắn nhãn **BREAKING** cho mọi lần `contract_hash` đổi, và
+ở đây nhãn đó **rộng hơn sự thật**. Thứ đổi trong schema là **một chuỗi mô tả**:
+
+```diff
+- "`ltt_llm` for text (89K usable input context). ..."
++ "`ltt_llm` for text (156K usable input context). ..."
+```
+
+Không trường nào bị bỏ, không `enum` nào hẹp lại, không ràng buộc nào siết vào.
+Một tích hợp đang chạy **không hỏng** — nó chỉ được phép gửi nhiều hơn.
+
+⭐ Nhưng chốt vẫn đúng khi bắt phải khai báo: hash phủ cả mô tả **có chủ ý**, vì
+mô tả là thứ khách đọc rồi cấu hình theo. Một lần đổi mô tả mà không ai ghi lại
+chính là cách `89K` sống sót nhiều ngày sau khi nó hết đúng.
+
 ## 2026-09-01 — `ltt_llm_vision` KHÔNG có 89K ngữ cảnh, và chưa bao giờ có
 
 **FIXED · Ngữ cảnh công bố nay đúng theo TỪNG model.**

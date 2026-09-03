@@ -16,6 +16,75 @@
 
 
 
+## 2026-09-03 (tối) — Ngữ cảnh dài `ltt_llm`: 413 của client, và cửa sổ 131K → 200K
+
+- **Nhánh:** `phien/ltt-llm-context-200k` từ `admin-mvp-v3`. **CHƯA DEPLOY** —
+  máy B vẫn chạy `-c 131072`. Thứ tự deploy ở
+  `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md` §7 D-5 và nó **không hoán vị được**.
+
+### Triệu chứng và nguyên nhân
+
+`POST /api/v1/responses` ăn `413` với 101.938 token vào trên trần 96.256.
+Client **có** nén — nó nén quá muộn. Hai bộ cài đặt ngưỡng nén ở `0,8 × cửa sổ`,
+để lại khoảng trống 25.412 < 32.768 = một lượt sinh dài nhất; mà client chỉ kiểm
+ngưỡng **giữa hai lượt**. Nay ngưỡng nén **dẫn xuất**: `công bố − token ra tối đa`.
+
+Tìm ra trên đường, cùng một họ khuyết tật:
+
+| | |
+|---|---|
+| Hai bộ cài khai `ltt_llm_vision` bằng cửa sổ của model **text** | hứa gấp **3,1 lần** thật (88.555 vs 28.262) |
+| **Hai phép kiểm đang cưỡng chế khuyết tật đó** (`test_283`, `test_334`) | `assert m["context_window"] == HANG_SO` trong vòng lặp trên nhiều model ⇒ sửa mã cho đúng thì gate đỏ |
+| `sdk/ltt_cai_dat_cli.py` không đặt `CLAUDE_CODE_MAX_CONTEXT_TOKENS` | khách macOS/Linux nhận bộ cài **yếu hơn** bản Windows, không dòng nào nói ra |
+| `deploy.ps1` gõ tay `LTT_LLM_MAX_INPUT_TOKENS` ở **ba** chỗ, không chốt nào | đổi cửa sổ ⇒ máy B lặng lẽ lùi về trần cũ ở lần deploy sau |
+
+### Đo thật trên card đang phục vụ (RTX 3090, build 10689)
+
+| token vào | 131K/q8_0 | 200K/q4_0 |
+|---:|---|---|
+| 50.000 | 1.004,7 tok/s | 999,9 |
+| 100.000 | 802,0 | 805,3 |
+| 130.000 | 712,8 | 726,5 |
+| 150.000 / 165.000 / 180.000 | — quá cửa sổ | 672,4 / 639,1 / 616,7 |
+| VRAM đỉnh | 22.017 MiB | **21.979 MiB** |
+
+Chất lượng: `danh_gia_llm --lan 3` **36/36 cả hai**; kim-trong-đống-cỏ 130K, năm
+độ sâu, cùng seed: **10/10 cả hai**. ⚠️ Cả hai hoà **ở kịch trần**, nên chúng
+loại trừ một suy giảm đủ lớn để đo thấy — **không** chứng minh hai hồ sơ như nhau.
+
+Codex thật (`codex-cli 0.145.0`), A/B khác đúng một dòng cấu hình: không catalog
+⇒ `warning: Model metadata for ltt_llm not found`; có catalog ⇒ **không cảnh báo**.
+
+### 🔴 Hai cái bẫy đo đạc — cùng một cái xác
+
+Hồ sơ 200K "chết" hai lần (130K rồi 180K), cả hai lần để lại y hệt dấu vết của
+một lần OOM, và cả hai lần giải thích OOM **khớp hoàn hảo**. Cả hai đều sai:
+lần một llama-swap **đuổi** model để nạp hồ sơ khác (một phiên khác đang kiểm
+GUI ChatLTT trên production); lần hai llama-swap **unload theo `ttl: 900`** vì
+công cụ đo gửi thẳng tới cổng `llama-server`, bỏ qua llama-swap — mà `ttl` đếm
+hoạt động **đi qua** llama-swap.
+
+⭐ OOM · bị đuổi · hết TTL để lại **cùng một cái xác**, và không phép đo nào ở
+tầng client phân biệt được. Chuẩn "tái hiện được" chưa đủ; phải **giải thích
+được cái xác bằng một nguồn độc lập**.
+
+### Quyết định
+
+Engine `qwen38-api` lên `-c 204800` + KV `q4_0`; trần vào 169.984; công bố
+156.385; ngưỡng nén 123.617. **Gỡ `qwen38-ops`** — hai hồ sơ text cùng mở là một
+nguồn `ConnectionReset` ngẫu nhiên, vì llama-swap giết lượt đang chạy.
+
+Trần 169.984 nằm **bên trong** vùng đã chạy thật (179.902 token).
+
+### Còn tồn đọng
+
+- **Chưa deploy.** Cần cửa sổ deploy chung với phiên `lttchat`.
+- Canary Codex/Claude **phiên dài với khoá thật** chưa chạy (thiếu khoá; bộ kiểm
+  đọc tệp khoá bị chặn ở phiên này).
+- `qwen38-vision` vẫn 65.536, và cửa sổ công bố của nó (28.262) **hẹp hơn** một
+  lượt sinh dài nhất ⇒ không có ngưỡng nén nào giữ được lời hứa cho nó.
+- `deploy.ps1` vẫn **không** restart `LTTLlamaSwap` (D-03-5 của audit 31/08).
+
 ## 2026-09-03 (chiều) — H43 ChatLTT: Phase 03–08a (text · ảnh · tiếng · catalog · dữ liệu · app)
 
 - **Hạng mục:** H43.3 → H43.8a. Cùng cây riêng, cùng nhánh, **không deploy**.
