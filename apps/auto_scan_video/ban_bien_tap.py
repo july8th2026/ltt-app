@@ -114,6 +114,35 @@ class BanBienTap:
             "ghi_chu": dict(self.ghi_chu),
         }
 
+    @classmethod
+    def tu_dict(cls, goi: dict) -> "BanBienTap":
+        """Doc lai tu dang da luu. Nua con lai cua `sang_dict`.
+
+        🔴 Pha 12 ghi artifact nay ra ma **khong co duong doc lai**, va khong ai
+           thay vi pha 12 khong tu doc lai bao gio. Pha 14 la nguoi doc dau tien.
+
+        ⭐ Mot cap `sang_dict` khong co `tu_dict` la mot dinh dang luu tru chua ai
+           thu doc — tuc mot dinh dang chua ai kiem chung. Va no chi lo ra o pha
+           SAU, khi artifact da nam trong kho cua khach.
+
+        ⛔ `van_tay()` bam tren `sang_dict()`, nen `tu_dict(sang_dict(x))` phai
+           cho lai **dung van tay cu**; neu khong thi mot lan doc-ghi vong quanh
+           se lam vo hieu ca ha nguon ma khong co gi thay doi that.
+        """
+        goi = dict(goi or {})
+        return cls(
+            preset=str(goi.get("preset") or ""),
+            quyet_dinh=tuple(
+                QuyetDinh(ma_canh=str(q.get("ma_canh") or ""),
+                          thao_tac=str(q.get("thao_tac") or THAO_TAC_GIU),
+                          ly_do=str(q.get("ly_do") or ""),
+                          do_tin=float(q.get("do_tin") or 0.0),
+                          bang_chung=tuple(q.get("bang_chung") or ()))
+                for q in (goi.get("quyet_dinh") or [])),
+            thoi_luong_nguon=float(goi.get("thoi_luong_nguon") or 0.0),
+            phien_ban=int(goi.get("phien_ban") or PHIEN_BAN_BAN),
+            ghi_chu=dict(goi.get("ghi_chu") or {}))
+
     def van_tay(self) -> str:
         """⛔ Doi ban = doi van tay = ha nguon phai chay lai. Xem yeu cau 7."""
         return hashlib.sha256(

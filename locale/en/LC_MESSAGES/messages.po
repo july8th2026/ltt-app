@@ -13917,3 +13917,39 @@ msgstr "Choosing what to keep"
 
 msgid "Nền tảng đã cấp card nhưng tiến trình tách không thấy GPU."
 msgstr "The platform assigned a GPU but the separation process cannot see it."
+
+msgid "Bản biên tập không giữ lại đoạn thoại nào."
+msgstr "The edit plan kept no dialogue segments."
+
+msgid "Bản lồng tiếng không ghi giọng đã chọn."
+msgstr "The dubbing document does not record the chosen voice."
+
+msgid "Bản lồng tiếng không phủ đúng phần giữ lại: thừa {thua}, thiếu {thieu}."
+msgstr "The dubbing document does not match the retained segments: {thua} extra, {thieu} missing."
+
+msgid "Bản lồng tiếng sai lược đồ."
+msgstr "The dubbing document has the wrong schema."
+
+msgid "Chưa có bản biên tập nên chưa biết giữ phần nào."
+msgstr "No edit plan yet, so there is no way to know what is kept."
+
+msgid "Chưa ràng giọng nên chưa thể viết lời thoại."
+msgstr "No voice has been bound yet, so the lines cannot be written."
+
+msgid "Không có đoạn nào được giữ lại để lồng tiếng."
+msgstr "No segments were retained for dubbing."
+
+msgid "Lối nói không nằm trong bảng cho phép."
+msgstr "Speech style is not in the allowed vocabulary."
+
+msgid "Sắc thái không nằm trong bảng cho phép."
+msgstr "Mood is not in the allowed vocabulary."
+
+msgid "Model không trả về bảng đoạn."
+msgstr "The model did not return a segment table."
+
+msgid "Thiếu lời thoại cho {n} đoạn."
+msgstr "Missing dubbed lines for {n} segments."
+
+msgid "Đang viết lời thoại"
+msgstr "Writing dubbed lines"

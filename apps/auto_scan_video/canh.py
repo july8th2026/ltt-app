@@ -289,6 +289,30 @@ def kiem_chi_muc(ci: ChiMucCanh) -> None:
         raise CanhError(f"{tong} khung vuot tran {KHUNG_TOI_DA}")
 
 
+def tu_dict(goi: dict) -> ChiMucCanh:
+    """Doc lai chi muc canh tu dang da luu. Nua con lai cua `sang_json`.
+
+    ⭐ Cung ly do nhu `ban_bien_tap.BanBienTap.tu_dict`: pha 10 va 12 ghi chi muc
+       ra kho ma khong co duong doc lai, nen dinh dang luu tru chua tung duoc mot
+       nguoi doc nao kiem chung. Pha 14 la nguoi doc do.
+    """
+    goi = dict(goi or {})
+    return ChiMucCanh(
+        canh=tuple(Canh(ma=str(c.get("ma") or ""),
+                        bat=float(c.get("bat") or 0.0),
+                        ket=float(c.get("ket") or 0.0),
+                        khung=tuple(float(m) for m in (c.get("khung") or ())))
+                   for c in (goi.get("canh") or [])),
+        thoi_luong=float(goi.get("thoi_luong") or 0.0),
+        nguong=float(goi.get("nguong") or NGUONG_DOI_CANH),
+        ghi_chu=dict(goi.get("ghi_chu") or {}))
+
+
+def tu_json(van_ban: str) -> ChiMucCanh:
+    """`tu_dict` tren mot chuoi JSON."""
+    return tu_dict(json.loads(van_ban))
+
+
 def sang_json(ci: ChiMucCanh) -> str:
     """Dang luu tru. Tat dinh: khoa sap xep, so lam tron."""
     return json.dumps({

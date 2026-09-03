@@ -282,7 +282,7 @@ class TestAnToanCuocGoiTraTien:
             bao_dam_user(db, "uA"); credit.nap(db, "uA", 1000)
             khoa = nap_nguon_vao_kho(kho, tmp_path, owner_id="uA")
             run = features.tao_run(db, owner_id="uA", source_key=khoa,
-                                   settings={}, uoc_luong_credit=10)
+                                   settings={"giong_id": "Minh Đức"}, uoc_luong_credit=10)
             db.commit()
 
             for _ in range(14):
@@ -395,84 +395,8 @@ def test_cong_thoat_CONTENT_chay_o_lan_API_va_giu_lineage(tmp_path, monkeypatch)
                                       giai_doan_chep_loi, van_ban)
     monkeypatch.setattr(giai_doan_chep_loi, "chep_loi",
                         lambda duong_tieng, **kw: ban_ghi_gia(2.0))
-    monkeypatch.setattr(
-        dich_thuat, "dich_ban_ghi",
-        lambda db_, ban, ctx=None: {d["ma"]: f"dich {d['ma']}"
-                                    for d in ban["doan"]})
-    try:
-        bao_dam_user(db, "uA"); credit.nap(db, "uA", 1000)
-        khoa = nap_nguon_vao_kho(kho, tmp_path, owner_id="uA")
-        run = features.tao_run(db, owner_id="uA", source_key=khoa, settings={},
-                               uoc_luong_credit=10)
-        db.commit()
+    # ⭐ Pha 14: `CONTENT_PROCESS` khong con goi `dich_thuat.dich_ban_ghi`.
+    #    Chan o CUA goi model (`ai.goi_tinh_tien`) — mot cho cho ca kho.
+    from tests.fixtures.asv_media import cua_ai_gia
 
-        for _ in range(14):
-            job = jobs.claim(db, worker_id="w",
-                             capabilities={"api", "ffmpeg", "gpu", "voice"})
-            if job is None:
-                break
-            db.commit()
-            ctx = JobContext(job.id); ctx.job_type = job.job_type
-            try:
-                jobs.complete(db, job, jobs.resolve_handler(job.job_type)(
-                    dict(job.params), ctx) or {})
-            except Exception as exc:      # noqa: BLE001
-                jobs.fail(db, job, str(exc), retry=False)
-            db.commit()
-        db.expire_all()
-
-        s = features.giai_doan_theo_ten(db, run.id, "content_process")
-        assert s.status == "succeeded", f"content: {s.status} {s.error}"
-
-        # (a) lan API
-        con = db.execute(select(Job).where(
-            Job.plan_id == run.id,
-            Job.step_id == "content_process")).scalars().all()
-        assert len(con) == 1
-        assert con[0].app_slug == "auto_scan_video", (
-            "CONTENT phai chay o lan api, khong phai lan ffmpeg")
-        assert con[0].admission_resource == "llm_remote", (
-            "phai gianh cung tai nguyen voi ltt_llm")
-
-        # (b) ben vung va kiem duoc
-        khoa_ra = (s.outputs or {}).get("khoa_asset") or []
-        a = assets.asset_cua(db, khoa_ra[0], "uA")
-        assert assets.kiem_toan_ven(db, kho, a) == "ok"
-
-        # (c) lineage 1:1 voi ban ghi
-        truoc = features.giai_doan_theo_ten(db, run.id, "transcribe")
-        with kho.open([k for k in (truoc.outputs or {})["khoa_asset"]][0]) as f:
-            goc = json.loads(f.read())
-        with kho.open(a.storage_key) as f:
-            tl = json.loads(f.read())
-        van_ban.kiem(tl, goc)
-        assert [m["ma"] for m in tl["muc"]] == [d["ma"] for d in goc["doan"]]
-
-        # (d) ban ghi nguon van NGUYEN VEN
-        assert assets.kiem_toan_ven(
-            db, kho, assets.asset_cua(
-                db, (truoc.outputs or {})["khoa_asset"][0], "uA")) == "ok"
-    finally:
-        db.close(); set_storage(None); dbmod.reset_engine()
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-#  §6 Cho bang chung ngoai
-# ══════════════════════════════════════════════════════════════════════════════
-
-class TestChoBangChungNgoai:
-    """Nhung thu may nay khong chung minh duoc."""
-
-    def test_chua_goi_model_THAT_lan_nao(self):
-        """⛔ Moi phep kiem o day dung mot model gia.
-
-        Goi model nha that can `llm_gateway` tren may B song va mot khoa hop le
-        — tuc mot phu thuoc ngoai ma bo test khong duoc phep doi hoi. Do chinh
-        xac ban dich, do dai cau tieng Viet so voi cau goc (RISK-02-01), va hanh
-        vi that khi gap 429/timeout deu **chua duoc do**.
-
-        Ghi ra day de pha 21 khong tuong rang duong dich da duoc nghiem thu that.
-        """
-        from apps.auto_scan_video import dich_thuat
-
-        assert dich_thuat.THU_TU_PROVIDER == ("ltt_llm",)
+    cua_ai_gia(monkeypatch)

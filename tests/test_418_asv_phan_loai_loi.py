@@ -26,6 +26,7 @@ from apps.auto_scan_video.qc import QcError
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
 from apps.auto_scan_video.demucs_runner import ThieuCard
+from apps.auto_scan_video.long_tieng import LongTiengError, ThieuDoan
 from apps.auto_scan_video.ban_bien_tap import BanBienTapError
 from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
 from apps.auto_scan_video.hieu_canh import HieuCanhError
@@ -60,6 +61,10 @@ BANG = {
     #    pha 13 truong hop nay khong nem gi ca — no **im lang chay CPU**, cham
     #    hon 9,5 lan, va giu suat `tach_nguon_cuc_bo` suot ~37 phut o tran 2 gio.
     ThieuCard: loi.TAM_THOI,
+    # ⛔ Loi HOP DONG voi model: thu lai la tra tien lan hai cho cung mot cau tra
+    #    loi sai. Xem ghi chu trong `loi.py`.
+    LongTiengError: loi.NGUOI_DUNG,
+    ThieuDoan: loi.NGUOI_DUNG,
     GiongMoHo: loi.MO_HO,
     DichMoHo: loi.MO_HO,
     MediaError: loi.NGUOI_DUNG,
@@ -284,6 +289,9 @@ def test_moi_lop_ngoai_le_cua_app_deu_duoc_phan_loai():
         #    khi mot phep kiem cham toi model that; production khong bao gio co
         #    `PYTEST_CURRENT_TEST` nen no khong the len toi bien cua nen tang.
         "ChayTrongBoTest",
+        # 🔑 `ThieuBanBienTap` ke thua `ThieuNguon` — da co trong BANG. No chi dat
+        #    ten cho MOT truong hop thieu thuong nguon cu the.
+        "ThieuBanBienTap",
     }
 
     # ⚠️ Gom lop cha theo CA HAI dang: `class X(MediaError)` (`ast.Name`) va

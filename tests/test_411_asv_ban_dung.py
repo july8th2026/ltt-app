@@ -190,7 +190,7 @@ def test_doi_chieu_kiem_TOAN_VEN_chu_khong_tin_cot_da_luu(tmp_path, monkeypatch)
 
         bao_dam_user(db, "uA"); credit.nap(db, "uA", 100)
         run = features.tao_run(db, owner_id="uA", source_key="asv/uA/x.mp4",
-                               settings={}, uoc_luong_credit=0)
+                               settings={"giong_id": "Minh Đức"}, uoc_luong_credit=0)
         db.commit()
 
         tam = assets.khoa_staging(owner_id="uA", run_id=run.id, stage="compose",

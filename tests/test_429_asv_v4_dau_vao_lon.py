@@ -352,7 +352,7 @@ def test_ve_cua_NGUOI_KHAC_khong_dung_duoc(db, tmp_path):
 
     with pytest.raises(features.KhongTimThay):
         features.tao_run_tu_ve(db, kho, owner_id="u2", upload_id=phien.id,
-                               settings={})
+                               settings={"giong_id": "Minh Đức"})
 
 
 def test_ve_khong_ton_tai_bao_KHONG_TIM_THAY_chu_khong_no(db, tmp_path):
@@ -362,7 +362,7 @@ def test_ve_khong_ton_tai_bao_KHONG_TIM_THAY_chu_khong_no(db, tmp_path):
     bao_dam_user(db, "u1")
     with pytest.raises(features.KhongTimThay):
         features.tao_run_tu_ve(db, _KhoR2Gia(tmp_path), owner_id="u1",
-                               upload_id="khong-co-that", settings={})
+                               upload_id="khong-co-that", settings={"giong_id": "Minh Đức"})
 
 
 def test_route_tao_UU_TIEN_duong_ben_vung_khi_co_ca_hai():

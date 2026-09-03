@@ -160,6 +160,21 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Ban long tieng (pha 14) ───────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu lai**. Mot ban long
+    #    tieng khong phu dung phan giu lai, hay mot bang tu vung sai, la mot loi
+    #    HOP DONG giua ta va model: thu lai chi tra tien lan hai cho cung mot cau
+    #    tra loi sai.
+    #
+    # ⚠️ `ThieuDoan` (model bo sot doan) la truong hop RANH GIOI, va no duoc xep
+    #    vao day co y: mot lo thieu doan thuong la loi nhac qua dai hoac model tra
+    #    ve cat ngan — ca hai deu KHONG tu khoi phuc o lan thu hai, va lan thu hai
+    #    do tra tien day du. Nguoi van hanh chia nho lo roi chay lai thi hon.
+    from .long_tieng import LongTiengError
+    if isinstance(exc, LongTiengError):
+        return NGUOI_DUNG
+
     # ── Cap card GPU (pha 13) ───────────────────────────────────────────────
     #
     # ⭐ `TAM_THOI` — tuc **THU LAI**, va o day thu lai la viec dung chu khong

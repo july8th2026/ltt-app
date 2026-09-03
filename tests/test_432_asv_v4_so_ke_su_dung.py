@@ -54,7 +54,7 @@ def db(tmp_path, monkeypatch):
 
 def _run(db, *, owner="u1", held=1000) -> AsvRun:
     run = AsvRun(owner_id=owner, source_key="asv/u1/nguon/x.mp4",
-                 settings={}, credit_held=held)
+                 settings={"giong_id": "Minh Đức"}, credit_held=held)
     db.add(run); db.flush()
     for g in pipeline.CHUOI:
         db.add(AsvStage(run_id=run.id, owner_id=owner, stage=g.ten))
@@ -605,7 +605,7 @@ def test_ca_luot_chay_chi_giu_credit_MOT_lan_va_quyet_toan_dung_so_do_duoc(db):
 
     run = features.tao_run(db, owner_id="u-tich-hop",
                            source_key="asv/u/nguon/a.mp4",
-                           settings={}, uoc_luong_credit=200)
+                           settings={"giong_id": "Minh Đức"}, uoc_luong_credit=200)
     db.commit()
 
     # (1) dung MOT lan giu, va giu tren chinh `run.id`
@@ -669,9 +669,9 @@ def test_hai_khach_chay_cung_luc_khong_cham_vao_so_cua_nhau(db):
     db.commit()
 
     ra = features.tao_run(db, owner_id="u-a", source_key="asv/a/x.mp4",
-                          settings={}, uoc_luong_credit=100)
+                          settings={"giong_id": "Minh Đức"}, uoc_luong_credit=100)
     rb = features.tao_run(db, owner_id="u-b", source_key="asv/b/y.mp4",
-                          settings={}, uoc_luong_credit=100)
+                          settings={"giong_id": "Minh Đức"}, uoc_luong_credit=100)
     db.commit()
 
     su_dung.ghi(db, ra, stage=pl.VOICE_SYNTHESIS, item_key="s1",
@@ -702,7 +702,7 @@ def test_vuot_hold_thi_khach_chi_tra_TOI_DA_phan_da_giu(db):
     credit.nap(db, "u-vuot", 500)
     db.commit()
     run = features.tao_run(db, owner_id="u-vuot", source_key="asv/u/x.mp4",
-                           settings={}, uoc_luong_credit=30)
+                           settings={"giong_id": "Minh Đức"}, uoc_luong_credit=30)
     db.commit()
 
     su_dung.ghi(db, run, stage=pl.VOICE_SYNTHESIS, item_key="s1",

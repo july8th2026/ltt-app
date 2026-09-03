@@ -140,3 +140,50 @@ def tiny_mp4_silent(dest: Path, *, duration_s: float = DEFAULT_DURATION_S) -> Pa
          "-c:v", "libx264", "-pix_fmt", "yuv420p", str(dest)],
         check=True, capture_output=True)
     return dest
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Cua goi model — MOT cho chan cho ca bo test
+# ══════════════════════════════════════════════════════════════════════════════
+
+def cua_ai_gia(monkeypatch, *, chu=None):
+    """Thay `ai.goi_tinh_tien` — cua DUY NHAT moi loi goi model cua app di qua.
+
+    ⚠️ BAT BUOC cho moi phep kiem chay het chuoi: `CONTENT_PROCESS` goi ra
+       `platform_core/llm/dieu_phoi.py`, va bo dieu phoi can mot khoa API that.
+       Khong co khoa thi no tu choi — **dung nhu no nen lam**. Mot bo test khong
+       duoc phep doi hoi mot khoa tra tien.
+
+    🔴 **Vi sao ham nay ton tai o day chu khong nam trong tung tep test.**
+
+       Truoc pha 14 co **BA ban sao** cua cung mot stub (`test_402`, `test_403`,
+       va mot ban inline trong `test_408`), va ca ba deu thay
+       `dich_thuat.dich_ban_ghi`. Pha 14 doi `CONTENT_PROCESS` sang goi
+       `ai.goi_tinh_tien`, nen ca ba **thoi chan** cung mot luc.
+
+    ⛔ Va mot stub thoi chan con te hon khong co stub: phep kiem van xanh cho toi
+       khi no bat ngo doi mot khoa API tra tien — o mot may khac, vao mot ngay
+       khac, voi mot thong bao khong lien quan gi toi thay doi da gay ra no.
+
+    ⭐ Nen: mot cho chan, o CUA (pha 08 gom moi loi goi model ve day). Them mot
+       nguoi goi model moi thi khong can nho sua stub nao ca.
+    """
+    from apps.auto_scan_video import ai, long_tieng
+
+    def gia(db, run, thao_tac, messages, *, stage, item_key, uoc_credit=0,
+            ctx=None, temperature=None):
+        # ⭐ Phan hoi BAM VAO dau vao: mot ban gia tra ve du lieu co dinh se khong
+        #    bao gio phat hien duoc loi ghep sai ma doan.
+        import json
+
+        goi = json.loads(messages[-1]["content"])
+        lam = chu or (lambda ma: f"loi thoai cua {ma}")
+        return {"noi_dung": {"doan": {
+            str(d["ma"]): {"chu": lam(d["ma"]),
+                           "cam_xuc": long_tieng.CAM_XUC[0],
+                           "kieu_noi": long_tieng.KIEU_NOI[0],
+                           "nhan_manh": []}
+            for d in goi.get("doan") or []}}, "su_dung": None}
+
+    monkeypatch.setattr(ai, "goi_tinh_tien", gia)
+    return True

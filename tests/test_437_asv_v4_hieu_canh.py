@@ -50,7 +50,7 @@ def db(tmp_path, monkeypatch):
 
 
 def _run(db, *, owner="u1", held=1000) -> AsvRun:
-    r = AsvRun(owner_id=owner, source_key="asv/u1/x.mp4", settings={},
+    r = AsvRun(owner_id=owner, source_key="asv/u1/x.mp4", settings={"giong_id": "Minh Đức"},
                credit_held=held)
     db.add(r); db.flush()
     for g in pipeline.CHUOI:

@@ -135,9 +135,21 @@ def tu_thiet_lap(settings: dict) -> YeuCau:
     s = dict(settings or {})
     che_do = str(s.get("che_do_giong") or CHE_DO_GIONG_MAC_DINH)
     dd = s.get("dac_diem_giong") or {}
+    # 🔴 **Hai khoa cho cung mot thu, va chung da song song ma khong ai noi.**
+    #
+    #    Pha 09 dung `giong_id`; nhung `giai_doan_giong.py` — da chay tu truoc —
+    #    doc `settings["voice_id"]`. Nen mot lan chay co the viet loi thoai CHO
+    #    mot giong roi **doc len bang mot giong khac**, va khong cho nao bao loi:
+    #    ca hai deu tim thay mot gia tri hop le cua rieng minh.
+    #
+    # ⭐ Nhan CA HAI o day, uu tien `giong_id`. Day khong phai chieu long mot ten
+    #    khoa cu — do la mot lan hop nhat: mot cau hoi ("giong nao?") phai co MOT
+    #    cho tra loi. Pha 15 se lam not phia con lai: `giai_doan_giong` phai lay
+    #    giong tu `ma_giong` da dong bang trong ban long tieng chu khong tu doc
+    #    `settings` nua.
     return YeuCau(
         che_do=che_do,
-        giong_id=str(s.get("giong_id") or ""),
+        giong_id=str(s.get("giong_id") or s.get("voice_id") or ""),
         dac_diem=DacDiemMongMuon(
             gioi=str(dd.get("gioi") or ""),
             vung=str(dd.get("vung") or ""),

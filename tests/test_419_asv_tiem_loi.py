@@ -81,7 +81,7 @@ def test_video_KHONG_CO_TIENG_hong_ngay_va_khong_thu_lai(db, kho_tam, tmp_path):
     khoa = nap_nguon_vao_kho(get_storage(), tmp_path, owner_id="uA",
                              im_lang=True)
     run = features.tao_run(db, owner_id="uA", source_key=khoa,
-                           settings={"timing_mode": "fit_original"},
+                           settings={"giong_id": "Minh Đức", "timing_mode": "fit_original"},
                            uoc_luong_credit=10)
     db.commit()
     truoc = credit.so_du(db, "uA")

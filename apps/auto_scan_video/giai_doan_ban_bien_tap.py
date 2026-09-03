@@ -99,14 +99,33 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
 
 
 def _nguon_soi_duoc(db, kho, run) -> str:
+    """Tep HINH de tach canh.
+
+    🔴 **Ban dau ham nay chi tim trong artifact cua `media_prepare`, va do la mot
+       cho chet.** `media_prepare` co y **khong** xuat ban hinh nao: no sinh
+       `source_probe.json` va `audio_full.wav`, con ban goc thi khong bi cham
+       ("Mat ban goc la mat kha nang tinh lai moi thu ha nguon").
+
+    ⇒ Nen preset `smart_localize` hong ngay o buoc DAU TIEN cua no, voi thong
+      bao "chua co ban media de phan tich canh" — mot cau dung ve chu nghia va
+      sai ve nguyen nhan.
+
+    ⭐ No khong bi phat hien vi `PRESET_MAC_DINH` la `localize_preserve_picture`,
+       va nhanh do **di vong qua ham nay** (mot canh la du). Tuc ca preset cat
+       chua tung chay het chuoi mot lan nao. Pha 14 la cho no chay lan dau.
+
+    ⇒ Nguon dung la **ban goc cua run**. Van uu tien mot artifact hinh cua
+      `media_prepare` neu sau nay co, nhung khong con phu thuoc vao no.
+    """
     from . import assets, features
 
     gd = features.giai_doan_theo_ten(db, run.id, "media_prepare")
-    khoa = [k for k in ((gd.outputs or {}).get("khoa_asset") or [])
+    khoa = [k for k in (((gd.outputs or {}) if gd else {}).get("khoa_asset") or [])
             if str(k).endswith((".mp4", ".mkv", ".mov"))]
+    khoa = khoa[0] if khoa else str(run.source_key or "")
     if not khoa:
         raise ThieuChiMuc(_t('Chưa có bản media để phân tích cảnh.'))
-    return assets.nguon_soi_duoc(kho, khoa[0])
+    return assets.nguon_soi_duoc(kho, khoa)
 
 
 def _ban_ghi(db, kho, run) -> dict:

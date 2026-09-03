@@ -66,25 +66,15 @@ def asr_gia(monkeypatch):
 
 @pytest.fixture()
 def dich_gia(monkeypatch):
-    """Thay bo dich that bang mot ban dich xac dinh.
+    """Thay cua goi model. Than ham o `tests/fixtures/asv_media.py`.
 
-    ⚠️ BAT BUOC cho moi phep kiem chay het chuoi: `CONTENT_PROCESS` goi
-       `platform_core/llm/dieu_phoi.py`, va bo dieu phoi can mot khoa API that.
-       Khong co khoa thi no tu choi — **dung nhu no nen lam**. Mot bo test khong
-       duoc phep doi hoi mot khoa tra tien.
-
-    ⭐ Duong goi that (chia lo, gop, phan loai loi mo ho) duoc kiem rieng o
-       `tests/test_408_asv_dich_thuat.py`.
+    ⭐ Goi ham chung thay vi chep lai: truoc pha 14 co ba ban sao cua
+       stub nay va ca ba cung thoi chan mot luc khi `CONTENT_PROCESS`
+       doi cho goi model.
     """
-    from apps.auto_scan_video import dich_thuat
+    from tests.fixtures.asv_media import cua_ai_gia
 
-    monkeypatch.setattr(
-        dich_thuat, "dich_ban_ghi",
-        lambda db, ban_ghi_goc, ctx=None: {
-            d["ma"]: f"ban dich cua {d['ma']}"
-            for d in (ban_ghi_goc.get("doan") or [])})
-    return True
-
+    return cua_ai_gia(monkeypatch)
 
 @pytest.fixture()
 def giong_gia(monkeypatch, tmp_path):
@@ -140,7 +130,7 @@ def _tao_run(db, owner="uA", giu=10, *, kho=None, tmp_path=None):
     thu_muc = Path(tmp_path) if tmp_path else Path(tempfile.mkdtemp(prefix="asv-t-"))
     khoa = nap_nguon_vao_kho(kho or get_storage(), thu_muc, owner_id=owner)
     run = features.tao_run(db, owner_id=owner, source_key=khoa,
-                           settings={"timing_mode": "fit_original"},
+                           settings={"giong_id": "Minh Đức", "timing_mode": "fit_original"},
                            uoc_luong_credit=giu)
     db.commit()
     return run
@@ -397,7 +387,7 @@ def test_huy_thi_hoan_lai_phan_da_giu(db, kho_tam):
     bao_dam_user(db, "uA"); credit.nap(db, "uA", 1000); db.commit()
     truoc = credit.so_du(db, "uA")
     run = features.tao_run(db, owner_id="uA", source_key="asv/uA/x.mp4",
-                           settings={}, uoc_luong_credit=25)
+                           settings={"giong_id": "Minh Đức"}, uoc_luong_credit=25)
     db.commit()
     assert credit.so_du(db, "uA") == truoc - 25
 

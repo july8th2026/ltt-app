@@ -58,7 +58,8 @@ from sqlalchemy.orm import Session
 from platform_core.i18n import _ as _t
 
 from .tables import (DUNG_DA_GIAO, DUNG_MO_HO, DUNG_TRANG_THAI, DUNG_TU_CHOI,
-                     ITEM_PENDING, AsvRun, AsvUsage, AsvWorkItem)
+                     ITEM_PENDING, ITEM_SUCCEEDED, AsvRun, AsvUsage,
+                     AsvWorkItem)
 
 # ⭐ Tai xuat tu `tables`, KHONG khai lai. Ba hang so nay quyet dinh cai gi duoc
 #    tinh tien; hai ban sao cua chung la hai cau tra loi cho mot cau hoi tien.
@@ -227,6 +228,47 @@ def mo_don_vi(db: Session, run: AsvRun, *, stage: str, item_key: str,
             AsvWorkItem.run_id == run.id, AsvWorkItem.stage == stage,
             AsvWorkItem.item_key == item_key)).scalar_one()
     return it
+
+
+def danh_dau_xong(db: Session, run: AsvRun, *, stage: str, item_key: str,
+                  fingerprint: str = "", outputs: dict | None = None) -> AsvWorkItem:
+    """Danh dau MOT don vi viec la xong, kem van tay da sinh ra no.
+
+    🔑 Van tay la thu bien mot dong checkpoint tu "da lam roi" thanh "da lam roi
+       **cho dung cai nay**". Khong co no, mot lan nang phien ban ma hay doi
+       giong se dung lai ket qua cu ma khong ai biet — dung cai `AsvWorkItem` da
+       ke ten khi giai thich vi sao V2 (theo doi tien do bang su ton tai cua tep)
+       la khong du.
+
+    ⛔ Chi tien LEN: mot don vi da `succeeded` khong bi keo ve `running` boi mot
+       lan chay lai. Lan chay lai chi di qua nhung don vi CHUA xong — do la ca y
+       nghia cua viec cham diem tung doan thay vi tung giai doan.
+    """
+    it = mo_don_vi(db, run, stage=stage, item_key=item_key,
+                   fingerprint=fingerprint)
+    it.status = ITEM_SUCCEEDED
+    it.fingerprint = str(fingerprint or it.fingerprint or "")
+    if outputs:
+        it.outputs = dict(outputs)
+    it.finished_at = _now()
+    it.revision = int(it.revision or 1) + 1
+    db.flush()
+    return it
+
+
+def da_xong(db: Session, run: AsvRun, *, stage: str,
+            fingerprint: str = "") -> set[str]:
+    """Cac `item_key` DA xong cua mot giai doan, **dung van tay nay**.
+
+    ⭐ Loc theo van tay chu khong chi theo trang thai: sau khi doi giong hay doi
+       ban bien tap, nhung doan da viet la ket qua cua mot cau hoi KHAC — coi
+       chung la "da lam roi" thi khach nhan mot ban long tieng nua cu nua moi.
+    """
+    dk = [AsvWorkItem.run_id == run.id, AsvWorkItem.stage == stage,
+          AsvWorkItem.status == ITEM_SUCCEEDED]
+    if fingerprint:
+        dk.append(AsvWorkItem.fingerprint == str(fingerprint))
+    return {r.item_key for r in db.execute(select(AsvWorkItem).where(*dk)).scalars()}
 
 
 def ghi(db: Session, run: AsvRun, *, stage: str, item_key: str,
