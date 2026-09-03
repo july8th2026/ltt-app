@@ -266,3 +266,46 @@ cáo.
 máy B (`8299`/`8199`/`8120`), tiền tố khoá API `ltt_sk_`, dải IP `192.168.`.
 Đó là những thứ cho ai đó **đi tiếp một bước**; một cái tên model thì không.
 Chốt ở `tools/kiem_chatltt_gui.mjs::khong-lo-id-noi-bo`.
+
+## Đợt 5–6 (media) — bốn phép kiểm sai, không phải bốn lỗi sản phẩm
+
+Đo 04/09 trên production. Lượt chạy đầu báo **4 HỎNG**; điều tra xong thì **cả
+bốn đều là phép kiểm sai**, và mỗi cái sai một kiểu khác nhau — đáng ghi lại vì
+chúng là bốn cách khác nhau để một bộ kiểm nói dối.
+
+| Báo | Sự thật | Loại sai |
+|---|---|---|
+| 6.1/6.2 "nút media không sẵn sàng" | model chưa nạp trên máy B | **suy từ giao diện** thay vì hỏi máy chủ |
+| 6.3 "máy chủ nhận `voice_id` của người khác" | đúng thiết kế; job `failed`, hoàn đủ | đo **chi tiết cài đặt** thay vì bất biến |
+| 6.4 "bấm Đọc to không gửi gì" | đúng thiết kế: phải qua ô xác nhận giá | đòi sản phẩm **bỏ một chốt an toàn** |
+| 6.4 lần hai, `manh_doi_chieu:""` | mảnh đối chiếu rỗng ⇒ nửa mệnh đề tự tắt | **xanh mà không chứng minh gì** |
+
+🔴 **Cái nguy nhất trong bảng này là dòng cuối, không phải dòng nào đỏ.** Ba
+dòng trên đều đỏ, nên chúng được điều tra. Dòng cuối **xanh** — nó đóng hồ sơ
+lại. Nếu không đọc kỹ `manh_doi_chieu:""` thì hạng mục đó vĩnh viễn là một dòng
+`DAT` không kiểm gì cả.
+
+⛔ Và 6.3 suýt gây thiệt hại thật. Nếu "sửa" sản phẩm cho khớp phép kiểm, ta
+thêm một chỗ kiểm sở hữu **thứ hai** ở route — đúng thứ `tim_profile` cảnh báo,
+và chỗ kiểm ở route sẽ **không thấy kho giọng chung** nên chặn nhầm giọng hợp
+lệ. Một phép kiểm sai kéo theo một lỗ hổng thật.
+
+⭐ Ba luật rút ra, đã cưỡng chế bằng mã trong `tools/kiem_chatltt/`:
+
+1. **Trạng thái năng lực hỏi máy chủ**, không suy từ nút — `nangLuc(p, ten)`,
+   và mọi lần `bo_qua` phải kèm con số máy chủ trả về.
+2. **Đo bất biến, đừng đo cách cài đặt.** 6.3 giờ chấp nhận cả hai đường (chặn
+   lúc nộp *hoặc* nhận rồi hỏng + hoàn đủ) và chỉ đỏ khi **ra tiếng** hoặc
+   **mất tiền**.
+3. **Nguồn đối chiếu phải độc lập với thứ đang đo.** 6.4 đặt sẵn dấu hiệu
+   `CANHCUT DOCTO 4471` thay vì bốc chữ từ màn hình; bốc từ màn hình đã lấy
+   nhầm khối *Suy luận*.
+
+### Bộ kiểm tự tạo ra điều kiện làm chính nó đỏ
+
+⛔ Đợt 1–4 gửi hàng chục lượt chữ, giữ LLM trên GPU (TTL 1800s), nên `image.ltt`
+và `speech.ltt` **không còn chỗ nạp**. Rồi đợt 5–6 báo "model chưa sẵn sàng".
+
+⭐ Nên chạy media **trước** hoặc **riêng**: `--dot 5,6` trên một GPU rảnh. Và
+"máy bận" phải là `BOQUA` kèm bằng chứng (`job` vẫn `queued`, `thu=0`), không
+bao giờ là `HONG` — một hàng đợi dài không phải một bất biến bị vi phạm.

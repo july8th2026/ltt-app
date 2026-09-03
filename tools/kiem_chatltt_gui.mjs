@@ -180,6 +180,26 @@ const soDu = async (p) => {
 };
 const dangChay = (p) => p.getByRole('button', { name: 'Dừng' }).count().then((n) => n > 0);
 
+/** Trang thai mot nang luc, HOI THANG MAY CHU.
+ *
+ * 🔴 VI SAO CAN HAM NAY. Dot 5 va 6 tung bao HONG voi "qua 60s ma chua: nut
+ *    media san sang" — va ket luan do SAI. Nut bi vo hieu vi `san_sang !==
+ *    'san_sang'` (`TaoMedia.tsx`), tuc **model chua nap**, khong phai giao dien
+ *    hong. Do 04/09: ngay sau lat chay do, catalog tra `speech.ltt=san_sang`.
+ *
+ * ⭐ Va ly do model chua nap lai la CHINH BO KIEM NAY: dot 1-4 gui hang chuc
+ *    luot chu, giu LLM tren GPU (TTL 1800s), nen sidecar anh/tieng khong con
+ *    cho. Mot bo kiem tu tao ra dieu kien roi bao do la loi san pham.
+ *
+ * ⛔ Nen dung suy tu cai nut. Doc **con so may chu noi**, va dat no vao thong
+ *    diep `bo_qua` — mot lan bo qua co bang chung khac han mot lan bo qua vi
+ *    het kien nhan.
+ */
+const nangLuc = (p, ten) => p.evaluate(
+  (t) => fetch('/chatltt/api/danh-muc').then((r) => r.json())
+    .then((d) => (d.nang_luc || []).find((n) => n.ten === t)?.san_sang || 'khong_co_trong_catalog')
+    .catch((e) => 'khong_doc_duoc: ' + e.message), ten);
+
 async function guiChu(p, chu) {
   // ⛔ `exact: true`. Khong co no, `name: 'Gửi'` khop CA "Sửa và gửi lại" —
   //    va no chi khop khi hoi thoai DA CO tin nhan, tuc lo ra o hang muc thu
@@ -623,7 +643,7 @@ const HANG_MUC = [
 //    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
 //    khong ai sua khi no sai.
 const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
-                   hoiThoaiMoi, donOSoan, soDu };
+                   hoiThoaiMoi, donOSoan, soDu, nangLuc };
 {
   const nap = async (ten, ham) => {
     try {

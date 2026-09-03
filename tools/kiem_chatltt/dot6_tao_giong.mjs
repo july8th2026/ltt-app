@@ -19,20 +19,33 @@
  * ~3 credit. Con số đọc lại từ báo giá, không gõ cứng.
  */
 
-export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi }) {
+export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi, nangLuc }) {
   const nutGiong = (p) => p.getByRole('button', { name: 'Tạo giọng' });
   const oChu = (p) => p.getByLabel('Văn bản cần đọc');
   const chonGiong = (p) => p.getByRole('combobox', { name: 'Chọn giọng' });
   const soAm = (p) => p.locator('article audio').count();
 
+  /** Mo o soan tieng. Tra `null` khi mo duoc, `{bo_qua}` khi model chua nap. */
   async function moPanelGiong(p) {
     if (!(await nutGiong(p).count())) {
       await hoiThoaiMoi(p);
       await guiChu(p, 'Chao.');
       await xong(p);
     }
-    await doiDen('nut media san sang', async () =>
-      (await nutGiong(p).count()) > 0 && !(await nutGiong(p).isDisabled()), 60);
+    // ⛔ NUT VO HIEU KHONG PHAI LOI GIAO DIEN. `TaoMedia.tsx` tat nut khi
+    //    `san_sang !== 'san_sang'` — tuc **model chua nap tren may B**. Lat
+    //    chay 04/09 bao HONG o day, va ket luan do sai: catalog ngay sau do
+    //    tra `speech.ltt=san_sang`. GPU luc ay dang giu LLM cho dot 1-4.
+    //
+    // ⭐ Nen doi that lau (model nap ~1-2 phut), roi neu van chua thi HOI MAY
+    //    CHU va bo qua KEM CON SO no tra ve. Bo qua co bang chung.
+    try {
+      await doiDen('model tieng nap xong (nut het vo hieu)', async () =>
+        (await nutGiong(p).count()) > 0 && !(await nutGiong(p).isDisabled()), 210);
+    } catch {
+      return { bo_qua: `model tieng chua nap — may chu noi speech.ltt=`
+        + `${await nangLuc(p, 'speech.ltt')}` };
+    }
     // ⛔ NUT NAY LA MOT CONG TAC BAT/TAT. Bam khi panel DA MO thi no DONG lai,
     //    va hang muc doi mai mot o nhap vua bi an di. Hang muc `5.1` ket thuc
     //    bang "Huy" va de panel mo — nen `5.2` bam mot phat la tat.
@@ -62,7 +75,8 @@ export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi 
       ten: '6.1-tao-giong-tron-vong-va-thu-DUNG-so-da-bao',
       hoi: 'Tạo tiếng thật: có audio không, và thu đúng số đã báo không?',
       async chay(p) {
-        await moPanelGiong(p);
+        const bq = await moPanelGiong(p);
+        if (bq) return bq;
         const truoc = await soDu(p);
         const amTruoc = await soAm(p);
         const { gia } = await xemGia(p, 'Xin chao, day la mot cau thu de kiem giong noi.');
@@ -108,7 +122,8 @@ export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi 
       ten: '6.2-giong-rieng-di-DUNG-vao-tham-so',
       hoi: 'Chọn giọng của mình — nó có thật sự đi theo yêu cầu không?',
       async chay(p) {
-        await moPanelGiong(p);
+        const bq = await moPanelGiong(p);
+        if (bq) return bq;
         if (!(await chonGiong(p).count())) {
           // ⭐ BO QUA, khong HONG. Bo chon chi hien khi nguoi dung CO giong
           //    nhan ban — mot tai khoan chua nhan ban giong nao thi menh de
@@ -146,15 +161,31 @@ export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi 
     },
     {
       dot: 6,
-      ten: '6.3-giong-cua-NGUOI-KHAC-bi-tu-choi',
-      hoi: 'Gõ tay một voice_id không thuộc mình — máy chủ có nhận không?',
-      // May chu PHAI tu choi; 4xx la ket qua dung.
+      ten: '6.3-giong-cua-NGUOI-KHAC-khong-bao-gio-thanh-tieng',
+      hoi: 'Gõ tay một voice_id không thuộc mình — có ra tiếng không, và tiền có về không?',
       loi_mong_doi: [/40\d POST .*\/(tao|bao-gia)/, /Failed to load resource/],
       async chay(p) {
-        // 🔴 Giong nhan ban la du lieu sinh trac. `tim_profile` kiem `public_id`
-        //    VA chu so huu trong MOT truy van — vi tach lam hai buoc thi co mot
-        //    khoang trong o giua ma mot ban va sau nay rat de quen buoc hai.
-        //    Hang muc nay do chinh menh de do tu ngoai vao.
+        // 🔴 PHIEN BAN DAU CUA HANG MUC NAY DOI SAI THU, VA NO BAO DO MOT LAN.
+        //
+        //    No doi may chu tra 4xx **ngay luc nop**, roi bao HONG khi nhan
+        //    202. Nhung do khong phai lo hong — do la thiet ke, va thiet ke ay
+        //    duoc ghi ro trong `tham_chieu.tim_profile`:
+        //
+        //      "Dung tach thanh 'tim theo id roi so owner': hai buoc thi co mot
+        //       khoang trong o giua ma mot ban va sau nay rat de quen buoc hai."
+        //
+        //    `features.giai_giong` la cho kiem **duy nhat**, va no phai la duy
+        //    nhat: no can `cho_dung_chung=True` de kho giong chung van doc
+        //    duoc. Mot phep kiem o route se KHONG thay kho chung, nen no vua
+        //    thanh cho kiem **thu hai** vua chan nham giong hop le.
+        //
+        // ⛔ Nen doi mot cai chan o route la doi san pham TE DI de phep kiem
+        //    xanh. Menh de that khong phai "nop bi tu choi" ma la:
+        //    **khong bao gio ra tieng, va tien ve du.**
+        //
+        // ⭐ Do 04/09 tren production, chinh cai job bi bao la "lo hong":
+        //    `failed`, giu 1 / thu 0 / **hoan 1**, kem cau
+        //    "Khong tim thay giong nay trong tai khoan cua ban." Bat bien giu.
         const r = await p.evaluate(async () => {
           const csrf = document.querySelector('[data-csrf]')?.getAttribute('data-csrf') || '';
           const cid = location.hash.slice(1);
@@ -170,42 +201,164 @@ export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi 
           return { status: res.status, than: (await res.text()).slice(0, 200) };
         });
         if (r.bo_qua) return r;
-        if (r.status === 202 || r.status === 200) {
-          throw new Error(`may chu NHAN mot voice_id khong thuoc nguoi goi: ${r.than}`);
-        }
         if (r.status >= 500) throw new Error(`may chu 5xx thay vi tu choi sach: ${r.status}`);
-        return r;
+        // Duong MOT: tu choi ngay. Sach nhat, va cung dat.
+        if (r.status >= 400) return { chan_luc_nop: r.status, ra_tieng: false };
+
+        // Duong HAI: nhan job, roi job hong va tra tien. Cung dat, mien la
+        // ca HAI ve deu dung — va ta doi ca hai, khong chi mot.
+        const amTruoc = await soAm(p);
+        const truoc = await soDu(p);
+        let cuoiCung = null;
+        const ket = await doiDen('job giong la ket thuc', async () => {
+          const t = await p.evaluate(() => {
+            const cid = location.hash.slice(1);
+            return fetch('/chatltt/api/hoi-thoai/' + cid).then((x) => x.json())
+              .then((s) => {
+                const m = [...s.messages].reverse().find((y) => y.execution?.mode === 'job');
+                return m ? { ex: m.execution.status, credit: m.execution.credit,
+                             loi: (m.execution.error_text || '').slice(0, 120) } : null;
+              });
+          }).catch((e) => ({ ex: 'khong_doc_duoc', vi_sao: String(e).slice(0, 160) }));
+          // ⛔ DUNG NUOT LOI THANH `null`. Lat truoc bao "lan cuoi: null" va
+          //    con so do khong noi duoc no la "chua xong" hay "khong doc duoc"
+          //    hay "khong co job nao" — ba nguyen nhan khac han nhau, cung mot
+          //    hien thi. Mot chan doan mo la mot lat chay phai lam lai.
+          if (t && t.ex === 'khong_doc_duoc') throw new Error('doc trang thai job hong: ' + t.vi_sao);
+          if (t === null) { cuoiCung = 'chua thay tin nhan nao mode=job trong hoi thoai'; return null; }
+          cuoiCung = t;
+          return ['done', 'failed', 'cancelled'].includes(t.ex) ? t : null;
+        }, 240).catch((e) => {
+          // ⭐ Cung ly le nhu `5.2` va `6.1`: **may ban la mot ket qua**. Job
+          //    van `queued` voi thu=0 nghia la hang doi dai, khong phai bat
+          //    bien bi vi pham — va cai ta dang do o day (khong ra tieng,
+          //    tien ve du) VAN chua the ket luan. Bo qua, kem bang chung.
+          const c = cuoiCung && cuoiCung.credit;
+          if (cuoiCung && cuoiCung.ex === 'queued' && (c?.thu ?? 0) === 0) {
+            return { bo_qua: 'may tao tieng dang ban — job van `queued`, chua thu tien '
+              + `(giu ${c?.giu ?? 0}, thu ${c?.thu ?? 0})` };
+          }
+          throw new Error(e.message + ' | ' + JSON.stringify(cuoiCung));
+        });
+        if (ket.bo_qua) return ket;
+
+        if (ket.ex === 'done') {
+          throw new Error(`giong cua NGUOI KHAC da doc THANH CONG: ${JSON.stringify(ket)}`);
+        }
+        if ((await soAm(p)) > amTruoc) throw new Error('co them mot khoi am thanh cho mot giong khong duoc phep');
+        // ⛔ Tien PHAI ve. Mot job khong bao gio chay duoc ma van giu tien la
+        //    mot lan mat tien am tham — khach khong thay bao gia nao ca.
+        const c = ket.credit || {};
+        if ((c.thu ?? 0) !== 0) throw new Error(`da THU ${c.thu} credit cho mot giong bi tu choi`);
+        if ((c.giu ?? 0) > 0 && (c.hoan ?? 0) !== c.giu) {
+          throw new Error(`giu ${c.giu} ma chi hoan ${c.hoan}: ${JSON.stringify(ket)}`);
+        }
+        await cho(2500);
+        const sau = await soDu(p);
+        if (truoc !== null && sau !== null && sau < truoc) {
+          throw new Error(`so du GIAM sau mot lan bi tu choi: ${truoc} -> ${sau}`);
+        }
+        return { nhan_luc_nop: r.status, ket_cuc: ket.ex, credit: c,
+                 ra_tieng: false, loi: ket.loi };
       },
     },
     {
       dot: 6,
-      ten: '6.4-Doc-to-tra-loi-cua-chinh-luot-do',
-      hoi: 'Nút "Đọc to" có đọc đúng câu trả lời của lượt nó nằm cạnh không?',
+      ten: '6.4-Doc-to-dien-DUNG-bai-do-va-KHONG-tu-tieu-tien',
+      hoi: '"Đọc to" có lấy đúng chữ của lượt đó, và có chờ xác nhận giá không?',
       async chay(p) {
+        // 🔴 PHIEN BAN DAU DOI MOT YEU CAU DI RA NGAY SAU CU BAM, va bao HONG
+        //    khi khong thay. Nhung san pham CO Y khong lam the — chu thich nam
+        //    ngay canh nut, o `ThongDiepView.tsx`:
+        //
+        //      "Van phai qua o xac nhan gia."
+        //
+        //    `onDocTo` chi goi `datChuDocTo(chu)`: no DIEN san o soan tieng.
+        //
+        // ⛔ Doi mot cu bam tu tieu tien la doi sai HUONG cua mot quy tac an
+        //    toan. Neu ta "sua" cho phep kiem xanh, ta vua bo mat o xac nhan
+        //    gia — mot cu bam nham thanh mot lan mat tien khong hoi.
+        //
+        // ⭐ Nen do hai menh de ma san pham THAT SU giu, va ca hai deu dang gia:
+        //      1. chu duoc dien la chu cua DUNG bai do (khong doc nham bai);
+        //      2. tien KHONG nhuc nhich khi chua bam "Dong y, tao".
+        //    Va do duoc ca hai ma khong ton mot credit nao.
+        if (!(await p.getByRole('button', { name: 'Đọc to' }).count())) {
+          return { bo_qua: 'khong co nut Doc to — may chu noi speech.ltt='
+            + `${await nangLuc(p, 'speech.ltt')}` };
+        }
+        // ⛔ LAT TRUOC "DAT" VOI `manh_doi_chieu: \"\"` — tuc nua menh de
+        //    "dung bai" DA BI BO QUA IM LANG. Bai cuoi luc ay la khoi am thanh
+        //    cua `6.1`, khong co chu nao, nen `manh` rong va phep kiem tu tat
+        //    minh di. Mot lat xanh khong chung minh gi thi te hon mot lat do:
+        //    no dong ho so lai.
+        //
+        // ⭐ Nen TU TAO lay du lieu thay vi nhat lay thu dang co: mot luot chu
+        //    voi mot chuoi dac trung minh biet truoc. Va neu van khong co chu
+        //    de doi chieu thi BAO HONG, khong lang le di qua.
+        await hoiThoaiMoi(p);
+        await guiChu(p, 'Chep lai dung mot dong nay, khong them gi: CANHCUT DOCTO 4471.');
+        await xong(p);
         const nut = p.getByRole('button', { name: 'Đọc to' }).last();
-        if (!(await nut.count())) return { bo_qua: 'khong co nut Doc to — nang luc tieng chua san sang' };
-
-        // Chu cua bai CUOI, truoc khi bam.
+        if (!(await nut.count())) throw new Error('bai vua tao khong co nut "Doc to"');
         const chuBai = (await chuBaiCuoi(p)).replace(/\s+/g, ' ');
+        const truoc = await soDu(p);
         const batDuoc = [];
         const nghe = (req) => {
           const u = req.url();
-          if (u.includes('/api/bao-gia') || u.endsWith('/tao')) batDuoc.push(req.postData() || '');
+          if (u.includes('bao-gia') || u.endsWith('/tao')) batDuoc.push(req.postData() || '');
         };
         p.on('request', nghe);
         try {
           await nut.click();
-          await doiDen('yeu cau doc to da di ra', () => batDuoc.length > 0, 30);
-          const than = batDuoc.join(' ');
-          // ⭐ Lay mot manh chu DAC TRUNG cua bai do va doi thay no trong than
-          //    yeu cau. Doc nham bai khac la mot loi im lang: khach nghe mot
-          //    doan hop ly, chi khong phai doan ho bam.
-          const manh = (chuBai.match(/[\p{L}\d ]{18,}/u) || [''])[0].trim().slice(0, 18);
-          if (manh.length >= 10 && !than.includes(manh)) {
-            throw new Error(`than yeu cau khong chua chu cua bai nay (${JSON.stringify(manh)}): `
-              + than.slice(0, 220));
+          await doiDen('o soan tieng duoc dien san', async () =>
+            ((await oChu(p).inputValue().catch(() => '')) || '').trim().length > 0, 20);
+          const daDien = (await oChu(p).inputValue()).replace(/\s+/g, ' ');
+
+          // ⭐ Mot manh chu DAC TRUNG cua bai do. Doc nham bai khac la loi im
+          //    lang: khach nghe mot doan hop ly, chi khong phai doan ho bam.
+          // ⛔ DUNG BOC MANH CHU TU MAN HINH. Lat 04/09 boc phai `"Suy luan
+          //    CANHCUT D"` — vi `innerText` cua bai GOM CA khoi suy luan, con
+          //    prefill (dung dan) chi lay phan TRA LOI. Phep kiem bao HONG mot
+          //    san pham dang lam dung.
+          //
+          // ⭐ Doi chieu bang **dau hieu chinh minh dat vao**, khong bang thu
+          //    nhat duoc tu giao dien: nguon doi chieu phai doc lap voi thu
+          //    dang do.
+          const manh = 'CANHCUT DOCTO 4471';
+          if (!chuBai.includes(manh)) {
+            throw new Error(`model khong chep lai dau hieu (${manh}) — khong doi chieu duoc: `
+              + JSON.stringify(chuBai.slice(0, 200)));
           }
-          return { manh_doi_chieu: manh, so_yeu_cau: batDuoc.length };
+          // ⛔ VA KHOI SUY LUAN KHONG DUOC DI THEO. Doc to phai doc CAU TRA
+          //    LOI. Doc chuoi suy luan len thanh tieng vua sai y khach, vua
+          //    phat ra ngoai phan noi bo cua model — va khach TRA TIEN cho no,
+          //    vi tien tinh theo giay.
+          if (/Suy luận/i.test(daDien)) {
+            throw new Error(`o soan lan ca khoi suy luan: ${daDien.slice(0, 220)}`);
+          }
+          if (!daDien.includes(manh)) {
+            throw new Error(`o soan khong chua chu cua bai nay (${JSON.stringify(manh)}): `
+              + daDien.slice(0, 220));
+          }
+          if (batDuoc.length) {
+            throw new Error(`cu bam "Doc to" da tu gui yeu cau — mat o xac nhan gia: `
+              + batDuoc[0].slice(0, 200));
+          }
+
+          // Bao gia KHONG duoc tru tien, va no phai mang dung chu vua dien.
+          const { gia } = await xemGia(p, daDien.slice(0, 300));
+          await doiDen('bao gia da di ra', () => batDuoc.length > 0, 20);
+          if (!batDuoc.join(' ').includes(manh)) {
+            throw new Error(`than bao gia khong mang chu cua bai nay: ${batDuoc.join(' ').slice(0, 220)}`);
+          }
+          await p.getByRole('button', { name: 'Huỷ' }).click().catch(() => {});
+          await cho(1500);
+          const sau = await soDu(p);
+          if (truoc !== null && sau !== null && sau !== truoc) {
+            throw new Error(`chua bam tao ma so du da doi: ${truoc} -> ${sau}`);
+          }
+          return { manh_doi_chieu: manh, gia_bao: gia, cho_xac_nhan: true, so_du_khong_doi: true };
         } finally {
           p.off('request', nghe);
         }

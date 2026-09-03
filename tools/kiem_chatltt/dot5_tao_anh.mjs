@@ -20,7 +20,7 @@
  *    credit trước/sau**. Một artifact hiện ra mà sổ tiền sai thì vẫn là hỏng.
  */
 
-export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong }) {
+export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) {
   const nutAnh = (p) => p.getByRole('button', { name: 'Tạo ảnh' });
   const oMoTa = (p) => p.getByLabel('Mô tả ảnh');
 
@@ -32,8 +32,16 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong }) {
       await guiChu(p, 'Chao.');
       await xong(p);
     }
-    await doiDen('nut media san sang', async () =>
-      (await nutAnh(p).count()) > 0 && !(await nutAnh(p).isDisabled()), 60);
+    // ⛔ NUT VO HIEU KHONG PHAI LOI GIAO DIEN — xem chu thich day du o
+    //    `dot6_tao_giong.mjs`. Nut tat khi `san_sang !== 'san_sang'`, tuc model
+    //    chua nap tren may B. Bo qua o day phai KEM con so may chu tra ve.
+    try {
+      await doiDen('model anh nap xong (nut het vo hieu)', async () =>
+        (await nutAnh(p).count()) > 0 && !(await nutAnh(p).isDisabled()), 210);
+    } catch {
+      return { bo_qua: `model anh chua nap — may chu noi image.ltt=`
+        + `${await nangLuc(p, 'image.ltt')}` };
+    }
     // ⛔ NUT NAY LA MOT CONG TAC BAT/TAT. Bam khi panel DA MO thi no DONG lai,
     //    va hang muc doi mai mot o nhap vua bi an di. Hang muc `5.1` ket thuc
     //    bang "Huy" va de panel mo — nen `5.2` bam mot phat la tat.
@@ -66,7 +74,8 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong }) {
       ten: '5.1-bao-gia-khong-tru-tien-va-Huy-khong-de-lai-gi',
       hoi: 'Xem giá rồi Huỷ — có mất tiền hay để lại rác trong hội thoại không?',
       async chay(p) {
-        await moPanelAnh(p);
+        const bq = await moPanelAnh(p);
+        if (bq) return bq;
         const truoc = await soDu(p);
         const anhTruoc = await soAnh(p);
         const { gia } = await xemGia(p, 'mot con meo tam mau ngoi tren bau cua so');
@@ -91,7 +100,8 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong }) {
         //    UOC cao, roi `_quyet_toan_credit` thu theo **anh THAT** va hoan
         //    phan du (`test_606`). Hang muc nay do dieu do tu phia NGUOI DUNG:
         //    so du giam dung bang so da bao, khong hon.
-        await moPanelAnh(p);
+        const bq = await moPanelAnh(p);
+        if (bq) return bq;
         const truoc = await soDu(p);
         const anhTruoc = await soAnh(p);
         const { gia } = await xemGia(p, 'mot ngon hai dang tren vach da luc hoang hon');
