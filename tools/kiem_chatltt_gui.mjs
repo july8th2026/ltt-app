@@ -162,24 +162,30 @@ async function guiChu(p, chu) {
     async () => (await soBai(p)) >= truoc + 2 || (await dangChay(p)), 40);
 }
 
-async function xong(p, hanS = 120) {
-  // 🔴 HAI DIEU KIEN, VA THIEU DIEU KIEN THU HAI LA MOT LO HONG THAT.
+async function xong(p, hanS = 150) {
+  // 🔴 DOC DAU HIEU CUA SAN PHAM, DUNG DOAN BANG DO DAI CHUOI.
   //
-  //    Ban dau `xong` chi doi "khong con nut Dung". Nhung ngay sau khi bam Gui,
-  //    nut Dung CHUA KIP hien — nen `xong` tra ve ngay lap tuc, va hang muc ke
-  //    tiep doc mot bai TRONG roi ket luan "model tra loi sai".
+  //    Ban truoc doi hai thu: "khong con nut Dung" va "chu dai hon 15 ky tu".
+  //    Ca hai deu SAI kieu:
   //
-  // ⛔ Do khong phai mot bao cao sai vo hai: no bao SAN PHAM hong trong khi
-  //    phep do moi la thu hong. Va o chieu nguoc lai no con te hon — mot cau
-  //    tra loi RONG that su cung se di qua, vi khong ai kiem noi dung.
+  //      · `dangChay` co mot khoang FALSE ngay sau khi bam Gui — tin nhan da
+  //        tao nhung luong chua mo. `xong` tra ve trong khoang do.
+  //      · "dai hon 15 ky tu" duoc thoa boi CHINH nhan vai: mot bai chi co
+  //        "ChatLTT" + "▸ Đang suy nghĩ…" da 24 ky tu, khong mot chu tra loi
+  //        nao.
   //
-  // ⭐ Nen: doi luot ket thuc, ROI doi noi dung that su co mat.
-  await doiDen('luot chay xong', async () => !(await dangChay(p)), hanS);
-  await doiDen('cau tra loi co noi dung', async () => {
-    const chu = (await chuBaiCuoi(p)).replace(/\s/g, '');
-    // "ChatLTT" la nhan vai, khong phai noi dung.
-    return chu.length > 'ChatLTT'.length + 8;
-  }, 30);
+  // ⛔ Hau qua do that tren production: hang muc hoi "thu do nuoc Phap" doc
+  //    phai cau tra loi cua luot TRUOC (mot loi chao), roi bao "model tra loi
+  //    sai". Chay tay cung cau hoi ay: "Paris". Bao cao vu khong san pham
+  //    trong khi phep do moi la thu hong — lan thu ba trong cung mot buoi.
+  //
+  // ⭐ Nut "Tạo lại" chi hien tren mot bai DA XONG. Do la dau hieu chinh san
+  //    pham dung de noi "luot nay ket thuc roi" — muon no thi khong phai doan.
+  await doiDen('luot ket thuc (bai cuoi co nut "Tạo lại")', async () => {
+    if (await dangChay(p)) return false;
+    const cuoi = p.locator('article').last();
+    return (await cuoi.getByRole('button', { name: 'Tạo lại' }).count()) > 0;
+  }, hanS);
 }
 
 // ── Cac hang muc ───────────────────────────────────────────────────────────
@@ -256,7 +262,10 @@ const HANG_MUC = [
       // ⭐ Chon mot cau co dap an mot tu, kiem duoc bang chuoi con: khong can
       //    hieu ngu nghia, khong phu thuoc model "gioi" den dau.
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Thu do cua nuoc Phap ten la gi? Tra loi dung mot tu.');
       await xong(p);
       const chu = (await chuBaiCuoi(p)).toLowerCase();
@@ -271,7 +280,10 @@ const HANG_MUC = [
     hoi: 'Model co ton trong rang buoc dinh dang trong lenh khong?',
     async chay(p) {
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Liet ke dung 3 mau sac, moi mau mot dong, khong giai thich gi them.');
       await xong(p);
       const chu = await chuBaiCuoi(p);
@@ -295,7 +307,10 @@ const HANG_MUC = [
       //    THAT: SSE cat chunk giua mot ky tu UTF-8 nhieu byte, hoac mot lop
       //    minify/proxy doi charset. jsdom khong the do duoc dieu do.
       await p.getByRole('button', { name: '+ Hội thoại mới' }).click();
-      await cho(600);
+      // ⛔ Doi cho luong bai RONG HAN, khong `cho(600)`. Neu bam Gui truoc khi
+      //    hoi thoai moi kip thay the hoi thoai cu, tin nhan di vao hoi thoai
+      //    CU — va hang muc doc phai cau tra loi cua mot cau hoi khac.
+      await doiDen('hoi thoai moi da rong', async () => (await soBai(p)) === 0, 20);
       await guiChu(p, 'Viet lai chinh xac cau nay, khong doi gi: "Nghiêng nước nghiêng thành."');
       await xong(p);
       const chu = await chuBaiCuoi(p);
