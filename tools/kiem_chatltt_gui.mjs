@@ -735,6 +735,20 @@ try {
     const t0 = Date.now();
     hangMucHienTai = hm;
     try {
+      // ⛔ BAO DAM DANG O DUNG TRANG TRUOC MOI HANG MUC.
+      //
+      //    Do 03/09: hang muc `2.1` goi `goBack()`, va vi giao dien dung
+      //    `replaceState` nen lich su chi co MOT muc — trinh duyet **roi khoi
+      //    trang**. Sau muc do, sau hang muc con lai chay tren mot trang khong
+      //    phai ChatLTT va bao nhung loi vo nghia ("khong co o tim").
+      //
+      // ⭐ Mot hang muc duoc phep dieu huong; no khong duoc phep lam do ca dot.
+      //    Bay dong nay tach "mot phep kiem do" khoi "ca lo mat nghia".
+      if (!(await page.getByLabel('Nội dung tin nhắn').count())) {
+        await page.goto(`${URL_GOC}/chatltt`, { waitUntil: 'domcontentloaded' });
+        await doiDen('ve lai duoc ChatLTT',
+          async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
+      }
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
       ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,

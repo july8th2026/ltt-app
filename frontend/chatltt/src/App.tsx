@@ -90,6 +90,30 @@ export function App({ api }: AppProps) {
   const huy = useRef<AbortController | null>(null)
   const cuoiLuong = useRef<HTMLDivElement | null>(null)
   const nguoiDungDaCuon = useRef(false)
+  /**
+   * Lần đổi hội thoại sắp tới có phải do NGƯỜI DÙNG chủ động không.
+   *
+   * 🔴 Đo trên production 03/09: bấm Back **rời khỏi trang** thay vì về hội
+   *    thoại trước. Vì mọi lần đổi đều `replaceState`, nên lịch sử chỉ có đúng
+   *    một mục — không có gì để lùi về.
+   *
+   * ⭐ Ranh giới đúng: **người dùng chủ động đổi chỗ ⇒ một bước lịch sử**; máy
+   *    chủ vừa cấp địa chỉ cho chỗ đang đứng ⇒ **không** phải một bước. Gửi tin
+   *    đầu tiên không đưa họ đi đâu cả — nó chỉ làm chỗ họ đang đứng có tên.
+   *
+   * ⛔ Và đây là lý do KHÔNG `pushState` cho mọi thứ: bản đầu của tệp này ghi
+   *    rõ vì sao dùng `replaceState` — mười lần bấm quanh thanh bên thì phải
+   *    bấm Back mười lần mới rời được trang. Cả hai lo ngại đều thật; chúng chỉ
+   *    thuộc hai loại thay đổi khác nhau.
+   */
+  const dayLichSu = useRef(false)
+
+  /** Đổi hội thoại theo ý người dùng — có một bước lịch sử. */
+  const chonHoiThoai = useCallback((id: string | null) => {
+    dayLichSu.current = true
+    datConvId(id)
+    if (id === null) datSuThat(null)
+  }, [])
 
   const nangLucText = useMemo(
     () => nangLuc.find((n) => n.ten === 'text.chat'), [nangLuc],
@@ -162,8 +186,13 @@ export function App({ api }: AppProps) {
     if (typeof window === 'undefined') return
     const muon = convId ? `#${convId}` : ''
     if (window.location.hash === muon) return
-    window.history.replaceState(null, '',
-      window.location.pathname + window.location.search + muon)
+    const duong = window.location.pathname + window.location.search + muon
+    if (dayLichSu.current) {
+      dayLichSu.current = false
+      window.history.pushState(null, '', duong)
+    } else {
+      window.history.replaceState(null, '', duong)
+    }
   }, [convId])
 
   // Back/Forward của trình duyệt, và người dán một link vào thanh địa chỉ.
@@ -213,7 +242,7 @@ export function App({ api }: AppProps) {
       const mod = e.ctrlKey || e.metaKey
       if (mod && e.shiftKey && (e.key === 'o' || e.key === 'O')) {
         e.preventDefault()
-        datConvId(null); datSuThat(null)
+        chonHoiThoai(null)
         oSoan.current?.focus()
         return
       }
@@ -396,7 +425,7 @@ export function App({ api }: AppProps) {
         <button
           type="button"
           className="ltc-nut ltc-nut--moi"
-          onClick={() => { datConvId(null); datSuThat(null) }}
+          onClick={() => chonHoiThoai(null)}
         >
           + Hội thoại mới
         </button>
@@ -415,7 +444,7 @@ export function App({ api }: AppProps) {
                 type="button"
                 className={`ltc-ds__muc${h.id === convId ? ' la-dang-xem' : ''}`}
                 aria-current={h.id === convId ? 'true' : undefined}
-                onClick={() => datConvId(h.id)}
+                onClick={() => chonHoiThoai(h.id)}
               >
                 {h.title || 'Hội thoại mới'}
               </button>
