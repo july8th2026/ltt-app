@@ -171,6 +171,64 @@ def loi_cong_cu_tu_do() -> int:
     return psutil.cpu_count(logical=False) or psutil.cpu_count() or 1
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  MOT cau hoi, MOT cau tra loi: bo test duoc bao nhieu worker
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Loi VAT LY de danh cho may: Windows + 4 dich vu production + phien khac.
+#:
+#: 🔴 **Don vi VAT LY, khong phai logic.** Day la cho ca co che tung hong:
+#:    `LOI_DE_DANH_CHO_MAY = 6` tru tren `os.cpu_count()` = 20 (logic), con
+#:    `pytest -n auto` doc `psutil.cpu_count(logical=False)` = 10 (vat ly). Hai
+#:    don vi, mot hang so ⇒ "ngan sach" 11 lai LON HON `auto` = 10. Mot co che
+#:    sinh ra de GIAM tai da TANG no, suot tu `03845cb` toi 03/09.
+#:
+#: ⭐ Do that: nen may 3%-37% tuy gio (0,6-3,7 loi vat ly). De danh 3 phu duoc
+#:    nen thuong; luc nen cao thi `loi_phien_khac_dang_giu` va tran cung o duoi
+#:    keo tiep xuong.
+LOI_DE_DANH_VAT_LY = 3
+
+#: ⛔ TRAN CUNG. Chu du an chon 03/09: **uu tien an toan, chap nhan cham hon**.
+#:
+#:    Do that hom do: `-n 11` mat 327s; `-n 6` mat hon 15 phut (~2,8x cham hon).
+#:    Cai gia do duoc chap nhan co y — mot luot gate cham khong lam ai mat gi,
+#:    mot lan treo may lam khach mat dich vu.
+#:
+#: ⚠️ Va no la TRAN chu khong phai gia tri: khi may ban, phep tinh o duoi cho ra
+#:    so nho hon va so do thang.
+TRAN_WORKER_BO_TEST = 6
+
+
+def loi_cho_bo_test(*, phien: str = "") -> int:
+    """So worker cho `bo test`. **Ham DUY NHAT tra loi cau hoi nay.**
+
+    Truoc 03/09 co sau cho cung tra loi no — `ngan_sach_loi`, `_chia_loi`,
+    `LOI_TOI_DA_MOI_CONG_CU`, `loi_cong_cu_tu_do`, `loi_dang_ban`,
+    `_ap_ngan_sach_thuc` — tren HAI don vi khac nhau. Chong cheo nhieu tang thi
+    khong ai doc noi ca duong, va cho lech nam giua hai tang la cho khong ai soi.
+
+    Mot phep tinh, mot don vi (**loi vat ly**), ba ve:
+
+        vat_ly - de_danh - phien_khac      may con bao nhieu cho ta
+        TRAN_WORKER_BO_TEST                tran an toan cung
+        max(1, ...)                        khong bao gio tu choi chay
+
+    ⛔ `max(1, ...)`: mot cong chat luong tu choi chay vi ban la mot cong khong
+       ai dung, va no se bi go bang mot co `--bo-qua`. Cham thi duoc, dung han
+       thi khong.
+    """
+    vat_ly = loi_cong_cu_tu_do()
+    khac = 0
+    if phien is not None:
+        try:
+            from cua_so_yen import loi_phien_khac_dang_giu
+            khac = loi_phien_khac_dang_giu(phien)
+        except (ImportError, OSError, ValueError) as exc:
+            print(f"  [ngan sach] khong doc duoc khoa phien khac "
+                  f"({type(exc).__name__}) - bo qua phan tru do")
+    return max(1, min(TRAN_WORKER_BO_TEST, vat_ly - LOI_DE_DANH_VAT_LY - khac))
+
+
 def _chia_loi(so_viec_nang: int) -> int:
     """Moi viec nang duoc bao nhieu loi. Toi thieu 1."""
     return max(1, min(LOI_TOI_DA_MOI_CONG_CU,
@@ -277,10 +335,7 @@ def _ap_ngan_sach_thuc(steps: list, phien: str) -> None:
        sau `test_nhanh.py`) chu khong bang TEN buoc — mot cai ten la mot chuoi
        hien thi, doi luc nao cung duoc, va no se doi im lang.
     """
-    moi = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
-                     ngan_sach_loi(phien=phien, tru_phien_khac=True)
-                     - len(FRONTENDS),
-                     loi_cong_cu_tu_do()))
+    moi = loi_cho_bo_test(phien=phien)
     for st in steps:
         argv = list(getattr(st, "argv", []) or [])
         if "test_nhanh.py" not in " ".join(argv) or "-n" not in argv:
@@ -326,9 +381,8 @@ def _steps(quick: bool) -> list[Step]:
     # ⛔ `loi_cong_cu_tu_do()` la ve thu BA cua phep `min`, va no la ve chiu luc:
     #    hai ve kia tinh tren loi LOGIC, ve nay tra ve dung thu xdist se tu chon.
     #    Thieu no thi "ngan sach" 11 lai lon hon `auto` = 10. Xem docstring cua no.
-    loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
-                             ngan_sach_loi() - len(FRONTENDS),
-                             loi_cong_cu_tu_do()))
+    # MOT nguon duy nhat. Xem `loi_cho_bo_test`.
+    loi_bo_test = loi_cho_bo_test()
 
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #

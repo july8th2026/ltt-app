@@ -27,14 +27,13 @@ import gate  # noqa: E402
 
 
 def _n_truyen_cho_pytest() -> int:
-    """Dung LAI dung phep tinh o `gate.py`, khong chep so.
+    """Goi CHINH ham gate dung. Khong chep phep tinh.
 
-    ⚠️ Neu mai nay `gate.py` doi phep tinh nay ma tep test giu mot ban chep, thi
-       phep kiem se chot mot thu khong con ai chay. Doc lai tu chinh module.
+    ⭐ Tu 03/09 chi con MOT ham tra loi cau hoi nay, nen phep kiem goi thang no.
+       Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
+       mot cho de hai ben lech nhau ma khong ai do.
     """
-    return max(1, min(gate.LOI_TOI_DA_MOI_CONG_CU,
-                      gate.ngan_sach_loi() - len(gate.FRONTENDS),
-                      gate.loi_cong_cu_tu_do()))
+    return gate.loi_cho_bo_test(phien="")
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
@@ -63,6 +62,11 @@ def test_moi_hinh_may_deu_ton_trong_tran(monkeypatch, logic, vat_ly):
     n = _n_truyen_cho_pytest()
     assert n <= vat_ly, f"may {logic}/{vat_ly}: truyen -n {n} > auto {vat_ly}"
     assert n >= 1, "khong duoc tra ve 0 worker"
+    # ⭐ Va phai de lai cho cho may, tru khi may qua nho de con cho de lai.
+    if vat_ly > gate.LOI_DE_DANH_VAT_LY + 1:
+        assert n <= vat_ly - gate.LOI_DE_DANH_VAT_LY, (
+            f"may {vat_ly} loi vat ly: -n {n} khong chua {gate.LOI_DE_DANH_VAT_LY} "
+            f"loi cho OS + dich vu")
 
 
 def test_chot_nay_THAT_SU_bat_duoc_ban_gan_thang(monkeypatch):
@@ -80,8 +84,8 @@ def test_chot_nay_THAT_SU_bat_duoc_ban_gan_thang(monkeypatch):
     assert ban_cu > gate.loi_cong_cu_tu_do(), (
         "ban cu phai VUOT tran — neu khong thi khong co gi de sua")
 
-    # Va ban moi thi khong.
-    assert _n_truyen_cho_pytest() == 10
+    # Ban moi: bi tran cung keo xuong 6, va con chua 3 loi cho may.
+    assert _n_truyen_cho_pytest() == gate.TRAN_WORKER_BO_TEST == 6
 
 
 def test_loi_cong_cu_tu_do_doc_cung_nguon_voi_xdist():
@@ -107,6 +111,7 @@ def test_khong_tra_ve_0_khi_may_rat_nho(monkeypatch):
     """
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 2)
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 1)
+    # 1 - 3 de danh = -2 -> `max(1, ...)` cuu. Tu choi chay la kieu hong te hon cham.
     assert _n_truyen_cho_pytest() == 1
 
 
@@ -260,3 +265,55 @@ def test_khong_giu_duoc_khoa_thi_chay_khong_khoa_la_True():
     # Tat xep hang thi khong phai "chen", chi la khong xep hang.
     k2 = c.CuaSoYen("toi", "lenh", bat=False, tai_nguyen=(c.MAC_DINH,))
     assert k2.chay_khong_khoa is False
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Logic THONG NHAT — mot cau hoi, mot cau tra loi
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_chi_MOT_ham_quyet_dinh_so_worker_cua_bo_test():
+    """⛔ Truoc 03/09 co SAU cho cung tra loi "duoc bao nhieu loi", tren HAI don vi.
+
+    Chong cheo nhieu tang thi khong ai doc noi ca duong, va cho lech nam GIUA hai
+    tang la cho khong ai soi — dung kieu loi da song tu `03845cb`: mot ve tinh
+    tren loi logic (20), mot ve tren loi vat ly (10).
+
+    ⭐ Chot bang AST: duong dung `argv` cua buoc `bo test` chi duoc goi
+       `loi_cho_bo_test`, khong duoc tu ghep `min(...)` mot lan nua.
+    """
+    import ast
+    import inspect
+
+    import textwrap
+    nguon = textwrap.dedent(inspect.getsource(gate._steps))
+    cay = ast.parse(nguon)
+    goi = {n.func.id for n in ast.walk(cay)
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "loi_cho_bo_test" in goi, "`_steps` khong dung ham thong nhat"
+    # Cac ten cu khong duoc quay lai o duong nay.
+    nguon_ap = inspect.getsource(gate._ap_ngan_sach_thuc)
+    assert "loi_cho_bo_test" in nguon_ap
+    assert "LOI_TOI_DA_MOI_CONG_CU" not in nguon_ap, (
+        "tran cua VITEST khong duoc dung cho pytest — do la muon hang so qua "
+        "bien don vi lan thu hai")
+
+
+def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
+    """Mot don vi duy nhat. Lech don vi la loi da song 5 thang o kho nay."""
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    # Khong phu thuoc `os.cpu_count()` (logic) nua.
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
+    assert gate.loi_cho_bo_test(phien="") == gate.TRAN_WORKER_BO_TEST
+
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
+    assert gate.loi_cho_bo_test(phien="") == min(
+        gate.TRAN_WORKER_BO_TEST, 8 - gate.LOI_DE_DANH_VAT_LY)
+
+
+def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
+    import cua_so_yen as c
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 4}])
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+    # 10 - 3 - 4 = 3, nho hon tran 6 -> 3 thang
+    assert gate.loi_cho_bo_test(phien="toi") == 3

@@ -132,9 +132,9 @@ Chủ dự án nghi bot ở kho tham chiếu chiếm CPU. Kiểm (read-only):
 sau reset:
 ```
 cmd.exe /c D:\FULL AUTO VIDEO\start_gui.bat
-python.exe run_master_g...        (DUNGVIDEO-FULLenv)
+python.exe run_master_g...        (DUNGVIDEO-FULL\venv)
 pythonw.exe D:\FULL AUTO VIDEO\...
-D:\BOT GEMINIenv\...\python.exe main.py      <- bot production cong 8000
+D:\BOT GEMINI\venv\...\python.exe main.py      <- bot production cong 8000
 ```
 
 **Nhưng lúc reset nó đang NGỦ** — `DUNGVIDEO-FULL/logs/dungvideo_debug.log`:
