@@ -553,12 +553,12 @@ DESKTOP_MODEL = "ltt-llm-claude-compat"
 #:    sai và chúng mâu thuẫn nhau: `65000` bắt khách tự giới hạn thấp hơn thật
 #:    26 nghìn token, còn `131K` hứa nhiều hơn thật 42 nghìn rồi để họ ăn **413**
 #:    giữa hội thoại. Một con số gõ tay trong tài liệu bán hàng là một lời hứa.
-CUA_SO_CONG_BO = 88_555
+CUA_SO_CONG_BO = 156_385
 TOKEN_RA_TRAN = 32_768
 
 #: Ngưỡng client **phải nén** hội thoại. Bản sao của `ngan_sach.NEN_CHO_CLIENT`,
 #: cùng lý do và cùng cách đối chiếu như hai con số trên.
-NEN_CLIENT = 55_787
+NEN_CLIENT = 123_617
 
 
 #: Năm con số của một hội thoại dài, và **vì sao chúng khác nhau**.
@@ -574,10 +574,10 @@ NEN_CLIENT = 55_787
 #:    `65000` bắt khách tự bó hẹp; `131K` hứa quá rồi để họ ăn 413; một con số
 #:    dùng chung cho `ltt_llm` và `ltt_llm_vision` hứa cho vision gấp 3,1 lần.
 NGU_CANH_NAM_SO = (
-    ("Engine context", "131,072",
+    ("Engine context", "204,800",
      "What the model is loaded with on our GPU. You never send this much: "
      "input and output share this window."),
-    ("Hard input limit", "96,256",
+    ("Hard input limit", "169,984",
      "The most input we accept. Above it you get 413 — never a silent "
      "truncation. It is the engine window minus the longest possible answer "
      "and a margin for token estimation."),

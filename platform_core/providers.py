@@ -225,7 +225,7 @@ REGISTRY: dict[str, Provider] = {
                 is_active=True,
                 capabilities={
                     # CHỈ khai thứ ĐÃ ĐO THẬT trên máy B (SO_DO_P2_P6.md).
-                    "context_window": 131_072,
+                    "context_window": 204_800,
                     "vision": False,
                     "tool_calling": True,
                     "license": "Apache-2.0",

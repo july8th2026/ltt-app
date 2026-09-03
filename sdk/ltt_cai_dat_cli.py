@@ -46,10 +46,12 @@ BIEN_KHOA = "LTT_API_KEY"
 #:    Vi vay `tests/test_275_cai_dat_cli.py` doi chieu HAI CHIEU: so o day phai
 #:    bang `ngan_sach.CONG_BO_CHO_CLIENT`. Doi mot ben ma quen ben kia => gate do.
 #:
-#:    Truoc 02/09 so nay la 65000 -- da CU tu lau (tran vao tung la 65k, roi 81k,
-#:    nay 96.256 => cong bo 88.555). Khach macOS/Linux tai ban nay ve bi bao
-#:    ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
-CUA_SO_NGU_CANH = 88555
+#:    Truoc 02/09 so nay la 65000 -- da CU tu lau. Khach macOS/Linux tai ban do
+#:    ve bi bao ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
+#:
+#:    Duong di cua con so: 65.000 -> 88.555 (02/09) -> 156.385 (03/09, khi cua
+#:    so engine len 204.800). Moi lan doi deu phai doi CA HAI bo cai.
+CUA_SO_NGU_CANH = 156385
 
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
@@ -61,7 +63,7 @@ TOKEN_RA_TRAN = 32768
 #:    MOT luot sinh dai nhat (32.768) — client chi kiem nguong GIUA hai luot.
 #:    Voi 0,8 khoang do chi con 25.412, thieu, va production da an mot `413` o
 #:    101.938 token vao dung vi vay.
-NEN_HOI_THOAI = 55787
+NEN_HOI_THOAI = 123617
 
 #: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 65536` — mot NUA
 #: model text — nen no KHONG duoc dung chung con so voi `ltt_llm`.

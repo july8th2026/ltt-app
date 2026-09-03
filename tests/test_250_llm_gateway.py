@@ -54,7 +54,7 @@ def test_public_cap_chan_TRUOC_thuong_nguon():
     """Q116: vượt trần theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
     c, up = _client(_cfg(max_input_tokens=65_000))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-ops",
+        "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 162_500}],
     })
     assert r.status_code == 413
@@ -88,7 +88,7 @@ def _cfg(**ghi_de) -> Config:
         comfy_url="http://127.0.0.1:8188", vram_sach_mb=2500, don_dep_bat=False,
         upstream_url="http://127.0.0.1:8280",
         host="127.0.0.1", port=8299, token="",
-        models_mo=("qwen38-ops", "qwen38-vision"),
+        models_mo=("qwen38-api", "qwen38-vision"),
         max_input_tokens=200_000, max_output_tokens=16_384,
         max_images=4, max_image_bytes=12 * 1024 * 1024,
         upstream_timeout_s=600.0, stream_timeout_s=900.0,
@@ -134,14 +134,14 @@ def test_models_rong_thi_khong_mo_model_nao():
 def test_bat_co_mot_minh_khong_mo_model_nao():
     """Cùng tinh thần Q92: có cấu hình thượng nguồn không đủ để mở model."""
     c, up = _client(_cfg(models_mo=()))
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 404
     assert up.goi == []                  # KHÔNG được chạm thượng nguồn
 
 
 def test_ten_la_khong_lam_cong_sap():
-    c, _ = _client(_cfg(models_mo=("qwen38-ops", "khong-ton-tai")))
-    assert [m["id"] for m in c.get("/v1/models").json()["data"]] == ["qwen38-ops"]
+    c, _ = _client(_cfg(models_mo=("qwen38-api", "khong-ton-tai")))
+    assert [m["id"] for m in c.get("/v1/models").json()["data"]] == ["qwen38-api"]
     assert c.get("/health").json()["models_la"] == ["khong-ton-tai"]
 
 
@@ -154,7 +154,7 @@ def test_ten_la_khong_lam_cong_sap():
 ])
 def test_ba_giao_thuc_chuyen_tiep_dung_duong(duong_cong, duong_thuong_nguon):
     c, up = _client()
-    r = c.post(duong_cong, json={"model": "qwen38-ops", "messages": [
+    r = c.post(duong_cong, json={"model": "qwen38-api", "messages": [
         {"role": "user", "content": "xin chao"}]})
     assert r.status_code == 200
     assert up.goi[-1][1] == duong_thuong_nguon
@@ -163,7 +163,7 @@ def test_ba_giao_thuc_chuyen_tiep_dung_duong(duong_cong, duong_thuong_nguon):
 def test_than_duoc_chuyen_tiep_nguyen_ven():
     """Cổng không được sửa body — llama-server cần đúng thứ client gửi."""
     c, up = _client()
-    than = {"model": "qwen38-ops", "messages": [{"role": "user", "content": "a"}],
+    than = {"model": "qwen38-api", "messages": [{"role": "user", "content": "a"}],
             "temperature": 0.7, "tools": [], "reasoning_effort": "xhigh"}
     c.post("/v1/chat/completions", json=than)
     assert up.goi[-1][2] == than
@@ -174,7 +174,7 @@ def test_than_duoc_chuyen_tiep_nguyen_ven():
 def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
     c, up = _client(_cfg(max_input_tokens=100))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-ops",
+        "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
@@ -184,7 +184,7 @@ def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
 def test_anh_gui_vao_ho_so_khong_vision_thi_413():
     c, up = _client()
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-ops",                     # hồ sơ 200K, KHÔNG nạp mmproj
+        "model": "qwen38-api",                     # hồ sơ 200K, KHÔNG nạp mmproj
         "messages": [{"role": "user", "content": [
             {"type": "image_url", "image_url": {"url": "data:image/png;base64,QUJD"}}]}]})
     assert r.status_code == 413
@@ -225,7 +225,7 @@ def test_anh_qua_lon_thi_413():
 def test_xin_sinh_qua_nhieu_token_thi_413():
     c, _ = _client(_cfg(max_output_tokens=1000))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-ops", "messages": [], "max_tokens": 99_999})
+        "model": "qwen38-api", "messages": [], "max_tokens": 99_999})
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "max_tokens"
 
@@ -256,7 +256,7 @@ def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
 
 def test_ban_thi_429_khong_phai_5xx():
     c, up = _client(tt=_tt_ban())
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 429, "bao 5xx se lam may A disable key sau 5 lan (D-005)"
     assert r.headers.get("Retry-After") == "30"
     assert up.goi == []
@@ -267,7 +267,7 @@ def test_khong_hoi_duoc_nvidia_smi_thi_coi_la_ban():
     tt = TrongTai(ram_trong_toi_thieu_gb=48.0, bat=True,
                   dem_python_gpu=lambda: None, ram_trong_gb=lambda: 100.0)
     c, _ = _client(tt=tt)
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 429
 
 
@@ -275,7 +275,7 @@ def test_ram_duoi_nguong_thi_ban():
     tt = TrongTai(ram_trong_toi_thieu_gb=48.0, bat=True,
                   dem_python_gpu=lambda: 0, ram_trong_gb=lambda: 10.0)
     c, _ = _client(tt=tt)
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 429
 
 
@@ -284,7 +284,7 @@ def test_yeu_cau_hong_van_413_ke_ca_khi_card_ban():
     khoát, chứ không phải lúc 429 lúc 413 tuỳ card bận hay rảnh."""
     c, _ = _client(_cfg(max_input_tokens=100), tt=_tt_ban())
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-ops",
+        "model": "qwen38-api",
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
 
@@ -293,7 +293,7 @@ def test_yeu_cau_hong_van_413_ke_ca_khi_card_ban():
 
 def test_thuong_nguon_5xx_thi_502_khong_phai_429():
     c, _ = _client(up=FakeUpstream(ma=599, than=b"connection refused"))
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 502
     assert r.json()["ma_thuong_nguon"] == 599
 
@@ -301,7 +301,7 @@ def test_thuong_nguon_5xx_thi_502_khong_phai_429():
 def test_thuong_nguon_4xx_thi_chuyen_tiep_nguyen_ma():
     """400 của llama-server là thông tin cho client, không phải lỗi của cổng."""
     c, _ = _client(up=FakeUpstream(ma=400, than=b'{"error":"bad template"}'))
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 400
     assert r.json()["error"] == "bad template"
 
@@ -314,7 +314,7 @@ def test_stream_chuyen_tiep_tung_byte_khong_doi():
             b"data: [DONE]\n\n"]
     c, _ = _client(up=FakeUpstream(khoi_stream=khoi))
     r = c.post("/v1/chat/completions",
-               json={"model": "qwen38-ops", "messages": [], "stream": True})
+               json={"model": "qwen38-api", "messages": [], "stream": True})
     assert r.status_code == 200
     assert r.content == b"".join(khoi), "cong phai la duong ong, khong phai bo dich"
 
@@ -325,7 +325,7 @@ def test_token_sai_thi_401():
     c, _ = _client(_cfg(token="bimat"))
     r = c.post("/v1/chat/completions",
                headers={"Authorization": "Bearer sai"},
-               json={"model": "qwen38-ops", "messages": []})
+               json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 401
 
 
@@ -333,7 +333,7 @@ def test_token_dung_thi_qua():
     c, _ = _client(_cfg(token="bimat"))
     r = c.post("/v1/chat/completions",
                headers={"Authorization": "Bearer bimat"},
-               json={"model": "qwen38-ops", "messages": []})
+               json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 200
 
 
@@ -342,7 +342,7 @@ def test_token_dung_thi_qua():
 def test_health_bao_du_thu_can_de_chan_doan():
     c, _ = _client()
     d = c.get("/health").json()
-    assert d["models_mo"] == ["qwen38-ops", "qwen38-vision"]
+    assert d["models_mo"] == ["qwen38-api", "qwen38-vision"]
     assert d["thuong_nguon"]["song"] is True
     assert d["trong_tai"]["ban"] is False
     assert d["tran"]["input_tokens"] == 200_000
@@ -376,7 +376,7 @@ def test_mot_python_la_ComfyUI_thuong_tru_KHONG_phai_ban():
                   dem_python_gpu=lambda: 1, ram_trong_gb=lambda: 100.0,
                   tai_gpu=lambda: 0)
     c, _ = _client(tt=tt)
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 200, "1 python = ComfyUI thuong tru = van phuc vu duoc"
 
 
@@ -385,7 +385,7 @@ def test_khong_co_python_nao_thi_ranh():
                   dem_python_gpu=lambda: 0, ram_trong_gb=lambda: 100.0)
     c, _ = _client(tt=tt)
     assert c.post("/v1/chat/completions",
-                  json={"model": "qwen38-ops", "messages": []}).status_code == 200
+                  json={"model": "qwen38-api", "messages": []}).status_code == 200
 
 
 # ── 10. Doc gateway.env luc khoi dong ───────────────────────────────────────

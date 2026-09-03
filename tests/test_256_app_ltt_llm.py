@@ -21,7 +21,7 @@ from apps.ltt_llm import features
 from apps.ltt_llm.manifest import CUA_SO_NGU_CANH, MANIFEST, MAX_TOKENS_TRAN
 
 
-def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
+def test_cua_so_ngu_canh_khop_moc_da_do():
     """Mốc đã đo phải được gắn vào hợp đồng app, không chỉ ghi trong nhật ký.
 
     🔴 NHƯNG MÔ TẢ CÔNG KHAI KHÔNG ĐƯỢC NÓI CON SỐ NÀY (sửa 30/08).
@@ -47,18 +47,32 @@ def test_cua_so_ngu_canh_khop_moc_benchmark_131k():
        ⭐ Đáng ghi vì nó gọn: phép kiểm sinh ra để **ngăn** một lời hứa sai đã
           **bắt buộc** một lời hứa sai khác. Nó vòng qua hai model rồi so với
           một hằng số — vòng lặp làm nó *trông như* kiểm từng model.
-    """
-    from apps.ltt_llm.ngan_sach import cong_bo_cua
 
-    assert CUA_SO_NGU_CANH == 131_072
+    🔴 SỬA LẦN BA 03/09 — VÀ LẦN NÀY CŨNG LÀ CHÍNH PHÉP KIỂM NÀY.
+
+       Nó gõ tay `131_072` ở ba chỗ: tên hàm, câu `assert`, và chuỗi cấm
+       `"131K"`. Khi cửa sổ engine lên 204.800 thì cả ba đỏ **cùng lúc**, và
+       không chỗ nào trong ba chỗ đó nói cho người sửa biết chỗ nào là *chốt
+       thật* còn chỗ nào chỉ là con số ngẫu nhiên của hôm qua.
+
+       ⭐ Thứ phép kiểm này thật sự muốn chốt không phải "engine = 131.072" —
+          nó là **"hằng của app bằng hằng của ngân sách"** và **"mô tả công khai
+          không được nói con số ENGINE"**. Cả hai mệnh đề ấy viết được mà không
+          gõ một con số nào, và khi viết như vậy thì lần nâng cửa sổ tới không
+          làm ai phải sửa phép kiểm này nữa.
+    """
+    from apps.ltt_llm.ngan_sach import CUA_SO_MODEL, cong_bo_cua
+
+    assert CUA_SO_NGU_CANH == CUA_SO_MODEL
+    engine_k = f"{round(CUA_SO_MODEL / 1000)}K"
     models = MANIFEST.tools[0].api_contract["models"]
     for ten in ("ltt_llm", "ltt_llm_vision"):
         mo_ta = models[ten]["description"]
         cua_so = f"{round(cong_bo_cua(models[ten]['id']) / 1000)}K"
         assert cua_so in mo_ta, (ten, cua_so, mo_ta)
-        assert "131K" not in mo_ta, (
-            f"`{ten}` van hua cua so cua ENGINE chu khong phai cua so khach "
-            f"dung duoc: {mo_ta}")
+        assert engine_k not in mo_ta, (
+            f"`{ten}` van hua cua so cua ENGINE ({engine_k}) chu khong phai "
+            f"cua so khach dung duoc: {mo_ta}")
 
 
 # ── 1. Bản khai ──────────────────────────────────────────────────────────────

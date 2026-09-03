@@ -1,0 +1,52 @@
+{
+ "model": "qwen38-api",
+ "moc": 130000,
+ "luc": "19:51:15",
+ "luot": [
+  {
+   "model": "qwen38-api",
+   "token_vao": 130235,
+   "giay": 184.7,
+   "do_sau": [
+    0.1,
+    0.3,
+    0.5,
+    0.7,
+    0.9
+   ],
+   "tim_thay": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "diem": 5,
+   "tren": 5,
+   "tra_loi": "KIM-1=M8W3D6NO\nKIM-2=S5NV2EQM\nKIM-3=KF28XM4U\nKIM-4=PZ1NE13T\nKIM-5=NHVRZYO1"
+  },
+  {
+   "model": "qwen38-api",
+   "token_vao": 130108,
+   "giay": 184.8,
+   "do_sau": [
+    0.1,
+    0.3,
+    0.5,
+    0.7,
+    0.9
+   ],
+   "tim_thay": [
+    true,
+    true,
+    true,
+    true,
+    true
+   ],
+   "diem": 5,
+   "tren": 5,
+   "tra_loi": "KIM-1=JWK9LYS1\nKIM-2=C787LY2O\nKIM-3=6IFDL26O\nKIM-4=77J504EP\nKIM-5=FVYM611Z"
+  }
+ ],
+ "tong": "10/10"
+}

@@ -127,31 +127,7 @@ models:
   # Khach dieu khien do sau bang `reasoning_effort` trong tung request.
   qwen38-api:
     name: "Qwen3.8-27B (LTT Studios)"
-    description: "Coding, chat, agent, tom tat. Engine 131K; input public 65K."
-    capabilities:
-      in: ["text"]
-      out: ["text"]
-    cmd: |
-      ${BIN}/llama-server.exe
-      -m ${GGUF}
-      ${CHUNG}
-      -c 131072
-      --cache-type-k q8_0 --cache-type-v q8_0
-      --host 127.0.0.1 --port ${PORT}
-    proxy: "http://127.0.0.1:${PORT}"
-    # Dai hon `ops`: khach ngoai goi rai rac, nap lai giua cac lan la tra tien
-    # bang do tre cho nguoi dung cuoi.
-    ttl: 1800
-    unloadTimeout: 30
-
-  # ---------------------------------------------------- van hanh trong LAN
-  # KHONG phuc vu khach ngoai. Ngu canh 200K chi dung duoc khi KHONG qua Cloudflare.
-  qwen38-ops:
-    name: "Qwen3.8-27B ops (200K, khong vision)"
-    description: "Van hanh, ngu canh dai 200K, khong doc anh. Cho Codex va Claude Code."
-    # Khai modality that su cua ho so nay. Khong co mmproj => KHONG nhan anh.
-    # Khai o day de chinh llama-swap tra dung trong /v1/models, chu khong chi
-    # `llm_gateway` biet - hai noi cung mot su that, khong the lech nhau.
+    description: "Coding, chat, agent, tom tat. Engine 200K; input public 170K."
     capabilities:
       in: ["text"]
       out: ["text"]
@@ -163,11 +139,33 @@ models:
       --cache-type-k q4_0 --cache-type-v q4_0
       --host 127.0.0.1 --port ${PORT}
     proxy: "http://127.0.0.1:${PORT}"
-    # 900s = 15 phut. Du dai de mot phien agent co khoang nghi ma khong phai nap
-    # lai (nap lai o 200K ton them ca thoi gian prefill), du ngan de tra VRAM cho
-    # ComfyUI truoc khi lo anh ke tiep bat dau.
-    ttl: 900
+    # Dai hon `ops`: khach ngoai goi rai rac, nap lai giua cac lan la tra tien
+    # bang do tre cho nguoi dung cuoi.
+    ttl: 1800
     unloadTimeout: 30
+
+  # ==========================================================================
+  # `qwen38-ops` DA GO NGAY 03/09, va viec go la MOT PHAN CUA BAN VA.
+  #
+  # No tung ton tai vi ta tin rang 200K "chi dung duoc khi KHONG qua
+  # Cloudflare". Do la mot suy luan, khong phai mot phep do, va no SAI cho cua
+  # ma Codex/Claude Code that su dung:
+  #
+  #   * lap luan cu: prefill ~1.000 tok/s => prompt 200K ton ~200s => CF cat o
+  #     125s => 524. Dung cho cua DONG BO.
+  #   * nhung `nhip_tim.py` chen chu thich SSE moi 15 giay TRONG LUC prefill,
+  #     nen dong ho im-lang cua CF khong bao gio cham o cua STREAM. Chu thich
+  #     cu duoc viet TRUOC khi `nhip_tim.py` ton tai, va khong ai doc lai no.
+  #
+  # 🔴 VA CO MOT LY DO MANH HON DE CHI GIU MOT HO SO TEXT. Do that 03/09:
+  #    llama-swap **giet mot luot dang chay** de nap ho so khac. Luot bi giet
+  #    chi nhan `ConnectionReset`, khong loi nao noi vi sao — no trong y het
+  #    mot lan OOM, va no da lam hong hai lo do lien tiep cua chinh phien nay.
+  #
+  #    Hai ho so text cung mo ra cho khach = mot nguon `ConnectionReset` ngau
+  #    nhien khong giai thich duoc. Mot ho so text cong khai, mot tep `-c`, mot
+  #    su that. Nen `qwen38-api` GIO CHINH LA ho so 200K.
+  # ==========================================================================
 
   # ------------------------------------------------------------------- vision
   qwen38-vision:

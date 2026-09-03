@@ -118,7 +118,7 @@ MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
 #: Dau moc hai dau. Moi thu giua chung la cua ta; moi thu ngoai chung la cua
 #: khach va KHONG duoc dung toi.
 #: Cua so ngu canh cong bo cho client, khop `ngan_sach.CONG_BO_CHO_CLIENT`.
-CUA_SO_NGU_CANH = 88555
+CUA_SO_NGU_CANH = 156385
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
 #: Nguong client PHAI nen hoi thoai, khop `ngan_sach.NEN_CHO_CLIENT`.
@@ -130,7 +130,7 @@ TOKEN_RA_TRAN = 32768
 #:    GIUA hai luot, nen luot ke tiep van duoc phep lon them tron mot luot nua.
 #:    Voi 0,8 thi khoang trong chi con 25.412 < 32.768 — thieu, va production
 #:    da an mot `413` o 101.938 token vao dung vi vay.
-NEN_HOI_THOAI = 55787
+NEN_HOI_THOAI = 123617
 
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:

@@ -40,7 +40,26 @@ from __future__ import annotations
 #: Cửa sổ ngữ cảnh của model, **đo từ `-c` của llama-server** trên máy B
 #: (`llama-swap.yaml`, hồ sơ `qwen38-api`). Vào và ra **dùng chung** con số này.
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` bên B thì đổi ở đây.
-CUA_SO_MODEL = 131_072
+#:
+#: 📈 03/09: 131.072 → 204.800, kèm KV cache `q8_0` → `q4_0` (bắt buộc: `q8_0`
+#:    ở 204.800 không vừa card 24 GB). Bằng chứng đầy đủ ở
+#:    `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md`. Ba số quan trọng nhất:
+#:
+#:      * **VRAM đỉnh 21.979 MiB** ở hồ sơ 200K, so với **22.017 MiB** ở hồ sơ
+#:        131K cũ — rộng gấp rưỡi mà tốn ÍT hơn. Đây không phải phép màu: KV
+#:        `q4_0` ở 204.800 nhỏ hơn KV `q8_0` ở 131.072.
+#:      * **Chạy thật tới 179.902 token vào**, đọc lại đúng mốc đầu và mốc cuối.
+#:        Trần dẫn xuất dưới đây là 169.984 ⇒ trần nằm **bên trong** vùng đã
+#:        chứng minh, không phải ở mép nó.
+#:      * Prefill **không** chậm hơn ở mọi mốc chung (50K/100K/130K), và
+#:        kim-trong-đống-cỏ ở 130K đọc đúng **10/10** ở năm độ sâu.
+#:
+#: ⚠️ VÀ MỘT CẢNH BÁO CHO NGƯỜI SỬA TIẾP: đổi số này **không đủ** để máy B đổi
+#:    theo. `llm_gateway/deploy/deploy.ps1` ghi đè `LTT_LLM_MAX_INPUT_TOKENS`
+#:    bằng số gõ tay, và nó chép `llama-swap.yaml` mà **không** restart
+#:    `LTTLlamaSwap`. Thứ tự deploy nằm ở §7 của tài liệu trên và nó **không
+#:    hoán vị được**. `test_334` chốt hai bản sao đó.
+CUA_SO_MODEL = 204_800
 
 #: Cửa sổ ngữ cảnh của model **VISION** — `qwen38-vision` nạp với `-c 65536`
 #: (`llama-swap.yaml` trên máy B, và `llm_gateway/catalog.py:max_context`).
