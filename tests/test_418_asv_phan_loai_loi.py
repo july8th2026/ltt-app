@@ -27,6 +27,7 @@ from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
 from apps.auto_scan_video.giai_doan_noi_dung import ThieuBanGhi
 from apps.auto_scan_video.giai_doan_thoi_gian import ThieuDauVao as ThieuDauVaoTG
+from apps.auto_scan_video.features import TinhHaiLan
 from apps.auto_scan_video.giong_noi import GiongError, GiongMoHo, MayBan
 from apps.auto_scan_video.ket_xuat import KetXuatError
 from apps.auto_scan_video.nhap_media import MediaError
@@ -64,6 +65,15 @@ BANG = {
     KetXuatError: loi.TAM_THOI,
     GiongError: loi.TAM_THOI,
     DichError: loi.TAM_THOI,
+    #: 🔴 `TinhHaiLan` la mot lech SO SACH, khong phai mot truot thoang qua.
+    #:    Roi xuong nhanh mac dinh `TAM_THOI` nghia la nen tang **THU LAI** —
+    #:    va thu bi thu lai la mot lan chay ma so tien cua no da duoc phat hien
+    #:    la sai. Chay lai khong sua duoc mot giai doan vua co don vi viec vua
+    #:    tu ghi `credit_actual`; no chi lam viec do them mot lan nua.
+    #:
+    #: ⭐ Nhan `NGUOI_DUNG` o day khong co nghia "khach lam sai" — trong bang
+    #:    nay no la nhan cua *that bai cuoi cung, dung thu lai*.
+    TinhHaiLan: loi.NGUOI_DUNG,
 }
 
 

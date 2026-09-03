@@ -346,6 +346,12 @@ STORES: tuple = (
           N_("Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn "
           "từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."),
           "job_content.purge_expired (worker)"),
+    Store("asv_work_item", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Checkpoint từng đoạn bên trong một giai đoạn: đoạn nào đã đọc "
+          "thành tiếng, tốn bao nhiêu, thử mấy lần. Cùng hạn với giai đoạn "
+          "chứa nó — một checkpoint sống lâu hơn kết quả nó trỏ tới là một "
+          "lời hứa hỏng."),
+          "job_content.purge_expired (worker)"),
 
     # ── Derived: rebuildable ─────────────────────────────────────────────────
     Store("ho_so_he_thong.txt", DERIVED, None, N_("nội bộ"),

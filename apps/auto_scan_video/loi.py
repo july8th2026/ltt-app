@@ -112,6 +112,21 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, QcChan):
         return NGUOI_DUNG
 
+    # ⛔ `TinhHaiLan` la mot lech SO SACH, khong phai mot truot thoang qua.
+    #
+    # 🔴 Neu no roi xuong nhanh mac dinh `TAM_THOI`, nen tang se **THU LAI** —
+    #    va thu bi thu lai la mot lan chay ma so tien cua no da duoc phat hien
+    #    la sai. Chay lai khong sua duoc mot giai doan vua co don vi viec vua tu
+    #    ghi `credit_actual`; no chi lam viec do them mot lan nua.
+    #
+    # ⭐ `NGUOI_DUNG` o day khong co nghia "khach lam sai" — trong bang nay no
+    #    la nhan cua *that bai cuoi cung, dung thu lai*, va do la dieu can noi.
+    #    `test_418` vua bat duoc dung cho nay: mot lop ngoai le moi khong duoc
+    #    phan loai se im lang thua ke hanh vi nguy hiem nhat trong bang.
+    from .features import TinhHaiLan
+    if isinstance(exc, TinhHaiLan):
+        return NGUOI_DUNG
+
     if isinstance(exc, (MediaError, BanGhiError, VanBanError, ThoiGianError,
                         BanDungError)):
         return NGUOI_DUNG

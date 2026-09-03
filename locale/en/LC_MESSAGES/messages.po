@@ -13825,3 +13825,7 @@ msgstr "A customer's own pronunciation dictionary: which word is read as what. W
 #: apps/auto_scan_video/features.py
 msgid "Không tìm thấy lượt tải lên."
 msgstr "Upload not found."
+
+#: platform_core/public_api/governance.py
+msgid "Checkpoint từng đoạn bên trong một giai đoạn: đoạn nào đã đọc thành tiếng, tốn bao nhiêu, thử mấy lần. Cùng hạn với giai đoạn chứa nó — một checkpoint sống lâu hơn kết quả nó trỏ tới là một lời hứa hỏng."
+msgstr "Per-segment checkpoints inside a stage: which segment has been spoken, what it cost, how many attempts. Expires with the stage that owns it — a checkpoint outliving the result it points at is a broken promise."

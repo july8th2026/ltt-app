@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:70d8cce4df8558f6052b83743a410e148cf0b241f01b9d853c8ded05fe2af246
-Nguồn đã quét : 1551 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:30ea2130f9c388645a4864884a00ec63dd51c68717ec819e1ceb74b014831b02
+Nguồn đã quét : 1552 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1693,8 +1693,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1551 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1182, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1552 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1183, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -3119,7 +3119,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (172)
+[tools] (173)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -3266,6 +3266,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - tools/system_profile_config.json
 - tools/tai_ket_qua_job.py
 - tools/tai_khoan_thu.py
+- tools/tai_may.py
 - tools/tail_audit.py
 - tools/tao_clip_mau.py
 - tools/test_agent_p3_postgres.ps1
@@ -3302,7 +3303,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1551 file; 15553977 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1552 file; 15564935 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -16452,7 +16453,7 @@ def kiem_tep_ra(duong: str, ban: dict, *, soi) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/loi.py
-SHA256=827af12ceabbbb3a07c00dc9b69d1df81bf7e3b07fa99ea339d45fcbeda38022 BYTES=6648 LINES=145
+SHA256=5a15986e16f103c3a8fe41807c88598d5d095b03553d071b59b6e629e3cad09a BYTES=7461 LINES=160
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Phan loai loi cua Auto Scan -> phan loai cua NEN TANG (Prompt 17 muc 1).
 
@@ -16566,6 +16567,21 @@ def phan_loai(exc: BaseException) -> str:
     #    la ba lan cho vo ich.
     from .thi_hanh import QcChan
     if isinstance(exc, QcChan):
+        return NGUOI_DUNG
+
+    # ⛔ `TinhHaiLan` la mot lech SO SACH, khong phai mot truot thoang qua.
+    #
+    # 🔴 Neu no roi xuong nhanh mac dinh `TAM_THOI`, nen tang se **THU LAI** —
+    #    va thu bi thu lai la mot lan chay ma so tien cua no da duoc phat hien
+    #    la sai. Chay lai khong sua duoc mot giai doan vua co don vi viec vua tu
+    #    ghi `credit_actual`; no chi lam viec do them mot lan nua.
+    #
+    # ⭐ `NGUOI_DUNG` o day khong co nghia "khach lam sai" — trong bang nay no
+    #    la nhan cua *that bai cuoi cung, dung thu lai*, va do la dieu can noi.
+    #    `test_418` vua bat duoc dung cho nay: mot lop ngoai le moi khong duoc
+    #    phan loai se im lang thua ke hanh vi nguy hiem nhat trong bang.
+    from .features import TinhHaiLan
+    if isinstance(exc, TinhHaiLan):
         return NGUOI_DUNG
 
     if isinstance(exc, (MediaError, BanGhiError, VanBanError, ThoiGianError,
@@ -134260,7 +134276,7 @@ def for_tool_name(name: str):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/governance.py
-SHA256=b939e171ca6e564f674a49dbf915d687e597e13f871be0a24b41f0a981b3b1c8 BYTES=27041 LINES=411
+SHA256=5d0f7f37db085227c9180499e6c54ba1298129344caca6d1351141b6c27c4b11 BYTES=27485 LINES=417
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Every store that holds customer data, how long it keeps it, and why.
 
@@ -134609,6 +134625,12 @@ STORES: tuple = (
     Store("asv_asset", CONTENT, 30, N_("chủ tài khoản"),
           N_("Sổ tài nguyên đã sinh ra: khoá lưu trữ, vân tay, và nó bắt nguồn "
           "từ tài nguyên nào. Không giữ bytes, chỉ giữ đường tới chúng."),
+          "job_content.purge_expired (worker)"),
+    Store("asv_work_item", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Checkpoint từng đoạn bên trong một giai đoạn: đoạn nào đã đọc "
+          "thành tiếng, tốn bao nhiêu, thử mấy lần. Cùng hạn với giai đoạn "
+          "chứa nó — một checkpoint sống lâu hơn kết quả nó trỏ tới là một "
+          "lời hứa hỏng."),
           "job_content.purge_expired (worker)"),
 
     # ── Derived: rebuildable ─────────────────────────────────────────────────
@@ -184616,20 +184638,36 @@ def skip_without_postgres():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/rao_chan_nang.py
-SHA256=b89c64eebf34feda0b214c35b1c1c57f4a1f7976c179c8a0e1011581b2ed0ffc BYTES=2154 LINES=63
+SHA256=e5ffde5b98441b57c13939204a2852d8e24fa3bac409caa2deac80dbf559ebc5 BYTES=2935 LINES=78
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Rao chan cho phep kiem NANG — thu khoi dong mot model that.
 
 ## Vi sao tep nay ton tai
 
 `tests/test_406::test_tach_nguon_ra_du_BON_stem` goi **demucs that**, khong
-marker, khong bien moi truong, khong skip. `tools/test_nhanh.py` chay
-`pytest -n auto` = 20 worker tren may nay, va may nay **dang phuc vu khach**
-(`C:\\LTTPlatform` ton tai: LTTStudioWeb, Worker, Voice, Codex deu chay).
+marker, khong bien moi truong, khong skip. Va no chay giua mot luot gate, tren
+mot may **dang phuc vu khach** (`C:\\LTTPlatform` ton tai: LTTStudioWeb, Worker,
+Voice, Codex deu chay).
 
-Ngay 02/09 chu du an phai **reset cung may hai lan**. Phien `lttstudiosapp-a1`
-truy ra: tai khong CONG ma NHAN, vi mot model nang chay ben trong mot worker cua
-mot bo test da song song.
+⚠️ **MOT DINH CHINH, giu lai vi ban dau toi viet sai o day.**
+
+   Doan nay ban dau noi gate chay `pytest -n auto` = 20 worker, va rang tai
+   "khong CONG ma NHAN". **Khong con dung.** `gate.py:490` truyen
+   `-n str(loi_bo_test)` voi `ngan_sach_loi() = cpu_count() - 6` = **14** tren
+   may nay, va `tests/test_394:324` co mot phep kiem chot rang `-n auto` khong
+   duoc quay lai.
+
+   Toi doc `gate.py:72` — mot **chu thich mo ta co che CU**, nam trong khoi giai
+   thich vi sao no da duoc sua — roi doc no thanh hien trang. Phien
+   `lttstudiosapp-73` chi ra, va ho dung.
+
+⭐ Con so doi, ly do thi khong. `--dist loadfile` gui tron mot tep cho mot worker
+   nen demucs **khong nhan len**; nhung mot model ML that van nap trong so va an
+   het phan CPU con lai cua mot may dang phuc vu khach, giua mot luot do dat
+   tien. Rao no lai van dung — chi la dung vi mot ly do nho hon ly do toi tuong.
+
+⛔ Va bai hoc chung hon, vi no lap lai nam lan trong phien nay: **mot chu thich
+   noi ve luc no duoc viet, khong noi ve luc ban doc no.**
 
 `pipeline.CHUOI` da khai `tai_nguyen="tach_nguon_cuc_bo"` de nen tang dieu tiet
 — nhung do la o **hang doi**. pytest khong di qua hang doi. Nen o day can mot
@@ -184664,8 +184702,7 @@ BIEN = "LTT_TEST_NANG"
 
 LY_DO = (
     f"phep kiem NANG (nap model that). Bat bang {BIEN}=1. "
-    "Mac dinh bo qua vi may nay dang phuc vu khach va bo test chay 20 worker "
-    "song song — xem tests/rao_chan_nang.py")
+    "Mac dinh bo qua vi may nay dang phuc vu khach — xem tests/rao_chan_nang.py")
 
 
 def bat() -> bool:
@@ -274357,7 +274394,7 @@ def test_thu_lai_HUY_job_con_cu_thay_vi_bo_quen_no(run_dang_chay, db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_418_asv_phan_loai_loi.py
-SHA256=a5df0d572691ed041a83fd8b63d1c41ed9b51078a514a4283f619bb92fbc8273 BYTES=10866 LINES=235
+SHA256=baae35366bfec7338e8bc3fa3aa1adff875520b01878aa57daa667550512de6d BYTES=11493 LINES=245
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 17 §1 — phan loai loi co kieu, va phep dich sang phan loai cua nen tang.
 
@@ -274388,6 +274425,7 @@ from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
 from apps.auto_scan_video.giai_doan_noi_dung import ThieuBanGhi
 from apps.auto_scan_video.giai_doan_thoi_gian import ThieuDauVao as ThieuDauVaoTG
+from apps.auto_scan_video.features import TinhHaiLan
 from apps.auto_scan_video.giong_noi import GiongError, GiongMoHo, MayBan
 from apps.auto_scan_video.ket_xuat import KetXuatError
 from apps.auto_scan_video.nhap_media import MediaError
@@ -274425,6 +274463,15 @@ BANG = {
     KetXuatError: loi.TAM_THOI,
     GiongError: loi.TAM_THOI,
     DichError: loi.TAM_THOI,
+    #: 🔴 `TinhHaiLan` la mot lech SO SACH, khong phai mot truot thoang qua.
+    #:    Roi xuong nhanh mac dinh `TAM_THOI` nghia la nen tang **THU LAI** —
+    #:    va thu bi thu lai la mot lan chay ma so tien cua no da duoc phat hien
+    #:    la sai. Chay lai khong sua duoc mot giai doan vua co don vi viec vua
+    #:    tu ghi `credit_actual`; no chi lam viec do them mot lan nua.
+    #:
+    #: ⭐ Nhan `NGUOI_DUNG` o day khong co nghia "khach lam sai" — trong bang
+    #:    nay no la nhan cua *that bai cuoi cung, dung thu lai*.
+    TinhHaiLan: loi.NGUOI_DUNG,
 }
 
 
@@ -277289,17 +277336,27 @@ def test_ban_dung_van_khai_che_do_hinh_nhu_MOT_TRUONG_DU_LIEU():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_428_asv_v4_rao_chan_nang.py
-SHA256=efb226ed994234caa8b11361a2f47aa799e9c19c24d79af3060360d8c7409ebf BYTES=13025 LINES=278
+SHA256=ecf00e8510929ed9fba555be8a8d17435060787f7c6431ad90ae7108c493312b BYTES=13455 LINES=288
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Auto Scan Video V4 — a normal test run must not start a real model.
 
 ## The thing this prevents
 
-`tools/test_nhanh.py` runs `pytest -n auto` = 20 workers on this machine, and **this
-machine is production** (`C:\\LTTPlatform` exists; LTTStudioWeb, Worker, Voice and Codex
-are all serving). On 2026-09-02 the owner had to **hard-reset the machine twice**. Session
-`lttstudiosapp-a1` traced it: load did not *add*, it *multiplied*, because a heavy model ran
-inside one worker of an already-parallel suite.
+A real model loads inside a gate run, on a machine that **is production**
+(`C:\\LTTPlatform` exists; LTTStudioWeb, Worker, Voice and Codex are all serving).
+
+⚠️ **A correction, kept because I got it wrong here first.** This paragraph originally
+   claimed the gate runs `pytest -n auto` = 20 workers and that load *multiplied*. It does
+   not, and has not since `03845cb`: `gate.py:490` passes `-n str(loi_bo_test)` where
+   `ngan_sach_loi() = cpu_count() - 6` = **14** here, and `tests/test_394:324` pins that
+   `-n auto` may not return. I read `gate.py:72` — a comment describing the **old**
+   mechanism, inside the block explaining why it was replaced — as current state. Session
+   `lttstudiosapp-73` caught it, and they were right.
+
+⭐ The number changed; the reason did not. `--dist loadfile` sends a whole file to one
+   worker, so demucs does **not** multiply — but a real ML model still loads weights and
+   takes the machine's spare CPU mid-measurement, on a box serving customers. Gating it is
+   still right, for a smaller reason than I claimed.
 
 `pipeline.CHUOI` declares `tai_nguyen="tach_nguon_cuc_bo"` so the platform throttles it —
 but that governs the **job queue**. pytest does not go through the queue.
@@ -321305,6 +321362,203 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/tai_may.py
+SHA256=12560fb1a93812782150b3b3b621839eca05c64269cd30bd7bc19a2ae1261be1 BYTES=7863 LINES=191
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""tai_may.py — may con cho mot luot do dat tien khong.
+
+    python tools/tai_may.py            # phan quyet: RANH / BAN / QUA TAI
+    python tools/tai_may.py --cho 900  # doi toi khi ranh, toi da 15 phut
+
+## ⚠️ TEP NAY KHONG DANH CHO `gate.py`. Doc muc nay truoc khi noi no vao do.
+
+Ban dau toi viet no de them mot "cua CPU" cho gate. Roi doc `gate.py` va thay
+gate **da co hai lop bao ve**, va lop thu hai manh hon thu toi dinh xay:
+
+    gate.py:110   ngan_sach_loi() = cpu_count() - 6   -> 14 luong, khong phai 20
+    gate.py:591   UU_TIEN_THAP = BELOW_NORMAL_PRIORITY_CLASS tren MOI tien trinh con
+
+Docstring cua chinh no da noi ro vi sao lop thu hai la lop that su chiu luc:
+
+    "lop thu nhat (ngan sach loi) la mot phep TINH — con phep tinh thi co the
+     sai. Uu tien thi khong: du gate co tinh nham bao nhieu, he dieu hanh van
+     cho `LTTStudioWeb` chay truoc."
+
+⇒ Them mot cua CPU truoc `bo test` la **canh mot cua da co nguoi canh**, va canh
+  bang mot phep do te hon: mot nguong 80% doan tu ben ngoai, thay cho mot co che
+  hang doi cua he dieu hanh.
+
+## ⇒ Vay no dung o dau
+
+Ba cho ma hai lop tren KHONG voi toi:
+
+1. **`python -m pytest ...` chay thang.** Khong qua gate ⇒ khong ngan sach loi,
+   khong uu tien thap. Day la duong toi dung nhieu nhat khi lam viec, va no la
+   duong khong duoc bao ve nhat.
+
+2. **RAM.** `BELOW_NORMAL_PRIORITY_CLASS` xep hang CPU, no khong nhuong bo nho.
+   Muoi bon tien trinh Python cong voi mot model that (`LTT_TEST_NANG=1` nap
+   demucs/whisper) khong bi uu tien thap cuu khoi mot lan het RAM.
+
+3. **Truoc khi bat `LTT_TEST_NANG`.** Do la luc duy nhat mot phep kiem duoc phep
+   nap trong so model that; do tai truoc la re, va la thoi diem no dang gia nhat.
+
+## Va mot cho `cua_so_yen` khong the voi toi, do duoc
+
+    11:38 03/09   cua_so_yen trang-thai  ->  RANH - khong tai nguyen nao bi giu
+                  CPU                    ->  65%
+
+Khong ai giu khoa, may van chay 65%. Nhung thu chiem cho do — bon dich vu
+production, mot lan deploy, mot phien khac chay pytest thang, mot job cua khach —
+khong di qua `cua_so_yen` va **khong the di qua no**. Do la mot lo hong THIET KE
+cua khoa, khong phai mot loi: khoa la per-RUN, tai la per-MAY.
+
+## ⛔ Vi sao no CHI DOC, va khong tu chan ai
+
+Khong khoa gi, khong giet gi, khong sua hanh vi cua `gate.py`. In mot phan quyet
+va tra ma thoat. Nguoi goi quyet dinh.
+
+## Phan quyet dua tren RAM, khong dua tren CPU. Day la phan quan trong nhat.
+
+  RANH     RAM trong > 8 GiB
+  BAN      RAM trong 4-8 GiB
+  QUA TAI  RAM trong < 4 GiB
+
+CPU **duoc in ra nhung khong tham gia phan quyet**, va do la mot quyet dinh chu
+khong phai mot thieu sot.
+
+🔴 **Ban dau toi cho CPU vao phan quyet (RANH <50%, QUA TAI >80%). Phien
+   `lttstudiosapp-73` pha no bang mot phep do.** Cung may, cung ngay, cung bon
+   dich vu, khong luot gate nao chay:
+
+       ~13:0x   CPU nen 27%   (≈ 5 loi)
+       ~21:2x   CPU nen  3%
+
+   Chenh gan **muoi lan**. Mot nguong co dinh kieu "tren 80% thi doi" se ngoan
+   luc 21h va cam cua luc 13h, trong khi khong co gi ve phia gate thay doi ca.
+   (`LOI_DE_DANH_CHO_MAY = 6` cua ho lay tu con so 27% — tu truong hop XAU, co
+   y, vi mot phep do luc ranh la san cua truong hop tot.)
+
+⭐ RAM trong on dinh hon nhieu, va no dung la manh ma hai lop bao ve cua gate
+   khong che: `BELOW_NORMAL_PRIORITY_CLASS` xep hang CPU, no **khong nhuong bo
+   nho**. Muoi bon tien trinh Python cong mot model that khong duoc uu tien thap
+   cuu khoi mot lan het RAM.
+
+⚠️ Va la RAM TRONG, khong phai phan tram da dung: con so can tra loi la "con bao
+   nhieu de mo 14 tien trinh nua", khong phai "da dung bao nhieu".
+
+⚠️ CPU van do trung binh 2 giay chu khong lat cat — mot lat cat trung luc mot
+   tien trinh vua thuc day se doc 100% cho mot may dang ranh. No o day de nguoi
+   doc co ngu canh, khong de may quyet dinh.
+
+🔴 Va tam GiB van la mot nguong DE XUAT tu mot lan do, khong phai hang so da
+   chung minh. No o day de co mot con so chung thay vi moi phien tu doan mot
+   kieu.
+
+## ⛔ Va mot ly do nua de KHONG noi cai nay vao `gate.py`
+
+Phien `lttstudiosapp-73` chi ra mot the khoa chet ma `cua_so_yen` hien khong co:
+
+    gate A: GIU khoa cpu_nhieu  ->  doi tai giam
+    gate B: doi khoa cpu_nhieu
+    nguon tai that: LTTStudioWorker dang chay mot job cua KHACH
+
+A doi mot thu **no khong gay ra va khong ket thuc duoc**, trong luc chan B. Ca
+hai dung im cho toi khi khach kia xong.
+
+⇒ Neu sau nay co ai noi phep do nay vao mot duong co khoa: dat no **truoc** khi
+  xin khoa, dung dat sau. Va dung bao gio de no **chan** — `_chay_theo_lich` da
+  ghi cung bai hoc: *"tu choi chay thi cong chat luong thanh vo dung tren may
+  nho, va do la kieu hong te hon han cham."* Mot cua bi chan se de ra mot co
+  `--bo-qua-cua-tai`, va tu do cua ay khong con ton tai.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+
+RANH = "RANH"
+BAN = "BAN"
+QUA_TAI = "QUA TAI"
+
+#: Trung binh CPU do trong bao lau. Xem ghi chu dau tep.
+CUA_SO_DO_S = 2.0
+
+#: ⛔ KHONG co nguong CPU. Xem muc "Phan quyet dua tren RAM" o dau tep: nen CPU
+#:    cua may nay bien dong gan muoi lan trong mot ngay (27% -> 3%), nen mot
+#:    nguong CPU co dinh se bat sai theo gio chu khong theo tai that.
+NGUONG_RAM_TRONG_BAN_GIB = 8.0
+NGUONG_RAM_TRONG_QUA_TAI_GIB = 4.0
+
+
+def do() -> dict:
+    """`{cpu, ram_trong_gib, loi, phan_quyet, ly_do}`.
+
+    Tra `phan_quyet=None` khi khong do duoc — **khong** doan la RANH. Mot phep
+    do that bai va mot may ranh khong duoc phep trong giong nhau.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return {"phan_quyet": None, "ly_do": "khong co psutil - khong do duoc",
+                "cpu": None, "ram_trong_gib": None, "loi": None}
+
+    cpu = psutil.cpu_percent(interval=CUA_SO_DO_S)
+    bo_nho = psutil.virtual_memory()
+    trong = bo_nho.available / (1024 ** 3)
+    loi = psutil.cpu_count() or 0
+
+    # Chi RAM quyet dinh. CPU chi di kem de nguoi doc co ngu canh.
+    if trong < NGUONG_RAM_TRONG_QUA_TAI_GIB:
+        pq, ly_do = QUA_TAI, "RAM trong qua thap - 14 tien trinh nua rat de het"
+    elif trong < NGUONG_RAM_TRONG_BAN_GIB:
+        pq, ly_do = BAN, "RAM trong dang hep - nen chay cum nho, dung bat model that"
+    else:
+        pq, ly_do = RANH, "du bo nho cho mot luot day du"
+    return {"phan_quyet": pq, "ly_do": ly_do, "cpu": cpu,
+            "ram_trong_gib": trong, "loi": loi}
+
+
+def _in(k: dict) -> None:
+    if k["phan_quyet"] is None:
+        print(f"KHONG DO DUOC: {k['ly_do']}")
+        return
+    print(f"CPU {k['cpu']:.0f}% tren {k['loi']} loi | "
+          f"RAM trong {k['ram_trong_gib']:.1f} GiB")
+    print(f"RESULT: {k['phan_quyet']} - {k['ly_do']}")
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="May con cho mot luot do dat tien khong.")
+    p.add_argument("--cho", type=float, default=0.0,
+                   help="doi toi khi RANH, toi da bao nhieu giay (0 = do mot lan)")
+    p.add_argument("--nhip", type=float, default=20.0, help="giay giua hai lan do")
+    a = p.parse_args()
+
+    bat_dau = time.time()
+    while True:
+        k = do()
+        _in(k)
+        if k["phan_quyet"] in (RANH, None):
+            # ⛔ `None` (khong do duoc) tra ve 0 co chu y: mot cong cu do khong
+            #    chay duoc khong duoc phep tro thanh mot cai chan. No da noi ro
+            #    la khong do duoc, va do la thong tin nguoi goi can.
+            return 0
+        if a.cho <= 0 or time.time() - bat_dau >= a.cho:
+            # 2 = con ban, 3 = qua tai. Khac nhau vi hai tinh huong doi hai
+            # phan ung khac nhau: mot cai nen doi, mot cai nen dung han.
+            return 2 if k["phan_quyet"] == BAN else 3
+        print(f"  [tai may] doi {a.nhip:.0f}s roi do lai "
+              f"(da doi {(time.time() - bat_dau) / 60:.1f} phut)\n")
+        time.sleep(a.nhip)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

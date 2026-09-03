@@ -3,13 +3,29 @@
 ## Vi sao tep nay ton tai
 
 `tests/test_406::test_tach_nguon_ra_du_BON_stem` goi **demucs that**, khong
-marker, khong bien moi truong, khong skip. `tools/test_nhanh.py` chay
-`pytest -n auto` = 20 worker tren may nay, va may nay **dang phuc vu khach**
-(`C:\\LTTPlatform` ton tai: LTTStudioWeb, Worker, Voice, Codex deu chay).
+marker, khong bien moi truong, khong skip. Va no chay giua mot luot gate, tren
+mot may **dang phuc vu khach** (`C:\\LTTPlatform` ton tai: LTTStudioWeb, Worker,
+Voice, Codex deu chay).
 
-Ngay 02/09 chu du an phai **reset cung may hai lan**. Phien `lttstudiosapp-a1`
-truy ra: tai khong CONG ma NHAN, vi mot model nang chay ben trong mot worker cua
-mot bo test da song song.
+⚠️ **MOT DINH CHINH, giu lai vi ban dau toi viet sai o day.**
+
+   Doan nay ban dau noi gate chay `pytest -n auto` = 20 worker, va rang tai
+   "khong CONG ma NHAN". **Khong con dung.** `gate.py:490` truyen
+   `-n str(loi_bo_test)` voi `ngan_sach_loi() = cpu_count() - 6` = **14** tren
+   may nay, va `tests/test_394:324` co mot phep kiem chot rang `-n auto` khong
+   duoc quay lai.
+
+   Toi doc `gate.py:72` — mot **chu thich mo ta co che CU**, nam trong khoi giai
+   thich vi sao no da duoc sua — roi doc no thanh hien trang. Phien
+   `lttstudiosapp-73` chi ra, va ho dung.
+
+⭐ Con so doi, ly do thi khong. `--dist loadfile` gui tron mot tep cho mot worker
+   nen demucs **khong nhan len**; nhung mot model ML that van nap trong so va an
+   het phan CPU con lai cua mot may dang phuc vu khach, giua mot luot do dat
+   tien. Rao no lai van dung — chi la dung vi mot ly do nho hon ly do toi tuong.
+
+⛔ Va bai hoc chung hon, vi no lap lai nam lan trong phien nay: **mot chu thich
+   noi ve luc no duoc viet, khong noi ve luc ban doc no.**
 
 `pipeline.CHUOI` da khai `tai_nguyen="tach_nguon_cuc_bo"` de nen tang dieu tiet
 — nhung do la o **hang doi**. pytest khong di qua hang doi. Nen o day can mot
@@ -44,8 +60,7 @@ BIEN = "LTT_TEST_NANG"
 
 LY_DO = (
     f"phep kiem NANG (nap model that). Bat bang {BIEN}=1. "
-    "Mac dinh bo qua vi may nay dang phuc vu khach va bo test chay 20 worker "
-    "song song — xem tests/rao_chan_nang.py")
+    "Mac dinh bo qua vi may nay dang phuc vu khach — xem tests/rao_chan_nang.py")
 
 
 def bat() -> bool:

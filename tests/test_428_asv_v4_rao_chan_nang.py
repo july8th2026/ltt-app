@@ -2,11 +2,21 @@
 
 ## The thing this prevents
 
-`tools/test_nhanh.py` runs `pytest -n auto` = 20 workers on this machine, and **this
-machine is production** (`C:\\LTTPlatform` exists; LTTStudioWeb, Worker, Voice and Codex
-are all serving). On 2026-09-02 the owner had to **hard-reset the machine twice**. Session
-`lttstudiosapp-a1` traced it: load did not *add*, it *multiplied*, because a heavy model ran
-inside one worker of an already-parallel suite.
+A real model loads inside a gate run, on a machine that **is production**
+(`C:\\LTTPlatform` exists; LTTStudioWeb, Worker, Voice and Codex are all serving).
+
+⚠️ **A correction, kept because I got it wrong here first.** This paragraph originally
+   claimed the gate runs `pytest -n auto` = 20 workers and that load *multiplied*. It does
+   not, and has not since `03845cb`: `gate.py:490` passes `-n str(loi_bo_test)` where
+   `ngan_sach_loi() = cpu_count() - 6` = **14** here, and `tests/test_394:324` pins that
+   `-n auto` may not return. I read `gate.py:72` — a comment describing the **old**
+   mechanism, inside the block explaining why it was replaced — as current state. Session
+   `lttstudiosapp-73` caught it, and they were right.
+
+⭐ The number changed; the reason did not. `--dist loadfile` sends a whole file to one
+   worker, so demucs does **not** multiply — but a real ML model still loads weights and
+   takes the machine's spare CPU mid-measurement, on a box serving customers. Gating it is
+   still right, for a smaller reason than I claimed.
 
 `pipeline.CHUOI` declares `tai_nguyen="tach_nguon_cuc_bo"` so the platform throttles it —
 but that governs the **job queue**. pytest does not go through the queue.
