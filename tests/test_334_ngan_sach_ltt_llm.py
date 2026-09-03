@@ -277,6 +277,60 @@ class TestBanSaoConLai:
         assert self._so("TOKEN_RA_TOI_DA",
                         "server/api/tools.py") == ngan_sach.TOKEN_RA_TRAN
 
+    def test_deploy_ps1_KHONG_lui_tran_cua_may_B(self):
+        """🔴 BẢN SAO NGUY HIỂM NHẤT, VÌ NÓ **GHI ĐÈ** CHỨ KHÔNG CHỈ HIỂN THỊ.
+
+        `llm_gateway/deploy/deploy.ps1` viết lại `gateway.env` ở **ba** chỗ:
+        nhánh migrate (thay dòng cũ), nhánh migrate (thêm nếu thiếu), và nhánh
+        sinh mới. Cả ba đều gõ tay con số.
+
+        ⛔ Nên đổi `CUA_SO_MODEL` mà quên tệp này thì máy B **chạy đúng cho tới
+           lần deploy kế tiếp**, rồi lặng lẽ lùi về trần cũ. Không lỗi, không
+           cảnh báo — chỉ là những yêu cầu lẽ ra vừa lại bắt đầu ăn 413, và
+           không ai nối được nó với một lần deploy không liên quan.
+
+        ⭐ Đây đúng lớp khuyết tật "cấu hình trên đĩa ≠ cấu hình đang chạy" mà
+           audit 31/08 ghi là D-03-5. Ở đó nó là `llama-swap.yaml` không được
+           restart; ở đây nó là `gateway.env` bị viết đè.
+        """
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / "llm_gateway" / "deploy" / "deploy.ps1").read_text(
+            encoding="utf-8")
+        vao = re.findall(r"LTT_LLM_MAX_INPUT_TOKENS=(\d+)", van)
+        ra = re.findall(r"LTT_LLM_MAX_OUTPUT_TOKENS=(\d+)", van)
+        assert vao, "deploy.ps1 khong con ghi LTT_LLM_MAX_INPUT_TOKENS — phep kiem nay VO"
+        for gt in vao:
+            assert int(gt) == ngan_sach.TOKEN_VAO_TRAN, (
+                f"deploy.ps1 se ghi tran vao {gt} len may B, nhung nguon chan ly "
+                f"la {ngan_sach.TOKEN_VAO_TRAN}")
+        for gt in ra:
+            assert int(gt) == ngan_sach.TOKEN_RA_TRAN, (
+                f"deploy.ps1 se ghi tran ra {gt} len may B, nhung nguon chan ly "
+                f"la {ngan_sach.TOKEN_RA_TRAN}")
+
+    def test_llama_swap_yaml_khop_cua_so_cua_TUNG_ho_so(self):
+        """Tệp thật sự quyết định `-c` của mỗi hồ sơ trên máy B.
+
+        `catalog.py` chỉ **công bố**; `llama-swap.yaml` là thứ **khởi động
+        tiến trình**. Hai tệp lệch nhau thì `/v1/models` nói một đằng và model
+        chạy một nẻo — và bên sai là bên ta tin.
+        """
+        import pathlib
+        import re
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        van = (goc / "llm_gateway" / "deploy" / "llama-swap.yaml").read_text(
+            encoding="utf-8")
+        for ho_so, mong in (("qwen38-api", ngan_sach.CUA_SO_MODEL),
+                            ("qwen38-vision", ngan_sach.CUA_SO_MODEL_VISION)):
+            m = re.search(rf"^  {re.escape(ho_so)}:.*?^\s*-c (\d+)",
+                          van, re.S | re.M)
+            assert m, f"khong tim thay `-c` cua {ho_so} trong llama-swap.yaml"
+            assert int(m.group(1)) == mong, (
+                f"llama-swap.yaml khoi dong {ho_so} voi -c {m.group(1)} nhung "
+                f"ngan_sach khai {mong}")
+
     def test_catalog_may_B_khop_cua_so_model(self):
         """`llm_gateway/catalog.py` công bố `max_context` ở `/v1/models` của B."""
         import pathlib
