@@ -212,6 +212,59 @@ load-aware scaling. `-n auto` = số lõi vật lý, **cố định lúc khởi 
   ⚠️ Trần của nó: chỉ xếp hàng CPU. Không nhường RAM, và **không phân xử giữa hai tiến trình
      cùng ưu tiên thấp** — hai lượt gate, hoặc gate với một bot cũng chạy ưu tiên thường.
 
+## Điều tra "gate ⨯ pytest xung đột" — BÁC BỎ, và cái thật nằm chỗ khác
+
+Chủ dự án nghi gate và pytest giẫm nhau. Đo hai mặt:
+
+**Mặt 1 — tranh lõi trong nội bộ gate: KHÔNG.** Đo luồng thực tế của 6 bước tĩnh bằng cách
+chạy chính `argv` của chúng và đếm tiến trình con:
+
+```
+buoc                   khai  that   CPU dinh
+secret scan               1     1        5%
+ky tu dieu khien          1     1        5%
+system profile            1     1        5%
+chuoi chua dich           1     1        5%
+bien dich duoc            1     1        5%
+ten chua dinh nghia       1     1        5%
+```
+
+Khai báo **trung thực**. Bộ đếm `_chay_theo_lich` giữ tổng ≤ 14: `bo test` lấy 10, còn 4 cho
+các bước tĩnh xếp hàng. Nhóm `sau_test` (5 bước) chạy **sau** `bo test`, không tranh.
+
+**Mặt 2 — tranh tệp: đã có cơ chế.** `TEP_KHONG_DUOC_DOC_SONG_SONG` khai 4 tệp mà bộ test ghi
+và bước tĩnh đọc, sau sự cố `Errno 22` ngày 29/08 (hai phiên mất gần trọn một ngày, và cả hai
+đều đổ cho nguyên nhân sai).
+
+### ⇒ Cái thật: ngân sách TĨNH, nền ĐỘNG
+
+```
+                               lõi
+nền thật (đo 03/09 14:2x)      1.7
+LOI_DE_DANH_CHO_MAY (giả định)   6
+bo test                         10
+bước tĩnh (tối đa còn lại)       4
+─────────────────────────────────
+TỔNG khi gate chạy            15.7 / 20   -> OK
+```
+
+Nhưng nền **biến động ~10 lần trong ngày**, đo được ở bốn thời điểm khác nhau:
+
+```
+ 3%  lúc 21h        1.7 lõi  ->  tổng 15.7/20   OK
+ 8%  lúc 14h        1.7 lõi  ->  tổng 15.7/20   OK
+27%  lúc 13h        5.4 lõi  ->  tổng 19.4/20   sát trần
+37%  ngay sau reset 7.4 lõi  ->  tổng 21.4/20   VƯỢT 1.4 lõi
+```
+
+⇒ **`LOI_DE_DANH_CHO_MAY = 6` là một hằng số cho một nền động.** Nó đúng ở phần lớn thời
+  điểm và sai ở đúng lúc quan trọng nhất — khi máy đang bận, tức khi bảo vệ mới có nghĩa.
+
+⭐ Đây chính là câu hỏi chủ dự án đặt từ đầu ("có phương án tự co giãn theo CPU rảnh không"),
+  và giờ nó có bằng chứng: **có, và nó cần thiết**. Lời giải đã tồn tại ở nhánh của
+  `lttchat-…-49`: `loi_dang_ban()` + `ngan_sach_loi(do_tai=True)` trừ phần tải **vượt nền**.
+  Việc còn lại là hợp nhất nó với `tru_phien_khac` của B2 thành **một** tham số.
+
 ## Nghiệm thu
 
 1. `-n` truyền cho pytest **≤** `psutil.cpu_count(logical=False)` trong mọi cấu hình.
