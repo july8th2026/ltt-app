@@ -121,7 +121,17 @@ def ngan_sach_loi(*, phien: str = "", tru_phien_khac: bool = False) -> int:
     ⛔ Mac dinh `False` de moi nguoi goi cu giu nguyen hanh vi. Chi duong chay
        that (sau khi da giu khoa) moi bat len — xem `_ap_ngan_sach_thuc`.
     """
-    con = (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY
+    # 🔑 **DON VI VAT LY**, thong nhat voi `loi_cho_bo_test`.
+    #
+    # 🔴 Truoc 03/09 dong nay la `(os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY`
+    #    = 20 - 6 = 14, tren loi LOGIC. Hau qua khong nam o `bo test` (da sua o
+    #    `loi_cho_bo_test`) ma o **bo dem lich**: no cho tong <= 14, `bo test`
+    #    khai 6, con **8 suat** cho buoc tinh chay cung. Tam buoc tinh ~4 loi
+    #    vat ly + 6 cua bo test = 10/10 — cham tran tro lai, va lan nay khong
+    #    qua duong nao co ai soi.
+    #
+    # ⇒ Mot don vi cho CA LUOT chay, khong phai mot don vi cho moi tang.
+    con = loi_cong_cu_tu_do() - LOI_DE_DANH_VAT_LY
     if tru_phien_khac:
         try:
             from cua_so_yen import loi_phien_khac_dang_giu
