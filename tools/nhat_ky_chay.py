@@ -205,7 +205,17 @@ def xem(so_luot: int = 1) -> int:
         if not ket:
             # 🔴 Day la truong hop tep nay sinh ra de phuc vu: luot chay KHONG
             #    ket thuc — may treo, hoac bi giet. Nhat ky van con.
-            print("  ⚠️  KHONG CO DONG `ket_thuc` — luot nay bi cat giua chung")
+            #
+            # ⛔ **ASCII THUAN o MOI dong `print`.** Loi thu BA cua tep nay, tim
+            #    ra o dung luot dau tien bi cat: dong nay tung co mot emoji, va
+            #    `print` no vo voi `UnicodeEncodeError` tren stdout cp1252 —
+            #    tuc cong cu doc nhat ky **chet dung luc can doc nhat**.
+            #
+            #    Kho nay da co `test_nhanh._ep_utf8()` cho viec do, nhung chinh
+            #    docstring cua no canh bao `reconfigure` co the vang mat duoi mot
+            #    trinh hung khac. Nen o day chon cach khong the hong: khong dung
+            #    ky tu ngoai ASCII trong dau ra.
+            print("  [!] KHONG CO DONG `ket_thuc` - luot nay bi cat giua chung")
         mau = [d for d in dong if d["loai"] == "mau" and "cpu" in d]
         if mau:
             dinh = max(mau, key=lambda d: d["cpu"])
