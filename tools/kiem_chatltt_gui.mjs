@@ -113,9 +113,40 @@ const PHIEN = co('--phien', '');
  */
 const PROFILE = co('--profile', '');
 
-if (!PHIEN && !PROFILE && (!NGUOI || !MAT_KHAU)) {
-  console.error('Can `--profile <thu-muc>` (profile Chrome that), '
-    + '`--phien <tep>`, hoac LTT_SMOKE_USER/LTT_SMOKE_PASS.');
+/**
+ * `--cdp <dia-chi>` — NOI VAO mot Chrome DANG CHAY, thay vi tu mo trinh duyet.
+ *
+ * 🔴 VI SAO CAN, VA BANG CHUNG DAN TOI NO. Ngay 04/09 profile kiem het
+ *    phien; moi lan `launchPersistentContext` mo lai, Cloudflare tra CAPTCHA va
+ *    xoay vong khong vao duoc. Cung luc do chu du an mo **Coc Coc** va dang
+ *    nhap binh thuong, ngay lap tuc.
+ *
+ * ⭐ Do la phep doi chung dat gia: khac biet khong nam o profile, o mang,
+ *    hay o tai khoan — ma o chinh viec **Playwright TU KHOI CHAY** Chrome kem
+ *    co automation. Mot profile moi van bi y het, vi nguyen nhan khong phai
+ *    profile.
+ *
+ * ⛔ Loi giai KHONG phai che dau co automation — do la vuot bot detection,
+ *    thu bo kiem nay khong lam. Loi giai la **dung mot Chrome that**: chu du an
+ *    tu mo, tu qua xac minh, tu dang nhap; bo kiem chi NOI VAO qua cong go loi.
+ *    Khong gia mao gi, va viec xac thuc van hoan toan la cua con nguoi.
+ *
+ * Mo trinh duyet (chu du an chay, roi dang nhap trong cua so hien ra):
+ *
+ *     chrome.exe --user-data-dir=C:\LTTBrowserProfiles\ChatLTTKiem2 \
+ *                --remote-debugging-port=9222 https://app.lttstudios.com/chatltt
+ *
+ * Roi:  node tools/kiem_chatltt_gui.mjs --url https://app.lttstudios.com \
+ *            --cdp http://127.0.0.1:9222
+ *
+ * ⚠️ Bo kiem KHONG dong trinh duyet nay khi xong — no khong so huu cua so
+ *    do. Dong nham la cuop mat phien ma nguoi dung vua bo cong dang nhap.
+ */
+const CDP = co('--cdp', '');
+
+if (!PHIEN && !PROFILE && !CDP && (!NGUOI || !MAT_KHAU)) {
+  console.error('Can `--cdp <dia-chi>` (noi vao Chrome dang chay), '
+    + '`--profile <thu-muc>`, `--phien <tep>`, hoac LTT_SMOKE_USER/LTT_SMOKE_PASS.');
   process.exit(2);
 }
 
@@ -671,10 +702,10 @@ async function dangNhap(page) {
 
   // Da co phien: khong dung toi form dang nhap. Neu van thay form thi phien da
   // het han — noi thang thay vi de no do o mot hang muc chang lien quan.
-  if (PHIEN || PROFILE) {
+  if (PHIEN || PROFILE || CDP) {
     if (await page.getByRole('textbox', { name: /Username|Tên đăng nhập/i }).count()) {
       throw new Error('phien da het han — dang nhap lai trong '
-        + (PROFILE ? 'profile `' + PROFILE + '`' : 'tep `' + PHIEN + '`'));
+        + (CDP ? 'trinh duyet o `' + CDP + '`' : PROFILE ? 'profile `' + PROFILE + '`' : 'tep `' + PHIEN + '`'));
     }
     await doiDen('vao duoc ChatLTT',
       async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 40);
@@ -714,7 +745,15 @@ async function dangNhap(page) {
 
 let trinh = null;
 let boi_canh;
-if (PROFILE) {
+let cdp_noi_vao = false;
+if (CDP) {
+  // ⚠️ `connectOverCDP` tra ve mot `Browser` cua trinh duyet NGUOI KHAC so
+  //    huu. Dung `boi_canh.close()` o cuoi — xem co `cdp_noi_vao`.
+  trinh = await chromium.connectOverCDP(CDP);
+  boi_canh = trinh.contexts()[0];
+  if (!boi_canh) throw new Error(`khong thay boi canh nao o ${CDP}`);
+  cdp_noi_vao = true;
+} else if (PROFILE) {
   // ⚠️ `launchPersistentContext` tra ve CHINH boi canh, khong co doi tuong
   //    `Browser` rieng — nen `trinh` giu `null` va cho dong bang `boi_canh`.
   //    Quen dieu nay thi tien trinh Chrome o lai sau khi bo kiem xong, va lan
@@ -832,8 +871,14 @@ try {
   maThoat = 2;
   console.log(`  [CHET] khong chay duoc bo kiem: ${e.message}`);
 } finally {
-  await boi_canh.close().catch(() => {});
-  if (trinh) await trinh.close().catch(() => {});
+  // ⛔ KHI NOI VAO QUA CDP THI KHONG DONG GI CA. Cua so do la cua NGUOI
+  //    DUNG: ho vua bo cong qua xac minh Cloudflare va dang nhap bang tay. Dong
+  //    no di la vut mat dung thu vua ton cong nhat, va lan chay sau lai phai
+  //    lam lai tu dau. Bo kiem chi la khach tro trong cua so ay.
+  if (!cdp_noi_vao) {
+    await boi_canh.close().catch(() => {});
+    if (trinh) await trinh.close().catch(() => {});
+  }
 }
 
 // ⛔ Loi console va request hong la HANG MUC, khong phai ghi chu. Mot bo kiem in

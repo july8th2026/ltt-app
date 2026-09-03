@@ -223,7 +223,13 @@ MANIFEST = AppManifest(
             # Giọng nhân bản CỦA NGƯỜI DÙNG cho palette/sản phẩm khác, không
             # import app này (H43 Phase 02). Gợi ý cho giao diện; sở hữu vẫn do
             # `features.giai_giong` kiểm lúc thi hành.
-            tuy_chon_dong={"voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"},
+            tuy_chon_dong={
+                "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id",
+                # ⭐ Kho DUNG CHUNG. Khong co dong nay thi mot tai khoan chua
+                #    nhan ban giong nao khong thay MOT lua chon nao ca — do la
+                #    trang thai cua gan nhu moi khach moi.
+                "preset": "apps.ltt_voice.tham_chieu:tuy_chon_preset",
+            },
 
             api_exposed=True,
             api_contract={

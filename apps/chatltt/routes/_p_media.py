@@ -37,9 +37,13 @@ async def bao_gia(request: Request, _=Depends(require_login), db=Depends(get_db)
     if not kiem_csrf(request, than):
         return loi(403, "csrf")
     try:
+        # `hoi_thoai` la TUY CHON va chi dung cho mot viec: biet luot tieng
+        # truoc do trong CUNG hoi thoai da chon giong nao, de khong hoi model
+        # lai (moi lan hoi ton 1 credit). Thieu no thi bao gia van chay.
         return json_ok(TM.bao_gia(str(than.get("nang_luc") or ""),
                                   dict(than.get("tham_so") or {}),
-                                  db=db, user_id=uid(request)))
+                                  db=db, user_id=uid(request),
+                                  conv_id=str(than.get("hoi_thoai") or "")))
     except chinh_sach.KhongDuocPhep as e:
         return loi(403, "khong_duoc_phep", str(e))
     except TM.ThamSoSai as e:

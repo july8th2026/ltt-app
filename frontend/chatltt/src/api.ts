@@ -143,10 +143,15 @@ export class Api {
 
   baoGia(nangLuc: string, thamSo: Record<string, unknown>):
   Promise<{ nang_luc: string; credit: number; phien_ban_gia: string;
-            tham_so: Record<string, unknown> }> {
+            tham_so: Record<string, unknown>
+            giong?: { preset: string; nguon: string; ton_credit: number } }> {
+    // `hoi_thoai` de may chu biet luot tieng truoc do da chon giong nao — moi
+    // lan hoi model chon lai ton 1 credit. Thieu no thi bao gia van chay, chi
+    // la lan nao cung phai hoi lai.
     return this.goi('/bao-gia', {
       method: 'POST',
-      body: JSON.stringify({ nang_luc: nangLuc, tham_so: thamSo }),
+      body: JSON.stringify({ nang_luc: nangLuc, tham_so: thamSo,
+                             hoi_thoai: this.convHienTai || '' }),
     })
   }
 

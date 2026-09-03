@@ -268,4 +268,12 @@ def test_so_lan_thu_synthesize_la_5_va_khong_import_cheo():
     assert MANIFEST.so_lan_thu_for(LANE) == 5
     tool = next(t for t in MANIFEST.tools if t.name == TOOL)
     assert tool.admission_resource == "vieneu_gpu" and tool.admission_slots == 1
-    assert tool.tuy_chon_dong == {"voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"}
+    assert tool.tuy_chon_dong == {
+        "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id",
+        # ⭐ THEM 04/09: kho DUNG CHUNG. Truoc do mot tai khoan chua nhan ban
+        #    giong nao thay o chon giong RONG — tuc khong co lua chon nao, va do
+        #    la trang thai cua gan nhu moi khach moi. Hai khoa nay khac vai:
+        #    `voice_id` la giong CUA HO (kiem so huu), `preset` la kho chung
+        #    (khong thuoc ai). Gop lam mot la xoa mat ranh gioi do.
+        "preset": "apps.ltt_voice.tham_chieu:tuy_chon_preset",
+    }

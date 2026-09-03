@@ -92,9 +92,18 @@ def test_ltt_voice_khai_so_lan_thu_va_tuy_chon_dong():
     assert MANIFEST.so_lan_thu_for("ltt_voice.enroll") == SO_LAN_THU_JOB
     tool = next(t for t in MANIFEST.tools if t.name == "speech.ltt")
     assert tool.tuy_chon_dong == {
-        "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id"}
-    ham = reg.tai_tham_chieu(tool.tuy_chon_dong["voice_id"])
-    assert callable(ham)
+        "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id",
+        # ⭐ THEM 04/09: kho DUNG CHUNG. Truoc do mot tai khoan chua nhan ban
+        #    giong nao thay o chon giong RONG — tuc khong co lua chon nao, va do
+        #    la trang thai cua gan nhu moi khach moi. Hai khoa nay khac vai:
+        #    `voice_id` la giong CUA HO (kiem so huu), `preset` la kho chung
+        #    (khong thuoc ai). Gop lam mot la xoa mat ranh gioi do.
+        "preset": "apps.ltt_voice.tham_chieu:tuy_chon_preset",
+    }
+    # Ca hai tham chieu phai NAP DUOC. Mot chuoi `module:ham` go sai chi lo ra
+    # luc chay that, va luc do no lam RONG danh sach chu khong bao loi.
+    for khoa in ("voice_id", "preset"):
+        assert callable(reg.tai_tham_chieu(tool.tuy_chon_dong[khoa])), khoa
 
 
 def test_invocation_submit_doc_so_lan_thu_cua_manifest(monkeypatch):

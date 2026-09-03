@@ -24,7 +24,9 @@ export type TaoMediaProps = {
   onDaNhanChuDocTo?: () => void
 }
 
-type Cho = { nang_luc: string; credit: number; tham_so: Record<string, unknown> } | null
+type Giong = { preset: string; nguon: string; ton_credit: number }
+type Cho = { nang_luc: string; credit: number; tham_so: Record<string, unknown>
+             giong?: Giong } | null
 
 export function TaoMedia({
   api, nangLuc, onXong, onLoi, chuDocTo, onDaNhanChuDocTo,
@@ -52,7 +54,7 @@ export function TaoMedia({
   async function hoiGia(ten: string, tham_so: Record<string, unknown>) {
     try {
       const bg = await api.baoGia(ten, tham_so)
-      datCho({ nang_luc: ten, credit: bg.credit, tham_so: bg.tham_so })
+      datCho({ nang_luc: ten, credit: bg.credit, tham_so: bg.tham_so, giong: bg.giong })
     } catch (e) {
       onLoi(e instanceof Error ? e.message : 'Không báo giá được.')
     }
@@ -143,6 +145,15 @@ export function TaoMedia({
         <div className="ltc-media__gia" role="group" aria-label="Xác nhận giá">
           <span>
             Lượt này tốn <strong>{cho.credit}</strong> credit.
+            {cho.giong && (
+              <>
+                {' '}Giọng <strong>{cho.giong.preset}</strong>
+                {cho.giong.nguon === 'model' && ' (model chọn theo nội dung)'}
+                {cho.giong.nguon === 'nho' && ' (như lượt trước)'}
+                {cho.giong.ton_credit > 0
+                  && ` — chọn giọng tốn thêm ${cho.giong.ton_credit} credit.`}
+              </>
+            )}
           </span>
           <button type="button" className="ltc-nut" disabled={dangNop} onClick={xacNhan}>
             {dangNop ? 'Đang gửi…' : 'Đồng ý, tạo'}

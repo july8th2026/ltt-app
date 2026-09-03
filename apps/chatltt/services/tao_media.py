@@ -41,17 +41,57 @@ class ThamSoSai(ValueError):
     pass
 
 
-def bao_gia(ten: str, params: dict, *, db=None, user_id: str = "") -> dict:
-    """Bao gia mot luot tao. Nem `ThamSoSai` khi tham so sai — CHUA giu tien."""
+def bao_gia(ten: str, params: dict, *, db=None, user_id: str = "",
+            conv_id: str = "") -> dict:
+    """Bao gia mot luot tao. Nem `ThamSoSai` khi tham so sai — CHUA giu tien.
+
+    🔴 VOI TIENG: neu khach khong chi dinh giong nao, MODEL TU CHON mot giong
+       trong kho chung cho hop noi dung — va viec do xay ra **o day**, ngay
+       truoc khi bao gia, chu khong phai luc nop.
+
+    ⭐ Vi sao o day: khach phai **nhin thay giong** truoc khi dong y tra tien.
+       Chon sau khi dong y nghia la ho tra cho mot thu chua duoc xem.
+
+    ⛔ Va phu phi phai duoc NOI RA. Mot lan hoi model ton **1 credit** (gia lam
+       tron len — do 04/09), nen bao gia tra ve ca `giong` kem `ton_credit` de
+       giao dien noi that: "1 credit doc + 1 credit chon giong". Mot phu phi im
+       lang la mot loi tinh tien, du so tien nho.
+    """
     from platform_core.runtime_noi_bo import job as J
 
     chinh_sach.kiem_cho_phep(ten)
+    giong = None
+    if ten == chinh_sach.NANG_LUC_TIENG and db is not None:
+        giong = _giong_cho_luot(db, user_id=user_id, conv_id=conv_id,
+                                params=params)
+        if giong:
+            params = dict(params, preset=giong["preset"])
     try:
         bg = J.bao_gia(ten, params, db=db, user_id=user_id)
     except J.ThamSoSai as e:
         raise ThamSoSai(str(e)) from None
-    return {"nang_luc": ten, "credit": bg.credit, "phien_ban_gia": bg.phien_ban_gia,
-            "tham_so": bg.tham_so_sach}
+    ra = {"nang_luc": ten, "credit": bg.credit, "phien_ban_gia": bg.phien_ban_gia,
+          "tham_so": bg.tham_so_sach}
+    if giong:
+        ra["giong"] = giong
+    return ra
+
+
+def _giong_cho_luot(db, *, user_id: str, conv_id: str, params: dict):
+    """Giong cho mot luot tieng, khi khach chua tu chon. `None` neu ho da chon.
+
+    ⛔ KHACH CHON THI KHONG DUOC DE MODEL DE LEN. `voice_id` (giong nhan ban)
+       hay `preset` khach tu dat deu la mot lua chon co y — thay no bang mot lua
+       chon cua may la lay mat quyen quyet dinh cua nguoi tra tien.
+    """
+    from apps.chatltt.services import chon_giong
+
+    if params.get("voice_id") or params.get("preset"):
+        return None
+    if not conv_id:
+        return None
+    return chon_giong.chon(db, user_id=user_id, conv_id=conv_id,
+                           text=str(params.get("text") or ""))
 
 
 def tao(db, *, user_id: str, conv_id: str, ten: str, params: dict,
@@ -80,6 +120,16 @@ def tao(db, *, user_id: str, conv_id: str, ten: str, params: dict,
                                 status="queued")
     ex = S.mo_execution(db, message=tra_loi, tool_name=ten, mode="job")
     ex.credit_giu = bg.credit
+    # ⭐ GHI LAI GIONG DA DUNG. Day la thu `chon_giong.giong_da_dung()` doc o
+    #    luot sau de KHONG phai hoi model lai — mot lan hoi ton 1 credit, va mot
+    #    hoi thoai doi giong giua chung cung nghe nhu doi nguoi doc.
+    #
+    # ⛔ Doc tu `bg.tham_so_sach` chu khong tu `params`: day la tham so DA QUA
+    #    cua kiem cua nen tang. Ghi lai thu khach gui ma chua qua cua la ghi mot
+    #    gia tri co the chua bao gio duoc dung.
+    _preset = (bg.tham_so_sach or {}).get("preset") if ten == chinh_sach.NANG_LUC_TIENG else None
+    if _preset:
+        ex.usage = dict(ex.usage or {}, giong={"preset": str(_preset)})
     job = J.nop_job(db, user_id=user_id, bao_gia=bg, correlation_id=ex.id,
                     idempotency_key=f"chatltt:{ex.id}")
     ex.job_id = job.id
