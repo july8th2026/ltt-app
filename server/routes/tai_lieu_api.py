@@ -169,6 +169,10 @@ def _boi_canh_cam(request: Request) -> dict:
         "env_key": examples.ENV_API_KEY,
         # Ba cua cua `text.chat`. CONG KHAI co chu y — xem `examples.BA_CUA`.
         "ba_cua": examples.BA_CUA,
+        # Nam con so cua mot hoi thoai dai + cach doc mot 413. Cung ly do CONG
+        # KHAI nhu `BA_CUA`: day la su that ve SAN PHAM, khong phai ve tai khoan.
+        "ngu_canh_nam_so": examples.NGU_CANH_NAM_SO,
+        "loi_413": examples.LOI_413,
     }
 
 

@@ -448,10 +448,16 @@ class TestCamCliKhopNganSach:
         spec.loader.exec_module(mod)
         return mod
 
+    #: Bí danh công khai → id nội bộ, để đối chiếu **theo từng model**.
+    _THEO_ALIAS = {"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}
+
     def test_cua_so_va_tran_ra_khop_nguon_chan_ly(self):
         cc = self._cam_cli()
         assert cc.CUA_SO_NGU_CANH == ngan_sach.CONG_BO_CHO_CLIENT
         assert cc.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+        assert cc.NEN_HOI_THOAI == ngan_sach.NEN_CHO_CLIENT
+        assert cc.CUA_SO_NGU_CANH_VISION == ngan_sach.cong_bo_cua("qwen38-vision")
+        assert cc.NEN_HOI_THOAI_VISION == ngan_sach.nen_cua("qwen38-vision")
 
     def test_ca_HAI_client_deu_duoc_noi_that_cua_so(self):
         """Codex qua `model_catalog_json`; Claude Code qua biến môi trường.
@@ -462,10 +468,81 @@ class TestCamCliKhopNganSach:
         cc = self._cam_cli()
         import json
         cat = json.loads(cc._catalog_codex())
-        assert all(m["context_window"] == ngan_sach.CONG_BO_CHO_CLIENT
-                   for m in cat["models"]), "Codex khong duoc noi that"
         assert "CLAUDE_CODE_MAX_CONTEXT_TOKENS" in cc.CLAUDE_ENV, \
             "Claude Code khong duoc noi that — no se gia dinh 200k"
+        assert {m["slug"] for m in cat["models"]} == set(self._THEO_ALIAS)
+
+    def test_MOI_model_trong_catalog_khai_cua_so_CUA_NO(self):
+        """🔴 BÁNH CÓC CHO LỖI "MỘT CON SỐ CHO HAI MODEL", bản bộ cài.
+
+        Trước 03/09 phép kiểm ở đây viết:
+
+            assert all(m["context_window"] == ngan_sach.CONG_BO_CHO_CLIENT
+                       for m in cat["models"])
+
+        — tức nó **đòi** cả hai model khai cùng một con số, và `ltt_llm_vision`
+        (cửa sổ thật 28.262) bị buộc phải nói 88.555. Phép kiểm không bắt được
+        khuyết tật; nó **cưỡng chế** khuyết tật, và sửa mã sẽ làm gate đỏ.
+
+        ⭐ Đây đúng là khuyết tật F-02 mà `cong_bo_cua()` sinh ra để giết. Nó
+           chết ở `/api/v1/models` và sống sót ở bộ cài — vì bản vá hôm ấy sửa
+           *con số*, còn phép kiểm vẫn giữ nguyên *hình dạng sai*: một hằng số
+           cho một vòng lặp trên nhiều model.
+        """
+        cc = self._cam_cli()
+        import json
+        for m in json.loads(cc._catalog_codex())["models"]:
+            mong = ngan_sach.cong_bo_cua(self._THEO_ALIAS[m["slug"]])
+            for truong in ("context_window", "max_context_window"):
+                assert m[truong] == mong, (
+                    f"{m['slug']}.{truong} = {m[truong]} nhung cua so that cua "
+                    f"model nay cho {mong}")
+            assert m["truncation_policy"]["limit"] == mong
+
+    def test_nguong_nen_chua_TRON_mot_luot_sinh_dai_nhat(self):
+        """🔴 ĐÂY LÀ PHÉP KIỂM CHO ĐÚNG LỖI PRODUCTION 03/09.
+
+        `413` ở `POST /api/v1/responses`: 101.938 token vào trên trần 96.256.
+        Client **có** nén — nó chỉ nén quá muộn, vì khoảng trống từ ngưỡng nén
+        lên cửa sổ công bố (25.412 với tỉ lệ `× 0,8` cũ) **nhỏ hơn một lượt
+        sinh dài nhất** mà chính ta cho phép (32.768).
+
+        ⛔ Client chỉ kiểm ngưỡng **giữa hai lượt**. Nên bất biến không phải
+           "ngưỡng nén nhỏ hơn cửa sổ" — nó là *"cửa sổ trừ ngưỡng nén phải đủ
+           cho trọn một lượt nữa"*. Hai câu ấy nghe giống nhau và chỉ một câu
+           đúng.
+        """
+        cc = self._cam_cli()
+        import json
+        for m in json.loads(cc._catalog_codex())["models"]:
+            nen = m.get("auto_compact_token_limit")
+            if nen is None:
+                # Bỏ hẳn trường là câu trả lời hợp lệ — và chỉ hợp lệ khi nguồn
+                # chân lý cũng nói "không có ngưỡng nào giữ được lời hứa".
+                assert ngan_sach.nen_cua(self._THEO_ALIAS[m["slug"]]) == 0, (
+                    f"{m['slug']} bo truong auto_compact_token_limit trong khi "
+                    f"nguon chan ly VAN dinh nghia duoc mot nguong")
+                continue
+            con = m["context_window"] - nen
+            assert con >= ngan_sach.TOKEN_RA_TRAN, (
+                f"{m['slug']}: nen o {nen} tren cua so {m['context_window']} chi "
+                f"chua {con} token — nho hon mot luot sinh dai nhat "
+                f"({ngan_sach.TOKEN_RA_TRAN}). Day dung la cau hinh da an 413.")
+
+    def test_phep_kiem_nay_DO_DUOC_khi_bat_bien_bi_pha(self):
+        """⭐ Một chốt chỉ hữu ích nếu chứng minh được nó **đỏ được**.
+
+        Dựng lại đúng cấu hình đã gây sự cố — ngưỡng nén `= 0,8 × cửa sổ` — rồi
+        đòi cùng một bất biến. Nó phải vỡ. Không có phép kiểm này thì ba phép
+        kiểm ở trên có thể xanh vì chúng không đo gì cả.
+        """
+        cua_so = ngan_sach.CONG_BO_CHO_CLIENT
+        nen_cu = int(cua_so * 0.8)                     # công thức cũ, 70.844
+        assert cua_so - nen_cu < ngan_sach.TOKEN_RA_TRAN, (
+            "cong thuc CU dang thoa bat bien — nghia la bat bien nay khong con "
+            "phan biet duoc cau hinh hong voi cau hinh lanh")
+        nen_moi = ngan_sach.NEN_CHO_CLIENT
+        assert cua_so - nen_moi >= ngan_sach.TOKEN_RA_TRAN
 
 
 # ── Số công bố cho KHÁCH phải khớp số máy chủ thực thi (30/08) ─────────────
@@ -609,6 +686,75 @@ class TestTaiLieuKhopMayChuThat:
         assert "/api/v1/messages" in ma and "/api/v1/responses" in ma, (
             "cua dong bo khong con chi sang hai cua stream — tai lieu va may "
             "chu se lech nhau nhu da lech tu 24/08 toi 30/08")
+
+
+class TestNamSoNguCanhPhaiCONG_KHAI:
+    """🔴 SINH RA TỪ SỰ CỐ 03/09, không phải từ mong muốn tài liệu đầy đủ.
+
+    Một lượt `POST /api/v1/responses` ăn `413` ở 101.938 token vào trên trần
+    96.256 — và trang công khai duy nhất nói về tích hợp (`/huong-dan`) **không
+    có một con số nào** về ngữ cảnh. Khách không có gì để đối chiếu, nên họ
+    đoán; và cái đoán sai luôn là cùng một cái: tưởng `context_window` là thứ
+    mình được phép gửi.
+
+    ⛔ Phép kiểm này chốt **cả năm** con số phải đứng riêng. Gộp hai cái bất kỳ
+       là dựng lại đúng lớp lỗi đã mắc bốn lần ở dự án này.
+    """
+
+    def test_ba_con_so_may_doc_duoc_khop_nguon_chan_ly(self):
+        from platform_core.public_api import examples
+
+        theo_ten = {ten: gt for ten, gt, _ in examples.NGU_CANH_NAM_SO}
+        assert theo_ten["Engine context"].replace(",", "") == str(
+            ngan_sach.CUA_SO_MODEL)
+        assert theo_ten["Hard input limit"].replace(",", "") == str(
+            ngan_sach.TOKEN_VAO_TRAN)
+        assert theo_ten["Advertised context"].replace(",", "") == str(
+            ngan_sach.CONG_BO_CHO_CLIENT)
+        assert theo_ten["Auto-compact at"].replace(",", "") == str(
+            ngan_sach.NEN_CHO_CLIENT)
+        assert theo_ten["Max output"].replace(",", "") == str(
+            ngan_sach.TOKEN_RA_TRAN)
+
+    def test_nam_so_KHAC_NHAU_va_dung_thu_tu(self):
+        """Bất biến của cả chương trình, viết ra thành một dòng đọc được."""
+        assert (ngan_sach.NEN_CHO_CLIENT
+                < ngan_sach.CONG_BO_CHO_CLIENT
+                < ngan_sach.TOKEN_VAO_TRAN
+                < ngan_sach.CUA_SO_MODEL)
+        from platform_core.public_api import examples
+
+        gia_tri = [gt for _, gt, _ in examples.NGU_CANH_NAM_SO]
+        assert len(set(gia_tri)) == len(gia_tri), (
+            "hai trong nam con so dang bang nhau — mot trong hai la ban sao "
+            "cua cai kia, va do dung la cach bon lan truoc da hong")
+
+    def test_trang_CONG_KHAI_render_nam_so_va_muc_413(self):
+        """Bánh cóc: khai biến mà quên đưa vào ngữ cảnh là bảng rỗng, im lặng."""
+        from server.routes import tai_lieu_api
+
+        ma = (pathlib.Path(tai_lieu_api.__file__)).read_text(encoding="utf-8")
+        assert '"ngu_canh_nam_so": examples.NGU_CANH_NAM_SO' in ma
+        assert '"loi_413": examples.LOI_413' in ma
+        mau = pathlib.Path("server/templates/huong_dan.html").read_text(
+            encoding="utf-8")
+        assert "ngu_canh_nam_so" in mau and "loi_413" in mau, (
+            "trang cong khai khong render muc ngu canh / 413")
+
+    def test_413_KHONG_khuyen_xoa_phien(self):
+        """⛔ "Xoá phiên rồi làm lại" mất việc đang làm mà **không** sửa gì.
+
+        Nó là lời khuyên dễ viết nhất và sai nhất: nguyên nhân nằm ở cấu hình
+        client, nên lần sau nó lặp lại y hệt.
+        """
+        from platform_core.public_api import examples
+
+        van = " ".join(t + " " + c for t, c in examples.LOI_413).lower()
+        for cam in ("start over", "clear the session", "delete the session",
+                    "start a fresh conversation"):
+            assert cam not in van, f"tai lieu 413 dang khuyen {cam!r}"
+        assert "model_catalog_json" in van
+        assert "claude_code_max_context_tokens" in van
 
 
 class TestBaCuaPhaiCONG_KHAI:

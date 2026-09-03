@@ -13145,3 +13145,24 @@ msgstr "with the conversation that holds it"
 
 msgid "xoá mềm rồi dọn theo hạn giữ dữ liệu"
 msgstr "soft-deleted, then purged at the retention limit"
+
+msgid "Hội thoại dài: năm con số, và vì sao chúng khác nhau"
+msgstr "Long conversations: five numbers, and why they differ"
+
+msgid "Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn."
+msgstr "Codex and Claude Code compact a conversation on their own as it grows. They only compact IN TIME if you tell them this model's real window — the plug-in tool above does that for you."
+
+msgid "Con số"
+msgstr "Number"
+
+msgid "Giá trị"
+msgstr "Value"
+
+msgid "Nó là gì"
+msgstr "What it is"
+
+msgid "Vượt trần thì bạn nhận 413 kèm đúng con số đã áp cho model bạn gọi. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
+msgstr "Go over the limit and you get a 413 carrying the number that actually applied to the model you called. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
+
+msgid "Nếu bạn ăn 413 giữa chừng"
+msgstr "If you hit a 413 mid-conversation"

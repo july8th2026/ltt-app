@@ -121,6 +121,34 @@ MUC_MAC_DINH = (MUC_CODEX_CLI, MUC_CLAUDE_CLI,
 CUA_SO_NGU_CANH = 88555
 #: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
 TOKEN_RA_TRAN = 32768
+#: Nguong client PHAI nen hoi thoai, khop `ngan_sach.NEN_CHO_CLIENT`.
+#:
+#: 🔴 TRUOC 03/09 CHO NAY KHONG CO SO NAO — no duoc tinh tai cho bang
+#:    `int(CUA_SO_NGU_CANH * 0.8)`, va ti le 0,8 ay **khong do cai can do**.
+#:    Thu phai vua la khoang trong giua nguong nen va cua so cong bo, va khoang
+#:    do phai chua tron MOT luot sinh dai nhat (32.768): client chi kiem nguong
+#:    GIUA hai luot, nen luot ke tiep van duoc phep lon them tron mot luot nua.
+#:    Voi 0,8 thi khoang trong chi con 25.412 < 32.768 — thieu, va production
+#:    da an mot `413` o 101.938 token vao dung vi vay.
+NEN_HOI_THOAI = 55787
+
+#: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
+#:
+#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. `qwen38-vision` nap `-c 65536`, mot nua
+#:    model text, nen cua so cong bo cua no la 28.262 chu khong phai 88.555.
+#:    Ban truoc cua tep nay khai **cung mot con so cho ca hai model**, tuc noi
+#:    voi Codex rang `ltt_llm_vision` co ngu canh **gap 3,1 lan** su that; hoi
+#:    thoai anh dai vua phai la an 413 ma khong hieu vi sao.
+#:
+#: ⭐ Va day dung la khuyet tat F-02 — mot con so cho hai model — thu ma
+#:    `ngan_sach.cong_bo_cua()` sinh ra de giet. No chet o `/api/v1/models` va
+#:    **song sot nguyen ven o day**, vi ban va sua *con so* chu khong sua *hinh
+#:    dang*: chung nao con MOT hang so cho HAI model thi loi nay con quay lai.
+CUA_SO_NGU_CANH_VISION = 28262
+#: `ngan_sach.nen_cua("qwen38-vision")` tra **0**: cua so cong bo cua vision
+#: (28.262) hep hon mot luot sinh dai nhat (32.768), nen khong nguong nen nao
+#: giu duoc loi hua. 0 = **bo han truong do**, dung ghi mot con so bia.
+NEN_HOI_THOAI_VISION = 0
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -467,8 +495,8 @@ def _catalog_codex() -> str:
     """
     import json
 
-    def mot(slug: str, doc_anh: bool = False) -> dict:
-        return {
+    def mot(slug: str, cua_so: int, nen: int, doc_anh: bool = False) -> dict:
+        d = {
             "slug": slug, "display_name": slug,
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": "medium",
@@ -486,12 +514,11 @@ def _catalog_codex() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": CUA_SO_NGU_CANH},
+            "truncation_policy": {"mode": "tokens", "limit": cua_so},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
-            "context_window": CUA_SO_NGU_CANH,
-            "max_context_window": CUA_SO_NGU_CANH,
-            "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
+            "context_window": cua_so,
+            "max_context_window": cua_so,
             # !! KHONG them `effective_context_window_percent` o day. CLI doi
             #    i64, tien ich VS Code doi chuoi - xem docstring. Bo han.
             "experimental_supported_tools": [],
@@ -499,9 +526,20 @@ def _catalog_codex() -> str:
             "supports_search_tool": False, "use_responses_lite": False,
             "node_repl_auto_review_required": False, "node_repl_disabled": False,
         }
+        # ⛔ BO HAN truong nay khi khong co nguong nao giu duoc loi hua (nen=0).
+        #    Ghi mot con so bia vao day thi Codex se TIN no, va cai gia la mot
+        #    413 giua phien — dung thu ta dang di dep. Thieu truong thi Codex
+        #    dung mac dinh cua no tinh theo `context_window`, va `context_window`
+        #    o tren la con so THAT.
+        if nen > 0:
+            d["auto_compact_token_limit"] = nen
+        return d
 
-    return json.dumps({"models": [mot("ltt_llm"), mot("ltt_llm_vision", True)]},
-                      indent=1)
+    return json.dumps(
+        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
+                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        indent=1)
 
 
 def _codex_profile() -> str:
@@ -528,11 +566,15 @@ def _codex_config_goc(goc: str) -> str:
       profile giu nguyen mac dinh cua khach nhung chi CLI dung duoc. Khong co
       cach nao duoc ca hai - do la gioi han cua Codex, khong phai cua ta.
     """
+    # ⛔ `{CUA_SO_NGU_CANH}` chu KHONG phai `88555` go tay. Ban truoc go tay o
+    #    dung dong nay, va do la mot ban sao THU BA cua cung mot con so — hai
+    #    ban tren co test doi chieu, ban nay thi khong. Doi nguon chan ly ma
+    #    quen dong nay thi dang goc va dang profile noi hai con so khac nhau.
     return (f'model = "{MODEL}"\n'
             f'model_provider = "ltt"\n'
             f'model_reasoning_effort = "low"\n'
             f'model_reasoning_summary = "none"\n'
-            f'model_context_window = 88555\n'
+            f'model_context_window = {CUA_SO_NGU_CANH}\n'
             f'\n' + _codex_config(goc))
 
 
@@ -1298,6 +1340,19 @@ def cam_vscode(goc: str, tt: dict) -> list:
             {"name": "ANTHROPIC_BASE_URL", "value": goc + "/api"},
             {"name": "ANTHROPIC_MODEL", "value": MODEL},
             {"name": "ANTHROPIC_DEFAULT_HAIKU_MODEL", "value": MODEL},
+            # 🔴 HAI DONG NAY TUNG THIEU O DAY, va chung la cung mot "loi tien"
+            #    ma `cam_claude()` mo ta cach do ba tram dong: khong khai thi
+            #    Claude Code GIA DINH cua so 200.000 va khong bao gio nen kip.
+            #
+            # ⛔ "Nhung `useTerminal` chay `claude` CLI, no doc bien cap nguoi
+            #    dung roi" — dung, VA KHONG DU. Bien cap nguoi dung chi duoc dat
+            #    khi khach cam ca muc `claude-cli`; ai chon RIENG muc VS Code
+            #    thi khong co dong nao dat chung. Mot phu thuoc an giua hai muc
+            #    la thu khong ai doc ra tu tep cau hinh.
+            {"name": "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
+             "value": str(CUA_SO_NGU_CANH)},
+            {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+             "value": str(TOKEN_RA_TRAN)},
         ],
         "claudeCode.disableLoginPrompt": True,
         # * `useTerminal` la duong DA CHUNG MINH CHAY DUOC (T6 tren VM: claude.exe

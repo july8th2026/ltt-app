@@ -138,6 +138,47 @@ def cong_bo_cua(model_id: str) -> int:
     return int(tran_vao_cua(model_id) * 0.92)
 
 
+#: Ngưỡng client **phải nén** hội thoại, tính từ cửa sổ công bố.
+#:
+#: 🔴 VÌ SAO KHÔNG PHẢI MỘT TỈ LỆ. Trước 03/09 cả hai bộ cài đều gõ `× 0,8`, và
+#:    tỉ lệ ấy **không đo cái cần đo**. Thứ phải vừa không phải "80 % cửa sổ" mà
+#:    là *khoảng trống còn lại sau ngưỡng nén*: client kiểm ngưỡng **giữa hai
+#:    lượt**, nên lượt kế tiếp vẫn được phép lớn thêm trọn một lượt nữa trước
+#:    khi nó có cơ hội nén lần sau.
+#:
+#: ⛔ VÀ ĐÂY LÀ LỖI ĐÃ XẢY RA TRÊN PRODUCTION, không phải lo xa. Một lượt
+#:    `POST /api/v1/responses` ăn `413` với **101.938** token vào trên trần
+#:    96.256. Với `× 0,8` thì ngưỡng nén là 70.844 và khoảng trống tới trần chỉ
+#:    còn **25.412** — nhỏ hơn một lượt sinh dài nhất mà chính ta cho phép
+#:    (`TOKEN_RA_TRAN` = 32.768). Cấu hình ấy **không thể** giữ lời hứa "nén
+#:    trước khi chạm trần"; nó chỉ đúng chừng nào không ai trả lời dài.
+#:
+#: ⭐ Nên quy tắc là: **chừa trọn một lượt sinh dài nhất** giữa ngưỡng nén và
+#:    cửa sổ công bố. Kết quả có một tính chất đáng chú ý: ở hồ sơ ngữ cảnh rộng
+#:    nó xấp xỉ đúng 0,8 cũ — con số cũ không sai vì bịa, nó sai vì **được chọn ở
+#:    một cửa sổ rộng rồi mang sang một cửa sổ hẹp** mà không ai tính lại.
+def nen_cua(model_id: str) -> int:
+    """Ngưỡng nén hội thoại **công bố cho client** của một model.
+
+    ⛔ TRẢ **0** KHI KHÔNG ĐỊNH NGHĨA ĐƯỢC, chứ không kẹp về một số trông hợp lệ.
+       `qwen38-vision` chạy `-c 65536` và vẫn chịu chung `TOKEN_RA_TRAN` 32.768,
+       nên cửa sổ công bố của nó (28.262) **hẹp hơn một lượt sinh dài nhất**:
+       không có ngưỡng nén nào giữ được lời hứa, kể cả ngưỡng bằng 1.
+
+    ⭐ Con số 0 là một câu trả lời, không phải một lỗi: nó nói *"model này không
+       phải model để chạy một phiên agent dài"*. Bộ cài đọc 0 thì **bỏ hẳn**
+       trường ngưỡng nén thay vì ghi một con số bịa vào tệp cấu hình của khách —
+       và đó đúng là khác biệt giữa "khách biết mình đang ở đâu" và "khách tin
+       một lời hứa ta không giữ được".
+    """
+    con = cong_bo_cua(model_id) - TOKEN_RA_TRAN
+    return con if con > 0 else 0
+
+
+#: Ngưỡng nén của model text — con số hai bộ cài chép sang máy khách.
+NEN_CHO_CLIENT = nen_cua("qwen38-api")
+
+
 # ══════════════════════════════════════════════════════════════════════════
 #  MẶC ĐỊNH THEO CỬA — mỗi cửa một ngân sách, và tên phải nói ra cửa nào
 # ══════════════════════════════════════════════════════════════════════════

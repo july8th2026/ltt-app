@@ -87,6 +87,47 @@ def test_claude_code_dat_du_CA_HAI_model(tmp_path):
     assert env["ANTHROPIC_DEFAULT_HAIKU_MODEL"] == cd.MODEL
 
 
+def test_claude_code_NOI_THAT_cua_so_ngu_canh(tmp_path):
+    """🔴 THIẾU HAI BIẾN NÀY LÀ MỘT LỖI TIỀN — và chúng **đã** thiếu ở đây.
+
+    `tools/cam_cli.py` (bản Windows) đặt chúng từ 30/08 kèm cả một khối chú
+    thích giải thích vì sao. Tệp này — bản một-tệp cho macOS/Linux — thì không.
+    Tức khách macOS/Linux nhận một bộ cài **yếu hơn**, và không dòng nào trong
+    hai tệp nói ra điều đó.
+
+    Không có chúng, Claude Code giả định cửa sổ 200.000 (nó nói thẳng ra trong
+    phiên), nên auto-compact không bao giờ nén kịp và khách ăn `413` giữa chừng.
+
+    ⛔ Và bài học chung: **hai bộ cài cho cùng một sản phẩm phải khai cùng một
+       tập khoá**, không chỉ cùng một catalog. `test_catalog_KHOP_TUNG_TRUONG`
+       so catalog và xanh suốt — vì khoảng trống nằm ở *chỗ nó không nhìn*.
+    """
+    from apps.ltt_llm import ngan_sach
+    goc = tmp_path / ".claude"
+    cd.claude_code("https://x.test", goc)
+    env = json.loads((goc / "settings.json").read_text(encoding="utf-8"))["env"]
+    assert env["CLAUDE_CODE_MAX_CONTEXT_TOKENS"] == str(ngan_sach.CONG_BO_CHO_CLIENT)
+    assert env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] == str(ngan_sach.TOKEN_RA_TRAN)
+
+
+def test_HAI_BO_CAI_khai_cung_mot_tap_khoa_cho_Claude_Code(tmp_path):
+    """Bản Windows và bản một-tệp phải đặt **cùng một tập biến**.
+
+    So *tên khoá*, không so giá trị: giá trị đã có phép kiểm riêng, còn thứ
+    trượt được mà không ai thấy là **một bên quên hẳn một khoá**.
+    """
+    import importlib.util
+    duong = pathlib.Path(__file__).resolve().parent.parent / "tools" / "cam_cli.py"
+    dac = importlib.util.spec_from_file_location("_cam_cli_khoa", duong)
+    mo = importlib.util.module_from_spec(dac)
+    dac.loader.exec_module(mo)
+    goc = tmp_path / ".claude"
+    cd.claude_code("https://x.test", goc)
+    env = json.loads((goc / "settings.json").read_text(encoding="utf-8"))["env"]
+    thieu = set(mo.CLAUDE_ENV) - set(env)
+    assert not thieu, f"ban mot-tep thieu khoa ma ban Windows co: {sorted(thieu)}"
+
+
 def test_settings_json_hong_thi_KHONG_DAM_SUA(tmp_path):
     """⛔ Thà không làm gì còn hơn ghi đè một file ta không đọc được."""
     goc = tmp_path / ".claude"; goc.mkdir()

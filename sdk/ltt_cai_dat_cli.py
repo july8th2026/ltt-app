@@ -51,6 +51,28 @@ BIEN_KHOA = "LTT_API_KEY"
 #:    ngu canh THAP hon that 26%, tuc Codex nen som va vo co.
 CUA_SO_NGU_CANH = 88555
 
+#: Tran token RA, khop `ngan_sach.TOKEN_RA_TRAN`.
+TOKEN_RA_TRAN = 32768
+
+#: Nguong client PHAI nen hoi thoai, khop `ngan_sach.NEN_CHO_CLIENT`.
+#:
+#: 🔴 KHONG PHAI `CUA_SO_NGU_CANH * 0.8`. Ti le do khong do cai can do: thu phai
+#:    vua la khoang trong tu nguong nen len cua so cong bo, va no phai chua tron
+#:    MOT luot sinh dai nhat (32.768) — client chi kiem nguong GIUA hai luot.
+#:    Voi 0,8 khoang do chi con 25.412, thieu, va production da an mot `413` o
+#:    101.938 token vao dung vi vay.
+NEN_HOI_THOAI = 55787
+
+#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 65536` — mot NUA
+#: model text — nen no KHONG duoc dung chung con so voi `ltt_llm`.
+#:
+#: ⛔ Ban truoc khai 88.555 cho ca hai, tuc hua cho `ltt_llm_vision` mot ngu
+#:    canh **gap 3,1 lan** su that.
+CUA_SO_NGU_CANH_VISION = 28262
+#: `nen_cua("qwen38-vision")` = 0: cua so cong bo cua vision hep hon mot luot
+#: sinh dai nhat, nen khong nguong nen nao giu duoc loi hua. 0 = bo han truong.
+NEN_HOI_THOAI_VISION = 0
+
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
 #: Dung khi khach DA CO san bang do: ta khong ghi de (bang cua ho), nhung thieu
@@ -74,8 +96,8 @@ def _catalog() -> str:
          chuoi. KHONG so nao lam vua long ca hai => BO HAN. No la tuy chon.
        * tro `model_catalog_json` toi tep KHONG ton tai -- Codex tu choi khoi dong.
     """
-    def mot(slug: str, doc_anh: bool = False) -> dict:
-        return {
+    def mot(slug: str, cua_so: int, nen: int, doc_anh: bool = False) -> dict:
+        d = {
             "slug": slug, "display_name": slug,
             "description": f"{slug} (LTT Studios)",
             "default_reasoning_level": "medium",
@@ -93,20 +115,27 @@ def _catalog() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": CUA_SO_NGU_CANH},
+            "truncation_policy": {"mode": "tokens", "limit": cua_so},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
-            "context_window": CUA_SO_NGU_CANH,
-            "max_context_window": CUA_SO_NGU_CANH,
-            "auto_compact_token_limit": int(CUA_SO_NGU_CANH * 0.8),
+            "context_window": cua_so,
+            "max_context_window": cua_so,
             "experimental_supported_tools": [],
             "input_modalities": ["text", "image"] if doc_anh else ["text"],
             "supports_search_tool": False, "use_responses_lite": False,
             "node_repl_auto_review_required": False, "node_repl_disabled": False,
         }
+        # Khong co nguong nao giu duoc loi hua (nen=0) thi BO HAN truong, dung
+        # ghi mot con so bia: Codex se tin no, va cai gia la mot 413 giua phien.
+        if nen > 0:
+            d["auto_compact_token_limit"] = nen
+        return d
 
-    return json.dumps({"models": [mot("ltt_llm"), mot("ltt_llm_vision", True)]},
-                      indent=1)
+    return json.dumps(
+        {"models": [mot("ltt_llm", CUA_SO_NGU_CANH, NEN_HOI_THOAI),
+                    mot("ltt_llm_vision", CUA_SO_NGU_CANH_VISION,
+                        NEN_HOI_THOAI_VISION, doc_anh=True)]},
+        indent=1)
 
 
 def _goc(base: str) -> str:
@@ -206,6 +235,20 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
         "ANTHROPIC_BASE_URL": f"{_goc(base)}/api",     # KHONG /v1: client tu ghep
         "ANTHROPIC_MODEL": MODEL,
         "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
+        # 🔴 HAI DONG DUOI KHONG PHAI TINH CHINH — THIEU CHUNG LA MOT LOI TIEN,
+        #    va chung da thieu o day trong khi ban Windows (`tools/cam_cli.py`)
+        #    thi co. Tuc khach macOS/Linux nhan mot ban cai **yeu hon**, va
+        #    khong co gi trong tep nay noi ra dieu do.
+        #
+        #    Claude Code khong biet `ltt_llm` nen no GIA DINH cua so 200.000 va
+        #    noi thang ra:
+        #        "ltt_llm" is not a model this version of Claude Code
+        #        recognizes, so auto-compact will keep this session within
+        #        200k tokens (the context window it assumes).
+        #    Tran vao that cua ta nho hon nhieu, nen auto-compact khong bao gio
+        #    kip nen va khach an 413 giua phien.
+        "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
+        "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.
     env.setdefault("ANTHROPIC_AUTH_TOKEN", f"${BIEN_KHOA}")

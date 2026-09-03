@@ -80,6 +80,41 @@
   <p class="muted">{{ _("Cắm Codex hay Claude Code thì bạn dùng hai cửa stream — công cụ ở trên đặt sẵn đúng cửa cho từng bề mặt.") }}</p>
 </div>
 
+{# 🔴 MỤC NÀY SINH RA TỪ MỘT SỰ CỐ THẬT, không phải từ mong muốn đầy đủ.
+   Một lượt `POST /api/v1/responses` ăn 413 với 101.938 token vào trên trần
+   96.256 — và trang này, trang công khai duy nhất nói về tích hợp, **không có
+   một con số nào** về ngữ cảnh để khách đối chiếu. Không có chỗ nào trả lời
+   *"vì sao hội thoại dài thì hỏng"*, nên người ta đoán, và đoán sai theo đúng
+   một kiểu: tưởng `context_window` là thứ mình được phép gửi.
+
+   ⛔ Năm con số phải đứng RIÊNG. Gộp hai cái bất kỳ là dựng lại đúng lớp lỗi
+      dự án này đã mắc bốn lần. #}
+<div class="card" id="ngu-canh">
+  <h2 style="margin-top:0;">{{ _("Hội thoại dài: năm con số, và vì sao chúng khác nhau") }}</h2>
+  <p>{{ _("Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn.") }}</p>
+  <table class="table">
+    <thead><tr>
+      <th scope="col">{{ _("Con số") }}</th>
+      <th scope="col">{{ _("Giá trị") }}</th>
+      <th scope="col">{{ _("Nó là gì") }}</th>
+    </tr></thead>
+    <tbody>
+    {% for ten, gia_tri, nghia in ngu_canh_nam_so %}
+      <tr><td>{{ ten }}</td><td><code>{{ gia_tri }}</code></td><td>{{ nghia }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  <p class="muted">{{ _("Vượt trần thì bạn nhận 413 kèm đúng con số đã áp cho model bạn gọi. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất.") }}</p>
+
+  <h3>{{ _("Nếu bạn ăn 413 giữa chừng") }}</h3>
+  <dl>
+  {% for tieu_de, cach_sua in loi_413 %}
+    <dt><strong>{{ tieu_de }}</strong></dt>
+    <dd class="muted" style="margin:0 0 .6rem 0;">{{ cach_sua }}</dd>
+  {% endfor %}
+  </dl>
+</div>
+
 {# 🔴 MỤC NÀY SINH RA VÌ MỘT SỐ ĐO. Trang này — trang công khai DUY NHẤT nói về
    tích hợp — nhắc `ltt_llm` 16 lần và `image.ltt` **0 lần**. Ta bán hai thứ và
    giới thiệu một; người chưa đăng ký thấy giá ảnh ở /gia-api rồi hết đường.
