@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:30ea2130f9c388645a4864884a00ec63dd51c68717ec819e1ceb74b014831b02
-Nguồn đã quét : 1552 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:953a997f3839e8c9763a510b8d79a86772a1bf69ffd0f42d9db8b13b48c42487
+Nguồn đã quét : 1554 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -170,6 +170,7 @@ Các lớp chính:
     - apps/auto_scan_video/qc.py
     - apps/auto_scan_video/quan_sat.py
     - apps/auto_scan_video/routes.py
+    - apps/auto_scan_video/su_dung.py
     - apps/auto_scan_video/tables.py
     - apps/auto_scan_video/tach_tieng.py
     - apps/auto_scan_video/templates/asv_chi_tiet.html
@@ -1284,7 +1285,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (382 file pytest + 3 frontend)
+10. QUALITY GATES (383 file pytest + 3 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1629,6 +1630,7 @@ Test inventory:
 - tests/test_428_asv_v4_rao_chan_nang.py
 - tests/test_429_asv_v4_dau_vao_lon.py
 - tests/test_430_asv_v4_don_vi_viec.py
+- tests/test_431_ngan_sach_loi.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -1693,8 +1695,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1552 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1183, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1554 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:65, .py:1185, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -1782,7 +1784,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 [alembic.ini] (1)
 - alembic.ini
 
-[apps] (316)
+[apps] (317)
 - apps/__init__.py
 - apps/agent/__init__.py
 - apps/agent/jobs.py
@@ -1844,6 +1846,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - apps/auto_scan_video/qc.py
 - apps/auto_scan_video/quan_sat.py
 - apps/auto_scan_video/routes.py
+- apps/auto_scan_video/su_dung.py
 - apps/auto_scan_video/tables.py
 - apps/auto_scan_video/tach_tieng.py
 - apps/auto_scan_video/templates/asv_chi_tiet.html
@@ -2715,7 +2718,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (402)
+[tests] (403)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3074,6 +3077,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - tests/test_428_asv_v4_rao_chan_nang.py
 - tests/test_429_asv_v4_dau_vao_lon.py
 - tests/test_430_asv_v4_don_vi_viec.py
+- tests/test_431_ngan_sach_loi.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3303,7 +3307,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1552 file; 15564935 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15577732 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -18009,6 +18013,176 @@ def _run_cua_toi(db, run_id: str, u):
     except features.AsvError:
         raise HTTPException(status_code=404,
                             detail=_t('Không tìm thấy lần chạy.')) from None
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/su_dung.py
+SHA256=2c6690955e1fbb3895557d74176ec5396a64e44d03a9ccd967a3988e76dcb1b2 BYTES=6915 LINES=164
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ban ghi SU DUNG DA GIAO cho mot luot goi nang luc — va cua chan truoc khi tieu.
+
+## Vi sao khong dung thang `credit_actual`
+
+`AsvWorkItem.credit_actual` tra loi "het bao nhieu". No khong tra loi duoc ba cau
+hoi ma mot lan doi soat tien can:
+
+    nang luc nao da chay        -> khach hoi "toi tra cho cai gi"
+    do bang don vi gi           -> 1.200 token va 12 giay la hai the gioi khac nhau
+    lan goi do co CHAC da chay  -> ADR-001 D9: dispatch mo ho khong duoc thu lai mu
+
+⇒ `SuDung` la ban ghi **da giao**, `credit_actual` la mot truong cua no. Tach ra
+  vi mot con so khong tu giai thich duoc, va hoa don thi phai.
+
+## 🔑 DA GIAO, khong phai DA YEU CAU
+
+ADR-001 D4: `actual = tong do duoc`, **khong bao gio** tinh lai tu bang gia. Ham
+`ghi()` doi `don_vi_da_giao` va tu choi mot ban ghi khong co no.
+
+⛔ Ly do khong phai su nghiem khac ve hinh thuc. `agent/executor.actual_cost`
+   tinh tien theo thu **da yeu cau**, va no da gay hai loi tien that trong du an
+   nay. Mot ban ghi "da giao" ma so lieu lay tu tham so dau vao thi mang dung cai
+   ten no khong xung.
+
+## Ba trang thai dispatch, va vi sao hai trong so do khong duoc thu lai
+
+    DA_GIAO    provider tra ket qua      -> tinh tien, dung lai duoc
+    TU_CHOI    provider tu choi ro rang  -> khong tinh tien, thu lai duoc
+    MO_HO      mat ket noi SAU khi gui   -> **khong biet** da chay chua
+
+`MO_HO` la trang thai dat nhat: co the provider da chay va da tinh tien ta, co
+the chua. Thu lai mu la co the tra tien hai lan cho mot viec; bo qua la co the
+mat mot ket qua da tra tien. Nen no **khong tu dong** lam gi ca — no cham mot
+dau va de nguoi/ tang tren quyet dinh.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from platform_core.i18n import _ as _t
+
+# ── Trang thai dispatch (ADR-001 D9) ─────────────────────────────────────────
+DA_GIAO = "da_giao"
+TU_CHOI = "tu_choi"
+MO_HO = "mo_ho"
+TRANG_THAI = (DA_GIAO, TU_CHOI, MO_HO)
+
+#: Chi trang thai nay moi duoc tinh tien.
+TINH_TIEN = frozenset({DA_GIAO})
+
+#: ⛔ Trang thai nay khong duoc tu dong thu lai. Xem docstring dau tep.
+KHONG_TU_DONG_THU_LAI = frozenset({MO_HO})
+
+# ── Don vi do ────────────────────────────────────────────────────────────────
+#: Don vi phai di KEM so. "1.200" khong noi len dieu gi; "1.200 token" thi co.
+TOKEN = "token"
+GIAY = "giay"
+KY_TU = "ky_tu"
+KHUNG_HINH = "khung_hinh"
+DON_VI = (TOKEN, GIAY, KY_TU, KHUNG_HINH)
+
+
+class SuDungError(ValueError):
+    """Ban ghi su dung khong hop le. LUON la loi lap trinh, khong phai loi khach."""
+
+
+@dataclass(frozen=True)
+class SuDung:
+    """MOT luot goi nang luc, do duoc.
+
+    Bat bien o cap doi tuong: mot ban ghi da giao khong duoc sua sau khi ghi.
+    Muon sua nghia la lan goi do khac di, tuc la mot ban ghi KHAC.
+    """
+
+    #: Nang luc nao — `text.chat`, `speech.ltt`, `autosubvideo.transcribe`...
+    nang_luc: str
+    #: Chu so huu nang luc do. Khong phai ten provider ben ngoai: ta khong ban
+    #: ten vendor cho khach (`ltt_llm.ALIAS_SANG_ID` giu lop dem do).
+    app_chu: str
+    trang_thai: str
+    don_vi: str = ""
+    #: 🔑 So DO DUOC. Rong voi TU_CHOI/MO_HO — va do la mot su that, khong phai
+    #:    mot cho trong can dien.
+    so_luong: float = 0.0
+    #: Credit DO DUOC. Khong bao gio tinh lai tu bang gia (ADR-001 D4).
+    credit: int = 0
+    #: Danh tinh lan gui, de doi soat khi MO_HO. Rong neu tang duoi khong cap.
+    ma_dispatch: str = ""
+    ghi_chu: dict = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.trang_thai not in TRANG_THAI:
+            raise SuDungError(f"trang thai khong biet: {self.trang_thai!r}")
+        if not self.nang_luc or not self.app_chu:
+            raise SuDungError("thieu nang_luc hoac app_chu")
+        if self.credit < 0 or self.so_luong < 0:
+            raise SuDungError("so am")
+
+        if self.trang_thai in TINH_TIEN:
+            # ⛔ Mot ban ghi DA GIAO ma khong co don vi do la mot con so khong
+            #    kiem duoc. Doi soat sau nay se khong biet no den tu dau.
+            if not self.don_vi or self.don_vi not in DON_VI:
+                raise SuDungError(
+                    f"{self.nang_luc}: da giao thi phai khai don vi do "
+                    f"({'/'.join(DON_VI)}), nhan duoc {self.don_vi!r}")
+            if self.so_luong <= 0:
+                raise SuDungError(f"{self.nang_luc}: da giao ma so luong = 0")
+        elif self.credit:
+            # 🔴 Cho de sai nhat trong ca tep: mot lan TU_CHOI/MO_HO khong duoc
+            #    mang credit. Neu no mang, tong cua lan chay se cong ca nhung
+            #    viec **chua chac da chay** — va no cong am tham.
+            raise SuDungError(
+                f"{self.nang_luc}: trang thai {self.trang_thai} khong duoc mang "
+                f"credit (nhan {self.credit})")
+
+    @property
+    def duoc_tinh_tien(self) -> bool:
+        return self.trang_thai in TINH_TIEN
+
+    @property
+    def duoc_tu_dong_thu_lai(self) -> bool:
+        return self.trang_thai not in KHONG_TU_DONG_THU_LAI
+
+
+def tong_credit(cac_su_dung) -> int:
+    """Tong credit cua nhung luot **da giao**. Bo qua tu choi/mo ho."""
+    return sum(int(s.credit) for s in cac_su_dung if s.duoc_tinh_tien)
+
+
+def cua_chan_truoc_khi_tieu(db, run, *, uoc_them: int) -> None:
+    """⛔ Goi TRUOC moi luot co the ton tien. Nem neu se vuot muc da giu.
+
+    Mong hon `features.kiem_tran_chi` mot lop: no nhan **uoc** cua lan goi sap
+    toi, con `kiem_tran_chi` chi biet nhung gi da tieu.
+
+    🔑 Vi sao can mot cua o day thay vi de `quyet_toan` phat hien sau: `quyet_toan`
+       chay khi lan chay da ket thuc. Luc do tien da tieu roi, va thu duy nhat
+       con lam duoc la bao cho khach mot con so ho khong dong y.
+
+    ⇒ Mot uoc luong te phai thanh mot **that bai chinh sach sach se** truoc khi
+      tieu, khong phai mot hoa don bat ngo sau khi tieu.
+    """
+    from . import features
+
+    features.kiem_tran_chi(db, run, max(0, int(uoc_them)))
+
+
+def cua_chan_cho_lo(db, run, *, uoc_moi_don_vi: int, so_don_vi: int) -> None:
+    """Cua chan cho mot LO — vd sinh tieng 200 doan, doc anh 40 canh.
+
+    ⭐ Kiem CA LO truoc khi chay don vi dau tien, khong phai kiem tung cai mot.
+
+       Kiem tung cai thi lo se chay toi doan thu 137 roi dung — khach da tra cho
+       136 doan cua mot san pham **khong dung duoc**, vi mot ban long tieng thieu
+       mot phan ba cuoi khong phai mot ban long tieng.
+
+    ⇒ Het ngan sach thi hong TRUOC KHI bat dau, khong phai o giua.
+    """
+    cua_chan_truoc_khi_tieu(
+        db, run, uoc_them=max(0, int(uoc_moi_don_vi)) * max(0, int(so_don_vi)))
+
+
+def loi_khong_du_ngan_sach() -> str:
+    return _t('Chi phí thực tế sẽ vượt mức đã giữ cho phiên chạy này.')
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -278312,6 +278486,122 @@ def test_bang_item_KHONG_co_cot_nao_cua_mot_hang_doi():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
+SHA256=4c89f55fd07ff0d5c147f37db19ca7771a426337f9dbe85cd5d99597ab063b45 BYTES=4213 LINES=110
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
+
+## Loi that ma tep nay chot lai — do 2026-09-03
+
+        os.cpu_count()            = 20   loi LOGIC
+        psutil.cpu_count(False)   = 10   loi VAT LY   <- xdist `auto` dung so nay
+        gate truyen  -n           = 11
+
+`ngan_sach_loi()` tinh tren loi **logic**, xdist `auto` tinh tren loi **vat ly**,
+va ca hai bi tru cung hang so `LOI_DE_DANH_CHO_MAY = 6`. Nen mot co che sinh ra
+de **giam** tai lai dang **tang** no.
+
+⭐ Tren may khong sieu phan luong, hai so trung nhau va loi nay khong ton tai.
+   No chi lo ra o may co SMT. Nen phep kiem duoi day **gia lap nhieu hinh may**
+   thay vi chi kiem may dang chay — mot phep kiem chi chay tren may nay se xanh
+   o nua so may va khong ai biet.
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "tools"))
+import gate  # noqa: E402
+
+
+def _n_truyen_cho_pytest() -> int:
+    """Dung LAI dung phep tinh o `gate.py`, khong chep so.
+
+    ⚠️ Neu mai nay `gate.py` doi phep tinh nay ma tep test giu mot ban chep, thi
+       phep kiem se chot mot thu khong con ai chay. Doc lai tu chinh module.
+    """
+    return max(1, min(gate.LOI_TOI_DA_MOI_CONG_CU,
+                      gate.ngan_sach_loi() - len(gate.FRONTENDS),
+                      gate.loi_cong_cu_tu_do()))
+
+
+def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
+    """🔑 Bat bien chinh: ngan sach la TRAN, khong duoc thanh SAN."""
+    assert _n_truyen_cho_pytest() <= gate.loi_cong_cu_tu_do()
+
+
+@pytest.mark.parametrize("logic,vat_ly", [
+    (20, 10),   # may nay — SMT, va la hinh may loi da song
+    (16, 8),
+    (8, 4),
+    (4, 4),     # khong SMT: hai so trung nhau, loi khong the lo ra
+    (2, 1),
+    (64, 32),
+])
+def test_moi_hinh_may_deu_ton_trong_tran(monkeypatch, logic, vat_ly):
+    """Gia lap nhieu may, vi loi nay chi lo ra o may co SMT.
+
+    ⛔ Mot phep kiem chi chay tren may hien tai se xanh o nua so cau hinh va
+       khong noi gi ve nua kia. `LOI_DE_DANH_CHO_MAY` cung bi keo theo — tren may
+       4 loi, `20-6` va `4-6` cho hai the gioi khac han.
+    """
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: logic)
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: vat_ly)
+
+    n = _n_truyen_cho_pytest()
+    assert n <= vat_ly, f"may {logic}/{vat_ly}: truyen -n {n} > auto {vat_ly}"
+    assert n >= 1, "khong duoc tra ve 0 worker"
+
+
+def test_chot_nay_THAT_SU_bat_duoc_ban_gan_thang(monkeypatch):
+    """Chung minh phep kiem tren khong phai mot den xanh noi vao khong.
+
+    Tai hien **ban truoc khi sua**: bo ve `loi_cong_cu_tu_do()` ra khoi `min`.
+    Neu no van xanh thi phep kiem o tren dang do mot thu khac.
+    """
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+
+    ban_cu = max(1, min(gate.LOI_TOI_DA_MOI_CONG_CU,
+                        gate.ngan_sach_loi() - len(gate.FRONTENDS)))
+    assert ban_cu == 11, "ban cu phai tai hien dung con so 11 da do duoc"
+    assert ban_cu > gate.loi_cong_cu_tu_do(), (
+        "ban cu phai VUOT tran — neu khong thi khong co gi de sua")
+
+    # Va ban moi thi khong.
+    assert _n_truyen_cho_pytest() == 10
+
+
+def test_loi_cong_cu_tu_do_doc_cung_nguon_voi_xdist():
+    """Neu hai ben doc hai nguon khac nhau thi chung se lech lai, im lang.
+
+    ⭐ `xdist/plugin.py:32` goi `psutil.cpu_count(logical=use_logical)`, va chi
+       roi ve `os.cpu_count()` khi khong co psutil (`plugin.py:46`). Ham cua ta
+       phai co dung hai nhanh do.
+    """
+    import inspect
+
+    nguon = inspect.getsource(gate.loi_cong_cu_tu_do)
+    assert "psutil" in nguon
+    assert "logical=False" in nguon
+    assert "os.cpu_count" in nguon, "thieu nhanh du phong khi khong co psutil"
+
+
+def test_khong_tra_ve_0_khi_may_rat_nho(monkeypatch):
+    """`max(1, ...)`: mot may 2 loi van phai chay duoc, chi la cham hon.
+
+    Tu choi chay van la kieu hong te hon cham — cung luan cu voi
+    `ngan_sach_loi()` giu `max(2, ...)`.
+    """
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 2)
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 1)
+    assert _n_truyen_cho_pytest() == 1
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_43_web_hardening.py
 SHA256=6beaf002832aa9f31503a5de6f6f7a36f495172649838c0e9976fc2a73dd4891 BYTES=8439 LINES=190
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -308511,7 +308801,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=84399c8f10ae8ca1c34495ea69cc84d8cf54c3c33009375e4c472fe98b4049e7 BYTES=63045 LINES=1204
+SHA256=3e7262d9d8c07ffd22100610076697023e03f1bd7c5098165752c27577ae22f7 BYTES=64714 LINES=1240
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -308625,6 +308915,38 @@ def ngan_sach_loi() -> int:
     return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
 
 
+def loi_cong_cu_tu_do() -> int:
+    """So worker ma `pytest -n auto` se TU CHON. Cung nguon voi xdist.
+
+    🔴 **HAM NAY SUA MOT LOI DANG SONG, do duoc 03/09:**
+
+            os.cpu_count()            = 20   loi LOGIC
+            psutil.cpu_count(False)   = 10   loi VAT LY   <- xdist `auto` dung
+            gate truyen  -n           = 11
+
+       `ngan_sach_loi()` tinh tren loi **logic**, xdist `auto` tinh tren loi
+       **vat ly**, va ca hai bi tru cung mot hang so `LOI_DE_DANH_CHO_MAY`. Nen
+       "ngan sach" 11 lai LON HON 10 — mot co che sinh ra de GIAM tai dang TANG.
+
+    ⭐ Tren may khong sieu phan luong hai so trung nhau va loi nay **khong ton
+       tai**. No chi lo ra o may co SMT — tuc dung loai may nay.
+
+    ⛔ Bai hoc the loai, `lttchat-...-49` tra gia de co o mot ban va bi bo:
+       **mot ngan sach la GIOI HAN TREN, khong phai mot phep gan.** Gan thang
+       thi khi cong cu tu do ra so nho hon, cai "tran" lai thanh SAN.
+
+    ⇒ Doc cung nguon voi `xdist/plugin.py:32` de hai ben khong bao gio lech.
+
+    ⚠️ Khong psutil thi xdist cung roi ve `os.cpu_count()` (`plugin.py:46`), nen
+       nhanh du phong tra dung thu xdist se tra — khong doan, khong tu che.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return os.cpu_count() or 1
+    return psutil.cpu_count(logical=False) or psutil.cpu_count() or 1
+
+
 def _chia_loi(so_viec_nang: int) -> int:
     """Moi viec nang duoc bao nhieu loi. Toi thieu 1."""
     return max(1, min(LOI_TOI_DA_MOI_CONG_CU,
@@ -308736,8 +309058,12 @@ def _steps(quick: bool) -> list[Step]:
     #    loi** o `_chay_theo_lich` lo phan con lai — neu tong vuot ngan sach thi
     #    mot frontend doi, chu khong phai ai cung bi cat nho tu dau.
     loi_moi_viec = min(2, LOI_TOI_DA_MOI_CONG_CU)          # frontend: ngan, 2 la du
+    # ⛔ `loi_cong_cu_tu_do()` la ve thu BA cua phep `min`, va no la ve chiu luc:
+    #    hai ve kia tinh tren loi LOGIC, ve nay tra ve dung thu xdist se tu chon.
+    #    Thieu no thi "ngan sach" 11 lai lon hon `auto` = 10. Xem docstring cua no.
     loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
-                             ngan_sach_loi() - len(FRONTENDS)))
+                             ngan_sach_loi() - len(FRONTENDS),
+                             loi_cong_cu_tu_do()))
 
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #

@@ -110,6 +110,38 @@ def ngan_sach_loi() -> int:
     return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
 
 
+def loi_cong_cu_tu_do() -> int:
+    """So worker ma `pytest -n auto` se TU CHON. Cung nguon voi xdist.
+
+    🔴 **HAM NAY SUA MOT LOI DANG SONG, do duoc 03/09:**
+
+            os.cpu_count()            = 20   loi LOGIC
+            psutil.cpu_count(False)   = 10   loi VAT LY   <- xdist `auto` dung
+            gate truyen  -n           = 11
+
+       `ngan_sach_loi()` tinh tren loi **logic**, xdist `auto` tinh tren loi
+       **vat ly**, va ca hai bi tru cung mot hang so `LOI_DE_DANH_CHO_MAY`. Nen
+       "ngan sach" 11 lai LON HON 10 — mot co che sinh ra de GIAM tai dang TANG.
+
+    ⭐ Tren may khong sieu phan luong hai so trung nhau va loi nay **khong ton
+       tai**. No chi lo ra o may co SMT — tuc dung loai may nay.
+
+    ⛔ Bai hoc the loai, `lttchat-...-49` tra gia de co o mot ban va bi bo:
+       **mot ngan sach la GIOI HAN TREN, khong phai mot phep gan.** Gan thang
+       thi khi cong cu tu do ra so nho hon, cai "tran" lai thanh SAN.
+
+    ⇒ Doc cung nguon voi `xdist/plugin.py:32` de hai ben khong bao gio lech.
+
+    ⚠️ Khong psutil thi xdist cung roi ve `os.cpu_count()` (`plugin.py:46`), nen
+       nhanh du phong tra dung thu xdist se tra — khong doan, khong tu che.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return os.cpu_count() or 1
+    return psutil.cpu_count(logical=False) or psutil.cpu_count() or 1
+
+
 def _chia_loi(so_viec_nang: int) -> int:
     """Moi viec nang duoc bao nhieu loi. Toi thieu 1."""
     return max(1, min(LOI_TOI_DA_MOI_CONG_CU,
@@ -221,8 +253,12 @@ def _steps(quick: bool) -> list[Step]:
     #    loi** o `_chay_theo_lich` lo phan con lai — neu tong vuot ngan sach thi
     #    mot frontend doi, chu khong phai ai cung bi cat nho tu dau.
     loi_moi_viec = min(2, LOI_TOI_DA_MOI_CONG_CU)          # frontend: ngan, 2 la du
+    # ⛔ `loi_cong_cu_tu_do()` la ve thu BA cua phep `min`, va no la ve chiu luc:
+    #    hai ve kia tinh tren loi LOGIC, ve nay tra ve dung thu xdist se tu chon.
+    #    Thieu no thi "ngan sach" 11 lai lon hon `auto` = 10. Xem docstring cua no.
     loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
-                             ngan_sach_loi() - len(FRONTENDS)))
+                             ngan_sach_loi() - len(FRONTENDS),
+                             loi_cong_cu_tu_do()))
 
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #
