@@ -38,7 +38,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import (JSON, DateTime, Index, Integer, String, Text,
+from sqlalchemy import (JSON, DateTime, Float, Index, Integer, String, Text,
                         UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -79,6 +79,23 @@ def sinh_id() -> str:
     viec vo tinh truyen mot id khac vao dung cho nay.
     """
     return "asvr_" + uuid.uuid4().hex
+
+
+# ── Trang thai mot luot goi nang luc (ADR-001 D9) ────────────────────────────
+#
+# 🔑 Ba trang thai, va HAI trong so do khong duoc thu lai mu:
+#
+#     DA_GIAO   provider tra ket qua       -> tinh tien, dung lai duoc
+#     TU_CHOI   provider tu choi ro rang   -> khong tinh tien, thu lai duoc
+#     MO_HO     mat ket noi SAU khi gui    -> **khong biet** da chay chua
+#
+# `MO_HO` la trang thai dat nhat trong ca he: co the provider da chay va da tinh
+# tien ta, co the chua. Thu lai mu la co the tra tien hai lan cho mot viec; bo
+# qua la co the mat mot ket qua da tra tien. Nen no khong tu dong lam gi ca.
+DUNG_DA_GIAO = "da_giao"
+DUNG_TU_CHOI = "tu_choi"
+DUNG_MO_HO = "mo_ho"
+DUNG_TRANG_THAI = (DUNG_DA_GIAO, DUNG_TU_CHOI, DUNG_MO_HO)
 
 
 class AsvRun(Base):
@@ -368,4 +385,104 @@ class AsvWorkItem(Base):
                          name="ux_asv_work_item_run_stage_key"),
         Index("ix_asv_work_item_run_stage_status", "run_id", "stage", "status"),
         Index("ix_asv_work_item_owner_run", "owner_id", "run_id"),
+    )
+
+
+class AsvUsage(Base):
+    """MOT luot goi nang luc, **do duoc**. So cai cua lan chay.
+
+    ## Vi sao mot bang rieng, khi da co `AsvWorkItem.credit_actual`
+
+    `credit_actual` tra loi "het bao nhieu". No khong tra loi duoc ba cau hoi ma
+    mot lan doi soat tien can:
+
+        nang luc nao da chay        -> khach hoi "toi tra cho cai gi"
+        do bang don vi gi           -> 1.200 token va 12 giay la hai the gioi khac
+        lan goi do co CHAC da chay  -> ADR-001 D9: dispatch mo ho, xem tren
+
+    Mot don vi viec co the goi NHIEU nang luc (doc canh bang VLM roi sinh tieng
+    bang TTS), nen quan he la mot-nhieu va mot cot khong dien dat duoc.
+
+    ## ⛔ BANG NAY KHONG PHAI MOT DUONG TIEN THU HAI
+
+    🔴 Day la cho de sai nhat trong ca pha 06. Neu `features.tong_da_dung` cong
+       ca `AsvUsage.credit`, ta co **ba** noi mang tien cho cung mot viec —
+       stage, item, va so cai — va `_kiem_khong_tinh_hai_lan` da ton tai chinh
+       vi hai noi da la mot noi qua nhieu.
+
+    ⇒ Tien di qua DUNG MOT cot: `AsvWorkItem.credit_actual`. Bang nay la **bang
+      chung** giai thich con so do, khong phai mot nguon cong thu hai. Bat bien:
+
+          item.credit_actual == tong credit cua cac dong DA_GIAO cua item do
+
+      `su_dung.doi_soat` kiem dieu do, va `features.quyet_toan` goi no truoc khi
+      chot tien — vi mot con so khong giai thich duoc thi khong duoc thu.
+
+    ## An toan khi may chet giua chung
+
+    `su_dung.ghi` viet dong nay VA cong `credit_actual` cua item trong **mot
+    giao dich**. May chet truoc commit thi khong co gi; chet sau commit thi ca
+    hai deu co. Khong co khe cua so nao de mot ban ghi da giao ton tai ma tien
+    chua duoc cong, hoac nguoc lai.
+
+    `UNIQUE(run_id, ma_dispatch)` lo phan con lai: neu tang goi cung cap mot ma
+    dispatch **on dinh cua provider**, thi mot lan phat lai cung ma do se bi CSDL
+    tu choi thay vi tinh tien lan hai.
+
+    ⚠️ Chinh xac ve pham vi cua loi hua do: no bao ve khi ma dispatch **on dinh**.
+       Neu tang goi sinh mot ma moi moi lan thi do la mot lan gui KHAC, va tinh
+       tien no la dung. Bang nay khong biet — va khong the biet — hai lan gui
+       khac ma co phai cung mot viec hay khong.
+    """
+
+    __tablename__ = "asv_usage"
+
+    id: Mapped[str] = mapped_column(String(48), primary_key=True, default=sinh_id)
+    run_id: Mapped[str] = mapped_column(String(48), nullable=False, index=True)
+
+    #: ⛔ Chu so huu o COT — cung ly do nhu `AsvWorkItem.owner_id`: mot phep tra
+    #:    "cua ai" phai la mot dieu kien WHERE.
+    owner_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+
+    stage: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    #: Don vi viec da sinh ra lan goi nay. Luon co: xem `su_dung.ghi`.
+    item_key: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    #: Lan thu thu may cua item. 🔑 Giu lai de tra loi "vi sao lan chay nay ton
+    #: nhieu the" — mot item thu ba lan co ba dong, va hai dong dau van la tien
+    #: that neu chung DA_GIAO.
+    attempt: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: Nang luc da goi: `text.chat`, `speech.ltt`, `autosubvideo.transcribe`.
+    nang_luc: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    #: App CHU cua nang luc do. ⛔ Khong phai ten vendor ben ngoai: ta khong ban
+    #:    ten nha cung cap cho khach (`ltt_llm.ALIAS_SANG_ID` giu lop dem do).
+    app_chu: Mapped[str] = mapped_column(String(32), nullable=False)
+
+    trang_thai: Mapped[str] = mapped_column(String(16), nullable=False, index=True)
+
+    #: Don vi do. Rong voi `tu_choi`/`mo_ho` — do la mot su that, khong phai mot
+    #: cho trong can dien.
+    don_vi: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    so_luong: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
+
+    #: Credit DO DUOC. Bang 0 tru khi `trang_thai == da_giao`.
+    credit: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: Danh tinh lan gui, de doi soat khi mo ho va de chong tinh hai lan.
+    ma_dispatch: Mapped[str] = mapped_column(String(64), nullable=False)
+
+    #: Vet giai quyet mot dong `mo_ho`: ai quyet, khi nao, ket luan gi.
+    ghi_chu: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_now, nullable=False)
+
+    __table_args__ = (
+        #: 🔑 Rang buoc chiu luc. Xem docstring — pham vi loi hua co gioi han.
+        UniqueConstraint("run_id", "ma_dispatch", name="ux_asv_usage_run_dispatch"),
+        Index("ix_asv_usage_run_stage_item", "run_id", "stage", "item_key"),
+        Index("ix_asv_usage_run_trang_thai", "run_id", "trang_thai"),
     )

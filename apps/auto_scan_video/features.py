@@ -35,6 +35,7 @@ from platform_core import credit, jobs
 from platform_core.i18n import _ as _t
 
 from . import pipeline
+from . import su_dung
 from .tables import (RUN_CANCELLED, RUN_DONE, RUN_ERROR, RUN_QUEUED,
                      RUN_RUNNING, RUN_TERMINAL, STAGE_FAILED_TERMINAL,
                      STAGE_PENDING, STAGE_QUEUED, STAGE_SUCCEEDED,
@@ -300,6 +301,20 @@ def thu_lai_giai_doan(db: Session, run_id: str, owner_id: str,
     if stage is None:
         raise KhongTimThay(_t('Không có giai đoạn tên này.'))
 
+    # ⛔ ADR-001 D9. Mot lan gui MO HO la mot lan **khong biet** provider da chay
+    #    chua. Thu lai giai doan do la co the tra tien lan thu hai cho dung mot
+    #    viec — va khong cach nao phat hien sau, vi ca hai lan deu trong nhu that.
+    #
+    # 🔑 Chan o day chu khong o `su_dung`: `su_dung.ghi` chi biet mot luot goi,
+    #    con cau hoi "co duoc chay lai ca giai doan nay khong" chi tra loi duoc
+    #    o cho nhin thay ca giai doan.
+    #
+    # ⇒ Cach mo khoa la mot NGUOI ket luan (`su_dung.giai_quyet_mo_ho`), khong
+    #   phai mot lan bam lai.
+    mo_ho = su_dung.cac_mo_ho(db, run, stage=ten)
+    if mo_ho:
+        raise AsvError(su_dung.loi_dispatch_mo_ho(len(mo_ho)))
+
     _dat_lai_giai_doan(db, stage)
     da_vo_hieu = vo_hieu_ha_nguon(db, run, ten)
 
@@ -428,6 +443,16 @@ def quyet_toan(db: Session, run: AsvRun, *, trang_thai_cuoi: str) -> AsvRun:
         raise AsvError(f"trang thai ket thuc khong hop le: {trang_thai_cuoi}")
     if run.status in RUN_TERMINAL:
         return run
+
+    # ⛔ Bang chung phai giai thich duoc con so TRUOC khi con so duoc thu.
+    #
+    # 🔑 `su_dung.ghi` la duong duy nhat cong tien vao mot don vi viec, nen no
+    #    khong the tu lam lech. Cai phep doi soat nay thuc su bat la mot duong
+    #    ghi **khac** — mot lan `item.credit_actual = ...` viet tay o pha sau.
+    #    Do la thu chi lo ra khi doi chieu hai nguon, va cho de lo ra la day:
+    #    sau khi quyet toan thi tien da thu, va mot phep kiem sau do chi con la
+    #    mot bao cao.
+    su_dung.doi_soat(db, run)
 
     thuc_te = min(tong_da_dung(db, run), int(run.credit_held))
     if int(run.credit_held) > 0:
