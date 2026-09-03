@@ -575,3 +575,142 @@ def test_khong_con_don_vi_viec_mo_coi_sau_mot_luot_ghi_binh_thuong(db):
                 su_dung=_giao(credit=3))
     su_dung.doi_soat(db, run)
     assert db.query(AsvWorkItem).count() == 1
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  §10  Tich hop: so cai + so credit THAT cua nen tang, mot lan chay tron ven
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Cac muc tren dung `AsvRun` dung tay. Muc nay di qua `features.tao_run` — tuc
+# qua `platform_core.credit.giu_cho` that — de chung minh "MOT hold duy nhat"
+# bang CHUC NANG, khong chi bang mot phep quet AST.
+
+def test_ca_luot_chay_chi_giu_credit_MOT_lan_va_quyet_toan_dung_so_do_duoc(db):
+    """Duong tien day du: nap -> giu -> ghi so cai -> doi soat -> quyet toan.
+
+    🔑 Bon dieu duoc chot cung mot luc, va chung chi co nghia khi di CUNG nhau:
+
+        1. `tao_run` giu credit dung MOT lan, tren `run.id`
+        2. moi luot goi nang luc chi cong vao `AsvWorkItem.credit_actual`
+        3. `quyet_toan` doi soat TRUOC khi thu, roi thu dung tong DO DUOC
+        4. phan khong dung duoc HOAN — khach khong tra cho thu khong chay
+    """
+    from platform_core import credit
+
+    from apps.auto_scan_video import pipeline as pl
+
+    credit.nap(db, "u-tich-hop", 1000)
+    db.commit()
+    truoc = credit.so_du(db, "u-tich-hop")
+
+    run = features.tao_run(db, owner_id="u-tich-hop",
+                           source_key="asv/u/nguon/a.mp4",
+                           settings={}, uoc_luong_credit=200)
+    db.commit()
+
+    # (1) dung MOT lan giu, va giu tren chinh `run.id`
+    #
+    # 🔑 Dem BUT TOAN giu cho, khong chi doc tong. `so_da_giu` cong moi but toan
+    #    `CREDIT_HOLD` cua `job_id`, nen mot lan giu 200 va hai lan giu 100 cho
+    #    ra **cung mot so**. Cai ta muon chot la "chi mot chu so huu tinh tien",
+    #    va dieu do chi doc duoc o SO LUONG but toan.
+    from platform_core.models import CreditEntry
+    but_toan = db.query(CreditEntry).filter(
+        CreditEntry.job_id == run.id,
+        CreditEntry.kind == "hold").all()
+    assert len(but_toan) == 1, f"phai co DUNG mot but toan giu cho, co {len(but_toan)}"
+    assert credit.so_da_giu(db, run.id) == 200
+    assert credit.so_du(db, "u-tich-hop") == truoc - 200
+
+    # (2) ba luot goi nang luc that (fake provider), tong do duoc = 47
+    for khoa, c in (("seg-1", 20), ("seg-2", 15), ("seg-3", 12)):
+        su_dung.ghi(db, run, stage=pl.VOICE_SYNTHESIS, item_key=khoa,
+                    su_dung=_giao(credit=c, ma_dispatch=f"prov-{khoa}"))
+    # mot luot bi provider tu choi: khong dong nao
+    su_dung.ghi(db, run, stage=pl.VOICE_SYNTHESIS, item_key="seg-4",
+                su_dung=su_dung.SuDung(nang_luc="speech.ltt", app_chu="ltt_voice",
+                                       trang_thai=su_dung.TU_CHOI,
+                                       ma_dispatch="prov-seg-4"))
+    db.flush()
+
+    assert features.tong_da_dung(db, run) == 47
+    su_dung.doi_soat(db, run)
+
+    # (3)(4) quyet toan thu dung 47, hoan 153
+    features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
+    db.commit()
+
+    assert run.credit_actual == 47
+
+    # ⚠️ `so_da_giu` KHONG ve 0 sau quyet toan, va do la dung: no cong moi but
+    #    toan `CREDIT_HOLD` — mot **so sach lich su**, khong phai "con giu bao
+    #    nhieu". Phep kiem dau tien toi viet o day khang dinh no ve 0 va do la
+    #    toi doc sai hop dong cua nen tang chu khong phai nen tang sai.
+    assert credit.so_da_giu(db, run.id) == 200
+    assert credit._da_ket_so(db, run.id), "quyet toan phai de lai but toan ket so"
+
+    # ⭐ Bang chung THAT rang phan khong dung da duoc hoan nam o SO DU.
+    assert credit.so_du(db, "u-tich-hop") == truoc - 47, (
+        "phan khong dung phai duoc hoan — khach khong tra cho thu khong chay")
+
+    ke = su_dung.so_ke(db, run)
+    assert ke["tong"]["credit"] == 47
+    assert ke["tong"]["da_giao"] == 3 and ke["tong"]["tu_choi"] == 1
+
+
+def test_hai_khach_chay_cung_luc_khong_cham_vao_so_cua_nhau(db):
+    """Cach ly chu so huu o duong tien THAT, khong chi o truy van so cai."""
+    from platform_core import credit
+
+    from apps.auto_scan_video import pipeline as pl
+
+    for u in ("u-a", "u-b"):
+        credit.nap(db, u, 500)
+    db.commit()
+
+    ra = features.tao_run(db, owner_id="u-a", source_key="asv/a/x.mp4",
+                          settings={}, uoc_luong_credit=100)
+    rb = features.tao_run(db, owner_id="u-b", source_key="asv/b/y.mp4",
+                          settings={}, uoc_luong_credit=100)
+    db.commit()
+
+    su_dung.ghi(db, ra, stage=pl.VOICE_SYNTHESIS, item_key="s1",
+                su_dung=_giao(credit=10))
+    su_dung.ghi(db, rb, stage=pl.VOICE_SYNTHESIS, item_key="s1",
+                su_dung=_giao(credit=90))
+    db.flush()
+
+    features.quyet_toan(db, ra, trang_thai_cuoi=RUN_DONE)
+    features.quyet_toan(db, rb, trang_thai_cuoi=RUN_DONE)
+    db.commit()
+
+    assert credit.so_du(db, "u-a") == 500 - 10
+    assert credit.so_du(db, "u-b") == 500 - 90
+
+
+def test_vuot_hold_thi_khach_chi_tra_TOI_DA_phan_da_giu(db):
+    """⛔ Bat bien co san cua nen tang, va so cai khong duoc pha no.
+
+    `su_dung.ghi` co y KHONG tu choi ghi mot viec da giao vi ly do ngan sach —
+    tien da tieu roi, giau no di chi lam so sach sai. Nhung `quyet_toan` van
+    chan tren o muc da giu: phan vuot la ta chiu, khong phai khach.
+    """
+    from platform_core import credit
+
+    from apps.auto_scan_video import pipeline as pl
+
+    credit.nap(db, "u-vuot", 500)
+    db.commit()
+    run = features.tao_run(db, owner_id="u-vuot", source_key="asv/u/x.mp4",
+                           settings={}, uoc_luong_credit=30)
+    db.commit()
+
+    su_dung.ghi(db, run, stage=pl.VOICE_SYNTHESIS, item_key="s1",
+                su_dung=_giao(credit=90))
+    db.flush()
+    assert features.tong_da_dung(db, run) == 90, "so cai phai ghi that"
+
+    features.quyet_toan(db, run, trang_thai_cuoi=RUN_DONE)
+    db.commit()
+    assert run.credit_actual == 30, "chan tren o muc da giu"
+    assert credit.so_du(db, "u-vuot") == 500 - 30
