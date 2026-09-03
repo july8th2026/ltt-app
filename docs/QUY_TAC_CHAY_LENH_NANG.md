@@ -113,6 +113,54 @@ vị 7 ngày) để chỉ ra cái gì bất thường.
 ⇒ **Một công cụ chống-treo chưa được thử là một công cụ chưa tồn tại.** Và thử nó ở đường
   **hỏng** quan trọng hơn thử ở đường xanh.
 
+## Số liệu tìm được ngày 03/09 — và nó bác bỏ cái gì
+
+Chiều 03/09 phát hiện máy này **đã có sẵn** một hộp đen GPU chạy từ trước:
+`D:\FULL AUTO VIDEO\gpu_recorder.py`, tự chạy khi đăng nhập, ghi 2–5 mẫu/giây kèm CPU và RAM,
+`fsync` từng dòng. Nó ghi xuyên qua cả hai lần máy chết hôm đó.
+
+### Ba khoảng đứt của ngày 03/09
+
+| Giờ | Im lặng | CPU trước khi đứt | RAM trống | GPU |
+|---|---|---|---|---|
+| 01:35:10 | 26,5 phút | 100% | 15,6 GB | 0% / 28%, 47 °C, 27 W |
+| 13:48:57 | 6,9 phút | 20→71% | 15,2 GB | 0% / 37%, 48 °C, 32 W |
+| 15:13:29 | 3,6 phút | **4,6%** | **17,2 GB** | 0% / 2%, 48 °C, **19 W** |
+
+Cực trị cả ngày: điện GPU cao nhất **168 W trên trần 360 W**; VRAM cao nhất 12,3/16,3 GB;
+**không một mẫu nào** có cờ chặn xung.
+
+### Nhật ký sự kiện Windows
+
+- **29 lần `Kernel-Power 41`** trong 21 ngày (từ 14/08), 6 lần riêng ngày 02/09
+- `BugCheckCode = 0` ở cả ba lần gần nhất, **không** minidump, **không** sự kiện 1001
+- 2 lần WHEA-Logger id 19 (*lỗi phần cứng đã sửa được*, lõi CPU) ngày 29/08 và 01/09
+
+### Đọc được gì từ đó
+
+⛔ `Kernel-Power 41` + `BugCheckCode = 0` + không dump = Windows **không sập**. Nó mất nguồn
+hoặc bị reset cứng. Một lần hết RAM hay nghẽn CPU không tạo ra dấu vết này — máy sẽ chậm như
+chết nhưng vẫn sống và vẫn ghi được.
+
+⛔ Lần 15:13 xảy ra lúc máy **đang rảnh**: CPU 4,6%, RAM trống 17 GB, GPU 19 W. Không có phép
+đọc nào của "quá tải" giải thích được một mẫu như vậy.
+
+⛔ Sáu trong chín lần là ngày **02/09**, trước khi có bất kỳ lượt gate nào của việc đang làm.
+
+🔴 Nghĩa là **giả thuyết "gate ⨯ pytest làm treo máy" không được số liệu chống đỡ** — và tôi đã
+làm cả một ngày trên giả thuyết đó. Việc hạ `-n` từ 11 xuống 6 vẫn **đúng và vẫn giữ** (`-n 11`
+lớn hơn cả số `-n auto` tự chọn là 10, đó là một lỗi thật), nhưng nó không phải nguyên nhân của
+những lần khởi động lại.
+
+⚠️ Số liệu này **không** kết luận được là hỏng phần cứng. Người bấm nút reset cũng tạo ra đúng
+`Kernel-Power 41` với `BugCheckCode = 0`, và chủ dự án cho biết phần cứng không lỗi. Cái nó bác
+bỏ là *quá tải phần mềm*, không phải cái nó chứng minh.
+
+⭐ Bài học về quy trình, không về máy: **bằng chứng đã nằm sẵn trên đĩa suốt cả ngày.** 35 MB
+telemetry mỗi ngày, ghi từ 28/08, tự chạy từ Startup. Tôi dựng lại một hộp đen mới từ đầu và
+chạy gate nhiều lượt để "dò" — trong khi câu trả lời chỉ cách một lệnh `ls` trong thư mục
+`logs/gpu/`. **Trước khi dựng một phép đo, hãy tìm xem phép đo đó đã tồn tại chưa.**
+
 ## Ngân sách hiện tại, để khỏi tra lại
 
 ```
