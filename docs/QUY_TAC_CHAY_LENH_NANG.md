@@ -73,6 +73,46 @@ trong RAM của một tiến trình đã chết. Một lần reset không có nh
 3. **Không để phép đo thành nghi can.** Lấy mẫu thưa (≥ 8 s), chỉ đọc tổng máy. Quét
    `process_iter` qua trăm tiến trình mỗi 2 giây là tự thêm tải rồi đo chính mình.
 
+## Hộp đen — bật MỘT LẦN, chạy nền suốt
+
+```bash
+python tools/giam_sat_may.py --chay        # ghi mỗi 15s vào %TEMP%\ltt_hop_den
+```
+
+Nó ghi **máy**, không ghi *lệnh của ta* — nên nó thấy cả bot, phiên khác, dịch vụ production,
+deploy. Đó là điều `nhat_ky_chay.py` không làm được: hôm 03/09 cây gate có 13 tiến trình
+trong khi toàn máy có 58, và 45 cái còn lại không đi qua bất cứ thứ gì ta bọc.
+
+### Sau một lần treo / reset — lệnh đầu tiên phải gõ
+
+```bash
+python tools/giam_sat_may.py --kham
+```
+
+Nó tự tìm chỗ log **đứt** (khoảng trống > 3 nhịp = máy chết), lấy 6 mẫu cuối trước đó, xếp
+hạng tiến trình theo CPU/RAM ở đúng những mẫu ấy, và so với **nền của chính máy này** (trung
+vị 7 ngày) để chỉ ra cái gì bất thường.
+
+⛔ Nó **không kết luận nguyên nhân**. Nó đưa ra ai đang chiếm chỗ và cái gì lệch khỏi thường
+   lệ; phần kết luận là của người đọc. Một công cụ tự kết luận sẽ dẫn người đọc vào giả thuyết
+   đầu tiên — và đó đúng là kiểu sai đã xảy ra **mười một lần trong một ngày** ở dự án này.
+
+Đối chiếu thêm: `nhat_ky_chay.py --xem 3` (lệnh ta chạy) · `D:/FULL AUTO VIDEO/*/logs/` (bot)
+· `ListAgents` (phiên khác).
+
+### Ba lỗi tìm ra khi THỬ hai công cụ này, cả ba im lặng trên đường xanh
+
+| Lỗi | Hậu quả nếu không thử |
+|---|---|
+| `cpu_percent(interval=None)` lần đầu trả `0.0` | ghi `0%` cho máy đang chạy 100% |
+| cùng hàm gọi từ hai luồng → giẫm mốc | mẫu **giữa** cũng `0%` |
+| `print` emoji vỡ trên cp1252 | `--xem` **chết đúng nhánh "bị cắt"** — tức đúng lúc cần đọc |
+| `p.cpu_percent(None)` lần đầu mỗi tiến trình = 0 | `top: []` — máy bận trông y hệt máy trống |
+| `System Idle Process` (pid 0/4) | báo cáo mở đầu bằng "1786%" của tiến trình *nhàn rỗi* |
+
+⇒ **Một công cụ chống-treo chưa được thử là một công cụ chưa tồn tại.** Và thử nó ở đường
+  **hỏng** quan trọng hơn thử ở đường xanh.
+
 ## Ngân sách hiện tại, để khỏi tra lại
 
 ```
