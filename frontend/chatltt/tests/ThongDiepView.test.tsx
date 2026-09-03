@@ -214,3 +214,47 @@ describe('Loi hien ra phai la mot CAU, khong phai van ban noi bo', () => {
     expect(screen.getByRole('alert').textContent).toContain('Ảnh tham chiếu quá lớn.')
   })
 })
+
+describe('Cho tai nguyen: noi ra ly do, khong noi "Dang tao"', () => {
+  /**
+   * 🔴 Đo 04/09 trên production: job ảnh nằm `queued` nhiều phút vì GPU máy B
+   *    bận. Log worker nói rõ từng vòng — một câu tiếng Việt **viết sẵn cho
+   *    người dùng**, kèm cả gợi ý — nhưng nó dừng lại ở log. Màn hình vẫn nói
+   *    "Đang tạo…".
+   *
+   * ⛔ `defer_resource` không chạm sổ tiền và không tiêu lượt thử, nên đó là
+   *    một lần chờ hoàn toàn lành. Che nó đi không bảo vệ ai — nó chỉ biến một
+   *    lần chờ CÓ LÝ DO thành một lần treo VÔ CỚ.
+   */
+  const ve = (usage: Record<string, unknown>) => {
+    const m = tin({
+      status: 'queued', blocks: [],
+      execution: { id: 'ex1', status: 'queued', mode: 'job', tool_name: 'image.ltt',
+        partial_text: '', reasoning_text: '', finish_reason: '', usage,
+        credit: { giu: 3, thu: 0, hoan: 0 }, error_code: '', error_text: '',
+        job_id: 'j1', seq: 2 },
+    })
+    return render(<ThongDiepView m={m} phang={[m]} onChuyenNhanh={KHONG}
+      onTaoLai={KHONG} onSuaGuiLai={KHONG} />)
+  }
+
+  it('dang cho may ban ⇒ noi ro, kem so giay', () => {
+    ve({ cho_tai_nguyen: 17 })
+    const t = screen.getByRole('status').textContent || ''
+    expect(t).toContain('Máy đang bận')
+    expect(t).toContain('17 giây')
+    expect(t).not.toContain('Đang tạo')
+  })
+
+  it('den han thu lai ⇒ van la CHO, khong nhap nhay ve "Dang tao"', () => {
+    ve({ cho_tai_nguyen: 0 })
+    expect(screen.getByRole('status').textContent).toContain('Máy đang bận')
+  })
+
+  it('khong cho gi ⇒ van la "Dang tao" kem tien do', () => {
+    ve({ progress: 45 })
+    const t = screen.getByRole('status').textContent || ''
+    expect(t).toContain('Đang tạo')
+    expect(t).toContain('45%')
+  })
+})

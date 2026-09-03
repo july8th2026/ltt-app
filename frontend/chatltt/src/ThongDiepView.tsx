@@ -145,7 +145,10 @@ export function ThongDiepView({
   const loi = m.blocks.find((k) => k.type === 'error')
   const trangThai = m.blocks.find((k) => k.type === 'status')
   const dangTaoMedia = dangChay && m.execution?.mode === 'job'
-  const tienDo = (m.execution?.usage as { progress?: number } | undefined)?.progress ?? null
+  const dungLuong = m.execution?.usage as
+    { progress?: number; cho_tai_nguyen?: number } | undefined
+  const tienDo = dungLuong?.progress ?? null
+  const choTaiNguyen = dungLuong?.cho_tai_nguyen ?? null
 
   return (
     <article
@@ -197,7 +200,19 @@ export function ThongDiepView({
 
       {dangTaoMedia && (
         <p className="ltc-tin__nhan" role="status">
-          Đang tạo… {tienDo != null ? `${tienDo}%` : ''}
+          {/*
+            🔴 "Đang tạo…" MOT MINH la mot loi noi doi nho. Do 04/09 tren
+               production: job anh nam `queued` NHIEU PHUT vi GPU may B dang
+               ban, va man hinh van noi "Đang tạo…" — trong khi thu that su
+               dang xay ra la **cho**, va he thong biet chinh xac con bao nhieu
+               giay (`job.next_run_at`).
+            ⭐ `defer_resource` khong cham so tien va khong tieu luot thu, nen
+               day la mot lan cho hoan toan lanh. Che no di khong bao ve ai —
+               no chi bien mot lan cho CO LY DO thanh mot lan treo VO CO.
+          */}
+          {choTaiNguyen != null
+            ? `Máy đang bận — tự thử lại${choTaiNguyen > 0 ? ` sau ${choTaiNguyen} giây` : ' ngay'}…`
+            : `Đang tạo… ${tienDo != null ? `${tienDo}%` : ''}`}
         </p>
       )}
       {duongTaiSan && <KhoiTaiSan khoi={m.blocks} duongTaiSan={duongTaiSan}

@@ -155,11 +155,66 @@ def dong_bo(db, *, user_id: str, execution_id: str) -> dict:
     else:
         moi = int(getattr(job, "progress", 0) or 0)
         cu = int((ex.usage or {}).get("progress") or 0)
+        cho_moi = _cho_tai_nguyen(job)
+        cho_cu = (ex.usage or {}).get("cho_tai_nguyen")
         if moi != cu:
             S.ap_dung(ex, {"type": "execution.progress", "progress": moi},
                       message=tin)
+        if cho_moi != cho_cu:
+            # 🔴 LY DO CHO DA DUOC BIET CHINH XAC, VA NO DUNG LAI O LOG.
+            #
+            #    Đo 04/09 trên production: job ảnh nằm `queued` nhiều phút.
+            #    Log worker nói rõ từng vòng — `DangBan: "Máy tạo ảnh đang bận.
+            #    Bạn có thể thử lại sau, hoặc chọn model đắm máy."` — một câu
+            #    tiếng Việt **viết sẵn cho người dùng**, kèm cả gợi ý.
+            #
+            #    Phía khách chỉ thấy một khối media nằm im. Không biết đang chờ
+            #    gì, chờ bao lâu, hay có phải mình làm sai gì không.
+            #
+            # ⛔ `defer_resource` KHÔNG chạm sổ tiền và KHÔNG tiêu lượt thử —
+            #    nên đây là một lần chờ hoàn toàn lành. Che nó đi không bảo vệ
+            #    ai; nó chỉ biến một lần chờ có lý do thành một lần treo vô cớ.
+            u = dict(ex.usage or {})
+            if cho_moi is None:
+                u.pop("cho_tai_nguyen", None)
+            else:
+                u["cho_tai_nguyen"] = cho_moi
+            ex.usage = u
+        if moi != cu or cho_moi != cho_cu:
             db.commit()
     return S.snapshot(ex)
+
+
+def _cho_tai_nguyen(job) -> Optional[int]:
+    """Job có đang chờ một máy bận không, và còn bao nhiêu giây.
+
+    Trả `None` khi không phải trạng thái đó. Trả **số giây còn lại** (>= 0) khi
+    `defer_resource` đã hẹn lại — con số ấy là thật, không phải phỏng đoán:
+    `job.next_run_at` do chính nền tảng đặt.
+
+    ⚠️ Trả `0` chứ không `None` khi đã tới hẹn: "sắp thử lại" vẫn là chờ tài
+       nguyên, và một `None` ở đó sẽ làm dòng trạng thái nhấp nháy tắt/bật giữa
+       hai nhịp hỏi.
+    """
+    from platform_core.jobs import PROVIDER_REJECTED
+
+    if str(getattr(job, "status", "")) != "queued":
+        return None
+    if str(getattr(job, "provider_state", "")) != PROVIDER_REJECTED:
+        return None
+    khi = getattr(job, "next_run_at", None)
+    if khi is None:
+        return 0
+    try:
+        con = (khi - _now_utc()).total_seconds()
+    except (TypeError, ValueError):
+        return 0
+    return max(0, int(con))
+
+
+def _now_utc():
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc)
 
 
 def kiem_so_huu_khoa(khoa: str, user_id: str) -> bool:

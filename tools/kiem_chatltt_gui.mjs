@@ -640,6 +640,8 @@ const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
   await nap('dot2_hoi_thoai.mjs', 'dot2');
   await nap('dot3_markdown.mjs', 'dot3');
   await nap('dot4_dinh_kem.mjs', 'dot4');
+  await nap('dot5_tao_anh.mjs', 'dot5');
+  await nap('dot6_tao_giong.mjs', 'dot6');
 }
 
 // ── Chay ───────────────────────────────────────────────────────────────────
