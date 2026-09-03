@@ -165,6 +165,53 @@ Dem duoc luc dieu tra: 4 phien Claude · Codex · playwright-mcp · node · pwsh
 ⇒ Ngan sach loi B0-B3 dieu tiet **13**. Do la thiet ke dung cho pham vi cua no, va pham vi
   do la thieu so. Khong co co che nao o tam MAY.
 
+## 🔴 ĐÍNH CHÍNH — bot CÓ `ResourceGuard`, nhưng nó gần như vô hiệu
+
+Tôi kết luận *"không một dòng nào"* sau khi quét **hẹp** (`DUNGVIDEO-FULL/engine`,
+`master_gui`, `bot_logger.py`). Một lượt quét **rộng** tìm ra `bot_coordination.py`:
+
+```python
+bot_coordination.py:429   cpu = psutil.cpu_percent(interval=0.1)
+bot_coordination.py:436   free_gb = psutil.virtual_memory().available / 1024**3
+```
+
+⛔ Lần thứ chín của cùng một lỗi: **một kết quả rỗng từ phép quét hẹp không phải bằng chứng
+   vắng mặt.** Ghi lại vì nó đúng bằng lỗi `lttstudiosapp-73` mắc (`0/15`) và lỗi tôi mắc ở
+   Phase 02 (đọc import list mà không kiểm bề mặt khai báo).
+
+### Nhưng cơ chế đó gần như không đóng — và lý do đã được ghi ngay trong mã
+
+```python
+CPU_MAX_PERCENT = 98   # [Phase F3] 92→98: nguong cu chan job khi DEMUCS/Whisper
+                       # burst CPU >92% (DUNGVIDEO chi chay duoc 2 job/4h).
+RAM_MIN_FREE_GB = 2.0  # may 32 GiB
+```
+
+⭐ **Đây chính xác là kịch bản plan này đã cảnh báo**, xảy ra thật ở một hệ thống khác: một
+   cửa chặn quá chặt thì người ta không gỡ nó — họ **nới ngưỡng** cho tới khi nó không còn
+   chặn gì. 92 → 98 không phải tinh chỉnh, nó là vô hiệu hoá bằng con số.
+
+### Và bot đang chạy KHÔNG gọi nó
+
+`DUNGVIDEO-FULL/bot/worker.py:41` chỉ import `GpuSlot, VramBudget`; dòng 1099 thêm
+`PhaseRegistry`. **`ResourceGuard` không xuất hiện.** Bot giành GPU slot và VRAM budget —
+không hỏi CPU/RAM.
+
+## Cộng đồng: xdist KHÔNG có cơ chế tự co giãn theo tải
+
+Tra `pytest-dev/pytest-xdist` — 6 issue về `numprocesses`/load, **không cái nào** là
+load-aware scaling. `-n auto` = số lõi vật lý, **cố định lúc khởi động**, không đọc lại.
+
+⇒ Lời giải "worker tự co giãn theo CPU rảnh" **không tồn tại ở tầng xdist**. Ai muốn nó phải
+  tự viết — và tự viết một bộ điều tiết là tự nhận một bài toán điều khiển.
+
+⭐ Lời giải "auto" thật sự **đã có sẵn, ở tầng hệ điều hành**: `BELOW_NORMAL_PRIORITY_CLASS`.
+  Nó không đếm, không đoán, không cần ngưỡng — OS nhường CPU **đúng lúc có ai cần**. Đó là
+  auto-scaling đúng nghĩa, và nó miễn phí trên máy rảnh.
+
+  ⚠️ Trần của nó: chỉ xếp hàng CPU. Không nhường RAM, và **không phân xử giữa hai tiến trình
+     cùng ưu tiên thấp** — hai lượt gate, hoặc gate với một bot cũng chạy ưu tiên thường.
+
 ## Nghiệm thu
 
 1. `-n` truyền cho pytest **≤** `psutil.cpu_count(logical=False)` trong mọi cấu hình.
