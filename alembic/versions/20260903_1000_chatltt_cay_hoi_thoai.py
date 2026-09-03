@@ -15,7 +15,18 @@ import sqlalchemy as sa
 from alembic import op
 
 revision = "7d2c1e9f4a03"
-down_revision = "c7b91e4a2f80"
+# ⚠️ **Doi ngay 2026-09-03 khi gop hai nhanh.** Chuoi nay va chuoi Auto Scan V4
+#    cung tach ra tu `c7b91e4a2f80` (voice_tu_dien) o hai nhanh khac nhau, nen
+#    sau khi gop co HAI dau va alembic khong biet chay cai nao truoc
+#    (`test_103::test_platform_migrations_have_a_single_head`).
+#
+# ⭐ Noi vao SAU chuoi ASV chu khong nguoc lai, vi chinh
+#    `test_616::test_alembic_mot_head_va_migration_chatltt_noi_dung_chuoi` chot
+#    rang migration nay la **dau chuoi**. Dat ASV sau se lam phep chot do do.
+#
+# ⚠️ An toan vi ca hai app deu `enabled=False` va chua tung nang cap o
+#    production. Neu da chay that thi phai dung `alembic merge`.
+down_revision = "c81d3f5a90e7"
 branch_labels = None
 depends_on = None
 

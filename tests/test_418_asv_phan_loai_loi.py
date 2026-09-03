@@ -23,6 +23,7 @@ from apps.auto_scan_video.giai_doan_giong import ThieuBanDich
 from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
+from apps.auto_scan_video.su_dung import DaGhiRoi, DoiSoatLech, SuDungError
 from apps.auto_scan_video.thi_hanh import QcChan
 from apps.auto_scan_video.giai_doan_media import ThieuNguon
 from apps.auto_scan_video.giai_doan_noi_dung import ThieuBanGhi
@@ -74,6 +75,22 @@ BANG = {
     #: ⭐ Nhan `NGUOI_DUNG` o day khong co nghia "khach lam sai" — trong bang
     #:    nay no la nhan cua *that bai cuoi cung, dung thu lai*.
     TinhHaiLan: loi.NGUOI_DUNG,
+    #: ── So cai su dung (pha 06) ─────────────────────────────────────────────
+    #:
+    #: 🔑 `SuDungError` la **loi lap trinh**, khong phai loi khach: mot ban ghi
+    #:    "da giao" thieu don vi do, mot trang thai mo ho mang credit, mot con
+    #:    so am. Chay lai cung mot ma se dung y het — `TAM_THOI` chi dot ba lan
+    #:    thu cho mot ket qua khong doi.
+    SuDungError: loi.NGUOI_DUNG,
+    #: 🔴 `DoiSoatLech` nguy hiem nhat khi bi thu lai: no la luc **tien cua mot
+    #:    don vi viec khong khop voi bang chung cua chinh no**. Thu lai mot lan
+    #:    quyet toan da phat hien lech la co chot lai dung con so sai do.
+    DoiSoatLech: loi.NGUOI_DUNG,
+    #: ⭐ `DaGhiRoi` nguoc lai — no la mot **thanh cong**: rang buoc
+    #:    `UNIQUE(run_id, ma_dispatch)` vua chan mot lan tinh tien thu hai.
+    #:    Nguoi goi phai bat va di tiep; neu no len toi bien thi ai do da khong
+    #:    bat, va thu lai chi lam CSDL tu choi them mot lan nua.
+    DaGhiRoi: loi.NGUOI_DUNG,
 }
 
 

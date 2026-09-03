@@ -127,6 +127,25 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, TinhHaiLan):
         return NGUOI_DUNG
 
+    # ⛔ Ba lop cua so cai su dung (pha 06) — CUNG mot ly do, va `SuDungError` la
+    #    lop cha nen mot dong bat het ca ba.
+    #
+    # 🔑 `SuDungError` la **loi lap trinh**, khong phai loi khach: mot ban ghi
+    #    "da giao" thieu don vi do, mot trang thai mo ho mang credit, mot con so
+    #    am. Chay lai cung mot ma se dung y het.
+    #
+    # 🔴 `DoiSoatLech` con nguy hiem hon khi bi thu lai: no la luc **tien cua
+    #    mot don vi viec khong khop voi bang chung cua chinh no**. Thu lai mot
+    #    lan quyet toan da phat hien lech la thu chot lai dung con so sai do.
+    #
+    # ⭐ `DaGhiRoi` thi nguoc lai — no la mot **thanh cong**: rang buoc
+    #    `UNIQUE(run_id, ma_dispatch)` vua chan mot lan tinh tien thu hai. Nguoi
+    #    goi phai bat no va di tiep; neu no len toi day thi ai do da khong bat,
+    #    va thu lai chi lam CSDL tu choi them mot lan nua.
+    from .su_dung import SuDungError
+    if isinstance(exc, SuDungError):
+        return NGUOI_DUNG
+
     if isinstance(exc, (MediaError, BanGhiError, VanBanError, ThoiGianError,
                         BanDungError)):
         return NGUOI_DUNG

@@ -34,6 +34,8 @@ khong lam lang.
 """
 from __future__ import annotations
 
+import logging
+
 import io
 import json
 import tempfile
@@ -91,6 +93,62 @@ def chep_loi(duong_tieng: str, *, ngon_ngu: str = "", ctx=None) -> dict:
         on_progress=tien_do, is_cancelled=huy, gpu_uuid=uuid_card)
 
 
+log = logging.getLogger(__name__)
+
+
+def can_phan_vai(run) -> bool:
+    """Lan chay nay CO can bang chung nguoi noi khong?
+
+    🔑 **Chi `AUTO_MATCH` can.** `hop_dong_v4.CHE_DO_GIONG_TU_KHOP` phai doc dac
+       diem nguoi noi that de chon giong khop; khong co bang chung thi "tu khop"
+       chi con la "lay giong mac dinh" — dung dieu `ADR-V4-001` D-V4-04 cam.
+
+    ⛔ `USER_SELECTED` **khong** can, va chay phan vai cho no la tra tien GPU cho
+       mot ket qua khong ai doc. Pha 07 goi dich danh dieu do: *"do not pay GPU
+       cost blindly"*.
+
+    ⚠️ Mac dinh la KHONG chay. Mot nang luc ton GPU phai duoc XIN, khong duoc tu
+       bat — thieu thiet lap thi lan chay do khong yeu cau no.
+    """
+    from . import hop_dong_v4
+
+    che_do = str((getattr(run, "settings", None) or {}).get("che_do_giong") or "")
+    return che_do == hop_dong_v4.CHE_DO_GIONG_TU_KHOP
+
+
+def phan_vai(duong_tieng: str, ban: dict, *, ctx=None) -> dict:
+    """Chay phan vai qua RANH GIOI da khai cua app chu, roi gan vao ban ghi.
+
+    🔑 `gpu_uuid` den tu `JobContext` — card do **nen tang** cap qua
+       `platform_core.gpu_lease`. Ta chuyen tiep, khong bao gio tu chon (I11/O6).
+       Truoc pha nay `pyannote_runner` tu lay card dau tien torch thay, bat ke
+       lease; tham so do la thu sua dieu ay.
+
+    ⚠️ Phan vai la nang luc PHU. Neu no khong kha dung (thieu `LTT_HF_TOKEN`,
+       thieu sidecar) thi lan chay **khong hong**: ban ghi duoc danh dau
+       `khong_kha_dung` va di tiep. Mot ban long tieng thieu nhan nguoi noi van
+       la mot ban long tieng; mot lan chay hong thi khong.
+    """
+    from apps.autosubvideo.ai_workflows import assign_speakers, diarize_file
+
+    tien_do = getattr(ctx, "progress", None) if ctx is not None else None
+    huy = getattr(ctx, "is_cancelled", None) if ctx is not None else None
+    uuid_card = str(getattr(ctx, "gpu_uuid", "") or "") if ctx is not None else ""
+
+    try:
+        luot = diarize_file(duong_tieng, on_progress=tien_do, is_cancelled=huy,
+                            gpu_uuid=uuid_card)
+    except Exception as loi:          # noqa: BLE001 - xem docstring
+        # ⛔ Mot lan HUY khong duoc bien thanh "khong kha dung": huy la y muon
+        #    cua nguoi dung va phai noi len tren de vong chay dung han.
+        if huy is not None and huy():
+            raise
+        log.info("phan vai khong kha dung (%s) - di tiep", type(loi).__name__)
+        return ban_ghi.danh_dau_phan_vai(ban, ban_ghi.PHAN_VAI_KHONG_KHA_DUNG)
+
+    return ban_ghi.gan_nguoi_noi(ban, luot, gan=assign_speakers)
+
+
 def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     """Doc ban tieng -> chep loi -> chuan hoa -> kiem. Tra ve phan de promote."""
     khoa_tieng = _khoa_tieng_asr(db, run)
@@ -118,6 +176,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
         if cuoi > tt["thoi_luong"] + 1.0:
             raise ban_ghi.BanGhiError(
                 _t('Bản ghi dài hơn bản tiếng — mốc thời gian đã trôi.'))
+
+        # ── Phan vai: CO DIEU KIEN, khong mac dinh ──────────────────────────
+        if can_phan_vai(run):
+            if ctx is not None and getattr(ctx, "progress", None):
+                ctx.progress(70, _t('Đang phân vai người nói'))
+            ban = phan_vai(duong, ban, ctx=ctx)
+        else:
+            ban = ban_ghi.danh_dau_phan_vai(ban, ban_ghi.PHAN_VAI_KHONG_CHAY)
 
         goi = json.dumps(ban, sort_keys=True, ensure_ascii=False).encode("utf-8")
         vt = ban_ghi.van_tay_ban_ghi(

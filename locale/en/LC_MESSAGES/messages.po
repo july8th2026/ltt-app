@@ -13886,3 +13886,11 @@ msgstr "with the conversation that holds it"
 
 msgid "xoá mềm rồi dọn theo hạn giữ dữ liệu"
 msgstr "soft-deleted, then purged at the retention limit"
+
+#: apps/auto_scan_video/giai_doan_chep_loi.py
+msgid "Đang phân vai người nói"
+msgstr "Identifying who is speaking"
+
+#: platform_core/public_api/governance.py
+msgid "Sổ cái từng lượt gọi năng lực: năng lực nào đã chạy, đo bằng đơn vị gì, hết bao nhiêu credit. Đây là thứ trả lời câu hỏi \"tôi trả cho cái gì\" — nên nó phải sống đúng bằng lần chạy mà nó giải thích, không lâu hơn."
+msgstr "Per-call ledger of capability usage: which capability ran, in what unit it was measured, how many credits it cost. This is what answers \"what am I paying for\" - so it must live exactly as long as the run it explains, no longer."

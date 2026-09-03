@@ -137,6 +137,11 @@ APP_DUOC_DUNG_APP: dict = {
     #    dung dieu O10 va cong thoat pha 10 doi.
     ("auto_scan_video", "autosubvideo"): {
         ("apps.autosubvideo.transcription", "transcribe_file"),
+        # Pha 07: phan vai nguoi noi. Cung ly do BOC nhu tren — `diarize` khai
+        # `gpu_vram_mb=2000` nhung app chu khai `requires=("ffmpeg",)`, nen nop
+        # job sang do la de viec GPU roi vao lan ffmpeg.
+        ("apps.autosubvideo.ai_workflows", "diarize_file"),
+        ("apps.autosubvideo.ai_workflows", "assign_speakers"),
     },
 
     # ── Auto Scan Video doc NGAN SACH TOKEN cua model nha ───────────────────

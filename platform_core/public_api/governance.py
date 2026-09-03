@@ -375,6 +375,12 @@ STORES: tuple = (
           "chứa nó — một checkpoint sống lâu hơn kết quả nó trỏ tới là một "
           "lời hứa hỏng."),
           "job_content.purge_expired (worker)"),
+    Store("asv_usage", CONTENT, 30, N_("chủ tài khoản"),
+          N_("Sổ cái từng lượt gọi năng lực: năng lực nào đã chạy, đo bằng đơn "
+          "vị gì, hết bao nhiêu credit. Đây là thứ trả lời câu hỏi \"tôi trả "
+          "cho cái gì\" — nên nó phải sống đúng bằng lần chạy mà nó giải "
+          "thích, không lâu hơn."),
+          "job_content.purge_expired (worker)"),
 
     # ── Derived: rebuildable ─────────────────────────────────────────────────
     Store("ho_so_he_thong.txt", DERIVED, None, N_("nội bộ"),
