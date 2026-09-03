@@ -217,9 +217,53 @@ def test_amix_luon_normalize_KHONG():
 
 
 def test_moi_doan_duoc_TRE_dung_moc_cua_no():
+    """⚠️ `:all=1` — bai hoc mang tu trinh render cu sang o pha 17.
+
+    Thieu no thi `adelay` **chi tre kenh dau**, va tieng lech hai ben tai: hong
+    theo kieu nghe thay duoc nhung rat kho goi ten.
+    """
     bt = am_master.bieu_thuc_lo(2, [0, 1500], [1.0, 1.0])
-    assert "adelay=0|0" in bt
-    assert "adelay=1500|1500" in bt
+    assert "adelay=0:all=1" in bt
+    assert "adelay=1500:all=1" in bt
+
+
+def test_moi_dau_vao_duoc_dat_DINH_DANG_truoc_khi_tron():
+    """⭐ Bai hoc thu hai mang sang: tieng TTS va nhac nen khong cung tan so, va
+    de `amix` tu chon la de no chon theo dau vao dau tien."""
+    bt = am_master.bieu_thuc_lo(3, [0, 100, 200], [1.0, 1.0, 1.0])
+    assert bt.count("aformat=") == 3
+
+
+def test_chuan_am_luong_co_DUAL_MONO():
+    """⚠️ Bai hoc da tra gia mot lan o pha 18 cua ban truoc: mot doan tieng MONO
+    upmix len stereo bi `loudnorm` **do to hon thuc te 3 dB** neu thieu co nay.
+    May sinh tieng tra ve mono, nen do la duong chay binh thuong.
+
+    🔴 **Ban dau phep kiem nay quet VAN BAN cua tep, va no tu lam minh xanh.**
+
+       Doan chu thich ngay tren dong ma co chua chuoi `dual_mono=true` de giai
+       thich luat. Nen khi kiem dot bien go **chinh dong ma** di, phep kiem van
+       tim thay chuoi do — trong chu thich — va bao xanh.
+
+    ⭐ Day dung la cai bay ma `test_401._vi_pham` da hoc mot lan roi, chi la theo
+       chieu NGUOC LAI: o do mot guard bao dong tren doan van giai thich no; o
+       day mot phep kiem duoc **thoa man** boi doan van giai thich no. Ca hai deu
+       den tu viec doc VAN BAN thay vi doc CAU TRUC.
+
+    ⇒ Doc AST. Chu thich khong bao gio vao cay cu phap.
+    """
+    import ast
+    from pathlib import Path as _P
+
+    cay = ast.parse(_P(am_master.__file__).read_text(encoding="utf-8"))
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "tron_cuoi"]
+    assert ham, "khong tim thay `tron_cuoi`"
+    chuoi = [n.value for n in ast.walk(ham[0])
+             if isinstance(n, ast.Constant) and isinstance(n.value, str)]
+    assert any("dual_mono=true" in c for c in chuoi), (
+        "`tron_cuoi` khong dat `dual_mono=true` — mot doan mono upmix len stereo "
+        "se bi do to hon thuc te 3 dB")
 
 
 def test_he_so_co_gian_thanh_atempo_va_bi_CHAN():

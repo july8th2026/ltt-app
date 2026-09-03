@@ -160,6 +160,15 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, RangGiongError):
         return NGUOI_DUNG
 
+    # ── Cach render (pha 17) ────────────────────────────────────────────────
+    #
+    # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Mot ban dung khai preset mot dang va
+    #    xin cach render mot dang khac la mau thuan trong chinh du lieu; lan thu
+    #    hai cho ra dung mau thuan do.
+    from .che_do_render import CheDoError
+    if isinstance(exc, CheDoError):
+        return NGUOI_DUNG
+
     # ── Ban do thoi gian va ban phoi am (pha 16) ────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu lai**. Ca hai lop deu

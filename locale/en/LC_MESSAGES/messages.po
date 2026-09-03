@@ -14016,3 +14016,27 @@ msgstr "Mixing the audio master failed: {loi}"
 
 msgid "Đang trộn bản phối"
 msgstr "Mixing the audio master"
+
+msgid "Bản dựng cắt nối nhưng không khai khoảng nào được giữ."
+msgstr "The manifest cuts and joins but declares no retained ranges."
+
+msgid "Bản dựng khai cách render không hợp lệ."
+msgstr "The manifest declares an invalid render path."
+
+msgid "Bản dựng khai preset {p} nhưng xin cách render {c}."
+msgstr "The manifest declares preset {p} but asks for render path {c}."
+
+msgid "Bộ mã hoá không được khai: {b}"
+msgstr "Encoder not declared: {b}"
+
+msgid "Chưa có bản phối âm để dựng bản dựng."
+msgstr "No audio master yet, so the manifest cannot be built."
+
+msgid "Khoảng cắt nối rỗng hoặc ngược."
+msgstr "A cut range is empty or reversed."
+
+msgid "Không có khoảng nào để cắt nối."
+msgstr "There are no ranges to cut and join."
+
+msgid "Preset không hợp lệ: {p}"
+msgstr "Invalid preset: {p}"

@@ -98,63 +98,25 @@ class KetXuatError(MediaError):
 #    can ffmpeg, can vai giay, va khong noi duoc **vi sao** no sai. O day lenh
 #    la mot gia tri: so sanh duoc, in ra duoc, che duoc.
 
-def _loc_am(ban: dict, *, so_lop: int) -> str:
-    """`filter_complex` tron nen + N lop tieng theo moc thoi gian.
-
-    Khuon `amix ... normalize=0` lay tu chinh `tach_tieng.tron_nen` cua ta
-    (von lay tu `Cut_only/nerf_engine/stages/audio.py:95`).
-
-    🔑 `normalize=0` la bat buoc, khong phai tuy chon. Mac dinh `amix` **chia
-       bien do cho so dau vao**, nen mot doan 30 lop tieng se nho hon mot doan
-       3 lop — tuc am luong cua ban long tieng phu thuoc vao **so cau noi**,
-       mot hanh vi khong ai yeu cau va rat kho truy khi nghe thay.
-
-    🔑 `aformat` tren TUNG dau vao, truoc khi tron. Tieng do may TTS sinh ra va
-       nhac nen do demucs tach ra khong cung tan so/so kenh; de `amix` tu xu ly
-       la de no chon gium, va no chon theo dau vao dau tien.
-    """
-    tieng = ban["tieng"]
-    dinh = (f"aformat=sample_rates={int(tieng['tan_so'])}"
-            f":channel_layouts={'stereo' if int(tieng['so_kenh']) == 2 else 'mono'}")
-
-    phan = [f"[1:a]{dinh}[nen]"]
-    nhan = ["[nen]"]
-    for i, lop in enumerate(tieng["lop"]):
-        vao = f"[{i + 2}:a]"
-        buoc = [dinh]
-        he_so = float(lop["he_so_toc"])
-        if he_so > 1.0:
-            # ⛔ Chi ap khi > 1. Ban dung da tu choi he so < 1 (`ban_dung.kiem`),
-            #    nhung `atempo=1.0` van la mot lan xu ly thua tren moi doan.
-            buoc.append(f"atempo={he_so:.6f}")
-        dat = int(lop["dat_tai_ms"])
-        if dat > 0:
-            # `all=1` dat tre cho MOI kenh. Khong co no, `adelay=1200` chi tre
-            # kenh dau va tieng lech hai ben tai — hong theo kieu nghe thay
-            # duoc nhung rat kho goi ten.
-            buoc.append(f"adelay={dat}:all=1")
-        phan.append(f"{vao}{','.join(buoc)}[s{i}]")
-        nhan.append(f"[s{i}]")
-
-    # 🔴 `loudnorm` tren BAN TRON CUOI, khong chi tren nhac nen.
-    #
-    #    Cong QC cua pha 18 bat duoc dieu nay ngay lan chay dau: T4 doi ban ra
-    #    dat **-14 LUFS ± 1,0**, va do that la **-12,58** — to hon 1,58 dB.
-    #
-    #    Nguyen nhan don gian va rat de bo sot: `AUDIO_PREPARE` chuan hoa nhac
-    #    nen ve -14, roi RENDER **cong them** N lop tieng vao. Tong cua hai
-    #    nguon deu o muc chuan thi to hon ca hai. Khong cho nao trong chuoi
-    #    chuan hoa lai tong do, nen moi ban long tieng deu to hon chuan — mot
-    #    khiem khuyet khong ai nghe ra thanh "sai 1,58 dB", nguoi ta chi thay
-    #    no "hoi to", va do la loai khiem khuyet khong bao gio duoc bao cao.
-    #
-    # ⚠️ `dual_mono=true`: mot doan tieng mono da qua `aformat` thanh stereo se
-    #    bi `loudnorm` do to hon thuc te 3 dB neu thieu co nay.
-    phan.append(f"{''.join(nhan)}amix=inputs={so_lop + 1}"
-                f":normalize=0:dropout_transition=0[tron]")
-    phan.append(f"[tron]loudnorm=I={LUFS_DICH_RA}:TP={DINH_THAT_RA_DB}"
-                f":LRA=11:dual_mono=true[ra]")
-    return ";".join(phan)
+# 🔴 **`_loc_am` da duoc GO o pha 17, va day la cho ghi lai vi sao.**
+#
+#    Ham do tron nen + N lop tieng + `loudnorm` **ngay trong lenh render**. Pha
+#    16 dung mot BAN PHOI hoan chinh truoc do; giu ca hai nghia la chuan hoa am
+#    luong HAI LAN tren cung mot dong tin hieu, va lan thu hai thang im lang.
+#
+# ⭐ Bon bai hoc cua no khong bi vut di — chung da tra gia va chung di theo sang
+#    `am_master`, cung voi phep kiem cua chung:
+#
+#      * `amix ... normalize=0`   — mac dinh chia bien do cho so dau vao, tuc am
+#                                   luong phu thuoc SO CAU NOI
+#      * `adelay ... :all=1`      — thieu thi chi kenh dau bi tre, tieng lech tai
+#      * `aformat` tung dau vao   — de `amix` tu chon la de no chon theo dau vao
+#                                   dau tien
+#      * `loudnorm ... dual_mono=true` — mot doan mono upmix len stereo bi do to
+#                                   hon thuc te 3 dB neu thieu co nay
+#
+# ⛔ Xoa mot ham ma khong mang theo ly do ton tai cua no la cach chac chan de
+#    nguoi sau viet lai dung cai ban dau da sai.
 
 
 def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str, duong_nen: str,
@@ -167,31 +129,72 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str, duong_nen: str,
        nam o cho cua mot cau khac — va no **khong hong**, no chi sai. Nen ham
        tu kiem thay vi tin nguoi goi.
     """
+    from . import che_do_render as cdr
+
     lop = ban["tieng"]["lop"]
     if len(duong_lop) != len(lop):
         raise KetXuatError(
             _t('Số tệp tiếng ({co}) không khớp số lớp trong bản dựng ({can}).')
             .format(co=len(duong_lop), can=len(lop)))
-    if ban["hinh"]["che_do"] != ban_dung.CHE_DO_HINH:
-        raise KetXuatError(
-            _t('Bản dựng khai chế độ hình khác "copy" — MVP không mã hoá lại hình.'))
+
+    hinh = ban["hinh"]
+    cach = str(hinh.get("cach_render") or cdr.SAO_CHEP)
+    if cach not in cdr.CHE_DO:
+        raise KetXuatError(_t('Bản dựng khai cách render không hợp lệ.'))
+
+    # 🔴 **Cong cuoi cho loi hua cua preset giu hinh.**
+    #
+    #    Truoc pha 17 cho nay la mot chot VO DIEU KIEN: tu choi moi che do hinh
+    #    khac `copy`. Pha 17 phai noi no ra vi preset CAT buoc phai ma hoa lai —
+    #    nhung cach noi SAI la xoa han chot, vi khi do `localize_preserve_picture`
+    #    mat lop bao ve **mot cach im lang**: khong phep kiem nao do, chi la mot
+    #    ngay nao do mot khach chon "giu nguyen hinh anh" va nhan ve mot ban da
+    #    ma hoa lai.
+    #
+    # ⇒ Chot khong bi xoa, no bi **thu hep**: preset nao thi cach render do, va
+    #   doi chieu ngay tai day — cho cuoi cung truoc khi ton mot suat render.
+    preset = str(ban.get("preset") or "")
+    if preset:
+        try:
+            cho_phep = cdr.che_do_cho(preset)
+        except cdr.CheDoError as exc:
+            raise KetXuatError(str(exc)) from exc
+        if cach != cho_phep:
+            raise KetXuatError(
+                _t('Bản dựng khai preset {p} nhưng xin cách render {c}.')
+                .format(p=preset, c=cach))
 
     ra = ban["ra"]
     cmd = [ffmpeg_bin, "-y", "-hide_banner", "-loglevel", "error",
            "-i", duong_video, "-i", duong_nen]
-    for d in duong_lop:
-        cmd += ["-i", d]
 
-    if lop:
-        cmd += ["-filter_complex", _loc_am(ban, so_lop=len(lop)), "-map", "[ra]"]
+    if cach == cdr.SAO_CHEP:
+        # ── Preset giu hinh: luong hinh di THANG tu nguon sang ban ra ─────
+        #
+        # ⛔ Khong giai ma, khong ma hoa, khong mat mat the he, khong ton mot
+        #    suat GPU nao. Do la duong da chung minh cua V2 (D-ASV-03).
+        cmd += ["-map", "0:v:0", "-c:v", str(hinh["che_do"])]
     else:
-        # Khong co lop tieng nao (moi doan deu bi cat o TIMING). Van phai ra mot
-        # tep hop le: lay thang nhac nen.
-        cmd += ["-map", "1:a:0"]
+        # ── Preset cat: CAT-NOI roi ma hoa lai ───────────────────────────
+        #
+        # 🔴 Ma hoa lai o day khong phai mot lua chon toi uu hoa. Cat bang stream
+        #    copy chi cat duoc tai KEYFRAME, va do that tren tep cua chinh chuoi
+        #    nay cho **GOP 8,333 giay** — tuc diem cat bi day di toi 8,3 giay
+        #    trong khi ban phoi am da dung theo diem cat CHINH XAC. Xem
+        #    `che_do_render`.
+        khoang = [(float(b), float(k)) for b, k in (hinh.get("khoang_giu") or ())]
+        bo = str(hinh.get("bo_ma_hoa") or cdr.LUI_VE)
+        cmd += ["-filter_complex", cdr.loc_cat_noi(khoang), "-map", "[ra]"]
+        cmd += list(cdr.tham_so(bo))
+
+    # ── Tieng: BAN PHOI cua pha 16, khong tron lai ───────────────────────
+    #
+    # ⭐ Ban phoi da tron nen + moi lop tieng va da chuan am luong MOT lan. Tron
+    #    lai o day la chuan hoa hai lan tren cung mot dong tin hieu — va lan thu
+    #    hai thang mot cach im lang.
+    cmd += ["-map", "1:a:0"]
 
     cmd += [
-        "-map", "0:v:0",
-        "-c:v", str(ban["hinh"]["che_do"]),      # copy
         "-c:a", str(ra["codec_tieng"]),
         "-b:a", str(ra["bitrate_tieng"]),
         "-ar", str(ban["tieng"]["tan_so"]),

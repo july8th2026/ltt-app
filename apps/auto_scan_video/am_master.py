@@ -109,7 +109,14 @@ def bieu_thuc_lo(so_dau_vao: int, moc_ms: list[int], he_so: list[float]) -> str:
                     _t('Hệ số co giãn {h} ngoài khoảng một lần `atempo`.')
                     .format(h=round(h, 3)))
             chuoi += f"atempo={h:.6f},"
-        chuoi += (f"adelay={moc_ms[i]}|{moc_ms[i]},"
+        # ⚠️ `all=1` — bai hoc thu hai mang tu trinh render cu sang. Thieu no
+        #    thi `adelay` **chi tre kenh dau**, va tieng lech hai ben tai: hong
+        #    theo kieu nghe thay duoc nhung rat kho goi ten.
+        #
+        # ⭐ `aformat` tren TUNG dau vao, TRUOC khi tron: tieng do may TTS sinh
+        #    ra va nhac nen do demucs tach ra khong cung tan so/so kenh, va de
+        #    `amix` tu xu ly la de no chon gium — no chon theo dau vao dau tien.
+        chuoi += (f"adelay={moc_ms[i]}:all=1,"
                   f"aformat=sample_fmts=fltp:sample_rates={TAN_SO}:"
                   f"channel_layouts=stereo[v{i}];")
         phan.append(chuoi)
@@ -171,7 +178,16 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
                     f"channel_layouts=stereo[t{i}];")
     nhan = "[nen]" + "".join(f"[t{i}]" for i in range(1, n))
     phan.append(f"{nhan}amix=inputs={n}:normalize=0:dropout_transition=0[tron];")
-    phan.append(f"[tron]loudnorm=I={lufs_dich()}:TP={dinh_that_db()}:LRA=11[ra]")
+    # ⚠️ `dual_mono=true` — mot bai hoc DA TRA GIA o pha 18 cua ban truoc, mang
+    #    sang day nguyen ven: mot doan tieng MONO da qua `aformat` thanh stereo
+    #    se bi `loudnorm` **do to hon thuc te 3 dB** neu thieu co nay. May sinh
+    #    tieng tra ve mono, nen truong hop do khong phai gia dinh — no la duong
+    #    chay binh thuong.
+    #
+    # ⭐ Va no la loai khiem khuyet khong bao gio duoc bao cao: khach khong nghe
+    #    ra "sai 3 dB", ho chi thay ban long tieng "hoi to".
+    phan.append(f"[tron]loudnorm=I={lufs_dich()}:TP={dinh_that_db()}"
+                f":LRA=11:dual_mono=true[ra]")
 
     cmd += ["-filter_complex", "".join(phan), "-map", "[ra]",
             "-t", f"{max(0.001, float(tong_giay)):.3f}",

@@ -60,16 +60,42 @@ class BanDungError(ValueError):
 
 def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
          ban_ke_tieng: dict, phien_ban_ffmpeg: str,
-         tong_giay: float) -> dict:
+         tong_giay: float, khoa_master: str = "", che_do: str = "",
+         bo_ma_hoa: str = "", khoang_giu=None, preset: str = "") -> dict:
     """Dung ban dung tu cac tai lieu chinh tac. Khong cham mot tep media nao.
 
     `ke_hoach`      ket qua cua `thoi_gian.lap_ke_hoach`
     `ban_ke_tieng`  `{doan: [{ma, khoa, giay}]}` do VOICE sinh ra
+    `khoa_master`   ban phoi am cua pha 16 — **thu ma trinh render doc**
+    `che_do`        `che_do_render.SAO_CHEP` hoac `CAT_MA_HOA_LAI`
+    `bo_ma_hoa`     bo ma hoa da chon (chi co nghia khi ma hoa lai)
+    `khoang_giu`    cac khoang NGUON duoc giu, theo thu tu — chi cho preset cat
+
+    🔴 **Pha 17 them `khoa_master`, va no thay the mot thu chu khong bo sung.**
+
+       Truoc do trinh render tu tron: nen + N lop tieng + `loudnorm`, ngay trong
+       lenh render. Pha 16 dung mot BAN PHOI hoan chinh — neu render van tu tron
+       thi ban phoi do la mot artifact **ton ffmpeg de sinh ra va khong ai doc**,
+       dung cai loi pha 14 vua go bo o cho khac.
+
+    ⭐ Nen tu pha 17: mot nguon hinh, mot nguon tieng. Cac lop van duoc ghi lai
+       trong ban dung — chung la **ho so** cua quyet dinh thoi gian, van con
+       nguyen gia tri khi can truy vet — nhung trinh render khong con dung chung
+       de tron nua.
     """
+    from . import che_do_render as cdr
+
     if not khoa_video:
         raise BanDungError(_t('Bản dựng thiếu luồng hình nguồn.'))
     if not khoa_nen:
         raise BanDungError(_t('Bản dựng thiếu nhạc nền.'))
+    che_do = str(che_do or cdr.SAO_CHEP)
+    if che_do not in cdr.CHE_DO:
+        raise BanDungError(_t('Bản dựng khai cách render không hợp lệ.'))
+    khoang_giu = [(float(b), float(k)) for b, k in (khoang_giu or ())]
+    if che_do == cdr.CAT_MA_HOA_LAI and not khoang_giu:
+        raise BanDungError(
+            _t('Bản dựng cắt nối nhưng không khai khoảng nào được giữ.'))
 
     khoa_theo_ma = {str(d["ma"]): str(d.get("khoa") or "")
                     for d in (ban_ke_tieng.get("doan") or [])}
@@ -97,10 +123,34 @@ def dung(*, khoa_video: str, khoa_nen: str, ke_hoach: dict,
     ban = {
         "schema": SCHEMA_BAN_DUNG,
         "phien_ban": PHIEN_BAN_BAN_DUNG,
-        # ── Hinh: mot nguon, SAO CHEP ────────────────────────────────────
-        "hinh": {"khoa": khoa_video, "che_do": CHE_DO_HINH},
-        # ── Tieng: nen + cac lop tieng dat theo ke hoach ─────────────────
+        # 🔑 **Preset di theo ban dung, va do la mot lop bao ve chu khong phai
+        #    mot ghi chu.** Trinh render doi chieu `che_do_cho(preset)` voi
+        #    `cach_render`: mot ban dung khai "giu nguyen hinh anh" ma lai xin ma
+        #    hoa lai se hong o cong cuoi, truoc khi ton mot suat render.
+        #
+        # ⭐ Truoc pha 17 lop bao ve nay la mot chot vo dieu kien trong trinh
+        #    render ("khong bao gio ma hoa lai"). Pha 17 phai noi no ra — va
+        #    `test_427` da luong truoc chinh viec do, kem canh bao rang cach noi
+        #    SAI la xoa han chot: khi do preset giu hinh mat bao ve **im lang**.
+        "preset": str(preset or ""),
+        # ── Hinh: mot nguon; SAO CHEP hoac CAT-NOI roi ma hoa lai ────────
+        #
+        # 🔑 `che_do` la thu trinh render doc de chon duong. `che_do_hinh` giu
+        #    lai ten cu (`copy`) cho preset giu hinh de khong pha ho so cu.
+        "hinh": {
+            "khoa": khoa_video,
+            "che_do": CHE_DO_HINH,
+            "cach_render": che_do,
+            "bo_ma_hoa": str(bo_ma_hoa or ""),
+            "khoang_giu": [[round(b, 4), round(k, 4)] for b, k in khoang_giu],
+        },
+        # ── Tieng: BAN PHOI da dung o pha 16 ────────────────────────────
+        #
+        # ⭐ `nen` va `lop` van o day lam HO SO cua quyet dinh thoi gian — chung
+        #    tra loi "cau nay dat o dau, vi sao" khi can truy vet. Nhung thu
+        #    trinh render THUC SU doc la `master`.
         "tieng": {
+            "master": {"khoa": str(khoa_master or "")},
             "nen": {"khoa": khoa_nen},
             "lop": lop,
             "tan_so": TAN_SO_RA,

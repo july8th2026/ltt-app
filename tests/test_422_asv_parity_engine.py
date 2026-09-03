@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import inspect
 
+from apps.auto_scan_video import am_master
 from apps.auto_scan_video import ket_xuat, tach_tieng, thoi_gian
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -44,7 +45,8 @@ def test_LECH_CO_Y_6_ban_nen_giu_44k1_cua_htdemucs_chu_khong_48k():
 
     ⇒ Ban di san lay mau lai **truoc** khi tach (hoac ep stem ve 48k luc tron);
       ta giu nguyen tan so goc cua model va lay mau lai **mot lan duy nhat, o
-      RENDER** (`ket_xuat._loc_am` dat `aformat` cho moi dau vao). Cung mot so
+      TRON BAN PHOI** (`am_master.bieu_thuc_lo` dat `aformat` cho moi dau
+      vao). Cung mot so
       lan lay mau lai, nhung cua ta xay ra sau khi model da lam viec xong.
 
     ⚠️ Cho lech nay ton tai tu pha 09 va khong o bang nao ca. No khong gay hai —
@@ -55,7 +57,7 @@ def test_LECH_CO_Y_6_ban_nen_giu_44k1_cua_htdemucs_chu_khong_48k():
     assert tach_tieng.SO_KENH_TACH == 2
     # Va RENDER phai dua no ve 48k — neu khong, hai tan so gap nhau o `amix`.
     assert ket_xuat.ban_dung.TAN_SO_RA == 48000
-    assert "aformat=sample_rates=" in inspect.getsource(ket_xuat._loc_am)
+    assert "aformat=" in inspect.getsource(am_master.bieu_thuc_lo)
 
 
 def test_LECH_CO_Y_1_khong_phoi_lai_tung_stem():
@@ -116,7 +118,10 @@ def test_LECH_CO_Y_3_tron_NHIEU_LOP_theo_moc_thoi_gian():
     N moc khac nhau, moi lop co the co he so tang toc rieng. Do la phan moi cua
     pha 15, va no khong co ban doi chieu.
     """
-    ma = inspect.getsource(ket_xuat._loc_am)
+    # ⚠️ Pha 17 go `ket_xuat._loc_am`: pha 16 da dung mot BAN PHOI hoan chinh,
+    #    va giu ca hai la chuan hoa am luong hai lan tren cung mot dong tin hieu.
+    #    Cho lech thi khong doi — no chi doi CHO O.
+    ma = inspect.getsource(am_master.bieu_thuc_lo)
     assert "adelay" in ma and "amix" in ma
 
 
@@ -128,7 +133,7 @@ def test_LECH_CO_Y_4_loudnorm_tren_BAN_TRON_CUOI():
     them N lop tieng thi to hon ca hai. Ban di san khong gap loi nay vi no thay
     the tieng chu khong **cong them** tieng.
     """
-    ma = inspect.getsource(ket_xuat._loc_am)
+    ma = inspect.getsource(am_master.tron_cuoi)
     assert "loudnorm" in ma
     assert "dual_mono=true" in ma, (
         "thieu `dual_mono` — mot lop mono da noi rong thanh stereo se bi do to "

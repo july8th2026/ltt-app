@@ -57,6 +57,22 @@ def _doc(kho: Storage, khoa: str) -> dict:
         return json.loads(f.read().decode("utf-8"))
 
 
+def _khoa_master(db, kho, run) -> str:
+    """Khoa ban phoi am do pha 16 sinh ra o `TIMING_ALIGN`.
+
+    ⛔ Thieu no thi trinh render khong co tieng. Bat o day — luc dung ban dung —
+       chu khong o giua mot luot ffmpeg da chiem suat render.
+    """
+    from . import features, pipeline
+
+    gd = features.giai_doan_theo_ten(db, run.id, pipeline.TIMING_ALIGN)
+    khoa = [k for k in (((gd.outputs or {}) if gd else {}).get("khoa_asset") or [])
+            if str(k).endswith(".wav")]
+    if not khoa:
+        raise ban_dung.BanDungError(_t('Chưa có bản phối âm để dựng bản dựng.'))
+    return khoa[0]
+
+
 def _khoa_con_dung(db, kho: Storage, run) -> set[str]:
     """Moi khoa artifact CUA CHINH chu so huu, da kiem toan ven.
 
@@ -95,13 +111,34 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     thoi_gian.kiem(ke_hoach)          # con dat hop dong sau khi doc lai (I8)
     ban_ke = _doc(kho, khoa_ke)
 
+    # ── Cach render, va cac khoang hinh duoc giu (pha 17) ──────────────────
+    #
+    # ⭐ Ca hai suy tu **khai bao** (preset) va tu **ban do** ma pha 16 da luu
+    #    cung ke hoach — khong tinh lai tu du lieu. Tinh lai mot quyet dinh da
+    #    chot la mo duong cho hai cau tra loi khac nhau cho cung mot cau hoi.
+    from . import ban_do_thoi_gian, che_do_render as cdr, hop_dong_v4
+
+    preset = str((run.settings or {}).get("preset") or hop_dong_v4.PRESET_MAC_DINH)
+    cach = cdr.che_do_cho(preset)
+    ban_do = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
+    khoang = list(ban_do.giu)
+
+    # 🔑 GPU chi duoc dung khi nen tang DA CAP. `ctx.gpu_uuid` la cau tra loi
+    #    duy nhat — khong tu do card roi tu quyet.
+    co_gpu = bool(str(getattr(ctx, "gpu_uuid", "") or "")) if ctx is not None else False
+    bo_ma_hoa = (cdr.chon_bo_ma_hoa(cho_phep_gpu=co_gpu)
+                 if cach == cdr.CAT_MA_HOA_LAI else "")
+
     ban = ban_dung.dung(
         khoa_video=run.source_key,
         khoa_nen=khoa_nen,
+        khoa_master=_khoa_master(db, kho, run),
         ke_hoach=ke_hoach,
         ban_ke_tieng=ban_ke,
         phien_ban_ffmpeg=nhap_media.phien_ban_ffmpeg(),
-        tong_giay=float(ke_hoach.get("tong_ms") or 0) / 1000.0)
+        tong_giay=float(ke_hoach.get("tong_ms") or 0) / 1000.0,
+        che_do=cach, bo_ma_hoa=bo_ma_hoa, khoang_giu=khoang,
+        preset=preset)
 
     # 🔑 Muc 5: doi chieu MOI tham chieu TRUOC khi ton mot suat render.
     if ctx is not None and getattr(ctx, "progress", None):

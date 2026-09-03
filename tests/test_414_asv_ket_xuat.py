@@ -85,11 +85,53 @@ def test_co_shortest_de_tieng_tran_khong_keo_dai_video():
     assert "-shortest" in _lenh(_ban())
 
 
-def test_KHONG_BAO_GIO_ma_hoa_lai_hinh():
+def test_preset_GIU_HINH_khong_bao_gio_ma_hoa_lai():
+    """⛔ D-ASV-03: preset giu hinh **sao chep** luong hinh. Khong giai ma, khong
+    ma hoa, khong mat mat the he, khong ton mot suat GPU nao.
+
+    🔴 **Chot nay tung la "KHONG BAO GIO ma hoa lai hinh" — khong dieu kien.**
+       Pha 17 lam no thanh sai: preset CAT **buoc phai** ma hoa lai, vi cat bang
+       stream copy chi cat duoc tai keyframe va do that cho GOP 8,333 giay — tuc
+       diem cat bi day di toi 8,3 giay so voi ban phoi am.
+
+    ⭐ Nen menh de duoc **thu hep chu khong bo**: no van la mot loi hua, chi la
+       mot loi hua cua MOT preset. Bo han no di se de preset giu hinh troi vao
+       ma hoa lai ma khong ai thay.
+    """
+    from apps.auto_scan_video import che_do_render as cdr
+
+    cmd = _lenh(_ban())          # mac dinh: SAO_CHEP
+    assert "copy" in cmd
+    for bo in cdr.THAM_SO:
+        assert bo not in cmd, f"preset giu hinh dang ma hoa bang {bo}"
+    assert "-filter_complex" not in cmd
+
+
+def test_cach_render_KHONG_HOP_LE_bi_tu_choi():
+    """Mot ban dung khai mot cach render khong co that phai hong o day, khong
+    phai o giua mot luot ffmpeg da chiem suat."""
     ban = _ban()
-    ban["hinh"]["che_do"] = "libx264"
+    ban["hinh"]["cach_render"] = "phep_thuat"
     with pytest.raises(ket_xuat.KetXuatError):
         _lenh(ban)
+
+
+def test_preset_CAT_ma_hoa_lai_va_KHONG_dung_copy():
+    """Va chieu nguoc lai: preset cat khong duoc am tham dung `copy`."""
+    from apps.auto_scan_video import che_do_render as cdr
+
+    ban = _ban()
+    ban["hinh"]["cach_render"] = cdr.CAT_MA_HOA_LAI
+    ban["hinh"]["bo_ma_hoa"] = "libx264"
+    ban["hinh"]["khoang_giu"] = [[0.0, 5.0], [10.0, 20.0]]
+    cmd = _lenh(ban)
+    assert "libx264" in cmd
+    assert "-filter_complex" in cmd
+    # Khoang duoc giu phai xuat hien DUNG THU TU trong bieu thuc cat-noi.
+    loc = cmd[cmd.index("-filter_complex") + 1]
+    assert loc.index("start=0.000000") < loc.index("start=10.000000")
+    assert "concat=n=2" in loc
+    assert "copy" not in cmd
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -118,28 +160,13 @@ def test_khong_bao_gio_shell_true():
                 assert not nut.value.value, f"{mod.__name__} dung shell=True"
 
 
-def test_atempo_CHI_ap_khi_he_so_lon_hon_1():
-    assert "atempo" not in " ".join(_lenh(_ban(he_so=1.0)))
-    assert "atempo=1.150000" in " ".join(_lenh(_ban(he_so=1.15)))
-
-
-def test_adelay_dat_tre_cho_MOI_kenh():
-    """Thieu `all=1` thi chi kenh dau bi tre — tieng lech hai ben tai."""
-    loi = " ".join(_lenh(_ban()))
-    assert "adelay=500:all=1" in loi
-
-
-def test_amix_khong_chuan_hoa_bien_do():
-    """`normalize=1` (mac dinh) chia bien do cho so dau vao ⇒ am luong cua ban
-    long tieng phu thuoc vao SO CAU NOI. Khong ai yeu cau hanh vi do."""
-    assert "normalize=0" in " ".join(_lenh(_ban()))
-
-
-def test_moi_dau_vao_duoc_dat_dinh_dang_truoc_khi_tron():
-    """Tieng TTS va nhac nen khong cung tan so; de `amix` tu chon la de no chon
-    theo dau vao dau tien."""
-    loi = " ".join(_lenh(_ban(so_lop=2)))
-    assert loi.count("aformat=sample_rates=48000") == 3   # nen + 2 lop
+# 🔴 **Bon phep kiem tron tieng da chuyen sang `test_442`** cung voi ham ma
+#    chung canh giu. Pha 17 go `_loc_am` khoi trinh render: pha 16 da dung mot
+#    ban phoi hoan chinh, va giu ca hai la chuan hoa am luong hai lan.
+#
+# ⭐ Chung KHONG bi xoa. Moi bai hoc trong so do da tra gia mot lan
+#    (`normalize=0`, `all=1`, `aformat` tung dau vao, `dual_mono`), va chung di
+#    theo doi tuong chung bao ve chu khong theo tep chung tinh co nam trong.
 
 
 def test_so_tep_lech_so_lop_bi_TU_CHOI():
@@ -154,8 +181,10 @@ def test_so_tep_lech_so_lop_bi_TU_CHOI():
 def test_khong_lop_tieng_nao_van_ra_lenh_hop_le():
     """Moi doan bi cat o TIMING la mot ket cuc hop le, khong phai mot loi."""
     cmd = _lenh(_ban(so_lop=0))
-    assert "-filter_complex" not in cmd
+    # ⚠️ Tu pha 17 tieng LUON den tu ban phoi (`-map 1:a:0`), ke ca khi con lop
+    #    nao. `-filter_complex` chi con xuat hien o preset CAT (cat-noi hinh).
     assert "1:a:0" in cmd
+    assert "-filter_complex" not in cmd
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -29,6 +29,7 @@ from apps.auto_scan_video.demucs_runner import ThieuCard
 from apps.auto_scan_video.long_tieng import LongTiengError, ThieuDoan
 from apps.auto_scan_video.am_master import MasterError
 from apps.auto_scan_video.ban_do_thoi_gian import BanDoError
+from apps.auto_scan_video.che_do_render import CheDoError
 from apps.auto_scan_video.nan_cho_vua import NanError
 from apps.auto_scan_video.ban_bien_tap import BanBienTapError
 from apps.auto_scan_video.giai_doan_ban_bien_tap import ThieuChiMuc
@@ -74,6 +75,7 @@ BANG = {
     # ⛔ Ket luan cua mot phep tinh TAT DINH: lan thu hai cho dung ket qua do.
     BanDoError: loi.NGUOI_DUNG,
     MasterError: loi.NGUOI_DUNG,
+    CheDoError: loi.NGUOI_DUNG,
     GiongMoHo: loi.MO_HO,
     DichMoHo: loi.MO_HO,
     MediaError: loi.NGUOI_DUNG,
