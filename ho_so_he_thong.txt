@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:953a997f3839e8c9763a510b8d79a86772a1bf69ffd0f42d9db8b13b48c42487
+Fingerprint   : sha256:b8dae36024667d54765ee063e18539b512a3f539987ac70df7e731f4848045c1
 Nguồn đã quét : 1554 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3307,7 +3307,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:124, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15577732 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1554 file; 15587511 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -278487,7 +278487,7 @@ def test_bang_item_KHONG_co_cot_nao_cua_mot_hang_doi():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
-SHA256=4c89f55fd07ff0d5c147f37db19ca7771a426337f9dbe85cd5d99597ab063b45 BYTES=4213 LINES=110
+SHA256=f218209ee847521270fae0257f0c35ab112860ca5551169f93c9adf3786f7baf BYTES=8249 LINES=206
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
 
@@ -278599,6 +278599,102 @@ def test_khong_tra_ve_0_khi_may_rat_nho(monkeypatch):
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 2)
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 1)
     assert _n_truyen_cho_pytest() == 1
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B1/B2 — ngan sach per-MAY
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_ghi_khoa_CU_lam_ngan_sach_GIAM_chu_khong_giu_nguyen():
+    """🔴 Cho de sai nhat cua ca co che, va no hong ve phia MO.
+
+    Mot ban ghi khoa ghi truoc 03/09 khong co khoa `so_loi`. Doc no thanh 0
+    nghia la "luot do khong dung loi nao" ⇒ ngan sach khong bi tru ⇒ dung cai
+    qua tai ta muon chan, chi khac la **im lang**.
+
+    "Khong khai" va "khong dung" la hai dieu khac nhau.
+    """
+    import cua_so_yen as c
+
+    assert c.loi_da_hua({"tai_nguyen": c.MAC_DINH}) == c.SO_LOI_KHI_KHONG_KHAI
+    assert c.SO_LOI_KHI_KHONG_KHAI > 0, "fail-OPEN: ban ghi cu khong tru gi ca"
+
+
+def test_khoa_treo_va_tai_nguyen_khac_KHONG_bi_tru():
+    """Tru nham thi ngan sach teo lai vi mot khoa chet — cung te theo chieu kia."""
+    import cua_so_yen as c
+
+    assert c.loi_da_hua({"tai_nguyen": c.MAC_DINH, "so_loi": 9, "treo": "x"}) == 0
+    assert c.loi_da_hua({"tai_nguyen": "postgres_test", "so_loi": 9}) == 0
+    assert c.loi_da_hua({"tai_nguyen": c.MAC_DINH, "so_loi": 9}) == 9
+
+
+def test_ngan_sach_per_MAY_tru_dung_tong_cua_phien_khac(monkeypatch):
+    import cua_so_yen as c
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "a", "tai_nguyen": c.MAC_DINH, "so_loi": 4},
+        {"phien": "b", "tai_nguyen": c.MAC_DINH},          # cu -> fail-closed
+        {"phien": "c", "tai_nguyen": c.MAC_DINH, "so_loi": 5, "treo": "x"},
+    ])
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+
+    # 4 + SO_LOI_KHI_KHONG_KHAI, khoa treo khong tinh
+    cho_doi = 4 + c.SO_LOI_KHI_KHONG_KHAI
+    assert c.loi_phien_khac_dang_giu() == cho_doi
+    assert (gate.ngan_sach_loi(tru_phien_khac=True)
+            == max(2, 20 - gate.LOI_DE_DANH_CHO_MAY - cho_doi))
+
+
+def test_KHONG_tru_chinh_minh(monkeypatch):
+    """Mot luot khong duoc tru phan cua chinh no — no se tu bop co."""
+    import cua_so_yen as c
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "toi", "tai_nguyen": c.MAC_DINH, "so_loi": 9}])
+    assert c.loi_phien_khac_dang_giu("toi") == 0
+
+
+def test_ap_ngan_sach_sua_CA_argv_chu_khong_chi_con_so(monkeypatch):
+    """⛔ Diem dat nhat, `lttchat-...-49` chi ra.
+
+    `_steps()` chay TRUOC khi giu khoa, nen `argv` da co dinh `-n <so>`. Tinh
+    lai con so ma khong sua `argv` thi no tru dung va **van chay so worker cu**.
+    """
+    import cua_so_yen as c
+
+    class St:
+        def __init__(self):
+            self.argv = [sys.executable, "tools/test_nhanh.py", "-n", "11"]
+            self.so_loi = 11
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 6}])
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+
+    st = St()
+    gate._ap_ngan_sach_thuc([st], phien="toi")
+
+    i = st.argv.index("-n")
+    assert st.argv[i + 1] != "11", "argv KHONG duoc sua — van chay 11 worker"
+    assert int(st.argv[i + 1]) == st.so_loi, "argv va so_loi lech nhau"
+    assert int(st.argv[i + 1]) <= 10, "van vuot tran cua cong cu"
+
+
+def test_khong_do_duoc_thi_GIU_NGUYEN_ngan_sach_chu_khong_doan(monkeypatch):
+    """Mot cong cu do hong khong duoc bien thanh mot cai chan."""
+    import builtins
+    that = builtins.__import__
+
+    def no(ten, *a, **k):
+        if ten == "cua_so_yen":
+            raise ImportError("gia lap")
+        return that(ten, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", no)
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+    assert gate.ngan_sach_loi(tru_phien_khac=True) == gate.ngan_sach_loi()
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -299853,7 +299949,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cua_so_yen.py
-SHA256=e5b9d698b71d8cf5eeba8ef8d5e713dd0fc5e40e771e76736abfa19e87b0cc8d BYTES=12788 LINES=335
+SHA256=8c0d9ef3190b87aeb712a1599c53cbaec30ba45ea80f9a01bab7369f0c48d4d7 BYTES=14807 LINES=383
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cua_so_yen.py — mot khoa cap may cho cac luot do dat tien.
 
@@ -299985,8 +300081,26 @@ def _mo_ta(ban_ghi: dict) -> str:
             f"`{ban_ghi.get('lenh') or '?'}` duoc {giay / 60:.1f} phut")
 
 
-def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH) -> bool:
-    """Thu chiem khoa MOT lan cho MOT tai nguyen. True neu duoc."""
+#: Doc ra khi mot ban ghi khoa KHONG khai `so_loi`.
+#:
+#: ⛔ **KHONG phai 0, va day la phan de sai nhat cua ca co che.** Mot ban ghi cu
+#:    (ghi truoc 03/09) khong co khoa nay. Doc no thanh 0 nghia la "luot do
+#:    khong dung loi nao" — tuc ngan sach khong bi tru — tuc dung cai qua tai ma
+#:    co che nay sinh ra de chan, chi khac la **im lang**.
+#:
+#: ⭐ "Khong khai" va "khong dung" la hai dieu khac nhau. Khi khong biet, doan ve
+#:    phia DE DAT (fail-closed): mot luot gate dang giu `cpu_nhieu` thi chac chan
+#:    dang dung mot phan dang ke cua may.
+SO_LOI_KHI_KHONG_KHAI = 8
+
+
+def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH, *,
+            so_loi: int = 0) -> bool:
+    """Thu chiem khoa MOT lan cho MOT tai nguyen. True neu duoc.
+
+    `so_loi` la so loi luot nay se dung. Ghi vao ban ghi de mot luot KHAC tinh
+    duoc ngan sach con lai cua **may**, thay vi cua rieng no.
+    """
     tep = _tep(tai_nguyen)
     ban_ghi = {
         "phien": phien,
@@ -299994,6 +300108,7 @@ def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH) -> bool:
         "may": socket.gethostname(),
         "lenh": lenh,
         "tai_nguyen": tai_nguyen,
+        "so_loi": max(0, int(so_loi)),
         "bat_dau_epoch": time.time(),
         "bat_dau": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -300033,6 +300148,33 @@ def nha(phien: str = "", *, ep: bool = False,
     return True
 
 
+def loi_da_hua(ban_ghi: dict, *, tai_nguyen_can_tru: str = MAC_DINH) -> int:
+    """So loi mot ban ghi khoa dang giu. Fail-CLOSED khi khong khai.
+
+    🔴 Ham nay ton tai vi mot mac dinh 0 se lam ca co che vo dung mot cach im
+       lang. Xem `SO_LOI_KHI_KHONG_KHAI`.
+    """
+    if ban_ghi.get("hong") or ban_ghi.get("treo"):
+        return 0                      # khoa chet khong giu loi nao
+    if str(ban_ghi.get("tai_nguyen") or MAC_DINH) != tai_nguyen_can_tru:
+        return 0                      # tai nguyen khac, khong phai CPU
+    khai = ban_ghi.get("so_loi")
+    if khai is None:
+        return SO_LOI_KHI_KHONG_KHAI
+    try:
+        return max(0, int(khai))
+    except (TypeError, ValueError):
+        return SO_LOI_KHI_KHONG_KHAI
+
+
+def loi_phien_khac_dang_giu(phien_minh: str = "",
+                            tai_nguyen: str = MAC_DINH) -> int:
+    """Tong loi cac luot KHAC dang giu. Dung de bien ngan sach thanh per-MAY."""
+    return sum(loi_da_hua(r, tai_nguyen_can_tru=tai_nguyen)
+               for r in dang_giu()
+               if not (phien_minh and r.get("phien") == phien_minh))
+
+
 def dang_giu() -> list[dict]:
     """Moi khoa dang ton tai tren may, kem ly do treo neu co.
 
@@ -300069,7 +300211,9 @@ class CuaSoYen:
 
     def __init__(self, phien: str, lenh: str, *, bat: bool = True,
                  cho_toi_da_s: float = 1800.0,
-                 tai_nguyen: tuple[str, ...] = (MAC_DINH,)):
+                 tai_nguyen: tuple[str, ...] = (MAC_DINH,),
+                 so_loi: int = 0):
+        self.so_loi = max(0, int(so_loi))
         self.phien = phien
         self.lenh = lenh
         self.bat = bat
@@ -300095,7 +300239,7 @@ class CuaSoYen:
            bat cu cai nao la nha het roi thu lai tu dau.
         """
         for tn in self.tai_nguyen:
-            if not thu_giu(self.phien, self.lenh, tn):
+            if not thu_giu(self.phien, self.lenh, tn, so_loi=self.so_loi):
                 for da in self.da_giu:
                     nha(self.phien, tai_nguyen=da)
                 self.da_giu = []
@@ -308801,7 +308945,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=3e7262d9d8c07ffd22100610076697023e03f1bd7c5098165752c27577ae22f7 BYTES=64714 LINES=1240
+SHA256=7aa6c1258ba4e3ab0f9bc605e09b20c4355a259156bd25188f9debeae1eee376 BYTES=68438 LINES=1320
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -308907,12 +309051,41 @@ LOI_DE_DANH_CHO_MAY = 6
 LOI_TOI_DA_MOI_CONG_CU = 12
 
 
-def ngan_sach_loi() -> int:
+def ngan_sach_loi(*, phien: str = "", tru_phien_khac: bool = False) -> int:
     """So loi ma CA luot gate duoc dung cung luc.
 
     Toi thieu 2: mot may hai loi van phai chay duoc gate, chi la cham hon.
+
+    `tru_phien_khac=True` bien ngan sach tu **per-RUN** thanh **per-MAY**: tru di
+    so loi cac luot gate KHAC dang giu khoa.
+
+    🔴 Vi sao can: truoc 03/09 ham nay chi doc `os.cpu_count()`, nen moi luot tu
+       tin no co 14 loi — va **ca hai deu dung theo cach tinh cua rieng minh**.
+       Do duoc: 1 luot + nen production = 19/20 loi; **2 luot = 33/20**.
+
+    ⚠️ `BELOW_NORMAL_PRIORITY_CLASS` khong che duoc canh do, va day la tran cua
+       lop bao ve ay: no cuu `LTTStudioWeb` (uu tien binh thuong) khoi gate,
+       nhung hai gate deu uu tien THAP BANG NHAU nen tranh nhau song phang.
+
+    ⛔ Mac dinh `False` de moi nguoi goi cu giu nguyen hanh vi. Chi duong chay
+       that (sau khi da giu khoa) moi bat len — xem `_ap_ngan_sach_thuc`.
     """
-    return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
+    con = (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY
+    if tru_phien_khac:
+        try:
+            from cua_so_yen import loi_phien_khac_dang_giu
+            con -= loi_phien_khac_dang_giu(phien)
+        except (ImportError, OSError, ValueError) as exc:
+            # ⛔ Khong do duoc thi giu nguyen ngan sach cu, KHONG doan. Mot cong
+            #    cu do hong khong duoc bien thanh mot cai chan.
+            #
+            # ⚠️ Nhung NOI RA. Ban dau day la `except Exception: pass` va banh
+            #    coc `nuot loi lang le` bat dung no — dung: mot ngan sach khong
+            #    tru duoc phan cua phien khac trong y het mot may dang ranh, va
+            #    im lang la cach chac chan nhat de khong ai biet.
+            print(f"  [ngan sach] khong doc duoc khoa phien khac "
+                  f"({type(exc).__name__}: {exc}) - giu ngan sach per-RUN")
+    return max(2, con)
 
 
 def loi_cong_cu_tu_do() -> int:
@@ -309041,6 +309214,47 @@ class Step:
 def _npm() -> str | None:
     """npm trên Windows là `npm.cmd`; `shutil.which` xử lý đúng cả hai."""
     return shutil.which("npm")
+
+
+def _ap_ngan_sach_thuc(steps: list, phien: str) -> None:
+    """Sua lai `-n` cua buoc `bo test` theo ngan sach THUC, sau khi da giu khoa.
+
+    ⭐ Sua **tai cho** thay vi dung lai ca danh sach: `steps` co the da di qua
+       `_rut_gon_vong_lap` / `_thu_hep`, va dung lai se mat phan do.
+
+    ⚠️ Chi cham dung mot buoc, va tim no bang chinh `argv` cua no (`-n` di ngay
+       sau `test_nhanh.py`) chu khong bang TEN buoc — mot cai ten la mot chuoi
+       hien thi, doi luc nao cung duoc, va no se doi im lang.
+    """
+    moi = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
+                     ngan_sach_loi(phien=phien, tru_phien_khac=True)
+                     - len(FRONTENDS),
+                     loi_cong_cu_tu_do()))
+    for st in steps:
+        argv = list(getattr(st, "argv", []) or [])
+        if "test_nhanh.py" not in " ".join(argv) or "-n" not in argv:
+            continue
+        i = argv.index("-n")
+        if i + 1 >= len(argv):
+            continue
+        cu_so = argv[i + 1]
+        if str(cu_so) == str(moi):
+            continue
+        argv[i + 1] = str(moi)
+        st.argv = argv
+        st.so_loi = moi
+        print(f"  [ngan sach] -n {cu_so} -> {moi} "
+              f"(luot khac dang giu {loi_bi_giu_boi_phien_khac(phien)} loi)")
+
+
+def loi_bi_giu_boi_phien_khac(phien: str = "") -> int:
+    """Chi de IN ra. Khong tham gia phep tinh — xem `ngan_sach_loi`."""
+    try:
+        from cua_so_yen import loi_phien_khac_dang_giu
+        return loi_phien_khac_dang_giu(phien)
+    except (ImportError, OSError, ValueError):
+        # Chi de IN; that bai o day da duoc `ngan_sach_loi` noi ra roi.
+        return 0
 
 
 def _steps(quick: bool) -> list[Step]:
@@ -309877,6 +310091,16 @@ def main() -> int:
     with CuaSoYen(phien, lenh, bat=xep_hang,
                   cho_toi_da_s=args.cho * 60,
                   tai_nguyen=tuple(sorted(can)) or (MAC_DINH,)) as khoa:
+        # 🔴 TINH LAI NGAN SACH O DAY, khong o `_steps()`.
+        #
+        #    `_steps()` chay o dong ~1036, TRUOC `CuaSoYen.__enter__`. Luc do ta
+        #    chua biet co luot nao khac dang giu khoa, va `argv` cua buoc
+        #    `bo test` da co dinh `-n <so>`.
+        #
+        # ⛔ Tinh lai CON SO thoi thi vo nghia: no tru dung va van chay dung so
+        #    worker cu. Phai sua ca `argv`.
+        _ap_ngan_sach_thuc(steps, phien)
+
         cay_dau = _anh_chup_cay()
         dong = f"Gate [{ho_so}]: {len(steps)} buoc"
         if not args.tuan_tu:

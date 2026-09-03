@@ -108,3 +108,99 @@ def test_khong_tra_ve_0_khi_may_rat_nho(monkeypatch):
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 2)
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 1)
     assert _n_truyen_cho_pytest() == 1
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B1/B2 — ngan sach per-MAY
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_ghi_khoa_CU_lam_ngan_sach_GIAM_chu_khong_giu_nguyen():
+    """🔴 Cho de sai nhat cua ca co che, va no hong ve phia MO.
+
+    Mot ban ghi khoa ghi truoc 03/09 khong co khoa `so_loi`. Doc no thanh 0
+    nghia la "luot do khong dung loi nao" ⇒ ngan sach khong bi tru ⇒ dung cai
+    qua tai ta muon chan, chi khac la **im lang**.
+
+    "Khong khai" va "khong dung" la hai dieu khac nhau.
+    """
+    import cua_so_yen as c
+
+    assert c.loi_da_hua({"tai_nguyen": c.MAC_DINH}) == c.SO_LOI_KHI_KHONG_KHAI
+    assert c.SO_LOI_KHI_KHONG_KHAI > 0, "fail-OPEN: ban ghi cu khong tru gi ca"
+
+
+def test_khoa_treo_va_tai_nguyen_khac_KHONG_bi_tru():
+    """Tru nham thi ngan sach teo lai vi mot khoa chet — cung te theo chieu kia."""
+    import cua_so_yen as c
+
+    assert c.loi_da_hua({"tai_nguyen": c.MAC_DINH, "so_loi": 9, "treo": "x"}) == 0
+    assert c.loi_da_hua({"tai_nguyen": "postgres_test", "so_loi": 9}) == 0
+    assert c.loi_da_hua({"tai_nguyen": c.MAC_DINH, "so_loi": 9}) == 9
+
+
+def test_ngan_sach_per_MAY_tru_dung_tong_cua_phien_khac(monkeypatch):
+    import cua_so_yen as c
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "a", "tai_nguyen": c.MAC_DINH, "so_loi": 4},
+        {"phien": "b", "tai_nguyen": c.MAC_DINH},          # cu -> fail-closed
+        {"phien": "c", "tai_nguyen": c.MAC_DINH, "so_loi": 5, "treo": "x"},
+    ])
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+
+    # 4 + SO_LOI_KHI_KHONG_KHAI, khoa treo khong tinh
+    cho_doi = 4 + c.SO_LOI_KHI_KHONG_KHAI
+    assert c.loi_phien_khac_dang_giu() == cho_doi
+    assert (gate.ngan_sach_loi(tru_phien_khac=True)
+            == max(2, 20 - gate.LOI_DE_DANH_CHO_MAY - cho_doi))
+
+
+def test_KHONG_tru_chinh_minh(monkeypatch):
+    """Mot luot khong duoc tru phan cua chinh no — no se tu bop co."""
+    import cua_so_yen as c
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "toi", "tai_nguyen": c.MAC_DINH, "so_loi": 9}])
+    assert c.loi_phien_khac_dang_giu("toi") == 0
+
+
+def test_ap_ngan_sach_sua_CA_argv_chu_khong_chi_con_so(monkeypatch):
+    """⛔ Diem dat nhat, `lttchat-...-49` chi ra.
+
+    `_steps()` chay TRUOC khi giu khoa, nen `argv` da co dinh `-n <so>`. Tinh
+    lai con so ma khong sua `argv` thi no tru dung va **van chay so worker cu**.
+    """
+    import cua_so_yen as c
+
+    class St:
+        def __init__(self):
+            self.argv = [sys.executable, "tools/test_nhanh.py", "-n", "11"]
+            self.so_loi = 11
+
+    monkeypatch.setattr(c, "dang_giu", lambda: [
+        {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 6}])
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+    monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
+
+    st = St()
+    gate._ap_ngan_sach_thuc([st], phien="toi")
+
+    i = st.argv.index("-n")
+    assert st.argv[i + 1] != "11", "argv KHONG duoc sua — van chay 11 worker"
+    assert int(st.argv[i + 1]) == st.so_loi, "argv va so_loi lech nhau"
+    assert int(st.argv[i + 1]) <= 10, "van vuot tran cua cong cu"
+
+
+def test_khong_do_duoc_thi_GIU_NGUYEN_ngan_sach_chu_khong_doan(monkeypatch):
+    """Mot cong cu do hong khong duoc bien thanh mot cai chan."""
+    import builtins
+    that = builtins.__import__
+
+    def no(ten, *a, **k):
+        if ten == "cua_so_yen":
+            raise ImportError("gia lap")
+        return that(ten, *a, **k)
+
+    monkeypatch.setattr(builtins, "__import__", no)
+    monkeypatch.setattr(gate.os, "cpu_count", lambda: 20)
+    assert gate.ngan_sach_loi(tru_phien_khac=True) == gate.ngan_sach_loi()
