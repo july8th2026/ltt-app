@@ -101,6 +101,33 @@ def _don_tep_cu() -> None:
             pass
 
 
+def _nhan(p) -> str:
+    """Nhan ngan doc duoc cho mot tien trinh. `python.exe` khong noi len gi ca."""
+    try:
+        cl = p.cmdline()
+    except Exception:  # noqa: BLE001
+        return ""
+    if len(cl) < 2:
+        return ""
+    for i, x in enumerate(cl[1:], 1):
+        x = str(x)
+        # ⛔ `-c` di kem ca mot doan MA NGUON. Lay no lam nhan cho ra mot chuoi
+        #    nhieu dong, dai, va khong noi len gi — do that o ban dau: nhan cua
+        #    mot `python -c` ra nguyen mot doan import co ca xuong dong trong do.
+        #
+        # ⚠️ Va chinh doan comment nay tung lam VO tep: ban dau toi dan nguyen
+        #    chuoi nhan xau vao day, trong do co mot dau nhay don, va no dong
+        #    chuoi Python cua lenh dang ghi tep. Mo ta mot chuoi xau bang cach
+        #    CHEP no vao la cach de nhat de lam hong thu dang sua.
+        if x in ("-c", "-m"):
+            ke = str(cl[i + 1]) if i + 1 < len(cl) else ""
+            return f"{x} {ke.splitlines()[0][:24]}" if x == "-m" else "-c inline"
+        if x.startswith("-"):
+            continue
+        return Path(x).name[:32] if ("/" in x or "\\" in x) else x[:32]
+    return str(cl[1])[:32]
+
+
 def mot_vong() -> dict:
     """Mot anh chup. Nhe: top-N tien trinh, doc bang `oneshot`."""
     try:
@@ -112,6 +139,28 @@ def mot_vong() -> dict:
     ra = {"cpu": psutil.cpu_percent(interval=0.2),
           "ram_trong_gib": round(m.available / 2**30, 2),
           "so_tien_trinh": len(psutil.pids())}
+
+    # SWAP: dau hieu SOM hon "RAM trong thap". Khi may bat dau swap manh thi no
+    # da tren duong treo, con "RAM trong 2 GiB" thi co the chi la cache.
+    try:
+        sw = psutil.swap_memory()
+        ra["swap_dung_gib"] = round(sw.used / 2**30, 2)
+    except Exception:  # noqa: BLE001
+        pass
+
+    # DISK I/O tich luy. `--kham` lay HIEU giua hai mau de ra toc do — ghi so
+    # tich luy thay vi toc do vi mot lan doc khong tinh duoc toc do, va hai mau
+    # thi tinh duoc ca hai.
+    #
+    # 🔴 Kho nay da co mot su co I/O that: 282 tien trinh mo coi khoa **85 GB
+    #    temp**. Mot hop den khong ghi I/O se khong thay lai duoc canh do.
+    try:
+        io = psutil.disk_io_counters()
+        if io:
+            ra["doc_mb"] = round(io.read_bytes / 2**20)
+            ra["ghi_mb"] = round(io.write_bytes / 2**20)
+    except Exception:  # noqa: BLE001
+        pass
 
     # 🔴 `p.cpu_percent(None)` lan goi DAU cua MOI tien trinh tra 0.0 — no do
     #    chenh lech voi lan truoc, va lan dau khong co lan truoc. Voi bo loc
@@ -143,7 +192,15 @@ def mot_vong() -> dict:
                 c = p.cpu_percent(None)
                 if c <= 0:
                     continue
+                # 🔴 `name` KHONG DU. Tren may nay co hang chuc `python.exe`:
+                #    gate, worker pytest, bot dungvideo, bot gemini, phien
+                #    Claude, sidecar giong noi. Mot hop den bao "python.exe an
+                #    77%" thi sau mot lan reset ta van khong biet gi hon truoc.
+                #
+                # ⇒ Ghi them mot NHAN doc duoc tu `cmdline`, cat ngan. Do la
+                #   khac biet giua mot ban ghi va mot ban ghi DUNG DUOC.
                 nang.append({"pid": p.pid, "ten": (p.info["name"] or "")[:22],
+                             "nhan": _nhan(p),
                              "cpu": round(c, 1),
                              "ram_mb": round(p.memory_info().rss / 2**20)})
         except (psutil.Error, OSError):
@@ -268,15 +325,17 @@ def kham(so_lan: int = 1) -> int:
         for d in mau:
             for p in d.get("top", []):
                 k = p["ten"]
-                g = gom.setdefault(k, {"cpu": 0.0, "ram_mb": 0, "lan": 0})
+                g = gom.setdefault(k, {"cpu": 0.0, "ram_mb": 0, "lan": 0,
+                                       "nhan": p.get("nhan", "")})
                 g["cpu"] += p["cpu"]
                 g["ram_mb"] = max(g["ram_mb"], p["ram_mb"])
                 g["lan"] += 1
         if gom:
             print(f"\n  Ai chiem cho trong 6 mau do (tong CPU, RAM dinh):")
             for ten, g in sorted(gom.items(), key=lambda x: -x[1]["cpu"])[:8]:
-                print(f"    {ten:24} CPU {g['cpu']:7.1f}  "
-                      f"RAM {g['ram_mb']:6d} MB  ({g['lan']} mau)")
+                nhan = f"  [{g['nhan']}]" if g.get("nhan") else ""
+                print(f"    {ten:20} CPU {g['cpu']:7.1f}  "
+                      f"RAM {g['ram_mb']:6d} MB  ({g['lan']} mau){nhan}")
 
         cuoi = mau[-1]
         print(f"\n  So voi nen:")
@@ -290,6 +349,15 @@ def kham(so_lan: int = 1) -> int:
             print("    [!] RAM trong RAT THAP - het bo nho la nguyen nhan hang dau")
         if cuoi.get("cpu", 0) > 90:
             print("    [!] CPU bao hoa o mau cuoi")
+        if cuoi.get("swap_dung_gib", 0) > 2:
+            print(f"    [!] SWAP {cuoi['swap_dung_gib']:.1f} GiB - may dang trao "
+                  f"bo nho ra dia, dau hieu SOM cua mot lan treo")
+        if len(mau) >= 2 and "ghi_mb" in mau[-1] and "ghi_mb" in mau[0]:
+            dt = max(1.0, _giay(mau[-1]) - _giay(mau[0]))
+            toc_ghi = (mau[-1]["ghi_mb"] - mau[0]["ghi_mb"]) / dt
+            toc_doc = (mau[-1].get("doc_mb", 0) - mau[0].get("doc_mb", 0)) / dt
+            print(f"    Dia: doc {toc_doc:.0f} MB/s, ghi {toc_ghi:.0f} MB/s "
+                  f"(trung binh {dt:.0f}s cuoi)")
 
     print("\n[kham] Day la SO LIEU, khong phai ket luan. Doi chieu voi:")
     print("       - nhat ky lenh:  python tools/nhat_ky_chay.py --xem 3")
