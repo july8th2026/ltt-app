@@ -154,6 +154,66 @@ def test_chia_doan_giu_du_noi_dung():
                                               .replace("?", " ").split())
 
 
+# ── chia đoạn CÂN BẰNG (đường bản đọc) ──────────────────────────────────────
+
+def _bai(n_cau: int) -> str:
+    return " ".join(f"Day la cau so {i} trong mot bai doc thu nghiem kha dai."
+                    for i in range(n_cau))
+
+
+def test_can_bang_khong_them_doan_va_khong_vuot_tran():
+    """Hai bất biến của phép cân bằng. Vi phạm cái nào cũng là một hồi quy.
+
+    ⛔ `_can_bang` tìm trần nhỏ nhất còn cho ra ngần ấy đoạn bằng phép nhị phân,
+       và phép ấy dựa trên giả định "trần lớn hơn thì đoạn ít hơn" — đúng trong
+       mọi ca thật nhưng KHÔNG phải một định lý. Nên hai bất biến này phải được
+       kiểm, không được suy ra.
+    """
+    for n in (5, 20, 60, 200):
+        goc = _bai(n)
+        goi = text_pipeline.chia_doan(goc, tran_moi_doan=300)
+        deu = text_pipeline.chia_doan(goc, tran_moi_doan=300, can_bang=True)
+        assert len(deu) <= len(goi)
+        assert max(len(d) for d in deu) <= 300
+
+
+def test_can_bang_giu_du_noi_dung():
+    goc = _bai(40)
+    deu = text_pipeline.chia_doan(goc, tran_moi_doan=300, can_bang=True)
+    assert " ".join(deu).split() == goc.split()
+
+
+def test_can_bang_xoa_duoc_duoi_cut():
+    """🔴 CA BỆNH LÝ ĐÃ ĐO — đây là lý do phép cân bằng tồn tại.
+
+    Phép gói tới trần nhồi đầy đoạn trước rồi để phần thừa rơi vào đoạn cuối.
+    Đo 03/09 trên corpus của `tools/do_bai_dai.py` ở trần 1.500: một bài 1.591
+    ký tự ra **1.462 + 128** — đuôi cụt lệch 11,4 lần, mà vẫn tốn trọn một lượt
+    `infer`. Phép cân bằng cho 2 đoạn ~795.
+
+    ⚠️ Chốt bằng TỈ LỆ, không bằng con số tuyệt đối: corpus đổi thì số đổi, còn
+       mệnh đề "đuôi không được cụt hơn một nửa đoạn dài nhất" thì không đổi.
+    """
+    goc = _bai(46)
+    goi = text_pipeline.chia_doan(goc, tran_moi_doan=1500)
+    assert len(goi) > 1, "ca thu phai chia ra nhieu doan moi co nghia"
+    deu = text_pipeline.chia_doan(goc, tran_moi_doan=1500, can_bang=True)
+    assert len(deu) == len(goi)
+    assert min(len(d) for d in deu) / max(len(d) for d in deu) > 0.5
+
+
+def test_chuan_bi_dung_phep_can_bang():
+    """Đường BẢN ĐỌC cân bằng; `du_an.nhap_van_ban` thì KHÔNG.
+
+    ⭐ Hai người gọi, hai nhu cầu — `du_an.py` đã ghi rõ: khối biên tập muốn gói
+       tới trần (một kịch bản ngắn thật sự là MỘT khối), bản đọc muốn các đoạn
+       đều nhau. Phép kiểm này chốt rằng chúng không bị gộp lại làm một.
+    """
+    goc = _bai(46)
+    doan = text_pipeline.chuan_bi(goc, tran_moi_doan=1500).doan
+    assert min(len(d) for d in doan) / max(len(d) for d in doan) > 0.5
+
+
 def test_chuan_bi_giu_ca_ban_goc():
     """Lịch sử job phải ghi được CẢ text gốc lẫn text đã chuẩn hoá.
 
