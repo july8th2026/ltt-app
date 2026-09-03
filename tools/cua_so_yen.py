@@ -128,8 +128,26 @@ def _mo_ta(ban_ghi: dict) -> str:
             f"`{ban_ghi.get('lenh') or '?'}` duoc {giay / 60:.1f} phut")
 
 
-def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH) -> bool:
-    """Thu chiem khoa MOT lan cho MOT tai nguyen. True neu duoc."""
+#: Doc ra khi mot ban ghi khoa KHONG khai `so_loi`.
+#:
+#: ⛔ **KHONG phai 0, va day la phan de sai nhat cua ca co che.** Mot ban ghi cu
+#:    (ghi truoc 03/09) khong co khoa nay. Doc no thanh 0 nghia la "luot do
+#:    khong dung loi nao" — tuc ngan sach khong bi tru — tuc dung cai qua tai ma
+#:    co che nay sinh ra de chan, chi khac la **im lang**.
+#:
+#: ⭐ "Khong khai" va "khong dung" la hai dieu khac nhau. Khi khong biet, doan ve
+#:    phia DE DAT (fail-closed): mot luot gate dang giu `cpu_nhieu` thi chac chan
+#:    dang dung mot phan dang ke cua may.
+SO_LOI_KHI_KHONG_KHAI = 8
+
+
+def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH, *,
+            so_loi: int = 0) -> bool:
+    """Thu chiem khoa MOT lan cho MOT tai nguyen. True neu duoc.
+
+    `so_loi` la so loi luot nay se dung. Ghi vao ban ghi de mot luot KHAC tinh
+    duoc ngan sach con lai cua **may**, thay vi cua rieng no.
+    """
     tep = _tep(tai_nguyen)
     ban_ghi = {
         "phien": phien,
@@ -137,6 +155,7 @@ def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH) -> bool:
         "may": socket.gethostname(),
         "lenh": lenh,
         "tai_nguyen": tai_nguyen,
+        "so_loi": max(0, int(so_loi)),
         "bat_dau_epoch": time.time(),
         "bat_dau": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -176,6 +195,33 @@ def nha(phien: str = "", *, ep: bool = False,
     return True
 
 
+def loi_da_hua(ban_ghi: dict, *, tai_nguyen_can_tru: str = MAC_DINH) -> int:
+    """So loi mot ban ghi khoa dang giu. Fail-CLOSED khi khong khai.
+
+    🔴 Ham nay ton tai vi mot mac dinh 0 se lam ca co che vo dung mot cach im
+       lang. Xem `SO_LOI_KHI_KHONG_KHAI`.
+    """
+    if ban_ghi.get("hong") or ban_ghi.get("treo"):
+        return 0                      # khoa chet khong giu loi nao
+    if str(ban_ghi.get("tai_nguyen") or MAC_DINH) != tai_nguyen_can_tru:
+        return 0                      # tai nguyen khac, khong phai CPU
+    khai = ban_ghi.get("so_loi")
+    if khai is None:
+        return SO_LOI_KHI_KHONG_KHAI
+    try:
+        return max(0, int(khai))
+    except (TypeError, ValueError):
+        return SO_LOI_KHI_KHONG_KHAI
+
+
+def loi_phien_khac_dang_giu(phien_minh: str = "",
+                            tai_nguyen: str = MAC_DINH) -> int:
+    """Tong loi cac luot KHAC dang giu. Dung de bien ngan sach thanh per-MAY."""
+    return sum(loi_da_hua(r, tai_nguyen_can_tru=tai_nguyen)
+               for r in dang_giu()
+               if not (phien_minh and r.get("phien") == phien_minh))
+
+
 def dang_giu() -> list[dict]:
     """Moi khoa dang ton tai tren may, kem ly do treo neu co.
 
@@ -212,7 +258,9 @@ class CuaSoYen:
 
     def __init__(self, phien: str, lenh: str, *, bat: bool = True,
                  cho_toi_da_s: float = 1800.0,
-                 tai_nguyen: tuple[str, ...] = (MAC_DINH,)):
+                 tai_nguyen: tuple[str, ...] = (MAC_DINH,),
+                 so_loi: int = 0):
+        self.so_loi = max(0, int(so_loi))
         self.phien = phien
         self.lenh = lenh
         self.bat = bat
@@ -238,13 +286,32 @@ class CuaSoYen:
            bat cu cai nao la nha het roi thu lai tu dau.
         """
         for tn in self.tai_nguyen:
-            if not thu_giu(self.phien, self.lenh, tn):
+            if not thu_giu(self.phien, self.lenh, tn, so_loi=self.so_loi):
                 for da in self.da_giu:
                     nha(self.phien, tai_nguyen=da)
                 self.da_giu = []
                 return False
             self.da_giu.append(tn)
         return True
+
+    @property
+    def chay_khong_khoa(self) -> bool:
+        """Luot nay dang CHEN: da het gio cho ma khoa van bi giu.
+
+        ⭐ **B3 khong can mot nhanh ngan sach rieng, va do la ket qua chu khong
+           phai su tinh co.** Khi chen, luot kia VAN dang giu khoa, nen ban ghi
+           cua no van nam do — va `ngan_sach_loi(tru_phien_khac=True)` (goi SAU
+           khoi `with`) tu dong tru phan cua no. Do that: mot luot kia giu 10 loi
+           thi ngan sach cua ta tu 14 tut xuong 4.
+
+        ⇒ "Chen thi chay nho" roi ra tu chinh phep tru per-MAY. Viet them mot
+          nhanh `neu dang chen thi giam` se la mot duong thu hai toi cung mot
+          ket qua — va hai duong toi cung mot so la hai cho de chung lech nhau.
+
+        Thuoc tinh nay chi de **noi ra** dieu do o dong ket qua. No khong tham
+        gia phep tinh nao.
+        """
+        return self.bat and bool(self.tai_nguyen) and not self.da_giu
 
     def _ai_giu(self) -> str:
         for tn in self.tai_nguyen:

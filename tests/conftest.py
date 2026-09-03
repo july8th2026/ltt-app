@@ -27,6 +27,7 @@ kia. Ba fixture đó là phần vá cho một thiết kế đã bị gỡ.
 from __future__ import annotations
 
 import os
+import pathlib
 import sys
 
 import pytest
@@ -75,6 +76,21 @@ def pytest_xdist_auto_num_workers(config) -> int:
        phai mot phep gan. Ta chi biet mot rang buoc (de danh loi cho production);
        ta khong biet ro hon xdist ve diem bao hoa cua no.
     """
+    # ⭐ MOT nguon duy nhat: hoi chinh `gate.loi_cho_bo_test()`.
+    #
+    # 🔴 Truoc 03/09 day la mot phep tinh RIENG, va no ra **10** — toan bo loi
+    #    vat ly cua may, khong chua mot loi nao cho OS lan bon dich vu
+    #    production. Ma day la duong ma mot lenh `pytest -n auto` **go tay,
+    #    ngoai gate** di qua: khong khoa, khong ngan sach, khong ai thay.
+    #    Chinh docstring o tren tu ghi lai rang phien viet no da lam dung the
+    #    ba lan trong mot ngay.
+    #
+    # ⇒ Noi vao cung ham ma gate dung, thi mot lan go tay cung duoc tran 6, va
+    #   cung tru di phan phien khac dang giu.
+    #
+    # ⚠️ Fail-open: khong nap duoc `gate` thi quay ve phep tinh cu. Mot bo test
+    #    tu choi chay vi khong import duoc mot cong cu la mot bo test se bi go
+    #    bang `-p no:cacheprovider` hoac mot con so go tay — te hon nhieu.
     tong = os.cpu_count() or 4
     tran = max(2, tong - _LOI_DE_DANH)
     goc = tran
@@ -86,9 +102,26 @@ def pytest_xdist_auto_num_workers(config) -> int:
     except ImportError:
         pass
     n = max(2, min(tran, goc))
-    print(f"\n[conftest] `-n auto` -> {n} worker (tran {tran} = {tong} loi tru "
-          f"{_LOI_DE_DANH} de danh cho dich vu production; xdist tu de xuat "
-          f"{goc}).", file=sys.stderr)
+
+    nguon = "conftest"
+    try:
+        import sys as _sys
+        _tools = str(pathlib.Path(__file__).resolve().parent.parent / "tools")
+        if _tools not in _sys.path:
+            _sys.path.insert(0, _tools)
+        import gate as _gate
+        # `do_tai=False`: mot lenh `pytest` go tay khong duoc cham them mot giay
+        # chi de do CPU. Phan DO DUOC la viec cua gate, noi mot giay khong dang ke
+        # trong mot luot nam phut.
+        n = max(1, min(n, _gate.loi_cho_bo_test(do_tai=False)))
+        nguon = "gate.loi_cho_bo_test"
+    except Exception as _loi:  # noqa: BLE001 - fail-open, xem ghi chu tren
+        print(f"[conftest] khong hoi duoc gate ({type(_loi).__name__}) - "
+              f"dung phep tinh cuc bo", file=sys.stderr)
+
+    print(f"\n[conftest] `-n auto` -> {n} worker (nguon: {nguon}; tran cuc bo "
+          f"{tran} = {tong} loi tru {_LOI_DE_DANH} de danh cho dich vu "
+          f"production; xdist tu de xuat {goc}).", file=sys.stderr)
     print("[conftest] Can nhieu hon thi go so RO RANG: mot con so la mot y "
           "dinh, `auto` thi khong.\n", file=sys.stderr)
     return n
