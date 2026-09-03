@@ -185,6 +185,13 @@ Cả hai lượt đều đi hết đường tới `https://app.lttstudios.com/ap
 và nhận `401` có cấu trúc (`retry: never`) — tức đường mạng, Cloudflare và cổng
 fail-closed đều đúng. Lượt phiên dài với khoá thật vẫn còn nợ (xem §8).
 
+**Chạy lại sau khi đổi số** (catalog mới: `ltt_llm` 156.385 / nén 123.617;
+`ltt_llm_vision` 28.262 / **không có** trường ngưỡng nén): Codex 0.145.0 vẫn
+nhận tệp, vẫn **không** cảnh báo. Đây là phép đo bắt buộc chứ không phải cho
+yên tâm — bỏ hẳn một trường là đúng thứ đã từng làm Codex từ chối khởi động
+(30/08, `web_search_tool_type: null`), và một trường khác thì làm vỡ tiện ích
+VS Code trong khi CLI vẫn xanh.
+
 ---
 
 ## 5. Trần nào bị chạm trước
