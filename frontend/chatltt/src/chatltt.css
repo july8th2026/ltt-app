@@ -26,6 +26,31 @@
  *    `min-height` giu no dung duoc tren man rat thap; vung tin nhan tu cuon nen
  *    khong bao giờ co gi khong voi toi duoc.
  */
+/* Goc mount cua React: GIU CHO TRUOC KHI CO GI DE VE.
+ *
+ * 🔴 DO DUOC 03/09, va no lat nguoc mot chan doan sai cua chinh toi. CLS cua
+ *    trang do 0,1642, va toi cho rang thu phamla khoi "Suy luan" moc ra o giay
+ *    3,7. Do tung cu nhay mot thi khac han:
+ *
+ *      v=0,0749  t+0ms  FOOTER.platform-footer  truoc=109  sau=819
+ *
+ *    Cu nhay lon nhat xay ra o **giay thu khong**, va no la CHAN TRANG. Truoc
+ *    khi React mount, `#chatltt-root` rong ⇒ cao 0 ⇒ chan trang nam o 109px.
+ *    Mount xong, `.ltc` chiem `100vh - 190px` va day chan trang xuong 819px.
+ *
+ * ⭐ Thu duy nhat can lam la BAO TRUOC chieu cao ay cho trinh duyet, bang dung
+ *    cong thuc `.ltc` se dung. Trinh duyet danh cho san, va chan trang khong
+ *    bao gio phai di dau ca.
+ *
+ * ⚠️ Ba con so phai KHOP voi `.ltc` ben duoi. Lech mot cai la lai nhay, chi
+ *    it hon — tuc kho thay hon.
+ */
+#chatltt-root {
+  min-height: calc(100vh - 190px);
+}
+@media (max-height: 610px) { #chatltt-root { min-height: 420px; } }
+@media (min-height: 1190px) { #chatltt-root { min-height: 1000px; } }
+
 .ltc {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);

@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:c4ea0df7cb8052fbea1d1213421e27fdc5e3b008e592f8b6434174dc4e0589c3
+Fingerprint   : sha256:36f44e1296e6c953163f8c69c612d13dbd4d5bb4c116327e70133014a0766795
 Nguồn đã quét : 1563 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -1043,7 +1043,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 7. FRONTEND WORKSPACES (4)
 - agent-canvas: package=ltt-agent-canvas@0.1.0, Node=24.17.0, src=11, tests=6, bundle=assets/main-Aor7-v29.js
 - autosub-studio: package=ltt-autosub-studio@0.1.0, Node=24.17.0, src=10, tests=2, bundle=assets/main-C1Q3T130.js
-- chatltt: package=ltt-chatltt@0.1.0, Node=24.17.0, src=10, tests=8, bundle=assets/main-B4T3038e.js
+- chatltt: package=ltt-chatltt@0.1.0, Node=24.17.0, src=10, tests=8, bundle=assets/main-KfbQ8w8Y.js
 - prompt-ai-ommi: package=ltt-prompt-ai-ommi@0.1.0, Node=24.17.0, src=11, tests=4, bundle=assets/main-CgVyWR3g.js
 - Sau mọi thay đổi GUI: Playwright render thật + console + failed network + mobile.
 
@@ -2526,8 +2526,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - server/static/autosub-studio/build-meta.json
 - server/static/cam_chon.js
 - server/static/chatltt/.vite/manifest.json
-- server/static/chatltt/assets/main-B4T3038e.js
-- server/static/chatltt/assets/main-CRSGR5rx.css
+- server/static/chatltt/assets/main-Cs0wCogZ.css
+- server/static/chatltt/assets/main-KfbQ8w8Y.js
 - server/static/chatltt/build-meta.json
 - server/static/chon_tep.js
 - server/static/dev_playground.js
@@ -3274,7 +3274,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1563 file; 16006546 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1563 file; 16012026 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -107544,7 +107544,7 @@ export function suyLuanCuaThongDiep(m: ThongDiep): string {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ frontend/chatltt/src/chatltt.css
-SHA256=2e8883ab4325a1ccd611d2d26721c9cdc3989408d388847cd00810ed5e37e339 BYTES=14237 LINES=427
+SHA256=fdb6e434547ced93af2333eff09892a525e5fef000461a08639b780372fa2d93 BYTES=15320 LINES=452
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /*
  * chatltt.css — chi bo cuc va sac thai rieng cua ChatLTT.
@@ -107574,6 +107574,31 @@ SHA256=2e8883ab4325a1ccd611d2d26721c9cdc3989408d388847cd00810ed5e37e339 BYTES=14
  *    `min-height` giu no dung duoc tren man rat thap; vung tin nhan tu cuon nen
  *    khong bao giờ co gi khong voi toi duoc.
  */
+/* Goc mount cua React: GIU CHO TRUOC KHI CO GI DE VE.
+ *
+ * 🔴 DO DUOC 03/09, va no lat nguoc mot chan doan sai cua chinh toi. CLS cua
+ *    trang do 0,1642, va toi cho rang thu phamla khoi "Suy luan" moc ra o giay
+ *    3,7. Do tung cu nhay mot thi khac han:
+ *
+ *      v=0,0749  t+0ms  FOOTER.platform-footer  truoc=109  sau=819
+ *
+ *    Cu nhay lon nhat xay ra o **giay thu khong**, va no la CHAN TRANG. Truoc
+ *    khi React mount, `#chatltt-root` rong ⇒ cao 0 ⇒ chan trang nam o 109px.
+ *    Mount xong, `.ltc` chiem `100vh - 190px` va day chan trang xuong 819px.
+ *
+ * ⭐ Thu duy nhat can lam la BAO TRUOC chieu cao ay cho trinh duyet, bang dung
+ *    cong thuc `.ltc` se dung. Trinh duyet danh cho san, va chan trang khong
+ *    bao gio phai di dau ca.
+ *
+ * ⚠️ Ba con so phai KHOP voi `.ltc` ben duoi. Lech mot cai la lai nhay, chi
+ *    it hon — tuc kho thay hon.
+ */
+#chatltt-root {
+  min-height: calc(100vh - 190px);
+}
+@media (max-height: 610px) { #chatltt-root { min-height: 420px; } }
+@media (min-height: 1190px) { #chatltt-root { min-height: 1000px; } }
+
 .ltc {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -163943,23 +163968,30 @@ SHA256=b23e783edc8870a5e8cdf10afb4d0f5a20ae33d37964208390d3a486409b95f6 BYTES=30
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/.vite/manifest.json
-SHA256=76bd19e4d116a37ca11dde772893970f7f033a1cbd745b9ec020e64ffe65415f BYTES=186 LINES=11
+SHA256=fb51d04a255e2e7c81a29d0471d57c64b1c73c2b98ae9764125e05e4c9e20d3a BYTES=186 LINES=11
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "src/main.tsx": {
-    "file": "assets/main-B4T3038e.js",
+    "file": "assets/main-KfbQ8w8Y.js",
     "name": "main",
     "src": "src/main.tsx",
     "isEntry": true,
     "css": [
-      "assets/main-CRSGR5rx.css"
+      "assets/main-Cs0wCogZ.css"
     ]
   }
 }
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-B4T3038e.js
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-Cs0wCogZ.css
+SHA256=84cf914f6e0277660290fb90461c5919a154a0fbc7edeb0616ae72691c1c70a2 BYTES=8274 LINES=1
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+#chatltt-root{min-height:calc(100vh - 190px)}@media (height<=610px){#chatltt-root{min-height:420px}}@media (height>=1190px){#chatltt-root{min-height:1000px}}.ltc{height:calc(100vh - 190px);min-height:420px;max-height:1000px;color:var(--text-primary);font-family:var(--font);grid-template-rows:minmax(0,1fr);grid-template-columns:280px minmax(0,1fr);gap:0;display:grid}.ltc-ben{border-right:1px solid var(--border-subtle);background:var(--surface-base);flex-direction:column;gap:8px;min-width:0;min-height:0;padding:12px;display:flex}.ltc-tim{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);width:100%;color:var(--text-primary);font:inherit;padding:8px 10px}.ltc-ds{min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto}.ltc-ds__muc{text-align:left;border-radius:var(--radius-sm);width:100%;color:var(--text-secondary);font:inherit;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;background:0 0;border:1px solid #0000;padding:8px 10px;overflow:hidden}.ltc-ds__muc:hover{background:var(--surface-raised);color:var(--text-primary)}.ltc-ds__muc.la-dang-xem{background:var(--surface-interactive);border-color:var(--border-strong);color:var(--text-primary)}.ltc-chinh{background:var(--surface-canvas);grid-template-rows:auto minmax(0,1fr) auto auto auto;min-width:0;min-height:0;display:grid}.ltc-dinh{border-bottom:1px solid var(--border-subtle);align-items:center;gap:12px;padding:10px 16px;display:flex}.ltc-model{color:var(--text-secondary);align-items:center;gap:8px;display:flex}.ltc-model select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-chip{border:1px solid var(--status-warning-border);background:var(--status-warning-soft);color:var(--status-warning);border-radius:999px;padding:3px 10px;font-size:12px}.ltc-luong{scroll-behavior:smooth;flex-direction:column;gap:16px;min-height:0;padding:16px;display:flex;overflow-y:auto}.ltc-trong{color:var(--text-muted);text-align:center;margin-top:15vh}.ltc-tin{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);width:100%;max-width:760px;margin:0 auto;padding:12px 14px}.ltc-tin--user{background:var(--surface-overlay)}.ltc-tin__vai{color:var(--text-muted);margin-bottom:6px;font-size:12px}.ltc-tin__tho{white-space:pre-wrap;margin:0}.ltc-tin__chu{overflow-wrap:anywhere;line-height:1.6}.ltc-tin__chu>:first-child{margin-top:0}.ltc-tin__chu>:last-child{margin-bottom:0}.ltc-tin__chu pre{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px;overflow-x:auto}.ltc-tin__chu code{font-family:var(--mono);font-size:.92em}.ltc-tin__chu table{border-collapse:collapse;display:block;overflow-x:auto}.ltc-tin__chu th,.ltc-tin__chu td{border:1px solid var(--border-subtle);padding:4px 8px}.ltc-tin__loi{border:1px solid var(--status-danger-border);background:var(--status-danger-soft);color:var(--status-danger);border-radius:var(--radius-sm);margin:8px 0 0;padding:8px 10px}.ltc-tin__nhan{color:var(--text-muted);margin:8px 0 0;font-size:13px}.ltc-tin__thanhcong{align-items:center;gap:12px;min-height:24px;margin-top:10px;display:flex}.ltc-nhanh{color:var(--text-secondary);align-items:center;gap:4px;display:flex}.ltc-nhanh button{border:1px solid var(--border-subtle);background:var(--surface-overlay);color:var(--text-primary);border-radius:var(--radius-sm);cursor:pointer;min-width:28px;min-height:28px}.ltc-nhanh button:disabled{opacity:.4;cursor:default}.ltc-nhanh span{text-align:center;min-width:44px;font-size:12px}.ltc-suyluan{margin-bottom:10px}.ltc-suyluan__nut{color:var(--text-muted);font:inherit;cursor:pointer;background:0 0;border:none;padding:0}.ltc-suyluan__chu{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-secondary);white-space:pre-wrap;font-family:var(--mono);margin:6px 0 0;padding:8px 10px;font-size:13px}.ltc-soan{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:flex-end;gap:8px;padding:12px 16px;display:flex}.ltc-soan__anh,.ltc-soan__loi{flex:0 0 100%;margin:0}.ltc-soan__anh{flex-wrap:wrap;gap:6px;padding:0;list-style:none;display:flex}.ltc-soan__anh-mot{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);align-items:center;gap:6px;max-width:100%;padding:4px 6px 4px 10px;font-size:.85rem;display:inline-flex}.ltc-soan__anh-ten{text-overflow:ellipsis;white-space:nowrap;max-width:22ch;overflow:hidden}.ltc-soan__anh-bo{cursor:pointer;color:var(--text-secondary);background:0 0;border:0;padding:2px 4px;font-size:1rem;line-height:1}.ltc-soan__anh-bo:hover{color:var(--text-primary)}.ltc-soan__loi{color:var(--support-error,#da1e28);font-size:.85rem}.ltc-soan__tep{opacity:0;pointer-events:none;width:1px;height:1px;position:absolute}.ltc-soan__o{resize:none;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);color:var(--text-primary);font:inherit;flex:1;max-height:320px;padding:10px 12px;line-height:1.5}.ltc-nut{border:1px solid var(--brand-border);border-radius:var(--radius-md);background:var(--brand-primary);color:#fff;font:inherit;cursor:pointer;padding:10px 16px}.ltc-nut:disabled{opacity:.45;cursor:default}.ltc-nut--dung{background:var(--surface-interactive);border-color:var(--border-strong)}.ltc-nut--moi{width:100%}.ltc-nut--nho{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-overlay);color:var(--text-secondary);font:inherit;cursor:pointer;padding:4px 10px;font-size:13px}.ltc-loi{background:var(--status-danger-soft);color:var(--status-danger);border-top:1px solid var(--status-danger-border);margin:0;padding:8px 16px}.ltc-nhipdap{background:var(--text-muted);width:8px;height:16px;animation:1s steps(2,start) infinite ltc-nhap;display:inline-block}@keyframes ltc-nhap{to{opacity:0}}@media (width<=860px){.ltc{grid-template-rows:auto;grid-template-columns:minmax(0,1fr);height:auto;max-height:none}.ltc-ben{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:220px}.ltc-luong{padding:12px 10px}.ltc-tin{padding:10px 12px}}@media (prefers-reduced-motion:reduce){.ltc-luong{scroll-behavior:auto}.ltc-nhipdap{opacity:.6;animation:none}}.ltc-media{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 16px;display:flex}.ltc-media__o{flex-wrap:wrap;align-items:flex-end;gap:8px;width:100%;display:flex}.ltc-media__o textarea{resize:vertical;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);min-width:220px;color:var(--text-primary);font:inherit;flex:1;padding:8px 10px}.ltc-media__giong{color:var(--text-secondary);align-items:center;gap:6px;display:flex}.ltc-media__giong select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-media__gia{border:1px solid var(--brand-border);background:var(--brand-soft);border-radius:var(--radius-sm);flex-wrap:wrap;align-items:center;gap:10px;width:100%;padding:8px 10px;display:flex}.ltc-lien{color:var(--text-muted);font-size:13px}.ltc-taisan{flex-wrap:wrap;gap:8px;margin-top:10px;display:flex}.ltc-taisan__anh{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-canvas);width:auto;max-width:100%;max-height:45vh;display:block}.ltc-taisan__am{width:100%;max-width:420px}.ltc-sodu{border:1px solid var(--border-subtle);background:var(--surface-raised);color:var(--text-secondary);white-space:nowrap;border-radius:999px;margin-left:auto;padding:3px 10px;font-size:13px}.ltc-trangthai{height:1.5rem;margin:0 0 .25rem;line-height:1.5rem;position:relative}.ltc-trangthai__chu{white-space:nowrap;color:var(--text-secondary);font-size:.9em;position:absolute;top:0;left:0}@media (prefers-reduced-motion:no-preference){.ltc-trangthai:not([data-trangthai=khong]) .ltc-trangthai__chu{animation:1.6s ease-in-out infinite ltc-tho}}@keyframes ltc-tho{0%,to{opacity:.55}50%{opacity:1}}
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-KfbQ8w8Y.js
 SHA256=14345005ba48085dab9ca02391ad51e18a5db94a6a49b0db03118e0b4692a13d BYTES=365515 LINES=43
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 var e=Object.create,t=Object.defineProperty,n=Object.getOwnPropertyDescriptor,r=Object.getOwnPropertyNames,i=Object.getPrototypeOf,a=Object.prototype.hasOwnProperty,o=(e,t)=>()=>(t||(e((t={exports:{}}).exports,t),e=null),t.exports),s=(e,n)=>{let r={};for(var i in e)t(r,i,{get:e[i],enumerable:!0});return n||t(r,Symbol.toStringTag,{value:`Module`}),r},c=(e,i,o,s)=>{if(i&&typeof i==`object`||typeof i==`function`)for(var c=r(i),l=0,u=c.length,d;l<u;l++)d=c[l],!a.call(e,d)&&d!==o&&t(e,d,{get:(e=>i[e]).bind(null,d),enumerable:!(s=n(i,d))||s.enumerable});return e},l=(n,r,o)=>(o=n==null?{}:e(i(n)),c(r||!n||!n.__esModule||!a.call(n,`default`)?t(o,`default`,{value:n,enumerable:!0}):o,n)),u=o((e=>{var t=Symbol.for(`react.transitional.element`),n=Symbol.for(`react.portal`),r=Symbol.for(`react.fragment`),i=Symbol.for(`react.strict_mode`),a=Symbol.for(`react.profiler`),o=Symbol.for(`react.consumer`),s=Symbol.for(`react.context`),c=Symbol.for(`react.forward_ref`),l=Symbol.for(`react.suspense`),u=Symbol.for(`react.memo`),d=Symbol.for(`react.lazy`),f=Symbol.for(`react.activity`),p=Symbol.iterator;function m(e){return typeof e!=`object`||!e?null:(e=p&&e[p]||e[`@@iterator`],typeof e==`function`?e:null)}var h={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},g=Object.assign,_={};function v(e,t,n){this.props=e,this.context=t,this.refs=_,this.updater=n||h}v.prototype.isReactComponent={},v.prototype.setState=function(e,t){if(typeof e!=`object`&&typeof e!=`function`&&e!=null)throw Error(`takes an object of state variables to update or a function which returns an object of state variables.`);this.updater.enqueueSetState(this,e,t,`setState`)},v.prototype.forceUpdate=function(e){this.updater.enqueueForceUpdate(this,e,`forceUpdate`)};function y(){}y.prototype=v.prototype;function b(e,t,n){this.props=e,this.context=t,this.refs=_,this.updater=n||h}var x=b.prototype=new y;x.constructor=b,g(x,v.prototype),x.isPureReactComponent=!0;var ee=Array.isArray;function S(){}var C={H:null,A:null,T:null,S:null},w=Object.prototype.hasOwnProperty;function T(e,n,r){var i=r.ref;return{$$typeof:t,type:e,key:n,ref:i===void 0?null:i,props:r}}function te(e,t){return T(e.type,t,e.props)}function E(e){return typeof e==`object`&&!!e&&e.$$typeof===t}function ne(e){var t={"=":`=0`,":":`=2`};return`$`+e.replace(/[=:]/g,function(e){return t[e]})}var D=/\/+/g;function re(e,t){return typeof e==`object`&&e&&e.key!=null?ne(``+e.key):t.toString(36)}function ie(e){switch(e.status){case`fulfilled`:return e.value;case`rejected`:throw e.reason;default:switch(typeof e.status==`string`?e.then(S,S):(e.status=`pending`,e.then(function(t){e.status===`pending`&&(e.status=`fulfilled`,e.value=t)},function(t){e.status===`pending`&&(e.status=`rejected`,e.reason=t)})),e.status){case`fulfilled`:return e.value;case`rejected`:throw e.reason}}throw e}function ae(e,r,i,a,o){var s=typeof e;(s===`undefined`||s===`boolean`)&&(e=null);var c=!1;if(e===null)c=!0;else switch(s){case`bigint`:case`string`:case`number`:c=!0;break;case`object`:switch(e.$$typeof){case t:case n:c=!0;break;case d:return c=e._init,ae(c(e._payload),r,i,a,o)}}if(c)return o=o(e),c=a===``?`.`+re(e,0):a,ee(o)?(i=``,c!=null&&(i=c.replace(D,`$&/`)+`/`),ae(o,r,i,``,function(e){return e})):o!=null&&(E(o)&&(o=te(o,i+(o.key==null||e&&e.key===o.key?``:(``+o.key).replace(D,`$&/`)+`/`)+c)),r.push(o)),1;c=0;var l=a===``?`.`:a+`:`;if(ee(e))for(var u=0;u<e.length;u++)a=e[u],s=l+re(a,u),c+=ae(a,r,i,s,o);else if(u=m(e),typeof u==`function`)for(e=u.call(e),u=0;!(a=e.next()).done;)a=a.value,s=l+re(a,u++),c+=ae(a,r,i,s,o);else if(s===`object`){if(typeof e.then==`function`)return ae(ie(e),r,i,a,o);throw r=String(e),Error(`Objects are not valid as a React child (found: `+(r===`[object Object]`?`object with keys {`+Object.keys(e).join(`, `)+`}`:r)+`). If you meant to render a collection of children, use an array instead.`)}return c}function oe(e,t,n){if(e==null)return e;var r=[],i=0;return ae(e,r,``,``,function(e){return t.call(n,e,i++)}),r}function se(e){if(e._status===-1){var t=e._result;t=t(),t.then(function(t){(e._status===0||e._status===-1)&&(e._status=1,e._result=t)},function(t){(e._status===0||e._status===-1)&&(e._status=2,e._result=t)}),e._status===-1&&(e._status=0,e._result=t)}if(e._status===1)return e._result.default;throw e._result}var O=typeof reportError==`function`?reportError:function(e){if(typeof window==`object`&&typeof window.ErrorEvent==`function`){var t=new window.ErrorEvent(`error`,{bubbles:!0,cancelable:!0,message:typeof e==`object`&&e&&typeof e.message==`string`?String(e.message):String(e),error:e});if(!window.dispatchEvent(t))return}else if(typeof process==`object`&&typeof process.emit==`function`){process.emit(`uncaughtException`,e);return}console.error(e)},k={map:oe,forEach:function(e,t,n){oe(e,function(){t.apply(this,arguments)},n)},count:function(e){var t=0;return oe(e,function(){t++}),t},toArray:function(e){return oe(e,function(e){return e})||[]},only:function(e){if(!E(e))throw Error(`React.Children.only expected to receive a single React element child.`);return e}};e.Activity=f,e.Children=k,e.Component=v,e.Fragment=r,e.Profiler=a,e.PureComponent=b,e.StrictMode=i,e.Suspense=l,e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=C,e.__COMPILER_RUNTIME={__proto__:null,c:function(e){return C.H.useMemoCache(e)}},e.cache=function(e){return function(){return e.apply(null,arguments)}},e.cacheSignal=function(){return null},e.cloneElement=function(e,t,n){if(e==null)throw Error(`The argument must be a React element, but you passed `+e+`.`);var r=g({},e.props),i=e.key;if(t!=null)for(a in t.key!==void 0&&(i=``+t.key),t)!w.call(t,a)||a===`key`||a===`__self`||a===`__source`||a===`ref`&&t.ref===void 0||(r[a]=t[a]);var a=arguments.length-2;if(a===1)r.children=n;else if(1<a){for(var o=Array(a),s=0;s<a;s++)o[s]=arguments[s+2];r.children=o}return T(e.type,i,r)},e.createContext=function(e){return e={$$typeof:s,_currentValue:e,_currentValue2:e,_threadCount:0,Provider:null,Consumer:null},e.Provider=e,e.Consumer={$$typeof:o,_context:e},e},e.createElement=function(e,t,n){var r,i={},a=null;if(t!=null)for(r in t.key!==void 0&&(a=``+t.key),t)w.call(t,r)&&r!==`key`&&r!==`__self`&&r!==`__source`&&(i[r]=t[r]);var o=arguments.length-2;if(o===1)i.children=n;else if(1<o){for(var s=Array(o),c=0;c<o;c++)s[c]=arguments[c+2];i.children=s}if(e&&e.defaultProps)for(r in o=e.defaultProps,o)i[r]===void 0&&(i[r]=o[r]);return T(e,a,i)},e.createRef=function(){return{current:null}},e.forwardRef=function(e){return{$$typeof:c,render:e}},e.isValidElement=E,e.lazy=function(e){return{$$typeof:d,_payload:{_status:-1,_result:e},_init:se}},e.memo=function(e,t){return{$$typeof:u,type:e,compare:t===void 0?null:t}},e.startTransition=function(e){var t=C.T,n={};C.T=n;try{var r=e(),i=C.S;i!==null&&i(n,r),typeof r==`object`&&r&&typeof r.then==`function`&&r.then(S,O)}catch(e){O(e)}finally{t!==null&&n.types!==null&&(t.types=n.types),C.T=t}},e.unstable_useCacheRefresh=function(){return C.H.useCacheRefresh()},e.use=function(e){return C.H.use(e)},e.useActionState=function(e,t,n){return C.H.useActionState(e,t,n)},e.useCallback=function(e,t){return C.H.useCallback(e,t)},e.useContext=function(e){return C.H.useContext(e)},e.useDebugValue=function(){},e.useDeferredValue=function(e,t){return C.H.useDeferredValue(e,t)},e.useEffect=function(e,t){return C.H.useEffect(e,t)},e.useEffectEvent=function(e){return C.H.useEffectEvent(e)},e.useId=function(){return C.H.useId()},e.useImperativeHandle=function(e,t,n){return C.H.useImperativeHandle(e,t,n)},e.useInsertionEffect=function(e,t){return C.H.useInsertionEffect(e,t)},e.useLayoutEffect=function(e,t){return C.H.useLayoutEffect(e,t)},e.useMemo=function(e,t){return C.H.useMemo(e,t)},e.useOptimistic=function(e,t){return C.H.useOptimistic(e,t)},e.useReducer=function(e,t,n){return C.H.useReducer(e,t,n)},e.useRef=function(e){return C.H.useRef(e)},e.useState=function(e){return C.H.useState(e)},e.useSyncExternalStore=function(e,t,n){return C.H.useSyncExternalStore(e,t,n)},e.useTransition=function(){return C.H.useTransition()},e.version=`19.2.8`})),d=o(((e,t)=>{t.exports=u()})),f=o((e=>{function t(e,t){var n=e.length;e.push(t);a:for(;0<n;){var r=n-1>>>1,a=e[r];if(0<i(a,t))e[r]=t,e[n]=a,n=r;else break a}}function n(e){return e.length===0?null:e[0]}function r(e){if(e.length===0)return null;var t=e[0],n=e.pop();if(n!==t){e[0]=n;a:for(var r=0,a=e.length,o=a>>>1;r<o;){var s=2*(r+1)-1,c=e[s],l=s+1,u=e[l];if(0>i(c,n))l<a&&0>i(u,c)?(e[r]=u,e[l]=n,r=l):(e[r]=c,e[s]=n,r=s);else if(l<a&&0>i(u,n))e[r]=u,e[l]=n,r=l;else break a}}return t}function i(e,t){var n=e.sortIndex-t.sortIndex;return n===0?e.id-t.id:n}if(e.unstable_now=void 0,typeof performance==`object`&&typeof performance.now==`function`){var a=performance;e.unstable_now=function(){return a.now()}}else{var o=Date,s=o.now();e.unstable_now=function(){return o.now()-s}}var c=[],l=[],u=1,d=null,f=3,p=!1,m=!1,h=!1,g=!1,_=typeof setTimeout==`function`?setTimeout:null,v=typeof clearTimeout==`function`?clearTimeout:null,y=typeof setImmediate<`u`?setImmediate:null;function b(e){for(var i=n(l);i!==null;){if(i.callback===null)r(l);else if(i.startTime<=e)r(l),i.sortIndex=i.expirationTime,t(c,i);else break;i=n(l)}}function x(e){if(h=!1,b(e),!m){if(n(c)!==null)m=!0,ee||(ee=!0,E());else{var t=n(l);t!==null&&re(x,t.startTime-e)}}}var ee=!1,S=-1,C=5,w=-1;function T(){return g?!0:!(e.unstable_now()-w<C)}function te(){if(g=!1,ee){var t=e.unstable_now();w=t;var i=!0;try{a:{m=!1,h&&(h=!1,v(S),S=-1),p=!0;var a=f;try{b:{for(b(t),d=n(c);d!==null&&!(d.expirationTime>t&&T());){var o=d.callback;if(typeof o==`function`){d.callback=null,f=d.priorityLevel;var s=o(d.expirationTime<=t);if(t=e.unstable_now(),typeof s==`function`){d.callback=s,b(t),i=!0;break b}d===n(c)&&r(c),b(t)}else r(c);d=n(c)}if(d!==null)i=!0;else{var u=n(l);u!==null&&re(x,u.startTime-t),i=!1}}break a}finally{d=null,f=a,p=!1}i=void 0}}finally{i?E():ee=!1}}}var E;if(typeof y==`function`)E=function(){y(te)};else if(typeof MessageChannel<`u`){var ne=new MessageChannel,D=ne.port2;ne.port1.onmessage=te,E=function(){D.postMessage(null)}}else E=function(){_(te,0)};function re(t,n){S=_(function(){t(e.unstable_now())},n)}e.unstable_IdlePriority=5,e.unstable_ImmediatePriority=1,e.unstable_LowPriority=4,e.unstable_NormalPriority=3,e.unstable_Profiling=null,e.unstable_UserBlockingPriority=2,e.unstable_cancelCallback=function(e){e.callback=null},e.unstable_forceFrameRate=function(e){0>e||125<e?console.error(`forceFrameRate takes a positive int between 0 and 125, forcing frame rates higher than 125 fps is not supported`):C=0<e?Math.floor(1e3/e):5},e.unstable_getCurrentPriorityLevel=function(){return f},e.unstable_next=function(e){switch(f){case 1:case 2:case 3:var t=3;break;default:t=f}var n=f;f=t;try{return e()}finally{f=n}},e.unstable_requestPaint=function(){g=!0},e.unstable_runWithPriority=function(e,t){switch(e){case 1:case 2:case 3:case 4:case 5:break;default:e=3}var n=f;f=e;try{return t()}finally{f=n}},e.unstable_scheduleCallback=function(r,i,a){var o=e.unstable_now();switch(typeof a==`object`&&a?(a=a.delay,a=typeof a==`number`&&0<a?o+a:o):a=o,r){case 1:var s=-1;break;case 2:s=250;break;case 5:s=1073741823;break;case 4:s=1e4;break;default:s=5e3}return s=a+s,r={id:u++,callback:i,priorityLevel:r,startTime:a,expirationTime:s,sortIndex:-1},a>o?(r.sortIndex=a,t(l,r),n(c)===null&&r===n(l)&&(h?(v(S),S=-1):h=!0,re(x,a-o))):(r.sortIndex=s,t(c,r),m||p||(m=!0,ee||(ee=!0,E()))),r},e.unstable_shouldYield=T,e.unstable_wrapCallback=function(e){var t=f;return function(){var n=f;f=t;try{return e.apply(this,arguments)}finally{f=n}}}})),p=o(((e,t)=>{t.exports=f()})),m=o((e=>{var t=d();function n(e){var t=`https://react.dev/errors/`+e;if(1<arguments.length){t+=`?args[]=`+encodeURIComponent(arguments[1]);for(var n=2;n<arguments.length;n++)t+=`&args[]=`+encodeURIComponent(arguments[n])}return`Minified React error #`+e+`; visit `+t+` for the full message or use the non-minified dev environment for full errors and additional helpful warnings.`}function r(){}var i={d:{f:r,r:function(){throw Error(n(522))},D:r,C:r,L:r,m:r,X:r,S:r,M:r},p:0,findDOMNode:null},a=Symbol.for(`react.portal`);function o(e,t,n){var r=3<arguments.length&&arguments[3]!==void 0?arguments[3]:null;return{$$typeof:a,key:r==null?null:``+r,children:e,containerInfo:t,implementation:n}}var s=t.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE;function c(e,t){if(e===`font`)return``;if(typeof t==`string`)return t===`use-credentials`?t:``}e.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE=i,e.createPortal=function(e,t){var r=2<arguments.length&&arguments[2]!==void 0?arguments[2]:null;if(!t||t.nodeType!==1&&t.nodeType!==9&&t.nodeType!==11)throw Error(n(299));return o(e,t,null,r)},e.flushSync=function(e){var t=s.T,n=i.p;try{if(s.T=null,i.p=2,e)return e()}finally{s.T=t,i.p=n,i.d.f()}},e.preconnect=function(e,t){typeof e==`string`&&(t?(t=t.crossOrigin,t=typeof t==`string`?t===`use-credentials`?t:``:void 0):t=null,i.d.C(e,t))},e.prefetchDNS=function(e){typeof e==`string`&&i.d.D(e)},e.preinit=function(e,t){if(typeof e==`string`&&t&&typeof t.as==`string`){var n=t.as,r=c(n,t.crossOrigin),a=typeof t.integrity==`string`?t.integrity:void 0,o=typeof t.fetchPriority==`string`?t.fetchPriority:void 0;n===`style`?i.d.S(e,typeof t.precedence==`string`?t.precedence:void 0,{crossOrigin:r,integrity:a,fetchPriority:o}):n===`script`&&i.d.X(e,{crossOrigin:r,integrity:a,fetchPriority:o,nonce:typeof t.nonce==`string`?t.nonce:void 0})}},e.preinitModule=function(e,t){if(typeof e==`string`){if(typeof t==`object`&&t){if(t.as==null||t.as===`script`){var n=c(t.as,t.crossOrigin);i.d.M(e,{crossOrigin:n,integrity:typeof t.integrity==`string`?t.integrity:void 0,nonce:typeof t.nonce==`string`?t.nonce:void 0})}}else t??i.d.M(e)}},e.preload=function(e,t){if(typeof e==`string`&&typeof t==`object`&&t&&typeof t.as==`string`){var n=t.as,r=c(n,t.crossOrigin);i.d.L(e,n,{crossOrigin:r,integrity:typeof t.integrity==`string`?t.integrity:void 0,nonce:typeof t.nonce==`string`?t.nonce:void 0,type:typeof t.type==`string`?t.type:void 0,fetchPriority:typeof t.fetchPriority==`string`?t.fetchPriority:void 0,referrerPolicy:typeof t.referrerPolicy==`string`?t.referrerPolicy:void 0,imageSrcSet:typeof t.imageSrcSet==`string`?t.imageSrcSet:void 0,imageSizes:typeof t.imageSizes==`string`?t.imageSizes:void 0,media:typeof t.media==`string`?t.media:void 0})}},e.preloadModule=function(e,t){if(typeof e==`string`){if(t){var n=c(t.as,t.crossOrigin);i.d.m(e,{as:typeof t.as==`string`&&t.as!==`script`?t.as:void 0,crossOrigin:n,integrity:typeof t.integrity==`string`?t.integrity:void 0})}else i.d.m(e)}},e.requestFormReset=function(e){i.d.r(e)},e.unstable_batchedUpdates=function(e,t){return e(t)},e.useFormState=function(e,t,n){return s.H.useFormState(e,t,n)},e.useFormStatus=function(){return s.H.useHostTransitionStatus()},e.version=`19.2.8`})),h=o(((e,t)=>{function n(){if(!(typeof __REACT_DEVTOOLS_GLOBAL_HOOK__>`u`||typeof __REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE!=`function`))try{__REACT_DEVTOOLS_GLOBAL_HOOK__.checkDCE(n)}catch(e){console.error(e)}}n(),t.exports=m()})),g=o((e=>{var t=p(),n=d(),r=h();function i(e){var t=`https://react.dev/errors/`+e;if(1<arguments.length){t+=`?args[]=`+encodeURIComponent(arguments[1]);for(var n=2;n<arguments.length;n++)t+=`&args[]=`+encodeURIComponent(arguments[n])}return`Minified React error #`+e+`; visit `+t+` for the full message or use the non-minified dev environment for full errors and additional helpful warnings.`}function a(e){return!(!e||e.nodeType!==1&&e.nodeType!==9&&e.nodeType!==11)}function o(e){var t=e,n=e;if(e.alternate)for(;t.return;)t=t.return;else{e=t;do t=e,t.flags&4098&&(n=t.return),e=t.return;while(e)}return t.tag===3?n:null}function s(e){if(e.tag===13){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function c(e){if(e.tag===31){var t=e.memoizedState;if(t===null&&(e=e.alternate,e!==null&&(t=e.memoizedState)),t!==null)return t.dehydrated}return null}function l(e){if(o(e)!==e)throw Error(i(188))}function u(e){var t=e.alternate;if(!t){if(t=o(e),t===null)throw Error(i(188));return t===e?e:null}for(var n=e,r=t;;){var a=n.return;if(a===null)break;var s=a.alternate;if(s===null){if(r=a.return,r!==null){n=r;continue}break}if(a.child===s.child){for(s=a.child;s;){if(s===n)return l(a),e;if(s===r)return l(a),t;s=s.sibling}throw Error(i(188))}if(n.return!==r.return)n=a,r=s;else{for(var c=!1,u=a.child;u;){if(u===n){c=!0,n=a,r=s;break}if(u===r){c=!0,r=a,n=s;break}u=u.sibling}if(!c){for(u=s.child;u;){if(u===n){c=!0,n=s,r=a;break}if(u===r){c=!0,r=s,n=a;break}u=u.sibling}if(!c)throw Error(i(189))}}if(n.alternate!==r)throw Error(i(190))}if(n.tag!==3)throw Error(i(188));return n.stateNode.current===n?e:t}function f(e){var t=e.tag;if(t===5||t===26||t===27||t===6)return e;for(e=e.child;e!==null;){if(t=f(e),t!==null)return t;e=e.sibling}return null}var m=Object.assign,g=Symbol.for(`react.element`),_=Symbol.for(`react.transitional.element`),v=Symbol.for(`react.portal`),y=Symbol.for(`react.fragment`),b=Symbol.for(`react.strict_mode`),x=Symbol.for(`react.profiler`),ee=Symbol.for(`react.consumer`),S=Symbol.for(`react.context`),C=Symbol.for(`react.forward_ref`),w=Symbol.for(`react.suspense`),T=Symbol.for(`react.suspense_list`),te=Symbol.for(`react.memo`),E=Symbol.for(`react.lazy`),ne=Symbol.for(`react.activity`),D=Symbol.for(`react.memo_cache_sentinel`),re=Symbol.iterator;function ie(e){return typeof e!=`object`||!e?null:(e=re&&e[re]||e[`@@iterator`],typeof e==`function`?e:null)}var ae=Symbol.for(`react.client.reference`);function oe(e){if(e==null)return null;if(typeof e==`function`)return e.$$typeof===ae?null:e.displayName||e.name||null;if(typeof e==`string`)return e;switch(e){case y:return`Fragment`;case x:return`Profiler`;case b:return`StrictMode`;case w:return`Suspense`;case T:return`SuspenseList`;case ne:return`Activity`}if(typeof e==`object`)switch(e.$$typeof){case v:return`Portal`;case S:return e.displayName||`Context`;case ee:return(e._context.displayName||`Context`)+`.Consumer`;case C:var t=e.render;return e=e.displayName,e||=(e=t.displayName||t.name||``,e===``?`ForwardRef`:`ForwardRef(`+e+`)`),e;case te:return t=e.displayName||null,t===null?oe(e.type)||`Memo`:t;case E:t=e._payload,e=e._init;try{return oe(e(t))}catch{}}return null}var se=Array.isArray,O=n.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,k=r.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE,ce={pending:!1,data:null,method:null,action:null},le=[],ue=-1;function de(e){return{current:e}}function A(e){0>ue||(e.current=le[ue],le[ue]=null,ue--)}function j(e,t){ue++,le[ue]=e.current,e.current=t}var fe=de(null),pe=de(null),me=de(null),he=de(null);function M(e,t){switch(j(me,t),j(pe,e),j(fe,null),t.nodeType){case 9:case 11:e=(e=t.documentElement)&&(e=e.namespaceURI)?Vd(e):0;break;default:if(e=t.tagName,t=t.namespaceURI)t=Vd(t),e=Hd(t,e);else switch(e){case`svg`:e=1;break;case`math`:e=2;break;default:e=0}}A(fe),j(fe,e)}function N(){A(fe),A(pe),A(me)}function ge(e){e.memoizedState!==null&&j(he,e);var t=fe.current,n=Hd(t,e.type);t!==n&&(j(pe,e),j(fe,n))}function P(e){pe.current===e&&(A(fe),A(pe)),he.current===e&&(A(he),Qf._currentValue=ce)}var F,_e;function ve(e){if(F===void 0)try{throw Error()}catch(e){var t=e.stack.trim().match(/\n( *(at )?)/);F=t&&t[1]||``,_e=-1<e.stack.indexOf(`
@@ -164008,17 +164040,10 @@ Error generating stack: `+e.message+`
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/assets/main-CRSGR5rx.css
-SHA256=e49861e1be5c2e63a34f21c8fb84fbea0a8729d5813c3aad09257881c4011a3b BYTES=8117 LINES=1
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-.ltc{height:calc(100vh - 190px);min-height:420px;max-height:1000px;color:var(--text-primary);font-family:var(--font);grid-template-rows:minmax(0,1fr);grid-template-columns:280px minmax(0,1fr);gap:0;display:grid}.ltc-ben{border-right:1px solid var(--border-subtle);background:var(--surface-base);flex-direction:column;gap:8px;min-width:0;min-height:0;padding:12px;display:flex}.ltc-tim{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);width:100%;color:var(--text-primary);font:inherit;padding:8px 10px}.ltc-ds{min-height:0;margin:0;padding:0;list-style:none;overflow-y:auto}.ltc-ds__muc{text-align:left;border-radius:var(--radius-sm);width:100%;color:var(--text-secondary);font:inherit;cursor:pointer;text-overflow:ellipsis;white-space:nowrap;background:0 0;border:1px solid #0000;padding:8px 10px;overflow:hidden}.ltc-ds__muc:hover{background:var(--surface-raised);color:var(--text-primary)}.ltc-ds__muc.la-dang-xem{background:var(--surface-interactive);border-color:var(--border-strong);color:var(--text-primary)}.ltc-chinh{background:var(--surface-canvas);grid-template-rows:auto minmax(0,1fr) auto auto auto;min-width:0;min-height:0;display:grid}.ltc-dinh{border-bottom:1px solid var(--border-subtle);align-items:center;gap:12px;padding:10px 16px;display:flex}.ltc-model{color:var(--text-secondary);align-items:center;gap:8px;display:flex}.ltc-model select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-chip{border:1px solid var(--status-warning-border);background:var(--status-warning-soft);color:var(--status-warning);border-radius:999px;padding:3px 10px;font-size:12px}.ltc-luong{scroll-behavior:smooth;flex-direction:column;gap:16px;min-height:0;padding:16px;display:flex;overflow-y:auto}.ltc-trong{color:var(--text-muted);text-align:center;margin-top:15vh}.ltc-tin{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);width:100%;max-width:760px;margin:0 auto;padding:12px 14px}.ltc-tin--user{background:var(--surface-overlay)}.ltc-tin__vai{color:var(--text-muted);margin-bottom:6px;font-size:12px}.ltc-tin__tho{white-space:pre-wrap;margin:0}.ltc-tin__chu{overflow-wrap:anywhere;line-height:1.6}.ltc-tin__chu>:first-child{margin-top:0}.ltc-tin__chu>:last-child{margin-bottom:0}.ltc-tin__chu pre{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);padding:10px;overflow-x:auto}.ltc-tin__chu code{font-family:var(--mono);font-size:.92em}.ltc-tin__chu table{border-collapse:collapse;display:block;overflow-x:auto}.ltc-tin__chu th,.ltc-tin__chu td{border:1px solid var(--border-subtle);padding:4px 8px}.ltc-tin__loi{border:1px solid var(--status-danger-border);background:var(--status-danger-soft);color:var(--status-danger);border-radius:var(--radius-sm);margin:8px 0 0;padding:8px 10px}.ltc-tin__nhan{color:var(--text-muted);margin:8px 0 0;font-size:13px}.ltc-tin__thanhcong{align-items:center;gap:12px;min-height:24px;margin-top:10px;display:flex}.ltc-nhanh{color:var(--text-secondary);align-items:center;gap:4px;display:flex}.ltc-nhanh button{border:1px solid var(--border-subtle);background:var(--surface-overlay);color:var(--text-primary);border-radius:var(--radius-sm);cursor:pointer;min-width:28px;min-height:28px}.ltc-nhanh button:disabled{opacity:.4;cursor:default}.ltc-nhanh span{text-align:center;min-width:44px;font-size:12px}.ltc-suyluan{margin-bottom:10px}.ltc-suyluan__nut{color:var(--text-muted);font:inherit;cursor:pointer;background:0 0;border:none;padding:0}.ltc-suyluan__chu{background:var(--surface-canvas);border:1px solid var(--border-subtle);border-radius:var(--radius-sm);color:var(--text-secondary);white-space:pre-wrap;font-family:var(--mono);margin:6px 0 0;padding:8px 10px;font-size:13px}.ltc-soan{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:flex-end;gap:8px;padding:12px 16px;display:flex}.ltc-soan__anh,.ltc-soan__loi{flex:0 0 100%;margin:0}.ltc-soan__anh{flex-wrap:wrap;gap:6px;padding:0;list-style:none;display:flex}.ltc-soan__anh-mot{border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);align-items:center;gap:6px;max-width:100%;padding:4px 6px 4px 10px;font-size:.85rem;display:inline-flex}.ltc-soan__anh-ten{text-overflow:ellipsis;white-space:nowrap;max-width:22ch;overflow:hidden}.ltc-soan__anh-bo{cursor:pointer;color:var(--text-secondary);background:0 0;border:0;padding:2px 4px;font-size:1rem;line-height:1}.ltc-soan__anh-bo:hover{color:var(--text-primary)}.ltc-soan__loi{color:var(--support-error,#da1e28);font-size:.85rem}.ltc-soan__tep{opacity:0;pointer-events:none;width:1px;height:1px;position:absolute}.ltc-soan__o{resize:none;border:1px solid var(--border-subtle);border-radius:var(--radius-md);background:var(--surface-raised);color:var(--text-primary);font:inherit;flex:1;max-height:320px;padding:10px 12px;line-height:1.5}.ltc-nut{border:1px solid var(--brand-border);border-radius:var(--radius-md);background:var(--brand-primary);color:#fff;font:inherit;cursor:pointer;padding:10px 16px}.ltc-nut:disabled{opacity:.45;cursor:default}.ltc-nut--dung{background:var(--surface-interactive);border-color:var(--border-strong)}.ltc-nut--moi{width:100%}.ltc-nut--nho{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-overlay);color:var(--text-secondary);font:inherit;cursor:pointer;padding:4px 10px;font-size:13px}.ltc-loi{background:var(--status-danger-soft);color:var(--status-danger);border-top:1px solid var(--status-danger-border);margin:0;padding:8px 16px}.ltc-nhipdap{background:var(--text-muted);width:8px;height:16px;animation:1s steps(2,start) infinite ltc-nhap;display:inline-block}@keyframes ltc-nhap{to{opacity:0}}@media (width<=860px){.ltc{grid-template-rows:auto;grid-template-columns:minmax(0,1fr);height:auto;max-height:none}.ltc-ben{border-right:none;border-bottom:1px solid var(--border-subtle);max-height:220px}.ltc-luong{padding:12px 10px}.ltc-tin{padding:10px 12px}}@media (prefers-reduced-motion:reduce){.ltc-luong{scroll-behavior:auto}.ltc-nhipdap{opacity:.6;animation:none}}.ltc-media{border-top:1px solid var(--border-subtle);background:var(--surface-base);flex-wrap:wrap;align-items:center;gap:8px;padding:8px 16px;display:flex}.ltc-media__o{flex-wrap:wrap;align-items:flex-end;gap:8px;width:100%;display:flex}.ltc-media__o textarea{resize:vertical;border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);min-width:220px;color:var(--text-primary);font:inherit;flex:1;padding:8px 10px}.ltc-media__giong{color:var(--text-secondary);align-items:center;gap:6px;display:flex}.ltc-media__giong select{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-raised);color:var(--text-primary);font:inherit;padding:6px 8px}.ltc-media__gia{border:1px solid var(--brand-border);background:var(--brand-soft);border-radius:var(--radius-sm);flex-wrap:wrap;align-items:center;gap:10px;width:100%;padding:8px 10px;display:flex}.ltc-lien{color:var(--text-muted);font-size:13px}.ltc-taisan{flex-wrap:wrap;gap:8px;margin-top:10px;display:flex}.ltc-taisan__anh{border:1px solid var(--border-subtle);border-radius:var(--radius-sm);background:var(--surface-canvas);width:auto;max-width:100%;max-height:45vh;display:block}.ltc-taisan__am{width:100%;max-width:420px}.ltc-sodu{border:1px solid var(--border-subtle);background:var(--surface-raised);color:var(--text-secondary);white-space:nowrap;border-radius:999px;margin-left:auto;padding:3px 10px;font-size:13px}.ltc-trangthai{height:1.5rem;margin:0 0 .25rem;line-height:1.5rem;position:relative}.ltc-trangthai__chu{white-space:nowrap;color:var(--text-secondary);font-size:.9em;position:absolute;top:0;left:0}@media (prefers-reduced-motion:no-preference){.ltc-trangthai:not([data-trangthai=khong]) .ltc-trangthai__chu{animation:1.6s ease-in-out infinite ltc-tho}}@keyframes ltc-tho{0%,to{opacity:.55}50%{opacity:1}}
-
-@@@LTT_PROFILE_FILE_END@@@
-
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/chatltt/build-meta.json
-SHA256=3302f42e4bc319220de474362e59ca3318ad9f635440342cbcd9eea7f827b0cc BYTES=131 LINES=1
+SHA256=3957bb89c332848a53e0b18f96c148dafe782101c09bab77d694ec7a5ae57c81 BYTES=131 LINES=1
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
-{"schema":1,"source_sha256":"0387fa82cc0b517aafa70076d043746af374246e0951f33a7a813bc297352fc5","node":"24.17.0","sourcemap":false}
+{"schema":1,"source_sha256":"27d68309578288bab61ab1a84532558f2e86b92c1120c2f21910d26d7babb838","node":"24.17.0","sourcemap":false}
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -271024,7 +271049,7 @@ def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_431_ngan_sach_loi.py
-SHA256=7547a7cb6801897d39dccdefe7f914d21944a6420c15ebfe6706be39cffddc2a BYTES=27455 LINES=603
+SHA256=5c7cb16c238e6b21d4ca29c7f852d7b4a0b00598af9893519d3720f148321992 BYTES=27880 LINES=608
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngan sach loi cua `gate.py` la GIOI HAN TREN, khong phai mot phep gan.
 
@@ -271392,10 +271417,15 @@ def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # Khong phu thuoc `os.cpu_count()` (logic) nua.
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
-    assert gate.loi_cho_bo_test(phien="") == gate.TRAN_WORKER_BO_TEST
+    # ⛔ `do_tai=False` — CUNG LY DO nhu `_n_truyen_cho_pytest`. Hai phep kiem
+    #    trong tep nay chot mot con so co dinh tu mot ham MAC DINH DO CPU THAT.
+    #    Ca hai xanh khi chay rieng va do trong luot gate, vi chinh bo test dang
+    #    lam may ban. Phien `ltt-llm-api-http-guide` sua ban thu hai o nhanh
+    #    cua ho (`9b6bef0`); day la ban tuong ung o nhanh nay.
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == gate.TRAN_WORKER_BO_TEST
 
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
-    assert gate.loi_cho_bo_test(phien="") == min(
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == min(
         gate.TRAN_WORKER_BO_TEST, 8 - gate.LOI_DE_DANH_VAT_LY)
 
 
@@ -271405,7 +271435,7 @@ def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
         {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 4}])
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # 10 - 3 - 4 = 3, nho hon tran 6 -> 3 thang
-    assert gate.loi_cho_bo_test(phien="toi") == 3
+    assert gate.loi_cho_bo_test(phien="toi", do_tai=False) == 3
 
 
 def test_bo_dem_LICH_cung_dung_don_vi_VAT_LY(monkeypatch):
@@ -316438,7 +316468,7 @@ export function dot2({ cho, doiDen, soBai, chuBaiCuoi, guiChu, xong, hoiThoaiMoi
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt/dot3_markdown.mjs
-SHA256=50ecda1c8d233c1d59a1792f3c1ba44c91ae73b3bb66ba0dbfe346dcdf456dea BYTES=10026 LINES=211
+SHA256=53581b80ff79055cbf0833665079316c93445dc9420e1b4583be24eb557fa0a1 BYTES=12745 LINES=266
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * Đợt 3 — KẾT XUẤT MARKDOWN, và Đợt A — TRẠNG THÁI NGỮ CẢNH.
@@ -316623,6 +316653,55 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
     },
     {
       dot: 'A',
+      ten: 'A.3-CLS-luc-TAI-TRANG',
+      hoi: 'Trang có nhảy khi React mount không?',
+      async chay(p) {
+        // 🔴 HANG MUC NAY RA DOI TU MOT CHAN DOAN SAI CUA CHINH TOI.
+        //
+        //    A.2 do CLS 0,1642 va toi ket luan thu pham la khoi "Suy luan" moc
+        //    ra o giay 3,7. Do tung cu nhay mot thi khac han:
+        //
+        //      v=0,0749  t+0ms  FOOTER.platform-footer  truoc=109  sau=819
+        //
+        //    Cu nhay lon nhat o **giay thu khong**, va la CHAN TRANG: truoc khi
+        //    React mount thi `#chatltt-root` rong ⇒ cao 0 ⇒ chan trang nam cao;
+        //    mount xong no bi day xuong 710px.
+        //
+        // ⛔ A.2 dung `buffered: true` nen no GOP ca hai hien tuong vao mot con
+        //    so. Mot phep do gop hai thu lai thi khi no do, khong ai biet phai
+        //    sua cai nao — va toi da sua nham mot lan roi.
+        await p.goto(p.url().split('#')[0], { waitUntil: 'commit' });
+        await p.evaluate(() => {
+          window.__clsTai = 0; window.__maxTai = 0; window.__nguon = '';
+          new PerformanceObserver((l) => {
+            for (const e of l.getEntries()) if (!e.hadRecentInput) {
+              window.__clsTai += e.value;
+              if (e.value > window.__maxTai) {
+                window.__maxTai = e.value;
+                const n = (e.sources || [])[0]?.node;
+                const el = n && (n.nodeType === 1 ? n : n.parentElement);
+                window.__nguon = (el?.tagName || '?') + '.' + String(el?.className || '').slice(0, 40);
+              }
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+        }).catch(() => {});
+        await doiDen('app da mount', async () =>
+          (await p.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
+        await cho(2500);
+        const r = await p.evaluate(() => ({
+          cls: +(window.__clsTai || 0).toFixed(4),
+          lon_nhat: +(window.__maxTai || 0).toFixed(4),
+          nguon: window.__nguon || '',
+        }));
+        if (r.cls > 0.02) {
+          throw new Error(`CLS luc tai trang ${r.cls} > 0,02 — cu nhay lon nhat `
+            + `${r.lon_nhat} tu ${r.nguon}. Goc mount phai GIU CHO truoc khi React ve.`);
+        }
+        return r;
+      },
+    },
+    {
+      dot: 'A',
       ten: 'A.2-CLS-cua-mot-luot-stream',
       hoi: 'Một lượt trả lời làm bố cục nhảy bao nhiêu?',
       async chay(p) {
@@ -316633,7 +316712,13 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
             for (const e of l.getEntries()) if (!e.hadRecentInput) {
               window.__cls += e.value; window.__max = Math.max(window.__max, e.value);
             }
-          }).observe({ type: 'layout-shift', buffered: true });
+            // ⛔ `buffered: false`. Voi `true`, PerformanceObserver phat lai
+            //    ca nhung cu nhay tu LUC TAI TRANG — va hang muc nay ten la
+            //    "CLS cua mot luot stream". Do 03/09: 0,0749 trong tong 0,0836
+            //    den tu chan trang nhay luc mount, khong lien quan gi toi
+            //    stream. Mot phep do gop hai hien tuong lai thi khi no do,
+            //    khong ai biet phai sua cai nao.
+          }).observe({ type: 'layout-shift', buffered: false });
         });
         await guiChu(p, 'Viet mot doan 4 cau ve mua xuan, kem mot danh sach 3 gach dau dong.');
         await xong(p);
@@ -316655,7 +316740,7 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/kiem_chatltt/dot4_dinh_kem.mjs
-SHA256=3891f76d64d98a4fb585cb0807e38f9687b66641dec1601d468ef88878a435ab BYTES=11067 LINES=232
+SHA256=c2cdec186872554124d1da06b1630afa88f17ca31cf6576ba224041bfb9c3dc5 BYTES=12163 LINES=257
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /**
  * Đợt 4 — ĐÍNH KÈM VÀ VISION.
@@ -316728,6 +316813,25 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
    *    Day la lan thu BA cung mot loi trong bo kiem nay (mac dinh model, mo
    *    hoi thoai moi, va gio la day). Cung mot goc: DOC TRUOC KHI DU LIEU TOI.
    */
+  /**
+   * Doi cho MOI tep tai xong, thay vi mot khoang cho co dinh.
+   *
+   * ⛔ Ban dau dung `cho(4000)`. Qua Cloudflare, ba anh khong xong trong bon
+   *    giay — nen hang muc doc trang thai GIUA CHUNG roi ket luan "mot tep hong
+   *    giet ca lo", trong khi hai tep kia mới đang bay. Lan thu TU trong cung
+   *    mot buoi: doc truoc khi du lieu toi.
+   *
+   * ⭐ Nut doi nhan thanh "Dang tai…" khi ban, va tro lai khi xong. Do la dau
+   *    hieu cua chinh san pham — muon no thi khong phai doan.
+   */
+  const choTaiXong = async (p, giay = 60) => {
+    await doiDen('tai anh xong', async () => {
+      const n = await p.getByRole('button', { name: /Đang tải/ }).count();
+      return n === 0;
+    }, giay);
+    await cho(500);
+  };
+
   const chonVision = async (p) => {
     const sel = p.locator('select[aria-label="Chọn model"]');
     await doiDen('catalog da ve', async () =>
@@ -316757,7 +316861,7 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
           { name: 'hong.png', mimeType: 'image/png', buffer: Buffer.from('khong phai anh') },
           anhHopLe(80, 80),
         ]);
-        await cho(4000);
+        await choTaiXong(p);
         const r = await p.evaluate(() => ({
           chip: [...document.querySelectorAll('.ltc-soan__anh-ten')].map((e) => e.textContent),
           loi: document.querySelector('.ltc-soan__loi')?.textContent || '',
@@ -316775,12 +316879,18 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
       hoi: 'Một tệp văn bản đổi đuôi thành .png có lọt không?',
       async chay(p) {
         await hoiThoaiMoi(p);
+        // ⚠️ 4.1 de lai mot chip. Bo tay truoc khi do, neu khong hang muc nay
+        //    dem chip cua hang muc TRUOC roi ket luan "tep gia vo da duoc nhan".
+        for (const nut of await p.getByRole('button', { name: /^Bỏ ảnh / }).all()) {
+          await nut.click().catch(() => {});
+        }
+        await cho(400);
         if (!(await chonVision(p))) return { bo_qua: 'khong co alias vision' };
         await p.locator('input[type=file]').setInputFiles([{
           name: 'giavo.png', mimeType: 'image/png',
           buffer: Buffer.from('#!/bin/sh\necho khong phai anh dau\n'),
         }]);
-        await cho(3500);
+        await choTaiXong(p);
         const r = await p.evaluate(() => ({
           chip: [...document.querySelectorAll('.ltc-soan__anh-ten')].length,
           loi: document.querySelector('.ltc-soan__loi')?.textContent || '',

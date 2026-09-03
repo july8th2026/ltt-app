@@ -364,10 +364,15 @@ def test_moi_ve_deu_tinh_tren_LOI_VAT_LY(monkeypatch):
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # Khong phu thuoc `os.cpu_count()` (logic) nua.
     monkeypatch.setattr(gate.os, "cpu_count", lambda: 999)
-    assert gate.loi_cho_bo_test(phien="") == gate.TRAN_WORKER_BO_TEST
+    # ⛔ `do_tai=False` — CUNG LY DO nhu `_n_truyen_cho_pytest`. Hai phep kiem
+    #    trong tep nay chot mot con so co dinh tu mot ham MAC DINH DO CPU THAT.
+    #    Ca hai xanh khi chay rieng va do trong luot gate, vi chinh bo test dang
+    #    lam may ban. Phien `ltt-llm-api-http-guide` sua ban thu hai o nhanh
+    #    cua ho (`9b6bef0`); day la ban tuong ung o nhanh nay.
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == gate.TRAN_WORKER_BO_TEST
 
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 8)
-    assert gate.loi_cho_bo_test(phien="") == min(
+    assert gate.loi_cho_bo_test(phien="", do_tai=False) == min(
         gate.TRAN_WORKER_BO_TEST, 8 - gate.LOI_DE_DANH_VAT_LY)
 
 
@@ -377,7 +382,7 @@ def test_phien_khac_giu_thi_tu_tut_xuong(monkeypatch):
         {"phien": "khac", "tai_nguyen": c.MAC_DINH, "so_loi": 4}])
     monkeypatch.setattr(gate, "loi_cong_cu_tu_do", lambda: 10)
     # 10 - 3 - 4 = 3, nho hon tran 6 -> 3 thang
-    assert gate.loi_cho_bo_test(phien="toi") == 3
+    assert gate.loi_cho_bo_test(phien="toi", do_tai=False) == 3
 
 
 def test_bo_dem_LICH_cung_dung_don_vi_VAT_LY(monkeypatch):

@@ -181,6 +181,55 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
     },
     {
       dot: 'A',
+      ten: 'A.3-CLS-luc-TAI-TRANG',
+      hoi: 'Trang có nhảy khi React mount không?',
+      async chay(p) {
+        // 🔴 HANG MUC NAY RA DOI TU MOT CHAN DOAN SAI CUA CHINH TOI.
+        //
+        //    A.2 do CLS 0,1642 va toi ket luan thu pham la khoi "Suy luan" moc
+        //    ra o giay 3,7. Do tung cu nhay mot thi khac han:
+        //
+        //      v=0,0749  t+0ms  FOOTER.platform-footer  truoc=109  sau=819
+        //
+        //    Cu nhay lon nhat o **giay thu khong**, va la CHAN TRANG: truoc khi
+        //    React mount thi `#chatltt-root` rong ⇒ cao 0 ⇒ chan trang nam cao;
+        //    mount xong no bi day xuong 710px.
+        //
+        // ⛔ A.2 dung `buffered: true` nen no GOP ca hai hien tuong vao mot con
+        //    so. Mot phep do gop hai thu lai thi khi no do, khong ai biet phai
+        //    sua cai nao — va toi da sua nham mot lan roi.
+        await p.goto(p.url().split('#')[0], { waitUntil: 'commit' });
+        await p.evaluate(() => {
+          window.__clsTai = 0; window.__maxTai = 0; window.__nguon = '';
+          new PerformanceObserver((l) => {
+            for (const e of l.getEntries()) if (!e.hadRecentInput) {
+              window.__clsTai += e.value;
+              if (e.value > window.__maxTai) {
+                window.__maxTai = e.value;
+                const n = (e.sources || [])[0]?.node;
+                const el = n && (n.nodeType === 1 ? n : n.parentElement);
+                window.__nguon = (el?.tagName || '?') + '.' + String(el?.className || '').slice(0, 40);
+              }
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+        }).catch(() => {});
+        await doiDen('app da mount', async () =>
+          (await p.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
+        await cho(2500);
+        const r = await p.evaluate(() => ({
+          cls: +(window.__clsTai || 0).toFixed(4),
+          lon_nhat: +(window.__maxTai || 0).toFixed(4),
+          nguon: window.__nguon || '',
+        }));
+        if (r.cls > 0.02) {
+          throw new Error(`CLS luc tai trang ${r.cls} > 0,02 — cu nhay lon nhat `
+            + `${r.lon_nhat} tu ${r.nguon}. Goc mount phai GIU CHO truoc khi React ve.`);
+        }
+        return r;
+      },
+    },
+    {
+      dot: 'A',
       ten: 'A.2-CLS-cua-mot-luot-stream',
       hoi: 'Một lượt trả lời làm bố cục nhảy bao nhiêu?',
       async chay(p) {
@@ -191,7 +240,13 @@ export function dot3({ cho, doiDen, chuBaiCuoi, dangChay, guiChu, xong, hoiThoai
             for (const e of l.getEntries()) if (!e.hadRecentInput) {
               window.__cls += e.value; window.__max = Math.max(window.__max, e.value);
             }
-          }).observe({ type: 'layout-shift', buffered: true });
+            // ⛔ `buffered: false`. Voi `true`, PerformanceObserver phat lai
+            //    ca nhung cu nhay tu LUC TAI TRANG — va hang muc nay ten la
+            //    "CLS cua mot luot stream". Do 03/09: 0,0749 trong tong 0,0836
+            //    den tu chan trang nhay luc mount, khong lien quan gi toi
+            //    stream. Mot phep do gop hai hien tuong lai thi khi no do,
+            //    khong ai biet phai sua cai nao.
+          }).observe({ type: 'layout-shift', buffered: false });
         });
         await guiChu(p, 'Viet mot doan 4 cau ve mua xuan, kem mot danh sach 3 gach dau dong.');
         await xong(p);

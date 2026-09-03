@@ -69,6 +69,25 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
    *    Day la lan thu BA cung mot loi trong bo kiem nay (mac dinh model, mo
    *    hoi thoai moi, va gio la day). Cung mot goc: DOC TRUOC KHI DU LIEU TOI.
    */
+  /**
+   * Doi cho MOI tep tai xong, thay vi mot khoang cho co dinh.
+   *
+   * ⛔ Ban dau dung `cho(4000)`. Qua Cloudflare, ba anh khong xong trong bon
+   *    giay — nen hang muc doc trang thai GIUA CHUNG roi ket luan "mot tep hong
+   *    giet ca lo", trong khi hai tep kia mới đang bay. Lan thu TU trong cung
+   *    mot buoi: doc truoc khi du lieu toi.
+   *
+   * ⭐ Nut doi nhan thanh "Dang tai…" khi ban, va tro lai khi xong. Do la dau
+   *    hieu cua chinh san pham — muon no thi khong phai doan.
+   */
+  const choTaiXong = async (p, giay = 60) => {
+    await doiDen('tai anh xong', async () => {
+      const n = await p.getByRole('button', { name: /Đang tải/ }).count();
+      return n === 0;
+    }, giay);
+    await cho(500);
+  };
+
   const chonVision = async (p) => {
     const sel = p.locator('select[aria-label="Chọn model"]');
     await doiDen('catalog da ve', async () =>
@@ -98,7 +117,7 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
           { name: 'hong.png', mimeType: 'image/png', buffer: Buffer.from('khong phai anh') },
           anhHopLe(80, 80),
         ]);
-        await cho(4000);
+        await choTaiXong(p);
         const r = await p.evaluate(() => ({
           chip: [...document.querySelectorAll('.ltc-soan__anh-ten')].map((e) => e.textContent),
           loi: document.querySelector('.ltc-soan__loi')?.textContent || '',
@@ -116,12 +135,18 @@ export function dot4({ cho, doiDen, chuBaiCuoi, guiChu, xong, hoiThoaiMoi }) {
       hoi: 'Một tệp văn bản đổi đuôi thành .png có lọt không?',
       async chay(p) {
         await hoiThoaiMoi(p);
+        // ⚠️ 4.1 de lai mot chip. Bo tay truoc khi do, neu khong hang muc nay
+        //    dem chip cua hang muc TRUOC roi ket luan "tep gia vo da duoc nhan".
+        for (const nut of await p.getByRole('button', { name: /^Bỏ ảnh / }).all()) {
+          await nut.click().catch(() => {});
+        }
+        await cho(400);
         if (!(await chonVision(p))) return { bo_qua: 'khong co alias vision' };
         await p.locator('input[type=file]').setInputFiles([{
           name: 'giavo.png', mimeType: 'image/png',
           buffer: Buffer.from('#!/bin/sh\necho khong phai anh dau\n'),
         }]);
-        await cho(3500);
+        await choTaiXong(p);
         const r = await p.evaluate(() => ({
           chip: [...document.querySelectorAll('.ltc-soan__anh-ten')].length,
           loi: document.querySelector('.ltc-soan__loi')?.textContent || '',
