@@ -32,8 +32,22 @@ def _n_truyen_cho_pytest() -> int:
     ⭐ Tu 03/09 chi con MOT ham tra loi cau hoi nay, nen phep kiem goi thang no.
        Ban truoc cua tep nay chep lai phep `min(...)` ba ve — va mot ban chep la
        mot cho de hai ben lech nhau ma khong ai do.
+
+    ⛔ `do_tai=False` KHONG PHAI DE CHO DE. Thieu no thi moi phep kiem goi ham
+       nay **do chinh cai may no dang chay tren do**: chay rieng ⇒ may ranh ⇒
+       ra dung tran; chay TRONG mot luot gate ⇒ chinh bo test lam may ban ⇒ nho
+       hon tran ⇒ do. Do duoc 03/09 tren cay nay, trong mot luot gate day du:
+
+           [ngan sach] 4 loi dang bi chiem (khai bao 0, do duoc 4)
+
+       va `test_them_mot_frontend_da_CHE_khuyet_tat_chu_khong_sua_no` do trong
+       khi no XANH khi chay mot minh.
+
+    ⭐ Phan DO DUOC duoc chot rieng, va chot bang BAT DANG THUC chu khong bang
+       mot con so: `test_do_tai_khong_bao_gio_noi_ngan_sach`. Mot con so do duoc
+       thi khong bao gio la mot hang so.
     """
-    return gate.loi_cho_bo_test(phien="")
+    return gate.loi_cho_bo_test(phien="", do_tai=False)
 
 
 def test_n_khong_bao_gio_vuot_so_xdist_tu_chon():
