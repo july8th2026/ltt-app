@@ -32,7 +32,24 @@ load_app_tables()
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # ⛔ `disable_existing_loggers=False` LA BAT BUOC, khong phai tuy chon.
+    #
+    #    `fileConfig` mac dinh la True, va True o day nghia la: moi logger DA
+    #    duoc tao truoc luc nay bi dat `disabled = True` — **vinh vien**, khong
+    #    khoi phuc, khong mot dong canh bao.
+    #
+    # 🔴 Do 03/09. `alembic upgrade` chay trong tien trinh (test_616) tat
+    #    `platform_core.job_runner`, va phep kiem chong ro bi mat cua worker
+    #    (`test_67`) do vi `caplog.text` RONG — no khong bat duoc mot canh bao
+    #    ma logger da bi tat khong bao gio phat ra. Phep kiem do XANH khi chay
+    #    mot minh; no chi do khi mot tep khac tao logger truoc, roi migration
+    #    chay sau. Ba tep, ba thu muc, khong lien quan gi nhau.
+    #
+    # ⭐ Nhung cai gia thuc su khong nam o bo test. Bat ky ai nhung alembic vao
+    #    mot tien trinh dang song — mot script bao tri, mot lenh quan tri, mot
+    #    worker tu migrate — deu lam CA tien trinh do cam tieng tu do tro di.
+    #    Migration khong duoc quyen tat log cua ung dung chu nha.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

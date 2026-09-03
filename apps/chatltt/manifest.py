@@ -26,6 +26,8 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest
 
+from apps.chatltt.services import hoi_thoai as _hoi_thoai
+
 MANIFEST = AppManifest(
     slug="chatltt",
     display_name="ChatLTT",
@@ -48,6 +50,11 @@ MANIFEST = AppManifest(
     # Bảng CSDL riêng của app (Phase 07): `chatltt_conversations`, `chatltt_messages`,
     # `chatltt_executions` — trong `apps/chatltt/tables.py`.
     table_prefix="chatltt",
+
+    # Viec dinh ky: don that nhung hoi thoai da xoa mem qua 30 ngay. Chay duoi
+    # lease cua nen tang nen dung MOT lan tren ca cum (khuon `apps/vps/bao_tri`).
+    bao_tri=_hoi_thoai.bao_tri,
+    bao_tri_moi_giay=6 * 3600,
     notes=("Client noi bo cua text.chat / image.ltt / speech.ltt qua "
            "platform_core.runtime_noi_bo. Khong goi /api/v1, khong biet URL may B."),
 )

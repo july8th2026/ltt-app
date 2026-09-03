@@ -129,6 +129,21 @@ theo hướng dẫn trong đó**.
 | `python tools\gate.py --vong-lap` | sau **mỗi** lần sửa — **mặc định** | **~15 giây** |
 | `python tools\test_nhanh.py` | muốn chạy cả bộ test | ~4 phút |
 | `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
+| `python tools\gate.py --noi-tiep` | khi nghi kết quả bị **nhiễu** bởi song song hoặc tải máy | ~25–30 phút |
+
+⛔ **`--tuan-tu` KHÔNG phải `--noi-tiep`, và nhầm hai cái này rất dễ.**
+`--tuan-tu` xếp hàng các **bước**; bước `bo test` bên trong nó vẫn tự mở 10–14
+worker pytest. `--noi-tiep` hạ **cả hai** mức: một bước một lúc, **và** một tiến
+trình pytest (không xdist, không pha 2), frontend `--maxWorkers=1`.
+
+⭐ Dùng nó khi — và chỉ khi — bạn thấy triệu chứng "đỏ khi chạy cả bộ, xanh khi
+chạy một mình". Một lượt `--noi-tiep` XANH trong khi lượt song song ĐỎ là bằng
+chứng về một lỗi **cách ly** (hoặc một máy quá tải); nó chưa chỉ ra lỗi ở đâu.
+Nơi tìm là `tests/test_631_cach_ly_bo_test.py` — hai luật hay bị phá nhất.
+
+⚠️ Mọi lượt gate nay in `[tai may] N/20 loi dang ban -> RANH/BAN/QUA TAI` trước
+khi chạy. `cua_so_yen` chỉ thấy ai **xin khoá**; nó không thấy `pytest` gõ tay,
+deploy, hay bốn dịch vụ production. Đo 03/09: khoá báo RẢNH trong khi CPU 65%.
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 

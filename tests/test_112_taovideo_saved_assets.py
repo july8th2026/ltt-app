@@ -40,6 +40,12 @@ def _upload(name: str, content_type: str,
 def test_upload_ref_luu_metadata_va_chuan_hoa_role(tmp_path, monkeypatch):
     from apps.taovideo.routes import _luu_refs
     import platform_core.db as dbmod
+    # ⛔ PHAI import TRUOC `create_all`. `Base.metadata` rong cho toi khi module
+    #    nay duoc nap; `create_all` tren mot metadata rong tao ZERO bang va
+    #    khong ne mot tieng nao. Phep kiem nay tung xanh chi vi mot tep test
+    #    KHAC chay truoc no trong cung tien trinh da nap ho — nen no do ngay
+    #    khi chay mot minh, hoac khi xdist xep no len dau mot worker.
+    import platform_core.models  # noqa: F401
     import platform_core.storage as storage_module
     from tests.conftest import bao_dam_user
     monkeypatch.setenv("LTT_DATABASE_URL",

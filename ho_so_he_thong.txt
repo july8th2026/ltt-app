@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:ccab0bf899d5669839ba08680e72d707fbc1f9b5a16311f2ca3311f6ee46ef6f
-Nguồn đã quét : 1544 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:a7bd48c2fa9ba8cda82387eda86b9113cd9f52d915fdb0cdaaaf8b1480bbbe56
+Nguồn đã quét : 1549 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1239,7 +1239,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (374 file pytest + 4 frontend)
+10. QUALITY GATES (379 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1582,7 +1582,12 @@ Test inventory:
 - tests/test_624_chatltt_anh_tieng_trong_hoi_thoai.py
 - tests/test_625_chatltt_tai_san_so_huu.py
 - tests/test_626_chatltt_mo_rong_bang_fixture.py
+- tests/test_627_chatltt_torture_dong_thoi_tien.py
+- tests/test_628_chatltt_torture_bao_mat.py
+- tests/test_629_chatltt_torture_du_lieu_hieu_nang.py
 - tests/test_62_khoa_logic.py
+- tests/test_630_suc_khoe_giai_dia_chi_nhu_duong_goi_that.py
+- tests/test_631_cach_ly_bo_test.py
 - tests/test_63_lop_csdl.py
 - tests/test_64_nguoi_dung.py
 - tests/test_65_dang_ky.py
@@ -1640,8 +1645,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1544 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:47, .md:14, .mjs:5, .ps1:65, .py:1148, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1549 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:47, .md:14, .mjs:5, .ps1:65, .py:1153, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2667,7 +2672,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (391)
+[tests] (396)
 - tests/__init__.py
 - tests/browser/autosub_as5.js
 - tests/browser/autosub_as6_disabled.js
@@ -3021,7 +3026,12 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - tests/test_624_chatltt_anh_tieng_trong_hoi_thoai.py
 - tests/test_625_chatltt_tai_san_so_huu.py
 - tests/test_626_chatltt_mo_rong_bang_fixture.py
+- tests/test_627_chatltt_torture_dong_thoi_tien.py
+- tests/test_628_chatltt_torture_bao_mat.py
+- tests/test_629_chatltt_torture_du_lieu_hieu_nang.py
 - tests/test_62_khoa_logic.py
+- tests/test_630_suc_khoe_giai_dia_chi_nhu_duong_goi_that.py
+- tests/test_631_cach_ly_bo_test.py
 - tests/test_63_lop_csdl.py
 - tests/test_64_nguoi_dung.py
 - tests/test_65_dang_ky.py
@@ -3242,7 +3252,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1544 file; 15685485 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1549 file; 15747684 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -3257,7 +3267,7 @@ ho_so_he_thong.txt -whitespace
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ AGENTS.md
-SHA256=eaec96fbbf74e0d6dbed39f8ae6296d81d33fd23767e01d7857bed8bc51a612c BYTES=39880 LINES=713
+SHA256=553e9bf3289f2e5e960eb2c5a4c3629f46450e3bfecb9a75c6d9d5824145c64f BYTES=41039 LINES=728
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 # Quy tắc làm việc trong dự án này
 
@@ -3390,6 +3400,21 @@ theo hướng dẫn trong đó**.
 | `python tools\gate.py --vong-lap` | sau **mỗi** lần sửa — **mặc định** | **~15 giây** |
 | `python tools\test_nhanh.py` | muốn chạy cả bộ test | ~4 phút |
 | `python tools\gate.py` | **trước khi báo xong** | ~5 phút |
+| `python tools\gate.py --noi-tiep` | khi nghi kết quả bị **nhiễu** bởi song song hoặc tải máy | ~25–30 phút |
+
+⛔ **`--tuan-tu` KHÔNG phải `--noi-tiep`, và nhầm hai cái này rất dễ.**
+`--tuan-tu` xếp hàng các **bước**; bước `bo test` bên trong nó vẫn tự mở 10–14
+worker pytest. `--noi-tiep` hạ **cả hai** mức: một bước một lúc, **và** một tiến
+trình pytest (không xdist, không pha 2), frontend `--maxWorkers=1`.
+
+⭐ Dùng nó khi — và chỉ khi — bạn thấy triệu chứng "đỏ khi chạy cả bộ, xanh khi
+chạy một mình". Một lượt `--noi-tiep` XANH trong khi lượt song song ĐỎ là bằng
+chứng về một lỗi **cách ly** (hoặc một máy quá tải); nó chưa chỉ ra lỗi ở đâu.
+Nơi tìm là `tests/test_631_cach_ly_bo_test.py` — hai luật hay bị phá nhất.
+
+⚠️ Mọi lượt gate nay in `[tai may] N/20 loi dang ban -> RANH/BAN/QUA TAI` trước
+khi chạy. `cua_so_yen` chỉ thấy ai **xin khoá**; nó không thấy `pytest` gõ tay,
+deploy, hay bốn dịch vụ production. Đo 03/09: khoá báo RẢNH trong khi CPU 65%.
 
 🔑 **Gate là công cụ ra PHÁN QUYẾT, không phải công cụ CHẨN ĐOÁN.**
 
@@ -4412,7 +4437,7 @@ người ta hay dán nguyên nó vào chat để hỏi.
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ alembic/env.py
-SHA256=c5a1c88e6a34e0a5fbca47fba2a2ecabfb9333e4db9b275a527f9d0b13824bbb BYTES=3222 LINES=98
+SHA256=87c0cdfb22b78fbc8ea82ddda139506a3f5b590a6225d686cfcbbfc9007c19b8 BYTES=4317 LINES=115
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Alembic environment.
@@ -4448,7 +4473,24 @@ load_app_tables()
 config = context.config
 
 if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+    # ⛔ `disable_existing_loggers=False` LA BAT BUOC, khong phai tuy chon.
+    #
+    #    `fileConfig` mac dinh la True, va True o day nghia la: moi logger DA
+    #    duoc tao truoc luc nay bi dat `disabled = True` — **vinh vien**, khong
+    #    khoi phuc, khong mot dong canh bao.
+    #
+    # 🔴 Do 03/09. `alembic upgrade` chay trong tien trinh (test_616) tat
+    #    `platform_core.job_runner`, va phep kiem chong ro bi mat cua worker
+    #    (`test_67`) do vi `caplog.text` RONG — no khong bat duoc mot canh bao
+    #    ma logger da bi tat khong bao gio phat ra. Phep kiem do XANH khi chay
+    #    mot minh; no chi do khi mot tep khac tao logger truoc, roi migration
+    #    chay sau. Ba tep, ba thu muc, khong lien quan gi nhau.
+    #
+    # ⭐ Nhung cai gia thuc su khong nam o bo test. Bat ky ai nhung alembic vao
+    #    mot tien trinh dang song — mot script bao tri, mot lenh quan tri, mot
+    #    worker tu migrate — deu lam CA tien trinh do cam tieng tu do tro di.
+    #    Migration khong duoc quyen tat log cua ung dung chu nha.
+    fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 
@@ -17563,7 +17605,7 @@ SHA256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 BYTES=0 
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/chatltt/manifest.py
-SHA256=08e1aafcf6de0d50b9ddddde271e659e18ddfbdd74a81ca29ae8ed1a449be7ce BYTES=2160 LINES=53
+SHA256=daacda3b740be77cd239a3d78c6b11b13476f01140901da84c4818a0b28bde88 BYTES=2444 LINES=60
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 ChatLTT — sản phẩm hội thoại LTT-native trên ba model nhà. (H43, 2026-09)
@@ -17593,6 +17635,8 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest
 
+from apps.chatltt.services import hoi_thoai as _hoi_thoai
+
 MANIFEST = AppManifest(
     slug="chatltt",
     display_name="ChatLTT",
@@ -17615,6 +17659,11 @@ MANIFEST = AppManifest(
     # Bảng CSDL riêng của app (Phase 07): `chatltt_conversations`, `chatltt_messages`,
     # `chatltt_executions` — trong `apps/chatltt/tables.py`.
     table_prefix="chatltt",
+
+    # Viec dinh ky: don that nhung hoi thoai da xoa mem qua 30 ngay. Chay duoi
+    # lease cua nen tang nen dung MOT lan tren ca cum (khuon `apps/vps/bao_tri`).
+    bao_tri=_hoi_thoai.bao_tri,
+    bao_tri_moi_giay=6 * 3600,
     notes=("Client noi bo cua text.chat / image.ltt / speech.ltt qua "
            "platform_core.runtime_noi_bo. Khong goi /api/v1, khong biet URL may B."),
 )
@@ -18334,7 +18383,7 @@ def theo_doi(q, *, cho_moi_lan_s: float = 15.0) -> Iterator[Optional[dict]]:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/chatltt/services/hoi_thoai.py
-SHA256=cbfa389dfcac6229e665608c2217c6f07f7dcc1f307f22ac4dbbc9e2a5d5e300 BYTES=13978 LINES=310
+SHA256=0615bbccf4f5796fef10c9863217c0ae1efb83a3ef6bf42080d31fbcf7163130 BYTES=16652 LINES=381
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 hoi_thoai.py — cây hội thoại của ChatLTT: nghiệp vụ thuần, không HTTP. (H43 Phase 07)
@@ -18354,6 +18403,7 @@ Hành vi kế thừa từ LibreChat (báo cáo Phase 01 §1–§2), viết lại
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional
 
@@ -18361,6 +18411,9 @@ from sqlalchemy import or_, select
 
 from apps.chatltt.tables import (LOAI_KHOI, TRANG_THAI, VAI, ChatlttConversation,
                                  ChatlttExecution, ChatlttMessage, sinh_id)
+
+
+log = logging.getLogger("apps.chatltt.hoi_thoai")
 
 
 class KhongTimThay(LookupError):
@@ -18462,6 +18515,73 @@ def xoa(db, *, user_id: str, conv_id: str) -> ChatlttConversation:
 
 
 # ── Message / cây ────────────────────────────────────────────────────────────
+
+#: Bao lau sau khi XOA MEM thi don that. Khong phai mot con so tuy y:
+#:
+#: 🔴 Nguoi dung xoa nham la chuyen thuong, va thu ho mat khong lay lai duoc.
+#:    30 ngay la cua so ma `AppProject` cua nen tang da chon cho dung viec do
+#:    (Q89), nen dung lai no thay vi phat minh mot con so thu hai.
+#:
+#: ⛔ KHONG dung day de gia hoa hoi thoai con song. Governance khai
+#:    `chatltt_*` la CONTENT **khong tu gia di** — mot hoi thoai chua bi xoa thi
+#:    khong bao gio bi don, va do la loi hua voi khach.
+GIA_HAN_XOA_NGAY = 30
+
+
+def don_da_xoa(db, *, gia_han_ngay: int = GIA_HAN_XOA_NGAY, now=None) -> dict:
+    """Don that nhung hoi thoai da xoa mem qua han. An toan goi nhieu lan.
+
+    Xoa theo thu tu con -> cha (execution, message, roi conversation) de khong
+    bao gio de lai mot hang tro toi mot hang khong con.
+
+    ⚠️ **Khong** cham kho tep o day. Anh/tieng thuoc `jobs`, va `job_content.py`
+       cua nen tang moi la thu so huu vong doi cua chung — don o hai noi la hai
+       cach dem, va chung se lech.
+    """
+    from datetime import timedelta
+
+    moc = (now or _now()) - timedelta(days=max(1, int(gia_han_ngay)))
+    ids = [r[0] for r in db.execute(
+        select(ChatlttConversation.id).where(
+            ChatlttConversation.deleted_at.is_not(None),
+            ChatlttConversation.deleted_at < moc)).all()]
+    if not ids:
+        return {"hoi_thoai": 0, "thong_diep": 0, "thi_hanh": 0}
+    from sqlalchemy import delete
+
+    n_ex = db.execute(delete(ChatlttExecution).where(
+        ChatlttExecution.conversation_id.in_(ids))).rowcount or 0
+    n_m = db.execute(delete(ChatlttMessage).where(
+        ChatlttMessage.conversation_id.in_(ids))).rowcount or 0
+    n_c = db.execute(delete(ChatlttConversation).where(
+        ChatlttConversation.id.in_(ids))).rowcount or 0
+    return {"hoi_thoai": n_c, "thong_diep": n_m, "thi_hanh": n_ex}
+
+
+def bao_tri() -> None:
+    """Viec dinh ky cua app — nen tang goi duoi lease, dung MOT lan tren cum.
+
+    ⛔ KHONG duoc nem: mot app hong vong bao tri khong duoc lam hong vong bao
+       tri cua app khac (cung luat voi `AppManifest.bang_gia`).
+    """
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        kq = don_da_xoa(db)
+        db.commit()
+        if any(kq.values()):
+            log.info("don hoi thoai da xoa: %s", kq)
+    except Exception:                                           # noqa: BLE001
+        db.rollback()
+        log.exception("khong don duoc hoi thoai da xoa")
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
 
 def kiem_khoi(blocks) -> list:
     if not isinstance(blocks, list):
@@ -19521,7 +19641,7 @@ EXECUTOR = _Executor()
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/features.py
-SHA256=c736350b90d3050682cb4f90724abe97a41bfb183a283915ce5fe035ec21a57f BYTES=13917 LINES=306
+SHA256=fc02d3027d2cc1741f38d2413299ab67d566d2922b752473c002c583257fe773 BYTES=15491 LINES=347
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 features.py — quy tắc nghiệp vụ của `ltt_llm`, dùng chung cho CẢ HAI cánh cửa. (H38)
@@ -19804,21 +19924,62 @@ def chay(db, params: dict, *, timeout_s: float = 300.0,
     )
 
 
-def suc_khoe(timeout_s: float = 1.5) -> str:
-    """Sức khoẻ của `text.chat` cho catalog sản phẩm khác (`AppManifest.suc_khoe`).
+def _dia_chi_cong() -> str:
+    """Dia chi cong may B, giai theo ĐÚNG thu tu ma duong goi that dung.
 
-    Hỏi `GET /live` của cổng máy B — đường **không cần khoá** và cố ý không nói
-    gì thêm (xem `llm_gateway/api.py::live`). Không đọc CSDL, không cần
-    `api_pool`, nên gọi được từ mọi tiến trình. Không bao giờ ném: mọi lỗi mạng
-    đều là "chưa sẵn sàng" — đó chính là câu trả lời đúng cho người dùng.
+    🔴 `luong_vlm.mo` lay `base_url` cua **KHOA** truoc, roi moi den registry
+       (`luong_vlm.py:136-137`). Ban dau ham nay chi doc registry — va do LIVE
+       03/09 cho thay hau qua: cong may B tra 200 o `/live`, nhung hook bao
+       `chua_san_sang` vi registry rong tren may nay.
 
-    Bận (429) không nhìn thấy ở `/live`; "ban" được cửa stream báo lúc gọi thật
-    qua `DangBan` — catalog không đoán trước điều đó.
+    ⛔ Mot chip "chua san sang" SAI lam o soan bi tat cho **moi** nguoi trong
+       khi model chay tot. No la mat ngoai kia cua dung cai loi ma Phase 06
+       sinh ra de chan (chip xanh noi doi) — chi khac chieu, va chieu nay lam
+       mat ca san pham chu khong chi lam nguoi dung buc minh.
+
+    Doc CSDL chi de lay `base_url` — **khong** giai ma credential.
     """
     from platform_core import providers
 
     prov = providers.get(THU_TU_PROVIDER[0])
-    base = (getattr(prov, "base_url", "") or "").strip()
+    tu_registry = (getattr(prov, "base_url", "") or "").strip()
+    if tu_registry:
+        return tu_registry
+    try:
+        from platform_core.db import get_session
+        from platform_core.models import ApiKey
+
+        gen = get_session()
+        db = next(gen)
+        try:
+            # Loc theo `provider` (mot cot that); `categories` la chuoi gop nen
+            # khong loc trong SQL — va khong can: mot provider `ltt_llm` chi
+            # phuc vu mot thu.
+            hang = db.query(ApiKey.base_url).filter(
+                ApiKey.provider == THU_TU_PROVIDER[0],
+                ApiKey.base_url != "").first()
+            return (hang[0] or "").strip() if hang else ""
+        finally:
+            try:
+                next(gen)
+            except StopIteration:
+                pass
+    except Exception as e:                                      # noqa: BLE001
+        log.info("suc_khoe: khong doc duoc base_url tu khoa (%s)", type(e).__name__)
+        return ""
+
+
+def suc_khoe(timeout_s: float = 1.5) -> str:
+    """Suc khoe cua `text.chat` cho catalog san pham khac (`AppManifest.suc_khoe`).
+
+    Hoi `GET /live` cua cong may B — duong **khong can khoa** va co y khong noi
+    gi them (xem `llm_gateway/api.py::live`). Khong bao gio nem: moi loi mang
+    deu la "chua san sang", va do chinh la cau tra loi dung cho nguoi dung.
+
+    Ban (429) khong nhin thay o `/live`; "ban" duoc cua stream bao luc goi that
+    qua `DangBan` — catalog khong doan truoc dieu do.
+    """
+    base = _dia_chi_cong()
     if not base:
         return "chua_san_sang"
     import httpx
@@ -184131,7 +184292,7 @@ async page => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/conftest.py
-SHA256=6b050c13953398f75d582ff459c2020dfbf6c6b959d7e597d772ca6b07f4a0cf BYTES=12129 LINES=252
+SHA256=039aacd1b54d1678312cf4c7142b28b90d61e3cc0d917349563825de003dd71a BYTES=15432 LINES=316
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Fixture dùng chung cho toàn bộ bộ test.
@@ -184161,8 +184322,72 @@ kia. Ba fixture đó là phần vá cho một thiết kế đã bị gỡ.
 """
 from __future__ import annotations
 
+import os
+import sys
+
 import pytest
 from fastapi import APIRouter, Depends, Form, Request
+
+# ═══════════════════════════════════════════════════════════════════════════
+# `-n auto` GO TAY — cai lam may treo, va cai KHONG khoa nao thay
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Gate KHONG con `-n auto` (sua o `03845cb`; `tools/gate.py` truyen `-n` ro
+#    rang theo `ngan_sach_loi()`, va `test_394` chot dieu do). Nhung `pytest`
+#    go tay thi khong di qua gate — khong ngan sach, khong `cua_so_yen`, khong
+#    uu tien thap.
+#
+# ⛔ Va no khong hiem: ngay 03/09 phien nay chay `pytest -n auto` **ba lan** len
+#    ca kho trong khi mot phien khac dang chay gate, tren dung 20 loi ma bon
+#    dich vu production dang phuc vu khach. 16 test do — va chung xanh het khi
+#    chay lai theo cum. Ta da mat gan mot gio de duoi mot "loi" ma chinh phep do
+#    tu tao ra.
+#
+# ⭐ Vi sao CHAN `auto` chu khong chan `-n 20`. `auto` khong phai mot lua chon
+#    cua nguoi go — no la "cong cu tu quyet", va cong cu nay quyet sai vi no
+#    khong biet gi ve bon dich vu ben canh. Mot con so go tay thi NGUOC LAI: do
+#    la mot y dinh, va ta khong dap y dinh cua nguoi khac. Ranh gioi la
+#    **mac dinh chu khong phai menh lenh**.
+# ⭐ Va cho tra loi la mot MOC CO SAN cua xdist, khong phai mot cho ta chen vao.
+#    `pytest_xdist_auto_num_workers` ton tai dung de tra loi cau hoi "auto la
+#    bao nhieu". Cai dat no thi ta chi doi cau tra loi cho `auto`; moi con so
+#    go tay di duong khac va khong he cham toi day.
+#
+#    (Ban dau cua vá này kẹp trong `pytest_configure` — sai, vì xdist mới giải
+#    `auto` ở `pytest_cmdline_main`, tức SAU đó. Móc này chạy đúng lúc.)
+_LOI_DE_DANH = 6
+
+
+def pytest_xdist_auto_num_workers(config) -> int:
+    """Tran cho `auto` — LAY MIN, khong dat de.
+
+    ⛔ Ban dau tra thang `cpu_count() - 6` = 14. Do la mot loi that va no chi
+       lo ra khi do: xdist tu tra loi bang `psutil.cpu_count(logical=False)`,
+       tuc **10** loi vat ly tren may nay. Mot "cai tran" 14 dat len mot cau tra
+       loi 10 thi khong ha gi ca — no NANG so worker len, dung chieu nguoc lai
+       voi ca ly do vá này ton tai.
+
+    ⭐ Nen tran phai la mot phep MIN voi cau tra loi cua chinh cong cu, khong
+       phai mot phep gan. Ta chi biet mot rang buoc (de danh loi cho production);
+       ta khong biet ro hon xdist ve diem bao hoa cua no.
+    """
+    tong = os.cpu_count() or 4
+    tran = max(2, tong - _LOI_DE_DANH)
+    goc = tran
+    try:
+        import psutil
+        vat_ly = psutil.cpu_count(logical=False)
+        if vat_ly:
+            goc = int(vat_ly)
+    except ImportError:
+        pass
+    n = max(2, min(tran, goc))
+    print(f"\n[conftest] `-n auto` -> {n} worker (tran {tran} = {tong} loi tru "
+          f"{_LOI_DE_DANH} de danh cho dich vu production; xdist tu de xuat "
+          f"{goc}).", file=sys.stderr)
+    print("[conftest] Can nhieu hon thi go so RO RANG: mot con so la mot y "
+          "dinh, `auto` thi khong.\n", file=sys.stderr)
+    return n
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 # ⛔ BON TEN TREN PHAI o CAP MODULE, khong duoc import ben trong `_router_thu()`.
@@ -187616,7 +187841,7 @@ def test_render_error_workspace_va_translate_giu_form_contract():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_112_taovideo_saved_assets.py
-SHA256=db97b5fbc72e2f7440a18cbe8e1ed8a6943c9ae030c5837ffd7d262bf43a27a3 BYTES=5486 LINES=139
+SHA256=4639bb674046663fecbf12a656e1c6d44a58d1350d79087f405bd91ca3809751 BYTES=5916 LINES=145
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """H15.S4 TV-FEAT-001 — asset lịch sử owner-scoped và validation."""
 
@@ -187660,6 +187885,12 @@ def _upload(name: str, content_type: str,
 def test_upload_ref_luu_metadata_va_chuan_hoa_role(tmp_path, monkeypatch):
     from apps.taovideo.routes import _luu_refs
     import platform_core.db as dbmod
+    # ⛔ PHAI import TRUOC `create_all`. `Base.metadata` rong cho toi khi module
+    #    nay duoc nap; `create_all` tren mot metadata rong tao ZERO bang va
+    #    khong ne mot tieng nao. Phep kiem nay tung xanh chi vi mot tep test
+    #    KHAC chay truoc no trong cung tien trinh da nap ho — nen no do ngay
+    #    khi chay mot minh, hoac khi xdist xep no len dau mot worker.
+    import platform_core.models  # noqa: F401
     import platform_core.storage as storage_module
     from tests.conftest import bao_dam_user
     monkeypatch.setenv("LTT_DATABASE_URL",
@@ -198271,7 +198502,7 @@ def test_operator_report_khong_lo_storage_key_hay_filename(env, monkeypatch):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_174_app_upload_lifecycle.py
-SHA256=326b155f260e95bfe73d79428c3379feb5de0200d7470d4bfd057d470ca69a8f BYTES=7736 LINES=175
+SHA256=9933800c8db295b37b39473b5f0804b7808ee0e309b1bb436aed727f8c5eabd7 BYTES=7939 LINES=178
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """R2 route integration — media chỉ bền vững sau hold, retry không thu lại."""
 from __future__ import annotations
@@ -198305,6 +198536,9 @@ def _client(tmp_path, monkeypatch, *, credit_amount=100):
     monkeypatch.setenv("LTT_SESSION_SECRET", "upload-route-contract")
     monkeypatch.setenv("LTT_ADMIN_USERNAME", "admin")
     monkeypatch.delenv("TURNSTILE_SECRET_KEY", raising=False)
+    # PHAI import truoc `create_all`: `Base.metadata` rong cho toi khi module
+    # nay duoc nap, va `create_all` tren metadata rong tao ZERO bang, im lang.
+    import platform_core.models  # noqa: F401
     dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
     storage = LocalStorage(str(tmp_path / "storage")); set_storage(storage)
     gen = dbmod.get_session(); db = next(gen)
@@ -276635,6 +276869,739 @@ def test_them_model_moi_can_sua_dung_nhung_dau_da_ghi_ra():
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_627_chatltt_torture_dong_thoi_tien.py
+SHA256=1a15996ea23e12f96b2f7fc49c43d61872148c498f7790fc395ba432c7ad9d87 BYTES=10308 LINES=247
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_627 — Phase 12 nhóm ĐỒNG THỜI và TIỀN. Tấn công, không nghiệm thu.
+
+  1. Hai tab cùng xem một lượt: cả hai thấy, không ai nuốt sự kiện của ai.
+  2. Đua Dừng ↔ Xong: bấm Dừng đúng lúc lượt vừa xong ⇒ **không** đảo ngược
+     trạng thái đã kết thúc, và **không** thu thêm lần nữa.
+  3. Nộp trùng (double-click, F5): một job, một lần giữ tiền.
+  4. Sự kiện kết thúc tới HAI lần ⇒ tiền chỉ đi một lần.
+  5. Worker chết sau khi giữ tiền: lượt không nằm "đang chảy" vĩnh viễn.
+  6. Kết quả một phần (job xong nhưng không có artifact) ⇒ nói ra, không im.
+  7. Nhiều lượt của cùng một người: mỗi lượt một sổ riêng, không cộng nhầm.
+"""
+from __future__ import annotations
+
+import json
+import threading
+import uuid
+
+import pytest
+
+from apps.chatltt.services import hoi_thoai as H
+from apps.chatltt.services import su_kien as S
+
+NL = bytes([10])
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL", "sqlite:///" + (tmp_path / "t.db").as_posix())
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+    from platform_core.registry import load_app_tables
+    load_app_tables()
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    s = next(gen)
+    yield s
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+    dbmod.reset_engine()
+
+
+def _user(db, credits=1000):
+    from platform_core import credit
+    from platform_core.users import tao_nguoi_dung
+    u = tao_nguoi_dung(db, email="t627-" + uuid.uuid4().hex[:6] + "@example.com",
+                       password="a-good-password-12", is_verified=True)
+    db.flush()
+    if credits:
+        credit.cap_tay(db, u.id, credits, by="test")
+    db.commit()
+    return u.id
+
+
+def _luot(db, uid, mode="stream"):
+    hoi = H.tao_hoi_thoai(db, user_id=uid, model_alias="a")
+    m = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="user",
+                          blocks=[{"type": "text", "text": "hoi"}])
+    a = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="assistant",
+                          blocks=[], parent_id=m.id, status="streaming")
+    ex = S.mo_execution(db, message=a, tool_name="text.chat", mode=mode)
+    db.commit()
+    return hoi, a, ex
+
+
+# ── 1. Hai người xem cùng một lượt ──────────────────────────────────────────
+
+def test_hai_tab_cung_xem_khong_ai_nuot_su_kien_cua_ai():
+    from apps.chatltt.services import dang_chay as D
+
+    so = D.bat_dau("ex_627a", "u")
+    q1, q2 = so.dang_ky(), so.dang_ky()
+    for i in range(5):
+        so.phat({"type": "response.delta", "text": str(i)})
+    it1, it2 = D.theo_doi(q1, cho_moi_lan_s=0.05), D.theo_doi(q2, cho_moi_lan_s=0.05)
+    a = [next(it1)["text"] for _ in range(5)]
+    b = [next(it2)["text"] for _ in range(5)]
+    assert a == b == ["0", "1", "2", "3", "4"]
+    D.ket_thuc("ex_627a")
+    assert list(it1) == [] and list(it2) == []
+
+
+def test_nguoi_xem_cham_bi_bo_delta_CU_chu_khong_chan_luot(monkeypatch):
+    """Hàng đợi đầy ⇒ bỏ delta cũ NHẤT của người đó, không chặn cả lượt.
+
+    Sự thật vẫn ở CSDL, nên họ thấy đủ ở snapshot kế tiếp — nhưng lượt không
+    được đứng lại vì một trình duyệt đọc chậm.
+    """
+    from apps.chatltt.services import dang_chay as D
+
+    monkeypatch.setattr(D, "SUC_CHUA_HANG_DOI", 3)
+    so = D.bat_dau("ex_627b", "u")
+    q = so.dang_ky()
+    for i in range(10):
+        so.phat({"type": "response.delta", "text": str(i)})   # không treo
+    it = D.theo_doi(q, cho_moi_lan_s=0.05)
+    con = [next(it)["text"] for _ in range(3)]
+    assert con == ["7", "8", "9"]                              # giữ MỚI nhất
+    D.ket_thuc("ex_627b")
+
+
+# ── 2. Đua Dừng ↔ Xong ──────────────────────────────────────────────────────
+
+def test_dung_sau_khi_da_xong_khong_dao_nguoc_va_khong_thu_them(db):
+    from apps.chatltt.services import luot as LUOT
+    uid = _user(db)
+    _hoi, a, ex = _luot(db, uid)
+    S.ap_dung(ex, {"type": "response.started", "request_id": "r", "credit_giu": 5}, message=a)
+    S.ap_dung(ex, {"type": "response.completed", "finish_reason": "stop"}, message=a)
+    S.ap_dung(ex, {"type": "billing.updated", "credit_giu": 5,
+                   "credit_thu": 2, "credit_hoan": 3}, message=a)
+    db.commit()
+    truoc = (ex.status, ex.credit_thu, ex.seq)
+
+    kq = LUOT.dung(db, user_id=uid, execution_id=ex.id)
+    assert kq["status"] == "done"                    # KHÔNG thành "cancelled"
+    assert (ex.status, ex.credit_thu) == (truoc[0], truoc[1])
+
+
+def test_su_kien_ket_thuc_toi_hai_lan_thi_tien_chi_di_mot_lan(db):
+    uid = _user(db)
+    _hoi, a, ex = _luot(db, uid)
+    bill = {"type": "billing.updated", "credit_giu": 5, "credit_thu": 2, "credit_hoan": 3}
+    S.ap_dung(ex, {"type": "response.completed", "finish_reason": "stop"}, message=a)
+    S.ap_dung(ex, bill, message=a)
+    S.ap_dung(ex, bill, message=a)                    # lặp
+    db.commit()
+    assert (ex.credit_thu, ex.credit_hoan) == (2, 3)  # không cộng dồn
+
+
+# ── 3. Nộp trùng ────────────────────────────────────────────────────────────
+
+def test_nop_trung_mot_job_mot_lan_giu_tien(db):
+    from platform_core import credit
+    from platform_core.runtime_noi_bo import job as J
+
+    uid = _user(db, 100)
+    bg = J.bao_gia("image.ltt", {"prompt": "meo", "count": 2}, db=db, user_id=uid)
+    j1 = J.nop_job(db, user_id=uid, bao_gia=bg, idempotency_key="k1")
+    db.commit()
+    j2 = J.nop_job(db, user_id=uid, bao_gia=bg, idempotency_key="k1")
+    db.commit()
+    assert j1.id == j2.id
+    assert int(credit.so_du(db, uid)) == 100 - bg.credit
+    # Khoá khác ⇒ job khác, và giữ tiền lần hai (đúng: hai yêu cầu thật).
+    j3 = J.nop_job(db, user_id=uid, bao_gia=bg, idempotency_key="k2")
+    db.commit()
+    assert j3.id != j1.id
+    assert int(credit.so_du(db, uid)) == 100 - 2 * bg.credit
+
+
+# ── 5. Worker chết / lượt mồ côi ────────────────────────────────────────────
+
+def test_luot_khong_bao_gio_nam_dang_chay_vinh_vien(db, monkeypatch):
+    """Thân luồng vỡ giữa chừng ⇒ vẫn để lại một trạng thái KẾT THÚC."""
+    from apps.chatltt.services import luot as LUOT
+    from platform_core.runtime_noi_bo import luong as L
+
+    uid = _user(db)
+    _hoi, a, ex = _luot(db, uid)
+    ex_id = ex.id
+
+    def no(*_a, **_k):
+        raise RuntimeError("worker chet giua chung")
+
+    monkeypatch.setattr(L, "mo_luong", no)
+    LUOT.chay(ex_id, user_id=uid)
+
+    db.expire_all()
+    from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
+    ex2 = db.get(ChatlttExecution, ex_id)
+    a2 = db.get(ChatlttMessage, ex2.message_id)
+    assert ex2.status == "failed" and a2.status == "failed"
+    assert ex2.finished_at is not None
+    assert ex2.error_code == "loi_noi_bo"
+
+
+def test_luong_can_ma_khong_co_su_kien_ket_thuc_van_dong_lai(db, monkeypatch):
+    from apps.chatltt.services import luot as LUOT
+    from platform_core.runtime_noi_bo import luong as L
+
+    uid = _user(db)
+    _hoi, _a, ex = _luot(db, uid)
+    ex_id = ex.id
+    monkeypatch.setattr(L, "mo_luong",
+                        lambda *a, **k: iter([{"type": "response.delta", "text": "a"}]))
+    LUOT.chay(ex_id, user_id=uid)
+    db.expire_all()
+    from apps.chatltt.tables import ChatlttExecution
+    ex2 = db.get(ChatlttExecution, ex_id)
+    assert ex2.status == "failed" and ex2.error_code == "luong_cat"
+    assert ex2.partial_text == "a"                    # phần đã sinh KHÔNG mất
+
+
+# ── 6. Kết quả một phần ─────────────────────────────────────────────────────
+
+def test_job_xong_nhung_khong_co_artifact_thi_noi_ra(db, monkeypatch):
+    from apps.chatltt.services import tao_media as TM
+    from apps.chatltt.tables import ChatlttMessage
+
+    uid = _user(db)
+    _hoi, a, ex = _luot(db, uid, mode="job")
+    ex.tool_name = "image.ltt"
+    ex.job_id = "job-627"
+    ex.credit_giu = 6
+    db.commit()
+
+    class JobGia:
+        id = "job-627"
+        status = "done"
+        result = {"image_keys": [], "so_anh_xin": 2, "so_anh_that": 0,
+                  "credit_cost": 0}
+        progress = 100
+        error = ""
+
+    monkeypatch.setattr("platform_core.job_history.get_owned",
+                        lambda db, u, j: JobGia())
+    TM.dong_bo(db, user_id=uid, execution_id=ex.id)
+    db.expire_all()
+    a2 = db.get(ChatlttMessage, ex.message_id)
+    assert a2.blocks == [{"type": "status", "code": "khong_co_ket_qua"}]
+    assert ex.credit_thu == 0 and ex.credit_hoan == 6
+
+
+# ── 7. Nhiều lượt, mỗi lượt một sổ ──────────────────────────────────────────
+
+def test_ba_luot_song_song_moi_luot_mot_so_rieng(db):
+    uid = _user(db)
+    exs = []
+    for _ in range(3):
+        _hoi, a, ex = _luot(db, uid)
+        exs.append((a, ex))
+    for i, (a, ex) in enumerate(exs):
+        S.ap_dung(ex, {"type": "response.started", "request_id": f"r{i}",
+                       "credit_giu": 10}, message=a)
+        S.ap_dung(ex, {"type": "response.delta", "text": f"luot-{i}"}, message=a)
+        S.ap_dung(ex, {"type": "billing.updated", "credit_giu": 10,
+                       "credit_thu": i + 1, "credit_hoan": 9 - i}, message=a)
+    db.commit()
+    assert [ex.partial_text for _a, ex in exs] == ["luot-0", "luot-1", "luot-2"]
+    assert [ex.credit_thu for _a, ex in exs] == [1, 2, 3]
+    assert [ex.request_id for _a, ex in exs] == ["r0", "r1", "r2"]
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_628_chatltt_torture_bao_mat.py
+SHA256=affc7db0485e059347a3fbbfb36b744cb43ce0ae51334b055c421ff2bc3f162e BYTES=10642 LINES=258
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_628 — Phase 12 nhóm BẢO MẬT. Mỗi phép kiểm là một lần thử phá thật.
+
+  1. IDOR trên MỌI cửa mang id: hội thoại · message · execution · job · artifact.
+  2. Không phân biệt được "không tồn tại" với "không phải của bạn" — kể cả bằng
+     **thời gian** hay **hình dạng** phản hồi.
+  3. Không lộ bí mật/alias nội bộ trong thông điệp lỗi.
+  4. Thân request quá cỡ bị chặn.
+  5. Không đếm được số hội thoại của người khác (enumeration).
+  6. CSRF bắt buộc trên MỌI cửa ghi — liệt kê bằng chính bảng route, nên một
+     route mới quên CSRF sẽ làm test này đỏ chứ không lọt.
+"""
+from __future__ import annotations
+
+import json
+import re
+import uuid
+
+import pytest
+
+
+@pytest.fixture()
+def web(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL", "sqlite:///" + (tmp_path / "s.db").as_posix())
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine
+    from platform_core.registry import load_app_tables
+    load_app_tables()
+    Base.metadata.create_all(get_engine())
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    app = create_app(env={
+        "LTT_ENV": "local-server-test", "LTT_SESSION_SECRET": "chatltt-secret-628",
+        "LTT_ADMIN_USERNAME": "", "LTT_ADMIN_PASSWORD_HASH": "",
+        "LTT_CONFIG_PATH": str(tmp_path / "c.json"),
+    })
+    with TestClient(app, base_url="https://testserver") as c:
+        yield c
+    dbmod.reset_engine()
+
+
+def _user(credits=500):
+    from platform_core import credit
+    from platform_core.db import get_session
+    from platform_core.users import tao_nguoi_dung
+    gen = get_session()
+    db = next(gen)
+    try:
+        email = "s628-" + uuid.uuid4().hex[:6] + "@example.com"
+        u = tao_nguoi_dung(db, email=email, password="a-good-password-12", is_verified=True)
+        db.flush()
+        if credits:
+            credit.cap_tay(db, u.id, credits, by="test")
+        db.commit()
+        return u.id, email
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+def _phien(app, email):
+    from fastapi.testclient import TestClient
+    c = TestClient(app, base_url="https://testserver")
+    r = c.get("/login")
+    m = re.search(r'name="csrf_token" value="([^"]+)"', r.text)
+    c.post("/login", data={"username": email, "password": "a-good-password-12",
+                           "csrf_token": m.group(1), "next": "/chatltt"},
+           follow_redirects=True)
+    r = c.get("/chatltt")
+    csrf = re.search(r'data-csrf="([^"]+)"', r.text).group(1)
+    return c, {"X-CSRF-Token": csrf}
+
+
+def _du_lieu_cua_A(c, h):
+    """Một hội thoại của A, kèm một execution job và một artifact."""
+    from apps.chatltt.services import hoi_thoai as H
+    from apps.chatltt.services import su_kien as S
+    from platform_core.db import get_session
+
+    cv = c.post("/chatltt/api/hoi-thoai", json={"model_alias": "ltt_llm"},
+                headers=h).json()["id"]
+    gen = get_session()
+    db = next(gen)
+    try:
+        uid = db.execute(__import__("sqlalchemy").text(
+            "SELECT user_id FROM chatltt_conversation WHERE id=:i"), {"i": cv}).scalar()
+        m = H.them_thong_diep(db, user_id=uid, conv_id=cv, role="user",
+                              blocks=[{"type": "text", "text": "bi mat cua A"}])
+        a = H.them_thong_diep(db, user_id=uid, conv_id=cv, role="assistant",
+                              blocks=[], parent_id=m.id, status="queued")
+        ex = S.mo_execution(db, message=a, tool_name="image.ltt", mode="job")
+        ex.job_id = "job-a-628"
+        db.commit()
+        return {"uid": uid, "cv": cv, "msg": m.id, "a": a.id, "ex": ex.id,
+                "khoa": f"anhnoibo/{uid}/job-a-628/0.png"}
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+# ── 1 + 2. IDOR trên mọi cửa, và không phân biệt được ───────────────────────
+
+def test_idor_tren_moi_cua_mang_id(web):
+    _uid_a, email_a = _user()
+    ca, ha = _phien(web.app, email_a)
+    A = _du_lieu_cua_A(ca, ha)
+
+    _uid_b, email_b = _user()
+    cb, hb = _phien(web.app, email_b)
+
+    cua_doc = [
+        f"/chatltt/api/hoi-thoai/{A['cv']}",
+        f"/chatltt/api/luot/{A['ex']}/trang-thai",
+        f"/chatltt/tai-san/{A['khoa']}",
+    ]
+    cua_ghi = [
+        (f"/chatltt/api/hoi-thoai/{A['cv']}/luot", {"text": "x"}),
+        (f"/chatltt/api/hoi-thoai/{A['cv']}/tao",
+         {"nang_luc": "image.ltt", "tham_so": {"prompt": "x"}}),
+        (f"/chatltt/api/hoi-thoai/{A['cv']}/doi-ten", {"title": "cua toi"}),
+        (f"/chatltt/api/hoi-thoai/{A['cv']}/luu-tru", {"luu": True}),
+        (f"/chatltt/api/hoi-thoai/{A['cv']}/xoa", {}),
+        (f"/chatltt/api/hoi-thoai/{A['cv']}/chon-la", {"message_id": A["a"]}),
+        (f"/chatltt/api/luot/{A['ex']}/dung", {}),
+    ]
+    for d in cua_doc:
+        r = cb.get(d, headers=hb)
+        assert r.status_code == 404, d
+        assert "bi mat cua A" not in r.text
+    for d, than in cua_ghi:
+        r = cb.post(d, json=than, headers=hb)
+        assert r.status_code == 404, d
+
+    # Và A vẫn nguyên vẹn sau tất cả.
+    st = ca.get(f"/chatltt/api/hoi-thoai/{A['cv']}", headers=ha).json()
+    assert st["conversation"]["title"] != "cua toi"
+    assert len(st["messages"]) == 2
+
+
+def test_khong_phan_biet_duoc_khong_ton_tai_voi_khong_phai_cua_ban(web):
+    _uid_a, email_a = _user()
+    ca, ha = _phien(web.app, email_a)
+    A = _du_lieu_cua_A(ca, ha)
+    _uid_b, email_b = _user()
+    cb, hb = _phien(web.app, email_b)
+
+    that = cb.get(f"/chatltt/api/hoi-thoai/{A['cv']}", headers=hb)
+    bia = cb.get("/chatltt/api/hoi-thoai/cv_khong_ton_tai_0000", headers=hb)
+    assert that.status_code == bia.status_code == 404
+    assert that.json() == bia.json()                    # cùng THÂN, không chỉ cùng mã
+
+    that2 = cb.get(f"/chatltt/api/luot/{A['ex']}/trang-thai", headers=hb)
+    bia2 = cb.get("/chatltt/api/luot/ex_khong_co/trang-thai", headers=hb)
+    assert that2.json() == bia2.json()
+
+
+# ── 3. Không lộ bí mật / alias nội bộ ───────────────────────────────────────
+
+def test_thong_diep_loi_khong_lo_bi_mat_hay_id_noi_bo(web):
+    _uid, email = _user(0)
+    c, h = _phien(web.app, email)
+    cv = c.post("/chatltt/api/hoi-thoai", json={"model_alias": "ltt_llm"},
+                headers=h).json()["id"]
+    ra = []
+    ra.append(c.post(f"/chatltt/api/hoi-thoai/{cv}/luot", json={"text": ""}, headers=h))
+    ra.append(c.post("/chatltt/api/bao-gia", headers=h,
+                     json={"nang_luc": "image.ltt", "tham_so": {"prompt": "x", "count": 99}}))
+    ra.append(c.post("/chatltt/api/bao-gia", headers=h,
+                     json={"nang_luc": "khong.co", "tham_so": {}}))
+    ra.append(c.get("/chatltt/api/hoi-thoai/cv_bia", headers=h))
+    van = " ".join(r.text for r in ra)
+    for cam in ("qwen38", "hidream", "vieneu", "8299", "8199", "8120", "192.168.",
+                "LTT_RENDER_BASE_URL", "LTT_VOICE_SIDECAR_TOKEN", "Traceback",
+                "sqlite", "postgresql", "/LTTPlatform", "secrets"):
+        assert cam.lower() not in van.lower(), cam
+
+
+# ── 4. Thân quá cỡ ──────────────────────────────────────────────────────────
+
+def test_than_qua_co_bi_chan_truoc_khi_cham_so_tien(web):
+    from platform_core import credit
+    from platform_core.db import get_session
+
+    uid, email = _user(500)
+    c, h = _phien(web.app, email)
+    cv = c.post("/chatltt/api/hoi-thoai", json={"model_alias": "ltt_llm"},
+                headers=h).json()["id"]
+    r = c.post(f"/chatltt/api/hoi-thoai/{cv}/luot",
+               json={"text": "a" * 300_000}, headers=h)
+    assert r.status_code in (400, 413), r.status_code
+    gen = get_session()
+    db = next(gen)
+    try:
+        assert int(credit.so_du(db, uid)) == 500      # không tiêu gì
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
+
+# ── 5. Không đếm được của người khác ────────────────────────────────────────
+
+def test_khong_dem_duoc_hoi_thoai_cua_nguoi_khac(web):
+    _uid_a, email_a = _user()
+    ca, ha = _phien(web.app, email_a)
+    for _ in range(3):
+        ca.post("/chatltt/api/hoi-thoai", json={"model_alias": "ltt_llm"}, headers=ha)
+    _uid_b, email_b = _user()
+    cb, hb = _phien(web.app, email_b)
+    assert cb.get("/chatltt/api/hoi-thoai", headers=hb).json()["hoi_thoai"] == []
+    # Tìm kiếm cũng không rò: A có "bi mat", B tìm chữ đó ra rỗng.
+    assert cb.get("/chatltt/api/hoi-thoai?tim=bi mat", headers=hb
+                  ).json()["hoi_thoai"] == []
+
+
+# ── 6. CSRF trên MỌI cửa ghi, liệt kê từ bảng route ─────────────────────────
+
+def test_moi_cua_GHI_deu_doi_CSRF():
+    """Đọc bảng route thật: một route POST mới quên CSRF sẽ làm test này đỏ."""
+    import inspect
+
+    from apps.chatltt.routes import router
+
+    ghi = [r for r in router.routes
+           if {"POST", "PUT", "PATCH", "DELETE"} & set(getattr(r, "methods", ()))]
+    assert len(ghi) >= 8, len(ghi)
+    thieu = []
+    for r in ghi:
+        nguon = inspect.getsource(r.endpoint)
+        if "kiem_csrf" not in nguon:
+            thieu.append(r.path)
+    assert not thieu, thieu
+
+
+def test_thieu_hoac_sai_CSRF_deu_bi_tu_choi(web):
+    _uid, email = _user()
+    c, h = _phien(web.app, email)
+    cv = c.post("/chatltt/api/hoi-thoai", json={"model_alias": "ltt_llm"},
+                headers=h).json()["id"]
+    for hd in ({}, {"X-CSRF-Token": ""}, {"X-CSRF-Token": "bia-dat"}):
+        r = c.post(f"/chatltt/api/hoi-thoai/{cv}/luot", json={"text": "x"}, headers=hd)
+        assert r.status_code == 403, hd
+        assert r.json()["error"]["code"] == "csrf"
+
+
+def test_chua_dang_nhap_thi_moi_cua_deu_dong(web):
+    for d in ("/chatltt", "/chatltt/api/danh-muc", "/chatltt/api/hoi-thoai",
+              "/chatltt/api/so-du", "/chatltt/tai-san/anhnoibo/u/j/0.png"):
+        r = web.get(d, follow_redirects=False)
+        assert r.status_code in (302, 303, 401), (d, r.status_code)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_629_chatltt_torture_du_lieu_hieu_nang.py
+SHA256=b80474f5f1ce0afae7d435bc0cbd96d0602f5fe83178f354c4d75b05f1db0e44 BYTES=8812 LINES=210
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_629 — Phase 12 nhóm DỮ LIỆU và HIỆU NĂNG.
+
+Dữ liệu:
+  1. Xoá khi đang chạy: lượt bị huỷ, và sự kiện tới SAU đó không hồi sinh gì.
+  2. Dọn dữ liệu đã xoá mềm: đúng hạn, đúng thứ tự con→cha, không đụng hội
+     thoại còn sống, an toàn gọi nhiều lần.
+  3. Không để lại hàng mồ côi (execution/message trỏ tới hội thoại đã dọn).
+  4. Vòng bảo trì **không được ném** dù CSDL hỏng.
+
+Hiệu năng (ngưỡng rộng có chủ ý — chúng bắt lỗi ĐỘ PHỨC TẠP, không đo máy):
+  5. Cây 400 nút: dựng + đi đường + liệt kê anh em.
+  6. Một lượt 5.000 delta: `ap_dung` không bậc hai.
+  7. `su_that()` của một hội thoại dài trả về trong một truy vấn có giới hạn.
+"""
+from __future__ import annotations
+
+import time
+import uuid
+from datetime import timedelta
+
+import pytest
+
+from apps.chatltt.services import hoi_thoai as H
+from apps.chatltt.services import su_kien as S
+from apps.chatltt.tables import ChatlttConversation, ChatlttExecution, ChatlttMessage
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL", "sqlite:///" + (tmp_path / "d.db").as_posix())
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+    from platform_core.registry import load_app_tables
+    load_app_tables()
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    s = next(gen)
+    yield s
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+    dbmod.reset_engine()
+
+
+def _luot(db, uid="u-d"):
+    hoi = H.tao_hoi_thoai(db, user_id=uid, model_alias="a")
+    m = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="user",
+                          blocks=[{"type": "text", "text": "hoi"}])
+    a = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="assistant",
+                          blocks=[], parent_id=m.id, status="streaming")
+    ex = S.mo_execution(db, message=a, tool_name="text.chat", mode="stream")
+    db.commit()
+    return hoi, a, ex
+
+
+# ── 1. Xoá khi đang chạy ────────────────────────────────────────────────────
+
+def test_xoa_khi_dang_chay_va_su_kien_toi_sau_khong_hoi_sinh(db):
+    hoi, a, ex = _luot(db)
+    S.ap_dung(ex, {"type": "response.delta", "text": "dang viet"}, message=a)
+    db.commit()
+
+    H.xoa(db, user_id="u-d", conv_id=hoi.id)
+    db.commit()
+    assert ex.status == "cancelled" and a.status == "cancelled"
+
+    # Luồng chậm chân: sự kiện tới SAU khi xoá. Nó ghi vào execution (đúng —
+    # tiền phải được quyết toán), nhưng KHÔNG được làm hội thoại sống lại.
+    S.ap_dung(ex, {"type": "billing.updated", "credit_giu": 5,
+                   "credit_thu": 1, "credit_hoan": 4}, message=a)
+    db.commit()
+    assert ex.credit_thu == 1                       # tiền vẫn chốt đúng
+    assert hoi.deleted_at is not None               # nhưng vẫn là đã xoá
+    with pytest.raises(H.KhongTimThay):
+        H.lay_hoi_thoai(db, user_id="u-d", conv_id=hoi.id)
+    assert H.liet_ke(db, user_id="u-d") == []
+
+
+# ── 2 + 3. Dọn dữ liệu đã xoá mềm ───────────────────────────────────────────
+
+def test_don_dung_han_dung_thu_tu_va_khong_de_lai_mo_coi(db):
+    song, _a1, _e1 = _luot(db)
+    cu, _a2, _e2 = _luot(db)
+    moi_xoa, _a3, _e3 = _luot(db)
+
+    H.xoa(db, user_id="u-d", conv_id=cu.id)
+    H.xoa(db, user_id="u-d", conv_id=moi_xoa.id)
+    cu.deleted_at = H._now() - timedelta(days=40)        # quá hạn
+    db.commit()
+
+    kq = H.don_da_xoa(db)
+    db.commit()
+    assert kq == {"hoi_thoai": 1, "thong_diep": 2, "thi_hanh": 1}
+
+    con = {c.id for c in db.query(ChatlttConversation).all()}
+    assert con == {song.id, moi_xoa.id}                  # còn sống + mới xoá đều ở lại
+
+    # Không hàng con nào trỏ tới một hội thoại không còn.
+    for bang in (ChatlttMessage, ChatlttExecution):
+        mo_coi = [r for r in db.query(bang).all() if r.conversation_id not in con]
+        assert mo_coi == [], (bang.__name__, mo_coi)
+
+    # Gọi lại: không đổi gì, không ném.
+    assert H.don_da_xoa(db) == {"hoi_thoai": 0, "thong_diep": 0, "thi_hanh": 0}
+
+
+def test_hoi_thoai_CON_SONG_khong_bao_gio_bi_don_du_rat_cu(db):
+    hoi, _a, _e = _luot(db)
+    hoi.created_at = H._now() - timedelta(days=3650)
+    hoi.updated_at = hoi.created_at
+    db.commit()
+    assert H.don_da_xoa(db, gia_han_ngay=1) == {"hoi_thoai": 0, "thong_diep": 0, "thi_hanh": 0}
+    assert db.get(ChatlttConversation, hoi.id) is not None
+
+
+def test_bao_tri_khong_bao_gio_nem(db, monkeypatch):
+    monkeypatch.setattr(H, "don_da_xoa",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("CSDL hong")))
+    H.bao_tri()          # không ném ⇒ vòng bảo trì của app khác vẫn chạy
+
+
+def test_manifest_khai_bao_tri_va_governance_biet_ba_bang():
+    from apps.chatltt.manifest import MANIFEST
+    from platform_core.public_api import governance
+
+    assert callable(MANIFEST.bao_tri) and MANIFEST.bao_tri_moi_giay > 0
+    ten = {s.table for s in governance.STORES}
+    assert {"chatltt_conversation", "chatltt_message", "chatltt_execution"} <= ten
+    for s in governance.STORES:
+        if s.table.startswith("chatltt_"):
+            assert s.klass == governance.CONTENT
+            assert s.retention_days is None       # không tự già đi
+            assert s.purged_by                    # nhưng phải nói ra cách nó biến mất
+
+
+# ── 5. Cây lớn ──────────────────────────────────────────────────────────────
+
+def test_cay_400_nut_van_nhanh_va_dung(db):
+    uid = "u-lon"
+    hoi = H.tao_hoi_thoai(db, user_id=uid, model_alias="a")
+    cha = None
+    la_cuoi = None
+    for i in range(200):
+        u = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="user",
+                              blocks=[{"type": "text", "text": f"hoi {i}"}],
+                              parent_id=cha)
+        a = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="assistant",
+                              blocks=[{"type": "text", "text": f"dap {i}"}],
+                              parent_id=u.id)
+        cha = a.id
+        la_cuoi = a.id
+    db.commit()
+
+    t0 = time.monotonic()
+    phang = H.tat_ca(db, user_id=uid, conv_id=hoi.id)
+    rung = H.dung_cay(phang)
+    duong = H.duong_toi_la(db, user_id=uid, conv_id=hoi.id, leaf_id=la_cuoi)
+    dt = time.monotonic() - t0
+
+    assert len(phang) == 400
+    assert len(rung) == 1                              # đúng một gốc
+    assert len(duong) == 400 and duong[-1].id == la_cuoi
+    assert duong[0].parent_id is None
+    # Ngưỡng rộng: nó bắt độ phức tạp bậc hai, không đo tốc độ máy.
+    assert dt < 5.0, dt
+
+
+def test_su_that_cua_hoi_thoai_dai_van_dung_hinh_dang(db):
+    uid = "u-dai"
+    hoi = H.tao_hoi_thoai(db, user_id=uid, model_alias="a")
+    cha = None
+    for i in range(60):
+        m = H.them_thong_diep(db, user_id=uid, conv_id=hoi.id, role="user",
+                              blocks=[{"type": "text", "text": "x" * 500}],
+                              parent_id=cha)
+        cha = m.id
+    db.commit()
+    t0 = time.monotonic()
+    st = H.su_that(db, user_id=uid, conv_id=hoi.id)
+    dt = time.monotonic() - t0
+    assert len(st["messages"]) == 60
+    assert st["conversation"]["current_leaf_id"] == cha
+    assert dt < 3.0, dt
+
+
+# ── 6. Stream rất dài ───────────────────────────────────────────────────────
+
+def test_nam_nghin_delta_khong_bac_hai(db):
+    _hoi, a, ex = _luot(db)
+    S.ap_dung(ex, {"type": "response.started", "request_id": "r", "credit_giu": 9}, message=a)
+
+    t0 = time.monotonic()
+    for i in range(5000):
+        S.ap_dung(ex, {"type": "response.delta", "text": "x"}, message=a)
+    dt = time.monotonic() - t0
+
+    assert len(ex.partial_text) == 5000
+    assert ex.seq == 5001
+    assert dt < 5.0, dt
+
+    # Khối mã rất lớn vẫn đồng bộ được vào message.
+    S.ap_dung(ex, {"type": "response.completed", "finish_reason": "stop"}, message=a)
+    S.dong_bo_khoi_text(a, ex)
+    db.commit()
+    assert a.blocks[-1]["type"] == "text" and len(a.blocks[-1]["text"]) == 5000
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_62_khoa_logic.py
 SHA256=0a476165d6e0485a3dd19c4c086bd6eafcee0946c7d374ce9e2c3b9fdb0539c6 BYTES=16332 LINES=313
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -276951,6 +277918,344 @@ def test_moi_quyet_dinh_co_mot_so_duy_nhat():
     trung = {q for q in so if so.count(q) > 1}
     assert not trung, f"quyết định trùng số: {sorted(trung)}"
     assert len(so) >= 12, "bảng quyết định trông như bị cắt mất"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_630_suc_khoe_giai_dia_chi_nhu_duong_goi_that.py
+SHA256=c12f7efa4f465f4c311f757c8cbaf1697d78cf7520e2b74056225606f66d9c62 BYTES=6654 LINES=150
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_630 — Hook `suc_khoe` phải giải địa chỉ cổng theo **đúng thứ tự** mà đường
+gọi thật dùng. (H43 Phase 12, tìm ra bằng phép đo LIVE 03/09)
+
+🔴 VÌ SAO TỆP NÀY TỒN TẠI. Bản đầu của `ltt_llm.features.suc_khoe` chỉ đọc
+   `providers.get(...).base_url` (biến môi trường). Nhưng `luong_vlm.mo` —
+   đường gọi THẬT — lấy `base_url` của **khoá** trước, rồi mới đến registry
+   (`luong_vlm.py:136-137`), và đó là cách production được cấu hình.
+
+   Đo LIVE 03/09: `GET http://192.168.2.66:8299/live` trả **200**, tức cổng máy
+   B đang sống, nhưng hook trả `chua_san_sang`.
+
+⛔ Một chip "chưa sẵn sàng" SAI làm ô soạn bị tắt cho **mọi** người trong khi
+   model chạy tốt. Nó là mặt kia của đúng cái lỗi Phase 06 sinh ra để chặn (chip
+   xanh nói dối) — chỉ khác chiều, và chiều này mất cả sản phẩm chứ không chỉ
+   làm người dùng bực mình.
+"""
+from __future__ import annotations
+
+import pytest
+
+
+@pytest.fixture()
+def db(tmp_path, monkeypatch):
+    monkeypatch.setenv("LTT_DATABASE_URL", "sqlite:///" + (tmp_path / "h.db").as_posix())
+    monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
+    import platform_core.db as dbmod
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.db import Base, get_engine, get_session
+    Base.metadata.create_all(get_engine())
+    gen = get_session()
+    s = next(gen)
+    yield s
+    try:
+        next(gen)
+    except StopIteration:
+        pass
+    dbmod.reset_engine()
+
+
+def _khoa(db, *, provider="ltt_llm", base_url="http://may-b.noi-bo:8299"):
+    from platform_core.models import ApiKey
+
+    k = ApiKey(provider=provider, categories="chat", base_url=base_url,
+               name="khoa thu", credential_enc="x", status="active")
+    db.add(k)
+    db.commit()
+    return k
+
+
+def test_lay_base_url_cua_KHOA_khi_registry_rong(db, monkeypatch):
+    from apps.ltt_llm import features
+
+    monkeypatch.setattr("platform_core.providers.get",
+                        lambda _p: type("P", (), {"base_url": ""})())
+    assert features._dia_chi_cong() == ""          # chưa có khoá ⇒ rỗng, fail-closed
+    _khoa(db)
+    assert features._dia_chi_cong() == "http://may-b.noi-bo:8299"
+
+
+def test_registry_thang_khoa_khi_ca_hai_deu_co(db, monkeypatch):
+    """Cùng thứ tự `luong_vlm.mo` dùng? KHÔNG — và đó là chủ đích.
+
+    `luong_vlm` ưu tiên khoá vì nó **đã** cầm đúng khoá sẽ gọi. Hook sức khoẻ
+    không chọn khoá; nó chỉ cần biết cổng nào đang phục vụ. Registry (biến môi
+    trường của tiến trình) là thứ người vận hành đặt và sửa được ngay, nên khi
+    có nó thì nó thắng — một cách để chuyển hướng thăm dò mà không sửa CSDL.
+    """
+    from apps.ltt_llm import features
+
+    monkeypatch.setattr("platform_core.providers.get",
+                        lambda _p: type("P", (), {"base_url": "http://tu-env:9999"})())
+    _khoa(db, base_url="http://tu-khoa:8299")
+    assert features._dia_chi_cong() == "http://tu-env:9999"
+
+
+def test_khoa_cua_provider_KHAC_khong_duoc_dung(db, monkeypatch):
+    from apps.ltt_llm import features
+
+    monkeypatch.setattr("platform_core.providers.get",
+                        lambda _p: type("P", (), {"base_url": ""})())
+    _khoa(db, provider="gemini", base_url="http://nham-provider:1234")
+    assert features._dia_chi_cong() == ""
+
+
+def test_khong_co_CSDL_thi_tra_rong_chu_khong_nem(monkeypatch):
+    """Hook chạy ở mọi tiến trình, kể cả nơi chưa cấu hình CSDL.
+
+    ⛔ ĐỪNG `importlib.reload(platform_core.db)` để dọn dẹp ở đây. Bản đầu của
+       phép kiểm này làm đúng thế, và nó **phá mọi tệp test chạy sau nó trong
+       cùng tiến trình**: `reload` dựng một lớp `Base` MỚI mang một
+       `MetaData` RỖNG, nên `Base.metadata.create_all()` của tệp sau tạo
+       **không bảng nào** — im lặng — rồi test đó chết với
+       `no such table: users` ở một chỗ chẳng liên quan gì.
+
+       Giá đo được: 16 phép kiểm đỏ rải trên sáu tệp (112, 122, 157, 172, 220,
+       305, 606), tất cả đều XANH khi chạy một mình, và gần một giờ đuổi theo
+       một giả thuyết sai (“máy quá tải”). Xem `docs/CHATLTT/reports/12_torture.md`.
+
+    ⭐ Không cần dọn gì cả: `monkeypatch` trả `LTT_DATABASE_URL` về chỗ cũ khi
+       test kết thúc, và `reset_engine()` để lần `get_engine()` sau dựng lại
+       từ biến môi trường đã được trả. Trạng thái duy nhất cần đặt lại là
+       engine — không phải cả module.
+    """
+    import platform_core.db as dbmod
+    from apps.ltt_llm import features
+
+    monkeypatch.delenv("LTT_DATABASE_URL", raising=False)
+    dbmod.reset_engine()
+    monkeypatch.setattr("platform_core.providers.get",
+                        lambda _p: type("P", (), {"base_url": ""})())
+    assert features._dia_chi_cong() == ""
+    assert features.suc_khoe(timeout_s=0.2) == "chua_san_sang"
+    dbmod.reset_engine()
+
+
+def test_cong_tra_khac_200_thi_chua_san_sang(db, monkeypatch):
+    import httpx
+
+    from apps.ltt_llm import features
+
+    monkeypatch.setattr("platform_core.providers.get",
+                        lambda _p: type("P", (), {"base_url": "http://x:1"})())
+    for ma in (500, 503, 404):
+        monkeypatch.setattr(httpx, "get",
+                            lambda *a, ma=ma, **k: type("R", (), {"status_code": ma})())
+        assert features.suc_khoe(timeout_s=0.2) == "chua_san_sang", ma
+    monkeypatch.setattr(httpx, "get",
+                        lambda *a, **k: type("R", (), {"status_code": 200})())
+    assert features.suc_khoe(timeout_s=0.2) == "san_sang"
+
+    def no(*_a, **_k):
+        raise httpx.ConnectError("khong noi duoc")
+
+    monkeypatch.setattr(httpx, "get", no)
+    assert features.suc_khoe(timeout_s=0.2) == "chua_san_sang"
+
+
+def test_anhnoibo_giai_dia_chi_dung_nhu_duong_goi_that(monkeypatch):
+    """`anhnoibo` gọi qua `providers.get("ltt_image").base_url` (biến môi trường),
+    nên hook của nó đọc **cùng một chỗ** — không thêm đường thứ hai."""
+    import inspect
+
+    from apps.anhnoibo import features as anh, jobs
+
+    nguon_hook = inspect.getsource(anh.suc_khoe)
+    nguon_that = inspect.getsource(jobs._dieu_phoi)
+    assert 'providers.get("ltt_image")' in nguon_hook
+    assert 'providers.get("ltt_image")' in nguon_that
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_631_cach_ly_bo_test.py
+SHA256=35147955c01b2ed28cf65182a0951617d3da7954a81b5bee35cb804eb5b46b19 BYTES=8704 LINES=176
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""
+test_631 — HAI bất biến cách ly mà một tệp test có thể phá cho **cả tiến trình**.
+
+🔴 VÌ SAO TỆP NÀY TỒN TẠI. Ngày 03/09 một lượt gate đỏ với **16 phép kiểm** rải
+   trên bảy tệp không liên quan gì nhau (112, 122, 157, 172, 220, 305, 606).
+   Mọi tệp đều XANH khi chạy một mình. Triệu chứng giống hệt nhau ở mọi chỗ:
+
+       sqlite3.OperationalError: no such table: users
+
+   Giả thuyết đầu — “máy quá tải, hai lượt `pytest -n auto` tranh nhau” — khớp
+   *hoàn hảo* với mọi dữ kiện có lúc đó: đỏ khi chạy cả bộ, xanh khi chạy cụm
+   nhỏ, và máy thật sự đang bận. Nó sai. Nó ngốn gần một giờ, và nó kết thúc
+   cuộc điều tra đúng lúc cuộc điều tra mới bắt đầu.
+
+⭐ Cả hai lỗi thật đều thuộc **một** loại: một tệp test làm hỏng trạng thái toàn
+   cục mà mọi tệp SAU nó dựa vào. Loại đó không thể tự lộ ra ở tệp gây lỗi —
+   nó chỉ hiện ở nạn nhân, nên ai đọc dấu vết cũng bị dẫn đi sai chỗ.
+
+⇒ Nên chúng phải bị bắt bằng một phép quét TĨNH ở nơi gây ra, chứ không bằng
+  cách đọc dấu vết ở nơi chịu hậu quả.
+"""
+from __future__ import annotations
+
+import ast
+import pathlib
+import warnings
+
+import pytest
+
+GOC = pathlib.Path(__file__).resolve().parent.parent
+TEP_TEST = sorted((GOC / "tests").glob("test_*.py"))
+
+#: Hai module này SỞ HỮU `Base` và `Base.metadata`. `reload` một trong hai dựng
+#: một lớp `Base` mới mang một `MetaData` RỖNG, và mọi `create_all` sau đó tạo
+#: **không bảng nào** — im lặng, mã thoát 0, không cảnh báo.
+MODULE_KHONG_DUOC_RELOAD = {"platform_core.db", "platform_core.models"}
+
+
+def _cay(p: pathlib.Path) -> ast.Module:
+    # Nen `SyntaxWarning` cua tep BI QUET. Doc ma nguoi khac khong phai ly do
+    # de mot phep kiem tu bom 18 canh bao vao moi luot gate.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", SyntaxWarning)
+        return ast.parse(p.read_text(encoding="utf-8"), filename=str(p))
+
+
+def _ten_module_cua_bien(cay: ast.Module) -> dict[str, str]:
+    """Bí danh -> tên module, cho `import platform_core.db as dbmod`."""
+    ra: dict[str, str] = {}
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Import):
+            for a in n.names:
+                ra[a.asname or a.name.split(".")[0]] = a.name
+    return ra
+
+
+# ── 1. Không `reload` module giữ `Base` ─────────────────────────────────────
+
+def test_khong_tep_test_nao_reload_module_giu_Base():
+    """`importlib.reload(platform_core.db)` là một quả mìn hẹn giờ.
+
+    Nó không làm hỏng tệp đặt nó. Nó làm hỏng tệp **kế tiếp** trên cùng worker,
+    và tệp kế tiếp thì thay đổi theo số worker — nên cùng một cây cho ra tập
+    lỗi khác nhau giữa hai lượt. Đó chính là thứ khiến “máy quá tải” trông
+    giống một lời giải thích đúng.
+    """
+    vi_pham = []
+    for p in TEP_TEST:
+        cay = _cay(p)
+        bi_danh = _ten_module_cua_bien(cay)
+        for n in ast.walk(cay):
+            if not isinstance(n, ast.Call):
+                continue
+            f = n.func
+            ten = f.attr if isinstance(f, ast.Attribute) else getattr(f, "id", "")
+            if ten != "reload" or not n.args:
+                continue
+            doi = n.args[0]
+            goc = doi.id if isinstance(doi, ast.Name) else None
+            if goc and bi_danh.get(goc) in MODULE_KHONG_DUOC_RELOAD:
+                vi_pham.append(f"{p.name}:{n.lineno} reload({bi_danh[goc]})")
+    assert vi_pham == [], (
+        "reload module giu `Base` lam moi `create_all` sau do tao ZERO bang:\n  "
+        + "\n  ".join(vi_pham)
+        + "\n\nDon dep engine bang `reset_engine()`; monkeypatch tu tra bien "
+          "moi truong ve. Khong bao gio reload ca module.")
+
+
+# ── 2. `create_all` phải đứng SAU khi bảng đã đăng ký ───────────────────────
+
+def _goi_create_all(cay: ast.Module) -> list[ast.Call]:
+    ra = []
+    for n in ast.walk(cay):
+        if (isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                and n.func.attr == "create_all"):
+            ra.append(n)
+    return ra
+
+
+def _dong_nap_models(cay: ast.Module) -> list[int]:
+    """Dòng của mọi câu lệnh làm `platform_core.models` được nạp."""
+    dong = []
+    for n in ast.walk(cay):
+        if isinstance(n, ast.Import):
+            if any(a.name == "platform_core.models" for a in n.names):
+                dong.append(n.lineno)
+        elif isinstance(n, ast.ImportFrom):
+            if n.module == "platform_core.models":
+                dong.append(n.lineno)
+            elif n.module == "platform_core" and any(a.name == "models" for a in n.names):
+                dong.append(n.lineno)
+    return sorted(dong)
+
+
+#: Chi nhung tep THUC SU goi `create_all`. Loc o day chu khong `skip` trong
+#: than phep kiem: mot `skip` la mot dong "khong canh gi ca" phai giai trinh
+#: voi banh coc `check_bo_qua`, va o day no se phai giai trinh **188 lan** cho
+#: mot dieu kien chang co gi bat ngo.
+TEP_CO_CREATE_ALL = [p for p in TEP_TEST if _goi_create_all(_cay(p))]
+
+
+@pytest.mark.parametrize("tep", TEP_CO_CREATE_ALL, ids=lambda p: p.name)
+def test_create_all_luon_dung_sau_khi_bang_da_dang_ky(tep):
+    """`Base.metadata` RỖNG cho tới khi `platform_core.models` được nạp.
+
+    ⛔ `create_all` trên một metadata rỗng KHÔNG ném gì cả — nó tạo đúng không
+       bảng nào rồi trả về bình thường. Phép kiểm chết sau đó, ở dòng đầu tiên
+       chạm CSDL, với một thông điệp nói về `users` chứ không nói về import.
+
+    ⭐ Ba tệp (112, 174, 90) đã sống như vậy nhiều tháng và **vẫn xanh**, vì
+       xdist gửi trọn tệp cho một worker đã chạy tệp khác trước đó — tệp khác
+       ấy nạp `models` hộ. Chúng chỉ đỏ khi bị xếp lên ĐẦU một worker. Một phép
+       kiểm xanh nhờ hàng xóm thì không phải một phép kiểm xanh.
+    """
+    cay = _cay(tep)
+    goi = _goi_create_all(cay)
+    nap = _dong_nap_models(cay)
+    dau_tien = min(g.lineno for g in goi)
+    assert nap and min(nap) < dau_tien, (
+        f"{tep.name}: `create_all` o dong {dau_tien} nhung `platform_core.models` "
+        f"{'nap o dong ' + str(min(nap)) if nap else 'KHONG he duoc nap'}. "
+        "Metadata rong => create_all tao ZERO bang, im lang.")
+
+
+# ── 3. Migration không được tắt logger của ứng dụng chủ nhà ─────────────────
+
+def test_alembic_khong_tat_logger_dang_co():
+    """`fileConfig(...)` mặc định `disable_existing_loggers=True`.
+
+    ⛔ Và True ở đây nghĩa là: mọi logger **đã** được tạo trước lúc đó bị đặt
+       `disabled = True` — vĩnh viễn, không khôi phục, không một dòng cảnh báo.
+
+    🔴 Đo 03/09, và nó là lỗi cách ly **thứ ba** trong cùng một ngày, cùng một
+       hình dạng: `test_616` chạy `alembic upgrade` trong tiến trình ⇒ tắt
+       `platform_core.job_runner` ⇒ `test_67::test_worker_khong_ghi_bi_mat...`
+       đỏ vì `caplog.text` RỖNG. Ba tệp, ba thư mục, không liên quan gì nhau.
+       Phép kiểm nạn nhân XANH khi chạy một mình.
+
+    ⭐ Cái giá thật không nằm ở bộ test. Bất kỳ ai nhúng alembic vào một tiến
+       trình đang sống — script bảo trì, lệnh quản trị, worker tự migrate — đều
+       làm **cả** tiến trình đó câm tiếng từ đó trở đi, và triệu chứng là sự
+       vắng mặt của log, thứ không ai đi tìm.
+    """
+    env = GOC / "alembic" / "env.py"
+    cay = _cay(env)
+    goi = [n for n in ast.walk(cay)
+           if isinstance(n, ast.Call) and getattr(n.func, "id", "") == "fileConfig"]
+    assert goi, "alembic/env.py khong con goi fileConfig — cap nhat phep kiem nay"
+    for n in goi:
+        tu = {k.arg: k.value for k in n.keywords}
+        co = tu.get("disable_existing_loggers")
+        assert isinstance(co, ast.Constant) and co.value is False, (
+            f"alembic/env.py:{n.lineno} goi fileConfig ma khong "
+            "`disable_existing_loggers=False`. Mac dinh True se tat vinh vien "
+            "moi logger da tao — migration khong duoc quyen lam ung dung chu "
+            "nha cam tieng.")
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -283146,7 +284451,7 @@ def test_orphan_child_duoc_reclaim(db):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_90_agent_planner_validator.py
-SHA256=014b324dd188cc6e4581ecad08c1ee055861f0bdceacda8925086dd492b5215e BYTES=10714 LINES=241
+SHA256=0d273a5022352308b8ecb39225ae14ccc66603082b8fd76bbe3182d2cc6ec55e BYTES=10917 LINES=244
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """P4: untrusted planner output is normalized and deterministically rejected/accepted."""
 from __future__ import annotations
@@ -283343,6 +284648,9 @@ def test_quyen_app_duoc_doc_tu_db(tmp_path, monkeypatch):
     monkeypatch.setenv("LTT_DATABASE_URL", url)
     import platform_core.db as dbmod
     from platform_core import app_access, users
+    # PHAI import truoc `create_all`: `Base.metadata` rong cho toi khi module
+    # nay duoc nap, va `create_all` tren metadata rong tao ZERO bang, im lang.
+    import platform_core.models  # noqa: F401
     dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
     gen = dbmod.get_session(); db = next(gen)
     try:
@@ -304977,7 +306285,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=d0989ba36d581e3c9dbf2ed21b96fafec1d955a871822b568ab294510209bf79 BYTES=63056 LINES=1204
+SHA256=dafcc59dc5737405202013e7f6a64839f75155f0dbbc8a3656717e91063c32c0 BYTES=69210 LINES=1322
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -305083,12 +306391,57 @@ LOI_DE_DANH_CHO_MAY = 6
 LOI_TOI_DA_MOI_CONG_CU = 12
 
 
-def ngan_sach_loi() -> int:
+def loi_dang_ban(mau_s: float = 1.0) -> float:
+    """So loi DANG bi ai do chiem — do that, khong doan.
+
+    🔴 VI SAO CAN THEM PHEP DO NAY. `LOI_DE_DANH_CHO_MAY` la mot HANG SO, va
+       no duoc dat tu mot phep do luc may RANH (27% CPU, 02/09). No dung cho
+       cai no mo ta: nen tai cua bon dich vu production.
+
+       Nhung hai lan may treo phai reset cung KHONG do nen tai gay ra. Chung do
+       hai thu ma hang so khong the biet:
+
+         · mot `pytest -n auto` go tay NGOAI gate — 20 worker, khong ngan sach,
+           khong khoa. (Phien nay da lam dung the ba lan ngay 03/09.)
+         · mot luot gate THU HAI da het `--cho` va chay de — `cua_so_yen` chi
+           canh bao roi `return self`, no khong tu choi.
+
+       Ca hai deu vo hinh voi cua so yen — khoa chi thay ai XIN khoa. Ca hai
+       deu hien ra o CPU.
+
+    ⚠️ Tra ve 0.0 khi khong do duoc: fail-open co chu y. Mot cong chat luong tu
+       choi chay vi khong doc noi CPU la mot cong khong ai dung.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return 0.0
+    try:
+        phan_tram = psutil.cpu_percent(interval=mau_s)
+    except (OSError, RuntimeError) as loi:
+        print(f"  [tai may] khong do duoc CPU ({loi}) - coi nhu may ranh")
+        return 0.0
+    return (os.cpu_count() or 4) * float(phan_tram) / 100.0
+
+
+def ngan_sach_loi(do_tai: bool = False) -> int:
     """So loi ma CA luot gate duoc dung cung luc.
 
     Toi thieu 2: mot may hai loi van phai chay duoc gate, chi la cham hon.
+
+    ⭐ `do_tai=True` tru them phan DANG bi chiem ngoai muc nen. Chi bat o luot
+       that (`main`), khong bat trong `_steps` — neu khong moi lan dung danh
+       sach buoc lai ngu mot giay, va `_steps` bi goi nhieu lan.
     """
-    return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
+    tran = max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
+    if not do_tai:
+        return tran
+    # Phan tai VUOT nen: nen da duoc tru bang `LOI_DE_DANH_CHO_MAY` roi, nen
+    # tru them ca no la tru hai lan.
+    thua = loi_dang_ban() - LOI_DE_DANH_CHO_MAY
+    if thua <= 0:
+        return tran
+    return max(2, int(tran - thua))
 
 
 def _chia_loi(so_viec_nang: int) -> int:
@@ -305187,7 +306540,7 @@ def _npm() -> str | None:
     return shutil.which("npm")
 
 
-def _steps(quick: bool) -> list[Step]:
+def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
     # ── Chia ngan sach loi TRUOC khi dung danh sach buoc ────────────────────
     #
     # Bon viec co the chay dong thoi va MOI viec tu sinh mot be tien trinh:
@@ -305204,6 +306557,18 @@ def _steps(quick: bool) -> list[Step]:
     loi_moi_viec = min(2, LOI_TOI_DA_MOI_CONG_CU)          # frontend: ngan, 2 la du
     loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
                              ngan_sach_loi() - len(FRONTENDS)))
+    # ── Che do NOI TIEP: mot loi cho moi cong cu con ────────────────────────
+    #
+    # 🔴 `--tuan-tu` MOT MINH khong du, va day la cho de doc nham nhat trong
+    #    ca tep nay. No xep hang cac BUOC — nhung buoc `bo test` van tu mo 12
+    #    worker pytest ben trong no, va moi buoc `frontend` van mo 2 worker
+    #    vitest. "Tuan tu" o muc lich chay khong co nghia la mot tien trinh.
+    #
+    # ⇒ Ho so `noi-tiep` phai ha CA HAI muc: lich chay MOT buoc mot luc, va
+    #   moi cong cu con MOT tien trinh.
+    if noi_tiep:
+        loi_moi_viec = 1
+        loi_bo_test = 1
 
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #
@@ -305466,11 +306831,26 @@ def _steps(quick: bool) -> list[Step]:
         # ⛔ `-n` tuong minh thay cho `auto`. `auto` = MOI loi cua may, va no
         #    khong biet gi ve ba vitest dang chay canh no, cung khong biet gi ve
         #    bon dich vu production tren cung may.
-        steps.append(Step("bo test (song song)",
-                          [sys.executable, "tools/test_nhanh.py",
-                           "-n", str(loi_bo_test)], ROOT,
-                          nhom="nang", tai_nguyen=("cpu_nhieu",),
-                          so_loi=loi_bo_test))
+        #
+        # ⛔ NOI TIEP KHONG PHAI `-n 1`. Hai thu khac nhau that su:
+        #      `-n 1`      van qua xdist — mot worker, nhung la mot TIEN TRINH
+        #                  CON, va no van chia tep theo `--dist loadfile`.
+        #      `--noi-tiep` khong co xdist gi ca: dung tien trinh pytest do,
+        #                  dung thu tu thu thap goc, khong co pha 2.
+        #    Khac biet do la ca cai gia tri cua che do nay: no la phep do duy
+        #    nhat KHONG di qua lop ma ta dang nghi ngo.
+        if noi_tiep:
+            steps.append(Step("bo test (noi tiep)",
+                              [sys.executable, "tools/test_nhanh.py",
+                               "--noi-tiep"], ROOT,
+                              nhom="nang", tai_nguyen=("cpu_nhieu",),
+                              so_loi=1))
+        else:
+            steps.append(Step("bo test (song song)",
+                              [sys.executable, "tools/test_nhanh.py",
+                               "-n", str(loi_bo_test)], ROOT,
+                              nhom="nang", tai_nguyen=("cpu_nhieu",),
+                              so_loi=loi_bo_test))
     return steps
 
 
@@ -305533,6 +306913,17 @@ HO_SO: dict[str, dict] = {
         "mo_ta": "toan kho — mac dinh, giu nguyen hanh vi cu",
         "chung_minh": "toan bo cong chat luong tren cay nay",
         "khong_chung_minh": "khong noi gi ve viec deploy hay ve production",
+        "xep_hang": True,
+    },
+    "noi-tiep": {
+        "mo_ta": "day du, MOT buoc mot luc, MOT tien trinh pytest (~25-30 phut)",
+        "chung_minh": "toan bo cong chat luong, VA rang ket qua do khong phu "
+                      "thuoc vao so worker hay vao tai cua may luc do",
+        "khong_chung_minh": "khong noi gi ve deploy hay production. Va no KHONG "
+                            "chung minh che do song song sai — mot lan noi tiep "
+                            "xanh trong khi song song do la bang chung ve MOT "
+                            "loi CACH LY (hoac mot may qua tai), chua chi ra "
+                            "loi nam o dau.",
         "xep_hang": True,
     },
     "phat-hanh": {
@@ -305946,7 +307337,12 @@ def main() -> int:
     parser.add_argument("-j", type=int, default=8,
                         help="so luong buoc tinh chay cung luc (mac dinh 8)")
     parser.add_argument("--tuan-tu", action="store_true",
-                        help="ep chay noi tiep - de go loi chinh gate")
+                        help="ep cac BUOC chay lan luot - de go loi chinh gate "
+                             "(cong cu con van tu song song ben trong)")
+    parser.add_argument("--noi-tiep", action="store_true",
+                        help="ho so NOI TIEP: mot buoc mot luc VA mot tien "
+                             "trinh pytest. Cham (~25-30 phut) nhung khong the "
+                             "bi nhieu boi tai may hay boi cach ly worker")
     parser.add_argument("--phien", default="",
                         help="ten phien, hien cho phien khac dang doi")
     parser.add_argument("--khong-khoa", action="store_true",
@@ -305960,6 +307356,14 @@ def main() -> int:
     parser.add_argument("--doi", action="store_true",
                         help="suy pham vi tu cay hien tai")
     args = parser.parse_args()
+
+    # ⛔ NOI RA thay vi im lang uu tien. `--noi-tiep` la mot HO_SO, va ho so thi
+    #    loai tru nhau. Nhan ca hai roi lang le bo mot cai la dung cai bay ma
+    #    `--pham-vi` sinh ra de tranh: mot phep do HEP ma nguoi doc tuong la
+    #    day du — chi dao chieu.
+    if args.noi_tiep and (args.pham_vi or args.doi or args.quick or args.vong_lap):
+        parser.error("`--noi-tiep` la mot ho so DAY DU; no khong ket hop voi "
+                     "--pham-vi/--doi/--quick/--vong-lap. Chon mot.")
 
     # 🔴 MOT BANG CHE DO DUY NHAT — `HO_SO`. Khong co "gate cu" va "gate moi".
     #
@@ -305975,10 +307379,18 @@ def main() -> int:
     #    khong phai hai tep, ma hai NOI dinh nghia cung mot thu.
     ho_so = (args.ho_so or ("vong-lap" if args.vong_lap else
                             "nhanh" if args.quick else
+                            "noi-tiep" if args.noi_tiep else
                             "pham-vi" if args.pham_vi else
                             "doi" if args.doi else "day-du"))
 
-    steps = _steps(ho_so in ("nhanh", "vong-lap"))
+    # Ho so `noi-tiep` KEO THEO `--tuan-tu`. Neu khong, `_chay_theo_lich` van
+    # nop ba buoc frontend song song voi bo test — moi cai mot loi, nhung ba
+    # tien trinh node canh mot tien trinh pytest van la bon thu tranh nhau, va
+    # ca diem cua che do nay la khong con thu gi tranh nhau ca.
+    noi_tiep = ho_so == "noi-tiep"
+    tuan_tu = args.tuan_tu or noi_tiep
+
+    steps = _steps(ho_so in ("nhanh", "vong-lap"), noi_tiep=noi_tiep)
     if ho_so == "vong-lap":
         steps = _rut_gon_vong_lap(steps)
     elif ho_so in ("pham-vi", "doi"):
@@ -306019,14 +307431,28 @@ def main() -> int:
                   tai_nguyen=tuple(sorted(can)) or (MAC_DINH,)) as khoa:
         cay_dau = _anh_chup_cay()
         dong = f"Gate [{ho_so}]: {len(steps)} buoc"
-        if not args.tuan_tu:
+        if tuan_tu:
+            dong += ", MOT buoc mot luc" + (", MOT tien trinh" if noi_tiep else "")
+        else:
             dong += (f", toi da {args.j} buoc cung luc"
                      f", ngan sach {ngan_sach_loi()}/{os.cpu_count()} loi")
         if can:
             dong += f", tai nguyen: {', '.join(sorted(can))}"
-        print(dong + "\n")
+        print(dong)
+        # 🔴 IN TAI MAY TRUOC KHI CHAY, o MOI ho so. Khoa cua so yen chi thay ai
+        #    XIN khoa; no khong thay `pytest` go tay, khong thay deploy, khong
+        #    thay bon dich vu production dang ban. Do 03/09: `cua_so_yen
+        #    trang-thai` bao RANH trong khi CPU 65%.
+        ban = loi_dang_ban()
+        muc = ("RANH" if ban <= LOI_DE_DANH_CHO_MAY else
+               "BAN" if ban <= ngan_sach_loi() else "QUA TAI")
+        print(f"  [tai may] {ban:.1f}/{os.cpu_count()} loi dang ban -> {muc}")
+        if muc == "QUA TAI":
+            print("  [tai may] CANH BAO: co thu gi do NGOAI luot nay dang chiem "
+                  "may. Ket qua co the bi nhieu; xem `--noi-tiep`.")
+        print()
         t0_chay = time.time()
-        _chay_theo_lich(steps, j=args.j, tuan_tu=args.tuan_tu)
+        _chay_theo_lich(steps, j=args.j, tuan_tu=tuan_tu)
         tong_s = time.time() - t0_chay
 
     print("\n" + "=" * 62)

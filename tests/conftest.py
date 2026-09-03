@@ -26,8 +26,72 @@ kia. Ba fixture đó là phần vá cho một thiết kế đã bị gỡ.
 """
 from __future__ import annotations
 
+import os
+import sys
+
 import pytest
 from fastapi import APIRouter, Depends, Form, Request
+
+# ═══════════════════════════════════════════════════════════════════════════
+# `-n auto` GO TAY — cai lam may treo, va cai KHONG khoa nao thay
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Gate KHONG con `-n auto` (sua o `03845cb`; `tools/gate.py` truyen `-n` ro
+#    rang theo `ngan_sach_loi()`, va `test_394` chot dieu do). Nhung `pytest`
+#    go tay thi khong di qua gate — khong ngan sach, khong `cua_so_yen`, khong
+#    uu tien thap.
+#
+# ⛔ Va no khong hiem: ngay 03/09 phien nay chay `pytest -n auto` **ba lan** len
+#    ca kho trong khi mot phien khac dang chay gate, tren dung 20 loi ma bon
+#    dich vu production dang phuc vu khach. 16 test do — va chung xanh het khi
+#    chay lai theo cum. Ta da mat gan mot gio de duoi mot "loi" ma chinh phep do
+#    tu tao ra.
+#
+# ⭐ Vi sao CHAN `auto` chu khong chan `-n 20`. `auto` khong phai mot lua chon
+#    cua nguoi go — no la "cong cu tu quyet", va cong cu nay quyet sai vi no
+#    khong biet gi ve bon dich vu ben canh. Mot con so go tay thi NGUOC LAI: do
+#    la mot y dinh, va ta khong dap y dinh cua nguoi khac. Ranh gioi la
+#    **mac dinh chu khong phai menh lenh**.
+# ⭐ Va cho tra loi la mot MOC CO SAN cua xdist, khong phai mot cho ta chen vao.
+#    `pytest_xdist_auto_num_workers` ton tai dung de tra loi cau hoi "auto la
+#    bao nhieu". Cai dat no thi ta chi doi cau tra loi cho `auto`; moi con so
+#    go tay di duong khac va khong he cham toi day.
+#
+#    (Ban dau cua vá này kẹp trong `pytest_configure` — sai, vì xdist mới giải
+#    `auto` ở `pytest_cmdline_main`, tức SAU đó. Móc này chạy đúng lúc.)
+_LOI_DE_DANH = 6
+
+
+def pytest_xdist_auto_num_workers(config) -> int:
+    """Tran cho `auto` — LAY MIN, khong dat de.
+
+    ⛔ Ban dau tra thang `cpu_count() - 6` = 14. Do la mot loi that va no chi
+       lo ra khi do: xdist tu tra loi bang `psutil.cpu_count(logical=False)`,
+       tuc **10** loi vat ly tren may nay. Mot "cai tran" 14 dat len mot cau tra
+       loi 10 thi khong ha gi ca — no NANG so worker len, dung chieu nguoc lai
+       voi ca ly do vá này ton tai.
+
+    ⭐ Nen tran phai la mot phep MIN voi cau tra loi cua chinh cong cu, khong
+       phai mot phep gan. Ta chi biet mot rang buoc (de danh loi cho production);
+       ta khong biet ro hon xdist ve diem bao hoa cua no.
+    """
+    tong = os.cpu_count() or 4
+    tran = max(2, tong - _LOI_DE_DANH)
+    goc = tran
+    try:
+        import psutil
+        vat_ly = psutil.cpu_count(logical=False)
+        if vat_ly:
+            goc = int(vat_ly)
+    except ImportError:
+        pass
+    n = max(2, min(tran, goc))
+    print(f"\n[conftest] `-n auto` -> {n} worker (tran {tran} = {tong} loi tru "
+          f"{_LOI_DE_DANH} de danh cho dich vu production; xdist tu de xuat "
+          f"{goc}).", file=sys.stderr)
+    print("[conftest] Can nhieu hon thi go so RO RANG: mot con so la mot y "
+          "dinh, `auto` thi khong.\n", file=sys.stderr)
+    return n
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 # ⛔ BON TEN TREN PHAI o CAP MODULE, khong duoc import ben trong `_router_thu()`.

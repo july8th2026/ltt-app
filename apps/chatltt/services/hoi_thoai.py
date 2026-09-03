@@ -16,6 +16,7 @@ Hành vi kế thừa từ LibreChat (báo cáo Phase 01 §1–§2), viết lại
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Iterable, Optional
 
@@ -23,6 +24,9 @@ from sqlalchemy import or_, select
 
 from apps.chatltt.tables import (LOAI_KHOI, TRANG_THAI, VAI, ChatlttConversation,
                                  ChatlttExecution, ChatlttMessage, sinh_id)
+
+
+log = logging.getLogger("apps.chatltt.hoi_thoai")
 
 
 class KhongTimThay(LookupError):
@@ -124,6 +128,73 @@ def xoa(db, *, user_id: str, conv_id: str) -> ChatlttConversation:
 
 
 # ── Message / cây ────────────────────────────────────────────────────────────
+
+#: Bao lau sau khi XOA MEM thi don that. Khong phai mot con so tuy y:
+#:
+#: 🔴 Nguoi dung xoa nham la chuyen thuong, va thu ho mat khong lay lai duoc.
+#:    30 ngay la cua so ma `AppProject` cua nen tang da chon cho dung viec do
+#:    (Q89), nen dung lai no thay vi phat minh mot con so thu hai.
+#:
+#: ⛔ KHONG dung day de gia hoa hoi thoai con song. Governance khai
+#:    `chatltt_*` la CONTENT **khong tu gia di** — mot hoi thoai chua bi xoa thi
+#:    khong bao gio bi don, va do la loi hua voi khach.
+GIA_HAN_XOA_NGAY = 30
+
+
+def don_da_xoa(db, *, gia_han_ngay: int = GIA_HAN_XOA_NGAY, now=None) -> dict:
+    """Don that nhung hoi thoai da xoa mem qua han. An toan goi nhieu lan.
+
+    Xoa theo thu tu con -> cha (execution, message, roi conversation) de khong
+    bao gio de lai mot hang tro toi mot hang khong con.
+
+    ⚠️ **Khong** cham kho tep o day. Anh/tieng thuoc `jobs`, va `job_content.py`
+       cua nen tang moi la thu so huu vong doi cua chung — don o hai noi la hai
+       cach dem, va chung se lech.
+    """
+    from datetime import timedelta
+
+    moc = (now or _now()) - timedelta(days=max(1, int(gia_han_ngay)))
+    ids = [r[0] for r in db.execute(
+        select(ChatlttConversation.id).where(
+            ChatlttConversation.deleted_at.is_not(None),
+            ChatlttConversation.deleted_at < moc)).all()]
+    if not ids:
+        return {"hoi_thoai": 0, "thong_diep": 0, "thi_hanh": 0}
+    from sqlalchemy import delete
+
+    n_ex = db.execute(delete(ChatlttExecution).where(
+        ChatlttExecution.conversation_id.in_(ids))).rowcount or 0
+    n_m = db.execute(delete(ChatlttMessage).where(
+        ChatlttMessage.conversation_id.in_(ids))).rowcount or 0
+    n_c = db.execute(delete(ChatlttConversation).where(
+        ChatlttConversation.id.in_(ids))).rowcount or 0
+    return {"hoi_thoai": n_c, "thong_diep": n_m, "thi_hanh": n_ex}
+
+
+def bao_tri() -> None:
+    """Viec dinh ky cua app — nen tang goi duoi lease, dung MOT lan tren cum.
+
+    ⛔ KHONG duoc nem: mot app hong vong bao tri khong duoc lam hong vong bao
+       tri cua app khac (cung luat voi `AppManifest.bang_gia`).
+    """
+    from platform_core.db import get_session
+
+    gen = get_session()
+    db = next(gen)
+    try:
+        kq = don_da_xoa(db)
+        db.commit()
+        if any(kq.values()):
+            log.info("don hoi thoai da xoa: %s", kq)
+    except Exception:                                           # noqa: BLE001
+        db.rollback()
+        log.exception("khong don duoc hoi thoai da xoa")
+    finally:
+        try:
+            next(gen)
+        except StopIteration:
+            pass
+
 
 def kiem_khoi(blocks) -> list:
     if not isinstance(blocks, list):
