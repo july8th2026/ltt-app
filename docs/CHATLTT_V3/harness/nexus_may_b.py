@@ -182,22 +182,36 @@ def _nho_duong(viec: str, duong: str) -> None:
     CACHE.write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8")
 
 
-def _dong_lenh(phan: list) -> str:
-    """Gop thanh MOT dong lenh.
+def _bao_nhay(x: str) -> str:
+    """Bọc MỘT token bằng nháy đơn PowerShell, VÔ ĐIỀU KIỆN.
 
-    !! Nexus KHONG chuyen mang `args` toi tien trinh — do that 04/09:
-       `curl.exe --version` voi args=["--version"] van bao "try 'curl --help'",
-       tuc exe chay ma khong nhan duoc tham so nao. Mot mang bi bo qua IM LANG
-       la thu de nham nhat: lenh van chay, exit code van co, chi la sai viec.
+    🔴 Bản trước chỉ bọc khi token có khoảng trắng — và bộ rà bảo mật bắt đúng.
+       Trong nháy đơn PowerShell **không** nội suy gì, nên một token đã bọc là
+       một token trơ. Không bọc thì `x;lenh-khac` là hai lệnh, và lệnh thứ hai
+       chạy dưới **LocalSystem trên máy B** (`Ket_noi.md` §3: `/exec` chỉ kiểm
+       `cwd`, thân lệnh chạy tự do).
 
-    Nexus boc dong nay trong PowerShell, nen phan nao co khoang trang phai
-    duoc boc nhay don.
+    ⛔ "Đầu vào là do chính tôi gõ" KHÔNG phải lý do bỏ qua. Phiên sau sẽ ghép
+       vào đây một đường dẫn lấy từ log, một tên tệp, một URL — và lúc đó phép
+       bọc có điều kiện là một lỗ mở sẵn. Bọc hết thì không có lúc đó.
     """
-    ra = []
-    for x in phan:
-        x = str(x)
-        ra.append("'" + x.replace("'", "''") + "'" if (" " in x or '"' in x) else x)
-    return " ".join(ra)
+    return "'" + str(x).replace("'", "''") + "'"
+
+
+def _dong_lenh(phan: list) -> str:
+    """Gộp thành MỘT dòng lệnh PowerShell an toàn: `& 'exe' 'arg1' 'arg2'`.
+
+    !! Nexus KHÔNG chuyển mảng `args` tới tiến trình — đo thật 04/09:
+       `curl.exe --version` với `args=["--version"]` vẫn báo *"try 'curl --help'"*,
+       tức exe chạy mà không nhận được tham số nào. Nên phải gộp dòng lệnh; đó
+       là ràng buộc của bên nhận, không phải lựa chọn.
+
+    ⭐ Toán tử `&` là bắt buộc khi tên chương trình nằm trong nháy — thiếu nó
+       thì PowerShell coi chuỗi đó là một chuỗi và **in ra** thay vì chạy.
+    """
+    if not phan:
+        return ""
+    return "& " + " ".join(_bao_nhay(x) for x in phan)
 
 
 # ── Lệnh ─────────────────────────────────────────────────────────────────────

@@ -205,6 +205,14 @@
       "rui_ro": "cao",
       "chan_pha": "P01/P03",
       "luat": "cam tool_call_format trong chat_template_kwargs + phep kiem tinh chot"
+    },
+    {
+      "id": "M-5",
+      "muc": "Model TIN TUYET DOI ket qua tool — khong tu kiem lai",
+      "nguon": "Cong 0 G0-4, doi chung tinh co: fixture cho so SAI (lech 7.200), 5/5 lap lai",
+      "he_qua": "ranh gioi tin cay cua P02 nang tu NGUYEN TAC len QUAN SAT: phong ve injection PHAI o kernel, khong the trong vao viec model thay vo ly",
+      "rui_ro": "cao",
+      "chan_pha": "P02/P06"
     }
   ],
   "phan_loai_khoang_trong": {
@@ -281,5 +289,24 @@
     "exec BAT BUOC truong `reason`",
     "files/read: 404 = sai doi tuong, khong phai thieu route",
     "be mat API: exec, files/read, metrics/gpu, health, capabilities"
-  ]
+  ],
+  "cong_0": {
+    "trang_thai": "THONG",
+    "ngay": "2026-09-04",
+    "so_luot": 20,
+    "ket_qua": {
+      "G0-1": "5/5 tool co cau truc",
+      "G0-2": "5/5 chi van ban",
+      "G0-3": "5/5 ra dung 2 loi goi song song",
+      "G0-4": "5/5 tieu thu duoc tool result"
+    },
+    "do_tre": {
+      "nap_model_s": 21.0,
+      "moi_luot_s": [
+        1.4,
+        3.2
+      ]
+    },
+    "bang_chung": "artifacts/01_cong0.json"
+  }
 }
