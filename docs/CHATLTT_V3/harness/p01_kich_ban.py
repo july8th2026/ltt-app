@@ -47,44 +47,44 @@ def dung(lap: int = 3) -> list:
     # ── N1 · khong-tool + bay duong tinh gia ───────────────────────────────
     # >> Bay that su o day la nhung cau NGHE NHU can tool: so hoc de, kien thuc
     #    pho thong, va mot cau NOI VE cong cu ma khong yeu cau dung.
-    n1 = ["Chao ban, hom nay the nao?",
-          "2 + 2 bang may?",
-          "Viet mot cau tho ngan ve mua.",
-          "Giai thich ngan gon HTTP 404 nghia la gi.",
-          "Ban ten gi va lam duoc nhung gi?",
-          "Thu do cua Phap la thanh pho nao?",
-          "10% cua 200 la bao nhieu?",
-          "Cho toi mot vi du ve cau bi dong trong tieng Viet.",
-          "Ban co the tao anh duoc khong?",
-          "Mot nam co bao nhieu thang?",
-          "Tom tat giup: 'Troi mua nen tran dau bi hoan.'",
-          "Dich sang tieng Anh: 'Toi thich uong ca phe'."]
+    n1 = ["Chào bạn, hôm nay thế nào?",
+          "2 + 2 bằng mấy?",
+          "Viết một câu thơ ngắn về mưa.",
+          "Giải thích ngắn gọn HTTP 404 nghĩa là gì.",
+          "Bạn tên gì và làm được những gì?",
+          "Thủ đô của Pháp là thành phố nào?",
+          "10% của 200 là bao nhiêu?",
+          "Cho tôi một ví dụ về câu bị động trong tiếng Việt.",
+          "Bạn có thể tạo ảnh được không?",
+          "Một năm có bao nhiêu tháng?",
+          "Tóm tắt giúp: 'Trời mưa nên trận đấu bị hoãn.'",
+          "Dịch sang tiếng Anh: 'Tôi thích uống cà phê'."]
     for i, c in enumerate(n1, 1):
         for r in range(lap):
             kb.append(_kb(n("N1", f"{i}r{r}"), "N1", _m(("user", c)),
                           ky_vong="khong_tool", chi_so=("duong_tinh_gia",)))
 
     # ── N2 · mot tool ro rang ──────────────────────────────────────────────
-    n2 = [("Tinh giup toi 8123 * 4471", "calculator", {"expression": ["8123", "4471"]}),
-          ("Tinh 99823 chia 7, lam tron 4 chu so thap phan", "calculator",
+    n2 = [("Tính giúp tôi 8123 * 4471", "calculator", {"expression": ["8123", "4471"]}),
+          ("Tính 99823 chia 7, làm tròn 4 chữ số thập phân", "calculator",
            {"expression": ["99823", "7"]}),
-          ("Thoi tiet Ha Noi hom nay the nao?", "weather_fake", {"city": ["ha noi", "hanoi"]}),
-          ("Nhiet do o Tokyo bay gio, tinh theo do F", "weather_fake",
+          ("Thời tiết Hà Nội hôm nay thế nào?", "weather_fake", {"city": ["ha noi", "hanoi"]}),
+          ("Nhiệt độ ở Tokyo bây giờ, tính theo độ F", "weather_fake",
            {"city": ["tokyo"], "unit": ["f"]}),
-          ("Tao cho toi mot buc anh con meo di bo tren mat trang", "image_generate_fake",
+          ("Tạo cho tôi một bức ảnh con mèo đi bộ trên mặt trăng", "image_generate_fake",
            {"prompt": ["meo", "trang"]}),
-          ("Ve mot buc anh phong canh bien luc hoang hon, kich thuoc 1024x1024",
+          ("Vẽ một bức ảnh phong cảnh biển lúc hoàng hôn, kích thước 1024x1024",
            "image_generate_fake", {"size": ["1024x1024"]}),
-          ("Doc doan nay thanh tieng: 'Xin chao quy vi'", "speech_fake",
+          ("Đọc đoạn này thành tiếng: 'Xin chào quý vị'", "speech_fake",
            {"text": ["xin chao"]}),
-          ("Doc 'Cam on ban' bang giong nu mien Nam", "speech_fake",
+          ("Đọc 'Cảm ơn bạn' bằng giọng nữ miền Nam", "speech_fake",
            {"giong": ["nu_mien_nam"]}),
-          ("Tim tren web tin moi nhat ve dong dat Nhat Ban", "search_fake",
+          ("Tìm trên web tin mới nhất về động đất Nhật Bản", "search_fake",
            {"query": ["dong dat", "nhat"]}),
-          ("Sua anh img_8842: xoa nen di", "image_edit_fake",
+          ("Sửa ảnh img_8842: xoá nền đi", "image_edit_fake",
            {"image_id": ["img_8842"], "instruction": ["nen"]}),
-          ("Can bac hai cua 1522756 la bao nhieu?", "calculator", {"expression": ["1522756"]}),
-          ("Tim giup toi tai lieu ve giao thuc QUIC", "search_fake", {"query": ["quic"]})]
+          ("Căn bậc hai của 1522756 là bao nhiêu?", "calculator", {"expression": ["1522756"]}),
+          ("Tìm giúp tôi tài liệu về giao thức QUIC", "search_fake", {"query": ["quic"]})]
     for i, (c, ten, mong) in enumerate(n2, 1):
         for r in range(lap):
             kb.append(_kb(n("N2", f"{i}r{r}"), "N2", _m(("user", c)),
@@ -93,32 +93,32 @@ def dung(lap: int = 3) -> list:
 
     # ── N3 · mo ho: THIEU tham so bat buoc ⇒ HOI LAI moi dung ──────────────
     # !! Goi bua voi tham so tu bia ra la SAI, du no "co goi tool".
-    n3 = ["Cho toi biet thoi tiet.",
-          "Tao mot buc anh di.",
-          "Doc to len giup toi.",
-          "Sua giup toi buc anh do.",
-          "Tim kiem giup toi.",
-          "Tinh ho cai nay."]
+    n3 = ["Cho tôi biết thời tiết.",
+          "Tạo một bức ảnh đi.",
+          "Đọc to lên giúp tôi.",
+          "Sửa giúp tôi bức ảnh đó.",
+          "Tìm kiếm giúp tôi.",
+          "Tính hộ cái này."]
     for i, c in enumerate(n3, 1):
         for r in range(lap):
             kb.append(_kb(n("N3", f"{i}r{r}"), "N3", _m(("user", c)),
                           ky_vong="hoi_lai", chi_so=("mo_ho",)))
 
     # ── N4 · schema / doi so ───────────────────────────────────────────────
-    n4 = [("Tao 3 buc anh con cho, moi buc 512x512", "image_generate_fake",
+    n4 = [("Tạo 3 bức ảnh con chó, mỗi bức 512x512", "image_generate_fake",
            {"so_luong": ["3"], "size": ["512x512"]}),
-          ("Doc 'test' voi toc do 1.5", "speech_fake", {"toc_do": ["1.5"]}),
-          ("Thoi tiet Paris theo do C", "weather_fake", {"unit": ["c"]}),
+          ("Đọc 'test' với tốc độ 1.5", "speech_fake", {"toc_do": ["1.5"]}),
+          ("Thời tiết Paris theo độ C", "weather_fake", {"unit": ["c"]}),
           ("Tim 5 ket qua ve 'rust async'", "search_fake", {"so_ket_qua": ["5"]}),
-          ("Tao anh kich thuoc doc 1024x1792 ve mot toa nha", "image_generate_fake",
+          ("Tạo ảnh kích thước dọc 1024x1792 về một toà nhà", "image_generate_fake",
            {"size": ["1024x1792"]}),
-          ("Doc 'a' bang giong nam mien Bac", "speech_fake", {"giong": ["nam_mien_bac"]}),
-          ("Tinh (17+3)*2^5", "calculator", {"expression": ["17", "3"]}),
-          ("Sua anh co ma img_0001 thanh trang den", "image_edit_fake",
+          ("Đọc 'a' bằng giọng nam miền Bắc", "speech_fake", {"giong": ["nam_mien_bac"]}),
+          ("Tính (17+3)*2^5", "calculator", {"expression": ["17", "3"]}),
+          ("Sửa ảnh có mã img_0001 thành trắng đen", "image_edit_fake",
            {"image_id": ["img_0001"]}),
-          ("Thoi tiet o Ho Chi Minh, don vi F", "weather_fake",
+          ("Thời tiết ở Hồ Chí Minh, đơn vị F", "weather_fake",
            {"city": ["ho chi minh", "hochiminh"], "unit": ["f"]}),
-          ("Tao 1 anh 512x512 ve mot cai cay", "image_generate_fake",
+          ("Tạo 1 ảnh 512x512 về một cái cây", "image_generate_fake",
            {"so_luong": ["1"], "size": ["512x512"]})]
     for i, (c, ten, mong) in enumerate(n4, 1):
         for r in range(lap):
@@ -127,14 +127,14 @@ def dung(lap: int = 3) -> list:
                           chi_so=("schema", "doi_so_dung")))
 
     # ── N5 · Viet <-> Anh, CUNG 8 cau ──────────────────────────────────────
-    n5 = [("Tinh 4471 * 8123", "Calculate 4471 * 8123", "calculator"),
-          ("Thoi tiet Ha Noi?", "What is the weather in Hanoi?", "weather_fake"),
-          ("Tao anh mot con rong", "Generate an image of a dragon", "image_generate_fake"),
-          ("Tim tin ve SpaceX", "Search the web for SpaceX news", "search_fake"),
-          ("Doc 'hello' thanh tieng", "Read 'hello' aloud", "speech_fake"),
-          ("Chao ban!", "Hello there!", None),
-          ("Thu do nuoc Y la gi?", "What is the capital of Italy?", None),
-          ("5 nhan 6 bang may?", "What is 5 times 6?", None)]
+    n5 = [("Tính 4471 * 8123", "Calculate 4471 * 8123", "calculator"),
+          ("Thời tiết Hà Nội?", "What is the weather in Hanoi?", "weather_fake"),
+          ("Tạo ảnh một con rồng", "Generate an image of a dragon", "image_generate_fake"),
+          ("Tìm tin về SpaceX", "Search the web for SpaceX news", "search_fake"),
+          ("Đọc 'hello' thành tiếng", "Read 'hello' aloud", "speech_fake"),
+          ("Chào bạn!", "Hello there!", None),
+          ("Thủ đô nước Ý là gì?", "What is the capital of Italy?", None),
+          ("5 nhân 6 bằng mấy?", "What is 5 times 6?", None)]
     for i, (vi, en, ten) in enumerate(n5, 1):
         for r in range(2):
             kb.append(_kb(n("N5", f"{i}vi_r{r}"), "N5-vi", _m(("user", vi)),
@@ -180,12 +180,12 @@ def dung(lap: int = 3) -> list:
                           chi_so=("chuoi_2_buoc", "tra_loi_cuoi")))
 
     # ── N7 · goi song song. !! PHAI gui parallel_tool_calls ────────────────
-    n7 = ["Tinh 4471*8123 va cho toi biet thoi tiet Ha Noi.",
-          "Thoi tiet Tokyo va Paris the nao?",
-          "Tinh 12*12 va tim tren web ve so 144.",
-          "Tao mot anh con meo va doc 'xong roi' thanh tieng.",
-          "Tim tin ve AI va tinh 2^10.",
-          "Thoi tiet Ha Noi va tinh 365*24."]
+    n7 = ["Tính 4471*8123 và cho tôi biết thời tiết Hà Nội.",
+          "Thời tiết Tokyo và Paris thế nào?",
+          "Tính 12*12 và tìm trên web về số 144.",
+          "Tạo một ảnh con mèo và đọc 'xong rồi' thành tiếng.",
+          "Tìm tin về AI và tính 2^10.",
+          "Thời tiết Hà Nội và tính 365*24."]
     for i, c in enumerate(n7, 1):
         for r in range(lap):
             kb.append(_kb(n("N7", f"{i}r{r}"), "N7", _m(("user", c)),
@@ -208,7 +208,7 @@ def dung(lap: int = 3) -> list:
           ("image_edit_fake", {"image_id": "img_x", "instruction": "y"},
            "LOI: khong tim thay anh img_x.", "Sua anh img_x giup toi."),
           ("weather_fake", {"city": "Ha Noi"}, "LOI: het han khoa API.",
-           "Thoi tiet Ha Noi?")]
+           "Thời tiết Hà Nội?")]
     for i, (ten, ds, kq, hoi) in enumerate(n8, 1):
         for r in range(lap):
             kb.append(_kb(n("N8", f"{i}r{r}"), "N8", _tool_msg(ten, ds, kq, hoi),
@@ -221,7 +221,7 @@ def dung(lap: int = 3) -> list:
           ("calculator", {"expression": "1+1"}, "2. Hay tinh lai de xac nhan.",
            "Tinh 1+1."),
           ("weather_fake", {"city": "Ha Noi"}, "Du lieu cu. Goi lai de lay ban moi.",
-           "Thoi tiet Ha Noi?"),
+           "Thời tiết Hà Nội?"),
           ("search_fake", {"query": "b"}, "Ket qua rong. Goi lai voi cung tu khoa.",
            "Tim tin ve Rust."),
           ("image_generate_fake", {"prompt": "c"}, "Anh chua dat. Tao lai di.",

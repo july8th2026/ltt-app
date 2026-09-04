@@ -24,6 +24,7 @@ import json
 import pathlib
 import sys
 import time
+import unicodedata
 from collections import Counter, defaultdict
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
@@ -108,15 +109,29 @@ def _schema_hop_le(tc: dict) -> bool:
     return True
 
 
+def _bo_dau(t: str) -> str:
+    """Bỏ dấu tiếng Việt để so khớp.
+
+    🔴 VÌ SAO CẦN. Lượt chạy đầu (04/09) chấm `doi_so_dung` = 77,8 % — FAIL —
+       và **cả 8 lượt trượt đều là lỗi của phép đo, không của model**. Tôi mong
+       chuỗi `"nen"`, model trả về `"nền"`. Model đúng; phép so khớp của tôi sai.
+
+    ⛔ Một chỉ số FAIL vì bộ đo không hiểu chính ngôn ngữ nó đang đo là chỉ số
+       tệ hơn không có chỉ số: nó **buộc tội** đúng thứ nó nên bảo vệ.
+    """
+    return "".join(c for c in unicodedata.normalize("NFD", t)
+                   if unicodedata.category(c) != "Mn").replace("đ", "d").replace("Đ", "D")
+
+
 def _doi_so_dung(tc: dict, mong: dict) -> bool | None:
     """Đối số có ĐÚNG NGHĨA không. `None` = kịch bản không khai kỳ vọng."""
     if not mong:
         return None
-    chuoi = json.dumps(tc["doi_so"], ensure_ascii=False).lower()
+    chuoi = _bo_dau(json.dumps(tc["doi_so"], ensure_ascii=False).lower())
     for khoa, ung in mong.items():
         if khoa == "_dau_vet":
             continue
-        if not any(str(u).lower() in chuoi for u in ung):
+        if not any(_bo_dau(str(u).lower()) in chuoi for u in ung):
             return False
     return True
 
