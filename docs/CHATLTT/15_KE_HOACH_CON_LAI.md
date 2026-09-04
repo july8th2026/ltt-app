@@ -122,3 +122,51 @@ riêng đi đúng vào tham số"* chưa từng được kiểm.
 🔑 **H1 trước H2** vì đo trên hai máy chạy hai bản mã khác nhau là đo một hệ
    không tồn tại. Và **H2 trước mọi thứ còn lại** vì nếu ba bản vá GPU sai thì
    mọi phép đo sau đó đều đứng trên một nền không chắc.
+
+---
+
+# Tiến độ — cập nhật 04/09 chiều
+
+| | Hạng mục | Trạng thái | Bằng chứng |
+|---|---|---|---|
+| H1 | Deploy máy A | ✅ | 0 tệp `.py` lệch trên 5 gói, bundle khớp, `/health/ready` 200 |
+| H2 | Nghiệm thu GPU điều kiện thật | ✅ | **60 mẫu, 0 mẫu thấy hai model cùng làm việc**; VRAM đỉnh 17.195 MiB |
+| H3 | Chốt "nhả về RAM" | ✅ | 6 chốt `test_637`, đã thử phá → 4 đỏ |
+| ~~H4~~ | ~~giọng nhân bản~~ | ✅ gỡ | chủ dự án chốt: ChatLTT dùng **kho chung** |
+| H5 | Đợt 8 — di động | ✅ 5/5 | và **gỡ một bản vá thừa** — xem dưới |
+| H6 | Đợt 9 — đổi model | ✅ 3 hạng mục | bắt được lỗi ghi đè lựa chọn model |
+| H7 | Nợ nhỏ | còn | `5.2/5.3` phập phù theo card rảnh |
+
+## Bốn lỗi sản phẩm tìm thêm được ở H5–H6
+
+1. **Lựa chọn model bị âm thầm ghi đè** — `napSuThat` gọi từ bảy chỗ, mỗi lần
+   đặt lại `alias`. Lỗi tiền + lỗi tin cậy, im lặng cả hai. *(H6)*
+2. Ba lỗi còn lại nằm trong **chính bộ kiểm**, và đáng ghi ngang lỗi sản phẩm —
+   xem mục dưới.
+
+## Năm lỗi trong CHÍNH BỘ KIỂM, tìm ra ở H5–H6
+
+| Lỗi | Hậu quả |
+|---|---|
+| Cổng "model bận" với sang hạng mục đo **bố cục** | che mất `8.4` thành `BOQUA` |
+| `--chi` không khớp → chạy **0 hạng mục** → `RESULT: PASS` | một lỗi gõ cho ra chữ thành công |
+| `8.4` đạt khi tìm thấy **0 nút** | "mọi nút ≥ 44px" đúng hiển nhiên trên tập rỗng |
+| Bộ kiểm **không giả lập cảm ứng** | mọi luật CSS cho ngón tay chưa từng được chạy |
+| `cacAlias` đọc **trước khi danh mục nạp** | báo "0 model" trong khi hạng mục sau thấy đủ hai |
+
+⭐ **Ba trong năm cái trên đều là "xanh mà không chứng minh gì"** — cùng họ với
+`manh_doi_chieu: ""` sáng nay. Không cái nào đỏ, và cả năm đều đang nói điều gì
+đó.
+
+## Một bản vá đã GỠ, và vì sao
+
+Tôi báo *"nút media 27 px, dưới ngưỡng chạm 44 px"* rồi thêm luật
+`@media (pointer: coarse)` vào `chatltt.css`. **Cả hai đều sai:**
+
+- 27 px chỉ xuất hiện khi giả lập màn hẹp **mà không giả lập cảm ứng** — tức một
+  máy tính cửa sổ nhỏ, nơi 27 px vừa mắt;
+- và nền tảng **đã có sẵn** luật ấy: `ltt.css` dòng 44,
+  `@media(pointer:coarse){ :where(button,...){min-height:44px} }`.
+
+🔑 Trước khi vá một con số đo được, hỏi: *"điều kiện tôi vừa dựng có tồn tại
+   trên máy thật không?"* và *"đã có ai canh chỗ này chưa?"*

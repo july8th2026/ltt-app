@@ -172,17 +172,39 @@ export function App({ api }: AppProps) {
 
   useEffect(() => { napDs() }, [napDs])
 
-  const napSuThat = useCallback(async (id: string) => {
+  /**
+   * Nạp sự thật của một hội thoại.
+   *
+   * 🔴 `dongBoAlias` MẶC ĐỊNH `false`, VÀ ĐÓ LÀ CẢ BẢN VÁ.
+   *
+   *    Bản cũ đặt lại `alias` ở **mọi** lời gọi. Mà hàm này được gọi từ **bảy**
+   *    chỗ: sau khi gửi lượt, sau khi luồng kết thúc, sau khi tạo media… Nên
+   *    người dùng chọn một model rồi bất kỳ lần làm mới nào cũng **âm thầm trả
+   *    về model cũ**.
+   *
+   * ⛔ Đo 04/09 trên production: chọn `ltt_llm_vision`, ô chọn quay lại
+   *    `ltt_llm` sau ~16 giây, không một thông báo nào. Khách nghĩ mình đang
+   *    dùng model đọc ảnh, trả tiền cho một model khác, và không có cách nào
+   *    biết. Lỗi tiền + lỗi tin cậy, im lặng cả hai.
+   *
+   * ⭐ Đồng bộ alias chỉ có nghĩa khi ta **vừa mở một hội thoại** — lúc đó model
+   *    của hội thoại là sự thật. Ở mọi lời gọi khác, thứ đúng là **lựa chọn
+   *    người dùng vừa làm**, không phải giá trị cũ trong CSDL.
+   */
+  const napSuThat = useCallback(async (id: string,
+                                       { dongBoAlias = false } = {}) => {
     const st = await api.suThat(id)
     datSuThat(st)
-    if (st.conversation.model_alias) datAlias(st.conversation.model_alias)
+    if (dongBoAlias && st.conversation.model_alias) datAlias(st.conversation.model_alias)
     return st
   }, [api])
 
   useEffect(() => {
     api.convHienTai = convId ?? ''
     if (!convId) { datSuThat(null); return }
-    napSuThat(convId).catch((e) => {
+    // ⭐ CHO DUY NHAT truyen `dongBoAlias: true` — day la luc VUA MO mot hoi
+    //    thoai, nen model cua no la su that. Xem docstring `napSuThat`.
+    napSuThat(convId, { dongBoAlias: true }).catch((e) => {
       datLoi(nhanLoi(e))
       // ⛔ VA TRA VE MAN HINH TRONG, khong dung o mot man hinh loi.
       //

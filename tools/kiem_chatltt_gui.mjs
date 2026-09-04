@@ -750,6 +750,8 @@ const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
   await nap('dot5_tao_anh.mjs', 'dot5');
   await nap('dot6_tao_giong.mjs', 'dot6');
   await nap('dot7_tien_dong_thoi.mjs', 'dot7');
+  await nap('dot8_di_dong.mjs', 'dot8');
+  await nap('dot9_doi_model.mjs', 'dot9');
 }
 
 // ── Chay ───────────────────────────────────────────────────────────────────
@@ -859,7 +861,10 @@ let maThoat = 0;
 try {
   await dangNhap(page);
   for (const hm of HANG_MUC) {
-    if (CHI && hm.ten !== CHI) continue;
+    // ⭐ Khop theo TIEN TO. Ten hang muc dai va co dau gach ngang
+    //    (`8.4-nut-media-cham-duoc-bang-ngon-tay`); bat go du ca ten la bat go
+    //    dung mot chuoi ma khong ai nho, va go sai thi loc ra RONG.
+    if (CHI && !hm.ten.startsWith(CHI) && hm.ten !== CHI) continue;
     if (DOT.length && !DOT.includes(String(hm.dot ?? '0'))) continue;
     const t0 = Date.now();
     hangMucHienTai = hm;
@@ -905,7 +910,18 @@ try {
       // ⭐ Chi bo qua khi chinh SAN PHAM noi cau do tren man hinh. Do la bang
       //    chung quan sat duoc, khong phai mot phong doan cua bo kiem. Va cau
       //    ay tu no da hua "khong bi tinh tien" — tuc so tien khong lien can.
-      const manHinh = await page.locator('article').last().innerText().catch(() => '');
+      // ⛔ CUA NAY CHI CUU NHUNG HANG MUC PHU THUOC CAU TRA LOI CUA MODEL.
+      //
+      //    Do 04/09: `8.4` do CHIEU CAO NUT (27px < 44px) — mot loi bo cuc that,
+      //    khong dinh gi toi model. Nhung man hinh luc ay tinh co dang hien "Model
+      //    dang ban", nen cua nay nuot no thanh BOQUA va **giau mat mot loi that**.
+      //
+      // ⭐ Mot cai luoi cuu qua rong thi bat ca thu khong can cuu. Hang muc do
+      //    thu KHONG lien quan model phai khai `doc_lap_voi_model: true`, va cua
+      //    nay tranh ra.
+      const manHinh = hm.doc_lap_voi_model
+        ? ''
+        : await page.locator('article').last().innerText().catch(() => '');
       if (/Model đang bận/i.test(manHinh) && /không bị tính tiền/i.test(manHinh)) {
         const ct = { bo_qua: 'model bao BAN ngay tren man hinh — menh de chua kiem duoc',
                      man_hinh: manHinh.replace(/\s+/g, ' ').slice(0, 120),
@@ -969,5 +985,18 @@ for (const l of loiConsole.slice(0, 8)) console.log(`    console: ${l}`);
 for (const r of requestHong.slice(0, 8)) console.log(`    request: ${r}`);
 console.log(`  bao cao: ${duong}`);
 console.log('='.repeat(64));
+// 🔴 CHAY 0 HANG MUC KHONG PHAI THANH CONG.
+//
+//    Do 04/09: `--chi 8.4` khong khop ten nao (ten that la
+//    `8.4-nut-media-cham-duoc-bang-ngon-tay`), bo loc ra RONG, va bo kiem in
+//    `DAT 0 / BO QUA 0 / HONG 0` roi **`RESULT: PASS`**.
+//
+// ⛔ Ba duong deu dan toi day: mot loi go trong bo loc, mot hang muc doi ten,
+//    hay mot dot nap hong. Ca ba cho ra chu PASS — dung loai xanh khong chung
+//    minh gi ma ca ngay hom nay di sua.
+if (ketQua.length === 0) {
+  maThoat = maThoat || 3;
+  console.log('  [!] KHONG HANG MUC NAO CHAY. Kiem lai `--dot` / `--chi`.');
+}
 console.log(maThoat === 0 ? 'RESULT: PASS' : 'RESULT: FAIL');
 process.exit(maThoat);

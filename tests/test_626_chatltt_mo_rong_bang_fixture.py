@@ -158,15 +158,52 @@ def test_khoi_la_khong_duoc_ghi_vao_hoi_thoai():
 
 # ── Hai phép kiểm TĨNH giữ cho ba điều trên còn đúng ────────────────────────
 
+XAU_TEN_MODEL = re.compile(
+    r"(qwen38|hidream|noi-bo-|ltt_llm_vision|ltt_llm_dai|vieneu)", re.IGNORECASE)
+
+
+def _bo_chu_thich(dong: str) -> str:
+    """Phần MÃ của một dòng — bỏ mọi dạng chú thích.
+
+    ⛔ VÌ SAO CẦN DÒNG KHỐI, KHÔNG CHỈ `#` VÀ `//`. Bản cũ chỉ cắt hai dạng đó,
+       nên một docstring JSDoc (`/** ... */`, mỗi dòng mở đầu bằng `*`) vẫn bị
+       quét. Ngày 04/09 nó báo đỏ trên **chính đoạn giải thích** một bản vá:
+
+         App.tsx:185 re nhanh theo model: * ⛔ Đo 04/09: chọn `ltt_llm_vision`…
+
+    ⭐ Đây là thu hẹp phạm vi cho ĐÚNG, không phải nới lỏng: **một chú thích
+       không rẽ nhánh được**. Cái giá của việc không sửa là một bộ dò trừng phạt
+       việc viết ra lý do — và thứ bị bỏ đầu tiên sẽ luôn là lời giải thích.
+    """
+    ma = dong.split("#", 1)[0].split("//", 1)[0]
+    tr = ma.strip()
+    if tr.startswith(("*", "/*")):
+        return ""
+    return ma
+
+
+def test_bo_do_van_bat_duoc_mot_nhanh_THAT():
+    """Tự kiểm: thu hẹp phạm vi rồi thì bộ dò còn bắt được gì không.
+
+    🔴 Không có phép kiểm này thì `_bo_chu_thich` có thể bị nới rộng dần tới lúc
+       nó trả `""` cho mọi thứ, và cả bộ dò thành trang trí mà không ai biết.
+    """
+    assert XAU_TEN_MODEL.search(_bo_chu_thich("if (alias === 'ltt_llm_vision') {"))
+    assert XAU_TEN_MODEL.search(_bo_chu_thich("  const m = 'qwen38-api'"))
+    # …nhung KHONG bat chu thich:
+    assert not XAU_TEN_MODEL.search(_bo_chu_thich("   * chon `ltt_llm_vision` roi"))
+    assert not XAU_TEN_MODEL.search(_bo_chu_thich("  // dung ltt_llm_vision o day"))
+    assert not XAU_TEN_MODEL.search(_bo_chu_thich("  # qwen38 chi la vi du"))
+
+
 def test_khong_re_nhanh_theo_ten_model_o_bat_cu_dau():
-    xau = re.compile(r"(qwen38|hidream|noi-bo-|ltt_llm_vision|ltt_llm_dai|vieneu)",
-                     re.IGNORECASE)
     for goc, duoi in ((GOC / "apps" / "chatltt", "*.py"),
                       (GOC / "frontend" / "chatltt" / "src", "*.ts*")):
         for tep in goc.rglob(duoi):
             for i, dong in enumerate(tep.read_text(encoding="utf-8").splitlines(), 1):
-                ma = dong.split("#", 1)[0].split("//", 1)[0]
-                assert not xau.search(ma), f"{tep.name}:{i} re nhanh theo model: {dong.strip()}"
+                ma = _bo_chu_thich(dong)
+                assert not XAU_TEN_MODEL.search(ma), (
+                    f"{tep.name}:{i} re nhanh theo model: {dong.strip()}")
 
 
 def test_chatltt_khong_import_app_khac_hay_provider():
