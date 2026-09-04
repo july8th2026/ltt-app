@@ -615,10 +615,6 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         Step("dich thieu ban EN",
              [sys.executable, "tools/check_dich_thieu.py"], ROOT,
              nhom="sau_test"),
-        # Hồ sơ là bản đồ để AI/người mới hiểu code. Nếu không khóa freshness,
-        # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
-        Step("system profile", [sys.executable, "tools/build_system_profile.py",
-                                 "--check"], ROOT),
         # EXT-17: hợp đồng công khai của /api/v1 so với bản chuẩn đã đóng băng.
         # Không có bước này thì một thay đổi phá vỡ tương thích lên tàu được vì
         # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy

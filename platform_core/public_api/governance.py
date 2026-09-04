@@ -345,8 +345,6 @@ STORES: tuple = (
           N_("Phiên bản một cảnh, kèm góp ý của người dùng.")),
 
     # ── Derived: rebuildable ─────────────────────────────────────────────────
-    Store("ho_so_he_thong.txt", DERIVED, None, N_("nội bộ"),
-          N_("Bản đồ mã nguồn, sinh lại được bằng một lệnh.")),
     Store("sdk/postman/*", DERIVED, None, N_("công khai"),
           N_("Sinh từ OpenAPI.")),
 )

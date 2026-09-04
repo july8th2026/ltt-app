@@ -244,7 +244,11 @@ def test_moi_buoc_gate_cu_van_con():
         "kich thuoc route server", "chuong chua treo", "ten chua dinh nghia",
         "nuot loi lang le", "bien .ps1 trung tham so", "trung so test",
         "bo qua im lang", "ky tu dieu khien", "chuoi chua dich",
-        "dich thieu ban EN", "system profile", "hop dong API",
+        # ⛔ "system profile" GO 2026-09-04 cung voi ca tinh nang (chu du an
+        #    quyet). Chot nay canh viec MAT BUOC LANG LE, va lan nay viec mat
+        #    la CO Y — nen phai go khoi ban chuan, khong phai nen chot.
+        #    Ly do + toan bo pham vi: docs/HO_SO_HE_THONG.md (nay la bia mo).
+        "dich thieu ban EN", "hop dong API",
         "anh chup hop dong", "tai lieu sinh ra", "SDK khop hop dong",
         "tai san GUI", "postman", "bo test (song song)",
     }

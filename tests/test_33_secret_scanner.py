@@ -81,12 +81,6 @@ def test_source_file_is_not_excluded(tmp_path):
     assert not _is_excluded_file(root, path)
 
 
-def test_generated_system_profile_is_excluded_because_originals_are_scanned(tmp_path):
-    path = tmp_path / "ho_so_he_thong.txt"
-    path.write_text("generated source mirror", encoding="utf-8")
-    assert _is_excluded_file(tmp_path, path)
-
-
 def test_node_dependency_tree_is_excluded(tmp_path):
     root = tmp_path
     path = root / "frontend" / "agent-canvas" / "node_modules" / "vendor.js"
