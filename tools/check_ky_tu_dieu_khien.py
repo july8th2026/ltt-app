@@ -60,7 +60,6 @@ CHO_PHEP = "\n\r\t"
 
 #: Tep sinh tu dong hoac chua du lieu do, khong phai tai lieu nguoi viet.
 BO_QUA = (
-    "ho_so_he_thong.txt",          # ban do sinh tu nguon
     "locale/",                     # catalog dich
     "node_modules/",
 )

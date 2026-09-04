@@ -41,8 +41,8 @@ Khu API thì khác, vì hai lẽ:
 Khu VPS có phép đo riêng, viết độc lập, gần trùng logic với các hàm ở đây.
 **Đừng gom lại vội.** Hai phiên chạy song song ngày 25/08 đã mất nửa buổi cho
 đúng loại va chạm mà một mô-đun dùng chung tạo ra (`ltt.css`,
-`tools/gui/ltt.css`, `ho_so_he_thong.txt` — mỗi lần một bên sửa là bên kia đỏ
-gate). Một phụ thuộc dùng chung giữa hai khu đang xây song song là một điểm
+`tools/gui/ltt.css`, và `ho_so_he_thong.txt` thời nó còn tồn tại — mỗi lần một
+bên sửa là bên kia đỏ gate). Một phụ thuộc dùng chung giữa hai khu đang xây song song là một điểm
 phải điều phối, và điều phối đắt hơn hai bản sao.
 
 ⇒ Gom lại **sau**, khi cả hai khu ổn. Ghi ở đây để người sau không tưởng hai

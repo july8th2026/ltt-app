@@ -74,13 +74,6 @@ EXCLUDED_DIR_NAMES = {
 
 EXCLUDED_DIR_PREFIXES = (".backup_",)
 
-# Generated, deterministic mirror of repository sources. Scanning it would
-# duplicate every finding from the original file and would also re-surface the
-# documented synthetic hashes in the already-excluded vendored cutclipshort
-# tree. Its inputs are scanned at their original paths; profile scope and
-# freshness are independently enforced by test_177 and tools/gate.py.
-EXCLUDED_FILE_NAMES = {"ho_so_he_thong.txt"}
-
 EXCLUDED_DATA_PATTERNS = (
     re.compile(r"^config(?:\..*)?\.json$", re.IGNORECASE),
     re.compile(r"^retry_.*\.json$", re.IGNORECASE),
@@ -193,8 +186,6 @@ def _duoi_thu_vien_nhung(relative: Path) -> bool:
 
 def _is_excluded_file(root: Path, path: Path) -> bool:
     relative = path.relative_to(root)
-    if path.name in EXCLUDED_FILE_NAMES:
-        return True
     if _duoi_thu_vien_nhung(relative):
         return True
     if any(_is_excluded_dir(part) for part in relative.parts[:-1]):
