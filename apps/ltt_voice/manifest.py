@@ -128,9 +128,9 @@ MANIFEST = AppManifest(
     #    chạy nhưng có thể bị xếp vào card chật.
     gpu_vram_mb={"ltt_voice.synthesize": 2000, "ltt_voice.enroll": 2000},
 
-    # Đo được: 3.000 ký tự mất 17,6 giây sinh. Trần 900 giây cho một job là rất
-    # rộng, và nó tồn tại để bắt job **treo** chứ không để bắt job chậm: một job
-    # treo mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
+    # Trần này tồn tại để bắt job **treo**, không để bắt job chậm: một job treo
+    # mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
+    #
     # 🔴 3600 CHO `synthesize`, VÀ CON SỐ ẤY ĐI CÙNG `TRAN_KY_TU_CONG_KHAI`.
     #
     #    Trước 03/09 nó là 900 giây, hợp lý khi trần yêu cầu là 1.500 ký tự
