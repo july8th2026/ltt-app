@@ -23,17 +23,35 @@
     (`D:\LTTSTUDIOSAPP-asv`), and not the production tree — is satisfied. Recorded here
     rather than silently diverging.
   - ⛔ **This machine IS production** (`C:\LTTPlatform` exists). Never deploy from here.
-- **current_phase**: 28
-- **phase_status**: Phase 28 `BLOCKED_EXTERNAL` — **stop**. No P0/P1 blockers
-  remain and 18 of 20 gates are green, but **G9** and **G17** need evidence this
-  machine cannot produce, so **G20 is not satisfied**.
-  ⛔ Not `READY_FOR_PRODUCTION_PILOT`. ⛔ And deliberately **not**
-  `FAIL_REMEDIATE`: that verdict exists to send a DEFECT back, and there is no
-  defect — returning to Phase 26 would spend a cycle on missing credentials.
-- **rc_sha (code)**: `747ca288eb1cdb9eeaf0b47e325e450108d54f71` — frozen. Every
-  later commit on this branch touches `docs/` and `evidence/` only, so the code
-  artifact is unchanged by them.
-- **rc_sha (docs head)**: `50e8083` — Phase 28 report + STATE.
+- **current_phase**: 29
+- **phase_status**: Phase 29 `PASS`. 🔑 **G9 is now PASS**, and it fell to exactly
+  the sentence Phase 28 used to block it: *"No live `ltt_llm_vision` call has ever
+  been made."* One has now been made — many, on machine B, in a run with **no
+  substitutions of any kind**.
+  🔴 **G17 still NOT PASS, but on ONE leg instead of three.** Phase 28 listed
+  three missing things; two are closed by measurement (live model, live voice) and
+  the third — *representative real customer footage* — is the only item left, and
+  it is the one item this machine genuinely cannot manufacture.
+  ⚠️ So the status is **not** `READY_FOR_PRODUCTION_PILOT` and **not**
+  `BLOCKED_EXTERNAL` in the old shape: the block narrowed from "credentials and
+  hardware and footage" to "footage", which is a different ask of the owner.
+- **rc_sha (code)**: 🔴 **the Phase 28 freeze at `747ca28` no longer holds.** That
+  entry said every later commit touched `docs/` and `evidence/` only. Phase 29
+  broke that on purpose: removing the substitutions exposed **seven** defects
+  (A29-01..A29-07) that only real execution could reach, and six of them are code.
+  Current code SHA: `e580edbe`.
+  ⭐ Recorded rather than quietly re-freezing, because the freeze was a **claim
+  about the artifact** and the claim stopped being true.
+- **rc_sha (docs head)**: `88c50f59` — evidence rename + this entry.
+- **first fully-real acceptance run** (2026-09-05): `thay_the: []` — **no door
+  substituted at all**. Real `qwen38-vision` on machine B, real `LTTStudioVoice`
+  on machine A `:8120`, scratch PostgreSQL. **20 passed in 15:44.**
+
+      giu hinh         run=done  so_cat=0  master -3.42 -> ban ra -3.27  T5 dat  QC True
+      cat thong minh   run=done  so_cat=1  master -3.48 -> ban ra -3.28  T5 dat  QC True
+
+  🔑 `so_cat=1` on the smart preset is the load-bearing number: the cutting preset
+  actually cut, which is what A26-05 said it never did.
 - **gate at RC**: `python tools/gate.py --phien asv-v4` → **`RESULT: PASS`**, run
   twice: once at `747ca28` and again at `50e8083`.
   ⚠️ Four frontend steps report **BOQUA**, and the gate's own RESULT line says
@@ -43,6 +61,7 @@
   runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
   every stage of every E2E run. Evidence recorded before that commit does not
   describe this RC.
+- **known red on this branch, NOT a defect**: `test_177_system_profile.py` (2 tests) fails here because `ho_so_he_thong.txt` is a whole-tree snapshot that goes stale the moment anyone edits anything — and this phase edited a lot. 🔑 It is **already deleted on `admin-mvp-v3`**, the branch this work merges into (verified: `git ls-tree admin-mvp-v3 -- ho_so_he_thong.txt` is empty), so it resolves by merging, not by fixing. ⛔ Do **not** regenerate the snapshot to make the gate green: `build_system_profile.py` is a heavy command and the artifact it produces is on its way out. This is branch lag, and naming it here is cheaper than someone rediscovering it under time pressure.
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
   `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
   `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
@@ -376,15 +395,16 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 |---|---|---|---|
 | Real GPU demucs/ASR resource ledger | dev interpreter is `torch+cpu` | run the profile under `C:\LTTPlatform\venv` (read-only), or install cu128 into the test env | G7, G8, G18, G24 |
 | Multi-process invariants (I1/I18) | `test_214`×7 + `test_73` skip without `LTT_TEST_DATABASE_URL` | a scratch PostgreSQL DB whose name contains `test`; PG is already live on 5432 | G4 |
-| Live `ltt_llm` / `ltt_llm_vision` call | keys live in `C:\LTTPlatform\secrets`, ACL-locked (`Test-Path` -> *Access denied*); Phase 22 substituted only `dieu_phoi.goi`, so prompt assembly, budget gate, ledger and schema validation all ran for real | operator-supplied token | G9, G17 |
-| Real LTT Voice synthesis quality | :8120 answers `401` without `LTT_VOICE_SIDECAR_TOKEN`, same locked directory. Phase 22 substituted it with **real** SAPI speech, which closes placement/duration/level/mixing but says nothing about Vietnamese voice quality | a real run against `LTTStudioVoice` on :8120 | G11, G12, G17 |
-| Representative real customer videos | Phase 22 built `tests/fixtures/asv_e2e` — real SAPI speech, two speakers, four scenes, a continuous bed and one dialogue-free scene — and ran **both presets end to end**; it is representative in structure but still synthetic | operator-supplied fixtures, both presets | G17 |
+| ~~Live `ltt_llm` / `ltt_llm_vision` call~~ | ✅ **CLOSED (Phase 29).** And closed **without minting anything**: the credential already existed in the pool: what was missing was a process able to read the pool. `setup/nghiem_thu_asv.ps1` loads `app.env` into **one** Administrator process; the ACL on `C:\LTTPlatform\secrets` was never loosened. ⚠️ The model used is `qwen38-vision`, the **same 27B model** as `qwen38-api` on a different serving profile — not a smaller vision model | — | — |
+| ~~Real LTT Voice synthesis quality~~ | ✅ **CLOSED (Phase 29)** — same one-process mechanism. ⚠️ Note for anyone reading Phase 22's entry: LTT Voice runs on **machine A**, this machine, not machine B. An earlier grouping in this session implied otherwise and the owner caught it | — | — |
+| Representative real customer videos | 🔴 **THE ONLY ITEM LEFT.** Phase 22 built `tests/fixtures/asv_e2e` — real SAPI speech, two speakers, four scenes, a continuous bed and one dialogue-free scene — and Phase 29 ran **both presets end to end against real everything else**. It is representative in structure and now exercised by the real chain, but the *source footage* is still synthetic, and no amount of local work changes that | 2 clips, 2-5 min, English, >=2 speakers, >=1 genuinely cuttable scene, in `tests/fixtures/asv_e2e_that/` (needs a `.gitignore` first) | **G17** |
 | `transcribe` on CUDA | 🔴 **Phase 22's entry was wrong and is corrected here.** Measured in Phase 24 in three separated steps: the CUDA path does **not** hang — `large-v3` loads in 8.93 s and inference then fails in **0.23 s** with `RuntimeError: Library cublas64_12.dll is not found or cannot be loaded` (`ctranslate2` ships `cudnn64_9.dll`, not CUDA 12 cuBLAS). ⚠️ Production is unaffected: `install.ps1` sets `LTT_WHISPERX_PYTHON` and `C:\LTTPlatform\whisperx-venv` exists, so ASR runs in the sidecar there; the broken path is the in-process fallback, used only where that variable is unset. 🔴 Still open in the owner app: `_get_faster_model` wraps only the *constructor* in its CPU-fallback `try`, and construction succeeds on a broken CUDA stack, so the fallback can never fire for this failure mode. ⛔ The 30-minute block seen twice (Phase 22, Phase 23 regression) is **not** explained by this and was not reproduced by the bounded harness. | install CUDA 12 cuBLAS in the dev tree, or measure the sidecar path directly | G7, G24 |
 
 ## Phase history
 
 | Phase | Gate | Report |
 |---|---|---|
+| 29 Remove every substitution and run for real | **`PASS`** | The owner granted the access Phase 28 was blocked on, and the doors came out one at a time: real pool key -> real `qwen38-vision` on machine B -> real `LTTStudioVoice` on machine A -> scratch PostgreSQL. ⭐ **Each door removed found a defect the substitute had been hiding** — seven of them, A29-01..07, six in code. 🔑 The pattern is the phase's real finding: a substitute does not just *fail to test* the thing it replaces, it **actively conceals defects in the code around it**, because it absorbs the shape errors a real dependency would reject. A29-01 (a render preset passed where a voice id belonged) had been sitting in a green suite since Phase 22 for exactly that reason. 🔴 **A29-04 was mine** — introduced in Phase 27's VLM wiring: the stage reported progress before committing its lease, so a second session's SQLite contention turned into `database is locked` on the paid path. 🔴 **A29-07 showed a constant can be measured correctly and still be wrong**: `BIEN_CHO_CODEC_DB` was measured at Phase 22 on a run with `so_cat: 0` — i.e. on one preset, because the other could not yet cut — then applied to both. ⚠️ And the confirming run **disproved half my explanation of it**, which is recorded at the constant rather than tidied away. Final: `thay_the: []`, **20 passed in 15:44**, both presets `done`, both QC pass. | this STATE entry |
 | 28 Independent re-audit + RC freeze (read only) | **`BLOCKED_EXTERNAL`** | Every Phase 26 finding re-derived **from source at HEAD**, not from Phase 27's report: all closed, no P0/P1 left. Scope held hard — 16 files, all under `apps/`, and **zero** lines in `platform_core/` or `server/`; B25-01 had a live opportunity to break that and used the existing `AppManifest.bao_tri` hook instead. ⭐ Six gates moved FAIL->PASS and two PARTIAL->PASS. G10 is real now rather than vacuous: cuts happen, each decision carries reason/confidence/threshold/evidence, `preserve` refuses to cut even when every scene is recommended for removal, and `so_doan_bi_cat: 1` proves no dubbing was paid for a dropped scene. 🔴 **G14 got worse, not better**: Phase 26 recorded "repair computed but never driven"; the orphan check shows `qc_ai.py` itself has no caller either. 🔴 **G9 and G17 remain NOT PASS** — measured, not assumed: `:8120` is **open but needs a token**, and `tests/fixtures/asv_e2e_that/` does not exist. 🔴 **And one measurement in this phase was wrong**: it reported machine B's gateways unreachable after probing `127.0.0.1:8199/8299` — but they listen on **machine B**, `192.168.2.66`, where both are **OPEN** and answer `401` for lack of a token. Machine B is up; the `ltt_llm` credential already exists (there are live measurements against it in `docs/audit_ltt_llm/`). Corrected in `28_REPORT.md` rather than edited away. ⚠️ And the audit's own first probe was **wrong** about RENDER reading `gpu_uuid` — `getattr(ctx, "gpu_uuid", "")` reads through a string literal, invisible to an `ast.Attribute` walk: a check aimed at the wrong node type returns a confident, clean, false answer. Evidence re-run at the RC SHA: E2E **20 passed**, perf **12 passed**, cluster **1051 passed**, gate **PASS**. | [`reports/28_REPORT.md`](reports/28_REPORT.md) |
 | 27 Blocker remediation | **PASS** | Nine findings, and the audit's own conclusion held: they were **one habit** — a capability finished, unit-tested, and never connected. Closing them showed the habit had also infected the test doubles. 🔑 For B22-01 the schema of a single VLM answer was described in **four places and no two agreed** (prompt asks flat · `DOC_CANH` declared a `canh` wrapper · the reader tolerated both · the E2E double returned a batch API that never existed), so a response obeying the prompt exactly would have been **rejected**. And the prompt had never attached a frame — it said "there are N representative frames" and sent none, so a vision model was selected to answer a question a text model answers identically. 🔑 B24-01 was wrong in **three** places, and the deepest was that COMPOSE decided the encoder from `ctx.gpu_uuid` — COMPOSE and RENDER are two jobs and a lease dies with its job, so the question was asked where the answer could never still hold. ⛔ And a pin was **protecting the defect it was written to prevent**: `test_renderer_KHONG_xin_GPU` forbade `gpu_env` on a sentence true for one preset since Phase 12. 🔴 Wiring the retention sweeper turned a harmless label into a live command — `HAN_TRUNG_GIAN` was stamped on the **deliverable** too, harmless only while nothing swept; the two changes had to land together. ⭐ The check the audit asked for (`test_453`) found the **sixth and seventh** instances (`qc_ai.py`, `sua_chua.py`) and says plainly it catches 3/5, not 5/5. ⚠️ And the phase got one thing wrong about itself: B23-01 was reported FIXED before its guarding pin was run, and the pin refused a fix that was half of one. Measured: NVENC +228 MiB but **88 % encoder** (V4-R15). E2E **20 passed**, perf **12 passed**, invariants **188 passed / 1 xfailed**. | [`reports/27_REPORT.md`](reports/27_REPORT.md) |
 | 26 Independent audit (read only) | **`AUDIT_COMPLETE_WITH_BLOCKERS`** | Read from source, not from STATE; no code touched. **Five new findings** (A26-01..A26-05) and four recorded blockers re-verified from the code rather than from the claims about it. 🔴 **A26-01 (P1)**: the translation stage's fingerprint contains **no model identity** — it reads a dead module's empty constant while `qwen38-api` does the work, so changing the model invalidates nothing; and it is **masked by B23-01**, meaning fixing the cache alone would start serving stale output. 🔴 **A26-05 (P1)**: the smart preset's own description promises scene removal that measurement shows never happens, with a quality cost charged for it — the defect class Phase 21 named while shipping an instance of it. **A26-03 (P2)** contradicts STATE: V4-R01 is recorded CLOSED, but `routes.py:254` still `await read()`s the whole upload **before** the size check, violating G6's exact wording. ⭐ And the audit's own conclusion: **one habit, five times** — the VLM, the stage cache, the hardware encoder, the artifact sweeper and `dich_thuat.py` were each finished, unit-tested, and never connected to a running path. A capability with a green test and no live caller looks exactly like a finished feature from every angle except the only one that matters; Phase 27 should add the check that finds them all before fixing them one by one. Gates: G3, G4, G6, G8, G9, G16 **FAIL**; G10, G13, G14 partial; G17 not PASS (external evidence still missing); the other ten PASS. | [`reports/26_REPORT.md`](reports/26_REPORT.md) |
