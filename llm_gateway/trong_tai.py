@@ -78,7 +78,12 @@ TRAN_PYTHON_GPU = 2
 #:
 #: ⚠️ `llama-server.exe` **không phải** python — đó là lý do phép đếm bỏ sót nó
 #:    (D-037), và cũng là lý do phép kết hợp này không tự chặn chính mình.
-TAI_GPU_DANG_TINH = 50
+#: ⭐ ĐÃ CHUYỂN SANG `render_gateway.busy` (04/09) và dùng lại ở đây, đúng luật
+#:    "dùng lại, không chép lại" ở đầu tệp này. Từ 04/09 **cả hai cổng** cùng cần
+#:    con số này: cổng ảnh dùng nó để **không đuổi** một hộ đang tính, cổng LLM
+#:    dùng nó để **không nạp đè** lên một lượt vẽ. Hai câu hỏi ngược chiều, cùng
+#:    một ngưỡng — nên phải cùng một hằng số.
+from render_gateway.busy import TAI_GPU_DANG_TINH  # noqa: E402,F401
 
 
 def _tai_gpu_mac_dinh() -> Optional[int]:

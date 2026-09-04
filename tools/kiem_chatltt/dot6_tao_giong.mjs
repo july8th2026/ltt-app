@@ -198,12 +198,23 @@ export function dot6({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, chuBaiCuoi,
               tham_so: { text: 'thu giong nguoi khac', voice_id: 'vc_00000000000000000000000000000000' },
             }),
           });
-          return { status: res.status, than: (await res.text()).slice(0, 200) };
+          const chu = await res.text();
+          return { status: res.status, than: chu.slice(0, 200),
+                   la_html: chu.trim().startsWith('<') };
         });
         if (r.bo_qua) return r;
         if (r.status >= 500) throw new Error(`may chu 5xx thay vi tu choi sach: ${r.status}`);
         // Duong MOT: tu choi ngay. Sach nhat, va cung dat.
-        if (r.status >= 400) return { chan_luc_nop: r.status, ra_tieng: false };
+        if (r.status >= 400) {
+          // ⛔ Cung ly le nhu `5.5`: mot `403` cua Cloudflare trong y het
+          //    mot `403` cua ung dung neu chi doc ma. Lat 04/09 bao DAT voi
+          //    `chan_luc_nop: 403` trong khi phien da chet — mot ket luan dung
+          //    ve mot thu chua he duoc kiem.
+          if (r.la_html) {
+            throw new Error(`bi mot lop BIEN chan (than la HTML), khong phai ung dung tu choi: ${r.than.slice(0, 90)}`);
+          }
+          return { chan_luc_nop: r.status, ra_tieng: false, than: r.than.slice(0, 90) };
+        }
 
         // Duong HAI: nhan job, roi job hong va tra tien. Cung dat, mien la
         // ca HAI ve deu dung — va ta doi ca hai, khong chi mot.

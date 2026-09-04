@@ -226,6 +226,35 @@ const dangChay = (p) => p.getByRole('button', { name: 'Dừng' }).count().then((
  *    diep `bo_qua` — mot lan bo qua co bang chung khac han mot lan bo qua vi
  *    het kien nhan.
  */
+/** Phien con song khong. Nem khi da bi dang xuat / Cloudflare chan lai.
+ *
+ * 🔴 VI SAO PHAI CO. Lat chay 04/09: phien chet GIUA LUOT, va Cloudflare
+ *    bat dau tra `403` kem trang `<!DOCTYPE html>...Just a moment...`. Hai hang
+ *    muc **BAO DAT** dua tren chinh con so 403 do — vi ca hai chi kiem
+ *    `status === 403` va khong nhin thu gi khac.
+ *
+ * ⛔ Mot `403` cua Cloudflare KHONG PHAN BIET DUOC voi mot `403` cua ung
+ *    dung, neu chi doc ma trang thai. Do dung loai loi ta da sua ca ngay o cho
+ *    khac: chot mot con so ma khong hoi no **tu dau ra**.
+ *
+ * ⭐ Nen bo kiem phai DUNG HAN thay vi de lai mot bao cao trong nhu that.
+ *    Mot lat chay bi cat giua chung la mot su that; mot lat chay "xanh" tren
+ *    rac la mot lat chay se bi tin.
+ */
+async function conPhien(page) {
+  const r = await page.evaluate(async () => {
+    try {
+      const res = await fetch('/chatltt/api/so-du', { redirect: 'follow' });
+      const chu = await res.text();
+      return { ma: res.status, html: chu.trim().startsWith('<') , dai: chu.length };
+    } catch (e) { return { ma: -1, html: false, loi: String(e).slice(0, 80) }; }
+  });
+  if (r.ma === 200 && !r.html) return true;
+  throw new Error(
+    `PHIEN DA CHET giua luot (so-du tra ${r.ma}${r.html ? ', than la HTML' : ''}). `
+    + 'Dang nhap lai trong cua so Chrome roi chay lai — dung tin ket qua sau diem nay.');
+}
+
 const nangLuc = (p, ten) => p.evaluate(
   (t) => fetch('/chatltt/api/danh-muc').then((r) => r.json())
     .then((d) => (d.nang_luc || []).find((n) => n.ten === t)?.san_sang || 'khong_co_trong_catalog')
@@ -822,6 +851,7 @@ try {
         await doiDen('ve lai duoc ChatLTT',
           async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
       }
+      await conPhien(page);
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
       ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,
