@@ -68,6 +68,29 @@ def dinh_that_db() -> float:
     return float(DINH_THAT_DB)
 
 
+#: Bien du cho BO MA HOA CO MAT MAT, tinh bang dB.
+#:
+#: 🔴 **Do duoc o pha 22, va no la mot chot chan that.** Ban phoi duoc gioi han
+#:    dung bang tran QC (-1,5 dBTP), roi `RENDER` ma hoa no sang AAC — va AAC
+#:    **luon** vuot len mot chut vi dinh giua-mau (inter-sample peak). Do that
+#:    tren mot lan chay day du: ban phoi -1,49 dBTP, tep giao cho khach
+#:    **-1,45 dBTP**, tuc QC T5 hong vi 0,05 dB tren mot ban phoi khong he sai.
+#:
+#: ⭐ Sai lam o day khong phai con so, ma la **do luong o hai cho khac nhau**:
+#:    gioi han dat tren PCM, con phep kiem do tren AAC. Mot chuoi giao hang co
+#:    mat mat phai chua bien du cho buoc mat mat do — day la thuc hanh chuan cua
+#:    nganh, khong phai mot cai va cho lan chay nay.
+#:
+#: ⛔ Va cach sua SAI la noi tran cua QC ra: khi do phep kiem thoi noi ve thu
+#:    khach that su nhan duoc.
+BIEN_CHO_CODEC_DB = 1.0
+
+
+def dinh_that_phoi_db() -> float:
+    """Tran dinh that cua BAN PHOI — thap hon tran giao hang mot bien du."""
+    return dinh_that_db() - BIEN_CHO_CODEC_DB
+
+
 #: He so am luong cua NEN khi co tieng noi de len.
 #:
 #: 🔴 Khong phai mot lua chon tham my: neu nen giu nguyen muc thi giong Viet phai
@@ -155,6 +178,42 @@ def tron_lo(duong_vao: list[str], moc_ms: list[int], he_so: list[float],
     return dich
 
 
+def bieu_thuc_chuan_am(vao: str, ra: str, *, tong_giay: float = 0.0) -> str:
+    """Bo loc chuan am luong cuoi cung. Tach rieng de KIEM duoc ma khong chay.
+
+    ⭐ Truoc pha 22 chuoi nay nam thang trong `tron_cuoi`, va cach duy nhat de
+       kiem no la chay ca mot lan tron that. Mot tham so quan trong nhu tran dinh
+       that thi phai co mot phep kiem re tien canh no.
+    """
+    # 🔴 **`apad` khong phai mot chi tiet — no giu loi hua cua preset giu hinh.**
+    #
+    #    `amix` ket thuc khi dau vao dai nhat het, va dieu do co the som hon ban
+    #    nguon vai chuc mili giay. Trinh render map mot luong hinh + mot luong
+    #    tieng voi `-shortest`, nen mot ban phoi NGAN HON keo theo **luong hinh
+    #    bi cat**. Do that o pha 22: ban phoi 2,919 s tren mot nguon 3,000 s, va
+    #    QC T3 ("luong hinh giong het nguon tung bit") hong — dung cai T3 sinh ra
+    #    de bao ve.
+    #
+    # ⭐ Khiem khuyet nay bi CHE cho toi pha 22: truoc do trinh render doc nham
+    #    ban NEN, ma ban nen thi luon dai bang ban nguon. Mot loi che mot loi.
+    # ⚠️ **`asetpts` moi la thu sua duoc, khong phai `apad`.** Do tung buoc tren
+    #    mot ban nguon 3,019 giay, cat bang `-t 3.000`:
+    #
+    #        anull                              -> 3,000
+    #        loudnorm                           -> 2,919   <- mat 0,1 giay
+    #        loudnorm,apad                      -> 2,919
+    #        loudnorm,apad=pad_dur=0.5          -> 2,919
+    #        loudnorm,asetpts=N/SR/TB,apad      -> 3,000
+    #
+    # 🔑 `loudnorm` **doi moc thoi gian**: ban ra bat dau tre 0,1 giay, nen `-t`
+    #    cat o PTS 3,000 khi moi co 2,919 giay am thanh. `apad` khong cuu duoc vi
+    #    van de khong phai thieu mau ma la moc bi day. `asetpts=N/SR/TB` dat lai
+    #    moc ve 0, roi `apad` lo phan thieu neu ban tron that su ngan hon.
+    dem = ",asetpts=N/SR/TB,apad" if tong_giay > 0 else ""
+    return (f"{vao}loudnorm=I={lufs_dich()}:TP={dinh_that_phoi_db()}"
+            f":LRA=11:dual_mono=true{dem}{ra}")
+
+
 def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
               hoi_huy=None, timeout: int = 1800) -> str:
     """Tron ban nen (da ha muc) voi cac ban lo tieng, roi chuan am luong.
@@ -186,8 +245,7 @@ def tron_cuoi(nen: str, cac_lo: list[str], dich: str, *, tong_giay: float,
     #
     # ⭐ Va no la loai khiem khuyet khong bao gio duoc bao cao: khach khong nghe
     #    ra "sai 3 dB", ho chi thay ban long tieng "hoi to".
-    phan.append(f"[tron]loudnorm=I={lufs_dich()}:TP={dinh_that_db()}"
-                f":LRA=11:dual_mono=true[ra]")
+    phan.append(bieu_thuc_chuan_am("[tron]", "[ra]", tong_giay=tong_giay))
 
     cmd += ["-filter_complex", "".join(phan), "-map", "[ra]",
             "-t", f"{max(0.001, float(tong_giay)):.3f}",

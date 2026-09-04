@@ -203,6 +203,17 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
     tieng = ban.get("tieng") or {}
     if not (tieng.get("nen") or {}).get("khoa"):
         raise BanDungError(_t('Bản dựng thiếu nhạc nền.'))
+    # 🔴 **Them o pha 22, va no la nua con thieu cua mot loi da giao hang.**
+    #
+    #    Ham nay doi `nen` phai co tu pha 16, nhung khong bao gio doi `master` —
+    #    trong khi `master` moi la thu trinh render doc. Ket qua: mot ban dung
+    #    **khong co ban phoi** van qua duoc moi phep kiem, va `giai_doan_ket_xuat`
+    #    lang le render bang `nen`. Do la nhac nen tach ra tu ban goc: khach nhan
+    #    ve mot video khong co mot cau long tieng nao.
+    #
+    # ⇒ Mot truong ma trinh render BAT BUOC phai co thi phai duoc kiem o day.
+    if not (tieng.get("master") or {}).get("khoa"):
+        raise BanDungError(_t('Bản dựng thiếu bản phối âm.'))
 
     truoc_ket = None
     for lop in (tieng.get("lop") or []):
@@ -222,7 +233,10 @@ def kiem(ban: dict, *, khoa_hop_le: set[str] | None = None) -> None:
         truoc_ket = dat
 
     if khoa_hop_le is not None:
-        moi = {hinh["khoa"], tieng["nen"]["khoa"]}
+        # ⭐ `master` nam trong tap doi chieu nay tu pha 22: mot khoa ma trinh
+        #    render se doc ma khong co trong kho la mot lan render hong o giua
+        #    chung, sau khi da tai vai tram MB.
+        moi = {hinh["khoa"], tieng["nen"]["khoa"], tieng["master"]["khoa"]}
         moi |= {lop["khoa"] for lop in (tieng.get("lop") or [])}
         thieu = sorted(moi - khoa_hop_le)
         if thieu:
@@ -265,6 +279,12 @@ def tom_tat(ban: dict) -> dict:
         "so_lop_tieng": len(lop),
         "so_lop_tang_toc": sum(1 for l in lop if float(l["he_so_toc"]) > 1.0),
         "che_do_hinh": (ban.get("hinh") or {}).get("che_do", ""),
+        # ⭐ Them o pha 22. `che_do_hinh` luon la `copy` (ten cu, giu cho ho so
+        #    cu doc duoc), nen truoc do BAN TOM TAT khong noi duoc lua chon co
+        #    hau qua nhat cua ca ban dung: sao chep luong hinh hay cat-noi roi ma
+        #    hoa lai. Mot ban tom tat de nguoi van hanh doc ma bo qua dieu do thi
+        #    hai lan chay khac han nhau trong y het nhau.
+        "cach_render": (ban.get("hinh") or {}).get("cach_render", ""),
         "thoi_luong_giay": (ban.get("ra") or {}).get("thoi_luong_giay", 0),
         "ffmpeg": (ban.get("cong_cu") or {}).get("ffmpeg", ""),
     }

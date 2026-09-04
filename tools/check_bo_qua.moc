@@ -12,5 +12,6 @@ test_293_vps_dung_lai_cong_vao.py::test_duong_ra_cho_may_CHUA_co_IP_rieng_khong_
 test_299_khu_api_da_dich.py::test_trang_cong_khai_render_ban_EN_khong_con_tieng_viet
 test_334_ngan_sach_ltt_llm.py::_health
 test_362_cay_rieng_va_deploy.py::test_cay_lien_ket_co_dot_git_la_TEP
+test_448_asv_v4_e2e_nghiem_thu.py::test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc
 test_73_dong_thoi_pg.py::pytestmark
 test_74_smoke_playwright.py::pytestmark

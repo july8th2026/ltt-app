@@ -178,12 +178,26 @@ def cua_ai_gia(monkeypatch, *, chu=None):
 
         goi = json.loads(messages[-1]["content"])
         lam = chu or (lambda ma: f"loi thoai cua {ma}")
-        return {"noi_dung": {"doan": {
+        than = {"doan": {
             str(d["ma"]): {"chu": lam(d["ma"]),
                            "cam_xuc": long_tieng.CAM_XUC[0],
                            "kieu_noi": long_tieng.KIEU_NOI[0],
                            "nhan_manh": []}
-            for d in goi.get("doan") or []}}, "su_dung": None}
+            for d in goi.get("doan") or []}}
+        # 🔴 **CHUOI, khong phai dict.** `ai.goi` tra ve nguyen van phan hoi cua
+        #    model (`ai.py:270`), va bo doc JSON la `ai.doc_json`.
+        #
+        #    Truoc pha 22 ham nay tra ve mot **dict** o `noi_dung` — thu ma cua
+        #    that khong bao gio tra ve — va vi the che mat mot loi khong the
+        #    khong xay ra: `giai_doan_noi_dung` va `giai_doan_giong` deu goi
+        #    `.get("doan")` thang tren chuoi do, nen **moi lan goi model that
+        #    deu nem `AttributeError`**. Ca bo test van xanh, vi ban gia tra ve
+        #    dung thu ma nguon muon nhan thay vi thu cua that tra ve.
+        #
+        # ⭐ Bai hoc: mot ban thay the phai trung thanh voi **hop dong cua cai
+        #    no thay**, khong phai voi mong doi cua nguoi goi.
+        return {"noi_dung": json.dumps(than, ensure_ascii=False),
+                "su_dung": None}
 
     monkeypatch.setattr(ai, "goi_tinh_tien", gia)
     return True

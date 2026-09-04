@@ -255,15 +255,25 @@ def test_chuan_am_luong_co_DUAL_MONO():
     import ast
     from pathlib import Path as _P
 
+    # ⚠️ Pha 22 tach bo loc chuan am ra `bieu_thuc_chuan_am` de kiem duoc ma
+    #    khong phai chay ca mot lan tron. Nen phep kiem doi cho: doc KET QUA
+    #    that cua ham do — manh hon doc AST, vi no la chinh chuoi di vao ffmpeg.
+    bt = am_master.bieu_thuc_chuan_am("[a]", "[b]", tong_giay=3.0)
+    assert "dual_mono=true" in bt, (
+        "bo loc chuan am khong dat `dual_mono=true` — mot doan mono upmix len "
+        f"stereo se bi do to hon thuc te 3 dB ({bt})")
+
+    # ⛔ Va `tron_cuoi` phai THAT SU dung ham do. Neu khong, chuoi tren la mot
+    #    ban khai dep dat canh mot lenh ffmpeg khac han — dung loai lech ma pha
+    #    22 vua tim thay o trinh render.
     cay = ast.parse(_P(am_master.__file__).read_text(encoding="utf-8"))
     ham = [n for n in ast.walk(cay)
            if isinstance(n, ast.FunctionDef) and n.name == "tron_cuoi"]
     assert ham, "khong tim thay `tron_cuoi`"
-    chuoi = [n.value for n in ast.walk(ham[0])
-             if isinstance(n, ast.Constant) and isinstance(n.value, str)]
-    assert any("dual_mono=true" in c for c in chuoi), (
-        "`tron_cuoi` khong dat `dual_mono=true` — mot doan mono upmix len stereo "
-        "se bi do to hon thuc te 3 dB")
+    goi = {n.func.id for n in ast.walk(ham[0])
+           if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)}
+    assert "bieu_thuc_chuan_am" in goi, (
+        "`tron_cuoi` khong con dung `bieu_thuc_chuan_am`")
 
 
 def test_he_so_co_gian_thanh_atempo_va_bi_CHAN():

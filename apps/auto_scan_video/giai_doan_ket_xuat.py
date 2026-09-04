@@ -121,14 +121,29 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             prefix=f"asv-render-{str(run.id)[:12]}-") as tam:
         thu_muc = Path(tam)
         duong_video = _duong_doc_duoc(kho, run.source_key, thu_muc)
-        duong_nen = _tai_ve(kho, ban["tieng"]["nen"]["khoa"], thu_muc / "nen.wav")
+        # 🔴 **BAN PHOI, khong phai ban nen.** Tim ra o pha 22 bang cach do am
+        #    luong tep ra: -18,69 LUFS (dich -14) va dinh that **+4,1 dB**
+        #    (tran -1,5) — ho so cua mot dong tin hieu chua he di qua
+        #    `loudnorm`. Vi dong nay tai ve `tieng.nen`, moi video giao cho
+        #    khach mang **nhac nen tach ra tu ban goc va khong co mot cau long
+        #    tieng nao**.
+        #
+        # ⭐ Khong phep kiem nao bat duoc vi ca hai nua deu dung: pha 16 chung
+        #    minh ban phoi dung, pha 17 chung minh cau lenh render dung — chi
+        #    khong ai doi chieu rang cau lenh do doc dung TRUONG nao. Chinh
+        #    `ban_dung.dung()` viet o tren no: *"thu trinh render THUC SU doc la
+        #    master"*, va dong nay doc `nen`.
+        khoa_master = str(((ban["tieng"].get("master") or {}).get("khoa") or ""))
+        if not khoa_master:
+            raise ket_xuat.KetXuatError(_t('Bản dựng thiếu bản phối âm để kết xuất.'))
+        duong_master = _tai_ve(kho, khoa_master, thu_muc / "master.wav")
         duong_lop = [_tai_ve(kho, l["khoa"], thu_muc / f"s{i}.wav")
                      for i, l in enumerate(lop)]
 
         duong_ra = str(thu_muc / "ra.mp4")
         cmd = ket_xuat.dung_lenh(
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
-            duong_video=duong_video, duong_nen=duong_nen,
+            duong_video=duong_video, duong_master=duong_master,
             duong_lop=duong_lop, duong_ra=duong_ra)
 
         if bao:

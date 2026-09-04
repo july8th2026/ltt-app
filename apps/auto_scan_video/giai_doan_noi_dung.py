@@ -162,7 +162,24 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             item_key=f"lo_{i:03d}",
             ctx=ctx)
 
-        moi = long_tieng.doc_chuyen(kq.get("noi_dung") or {}, ma_da_gui)
+        # 🔴 **`noi_dung` la MOT CHUOI, khong phai mot dict.** `ai.goi` tra ve
+        #    nguyen van phan hoi cua model (`ai.py:270`), va viec doc no thanh
+        #    JSON la viec cua `ai.doc_json` — ham ton tai dung de lam dieu do va
+        #    de kiem cac truong bat buoc cua tung thao tac.
+        #
+        #    Truoc pha 22 dong nay truyen thang chuoi vao `doc_chuyen`, va
+        #    `doc_chuyen` goi `.get("doan")` tren no: **moi lan goi model that
+        #    deu nem `AttributeError`**, tuc giai doan tra tien nay chua bao gio
+        #    chay noi mot lan voi mot model that.
+        #
+        # ⭐ Vi sao khong bo test nao bat duoc: `tests/fixtures/asv_media.cua_ai_gia`
+        #    thay `goi_tinh_tien` va tra ve mot **dict** o `noi_dung` — thu ma cua
+        #    that khong bao gio tra ve. Mot ban gia tra ve dung thu ma ma nguon
+        #    muon nhan, thay vi thu cua that tra ve, se lam ca bo test xanh
+        #    quanh mot loi khong the khong xay ra.
+        moi = long_tieng.doc_chuyen(
+            ai.doc_json(kq.get("noi_dung") or "", ai.CHUYEN_LOI_THOAI),
+            ma_da_gui)
         chuyen.update(moi)
 
         # ⛔ Ghi diem chot NGAY sau moi lo, khong doi den cuoi: mot lan sap o lo

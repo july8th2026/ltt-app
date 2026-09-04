@@ -44,6 +44,10 @@ def _dung(**kw):
     from apps.auto_scan_video import ban_dung
     goc = dict(khoa_video="asv/uA/nguon/a.mp4",
                khoa_nen="asv/uA/r1/audio_prepare/bed.wav",
+               # ⚠️ Pha 22: `master` la truong trinh render THUC SU doc, va
+               #    `kiem` doi no tu khi mot lan chay that giao ra video mang
+               #    nhac nen thay vi ban long tieng.
+               khoa_master="asv/uA/r1/timing_align/master.wav",
                ke_hoach=_ke_hoach(), ban_ke_tieng=_ban_ke(),
                phien_ban_ffmpeg="8.0.1", tong_giay=6.0)
     goc.update(kw)
@@ -155,7 +159,10 @@ def test_tham_chieu_KHONG_TON_TAI_bi_bat_TRUOC_khi_render():
     from apps.auto_scan_video import ban_dung
 
     ban = _dung()
-    du = {ban["hinh"]["khoa"], ban["tieng"]["nen"]["khoa"]}
+    # ⚠️ `master` nam trong tap doi chieu tu pha 22 — trinh render doc no, nen
+    #    thieu no la mot lan render hong o giua chung.
+    du = {ban["hinh"]["khoa"], ban["tieng"]["nen"]["khoa"],
+          ban["tieng"]["master"]["khoa"]}
     du |= {l["khoa"] for l in ban["tieng"]["lop"]}
 
     ban_dung.kiem(ban, khoa_hop_le=du)          # đủ -> qua
@@ -309,3 +316,46 @@ def test_cong_thoat_ban_dung_dinh_nghia_du_MOT_LAN_RENDER():
     assert ban["ra"]["codec_tieng"] == "aac" and ban["ra"]["faststart"] is True
     assert ban["ra"]["thoi_luong_giay"] > 0
     assert ban["cong_cu"]["ffmpeg"]
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Pha 22 — ban phoi la truong TRINH RENDER DOC, nen `kiem` phai doi no
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_dung_THIEU_ban_phoi_bi_tu_choi():
+    """🔴 Truoc pha 22 `kiem` doi `nen` nhung khong doi `master`, trong khi thu
+    trinh render doc la `master`.
+
+    Hau qua do duoc tren mot lan chay that: `giai_doan_ket_xuat` tai ve `nen` —
+    nhac nen tach ra tu ban goc — va giao cho khach mot video **khong co mot cau
+    long tieng nao**. Am luong tep ra noi ro no chua he di qua chuan hoa:
+    -18,69 LUFS (dich -14) va dinh that **+4,1 dB** (tran -1,5).
+
+    ⭐ Mot truong ma trinh render bat buoc phai co thi phai duoc kiem o day —
+       khong phai o giua mot luot ffmpeg da chiem suat va da tai vai tram MB.
+    """
+    from apps.auto_scan_video import ban_dung
+
+    ban = _dung()
+    ban["tieng"]["master"]["khoa"] = ""
+    with pytest.raises(ban_dung.BanDungError) as loi:
+        ban_dung.kiem(ban)
+    assert "phối" in str(loi.value)
+
+
+def test_ban_phoi_KHONG_CON_TRONG_KHO_bi_bat_truoc_khi_render():
+    """⛔ Khoa ban phoi phai nam trong tap doi chieu tai nguyen.
+
+    Neu khong, mot ban phoi da bi don dep van cho ra mot ban dung "hop le", va
+    lan render hong o giua chung — sau khi da tai luong hinh ve dia.
+    """
+    from apps.auto_scan_video import ban_dung
+
+    ban = _dung()
+    du = {ban["hinh"]["khoa"], ban["tieng"]["nen"]["khoa"],
+          ban["tieng"]["master"]["khoa"]}
+    du |= {l["khoa"] for l in ban["tieng"]["lop"]}
+    ban_dung.kiem(ban, khoa_hop_le=du)                    # du -> qua
+
+    with pytest.raises(ban_dung.BanDungError):
+        ban_dung.kiem(ban, khoa_hop_le=du - {ban["tieng"]["master"]["khoa"]})

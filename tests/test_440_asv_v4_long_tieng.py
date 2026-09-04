@@ -379,10 +379,13 @@ def _kho():
 
 
 def _tra_loi(mas):
-    return {"noi_dung": {"doan": {
+    # ⚠️ `noi_dung` la CHUOI — dung thu `ai.goi` tra ve. Pha 22 tim ra rang
+    #    mot ban gia tra ve dict o day che mat mot loi that o duong goi model.
+    than = {"doan": {
         m: {"chu": "loi thoai cua " + m, "cam_xuc": long_tieng.CAM_XUC[0],
             "kieu_noi": long_tieng.KIEU_NOI[0], "nhan_manh": []}
-        for m in mas}}, "su_dung": None}
+        for m in mas}}
+    return {"noi_dung": json.dumps(than, ensure_ascii=False), "su_dung": None}
 
 
 def _ma_trong(messages):

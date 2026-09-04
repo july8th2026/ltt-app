@@ -119,7 +119,8 @@ class KetXuatError(MediaError):
 #    nguoi sau viet lai dung cai ban dau da sai.
 
 
-def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str, duong_nen: str,
+def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
+              duong_master: str,
               duong_lop: list[str], duong_ra: str,
               tien_do: bool = True) -> list[str]:
     """Ban dung + duong dan cuc bo -> argv. Khong cham mot tep nao.
@@ -166,7 +167,7 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str, duong_nen: str,
 
     ra = ban["ra"]
     cmd = [ffmpeg_bin, "-y", "-hide_banner", "-loglevel", "error",
-           "-i", duong_video, "-i", duong_nen]
+           "-i", duong_video, "-i", duong_master]
 
     if cach == cdr.SAO_CHEP:
         # ── Preset giu hinh: luong hinh di THANG tu nguon sang ban ra ─────

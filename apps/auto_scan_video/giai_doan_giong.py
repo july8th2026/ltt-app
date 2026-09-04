@@ -265,7 +265,11 @@ def _viet_lai(db, run, m: dict, *, chu: str, giay: float, khe: float,
                                      khe=khe),
             stage=pipeline.VOICE_SYNTHESIS,
             item_key=f"nan:{m['ma']}:{so_vong}", ctx=ctx)
-        return nan_cho_vua.doc_nan(kq.get("noi_dung") or {})
+        # 🔴 Cung mot loi voi `giai_doan_noi_dung`, tim ra o pha 22: `noi_dung`
+        #    la CHUOI phan hoi tho cua model, va `doc_nan` goi `.get` tren no.
+        #    `ai.doc_json` la buoc doc-va-kiem-luoc-do bi bo quen o ca hai cho.
+        return nan_cho_vua.doc_nan(
+            ai.doc_json(kq.get("noi_dung") or "", ai.RUT_NGAN_CHO_VUA))
     except (ai.AiError, ai.AiMoHo, nan_cho_vua.NanError) as exc:
         log.info("khong nan duoc doan %s: %s", m.get("ma"), exc)
         raise _KhongNanDuoc(str(exc)) from exc

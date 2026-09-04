@@ -44,7 +44,7 @@ def _ban(*, so_lop: int = 2, tong_giay: float = 2.0,
 def _lenh(ban, **kw):
     n = len(ban["tieng"]["lop"])
     return ket_xuat.dung_lenh(
-        ban, ffmpeg_bin="ffmpeg", duong_video="/t/v.mp4", duong_nen="/t/n.wav",
+        ban, ffmpeg_bin="ffmpeg", duong_video="/t/v.mp4", duong_master="/t/n.wav",
         duong_lop=[f"/t/s{i}.wav" for i in range(n)], duong_ra="/t/o.mp4", **kw)
 
 
@@ -174,7 +174,7 @@ def test_so_tep_lech_so_lop_bi_TU_CHOI():
     cho. Mot loi im lang phai bi bat o day."""
     with pytest.raises(ket_xuat.KetXuatError):
         ket_xuat.dung_lenh(_ban(so_lop=2), ffmpeg_bin="ffmpeg",
-                           duong_video="/t/v.mp4", duong_nen="/t/n.wav",
+                           duong_video="/t/v.mp4", duong_master="/t/n.wav",
                            duong_lop=["/t/s0.wav"], duong_ra="/t/o.mp4")
 
 
@@ -260,7 +260,7 @@ def test_render_that_sinh_ra_tep_co_ca_hinh_va_tieng(tmp_path):
 
     ban = _ban(so_lop=2, tong_giay=2.0)
     cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin=binary, duong_video=str(video),
-                             duong_nen=str(nen),
+                             duong_master=str(nen),
                              duong_lop=[str(s0), str(s1)], duong_ra=str(ra))
     ket_xuat._chay_co_tien_do(cmd, tong_giay=2.0, timeout=120)
 
@@ -278,7 +278,7 @@ def test_tien_do_duoc_bao_ra_trong_luc_render(tmp_path):
     ra = tmp_path / "ra.mp4"
     ban = _ban(so_lop=0, tong_giay=3.0)
     cmd = ket_xuat.dung_lenh(ban, ffmpeg_bin=binary, duong_video=str(video),
-                             duong_nen=str(nen), duong_lop=[], duong_ra=str(ra))
+                             duong_master=str(nen), duong_lop=[], duong_ra=str(ra))
     thay: list[float] = []
     ket_xuat._chay_co_tien_do(cmd, tong_giay=3.0, timeout=120,
                               bao_tien_do=thay.append)

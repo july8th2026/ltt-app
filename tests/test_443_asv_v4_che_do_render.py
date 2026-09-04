@@ -63,7 +63,7 @@ def _lenh(ban):
     from apps.auto_scan_video import ket_xuat
 
     return ket_xuat.dung_lenh(ban, ffmpeg_bin="ffmpeg", duong_video="/t/v.mp4",
-                              duong_nen="/t/m.wav", duong_lop=[],
+                              duong_master="/t/m.wav", duong_lop=[],
                               duong_ra="/t/o.mp4", tien_do=False)
 
 

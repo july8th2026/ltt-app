@@ -228,19 +228,23 @@ def test_vong_nan_co_TRAN_CUNG(tmp_path, monkeypatch, db, kho_tam, asr_gia,
 
     def gia_nan(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
                 ctx=None, temperature=None):
+        # ⚠️ `noi_dung` la CHUOI (pha 22): cua that tra ve nguyen van phan
+        #    hoi cua model, va `ai.doc_json` moi la bo doc.
+        import json
         if thao_tac is ai.RUT_NGAN_CHO_VUA:
             dem["n"] += 1
-            return {"noi_dung": {"doan": {"chu": "cau ngan hon lan %d" % dem["n"]}},
+            than = {"doan": {"chu": "cau ngan hon lan %d" % dem["n"]}}
+            return {"noi_dung": json.dumps(than, ensure_ascii=False),
                     "su_dung": None}
-        from tests.fixtures.asv_media import cua_ai_gia  # noqa: F401
-        import json
         goi = json.loads(messages[-1]["content"])
         from apps.auto_scan_video import long_tieng
-        return {"noi_dung": {"doan": {
+        than = {"doan": {
             str(d["ma"]): {"chu": "loi thoai cua %s" % d["ma"],
                            "cam_xuc": long_tieng.CAM_XUC[0],
                            "kieu_noi": long_tieng.KIEU_NOI[0], "nhan_manh": []}
-            for d in goi.get("doan") or []}}, "su_dung": None}
+            for d in goi.get("doan") or []}}
+        return {"noi_dung": json.dumps(than, ensure_ascii=False),
+                "su_dung": None}
 
     monkeypatch.setattr(ai, "goi_tinh_tien", gia_nan)
 

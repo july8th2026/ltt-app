@@ -14103,3 +14103,9 @@ msgstr "Invalid voice selection mode."
 
 msgid "Hãy chọn một giọng đọc."
 msgstr "Please choose a voice."
+
+msgid "Bản dựng thiếu bản phối âm."
+msgstr "The build is missing its audio master."
+
+msgid "Bản dựng thiếu bản phối âm để kết xuất."
+msgstr "The build has no audio master to render from."
