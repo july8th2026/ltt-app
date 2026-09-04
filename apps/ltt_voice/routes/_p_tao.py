@@ -44,6 +44,41 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         # thu nhỏ. Nhiều hơn thì cột giữa dài ra và đẩy ô kịch bản lên trên.
         gan_day, _cur = job_history.list_owned(
             db, uid, app_slug=MANIFEST.slug, limit=3)
+
+        # ── PHIÊN BẢN của MỘT văn bản ───────────────────────────────────────
+        #
+        # 🔴 Ảnh tham chiếu có `V3 / V2 / V1`, và chú thích cũ ở template bỏ nó
+        #    với lý do *"phiên bản là khái niệm của KHỐI trong một dự án"*. Lý
+        #    do ấy đúng cho **khối**, và nó không trả lời câu hỏi ở đây: một
+        #    người đọc đi đọc lại CÙNG một câu để chọn bản ưng nhất thì ba lượt
+        #    ấy có phải phiên bản của nhau không? Có — và đó chính là cảnh ảnh
+        #    mẫu vẽ.
+        #
+        # ⭐ Nhóm theo **văn bản đã chuẩn hoá** (`result.text`), không theo văn
+        #    bản thô: hai lượt chỉ khác nhau một dấu cách thừa là cùng một bài
+        #    đọc, và người dùng coi chúng là hai lần thử của một thứ.
+        #
+        # ⛔ KHÔNG gom ba job bất kỳ rồi gắn nhãn V1/V2/V3 — đó đúng là thứ §22
+        #    cấm. Không đủ hai lượt cùng văn bản thì danh sách RỖNG, và cột phải
+        #    hiện trạng thái rỗng thật thà.
+        #
+        # ⚠️ Lấy trong một cửa sổ gần đây (không quét cả lịch sử): nhãn vì thế là
+        #    "trong các lượt gần đây", và template nói đúng như vậy.
+        _lich, _ = job_history.list_owned(
+            db, uid, app_slug=MANIFEST.slug, limit=25)
+        _xong = [j for j in _lich
+                 if j.status == "done" and (j.result or {}).get("audio_key")]
+        phien_ban = []
+        if _xong:
+            _chuan = ((_xong[0].result or {}).get("text") or "").strip()
+            if _chuan:
+                cung = [j for j in _xong
+                        if ((j.result or {}).get("text") or "").strip() == _chuan]
+                if len(cung) > 1:
+                    # `cung` mới nhất trước; nhãn V lớn nhất cho bản mới nhất.
+                    n = len(cung)
+                    phien_ban = [{"job": j, "nhan": f"V{n - i}"}
+                                 for i, j in enumerate(cung)]
         # ⚠️ TÍNH Ở ĐÂY, không ở chỗ dựng template. `finally` ngay bên dưới
         #    đóng phiên CSDL, nên một lời gọi ORM đặt sau đó chạm vào một
         #    session đã đóng — và nó hỏng ở tận Jinja, một chỗ không ai nghĩ
@@ -95,7 +130,8 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     cac_nac_toc_do=_toc_do.CAC_NAC,
                     du_an_ds=du_an_ds,
                     duong_nghe=duong_nghe,
-                    gan_day=gan_day))
+                    gan_day=gan_day,
+                    phien_ban=phien_ban))
 
 
 @router.post("/xem-truoc")
@@ -237,6 +273,9 @@ def ket_qua(job_id: str, user=Depends(user_hien_tai), _=Depends(require_login)):
 @router.post("/tao")
 def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
         preset: str = Form(""), toc_do: str = Form("1.0"),
+        # `features.chuan_hoa` kep gia tri la ve "auto" — cua khong tu kiem,
+        # vi Public API di THANG xuong job va khong qua day.
+        ngon_ngu: str = Form("auto"),
         csrf_token: str = Form(""),
         user=Depends(user_hien_tai), _=Depends(require_login)):
     if not verify_csrf_token(request, csrf_token):
@@ -251,7 +290,7 @@ def tao(request: Request, text: str = Form(""), voice_id: str = Form(""),
         #    `features` vì Public API đi THẲNG xuống job, không qua route này.
         yc = features.chuan_hoa({"text": text, "voice_id": voice_id,
                                  "preset": preset, "owner_id": _uid(user),
-                                 "toc_do": toc_do})
+                                 "toc_do": toc_do, "ngon_ngu": ngon_ngu})
     except features.LoiGiongNoi as e:
         return JSONResponse({"ok": False, "loi": str(e)}, status_code=400)
 

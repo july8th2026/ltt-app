@@ -1,6 +1,19 @@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
 
+{# Studio dung che do trang RONG. Nen tang da co san co che nay va tam app
+   khac dang dung no (`page--wide` 1600px, `page--immersive` 1800px); Studio
+   thi chua, nen no bi kep o `.page{max-width:1180px}`.
+
+   Do 04/09/2026 o 1672x941: workspace chi rong 1120px, tuc bo phi 31% chieu
+   ngang, trong khi anh tham chieu dung gan het. Va cai gia khong chi la tham
+   my — ba cot hep lai lam cot trai cao 895px, day o y=1105, nen **nut Tao
+   tieng noi nam duoi man hinh** (viewport 941).
+
+   `immersive` chu khong `wide`: `wide` cho 1600px va padding hep hon; o 1672
+   thi `immersive` cho ~1626px content, sat voi 1631px do duoc tu anh mau. #}
+{% block page_mode %}immersive{% endblock %}
+
 {#
   Màn Studio. Đối chiếu với ảnh tham chiếu `01_STUDIO.png`:
 
@@ -64,6 +77,47 @@
     {# ── Cột trái: chọn giọng + đầu ra + nút tạo ─────────────────────────── #}
     <div class="lv-st-trai">
       {% include "_voice_chon.html" %}
+
+      {#
+        NGÔN NGỮ — mục ② `LANGUAGE` trong ảnh 01.
+
+        🔴 Ô NÀY TỪNG BỊ BỎ, và lý do bỏ đã HẾT HẠN.
+
+           Chú thích ở đầu tệp này ghi: *"`LANGUAGE Auto / VI / EN` — engine tự
+           xử VI lẫn EN. Ba nút giả tệ hơn một câu thật."* Nhận xét ấy **đúng
+           vào lúc viết**: khi đó không có khái niệm ngôn ngữ nào trong app cả,
+           nên ba nút ấy sẽ chẳng điều khiển gì.
+
+        ⭐ Nó hết đúng khi `lan_ngon_ngu.py` ra đời. Nay có: làn của từng giọng,
+           phép đoán ngôn ngữ của văn bản, và phép đối chiếu hai thứ đó thành
+           một cảnh báo. Ô này điều khiển đúng phép đối chiếu ấy.
+
+        ⛔ VÀ NÓ KHÔNG PHẢI THAM SỐ CỦA ENGINE. Không có `language=` nào được
+           gửi xuống VieNeu — model song ngữ và tự xử lý. Thứ ô này đổi là
+           **cách sản phẩm đối chiếu**, không phải cách model đọc.
+
+        ⭐ Vì sao có giá trị: `doan_ngon_ngu` trả `None` khi không đủ dấu hiệu,
+           và im lặng khi ấy là đúng. Nhưng ca im lặng nhiều nhất lại là ca cần
+           nhắc nhất — một câu tiếng Anh NGẮN đọc bằng giọng Việt. Khách khai
+           được thì máy hết phải đoán.
+
+        ⚠️ Đây là bài học ② ở đầu tệp lặp lại lần thứ hai: một lời hoãn có điều
+           kiện mà không ai quay lại kiểm điều kiện thì thành một lời từ chối
+           vĩnh viễn. Lần này điều kiện được kiểm, và nó đã đổi.
+      #}
+      <div class="lv-st-o">
+        <span class="eyebrow">{{ _("Ngôn ngữ") }}</span>
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Ngôn ngữ văn bản') }}">
+          {% for ma, nhan in [("auto", _("Tự động")), ("vi", _("Tiếng Việt")),
+                              ("en", _("Tiếng Anh"))] %}
+            <button type="button" class="lv-loc-nut{{ ' on' if ma == 'auto' }}"
+                    aria-pressed="{{ 'true' if ma == 'auto' else 'false' }}"
+                    data-ngonngu="{{ ma }}">{{ nhan }}</button>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="ngon_ngu" id="lv-ngon-ngu" value="auto">
+        <small class="dim">{{ _("Chỉ dùng để nhắc khi văn bản lệch làn của giọng. Máy đọc được cả hai thứ tiếng dù bạn chọn gì.") }}</small>
+      </div>
 
       {#
         TỐC ĐỘ — và đây là một điều khiển THẬT, không phải một nút giả.
@@ -285,11 +339,36 @@
               <a class="btn sm ghost" download href="{{ duong }}?mp3=1">{{ _("MP3") }}</a>
               <a class="btn sm ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }}</a>
             </div>
+            {#
+              CHI TIẾT — mục `DETAILS` trong ảnh 01.
+
+              ⛔ MỖI DÒNG PHẢI LÀ MỘT TRƯỜNG CÓ THẬT. Ảnh mẫu ghi `Latency
+                 812 ms`; ta **không** đo được độ trễ của model — thứ đo được là
+                 `finished_at - started_at`, tức thời gian job CHẠY. Nên dòng ấy
+                 mang đúng tên đó. Gọi nó là "latency" là hứa một phép đo mà ta
+                 không thực hiện, và không ai kiểm được lời hứa ấy.
+
+              ⭐ `Số đoạn` không có trong ảnh mẫu, và nó ở đây vì nó là thứ ảnh
+                 mẫu KHÔNG THỂ có: từ 03/09 một bài dài được chia nhiều lượt rồi
+                 ghép. Khi khách thấy "7 đoạn" họ hiểu vì sao lượt ấy lâu hơn.
+            #}
             <dl class="lv-kq-ct">
               <dt>{{ _("Thời lượng") }}</dt>
-              <dd>{{ moi_nhat.result.get("duration_s") }}s</dd>
+              <dd class="tnum">{{ moi_nhat.result.get("duration_s") }}s</dd>
+              {% if moi_nhat.started_at and moi_nhat.finished_at %}
+                <dt>{{ _("Thời gian xử lý") }}</dt>
+                <dd class="tnum">{{ "%.1f"|format((moi_nhat.finished_at - moi_nhat.started_at).total_seconds()) }}s</dd>
+              {% endif %}
+              {% if (moi_nhat.result.get("so_doan") or 1) > 1 %}
+                <dt>{{ _("Số đoạn") }}</dt>
+                <dd class="tnum">{{ moi_nhat.result.get("so_doan") }}</dd>
+              {% endif %}
+              <dt>{{ _("Định dạng") }}</dt>
+              <dd>WAV · 48 kHz</dd>
               <dt>{{ _("Credit đã tính") }}</dt>
-              <dd>{{ moi_nhat.result.get("credit_cost") }}</dd>
+              <dd class="tnum">{{ moi_nhat.result.get("credit_cost") }}</dd>
+              <dt>{{ _("Mã yêu cầu") }}</dt>
+              <dd class="lv-ma"><code>{{ moi_nhat.id }}</code></dd>
             </dl>
           {% else %}
             <p class="dim">{{ _("Nhập văn bản rồi bấm Tạo tiếng nói. Kết quả hiện ngay tại đây.") }}</p>
@@ -369,6 +448,42 @@
 
         <div id="lv-kq-loi" class="alert alert-err" role="alert" hidden></div>
       </div>
+
+      {#
+        PHIÊN BẢN — mục `VERSIONS` trong ảnh 01.
+
+        🔴 Chú thích cũ ở đầu tệp bỏ mục này: *"phiên bản là khái niệm của KHỐI
+           trong một dự án, không phải của một lượt đọc lẻ."* Câu ấy đúng về
+           **khối**, và nó trả lời một câu hỏi khác câu ảnh mẫu đang hỏi.
+
+        ⭐ Câu ảnh mẫu hỏi là: tôi đọc đi đọc lại CÙNG một câu để chọn bản ưng
+           nhất — ba lượt ấy có phải phiên bản của nhau không? Có. Route nhóm
+           chúng theo **văn bản đã chuẩn hoá**, nên hai lượt chỉ khác một dấu
+           cách thừa vẫn nằm cùng nhóm.
+
+        ⛔ Và nó KHÔNG gom ba job bất kỳ rồi gắn nhãn V1/V2/V3 — §22 cấm đúng
+           điều đó. Không đủ hai lượt cùng văn bản thì mục này KHÔNG hiện.
+      #}
+      {% if phien_ban and phien_ban|length > 1 %}
+      <div class="lv-st-o lv-pb">
+        <div class="lv-st-o-dau">
+          <span class="eyebrow">{{ _("Phiên bản") }}</span>
+          <a class="dim" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }} →</a>
+        </div>
+        <ul class="lv-pb-ds">
+          {% for pb in phien_ban %}
+            <li>
+              <b class="lv-pb-nhan">{{ pb.nhan }}</b>
+              <span class="dim">{{ pb.job.created_at.strftime("%H:%M") if pb.job.created_at else "" }}</span>
+              <span class="tnum dim">{{ pb.job.result.get("duration_s") }}s</span>
+              <a class="btn sm ghost" download
+                 href="{{ manifest.route_prefix }}/audio/{{ pb.job.result.get('audio_key') }}">{{ _("Tải") }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+        <small class="dim">{{ _("Các lượt đọc cùng một văn bản, trong các lượt gần đây.") }}</small>
+      </div>
+      {% endif %}
 
       <details class="lv-gia">
         <summary>{{ _("Cách tính tiền") }}</summary>

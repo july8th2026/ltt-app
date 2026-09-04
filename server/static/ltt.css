@@ -2464,7 +2464,103 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 }
 
 /* ── Man Studio: bo cuc ba cot (P2) ────────────────────────────────────────── */
-.lv-st{display:grid;grid-template-columns:290px minmax(0,1fr) 330px;gap:16px;align-items:start}
+/* Studio la mot BAN LAM VIEC, khong phai mot bieu mau.
+   Ti le ba cot lay tu anh tham chieu 01_STUDIO.png (do 04/09/2026):
+     trai 397 : giua 692 : phai 519  ->  24,3% : 42,4% : 31,8%
+   Dung `fr` chu khong dung px co dinh: ban truoc la `290px 1fr 330px`, nen
+   cot giua nuot toan bo phan rong them va hai cot ben khong lon theo. O
+   1672px do duoc 25,9/41,8/29,5 — gan dung, va no gan dung chi vi be rong
+   tong dang bi kep o 1120. Bo kep ra thi ti le px lech han. */
+.lv-st{display:grid;grid-template-columns:397fr 692fr 519fr;gap:12px;align-items:start}
+/* Chi Studio moi bo tran 1120px cua vo Voice. Cac man Voice khac (Giong, Du
+   an, Lich su, API) la trang DOC, va mot cot chu rong 1600px thi kho doc. */
+.lv-man.lv-studio{max-width:none}
+/* DAI DAU MAN COMPACT — chi o Studio.
+   `_voice_vo.html` dung chung cho ca sau man Voice, va o nam man kia no dung:
+   chung la trang DOC, tieu de + mo ta la thu dau tien can thay. Studio thi la
+   mot BAN LAM VIEC — anh tham chieu di thang tu thanh dieu huong vao workspace.
+
+   Do 04/09: dai nay cao 67px va day workspace xuong y=204, trong khi anh mau
+   bat dau o ~132. Cong voi cot trai 876px, no la ly do **nut Tao tieng noi nam
+   duoi man hinh**.
+
+   ⛔ KHONG xoa `<h1>`: `aria-labelledby="lv-title"` cua ca trang tro vao no, va
+      mot trang khong co tieu de la mot hoi quy tro nang. Chi thu nho no va gap
+      vao mot hang voi cac chip — dung hinh dang anh mau co.
+   ⛔ Va KHONG dong vao mac dinh cua `_voice_vo`: nam man kia giu nguyen. */
+.lv-studio>.lv-vo{align-items:center;gap:12px;margin-bottom:10px}
+.lv-studio>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;gap:10px;min-width:0}
+.lv-studio>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-studio>.lv-vo .lv-vo-chu p{display:none}
+/* DANH SACH GIONG THAP HON — chi o Studio.
+   Man `Giong cua toi` la noi de DUYET giong, nen o do danh sach cao la dung.
+   O Studio no chi la mot buoc trong bay buoc, va anh tham chieu cho no ~230px
+   ca hop. Do 04/09: hop giong cao 475px = 54% ca cot trai, va chinh no day
+   nut Tao tieng noi xuong duoi man hinh.
+   Danh sach van cuon (22 giong, noi dung 1150px) — thu ngan cua so nhin, khong
+   bo bot giong nao. */
+.lv-studio .lv-chon-ds{max-height:150px}
+/* DANH SO 1..N CHO COT TRAI.
+   Anh tham chieu danh so tung muc, va do khong phai trang tri: no bien mot
+   chong the roi thanh mot QUY TRINH doc duoc bang mat — chon giong, roi ngon
+   ngu, roi cach doc, roi dau ra, roi bam.
+
+   Dung `counter` chu khong go so vao HTML: so muc con doi (LANGUAGE vua them,
+   MODE co the them sau), va mot day so go tay se lech ngay lan doi dau tien —
+   lech im lang, vi khong gi do khi "3" dung sau "5". */
+.lv-studio .lv-st-trai{counter-reset:lvb}
+.lv-studio .lv-st-trai>.lv-chon,.lv-studio .lv-st-trai>.lv-st-o{counter-increment:lvb}
+.lv-studio .lv-st-trai>.lv-chon>.lv-chon-dau>.eyebrow::before,
+.lv-studio .lv-st-trai>.lv-st-o>.eyebrow::before,
+.lv-studio .lv-st-trai>.lv-st-o>.lv-st-o-dau>.eyebrow::before{
+  content:counter(lvb);display:inline-grid;place-items:center;width:16px;height:16px;
+  margin-right:7px;border:1px solid var(--line);border-radius:4px;
+  background:var(--surface-raised,#1a1414);color:var(--muted);
+  font-size:9.5px;letter-spacing:0;vertical-align:-3px}
+/* Cau giai thich xuong DONG RIENG. Truoc do no chay tiep ngay sau nhom nut
+   toc do va quan quanh chung — do 04/09, o 395px chieu ngang. */
+.lv-studio .lv-st-trai>.lv-st-o>small.dim{display:block;margin-top:7px;font-size:10.5px;line-height:1.45}
+/* MAT DO COT TRAI.
+   Anh tham chieu xep BAY muc trong mot man 941px. Ban hien tai xep NAM muc
+   ma da tran: do 04/09 sau khi them o Ngon ngu, cot trai cao 883px va nut
+   Tao tieng noi tut xuong y=1033.
+
+   Cho chenh khong phai so muc ma la MAT DO: moi hop co padding 13/14 va mot
+   cau giai thich day du ben duoi. Cau ay co gia tri — no la thu tra loi
+   "nut nay lam gi" ma khong bat khach di doc tai lieu — nen thu nho va thu
+   chat, khong xoa.
+
+   ⛔ Chi trong `.lv-studio`. Man `Giong cua toi` va `Du an` la trang doc, o do
+      khoang tho la dung. */
+.lv-studio .lv-st-trai{gap:10px}
+.lv-studio .lv-st-trai>.lv-st-o,.lv-studio .lv-st-trai>.lv-chon{padding:10px 12px}
+.lv-studio .lv-st-trai>.lv-st-o>.eyebrow{display:block;margin-bottom:7px}
+/* NUT CHINH GHIM DAY COT TRAI.
+   §17 cua ban yeu cau: Generate la diem ket thi giac cua day 1..N. Nhung day
+   ay dai hon man hinh — do 04/09 cot trai cao 823px trong khoang 791px con
+   lai, va do khong phai mot loi bo cuc ma la mot su that: nam muc co giai
+   thich thi cao hon nam muc khong co.
+
+   Hai duong ra. Cat bot giai thich — nhung do la thu tra loi "nut nay lam gi"
+   ngay tai cho. Hoac ghim nut. Ghim giu duoc CA HAI: cuon de doc, ma hanh dong
+   chinh khong bao gio roi khoi tam mat.
+
+   ⚠️ `bottom:10px` chu khong `bottom:0`: dinh sat day man hinh trong nhu bi cat. */
+.lv-studio .lv-st-nut{position:sticky;bottom:10px;z-index:2;
+  padding:10px 0 0;background:linear-gradient(180deg,transparent,var(--bg) 42%)}
+/* Dai dau man sat hon mot chut — anh mau bat dau workspace o ~132px. */
+.page--immersive:has(.lv-studio){padding-top:10px}
+.lv-studio>.lv-vo{margin-bottom:8px}
+/* PHIEN BAN — mot dong bon cot, dung khuon `lv-gd` cua o Gan day de hai danh
+   sach o hai cot trong nhu mot he, khong nhu hai bo phan roi. */
+.lv-pb-ds{list-style:none;margin:0;padding:0;display:grid;gap:2px}
+.lv-pb-ds li{display:grid;grid-template-columns:auto auto minmax(0,1fr) auto;
+  align-items:center;gap:9px;padding:6px 0;border-top:1px solid var(--line)}
+.lv-pb-ds li:first-child{border-top:0}
+.lv-pb-nhan{display:inline-grid;place-items:center;min-width:26px;height:19px;
+  padding:0 5px;border:1px solid var(--brand-primary,#b7372b);border-radius:4px;
+  background:var(--brand-soft,#3a1512);color:#fff;font-size:10.5px}
+.lv-kq-ct .lv-ma code{font-size:10.5px;color:var(--muted);word-break:break-all}
 .lv-st-trai,.lv-st-giua,.lv-st-phai{display:flex;flex-direction:column;gap:14px;min-width:0}
 .lv-st-phai{position:sticky;top:72px}
 

@@ -1093,6 +1093,23 @@
       })(nutTocDo[k]);
     }
 
+    /* ── Ngon ngu van ban (Tu dong / VI / EN) ──────────────────────────────
+       KHONG phai tham so cua engine — VieNeu song ngu va tu xu ly. No dieu
+       khien phep DOI CHIEU lan giong (`lan_ngon_ngu.doi_chieu`): khach khai
+       thi may het phai doan, va canh bao "van ban lech lan cua giong" thoi im
+       lang o dung ca no hay im nhat — mot cau tieng Anh NGAN doc bang giong
+       Viet. */
+    var oNgonNgu = document.getElementById("lv-ngon-ngu");
+    var nutNgonNgu = document.querySelectorAll("[data-ngonngu]");
+    for (var kn = 0; kn < nutNgonNgu.length; kn++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          if (oNgonNgu) oNgonNgu.value = nut.dataset.ngonngu || "auto";
+          batNut(nut);
+        });
+      })(nutNgonNgu[kn]);
+    }
+
     /* ── Tu dien phat am rieng ─────────────────────────────────────────────
        Nap KHI MO lan dau, khong nap san: hau het khach khong mo no, va no la
        mot vong mang cho mot thu ho khong nhin. */

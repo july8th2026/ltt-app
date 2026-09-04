@@ -165,14 +165,24 @@ def _seed_lich_su(db, uid: str) -> None:
 
     from apps.ltt_voice.manifest import MANIFEST
 
+    # ⭐ BA lượt CUỐI cùng một văn bản: đó là cách duy nhất kiểm được panel
+    #    `Phiên bản`. Nó chỉ hiện khi có từ hai lượt đọc cùng một bài — seed
+    #    toàn văn bản khác nhau thì panel không bao giờ render, và tôi sẽ tưởng
+    #    mình viết hỏng trong khi nó đang làm đúng.
+    _lap = "Xin chào mọi người, chào mừng các bạn đến với LTT Voice Studio."
     cau = [
-        ("Xin chào mọi người, chào mừng các bạn đến với LTT Voice Studio.", 4.21),
         ("Đây là công cụ AI Text to Speech mạnh mẽ, giúp bạn tạo giọng nói "
          "tự nhiên và biểu cảm chỉ trong vài giây.", 6.37),
         ("Let's make content creation faster, easier, and more powerful with AI.",
          4.89),
+        (_lap, 4.21),
+        (_lap, 4.35),
+        (_lap, 4.18),
     ]
+    from datetime import datetime, timedelta, timezone
+    _goc = datetime.now(timezone.utc)
     for i, (text, giay) in enumerate(cau):
+        _bd = _goc - timedelta(minutes=6 * (len(cau) - i))
         jid = f"devjob{i + 1:04d}"
         khoa = f"voice/out/{uid}/{jid}/tieng.wav"
         _wav_im(os.path.join(KHO, *khoa.split("/")), giay=giay)
@@ -200,6 +210,10 @@ def _seed_lich_su(db, uid: str) -> None:
                     "text": text, "so_doan": 1,
                     "credit_cost": max(1, int(giay * 0.2)),
                     "toc_do": 1.0},
+            # Co `started_at`/`finished_at` thi o CHI TIET moi hien duoc dong
+            # "Thoi gian xu ly" — thu do duoc that, khac voi "latency" cua model.
+            started_at=_bd, finished_at=_bd + timedelta(seconds=giay * 0.18),
+            created_at=_bd,
             progress=100))
 
 

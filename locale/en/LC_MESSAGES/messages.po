@@ -13198,3 +13198,18 @@ msgstr "Go over the limit and you get a 413 carrying the number that actually ap
 
 msgid "Nếu bạn ăn 413 giữa chừng"
 msgstr "If you hit a 413 mid-conversation"
+
+msgid "Ngôn ngữ văn bản"
+msgstr "Text language"
+
+msgid "Chỉ dùng để nhắc khi văn bản lệch làn của giọng. Máy đọc được cả hai thứ tiếng dù bạn chọn gì."
+msgstr "Only used to warn you when the text does not match the voice's lane. The engine reads both languages whatever you pick."
+
+msgid "Thời gian xử lý"
+msgstr "Processing time"
+
+msgid "Số đoạn"
+msgstr "Segments"
+
+msgid "Các lượt đọc cùng một văn bản, trong các lượt gần đây."
+msgstr "Reads of the same text, among your recent runs."
