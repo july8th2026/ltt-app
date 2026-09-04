@@ -166,6 +166,7 @@ class TrongTai:
                  dem_python_gpu: Callable[[], Optional[int]] = _dem_python_gpu_mac_dinh,
                  ram_trong_gb: Callable[[], Optional[float]] = _ram_trong_gb_mac_dinh,
                  tai_gpu: Callable[[], Optional[int]] = _tai_gpu_mac_dinh,
+                 ho_kia_dang_ve: Optional[Callable[[], bool]] = None,
                  tai_dang_tinh: int = TAI_GPU_DANG_TINH,
                  model_cua_ta_dang_chay: Callable[[], bool] = lambda: False):
         self.ram_toi_thieu = ram_trong_toi_thieu_gb
@@ -174,10 +175,29 @@ class TrongTai:
         self._dem = dem_python_gpu
         self._ram = ram_trong_gb
         self._tai = tai_gpu
+        #: ComfyUI CÓ VIỆC ĐANG CHẠY không. `None` ⇒ coi như không — giữ hành vi
+        #: cũ cho mọi lời gọi chưa tiêm, và cho test không phải dựng ComfyUI.
+        self._ve = ho_kia_dang_ve
         self.tai_dang_tinh = tai_dang_tinh
         #: Model CUA TA co dang nap va san sang khong. Mac dinh `False` de giu
         #: nguyen hanh vi cu khi ben goi khong noi day — xem `phan_xu`.
         self._model_cua_ta = model_cua_ta_dang_chay
+
+    def _ho_kia_dang_ve(self) -> bool:
+        """ComfyUI có việc đang chạy không. Hỏng/không tiêm ⇒ `False`.
+
+        ⛔ "Không biết" ở đây trả `False` (không bận) chứ không `True`, và đó là
+           **giữ nguyên hành vi cũ**: trước 04/09 nhánh này không hỏi gì cả. Một
+           nguồn tin mới hỏng không được phép làm cổng chặt hơn trước — đó là
+           cách một cải tiến biến thành một sự cố.
+        """
+        if self._ve is None:
+            return False
+        try:
+            return bool(self._ve())
+        except Exception:                                       # noqa: BLE001
+            log.info("khong hoi duoc hang doi ComfyUI — coi nhu khong ve")
+            return False
 
     def phan_xu(self) -> PhanXu:
         if not self.bat:
@@ -234,10 +254,35 @@ class TrongTai:
                 #    đầu vẽ thật, ta sẽ không còn từ chối. Chấp nhận được vì
                 #    `--reserve-vram 3` đã có và VRAM của ta ổn định ở 22,4 GB;
                 #    đổi lại là chấm dứt 70 % lượt từ chối oan.
-                if self._model_cua_ta():
+                if self._model_cua_ta() and not self._ho_kia_dang_ve():
                     return PhanXu(ban=False, so_python_gpu=n, ram_trong_gb=ram,
                                   ly_do=(f"tai GPU {tai}% nhung model cua ta dang "
                                          f"chay — tai nay la CUA TA"))
+                if self._model_cua_ta():
+                    # 🔴 LỖ HỔNG CỦA CHÍNH NHÁNH TRÊN, ĐO 04/09/2026.
+                    #
+                    #    Nhánh "tải này là CỦA TA" giả định: model ta đã nạp thì
+                    #    tải cao chắc là của ta. Chú thích của nó đã nói thẳng cái
+                    #    giá: *"nếu model ta đã nạp VÀ ComfyUI bắt đầu vẽ thật, ta
+                    #    sẽ không còn từ chối"*.
+                    #
+                    #    Đo thật lúc 12:5x: `qwen38-api state=ready`, ComfyUI
+                    #    `queue_running=1`, card **24.178/24.576 MiB, tải 86 %** —
+                    #    hai model vừa cùng thường trú vừa cùng làm việc. Và tiền
+                    #    đề của đánh đổi đã hỏng: VRAM của ta lúc ấy chỉ **13,3 GB**
+                    #    chứ không phải 22,4 GB, tức nó đã tràn sang RAM chủ và
+                    #    đang chạy ở một phần tư tốc độ.
+                    #
+                    # ⭐ Thứ sửa được điều này không phải một ngưỡng tải khác, mà
+                    #    một NGUỒN TIN KHÁC: **hỏi thẳng ComfyUI có việc đang chạy
+                    #    không**. Mức tải là suy đoán; hàng đợi là sự thật. Và vì
+                    #    ta hỏi trực tiếp nên nhánh này KHÔNG làm sống lại 70 %
+                    #    lượt từ chối oan của 31/08 — những lượt đó bị chối vì tải
+                    #    do CHÍNH TA tạo ra, còn ở đây hàng đợi ComfyUI trống nên
+                    #    câu trả lời vẫn là "không bận".
+                    return PhanXu(ban=True, so_python_gpu=n, ram_trong_gb=ram,
+                                  ly_do=("model cua ta da nap NHUNG ComfyUI dang "
+                                         "ve that — chay ca hai lam ca hai cham"))
                 return PhanXu(ban=True, so_python_gpu=n, ram_trong_gb=ram,
                               ly_do=(f"co tien trinh python tren card va tai GPU "
                                      f"{tai}% (>= {self.tai_dang_tinh}%) — dang ve, "

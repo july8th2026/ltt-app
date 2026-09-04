@@ -77,7 +77,11 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     #    Goi `/running` moi yeu cau la them mot vong loopback vao duong nong.
     tt = trong_tai if trong_tai is not None else TrongTai(
         ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, bat=cfg.trong_tai_bat,
-        model_cua_ta_dang_chay=lambda: _co_model_cua_ta_dang_chay())
+        model_cua_ta_dang_chay=lambda: _co_model_cua_ta_dang_chay(),
+        # ⭐ HOI THANG HANG DOI ComfyUI, dung suy tu muc tai. Muc tai la suy doan
+        #    ("card nong, chac ai do dang lam"); hang doi la su that ("co dung
+        #    n viec dang chay"). Xem nhanh `_model_cua_ta` trong `trong_tai.py`.
+        ho_kia_dang_ve=lambda: _comfy_dang_ve())
 
     gh = gioi_han if gioi_han is not None else GioiHan(
         max_dong_thoi=cfg.max_dong_thoi, rpm=cfg.rpm, now=now)
@@ -87,6 +91,26 @@ def create_app(cfg: Config, upstream, *, trong_tai: Optional[TrongTai] = None,
     elif cfg.don_dep_bat:
         don_dep = DonDepGpu(comfy_url=cfg.comfy_url,
                             nguong_sach_mb=cfg.vram_sach_mb)
+
+    def _comfy_dang_ve() -> bool:
+        """ComfyUI có việc ĐANG CHẠY không (không tính việc đang xếp hàng).
+
+        ⛔ Chỉ tính `queue_running`, không tính `queue_pending`: một việc đang
+           xếp hàng chưa chiếm card, và coi nó là bận sẽ chặn lượt LLM trong lúc
+           ComfyUI còn chưa bắt đầu gì.
+
+        ⚠️ Gọi LƯỜI — chỉ chạy khi nhánh tải thực sự cần, cùng lý do với
+           `_co_model_cua_ta_dang_chay`: thêm một vòng loopback vào đường nóng
+           của mọi yêu cầu là trả giá cho một câu hỏi hiếm khi cần hỏi.
+        """
+        try:
+            import httpx
+
+            r = httpx.get(f"{cfg.comfy_url.rstrip('/')}/queue", timeout=4.0)
+            r.raise_for_status()
+            return bool(r.json().get("queue_running"))
+        except Exception:                                       # noqa: BLE001
+            return False
 
     def _co_model_cua_ta_dang_chay() -> bool:
         """`llama-swap` có đang giữ **bất kỳ** model nào của ta không.
