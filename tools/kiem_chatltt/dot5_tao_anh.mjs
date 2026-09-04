@@ -22,7 +22,7 @@
 
 import { anhHopLe } from './dot4_dinh_kem.mjs';
 
-export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) {
+export function dot5({ cho, doiDen, soDu, soDuOnDinh, hoiThoaiMoi, guiChu, xong, nangLuc }) {
   const nutAnh = (p) => p.getByRole('button', { name: 'Tạo ảnh' });
   const oMoTa = (p) => p.getByLabel('Mô tả ảnh');
 
@@ -78,7 +78,11 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) 
       async chay(p) {
         const bq = await moPanelAnh(p);
         if (bq) return bq;
-        const truoc = await soDu(p);
+        // ⛔ DOI SO DU NGUNG NHUC NHICH TRUOC KHI LAY MOC. `moPanelAnh` co
+        //    the vua gui mot luot chu de mo o media, va khoan thu cua luot do ve
+        //    KHONG DONG BO — no se ha so du ngay giua phep do nay va bi quy cho
+        //    "bao gia da tru tien".
+        const truoc = await soDuOnDinh(p);
         const anhTruoc = await soAnh(p);
         const { gia } = await xemGia(p, 'mot con meo tam mau ngoi tren bau cua so');
         const giuaChung = await soDu(p);
@@ -104,7 +108,7 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) 
         //    so du giam dung bang so da bao, khong hon.
         const bq = await moPanelAnh(p);
         if (bq) return bq;
-        const truoc = await soDu(p);
+        const truoc = await soDuOnDinh(p);
         const anhTruoc = await soAnh(p);
         const { gia } = await xemGia(p, 'mot ngon hai dang tren vach da luc hoang hon');
         await p.getByRole('button', { name: 'Đồng ý, tạo' }).click();

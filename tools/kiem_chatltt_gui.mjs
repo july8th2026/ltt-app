@@ -209,6 +209,33 @@ const soDu = async (p) => {
   const m = t.replace(/[.\s]/g, '').match(/(\d+)/);
   return m ? Number(m[1]) : null;
 };
+/** So du khi no da NGUNG NHUC NHICH — hai lan doc lien tiep bang nhau.
+ *
+ * 🔴 VI SAO CAN. So du KHONG don dieu theo thoi gian: giu/thu/hoan quyet
+ *    toan **khong dong bo** voi luot dang chay, nen mot khoan cua luot TRUOC co
+ *    the ve ngay giua phep do cua luot NAY.
+ *
+ * ⛔ Do 04/09: hang muc `5.1` bao "BAO GIA da tru tien: 908 -> 907" trong
+ *    khi bao gia khong he cham so tien. Thu tru mot credit la luot chu `"Chao."`
+ *    ma chinh `moPanelAnh` vua gui de mo o media. Mot phep kiem to nham san pham
+ *    vi no do mot dai luong dang chuyen dong.
+ *
+ * ⭐ Cung goc voi loi `7.4` ("so du phai giam") da sua truoc do trong ngay.
+ *    Sua o mot cho roi khong ra soat nhung cho con lai la de danh lai dung cai
+ *    bay cho lan sau.
+ */
+const soDuOnDinh = async (p, hanS = 20) => {
+  let truoc = await soDu(p);
+  const het = Date.now() + hanS * 1000;
+  while (Date.now() < het) {
+    await cho(1500);
+    const nay = await soDu(p);
+    if (nay !== null && nay === truoc) return nay;
+    truoc = nay;
+  }
+  return truoc;
+};
+
 const dangChay = (p) => p.getByRole('button', { name: 'Dừng' }).count().then((n) => n > 0);
 
 /** Trang thai mot nang luc, HOI THANG MAY CHU.
@@ -703,7 +730,7 @@ const HANG_MUC = [
 //    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
 //    khong ai sua khi no sai.
 const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
-                   hoiThoaiMoi, donOSoan, soDu, nangLuc };
+                   hoiThoaiMoi, donOSoan, soDu, soDuOnDinh, nangLuc };
 {
   const nap = async (ten, ham) => {
     try {
