@@ -321,3 +321,18 @@ describe('nang luc chua san sang', () => {
     expect(goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1)
   })
 })
+
+/**
+ * ⚠️ ĐÃ THỬ VIẾT MỘT PHÉP KIỂM Ở ĐÂY CHO "lựa chọn model không bị ghi đè",
+ *    VÀ ĐÃ GỠ NÓ. Ghi lại vì cái gỡ đáng nhớ hơn cái viết.
+ *
+ *    Phép kiểm đó bấm lại chính hội thoại đang mở để giả lập "một lần làm mới".
+ *    Nhưng bấm lại **không đổi `convId`**, nên hiệu ứng `[convId]` không chạy,
+ *    nên `napSuThat` không hề được gọi. Gỡ bản vá ra thì nó **vẫn xanh** — một
+ *    dòng trang trí.
+ *
+ * ⭐ Đường thật đi qua `guiLuot` → `napSuThat(cid)` (`App.tsx`), tức cần một
+ *    lượt gửi thật với SSE. Thứ đang canh mệnh đề này là hạng mục `9.1` của bộ
+ *    kiểm giao diện — nó chạy trên sản phẩm thật và **chính nó đã bắt được lỗi
+ *    này**, với thông điệp nói rõ ô chọn quay về `ltt_llm`.
+ */
