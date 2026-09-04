@@ -86,11 +86,11 @@
     {
       "id": "P04",
       "ten": "duyet ben + tien",
-      "trang_thai": "CHUA",
+      "trang_thai": "DANG LAM",
       "chan": [
         "P03"
       ],
-      "phan_tram": 0
+      "phan_tram": 35
     },
     {
       "id": "P05",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 8.3,
-      "phan_tram": 49
+      "xong": 9.9,
+      "phan_tram": 58
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,8 +363,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 8.3,
-      "phan_tram": 16
+      "xong": 9.9,
+      "phan_tram": 19
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -576,5 +576,27 @@
   "bay_da_dinh": [
     "ghi tep bang python p.write_text tren Windows sinh CRLF -> gate 'kieu xuong dong' DO. Dinh 2 lan trong mot phien. Cach chan: sau moi lan ghi bang python, chuan hoa LF.",
     "p.write_text() voi mot chuoi mang lone surrogate (do escape \\ud83d trong nguon Python) NEM giua chung — nhung tep da bi TRUNCATE ve 0 byte truoc khi nem. Vitest bao 'No test suite found', khong bao 'tep rong'. Cach chan: viet tep co emoji bang Write, dung ghep escape trong chuoi Python."
-  ]
+  ],
+  "p04": {
+    "trang_thai": "DANG LAM",
+    "phan_tram": 35,
+    "da_xong": [
+      "duyet.py — phieu duyet BEN + test_809 (30)",
+      "quyet dinh di bang UPDATE CO DIEU KIEN (WHERE quyet_dinh='cho'), khong bang if trong Python",
+      "khoa_idem DAN XUAT tu (run_id, step_id, bam_trung) — client khong tu nghi ra duoc",
+      "doi_so_cuoi(): ban da sua thang ban goc; tra BAN SAO",
+      "tu choi/het han -> KetQua model doc duoc, run KHONG chet",
+      "han cho 30 phut (bao gia gan voi phien_ban_gia, khong de song qua dem)"
+    ],
+    "con_lai": [
+      "noi AWAITING_APPROVAL vao dieu_phoi (can co che tam dung/chay tiep)",
+      "route + UI duyet",
+      "R2b: mot request_id cho ca run (can thanh_toan.py — khoa cua phien dieu phoi)",
+      "doi soat chatltt_run vs credit_entries"
+    ],
+    "dot_bien_da_thu": [
+      "go unique=True khoi ux_chatltt_approval_step => test_809::test_RANG_BUOC_CSDL_chan_hai_phieu_cho_mot_buoc DO (1 failed / 29 passed). Hop dong 02 §6 doi dung phep dot bien nay."
+    ],
+    "ghi_chu": "Phep kiem rang buoc DI VONG QUA `xin_duyet` va chen thang hang thu hai. Goi ham hai lan chi chung minh HAM tu kiem — khong chung minh RANG BUOC con do."
+  }
 }
