@@ -83,7 +83,44 @@ def dinh_that_db() -> float:
 #:
 #: ⛔ Va cach sua SAI la noi tran cua QC ra: khi do phep kiem thoi noi ve thu
 #:    khach that su nhan duoc.
-BIEN_CHO_CODEC_DB = 1.0
+#:
+#: 🔴 **1,0 tung DU, va no du vi no duoc do tren MOT preset (A29-07).**
+#:
+#:    Con so 1,0 den tu "mot lan chay day du" o pha 22 — nhung lan chay do co
+#:    `so_cat: 0`: preset cat chua noi duoc VLM nen no chay ra mot ban giong het
+#:    preset giu hinh. Tuc bien du duoc do tren mot hinh dang tin hieu, roi ap
+#:    cho ca hai.
+#:
+#:    Do duoc o luot chay THAT dau tien (pha 29, ca hai cua deu that), cung mot
+#:    ban phoi -2,49 dBTP cho ca hai preset:
+#:
+#:        giu hinh   -2,49 -> ban giao -2,30   vot lo **0,19 dB**
+#:        cat        -2,49 -> ban giao -0,78   vot lo **1,71 dB**   <- vuot bien du
+#:
+#: 🔴 **Va lan chay xac nhan da BAC mot nua loi giai thich dau tien cua toi.**
+#:
+#:    Toi doan preset cat vot lo manh hon vi tin hieu DAC hon (da bo doan im
+#:    lang). Do lai sau khi ha tran phoi xuong -3,5:
+#:
+#:        giu hinh   -3,42 -> -3,27   vot lo 0,15 dB
+#:        cat        -3,48 -> -3,28   vot lo **0,20 dB**   (truoc: 1,71)
+#:
+#:    Cung mot duong ma, cung mot preset, vot lo tut tu 1,71 xuong 0,20. Nen no
+#:    khong phai thuoc tinh cua tin hieu — no phu thuoc **limiter dang phai ep
+#:    manh toi dau**. O -2,5 limiter kep nhieu mau vao tran, va moi mau bi kep
+#:    la mot cho dinh giua-mau co the vuot len; o -3,5 no gan nhu khong ep.
+#:
+#: ⛔ Ghi ro dieu nay vi mot ly do cu the: neu ai do doc du bao cu cua toi ("con
+#:    0,29 dB du"), ho se ket luan bien du dang qua chat va co the ha no xuong.
+#:    So that la con **~1,8 dB** du. Ha bien du xuong lai lam limiter ep manh
+#:    hon, tuc lam vot lo TANG tro lai — mot vong phan hoi de doc nham.
+#:
+#: ⚠️ Va van la mot con so do tu MOT ban nguon. No can do lai tren vai nguon
+#:    khac nhau truoc khi ai do tin no la du.
+#:
+#: ⛔ Va no KHONG lam ban giao nho di ve cam giac: LUFS tich hop van la -14, chi
+#:    co bien dinh la ha xuong. Am luong nghe duoc khong doi.
+BIEN_CHO_CODEC_DB = 2.0
 
 
 def dinh_that_phoi_db() -> float:

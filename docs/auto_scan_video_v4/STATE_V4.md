@@ -181,8 +181,22 @@
     database), or shorten `AsvRun.id` (app-only, and safe **today** because
     ASV has no production rows - but it changes an id scheme chosen on
     purpose, `asvr_` prefixes exist so a wrong id cannot be passed silently).
-  * **A29-07 (P1) — the smart preset's delivered file breaches its own
-    true-peak ceiling.** First fully-real end-to-end run (no doors
+  * **A29-07 (P1) — FIXED, and the fix disproved half my explanation.**
+    Phase 22 had already installed the right mechanism - `BIEN_CHO_CODEC_DB`,
+    a margin so the PCM master sits below the delivery ceiling and AAC's
+    inter-sample overshoot still lands under it. It was set to **1.0 dB**,
+    measured on a run where `so_cat: 0` - i.e. **on one preset only**, because
+    the cutting preset could not yet cut. Raised to **2.0**.
+    🔴 I explained the cut preset's larger overshoot as a denser signal.
+    The confirming run says otherwise: at a -3.5 master ceiling the cut
+    overshoot fell from **1.71 to 0.20 dB** - same code, same preset. So
+    overshoot tracks **how hard the limiter is working**, not signal density.
+    ⛔ Recorded loudly because my earlier projection said "0.29 dB of margin
+    left"; the truth is ~1.8 dB, and anyone trusting the projection would
+    conclude the margin is too tight and lower it - which makes the limiter
+    work harder and the overshoot grow again.
+  * **A29-07 original measurement (superseded):** the smart preset's delivered
+    file breached its own true-peak ceiling. First fully-real end-to-end run (no doors
     substituted at all):
         preserve      T4 -14.41 LUFS ok | T5 **-2.30** dBTP ok
         smart_localize T4 -14.34 LUFS ok | T5 **-0.78** dBTP **FAIL** (max -1.5)
