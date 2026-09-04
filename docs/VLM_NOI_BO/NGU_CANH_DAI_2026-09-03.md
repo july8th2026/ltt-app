@@ -914,11 +914,103 @@ thứ cũng "chạy được" cho tới khi có người đưa vào một kết 
 
 ⛔ Không sửa trong lượt này (mã máy B, cần một lượt deploy riêng). → N-14.
 
+## 7h. 🔴 PHÍA CLAUDE: CÙNG MỘT LỖI, KHÁC TÊN KHOÁ
+
+Sau khi đóng phía Codex, người dùng hỏi một câu mà tôi chưa tự hỏi: *"ngoài
+codex bạn đã sửa cho claude chưa? cắm claude có đủ trường không?"*
+
+Câu trả lời là **chưa**, và thiếu đúng cùng một chỗ.
+
+### 7h.1 Nguồn: bản đang cài, rồi tài liệu chính thức
+
+Không đoán tên biến. Quét bundle của chính bản Claude Code đang chạy trên máy
+(`app.asar`, 34 MB) ra **824** tên biến, rồi đối chiếu với
+`code.claude.com/docs/en/env-vars.md` và `model-config.md` — **bản `.md`**, vì
+trang HTML render bằng JS và chỉ rò ra 5 tên.
+
+### 7h.2 Khuyết tật
+
+Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` và dừng ở đó. Nhưng
+`model-config.md`, mục *Default auto-compact thresholds*, nói thẳng:
+
+> *"If you don't set an auto-compact window, Claude Code compacts when the
+> conversation reaches the model's context limit"*
+>
+> *"Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+> gateway alias, compact at the context window Claude Code assumes for the ID"*
+
+⇒ `MAX_CONTEXT_TOKENS` chỉ sửa con số Claude **giả định**. Nó **không** đặt
+ngưỡng nén. Claude nén ở **đúng 156.385** — 100% cửa sổ, không phải một phần an
+toàn dưới nó.
+
+```
+tran cung may chu  169.984
+Claude nen o       156.385
+con lai             13.599   <  mot luot sinh dai nhat 32.768
+```
+
+⛔ **Cùng số học, cùng hậu quả với lỗi `× 0,8` ở §1** (để lại 25.412 < 32.768) —
+thứ đã ăn một `413` thật ở production. Chỉ khác tên khoá.
+
+⭐ Và nó sống được vì `MAX_CONTEXT_TOKENS` **trông như** đã giải quyết xong vấn
+đề: ta đo được cảnh báo *"is not a model this version of Claude Code
+recognizes"* biến mất sau khi đặt nó (§30/08), rồi coi đó là bằng chứng. Cảnh
+báo biến mất chứng minh Claude **nhận** con số; nó không chứng minh Claude
+**nén đúng lúc**. Hai mệnh đề khác nhau.
+
+### 7h.3 Sửa: hai biến, suy từ SSOT
+
+```
+CLAUDE_CODE_AUTO_COMPACT_WINDOW = NEN_HOI_THOAI     = 123.617
+MAX_MCP_OUTPUT_TOKENS           = TRAN_KET_QUA_TOOL =  16.384
+```
+
+Con số thứ nhất **trùng** ngưỡng nén Codex — hai client, một máy chủ, một con
+số. Con số thứ hai vì mặc định Claude là **25.000**, chiếm 76% khoảng trống; hai
+phản hồi MCP trong một lượt là tràn.
+
+⚠️ `CLAUDE_CODE_AUTO_COMPACT_WINDOW` có **sàn 100.000**. Ngưỡng vision của ta
+(55.787) nằm dưới sàn, và biến môi trường không tách được theo model — nhưng
+`ANTHROPIC_MODEL` là `ltt_llm`, nên con số text mới là con số đúng cho phiên
+Claude Code.
+
+### 7h.4 Ba thứ CỐ Ý không đặt
+
+| Biến | Vì sao không |
+|---|---|
+| `BASH_MAX_OUTPUT_LENGTH` | mặc định **30.000 ký tự** ≈ 6.000 token — đã an toàn sẵn |
+| `CLAUDE_CODE_FILE_READ_MAX_OUTPUT_TOKENS` | tài liệu mô tả nó để **nâng** giới hạn; đặt vào chỉ tăng rủi ro |
+| `CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT` | nó **tắt** nén chủ động — ngược hẳn thứ ta cần |
+
+⭐ Đây là chỗ đọc tài liệu trả công rõ nhất: nếu suy từ đối xứng với Codex, tôi
+đã đặt cả ba, và cái thứ ba sẽ **phá** đúng thứ hai cái kia vừa sửa.
+
+### 7h.5 Một tin tốt, và một cái bẫy suýt dính
+
+`ltt_llm` không bắt đầu bằng `claude-` và không chứa `[1m]` ⇒ rơi vào **trường
+hợp 1** của tài liệu: *"the variable applies directly and proactive compaction
+continues at the declared window"*.
+
+⛔ Nhưng nếu ID **bắt đầu bằng `claude-`** hoặc phân giải được về một model
+Claude, thì `MAX_CONTEXT_TOKENS` **chỉ có tác dụng khi kèm `DISABLE_COMPACT`** —
+tức tắt sạch nén. Ta có một alias tên `ltt-llm-claude-compat` (chỉ dùng cho
+Claude **Desktop**, một bề mặt khác), nên tên model suýt đổi cả hành vi.
+
+### 7h.6 Máy chủ: sạch
+
+Đối chiếu `llm-gateway-protocol.md`: `/api/v1/messages` **có**;
+`HEAD /api/hello` và `/v1/messages/count_tokens` trả **404** — tài liệu nói cả
+hai tuỳ chọn, từ chối được mà không hỏng gì. Model discovery mặc định **tắt**
+(`CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY`), và kể cả bật thì Claude chỉ giữ
+mục có `claude`/`anthropic` trong `id` — `ltt_llm` bị lọc. Không phải lỗi, nhưng
+đáng biết.
+
 ## 8. Còn nợ — nói ra, không giấu
 
 | # | Nợ | Vì sao chưa đóng |
 |---|---|---|
 | ~~N-1~~ | 🟢 **ĐÓNG 04/09** — máy B **đã** deploy. ~~Máy B vẫn `-c 131072`~~ | Hỏi máy chủ thật: `ltt_llm` công bố **156.385**. Dòng nợ này đã sai trong một thời gian mà không ai biết, vì nó là chữ chép tay. §7e. |
+| **N-15** | 🔴 **Bản vá Claude CHƯA có canary** | §7h sửa từ **tài liệu**, không từ **phép đo**. Phía Codex có H-5 (14/14 tệp, `context compacted` ×2, zero 413); phía Claude **không có gì tương đương**. Lập luận chắc và nguồn chính thức, nhưng cả hồ sơ này nói rằng một thứ *trông như* đã xong thì chưa phải xong — và đây đúng là chỗ đó. Chạy canary tương đương H-5 với `claude` CLI. |
 | **N-14** | ⚠️ **Cổng máy B cho vision nhận đầu vào bằng TRỌN cửa sổ engine** | `min(cfg.max_input_tokens, spec.max_context)` = 131.072 trên `-c 131072` ⇒ ở biên không còn chỗ sinh. Vô hại hôm nay vì máy A kẹp ở 96.256, nhưng đó là đúng nhờ bất biến ở **máy khác**. Sửa đúng: `spec.max_context - TOKEN_RA_TRAN`. §7g.1 |
 | **N-13** | ⚠️ **Bản vá `/api/v1/models` chưa deploy** | Ba trường bắt buộc đã thêm (§7e.3, `fa1b8e9`) nhưng khách vẫn nhận bản thiếu cho tới khi deploy. Xếp cùng hàng với H-4 — cùng một lượt `2-cai-dat.ps1`. |
 | ~~N-2~~ | ~~Canary Codex/Claude phiên dài với khóa thật~~ | ✅ **XANH 04/09 (H-5, §7f)** — 14/14 tệp, 4,2 MB kết quả tool, `context compacted` ×2, **zero 413**. Lượt trước (H-2) **thất bại**, xem §7c. Kết quả đáng giá hơn một lần xanh: nó chứng minh H-1 đã đưa hai bên về cùng một đơn vị, và lộ ra một cơ chế thứ ba mà không phép đo nào trước đó thấy được. |
