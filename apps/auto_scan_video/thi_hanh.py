@@ -299,13 +299,27 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
                              van_tay=vt)
 
         # ── Buoc 2→4: kiem hop le -> promote -> ghi tham chieu + van tay ───
+        # 🔴 **BAN GIAO KHONG CO HAN; ban trung gian thi co.**
+        #
+        #    `promote_va_ghi` mac dinh dong `HAN_TRUNG_GIAN = 30 ngay` len MOI
+        #    thu, ke ca tep khach tai ve. Truoc pha 27 dieu do vo hai theo mot
+        #    cach rat xau: khong bo quet nao ton tai, nen `expires_at` chi la mot
+        #    nhan. Pha 27 vua noi bo quet vao (`features.bao_tri`) — va ngay
+        #    khoanh khac do, cai nhan vo hai kia tro thanh mot lenh **xoa video
+        #    cua khach sau 30 ngay**.
+        #
+        # ⇒ Hai thay doi nay PHAI di cung nhau. Mot bo quet dung khong kem dong
+        #   nay la mot bo quet dung ap dung sai chinh sach — va no im lang cho
+        #   30 ngay truoc khi ai do phat hien.
         khoa_ra: list[str] = []
+        la_ban_giao = ten == pipeline.RENDER
         for phan in ra["phan"]:
             asset = assets.promote_va_ghi(
                 db, kho, owner_id=owner_id, run_id=run_id, stage=ten,
                 van_tay=phan.get("van_tay") or vt, kind=phan["kind"],
                 duoi=phan["duoi"], staging_key=phan["staging_key"],
-                parent_keys=_khoa_cha(db, run_id, ten))
+                parent_keys=_khoa_cha(db, run_id, ten),
+                han=None if la_ban_giao else assets.HAN_TRUNG_GIAN)
             khoa_ra.append(asset.storage_key)
 
         ket_qua = {"stage": ten, "khoa_asset": khoa_ra,

@@ -537,6 +537,45 @@ def asset_cua(db: Session, khoa: str, owner_id: str) -> AsvAsset:
     return row
 
 
+def quet_het_han(db: Session, kho: Storage, *, moc=None, toi_da: int = 500) -> int:
+    """Xoa nhung artifact DA QUA `expires_at`. Tra ve so tep da xoa.
+
+    🔴 **Truoc pha 27 khong ham nao lam viec nay, va `expires_at` chua tung
+       duoc mot cau lenh nao doc de xoa.** `HAN_TRUNG_GIAN = 30 ngay` duoc dong
+       len moi artifact, `kiem_toan_ven` bao `expired`, va roi khong gi xay ra.
+       Mot chinh sach luu tru duoc khai ma khong co bo quet doc len nhu mot loi
+       hua — va no con to hon mot loi hua: no lam bao cao kiem toan noi "expired"
+       ve nhung tep van dang nam nguyen tren dia va van dang tinh tien luu tru.
+
+    ⛔ **KHONG dung `don_theo_run` cho viec nay.** Ham do xoa MOI artifact cua
+       mot lan chay — ke ca ban giao cho khach. Bo quet nay chi cham nhung dong
+       co `expires_at` da qua, tuc dung nhung ban trung gian; ban giao duoc
+       promote voi `han=None` nen no khong co ngay het han de qua.
+
+    ⚠️ `toi_da` chan tren MOT luot: bo quet chay trong vong bao tri cua worker
+       (moi gio), va mot luot xoa hang chuc nghin tep se giu lease `bao_tri`
+       qua lau va chan moi viec nen khac. Con lai se duoc don o luot sau.
+    """
+    moc = _aware(moc) if moc is not None else _now()
+    hang = list(db.execute(
+        select(AsvAsset)
+        .where(AsvAsset.expires_at.is_not(None), AsvAsset.expires_at <= moc)
+        .order_by(AsvAsset.expires_at)
+        .limit(max(1, int(toi_da)))).scalars())
+    dem = 0
+    for a in hang:
+        try:
+            kho.delete(a.storage_key)
+            dem += 1
+        except (StorageError, FileNotFoundError):
+            # Da bien mat roi thi khong con gi de xoa — nhung DONG thi van phai
+            # di, neu khong luot sau se lai doc dung no va lai khong xoa duoc gi.
+            pass
+        db.delete(a)
+    db.flush()
+    return dem
+
+
 def don_theo_run(db: Session, kho: Storage, run_id: str, owner_id: str) -> int:
     """Xoa artifact cua MOT run cua chinh chu so huu. Tra ve so tep da xoa.
 

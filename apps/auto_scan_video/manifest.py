@@ -54,6 +54,19 @@ def _gia(params: dict) -> int:
     return 0
 
 
+def _bao_tri() -> None:
+    """Uy quyen cho `features.bao_tri`.
+
+    ⛔ Import BEN TRONG ham, khong o dau tep: `manifest.py` duoc nap boi
+       `registry.discover()` o moi tien trinh — ke ca nhung tien trinh khong bao
+       gio chay viec nay — va keo ca `features` (kem SQLAlchemy, kho luu tru)
+       vao do la bat moi worker tra gia nap cho mot ham no khong goi.
+    """
+    from .features import bao_tri
+
+    bao_tri()
+
+
 MANIFEST = AppManifest(
     slug="auto_scan_video",
     display_name=N_('Auto Scan Video'),
@@ -75,6 +88,14 @@ MANIFEST = AppManifest(
     job_types=("auto_scan_video.advance", "auto_scan_video.edit_plan",
                "auto_scan_video.content_process"),
     requires=("api",),
+
+    #: 🔑 Bo quet han luu tru. Xem `features.bao_tri` va `assets.quet_het_han`:
+    #:    truoc pha 27 `expires_at` duoc GHI vao moi artifact va khong cau lenh
+    #:    nao doc no de xoa.
+    #:
+    #: ⚠️ Mot gio la mac dinh cua hop dong va no dung o day: chu ky la 30 NGAY,
+    #:    nen quet day hon khong don duoc them gi, chi ton them mot luot doc.
+    bao_tri=_bao_tri,
     credit_cost=_gia,
 
     max_runtime_s={

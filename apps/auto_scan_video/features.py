@@ -28,6 +28,8 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 
+import logging
+
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -40,6 +42,8 @@ from .tables import (RUN_CANCELLED, RUN_DONE, RUN_ERROR, RUN_QUEUED,
                      RUN_RUNNING, RUN_TERMINAL, STAGE_FAILED_TERMINAL,
                      STAGE_PENDING, STAGE_QUEUED, STAGE_SUCCEEDED,
                      AsvRun, AsvStage, AsvWorkItem)
+
+log = logging.getLogger(__name__)
 
 SLUG = "auto_scan_video"
 JOB_DIEU_PHOI = "auto_scan_video.advance"
@@ -660,9 +664,42 @@ def tao_run_tu_ve(db: Session, kho, *, owner_id: str, upload_id: str,
                    settings=settings, uoc_luong_credit=uoc)
 
 
-def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
+def bao_tri() -> None:
+    """Viec nen dinh ky cua app. Nen tang goi moi `bao_tri_moi_giay` giay.
+
+    🔑 **Day la NGUOI GOI ma B25-01 thieu.** Hop dong `AppManifest.bao_tri` da
+       ton tai tu 24/08, va chinh no duoc them vao vi mot app khac (`vps`) da
+       viet xong `thu_phi_dinh_ky` kem test ma khong noi nao goi. Auto Scan lap
+       lai dung viec do voi `expires_at`: chinh sach co, ham kiem co, bao cao
+       co — va khong ai chay.
+
+    ⛔ Ham nay KHONG duoc nem: nen tang bat va ghi log, nhung mot app nem moi
+       luot la mot dong log rac moi gio, va no che nhung loi that.
+
+    ⭐ Chay duoi lease `bao_tri` cua nen tang, nen no chay **dung mot lan tren
+       toan cum** du co bao nhieu tien trinh worker. Do la ly do viec nay phai
+       di qua hop dong thay vi app tu dung mot vong lap: so worker mac dinh
+       bang so GPU, va mot vong lap tu dung se xoa N lan mot gio.
+    """
+    from platform_core.db import get_session
+    from platform_core.storage import get_storage
+
+    from . import assets
+
+    try:
+        kho = get_storage()
+        for db in get_session():
+            so = assets.quet_het_han(db, kho)
+            db.commit()
+            if so:
+                log.info("ASV bao tri: da xoa %s artifact het han", so)
+    except Exception:                       # noqa: BLE001
+        log.exception("ASV bao tri that bai")
+
+
+def tao_run_tu_tai_len(db: Session, *, owner_id: str, duong_tep: str,
                        ten_tep: str, settings: dict) -> AsvRun:
-    """Nhan bytes tu mot lan tai len -> luu vao kho -> tao run.
+    """Nhan mot TEP DA NAM TREN DIA tu mot lan tai len -> luu vao kho -> tao run.
 
     🔑 **Uoc gia phai duoc tinh o day, khong o route.** No can biet thoi luong
        video, tuc can soi tep — va soi tep cung la cho `MVP_CONTRACT` §2 tu choi
@@ -671,9 +708,18 @@ def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
     ⛔ Khoa luu tru KHONG mang ten tep cua khach. Ten do do khach dat, va mot ten
        tep di vao khoa la mot chuoi cua client di vao duong dan — dung thu ma
        `assets.dat_khoa` sinh ra de chan.
+
+    🔴 **Ham nay tung nhan `du_lieu: bytes`, va do la nua con lai cua `V4-R01`
+       ma STATE ghi nham la da dong.** Pha 05 dong nua CHECKSUM (ba lan
+       `read_bytes()` de bam, nay da chay dong). Nua BO NHO — "ca video nam
+       trong RAM hai lan" — van mo tren duong nay: route `await video.read()`
+       ca tep, roi ham nay `write_bytes` chinh nhung byte do ra mot tep tam, nen
+       chung thuong tru **hai** cho cung luc. Va tran 90 MB duoc ap SAU khi da
+       cap phat.
+
+    ⇒ Nay nguoi goi dua mot DUONG DAN. Tep da nam tren dia, duoc soi tai cho, va
+      di vao kho bang mot luong doc — khong luc nao ca tep nam trong RAM.
     """
-    import io
-    import tempfile
     import uuid
     from pathlib import Path
 
@@ -685,23 +731,27 @@ def tao_run_tu_tai_len(db: Session, *, owner_id: str, du_lieu: bytes,
     if not duoi.isalnum() or len(duoi) > 5:
         duoi = "mp4"
 
+    tep = Path(duong_tep)
+    if not tep.is_file() or tep.stat().st_size <= 0:
+        raise AsvError(_t('Tệp rỗng.'))
+
     # Soi TRUOC khi luu: mot tep khong dung chinh sach thi khong nen chiem cho
     # trong kho, va khach nen biet ngay thay vi sau mot vong hang doi.
-    with tempfile.TemporaryDirectory(prefix="asv-nhan-") as tam:
-        tep = Path(tam) / f"nguon.{duoi}"
-        tep.write_bytes(du_lieu)
-        try:
-            tt = nhap_media.soi(str(tep))
-        except nhap_media.MediaError as exc:
-            raise AsvError(str(exc)) from exc
-        try:
-            nhap_media.kiem_chinh_sach(tt)
-        except nhap_media.MediaError as exc:
-            raise AsvError(str(exc)) from exc
-        uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
+    try:
+        tt = nhap_media.soi(str(tep))
+    except nhap_media.MediaError as exc:
+        raise AsvError(str(exc)) from exc
+    try:
+        nhap_media.kiem_chinh_sach(tt)
+    except nhap_media.MediaError as exc:
+        raise AsvError(str(exc)) from exc
+    uoc = gia.uoc_credit(float(tt.get("thoi_luong") or 0))
 
     khoa = f"asv/{owner_id[:16]}/nguon/{uuid.uuid4().hex}.{duoi}"
-    get_storage().put(khoa, io.BytesIO(du_lieu), content_type="video/mp4")
+    # ⭐ Mot doi tuong tep, khong phai `io.BytesIO(du_lieu)`: backend doc theo
+    #    khoi, nen dinh bo nho khong con ti le voi kich thuoc video.
+    with tep.open("rb") as f:
+        get_storage().put(khoa, f, content_type="video/mp4")
 
     return tao_run(db, owner_id=owner_id, source_key=khoa,
                    settings=settings, uoc_luong_credit=uoc)

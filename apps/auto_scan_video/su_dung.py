@@ -52,7 +52,7 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from platform_core.i18n import _ as _t
@@ -109,6 +109,16 @@ DON_VI = (TOKEN, GIAY, KY_TU, KHUNG_HINH, LUOT)
 
 class SuDungError(ValueError):
     """Ban ghi su dung khong hop le. LUON la loi lap trinh, khong phai loi khach."""
+
+
+class XungDotDonVi(SuDungError):
+    """Mot tien trinh khac da ghi don vi viec nay giua chung.
+
+    ⛔ Cung ngu nghia voi `features.XungDot` nhung la mot LOP RIENG: mot xung
+       dot o cap giai doan va mot xung dot o cap don vi doi hai cach xu ly khac
+       nhau (mot cai lam hong ca giai doan, mot cai chi bo qua mot doan), va gop
+       chung lai la buoc nguoi bat phai doan xem no dang bat cai nao.
+    """
 
 
 class DaGhiRoi(SuDungError):
@@ -243,16 +253,39 @@ def danh_dau_xong(db: Session, run: AsvRun, *, stage: str, item_key: str,
     ⛔ Chi tien LEN: mot don vi da `succeeded` khong bi keo ve `running` boi mot
        lan chay lai. Lan chay lai chi di qua nhung don vi CHUA xong — do la ca y
        nghia cua viec cham diem tung doan thay vi tung giai doan.
+
+    🔴 **`revision` o day tung la mot lo`i hua khong ai giu.** `tables.py:327` noi
+       ve chinh cot nay: *"`UPDATE ... WHERE revision = :r` bien mot cuoc dua
+       thanh mot xung dot NHIN THAY DUOC thay vi mot ban ghi de."*
+       `features.cap_nhat_giai_doan` thuc hien dung dieu do cho `AsvStage` — con
+       o day dong cu la mot phep gan ORM tran: doc `it.revision`, cong mot, ghi
+       de. Tuc kich ban cot nay sinh ra de xu ly — mot job mo coi bi worker thu
+       hai nhat trong khi worker dau con song — ket thuc bang "ai ghi sau thi
+       thang", va bo dem tang hai lan ma khong ai duoc bao.
+
+    ⚠️ No chua bao gio gay hai VI hai rang buoc UNIQUE che cho:
+       `UNIQUE(run_id, stage, item_key)` va `UNIQUE(run_id, ma_dispatch)` cua so
+       cai. Nhung "chua gay hai" khong phai "da duoc thi hanh", va bat bien duoc
+       viet ra o `tables.py` thi phai co mot cho thi hanh no.
     """
     it = mo_don_vi(db, run, stage=stage, item_key=item_key,
                    fingerprint=fingerprint)
-    it.status = ITEM_SUCCEEDED
-    it.fingerprint = str(fingerprint or it.fingerprint or "")
-    if outputs:
-        it.outputs = dict(outputs)
-    it.finished_at = _now()
-    it.revision = int(it.revision or 1) + 1
+    rev = int(it.revision or 1)
+    ket_qua = db.execute(
+        update(AsvWorkItem)
+        .where(AsvWorkItem.id == it.id, AsvWorkItem.revision == rev)
+        .values(revision=rev + 1, status=ITEM_SUCCEEDED,
+                fingerprint=str(fingerprint or it.fingerprint or ""),
+                finished_at=_now(),
+                **({"outputs": dict(outputs)} if outputs else {})))
+    if ket_qua.rowcount != 1:
+        # ⭐ Nem, khong ghi de. Nguoi goi dang o giua mot lan dispatch va can
+        #    biet rang mot tien trinh khac da cham don vi nay — day dung la thu
+        #    cot `revision` duoc them vao de lam cho nhin thay duoc.
+        raise XungDotDonVi(
+            _t('Đơn vị việc đã được cập nhật ở tiến trình khác.'))
     db.flush()
+    db.expire(it)
     return it
 
 

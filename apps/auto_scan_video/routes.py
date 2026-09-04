@@ -28,6 +28,8 @@ vi **chuoi la co dinh** — khong co do thi de dung, khong co node de keo tha
 from __future__ import annotations
 
 import logging
+import tempfile
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import (HTMLResponse, JSONResponse,
@@ -78,6 +80,11 @@ KIEU_VIDEO = ("video/mp4", "video/quicktime", "video/x-matroska", "video/webm")
 #: chu, nen dat duoi nguong do la de khach nhan mot cau tieng Viet thay vi mot
 #: trang loi 413 cua Cloudflare.
 TRAN_TAI_LEN = 90 * 1024 * 1024
+
+#: Khoi doc moi vong khi chay tep tai len xuong dia. 1 MiB — du lon de khong
+#: thanh mot vong lap syscall, du nho de dinh bo nho khong phu thuoc kich thuoc
+#: video. Day la con so bien G6 tu mot loi hua thanh mot rang buoc.
+KHOI_TAI_LEN = 1024 * 1024
 
 #: Nhan tieng Viet cho chin giai doan. ⭐ Khoa lay TU `pipeline`, khong go tay:
 #: doi ten mot giai doan ma quen sua cho nay se lam `test_423` do, thay vi de
@@ -251,22 +258,45 @@ async def tao(request: Request,
         return _lai_voi_loi(request, db, u,
                             _t('Định dạng video không được hỗ trợ.'))
 
-    du_lieu = await video.read()
-    if not du_lieu:
-        return _lai_voi_loi(request, db, u, _t('Tệp rỗng.'))
-    if len(du_lieu) > TRAN_TAI_LEN:
-        return _lai_voi_loi(request, db, u, _t(
-            'Video vượt quá 90 MB. Hãy cắt ngắn hoặc giảm chất lượng trước.'))
+    # 🔴 **Dong cu o day la `du_lieu = await video.read()`, va no vi pham G6
+    #    theo dung tung chu: *"production path does not `await read()` entire
+    #    large video into RAM"*.**
+    #
+    #    Te hon ca viec cap phat: tran 90 MB duoc kiem o dong NGAY SAU no, tuc
+    #    mot tep 100 MB van duoc cap phat du 100 MB truoc khi bi tu choi. Mot
+    #    quyet dinh "co nhan khong" dat sau hanh dong ma no le ra phai chan.
+    #
+    # ⇒ Chay theo khoi va ap tran NGAY TRONG luc chay: byte thu (tran + 1) lam
+    #   vong lap dung lai, va khong byte nao nua duoc doc.
+    #
+    # ⭐ `SpooledTemporaryFile` cua Starlette da giu tep tren DIA khi no vuot
+    #    nguong, nen o day ta khong tao them mot ban sao thu ba — ta chi thoi
+    #    keo no nguyen khoi vao `bytes`.
+    with tempfile.TemporaryDirectory(prefix="asv-tai-len-") as tam:
+        tep = Path(tam) / "nguon"
+        da = 0
+        with tep.open("wb") as ra:
+            while True:
+                khoi = await video.read(KHOI_TAI_LEN)
+                if not khoi:
+                    break
+                da += len(khoi)
+                if da > TRAN_TAI_LEN:
+                    return _lai_voi_loi(request, db, u, _t(
+                        'Video vượt quá 90 MB. Hãy cắt ngắn hoặc giảm chất lượng trước.'))
+                ra.write(khoi)
+        if da <= 0:
+            return _lai_voi_loi(request, db, u, _t('Tệp rỗng.'))
 
-    try:
-        run = features.tao_run_tu_tai_len(
-            db, owner_id=u.id, du_lieu=du_lieu,
-            ten_tep=video.filename or "video.mp4",
-            settings=dict(cai_dat))
-        db.commit()
-    except features.AsvError as exc:
-        db.rollback()
-        return _lai_voi_loi(request, db, u, str(exc))
+        try:
+            run = features.tao_run_tu_tai_len(
+                db, owner_id=u.id, duong_tep=str(tep),
+                ten_tep=video.filename or "video.mp4",
+                settings=dict(cai_dat))
+            db.commit()
+        except features.AsvError as exc:
+            db.rollback()
+            return _lai_voi_loi(request, db, u, str(exc))
 
     return RedirectResponse(f"{MANIFEST.route_prefix}/run/{run.id}",
                             status_code=303)
