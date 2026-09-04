@@ -291,6 +291,16 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
                 "do_cua_phep_do": _do_phan_bo(str(tep_ra)),
             }
 
+        # ⛔ Doc TRUOC khi phien dong: `AsvUsage` la doi tuong ORM, va doc
+        #    no sau khi phien dong se nem `DetachedInstanceError`.
+        from sqlalchemy import select as _select
+        from apps.auto_scan_video.tables import AsvUsage as _AsvUsage
+        vi_sao = [
+            {"nang_luc": r.nang_luc, "trang_thai": r.trang_thai,
+             "ly_do": str((r.ghi_chu or {}).get("ly_do") or "")[:300]}
+            for r in db.execute(_select(_AsvUsage).where(
+                _AsvUsage.run_id == run.id)).scalars()
+            if r.trang_thai != "da_giao"]
         so_ke = su_dung.so_ke(db, run)
         doi_soat = quan_sat.doi_soat_nhanh(db, run)
         khach = quan_sat.tom_tat_cho_khach(db, run)
@@ -332,6 +342,10 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
                #    la cau hoi dau tien nguoi doc se hoi.
                "muc": list(qc.get("muc") or [])},
         "so_ke": so_ke, "doi_soat": doi_soat, "tom_tat_khach": khach,
+        # 🔑 LY DO cua tung lan khong-thanh-cong, khong chi con dem.
+        #    Mot bao cao noi "tu_choi: 4" buoc nguoi doc di doan, va ba
+        #    vong doan da troi qua truoc khi dong nay duoc them.
+        "vi_sao_hong": vi_sao,
         "credit_con_lai": con_lai,
         "ra": ra,
         "tai_ve": {"ma_chu": tai.status_code, "byte_chu": len(tai.content),

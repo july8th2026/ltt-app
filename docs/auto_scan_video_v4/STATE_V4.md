@@ -140,6 +140,29 @@
     collision seen from a second angle. The clean route is to run this suite on
     **PostgreSQL behind `tests/pg_scratch.py`** - whose guard already refuses
     any URL whose database name does not contain `test`. Not attempted yet.
+  * **A29-04 (P1, mine, introduced in Phase 27) — a write transaction was
+    held across a network call.** `_doc_cac_canh` called `sd.mo_don_vi`
+    (a write) and only committed *after* `_rut_khung` (ffmpeg) and
+    `ai.goi_tinh_tien` (network to machine B). With the substitute model that
+    is milliseconds; with the real one it is seconds, and `ctx.progress` on a
+    second session cannot get in. **FIXED**: commit before the slow work.
+    ⭐ `giai_doan_noi_dung` had written this exact lesson down in
+    prose. It did not reach `_doc_cac_canh` because I wrote that function
+    after reading it.
+  * **A29-05 (P2) — and the real-model E2E still needs PostgreSQL.** After
+    A29-04 the refusals went 4 -> 3, which confirms the mechanism and shows it
+    is not the only writer: `ctx.provider_dispatched` durably records the
+    dispatch on **its own session** immediately before the outbound HTTP, by
+    design (I5). Several sessions + SQLite's single-writer lock + multi-second
+    network holds is not a defect to patch away; it is what SQLite is.
+    🔴 And the reason this took four rounds to establish is worth
+    recording: **three hypotheses were wrong, and all three were checkable.**
+    Context overflow (8,559 of 28,262 tokens - no), machine B saturated
+    (still refused at 0% / 23.8 GB free - no), "SQLite in general" (a single
+    paid call on SQLite succeeded - no). The answer was in the ledger the
+    whole time: `AsvUsage.ghi_chu["ly_do"]` recorded
+    `database is locked [SQL: UPDATE jobs SET` on every one - and the report
+    printed only the **count**. It now records the reason.
 - **findings_for_phase_28**:
   * **A27-01 (P2)** — `apps/auto_scan_video/qc_ai.py` (semantic + visual QC) and
     `sua_chua.py` (repair) have **no caller in product code**. `loi.py` imports

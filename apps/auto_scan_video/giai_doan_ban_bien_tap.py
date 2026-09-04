@@ -151,9 +151,6 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
     for i, c in enumerate(canh):
         if huy is not None and huy():
             raise ThieuChiMuc(_t('Lần chạy đã bị hủy.'))
-        if ctx is not None and getattr(ctx, "progress", None):
-            ctx.progress(5 + int(80 * i / max(1, len(canh))),
-                         _t('Đang đọc cảnh'))
 
         ngu_canh = hc.ngu_canh_cho_canh(ban_ghi or {}, c.bat, c.ket)
         so_khung = len(getattr(c, "khung", ()) or ())
@@ -169,6 +166,30 @@ def _doc_cac_canh(db, kho, run, ci, ban_ghi: dict, ctx) -> tuple:
 
         sd.mo_don_vi(db, run, stage=pipeline.EDIT_PLAN, item_key=c.ma,
                      fingerprint=van_tay)
+        # 🔴 **`commit` NGAY o day, truoc ffmpeg va truoc mang.**
+        #
+        #    `mo_don_vi` GHI, nen tu day toi lan commit ke tiep phien cua handler
+        #    giu mot khoa ghi. Neu de nguyen thu tu cu, khoa do bi giu xuyen qua
+        #    ca `_rut_khung` (ffmpeg, vai giay) lan `goi_tinh_tien` (mang toi may
+        #    B, vai giay) — va `ctx.progress` cua vong sau, chay tren mot phien
+        #    THU HAI, khong chen vao duoc.
+        #
+        #    Do duoc: ca bon lan `doc_canh` bi ghi `tu_choi`, ly do that su la
+        #    `sqlite3.OperationalError: database is locked [SQL: UPDATE jobs SET`
+        #    — tuc chinh `ctx.progress`, chu **model chua tu choi lan nao**.
+        #
+        # ⛔ Va day khong phai mot han che cua SQLite. Giu mot giao dich GHI
+        #    xuyen qua mot loi goi mang la sai tren MOI backend: PostgreSQL cung
+        #    giu ket noi va khoa hang y the, chi la no chiu lau hon truoc khi keu.
+        #
+        # ⭐ `giai_doan_noi_dung` da viet chinh bai hoc nay ra bang chu. No khong
+        #    toi duoc ham nay vi ham nay duoc viet SAU khi doc no.
+        db.commit()
+
+        # Bao tien do SAU khi da nha khoa, khong truoc.
+        if ctx is not None and getattr(ctx, "progress", None):
+            ctx.progress(5 + int(80 * i / max(1, len(canh))),
+                         _t('Đang đọc cảnh'))
 
         khung = _rut_khung(duong, getattr(c, "khung", ()) or ())
         messages = hc.loi_nhac_canh(
