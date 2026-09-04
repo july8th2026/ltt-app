@@ -39,6 +39,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import pathlib
 import json
 import ssl
 import sys
@@ -230,7 +231,8 @@ def lenh_kham(_args) -> int:
     for duong in DUONG_UNG_VIEN["chay"]:
         try:
             ma, than = goi(duong, {"command": "cmd", "args": ["/c", "echo nexus-ok"],
-                                   "cwd": "H:\\"}, method="POST")
+                                   "cwd": "H:\\",
+                                   "reason": "H44 P01: do duong exec"}, method="POST")
         except LoiNexus as e:
             print(f"  {duong:<28}-> loi: {e}")
             continue
@@ -264,7 +266,8 @@ def lenh_chay(args) -> int:
     if not args.lenh:
         print("Thieu lenh.", file=sys.stderr)
         return 2
-    than = {"command": args.lenh[0], "args": list(args.lenh[1:]), "cwd": args.cwd}
+    than = {"command": args.lenh[0], "args": list(args.lenh[1:]), "cwd": args.cwd,
+            "reason": args.reason}
     ma, tra = goi(duong, than, method="POST", timeout=args.timeout)
     _ghi_nhat_ky("chay", " ".join(args.lenh), str(ma))
     print(tra)
@@ -282,13 +285,49 @@ def lenh_http(args) -> int:
     if not duong:
         print("Chua biet duong chay lenh. Chay `kham` truoc.", file=sys.stderr)
         return 2
-    than = {"command": "curl",
+    # !! `curl.exe`, KHONG phai `curl`. Nexus boc lenh trong PowerShell, va o do
+    #    `curl` la bi danh cua `Invoke-WebRequest` — no nuot co -sS/--max-time roi
+    #    bao thieu tham so `Uri`. Cung ly do khien `cmd`/`powershell.exe` treo:
+    #    long mot shell trong mot shell da co san.
+    than = {"command": "curl.exe",
             "args": ["-sS", "--max-time", str(int(args.timeout)), args.url],
-            "cwd": "H:\\"}
+            "cwd": "H:\\", "reason": args.reason}
     ma, tra = goi(duong, than, method="POST", timeout=args.timeout + 10)
     _ghi_nhat_ky("http", args.url, str(ma))
     print(tra)
     return 0 if ma in (200, 201) else 1
+
+
+def lenh_raw(args) -> int:
+    """GET/POST một đường proxy bất kỳ và in NGUYÊN VĂN.
+
+    ⭐ Có mặt vì `kham` cắt ngắn thân trả về, mà chính thân đó mới nói được
+       schema mà một cửa 422 đang đòi. Cắt ngắn một thông báo lỗi là vứt đi
+       đúng phần trả lời được câu hỏi.
+    """
+    # >> Doc than tu TEP khi co: bash/PowerShell deu nuot backslash trong
+    #    chuoi inline, va duong dan Windows thi day backslash. Mot lan gia
+    #    tri bi nuot la mot loi JSON o cot 41 khong lien quan gi den viec that.
+    if args.than_file:
+        than = json.loads(pathlib.Path(args.than_file).read_text(encoding="utf-8"))
+    else:
+        than = json.loads(args.than) if args.than else None
+    ma, tra = goi(args.duong, than, method=("POST" if than is not None else "GET"),
+                  timeout=args.timeout)
+    _ghi_nhat_ky("raw", args.duong, str(ma))
+    # >> Ghi ra TEP khi duoc yeu cau: console Windows (cp1252) nem khi gap
+    #    ky tu ngoai bang ma, va mot template Jinja thi day ky tu nhu vay.
+    #    In truc tiep la danh mat ket qua cua mot loi goi da thanh cong.
+    if args.out:
+        pathlib.Path(args.out).write_text(tra, encoding="utf-8")
+        print(f"HTTP {ma} -> {args.out} ({len(tra)} ky tu)")
+        return 0 if ma < 400 else 1
+    print(f"HTTP {ma}")
+    try:
+        print(json.dumps(json.loads(tra), ensure_ascii=False, indent=2))
+    except ValueError:
+        print(tra)
+    return 0 if ma < 400 else 1
 
 
 def main(argv=None) -> int:
@@ -305,12 +344,22 @@ def main(argv=None) -> int:
     c = sub.add_parser("chay", help="chay mot lenh tren may B")
     c.add_argument("--cwd", default="H:\\")
     c.add_argument("--timeout", type=float, default=120.0)
+    c.add_argument("--reason", default="H44 P01: doc sieu du lieu runtime may B")
     c.add_argument("lenh", nargs=argparse.REMAINDER)
     c.set_defaults(f=lenh_chay)
+
+    r = sub.add_parser("raw", help="GET/POST mot duong proxy bat ky, in NGUYEN VAN")
+    r.add_argument("duong")
+    r.add_argument("--than", default="", help="JSON than; co than ⇒ POST")
+    r.add_argument("--than-file", default="", help="doc than tu tep JSON")
+    r.add_argument("--out", default="", help="ghi than tra ve ra tep UTF-8")
+    r.add_argument("--timeout", type=float, default=30.0)
+    r.set_defaults(f=lenh_raw)
 
     h = sub.add_parser("http", help="GET mot URL localhost cua may B")
     h.add_argument("url")
     h.add_argument("--timeout", type=float, default=30.0)
+    h.add_argument("--reason", default="H44 P01: doc /props /running cua llama-server")
     h.set_defaults(f=lenh_http)
 
     args = p.parse_args(argv)

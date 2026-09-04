@@ -190,10 +190,21 @@
     },
     {
       "id": "M-1",
-      "muc": "handler tool-call Native hay Generic — CHUA AI BIET",
+      "muc": "handler tool-call: NATIVE (Qwen3-Coder PEG) — DA TRA LOI",
       "nguon": "llama.cpp docs/function-calling.md:20-22,77-83",
+      "rui_ro": "thap",
+      "chan_pha": "P01",
+      "trang_thai": "DONG (con xac nhan build)",
+      "bang_chung": "01_M1_NATIVE_HAY_GENERIC.md"
+    },
+    {
+      "id": "M-4",
+      "muc": "BAY: tool_call_format=json lam moi loi goi tool thanh van ban thuong",
+      "nguon": "chat_template.jinja:2 + common/chat.cpp:3596-3602",
+      "giai_thich": "phep phat hien doc MA NGUON template (chua CA hai nhanh), con render thi theo mot nhanh ⇒ dat json = template day JSON nhung parser doi XML ⇒ hong 0% IM LANG",
       "rui_ro": "cao",
-      "chan_pha": "P01"
+      "chan_pha": "P01/P03",
+      "luat": "cam tool_call_format trong chat_template_kwargs + phep kiem tinh chot"
     }
   ],
   "phan_loai_khoang_trong": {
@@ -250,5 +261,25 @@
     "nguyen_nhan": "node_modules bi gitignore, cay moi khong co",
     "canh_bao": "30 test GUI cua chatltt KHONG chay o BAT KY cay nao — cay chinh cung thieu frontend/chatltt/node_modules",
     "phai_sua_truoc": "P03"
-  }
+  },
+  "template_may_b": {
+    "duong_dan": "H:/LTT_LLM/models/chat_template.jinja",
+    "phien_ban": "qwen3.8-froggeric-v22.3",
+    "sha256": "6e1439c913ad7df4a966493ad70de7e7fc5a548d41bbe417c1571f766603629b",
+    "so_dong": 421,
+    "size_bytes": 26681,
+    "truncated": false,
+    "tool_format_mac_dinh": "xml",
+    "handler_llamacpp": "Qwen3-Coder (COMMON_CHAT_FORMAT_PEG_NATIVE)",
+    "supports_reasoning": true
+  },
+  "nexus_luat_van_hanh": [
+    "exe tran chay tot (hostname 467ms)",
+    "KHONG long cmd/powershell — Nexus da boc san trong PowerShell, long vao la treo 120s",
+    "curl la bi danh Invoke-WebRequest; dung curl.exe",
+    "mang args khong toi duoc tien trinh — truyen ca dong lenh trong `command`",
+    "exec BAT BUOC truong `reason`",
+    "files/read: 404 = sai doi tuong, khong phai thieu route",
+    "be mat API: exec, files/read, metrics/gpu, health, capabilities"
+  ]
 }
