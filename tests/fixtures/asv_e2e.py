@@ -40,7 +40,6 @@ import array
 import json
 import math
 import re
-import statistics
 import shutil
 import subprocess
 import unicodedata
@@ -660,6 +659,17 @@ def muc_theo_cua_so(duong: str, *, cua_so_s: float = 0.2) -> list[float]:
     return ra
 
 
+def _phan_vi(gia_tri: list, p: float) -> float:
+    """Phan vi thu `p` (0..1) cua mot day so. Khong noi suy — lay mau that.
+
+    ⛔ Khong dung `statistics.quantiles`: no noi suy giua hai mau, va voi 54 mau
+       thi mot gia tri noi suy khong ung voi cua so nao co that. O day ta muon
+       "muc cua mot cua so yen", khong muon mot con so trung binh giua hai cua.
+    """
+    q = sorted(gia_tri)
+    return q[max(0, min(len(q) - 1, int(p * (len(q) - 1))))]
+
+
 def vung_co_tieng(duong: str, *, tren_nen_db: float = 2.0,
                   cua_so_s: float = 0.5,
                   ngan_nhat_s: float = 1.0) -> list[tuple[float, float]]:
@@ -680,11 +690,38 @@ def vung_co_tieng(duong: str, *, tren_nen_db: float = 2.0,
        cua phep do: `am_master.NEN_GIAM_DB` ha nen **deu -6 dB tren ca bai** chu
        khong ha rieng luc co loi thoai, va chinh chu thich cua no ghi "CHUA DO
        tren ban that". Day la lan do dau tien.
+
+    🔴 **NEN lay o PHAN VI 20, khong lay o TRUNG VI — va day la mot dinh chinh
+       cua pha 27, co so do di kem.**
+
+       Ban cu lay trung vi, kem mot tien de viet thang ra: *"mot ban long tieng
+       noi khoang mot phan ba thoi luong, nen trung vi roi vao nen"*. Tien de do
+       phu thuoc vao **nguon co bao nhieu doan im lang** — mot thu ban than phep
+       do khong kiem soat.
+
+       Pha 27 noi VLM vao mach, `smart_localize` lan dau thuc su cat mot canh
+       khong loi thoai, va tien de vo ngay. Do duoc tren cung mot lan chay, hai
+       ban ra cua hai preset:
+
+           preserve  n=64  p20 -17,73  p50 -17,07  ->  trung vi: 4 vung
+           cat       n=54  p20 -17,80  p50 -16,48  ->  trung vi: 1 vung
+
+       Bo 5 giay duoi cung (phan im nhat) day trung vi len **0,6 dB**, va chi
+       tung do da lam bao cao noi "khong co doan nao noi len tren nen" ve mot
+       tep co cau truc tieng **giong het** ban kia — 44 cua so dau cua hai chuoi
+       muc TRUNG KHIT nhau, chung chi tach o dung cho bi cat.
+
+       Voi nen = p20 thi ca hai deu ra **6 vung**, tuc phep do noi cung mot dieu
+       ve hai tep giong nhau.
+
+    ⭐ Va p20 la dinh nghia dung hon cua "nen": nen la phan YEN cua phan bo, nen
+       lay no o phia duoi phan bo chu khong lay o giua. Trung vi chi dung khi ta
+       biet truoc rang qua nua thoi luong la nen — mot dieu ta khong biet.
     """
     muc = muc_theo_cua_so(duong, cua_so_s=cua_so_s)
     if not muc:
         return []
-    nen = statistics.median(muc)
+    nen = _phan_vi(muc, 0.20)
     nguong = nen + float(tren_nen_db)
 
     vung: list[tuple[float, float]] = []

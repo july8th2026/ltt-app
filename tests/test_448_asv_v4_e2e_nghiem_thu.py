@@ -170,6 +170,39 @@ def _doc_artifact(db, kho, run, stage: str, duoi: str) -> bytes | None:
 _sach = fx.sach_de_cong_bo
 
 
+def _do_phan_bo(duong: str) -> dict:
+    """Phan bo muc theo cua so — de doc duoc VI SAO `vung_co_tieng` ra rong.
+
+    ⛔ Mot bao cao noi "0 vung co tieng" ma khong kem nen/nguong buoc nguoi doc
+       phai doan giua hai kha nang rat khac nhau: tep that su khong co tieng
+       long, hay phep do vua mat tien de cua no.
+    """
+    from tests.fixtures import asv_e2e as fx
+
+    muc = fx.muc_theo_cua_so(duong, cua_so_s=0.5)
+    if not muc:
+        return {}
+    # ⛔ Dung CHINH ham cua phep do, khong go lai phep tinh nen: mot ban sao la
+    #    mot cho de bao cao va phep do noi hai dieu khac nhau ve cung mot tep.
+    nen = fx._phan_vi(muc, 0.20)
+    nguong = nen + 2.0
+    return {
+        "so_cua_so": len(muc),
+        "nen_p20_db": round(nen, 2),
+        "nguong_db": round(nguong, 2),
+        "thap_nhat_db": round(min(muc), 2),
+        "cao_nhat_db": round(max(muc), 2),
+        "so_cua_so_tren_nguong": sum(1 for m in muc if m >= nguong),
+        "ti_le_tren_nguong": round(
+            sum(1 for m in muc if m >= nguong) / len(muc), 3),
+        # ⭐ Ca chuoi muc, khong chi vai thong ke. 54-64 so cho mot lan chay —
+        #    du nho de luu, va no la thu duy nhat tra loi duoc cau hoi "phep do
+        #    mat tien de, hay san pham that su mat tuong phan" ma khong phai
+        #    chay lai ca lan nghiem thu.
+        "muc_cua_so_db": [round(m, 2) for m in muc],
+    }
+
+
 def _do_am(duong: str) -> dict:
     """LUFS + dinh that cua tep ra, do bang chinh ham san pham dung."""
     from apps.auto_scan_video import tach_tieng
@@ -247,6 +280,15 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
                 "phu_song_loi": fx.phu_song_loi(
                     fx.vung_co_tieng(str(tep_ra)), su_that.loi),
                 "am_luong": _do_am(str(tep_ra)),
+                # 🔑 **So do CUA CHINH PHEP DO, khong phai cua san pham.**
+                #    `vung_co_tieng` lay NEN bang trung vi moi cua so, va
+                #    docstring cua no dat mot tien de: "mot ban long tieng noi
+                #    khoang mot phan ba thoi luong, nen trung vi roi vao nen".
+                #    Ngay preset cat that su cat mot canh IM LANG, ti le noi
+                #    tang len va tien de do co the vo — luc do bao cao se noi
+                #    "khong co tieng long" ve mot tep nghe ro tung cau.
+                # ⇒ Ghi lai nen/nguong/dinh de lan sau khong phai doan.
+                "do_cua_phep_do": _do_phan_bo(str(tep_ra)),
             }
 
         so_ke = su_dung.so_ke(db, run)
@@ -520,11 +562,13 @@ def test_tieng_long_NAM_DUNG_CHO_trong_tep_ra(bc):
             f"{l['ra']['thoi_luong']}")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "VLM chua duoc noi vao EDIT_PLAN: `giai_doan_ban_bien_tap.chay` truyen "
-    "`hieu = ()`, va `ban_bien_tap._quyet_dinh_mot_canh` GIU moi canh khi khong "
-    "co bang chung. Nen `smart_localize` khong cat duoc canh nao — ke ca mot "
-    "canh khong co mot cau thoai nao. Chu cua pha 27."))
+# ⭐ **Nhan `xfail(strict=True)` da duoc GO o pha 27, va viec go no la mot su
+#    kien co that chu khong phai mot thao tac don dep.** Pha 22 viet nhan do kem
+#    mot cau: *"ngay ai do noi VLM vao chuoi, phep kiem nay thanh cong va pytest
+#    bao XPASS — tuc bo test tu noi rang khiem khuyet da het, thay vi de mot
+#    dong TODO nam lai them mot nam."* No da bao XPASS o lan chay E2E dau tien
+#    sau khi B22-01 duoc sua, tren mot luot chay THAT: `so_canh 4, so_giu 3,
+#    so_cat 1, so_canh_da_doc 4`.
 def test_preset_CAT_phai_cat_it_nhat_MOT_canh_khong_co_thoai(bc):
     """🔴 Ban nguon co han mot canh **khong co loi thoai nao** (canh thu tu), va
     preset cat van giu nguyen no.

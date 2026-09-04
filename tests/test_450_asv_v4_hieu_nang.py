@@ -85,11 +85,39 @@ def _cap_gpu_nhu_worker_that(db, job_type: str, job_id: str):
     can = _vram_can(job_type)
     if can <= 0:
         return None
+
+    # 🔴 **Cap card cho mot tien trinh KHONG THE dung card la lam ban do bot
+    #    trung thanh, khong phai them.**
+    #
+    #    Cay nay chay `torch+cpu` (V4-R05). Cap lease cho `asv_gpu.*` o day thi
+    #    `ctx.gpu_uuid` co gia tri, `demucs_runner` tin rang no co card, roi
+    #    khong thay CUDA dau va nem `ThieuCard: "Nen tang da cap card nhung tien
+    #    trinh tach khong thay GPU"` — mot phan loai HOAN TOAN DUNG cho mot tinh
+    #    huong ma bo do vua tu bia ra.
+    #
+    # ⇒ Hoi chinh thu quyet dinh: torch cua cay NAY co thay card khong. Tren
+    #   venv san pham (`torch 2.11.0+cu128`) dieu kien nay dat va lease duoc cap
+    #   nhu worker that; o cay dev thi khong, va bo do noi that ve dieu do thay
+    #   vi gia vo.
+    #
+    # ⚠️ `asv_media.render` KHONG di qua torch — no chay ffmpeg, va `h264_nvenc`
+    #    dung duoc ngay ca khi torch la ban CPU. Nen no van duoc cap.
+    if not _torch_thay_card() and not job_type.startswith("asv_media."):
+        return None
     try:
         return gpu_lease.acquire(db, worker_id="w-do", job_id=job_id,
                                  need_mb=can)
     except Exception:                       # noqa: BLE001
         return None
+
+
+def _torch_thay_card() -> bool:
+    """Trinh thong dich DANG CHAY co thay GPU khong. Do, khong khai."""
+    try:
+        import torch
+        return bool(torch.cuda.is_available())
+    except Exception:                       # noqa: BLE001
+        return False
 
 
 def _nha_gpu(db, lease) -> None:
@@ -566,12 +594,14 @@ def test_bao_cao_SUAT_ket_luan_khop_voi_so_do(bc):
 #  Hai chot rut ra tu so do
 # ══════════════════════════════════════════════════════════════════════════════
 
-@pytest.mark.xfail(strict=True, reason=(
-    "`giai_doan_ban_dung` chon bo ma hoa bang `co_gpu = bool(ctx.gpu_uuid)`, "
-    "nhung COMPOSE chay o lane `ffmpeg` cua `asv_media` — app do khong khai "
-    "`gpu_vram_mb` nen nen tang khong bao gio cap lease, `ctx.gpu_uuid` luon "
-    "rong, va `chon_bo_ma_hoa(cho_phep_gpu=False)` luon tra `libx264`. Chu cua "
-    "pha 27."))
+# ⭐ **Nhan `xfail(strict=True)` da duoc GO o pha 27.** Ly do cu con dung tung
+#    chu ve nguyen nhan, va no da duoc sua o BA cho: `asv_media` khai
+#    `gpu_vram_mb` cho `asv_media.render` (500 MiB, do that: mot phien nvenc
+#    1080p chiem dinh 228 MiB); quyet dinh bo ma hoa chuyen tu COMPOSE (mot job
+#    khong bao gio giu lease toi luc render) sang RENDER; va ffmpeg duoc ghim
+#    vao card duoc cap bang `ctx.gpu_env()`.
+#    Do duoc tren luot chay that: `bo_ma_hoa_may_co h264_nvenc`, va lan chay
+#    `cat_thong_minh` ghi `bo_ma_hoa: h264_nvenc`.
 def test_preset_CAT_dung_bo_ma_hoa_PHAN_CUNG_khi_may_co(bc):
     """🔴 May co `h264_nvenc` (do duoc), pha 17 do NVENC nhanh 1,68 lan va ha
     CPU may tu 61% xuong 41% — va duong chay that van ma hoa bang CPU.

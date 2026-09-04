@@ -1,6 +1,6 @@
 {
   "schema": "asv.v4.nghiem_thu.1",
-  "ghi_luc": "2026-09-04T10:19:06",
+  "ghi_luc": "2026-09-04T19:58:06",
   "may": {
     "os": "Windows-10-10.0.19045-SP0",
     "python": "3.13.12",
@@ -103,7 +103,7 @@
       "che_do_giong": "USER_SELECTED",
       "giong_id": "Minh Đức",
       "trang_thai_run": "done",
-      "giay_tong": 67.9,
+      "giay_tong": 67.5,
       "giai_doan": [
         {
           "ten": "media_prepare",
@@ -139,7 +139,7 @@
               "other"
             ],
             "lufs": -13.95,
-            "dinh_that": -1.5,
+            "dinh_that": -1.67,
             "thoi_luong": 32.192018
           }
         },
@@ -156,13 +156,13 @@
             "ngon_ngu": "en",
             "engine": "faster-whisper",
             "canh_chinh": "fallback_unaligned",
-            "phu_song": 19.4
+            "phu_song": 19.42
           }
         },
         {
           "ten": "edit_plan",
           "trang_thai": "succeeded",
-          "phien_ban_engine": "ban_bien_tap/1/1/0.4",
+          "phien_ban_engine": "ban_bien_tap/2/1/0.4",
           "credit": 0,
           "loi": "",
           "tom_tat": {
@@ -171,13 +171,14 @@
             "so_canh": 1,
             "so_giu": 1,
             "so_cat": 0,
+            "so_canh_da_doc": 0,
             "bat_bien_giu_hinh": true
           }
         },
         {
           "ten": "content_process",
           "trang_thai": "succeeded",
-          "phien_ban_engine": "noi_dung/1/ltt_llm/",
+          "phien_ban_engine": "noi_dung/1/ltt_llm:qwen38-api",
           "credit": 0,
           "loi": "",
           "tom_tat": {
@@ -227,8 +228,8 @@
             "so_doan_bi_cat": 0,
             "so_doan_tang_toc": 3,
             "he_so_toc_lon_nhat": 1.086,
-            "troi_toi_da_ms": 636,
-            "ket_cuoi_ms": 28212,
+            "troi_toi_da_ms": 649,
+            "ket_cuoi_ms": 28211,
             "che_do": "fit_original",
             "ban_do": {
               "phien_ban": 1,
@@ -245,7 +246,7 @@
             "master": {
               "thoi_luong": 32.189,
               "lech_giay": 0.0,
-              "lufs": -14.66,
+              "lufs": -14.64,
               "dinh_that": -2.49
             }
           }
@@ -275,7 +276,7 @@
           "tom_tat": {
             "stage": "render",
             "thoi_luong_giay": 32.167,
-            "co_byte": 2194112,
+            "co_byte": 2194349,
             "codec_video": "h264",
             "codec_tieng": "aac",
             "so_lop_tieng": 4,
@@ -315,7 +316,7 @@
         },
         {
           "job_type": "asv_gpu.audio_prepare",
-          "giay": 23.42,
+          "giay": 20.55,
           "loi": ""
         },
         {
@@ -325,7 +326,7 @@
         },
         {
           "job_type": "asv_gpu.transcribe",
-          "giay": 35.01,
+          "giay": 37.45,
           "loi": ""
         },
         {
@@ -335,7 +336,7 @@
         },
         {
           "job_type": "auto_scan_video.edit_plan",
-          "giay": 0.02,
+          "giay": 0.01,
           "loi": ""
         },
         {
@@ -345,7 +346,7 @@
         },
         {
           "job_type": "auto_scan_video.content_process",
-          "giay": 0.03,
+          "giay": 0.04,
           "loi": ""
         },
         {
@@ -365,7 +366,7 @@
         },
         {
           "job_type": "asv_media.timing_align",
-          "giay": 2.22,
+          "giay": 2.2,
           "loi": ""
         },
         {
@@ -375,7 +376,7 @@
         },
         {
           "job_type": "asv_media.compose",
-          "giay": 0.08,
+          "giay": 0.09,
           "loi": ""
         },
         {
@@ -420,6 +421,7 @@
         "so_canh": 1,
         "so_giu": 1,
         "so_cat": 0,
+        "so_canh_da_doc": 0,
         "bat_bien_giu_hinh": true
       },
       "ban_dung": {
@@ -434,7 +436,7 @@
       "ket_xuat": {
         "stage": "render",
         "thoi_luong_giay": 32.167,
-        "co_byte": 2194112,
+        "co_byte": 2194349,
         "codec_video": "h264",
         "codec_tieng": "aac",
         "so_lop_tieng": 4,
@@ -481,13 +483,13 @@
           {
             "dich": -14.0,
             "dung_sai": 1.0,
-            "lufs": -14.71,
+            "lufs": -14.69,
             "ma": "T4",
             "mo_ta": "am luong tich hop",
             "trang_thai": "dat"
           },
           {
-            "dinh_that": -2.33,
+            "dinh_that": -2.31,
             "ma": "T5",
             "mo_ta": "dinh that",
             "toi_da": -1.5,
@@ -531,7 +533,7 @@
             "so_doan_vuot": 0,
             "tran_so_doan": 3,
             "trang_thai": "dat",
-            "troi_toi_da_ms": 636
+            "troi_toi_da_ms": 649
           },
           {
             "ma": "T12",
@@ -625,7 +627,7 @@
       },
       "credit_con_lai": 1000,
       "ra": {
-        "byte": 2194112,
+        "byte": 2194349,
         "thoi_luong": 32.167,
         "codec_video": "h264",
         "codec_tieng": "aac",
@@ -635,8 +637,16 @@
         ],
         "vung_co_tieng": [
           [
+            2.0,
+            4.5
+          ],
+          [
+            9.0,
+            10.0
+          ],
+          [
             10.5,
-            11.5
+            12.0
           ],
           [
             16.5,
@@ -644,7 +654,7 @@
           ],
           [
             18.0,
-            19.5
+            20.0
           ],
           [
             22.0,
@@ -656,7 +666,7 @@
             "ma": "l1",
             "bat": 0.8,
             "ket": 6.16,
-            "co_tieng": false
+            "co_tieng": true
           },
           {
             "ma": "l2",
@@ -678,13 +688,88 @@
           }
         ],
         "am_luong": {
-          "lufs": -14.71,
-          "dinh_that": -2.33
+          "lufs": -14.69,
+          "dinh_that": -2.31
+        },
+        "do_cua_phep_do": {
+          "so_cua_so": 64,
+          "nen_p20_db": -17.8,
+          "nguong_db": -15.8,
+          "thap_nhat_db": -18.69,
+          "cao_nhat_db": -12.94,
+          "so_cua_so_tren_nguong": 26,
+          "ti_le_tren_nguong": 0.406,
+          "muc_cua_so_db": [
+            -18.68,
+            -16.67,
+            -14.05,
+            -16.27,
+            -14.97,
+            -15.48,
+            -14.8,
+            -14.84,
+            -15.42,
+            -17.58,
+            -17.83,
+            -18.69,
+            -18.15,
+            -18.14,
+            -17.92,
+            -15.07,
+            -17.22,
+            -16.35,
+            -14.43,
+            -15.25,
+            -16.56,
+            -13.97,
+            -14.44,
+            -15.53,
+            -17.8,
+            -17.96,
+            -18.01,
+            -17.74,
+            -17.54,
+            -16.07,
+            -14.54,
+            -17.14,
+            -17.18,
+            -14.29,
+            -14.91,
+            -17.33,
+            -15.07,
+            -14.33,
+            -14.29,
+            -15.0,
+            -18.18,
+            -18.12,
+            -17.96,
+            -18.03,
+            -13.79,
+            -13.69,
+            -14.29,
+            -12.94,
+            -13.84,
+            -14.02,
+            -13.07,
+            -17.25,
+            -17.57,
+            -17.29,
+            -17.54,
+            -17.42,
+            -17.63,
+            -17.67,
+            -17.55,
+            -17.63,
+            -17.34,
+            -17.74,
+            -17.72,
+            -17.26
+          ]
         }
       },
       "tai_ve": {
         "ma_chu": 200,
-        "byte_chu": 2194112,
+        "byte_chu": 2194349,
         "ma_nguoi_khac": 404
       }
     },
@@ -694,7 +779,7 @@
       "che_do_giong": "USER_SELECTED",
       "giong_id": "Minh Đức",
       "trang_thai_run": "done",
-      "giay_tong": 52.8,
+      "giay_tong": 58.1,
       "giai_doan": [
         {
           "ten": "media_prepare",
@@ -730,7 +815,7 @@
               "other"
             ],
             "lufs": -13.95,
-            "dinh_that": -1.5,
+            "dinh_that": -1.67,
             "thoi_luong": 32.192018
           }
         },
@@ -747,29 +832,30 @@
             "ngon_ngu": "en",
             "engine": "faster-whisper",
             "canh_chinh": "fallback_unaligned",
-            "phu_song": 19.4
+            "phu_song": 19.42
           }
         },
         {
           "ten": "edit_plan",
           "trang_thai": "succeeded",
-          "phien_ban_engine": "ban_bien_tap/1/1/0.4",
+          "phien_ban_engine": "ban_bien_tap/2/1/0.4",
           "credit": 0,
           "loi": "",
           "tom_tat": {
             "stage": "edit_plan",
             "preset": "smart_localize",
             "so_canh": 4,
-            "so_giu": 4,
-            "so_cat": 0,
-            "so_co_bang_chung": 0,
-            "ti_le_giu": 1.0
+            "so_giu": 3,
+            "so_cat": 1,
+            "so_canh_da_doc": 4,
+            "so_co_bang_chung": 4,
+            "ti_le_giu": 0.8479
           }
         },
         {
           "ten": "content_process",
           "trang_thai": "succeeded",
-          "phien_ban_engine": "noi_dung/1/ltt_llm/",
+          "phien_ban_engine": "noi_dung/1/ltt_llm:qwen38-api",
           "credit": 0,
           "loi": "",
           "tom_tat": {
@@ -815,29 +901,29 @@
           "loi": "",
           "tom_tat": {
             "stage": "timing_align",
-            "so_doan": 4,
-            "so_doan_bi_cat": 0,
-            "so_doan_tang_toc": 3,
+            "so_doan": 3,
+            "so_doan_bi_cat": 1,
+            "so_doan_tang_toc": 2,
             "he_so_toc_lon_nhat": 1.086,
-            "troi_toi_da_ms": 636,
-            "ket_cuoi_ms": 28212,
+            "troi_toi_da_ms": 649,
+            "ket_cuoi_ms": 21584,
             "che_do": "fit_original",
             "ban_do": {
               "phien_ban": 1,
               "giu": [
                 [
                   0.0,
-                  32.189
+                  27.292
                 ]
               ],
               "thoi_luong_nguon": 32.189,
-              "thoi_luong_ra": 32.189
+              "thoi_luong_ra": 27.292
             },
             "so_cho_noi": 0,
             "master": {
-              "thoi_luong": 32.189,
-              "lech_giay": 0.0,
-              "lufs": -14.66,
+              "thoi_luong": 27.292,
+              "lech_giay": -0.0,
+              "lufs": -14.78,
               "dinh_that": -2.49
             }
           }
@@ -850,11 +936,11 @@
           "loi": "",
           "tom_tat": {
             "stage": "compose",
-            "so_lop_tieng": 4,
-            "so_lop_tang_toc": 3,
+            "so_lop_tieng": 3,
+            "so_lop_tang_toc": 2,
             "che_do_hinh": "copy",
             "cach_render": "cat_ma_hoa_lai",
-            "thoi_luong_giay": 32.189,
+            "thoi_luong_giay": 27.292,
             "ffmpeg": "8.0.1-full_build-www.gyan.dev"
           }
         },
@@ -866,11 +952,11 @@
           "loi": "",
           "tom_tat": {
             "stage": "render",
-            "thoi_luong_giay": 32.167,
-            "co_byte": 1992045,
+            "thoi_luong_giay": 27.292,
+            "co_byte": 1837550,
             "codec_video": "h264",
             "codec_tieng": "aac",
-            "so_lop_tieng": 4,
+            "so_lop_tieng": 3,
             "chan_doan": ""
           }
         },
@@ -907,7 +993,7 @@
         },
         {
           "job_type": "asv_gpu.audio_prepare",
-          "giay": 19.57,
+          "giay": 20.8,
           "loi": ""
         },
         {
@@ -917,7 +1003,7 @@
         },
         {
           "job_type": "asv_gpu.transcribe",
-          "giay": 24.29,
+          "giay": 27.86,
           "loi": ""
         },
         {
@@ -927,7 +1013,7 @@
         },
         {
           "job_type": "auto_scan_video.edit_plan",
-          "giay": 0.11,
+          "giay": 0.59,
           "loi": ""
         },
         {
@@ -947,7 +1033,7 @@
         },
         {
           "job_type": "asv_voice.voice_synthesis",
-          "giay": 0.52,
+          "giay": 0.54,
           "loi": ""
         },
         {
@@ -957,7 +1043,7 @@
         },
         {
           "job_type": "asv_media.timing_align",
-          "giay": 2.13,
+          "giay": 1.94,
           "loi": ""
         },
         {
@@ -967,7 +1053,7 @@
         },
         {
           "job_type": "asv_media.compose",
-          "giay": 0.08,
+          "giay": 0.36,
           "loi": ""
         },
         {
@@ -987,7 +1073,7 @@
         },
         {
           "job_type": "asv_media.qc",
-          "giay": 1.7,
+          "giay": 1.61,
           "loi": ""
         },
         {
@@ -1010,27 +1096,28 @@
         "stage": "edit_plan",
         "preset": "smart_localize",
         "so_canh": 4,
-        "so_giu": 4,
-        "so_cat": 0,
-        "so_co_bang_chung": 0,
-        "ti_le_giu": 1.0
+        "so_giu": 3,
+        "so_cat": 1,
+        "so_canh_da_doc": 4,
+        "so_co_bang_chung": 4,
+        "ti_le_giu": 0.8479
       },
       "ban_dung": {
         "stage": "compose",
-        "so_lop_tieng": 4,
-        "so_lop_tang_toc": 3,
+        "so_lop_tieng": 3,
+        "so_lop_tang_toc": 2,
         "che_do_hinh": "copy",
         "cach_render": "cat_ma_hoa_lai",
-        "thoi_luong_giay": 32.189,
+        "thoi_luong_giay": 27.292,
         "ffmpeg": "8.0.1-full_build-www.gyan.dev"
       },
       "ket_xuat": {
         "stage": "render",
-        "thoi_luong_giay": 32.167,
-        "co_byte": 1992045,
+        "thoi_luong_giay": 27.292,
+        "co_byte": 1837550,
         "codec_video": "h264",
         "codec_tieng": "aac",
-        "so_lop_tieng": 4,
+        "so_lop_tieng": 3,
         "chan_doan": ""
       },
       "ban_long_tieng": {
@@ -1055,13 +1142,13 @@
             "trang_thai": "dat"
           },
           {
-            "lech": -0.022,
+            "lech": 0.0,
             "ma": "T2",
             "mo_ta": "thoi luong ban ra so voi MONG DOI cua che do",
-            "mong_doi": 32.189,
+            "mong_doi": 27.292,
             "nguong": 0.5,
             "thoi_luong_nguon": 32.189,
-            "thoi_luong_ra": 32.167,
+            "thoi_luong_ra": 27.292,
             "trang_thai": "dat"
           },
           {
@@ -1073,13 +1160,13 @@
           {
             "dich": -14.0,
             "dung_sai": 1.0,
-            "lufs": -14.71,
+            "lufs": -14.83,
             "ma": "T4",
             "mo_ta": "am luong tich hop",
             "trang_thai": "dat"
           },
           {
-            "dinh_that": -2.33,
+            "dinh_that": -2.31,
             "ma": "T5",
             "mo_ta": "dinh that",
             "toi_da": -1.5,
@@ -1088,7 +1175,7 @@
           {
             "ma": "T6",
             "mo_ta": "moi doan con lai deu co tep tieng",
-            "so_can": 4,
+            "so_can": 3,
             "so_thieu": 0,
             "thieu": [],
             "trang_thai": "dat"
@@ -1123,12 +1210,12 @@
             "so_doan_vuot": 0,
             "tran_so_doan": 3,
             "trang_thai": "dat",
-            "troi_toi_da_ms": 636
+            "troi_toi_da_ms": 649
           },
           {
             "ma": "T12",
             "mo_ta": "so doan bi cat da duoc bao cao",
-            "so_doan_bi_cat": 0,
+            "so_doan_bi_cat": 1,
             "trang_thai": "dat"
           },
           {
@@ -1140,6 +1227,16 @@
       },
       "so_ke": {
         "theo_nang_luc": [
+          {
+            "app_chu": "ltt_llm",
+            "nang_luc": "doc_canh",
+            "don_vi": "token",
+            "so_luong": 410.0,
+            "credit": 0,
+            "da_giao": 4,
+            "tu_choi": 0,
+            "mo_ho": 0
+          },
           {
             "app_chu": "ltt_llm",
             "nang_luc": "chuyen_loi_thoai",
@@ -1173,7 +1270,7 @@
         ],
         "tong": {
           "credit": 0,
-          "da_giao": 9,
+          "da_giao": 13,
           "tu_choi": 0,
           "mo_ho": 0
         },
@@ -1181,8 +1278,8 @@
       },
       "doi_soat": {
         "khop": true,
-        "so_don_vi": 13,
-        "so_dong_da_giao": 9,
+        "so_don_vi": 17,
+        "so_dong_da_giao": 13,
         "don_vi_co_tien_khong_co_so_cai": [],
         "so_cai_khong_co_don_vi": []
       },
@@ -1194,6 +1291,12 @@
         "credit_da_giu": 5,
         "credit_da_tinh": 0,
         "chi_phi_theo_nang_luc": [
+          {
+            "nang_luc": "doc_canh",
+            "don_vi": "token",
+            "so_luong": 410.0,
+            "credit": 0
+          },
           {
             "nang_luc": "chuyen_loi_thoai",
             "don_vi": "token",
@@ -1217,8 +1320,8 @@
       },
       "credit_con_lai": 1000,
       "ra": {
-        "byte": 1992045,
-        "thoi_luong": 32.167,
+        "byte": 1837550,
+        "thoi_luong": 27.292,
         "codec_video": "h264",
         "codec_tieng": "aac",
         "khung": [
@@ -1227,8 +1330,16 @@
         ],
         "vung_co_tieng": [
           [
+            2.0,
+            4.5
+          ],
+          [
+            9.0,
+            10.0
+          ],
+          [
             10.5,
-            11.5
+            12.0
           ],
           [
             16.5,
@@ -1236,10 +1347,10 @@
           ],
           [
             18.0,
-            19.5
+            20.0
           ],
           [
-            22.0,
+            22.5,
             25.5
           ]
         ],
@@ -1248,7 +1359,7 @@
             "ma": "l1",
             "bat": 0.8,
             "ket": 6.16,
-            "co_tieng": false
+            "co_tieng": true
           },
           {
             "ma": "l2",
@@ -1270,13 +1381,78 @@
           }
         ],
         "am_luong": {
-          "lufs": -14.71,
-          "dinh_that": -2.33
+          "lufs": -14.83,
+          "dinh_that": -2.31
+        },
+        "do_cua_phep_do": {
+          "so_cua_so": 54,
+          "nen_p20_db": -17.92,
+          "nguong_db": -15.92,
+          "thap_nhat_db": -18.69,
+          "cao_nhat_db": -13.97,
+          "so_cua_so_tren_nguong": 25,
+          "ti_le_tren_nguong": 0.463,
+          "muc_cua_so_db": [
+            -18.68,
+            -16.67,
+            -14.05,
+            -16.27,
+            -14.97,
+            -15.48,
+            -14.8,
+            -14.84,
+            -15.42,
+            -17.58,
+            -17.83,
+            -18.69,
+            -18.15,
+            -18.14,
+            -17.92,
+            -15.07,
+            -17.22,
+            -16.35,
+            -14.43,
+            -15.25,
+            -16.56,
+            -13.97,
+            -14.44,
+            -15.53,
+            -17.8,
+            -17.96,
+            -18.01,
+            -17.74,
+            -17.54,
+            -16.07,
+            -14.54,
+            -17.14,
+            -17.18,
+            -14.29,
+            -14.91,
+            -17.33,
+            -15.07,
+            -14.33,
+            -14.29,
+            -15.0,
+            -18.17,
+            -18.12,
+            -17.93,
+            -17.95,
+            -17.13,
+            -15.75,
+            -15.59,
+            -14.44,
+            -14.86,
+            -15.61,
+            -14.6,
+            -17.02,
+            -17.19,
+            -16.86
+          ]
         }
       },
       "tai_ve": {
         "ma_chu": 200,
-        "byte_chu": 1992045,
+        "byte_chu": 1837550,
         "ma_nguoi_khac": 404
       }
     }
