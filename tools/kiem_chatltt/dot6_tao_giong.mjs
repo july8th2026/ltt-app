@@ -120,41 +120,61 @@ export function dot6({ cho, doiDen, soDu, soDuOnDinh, hoiThoaiMoi, guiChu, xong,
     },
     {
       dot: 6,
-      ten: '6.2-giong-rieng-di-DUNG-vao-tham-so',
-      hoi: 'Chọn giọng của mình — nó có thật sự đi theo yêu cầu không?',
+      ten: '6.2-giong-KHO-CHUNG-di-dung-vao-tham-so',
+      hoi: 'Chọn một giọng kho chung — nó có thật sự đi theo yêu cầu không?',
       async chay(p) {
+        // 🔴 HANG MUC NAY DA DOI DOI TUONG 04/09, VA DO LA MOT QUYET DINH SAN PHAM.
+        //
+        //    Ban cu kiem **giong nhan ban theo tai khoan** (`voice_id`). No BO
+        //    QUA moi luot voi ly do "tai khoan nay chua co giong nhan ban nao" —
+        //    va mot ly do bo qua lap lai mai la mot cau hoi chua duoc hoi.
+        //
+        // ⭐ Chu du an chot: *"su dung voice trong kho su dung chung, khong theo
+        //    tai khoan ca nhan"*. Nen menh de dung phai kiem la: mot giong KHO
+        //    CHUNG khach chon co di dung vao tham so `preset` khong.
+        //
+        // ⛔ Va no khong con bo qua duoc nua: kho chung LUON co 20 giong, khong
+        //    phu thuoc tai khoan. Bo qua o day tu nay la mot loi that.
         const bq = await moPanelGiong(p);
         if (bq) return bq;
         if (!(await chonGiong(p).count())) {
-          // ⭐ BO QUA, khong HONG. Bo chon chi hien khi nguoi dung CO giong
-          //    nhan ban — mot tai khoan chua nhan ban giong nao thi menh de
-          //    nay chua kiem duoc, khong phai bi vi pham.
-          return { bo_qua: 'tai khoan nay chua co giong nhan ban nao' };
+          throw new Error('khong co o chon giong — kho chung phai luon co giong');
         }
         const cac = await chonGiong(p).locator('option')
           .evaluateAll((o) => o.map((x) => ({ v: x.value, t: x.textContent.trim() })));
-        const rieng = cac.find((x) => x.v && x.v !== '');
-        if (!rieng) return { bo_qua: 'chi co giong dung san' };
+        const chung = cac.filter((x) => x.v);
+        if (chung.length < 2) {
+          throw new Error(`kho chung chi co ${chung.length} giong: ${JSON.stringify(cac)}`);
+        }
+        // Chon giong THU HAI, khong phai dau tien: phan tu dau cung la mac dinh
+        // cua may chu, nen chon no thi khong phan biet duoc "da di theo yeu cau"
+        // voi "may chu tu chon dung cai do".
+        const chon = chung[1];
 
-        // Bat yeu cau di ra de xem `voice_id` co that su duoc gui khong.
         const batDuoc = [];
         const nghe = (req) => {
-          if (req.url().includes('/api/hoi-thoai/') && req.url().endsWith('/tao')) {
-            batDuoc.push(req.postData() || '');
-          }
+          const u = req.url();
+          if (u.includes('bao-gia') || u.endsWith('/tao')) batDuoc.push(req.postData() || '');
         };
         p.on('request', nghe);
         try {
-          await chonGiong(p).selectOption(rieng.v);
+          await chonGiong(p).selectOption(chon.v);
           await cho(600);
-          const { gia } = await xemGia(p, 'Doc bang giong rieng cua toi.');
-          await p.getByRole('button', { name: 'Đồng ý, tạo' }).click();
-          await doiDen('yeu cau tao da di ra', () => batDuoc.length > 0, 30);
+          const { gia } = await xemGia(p, 'Doc thu bang giong kho chung.');
+          await doiDen('bao gia da di ra', () => batDuoc.length > 0, 25);
           const than = batDuoc[0];
-          if (!than.includes(rieng.v)) {
-            throw new Error(`giong da chon (${rieng.v}) KHONG co trong than yeu cau: ${than.slice(0, 200)}`);
+          if (!than.includes('"preset"')) {
+            throw new Error(`than yeu cau khong mang \`preset\`: ${than.slice(0, 200)}`);
           }
-          return { giong: rieng.t.slice(0, 30), gia_bao: gia, di_vao_tham_so: true };
+          if (than.includes('"voice_id"')) {
+            throw new Error(`van gui \`voice_id\` (giong nhan ban) — ChatLTT phai dung kho chung: ${than.slice(0, 200)}`);
+          }
+          if (!than.includes(chon.v)) {
+            throw new Error(`giong da chon (${chon.v}) KHONG co trong than: ${than.slice(0, 200)}`);
+          }
+          await p.getByRole('button', { name: 'Huỷ' }).click().catch(() => {});
+          return { giong: chon.v, nhan: chon.t.slice(0, 34), so_giong_kho_chung: chung.length,
+                   gia_bao: gia, di_vao_tham_so: true };
         } finally {
           p.off('request', nghe);
         }
