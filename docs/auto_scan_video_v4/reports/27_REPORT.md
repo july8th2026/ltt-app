@@ -85,7 +85,7 @@ collapse above, and frames actually attached to the prompt as OpenAI
    `ai.goi_tinh_tien` writes the ledger on all three branches before we see the
    result, so discarding the result drops no entry.
 
-**Evidence — real E2E run** (`evidence/22_nghiem_thu.json`):
+**Evidence — real E2E run** (`evidence/nghiem_thu_hien_hanh.json`):
 `so_canh 4, so_giu 3, so_cat 1, so_canh_da_doc 4`; output 27.29 s against a
 32.19 s source; `timing_align` recorded `so_doan_bi_cat: 1` — a dubbed line
 belonging to the cut scene was not placed, which is V4-R07 working.
@@ -133,7 +133,7 @@ encodes on one card. Recorded as **V4-R15**; no second slot-counter was added
 inside the app, because that would create a second owner for one resource —
 exactly what `pipeline.CHUOI` refused to do for demucs.
 
-**Evidence:** `evidence/24_hieu_nang.json` — `bo_ma_hoa_may_co: h264_nvenc`, and
+**Evidence:** `evidence/hieu_nang_hien_hanh.json` — `bo_ma_hoa_may_co: h264_nvenc`, and
 the `cat_thong_minh` run records `bo_ma_hoa: h264_nvenc` where it previously
 recorded `libx264`. `test_preset_CAT_dung_bo_ma_hoa_PHAN_CUNG_khi_may_co`
 reported **XPASS(strict)**; marker removed.

@@ -1,7 +1,12 @@
 # Phase 22 — E2E functional acceptance
 
 **Verdict: PASS, with one named blocker handed to Phase 27.**
-Branch `phien/asv-v4`. Machine evidence: [`evidence/22_nghiem_thu.json`](../evidence/22_nghiem_thu.json).
+Branch `phien/asv-v4`. Machine evidence: [`evidence/nghiem_thu_hien_hanh.json`](../evidence/nghiem_thu_hien_hanh.json).
+
+> ⚠️ **Tep bang chung duoc lien ket la tep CUON**, khong phai anh chup cua pha
+> nay: moi luot nghiem thu ghi de len no (co y — xem `evidence/README.md`).
+> Cac con so trich trong bao cao nay dong bang cung bao cao; mo tep ra hom nay
+> se thay so cua luot chay GAN NHAT, khong phai so duoi day.
 
 Both presets now produce a usable final video with every critical QC gate passing.
 Three real defects were found by running the product end to end, and all three are

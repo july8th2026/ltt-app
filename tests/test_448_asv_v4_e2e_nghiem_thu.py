@@ -61,9 +61,20 @@ from tests.test_423_asv_giao_dien import moi_truong  # noqa: F401
 #    moi truong test ve dung hinh dang production chu khong phai mot cai va.
 import apps.ltt_voice.tables  # noqa: E402,F401  isort:skip
 
-#: Bao cao da luu — bang chung cua pha 22, doc boi nua B.
+#: 🔴 **Tep nay CUON, no khong dong bang — va cai ten cu da noi nguoc lai.**
+#:
+#:    No tung ten la `22_nghiem_thu.json`, nghe nhu "bang chung cua pha 22".
+#:    Thuc te moi luot nghiem thu deu GHI DE len no, va dieu do la CO Y: pha 28
+#:    da sinh lai no vi bang chung ghi truoc mot commit cham vao duong chay thi
+#:    khong con mo ta ban dang xet.
+#:
+#: ⛔ Hai su that do khong the cung dung duoi mot cai ten. Bao cao pha 22 trich
+#:    so tu tep nay; sau pha 29 nhung so do khong con o trong no nua — lien ket
+#:    van song, noi dung van dung, chi la no khong con la thu bao cao 22 mo ta.
+#:    Doi ten de cai ten thoi hua mot dieu ma tep khong giu.
 BAO_CAO = (Path(__file__).resolve().parents[1]
-           / "docs" / "auto_scan_video_v4" / "evidence" / "22_nghiem_thu.json")
+           / "docs" / "auto_scan_video_v4" / "evidence"
+           / "nghiem_thu_hien_hanh.json")
 
 #: Noi luot chay ghi bao cao. Khong dat = thu muc tam.
 BIEN_RA = "LTT_ASV_E2E_RA"
@@ -430,7 +441,7 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
         "luot": luot,
     }
 
-    duong = Path(os.environ.get(BIEN_RA) or (tmp_path / "22_nghiem_thu.json"))
+    duong = Path(os.environ.get(BIEN_RA) or (tmp_path / "nghiem_thu_hien_hanh.json"))
     duong.parent.mkdir(parents=True, exist_ok=True)
     duong.write_text(json.dumps(_sach(bao_cao), ensure_ascii=False, indent=2),
                      encoding="utf-8")

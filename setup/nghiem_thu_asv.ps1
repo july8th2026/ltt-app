@@ -100,7 +100,7 @@ if (-not $pyChay) {
 }
 Write-Host "  [OK] Chay pytest bang: $pyChay" -ForegroundColor Green
 if (-not $BaoCao) {
-    $BaoCao = Join-Path $Repo 'docs\auto_scan_video_v4\evidence\22_nghiem_thu.json'
+    $BaoCao = Join-Path $Repo 'docs\auto_scan_video_v4\evidence\nghiem_thu_hien_hanh.json'
 }
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()

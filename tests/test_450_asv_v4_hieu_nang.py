@@ -40,8 +40,20 @@ from tests.test_423_asv_giao_dien import moi_truong  # noqa: F401
 
 import apps.ltt_voice.tables  # noqa: E402,F401  isort:skip
 
+#: 🔴 **Tep nay CUON, no khong dong bang — va cai ten cu da noi nguoc lai.**
+#:
+#:    No tung ten la `24_hieu_nang.json`, nghe nhu "bang chung cua pha 24".
+#:    Thuc te moi luot nghiem thu deu GHI DE len no, va dieu do la CO Y: pha 28
+#:    da sinh lai no vi bang chung ghi truoc mot commit cham vao duong chay thi
+#:    khong con mo ta ban dang xet.
+#:
+#: ⛔ Hai su that do khong the cung dung duoi mot cai ten. Bao cao pha 24 trich
+#:    so tu tep nay; sau pha 29 nhung so do khong con o trong no nua — lien ket
+#:    van song, noi dung van dung, chi la no khong con la thu bao cao 24 mo ta.
+#:    Doi ten de cai ten thoi hua mot dieu ma tep khong giu.
 BAO_CAO = (Path(__file__).resolve().parents[1]
-           / "docs" / "auto_scan_video_v4" / "evidence" / "24_hieu_nang.json")
+           / "docs" / "auto_scan_video_v4" / "evidence"
+           / "hieu_nang_hien_hanh.json")
 BIEN_RA = "LTT_ASV_PERF_RA"
 SCHEMA = "asv.v4.hieu_nang.1"
 NANG_LUC = {"api", "ffmpeg", "gpu", "voice"}
@@ -273,7 +285,7 @@ def test_DO_TAI_hai_preset(moi_truong, tmp_path, monkeypatch):
         "khai_bao_vram": _khai_vram(),
         "luot": luot,
     }
-    duong = Path(os.environ.get(BIEN_RA) or (tmp_path / "24_hieu_nang.json"))
+    duong = Path(os.environ.get(BIEN_RA) or (tmp_path / "hieu_nang_hien_hanh.json"))
     duong.parent.mkdir(parents=True, exist_ok=True)
     duong.write_text(
         json.dumps(fx.sach_de_cong_bo(bao_cao), ensure_ascii=False,
@@ -443,7 +455,8 @@ DINH_CPU_DE_TACH_SUAT = 70.0
 RAM_TRONG_DE_TACH_SUAT_GIB = 8.0
 
 BAO_CAO_SUAT = (Path(__file__).resolve().parents[1]
-                / "docs" / "auto_scan_video_v4" / "evidence" / "24_suat_gpu.json")
+                / "docs" / "auto_scan_video_v4" / "evidence"
+                / "suat_gpu_hien_hanh.json")
 BIEN_RA_SUAT = "LTT_ASV_SUAT_RA"
 
 
@@ -560,7 +573,7 @@ def test_DO_SUAT_demucs_va_asr(tmp_path, monkeypatch):
         "chua_do_duoc": ("VRAM khi hai model cung tren mot card — cay nay la "
                          "torch+cpu (V4-R05), nen ca hai deu chay tren CPU"),
     }
-    duong = Path(os.environ.get(BIEN_RA_SUAT) or (tmp_path / "24_suat_gpu.json"))
+    duong = Path(os.environ.get(BIEN_RA_SUAT) or (tmp_path / "suat_gpu_hien_hanh.json"))
     duong.parent.mkdir(parents=True, exist_ok=True)
     duong.write_text(
         json.dumps(fx.sach_de_cong_bo(bao_cao), ensure_ascii=False,
@@ -644,7 +657,8 @@ def test_SUAT_GPU_van_phai_dung_CHUNG_cho_toi_khi_co_phep_do_moi(bc):
     am, chep = theo["audio_prepare"], theo["transcribe"]
     assert am.tai_nguyen and am.tai_nguyen == chep.tai_nguyen, (
         "audio_prepare va transcribe khong con dung chung mot ten tai nguyen — "
-        "neu do la co y thi phai kem phep do moi thay cho evidence/24_suat_gpu.json")
+        "neu do la co y thi phai kem phep do moi thay cho "
+        "evidence/suat_gpu_hien_hanh.json")
     assert am.tai_nguyen_suat == chep.tai_nguyen_suat == 1
 
 
@@ -653,7 +667,8 @@ def test_SUAT_GPU_van_phai_dung_CHUNG_cho_toi_khi_co_phep_do_moi(bc):
 # ══════════════════════════════════════════════════════════════════════════════
 
 BAO_CAO_ASR = (Path(__file__).resolve().parents[1]
-               / "docs" / "auto_scan_video_v4" / "evidence" / "24_asr_cuda.json")
+               / "docs" / "auto_scan_video_v4" / "evidence"
+               / "asr_cuda_hien_hanh.json")
 BIEN_RA_ASR = "LTT_ASV_ASR_RA"
 
 
@@ -714,7 +729,7 @@ def test_DO_ASR_tren_CUDA(tmp_path, monkeypatch):
     ra["san_sang_sidecar"] = bool(os.environ.get("LTT_WHISPERX_PYTHON", "").strip())
     ra["ghi_luc"] = time.strftime("%Y-%m-%dT%H:%M:%S")
     ra["may"] = _may()
-    duong = Path(os.environ.get(BIEN_RA_ASR) or (tmp_path / "24_asr_cuda.json"))
+    duong = Path(os.environ.get(BIEN_RA_ASR) or (tmp_path / "asr_cuda_hien_hanh.json"))
     duong.parent.mkdir(parents=True, exist_ok=True)
     duong.write_text(
         json.dumps(fx.sach_de_cong_bo(ra), ensure_ascii=False, indent=2),

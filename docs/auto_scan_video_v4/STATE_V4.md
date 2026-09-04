@@ -38,8 +38,8 @@
   twice: once at `747ca28` and again at `50e8083`.
   ⚠️ Four frontend steps report **BOQUA**, and the gate's own RESULT line says
   what that means: *"4 BUOC TU BO QUA, KHONG PHAI BANG CHUNG."*
-- **evidence regenerated at the RC**: `evidence/22_nghiem_thu.json` and
-  `evidence/24_hieu_nang.json`. 🔑 This was not a formality — the Phase 27
+- **evidence regenerated at the RC**: `evidence/nghiem_thu_hien_hanh.json` and
+  `evidence/hieu_nang_hien_hanh.json`. 🔑 This was not a formality — the Phase 27
   runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
   every stage of every E2E run. Evidence recorded before that commit does not
   describe this RC.

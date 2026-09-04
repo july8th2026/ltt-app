@@ -2,9 +2,13 @@
 
 **Verdict: PASS, with one blocker recorded and one earlier finding corrected.**
 Branch `phien/asv-v4`. Evidence:
-[`24_hieu_nang.json`](../evidence/24_hieu_nang.json) ·
-[`24_suat_gpu.json`](../evidence/24_suat_gpu.json) ·
-[`24_asr_cuda.json`](../evidence/24_asr_cuda.json).
+[`hieu_nang_hien_hanh.json`](../evidence/hieu_nang_hien_hanh.json) ·
+[`suat_gpu_hien_hanh.json`](../evidence/suat_gpu_hien_hanh.json) ·
+[`asr_cuda_hien_hanh.json`](../evidence/asr_cuda_hien_hanh.json).
+
+> ⚠️ **Ba tep bang chung duoc lien ket deu CUON**, khong phai anh chup cua pha
+> nay: moi luot do ghi de len chung (co y — xem `evidence/README.md`). Cac con
+> so trich trong bao cao nay dong bang cung bao cao.
 
 This phase changed no product code. It measured, and two of the measurements
 changed what the project believes.

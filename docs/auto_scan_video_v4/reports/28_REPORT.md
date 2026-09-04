@@ -33,8 +33,8 @@ gate genuinely requires it."* G9 and G17 genuinely require it.
 | branch base | `706faca50c75fb5b6dbad6c346b96c98a6736a11` (`phien/asv`) |
 | worktree | `D:\LTTSTUDIOSAPP\.claude\worktrees\auto-scan-video-v4-mvp-7173d9` |
 | gate at RC | `python tools/gate.py --phien asv-v4` → `RESULT: PASS` |
-| E2E evidence | `evidence/22_nghiem_thu.json`, regenerated at this SHA |
-| performance evidence | `evidence/24_hieu_nang.json`, regenerated at this SHA |
+| E2E evidence | `evidence/nghiem_thu_hien_hanh.json`, regenerated at this SHA |
+| performance evidence | `evidence/hieu_nang_hien_hanh.json`, regenerated at this SHA |
 
 ⚠️ The evidence files had to be regenerated for this phase, and that was not a
 formality: Phase 27's runs predated commit `9ff469e`, which changed
