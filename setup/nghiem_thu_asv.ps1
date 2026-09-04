@@ -159,6 +159,20 @@ if ($ModelGia -or -not $coCsdl) {
     #    vao CSDL production qua no.
     $env:LTT_ASV_MODEL_THAT = '1'
     $env:LTT_ASV_POOL_URL   = $env:LTT_DATABASE_URL
+
+    # !! Model THAT doi PostgreSQL, khong chay duoc tren SQLite.
+    #    Bo nay mo nhieu phien cung luc theo dung thiet ke (handler,
+    #    ctx.progress, ctx.provider_dispatched - bat bien I5). SQLite chi
+    #    cho MOT nguoi ghi, va mot loi goi model that giu ket noi vai
+    #    giay, nen chung dam nhau: 'database is locked [SQL: UPDATE jobs'.
+    #
+    # !! Ten CSDL PHAI chua 'test' - `tests/pg_scratch.py` tu choi neu
+    #    khong, vi cac bai nay goi `drop_all`.
+    if (-not $env:LTT_TEST_DATABASE_URL) {
+        $env:LTT_TEST_DATABASE_URL = ($env:LTT_DATABASE_URL -replace
+            '/[^/?]+(\?|$)', '/lttplatform_test$1')
+    }
+    Write-Host "  [**] CSDL nghiem thu: PostgreSQL nhap (ten chua 'test')" -ForegroundColor Cyan
     Write-Host "  [**] Model: THAT, qua pool khoa -> may B" -ForegroundColor Cyan
 }
 if ($GiongSAPI -or -not $coToken) {

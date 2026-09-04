@@ -19,8 +19,25 @@ from fastapi.testclient import TestClient
 @pytest.fixture()
 def moi_truong(tmp_path, monkeypatch):
     """Hai nguoi dung that, qua HTTP that. Khuon lay tu `test_103`."""
-    monkeypatch.setenv("LTT_DATABASE_URL",
-                       f"sqlite:///{(tmp_path / 'asv.db').as_posix()}")
+    # 🔑 PostgreSQL NHAP khi co khai, SQLite khi khong.
+    #
+    #    SQLite chi cho MOT nguoi ghi, con bo nay mo nhieu phien cung luc theo
+    #    dung thiet ke: handler mot phien, `ctx.progress` mot phien,
+    #    `ctx.provider_dispatched` mot phien (ghi ben ngay truoc cu HTTP - bat
+    #    bien I5). Voi ban model gia, moi phien chi giu vai mili-giay va khong
+    #    ai thay. Voi model THAT, mot loi goi giu ket noi vai giay va chung dam
+    #    nhau: `doc_canh` bi ghi `tu_choi` voi ly do that su la
+    #    `database is locked [SQL: UPDATE jobs SET`.
+    #
+    # ⛔ `pg_scratch.scratch_url()` la duong DUY NHAT lay URL do: no doi ten CSDL
+    #    chua `test` va `pytest.fail` neu khong, vi cac bai nay goi `drop_all`.
+    #    Di qua bo canh, khong di quanh no.
+    from tests import pg_scratch
+
+    _nhap = pg_scratch.scratch_url()
+    monkeypatch.setenv(
+        "LTT_DATABASE_URL",
+        _nhap or f"sqlite:///{(tmp_path / 'asv.db').as_posix()}")
     monkeypatch.setenv("LTT_DATA_DIR", str(tmp_path / "data"))
     monkeypatch.setenv("LTT_AUTO_SCAN_VIDEO", "1")
     monkeypatch.delenv("LTT_STORAGE", raising=False)
@@ -36,6 +53,11 @@ def moi_truong(tmp_path, monkeypatch):
     #    mot phep kiem dang do thu tu import.
     import apps.auto_scan_video.tables  # noqa: F401
     dbmod.reset_engine()
+    if _nhap:
+        # ⚠️ CSDL nhap song qua nhieu lan chay, nen phai don TRUOC. Khong don thi
+        #    `tao_nguoi_dung` o duoi va cham UNIQUE email cua lan chay truoc, va
+        #    thong bao do khong nhac gi toi viec CSDL con du lieu cu.
+        dbmod.Base.metadata.drop_all(dbmod.get_engine())
     dbmod.Base.metadata.create_all(dbmod.get_engine())
     db = next(dbmod.get_session())
     from platform_core import credit

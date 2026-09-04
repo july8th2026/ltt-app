@@ -163,6 +163,24 @@
     whole time: `AsvUsage.ghi_chu["ly_do"]` recorded
     `database is locked [SQL: UPDATE jobs SET` on every one - and the report
     printed only the **count**. It now records the reason.
+  * **A29-06 (P1, PRODUCTION-FATAL) — the first paying run would die at the
+    credit hold, and 29 phases never saw it.**
+        AsvRun.id          = "asvr_" + 32 hex = **37** characters
+        CreditEntry.job_id = VARCHAR(**36**)
+    `features.py:140` passes `run.id` into `credit.giu_cho(...)`. Over by
+    exactly one character.
+    🔴 Production runs **PostgreSQL**, which enforces column width;
+    every ASV test has run on **SQLite**, which does not. And ASV has never
+    run in production (`enabled=False`), so nothing else could have caught it.
+    The very first paying customer run would fail at the credit hold -
+    **before any work happens** - with a raw database error.
+    ⭐ This is the entire payoff of moving the acceptance suite onto
+    PostgreSQL: it was found in the first run, in seven seconds.
+    ⛔ NOT fixed here. Two candidate fixes and both are decisions: widen
+    `CreditEntry.job_id` (platform schema + a migration on the production
+    database), or shorten `AsvRun.id` (app-only, and safe **today** because
+    ASV has no production rows - but it changes an id scheme chosen on
+    purpose, `asvr_` prefixes exist so a wrong id cannot be passed silently).
 - **findings_for_phase_28**:
   * **A27-01 (P2)** — `apps/auto_scan_video/qc_ai.py` (semantic + visual QC) and
     `sua_chua.py` (repair) have **no caller in product code**. `loi.py` imports
