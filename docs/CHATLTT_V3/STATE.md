@@ -33,6 +33,53 @@
 | ASV (`auto-scan-video-v4-mvp`) | `apps/auto_scan_video/`, `apps/asv_*`, `tests/test_4xx_asv_*` | có ghi |
 | **H44 (phiên này)** | `apps/chatltt/`, `platform_core/runtime_noi_bo/`, `frontend/chatltt/`, `docs/CHATLTT_V3/`, `tests/test_7xx` | — |
 
+## Tiến độ — đo bằng NGÀY CÔNG, không bằng số pha
+
+⛔ Đếm pha là cách đếm gian: P00 mất nửa ngày, P03 mất năm ngày, cả hai đều là
+"một pha". Bảng dưới quy về ngày công theo ước lượng trong `00_KE_HOACH_V3.md`.
+
+| Làn | Pha | Ước (ngày) | Xong | Còn |
+|---|---|---|---|---|
+| **A** | P00 nguồn chân lý | 0,5 | **0,5** ✅ | — |
+| **A** | P01 qualification Qwen | 2,5 | **1,0** (40 %) | 1,5 |
+| **A** | P02 ADR điều phối | 1,0 | 0 | 1,0 |
+| **A** | P03 kernel điều phối | 5,0 | 0 | 5,0 |
+| **A** | P04 duyệt bền + tiền | 4,5 | 0 | 4,5 |
+| **A** | P05 ảnh/tiếng thành tool | 3,5 | 0 | 3,5 |
+| | **Làn A** | **17,0** | **1,5** | **15,5** |
+| **B** | P06 · P07 · P08 | 20,0 | 0 | 20,0 |
+| **C** | P09 · P10 · P11 · P12 | 14,0 | 0 | 14,0 |
+| | **TOÀN CHƯƠNG TRÌNH** | **51,0** | **1,5** | **49,5** |
+
+### Con số
+
+| | |
+|---|---|
+| **Toàn chương trình (P00→P12)** | **≈ 3 %** |
+| **Làn A** (phần phát hành được một mình) | **≈ 9 %** |
+| Mã sản phẩm đã sửa | **0 dòng** — đúng thiết kế: P00–P02 cấm mã sản phẩm |
+
+⭐ Ba phần trăm là con số thật, và nó **không** đo hết giá trị đã tạo: sáu phát
+hiện dưới đây đã đổi kế hoạch **trước khi** một dòng mã sản phẩm nào được viết,
+và một trong số đó (R2b) là chuyện tiền. Nhưng cũng đừng thổi nó lên — công
+xây thật vẫn còn nguyên ở phía trước.
+
+## P01 — bóc chi tiết 40 %
+
+| Hạng mục | Trạng thái |
+|---|---|
+| Siêu dữ liệu máy B (build · băm GGUF · băm template · đối chiếu yaml) | ✅ xong |
+| Ngưỡng + ma trận kịch bản, **chốt trước khi đo** | ✅ xong (`ddf7af3`) |
+| Harness gọi máy B qua Nexus | ✅ xong |
+| **Cổng 0** — khớp định dạng, 20 lượt | ✅ **THÔNG 20/20** |
+| Đo bẫy `tool_call_format` | ✅ xong — **bác bỏ**, đã đính chính |
+| Bộ tool giả đủ 8 cái | ⚠️ mới 2/8 (`calculator`, `weather_fake`) |
+| Lô chính 541 lượt × hồ sơ nền | ❌ chưa |
+| A/B KV `q8_0` vs `q4_0` (hồ sơ tạm `-c 65536`) | ❌ chưa |
+| A/B MTP bật/tắt · `reasoning_effort` low/xhigh | ❌ chưa |
+| Ngữ cảnh dài 50K/130K/180K | ❌ chưa |
+| Báo cáo + phán quyết PASS/CONDITIONAL/FAIL | ❌ chưa |
+
 ## Pha đã đóng
 
 | Pha | Kết quả | Sản phẩm |

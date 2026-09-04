@@ -53,15 +53,17 @@
         "00_REFERENCE_MATRIX.md",
         "00_GAP_MATRIX.md",
         "00_DO_NOT_REWRITE.md"
-      ]
+      ],
+      "phan_tram": 100
     },
     {
       "id": "P01",
       "ten": "qwen3.8 tool-call qualification",
-      "trang_thai": "CHUA",
+      "trang_thai": "DANG LAM",
       "chan": [
         "tai khoan do >= 3500 credit"
-      ]
+      ],
+      "phan_tram": 40
     },
     {
       "id": "P02",
@@ -69,7 +71,8 @@
       "trang_thai": "CHUA",
       "chan": [
         "P01"
-      ]
+      ],
+      "phan_tram": 0
     },
     {
       "id": "P03",
@@ -77,7 +80,8 @@
       "trang_thai": "CHUA",
       "chan": [
         "P02"
-      ]
+      ],
+      "phan_tram": 0
     },
     {
       "id": "P04",
@@ -85,7 +89,8 @@
       "trang_thai": "CHUA",
       "chan": [
         "P03"
-      ]
+      ],
+      "phan_tram": 0
     },
     {
       "id": "P05",
@@ -93,25 +98,29 @@
       "trang_thai": "CHUA",
       "chan": [
         "P04"
-      ]
+      ],
+      "phan_tram": 0
     },
     {
       "id": "P06",
       "ten": "tep/tri thuc/tim kiem/code/MCP",
       "trang_thai": "CHUA",
-      "lan": "B"
+      "lan": "B",
+      "phan_tram": 0
     },
     {
       "id": "P07",
       "ten": "memory/projects/agents/skills",
       "trang_thai": "CHUA",
-      "lan": "B"
+      "lan": "B",
+      "phan_tram": 0
     },
     {
       "id": "P08",
       "ten": "deep research/artifacts/nen",
       "trang_thai": "CHUA",
-      "lan": "B"
+      "lan": "B",
+      "phan_tram": 0
     },
     {
       "id": "P09",
@@ -121,20 +130,23 @@
       "chan": [
         "P03",
         "P04"
-      ]
+      ],
+      "phan_tram": 0
     },
     {
       "id": "P10",
       "ten": "gia co san xuat + di tru",
       "trang_thai": "CHUA",
-      "lan": "C"
+      "lan": "C",
+      "phan_tram": 0
     },
     {
       "id": "P11",
       "ten": "red team doc lap",
       "trang_thai": "CHUA",
       "lan": "C",
-      "ghi_chu": "phien Claude MOI, cay reviewer khac"
+      "ghi_chu": "phien Claude MOI, cay reviewer khac",
+      "phan_tram": 0
     },
     {
       "id": "P12",
@@ -143,7 +155,8 @@
       "lan": "C",
       "chan": [
         "P11"
-      ]
+      ],
+      "phan_tram": 0
     }
   ],
   "phat_hien_p00": [
@@ -323,5 +336,30 @@
       "ly_do": "van pham GBNF cuong che sinh, thang prompt",
       "bang_chung": "artifacts/01_bay_tool_format.json"
     }
+  },
+  "tien_do": {
+    "don_vi": "ngay cong (8h)",
+    "lan_A": {
+      "uoc": 17.0,
+      "xong": 1.5,
+      "phan_tram": 9
+    },
+    "lan_B": {
+      "uoc": 20.0,
+      "xong": 0,
+      "phan_tram": 0
+    },
+    "lan_C": {
+      "uoc": 14.0,
+      "xong": 0,
+      "phan_tram": 0
+    },
+    "toan_chuong_trinh": {
+      "uoc": 51.0,
+      "xong": 1.5,
+      "phan_tram": 3
+    },
+    "ma_san_pham_da_sua": 0,
+    "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
   }
 }
