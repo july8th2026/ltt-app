@@ -164,35 +164,10 @@ def _doc_artifact(db, kho, run, stage: str, duoi: str) -> bytes | None:
     return None
 
 
-#: Khoa bi BO khoi bao cao truoc khi ghi ra dia.
-KHOA_KHONG_GHI = ("khoa_asset", "khoa", "van_tay_ban", "van_tay",
-                  # `asvr_<32 hex>` cung roi vao luat `bare_32_char_hex`,
-                  # va mot ma lan chay cua mot CSDL vut di thi khong
-                  # chung minh gi ca.
-                  "run_id")
-
-_HEX32 = __import__("re").compile(r"^[0-9a-f]{32}$")
-
-
-def _sach(gt):
-    """Bo khoa luu tru va rut gon van tay truoc khi ghi bao cao ra kho.
-
-    🔴 **Khong phai lam dep — la mot cong cua chinh kho nay.**
-       `tests/test_44_release_build` quet bi mat tren TOAN BO noi dung phat hanh,
-       va luat `bare_32_char_hex` bao dong tren moi chuoi 32 ky tu hex. Ban dau
-       bao cao nay chep nguyen `tom_tat` cua tung giai doan, keo theo 44 van tay
-       va khoa luu tru -> **44 bao dong**.
-
-    ⭐ Va phep quet do dung: mot bao cao nghiem thu khong can mot khoa luu tru
-       nao ca. No can CON SO. Bo chung di lam bao cao vua sach vua ngan hon.
-    """
-    if isinstance(gt, dict):
-        return {k: _sach(v) for k, v in gt.items() if k not in KHOA_KHONG_GHI}
-    if isinstance(gt, list):
-        return [_sach(v) for v in gt]
-    if isinstance(gt, str) and _HEX32.match(gt):
-        return gt[:12] + "..."
-    return gt
+# ⭐ Ham lam sach da chuyen sang `tests/fixtures/asv_e2e` o pha 24: pha 24 dinh
+#    lai dung cai bay nay (75 bao dong `bare_32_char_hex` tu mot tep bang chung
+#    khac), va ly do la ham nay nam trong tep test cua RIENG pha 22.
+_sach = fx.sach_de_cong_bo
 
 
 def _do_am(duong: str) -> dict:

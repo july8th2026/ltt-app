@@ -1,0 +1,1082 @@
+{
+  "schema": "asv.v4.hieu_nang.1",
+  "ghi_luc": "2026-09-04T14:22:25",
+  "may": {
+    "os": "Windows-10-10.0.19045-SP0",
+    "python": "3.13.12",
+    "loi_vat_ly": 10,
+    "loi_logic": 20,
+    "ram_gib": 31.9,
+    "ffmpeg": "ffmpeg.EXE",
+    "torch": "2.11.0+cpu cuda=False"
+  },
+  "bo_ma_hoa_may_co": "h264_nvenc",
+  "nguong": {
+    "tran_cpu_mot_luot": 90.0,
+    "giay_tren_tran_toi_da": 3.0,
+    "san_ram_trong_mb": 4096.0
+  },
+  "nguon": {
+    "thoi_luong": 32.189,
+    "so_canh": 4,
+    "so_loi": 4
+  },
+  "khai_bao_vram": {
+    "asv_gpu.audio_prepare": 2200,
+    "asv_gpu.transcribe": 6000
+  },
+  "luot": [
+    {
+      "nhan": "giu_hinh",
+      "preset": "localize_preserve_picture",
+      "trang_thai": "done",
+      "giai_doan": [
+        {
+          "ten": "tai_len",
+          "giay": 0.11,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "media_prepare",
+          "giay": 0.18,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "audio_prepare",
+          "giay": 24.1,
+          "so_mau": 46,
+          "cpu_dinh": 53.6,
+          "cpu_tb": 32.5,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22018.6,
+          "ram_trong_thap_nhat_mb": 10598.0,
+          "vram_dinh_mb": [
+            12298,
+            819
+          ],
+          "doc_mb": 0.5,
+          "ghi_mb": 134.5
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "transcribe",
+          "giay": 43.72,
+          "so_mau": 82,
+          "cpu_dinh": 57.6,
+          "cpu_tb": 34.4,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 23538.3,
+          "ram_trong_thap_nhat_mb": 9078.3,
+          "vram_dinh_mb": [
+            12298,
+            832
+          ],
+          "doc_mb": 18.6,
+          "ghi_mb": 250.7
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "edit_plan",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "content_process",
+          "giay": 0.03,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "voice_synthesis",
+          "giay": 0.56,
+          "so_mau": 1,
+          "cpu_dinh": 15.7,
+          "cpu_tb": 15.7,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22217.3,
+          "ram_trong_thap_nhat_mb": 10399.4,
+          "vram_dinh_mb": [
+            12298,
+            796
+          ],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "timing_align",
+          "giay": 2.66,
+          "so_mau": 5,
+          "cpu_dinh": 25.0,
+          "cpu_tb": 17.7,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22371.9,
+          "ram_trong_thap_nhat_mb": 10244.7,
+          "vram_dinh_mb": [
+            12298,
+            796
+          ],
+          "doc_mb": 0.0,
+          "ghi_mb": 17.3
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "compose",
+          "giay": 0.08,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "render",
+          "giay": 1.15,
+          "so_mau": 2,
+          "cpu_dinh": 24.6,
+          "cpu_tb": 19.5,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22269.5,
+          "ram_trong_thap_nhat_mb": 10347.1,
+          "vram_dinh_mb": [
+            12298,
+            796
+          ],
+          "doc_mb": 0.0,
+          "ghi_mb": 13.9
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "qc",
+          "giay": 1.98,
+          "so_mau": 4,
+          "cpu_dinh": 25.2,
+          "cpu_tb": 18.1,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22366.5,
+          "ram_trong_thap_nhat_mb": 10250.2,
+          "vram_dinh_mb": [
+            12298,
+            796
+          ],
+          "doc_mb": 0.0,
+          "ghi_mb": 8.4
+        },
+        {
+          "ten": "advance",
+          "giay": 0.02,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        }
+      ],
+      "tong": {
+        "nen": {
+          "cpu_nen": 11.8,
+          "ram_trong_mb_nen": 11992.5,
+          "vram_mb_nen": [
+            12298,
+            802
+          ]
+        },
+        "so_mau": 140,
+        "nhip_s": 0.5,
+        "cpu_dinh": 57.6,
+        "cpu_tb": 32.4,
+        "ram_trong_thap_nhat_mb": 9078.3,
+        "vram_dinh_mb": [
+          12298,
+          832
+        ]
+      },
+      "nhat_ky": [
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "media_prepare",
+          "giay": 0.18,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "audio_prepare",
+          "giay": 24.1,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "transcribe",
+          "giay": 43.72,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "edit_plan",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "content_process",
+          "giay": 0.03,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "voice_synthesis",
+          "giay": 0.56,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "timing_align",
+          "giay": 2.66,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "compose",
+          "giay": 0.08,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "render",
+          "giay": 1.15,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "qc",
+          "giay": 1.98,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.02,
+          "loi": ""
+        }
+      ],
+      "lap_lai": {
+        "ffmpeg": 26,
+        "ffprobe": 21,
+        "bam_tep": 3,
+        "doc_kho": 67
+      },
+      "lap_lai_chi_tiet": {
+        "ffprobe": [
+          "nguon.mp4",
+          "547aa2f67bb3....mp4",
+          "e8dfbe632426....wav",
+          "bed.wav",
+          "547aa2f67bb3....mp4",
+          "b6d8d6ddad69....wav",
+          "e8dfbe632426....wav",
+          "seg_0001.wav",
+          "seg_0002.wav",
+          "seg_0003.wav",
+          "seg_0004.wav",
+          "77ad53de460a....wav",
+          "201b6fe471dd....wav",
+          "343656ef4323....wav",
+          "0355e47b8ccd....wav",
+          "master.wav",
+          "f67b300efa19....wav",
+          "ra.mp4",
+          "c9f5f704e0ea....mp4",
+          "c9f5f704e0ea....mp4",
+          "547aa2f67bb3....mp4"
+        ],
+        "ffmpeg": [
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffmpeg.EXE",
+          "ffprobe.EXE",
+          "ffmpeg.EXE",
+          "ffmpeg.EXE -filter_complex",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffmpeg.EXE -filter_complex",
+          "ffmpeg.EXE -filter_complex",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE"
+        ],
+        "bam_tep": [
+          "547aa2f67bb3....mp4",
+          "547aa2f67bb3....mp4",
+          "e8dfbe632426....wav"
+        ],
+        "doc_kho": [
+          "76815bdb22ec....json",
+          "e8dfbe632426....wav",
+          "b6d8d6ddad69....wav",
+          "4bee5919ab12....json",
+          "4bee5919ab12....json",
+          "1-9aa44311af598c0feaf489fff8bc8d.json",
+          "4bee5919ab12....json",
+          "1-9aa44311af598c0feaf489fff8bc8d.json",
+          "178d496975cf....json",
+          "178d496975cf....json",
+          "77ad53de460a....wav",
+          "201b6fe471dd....wav",
+          "343656ef4323....wav",
+          "0355e47b8ccd....wav",
+          "b828482bc14e....json",
+          "178d496975cf....json",
+          "b828482bc14e....json",
+          "178d496975cf....json",
+          "b828482bc14e....json",
+          "d310524fec86....json",
+          "f67b300efa19....wav",
+          "d310524fec86....json",
+          "b828482bc14e....json",
+          "76815bdb22ec....json"
+        ]
+      },
+      "bo_ma_hoa": "",
+      "cach_render": "sao_chep"
+    },
+    {
+      "nhan": "cat_thong_minh",
+      "preset": "smart_localize",
+      "trang_thai": "done",
+      "giai_doan": [
+        {
+          "ten": "tai_len",
+          "giay": 0.1,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "media_prepare",
+          "giay": 0.18,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "audio_prepare",
+          "giay": 24.19,
+          "so_mau": 45,
+          "cpu_dinh": 51.5,
+          "cpu_tb": 32.6,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 23687.1,
+          "ram_trong_thap_nhat_mb": 8929.6,
+          "vram_dinh_mb": [
+            12298,
+            807
+          ],
+          "doc_mb": 8.2,
+          "ghi_mb": 148.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "transcribe",
+          "giay": 31.79,
+          "so_mau": 60,
+          "cpu_dinh": 46.2,
+          "cpu_tb": 36.6,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22911.9,
+          "ram_trong_thap_nhat_mb": 9704.8,
+          "vram_dinh_mb": [
+            12298,
+            799
+          ],
+          "doc_mb": 4.7,
+          "ghi_mb": 151.7
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "edit_plan",
+          "giay": 0.11,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "content_process",
+          "giay": 0.03,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "voice_synthesis",
+          "giay": 0.59,
+          "so_mau": 1,
+          "cpu_dinh": 33.9,
+          "cpu_tb": 33.9,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22247.4,
+          "ram_trong_thap_nhat_mb": 10369.3,
+          "vram_dinh_mb": [
+            12298,
+            794
+          ],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "timing_align",
+          "giay": 2.7,
+          "so_mau": 5,
+          "cpu_dinh": 24.3,
+          "cpu_tb": 19.5,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22384.5,
+          "ram_trong_thap_nhat_mb": 10232.1,
+          "vram_dinh_mb": [
+            12298,
+            813
+          ],
+          "doc_mb": 0.0,
+          "ghi_mb": 13.7
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "compose",
+          "giay": 0.09,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "render",
+          "giay": 1.15,
+          "so_mau": 2,
+          "cpu_dinh": 36.8,
+          "cpu_tb": 30.1,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22549.6,
+          "ram_trong_thap_nhat_mb": 10067.0,
+          "vram_dinh_mb": [
+            12298,
+            813
+          ],
+          "doc_mb": 0.1,
+          "ghi_mb": 13.8
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        },
+        {
+          "ten": "qc",
+          "giay": 2.14,
+          "so_mau": 4,
+          "cpu_dinh": 35.9,
+          "cpu_tb": 23.7,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 22375.2,
+          "ram_trong_thap_nhat_mb": 10241.4,
+          "vram_dinh_mb": [
+            12298,
+            813
+          ],
+          "doc_mb": 0.9,
+          "ghi_mb": 12.9
+        },
+        {
+          "ten": "advance",
+          "giay": 0.01,
+          "so_mau": 0,
+          "cpu_dinh": 0.0,
+          "cpu_tb": 0.0,
+          "cpu_tren_tran_giay": 0.0,
+          "ram_dung_dinh_mb": 0.0,
+          "ram_trong_thap_nhat_mb": 0.0,
+          "vram_dinh_mb": [],
+          "doc_mb": 0.0,
+          "ghi_mb": 0.0
+        }
+      ],
+      "tong": {
+        "nen": {
+          "cpu_nen": 10.4,
+          "ram_trong_mb_nen": 10312.8,
+          "vram_mb_nen": [
+            12298,
+            796
+          ]
+        },
+        "so_mau": 118,
+        "nhip_s": 0.5,
+        "cpu_dinh": 51.5,
+        "cpu_tb": 33.6,
+        "ram_trong_thap_nhat_mb": 8929.6,
+        "vram_dinh_mb": [
+          12298,
+          813
+        ]
+      },
+      "nhat_ky": [
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "media_prepare",
+          "giay": 0.18,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "audio_prepare",
+          "giay": 24.19,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "transcribe",
+          "giay": 31.79,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "edit_plan",
+          "giay": 0.11,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "content_process",
+          "giay": 0.03,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "voice_synthesis",
+          "giay": 0.59,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "timing_align",
+          "giay": 2.7,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "compose",
+          "giay": 0.09,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "render",
+          "giay": 1.15,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        },
+        {
+          "giai_doan": "qc",
+          "giay": 2.14,
+          "loi": ""
+        },
+        {
+          "giai_doan": "advance",
+          "giay": 0.01,
+          "loi": ""
+        }
+      ],
+      "lap_lai": {
+        "ffmpeg": 22,
+        "ffprobe": 21,
+        "bam_tep": 3,
+        "doc_kho": 68
+      },
+      "lap_lai_chi_tiet": {
+        "ffprobe": [
+          "nguon.mp4",
+          "b1236c0a9c41....mp4",
+          "e8dfbe632426....wav",
+          "bed.wav",
+          "b1236c0a9c41....mp4",
+          "b6d8d6ddad69....wav",
+          "e8dfbe632426....wav",
+          "seg_0001.wav",
+          "seg_0002.wav",
+          "seg_0003.wav",
+          "seg_0004.wav",
+          "77ad53de460a....wav",
+          "201b6fe471dd....wav",
+          "343656ef4323....wav",
+          "0355e47b8ccd....wav",
+          "master.wav",
+          "88df6c0426a3....wav",
+          "ra.mp4",
+          "161c4c82258a....mp4",
+          "161c4c82258a....mp4",
+          "b1236c0a9c41....mp4"
+        ],
+        "ffmpeg": [
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffmpeg.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE",
+          "ffprobe.EXE"
+        ],
+        "bam_tep": [
+          "b1236c0a9c41....mp4",
+          "b1236c0a9c41....mp4",
+          "e8dfbe632426....wav"
+        ],
+        "doc_kho": [
+          "76815bdb22ec....json",
+          "e8dfbe632426....wav",
+          "b6d8d6ddad69....wav",
+          "4bee5919ab12....json",
+          "4bee5919ab12....json",
+          "1-456cddef926a963290f4d168d93d8e.json",
+          "4bee5919ab12....json",
+          "1-456cddef926a963290f4d168d93d8e.json",
+          "4933d479d7f3....json",
+          "4933d479d7f3....json",
+          "77ad53de460a....wav",
+          "201b6fe471dd....wav",
+          "343656ef4323....wav",
+          "0355e47b8ccd....wav",
+          "3c1241e23318....json",
+          "4933d479d7f3....json",
+          "3c1241e23318....json",
+          "4933d479d7f3....json",
+          "3c1241e23318....json",
+          "1-456cddef926a963290f4d168d93d8e.json",
+          "47ba3e5ea55f....json",
+          "88df6c0426a3....wav",
+          "47ba3e5ea55f....json",
+          "3c1241e23318....json"
+        ]
+      },
+      "bo_ma_hoa": "libx264",
+      "cach_render": "cat_ma_hoa_lai"
+    }
+  ]
+}

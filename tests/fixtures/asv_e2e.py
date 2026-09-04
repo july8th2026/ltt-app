@@ -568,6 +568,37 @@ def dat_cua_giong(monkeypatch, thu_muc: Path, *, toc_do: int = 0):
 #  Do dac tren dau ra
 # ══════════════════════════════════════════════════════════════════════════════
 
+#: Khoa bi BO khoi moi tep bang chung truoc khi ghi ra kho.
+KHOA_KHONG_CONG_BO = ("khoa_asset", "khoa", "van_tay_ban", "van_tay", "run_id")
+
+_HEX32 = re.compile(r"^[0-9a-f]{32}")
+
+
+def sach_de_cong_bo(gt):
+    """Bo khoa luu tru va rut gon van tay truoc khi ghi mot tep bang chung.
+
+    🔴 **Khong phai lam dep — la mot cong cua chinh kho nay.**
+       `tests/test_44_release_build` quet bi mat tren TOAN BO noi dung phat hanh,
+       va luat `bare_32_char_hex` bao dong tren moi chuoi 32 ky tu hex. Pha 22
+       dinh lan dau (**44** bao dong tu mot tep bang chung), pha 24 dinh lai
+       (**75**) — cung mot loi, o mot tep khac, vi ham lam sach nam trong tep
+       test cua pha 22 chu khong nam o cho ai cung thay.
+
+    ⭐ Nen no o day: MOT cho, va tep bang chung thu ba se khong phai hoc lai.
+
+    ⛔ Va phep quet do dung: mot bao cao nghiem thu hay do dac khong can mot khoa
+       luu tru nao ca. No can CON SO.
+    """
+    if isinstance(gt, dict):
+        return {k: sach_de_cong_bo(v) for k, v in gt.items()
+                if k not in KHOA_KHONG_CONG_BO}
+    if isinstance(gt, list):
+        return [sach_de_cong_bo(v) for v in gt]
+    if isinstance(gt, str) and _HEX32.match(gt):
+        return gt[:12] + "..." + gt[32:]
+    return gt
+
+
 def soi(duong: str) -> dict:
     """ffprobe -> dict. Dung cho phep kiem tren TEP RA, khong tren bao cao."""
     ff = shutil.which("ffprobe") or "ffprobe"
