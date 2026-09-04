@@ -6,6 +6,11 @@ from __future__ import annotations
 import pytest
 
 
+#: Ma revision cua migration ChatLTT. Mot hang so, khong phai mot chuoi go
+#: o hai cho: hai ban cua mot ma la hai ban se lech nhau.
+MA_CHATLTT = "7d2c1e9f4a03"
+
+
 def test_ba_bang_mang_dung_tien_to_va_registry_nap_duoc():
     from platform_core.db import Base
     from platform_core.registry import load_app_tables
@@ -45,7 +50,7 @@ def test_alembic_mot_head_va_migration_chatltt_noi_dung_chuoi():
     #    hai nhanh gap nhau. Thu dang chot: chuoi co dung MOT dau, migration cua
     #    chatltt CO trong chuoi va co moc, va len/xuong mot buoc thi sach — ba
     #    dieu do khong phu thuoc ai gop truoc.
-    ma_chatltt = "7d2c1e9f4a03"
+    ma_chatltt = MA_CHATLTT
     trong_chuoi = {r.revision for r in scripts.walk_revisions()}
     assert ma_chatltt in trong_chuoi, "migration chatltt bien mat khoi chuoi"
 
@@ -71,8 +76,25 @@ def test_upgrade_head_roi_downgrade_mot_buoc_sach(tmp_path, monkeypatch):
     idx = {i["name"] for i in insp.get_indexes("chatltt_message")}
     assert {"ix_chatltt_msg_conv_parent", "ix_chatltt_msg_conv_created"} <= idx
 
-    command.downgrade(cfg, "-1")
+    # 🔴 **`-1` la "mot buoc TU HEAD", khong phai "bo migration cua ChatLTT".**
+    #
+    #    Hai thu do trung nhau dung khi migration ChatLTT tinh co la head, va
+    #    chung tach ra o migration TIEP THEO cua bat ky ai — du no khong lien
+    #    quan gi toi ChatLTT. Luc do phep kiem bao ba bang `chatltt_*` "khong
+    #    bi xoa": mot cau dung ve su that va sai ve y nghia, vi thu vua bi lui
+    #    la migration cua nguoi khac. Da xay ra that voi `b3f6a1d70c52`.
+    #
+    # ⇒ Lui toi CHINH `down_revision` cua migration nay. Phep kiem gio do dung
+    #   thu ten no noi, va khong con phu thuoc vao thu tu ai nop migration.
+    from alembic.script import ScriptDirectory
+
+    _rev = ScriptDirectory.from_config(cfg).get_revision(MA_CHATLTT)
+    command.downgrade(cfg, _rev.down_revision)
     insp = inspect(create_engine(url))
     bang2 = set(insp.get_table_names())
     assert not {t for t in bang2 if t.startswith("chatltt_")}
-    assert (bang - bang2) == {"chatltt_conversation", "chatltt_message", "chatltt_execution"}
+    # ⚠️ `>=` chu khong `==`: lui toi `down_revision` cua ChatLTT cung lui moi
+    #    migration nop SAU no, nen co the co bang khac bien mat theo. Dieu bai
+    #    nay chot la ba bang cua ChatLTT co bi xoa sach khong.
+    assert (bang - bang2) >= {"chatltt_conversation", "chatltt_message",
+                              "chatltt_execution"}
