@@ -81,7 +81,7 @@
       "chan": [
         "P02"
       ],
-      "phan_tram": 45
+      "phan_tram": 60
     },
     {
       "id": "P04",
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 5.8,
-      "phan_tram": 34
+      "xong": 6.5,
+      "phan_tram": 38
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 5.8,
-      "phan_tram": 11
+      "xong": 6.5,
+      "phan_tram": 13
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -535,16 +535,22 @@
       "gop_manh.py + test_801 (15)",
       "chieu_tool.py + test_802 (12)",
       "test_803 bat bien C2 (10)",
-      "thi_hanh.py + test_804 (14)"
+      "thi_hanh.py + test_804 (14)",
+      "dieu_phoi.py + test_805 (18) — may trang thai 10 trang thai"
     ],
     "con_lai": [
-      "dieu_phoi.py (may trang thai)",
       "bang chatltt_run/step + migration",
       "co LTT_CHATLTT_V3_TOOLS",
-      "noi vao luot.py",
-      "test_805..812"
+      "noi dieu_phoi vao luot.py",
+      "tool noi bo that (calculator)",
+      "A5 bo hien thi bo qua khoi la",
+      "test_806..812"
     ],
     "dong_ma_san_pham_dau_tien": "apps/chatltt/services/gop_manh.py",
-    "cong_thu_tu": "CHO_MODEL_GOI — hep hon chinh_sach.CONG_CU_CHO_PHEP. Nguoi dung BAM NUT tao anh la mot chuyen; model TU QUYET tieu 3-12 credit cua ho la chuyen khac."
+    "cong_thu_tu": "CHO_MODEL_GOI — hep hon chinh_sach.CONG_CU_CHO_PHEP. Nguoi dung BAM NUT tao anh la mot chuyen; model TU QUYET tieu 3-12 credit cua ho la chuyen khac.",
+    "dot_bien_da_thu": [
+      "cham tran -> FAILED thay vi COMPLETED  => test DO (va bang chuyen doi cung chan)",
+      "bo message assistant mang tool_calls   => test DO"
+    ]
   }
 }
