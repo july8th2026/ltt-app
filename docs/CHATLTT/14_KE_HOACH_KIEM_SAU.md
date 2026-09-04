@@ -320,3 +320,84 @@ và `speech.ltt` **không còn chỗ nạp**. Rồi đợt 5–6 báo "model ch�
 ⭐ Nên chạy media **trước** hoặc **riêng**: `--dot 5,6` trên một GPU rảnh. Và
 "máy bận" phải là `BOQUA` kèm bằng chứng (`job` vẫn `queued`, `thu=0`), không
 bao giờ là `HONG` — một hàng đợi dài không phải một bất biến bị vi phạm.
+
+## Bốn lỗi sản phẩm thật (04/09) — và cách mỗi lỗi lộ ra
+
+Ghi cả **cách phát hiện**, không chỉ cách sửa: cách sửa chỉ dùng được một lần,
+còn cách phát hiện dùng lại được.
+
+### 1. Ảnh tham chiếu chưa bao giờ dùng được — một dấu `/`
+
+Khoá ảnh ChatLTT là `chatltt/anh-vao/<uid>/…`, nên **đoạn thứ hai là `anh-vao`**
+chứ không phải id người dùng. Mà `anhnoibo/features._kiem_chu_so_huu` kiểm đúng
+đoạn thứ hai theo quy ước kho `{app}/{user_id}/…`. Kết quả: **mọi** ảnh khách
+tải lên trong chat đều bị `image.ltt` từ chối.
+
+⭐ **Loại lỗi khó thấy nhất: một hàng rào an toàn ĐÚNG, chặn một thao tác HỢP
+   LỆ.** Nó không báo gì; nó chỉ làm một tính năng đã xây xong trông như chưa
+   từng được xây. Cả hai đầu (`mode=edit`, `image_keys`) đã sẵn sàng hàng tháng.
+
+🔎 **Lộ ra khi nào:** khi đi *dựng phép kiểm* cho một tính năng tưởng đã có. Đọc
+   hợp đồng hai đầu rồi hỏi "khoá đi từ đây sang kia có qua được cửa nào không".
+
+### 2. Khách kẹt vĩnh viễn khi model chưa nạp
+
+`danhMuc()` chỉ nạp **một lần** lúc gắn component. Model máy B nạp sau vài phút,
+nên ai mở trang trước đó thấy nút media vô hiệu **mãi mãi** — không báo, không
+đổi, lối thoát duy nhất là F5 mà không ai nói cho họ.
+
+🔎 **Lộ ra từ một dòng `BOQUA`, không phải một dòng đỏ:**
+
+    [BOQUA] 6.1 {"bo_qua":"model tieng chua nap — may chu noi speech.ltt=san_sang"}
+
+   Một câu **tự mâu thuẫn** nằm ngay trong lý do bỏ qua. Bộ kiểm đã ghi đúng dữ
+   kiện từ lượt trước; nó chỉ không biết đó là mâu thuẫn. ⭐ Thứ bắt được nó là
+   **đọc kỹ một dòng không-đỏ thay vì hài lòng vì nó không đỏ.**
+
+### 3. Kho giọng chung chưa từng được mời ra màn hình
+
+`tuy_chon_voice_id` cố ý chỉ trả giọng **nhân bản của chính người dùng**, nên
+một tài khoản chưa nhân bản giọng nào thấy ô chọn giọng **không hiện ra**. Đó là
+trạng thái của gần như mọi khách mới — trong khi nền tảng sẵn 20 giọng và
+`speech.ltt` đã nhận `preset` từ lâu.
+
+🔎 **Lộ ra khi một hạng mục BỎ QUA hai lần liên tiếp với cùng lý do**
+   (*"tài khoản này chưa có giọng nhân bản nào"*). Một lý do bỏ qua lặp lại là
+   một câu hỏi chưa được hỏi: *vì sao mặc định lại là trạng thái không kiểm được?*
+
+### 4. Chọn giọng có thể làm sập cửa báo giá
+
+`chon()` tin rằng `_hoi_model` không bao giờ ném — đúng, nhưng đó là bảo đảm nằm
+ở **hàm khác**. Cửa gọi nó là đường báo giá của khách; một ngoại lệ lọt qua là
+HTTP 500 khi khách chỉ định xem giá.
+
+🔎 **Lộ ra từ phép kiểm của chính mình**, viết theo luật đã tự đặt ở đầu tệp
+   ("không đường nào ném"). ⭐ Viết luật ra thành chữ **trước**, rồi viết phép
+   kiểm chốt đúng câu chữ đó — chính khoảng cách giữa hai thứ là chỗ lỗi nấp.
+
+### Ba lần công cụ của dự án bắt được, và cả ba đều đúng
+
+| Công cụ | Bắt được gì | Xử |
+|---|---|---|
+| `lint_app_contract` | ChatLTT import thẳng vào ruột `ltt_voice` | đọc qua danh mục nền tảng — sạch hơn thật |
+| `check_i18n` | dò chữ trên một **nhãn đã dịch** | bỏ hẳn phép so chuỗi; thứ tự quyết ở dữ liệu |
+| `test_633` (chốt cũ) | hình khoá đổi | chốt lại bằng **mệnh đề**, gọi thẳng hàm của app kia |
+
+⛔ Và một lần **không hạ mốc**: `check_i18n` giữ nguyên **774**. Thêm một dạng
+"không phải chuỗi giao diện" theo đúng khuôn có sẵn — chuỗi ở khoá `content` của
+dict có `role` là một **tin nhắn LLM**. Bọc `_()` vào đó sai theo hướng nguy hiểm
+hơn: nó làm model nhận lời nhắc **khác nhau tuỳ ngôn ngữ giao diện**, tức một
+thiết lập hiển thị lặng lẽ đổi **hành vi** sản phẩm.
+
+### Một chốt đầu tiên viết ra là TAUTOLOGY
+
+Chốt cửa sổ ngữ cảnh bản đầu: `tran_vao_cua(m) + TOKEN_RA_TRAN <= cua_so`. Nó
+**không thể đỏ** — vì `tran_vao_cua` trừ đúng số đó, tổng luôn bằng `cua_so − LE`.
+Nâng `TOKEN_RA_TRAN` lên 40.000 thì tổng vẫn 63.488, vẫn xanh.
+
+⭐ Bản đẳng thức `… + LE == CUA_SO_THEO_MODEL[m]` **đỏ đúng một thay đổi**: bỏ
+   phần trừ trần-ra khỏi `tran_vao_cua`. Xanh với những thay đổi vẫn an toàn.
+
+🔑 **Luật rút ra, dùng cho mọi phép kiểm sau:**
+   **một chốt phải kèm được kịch bản làm nó ĐỎ** — không viết ra được thì chốt
+   ấy chưa tồn tại; và **một phép đo phải kèm được đối chứng làm nó ra KHÁC ĐI**.
