@@ -107,9 +107,8 @@ def _post(duong, than, *, timeout, cong, rut):
                       method="POST", timeout=180)
         if ma not in (200, 201):
             return None
-        ps = (f"curl.exe -sS --max-time {int(timeout)} "
-              f"-H 'Content-Type: application/json' "
-              f"-d \"@{TEP_TREN_B}\" http://127.0.0.1:{cong}{duong}")
+        # Than lon => prefill lau => co the vuot tran 120s cua Nexus.
+        return _chay_tach_roi(duong, timeout)
     else:
         ps = (f"$b='{b64}'; $p=Join-Path $env:TEMP 'h44_nc.json'; "
               f"[IO.File]::WriteAllBytes($p,[Convert]::FromBase64String($b)); "
@@ -127,6 +126,69 @@ def _post(duong, than, *, timeout, cong, rut):
         return rut(d.get("stdout") or "")
     except (ValueError, KeyError, TypeError):
         return None
+
+
+#: Tran cua Nexus: controller bo cuoc neu node khong tra loi trong 120 giay.
+#: Do 04/09 — mot prefill 156K mat ~150-200s, tuc VUOT tran. Con so 120,2s cua
+#: lan hong dau tien khop chinh xac voi tran nay, khong phai voi model.
+TRAN_NEXUS_S = 110
+TEP_RA = "C:/Users/Public/h44_out.json"
+TEN_TAC_VU = "H44Long"
+
+
+def _chay_tach_roi(duong_cong: str, timeout: float) -> dict | None:
+    """Chay mot yeu cau DAI qua Scheduled Task roi hoi ket qua theo nhip.
+
+    🔴 BA CACH DEU HONG TRUOC KHI TOI CACH NAY, va ca ba deu hong IM LANG:
+
+       1. exec dong bo          -> Nexus cat o 120s (loi TIMEOUT cua controller)
+       2. Start-Process -NoNewWindow -PassThru
+                                -> tien trinh chet ngay khi exec tra ve; tep ra
+                                   0 byte, tep loi 0 byte, khong con curl.exe nao
+       3. (khong thu) Start-Job -> cung buoc vao phien PowerShell da chet
+
+    ⭐ Ghi nho van hanh cua du an da noi truoc dieu nay: *"lo do dai tren may B
+       phai dung Scheduled Task; ssh va Start-Process deu chet theo phien"*.
+       Toi doc no tu dau phien va van di lai ca hai duong sai — vi luc do toi
+       tuong no chi noi ve ssh.
+    """
+    B = chr(92); PUB = "C:" + B + "Users" + B + "Public" + B
+    cmd = ("@echo off" + chr(13) + chr(10) +
+           'curl.exe -sS --max-time ' + str(int(timeout)) +
+           ' -H "Content-Type: application/json" -d "@' + PUB + 'h44_than.json" '
+           'http://127.0.0.1:' + str(CONG) + duong_cong +
+           ' > ' + PUB + 'h44_out.json 2> ' + PUB + 'h44_err.txt' + chr(13) + chr(10))
+    # Xoa ket qua cu TRUOC khi chay — doc nham ket qua luot truoc la mot dang
+    # hong khong bao gio bao loi.
+    N.goi("files/write", {"path": TEP_RA, "content": "",
+                          "reason": "H44 P01: xoa ket qua luot truoc"},
+          method="POST", timeout=60)
+    N.goi("files/write", {"path": "C:/Users/Public/h44_run.cmd", "content": cmd,
+                          "reason": "H44 P01: script cho Scheduled Task"},
+          method="POST", timeout=60)
+    ma, _ = N.goi("exec", {"command": ("schtasks /Create /TN " + TEN_TAC_VU + " /TR " +
+                                      PUB + "h44_run.cmd /SC ONCE /ST 00:00 "
+                                      "/RL HIGHEST /RU SYSTEM /F 2>&1; "
+                                      "schtasks /Run /TN " + TEN_TAC_VU + " 2>&1"),
+                           "args": [], "cwd": "C:/Users",
+                           "reason": "H44 P01: chay lo ngu canh dai qua Scheduled Task"},
+                  method="POST", timeout=100)
+    if ma not in (200, 201):
+        return None
+    het = time.monotonic() + timeout
+    while time.monotonic() < het:
+        time.sleep(8)
+        ma, tra = N.goi("files/read?path=" + TEP_RA, timeout=60)
+        if ma != 200:
+            continue
+        noi = (json.loads(tra).get("data") or {}).get("content") or ""
+        if not noi.strip():
+            continue
+        try:
+            return json.loads(noi)
+        except ValueError:
+            continue
+    return None
 
 
 #: (ma, kim, cau hoi, tool mong doi, chuoi PHAI co trong doi so)
