@@ -153,7 +153,43 @@ lượt đơn lẻ đang chạy production.
 
 **Tôi đi tiếp với giả định (b)** và thiết kế `chatltt_run` sao cho cả ba phương
 án đều lắp được: ba cột tổng là dẫn xuất, nên đổi luật làm tròn **không đổi
-schema**. Nếu chủ dự án chọn khác, phần phải sửa là `thi_hanh.py`, không phải bảng.
+schema**.
+
+### 6b. 🔴 Nhưng (b) KHÔNG nằm trọn trong `apps/chatltt/` — đo được, không suy
+
+Phiên điều phối chốt (b) và dặn: *"`platform_core/llm/thanh_toan.py` không nằm
+trong ranh giới của bạn — nếu (b) buộc phải sửa tệp này, báo trước."* Tôi đã
+truy đường quyết toán, và **nó buộc thật**:
+
+```
+mo_luong()  ->  _phat()  ->  finally:
+                              luong.py:381  thanh_toan.quyet_toan_hoac_hoan(...)
+                                              -> gia_token.tinh()
+                                              -> tong_credit_lam_tron_len   <- C1 o DAY
+```
+
+Mỗi lời gọi `mo_luong` **tự quyết toán và tự làm tròn**, ngay trong `finally`.
+Một run 8 vòng ⇒ 8 lần làm tròn lên, xong trước khi ChatLTT kịp cộng gì.
+
+**Bốn đường, và ba đường đầu đều vướng:**
+
+| Đường | Vướng ở đâu |
+|---|---|
+| Sửa `thanh_toan.py` thêm cửa "cộng dồn, chưa làm tròn" | **ngoài ranh giới** của tôi (điều phối đã dặn báo trước) |
+| Hoãn quyết toán tới lúc đóng run | ⛔ phá bất biến `00_DO_NOT_REWRITE.md` §2: *"quyết toán trong `finally`, không phải sau vòng lặp — khách đóng kết nối thì `GeneratorExit` ném ngay chỗ `yield`"*. Run chết ⇒ **không thu, không hoàn**, tiền treo |
+| Hoàn bù ở cuối run | tạo **đường bút toán thứ hai** — đúng thứ §5 cấm |
+| Dùng **một `request_id` cho cả run** (giữ một lần, quyết toán một lần) | 🟢 khả thi: chỉ cần `chuan_bi` nhận `request_id` sẵn có — `luong.py` **nằm trong** ranh giới của tôi. Nhưng phải giải: `_phat().finally` chạy N lần trên **cùng** một `request_id`, mà `credit.quyet_toan` không thiết kế cho việc đó |
+
+⇒ **Đường thứ tư là đường duy nhất đi được**, và nó vẫn cần một quyết định
+thiết kế thật ở P04: quyết toán một lần cho cả run **mà không** đánh mất tính
+chất *"khách ngắt giữa chừng vẫn thu đúng phần đã sinh"*.
+
+⭐ Nghĩa là (b) **rẻ hơn (a)** nhưng **không miễn phí** như phán quyết giả định.
+Nó không phải một hằng số đổi chỗ; nó là một thay đổi ở tầng quyết toán, chỉ
+nhỏ hơn (a) ở chỗ nó **không chạm cửa `/api/v1`**.
+
+Tôi vẫn đi tiếp với (b) như điều phối chốt. Việc thiết kế quyết toán-một-lần
+thuộc **P04**, không phải P03 — nên nó không chặn kernel.
 
 ## 7. Đường lùi
 

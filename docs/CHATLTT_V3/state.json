@@ -490,7 +490,17 @@
     ],
     "R1": "chon C (gianh lai moi vong, WAITING_SLOT) — A tu khoa chinh no",
     "R2": "chatltt_run tong hop theo run_id, KHONG dung so thu hai",
-    "R2b": "de xuat (b) C2 trong pham vi mot run — CHO CHU DU AN",
+    "R2b": {
+      "quyet_dinh_dang_chay": "(b) C2 trong pham vi mot run — phien dieu phoi chot 2026-09-05",
+      "trang_thai": "GIA DINH DANG CHAY; quyet dinh vinh vien cho chu du an",
+      "rang_buoc_them": [
+        "cong don CHINH XAC qua cac vong, lam tron LEN dung MOT lan luc dong run, san 1 credit/run",
+        "giu_cho dau run tinh theo TRAN 8 vong, hoan phan chenh khi dong",
+        "idempotent theo run_id — dong run hai lan khong tru hai lan"
+      ],
+      "phat_hien_moi": "(b) KHONG nam tron trong apps/chatltt/. luong.py:381 quyet toan VA lam tron ngay trong _phat().finally, moi loi goi mot lan. Bon duong: sua thanh_toan.py (ngoai ranh gioi) · hoan quyet toan (pha bat bien DO_NOT_REWRITE §2) · hoan bu (duong but toan thu hai) · MOT request_id cho ca run (kha thi, luong.py trong ranh gioi). Duong thu tu la duy nhat di duoc, va no thuoc P04 chu khong P03.",
+      "khong_chan_P03": true
+    },
     "bang_moi": [
       "chatltt_run",
       "chatltt_step",
