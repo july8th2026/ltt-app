@@ -273,3 +273,51 @@ describe('App — noi lai luong sau khi tai lai trang', () => {
     window.location.hash = ''
   })
 })
+
+/**
+ * Năng lực CHƯA sẵn sàng thì phải tự hỏi lại — đừng bắt người dùng bấm F5.
+ *
+ * 🔴 Trước 04/09 danh mục chỉ được nạp **một lần** lúc gắn component. Model ảnh
+ *    và giọng nằm ở máy B và nạp sau vài phút, nên ai mở trang trước đó sẽ thấy
+ *    nút "Tạo giọng" vô hiệu **vĩnh viễn**: không có gì báo, không có gì đổi, và
+ *    lối thoát duy nhất là F5 mà không ai nói cho họ biết.
+ *
+ * ⭐ Lỗi này lộ ra từ chính một dòng BỎ QUA của bộ kiểm giao diện, không phải từ
+ *    một dòng đỏ: *"model tiếng chưa nạp — máy chủ nói `speech.ltt=san_sang`"*.
+ *    Một câu tự mâu thuẫn. Thứ bắt được nó là đọc kỹ một dòng BOQUA thay vì hài
+ *    lòng vì nó không đỏ.
+ */
+describe('nang luc chua san sang', () => {
+  const chuaSanSang = {
+    nang_luc: NANG_LUC.nang_luc.map((n) => (
+      n.ten === 'speech.ltt' ? { ...n, san_sang: 'dang_nap' } : n)),
+  }
+
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
+
+  it('hoi lai danh muc khi con nang luc chua san sang', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const goi = datMayChuGia({ nangLuc: chuaSanSang })
+    veApp()
+    await waitFor(() => expect(
+      goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1))
+
+    await vi.advanceTimersByTimeAsync(21_000)
+    await waitFor(() => expect(
+      goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length)
+      .toBeGreaterThan(1))
+  })
+
+  it('DU sang sang roi thi KHONG hoi lai — vong lap phai tu dung', async () => {
+    // ⛔ Nua kia cua menh de. Mot vong lap chay mai la mot vong lap se bi ai do
+    //    tat di vi ton, va lan tat do mang theo ca truong hop dang can no.
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const goi = datMayChuGia()
+    veApp()
+    await waitFor(() => expect(
+      goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1))
+
+    await vi.advanceTimersByTimeAsync(65_000)
+    expect(goi.mock.calls.filter((c) => String(c[0]).endsWith('/danh-muc')).length).toBe(1)
+  })
+})

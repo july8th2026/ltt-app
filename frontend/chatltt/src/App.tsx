@@ -122,21 +122,43 @@ export function App({ api }: AppProps) {
     () => Object.keys(nangLucText?.models ?? {}), [nangLucText],
   )
 
+  const napDanhMuc = useCallback(() => api.danhMuc()
+    .then((d) => {
+      datNangLuc(d.nang_luc)
+      const text = d.nang_luc.find((n) => n.ten === 'text.chat')
+      // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
+      //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
+      //    `apps/ltt_llm/manifest.py`. No dung — mot cach tinh co. Dao hai
+      //    dong ben do la ca san pham lang le chuyen sang `ltt_llm_vision`,
+      //    model co ngu canh 28K thay vi 89K.
+      const dau = text?.model_mac_dinh || Object.keys(text?.models ?? {})[0] || ''
+      datAlias((a) => a || dau)
+      return d.nang_luc
+    }), [api])
+
+  useEffect(() => { napDanhMuc().catch((e) => datLoi(nhanLoi(e))) }, [napDanhMuc])
+
+  // ── Nang luc chua san sang thi HOI LAI, dung doi F5 ──────────────────────
+  //
+  // 🔴 VI SAO CAN. Danh muc truoc day chi duoc nap **mot lan** luc gan component.
+  //    Model anh/tieng nam o may B va nap sau vai phut; ai mo trang truoc do se
+  //    thay nut "Tao giong" vo hieu **vinh vien** — khong co gi bao, khong co gi
+  //    doi, va cach duy nhat thoat ra la bam F5 ma khong ai noi cho ho biet.
+  //
+  // ⭐ Do 04/09 tren production, va no lo ra tu chinh dong bo qua cua bo kiem:
+  //    *"model tieng chua nap — may chu noi speech.ltt=san_sang"*. Mot cau tu
+  //    mau thuan: nut vo hieu suot 210 giay trong khi may chu bao san sang. Bo
+  //    kiem khong bat duoc loi nay, no chi ghi lai du kien; thu bat duoc la
+  //    **doc ky mot dong BOQUA thay vi hai long vi no khong do**.
+  //
+  // ⛔ Chi hoi lai KHI CON THIEU, va dung ngay khi du. Mot vong lap chay mai la
+  //    mot vong lap se bi ai do tat di vi ton, roi mang theo ca cai nay.
   useEffect(() => {
-    api.danhMuc()
-      .then((d) => {
-        datNangLuc(d.nang_luc)
-        const text = d.nang_luc.find((n) => n.ten === 'text.chat')
-        // ⛔ `model_mac_dinh` chu KHONG `Object.keys(models)[0]`. Ban cu lay
-        //    phan tu dau cua mot dict, tuc mac dinh la THU TU KHAI trong
-        //    `apps/ltt_llm/manifest.py`. No dung — mot cach tinh co. Dao hai
-        //    dong ben do la ca san pham lang le chuyen sang `ltt_llm_vision`,
-        //    model co ngu canh 28K thay vi 89K.
-        const dau = text?.model_mac_dinh || Object.keys(text?.models ?? {})[0] || ''
-        datAlias((a) => a || dau)
-      })
-      .catch((e) => datLoi(nhanLoi(e)))
-  }, [api])
+    const thieu = nangLuc.some((n) => n.san_sang !== 'san_sang')
+    if (!nangLuc.length || !thieu) return undefined
+    const h = window.setInterval(() => { void napDanhMuc().catch(() => {}) }, 20_000)
+    return () => window.clearInterval(h)
+  }, [nangLuc, napDanhMuc])
 
   const napSoDu = useCallback(() => {
     api.soDu().then((d) => datSoDu(d.credit)).catch(() => {})
