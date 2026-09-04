@@ -11,7 +11,7 @@
     800,
     899
   ],
-  "pha_hien_tai": "P01",
+  "pha_hien_tai": "P02",
   "co_tinh_nang": [
     "LTT_CHATLTT_V3_TOOLS",
     "LTT_CHATLTT_V3_PAID_TOOLS"
@@ -59,16 +59,16 @@
     {
       "id": "P01",
       "ten": "qwen3.8 tool-call qualification",
-      "trang_thai": "DANG LAM",
+      "trang_thai": "PASS",
       "chan": [
         "tai khoan do >= 3500 credit"
       ],
-      "phan_tram": 85
+      "phan_tram": 100
     },
     {
       "id": "P02",
       "ten": "ADR dieu phoi",
-      "trang_thai": "CHUA",
+      "trang_thai": "DANG LAM",
       "chan": [
         "P01"
       ],
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 2.6,
-      "phan_tram": 15
+      "xong": 3.2,
+      "phan_tram": 19
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 2.6,
-      "phan_tram": 5
+      "xong": 3.2,
+      "phan_tram": 6
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -447,5 +447,31 @@
     ],
     "ly_do": "phien 'LTT Video AI V3 P00 audit' khai tests/test_70x_* la vung cua ho. Ca hai chua tao tep nao nen doi bay gio la mien phi; doi sau khi ca hai da co 30 tep thi khong.",
     "kiem": "tests/ khong co test_7xx/8xx/9xx nao; so cao nhat dang dung la 637"
+  },
+  "p01_phan_quyet": {
+    "ket_qua": "PASS",
+    "ngay": "2026-09-05",
+    "tong_luot_goi": 581,
+    "so_hong": 0,
+    "credit": 0,
+    "phut_gpu": 40,
+    "bon_cong": {
+      "cong_0": "20/20",
+      "lo_chinh": "9/9 chi so PASS",
+      "ngu_canh_sau": "22/22",
+      "duong_ong_LTT": "7/7 (test_800)"
+    },
+    "M1": "NATIVE (Qwen3-Coder) — chung minh bang ma VA bang do",
+    "M2": "khong do thay suy giam toi 128K; A/B q8_0 ha uu tien",
+    "M3": "khong tai hien duoc loi nao trong 5 loi hua cua template v22.3",
+    "gioi_han": [
+      "128K-170K chua do",
+      "A/B KV ha uu tien",
+      "MTP/reasoning chua co lap",
+      "vong lap THAT nhieu buoc -> P03",
+      "so tien luot agentic -> P04",
+      "ma tran DE, chua du lam luoi do hoi quy"
+    ],
+    "bang_chung": "01_PHAN_QUYET.md"
   }
 }
