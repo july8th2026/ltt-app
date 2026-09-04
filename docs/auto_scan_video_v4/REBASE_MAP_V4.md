@@ -51,6 +51,7 @@ two; translation moved after planning), not the parts that were wrong.
 | `gia.py` | 97 | price estimate | **REFACTOR** | `smart_localize` costs differently — scene analysis + VLM added, discarded scenes subtracted | 06, 12 |
 | `loi.py` | 145 | error taxonomy → platform | **EXTEND** | new typed errors for scene/VLM/binding/fit. The boundary-translation design **kept** | |
 | `quan_sat.py` | 142 | run observability | **EXTEND** | per-item timeline; cost explainability | 20 |
+| `san_sang.py` | 130 | can this host run Auto Scan at all | **ADD** | ⛔ Deliberately a **function, not a route**: Phase 25 forbids feature expansion, and a new endpoint is new public surface. 🔑 Three states, not two — `chua_do` (the probe itself failed) is never folded into `khong`, because a broken probe and an unconfigured dependency demand different actions, and a failed probe must never count as ready. Returns `co`/`khong` only, never the value of an environment variable | 25 |
 | `nhap_media.py` | 308 | probe, input policy, normalize | **EXTEND** | policy gains preset awareness; streaming hash | 05, 13 |
 | `tach_tieng.py` | 263 | demucs separation + bed mix | **KEEP** | Phase 13 measures it; changes only if the ledger says so | 13 |
 | `demucs_runner.py` | 126 | isolated subprocess | **KEEP** | | |

@@ -244,6 +244,46 @@ def lenh_da_che(cmd: list[str], *, goc_tam: str = "") -> list[str]:
     return ra
 
 
+#: Duong dan tuyet doi trong mot dong van ban.
+#:
+#: 🔴 **Khong duoc dung `\s` lam dau cham het.** Duong dan Windows CO DAU CACH,
+#:    va dung cai nam sau dau cach moi la thu phai giau: ban dau bo do nay dung
+#:    `[^\s]` va no che `C:\Users\Thang` roi de nguyen `Tuong\AppData\...` —
+#:    tuc **ten that cua nguoi dung** di ra nguyen ven ngay sau chuoi da-che.
+#:
+#: ⇒ Cham het la dau nhay, dau ngoac hay het dong — nhung thu ffmpeg thuc su
+#:   dung de dong mot duong dan. Che qua tay o mot ho so chan doan la huong an
+#:   toan; che thieu thi khong.
+_DUONG_TRONG_VAN = re.compile(
+    r"""(?:[A-Za-z]:[\\/]|\\\\|(?<![\w])/)[^\r\n'"<>|]*""")
+
+
+def van_ban_da_che(van: str, *, goc_tam: str = "") -> str:
+    """Che moi duong dan trong mot doan van ban, giu lai TEN TEP.
+
+    🔴 **Pha 25: `lenh_da_che` chi che mot nua duong ro ri.** Ho so chan doan luu
+       ca `stderr` cua ffmpeg, va ffmpeg in nguyen duong dan trong do:
+
+           Output #0, mp4, to 'C:\\Users\\<ten that>\\AppData\\...\\ra.mp4'
+
+       Nen cau lenh duoc che sach trong khi cung thong tin do di ra bang cua sau,
+       vao dung mot ban ghi duoc luu lai de nguoi khac doc.
+
+    ⭐ Giu lai ten tep vi do la thu lam ho so chan doan co ich; bo phan thu muc,
+       vi do la thu lo bo cuc dia may chu va ten that cua nguoi dung Windows.
+    """
+    van = str(van or "")
+    if goc_tam:
+        van = van.replace(goc_tam, _CHE)
+
+    def _thay(m: "re.Match[str]") -> str:
+        s = m.group(0).rstrip(".,;:)")
+        duoi = m.group(0)[len(s):]
+        return f"{_CHE}/{Path(s).name}{duoi}"
+
+    return _DUONG_TRONG_VAN.sub(_thay, van)
+
+
 def ho_so_chan_doan(ban: dict, cmd: list[str], *, goc_tam: str = "",
                     duoi_stderr: str = "") -> dict:
     """Thu de tra lai mot lan render that bai, KHONG kem bi mat nao."""
@@ -252,8 +292,9 @@ def ho_so_chan_doan(ban: dict, cmd: list[str], *, goc_tam: str = "",
         "lenh": lenh_da_che(cmd, goc_tam=goc_tam),
         "tom_tat_ban_dung": ban_dung.tom_tat(ban),
         # Duoi cua stderr la thu noi ffmpeg khong thich cai gi. Cat ngan de mot
-        # lan hong khong bien thanh mot cot CSDL vai megabyte.
-        "stderr": (duoi_stderr or "")[-2000:],
+        # lan hong khong bien thanh mot cot CSDL vai megabyte — va CHE duong
+        # dan, vi ffmpeg in ca duong dan day du vao day.
+        "stderr": van_ban_da_che((duoi_stderr or "")[-2000:], goc_tam=goc_tam),
     }
 
 
