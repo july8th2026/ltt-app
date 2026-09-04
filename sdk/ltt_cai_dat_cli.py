@@ -65,15 +65,76 @@ TOKEN_RA_TRAN = 32768
 #:    101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
-#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 65536` — mot NUA
-#: model text — nen no KHONG duoc dung chung con so voi `ltt_llm`.
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
 #:
-#: ⛔ Ban truoc khai 88.555 cho ca hai, tuc hua cho `ltt_llm_vision` mot ngu
-#:    canh **gap 3,1 lan** su that.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `nen_cua("qwen38-vision")` = 0: cua so cong bo cua vision hep hon mot luot
-#: sinh dai nhat, nen khong nguong nen nao giu duoc loi hua. 0 = bo han truong.
-NEN_HOI_THOAI_VISION = 0
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
+
+#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
+#:
+#: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
+#:    Ban truoc 01/09 khai 88.555 cho CA HAI model va do la mot loi hua sai
+#:    (luc do vision chay `-c 65536`, cua so that cua no la 28.262). Su trung
+#:    hop hom nay khong xoa duoc ly do phai tach: hai model, hai `-c`, hai con
+#:    so — va chung se lech lai ngay lan nang cua so ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
+#:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
+#:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
+#:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
+#:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
+#:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
@@ -117,7 +178,7 @@ def _catalog() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": cua_so},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
             "context_window": cua_so,
@@ -251,6 +312,14 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
         #    kip nen va khach an 413 giua phien.
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
         "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+        # 🔴 HAI DONG NAY THEM 04/09, va thieu chung cung la mot loi tien.
+        #    `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+        #    no KHONG dat nguong nen. Tai lieu chinh thuc noi ro: khong dat
+        #    cua so nen thi Claude nen khi hoi thoai **cham dung** cua so ay,
+        #    tuc 100%. Voi ta la 156.385 tren tran cung 169.984 — chi con
+        #    13.599, nho hon mot luot sinh dai nhat (32.768).
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+        "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.
     env.setdefault("ANTHROPIC_AUTH_TOKEN", f"${BIEN_KHOA}")

@@ -4,8 +4,8 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
 ⭐ HAI HỒ SƠ, MỘT TRỌNG SỐ. Cùng một file GGUF, hai cách khởi động, vì trên card
    24 GB **không thể vừa nạp `mmproj` vừa mở ngữ cảnh 200K**:
 
-     qwen38-api     200K ngữ cảnh, KV q4_0, KHÔNG vision  ~21,5 GB  ← MẶC ĐỊNH
-     qwen38-vision   64K ngữ cảnh, KV q8_0, CÓ  vision    ~19,9 GB
+     qwen38-api     200K ngữ cảnh, KV q4_0, KHÔNG vision  21,98 GB  ← MẶC ĐỊNH
+     qwen38-vision  131K ngữ cảnh, KV q4_0, CÓ  vision    21,10 GB
 
    `llama-swap` đổi giữa hai hồ sơ theo tên model client gọi, **chỉ một cái nằm
    trong VRAM tại một thời điểm**.
@@ -51,7 +51,25 @@ catalog.py — model nào được mở, và mỗi model chịu được gì.
 
    Chi tiết + hai cái bẫy đo đạc: `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md`.
 
-   `qwen38-vision` vẫn giữ 65536 cho tới benchmark có mmproj.
+✅ `qwen38-vision` 131072 / KV q4_0 — đo thật 03/09, cùng ngày, trên một hồ sơ
+   thử riêng (`qwen38-vision-thu`, KHÔNG khai trong `LTT_LLM_MODELS` nên cổng
+   fail-closed từ chối và không request nào của khách rơi vào nó):
+
+     50.128 tok  →  1.012,1 tok/s · TTFT 49,5 s   VRAM 21.095 MiB
+     89.868 tok  →    847,2 tok/s · TTFT 106,1 s  VRAM 21.099 MiB
+     mốc đầu + mốc cuối prompt đọc lại đúng ở cả hai lượt
+
+   🔴 VÀ PHẢI ĐO CẢ VIỆC NÓ CÒN ĐỌC ĐƯỢC ẢNH. Đổi KV `q8_0 → q4_0` trên đúng
+      hồ sơ mà công việc của nó là *nhìn* thì "chạy được ở ngữ cảnh dài" chưa
+      trả lời gì cả. A/B trên **cùng một ảnh**, mốc ngẫu nhiên 6 ký tự:
+
+        qwen38-vision      65K/q8_0  →  "OO1N0G"  ✓  21,2 s
+        qwen38-vision-thu 131K/q4_0  →  "OO1N0G"  ✓   2,9 s
+
+   ⚠️ VRAM **CÓ** tăng: 20.351 → 21.099 MiB (+748). Tôi dự đoán "không tăng" vì
+      KV `131.072@q4_0` bằng đúng số byte với `65.536@q8_0` — dự đoán ấy đúng
+      cho KV và **sai cho tổng**, vì buffer tính toán giãn theo ngữ cảnh. Biên
+      còn lại 3.477 MiB, rộng hơn cả hồ sơ text (2.597 MiB).
 """
 from __future__ import annotations
 
@@ -82,8 +100,8 @@ HO_SO: tuple[ModelSpec, ...] = (
     ModelSpec(
         ten="qwen38-vision",
         co_vision=True,
-        max_context=65_536,
-        mo_ta="Qwen3.8-27B - doc anh/anh chup man hinh, ngu canh 64K",
+        max_context=131_072,
+        mo_ta="Qwen3.8-27B - doc anh/anh chup man hinh, ngu canh 131K",
     ),
 )
 

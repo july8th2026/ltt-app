@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:4a053886e2b942ca2c4e176034b141f19506c8d7d430574af08e3bbc07a285ff
+Fingerprint   : sha256:18bb5d33991a263c861f3b491da563a455e81f4d1cbd46686f5ebd26f47140db
 Nguồn đã quét : 1569 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -3282,7 +3282,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:123, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1569 file; 16168588 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1569 file; 16209088 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -21077,7 +21077,7 @@ MANIFEST = AppManifest(
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_llm/ngan_sach.py
-SHA256=483db1aaecfe1b205d84814ceb13238955c9ed898cdd5dd70e9a9eec61635e3c BYTES=19672 LINES=301
+SHA256=6603d1856d74218092059db9fcd5e29dda4f12a54317ec53a81210863fcdebe9 BYTES=19673 LINES=301
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách của `ltt_llm` — **nguồn chân lý duy nhất** cho mọi con số.
 
@@ -21163,7 +21163,7 @@ CUA_SO_MODEL = 204_800
 #:
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` của `qwen38-vision` bên B
 #:    thì đổi ở đây. `test_334` buộc hai đầu lại.
-CUA_SO_MODEL_VISION = 65_536
+CUA_SO_MODEL_VISION = 131_072
 
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
 #: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
@@ -136195,7 +136195,7 @@ def quote_invalid(detail: object = "") -> ApiError:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ platform_core/public_api/examples.py
-SHA256=5c60dac1466ee190ac9c3174a708960a68885c48c5566c3fb3fb61fc2b8e19ea BYTES=47918 LINES=989
+SHA256=a0cf9503246224f833a9078f559b108bd26f182a43c9b0b1d6f395708fdd2082 BYTES=50102 LINES=1021
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Runnable examples, generated from the contract rather than written twice.
 
@@ -136759,6 +136759,17 @@ TOKEN_RA_TRAN = 32_768
 #: cùng lý do và cùng cách đối chiếu như hai con số trên.
 NEN_CLIENT = 123_617
 
+#: Trần cho **một** kết quả công cụ, công bố vì nó đổi hành vi thấy được.
+#:
+#: ⛔ Không phải một chi tiết nội bộ: khách sẽ **thấy** kết quả một lệnh dài
+#:    bị cắt ở giữa, và nếu trang này không nói trước thì họ báo đó là lỗi.
+#:
+#: 🔴 Và nó là hàng phòng thủ duy nhất chống một sự thật của cả hai client:
+#:    chúng chỉ kiểm ngưỡng nén **giữa hai lượt**, không kiểm giữa các lần
+#:    gọi công cụ trong cùng một lượt. Một kết quả không có trần thì một
+#:    lượt duy nhất vượt được mọi khoảng dự trữ.
+TRAN_KET_QUA_TOOL = 16_384
+
 
 #: Năm con số của một hội thoại dài, và **vì sao chúng khác nhau**.
 #:
@@ -136790,6 +136801,11 @@ NGU_CANH_NAM_SO = (
      "client only checks between turns."),
     ("Max output", f"{TOKEN_RA_TRAN:,}",
      "The most one answer can generate."),
+    ("One tool result", f"{TRAN_KET_QUA_TOOL:,}",
+     "The most a single command or tool result adds to the conversation. "
+     "Longer output is trimmed in the middle, keeping the start and the end. "
+     "Both clients check the compaction threshold only between turns, so "
+     "without this ceiling one turn can outgrow every reserve."),
 )
 
 #: Vì sao một yêu cầu ăn `413`, và **cách sửa đúng chỗ**.
@@ -136803,6 +136819,12 @@ LOI_413 = (
      "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` assumes 200,000 and says so in the "
      "session. Run our `cam` tool (or apply the manual config below) and start "
      "a new session — configuration is read at startup."),
+    ("Claude Code: one variable is not enough",
+     "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` corrects the window Claude Code "
+     "assumes, but it does not set the compaction threshold. Without "
+     "`CLAUDE_CODE_AUTO_COMPACT_WINDOW`, Claude Code compacts only when the "
+     "conversation reaches that window — 156,385 — which leaves less room "
+     "than one full answer (32,768) before our hard limit. Set both."),
     ("Your client compacts, but too late",
      "If you configured the window by hand, check the compaction threshold "
      f"too: it must sit at least {TOKEN_RA_TRAN:,} tokens below the advertised "
@@ -136902,8 +136924,16 @@ def claude_code_env(base_url: str) -> str:
         f'$env:ANTHROPIC_MODEL = "{CLI_MODEL}"\n'
         f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work\n'
         f'# Claude Code does not know `{CLI_MODEL}`, so it ASSUMES a 200,000\n'
-        f'# token window: it never compacts in time and you hit 413 mid-chat.\n'
+        f'# token window and never compacts in time. All four lines matter:\n'
+        f'#   MAX_CONTEXT_TOKENS    corrects the window it assumes\n'
+        f'#   AUTO_COMPACT_WINDOW   sets WHEN it compacts. Without it Claude\n'
+        f'#                         compacts only AT the window above, leaving\n'
+        f'#                         less room than one full answer.\n'
+        f'#   MAX_MCP_OUTPUT_TOKENS caps one MCP result: its default, 25000,\n'
+        f'#                         can outgrow that room in a single turn.\n'
         f'$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "{CUA_SO_CONG_BO}"\n'
+        f'$env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "{NEN_CLIENT}"\n'
+        f'$env:MAX_MCP_OUTPUT_TOKENS = "{TRAN_KET_QUA_TOOL}"\n'
         f'$env:CLAUDE_CODE_MAX_OUTPUT_TOKENS = "{TOKEN_RA_TRAN}"'
     )
 
@@ -136919,6 +136949,8 @@ def claude_code_settings(base_url: str) -> str:
             # Without these two Claude Code assumes a 200,000-token window,
             # never compacts in time, and you hit 413 mid-conversation.
             "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_CONG_BO),
+            "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(NEN_CLIENT),
+            "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
             "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
         }
     })
@@ -148943,7 +148975,7 @@ moto[s3]>=5.0,<6.0
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ sdk/ltt_cai_dat_cli.py
-SHA256=a715f7ca252260e6316006ddcb0809775af74923fd707674635325a26a47b324 BYTES=16428 LINES=378
+SHA256=37132abf727aa2dea6b906779f7af37004da51d230da0d24ede1567b93231fcb BYTES=20517 LINES=447
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 #!/usr/bin/env python3
 """ltt_cai_dat_cli.py - plug LTT Studios into Codex, Claude Code and Claude Desktop.
@@ -149012,15 +149044,76 @@ TOKEN_RA_TRAN = 32768
 #:    101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
-#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 65536` — mot NUA
-#: model text — nen no KHONG duoc dung chung con so voi `ltt_llm`.
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
 #:
-#: ⛔ Ban truoc khai 88.555 cho ca hai, tuc hua cho `ltt_llm_vision` mot ngu
-#:    canh **gap 3,1 lan** su that.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `nen_cua("qwen38-vision")` = 0: cua so cong bo cua vision hep hon mot luot
-#: sinh dai nhat, nen khong nguong nen nao giu duoc loi hua. 0 = bo han truong.
-NEN_HOI_THOAI_VISION = 0
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
+
+#: Cua so cong bo cua model VISION. `qwen38-vision` nap `-c 131072`.
+#:
+#: ⛔ NO VAN LA MOT CON SO RIENG, du hien gio no tinh co bang con so text CU.
+#:    Ban truoc 01/09 khai 88.555 cho CA HAI model va do la mot loi hua sai
+#:    (luc do vision chay `-c 65536`, cua so that cua no la 28.262). Su trung
+#:    hop hom nay khong xoa duoc ly do phai tach: hai model, hai `-c`, hai con
+#:    so — va chung se lech lai ngay lan nang cua so ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555, khi vision len `-c 131072` + KV q4_0. Do that:
+#:    89.868 token vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi
+#:    ho so 65K cu), va A/B doc anh tren cung mot anh: ca hai ho so tra dung moc.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that: cua so
+#:    cong bo cua vision khi ay (28.262) HEP HON mot luot sinh dai nhat (32.768),
+#:    nen khong nguong nen nao giu duoc loi hua va bo cai phai bo han truong do.
+#:    Nang cua so len 131K la thu lam cho no dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 #: Khoa BAT BUOC trong `[model_providers.ltt]`, kem ly do.
 #:
@@ -149064,7 +149157,7 @@ def _catalog() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": cua_so},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
             "context_window": cua_so,
@@ -149198,6 +149291,14 @@ def claude_code(base: str, goc_claude: pathlib.Path) -> list:
         #    kip nen va khach an 413 giua phien.
         "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
         "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+        # 🔴 HAI DONG NAY THEM 04/09, va thieu chung cung la mot loi tien.
+        #    `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+        #    no KHONG dat nguong nen. Tai lieu chinh thuc noi ro: khong dat
+        #    cua so nen thi Claude nen khi hoi thoai **cham dung** cua so ay,
+        #    tuc 100%. Voi ta la 156.385 tren tran cung 169.984 — chi con
+        #    13.599, nho hon mot luot sinh dai nhat (32.768).
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+        "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
     })
     # Khoa KHONG vao day. `settings.json` bi chia se va commit thuong xuyen.
     env.setdefault("ANTHROPIC_AUTH_TOKEN", f"${BIEN_KHOA}")
@@ -156864,7 +156965,7 @@ def sang_anthropic_content(noi_dung: str, tool_calls: Any) -> list:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/api/tools.py
-SHA256=cdc8711b841e55f7c5dfb2c8351e328d92c3fd5fc3c15671919efd91eaa583c1 BYTES=8630 LINES=162
+SHA256=ce844ba10fd313b16c2e7d8f49ab8e7f6fbf7bc648cc3b359dd9ee7c32df26c8 BYTES=10940 LINES=194
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """``/api/v1/tools`` — the public catalog endpoints.
 
@@ -156916,9 +157017,14 @@ def _dang_codex(model) -> dict:
     """
     rang_buoc = dict(getattr(model, "constraints", None) or {})
     cua_so = int(rang_buoc.get("context_window") or CUA_SO_CONG_BO_MAC_DINH)
+    ra = int(rang_buoc.get("max_output_tokens") or TOKEN_RA_TOI_DA)
     doc_anh = bool(rang_buoc.get("reads_images")
                    or "vision" in str(model.name).lower())
-    return {
+    # Ngưỡng nén và trần kết quả tool — **suy ra**, không gõ thêm hằng số.
+    # Cùng phép suy với hai bộ cài (`tools/cam_cli.py`), nên ba nơi không lệch
+    # được: khoảng trống giữa ngưỡng nén và cửa sổ phải chứa trọn một lượt ra.
+    nen = cua_so - ra
+    d = {
         "slug": model.name,
         "display_name": model.name,
         "description": model.description,
@@ -156934,7 +157040,34 @@ def _dang_codex(model) -> dict:
         "visibility": "list",
         "supported_in_api": True,
         "priority": 1,
+        # 🔴 BA TRƯỜNG DƯỚI ĐÂY LÀ **BẮT BUỘC**, và thiếu chúng thì Codex bỏ
+        #    **cả mục** — im lặng, rồi rơi về metadata dự phòng của nó
+        #    (272.000 ngữ cảnh, KHÔNG nén), tức bảo đảm một `413` giữa phiên.
+        #
+        # ⛔ Đo 04/09 trên `rust-v0.145.0`: `ModelInfo` có 17 trường không mang
+        #    `#[serde(default)]`; endpoint này thiếu **tám**. Năm trong tám là
+        #    `Option<T>` — serde tự cho `None`, vô hại. Ba cái còn lại KHÔNG
+        #    phải `Option`, và chính ba cái đó giết cả mục:
+        #      `support_verbosity: bool`               (openai_models.rs:424)
+        #      `truncation_policy: TruncationPolicyConfig`          (:429)
+        #      `experimental_supported_tools: Vec<String>`          (:449)
+        #
+        # ⭐ Phân biệt đó không phải suy luận — nó đến từ một phép thử BÁC BỎ:
+        #    catalog của bộ cài cũng thiếu 5 trường mà Codex vẫn chạy thật. Nếu
+        #    "thiếu bất kỳ trường bắt buộc nào là hỏng" thì bộ cài đã phải hỏng.
+        #    Nó không hỏng ⇒ giả thuyết đầu của tôi sai ⇒ ranh giới thật là
+        #    `Option` hay không.
+        "support_verbosity": False,
+        "truncation_policy": {"mode": "tokens", "limit": max(ra // 2, 1)},
+        "experimental_supported_tools": [],
     }
+    # ⛔ BỎ HẲN khi không ngưỡng nào giữ được lời hứa (`nen <= 0`), thay vì ghi
+    #    một con số trông hợp lệ. Thiếu trường thì Codex dùng mặc định của nó
+    #    (90% cửa sổ); một con số bịa thì nó TIN, và cái giá là `413` giữa
+    #    phiên. Cùng luật với `tools/cam_cli.py`.
+    if nen > 0:
+        d["auto_compact_token_limit"] = nen
+    return d
 
 
 def register_tool_routes(api, config, tag: str) -> None:
@@ -176816,7 +176949,7 @@ SHA256=6755102e1a78b495bbe6024bb5438274ce33a83439bc7eb4c45c56dc201730eb BYTES=15
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/templates/huong_dan.html
-SHA256=a5d1a73c2c32ff778c6523d2e6cc9fdc6896c351031a2fe389ca49a5079eec94 BYTES=10610 LINES=176
+SHA256=f112400a7c18afbb714f11dd130988447dbc0a81f15100f13bc3cf9bd8265337 BYTES=10610 LINES=176
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base_public.html" %}
 {% block title %}{{ _("Hướng dẫn cắm API") }} · LTT AI Studio{% endblock %}
@@ -176910,7 +177043,7 @@ SHA256=a5d1a73c2c32ff778c6523d2e6cc9fdc6896c351031a2fe389ca49a5079eec94 BYTES=10
    ⛔ Năm con số phải đứng RIÊNG. Gộp hai cái bất kỳ là dựng lại đúng lớp lỗi
       dự án này đã mắc bốn lần. #}
 <div class="card" id="ngu-canh">
-  <h2 style="margin-top:0;">{{ _("Hội thoại dài: năm con số, và vì sao chúng khác nhau") }}</h2>
+  <h2 style="margin-top:0;">{{ _("Hội thoại dài: sáu con số, và vì sao chúng khác nhau") }}</h2>
   <p>{{ _("Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn.") }}</p>
   <table class="table">
     <thead><tr>
@@ -187558,7 +187691,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34034 LINES=1113
+SHA256=7e6e35836d855355287a06409fdc640baaeaf0765e8e10926c2e552403d7d85e BYTES=34034 LINES=1113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -188080,7 +188213,7 @@ SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 28K input context.",
+            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 89K input context.",
             "examples": [
               "ltt_llm"
             ]
@@ -188147,7 +188280,7 @@ SHA256=c1f64f510e4703b193a66c24d24f1da3bcec5a0a2390fc8f1e7fcc9f8db974f0 BYTES=34
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "dcf6aa9d633aaa41"
+      "contract_hash": "5699a45f6a44d8b6"
     },
     {
       "name": "text.prompt_package",
@@ -194172,7 +194305,7 @@ def test_the_workspace_alias_still_answers(api):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_145_gate_covers_everything.py
-SHA256=60f62fd9c714fff6516a46e32ba3212881fc39e853984fbc8abeafd317fc1317 BYTES=22133 LINES=455
+SHA256=98d84ccc1581b68f3241185135d36313d3ab8512ba53f82c50145d975db1ee87 BYTES=24810 LINES=506
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """`tools/gate.py` phải phủ MỌI thứ cần chạy trước khi báo xong.
 
@@ -194579,6 +194712,57 @@ def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():
     xau = [(i, dong.strip()) for i, dong in enumerate(nguon.splitlines(), 1)
            if "print(" in dong and any(ord(c) > 127 for c in dong)]
     assert not xau, f"dong print co ky tu ngoai ASCII: {xau}"
+
+
+def test_anh_chup_cay_phu_MA_DEPLOY_DI_XA_khoi_kho():
+    """🔴 CHỐT "CÂY ĐỨNG YÊN" TỪNG KHÔNG SOI BA THỨ QUAN TRỌNG NHẤT.
+
+    Trước 03/09, `_anh_chup_cay()` chỉ chụp bảy thư mục và **bỏ qua**
+    `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy trên máy khách) và
+    `frontend/`.
+
+    ⛔ Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì `CAY DA DOI
+       TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã
+       không còn tồn tại. Với hai phiên làm việc song song trên cùng một kho,
+       đó không phải rủi ro lý thuyết.
+
+    ⭐ Ba thư mục ấy đáng canh **hơn** phần còn lại, không kém: mã trong chúng
+       **rời khỏi kho này** — chạy trên máy B, hoặc tải về máy khách. Một lần
+       sai ở đó không lộ ra trong bất kỳ phép kiểm nào chạy tại chỗ.
+    """
+    from tools.gate import THU_MUC_CHUP
+
+    for phai_co in ("llm_gateway", "sdk", "frontend"):
+        assert phai_co in THU_MUC_CHUP, (
+            f"`{phai_co}` khong nam trong anh chup cay. Ma o do DEPLOY DI XA "
+            f"khoi kho nay, nen sua no giua mot luot gate se khong bi phat hien.")
+
+
+def test_anh_chup_cay_CAT_node_modules_nhung_GIU_bundle_da_commit():
+    """Cắt phải cắt đúng thứ vô nghĩa, và **chỉ** thứ vô nghĩa.
+
+    ⭐ Cắt `node_modules` là lý do ảnh chụp rộng gấp đôi mà lại **nhanh hơn**:
+       `os.walk` cắt `dirnames` tại chỗ nên nó không đi xuống 12.255 tệp, khác
+       hẳn `rglob` (đi xuống rồi mới lọc). Đo 03/09: 1.321 tệp/0,143 s → 1.491
+       tệp/0,047 s.
+
+    ⛔ NHƯNG `.vite`, `dist`, `coverage` thì KHÔNG được cắt. Bốn tệp
+       `server/static/*/.vite/manifest.json` là bundle production **đã commit**
+       — chúng chính là thứ máy chủ phục vụ. Cắt chúng khỏi ảnh chụp là mất
+       đúng thứ cần canh, và mất một cách im lặng.
+    """
+    from tools.gate import _BO_QUA_THU_MUC, _anh_chup_cay
+
+    assert "node_modules" in _BO_QUA_THU_MUC
+    for khong_duoc_cat in (".vite", "dist", "coverage"):
+        assert khong_duoc_cat not in _BO_QUA_THU_MUC, (
+            f"`{khong_duoc_cat}` bi cat khoi anh chup — bundle da commit nam "
+            f"trong do, va mat chung la mat dung thu can canh")
+
+    cay = _anh_chup_cay()
+    assert not [p for p in cay if "node_modules" in p], "node_modules lot vao anh chup"
+    manifest = [p for p in cay if p.endswith(".vite/manifest.json")]
+    assert manifest, "khong con manifest bundle nao trong anh chup"
 
 
 def test_canh_bao_cay_doi_phai_KE_TEN_chu_khong_chi_bao_co_doi():
@@ -230994,7 +231178,7 @@ def test_them_provider_khong_lam_vo_registry_cu():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_250_llm_gateway.py
-SHA256=1fbd3cf264633474bb805486b373a0b338080f62e1c6337ac319576a1fe7c0ee BYTES=21873 LINES=484
+SHA256=abf5a8bb95de832acbb33c60b424c4f715ba07fdfb0d8c69d5905ae7b4075f15 BYTES=31758 LINES=679
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 test_250_llm_gateway — hợp đồng của cổng VLM (H38, P7).
@@ -231048,6 +231232,40 @@ def test_config_mac_dinh_khoa_public_input_KHOP_NGAN_SACH(monkeypatch):
         "parallel=1 thi gateway khong duoc tao hidden queue")
 
 
+#: Đường dẫn upstream **chạm model**. Mọi thứ khác (`/running`, `/tokenize`,
+#: `/v1/models`) là siêu dữ liệu hoặc CPU: llama-swap và llama-server trả lời
+#: chúng mà không sinh một token nào.
+#:
+#: 🔴 VÌ SAO CẦN PHÂN BIỆT NÀY, thay vì `assert up.goi == []` như trước 03/09.
+#:
+#:    Hai phép kiểm dưới đây từng chốt "KHÔNG một lời gọi upstream nào". Câu đó
+#:    chặt hơn thứ nó muốn bảo vệ, và cái nó thật sự bảo vệ là *một yêu cầu quá
+#:    to không được tiêu GPU* (đo 03/09: 413 trong ≤0,02 s, trước cả hàng rào
+#:    đồng thời).
+#:
+#:    Khi cổng bắt đầu đếm token THẬT bằng `/tokenize` — để con số ta từ chối
+#:    nằm cùng đơn vị với con số client đếm — thì đường từ chối buộc phải hỏi
+#:    `/running` một lần. Giữ nguyên `== []` nghĩa là cấm hẳn bản vá đó.
+#:
+#: ⭐ Nên chốt được viết lại cho ĐÚNG thứ cần chốt, và nó **mạnh hơn** bản cũ ở
+#:    một điểm: bản cũ chỉ nói "không gọi gì", bản này nói rõ **không gọi suy
+#:    luận** *và* liệt kê được đường nào được phép xuất hiện. Một lời gọi
+#:    `/v1/chat/completions` lọt vào đây sẽ đỏ ở cả hai bản; một `/running` chỉ
+#:    đỏ ở bản cũ, và đỏ vì lý do sai.
+DUONG_CHAM_MODEL = ("/v1/chat/completions", "/v1/responses", "/v1/messages")
+
+
+def _chi_sieu_du_lieu(up) -> None:
+    """Chốt: không lời gọi nào chạm model, và mọi lời gọi đều nằm trong bảng."""
+    duong = [g[1] for g in up.goi]
+    cham = [d for d in duong if any(d.startswith(x) for x in DUONG_CHAM_MODEL)]
+    assert cham == [], f"da cham model tren duong tu choi: {cham}"
+    la = [d for d in duong
+          if d not in ("/running", "/v1/models")
+          and not (d.startswith("/upstream/") and d.endswith("/tokenize"))]
+    assert la == [], f"loi goi upstream ngoai bang sieu du lieu: {la}"
+
+
 def test_public_cap_chan_TRUOC_thuong_nguon():
     """Q116: vượt trần theo bộ ước phải bị chặn trước khi chạm upstream/GPU."""
     c, up = _client(_cfg(max_input_tokens=65_000))
@@ -231057,7 +231275,7 @@ def test_public_cap_chan_TRUOC_thuong_nguon():
     })
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
-    assert up.goi == []
+    _chi_sieu_du_lieu(up)
 
 
 # ── Đồ giả ───────────────────────────────────────────────────────────────────
@@ -231071,9 +231289,34 @@ class FakeUpstream:
         self.than = than
         self.khoi_stream = khoi_stream or [b"data: a\n\n", b"data: b\n\n"]
         self.goi: list[tuple[str, str, dict]] = []
+        #: Trả lời riêng cho từng đường, khi test cần. `None` = dùng `self.than`.
+        #:
+        #: ⭐ Cần vì `/running` và `/tokenize` KHÔNG thể dùng chung một thân với
+        #:    `/v1/chat/completions`: cổng phân giải `tokens` và `running` từ
+        #:    thân, nên một thân `{"ok":true}` làm cả hai nhánh trả `None` và
+        #:    phép kiểm xanh vì lý do sai.
+        self.rieng: dict[str, bytes] = {}
+
+    def dat_running(self, ten: str) -> None:
+        """Khai hồ sơ nào đang `ready`. Chuỗi rỗng = không hồ sơ nào."""
+        import json as _json
+        d = {"running": [{"model": ten, "state": "ready"}]} if ten else {"running": []}
+        self.rieng["/running"] = _json.dumps(d).encode()
+
+    def dat_tokenize(self, so_token: int) -> None:
+        """Khai `/tokenize` trả về đúng `so_token` token."""
+        import json as _json
+        # ⛔ Khai theo dung duong THAT: `/upstream/<model>/tokenize`. Khai
+        #    `/tokenize` tran thi bo gia se tra loi mot duong ma llama-swap
+        #    THAT tra 404 — va phep kiem se xanh cho mot ban va da chet.
+        for ten in ("qwen38-api", "qwen38-vision"):
+            self.rieng["/upstream/" + ten + "/tokenize"] = _json.dumps(
+                {"tokens": list(range(so_token))}).encode()
 
     def json(self, method, path, *, body=None, timeout=60.0):
         self.goi.append((method, path, body or {}))
+        if path in self.rieng:
+            return 200, self.rieng[path]
         return self.ma, self.than
 
     def stream(self, method, path, *, body=None, timeout=900.0):
@@ -231176,7 +231419,121 @@ def test_dau_vao_qua_dai_thi_413_va_khong_cham_thuong_nguon():
         "messages": [{"role": "user", "content": "x" * 100_000}]})
     assert r.status_code == 413
     assert r.json()["detail"]["truong"] == "input_tokens"
-    assert up.goi == []
+    _chi_sieu_du_lieu(up)
+
+
+def test_dem_that_KHONG_chay_o_duong_nhanh():
+    """⭐ Điều kiện để bản vá "đếm thật" không phải một cái giá trả mỗi lượt.
+
+    Ước **vừa** trần ⇒ nhận ngay, và cổng KHÔNG được hỏi `/running` hay
+    `/tokenize`. Ước là số cao, nên ước vừa thì thật chắc chắn vừa — không có
+    gì để đếm lại.
+    """
+    c, up = _client()
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "xin chao"}]})
+    assert r.status_code == 200
+    duong = [g[1] for g in up.goi]
+    assert "/tokenize" not in duong, "duong nhanh da goi /tokenize"
+    assert "/running" not in duong, "duong nhanh da goi /running"
+
+
+def test_uoc_vuot_nhung_THAT_vua_thi_duoc_nhan():
+    """🔴 CHÍNH BẢN VÁ. Ước 40.000 vượt trần 20.000, nhưng thật chỉ 5.000.
+
+    Trước 03/09 lượt này ăn `413` — và client, đếm token THẬT bằng tokenizer
+    của nó, không có cách nào biết vì sao: nó thấy 5.000 token trên một cửa sổ
+    ta công bố rộng hơn thế nhiều.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")          # ho so DA nap => dem that duoc
+    up.dat_tokenize(5_000)
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})   # uoc 40.001
+    assert r.status_code == 200, r.text
+    assert "/upstream/qwen38-api/tokenize" in [g[1] for g in up.goi]
+
+
+def test_duong_tokenize_PHAI_qua_upstream_cua_tung_model():
+    """🔴 BÁNH CÓC CHO MỘT BẢN VÁ ĐÃ LÊN PRODUCTION VÀ KHÔNG LÀM GÌ CẢ.
+
+    `llama-swap` định tuyến theo trường `model` **trong thân**. `/tokenize`
+    không có trường đó, nên nó trả **404**. Đo 03/09 trên máy B:
+
+        POST /tokenize                       -> 404
+        POST /upstream/qwen38-api/tokenize    -> 200 {"tokens":[...]}
+
+    ⛔ Bản đầu của `_dem_token_that` gọi `/tokenize`. Nó nhận 404, trả `None`,
+       và cổng lặng lẽ lùi về phép ước — bản vá đã deploy và **không làm gì**,
+       không một dòng nào nói ra. Phép kiểm cũ (`"/tokenize" in duong`) sẽ
+       **xanh** với đường sai, vì `"/upstream/x/tokenize"` cũng chứa chuỗi đó.
+
+    ⭐ Nên chốt phải là đường ĐẦY ĐỦ, không phải một chuỗi con.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")
+    up.dat_tokenize(5_000)
+    c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    tok = [g for g in up.goi if "tokenize" in g[1]]
+    assert tok, "khong goi tokenize lan nao"
+    for method, duong, _than in tok:
+        assert method == "POST", (method, duong)
+        assert duong == "/upstream/qwen38-api/tokenize", (
+            f"duong tokenize sai: {duong!r}. llama-swap tra 404 cho `/tokenize` "
+            f"tran, va mot 404 o day bi nuot thanh mot lan lui ve phep uoc.")
+
+
+def test_uoc_vuot_va_THAT_cung_vuot_thi_413_bao_so_THAT():
+    """Số trong `413` phải là số ta **phán xử bằng**, không phải số ước.
+
+    ⛔ Trả về số ước ở đây thì khách đọc một con số không khớp với bất cứ thứ gì
+       họ đo được, và không có đường nào lần ra.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("qwen38-api")
+    up.dat_tokenize(30_000)
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    d = r.json()["detail"]
+    assert d["thay"] == 30_000, d
+    assert d["tran"] == 20_000, d
+
+
+def test_ho_so_CHUA_nap_thi_khong_hoi_tokenize():
+    """Nhánh ba: chưa nạp ⇒ từ chối theo ước, KHÔNG đánh thức GPU.
+
+    Hỏi `/tokenize` cho một hồ sơ chưa nạp thì llama-swap sẽ **đổi model** để
+    phục vụ nó — 2,5 phút và một lần chiếm card, cho một yêu cầu ta đang định
+    từ chối.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000))
+    up.dat_running("")                    # khong ho so nao ready
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    assert "/tokenize" not in [g[1] for g in up.goi]
+
+
+def test_thuong_nguon_chet_thi_van_413_theo_uoc():
+    """llama-swap chết không được biến một `413` thành một lỗi khác.
+
+    ⛔ Và không được biến nó thành một lần **chờ**: đường từ chối gọi `/running`
+       với `timeout=2.0` chứ không phải 5, vì năm giây cho một yêu cầu chắc chắn
+       bị từ chối là một hồi quy so với bản trước.
+    """
+    c, up = _client(_cfg(max_input_tokens=20_000), up=FakeUpstream(ma=599))
+    r = c.post("/v1/chat/completions", json={
+        "model": "qwen38-api",
+        "messages": [{"role": "user", "content": "x" * 100_000}]})
+    assert r.status_code == 413
+    assert r.json()["detail"]["thay"] == 40_001      # so UOC, vi khong dem duoc
 
 
 def test_anh_gui_vao_ho_so_khong_vision_thi_413():
@@ -231229,14 +231586,36 @@ def test_xin_sinh_qua_nhieu_token_thi_413():
 
 
 def test_vao_cong_ra_vuot_cua_so_ngu_canh_thi_413():
-    """Chốt bắt được cái mà hai chốt kia bỏ lọt: mỗi cái vừa, cộng lại thì tràn."""
-    c, _ = _client(_cfg(max_input_tokens=200_000, max_output_tokens=60_000))
+    """Chốt bắt được cái mà hai chốt kia bỏ lọt: mỗi cái vừa, cộng lại thì tràn.
+
+    ⛔ MỌI CON SỐ Ở ĐÂY **DẪN XUẤT** TỪ CỬA SỔ THẬT CỦA HỒ SƠ, không gõ tay.
+
+       Bản trước gõ một kịch bản chỉnh riêng cho cửa sổ 65.536 của vision
+       (~40.000 vào + 50.000 ra). Ngày 03/09 vision lên `-c 131072` và kịch bản
+       ấy **thôi tràn** — phép kiểm chuyển sang xanh-vì-lý-do-sai, tức nó không
+       còn kiểm cái nó nói là kiểm.
+
+    ⭐ Một phép kiểm về "vào + ra vượt cửa sổ" mà gõ tay hai con số thì nó
+       thật ra đang chốt *một cửa sổ cụ thể*, không phải *bất biến*. Dẫn xuất
+       thì lần nâng cửa sổ kế tiếp không ai phải sửa nó.
+    """
+    from llm_gateway.catalog import HO_SO
+
+    cua_so = {m.ten: m.max_context for m in HO_SO}["qwen38-vision"]
+    # Vào ~55 % cửa sổ, ra ~55 % cửa sổ: mỗi cái vừa trần của nó, cộng lại tràn.
+    token_vao = int(cua_so * 0.55)
+    token_ra = int(cua_so * 0.55)
+    ky_tu = int(token_vao * 2.5)               # KY_TU_MOI_TOKEN cua ngan_sach
+
+    c, _ = _client(_cfg(max_input_tokens=cua_so * 2, max_output_tokens=cua_so))
     r = c.post("/v1/chat/completions", json={
-        "model": "qwen38-vision",              # cửa sổ 65.536
-        "messages": [{"role": "user", "content": "x" * 100_000}],  # ~40.000 token
-        "max_tokens": 50_000})
-    assert r.status_code == 413
-    assert r.json()["detail"]["truong"] == "context"
+        "model": "qwen38-vision",
+        "messages": [{"role": "user", "content": "x" * ky_tu}],
+        "max_tokens": token_ra})
+    assert r.status_code == 413, r.text
+    d = r.json()["detail"]
+    assert d["truong"] == "context", d
+    assert d["tran"] == cua_so, d
 
 
 def test_anh_kieu_anthropic_va_responses_deu_dem_duoc():
@@ -257443,7 +257822,7 @@ def test_LUON_nhac_nap_lai_env(envfile):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_334_ngan_sach_ltt_llm.py
-SHA256=5e51007fb793a5cdff2f397f6146a777d39fb2f1303e472e6509decccaa2f5c9 BYTES=46642 LINES=897
+SHA256=fb0244b51917da32f5e9e83b59d667b4f3cfb2447fa2fa87803c837ee681b464 BYTES=59259 LINES=1109
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Ngân sách `ltt_llm`: **một nguồn chân lý**, và không nơi nào được lệch nó.
 
@@ -257878,6 +258257,74 @@ class TestBanSaoConLai:
                 f"CUA_SO_CONG_BO_MAC_DINH cua server/api/tools.py, va khach se "
                 f"nhan mot con so khong lien quan gi toi model nay")
 
+    #: Trường **bắt buộc** của `ModelInfo` mà `/api/v1/models` phải mang.
+    #:
+    #: 🔴 Đo 04/09 trên `rust-v0.145.0`, không đoán: `ModelInfo` có 17 trường
+    #:    không mang `#[serde(default)]`. Endpoint ta thiếu **tám** — nhưng
+    #:    **năm** trong tám là `Option<T>`, và serde tự cho `None`. Ba cái dưới
+    #:    đây KHÔNG phải `Option`, nên thiếu chúng là Codex bỏ **cả mục**, im
+    #:    lặng, rồi rơi về metadata dự phòng (272.000 ngữ cảnh, KHÔNG nén).
+    #:
+    #: ⭐ Ranh giới `Option`/không-`Option` đến từ một phép thử BÁC BỎ, không
+    #:    từ suy luận: catalog bộ cài cũng thiếu 5 trường mà Codex vẫn chạy
+    #:    thật. Nếu "thiếu trường bắt buộc nào cũng chết" thì nó đã phải chết.
+    _BAT_BUOC_KHONG_OPTION = ("support_verbosity", "truncation_policy",
+                              "experimental_supported_tools")
+
+    def test_models_endpoint_mang_du_truong_Codex_BAT_BUOC(self):
+        """🔴 KHUYẾT TẬT SỐNG TRÊN PRODUCTION, tìm ra 04/09.
+
+        `/api/v1/models` thiếu cả ba trường dưới. Khách nào **không** dùng bộ
+        cài của ta — cấu hình tay theo tài liệu, hoặc dùng tiện ích VS Code —
+        thì Codex không parse nổi một mục nào, rơi về 272.000 ngữ cảnh và
+        **không nén**, tức bảo đảm một `413` giữa phiên.
+
+        ⛔ Bộ cài che được lỗi này (`model_catalog_json` thay cả catalog), nên
+           nó **không hiện ra** ở bất kỳ phép đo nào đi qua bộ cài. Đó chính là
+           lý do phải có phép kiểm riêng cho endpoint.
+        """
+        import types
+        from server.api import tools as sv
+        m = types.SimpleNamespace(name="ltt_llm", description="x")
+        m.constraints = {"context_window": 156_385, "max_output_tokens": 32_768}
+        d = sv._dang_codex(m)
+        for truong in self._BAT_BUOC_KHONG_OPTION:
+            assert truong in d, (
+                f"/api/v1/models thieu {truong!r} — Codex se bo CA MUC va roi ve "
+                f"metadata du phong 272.000 ngu canh khong nen")
+
+    def test_models_endpoint_va_bo_cai_noi_CUNG_mot_con_so(self):
+        """Ba nơi suy ra ngưỡng nén và trần kết quả tool; ba nơi phải trùng.
+
+        ⛔ Bất biến không phải "mỗi nơi có một con số hợp lệ" — nó là *"ba con
+           số ấy là MỘT"*. Hai catalog nói hai ngưỡng nén khác nhau thì hành vi
+           của khách phụ thuộc vào việc họ cài bằng cách nào, và đó là loại lỗi
+           không ai tái hiện được.
+        """
+        import json
+        import types
+        from server.api import tools as sv
+        import importlib.util
+        import pathlib as _pl
+        goc = _pl.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "cam_cli_doi_chieu_sv", goc / "tools" / "cam_cli.py")
+        cc = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cc)
+        bo_cai = {m["slug"]: m for m in json.loads(cc._catalog_codex())["models"]}
+        for slug, bc in bo_cai.items():
+            m = types.SimpleNamespace(name=slug, description="x")
+            m.constraints = {"context_window": bc["context_window"],
+                             "max_output_tokens": ngan_sach.TOKEN_RA_TRAN}
+            sv_d = sv._dang_codex(m)
+            assert sv_d["truncation_policy"] == bc["truncation_policy"], (
+                f"{slug}: may chu {sv_d['truncation_policy']} != bo cai "
+                f"{bc['truncation_policy']}")
+            assert (sv_d.get("auto_compact_token_limit")
+                    == bc.get("auto_compact_token_limit")), (
+                f"{slug}: nguong nen may chu {sv_d.get('auto_compact_token_limit')} "
+                f"!= bo cai {bc.get('auto_compact_token_limit')}")
+
     def test_context_window_cua_alias_khop_cua_so_model_that(self):
         """Con số công bố của mỗi alias phải dẫn xuất từ cửa sổ THẬT của model
         nó trỏ tới — không phải từ cửa sổ của model bên cạnh."""
@@ -257997,6 +258444,17 @@ class TestCamCliKhopNganSach:
         spec.loader.exec_module(mod)
         return mod
 
+    @staticmethod
+    def _sdk_cli():
+        import importlib.util
+        import pathlib
+        goc = pathlib.Path(__file__).resolve().parents[1]
+        spec = importlib.util.spec_from_file_location(
+            "sdk_cli_doi_chieu", goc / "sdk" / "ltt_cai_dat_cli.py")
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod
+
     #: Bí danh công khai → id nội bộ, để đối chiếu **theo từng model**.
     _THEO_ALIAS = {"ltt_llm": "qwen38-api", "ltt_llm_vision": "qwen38-vision"}
 
@@ -258046,7 +258504,125 @@ class TestCamCliKhopNganSach:
                 assert m[truong] == mong, (
                     f"{m['slug']}.{truong} = {m[truong]} nhung cua so that cua "
                     f"model nay cho {mong}")
-            assert m["truncation_policy"]["limit"] == mong
+            # ⛔ KHONG kiem `truncation_policy` o day. No la mot ĐẠI LƯỢNG
+            #    KHÁC HẲN — trần cho MỘT kết quả tool, không phải cửa sổ — và
+            #    dòng cũ ở chỗ này (`limit == mong`) chính là thứ **cưỡng chế**
+            #    khuyết tật: nó bắt một kết quả tool được phép nuốt trọn ngữ
+            #    cảnh. Bất biến thật ở `test_tran_ket_qua_tool_*` bên dưới.
+
+    def test_tran_ket_qua_tool_KHONG_duoc_bang_ca_cua_so(self):
+        """🔴 PHÉP KIỂM CHO KHUYẾT TẬT 04/09 — và cho một lỗ hổng của Codex.
+
+        Bộ cài từng khai `truncation_policy = {"tokens", cả cửa sổ}`, tức
+        **một kết quả tool được phép nuốt trọn ngữ cảnh**. Mặc định của chính
+        Codex là `TruncationPolicyConfig::bytes(10_000)` với
+        `APPROX_BYTES_PER_TOKEN = 4` — tức 2.500 token. Ta rộng hơn 62 lần.
+
+        ⭐ VÌ SAO ĐIỀU ĐÓ NGUY HIỂM chứ không chỉ lãng phí: Codex kiểm ngưỡng
+           nén **giữa hai lượt**, KHÔNG kiểm giữa các lần gọi tool trong cùng
+           một lượt (openai/codex#16033 — 83 lệnh shell đưa ngữ cảnh 0 → 400K
+           trong một lượt; có TODO của chính họ thừa nhận). Khi một lượt phình
+           ra thì `truncation_policy` là **hàng phòng thủ duy nhất còn lại**.
+           Production đã ăn một kết quả tool **95.901 token trong một lượt**.
+
+        ⛔ Bất biến không phải "limit nhỏ hơn cửa sổ". Nó là: sau một kết quả
+           tool lớn nhất, **vẫn phải còn chỗ cho trọn một lượt sinh kế tiếp**.
+        """
+        cc = self._cam_cli()
+        import json
+        for m in json.loads(cc._catalog_codex())["models"]:
+            tp = m["truncation_policy"]
+            assert tp["mode"] == "tokens", (m["slug"], tp)
+            assert tp["limit"] != m["context_window"], (
+                f"{m['slug']}: tran ket qua tool = ca cua so ngu canh "
+                f"({tp['limit']}) — mot ket qua tool duy nhat nuot tron ngu "
+                f"canh, va Codex khong kiem nen GIUA cac lan goi tool")
+            khoang = m["context_window"] - m.get(
+                "auto_compact_token_limit", m["context_window"])
+            assert tp["limit"] * 2 <= max(khoang, ngan_sach.TOKEN_RA_TRAN), (
+                f"{m['slug']}: tran ket qua tool {tp['limit']} chiem qua nua "
+                f"khoang trong {khoang} — hai ket qua lien tiep trong mot luot "
+                f"la tran")
+
+    def test_Claude_PHAI_duoc_dat_cua_so_nen_rieng(self):
+        """🔴 KHUYẾT TẬT 04/09 TRÊN ĐƯỜNG CLAUDE — cùng họ với Codex, khác tên.
+
+        `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chỉ sửa con số Claude **giả định**. Nó
+        **không** đặt ngưỡng nén. Tài liệu chính thức
+        (`code.claude.com/docs/en/model-config.md`, mục *Default auto-compact
+        thresholds*) nói thẳng:
+
+            "If you don't set an auto-compact window, Claude Code compacts when
+             the conversation reaches the model's context limit"
+            "Sessions on a model ID Claude Code doesn't recognize, such as an
+             LLM gateway alias, compact at the context window Claude Code
+             assumes for the ID"
+
+        ⇒ Không đặt `CLAUDE_CODE_AUTO_COMPACT_WINDOW` thì Claude nén ở **đúng
+          100%** cửa sổ ta khai (156.385), chừa lại 13.599 trên trần cứng —
+          nhỏ hơn một lượt sinh dài nhất (32.768). Và Claude cũng chỉ kiểm
+          ngưỡng **giữa hai lượt**.
+
+        ⛔ Đây đúng là hình dạng lỗi đã ăn `413` ở production phía Codex, chỉ
+           khác tên khoá. Nó sống được vì `MAX_CONTEXT_TOKENS` **trông như** đã
+           giải quyết xong vấn đề.
+        """
+        cc = self._cam_cli()
+        assert "CLAUDE_CODE_AUTO_COMPACT_WINDOW" in cc.CLAUDE_ENV, (
+            "bo cai khong dat cua so nen cho Claude — Claude se nen o 100% "
+            "cua so khai bao, khong con cho cho mot luot sinh")
+        assert cc.CUA_SO_NEN_CLAUDE == cc.NEN_HOI_THOAI, (
+            f"cua so nen Claude {cc.CUA_SO_NEN_CLAUDE} != nguong nen Codex "
+            f"{cc.NEN_HOI_THOAI} — hai client, mot may chu, phai MOT con so")
+        con = ngan_sach.tran_vao_cua("qwen38-api") - cc.CUA_SO_NEN_CLAUDE
+        assert con >= ngan_sach.TOKEN_RA_TRAN, (
+            f"nen o {cc.CUA_SO_NEN_CLAUDE} tren tran cung "
+            f"{ngan_sach.tran_vao_cua('qwen38-api')} chi chua {con} token — "
+            f"nho hon mot luot sinh dai nhat ({ngan_sach.TOKEN_RA_TRAN})")
+
+    #: Sàn cứng của `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, đọc từ tài liệu chính
+    #: thức: *"Set the auto-compact window in tokens, from `100000` to
+    #: `1000000`"*. Giá trị dưới sàn bị Claude kẹp lên, tức lời hứa của ta im
+    #: lặng thành một lời hứa khác.
+    _SAN_CUA_SO_NEN_CLAUDE = 100_000
+
+    def test_cua_so_nen_Claude_KHONG_duoi_san_Claude_chap_nhan(self):
+        """Một con số bị client kẹp lại là một con số ta không còn kiểm soát."""
+        cc = self._cam_cli()
+        assert cc.CUA_SO_NEN_CLAUDE >= self._SAN_CUA_SO_NEN_CLAUDE, (
+            f"{cc.CUA_SO_NEN_CLAUDE} duoi san {self._SAN_CUA_SO_NEN_CLAUDE} — "
+            f"Claude se kep len va bo cai noi mot dang, client lam mot dang")
+
+    def test_tran_ket_qua_MCP_khop_tran_ket_qua_tool_cua_Codex(self):
+        """Mặc định `MAX_MCP_OUTPUT_TOKENS` là 25.000 — chiếm 76% khoảng trống.
+
+        Hai kết quả MCP trong **một** lượt là tràn, và Claude không kiểm ngưỡng
+        giữa các lần gọi tool. Cùng bài toán với Codex nên cùng con số.
+        """
+        cc = self._cam_cli()
+        assert "MAX_MCP_OUTPUT_TOKENS" in cc.CLAUDE_ENV
+        assert cc.TRAN_KET_QUA_TOOL * 2 <= ngan_sach.TOKEN_RA_TRAN, (
+            f"hai ket qua tool {cc.TRAN_KET_QUA_TOOL} lien tiep vuot khoang "
+            f"trong {ngan_sach.TOKEN_RA_TRAN}")
+
+    def test_hai_bo_cai_khai_CUNG_bo_bien_Claude(self):
+        """Bản `sdk` từng **thiếu** hai biến mà bản Windows có — chú thích ngay
+        trong tệp ấy ghi lại chuyện đó. Phép kiểm này để nó đừng lặp lại."""
+        cc, sdk = self._cam_cli(), self._sdk_cli()
+        for ten in ("CUA_SO_NEN_CLAUDE", "TRAN_KET_QUA_TOOL", "NEN_HOI_THOAI"):
+            assert getattr(cc, ten) == getattr(sdk, ten), (
+                f"{ten}: cam_cli {getattr(cc, ten)} != sdk {getattr(sdk, ten)}")
+
+    def test_hai_bo_cai_khai_CUNG_tran_ket_qua_tool(self):
+        """Hai bộ cài là hai tệp; một tệp được sửa còn tệp kia thì không, đó là
+        cách khuyết tật vision đã sống nhiều ngày."""
+        import json
+        cc, sdk = self._cam_cli(), self._sdk_cli()
+        a = {m["slug"]: m["truncation_policy"]
+             for m in json.loads(cc._catalog_codex())["models"]}
+        b = {m["slug"]: m["truncation_policy"]
+             for m in json.loads(sdk._catalog())["models"]}
+        assert a == b, f"cam_cli {a} != sdk {b}"
 
     def test_nguong_nen_chua_TRON_mot_luot_sinh_dai_nhat(self):
         """🔴 ĐÂY LÀ PHÉP KIỂM CHO ĐÚNG LỖI PRODUCTION 03/09.
@@ -258119,6 +258695,11 @@ class TestExamplesKhopNganSach:
 
         assert examples.CUA_SO_CONG_BO == ngan_sach.CONG_BO_CHO_CLIENT
         assert examples.TOKEN_RA_TRAN == ngan_sach.TOKEN_RA_TRAN
+        # ⛔ HAI DONG NAY THIEU CHO TOI 04/09. `NEN_CLIENT` la con so trang
+        #    cong khai bao khach dat lam nguong nen — no troi khoi nguon chan
+        #    ly thi trang day khach mot nguong sai, va khong gi keu len.
+        assert examples.NEN_CLIENT == ngan_sach.NEN_CHO_CLIENT
+        assert examples.TRAN_KET_QUA_TOOL == ngan_sach.TOKEN_RA_TRAN // 2
 
     def test_KHONG_con_so_ngu_canh_go_tay_nao_trong_doan_ma_mau(self):
         """Bánh cóc: mọi đoạn khách chép phải sinh ra từ hằng, không gõ."""
@@ -258137,6 +258718,16 @@ class TestExamplesKhopNganSach:
         ])
         cho_phep = {str(ngan_sach.CONG_BO_CHO_CLIENT),
                     str(ngan_sach.TOKEN_RA_TRAN),
+                    # Hai con so cua ban 1.6.0 — VAN suy tu SSOT, khong go tay.
+                    str(ngan_sach.NEN_CHO_CLIENT),
+                    str(ngan_sach.TOKEN_RA_TRAN // 2),
+                    # ⚠️ `25000` la HANG SO CUA CLAUDE, khong phai cua ta:
+                    #    mac dinh `MAX_MCP_OUTPUT_TOKENS`, doc 04/09 tu
+                    #    `code.claude.com/docs/en/env-vars.md`. No duoc phep
+                    #    xuat hien vi no khong the troi theo SSOT cua ta —
+                    #    nhung no CO THE troi theo Anthropic, nen neu doan mau
+                    #    con nhac no thi phai doi chieu lai tai lieu.
+                    "25000",
                     "600000",           # stream_idle_timeout_ms
                     "200",              # nhac trong chu thich: "200,000 token"
                     "000", "0", "1", "145", "0.145", "2"}
@@ -293959,7 +294550,7 @@ exit /b %ERRORLEVEL%
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cam_cli.py
-SHA256=f4befdd040a656d19b189bbf8a6768929967386bca57be6808b8ef18a24bfe36 BYTES=93259 LINES=2094
+SHA256=282c97ee8975a89477b50139c709a3322cf8439c6fb3ce488e1e5af37f68181b BYTES=97716 LINES=2172
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cam_cli.py - cam Codex / Claude Code vao API cua LTT Studios, va GO RA sach.
 
@@ -294053,7 +294644,7 @@ GOC_MAC_DINH = "https://app.lttstudios.com"
 #:    KHONG BIET MINH LA BAN NAO. Khi khach bao "cam khong duoc", ta khong co
 #:    cach nao biet ho dang chay ban gi - va do la cau hoi DAU TIEN cua moi lan
 #:    ho tro.
-PHIEN_BAN = "1.4.0"
+PHIEN_BAN = "1.6.0"
 
 MODEL = "ltt_llm"
 
@@ -294095,23 +294686,87 @@ TOKEN_RA_TRAN = 32768
 #:    da an mot `413` o 101.938 token vao dung vi vay.
 NEN_HOI_THOAI = 123617
 
+#: Tran token cho MOT ket qua tool, do vao `truncation_policy` cua catalog.
+#:
+#: 🔴 TRUOC 04/09 CHO NAY LA `cua_so` — tuc **ca cua so ngu canh**. Mot ket qua
+#:    tool duy nhat duoc phep nuot tron ngu canh. Mac dinh cua chinh Codex la
+#:    `TruncationPolicyConfig::bytes(10_000)` voi `APPROX_BYTES_PER_TOKEN = 4`,
+#:    tuc **2.500 token** — ta rong hon **62 lan**.
+#:
+#: ⭐ VA DAY KHONG PHAI MOT TRUONG TRANG TRI. Codex chi kiem nguong nen **GIUA
+#:    hai luot**, khong kiem giua cac lan goi tool trong CUNG mot luot
+#:    (openai/codex#16033: 83 lenh shell dua ngu canh tu 0 len 400K trong mot
+#:    luot, nen khong kip chay; co TODO cua chinh ho thua nhan). Nen khi mot
+#:    luot phinh ra, `truncation_policy` la **co che phong thu duy nhat con
+#:    lai** — va ta da vo hieu hoa no bang chinh tay minh. Production da an mot
+#:    ket qua tool **95.901 token trong mot luot**.
+#:
+#: Suy ra, khong bia: khoang trong giua nguong nen va cua so cong bo dung bang
+#: `TOKEN_RA_TRAN` (156.385 - 123.617 = 32.768). Mot ket qua tool khong duoc
+#: chiem qua NUA khoang do, de sau no van con cho cho luot sinh ke tiep.
+#:
+#: ⚠️ Don vi o day la token **UOC CUA CODEX** (`len/4`), khong phai token that
+#:    cua Qwen. Do 03/09: tieng Viet ~3,14 ky tu/token that, nen 16.384 x 4 =
+#:    65.536 byte ~ **20.872 token that** — van duoi 32.768, con bien an toan.
+TRAN_KET_QUA_TOOL = TOKEN_RA_TRAN // 2
+
+#: Cua so nen cua Claude Code, do vao `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+#:
+#: 🔴 TRUOC 04/09 BIEN NAY KHONG DUOC DAT, va do la MOT LOI TIEN — cung ho voi
+#:    `truncation_policy` cua Codex, chi khac ten. Tai lieu chinh thuc
+#:    (`code.claude.com/docs/en/model-config.md`, muc *Default auto-compact
+#:    thresholds*) noi thang:
+#:
+#:        "If you don't set an auto-compact window, Claude Code compacts when
+#:         the conversation reaches the model's context limit"
+#:        "Sessions on a model ID Claude Code doesn't recognize, such as an LLM
+#:         gateway alias, compact at the context window Claude Code assumes"
+#:
+#: ⇒ Ta khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS = 156.385` va khong dat cua so nen,
+#:   nen Claude nen o DUNG 156.385 — tuc 100% cua so, khong phai mot phan an
+#:   toan duoi no. Tran cung may chu la 169.984, nen khoang con lai chi
+#:   **13.599**, trong khi mot luot sinh dai nhat la **32.768**. Va Claude cung
+#:   chi kiem nguong GIUA hai luot.
+#:
+#: ⭐ Dung mot con so voi Codex (`NEN_HOI_THOAI`), va vi cung mot ly do: khoang
+#:    trong tu nguong nen len tran phai chua TRON mot luot nua.
+#:
+#: ⚠️ Bien nay co san **toi thieu 100.000**. Nguong vision cua ta (55.787) nam
+#:    duoi muc do va bien moi truong thi khong tach duoc theo model — nhung
+#:    `ANTHROPIC_MODEL` la `ltt_llm`, nen con so text moi la con so dung cho
+#:    phien Claude Code.
+CUA_SO_NEN_CLAUDE = NEN_HOI_THOAI
+
 #: Cua so cong bo cua model VISION. **KHONG dung chung so voi model text.**
 #:
-#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. `qwen38-vision` nap `-c 65536`, mot nua
-#:    model text, nen cua so cong bo cua no la 28.262 chu khong phai 88.555.
-#:    Ban truoc cua tep nay khai **cung mot con so cho ca hai model**, tuc noi
-#:    voi Codex rang `ltt_llm_vision` co ngu canh **gap 3,1 lan** su that; hoi
-#:    thoai anh dai vua phai la an 413 ma khong hieu vi sao.
+#: ⛔ DAY LA MOT LOI DA SONG NHIEU NGAY. Ban truoc cua tep nay khai **cung mot
+#:    con so cho ca hai model**, tuc noi voi Codex rang `ltt_llm_vision` co ngu
+#:    canh **gap 3,1 lan** su that (88.555 trong khi that la 28.262, vi luc do
+#:    `qwen38-vision` nap `-c 65536`); hoi thoai anh dai vua phai la an 413 ma
+#:    khong hieu vi sao.
 #:
 #: ⭐ Va day dung la khuyet tat F-02 — mot con so cho hai model — thu ma
 #:    `ngan_sach.cong_bo_cua()` sinh ra de giet. No chet o `/api/v1/models` va
 #:    **song sot nguyen ven o day**, vi ban va sua *con so* chu khong sua *hinh
 #:    dang*: chung nao con MOT hang so cho HAI model thi loi nay con quay lai.
-CUA_SO_NGU_CANH_VISION = 28262
-#: `ngan_sach.nen_cua("qwen38-vision")` tra **0**: cua so cong bo cua vision
-#: (28.262) hep hon mot luot sinh dai nhat (32.768), nen khong nguong nen nao
-#: giu duoc loi hua. 0 = **bo han truong do**, dung ghi mot con so bia.
-NEN_HOI_THOAI_VISION = 0
+#:
+#: ⚠️ VA HOM NAY NO TINH CO BANG con so text CU — dung doc su trung hop do
+#:    thanh "hai model dung chung mot so". Vision len `-c 131072` (03/09) nen
+#:    cua so cong bo cua no la 88.555; text len `-c 204800` nen cua so cua text
+#:    la 156.385. Hai duong doc lap, va chung se lech lai o lan nang ke tiep.
+#:
+#: 📈 03/09: 28.262 -> 88.555. Do that tren mot ho so thu rieng: 89.868 token
+#:    vao doc lai dung moc dau-cuoi, VRAM 21.099 MiB (+748 so voi ho so 65K),
+#:    va A/B doc anh tren cung mot anh — ca hai ho so tra dung moc ngau nhien.
+CUA_SO_NGU_CANH_VISION = 88555
+#: Nguong nen cua vision, khop `ngan_sach.nen_cua("qwen38-vision")`.
+#:
+#: ⭐ TRUOC 03/09 SO NAY LA **0**, va so 0 do la mot cau tra loi that chu khong
+#:    phai mot cho trong: cua so cong bo cua vision khi ay (28.262) HEP HON mot
+#:    luot sinh dai nhat (32.768), nen khong nguong nen nao giu duoc loi hua va
+#:    bo cai phai bo han truong do. Nang cua so len 131K la thu lam cho no
+#:    dinh nghia duoc tro lai.
+NEN_HOI_THOAI_VISION = 55787
 
 MOC_MO = "# >>> LTT Studios - them boi cam_cli.py. Dung sua tay trong khoi nay. >>>"
 MOC_DONG = "# <<< LTT Studios <<<"
@@ -294477,7 +295132,7 @@ def _catalog_codex() -> str:
             "supports_reasoning_summary_parameter": False,
             "default_reasoning_summary": "none", "support_verbosity": False,
             "apply_patch_tool_type": "freeform",
-            "truncation_policy": {"mode": "tokens", "limit": cua_so},
+            "truncation_policy": {"mode": "tokens", "limit": TRAN_KET_QUA_TOOL},
             "supports_parallel_tool_calls": False,
             "supports_image_detail_original": False,
             "context_window": cua_so,
@@ -295316,6 +295971,16 @@ def cam_vscode(goc: str, tt: dict) -> list:
              "value": str(CUA_SO_NGU_CANH)},
             {"name": "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
              "value": str(TOKEN_RA_TRAN)},
+            # 🔴 VA HAI DONG NAY THEM 04/09 — cung mot ho loi, mot tang
+            #    sau. `MAX_CONTEXT_TOKENS` chi sua con so Claude GIA DINH;
+            #    no KHONG dat nguong nen. Khong dat cua so nen thi Claude
+            #    nen khi hoi thoai cham DUNG cua so ay (tai lieu chinh thuc,
+            #    muc "Default auto-compact thresholds"), tuc 100% — chua lai
+            #    13.599 tren tran cung, nho hon mot luot sinh 32.768.
+            {"name": "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+             "value": str(CUA_SO_NEN_CLAUDE)},
+            {"name": "MAX_MCP_OUTPUT_TOKENS",
+             "value": str(TRAN_KET_QUA_TOOL)},
         ],
         "claudeCode.disableLoginPrompt": True,
         # * `useTerminal` la duong DA CHUNG MINH CHAY DUOC (T6 tren VM: claude.exe
@@ -295431,7 +296096,9 @@ def _go_vscode_khong_tri_nho(tep: pathlib.Path, tt: dict) -> list:
 CLAUDE_ENV = ("ANTHROPIC_BASE_URL", "ANTHROPIC_MODEL",
               "ANTHROPIC_DEFAULT_HAIKU_MODEL",
               "CLAUDE_CODE_MAX_CONTEXT_TOKENS",
-              "CLAUDE_CODE_MAX_OUTPUT_TOKENS")
+              "CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+              "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+              "MAX_MCP_OUTPUT_TOKENS")
 
 
 def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
@@ -295457,7 +296124,9 @@ def cam_claude(goc: str, tt: dict, toan_cuc: bool) -> list:
                "ANTHROPIC_MODEL": MODEL,
                "ANTHROPIC_DEFAULT_HAIKU_MODEL": MODEL,
                "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_NGU_CANH),
-               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN)}
+               "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
+               "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(CUA_SO_NEN_CLAUDE),
+               "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL)}
     for ten, gt in gia_tri.items():
         ra.append(f"  [{'OK' if _setx(ten, gt) else '!!'}] bien moi truong {ten}")
 
@@ -310569,7 +311238,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=bca385c50a61f05c9c7342d5aedc872ee97d1836af7cd6216613bd0b9daec5af BYTES=80014 LINES=1543
+SHA256=454f7e279f08dbed6ddf975bf775f63fbe8512023071af4c014946c0aff095f8 BYTES=82294 LINES=1583
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -311695,6 +312364,44 @@ def _console_text(value: str, encoding: str | None = None) -> str:
 BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "bo test (song song)")
 
 
+#: Thư mục nằm trong ảnh chụp "cây đứng yên".
+#:
+#: 🔴 TRƯỚC 03/09 DANH SÁCH NÀY THIẾU BA THỨ QUAN TRỌNG NHẤT VỚI HAI PHIÊN
+#:    LÀM VIỆC SONG SONG: `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy
+#:    trên máy khách) và `frontend/`.
+#:
+#:    Một chương trình sửa 10 thư mục — đo thật 03/09 — có **năm** thư mục nằm
+#:    ngoài ảnh chụp. Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì
+#:    `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về
+#:    một cây đã không còn tồn tại.
+#:
+#: ⭐ Cùng họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`: chốt có, và nó chỉ
+#:    canh phần nó được kể tên.
+THU_MUC_CHUP = (
+    "apps", "platform_core", "server", "tools", "tests", "alembic", "locale",
+    # Mã chạy trên máy B và bộ cài chạy trên máy khách. Cả hai deploy đi xa
+    # khỏi kho này, nên một lần sửa giữa lượt gate là một lần sai không ai thấy.
+    "llm_gateway", "render_gateway", "sdk", "nexus_agent", "codex_sidecar",
+    # Nguồn frontend. `node_modules` bị cắt ở `_BO_QUA_THU_MUC`.
+    "frontend",
+)
+
+#: Thư mục **cắt ngay lúc duyệt**, không phải lọc sau.
+#:
+#: ⭐ VÀ ĐÓ LÀ TOÀN BỘ LÝ DO ẢNH CHỤP RỘNG HƠN MÀ LẠI NHANH HƠN. Bản `rglob`
+#:    trước vẫn **đi xuống** `node_modules` (12.255 tệp) rồi mới bỏ; `os.walk`
+#:    cắt `dirnames` tại chỗ nên nó không xuống. Đo 03/09 trên cây này:
+#:
+#:        rglob,   7 thu muc, loc sau   1.321 tep   0,143 s
+#:        os.walk, 13 thu muc, cat nhanh 1.491 tep   0,047 s
+#:
+#: ⛔ VÀ KHÔNG CẮT `.vite`. Bốn tệp `server/static/*/.vite/manifest.json` là
+#:    bundle production **đã commit** — chúng chính là thứ máy chủ phục vụ, nên
+#:    mất chúng khỏi ảnh chụp là mất đúng thứ cần canh. Cắt `dist`/`coverage`
+#:    cũng cùng rủi ro; chỉ cắt hai thứ chắc chắn vô nghĩa.
+_BO_QUA_THU_MUC = frozenset({"__pycache__", "node_modules"})
+
+
 def _anh_chup_cay() -> dict[str, tuple[int, int]]:
     """Ảnh chụp cây nguồn: đường dẫn → (kích thước, thời điểm sửa).
 
@@ -311706,19 +312413,21 @@ def _anh_chup_cay() -> dict[str, tuple[int, int]]:
        nhau không nói được gì ngoài "khác nhau". Xem `_ke_cho_da_doi`.
     """
     ra: dict[str, tuple[int, int]] = {}
-    for thu_muc in ("apps", "platform_core", "server", "tools", "tests",
-                    "alembic", "locale"):
+    for thu_muc in THU_MUC_CHUP:
         goc = ROOT / thu_muc
-        if not goc.exists():
+        if not goc.is_dir():
             continue
-        for f in sorted(goc.rglob("*")):
-            if not f.is_file() or "__pycache__" in f.parts:
-                continue
-            try:
-                st = f.stat()
-            except OSError:
-                continue
-            ra[f.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
+        for thu, con, tep in os.walk(goc):
+            # Cắt tại chỗ: `os.walk` đọc lại `con` sau mỗi vòng, nên gán vào
+            # `con[:]` là bảo nó **không đi xuống** những nhánh đó.
+            con[:] = [d for d in con if d not in _BO_QUA_THU_MUC]
+            for ten in tep:
+                p = Path(thu) / ten
+                try:
+                    st = p.stat()
+                except OSError:
+                    continue
+                ra[p.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
     return ra
 
 

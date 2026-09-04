@@ -560,6 +560,17 @@ TOKEN_RA_TRAN = 32_768
 #: cùng lý do và cùng cách đối chiếu như hai con số trên.
 NEN_CLIENT = 123_617
 
+#: Trần cho **một** kết quả công cụ, công bố vì nó đổi hành vi thấy được.
+#:
+#: ⛔ Không phải một chi tiết nội bộ: khách sẽ **thấy** kết quả một lệnh dài
+#:    bị cắt ở giữa, và nếu trang này không nói trước thì họ báo đó là lỗi.
+#:
+#: 🔴 Và nó là hàng phòng thủ duy nhất chống một sự thật của cả hai client:
+#:    chúng chỉ kiểm ngưỡng nén **giữa hai lượt**, không kiểm giữa các lần
+#:    gọi công cụ trong cùng một lượt. Một kết quả không có trần thì một
+#:    lượt duy nhất vượt được mọi khoảng dự trữ.
+TRAN_KET_QUA_TOOL = 16_384
+
 
 #: Năm con số của một hội thoại dài, và **vì sao chúng khác nhau**.
 #:
@@ -591,6 +602,11 @@ NGU_CANH_NAM_SO = (
      "client only checks between turns."),
     ("Max output", f"{TOKEN_RA_TRAN:,}",
      "The most one answer can generate."),
+    ("One tool result", f"{TRAN_KET_QUA_TOOL:,}",
+     "The most a single command or tool result adds to the conversation. "
+     "Longer output is trimmed in the middle, keeping the start and the end. "
+     "Both clients check the compaction threshold only between turns, so "
+     "without this ceiling one turn can outgrow every reserve."),
 )
 
 #: Vì sao một yêu cầu ăn `413`, và **cách sửa đúng chỗ**.
@@ -604,6 +620,12 @@ LOI_413 = (
      "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` assumes 200,000 and says so in the "
      "session. Run our `cam` tool (or apply the manual config below) and start "
      "a new session — configuration is read at startup."),
+    ("Claude Code: one variable is not enough",
+     "`CLAUDE_CODE_MAX_CONTEXT_TOKENS` corrects the window Claude Code "
+     "assumes, but it does not set the compaction threshold. Without "
+     "`CLAUDE_CODE_AUTO_COMPACT_WINDOW`, Claude Code compacts only when the "
+     "conversation reaches that window — 156,385 — which leaves less room "
+     "than one full answer (32,768) before our hard limit. Set both."),
     ("Your client compacts, but too late",
      "If you configured the window by hand, check the compaction threshold "
      f"too: it must sit at least {TOKEN_RA_TRAN:,} tokens below the advertised "
@@ -703,8 +725,16 @@ def claude_code_env(base_url: str) -> str:
         f'$env:ANTHROPIC_MODEL = "{CLI_MODEL}"\n'
         f'$env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "{CLI_MODEL}"   # background work\n'
         f'# Claude Code does not know `{CLI_MODEL}`, so it ASSUMES a 200,000\n'
-        f'# token window: it never compacts in time and you hit 413 mid-chat.\n'
+        f'# token window and never compacts in time. All four lines matter:\n'
+        f'#   MAX_CONTEXT_TOKENS    corrects the window it assumes\n'
+        f'#   AUTO_COMPACT_WINDOW   sets WHEN it compacts. Without it Claude\n'
+        f'#                         compacts only AT the window above, leaving\n'
+        f'#                         less room than one full answer.\n'
+        f'#   MAX_MCP_OUTPUT_TOKENS caps one MCP result: its default, 25000,\n'
+        f'#                         can outgrow that room in a single turn.\n'
         f'$env:CLAUDE_CODE_MAX_CONTEXT_TOKENS = "{CUA_SO_CONG_BO}"\n'
+        f'$env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "{NEN_CLIENT}"\n'
+        f'$env:MAX_MCP_OUTPUT_TOKENS = "{TRAN_KET_QUA_TOOL}"\n'
         f'$env:CLAUDE_CODE_MAX_OUTPUT_TOKENS = "{TOKEN_RA_TRAN}"'
     )
 
@@ -720,6 +750,8 @@ def claude_code_settings(base_url: str) -> str:
             # Without these two Claude Code assumes a 200,000-token window,
             # never compacts in time, and you hit 413 mid-conversation.
             "CLAUDE_CODE_MAX_CONTEXT_TOKENS": str(CUA_SO_CONG_BO),
+            "CLAUDE_CODE_AUTO_COMPACT_WINDOW": str(NEN_CLIENT),
+            "MAX_MCP_OUTPUT_TOKENS": str(TRAN_KET_QUA_TOOL),
             "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(TOKEN_RA_TRAN),
         }
     })
