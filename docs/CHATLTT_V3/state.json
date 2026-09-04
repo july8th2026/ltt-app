@@ -1,0 +1,254 @@
+{
+  "chuong_trinh": "H44",
+  "ten": "CHATLTT V3 — AGENTIC MULTIMODAL",
+  "goi_prompt": "LTTCHAT_V3_AGENTIC_MULTIMODAL_PROMPT_PACK",
+  "cay": "D:\\LTTSTUDIOSAPP\\.claude\\worktrees\\chatltt-v3-agentic",
+  "nhanh": "claude/chatltt-v3-agentic",
+  "base_sha": "72a484c5f281f4d909e72927648df7dd62e5e196",
+  "base_nhanh": "admin-mvp-v3",
+  "final_sha": null,
+  "dai_test": [
+    700,
+    799
+  ],
+  "pha_hien_tai": "P01",
+  "co_tinh_nang": [
+    "LTT_CHATLTT_V3_TOOLS",
+    "LTT_CHATLTT_V3_PAID_TOOLS"
+  ],
+  "da_deploy": false,
+  "quyet_dinh_chu_du_an": [
+    {
+      "id": 1,
+      "cau": "reset may B de A/B KV",
+      "quyet_dinh": "duoc",
+      "ghi_chu": "chua co khach that",
+      "ngay": "2026-09-04"
+    },
+    {
+      "id": 2,
+      "cau": "ngan sach P01",
+      "quyet_dinh": "claude tu dinh",
+      "tran_credit": 3500,
+      "tran_gio_gpu": 11,
+      "so_lo": 4,
+      "ngay": "2026-09-04"
+    },
+    {
+      "id": 3,
+      "cau": "q4_0 hong tool-call thi sao",
+      "quyet_dinh": "giu 200K ngu canh",
+      "he_qua": "q4_0 bi khoa theo he qua; A/B doi vai thanh phep chan doan",
+      "ngay": "2026-09-04"
+    }
+  ],
+  "pha": [
+    {
+      "id": "P00",
+      "ten": "nguon chan ly + ma tran khoang trong",
+      "trang_thai": "PASS",
+      "san_pham": [
+        "00_SOURCE_TRUTH.md",
+        "00_CALL_GRAPH.md",
+        "00_REFERENCE_MATRIX.md",
+        "00_GAP_MATRIX.md",
+        "00_DO_NOT_REWRITE.md"
+      ]
+    },
+    {
+      "id": "P01",
+      "ten": "qwen3.8 tool-call qualification",
+      "trang_thai": "CHUA",
+      "chan": [
+        "tai khoan do >= 3500 credit"
+      ]
+    },
+    {
+      "id": "P02",
+      "ten": "ADR dieu phoi",
+      "trang_thai": "CHUA",
+      "chan": [
+        "P01"
+      ]
+    },
+    {
+      "id": "P03",
+      "ten": "kernel dieu phoi (tool gia)",
+      "trang_thai": "CHUA",
+      "chan": [
+        "P02"
+      ]
+    },
+    {
+      "id": "P04",
+      "ten": "duyet ben + tien",
+      "trang_thai": "CHUA",
+      "chan": [
+        "P03"
+      ]
+    },
+    {
+      "id": "P05",
+      "ten": "anh + tieng thanh tool",
+      "trang_thai": "CHUA",
+      "chan": [
+        "P04"
+      ]
+    },
+    {
+      "id": "P06",
+      "ten": "tep/tri thuc/tim kiem/code/MCP",
+      "trang_thai": "CHUA",
+      "lan": "B"
+    },
+    {
+      "id": "P07",
+      "ten": "memory/projects/agents/skills",
+      "trang_thai": "CHUA",
+      "lan": "B"
+    },
+    {
+      "id": "P08",
+      "ten": "deep research/artifacts/nen",
+      "trang_thai": "CHUA",
+      "lan": "B"
+    },
+    {
+      "id": "P09",
+      "ten": "UX V3",
+      "trang_thai": "CHUA",
+      "lan": "C",
+      "chan": [
+        "P03",
+        "P04"
+      ]
+    },
+    {
+      "id": "P10",
+      "ten": "gia co san xuat + di tru",
+      "trang_thai": "CHUA",
+      "lan": "C"
+    },
+    {
+      "id": "P11",
+      "ten": "red team doc lap",
+      "trang_thai": "CHUA",
+      "lan": "C",
+      "ghi_chu": "phien Claude MOI, cay reviewer khac"
+    },
+    {
+      "id": "P12",
+      "ten": "phat hanh",
+      "trang_thai": "CHUA",
+      "lan": "C",
+      "chan": [
+        "P11"
+      ]
+    }
+  ],
+  "phat_hien_p00": [
+    {
+      "id": "R1",
+      "muc": "mot suat LLM toan nen tang",
+      "nguon": "apps/ltt_llm/manifest.py:197 + llama-swap.yaml --parallel 1",
+      "rui_ro": "cao",
+      "chan_pha": "P02"
+    },
+    {
+      "id": "R2",
+      "muc": "tien tinh theo mot lan goi model, khong theo mot luot",
+      "nguon": "chatltt_execution 3 cot vo huong",
+      "rui_ro": "cao",
+      "chan_pha": "P02"
+    },
+    {
+      "id": "R2b",
+      "muc": "lam tron C1 thu gap ~3,5 lan tren luot agentic",
+      "nguon": "platform_core/llm/thanh_toan.py",
+      "rui_ro": "cao",
+      "chan_pha": "P02",
+      "so_lieu": {
+        "that_credit": 2.3,
+        "thu_credit": 8,
+        "so_vong": 8
+      }
+    },
+    {
+      "id": "U-1",
+      "muc": "llama.cpp goi dich danh -ctk q4_0 substantially degrade tool calling",
+      "nguon": "llama.cpp docs/function-calling.md:332-333",
+      "loai_bang_chung": "OFFICIAL-UPSTREAM",
+      "rui_ro": "cao",
+      "chan_pha": "P01"
+    },
+    {
+      "id": "U-2",
+      "muc": "parallel_tool_calls tat mac dinh",
+      "nguon": "llama.cpp docs/function-calling.md:24",
+      "loai_bang_chung": "OFFICIAL-UPSTREAM",
+      "chan_pha": "P01"
+    },
+    {
+      "id": "M-1",
+      "muc": "handler tool-call Native hay Generic — CHUA AI BIET",
+      "nguon": "llama.cpp docs/function-calling.md:20-22,77-83",
+      "rui_ro": "cao",
+      "chan_pha": "P01"
+    }
+  ],
+  "phan_loai_khoang_trong": {
+    "GIU": 7,
+    "MO": 12,
+    "XAY": 21,
+    "HOAN": 3,
+    "cho_quyet_dinh": 1,
+    "phai_do": 3
+  },
+  "moi_truong_may_b": {
+    "ho_so_text": {
+      "ten": "qwen38-api",
+      "ctx": 204800,
+      "kv": "q4_0",
+      "vision": false
+    },
+    "ho_so_vision": {
+      "ten": "qwen38-vision",
+      "ctx": 131072,
+      "kv": "q4_0",
+      "vision": true
+    },
+    "co_chung": [
+      "--jinja",
+      "--chat-template-file",
+      "--reasoning-format deepseek",
+      "-fa 1",
+      "-ngl 999",
+      "--parallel 1",
+      "--spec-type draft-mtp",
+      "--spec-draft-n-max 2"
+    ],
+    "template": "froggeric/Qwen-Fixed-Chat-Templates qwen3.8-froggeric-v22.3",
+    "gguf": "Qwen3.8-27B-UD-Q4_K_M.gguf"
+  },
+  "gia_token_credit_1m": {
+    "vao": 50,
+    "vao_cache": 10,
+    "ra": 400,
+    "phien_ban_gia": "ltt-vlm-2026-08-22",
+    "lam_tron": "len credit nguyen moi luot goi, toi thieu 1"
+  },
+  "cap_nhat_luc": "2026-09-04",
+  "cong_chat_luong": {
+    "gate_day_du": "PASS",
+    "ho_so": "test-results/gates/20260904T140608Z-10420.json",
+    "buoc_bo_qua": [
+      "frontend agent-canvas",
+      "frontend autosub-studio",
+      "frontend prompt-ai-ommi",
+      "frontend chatltt"
+    ],
+    "nguyen_nhan": "node_modules bi gitignore, cay moi khong co",
+    "canh_bao": "30 test GUI cua chatltt KHONG chay o BAT KY cay nao — cay chinh cung thieu frontend/chatltt/node_modules",
+    "phai_sua_truoc": "P03"
+  }
+}
