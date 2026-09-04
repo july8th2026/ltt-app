@@ -389,9 +389,52 @@ tròn lên ⇒ **1 credit**. Tính bằng token ở đây là ước thiếu **3
 
 | Khoản | Credit | GPU |
 |---|---|---|
-| Lượt đo nền (6 cấu hình trên) | **~2.700** | **~8 giờ** |
-| Mỗi vòng *chỉnh → đo lại* (dự phòng 1 vòng) | ~810 | ~3 giờ |
-| **Trần xin duyệt** | **3.500** (≈ 350.000đ sổ) | **~11 giờ** |
+| Lượt đo nền (6 cấu hình trên) | ~~2.700~~ | ~~8 giờ~~ |
+| Mỗi vòng *chỉnh → đo lại* (dự phòng 1 vòng) | ~~810~~ | ~~3 giờ~~ |
+| **Trần xin duyệt** | ~~3.500~~ | ~~11 giờ~~ |
+
+### 🔴 ĐÍNH CHÍNH 04/09 — ngân sách trên **sai hai bậc**, và tôi nói rõ vì sao
+
+Sau khi chạy thật, cả hai con số đều lệch **về phía đắt**:
+
+| | Ước ban đầu | **Đo được** | Lệch |
+|---|---|---|---|
+| Credit | 3.500 | **≈ 0** | **∞** |
+| Thời gian mỗi lượt gọi | 9–11 s | **2,0–3,9 s** | ~4× |
+| Bộ lõi | 2.415 lượt / 8 giờ | **266 lượt / ~12 phút** | ~40× |
+
+**Vì sao credit về 0:** P01 là **qualification hợp đồng phục vụ**, nên nó gọi
+thẳng `llama-swap` trên máy B (`127.0.0.1:8280`) — **không đi qua**
+`runtime_noi_bo`, không qua `thanh_toan`, không sinh bút toán nào. Tôi đã định
+giá cả lô như thể nó chạy qua đường tính tiền. Đó là định giá **sai tầng**.
+
+**Vì sao 266 chứ không 541:** kịch bản nhiều bước được **nạp sẵn ngữ cảnh**
+(`role: "tool"` đã có kết quả) thay vì chạy vòng thật. Một lượt gọi đo đúng thứ
+cần đo — *"model làm gì khi đã có kết quả tool"* — mà không phải trả giá cho
+lượt gọi sinh ra kết quả đó.
+
+**Vì sao 2,5 s chứ không 10 s:** tôi ước decode 400 token ở 63 tok/s. Thực tế
+lời gọi tool ngắn (~60 token) và prefill nhỏ, nên phần lớn lượt xong dưới 3 s.
+
+### Ngân sách đúng
+
+| Khoản | Credit | GPU |
+|---|---|---|
+| Bộ lõi 266 lượt | 0 | ~12 phút |
+| A/B KV `q8_0` vs `q4_0` (hồ sơ tạm, 2 × 266) | 0 | ~25 phút + 2 lần nạp |
+| A/B MTP · `reasoning_effort` | 0 | ~15 phút |
+| **Ngữ cảnh dài 50K/130K/180K (36 lượt)** | 0 | **~100 phút** ← chiếm phần lớn |
+| Cổng nhỏ qua **ngăn xếp LTT** (~30 lượt, có tính tiền) | **~30** | ~5 phút |
+| **Tổng** | **≈ 30 credit** | **≈ 2,5 giờ** |
+
+⛔ Nhưng đừng đọc đính chính này thành *"đo trực tiếp là đủ"*. Nó **không** đo
+đường ống LTT — `runtime_noi_bo` có gửi `tools` không, `su_kien` có giữ
+`tool_call.delta` không, tiền có đúng không. Đó là một cổng **riêng**, nhỏ, và
+nó **phải** chạy qua đường tính tiền thật. Ba mươi credit ấy là khoản không
+được cắt.
+
+⭐ Hạng mục đắt nhất nay là **ngữ cảnh dài** (100 trong 150 phút) vì prefill
+180K token mất ~170 s mỗi lượt. Đó là chỗ duy nhất đáng cân nhắc cắt bớt lượt lặp.
 
 ⭐ **Chi phí THẬT nhỏ hơn con số sổ rất nhiều.** Chưa có khách thật ⇒ 3.500
 credit là tiền của chủ dự án chuyển từ cột này sang cột kia trong sổ của chính
