@@ -1406,6 +1406,64 @@
 
     var chu = (cauHinh || {}).chu || {};
     var duong = (cauHinh || {}).duong || "";
+
+    /* ── Chi tiet luot dang chon ───────────────────────────────────────────
+     *
+     * 🔴 KHOI NAY DA NAM SAN TRONG TEMPLATE VA CHUA BAO GIO CHAY.
+     *
+     *    `ltt_voice_lich_su.html` co `#lv-ls-ct` voi day du truong (luc, giong,
+     *    thoi luong, credit, ma yeu cau, nut tai, nut mo trang viec), va moi
+     *    dong deu mang `data-luc` / `data-giong` / `data-giay` / `data-credit`
+     *    / `data-audio` / `data-tt` / `tabindex="0"`. Tat ca deu san. Thu duy
+     *    nhat thieu la mot ham noi hai dau lai.
+     *
+     * ⛔ Nen no hong theo kieu khong ai bao: khong co loi, khong co o trong —
+     *    the panel chi don gian KHONG BAO GIO hien. Cung lop voi bug bam the
+     *    giong o tab Giong (do cung ngay 04/09).
+     *
+     * ⚠️ Chi doc tu DOM, khong goi them mot vong mang nao: moi con so can hien
+     *    da duoc may chu ghi vao `data-*` luc dung trang. */
+    var oCt = document.getElementById("lv-ls-ct");
+    function dat(id, gt) {
+      var e = document.getElementById(id);
+      if (e) e.textContent = gt == null || gt === "" ? "—" : String(gt);
+    }
+    function chonDong(n) {
+      if (!oCt) return;
+      for (var i = 0; i < ds.length; i++) ds[i].classList.toggle("chon", ds[i] === n);
+      var d = n.dataset;
+      dat("lv-ls-ct-luc", d.luc);
+      dat("lv-ls-ct-giong", d.giong || chu.giongMacDinh || "");
+      dat("lv-ls-ct-giay", d.giay ? d.giay + "s" : "");
+      dat("lv-ls-ct-credit", d.credit);
+      dat("lv-ls-ct-id", d.id);
+      var tt = document.getElementById("lv-ls-ct-tt");
+      if (tt) {
+        var chip = n.querySelector(".badge");
+        tt.innerHTML = chip ? chip.outerHTML : "";
+      }
+      var tai = document.getElementById("lv-ls-ct-tai");
+      if (tai) {
+        if (d.audio) { tai.href = d.audio; tai.hidden = false; }
+        else { tai.hidden = true; }
+      }
+      var job = document.getElementById("lv-ls-ct-job");
+      if (job && d.id) job.href = "/jobs/" + d.id;
+      oCt.hidden = false;
+    }
+    var BEN_TRONG_LS = "a, button, input, select, textarea";
+    for (var q = 0; q < ds.length; q++) {
+      (function (n) {
+        n.addEventListener("click", function (e) {
+          if (e.target.closest(BEN_TRONG_LS)) return;
+          chonDong(n);
+        });
+        n.addEventListener("keydown", function (e) {
+          if (e.target !== n) return;
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); chonDong(n); }
+        });
+      })(ds[q]);
+    }
     /* ── Doc lai mot luot ──────────────────────────────────────────────────
        ⛔ NOP MOT JOB MOI va thu tien nhu mot luot moi — engine chay lai toan
           bo. Khac han `Luu vao du an` (tham chieu tep da co, ton 0). Nut hoi

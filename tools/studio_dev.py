@@ -130,6 +130,7 @@ def seed(lam_lai: bool = True) -> None:
             return
         _seed_giong(db, uid)
         _seed_lich_su(db, uid)
+        _seed_du_an(db, uid)
         db.commit()
     finally:
         try:
@@ -152,6 +153,36 @@ def _seed_giong(db, uid: str) -> None:
     db.add(VoiceRepr(profile_id=p.id, ref_id=0, engine="vieneu",
                      storage_key="voice/repr/dev.bin",
                      fingerprint="dev", trang_thai="dang_dung"))
+
+
+def _seed_du_an(db, uid: str) -> None:
+    """Hai du an, mot co khoi.
+
+    ⛔ Khong seed thi man `Du an` luon o TRANG THAI RONG, va so mot trang rong
+       voi mot anh mau co du lieu la cai bay §27 da ghi: moi khac biet deu doc
+       len nhu mot loi bo cuc.
+    """
+    from apps.ltt_voice.tables_du_an import VoiceBlock, VoiceProject
+
+    d = VoiceProject(public_id="prj_01K8f3a7Gm001", owner_id=uid,
+             ten="Kich ban gioi thieu san pham", trang_thai="nhap")
+    db.add(d)
+    db.flush()
+    cau = [
+        ("Xin chào mọi người, chào mừng các bạn đến với LTT Voice Studio.", "xong"),
+        ("Đây là công cụ AI Text to Speech mạnh mẽ, giúp bạn tạo giọng nói "
+         "tự nhiên và biểu cảm chỉ trong vài giây.", "xong"),
+        ("Doanh thu tháng này đạt 1.250.000.000 đồng, tăng 15% so với tháng trước.",
+         "moi"),
+        ("Let's make content creation faster, easier, and more powerful with AI.",
+         "moi"),
+    ]
+    for i, (t, tt) in enumerate(cau):
+        db.add(VoiceBlock(project_id=d.id, thu_tu=float(i + 1), text=t,
+                    trang_thai=tt))
+
+    db.add(VoiceProject(public_id="prj_01K8f3a7Gm002", owner_id=uid,
+                ten="Loi dan podcast so 12", trang_thai="nhap"))
 
 
 def _seed_lich_su(db, uid: str) -> None:
