@@ -182,6 +182,24 @@ def _nho_duong(viec: str, duong: str) -> None:
     CACHE.write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8")
 
 
+def _dong_lenh(phan: list) -> str:
+    """Gop thanh MOT dong lenh.
+
+    !! Nexus KHONG chuyen mang `args` toi tien trinh — do that 04/09:
+       `curl.exe --version` voi args=["--version"] van bao "try 'curl --help'",
+       tuc exe chay ma khong nhan duoc tham so nao. Mot mang bi bo qua IM LANG
+       la thu de nham nhat: lenh van chay, exit code van co, chi la sai viec.
+
+    Nexus boc dong nay trong PowerShell, nen phan nao co khoang trang phai
+    duoc boc nhay don.
+    """
+    ra = []
+    for x in phan:
+        x = str(x)
+        ra.append("'" + x.replace("'", "''") + "'" if (" " in x or '"' in x) else x)
+    return " ".join(ra)
+
+
 # ── Lệnh ─────────────────────────────────────────────────────────────────────
 
 def lenh_gpu(_args) -> int:
@@ -266,7 +284,7 @@ def lenh_chay(args) -> int:
     if not args.lenh:
         print("Thieu lenh.", file=sys.stderr)
         return 2
-    than = {"command": args.lenh[0], "args": list(args.lenh[1:]), "cwd": args.cwd,
+    than = {"command": _dong_lenh(args.lenh), "args": [], "cwd": args.cwd,
             "reason": args.reason}
     ma, tra = goi(duong, than, method="POST", timeout=args.timeout)
     _ghi_nhat_ky("chay", " ".join(args.lenh), str(ma))
@@ -289,9 +307,9 @@ def lenh_http(args) -> int:
     #    `curl` la bi danh cua `Invoke-WebRequest` — no nuot co -sS/--max-time roi
     #    bao thieu tham so `Uri`. Cung ly do khien `cmd`/`powershell.exe` treo:
     #    long mot shell trong mot shell da co san.
-    than = {"command": "curl.exe",
-            "args": ["-sS", "--max-time", str(int(args.timeout)), args.url],
-            "cwd": "H:\\", "reason": args.reason}
+    than = {"command": _dong_lenh(
+                ["curl.exe", "-sS", "--max-time", str(int(args.timeout)), args.url]),
+            "args": [], "cwd": "C:/Users", "reason": args.reason}
     ma, tra = goi(duong, than, method="POST", timeout=args.timeout + 10)
     _ghi_nhat_ky("http", args.url, str(ma))
     print(tra)

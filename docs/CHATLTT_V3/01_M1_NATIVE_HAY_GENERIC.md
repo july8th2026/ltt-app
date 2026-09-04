@@ -167,26 +167,46 @@ Nhưng nếu ChatLTT không gửi cờ, năng lực đó **tắt ở tầng runt
 ⇒ Bộ kiểm "gọi song song" của P01 **phải** gửi `parallel_tool_calls: true`.
 Không gửi thì nó đo một thứ đã tắt sẵn rồi kết luận sai về model.
 
-## 7. Còn một việc chưa đóng — và tôi không lấp nó bằng suy luận
+## 7. 🟢 ĐÃ ĐÓNG — phân tích đúng trên **chính build đang chạy**
 
-Phân tích trên đọc `common/chat.cpp` ở nhánh **master**. `llama-swap.yaml` ghi
-*"build 10689"*, và **chưa xác nhận được** đó có phải build đang chạy không:
-`llama-server.exe --version` gọi qua Nexus **treo quá 60 giây** (xem §8).
+Bản đầu của mục này để ngỏ: phân tích đọc `chat.cpp` ở **master**, trong khi
+production có thể chạy build khác. Đã đóng bằng đo, không bằng suy luận.
 
-Rủi ro thật của khoảng trống này: master đã chuyển sang **autoparser/PEG**
-(`COMMON_CHAT_FORMAT_PEG_NATIVE`); một build cũ hơn có thể dùng bộ phân tích
-Qwen3-Coder viết tay. **Ba dấu mốc phát hiện thì gần như chắc chắn không đổi** —
-chúng có từ khi handler ra đời — nhưng "gần như chắc chắn" không phải bằng chứng.
+**Build thật, hỏi máy B:**
 
-**Đóng bằng, theo thứ tự rẻ trước:**
-1. `files/read` log của llama-swap (băng-rôn khởi động in số build) — cần biết
-   đường dẫn log; `files/read` đã chạy tốt.
-2. `/props` của engine khi có model nạp — trả cả `chat_template` đang hoạt động.
-3. Bật `--verbose` một lượt và đọc dòng `Using specialized template: Qwen3-Coder`
-   — bằng chứng **trực tiếp** nhất, đúng dòng `LOG_DBG` ở §3.
+```
+& 'H:/LTT_LLM/bin/llamacpp/llama-server.exe' --version
+  -> version: 0.3.0-dev (build 10689, commit 57291f264)
+     built with Clang 20.1.8 for Windows x86_64
+```
 
-⭐ Cách 3 là bằng chứng mạnh nhất vì nó không suy luận gì cả: nó **đọc chính lời
-khai của runtime**. Đưa vào P01 bước 1 như một hạng mục bắt buộc.
+**Lấy đúng `chat.cpp` tại commit đó** (`raw.githubusercontent.com/…/57291f264/common/chat.cpp`,
+HTTP 200, **174.542 byte** — cùng kích thước với bản master đã đọc), và phép
+phát hiện nằm ở **đúng dòng 3597-3601**, nguyên văn:
+
+```cpp
+if (src.find("<tool_call>")  != std::string::npos &&
+    src.find("<function=")   != std::string::npos &&
+    src.find("<parameter=")  != std::string::npos) {
+    LOG_DBG("Using specialized template: Qwen3-Coder\n");
+    return common_chat_params_init_qwen3_coder(tmpl, params);
+}
+return std::nullopt;
+```
+
+⇒ **Phán quyết NATIVE đúng trên build đang phục vụ**, không phải trên một nhánh
+mã mà máy này chưa từng chạy.
+
+⭐ Và một xác nhận đi kèm, đáng giá riêng: `llama-swap.yaml` **trong kho khớp
+hoàn toàn** với bản đang chạy trên máy B (`H:\LTT_LLM\gateway\llama-swap.yaml`,
+207/208 dòng, chỉ lệch một dòng chú thích; mọi dòng cấu hình **giống hệt**).
+Trong một dự án đã năm lần bị tài liệu chép tay nói sai, một bản cấu hình
+**không trôi** là điều đáng ghi lại chứ không đáng cho qua.
+
+**Còn một hạng mục xác nhận trực tiếp** (rẻ, làm khi engine nạp lần tới): bật
+`--verbose` và đọc dòng `Using specialized template: Qwen3-Coder` trong log.
+Đó là runtime **tự khai**, mạnh hơn mọi suy luận từ mã. Nhưng nó nay chỉ là
+**xác nhận thừa**, không còn là mắt xích chịu lực.
 
 ## 8. Thu hoạch vận hành về Nexus (trả giá bằng năm lượt thử)
 
