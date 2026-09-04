@@ -90,7 +90,7 @@
       "chan": [
         "P03"
       ],
-      "phan_tram": 35
+      "phan_tram": 55
     },
     {
       "id": "P05",
@@ -348,8 +348,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 9.9,
-      "phan_tram": 58
+      "xong": 10.8,
+      "phan_tram": 64
     },
     "lan_B": {
       "uoc": 20.0,
@@ -363,8 +363,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 9.9,
-      "phan_tram": 19
+      "xong": 10.8,
+      "phan_tram": 21
     },
     "ma_san_pham_da_sua": "9 tep: 6 moi trong apps/chatltt/services + frontend ThongDiepView.tsx + governance.py + luot.py",
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -579,17 +579,21 @@
   ],
   "p04": {
     "trang_thai": "DANG LAM",
-    "phan_tram": 35,
+    "phan_tram": 55,
     "da_xong": [
       "duyet.py — phieu duyet BEN + test_809 (30)",
       "quyet dinh di bang UPDATE CO DIEU KIEN (WHERE quyet_dinh='cho'), khong bang if trong Python",
       "khoa_idem DAN XUAT tu (run_id, step_id, bam_trung) — client khong tu nghi ra duoc",
       "doi_so_cuoi(): ban da sua thang ban goc; tra BAN SAO",
       "tu choi/het han -> KetQua model doc duoc, run KHONG chet",
-      "han cho 30 phut (bao gia gan voi phien_ban_gia, khong de song qua dem)"
+      "han cho 30 phut (bao gia gan voi phien_ban_gia, khong de song qua dem)",
+      "dieu_phoi: CanDuyet (GIA TRI tra ve, khong phai ngoai le) + tiep_tuc() + test_810 (16)",
+      "chay() tach thanh chay() + _vong(); lich_su chuyen vao Run de song qua lan dung",
+      "kiem cho-duyet SAU CA LO: hai loi goi song song thi ca hai duoc hoi",
+      "thieu mot ket qua duyet => NEM, khong doan"
     ],
     "con_lai": [
-      "noi AWAITING_APPROVAL vao dieu_phoi (can co che tam dung/chay tiep)",
+      "noi duyet.py <-> dieu_phoi.CanDuyet trong luot.py (chay_tool that)",
       "route + UI duyet",
       "R2b: mot request_id cho ca run (can thanh_toan.py — khoa cua phien dieu phoi)",
       "doi soat chatltt_run vs credit_entries"

@@ -84,6 +84,27 @@ class ChuyenTrangThaiSai(RuntimeError):
 
 
 @dataclass
+class CanDuyet:
+    """`chay_tool` trả cái này thay cho `KetQua` ⇒ run **dừng** chờ người duyệt.
+
+    ## Vì sao là GIÁ TRỊ TRẢ VỀ chứ không phải một ngoại lệ
+
+    Chờ duyệt không phải chuyện bất thường — với một tool `PAID` thì đó là
+    đường đi **bình thường**. Ngoại lệ dành cho thứ không nằm trong kế hoạch;
+    dùng nó cho một nhánh dự kiến biến `try/except` thành cấu trúc điều khiển,
+    và rồi một `except Exception` ở đâu đó sẽ nuốt mất một phiếu duyệt.
+
+    ⭐ Và nó giữ `chay_tool` **thuần một kiểu quyết định**: hàm ấy trả lời
+       *"chạy xong rồi, đây là kết quả"* hay *"chưa chạy, cần hỏi đã"*. Cả hai
+       đều là câu trả lời.
+    """
+
+    approval_id: str
+    tool_name: str = ""
+    doi_so: dict = field(default_factory=dict)
+
+
+@dataclass
 class Buoc:
     """Một bước đã chạy — ánh xạ 1-1 sang `chatltt_step`."""
 
@@ -94,6 +115,10 @@ class Buoc:
     doi_so_tho: str = ""
     ket_qua: Optional[thi_hanh.KetQua] = None
     bam: str = ""
+    #: `approval_id` khi bước này đang chờ duyệt. `ket_qua` còn `None`.
+    cho_duyet: str = ""
+    #: `tool_call_id` model đã dùng — cần để dựng lại `role="tool"` khi chạy tiếp.
+    goi_id: str = ""
 
 
 @dataclass
@@ -106,7 +131,16 @@ class Run:
     ly_do_ket: str = ""
     buoc: list = field(default_factory=list)
     van_ban_cuoi: str = ""
+    #: Lịch sử hội thoại đang dựng. **Nằm trong `Run`**, không phải biến cục bộ
+    #: của `chay()` — vì một run dừng ở `AWAITING_APPROVAL` rồi `tiep_tuc()`
+    #: nhiều phút sau phải nói tiếp đúng câu chuyện đó.
+    lich_su: list = field(default_factory=list)
+    tools: list = field(default_factory=list)
     _dem_bam: dict = field(default_factory=dict)
+
+    def dang_cho_duyet(self) -> list:
+        """Các bước còn treo chờ người duyệt."""
+        return [b for b in self.buoc if b.cho_duyet and b.ket_qua is None]
 
     def chuyen(self, toi: str) -> None:
         cho_phep = CHUYEN_HOP_LE.get(self.trang_thai)
@@ -165,10 +199,20 @@ def chay(*, messages: list, tools: list,
     Cả hai đều **tuỳ chọn**: máy trạng thái vẫn chạy đúng khi không ai lắng nghe
     và không ai lưu — đó là thứ giữ nó kiểm được bằng số học thuần (`test_803`).
     """
-    run = Run()
-    lich_su = list(messages)
+    run = Run(lich_su=list(messages), tools=list(tools))
+    _phat = phat or (lambda sk: None)
+    _phat({"type": "run.started", "so_vong_toi_da": tran_vong})
+    return _vong(run, goi_model=goi_model, chay_tool=chay_tool,
+                 tran_vong=tran_vong, tran_tool=tran_tool,
+                 phat=phat, ghi=ghi, nen_dung=nen_dung)
+
+
+def _vong(run: Run, *, goi_model, chay_tool, tran_vong, tran_tool,
+          phat=None, ghi=None, nen_dung=None) -> Run:
+    """Vòng lặp chính. Tách khỏi `chay()` để `tiep_tuc()` vào lại được."""
     _phat = phat or (lambda sk: None)
     _ghi = ghi or (lambda b: None)
+    tools = run.tools
 
     def _them(b: Buoc) -> Buoc:
         """Chỗ DUY NHẤT một bước được sinh ra. Hai lối vào thì sớm muộn một lối
@@ -176,8 +220,6 @@ def chay(*, messages: list, tools: list,
         run.buoc.append(b)
         _ghi(b)
         return b
-
-    _phat({"type": "run.started", "so_vong_toi_da": tran_vong})
 
     while True:
         if nen_dung and nen_dung():
@@ -193,7 +235,7 @@ def chay(*, messages: list, tools: list,
         chu = []
         ly_do = ""
         loi_luong = ""
-        for sk in goi_model(lich_su, tools):
+        for sk in goi_model(run.lich_su, tools):
             loai = sk.get("type")
             if loai == "response.delta":
                 chu.append(sk.get("text") or "")
@@ -227,7 +269,7 @@ def chay(*, messages: list, tools: list,
             run.ly_do_ket = KET_TRAN_TOOL
             break
 
-        lich_su = lich_su + [_tin_nhan_assistant(loi_goi)]
+        run.lich_su = run.lich_su + [_tin_nhan_assistant(loi_goi)]
         cham_tran_trung = False
         for lg in loi_goi:
             run.so_loi_goi_tool += 1
@@ -255,13 +297,37 @@ def chay(*, messages: list, tools: list,
                            "policy_class": chieu_tool.lop_chinh_sach(lg.ten)})
                     kq = chay_tool(lg.ten, ds)
 
+            goi_id = lg.id or f"call_{lg.index}"
+            if isinstance(kq, CanDuyet):
+                # ⭐ Bước được GHI ngay, với `ket_qua` còn `None`. Nếu chờ tới lúc
+                #    duyệt xong mới ghi thì một tiến trình chết trong lúc chờ sẽ
+                #    làm biến mất cả việc đang hỏi — và người dùng nhận một phiếu
+                #    duyệt trỏ tới một bước không tồn tại.
+                _them(Buoc(thu_tu=len(run.buoc) + 1, loai="tool", ten=lg.ten,
+                           doi_so=ds, doi_so_tho=lg.doi_so_tho, ket_qua=None,
+                           bam=gop_manh.bam_trung(lg.ten, ds),
+                           cho_duyet=kq.approval_id, goi_id=goi_id))
+                continue
+
             _them(Buoc(thu_tu=len(run.buoc) + 1, loai="tool",
                        ten=lg.ten, doi_so=ds,
                        doi_so_tho=lg.doi_so_tho, ket_qua=kq,
-                       bam=gop_manh.bam_trung(lg.ten, ds)))
+                       bam=gop_manh.bam_trung(lg.ten, ds), goi_id=goi_id))
             _phat({"type": "tool.result" if kq.ok else "tool.failed",
                    "tool_name": lg.ten, "tom_tat": kq.tom_tat()})
-            lich_su = lich_su + [_tin_nhan_tool(lg, kq)]
+            run.lich_su = run.lich_su + [_tin_nhan_tool(lg, kq)]
+
+        # ⛔ DỪNG trước khi đi tiếp nếu còn bước chờ duyệt.
+        #
+        #    Kiểm SAU cả lô, không phải ngay khi gặp cái đầu tiên: một lượt có hai
+        #    lời gọi song song thì cả hai đều phải được hỏi, không phải hỏi cái
+        #    này rồi bỏ quên cái kia tới vòng sau.
+        if run.dang_cho_duyet():
+            run.chuyen(AWAITING_APPROVAL)
+            for b in run.dang_cho_duyet():
+                _phat({"type": "approval.required", "approval_id": b.cho_duyet,
+                       "tool_name": b.ten, "doi_so": b.doi_so})
+            return run
 
         if run.trang_thai == TOOL_REQUESTED:
             run.chuyen(TOOL_RUNNING)
@@ -283,7 +349,65 @@ def chay(*, messages: list, tools: list,
     return run
 
 
-__all__ = ["chay", "Run", "Buoc", "ChuyenTrangThaiSai", "CHUYEN_HOP_LE",
+def tiep_tuc(run: Run, *, ket_qua_duyet: dict, goi_model, chay_tool,
+             tran_vong: int = TRAN_VONG_MODEL, tran_tool: int = TRAN_LOI_GOI_TOOL,
+             phat=None, ghi=None, nen_dung=None) -> Run:
+    """Chạy tiếp một run đang ở `AWAITING_APPROVAL`.
+
+    `ket_qua_duyet` là `{approval_id: KetQua}` — mỗi bước treo một kết quả, dù
+    là kết quả của tool (đã duyệt) hay của lời từ chối (`duyet.ket_qua_cho_model`).
+
+    ⛔ **Từ chối không giết run.** `02_HOP_DONG.md` §1:
+       `AWAITING_APPROVAL → TOOL_RESULT_READY`. Lời từ chối đi vào lịch sử như
+       một kết quả tool bình thường, và model đọc được để đổi cách.
+
+    🔴 **Thiếu một kết quả thì NÉM, không đoán.** Một bước treo không có
+       câu trả lời mà vẫn đi tiếp là một lời gọi tool biến mất khỏi lịch sử —
+       model thấy nó đã hỏi mà không ai trả lời, và sẽ hỏi lại.
+    """
+    if run.trang_thai != AWAITING_APPROVAL:
+        raise ChuyenTrangThaiSai(
+            f"tiep_tuc chi vao duoc tu {AWAITING_APPROVAL}, dang o {run.trang_thai}")
+
+    _phat = phat or (lambda sk: None)
+    _ghi = ghi or (lambda b: None)
+    treo = run.dang_cho_duyet()
+    thieu = [b.cho_duyet for b in treo if b.cho_duyet not in ket_qua_duyet]
+    if thieu:
+        raise ValueError(f"thieu ket qua duyet cho: {thieu}")
+
+    for b in treo:
+        kq = ket_qua_duyet[b.cho_duyet]
+        b.ket_qua = kq
+        _ghi(b)
+        _phat({"type": "tool.result" if kq.ok else "tool.failed",
+               "tool_name": b.ten, "tom_tat": kq.tom_tat()})
+        run.lich_su = run.lich_su + [
+            {"role": "tool", "tool_call_id": b.goi_id or f"call_{b.thu_tu}",
+             "content": kq.cho_model()}]
+
+    # `TOOL_RUNNING` rồi `TOOL_RESULT_READY` — đi đúng bảng chuyển đổi, không
+    # nhảy tắt. Một bước nhảy tắt hôm nay là một trạng thái không ai đợi được
+    # ở đó ngày mai.
+    run.chuyen(TOOL_RUNNING)
+    run.chuyen(TOOL_RESULT_READY)
+
+    if run.so_vong_model >= tran_vong:
+        run.chuyen(COMPLETED)
+        run.ly_do_ket = KET_TRAN_VONG
+        _phat({"type": "run.completed", "ly_do_ket": run.ly_do_ket,
+               "so_vong": run.so_vong_model,
+               "so_loi_goi_tool": run.so_loi_goi_tool})
+        return run
+
+    run.chuyen(MODEL_RESUMING)
+    return _vong(run, goi_model=goi_model, chay_tool=chay_tool,
+                 tran_vong=tran_vong, tran_tool=tran_tool,
+                 phat=phat, ghi=ghi, nen_dung=nen_dung)
+
+
+__all__ = ["chay", "tiep_tuc", "CanDuyet", "Run", "Buoc", "ChuyenTrangThaiSai",
+           "CHUYEN_HOP_LE",
            "TRAN_VONG_MODEL", "TRAN_LOI_GOI_TOOL", "TRAN_TRUNG",
            "CREATED", "MODEL_RUNNING", "TOOL_REQUESTED", "AWAITING_APPROVAL",
            "TOOL_RUNNING", "WAITING_BACKGROUND", "TOOL_RESULT_READY",
