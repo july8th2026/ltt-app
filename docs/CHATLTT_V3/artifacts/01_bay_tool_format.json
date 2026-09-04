@@ -1,0 +1,54 @@
+{
+  "doi_chung_xml": [
+    {
+      "loai": "tool_co_cau_truc",
+      "so_loi_goi": 1,
+      "ten": [
+        "calculator"
+      ],
+      "finish_reason": "tool_calls"
+    },
+    {
+      "loai": "tool_co_cau_truc",
+      "so_loi_goi": 1,
+      "ten": [
+        "calculator"
+      ],
+      "finish_reason": "tool_calls"
+    },
+    {
+      "loai": "tool_co_cau_truc",
+      "so_loi_goi": 1,
+      "ten": [
+        "calculator"
+      ],
+      "finish_reason": "tool_calls"
+    }
+  ],
+  "bay_json": [
+    {
+      "loai": "tool_co_cau_truc",
+      "so_loi_goi": 1,
+      "ten": [
+        "calculator"
+      ],
+      "finish_reason": "tool_calls"
+    },
+    {
+      "loai": "tool_co_cau_truc",
+      "so_loi_goi": 1,
+      "ten": [
+        "calculator"
+      ],
+      "finish_reason": "tool_calls"
+    },
+    {
+      "loai": "tool_co_cau_truc",
+      "so_loi_goi": 1,
+      "ten": [
+        "calculator"
+      ],
+      "finish_reason": "tool_calls"
+    }
+  ]
+}

@@ -199,12 +199,14 @@
     },
     {
       "id": "M-4",
-      "muc": "BAY: tool_call_format=json lam moi loi goi tool thanh van ban thuong",
+      "muc": "tool_call_format=json — DA DO, KHONG phai bay thoi hiem",
       "nguon": "chat_template.jinja:2 + common/chat.cpp:3596-3602",
       "giai_thich": "phep phat hien doc MA NGUON template (chua CA hai nhanh), con render thi theo mot nhanh ⇒ dat json = template day JSON nhung parser doi XML ⇒ hong 0% IM LANG",
-      "rui_ro": "cao",
+      "rui_ro": "thap",
       "chan_pha": "P01/P03",
-      "luat": "cam tool_call_format trong chat_template_kwargs + phep kiem tinh chot"
+      "luat": "cam tool_call_format trong chat_template_kwargs + phep kiem tinh chot",
+      "dinh_chinh": "Ban dau ket luan 'hong 0% im lang'. DO 04/09: 3/3 van phan tich duoc. Mat xich bo sot: khi co tools, llama.cpp dung mot VAN PHAM GBNF cuong che sinh dung khuon XML (chat.cpp:1201 include_grammar). Van pham thang prompt.",
+      "suc_nang_moi": "luat VE SINH, khong phai luat AN TOAN"
     },
     {
       "id": "M-5",
@@ -213,6 +215,13 @@
       "he_qua": "ranh gioi tin cay cua P02 nang tu NGUYEN TAC len QUAN SAT: phong ve injection PHAI o kernel, khong the trong vao viec model thay vo ly",
       "rui_ro": "cao",
       "chan_pha": "P02/P06"
+    },
+    {
+      "id": "M-6",
+      "muc": "Khi co `tools`, llama.cpp CUONG CHE SINH bang van pham GBNF (lazy)",
+      "nguon": "chat.cpp@57291f264:1201 + 1332-1337, do bang /apply-template",
+      "he_qua": "dinh dang tool-call duoc bao dam o tang SINH, khong chi o tang DOC. Manh hon nhieu so voi gia dinh ban dau — nhung cung nghia la prompt va van pham co the mau thuan ma khong ai thay.",
+      "rui_ro": "thap"
     }
   ],
   "phan_loai_khoang_trong": {
@@ -307,6 +316,12 @@
         3.2
       ]
     },
-    "bang_chung": "artifacts/01_cong0.json"
+    "bang_chung": "artifacts/01_cong0.json",
+    "bay_tool_format": {
+      "ket_qua": "KHONG tai hien",
+      "so_luot": 6,
+      "ly_do": "van pham GBNF cuong che sinh, thang prompt",
+      "bang_chung": "artifacts/01_bay_tool_format.json"
+    }
   }
 }

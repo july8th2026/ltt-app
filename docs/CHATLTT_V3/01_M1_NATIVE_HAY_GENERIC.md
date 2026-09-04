@@ -142,18 +142,88 @@ tool_call_format = json
   ⇒ V3 thay 0 tool call, trong khi model dang co gang goi tool moi luot
 ```
 
-⭐ **Đây là dạng hỏng tệ nhất có thể có**: không lỗi, không log, model vẫn nói
-năng mạch lạc, sổ tiền vẫn chạy. Nó chỉ lộ ra khi có người hỏi *"sao nó không
-bao giờ dùng tool?"* — và câu trả lời sẽ bị đổ nhầm cho model, hoặc cho KV.
+### 5b. 🔴 ĐÍNH CHÍNH 04/09 — TÔI ĐÃ SAI. Bẫy **không** nổ, và lý do đáng biết
 
-⇒ **LUẬT cho V3, đưa vào `00_DO_NOT_REWRITE.md`:**
-> `tool_call_format` **phải để mặc định** (`xml`). Không được đặt trong
-> `chat_template_kwargs`. Muốn đổi thì phải đổi **template** để nhánh XML biến
-> mất khỏi mã nguồn — và đó là một ADR, không phải một tham số.
+Bản đầu của §5 (commit `e0d8ac3`) kết luận chắc nịch rằng đặt
+`tool_call_format=json` sẽ làm **mọi lời gọi tool thành văn bản thường**. Tôi đã
+đem đi đo. **Nó không xảy ra.**
 
-Cần một **phép kiểm tĩnh** chốt điều này: quét `apps/chatltt/` và
-`platform_core/` cấm chuỗi `tool_call_format`. Rẻ, và nó chặn đúng cái sai mà
-một phiên sau rất dễ mắc khi thấy JSON "sạch hơn XML".
+| Cấu hình | 3 lượt | Kết quả |
+|---|---|---|
+| mặc định (`xml`) | 3 | **3/3** `tool_calls` có cấu trúc |
+| `chat_template_kwargs: {"tool_call_format":"json"}` | 3 | **3/3** `tool_calls` có cấu trúc, **0/3** lệch định dạng |
+
+Và không phải vì kwarg bị bỏ qua — nó tới nơi thật. Hỏi `/apply-template` của
+engine (cổng 8281) để đọc **prompt đã render**:
+
+| | mặc định | `tool_call_format=json` |
+|---|---|---|
+| độ dài prompt | 2.173 ký tự | **2.090** |
+| hướng dẫn `<function=example…>` | **có** | **không** |
+| hướng dẫn `{"name": "example…"}` | không | **có** |
+
+⇒ Template **thật sự chuyển sang dạy model viết JSON**. Vậy mà parser vẫn đọc được.
+
+**Mắt xích tôi bỏ sót** nằm ở cuối `common_chat_params_init_qwen3_coder`:
+
+```cpp
+// dòng 1201
+auto include_grammar = has_response_format ||
+                       (has_tools && inputs.tool_choice != COMMON_CHAT_TOOL_CHOICE_NONE);
+...
+if (include_grammar) {
+    data.grammar_lazy = has_tools && inputs.tool_choice == COMMON_CHAT_TOOL_CHOICE_AUTO;
+    data.grammar = build_grammar(...);      // <- GBNF ep dung dinh dang XML
+    if (data.grammar_lazy)
+        for (const auto & start : tool_call_starts)
+            data.grammar_triggers.push_back({ ..._WORD, start });   // kich hoat boi "<tool_call>"
+}
+```
+
+⭐ **Khi có `tools`, llama.cpp không chỉ *phân tích* — nó *cưỡng chế sinh*.**
+Một văn phạm GBNF được dựng từ chính schema của tool và ép đầu ra vào đúng khuôn
+`<tool_call>\n<function=…>\n<parameter=…>`. Văn phạm ở chế độ **lazy**: nó nằm im
+cho tới khi model phát ra `<tool_call>` — và nhánh JSON của template **cũng dùng
+đúng thẻ `<tool_call>`** (chỉ khác phần ruột). Model gõ thẻ mở, văn phạm bật, và
+từ đó bộ lấy mẫu **không còn đường sinh ra JSON** dù prompt vừa bảo nó thế.
+
+**Văn phạm thắng prompt.** Đó là lý do bẫy không nổ.
+
+### 5c. Luật sửa lại — vẫn giữ, nhưng vì lý do khác và với sức nặng khác
+
+⛔ **Sức nặng cũ (sai):** *"hỏng 0 %, im lặng, thảm hoạ."*
+✅ **Sức nặng đúng:** *"prompt và văn phạm mâu thuẫn nhau; đo n=3 vẫn phân tích
+được; cái giá về chất lượng thì chưa ai đo."*
+
+Luật giữ nguyên, nhưng nay nó là một luật **vệ sinh**, không phải một luật **an toàn**:
+
+> `tool_call_format` để mặc định. Đặt `json` khiến model bị dạy một đằng và bị
+> **ép** sinh một nẻo — nó không vỡ, nhưng nó bắt model làm việc chống lại chính
+> chỉ dẫn nó vừa đọc. Chưa ai đo điều đó ăn vào độ chính xác đối số bao nhiêu ở
+> ca khó. Không có lợi ích nào bù lại, nên đừng đặt.
+
+Phép kiểm tĩnh vẫn đáng làm, nhưng hạ từ **chốt an toàn** xuống **chốt vệ sinh**,
+và chú thích của nó phải nói đúng lý do — một chốt giải thích sai lý do là một
+chốt sẽ bị gỡ bởi người đầu tiên đọc kỹ nó.
+
+### 5d. Bài học phương pháp, đắt hơn cả kết luận
+
+Tôi đọc `chat.cpp` đủ để thấy **phép phát hiện** và **bộ phân tích**, rồi dừng
+lại và kết luận. Nhưng đường sinh ra token có **ba** chặng, không phải hai:
+
+```
+phat hien template  ->  van pham cuong che sinh  ->  bo phan tich doc lai
+        (da doc)              (BO SOT)                     (da doc)
+```
+
+Chặng giữa là chặng **quyết định hành vi**, và nó nằm ở cuối cùng một hàm mà tôi
+đã mở. Một suy luận đọc hai phần ba đường ống thì khớp hoàn hảo với hai phần ba
+sự thật — và `gia-thuyet-khop-qua-vua` nói đúng: khớp hoàn hảo là lúc nên nghi,
+không phải lúc nên dừng.
+
+⭐ Và đây là lý do phép đo 6 lượt gọi này đáng giá hơn cả §5 gốc: nó tốn **6
+credit** và nó bác bỏ một luật mà tôi đã sắp đem đi cưỡng chế bằng một phép kiểm
+tĩnh cho toàn kho.
 
 ## 6. Một hệ quả thứ hai: `parallel_tool_calls`
 
