@@ -243,6 +243,16 @@ chế đã hỏng năm lần. Ví dụ thật: trần ký tự của `ltt_voice`
 **hai** hằng số ngày 31/08 — bảng cũ vẫn mô tả **một**, và không ai phát hiện
 cho tới khi có người đối chiếu từng giá trị với mã.
 
+## ⛔ `D:\LTTBackups` — ACL chặn ở đó là CỐ Ý, đừng "sửa"
+
+Thư mục ấy chứa `app.env` và dump CSDL **mang bí mật thật**. Hạng mục **W1.5**
+của `docs/AUDIT_MVP_2026-07-31.md` yêu cầu đúng điều đang thấy: *"thư mục backup
+chỉ SYSTEM/Admin đọc"*.
+
+Thấy `Access denied` ở đó mà chạy `icacls` để mở ra là **gỡ một bản vá bảo mật
+đã hoàn thành**. Remote git `backup` trỏ vào đó đã được **gỡ 04/09**; bản sao
+off-site nay là **GitHub riêng tư** (`origin`).
+
 ## Không bao giờ commit hay copy đi
 
 ```
@@ -256,6 +266,7 @@ cloudflare/config.yml cloudflare/*.json
 |---|---|
 | `docs/00_BAT_DAU_TU_DAY.md` | bố cục, nguyên tắc |
 | `docs/01_COPY_LEN_SERVER.md` | chuyển sang máy chủ + cập nhật |
+| `docs/16_CAP_NHAT_VA_DEPLOY.md` | **quy trình cho MỌI phiên**: đồng bộ → gate → ff → deploy → đẩy GitHub |
 | `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |

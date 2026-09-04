@@ -32,7 +32,11 @@ Cập nhật: 2026-08-01.
 3. **Đẩy git lên bản sao dự phòng cục bộ** — tạo bare repo
    `D:\LTTBackups\LTTSTUDIOSAPP.git` và push toàn bộ (24 commit). Đây là remote
    tên `backup`, cho dự phòng phiên bản ngay, **không lộ gì ra Internet**.
-   Đồng bộ lại bất cứ lúc nào: `git push backup master`.
+   ⛔ **HẾT DÙNG TỪ 04/09/2026.** Remote `backup` đã gỡ: `D:\LTTBackups`
+   chứa `app.env` + dump CSDL và đã được siết ACL đúng theo hạng mục **W1.5**
+   (*"chỉ SYSTEM/Admin đọc"*), nên không đẩy mã vào đó được — và **không nên**.
+   Bản sao off-site nay là **GitHub riêng tư** `origin`. Xem
+   `docs/16_CAP_NHAT_VA_DEPLOY.md`.
 
 ---
 
