@@ -11,7 +11,7 @@
     800,
     899
   ],
-  "pha_hien_tai": "P02",
+  "pha_hien_tai": "P03",
   "co_tinh_nang": [
     "LTT_CHATLTT_V3_TOOLS",
     "LTT_CHATLTT_V3_PAID_TOOLS"
@@ -68,20 +68,20 @@
     {
       "id": "P02",
       "ten": "ADR dieu phoi",
-      "trang_thai": "DANG LAM",
+      "trang_thai": "PASS",
       "chan": [
         "P01"
       ],
-      "phan_tram": 80
+      "phan_tram": 100
     },
     {
       "id": "P03",
       "ten": "kernel dieu phoi (tool gia)",
-      "trang_thai": "CHUA",
+      "trang_thai": "DANG LAM",
       "chan": [
         "P02"
       ],
-      "phan_tram": 0
+      "phan_tram": 12
     },
     {
       "id": "P04",
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 4.0,
-      "phan_tram": 24
+      "xong": 4.6,
+      "phan_tram": 27
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 4.0,
-      "phan_tram": 8
+      "xong": 4.6,
+      "phan_tram": 9
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -518,5 +518,20 @@
       "02_ADR_R1_MOT_SUAT.md",
       "02_HOP_DONG.md"
     ]
+  },
+  "p03": {
+    "da_xong": [
+      "gop_manh.py + test_801 (15 phep kiem)"
+    ],
+    "con_lai": [
+      "chieu_tool.py",
+      "thi_hanh.py",
+      "dieu_phoi.py",
+      "duyet.py",
+      "bang chatltt_run/step/approval + migration",
+      "co LTT_CHATLTT_V3_TOOLS",
+      "test_802..812"
+    ],
+    "dong_ma_san_pham_dau_tien": "apps/chatltt/services/gop_manh.py"
   }
 }
