@@ -49,12 +49,56 @@ $ErrorActionPreference = 'Stop'
 if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
 
 $envFile = Join-Path $Root 'secrets\app.env'
-$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
 $boTest  = Join-Path $Repo 'tests\test_448_asv_v4_e2e_nghiem_thu.py'
 
-foreach ($p in @($envFile, $venvPy, $boTest)) {
+foreach ($p in @($envFile, $boTest)) {
     if (-not (Test-Path $p)) { throw "Khong thay $p" }
 }
+
+# !! KHONG dung venv cua SAN PHAM de chay pytest.
+#
+#    Do that hom nay: no la Python 3.13.12 voi `torch 2.11.0+cu128` va
+#    `cuda True` - tuc dung trinh thong dich san pham can - nhung no
+#    **khong co pytest**, va do la co y: venv do cai thu SAN PHAM chay,
+#    khong cai bo cong cu kiem thu. `-m pytest` o day se hong ngay dong
+#    dau voi 'No module named pytest', SAU khi da nap xong app.env.
+#
+# => Thu can tu cau nay la **app.env**, khong phai trinh thong dich.
+#    Tu tim mot python CO pytest.
+function Tim-Python {
+    param([string[]]$UngVien)
+    # !! DAY LA LAN THU TU CUA CUNG MOT BAY, va no dinh o chinh ham
+    #    dung de TRANH mot loi khac. Voi `$ErrorActionPreference='Stop'`,
+    #    mot exe NGOAI ghi ra stderr tro thanh NativeCommandError va KET
+    #    THUC script - va phep do duoi day CO Y chay mot python thieu
+    #    pytest, tuc no CHAC CHAN in mot traceback ra stderr.
+    #
+    #    `2>$null` khong cuu duoc: no vut bo VAN BAN, con PowerShell van
+    #    sinh ban ghi loi truoc do. Phai ha preference quanh chinh lan goi.
+    $cuTP = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        foreach ($u in $UngVien) {
+            if (-not $u) { continue }
+            $duong = $null
+            $c = Get-Command $u -ErrorAction SilentlyContinue
+            if ($c) { $duong = $c.Source } elseif (Test-Path $u) { $duong = $u }
+            if (-not $duong) { continue }
+            & $duong -c "import pytest" 1>$null 2>$null
+            if ($LASTEXITCODE -eq 0) { return $duong }
+        }
+    } finally {
+        $ErrorActionPreference = $cuTP
+    }
+    return $null
+}
+
+$venvPy = Join-Path $Root 'venv\Scripts\python.exe'
+$pyChay = Tim-Python @($Python, $venvPy, 'python.exe', 'py.exe')
+if (-not $pyChay) {
+    throw "Khong tim thay python nao co pytest. Chi dinh bang -Python."
+}
+Write-Host "  [OK] Chay pytest bang: $pyChay" -ForegroundColor Green
 if (-not $BaoCao) {
     $BaoCao = Join-Path $Repo 'docs\auto_scan_video_v4\evidence\22_nghiem_thu.json'
 }
@@ -140,7 +184,7 @@ Write-Host ''
 #    doc. Python ghi stderr vi nhieu ly do binh thuong.
 $cu = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
-& $venvPy -m pytest -q -p no:randomly $boTest
+& $pyChay -m pytest -q -p no:randomly $boTest
 $maThoat = $LASTEXITCODE
 $ErrorActionPreference = $cu
 

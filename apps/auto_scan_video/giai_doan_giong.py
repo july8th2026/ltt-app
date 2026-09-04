@@ -89,9 +89,19 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     # Giai giong MOT LAN cho ca lan chay — day cung la noi quyen so huu giong
     # duoc kiem (I6/I7). Lam lai cho tung doan la N luot tra CSDL cho mot cau
     # tra loi khong doi.
+    # 🔴 **`preset=cai_dat.get("preset")` la mot LOI, va no da lam moi lan chay
+    #    that hong o dung day (A29-01).**
+    #
+    #    `settings["preset"]` la preset DUNG PHIM — `localize_preserve_picture`
+    #    hay `smart_localize`. Con `ltt_voice.preset` nghia la TEN MOT GIONG
+    #    DUNG SAN. Hai nghia cua cung mot tu, o hai app, va khong cho nao trong
+    #    ma noi rang chung khac nhau. Do:
+    #        giong_mau.hop_le("localize_preserve_picture") -> False
+    #
+    # ⇒ Khong co "voice preset" nao trong `settings` ca. Chi co MOT ma giong, va
+    #   `giong_noi.tach_ma_giong` biet no thuoc o nao.
     ref_b64, preset = giong_noi.giai_giong(
-        db, owner_id=run.owner_id, voice_id=ma_giong,
-        preset=str(cai_dat.get("preset") or ""))
+        db, owner_id=run.owner_id, voice_id=ma_giong)
 
     muc = list(tai_lieu.get("muc") or [])
     phan: list[dict] = []

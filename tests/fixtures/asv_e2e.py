@@ -362,8 +362,23 @@ def dung_model_that() -> bool:
     """Luot chay nay co goi model tren may B THAT khong."""
     import os
 
+    url = str(os.environ.get("LTT_DATABASE_URL", "")).strip().lower()
+    # 🔴 **Doi POSTGRES, khong chi doi "co dat".**
+    #
+    #    Fixture `moi_truong` CO Y ghi de `LTT_DATABASE_URL` bang mot SQLite
+    #    dung-mot-lan de tao user/run/credit ma khong cham CSDL that. Pool khoa
+    #    thi nam o PostgreSQL. Mot tien trinh chi co MOT bien nay, nen hai thu
+    #    do loai tru nhau — va mot phep kiem "co dat khong" se noi CO trong khi
+    #    cai duoc dat la CSDL RONG cua bo test.
+    #
+    # ⇒ Hau qua neu khong siet: `api_pool.chon_key` tim trong SQLite rong,
+    #   nem `ThieuKeyError`, va `dieu_phoi.goi` doc do la "provider nay khong
+    #   phuc vu duoc" roi nem `KhongCoProviderNao` — mot thong bao khong nhac gi
+    #   toi CSDL, sau khi da ton demucs va ASR.
     return (str(os.environ.get(BIEN_MODEL_THAT, "")).strip() == "1"
-            and bool(str(os.environ.get("LTT_DATABASE_URL", "")).strip()))
+            and url.startswith(("postgres://", "postgresql://",
+                                "postgresql+psycopg://",
+                                "postgresql+psycopg2://")))
 
 
 def dung_giong_that() -> bool:
@@ -589,20 +604,48 @@ TU_DIEN: dict[str, str] = {
 
 
 def _dich_gia(chu: str, su_that) -> str:
-    """Tra ban dich tieng Viet cua cau GAN NHAT trong kich ban.
+    """Tra ban dich tieng Viet cua cau GAN NHAT trong kich ban, **theo ty le**.
 
     ⭐ Khop theo noi dung chu khong theo ma doan: ma doan do ASR sinh ra, con
        kich ban thi khong biet ASR se dat ten gi. Khop bang tu chung nhieu nhat.
+
+    🔴 **Va phan tra ve phai CAN DOI VE DO DAI voi manh nguon.**
+
+       Ban dau ham nay tra ve NGUYEN cau tieng Viet cho bat ky manh nao khop tu
+       hai tu tro len. ASR tach ban nguon thanh 6 doan, gom "Thank you." va
+       "Of course." — moi cai duoi mot giay — va ca hai nhan ve mot cau hai
+       menh de. Voi giong SAPI dieu do vo hai: no doc chuoi da bo dau rat nhanh.
+       Voi giong THAT thi mot khe 0,6 giay nhan ~6 giay tieng, va `timing_align`
+       chet dung nhu no nen chet: "he so co gian 11.304 ngoai khoang mot lan
+       atempo".
+
+    ⇒ Cat ban dich theo dung ty le so tu cua manh nguon tren cau nguon. Mot
+      trinh dich that dich "Thank you." thanh "Cam on.", khong thanh mot cau
+      hai menh de — va do dai moi la thu bac thang nan cho vua dang do.
     """
     if not su_that:
         return chu
     chuan = _chuan(chu)
-    tot, diem = "", 0
+    tot, diem, cau_nguon = "", 0, ""
     for l in su_that.loi:
         chung = len(set(_chuan(l.chu).split()) & set(chuan.split()))
         if chung > diem:
-            tot, diem = l.ma, chung
-    return TU_DIEN.get(tot, chu) if diem >= 2 else chu
+            tot, diem, cau_nguon = l.ma, chung, l.chu
+    if diem < 2:
+        return chu
+    dich = TU_DIEN.get(tot, chu)
+
+    # Ty le so tu: manh nguon / cau nguon. Kep vao (0, 1].
+    tu_manh = len(chuan.split()) or 1
+    tu_cau = len(_chuan(cau_nguon).split()) or 1
+    ty_le = min(1.0, tu_manh / tu_cau)
+    if ty_le >= 0.85:
+        return dich
+
+    tu_dich = dich.split()
+    lay = max(2, round(len(tu_dich) * ty_le))
+    ra = " ".join(tu_dich[:lay]).rstrip(",;:")
+    return ra if ra.endswith(".") else ra + "."
 
 
 def _chuan(chu: str) -> str:

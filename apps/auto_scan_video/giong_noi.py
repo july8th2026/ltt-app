@@ -92,14 +92,51 @@ def san_sang() -> bool:
         return False
 
 
+def tach_ma_giong(ma: str) -> tuple[str, str]:
+    """Mot ma giong -> `(voice_id, preset)` cho hop dong cua `ltt_voice`.
+
+    🔴 **Luat nay tung khong ton tai o dau ca, va hau qua la giai doan long
+       tieng KHONG THE thanh cong tren duong that (A29-01).**
+
+       `gia.giong_chon_duoc` tra ve mot danh sach PHANG `{ma, ten}` gom ca giong
+       DUNG SAN cua `ltt_voice` lan giong RIENG khach da nhan ban — no khong
+       danh dau cai nao la cai nao. Nen nguoi goi khong the biet dien o nao, va
+       ban dau no dien het vao `voice_id`. Trong khi `Minh Duc` la mot giong
+       dung san, tuc thuoc `preset`.
+
+    ⛔ Va `ltt_voice.chuan_hoa` tu choi khi CA HAI o cung co gia tri — mot phep
+       chan hoan toan dung, vi "giong cua ban" va "giong co san" la hai nguon
+       khac nhau cho cung mot cau hoi.
+
+    ⭐ Luat dat o DAY, khong o giai doan: day la tep duy nhat cua Auto Scan noi
+       chuyen voi `ltt_voice`, va hai ban cua mot luat la hai ban se lech nhau.
+       `giong_mau.hop_le` la mot ten DA KHAI trong `BE_MAT_CONG_KHAI`.
+    """
+    ma = str(ma or "").strip()
+    if not ma:
+        return "", ""
+    try:
+        from apps.ltt_voice.giong_mau import hop_le
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        log.warning("khong nap duoc catalog giong mau (%s)", type(exc).__name__)
+        return ma, ""
+    return ("", ma) if hop_le(ma) else (ma, "")
+
+
 def giai_giong(db, *, owner_id: str, voice_id: str = "", preset: str = ""):
     """`(ref_b64, preset)` cho mot chu so huu. Nem neu giong khong phai cua ho.
 
     Goi dung mot lan cho ca lan chay, roi dung lai cho moi doan: giai giong la
     mot phep tra CSDL, va lam lai no cho tung doan la N luot tra cho mot cau tra
     loi khong doi.
+
+    ⭐ `voice_id` nhan duoc mot ma giong BAT KY — ke ca ten mot giong dung san —
+       va `tach_ma_giong` dat no vao dung o. Nguoi goi khong phai biet luat do.
     """
     from apps.ltt_voice.features import chuan_hoa, giai_giong as _giai
+
+    if voice_id and not preset:
+        voice_id, preset = tach_ma_giong(voice_id)
 
     # `chuan_hoa` doi co `text`; o day ta chi giai giong, nen dua mot cho giu chan.
     yc = chuan_hoa({"text": ".", "voice_id": voice_id, "preset": preset,

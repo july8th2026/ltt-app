@@ -81,6 +81,34 @@
     (`test_448`, real E2E run), B24-01 (`test_450`, real perf run) and B23-01
     (`test_449`) — the last one after **refusing** a fix that was only half of
     one. See "what Phase 27 got wrong about itself" below.
+- **open_blockers (MOI, tim ra SAU pha 28)**:
+  * **A29-01 (P1) — the dubbing stage could never succeed on the real path.**
+    First run ever with `LTT_ASV_GIONG_THAT=1`: `voice_synthesis` ->
+    `failed_terminal`, *"Chi chon mot: giong cua ban hoac giong co san."*
+    `giai_doan_giong.py` passed **two** wrong arguments at once:
+    `preset=cai_dat["preset"]` — that is the **render** preset
+    (`localize_preserve_picture`), while `ltt_voice.preset` means the name of a
+    **built-in voice** (`giong_mau.hop_le("localize_preserve_picture") = False`);
+    and `voice_id=ma_giong` — but `"Minh Duc"` **is** a built-in
+    (`hop_le("Minh Duc") = True`), so it belongs in `preset`. Both set at once
+    trips `chuan_hoa`'s correct guard.
+    ⭐ Same shape as every other finding in this programme: `giai_giong` was
+    tested in isolation (test_409/test_435, with the right arguments) and the
+    E2E always substituted it, so the live path had **never run**.
+    **FIXED** — the rule now lives once, at the boundary
+    (`giong_noi.tach_ma_giong`), and the stage stops passing a render preset.
+    Measured after: `preset='Minh Duc'`, `lech_lon_nhat` 10.3 -> **0.83**, both
+    runs `done`, **20 passed** with the real LTTStudioVoice.
+  * **A29-02 (P2, fixture) — the translation double inflated short fragments.**
+    ASR splits the source into **6** segments including "Thank you." and
+    "Of course."; `_dich_gia` matched by shared words and returned a **whole**
+    Vietnamese sentence for each, so a ~0.6 s slot received ~6 s of real speech
+    and `timing_align` refused with "he so co gian 11.304". ⭐ SAPI had hidden
+    this for 29 phases: it reads accent-stripped text so fast that a
+    wrongly-proportioned translation still produced a plausible **duration** —
+    a double can be right about **content** and wrong about **length**, and
+    length is what the fit ladder measures. **FIXED**: the double now truncates
+    in proportion to the source fragment.
 - **findings_for_phase_28**:
   * **A27-01 (P2)** — `apps/auto_scan_video/qc_ai.py` (semantic + visual QC) and
     `sua_chua.py` (repair) have **no caller in product code**. `loi.py` imports

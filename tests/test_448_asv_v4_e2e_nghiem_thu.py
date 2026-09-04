@@ -661,7 +661,14 @@ def test_bao_cao_GHI_RO_thu_khong_that(bc):
     con lai la that. Mot danh sach rong o day nghia la co nguoi da xoa loi khai
     thay vi dong lai cai lo hong.
     """
-    assert bc["thay_the"], "bao cao khong khai cua thay the nao"
+    # ⭐ Danh sach RONG chi hop le khi bao cao noi ro CA HAI cua deu that. Mot
+    #    danh sach rong khong kem hai co doc len giong het mot bao cao co nguoi
+    #    xoa loi khai thay vi dong lai lo hong — dung dieu docstring canh bao.
+    if not bc["thay_the"]:
+        assert bc.get("model_that") and bc.get("giong_that"), (
+            "bao cao khong khai cua thay the nao, va cung khong khai la da "
+            "chay that ca hai cua")
+        return
     for t in bc["thay_the"]:
         assert t["ly_do"].strip() and t["con_that"].strip(), t
 
