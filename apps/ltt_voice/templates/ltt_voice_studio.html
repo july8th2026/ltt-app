@@ -283,6 +283,21 @@
             <ul class="lv-gd">
               {% for j in gan_day %}
                 <li>
+                  {#
+                    NUT PHAT — anh mau co mot nut phat o dau moi dong.
+
+                    ⭐ Dung lai `lv-phat` (`data-nang="1"`) chu khong dung mot
+                       `<audio controls>` tran: ba man khac cua Voice deu dung
+                       thanh phan nay, va mot trinh phat thu hai o day la mot
+                       cho de chung lech nhau.
+
+                    ⚠️ `preload="none"`: ba dong nay hien o MOI lan mo Studio,
+                       nen tai san truoc la ba luot mang cho thu khach chua bam.
+                  #}
+                  {% if j.status == "done" and (j.result or {}).get("audio_key") %}
+                    <audio class="lv-gd-phat" data-nang="1" preload="none"
+                           src="{{ manifest.route_prefix }}/audio/{{ j.result.get('audio_key') }}"></audio>
+                  {% endif %}
                   <span class="lv-gd-chu">{{ (j.params or {}).get('text', '')[:70] }}</span>
                   <span class="lv-gd-phai">
                     {% if j.result and j.result.get('duration_s') %}

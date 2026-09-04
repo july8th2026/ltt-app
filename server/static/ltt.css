@@ -2561,6 +2561,16 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
   padding:0 5px;border:1px solid var(--brand-primary,#b7372b);border-radius:4px;
   background:var(--brand-soft,#3a1512);color:#fff;font-size:10.5px}
 .lv-kq-ct .lv-ma code{font-size:10.5px;color:var(--muted);word-break:break-all}
+/* SONG AM TO HON o cot ket qua — anh mau danh cho no gan nua chieu cao panel,
+   vi do la thu khach nhin vao de biet ban doc co dung khong truoc khi nghe. */
+.lv-studio .lv-kq .lv-phat{padding:8px 11px}
+.lv-studio .lv-kq .lv-phat-song{height:58px}
+/* Nut phat trong dong Gan day: dung lai `lv-phat` nhung GIAU song am — mot
+   dong cao 40px thi song am khong doc duoc gi, no chi choan cho. */
+.lv-gd .lv-phat{width:auto;padding:0;border:0;background:none}
+.lv-gd .lv-phat-song,.lv-gd .lv-phat-gio{display:none}
+.lv-gd .lv-phat-nut{width:26px;height:26px}
+.lv-gd li{display:flex;align-items:center;gap:9px}
 .lv-st-trai,.lv-st-giua,.lv-st-phai{display:flex;flex-direction:column;gap:14px;min-width:0}
 .lv-st-phai{position:sticky;top:72px}
 
