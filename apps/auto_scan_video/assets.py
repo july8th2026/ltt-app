@@ -462,37 +462,59 @@ def cache_dung_duoc(db: Session, kho: Storage, *, owner_id: str, run_id: str,
 
     🔑 `owner_id` nam trong menh de WHERE **va** trong khoa. Hai khach cung mot
        van tay van la hai lan tinh (I19).
+
+    🔴 **Ham nay tung khong bao gio tra ve mot lan trung nao, va no hong o HAI
+       tang chu khong mot (B23-01).**
+
+    Tang mot: no loc bang `f"/{van_tay}." in storage_key` voi mot van tay 64 ky
+    tu, trong khi `dat_khoa` cat con `DAI_VAN_TAY_TRONG_KHOA = 32` ky tu khi
+    dung ten tep. Mot chuoi 64 ky tu khong the nam trong mot khoa chi chua 32 ky
+    tu dau.
+
+    Tang hai — va day moi la tang khong sua duoc bang cach cat cho khop: khoa
+    mang van tay cua **TUNG ARTIFACT**, khong phai van tay cua GIAI DOAN. Do
+    that: mot lan `media_prepare` ghi **hai** artifact duoi **hai** van tay khac
+    nhau (`source_probe.json` va `audio_full.wav`), va `promote_va_ghi` nhan
+    `van_tay=phan["van_tay"] or vt` — tuc moi phan tu dat ten khoa cua rieng no.
+    Nen **khong** gia tri don nao trong `storage_key` tra loi duoc cau hoi ta
+    dang hoi.
+
+    ⇒ Bo han phep so khop chuoi. Cau hoi *"giai doan nay da chay xong voi dung
+      van tay nay chua"* da co mot cho tra loi dung: `AsvStage.fingerprint`,
+      chinh la thu `features.danh_dau_xong` ghi lai. Va danh sach artifact cua
+      no da nam trong `outputs["khoa_asset"]`.
+
+    ⭐ Doi lai, ham nay manh hon truoc theo mot chieu quan trong: no khong con
+       doan tu ten tep nua. Mot khoa doi cach dat ten khong lam cache im lang
+       chet lan nua.
     """
+    from .tables import STAGE_SUCCEEDED, AsvStage
+
+    gd = db.execute(select(AsvStage).where(
+        AsvStage.run_id == run_id,
+        AsvStage.stage == stage)).scalar_one_or_none()
+    if gd is None or gd.status != STAGE_SUCCEEDED:
+        return None
+    if not van_tay or str(gd.fingerprint or "") != str(van_tay):
+        return None
+
+    khoa = [str(k) for k in ((gd.outputs or {}).get("khoa_asset") or [])]
+    if not khoa:
+        return None
+
     hang = list(db.execute(
         select(AsvAsset).where(AsvAsset.owner_id == owner_id,
                                AsvAsset.run_id == run_id,
-                               AsvAsset.created_by_stage == stage)).scalars())
-    if not hang:
+                               AsvAsset.storage_key.in_(khoa))).scalars())
+    # ⛔ Thieu MOT artifact la cache khong dung duoc — khong phai "dung phan con
+    #    lai". Mot giai doan giao ba tep va ta tra ve hai la mot lan hong o ha
+    #    nguon, xa cho gay ra no.
+    if len(hang) != len(set(khoa)):
         return None
-    # 🔴 **Dong nay tung khong bao gio khop, va vi the cache nay chua bao gio
-    #    tra ve mot lan trung nao ke tu khi no ra doi (B23-01).**
-    #
-    #    `dat_khoa` cat van tay con `DAI_VAN_TAY_TRONG_KHOA = 32` ky tu khi dung
-    #    TEN TEP; van tay giai doan la sha256 **64** ky tu. Nen phep tim kiem
-    #    mot chuoi 64 ky tu trong mot khoa chi chua 32 ky tu dau — no khong the
-    #    dung, va no that bai theo cach im lang nhat co the: khong loi, khong
-    #    canh bao, chi la mot lan tinh lai day du moi lan.
-    #
-    # ⭐ Cat o day bang **chinh hang so ma `dat_khoa` dung**, khong go lai 32:
-    #    hai ban sao cua mot con so la hai cho de chung lech nhau, va lan lech
-    #    tiep theo se lai im lang y het lan nay.
-    #
-    # ⚠️ 32 ky tu hex = 128 bit, va pham vi da bi thu hep boi menh de WHERE ben
-    #    tren (dung chu so huu, dung lan chay, dung giai doan). Mot va cham phai
-    #    xay ra giua hai van tay cua CUNG mot giai doan trong CUNG mot lan chay.
-    ngan = str(van_tay)[:DAI_VAN_TAY_TRONG_KHOA]
-    hop = [a for a in hang if f"/{ngan}." in a.storage_key]
-    if not hop:
-        return None
-    for a in hop:
+    for a in hang:
         if kiem_toan_ven(db, kho, a) != ASSET_OK:
             return None
-    return hop
+    return hang
 
 
 def vo_hieu_theo_day_chuyen(db: Session, run_id: str,

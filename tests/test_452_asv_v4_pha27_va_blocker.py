@@ -227,22 +227,40 @@ def test_ffmpeg_duoc_GHIM_vao_card_duoc_cap():
 #  B23-01 + A26-01 — cache chua tung trung, va van tay khong mang danh tinh model
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_khoa_cache_va_van_tay_dung_CUNG_mot_phep_cat():
-    """🔴 Cache loc bang mot chuoi 64 ky tu trong mot khoa chi chua 32 ky tu dau.
+def test_cache_giai_doan_KHONG_con_doan_tu_TEN_TEP():
+    """🔴 **Khiem khuyet nay co HAI tang, va ban va dau tien cua toi chi cham tang mot.**
 
-    Khong the khop, va no that bai theo cach im lang nhat: khong loi, khong canh
-    bao, chi la mot lan tinh lai day du moi lan.
+    Tang mot: loc bang `f"/{van_tay}." in storage_key` voi van tay 64 ky tu,
+    trong khi `dat_khoa` cat con 32. Cat cho khop la du de dong tang do — va toi
+    da ghi B23-01 la FIXED sau khi lam dung nhu the.
+
+    Tang hai, va la tang that: khoa mang van tay cua **TUNG ARTIFACT**, khong
+    phai cua GIAI DOAN. Do that: mot lan `media_prepare` ghi hai artifact duoi
+    hai van tay khac nhau. Nen **khong** gia tri don nao trong `storage_key` tra
+    loi duoc cau hoi dang hoi. `xfail(strict)` o `test_449` van do, va no dung.
+
+    ⇒ Cau hoi "giai doan nay da chay xong voi van tay nay chua" duoc hoi o cho
+      duy nhat ghi lai dieu do: `AsvStage.fingerprint`.
     """
+    goc = _ten_duoc_goi(assets.cache_dung_duoc)
+    thuoc = _thuoc_tinh(assets.cache_dung_duoc)
+    assert "fingerprint" in thuoc, "cache khong doc van tay cua GIAI DOAN"
+    assert "storage_key" in thuoc, "cache khong doi chieu danh sach artifact"
+    # ⛔ Va no khong duoc quay lai doan tu ten tep: khong cat chuoi, khong so
+    #    khop chuoi con.
+    cay = ast.parse(inspect.getsource(assets.cache_dung_duoc))
+    assert not [n for n in ast.walk(cay) if isinstance(n, ast.Compare)
+                and any(isinstance(o, ast.In) for o in n.ops)
+                and isinstance(n.left, ast.JoinedStr)], (
+        "cache van doan quan he giai doan/artifact bang mot phep so khop chuoi")
+    assert "DAI_VAN_TAY_TRONG_KHOA" not in goc | thuoc
+
+    # Va `dat_khoa` VAN cat — de nguoi doc sau khong tuong hai thu da bang nhau.
     van_tay = "a" * 64
     khoa = assets.dat_khoa(owner_id="u1", run_id="r1", stage="edit_plan",
                            van_tay=van_tay, duoi="json")
-    assert f"/{van_tay}." not in khoa, "gia dinh cua phep kiem nay da doi"
-    ngan = van_tay[:assets.DAI_VAN_TAY_TRONG_KHOA]
-    assert f"/{ngan}." in khoa
-
-    nguon = inspect.getsource(assets.cache_dung_duoc)
-    assert "DAI_VAN_TAY_TRONG_KHOA" in nguon, (
-        "`cache_dung_duoc` khong cat van tay cung cach `dat_khoa` cat")
+    assert f"/{van_tay}." not in khoa
+    assert f"/{van_tay[:assets.DAI_VAN_TAY_TRONG_KHOA]}." in khoa
 
 
 def test_van_tay_CONTENT_PROCESS_mang_DANH_TINH_MODEL_dang_chay():

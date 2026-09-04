@@ -303,12 +303,14 @@ def test_TOAN_VEN_bat_duoc_mot_artifact_da_BI_SUA(db, kho_tam, tmp_path,
         "mot artifact bi sua noi dung van duoc coi la toan ven")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "`cache_dung_duoc` loc bang `f'/{van_tay}.' in storage_key`, nhung khoa "
-    "mang van tay DA BI CAT con 32 ky tu (`DAI_VAN_TAY_TRONG_KHOA`) va mang van "
-    "tay cua TUNG ARTIFACT chu khong phai van tay 64 ky tu cua GIAI DOAN. Hai "
-    "cai khong bao gio khop, nen cache cap giai doan chua tung mot lan tra ve "
-    "ket qua. Chu cua pha 27."))
+# ⭐ **Nhan `xfail(strict=True)` da duoc GO o pha 27 — va no da bat toi mot lan.**
+#    Ban va DAU TIEN cua pha 27 chi sua tang mot (cat van tay cho khop cach
+#    `dat_khoa` cat), va toi da ghi B23-01 la FIXED trong bao cao truoc khi chay
+#    phep kiem nay. No van do. Ly do cu cua nhan nay ke ca HAI tang, va tang hai
+#    moi la tang that: khoa mang van tay cua TUNG ARTIFACT, nen khong phep so
+#    khop chuoi nao tren `storage_key` tra loi duoc cau hoi "giai doan nay da
+#    chay voi van tay nay chua".
+#    Ban va that bo han phep so khop chuoi va hoi `AsvStage.fingerprint`.
 def test_cache_cap_GIAI_DOAN_dung_lai_duoc_mot_giai_doan_khong_doi(
         db, kho_tam, tmp_path, asr_gia, dich_gia, giong_gia):
     """🔴 ADR-001 D8: cung dau vao, cung cau hinh, cung phien ban engine thi

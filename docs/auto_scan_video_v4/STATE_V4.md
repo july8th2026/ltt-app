@@ -23,15 +23,22 @@
     (`D:\LTTSTUDIOSAPP-asv`), and not the production tree — is satisfied. Recorded here
     rather than silently diverging.
   - ⛔ **This machine IS production** (`C:\LTTPlatform` exists). Never deploy from here.
-- **current_phase**: 26
-- **phase_status**: Phase 26 `AUDIT_COMPLETE_WITH_BLOCKERS` -> Phase 27 AUTHORIZED
+- **current_phase**: 27
+- **phase_status**: Phase 27 `PASS` -> Phase 28 AUTHORIZED
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
   `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
   `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
   ⚠️ `test_417` alone is 84 % of the full time. It is **split, not dropped**: it proves
   downstream invalidation, and an 80-second suite gets run once a day instead of after
   every edit — which is how a defect ends up ten edits deep.
-- **last_green_invariant_result**: `VONG_DU` → **168 passed, 1 xfailed in 50.88 s** (2026-09-04)
+- **last_green_invariant_result**: `VONG_DU` + `test_452` + `test_453` →
+  **188 passed, 1 xfailed in 53.95 s** (2026-09-04, after Phase 27)
+  - The one remaining `xfail(strict)` is `test_425::test_chuoi_thi_hanh_biet_den_preset`,
+    a **Phase 12** debt (`pipeline.py` never names the preset). Not a Phase 26 blocker.
+  - ⭐ Two other strict-xfail pins **flipped to XPASS on real runs and were removed**:
+    B22-01's (`test_448`) and B24-01's (`test_450`). Phase 22 wrote the first one
+    predicting exactly that — so the suite would announce the defect's end instead of
+    leaving a TODO lying around for another year. It did.
 - **certified_baseline**: `python tools/gate.py --phien asv-v4` -> `RESULT: FAIL (1/26)`, 675 s,
   **2 failed / 5 769 passed / 32 skipped**, no tree-changed warning.
   Both failures proven non-ASV: `test_82` (gitignored `apps/*/vendor/`, every fresh worktree)

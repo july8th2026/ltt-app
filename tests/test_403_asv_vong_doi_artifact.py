@@ -54,6 +54,30 @@ def _staging(kho, khoa: str, du_lieu: bytes) -> str:
     return khoa
 
 
+def _giai_doan_xong(db, *, run_id: str, owner_id: str, stage: str,
+                    van_tay: str, khoa: list):
+    """Dong `AsvStage` ma mot lan chay THAT de lai sau khi giai doan xong.
+
+    🔑 Sau pha 27, `cache_dung_duoc` hoi `AsvStage.fingerprint` chu khong con do
+       chuoi tren `storage_key`. Ly do: khoa mang van tay cua TUNG ARTIFACT
+       (mot lan `media_prepare` ghi hai artifact duoi hai van tay khac nhau),
+       nen khong gia tri nao trong ten tep tra loi duoc cau hoi "GIAI DOAN nay
+       da chay voi van tay nay chua".
+
+    ⇒ Cac phep kiem cache vi the phai dung canh day du. Truoc do chung chi tao
+      artifact — mot trang thai `chay_giai_doan` khong bao gio tao ra, vi no
+      luon co dong giai doan truoc khi hoi cache.
+    """
+    from apps.auto_scan_video.tables import STAGE_SUCCEEDED, AsvStage
+
+    gd = AsvStage(run_id=run_id, owner_id=owner_id, stage=stage,
+                  status=STAGE_SUCCEEDED, fingerprint=van_tay,
+                  outputs={"stage": stage, "khoa_asset": list(khoa)})
+    db.add(gd)
+    db.flush()
+    return gd
+
+
 @pytest.fixture()
 def asr_gia(monkeypatch):
     """Thay engine ASR that bang mot ban ghi xac dinh.
@@ -355,6 +379,8 @@ def test_cache_TRUNG_van_tay_van_bi_bo_khi_tep_mat(db, kho):
     a = assets.promote_va_ghi(db, kho, owner_id="uA", run_id="r1",
                               stage="compose", van_tay="vt", kind="json",
                               duoi="json", staging_key=tam)
+    _giai_doan_xong(db, run_id="r1", owner_id="uA", stage="compose",
+                    van_tay="vt", khoa=[a.storage_key])
     db.commit()
 
     assert assets.cache_dung_duoc(db, kho, owner_id="uA", run_id="r1",
@@ -374,9 +400,11 @@ def test_cache_KHONG_BAO_GIO_vuot_qua_ranh_gioi_chu_so_huu(db, kho):
     from apps.auto_scan_video import assets
 
     tam = _staging(kho, "asv-staging/uA/r1/compose/chung.json", b'{"a":1}')
-    assets.promote_va_ghi(db, kho, owner_id="uA", run_id="r1", stage="compose",
-                          van_tay="chung", kind="json", duoi="json",
-                          staging_key=tam)
+    a = assets.promote_va_ghi(db, kho, owner_id="uA", run_id="r1",
+                              stage="compose", van_tay="chung", kind="json",
+                              duoi="json", staging_key=tam)
+    _giai_doan_xong(db, run_id="r1", owner_id="uA", stage="compose",
+                    van_tay="chung", khoa=[a.storage_key])
     db.commit()
 
     # uB co CUNG van tay nhung khac run/chu so huu -> khong duoc dung lai.
@@ -397,9 +425,11 @@ def test_vo_hieu_theo_day_chuyen_danh_dau_ha_nguon(db, kho):
 
     for stage in ("transcribe", "content_process"):
         tam = _staging(kho, f"asv-staging/uA/r1/{stage}/vt.json", b'{"a":1}')
-        assets.promote_va_ghi(db, kho, owner_id="uA", run_id="r1", stage=stage,
-                              van_tay="vt", kind="json", duoi="json",
-                              staging_key=tam)
+        a = assets.promote_va_ghi(db, kho, owner_id="uA", run_id="r1",
+                                  stage=stage, van_tay="vt", kind="json",
+                                  duoi="json", staging_key=tam)
+        _giai_doan_xong(db, run_id="r1", owner_id="uA", stage=stage,
+                        van_tay="vt", khoa=[a.storage_key])
     db.commit()
 
     so = assets.vo_hieu_theo_day_chuyen(db, "r1", ["content_process"])
