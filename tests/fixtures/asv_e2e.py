@@ -357,28 +357,80 @@ BIEN_GIONG_THAT = "LTT_ASV_GIONG_THAT"
 #:    cai ma pool sinh ra de khong ai phai lam.
 BIEN_MODEL_THAT = "LTT_ASV_MODEL_THAT"
 
+#: URL cua CSDL giu POOL KHOA. ⛔ Mot bien RIENG, khong dung `LTT_DATABASE_URL`:
+#: bien do bi `moi_truong` ghi de bang SQLite dung-mot-lan **truoc khi** than
+#: bai test chay, nen doc no o day se luon thay CSDL rong cua bo test.
+BIEN_POOL_URL = "LTT_ASV_POOL_URL"
+
 
 def dung_model_that() -> bool:
     """Luot chay nay co goi model tren may B THAT khong."""
     import os
 
-    url = str(os.environ.get("LTT_DATABASE_URL", "")).strip().lower()
-    # 🔴 **Doi POSTGRES, khong chi doi "co dat".**
+    # 🔴 **Doc `BIEN_POOL_URL`, KHONG doc `LTT_DATABASE_URL`.**
     #
-    #    Fixture `moi_truong` CO Y ghi de `LTT_DATABASE_URL` bang mot SQLite
-    #    dung-mot-lan de tao user/run/credit ma khong cham CSDL that. Pool khoa
-    #    thi nam o PostgreSQL. Mot tien trinh chi co MOT bien nay, nen hai thu
-    #    do loai tru nhau — va mot phep kiem "co dat khong" se noi CO trong khi
-    #    cai duoc dat la CSDL RONG cua bo test.
-    #
-    # ⇒ Hau qua neu khong siet: `api_pool.chon_key` tim trong SQLite rong,
-    #   nem `ThieuKeyError`, va `dieu_phoi.goi` doc do la "provider nay khong
-    #   phuc vu duoc" roi nem `KhongCoProviderNao` — mot thong bao khong nhac gi
-    #   toi CSDL, sau khi da ton demucs va ASR.
+    #    Fixture `moi_truong` ghi de `LTT_DATABASE_URL` bang mot SQLite
+    #    dung-mot-lan **truoc khi** than bai test chay. Mot phep kiem "co dat
+    #    khong" tren bien do se noi CO trong khi cai duoc dat la CSDL RONG cua
+    #    bo test — va hau qua la `api_pool.chon_key` nem `ThieuKeyError`, roi
+    #    `dieu_phoi.goi` doc do thanh "provider nay khong phuc vu duoc" va nem
+    #    `KhongCoProviderNao`: mot thong bao khong nhac gi toi CSDL, sau khi da
+    #    ton demucs va ASR. Da dinh dung nhu vay mot lan.
+    url = str(os.environ.get(BIEN_POOL_URL, "")).strip().lower()
     return (str(os.environ.get(BIEN_MODEL_THAT, "")).strip() == "1"
             and url.startswith(("postgres://", "postgresql://",
                                 "postgresql+psycopg://",
                                 "postgresql+psycopg2://")))
+
+
+def nap_khoa_pool(db, *, provider: str = "ltt_llm") -> int:
+    """Chep cac dong khoa `provider` tu POOL THAT sang CSDL cua bo test.
+
+    Tra ve so dong da chep. `0` nghia la pool that khong co khoa nao dung duoc
+    — mot ket qua co that, khong phai mot loi cua ham nay.
+
+    ⛔ CHI DOC production. Mo mot engine RIENG, `SELECT`, dong. Khong ghi, khong
+       xoa, khong dung `Base.metadata` len no.
+
+    🔑 Chep nguyen `credential_enc` — mot Fernet token. Ma o day **khong bao gio
+       nhin thay ban ro**; khoa giai nam trong `app.env` va chi
+       `api_keys.lay_credential` dung toi no, dung luc goi.
+
+    ⭐ Va chep sang CSDL RIENG cua bo test co mot loi phu dang ke: moi bo dem
+       `last_used_at` / `error_count` / cooldown cua luot nghiem thu **khong**
+       ghi vao dong khoa that. Tai cua bo test khong lam ban thong ke cua khoa
+       production.
+    """
+    import os
+
+    from sqlalchemy import create_engine, inspect as sa_inspect, select
+    from sqlalchemy.orm import Session as SaSession
+
+    from platform_core.models import ApiKey
+
+    url = str(os.environ.get(BIEN_POOL_URL, "")).strip()
+    if not url:
+        return 0
+
+    may = create_engine(url, pool_pre_ping=True)
+    try:
+        with SaSession(may) as phien:
+            hang = list(phien.execute(
+                select(ApiKey).where(ApiKey.provider == provider,
+                                     ApiKey.enabled.is_(True),
+                                     ApiKey.owner_user_id == "")).scalars())
+            # ⚠️ Doc HET gia tri ra dict TRUOC khi dong phien: mot doi tuong ORM
+            #    da tach khoi phien se nem `DetachedInstanceError` o lan doc
+            #    thuoc tinh dau tien, va thong bao do khong nhac gi toi phien.
+            cot = [c.key for c in sa_inspect(ApiKey).mapper.column_attrs]
+            goi = [{k: getattr(k_row, k) for k in cot} for k_row in hang]
+    finally:
+        may.dispose()
+
+    for g in goi:
+        db.add(ApiKey(**g))
+    db.flush()
+    return len(goi)
 
 
 def dung_giong_that() -> bool:

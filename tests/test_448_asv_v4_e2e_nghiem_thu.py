@@ -360,6 +360,25 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
         pytest.skip("khong co SAPI de dung ban nguon co tieng noi that")
 
     su_that = fx.nguon_hoi_thoai(tmp_path / "nguon")
+
+    # 🔑 Nap khoa pool TRUOC khi dat cua model.
+    #
+    # ⛔ Va khang dinh NGAY neu pool that khong co khoa nao: khong co
+    #    khoa thi khong co duong nao goi model that, va bai nay phai noi
+    #    ra o day chu khong hong o giua chuoi — sau khi da ton demucs va
+    #    ASR, duoi mot thong bao (`KhongCoProviderNao`) khong nhac gi toi
+    #    CSDL. Da dinh dung nhu vay mot lan.
+    if fx.dung_model_that():
+        from platform_core.db import get_session
+        so_khoa = 0
+        for _db in get_session():
+            so_khoa = fx.nap_khoa_pool(_db)
+            _db.commit()
+            break
+        assert so_khoa, (
+            "LTT_ASV_MODEL_THAT=1 nhung pool that khong co khoa `ltt_llm` "
+            "nao dung duoc - khong co duong nao goi model that")
+
     dem_model = fx.dat_cua_model(monkeypatch, su_that=su_that)
     dem_giong = fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
 

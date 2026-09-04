@@ -140,6 +140,7 @@ if (-not $coCsdl) {
 $env:LTT_TEST_NANG   = '1'
 $env:LTT_ASV_E2E_RA  = $BaoCao
 
+Remove-Item Env:LTT_ASV_POOL_URL -ErrorAction SilentlyContinue
 if ($ModelGia -or -not $coCsdl) {
     Remove-Item Env:LTT_ASV_MODEL_THAT -ErrorAction SilentlyContinue
     Write-Host "  [--] Model: ban thay the (khong cham may B)" -ForegroundColor Yellow
@@ -147,7 +148,17 @@ if ($ModelGia -or -not $coCsdl) {
     # KHONG go cung dia chi may B vao day. `Ket_noi.md` noi thang: tin cum chu
     # dung tin mot gia tri chep lai. Dia chi that nam o cot `base_url` cua dong
     # khoa trong pool, va `api_pool.chon_key` la thu duy nhat biet chon dong nao.
+    #
+    # !! `LTT_ASV_POOL_URL` la mot bien RIENG, va no phai the.
+    #    Fixture `moi_truong` GHI DE `LTT_DATABASE_URL` bang mot SQLite
+    #    dung-mot-lan truoc khi than bai test chay - de tao user/run/credit
+    #    ma khong cham CSDL that. Nen bo test khong con duong nao doc lai
+    #    URL cua pool tru khi ta giu no o mot cho khac.
+    #
+    # !! Bien nay chi de DOC mot dong khoa. Khong bo test nao duoc ghi
+    #    vao CSDL production qua no.
     $env:LTT_ASV_MODEL_THAT = '1'
+    $env:LTT_ASV_POOL_URL   = $env:LTT_DATABASE_URL
     Write-Host "  [**] Model: THAT, qua pool khoa -> may B" -ForegroundColor Cyan
 }
 if ($GiongSAPI -or -not $coToken) {

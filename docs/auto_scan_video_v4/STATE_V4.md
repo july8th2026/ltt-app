@@ -109,6 +109,26 @@
     a double can be right about **content** and wrong about **length**, and
     length is what the fit ladder measures. **FIXED**: the double now truncates
     in proportion to the source fragment.
+  * **A29-03 (P2, harness) — the real-model E2E is blocked by SQLite, and by
+    nothing else.** Measured end to end today:
+      - pool key resolves and works: `GET /v1/models -> 200`, both
+        `qwen38-api` and `qwen38-vision` served from `http://192.168.2.66:8299`;
+      - one real `DOC_CANH` call returns **valid, schema-correct** JSON from
+        `Qwen3.8-27B-UD-Q4_K_M.gguf`, correctly describing the frames
+        (`loai: test_pattern_ky_thuat`, `de_xuat: khong_chac`, `do_tin: 0.2`);
+      - the prompt is **8,559** estimated tokens against the measured 28,262
+        vision window - **not** a context problem (V4-R08 was the first suspect
+        and it was wrong).
+    🔴 What actually fails: `content_process` dies with
+    `sqlite3.OperationalError: database is locked`, and the four `doc_canh`
+    calls are recorded `tu_choi` in its wake. Real network latency to machine B
+    widens exactly the two-session window `giai_doan_noi_dung` already
+    documents (`su_dung.ghi` + `danh_dau_xong` hold the handler's write lock
+    while `ctx.progress` opens a second session).
+    ⭐ So "real model" and "throwaway SQLite" are the same
+    collision seen from a second angle. The clean route is to run this suite on
+    **PostgreSQL behind `tests/pg_scratch.py`** - whose guard already refuses
+    any URL whose database name does not contain `test`. Not attempted yet.
 - **findings_for_phase_28**:
   * **A27-01 (P2)** — `apps/auto_scan_video/qc_ai.py` (semantic + visual QC) and
     `sua_chua.py` (repair) have **no caller in product code**. `loi.py` imports
