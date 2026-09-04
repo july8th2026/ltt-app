@@ -1119,6 +1119,19 @@
       var oTd = document.getElementById("lv-toc-do");
       if (oTd) fd.append("toc_do", oTd.value || "1.0");
 
+      /* 🔴 VA TOI VUA ROI VAO DUNG CAI BAY MO TA O TREN — 04/09/2026.
+       *
+       *    Them o `Ngon ngu`, kiem bang trinh duyet thay `lv-ngon-ngu.value`
+       *    doi tu "auto" sang "en" khi bam, va ket luan la xong. Y HET dong
+       *    chu ngay tren: "toi kiem input an thay dung, va ket luan la xong.
+       *    Nhung khong ai doc input ay."
+       *
+       * ⭐ `test_392` bat duoc, va no bat duoc vi no khong kiem GIA TRI cua
+       *    input — no doi chieu TAP HOP input trong form voi tap hop truong
+       *    `fd.append`. Mot phep kiem ve gia tri se xanh o ca hai ban. */
+      var oNn = document.getElementById("lv-ngon-ngu");
+      if (oNn) fd.append("ngon_ngu", oNn.value || "auto");
+
       fetch(duong + "/tao", {method: "POST", body: fd})
         .then(function (r) { return r.json(); })
         .then(function (d) {
