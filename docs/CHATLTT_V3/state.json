@@ -81,7 +81,7 @@
       "chan": [
         "P02"
       ],
-      "phan_tram": 25
+      "phan_tram": 30
     },
     {
       "id": "P04",
@@ -499,7 +499,18 @@
         "idempotent theo run_id — dong run hai lan khong tru hai lan"
       ],
       "phat_hien_moi": "(b) KHONG nam tron trong apps/chatltt/. luong.py:381 quyet toan VA lam tron ngay trong _phat().finally, moi loi goi mot lan. Bon duong: sua thanh_toan.py (ngoai ranh gioi) · hoan quyet toan (pha bat bien DO_NOT_REWRITE §2) · hoan bu (duong but toan thu hai) · MOT request_id cho ca run (kha thi, luong.py trong ranh gioi). Duong thu tu la duy nhat di duoc, va no thuoc P04 chu khong P03.",
-      "khong_chan_P03": true
+      "khong_chan_P03": true,
+      "dinh_ly_C2": {
+        "phat_bieu": "Delta_k = C_k - C_(k-1) <= c1_k voi moi k",
+        "he_qua": "hold du cho C1 hom nay thi du cho C2 ngay mai — khong noi hold",
+        "da_kiem": "test_803, 100.000 day ngau nhien mien so nguyen mcredit, 0 vi pham",
+        "cho_gay": "neo vao A_(k-1) DA THU thay vi C_(k-1) DU DINH -> vong sau doi bu -> gay",
+        "ba_duong_thua": [
+          "noi hold",
+          "don vao vong cuoi",
+          "mot request_id ca run"
+        ]
+      }
     },
     "bang_moi": [
       "chatltt_run",
@@ -522,7 +533,8 @@
   "p03": {
     "da_xong": [
       "gop_manh.py + test_801 (15)",
-      "chieu_tool.py + test_802 (12)"
+      "chieu_tool.py + test_802 (12)",
+      "test_803 bat bien C2 (10) — don duong P04"
     ],
     "con_lai": [
       "thi_hanh.py",

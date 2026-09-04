@@ -188,8 +188,41 @@ chất *"khách ngắt giữa chừng vẫn thu đúng phần đã sinh"*.
 Nó không phải một hằng số đổi chỗ; nó là một thay đổi ở tầng quyết toán, chỉ
 nhỏ hơn (a) ở chỗ nó **không chạm cửa `/api/v1`**.
 
-Tôi vẫn đi tiếp với (b) như điều phối chốt. Việc thiết kế quyết toán-một-lần
-thuộc **P04**, không phải P03 — nên nó không chặn kernel.
+### 6c. 🟢 Trần tôi tưởng có — nó KHÔNG tồn tại. Đã chứng minh và đã ghim.
+
+Bản trên nêu một lo: phần thu mỗi vòng của C2-tích-luỹ có thể vượt phần giữ chỗ
+của chính vòng đó, đụng `charged = min(provider_actual, held)` (`credit.py:408`)
+và **thu thiếu trong im lặng**. Ba đường vá được liệt kê.
+
+**Cả ba đều thừa.** Với `E_k` = chi phí chính xác tích luỹ, `C_k = max(1, ceil(E_k))`,
+`c1_k = max(1, ceil(cost_k))`:
+
+> **Δ_k = C_k − C_(k−1) ≤ c1_k với mọi k**, vì `ceil(a+b) ≤ ceil(a) + ceil(b)`.
+
+⇒ **Hold đủ cho C1 hôm nay thì đủ cho C2 ngày mai** — cùng một hold, không nới.
+Và phát biểu mạnh hơn: đường mới **đi vào trần nhẹ hơn** đường hiện tại, không
+bao giờ nặng hơn.
+
+**Đã kiểm, không chỉ chứng minh:** `tests/test_803_c2_tich_luy_bat_bien.py`
+quét 100.000 dãy `cost` ngẫu nhiên trong **miền số nguyên milli-credit** (đúng
+miền mã thật chạy, không phải số thực) — 0 vi phạm. Số học thuần, không import
+`thanh_toan`/`credit`, nên nó không đỏ vì một phiên khác đang sửa CSDL.
+
+⛔ **Chỗ định lý GÃY**, và nó là quyết định thiết kế chứ không phải chi tiết:
+neo vào `C_(k−1)` **dự định**, KHÔNG neo vào `A_(k−1)` **đã thu thật**. Neo vào
+số đã thu thì một vòng bị kẹp sẽ khiến vòng sau **đòi bù**, Δ vượt c1, định lý
+gãy. Và nó sai cả hợp đồng: `credit.quyet_toan` viết rõ *"phần vượt là variance
+**nội bộ của nền tảng**"* — đòi bù là chuyển variance của nhà sang khách.
+
+⭐ Một chỗ phát biểu gốc chưa khớp, ghim luôn: với `cost_1 = 0` thì
+**Δ_1 = 0 < c1_1 = 1**, không "bằng nhau". Lệch về phía an toàn, nên định lý
+vẫn đứng — nhưng nó là **một quyết định sản phẩm đội lốt chi tiết số học**:
+một vòng không tốn gì thì C2 thu 0, C1 thu 1. ⇒ P04 phải trả lời riêng: run có
+tổng chi phí 0 thì thu 0 hay sàn 1? Sàn là **luật ở tầng run**, không phải hệ
+quả của phép làm tròn.
+
+Tôi vẫn đi tiếp với (b) như điều phối chốt. Việc thiết kế quyết toán thuộc
+**P04**, không phải P03 — nên nó không chặn kernel.
 
 ## 7. Đường lùi
 
