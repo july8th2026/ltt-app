@@ -109,8 +109,19 @@
     a double can be right about **content** and wrong about **length**, and
     length is what the fit ladder measures. **FIXED**: the double now truncates
     in proportion to the source fragment.
-  * **A29-03 (P2, harness) — the real-model E2E is blocked by SQLite, and by
-    nothing else.** Measured end to end today:
+  * **A29-03 (P2) — the real-model E2E is blocked by TWO things, and my first
+    diagnosis named only one.** 🔴 I wrote "blocked by SQLite, and by
+    nothing else" before asking machine B how it was doing. The project owner
+    suggested the model might simply be busy with another session's job, and
+    the measurement agreed with **them**, not me — machine B's RTX 3090 read
+    `utilization 99%`, `vram_free 2,276 / 24,576 MB`, `power 367.3 / 370 W`,
+    17 processes. Only 2.2 GB free is **not enough to load `qwen38-vision` at
+    all**, so llama-swap must evict, queue or refuse — which is a far better
+    explanation of four `tu_choi` than anything I had proposed.
+    🔴 Lesson, and it is the same one this programme keeps teaching: I
+    reached for the failure I could see in my own logs and stopped, instead of
+    asking the other machine a question I had the access to ask.
+    Measured end to end today:
       - pool key resolves and works: `GET /v1/models -> 200`, both
         `qwen38-api` and `qwen38-vision` served from `http://192.168.2.66:8299`;
       - one real `DOC_CANH` call returns **valid, schema-correct** JSON from
