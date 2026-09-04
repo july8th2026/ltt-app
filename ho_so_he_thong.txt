@@ -2,7 +2,7 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:dc60f73a8ca54aa9ecbd1b057ec9e0431fb87d00e5ad53c63e10c18aa13ffea6
+Fingerprint   : sha256:ea3de4938fd3f7eed6944fe2eb2e28f2bc8f17d694c5d670b81298f7b29cdbfc
 Nguồn đã quét : 1481 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
@@ -1487,9 +1487,7 @@ Test inventory:
 - tests/test_374_to_tien_mo_coi.py
 - tests/test_375_ltt_voice_nop_lai_khong_trung.py
 - tests/test_376_cong_chat_luong_voice.py
-- tests/test_377_cong_giong_duong_ghi.py
 - tests/test_377_sandbox_dung_loai_media.py
-- tests/test_378_ban_doc_dai.py
 - tests/test_378_noi_day_canh_bao_cpu.py
 - tests/test_379_to_tien_may_a.py
 - tests/test_37_p3_web_foundation.py
@@ -1508,6 +1506,8 @@ Test inventory:
 - tests/test_392_toc_do_hau_ky.py
 - tests/test_393_kiem_truoc_khi_cam.py
 - tests/test_394_nen_da_phien.py
+- tests/test_395_cong_giong_duong_ghi.py
+- tests/test_396_ban_doc_dai.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -2859,9 +2859,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_374_to_tien_mo_coi.py
 - tests/test_375_ltt_voice_nop_lai_khong_trung.py
 - tests/test_376_cong_chat_luong_voice.py
-- tests/test_377_cong_giong_duong_ghi.py
 - tests/test_377_sandbox_dung_loai_media.py
-- tests/test_378_ban_doc_dai.py
 - tests/test_378_noi_day_canh_bao_cpu.py
 - tests/test_379_to_tien_may_a.py
 - tests/test_37_p3_web_foundation.py
@@ -2880,6 +2878,8 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_392_toc_do_hau_ky.py
 - tests/test_393_kiem_truoc_khi_cam.py
 - tests/test_394_nen_da_phien.py
+- tests/test_395_cong_giong_duong_ghi.py
+- tests/test_396_ban_doc_dai.py
 - tests/test_43_web_hardening.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
@@ -3113,7 +3113,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1481 file; 14962213 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1481 file; 14964057 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -176171,7 +176171,7 @@ from tools.upscale_browser_server import app  # noqa: E402,F401
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/golden/public_api_catalog_v1.json
-SHA256=a1fa95de6406dfe2c1b6a8dca5c1dfdcc6fa41955dcfeef15dfc4af7e6083f77 BYTES=34033 LINES=1113
+SHA256=ead42bd22acef5d4759be9e3ed2e8907ec6b255b3a4add314ca6a79d59ee19bd BYTES=34151 LINES=1113
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {
   "tools": [
@@ -176540,8 +176540,8 @@ SHA256=a1fa95de6406dfe2c1b6a8dca5c1dfdcc6fa41955dcfeef15dfc4af7e6083f77 BYTES=34
         "properties": {
           "text": {
             "type": "string",
-            "maxLength": 1500,
-            "description": "What to say. Vietnamese, English, or both mixed. Up to 1500 characters per call - longer scripts should be split into several calls, because voice consistency degrades on very long single passes.",
+            "maxLength": 100000,
+            "description": "What to say. Vietnamese, English, or both mixed. Up to 100,000 characters per call. You do NOT need to split long text yourself - it is segmented on sentence boundaries, spoken in several passes and joined back into one continuous audio file. For anything longer, use Projects, where each block is its own pass.",
             "examples": [
               "Xin chào, đây là giọng đọc của LTT Studios."
             ]
@@ -176583,7 +176583,7 @@ SHA256=a1fa95de6406dfe2c1b6a8dca5c1dfdcc6fa41955dcfeef15dfc4af7e6083f77 BYTES=34
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "34f673d8463aba44"
+      "contract_hash": "e37638a1ec2e07be"
     },
     {
       "name": "story.storyboard",
@@ -256202,109 +256202,6 @@ def test_db_dai_cao_phai_chan_CA_HAI_phia():
 
 @@@LTT_PROFILE_FILE_END@@@
 
-@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_377_cong_giong_duong_ghi.py
-SHA256=7b97bb1481a85b82af311ae572c40c68685b6c065314ff56f41bfb793470d576 BYTES=3881 LINES=97
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-r"""
-🔴 Cổng giọng vừa có cửa GHI đầu tiên, và cửa ghi khác hẳn cửa đọc về rủi ro.
-
-Trước `/v1/lo-ra-tep`, mọi cửa nhận đường dẫn của `voice_sidecar/server.py` đều
-chỉ ĐỌC (`/v1/enroll` nhận `duong_wav` rồi mở nó). Đường tài liệu dài đổi điều
-đó: sidecar phải ghi từng đoạn ra đĩa để worker không phải cầm hàng trăm MB
-base64.
-
-⛔ Một cửa nhận đường dẫn TUỲ Ý để ghi là một cửa ghi đè được `app.env`, ghi đè
-   được chính `server.py`, ghi đè được một tệp hệ thống. Loopback và bearer
-   token vẫn là hàng rào đầu — nhưng *"chỉ máy này gọi được"* không đồng nghĩa
-   với *"mọi thứ chạy trên máy này đều đáng tin"*, và chính đầu tệp `server.py`
-   đã ghi rằng cổng này **không có xác thực nào ngoài một token dùng chung**.
-
-⇒ Đường ghi bị kẹp vào một gốc, fail-closed. Tệp này chốt cái kẹp đó.
-
-⚠️ Chốt `_kiem_duong_ghi` chứ không chốt cửa HTTP: cửa cần engine và GPU, còn
-   phép kẹp thì thuần đường dẫn. Kiểm phần kiểm được, ở chỗ nó không cần model.
-"""
-from __future__ import annotations
-
-import os
-import tempfile
-
-import pytest
-
-
-def _kiem():
-    from voice_sidecar.server import _kiem_duong_ghi
-    return _kiem_duong_ghi
-
-
-def test_cho_phep_ghi_trong_thu_muc_tam():
-    d = os.path.join(tempfile.gettempdir(), "ltt_voice_thu", "doan0.wav")
-    assert _kiem()(d) == os.path.realpath(d)
-
-
-def test_tu_choi_duong_ngoai_goc():
-    from fastapi import HTTPException
-
-    for xau in (r"C:\LTTPlatform\secrets\app.env",
-                r"C:\Windows\System32\drivers\etc\hosts",
-                "/etc/passwd"):
-        with pytest.raises(HTTPException) as e:
-            _kiem()(xau)
-        assert e.value.status_code == 400
-
-
-def test_tu_choi_duong_di_nguoc_bang_dau_cham_cham():
-    """⛔ `..` phải bị chặn SAU khi chuẩn hoá, không phải bằng cách tìm chuỗi "..".
-
-    Tìm chuỗi thì `a..b.wav` bị chặn oan còn `tmp/x/../../../secrets` thì tuỳ
-    cách viết mà lọt. `realpath` rồi so gốc là phép duy nhất không phụ thuộc
-    cách viết.
-    """
-    from fastapi import HTTPException
-
-    xau = os.path.join(tempfile.gettempdir(), "..", "..", "hiem.wav")
-    if os.path.realpath(xau).startswith(os.path.realpath(tempfile.gettempdir())):
-        pytest.skip("thu muc tam nam sat goc o dia, ca thu khong co nghia")
-    with pytest.raises(HTTPException):
-        _kiem()(xau)
-
-
-def test_tu_choi_duong_rong():
-    from fastapi import HTTPException
-
-    for xau in ("", "   ", None):
-        with pytest.raises(HTTPException):
-            _kiem()(xau)
-
-
-def test_khong_dung_startswith_de_so_goc():
-    """🔴 `C:\tmp-khac` bắt đầu bằng `C:\tmp` nhưng KHÔNG nằm trong nó.
-
-    Một phép so chuỗi ở đây là một lỗ đi ra ngoài gốc mà vẫn qua được mọi phép
-    kiểm ngây thơ. Đây là ca chứng minh `commonpath` là bắt buộc.
-    """
-    from fastapi import HTTPException
-
-    goc = os.path.realpath(tempfile.gettempdir())
-    canh = goc + "-khac"
-    if os.path.realpath(canh) == goc:
-        pytest.skip("he tep khong phan biet duoc ca thu nay")
-    with pytest.raises(HTTPException):
-        _kiem()(os.path.join(canh, "x.wav"))
-
-
-def test_goc_them_duoc_bang_bien_moi_truong(monkeypatch):
-    """Gốc phụ khai bằng `LTT_VOICE_THU_MUC_TAM` — vì kho của nền tảng không
-    nhất thiết nằm trong thư mục tạm của hệ thống."""
-    import voice_sidecar.server as sv
-
-    with tempfile.TemporaryDirectory() as tam:
-        monkeypatch.setattr(sv, "_GOC_GHI", tam)
-        d = os.path.join(tam, "kho", "doan1.wav")
-        assert sv._kiem_duong_ghi(d) == os.path.realpath(d)
-
-@@@LTT_PROFILE_FILE_END@@@
-
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_377_sandbox_dung_loai_media.py
 SHA256=c37ed722285f964b949e756cc8fb75bf32080123c43411e8a3b3571f1e70692e BYTES=6430 LINES=132
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -256440,288 +256337,6 @@ def test_speech_ltt_khai_tra_ve_AUDIO():
     tool = [t for t in MANIFEST.tools if t.name == "speech.ltt"]
     assert tool, "khong tim thay `speech.ltt` trong ban khai"
     assert tool[0].returns.get("audio_key") == "audio", tool[0].returns
-
-@@@LTT_PROFILE_FILE_END@@@
-
-@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_378_ban_doc_dai.py
-SHA256=5bbb15609c7c806170a64c5ff701e5c9a44a5569751f50b3db6039abc8609a1a BYTES=11104 LINES=276
-@@@LTT_PROFILE_CONTENT_BEGIN@@@
-r"""
-Bản đọc dài: ĐỌC TIẾP được, và một đoạn hỏng không kéo cả tài liệu theo.
-
-Đây là hai yêu cầu P0 của đường tài liệu dài, và cả hai đều là mệnh đề về
-**việc gì KHÔNG xảy ra** — nên chúng không tự lộ ra trong bất kỳ lượt chạy
-thành công nào. Một bộ ghép chạy đúng và một bộ ghép sinh lại cả cuốn sách sau
-mỗi lần hỏng cho ra **cùng một tệp WAV**; thứ phân biệt chúng chỉ là số lượt
-gọi GPU, và không ai đếm nó trừ khi có phép kiểm đếm hộ.
-
-⛔ Nên tệp này đếm. Nó không kiểm âm thanh (đã có `test_342`) — nó kiểm
-   **sidecar được hỏi những đoạn nào**.
-"""
-from __future__ import annotations
-
-import os
-import shutil
-import wave
-
-import pytest
-
-
-# ── giả lập kho và cổng giọng ────────────────────────────────────────────────
-
-class KhoGia:
-    """Đủ mặt `Storage` mà `ban_doc_dai` dùng: `local_path` và `put`."""
-
-    def __init__(self, goc: str):
-        self.goc = goc
-        self.da_put: list = []
-
-    def _p(self, khoa: str) -> str:
-        return os.path.join(self.goc, *khoa.split("/"))
-
-    def local_path(self, khoa: str):
-        p = self._p(khoa)
-        return p if os.path.exists(p) else None
-
-    def put(self, khoa: str, stream, content_type: str = ""):
-        p = self._p(khoa)
-        os.makedirs(os.path.dirname(p), exist_ok=True)
-        with open(p, "wb") as f:
-            shutil.copyfileobj(stream, f)
-        self.da_put.append(khoa)
-        return None
-
-
-def _wav_nho(duong: str, giay: float = 0.5) -> None:
-    os.makedirs(os.path.dirname(duong) or ".", exist_ok=True)
-    with wave.open(duong, "wb") as f:
-        f.setnchannels(1)
-        f.setsampwidth(2)
-        f.setframerate(16000)
-        f.writeframes(b"\x00\x01" * int(16000 * giay))
-
-
-class CongGia:
-    """Cổng giọng giả. GHI LẠI từng lượt được hỏi những văn bản nào."""
-
-    class SidecarBan(Exception):
-        pass
-
-    def __init__(self, hong_o: set | None = None):
-        self.lo_da_goi: list = []       # mỗi phần tử: danh sách text của một lượt
-        self.hong_o = hong_o or set()   # text nào làm lượt gọi ném lỗi
-        self.ghep_voi = None
-
-    def lo_ra_tep(self, texts, duong_ra, *, ref_b64=None, preset=None):
-        self.lo_da_goi.append(list(texts))
-        xau = [t for t in texts if t in self.hong_o]
-        if xau:
-            raise RuntimeError(f"engine hong o: {xau[0]!r}")
-        for d in duong_ra:
-            _wav_nho(d)
-        return {"items": [{"duong": d} for d in duong_ra], "gen_s": 1.0}
-
-    def ghep_tep(self, duong_vao, duong_ra, *, so_cau=None):
-        self.ghep_voi = (list(duong_vao), list(so_cau or []))
-        _wav_nho(duong_ra, giay=0.5 * len(duong_vao))
-        return {"so_doan": len(duong_vao), "giay": 0.5 * len(duong_vao),
-                "moc_s": [0.0] * (len(duong_vao) + 1), "nghi_s": 0.3}
-
-
-class CtxGia:
-    def __init__(self, job_id="job-abc"):
-        self.job_id = job_id
-        self.moc: list = []
-
-    def progress(self, phan_tram, loi_nhan=""):
-        self.moc.append((phan_tram, loi_nhan))
-
-
-@pytest.fixture()
-def moi_truong(tmp_path, monkeypatch):
-    """Nối `ban_doc_dai` vào kho giả và cổng giả."""
-    from apps.ltt_voice import ban_doc_dai
-
-    kho = KhoGia(str(tmp_path / "kho"))
-    cong = CongGia()
-    monkeypatch.setattr(ban_doc_dai, "sidecar_client", cong)
-
-    import platform_core.storage as st
-    monkeypatch.setattr(st, "get_storage", lambda: kho)
-
-    thu_muc = tmp_path / "tam"
-    thu_muc.mkdir()
-    return ban_doc_dai, kho, cong, str(thu_muc)
-
-
-def _doan(n: int) -> list:
-    return [f"Day la doan so {i}. No co hai cau." for i in range(n)]
-
-
-# ── 1. đọc tiếp ──────────────────────────────────────────────────────────────
-
-def test_doan_da_co_trong_kho_thi_KHONG_sinh_lai(moi_truong):
-    """🔴 YÊU CẦU P0: máy chủ khởi động lại giữa chừng ⇒ đọc tiếp, không làm lại.
-
-    Đặt sẵn 3/5 đoạn vào kho — đúng thứ còn lại sau một lượt chạy bị cắt ngang —
-    rồi chạy. Cổng giọng chỉ được phép nhìn thấy hai đoạn cuối.
-
-    ⚠️ Chốt bằng **văn bản đã hỏi**, không bằng số lượt gọi: một bản sửa sai
-       chia lô khác đi vẫn phải qua được phép kiểm này, còn một bản sinh lại cả
-       năm đoạn thì không, dù nó gọi đúng một lượt.
-    """
-    bdd, kho, cong, thu_muc = moi_truong
-    doan = _doan(5)
-
-    for i in (0, 1, 2):
-        p = kho._p(bdd.khoa_doan("u1", "job-abc", i))
-        _wav_nho(p)
-
-    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="job-abc")
-
-    da_hoi = [t for lo in cong.lo_da_goi for t in lo]
-    assert da_hoi == doan[3:], da_hoi
-
-
-def test_khong_co_gi_trong_kho_thi_sinh_du(moi_truong):
-    bdd, kho, cong, thu_muc = moi_truong
-    doan = _doan(5)
-    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="job-abc")
-    assert [t for lo in cong.lo_da_goi for t in lo] == doan
-
-
-def test_lo_thu_hai_khong_lam_lai_lo_thu_nhat(moi_truong):
-    """Chia lô là chuyện xếp việc, không được biến thành chuyện làm lại."""
-    bdd, kho, cong, thu_muc = moi_truong
-    doan = _doan(20)
-    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j", so_moi_lo=8)
-    da_hoi = [t for lo in cong.lo_da_goi for t in lo]
-    assert da_hoi == doan
-    assert len(da_hoi) == len(set(da_hoi)), "co doan bi sinh hai lan"
-
-
-# ── 2. một đoạn hỏng không kéo theo cả lô ────────────────────────────────────
-
-def test_mot_doan_hong_thi_bay_doan_kia_van_duoc_giu(moi_truong):
-    """🔴 YÊU CẦU P0: đoạn 47 hỏng thì đừng render lại 1–46.
-
-    Một lô là tám đoạn. Nếu một đoạn làm engine ném lỗi thì bảy đoạn kia **đã
-    sinh xong trên GPU** cũng mất theo — trừ khi ta thử lại từng đoạn một.
-
-    Phép kiểm chốt điều thật sự quan trọng: sau khi lượt này ném lỗi, kho phải
-    đã giữ được bảy đoạn tốt, để lần thử sau của nền tảng chỉ còn thiếu một.
-    """
-    bdd, kho, cong, thu_muc = moi_truong
-    doan = _doan(8)
-    cong.hong_o = {doan[5]}
-
-    with pytest.raises(Exception):
-        bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j",
-                 so_moi_lo=8)
-
-    da_giu = sorted(int(k.rsplit("/", 1)[-1].split(".")[0])
-                    for k in kho.da_put)
-    assert da_giu == [0, 1, 2, 3, 4, 6, 7], da_giu
-
-
-def test_lan_thu_sau_chi_con_thieu_dung_doan_hong(moi_truong):
-    """Nối tiếp phép kiểm trên: nền tảng thử lại ⇒ chỉ đoạn 5 được hỏi.
-
-    ⭐ Đây là chỗ hai cơ chế gặp nhau. `SO_LAN_THU_JOB` của nền tảng thử lại cả
-       job với **cùng `job_id`**; khoá đoạn gắn với `job_id`; nên lần thử sau
-       nhìn thấy đúng bảy đoạn lần trước để lại. Không cơ chế nào trong hai cái
-       biết về cái kia, và đó là lý do cách này rẻ.
-    """
-    bdd, kho, cong, thu_muc = moi_truong
-    doan = _doan(8)
-    cong.hong_o = {doan[5]}
-    with pytest.raises(Exception):
-        bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j", so_moi_lo=8)
-
-    cong.hong_o = set()
-    cong.lo_da_goi.clear()
-    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j", so_moi_lo=8)
-
-    assert [t for lo in cong.lo_da_goi for t in lo] == [doan[5]]
-
-
-def test_bay_len_nguyen_ven_khi_cong_dang_ban(moi_truong):
-    """⛔ BẬN KHÔNG PHẢI HỎNG. `SidecarBan` phải bay thẳng lên cho `job_runner`
-    xếp lại — bọc nó thành một lỗi khác là biến "máy đang bận" thành "job hỏng",
-    và một job hỏng thì TRỪ CREDIT cho việc chưa từng chạy."""
-    bdd, kho, cong, thu_muc = moi_truong
-
-    def ban(*a, **k):
-        raise cong.SidecarBan("dang ban")
-
-    cong.lo_ra_tep = ban
-    with pytest.raises(cong.SidecarBan):
-        bdd.dung(_doan(8), thu_muc=thu_muc, owner_id="u1", job_id="j")
-
-
-# ── 3. hợp đồng của khoá và của tiến độ ──────────────────────────────────────
-
-def test_khoa_doan_co_job_id_nhu_MOT_DOAN_duong_dan(moi_truong):
-    """🔴 `/{job_id}/` — có dấu gạch chéo hai đầu.
-
-    `platform_core/job_content.py` nhận diện tệp của một job bằng cách tìm
-    `/{job_id}/` như một ĐOẠN đường dẫn. `jobs.py` đã ghi lại cái giá của việc
-    làm sai: tệp không bao giờ bị dọn, trong khi vòng bảo trì vẫn chạy và vẫn
-    báo thành công — một rò rỉ hoàn toàn im lặng.
-    """
-    bdd, _, _, _ = moi_truong
-    k = bdd.khoa_doan("u1", "job-abc", 7)
-    assert "/job-abc/" in k
-    assert k.endswith("/0007.wav"), k
-
-
-def test_tien_do_that_va_khong_bao_gio_lui(moi_truong):
-    """Tiến độ phải lấy từ SỐ ĐOẠN ĐÃ XONG, không phải từ một đồng hồ."""
-    bdd, kho, cong, thu_muc = moi_truong
-    ctx = CtxGia()
-    bdd.dung(_doan(20), thu_muc=thu_muc, owner_id="u1", job_id="job-abc",
-             ctx=ctx, so_moi_lo=8)
-
-    pt = [p for p, _ in ctx.moc]
-    assert pt, "khong bao tien do lan nao"
-    assert pt == sorted(pt), pt
-    assert max(pt) <= 100 and min(pt) >= 0
-
-
-def test_tien_do_hong_khong_lam_hong_ban_doc(moi_truong):
-    """Việc phụ không được giết việc chính — cùng luật với `nghe_thu.dung`."""
-    bdd, kho, cong, thu_muc = moi_truong
-
-    class CtxVo:
-        job_id = "j"
-
-        def progress(self, *a, **k):
-            raise RuntimeError("bang dieu khien sap")
-
-    duong, _ = bdd.dung(_doan(3), thu_muc=thu_muc, owner_id="u1", job_id="j",
-                        ctx=CtxVo())
-    assert os.path.isfile(duong)
-
-
-def test_so_cau_duoc_tinh_cho_MOI_doan_ke_ca_doan_lay_lai_tu_kho(moi_truong):
-    """⚠️ Đoạn lấy lại từ kho không mang theo văn bản của nó — chỉ có tệp.
-
-    Nhưng bộ ghép CẦN số câu của mọi đoạn để phân biệt ranh giới câu với khe từ
-    (`noi_dai.nhip_nghi`). Thiếu nó ở vài đoạn thì nhịp nghỉ tính trên một mẫu
-    thiên lệch, và mối nối nghe khác đi tuỳ đoạn nào tình cờ còn trong kho —
-    một khác biệt phụ thuộc LỊCH SỬ CHẠY, thứ khó truy nhất.
-    """
-    bdd, kho, cong, thu_muc = moi_truong
-    doan = _doan(5)
-    for i in (0, 1):
-        _wav_nho(kho._p(bdd.khoa_doan("u1", "j", i)))
-
-    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j")
-
-    duong_vao, so_cau = cong.ghep_voi
-    assert len(duong_vao) == 5
-    assert len(so_cau) == 5
-    assert all(s >= 1 for s in so_cau)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -261421,6 +261036,427 @@ def test_tai_lieu_cay_rieng_khong_tro_toi_tep_khong_ton_tai():
     assert not thieu, (
         f"cay_rieng.py tro toi tools/{{{', '.join(sorted(thieu))}}} "
         "nhung tep do khong ton tai")
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_395_cong_giong_duong_ghi.py
+SHA256=6040e57b60667ef822b1a9b8bdc2f7694ad66418d6b7206a5923a5a7fc6c8b5e BYTES=5607 LINES=133
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+🔴 Cổng giọng vừa có cửa GHI đầu tiên, và cửa ghi khác hẳn cửa đọc về rủi ro.
+
+Trước `/v1/lo-ra-tep`, mọi cửa nhận đường dẫn của `voice_sidecar/server.py` đều
+chỉ ĐỌC (`/v1/enroll` nhận `duong_wav` rồi mở nó). Đường tài liệu dài đổi điều
+đó: sidecar phải ghi từng đoạn ra đĩa để worker không phải cầm hàng trăm MB
+base64.
+
+⛔ Một cửa nhận đường dẫn TUỲ Ý để ghi là một cửa ghi đè được `app.env`, ghi đè
+   được chính `server.py`, ghi đè được một tệp hệ thống. Loopback và bearer
+   token vẫn là hàng rào đầu — nhưng *"chỉ máy này gọi được"* không đồng nghĩa
+   với *"mọi thứ chạy trên máy này đều đáng tin"*, và chính đầu tệp `server.py`
+   đã ghi rằng cổng này **không có xác thực nào ngoài một token dùng chung**.
+
+⇒ Đường ghi bị kẹp vào một gốc, fail-closed. Tệp này chốt cái kẹp đó.
+
+⚠️ Chốt `_kiem_duong_ghi` chứ không chốt cửa HTTP: cửa cần engine và GPU, còn
+   phép kẹp thì thuần đường dẫn. Kiểm phần kiểm được, ở chỗ nó không cần model.
+"""
+from __future__ import annotations
+
+import contextlib
+import os
+import tempfile
+
+import pytest
+
+
+def _kiem():
+    from voice_sidecar.server import _kiem_duong_ghi
+    return _kiem_duong_ghi
+
+
+@contextlib.contextmanager
+def _goc_gia():
+    """Dựng một gốc do phép kiểm KIỂM SOÁT, kèm một thư mục cạnh nó.
+
+    🔴 VÌ SAO KHÔNG DÙNG THẲNG THƯ MỤC TẠM CỦA HỆ THỐNG.
+
+       Bản đầu của hai phép kiểm dưới đây so với `tempfile.gettempdir()` thật,
+       nên chúng phải mang theo một `pytest.skip` cho trường hợp thư mục tạm nằm
+       sát gốc ổ đĩa. Và trên chính máy này **cả hai đều bị bỏ qua** —
+       `tools/check_bo_qua.py` bắt được.
+
+    ⛔ Một phép kiểm bị bỏ qua là một phép kiểm KHÔNG canh gì cả, và hai phép
+       kiểm bị bỏ qua ở đây là hai phép kiểm về **an ninh đường ghi** — đúng
+       loại không được phép im lặng nghỉ việc. Tệ hơn: chúng vẫn hiện ra trong
+       danh sách test như thể đang bảo vệ một thứ gì đó.
+
+    ⭐ Thay `gettempdir()` bằng một gốc dựng tại chỗ thì điều kiện bỏ qua biến
+       mất hẳn — không phải được khai báo, mà là không còn tồn tại.
+    """
+    import voice_sidecar.server as sv
+
+    with tempfile.TemporaryDirectory() as cha:
+        goc = os.path.realpath(os.path.join(cha, "kho"))
+        canh = os.path.realpath(os.path.join(cha, "kho-khac"))
+        os.makedirs(goc)
+        os.makedirs(canh)
+        truoc = sv._goc_cho_phep
+        sv._goc_cho_phep = lambda: [goc]
+        try:
+            yield sv, goc, canh
+        finally:
+            sv._goc_cho_phep = truoc
+
+
+def test_cho_phep_ghi_trong_thu_muc_tam():
+    d = os.path.join(tempfile.gettempdir(), "ltt_voice_thu", "doan0.wav")
+    assert _kiem()(d) == os.path.realpath(d)
+
+
+def test_tu_choi_duong_ngoai_goc():
+    from fastapi import HTTPException
+
+    for xau in (r"C:\LTTPlatform\secrets\app.env",
+                r"C:\Windows\System32\drivers\etc\hosts",
+                "/etc/passwd"):
+        with pytest.raises(HTTPException) as e:
+            _kiem()(xau)
+        assert e.value.status_code == 400
+
+
+def test_tu_choi_duong_di_nguoc_bang_dau_cham_cham():
+    """⛔ `..` phải bị chặn SAU khi chuẩn hoá, không phải bằng cách tìm chuỗi "..".
+
+    Tìm chuỗi thì `a..b.wav` bị chặn oan còn `tmp/x/../../../secrets` thì tuỳ
+    cách viết mà lọt. `realpath` rồi so gốc là phép duy nhất không phụ thuộc
+    cách viết.
+    """
+    from fastapi import HTTPException
+
+    with _goc_gia() as (sv, goc, _):
+        with pytest.raises(HTTPException):
+            sv._kiem_duong_ghi(os.path.join(goc, "..", "hiem.wav"))
+        with pytest.raises(HTTPException):
+            sv._kiem_duong_ghi(os.path.join(goc, "a", "..", "..", "hiem.wav"))
+        # và một tên tệp CÓ hai dấu chấm vẫn phải qua được — chặn bằng cách tìm
+        # chuỗi ".." sẽ chặn oan chính nó.
+        assert sv._kiem_duong_ghi(os.path.join(goc, "a..b.wav"))
+
+
+def test_tu_choi_duong_rong():
+    from fastapi import HTTPException
+
+    for xau in ("", "   ", None):
+        with pytest.raises(HTTPException):
+            _kiem()(xau)
+
+
+def test_khong_dung_startswith_de_so_goc():
+    """🔴 `C:\tmp-khac` bắt đầu bằng `C:\tmp` nhưng KHÔNG nằm trong nó.
+
+    Một phép so chuỗi ở đây là một lỗ đi ra ngoài gốc mà vẫn qua được mọi phép
+    kiểm ngây thơ. Đây là ca chứng minh `commonpath` là bắt buộc.
+    """
+    from fastapi import HTTPException
+
+    with _goc_gia() as (sv, goc, canh):
+        assert sv._kiem_duong_ghi(os.path.join(goc, "x.wav"))
+        with pytest.raises(HTTPException):
+            sv._kiem_duong_ghi(os.path.join(canh, "x.wav"))
+
+
+def test_goc_them_duoc_bang_bien_moi_truong(monkeypatch):
+    """Gốc phụ khai bằng `LTT_VOICE_THU_MUC_TAM` — vì kho của nền tảng không
+    nhất thiết nằm trong thư mục tạm của hệ thống."""
+    import voice_sidecar.server as sv
+
+    with tempfile.TemporaryDirectory() as tam:
+        monkeypatch.setattr(sv, "_GOC_GHI", tam)
+        d = os.path.join(tam, "kho", "doan1.wav")
+        assert sv._kiem_duong_ghi(d) == os.path.realpath(d)
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_396_ban_doc_dai.py
+SHA256=5bbb15609c7c806170a64c5ff701e5c9a44a5569751f50b3db6039abc8609a1a BYTES=11104 LINES=276
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+r"""
+Bản đọc dài: ĐỌC TIẾP được, và một đoạn hỏng không kéo cả tài liệu theo.
+
+Đây là hai yêu cầu P0 của đường tài liệu dài, và cả hai đều là mệnh đề về
+**việc gì KHÔNG xảy ra** — nên chúng không tự lộ ra trong bất kỳ lượt chạy
+thành công nào. Một bộ ghép chạy đúng và một bộ ghép sinh lại cả cuốn sách sau
+mỗi lần hỏng cho ra **cùng một tệp WAV**; thứ phân biệt chúng chỉ là số lượt
+gọi GPU, và không ai đếm nó trừ khi có phép kiểm đếm hộ.
+
+⛔ Nên tệp này đếm. Nó không kiểm âm thanh (đã có `test_342`) — nó kiểm
+   **sidecar được hỏi những đoạn nào**.
+"""
+from __future__ import annotations
+
+import os
+import shutil
+import wave
+
+import pytest
+
+
+# ── giả lập kho và cổng giọng ────────────────────────────────────────────────
+
+class KhoGia:
+    """Đủ mặt `Storage` mà `ban_doc_dai` dùng: `local_path` và `put`."""
+
+    def __init__(self, goc: str):
+        self.goc = goc
+        self.da_put: list = []
+
+    def _p(self, khoa: str) -> str:
+        return os.path.join(self.goc, *khoa.split("/"))
+
+    def local_path(self, khoa: str):
+        p = self._p(khoa)
+        return p if os.path.exists(p) else None
+
+    def put(self, khoa: str, stream, content_type: str = ""):
+        p = self._p(khoa)
+        os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "wb") as f:
+            shutil.copyfileobj(stream, f)
+        self.da_put.append(khoa)
+        return None
+
+
+def _wav_nho(duong: str, giay: float = 0.5) -> None:
+    os.makedirs(os.path.dirname(duong) or ".", exist_ok=True)
+    with wave.open(duong, "wb") as f:
+        f.setnchannels(1)
+        f.setsampwidth(2)
+        f.setframerate(16000)
+        f.writeframes(b"\x00\x01" * int(16000 * giay))
+
+
+class CongGia:
+    """Cổng giọng giả. GHI LẠI từng lượt được hỏi những văn bản nào."""
+
+    class SidecarBan(Exception):
+        pass
+
+    def __init__(self, hong_o: set | None = None):
+        self.lo_da_goi: list = []       # mỗi phần tử: danh sách text của một lượt
+        self.hong_o = hong_o or set()   # text nào làm lượt gọi ném lỗi
+        self.ghep_voi = None
+
+    def lo_ra_tep(self, texts, duong_ra, *, ref_b64=None, preset=None):
+        self.lo_da_goi.append(list(texts))
+        xau = [t for t in texts if t in self.hong_o]
+        if xau:
+            raise RuntimeError(f"engine hong o: {xau[0]!r}")
+        for d in duong_ra:
+            _wav_nho(d)
+        return {"items": [{"duong": d} for d in duong_ra], "gen_s": 1.0}
+
+    def ghep_tep(self, duong_vao, duong_ra, *, so_cau=None):
+        self.ghep_voi = (list(duong_vao), list(so_cau or []))
+        _wav_nho(duong_ra, giay=0.5 * len(duong_vao))
+        return {"so_doan": len(duong_vao), "giay": 0.5 * len(duong_vao),
+                "moc_s": [0.0] * (len(duong_vao) + 1), "nghi_s": 0.3}
+
+
+class CtxGia:
+    def __init__(self, job_id="job-abc"):
+        self.job_id = job_id
+        self.moc: list = []
+
+    def progress(self, phan_tram, loi_nhan=""):
+        self.moc.append((phan_tram, loi_nhan))
+
+
+@pytest.fixture()
+def moi_truong(tmp_path, monkeypatch):
+    """Nối `ban_doc_dai` vào kho giả và cổng giả."""
+    from apps.ltt_voice import ban_doc_dai
+
+    kho = KhoGia(str(tmp_path / "kho"))
+    cong = CongGia()
+    monkeypatch.setattr(ban_doc_dai, "sidecar_client", cong)
+
+    import platform_core.storage as st
+    monkeypatch.setattr(st, "get_storage", lambda: kho)
+
+    thu_muc = tmp_path / "tam"
+    thu_muc.mkdir()
+    return ban_doc_dai, kho, cong, str(thu_muc)
+
+
+def _doan(n: int) -> list:
+    return [f"Day la doan so {i}. No co hai cau." for i in range(n)]
+
+
+# ── 1. đọc tiếp ──────────────────────────────────────────────────────────────
+
+def test_doan_da_co_trong_kho_thi_KHONG_sinh_lai(moi_truong):
+    """🔴 YÊU CẦU P0: máy chủ khởi động lại giữa chừng ⇒ đọc tiếp, không làm lại.
+
+    Đặt sẵn 3/5 đoạn vào kho — đúng thứ còn lại sau một lượt chạy bị cắt ngang —
+    rồi chạy. Cổng giọng chỉ được phép nhìn thấy hai đoạn cuối.
+
+    ⚠️ Chốt bằng **văn bản đã hỏi**, không bằng số lượt gọi: một bản sửa sai
+       chia lô khác đi vẫn phải qua được phép kiểm này, còn một bản sinh lại cả
+       năm đoạn thì không, dù nó gọi đúng một lượt.
+    """
+    bdd, kho, cong, thu_muc = moi_truong
+    doan = _doan(5)
+
+    for i in (0, 1, 2):
+        p = kho._p(bdd.khoa_doan("u1", "job-abc", i))
+        _wav_nho(p)
+
+    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="job-abc")
+
+    da_hoi = [t for lo in cong.lo_da_goi for t in lo]
+    assert da_hoi == doan[3:], da_hoi
+
+
+def test_khong_co_gi_trong_kho_thi_sinh_du(moi_truong):
+    bdd, kho, cong, thu_muc = moi_truong
+    doan = _doan(5)
+    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="job-abc")
+    assert [t for lo in cong.lo_da_goi for t in lo] == doan
+
+
+def test_lo_thu_hai_khong_lam_lai_lo_thu_nhat(moi_truong):
+    """Chia lô là chuyện xếp việc, không được biến thành chuyện làm lại."""
+    bdd, kho, cong, thu_muc = moi_truong
+    doan = _doan(20)
+    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j", so_moi_lo=8)
+    da_hoi = [t for lo in cong.lo_da_goi for t in lo]
+    assert da_hoi == doan
+    assert len(da_hoi) == len(set(da_hoi)), "co doan bi sinh hai lan"
+
+
+# ── 2. một đoạn hỏng không kéo theo cả lô ────────────────────────────────────
+
+def test_mot_doan_hong_thi_bay_doan_kia_van_duoc_giu(moi_truong):
+    """🔴 YÊU CẦU P0: đoạn 47 hỏng thì đừng render lại 1–46.
+
+    Một lô là tám đoạn. Nếu một đoạn làm engine ném lỗi thì bảy đoạn kia **đã
+    sinh xong trên GPU** cũng mất theo — trừ khi ta thử lại từng đoạn một.
+
+    Phép kiểm chốt điều thật sự quan trọng: sau khi lượt này ném lỗi, kho phải
+    đã giữ được bảy đoạn tốt, để lần thử sau của nền tảng chỉ còn thiếu một.
+    """
+    bdd, kho, cong, thu_muc = moi_truong
+    doan = _doan(8)
+    cong.hong_o = {doan[5]}
+
+    with pytest.raises(Exception):
+        bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j",
+                 so_moi_lo=8)
+
+    da_giu = sorted(int(k.rsplit("/", 1)[-1].split(".")[0])
+                    for k in kho.da_put)
+    assert da_giu == [0, 1, 2, 3, 4, 6, 7], da_giu
+
+
+def test_lan_thu_sau_chi_con_thieu_dung_doan_hong(moi_truong):
+    """Nối tiếp phép kiểm trên: nền tảng thử lại ⇒ chỉ đoạn 5 được hỏi.
+
+    ⭐ Đây là chỗ hai cơ chế gặp nhau. `SO_LAN_THU_JOB` của nền tảng thử lại cả
+       job với **cùng `job_id`**; khoá đoạn gắn với `job_id`; nên lần thử sau
+       nhìn thấy đúng bảy đoạn lần trước để lại. Không cơ chế nào trong hai cái
+       biết về cái kia, và đó là lý do cách này rẻ.
+    """
+    bdd, kho, cong, thu_muc = moi_truong
+    doan = _doan(8)
+    cong.hong_o = {doan[5]}
+    with pytest.raises(Exception):
+        bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j", so_moi_lo=8)
+
+    cong.hong_o = set()
+    cong.lo_da_goi.clear()
+    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j", so_moi_lo=8)
+
+    assert [t for lo in cong.lo_da_goi for t in lo] == [doan[5]]
+
+
+def test_bay_len_nguyen_ven_khi_cong_dang_ban(moi_truong):
+    """⛔ BẬN KHÔNG PHẢI HỎNG. `SidecarBan` phải bay thẳng lên cho `job_runner`
+    xếp lại — bọc nó thành một lỗi khác là biến "máy đang bận" thành "job hỏng",
+    và một job hỏng thì TRỪ CREDIT cho việc chưa từng chạy."""
+    bdd, kho, cong, thu_muc = moi_truong
+
+    def ban(*a, **k):
+        raise cong.SidecarBan("dang ban")
+
+    cong.lo_ra_tep = ban
+    with pytest.raises(cong.SidecarBan):
+        bdd.dung(_doan(8), thu_muc=thu_muc, owner_id="u1", job_id="j")
+
+
+# ── 3. hợp đồng của khoá và của tiến độ ──────────────────────────────────────
+
+def test_khoa_doan_co_job_id_nhu_MOT_DOAN_duong_dan(moi_truong):
+    """🔴 `/{job_id}/` — có dấu gạch chéo hai đầu.
+
+    `platform_core/job_content.py` nhận diện tệp của một job bằng cách tìm
+    `/{job_id}/` như một ĐOẠN đường dẫn. `jobs.py` đã ghi lại cái giá của việc
+    làm sai: tệp không bao giờ bị dọn, trong khi vòng bảo trì vẫn chạy và vẫn
+    báo thành công — một rò rỉ hoàn toàn im lặng.
+    """
+    bdd, _, _, _ = moi_truong
+    k = bdd.khoa_doan("u1", "job-abc", 7)
+    assert "/job-abc/" in k
+    assert k.endswith("/0007.wav"), k
+
+
+def test_tien_do_that_va_khong_bao_gio_lui(moi_truong):
+    """Tiến độ phải lấy từ SỐ ĐOẠN ĐÃ XONG, không phải từ một đồng hồ."""
+    bdd, kho, cong, thu_muc = moi_truong
+    ctx = CtxGia()
+    bdd.dung(_doan(20), thu_muc=thu_muc, owner_id="u1", job_id="job-abc",
+             ctx=ctx, so_moi_lo=8)
+
+    pt = [p for p, _ in ctx.moc]
+    assert pt, "khong bao tien do lan nao"
+    assert pt == sorted(pt), pt
+    assert max(pt) <= 100 and min(pt) >= 0
+
+
+def test_tien_do_hong_khong_lam_hong_ban_doc(moi_truong):
+    """Việc phụ không được giết việc chính — cùng luật với `nghe_thu.dung`."""
+    bdd, kho, cong, thu_muc = moi_truong
+
+    class CtxVo:
+        job_id = "j"
+
+        def progress(self, *a, **k):
+            raise RuntimeError("bang dieu khien sap")
+
+    duong, _ = bdd.dung(_doan(3), thu_muc=thu_muc, owner_id="u1", job_id="j",
+                        ctx=CtxVo())
+    assert os.path.isfile(duong)
+
+
+def test_so_cau_duoc_tinh_cho_MOI_doan_ke_ca_doan_lay_lai_tu_kho(moi_truong):
+    """⚠️ Đoạn lấy lại từ kho không mang theo văn bản của nó — chỉ có tệp.
+
+    Nhưng bộ ghép CẦN số câu của mọi đoạn để phân biệt ranh giới câu với khe từ
+    (`noi_dai.nhip_nghi`). Thiếu nó ở vài đoạn thì nhịp nghỉ tính trên một mẫu
+    thiên lệch, và mối nối nghe khác đi tuỳ đoạn nào tình cờ còn trong kho —
+    một khác biệt phụ thuộc LỊCH SỬ CHẠY, thứ khó truy nhất.
+    """
+    bdd, kho, cong, thu_muc = moi_truong
+    doan = _doan(5)
+    for i in (0, 1):
+        _wav_nho(kho._p(bdd.khoa_doan("u1", "j", i)))
+
+    bdd.dung(doan, thu_muc=thu_muc, owner_id="u1", job_id="j")
+
+    duong_vao, so_cau = cong.ghep_voi
+    assert len(duong_vao) == 5
+    assert len(so_cau) == 5
+    assert all(s >= 1 for s in so_cau)
 
 @@@LTT_PROFILE_FILE_END@@@
 

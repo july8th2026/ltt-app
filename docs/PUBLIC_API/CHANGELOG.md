@@ -21,6 +21,63 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-03 — `speech.ltt` nhận văn bản dài gấp 66 lần, và bạn không phải tự chia nữa
+
+**ADDED · `text` nay tối đa `100.000` ký tự, thay vì `1.500`.**
+
+```diff
+- "text": { "maxLength": 1500 }
++ "text": { "maxLength": 100000 }
+```
+
+**FIXED · Tài liệu của tham số `text` đã nói sai kể từ ngày đường văn bản dài
+được xây.** Nó bảo bạn *"longer scripts should be split into several calls"* —
+tức mỗi tích hợp phải tự viết lại phép chia đoạn theo ranh giới câu, phép ghép,
+phép đo nhịp nghỉ và phép cân mức. Bốn thứ đó đã nằm sẵn trong hệ thống.
+
+Nay gửi thẳng cả bài. Nó được cắt theo **ranh giới câu**, đọc thành nhiều lượt,
+rồi ghép lại thành **một tệp liền mạch** — nhịp nghỉ ở mối nối đo từ chính bản
+đọc chứ không phải một hằng số, và mức âm được cân giữa các đoạn.
+
+*Có phá vỡ tương thích không?* **Không.** Đây là nới lỏng: mọi yêu cầu ≤ 1.500 ký
+tự chạy y như hôm qua, cùng đường mã, cùng kết quả. Không trường nào bị đổi tên,
+không trường nào biến mất.
+
+> ⚠️ **`tools/check_api_compat.py` vẫn gắn nhãn `[BREAKING]` cho mục này**, và
+> nhãn ấy không sai theo cách nó đo: nó so `contract_hash`, nên **mọi** thay đổi
+> của hợp đồng đều trông giống nhau với nó — nới lỏng, thắt chặt, hay đổi tên
+> trường đều cho ra một hash khác.
+>
+> Ghi ra đây vì hai lý do. Thứ nhất, ai đọc diff sẽ thấy một dòng `--accept` và
+> nên biết vì sao nó có mặt. Thứ hai — và đây mới là điều đáng nhớ — **một bộ dò
+> không phân biệt được hai hướng thì nó không phán quyết được hướng nào**; nó
+> chỉ nói "có đổi". Phán quyết "không phá vỡ" ở trên là của người, dựa trên hai
+> mệnh đề kiểm được: không yêu cầu hợp lệ nào của hôm qua bị từ chối hôm nay, và
+> hình dạng phản hồi không đổi.
+
+*Có phải sửa gì không?* **Không bắt buộc.** Nhưng nếu tích hợp của bạn đang tự
+cắt kịch bản thành nhiều lượt gọi rồi tự nối tệp, bạn nên bỏ đoạn đó đi: bản ghép
+của chúng tôi đo nhịp nghỉ và cân mức giữa các đoạn, còn phép nối tệp thẳng thì
+không — mối nối nghe rõ hơn.
+
+*Vì sao là 100.000 chứ không phải vô hạn?* Vì con số này **không đến từ model**.
+Trần chất lượng của một lượt sinh vẫn là 1.500 ký tự và không đổi; nó chỉ không
+còn rò ra thành trần của bạn nữa. 100.000 đến từ **tài nguyên**: ở độ dài đó một
+lượt đọc giữ GPU khoảng 13 phút, và hệ thống chưa có hàng đợi ưu tiên để một
+việc dài không chặn người khác. Dài hơn nữa thì dùng **Dự án** — mỗi khối là một
+lượt đọc riêng, và không có trần tổng.
+
+*Thời gian chạy.* `max_runtime_s` của `ltt_voice.synthesize` nâng từ `900` lên
+`3600` giây cùng lúc — hai con số này là hai đầu của cùng một ngân sách, nâng
+một đầu mà quên đầu kia thì job dài nhất chết đúng lúc gần xong.
+
+**FIXED · Trần đỉnh thật (−1,0 dBTP) nay áp cho MỌI bản đọc.** Trước hôm nay nó
+chỉ được thi hành ở đường ghép nhiều đoạn; một bài ngắn đi đường một lượt không
+đi qua bộ hạ trần. Đo được **−0,78 dBTP** trên một bài 1.400 ký tự — vượt trần,
+tức có thể méo khi qua bộ giải mã có mất dữ liệu (MP3/AAC). Bài ngắn của bạn có
+thể nhỏ tiếng đi tối đa vài phần mười dB so với hôm qua; đó là phần lẽ ra đã
+phải hạ từ đầu.
+
 ## 2026-09-01 — `ltt_llm_vision` KHÔNG có 89K ngữ cảnh, và chưa bao giờ có
 
 **FIXED · Ngữ cảnh công bố nay đúng theo TỪNG model.**

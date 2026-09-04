@@ -114,17 +114,32 @@ này rẻ.
 | **thời gian** | một lượt HTTP duy nhất cho cả bài | một lượt cho mỗi lô |
 | **hạt** | một đoạn hỏng ⇒ mất cả bài | mất đúng đoạn ấy |
 | **tiến độ** | không có | lấy từ số đoạn đã xong |
-| **trần ký tự công khai** | *xem `tham_so_cong_khai.py`* | *điều kiện ở dưới* |
+| **trần ký tự công khai** | trần của MODEL | trần của TÀI NGUYÊN |
 
-⚠️ **Trần ký tự công khai KHÔNG được mở bằng tệp này.** Hạ tầng sẵn sàng không
-phải bằng chứng chất lượng — đó đúng là câu `tham_so_cong_khai.py` đã viết, và
-mở trần vì "đường đã xây xong" là biến một cảnh báo đúng thành một lời cho phép.
+### Trần công khai: đã mở 03/09/2026, và nó đổi *loại*
 
-Điều kiện mở, và cách kiểm nó:
+Con số cũ nói *"model đọc liền được bao nhiêu trước khi trôi"*. Con số mới nói
+*"một job giữ GPU bao lâu thì còn công bằng với người khác"*. Đổi một trần cứng
+lấy một trần cứng khác thì vô nghĩa; đổi một trần **chất lượng** lấy một trần
+**ngân sách** mới là gỡ đúng thứ. Giá trị và toàn bộ suy luận ở
+`apps/ltt_voice/tham_so_cong_khai.py` — không chép lại ở đây.
+
+Ràng buộc chọn ra con số **không phải** thời gian job cũng không phải định dạng
+tệp (cả hai còn rộng hơn), mà là **công bằng GPU**: chưa có hàng đợi ưu tiên,
+nên một job dài chặn mọi người khác suốt thời gian nó chạy.
+
+Cách đo lại, và điều kiện nâng tiếp, cũng ở tệp ấy. Lệnh:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\setup\do_bai_dai.ps1
+powershell -ExecutionPolicy Bypass -File .\setup\do_bai_dai_worktree.ps1
 ```
+
+⚠️ **`_worktree` chứ không phải bản thường**, và lý do đáng nhớ: dịch vụ
+`LTTStudioVoice` đang chạy là bản **đã deploy** ở `C:\LTTPlatform\app`. Cửa
+sidecar mới chỉ có trong worktree thì đơn giản là *không có ở đó* — lượt đo đầu
+tiên 03/09 nhận `404` cho cả bốn bài ghép và báo chúng là "hỏng". Deploy chỉ để
+lấy một số đo là đánh đổi sai, nên script dựng một sidecar **thứ hai** từ
+worktree trên một cổng riêng, đo, rồi tắt.
 
 `tools/do_bai_dai.py` đo trên **bản ghép** ở nhiều độ dài, mang theo ba đối
 chứng nằm trong chính phép đo:

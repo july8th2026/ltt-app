@@ -577,13 +577,13 @@ Scopes: `jobs:create`
 
 Input:
 
-- `text` — string, **required**, max length 1500, What to say. Vietnamese, English, or both mixed. Up to 1500 characters per call - longer scripts should be split into several calls, because voice consistency degrades on very long single passes.
+- `text` — string, **required**, max length 100000, What to say. Vietnamese, English, or both mixed. Up to 100,000 characters per call. You do NOT need to split long text yourself - it is segmented on sentence boundaries, spoken in several passes and joined back into one continuous audio file. For anything longer, use Projects, where each block is its own pass.
 - `voice_id` — string, max length 40, One of your own cloned voices, as returned when you created it. Stays valid across engine upgrades. Leave empty to use a built-in voice.
 - `preset` — string, max length 64, A built-in voice name. Ignored when voice_id is given; sending both is rejected.
 
 Output: `audio_key` (artifact), `text` (string)
 
-Contract hash: `34f673d8463aba44`
+Contract hash: `e37638a1ec2e07be`
 
 ### `story.storyboard`
 

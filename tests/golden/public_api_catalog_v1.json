@@ -365,8 +365,8 @@
         "properties": {
           "text": {
             "type": "string",
-            "maxLength": 1500,
-            "description": "What to say. Vietnamese, English, or both mixed. Up to 1500 characters per call - longer scripts should be split into several calls, because voice consistency degrades on very long single passes.",
+            "maxLength": 100000,
+            "description": "What to say. Vietnamese, English, or both mixed. Up to 100,000 characters per call. You do NOT need to split long text yourself - it is segmented on sentence boundaries, spoken in several passes and joined back into one continuous audio file. For anything longer, use Projects, where each block is its own pass.",
             "examples": [
               "Xin chào, đây là giọng đọc của LTT Studios."
             ]
@@ -408,7 +408,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "34f673d8463aba44"
+      "contract_hash": "e37638a1ec2e07be"
     },
     {
       "name": "story.storyboard",

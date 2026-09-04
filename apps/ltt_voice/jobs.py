@@ -194,7 +194,7 @@ def _cat_kho(yc, duong: str, thu_muc: str, *, job_id: str, khai,
     """
     from platform_core.storage import get_storage
 
-    from . import toc_do
+    from . import features, toc_do
 
     # Đo trên tệp thật, không tin header của sidecar. Header chỉ để đối chiếu.
     giay = _do_thoi_luong(duong)

@@ -342,7 +342,7 @@
     },
     "speech.ltt": {
       "aliases": [],
-      "contract_hash": "34f673d8463aba44",
+      "contract_hash": "e37638a1ec2e07be",
       "deprecated": "",
       "execution_mode": "ASYNC_JOB",
       "models": [],

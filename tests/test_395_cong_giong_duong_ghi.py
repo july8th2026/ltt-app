@@ -19,6 +19,7 @@ base64.
 """
 from __future__ import annotations
 
+import contextlib
 import os
 import tempfile
 
@@ -28,6 +29,40 @@ import pytest
 def _kiem():
     from voice_sidecar.server import _kiem_duong_ghi
     return _kiem_duong_ghi
+
+
+@contextlib.contextmanager
+def _goc_gia():
+    """Dựng một gốc do phép kiểm KIỂM SOÁT, kèm một thư mục cạnh nó.
+
+    🔴 VÌ SAO KHÔNG DÙNG THẲNG THƯ MỤC TẠM CỦA HỆ THỐNG.
+
+       Bản đầu của hai phép kiểm dưới đây so với `tempfile.gettempdir()` thật,
+       nên chúng phải mang theo một `pytest.skip` cho trường hợp thư mục tạm nằm
+       sát gốc ổ đĩa. Và trên chính máy này **cả hai đều bị bỏ qua** —
+       `tools/check_bo_qua.py` bắt được.
+
+    ⛔ Một phép kiểm bị bỏ qua là một phép kiểm KHÔNG canh gì cả, và hai phép
+       kiểm bị bỏ qua ở đây là hai phép kiểm về **an ninh đường ghi** — đúng
+       loại không được phép im lặng nghỉ việc. Tệ hơn: chúng vẫn hiện ra trong
+       danh sách test như thể đang bảo vệ một thứ gì đó.
+
+    ⭐ Thay `gettempdir()` bằng một gốc dựng tại chỗ thì điều kiện bỏ qua biến
+       mất hẳn — không phải được khai báo, mà là không còn tồn tại.
+    """
+    import voice_sidecar.server as sv
+
+    with tempfile.TemporaryDirectory() as cha:
+        goc = os.path.realpath(os.path.join(cha, "kho"))
+        canh = os.path.realpath(os.path.join(cha, "kho-khac"))
+        os.makedirs(goc)
+        os.makedirs(canh)
+        truoc = sv._goc_cho_phep
+        sv._goc_cho_phep = lambda: [goc]
+        try:
+            yield sv, goc, canh
+        finally:
+            sv._goc_cho_phep = truoc
 
 
 def test_cho_phep_ghi_trong_thu_muc_tam():
@@ -55,11 +90,14 @@ def test_tu_choi_duong_di_nguoc_bang_dau_cham_cham():
     """
     from fastapi import HTTPException
 
-    xau = os.path.join(tempfile.gettempdir(), "..", "..", "hiem.wav")
-    if os.path.realpath(xau).startswith(os.path.realpath(tempfile.gettempdir())):
-        pytest.skip("thu muc tam nam sat goc o dia, ca thu khong co nghia")
-    with pytest.raises(HTTPException):
-        _kiem()(xau)
+    with _goc_gia() as (sv, goc, _):
+        with pytest.raises(HTTPException):
+            sv._kiem_duong_ghi(os.path.join(goc, "..", "hiem.wav"))
+        with pytest.raises(HTTPException):
+            sv._kiem_duong_ghi(os.path.join(goc, "a", "..", "..", "hiem.wav"))
+        # và một tên tệp CÓ hai dấu chấm vẫn phải qua được — chặn bằng cách tìm
+        # chuỗi ".." sẽ chặn oan chính nó.
+        assert sv._kiem_duong_ghi(os.path.join(goc, "a..b.wav"))
 
 
 def test_tu_choi_duong_rong():
@@ -78,12 +116,10 @@ def test_khong_dung_startswith_de_so_goc():
     """
     from fastapi import HTTPException
 
-    goc = os.path.realpath(tempfile.gettempdir())
-    canh = goc + "-khac"
-    if os.path.realpath(canh) == goc:
-        pytest.skip("he tep khong phan biet duoc ca thu nay")
-    with pytest.raises(HTTPException):
-        _kiem()(os.path.join(canh, "x.wav"))
+    with _goc_gia() as (sv, goc, canh):
+        assert sv._kiem_duong_ghi(os.path.join(goc, "x.wav"))
+        with pytest.raises(HTTPException):
+            sv._kiem_duong_ghi(os.path.join(canh, "x.wav"))
 
 
 def test_goc_them_duoc_bang_bien_moi_truong(monkeypatch):
