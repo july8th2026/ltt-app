@@ -30,9 +30,19 @@
   ⛔ Not `READY_FOR_PRODUCTION_PILOT`. ⛔ And deliberately **not**
   `FAIL_REMEDIATE`: that verdict exists to send a DEFECT back, and there is no
   defect — returning to Phase 26 would spend a cycle on missing credentials.
-- **rc_sha**: `747ca288eb1cdb9eeaf0b47e325e450108d54f71` — frozen, gate `RESULT: PASS`,
-  E2E and performance evidence regenerated **at this SHA** (the previous run
-  predated `9ff469e`, which changes code running in every E2E stage).
+- **rc_sha (code)**: `747ca288eb1cdb9eeaf0b47e325e450108d54f71` — frozen. Every
+  later commit on this branch touches `docs/` and `evidence/` only, so the code
+  artifact is unchanged by them.
+- **rc_sha (docs head)**: `50e8083` — Phase 28 report + STATE.
+- **gate at RC**: `python tools/gate.py --phien asv-v4` → **`RESULT: PASS`**, run
+  twice: once at `747ca28` and again at `50e8083`.
+  ⚠️ Four frontend steps report **BOQUA**, and the gate's own RESULT line says
+  what that means: *"4 BUOC TU BO QUA, KHONG PHAI BANG CHUNG."*
+- **evidence regenerated at the RC**: `evidence/22_nghiem_thu.json` and
+  `evidence/24_hieu_nang.json`. 🔑 This was not a formality — the Phase 27
+  runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
+  every stage of every E2E run. Evidence recorded before that commit does not
+  describe this RC.
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
   `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
   `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
