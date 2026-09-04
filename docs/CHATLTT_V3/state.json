@@ -63,7 +63,7 @@
       "chan": [
         "tai khoan do >= 3500 credit"
       ],
-      "phan_tram": 70
+      "phan_tram": 85
     },
     {
       "id": "P02",
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 2.25,
-      "phan_tram": 13
+      "xong": 2.6,
+      "phan_tram": 15
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 2.25,
-      "phan_tram": 4
+      "xong": 2.6,
+      "phan_tram": 5
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -404,5 +404,35 @@
       "artifacts/01_lo_co_dau.json",
       "artifacts/01_lo_khong_dau.json"
     ]
+  },
+  "ngu_canh_dai": {
+    "trang_thai": "PASS",
+    "so_luot": 22,
+    "goi_dung": "22/22",
+    "kim_trong_doi_so": "22/22",
+    "do_sau_da_do": [
+      42000,
+      128000
+    ],
+    "vi_tri_kim": [
+      "dau",
+      "giua",
+      "cuoi"
+    ],
+    "do_tre_s": {
+      "42K": 43,
+      "128K": 185
+    },
+    "da_cat": "tang 180K (12 luot, ~35 phut) — cau hoi da tra loi, ChatLTT tran 1 luot ~80K token",
+    "chua_do": "vung 128K-170K: ngoai duong ChatLTT, TRONG duong Public API. ~10 phut neu can",
+    "bang_chung": [
+      "artifacts/01_nc_50k.json",
+      "artifacts/01_nc_sau.json"
+    ]
+  },
+  "ab_kv": {
+    "trang_thai": "HA UU TIEN",
+    "ly_do": "q4_0 dat 22/22 o 128K ⇒ cai gia cua no (neu co) nho hon suc phan biet cua bo kiem. Va D-0 khong cho phep hanh dong theo ket qua du no the nao — 200K da chot, q4_0 bi khoa theo he qua.",
+    "tiet_kiem": "2 lan restart may B + 2 lan nap model + ~25 phut"
   }
 }
