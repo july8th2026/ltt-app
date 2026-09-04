@@ -13,7 +13,7 @@
 | Nhánh | `claude/chatltt-v3-agentic` |
 | **BASE_SHA** | `72a484c5f281f4d909e72927648df7dd62e5e196` (`admin-mvp-v3` = `origin/admin-mvp-v3`, 0/0) |
 | FINAL_SHA | *(chưa)* |
-| Dải test | **700–799** |
+| Dải test | **800–899** |
 | Pha hiện tại | **P00 ✅ ĐÓNG** → tiếp theo **P01** |
 | Deploy | ⛔ chương trình này **chưa deploy**. Làn A phát hành sau cờ `LTT_CHATLTT_V3_TOOLS` |
 
@@ -29,9 +29,9 @@
 
 | Phiên | Vùng giữ | Trạng thái |
 |---|---|---|
-| `ltt-llm-api-http-guide-a3e123-cb` | LTT VIDEO AI V3 — `docs/video-ai/`, sau này `apps/lttvideo/` | sống, cây **sạch** — mtime trên `apps/chatltt/*` là dấu checkout, không phải sửa |
+| `ltt-llm-api-http-guide-a3e123-cb` | LTT VIDEO AI V3 — `platform_core/video_gen/`, **`tests/test_70x_*`**, `tools/video_cloud.py`, `docs/VIDEO_AI/`; cũng đang sửa `docs/NHAT_KY.md` | sống. **Không dùng máy B** (GPU đi cloud RunPod) ⇒ không tranh chấp GPU. **Có** tranh chấp lõi CPU máy A khi chạy gate |
 | ASV (`auto-scan-video-v4-mvp`) | `apps/auto_scan_video/`, `apps/asv_*`, `tests/test_4xx_asv_*` | có ghi |
-| **H44 (phiên này)** | `apps/chatltt/`, `platform_core/runtime_noi_bo/`, `frontend/chatltt/`, `docs/CHATLTT_V3/`, `tests/test_7xx` | — |
+| **H44 (phiên này)** | `apps/chatltt/`, `platform_core/runtime_noi_bo/`, `frontend/chatltt/`, `docs/CHATLTT_V3/`, **`tests/test_8xx`** | — |
 
 ## Tiến độ — đo bằng NGÀY CÔNG, không bằng số pha
 

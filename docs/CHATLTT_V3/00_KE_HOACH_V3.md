@@ -248,7 +248,7 @@ lượt đầu.
 | Quyết định | **Q121** trở đi (Q120 là số cuối đang dùng) |
 | Gốc mã | `admin-mvp-v3` @ `72a484c` — **BASE_SHA ghi vào STATE.md ngay ở P00** |
 | Cây riêng | **một** cây: `claude/chatltt-v3-agentic` |
-| Dải test | **700–799** (600–637 đã dùng; 640–699 chừa cho H43 còn dư) |
+| Dải test | **800–899** (600–637 đã dùng; 640–699 chừa H43; **700–799 đã nhường VIDEO AI V3**, xem §nhường-dải) |
 | Tài liệu | `docs/CHATLTT_V3/` + `STATE.md` + `state.json` (khuôn H43) |
 | Cổng | `python tools\gate.py --vong-lap` sau mỗi sửa · `gate.py` đầy đủ trước mỗi lần đóng phase |
 
@@ -554,12 +554,12 @@ Mã thật đầu tiên. Vẫn giữ nguyên giao diện ảnh/tiếng V2.
   `(tool_name, băm đối số chuẩn hoá)` trong cùng run; trần credit tích luỹ mỗi lượt.
 - Giữ nguyên nhánh cây hội thoại — một run gắn vào **một** message assistant.
 
-**Test `test_700..712`:** không-tool (hồi quy) · một tool · tuần tự · nhiều lời
+**Test `test_800..812`:** không-tool (hồi quy) · một tool · tuần tự · nhiều lời
 gọi · đối số sai · tool lạ · handler ném · trùng · mồi lặp · ngắt kết nối +
 reload · hai tab · hai người dùng · huỷ · text và tool trong cùng một lượt ·
 JSON đối số cắt mảnh.
 
-**Đạt khi:** toàn bộ `test_700..712` xanh · **`test_623` (lượt text V1) vẫn
+**Đạt khi:** toàn bộ `test_800..812` xanh · **`test_623` (lượt text V1) vẫn
 xanh không sửa một dòng nào** · `gate.py` đầy đủ xanh · `lint_app_contract.py`
 không cảnh báo trần 900 dòng/30 handler cho `apps/chatltt/routes/`.
 
