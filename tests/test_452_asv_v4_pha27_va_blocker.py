@@ -367,3 +367,53 @@ def test_BAN_GIAO_khong_co_han_con_ban_trung_gian_thi_co():
     assert any(isinstance(k.value, ast.IfExp) for k in han), (
         "`han` khong phu thuoc vao viec day co phai ban giao hay khong")
     assert isinstance(assets.HAN_TRUNG_GIAN, timedelta)
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  A29-06 · P1 · id cua lan chay phai VUA cot so tien
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ma_lan_chay_VUA_cot_job_id_cua_so_credit():
+    """🔴 **Mot ky tu, va no lam luot chay TRA TIEN dau tien chet o production.**
+
+        AsvRun.id             = "asvr_" + 32 hex = 37 ky tu
+        credit_entries.job_id = VARCHAR(36)      <- truoc ban va
+
+    `features.py` truyen `run.id` vao `credit.giu_cho(...)`. PostgreSQL cuong
+    che do dai cot; SQLite coi no la mot **goi y**. Moi bai test cua Auto Scan
+    chay tren SQLite, production chay PostgreSQL, va Auto Scan chua tung chay o
+    production — nen khong con duong nao khac de bat duoc no.
+
+    ⭐ Phep kiem nay do QUAN HE giua hai lo so, khong go lai con so nao. Doi
+       `sinh_id` cho dai hon, hay ha cot xuong, deu lam no do — va do la dung
+       hai huong ma khiem khuyet nay co the quay lai.
+    """
+    from platform_core.models import CreditEntry
+    from apps.auto_scan_video.tables import sinh_id
+
+    cot = CreditEntry.__table__.c.job_id.type.length
+    assert cot, "credit_entries.job_id khong khai do dai"
+
+    # Sinh nhieu lan: mot lo id co the doi dai theo tung lan (vd base62).
+    for _ in range(20):
+        ma = sinh_id()
+        assert len(ma) <= cot, (
+            f"ma lan chay dai {len(ma)} ky tu, cot job_id chi chua {cot} — "
+            "mot but toan credit se hong tren PostgreSQL")
+
+
+def test_moi_ID_CO_TIEN_TO_cua_ASV_deu_vua_cot_no_di_qua():
+    """⛔ Cung mot cau hoi, hoi cho MOI bang cua ASV mang khoa ngoai kieu chuoi.
+
+    ⚠️ Doc do dai tu CHINH cac cot, khong go lai: mot phep kiem go lai con so se
+       van xanh sau khi ai do ha mot cot xuong.
+    """
+    from apps.auto_scan_video.tables import (AsvAsset, AsvRun, AsvStage,
+                                             AsvUsage, AsvWorkItem, sinh_id)
+
+    ma = sinh_id()
+    for bang, cot in ((AsvRun, "id"), (AsvStage, "run_id"), (AsvAsset, "run_id"),
+                      (AsvUsage, "run_id"), (AsvWorkItem, "run_id")):
+        dai = bang.__table__.c[cot].type.length
+        assert dai and len(ma) <= dai, (
+            f"{bang.__tablename__}.{cot} chua duoc {dai} ky tu, "
+            f"ma lan chay dai {len(ma)}")

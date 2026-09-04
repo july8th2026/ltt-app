@@ -295,7 +295,16 @@ class Job(Base):
     # Quan hệ execution Agent. Chuỗi rỗng giữ tương thích toàn bộ job cũ.
     parent_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
                                             index=True)
-    plan_id: Mapped[str] = mapped_column(String(36), default="", nullable=False,
+    #: 🔑 64, cung ly do voi `credit_entries.job_id`: cot nay nhan id cua mot
+    #:    THUC THE THUOC APP (`AsvRun.id` = "asvr_" + 32 hex = 37 ky tu),
+    #:    khong phai mot job id cua nen tang. 36 la do dai UUID, va mot id
+    #:    co tien to la luoc do hop le ma app duoc phep dung.
+    #:
+    #: ⚠️ Khiem khuyet nay AN SAU khiem khuyet o `credit_entries.job_id`: no
+    #:    chi lo ra sau khi cai kia duoc sua, vi truoc do lan chay khong di
+    #:    toi day. Mot lan sua khong kem mot lan chay lai la mot lan sua
+    #:    chua biet minh da du hay chua.
+    plan_id: Mapped[str] = mapped_column(String(64), default="", nullable=False,
                                          index=True)
     step_id: Mapped[str] = mapped_column(String(32), default="", nullable=False)
 
@@ -622,7 +631,22 @@ class CreditEntry(Base):
         index=True, nullable=False)
     delta: Mapped[int] = mapped_column(Integer, nullable=False)   # +nạp/hoàn, -trừ
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
-    job_id: Mapped[str] = mapped_column(String(36), default="", nullable=False, index=True)
+    #: 🔴 **64, khong phai 36 — va mot ky tu la khoang cach giua hai con so do.**
+    #:
+    #:    `36` la do dai mot UUID co dau gach, tuc cot nay tung duoc dat kich
+    #:    thuoc cho MOT lo id roi moi lo khac phai vua vao no. `AsvRun.id` la
+    #:    `"asvr_" + 32 hex` = **37**, va no tran dung mot ky tu.
+    #:
+    #: ⛔ Hau qua khong nho: PostgreSQL cuong che do dai cot, con SQLite coi no
+    #:    la mot goi y. Moi bai test cua Auto Scan chay tren SQLite, production
+    #:    chay PostgreSQL, va Auto Scan chua tung chay o production — nen luot
+    #:    chay TRA TIEN dau tien se chet o `credit.giu_cho` voi
+    #:    `StringDataRightTruncation`, TRUOC khi he thong lam gi.
+    #:
+    #: ⭐ Id co tien to (`asvr_`, `vc_`, `upl_`) la mot lua chon co ich: no noi
+    #:    id do la gi trong log va chan viec truyen nham mot id khac vao day.
+    #:    Rut ngan id de vua cot la de cai duoi quyet dinh cai tren.
+    job_id: Mapped[str] = mapped_column(String(64), default="", nullable=False, index=True)
     note: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_bay_gio, nullable=False)
