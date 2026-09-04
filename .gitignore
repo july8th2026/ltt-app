@@ -161,3 +161,9 @@ apps/*/vendor/
 *.pt
 cutclipshort/**/*.onnx
 frontend/prompt-ai-ommi/node_modules/
+
+# H44 — dau vet chay cua harness Nexus (khong commit)
+docs/CHATLTT_V3/harness/nexus_audit.log
+docs/CHATLTT_V3/harness/nexus_cert_pin.txt
+docs/CHATLTT_V3/harness/nexus_duong.json
+docs/CHATLTT_V3/harness/p01_sieu_du_lieu.json
