@@ -171,6 +171,45 @@
     hop.appendChild(nut);
     hop.appendChild(song);
     hop.appendChild(gio);
+
+    /* ── Bang dieu khien DAY DU — chi khi the audio khai `data-day-du="1"` ──
+     *
+     * Anh tham chieu 01_STUDIO co toc do phat va am luong o cot ket qua. Ca
+     * hai la THUOC TINH THAT cua `<audio>` (`playbackRate`, `volume`), nen day
+     * khong phai hai nut ve them — bam la doi that.
+     *
+     * ⛔ `playbackRate` KHAC voi o `Toc do doc` o cot trai. O ben trai doi TEP
+     *    (time-stretch giu cao do, `toc_do.py`, tinh tien theo ban goc); cai
+     *    nay chi doi cach TRINH DUYET phat lai, khong dong vao tep, khong tinh
+     *    tien. Hai thu de bi lan, nen nhan phai noi ro: "phat" chu khong "doc".
+     *
+     * ⚠️ Chi bat o cot ket qua cua Studio. Lich su va Du an co hang chuc dong;
+     *    hai dieu khien nhan cho moi dong la nhieu, khong phai tinh nang. */
+    if (au.dataset.dayDu === "1") {
+      var nutTd = document.createElement("button");
+      nutTd.type = "button";
+      nutTd.className = "lv-phat-td";
+      var nacTd = [1, 1.25, 1.5, 0.75];
+      var iTd = 0;
+      nutTd.textContent = "1×";
+      nutTd.setAttribute("aria-label", "Toc do phat lai");
+      nutTd.addEventListener("click", function () {
+        iTd = (iTd + 1) % nacTd.length;
+        au.playbackRate = nacTd[iTd];
+        nutTd.textContent = nacTd[iTd] + "×";
+      });
+
+      var am = document.createElement("input");
+      am.type = "range";
+      am.className = "lv-phat-am";
+      am.min = "0"; am.max = "1"; am.step = "0.05"; am.value = "1";
+      am.setAttribute("aria-label", "Am luong");
+      am.addEventListener("input", function () { au.volume = Number(am.value); });
+
+      hop.appendChild(nutTd);
+      hop.appendChild(am);
+    }
+
     hop.appendChild(au);
 
     function dinhDang(gy) {
@@ -1109,6 +1148,35 @@
         });
       })(nutNgonNgu[kn]);
     }
+
+    /* ── Dinh dang tai ve (WAV / MP3) ──────────────────────────────────────
+       KHONG doi luot sinh — cong giong luon tra WAV. No doi nut tai CHINH o
+       cot ket qua, va viec chuyen sang MP3 xay ra dung luc tai (`?mp3=1`,
+       `_p_audio.py`). Tuc day la mot lua chon THAT ve thu khach nhan duoc.
+
+       ⚠️ Ap cho ca nut hien san (luot gan nhat) lan nut cua luot vua chay —
+       hai bo nut, mot lua chon; quen mot bo la de khach chon roi thay khong
+       gi doi. */
+    var oDinhDang = "wav";
+    function apDinhDang() {
+      var ds = document.querySelectorAll("[data-tai]");
+      for (var i = 0; i < ds.length; i++) {
+        var la = ds[i].dataset.tai === oDinhDang;
+        ds[i].classList.toggle("primary", la);
+        ds[i].classList.toggle("ghost", !la);
+      }
+    }
+    var nutDd = document.querySelectorAll("[data-dinhdang]");
+    for (var kd = 0; kd < nutDd.length; kd++) {
+      (function (nut) {
+        nut.addEventListener("click", function () {
+          oDinhDang = nut.dataset.dinhdang || "wav";
+          batNut(nut);
+          apDinhDang();
+        });
+      })(nutDd[kd]);
+    }
+    apDinhDang();
 
     /* ── Tu dien phat am rieng ─────────────────────────────────────────────
        Nap KHI MO lan dau, khong nap san: hau het khach khong mo no, va no la

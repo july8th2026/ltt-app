@@ -69,6 +69,7 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
         _xong = [j for j in _lich
                  if j.status == "done" and (j.result or {}).get("audio_key")]
         phien_ban = []
+        nhan_pb = {}
         if _xong:
             _chuan = ((_xong[0].result or {}).get("text") or "").strip()
             if _chuan:
@@ -79,6 +80,10 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     n = len(cung)
                     phien_ban = [{"job": j, "nhan": f"V{n - i}"}
                                  for i, j in enumerate(cung)]
+        # Bản đồ `job_id -> nhãn` để dòng `Gần đây` gắn chip mà không phải dò
+        # lại. Dòng nào không thuộc nhóm nào thì KHÔNG có chip — chứ không gắn
+        # bừa `V1` cho một lượt đứng một mình.
+        nhan_pb = {pb["job"].id: pb["nhan"] for pb in phien_ban}
         # ⚠️ TÍNH Ở ĐÂY, không ở chỗ dựng template. `finally` ngay bên dưới
         #    đóng phiên CSDL, nên một lời gọi ORM đặt sau đó chạm vào một
         #    session đã đóng — và nó hỏng ở tận Jinja, một chỗ không ai nghĩ
@@ -131,7 +136,8 @@ def trang_tao(request: Request, giong: str = "", user=Depends(user_hien_tai),
                     du_an_ds=du_an_ds,
                     duong_nghe=duong_nghe,
                     gan_day=gan_day,
-                    phien_ban=phien_ban))
+                    phien_ban=phien_ban,
+                    nhan_pb=nhan_pb))
 
 
 @router.post("/xem-truoc")

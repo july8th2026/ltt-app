@@ -190,9 +190,29 @@
 
       <div class="lv-st-o">
         <span class="eyebrow">{{ _("Đầu ra") }}</span>
-        {# SỰ THẬT, không phải điều khiển. Cổng trả đúng một định dạng. #}
-        <p class="lv-st-that">WAV · 48 kHz</p>
-        <small class="dim">{{ _("Định dạng duy nhất hiện có. Tải về rồi chuyển đổi nếu cần thứ khác.") }}</small>
+        {#
+          ⭐ ĐÂY LÀ ĐỊNH DẠNG **TẢI VỀ**, KHÔNG PHẢI ĐỊNH DẠNG SINH RA.
+
+             Chú thích cũ ở đầu tệp ghi *"cổng trả đúng một sample rate; một nút
+             chọn 24 kHz không làm gì là một lời hứa sai"* — và câu ấy vẫn đúng
+             nguyên: `48 kHz` ở dưới là một SỰ THẬT, không phải ô chọn.
+
+          ⛔ Nhưng nó đã bị áp nhầm cho cả định dạng tệp. WAV/MP3 **là** một khả
+             năng thật: `/audio?mp3=1` chuyển đúng lúc tải (`_p_audio.py`), và
+             cột kết quả đã có sẵn hai nút ấy. Thứ thiếu chỉ là chỗ khách nói
+             trước họ muốn cái nào, để nút tải chính không phải đoán.
+
+          ⇒ Ô này đổi nút tải CHÍNH ở cột kết quả. Không đụng gì tới lượt sinh.
+        #}
+        <div class="lv-loc-nhom" role="group" aria-label="{{ _('Định dạng tải về') }}">
+          {% for ma, nhan in [("wav", "WAV"), ("mp3", "MP3")] %}
+            <button type="button" class="lv-loc-nut{{ ' on' if ma == 'wav' }}"
+                    aria-pressed="{{ 'true' if ma == 'wav' else 'false' }}"
+                    data-dinhdang="{{ ma }}">{{ nhan }}</button>
+          {% endfor %}
+        </div>
+        <p class="lv-st-that">48 kHz</p>
+        <small class="dim">{{ _("Tần số mẫu là cố định — cổng giọng trả đúng một mức. Định dạng chỉ đổi lúc tải về, không đổi lượt sinh.") }}</small>
       </div>
 
       <div class="lv-st-nut">
@@ -303,7 +323,35 @@
                     {% if j.result and j.result.get('duration_s') %}
                       <small class="dim tnum">{{ j.result.get('duration_s') }}s</small>
                     {% endif %}
+                    {# Chip phiên bản CHỈ khi lượt này thuộc một nhóm cùng văn
+                       bản. Một lượt đứng một mình không có "V1" — gắn bừa là
+                       đúng thứ §22 cấm. #}
+                    {% if nhan_pb and nhan_pb.get(j.id) %}
+                      <b class="lv-pb-nhan">{{ nhan_pb.get(j.id) }}</b>
+                    {% endif %}
                     {% with tt = j.status %}{% include "_voice_trangthai.html" %}{% endwith %}
+                    {#
+                      MENU — ảnh mẫu có dấu `⋮` ở cuối mỗi dòng.
+
+                      ⛔ Mỗi mục phải là một hành động THẬT (§37: 0 dead control).
+                         Ở đây là ba đường đã tồn tại: tải WAV, tải MP3 (cùng cửa
+                         `/audio`, `?mp3=1` chuyển lúc tải), và mở trang việc.
+
+                      ⭐ `<details>` chứ không phải một dropdown tự viết: nó đóng
+                         mở bằng bàn phím sẵn, không cần một dòng JS nào, và
+                         không có trạng thái nào để lệch.
+                    #}
+                    {% if j.status == "done" and (j.result or {}).get("audio_key") %}
+                      {% set d = manifest.route_prefix ~ "/audio/" ~ j.result.get("audio_key") %}
+                      <details class="lv-gd-menu">
+                        <summary aria-label="{{ _('Thêm hành động') }}">⋮</summary>
+                        <div class="lv-gd-menu-hop">
+                          <a download href="{{ d }}">{{ _("Tải WAV") }}</a>
+                          <a download href="{{ d }}?mp3=1">{{ _("Tải MP3") }}</a>
+                          <a href="/jobs/{{ j.id }}">{{ _("Mở trang việc") }}</a>
+                        </div>
+                      </details>
+                    {% endif %}
                   </span>
                 </li>
               {% endfor %}
@@ -348,10 +396,10 @@
             {% set duong = manifest.route_prefix ~ "/audio/" ~ moi_nhat.result.get("audio_key") %}
             <p class="dim lv-kq-nhan">{{ _("Lượt gần nhất") }}</p>
             <p class="lv-kq-chu">{{ (moi_nhat.params or {}).get('text', '')[:120] }}</p>
-            <audio data-nang="1" controls preload="none" src="{{ duong }}"></audio>
+            <audio data-nang="1" data-day-du="1" controls preload="none" src="{{ duong }}"></audio>
             <div class="lv-kq-nut">
-              <a class="btn sm ghost" download href="{{ duong }}">{{ _("WAV") }}</a>
-              <a class="btn sm ghost" download href="{{ duong }}?mp3=1">{{ _("MP3") }}</a>
+              <a class="btn sm ghost" download data-tai="wav" href="{{ duong }}">{{ _("WAV") }}</a>
+              <a class="btn sm ghost" download data-tai="mp3" href="{{ duong }}?mp3=1">{{ _("MP3") }}</a>
               <a class="btn sm ghost" href="{{ manifest.route_prefix }}/lich-su">{{ _("Xem tất cả") }}</a>
             </div>
             {#

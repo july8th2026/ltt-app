@@ -2546,8 +2546,11 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
    chinh khong bao gio roi khoi tam mat.
 
    ⚠️ `bottom:10px` chu khong `bottom:0`: dinh sat day man hinh trong nhu bi cat. */
+/* ⚠️ Chuyen mau phai DUC SOM. Ban dau `var(--bg) 42%` de nua tren trong
+   suot, va hop `DAU RA` ngay tren hien xuyen qua nut — trong nhu bo cuc
+   bi vo chu khong nhu mot nut ghim. 14% du de mep tren khong bi cat ngang. */
 .lv-studio .lv-st-nut{position:sticky;bottom:10px;z-index:2;
-  padding:10px 0 0;background:linear-gradient(180deg,transparent,var(--bg) 42%)}
+  padding:12px 0 0;background:linear-gradient(180deg,transparent,var(--bg) 14%)}
 /* Dai dau man sat hon mot chut — anh mau bat dau workspace o ~132px. */
 .page--immersive:has(.lv-studio){padding-top:10px}
 .lv-studio>.lv-vo{margin-bottom:8px}
@@ -2571,6 +2574,25 @@ button.lv-the-song.dang-phat .lv-nghe-dau::before{width:4px;height:14px;
 .lv-gd .lv-phat-song,.lv-gd .lv-phat-gio{display:none}
 .lv-gd .lv-phat-nut{width:26px;height:26px}
 .lv-gd li{display:flex;align-items:center;gap:9px}
+/* Menu `⋮` cua dong Gan day. `<details>` thuan, khong JS. */
+.lv-gd-menu{position:relative}
+.lv-gd-menu>summary{list-style:none;cursor:pointer;padding:0 4px;color:var(--dim);
+  border-radius:4px;line-height:1}
+.lv-gd-menu>summary::-webkit-details-marker{display:none}
+.lv-gd-menu>summary:hover{color:var(--text)}
+.lv-gd-menu>summary:focus-visible{outline:2px solid var(--focus-ring);outline-offset:2px}
+.lv-gd-menu-hop{position:absolute;right:0;top:calc(100% + 6px);z-index:6;min-width:132px;
+  padding:5px;border:1px solid var(--line);border-radius:var(--radius-sm,6px);
+  background:var(--panel);box-shadow:0 12px 30px #0009;display:grid;gap:1px}
+.lv-gd-menu-hop a{display:block;padding:7px 9px;border-radius:4px;color:var(--text);
+  text-decoration:none;font-size:11.5px;white-space:nowrap}
+.lv-gd-menu-hop a:hover{background:var(--brand-soft,#2b1512)}
+/* Toc do phat + am luong — chi o bang dieu khien day du cua cot ket qua. */
+.lv-phat-td{flex:0 0 auto;min-width:34px;height:22px;padding:0 5px;
+  border:1px solid var(--line);border-radius:5px;background:transparent;
+  color:var(--muted);font:inherit;font-size:10.5px;cursor:pointer}
+.lv-phat-td:hover{color:var(--text);border-color:var(--brand-border)}
+.lv-phat-am{flex:0 0 62px;width:62px;height:3px;accent-color:var(--accent)}
 .lv-st-trai,.lv-st-giua,.lv-st-phai{display:flex;flex-direction:column;gap:14px;min-width:0}
 .lv-st-phai{position:sticky;top:72px}
 

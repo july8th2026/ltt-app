@@ -13213,3 +13213,12 @@ msgstr "Segments"
 
 msgid "Các lượt đọc cùng một văn bản, trong các lượt gần đây."
 msgstr "Reads of the same text, among your recent runs."
+
+msgid "Thêm hành động"
+msgstr "More actions"
+
+msgid "Định dạng tải về"
+msgstr "Download format"
+
+msgid "Tần số mẫu là cố định — cổng giọng trả đúng một mức. Định dạng chỉ đổi lúc tải về, không đổi lượt sinh."
+msgstr "The sample rate is fixed - the voice engine returns exactly one. Format only changes at download time, not the generation itself."
