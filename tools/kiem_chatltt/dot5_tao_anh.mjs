@@ -22,7 +22,7 @@
 
 import { anhHopLe } from './dot4_dinh_kem.mjs';
 
-export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) {
+export function dot5({ cho, doiDen, soDu, soDuOnDinh, hoiThoaiMoi, guiChu, xong, nangLuc }) {
   const nutAnh = (p) => p.getByRole('button', { name: 'Tạo ảnh' });
   const oMoTa = (p) => p.getByLabel('Mô tả ảnh');
 
@@ -78,7 +78,11 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) 
       async chay(p) {
         const bq = await moPanelAnh(p);
         if (bq) return bq;
-        const truoc = await soDu(p);
+        // ⛔ DOI SO DU NGUNG NHUC NHICH TRUOC KHI LAY MOC. `moPanelAnh` co
+        //    the vua gui mot luot chu de mo o media, va khoan thu cua luot do ve
+        //    KHONG DONG BO — no se ha so du ngay giua phep do nay va bi quy cho
+        //    "bao gia da tru tien".
+        const truoc = await soDuOnDinh(p);
         const anhTruoc = await soAnh(p);
         const { gia } = await xemGia(p, 'mot con meo tam mau ngoi tren bau cua so');
         const giuaChung = await soDu(p);
@@ -104,7 +108,7 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) 
         //    so du giam dung bang so da bao, khong hon.
         const bq = await moPanelAnh(p);
         if (bq) return bq;
-        const truoc = await soDu(p);
+        const truoc = await soDuOnDinh(p);
         const anhTruoc = await soAnh(p);
         const { gia } = await xemGia(p, 'mot ngon hai dang tren vach da luc hoang hon');
         await p.getByRole('button', { name: 'Đồng ý, tạo' }).click();
@@ -226,10 +230,23 @@ export function dot5({ cho, doiDen, soDu, hoiThoaiMoi, guiChu, xong, nangLuc }) 
             headers: { 'content-type': 'application/json', 'X-CSRF-Token': csrf },
             body: JSON.stringify({ nang_luc: 'video.khong_he_co', tham_so: { prompt: 'x' } }),
           });
-          return { status: res.status, than: (await res.text()).slice(0, 160) };
+          const chu = await res.text();
+          return { status: res.status, than: chu.slice(0, 160),
+                   la_html: chu.trim().startsWith('<') };
         });
         if (r.status === 200) throw new Error('may chu BAO GIA cho mot nang luc ngoai allowlist');
         if (r.status >= 500) throw new Error(`may chu 5xx thay vi tu choi sach: ${r.status}`);
+        // ⛔ CON SO 403 KHONG DU. Lat 04/09 bao DAT voi than la
+        //    `<!DOCTYPE html>...Just a moment...` — mot trang thu thach cua
+        //    Cloudflare, khong phai loi cua ung dung. Hai loai 403 do khong
+        //    phan biet duoc neu chi doc ma trang thai.
+        //
+        // ⭐ Doi THAN JSON cua chinh ung dung: `khong_duoc_phep` la cau tra
+        //    loi cua san pham, va no khong the den tu mot lop bien nao khac.
+        if (r.la_html) throw new Error(`bi mot lop BIEN chan (than la HTML), khong phai ung dung tu choi: ${r.than.slice(0, 90)}`);
+        if (!/khong_duoc_phep/.test(r.than)) {
+          throw new Error(`than tu choi khong phai cua ung dung: ${r.than.slice(0, 120)}`);
+        }
         return r;
       },
     },

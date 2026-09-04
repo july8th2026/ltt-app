@@ -209,6 +209,33 @@ const soDu = async (p) => {
   const m = t.replace(/[.\s]/g, '').match(/(\d+)/);
   return m ? Number(m[1]) : null;
 };
+/** So du khi no da NGUNG NHUC NHICH — hai lan doc lien tiep bang nhau.
+ *
+ * 🔴 VI SAO CAN. So du KHONG don dieu theo thoi gian: giu/thu/hoan quyet
+ *    toan **khong dong bo** voi luot dang chay, nen mot khoan cua luot TRUOC co
+ *    the ve ngay giua phep do cua luot NAY.
+ *
+ * ⛔ Do 04/09: hang muc `5.1` bao "BAO GIA da tru tien: 908 -> 907" trong
+ *    khi bao gia khong he cham so tien. Thu tru mot credit la luot chu `"Chao."`
+ *    ma chinh `moPanelAnh` vua gui de mo o media. Mot phep kiem to nham san pham
+ *    vi no do mot dai luong dang chuyen dong.
+ *
+ * ⭐ Cung goc voi loi `7.4` ("so du phai giam") da sua truoc do trong ngay.
+ *    Sua o mot cho roi khong ra soat nhung cho con lai la de danh lai dung cai
+ *    bay cho lan sau.
+ */
+const soDuOnDinh = async (p, hanS = 20) => {
+  let truoc = await soDu(p);
+  const het = Date.now() + hanS * 1000;
+  while (Date.now() < het) {
+    await cho(1500);
+    const nay = await soDu(p);
+    if (nay !== null && nay === truoc) return nay;
+    truoc = nay;
+  }
+  return truoc;
+};
+
 const dangChay = (p) => p.getByRole('button', { name: 'Dừng' }).count().then((n) => n > 0);
 
 /** Trang thai mot nang luc, HOI THANG MAY CHU.
@@ -226,6 +253,35 @@ const dangChay = (p) => p.getByRole('button', { name: 'Dừng' }).count().then((
  *    diep `bo_qua` — mot lan bo qua co bang chung khac han mot lan bo qua vi
  *    het kien nhan.
  */
+/** Phien con song khong. Nem khi da bi dang xuat / Cloudflare chan lai.
+ *
+ * 🔴 VI SAO PHAI CO. Lat chay 04/09: phien chet GIUA LUOT, va Cloudflare
+ *    bat dau tra `403` kem trang `<!DOCTYPE html>...Just a moment...`. Hai hang
+ *    muc **BAO DAT** dua tren chinh con so 403 do — vi ca hai chi kiem
+ *    `status === 403` va khong nhin thu gi khac.
+ *
+ * ⛔ Mot `403` cua Cloudflare KHONG PHAN BIET DUOC voi mot `403` cua ung
+ *    dung, neu chi doc ma trang thai. Do dung loai loi ta da sua ca ngay o cho
+ *    khac: chot mot con so ma khong hoi no **tu dau ra**.
+ *
+ * ⭐ Nen bo kiem phai DUNG HAN thay vi de lai mot bao cao trong nhu that.
+ *    Mot lat chay bi cat giua chung la mot su that; mot lat chay "xanh" tren
+ *    rac la mot lat chay se bi tin.
+ */
+async function conPhien(page) {
+  const r = await page.evaluate(async () => {
+    try {
+      const res = await fetch('/chatltt/api/so-du', { redirect: 'follow' });
+      const chu = await res.text();
+      return { ma: res.status, html: chu.trim().startsWith('<') , dai: chu.length };
+    } catch (e) { return { ma: -1, html: false, loi: String(e).slice(0, 80) }; }
+  });
+  if (r.ma === 200 && !r.html) return true;
+  throw new Error(
+    `PHIEN DA CHET giua luot (so-du tra ${r.ma}${r.html ? ', than la HTML' : ''}). `
+    + 'Dang nhap lai trong cua so Chrome roi chay lai — dung tin ket qua sau diem nay.');
+}
+
 const nangLuc = (p, ten) => p.evaluate(
   (t) => fetch('/chatltt/api/danh-muc').then((r) => r.json())
     .then((d) => (d.nang_luc || []).find((n) => n.ten === t)?.san_sang || 'khong_co_trong_catalog')
@@ -674,7 +730,7 @@ const HANG_MUC = [
 //    dong thi khong ai doc lai, va mot bo kiem khong ai doc lai la mot bo kiem
 //    khong ai sua khi no sai.
 const TRO_GIUP = { cho, doiDen, soBai, chuBaiCuoi, dangChay, guiChu, xong,
-                   hoiThoaiMoi, donOSoan, soDu, nangLuc };
+                   hoiThoaiMoi, donOSoan, soDu, soDuOnDinh, nangLuc };
 {
   const nap = async (ten, ham) => {
     try {
@@ -822,6 +878,7 @@ try {
         await doiDen('ve lai duoc ChatLTT',
           async () => (await page.getByLabel('Nội dung tin nhắn').count()) > 0, 30);
       }
+      await conPhien(page);
       const ct = await hm.chay(page);
       const bo = ct && typeof ct === 'object' && 'bo_qua' in ct;
       ketQua.push({ dot: hm.dot ?? 0, ten: hm.ten, dat: !bo, bo_qua: !!bo,

@@ -45,6 +45,17 @@ SO_MAU_GIU = 12
 #:
 #: Từ số đo thật trên máy B (bf16, `--reserve-vram 3`): t2i đỉnh **17.600 MB**, có
 #: ảnh tham chiếu đỉnh **20.000 MB**. Lấy mức cao hơn cộng một khoảng đệm nhỏ, vì
+#: Số tiến trình python trên card kể từ đó coi là **có người đang tính**.
+#:
+#: ⭐ **2**, không phải 1: trên máy B ComfyUI luôn chạy, nên một python là trạng
+#:    thái bình thường. `llm_gateway/trong_tai.py` chốt cùng con số này và ghi rõ
+#:    vì sao đặt 1 là sai — cổng sẽ trả 429 vĩnh viễn.
+#:
+#: ⚠️ Trước 04/09 số này được gõ thẳng vào giữa `observe()`. Đặt tên vì nó nay
+#:    được đọc ở **hai** chỗ, và một hằng số vô danh dùng hai nơi là một hằng số
+#:    sẽ lệch.
+TRAN_PYTHON_GPU = 2
+
 #: nhận một job rồi hết VRAM giữa chừng đắt hơn nhiều so với báo bận.
 VRAM_CAN_TOI_THIEU_MB = 20_500
 
@@ -93,6 +104,43 @@ def so_python_tinh_tren_gpu() -> Optional[int]:
         if "python" in dong.lower():
             dem += 1
     return dem
+
+
+#: Mức tải GPU (%) coi là **có người đang TÍNH**, không phải chỉ đang giữ bộ nhớ.
+#:
+#: 🔴 VÌ SAO ĐẾM TIẾN TRÌNH KHÔNG ĐỦ. `TRAN_PYTHON_GPU` coi "1 python = ComfyUI
+#:    thường trú = rảnh". Đúng khi ComfyUI ngồi im. Nhưng ComfyUI **đang vẽ** cũng
+#:    là đúng 1 python — phép đếm không phân biệt được. Và `llama-server.exe`
+#:    **không phải python**, nên nó vô hình với phép đếm hoàn toàn.
+#:
+#: ⭐ Mức tải phân biệt được: ngồi im 0–1 %, đang làm ~100 %.
+#:
+#: ⚠️ Con số 50 và bảng bốn trường hợp đến từ `llm_gateway/trong_tai.py`, đo
+#:    24/08. Nay nó nằm ở ĐÂY vì cả hai cổng cùng cần, và hướng phụ thuộc đã chốt
+#:    là `llm_gateway` → `render_gateway` (xem đầu `trong_tai.py`). Một hằng số ở
+#:    hai nơi là một hằng số sẽ lệch.
+TAI_GPU_DANG_TINH = 50
+
+
+def tai_gpu_phan_tram() -> Optional[int]:
+    """Phần trăm tải GPU, hỏi `nvidia-smi`. `None` khi không hỏi được.
+
+    Cùng lý do dùng `nvidia-smi` như `vram_dung_mb_qua_smi` ngay dưới: trên
+    Windows/WDDM mọi nguồn trong tiến trình đều chỉ thấy chính nó.
+    """
+    exe = shutil.which("nvidia-smi")
+    if not exe:
+        return None
+    try:
+        ra = subprocess.run(
+            [exe, "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=NVIDIA_SMI_TIMEOUT_S)
+        if ra.returncode != 0:
+            return None
+        dong = (ra.stdout or "").strip().splitlines()
+        return int(dong[0].strip()) if dong else None
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return None
 
 
 def vram_dung_mb_qua_smi() -> Optional[int]:
@@ -228,6 +276,33 @@ class BusyWatcher:
     #: VRAM tối thiểu phải còn dùng được. Bắt việc **đang giữ bộ nhớ** — kể cả khi
     #: nó không tính gì và không phải python (`llama-server.exe`, 22/08).
     vram_can_toi_thieu_mb: int = VRAM_CAN_TOI_THIEU_MB
+    #: Có hộ **bảo-được** nào giữ card không (ta gọi được endpoint nhả của nó).
+    #:
+    #: 🔴 VÌ SAO CHỐT NÀY TỒN TẠI — MỘT KHOÁ CHẾT THEO THỨ TỰ, ĐO 04/09/2026.
+    #:
+    #:    Máy A hỏi `/health` TRƯỚC khi gửi lệnh vẽ, và hoãn job nếu `busy`
+    #:    (`apps/anhnoibo/jobs.py::_xep_lai_neu_may_ban`). Nhánh VRAM bên dưới bật
+    #:    `busy` mỗi khi **bất kỳ ai** giữ card — kể cả Qwen, kẻ ta **bảo nhả
+    #:    được**. Nên lệnh vẽ không bao giờ tới, và `xin_card` — thứ duy nhất biết
+    #:    đi bảo Qwen nhả — **không bao giờ chạy**.
+    #:
+    #:    Bằng chứng: `gateway.log` không có **một** `POST` nào, và `/unload` chỉ
+    #:    được gọi **6 lần** trong toàn bộ lịch sử log. Job ảnh nằm `queued` vô hạn
+    #:    với lý do "máy tạo ảnh đang bận" — trong khi ComfyUI sống, hàng đợi
+    #:    trống, và card chỉ đang bị một hộ bảo-được ôm.
+    #:
+    #: ⭐ VÀ ĐÂY LÀ ĐÚNG CON BUG `api.py` ĐÃ SỬA MỘT LẦN, SỐNG LẠI Ở TẦNG TRÊN.
+    #:    Chú thích ở `api.py:255` viết: *"chốt bận coi 'VRAM còn ít' là bận, nên
+    #:    khi Qwen giữ 19 GB thì cổng trả 429 ngay — không bao giờ đi bảo Qwen
+    #:    nhả"*. Nó được sửa **bên trong** cổng bằng cách đặt `xin_card` trước chốt
+    #:    bận. Máy A dựng lại đúng phép kiểm đó ở **ngoài**, nên bản sửa bên trong
+    #:    mất tác dụng.
+    #:
+    #: ⛔ KHÔNG bỏ hẳn nhánh VRAM. Nó cứu một ca thật 22/08: `llama-server` ôm
+    #:    15,9 GB, GPU 0 % tải, phép đếm python trả về 1 ⇒ cổng báo rảnh trong khi
+    #:    card chỉ còn 4,6 GB. Chốt này chỉ **thu hẹp** nhánh đó đúng một trường
+    #:    hợp: kẻ giữ là hộ bảo-được **và** không ai đang tính trên card.
+    co_ho_bao_duoc: Callable[[], bool] = lambda: False
 
     _bat_dau: dict[str, float] = field(default_factory=dict, init=False)
     _thoi_luong: list[float] = field(default_factory=list, init=False)
@@ -257,6 +332,30 @@ class BusyWatcher:
         return True
 
     # ── quan sát ─────────────────────────────────────────────────────────────
+    def _nhuong_duoc(self) -> bool:
+        """Card đang bị giữ, nhưng ta **lấy lại được** — nên đừng báo bận.
+
+        Đúng khi có hộ bảo-được, **và** không ai đang tính trên card. Hai điều
+        kiện, không phải một:
+
+          · có hộ bảo-được  → có đường lấy lại card (`xin_card` sẽ làm)
+          · không ai đang tính → lấy lại **không cắt ngang việc của ai**
+
+        ⛔ Thiếu vế thứ hai là quay lại đúng thứ ta đang tránh: báo rảnh trong lúc
+           Qwen đang sinh chữ, để rồi `xin_card` gọi `/unload` và **giết một lượt
+           đang chạy** — llama-swap làm đúng như vậy, đo 03/09, và lượt bị giết
+           chỉ nhận `ConnectionReset` trông y hệt một lần OOM.
+        """
+        try:
+            if not self.co_ho_bao_duoc():
+                return False
+        except Exception:                                       # noqa: BLE001
+            return False
+        so_py = self.dem_python_gpu()
+        # Không đọc được ⇒ coi như KHÔNG nhường được: giữ hành vi cũ (báo bận),
+        # vì "không biết" ở đây phải xử như "không an toàn".
+        return so_py is not None and so_py < TRAN_PYTHON_GPU
+
     def observe(self, cua_ta: set[str]) -> BusyState:
         """Đọc một lần trạng thái máy. `cua_ta` = tập `prompt_id` của cổng này."""
         if self._dang_doc_chiem():
@@ -289,7 +388,7 @@ class BusyWatcher:
         #    trú. Ngưỡng VRAM sẽ làm cổng tự báo bận vĩnh viễn sau lô đầu tiên.
         #    Cái phân biệt được là SỐ TIẾN TRÌNH python đang tính trên card.
         so_py = self.dem_python_gpu()
-        if so_py is not None and so_py >= 2:
+        if so_py is not None and so_py >= TRAN_PYTHON_GPU:
             return BusyState(True,
                              f"co {so_py - 1} tien trinh khac dang tinh tren GPU",
                              None, 0, len(dang_chay) + len(dang_cho), vram_mb, ram_gb,
@@ -300,7 +399,7 @@ class BusyWatcher:
         #    về 1 ⇒ cổng báo rảnh trong khi card chỉ còn 4,6 GB.
         if ngoai_mb is not None:
             kha_dung = self._vram_tong_mb() - ngoai_mb
-            if kha_dung < self.vram_can_toi_thieu_mb:
+            if kha_dung < self.vram_can_toi_thieu_mb and not self._nhuong_duoc():
                 return BusyState(
                     True,
                     f"tien trinh khac dang giu {ngoai_mb} MB VRAM, "

@@ -34,6 +34,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 from . import __version__, nhuong_card, tren_gpu
+from . import busy as busy_mod
 from . import jobs as J
 from .busy import BusyWatcher
 from .catalog import ModelSpec, nap_catalog
@@ -76,8 +77,13 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
     # Hai nguồn GPU tiêm được để test không đọc card của máy đang chạy test.
     # Cả hai mặc định hỏi `nvidia-smi` — KHÔNG phải `/system_stats`, vì nguồn đó
     # mù với tiến trình khác trên Windows/WDDM (đã đo, xem `busy.py`).
+    # ⚠️ `co_ho_bao_duoc` phải là một HÀM, không phải một giá trị: danh sách hộ
+    #    được đọc **bên dưới**, nên một giá trị tính ở đây sẽ luôn là `False`.
+    #    Tra cứu muộn cũng đúng hơn về nghĩa — nó hỏi "lúc này có ai bảo được
+    #    không", không phải "lúc khởi động có ai".
     watcher = BusyWatcher(comfy=comfy,
                           ram_trong_toi_thieu_gb=cfg.ram_trong_toi_thieu_gb, now=now,
+                          co_ho_bao_duoc=lambda: any(h.bao_duoc for h in ho_dung_card),
                           **({"doc_vram_mb": doc_vram_mb} if doc_vram_mb else {}),
                           **({"dem_python_gpu": dem_python_gpu} if dem_python_gpu else {}))
     catalog: dict[str, ModelSpec] = nap_catalog(workflow_dir)
@@ -92,6 +98,31 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
         log.info("ho dung chung card: %s",
                  ", ".join(f"{h.ten}{'' if h.bao_duoc else ' (chi cho duoc)'}"
                            for h in ho_dung_card))
+
+    def _ho_khac_dang_tinh() -> bool:
+        """Có hộ KHÁC đang tính trên card không — dùng để **không đuổi** họ.
+
+        🔴 CÂU HỎI NÀY KHÁC "card có bận không". Ở đây ta đã quyết định muốn card;
+           thứ cần biết là **đuổi bây giờ có cắt ngang việc của ai không**.
+
+        ⭐ Hai tín hiệu, đúng như `llm_gateway/trong_tai.py` đã đo cho chiều ngược:
+
+             python trên card >= 2      ⇒ có tiến trình khác đang tính
+             ComfyUI của TA đang vẽ     ⇒ tải cao là của ta, KHÔNG tính là hộ khác
+             còn lại, tải GPU cao       ⇒ `llama-server` đang trả lời ⇒ ĐANG TÍNH
+
+        ⛔ `llama-server.exe` **không phải python**, nên phép đếm python một mình
+           mù với nó — đúng lý do `trong_tai` phải ghép thêm mức tải. Không có vế
+           tải thì ta sẽ đuổi Qwen ngay giữa một câu trả lời đang chảy.
+        """
+        so_py = watcher.dem_python_gpu()
+        if so_py is not None and so_py >= busy_mod.TRAN_PYTHON_GPU:
+            return True
+        # ComfyUI của ta đang vẽ ⇒ tải cao là của chính ta, không phải hộ khác.
+        if store.active_prompt_ids():
+            return False
+        tai = busy_mod.tai_gpu_phan_tram()
+        return tai is not None and tai >= busy_mod.TAI_GPU_DANG_TINH
 
     def goi_nha(duong: str) -> bool:
         """Gọi endpoint nhả của một hộ. Hỏng thì trả False, KHÔNG ném.
@@ -273,6 +304,7 @@ def create_app(cfg: Config, comfy: ComfyClient, *,
         px = nhuong_card.xin_card(ho_khac=ho_dung_card,
                                   doc_vram=watcher.doc_vram_mb,
                                   goi_nha=goi_nha_ho,
+                                  dang_tinh=_ho_khac_dang_tinh,
                                   so_duoi=so_duoi)
         if not px.duoc:
             slot.release()

@@ -162,6 +162,7 @@ def xin_card(*, ho_khac: Sequence[HoDung],
              han_giay: Optional[float] = None,
              nhip_giay: Optional[float] = None,
              so_duoi: Optional["SoDuoi"] = None,
+             dang_tinh: Optional[Callable[[], bool]] = None,
              now: Callable[[], float] = time.monotonic,
              ngu: Callable[[float], None] = time.sleep) -> PhanXuXinCard:
     """Bảo các hộ bảo-được nhả, rồi **CHỜ VÀ XÁC MINH** VRAM xuống dưới ngưỡng.
@@ -215,6 +216,47 @@ def xin_card(*, ho_khac: Sequence[HoDung],
             f"vua duoi cach day chua du {so_duoi._cach():.0f}s — cho them "
             f"{con:.0f}s de khong lam khach LLM tra 18s nap lai moi luot. "
             f"VRAM dang {vram0} MB.", ())
+
+    # ── CÓ AI ĐANG LÀM VIỆC TRÊN CARD KHÔNG? ────────────────────────────────
+    #
+    # 🔴 ĐUỔI MỘT KẺ ĐANG GIỮ LÀ ĐÚNG. ĐUỔI MỘT KẺ ĐANG LÀM LÀ PHÁ VIỆC.
+    #
+    #    `llama-swap` **giết một lượt đang chạy** để nhả model — đo 03/09/2026, và
+    #    lượt bị giết chỉ nhận `ConnectionReset`, không lỗi nào nói vì sao. Với
+    #    khách ChatLTT, đó là câu trả lời đang chảy dở **biến mất giữa chừng**.
+    #
+    # ⭐ Nên phân biệt hai trạng thái của cùng một hộ:
+    #      · đang GIỮ bộ nhớ, ngồi im  → bảo nhả, không ai thiệt
+    #      · đang TÍNH                 → **chờ**, đừng bảo nhả
+    #
+    #    Đây chính là luật hai-tín-hiệu mà `llm_gateway/trong_tai.py` đã đo và
+    #    dùng cho chiều ngược lại. Hai cổng nay soi cùng một thứ, từ hai phía.
+    #
+    # ⛔ Chờ **có hạn**. Hết `han_giay` mà vẫn đang tính ⇒ báo bận (429), và đó là
+    #    câu trả lời ĐÚNG — máy bận thật, không phải hỏng.
+    if dang_tinh is not None:
+        while True:
+            try:
+                ban_ron = bool(dang_tinh())
+            except Exception:                                   # noqa: BLE001
+                # Không đo được ⇒ xử như ĐANG TÍNH: thà chờ oan còn hơn cắt ngang
+                # một lượt của khách. Ngược hướng với nhánh `doc_vram is None` bên
+                # trên, và ngược có chủ ý: ở đó ta sắp tiêu GPU nên "không biết"
+                # là "không được"; ở đây ta sắp **phá việc người khác** nên "không
+                # biết" là "khoan đã".
+                ban_ron = True
+            if not ban_ron:
+                break
+            vram_g = doc_vram()
+            if vram_g is not None and vram_g <= nguong_mb:
+                # Nó vừa xong và tự nhả — đi luôn, khỏi đuổi ai.
+                return PhanXuXinCard(True, vram_g, now() - t0, "", ())
+            if now() - t0 >= han_giay:
+                return PhanXuXinCard(
+                    False, vram_g, now() - t0,
+                    f"ho giu card DANG TINH suot {han_giay:.0f}s — khong duoi de "
+                    f"khoi cat ngang mot luot dang chay. VRAM {vram_g} MB.", ())
+            ngu(nhip_giay)
 
     for ho in ho_khac:
         if not ho.bao_duoc:

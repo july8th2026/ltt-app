@@ -6,9 +6,21 @@
  *    khoan — va so gui len phai la so ho da nhin (`credit`), de may chu tu choi
  *    neu gia doi giua chung.
  *
- * ⭐ Danh sach giong lay tu `NangLuc.tuy_chon.voice_id` — do la giong CUA CHINH
- *    ho, may chu tra ve qua `ToolSpec.tuy_chon_dong`. Giao dien khong biet
- *    giong nao ton tai; no chi hien thu duoc moi.
+ * 🔴 GIONG LAY TU KHO DUNG CHUNG (`tuy_chon.preset`), KHONG theo tai khoan.
+ *    Chu du an chot 04/09: *"su dung voice trong kho su dung chung, khong theo
+ *    tai khoan ca nhan"*.
+ *
+ * ⛔ Ban truoc doc `tuy_chon.voice_id` — giong NHAN BAN cua chinh nguoi dung. Hai
+ *    hau qua, va ca hai deu do duoc:
+ *
+ *      · mot tai khoan chua nhan ban giong nao thi danh sach RONG, nen o chon
+ *        **khong hien ra**. Do la trang thai cua gan nhu moi khach moi;
+ *      · giong nhan ban la **du lieu sinh trac** cua mot con nguoi, va no thuoc
+ *        ve app `ltt_voice`. ChatLTT khong phai cho de moi no ra.
+ *
+ * ⭐ Kho chung co 20 giong gan nhan gioi/vung/phong cach, va `speech.ltt` da
+ *    nhan `preset` tu lau. Thu thieu chua bao gio la nang luc — chi la khong ai
+ *    moi chung ra man hinh.
  */
 import { useEffect, useState } from 'react'
 import type { Api } from './api'
@@ -43,7 +55,7 @@ export function TaoMedia({
   const [cho, datCho] = useState<Cho>(null)
   const [dangNop, datDangNop] = useState(false)
 
-  const giongCoThe = tieng?.tuy_chon?.voice_id ?? []
+  const giongCoThe = tieng?.tuy_chon?.preset ?? []
 
   // "Doc to" tren mot cau tra loi: mo san o tieng, dien san van ban. Nguoi dung
   // VAN phai bam "Xem gia" roi "Dong y" — mot lan doc to la mot lan tra tien.
@@ -166,7 +178,7 @@ export function TaoMedia({
               <span>Giọng</span>
               <select value={giong} aria-label="Chọn giọng"
                 onChange={(e) => datGiong(e.target.value)}>
-                <option value="">Giọng dựng sẵn</option>
+                <option value="">Để model tự chọn theo nội dung</option>
                 {giongCoThe.map((g) => (
                   <option key={g.value} value={g.value}>{g.label}</option>
                 ))}
@@ -188,7 +200,9 @@ export function TaoMedia({
                   ? { prompt: chu.trim(), mode: 'edit',
                       image_keys: thamChieu.map((a) => a.key) }
                   : { prompt: chu.trim(), mode: 't2i' })
-                : { text: chu.trim(), ...(giong ? { voice_id: giong } : {}) },
+                // ⛔ `preset` (kho chung), KHONG `voice_id` (giong nhan ban).
+                //    Bo trong ⇒ may chu de model tu chon theo noi dung.
+                : { text: chu.trim(), ...(giong ? { preset: giong } : {}) },
             )}
           >
             Xem giá
