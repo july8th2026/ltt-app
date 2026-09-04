@@ -131,7 +131,23 @@ MANIFEST = AppManifest(
     # Đo được: 3.000 ký tự mất 17,6 giây sinh. Trần 900 giây cho một job là rất
     # rộng, và nó tồn tại để bắt job **treo** chứ không để bắt job chậm: một job
     # treo mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
-    max_runtime_s={"ltt_voice.synthesize": 900, "ltt_voice.enroll": 300},
+    # 🔴 3600 CHO `synthesize`, VÀ CON SỐ ẤY ĐI CÙNG `TRAN_KY_TU_CONG_KHAI`.
+    #
+    #    Trước 03/09 nó là 900 giây, hợp lý khi trần yêu cầu là 1.500 ký tự
+    #    (một lượt đọc ~75 giây). Nhưng nó là **ràng buộc thật** của trần mới:
+    #    đo 03/09 cho 0,00763 giây GPU mỗi ký tự, nên 100.000 ký tự cần ~763
+    #    giây ở tốc độ đo được — tức nó sẽ **vừa vặn chạm** 900 và hỏng ở đúng
+    #    những tài liệu dài nhất, sau khi đã tiêu gần hết phần GPU của chúng.
+    #
+    # ⭐ 3600 cho biên ~4,7 lần so với tốc độ đo được, tức vẫn còn nguyên biên
+    #    khi GPU chậm gấp đôi vì đang chia với một job khác. Đây là **chốt chặn
+    #    cho job treo**, không phải hạn mức hiệu năng — nên nó phải rộng hơn ca
+    #    xấu nhất hợp lệ, chứ không sát ca trung bình.
+    #
+    # ⛔ Đừng nâng nó mà không nâng `TRAN_KY_TU_CONG_KHAI` theo, và ngược lại.
+    #    Hai con số này là hai đầu của cùng một ngân sách; lệch nhau thì hoặc
+    #    job chết oan, hoặc một job treo giữ GPU lâu hơn cần thiết.
+    max_runtime_s={"ltt_voice.synthesize": 3600, "ltt_voice.enroll": 300},
 
     # Bận thì 3 giây sau hỏi lại, thay vì 20 giây mặc định của nền tảng.
     #
@@ -219,13 +235,26 @@ MANIFEST = AppManifest(
                 #    temperature cao làm lệch tông giữa các đoạn.
                 "hidden": (),
                 "params": {
+                    # 🔴 MÔ TẢ CŨ BẮT NGƯỜI TÍCH HỢP LÀM HỘ TA MỘT VIỆC TA ĐÃ
+                    #    TỰ LÀM. Nó viết *"longer scripts should be split into
+                    #    several calls"* — tức mỗi khách hàng phải tự viết lại
+                    #    phép chia đoạn theo ranh giới câu, phép ghép, phép đo
+                    #    nhịp nghỉ và phép cân mức. Bốn thứ đó nằm sẵn trong
+                    #    `text_pipeline` và `noi_dai`, đã được đo, và không có
+                    #    lý do gì để mỗi tích hợp có một bản riêng kém hơn.
+                    #
+                    # ⭐ Trần nay là NGÂN SÁCH TÀI NGUYÊN, không phải chỗ giọng
+                    #    bắt đầu trôi — xem `tham_so_cong_khai.py`. Nên mô tả
+                    #    phải nói đúng điều đó, và nói cả đường đi khi vượt.
                     "text": {
                         "description": (
                             "What to say. Vietnamese, English, or both mixed. "
-                            f"Up to {TRAN_KY_TU_CONG_KHAI} characters per call - "
-                            "longer scripts should be split into several calls, "
-                            "because voice consistency degrades on very long "
-                            "single passes."),
+                            f"Up to {TRAN_KY_TU_CONG_KHAI:,} characters per "
+                            "call. You do NOT need to split long text yourself "
+                            "- it is segmented on sentence boundaries, spoken "
+                            "in several passes and joined back into one "
+                            "continuous audio file. For anything longer, use "
+                            "Projects, where each block is its own pass."),
                         "example": "Xin chào, đây là giọng đọc của LTT Studios.",
                     },
                     "voice_id": {

@@ -13121,3 +13121,18 @@ msgstr "Joining {n} segments"
 
 msgid "Ghép xong nhưng không thấy tệp kết quả."
 msgstr "Joining finished but the result file is missing."
+
+msgid "Độ dài văn bản"
+msgstr "Text length"
+
+msgid "Tối đa {n} ký tự cho một lần gửi — khoảng {p} phút tiếng nói. Bạn không cần tự chia: văn bản dài được cắt theo ranh giới câu rồi đọc thành nhiều lượt và ghép lại thành một tệp liền mạch. Dài hơn nữa thì dùng Dự án, mỗi khối một lượt đọc riêng."
+msgstr "Up to {n} characters per submission - about {p} minutes of speech. You do not need to split it yourself: long text is cut on sentence boundaries, spoken in several passes and joined back into one continuous file. For anything longer, use Projects, where each block is its own pass."
+
+msgid "Bạn không cần tự chia văn bản: bài dài được cắt theo ranh giới câu, đọc thành nhiều lượt rồi ghép thành một tệp liền mạch. Trần này là ngân sách tài nguyên cho một lần gửi, không phải chỗ giọng bắt đầu trôi. Dài hơn nữa thì dùng Dự án."
+msgstr "You do not need to split the text yourself: long pieces are cut on sentence boundaries, spoken in several passes and joined into one continuous file. This limit is a resource budget for a single submission, not the point where the voice starts to drift. For anything longer, use Projects."
+
+msgid "≈ {t} — một lượt đọc"
+msgstr "≈ {t} - a single pass"
+
+msgid "≈ {t} — {n} đoạn, ghép liền mạch"
+msgstr "≈ {t} - {n} segments, joined seamlessly"

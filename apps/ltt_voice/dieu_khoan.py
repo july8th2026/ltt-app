@@ -50,12 +50,21 @@ def cac_dieu() -> list:
                      mb=MAX_BYTES // (1024 * 1024)),
         },
         {
-            "tieu_de": _t("Độ dài mỗi lượt đọc"),
+            "tieu_de": _t("Độ dài văn bản"),
+            # ⛔ VĂN BẢN CŨ NÓI NGƯỢC VỚI THỨ HỆ THỐNG LÀM, và nó nói ngược từ
+            #    03/09/2026 — ngày đường tài liệu dài được mở. Nó bảo khách
+            #    *"nên chia thành nhiều lượt"* trong khi hệ thống đã tự chia.
+            #
+            # ⭐ Một lời khuyên đúng hôm qua mà không ai quay lại kiểm là một
+            #    lời khuyên sai hôm nay, và nó sai theo hướng bắt khách làm hộ
+            #    ta một việc ta đã tự làm.
             "noi_dung": _t(
-                "Tối đa {n} ký tự cho một lượt. Văn bản dài hơn nên chia thành "
-                "nhiều lượt: giọng đọc giữ được sự đồng nhất tốt hơn khi mỗi "
-                "lượt ngắn."
-            ).format(n=TRAN_KY_TU_CONG_KHAI),
+                "Tối đa {n} ký tự cho một lần gửi — khoảng {p} phút tiếng nói. "
+                "Bạn không cần tự chia: văn bản dài được cắt theo ranh giới câu "
+                "rồi đọc thành nhiều lượt và ghép lại thành một tệp liền mạch. "
+                "Dài hơn nữa thì dùng Dự án, mỗi khối một lượt đọc riêng."
+            ).format(n=f"{TRAN_KY_TU_CONG_KHAI:,}".replace(",", "."),
+                     p=int(TRAN_KY_TU_CONG_KHAI / 19.86 / 60)),
         },
         {
             "tieu_de": _t("Tiền"),

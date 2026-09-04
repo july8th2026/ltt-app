@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:da5678dfee25bccb951a16c05d1ec02b491d309782dd9ba6bca47125c1fe96c0
-Nguồn đã quét : 1478 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:dc60f73a8ca54aa9ecbd1b057ec9e0431fb87d00e5ad53c63e10c18aa13ffea6
+Nguồn đã quét : 1481 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1004,7 +1004,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - Local/R2 storage qua platform_core.storage; data path qua runtime_paths.
 - Tài liệu chi tiết: docs/DATA_RETENTION_POLICY.md và SECURITY_CHECKLIST.md.
 
-9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (184 tên; KHÔNG có giá trị)
+9. BIẾN MÔI TRƯỜNG ĐƯỢC THAM CHIẾU (186 tên; KHÔNG có giá trị)
 - LTT_ADMIN_EMAIL
 - LTT_ADMIN_PASSWORD_HASH
 - LTT_ADMIN_USERNAME
@@ -1049,6 +1049,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_GPU_CLAIMS_DIR
 - LTT_GPU_MONG_DOI
 - LTT_HF_TOKEN
+- LTT_HOP_DEN
 - LTT_HO_DUNG_CARD
 - LTT_I18N_BAT_BUOC
 - LTT_LLM
@@ -1142,6 +1143,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_STORAGE
 - LTT_TEMP_VIDEO_DIR
 - LTT_TEST_DATABASE_URL
+- LTT_TEST_NANG
 - LTT_TEST_R2_BUCKET
 - LTT_TEXT_
 - LTT_TEXT_0
@@ -1572,8 +1574,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1478 file)
-Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:67, .py:1109, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1481 file)
+Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:40, .md:14, .mjs:4, .ps1:67, .py:1112, .sh:3, .svg:1, .toml:1, .ts:20, .tsx:28, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2925,7 +2927,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tests/test_98_agent_canvas_run.py
 - tests/test_99_agent_hardening.py
 
-[tools] (172)
+[tools] (175)
 - tools/agent_browser_config.json
 - tools/agent_browser_server.py
 - tools/agent_image_upscale_smoke.py
@@ -3020,6 +3022,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/dong_goi_exe.py
 - tools/dong_goi_gui.py
 - tools/gate.py
+- tools/giam_sat_may.py
 - tools/gui/index.html
 - tools/gui/ltt.css
 - tools/h26_queue_soak.py
@@ -3043,6 +3046,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/nghiem_thu_anh_e2e.py
 - tools/nghiem_thu_chat_l1.py
 - tools/nhap_kho_giong_cu.py
+- tools/nhat_ky_chay.py
 - tools/prepare_agent_canary.py
 - tools/public_api_load_test.py
 - tools/qa/dev_portal_golden.js
@@ -3072,6 +3076,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - tools/system_profile_config.json
 - tools/tai_ket_qua_job.py
 - tools/tai_khoan_thu.py
+- tools/tai_may.py
 - tools/tail_audit.py
 - tools/tao_clip_mau.py
 - tools/test_agent_p3_postgres.ps1
@@ -3108,7 +3113,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:8, .html:122, .ini:1, .js:15, .json:4
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1478 file; 14860087 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1481 file; 14962213 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -18594,7 +18599,7 @@ def dung(doan: list, *, thu_muc: str, owner_id: str = "", job_id: str = "",
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/dieu_khoan.py
-SHA256=7bb60b4b8da81dfe447804b9564d61c23a2f32f1e7c8595db6c7d9c9e5430182 BYTES=5140 LINES=97
+SHA256=ddc92e8ace1f2f614ebdb221d03d5af49c85189ac24dc4d727e6c6c5e512336c BYTES=5943 LINES=106
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 dieu_khoan.py — điều khoản dùng giọng nói, và bản cam kết sở hữu.
@@ -18648,12 +18653,21 @@ def cac_dieu() -> list:
                      mb=MAX_BYTES // (1024 * 1024)),
         },
         {
-            "tieu_de": _t("Độ dài mỗi lượt đọc"),
+            "tieu_de": _t("Độ dài văn bản"),
+            # ⛔ VĂN BẢN CŨ NÓI NGƯỢC VỚI THỨ HỆ THỐNG LÀM, và nó nói ngược từ
+            #    03/09/2026 — ngày đường tài liệu dài được mở. Nó bảo khách
+            #    *"nên chia thành nhiều lượt"* trong khi hệ thống đã tự chia.
+            #
+            # ⭐ Một lời khuyên đúng hôm qua mà không ai quay lại kiểm là một
+            #    lời khuyên sai hôm nay, và nó sai theo hướng bắt khách làm hộ
+            #    ta một việc ta đã tự làm.
             "noi_dung": _t(
-                "Tối đa {n} ký tự cho một lượt. Văn bản dài hơn nên chia thành "
-                "nhiều lượt: giọng đọc giữ được sự đồng nhất tốt hơn khi mỗi "
-                "lượt ngắn."
-            ).format(n=TRAN_KY_TU_CONG_KHAI),
+                "Tối đa {n} ký tự cho một lần gửi — khoảng {p} phút tiếng nói. "
+                "Bạn không cần tự chia: văn bản dài được cắt theo ranh giới câu "
+                "rồi đọc thành nhiều lượt và ghép lại thành một tệp liền mạch. "
+                "Dài hơn nữa thì dùng Dự án, mỗi khối một lượt đọc riêng."
+            ).format(n=f"{TRAN_KY_TU_CONG_KHAI:,}".replace(",", "."),
+                     p=int(TRAN_KY_TU_CONG_KHAI / 19.86 / 60)),
         },
         {
             "tieu_de": _t("Tiền"),
@@ -20927,7 +20941,7 @@ def dien_canh_bao(mau: str, lan_giong: str, lan_text: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/manifest.py
-SHA256=5269ac347143aa33a67a43efa78a38a0bad801dd1caf888427ffd8e978d63e68 BYTES=14143 LINES=252
+SHA256=16587920636ef216917a8ca12264c3e06a0fabe98c57426cfaf96795959c7242 BYTES=16549 LINES=281
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 App `ltt_voice` — giọng nói tiếng Việt nhân bản, model chạy trên **máy A** (Q117).
@@ -21062,7 +21076,23 @@ MANIFEST = AppManifest(
     # Đo được: 3.000 ký tự mất 17,6 giây sinh. Trần 900 giây cho một job là rất
     # rộng, và nó tồn tại để bắt job **treo** chứ không để bắt job chậm: một job
     # treo mà vẫn đập nhịp sẽ giữ slot vô hạn và không ai được báo.
-    max_runtime_s={"ltt_voice.synthesize": 900, "ltt_voice.enroll": 300},
+    # 🔴 3600 CHO `synthesize`, VÀ CON SỐ ẤY ĐI CÙNG `TRAN_KY_TU_CONG_KHAI`.
+    #
+    #    Trước 03/09 nó là 900 giây, hợp lý khi trần yêu cầu là 1.500 ký tự
+    #    (một lượt đọc ~75 giây). Nhưng nó là **ràng buộc thật** của trần mới:
+    #    đo 03/09 cho 0,00763 giây GPU mỗi ký tự, nên 100.000 ký tự cần ~763
+    #    giây ở tốc độ đo được — tức nó sẽ **vừa vặn chạm** 900 và hỏng ở đúng
+    #    những tài liệu dài nhất, sau khi đã tiêu gần hết phần GPU của chúng.
+    #
+    # ⭐ 3600 cho biên ~4,7 lần so với tốc độ đo được, tức vẫn còn nguyên biên
+    #    khi GPU chậm gấp đôi vì đang chia với một job khác. Đây là **chốt chặn
+    #    cho job treo**, không phải hạn mức hiệu năng — nên nó phải rộng hơn ca
+    #    xấu nhất hợp lệ, chứ không sát ca trung bình.
+    #
+    # ⛔ Đừng nâng nó mà không nâng `TRAN_KY_TU_CONG_KHAI` theo, và ngược lại.
+    #    Hai con số này là hai đầu của cùng một ngân sách; lệch nhau thì hoặc
+    #    job chết oan, hoặc một job treo giữ GPU lâu hơn cần thiết.
+    max_runtime_s={"ltt_voice.synthesize": 3600, "ltt_voice.enroll": 300},
 
     # Bận thì 3 giây sau hỏi lại, thay vì 20 giây mặc định của nền tảng.
     #
@@ -21150,13 +21180,26 @@ MANIFEST = AppManifest(
                 #    temperature cao làm lệch tông giữa các đoạn.
                 "hidden": (),
                 "params": {
+                    # 🔴 MÔ TẢ CŨ BẮT NGƯỜI TÍCH HỢP LÀM HỘ TA MỘT VIỆC TA ĐÃ
+                    #    TỰ LÀM. Nó viết *"longer scripts should be split into
+                    #    several calls"* — tức mỗi khách hàng phải tự viết lại
+                    #    phép chia đoạn theo ranh giới câu, phép ghép, phép đo
+                    #    nhịp nghỉ và phép cân mức. Bốn thứ đó nằm sẵn trong
+                    #    `text_pipeline` và `noi_dai`, đã được đo, và không có
+                    #    lý do gì để mỗi tích hợp có một bản riêng kém hơn.
+                    #
+                    # ⭐ Trần nay là NGÂN SÁCH TÀI NGUYÊN, không phải chỗ giọng
+                    #    bắt đầu trôi — xem `tham_so_cong_khai.py`. Nên mô tả
+                    #    phải nói đúng điều đó, và nói cả đường đi khi vượt.
                     "text": {
                         "description": (
                             "What to say. Vietnamese, English, or both mixed. "
-                            f"Up to {TRAN_KY_TU_CONG_KHAI} characters per call - "
-                            "longer scripts should be split into several calls, "
-                            "because voice consistency degrades on very long "
-                            "single passes."),
+                            f"Up to {TRAN_KY_TU_CONG_KHAI:,} characters per "
+                            "call. You do NOT need to split long text yourself "
+                            "- it is segmented on sentence boundaries, spoken "
+                            "in several passes and joined back into one "
+                            "continuous audio file. For anything longer, use "
+                            "Projects, where each block is its own pass."),
                         "example": "Xin chào, đây là giọng đọc của LTT Studios.",
                     },
                     "voice_id": {
@@ -24471,7 +24514,7 @@ SHA256=072299bee32d6e341a5398fd230b8af6d944aff767c11d16e9d63c8535eceeb0 BYTES=32
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_api.html
-SHA256=115b3ff100a85a14f744a6d58045cabcec426dae01072762607f90326195feb9 BYTES=11603 LINES=223
+SHA256=ead373bfca571e635f4d6df953b665163ebb7e4215b7fccb7e856d59a81f13a9 BYTES=12065 LINES=228
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("API") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -24565,8 +24608,13 @@ SHA256=115b3ff100a85a14f744a6d58045cabcec426dae01072762607f90326195feb9 BYTES=11
           <dd>{{ _("%(n)s ký tự") % {"n": tran_ky_tu} }}</dd>
         </dl>
         {# ⭐ Câu này là toàn bộ lý do dòng trên tồn tại ở đây thay vì chỉ nằm
-             trong bảng tham số của `/developers/tools`. #}
-        <p class="dim"><small>{{ _("Đây là trần CHẤT LƯỢNG, không phải trần kỹ thuật: văn bản dài hơn vẫn sinh được, nhưng giọng bắt đầu trôi tông giữa các đoạn. Kịch bản dài thì chia thành nhiều lượt gọi.") }}</small></p>
+             trong bảng tham số của `/developers/tools`.
+
+           ⛔ Bản trước (tới 03/09/2026) viết "Kịch bản dài thì chia thành nhiều
+              lượt gọi" — đúng khi đường tài liệu dài chưa có, sai ngay ngày nó
+              có. Một câu hướng dẫn không ai quay lại kiểm là một câu sẽ tiếp tục
+              được làm theo rất lâu sau khi nó hết đúng. #}
+        <p class="dim"><small>{{ _("Bạn không cần tự chia văn bản: bài dài được cắt theo ranh giới câu, đọc thành nhiều lượt rồi ghép thành một tệp liền mạch. Trần này là ngân sách tài nguyên cho một lần gửi, không phải chỗ giọng bắt đầu trôi. Dài hơn nữa thì dùng Dự án.") }}</small></p>
       </div>
 
       {% if trang_thai.tool_mo %}
@@ -25655,7 +25703,7 @@ LttVoice.motDuAn({
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/templates/ltt_voice_studio.html
-SHA256=c54fd0fea131c3809f92c580deeef55111ad20c7f9ba9a8feb6664fde6e6adc2 BYTES=21922 LINES=403
+SHA256=f718f66934bca3f932b01ca9eed2a70fe3f65d6327c0c8dafccdb62f499e9398 BYTES=23213 LINES=421
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Tạo tiếng nói") }} — {{ _("Giọng nói LTT") }}{% endblock %}
@@ -25842,8 +25890,22 @@ SHA256=c54fd0fea131c3809f92c580deeef55111ad20c7f9ba9a8feb6664fde6e6adc2 BYTES=21
                   maxlength="{{ tran_ky_tu }}"
                   aria-labelledby="lv-nh-text" aria-describedby="lv-dem"
                   placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
+        {# ⭐ Ô đếm nói BA điều, không phải một.
+
+             Trước 03/09 nó chỉ hiện `0 / 1500 ký tự`, và con số 1.500 khi ấy là
+             trần của model — tức giao diện đang phơi một giới hạn kỹ thuật ra
+             làm giới hạn sản phẩm, đúng thứ đường tài liệu dài sinh ra để gỡ.
+
+             Nay trần là ngân sách tài nguyên, và thứ khách thật sự muốn biết
+             không phải "còn bao nhiêu ký tự" mà là **bài này dài bao lâu** và
+             **máy sẽ chia làm mấy đoạn**. Hai con số ấy hiện ngay khi gõ.
+
+           ⚠️ Chúng là ƯỚC. Số đoạn chính xác do `/xem-truoc` trả về (nó chạy
+              đúng `chia_doan`); ở đây chỉ là phép chia để khách không bị bất
+              ngờ. Đừng để hai chỗ nói hai con số mà không nói cái nào là ước. #}
         <p class="lv-dem" id="lv-dem">
-          <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
+          <span id="lv-so">0</span> / {{ "{:,}".format(tran_ky_tu).replace(",", ".") }} {{ _("ký tự") }}
+          <span id="lv-uoc-dai" class="dim" hidden></span>
           {# Cho bao rieng cho phep NHAP TXT. Khong dung `baoLoi`: no
              chuyen ca khoi ket qua sang trang thai LOI, trong nhu job
              hong — trong khi day chi la mot ghi chu ve viec cat bot. #}
@@ -26041,6 +26103,8 @@ SHA256=c54fd0fea131c3809f92c580deeef55111ad20c7f9ba9a8feb6664fde6e6adc2 BYTES=21
 LttVoice.studio({
   duong: {{ manifest.route_prefix | tojson }},
   tranKyTu: {{ tran_ky_tu | tojson }},
+  tranMoiLuot: {{ tran_moi_luot | tojson }},
+  kyTuMoiGiay: {{ ky_tu_moi_giay | tojson }},
   chu: {
     dangCho:   {{ _("Đang xếp hàng…") | tojson }},
     dangTao:   {{ _("Đang tạo tiếng…") | tojson }},
@@ -26051,6 +26115,8 @@ LttVoice.studio({
     khongXem:  {{ _("Không xem trước được lúc này.") | tojson }},
     khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
     doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }},
+    uocMotDoan: {{ _("≈ {t} — một lượt đọc") | tojson }},
+    uocNhieuDoan: {{ _("≈ {t} — {n} đoạn, ghép liền mạch") | tojson }},
     daLuuVao:  {{ _("Đã lưu vào") | tojson }},
     xoaMuc:    {{ _("Xoá mục") | tojson }},
     nhapBiCat: {{ _("Tệp dài {n} ký tự, đã cắt còn {t}.") | tojson }},
@@ -27042,7 +27108,7 @@ def luu_nguon(*, owner_id: str, public_id: str, data: bytes, mime: str) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/tham_so_cong_khai.py
-SHA256=09426869afaa846ba1c8f5f64807138ca69f711167c713d59f6ae1bf24cb6fb0 BYTES=5515 LINES=87
+SHA256=c4496c11ba3fa51c76040984f7a6ee0fc4eb57bbb42f31eb32bfb849d8b64a5f BYTES=9538 LINES=150
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 tham_so_cong_khai.py — vài hằng số mà CẢ HAI phía cùng phải biết.
@@ -27083,26 +27149,89 @@ TRAN_MOI_LUOT_SINH = 1500
 #:      · `TRAN_KY_TU_CONG_KHAI` — khách gửi được bao nhiêu trong một lần
 #:    Yêu cầu dài hơn một lượt thì **chia rồi ghép**, không từ chối.
 #:
-#: ⚠️ Vẫn giữ 1.500 cho tới khi đo được chất lượng bản GHÉP ở 3.000 và 5.000 ký
-#:    tự. Đường đã có, cổng chưa mở — và thứ tự đó là có chủ ý: hạ tầng sẵn sàng
-#:    không phải là bằng chứng chất lượng. Nới nó vẫn phải qua V10.
+#: ✅ MỞ 03/09/2026, VÀ CON SỐ MỚI KHÔNG CÒN NÓI VỀ MODEL NỮA.
 #:
-#: ✅ MỘT trong các điều kiện ấy đã xong (01/09/2026): **trôi tông đã đo, và
-#:    không có**. Ba lượt độc lập trên bài 12 đoạn, `tools/do_troi_tong.py`:
-#:    chênh F0 giữa các đoạn 11–20 Hz so với sàn nhiễu (độ lệch F0 *bên trong*
-#:    một đoạn) 19–26 Hz, độ dốc −0,2 đến +1,1 Hz mỗi đoạn. Không vượt sàn, và
-#:    phần vượt thì không có hướng.
+#: 🔴 ĐÂY LÀ CHỖ QUAN TRỌNG NHẤT: 1.500 là con số **của model** (chỗ giọng bắt
+#:    đầu trôi). 100.000 là con số **của tài nguyên** (một job giữ GPU bao lâu
+#:    thì còn công bằng với người khác). Đổi một trần cứng lấy một trần cứng
+#:    khác thì vô nghĩa; đổi một trần CHẤT LƯỢNG lấy một trần NGÂN SÁCH mới là
+#:    gỡ đúng thứ.
 #:
-#: ⛔ ĐỪNG đọc điều đó thành "nới được rồi". Trôi tông là MỘT chiều của chất
-#:    lượng; V10 còn CER/WER, tương đồng người nói, clipping, tỉ lệ hỏng. Một
-#:    phép đo không thay được một cổng — đó đúng là cách một cảnh báo đúng bị
-#:    biến thành một lời cho phép.
+#:    Trần của model vẫn còn nguyên và vẫn đúng — nó là `TRAN_MOI_LUOT_SINH` ở
+#:    trên. Nó chỉ không còn **rò ra** thành trần của sản phẩm, vì
+#:    `apps/ltt_voice/ban_doc_dai.py` hấp thụ nó: bài dài chia thành nhiều lượt
+#:    ≤ trần ấy, mỗi lượt một artifact riêng trên đĩa, rồi ghép.
 #:
-#: ✅ Và trần tuyệt đối cũ đã BỎ. Trước 01/09 nó là `TRAN_MOI_LUOT_SINH ×
-#:    voice_sidecar.tham_so.TRAN_SO_VAN_BAN_BATCH` (= 8 đoạn), vì cửa văn bản
-#:    dài áp kích thước một lượt gộp lô lên chính người gọi — bài 12 đoạn nhận
-#:    `413`. Nay cửa tự chia nhóm, nên số đoạn không còn là hợp đồng của khách.
-TRAN_KY_TU_CONG_KHAI = 1500
+#: ⭐ BẰNG CHỨNG (03/09, `tools/do_bai_dai.py`, sidecar dựng từ worktree):
+#:
+#:      chi so        1400(1 doan)   1500(2)   3000(3)   5000(4)   10000(7)
+#:      CER               0,1121      0,0915    0,0897    0,0980    0,1077
+#:      WER               0,2037      0,1969    0,1905    0,1906    0,2050
+#:      ty le phu         0,9401      0,9630    0,9605    0,9528    0,9534
+#:      F0 trung vi         91,8        89,7      89,7      90,8      90,8
+#:      ty le hong             0           0         0         0         0
+#:      RTF                0,214       0,199     0,168     0,163     0,152
+#:
+#:    Bản GHÉP **tốt hơn** bản một lượt trên mọi chỉ số ASR, ở mọi độ dài. Và
+#:    RTF *cải thiện* theo độ dài — chi phí khởi động chia cho nhiều việc hơn.
+#:
+#:    Tương đồng người nói, so với **sàn nhiễu của chính nó** (cắt đôi từng đoạn
+#:    rồi so hai nửa — hai nửa chắc chắn là cùng người, nên đó là mức giống nhau
+#:    nhất mà thước đo này đạt được):
+#:
+#:      doan xau nhat <-> doan 1   0,9742   0,9797   0,9760   0,9710
+#:      san nhieu (xau nhat)       0,9716   0,9650   0,9687   0,9684
+#:
+#:    Ở **mọi** độ dài, đoạn giống đoạn đầu ít nhất vẫn giống hơn hai nửa của
+#:    cùng một đoạn. Độ dốc theo chỉ số đoạn đổi dấu giữa các bài ⇒ dao động,
+#:    không phải một chiều.
+#:
+#: ⭐ VÌ SAO SUY RỘNG TỪ 10.000 LÊN 100.000 LÀ HỢP LỆ — lập luận về CƠ CHẾ, không
+#:    phải về đường cong:
+#:
+#:      đường sinh **không mang trạng thái nào giữa các đoạn**. Mỗi đoạn là một
+#:      lượt `infer` độc lập, cùng tham chiếu, cùng tham số. Không có gì tích
+#:      luỹ, nên đoạn thứ 60 không thể khác đoạn thứ 7 vì lý do "bài dài hơn".
+#:
+#:    Số đo xác nhận đúng dự đoán ấy. Nếu số đo NGƯỢC lại thì mới là chuyện lớn,
+#:    vì khi đó có một trạng thái ẩn mà ta không biết. Nó không ngược.
+#:
+#: ⚠️ GIỚI HẠN CỦA BẰNG CHỨNG: **một vòng đo**, không phải nhiều vòng như
+#:    `tools/cong_chat_luong_voice.py` đòi để rút dung sai từ chính số đo. Bốn
+#:    tài liệu độc lập và 17 đoạn cùng chỉ một hướng nên kết luận đứng được,
+#:    nhưng ĐỪNG viết "đã qua cổng V10" — nó chưa qua.
+#:
+#: ⛔ VÀ MỘT ĐỐI CHỨNG ĐÃ KHÔNG CHẠY. `do_bai_dai.py` khai ba đối chứng; mục ③
+#:    ("cùng văn bản, khác vị trí") trả rỗng ở cả bốn bài, vì phép chia cân bằng
+#:    gộp đoạn văn khác đi nên không đoạn nào trùng độ dài. Chạy được **hai**.
+#:
+#: ── 100.000 ĐẾN TỪ ĐÂU ──────────────────────────────────────────────────────
+#:
+#:    Đo được: **19,86 ký tự mỗi giây audio**, RTF **0,152**
+#:          ⇒ **0,00763 giây GPU cho mỗi ký tự**
+#:
+#:    Ba ràng buộc, và trần là cái NGẶT NHẤT:
+#:
+#:      thoi gian job (max_runtime_s = 3600, xem manifest)  ~ 236.000 ky tu
+#:      RIFF/WAV 2 GiB (~6,2 gio audio)                     ~ 444.000 ky tu
+#:      cong bang GPU: CHUA co bo xep lich uu tien          <- rang buoc that
+#:
+#: 🔴 Ràng buộc thứ ba mới là thứ chọn con số. Ở 100.000 ký tự một job giữ GPU
+#:    khoảng 13 phút ở RTF đo được (≈23 phút nếu GPU chậm gấp đôi). Chưa có hàng
+#:    đợi ưu tiên, nên suốt ngần ấy nó **chặn mọi người khác**. Mở tới trần định
+#:    dạng (444.000 ≈ gần một giờ) là cố ý giao cho một người khả năng làm nghẽn
+#:    cả hệ thống.
+#:
+#: ⭐ ĐIỀU KIỆN NÂNG TIẾP — ghi ra để người sau kiểm được mà không phải tin lời:
+#:      · có bộ xếp lịch ưu tiên (yêu cầu tương tác chen trước job nền), HOẶC
+#:      · một GPU được cấp riêng cho làn tài liệu dài
+#:    Khi ấy trần kế tiếp là **định dạng tệp**, và trước khi chạm nó phải có
+#:    RF64/WAVE64: WAV thường tràn ở ~2 GiB và nó hỏng **im lặng** — trình phát
+#:    vẫn mở được phần đầu.
+#:
+#: ⚠️ TÀI LIỆU DÀI HƠN 100.000 KHÔNG BỊ TỪ CHỐI — nó đi đường **Dự án**: 200
+#:    khối, mỗi khối một job riêng. Đó đúng là hình dạng mà một cuốn sách nên có.
+TRAN_KY_TU_CONG_KHAI = 100_000
 
 
 #: Số lần thử cho một job giọng. **Không phải một con số tuỳ ý.**
@@ -27664,7 +27793,7 @@ def xoa(db, owner_id: str, muc_id: int) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/ltt_voice/vo.py
-SHA256=6c8d276b2dc156a9de2b6a3e7de700c30e655c2703ac8a6ad933af86cac30e50 BYTES=5566 LINES=106
+SHA256=913ed4f0b9fd091798dc10675a0666fcbc3f25af5e80b0135c3a3c0011eb1e8f BYTES=6443 LINES=116
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 vo.py — VỎ dùng chung của mọi màn LTT Voice Studio.
@@ -27693,7 +27822,7 @@ from server.auth.csrf import issue_csrf_token
 
 from . import gia, sidecar_client
 from .manifest import MANIFEST
-from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI, TRAN_MOI_LUOT_SINH
 
 #: Khoá `nav_key` của từng màn. Phải khớp `NavEntry.nav_key` trong `manifest.py`,
 #: và `tests/test_344_ltt_voice_vo.py` chốt hai bên khớp nhau.
@@ -27748,6 +27877,16 @@ def ngu_canh(request, user, *, nav_key: str, hang_doi: int = 0, **them) -> dict:
         # `nav` là tên mà `base.html` đọc. Đừng đổi tên khoá này cho "gọn hơn".
         "nav": nav_key,
         "tran_ky_tu": TRAN_KY_TU_CONG_KHAI,
+        # ⭐ Giao diện cần CẢ HAI trần, vì chúng nói hai điều khác nhau với
+        #    khách: `tran_ky_tu` là "gửi được bao nhiêu", `tran_moi_luot` là
+        #    "chia làm mấy đoạn". Trước 03/09 chúng là một số nên ô đếm chỉ cần
+        #    một; nay ô đếm ước được số đoạn thì nó cần số thứ hai.
+        "tran_moi_luot": TRAN_MOI_LUOT_SINH,
+        # ⚠️ CÙNG hằng số mà phần giữ credit dùng (`gia.KY_TU_MOI_GIAY_UOC`),
+        #    KHÔNG phải một con số riêng cho giao diện. Hai chỗ ước thời lượng
+        #    bằng hai tỉ lệ khác nhau là hai chỗ nói với khách hai con số khác
+        #    nhau về cùng một văn bản — và họ sẽ tin con số nào tiện hơn.
+        "ky_tu_moi_giay": gia.KY_TU_MOI_GIAY_UOC,
         "bang_gia": gia.bang_gia(),
         "cong_san_sang": sidecar_client.san_sang(),
         "hang_doi": hang_doi,
@@ -156718,7 +156857,7 @@ SHA256=3bb860adaa0fdd1761189e74865f3a55a9f3f46ea5c93760d2d0870ea60fdd9e BYTES=26
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ server/static/voice.js
-SHA256=601b66b4214303f3dfb28669d53018bbb6a609d4846c39ae3046c7a730afb980 BYTES=79040 LINES=1887
+SHA256=3459f8800fc2b342778ad2890f8e405d473de19adc1fa8fc7b4c9620208ae985 BYTES=80825 LINES=1927
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 /* voice.js — hanh vi dung chung cua LTT Voice Studio.
  *
@@ -157465,6 +157604,18 @@ SHA256=601b66b4214303f3dfb28669d53018bbb6a609d4846c39ae3046c7a730afb980 BYTES=79
      *    hai cho tinh tien la hai cho lech nhau, nen cho nay khong bao gio duoc
      *    la nguon cua con so bi tru. No la mot uoc luong tho de khach khong bi
      *    bat ngo; `POST /xem-truoc` moi cho con so dung. */
+    /* Doc "1h 05m" / "9m 30s" / "45s". Khong dung toLocaleString: no khac nhau
+       giua cac trinh duyet, va mot uoc so thi khong can dia phuong hoa. */
+    function docThoiLuong(giay) {
+      var g = Math.max(1, Math.round(giay));
+      var h = Math.floor(g / 3600), p = Math.floor((g % 3600) / 60), s = g % 60;
+      if (h) return h + "h " + (p < 10 ? "0" : "") + p + "m";
+      if (p) return p + "m " + (s < 10 ? "0" : "") + s + "s";
+      return s + "s";
+    }
+
+    var oUocDai = document.getElementById("lv-uoc-dai");
+
     function dem() {
       var n = oText.value.length;
       oSo.textContent = String(n);
@@ -157472,6 +157623,34 @@ SHA256=601b66b4214303f3dfb28669d53018bbb6a609d4846c39ae3046c7a730afb980 BYTES=79
       if (tran) oSo.classList.toggle("sap-tran", n >= tran * 0.9);
       if (oUocDong) oUocDong.hidden = n === 0;
       if (oUoc && n) oUoc.textContent = String(Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)));
+
+      /* ⭐ THOI LUONG + SO DOAN, hien ngay khi go.
+       *
+       *    Truoc 03/09 o dem chi noi "0 / 1500 ky tu", va 1.500 khi ay la tran
+       *    cua MODEL — tuc giao dien dang phoi mot gioi han ky thuat ra lam
+       *    gioi han san pham. Nay tran la ngan sach tai nguyen, va thu khach
+       *    that su muon biet la bai nay DAI BAO LAU.
+       *
+       * ⚠️ `kyTuMoiGiay` lay tu `gia.KY_TU_MOI_GIAY_UOC` — CUNG hang so ma
+       *    phan giu credit dung. Go mot ti le rieng o day la de giao dien va
+       *    hoa don noi hai con so khac nhau ve cung mot van ban.
+       *
+       * ⚠️ So doan la UOC (phep chia don gian). So chinh xac do `/xem-truoc`
+       *    tra ve vi no chay dung `chia_doan`. */
+      if (oUocDai) {
+        var tocDo = cfg.kyTuMoiGiay || 18;
+        var moiLuot = cfg.tranMoiLuot || 0;
+        if (!n || !moiLuot) {
+          oUocDai.hidden = true;
+        } else {
+          var soDoan = Math.max(1, Math.ceil(n / moiLuot));
+          var mau = soDoan > 1 ? (chu.uocNhieuDoan || "") : (chu.uocMotDoan || "");
+          oUocDai.textContent = " · " + mau
+            .replace("{t}", docThoiLuong(n / tocDo))
+            .replace("{n}", String(soDoan));
+          oUocDai.hidden = false;
+        }
+      }
     }
     oText.addEventListener("input", dem);
 
@@ -172073,7 +172252,7 @@ exit $ma
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ setup/do_bai_dai_worktree.ps1
-SHA256=e2af1afaa7c3d850a683846a5e5d20460ebb0f6bfa5785a4e3734415122f061c BYTES=4482 LINES=116
+SHA256=4e4690df5fe84060512b32b987a4604bc571579596fa89dbf7b06bbe6fcceac4 BYTES=5085 LINES=129
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 <#
 .SYNOPSIS
@@ -172115,6 +172294,19 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+# !! DUNG NGAY O DAY, TRUOC MOI THU KHAC.
+#
+#    Mot cua so PowerShell mo bang `Start-Process -Verb RunAs` bat dau o
+#    C:\Windows\System32, KHONG phai o thu muc chua script. Nen moi duong dan
+#    TUONG DOI trong script nay -- ke ca `-Json tmp\do_bai_dai.json` mac dinh --
+#    tro vao thu muc he thong.
+#
+#    Da xay ra that 03/09/2026: ket qua phep do nam o
+#    C:\Windows\System32\tmp\do_bai_dai.json. No ghi duoc vi tien trinh dang
+#    nang quyen, va no khong bao loi gi ca. Mot script nang quyen ma ghi duong
+#    dan tuong doi la mot script ghi vao System32.
+Set-Location -LiteralPath $Repo
 
 $envFile = Join-Path $Root 'secrets\app.env'
 $tool    = Join-Path $Repo 'tools\do_bai_dai.py'
@@ -175099,7 +175291,7 @@ async page => {
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/conftest.py
-SHA256=6b050c13953398f75d582ff459c2020dfbf6c6b959d7e597d772ca6b07f4a0cf BYTES=12129 LINES=252
+SHA256=e48a95b63bc5049e964102fc486a7fb4a043bf43079d9af470361cc654e46e83 BYTES=17090 LINES=349
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 Fixture dùng chung cho toàn bộ bộ test.
@@ -175129,8 +175321,105 @@ kia. Ba fixture đó là phần vá cho một thiết kế đã bị gỡ.
 """
 from __future__ import annotations
 
+import os
+import pathlib
+import sys
+
 import pytest
 from fastapi import APIRouter, Depends, Form, Request
+
+# ═══════════════════════════════════════════════════════════════════════════
+# `-n auto` GO TAY — cai lam may treo, va cai KHONG khoa nao thay
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# 🔴 Gate KHONG con `-n auto` (sua o `03845cb`; `tools/gate.py` truyen `-n` ro
+#    rang theo `ngan_sach_loi()`, va `test_394` chot dieu do). Nhung `pytest`
+#    go tay thi khong di qua gate — khong ngan sach, khong `cua_so_yen`, khong
+#    uu tien thap.
+#
+# ⛔ Va no khong hiem: ngay 03/09 phien nay chay `pytest -n auto` **ba lan** len
+#    ca kho trong khi mot phien khac dang chay gate, tren dung 20 loi ma bon
+#    dich vu production dang phuc vu khach. 16 test do — va chung xanh het khi
+#    chay lai theo cum. Ta da mat gan mot gio de duoi mot "loi" ma chinh phep do
+#    tu tao ra.
+#
+# ⭐ Vi sao CHAN `auto` chu khong chan `-n 20`. `auto` khong phai mot lua chon
+#    cua nguoi go — no la "cong cu tu quyet", va cong cu nay quyet sai vi no
+#    khong biet gi ve bon dich vu ben canh. Mot con so go tay thi NGUOC LAI: do
+#    la mot y dinh, va ta khong dap y dinh cua nguoi khac. Ranh gioi la
+#    **mac dinh chu khong phai menh lenh**.
+# ⭐ Va cho tra loi la mot MOC CO SAN cua xdist, khong phai mot cho ta chen vao.
+#    `pytest_xdist_auto_num_workers` ton tai dung de tra loi cau hoi "auto la
+#    bao nhieu". Cai dat no thi ta chi doi cau tra loi cho `auto`; moi con so
+#    go tay di duong khac va khong he cham toi day.
+#
+#    (Ban dau cua vá này kẹp trong `pytest_configure` — sai, vì xdist mới giải
+#    `auto` ở `pytest_cmdline_main`, tức SAU đó. Móc này chạy đúng lúc.)
+_LOI_DE_DANH = 6
+
+
+def pytest_xdist_auto_num_workers(config) -> int:
+    """Tran cho `auto` — LAY MIN, khong dat de.
+
+    ⛔ Ban dau tra thang `cpu_count() - 6` = 14. Do la mot loi that va no chi
+       lo ra khi do: xdist tu tra loi bang `psutil.cpu_count(logical=False)`,
+       tuc **10** loi vat ly tren may nay. Mot "cai tran" 14 dat len mot cau tra
+       loi 10 thi khong ha gi ca — no NANG so worker len, dung chieu nguoc lai
+       voi ca ly do vá này ton tai.
+
+    ⭐ Nen tran phai la mot phep MIN voi cau tra loi cua chinh cong cu, khong
+       phai mot phep gan. Ta chi biet mot rang buoc (de danh loi cho production);
+       ta khong biet ro hon xdist ve diem bao hoa cua no.
+    """
+    # ⭐ MOT nguon duy nhat: hoi chinh `gate.loi_cho_bo_test()`.
+    #
+    # 🔴 Truoc 03/09 day la mot phep tinh RIENG, va no ra **10** — toan bo loi
+    #    vat ly cua may, khong chua mot loi nao cho OS lan bon dich vu
+    #    production. Ma day la duong ma mot lenh `pytest -n auto` **go tay,
+    #    ngoai gate** di qua: khong khoa, khong ngan sach, khong ai thay.
+    #    Chinh docstring o tren tu ghi lai rang phien viet no da lam dung the
+    #    ba lan trong mot ngay.
+    #
+    # ⇒ Noi vao cung ham ma gate dung, thi mot lan go tay cung duoc tran 6, va
+    #   cung tru di phan phien khac dang giu.
+    #
+    # ⚠️ Fail-open: khong nap duoc `gate` thi quay ve phep tinh cu. Mot bo test
+    #    tu choi chay vi khong import duoc mot cong cu la mot bo test se bi go
+    #    bang `-p no:cacheprovider` hoac mot con so go tay — te hon nhieu.
+    tong = os.cpu_count() or 4
+    tran = max(2, tong - _LOI_DE_DANH)
+    goc = tran
+    try:
+        import psutil
+        vat_ly = psutil.cpu_count(logical=False)
+        if vat_ly:
+            goc = int(vat_ly)
+    except ImportError:
+        pass
+    n = max(2, min(tran, goc))
+
+    nguon = "conftest"
+    try:
+        import sys as _sys
+        _tools = str(pathlib.Path(__file__).resolve().parent.parent / "tools")
+        if _tools not in _sys.path:
+            _sys.path.insert(0, _tools)
+        import gate as _gate
+        # `do_tai=False`: mot lenh `pytest` go tay khong duoc cham them mot giay
+        # chi de do CPU. Phan DO DUOC la viec cua gate, noi mot giay khong dang ke
+        # trong mot luot nam phut.
+        n = max(1, min(n, _gate.loi_cho_bo_test(do_tai=False)))
+        nguon = "gate.loi_cho_bo_test"
+    except Exception as _loi:  # noqa: BLE001 - fail-open, xem ghi chu tren
+        print(f"[conftest] khong hoi duoc gate ({type(_loi).__name__}) - "
+              f"dung phep tinh cuc bo", file=sys.stderr)
+
+    print(f"\n[conftest] `-n auto` -> {n} worker (nguon: {nguon}; tran cuc bo "
+          f"{tran} = {tong} loi tru {_LOI_DE_DANH} de danh cho dich vu "
+          f"production; xdist tu de xuat {goc}).", file=sys.stderr)
+    print("[conftest] Can nhieu hon thi go so RO RANG: mot con so la mot y "
+          "dinh, `auto` thi khong.\n", file=sys.stderr)
+    return n
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 # ⛔ BON TEN TREN PHAI o CAP MODULE, khong duoc import ben trong `_router_thu()`.
@@ -246673,7 +246962,7 @@ def test_uoc_giay_phu_moi_so_do_that():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_338_ltt_voice_hop_dong.py
-SHA256=887f36f5bf103a7f7031f4c1682358466fbc6b1a6c34cc64c60652e209f55424 BYTES=23101 LINES=524
+SHA256=44c70f7520717c5b3dea16c9963fb5a14fc74ba823529c4de1b7915e3105b76f BYTES=26477 LINES=585
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Hợp đồng của LTT VOICE: văn bản, audio vào, cổng sidecar, và manifest."""
 from __future__ import annotations
@@ -246687,30 +246976,91 @@ import pytest
 
 from apps.ltt_voice import audio_input, features, sidecar_client, text_pipeline
 from apps.ltt_voice.manifest import MANIFEST
-from apps.ltt_voice.tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from apps.ltt_voice.tham_so_cong_khai import (TRAN_KY_TU_CONG_KHAI,
+                                             TRAN_MOI_LUOT_SINH)
 
 
 # ── tham số dùng chung hai venv ──────────────────────────────────────────────
 
-def test_tran_ky_tu_khop_giua_app_va_sidecar():
+def test_tran_MOT_LUOT_khop_giua_app_va_sidecar():
     """🔴 Hai bản sao của một hằng số, và đây là phép kiểm giữ chúng khớp.
 
     `apps/ltt_voice/` chạy trong venv nền tảng; `voice_sidecar/` chạy trong venv
     cách ly có torch. App **không được** import sidecar, nên hằng số phải nằm hai
     chỗ. Hai bản sao không có phép kiểm là hai bản sao sẽ lệch.
+
+    ⚠️ Phép kiểm này trước 03/09 chốt `TRAN_KY_TU_CONG_KHAI`, và nó ĐÚNG lúc ấy
+       vì hai trần là một con số. Khi trần công khai được nới lên 100.000 thì nó
+       đỏ — không phải vì hợp đồng vỡ, mà vì **nó đang gọi tên sai hằng số**.
+       Thứ phải khớp với sidecar là trần MỘT LƯỢT SINH, và nó vẫn khớp.
     """
     from voice_sidecar import tham_so
-    assert TRAN_KY_TU_CONG_KHAI == tham_so.TRAN_KY_TU_MOT_LUOT
+    assert TRAN_MOI_LUOT_SINH == tham_so.TRAN_KY_TU_MOT_LUOT
 
 
-def test_tran_ky_tu_nam_duoi_nguong_troi_giong_cua_upstream():
-    """Q119 — trần là trần CHẤT LƯỢNG, lấy từ upstream #168 (~3.000 ký tự).
+def test_tran_mot_luot_nam_duoi_nguong_troi_giong_cua_upstream():
+    """Q119 — trần MỘT LƯỢT là trần CHẤT LƯỢNG, lấy từ upstream #168 (~3.000).
 
     Đo 30/08 cho thấy 3.000 ký tự vẫn sinh ra được (17,6 giây, không lỗi), nên
     con số này KHÔNG đến từ giới hạn kỹ thuật. Nó đến từ chỗ chất lượng bắt đầu
     tụt, và nới nó phải qua cổng V10.
     """
-    assert TRAN_KY_TU_CONG_KHAI <= 3000 // 2
+    assert TRAN_MOI_LUOT_SINH <= 3000 // 2
+
+
+def test_tran_cong_khai_KHONG_con_bi_buoc_vao_tran_model():
+    """⭐ Chốt chính điều làm nên đường tài liệu dài: hai trần được phép KHÁC nhau.
+
+    Trần model nói *"model đọc liền được bao nhiêu trước khi trôi"*; trần công
+    khai nói *"khách gửi được bao nhiêu trong một lần"*. Buộc chúng bằng nhau
+    chính là lỗi đã làm bài 3.000 ký tự **bị từ chối** trong khi thông điệp lỗi
+    của cổng đã nói *"phải đi đường long-form nhiều lượt sinh"*.
+
+    ⛔ Nếu ai đó sau này gán lại `TRAN_KY_TU_CONG_KHAI = TRAN_MOI_LUOT_SINH` cho
+       "gọn", phép kiểm này đỏ và nói thẳng vì sao đừng làm thế.
+    """
+    assert TRAN_KY_TU_CONG_KHAI > TRAN_MOI_LUOT_SINH
+
+
+def test_tran_cong_khai_nam_TRONG_ngan_sach_thoi_gian_job():
+    """🔴 Trần công khai và `max_runtime_s` là HAI ĐẦU CỦA CÙNG MỘT NGÂN SÁCH.
+
+    Trần mới không đến từ model — nó đến từ tài nguyên. Đo 03/09
+    (`tools/do_bai_dai.py`): 19,86 ký tự mỗi giây audio, RTF 0,152
+    ⇒ **0,00763 giây GPU mỗi ký tự**.
+
+    Nâng một đầu mà quên đầu kia thì hỏng theo kiểu tệ nhất: job chạy gần xong
+    rồi bị giết vì hết giờ — tức đã tiêu gần trọn phần GPU của nó rồi mới vứt
+    kết quả đi, và đúng ở những tài liệu dài nhất.
+
+    ⚠️ Đòi biên **2 lần**, không đòi vừa khít: GPU có thể chậm gấp đôi khi đang
+       chia việc với một job khác, và `max_runtime_s` là chốt chặn cho job TREO
+       chứ không phải hạn mức hiệu năng.
+    """
+    GIAY_GPU_MOI_KY_TU = 0.00763          # do 03/09, xem tham_so_cong_khai.py
+    tran_giay = MANIFEST.max_runtime_s["ltt_voice.synthesize"]
+    can = TRAN_KY_TU_CONG_KHAI * GIAY_GPU_MOI_KY_TU
+    assert tran_giay >= can * 2, (
+        f"tran {TRAN_KY_TU_CONG_KHAI} ky tu can ~{can:.0f}s GPU nhung "
+        f"max_runtime_s chi {tran_giay}s — bien duoi 2 lan")
+
+
+def test_tran_cong_khai_nam_duoi_tran_dinh_dang_WAV():
+    """⛔ RIFF/WAV tràn ở ~2 GiB, và nó hỏng IM LẶNG.
+
+    Trình phát vẫn mở được phần đầu, nên một bản đọc bị cắt trông y hệt một bản
+    đọc bình thường cho tới khi ai đó nghe tới cuối. Không có lỗi nào được ném,
+    không có gì đỏ.
+
+    ⇒ Trần ký tự phải nằm dưới ngưỡng ấy cho tới khi có RF64/WAVE64.
+    """
+    BYTE_MOI_GIAY = 48_000 * 2            # 48 kHz PCM16 mono
+    KY_TU_MOI_GIAY_AUDIO = 19.86          # do 03/09
+    giay_toi_da = (2 * 1024 ** 3) / BYTE_MOI_GIAY
+    ky_tu_toi_da = giay_toi_da * KY_TU_MOI_GIAY_AUDIO
+    assert TRAN_KY_TU_CONG_KHAI < ky_tu_toi_da, (
+        f"tran {TRAN_KY_TU_CONG_KHAI} vuot nguong tran WAV "
+        f"(~{ky_tu_toi_da:.0f} ky tu)")
 
 
 def test_tham_so_sinh_mau_khong_ra_hop_dong_cong_khai():
@@ -247999,7 +248349,7 @@ def test_trang_ltt_voice_khong_tra_422(duong):
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_342_ltt_voice_noi_dai.py
-SHA256=d5e0697e4f08c47f02d75b1cf5d43979811253411c5795571f9d8af572930482 BYTES=22119 LINES=475
+SHA256=5d0bd3d331aa0572a91375f7e999de91fa684e5bbdafaecb9d53364db03892d2 BYTES=25081 LINES=535
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Đường văn bản dài: chia đoạn, ghép, và hai trần là hai thứ khác nhau.
 
@@ -248067,13 +248417,29 @@ def test_van_ban_dai_duoc_chia_chu_khong_bi_tu_choi():
 
 # ── ghép ─────────────────────────────────────────────────────────────────────
 
-def test_ghep_mot_doan_khong_dong_gi():
+def test_ghep_mot_doan_khong_lam_viec_CUA_PHEP_GHEP():
+    """Một đoạn thì không cắt im, không cân mức, không chèn nhịp nghỉ.
+
+    ⚠️ Bản trước của phép kiểm này chốt `np.array_equal(ra, w)` — "không đụng gì
+       cả". Nó đúng về phép GHÉP, nhưng nó vô tình chốt luôn cả việc **không hạ
+       trần đỉnh**, và đó chính là lỗ hổng: bảo đảm −1,0 dBTP khi ấy chỉ tồn tại
+       ở đường nhiều đoạn. Xem `test_ha_tran_dinh_ap_ca_cho_ban_MOT_DOAN`.
+
+    ⭐ Nên nay nó chốt đúng mệnh đề nó vốn muốn: **độ dài không đổi** (không cắt,
+       không chèn) và **tương quan giữa các mẫu không đổi** (không cân mức, chỉ
+       có thể bị nhân bởi một hằng số duy nhất cho cả bản).
+    """
     from voice_sidecar import noi_dai
 
     w = _doan(0.2, 1.0, 0.3)
     ra, ho_so = noi_dai.ghep([w], SR)
     assert ho_so["so_doan"] == 1
-    assert np.array_equal(ra, w), "mot doan thi khong co moi noi nao de sua"
+    assert len(ra) == len(w), "mot doan thi khong co gi de cat hay chen"
+
+    # Chỉ được phép khác nhau đúng một hệ số nhân — tức hình dạng sóng nguyên vẹn.
+    khac_khong = np.abs(w) > 1e-6
+    ty_le = ra[khac_khong] / w[khac_khong]
+    assert np.allclose(ty_le, ty_le[0], rtol=1e-5), "song am bi bien dang"
 
 
 def test_ghep_cat_im_hai_dau_nen_moi_noi_khong_bi_im_gap_doi():
@@ -248476,6 +248842,50 @@ def test_ghep_tep_canh_bao_mat_khoang_du_khi_luu_pcm16(tmp_path):
     _, ho = noi_dai.ghep([vuot.copy(), vuot.copy()], SR, so_cau=[2, 2])
     assert ho["ha_tran_db"] < 0.0, "phai ha ca ban vi dinh vuot tran"
     assert ho["dinh_truoc_dbtp"] > noi_dai.TRAN_TRUE_PEAK_DBTP
+
+
+def test_ha_tran_dinh_ap_ca_cho_ban_MOT_DOAN():
+    """🔴 Bảo đảm −1,0 dBTP trước 03/09 chỉ thi hành ở đường GHÉP.
+
+    `ghep` nhánh `len == 1` trả thẳng về, và `/v1/speech` không gọi `ghep` bao
+    giờ. Nên bài NGẮN là bài không được bảo đảm — nghịch với trực giác của mọi
+    người, vì phép cân mức (thứ đẩy đỉnh lên) chỉ có ở đường ghép.
+
+    Đo 03/09: bài 1.400 ký tự một lượt ra **−0,78 dBTP**, vượt trần; bản ghép
+    7 đoạn ra −2,11 và tuân thủ.
+
+    ⭐ Một bảo đảm chỉ thi hành ở một nhánh không phải một bảo đảm — nó là một
+       sự trùng hợp của nhánh ấy.
+    """
+    from voice_sidecar import noi_dai
+
+    to = _doan(0.05, 1.0, 0.05, muc=0.9)
+    assert noi_dai.dinh_that(to) > noi_dai.TRAN_TRUE_PEAK_DBTP, "ca thu phai vuot tran"
+
+    ra, ha, truoc = noi_dai.ha_tran_dinh(to)
+    assert ha < 0.0
+    assert truoc is not None and truoc > noi_dai.TRAN_TRUE_PEAK_DBTP
+    assert noi_dai.dinh_that(ra) <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6
+
+    # và `ghep` mot doan cung phai ap
+    mot, ho = noi_dai.ghep([to.copy()], SR, so_cau=[2])
+    assert ho["ha_tran_db"] < 0.0
+    assert noi_dai.dinh_that(mot) <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6
+
+
+def test_ha_tran_dinh_KHONG_dung_toi_ban_da_trong_tran():
+    """Bản đã dưới trần phải đi qua NGUYÊN VẸN — không hạ "cho chắc".
+
+    Hạ một bản vốn đã đúng là làm nhỏ tiếng đi mà không ai yêu cầu, và nó tích
+    luỹ nếu hàm bị gọi hai lần trên cùng dữ liệu.
+    """
+    from voice_sidecar import noi_dai
+
+    nho = _doan(0.05, 1.0, 0.05, muc=0.05)
+    assert noi_dai.dinh_that(nho) < noi_dai.TRAN_TRUE_PEAK_DBTP
+    ra, ha, _ = noi_dai.ha_tran_dinh(nho)
+    assert ha == 0.0
+    assert np.array_equal(ra, nho)
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -283224,7 +283634,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/cua_so_yen.py
-SHA256=e5b9d698b71d8cf5eeba8ef8d5e713dd0fc5e40e771e76736abfa19e87b0cc8d BYTES=12788 LINES=335
+SHA256=623a4f1db2cf7a72a8335da297b68cdb888227ffb6707730751f4b7e35a67799 BYTES=15734 LINES=402
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """cua_so_yen.py — mot khoa cap may cho cac luot do dat tien.
 
@@ -283356,8 +283766,26 @@ def _mo_ta(ban_ghi: dict) -> str:
             f"`{ban_ghi.get('lenh') or '?'}` duoc {giay / 60:.1f} phut")
 
 
-def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH) -> bool:
-    """Thu chiem khoa MOT lan cho MOT tai nguyen. True neu duoc."""
+#: Doc ra khi mot ban ghi khoa KHONG khai `so_loi`.
+#:
+#: ⛔ **KHONG phai 0, va day la phan de sai nhat cua ca co che.** Mot ban ghi cu
+#:    (ghi truoc 03/09) khong co khoa nay. Doc no thanh 0 nghia la "luot do
+#:    khong dung loi nao" — tuc ngan sach khong bi tru — tuc dung cai qua tai ma
+#:    co che nay sinh ra de chan, chi khac la **im lang**.
+#:
+#: ⭐ "Khong khai" va "khong dung" la hai dieu khac nhau. Khi khong biet, doan ve
+#:    phia DE DAT (fail-closed): mot luot gate dang giu `cpu_nhieu` thi chac chan
+#:    dang dung mot phan dang ke cua may.
+SO_LOI_KHI_KHONG_KHAI = 8
+
+
+def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH, *,
+            so_loi: int = 0) -> bool:
+    """Thu chiem khoa MOT lan cho MOT tai nguyen. True neu duoc.
+
+    `so_loi` la so loi luot nay se dung. Ghi vao ban ghi de mot luot KHAC tinh
+    duoc ngan sach con lai cua **may**, thay vi cua rieng no.
+    """
     tep = _tep(tai_nguyen)
     ban_ghi = {
         "phien": phien,
@@ -283365,6 +283793,7 @@ def thu_giu(phien: str, lenh: str, tai_nguyen: str = MAC_DINH) -> bool:
         "may": socket.gethostname(),
         "lenh": lenh,
         "tai_nguyen": tai_nguyen,
+        "so_loi": max(0, int(so_loi)),
         "bat_dau_epoch": time.time(),
         "bat_dau": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -283404,6 +283833,33 @@ def nha(phien: str = "", *, ep: bool = False,
     return True
 
 
+def loi_da_hua(ban_ghi: dict, *, tai_nguyen_can_tru: str = MAC_DINH) -> int:
+    """So loi mot ban ghi khoa dang giu. Fail-CLOSED khi khong khai.
+
+    🔴 Ham nay ton tai vi mot mac dinh 0 se lam ca co che vo dung mot cach im
+       lang. Xem `SO_LOI_KHI_KHONG_KHAI`.
+    """
+    if ban_ghi.get("hong") or ban_ghi.get("treo"):
+        return 0                      # khoa chet khong giu loi nao
+    if str(ban_ghi.get("tai_nguyen") or MAC_DINH) != tai_nguyen_can_tru:
+        return 0                      # tai nguyen khac, khong phai CPU
+    khai = ban_ghi.get("so_loi")
+    if khai is None:
+        return SO_LOI_KHI_KHONG_KHAI
+    try:
+        return max(0, int(khai))
+    except (TypeError, ValueError):
+        return SO_LOI_KHI_KHONG_KHAI
+
+
+def loi_phien_khac_dang_giu(phien_minh: str = "",
+                            tai_nguyen: str = MAC_DINH) -> int:
+    """Tong loi cac luot KHAC dang giu. Dung de bien ngan sach thanh per-MAY."""
+    return sum(loi_da_hua(r, tai_nguyen_can_tru=tai_nguyen)
+               for r in dang_giu()
+               if not (phien_minh and r.get("phien") == phien_minh))
+
+
 def dang_giu() -> list[dict]:
     """Moi khoa dang ton tai tren may, kem ly do treo neu co.
 
@@ -283440,7 +283896,9 @@ class CuaSoYen:
 
     def __init__(self, phien: str, lenh: str, *, bat: bool = True,
                  cho_toi_da_s: float = 1800.0,
-                 tai_nguyen: tuple[str, ...] = (MAC_DINH,)):
+                 tai_nguyen: tuple[str, ...] = (MAC_DINH,),
+                 so_loi: int = 0):
+        self.so_loi = max(0, int(so_loi))
         self.phien = phien
         self.lenh = lenh
         self.bat = bat
@@ -283466,13 +283924,32 @@ class CuaSoYen:
            bat cu cai nao la nha het roi thu lai tu dau.
         """
         for tn in self.tai_nguyen:
-            if not thu_giu(self.phien, self.lenh, tn):
+            if not thu_giu(self.phien, self.lenh, tn, so_loi=self.so_loi):
                 for da in self.da_giu:
                     nha(self.phien, tai_nguyen=da)
                 self.da_giu = []
                 return False
             self.da_giu.append(tn)
         return True
+
+    @property
+    def chay_khong_khoa(self) -> bool:
+        """Luot nay dang CHEN: da het gio cho ma khoa van bi giu.
+
+        ⭐ **B3 khong can mot nhanh ngan sach rieng, va do la ket qua chu khong
+           phai su tinh co.** Khi chen, luot kia VAN dang giu khoa, nen ban ghi
+           cua no van nam do — va `ngan_sach_loi(tru_phien_khac=True)` (goi SAU
+           khoi `with`) tu dong tru phan cua no. Do that: mot luot kia giu 10 loi
+           thi ngan sach cua ta tu 14 tut xuong 4.
+
+        ⇒ "Chen thi chay nho" roi ra tu chinh phep tru per-MAY. Viet them mot
+          nhanh `neu dang chen thi giam` se la mot duong thu hai toi cung mot
+          ket qua — va hai duong toi cung mot so la hai cho de chung lech nhau.
+
+        Thuoc tinh nay chi de **noi ra** dieu do o dong ket qua. No khong tham
+        gia phep tinh nao.
+        """
+        return self.bat and bool(self.tai_nguyen) and not self.da_giu
 
     def _ai_giu(self) -> str:
         for tn in self.tai_nguyen:
@@ -292700,7 +293177,7 @@ if __name__ == "__main__":
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/gate.py
-SHA256=84399c8f10ae8ca1c34495ea69cc84d8cf54c3c33009375e4c472fe98b4049e7 BYTES=63045 LINES=1204
+SHA256=bca385c50a61f05c9c7342d5aedc872ee97d1836af7cd6216613bd0b9daec5af BYTES=80014 LINES=1543
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """
 gate.py — MỘT lệnh chạy toàn bộ cổng chất lượng.
@@ -292762,7 +293239,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cua_so_yen import MAC_DINH, CuaSoYen  # noqa: E402  (can sys.path o tren)
 
 ROOT = Path(__file__).resolve().parent.parent
-FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi")
+FRONTENDS = ("agent-canvas", "autosub-studio", "prompt-ai-ommi", "chatltt")
 
 # ═══════════════════════════════════════════════════════════════════════════
 # NGAN SACH LOI — mot chu so huu duy nhat cho ca luot gate
@@ -292806,12 +293283,219 @@ LOI_DE_DANH_CHO_MAY = 6
 LOI_TOI_DA_MOI_CONG_CU = 12
 
 
-def ngan_sach_loi() -> int:
+def ngan_sach_loi(*, phien: str = "", tru_phien_khac: bool = False) -> int:
     """So loi ma CA luot gate duoc dung cung luc.
 
     Toi thieu 2: mot may hai loi van phai chay duoc gate, chi la cham hon.
+
+    `tru_phien_khac=True` bien ngan sach tu **per-RUN** thanh **per-MAY**: tru di
+    so loi cac luot gate KHAC dang giu khoa.
+
+    🔴 Vi sao can: truoc 03/09 ham nay chi doc `os.cpu_count()`, nen moi luot tu
+       tin no co 14 loi — va **ca hai deu dung theo cach tinh cua rieng minh**.
+       Do duoc: 1 luot + nen production = 19/20 loi; **2 luot = 33/20**.
+
+    ⚠️ `BELOW_NORMAL_PRIORITY_CLASS` khong che duoc canh do, va day la tran cua
+       lop bao ve ay: no cuu `LTTStudioWeb` (uu tien binh thuong) khoi gate,
+       nhung hai gate deu uu tien THAP BANG NHAU nen tranh nhau song phang.
+
+    ⛔ Mac dinh `False` de moi nguoi goi cu giu nguyen hanh vi. Chi duong chay
+       that (sau khi da giu khoa) moi bat len — xem `_ap_ngan_sach_thuc`.
     """
-    return max(2, (os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY)
+    # 🔑 **DON VI VAT LY**, thong nhat voi `loi_cho_bo_test`.
+    #
+    # 🔴 Truoc 03/09 dong nay la `(os.cpu_count() or 4) - LOI_DE_DANH_CHO_MAY`
+    #    = 20 - 6 = 14, tren loi LOGIC. Hau qua khong nam o `bo test` (da sua o
+    #    `loi_cho_bo_test`) ma o **bo dem lich**: no cho tong <= 14, `bo test`
+    #    khai 6, con **8 suat** cho buoc tinh chay cung. Tam buoc tinh ~4 loi
+    #    vat ly + 6 cua bo test = 10/10 — cham tran tro lai, va lan nay khong
+    #    qua duong nao co ai soi.
+    #
+    # ⇒ Mot don vi cho CA LUOT chay, khong phai mot don vi cho moi tang.
+    con = loi_cong_cu_tu_do() - LOI_DE_DANH_VAT_LY
+    if tru_phien_khac:
+        try:
+            from cua_so_yen import loi_phien_khac_dang_giu
+            con -= loi_phien_khac_dang_giu(phien)
+        except (ImportError, OSError, ValueError) as exc:
+            # ⛔ Khong do duoc thi giu nguyen ngan sach cu, KHONG doan. Mot cong
+            #    cu do hong khong duoc bien thanh mot cai chan.
+            #
+            # ⚠️ Nhung NOI RA. Ban dau day la `except Exception: pass` va banh
+            #    coc `nuot loi lang le` bat dung no — dung: mot ngan sach khong
+            #    tru duoc phan cua phien khac trong y het mot may dang ranh, va
+            #    im lang la cach chac chan nhat de khong ai biet.
+            print(f"  [ngan sach] khong doc duoc khoa phien khac "
+                  f"({type(exc).__name__}: {exc}) - giu ngan sach per-RUN")
+    return max(2, con)
+
+
+def loi_cong_cu_tu_do() -> int:
+    """So worker ma `pytest -n auto` se TU CHON. Cung nguon voi xdist.
+
+    🔴 **HAM NAY SUA MOT LOI DANG SONG, do duoc 03/09:**
+
+            os.cpu_count()            = 20   loi LOGIC
+            psutil.cpu_count(False)   = 10   loi VAT LY   <- xdist `auto` dung
+            gate truyen  -n           = 11
+
+       `ngan_sach_loi()` tinh tren loi **logic**, xdist `auto` tinh tren loi
+       **vat ly**, va ca hai bi tru cung mot hang so `LOI_DE_DANH_CHO_MAY`. Nen
+       "ngan sach" 11 lai LON HON 10 — mot co che sinh ra de GIAM tai dang TANG.
+
+    ⭐ Tren may khong sieu phan luong hai so trung nhau va loi nay **khong ton
+       tai**. No chi lo ra o may co SMT — tuc dung loai may nay.
+
+    ⛔ Bai hoc the loai, `lttchat-...-49` tra gia de co o mot ban va bi bo:
+       **mot ngan sach la GIOI HAN TREN, khong phai mot phep gan.** Gan thang
+       thi khi cong cu tu do ra so nho hon, cai "tran" lai thanh SAN.
+
+    ⇒ Doc cung nguon voi `xdist/plugin.py:32` de hai ben khong bao gio lech.
+
+    ⚠️ Khong psutil thi xdist cung roi ve `os.cpu_count()` (`plugin.py:46`), nen
+       nhanh du phong tra dung thu xdist se tra — khong doan, khong tu che.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return os.cpu_count() or 1
+    return psutil.cpu_count(logical=False) or psutil.cpu_count() or 1
+
+
+def loi_dang_ban(mau_s: float = 1.0) -> float:
+    """So loi VAT LY dang bi ai do chiem — **do that**, khong doan.
+
+    ⭐ Ham nay den tu phien `lttchat` (`4420b56`), va no tra loi mot cau hoi ma
+       khoa `cua_so_yen` khong the tra loi. Doc nguyen van ly do cua ho:
+
+         `LOI_DE_DANH_VAT_LY` la mot HANG SO, dat tu mot phep do luc may RANH.
+         No dung cho cai no mo ta: nen tai cua bon dich vu production. Nhung
+         hai lan may treo phai reset KHONG do nen tai gay ra — chung do hai thu
+         ma mot hang so khong the biet:
+
+           · mot `pytest -n auto` go tay NGOAI gate: 20 worker, khong ngan
+             sach, khong khoa
+           · mot luot gate THU HAI da het `--cho` va chay de: `cua_so_yen` chi
+             canh bao roi `return self`, no khong tu choi
+
+         Ca hai deu **vo hinh voi khoa** — khoa chi thay ai XIN khoa. Ca hai
+         deu **hien ra o CPU**.
+
+    🔴 Va ngay 03/09 con mot thu thu ba, do duoc trong hop den: **muoi hai tien
+       trinh `demucs`, moi cai 460-984% CPU**, chay ngoai moi khoa. Mot tien
+       trinh chau khong xin khoa va khong nam trong `-n`; no chi hien ra o day.
+
+    ⛔ **Don vi VAT LY.** Ban goc nhan voi `os.cpu_count()` = 20 (LOGIC), con
+       moi phep tinh khac o day dung `loi_cong_cu_tu_do()` = 10 (vat ly). Tron
+       hai don vi la **dung cai loi da khoi dau ca chuyen nay** (`-n 11` lon hon
+       `auto` = 10). Doi don vi khi nhap, khong phai khi dung.
+
+    ⚠️ Tra 0.0 khi khong do duoc: fail-open co chu y. Mot cong chat luong tu
+       choi chay vi khong doc noi CPU la mot cong khong ai dung.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return 0.0
+    try:
+        phan_tram = psutil.cpu_percent(interval=mau_s)
+    except (OSError, RuntimeError) as loi:
+        print(f"  [ngan sach] khong do duoc CPU ({loi}) - coi nhu may ranh")
+        return 0.0
+    return loi_cong_cu_tu_do() * float(phan_tram) / 100.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  MOT cau hoi, MOT cau tra loi: bo test duoc bao nhieu worker
+# ══════════════════════════════════════════════════════════════════════════════
+
+#: Loi VAT LY de danh cho may: Windows + 4 dich vu production + phien khac.
+#:
+#: 🔴 **Don vi VAT LY, khong phai logic.** Day la cho ca co che tung hong:
+#:    `LOI_DE_DANH_CHO_MAY = 6` tru tren `os.cpu_count()` = 20 (logic), con
+#:    `pytest -n auto` doc `psutil.cpu_count(logical=False)` = 10 (vat ly). Hai
+#:    don vi, mot hang so ⇒ "ngan sach" 11 lai LON HON `auto` = 10. Mot co che
+#:    sinh ra de GIAM tai da TANG no, suot tu `03845cb` toi 03/09.
+#:
+#: ⭐ Do that: nen may 3%-37% tuy gio (0,6-3,7 loi vat ly). De danh 3 phu duoc
+#:    nen thuong; luc nen cao thi `loi_phien_khac_dang_giu` va tran cung o duoi
+#:    keo tiep xuong.
+LOI_DE_DANH_VAT_LY = 3
+
+#: ⛔ TRAN CUNG. Chu du an chon 03/09: **uu tien an toan, chap nhan cham hon**.
+#:
+#:    Do that hom do: `-n 11` mat 327s; `-n 6` mat hon 15 phut (~2,8x cham hon).
+#:    Cai gia do duoc chap nhan co y — mot luot gate cham khong lam ai mat gi,
+#:    mot lan treo may lam khach mat dich vu.
+#:
+#: ⚠️ Va no la TRAN chu khong phai gia tri: khi may ban, phep tinh o duoi cho ra
+#:    so nho hon va so do thang.
+TRAN_WORKER_BO_TEST = 6
+
+
+def loi_cho_bo_test(*, phien: str = "", do_tai: bool = True) -> int:
+    """So worker cho `bo test`. **Ham DUY NHAT tra loi cau hoi nay.**
+
+    Truoc 03/09 co sau cho cung tra loi no — `ngan_sach_loi`, `_chia_loi`,
+    `LOI_TOI_DA_MOI_CONG_CU`, `loi_cong_cu_tu_do`, `loi_dang_ban`,
+    `_ap_ngan_sach_thuc` — tren HAI don vi khac nhau. Chong cheo nhieu tang thi
+    khong ai doc noi ca duong, va cho lech nam giua hai tang la cho khong ai soi.
+
+    Mot phep tinh, mot don vi (**loi vat ly**), bon ve:
+
+        vat_ly - de_danh - chiem           may con bao nhieu cho ta
+        chiem = max(KHAI BAO, DO DUOC)     ai dang giu cho — hai nguon, mot so
+        TRAN_WORKER_BO_TEST                tran an toan cung
+        max(1, ...)                        khong bao gio tu choi chay
+
+    ## 🔑 `max`, KHONG phai `+` — va day la ca thiet ke
+
+    Hai nguon tin ve "ai dang chiem may", va chung **chong len nhau**:
+
+        KHAI BAO  `cua_so_yen`: phien khac da XIN khoa va khai bao so loi
+        DO DUOC   `loi_dang_ban()`: CPU that dang bi dot, bat ke ai dot
+
+    Mot phien vua khai 6 loi vua dang dung 6 loi **xuat hien o ca hai**. Cong
+    lai la tru 12 cho mot viec dang chiem 6, va ngan sach tut ve 1 — mot co che
+    giam tai tu lam minh vo dung.
+
+    ⇒ `max()` lay **cai lon hon**, tuc dem moi ke chiem cho dung mot lan:
+
+        chi KHAI BAO   phien khac vua giu khoa, chua kip chay  -> khai bao thang
+        chi DO DUOC    `pytest` go tay, bot, tien trinh chau   -> do duoc thang
+        ca hai         cung mot phien                          -> dem MOT lan
+
+    🔴 Ve DO DUOC la thu duy nhat nhin thay muoi hai tien trinh `demucs` cua
+       ngay 03/09 (moi cai 460-984% CPU, khong cai nao xin khoa, khong cai nao
+       nam trong `-n`). Khoa khong thay chung. Hang so khong thay chung.
+
+    ⛔ `max(1, ...)`: mot cong chat luong tu choi chay vi ban la mot cong khong
+       ai dung, va no se bi go bang mot co `--bo-qua`. Cham thi duoc, dung han
+       thi khong.
+    """
+    vat_ly = loi_cong_cu_tu_do()
+
+    khai_bao = 0
+    if phien is not None:
+        try:
+            from cua_so_yen import loi_phien_khac_dang_giu
+            khai_bao = loi_phien_khac_dang_giu(phien)
+        except (ImportError, OSError, ValueError) as exc:
+            print(f"  [ngan sach] khong doc duoc khoa phien khac "
+                  f"({type(exc).__name__}) - bo qua phan tru do")
+
+    do_duoc = 0
+    if do_tai:
+        # Phan VUOT nen: nen da duoc tru rieng bang `LOI_DE_DANH_VAT_LY`, nen
+        # tru them ca nen mot lan nua la tru hai lan cung mot thu.
+        thua = loi_dang_ban() - LOI_DE_DANH_VAT_LY
+        do_duoc = max(0, int(thua + 0.5))
+
+    chiem = max(khai_bao, do_duoc)
+    if chiem:
+        print(f"  [ngan sach] {chiem} loi dang bi chiem "
+              f"(khai bao {khai_bao}, do duoc {do_duoc}) - lay so lon hon")
+    return max(1, min(TRAN_WORKER_BO_TEST, vat_ly - LOI_DE_DANH_VAT_LY - chiem))
 
 
 def _chia_loi(so_viec_nang: int) -> int:
@@ -292910,7 +293594,45 @@ def _npm() -> str | None:
     return shutil.which("npm")
 
 
-def _steps(quick: bool) -> list[Step]:
+def _ap_ngan_sach_thuc(steps: list, phien: str) -> None:
+    """Sua lai `-n` cua buoc `bo test` theo ngan sach THUC, sau khi da giu khoa.
+
+    ⭐ Sua **tai cho** thay vi dung lai ca danh sach: `steps` co the da di qua
+       `_rut_gon_vong_lap` / `_thu_hep`, va dung lai se mat phan do.
+
+    ⚠️ Chi cham dung mot buoc, va tim no bang chinh `argv` cua no (`-n` di ngay
+       sau `test_nhanh.py`) chu khong bang TEN buoc — mot cai ten la mot chuoi
+       hien thi, doi luc nao cung duoc, va no se doi im lang.
+    """
+    moi = loi_cho_bo_test(phien=phien)
+    for st in steps:
+        argv = list(getattr(st, "argv", []) or [])
+        if "test_nhanh.py" not in " ".join(argv) or "-n" not in argv:
+            continue
+        i = argv.index("-n")
+        if i + 1 >= len(argv):
+            continue
+        cu_so = argv[i + 1]
+        if str(cu_so) == str(moi):
+            continue
+        argv[i + 1] = str(moi)
+        st.argv = argv
+        st.so_loi = moi
+        print(f"  [ngan sach] -n {cu_so} -> {moi} "
+              f"(luot khac dang giu {loi_bi_giu_boi_phien_khac(phien)} loi)")
+
+
+def loi_bi_giu_boi_phien_khac(phien: str = "") -> int:
+    """Chi de IN ra. Khong tham gia phep tinh — xem `ngan_sach_loi`."""
+    try:
+        from cua_so_yen import loi_phien_khac_dang_giu
+        return loi_phien_khac_dang_giu(phien)
+    except (ImportError, OSError, ValueError):
+        # Chi de IN; that bai o day da duoc `ngan_sach_loi` noi ra roi.
+        return 0
+
+
+def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
     # ── Chia ngan sach loi TRUOC khi dung danh sach buoc ────────────────────
     #
     # Bon viec co the chay dong thoi va MOI viec tu sinh mot be tien trinh:
@@ -292925,8 +293647,28 @@ def _steps(quick: bool) -> list[Step]:
     #    loi** o `_chay_theo_lich` lo phan con lai — neu tong vuot ngan sach thi
     #    mot frontend doi, chu khong phai ai cung bi cat nho tu dau.
     loi_moi_viec = min(2, LOI_TOI_DA_MOI_CONG_CU)          # frontend: ngan, 2 la du
-    loi_bo_test = max(1, min(LOI_TOI_DA_MOI_CONG_CU,
-                             ngan_sach_loi() - len(FRONTENDS)))
+    # ⛔ `loi_cong_cu_tu_do()` la ve thu BA cua phep `min`, va no la ve chiu luc:
+    #    hai ve kia tinh tren loi LOGIC, ve nay tra ve dung thu xdist se tu chon.
+    #    Thieu no thi "ngan sach" 11 lai lon hon `auto` = 10. Xem docstring cua no.
+    # MOT nguon duy nhat. Xem `loi_cho_bo_test`.
+    loi_bo_test = loi_cho_bo_test()
+
+    # ── Che do NOI TIEP: mot loi cho moi cong cu con ────────────────────────
+    #
+    # ⭐ Doan nay den tu nhanh `admin-mvp-v3` (phien lttchat) va duoc giu nguyen
+    #    khi hop nhat: no giai mot bai toan KHAC voi ngan sach o tren, va hai
+    #    thu bo sung cho nhau.
+    #
+    # 🔴 `--tuan-tu` MOT MINH khong du, va day la cho de doc nham nhat trong ca
+    #    tep nay. No xep hang cac BUOC — nhung buoc `bo test` van tu mo n worker
+    #    pytest ben trong no, va moi buoc `frontend` van mo 2 worker vitest.
+    #    "Tuan tu" o muc lich chay khong co nghia la mot tien trinh.
+    #
+    # ⇒ Ho so `noi-tiep` phai ha CA HAI muc: lich chay MOT buoc mot luc, va moi
+    #   cong cu con MOT tien trinh.
+    if noi_tiep:
+        loi_moi_viec = 1
+        loi_bo_test = 1
 
     # 🔴 THU HOI XAC TIEN TRINH TRUOC KHI DO BAT CU THU GI.
     #
@@ -293189,11 +293931,26 @@ def _steps(quick: bool) -> list[Step]:
         # ⛔ `-n` tuong minh thay cho `auto`. `auto` = MOI loi cua may, va no
         #    khong biet gi ve ba vitest dang chay canh no, cung khong biet gi ve
         #    bon dich vu production tren cung may.
-        steps.append(Step("bo test (song song)",
-                          [sys.executable, "tools/test_nhanh.py",
-                           "-n", str(loi_bo_test)], ROOT,
-                          nhom="nang", tai_nguyen=("cpu_nhieu",),
-                          so_loi=loi_bo_test))
+        #
+        # ⛔ NOI TIEP KHONG PHAI `-n 1`. Hai thu khac nhau that su:
+        #      `-n 1`      van qua xdist — mot worker, nhung la mot TIEN TRINH
+        #                  CON, va no van chia tep theo `--dist loadfile`.
+        #      `--noi-tiep` khong co xdist gi ca: dung tien trinh pytest do,
+        #                  dung thu tu thu thap goc, khong co pha 2.
+        #    Khac biet do la ca cai gia tri cua che do nay: no la phep do duy
+        #    nhat KHONG di qua lop ma ta dang nghi ngo.
+        if noi_tiep:
+            steps.append(Step("bo test (noi tiep)",
+                              [sys.executable, "tools/test_nhanh.py",
+                               "--noi-tiep"], ROOT,
+                              nhom="nang", tai_nguyen=("cpu_nhieu",),
+                              so_loi=1))
+        else:
+            steps.append(Step("bo test (song song)",
+                              [sys.executable, "tools/test_nhanh.py",
+                               "-n", str(loi_bo_test)], ROOT,
+                              nhom="nang", tai_nguyen=("cpu_nhieu",),
+                              so_loi=loi_bo_test))
     return steps
 
 
@@ -293256,6 +294013,17 @@ HO_SO: dict[str, dict] = {
         "mo_ta": "toan kho — mac dinh, giu nguyen hanh vi cu",
         "chung_minh": "toan bo cong chat luong tren cay nay",
         "khong_chung_minh": "khong noi gi ve viec deploy hay ve production",
+        "xep_hang": True,
+    },
+    "noi-tiep": {
+        "mo_ta": "day du, MOT buoc mot luc, MOT tien trinh pytest (~25-30 phut)",
+        "chung_minh": "toan bo cong chat luong, VA rang ket qua do khong phu "
+                      "thuoc vao so worker hay vao tai cua may luc do",
+        "khong_chung_minh": "khong noi gi ve deploy hay production. Va no KHONG "
+                            "chung minh che do song song sai — mot lan noi tiep "
+                            "xanh trong khi song song do la bang chung ve MOT "
+                            "loi CACH LY (hoac mot may qua tai), chua chi ra "
+                            "loi nam o dau.",
         "xep_hang": True,
     },
     "phat-hanh": {
@@ -293669,7 +294437,12 @@ def main() -> int:
     parser.add_argument("-j", type=int, default=8,
                         help="so luong buoc tinh chay cung luc (mac dinh 8)")
     parser.add_argument("--tuan-tu", action="store_true",
-                        help="ep chay noi tiep - de go loi chinh gate")
+                        help="ep cac BUOC chay lan luot - de go loi chinh gate "
+                             "(cong cu con van tu song song ben trong)")
+    parser.add_argument("--noi-tiep", action="store_true",
+                        help="ho so NOI TIEP: mot buoc mot luc VA mot tien "
+                             "trinh pytest. Cham (~25-30 phut) nhung khong the "
+                             "bi nhieu boi tai may hay boi cach ly worker")
     parser.add_argument("--phien", default="",
                         help="ten phien, hien cho phien khac dang doi")
     parser.add_argument("--khong-khoa", action="store_true",
@@ -293683,6 +294456,14 @@ def main() -> int:
     parser.add_argument("--doi", action="store_true",
                         help="suy pham vi tu cay hien tai")
     args = parser.parse_args()
+
+    # ⛔ NOI RA thay vi im lang uu tien. `--noi-tiep` la mot HO_SO, va ho so thi
+    #    loai tru nhau. Nhan ca hai roi lang le bo mot cai la dung cai bay ma
+    #    `--pham-vi` sinh ra de tranh: mot phep do HEP ma nguoi doc tuong la
+    #    day du — chi dao chieu.
+    if args.noi_tiep and (args.pham_vi or args.doi or args.quick or args.vong_lap):
+        parser.error("`--noi-tiep` la mot ho so DAY DU; no khong ket hop voi "
+                     "--pham-vi/--doi/--quick/--vong-lap. Chon mot.")
 
     # 🔴 MOT BANG CHE DO DUY NHAT — `HO_SO`. Khong co "gate cu" va "gate moi".
     #
@@ -293698,10 +294479,18 @@ def main() -> int:
     #    khong phai hai tep, ma hai NOI dinh nghia cung mot thu.
     ho_so = (args.ho_so or ("vong-lap" if args.vong_lap else
                             "nhanh" if args.quick else
+                            "noi-tiep" if args.noi_tiep else
                             "pham-vi" if args.pham_vi else
                             "doi" if args.doi else "day-du"))
 
-    steps = _steps(ho_so in ("nhanh", "vong-lap"))
+    # Ho so `noi-tiep` KEO THEO `--tuan-tu`. Neu khong, `_chay_theo_lich` van
+    # nop ba buoc frontend song song voi bo test — moi cai mot loi, nhung ba
+    # tien trinh node canh mot tien trinh pytest van la bon thu tranh nhau, va
+    # ca diem cua che do nay la khong con thu gi tranh nhau ca.
+    noi_tiep = ho_so == "noi-tiep"
+    tuan_tu = args.tuan_tu or noi_tiep
+
+    steps = _steps(ho_so in ("nhanh", "vong-lap"), noi_tiep=noi_tiep)
     if ho_so == "vong-lap":
         steps = _rut_gon_vong_lap(steps)
     elif ho_so in ("pham-vi", "doi"):
@@ -293740,16 +294529,43 @@ def main() -> int:
     with CuaSoYen(phien, lenh, bat=xep_hang,
                   cho_toi_da_s=args.cho * 60,
                   tai_nguyen=tuple(sorted(can)) or (MAC_DINH,)) as khoa:
+        # 🔴 TINH LAI NGAN SACH O DAY, khong o `_steps()`.
+        #
+        #    `_steps()` chay o dong ~1036, TRUOC `CuaSoYen.__enter__`. Luc do ta
+        #    chua biet co luot nao khac dang giu khoa, va `argv` cua buoc
+        #    `bo test` da co dinh `-n <so>`.
+        #
+        # ⛔ Tinh lai CON SO thoi thi vo nghia: no tru dung va van chay dung so
+        #    worker cu. Phai sua ca `argv`.
+        if getattr(khoa, "chay_khong_khoa", False):
+            print("  [cua so yen] dang CHEN - ngan sach se tu tut xuong theo "
+                  "phan luot kia dang giu (B3, xem cua_so_yen.chay_khong_khoa)")
+        _ap_ngan_sach_thuc(steps, phien)
+
         cay_dau = _anh_chup_cay()
         dong = f"Gate [{ho_so}]: {len(steps)} buoc"
-        if not args.tuan_tu:
+        if tuan_tu:
+            dong += ", MOT buoc mot luc" + (", MOT tien trinh" if noi_tiep else "")
+        else:
             dong += (f", toi da {args.j} buoc cung luc"
                      f", ngan sach {ngan_sach_loi()}/{os.cpu_count()} loi")
         if can:
             dong += f", tai nguyen: {', '.join(sorted(can))}"
-        print(dong + "\n")
+        print(dong)
+        # 🔴 IN TAI MAY TRUOC KHI CHAY, o MOI ho so. Khoa cua so yen chi thay ai
+        #    XIN khoa; no khong thay `pytest` go tay, khong thay deploy, khong
+        #    thay bon dich vu production dang ban. Do 03/09: `cua_so_yen
+        #    trang-thai` bao RANH trong khi CPU 65%.
+        ban = loi_dang_ban()
+        muc = ("RANH" if ban <= LOI_DE_DANH_CHO_MAY else
+               "BAN" if ban <= ngan_sach_loi() else "QUA TAI")
+        print(f"  [tai may] {ban:.1f}/{os.cpu_count()} loi dang ban -> {muc}")
+        if muc == "QUA TAI":
+            print("  [tai may] CANH BAO: co thu gi do NGOAI luot nay dang chiem "
+                  "may. Ket qua co the bi nhieu; xem `--noi-tiep`.")
+        print()
         t0_chay = time.time()
-        _chay_theo_lich(steps, j=args.j, tuan_tu=args.tuan_tu)
+        _chay_theo_lich(steps, j=args.j, tuan_tu=tuan_tu)
         tong_s = time.time() - t0_chay
 
     print("\n" + "=" * 62)
@@ -293906,6 +294722,909 @@ def _git_gon(argv: list[str]) -> str:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/giam_sat_may.py
+SHA256=45cf35234ceae161fb1e08bfab145d97644785c61c299c1bf878eab4734ab908 BYTES=38664 LINES=897
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""giam_sat_may.py — hop den cua may. Ghi lien tuc, doc lai sau mot lan treo.
+
+    python tools/giam_sat_may.py --chay          # chay nen, ghi moi 15s
+    python tools/giam_sat_may.py --kham          # KHAM NGHIEM sau mot lan reset
+    python tools/giam_sat_may.py --kham 2        # kham hai lan dut gan nhat
+    python tools/giam_sat_may.py --trang-thai    # dang chay khong
+
+## Khac gi `nhat_ky_chay.py`
+
+    nhat_ky_chay   ghi MOT luot chay, boc quanh mot lenh
+    giam_sat_may   ghi LIEN TUC, khong phu thuoc ai chay gi
+
+Ngay 03/09 may reset **hai lan**. Ca hai lan `nhat_ky_chay` deu chua ton tai
+hoac chua duoc dung, va quan trong hon: **cai lam treo may co the khong phai
+lenh ta boc**. Do duoc luc do: cay gate co 13 tien trinh, toan may co 58. Bon
+muoi lam cai con lai — bot, phien Claude khac, dich vu production, deploy — khong
+di qua bat cu thu gi ta boc duoc.
+
+⇒ Hop den phai ghi **may**, khong phai **lenh cua ta**.
+
+## 🔑 `--kham` la ly do tep nay ton tai
+
+Ghi log thi de. Cai kho la sau mot lan reset, doc mot nghin dong JSON de tra loi
+"cai gi lam treo". `--kham` lam viec do:
+
+  1. tim cho log **DUT** (khoang trong > 3 nhip = may chet hoac ngu)
+  2. lay 6 mau cuoi truoc khi dut
+  3. xep hang tien trinh theo CPU va RAM o dung nhung mau do
+  4. so voi nen binh thuong cua chinh may (trung vi 24h) de biet cai gi BAT THUONG
+
+⛔ No khong doan nguyen nhan. No dua ra ai dang chiem cho luc do va cai gi lech
+   khoi thuong le — phan ket luan la cua nguoi doc. Mot cong cu tu ket luan se
+   dan nguoi doc vao gia thuyet dau tien, va do dung la kieu sai da xay ra chin
+   lan trong mot ngay o du an nay.
+
+## Ba rang buoc thiet ke
+
+### 1. Chinh no khong duoc thanh nghi can
+
+Bai hoc dat nhat 03/09: phep do cua toi la mot trong ba ung vien lam treo may —
+`process_iter` qua 58 tien trinh, `cpu_percent` tung cai, moi 2 giay.
+
+⇒ Nhip **15 giay**, va moi vong chi lay **top 5** tien trinh theo CPU. Do bang
+  `oneshot()` de mot lan doc lay het truong, thay vi goi lai tung truong.
+
+### 2. `flush` + `fsync` moi dong
+
+Mot lan treo khong cho tien trinh dong tep. Thu nam trong buffer la thu khong
+bao gio doc lai duoc, dung luc no dang gia nhat.
+
+### 3. ASCII thuan o dau ra
+
+`print` mot emoji vo voi `UnicodeEncodeError` tren stdout cp1252 — va no vo o
+dung nhanh "bi cat", tuc dung luc can doc nhat. Da xay ra that voi
+`nhat_ky_chay.py`.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import statistics
+import subprocess
+import sys
+import tempfile
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+#: Noi ghi. Mac dinh `%TEMP%`, nhung **ban dat o `Desktop\HOP DEN` tu ghi canh
+#: chinh no** — vi mot hop den nam trong `%TEMP%` la mot hop den co the bi don
+#: dep, va nam trong mot worktree la mot hop den bien mat khi worktree bi go.
+#:
+#: Thu tu uu tien:
+#:   1. bien moi truong `LTT_HOP_DEN`
+#:   2. thu muc `du_lieu` canh script, NEU thu muc cha ten co "HOP DEN"
+#:   3. `%TEMP%/ltt_hop_den`
+def _thu_muc_ghi() -> Path:
+    tu_env = os.environ.get("LTT_HOP_DEN", "").strip()
+    if tu_env:
+        return Path(tu_env)
+    canh = Path(__file__).resolve().parent
+    if "HOP DEN" in canh.name.upper():
+        return canh / "du_lieu"
+    return Path(tempfile.gettempdir()) / "ltt_hop_den"
+
+
+THU_MUC = _thu_muc_ghi()
+
+#: Nhip ghi luc BINH THUONG. Thua co y — xem rang buoc 1 dau tep.
+NHIP_S = 15.0
+
+#: Nhip ghi khi may dang CANG. Xem `_dang_cang`.
+#:
+#: ⭐ Y tuong nay lay tu `gpu_recorder.py` cua `D:\FULL AUTO VIDEO` (0,5s binh
+#:    thuong / 0,2s khi cang): khoanh khac truoc khi mot may chet co the chi dai
+#:    vai tram mili-giay, va do dung la doan can do phan giai cao nhat.
+#:
+#: ⚠️ Nhung o day 15s/1s chu khong 0,5s/0,2s. Ban kia ghi 34 MB moi ngay cho
+#:    RIENG GPU; hop den nay con ghi ca bang tien trinh, nen cung nhip do se
+#:    thanh vai tram MB/ngay va tu bien minh thanh mot nghi can.
+NHIP_NONG_S = 1.0
+
+#: Bao lau thi thoi coi la cang, sau khi cac dieu kien da het (giay).
+#:
+#: 🔑 Co do tre nay vi doan HA TAI cung dang doc: neu tai tut ma may van chet
+#:    thi do la mot chuyen; neu tai tut roi may song lai thi la chuyen khac.
+#:    Cat nhip nhanh ngay khi het cang se lam mat dung doan phan biet hai cai.
+NGUI_S = 60.0
+
+#: Nguong coi la "dang cang".
+#:
+#: 🔴 Ba nguong dau (CPU, RAM, swap) la phan `gpu_recorder.py` KHONG co, va do
+#:    la ly do co che tang nhip cua no chua tung kich hoat dung luc: `_is_hot`
+#:    cua no chi nhin nhiet do, dien nang va VRAM. Ca ba lan may dut ngay 03/09,
+#:    GPU deu lanh (8,7 W, 48 C) trong khi CPU chay 100% va RAM dang tut —
+#:    tuc no ghi 0,5s/mau suot mot ngay ma van o nhip THUONG dung luc quan
+#:    trong nhat.
+CANG_CPU = 85.0          # %
+CANG_RAM_GIB = 4.0       # RAM trong con lai
+CANG_SWAP_GIB = 2.0      # swap dang dung
+CANG_NHIET_C = 75.0      # nhiet GPU
+CANG_DIEN_TI_LE = 0.85   # power.draw / power.limit
+CANG_VRAM_TRONG_MB = 2048
+
+#: Truong lay tu nvidia-smi. Lay NGUYEN bo cua `gpu_recorder.py`: bo do da qua
+#: mot thang van hanh that va tung truong deu co ly do o do.
+#:
+#: 🔑 `clocks_event_reasons.active` la truong dat gia nhat va la thu ban dau toi
+#:    KHONG lay. No phan biet ba kieu chet ma moi so lieu khac deu tron lan:
+#:    qua nhiet (HwThermalSlowdown), thieu nguon (HwPowerBrakeSlowdown), va cham
+#:    xung theo phan mem (SwPowerCap). Khong co no thi "GPU 50 C, 20 W" va "GPU
+#:    dang bi ha xung vi nguon" trong y het nhau.
+SMI_TRUONG = ("index,memory.used,memory.free,utilization.gpu,utilization.memory,"
+              "temperature.gpu,power.draw,power.limit,clocks.sm,fan.speed,pstate,"
+              "clocks_event_reasons.active")
+
+#: Giai ma bitmask `clocks_event_reasons.active`.
+#:
+#: ⛔ Bit 0 (`GpuIdle`) BAT gan nhu lien tuc tren mot may de ban — no khong phai
+#:    van de. Gop no vao "co chan xung" se cho ra bao dong o 100% so mau, va mot
+#:    canh bao luon bat thi khong con la canh bao.
+SMI_CO = {
+    0x0001: "nhan roi",
+    0x0002: "xung theo ung dung",
+    0x0004: "tran dien (phan mem)",
+    0x0008: "ha xung phan cung",
+    0x0010: "dong bo boost",
+    0x0020: "qua nhiet (phan mem)",
+    0x0040: "QUA NHIET (phan cung)",
+    0x0080: "THIEU NGUON (power brake)",
+    0x0100: "xung theo man hinh",
+}
+
+#: Nhung co THUC SU dang lo — dung cho canh bao, khac voi `SMI_CO` dung de in.
+SMI_CO_LO = 0x0004 | 0x0008 | 0x0020 | 0x0040 | 0x0080
+
+#: Bao nhieu tien trinh nang nhat duoc ghi moi vong.
+#:
+#: ⚠️ 10 chu khong 5: chu du an muon thay "moi tac vu dang chay". Ghi het 330
+#:    tien trinh moi 15 giay la 8 MB/gio va bien hop den thanh mot nghi can —
+#:    nen lay 10 nang nhat, du de thay ai chiem cho ma khong phinh.
+TOP_N = 10
+
+#: Cach nhau it nhat bao nhieu giay thi doc GPU mot lan. `nvidia-smi` la mot
+#: TIEN TRINH CON (~80ms), nen no khong duoc di theo nhip 1 giay cua che do cang.
+#:
+#: ⭐ Tinh theo THOI GIAN chu khong theo so vong: o che do cang nhip la 1s, neu
+#:    dem vong thi "moi 2 vong" thanh 2 giay va ta tu them 1800 tien trinh con
+#:    moi gio — dung kieu tu-bien-thanh-nghi-can ma ca tep nay dung de tranh.
+GPU_CACH_S = 30.0        # binh thuong
+GPU_CACH_NONG_S = 3.0    # khi dang cang
+
+#: Bang tien trinh giu GPU it doi. Ghi lai ca danh sach moi mau la lang phi —
+#: chi ghi khi TAP PID doi, con lai ghi mot con so.
+GPU_APP_GHI_LAI_S = 300.0
+
+#: Khoang trong bao nhieu NHIP thi coi la log DUT (may chet / ngu / reset).
+NHIP_COI_LA_DUT = 3
+
+#: Giu bao nhieu ngay. Moi ngay mot tep.
+GIU_NGAY = 7
+
+
+#: Da dat moc `cpu_percent` cho tung tien trinh chua. Xem `mot_vong`.
+_da_dat_moc = False
+
+#: Lan cuoi doc GPU (monotonic). Xem `GPU_CACH_S`.
+_gpu_lan_cuoi = 0.0
+
+#: Tap PID cham GPU o lan ghi day du gan nhat, va thoi diem ghi day du do.
+_gpu_app_pid: frozenset = frozenset()
+_gpu_app_luc = 0.0
+
+#: Lan cuoi thay may CANG (monotonic). Xem `NGUI_S`.
+_cang_luc = -1e9
+
+
+def _tep_hom_nay() -> Path:
+    THU_MUC.mkdir(parents=True, exist_ok=True)
+    return THU_MUC / f"{datetime.now():%Y%m%d}.jsonl"
+
+
+def _don_tep_cu() -> None:
+    """Xoa tep qua han. Mot hop den phinh mai se bi ai do xoa ca thu muc."""
+    gioi_han = time.time() - GIU_NGAY * 86400
+    for t in THU_MUC.glob("*.jsonl"):
+        try:
+            if t.stat().st_mtime < gioi_han:
+                t.unlink()
+        except OSError:
+            pass
+
+
+def _giai_ma_co(hex_str: str) -> list[str]:
+    """Bitmask `clocks_event_reasons.active` -> ten doc duoc."""
+    try:
+        v = int(hex_str, 16)
+    except (ValueError, TypeError):
+        return []
+    return [ten for bit, ten in SMI_CO.items() if v & bit]
+
+
+def _so(x: str, mac_dinh=None):
+    """`nvidia-smi` tra `[N/A]` cho nhieu truong. Mot truong vang KHONG duoc lam
+    hong ca dong.
+
+    🔴 Ban dau doan doc `used_memory` dung `int()` tran trong mot `try` bao ca
+       vong lap. Mot dong `[N/A]` nem ValueError va **vut ca danh sach 15 PID**,
+       roi ket qua ve None — trong y het "khong co tien trinh nao cham GPU".
+       Cung lop loi voi nhung loi im lang khac cua ngay 03/09: mot phep do hong
+       trong giong het mot may ranh.
+    """
+    try:
+        return float(x)
+    except (ValueError, TypeError):
+        return mac_dinh
+
+
+def _gpu(day_du_app: bool = True) -> dict:
+    """Trang thai day du tung card, va tien trinh nao dang cham GPU.
+
+    🔑 **Tien trinh cham GPU la nua quan trong hon.** "VRAM 15/16 GiB" khong noi
+       ai giu; may nay co bot dungvideo, LTT Voice, whisper, Ollama, va hai phien
+       Claude cung co the cham GPU. Mot lan treo do VRAM ma khong biet ai giu thi
+       cung vo dung nhu "python.exe an 77%".
+
+    ⚠️ `pynvml` khong co tren may nay (da kiem), nen dung `nvidia-smi`. Neu no
+       vang mat hoac qua han thi tra rong — mot phep do hong khong duoc lam hong
+       ca vong ghi.
+    """
+    ra: dict = {}
+    co_cua_so = 0x08000000 if os.name == "nt" else 0
+    try:
+        r = subprocess.run(
+            ["nvidia-smi", f"--query-gpu={SMI_TRUONG}",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=8,
+            creationflags=co_cua_so)
+        card = []
+        for d in r.stdout.strip().splitlines():
+            c = [x.strip() for x in d.split(",")]
+            if len(c) < 12:
+                continue
+            m = {"id": int(_so(c[0], 0)),
+                 "vram_mb": _so(c[1]),
+                 "vram_trong_mb": _so(c[2]),
+                 "util": _so(c[3]),
+                 "util_bonho": _so(c[4]),
+                 "nhiet_c": _so(c[5]),
+                 "dien_w": _so(c[6]),
+                 "dien_tran_w": _so(c[7]),
+                 "xung_mhz": _so(c[8]),
+                 "quat": _so(c[9]),
+                 "pstate": c[10],
+                 "co": c[11]}
+            card.append({k: v for k, v in m.items() if v is not None})
+        if card:
+            ra["gpu"] = card
+            ra["dien_tong_w"] = round(sum(x.get("dien_w", 0) for x in card), 1)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return ra
+
+    if not day_du_app:
+        return ra
+    try:
+        r = subprocess.run(
+            ["nvidia-smi", "--query-compute-apps=pid,used_memory",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=8,
+            creationflags=co_cua_so)
+        app = []
+        for d in r.stdout.strip().splitlines():
+            c = [x.strip() for x in d.split(",")]
+            if len(c) < 2 or not c[0].isdigit():
+                continue
+            # ⚠️ `used_memory` tra `[N/A]` tren may NAY, va do khong phai loi
+            #    lenh: o che do WDDM (GPU tieu dung tren Windows) driver KHONG
+            #    bao VRAM theo tung tien trinh, chi bao tong cua card. Van ghi
+            #    PID — biet ai dang giu context GPU la du de doi chieu.
+            app.append({"pid": int(c[0]), "vram_mb": _so(c[1])})
+        if app:
+            ra["gpu_app"] = app
+    except (OSError, subprocess.SubprocessError, ValueError):
+        pass
+    return ra
+
+
+def _nhan(p) -> str:
+    """Nhan ngan doc duoc cho mot tien trinh. `python.exe` khong noi len gi ca."""
+    import psutil
+    try:
+        cl = p.cmdline()
+    except (psutil.Error, OSError):
+        return ""
+    if len(cl) < 2:
+        return ""
+    for i, x in enumerate(cl[1:], 1):
+        x = str(x)
+        # ⛔ `-c` di kem ca mot doan MA NGUON. Lay no lam nhan cho ra mot chuoi
+        #    nhieu dong, dai, va khong noi len gi — do that o ban dau: nhan cua
+        #    mot `python -c` ra nguyen mot doan import co ca xuong dong trong do.
+        #
+        # ⚠️ Va chinh doan comment nay tung lam VO tep: ban dau toi dan nguyen
+        #    chuoi nhan xau vao day, trong do co mot dau nhay don, va no dong
+        #    chuoi Python cua lenh dang ghi tep. Mo ta mot chuoi xau bang cach
+        #    CHEP no vao la cach de nhat de lam hong thu dang sua.
+        if x in ("-c", "-m"):
+            ke = str(cl[i + 1]) if i + 1 < len(cl) else ""
+            return f"{x} {ke.splitlines()[0][:24]}" if x == "-m" else "-c inline"
+        if x.startswith("-"):
+            continue
+        return Path(x).name[:32] if ("/" in x or "\\" in x) else x[:32]
+    return str(cl[1])[:32]
+
+
+def mot_vong() -> dict:
+    """Mot anh chup. Nhe: top-N tien trinh, doc bang `oneshot`."""
+    try:
+        import psutil
+    except ImportError:
+        return {"loi": "khong co psutil"}
+
+    m = psutil.virtual_memory()
+    ra = {"cpu": psutil.cpu_percent(interval=0.2),
+          "ram_trong_gib": round(m.available / 2**30, 2),
+          "so_tien_trinh": len(psutil.pids())}
+
+    # SWAP: dau hieu SOM hon "RAM trong thap". Khi may bat dau swap manh thi no
+    # da tren duong treo, con "RAM trong 2 GiB" thi co the chi la cache.
+    try:
+        sw = psutil.swap_memory()
+        ra["swap_dung_gib"] = round(sw.used / 2**30, 2)
+    except (psutil.Error, OSError):
+        pass
+
+    # DISK I/O tich luy. `--kham` lay HIEU giua hai mau de ra toc do — ghi so
+    # tich luy thay vi toc do vi mot lan doc khong tinh duoc toc do, va hai mau
+    # thi tinh duoc ca hai.
+    #
+    # 🔴 Kho nay da co mot su co I/O that: 282 tien trinh mo coi khoa **85 GB
+    #    temp**. Mot hop den khong ghi I/O se khong thay lai duoc canh do.
+    try:
+        io = psutil.disk_io_counters()
+        if io:
+            ra["doc_mb"] = round(io.read_bytes / 2**20)
+            ra["ghi_mb"] = round(io.write_bytes / 2**20)
+    except (psutil.Error, OSError):
+        pass
+
+    # 🔴 `p.cpu_percent(None)` lan goi DAU cua MOI tien trinh tra 0.0 — no do
+    #    chenh lech voi lan truoc, va lan dau khong co lan truoc. Voi bo loc
+    #    `if c <= 0: continue` ben duoi, ket qua la `top: []` — mot may dang
+    #    chay 100% trong y het mot may khong co tien trinh nao.
+    #
+    # ⇒ Dat moc cho MOI tien trinh, doi mot nhip ngan, roi moi doc that. Trong
+    #   `chay()` moc da co tu vong truoc nen buoc nay gan nhu mien phi; o lan
+    #   goi don le (vd `--trang-thai`) thi no la thu cuu ket qua khoi rong.
+    if not _da_dat_moc:
+        for p in psutil.process_iter():
+            try:
+                p.cpu_percent(None)
+            except (psutil.Error, OSError):
+                pass
+        time.sleep(0.3)
+        globals()["_da_dat_moc"] = True
+
+    nang = []
+    for p in psutil.process_iter(["pid", "name"]):
+        try:
+            # ⛔ `System Idle Process` la tien trinh NHAN ROI cua Windows: CPU%
+            #    cua no la tong so loi dang RANH, nen no luon dung dau bang va
+            #    day moi thu that xuong. Mot bao cao kham nghiem mo dau bang
+            #    "System Idle Process 1786%" la mot bao cao khong ai doc tiep.
+            if p.pid in (0, 4):
+                continue
+            with p.oneshot():
+                c = p.cpu_percent(None)
+                if c <= 0:
+                    continue
+                # 🔴 `name` KHONG DU. Tren may nay co hang chuc `python.exe`:
+                #    gate, worker pytest, bot dungvideo, bot gemini, phien
+                #    Claude, sidecar giong noi. Mot hop den bao "python.exe an
+                #    77%" thi sau mot lan reset ta van khong biet gi hon truoc.
+                #
+                # ⇒ Ghi them mot NHAN doc duoc tu `cmdline`, cat ngan. Do la
+                #   khac biet giua mot ban ghi va mot ban ghi DUNG DUOC.
+                nang.append({"pid": p.pid, "ten": (p.info["name"] or "")[:22],
+                             "nhan": _nhan(p),
+                             "cpu": round(c, 1),
+                             "ram_mb": round(p.memory_info().rss / 2**20)})
+        except (psutil.Error, OSError):
+            continue
+    nang.sort(key=lambda x: -x["cpu"])
+    ra["top"] = nang[:TOP_N]
+
+    # GPU: thua hon nhip chinh, va tinh theo THOI GIAN. Xem `GPU_CACH_S`.
+    bay_gio = time.monotonic()
+    cach = GPU_CACH_NONG_S if (bay_gio - _cang_luc) < NGUI_S else GPU_CACH_S
+    if bay_gio - _gpu_lan_cuoi >= cach:
+        globals()["_gpu_lan_cuoi"] = bay_gio
+        # Bang PID cham GPU it doi — chi doc no khi da qua lau, hoac khi dang
+        # cang (luc do mot mo hinh vua duoc nap la thong tin dat gia).
+        day_du = (bay_gio - _gpu_app_luc >= GPU_APP_GHI_LAI_S
+                  or (bay_gio - _cang_luc) < NGUI_S)
+        g = _gpu(day_du_app=day_du)
+        if g:
+            # Gan ten cho tien trinh giu VRAM — cung ly do nhu `nhan` o tren.
+            # ⛔ KHONG tra ten trong `nang` (top 10 theo CPU). Tien trinh giu
+            #    GPU thuong dung im — mot mo hinh da nap xong VRAM an gan 0% CPU
+            #    — nen tra trong top se ra ten rong cho dung thu ta can biet.
+            for a in g.get("gpu_app", []):
+                try:
+                    pr = psutil.Process(a["pid"])
+                    # ⚠️ Ca `ten` LAN `nhan`. Voi `python.exe` thi ten vo dung va
+                    #    nhan la tat ca; voi `dwm.exe`, `chrome.exe`, `AnyDesk`
+                    #    thi nguoc lai — chung khong co doi so nao dang ke va
+                    #    `_nhan` tra chuoi rong. Do la 5/8 dong o lan thu dau.
+                    a["ten"] = pr.name()
+                    a["nhan"] = _nhan(pr)
+                except (psutil.NoSuchProcess, psutil.AccessDenied, OSError):
+                    a["ten"] = a["nhan"] = ""
+            # ⭐ Ghi ca danh sach CHI KHI tap PID doi. Tren may nay co 16 tien
+            #    trinh cham GPU luc de ban (dwm, explorer, chrome, Claude... — o
+            #    che do WDDM moi thu co cua so deu cham GPU), va chung khong doi
+            #    hang gio. Ghi lai 16 dong do moi 30 giay la ~1 MB/ngay cho mot
+            #    thong tin khong doi; ghi khi DOI thi vua giu duoc dung khoanh
+            #    khac "co ke moi vao GPU" vua khong phinh tep.
+            pid_moi = frozenset(a["pid"] for a in g.get("gpu_app", []))
+            if "gpu_app" in g:
+                if pid_moi == _gpu_app_pid:
+                    g["gpu_app_nhu_cu"] = len(pid_moi)
+                    del g["gpu_app"]
+                else:
+                    globals()["_gpu_app_pid"] = pid_moi
+                    globals()["_gpu_app_luc"] = bay_gio
+            ra.update(g)
+
+    # Danh dau CANG de vong chay biet co doi nhip khong. Tinh o day, tren dung
+    # so lieu vua do, thay vi bat vong chay do lai lan nua.
+    if _dang_cang(ra):
+        globals()["_cang_luc"] = time.monotonic()
+        ra["cang"] = True
+    return ra
+
+
+def _dang_cang(mau: dict) -> bool:
+    """May co dang o vung nguy hiem khong? Quyet dinh nhip lay mau.
+
+    🔴 Ba dieu kien dau (CPU, RAM, swap) la thu `gpu_recorder.py` KHONG co, va
+       do la ly do co che tang nhip cua no chua tung kich hoat dung luc: no chi
+       nhin GPU. Ngay 03/09 may dut ba lan, ca ba lan GPU deu lanh.
+
+    ⚠️ `or` chu khong `and`. Mot may co the chet vi CPU ma GPU van 8 W, hoac vi
+       VRAM ma CPU van 3%. Bat ky duong nao cung dang tang do phan giai.
+    """
+    if mau.get("cpu", 0) >= CANG_CPU:
+        return True
+    if mau.get("ram_trong_gib", 999) <= CANG_RAM_GIB:
+        return True
+    if mau.get("swap_dung_gib", 0) >= CANG_SWAP_GIB:
+        return True
+    for c in mau.get("gpu", []):
+        if c.get("nhiet_c", 0) >= CANG_NHIET_C:
+            return True
+        tran = c.get("dien_tran_w", 0)
+        if tran and c.get("dien_w", 0) / tran >= CANG_DIEN_TI_LE:
+            return True
+        if c.get("vram_trong_mb", 1e9) <= CANG_VRAM_TRONG_MB:
+            return True
+        try:
+            if int(c.get("co", "0x0"), 16) & SMI_CO_LO:
+                return True
+        except (ValueError, TypeError):
+            pass
+    return False
+
+
+def _ghi(f, dong: dict) -> None:
+    """Mot dong, xuong dia NGAY.
+
+    ⛔ Ca `flush` LAN `fsync`. `flush` day khoi buffer cua Python; `fsync` day
+       khoi buffer cua HE DIEU HANH. Mot lan mat dien khong ton trong cai nao,
+       va thu con nam trong buffer la thu khong bao gio doc lai duoc — dung luc
+       no dang gia nhat.
+    """
+    f.write(json.dumps(dong, ensure_ascii=False) + "\n")
+    f.flush()
+    try:
+        os.fsync(f.fileno())
+    except OSError:
+        pass
+
+
+def _ban_ghi_phien() -> dict:
+    """Ban ghi mo dau moi lan hop den bat dau ghi vao mot tep.
+
+    🔑 **`khoi_dong_luc` la truong quan trong nhat o day**, va la thu ca hai hop
+       den truoc deu thieu. No cho phep `--kham` tra loi dut khoat mot cau hoi
+       ma truoc do chi doan duoc:
+
+         khoang dut + moc khoi dong DOI  => MAY da khoi dong lai
+         khoang dut + moc khoi dong Y NGUYEN => chi HOP DEN dung, may van song
+
+    🔴 Toi da doc sai dung cho nay: mot khoang im lang 79 giay trong nhat ky
+       duoc ket luan la "may chet", trong khi telemetry cua mot cong cu khac cho
+       thay may van ghi binh thuong suot khoang do — that ra chi la ban hop den
+       cua toi bi khoi dong lai. Mot truong nay xoa han lop suy doan do.
+    """
+    ra = {"t": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+          "loai": "phien", "pid": os.getpid()}
+    try:
+        import psutil
+        ra["khoi_dong_luc"] = int(psutil.boot_time())
+        ra["loi_vat_ly"] = psutil.cpu_count(logical=False)
+        ra["loi_logic"] = psutil.cpu_count()
+        ra["ram_tong_gib"] = round(psutil.virtual_memory().total / 2**30, 1)
+    except (ImportError, OSError):
+        pass
+    try:
+        r = subprocess.run(
+            ["nvidia-smi",
+             "--query-gpu=index,name,memory.total,power.limit,power.max_limit",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=8,
+            creationflags=0x08000000 if os.name == "nt" else 0)
+        card = []
+        for d in r.stdout.strip().splitlines():
+            c = [x.strip() for x in d.split(",")]
+            if len(c) >= 5:
+                card.append({"id": c[0], "ten": c[1], "vram_tong_mb": _so(c[2]),
+                             "dien_tran_w": _so(c[3]), "dien_max_w": _so(c[4])})
+        if card:
+            ra["gpu_co_san"] = card
+            # ⚠️ Tong tran dien cua CAC card la con so dang ghi mot lan: hai card
+            #    180 W la 360 W chi rieng GPU. Khi doc lai mot lan may chet, biet
+            #    tran nay giup doi chieu voi `dien_tong_w` cua tung mau.
+            ra["dien_tran_tong_w"] = sum(x.get("dien_tran_w") or 0 for x in card)
+    except (OSError, subprocess.SubprocessError, ValueError):
+        pass
+    return ra
+
+
+def chay() -> int:
+    """Vong lap ghi. Chay nen, khong in gi tru khi hong."""
+    try:
+        import psutil
+        psutil.cpu_percent(interval=None)          # dat moc cho lan do dau
+        for p in psutil.process_iter():
+            try:
+                p.cpu_percent(None)
+            except psutil.Error:
+                pass
+    except ImportError:
+        print("[hop den] khong co psutil - khong ghi duoc")
+        return 1
+
+    # ⛔ Mot ban dang chay roi thi DUNG, dung ghi chen.
+    #
+    # 🔴 Tu 03/09 co BA duong khoi dong hop den: `BAT.bat` (bam tay), muc
+    #    Startup (tu chay khi dang nhap), va lenh tay cua toi. Hai ban cung ghi
+    #    vao MOT tep `.jsonl` se cho ra hai day mau tron vao nhau — nhip nhin
+    #    nhu 7 giay thay vi 15, va `_tim_cho_dut` doc nhip do la co so de goi
+    #    mot khoang la "dut". Tuc chinh cai chong-trung nay bao ve phep do
+    #    trung tam cua ca cong cu.
+    #
+    # ⚠️ Loc theo `cmdline[1]`, KHONG quet chuoi ca dong lenh — xem ghi chu dai
+    #    o `trang_thai()`: quet chuoi bat nham thu NHAC DEN no, va loi do da
+    #    xay ra muoi mot lan trong mot ngay.
+    try:
+        import psutil as _ps
+        for _pr in _ps.process_iter(["pid", "cmdline"]):
+            _cl = _pr.info["cmdline"] or []
+            if (len(_cl) > 1 and str(_cl[1]).endswith("giam_sat_may.py")
+                    and _pr.pid != os.getpid()):
+                print(f"[hop den] da co ban dang chay (pid {_pr.pid}) - thoat.")
+                return 0
+    except Exception as exc:  # noqa: BLE001
+        # Fail-OPEN co y: chinh phep kiem hong thi VAN ghi. Mot hop den khong
+        # chay la thiet hai chac chan; hai ban cung ghi chi la nhieu.
+        print(f"[hop den] khong kiem duoc ban trung ({type(exc).__name__}) - chay tiep")
+
+    print(f"[hop den] ghi vao {THU_MUC}, nhip {NHIP_S:.0f}s "
+          f"(xuong {NHIP_NONG_S:.0f}s khi cang). Ctrl-C de dung.")
+    _don_tep_cu()
+    ngay = None
+    f = None
+    try:
+        while True:
+            t = _tep_hom_nay()
+            if t != ngay:
+                if f:
+                    f.close()
+                f = open(t, "a", encoding="utf-8", newline="\n")
+                ngay = t
+                _don_tep_cu()
+                _ghi(f, _ban_ghi_phien())
+            mau = mot_vong()
+            _ghi(f, {"t": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     **mau})
+            # ⭐ Nhip thich nghi. Xem `NHIP_NONG_S` va `_dang_cang`.
+            nong = (time.monotonic() - _cang_luc) < NGUI_S
+            time.sleep(NHIP_NONG_S if nong else NHIP_S)
+    except KeyboardInterrupt:
+        print("\n[hop den] dung.")
+        return 0
+    finally:
+        if f:
+            f.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  KHAM NGHIEM — phan quan trong nhat
+# ══════════════════════════════════════════════════════════════════════════════
+
+def _doc_het(ke_ca_phien: bool = False) -> list[dict]:
+    """Doc het nhat ky.
+
+    ⚠️ Mac dinh BO ban ghi `loai="phien"`. Chung khong co `cpu`/`ram_trong_gib`
+       nen se lam lech moi thong ke, va — quan trong hon — chung nam DUNG sau
+       moi khoang dut, nen de chung trong day mau se lam `_tim_cho_dut` do
+       khoang tu ban ghi phien thay vi tu mau that.
+    """
+    ra = []
+    for t in sorted(THU_MUC.glob("*.jsonl")):
+        for l in t.read_text(encoding="utf-8", errors="replace").splitlines():
+            l = l.strip()
+            if not l:
+                continue
+            try:
+                o = json.loads(l)
+            except ValueError:
+                continue          # dong ghi do dang luc may chet - bo qua
+            if o.get("loai") == "phien" and not ke_ca_phien:
+                continue
+            ra.append(o)
+    return ra
+
+
+def _phien_theo_thoi_gian() -> list[dict]:
+    """Cac ban ghi `phien`, de tra moc khoi dong quanh mot khoang dut."""
+    return [d for d in _doc_het(ke_ca_phien=True) if d.get("loai") == "phien"]
+
+
+def _giay(d: dict) -> float:
+    return datetime.fromisoformat(d["t"]).timestamp()
+
+
+def _tim_cho_dut(dong: list[dict]) -> list[int]:
+    """Chi so cua nhung mau NGAY TRUOC mot khoang trong bat thuong."""
+    # ⚠️ Bam theo nhip THUONG (15s), khong theo nhip dang chay. O che do cang
+    #    nhip la 1s, va mot nguong 3s se goi moi lan may binh tinh tro lai la
+    #    mot "cho dut" — tuc chinh co che tang do phan giai se sinh ra bao dong
+    #    gia hang loat neu nguong di theo no.
+    nguong = NHIP_S * NHIP_COI_LA_DUT
+    return [i for i in range(len(dong) - 1)
+            if _giay(dong[i + 1]) - _giay(dong[i]) > nguong]
+
+
+def _phan_loai_dut(truoc: dict, sau: dict) -> str:
+    """MAY khoi dong lai, hay chi HOP DEN dung? Tra loi bang moc khoi dong.
+
+    🔴 Day la cau hoi toi da tra loi SAI mot lan hom nay: mot khoang im lang 79
+       giay bi ket luan la "may chet", trong khi mot cong cu khac cho thay may
+       van ghi binh thuong suot khoang do. Chenh lech giua hai ket luan nay la
+       chenh lech giua "di tim nguyen nhan treo may" va "di tim vi sao mot tien
+       trinh bi dung" — hai cuoc dieu tra hoan toan khac nhau.
+
+    ⛔ Neu khong co ban ghi phien nao bao quanh, noi thang la KHONG BIET. Mot
+       cau tra loi "co le" o day dat hon mot cau "khong ro".
+    """
+    ph = _phien_theo_thoi_gian()
+    t0, t1 = _giay(truoc), _giay(sau)
+    truoc_moc = [d.get("khoi_dong_luc") for d in ph if _giay(d) <= t0]
+    sau_moc = [d.get("khoi_dong_luc") for d in ph if _giay(d) >= t1]
+    a = next((x for x in reversed(truoc_moc) if x), None)
+    b = next((x for x in sau_moc if x), None)
+    if a is None or b is None:
+        return "(khong biet may co khoi dong lai khong - thieu ban ghi phien)"
+    if a != b:
+        from datetime import datetime as _dt
+        return (f"=> MAY DA KHOI DONG LAI (moc khoi dong doi, moc moi "
+                f"{_dt.fromtimestamp(b):%H:%M:%S})")
+    return "=> May KHONG khoi dong lai - chi hop den dung. Tim ly do o tien trinh."
+
+
+def kham(so_lan: int = 1) -> int:
+    if not THU_MUC.is_dir():
+        print(f"[kham] chua co hop den nao o {THU_MUC}")
+        print("       bat bang: python tools/giam_sat_may.py --chay")
+        return 1
+    dong = _doc_het()
+    if len(dong) < 4:
+        print(f"[kham] moi co {len(dong)} mau - chua du de kham")
+        return 1
+
+    cpu_all = [d["cpu"] for d in dong if "cpu" in d]
+    ram_all = [d["ram_trong_gib"] for d in dong if "ram_trong_gib" in d]
+    nen_cpu = statistics.median(cpu_all) if cpu_all else 0
+    nen_ram = statistics.median(ram_all) if ram_all else 0
+    print(f"[kham] {len(dong)} mau tu {dong[0]['t']} den {dong[-1]['t']}")
+    print(f"       NEN cua may nay: CPU trung vi {nen_cpu:.0f}%, "
+          f"RAM trong trung vi {nen_ram:.1f} GiB")
+
+    dut = _tim_cho_dut(dong)
+    if not dut:
+        print("\n[kham] KHONG co cho dut nao - may chua tat/treo trong ky nay.")
+        return 0
+
+    for chi_so in dut[-max(1, so_lan):]:
+        truoc, sau = dong[chi_so], dong[chi_so + 1]
+        khoang = (_giay(sau) - _giay(truoc)) / 60
+        print(f"\n{'='*66}")
+        print(f"DUT luc {truoc['t']} -> chay lai {sau['t']}  (im lang {khoang:.0f} phut)")
+        # 🔑 Phan quyet DUT KHOAT, khong phai suy doan. Xem `_ban_ghi_phien`.
+        print(f"    {_phan_loai_dut(truoc, sau)}")
+        print(f"{'='*66}")
+
+        mau = dong[max(0, chi_so - 5):chi_so + 1]
+        print(f"\n  6 mau cuoi truoc khi dut:")
+        for d in mau:
+            co = "  <-- BAT THUONG" if d.get("cpu", 0) > nen_cpu * 2 + 20 else ""
+            print(f"    {d['t'][11:19]}  CPU {d.get('cpu', 0):5.1f}%  "
+                  f"RAM trong {d.get('ram_trong_gib', 0):5.1f} GiB  "
+                  f"{d.get('so_tien_trinh', 0):4d} tien trinh{co}")
+
+        gom: dict[str, dict] = {}
+        for d in mau:
+            for p in d.get("top", []):
+                k = p["ten"]
+                g = gom.setdefault(k, {"cpu": 0.0, "ram_mb": 0, "lan": 0,
+                                       "nhan": p.get("nhan", "")})
+                g["cpu"] += p["cpu"]
+                g["ram_mb"] = max(g["ram_mb"], p["ram_mb"])
+                g["lan"] += 1
+        if gom:
+            print(f"\n  Ai chiem cho trong 6 mau do (tong CPU, RAM dinh):")
+            for ten, g in sorted(gom.items(), key=lambda x: -x[1]["cpu"])[:8]:
+                nhan = f"  [{g['nhan']}]" if g.get("nhan") else ""
+                print(f"    {ten:20} CPU {g['cpu']:7.1f}  "
+                      f"RAM {g['ram_mb']:6d} MB  ({g['lan']} mau){nhan}")
+
+        # GPU: chi cac mau CO doc GPU (xem `GPU_CACH_S`).
+        mau_gpu = [d for d in mau if d.get("gpu")]
+        if mau_gpu:
+            print(f"{chr(10)}  GPU o {len(mau_gpu)} mau co doc:")
+            for d in mau_gpu[-3:]:
+                cot = "  ".join(
+                    f"#{c['id']} u{c.get('util', 0):3.0f}% "
+                    f"{c.get('vram_mb', 0):6.0f}MB "
+                    f"{c.get('nhiet_c', 0):3.0f}C "
+                    f"{c.get('dien_w', 0):5.1f}/{c.get('dien_tran_w', 0):.0f}W "
+                    f"{c.get('xung_mhz', 0):4.0f}MHz {c.get('pstate', '')}"
+                    for c in d["gpu"])
+                print(f"    {d['t'][11:19]}  tong {d.get('dien_tong_w', 0):5.1f}W  {cot}")
+            for c in mau_gpu[-1]["gpu"]:
+                # ⚠️ Nguong 90% VRAM, khong phai 100%: het VRAM khong bao loi
+                #    sach — driver day sang bo nho he thong va may cham den muc
+                #    trong nhu treo. Do la mot duong VE treo khac han duong het
+                #    RAM, va no khong hien ra o bat cu con so RAM/CPU nao o tren.
+                # ⚠️ `vram_trong_mb` phai CO THAT. Dong ghi truoc ban nay khong
+                #    co truong do; mac dinh 0 se lam `tong == vram_mb` va moi
+                #    dong cu deu bao "VRAM gan day". Mot hop den bao dong sai
+                #    tren chinh du lieu lich su cua no la mot hop den khong ai
+                #    tin nua — va lich su la thu duy nhat no co.
+                if "vram_trong_mb" not in c:
+                    continue
+                tong = c.get("vram_mb", 0) + c["vram_trong_mb"]
+                if tong and c.get("vram_mb", 0) > tong * 0.9:
+                    print(f"    [!] GPU #{c['id']} VRAM gan day "
+                          f"({c['vram_mb']:.0f}/{tong:.0f} MB)")
+                if c.get("nhiet_c", 0) >= CANG_NHIET_C:
+                    print(f"    [!] GPU #{c['id']} NONG {c['nhiet_c']:.0f}C")
+            # 🔑 Co chan xung: thu duy nhat phan biet ba kieu chet. Xem `SMI_CO`.
+            for d in mau_gpu:
+                for c in d.get("gpu", []):
+                    try:
+                        v = int(c.get("co", "0x0"), 16)
+                    except (ValueError, TypeError):
+                        continue
+                    # ⛔ Loc bang `SMI_CO_LO`, khong in moi co. Bit `nhan roi`
+                    #    bat gan nhu lien tuc tren may de ban; in no ra la tao
+                    #    mot canh bao luon bat, tuc mot canh bao vo nghia.
+                    if v & SMI_CO_LO:
+                        ten = ", ".join(_giai_ma_co(c["co"]))
+                        print(f"    [!!] {d['t'][11:19]} GPU #{c['id']} BI CHAN "
+                              f"XUNG: {ten}")
+            giu = None
+            for d in reversed(mau_gpu):
+                if d.get("gpu_app"):
+                    giu = d["gpu_app"]
+                    break
+            if giu:
+                dem: dict = {}
+                for a in giu:
+                    k = a.get("nhan") or a.get("ten") or str(a["pid"])
+                    dem[k] = dem.get(k, 0) + 1
+                print(f"    {len(giu)} tien trinh cham GPU: "
+                      + ", ".join(f"{k}x{v}" if v > 1 else k
+                                  for k, v in list(dem.items())[:10]))
+
+        cuoi = mau[-1]
+        print(f"\n  So voi nen:")
+        d_cpu = cuoi.get("cpu", 0) - nen_cpu
+        d_ram = cuoi.get("ram_trong_gib", 0) - nen_ram
+        print(f"    CPU      {cuoi.get('cpu', 0):.0f}%  "
+              f"({'+' if d_cpu >= 0 else ''}{d_cpu:.0f} diem so voi nen)")
+        print(f"    RAM trong {cuoi.get('ram_trong_gib', 0):.1f} GiB  "
+              f"({'+' if d_ram >= 0 else ''}{d_ram:.1f} GiB)")
+        if cuoi.get("ram_trong_gib", 99) < 3:
+            print("    [!] RAM trong RAT THAP - het bo nho la nguyen nhan hang dau")
+        if cuoi.get("cpu", 0) > 90:
+            print("    [!] CPU bao hoa o mau cuoi")
+        if cuoi.get("swap_dung_gib", 0) > 2:
+            print(f"    [!] SWAP {cuoi['swap_dung_gib']:.1f} GiB - may dang trao "
+                  f"bo nho ra dia, dau hieu SOM cua mot lan treo")
+        if len(mau) >= 2 and "ghi_mb" in mau[-1] and "ghi_mb" in mau[0]:
+            dt = max(1.0, _giay(mau[-1]) - _giay(mau[0]))
+            toc_ghi = (mau[-1]["ghi_mb"] - mau[0]["ghi_mb"]) / dt
+            toc_doc = (mau[-1].get("doc_mb", 0) - mau[0].get("doc_mb", 0)) / dt
+            print(f"    Dia: doc {toc_doc:.0f} MB/s, ghi {toc_ghi:.0f} MB/s "
+                  f"(trung binh {dt:.0f}s cuoi)")
+
+    print("\n[kham] Day la SO LIEU, khong phai ket luan. Doi chieu voi:")
+    print("       - nhat ky lenh:  python tools/nhat_ky_chay.py --xem 3")
+    print("       - log bot:       D:/FULL AUTO VIDEO/*/logs/")
+    print("       - phien khac:    ListAgents")
+    return 0
+
+
+def trang_thai() -> int:
+    try:
+        import psutil
+    except ImportError:
+        print("khong co psutil")
+        return 1
+    # ⛔ Loc theo `cmdline[1]`, KHONG quet chuoi trong ca dong lenh.
+    #
+    # 🔴 Lan thu MUOI MOT cua cung mot loi trong ngay 03/09: ban dau dong nay
+    #    la `any("giam_sat_may" in str(c) for c in cmdline)`, va no bat ba
+    #    **shell wrapper** cua chinh cau lenh vua go — cmdline cua chung chua
+    #    chuoi do vi no la cau lenh. Bao "DANG CHAY pid [3 cai]" cho mot thu
+    #    khong chay.
+    #
+    #    Cung lop loi da bat "7 tien trinh gate.py" (that ra 1) va "5 tien trinh
+    #    test_nhanh" (that ra 1). **Quet chuoi bat nham thu NHAC DEN no.**
+    dang = []
+    for pr in psutil.process_iter(["pid", "cmdline"]):
+        cl = pr.info["cmdline"] or []
+        if len(cl) > 1 and str(cl[1]).endswith("giam_sat_may.py")                 and pr.pid != os.getpid():
+            dang.append(pr.pid)
+    print(f"hop den: {'DANG CHAY pid ' + str(dang) if dang else 'KHONG chay'}")
+    if THU_MUC.is_dir():
+        tep = sorted(THU_MUC.glob("*.jsonl"))
+        print(f"tep: {len(tep)} ngay, moi nhat: {tep[-1].name if tep else '(khong)'}")
+    return 0
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="Hop den cua may.")
+    p.add_argument("--chay", action="store_true", help="vong lap ghi (chay nen)")
+    p.add_argument("--kham", nargs="?", type=int, const=1, default=None,
+                   help="kham nghiem N lan dut gan nhat")
+    p.add_argument("--trang-thai", action="store_true")
+    a = p.parse_args()
+    if a.chay:
+        return chay()
+    if a.kham is not None:
+        return kham(a.kham)
+    if a.trang_thai:
+        return trang_thai()
+    p.print_help()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 
@@ -301058,6 +302777,264 @@ if __name__ == "__main__":
 
 @@@LTT_PROFILE_FILE_END@@@
 
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/nhat_ky_chay.py
+SHA256=6b94270120084edabfa0ab70dcdcfd7238dbccba2a9afc6ab41783984214df54 BYTES=10051 LINES=252
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""nhat_ky_chay.py — ghi nhat ky MOT luot chay nang, chiu duoc mot lan treo may.
+
+    python tools/nhat_ky_chay.py -- python tools/gate.py --phien X
+    python tools/nhat_ky_chay.py --xem            # doc lai luot gan nhat
+    python tools/nhat_ky_chay.py --xem 3          # ba luot gan nhat
+
+## Vi sao no ton tai
+
+Ngay 03/09 may bi reset **hai lan** vi qua tai. Ca hai lan, cau hoi "cai gi lam
+treo" khong tra loi duoc — khong phai vi kho manh moi, ma vi **khong con gi de
+doc**. Moi thu nam trong RAM cua mot tien trinh da chet.
+
+Ba ung vien cho lan dau (gate / 45 tien trinh ngoai gate / chinh phep do cua
+toi) khong phan biet duoc, va doan la vo ich. Mot lan reset khong co nhat ky la
+mot lan hoc duoc **khong gi ca**.
+
+⇒ Tep nay doi lay dieu do bang mot thu re: mot dong JSON moi vai giay, **flush
+  ngay**, ngoai cay kho.
+
+## Ba quyet dinh thiet ke, va ly do tung cai
+
+### 1. `flush()` + `os.fsync()` sau MOI dong
+
+Khong co buffer. Mot lan treo may khong cho tien trinh co hoi dong tep, nen bat
+cu thu gi con nam trong buffer la thu **khong bao gio** doc lai duoc — dung luc
+no dang gia nhat.
+
+⚠️ `fsync` moi dong la cham. Do la lua chon co y: nhip lay mau tinh bang giay,
+   nen chi phi khong dang ke, va thu ta mua duoc la ca phep do.
+
+### 2. Ngoai cay kho (`%TEMP%`)
+
+`gate._anh_chup_cay()` quet `tools/`, `tests/`, `apps/`… de phat hien cay doi
+giua chung. Mot tep nhat ky ghi lien tuc trong do se lam gate tu bao "CAY DA DOI
+TRONG LUC CHAY" va **tu vut bo phep do cua chinh no**. Cung lop loi voi
+`cua_so_yen`, va no da duoc ghi ra o do.
+
+### 3. Lay mau THUA va NHE — chi tong may
+
+⛔ Bai hoc dat nhat cua ngay 03/09: **chinh phep do cua toi la mot trong ba nghi
+   can.** Ban dau toi quet `process_iter` qua 58 tien trinh, goi `cpu_percent`
+   cho tung cai, lap 5 lan — roi khong loai tru duoc chinh no khoi danh sach
+   nguyen nhan lam treo may.
+
+⇒ Mac dinh **8 giay/mau**, va moi mau chi doc **ba con so cua toan may**
+  (cpu_percent, RAM trong, so tien trinh). Khong duyet tien trinh, khong doc
+  cmdline, khong tinh cay con. Chi tiet do de danh cho `--sau` chay MOT LAN o
+  dau va cuoi.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import tempfile
+import threading
+import time
+from datetime import datetime, timezone
+from pathlib import Path
+
+#: Ngoai cay kho — xem muc 2 dau tep.
+THU_MUC = Path(tempfile.gettempdir()) / "ltt_nhat_ky_chay"
+
+#: Giay giua hai mau. Thua co y: phep do khong duoc thanh mot nghi can.
+NHIP_S = 8.0
+
+
+def _anh_chup_nhe() -> dict:
+    """Ba con so cua TOAN MAY. Khong duyet tien trinh.
+
+    🔴 **Thu tep nay ngay khi viet xong, va no ra HAI loi lien tiep** — ca hai
+       deu khien nhat ky ghi `0%` cho mot may dang chay 100%:
+
+         1. `interval=None` lan goi DAU tra 0.0 (khong co moc so sanh)
+         2. `interval=None` giu trang thai TOAN CUC, ma ham nay duoc goi tu HAI
+            luong — chung giam moc cua nhau, nen mau o GIUA cung ra 0%
+
+    ⇒ `interval=0.2`: tu do trong khoang do, khong phu thuoc lan goi truoc, an
+      toan voi nhieu luong. Gia la chan 0,2s moi mau (2,5% cua nhip 8s).
+
+    ⚠️ Mot ham do tra ve 0.0 trong y het mot may dang ranh. Neu khong thu, ca
+       hai loi nay chi lo ra **sau mot lan treo** — dung luc khong sua duoc nua.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return {}
+    try:
+        m = psutil.virtual_memory()
+        # ⛔ `interval=0.2`, KHONG phai `None`.
+        #
+        # 🔴 Loi thu HAI tim ra khi thu tep nay: `interval=None` giu trang thai
+        #    TOAN CUC trong psutil, va ham nay duoc goi tu HAI luong — luong
+        #    chinh (`bat_dau`/`ket_thuc`) va luong lay mau. Hai luong giam moc
+        #    cua nhau ⇒ mau o giua ra `0%` cho mot may dang chay 100%.
+        #
+        # ⭐ `interval=0.2` tu do trong khoang do, khong phu thuoc lan goi truoc,
+        #    nen an toan voi nhieu luong. Gia: chan 0,2s moi mau — voi nhip 8s
+        #    thi la 2,5%, doi lay mot con so dung.
+        return {"cpu": psutil.cpu_percent(interval=0.2),
+                "ram_trong_gib": round(m.available / 2**30, 2),
+                "so_tien_trinh": len(psutil.pids())}
+    except Exception as exc:  # noqa: BLE001 - do tai khong duoc lam hong lan chay
+        return {"loi_do": f"{type(exc).__name__}: {exc}"}
+
+
+def _anh_chup_sau() -> dict:
+    """Chi tiet, chay DUNG MOT LAN o dau va cuoi. Xem muc 3 dau tep."""
+    try:
+        import psutil
+    except ImportError:
+        return {}
+    ra = []
+    try:
+        for p in psutil.process_iter(["pid", "name", "cmdline", "create_time"]):
+            ten = (p.info["name"] or "").lower()
+            if not ten.startswith(("python", "node", "ffmpeg", "pwsh")):
+                continue
+            cl = " ".join(p.info["cmdline"] or [])[:100]
+            ra.append({"pid": p.info["pid"], "ten": ten,
+                       "tuoi_phut": round((time.time() - p.info["create_time"]) / 60, 1),
+                       "lenh": cl})
+    except Exception as exc:  # noqa: BLE001
+        return {"loi_do": f"{type(exc).__name__}: {exc}"}
+    ra.sort(key=lambda x: -x["tuoi_phut"])
+    return {"tien_trinh": ra[:25], "tong": len(ra)}
+
+
+class NhatKy:
+    """Ghi tung dong, flush + fsync ngay. Xem muc 1 dau tep."""
+
+    def __init__(self, ten_luot: str):
+        THU_MUC.mkdir(parents=True, exist_ok=True)
+        dau = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.tep = THU_MUC / f"{dau}_{ten_luot}.jsonl"
+        self._f = open(self.tep, "a", encoding="utf-8", newline="\n")
+
+    def ghi(self, loai: str, **truong) -> None:
+        dong = {"t": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "loai": loai, **truong}
+        self._f.write(json.dumps(dong, ensure_ascii=False) + "\n")
+        # ⛔ Ca hai deu can. `flush` day khoi buffer cua Python; `fsync` day khoi
+        #    buffer cua HE DIEU HANH. Mot lan treo may khong ton trong cai nao.
+        self._f.flush()
+        try:
+            os.fsync(self._f.fileno())
+        except OSError:
+            pass
+
+    def dong(self) -> None:
+        try:
+            self._f.close()
+        except OSError:
+            pass
+
+
+def chay_va_ghi(argv: list[str], *, nhip: float = NHIP_S) -> int:
+    ten = Path(argv[1]).stem if len(argv) > 1 else "lenh"
+    nk = NhatKy(ten)
+    nk.ghi("bat_dau", lenh=" ".join(argv), pid_cha=os.getpid(),
+           **_anh_chup_nhe())
+    nk.ghi("anh_chup_dau", **_anh_chup_sau())
+
+    t0 = time.monotonic()
+    # BELOW_NORMAL giong `gate._run`, de nhat ky khong doi hanh vi lan chay.
+    them = {"creationflags": 0x00004000} if os.name == "nt" else {}
+    p = subprocess.Popen(argv, **them)
+
+    dung = threading.Event()
+
+    def lay_mau() -> None:
+        while not dung.wait(nhip):
+            nk.ghi("mau", giay=round(time.monotonic() - t0, 1), **_anh_chup_nhe())
+
+    th = threading.Thread(target=lay_mau, daemon=True)
+    th.start()
+    try:
+        ma = p.wait()
+    finally:
+        dung.set()
+        th.join(timeout=2)
+        nk.ghi("ket_thuc", ma=p.returncode,
+               giay=round(time.monotonic() - t0, 1), **_anh_chup_nhe())
+        nk.ghi("anh_chup_cuoi", **_anh_chup_sau())
+        nk.dong()
+    print(f"\n[nhat ky] {nk.tep}")
+    return ma
+
+
+def xem(so_luot: int = 1) -> int:
+    """In lai cac luot gan nhat. Dung sau mot lan treo."""
+    if not THU_MUC.is_dir():
+        print(f"chua co nhat ky nao o {THU_MUC}")
+        return 0
+    tep = sorted(THU_MUC.glob("*.jsonl"))[-max(1, so_luot):]
+    if not tep:
+        print("chua co luot nao")
+        return 0
+    for t in tep:
+        print(f"\n=== {t.name} ===")
+        dong = [json.loads(l) for l in t.read_text(encoding="utf-8").splitlines() if l.strip()]
+        ket = [d for d in dong if d["loai"] == "ket_thuc"]
+        if not ket:
+            # 🔴 Day la truong hop tep nay sinh ra de phuc vu: luot chay KHONG
+            #    ket thuc — may treo, hoac bi giet. Nhat ky van con.
+            #
+            # ⛔ **ASCII THUAN o MOI dong `print`.** Loi thu BA cua tep nay, tim
+            #    ra o dung luot dau tien bi cat: dong nay tung co mot emoji, va
+            #    `print` no vo voi `UnicodeEncodeError` tren stdout cp1252 —
+            #    tuc cong cu doc nhat ky **chet dung luc can doc nhat**.
+            #
+            #    Kho nay da co `test_nhanh._ep_utf8()` cho viec do, nhung chinh
+            #    docstring cua no canh bao `reconfigure` co the vang mat duoi mot
+            #    trinh hung khac. Nen o day chon cach khong the hong: khong dung
+            #    ky tu ngoai ASCII trong dau ra.
+            print("  [!] KHONG CO DONG `ket_thuc` - luot nay bi cat giua chung")
+        mau = [d for d in dong if d["loai"] == "mau" and "cpu" in d]
+        if mau:
+            dinh = max(mau, key=lambda d: d["cpu"])
+            it_ram = min(mau, key=lambda d: d.get("ram_trong_gib", 999))
+            print(f"  {len(mau)} mau | CPU dinh {dinh['cpu']:.0f}% luc "
+                  f"{dinh.get('giay', 0):.0f}s | RAM trong thap nhat "
+                  f"{it_ram.get('ram_trong_gib', '?')} GiB")
+        for d in dong:
+            if d["loai"] in ("bat_dau", "ket_thuc"):
+                print(f"  {d['t']} {d['loai']}: "
+                      f"{d.get('lenh') or 'ma=' + str(d.get('ma'))}")
+    return 0
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(
+        description="Chay mot lenh nang va ghi nhat ky chiu duoc treo may.")
+    p.add_argument("--xem", nargs="?", type=int, const=1, default=None,
+                   help="doc lai N luot gan nhat thay vi chay gi")
+    p.add_argument("--nhip", type=float, default=NHIP_S)
+    p.add_argument("lenh", nargs=argparse.REMAINDER,
+                   help="dat sau `--`, vi du: -- python tools/gate.py")
+    a = p.parse_args()
+
+    if a.xem is not None:
+        return xem(a.xem)
+    argv = [x for x in a.lenh if x != "--"]
+    if not argv:
+        p.error("thieu lenh. Vi du: nhat_ky_chay.py -- python tools/gate.py")
+    return chay_va_ghi(argv, nhip=a.nhip)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
 @@@LTT_PROFILE_FILE_BEGIN@@@ tools/prepare_agent_canary.py
 SHA256=2291b6379e06091ea614d292ffcbfc739f77d00639e8337de16ba685342e10ff BYTES=3411 LINES=87
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
@@ -305462,6 +307439,253 @@ def main(argv=None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tools/tai_may.py
+SHA256=6eace192416b17b6738e82792b82e1325dd62da4e11867501002cd5cfb4a2ff0 BYTES=9947 LINES=241
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""tai_may.py — may con cho mot luot do dat tien khong.
+
+    python tools/tai_may.py            # phan quyet: RANH / BAN / QUA TAI
+    python tools/tai_may.py --cho 900  # doi toi khi ranh, toi da 15 phut
+
+## ⚠️ TEP NAY KHONG DANH CHO `gate.py`. Doc muc nay truoc khi noi no vao do.
+
+Ban dau toi viet no de them mot "cua CPU" cho gate. Roi doc `gate.py` va thay
+gate **da co hai lop bao ve**, va lop thu hai manh hon thu toi dinh xay:
+
+    gate.py:110   ngan_sach_loi() = cpu_count() - 6   -> 14 luong, khong phai 20
+    gate.py:591   UU_TIEN_THAP = BELOW_NORMAL_PRIORITY_CLASS tren MOI tien trinh con
+
+Docstring cua chinh no da noi ro vi sao lop thu hai la lop that su chiu luc:
+
+    "lop thu nhat (ngan sach loi) la mot phep TINH — con phep tinh thi co the
+     sai. Uu tien thi khong: du gate co tinh nham bao nhieu, he dieu hanh van
+     cho `LTTStudioWeb` chay truoc."
+
+⇒ Them mot cua CPU truoc `bo test` la **canh mot cua da co nguoi canh**, va canh
+  bang mot phep do te hon: mot nguong 80% doan tu ben ngoai, thay cho mot co che
+  hang doi cua he dieu hanh.
+
+## ⇒ Vay no dung o dau
+
+Ba cho ma hai lop tren KHONG voi toi:
+
+1. **`python -m pytest ...` chay thang.** Khong qua gate ⇒ khong ngan sach loi,
+   khong uu tien thap. Day la duong toi dung nhieu nhat khi lam viec, va no la
+   duong khong duoc bao ve nhat.
+
+2. **RAM.** `BELOW_NORMAL_PRIORITY_CLASS` xep hang CPU, no khong nhuong bo nho.
+   Muoi bon tien trinh Python cong voi mot model that (`LTT_TEST_NANG=1` nap
+   demucs/whisper) khong bi uu tien thap cuu khoi mot lan het RAM.
+
+3. **Truoc khi bat `LTT_TEST_NANG`.** Do la luc duy nhat mot phep kiem duoc phep
+   nap trong so model that; do tai truoc la re, va la thoi diem no dang gia nhat.
+
+## Va mot cho `cua_so_yen` khong the voi toi, do duoc
+
+    11:38 03/09   cua_so_yen trang-thai  ->  RANH - khong tai nguyen nao bi giu
+                  CPU                    ->  65%
+
+Khong ai giu khoa, may van chay 65%. Nhung thu chiem cho do — bon dich vu
+production, mot lan deploy, mot phien khac chay pytest thang, mot job cua khach —
+khong di qua `cua_so_yen` va **khong the di qua no**. Do la mot lo hong THIET KE
+cua khoa, khong phai mot loi: khoa la per-RUN, tai la per-MAY.
+
+## ⛔ Vi sao no CHI DOC, va khong tu chan ai
+
+Khong khoa gi, khong giet gi, khong sua hanh vi cua `gate.py`. In mot phan quyet
+va tra ma thoat. Nguoi goi quyet dinh.
+
+## Phan quyet dua tren RAM, khong dua tren CPU. Day la phan quan trong nhat.
+
+  RANH     RAM trong > 8 GiB
+  BAN      RAM trong 4-8 GiB
+  QUA TAI  RAM trong < 4 GiB
+
+CPU **duoc in ra nhung khong tham gia phan quyet**, va do la mot quyet dinh chu
+khong phai mot thieu sot.
+
+🔴 **Ban dau toi cho CPU vao phan quyet (RANH <50%, QUA TAI >80%). Phien
+   `lttstudiosapp-73` pha no bang mot phep do.** Cung may, cung ngay, cung bon
+   dich vu, khong luot gate nao chay:
+
+       ~13:0x   CPU nen 27%   (≈ 5 loi)
+       ~21:2x   CPU nen  3%
+
+   Chenh gan **muoi lan**. Mot nguong co dinh kieu "tren 80% thi doi" se ngoan
+   luc 21h va cam cua luc 13h, trong khi khong co gi ve phia gate thay doi ca.
+   (`LOI_DE_DANH_CHO_MAY = 6` cua ho lay tu con so 27% — tu truong hop XAU, co
+   y, vi mot phep do luc ranh la san cua truong hop tot.)
+
+⭐ RAM trong on dinh hon nhieu, va no dung la manh ma hai lop bao ve cua gate
+   khong che: `BELOW_NORMAL_PRIORITY_CLASS` xep hang CPU, no **khong nhuong bo
+   nho**. Muoi bon tien trinh Python cong mot model that khong duoc uu tien thap
+   cuu khoi mot lan het RAM.
+
+⚠️ Va la RAM TRONG, khong phai phan tram da dung: con so can tra loi la "con bao
+   nhieu de mo 14 tien trinh nua", khong phai "da dung bao nhieu".
+
+⚠️ CPU van do trung binh 2 giay chu khong lat cat — mot lat cat trung luc mot
+   tien trinh vua thuc day se doc 100% cho mot may dang ranh. No o day de nguoi
+   doc co ngu canh, khong de may quyet dinh.
+
+🔴 Va tam GiB van la mot nguong DE XUAT tu mot lan do, khong phai hang so da
+   chung minh. No o day de co mot con so chung thay vi moi phien tu doan mot
+   kieu.
+
+## ⛔ Va mot ly do nua de KHONG noi cai nay vao `gate.py`
+
+Phien `lttstudiosapp-73` chi ra mot the khoa chet ma `cua_so_yen` hien khong co:
+
+    gate A: GIU khoa cpu_nhieu  ->  doi tai giam
+    gate B: doi khoa cpu_nhieu
+    nguon tai that: LTTStudioWorker dang chay mot job cua KHACH
+
+A doi mot thu **no khong gay ra va khong ket thuc duoc**, trong luc chan B. Ca
+hai dung im cho toi khi khach kia xong.
+
+⇒ Neu sau nay co ai noi phep do nay vao mot duong co khoa: dat no **truoc** khi
+  xin khoa, dung dat sau. Va dung bao gio de no **chan** — `_chay_theo_lich` da
+  ghi cung bai hoc: *"tu choi chay thi cong chat luong thanh vo dung tren may
+  nho, va do la kieu hong te hon han cham."* Mot cua bi chan se de ra mot co
+  `--bo-qua-cua-tai`, va tu do cua ay khong con ton tai.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+import time
+
+RANH = "RANH"
+BAN = "BAN"
+QUA_TAI = "QUA TAI"
+
+#: Trung binh CPU do trong bao lau. Xem ghi chu dau tep.
+CUA_SO_DO_S = 2.0
+
+#: ⛔ KHONG co nguong CPU. Xem muc "Phan quyet dua tren RAM" o dau tep: nen CPU
+#:    cua may nay bien dong gan muoi lan trong mot ngay (27% -> 3%), nen mot
+#:    nguong CPU co dinh se bat sai theo gio chu khong theo tai that.
+NGUONG_RAM_TRONG_BAN_GIB = 8.0
+NGUONG_RAM_TRONG_QUA_TAI_GIB = 4.0
+
+
+def do() -> dict:
+    """`{cpu, ram_trong_gib, loi, phan_quyet, ly_do}`.
+
+    Tra `phan_quyet=None` khi khong do duoc — **khong** doan la RANH. Mot phep
+    do that bai va mot may ranh khong duoc phep trong giong nhau.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return {"phan_quyet": None, "ly_do": "khong co psutil - khong do duoc",
+                "cpu": None, "ram_trong_gib": None, "loi": None}
+
+    cpu = psutil.cpu_percent(interval=CUA_SO_DO_S)
+    bo_nho = psutil.virtual_memory()
+    trong = bo_nho.available / (1024 ** 3)
+    loi = psutil.cpu_count() or 0
+
+    # Chi RAM quyet dinh. CPU chi di kem de nguoi doc co ngu canh.
+    if trong < NGUONG_RAM_TRONG_QUA_TAI_GIB:
+        pq, ly_do = QUA_TAI, "RAM trong qua thap - 14 tien trinh nua rat de het"
+    elif trong < NGUONG_RAM_TRONG_BAN_GIB:
+        pq, ly_do = BAN, "RAM trong dang hep - nen chay cum nho, dung bat model that"
+    else:
+        pq, ly_do = RANH, "du bo nho cho mot luot day du"
+    return {"phan_quyet": pq, "ly_do": ly_do, "cpu": cpu,
+            "ram_trong_gib": trong, "loi": loi}
+
+
+def ai_chiem_cho(toi_da: int = 8) -> list[dict]:
+    """Tien trinh python dang chay, KEM tuoi va cay cha. De biet AI chiem cho.
+
+    🔴 **Ham nay sinh ra tu mot lan reset may 03/09 ma toi khong dieu tra duoc.**
+
+       Do ngay truoc luc do: cay `gate.py` co 13 tien trinh (dung ngan sach 10
+       worker), nhung toan may co **58** tien trinh python. Tuc gate chi la 13/58,
+       va ngan sach loi — thu toi vua bo cong sua — chi dieu tiet duoc dung phan
+       do. 45 cai con lai khong di qua co che nao.
+
+    ⛔ Khi may reset, bang chung mat het. Khong co ban chup nao truoc do, nen ba
+       ung vien (gate / 45 tien trinh kia / chinh phep do) khong phan biet duoc,
+       va doan la vo ich.
+
+    ⇒ Ham nay khong sua duoc gi. No chi de lan sau co **du lieu** thay vi mot gia
+      thuyet. Chay no TRUOC mot luot nang, va giu ket qua.
+
+    ⚠️ Chinh no cung ton CPU (`process_iter` + `cpu_percent`), nen no lay MOT lat
+       cat roi thoi — khong lap, khong theo doi lien tuc.
+    """
+    try:
+        import psutil
+    except ImportError:
+        return []
+    ra = []
+    for p in psutil.process_iter(["pid", "ppid", "name", "create_time", "cmdline"]):
+        ten = (p.info["name"] or "").lower()
+        if not ten.startswith("python"):
+            continue
+        cl = " ".join(p.info["cmdline"] or [])
+        ra.append({
+            "pid": p.info["pid"], "ppid": p.info["ppid"],
+            "tuoi_phut": max(0.0, (time.time() - p.info["create_time"]) / 60),
+            "lenh": cl[:70] or "(khong doc duoc)",
+        })
+    # Gia nhat truoc: mot tien trinh python song hang gio thuong la XAC mo coi.
+    ra.sort(key=lambda x: -x["tuoi_phut"])
+    return ra[:toi_da]
+
+
+def _in(k: dict) -> None:
+    if k["phan_quyet"] is None:
+        print(f"KHONG DO DUOC: {k['ly_do']}")
+        return
+    print(f"CPU {k['cpu']:.0f}% tren {k['loi']} loi | "
+          f"RAM trong {k['ram_trong_gib']:.1f} GiB")
+    print(f"RESULT: {k['phan_quyet']} - {k['ly_do']}")
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="May con cho mot luot do dat tien khong.")
+    p.add_argument("--cho", type=float, default=0.0,
+                   help="doi toi khi RANH, toi da bao nhieu giay (0 = do mot lan)")
+    p.add_argument("--nhip", type=float, default=20.0, help="giay giua hai lan do")
+    p.add_argument("--ai", action="store_true",
+                   help="liet ke tien trinh python gia nhat - de biet AI chiem cho")
+    a = p.parse_args()
+
+    if a.ai:
+        ds = ai_chiem_cho()
+        print(f"{len(ds)} tien trinh python gia nhat:")
+        for x in ds:
+            print(f"  pid {x['pid']:6d} ppid {x['ppid']:6d} "
+                  f"{x['tuoi_phut']:7.1f} phut  {x['lenh']}")
+        print()
+
+    bat_dau = time.time()
+    while True:
+        k = do()
+        _in(k)
+        if k["phan_quyet"] in (RANH, None):
+            # ⛔ `None` (khong do duoc) tra ve 0 co chu y: mot cong cu do khong
+            #    chay duoc khong duoc phep tro thanh mot cai chan. No da noi ro
+            #    la khong do duoc, va do la thong tin nguoi goi can.
+            return 0
+        if a.cho <= 0 or time.time() - bat_dau >= a.cho:
+            # 2 = con ban, 3 = qua tai. Khac nhau vi hai tinh huong doi hai
+            # phan ung khac nhau: mot cai nen doi, mot cai nen dung han.
+            return 2 if k["phan_quyet"] == BAN else 3
+        print(f"  [tai may] doi {a.nhip:.0f}s roi do lai "
+              f"(da doi {(time.time() - bat_dau) / 60:.1f} phut)\n")
+        time.sleep(a.nhip)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -39,6 +39,19 @@ param(
 $ErrorActionPreference = 'Stop'
 if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
 
+# !! DUNG NGAY O DAY, TRUOC MOI THU KHAC.
+#
+#    Mot cua so PowerShell mo bang `Start-Process -Verb RunAs` bat dau o
+#    C:\Windows\System32, KHONG phai o thu muc chua script. Nen moi duong dan
+#    TUONG DOI trong script nay -- ke ca `-Json tmp\do_bai_dai.json` mac dinh --
+#    tro vao thu muc he thong.
+#
+#    Da xay ra that 03/09/2026: ket qua phep do nam o
+#    C:\Windows\System32\tmp\do_bai_dai.json. No ghi duoc vi tien trinh dang
+#    nang quyen, va no khong bao loi gi ca. Mot script nang quyen ma ghi duong
+#    dan tuong doi la mot script ghi vao System32.
+Set-Location -LiteralPath $Repo
+
 $envFile = Join-Path $Root 'secrets\app.env'
 $tool    = Join-Path $Repo 'tools\do_bai_dai.py'
 $entry   = Join-Path $Repo 'voice_sidecar_main.py'

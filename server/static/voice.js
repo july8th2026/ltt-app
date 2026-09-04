@@ -743,6 +743,18 @@
      *    hai cho tinh tien la hai cho lech nhau, nen cho nay khong bao gio duoc
      *    la nguon cua con so bi tru. No la mot uoc luong tho de khach khong bi
      *    bat ngo; `POST /xem-truoc` moi cho con so dung. */
+    /* Doc "1h 05m" / "9m 30s" / "45s". Khong dung toLocaleString: no khac nhau
+       giua cac trinh duyet, va mot uoc so thi khong can dia phuong hoa. */
+    function docThoiLuong(giay) {
+      var g = Math.max(1, Math.round(giay));
+      var h = Math.floor(g / 3600), p = Math.floor((g % 3600) / 60), s = g % 60;
+      if (h) return h + "h " + (p < 10 ? "0" : "") + p + "m";
+      if (p) return p + "m " + (s < 10 ? "0" : "") + s + "s";
+      return s + "s";
+    }
+
+    var oUocDai = document.getElementById("lv-uoc-dai");
+
     function dem() {
       var n = oText.value.length;
       oSo.textContent = String(n);
@@ -750,6 +762,34 @@
       if (tran) oSo.classList.toggle("sap-tran", n >= tran * 0.9);
       if (oUocDong) oUocDong.hidden = n === 0;
       if (oUoc && n) oUoc.textContent = String(Math.max(1, Math.ceil((1.5 + n / 18) * 0.2)));
+
+      /* ⭐ THOI LUONG + SO DOAN, hien ngay khi go.
+       *
+       *    Truoc 03/09 o dem chi noi "0 / 1500 ky tu", va 1.500 khi ay la tran
+       *    cua MODEL — tuc giao dien dang phoi mot gioi han ky thuat ra lam
+       *    gioi han san pham. Nay tran la ngan sach tai nguyen, va thu khach
+       *    that su muon biet la bai nay DAI BAO LAU.
+       *
+       * ⚠️ `kyTuMoiGiay` lay tu `gia.KY_TU_MOI_GIAY_UOC` — CUNG hang so ma
+       *    phan giu credit dung. Go mot ti le rieng o day la de giao dien va
+       *    hoa don noi hai con so khac nhau ve cung mot van ban.
+       *
+       * ⚠️ So doan la UOC (phep chia don gian). So chinh xac do `/xem-truoc`
+       *    tra ve vi no chay dung `chia_doan`. */
+      if (oUocDai) {
+        var tocDo = cfg.kyTuMoiGiay || 18;
+        var moiLuot = cfg.tranMoiLuot || 0;
+        if (!n || !moiLuot) {
+          oUocDai.hidden = true;
+        } else {
+          var soDoan = Math.max(1, Math.ceil(n / moiLuot));
+          var mau = soDoan > 1 ? (chu.uocNhieuDoan || "") : (chu.uocMotDoan || "");
+          oUocDai.textContent = " · " + mau
+            .replace("{t}", docThoiLuong(n / tocDo))
+            .replace("{n}", String(soDoan));
+          oUocDai.hidden = false;
+        }
+      }
     }
     oText.addEventListener("input", dem);
 

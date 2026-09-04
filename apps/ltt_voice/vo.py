@@ -25,7 +25,7 @@ from server.auth.csrf import issue_csrf_token
 
 from . import gia, sidecar_client
 from .manifest import MANIFEST
-from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI, TRAN_MOI_LUOT_SINH
 
 #: Khoá `nav_key` của từng màn. Phải khớp `NavEntry.nav_key` trong `manifest.py`,
 #: và `tests/test_344_ltt_voice_vo.py` chốt hai bên khớp nhau.
@@ -80,6 +80,16 @@ def ngu_canh(request, user, *, nav_key: str, hang_doi: int = 0, **them) -> dict:
         # `nav` là tên mà `base.html` đọc. Đừng đổi tên khoá này cho "gọn hơn".
         "nav": nav_key,
         "tran_ky_tu": TRAN_KY_TU_CONG_KHAI,
+        # ⭐ Giao diện cần CẢ HAI trần, vì chúng nói hai điều khác nhau với
+        #    khách: `tran_ky_tu` là "gửi được bao nhiêu", `tran_moi_luot` là
+        #    "chia làm mấy đoạn". Trước 03/09 chúng là một số nên ô đếm chỉ cần
+        #    một; nay ô đếm ước được số đoạn thì nó cần số thứ hai.
+        "tran_moi_luot": TRAN_MOI_LUOT_SINH,
+        # ⚠️ CÙNG hằng số mà phần giữ credit dùng (`gia.KY_TU_MOI_GIAY_UOC`),
+        #    KHÔNG phải một con số riêng cho giao diện. Hai chỗ ước thời lượng
+        #    bằng hai tỉ lệ khác nhau là hai chỗ nói với khách hai con số khác
+        #    nhau về cùng một văn bản — và họ sẽ tin con số nào tiện hơn.
+        "ky_tu_moi_giay": gia.KY_TU_MOI_GIAY_UOC,
         "bang_gia": gia.bang_gia(),
         "cong_san_sang": sidecar_client.san_sang(),
         "hang_doi": hang_doi,

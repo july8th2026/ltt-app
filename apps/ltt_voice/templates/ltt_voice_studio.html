@@ -183,8 +183,22 @@
                   maxlength="{{ tran_ky_tu }}"
                   aria-labelledby="lv-nh-text" aria-describedby="lv-dem"
                   placeholder="{{ _('Nhập đoạn văn bản bạn muốn đọc thành tiếng…') }}"></textarea>
+        {# ⭐ Ô đếm nói BA điều, không phải một.
+
+             Trước 03/09 nó chỉ hiện `0 / 1500 ký tự`, và con số 1.500 khi ấy là
+             trần của model — tức giao diện đang phơi một giới hạn kỹ thuật ra
+             làm giới hạn sản phẩm, đúng thứ đường tài liệu dài sinh ra để gỡ.
+
+             Nay trần là ngân sách tài nguyên, và thứ khách thật sự muốn biết
+             không phải "còn bao nhiêu ký tự" mà là **bài này dài bao lâu** và
+             **máy sẽ chia làm mấy đoạn**. Hai con số ấy hiện ngay khi gõ.
+
+           ⚠️ Chúng là ƯỚC. Số đoạn chính xác do `/xem-truoc` trả về (nó chạy
+              đúng `chia_doan`); ở đây chỉ là phép chia để khách không bị bất
+              ngờ. Đừng để hai chỗ nói hai con số mà không nói cái nào là ước. #}
         <p class="lv-dem" id="lv-dem">
-          <span id="lv-so">0</span> / {{ tran_ky_tu }} {{ _("ký tự") }}
+          <span id="lv-so">0</span> / {{ "{:,}".format(tran_ky_tu).replace(",", ".") }} {{ _("ký tự") }}
+          <span id="lv-uoc-dai" class="dim" hidden></span>
           {# Cho bao rieng cho phep NHAP TXT. Khong dung `baoLoi`: no
              chuyen ca khoi ket qua sang trang thai LOI, trong nhu job
              hong — trong khi day chi la mot ghi chu ve viec cat bot. #}
@@ -382,6 +396,8 @@
 LttVoice.studio({
   duong: {{ manifest.route_prefix | tojson }},
   tranKyTu: {{ tran_ky_tu | tojson }},
+  tranMoiLuot: {{ tran_moi_luot | tojson }},
+  kyTuMoiGiay: {{ ky_tu_moi_giay | tojson }},
   chu: {
     dangCho:   {{ _("Đang xếp hàng…") | tojson }},
     dangTao:   {{ _("Đang tạo tiếng…") | tojson }},
@@ -392,6 +408,8 @@ LttVoice.studio({
     khongXem:  {{ _("Không xem trước được lúc này.") | tojson }},
     khongDoi:  {{ _("Máy đọc đúng như bạn viết — không có gì phải chuẩn hoá.") | tojson }},
     doanNhieu: {{ _("Văn bản sẽ được chia thành {n} đoạn rồi ghép liền mạch.") | tojson }},
+    uocMotDoan: {{ _("≈ {t} — một lượt đọc") | tojson }},
+    uocNhieuDoan: {{ _("≈ {t} — {n} đoạn, ghép liền mạch") | tojson }},
     daLuuVao:  {{ _("Đã lưu vào") | tojson }},
     xoaMuc:    {{ _("Xoá mục") | tojson }},
     nhapBiCat: {{ _("Tệp dài {n} ký tự, đã cắt còn {t}.") | tojson }},

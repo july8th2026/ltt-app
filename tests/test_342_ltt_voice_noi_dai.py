@@ -64,13 +64,29 @@ def test_van_ban_dai_duoc_chia_chu_khong_bi_tu_choi():
 
 # ── ghép ─────────────────────────────────────────────────────────────────────
 
-def test_ghep_mot_doan_khong_dong_gi():
+def test_ghep_mot_doan_khong_lam_viec_CUA_PHEP_GHEP():
+    """Một đoạn thì không cắt im, không cân mức, không chèn nhịp nghỉ.
+
+    ⚠️ Bản trước của phép kiểm này chốt `np.array_equal(ra, w)` — "không đụng gì
+       cả". Nó đúng về phép GHÉP, nhưng nó vô tình chốt luôn cả việc **không hạ
+       trần đỉnh**, và đó chính là lỗ hổng: bảo đảm −1,0 dBTP khi ấy chỉ tồn tại
+       ở đường nhiều đoạn. Xem `test_ha_tran_dinh_ap_ca_cho_ban_MOT_DOAN`.
+
+    ⭐ Nên nay nó chốt đúng mệnh đề nó vốn muốn: **độ dài không đổi** (không cắt,
+       không chèn) và **tương quan giữa các mẫu không đổi** (không cân mức, chỉ
+       có thể bị nhân bởi một hằng số duy nhất cho cả bản).
+    """
     from voice_sidecar import noi_dai
 
     w = _doan(0.2, 1.0, 0.3)
     ra, ho_so = noi_dai.ghep([w], SR)
     assert ho_so["so_doan"] == 1
-    assert np.array_equal(ra, w), "mot doan thi khong co moi noi nao de sua"
+    assert len(ra) == len(w), "mot doan thi khong co gi de cat hay chen"
+
+    # Chỉ được phép khác nhau đúng một hệ số nhân — tức hình dạng sóng nguyên vẹn.
+    khac_khong = np.abs(w) > 1e-6
+    ty_le = ra[khac_khong] / w[khac_khong]
+    assert np.allclose(ty_le, ty_le[0], rtol=1e-5), "song am bi bien dang"
 
 
 def test_ghep_cat_im_hai_dau_nen_moi_noi_khong_bi_im_gap_doi():
@@ -473,3 +489,47 @@ def test_ghep_tep_canh_bao_mat_khoang_du_khi_luu_pcm16(tmp_path):
     _, ho = noi_dai.ghep([vuot.copy(), vuot.copy()], SR, so_cau=[2, 2])
     assert ho["ha_tran_db"] < 0.0, "phai ha ca ban vi dinh vuot tran"
     assert ho["dinh_truoc_dbtp"] > noi_dai.TRAN_TRUE_PEAK_DBTP
+
+
+def test_ha_tran_dinh_ap_ca_cho_ban_MOT_DOAN():
+    """🔴 Bảo đảm −1,0 dBTP trước 03/09 chỉ thi hành ở đường GHÉP.
+
+    `ghep` nhánh `len == 1` trả thẳng về, và `/v1/speech` không gọi `ghep` bao
+    giờ. Nên bài NGẮN là bài không được bảo đảm — nghịch với trực giác của mọi
+    người, vì phép cân mức (thứ đẩy đỉnh lên) chỉ có ở đường ghép.
+
+    Đo 03/09: bài 1.400 ký tự một lượt ra **−0,78 dBTP**, vượt trần; bản ghép
+    7 đoạn ra −2,11 và tuân thủ.
+
+    ⭐ Một bảo đảm chỉ thi hành ở một nhánh không phải một bảo đảm — nó là một
+       sự trùng hợp của nhánh ấy.
+    """
+    from voice_sidecar import noi_dai
+
+    to = _doan(0.05, 1.0, 0.05, muc=0.9)
+    assert noi_dai.dinh_that(to) > noi_dai.TRAN_TRUE_PEAK_DBTP, "ca thu phai vuot tran"
+
+    ra, ha, truoc = noi_dai.ha_tran_dinh(to)
+    assert ha < 0.0
+    assert truoc is not None and truoc > noi_dai.TRAN_TRUE_PEAK_DBTP
+    assert noi_dai.dinh_that(ra) <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6
+
+    # và `ghep` mot doan cung phai ap
+    mot, ho = noi_dai.ghep([to.copy()], SR, so_cau=[2])
+    assert ho["ha_tran_db"] < 0.0
+    assert noi_dai.dinh_that(mot) <= noi_dai.TRAN_TRUE_PEAK_DBTP + 1e-6
+
+
+def test_ha_tran_dinh_KHONG_dung_toi_ban_da_trong_tran():
+    """Bản đã dưới trần phải đi qua NGUYÊN VẸN — không hạ "cho chắc".
+
+    Hạ một bản vốn đã đúng là làm nhỏ tiếng đi mà không ai yêu cầu, và nó tích
+    luỹ nếu hàm bị gọi hai lần trên cùng dữ liệu.
+    """
+    from voice_sidecar import noi_dai
+
+    nho = _doan(0.05, 1.0, 0.05, muc=0.05)
+    assert noi_dai.dinh_that(nho) < noi_dai.TRAN_TRUE_PEAK_DBTP
+    ra, ha, _ = noi_dai.ha_tran_dinh(nho)
+    assert ha == 0.0
+    assert np.array_equal(ra, nho)

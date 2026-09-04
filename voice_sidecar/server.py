@@ -283,6 +283,17 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
         c = lay()
         wav, giay = c.noi(text, ref_b64=body.ref_b64, preset=body.preset)
         sr = c.sample_rate
+        # 🔴 TRẦN ĐỈNH THẬT CŨNG ÁP Ở ĐÂY, không chỉ ở đường ghép.
+        #
+        #    Cho tới 03/09/2026 cửa này trả thẳng sóng âm của engine, nên bảo
+        #    đảm −1,0 dBTP chỉ tồn tại khi bài có từ hai đoạn. Đo cùng ngày:
+        #    bài 1.400 ký tự đi đường này ra **−0,78 dBTP**, tức vượt trần —
+        #    trong khi bản ghép 7 đoạn ra −2,11 và tuân thủ.
+        #
+        # ⭐ Nghịch với trực giác, và đó là lý do không ai đi tìm ở đây: phép
+        #    cân mức giữa các đoạn (thứ đẩy đỉnh lên) chỉ có ở đường ghép, nên
+        #    ai cũng đoán đường ghép mới là đường cần hạ trần.
+        wav, ha_db, dinh_truoc = noi_dai.ha_tran_dinh(wav)
         thoi_luong = len(wav) / float(sr) if sr else 0.0
         return Response(
             content=_wav_bytes(wav, sr), media_type="audio/wav",
@@ -294,6 +305,8 @@ def create_app(cong: eng.CongGiong | None = None) -> FastAPI:
                 "X-RTF": f"{(giay / thoi_luong):.4f}" if thoi_luong else "0",
                 "X-Sample-Rate": str(sr),
                 "X-Tham-So": _dau(tham_so.PHIEN_BAN_THAM_SO),
+                "X-Dinh-Truoc-Dbtp": _dau(dinh_truoc),
+                "X-Ha-Tran-Db": _dau(round(ha_db, 2)),
             })
 
     @app.post("/v1/batch")

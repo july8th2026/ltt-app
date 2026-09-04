@@ -10,30 +10,91 @@ import pytest
 
 from apps.ltt_voice import audio_input, features, sidecar_client, text_pipeline
 from apps.ltt_voice.manifest import MANIFEST
-from apps.ltt_voice.tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from apps.ltt_voice.tham_so_cong_khai import (TRAN_KY_TU_CONG_KHAI,
+                                             TRAN_MOI_LUOT_SINH)
 
 
 # ── tham số dùng chung hai venv ──────────────────────────────────────────────
 
-def test_tran_ky_tu_khop_giua_app_va_sidecar():
+def test_tran_MOT_LUOT_khop_giua_app_va_sidecar():
     """🔴 Hai bản sao của một hằng số, và đây là phép kiểm giữ chúng khớp.
 
     `apps/ltt_voice/` chạy trong venv nền tảng; `voice_sidecar/` chạy trong venv
     cách ly có torch. App **không được** import sidecar, nên hằng số phải nằm hai
     chỗ. Hai bản sao không có phép kiểm là hai bản sao sẽ lệch.
+
+    ⚠️ Phép kiểm này trước 03/09 chốt `TRAN_KY_TU_CONG_KHAI`, và nó ĐÚNG lúc ấy
+       vì hai trần là một con số. Khi trần công khai được nới lên 100.000 thì nó
+       đỏ — không phải vì hợp đồng vỡ, mà vì **nó đang gọi tên sai hằng số**.
+       Thứ phải khớp với sidecar là trần MỘT LƯỢT SINH, và nó vẫn khớp.
     """
     from voice_sidecar import tham_so
-    assert TRAN_KY_TU_CONG_KHAI == tham_so.TRAN_KY_TU_MOT_LUOT
+    assert TRAN_MOI_LUOT_SINH == tham_so.TRAN_KY_TU_MOT_LUOT
 
 
-def test_tran_ky_tu_nam_duoi_nguong_troi_giong_cua_upstream():
-    """Q119 — trần là trần CHẤT LƯỢNG, lấy từ upstream #168 (~3.000 ký tự).
+def test_tran_mot_luot_nam_duoi_nguong_troi_giong_cua_upstream():
+    """Q119 — trần MỘT LƯỢT là trần CHẤT LƯỢNG, lấy từ upstream #168 (~3.000).
 
     Đo 30/08 cho thấy 3.000 ký tự vẫn sinh ra được (17,6 giây, không lỗi), nên
     con số này KHÔNG đến từ giới hạn kỹ thuật. Nó đến từ chỗ chất lượng bắt đầu
     tụt, và nới nó phải qua cổng V10.
     """
-    assert TRAN_KY_TU_CONG_KHAI <= 3000 // 2
+    assert TRAN_MOI_LUOT_SINH <= 3000 // 2
+
+
+def test_tran_cong_khai_KHONG_con_bi_buoc_vao_tran_model():
+    """⭐ Chốt chính điều làm nên đường tài liệu dài: hai trần được phép KHÁC nhau.
+
+    Trần model nói *"model đọc liền được bao nhiêu trước khi trôi"*; trần công
+    khai nói *"khách gửi được bao nhiêu trong một lần"*. Buộc chúng bằng nhau
+    chính là lỗi đã làm bài 3.000 ký tự **bị từ chối** trong khi thông điệp lỗi
+    của cổng đã nói *"phải đi đường long-form nhiều lượt sinh"*.
+
+    ⛔ Nếu ai đó sau này gán lại `TRAN_KY_TU_CONG_KHAI = TRAN_MOI_LUOT_SINH` cho
+       "gọn", phép kiểm này đỏ và nói thẳng vì sao đừng làm thế.
+    """
+    assert TRAN_KY_TU_CONG_KHAI > TRAN_MOI_LUOT_SINH
+
+
+def test_tran_cong_khai_nam_TRONG_ngan_sach_thoi_gian_job():
+    """🔴 Trần công khai và `max_runtime_s` là HAI ĐẦU CỦA CÙNG MỘT NGÂN SÁCH.
+
+    Trần mới không đến từ model — nó đến từ tài nguyên. Đo 03/09
+    (`tools/do_bai_dai.py`): 19,86 ký tự mỗi giây audio, RTF 0,152
+    ⇒ **0,00763 giây GPU mỗi ký tự**.
+
+    Nâng một đầu mà quên đầu kia thì hỏng theo kiểu tệ nhất: job chạy gần xong
+    rồi bị giết vì hết giờ — tức đã tiêu gần trọn phần GPU của nó rồi mới vứt
+    kết quả đi, và đúng ở những tài liệu dài nhất.
+
+    ⚠️ Đòi biên **2 lần**, không đòi vừa khít: GPU có thể chậm gấp đôi khi đang
+       chia việc với một job khác, và `max_runtime_s` là chốt chặn cho job TREO
+       chứ không phải hạn mức hiệu năng.
+    """
+    GIAY_GPU_MOI_KY_TU = 0.00763          # do 03/09, xem tham_so_cong_khai.py
+    tran_giay = MANIFEST.max_runtime_s["ltt_voice.synthesize"]
+    can = TRAN_KY_TU_CONG_KHAI * GIAY_GPU_MOI_KY_TU
+    assert tran_giay >= can * 2, (
+        f"tran {TRAN_KY_TU_CONG_KHAI} ky tu can ~{can:.0f}s GPU nhung "
+        f"max_runtime_s chi {tran_giay}s — bien duoi 2 lan")
+
+
+def test_tran_cong_khai_nam_duoi_tran_dinh_dang_WAV():
+    """⛔ RIFF/WAV tràn ở ~2 GiB, và nó hỏng IM LẶNG.
+
+    Trình phát vẫn mở được phần đầu, nên một bản đọc bị cắt trông y hệt một bản
+    đọc bình thường cho tới khi ai đó nghe tới cuối. Không có lỗi nào được ném,
+    không có gì đỏ.
+
+    ⇒ Trần ký tự phải nằm dưới ngưỡng ấy cho tới khi có RF64/WAVE64.
+    """
+    BYTE_MOI_GIAY = 48_000 * 2            # 48 kHz PCM16 mono
+    KY_TU_MOI_GIAY_AUDIO = 19.86          # do 03/09
+    giay_toi_da = (2 * 1024 ** 3) / BYTE_MOI_GIAY
+    ky_tu_toi_da = giay_toi_da * KY_TU_MOI_GIAY_AUDIO
+    assert TRAN_KY_TU_CONG_KHAI < ky_tu_toi_da, (
+        f"tran {TRAN_KY_TU_CONG_KHAI} vuot nguong tran WAV "
+        f"(~{ky_tu_toi_da:.0f} ky tu)")
 
 
 def test_tham_so_sinh_mau_khong_ra_hop_dong_cong_khai():

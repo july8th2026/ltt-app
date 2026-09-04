@@ -112,6 +112,39 @@ def dinh_that(wav) -> float:
     return 20.0 * float(np.log10(dinh))
 
 
+def ha_tran_dinh(wav) -> tuple:
+    """Hạ cả bản xuống dưới `TRAN_TRUE_PEAK_DBTP`. Trả `(wav, ha_db, dinh_truoc)`.
+
+    🔴 VÌ SAO NÓ TÁCH RA THÀNH MỘT HÀM, VÀ ĐÂY LÀ MỘT LỖI ĐÃ ĐO.
+
+       Trần đỉnh thật được chính tệp này gọi là **MỘT BẢO ĐẢM**. Nhưng cho tới
+       03/09/2026 nó chỉ được thi hành ở **một** đường: bên trong `ghep`, tức
+       chỉ khi có từ hai đoạn trở lên. Đường một lượt (`/v1/speech`) không gọi
+       `ghep` bao giờ, và nhánh `len == 1` của `ghep` thì trả về sớm.
+
+       Đo 03/09 (`tools/do_bai_dai.py`, bài 1.400 ký tự đi đường một lượt):
+
+           mot luot  ->  -0,78 dBTP     <- VUOT tran -1,0
+           ghep 2 doan -> -2,22 dBTP
+           ghep 7 doan -> -2,11 dBTP
+
+    ⛔ Và nó hỏng đúng chiều khó chịu nhất: **bài NGẮN là bài không được bảo
+       đảm**. Ai cũng sẽ đoán ngược lại — bài dài phức tạp hơn nên rủi ro hơn —
+       nên không ai đi tìm ở đây. Phép cân mức giữa các đoạn (thứ đẩy đỉnh lên)
+       chỉ có ở đường ghép, nên trực giác nói đường ghép mới cần hạ trần.
+
+    ⭐ Một bảo đảm thi hành ở một nhánh không phải một bảo đảm. Nó là một sự
+       trùng hợp của nhánh ấy.
+    """
+    if not len(wav):
+        return wav, 0.0, None
+    tp = dinh_that(wav)
+    if not np.isfinite(tp) or tp <= TRAN_TRUE_PEAK_DBTP:
+        return wav, 0.0, (float(tp) if np.isfinite(tp) else None)
+    ha = TRAN_TRUE_PEAK_DBTP - tp
+    return (wav * (10.0 ** (ha / 20.0))).astype(np.float32), float(ha), float(tp)
+
+
 def _khung_rms(wav, sr: int):
     n = max(1, int(sr * KHUNG_MS / 1000.0))
     du = len(wav) % n
@@ -303,7 +336,12 @@ def ghep(wavs, sr: int, so_cau=None) -> tuple:
     if not ds:
         return np.zeros(0, dtype=np.float32), {"so_doan": 0}
     if len(ds) == 1:
-        return ds[0], {"so_doan": 1, "nghi_s": 0.0, "nguon_nghi": "khong can ghep"}
+        # ⛔ VẪN PHẢI HẠ TRẦN ĐỈNH. Nhánh này trước 03/09 trả thẳng về, nên một
+        #    bản một đoạn không bao giờ được kiểm trần — xem `ha_tran_dinh`.
+        mot, ha, tp = ha_tran_dinh(ds[0])
+        return mot, {"so_doan": 1, "nghi_s": 0.0, "nguon_nghi": "khong can ghep",
+                     "dinh_truoc_dbtp": None if tp is None else round(tp, 2),
+                     "ha_tran_db": round(ha, 2)}
 
     nghi, nguon = nhip_nghi(ds, sr, so_cau=so_cau)
     can, da_chinh = can_do_to(ds, sr)
