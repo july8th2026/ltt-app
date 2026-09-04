@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:1b45a102360233e86e239454ac5aca9520e55ed26fc0809d86af7f1815f1ae2b
-Nguồn đã quét : 1669 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:e9cd343509b727c39f0d5d345e2b2068592f5ade71f6b09e5aaf3c7911282530
+Nguồn đã quét : 1670 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -1369,7 +1369,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (427 file pytest + 4 frontend)
+10. QUALITY GATES (428 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1730,6 +1730,7 @@ Test inventory:
 - tests/test_443_asv_v4_che_do_render.py
 - tests/test_444_asv_v4_qc_hai_che_do.py
 - tests/test_445_asv_v4_qc_ai_va_sua.py
+- tests/test_446_asv_v4_quan_sat_chi_phi.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
 - tests/test_46_deploy_realworld_fixes.py
@@ -1823,8 +1824,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1669 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1269, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1670 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1270, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2914,7 +2915,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (447)
+[tests] (448)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3289,6 +3290,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - tests/test_443_asv_v4_che_do_render.py
 - tests/test_444_asv_v4_qc_hai_che_do.py
 - tests/test_445_asv_v4_qc_ai_va_sua.py
+- tests/test_446_asv_v4_quan_sat_chi_phi.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
 - tests/test_46_deploy_realworld_fixes.py
@@ -3550,7 +3552,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1669 file; 17380930 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1670 file; 17398295 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -22748,7 +22750,7 @@ def tom_tat(qc_giong: list, qc_nghia: list, qc_hinh: list) -> dict:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/quan_sat.py
-SHA256=88e71752448d826b42d078c8bf0985b07ac737f8573b849812aee74f230968bc BYTES=5952 LINES=142
+SHA256=b14d1dcbfefd26824a2fa6589e138ab5f430f97d8d0a9a0cfcfe34aef8607be3 BYTES=10758 LINES=253
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Quan sat mot lan chay — dong thoi gian tu du lieu BEN, khong tu log tam.
 
@@ -22830,6 +22832,16 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
             muc["loi"] = (job_events.sanitize_text(s.error, limit=500)
                           if cho_van_hanh else LOI_CHUNG)
 
+        # ── Don vi viec: thu ma DIEM CHOT biet ma giai doan khong biet ─────
+        #
+        # 🔑 Mot giai doan "succeeded" khong noi duoc **bao nhieu viec da lam
+        #    that** va **bao nhieu duoc dung lai**. Hai lan chay cung ra
+        #    "succeeded" nhung mot lan goi model 200 lan con lan kia goi 0 —
+        #    va hoa don cua chung khac han nhau.
+        dv = dem_don_vi(db, run, g.ten)
+        if dv["tong"]:
+            muc["don_vi"] = dv
+
         if cho_van_hanh:
             muc.update({
                 "so_lan_thu": int(s.attempt or 0),
@@ -22876,7 +22888,108 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
         ra["chu_so_huu"] = run.owner_id
         ra["credit_da_giu"] = int(run.credit_held or 0)
         ra["credit_da_tinh"] = int(run.credit_actual or 0)
+        # 🔑 So cai o CUNG mot cho voi dong thoi gian. Truoc pha 20 hai thu nay
+        #    ton tai o hai truy van khac nhau, va mot nguoi van hanh muon tra loi
+        #    "vi sao lan chay nay ton bao nhieu" phai tu ghep chung — tuc phai TU
+        #    lam mot phep noi ma khong ai kiem.
+        from . import su_dung as sd
+
+        ra["so_ke"] = sd.so_ke(db, run)
+        ra["doi_soat"] = doi_soat_nhanh(db, run)
     return ra
+
+
+def dem_don_vi(db, run, stage: str) -> dict:
+    """Dem don vi viec cua MOT giai doan, theo trang thai.
+
+    ⭐ `dung_lai` la con so quan trong nhat o day va no khong co trong bang:
+       mot don vi `succeeded` co van tay **khac** van tay hien tai la mot don vi
+       thuoc mot cau hoi cu — no khong duoc tinh la "da lam roi". Xem
+       `su_dung.da_xong`.
+    """
+    from .tables import ITEM_SUCCEEDED
+
+    dem: dict[str, int] = {}
+    credit = 0
+    for it in features.cac_don_vi(db, run.id, stage):
+        dem[it.status] = dem.get(it.status, 0) + 1
+        credit += int(it.credit_actual or 0)
+    return {"tong": sum(dem.values()), "theo_trang_thai": dem,
+            "xong": dem.get(ITEM_SUCCEEDED, 0), "credit": credit}
+
+
+def doi_soat_nhanh(db, run) -> dict:
+    """Moi don vi CO TINH TIEN co truy duoc ve so cai khong, va nguoc lai.
+
+    🔴 **Day la cau tra loi cho cong thoat cua pha 20**: "mot nguoi van hanh giai
+       thich duoc MOI don vi da tinh tien tu bang chung ben vung".
+
+       `su_dung.doi_soat` da chot dieu do o cap **rang buoc** — no NEM khi lech.
+       Ham nay khong nem: no **bay ra** cho nguoi doc, vi mot man quan sat phai
+       tra loi duoc ca khi he thong dang hong.
+
+    ⛔ Hai chieu, khong phai mot:
+         * don vi co credit ma khong co dong so cai -> tinh tien tu dau ra?
+         * dong so cai da giao ma khong co don vi   -> lam viec gi ma khong ai ghi?
+       Chi kiem mot chieu la de ngo dung nua kia ma minh khong nghi toi.
+    """
+    from . import su_dung as sd
+
+    dong = list(sd.cac_dong(db, run))
+    co_dong = {(d.stage, d.item_key) for d in dong if d.trang_thai == sd.DA_GIAO}
+
+    thieu_dong, thieu_don_vi = [], []
+    co_don_vi = set()
+    for it in features.cac_don_vi(db, run.id):
+        co_don_vi.add((it.stage, it.item_key))
+        if int(it.credit_actual or 0) > 0 and (it.stage, it.item_key) not in co_dong:
+            thieu_dong.append(f"{it.stage}/{it.item_key}")
+    for k in co_dong:
+        if k not in co_don_vi:
+            thieu_don_vi.append(f"{k[0]}/{k[1]}")
+
+    return {
+        "khop": not thieu_dong and not thieu_don_vi,
+        "so_don_vi": len(co_don_vi),
+        "so_dong_da_giao": len(co_dong),
+        # Cat ngan: mot man quan sat khong duoc bien thanh mot bai dai khi hong.
+        "don_vi_co_tien_khong_co_so_cai": sorted(thieu_dong)[:20],
+        "so_cai_khong_co_don_vi": sorted(thieu_don_vi)[:20],
+    }
+
+
+def tom_tat_cho_khach(db, run) -> dict:
+    """Tien do va chi phi cho KHACH. Khong ten giai doan noi bo, khong duong dan.
+
+    ⛔ Khach thay **so buoc da xong tren tong so buoc**, khong thay ten giai doan.
+       Ten giai doan la mot chi tiet ky thuat cua ta; lo no ra bien moi lan doi
+       ten mot giai doan thanh mot thay doi giao dien, va bien so do chuoi thanh
+       thong tin cong khai.
+
+    ⭐ Chi phi thi hien ra: khach tra tien, nen khach duoc biet minh tra cho cai
+       gi — nhung theo **nang luc** (long tieng, tach tieng) chu khong theo ten
+       ky thuat cua nha cung cap.
+    """
+    from . import su_dung as sd
+
+    ds = features.cac_giai_doan(db, run)
+    xong = sum(1 for s in ds if s.status == "succeeded")
+    sk = sd.so_ke(db, run)
+    return {
+        "trang_thai": run.status,
+        "so_buoc_xong": xong,
+        "so_buoc": len(pipeline.CHUOI),
+        "phan_tram": int(round(100.0 * xong / max(1, len(pipeline.CHUOI)))),
+        "credit_da_giu": int(run.credit_held or 0),
+        "credit_da_tinh": int(run.credit_actual or 0),
+        # ⚠️ CHI ten nang luc va so luong. Khong `app_chu` — do la ten noi bo cua
+        #    nha cung cap, va no khong phai viec cua khach.
+        "chi_phi_theo_nang_luc": [
+            {"nang_luc": m["nang_luc"], "don_vi": m["don_vi"],
+             "so_luong": round(float(m["so_luong"]), 2), "credit": int(m["credit"])}
+            for m in sk.get("theo_nang_luc") or []],
+        "loi": tom_tat_loi_cho_khach(db, run),
+    }
 
 
 def tom_tat_loi_cho_khach(db, run) -> str:
@@ -303145,6 +303258,272 @@ def test_ke_hoach_sua_doc_lai_duoc_va_co_VAN_TAY():
     assert d["giai_doan_sua"] == {"content_process": ["seg_0001"]}
     assert d["can_sua"] and d["con_vong"]
     assert len(ke.van_tay()) == 32
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_446_asv_v4_quan_sat_chi_phi.py
+SHA256=699651e65efb226fcaaeaa1b1c7916cb303a0ba917cbd8a9ce66b750a6527ec7 BYTES=12559 LINES=260
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 20 — quan sat van hanh va giai thich duoc chi phi.
+
+Bon nhom:
+
+  A. Doi soat HAI CHIEU  — moi don vi tinh tien truy duoc, va nguoc lai
+  B. Don vi viec         — "succeeded" khong noi duoc da lam bao nhieu viec
+  C. Cho khach           — thay chi phi, KHONG thay ten giai doan noi bo
+  D. Khong ro ri         — khong duong dan, khong ten may, khong chu so huu
+"""
+from __future__ import annotations
+
+import json
+
+from apps.auto_scan_video import pipeline, quan_sat, su_dung as sd
+
+from tests.rao_chan_nang import demucs_gia_lap  # noqa: F401
+from tests.test_402_asv_mach_doc_gia import (asr_gia, db, dich_gia,  # noqa: F401
+                                             giong_gia, kho_tam)
+
+
+def _chay(db, kho_tam, tmp_path):
+    from tests.test_402_asv_mach_doc_gia import _chay_het_hang_doi, _tao_run
+
+    run = _tao_run(db, kho=kho_tam, tmp_path=tmp_path)
+    _chay_het_hang_doi(db)
+    db.expire_all()
+    from apps.auto_scan_video.tables import AsvRun
+
+    return db.get(AsvRun, run.id)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  A. Doi soat HAI CHIEU
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_moi_don_vi_TINH_TIEN_deu_truy_duoc_ve_so_cai(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """🔴 Cong thoat pha 20: "mot nguoi van hanh giai thich duoc MOI don vi da
+    tinh tien tu bang chung ben vung"."""
+    run = _chay(db, kho_tam, tmp_path)
+    ds = quan_sat.doi_soat_nhanh(db, run)
+    assert ds["khop"], (
+        "don vi co tien ma khong co so cai: %s | so cai khong co don vi: %s"
+        % (ds["don_vi_co_tien_khong_co_so_cai"], ds["so_cai_khong_co_don_vi"]))
+    assert ds["so_don_vi"] > 0, "khong don vi nao duoc ghi — khong co gi de doi soat"
+
+
+def _mo_coi(db, run, *, stage="gd", item_key="mo_coi", ma_dispatch="bia:1"):
+    """Dung mot dong so cai KHONG con don vi viec — va dung cach no THAT SU xay ra.
+
+    🔴 **Phep kiem dau tien cua toi dung sai cach, va do la mot phat hien.**
+
+       Toi goi `su_dung.ghi(...)` voi mot `item_key` khong co that va cho rang no
+       tao ra mot dong mo coi. Khong: `ghi` **tu mo don vi viec** (Phase 06 buoc
+       hai thu di cung mot giao dich), nen mot dong mo coi **khong sinh ra duoc
+       qua API**.
+
+    ⭐ Nhung no van xay ra duoc — chi la bang duong khac: mot don vi bi XOA hay
+       bi vo hieu trong khi dong so cai o lai. Do la truong hop that (don don
+       dep, migration, mot ban va sua tay), va do la cai phep kiem phai dung.
+
+    ⛔ Neu chi kiem duoc bang API thi phep kiem se noi "khong the xay ra" — trong
+       khi thu no canh giu chinh la nhung duong KHONG di qua API.
+    """
+    from sqlalchemy import delete
+
+    from apps.auto_scan_video.tables import AsvWorkItem
+
+    sd.ghi(db, run, stage=stage, item_key=item_key,
+           su_dung=sd.SuDung(nang_luc="x", app_chu="y", trang_thai=sd.DA_GIAO,
+                             don_vi=sd.LUOT, so_luong=1.0, credit=5,
+                             ma_dispatch=ma_dispatch))
+    db.flush()
+    db.execute(delete(AsvWorkItem).where(AsvWorkItem.run_id == run.id,
+                                         AsvWorkItem.item_key == item_key))
+    db.commit()
+
+
+def test_doi_soat_bat_duoc_DON_VI_co_tien_ma_MAT_dong_so_cai(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """🔴 Chieu THU HAI cua phep doi soat, va kiem dot bien chi ra khong ai dung
+    no.
+
+    Trong duong chay binh thuong hai thu luon di cung nhau (Phase 06 buoc chung
+    vao mot giao dich), nen chieu nay khong tu xuat hien. Nhung no la chieu **ton
+    tien nhat**: mot don vi ghi `credit_actual > 0` ma khong con dong so cai nao
+    la mot khoan da tru cua khach **khong con chung tu**.
+
+    ⛔ Mot phep doi soat chi kiem duoc chieu de xay ra la mot phep doi soat de ngo
+       dung chieu ma nguoi ta so nhat.
+    """
+    from sqlalchemy import delete
+
+    from apps.auto_scan_video.tables import AsvUsage
+
+    run = _chay(db, kho_tam, tmp_path)
+    sd.ghi(db, run, stage="gd", item_key="mat_chung_tu",
+           su_dung=sd.SuDung(nang_luc="x", app_chu="y", trang_thai=sd.DA_GIAO,
+                             don_vi=sd.LUOT, so_luong=1.0, credit=7,
+                             ma_dispatch="mat:1"))
+    db.flush()
+    db.execute(delete(AsvUsage).where(AsvUsage.run_id == run.id,
+                                      AsvUsage.ma_dispatch == "mat:1"))
+    db.commit()
+
+    ds = quan_sat.doi_soat_nhanh(db, run)
+    assert not ds["khop"], "don vi co tien ma mat chung tu van bao KHOP"
+    assert any("mat_chung_tu" in x for x in ds["don_vi_co_tien_khong_co_so_cai"])
+
+
+def test_doi_soat_bat_duoc_DONG_SO_CAI_khong_co_don_vi(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """⛔ Hai chieu, khong phai mot. Chi kiem mot chieu la de ngo dung nua kia
+    ma minh khong nghi toi: mot dong so cai khong co don vi nghia la co viec da
+    tinh tien ma khong ai ghi la da lam."""
+    run = _chay(db, kho_tam, tmp_path)
+    _mo_coi(db, run, item_key="khong_co_that")
+    ds = quan_sat.doi_soat_nhanh(db, run)
+    assert not ds["khop"]
+    assert any("khong_co_that" in x for x in ds["so_cai_khong_co_don_vi"])
+
+
+def test_doi_soat_KHONG_NEM_khi_lech(tmp_path, db, kho_tam, asr_gia, dich_gia,
+                                     giong_gia):
+    """⭐ `su_dung.doi_soat` nem khi lech — dung, no la mot RANG BUOC. Ham quan
+    sat thi khong: mot man quan sat phai tra loi duoc **ca khi he thong dang
+    hong**, va do la luc nguoi ta can no nhat."""
+    run = _chay(db, kho_tam, tmp_path)
+    _mo_coi(db, run, item_key="lech", ma_dispatch="bia:2")
+    ds = quan_sat.doi_soat_nhanh(db, run)      # khong nem
+    assert not ds["khop"]
+
+
+def test_danh_sach_lech_bi_CAT_NGAN(tmp_path, db, kho_tam, asr_gia, dich_gia,
+                                    giong_gia):
+    """⛔ Mot man quan sat khong duoc bien thanh mot bai dai khi he thong hong."""
+    run = _chay(db, kho_tam, tmp_path)
+    for i in range(40):
+        _mo_coi(db, run, item_key=f"bia_{i:03d}", ma_dispatch=f"bia:{i}")
+    ds = quan_sat.doi_soat_nhanh(db, run)
+    assert len(ds["so_cai_khong_co_don_vi"]) <= 20
+    assert ds["so_dong_da_giao"] >= 40, "con so TONG van phai dung du danh sach bi cat"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B. Don vi viec
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_dong_thoi_gian_NOI_bao_nhieu_viec_da_lam(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """🔑 Mot giai doan "succeeded" khong noi duoc **bao nhieu viec da lam that**.
+
+    Hai lan chay cung ra "succeeded" nhung mot lan goi model 200 lan con lan kia
+    goi 0 — va hoa don cua chung khac han nhau.
+    """
+    run = _chay(db, kho_tam, tmp_path)
+    dtg = quan_sat.dong_thoi_gian(db, run, cho_van_hanh=True)
+    co = [g for g in dtg["giai_doan"] if g.get("don_vi")]
+    assert co, "khong giai doan nao bao cao don vi viec"
+    for g in co:
+        assert g["don_vi"]["tong"] >= g["don_vi"]["xong"]
+
+
+def test_dem_don_vi_cua_giai_doan_KHONG_co_viec_thi_khong_hien(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """Mot khoi rong trong bao cao la nhieu; khong co viec thi khong noi gi."""
+    run = _chay(db, kho_tam, tmp_path)
+    d = quan_sat.dem_don_vi(db, run, pipeline.MEDIA_PREPARE)
+    assert d["tong"] == 0
+    dtg = quan_sat.dong_thoi_gian(db, run, cho_van_hanh=True)
+    mp = next(g for g in dtg["giai_doan"] if g["giai_doan"] == pipeline.MEDIA_PREPARE)
+    assert "don_vi" not in mp
+
+
+def test_SO_KE_nam_cung_cho_voi_dong_thoi_gian(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """🔑 Truoc pha 20 hai thu nay o hai truy van khac nhau, va mot nguoi van hanh
+    muon tra loi "vi sao lan chay nay ton bao nhieu" phai TU ghep chung — tuc tu
+    lam mot phep noi ma khong ai kiem."""
+    run = _chay(db, kho_tam, tmp_path)
+    dtg = quan_sat.dong_thoi_gian(db, run, cho_van_hanh=True)
+    assert "so_ke" in dtg and "doi_soat" in dtg
+    assert dtg["so_ke"]["run_id"] == run.id
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  C. Cho khach
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_khach_thay_TIEN_DO_va_CHI_PHI(tmp_path, db, kho_tam, asr_gia, dich_gia,
+                                       giong_gia):
+    run = _chay(db, kho_tam, tmp_path)
+    t = quan_sat.tom_tat_cho_khach(db, run)
+    assert t["so_buoc"] == len(pipeline.CHUOI)
+    assert 0 <= t["phan_tram"] <= 100
+    assert "credit_da_tinh" in t
+
+
+def test_khach_KHONG_thay_ten_giai_doan_noi_bo(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """⛔ Ten giai doan la chi tiet ky thuat cua ta. Lo no ra bien moi lan doi ten
+    mot giai doan thanh mot thay doi giao dien, va bien so do chuoi thanh thong
+    tin cong khai."""
+    run = _chay(db, kho_tam, tmp_path)
+    van = json.dumps(quan_sat.tom_tat_cho_khach(db, run), ensure_ascii=False)
+    for g in pipeline.CHUOI:
+        assert g.ten not in van, f"lo ten giai doan noi bo: {g.ten}"
+
+
+def test_khach_KHONG_thay_ten_app_chu(tmp_path, db, kho_tam, asr_gia, dich_gia,
+                                      giong_gia):
+    """⚠️ `app_chu` la ten noi bo cua nha cung cap nang luc — khong phai viec cua
+    khach, va la mot manh cua ban do he thong."""
+    run = _chay(db, kho_tam, tmp_path)
+    t = quan_sat.tom_tat_cho_khach(db, run)
+    for m in t["chi_phi_theo_nang_luc"]:
+        assert "app_chu" not in m
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  D. Khong ro ri
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ban_cho_KHACH_khong_lo_duong_dan_hay_chu_so_huu(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    run = _chay(db, kho_tam, tmp_path)
+    van = json.dumps(quan_sat.tom_tat_cho_khach(db, run), ensure_ascii=False)
+    for cam in ("C:\\\\", "/Users/", "AppData", run.owner_id, "Temp"):
+        assert cam not in van, f"lo `{cam}` cho khach"
+
+
+def test_ban_cho_KHACH_khong_lo_van_tay_hay_job_id(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """⭐ Van tay va `job_id` la moc de truy vet noi bo. Chung khong bi mat, chung
+    chi khong thuoc ve man cua khach."""
+    run = _chay(db, kho_tam, tmp_path)
+    t = quan_sat.tom_tat_cho_khach(db, run)
+    van = json.dumps(t, ensure_ascii=False)
+    assert "van_tay" not in van and "job_id" not in van
+
+    # ... va o ban VAN HANH thi chung PHAI co.
+    dtg = quan_sat.dong_thoi_gian(db, run, cho_van_hanh=True)
+    assert any(g.get("van_tay") for g in dtg["giai_doan"])
+
+
+def test_hai_nguoi_dung_KHONG_thay_so_ke_cua_nhau(
+        tmp_path, db, kho_tam, asr_gia, dich_gia, giong_gia):
+    """Chot co lap: mot lan chay chi bao cao don vi va so cai CUA CHINH NO."""
+    from tests.test_402_asv_mach_doc_gia import _chay_het_hang_doi, _tao_run
+
+    a = _chay(db, kho_tam, tmp_path)
+    b = _tao_run(db, owner="uB", kho=kho_tam, tmp_path=tmp_path / "b")
+    _chay_het_hang_doi(db)
+    db.expire_all()
+
+    sk_a = sd.so_ke(db, a)
+    assert sk_a["run_id"] == a.id
+    dong_a = {d.run_id for d in sd.cac_dong(db, a)}
+    assert dong_a <= {a.id}, "so cai cua lan chay nay lan sang lan chay khac"
+    assert b.owner_id == "uB"
 
 @@@LTT_PROFILE_FILE_END@@@
 

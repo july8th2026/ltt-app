@@ -78,6 +78,16 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
             muc["loi"] = (job_events.sanitize_text(s.error, limit=500)
                           if cho_van_hanh else LOI_CHUNG)
 
+        # ── Don vi viec: thu ma DIEM CHOT biet ma giai doan khong biet ─────
+        #
+        # 🔑 Mot giai doan "succeeded" khong noi duoc **bao nhieu viec da lam
+        #    that** va **bao nhieu duoc dung lai**. Hai lan chay cung ra
+        #    "succeeded" nhung mot lan goi model 200 lan con lan kia goi 0 —
+        #    va hoa don cua chung khac han nhau.
+        dv = dem_don_vi(db, run, g.ten)
+        if dv["tong"]:
+            muc["don_vi"] = dv
+
         if cho_van_hanh:
             muc.update({
                 "so_lan_thu": int(s.attempt or 0),
@@ -124,7 +134,108 @@ def dong_thoi_gian(db, run, *, cho_van_hanh: bool = False,
         ra["chu_so_huu"] = run.owner_id
         ra["credit_da_giu"] = int(run.credit_held or 0)
         ra["credit_da_tinh"] = int(run.credit_actual or 0)
+        # 🔑 So cai o CUNG mot cho voi dong thoi gian. Truoc pha 20 hai thu nay
+        #    ton tai o hai truy van khac nhau, va mot nguoi van hanh muon tra loi
+        #    "vi sao lan chay nay ton bao nhieu" phai tu ghep chung — tuc phai TU
+        #    lam mot phep noi ma khong ai kiem.
+        from . import su_dung as sd
+
+        ra["so_ke"] = sd.so_ke(db, run)
+        ra["doi_soat"] = doi_soat_nhanh(db, run)
     return ra
+
+
+def dem_don_vi(db, run, stage: str) -> dict:
+    """Dem don vi viec cua MOT giai doan, theo trang thai.
+
+    ⭐ `dung_lai` la con so quan trong nhat o day va no khong co trong bang:
+       mot don vi `succeeded` co van tay **khac** van tay hien tai la mot don vi
+       thuoc mot cau hoi cu — no khong duoc tinh la "da lam roi". Xem
+       `su_dung.da_xong`.
+    """
+    from .tables import ITEM_SUCCEEDED
+
+    dem: dict[str, int] = {}
+    credit = 0
+    for it in features.cac_don_vi(db, run.id, stage):
+        dem[it.status] = dem.get(it.status, 0) + 1
+        credit += int(it.credit_actual or 0)
+    return {"tong": sum(dem.values()), "theo_trang_thai": dem,
+            "xong": dem.get(ITEM_SUCCEEDED, 0), "credit": credit}
+
+
+def doi_soat_nhanh(db, run) -> dict:
+    """Moi don vi CO TINH TIEN co truy duoc ve so cai khong, va nguoc lai.
+
+    🔴 **Day la cau tra loi cho cong thoat cua pha 20**: "mot nguoi van hanh giai
+       thich duoc MOI don vi da tinh tien tu bang chung ben vung".
+
+       `su_dung.doi_soat` da chot dieu do o cap **rang buoc** — no NEM khi lech.
+       Ham nay khong nem: no **bay ra** cho nguoi doc, vi mot man quan sat phai
+       tra loi duoc ca khi he thong dang hong.
+
+    ⛔ Hai chieu, khong phai mot:
+         * don vi co credit ma khong co dong so cai -> tinh tien tu dau ra?
+         * dong so cai da giao ma khong co don vi   -> lam viec gi ma khong ai ghi?
+       Chi kiem mot chieu la de ngo dung nua kia ma minh khong nghi toi.
+    """
+    from . import su_dung as sd
+
+    dong = list(sd.cac_dong(db, run))
+    co_dong = {(d.stage, d.item_key) for d in dong if d.trang_thai == sd.DA_GIAO}
+
+    thieu_dong, thieu_don_vi = [], []
+    co_don_vi = set()
+    for it in features.cac_don_vi(db, run.id):
+        co_don_vi.add((it.stage, it.item_key))
+        if int(it.credit_actual or 0) > 0 and (it.stage, it.item_key) not in co_dong:
+            thieu_dong.append(f"{it.stage}/{it.item_key}")
+    for k in co_dong:
+        if k not in co_don_vi:
+            thieu_don_vi.append(f"{k[0]}/{k[1]}")
+
+    return {
+        "khop": not thieu_dong and not thieu_don_vi,
+        "so_don_vi": len(co_don_vi),
+        "so_dong_da_giao": len(co_dong),
+        # Cat ngan: mot man quan sat khong duoc bien thanh mot bai dai khi hong.
+        "don_vi_co_tien_khong_co_so_cai": sorted(thieu_dong)[:20],
+        "so_cai_khong_co_don_vi": sorted(thieu_don_vi)[:20],
+    }
+
+
+def tom_tat_cho_khach(db, run) -> dict:
+    """Tien do va chi phi cho KHACH. Khong ten giai doan noi bo, khong duong dan.
+
+    ⛔ Khach thay **so buoc da xong tren tong so buoc**, khong thay ten giai doan.
+       Ten giai doan la mot chi tiet ky thuat cua ta; lo no ra bien moi lan doi
+       ten mot giai doan thanh mot thay doi giao dien, va bien so do chuoi thanh
+       thong tin cong khai.
+
+    ⭐ Chi phi thi hien ra: khach tra tien, nen khach duoc biet minh tra cho cai
+       gi — nhung theo **nang luc** (long tieng, tach tieng) chu khong theo ten
+       ky thuat cua nha cung cap.
+    """
+    from . import su_dung as sd
+
+    ds = features.cac_giai_doan(db, run)
+    xong = sum(1 for s in ds if s.status == "succeeded")
+    sk = sd.so_ke(db, run)
+    return {
+        "trang_thai": run.status,
+        "so_buoc_xong": xong,
+        "so_buoc": len(pipeline.CHUOI),
+        "phan_tram": int(round(100.0 * xong / max(1, len(pipeline.CHUOI)))),
+        "credit_da_giu": int(run.credit_held or 0),
+        "credit_da_tinh": int(run.credit_actual or 0),
+        # ⚠️ CHI ten nang luc va so luong. Khong `app_chu` — do la ten noi bo cua
+        #    nha cung cap, va no khong phai viec cua khach.
+        "chi_phi_theo_nang_luc": [
+            {"nang_luc": m["nang_luc"], "don_vi": m["don_vi"],
+             "so_luong": round(float(m["so_luong"]), 2), "credit": int(m["credit"])}
+            for m in sk.get("theo_nang_luc") or []],
+        "loi": tom_tat_loi_cho_khach(db, run),
+    }
 
 
 def tom_tat_loi_cho_khach(db, run) -> str:
