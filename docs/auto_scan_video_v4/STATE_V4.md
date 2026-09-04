@@ -23,8 +23,8 @@
     (`D:\LTTSTUDIOSAPP-asv`), and not the production tree — is satisfied. Recorded here
     rather than silently diverging.
   - ⛔ **This machine IS production** (`C:\LTTPlatform` exists). Never deploy from here.
-- **current_phase**: 25
-- **phase_status**: Phase 25 PASS -> Phase 26 NOT STARTED
+- **current_phase**: 26
+- **phase_status**: Phase 26 `AUDIT_COMPLETE_WITH_BLOCKERS` -> Phase 27 AUTHORIZED
 - **last_green_invariant_command**: declared in `tests/bo_bat_bien_v4.py`, two rounds —
   `VONG_NHANH` (9 files, **~12.5 s**, run after every edit) and
   `VONG_DU` (+ `test_417`, **~78 s**, run before closing a phase).
@@ -39,6 +39,35 @@
   Raw log: `evidence/00_gate_baseline.txt`
 - **critical_external_evidence_pending**: see table below
 - **open_blockers**:
+  * **A26-01 (P1) — the translation stage's fingerprint carries no model identity.**
+    `thi_hanh.phien_ban_engine('content_process')` returns `noi_dung/1/ltt_llm/`
+    with an **empty** model field: it reads `dich_thuat.PROVIDER_CHINH` /
+    `MODEL_CHINH`, but Phase 14 moved that stage onto `ai.goi_tinh_tien` and
+    `dich_thuat.dich_ban_ghi` has had no callers since; the model that actually
+    runs is `ai.model_cho(CHUYEN_LOI_THOAI)` = `qwen38-api`. Changing the real
+    model invalidates nothing — neither the cache nor `_vo_hieu_giai_doan_da_lech`
+    — which is precisely what Phase 08 added engine versions to prevent.
+    ⚠️ **Masked by B23-01 and un-masked by fixing it**: with the cache dead there is
+    nothing stale to hand back, so B23-01 must not be fixed alone. Fix: derive the
+    version from `ai.ban_do_model`, and consider deleting `dich_thuat.py`.
+  * **A26-05 (P1) — the smart preset's customer-facing text promises cutting that
+    cannot happen.** `gia.PRESET_BANG` tells the customer "Bo bot nhung canh it noi
+    dung de video ngan lai" and states a re-encode quality cost in exchange;
+    measured on a source with a dialogue-free scene: `so_canh 4, so_giu 4,
+    so_cat 0`. The customer pays the cost and receives the same length. ⭐ Phase 21
+    named this exact defect class ("false feature") while shipping an instance of
+    it. Fix until B22-01 lands: describe what it does today, or hide it.
+  * **A26-02 (P2) — `AsvWorkItem.revision` is documented as the lost-update guard
+    and never enforced.** `tables.py:327` promises `UPDATE ... WHERE revision = :r`;
+    `AsvStage` implements it via `cap_nhat_giai_doan`, work items do not —
+    `su_dung.danh_dau_xong` bumps the counter with a plain ORM write. Damage is
+    limited today by two UNIQUE constraints, which is why it has never been seen.
+  * **A26-03 (P2) — the direct upload path still reads the whole video into RAM.**
+    `routes.py:254 du_lieu = await video.read()` runs **before** the 90 MB check at
+    line 257, and `tao_run_tu_tai_len` then writes the same bytes to a temp file —
+    resident twice. ⚠️ STATE recorded V4-R01 as CLOSED; Phase 05 closed the
+    *checksum* half, not the *memory* half named in the same risk. G6's wording is
+    violated literally.
   * **B25-01 — retention is declared, never enforced, and the same for scratch
     and for the deliverable.** `HAN_TRUNG_GIAN = 30 days` is stamped on every
     promoted artifact and `kiem_toan_ven` reports `expired` — but **nothing ever
@@ -274,6 +303,7 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 
 | Phase | Gate | Report |
 |---|---|---|
+| 26 Independent audit (read only) | **`AUDIT_COMPLETE_WITH_BLOCKERS`** | Read from source, not from STATE; no code touched. **Five new findings** (A26-01..A26-05) and four recorded blockers re-verified from the code rather than from the claims about it. 🔴 **A26-01 (P1)**: the translation stage's fingerprint contains **no model identity** — it reads a dead module's empty constant while `qwen38-api` does the work, so changing the model invalidates nothing; and it is **masked by B23-01**, meaning fixing the cache alone would start serving stale output. 🔴 **A26-05 (P1)**: the smart preset's own description promises scene removal that measurement shows never happens, with a quality cost charged for it — the defect class Phase 21 named while shipping an instance of it. **A26-03 (P2)** contradicts STATE: V4-R01 is recorded CLOSED, but `routes.py:254` still `await read()`s the whole upload **before** the size check, violating G6's exact wording. ⭐ And the audit's own conclusion: **one habit, five times** — the VLM, the stage cache, the hardware encoder, the artifact sweeper and `dich_thuat.py` were each finished, unit-tested, and never connected to a running path. A capability with a green test and no live caller looks exactly like a finished feature from every angle except the only one that matters; Phase 27 should add the check that finds them all before fixing them one by one. Gates: G3, G4, G6, G8, G9, G16 **FAIL**; G10, G13, G14 partial; G17 not PASS (external evidence still missing); the other ten PASS. | [`reports/26_REPORT.md`](reports/26_REPORT.md) |
 | 25 Security / migration / hardening | **PASS** | 🔑 **The test suite and the server had never been compared.** Tests build the schema with `create_all()`; the server runs `alembic upgrade head`; nothing in this repository — for **any** app — had ever checked that the two agree. A column added without a migration passes every gate and breaks on the first deploy. Measured on a temporary database: **zero drift for ASV tables**, and a guard now keeps it that way (adding an un-migrated column turns it red). 🔴 **Redaction locked the front door and left the back one open**: `lenh_da_che` masked paths in the render command while the same record stored ffmpeg's `stderr` unmasked — and ffmpeg prints full paths there. ⚠️ And the first masker leaked precisely what it protected: it ended a path at whitespace, and Windows paths contain spaces — inside the user's real name. A terminator must be what actually ends a path, not what usually does. IDOR now covers all **six** V4 object types (Phase 05 covered three; `asv_work_item` and `asv_usage` arrived later carrying customer data). ⚠️ **B25-01: retention is a label with nothing behind it** — nothing sweeps, and `assets.don_theo_run` has no caller: the fourth capability in four phases built and never connected. 🔴 That pin was also wrong first: it compared expiry *timestamps*, passed because RENDER is promoted 70 s later, and was measuring the clock — third instance in three phases of an assertion holding for a reason unrelated to its subject. New `san_sang.py` answers 'can this machine run me' with **three** states, because a failed probe is not an answer and must never count as ready. New `RUNBOOK.md` covers the five drills and ends by naming what it **cannot** fix, so an on-call person does not hunt for a button that does not exist. 14 tests + 1 xfail, **8/8 mutations red** after two of them had to be re-aimed. | [`reports/25_REPORT.md`](reports/25_REPORT.md) |
 | 24 CPU/GPU performance and load | **PASS** (one blocker recorded) | 🔑 **The shared GPU slot stays shared, and a measurement is why.** `pipeline.CHUOI` had written down the exact experiment that would release it — peak CPU < 70% and free RAM > 8 GiB with demucs and ASR concurrent. Run: throughput **x1.5** (63.53 s sequential -> 42.43 s concurrent, better than the x1.3 predicted), free RAM 9.1 GiB clears its condition, and **peak CPU 78.6% fails the 70% one**. The tempting result was one line of config away and measurable; the pre-written condition said no. 🔴 **B24-01: the smart preset never uses the hardware encoder** — the host has `h264_nvenc`, the run records `libx264`, because COMPOSE decides from `ctx.gpu_uuid` while running on a lane that is never granted a GPU. Third capability in three phases that was finished and never connected. 🔴 **And Phase 22's CUDA-ASR entry was wrong**: the path does not hang, it fails in 0.23 s with `cublas64_12.dll is not found` — production is unaffected because it uses the WhisperX sidecar, and the owner app's CPU fallback guards the constructor rather than the call that actually fails. ⭐ Two of my own instruments were corrected before their numbers were read: the background load was sampled **after** the upload had already started work, and the VRAM check passed for any declaration on a CPU-only tree — it now skips with that reason instead of showing green. Repeated-work audit: source hashed twice (455 MB/s -> 0.2 s today, 4-9 s at the 2-hour cap), 21 ffprobe, 67 storage reads — **nothing changed**, because the evidence says none of it is worth the churn yet, and the number that would change that is written down. 6/6 mutations red. | [`reports/24_REPORT.md`](reports/24_REPORT.md) |
 | 23 Failure / restart / retry / cancel | **PASS** (one blocker recorded) | 🔴 **There was no automatic retry at all.** Three mechanisms built for it existed and none was connected to the others: `loi.phan_loai` distinguishes `TAM_THOI` from a final error, `STAGE_FAILED_RETRYABLE` sits in the state table, and stage jobs dedupe on `asv:{run}:{stage}:a{attempt}` — a key shaped around an attempt counter. But `_thu_ket_qua_job_con` marked **every** failed child terminal, and nothing resubmitted a retryable stage. One flaky ffmpeg call ended the whole run — and since a terminal run has settled, `thu_lai_giai_doan` refuses it, so the only way forward was a **new run** recomputing demucs and ASR from scratch. 🔴 **A dubbed line already paid for was synthesised again**: per-segment checkpoints are committed, but the audio only becomes an artifact when the whole stage finishes — measured **6 voice calls for 3 segments** after one slip, and `UNIQUE(run_id, ma_dispatch)` hid it by blocking the second *write* while the GPU did the work twice. Fixed by reusing the segment still sitting under its staging key. 🔴 **And my own fix opened an unbounded loop**: `_thu_ket_qua_job_con` reaches the retryable state by a second road that asks nothing about attempts, so the submit site would respawn a job forever — the cap belongs at the last point before the action, not at one of the roads leading to it. ⚠️ **The first measurement of the phase described the test harness**, not the product: `test_402`'s runner passes `retry=False` for every exception, turning every failure final — exactly the question under test. 🔴 And mutation testing caught **two of my own tests measuring nothing**: they asserted the cache *refuses* a damaged artifact, and were green because it refuses everything — which is how B23-01 was found. 21 tests + 1 `xfail(strict)`, **9/9 mutations red** (plus one equivalent mutant, recorded as such). | [`reports/23_REPORT.md`](reports/23_REPORT.md) |
