@@ -320,6 +320,34 @@ STORES: tuple = (
           N_("Một lượt thi hành: phần chữ đã sinh (kể cả khi bị ngắt), số token "
              "đo được và số credit đã giữ/thu — thứ đối chiếu được với sổ tiền."),
           purged_by=N_("theo hội thoại chứa nó")),
+    # ── ChatLTT V3 — điều phối tool (H44) ────────────────────────────────────
+    #
+    # 🔴 Cả ba đều CONTENT, kể cả `chatltt_run` vốn chỉ chứa số đếm.
+    #
+    #    Với `step` và `approval` thì hiển nhiên: `doi_so` là câu hỏi của khách
+    #    đã được model viết lại thành tham số ("tìm bệnh viện gần Cầu Giấy"), và
+    #    `ket_qua` giữ tới 8 KB thứ tool trả về. Đó là nội dung, không phải một
+    #    bản ghi kỹ thuật.
+    #
+    # ⭐ `chatltt_run` mới là cái đáng nói. Nó **không** chứa chữ của ai, nên
+    #    xếp OPERATIONAL nghe hợp lý — và sẽ sai. OPERATIONAL tự già đi theo
+    #    hạn riêng, nghĩa là một ngày các `run` bị dọn trong khi hội thoại chứa
+    #    chúng vẫn còn: người dùng mở lại một lượt cũ và thấy các bước đã biến
+    #    mất khỏi một tin nhắn vẫn nguyên vẹn. Một hội thoại phải có **một** lời
+    #    hứa giữ dữ liệu, không phải hai lời hứa lệch nhau bên trong nó.
+    Store("chatltt_run", CONTENT, None, N_("chủ tài khoản"),
+          N_("Một lượt có dùng công cụ: số vòng đã chạy, lý do dừng, và tổng "
+             "credit đã giữ/thu/hoàn của cả lượt."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    Store("chatltt_step", CONTENT, None, N_("chủ tài khoản"),
+          N_("Từng bước trong một lượt: công cụ nào được gọi, với tham số gì, "
+             "và nó trả về gì. Tham số bắt nguồn từ câu hỏi của người dùng."),
+          purged_by=N_("theo hội thoại chứa nó")),
+    Store("chatltt_approval", CONTENT, None, N_("chủ tài khoản"),
+          N_("Lần người dùng bấm duyệt cho một công cụ tốn credit: tham số đã "
+             "duyệt, báo giá lúc đó, và quyết định. Bằng chứng của một lần "
+             "đồng ý tiêu tiền."),
+          purged_by=N_("theo hội thoại chứa nó")),
     Store("ommi_resource", CONTENT, None, N_("chủ tài khoản"),
           N_("Tài nguyên (ảnh, tệp) người dùng tải lên PROMPT AI OMMI.")),
     Store("ommi_resource_variant", CONTENT, None, N_("chủ tài khoản"),

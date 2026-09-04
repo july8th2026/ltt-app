@@ -64,6 +64,19 @@ function loiDocDuoc(ma: string, chu: string): string {
 const NHAN_TRANG_THAI: Record<string, string> = {
   cancelled: 'Đã dừng',
   length: 'Bị cắt ở trần độ dài',
+  // V3: bon ly do ket cua mot run co dung tool (`dieu_phoi.KET_*`).
+  //
+  // ⛔ Khong co nhan thi dong 228 do NGUYEN MA ra man hinh — nguoi dung doc
+  //    duoc chu `tran_vong`. Khong vo, va vi the khong ai bao loi; no chi lam
+  //    san pham trong nhu ban chua lam xong.
+  //
+  // ⭐ Bon cau nay noi ro cai gi da dung va vi sao, boi vi mot luot dung vi
+  //    tran trong y het mot luot model tu thay du — va voi nguoi dang cho thi
+  //    hai chuyen do khac nhau: mot cai nen hoi lai, mot cai thi khong.
+  tran_vong: 'Đã dừng sau số vòng tối đa — hãy hỏi tiếp nếu còn thiếu',
+  tran_tool: 'Đã dừng vì gọi công cụ quá nhiều lần trong một lượt',
+  tran_trung: 'Đã dừng vì công cụ được gọi lặp lại với cùng tham số',
+  huy: 'Đã dừng theo yêu cầu',
 }
 
 function KhoiSuyLuan({ chu, dangChay }: { chu: string; dangChay: boolean }) {

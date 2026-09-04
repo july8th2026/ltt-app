@@ -39,11 +39,32 @@ def _cho_phep(monkeypatch, *ten):
 
 # ── Cổng thứ tư hẹp hơn cổng thứ ba ────────────────────────────────────────
 
-def test_mac_dinh_MODEL_KHONG_duoc_tu_goi_gi(monkeypatch):
-    """⭐ Làn A của P03 chạy tool giả/miễn phí trước (gói prompt nói vậy), nên
-    mặc định rỗng là đúng — không phải thiếu sót."""
+def test_mac_dinh_MODEL_chi_duoc_goi_TOOL_NOI_BO_mien_phi(monkeypatch):
+    """⭐ Làn A của P03 chạy **tool miễn phí** trước (gói prompt nói vậy).
+
+    ⚠️ Phép kiểm này trước đây ghim *"mặc định rỗng"*. P03 mở hai tool nội bộ
+       (`tool_noi_bo.py`), nên mệnh đề cũ không còn đúng. Thứ thay nó **chặt
+       hơn**, không lỏng hơn: không phải *"mặc định có hai tool"* (một câu đếm),
+       mà là *"mọi thứ model tự gọi được đều thuộc lớp KHÔNG cần duyệt"* — một
+       câu về **tập hợp**, vẫn đỏ nếu ngày mai ai đó thêm `image.ltt` vào.
+    """
     _dat_danh_muc(monkeypatch, [_NangLucGia("image.ltt")])
-    assert C.chieu(None, user_id="u1") == []
+    khoi = C.chieu(None, user_id="u1")
+    ten = {t["function"]["name"] for t in khoi}
+    assert ten == {"noi_bo.thoi_gian", "noi_bo.tinh"}
+    assert "image.ltt" not in ten, "nang luc CO PHI khong duoc chieu o P03"
+    for t in ten:
+        assert not C.can_duyet(t), f"{t} can duyet ma van duoc model tu goi"
+
+
+def test_khong_co_tool_nao_MO_MA_can_duyet(monkeypatch):
+    """🔴 Biến thể của mệnh đề trên, đọc thẳng từ hằng số thay vì qua `chieu()`.
+
+    Hai phép kiểm vì chúng hỏng theo hai cách khác nhau: `chieu()` có thể lọc
+    đúng trong khi hằng số đã sai, và lúc ấy mọi tầng sau phải tự nhớ lọc.
+    """
+    for ten in C.CHO_MODEL_GOI:
+        assert not C.can_duyet(ten), f"{ten!r} nam trong CHO_MODEL_GOI ma can duyet"
 
 
 def test_nang_luc_duoc_MOI_nhung_khong_duoc_MODEL_GOI_thi_khong_chieu(monkeypatch):
@@ -133,4 +154,5 @@ def test_rong_tra_ve_LIST_RONG_de_ben_goi_biet_dung_gui_khoa(monkeypatch):
     văn phạm GBNF (`01_M1_NATIVE_HAY_GENERIC.md` §5b). Bên gọi phải kiểm rỗng
     rồi mới đính — nên hàm này trả list rỗng chứ không trả `[{}]`."""
     _dat_danh_muc(monkeypatch, [])
+    _cho_phep(monkeypatch)          # khong moi ca tool noi bo
     assert C.chieu(None, user_id="u1") == []

@@ -144,14 +144,39 @@ def chay(*, messages: list, tools: list,
          tran_vong: int = TRAN_VONG_MODEL,
          tran_tool: int = TRAN_LOI_GOI_TOOL,
          phat: Optional[Callable[[dict], None]] = None,
+         ghi: Optional[Callable[["Buoc"], None]] = None,
          nen_dung: Optional[Callable[[], bool]] = None) -> Run:
     """Chạy trọn một run. Trả `Run` đã ở trạng thái kết thúc.
 
     `phat` nhận sự kiện canonical để đẩy ra SSE. `nen_dung` cho nút Dừng.
+
+    ## Vì sao `ghi` là kênh RIÊNG, không dùng chung với `phat`
+
+    Trông thì hai kênh cùng nói "vừa có chuyện xảy ra", nhưng chúng khác nhau ở
+    hai điểm không hoà được:
+
+    - **Độ trung thực.** `phat` đi ra dây, nên nó đã tóm tắt và cắt bớt.
+      `ghi` phải giữ nguyên `doi_so_tho` — chuỗi model thật sự phát ra, thứ
+      không dựng lại được từ bất cứ sự kiện SSE nào.
+    - **Hậu quả khi hỏng.** Một `phat` hỏng chỉ là người dùng không thấy một
+      dòng; một `ghi` hỏng là lịch sử của run có lỗ. Gộp chúng lại buộc hai
+      mức nghiêm trọng ấy dùng chung một cách xử lý lỗi.
+
+    Cả hai đều **tuỳ chọn**: máy trạng thái vẫn chạy đúng khi không ai lắng nghe
+    và không ai lưu — đó là thứ giữ nó kiểm được bằng số học thuần (`test_803`).
     """
     run = Run()
     lich_su = list(messages)
     _phat = phat or (lambda sk: None)
+    _ghi = ghi or (lambda b: None)
+
+    def _them(b: Buoc) -> Buoc:
+        """Chỗ DUY NHẤT một bước được sinh ra. Hai lối vào thì sớm muộn một lối
+        quên gọi `_ghi`, và cái mất là một bước — im lặng."""
+        run.buoc.append(b)
+        _ghi(b)
+        return b
+
     _phat({"type": "run.started", "so_vong_toi_da": tran_vong})
 
     while True:
@@ -179,7 +204,7 @@ def chay(*, messages: list, tools: list,
             elif loai == "response.failed":
                 loi_luong = sk.get("code") or "loi"
             _phat(sk)
-        run.buoc.append(Buoc(thu_tu=len(run.buoc) + 1, loai="model"))
+        _them(Buoc(thu_tu=len(run.buoc) + 1, loai="model"))
         run.van_ban_cuoi = "".join(chu)
 
         if loi_luong:
@@ -230,10 +255,10 @@ def chay(*, messages: list, tools: list,
                            "policy_class": chieu_tool.lop_chinh_sach(lg.ten)})
                     kq = chay_tool(lg.ten, ds)
 
-            run.buoc.append(Buoc(thu_tu=len(run.buoc) + 1, loai="tool",
-                                 ten=lg.ten, doi_so=ds,
-                                 doi_so_tho=lg.doi_so_tho, ket_qua=kq,
-                                 bam=gop_manh.bam_trung(lg.ten, ds)))
+            _them(Buoc(thu_tu=len(run.buoc) + 1, loai="tool",
+                       ten=lg.ten, doi_so=ds,
+                       doi_so_tho=lg.doi_so_tho, ket_qua=kq,
+                       bam=gop_manh.bam_trung(lg.ten, ds)))
             _phat({"type": "tool.result" if kq.ok else "tool.failed",
                    "tool_name": lg.ten, "tom_tat": kq.tom_tat()})
             lich_su = lich_su + [_tin_nhan_tool(lg, kq)]

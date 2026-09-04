@@ -51,14 +51,21 @@ CAN_DUYET = frozenset({PAID, EXTERNAL_WRITE, DESTRUCTIVE})
 LOP_CUA: dict = {
     "image.ltt": PAID,
     "speech.ltt": PAID,
+    # Tool NỘI BỘ của ChatLTT (`tool_noi_bo.py`) — không tốn credit, không gọi
+    # máy B, không ghi gì. Lớp khai **ở đây** chứ không import từ tệp kia: nơi
+    # khai chính sách phải là nơi đọc chính sách, để một tool mới không thể tự
+    # nâng lớp cho mình bằng cách khai trong tệp của chính nó.
+    "noi_bo.thoi_gian": READ_ONLY,
+    "noi_bo.tinh": READ_ONLY,
 }
 
 #: Năng lực MODEL được phép tự gọi. Hẹp hơn `chinh_sach.CONG_CU_CHO_PHEP`.
 #:
-#: ⚠️ V3 làn A: rỗng ở mức mặc định — P03 chạy với **tool giả/miễn phí** trước
-#:    (gói prompt: *"Implement P02 with fake/free tools only"*). `image.ltt` và
-#:    `speech.ltt` chỉ vào đây ở **P05**, sau khi P04 dựng xong duyệt bền.
-CHO_MODEL_GOI: tuple = ()
+#: ⚠️ V3 làn A: **chỉ tool nội bộ miễn phí** (gói prompt: *"Implement P02 with
+#:    fake/free tools only"*). `image.ltt` và `speech.ltt` chỉ vào đây ở **P05**,
+#:    sau khi P04 dựng xong duyệt bền — trước đó `thi_hanh` chặn chúng ở bước 3
+#:    dù có ai thêm vào đây, nhưng "chặn ở tầng sau" không phải lý do để mời.
+CHO_MODEL_GOI: tuple = ("noi_bo.thoi_gian", "noi_bo.tinh")
 
 
 class KhongChoModelGoi(PermissionError):
@@ -121,7 +128,14 @@ def chieu(db, *, user_id: str, apps: Optional[list] = None) -> list:
        văn phạm GBNF của llama.cpp (`01_M1_NATIVE_HAY_GENERIC.md` §5b): có khoá
        `tools` là **bật** cưỡng chế sinh. Bên gọi kiểm rỗng rồi mới đính vào.
     """
-    ra = []
+    # Nhập TRONG hàm, có chủ ý: `tool_noi_bo` → `thi_hanh` → tệp này, nên nhập ở
+    # đầu tệp là một vòng. Nhập tại chỗ cắt vòng mà không cần một sổ đăng ký
+    # toàn cục — thứ mà thứ tự import quyết định, và thứ tự import là đúng cái
+    # đã làm test xanh khi chạy riêng và đỏ trong gate.
+    from apps.chatltt.services import tool_noi_bo
+
+    ra = [t for t in tool_noi_bo.khoi_cho(user_id)
+          if t["function"]["name"] in cho_model_goi()]
     for n in chinh_sach.danh_muc(db, user_id=user_id, apps=apps):
         if n.ten not in cho_model_goi():
             continue
