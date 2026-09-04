@@ -11,6 +11,28 @@
 
 ---
 
+## Lô 2026-09-04 — bốn kế hoạch đã hoàn tất
+
+Chuyển vào cùng ngày dọn kho. Tiêu chí: **không tệp nào trong kho trỏ tới**, và
+việc chúng mô tả đã xong, kết quả nằm ở chỗ khác.
+
+| Tệp | Vì sao chuyển |
+|---|---|
+| `KE_HOACH_CHAT_AI_STUDIO.md` | tự ghi "TRẠNG THÁI: XONG + NGHIỆM THU THẬT (2026-08-02)"; `apps/chataistudio/` đang chạy |
+| `KE_HOACH_TAO_CLIP_NGAN.md` | tự ghi "TRẠNG THÁI: XONG + NGHIỆM THU THẬT (2026-08-02)"; `apps/taoclipngan/` đang chạy |
+| `KE_HOACH_RA_SOAT_APP.md` | kế hoạch rà soát; kết quả nay ở `docs/APP_AUDIT/`, và nó còn liệt kê app đã gỡ (`kichban`, `demo`) |
+| `TONG_QUAN_TIEN_DO.md` | ảnh chụp tiến độ chép tay ngày 24/08 — đúng kiểu tài liệu **không có cách nào tự biết nó đã cũ**, cùng lý do đã gỡ `ho_so_he_thong.txt` |
+
+⛔ **Ba tệp đã CÂN NHẮC rồi quyết định GIỮ LẠI ở `docs/`**, đừng chuyển chúng vào đây:
+
+- `H41_3_DUONG_LUI.md` — `KE_HOACH_TRIEN_KHAI.md:3604` ghi H41.3 vẫn **"cần quyết định"**.
+  Đây là đường lùi cho việc **chưa làm**, không phải tư liệu lịch sử.
+- `KE_HOACH_TON_DONG.md` — backlog đang sống; `AUDIT_APPS_2026-08-02.md` và
+  `KE_HOACH_2APP_UPSCALE_AUTOSUB.md` đẩy việc hoãn vào đó.
+- `AUDIT_BAO_MAT_CHONG_DICH_NGUOC.md` — mục 7.4 của backlog trên trỏ tới nó.
+
+---
+
 ## Vì sao phải lưu trữ thay vì xoá
 
 Ba lần trong lịch sử dự án này, một quyết định tưởng là tuỳ tiện hoá ra có lý

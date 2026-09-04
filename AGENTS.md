@@ -701,10 +701,18 @@ tại. Hôm đó cả hai phiên đều mất một lượt, và cả hai dòng 
 một lượt sạch**.
 
 ⛔ **Đừng “song song hoá” cổng chất lượng để chữa cái này.** Pha `bo test` đã lấy
-`-n auto` = **mọi lõi** (20 lõi; nối tiếp 1.534 giây → song song 234 giây). Hai
+trọn phần lõi mà máy cho phép — số worker do **`tools/gate.py:loi_cho_bo_test()`**
+quyết, và đó là hàm DUY NHẤT trả lời câu hỏi đó. Hai
 lượt cùng lúc chỉ chia đôi cùng một chiếc bánh: tổng thời gian gần y hệt chạy
 lần lượt, nhưng trả thêm gấp đôi bộ nhớ, gấp đôi thư mục tạm, và gấp đôi khả
 năng đo sai. Song song hoá một thứ **đã bão hoà lõi** không phải tối ưu.
+
+⚠️ **Dòng trên trước 03/09 ghi `-n auto` = “mọi lõi (20 lõi)”. Sai, và sai về
+phía nguy hiểm.** `os.cpu_count()` trả **20** vì đó là lõi *logic*; máy này có
+**10 lõi vật lý**, và xdist đọc lõi vật lý. Từ 03/09 cổng không còn dùng
+`-n auto` nữa. Con số thật ở `tools/gate.py`; luật đầy đủ ở
+`docs/QUY_TRINH_WORKTREE.md` và `docs/QUY_TAC_CHAY_LENH_NANG.md`.
+⛔ Đừng gõ lại con số đó vào đây — đó chính là cơ chế vừa hỏng.
 
 **Ba thứ đã dựng:**
 

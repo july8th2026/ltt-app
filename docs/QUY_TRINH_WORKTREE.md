@@ -123,6 +123,13 @@ không cái nào nằm trong `-n` — vì `demucs_runner.py` không đặt
 ⇒ Test nạp model thật phải nằm sau rào chắn `LTT_TEST_NANG`
 (`tests/rao_chan_nang.py`).
 
+🔴 **Rào chắn đó CHƯA có trên trunk.** Đo 04/09: `tests/rao_chan_nang.py` chỉ
+tồn tại ở nhánh `phien/asv-v4`, không có ở `admin-mvp-v3`, `phien/asv` hay
+`h42-release-clean`. Nên trên trunk, câu trên mô tả một lớp bảo vệ **chưa tồn
+tại** — đừng đọc nó như một bảo đảm. Cho tới khi `phien/asv-v4` gộp về:
+kiểm bằng `ls tests/rao_chan_nang.py` trước khi tin, và test nào nạp model
+thật thì tự chặn bằng `LTT_TEST_NANG` gõ tay.
+
 ## Sau một lần treo
 
 `C:\Users\Thang Tuong\Desktop\HOP DEN\KHAM.bat` — hộp đen ghi liên tục

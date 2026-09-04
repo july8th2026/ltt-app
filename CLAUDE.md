@@ -288,6 +288,10 @@ cloudflare/config.yml cloudflare/*.json
 | `docs/02_LENH_CHO_CLAUDE.md` | câu lệnh mẫu người dùng đưa cho bạn |
 | `docs/03_THEM_APP_MOI.md` | thêm app |
 | `docs/04_CLOUDFLARE_TUNNEL.md` | Tunnel chi tiết + xử lý sự cố |
+| `docs/05_LEN_MANG_CLOUDFLARE.md` | đưa nền tảng ra Internet |
+| `docs/06_DON_HA_TANG.md` | dọn hạ tầng — việc Claude làm được và việc bạn phải tự làm |
+| `docs/QUY_TRINH_WORKTREE.md` | **đọc TRƯỚC khi tạo hay gỡ worktree** — vì sao máy treo, và luật để nó không lặp |
+| `docs/QUY_TAC_CHAY_LENH_NANG.md` | **đọc TRƯỚC mọi lệnh nặng** — bốn bước bắt buộc, ba điều tuyệt đối không làm |
 | `docs/PUBLIC_API/APP_API_COVERAGE_FINAL.md` | app/tool/model nào mở, nào đóng, **vì sao** |
 | `docs/PUBLIC_API/API_PLATFORM_FULL_RELEASE_READINESS.md` | trạng thái Public API + điều kiện còn lại |
 | `docs/_luutru/PROJECT_MEMORY.md` | nhật ký — **cập nhật cuối mỗi phiên** |
