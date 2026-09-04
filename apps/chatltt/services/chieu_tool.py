@@ -1,0 +1,146 @@
+"""
+chieu_tool.py — registry đã duyệt → khối `tools` gửi cho model. (H44 P03)
+
+## Vì sao KHÔNG viết phép chiếu thứ hai
+
+`platform_core/public_api/catalog.project_tool` đã làm đúng việc khó: bỏ id
+model nội bộ (`test_212`), ẩn tham số máy chủ tự quyết (`hidden`), giữ đúng
+kiểu số/chuỗi của enum. `runtime_noi_bo/danh_muc.py` mượn lại nó và ghi rõ lý
+do: *"Viết một phép chiếu thứ hai cho sản phẩm web là mời hai bản hợp đồng
+lệch nhau."*
+
+Tệp này đi qua **cùng một cửa** đó rồi chỉ **đổi hình dạng** sang khuôn OpenAI
+`tools`. Không đọc `ToolSpec` trực tiếp, không tự lọc tham số.
+
+## Ba cổng, và đây là cổng THỨ TƯ
+
+  `ToolSpec.customer_visible`                 palette Agent/Canvas
+  `api_exposed` + `LTT_PUBLIC_API_TOOLS`      bán qua `/api/v1`
+  `chinh_sach.CONG_CU_CHO_PHEP`               thứ ChatLTT MỜI người dùng
+  **`CHO_MODEL_GOI` (tệp này)**               thứ MODEL được phép tự gọi
+
+⛔ Cổng thứ tư hẹp hơn cổng thứ ba, và đó là điểm chính. Người dùng **bấm nút**
+tạo ảnh là một chuyện; **model tự quyết** tiêu 3–12 credit của họ là chuyện
+khác. Một tool có thể ở cổng ba mà không ở cổng bốn.
+
+⭐ Fail-closed: tên không có trong `CHO_MODEL_GOI` thì không được chiếu, kể cả
+   khi `chinh_sach` đã mời nó.
+"""
+from __future__ import annotations
+
+from typing import Optional
+
+from apps.chatltt.services import chinh_sach
+
+#: Lớp chính sách (`02_HOP_DONG.md` §3). Hai lớp cuối rỗng mà vẫn phải có: ngày
+#: đầu tiên có một tool ghi ra ngoài, chỗ để nó rơi vào phải ĐÃ fail-closed sẵn.
+READ_ONLY = "READ_ONLY"
+FREE = "FREE"
+PAID = "PAID"
+EXTERNAL_WRITE = "EXTERNAL_WRITE"
+DESTRUCTIVE = "DESTRUCTIVE"
+
+CAN_DUYET = frozenset({PAID, EXTERNAL_WRITE, DESTRUCTIVE})
+
+#: Tên năng lực → lớp chính sách. **Khai tay, không suy từ tên tool.**
+#:
+#: ⛔ Cùng lý do `luot.doc_anh_duoc()` đọc `constraints.reads_images` chứ không
+#:    tìm chữ "vision" trong tên: tên là quy ước đặt tên, hợp đồng là lời hứa.
+#:    Ngày ai đó thêm `image.xoa_het` mà phép suy theo tên xếp nó vào `PAID` vì
+#:    có chữ "image", ta mất cổng duyệt cho một thao tác phá huỷ.
+LOP_CUA: dict = {
+    "image.ltt": PAID,
+    "speech.ltt": PAID,
+}
+
+#: Năng lực MODEL được phép tự gọi. Hẹp hơn `chinh_sach.CONG_CU_CHO_PHEP`.
+#:
+#: ⚠️ V3 làn A: rỗng ở mức mặc định — P03 chạy với **tool giả/miễn phí** trước
+#:    (gói prompt: *"Implement P02 with fake/free tools only"*). `image.ltt` và
+#:    `speech.ltt` chỉ vào đây ở **P05**, sau khi P04 dựng xong duyệt bền.
+CHO_MODEL_GOI: tuple = ()
+
+
+class KhongChoModelGoi(PermissionError):
+    """Năng lực không nằm trong cổng thứ tư."""
+
+
+def lop_chinh_sach(ten: str) -> str:
+    """Lớp của một năng lực. Không khai ⇒ **`DESTRUCTIVE`**, không phải `FREE`.
+
+    🔴 Mặc định phải là lớp NGẶT NHẤT. Một tool mới quên khai lớp thì hậu quả
+       đúng là *"nó đòi duyệt trong khi lẽ ra không cần"* — phiền, và sửa trong
+       một dòng. Mặc định lỏng thì hậu quả là *"nó tiêu tiền của khách mà không
+       hỏi"* — và cái đó không sửa lại được sau khi đã xảy ra.
+    """
+    return LOP_CUA.get(str(ten), DESTRUCTIVE)
+
+
+def can_duyet(ten: str) -> bool:
+    return lop_chinh_sach(ten) in CAN_DUYET
+
+
+def cho_model_goi() -> frozenset:
+    return frozenset(CHO_MODEL_GOI)
+
+
+def kiem_cho_model_goi(ten: str) -> str:
+    """Trả lại `ten` nếu model được phép gọi; ném nếu không. Không có nhánh gần đúng.
+
+    ⛔ Đây là chỗ chặn model bịa tên tool. P01 đo 0/266 lượt bịa, nhưng con số đó
+       là **chất lượng**, không phải **rào**: rào phải đứng vững cả khi model tệ đi.
+    """
+    if str(ten) not in cho_model_goi():
+        raise KhongChoModelGoi(f"model khong duoc tu goi {ten!r}")
+    return str(ten)
+
+
+def _mot_tool(nang_luc) -> Optional[dict]:
+    """Một `NangLuc` (đã qua `catalog.project_tool`) → một mục `tools` OpenAI."""
+    hd = dict(getattr(nang_luc, "hop_dong", None) or {})
+    schema = hd.get("input_schema") or {}
+    if not isinstance(schema, dict) or schema.get("type") != "object":
+        # Fail-closed: hợp đồng không nói được đầu vào thì không mời model dùng.
+        return None
+    ten = str(nang_luc.ten)
+    mo_ta = str(getattr(nang_luc, "nhan", "") or hd.get("description") or "").strip()
+    if not mo_ta:
+        # ⛔ Model chọn tool bằng MÔ TẢ. Một tool không mô tả là một tool sẽ bị
+        #    chọn sai — P01 nhóm N3 cho thấy model đọc mô tả rất sát.
+        return None
+    return {"type": "function",
+            "function": {"name": ten, "description": mo_ta,
+                         "parameters": schema}}
+
+
+def chieu(db, *, user_id: str, apps: Optional[list] = None) -> list:
+    """Khối `tools` cho một người dùng. Rỗng ⇒ **đừng gửi khoá `tools`**.
+
+    ⭐ Rỗng khác `[]`: gửi `tools: []` là nói với model *"bạn có 0 tool"*, còn
+       không gửi khoá là nói *"lượt này không có tool"*. Hai câu khác nhau với
+       văn phạm GBNF của llama.cpp (`01_M1_NATIVE_HAY_GENERIC.md` §5b): có khoá
+       `tools` là **bật** cưỡng chế sinh. Bên gọi kiểm rỗng rồi mới đính vào.
+    """
+    ra = []
+    for n in chinh_sach.danh_muc(db, user_id=user_id, apps=apps):
+        if n.ten not in cho_model_goi():
+            continue
+        if getattr(n, "san_sang", "san_sang") != "san_sang":
+            # Năng lực đang bận/chưa sẵn sàng thì đừng mời model gọi — nó sẽ gọi,
+            # rồi ta phải giải thích một lỗi lẽ ra không cần tồn tại.
+            continue
+        muc = _mot_tool(n)
+        if muc is not None:
+            ra.append(muc)
+    return ra
+
+
+def lop_theo_ten(khoi_tools: list) -> dict:
+    """`{tên: lớp}` cho một khối đã chiếu — để thi hành khỏi tra lại."""
+    return {t["function"]["name"]: lop_chinh_sach(t["function"]["name"])
+            for t in (khoi_tools or [])}
+
+
+__all__ = ["chieu", "cho_model_goi", "kiem_cho_model_goi", "lop_chinh_sach",
+           "can_duyet", "lop_theo_ten", "KhongChoModelGoi",
+           "READ_ONLY", "FREE", "PAID", "EXTERNAL_WRITE", "DESTRUCTIVE"]
