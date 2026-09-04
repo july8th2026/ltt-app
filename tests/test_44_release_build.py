@@ -91,20 +91,6 @@ def test_release_contents_pass_the_secret_scanner():
     assert findings == [], f"{len(findings)} secret finding(s) in release contents"
 
 
-def test_release_secret_scan_skips_generated_profile_but_scans_originals(tmp_path):
-    marker = "-----BEGIN " + "PRIVATE KEY-----"
-    original = tmp_path / "source.py"
-    profile = tmp_path / "ho_so_he_thong.txt"
-    original.write_text(marker, encoding="utf-8")
-    profile.write_text(marker, encoding="utf-8")
-    findings = scan_for_secrets([
-        (str(profile), profile.name),
-        (str(original), original.name),
-    ])
-    assert len(findings) == 1
-    assert findings[0].path.name == original.name
-
-
 # ─── end-to-end build ──────────────────────────────────────────────────────────
 
 def test_build_produces_a_usable_archive(tmp_path):

@@ -16,6 +16,52 @@
 
 
 
+## 2026-09-04 — Nén đúng lúc cho cả Codex lẫn Claude · gỡ hồ sơ hệ thống
+
+**Đã deploy** lúc 10:50 (`EXITCODE=0`, health `status=ready`). Xác minh qua
+Cloudflare, không phải loopback: `/api/v1/models` đủ ba trường bắt buộc trên cả
+hai model, vision **28.262 → 88.555**, và hash tệp tải về **khớp** artefact đã
+dựng.
+
+### Ba khuyết tật cùng một họ, ba tên khác nhau
+
+| Nơi | Khuyết tật | Sửa |
+|---|---|---|
+| Catalog Codex | `truncation_policy.limit` = **cả cửa sổ** (156.385). Mặc định của chính Codex là 10.000 byte ≈ 2.500 token — ta rộng hơn **62 lần** | `TOKEN_RA_TRAN // 2` = 16.384 |
+| `/api/v1/models` | thiếu **3 trường bắt buộc**; Codex không parse nổi mục nào, im lặng rơi về 272K **không nén** | thêm, kèm `auto_compact_token_limit` |
+| Biến Claude | `CLAUDE_CODE_MAX_CONTEXT_TOKENS` chỉ sửa con số Claude **giả định** — nó **không** đặt ngưỡng nén | thêm `CLAUDE_CODE_AUTO_COMPACT_WINDOW` = 123.617 |
+
+⭐ Cả ba đều sống được vì mỗi cái **trông như** đã xong. Và cả ba đều nằm trên
+cùng một sự thật: **hai client chỉ kiểm ngưỡng nén GIỮA hai lượt**, không kiểm
+giữa các lần gọi công cụ trong cùng một lượt (openai/codex#16033, có TODO của
+chính họ). Nên trần kết quả công cụ là hàng phòng thủ duy nhất còn lại.
+
+Bằng chứng: canary Codex thật trên production — 14/14 tệp, 14 lệnh đọc **trọn**,
+4,2 MB kết quả công cụ, `context compacted` **hai lần**, **zero 413**. Không cắt
+thì 14 tệp ≈ 840.000 token; trần cứng 169.984 ⇒ **tệp thứ ba đã phải vỡ**.
+
+Chi tiết + số đo: `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md` §7d–§7g.
+
+### Gỡ hồ sơ hệ thống
+
+Chủ dự án quyết: `ho_so_he_thong.txt` + `tools/build_system_profile.py` không
+dùng nữa. Đã gỡ trọn bộ — 5 tệp xoá, 9 tệp sửa, kể cả các chỗ **bảo người đọc
+chạy** một lệnh đã mất (`CLAUDE.md`, `AGENTS.md`, `DEVELOPMENT_WORKFLOW.md`).
+
+⛔ Phần dễ sai nhất không phải xoá tệp mà là **cho phụ thuộc còn lại**:
+`build_release.py` liệt nó trong `REQUIRED_ENTRIES`, và `scan_source_secrets.py`
+khai `EXCLUDED_FILE_NAMES` ở một dòng rồi dùng ở dòng khác — xoá một nửa là
+`NameError` ngay lần quét đầu.
+
+⭐ **Vì sao gỡ là đúng, đo được:** hồ sơ chụp **cả cây**, nên nó cũ đi sau mỗi
+lần bất kỳ ai sửa bất kỳ tệp nào. Trong hai ngày 03–04/09: **ba** lượt `gate.py`
+đỏ chỉ vì hồ sơ cũ (mỗi lượt ~10 phút, không lỗi sản phẩm nào), và **một** xung
+đột merge giữa hai phiên ở đúng tệp đó. Toàn văn ở `docs/HO_SO_HE_THONG.md`,
+nay là bia mộ chứ không còn là hướng dẫn.
+
+⚠️ Luật *"tệp dẫn xuất — người commit sau cùng mới sinh"* (`AGENTS.md` §10.7)
+**còn nguyên** cho `tools/gui/ltt.css`. Gỡ hồ sơ không gỡ luật ấy.
+
 ## 2026-09-03 (tối) — Ngữ cảnh dài `ltt_llm`: 413 của client, và cửa sổ 131K → 200K
 
 - **Nhánh:** `phien/ltt-llm-context-200k` từ `admin-mvp-v3`. **CHƯA DEPLOY** —

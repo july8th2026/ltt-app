@@ -41,7 +41,11 @@ def test_gate_runs_the_scanners_and_pytest():
     # Buoc nay bat loai loi test khong bat duoc: route khong co test ma thieu
     # import. Da tim thay mot cai that o POST /upscalevideo/queue (2026-08-06).
     assert "ten chua dinh nghia" in names
-    assert "system profile" in names
+    # ⛔ GO 2026-09-04 cung voi ca tinh nang. Chot nay dung khi no ton tai:
+    #    no ngan mot buoc bien mat lang le. Lan nay viec go la CO Y (chu du an
+    #    quyet), nen phai go luon chot — mot chot canh mot thu khong con la mot
+    #    lan gate do ma khong ai sua duoc.
+    #    Ly do va toan bo pham vi: docs/HO_SO_HE_THONG.md (nay la bia mo).
     # DOI TEN 2026-08-26: buoc nay khong con goi `pytest` truc tiep. No di
     # qua `tools/test_nhanh.py` (hai pha: song song + noi tiep cho ba tep
     # ghi vao cay kho), cung tap pass/fail nhung 4 phut thay vi 2 gio.
