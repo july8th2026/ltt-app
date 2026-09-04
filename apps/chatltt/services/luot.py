@@ -27,7 +27,7 @@ from typing import Optional
 
 from sqlalchemy import select
 
-from apps.chatltt.services import chinh_sach, dang_chay
+from apps.chatltt.services import chieu_tool, chinh_sach, co_v3, dang_chay
 from apps.chatltt.services import hoi_thoai as H
 from apps.chatltt.services import su_kien as S
 from apps.chatltt.tables import ChatlttExecution, ChatlttMessage
@@ -226,6 +226,23 @@ def chay(execution_id: str, *, user_id: str) -> None:
         re_ = (ex.usage or {}).get("reasoning_effort")
         if re_:
             params["reasoning_effort"] = re_
+
+        # ── H44 V3: đính khối `tools` khi cờ bật ────────────────────────────
+        #
+        # ⛔ Chỉ đính khi có tool THẬT. Gửi `tools: []` là nói với model "bạn có
+        #    0 tool", còn KHÔNG gửi khoá là nói "lượt này không có tool" — hai
+        #    câu khác nhau với văn phạm GBNF của llama.cpp: **có khoá `tools` là
+        #    BẬT cưỡng chế sinh** (`01_M1_NATIVE_HAY_GENERIC.md` §5b). Một lượt
+        #    trò chuyện thường không nên đi qua văn phạm.
+        #
+        # ⭐ [U] `docs/function-calling.md:24`: `parallel_tool_calls` TẮT mặc
+        #    định ở llama.cpp. Không gửi cờ thì gọi song song không bao giờ xảy
+        #    ra — P01 đo 18/18 ra đúng 2 lời gọi, nhưng chỉ KHI có cờ.
+        if co_v3.tool_bat():
+            khoi_tools = chieu_tool.chieu(db, user_id=user_id)
+            if khoi_tools:
+                params["tools"] = khoi_tools
+                params["parallel_tool_calls"] = True
 
         ghi_nhan: dict = {}
         it = L.mo_luong(db, user_id=user_id, tool_name=ex.tool_name, params=params,

@@ -12,10 +12,10 @@
     899
   ],
   "pha_hien_tai": "P03",
-  "co_tinh_nang": [
-    "LTT_CHATLTT_V3_TOOLS",
-    "LTT_CHATLTT_V3_PAID_TOOLS"
-  ],
+  "co_tinh_nang": {
+    "LTT_CHATLTT_V3_TOOLS": "mac dinh TAT",
+    "LTT_CHATLTT_V3_PAID_TOOLS": "mac dinh TAT, DOC LAP voi co tren"
+  },
   "da_deploy": false,
   "quyet_dinh_chu_du_an": [
     {
@@ -81,7 +81,7 @@
       "chan": [
         "P02"
       ],
-      "phan_tram": 75
+      "phan_tram": 85
     },
     {
       "id": "P04",
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 7.2,
-      "phan_tram": 42
+      "xong": 7.8,
+      "phan_tram": 46
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 7.2,
-      "phan_tram": 14
+      "xong": 7.8,
+      "phan_tram": 15
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -537,14 +537,14 @@
       "test_803 bat bien C2 (10)",
       "thi_hanh.py + test_804 (14)",
       "dieu_phoi.py + test_805 (18)",
-      "3 bang + migration 4b8e21c6d907; test_616 cap nhat CO CHU DICH"
+      "3 bang + migration 4b8e21c6d907",
+      "co_v3.py + noi vao luot.py + test_806 (19)"
     ],
     "con_lai": [
-      "co LTT_CHATLTT_V3_TOOLS",
-      "noi dieu_phoi vao luot.py",
-      "ghi run/step xuong CSDL",
+      "ghi run/step xuong CSDL (dieu_phoi -> tables)",
       "A5 bo hien thi bo qua khoi la",
-      "test_806..812"
+      "tool noi bo that",
+      "test_807..812"
     ],
     "dong_ma_san_pham_dau_tien": "apps/chatltt/services/gop_manh.py",
     "cong_thu_tu": "CHO_MODEL_GOI — hep hon chinh_sach.CONG_CU_CHO_PHEP. Nguoi dung BAM NUT tao anh la mot chuyen; model TU QUYET tieu 3-12 credit cua ho la chuyen khac.",
@@ -558,5 +558,8 @@
     "down_revision": "7d2c1e9f4a03",
     "chi_them": true,
     "duong_lui": "xuong mot buoc mat run/step/approval, hoi thoai cu KHONG doi"
-  }
+  },
+  "bay_da_dinh": [
+    "ghi tep bang python p.write_text tren Windows sinh CRLF -> gate 'kieu xuong dong' DO. Dinh 2 lan trong mot phien. Cach chan: sau moi lan ghi bang python, chuan hoa LF."
+  ]
 }
