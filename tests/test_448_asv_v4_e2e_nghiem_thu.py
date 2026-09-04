@@ -233,8 +233,15 @@ def _tom_tat(giai_doan: list[dict], ten: str) -> dict:
 
 def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
               nhan: str, preset: str, che_do_giong: str, giong_id: str,
-              su_that) -> dict:
-    """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao."""
+              su_that=None) -> dict:
+    """Mot lan chay day du, tu form den tep tai ve. Tra ve phan bao cao.
+
+    ⚠️ `su_that=None` khi nguon la PHIM KHACH THAT: phim that khong di kem cau
+       tra loi. Chi mot truong cua bao cao phu thuoc no (`phu_song_loi`, phep
+       doi chieu voi su that doc lap), va truong do thanh `None` — **khong**
+       thanh mot gia tri trong trong nhu `[]`, vi `[]` doc y het "da doi chieu
+       va khong cau nao duoc phu song", tuc dung nguoc voi su that.
+    """
     import platform_core.db as dbmod
     from platform_core import credit
     from platform_core.storage import get_storage
@@ -288,8 +295,9 @@ def _mot_luot(client_chu, csrf, client_khac, nguon: Path, tam: Path, *,
                 "khung": [luong.get("video", {}).get("width"),
                           luong.get("video", {}).get("height")],
                 "vung_co_tieng": [list(v) for v in fx.vung_co_tieng(str(tep_ra))],
-                "phu_song_loi": fx.phu_song_loi(
-                    fx.vung_co_tieng(str(tep_ra)), su_that.loi),
+                "phu_song_loi": (
+                    fx.phu_song_loi(fx.vung_co_tieng(str(tep_ra)), su_that.loi)
+                    if su_that is not None else None),
                 "am_luong": _do_am(str(tep_ra)),
                 # 🔑 **So do CUA CHINH PHEP DO, khong phai cua san pham.**
                 #    `vung_co_tieng` lay NEN bang trung vi moi cua so, va
@@ -833,3 +841,122 @@ def test_CUA_GOI_MODEL_tra_ve_CHUOI_va_moi_nguoi_goi_phai_doc_qua_doc_json(bc):
     # Va cua that phai van tra ve chuoi: neu mot ngay nao do no tra dict, chot
     # tren la thua va phai duoc go — khong de nguoi sau doan.
     assert "noi_dung" in ai.goi.__doc__
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  G17 · chan cuoi cung: PHIM KHACH THAT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@rao_chan_nang.NANG
+@rao_chan_nang.CHI_KHI_BAT
+def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
+    """🔴 **Chan cuoi cung cua G17 — va bai nay ton tai de no dong duoc trong MOT
+    thao tac cua chu du an: tha phim vao thu muc.**
+
+    Truoc bai nay, `asv_e2e_that/` chi la mot cai TEN trong ba ban bao cao —
+    khong mot dong ma nao doc no. Nen "G17 kep vi thieu phim" thuc ra la "thieu
+    phim VA them mot vong sua ma", va vong sua thu hai khong ai ghi ra. Mot mon
+    no an nam trong mot cau nghe nhu da day du.
+
+    ⭐ **Bai nay chot IT hon duong chinh, va do la dieu dung.** Phim khach khong
+       di kem `SuThat`: ta khong biet truoc cau thoai nam o giay nao, nen khong
+       doi chieu `phu_song_loi` duoc. Nhung thu no chot lai la thu mot ban tong
+       hop **khong the** chung minh — tieng on phong, giong chong nhau, nhac nen
+       that, cat canh khong sach:
+
+        * ca hai preset chay het chuoi (`trang_thai_run == "done"`)
+        * QC dat
+        * ban ra khong dai hon nguon; preset giu hinh giu nguyen do dai
+        * so ke khop doi soat — moi thu tinh tien deu co but toan
+
+    ⛔ **Khong tep nao thi `skip`, va `skip` do phai NOI TEN thu con thieu.** Mot
+       bo test xanh voi mot chan G17 con ho, ma su vang mat khong hien o dau,
+       doc y het mot bo test da chung minh G17.
+    """
+    from apps.auto_scan_video import hop_dong_v4
+
+    phim = fx.phim_khach_that()
+    if not phim:
+        pytest.skip(
+            "G17 chua dong duoc: khong co tep phim nao trong "
+            f"{fx.THU_MUC_PHIM_THAT}. Can 2 clip 2-5 phut, tieng Anh, >=2 nguoi "
+            "noi, va it nhat MOT canh that su dang cat - de preset cat tra loi "
+            "duoc cau hoi 'no CO cat khong' chu khong phai 'no khong co gi de "
+            "cat'. Duoi nhan: " + ", ".join(fx.DUOI_PHIM))
+
+    _app, a, csrf_a, b, _csrf_b = moi_truong
+    monkeypatch.setenv("LTT_AUTOSUB_WHISPER_DEVICE", "cpu")
+    monkeypatch.setenv("LTT_AUTOSUB_WHISPER_COMPUTE", "int8")
+
+    # Cung phep bao ve nhu duong chinh: khong co khoa thi noi ra NGAY, khong
+    # hong o giua chuoi sau khi da ton demucs va ASR.
+    if fx.dung_model_that():
+        from platform_core.db import get_session
+        so_khoa = 0
+        for _db in get_session():
+            so_khoa = fx.nap_khoa_pool(_db)
+            _db.commit()
+            break
+        assert so_khoa, (
+            "LTT_ASV_MODEL_THAT=1 nhung pool that khong co khoa `ltt_llm` nao "
+            "dung duoc - khong co duong nao goi model that")
+
+    fx.dat_cua_model(monkeypatch, su_that=None)
+    fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
+
+    luot = []
+    for tep in phim:
+        goc_s = round(float(fx.soi(str(tep))["format"]["duration"]), 3)
+        for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
+                             ("cat_thong_minh", hop_dong_v4.PRESET_CAT_THONG_MINH)):
+            kq = _mot_luot(
+                a, csrf_a, b, tep, tmp_path / f"{tep.stem}_{nhan}",
+                nhan=f"{tep.name}::{nhan}", preset=preset,
+                che_do_giong=hop_dong_v4.CHE_DO_GIONG_TU_CHON,
+                giong_id="Minh Đức")
+            kq["nguon_that"] = {"ten": tep.name, "byte": tep.stat().st_size,
+                                "thoi_luong": goc_s}
+            luot.append(kq)
+
+    # ── Chot ────────────────────────────────────────────────────────────────
+    for kq in luot:
+        nhan = kq["nhan"]
+        assert kq["trang_thai_run"] == "done", (
+            f"{nhan}: chuoi khong chay het ({kq['trang_thai_run']}) — "
+            + str(kq.get("vi_sao_hong")))
+        assert kq["qc"]["dat"], f"{nhan}: QC hong o {kq['qc']['muc_hong']}"
+
+        # ⚠️ `ra` rong nghia la khong co tep ban giao. Noi thang dieu do, dung
+        #    de mot `KeyError` thay cho mot cau tra loi.
+        assert kq["ra"], f"{nhan}: khong co tep ban giao de do"
+        goc_s, ra_s = kq["nguon_that"]["thoi_luong"], kq["ra"]["thoi_luong"]
+        assert ra_s <= goc_s + 1.0, (
+            f"{nhan}: ban ra {ra_s:.2f}s DAI hon nguon {goc_s:.2f}s")
+        if nhan.endswith("giu_hinh"):
+            # ⚠️ Bien 1 giay, khong bien 0: ma hoa lai lam tron theo khung, nen
+            #    mot phep do dung bang 0 se do vi mot su that ve container chu
+            #    khong vi mot khiem khuyet.
+            assert abs(ra_s - goc_s) <= 1.0, (
+                f"{nhan}: preset GIU HINH doi do dai {goc_s:.2f} -> {ra_s:.2f}")
+
+        assert kq["doi_soat"].get("khop") is not False, (
+            f"{nhan}: so ke lech doi soat — {kq['doi_soat']}")
+
+    # ⚠️ Chot nay chi co nghia neu chu du an tha dung loai clip duoc yeu cau, nen
+    #    thong bao phai noi ro khi no do la ban NGUON khong hop le, khong phai
+    #    san pham hong — hai ket luan rat khac nhau tu cung mot dong do.
+    cat = [k for k in luot if k["nhan"].endswith("cat_thong_minh")]
+    assert any(int(k["ban_bien_tap"].get("so_cat") or 0) > 0 for k in cat), (
+        "khong clip nao bi cat canh nao. Neu san pham dung, thi ban nguon khong "
+        "co canh nao dang cat — G17 can mot clip CO canh dang cat, khong phai "
+        "mot clip bat ky")
+
+    duong = Path(os.environ.get("LTT_ASV_G17_RA")
+                 or (tmp_path / "g17_phim_that.json"))
+    duong.parent.mkdir(parents=True, exist_ok=True)
+    duong.write_text(json.dumps(fx.sach_de_cong_bo({
+        "schema": "asv.v4.g17_phim_that.1",
+        "ghi_luc": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        "may": _dang_ky_may(),
+        "so_clip": len(phim),
+        "luot": luot,
+    }), ensure_ascii=False, indent=2), encoding="utf-8")

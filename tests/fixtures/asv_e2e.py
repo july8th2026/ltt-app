@@ -357,6 +357,43 @@ BIEN_GIONG_THAT = "LTT_ASV_GIONG_THAT"
 #:    cai ma pool sinh ra de khong ai phai lam.
 BIEN_MODEL_THAT = "LTT_ASV_MODEL_THAT"
 
+#: Thu muc chu du an tha PHIM KHACH THAT vao.
+#:
+#: 🔴 **Day la chan cuoi cung cua G17, va la chan DUY NHAT may nay khong tu lam
+#:    duoc.** Pha 28 liet ke ba thu thieu — model that, giong that, phim that.
+#:    Hai thu dau dong lai bang phep do o pha 29. Thu thu ba thi khong: mot ban
+#:    nguon tong hop co the giong that ve CAU TRUC (hai giong, bon canh, mot
+#:    canh khong thoai) nhung no khong mang thu khien phim that kho — tieng on
+#:    phong, giong chong len nhau, nhac nen that, cat canh khong sach.
+#:
+#: ⚠️ Va phim that KHONG di kem `SuThat`. Voi ban tong hop ta biet truoc cau
+#:    thoai nam o giay nao; voi phim khach thi khong. Nen bai chay tren phim
+#:    that chot IT hon — nhung thu no chot lai la thu khong the tu dung ra:
+#:    duong chay co song sot khong, QC co dat khong, muc am co dung khong,
+#:    preset cat co that su cat khong.
+THU_MUC_PHIM_THAT = Path(__file__).resolve().parent / "asv_e2e_that"
+
+#: Duoi tep duoc coi la phim nguon. Khong nhan `.wav`/`.mp3`: bai nay nghiem thu
+#: ca duong hinh, mot tep chi co tieng se hong o RENDER voi mot thong bao khong
+#: lien quan gi toi thu dang duoc do.
+DUOI_PHIM = (".mp4", ".mov", ".mkv", ".webm", ".m4v")
+
+
+def phim_khach_that() -> tuple[Path, ...]:
+    """Cac tep phim chu du an da tha vao `asv_e2e_that/`, da sap xep.
+
+    ⛔ Tra ve rong khi khong co tep nao — **khong nem**. Bai goi no phai
+       `skip` kem mot ly do goi ten dung thu con thieu, va bao cao nghiem thu
+       phai GHI viec vang mat do. Mot chan G17 con ho ma khong ai nhin thay
+       trong bang chung thi chang khac gi no da dong.
+    """
+    if not THU_MUC_PHIM_THAT.is_dir():
+        return ()
+    return tuple(sorted(
+        t for t in THU_MUC_PHIM_THAT.iterdir()
+        if t.is_file() and t.suffix.lower() in DUOI_PHIM))
+
+
 #: URL cua CSDL giu POOL KHOA. ⛔ Mot bien RIENG, khong dung `LTT_DATABASE_URL`:
 #: bien do bi `moi_truong` ghi de bang SQLite dung-mot-lan **truoc khi** than
 #: bai test chay, nen doc no o day se luon thay CSDL rong cua bo test.
