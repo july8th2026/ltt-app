@@ -129,7 +129,7 @@ same treatment.
 ⚠️ **A measurement nobody had made:** one 1080p session already puts the encoder
 engine at 88 %. The genuinely scarce resource is the **NVENC engine**, not VRAM —
 and `gpu_lease` reserves by VRAM, so it does not serialise two concurrent
-encodes on one card. Recorded as **V4-R13**; no second slot-counter was added
+encodes on one card. Recorded as **V4-R15**; no second slot-counter was added
 inside the app, because that would create a second owner for one resource —
 exactly what `pipeline.CHUOI` refused to do for demucs.
 
@@ -324,7 +324,7 @@ it runs ffmpeg, and NVENC does not go through torch.
 | question | answer |
 |---|---|
 | Did we duplicate an existing capability? | No. Every fix **connected** something already built. The one new module-level function pair (`quet_het_han`, `bao_tri`) exists because the platform hook had no implementation, not because one was missing. |
-| Did we broaden scope? | Two deliberate refusals: `qc_ai`/`sua_chua` wiring (A27-01) and NVENC session serialisation (V4-R13) are recorded, not built. `dich_thuat.py` was **not** deleted — that would take a 200-line test file and two exception classes `loi.py` still uses, which is larger than the blocker requires. |
+| Did we broaden scope? | Two deliberate refusals: `qc_ai`/`sua_chua` wiring (A27-01) and NVENC session serialisation (V4-R15) are recorded, not built. `dich_thuat.py` was **not** deleted — that would take a 200-line test file and two exception classes `loi.py` still uses, which is larger than the blocker requires. |
 | Did we break old callers? | `features.tao_run_tu_tai_len` changed signature (`du_lieu` → `duong_tep`). Its only product caller is the route, updated in the same commit; `test_423`/`test_429` pin it by name and both pass. |
 | Did we add a silent fallback? | RENDER's encoder downgrade is a fallback, and it is **logged** and one-directional (never upgrades). A scene whose VLM read fails becomes "no evidence" — logged, and it decays to the safe answer (keep), never to a cut. |
 | Did we add CPU/GPU work without admission? | The VLM calls run in `EDIT_PLAN`, which already declared `tai_nguyen="llm_remote"`, slot 1. Frame extraction is ffmpeg on a lane that already runs ffmpeg for scene detection. RENDER now takes a **declared** 500 MiB lease. |
@@ -405,7 +405,7 @@ Unchanged from Phase 26 and still blocking **G17**:
 |---|---|---|
 | **A27-01** | P2 | `qc_ai.py` and `sua_chua.py` have no caller in product code. Same habit, sixth and seventh instances. Now held by `test_453`'s ratchet with a written reason. |
 | **A27-02** | P3 | `vung_co_tieng` used the median as noise floor; the premise broke the first time the cutting preset actually cut. Fixed to p20; recorded because the *class* of defect — a measurement whose premise depends on the input — is not limited to this one function. |
-| **V4-R13** | P2 | One 1080p NVENC session puts the encoder engine at 88 %. `gpu_lease` reserves by VRAM and therefore does not serialise concurrent encodes on one card. |
+| **V4-R15** | P2 | One 1080p NVENC session puts the encoder engine at 88 %. `gpu_lease` reserves by VRAM and therefore does not serialise concurrent encodes on one card. |
 
 ---
 

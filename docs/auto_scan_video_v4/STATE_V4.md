@@ -45,145 +45,41 @@
   and `test_361` (passes alone; red only because the gate held the quiet-window lock it asserts on).
   Raw log: `evidence/00_gate_baseline.txt`
 - **critical_external_evidence_pending**: see table below
-- **open_blockers**:
-  * **A26-01 (P1) — the translation stage's fingerprint carries no model identity.**
-    `thi_hanh.phien_ban_engine('content_process')` returns `noi_dung/1/ltt_llm/`
-    with an **empty** model field: it reads `dich_thuat.PROVIDER_CHINH` /
-    `MODEL_CHINH`, but Phase 14 moved that stage onto `ai.goi_tinh_tien` and
-    `dich_thuat.dich_ban_ghi` has had no callers since; the model that actually
-    runs is `ai.model_cho(CHUYEN_LOI_THOAI)` = `qwen38-api`. Changing the real
-    model invalidates nothing — neither the cache nor `_vo_hieu_giai_doan_da_lech`
-    — which is precisely what Phase 08 added engine versions to prevent.
-    ⚠️ **Masked by B23-01 and un-masked by fixing it**: with the cache dead there is
-    nothing stale to hand back, so B23-01 must not be fixed alone. Fix: derive the
-    version from `ai.ban_do_model`, and consider deleting `dich_thuat.py`.
-  * **A26-05 (P1) — the smart preset's customer-facing text promises cutting that
-    cannot happen.** `gia.PRESET_BANG` tells the customer "Bo bot nhung canh it noi
-    dung de video ngan lai" and states a re-encode quality cost in exchange;
-    measured on a source with a dialogue-free scene: `so_canh 4, so_giu 4,
-    so_cat 0`. The customer pays the cost and receives the same length. ⭐ Phase 21
-    named this exact defect class ("false feature") while shipping an instance of
-    it. Fix until B22-01 lands: describe what it does today, or hide it.
-  * **A26-02 (P2) — `AsvWorkItem.revision` is documented as the lost-update guard
-    and never enforced.** `tables.py:327` promises `UPDATE ... WHERE revision = :r`;
-    `AsvStage` implements it via `cap_nhat_giai_doan`, work items do not —
-    `su_dung.danh_dau_xong` bumps the counter with a plain ORM write. Damage is
-    limited today by two UNIQUE constraints, which is why it has never been seen.
-  * **A26-03 (P2) — the direct upload path still reads the whole video into RAM.**
-    `routes.py:254 du_lieu = await video.read()` runs **before** the 90 MB check at
-    line 257, and `tao_run_tu_tai_len` then writes the same bytes to a temp file —
-    resident twice. ⚠️ STATE recorded V4-R01 as CLOSED; Phase 05 closed the
-    *checksum* half, not the *memory* half named in the same risk. G6's wording is
-    violated literally.
-  * **B25-01 — retention is declared, never enforced, and the same for scratch
-    and for the deliverable.** `HAN_TRUNG_GIAN = 30 days` is stamped on every
-    promoted artifact and `kiem_toan_ven` reports `expired` — but **nothing ever
-    sweeps**: no job reads `expires_at` for ASV, and `assets.don_theo_run` exists
-    with **no caller** (the fourth built-and-unconnected capability, after the VLM,
-    the stage cache and the hardware encoder). Separately,
-    `thi_hanh.chay_giai_doan` calls `promote_va_ghi` without `han`, so the
-    customer's finished video gets the same 30-day window as working files, while
-    `assets.py` states the deliverable is written with its own retention. How long
-    a customer's video is kept is a business decision with a storage bill attached.
-    Pinned by `xfail(strict=True)` in `test_451`. **Owner: Phase 27.**
-  * **B24-01 — the smart preset never uses the hardware encoder.**
-    Measured: `detect_gpu_encoder()` returns `h264_nvenc` on this host, and the
-    smart run's build manifest records `bo_ma_hoa: "libx264"`.
-    `giai_doan_ban_dung` decides with `co_gpu = bool(ctx.gpu_uuid)`, but COMPOSE
-    runs on `asv_media` (`requires=("ffmpeg",)`, no `gpu_vram_mb`), so no lease is
-    ever granted and the fallback is always chosen. Phase 17 measured the cost:
-    NVENC 1.68x faster at SSIM ~ 0.995, host CPU 61% -> 41%. Every obvious fix is a
-    design change (declaring VRAM for compose stalls the whole ffmpeg lane on a
-    GPU-less host; moving the choice to render breaks manifest reproducibility).
-    Pinned by `xfail(strict=True)` in `test_450`. **Owner: Phase 27.**
-  * **B23-01 — the stage-level fingerprint cache has never returned a hit.**
-    ADR-001 D8 promises reuse at zero cost for an unchanged stage;
-    `assets.cache_dung_duoc` filters on `f"/{van_tay}." in storage_key`, but
-    `dat_khoa` truncates the fingerprint to `DAI_VAN_TAY_TRONG_KHOA = 32`
-    characters while the stage fingerprint handed in is 64 — the substring can
-    never appear. And the key carries each **artifact's** own fingerprint, not
-    the stage's (measured: one `media_prepare` run wrote two artifacts under
-    two different fingerprints), so no single value identifies the stage. The
-    cache branch of `chay_giai_doan` is dead code. Fixing it means changing
-    what goes into a storage key or adding a column to `asv_asset` — a design
-    decision, not a narrow fix. Pinned by `xfail(strict=True)` in `test_449`.
-    **Owner: Phase 27.** ⭐ The reuse that *does* work is at the **unit** level
-    (`AsvWorkItem` + ledger + the staging recovery added in Phase 23).
-  * **B22-01 — `smart_localize` cannot cut anything.** `giai_doan_ban_bien_tap.chay` passes `hieu = ()`, and `ban_bien_tap` keeps every scene without evidence, so the cutting preset differs from the preserve preset only by re-encoding the picture: it pays the quality cost and delivers none of the benefit. Measured in Phase 22 on a source whose fourth scene has **no dialogue at all** — `so_canh 4, so_giu 4, so_cat 0, so_co_bang_chung 0`. Pinned by `xfail(strict=True)` in `test_448`, so the day it is wired the suite says so. **Owner: Phase 27.** Related and latent: `hieu_canh.doc_hieu_canh` requires a top-level `canh` key that `loi_nhac_canh` never asks the model for — a compliant response would be rejected the moment the caller exists.
-- **cong_viec_ha_tang_dang_cho** (ngoai pham vi ASV, nhung chan lai viec do dac tien):
-  **ngan sach loi cua `gate.py` la per-RUN, khong per-MAY.** `ngan_sach_loi()` chi doc
-  `os.cpu_count()`, nen moi luot tu tin no co 14 loi va **ca hai deu dung theo cach tinh cua
-  rieng minh**. Do duoc: 1 luot + nen production = 19/20 loi (OK); **2 luot = 33/20 (qua tai
-  13 luong)**; 3 luot = 47/20.
-  ⚠️ `BELOW_NORMAL_PRIORITY_CLASS` khong che duoc ca nay — no cuu `LTTStudioWeb` khoi gate,
-  nhung hai gate deu uu tien thap **bang nhau** nen tranh nhau song phang.
-  ⛔ Mau chot: `cua_so_yen.thu_giu():134` **khong ghi `so_loi`** vao ban ghi khoa, nen mot
-  phien thay phien khac dang giu van khong biet phien kia dung bao nhieu.
-  Ba thay doi cong them, da gui `lttchat-...-49` (ho dang mo `gate.py`):
-    A. `thu_giu()` ghi them `so_loi` (mac dinh 0 -> caller cu khong doi hanh vi)
-    B. `ngan_sach_loi()` tru Sigma loi cac phien KHAC dang giu; giu `max(2, ...)`
-       ⚠️ phai lay so **sau khi da giu khoa**, khong phai o `gate.py:224` luc dung danh sach buoc
-  🔴🔴 **DO DUOC TRUOC KHI SUA — NGAN SACH HIEN TAI DANG LAM DIEU NGUOC LAI:**
-
-        os.cpu_count()            = 20   (loi LOGIC)
-        psutil.cpu_count(False)   = 10   (loi VAT LY  <- xdist `auto` dung so nay)
-        gate truyen  -n           = 11
-
-     `loi_bo_test = min(12, ngan_sach_loi() - len(FRONTENDS)) = min(12, 14-3) = 11`.
-
-     ⇒ **Gate dang chay 11 worker trong khi `-n auto` chi mo 10.** Co che "ngan sach loi"
-       sinh ra de GIAM tai, va tren may nay no dang TANG — dung lop loi ma `-49` mo ta
-       (mot ngan sach la GIOI HAN TREN, khong phai mot phep gan), chi khac la no dang song
-       trong ma chu khong phai trong mot ban nhap.
-
-     ⭐ Nguyen nhan goc: `ngan_sach_loi()` tinh tren `os.cpu_count()` = loi **logic** (20),
-       con xdist `auto` tinh tren loi **vat ly** (10). Hai don vi khac nhau bi tru cung mot
-       hang so `LOI_DE_DANH_CHO_MAY = 6`. Tren mot may khong SMT thi hai so trung nhau va
-       loi nay khong ton tai — nen no chi lo ra o dung loai may nay.
-
-     ⇒ Sua bat buoc phai la `min(<ngan sach cua ta>, <cau tra loi cua chinh cong cu>)`.
-       Va `test_nhanh.py:219` truyen thang `-n` cho pytest, khong kep gi — nen khong co
-       lop nao ben duoi bat lai giup.
-
-  🔴 **BA SUA CHUA tu `lttchat-...-49` sau khi doc thiet ke — diem 2 la mot LOI THAT:**
-    1. **Tinh lai con so thoi thi VO NGHIA.** `gate.py:224` dung `argv` cua buoc `bo test`
-       voi `-n <so>` **da co dinh** truoc khi `CuaSoYen.__enter__` chay. Lay so moi sau khi
-       giu khoa ma khong dung lai `argv` thi no tru dung va **van chay 11 worker**. Cho sach
-       nhat: cho `Step` giu mot HAM dung argv tre, thay vi mot list co dinh.
-    2. ⛔ **`so_loi = 0` cho ban ghi cu la FAIL-OPEN.** Toi thiet ke mac dinh 0 de caller cu
-       khong doi hanh vi — nhung 0 co nghia "khong khai", khong phai "khong dung loi nao".
-       Mot luot gate CU dang giu khoa se doc ra 0 loi => ngan sach khong bi tru => **dung cai
-       qua tai ta muon chan, chi khac la im lang**. Sua: doc ra 0 ma ban ghi CO tai nguyen
-       `cpu_nhieu` thi tinh bang mot gia tri de dat (vd `ngan_sach_loi()` mac dinh), tuc
-       fail-CLOSED o dung cho no re.
-    3. Hop nhat chu ky: ho da them `ngan_sach_loi(do_tai=False)`. Ba co cho cung mot cau hoi
-       "toi duoc dung bao nhieu loi" la ba cau tra loi khac nhau cho cung mot cau hoi — gop
-       thanh MOT tham so.
-  ⭐ Va mot bai hoc ho tra gia de co, ap thang vao day: ban dau ho lay `cpu_count() - 6` = 14
-     lam **tran** cho `-n`. Sai — xdist tu tra loi **10** (loi vat ly), nen cai "tran" 14 lai
-     **NANG** so worker len, nguoc han chieu no ton tai. Phai la `min` voi cau tra loi cua
-     chinh cong cu, khong phai mot phep gan. Ngan sach nay se gap dung hinh dang do o **moi**
-     cong cu con biet tu do.
-
-    C. **PHAN CUA PHIEN NAY, lam sau khi A+B merge:** het `--cho` ma chay de thi ngan sach
-       = phan CON LAI, khong phai full 14. Giu nguyen quyet dinh "khong tu choi chay" —
-       chi la khi biet minh dang chen thi tu thu nho. Can mot chot rieng chung minh ngan
-       sach THAT SU thu nho, khong phai mot co bao rang no thu nho.
-- **he_qua_luc_hop_nhat**: chu du an da **go tinh nang `ho_so_he_thong`**
-  tren `admin-mvp-v3` (`e85020e`) — `ho_so_he_thong.txt`,
-  `tools/build_system_profile.py` va `tests/test_177_system_profile.py` deu bi xoa
-  ben do, va `CLAUDE.md`/`AGENTS.md` duoc sua theo. `phien/asv-v4` re ra TRUOC
-  commit do nen van con ca ba, `tools/gate.py` cua nhanh nay van co buoc
-  `system profile`, va moi pha van sinh lai mot tep 18 MB cho mot tinh nang da
-  bi quyet go. ⛔ **Khong go o day**: quyet dinh nam tren nhanh khac, va bo mot
-  buoc cong o giua mot mach co chot la doi thuoc do trong luc dang do. Xu ly
-  luc hop nhat.
-- **debt_carried**: a **full** `tools/gate.py` run has not completed since Phase 00's
-  baseline. The Phase 04 attempt died at step 20/26 with no `RESULT:` line when the
-  previous session exited, and a peer session then announced a production deploy on this
-  machine — restarting a 20-worker suite would have contended with it. `--quick` is PASS
-  but says of itself it is not evidence. **Run the full gate at the next phase boundary**
-  once the peer's deploy is done.
+- **open_blockers**: **none.** All nine Phase 26 findings are closed or recorded
+  with a written reason (`reports/27_REPORT.md`). Eight FIXED with evidence;
+  A26-04 (P3) NOT_FIXED by design, with the condition that would change it
+  written at the constant itself.
+  - ⭐ Three `xfail(strict=True)` pins flipped and were removed: B22-01
+    (`test_448`, real E2E run), B24-01 (`test_450`, real perf run) and B23-01
+    (`test_449`) — the last one after **refusing** a fix that was only half of
+    one. See "what Phase 27 got wrong about itself" below.
+- **findings_for_phase_28**:
+  * **A27-01 (P2)** — `apps/auto_scan_video/qc_ai.py` (semantic + visual QC) and
+    `sua_chua.py` (repair) have **no caller in product code**. `loi.py` imports
+    only their exception classes, which makes both files look live from every
+    angle except the one that matters. This is the **sixth and seventh** instance
+    of the habit Phase 26 counted five times, and it was found by the check that
+    audit asked Phase 27 to build (`tests/test_453`). G14 was marked PARTIAL for
+    *"repair plan computed but never driven"* — that was half of it.
+    ⛔ Wiring them is feature expansion, which Phase 27 forbids. Held by the
+    ratchet with a written reason. **Owner: Phase 28 to schedule.**
+  * **A27-02 (P3)** — `tests/fixtures/asv_e2e.vung_co_tieng` estimated the noise
+    floor with the **median**, on a premise stated in its own docstring: *"a dub
+    speaks about a third of the duration, so the median falls on the bed."* That
+    premise depends on how much silence the **source** contains — something the
+    measurement does not control. The first time `smart_localize` really cut, the
+    premise broke and the report said "no speech in the output" about a file with
+    the same speech structure as the other preset. Fixed to the 20th percentile.
+    Recorded because the **class** — a measurement whose premise depends on its
+    input — is not limited to this function.
+- **what_phase_27_got_wrong_about_itself**: B23-01 was written up as FIXED before
+  the `xfail(strict)` guarding it had been run. The pin then failed, and its own
+  stated reason named the layer that had been skipped: the storage key carries
+  each **artifact's** fingerprint, not the stage's, so no string match on
+  `storage_key` can answer the question at all. The real fix reads
+  `AsvStage.fingerprint`. ⭐ Recorded here rather than quietly corrected: the
+  failure mode was trusting a patch that matched my model of the defect over the
+  check written specifically to test that model.
 
 ## Runtime measured on this machine (2026-09-03)
 
@@ -293,6 +189,7 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 | V4-R09 | P1 | G13 | `platform_core.media.detect_gpu_encoder()` exists and is careful (NVENC minimum-size trap already handled at `media.py:174`). ASV never calls it, because MVP v1 froze *stream-copy only* (D-ASV-03) — correct then, insufficient for `smart_localize`, which must re-encode at cut points. | 17 |
 | V4-R10 | P2 | G1 | Three baseline gate failures (`test_362` ×2, `test_82`) **can never pass inside a linked worktree** (V2's RISK-14-02) and this repo's own tooling creates linked worktrees. Do not spend time on them; count them as environmental. | — |
 | V4-R12 | P2 | G16 | `MVP_CONTRACT.md` §6 freezes **four** user settings; `routes.py:134-135` exposes **two** (`che_do`, `giong_id`). `keep_background` and `background_gain_db` were contracted and never surfaced. Found in Phase 01, owned by Phase 21. | 21 |
+| V4-R15 | P2 | G8 | **`gpu_lease` reserves by VRAM, and the scarce resource here is not VRAM.** Measured 2026-09-04 on this host: one 1080p `h264_nvenc` session takes **+228 MiB** but puts the **encoder engine at 88 %**. With a 500 MiB declaration a 16 GiB card admits dozens of leases, so two smart-preset renders can contend on one engine while the scheduler believes both fit. ⛔ No second slot-counter was added inside the app: that creates a second owner for one resource, exactly what `pipeline.CHUOI` refused to do for demucs. Found in Phase 27. | 28 |
 | V4-R11 | P2 | G4 | `enabled=False` does **not** close a route — `mount_all` mounts every error-free router. V2 fixed this with an explicit flag gate placed **before** `require_login` (after it, a closed route still 303s to `/login` and thereby admits it exists). Any V4 route added must keep that ordering. | 21 |
 
 ## External evidence pending
@@ -310,6 +207,7 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 
 | Phase | Gate | Report |
 |---|---|---|
+| 27 Blocker remediation | **PASS** | Nine findings, and the audit's own conclusion held: they were **one habit** — a capability finished, unit-tested, and never connected. Closing them showed the habit had also infected the test doubles. 🔑 For B22-01 the schema of a single VLM answer was described in **four places and no two agreed** (prompt asks flat · `DOC_CANH` declared a `canh` wrapper · the reader tolerated both · the E2E double returned a batch API that never existed), so a response obeying the prompt exactly would have been **rejected**. And the prompt had never attached a frame — it said "there are N representative frames" and sent none, so a vision model was selected to answer a question a text model answers identically. 🔑 B24-01 was wrong in **three** places, and the deepest was that COMPOSE decided the encoder from `ctx.gpu_uuid` — COMPOSE and RENDER are two jobs and a lease dies with its job, so the question was asked where the answer could never still hold. ⛔ And a pin was **protecting the defect it was written to prevent**: `test_renderer_KHONG_xin_GPU` forbade `gpu_env` on a sentence true for one preset since Phase 12. 🔴 Wiring the retention sweeper turned a harmless label into a live command — `HAN_TRUNG_GIAN` was stamped on the **deliverable** too, harmless only while nothing swept; the two changes had to land together. ⭐ The check the audit asked for (`test_453`) found the **sixth and seventh** instances (`qc_ai.py`, `sua_chua.py`) and says plainly it catches 3/5, not 5/5. ⚠️ And the phase got one thing wrong about itself: B23-01 was reported FIXED before its guarding pin was run, and the pin refused a fix that was half of one. Measured: NVENC +228 MiB but **88 % encoder** (V4-R15). E2E **20 passed**, perf **12 passed**, invariants **188 passed / 1 xfailed**. | [`reports/27_REPORT.md`](reports/27_REPORT.md) |
 | 26 Independent audit (read only) | **`AUDIT_COMPLETE_WITH_BLOCKERS`** | Read from source, not from STATE; no code touched. **Five new findings** (A26-01..A26-05) and four recorded blockers re-verified from the code rather than from the claims about it. 🔴 **A26-01 (P1)**: the translation stage's fingerprint contains **no model identity** — it reads a dead module's empty constant while `qwen38-api` does the work, so changing the model invalidates nothing; and it is **masked by B23-01**, meaning fixing the cache alone would start serving stale output. 🔴 **A26-05 (P1)**: the smart preset's own description promises scene removal that measurement shows never happens, with a quality cost charged for it — the defect class Phase 21 named while shipping an instance of it. **A26-03 (P2)** contradicts STATE: V4-R01 is recorded CLOSED, but `routes.py:254` still `await read()`s the whole upload **before** the size check, violating G6's exact wording. ⭐ And the audit's own conclusion: **one habit, five times** — the VLM, the stage cache, the hardware encoder, the artifact sweeper and `dich_thuat.py` were each finished, unit-tested, and never connected to a running path. A capability with a green test and no live caller looks exactly like a finished feature from every angle except the only one that matters; Phase 27 should add the check that finds them all before fixing them one by one. Gates: G3, G4, G6, G8, G9, G16 **FAIL**; G10, G13, G14 partial; G17 not PASS (external evidence still missing); the other ten PASS. | [`reports/26_REPORT.md`](reports/26_REPORT.md) |
 | 25 Security / migration / hardening | **PASS** | 🔑 **The test suite and the server had never been compared.** Tests build the schema with `create_all()`; the server runs `alembic upgrade head`; nothing in this repository — for **any** app — had ever checked that the two agree. A column added without a migration passes every gate and breaks on the first deploy. Measured on a temporary database: **zero drift for ASV tables**, and a guard now keeps it that way (adding an un-migrated column turns it red). 🔴 **Redaction locked the front door and left the back one open**: `lenh_da_che` masked paths in the render command while the same record stored ffmpeg's `stderr` unmasked — and ffmpeg prints full paths there. ⚠️ And the first masker leaked precisely what it protected: it ended a path at whitespace, and Windows paths contain spaces — inside the user's real name. A terminator must be what actually ends a path, not what usually does. IDOR now covers all **six** V4 object types (Phase 05 covered three; `asv_work_item` and `asv_usage` arrived later carrying customer data). ⚠️ **B25-01: retention is a label with nothing behind it** — nothing sweeps, and `assets.don_theo_run` has no caller: the fourth capability in four phases built and never connected. 🔴 That pin was also wrong first: it compared expiry *timestamps*, passed because RENDER is promoted 70 s later, and was measuring the clock — third instance in three phases of an assertion holding for a reason unrelated to its subject. New `san_sang.py` answers 'can this machine run me' with **three** states, because a failed probe is not an answer and must never count as ready. New `RUNBOOK.md` covers the five drills and ends by naming what it **cannot** fix, so an on-call person does not hunt for a button that does not exist. 14 tests + 1 xfail, **8/8 mutations red** after two of them had to be re-aimed. | [`reports/25_REPORT.md`](reports/25_REPORT.md) |
 | 24 CPU/GPU performance and load | **PASS** (one blocker recorded) | 🔑 **The shared GPU slot stays shared, and a measurement is why.** `pipeline.CHUOI` had written down the exact experiment that would release it — peak CPU < 70% and free RAM > 8 GiB with demucs and ASR concurrent. Run: throughput **x1.5** (63.53 s sequential -> 42.43 s concurrent, better than the x1.3 predicted), free RAM 9.1 GiB clears its condition, and **peak CPU 78.6% fails the 70% one**. The tempting result was one line of config away and measurable; the pre-written condition said no. 🔴 **B24-01: the smart preset never uses the hardware encoder** — the host has `h264_nvenc`, the run records `libx264`, because COMPOSE decides from `ctx.gpu_uuid` while running on a lane that is never granted a GPU. Third capability in three phases that was finished and never connected. 🔴 **And Phase 22's CUDA-ASR entry was wrong**: the path does not hang, it fails in 0.23 s with `cublas64_12.dll is not found` — production is unaffected because it uses the WhisperX sidecar, and the owner app's CPU fallback guards the constructor rather than the call that actually fails. ⭐ Two of my own instruments were corrected before their numbers were read: the background load was sampled **after** the upload had already started work, and the VRAM check passed for any declaration on a CPU-only tree — it now skips with that reason instead of showing green. Repeated-work audit: source hashed twice (455 MB/s -> 0.2 s today, 4-9 s at the 2-hour cap), 21 ffprobe, 67 storage reads — **nothing changed**, because the evidence says none of it is worth the churn yet, and the number that would change that is written down. 6/6 mutations red. | [`reports/24_REPORT.md`](reports/24_REPORT.md) |
@@ -329,7 +227,7 @@ V4 forbids (`V3_TO_V4_CORRECTIONS` §2/§3).
 | 10 Scene segmentation + frame sampling | **PASS** (benchmark deferred, stated) | Built rather than extracted — the proven engine lives in the **read-only** reference tree and `taoclipngan`'s copy is under gitignored `vendor/`. 🔴 **Memory dictated the shape**: a 40-min 1080p source is ~60 000 frames (~350 GB raw), so `ffmpeg`'s `select='gt(scene,T)'` does the comparing and ASV reads only timestamps — **no pixel enters Python**, pinned by AST; `-f null -` writes nothing; one ffmpeg call for the whole video, pinned by counting `subprocess.run`. Frame cap sits **where frames are produced** (60/run, 2/scene, 512 px long edge) because the vision window is 65 536 tokens — a cap after the spend is a cap in the wrong place. 🔴 **The even-distribution test caught a real bug in my first draft**: it gave one frame to each of the first 60 scenes and **nothing to the last 40** — the exact tail-truncation its own docstring forbade. 🔴 And the merge-vs-drop test **could not tell the difference** until mutation showed it: the fixture put short scenes at the *start*, where a separate head-merge rule closed the gap anyway; a short scene in the **middle** gets no such rescue. 28 tests, 6/6 mutations red, 376 passed in regression. ⚠️ Debt: `NGUONG_DOI_CANH = 0.4` unmeasured on real footage (written down as such, and it is inside the fingerprint); wall-clock CPU profile needs a representative source file the repo does not have; persisting `SceneIndex` as `AsvAsset` belongs to Phase 11, its first consumer. | [`reports/10_REPORT.md`](reports/10_REPORT.md) |
 | 09 LTT Voice boundary + voice binding | **PASS** (2 reqs deferred to 15, stated) | **V4-R14 (P0) closed**: `giong_mau`'s 20 sample voices classified on three axes existed all along and were simply **not exported** — seven additive read-only names on both sides. `loc` is exported rather than letting ASV walk `DANH_SACH`, because a filter is a **rule** and two copies of a rule drift. 🔑 **AUTO_MATCH defers, it does not default.** With no ContentProfile it resolves to `CHUA_RANG` — a valid state that is neither failure nor voice — and `ma_giong()` **raises** on it. V2 did the opposite (`routes.py:135` `giong_id: str = Form("")` → empty took the default), which `ADR-V4-001` D-V4-04 forbids by name: a default **reads nothing from the video**. Deferring beats a placeholder because Phase 14 sizes sentences against the real voice's reading speed, so a temporary voice yields an adaptation that must be redone. Ownership is **not** re-implemented — `features.giai_giong` already filters `owner_id`, handles the shared store and drops inactive voices; getting the first wrong means a customer's video read **in someone else's cloned voice**. `rang_giong.py` synthesizes **zero milliseconds**, pinned by AST. ⛔ Reqs 1–2 (per-segment synthesis service) deferred to Phase 15 — the structural blocker (`asv_stage` holds one `job_id`) was removed by Phase 05's `AsvWorkItem`, but the brief's own index puts synthesis at 15 and the billing prerequisite is still unproven. 22 tests, 6/6 mutations red, 540 passed in regression. | [`reports/09_REPORT.md`](reports/09_REPORT.md) |
 | 08 LTT AI text + vision boundary | **PASS** (1 debt stated) | 🔴 **A live bug, and ASV is its third victim.** `dieu_phoi.goi`'s own docstring warns that `{"ltt_llm": "ltt_llm"}` is wrong — `ltt_llm` is the app's public **alias**, not a model id, so `chon_key` raises and the dispatcher **silently skips the only provider**. Verified against the registry rather than assumed: `models_for("ltt_llm")` returns `qwen38-api` + `qwen38-vision` only. `dich_thuat.py:45` held that exact line; the two earlier victims are named in that docstring, and ASV went unnoticed because the stage is still a fake engine. ⭐ **An example in a docstring is code that people copy** — when it is wrong it is never wrong alone. New `ai.py`: six typed operations, model chosen **semantically** (`can_thi_giac` → `providers.model_capabilities`), token ceiling single-sourced from `ltt_llm.ngan_sach`, structured-output validation, prompt/schema version for fingerprints. Context windows differ — text 131 072 vs vision **65 536** — so a frame batch packed against the text ceiling is a 413 at runtime. 🔴 **Mutation found two holes in my own tests**: the ambiguity test was measuring the string fallback instead of the class-name branch, and the one-door guard locked `import platform_core.llm.dieu_phoi` but not `from platform_core.llm import dieu_phoi`. ⚠️ Also fixed a **flaky test I created in the Phase 07 unification**: making `do_tai=True` the default made three `test_431` cases read real CPU and change answer with load — green alone, red under `-n 4`. 28 tests, 7/7 mutations red. ⛔ Debt: nothing wires `su_dung.ghi` into `ai.goi` yet — no stage makes a paid call, and a ledger write on a path that never runs is a claim without a witness. Phase 11 is the first paid caller. | [`reports/08_REPORT.md`](reports/08_REPORT.md) |
-| 07 ASR + diarization capability rebase | **PASS** | **Half the objective was already met, and saying so is the finding**: for ASR, `transcribe_file` was already declared, already the only name ASV touched, and already forwarded the platform-assigned card — so *"remove the private-path dependency"* had nothing to remove, and an AST test now proves that positively. The gap was diarization (V4-R13), closed with two additive lines on both sides. 🔴 **Exporting it surfaced a live defect older than Auto Scan**: `pyannote_runner.py:20` did `if torch.cuda.is_available(): pipeline.to(torch.device("cuda"))` — it took the first card torch saw, **ignoring `gpu_lease` entirely**, while `manifest.py:51` declares `gpu_vram_mb=2000` so the platform *believed* it was arbitrating. Fixed by reusing the owner's own `_env_ghim_gpu`, adding no second arbiter. ⛔ `SCHEMA_BAN_GHI` deliberately **not** bumped — `kiem` compares by equality, so a bump invalidates every stored transcript and the customer pays for a second ASR pass they never asked for; speaker fields are additive, plus one explicit `phan_vai` with three values so Phase 09 can tell **no evidence** from **evidence that found nobody**. Diarization runs only for `AUTO_MATCH`; missing or malformed settings mean **do not spend**. ⭐ A Phase 02 test failed *forward* — it pinned the opposite state and carried the fix instruction in its failure message; a test pinning a temporary state must say what to do when it stops being temporary. ⚠️ Also relinked the ASV alembic chain after the trunk merge created **two heads** (the merging side rebases). 18 tests, 7/7 mutations red. | [`reports/07_REPORT.md`](reports/07_REPORT.md) |
+| 07 ASR + diarization capability rebase | **PASS** | **Half the objective was already met, and saying so is the finding**: for ASR, `transcribe_file` was already declared, already the only name ASV touched, and already forwarded the platform-assigned card — so *"remove the private-path dependency"* had nothing to remove, and an AST test now proves that positively. The gap was diarization (V4-R15), closed with two additive lines on both sides. 🔴 **Exporting it surfaced a live defect older than Auto Scan**: `pyannote_runner.py:20` did `if torch.cuda.is_available(): pipeline.to(torch.device("cuda"))` — it took the first card torch saw, **ignoring `gpu_lease` entirely**, while `manifest.py:51` declares `gpu_vram_mb=2000` so the platform *believed* it was arbitrating. Fixed by reusing the owner's own `_env_ghim_gpu`, adding no second arbiter. ⛔ `SCHEMA_BAN_GHI` deliberately **not** bumped — `kiem` compares by equality, so a bump invalidates every stored transcript and the customer pays for a second ASR pass they never asked for; speaker fields are additive, plus one explicit `phan_vai` with three values so Phase 09 can tell **no evidence** from **evidence that found nobody**. Diarization runs only for `AUTO_MATCH`; missing or malformed settings mean **do not spend**. ⭐ A Phase 02 test failed *forward* — it pinned the opposite state and carried the fix instruction in its failure message; a test pinning a temporary state must say what to do when it stops being temporary. ⚠️ Also relinked the ASV alembic chain after the trunk merge created **two heads** (the merging side rebases). 18 tests, 7/7 mutations red. | [`reports/07_REPORT.md`](reports/07_REPORT.md) |
 | 06 Billing usage + budget foundation | **PASS** (1 debt stated) | `AsvUsage` + migration `c81d3f5a90e7` + `su_dung.py`. 🔑 **The ledger is not a second money path** — money still flows through exactly one column (`AsvWorkItem.credit_actual`); the table *explains* it, and `doi_soat` pins `item.credit_actual == Σ delivered rows`, called from `quyet_toan` **before** the charge. Three of the eight requirements were **already implemented** (child jobs use `jobs.submit`, exactly-once aggregation, no price recompute) — the honest output for those is three AST pins, not new code. 🔴 Four bugs found in my own work, each by a different mechanism: `db.rollback()` on a duplicate dispatch id destroyed **the caller's whole transaction** (→ SAVEPOINT); a reconciliation guard would have alarmed on all pre-existing rows; `test_427` caught `su_dung.py` **missing from the rebase map** (8 ADD → 9); and an integration assertion of mine encoded a contract the platform does not have — `credit.so_da_giu` returns **200** after settlement because it sums historical `CREDIT_HOLD` entries, not "still held". ⭐ Counting hold *entries* proves "one billing owner"; the sum never could, since one hold of 200 and two of 100 are indistinguishable. ⚠️ Also capped `demucs_runner` at 4 torch threads — the black box measured twelve of them at **462–984 % CPU each**, and that is precisely where `-n 6` cannot reach: it counts pytest workers, not what each worker spawns. 38 tests, 7/7 mutations red. | [`reports/06_REPORT.md`](reports/06_REPORT.md) |
 | 05 DAG + item checkpoints + large input | **PASS** (2 sub-items deferred to 15, stated) | `AsvWorkItem` + migration `a4c17f9b62d0`; durable upload replaces `await video.read()`. 🔴 **`upload_sessions._SLUG` rejected 7 of 19 apps on this tree** (`ltt_llm`, `ltt_voice`, `prompt_ai_ommi` + the 4 ASV apps; on the main tree at `dac2406`, which has not merged the ASV apps, the same defect counts **3 of 15** — session `lttstudiosapp-73` measured that and the two numbers reconcile exactly) — no underscore allowed — including `ltt_voice`, which is *released and selling*. Invisible because the only caller (`autosubvideo`) is one of the few slugs without one, and `conftest` uses `APP_THU_SLUG="appthu"`: the suite exercised that path thousands of times, never once with a real slug. Widened by one character, purely additive, both directions pinned. 🔴 **Two more whole-video-into-RAM sites** beyond the one Phase 00 found — `_duong_doc_duoc` (no cap at all, and the durable path admits 2 GiB) and `kiem_hop_le`/`kiem_toan_ven` (every artifact of every run, `final.mp4` included). All three share a shape: **they never produce a wrong answer**, so the tests measure the largest single read, not the result. ⭐ Probing without downloading needed **zero** new code — `media.is_remote_source` already existed and its docstring already named the cost. | [`reports/05_REPORT.md`](reports/05_REPORT.md) |
 | 04 Regression shield + heavy-test isolation | **PASS** | Found **3 real-model calls with no guard at all** — 2 × demucs (`test_406`), 1 × faster-whisper (`test_407`) — in a repo with **no pytest config to hang a marker on**. Gated behind `LTT_TEST_NANG`, because a marker only filters when somebody types `-m`, and "somebody forgets" is exactly what hard-reset this machine twice. Added a ratchet over every `tests/test_*.py` so the fourth one cannot arrive quietly. ⭐ Three drafts were wrong first: `assign_speakers` is 12 lines of interval arithmetic (proximity is not evidence), three call sites reach a heavy function but raise before the engine, and the ini check flagged its own explanatory comment — **the third text-scanning detector this session to punish the prose documenting it**. ⚠️ Full gate not re-run; debt recorded above rather than folded into the green rows. | [`reports/04_REPORT.md`](reports/04_REPORT.md) |
