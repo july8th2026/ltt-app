@@ -195,6 +195,24 @@
     ⛔ NOT fixed: leaving headroom vs limiting after the final encode is an
     audio-chain decision, and Phase 24 already measured this chain aiming at
     -1.5 and delivering -1.45 - so the margin was known to be thin.
+  * **A29-06 fix CHANGED after review by the coordinating session.** I first
+    widened `credit_entries.job_id` and `jobs.plan_id` to 64 with a migration;
+    it worked (the full 71-migration chain ran clean on PostgreSQL). The
+    coordinator argued the cheaper direction and was right: widening edits
+    **shared platform columns** and needs a migration on the production
+    **money** table, while shortening the id touches **one file of this app**
+    and needs no migration.
+    ⭐ I measured the thing they could not see from outside: **nothing
+    parses `run.id`** - every use is `[:8]` for a log line or a filename. So
+    shortening is free in fact, not just in theory. `"asvr_" + 31 hex` = 36
+    chars, 124 bits; precedent in this same app (`assets.py` uses 19 hex).
+    🔴 And the decisive reason: the coordinator is queueing a check that
+    will **enforce** `job_id <= 36` as a platform contract. Widening to 64
+    would have put my patch in direct contradiction with a contract about to
+    be enforced - two people fixing one thing in opposite directions is worse
+    than neither fixing it.
+    ⚠️ The window is open only because ASV has **no production rows**; it shuts
+    permanently at the first paying run.
   * **A29-06 was TWO columns, not one.** `jobs.plan_id` is also VARCHAR(36)
     and also receives `run.id` (`jobs.py:237`). It stayed hidden **behind**
     the credit one: the run never reached it. 🔴 A fix without a re-run

@@ -72,13 +72,33 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
+#: 🔴 **31, khong phai 32 — va mot ky tu la ca ly do.**
+#:
+#:    `"asvr_" + 32 hex` = **37** ky tu, va `credit_entries.job_id` cung
+#:    `jobs.plan_id` cua nen tang deu la `VARCHAR(36)`. PostgreSQL cuong che do
+#:    dai cot; SQLite coi no la mot goi y. Moi bai test cua app nay chay tren
+#:    SQLite, production chay PostgreSQL, va app nay chua tung chay o production
+#:    — nen luot chay TRA TIEN dau tien se chet o `credit.giu_cho`, TRUOC khi he
+#:    thong lam bat cu viec gi (A29-06).
+#:
+#: ⭐ Sua o DAY chu khong noi cot nen tang: cot do la vung chung cua moi app va
+#:    noi no doi mot migration tren BANG TIEN cua production. Doi mot dong o day
+#:    thi khong cham gi ca — va no mien phi **hom nay** vi chua co hang nao mang
+#:    id cu trong so tien. Cua so do dong lai vinh vien vao luot tra tien dau.
+#:
+#: ⚠️ 31 hex = **124 bit**, va tien le nam ngay trong app nay: `assets.py` dung
+#:    `asvr_` + 19 hex (76 bit) cho pham vi mot chu so huu. Da do: khong cho nao
+#:    phan tich nguoc id nay — moi cho dung no deu chi lay `[:8]` de ghi log.
+DAI_HEX_MA_RUN = 31
+
+
 def sinh_id() -> str:
-    """`asvr_<32 hex>`. Tien to co chu y — cung loi `vc_`/`upl_` trong kho.
+    """`asvr_<31 hex>` = 36 ky tu. Tien to co chu y — cung loi `vc_`/`upl_`.
 
     Mot id co tien to tu noi no la gi trong log va trong bao loi, va no chan
     viec vo tinh truyen mot id khac vao dung cho nay.
     """
-    return "asvr_" + uuid.uuid4().hex
+    return "asvr_" + uuid.uuid4().hex[:DAI_HEX_MA_RUN]
 
 
 # ── Trang thai mot luot goi nang luc (ADR-001 D9) ────────────────────────────
