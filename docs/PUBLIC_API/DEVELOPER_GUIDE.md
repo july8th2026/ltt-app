@@ -616,7 +616,7 @@ Scopes: `jobs:create`
 Input:
 
 - `messages` — array, **required**, Conversation so far, OpenAI format: a list of {role, content}. `content` may be a string, or a list of parts for images.
-- `model` — string, one of `ltt_llm`, `ltt_llm_vision`, default ltt_llm, `ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 28K input context.
+- `model` — string, one of `ltt_llm`, `ltt_llm_vision`, default ltt_llm, `ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 89K input context.
 - `max_tokens` — integer, min 1, max 32768, default 4096, Ceiling on generated tokens. Credit is held against this and refunded down to what was actually generated.
 - `temperature` — number, min 0.0, max 2.0, Sampling temperature.
 - `tools` — array, Function definitions, OpenAI format. The model may answer with `tool_calls`.
@@ -624,7 +624,7 @@ Input:
 
 Output: `content` (string), `tool_calls` (array), `usage` (object)
 
-Contract hash: `dcf6aa9d633aaa41`
+Contract hash: `5699a45f6a44d8b6`
 
 ### `text.prompt_package`
 
@@ -732,7 +732,7 @@ Aliases, not vendor model ids. What a call *costs* comes from `POST /quotes`: pr
 |---|---|---|---|---|
 | `enhanced` | image | stable | `image.generate` | Better prompt adherence and fine detail than standard. |
 | `ltt_llm` | text | stable | `text.chat` | Text only, 156K usable input context. Coding, chat, agentic tool use, summarisation. |
-| `ltt_llm_vision` | text | stable | `text.chat` | Same model plus image reading, but a smaller 28K usable input context. Send images as OpenAI image_url parts. |
+| `ltt_llm_vision` | text | stable | `text.chat` | Same model plus image reading, but a smaller 89K usable input context. Send images as OpenAI image_url parts. |
 | `seedance-2.0` | video | stable | `video.generate` | Seedance 2.0 |
 | `seedance-2.0-fast` | video | stable | `video.generate` | Seedance 2.0 Fast |
 | `seedance-2.0-mini` | video | stable | `video.generate` | Seedance 2.0 Mini |

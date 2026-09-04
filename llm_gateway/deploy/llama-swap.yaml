@@ -14,7 +14,7 @@
 #   Chi MOT cai nam trong VRAM tai mot thoi diem.
 #
 #     qwen38-api      200K ngu canh, KV q4_0, KHONG vision  ~21,5 GB  <- MAC DINH
-#     qwen38-vision    64K ngu canh, KV q8_0, CO  vision    ~19,9 GB
+#     qwen38-vision   131K ngu canh, KV q4_0, CO  vision    ~21,1 GB
 #
 # ==========================================================================
 # CAC CON SO DUOI DAY DA DUOC DO, 03/09/2026, TREN DUNG CARD DANG PHUC VU.
@@ -186,8 +186,8 @@ models:
 
   # ------------------------------------------------------------------- vision
   qwen38-vision:
-    name: "Qwen3.8-27B vision (64K, doc anh)"
-    description: "Doc anh chup man hinh, bieu do, giao dien. Ngu canh 64K."
+    name: "Qwen3.8-27B vision (131K, doc anh)"
+    description: "Doc anh chup man hinh, bieu do, giao dien. Ngu canh 131K."
     capabilities:
       in: ["text", "image"]
       out: ["text"]
@@ -196,8 +196,8 @@ models:
       -m ${GGUF}
       --mmproj ${MODELS}/mmproj-F16.gguf
       ${CHUNG}
-      -c 65536
-      --cache-type-k q8_0 --cache-type-v q8_0
+      -c 131072
+      --cache-type-k q4_0 --cache-type-v q4_0
       --host 127.0.0.1 --port ${PORT}
     proxy: "http://127.0.0.1:${PORT}"
     ttl: 600

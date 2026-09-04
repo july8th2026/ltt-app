@@ -518,7 +518,7 @@
               "ltt_llm_vision"
             ],
             "default": "ltt_llm",
-            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 28K input context.",
+            "description": "`ltt_llm` for text (156K usable input context). `ltt_llm_vision` also reads images, with a smaller 89K input context.",
             "examples": [
               "ltt_llm"
             ]
@@ -585,7 +585,7 @@
       "required_scopes": [
         "jobs:create"
       ],
-      "contract_hash": "dcf6aa9d633aaa41"
+      "contract_hash": "5699a45f6a44d8b6"
     },
     {
       "name": "text.prompt_package",

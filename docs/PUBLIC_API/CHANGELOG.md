@@ -21,6 +21,157 @@ lần ghi lại đó hiện ra trong diff.
 | **DEPRECATED** | Vẫn chạy, đã có ngày kết thúc. Header `Deprecation` + `Sunset` (RFC 8594) xuất hiện trên phản hồi. |
 | **FIXED** | Hành vi đã sai so với tài liệu, nay đúng. |
 
+## 2026-09-04 — bộ cài `1.6.0`: Claude Code cũng nén đúng lúc
+
+**FIXED · Thêm `CLAUDE_CODE_AUTO_COMPACT_WINDOW` và `MAX_MCP_OUTPUT_TOKENS`.**
+
+Nếu bạn dùng **Claude Code**, hãy cài lại bộ cài `1.6.0`.
+
+**Vì sao bản trước chưa đủ.** Chúng tôi đã khai `CLAUDE_CODE_MAX_CONTEXT_TOKENS`
+và tưởng thế là xong. Nhưng biến đó chỉ sửa con số Claude **giả định** — nó
+**không** đặt ngưỡng nén. Tài liệu chính thức của Claude Code nói rõ: không đặt
+cửa sổ nén thì Claude nén khi hội thoại **chạm đúng** cửa sổ ấy, tức **100%**.
+
+Với số của chúng tôi, điều đó chừa lại **13.599** token trước trần cứng, trong
+khi một lượt trả lời dài nhất là **32.768**. Và Claude chỉ kiểm ngưỡng **giữa
+hai lượt**. Nên một lượt có kết quả công cụ lớn vẫn có thể vượt trần và nhận
+`413` — đúng triệu chứng chúng tôi vừa sửa cho Codex, chỉ khác tên khoá.
+
+Bản `1.6.0` đặt cửa sổ nén ở **123.617**, cùng con số Codex đang dùng.
+
+**`MAX_MCP_OUTPUT_TOKENS`:** mặc định của Claude là 25.000 token cho một phản
+hồi MCP — chiếm 76% khoảng trống. Hai phản hồi trong một lượt là tràn. Bản này
+hạ về **16.384**, cùng con số với trần kết quả công cụ của Codex.
+
+**Bạn phải làm gì:** cài lại rồi chạy `cam` như cũ. Nếu bạn tự đặt tay
+`CLAUDE_CODE_MAX_CONTEXT_TOKENS` mà **không** đặt `CLAUDE_CODE_AUTO_COMPACT_WINDOW`,
+hãy thêm biến thứ hai — biến thứ nhất một mình **không** đủ.
+
+## 2026-09-04 — `GET /api/v1/models` nay Codex đọc được
+
+**FIXED · Thêm ba trường bắt buộc vào mục model: `truncation_policy`,
+`support_verbosity`, `experimental_supported_tools`. Kèm `auto_compact_token_limit`.**
+
+**Ai bị ảnh hưởng:** người cấu hình Codex **bằng tay** theo tài liệu, hoặc dùng
+tiện ích VS Code, tức không đi qua bộ cài `cam` của chúng tôi. Ai dùng bộ cài
+thì **không** bị — nó ghi một catalog cục bộ thay hẳn cho endpoint này.
+
+**Triệu chứng cũ:** Codex không parse nổi **một mục nào** ở đây (`ModelInfo` có
+ba trường bắt buộc không phải `Option`, thiếu là hỏng cả mục), nên nó im lặng
+rơi về metadata dự phòng của chính nó — **272.000** token ngữ cảnh và **không
+nén**. Con số đó lớn hơn trần thật của chúng tôi, nên phiên dài **chắc chắn**
+kết thúc bằng `413`, và không có thông báo nào giải thích vì sao.
+
+**Bạn phải làm gì:** không gì cả. Nhưng nếu bạn từng gõ tay `model_context_window`
+để đối phó, hãy bỏ nó đi — nay endpoint tự khai đúng, và một con số gõ tay lệch
+với máy chủ là cách nhanh nhất để gặp lại `413`.
+
+## 2026-09-04 — bộ cài `1.5.0`: chặn một kết quả tool nuốt trọn ngữ cảnh
+
+**FIXED · Trần cho MỘT kết quả tool: cả cửa sổ (156.385) → 16.384 token.**
+
+Nếu bạn dùng `cam` hoặc `ltt_cai_dat_cli.py` để cấu hình Codex, **hãy cài lại
+bộ cài `1.5.0`**. Bản `1.4.0` khai `truncation_policy.limit` bằng cả cửa sổ ngữ
+cảnh, tức cho phép **một** kết quả lệnh (đọc tệp, chạy test, `grep` một kho lớn)
+chiếm trọn ngữ cảnh trong một lượt.
+
+**Vì sao điều đó dẫn tới `413`:** Codex chỉ kiểm ngưỡng nén **giữa hai lượt**,
+không kiểm giữa các lần gọi công cụ trong cùng một lượt
+([openai/codex#16033](https://github.com/openai/codex/issues/16033)). Khi một
+lượt phình ra, `truncation_policy` là hàng phòng thủ duy nhất còn lại. Để so
+sánh: mặc định của chính Codex là 10.000 byte ≈ **2.500 token**.
+
+**Bạn sẽ thấy gì khác:** kết quả một lệnh dài hơn ~64 KB nay bị cắt ở giữa
+(giữ đầu và cuối) kèm dòng báo đã cắt, thay vì vào trọn ngữ cảnh. Đọc tệp lớn
+thì chia nhỏ — và đó vốn là cách làm việc rẻ hơn.
+
+**Muốn nới:** đặt `tool_output_token_limit` trong `config.toml` của bạn; nó
+**đè** giá trị trong catalog của chúng tôi. Nới cao thì bạn nhận lại rủi ro
+`413` giữa phiên.
+
+## 2026-09-03 (khuya) — `ltt_llm_vision` lên 88K ngữ cảnh dùng được
+
+**ADDED · Cửa sổ ngữ cảnh dùng được của `ltt_llm_vision`: 28K → 88K.**
+
+Bạn **không phải sửa gì**. Nếu bạn đang tự giới hạn số ảnh hoặc độ dài hội thoại
+vì cửa sổ 28K thì nay có thể nới.
+
+```diff
+  ltt_llm_vision  context_window   28262  ->  88555
+  ltt_llm_vision  auto_compact         -  ->  55787
+  ltt_llm         context_window  156385      (KHONG doi)
+```
+
+⭐ **Và trường `auto_compact_token_limit` của `ltt_llm_vision` nay mới xuất hiện
+lần đầu.** Trước đây nó bị bỏ hẳn khỏi catalog Codex, và việc bỏ đó là **có chủ
+ý, không phải sót**: cửa sổ công bố cũ (28.262) **hẹp hơn** một lượt trả lời dài
+nhất (32.768), nên không ngưỡng nén nào giữ được lời hứa "nén trước khi chạm
+trần" — và ghi một con số bịa vào đó thì Codex sẽ tin nó.
+
+Nâng cửa sổ là thứ làm cho ngưỡng ấy **định nghĩa được trở lại**.
+
+⚠️ **Vision vẫn là một hồ sơ khác `ltt_llm`, và hai con số vẫn độc lập.** Hôm nay
+`88.555` tình cờ bằng con số của `ltt_llm` **hôm qua** — đừng đọc sự trùng hợp
+đó thành "hai model dùng chung một cửa sổ". Chúng chạy hai `-c` khác nhau và sẽ
+lệch lại ở lần nâng kế tiếp.
+
+### `contract_hash` của `text.chat`: `dcf6aa9d…` → `5699a45f…`
+
+Cùng loại với lần đổi trước trong ngày: thứ đổi là **một chuỗi mô tả**
+(`smaller 28K` → `smaller 89K`). Không trường nào bị bỏ, không ràng buộc nào
+siết vào — một tích hợp đang chạy không hỏng, nó chỉ được phép gửi nhiều hơn.
+
+⚠️ **Hai lần đổi hash trong một ngày là nhiều.** Nếu bạn ghim `contract_hash`
+để phát hiện thay đổi hợp đồng thì hôm nay bạn sẽ thấy hai lần báo — cả hai đều
+là **nới rộng**, không có lần nào thu hẹp.
+
+## 2026-09-03 (tối) — trần đầu vào nay đếm token **thật**, không phải token ước
+
+**FIXED · `413` từng xảy ra ở khoảng một nửa cửa sổ chúng tôi công bố.**
+
+Bạn **không phải sửa gì**. Nhiều yêu cầu trước đây bị từ chối nay được nhận.
+
+Cổng của chúng tôi từ chối một yêu cầu **trước khi** nó chạm GPU — đánh thức
+model chỉ để đếm token thì đã chạm GPU rồi. Phép chặn ấy dùng một phép **ước**
+(`số ký tự / 2,5`), và phép ước đó lệch nhiều hơn chúng tôi tưởng:
+
+| nội dung | ước/thật |
+|---|---:|
+| tiếng Anh văn xuôi | **2,00×** |
+| trộn — gần một phiên agent | **1,55×** |
+| JSON kiểu Codex gửi | 1,42× |
+| mã nguồn | 1,27× |
+| tiếng Việt có dấu | 1,26× |
+
+⛔ **Và vì sao nó là một lỗi, không chỉ một sự lãng phí:** chúng tôi cưỡng chế
+bằng token **ước**, còn client của bạn đếm token **thật**. Nên con số chúng tôi
+công bố — và ngưỡng nén Codex/Claude Code tính ra từ nó — **nằm ở một đơn vị
+khác** với thứ chúng tôi từ chối. Không ngưỡng nén nào ở phía bạn ngăn được
+`413` khi hai bên đếm bằng hai đơn vị khác nhau.
+
+⇒ Nay khi phép ước vượt trần, cổng hỏi tokenizer **thật của model** rồi mới
+quyết. Đo trên production, **cùng một thân request**:
+
+```
+truoc:  uoc 175.005  ->  413
+sau :   uoc 175.005, that 85.613  ->  200
+```
+
+Và chiều còn lại vẫn khoá: một yêu cầu **thật sự** vượt trần vẫn `413`, và con
+số trong lỗi nay là con số bạn đối chiếu được với tokenizer của mình:
+
+```
+uoc 360.001, that 176.092  ->  413  limit_value 169.984
+```
+
+⭐ **Hệ quả cho ai đọc `413`:** trường `thay` trong thân lỗi bây giờ là số token
+**thật**, không phải số ước — nên nó khớp với thứ client của bạn đếm được.
+
+⚠️ **Một ca còn lại:** nếu model vừa bị dỡ khỏi GPU (sau ~30 phút không ai gọi),
+lượt kế tiếp vẫn được phán xử bằng phép ước — hỏi tokenizer lúc đó sẽ phải nạp
+lại model, tức 2,5 phút cho một yêu cầu đang định từ chối. Trong thực tế lượt
+đầu của một phiên là lượt nhỏ, nên ca này hiếm; nhưng nó có thật.
+
 ## 2026-09-03 — `ltt_llm` lên 156K ngữ cảnh dùng được, và ngưỡng nén đổi công thức
 
 **ADDED · Cửa sổ ngữ cảnh dùng được của `ltt_llm`: 89K → 156K.**
@@ -38,6 +189,10 @@ cũ vẫn hợp lệ, chỉ là bạn được nhét vào nhiều hơn.
 ⚠️ **`ltt_llm_vision` giữ nguyên 28K.** Nó chạy trên một hồ sơ khác, cửa sổ
 engine `65.536`, và chưa được đo lại. Đừng suy con số của nó từ con số của
 `ltt_llm` — đó đúng là lỗi đã sửa ở mục 01/09 ngay dưới.
+
+> 🔄 **Câu trên đã được thay thế cùng ngày.** Vision *đã* được đo lại vài giờ
+> sau và lên `88.555` — xem mục **03/09 (khuya)** ở trên. Giữ nguyên câu cũ vì
+> nhật ký ghi *lịch sử*, không ghi *trạng thái*; nhưng đừng hành động theo nó.
 
 **FIXED · Ngưỡng nén (`auto_compact_token_limit`) nay là `cửa sổ − token ra tối
 đa`, không còn là `0,8 × cửa sổ`.**

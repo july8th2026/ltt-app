@@ -48,9 +48,14 @@ def _dang_codex(model) -> dict:
     """
     rang_buoc = dict(getattr(model, "constraints", None) or {})
     cua_so = int(rang_buoc.get("context_window") or CUA_SO_CONG_BO_MAC_DINH)
+    ra = int(rang_buoc.get("max_output_tokens") or TOKEN_RA_TOI_DA)
     doc_anh = bool(rang_buoc.get("reads_images")
                    or "vision" in str(model.name).lower())
-    return {
+    # Ngưỡng nén và trần kết quả tool — **suy ra**, không gõ thêm hằng số.
+    # Cùng phép suy với hai bộ cài (`tools/cam_cli.py`), nên ba nơi không lệch
+    # được: khoảng trống giữa ngưỡng nén và cửa sổ phải chứa trọn một lượt ra.
+    nen = cua_so - ra
+    d = {
         "slug": model.name,
         "display_name": model.name,
         "description": model.description,
@@ -66,7 +71,34 @@ def _dang_codex(model) -> dict:
         "visibility": "list",
         "supported_in_api": True,
         "priority": 1,
+        # 🔴 BA TRƯỜNG DƯỚI ĐÂY LÀ **BẮT BUỘC**, và thiếu chúng thì Codex bỏ
+        #    **cả mục** — im lặng, rồi rơi về metadata dự phòng của nó
+        #    (272.000 ngữ cảnh, KHÔNG nén), tức bảo đảm một `413` giữa phiên.
+        #
+        # ⛔ Đo 04/09 trên `rust-v0.145.0`: `ModelInfo` có 17 trường không mang
+        #    `#[serde(default)]`; endpoint này thiếu **tám**. Năm trong tám là
+        #    `Option<T>` — serde tự cho `None`, vô hại. Ba cái còn lại KHÔNG
+        #    phải `Option`, và chính ba cái đó giết cả mục:
+        #      `support_verbosity: bool`               (openai_models.rs:424)
+        #      `truncation_policy: TruncationPolicyConfig`          (:429)
+        #      `experimental_supported_tools: Vec<String>`          (:449)
+        #
+        # ⭐ Phân biệt đó không phải suy luận — nó đến từ một phép thử BÁC BỎ:
+        #    catalog của bộ cài cũng thiếu 5 trường mà Codex vẫn chạy thật. Nếu
+        #    "thiếu bất kỳ trường bắt buộc nào là hỏng" thì bộ cài đã phải hỏng.
+        #    Nó không hỏng ⇒ giả thuyết đầu của tôi sai ⇒ ranh giới thật là
+        #    `Option` hay không.
+        "support_verbosity": False,
+        "truncation_policy": {"mode": "tokens", "limit": max(ra // 2, 1)},
+        "experimental_supported_tools": [],
     }
+    # ⛔ BỎ HẲN khi không ngưỡng nào giữ được lời hứa (`nen <= 0`), thay vì ghi
+    #    một con số trông hợp lệ. Thiếu trường thì Codex dùng mặc định của nó
+    #    (90% cửa sổ); một con số bịa thì nó TIN, và cái giá là `413` giữa
+    #    phiên. Cùng luật với `tools/cam_cli.py`.
+    if nen > 0:
+        d["auto_compact_token_limit"] = nen
+    return d
 
 
 def register_tool_routes(api, config, tag: str) -> None:

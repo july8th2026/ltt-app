@@ -82,7 +82,7 @@ CUA_SO_MODEL = 204_800
 #:
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` của `qwen38-vision` bên B
 #:    thì đổi ở đây. `test_334` buộc hai đầu lại.
-CUA_SO_MODEL_VISION = 65_536
+CUA_SO_MODEL_VISION = 131_072
 
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
 #: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
