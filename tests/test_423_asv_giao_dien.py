@@ -155,12 +155,26 @@ def test_MOI_route_ghi_deu_doi_CSRF(moi_truong):
 #  §3  IDOR — hai nguoi dung that
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _tao_run_cho(client, csrf, tmp_path, ten="a.mp4"):
+def _tao_run_cho(client, csrf, tmp_path, ten="a.mp4", **them):
+    """Nop form nhu mot KHACH THAT nop.
+
+    ⚠️ **Pha 21 them `giong_id`, va do khong phai mot chi tieu ky thuat.**
+
+       Truoc pha 21 form khong doi giong: giao dien moi khach chon "Giọng mặc
+       định" — mot lua chon ma engine TU CHOI phuc vu (pha 09 da bo giong mac
+       dinh im lang). Mot lan nop nhu the di qua bon giai doan, bi giu credit,
+       roi hong o giua chuoi.
+
+    ⇒ Form gio doi mot giong CO THAT, va mau thu nay nop mot giong co that. Neu
+      no khong nop thi no dang mo phong mot khach khong the ton tai.
+    """
     from tests.fixtures.asv_media import tiny_mp4
     tep = tiny_mp4(tmp_path / ten, duration_s=1.0)
+    du_lieu = {"csrf_token": csrf, "che_do": "fit_original",
+               "giong_id": "Minh Đức"}
+    du_lieu.update(them)
     with open(tep, "rb") as f:
-        return client.post("/auto-scan-video/tao",
-                           data={"csrf_token": csrf, "che_do": "fit_original"},
+        return client.post("/auto-scan-video/tao", data=du_lieu,
                            files={"video": (ten, f, "video/mp4")})
 
 

@@ -2,8 +2,8 @@ HỒ SƠ HỆ THỐNG LTTSTUDIOSAPP
 ==============================================================================
 Schema hồ sơ : 2
 Phiên bản app : 1.0.0
-Fingerprint   : sha256:e9cd343509b727c39f0d5d345e2b2068592f5ade71f6b09e5aaf3c7911282530
-Nguồn đã quét : 1670 file repository; không đọc runtime/secrets/log
+Fingerprint   : sha256:3cde00dc467abdd3a878027ca7e439d30035fd38324819e5bda703762ec7621e
+Nguồn đã quét : 1671 file repository; không đọc runtime/secrets/log
 
 MỤC ĐÍCH VÀ CÁCH DÙNG
 - Đây là bản đồ kiến trúc KÈM snapshot đầy đủ code/config được chọn để
@@ -705,13 +705,13 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - [agent] GET    /agent/shared/{token} → workflow_shared_view | auth~login | apps/agent/routes/sharing.py:60
 - [agent] POST   /agent/shared/{token}/clone → workflow_shared_clone | auth~login | apps/agent/routes/sharing.py:69
 - [auto_scan_video] GET    /auto-scan-video → trang_chinh | auth~login | apps/auto_scan_video/routes.py:122
-- [auto_scan_video] GET    /auto-scan-video/run/{run_id} → chi_tiet | auth~login | apps/auto_scan_video/routes.py:252
-- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/huy → huy | auth~login | apps/auto_scan_video/routes.py:285
-- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tai → tai_ket_qua | auth~login | apps/auto_scan_video/routes.py:318
-- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/thu-lai → thu_lai | auth~login | apps/auto_scan_video/routes.py:299
-- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tien-do → tien_do | auth~login | apps/auto_scan_video/routes.py:269
-- [auto_scan_video] POST   /auto-scan-video/tao → tao | auth~login | apps/auto_scan_video/routes.py:170
-- [auto_scan_video] POST   /auto-scan-video/ve → cap_ve | auth~login | apps/auto_scan_video/routes.py:137
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id} → chi_tiet | auth~login | apps/auto_scan_video/routes.py:290
+- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/huy → huy | auth~login | apps/auto_scan_video/routes.py:323
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tai → tai_ket_qua | auth~login | apps/auto_scan_video/routes.py:356
+- [auto_scan_video] POST   /auto-scan-video/run/{run_id}/thu-lai → thu_lai | auth~login | apps/auto_scan_video/routes.py:337
+- [auto_scan_video] GET    /auto-scan-video/run/{run_id}/tien-do → tien_do | auth~login | apps/auto_scan_video/routes.py:307
+- [auto_scan_video] POST   /auto-scan-video/tao → tao | auth~login | apps/auto_scan_video/routes.py:174
+- [auto_scan_video] POST   /auto-scan-video/ve → cap_ve | auth~login | apps/auto_scan_video/routes.py:141
 - [autosubvideo] GET    /autosubvideo → page | auth~login | apps/autosubvideo/routes.py:111
 - [autosubvideo] GET    /autosubvideo/api/capabilities → studio_capabilities | auth~login | apps/autosubvideo/routes.py:400
 - [autosubvideo] GET    /autosubvideo/api/jobs → studio_jobs | auth~login | apps/autosubvideo/routes.py:599
@@ -1369,7 +1369,7 @@ Auth là gợi ý AST, không thay security review hay browser test.
 - LTT_WORKER_POOLS
 - LTT_WORKER_PROCESSES
 
-10. QUALITY GATES (428 file pytest + 4 frontend)
+10. QUALITY GATES (429 file pytest + 4 frontend)
 - Lệnh duy nhất trước khi báo xong: python tools/gate.py
 - Quick loop: python tools/gate.py --quick
 - Gate: secret scan, app contract, undefined names, silent-except,
@@ -1731,6 +1731,7 @@ Test inventory:
 - tests/test_444_asv_v4_qc_hai_che_do.py
 - tests/test_445_asv_v4_qc_ai_va_sua.py
 - tests/test_446_asv_v4_quan_sat_chi_phi.py
+- tests/test_447_asv_v4_giao_dien_san_pham.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
 - tests/test_46_deploy_realworld_fixes.py
@@ -1824,8 +1825,8 @@ Test inventory:
 - docs/HO_SO_HE_THONG.md
 - docs/NHAT_KY.md (hai mục mới nhất; lịch sử thực thi, không phải kiến trúc)
 
-13. CHỈ MỤC SOURCE (1670 file)
-Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1270, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
+13. CHỈ MỤC SOURCE (1671 file)
+Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:47, .md:14, .mjs:6, .ps1:65, .py:1271, .sh:3, .svg:1, .toml:1, .ts:28, .tsx:37, .txt:37, .yaml:4, <none>:1
 [.gitattributes] (1)
 - .gitattributes
 
@@ -2915,7 +2916,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - setup/vps_khoa_dich_vu.ps1
 - setup/xuat_ref_kho_chung.ps1
 
-[tests] (448)
+[tests] (449)
 - tests/__init__.py
 - tests/bo_bat_bien_v4.py
 - tests/browser/autosub_as5.js
@@ -3291,6 +3292,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - tests/test_444_asv_v4_qc_hai_che_do.py
 - tests/test_445_asv_v4_qc_ai_va_sua.py
 - tests/test_446_asv_v4_quan_sat_chi_phi.py
+- tests/test_447_asv_v4_giao_dien_san_pham.py
 - tests/test_44_release_build.py
 - tests/test_45_deploy_scripts.py
 - tests/test_46_deploy_realworld_fixes.py
@@ -3552,7 +3554,7 @@ Phân bố extension: .bat:2, .cfg:1, .css:10, .html:126, .ini:1, .js:16, .json:
 - Auth hint của route là phép đọc tĩnh; middleware/dependency runtime mới quyết định.
 - Fingerprint đổi nghĩa là phải tạo lại hồ sơ và review diff.
 
-15. SNAPSHOT TOÀN BỘ SOURCE (1670 file; 17398295 byte)
+15. SNAPSHOT TOÀN BỘ SOURCE (1671 file; 17421893 byte)
 - Không giới hạn dung lượng theo file hoặc tổng hồ sơ.
 - Nội dung là code/config/tài liệu nguồn UTF-8 trong phạm vi cấu hình;
   line ending được chuẩn hóa LF để hồ sơ deterministic trên Windows.
@@ -17008,7 +17010,7 @@ def khoa_ket_qua(db: Session, run: AsvRun) -> str:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/gia.py
-SHA256=e5f1f61d49cb602721b5e07683f67e5fa1fcab33486f42995bbf60df8ea64ac2 BYTES=3990 LINES=97
+SHA256=76441bd65ff6de6d0806c4ea9959b3cb133a1da3fb5a015dec51c2091c7e5824 BYTES=9557 LINES=205
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Uoc gia mot lan chay, va lua chon san pham cho giao dien.
 
@@ -17077,6 +17079,76 @@ CHE_DO_THOI_GIAN = (
 CHE_DO_MAC_DINH = "fit_original"
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Hai preset — thu khach THUC SU chon
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Truoc pha 21 khach khong co cach nao chon giua hai preset.** Chuoi `preset`
+#    khong xuat hien mot lan nao trong `routes.py` lan giao dien, nen moi lan chay
+#    deu roi ve mac dinh `localize_preserve_picture` — va ca duong `smart_localize`
+#    (pha 12 den 18 dung nen) la mot duong khong ai voi toi duoc.
+#
+# ⭐ Mo ta o day viet cho **khach**, khong phai cho lap trinh vien: khong "stream
+#    copy", khong "re-encode", khong ten giai doan. Khach quyet dinh dua tren
+#    dieu HO quan tam — hinh co bi cat khong — chu khong dua tren cach ta lam.
+#
+# ⚠️ Va no phai noi that ca **cai gia**: preset cat ma hoa lai luong hinh, nen
+#    ban ra khong con giong het ban goc tung diem anh. Giau dieu do di la ban mot
+#    thu khac voi thu minh giao.
+def _preset_bang():
+    from .hop_dong_v4 import PRESET_CAT_THONG_MINH, PRESET_GIU_HINH
+
+    return (
+        (PRESET_GIU_HINH, N_('Giữ nguyên hình ảnh'),
+         N_('Chỉ thay tiếng. Hình ảnh được sao chép nguyên vẹn, không cắt cảnh '
+            'nào và không giảm chất lượng. Video ra dài đúng bằng video vào.')),
+        (PRESET_CAT_THONG_MINH, N_('Rút gọn có biên tập'),
+         N_('Bỏ bớt những cảnh ít nội dung để video ngắn lại. Vì phải ghép lại '
+            'các đoạn được giữ nên hình ảnh sẽ được mã hoá lại — chất lượng gần '
+            'như bản gốc nhưng không còn giống hệt từng điểm ảnh.')),
+    )
+
+
+PRESET_BANG = _preset_bang()
+
+
+def preset_hop_le(ma: str) -> bool:
+    return any(ma == x[0] for x in PRESET_BANG)
+
+
+def preset_mac_dinh() -> str:
+    from .hop_dong_v4 import PRESET_MAC_DINH
+
+    return PRESET_MAC_DINH
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Hai cach chon giong
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# ⚠️ `AUTO_MATCH` duoc bay ra nhung **noi that rang no chua san sang**: pha 19 ghi
+#    lai rang khong giai doan nao sinh `HoSoNoiDung`, nen tu khop se hoan lai chu
+#    khong chon bua mot giong. Bay mot lua chon khong chay duoc ma khong noi gi la
+#    dung thu `V4_MVP_PRODUCT_CONTRACT` goi la "false feature".
+def _giong_bang():
+    from .hop_dong_v4 import CHE_DO_GIONG_TU_CHON, CHE_DO_GIONG_TU_KHOP
+
+    return (
+        (CHE_DO_GIONG_TU_CHON, N_('Tôi tự chọn giọng'),
+         N_('Bạn chọn một giọng trong danh sách bên dưới.')),
+        (CHE_DO_GIONG_TU_KHOP, N_('Để hệ thống gợi ý giọng'),
+         N_('Hệ thống chọn giọng hợp với nội dung. Tính năng này đang được hoàn '
+            'thiện — hiện tại hãy tự chọn giọng.')),
+    )
+
+
+CHE_DO_GIONG_BANG = _giong_bang()
+
+
+def che_do_giong_hop_le(ma: str) -> bool:
+    return any(ma == x[0] for x in CHE_DO_GIONG_BANG)
+
+
 def che_do_hop_le(ma: str) -> bool:
     return any(ma == x[0] for x in CHE_DO_THOI_GIAN)
 
@@ -17106,6 +17178,44 @@ def giong_cua_toi(db, owner_id: str) -> list[dict]:
         ma = str((g or {}).get("ma") or "")
         if ma:
             ra.append({"ma": ma, "ten": str(g.get("ten") or "") or "—"})
+    return ra
+
+
+def giong_chon_duoc(db, owner_id: str) -> list[dict]:
+    """Moi giong khach duoc chon: giong CUA HO, cong giong MAU.
+
+    🔴 **Truoc pha 21 giao dien moi khach chon "Giong mac dinh" — mot lua chon ma
+       engine TU CHOI phuc vu.**
+
+       Pha 09 da bo giong mac dinh im lang: `rang_giong` nem khi `USER_SELECTED`
+       khong kem ma giong, vi "de trong roi lay mac dinh" la dung loi ma
+       ADR-V4-001 D-V4-04 cam. Nhung o giao dien no van con, nen mot khach chon
+       no se di qua bon giai doan, bi giu credit, roi hong o giua chuoi.
+
+    ⭐ `V4_MVP_PRODUCT_CONTRACT` goi dung ten cho viec do: mot **false feature**.
+       Cach sua khong phai lam engine de dai hon — la thoi moi mot thu khong co.
+
+    ⇒ Danh sach nay LUON co giong mau, nen mot khach chua nhan ban giong nao van
+      co thu de chon. Do la mot lua chon CO THAT, khac han mot o trong.
+    """
+    ra = list(giong_cua_toi(db, owner_id))
+    da_co = {g["ma"] for g in ra}
+    # ⛔ `loc()` chu khong `THEO_MA`. Ban dau toi lay thang cai dict noi bo, va
+    #    `test_435::test_ASV_chi_cham_nhung_ten_da_khai` chan lai — dung. Mot dict
+    #    noi bo la thu app kia duoc phep doi hinh dang bat cu luc nao; mot ham da
+    #    khai la mot loi hua ho giu.
+    try:
+        from apps.ltt_voice.giong_mau import loc
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        log.warning("khong nap duoc giong mau (%s: %s)", type(exc).__name__, exc)
+        return ra
+    for g in loc() or []:
+        ma = str(getattr(g, "ma", "") or "")
+        if ma and ma not in da_co:
+            # ⛔ Chi HAI truong, cung ly do nhu `giong_cua_toi`: chep nguyen doi
+            #    tuong cua app kia la de mot truong noi bo cua ho lot ra giao dien
+            #    cua ta o lan doi sau.
+            ra.append({"ma": ma, "ten": str(getattr(g, "ten", "") or ma)})
     return ra
 
 @@@LTT_PROFILE_FILE_END@@@
@@ -23244,7 +23354,7 @@ def can_cho_ho_so(yeu_cau: YeuCau) -> bool:
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/routes.py
-SHA256=9392568d269478f83bb65d803e0a552858872a23a62ae301c9fe636f1c199e93 BYTES=15185 LINES=355
+SHA256=4c2fa7ab270a77db33d4ca7e88241d73be20066dd27a172fd759bd07c105321d BYTES=17228 LINES=393
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Giao dien khach cua Auto Scan Video.
 
@@ -23288,7 +23398,7 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import features, gia, pipeline, quan_sat
+from . import hop_dong_v4, features, gia, pipeline, quan_sat
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -23375,7 +23485,11 @@ def trang_chinh(request: Request, _g: None = Depends(_cong_co),
     return _dung_trang(request, "asv_trang_chinh.html", {
         "che_do": gia.CHE_DO_THOI_GIAN,
         "che_do_mac_dinh": gia.CHE_DO_MAC_DINH,
-        "giong": gia.giong_cua_toi(db, u.id) if u else [],
+        "preset": gia.PRESET_BANG,
+        "preset_mac_dinh": gia.preset_mac_dinh(),
+        "che_do_giong": gia.CHE_DO_GIONG_BANG,
+        "che_do_giong_mac_dinh": hop_dong_v4.CHE_DO_GIONG_MAC_DINH,
+        "giong": gia.giong_chon_duoc(db, u.id) if u else [],
         "lich_su": features.lich_su(db, u.id) if u else [],
         "loi": loi,
     })
@@ -23419,6 +23533,8 @@ async def tao(request: Request,
               upload_id: str = Form(""),
               video: UploadFile | None = File(None),
               che_do: str = Form(gia.CHE_DO_MAC_DINH),
+              preset: str = Form(""),
+              che_do_giong: str = Form(""),
               giong_id: str = Form(""),
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
@@ -23434,6 +23550,34 @@ async def tao(request: Request,
     if not gia.che_do_hop_le(che_do):
         return _lai_voi_loi(request, db, u,
                             _t('Chế độ thời gian không hợp lệ.'))
+
+    # ── Hai lua chon ma pha 21 mo ra ────────────────────────────────────────
+    #
+    # 🔴 Truoc pha 21 khong route nao nhan `preset`, nen moi lan chay deu roi ve
+    #    mac dinh va ca duong `smart_localize` khong ai voi toi duoc.
+    #
+    # ⛔ Rong = mac dinh, **khong** = "nhan bua". Mot gia tri khong hop le phai bi
+    #    tu choi ngay o cua chu khong di xuong worker roi hong o giua chuoi.
+    preset = preset or gia.preset_mac_dinh()
+    if not gia.preset_hop_le(preset):
+        return _lai_voi_loi(request, db, u, _t('Kiểu xử lý không hợp lệ.'))
+
+    che_do_giong = che_do_giong or hop_dong_v4.CHE_DO_GIONG_MAC_DINH
+    if not gia.che_do_giong_hop_le(che_do_giong):
+        return _lai_voi_loi(request, db, u, _t('Cách chọn giọng không hợp lệ.'))
+
+    # ⭐ Bat SOM: `USER_SELECTED` ma khong co giong thi pha 14 se nem o giua chuoi
+    #    — sau khi khach da doi qua bon giai doan va da bi giu credit. Mot cau
+    #    tra loi "ban chua chon giong" o day tot hon mot lan chay hong o phut thu
+    #    muoi.
+    if (che_do_giong == hop_dong_v4.CHE_DO_GIONG_TU_CHON and not giong_id):
+        return _lai_voi_loi(request, db, u, _t('Hãy chọn một giọng đọc.'))
+
+    cai_dat = {"timing_mode": che_do, "preset": preset,
+               "che_do_giong": che_do_giong, "giong_id": giong_id,
+               # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
+               #    no lam duong lui cho nhung run tao truoc pha 15.
+               "voice_id": giong_id}
     # ── Duong BEN VUNG: tep da nam trong kho, ta chi nhan mot ma ve ───────────
     #
     # ⭐ Dat truoc duong multipart co chu y. Khi ca hai cung co mat, duong ben
@@ -23444,7 +23588,7 @@ async def tao(request: Request,
         try:
             run = features.tao_run_tu_ve(
                 db, get_storage(), owner_id=u.id, upload_id=upload_id,
-                settings={"timing_mode": che_do, "voice_id": giong_id})
+                settings=dict(cai_dat))
             db.commit()
         except features.AsvError as exc:
             db.rollback()
@@ -23476,7 +23620,7 @@ async def tao(request: Request,
         run = features.tao_run_tu_tai_len(
             db, owner_id=u.id, du_lieu=du_lieu,
             ten_tep=video.filename or "video.mp4",
-            settings={"timing_mode": che_do, "voice_id": giong_id})
+            settings=dict(cai_dat))
         db.commit()
     except features.AsvError as exc:
         db.rollback()
@@ -23490,7 +23634,11 @@ def _lai_voi_loi(request: Request, db, u, thong_bao: str) -> HTMLResponse:
     return _dung_trang(request, "asv_trang_chinh.html", {
         "che_do": gia.CHE_DO_THOI_GIAN,
         "che_do_mac_dinh": gia.CHE_DO_MAC_DINH,
-        "giong": gia.giong_cua_toi(db, u.id),
+        "preset": gia.PRESET_BANG,
+        "preset_mac_dinh": gia.preset_mac_dinh(),
+        "che_do_giong": gia.CHE_DO_GIONG_BANG,
+        "che_do_giong_mac_dinh": hop_dong_v4.CHE_DO_GIONG_MAC_DINH,
+        "giong": gia.giong_chon_duoc(db, u.id),
         "lich_su": features.lich_su(db, u.id),
         "loi": thong_bao,
     }, status_code=400)
@@ -25351,7 +25499,7 @@ SHA256=0e8914bf5ff7b7143bfcfa42dcf537e5f265ef095f320fdb9273b764aea1f3c5 BYTES=27
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ apps/auto_scan_video/templates/asv_trang_chinh.html
-SHA256=109c331c572555d09ff5adf1fe864a4640ddd6b4638332110b91df96fab61b15 BYTES=3520 LINES=83
+SHA256=40b5a8ff8350994a794d148aab1b812ca1352ebc4c87df0c97819e4c74b2a89b BYTES=4473 LINES=103
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 {% extends "base.html" %}
 {% block title %}{{ _("Lồng tiếng Việt") }} — LTT AI Studio{% endblock %}
@@ -25381,6 +25529,17 @@ SHA256=109c331c572555d09ff5adf1fe864a4640ddd6b4638332110b91df96fab61b15 BYTES=35
     </div>
 
     <fieldset class="asv-o">
+      <legend><strong>{{ _("Kiểu xử lý") }}</strong></legend>
+      {% for ma, ten, mo_ta in preset %}
+        <label class="asv-chon">
+          <input type="radio" name="preset" value="{{ ma }}"
+                 {% if ma == preset_mac_dinh %}checked{% endif %}>
+          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <fieldset class="asv-o">
       <legend><strong>{{ _("Cách khớp thời gian") }}</strong></legend>
       {% for ma, ten, mo_ta in che_do %}
         <label class="asv-chon">
@@ -25391,17 +25550,26 @@ SHA256=109c331c572555d09ff5adf1fe864a4640ddd6b4638332110b91df96fab61b15 BYTES=35
       {% endfor %}
     </fieldset>
 
+    <fieldset class="asv-o">
+      <legend><strong>{{ _("Cách chọn giọng") }}</strong></legend>
+      {% for ma, ten, mo_ta in che_do_giong %}
+        <label class="asv-chon">
+          <input type="radio" name="che_do_giong" value="{{ ma }}"
+                 {% if ma == che_do_giong_mac_dinh %}checked{% endif %}>
+          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
     <div class="asv-o">
       <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
-      {% if giong %}
-        <select id="asv-giong" name="giong_id">
-          <option value="">{{ _("Giọng mặc định") }}</option>
-          {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
-        </select>
-      {% else %}
-        <input type="hidden" name="giong_id" value="">
-        <p class="asv-ghi-chu">{{ _("Đang dùng giọng mặc định. Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
-      {% endif %}
+      {# ⛔ KHONG co o "Giọng mặc định". Engine từ chối phục vụ nó (pha 09), nên
+         mời khách chọn nó là mời họ đi bốn giai đoạn rồi hỏng. Danh sách luôn có
+         giọng mẫu, nên luôn có thứ CÓ THẬT để chọn. #}
+      <select id="asv-giong" name="giong_id" required>
+        {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
+      </select>
+      <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
     </div>
 
     <div class="asv-o asv-tien">
@@ -294534,7 +294702,7 @@ def test_bang_parity_nay_KHONG_RONG():
 @@@LTT_PROFILE_FILE_END@@@
 
 @@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_423_asv_giao_dien.py
-SHA256=4a0e8827c69016cae82a1e040d593f274368aa7202117aff5264b3904d7ca6d5 BYTES=14100 LINES=306
+SHA256=511571b05b1d4fd5f5ac3f7739234e6abea3b8addb3f61492710ec84f42a054d BYTES=14725 LINES=320
 @@@LTT_PROFILE_CONTENT_BEGIN@@@
 """Pha 20 — giao dien khach: route, quyen, IDOR, va co mo app.
 
@@ -294693,12 +294861,26 @@ def test_MOI_route_ghi_deu_doi_CSRF(moi_truong):
 #  §3  IDOR — hai nguoi dung that
 # ══════════════════════════════════════════════════════════════════════════════
 
-def _tao_run_cho(client, csrf, tmp_path, ten="a.mp4"):
+def _tao_run_cho(client, csrf, tmp_path, ten="a.mp4", **them):
+    """Nop form nhu mot KHACH THAT nop.
+
+    ⚠️ **Pha 21 them `giong_id`, va do khong phai mot chi tieu ky thuat.**
+
+       Truoc pha 21 form khong doi giong: giao dien moi khach chon "Giọng mặc
+       định" — mot lua chon ma engine TU CHOI phuc vu (pha 09 da bo giong mac
+       dinh im lang). Mot lan nop nhu the di qua bon giai doan, bi giu credit,
+       roi hong o giua chuoi.
+
+    ⇒ Form gio doi mot giong CO THAT, va mau thu nay nop mot giong co that. Neu
+      no khong nop thi no dang mo phong mot khach khong the ton tai.
+    """
     from tests.fixtures.asv_media import tiny_mp4
     tep = tiny_mp4(tmp_path / ten, duration_s=1.0)
+    du_lieu = {"csrf_token": csrf, "che_do": "fit_original",
+               "giong_id": "Minh Đức"}
+    du_lieu.update(them)
     with open(tep, "rb") as f:
-        return client.post("/auto-scan-video/tao",
-                           data={"csrf_token": csrf, "che_do": "fit_original"},
+        return client.post("/auto-scan-video/tao", data=du_lieu,
                            files={"video": (ten, f, "video/mp4")})
 
 
@@ -303524,6 +303706,332 @@ def test_hai_nguoi_dung_KHONG_thay_so_ke_cua_nhau(
     dong_a = {d.run_id for d in sd.cac_dong(db, a)}
     assert dong_a <= {a.id}, "so cai cua lan chay nay lan sang lan chay khac"
     assert b.owner_id == "uB"
+
+@@@LTT_PROFILE_FILE_END@@@
+
+@@@LTT_PROFILE_FILE_BEGIN@@@ tests/test_447_asv_v4_giao_dien_san_pham.py
+SHA256=0536c4aaa4d834925320ef25e88b6715841c37361fbf781496531a4fa7feed7f BYTES=14410 LINES=320
+@@@LTT_PROFILE_CONTENT_BEGIN@@@
+"""Pha 21 — khach chon duoc that thu san pham hua.
+
+Bon nhom:
+
+  A. Hai preset      — truoc pha 21 khach KHONG co cach nao chon
+  B. Chon giong      — khong con "Giọng mặc định", mot lua chon engine tu choi
+  C. Bat SOM         — cai gi hong thi hong o CUA, khong o giua chuoi
+  D. Khong thuat ngu — khach khong thay ten giai doan, provider hay duong dan
+"""
+from __future__ import annotations
+
+from apps.auto_scan_video import gia, hop_dong_v4, pipeline
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  A. Hai preset
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_ca_HAI_preset_deu_co_trong_bang_cho_khach():
+    """🔴 Truoc pha 21, chuoi `preset` **khong xuat hien mot lan nao** trong
+    `routes.py` lan giao dien.
+
+    Tuc tinh nang dau bang cua ca ban V4 — hai preset — khach khong co cach nao
+    chon, va moi lan chay deu roi ve mac dinh `localize_preserve_picture`. Ca
+    duong `smart_localize` ma pha 12 den 18 dung nen la mot duong **khong ai voi
+    toi duoc**.
+    """
+    assert {m for m, _, _ in gia.PRESET_BANG} == set(hop_dong_v4.PRESET)
+
+
+def test_moi_preset_deu_co_mo_ta_bang_TIENG_VIET_cho_nguoi_dung():
+    for ma, ten, mo_ta in gia.PRESET_BANG:
+        assert ten and mo_ta, f"{ma} thieu ten hoac mo ta"
+        assert len(mo_ta) > 40, f"{ma}: mo ta qua ngan de quyet dinh"
+
+
+def test_mo_ta_preset_KHONG_dung_thuat_ngu_ky_thuat():
+    """⛔ Mo ta viet cho **khach**. Ho quyet dinh dua tren dieu HO quan tam —
+    hinh co bi cat khong — chu khong dua tren cach ta lam."""
+    cam = ("stream copy", "re-encode", "keyframe", "GOP", "nvenc", "libx264",
+           "ffmpeg", "codec", "concat", "encode")
+    for ma, ten, mo_ta in gia.PRESET_BANG:
+        van = f"{ten} {mo_ta}".lower()
+        for t in cam:
+            assert t.lower() not in van, f"{ma} lo thuat ngu `{t}`"
+
+
+def test_preset_CAT_noi_that_ve_CAI_GIA():
+    """⚠️ Preset cat ma hoa lai luong hinh, nen ban ra khong con giong het ban goc
+    tung diem anh. Giau dieu do di la ban mot thu khac voi thu minh giao."""
+    mo_ta = next(m for ma, _, m in gia.PRESET_BANG
+                 if ma == hop_dong_v4.PRESET_CAT_THONG_MINH)
+    assert "mã hoá lại" in mo_ta or "mã hóa lại" in mo_ta
+
+
+def test_preset_khong_hop_le_bi_TU_CHOI():
+    assert gia.preset_hop_le(hop_dong_v4.PRESET_GIU_HINH)
+    assert not gia.preset_hop_le("preset bia dat")
+    assert gia.preset_mac_dinh() in hop_dong_v4.PRESET
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  B. Chon giong
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_danh_sach_giong_LUON_co_thu_de_chon(db_rong):
+    """🔴 Truoc pha 21 giao dien moi khach chon "Giọng mặc định" — mot lua chon
+    ma engine **tu choi phuc vu**.
+
+    Pha 09 da bo giong mac dinh im lang (`rang_giong` nem khi `USER_SELECTED`
+    khong kem ma giong). Nen mot khach chon o rong se di qua bon giai doan, bi
+    giu credit, roi hong o giua chuoi. `V4_MVP_PRODUCT_CONTRACT` goi dung ten cho
+    viec do: mot **false feature**.
+
+    ⭐ Cach sua khong phai lam engine de dai hon — la thoi moi mot thu khong co,
+       va luon co giong MAU de danh sach khong bao gio rong.
+    """
+    ds = gia.giong_chon_duoc(db_rong, "khach-chua-co-giong-nao")
+    assert ds, "khach chua nhan ban giong nao ma danh sach rong — khong co gi de chon"
+    assert all(g["ma"] for g in ds), "mot muc khong co ma — do la o rong doi ten"
+
+
+def test_giong_MAU_deu_hop_le_voi_engine(db_rong):
+    """⛔ Mot muc trong danh sach ma `rang_giong` tu choi la mot cai bay: khach
+    chon duoc, va hong o giua chuoi."""
+    from apps.auto_scan_video import rang_giong
+    from apps.ltt_voice.giong_mau import hop_le
+
+    for g in gia.giong_chon_duoc(db_rong, "uX"):
+        if hop_le(g["ma"]):
+            kq = rang_giong.rang(
+                None, owner_id="uX",
+                yeu_cau=rang_giong.tu_thiet_lap(
+                    {"che_do_giong": hop_dong_v4.CHE_DO_GIONG_TU_CHON,
+                     "giong_id": g["ma"]}))
+            assert kq.da_chot, f"giong mau {g['ma']} khong rang duoc"
+
+
+def test_hai_cach_chon_giong_deu_duoc_khai():
+    assert {m for m, _, _ in gia.CHE_DO_GIONG_BANG} == set(hop_dong_v4.CHE_DO_GIONG)
+    assert gia.che_do_giong_hop_le(hop_dong_v4.CHE_DO_GIONG_TU_KHOP)
+    assert not gia.che_do_giong_hop_le("bia dat")
+
+
+def test_AUTO_MATCH_noi_THAT_rang_no_chua_san_sang():
+    """⚠️ Pha 19 ghi lai rang khong giai doan nao sinh `HoSoNoiDung`, nen tu khop
+    se **hoan lai** chu khong chon bua mot giong.
+
+    ⛔ Bay mot lua chon khong chay duoc ma khong noi gi la dung thu
+       `V4_MVP_PRODUCT_CONTRACT` goi la "false feature".
+    """
+    mo_ta = next(m for ma, _, m in gia.CHE_DO_GIONG_BANG
+                 if ma == hop_dong_v4.CHE_DO_GIONG_TU_KHOP)
+    assert "hoàn thiện" in mo_ta or "chưa" in mo_ta, (
+        "AUTO_MATCH duoc bay ra nhu mot tinh nang da chay duoc")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  D. Khong thuat ngu ky thuat trong bang cho khach
+# ══════════════════════════════════════════════════════════════════════════════
+
+def test_bang_cho_khach_KHONG_lo_ten_giai_doan():
+    van = " ".join(f"{a} {b} {c}" for a, b, c in
+                   (*gia.PRESET_BANG, *gia.CHE_DO_GIONG_BANG,
+                    *gia.CHE_DO_THOI_GIAN))
+    for g in pipeline.CHUOI:
+        assert g.ten not in van, f"lo ten giai doan `{g.ten}`"
+
+
+def test_bang_cho_khach_KHONG_lo_ten_app_noi_bo():
+    van = " ".join(f"{a} {b} {c}" for a, b, c in
+                   (*gia.PRESET_BANG, *gia.CHE_DO_GIONG_BANG))
+    for app in ("asv_media", "asv_gpu", "asv_run", "ltt_llm", "ltt_voice"):
+        assert app not in van, f"lo ten app noi bo `{app}`"
+
+
+def test_ma_preset_trong_bang_KHOP_hop_dong_khong_go_lai_chuoi():
+    """⛔ Mot chuoi chep lai la mot chuoi se troi. Bang giao dien phai lay ma tu
+    hop dong san pham, khong go lai."""
+    import ast
+    from pathlib import Path
+
+    van = Path(gia.__file__).read_text(encoding="utf-8")
+    cay = ast.parse(van)
+    ham = [n for n in ast.walk(cay)
+           if isinstance(n, ast.FunctionDef) and n.name == "_preset_bang"][0]
+    chuoi = {n.value for n in ast.walk(ham)
+             if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+    for ma in hop_dong_v4.PRESET:
+        assert ma not in chuoi, f"ma preset `{ma}` bi go lai thay vi lay tu hop dong"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture()
+def db_rong(tmp_path, monkeypatch):
+    """CSDL rong: du de hoi danh sach giong, khong can chay gi."""
+    import platform_core.db as dbmod
+
+    monkeypatch.setenv("LTT_DATABASE_URL",
+                       f"sqlite:///{(tmp_path / 'gd.db').as_posix()}")
+    dbmod.reset_engine()
+    import platform_core.models  # noqa: F401
+    from platform_core.registry import load_app_tables
+
+    load_app_tables()
+    dbmod.Base.metadata.create_all(dbmod.get_engine())
+    db = next(dbmod.get_session())
+    try:
+        yield db
+    finally:
+        db.close()
+        dbmod.reset_engine()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  E. CHINH CAI FORM — qua HTTP that
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Bon nhom tren khong cham toi route lan giao dien**, va kiem dot bien chi ra
+#    dieu do bang tam lo hong lien tiep: bo kiem preset, bo kiem che do giong, bo
+#    doi giong, khong luu preset vao `settings`, khong truyen bang cho giao dien,
+#    tra lai o "Giọng mặc định"... tat ca deu XANH.
+#
+# ⛔ Va do la **trong tam cua ca pha 21**. Toi da kiem cac BANG DU LIEU phia sau
+#    form thay vi kiem chinh cai form — tuc kiem thu de kiem thay vi thu quan
+#    trong.
+
+from tests.test_423_asv_giao_dien import moi_truong  # noqa: E402,F401
+
+GIONG_THU = "Minh \u0110\u1ee9c"
+
+
+def _nop(client, csrf, tmp_path, ten="a.mp4", **them):
+    from tests.fixtures.asv_media import tiny_mp4
+
+    tep = tiny_mp4(tmp_path / ten, duration_s=1.0)
+    du_lieu = {"csrf_token": csrf, "che_do": "fit_original",
+               "giong_id": GIONG_THU}
+    du_lieu.update(them)
+    with open(tep, "rb") as f:
+        return client.post("/auto-scan-video/tao", data=du_lieu,
+                           files={"video": (ten, f, "video/mp4")})
+
+
+def _settings(run_id: str) -> dict:
+    import platform_core.db as dbmod
+    from apps.auto_scan_video.tables import AsvRun
+
+    db = next(dbmod.get_session())
+    try:
+        return dict((db.get(AsvRun, run_id).settings) or {})
+    finally:
+        db.close()
+
+
+def test_FORM_hien_du_hai_preset(moi_truong, tmp_path):
+    """🔴 Truoc pha 21 form khong co o nao cho preset, nen ca duong
+    `smart_localize` la mot duong khach khong voi toi duoc."""
+    _app, a, _csrf, _b, _cb = moi_truong
+    van = a.get("/auto-scan-video").text
+    for ma in hop_dong_v4.PRESET:
+        assert f'value="{ma}"' in van, f"form thieu o chon preset `{ma}`"
+
+
+def test_FORM_khong_con_o_GIONG_MAC_DINH(moi_truong, tmp_path):
+    """⛔ Engine tu choi phuc vu no (pha 09). Moi khach chon no la moi ho di qua
+    bon giai doan, bi giu credit, roi hong o giua chuoi."""
+    _app, a, _csrf, _b, _cb = moi_truong
+    van = a.get("/auto-scan-video").text
+    assert '<option value="">' not in van, "form van moi chon mot giong rong"
+    assert GIONG_THU in van, "form khong co giong mau nao de chon"
+
+
+def test_nop_preset_CAT_thi_lan_chay_MANG_dung_preset_do(moi_truong, tmp_path):
+    """Menh de trung tam: khach chon duoc, va lua chon do **den duoc** lan chay."""
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf, _b, _cb = moi_truong
+    r = _nop(a, csrf, tmp_path, preset=hop_dong_v4.PRESET_CAT_THONG_MINH)
+    assert r.status_code == 200, r.text[:300]
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    assert _settings(run_id)["preset"] == hop_dong_v4.PRESET_CAT_THONG_MINH
+
+
+def test_nop_preset_KHONG_CO_THAT_bi_tu_choi_o_CUA(moi_truong, tmp_path):
+    """⛔ Mot gia tri khong hop le phai bi tu choi ngay o cua chu khong di xuong
+    worker roi hong o giua chuoi."""
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf, _b, _cb = moi_truong
+    r = _nop(a, csrf, tmp_path, preset="preset-bia-dat")
+    # ⚠️ Route tra **400 kem form va thong bao**, khong phai 200. Do la hanh vi
+    #    dung cho mot lan nop sai — va khang dinh `== 200` cua ban dau la cho SAI,
+    #    khong phai ma. Cai phai chot la: khong tao duoc lan chay, va khach doc
+    #    duoc vi sao.
+    assert r.status_code in (200, 400), r.status_code
+    assert "/run/" not in str(r.url), "preset bia dat van tao duoc lan chay"
+    assert "không hợp lệ" in r.text
+
+
+def test_TRANG_LOI_van_con_du_lua_chon_de_nop_lai(moi_truong, tmp_path):
+    """🔴 Lo hong ma kiem dot bien tim ra: khong ai kiem TRANG LOI.
+
+    Mot khach nop sai se nhan lai form — va neu form do khong con giong nao de
+    chon thi ho **ket**: khong sua duoc loi vua bao, va khong co gi de bam.
+
+    ⭐ Trang loi la trang duoc xem NHIEU hon trang binh thuong o dung nhung luc
+       nguoi ta buc nhat. No khong duoc phep la ban rut gon cua trang chinh.
+    """
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf, _b, _cb = moi_truong
+    r = _nop(a, csrf, tmp_path, preset="preset-bia-dat")
+    assert "/run/" not in str(r.url)
+    assert GIONG_THU in r.text, "trang loi khong con giong nao de chon"
+    for ma in hop_dong_v4.PRESET:
+        assert f'value="{ma}"' in r.text, f"trang loi thieu o chon preset `{ma}`"
+
+
+def test_nop_che_do_giong_KHONG_CO_THAT_bi_tu_choi(moi_truong, tmp_path):
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf, _b, _cb = moi_truong
+    r = _nop(a, csrf, tmp_path, che_do_giong="bia-dat")
+    assert "/run/" not in str(r.url)
+
+
+def test_nop_KHONG_giong_bi_tu_choi_SOM(moi_truong, tmp_path):
+    """⭐ `USER_SELECTED` ma khong co giong thi pha 14 se nem o GIUA chuoi — sau
+    khi khach da doi qua bon giai doan va da bi giu credit.
+
+    Mot cau "hay chon mot giong doc" o cua tot hon mot lan chay hong o phut thu
+    muoi.
+    """
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf, _b, _cb = moi_truong
+    r = _nop(a, csrf, tmp_path, giong_id="")
+    assert "/run/" not in str(r.url), "tao duoc lan chay khong co giong"
+    assert "giọng" in r.text.lower()
+
+
+def test_khong_nop_preset_thi_ve_MAC_DINH_chu_khong_hong(moi_truong, tmp_path):
+    """Tuong thich nguoc: mot client cu khong gui `preset` van chay duoc."""
+    from tests.fixtures import asv_media as fx
+
+    fx.require_ffmpeg()
+    _app, a, csrf, _b, _cb = moi_truong
+    r = _nop(a, csrf, tmp_path)
+    run_id = str(r.url).rstrip("/").rsplit("/", 1)[-1]
+    assert _settings(run_id)["preset"] == hop_dong_v4.PRESET_MAC_DINH
 
 @@@LTT_PROFILE_FILE_END@@@
 

@@ -65,6 +65,76 @@ CHE_DO_THOI_GIAN = (
 CHE_DO_MAC_DINH = "fit_original"
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+#  Hai preset — thu khach THUC SU chon
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# 🔴 **Truoc pha 21 khach khong co cach nao chon giua hai preset.** Chuoi `preset`
+#    khong xuat hien mot lan nao trong `routes.py` lan giao dien, nen moi lan chay
+#    deu roi ve mac dinh `localize_preserve_picture` — va ca duong `smart_localize`
+#    (pha 12 den 18 dung nen) la mot duong khong ai voi toi duoc.
+#
+# ⭐ Mo ta o day viet cho **khach**, khong phai cho lap trinh vien: khong "stream
+#    copy", khong "re-encode", khong ten giai doan. Khach quyet dinh dua tren
+#    dieu HO quan tam — hinh co bi cat khong — chu khong dua tren cach ta lam.
+#
+# ⚠️ Va no phai noi that ca **cai gia**: preset cat ma hoa lai luong hinh, nen
+#    ban ra khong con giong het ban goc tung diem anh. Giau dieu do di la ban mot
+#    thu khac voi thu minh giao.
+def _preset_bang():
+    from .hop_dong_v4 import PRESET_CAT_THONG_MINH, PRESET_GIU_HINH
+
+    return (
+        (PRESET_GIU_HINH, N_('Giữ nguyên hình ảnh'),
+         N_('Chỉ thay tiếng. Hình ảnh được sao chép nguyên vẹn, không cắt cảnh '
+            'nào và không giảm chất lượng. Video ra dài đúng bằng video vào.')),
+        (PRESET_CAT_THONG_MINH, N_('Rút gọn có biên tập'),
+         N_('Bỏ bớt những cảnh ít nội dung để video ngắn lại. Vì phải ghép lại '
+            'các đoạn được giữ nên hình ảnh sẽ được mã hoá lại — chất lượng gần '
+            'như bản gốc nhưng không còn giống hệt từng điểm ảnh.')),
+    )
+
+
+PRESET_BANG = _preset_bang()
+
+
+def preset_hop_le(ma: str) -> bool:
+    return any(ma == x[0] for x in PRESET_BANG)
+
+
+def preset_mac_dinh() -> str:
+    from .hop_dong_v4 import PRESET_MAC_DINH
+
+    return PRESET_MAC_DINH
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+#  Hai cach chon giong
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# ⚠️ `AUTO_MATCH` duoc bay ra nhung **noi that rang no chua san sang**: pha 19 ghi
+#    lai rang khong giai doan nao sinh `HoSoNoiDung`, nen tu khop se hoan lai chu
+#    khong chon bua mot giong. Bay mot lua chon khong chay duoc ma khong noi gi la
+#    dung thu `V4_MVP_PRODUCT_CONTRACT` goi la "false feature".
+def _giong_bang():
+    from .hop_dong_v4 import CHE_DO_GIONG_TU_CHON, CHE_DO_GIONG_TU_KHOP
+
+    return (
+        (CHE_DO_GIONG_TU_CHON, N_('Tôi tự chọn giọng'),
+         N_('Bạn chọn một giọng trong danh sách bên dưới.')),
+        (CHE_DO_GIONG_TU_KHOP, N_('Để hệ thống gợi ý giọng'),
+         N_('Hệ thống chọn giọng hợp với nội dung. Tính năng này đang được hoàn '
+            'thiện — hiện tại hãy tự chọn giọng.')),
+    )
+
+
+CHE_DO_GIONG_BANG = _giong_bang()
+
+
+def che_do_giong_hop_le(ma: str) -> bool:
+    return any(ma == x[0] for x in CHE_DO_GIONG_BANG)
+
+
 def che_do_hop_le(ma: str) -> bool:
     return any(ma == x[0] for x in CHE_DO_THOI_GIAN)
 
@@ -94,4 +164,42 @@ def giong_cua_toi(db, owner_id: str) -> list[dict]:
         ma = str((g or {}).get("ma") or "")
         if ma:
             ra.append({"ma": ma, "ten": str(g.get("ten") or "") or "—"})
+    return ra
+
+
+def giong_chon_duoc(db, owner_id: str) -> list[dict]:
+    """Moi giong khach duoc chon: giong CUA HO, cong giong MAU.
+
+    🔴 **Truoc pha 21 giao dien moi khach chon "Giong mac dinh" — mot lua chon ma
+       engine TU CHOI phuc vu.**
+
+       Pha 09 da bo giong mac dinh im lang: `rang_giong` nem khi `USER_SELECTED`
+       khong kem ma giong, vi "de trong roi lay mac dinh" la dung loi ma
+       ADR-V4-001 D-V4-04 cam. Nhung o giao dien no van con, nen mot khach chon
+       no se di qua bon giai doan, bi giu credit, roi hong o giua chuoi.
+
+    ⭐ `V4_MVP_PRODUCT_CONTRACT` goi dung ten cho viec do: mot **false feature**.
+       Cach sua khong phai lam engine de dai hon — la thoi moi mot thu khong co.
+
+    ⇒ Danh sach nay LUON co giong mau, nen mot khach chua nhan ban giong nao van
+      co thu de chon. Do la mot lua chon CO THAT, khac han mot o trong.
+    """
+    ra = list(giong_cua_toi(db, owner_id))
+    da_co = {g["ma"] for g in ra}
+    # ⛔ `loc()` chu khong `THEO_MA`. Ban dau toi lay thang cai dict noi bo, va
+    #    `test_435::test_ASV_chi_cham_nhung_ten_da_khai` chan lai — dung. Mot dict
+    #    noi bo la thu app kia duoc phep doi hinh dang bat cu luc nao; mot ham da
+    #    khai la mot loi hua ho giu.
+    try:
+        from apps.ltt_voice.giong_mau import loc
+    except Exception as exc:      # noqa: BLE001 - app kia co the chua nap
+        log.warning("khong nap duoc giong mau (%s: %s)", type(exc).__name__, exc)
+        return ra
+    for g in loc() or []:
+        ma = str(getattr(g, "ma", "") or "")
+        if ma and ma not in da_co:
+            # ⛔ Chi HAI truong, cung ly do nhu `giong_cua_toi`: chep nguyen doi
+            #    tuong cua app kia la de mot truong noi bo cua ho lot ra giao dien
+            #    cua ta o lan doi sau.
+            ra.append({"ma": ma, "ten": str(getattr(g, "ten", "") or ma)})
     return ra

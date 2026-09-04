@@ -40,7 +40,7 @@ from server.auth.session import require_login
 from server.deps import get_db, user_hien_tai
 from server.templating import templates
 
-from . import features, gia, pipeline, quan_sat
+from . import hop_dong_v4, features, gia, pipeline, quan_sat
 from .manifest import MANIFEST
 
 log = logging.getLogger(__name__)
@@ -127,7 +127,11 @@ def trang_chinh(request: Request, _g: None = Depends(_cong_co),
     return _dung_trang(request, "asv_trang_chinh.html", {
         "che_do": gia.CHE_DO_THOI_GIAN,
         "che_do_mac_dinh": gia.CHE_DO_MAC_DINH,
-        "giong": gia.giong_cua_toi(db, u.id) if u else [],
+        "preset": gia.PRESET_BANG,
+        "preset_mac_dinh": gia.preset_mac_dinh(),
+        "che_do_giong": gia.CHE_DO_GIONG_BANG,
+        "che_do_giong_mac_dinh": hop_dong_v4.CHE_DO_GIONG_MAC_DINH,
+        "giong": gia.giong_chon_duoc(db, u.id) if u else [],
         "lich_su": features.lich_su(db, u.id) if u else [],
         "loi": loi,
     })
@@ -171,6 +175,8 @@ async def tao(request: Request,
               upload_id: str = Form(""),
               video: UploadFile | None = File(None),
               che_do: str = Form(gia.CHE_DO_MAC_DINH),
+              preset: str = Form(""),
+              che_do_giong: str = Form(""),
               giong_id: str = Form(""),
               csrf_token: str = Form(""),
               _g: None = Depends(_cong_co),
@@ -186,6 +192,34 @@ async def tao(request: Request,
     if not gia.che_do_hop_le(che_do):
         return _lai_voi_loi(request, db, u,
                             _t('Chế độ thời gian không hợp lệ.'))
+
+    # ── Hai lua chon ma pha 21 mo ra ────────────────────────────────────────
+    #
+    # 🔴 Truoc pha 21 khong route nao nhan `preset`, nen moi lan chay deu roi ve
+    #    mac dinh va ca duong `smart_localize` khong ai voi toi duoc.
+    #
+    # ⛔ Rong = mac dinh, **khong** = "nhan bua". Mot gia tri khong hop le phai bi
+    #    tu choi ngay o cua chu khong di xuong worker roi hong o giua chuoi.
+    preset = preset or gia.preset_mac_dinh()
+    if not gia.preset_hop_le(preset):
+        return _lai_voi_loi(request, db, u, _t('Kiểu xử lý không hợp lệ.'))
+
+    che_do_giong = che_do_giong or hop_dong_v4.CHE_DO_GIONG_MAC_DINH
+    if not gia.che_do_giong_hop_le(che_do_giong):
+        return _lai_voi_loi(request, db, u, _t('Cách chọn giọng không hợp lệ.'))
+
+    # ⭐ Bat SOM: `USER_SELECTED` ma khong co giong thi pha 14 se nem o giua chuoi
+    #    — sau khi khach da doi qua bon giai doan va da bi giu credit. Mot cau
+    #    tra loi "ban chua chon giong" o day tot hon mot lan chay hong o phut thu
+    #    muoi.
+    if (che_do_giong == hop_dong_v4.CHE_DO_GIONG_TU_CHON and not giong_id):
+        return _lai_voi_loi(request, db, u, _t('Hãy chọn một giọng đọc.'))
+
+    cai_dat = {"timing_mode": che_do, "preset": preset,
+               "che_do_giong": che_do_giong, "giong_id": giong_id,
+               # ⚠️ Giu `voice_id` cho tuong thich nguoc: `giai_doan_giong` doc
+               #    no lam duong lui cho nhung run tao truoc pha 15.
+               "voice_id": giong_id}
     # ── Duong BEN VUNG: tep da nam trong kho, ta chi nhan mot ma ve ───────────
     #
     # ⭐ Dat truoc duong multipart co chu y. Khi ca hai cung co mat, duong ben
@@ -196,7 +230,7 @@ async def tao(request: Request,
         try:
             run = features.tao_run_tu_ve(
                 db, get_storage(), owner_id=u.id, upload_id=upload_id,
-                settings={"timing_mode": che_do, "voice_id": giong_id})
+                settings=dict(cai_dat))
             db.commit()
         except features.AsvError as exc:
             db.rollback()
@@ -228,7 +262,7 @@ async def tao(request: Request,
         run = features.tao_run_tu_tai_len(
             db, owner_id=u.id, du_lieu=du_lieu,
             ten_tep=video.filename or "video.mp4",
-            settings={"timing_mode": che_do, "voice_id": giong_id})
+            settings=dict(cai_dat))
         db.commit()
     except features.AsvError as exc:
         db.rollback()
@@ -242,7 +276,11 @@ def _lai_voi_loi(request: Request, db, u, thong_bao: str) -> HTMLResponse:
     return _dung_trang(request, "asv_trang_chinh.html", {
         "che_do": gia.CHE_DO_THOI_GIAN,
         "che_do_mac_dinh": gia.CHE_DO_MAC_DINH,
-        "giong": gia.giong_cua_toi(db, u.id),
+        "preset": gia.PRESET_BANG,
+        "preset_mac_dinh": gia.preset_mac_dinh(),
+        "che_do_giong": gia.CHE_DO_GIONG_BANG,
+        "che_do_giong_mac_dinh": hop_dong_v4.CHE_DO_GIONG_MAC_DINH,
+        "giong": gia.giong_chon_duoc(db, u.id),
         "lich_su": features.lich_su(db, u.id),
         "loi": thong_bao,
     }, status_code=400)

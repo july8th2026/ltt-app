@@ -26,6 +26,17 @@
     </div>
 
     <fieldset class="asv-o">
+      <legend><strong>{{ _("Kiểu xử lý") }}</strong></legend>
+      {% for ma, ten, mo_ta in preset %}
+        <label class="asv-chon">
+          <input type="radio" name="preset" value="{{ ma }}"
+                 {% if ma == preset_mac_dinh %}checked{% endif %}>
+          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
+    <fieldset class="asv-o">
       <legend><strong>{{ _("Cách khớp thời gian") }}</strong></legend>
       {% for ma, ten, mo_ta in che_do %}
         <label class="asv-chon">
@@ -36,17 +47,26 @@
       {% endfor %}
     </fieldset>
 
+    <fieldset class="asv-o">
+      <legend><strong>{{ _("Cách chọn giọng") }}</strong></legend>
+      {% for ma, ten, mo_ta in che_do_giong %}
+        <label class="asv-chon">
+          <input type="radio" name="che_do_giong" value="{{ ma }}"
+                 {% if ma == che_do_giong_mac_dinh %}checked{% endif %}>
+          <span><strong>{{ _(ten) }}</strong><small>{{ _(mo_ta) }}</small></span>
+        </label>
+      {% endfor %}
+    </fieldset>
+
     <div class="asv-o">
       <label for="asv-giong"><strong>{{ _("Giọng đọc") }}</strong></label>
-      {% if giong %}
-        <select id="asv-giong" name="giong_id">
-          <option value="">{{ _("Giọng mặc định") }}</option>
-          {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
-        </select>
-      {% else %}
-        <input type="hidden" name="giong_id" value="">
-        <p class="asv-ghi-chu">{{ _("Đang dùng giọng mặc định. Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
-      {% endif %}
+      {# ⛔ KHONG co o "Giọng mặc định". Engine từ chối phục vụ nó (pha 09), nên
+         mời khách chọn nó là mời họ đi bốn giai đoạn rồi hỏng. Danh sách luôn có
+         giọng mẫu, nên luôn có thứ CÓ THẬT để chọn. #}
+      <select id="asv-giong" name="giong_id" required>
+        {% for g in giong %}<option value="{{ g.ma }}">{{ g.ten }}</option>{% endfor %}
+      </select>
+      <p class="asv-ghi-chu">{{ _("Bạn có thể nhân bản giọng riêng ở LTT VOICE.") }}</p>
     </div>
 
     <div class="asv-o asv-tien">
