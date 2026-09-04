@@ -28,10 +28,45 @@ from __future__ import annotations
 import logging
 
 from platform_core.i18n import _ as _t
+from platform_core.jobs import DangBan
 
 from .features import LoiTaoAnh  # noqa: F401  (giữ tên cũ cho chỗ đang import)
 
 log = logging.getLogger(__name__)
+
+
+def _dang_ban(eta_s) -> DangBan:
+    """Dựng tín hiệu BẬN của nền tảng, giữ nguyên câu chữ khách đọc được.
+
+    `eta_s` rỗng = cổng **không biết** còn bao lâu; không đoán số phút, và để
+    `retry_after_s` rỗng cho nền tảng dùng giãn cách mặc định.
+    """
+    phut = int((eta_s or 0) / 60)
+    return DangBan(
+        _t("Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau, hoặc chọn "
+           "model đám mây.").format(
+               them=_t(" — còn khoảng {p} phút").format(p=phut) if phut else ""),
+        retry_after_s=eta_s)
+
+
+def _xep_lai_neu_may_ban(cong) -> None:
+    """Hỏi `/health` của cổng render; máy bận thì ném `DangBan` NGAY.
+
+    ⛔ Cổng **không trả lời** thì KHÔNG coi là bận — để đường thường đi tiếp và
+       hỏng như một lỗi hạ tầng (có đếm lượt thử). "Bận" xếp lại vô hạn; một
+       cổng đã chết mà xếp lại vô hạn là job nằm `queued` mãi không ai được báo.
+    `cong` rỗng (bộ điều phối giả trong test) ⇒ bỏ qua.
+    """
+    if cong is None:
+        return
+    from platform_core.image_gen import cong_render
+    try:
+        h = cong.health() or {}
+    except cong_render.CongRenderError as e:
+        log.info("khong hoi duoc /health cong render, di duong thuong: %s", e)
+        return
+    if h.get("busy"):
+        raise _dang_ban(h.get("eta_s"))
 
 
 def _voi_db(ham):
@@ -86,19 +121,26 @@ def handle(params: dict, ctx=None) -> dict:
     yc = features.chuan_hoa(params)
 
     dp = _dieu_phoi()
+    # ⭐ HỎI BẬN TRƯỚC KHI DỊCH PROMPT. `DieuPhoi.chay` dịch prompt (một lượt
+    #    Gemini có tính tiền) RỒI mới gửi máy B — nên khi máy B bận cả giờ, mỗi
+    #    lần job quay lại từ hàng đợi là một lượt dịch nữa cho cùng một câu.
+    #    `cong.health()` là một GET trong LAN; hỏi trước thì lượt bận không tốn
+    #    gì ngoài chính lượt hỏi. Không thay được `except BanError` bên dưới:
+    #    giữa lúc hỏi và lúc gửi, dự án video có thể vừa bắt đầu một lượt.
+    _xep_lai_neu_may_ban(getattr(dp, "cong", None))
     try:
         kq = dp.chay(job_id=str(getattr(ctx, "job_id", "") or "adhoc"),
                      prompt=yc.prompt, mode=yc.che_do, ref_keys=list(yc.ref_keys),
                      so_anh=yc.so_anh, negative_prompt=yc.negative_prompt,
                      tien_to_khoa=f"anhnoibo/{yc.owner_id or 'chung'}")
     except cong_render.BanError as e:
-        # ⛔ KHONG bao "that bai". May dang ban la trang thai binh thuong.
-        phut = int((e.eta_s or 0) / 60)
-        raise LoiTaoAnh(
-            _t("Máy tạo ảnh đang bận{them}. Bạn có thể thử lại sau, hoặc chọn "
-               "model đám mây.").format(
-                   them=_t(" — còn khoảng {p} phút").format(p=phut) if phut else "")
-        ) from e
+        # ⛔ KHONG bao "that bai". May dang ban la trang thai binh thuong —
+        #    va no phai la `DangBan` cua NEN TANG, khong phai `LoiTaoAnh`:
+        #    `LoiTaoAnh` roi vao nhanh `retry`, tieu mot luot thu, va sau ba
+        #    luot ban thi job HONG kem hoan tien cho mot viec chua tung chay
+        #    (do o Phase 02 H43). `DangBan` -> `resource_wait`: ve hang doi,
+        #    khong tinh luot, khong cham tien.
+        raise _dang_ban(e.eta_s) from e
     except dieu_phoi.DieuPhoiError as e:
         raise LoiTaoAnh(str(e)) from e
 

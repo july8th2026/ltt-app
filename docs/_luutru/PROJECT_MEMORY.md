@@ -1689,3 +1689,67 @@ Copy this template to the top of the change log for every material session:
 `docs/system_purification/reports/` — 13 bao cao (`00`…`10`, `01b`, `08b`,
 `phase_minus_1`). Bao cao `10_final_acceptance.md` chua ca hai **dinh chinh** va
 phan quyet chot.
+
+## 2026-09-04 — ChatLTT: bo kiem GUI dot 5-7, va sau lan bo kiem VU KHONG san pham
+
+Gate day du **PASS** (`20260903T193457Z-12864.json`). Truoc do lat noi tiep:
+5.934 passed / 32 skipped / 3 failed trong 41m32s — ca ba la `ho_so_he_thong`
+cu, da sinh lai.
+
+### Thu dang gia nhat cua buoi nay khong phai bug san pham
+
+Bo kiem GUI bao **sau** hang muc HONG. **Khong cai nao la loi san pham.** Moi cai
+sai mot kieu, va do la sau kieu khac nhau de mot bo kiem noi doi:
+
+| Bao | Su that | Loai sai |
+|---|---|---|
+| 6.1/6.2 "nut media khong san sang" | model chua nap tren may B | suy tu giao dien thay vi hoi may chu |
+| 6.3 "may chu nhan `voice_id` cua nguoi khac" | job `failed`, giu 1/thu 0/**hoan 1** | do chi tiet cai dat thay vi bat bien |
+| 6.4 "bam Doc to khong gui gi" | dung thiet ke: phai qua o xac nhan gia | doi san pham **bo mot chot an toan** |
+| 6.4 lan hai `manh_doi_chieu:""` | nua menh de tu tat | **xanh ma khong chung minh gi** |
+| 3 hang muc dot 0 | man hinh dang hien "Model dang ban… khong bi tinh tien" | may ban bi doc thanh san pham hong |
+| 7.4 "so du phai giam" | do 921 -> **933**: mot khoan hoan vua ve | chot huong tren mot dai luong khong don dieu |
+
+🔴 **Cai nguy nhat la dong thu tu, du no XANH.** Nam dong kia do nen duoc dieu
+tra; dong xanh do dong ho so lai.
+
+⛔ Va 6.3 suyt gay thiet hai that: "sua" san pham cho khop se them mot cho kiem
+so huu **thu hai** o route — dung thu `tham_chieu.tim_profile` canh bao — va cho
+do **khong thay kho giong chung** nen se chan nham giong hop le.
+
+### Hai gia thuyet sai bi phep do bac bo (khong thanh ban va)
+
+- **"`mo_luong` ro suat admission"**: chi `server/api/streaming.py` co
+  `BackgroundTask(release_by_id)`; duong ChatLTT khong thay cho nha, ma
+  `llm_remote` chi co **1 suat** — mot ro se khoa ca san pham 20 phut. Do that:
+  giu **1** giua luong, **0** sau luong. Cho nha o `_phat`: `with keep_alive(...)`.
+- **"tran ra khong theo model"**: `tran_theo_ngu_canh()` dung `CUA_SO_MODEL`
+  (204.800) vo dieu kien, con vision chi 65.536. Bac bo bang **so hoc**:
+  `tran_vao_cua` da tru san `TOKEN_RA_TRAN`, nen dau vao hop le lon nhat cua
+  vision la 30.720 va 30.720 + 32.768 = 63.488 <= 65.536.
+
+### Chot moi, va mot chot dau tien la TAUTOLOGY
+
+`tests/test_334`: chot `tran_vao_cua(m) + TOKEN_RA_TRAN + LE == CUA_SO_THEO_MODEL[m]`
+(DANG THUC). Ban `<=` viet truoc **khong the do**: tong luon bang `cua_so - LE`,
+nen nang `TOKEN_RA_TRAN` len 40.000 van xanh. Ban dang thuc **do dung mot thay
+doi**: bo phan tru tran-ra khoi `tran_vao_cua` (98.304 > 65.536).
+
+⭐ Hai luat rut ra, dung cho moi phep kiem sau:
+**mot chot phai kem duoc kich ban lam no DO** — khong viet ra duoc thi chot ay
+chua ton tai; va **mot phep do phai kem duoc doi chung lam no ra KHAC di**.
+
+### ⛔ CHAN: khong dang nhap lai duoc production tu may nay
+
+Hai thu chong len nhau, moi thu mot minh da du chan:
+1. `/login` tra **403 `cf-mitigated: challenge`** ke ca voi client HTTP tran mang
+   UA Chrome qua IPv4 (`/` tra 200, `/chatltt` tra 303 — khong thu thach);
+2. thu thach khong hoan tat duoc: `brunhild.challenges.cloudflare.com` co **0 ban
+   ghi A, chi AAAA** (do cheo 1.1.1.1 + 8.8.8.8; doi chung
+   `challenges.cloudflare.com` dual-stack), ma may **khong co IPv6 toan cuc nao**.
+
+⛔ Cach sua ghi trong `don-dep-sau-h6` (`Disable-NetAdapterBinding ms_tcpip6`)
+**khong ap duoc** — voi mot host chi-AAAA thi tat IPv6 la di lui.
+
+Con lai sau khi mo duoc dang nhap: **5.2, 5.3** (tao anh) va **6.2** (giong nhan
+ban — tai khoan kiem chua nhan ban giong nao).

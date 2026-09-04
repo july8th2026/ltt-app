@@ -41,7 +41,11 @@ def test_gate_runs_the_scanners_and_pytest():
     # Buoc nay bat loai loi test khong bat duoc: route khong co test ma thieu
     # import. Da tim thay mot cai that o POST /upscalevideo/queue (2026-08-06).
     assert "ten chua dinh nghia" in names
-    assert "system profile" in names
+    # ⛔ GO 2026-09-04 cung voi ca tinh nang. Chot nay dung khi no ton tai:
+    #    no ngan mot buoc bien mat lang le. Lan nay viec go la CO Y (chu du an
+    #    quyet), nen phai go luon chot — mot chot canh mot thu khong con la mot
+    #    lan gate do ma khong ai sua duoc.
+    #    Ly do va toan bo pham vi: docs/HO_SO_HE_THONG.md (nay la bia mo).
     # DOI TEN 2026-08-26: buoc nay khong con goi `pytest` truc tiep. No di
     # qua `tools/test_nhanh.py` (hai pha: song song + noi tiep cho ba tep
     # ghi vao cay kho), cung tap pass/fail nhung 4 phut thay vi 2 gio.
@@ -403,6 +407,57 @@ def test_moi_dong_print_cua_gate_song_duoc_khi_dau_ra_bi_HUNG():
     xau = [(i, dong.strip()) for i, dong in enumerate(nguon.splitlines(), 1)
            if "print(" in dong and any(ord(c) > 127 for c in dong)]
     assert not xau, f"dong print co ky tu ngoai ASCII: {xau}"
+
+
+def test_anh_chup_cay_phu_MA_DEPLOY_DI_XA_khoi_kho():
+    """🔴 CHỐT "CÂY ĐỨNG YÊN" TỪNG KHÔNG SOI BA THỨ QUAN TRỌNG NHẤT.
+
+    Trước 03/09, `_anh_chup_cay()` chỉ chụp bảy thư mục và **bỏ qua**
+    `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy trên máy khách) và
+    `frontend/`.
+
+    ⛔ Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì `CAY DA DOI
+       TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về một cây đã
+       không còn tồn tại. Với hai phiên làm việc song song trên cùng một kho,
+       đó không phải rủi ro lý thuyết.
+
+    ⭐ Ba thư mục ấy đáng canh **hơn** phần còn lại, không kém: mã trong chúng
+       **rời khỏi kho này** — chạy trên máy B, hoặc tải về máy khách. Một lần
+       sai ở đó không lộ ra trong bất kỳ phép kiểm nào chạy tại chỗ.
+    """
+    from tools.gate import THU_MUC_CHUP
+
+    for phai_co in ("llm_gateway", "sdk", "frontend"):
+        assert phai_co in THU_MUC_CHUP, (
+            f"`{phai_co}` khong nam trong anh chup cay. Ma o do DEPLOY DI XA "
+            f"khoi kho nay, nen sua no giua mot luot gate se khong bi phat hien.")
+
+
+def test_anh_chup_cay_CAT_node_modules_nhung_GIU_bundle_da_commit():
+    """Cắt phải cắt đúng thứ vô nghĩa, và **chỉ** thứ vô nghĩa.
+
+    ⭐ Cắt `node_modules` là lý do ảnh chụp rộng gấp đôi mà lại **nhanh hơn**:
+       `os.walk` cắt `dirnames` tại chỗ nên nó không đi xuống 12.255 tệp, khác
+       hẳn `rglob` (đi xuống rồi mới lọc). Đo 03/09: 1.321 tệp/0,143 s → 1.491
+       tệp/0,047 s.
+
+    ⛔ NHƯNG `.vite`, `dist`, `coverage` thì KHÔNG được cắt. Bốn tệp
+       `server/static/*/.vite/manifest.json` là bundle production **đã commit**
+       — chúng chính là thứ máy chủ phục vụ. Cắt chúng khỏi ảnh chụp là mất
+       đúng thứ cần canh, và mất một cách im lặng.
+    """
+    from tools.gate import _BO_QUA_THU_MUC, _anh_chup_cay
+
+    assert "node_modules" in _BO_QUA_THU_MUC
+    for khong_duoc_cat in (".vite", "dist", "coverage"):
+        assert khong_duoc_cat not in _BO_QUA_THU_MUC, (
+            f"`{khong_duoc_cat}` bi cat khoi anh chup — bundle da commit nam "
+            f"trong do, va mat chung la mat dung thu can canh")
+
+    cay = _anh_chup_cay()
+    assert not [p for p in cay if "node_modules" in p], "node_modules lot vao anh chup"
+    manifest = [p for p in cay if p.endswith(".vite/manifest.json")]
+    assert manifest, "khong con manifest bundle nao trong anh chup"
 
 
 def test_canh_bao_cay_doi_phai_KE_TEN_chu_khong_chi_bao_co_doi():

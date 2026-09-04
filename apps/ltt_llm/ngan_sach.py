@@ -40,7 +40,26 @@ from __future__ import annotations
 #: Cửa sổ ngữ cảnh của model, **đo từ `-c` của llama-server** trên máy B
 #: (`llama-swap.yaml`, hồ sơ `qwen38-api`). Vào và ra **dùng chung** con số này.
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` bên B thì đổi ở đây.
-CUA_SO_MODEL = 131_072
+#:
+#: 📈 03/09: 131.072 → 204.800, kèm KV cache `q8_0` → `q4_0` (bắt buộc: `q8_0`
+#:    ở 204.800 không vừa card 24 GB). Bằng chứng đầy đủ ở
+#:    `docs/VLM_NOI_BO/NGU_CANH_DAI_2026-09-03.md`. Ba số quan trọng nhất:
+#:
+#:      * **VRAM đỉnh 21.979 MiB** ở hồ sơ 200K, so với **22.017 MiB** ở hồ sơ
+#:        131K cũ — rộng gấp rưỡi mà tốn ÍT hơn. Đây không phải phép màu: KV
+#:        `q4_0` ở 204.800 nhỏ hơn KV `q8_0` ở 131.072.
+#:      * **Chạy thật tới 179.902 token vào**, đọc lại đúng mốc đầu và mốc cuối.
+#:        Trần dẫn xuất dưới đây là 169.984 ⇒ trần nằm **bên trong** vùng đã
+#:        chứng minh, không phải ở mép nó.
+#:      * Prefill **không** chậm hơn ở mọi mốc chung (50K/100K/130K), và
+#:        kim-trong-đống-cỏ ở 130K đọc đúng **10/10** ở năm độ sâu.
+#:
+#: ⚠️ VÀ MỘT CẢNH BÁO CHO NGƯỜI SỬA TIẾP: đổi số này **không đủ** để máy B đổi
+#:    theo. `llm_gateway/deploy/deploy.ps1` ghi đè `LTT_LLM_MAX_INPUT_TOKENS`
+#:    bằng số gõ tay, và nó chép `llama-swap.yaml` mà **không** restart
+#:    `LTTLlamaSwap`. Thứ tự deploy nằm ở §7 của tài liệu trên và nó **không
+#:    hoán vị được**. `test_334` chốt hai bản sao đó.
+CUA_SO_MODEL = 204_800
 
 #: Cửa sổ ngữ cảnh của model **VISION** — `qwen38-vision` nạp với `-c 65536`
 #: (`llama-swap.yaml` trên máy B, và `llm_gateway/catalog.py:max_context`).
@@ -63,7 +82,7 @@ CUA_SO_MODEL = 131_072
 #:
 #: ⛔ Đây là số ĐO, không phải số mong muốn. Đổi `-c` của `qwen38-vision` bên B
 #:    thì đổi ở đây. `test_334` buộc hai đầu lại.
-CUA_SO_MODEL_VISION = 65_536
+CUA_SO_MODEL_VISION = 131_072
 
 #: Trần token ra cứng cho một lượt. Khớp `LTT_LLM_MAX_OUTPUT_TOKENS` của máy B.
 #: ⭐ Phải ≥ 32.000: Claude Code gửi `max_tokens: 32000` mặc định và khách gần
@@ -81,7 +100,7 @@ LE = 2_048
 
 #: Trần đầu vào thật sự dùng được: chừa đủ chỗ cho một câu trả lời dài nhất.
 #: Đây là số máy B phải khai ở `LTT_LLM_MAX_INPUT_TOKENS`.
-TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE            # 96_256
+TOKEN_VAO_TRAN = CUA_SO_MODEL - TOKEN_RA_TRAN - LE           # 169_984
 
 #: Số byte JSON cho mỗi token khi hội thoại đi trên dây. Đo 30/08 trên thân
 #: request thật của Codex (kể cả dấu ngoặc, escape và định nghĩa tool).
@@ -93,12 +112,12 @@ BYTE_MOI_TOKEN_JSON = 4.5
 #: ⛔ ĐÂY LÀ MỘT LỖI ĐÃ XẢY RA: trần body 256 KB của nền tảng chặn hội thoại dài
 #:    ở khoảng 64.000 token — gần bằng 65.000 nên suốt buổi ta tưởng đang chạm
 #:    trần của máy B. Hai trần không liên quan gì nhau mà cái nhỏ hơn thắng.
-BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~433 KB
+BODY_BYTES_TOI_THIEU = int(TOKEN_VAO_TRAN * BYTE_MOI_TOKEN_JSON)   # ~747 KB
 
 #: Cửa sổ **công bố** cho client agentic (Codex, Claude Code) để chúng nén hội
 #: thoại **trước** khi chạm trần. Chừa 8% cho lệch tokenizer: client đếm token
 #: bằng bộ đếm của nó, model đếm bằng bộ của Qwen, hai số không bao giờ khớp.
-CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                    # 88_555
+CONG_BO_CHO_CLIENT = int(TOKEN_VAO_TRAN * 0.92)                   # 156_385
 
 
 # ── Ngân sách THEO MODEL ───────────────────────────────────────────────────
@@ -136,6 +155,47 @@ def tran_vao_cua(model_id: str) -> int:
 def cong_bo_cua(model_id: str) -> int:
     """Con số ngữ cảnh **công bố cho client** của một model."""
     return int(tran_vao_cua(model_id) * 0.92)
+
+
+#: Ngưỡng client **phải nén** hội thoại, tính từ cửa sổ công bố.
+#:
+#: 🔴 VÌ SAO KHÔNG PHẢI MỘT TỈ LỆ. Trước 03/09 cả hai bộ cài đều gõ `× 0,8`, và
+#:    tỉ lệ ấy **không đo cái cần đo**. Thứ phải vừa không phải "80 % cửa sổ" mà
+#:    là *khoảng trống còn lại sau ngưỡng nén*: client kiểm ngưỡng **giữa hai
+#:    lượt**, nên lượt kế tiếp vẫn được phép lớn thêm trọn một lượt nữa trước
+#:    khi nó có cơ hội nén lần sau.
+#:
+#: ⛔ VÀ ĐÂY LÀ LỖI ĐÃ XẢY RA TRÊN PRODUCTION, không phải lo xa. Một lượt
+#:    `POST /api/v1/responses` ăn `413` với **101.938** token vào trên trần
+#:    96.256. Với `× 0,8` thì ngưỡng nén là 70.844 và khoảng trống tới trần chỉ
+#:    còn **25.412** — nhỏ hơn một lượt sinh dài nhất mà chính ta cho phép
+#:    (`TOKEN_RA_TRAN` = 32.768). Cấu hình ấy **không thể** giữ lời hứa "nén
+#:    trước khi chạm trần"; nó chỉ đúng chừng nào không ai trả lời dài.
+#:
+#: ⭐ Nên quy tắc là: **chừa trọn một lượt sinh dài nhất** giữa ngưỡng nén và
+#:    cửa sổ công bố. Kết quả có một tính chất đáng chú ý: ở hồ sơ ngữ cảnh rộng
+#:    nó xấp xỉ đúng 0,8 cũ — con số cũ không sai vì bịa, nó sai vì **được chọn ở
+#:    một cửa sổ rộng rồi mang sang một cửa sổ hẹp** mà không ai tính lại.
+def nen_cua(model_id: str) -> int:
+    """Ngưỡng nén hội thoại **công bố cho client** của một model.
+
+    ⛔ TRẢ **0** KHI KHÔNG ĐỊNH NGHĨA ĐƯỢC, chứ không kẹp về một số trông hợp lệ.
+       `qwen38-vision` chạy `-c 65536` và vẫn chịu chung `TOKEN_RA_TRAN` 32.768,
+       nên cửa sổ công bố của nó (28.262) **hẹp hơn một lượt sinh dài nhất**:
+       không có ngưỡng nén nào giữ được lời hứa, kể cả ngưỡng bằng 1.
+
+    ⭐ Con số 0 là một câu trả lời, không phải một lỗi: nó nói *"model này không
+       phải model để chạy một phiên agent dài"*. Bộ cài đọc 0 thì **bỏ hẳn**
+       trường ngưỡng nén thay vì ghi một con số bịa vào tệp cấu hình của khách —
+       và đó đúng là khác biệt giữa "khách biết mình đang ở đâu" và "khách tin
+       một lời hứa ta không giữ được".
+    """
+    con = cong_bo_cua(model_id) - TOKEN_RA_TRAN
+    return con if con > 0 else 0
+
+
+#: Ngưỡng nén của model text — con số hai bộ cài chép sang máy khách.
+NEN_CHO_CLIENT = nen_cua("qwen38-api")
 
 
 # ══════════════════════════════════════════════════════════════════════════

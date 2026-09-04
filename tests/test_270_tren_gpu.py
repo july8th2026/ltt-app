@@ -92,7 +92,7 @@ def test_chot_nay_KHONG_tu_choi_yeu_cau():
     try:
         c, up = _client(up=FakeUpstream())
         r = c.post("/v1/chat/completions", json={
-            "model": "qwen38-ops",
+            "model": "qwen38-api",
             "messages": [{"role": "user", "content": "hi"}]})
         assert r.status_code == 200, r.text
         assert up.goi, "da tu choi phuc vu chi vi model dang o CPU"

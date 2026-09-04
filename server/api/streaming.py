@@ -46,6 +46,7 @@ from server.api import tool_dich
 from server.api.auth import require_scope
 from server.deps import get_db
 from apps.ltt_llm import ngan_sach
+from platform_core.runtime_noi_bo import luong as cua_luong
 
 log = logging.getLogger("server.api.streaming")
 
@@ -97,7 +98,7 @@ def _giai_ten_model(ten: str) -> str:
 #: ⛔ NỚI SỐ NÀY KHÔNG MUA THÊM THỜI GIAN. Nó chỉ đổi 503 của ta lấy 524 của
 #:    Cloudflare. Nạp từ đĩa lạnh lâu hơn thì giảm nhẹ bằng `ttl` của llama-swap
 #:    (giữ model thường trú), không bằng đồng hồ này.
-MO_LUONG_GIAY = 75.0
+MO_LUONG_GIAY = cua_luong.MO_LUONG_GIAY   # 75.0 — một hằng, một chỗ
 
 #: ⛔ TOKEN RA MẶC ĐỊNH KHÔNG CÒN Ở ĐÂY.
 #:
@@ -515,9 +516,6 @@ def _tran_vao_cua_model(alias: str) -> int:
 
 def _cua(duong: str, than: dict, principal: Principal, db: Session,
          config, request=None) -> StreamingResponse:
-    from platform_core import credit
-    from platform_core.llm import admission, thanh_toan
-
     # `text.chat` phải qua đủ ba cổng của Q92. Có route riêng KHÔNG cho nó đi
     # vòng qua công tắc người vận hành — cửa mới không được là cửa sau.
     tool = require_tool(build_catalog(config), TOOL_CHAT, principal)
@@ -630,95 +628,32 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
 
     # ⛔ KHONG tu ghep chuoi o day: `credit_entries.job_id` la VARCHAR(36) va
     #    PostgreSQL ep do dai trong khi SQLite thi khong. Xem `thanh_toan.ma_luot`.
-    request_id = thanh_toan.ma_luot("st")
-    ticket = admission.acquire(
-        db, resource=tool.admission_resource, slots=tool.admission_slots,
-        user_id=principal.user_id, mode="stream", holder_id=request_id)
-    if ticket is None:
-        db.rollback()
-        raise limits.execution_busy(tool.admission_resource)
-    vao_uoc = executor.estimate_input(tin)
-    xin_ra = _max_tokens(than, vao_uoc)
-
-    # 🔴 GHI GIÁ TRỊ ĐÃ KẸP TRỞ LẠI THÂN GỬI LÊN. Thiếu dòng này là lỗi thật, tìm
-    #    ra 24/08 khi cắm Claude Code lần đầu (H38/L2).
+    # ── Từ đây là FACADE (H43 Phase 02): admission → giữ chỗ → commit → mở luồng.
     #
-    #    `_max_tokens()` kẹp về `MAX_TOKENS_TRAN`, nhưng kết quả chỉ dùng cho
-    #    phần **giữ tiền**. Thân `gui` vẫn mang con số thô của khách. Nên ta kẹp
-    #    cái mình **thu tiền** mà không kẹp cái mình **gửi đi**, và máy B trả 413.
-    #
-    #    Claude Code gửi `max_tokens: 32000` mặc định — con số khách gần như
-    #    không có cách nào đổi. Nên trước khi sửa, Claude Code **hoàn toàn không
-    #    dùng được**, và triệu chứng là một 503 "thử lại sau" cho một thứ thử lại
-    #    bao nhiêu lần cũng hỏng.
-    #
-    # ⭐ VÌ SAO KẸP CHỨ KHÔNG TỪ CHỐI, khác hẳn `chat.py`. `max_tokens` là một
-    #    **trần**, không phải một lượng đặt hàng: kẹp nó xuống chỉ giới hạn câu
-    #    trả lời có thể dài tới đâu, và tiền vẫn tính theo token **thật sự sinh
-    #    ra** nên khách không trả thêm đồng nào. Còn `chat.py` từ chối là đúng ở
-    #    đó, vì lý do của nó là **thời gian** (trần 125 giây của Cloudflare) —
-    #    kẹp `max_tokens` không cứu được một lượt chạy quá lâu.
-    #
-    # ⛔ Giữ nguyên TÊN TRƯỜNG khách đã dùng: `/responses` của Codex đọc
-    #    `max_output_tokens`, hai cửa kia đọc `max_tokens`. Ghi nhầm tên là thêm
-    #    một trường lạ mà thượng nguồn bỏ qua — tức lại gửi đi con số thô.
-    #
-    # 🔴 VÀ KHI KHÁCH KHÔNG KHAI GÌ THÌ TÊN TRƯỜNG PHẢI THEO **CỬA**, KHÔNG ĐƯỢC
-    #    MẶC ĐỊNH `max_tokens`.
-    #
-    #    Bản trước rơi vào `else` là ghi `max_tokens` cho **mọi** cửa. Với
-    #    `/v1/responses` thì thượng nguồn **không đọc** tên đó — nó chỉ đọc
-    #    `max_output_tokens` — nên con số của ta bị bỏ qua và llama-server dùng
-    #    mặc định của chính nó: **1024**.
-    #
-    # ⛔ ĐO ĐƯỢC 29/08, VÀ ĐÂY LÀ GỐC CỦA "HỎI DÀI THÌ IM LẶNG": một yêu cầu
-    #    KHÔNG kèm giới hạn trả về đúng `output_tokens=1024`, `status=completed`,
-    #    sau ~22 giây — tức câu trả lời **bị cắt cụt giữa chừng** chứ không phải
-    #    mất kết nối. Codex không tự khai `max_output_tokens` nên lượt nào của nó
-    #    cũng dính. Câu ngắn (<1024 token) thì không ai thấy gì bất thường.
-    _ten_tran = "max_output_tokens" if duong.endswith("/responses") else "max_tokens"
-    for _ten in ("max_tokens", "max_output_tokens"):
-        if _ten in gui:
-            gui[_ten] = xin_ra
-            break
-    else:
-        gui[_ten_tran] = xin_ra
+    #    Toàn bộ thứ tự cửa đã đo là đúng (Q107/Q114) nay sống ở
+    #    `platform_core/runtime_noi_bo/luong.py`, để client nội bộ (ChatLTT) và
+    #    cửa này đi MỘT đường đếm token và quyết toán. Ở đây chỉ còn việc của
+    #    HTTP: dịch bốn lỗi trước-byte-đầu sang mã trạng thái + `problem+json`.
     try:
-        da_giu = thanh_toan.giu_cho_luot(
-            db, user_id=principal.user_id, request_id=request_id,
-            token_vao_uoc=vao_uoc, max_tokens=xin_ra)
-    except credit.ThieuCreditError as e:
-        # Không đủ tiền thì không đốt GPU. Chốt trước, không phải sau.
-        #
-        # ⭐ Đếm nó — xem ghi chú cùng chỗ ở `chat.py`.
-        metrics.increment(metrics.CREDIT_EXHAUSTED)
-        log.info("khach het credit tai %s: user=%s", duong, principal.user_id[:8])
-        db.rollback()
+        cb = cua_luong.chuan_bi(
+            db, user_id=principal.user_id, tool_name=TOOL_CHAT,
+            than={**than, "model": ten}, duong=duong)
+        luot = cua_luong.mo_thuong_nguon(
+            cb, timeout_s=MO_LUONG_GIAY,
+            trang_thai=getattr(request, "state", None))
+    except cua_luong.ThamSoSai as e:
+        raise _bao_400(str(e), than) from None
+    except cua_luong.ThieuCredit as e:
         raise insufficient_credit(str(e)) from None
-
-    # 🔴 CHỐT GIAO DỊCH TRƯỚC KHI CHẠM MODEL. Cùng bài học đã học ở
-    #    `server/api/chat.py`: giữ giao dịch mở suốt lượt gọi thì giữ luôn một
-    #    kết nối CSDL, và tiến trình chết giữa chừng sẽ cuộn mất phần giữ chỗ.
-    #    Với streaming còn nặng hơn: generator chạy **sau khi** phản hồi đã bắt
-    #    đầu, lúc đó `get_db` đã đóng phiên rồi.
-    db.commit()
-
-    from platform_core.llm import luong_vlm
-
-    try:
-        mo = luong_vlm.mo(db, duong=duong, than=gui, timeout_s=MO_LUONG_GIAY)
-    except luong_vlm.KhongMoDuocLuong as e:
-        _hoan(principal.user_id, request_id)
-        admission.release_by_id(ticket.id)
-        if e.ban:
-            # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền.
-            # Đếm vào `CAPACITY_REFUSED` — lý do đầy đủ ở nhánh bận của `_mot_cuc`.
-            metrics.increment(metrics.CAPACITY_REFUSED)
-            log.warning("BAN luong: user=%s duong=%s ly_do=%s",
-                        principal.user_id[:8], duong, e.ly_do)
-            raise service_unavailable(f"The model is busy right now: {e.ly_do}",
-                                      retry_after=e.thu_lai_sau_s) from None
-        if getattr(e, "qua_dai", False):
+    except cua_luong.DangBan as e:
+        if e.nguon == "suat":
+            raise limits.execution_busy(e.tai_nguyen) from None
+        # ⛔ BẬN ≠ HỎNG. 503 + Retry-After, và khách KHÔNG bị thu tiền (facade
+        #    đã hoàn và đã đếm vào `CAPACITY_REFUSED`).
+        raise service_unavailable(f"The model is busy right now: {e.ly_do}",
+                                  retry_after=e.thu_lai_sau_s) from None
+    except cua_luong.KhongMoDuoc as e:
+        if e.qua_dai:
             # 413 context_length_exceeded: ngữ cảnh vượt trần đầu-vào của máy B.
             # KHÔNG phải hỏng tạm — client PHẢI nén/bỏ lượt cũ rồi thử lại; retry
             # nguyên si chỉ tạo bão (đúng cái Codex đã dính: hội thoại/phản hồi
@@ -733,170 +668,30 @@ def _cua(duong: str, than: dict, principal: Principal, db: Session,
                 limit_name="input_tokens",
                 # ⛔ TRAN THEO MODEL, khong phai tran chung (P08 F-02).
                 #    `qwen38-vision` chay `-c 65536` nen tran vao that cua no
-                #    nho hon `TOKEN_VAO_TRAN` mot nua. Tra so chung o day nghia
-                #    la than loi noi mot dang (`tran: 65536`, nguyen van tu may
-                #    B) con truong may doc duoc noi mot dang khac.
+                #    nho hon `TOKEN_VAO_TRAN` mot nua.
                 limit_value=_tran_vao_cua_model(ten)) from None
-        log.warning("khong mo duoc luong cho user=%s: %s",
-                    principal.user_id[:8], e.ly_do)
         raise service_unavailable("The model could not serve this request.") from None
-    except BaseException:
-        _hoan(principal.user_id, request_id)
-        admission.release_by_id(ticket.id)
-        raise
 
-    metrics.increment("chat:stream")
-    return StreamingResponse(
-        _phat(mo, user_id=principal.user_id, request_id=request_id,
-              da_giu=da_giu, lease_id=ticket.id,
-              trang_thai=getattr(request, "state", None)),
-        media_type=mo.content_type, headers=_SSE,
-        background=BackgroundTask(admission.release_by_id, ticket.id))
-
-
-def _phat(mo, *, user_id: str, request_id: str, da_giu: int,
-          trang_thai=None,
-          lease_id: str = "") -> Iterator[bytes]:
-    """Chuyển byte nguyên xi, đếm token dọc đường, quyết toán khi hết.
-
-    ⛔ `finally` chứ không phải "sau vòng lặp". Khách đóng kết nối thì Starlette
-       ném `GeneratorExit` vào ngay chỗ `yield`, và nhánh sau vòng lặp **không
-       bao giờ chạy** — nghĩa là một lượt đã đốt GPU sẽ không bao giờ được quyết
-       toán, và phần giữ chỗ nằm lại đó mãi.
-    """
-    from platform_core.llm.dem_token_luong import DemToken
-    import time as _time
-
-    dem = DemToken()
-    vo: Optional[BaseException] = None
-    khach_ngat = False
-    _t0 = _time.monotonic()
-    _n_khoi = 0
-    _t_byte_dau: Optional[float] = None
-    from contextlib import nullcontext
     from platform_core.llm import admission
-    keeper = admission.keep_alive(lease_id) if lease_id else nullcontext()
-    with keeper:
-        try:
-            for khoi in mo.luong:
-                if _t_byte_dau is None:
-                    _t_byte_dau = _time.monotonic() - _t0
-                _n_khoi += 1
-                dem.nhin(khoi)
-                yield khoi
-        except GeneratorExit:
-            khach_ngat = True
-            raise
-        except BaseException as e:                              # noqa: BLE001
-            vo = e
-            raise
-        finally:
-            _dt = _time.monotonic() - _t0
-            log.warning(
-                "STREAM %s rid=%s dur=%.1fs ttfb=%s khoi=%s token_ra=%s",
-                "KHACH-NGAT" if khach_ngat else ("LOI" if vo else "XONG"),
-                request_id[-8:], _dt,
-                (f"{_t_byte_dau:.1f}s" if _t_byte_dau is not None else "-"),
-                _n_khoi, dem.token_ra)
-            _quyet_toan(user_id, request_id, dem, da_giu, trang_thai)
-            if vo is not None:
-                mo.hong(vo)
-            else:
-                mo.xong(tokens=dem.token_ra)
+    nen = (BackgroundTask(admission.release_by_id, cb.lease_id)
+           if cb.lease_id else None)
+    return StreamingResponse(luot.luong, media_type=luot.content_type,
+                             headers=_SSE, background=nen)
 
 
-def _quyet_toan(user_id: str, request_id: str, dem, da_giu: int,
-                trang_thai=None) -> None:
-    """Chốt tiền, trong một phiên CSDL **mới**.
+# `_phat` / `_quyet_toan` / `_hoan` đã HẠ xuống
+# `platform_core/runtime_noi_bo/luong.py` (H43 Phase 02). Giữ tên ở đây cho
+# ai còn tra theo tên cũ; thân hàm chỉ có MỘT ở nơi mới.
+_quyet_toan = cua_luong.quyet_toan
+_hoan = cua_luong.hoan
 
-    ⚠️ Phiên của request đã đóng từ lúc phản hồi bắt đầu — generator này chạy sau
-       đó. Dùng lại phiên cũ là `DetachedInstanceError` hoặc tệ hơn: một giao
-       dịch không bao giờ được commit.
-    """
-    from platform_core.db import get_session
-    from platform_core.llm import thanh_toan
-
-    gen = get_session()
-    db = next(gen)
-    try:
-        thu = thanh_toan.quyet_toan_hoac_hoan(
-            db, user_id=user_id, request_id=request_id, su_dung=dem.su_dung())
-        db.commit()
-        # ⛔ P08 F-01. Doc `server/api/guard.py:_write_request_log_muon` truoc khi
-        #    doi dong nay: task nen ghi so request doc `api_credit_delta` o
-        #    thoi diem NO chay, va no chay SAU generator nay. Dat o day la cach
-        #    duy nhat cua stream ke duoc so tien that vao so.
-        if trang_thai is not None:
-            trang_thai.api_credit_delta = -int(thu.thu_credit)
-        log.info("stream %s: giu=%s thu=%s token_ra=%s do_duoc=%s",
-                 request_id[-8:], da_giu, thu.thu_credit, dem.token_ra,
-                 dem.do_duoc)
-    except Exception:                                           # noqa: BLE001
-        db.rollback()
-        # 🔴 Ồn ào có chủ ý. Không quyết toán được nghĩa là phần giữ chỗ nằm lại
-        #    trên tài khoản khách — tiền của họ bị treo, và không có gì khác báo.
-        log.exception("KHONG QUYET TOAN DUOC stream %s user=%s",
-                      request_id[-8:], user_id[:8])
-    finally:
-        try:
-            next(gen)
-        except StopIteration:
-            pass
-
-
-def _hoan(user_id: str, request_id: str) -> None:
-    from platform_core.db import get_session
-    from platform_core.llm import thanh_toan
-
-    gen = get_session()
-    db = next(gen)
-    try:
-        thanh_toan.hoan_luot(db, user_id=user_id, request_id=request_id)
-        db.commit()
-    except Exception:                                           # noqa: BLE001
-        db.rollback()
-        log.exception("khong hoan duoc phan giu cho cua %s", request_id[-8:])
-    finally:
-        try:
-            next(gen)
-        except StopIteration:
-            pass
 
 
 # ── Đọc yêu cầu của hai giao thức ────────────────────────────────────────────
 
-def _tin_nhan(than: dict) -> list:
-    """Rút phần văn bản đầu vào, dù client nói giao thức nào.
+# Ước token đầu vào: một hàm, một chỗ — `runtime_noi_bo.luong.uoc_tin_nhan`.
+_tin_nhan = cua_luong.uoc_tin_nhan
 
-    Chỉ dùng để **ước** token đầu vào cho phần giữ chỗ, nên không cần chính xác
-    tuyệt đối — nhưng phải ước **CAO**, vì giữ thiếu thì khách tiêu quá số dư.
-    """
-    ra: list = []
-    he_thong = than.get("system")
-    if isinstance(he_thong, str):
-        ra.append({"content": he_thong})
-    elif isinstance(he_thong, list):
-        ra.extend({"content": (m or {}).get("text", "")} for m in he_thong
-                  if isinstance(m, dict))
-
-    tin = than.get("messages")
-    if isinstance(tin, list):
-        ra.extend(m for m in tin if isinstance(m, dict))
-
-    # Responses gọi nó là `input`, và nó có thể là chuỗi trần.
-    vao = than.get("input")
-    if isinstance(vao, str):
-        ra.append({"content": vao})
-    elif isinstance(vao, list):
-        ra.extend(m for m in vao if isinstance(m, dict))
-
-    # Định nghĩa tool đi kèm mỗi lượt và **không hề nhỏ**: đo thật 23/08, prompt
-    # hệ thống của Codex là ~21.936 token. Bỏ qua nó là ước thiếu rất nhiều.
-    cong_cu = than.get("tools")
-    if isinstance(cong_cu, list) and cong_cu:
-        import json
-        ra.append({"content": json.dumps(cong_cu, ensure_ascii=False)})
-    return ra
 
 
 def _chu_trong(khoi) -> str:
@@ -977,8 +772,7 @@ def _max_tokens(than: dict, token_vao_uoc: int = 0, executor=None) -> int:
     # ⭐ VÌ SAO ĐỂ RỘNG LÀ AN TOÀN: credit **giữ trước rồi hoàn** về đúng số token
     #    thật sinh ra (`_quyet_toan`), và model tự dừng khi trả lời xong. Nên số
     #    này chỉ quyết định *chỗ để thở*, không quyết định tiền khách trả.
-    from apps.ltt_llm.ngan_sach import mac_dinh_cho
-    return min(mac_dinh_cho("stream"), tran)
+    return min(int(executor.mac_dinh_cho("stream")), tran)
 
 
 def _luong_thu(duong: str) -> Iterator[bytes]:

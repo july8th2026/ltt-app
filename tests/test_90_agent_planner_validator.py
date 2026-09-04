@@ -193,6 +193,9 @@ def test_quyen_app_duoc_doc_tu_db(tmp_path, monkeypatch):
     monkeypatch.setenv("LTT_DATABASE_URL", url)
     import platform_core.db as dbmod
     from platform_core import app_access, users
+    # PHAI import truoc `create_all`: `Base.metadata` rong cho toi khi module
+    # nay duoc nap, va `create_all` tren metadata rong tao ZERO bang, im lang.
+    import platform_core.models  # noqa: F401
     dbmod.reset_engine(); dbmod.Base.metadata.create_all(dbmod.get_engine())
     gen = dbmod.get_session(); db = next(gen)
     try:

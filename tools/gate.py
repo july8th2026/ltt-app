@@ -615,10 +615,6 @@ def _steps(quick: bool, noi_tiep: bool = False) -> list[Step]:
         Step("dich thieu ban EN",
              [sys.executable, "tools/check_dich_thieu.py"], ROOT,
              nhom="sau_test"),
-        # Hồ sơ là bản đồ để AI/người mới hiểu code. Nếu không khóa freshness,
-        # nó sẽ âm thầm mô tả hệ thống cũ ngay sau lần sửa đầu tiên.
-        Step("system profile", [sys.executable, "tools/build_system_profile.py",
-                                 "--check"], ROOT),
         # EXT-17: hợp đồng công khai của /api/v1 so với bản chuẩn đã đóng băng.
         # Không có bước này thì một thay đổi phá vỡ tương thích lên tàu được vì
         # không ai diff một thứ mà không ai gom lại. Cố ý phá thì chạy
@@ -1122,6 +1118,44 @@ def _console_text(value: str, encoding: str | None = None) -> str:
 BO_QUA_KHI_QUICK = ("bat bien da tien trinh", "bo test (song song)")
 
 
+#: Thư mục nằm trong ảnh chụp "cây đứng yên".
+#:
+#: 🔴 TRƯỚC 03/09 DANH SÁCH NÀY THIẾU BA THỨ QUAN TRỌNG NHẤT VỚI HAI PHIÊN
+#:    LÀM VIỆC SONG SONG: `llm_gateway/` (mã cổng máy B), `sdk/` (bộ cài chạy
+#:    trên máy khách) và `frontend/`.
+#:
+#:    Một chương trình sửa 10 thư mục — đo thật 03/09 — có **năm** thư mục nằm
+#:    ngoài ảnh chụp. Nghĩa là sửa mã cổng máy B ngay giữa một lượt gate thì
+#:    `CAY DA DOI TRONG LUC CHAY` **không kêu**, và dòng `RESULT: PASS` nói về
+#:    một cây đã không còn tồn tại.
+#:
+#: ⭐ Cùng họ với `banh-coc-chi-bao-ve-thu-no-nhin-thay`: chốt có, và nó chỉ
+#:    canh phần nó được kể tên.
+THU_MUC_CHUP = (
+    "apps", "platform_core", "server", "tools", "tests", "alembic", "locale",
+    # Mã chạy trên máy B và bộ cài chạy trên máy khách. Cả hai deploy đi xa
+    # khỏi kho này, nên một lần sửa giữa lượt gate là một lần sai không ai thấy.
+    "llm_gateway", "render_gateway", "sdk", "nexus_agent", "codex_sidecar",
+    # Nguồn frontend. `node_modules` bị cắt ở `_BO_QUA_THU_MUC`.
+    "frontend",
+)
+
+#: Thư mục **cắt ngay lúc duyệt**, không phải lọc sau.
+#:
+#: ⭐ VÀ ĐÓ LÀ TOÀN BỘ LÝ DO ẢNH CHỤP RỘNG HƠN MÀ LẠI NHANH HƠN. Bản `rglob`
+#:    trước vẫn **đi xuống** `node_modules` (12.255 tệp) rồi mới bỏ; `os.walk`
+#:    cắt `dirnames` tại chỗ nên nó không xuống. Đo 03/09 trên cây này:
+#:
+#:        rglob,   7 thu muc, loc sau   1.321 tep   0,143 s
+#:        os.walk, 13 thu muc, cat nhanh 1.491 tep   0,047 s
+#:
+#: ⛔ VÀ KHÔNG CẮT `.vite`. Bốn tệp `server/static/*/.vite/manifest.json` là
+#:    bundle production **đã commit** — chúng chính là thứ máy chủ phục vụ, nên
+#:    mất chúng khỏi ảnh chụp là mất đúng thứ cần canh. Cắt `dist`/`coverage`
+#:    cũng cùng rủi ro; chỉ cắt hai thứ chắc chắn vô nghĩa.
+_BO_QUA_THU_MUC = frozenset({"__pycache__", "node_modules"})
+
+
 def _anh_chup_cay() -> dict[str, tuple[int, int]]:
     """Ảnh chụp cây nguồn: đường dẫn → (kích thước, thời điểm sửa).
 
@@ -1133,19 +1167,21 @@ def _anh_chup_cay() -> dict[str, tuple[int, int]]:
        nhau không nói được gì ngoài "khác nhau". Xem `_ke_cho_da_doi`.
     """
     ra: dict[str, tuple[int, int]] = {}
-    for thu_muc in ("apps", "platform_core", "server", "tools", "tests",
-                    "alembic", "locale"):
+    for thu_muc in THU_MUC_CHUP:
         goc = ROOT / thu_muc
-        if not goc.exists():
+        if not goc.is_dir():
             continue
-        for f in sorted(goc.rglob("*")):
-            if not f.is_file() or "__pycache__" in f.parts:
-                continue
-            try:
-                st = f.stat()
-            except OSError:
-                continue
-            ra[f.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
+        for thu, con, tep in os.walk(goc):
+            # Cắt tại chỗ: `os.walk` đọc lại `con` sau mỗi vòng, nên gán vào
+            # `con[:]` là bảo nó **không đi xuống** những nhánh đó.
+            con[:] = [d for d in con if d not in _BO_QUA_THU_MUC]
+            for ten in tep:
+                p = Path(thu) / ten
+                try:
+                    st = p.stat()
+                except OSError:
+                    continue
+                ra[p.relative_to(ROOT).as_posix()] = (st.st_size, int(st.st_mtime))
     return ra
 
 

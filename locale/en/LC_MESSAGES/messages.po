@@ -13136,3 +13136,65 @@ msgstr "≈ {t} - a single pass"
 
 msgid "≈ {t} — {n} đoạn, ghép liền mạch"
 msgstr "≈ {t} - {n} segments, joined seamlessly"
+msgid "[{slug}] so_lan_thu khai job_type không thuộc app: {jt!r}"
+msgstr "[{slug}] so_lan_thu names a job_type that does not belong to this app: {jt!r}"
+
+msgid "[{slug}] so_lan_thu[{jt!r}] phải là số nguyên ≥ 1: {so!r}"
+msgstr "[{slug}] so_lan_thu[{jt!r}] must be an integer >= 1: {so!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong trỏ tới tham số không tồn tại: {param!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong points to a parameter that does not exist: {param!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong chỉ hỗ trợ tham số `string`, {param!r} là {kind!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong only supports `string` parameters; {param!r} is {kind!r}"
+
+msgid "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] phải là `module:attribute`, nhận {ref!r}"
+msgstr "[{slug}] tool {tool!r} tuy_chon_dong[{param!r}] must be `module:attribute`, got {ref!r}"
+
+msgid "Trò chuyện với model của LTT: văn bản, ảnh và giọng nói trong một hội thoại."
+msgstr "Chat with LTT's own models: text, images and voice in one conversation."
+
+msgid "Sản phẩm hội thoại trên model của LTT đang được xây (H43). Trang này là chỗ giữ chỗ để đường dẫn không trả 404."
+msgstr "The conversation product on LTT's models is being built (H43). This page is a placeholder so the path does not return 404."
+
+msgid "ChatLTT cần JavaScript."
+msgstr "ChatLTT needs JavaScript."
+
+msgid "Giao diện chưa được build (thiếu bundle frontend/chatltt). API vẫn hoạt động tại /chatltt/api."
+msgstr "The interface has not been built (frontend/chatltt bundle missing). The API still works at /chatltt/api."
+
+msgid "Hội thoại ChatLTT: tiêu đề, model đang chọn, nhánh đang xem. Xoá là xoá mềm — dọn thật theo hạn giữ dữ liệu."
+msgstr "A ChatLTT conversation: title, selected model, branch in view. Deletion is soft; real removal follows the retention limit."
+
+msgid "Một lượt thi hành: phần chữ đã sinh (kể cả khi bị ngắt), số token đo được và số credit đã giữ/thu — thứ đối chiếu được với sổ tiền."
+msgstr "One execution: the text generated so far (even if interrupted), the tokens measured, and the credit held and charged — what reconciles against the ledger."
+
+msgid "Từng lượt nói trong cây hội thoại, kèm khối nội dung (chữ, suy luận, ảnh, tiếng). Thứ nhạy cảm nhất của sản phẩm này."
+msgstr "Each turn in the conversation tree, with its content blocks (text, reasoning, images, audio). The most sensitive data in this product."
+
+msgid "theo hội thoại chứa nó"
+msgstr "with the conversation that holds it"
+
+msgid "xoá mềm rồi dọn theo hạn giữ dữ liệu"
+msgstr "soft-deleted, then purged at the retention limit"
+
+msgid "Hội thoại dài: sáu con số, và vì sao chúng khác nhau"
+msgstr "Long conversations: six numbers, and why they differ"
+
+msgid "Codex và Claude Code tự nén hội thoại khi nó dài ra. Chúng chỉ nén ĐÚNG LÚC nếu bạn nói thật cho chúng biết cửa sổ của model này — công cụ cắm ở trên làm việc đó cho bạn."
+msgstr "Codex and Claude Code compact a conversation on their own as it grows. They only compact IN TIME if you tell them this model's real window — the plug-in tool above does that for you."
+
+msgid "Con số"
+msgstr "Number"
+
+msgid "Giá trị"
+msgstr "Value"
+
+msgid "Nó là gì"
+msgstr "What it is"
+
+msgid "Vượt trần thì bạn nhận 413 kèm đúng con số đã áp cho model bạn gọi. Chúng tôi KHÔNG bao giờ lặng lẽ cắt bớt lượt cũ: cắt đi thì thứ mất đầu tiên là chỉ dẫn hệ thống và kết quả tool, và bạn sẽ không biết là mình đã mất."
+msgstr "Go over the limit and you get a 413 carrying the number that actually applied to the model you called. We NEVER silently drop older turns: the first things to go would be your system instructions and your tool results, and you would have no way to know they were gone."
+
+msgid "Nếu bạn ăn 413 giữa chừng"
+msgstr "If you hit a 413 mid-conversation"

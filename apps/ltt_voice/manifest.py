@@ -34,8 +34,8 @@ from __future__ import annotations
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, NavEntry, ToolSpec
 
-from . import gia, nghe_thu
-from .tham_so_cong_khai import TRAN_KY_TU_CONG_KHAI
+from . import gia, nghe_thu, sidecar_client
+from .tham_so_cong_khai import SO_LAN_THU_JOB, TRAN_KY_TU_CONG_KHAI
 
 
 def _gia(params: dict) -> int:
@@ -163,6 +163,13 @@ MANIFEST = AppManifest(
     #    dưới ~40 % của một lượt 5 giây mà không biến hàng đợi thành máy bơm.
     cho_tai_nguyen_s={"ltt_voice.synthesize": 3, "ltt_voice.enroll": 3},
 
+    # Số lần thử: nạp model lúc deploy mất 39,9–73,1 giây (đo trong
+    # `tham_so_cong_khai.py`), cửa sổ 3 lượt mặc định ~30 giây là job chết mỗi
+    # lần deploy. Khai ở đây để **mọi** cửa (web, `/api/v1`, client nội bộ) cùng
+    # đọc một số — trước 02/09 chỉ bốn route web truyền tay, API thì không.
+    so_lan_thu={"ltt_voice.synthesize": SO_LAN_THU_JOB,
+                "ltt_voice.enroll": SO_LAN_THU_JOB},
+
     credit_cost=_gia,
     #: Trang gia cong khai `/gia-api` doc HAM NAY qua registry, khong
     #: import app nay theo ten. Xem `AppManifest.bang_gia`.
@@ -200,6 +207,12 @@ MANIFEST = AppManifest(
     bao_tri=nghe_thu.bao_tri,
     bao_tri_moi_giay=3600,
 
+    # Sức khoẻ cho catalog của sản phẩm khác (H43 Phase 06): hỏi sidecar THẬT
+    # qua `trang_thai()` ba trạng thái — không phải `san_sang()` (chỉ kiểm biến
+    # môi trường; đã hiện chip xanh trên một trang mọi lượt đều hỏng, 02/09).
+    suc_khoe=lambda: ("san_sang" if sidecar_client.trang_thai() == "san_sang"
+                      else "chua_san_sang"),
+
     tools=(
         ToolSpec(
             name="speech.ltt",
@@ -222,6 +235,17 @@ MANIFEST = AppManifest(
             #    và hai lượt cùng đập vào một card (Q114).
             admission_resource="vieneu_gpu",
             admission_slots=1,
+
+            # Giọng nhân bản CỦA NGƯỜI DÙNG cho palette/sản phẩm khác, không
+            # import app này (H43 Phase 02). Gợi ý cho giao diện; sở hữu vẫn do
+            # `features.giai_giong` kiểm lúc thi hành.
+            tuy_chon_dong={
+                "voice_id": "apps.ltt_voice.tham_chieu:tuy_chon_voice_id",
+                # ⭐ Kho DUNG CHUNG. Khong co dong nay thi mot tai khoan chua
+                #    nhan ban giong nao khong thay MOT lua chon nao ca — do la
+                #    trang thai cua gan nhu moi khach moi.
+                "preset": "apps.ltt_voice.tham_chieu:tuy_chon_preset",
+            },
 
             api_exposed=True,
             api_contract={

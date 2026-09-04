@@ -99,6 +99,13 @@ DISPOSITION = {
     # it would publish a contract about *device identity*, which has to wait for
     # the relay decision and the AGPL legal review (Q93, docs/nexus/).
     "nexus": (DEFER, ()),
+    # An internal *client* of three tools that are already sold (`text.chat`,
+    # `image.ltt`, `speech.ltt`), reached through `platform_core.runtime_noi_bo`
+    # rather than through `/api/v1`. It declares no ToolSpec, on purpose:
+    # publishing it would sell the same three capabilities a second time, under
+    # a second contract — and a second contract is where two price tables start
+    # to drift apart. H43, docs/CHATLTT/.
+    "chatltt": (DEFER, ()),
 
     "qualitylab": (INTERNAL_ONLY, ()),
 }

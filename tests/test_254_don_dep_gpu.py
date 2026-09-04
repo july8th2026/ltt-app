@@ -118,7 +118,7 @@ def test_cong_tra_429_khi_card_chua_sach():
     d, _ = _don([20000, 20000], so_lan_thu=2)
     up = FakeUpstream()
     c = TestClient(create_app(_cfg(), up, trong_tai=_tt_ranh(), don_dep=d))
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 429
     assert r.headers.get("Retry-After") == "60"
     # KHÔNG được đẩy yêu cầu xuống thượng nguồn khi biết card chưa sạch.
@@ -141,7 +141,7 @@ def test_cong_KHONG_don_khi_model_da_nam_trong_card():
             self.goi.append((method, path, body or {}))
             if path == "/running":
                 return 200, _json.dumps(
-                    {"running": [{"model": "qwen38-ops", "state": "ready"}]}).encode()
+                    {"running": [{"model": "qwen38-api", "state": "ready"}]}).encode()
             return 200, b'{"ok":true}'
 
         def stream(self, *a, **k):                      # pragma: no cover
@@ -150,7 +150,7 @@ def test_cong_KHONG_don_khi_model_da_nam_trong_card():
     d, goi = _don([20333, 20333], so_lan_thu=2)
     up = UpDangChay()
     c = TestClient(create_app(_cfg(), up, trong_tai=_tt_ranh(), don_dep=d))
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 200, "model dang chay ma bi coi la card ban -> 429 vinh vien"
     assert goi["nha"] == 0
 
@@ -222,7 +222,7 @@ def test_van_don_khi_KHONG_co_model_nao_cua_ta_chay():
 
     d, goi = _don([16620, 1515], so_lan_thu=3)
     c = TestClient(create_app(_cfg(), UpRong(), trong_tai=_tt_ranh(), don_dep=d))
-    r = c.post("/v1/chat/completions", json={"model": "qwen38-ops", "messages": []})
+    r = c.post("/v1/chat/completions", json={"model": "qwen38-api", "messages": []})
     assert r.status_code == 200
     assert goi["nha"] == 1, "ComfyUI giu VRAM thi PHAI bao no nha"
 

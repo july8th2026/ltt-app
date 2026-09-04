@@ -32,7 +32,7 @@ Bản khai của `ltt_llm` — model ngôn ngữ chạy trên máy nhà, bán ra
    **96.256** (`TOKEN_VAO_TRAN`), và đã là 96.256 từ đợt dọn tham số 30/08.
    Đừng đọc con số ở đây — đọc `ngan_sach.py`, hoặc hỏi máy B:
 
-       tran.input_tokens tu GET /health cua cong may B  ->  96256
+       tran.input_tokens tu GET /health cua cong may B  ->  169984
 
    Số đúng tại thời điểm viết:
 
@@ -55,6 +55,8 @@ from __future__ import annotations
 
 from platform_core.i18n import N_
 from platform_core.registry import AppManifest, ToolSpec
+
+from apps.ltt_llm import features as _features
 
 #: ⛔ CÁC HẰNG DƯỚI ĐÂY LÀ **BÍ DANH**, KHÔNG PHẢI ĐỊNH NGHĨA.
 #:
@@ -163,6 +165,9 @@ MANIFEST = AppManifest(
     job_types=("ltt_llm.chat",),
     requires=("api",),          # KHÔNG cần GPU của máy A: việc nặng ở máy B
     credit_cost=_cost,
+    # Sức khoẻ cho catalog của sản phẩm khác (H43 Phase 06): `GET /live` của
+    # cổng máy B, không cần khoá, timeout ngắn. Xem `features.suc_khoe`.
+    suc_khoe=_features.suc_khoe,
 
     enabled=True,
     group="AI",

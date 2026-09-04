@@ -1,0 +1,680 @@
+{
+ "model": "qwen38-api",
+ "url": "http://127.0.0.1:8280",
+ "lan": 3,
+ "luc": "2026-09-03 19:36:40",
+ "bai": [
+  {
+   "ma_bai": "vi-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 20.45,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 72,
+    "prompt_tokens": 30,
+    "total_tokens": 102,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 4.26,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 241,
+    "prompt_tokens": 30,
+    "total_tokens": 271,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 1.45,
+   "ra": "Hà Nội",
+   "su_dung": {
+    "completion_tokens": 72,
+    "prompt_tokens": 30,
+    "total_tokens": 102,
+    "prompt_tokens_details": {
+     "cached_tokens": 26
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 1.96,
+   "ra": "45000",
+   "su_dung": {
+    "completion_tokens": 106,
+    "prompt_tokens": 58,
+    "total_tokens": 164,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.68,
+   "ra": "45000",
+   "su_dung": {
+    "completion_tokens": 94,
+    "prompt_tokens": 58,
+    "total_tokens": 152,
+    "prompt_tokens_details": {
+     "cached_tokens": 54
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "vi-02",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 2.1,
+   "ra": "45000",
+   "su_dung": {
+    "completion_tokens": 115,
+    "prompt_tokens": 58,
+    "total_tokens": 173,
+    "prompt_tokens_details": {
+     "cached_tokens": 54
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 0.79,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 25,
+    "prompt_tokens": 27,
+    "total_tokens": 52,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 0.7,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 33,
+    "prompt_tokens": 27,
+    "total_tokens": 60,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "en-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 0.8,
+   "ra": "Tokyo",
+   "su_dung": {
+    "completion_tokens": 28,
+    "prompt_tokens": 27,
+    "total_tokens": 55,
+    "prompt_tokens_details": {
+     "cached_tokens": 23
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.99,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n < 2:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    i = 3\n    while i * i <= n:\n        if n % i == 0:\n            return False\n        i += 2\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 188,
+    "prompt_tokens": 60,
+    "total_tokens": 248,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 2.24,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n < 2:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    for i in range(3, int(n**0.5) + 1, 2):\n        if n % i == 0:\n            return False\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 139,
+    "prompt_tokens": 60,
+    "total_tokens": 199,
+    "prompt_tokens_details": {
+     "cached_tokens": 56
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 5.01,
+   "ra": "```python\ndef la_so_nguyen_to(n):\n    if n < 2:\n        return False\n    if n == 2:\n        return True\n    if n % 2 == 0:\n        return False\n    for i in range(3, int(n**0.5) + 1, 2):\n        if n % i == 0:\n            return False\n    return True\n```",
+   "su_dung": {
+    "completion_tokens": 327,
+    "prompt_tokens": 60,
+    "total_tokens": 387,
+    "prompt_tokens_details": {
+     "cached_tokens": 56
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.96,
+   "ra": "```python\ndef trung_binh(ds):\n    if not ds:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 175,
+    "prompt_tokens": 82,
+    "total_tokens": 257,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 2.15,
+   "ra": "```python\ndef trung_binh(ds):\n    if not ds:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 127,
+    "prompt_tokens": 82,
+    "total_tokens": 209,
+    "prompt_tokens_details": {
+     "cached_tokens": 78
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "code-02",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 3.29,
+   "ra": "```python\ndef trung_binh(ds):\n    if len(ds) == 0:\n        return 0.0\n    return sum(ds) / len(ds)\n```",
+   "su_dung": {
+    "completion_tokens": 187,
+    "prompt_tokens": 82,
+    "total_tokens": 269,
+    "prompt_tokens_details": {
+     "cached_tokens": 78
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.39,
+   "ra": "{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 123,
+    "prompt_tokens": 87,
+    "total_tokens": 210,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.96,
+   "ra": "{\"ten\":\"Lan\",\"tuoi\":28,\"ky_nang\":[\"Python\",\"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 114,
+    "prompt_tokens": 87,
+    "total_tokens": 201,
+    "prompt_tokens_details": {
+     "cached_tokens": 83
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "json-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 2.37,
+   "ra": "{\"ten\": \"Lan\", \"tuoi\": 28, \"ky_nang\": [\"Python\", \"Go\"]}",
+   "su_dung": {
+    "completion_tokens": 142,
+    "prompt_tokens": 87,
+    "total_tokens": 229,
+    "prompt_tokens_details": {
+     "cached_tokens": 83
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 75.19,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 89,
+    "prompt_tokens": 67926,
+    "total_tokens": 68015,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 2.99,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 118,
+    "prompt_tokens": 67926,
+    "total_tokens": 68044,
+    "prompt_tokens_details": {
+     "cached_tokens": 67922
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-10",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 2.85,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 114,
+    "prompt_tokens": 67926,
+    "total_tokens": 68040,
+    "prompt_tokens_details": {
+     "cached_tokens": 67922
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 77.6,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 133,
+    "prompt_tokens": 67925,
+    "total_tokens": 68058,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 3.4,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 135,
+    "prompt_tokens": 67925,
+    "total_tokens": 68060,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-50",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 3.48,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 143,
+    "prompt_tokens": 67925,
+    "total_tokens": 68068,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 77.77,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 154,
+    "prompt_tokens": 67925,
+    "total_tokens": 68079,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 3.5,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 146,
+    "prompt_tokens": 67925,
+    "total_tokens": 68071,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "ctx-90",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 3.26,
+   "ra": "XYLOPHONE-4417",
+   "su_dung": {
+    "completion_tokens": 133,
+    "prompt_tokens": 67925,
+    "total_tokens": 68058,
+    "prompt_tokens_details": {
+     "cached_tokens": 67921
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 11.11,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 665,
+    "prompt_tokens": 49,
+    "total_tokens": 714,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 5.96,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 412,
+    "prompt_tokens": 49,
+    "total_tokens": 461,
+    "prompt_tokens_details": {
+     "cached_tokens": 45
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "dai-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 6.16,
+   "ra": "1. muc 1\n2. muc 2\n3. muc 3\n4. muc 4\n5. muc 5\n6. muc 6\n7. muc 7\n8. muc 8\n9. muc 9\n10. muc 10\n11. muc 11\n12. muc 12\n13. muc 13\n14. muc 14\n15. muc 15\n16. muc 16\n17. muc 17\n18. muc 18\n19. muc 19\n20. muc 20\n21. muc 21\n22. muc 22\n23. muc 23\n24. muc 24\n25. muc 25\n26. muc 26\n27. muc 27\n28. muc 28\n29. muc 29\n30. muc 30\n31. muc 31\n32. muc 32\n33. muc 33\n34. muc 34\n35. muc 35\n36. muc 36\n37. muc 37\n38. muc 38\n39. muc 39\n40. muc 40",
+   "su_dung": {
+    "completion_tokens": 412,
+    "prompt_tokens": 49,
+    "total_tokens": 461,
+    "prompt_tokens_details": {
+     "cached_tokens": 45
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.28,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "M90bK5dq9lVEeHig82FEzjcuui98AJua"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 80,
+    "prompt_tokens": 559,
+    "total_tokens": 639,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.29,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "1TuVB5Vgqn1RbUh1X6epLvXLDNJH7P5N"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 75,
+    "prompt_tokens": 559,
+    "total_tokens": 634,
+    "prompt_tokens_details": {
+     "cached_tokens": 555
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-01",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 1.45,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tra_thoi_tiet",
+      "arguments": "{\"thanh_pho\":\"Da Nang\"}"
+     },
+     "id": "CmlvZi4y1PAmPlN5P5Uiriz2y0QnnzKh"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 79,
+    "prompt_tokens": 559,
+    "total_tokens": 638,
+    "prompt_tokens_details": {
+     "cached_tokens": 555
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 0,
+   "ma_http": 200,
+   "giay": 2.63,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "WodurWyADyzbSAL28EKugQfqJcVUFwcm"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 124,
+    "prompt_tokens": 571,
+    "total_tokens": 695,
+    "prompt_tokens_details": {
+     "cached_tokens": 43
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 1,
+   "ma_http": 200,
+   "giay": 1.71,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "HUE3f4Ygubj7IyycT9dWcoWL7OzA3krS"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 107,
+    "prompt_tokens": 571,
+    "total_tokens": 678,
+    "prompt_tokens_details": {
+     "cached_tokens": 567
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  },
+  {
+   "ma_bai": "tool-02",
+   "lan": 2,
+   "ma_http": 200,
+   "giay": 1.73,
+   "tool_calls": [
+    {
+     "type": "function",
+     "function": {
+      "name": "tinh_tien",
+      "arguments": "{\"so_luong\":3,\"don_gia\":12500}"
+     },
+     "id": "Y75pziSsdPeSM6ZYvklALzH0xPbz1935"
+    }
+   ],
+   "ra": "",
+   "su_dung": {
+    "completion_tokens": 107,
+    "prompt_tokens": 571,
+    "total_tokens": 678,
+    "prompt_tokens_details": {
+     "cached_tokens": 567
+    }
+   },
+   "so_429": 0,
+   "loi": ""
+  }
+ ]
+}

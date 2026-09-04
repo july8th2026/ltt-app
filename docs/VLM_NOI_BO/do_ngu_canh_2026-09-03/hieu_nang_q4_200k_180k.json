@@ -1,0 +1,59 @@
+{
+ "bat_dau": "2026-09-03T19:21:40",
+ "model": "qwen38-ops",
+ "vram_truoc_nap_mb": 468,
+ "luot": [
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 180000,
+   "token_ra_xin": 256,
+   "token_vao_that": 179902,
+   "finish_reason": "stop",
+   "vram_dinh_mb": 21979,
+   "tong_giay": 297.14,
+   "ttft_giay": 291.73,
+   "usage": {
+    "completion_tokens": 180,
+    "prompt_tokens": 179981,
+    "total_tokens": 180161,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "tra_loi": "DAU=APDYMEVB CUOI=EDRHWYEE",
+   "token_nghi_ky_tu": 462,
+   "sentinel_dau": true,
+   "sentinel_cuoi": true,
+   "prefill_tok_s": 616.7,
+   "decode_tok_s": 33.3
+  },
+  {
+   "model": "qwen38-ops",
+   "muc_tieu": 160000,
+   "token_ra_xin": 8192,
+   "token_vao_that": 160134,
+   "finish_reason": "stop",
+   "vram_dinh_mb": 21979,
+   "tong_giay": 248.43,
+   "ttft_giay": 244.93,
+   "usage": {
+    "completion_tokens": 122,
+    "prompt_tokens": 160213,
+    "total_tokens": 160335,
+    "prompt_tokens_details": {
+     "cached_tokens": 0
+    }
+   },
+   "tra_loi": "DAU=DJYKWKXG CUOI=OYHCCNKO",
+   "token_nghi_ky_tu": 251,
+   "sentinel_dau": true,
+   "sentinel_cuoi": true,
+   "prefill_tok_s": 653.8,
+   "decode_tok_s": 34.9
+  }
+ ],
+ "nap_giay": 15.6,
+ "dia_chi": "http://127.0.0.1:8282",
+ "vram_sau_nap_mb": 21959,
+ "ket_thuc": "2026-09-03T19:31:07"
+}

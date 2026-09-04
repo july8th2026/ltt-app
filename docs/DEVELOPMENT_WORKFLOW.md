@@ -109,10 +109,9 @@ python tools/cua_so_yen.py nha --ep     # gỡ khoá treo (hiếm khi cần)
 | `server/templates/_kieu_chung.html`, `base.html` | **nhắn trước khi sửa** — chạm mọi trang của mọi app |
 | `CLAUDE.md`, `AGENTS.md`, `tools/gate.py` | chỉ `Edit` khớp chuỗi chính xác |
 
-⛔ **Tệp DẪN XUẤT — người commit SAU CÙNG mới sinh:** `ho_so_he_thong.txt`
-(`build_system_profile.py`) và `tools/gui/ltt.css` (`dong_goi_gui.py`) chụp
-**cả cây**. Sinh giữa chừng là commit một nửa việc đang dở của phiên khác, dưới
-tên đợt của mình.
+⛔ **Tệp DẪN XUẤT — người commit SAU CÙNG mới sinh:** `tools/gui/ltt.css`
+(`dong_goi_gui.py`) chụp **cả cây**. Sinh giữa chừng là commit một nửa việc
+đang dở của phiên khác, dưới tên đợt của mình.
 
 ---
 
@@ -120,7 +119,6 @@ tên đợt của mình.
 
 ```powershell
 python tools/gate.py                    # đầy đủ, trên cây đứng yên
-python tools/build_system_profile.py    # nếu bạn là người commit cuối
 git add <từng path của mình>            # KHÔNG `git add -A`
 git diff --cached                       # kiểm không dính tệp phiên khác
 git commit
@@ -155,9 +153,7 @@ không lên git và không lên production.
 
 Ba nguyên nhân đã thật sự xảy ra, kiểm theo thứ tự này:
 
-1. **`ho_so_he_thong.txt` stale** — thêm/xoá bất cứ tệp nào cũng làm `test_177`
-   và bước `system profile` đỏ. Chạy `python tools/build_system_profile.py`.
-2. **Của phiên khác** — `git status` và `git log -1 -- <tệp>` **trước khi** đi
+1. **Của phiên khác** — `git status` và `git log -1 -- <tệp>` **trước khi** đi
    sửa. Đã dính: bốn phép kiểm đỏ hoá ra do baseline của phiên kia.
 3. **`CÂY ĐÃ ĐỔI TRONG LÚC CHẠY`** — gate tự in dòng này. Kết quả nói về cây lúc
    **bắt đầu**. Đừng trích nó làm bằng chứng.

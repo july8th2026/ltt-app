@@ -20,7 +20,7 @@ import logging
 from dataclasses import dataclass, field
 
 from platform_core.i18n import _ as _t
-from platform_core.jobs import LoiNguoiGoi
+from platform_core.jobs import DangBan, LoiNguoiGoi
 
 from . import lan_ngon_ngu
 from . import gia, sidecar_client, tham_chieu, text_pipeline
@@ -66,12 +66,23 @@ class LoiHaTang(RuntimeError):
     """
 
 
-class DangBanTam(RuntimeError):
-    """Máy đang bận. **KHÔNG PHẢI HỎNG** — job phải được xếp lại, không tính tiền."""
+class DangBanTam(DangBan, RuntimeError):
+    """Máy đang bận. **KHÔNG PHẢI HỎNG** — job phải được xếp lại, không tính tiền.
+
+    ⭐ Kế thừa `platform_core.jobs.DangBan` (H43 Phase 05, 03/09/2026) để worker
+       đưa job về hàng đợi bằng `resource_wait` — **không tiêu lượt thử, không
+       chạm tiền**. Trước đó lớp này chỉ là `RuntimeError`, và
+       `job_runner._provider_failure_kind` không nhận ra nó: mỗi lần cổng giọng
+       trả 429, job mất một trong năm lượt thử, và năm lượt bận liên tiếp là một
+       job HỎNG kèm hoàn tiền cho một việc chưa từng chạy.
+
+    ⛔ Vẫn KHÔNG kế thừa `LoiNguoiGoi` hay `LoiHaTang` — `test_501` chốt cả hai
+       chiều. Giữ `RuntimeError` để chỗ nào đang bắt theo lớp cũ không đổi.
+    """
 
     def __init__(self, retry_after_s: float = 5.0):
-        super().__init__("May tao tieng dang ban")
-        self.retry_after_s = retry_after_s
+        DangBan.__init__(self, "May tao tieng dang ban",
+                         retry_after_s=retry_after_s)
 
 
 # ── yêu cầu ──────────────────────────────────────────────────────────────────
