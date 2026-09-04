@@ -13222,3 +13222,18 @@ msgstr "Download format"
 
 msgid "Tần số mẫu là cố định — cổng giọng trả đúng một mức. Định dạng chỉ đổi lúc tải về, không đổi lượt sinh."
 msgstr "The sample rate is fixed - the voice engine returns exactly one. Format only changes at download time, not the generation itself."
+
+msgid "Ba bước, khoảng một phút."
+msgstr "Three steps, about a minute."
+
+msgid "Phân trang giọng"
+msgstr "Voice pagination"
+
+msgid "Trang sau"
+msgstr "Next page"
+
+msgid "Trang trước"
+msgstr "Previous page"
+
+msgid "Tạo giọng của bạn"
+msgstr "Create your voice"

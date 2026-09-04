@@ -2341,7 +2341,64 @@ a.adm-o-link:hover{border-color:var(--brand-border);background:var(--panel2)}
 .lv-nhan{display:inline-flex;gap:4px;align-items:baseline}
 
 /* ── Man Giong: luoi the + loc + panel chi tiet (P3) ───────────────────────── */
-.lv-g-khung{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+/* TAB GIONG — cung phep do, cung ket luan voi Studio.
+   Do that 04/09 o 1672x941: `.lv-man` bi kep 1120px, khung chia
+   `770px + 330px`, va ca trang cao 2402px — hon HAI MAN RUOI.
+
+   Anh tham chieu 02_VOICES cho luoi ~1085 va rail phai ~520, tuc ~66,8/32,0.
+   Cot phai o day KHONG phai mot cai chip: no chua trinh phat, bang thong tin,
+   danh sach clip goc. 330px la chieu rong cua mot thanh ben, khong phai cua
+   mot bang chi tiet — va do la ly do no trong chat trong anh chup truoc. */
+.lv-g-khung{display:grid;grid-template-columns:1085fr 520fr;gap:14px;align-items:start}
+.lv-man.lv-giong{max-width:none}
+/* Dai dau man compact — cung ly do va cung cach lam voi Studio. */
+.lv-giong>.lv-vo{align-items:center;gap:12px;margin-bottom:8px}
+.lv-giong>.lv-vo .lv-vo-chu{display:flex;align-items:baseline;gap:10px;min-width:0}
+.lv-giong>.lv-vo .lv-vo-chu h1{font-size:15px;letter-spacing:0}
+.lv-giong>.lv-vo .lv-vo-chu p{display:none}
+.page--immersive:has(.lv-giong){padding-top:10px}
+/* BA the moi hang, dung nhu anh tham chieu. `auto-fill` cho BON o 1089px, va
+   the vi the hep di — trong khi the con phai chua them nut phat, thoi luong,
+   va bon nut o hang duoi. Ba the cho moi the ~354px, du cho ca hang nut. */
+/* ⚠️ CHI o man rong. Ep ba cot o moi be rong la mot hoi quy: do 04/09 o
+   375px cho TRAN NGANG — ba the 355px khong the nam trong 351px. Duoi
+   nguong nay tra ve `auto-fill` cua ban goc, thu von da tu xuong mot cot. */
+@media(min-width:1200px){.lv-giong .lv-luoi{
+  grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}}
+.lv-g-trang{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.lv-g-trang-nut{display:flex;align-items:center;gap:8px}
+.lv-g-trang-nut b{min-width:44px;text-align:center;font-size:11.5px;color:var(--muted)}
+.lv-g-trang-nut .btn[disabled]{opacity:.4;cursor:not-allowed}
+/* Form tao giong gap lai. Khong to dam summary thanh mot cai nut gia — no la
+   mot cai nut that cua trinh duyet, chi can trong ra nhu mot the. */
+details.lv-tao-giong{margin-top:14px;padding:12px 14px;border:1px solid var(--line);
+  border-radius:var(--radius);background:var(--panel)}
+details.lv-tao-giong>summary{cursor:pointer;display:flex;align-items:baseline;gap:10px;
+  list-style:none}
+details.lv-tao-giong>summary::-webkit-details-marker{display:none}
+details.lv-tao-giong>summary::before{content:'+';margin-right:2px;color:var(--accent);
+  font-weight:700}
+details.lv-tao-giong[open]>summary::before{content:'2'}
+details.lv-tao-giong>summary:focus-visible{outline:2px solid var(--focus-ring);
+  outline-offset:3px;border-radius:4px}
+/* Huong dan ba buoc o rail phai — doc, gon, danh so. */
+.lv-hd-tao{margin-top:12px}
+.lv-buoc-doc{display:grid;gap:9px;margin:9px 0 11px;padding:0;list-style:none;
+  counter-reset:hdb}
+/* ⚠️ BA phan tu trong luoi HAI cot: `::before`, `<b>`, `<span>`. Khong dat
+   vi tri tuong minh thi `<span>` roi xuong hang hai cot MOT (rong 20px) va
+   chu doc thanh mot cot doc — do 04/09: the huong dan cao 716px cho ba dong
+   ngan. Neo `::before` qua hai hang, va cho ca hai chu vao cot hai. */
+.lv-buoc-doc li{counter-increment:hdb;display:grid;
+  grid-template-columns:20px minmax(0,1fr);gap:2px 9px;align-items:start}
+.lv-buoc-doc li::before{grid-row:1/3}
+.lv-buoc-doc b,.lv-buoc-doc span{grid-column:2}
+.lv-buoc-doc li::before{content:counter(hdb);display:grid;place-items:center;
+  width:20px;height:20px;border:1px solid var(--brand-border);border-radius:50%;
+  background:var(--brand-soft,#2b1512);color:#fff;font-size:10px}
+.lv-buoc-doc b{display:block;font-size:12px}
+.lv-buoc-doc span{display:block;color:var(--muted);font-size:11px;line-height:1.45}
 .lv-g-trai{min-width:0}
 .lv-g-phai{position:sticky;top:72px}
 

@@ -453,7 +453,54 @@
     var oAnMat = document.getElementById("lv-g-anmat");
     var dangLoc = {loai: "", gioi: "", vung: "", phongcach: ""};
 
+    /* ── Phan trang ────────────────────────────────────────────────────────
+     * Chay SAU bo loc, tren dung tap da loc: "trang 2 cua ket qua tim kiem" la
+     * mot khai niem dung, khong phai trang 2 cua toan bo danh sach.
+     *
+     * ⚠️ 9 the = ba hang, do duoc chu khong chon cho tron: the cao 167px, khe
+     *    12px, va con 683px duoi luoi o 1672x941.
+     *
+     * ⛔ Doi bo loc thi ve trang 1. Giu nguyen trang 4 trong khi ket qua chi
+     *    con 5 muc la mot luoi TRONG ma khong loi nao — dung loai lam nguoi ta
+     *    tuong trang hong. */
+    var MOI_TRANG = 9;
+    var trang = 1;
+    var oTrang = document.getElementById("lv-g-trang");
+    var oPhamVi = document.getElementById("lv-g-pham-vi");
+    var oTrangSo = document.getElementById("lv-g-trang-so");
+    var oTruoc = document.getElementById("lv-g-truoc");
+    var oSau = document.getElementById("lv-g-sau");
+
+    function phanTrang() {
+      var hop = the.filter(function (t) { return !t.dataset.locAn; });
+      var tong = hop.length;
+      var soTrang = Math.max(1, Math.ceil(tong / MOI_TRANG));
+      if (trang > soTrang) trang = soTrang;
+      var dau = (trang - 1) * MOI_TRANG;
+      for (var i = 0; i < hop.length; i++) {
+        hop[i].hidden = i < dau || i >= dau + MOI_TRANG;
+      }
+      if (!oTrang) return;
+      oTrang.hidden = tong <= MOI_TRANG;
+      if (oTrangSo) oTrangSo.textContent = trang + " / " + soTrang;
+      if (oPhamVi && tong) {
+        oPhamVi.textContent = (dau + 1) + "–" + Math.min(dau + MOI_TRANG, tong) +
+                              " / " + tong;
+      }
+      if (oTruoc) oTruoc.disabled = trang <= 1;
+      if (oSau) oSau.disabled = trang >= soTrang;
+    }
+    if (oTruoc) oTruoc.addEventListener("click", function () {
+      if (trang > 1) { trang--; phanTrang(); }
+    });
+    if (oSau) oSau.addEventListener("click", function () {
+      trang++; phanTrang();
+    });
+
     function loc() {
+      /* ⛔ Ve trang 1 moi lan bo loc doi. Giu nguyen trang 4 trong khi ket qua
+       *    chi con 5 muc la mot luoi TRONG ma khong loi nao. */
+      trang = 1;
       var q = ((oTim && oTim.value) || "").trim().toLowerCase();
       var con = 0;
       // Bao nhieu the bi an CHI vi no thieu nhan dang duoc loc — khong phai vi
@@ -479,6 +526,10 @@
           (!dangLoc.vung || d.vung === dangLoc.vung) &&
           (!dangLoc.phongcach || d.phongcach === dangLoc.phongcach) &&
           (!q || (d.ten || "").toLowerCase().indexOf(q) >= 0);
+        // Danh dau bang `dataset` chu khong dat `hidden` ngay: `phanTrang` moi
+        // la thu quyet dinh the nao HIEN. Hai cho cung ghi `hidden` la hai cho
+        // se da nhau, va cai da se im lang.
+        if (hop) { delete t.dataset.locAn; } else { t.dataset.locAn = "1"; }
         t.hidden = !hop;
         if (hop) {
           con++;
@@ -493,6 +544,7 @@
       }
       if (oSo) oSo.textContent = String(con);
       if (oKhongHop) oKhongHop.hidden = con !== 0;
+      phanTrang();
       if (oAnMat) {
         oAnMat.hidden = anViThieuNhan === 0;
         // Mot goi khong truyen chuoi nay thi im lang chu dung nem — mot loi
@@ -659,7 +711,23 @@
         var BEN_TRONG = "a, button, input, select, textarea, [role=button]";
 
         t.addEventListener("click", function (e) {
-          if (e.target.closest(BEN_TRONG)) return;
+          /* 🔴 BUG THAT, DO 04/09/2026: bam chuot vao mot the giong KHONG BAO
+           *    GIO mo duoc bang chi tiet.
+           *
+           *    `BEN_TRONG` co `[role=button]` de bo qua nhung nut BEN TRONG
+           *    the. Nhung CHINH CAI THE cung mang `role="button"` (no la mot
+           *    o bam duoc, va `_voice_the.html` khai dung nhu vay). Nen
+           *    `e.target.closest(BEN_TRONG)` luon tim thay — it nhat la chinh
+           *    cai the — va ham thoat ngay o dong dau.
+           *
+           * ⛔ Va no hong theo kieu kho thay nhat: ban phim VAN CHAY (duong
+           *    `keydown` ben duoi so `e.target !== t`, khong dung `closest`).
+           *    Nen mot lan kiem bang ban phim se bao "chay tot", trong khi moi
+           *    khach dung chuot deu thay cot phai trong tron.
+           *
+           * ⭐ Chua: bo qua khi phan tu tuong tac ay KHAC cai the. */
+          var trong = e.target.closest(BEN_TRONG);
+          if (trong && trong !== t) return;
           moChiTiet(t);
         });
         // The mang `role="button"` nen ban phim phai nhan ca Enter lan Space.
