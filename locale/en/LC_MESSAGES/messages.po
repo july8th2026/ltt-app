@@ -14107,5 +14107,11 @@ msgstr "Please choose a voice."
 msgid "Bản dựng thiếu bản phối âm."
 msgstr "The build is missing its audio master."
 
+msgid "Đang đọc cảnh"
+msgstr "Reading the scene"
+
+msgid "Đơn vị việc đã được cập nhật ở tiến trình khác."
+msgstr "This work item was updated by another process."
+
 msgid "Bản dựng thiếu bản phối âm để kết xuất."
 msgstr "The build has no audio master to render from."
