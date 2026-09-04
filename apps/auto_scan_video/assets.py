@@ -469,8 +469,24 @@ def cache_dung_duoc(db: Session, kho: Storage, *, owner_id: str, run_id: str,
                                AsvAsset.created_by_stage == stage)).scalars())
     if not hang:
         return None
-    # Khoa mang van tay, nen loc bang chinh khoa la du va khong the nham.
-    hop = [a for a in hang if f"/{van_tay}." in a.storage_key]
+    # 🔴 **Dong nay tung khong bao gio khop, va vi the cache nay chua bao gio
+    #    tra ve mot lan trung nao ke tu khi no ra doi (B23-01).**
+    #
+    #    `dat_khoa` cat van tay con `DAI_VAN_TAY_TRONG_KHOA = 32` ky tu khi dung
+    #    TEN TEP; van tay giai doan la sha256 **64** ky tu. Nen phep tim kiem
+    #    mot chuoi 64 ky tu trong mot khoa chi chua 32 ky tu dau — no khong the
+    #    dung, va no that bai theo cach im lang nhat co the: khong loi, khong
+    #    canh bao, chi la mot lan tinh lai day du moi lan.
+    #
+    # ⭐ Cat o day bang **chinh hang so ma `dat_khoa` dung**, khong go lai 32:
+    #    hai ban sao cua mot con so la hai cho de chung lech nhau, va lan lech
+    #    tiep theo se lai im lang y het lan nay.
+    #
+    # ⚠️ 32 ky tu hex = 128 bit, va pham vi da bi thu hep boi menh de WHERE ben
+    #    tren (dung chu so huu, dung lan chay, dung giai doan). Mot va cham phai
+    #    xay ra giua hai van tay cua CUNG mot giai doan trong CUNG mot lan chay.
+    ngan = str(van_tay)[:DAI_VAN_TAY_TRONG_KHOA]
+    hop = [a for a in hang if f"/{ngan}." in a.storage_key]
     if not hop:
         return None
     for a in hop:

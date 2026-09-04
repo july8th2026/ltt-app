@@ -123,10 +123,20 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     ban_do = ban_do_thoi_gian.BanDoThoiGian.tu_dict(ke_hoach.get("ban_do") or {})
     khoang = list(ban_do.giu)
 
-    # 🔑 GPU chi duoc dung khi nen tang DA CAP. `ctx.gpu_uuid` la cau tra loi
-    #    duy nhat — khong tu do card roi tu quyet.
-    co_gpu = bool(str(getattr(ctx, "gpu_uuid", "") or "")) if ctx is not None else False
-    bo_ma_hoa = (cdr.chon_bo_ma_hoa(cho_phep_gpu=co_gpu)
+    # 🔴 **Doc `ctx.gpu_uuid` O DAY la mot phep do sai cho, va no da lam
+    #    B24-01 khong the sua duoc bang mot dong khai bao.**
+    #
+    #    COMPOSE va RENDER la HAI job. Mot lease GPU song theo job, nen ke ca khi
+    #    COMPOSE duoc cap card, lease do da duoc tra lai truoc khi RENDER bat
+    #    dau — con COMPOSE thi chi dung 300 giay de dung mot tep JSON. Tuc dong
+    #    cu hoi "toi co card khong" o dung cho ma cau tra loi khong bao gio co
+    #    nghia cho cho se dung no.
+    #
+    # ⇒ O day ta ghi **tran khai bao**: may nay lam duoc gi. RENDER — noi lease
+    #   that su ton tai — chi duoc HA xuong CPU, khong bao gio duoc nang len.
+    #   Mot ban dung vi the van tat dinh: no noi "toi da xin nvenc", va ban ghi
+    #   cua lan chay noi "toi da duoc cap hay khong".
+    bo_ma_hoa = (cdr.chon_bo_ma_hoa(cho_phep_gpu=True)
                  if cach == cdr.CAT_MA_HOA_LAI else "")
 
     ban = ban_dung.dung(

@@ -450,7 +450,13 @@ def _doan_thao_tac(van: str, than: dict) -> str:
     """
     from apps.auto_scan_video import ai
 
-    if "canh" in than and "the_loai" not in than:
+    # 🔴 **Nhan dien nay tung doc mot hinh dang goi tin KHONG TON TAI.**
+    #    No cho mot khoa `canh` o goc — mot API doc-hang-loat ma
+    #    `hieu_canh.loi_nhac_canh` chua bao gio gui: cua that hoi **mot canh mot
+    #    lan**, va tin hieu do duoc di kem la `{bat, ket, dai_giay, so_khung,
+    #    co_thoai}`. Ban thay the vi the khong bao gio nhan ra thao tac doc canh,
+    #    va no khong lo ra vi khong nguoi goi nao ton tai de chay no.
+    if "co_thoai" in than and "dai_giay" in than:
         return ai.DOC_CANH.ma
     if "the_loai" in than or "ho_so" in than:
         return ai.HO_SO_NOI_DUNG.ma
@@ -473,11 +479,25 @@ def _phan_hoi(ma: str, than: dict, long_tieng, su_that) -> dict:
     from apps.auto_scan_video import ai
 
     if ma == ai.DOC_CANH.ma:
-        return {"canh": [
-            {"ma": str(c.get("ma") or c.get("id") or i),
-             "mo_ta": f"canh {i}", "co_chu": False, "quan_trong": 0.6,
-             "nhan": "noi_dung"}
-            for i, c in enumerate(than.get("canh") or [], start=1)]}
+        # 🔑 **Bam vao dau vao, khong tra so co dinh.** Mot canh khong co loi
+        #    thoai nao va ngan la ung vien bo; mot canh co thoai thi giu. Do la
+        #    phan doan mot VLM se dua ra, va no la thu duy nhat lam bai nghiem
+        #    thu noi duoc dieu gi ve `_quyet_dinh_mot_canh`: neu ban thay the
+        #    luon tra "giu" thi phep kiem "cat duoc it nhat mot canh" xanh hay
+        #    do khong con phu thuoc vao san pham nua.
+        co_thoai = bool(than.get("co_thoai"))
+        return {
+            "loai": "hoi_thoai" if co_thoai else "chuyen_canh",
+            "chu_the": ["nguoi noi"] if co_thoai else [],
+            "hanh_dong": "dang noi" if co_thoai else "khong co hanh dong ro",
+            "cam_xuc": "trung tinh",
+            "quan_trong": 0.75 if co_thoai else 0.1,
+            "de_xuat": "giu" if co_thoai else "bo",
+            "do_tin": 0.9,
+            "ly_do": ("canh co loi thoai" if co_thoai
+                      else "canh khong co loi thoai nao va khong co hanh dong ro"),
+            "canh_bao": [],
+        }
     if ma == ai.HO_SO_NOI_DUNG.ma:
         return {"the_loai": "huong_dan", "nhip": "vua",
                 "gioi": "nam", "vung": "bac", "phong_cach": "than_mat"}

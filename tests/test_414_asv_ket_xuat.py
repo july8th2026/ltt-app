@@ -201,11 +201,42 @@ def test_renderer_KHONG_goi_chep_loi_model_hay_may_sinh_tieng():
             f"{mod.__name__} cham vao thuong nguon")
 
 
-def test_renderer_KHONG_xin_GPU():
-    """`-c:v copy` khong cham bo ma hoa. Xin mot suat GPU la giu mot thu khan
-    hiem de khong dung toi (muc 6)."""
+def test_renderer_KHONG_TU_GIANH_GPU_ma_chi_dung_suat_da_duoc_cap():
+    """🔴 **Chot nay tung cam ca `gpu_env`, va lenh cam do chinh la B24-01.**
+
+    Cau chu cu: *"`-c:v copy` khong cham bo ma hoa. Xin mot suat GPU la giu mot
+    thu khan hiem de khong dung toi."* Dung — cho preset `preserve`. Preset
+    `smart_localize` **buoc phai ma hoa lai** (cat bang stream copy chi cat duoc
+    tai keyframe; do that cho GOP 8,333 giay), nen tu pha 12 tro di menh de do
+    het dung, va khong ai quay lai doc lai chot nay.
+
+    ⛔ Hau qua: `gpu_env` bi cam, nen ffmpeg khong bao gio duoc ghim vao card
+       duoc cap, nen bo ma hoa phan cung khong bao gio duoc dung — mot chot da
+       **bao ve chinh khiem khuyet no duoc viet ra de tranh**.
+
+    ⭐ Dieu can bao ve khong phai "dung cham GPU", ma la **khong TU GIANH**:
+       nen tang cap card qua `ctx.gpu_uuid`, va handler chi duoc dung cai da
+       duoc cap. Hai handler tu do card roi tu quyet la kich ban OOM ma
+       `gpu_lease` sinh ra de chan — va `gpu_env` la thu THI HANH viec do, chu
+       khong pha no.
+    """
+    # Tu giu cho, tu liet card, tu do bo ma hoa cua may: tat ca deu la tu quyet.
+    tu_gianh = ("gpu_lease", "list_gpus", "detect_gpu_encoder", "gpu_arbiter")
     for mod in (ket_xuat, giai_doan_ket_xuat):
-        assert _vi_pham(inspect.getsource(mod), ("gpu_env", "gpu_lease")) == []
+        assert _vi_pham(inspect.getsource(mod), tu_gianh) == [], (
+            f"{mod.__name__} tu gianh GPU thay vi dung suat nen tang cap")
+
+
+def test_renderer_GHIM_ffmpeg_vao_dung_card_duoc_cap():
+    """Mat con lai cua chot tren: duoc cap card ma khong ghim thi van la dam nhau.
+
+    `JobContext.gpu_env` ton tai dung cho viec nay va docstring cua no ke ten
+    ffmpeg. Mot lan render duoc cap card **1** ma chay `h264_nvenc` tren card
+    **0** thi nen tang giu cho mot dang con thuc te mot neo.
+    """
+    van = inspect.getsource(giai_doan_ket_xuat)
+    assert "gpu_env()" in van, (
+        "RENDER khong ghim tien trinh ffmpeg vao card duoc cap")
 
 
 def test_RENDER_chay_o_lan_ffmpeg_va_khong_khai_tai_nguyen():

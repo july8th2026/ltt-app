@@ -92,10 +92,17 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
     if ctx is not None and getattr(ctx, "progress", None):
         bao = ctx.progress
 
-    # ⛔ KHONG xin GPU (Prompt 15 muc 6). `-c:v copy` khong cham bo ma hoa, va
-    #    ma hoa AAC la viec cua CPU. `pipeline.CHUOI` da xep RENDER vao lan
-    #    `asv_media` va khong khai `tai_nguyen` — cho nay chi la chu thich cho
-    #    dieu do, de mot luot sau khong "them cho day du" mot `ctx.gpu_env()`.
+    # 🔴 **Chu thich cu o day noi "KHONG xin GPU", va no dung cho MOT preset.**
+    #
+    #    `-c:v copy` that su khong cham bo ma hoa — nhung `smart_localize` khong
+    #    di duong `copy`, no cat-noi roi **ma hoa lai**. Ban khai cua `asv_media`
+    #    nay da xin `gpu_vram_mb` cho `asv_media.render` (500 MiB, do that), nen
+    #    `ctx.gpu_uuid` co the co gia tri, va day la noi duy nhat cau tra loi do
+    #    con song khi ffmpeg thuc su chay.
+    #
+    # ⭐ `ctx.gpu_env()` an toan khi goi vo dieu kien: khong co card thi no tra
+    #    ve moi truong nguyen ven.
+    co_gpu = bool(str(getattr(ctx, "gpu_uuid", "") or "")) if ctx is not None else False
 
     with kho.open(khoa_ban) as f:
         ban = json.loads(f.read().decode("utf-8"))
@@ -141,10 +148,14 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
                      for i, l in enumerate(lop)]
 
         duong_ra = str(thu_muc / "ra.mp4")
+        bo_thuc = ket_xuat.bo_ma_hoa_thuc_te(ban, co_gpu=co_gpu)
+        khai = str((ban.get("hinh") or {}).get("bo_ma_hoa") or "")
+        if khai and bo_thuc != khai:
+            log.info("ha bo ma hoa %s -> %s: khong duoc cap GPU", khai, bo_thuc)
         cmd = ket_xuat.dung_lenh(
             ban, ffmpeg_bin=nhap_media.media.ffmpeg_bin(),
             duong_video=duong_video, duong_master=duong_master,
-            duong_lop=duong_lop, duong_ra=duong_ra)
+            duong_lop=duong_lop, duong_ra=duong_ra, bo_ma_hoa=bo_thuc)
 
         if bao:
             bao(15, _t('Đang kết xuất video'))
@@ -153,6 +164,10 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             duoi = ket_xuat._chay_co_tien_do(
                 cmd, tong_giay=tong_giay, timeout=TIMEOUT_RENDER,
                 hoi_huy=hoi_huy,
+                # ⭐ Goi vo dieu kien: khong co card thi `gpu_env` tra ve moi
+                #    truong nguyen ven, nen duong `preserve` khong doi hanh vi.
+                env=(ctx.gpu_env() if ctx is not None
+                     and getattr(ctx, "gpu_env", None) else None),
                 # Tien do cua ffmpeg (0-100) duoc ep vao khoang 15-95 cua giai
                 # doan: 0-15 la tai tep, 95-100 la soi va promote.
                 bao_tien_do=(lambda p: bao(15 + p * 0.8, _t('Đang kết xuất video')))

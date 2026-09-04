@@ -72,6 +72,34 @@ GIAY_TREN_TRAN_TOI_DA = 3.0
 SAN_RAM_TRONG_MB = 4096.0
 
 
+def _cap_gpu_nhu_worker_that(db, job_type: str, job_id: str):
+    """Giu mot card DUNG cach `job_runner._giu_gpu` giu, hoac `None`.
+
+    ⛔ Doc nhu cau tu chinh `job_runner._vram_can` chu khong go lai con so: mot
+       ban sao cua ban khai la mot ban sao se lech, va luc do bo do se noi rang
+       san pham dung trong khi no chi dung so cua bo do.
+    """
+    from platform_core import gpu_lease
+    from platform_core.job_runner import _vram_can
+
+    can = _vram_can(job_type)
+    if can <= 0:
+        return None
+    try:
+        return gpu_lease.acquire(db, worker_id="w-do", job_id=job_id,
+                                 need_mb=can)
+    except Exception:                       # noqa: BLE001
+        return None
+
+
+def _nha_gpu(db, lease) -> None:
+    from platform_core import gpu_lease
+    try:
+        gpu_lease.release(db, lease)
+    except Exception:                       # noqa: BLE001
+        pass
+
+
 def _chay_hang_doi_co_do(db, bo_do, *, nang_luc=NANG_LUC, toi_da=200) -> list[dict]:
     """Worker that, va danh dau moc tung giai doan cho bo do.
 
@@ -91,6 +119,17 @@ def _chay_hang_doi_co_do(db, bo_do, *, nang_luc=NANG_LUC, toi_da=200) -> list[di
         handler = jobq.resolve_handler(job.job_type)
         ctx = JobContext(job.id)
         ctx.job_type = job.job_type
+        # 🔴 **Worker gia nay tung bo qua buoc cap GPU, va do la mot khoang
+        #    trong lam chinh no khong the do duoc thu no dinh do.**
+        #
+        #    `job_runner._giu_gpu` doc `gpu_vram_mb` cua app roi giu mot card
+        #    truoc khi goi handler. Bo qua no thi `ctx.gpu_uuid` luon rong o
+        #    day — nen mot cau hoi nhu "lan chay co dung bo ma hoa phan cung
+        #    khong" chi do duoc chinh cai khoang trong nay, chu khong do san
+        #    pham. Cung lop loi ma pha 24 goi la "phep do mo ta bo do".
+        lease = _cap_gpu_nhu_worker_that(db, job.job_type, job.id)
+        if lease is not None:
+            ctx.gpu_uuid = lease.gpu_uuid
         ten = job.job_type.split(".")[-1]
         t0 = time.time()
         loi = ""
@@ -102,6 +141,8 @@ def _chay_hang_doi_co_do(db, bo_do, *, nang_luc=NANG_LUC, toi_da=200) -> list[di
             jobq.fail(db, job, str(exc), retry=False)
         finally:
             bo_do.ket_thuc(ten)
+            if lease is not None:
+                _nha_gpu(db, lease)
         db.commit()
         nhat_ky.append({"giai_doan": ten, "giay": round(time.time() - t0, 2),
                         "loi": loi})

@@ -98,11 +98,30 @@ def phien_ban_engine(stage_ten: str) -> str:
         return (f"ban_bien_tap/{giai_doan_ban_bien_tap.PHIEN_BAN_MA}"
                 f"/{ban_bien_tap.PHIEN_BAN_BAN}/{canh.NGUONG_DOI_CANH}")
     if stage_ten == pipeline.CONTENT_PROCESS:
-        from . import dich_thuat, van_ban
-        # Provider + model nam trong nay: doi model dich la doi san pham, va
-        # mot lan doi lang le nghia la khach nhan mot ban dich khac.
-        return (f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC}"
-                f"/{dich_thuat.PROVIDER_CHINH}/{dich_thuat.MODEL_CHINH}")
+        from . import ai, van_ban
+        # 🔴 **Hai dong nay tung doc mot module DA CHET, va hang so chung doc
+        #    thi RONG.**
+        #
+        #    Chung doc `dich_thuat.PROVIDER_CHINH` / `MODEL_CHINH`, nhung pha 14
+        #    da chuyen giai doan nay sang `ai.goi_tinh_tien`, va
+        #    `dich_thuat.dich_ban_ghi` khong con nguoi goi nao tu do.
+        #    `MODEL_CHINH` la chuoi rong — nen van tay cua **giai doan duy nhat
+        #    tra tien cho mot model** khong chua danh tinh model nao.
+        #
+        # ⛔ Hau qua dung bang thu pha 08 them engine version de ngan: nang model
+        #    len ban moi thi van tay khong doi, `_vo_hieu_giai_doan_da_lech`
+        #    khong vo hieu gi, va cache tra lai ban dich sinh boi model CU — im
+        #    lang. Va nguoc lai, sua cai hang so chet kia thi **lai** vo hieu
+        #    ca cache ma khong co gi that su doi.
+        #
+        # 🔑 Hoi BAN DO SONG. `ai.ban_do_model` la thu that su duoc truyen cho
+        #    `dieu_phoi.goi`, nen van tay va cu goi khong the lech nhau — chung
+        #    doc cung mot nguon.
+        ban_do = ai.ban_do_model(ai.CHUYEN_LOI_THOAI)
+        # Sap xep de hai lan goi cho ra cung mot chuoi; mot dict khong on dinh
+        # thu tu se lam van tay nhay va cache truot vo co.
+        model = ",".join(f"{p}:{m}" for p, m in sorted(ban_do.items()))
+        return f"noi_dung/{van_ban.PHIEN_BAN_LOI_NHAC}/{model}"
     if stage_ten == pipeline.VOICE_SYNTHESIS:
         from . import giong_noi
         return f"giong/{giong_noi.PHIEN_BAN_GIONG}"

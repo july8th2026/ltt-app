@@ -14077,8 +14077,8 @@ msgstr "Only the audio changes. The picture is copied untouched — no scene is 
 msgid "Rút gọn có biên tập"
 msgstr "Shorten with editing"
 
-msgid "Bỏ bớt những cảnh ít nội dung để video ngắn lại. Vì phải ghép lại các đoạn được giữ nên hình ảnh sẽ được mã hoá lại — chất lượng gần như bản gốc nhưng không còn giống hệt từng điểm ảnh."
-msgstr "Removes low-content scenes so the video is shorter. Because the kept parts must be joined, the picture is re-encoded — near-identical quality, but no longer pixel-for-pixel the original."
+msgid "Bỏ bớt những cảnh ít nội dung để video ngắn lại. Vì phải ghép lại các đoạn được giữ nên hình ảnh sẽ được mã hoá lại — chất lượng gần như bản gốc nhưng không còn giống hệt từng điểm ảnh. Nếu không cảnh nào đủ căn cứ để bỏ thì video giữ nguyên độ dài, và vẫn được mã hoá lại."
+msgstr "Removes low-content scenes so the video is shorter. Because the kept parts must be joined, the picture is re-encoded — near-identical quality, but no longer pixel-for-pixel the original. If no scene has enough evidence to drop, the video keeps its length and is still re-encoded."
 
 msgid "Tôi tự chọn giọng"
 msgstr "I pick the voice myself"

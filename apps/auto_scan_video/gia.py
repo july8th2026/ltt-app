@@ -88,10 +88,27 @@ def _preset_bang():
         (PRESET_GIU_HINH, N_('Giữ nguyên hình ảnh'),
          N_('Chỉ thay tiếng. Hình ảnh được sao chép nguyên vẹn, không cắt cảnh '
             'nào và không giảm chất lượng. Video ra dài đúng bằng video vào.')),
+        # 🔴 **Cau cuoi la dinh chinh cua pha 27 (A26-05), va no la mot cau
+        #    ve SAN PHAM chu khong phai mot cau rao truoc.**
+        #
+        #    Do duoc o pha 22, tren mot ban nguon co han mot canh **khong co
+        #    mot cau thoai nao**: `so_canh 4, so_giu 4, so_cat 0`. Khach doc
+        #    "bo bot nhung canh it noi dung", chap nhan mot cai gia chat luong
+        #    doi lay dieu do, va nhan ve mot video dai y nguyen da bi ma hoa
+        #    lai — tra tien cho mot thu khong xay ra.
+        #
+        # ⭐ Pha 27 da noi VLM vao mach nen viec cat GIO DA XAY RA duoc. Nhung
+        #    no van co dieu kien: khong co bang chung thi **giu** (cat mu nguy
+        #    hiem hon giu thua), va `SAN_GIU_LAI` chan khong cho cat qua nua
+        #    thoi luong. Nen mot video ma moi canh deu dang gia van ra dung do
+        #    dai cu — va khach phai biet dieu do TRUOC khi chon, khong phai sau
+        #    khi nhan tep.
         (PRESET_CAT_THONG_MINH, N_('Rút gọn có biên tập'),
          N_('Bỏ bớt những cảnh ít nội dung để video ngắn lại. Vì phải ghép lại '
             'các đoạn được giữ nên hình ảnh sẽ được mã hoá lại — chất lượng gần '
-            'như bản gốc nhưng không còn giống hệt từng điểm ảnh.')),
+            'như bản gốc nhưng không còn giống hệt từng điểm ảnh. Nếu không cảnh '
+            'nào đủ căn cứ để bỏ thì video giữ nguyên độ dài, và vẫn được mã hoá '
+            'lại.')),
     )
 
 

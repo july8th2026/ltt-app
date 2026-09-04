@@ -119,9 +119,30 @@ class KetXuatError(MediaError):
 #    nguoi sau viet lai dung cai ban dau da sai.
 
 
+def bo_ma_hoa_thuc_te(ban: dict, *, co_gpu: bool) -> str:
+    """Bo ma hoa se dung THAT, sau khi doi chieu tran khai voi suat da duoc cap.
+
+    🔑 **Chi duoc HA, khong bao gio duoc NANG.** Ban dung khai mot tran (may nay
+       lam duoc gi); nen tang cap mot suat (job nay co card khong). Ket qua la
+       giao cua hai — va vi ban dung duoc kiem truoc do, phep giao nay khong the
+       tao ra mot bo ma hoa chua tung duoc khai.
+
+    ⛔ Nang len se lam ban dung noi doi: van tay cua no gom `bo_ma_hoa`, nen mot
+       lan chay tra ve tep ma hoa bang thu khac voi thu da khai la mot cache se
+       tra sai ve sau.
+    """
+    from . import che_do_render as cdr
+
+    khai = str((ban.get("hinh") or {}).get("bo_ma_hoa") or "")
+    if not khai or khai == cdr.LUI_VE:
+        return khai
+    return khai if co_gpu else cdr.LUI_VE
+
+
 def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
               duong_master: str,
               duong_lop: list[str], duong_ra: str,
+              bo_ma_hoa: str = "",
               tien_do: bool = True) -> list[str]:
     """Ban dung + duong dan cuc bo -> argv. Khong cham mot tep nao.
 
@@ -184,7 +205,13 @@ def dung_lenh(ban: dict, *, ffmpeg_bin: str, duong_video: str,
         #    trong khi ban phoi am da dung theo diem cat CHINH XAC. Xem
         #    `che_do_render`.
         khoang = [(float(b), float(k)) for b, k in (hinh.get("khoang_giu") or ())]
-        bo = str(hinh.get("bo_ma_hoa") or cdr.LUI_VE)
+        # ⭐ `bo_ma_hoa` truyen vao la thu nguoi goi DA DOI CHIEU voi suat duoc
+        #    cap (`bo_ma_hoa_thuc_te`). Khong truyen thi dung tran khai — dung
+        #    cho moi phep kiem dung lenh khong quan tam toi lease.
+        bo = str(bo_ma_hoa or hinh.get("bo_ma_hoa") or cdr.LUI_VE)
+        if bo not in cdr.THAM_SO:
+            raise KetXuatError(
+                _t('Bộ mã hoá không được khai: {b}').format(b=bo))
         cmd += ["-filter_complex", cdr.loc_cat_noi(khoang), "-map", "[ra]"]
         cmd += list(cdr.tham_so(bo))
 
@@ -303,8 +330,16 @@ def ho_so_chan_doan(ban: dict, cmd: list[str], *, goc_tam: str = "",
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _chay_co_tien_do(cmd: list[str], *, tong_giay: float, timeout: int,
-                     hoi_huy=None, bao_tien_do=None) -> str:
+                     hoi_huy=None, bao_tien_do=None, env=None) -> str:
     """Chay ffmpeg, doc `-progress`, tra ve duoi cua stderr.
+
+    🔑 `env` la moi truong DA GHIM vao card nen tang cap (`ctx.gpu_env()`).
+       Khong ghim thi mot lan render duoc cap card **1** van co the chay
+       `h264_nvenc` tren card **0** — tuc nen tang giu cho mot dang, ffmpeg
+       dung mot neo, va hai job "duoc xep cho tu te" van dam nhau tren cung mot
+       engine. `JobContext.gpu_env` viet thang ffmpeg trong docstring cua no.
+
+    ⚠️ `None` = giu nguyen moi truong cua tien trinh cha, dung nhu truoc.
 
     Khuon lay tu `apps/autosubvideo/burn.py:40 _run_with_cleanup`. Khac mot cho
     co y: ban do dua vao viec `on_progress` **nem** de huy, nen phep huy chi xay
@@ -313,7 +348,7 @@ def _chay_co_tien_do(cmd: list[str], *, tong_giay: float, timeout: int,
     luong rieng theo dong ho, nen huy khong phu thuoc vao viec ffmpeg co noi gi.
     """
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            text=True)
+                            text=True, env=env)
     duoi: collections.deque[str] = collections.deque(maxlen=12)
     da_huy = threading.Event()
     han = time.monotonic() + timeout

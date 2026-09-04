@@ -60,11 +60,19 @@ def _run(db, *, owner="u1", held=1000) -> AsvRun:
 
 
 def _canh_ok(**k) -> str:
+    """Mot phan hoi VLM dung hinh dang ma `loi_nhac_canh` YEU CAU.
+
+    🔴 Ban nay tung boc trong mot khoa `canh` — mot hinh dang khong loi nhac nao
+       hoi va khong model nao duoc bao tra ve. Tuc bo test tu cung cap dau vao
+       cho mot nhanh chi ton tai de chieu no, va nhanh THAT (phan hoi phang, thu
+       ma loi dan mo ta) khong duoc mot phep kiem nao chay qua. Pha 27 bo lop
+       boc o ca ba cho: loi dan, khai bao `DOC_CANH`, va o day.
+    """
     d = {"loai": "phong van", "chu_the": ["nguoi dan"], "hanh_dong": "noi",
          "cam_xuc": "binh tinh", "quan_trong": 0.8, "de_xuat": "giu",
          "do_tin": 0.9, "ly_do": "co loi thoai chinh", "canh_bao": []}
     d.update(k)
-    return json.dumps({"canh": d}, ensure_ascii=False)
+    return json.dumps(d, ensure_ascii=False)
 
 
 class _Do:
@@ -101,7 +109,10 @@ def test_doc_duoc_phan_hoi_dung_luoc_do():
     (_canh_ok(do_tin="rat tin"), "do_tin khong phai so"),
     (_canh_ok(chu_the="mot chuoi"), "chu_the khong phai mang"),
     (_canh_ok(canh_bao={"a": 1}), "canh_bao khong phai mang"),
-    ('{"canh": {}}', "thieu de_xuat"),
+    ('{}', "thieu de_xuat va do_tin"),
+    ('{"de_xuat": "giu"}', "co de_xuat nhung thieu do_tin"),
+    ('{"canh": {"de_xuat": "giu", "do_tin": 0.9}}',
+     "phan hoi boc trong mot khoa `canh` — hinh dang khong ai hoi"),
     ("khong phai json", "khong co JSON nao"),
 ])
 def test_phan_hoi_sai_luoc_do_thi_NEM(xau, vi_sao):

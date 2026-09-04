@@ -103,7 +103,20 @@ class ThaoTac:
 
 
 DICH_THUAT = ThaoTac("dich_thuat", False, ("doan",), pha="14")
-DOC_CANH = ThaoTac("doc_canh", True, ("canh",), pha="11")
+#: 🔴 **Truoc pha 27 truong bat buoc o day la `("canh",)`, va no mo ta mot hinh
+#:    dang phan hoi ma khong ai bao gio yeu cau.**
+#:
+#:    `hieu_canh.loi_nhac_canh` bao model tra ve mot doi tuong PHANG — `loai`,
+#:    `chu_the`, `de_xuat`, `do_tin`, ... — khong co khoa `canh` nao. Nen mot
+#:    phan hoi lam **dung y nguyen loi dan** bi `doc_json` tu choi voi "thieu
+#:    truong bat buoc ['canh']". Khai bao va loi dan mo ta hai luoc do khac
+#:    nhau, va khong ai phat hien vi khong nguoi goi nao ton tai de chay no.
+#:
+#: ⭐ Hai truong duoi day la hai truong `_quyet_dinh_mot_canh` THUC SU doc.
+#:    `loai`/`chu_the`/`ly_do` la thu de nguoi doc bao cao hieu quyet dinh, nen
+#:    thieu chung khong lam quyet dinh sai — con thieu `de_xuat` hay `do_tin`
+#:    thi lam.
+DOC_CANH = ThaoTac("doc_canh", True, ("de_xuat", "do_tin"), pha="11")
 HO_SO_NOI_DUNG = ThaoTac("ho_so_noi_dung", True, ("the_loai", "nhip"), pha="11")
 CHUYEN_LOI_THOAI = ThaoTac("chuyen_loi_thoai", False, ("doan",), pha="14")
 RUT_NGAN_CHO_VUA = ThaoTac("rut_ngan_cho_vua", False, ("doan",), pha="15")
