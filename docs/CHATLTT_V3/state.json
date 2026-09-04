@@ -81,7 +81,7 @@
       "chan": [
         "P02"
       ],
-      "phan_tram": 60
+      "phan_tram": 75
     },
     {
       "id": "P04",
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 6.5,
-      "phan_tram": 38
+      "xong": 7.2,
+      "phan_tram": 42
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 6.5,
-      "phan_tram": 13
+      "xong": 7.2,
+      "phan_tram": 14
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -536,13 +536,13 @@
       "chieu_tool.py + test_802 (12)",
       "test_803 bat bien C2 (10)",
       "thi_hanh.py + test_804 (14)",
-      "dieu_phoi.py + test_805 (18) — may trang thai 10 trang thai"
+      "dieu_phoi.py + test_805 (18)",
+      "3 bang + migration 4b8e21c6d907; test_616 cap nhat CO CHU DICH"
     ],
     "con_lai": [
-      "bang chatltt_run/step + migration",
       "co LTT_CHATLTT_V3_TOOLS",
       "noi dieu_phoi vao luot.py",
-      "tool noi bo that (calculator)",
+      "ghi run/step xuong CSDL",
       "A5 bo hien thi bo qua khoi la",
       "test_806..812"
     ],
@@ -552,5 +552,11 @@
       "cham tran -> FAILED thay vi COMPLETED  => test DO (va bang chuyen doi cung chan)",
       "bo message assistant mang tool_calls   => test DO"
     ]
+  },
+  "migration": {
+    "revision": "4b8e21c6d907",
+    "down_revision": "7d2c1e9f4a03",
+    "chi_them": true,
+    "duong_lui": "xuong mot buoc mat run/step/approval, hoi thoai cu KHONG doi"
   }
 }

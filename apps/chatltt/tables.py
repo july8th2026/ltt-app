@@ -144,3 +144,139 @@ class ChatlttExecution(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
                                                  onupdate=_now, nullable=False)
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # ── H44 V3: liên kết lên run/step. Cả hai NULL với mọi hàng V1. ─────────
+    run_id: Mapped[str | None] = mapped_column(String(40), index=True, nullable=True)
+    step_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# H44 V3 — ba bảng của điều phối tool. CHỈ THÊM, không sửa ba bảng trên.
+#
+# `docs/CHATLTT_V3/02_HOP_DONG.md` §2. `chatltt_execution` **vẫn là** một lần
+# gọi model/job, và ba cột tiền vô hướng của nó **vẫn đúng** cho việc đó. `run`
+# là khái niệm MỚI ở trên, không phải đổi nghĩa cái cũ.
+#
+# ⛔ `chatltt_message.blocks` KHÔNG đổi hình dạng. Khối mới (`tool_call`,
+#    `tool_result`, `approval`) là **phần tử mới trong mảng cũ** — đó là điều
+#    kiện để một bản V1 đọc dữ liệu V3 vẫn vẽ được phần nó hiểu.
+# ══════════════════════════════════════════════════════════════════════════
+
+#: 12 trạng thái của một run (`services/dieu_phoi.py`).
+TRANG_THAI_RUN = ("CREATED", "MODEL_RUNNING", "TOOL_REQUESTED", "AWAITING_APPROVAL",
+                  "TOOL_RUNNING", "WAITING_BACKGROUND", "TOOL_RESULT_READY",
+                  "MODEL_RESUMING", "WAITING_SLOT", "COMPLETED", "FAILED", "CANCELLED")
+LY_DO_KET = ("xong", "tran_vong", "tran_tool", "tran_trung", "huy", "loi")
+QUYET_DINH_DUYET = ("cho", "duyet", "tu_choi", "het_han")
+
+
+class ChatlttRun(Base):
+    """Một LƯỢT của người dùng: N vòng model + M lời gọi tool."""
+
+    __tablename__ = "chatltt_run"
+    __table_args__ = (
+        Index("ix_chatltt_run_conv", "conversation_id", "created_at"),
+        Index("ix_chatltt_run_user_tt", "user_id", "trang_thai"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True,
+                                    default=lambda: sinh_id("run_"))
+    conversation_id: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    #: ⛔ `String(36)` — bài học `apps/ltt_voice/tables.py:66-75`: khai số ⇒ mọi
+    #:    khách thành chủ số 0.
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    message_id: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    trang_thai: Mapped[str] = mapped_column(String(24), default="CREATED", nullable=False)
+    so_vong_model: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    so_loi_goi_tool: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    #: 🔴 BA CỘT DẪN XUẤT, KHÔNG PHẢI BÚT TOÁN. Cộng từ `chatltt_execution` con,
+    #:    mỗi cái vẫn ứng đúng một `request_id` trong `credit_entries`. Đối soát
+    #:    vẫn là: một `request_id` ↔ một dòng sổ. Bảng này chỉ trả lời câu "lượt
+    #:    này tốn bao nhiêu" mà hôm nay không ai trả lời được.
+    credit_giu_tong: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    credit_thu_tong: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    credit_hoan_tong: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    #: Chi phí **chính xác** tích luỹ (milli-credit) — đầu vào của C2-trong-run
+    #: (R2b). Giữ ở đây vì `credit_entries` chỉ lưu credit nguyên đã làm tròn,
+    #: và `test_803` chứng minh phép cộng dồn phải neo vào số **dự định**.
+    mcredit_tich_luy: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    ly_do_ket: Mapped[str] = mapped_column(String(24), default="", nullable=False)
+    #: Rỗng khi không giữ lease xuyên run — mặc định, vì ADR-R1 chọn phương án C.
+    lease_id: Mapped[str] = mapped_column(String(40), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 onupdate=_now, nullable=False)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),
+                                                         nullable=True)
+
+
+class ChatlttStep(Base):
+    """Một BƯỚC trong run: `model` hoặc `tool`."""
+
+    __tablename__ = "chatltt_step"
+    __table_args__ = (
+        Index("ux_chatltt_step_thu_tu", "run_id", "thu_tu", unique=True),
+        Index("ix_chatltt_step_bam", "run_id", "bam_trung"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True,
+                                    default=lambda: sinh_id("st_"))
+    run_id: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    thu_tu: Mapped[int] = mapped_column(Integer, nullable=False)
+    loai: Mapped[str] = mapped_column(String(16), nullable=False)
+    execution_id: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    tool_name: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    tool_call_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    doi_so: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+
+    #: ⭐ Chuỗi đối số **trước khi gộp**. `test_800` đã chứng minh runtime KHÔNG
+    #:    gộp mảnh; ngày nào đó `gop_manh` gộp sai, thứ cần đọc là chuỗi này —
+    #:    và lúc đó nó phải đã được lưu, vì không dựng lại được từ kết quả.
+    doi_so_tho: Mapped[str] = mapped_column(Text, default="", nullable=False)
+
+    ket_qua: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    job_id: Mapped[str | None] = mapped_column(String(36), index=True, nullable=True)
+    trang_thai: Mapped[str] = mapped_column(String(16), default="", nullable=False)
+    bam_trung: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 nullable=False)
+
+
+class ChatlttApproval(Base):
+    """Một QUYẾT ĐỊNH duyệt. Bền qua F5, đóng tab, tiến trình khác, restart."""
+
+    __tablename__ = "chatltt_approval"
+    __table_args__ = (
+        #: 🔴 `unique=True` LÀ thứ làm "duyệt hai lần" KHÔNG THỂ xảy ra — ở tầng
+        #:    CSDL, không phải ở một `if` trong route. Route có thể quên; ràng
+        #:    buộc không quên. Cùng luật `job_submit.dedupe_key`.
+        Index("ux_chatltt_approval_step", "step_id", unique=True),
+        Index("ux_chatltt_approval_idem", "idempotency_key", unique=True),
+        Index("ix_chatltt_approval_user", "user_id", "quyet_dinh"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True,
+                                    default=lambda: sinh_id("ap_"))
+    step_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    run_id: Mapped[str] = mapped_column(String(40), index=True, nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), index=True, nullable=False)
+    tool_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    #: Đối số người dùng **nhìn thấy** khi bấm — không phải đối số lúc chạy.
+    doi_so: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    policy_class: Mapped[str] = mapped_column(String(16), nullable=False)
+    #: Số credit **đã hiện ra**. Lệch với giá tính lại ⇒ từ chối và báo lại —
+    #: cùng luật `tao_media.tao()` đã có: *"gia da doi: bao X, tinh lai Y"*.
+    bao_gia_credit: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    phien_ban_gia: Mapped[str] = mapped_column(String(32), default="", nullable=False)
+    quyet_dinh: Mapped[str] = mapped_column(String(16), default="cho", nullable=False)
+    doi_so_da_sua: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    quyet_boi: Mapped[str] = mapped_column(String(36), default="", nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now,
+                                                 nullable=False)
+    quyet_luc: Mapped[datetime | None] = mapped_column(DateTime(timezone=True),
+                                                       nullable=True)
