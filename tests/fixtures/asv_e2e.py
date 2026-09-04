@@ -340,6 +340,43 @@ class CuaThayThe:
     con_that: str
 
 
+#: 🔑 Bat bang `LTT_ASV_GIONG_THAT=1` **va** co `LTT_VOICE_SIDECAR_TOKEN`.
+#:
+#: ⛔ Doi CA HAI, khong chi mot. Chi doi co cai thu nhat thi mot lan quen dat
+#:    token cho ra mot luot chay hong giua chung voi `401`, sau khi da ton
+#:    demucs va ASR; doi ca hai thi no lang le lui ve SAPI va **noi ra trong
+#:    bao cao** rang no da lui.
+BIEN_GIONG_THAT = "LTT_ASV_GIONG_THAT"
+
+#: 🔑 Bat bang `LTT_ASV_MODEL_THAT=1` **va** co `LTT_DATABASE_URL`.
+#:
+#: ⛔ Doi ca `LTT_DATABASE_URL` chu khong doi mot bien khoa nao, va do la co y:
+#:    khoa cua may B khong nam trong mot bien moi truong — no la mot DONG POOL
+#:    trong CSDL, va `api_pool.chon_key` la thu duy nhat biet chon dong nao.
+#:    Doi mot bien khoa o day se moi nguoi go tay mot khoa vao shell, tuc dung
+#:    cai ma pool sinh ra de khong ai phai lam.
+BIEN_MODEL_THAT = "LTT_ASV_MODEL_THAT"
+
+
+def dung_model_that() -> bool:
+    """Luot chay nay co goi model tren may B THAT khong."""
+    import os
+
+    return (str(os.environ.get(BIEN_MODEL_THAT, "")).strip() == "1"
+            and bool(str(os.environ.get("LTT_DATABASE_URL", "")).strip()))
+
+
+def dung_giong_that() -> bool:
+    """Luot chay nay co goi LTTStudioVoice THAT khong."""
+    import os
+
+    return (str(os.environ.get(BIEN_GIONG_THAT, "")).strip() == "1"
+            and bool(str(os.environ.get("LTT_VOICE_SIDECAR_TOKEN", "")).strip()))
+
+
+#: DANH MUC moi cua co the bi thay, kem ly do. ⚠️ Day KHONG con la "nhung cua da
+#: bi thay trong luot nay" — cai do phu thuoc vao mot cong tac luc chay, va bao
+#: cao phai ghi thu DA XAY RA chu khong ghi thu co the xay ra.
 THAY_THE: tuple[CuaThayThe, ...] = (
     CuaThayThe(
         ten="platform_core.llm.dieu_phoi.goi",
@@ -421,10 +458,24 @@ def dat_cua_model(monkeypatch, *, su_that: SuThat | None = None):
         dem[ma] = dem.get(ma, 0) + 1
         return tra(_phan_hoi(ma, than, long_tieng, su_that))
 
+    if dung_model_that():
+        # ⭐ Khong thay gi: `dieu_phoi.goi` se chon khoa that tu pool, mo luong
+        #    toi may B, va tra ve thu model that noi. Day la thu dong G9 —
+        #    "shot boundaries + samples -> ltt_llm_vision" chi that su duoc
+        #    chung minh khi co mot luot goi that.
+        #
+        # ⚠️ Va no TIEU TOKEN THAT tren may B. Do la dien va thoi gian GPU cua
+        #    chinh chu du an, khong phai tien tra cho ben thu ba — nhung no van
+        #    la mot lan chay co gia, nen no phai duoc BAT ro rang chu khong roi
+        #    vao mac dinh.
+        dem["model_that"] = True
+        return dem
+
     monkeypatch.setattr("platform_core.llm.dieu_phoi.goi", gia)
     # ⛔ `ai` phai van la nguoi goi that: khong dung toi no o day, chi giu tham
     #    chieu de mot lan doi ten lo ra ngay thay vi thanh mot cua chet.
     assert callable(ai.goi_tinh_tien)
+    dem["da_thay"] = CUA_MODEL
     return dem
 
 
@@ -577,10 +628,43 @@ def dat_cua_giong(monkeypatch, thu_muc: Path, *, toc_do: int = 0):
         noi(_bo_dau(str(chu)), tep, giong=GIONG_NU, toc_do=toc_do)
         return tep.read_bytes(), {"x-thay-the": "sapi"}
 
+    if dung_giong_that():
+        # ⭐ Khong thay gi ca: `giong_noi.san_sang` se hoi sidecar that,
+        #    `giai_giong` doc kho giong that, va `doc_mot_doan` sinh tieng Viet
+        #    that. Day la thu dong duoc nua bang chung ngoai cua G11/G12/G17 —
+        #    SAPI la giong en-US va khong bao gio noi duoc gi ve chat luong
+        #    long tieng tieng Viet.
+        dem["giong_that"] = True
+        return dem
+
     monkeypatch.setattr(giong_noi, "san_sang", lambda: True)
     monkeypatch.setattr(giong_noi, "giai_giong", lambda db, **kw: (None, "bac"))
     monkeypatch.setattr(giong_noi, "doc_mot_doan", doc)
+    dem["da_thay"] = CUA_GIONG
     return dem
+
+
+#: Ba cua ma `dat_cua_giong` thay khi chay o che do SAPI.
+CUA_GIONG = ("apps.auto_scan_video.giong_noi.san_sang",
+             "apps.auto_scan_video.giong_noi.giai_giong",
+             "apps.auto_scan_video.giong_noi.doc_mot_doan")
+
+#: Cua ma `dat_cua_model` thay.
+CUA_MODEL = ("platform_core.llm.dieu_phoi.goi",)
+
+
+def cua_da_thay(*dem: dict) -> tuple[str, ...]:
+    """Ten nhung cua THUC SU bi thay trong luot chay nay, da sap xep.
+
+    ⭐ Doc tu chinh cac bo dem ma `dat_cua_*` tra ve, khong tu mot danh sach
+       doan truoc. Mot ban khai doan truoc se dung cho toi ngay ai do them mot
+       cong tac thu ba — va luc do bao cao se noi sai ve chinh luot chay dang
+       ghi, im lang.
+    """
+    ra: set = set()
+    for d in dem:
+        ra |= set((d or {}).get("da_thay") or ())
+    return tuple(sorted(ra))
 
 
 # ══════════════════════════════════════════════════════════════════════════════

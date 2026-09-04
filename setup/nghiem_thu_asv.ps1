@@ -1,0 +1,156 @@
+<#
+.SYNOPSIS
+    Chay bo nghiem thu dau-cuoi cua Auto Scan Video V4 voi moi truong production.
+
+.DESCRIPTION
+    Khuon lay tu `setup\tai_khoan_thu.ps1`: doc `secrets\app.env`, dat vao
+    TIEN TRINH NAY thoi, chay dung MOT lenh, roi thoat. Khong ghi app.env,
+    khong dung dich vu nao, khong in mot gia tri nao ra man hinh.
+
+    VI SAO CAN. `apps/ltt_voice/sidecar_client.py` va `voice_sidecar/server.py`
+    doc CUNG mot bien `LTT_VOICE_SIDECAR_TOKEN`, va bien do nam trong app.env
+    dang bi ACL chan. Nen mot tien trinh test chay bang tay khong the goi
+    LTTStudioVoice that, va bo nghiem thu phai thay bang SAPI - mot giong
+    en-US, khong noi duoc gi ve chat luong long tieng tieng Viet.
+
+    VI SAO HEP. Mot script "chay lenh bat ky voi moi truong production" huu
+    dung hon nhieu, va do chinh la ly do no khong nen ton tai: no bien moi
+    shell ve sau thanh mot shell doc duoc khoa ma hoa token. Script nay goi
+    ten bo test cua no trong ma.
+
+    KHONG TAO KHOA NAO. Token giong noi da ton tai tu luc cai
+    (`setup\2-cai-dat.ps1` sinh no bang `secrets.token_urlsafe(32)` va giu
+    nguyen neu da co). Sinh mot token moi o day khong phai "tao cai dang
+    thieu" - no la XOAY mot chung danh dang song, va vi hai dau doc chung mot
+    bien, xoay ma khong khoi dong lai ca hai se lam hong tinh nang giong noi
+    cua khach that.
+
+.EXAMPLE
+    powershell -ExecutionPolicy Bypass -File .\setup\nghiem_thu_asv.ps1
+    powershell -ExecutionPolicy Bypass -File .\setup\nghiem_thu_asv.ps1 -GiongSAPI
+
+.NOTES
+    Can Administrator (de doc app.env dang bi ACL chan).
+    Pure ASCII (CLAUDE.md quy tac 2).
+#>
+[CmdletBinding()]
+param(
+    [string]$Root = 'C:\LTTPlatform',
+    [string]$Repo = '',
+    # Mac dinh dung LTTStudioVoice THAT. Bat co nay de chay lai duong SAPI.
+    [switch]$GiongSAPI,
+    # Mac dinh goi model THAT tren may B qua pool. Bat co nay de dung ban gia.
+    [switch]$ModelGia,
+    # Noi ghi bao cao nghiem thu. Rong = ghi de ban trong kho.
+    [string]$BaoCao = ''
+)
+
+$ErrorActionPreference = 'Stop'
+if (-not $Repo) { $Repo = Split-Path -Parent $PSScriptRoot }
+
+$envFile = Join-Path $Root 'secrets\app.env'
+$venvPy  = Join-Path $Root 'venv\Scripts\python.exe'
+$boTest  = Join-Path $Repo 'tests\test_448_asv_v4_e2e_nghiem_thu.py'
+
+foreach ($p in @($envFile, $venvPy, $boTest)) {
+    if (-not (Test-Path $p)) { throw "Khong thay $p" }
+}
+if (-not $BaoCao) {
+    $BaoCao = Join-Path $Repo 'docs\auto_scan_video_v4\evidence\22_nghiem_thu.json'
+}
+
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin) {
+    throw "Can quyen Administrator de doc $envFile (ACL cua no la dung, dung noi long)."
+}
+
+# !! KHONG dat ten bien la `$so`. Xem `setup\nap_credit_tai_khoan_thu.ps1`:
+#    PowerShell khong phan biet hoa thuong, nen mot bien noi bo ten `$so` da
+#    tung ghi de tham so `-So` va lam sai mot but toan credit, im lang.
+$soBien = 0
+foreach ($dong in (Get-Content $envFile -Encoding UTF8)) {
+    $d = $dong.Trim()
+    if (-not $d -or $d.StartsWith('#') -or -not $d.Contains('=')) { continue }
+    $i = $d.IndexOf('=')
+    $ten = $d.Substring(0, $i).Trim()
+    $gt  = $d.Substring($i + 1)
+    if ($ten) {
+        # KHONG in gia tri nao: tep nay giu khoa ma hoa token va mat khau CSDL.
+        Set-Item -Path "Env:$ten" -Value $gt
+        $soBien++
+    }
+}
+Write-Host "  [OK] Nap $soBien bien tu app.env vao tien trinh nay (khong in gia tri)" -ForegroundColor Green
+
+$coToken = [bool]($env:LTT_VOICE_SIDECAR_TOKEN)
+if (-not $coToken) {
+    Write-Host "  [!!] app.env KHONG co LTT_VOICE_SIDECAR_TOKEN - se chay bang SAPI" -ForegroundColor Yellow
+}
+
+$coCsdl = [bool]($env:LTT_DATABASE_URL)
+if (-not $coCsdl) {
+    Write-Host "  [!!] app.env KHONG co LTT_DATABASE_URL - se dung ban model gia" -ForegroundColor Yellow
+}
+
+$env:LTT_TEST_NANG   = '1'
+$env:LTT_ASV_E2E_RA  = $BaoCao
+
+if ($ModelGia -or -not $coCsdl) {
+    Remove-Item Env:LTT_ASV_MODEL_THAT -ErrorAction SilentlyContinue
+    Write-Host "  [--] Model: ban thay the (khong cham may B)" -ForegroundColor Yellow
+} else {
+    # KHONG go cung dia chi may B vao day. `Ket_noi.md` noi thang: tin cum chu
+    # dung tin mot gia tri chep lai. Dia chi that nam o cot `base_url` cua dong
+    # khoa trong pool, va `api_pool.chon_key` la thu duy nhat biet chon dong nao.
+    $env:LTT_ASV_MODEL_THAT = '1'
+    Write-Host "  [**] Model: THAT, qua pool khoa -> may B" -ForegroundColor Cyan
+}
+if ($GiongSAPI -or -not $coToken) {
+    Remove-Item Env:LTT_ASV_GIONG_THAT -ErrorAction SilentlyContinue
+    Write-Host "  [--] Che do: SAPI (giong en-US thay the)" -ForegroundColor Yellow
+} else {
+    $env:LTT_ASV_GIONG_THAT = '1'
+    Write-Host "  [**] Che do: LTTStudioVoice THAT o :8120" -ForegroundColor Cyan
+}
+
+# Kiem cong truoc khi ton demucs + ASR. Mot lan chay hong o buoc long tieng
+# xay ra SAU vai phut xu ly nang, va do la vai phut khong can mat.
+if ($env:LTT_ASV_GIONG_THAT -eq '1') {
+    $cong = 8120
+    if ($env:LTT_VOICE_SIDECAR_PORT) { $cong = [int]$env:LTT_VOICE_SIDECAR_PORT }
+    $tcp = New-Object Net.Sockets.TcpClient
+    try {
+        $tcp.Connect('127.0.0.1', $cong)
+        Write-Host "  [OK] Sidecar giong noi dang mo o :$cong" -ForegroundColor Green
+    } catch {
+        throw "Sidecar giong noi khong mo o :$cong. Bat LTTStudioVoice roi chay lai, hoac dung -GiongSAPI."
+    } finally {
+        $tcp.Dispose()
+    }
+}
+
+Write-Host ''
+Write-Host "  Bao cao se ghi vao: $BaoCao"
+Write-Host ''
+
+# !! BAY DA DINH BA LAN - xem `setup\tai_khoan_thu.ps1`.
+#    Voi `$ErrorActionPreference = 'Stop'`, mot exe NGOAI ghi ra stderr thanh
+#    NativeCommandError va KET THUC script, nen ma thoat khong bao gio duoc
+#    doc. Python ghi stderr vi nhieu ly do binh thuong.
+$cu = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+& $venvPy -m pytest -q -p no:randomly $boTest
+$maThoat = $LASTEXITCODE
+$ErrorActionPreference = $cu
+
+Write-Host ''
+if ($maThoat -eq 0) {
+    Write-Host "  [OK] Nghiem thu xanh. EXITCODE=$maThoat" -ForegroundColor Green
+    Write-Host "  Doc `"giong_that`", `"model_that`" va `"thay_the`" trong bao cao"
+    Write-Host "  de biet cua nao da chay THAT. Danh sach `"thay_the`" RONG nghia la"
+    Write-Host "  ca hai cua deu that - va hai co kia phai cung noi vay."
+} else {
+    Write-Host "  [FAIL] Nghiem thu do. EXITCODE=$maThoat" -ForegroundColor Red
+}
+exit $maThoat

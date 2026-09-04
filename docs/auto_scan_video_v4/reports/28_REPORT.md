@@ -203,15 +203,48 @@ Measured on this machine at the RC SHA — not inferred:
 LTT_LLM_BASE_URL / LTT_RENDER_BASE_URL       not set in this process
 LTT_VOICE_SIDECAR_TOKEN                      not set in this process
 127.0.0.1:8100  open      (platform web)
-127.0.0.1:8120  OPEN      (LTT Voice sidecar — answers 401 without a token)
-127.0.0.1:8199  unreachable  (machine B image gateway)
-127.0.0.1:8299  unreachable  (machine B LLM gateway)
+127.0.0.1:8120  OPEN      (LTT Voice sidecar - answers 401 without a token)
 tests/fixtures/asv_e2e_that/                 does not exist
 ```
 
+🔴 **CORRECTION, made after this report was first written and left standing
+here rather than edited away.** The two lines that used to sit in that block
+read:
+
+```
+127.0.0.1:8199  unreachable  (machine B image gateway)
+127.0.0.1:8299  unreachable  (machine B LLM gateway)
+```
+
+They were **wrong, and wrong in the direction that makes the situation look
+worse than it is.** The machine B gateways do not listen on machine A's
+loopback — they listen on **machine B**, at `192.168.2.66`. Probing
+`127.0.0.1` there measured nothing about machine B at all. Re-measured over the
+LAN:
+
+```
+ping 192.168.2.66                 alive
+192.168.2.66:9443   OPEN   nexus worker
+192.168.2.66:9444   OPEN   nexus controller
+192.168.2.66:8199   OPEN   ltt_image   -> HTTP 401 {"detail":"render gateway: sai token"}
+192.168.2.66:8299   OPEN   ltt_llm     -> HTTP 401 {"detail":"token khong dung"}
+```
+
+⭐ So machine B is **up, serving, and refusing only for lack of a token** —
+the same shape as the voice sidecar. And `docs/audit_ltt_llm/` holds **live**
+measurements against that gateway (`413 {"tran":65536,...}`), which could not
+exist without a working pool key. ⇒ The `ltt_llm` credential almost certainly
+**already exists** in the pool; what this audit process lacks is a way to read
+the pool at all, because `LTT_DATABASE_URL` lives in the ACL-locked `app.env`.
+
+⚠️ The error is instructive and belongs in the record: a probe aimed at the
+wrong address returns a clean, confident, false answer — the **second** time in
+this one phase (the first was the `gpu_uuid` AST probe). Both times the tool
+answered exactly what it was asked, and the question was wrong.
+
 | # | needed | closes | note |
 |---|---|---|---|
-| 1 | Pool key for `ltt_llm` (covers the `ltt_llm_vision` **model alias** — same provider, same bearer, port 8299) | **G9**, G17 | ⚠️ machine B's gateway is not reachable from this host right now; the key alone may not be enough until it is |
+| 1 | Access to the **existing** `ltt_llm` pool row — not a new key. The gateway is up and the credential is already provisioned; the test process simply cannot read the pool without `LTT_DATABASE_URL` | **G9**, G17 | closed by loading `app.env` into one process (Administrator), not by minting anything |
 | 2 | `LTT_VOICE_SIDECAR_TOKEN` for `127.0.0.1:8120` | G11 quality, G12 quality, **G17** | the port is open — only the token is missing |
 | 3 | Two real customer videos, one per preset, dropped in `tests/fixtures/asv_e2e_that/` | **G17** | the smart-preset sample needs at least one scene genuinely worth cutting |
 | 4 | *(optional)* CUDA 12 cuBLAS in the dev tree, or permission to measure the production WhisperX sidecar | G7, G24 detail | production is unaffected — it already uses the sidecar |
@@ -245,8 +278,8 @@ G9 and G17, in this order:
 1. Set `LTT_VOICE_SIDECAR_TOKEN` in a process-scoped shell and re-run
    `tests/test_448` with `LTT_TEST_NANG=1`. The port is already open, so this is
    the cheapest of the three and it closes the voice half.
-2. Restore reachability to machine B (`:8299`) and provide the `ltt_llm` pool key,
-   then re-run the same suite. `EDIT_PLAN` will make **one call per scene** —
+2. Machine B needs nothing restored — it is up. Run the same bridge with the
+   model door left real, so `dieu_phoi.goi` resolves the **existing** pool key. `EDIT_PLAN` will make **one call per scene** —
    ⚠️ size frame batches against the **measured 28 262-token** vision window, not
    the 131 072 text alias (V4-R08).
 3. Drop two real videos in `tests/fixtures/asv_e2e_that/` and re-run both presets.

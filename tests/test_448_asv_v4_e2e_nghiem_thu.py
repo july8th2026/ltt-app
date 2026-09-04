@@ -360,8 +360,8 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
         pytest.skip("khong co SAPI de dung ban nguon co tieng noi that")
 
     su_that = fx.nguon_hoi_thoai(tmp_path / "nguon")
-    fx.dat_cua_model(monkeypatch, su_that=su_that)
-    fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
+    dem_model = fx.dat_cua_model(monkeypatch, su_that=su_that)
+    dem_giong = fx.dat_cua_giong(monkeypatch, tmp_path / "tieng")
 
     luot = []
     for nhan, preset in (("giu_hinh", hop_dong_v4.PRESET_GIU_HINH),
@@ -385,8 +385,15 @@ def test_NGHIEM_THU_ca_hai_preset_ra_video_dung_duoc(moi_truong, tmp_path,
             "loi": [{"ma": l.ma, "giong": l.giong, "bat": round(l.bat, 3),
                      "giay": round(l.giay, 3), "chu": l.chu} for l in su_that.loi],
         },
+        # 🔑 Ghi thu DA THUC SU bi thay trong luot nay, khong ghi ca danh muc.
+        #    Voi `LTT_ASV_GIONG_THAT=1` thi ba cua giong khong nam o day nua, va
+        #    do la ca diem: bao cao phai phan biet duoc mot luot chay dung
+        #    LTTStudioVoice that voi mot luot dung SAPI.
+        "giong_that": bool(dem_giong.get("giong_that")),
+        "model_that": bool(dem_model.get("model_that")),
         "thay_the": [{"ten": t.ten, "ly_do": t.ly_do, "con_that": t.con_that}
-                     for t in fx.THAY_THE],
+                     for t in fx.THAY_THE
+                     if t.ten in set(fx.cua_da_thay(dem_giong, dem_model))],
         "luot": luot,
     }
 
@@ -460,8 +467,41 @@ def test_moi_cua_THAY_THE_van_con_ton_tai(bc):
     trinh khong con nua — va no se im lang noi rang phan do van duoc thay."""
     import importlib
 
-    khai = {t.ten for t in fx.THAY_THE}
-    assert {t["ten"] for t in bc["thay_the"]} == khai, "bao cao lech ban khai"
+    # 🔴 Dong nay tung doc DANH MUC (`fx.THAY_THE`) chu khong doc BAO CAO, nen
+    #    no doi chieu danh muc voi chinh no — mot phep kiem luon dat, khong the
+    #    do gi. No chi lo ra khi pha nay them cong tac giong/model that.
+    khai = {t["ten"] for t in bc["thay_the"]}
+    # ⚠️ `khai` la nhung cua bao cao NOI da thay. Doi chieu voi danh muc theo
+    #    chieu TAP CON: mot luot chay giong that thay it cua hon, va do la mot
+    #    luot chay TOT hon chu khong phai mot bao cao sai.
+    assert khai <= {t.ten for t in fx.THAY_THE}, "bao cao khai mot cua ngoai danh muc"
+
+    # ⛔ Hai co va bon cua phai khop TUNG DOI MOT. Mot bao cao noi "da goi model
+    #    that" ma van khai da thay `dieu_phoi.goi` la mot bao cao tu mau thuan,
+    #    va no se duoc doc nhu bang chung cho mot dieu chua xay ra.
+    co_model = set(fx.CUA_MODEL) & khai
+    if bc.get("model_that"):
+        assert not co_model, (
+            "bao cao noi goi model THAT nhung van khai da thay cua model")
+    else:
+        assert co_model == set(fx.CUA_MODEL), (
+            "luot chay thay the phai khai du cua model")
+
+    # Va hai chieu phai khop: co `giong_that` thi ba cua giong PHAI vang.
+    co_giong = set(fx.CUA_GIONG) & khai
+    if bc.get("giong_that"):
+        assert not co_giong, (
+            "bao cao noi dung giong THAT nhung van khai da thay cua giong")
+    else:
+        assert co_giong == set(fx.CUA_GIONG), (
+            "luot chay SAPI phai khai du ba cua giong")
+
+    # ⭐ Va neu CA HAI deu that thi khong con cua nao duoc khai — luc do bao cao
+    #    phai noi ro ca hai co, vi mot danh sach RONG mot minh doc len giong het
+    #    mot bao cao quen ghi.
+    if not khai:
+        assert bc.get("model_that") and bc.get("giong_that"), (
+            "khong khai cua nao ma cung khong khai la da chay that")
     for ten in khai:
         module, _, thuoc_tinh = ten.rpartition(".")
         mod = importlib.import_module(module)
