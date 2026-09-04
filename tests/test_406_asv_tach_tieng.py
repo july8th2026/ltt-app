@@ -310,6 +310,15 @@ def test_cong_thoat_ban_nen_la_artifact_chinh_tac_da_kiem(tmp_path, monkeypatch)
     # ⭐ Chi mieng NANG la gia. Hang doi, worker, ffmpeg, kho, CSDL, tron nen,
     #    chuan am luong, lineage — van that, va do moi la thu phep kiem nay do.
     rao_chan_nang.gia_lap_demucs(monkeypatch)
+    # 🔴 **Va ASR nua — pha 23.** Vong duoi day chay het hang doi voi nang luc
+    #    `gpu`, nen no khong dung o `audio_prepare`: no di tiep sang
+    #    `transcribe`, va do la ASR THAT. Tren may nay duong CUDA cua
+    #    faster-whisper treo (do o pha 22: hon bay phut khong ket qua, khong
+    #    loi), nen phep kiem nay treo ca luot gate chua no.
+    #
+    # ⭐ Cung mot bai hoc voi demucs, chi khac cai ten: mot duong GIAN TIEP toi
+    #    model nang khong bi rao nao nhin thay.
+    rao_chan_nang.gia_lap_asr(monkeypatch)
 
     monkeypatch.setenv("LTT_DATABASE_URL",
                        f"sqlite:///{(tmp_path / 'p9.db').as_posix()}")

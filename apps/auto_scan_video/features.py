@@ -199,6 +199,30 @@ def danh_dau_xong(db: Session, stage: AsvStage, *, outputs: dict,
         finished_at=_now(), error="")
 
 
+#: Tran so lan mot GIAI DOAN duoc chay lai sau mot truot thoang qua.
+#:
+#: 🔴 **Truoc pha 23 con so nay khong ton tai, va khong co lan chay lai nao.**
+#:    `loi.phan_loai` van phan biet `TAM_THOI` voi loi cuoi cung, va
+#:    `STAGE_FAILED_RETRYABLE` van nam trong bang trang thai — nhung
+#:    `_thu_ket_qua_job_con` goi `danh_dau_hong` voi mac dinh `cuoi_cung=True`
+#:    cho MOI job con hong, nen phan loai do khong bao gio toi duoc trang thai
+#:    giai doan. Mot lan het cho dia trong nua giay lam hong ca lan chay.
+#:
+#: ⚠️ Va hau qua khong dung o do: mot run da ket thuc thi `thu_lai_giai_doan`
+#:    tu choi (no da quyet toan, khong con cho giu), nen khach chi con duong nop
+#:    mot lan chay MOI — tinh lai tu dau ca demucs lan ASR, vi cache artifact
+#:    khoa theo `run_id`.
+#:
+#: ⛔ Ba, khong phai vo han: mot truot "thoang qua" ma lap lai ba lan thi no
+#:    khong thoang qua, va thu tiep la dot cho.
+LAN_THU_GIAI_DOAN_TOI_DA = 3
+
+
+def con_luot_thu(stage: AsvStage) -> bool:
+    """Giai doan nay con duoc chay lai sau mot truot thoang qua khong."""
+    return int(stage.attempt or 0) < LAN_THU_GIAI_DOAN_TOI_DA
+
+
 def danh_dau_hong(db: Session, stage: AsvStage, loi: str, *,
                   cuoi_cung: bool = True) -> AsvStage:
     from .tables import STAGE_FAILED_RETRYABLE

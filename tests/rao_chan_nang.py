@@ -131,6 +131,35 @@ def gia_lap_demucs(monkeypatch):
     monkeypatch.setattr(tach_tieng, "_chay_kem_moi_truong", gia)
 
 
+def gia_lap_asr(monkeypatch):
+    """Thay engine ASR that bang mot ban ghi xac dinh.
+
+    🔴 **Vi sao can, va vi sao no giong het cau chuyen cua demucs.** Pha 13 tim
+       ra `test_406::test_cong_thoat_ban_nen_...` goi demucs **gian tiep qua hang
+       doi**, nen rao chan — dan len nhung nguoi goi THANG — khong thay no. Pha
+       23 tim ra rang **cung phep kiem do** cung voi toi ASR that theo dung cach
+       do: no chay het hang doi voi nang luc `gpu`, va `transcribe` la mot giai
+       doan `gpu`.
+
+    ⛔ Va lan nay cai gia cao hon mot lan nap model: `autosubvideo._get_faster_model`
+       mac dinh `device="cuda"`, va tren may nay duong CUDA cua faster-whisper
+       **treo**. Do duoc o pha 22: hon bay phut khong ket qua va khong loi, so
+       voi 7,5 giay tren CPU. Mot phep kiem treo vo han thi khong con la mot phep
+       kiem cham — no la mot luot gate khong bao gio ket thuc.
+
+    ⭐ Xac nhan bang chinh tien trinh dang treo: no da nap `ctranslate2.dll`,
+       `cudnn64_9.dll` va `nvcuda.dll`.
+
+    ⇒ Mieng NANG duy nhat (model) la gia; hang doi, worker, ffmpeg, kho, CSDL,
+      lineage van that — dung nguyen tac cua `gia_lap_demucs`.
+    """
+    from apps.auto_scan_video import giai_doan_chep_loi
+    from tests.fixtures.asv_media import ban_ghi_gia
+
+    monkeypatch.setattr(giai_doan_chep_loi, "chep_loi",
+                        lambda duong_tieng, **kw: ban_ghi_gia())
+
+
 @pytest.fixture(autouse=True)
 def demucs_gia_lap(monkeypatch):
     """Fixture AUTOUSE **pham vi tep** — nap vao mot tep test bang mot dong:

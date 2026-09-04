@@ -269,15 +269,34 @@ class TestAnToanCuocGoiTraTien:
         db = next(dbmod.get_session())
         kho = LocalStorage(str(tmp_path / "kho")); set_storage(kho)
 
-        from apps.auto_scan_video import (dich_thuat, features,
-                                          giai_doan_chep_loi)
+        from apps.auto_scan_video import features, giai_doan_chep_loi
         monkeypatch.setattr(giai_doan_chep_loi, "chep_loi",
                             lambda duong_tieng, **kw: ban_ghi_gia(2.0))
 
-        def mo_ho(db_, ban, ctx=None):
-            raise dich_thuat.DichMoHo("co the da goi provider")
+        # 🔴 **Ban va cu cua phep kiem nay va mot ham KHONG AI GOI.**
+        #
+        #    No thay `dich_thuat.dich_ban_ghi` — dung o thoi diem viet, nhung pha
+        #    14 da doi `CONTENT_PROCESS` sang goi `ai.goi_tinh_tien`. Tu do phep
+        #    kiem van XANH trong khi kich ban cua no (mot dispatch mo ho) **khong
+        #    con xay ra**: giai doan hong vi mot ly do khac han, va phep khang
+        #    dinh o cuoi do mot thu khong lien quan.
+        #
+        # ⭐ Cung mot lop khiem khuyet ma pha 14 tim thay o ba ban sao cua mot
+        #    stub, va pha 22 tim thay o mot ban gia tra ve sai kieu: **mot ban
+        #    thay the tro toi mot cua da doi cho**. Cho nay bi bo sot vi no
+        #    khong lam do gi ca — no chi lang le thoi kiem.
+        #
+        # ⇒ Thay o CUA THAT, va tao mot lan mo ho THAT: goi `on_dispatch` roi
+        #   mat ket noi. Do dung la tinh huong I5 noi toi.
+        dem = {"n": 0}
 
-        monkeypatch.setattr(dich_thuat, "dich_ban_ghi", mo_ho)
+        def mo_ho(db_, *, messages, on_dispatch=None, **kw):
+            dem["n"] += 1
+            if on_dispatch is not None:
+                on_dispatch("ltt_llm")
+            raise ConnectionResetError("mat ket noi sau khi da gui")
+
+        monkeypatch.setattr("platform_core.llm.dieu_phoi.goi", mo_ho)
         try:
             bao_dam_user(db, "uA"); credit.nap(db, "uA", 1000)
             khoa = nap_nguon_vao_kho(kho, tmp_path, owner_id="uA")
@@ -301,10 +320,33 @@ class TestAnToanCuocGoiTraTien:
             db.expire_all()
 
             s = features.giai_doan_theo_ten(db, run.id, "content_process")
-            assert s.status != "succeeded"
-            assert jobs.claim(db, worker_id="w2",
-                              capabilities={"api", "ffmpeg", "gpu", "voice"}) is None, (
-                "job dich mo ho van con trong hang doi -> se goi provider lan hai")
+            assert s.status not in ("succeeded", "pending"), s.status
+            assert dem["n"] >= 1, "kich ban chua he cham toi cua goi model"
+
+            # 🔑 Bat bien THAT cua I5: cua goi model chi duoc cham DUNG MOT LAN.
+            #
+            # ⛔ Phep kiem cu khang dinh "hang doi rong tuyet doi", va do la mot
+            #    menh de RONG HON menh de no muon bao ve: mot job dieu phoi
+            #    (`advance`) con lai chi lam mot viec — quyet toan lan chay — va
+            #    no khong goi provider nao ca. Do bang bo dem thi do dung thu can
+            #    do, va khong vo khi so vong lap doi.
+            truoc = dem["n"]
+            for _ in range(6):
+                job = jobs.claim(db, worker_id="w2",
+                                 capabilities={"api", "ffmpeg", "gpu", "voice"})
+                if job is None:
+                    break
+                db.commit()
+                ctx = JobContext(job.id); ctx.job_type = job.job_type
+                try:
+                    jobs.complete(db, job, jobs.resolve_handler(job.job_type)(
+                        dict(job.params), ctx) or {})
+                except Exception as exc:      # noqa: BLE001
+                    jobs.fail(db, job, str(exc), retry=False)
+                db.commit()
+            assert dem["n"] == truoc, (
+                f"cua goi model bi cham lai ({truoc} -> {dem['n']}) sau mot lan "
+                "dispatch MO HO")
         finally:
             db.close(); set_storage(None); dbmod.reset_engine()
 

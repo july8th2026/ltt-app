@@ -32,6 +32,7 @@ from platform_core.models import JOB_CANCELLED, JOB_DONE, JOB_ERROR, Job
 
 from . import features, pipeline, thi_hanh
 from .tables import (RUN_DONE, RUN_ERROR, RUN_QUEUED, RUN_RUNNING, RUN_TERMINAL,
+                     STAGE_FAILED_RETRYABLE,
                      STAGE_FAILED_TERMINAL, STAGE_PENDING, STAGE_QUEUED,
                      STAGE_RUNNING, STAGE_SUCCEEDED)
 
@@ -195,7 +196,35 @@ def _nop_giai_doan_san_sang(db, run, theo_ten: dict, da_xong: set[str]) -> list[
     da_nop: list[str] = []
     for g in pipeline.ke_tiep(da_xong):
         stage = theo_ten.get(g.ten)
-        if stage is None or stage.status != STAGE_PENDING:
+        # ⭐ `STAGE_FAILED_RETRYABLE` nam o day tu pha 23. Truoc do trang thai
+        #    do ton tai nhung **khong ai nop lai** mot giai doan dang mang no —
+        #    tuc no la mot ngo cut trong bang trang thai. Khoa dedupe da co
+        #    `a{attempt}` chinh vi truong hop nay, va `danh_dau_dang_chay` tang
+        #    `attempt` len, nen lan nop lai sinh mot job MOI chu khong dung lai
+        #    job cu.
+        if stage is None or stage.status not in (STAGE_PENDING,
+                                                 STAGE_FAILED_RETRYABLE):
+            continue
+
+        # 🔴 **Tran so lan thu phai duoc cuong che O DAY, khong chi o cho bat
+        #    loi.** `chay_giai_doan` kiem `con_luot_thu` truoc khi danh dau mot
+        #    giai doan la `failed_retryable` — nhung do khong phai duong DUY
+        #    NHAT dan toi trang thai do: `_thu_ket_qua_job_con` cung dat no khi
+        #    "job xong ma giai doan chua xong" (handler chet giua chung), va
+        #    duong do khong hoi tran nao ca.
+        #
+        # ⇒ Thieu phep kiem nay, mot giai doan roi vao dung cho do se duoc nop
+        #   lai **vo han**: moi vong dieu phoi sinh mot job moi, va khong co gi
+        #   dung lai. Do la mot vong lap tieu tai nguyen tren mot may dang phuc
+        #   vu khach — dung loai su co ma pha 23 ton tai de chan.
+        if (stage.status == STAGE_FAILED_RETRYABLE
+                and not features.con_luot_thu(stage)):
+            try:
+                features.danh_dau_hong(
+                    db, stage, stage.error or "het luot thu lai",
+                    cuoi_cung=True)
+            except features.XungDot:
+                pass
             continue
 
         # ⛔ `jobs.submit`, KHONG BAO GIO `submit_with_credit`. Chi run giu tien

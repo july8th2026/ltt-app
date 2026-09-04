@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import io
 import json
+import logging
 
 from platform_core.db import get_session
 from platform_core.i18n import _ as _t
@@ -34,7 +35,9 @@ from . import (assets, features, giai_doan_am_thanh, giai_doan_ban_dung,
                giai_doan_chep_loi, giai_doan_giong, giai_doan_ket_xuat,
                giai_doan_media, giai_doan_noi_dung, giai_doan_qc,
                giai_doan_thoi_gian, loi, pipeline)
-from .tables import STAGE_SUCCEEDED
+from .tables import STAGE_QUEUED, STAGE_RUNNING, STAGE_SUCCEEDED
+
+log = logging.getLogger(__name__)
 
 #: Chi phi do duoc gia cua mot giai doan o pha 05. Bang 0 vi khong provider nao
 #: bi goi va khong card nao bi dung.
@@ -326,6 +329,33 @@ def chay_giai_doan(ten: str, params: dict, ctx=None) -> dict:
         #    dinh `"retry"` cua `job_runner._provider_failure_kind` — tuc thu
         #    lai ba lan mot tep nguon khong co tieng, va thu lai mot lan sinh
         #    tieng CO THE DA TINH TIEN.
+        # 🔑 **Phan loai di vao TRANG THAI GIAI DOAN, khong chi vao ngoai le.**
+        #
+        #    Truoc pha 23, phep phan loai nay chi phuc vu hang doi nen tang; con
+        #    dong `asv_stage` thi `_thu_ket_qua_job_con` danh dau `failed_terminal`
+        #    cho MOI job con hong. Ket qua: `loi.TAM_THOI` khong lam gi ca, va
+        #    mot truot thoang qua ket thuc ca lan chay.
+        #
+        # ⛔ `rollback` truoc khi ghi: phien nay vua nem giua chung nen no dang
+        #    o trang thai khong xac dinh. Nhung diem chot da `commit` (tung doan
+        #    tieng, tung lo dich) khong bi anh huong — do la ca ly do chung
+        #    `commit` ngay tai cho thay vi `flush`.
+        try:
+            tam_thoi = loi.phan_loai(exc) == loi.TAM_THOI
+            db.rollback()
+            stage_hong = features.giai_doan_theo_ten(db, run_id, ten)
+            if stage_hong is not None and stage_hong.status in (
+                    STAGE_QUEUED, STAGE_RUNNING):
+                features.danh_dau_hong(
+                    db, stage_hong, str(exc)[:2000],
+                    cuoi_cung=not (tam_thoi and features.con_luot_thu(stage_hong)))
+                db.commit()
+        except Exception:                   # noqa: BLE001
+            # ⚠️ Ghi trang thai la viec PHU. No hong thi loi goc van phai noi
+            #    len — nuot loi goc de bao mot loi ghi so la doi mot cau tra loi
+            #    dung lay mot cau tra loi lac de.
+            log.warning("khong ghi duoc trang thai hong cua giai doan %s", ten)
+
         moi = loi.dich_sang_loi_nen_tang(exc)
         if moi is not exc:
             raise moi from exc

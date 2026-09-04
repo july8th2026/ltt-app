@@ -118,7 +118,32 @@ def chay(db, kho: Storage, *, run, ctx=None) -> dict:
             khoa_ben = assets.dat_khoa(owner_id=run.owner_id, run_id=run.id,
                                        stage=pipeline.VOICE_SYNTHESIS,
                                        van_tay=vt, duoi="wav")
+            khoa_tam_cu = assets.khoa_staging(
+                owner_id=run.owner_id, run_id=run.id,
+                stage=pipeline.VOICE_SYNTHESIS, van_tay=vt, duoi="wav")
             cu = _doan_con_dung(db, kho, run, khoa_ben)
+            if cu is None:
+                # 🔴 **Mot doan con nam trong STAGING van la doan ta DA TRA TIEN.**
+                #
+                #    Doan tieng chi thanh `AsvAsset` o cuoi giai doan, khi
+                #    `thi_hanh` promote ca lo. Nen mot lan truot o doan thu ba
+                #    lam hai doan dau **mat het dau vet co the dung lai** —
+                #    trong khi tep cua chung van nam nguyen trong kho duoi khoa
+                #    staging, va so cai da ghi rang chung DA GIAO.
+                #
+                # ⭐ Do duoc o pha 23: mot lan truot o doan ba lam luot chay lai
+                #    goi may sinh tieng **6 lan cho 3 doan**. Rang buoc
+                #    `UNIQUE(run_id, ma_dispatch)` che mat dieu do — no chan lan
+                #    GHI thu hai, khong chan lan LAM thu hai.
+                #
+                # ⛔ Khoa staging mang van tay cua chinh doan (chu + giong +
+                #    preset), nen mot tep tim thay o day dung la tep cua doan
+                #    nay chu khong phai cua mot lan chay khac; va no van bi do
+                #    lai bang `kiem_tep_tieng` truoc khi duoc tin.
+                cu = _doan_trong_staging(kho, khoa_tam_cu)
+                if cu is not None:
+                    phan.append({"staging_key": khoa_tam_cu, "kind": "audio",
+                                 "duoi": "wav", "van_tay": vt})
             if cu is not None:
                 kq = nan_cho_vua.ket_luan(m["ma"], chu=chu, giay=float(cu),
                                           khe=khe, so_vong=0)
@@ -295,6 +320,30 @@ def _ghi_so(db, run, *, ma: str, van_tay: str, giay: float, kq) -> None:
         # ⭐ Rang buoc `UNIQUE(run_id, ma_dispatch)` vua chan mot lan tinh tien
         #    thu hai cho cung mot doan. Do la thanh cong, khong phai loi.
         log.info("so cai da co doan tieng %s - bo qua lan ghi trung", ma)
+
+
+def _doan_trong_staging(kho: Storage, khoa_tam: str):
+    """So giay cua mot doan con nam trong staging, hoac None.
+
+    Khong doi mot ban ghi `AsvAsset` — do la thu chua kip ghi khi giai doan
+    truot giua chung. Nhung van **do lai tren tep that**: mot tep dang do trong
+    kho trong y het mot tep xong.
+    """
+    try:
+        if not kho.exists(khoa_tam):
+            return None
+        duong = kho.local_path(khoa_tam) if hasattr(kho, "local_path") else None
+        if not duong:
+            return None
+        return giong_noi.kiem_tep_tieng(duong)
+    except Exception as loi_doc:    # noqa: BLE001 - khong doc duoc = khong dung lai
+        # ⛔ Khong nuot im: mot tep staging khong doc duoc **khong** phai su co
+        #    (ta chi don gian sinh lai doan do), nhung neu no xay ra o MOI doan
+        #    thi phep dung lai da chet mot cach im lang va hoa don tang len ma
+        #    khong ai thay. Mot dong log la thu duy nhat phan biet hai canh do.
+        log.info("khong dung lai duoc doan trong staging %s (%s)",
+                 khoa_tam, type(loi_doc).__name__)
+        return None
 
 
 def _doan_con_dung(db, kho: Storage, run, khoa: str):
