@@ -44,6 +44,16 @@
   Both failures proven non-ASV: `test_82` (gitignored `apps/*/vendor/`, every fresh worktree)
   and `test_361` (passes alone; red only because the gate held the quiet-window lock it asserts on).
   Raw log: `evidence/00_gate_baseline.txt`
+- **gate_after_phase_27**: `python tools/gate.py --phien asv-v4` -> **`RESULT: PASS`**,
+  ~11 min (2026-09-04). ⭐ Strictly better than the certified baseline: the two
+  environmental failures above no longer reproduce, and every step is green.
+  ⚠️ Four frontend steps report **BOQUA** — the gate says so itself, in that line:
+  *"4 BUOC TU BO QUA, KHONG PHAI BANG CHUNG"*. They are not evidence of anything.
+  - The gate caught two things Phase 27 would otherwise have shipped: the two new
+    UI strings had no English entry (the translation ratchet), and
+    `ho_so_he_thong.txt` had gone stale after 16 app files changed. ⛔ The strings
+    were added **by hand** to the `.po`; running `i18n.py trich` would have let
+    msgmerge guess translations and reorder the whole file.
 - **critical_external_evidence_pending**: see table below
 - **open_blockers**: **none.** All nine Phase 26 findings are closed or recorded
   with a written reason (`reports/27_REPORT.md`). Eight FIXED with evidence;
