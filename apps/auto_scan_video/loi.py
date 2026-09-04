@@ -173,6 +173,20 @@ def phan_loai(exc: BaseException) -> str:
     if isinstance(exc, (SuaChuaError, QcAiError)):
         return NGUOI_DUNG
 
+    # ── Va cham o cap DON VI VIEC (pha 27) ──────────────────────────────────
+    #
+    # ⛔ `TAM_THOI` — thu lai duoc, va **phai** thu lai duoc. `XungDotDonVi` co
+    #    nghia la mot tien trinh khac vua ghi dong nay giua chung: khong co gi
+    #    sai trong du lieu, chi la ta thua cuoc dua. Lan sau doc lai se thay
+    #    trang thai moi va thuong la khong con gi de lam.
+    #
+    # ⚠️ Khac `XungDot` cua `features` (cap GIAI DOAN) o cho lop kia khong bao
+    #    gio len toi bien — no bi bat o tang route. Lop nay nem tu than mot giai
+    #    doan, nen no PHAI co mot phan loai.
+    from .su_dung import XungDotDonVi
+    if isinstance(exc, XungDotDonVi):
+        return TAM_THOI
+
     # ── Cach render (pha 17) ────────────────────────────────────────────────
     #
     # ⛔ `NGUOI_DUNG` — that bai cuoi cung. Mot ban dung khai preset mot dang va

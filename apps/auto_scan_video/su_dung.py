@@ -111,13 +111,24 @@ class SuDungError(ValueError):
     """Ban ghi su dung khong hop le. LUON la loi lap trinh, khong phai loi khach."""
 
 
-class XungDotDonVi(SuDungError):
+class XungDotDonVi(RuntimeError):
     """Mot tien trinh khac da ghi don vi viec nay giua chung.
 
     ⛔ Cung ngu nghia voi `features.XungDot` nhung la mot LOP RIENG: mot xung
        dot o cap giai doan va mot xung dot o cap don vi doi hai cach xu ly khac
        nhau (mot cai lam hong ca giai doan, mot cai chi bo qua mot doan), va gop
        chung lai la buoc nguoi bat phai doan xem no dang bat cai nao.
+
+    🔴 **Va no CO Y khong ke thua `SuDungError`.** Docstring cua lop do noi
+       thang: *"LUON la loi lap trinh, khong phai loi khach"*, va `loi.py` phan
+       loai ca ho do thanh `NGUOI_DUNG` — tuc **that bai cuoi cung, dung thu
+       lai**. Mot cuoc dua thua thi khong phai loi lap trinh va **phai** thu
+       lai duoc.
+
+    ⚠️ Neu ai do cho no ke thua `SuDungError` cho "gon", `loi.phan_loai` se bat
+       no o nhanh SuDungError o TREN va tra `NGUOI_DUNG` — nhanh danh rieng cho
+       no o duoi tro thanh ma chet, va mot va cham tam thoi thanh mot lan chay
+       hong han. `tests/test_418` chot ca hai chieu nay.
     """
 
 

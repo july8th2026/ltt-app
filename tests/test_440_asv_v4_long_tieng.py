@@ -14,6 +14,7 @@ import json
 import pytest
 
 from apps.auto_scan_video import ban_bien_tap, long_tieng
+from tests.fixtures import asv_media as fx_media
 
 # 🔴 Cac phep kiem o day chay HET chuoi, nen chung cham toi `audio_prepare`.
 #    Xem `tests/rao_chan_nang.py`.
@@ -409,6 +410,12 @@ def test_KHONG_doan_nao_thuoc_canh_BI_CAT_duoc_gui_cho_model(
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
             ctx=None, temperature=None):
+        # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
+        #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
+        #    hong chi vi mot nguoi goi model thu hai xuat hien.
+        san = fx_media.phan_hoi_ngoai_dich(thao_tac, messages)
+        if san is not None:
+            return san
         mas = _ma_trong(messages)
         da_gui.extend(mas)
         return _tra_loi(mas)
@@ -494,6 +501,12 @@ def test_thu_lai_KHONG_gui_lai_nhung_doan_DA_XONG(
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
             ctx=None, temperature=None):
+        # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
+        #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
+        #    hong chi vi mot nguoi goi model thu hai xuat hien.
+        san = fx_media.phan_hoi_ngoai_dich(thao_tac, messages)
+        if san is not None:
+            return san
         mas = _ma_trong(messages)
         dem["n"] += 1
         if dem["n"] == 2:
@@ -569,6 +582,12 @@ def test_doi_GIONG_thi_diem_chot_cu_KHONG_duoc_dung_lai(
 
     def gia(db_, run_, thao_tac, messages, *, stage, item_key, uoc_credit=0,
             ctx=None, temperature=None):
+        # ⭐ Uy quyen phan khong phai dich cho ban dung chung: stub nay do luu
+        #    luong cua CONTENT_PROCESS, khong do EDIT_PLAN, va no khong duoc
+        #    hong chi vi mot nguoi goi model thu hai xuat hien.
+        san = fx_media.phan_hoi_ngoai_dich(thao_tac, messages)
+        if san is not None:
+            return san
         mas = _ma_trong(messages)
         dang.extend(mas)
         return _tra_loi(mas)

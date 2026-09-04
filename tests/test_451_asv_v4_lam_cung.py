@@ -254,11 +254,21 @@ def test_che_duong_dan_giu_lai_dong_KHONG_phai_duong_dan():
 #  D. HAN LUU — mot nhan khong duoc thi hanh la mot nhan
 # ══════════════════════════════════════════════════════════════════════════════
 
-def test_MOI_artifact_deu_duoc_dat_han_luu(db, kho_tam, tmp_path, asr_gia,
-                                           dich_gia, giong_gia):
-    """Moi artifact promote deu phai co `expires_at`, khong duoc de trong."""
+def test_MOI_vat_lieu_TRUNG_GIAN_deu_duoc_dat_han_luu(db, kho_tam, tmp_path,
+                                                     asr_gia, dich_gia,
+                                                     giong_gia):
+    """🔴 **Chot nay tung doi MOI artifact co han — ke ca ban giao cho khach.**
+
+    Va phep kiem ngay duoi no (`..._song_LAU_HON_...`) doi dieu nguoc lai. Hai
+    chot mau thuan nhau cung xanh duoc **chi vi** khong bo quet nao ton tai: khi
+    `expires_at` chi la mot nhan, ca hai deu noi ve mot thu khong xay ra.
+
+    ⇒ Pha 27 noi bo quet vao (`features.bao_tri`), va luc do mau thuan tro thanh
+      mot lua chon phai dua: vat lieu trung gian co han, ban giao **khong**.
+    """
     from sqlalchemy import select
 
+    from apps.auto_scan_video import pipeline
     from apps.auto_scan_video.tables import AsvAsset
 
     run = _tao_run(db, tmp_path=tmp_path)
@@ -266,16 +276,24 @@ def test_MOI_artifact_deu_duoc_dat_han_luu(db, kho_tam, tmp_path, asr_gia,
     hang = db.execute(select(AsvAsset)
                       .where(AsvAsset.run_id == run.id)).scalars().all()
     assert hang, "lan chay khong tao artifact nao"
-    thieu = [a.storage_key for a in hang if a.expires_at is None]
-    assert not thieu, f"{len(thieu)} artifact khong co han luu"
+
+    trung_gian = [a for a in hang if a.created_by_stage != pipeline.RENDER]
+    giao = [a for a in hang if a.created_by_stage == pipeline.RENDER]
+    assert trung_gian and giao, "mau thu khong du hai loai de doi chieu"
+
+    thieu = [a.storage_key for a in trung_gian if a.expires_at is None]
+    assert not thieu, f"{len(thieu)} vat lieu trung gian khong co han luu"
+
+    # ⛔ Va ban giao KHONG duoc co han: mot bo quet dang chay cong voi mot han
+    #    30 ngay tren tep khach tai ve la mot lenh xoa video cua khach.
+    co_han = [a.storage_key for a in giao if a.expires_at is not None]
+    assert not co_han, (
+        f"ban giao cho khach mang han luu tru: {co_han} — bo quet se xoa no")
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "`thi_hanh.chay_giai_doan` goi `assets.promote_va_ghi` khong truyen `han`, "
-    "nen MOI artifact — ke ca ban giao cho khach o giai doan RENDER — nhan "
-    "`HAN_TRUNG_GIAN = 30 ngay`. Chinh `assets.py` viet rang ban giao 'duoc ghi "
-    "voi han rieng'. Quyet dinh giu ban giao bao lau la mot quyet dinh kinh "
-    "doanh; chu cua pha 27."))
+# ⭐ Nhan `xfail(strict=True)` da duoc GO o pha 27: ban giao nay khong con han,
+#    nen phep kiem duoi day dat that. Neu no do tro lai thi ban giao vua bi dat
+#    han lai — va lan nay co mot bo quet dang chay de thi hanh cai han do.
 def test_ban_giao_cho_khach_song_LAU_HON_vat_lieu_trung_gian(db, kho_tam,
                                                              tmp_path, asr_gia,
                                                              dich_gia,
@@ -306,7 +324,13 @@ def test_ban_giao_cho_khach_song_LAU_HON_vat_lieu_trung_gian(db, kho_tam,
     #    khong ai doc): mot phep kiem dat vi mot ly do khac han ly do no duoc
     #    viet ra.
     def _cua_so(a):
-        return (a.expires_at - a.created_at).days
+        # ⭐ Khong co han = song vo han. Pha 27 tra loi cau hoi "ban giao song
+        #    lau hon bao nhieu" bang cau tra loi manh nhat co the: no khong co
+        #    ngay het han nao ca. Mot lop luu tru rieng do bang MOT con so lon
+        #    hon van la mot lop co the bi bo quet cham toi.
+        if a.expires_at is None:
+            return float("inf")
+        return float((a.expires_at - a.created_at).days)
 
     assert _cua_so(giao[0]) > _cua_so(trung_gian[0]), (
         f"ban giao cho khach dung chung lop luu tru voi vat lieu nhap: "

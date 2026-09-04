@@ -83,7 +83,7 @@ MA_TRAN: dict[str, list[tuple[str, str]]] = {
         ("test_402_asv_mach_doc_gia.py", "test_lan_ffmpeg_KHONG_nhat_duoc_job_GPU"),
         ("test_419_asv_tiem_loi.py", "test_KHONG_giai_doan_nao_tu_chon_card_GPU"),
         ("test_419_asv_tiem_loi.py", "test_giai_doan_GPU_xin_moi_truong_qua_ctx_chu_khong_tu_dat"),
-        ("test_419_asv_tiem_loi.py", "test_RENDER_KHONG_xin_GPU_vi_no_khong_dung"),
+        ("test_419_asv_tiem_loi.py", "test_RENDER_khong_TU_GIANH_GPU_va_khong_dat_cho_mot_tai_nguyen_nao"),
         ("test_421_asv_tach_khoi_di_san.py", "test_KHONG_khoa_GPU_di_san"),
     ],
     # ── G6 Ben vung / bat bien lap ─────────────────────────────────────────

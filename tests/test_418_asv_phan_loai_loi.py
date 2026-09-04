@@ -23,6 +23,7 @@ from apps.auto_scan_video.giai_doan_giong import ThieuBanDich
 from apps.auto_scan_video.giai_doan_ket_xuat import ThieuBanDung
 from apps.auto_scan_video.giai_doan_qc import ThieuBanRa
 from apps.auto_scan_video.qc import QcError
+from apps.auto_scan_video.su_dung import XungDotDonVi
 from apps.auto_scan_video.ai import AiError, AiMoHo, LuocDoSai
 from apps.auto_scan_video.canh import CanhError
 from apps.auto_scan_video.demucs_runner import ThieuCard
@@ -74,6 +75,14 @@ BANG = {
     # ⭐ Khac hai lop tren: model tra ve mot cau viet lai khong doc duoc la mot
     #    truot ngau nhien, khong phai mot loi hop dong. Lan sau thuong duoc.
     NanError: loi.TAM_THOI,
+    # ⭐ TAM_THOI — thua mot cuoc dua khong phai mot loi. `XungDotDonVi` nghia
+    #    la mot tien trinh khac vua ghi dong don vi viec nay giua chung: du lieu
+    #    khong sai, ta chi cham chan. Doc lai lan sau thuong khong con gi de lam.
+    #
+    # ⚠️ Lop nay ra doi o pha 27 cung voi phep UPDATE co dieu kien tren
+    #    `AsvWorkItem.revision` — truoc do cuoc dua ket thuc bang mot ban ghi de
+    #    im lang, tuc khong co gi de phan loai vi khong co gi duoc nem.
+    XungDotDonVi: loi.TAM_THOI,
     # ⛔ Ket luan cua mot phep tinh TAT DINH: lan thu hai cho dung ket qua do.
     BanDoError: loi.NGUOI_DUNG,
     MasterError: loi.NGUOI_DUNG,

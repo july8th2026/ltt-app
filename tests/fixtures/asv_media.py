@@ -176,6 +176,16 @@ def cua_ai_gia(monkeypatch, *, chu=None):
         #    bao gio phat hien duoc loi ghep sai ma doan.
         import json
 
+        # ── DOC CANH (pha 27) ──────────────────────────────────────────────
+        #
+        # 🔑 Nhan theo `thao_tac`, khong theo hinh dang goi tin: o CUA nay ta co
+        #    san thao tac, nen doan mo la thua. (`tests/fixtures/asv_e2e` thay o
+        #    tang duoi — `dieu_phoi.goi` — nen no BUOC phai doan, va docstring
+        #    cua no ghi ro dieu do.)
+        san = phan_hoi_ngoai_dich(thao_tac, messages)
+        if san is not None:
+            return san
+
         goi = json.loads(messages[-1]["content"])
         lam = chu or (lambda ma: f"loi thoai cua {ma}")
         than = {"doan": {
@@ -201,3 +211,68 @@ def cua_ai_gia(monkeypatch, *, chu=None):
 
     monkeypatch.setattr(ai, "goi_tinh_tien", gia)
     return True
+
+
+def phan_hoi_ngoai_dich(thao_tac, messages):
+    """Phan hoi cho moi thao tac AI **khong phai** dich, hoac `None`.
+
+    🔑 Cong khai co chu dinh. `test_440` co ba ban thay the CUC BO cua
+       `ai.goi_tinh_tien` — chung ton tai vi tung phep kiem can dem xem model
+       duoc gui gi. Ba ban do chi biet luoc do DICH, nen ngay pha 27 them nguoi
+       goi model thu hai chung deu hong cung mot luc, dung nhu docstring cua
+       `cua_ai_gia` da canh bao ve ba ban sao truoc do.
+
+    ⇒ Chung uy quyen cho ham nay cho phan **khong** thuoc thu chung dang do.
+      Them mot thao tac AI moi thi chi phai sua MOT cho.
+    """
+    import json
+
+    from apps.auto_scan_video import ai
+
+    if getattr(thao_tac, "ma", "") != ai.DOC_CANH.ma:
+        return None
+    return {"noi_dung": json.dumps(_canh_gia(messages), ensure_ascii=False),
+            "su_dung": None}
+
+
+def _canh_gia(messages) -> dict:
+    """Phan hoi `DOC_CANH` — BAM VAO tin hieu do duoc gui kem.
+
+    ⛔ Mot ban gia luon tra "giu" se lam moi phep kiem ve chinh sach cat thanh
+       rong ruot: chung se xanh du `_quyet_dinh_mot_canh` co doc `de_xuat` hay
+       khong. Nen o day canh KHONG co loi thoai duoc de nghi BO voi do tin cao,
+       dung phan doan ma mot VLM se dua ra.
+
+    ⚠️ Tin nhan co the la da phuong thuc (mot phan van ban + N phan anh). Gop
+       cac phan van ban lai roi doc doi tuong JSON dau tien — do la `tin_hieu`
+       ma `loi_nhac_canh` gui.
+    """
+    import json
+
+    noi_dung = messages[-1].get("content")
+    if isinstance(noi_dung, list):
+        van = " ".join(p.get("text", "") for p in noi_dung
+                       if isinstance(p, dict))
+    else:
+        van = str(noi_dung or "")
+
+    tin = {}
+    dau, cuoi = van.find("{"), van.find("}")
+    if 0 <= dau < cuoi:
+        try:
+            tin = json.loads(van[dau:cuoi + 1])
+        except ValueError:
+            tin = {}
+    co_thoai = bool(tin.get("co_thoai"))
+    return {
+        "loai": "hoi thoai" if co_thoai else "chuyen canh",
+        "chu_the": ["nguoi noi"] if co_thoai else [],
+        "hanh_dong": "dang noi" if co_thoai else "khong co hanh dong ro",
+        "cam_xuc": "trung tinh",
+        "quan_trong": 0.75 if co_thoai else 0.1,
+        "de_xuat": "giu" if co_thoai else "bo",
+        "do_tin": 0.9,
+        "ly_do": ("canh co loi thoai" if co_thoai
+                  else "canh khong co loi thoai nao"),
+        "canh_bao": [],
+    }

@@ -67,6 +67,25 @@ KHONG_AP_DUNG = "khong_ap_dung"
 LECH_THOI_LUONG_S = 0.50
 #: T4 — am luong tich hop. Cung so `tach_tieng` dung de CHUAN HOA, va do la co y:
 #: chuan hoa toi mot dich roi do bang mot dich khac la tu bay minh.
+#:
+#: 🔴 **A26-04 (P3, pha 26) — va no duoc GIU nguyen mot cach co y, khong phai bo
+#:    qua.** Chia se hang so voi ben SAN XUAT co nghia la T4/T5 chi hoi duoc
+#:    *"co trung dich da nham khong"*. No bat duoc mot loi thi hanh va **khong
+#:    the** bat duoc mot dich SAI.
+#:
+#: ⭐ Bang chung rang hinh dang nay co that chu khong ly thuyet: pha 24 nham dung
+#:    tran (-1,5 dBTP) va giao -1,45 dBTP. Khoang lech do tim ra duoc chi vi
+#:    duong DO khac duong SAN XUAT (AAC dau ra so voi PCM master) — khong phai
+#:    vi phep kiem chat van cai dich.
+#:
+#: ⇒ Voi MVP, chia se hang so la DUNG: cau hoi dang hoi la "duong ong co lam
+#:   dung thu no duoc bao khong". Mot **quy cach ban giao** la mot tai lieu
+#:   khac, va no chua ton tai.
+#:
+#: ⛔ DIEU KIEN DE DOI: ngay co mot quy cach ban giao (mot muc am luong hua voi
+#:    khach, mot chuan nen tang phat, mot yeu cau cua doi tac), T4/T5 phai doc
+#:    **tai lieu do** chu khong doc `tach_tieng`. Khong duoc dan xep bang cach
+#:    chep so sang day — hai ban sao cua mot dich la hai dich se lech nhau.
 LUFS_DICH = tach_tieng.LUFS_DICH
 LUFS_DUNG_SAI = 1.0
 #: T5 — dinh that.

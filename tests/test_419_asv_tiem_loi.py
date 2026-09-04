@@ -374,23 +374,32 @@ def test_giai_doan_GPU_xin_moi_truong_qua_ctx_chu_khong_tu_dat():
             f"{mod.__name__} chay tren lan gpu ma khong nhan card tu ctx")
 
 
-def test_RENDER_KHONG_xin_GPU_vi_no_khong_dung(db):
-    """Muc 7 co hai chieu. Xin mot suat GPU cho `-c:v copy` la giu mot thu khan
-    hiem de khong dung toi."""
+def test_RENDER_khong_TU_GIANH_GPU_va_khong_dat_cho_mot_tai_nguyen_nao(db):
+    """🔴 **Chot nay tung khang dinh "RENDER khong xin GPU", va khang dinh do
+    chinh la B24-01.**
+
+    Muc 7 duoc viet khi MVP con mot preset: `-c:v copy` that su khong cham bo ma
+    hoa. Preset `smart_localize` thi **buoc phai ma hoa lai**, nen tu pha 12
+    menh de do het dung — va cam `gpu_env` da khoa bo ma hoa phan cung ra ngoai
+    tren mot may co `h264_nvenc`.
+
+    ⭐ Dieu con dung, va la dieu chot nay giu lai: RENDER khong duoc **tu gianh**
+       card (nen tang cap qua `ctx.gpu_uuid`), va khong duoc dat cho mot tai
+       nguyen dung chung nao — no la giai doan DAI NHAT cua san pham.
+    """
+    import ast
     import inspect
 
     from apps.auto_scan_video import giai_doan_ket_xuat
 
-    # ⚠️ Chot bang AST. Ban dau la `"gpu_env" not in getsource(...)` va no do —
-    #    vi `giai_doan_ket_xuat` co mot dong CHU THICH giai thich vi sao no
-    #    khong goi `ctx.gpu_env()`. Lan thu NAM trong dot xay nay mot phep quet
-    #    chuoi bat trung chinh tai lieu cua no.
-    import ast
-
     cay = ast.parse(inspect.getsource(giai_doan_ket_xuat))
     goi = {n.func.attr for n in ast.walk(cay)
            if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)}
-    assert "gpu_env" not in goi, "RENDER dang xin mot suat GPU no khong dung"
+    for tu_gianh in ("acquire", "list_gpus", "detect_gpu_encoder"):
+        assert tu_gianh not in goi, (
+            f"RENDER tu gianh GPU qua `{tu_gianh}` thay vi dung suat duoc cap")
+    # Va no VAN phai ghim vao card duoc cap — nua con lai cua cung mot luat.
+    assert "gpu_env" in goi, "RENDER khong ghim ffmpeg vao card duoc cap"
     g = next(x for x in pipeline.CHUOI if x.ten == pipeline.RENDER)
     assert g.tai_nguyen == ""
 
