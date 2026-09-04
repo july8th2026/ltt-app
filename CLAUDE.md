@@ -18,6 +18,24 @@ cũ nguy hiểm hơn không có bản đồ, vì nó trả lời tự tin. Đọ
 Quy tắc làm việc đầy đủ (kể cả quy tắc cập nhật memory và giao thức đổi quyết
 định) ở `AGENTS.md`.
 
+## ⛔ Đừng đọc cả kho — khám phá trước, đọc sau
+
+Một phiên đọc đệ quy cả cây sẽ nuốt hết ngữ cảnh trước khi chạm được việc thật,
+và phần lớn thứ nó nuốt là **rác sinh ra**: `tmp/`, `dist/`, `logs/`,
+`data/files/`, `__pycache__/`, `.playwright-*/`, ảnh bằng chứng trong `docs/`.
+
+Thứ tự đúng: **KHÁM PHÁ → ĐẾM → LỌC → PHÂN LOẠI → NHẮM → ĐỌC**.
+
+- Định vị bằng `grep`/`Glob`, không bằng `cat` cả thư mục.
+- Thư mục lớn: đo **siêu dữ liệu** (số tệp, dung lượng, mtime) trước; chỉ đọc
+  nội dung khi cần phân biệt *bản chuẩn* với *bản đã lỗi thời*.
+- Đầu ra lệnh có thể lớn thì ghi ra tệp tạm rồi tóm tắt, đừng đổ vào ngữ cảnh.
+- Không nạp: sản phẩm build, log, cache, kết xuất sinh ra, bản sao lưu, dữ liệu
+  vận hành, artefact của phiên cũ — trừ khi việc đang làm cần đúng cái đó.
+
+⭐ Cỡ thật để bạn liệu: `docs/` có **645 tệp `.md`** và **788 tệp ảnh (90 MB)**.
+Đọc theo nhu cầu, không đọc theo thứ tự.
+
 ⚠️ **`D:\BOT GEMINI` là kho tham chiếu CHỈ ĐỌC.** Nó đang phục vụ người dùng
 thật trên cổng 8000. Không sửa, không tạo, không xoá gì bên đó. Nền tảng này
 dùng cổng **8100**.

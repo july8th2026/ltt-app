@@ -83,6 +83,12 @@ __pycache__/
 .eggs/
 pip-wheel-metadata/
 
+# Cache cua bo kiem/linter. Chung TU ghi mot .gitignore chua "*" ben trong,
+# nhung luat do bien mat neu thu muc bi tao lai bang tay hay bi chep di.
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
 # ─── Virtual environments ─────────────────────────────────────────────────────
 venv/
 .venv/
