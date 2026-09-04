@@ -72,7 +72,7 @@
       "chan": [
         "P01"
       ],
-      "phan_tram": 0
+      "phan_tram": 80
     },
     {
       "id": "P03",
@@ -345,8 +345,8 @@
     "don_vi": "ngay cong (8h)",
     "lan_A": {
       "uoc": 17.0,
-      "xong": 3.2,
-      "phan_tram": 19
+      "xong": 4.0,
+      "phan_tram": 24
     },
     "lan_B": {
       "uoc": 20.0,
@@ -360,8 +360,8 @@
     },
     "toan_chuong_trinh": {
       "uoc": 51.0,
-      "xong": 3.2,
-      "phan_tram": 6
+      "xong": 4.0,
+      "phan_tram": 8
     },
     "ma_san_pham_da_sua": 0,
     "ghi_chu": "dem theo NGAY CONG, khong theo so pha — P00 nua ngay, P03 nam ngay"
@@ -473,5 +473,40 @@
       "ma tran DE, chua du lam luoi do hoi quy"
     ],
     "bang_chung": "01_PHAN_QUYET.md"
+  },
+  "p02": {
+    "trang_thai": "DE XUAT (cho chu du an chot §6 lam tron tien)",
+    "quyet_dinh": "Phuong an A — ChatLTT tu so huu bo dieu phoi, dung primitive nen tang",
+    "cham_diem": {
+      "A": 47,
+      "B": 37,
+      "C_langgraph": 32,
+      "D_librechat": 22
+    },
+    "ba_dieu_kien_loai_truoc": [
+      "an toan tien",
+      "khong trung lap",
+      "khong cham loi"
+    ],
+    "R1": "chon C (gianh lai moi vong, WAITING_SLOT) — A tu khoa chinh no",
+    "R2": "chatltt_run tong hop theo run_id, KHONG dung so thu hai",
+    "R2b": "de xuat (b) C2 trong pham vi mot run — CHO CHU DU AN",
+    "bang_moi": [
+      "chatltt_run",
+      "chatltt_step",
+      "chatltt_approval"
+    ],
+    "sua_bang_cu": "chatltt_execution + run_id, step_id (deu nullable)",
+    "tran": {
+      "vong_model": 8,
+      "loi_goi_tool": 12,
+      "trung": 2,
+      "lease_neu_A_phut": 5
+    },
+    "san_pham": [
+      "02_ADR_ORCHESTRATION.md",
+      "02_ADR_R1_MOT_SUAT.md",
+      "02_HOP_DONG.md"
+    ]
   }
 }
