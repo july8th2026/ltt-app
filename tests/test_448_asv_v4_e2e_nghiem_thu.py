@@ -878,8 +878,10 @@ def test_G17_hai_preset_tren_PHIM_KHACH_THAT(moi_truong, tmp_path, monkeypatch):
     if not phim:
         pytest.skip(
             "G17 chua dong duoc: khong co tep phim nao trong "
-            f"{fx.THU_MUC_PHIM_THAT}. Can 2 clip 2-5 phut, tieng Anh, >=2 nguoi "
-            "noi, va it nhat MOT canh that su dang cat - de preset cat tra loi "
+            f"{fx.THU_MUC_PHIM_THAT}. Can 2 clip 2-5 phut, tieng Anh, MOT nguoi "
+            "noi la du (san pham la thuyet minh mot giong; nhieu giong la huong "
+            "mo rong sau), va it nhat MOT canh that su dang cat - de preset cat "
+            "tra loi "
             "duoc cau hoi 'no CO cat khong' chu khong phai 'no khong co gi de "
             "cat'. Duoi nhan: " + ", ".join(fx.DUOI_PHIM))
 
