@@ -154,7 +154,7 @@ def _cac_nan(db, run) -> list[dict]:
 
 
 def _sua_chua_neu_can(db, run, theo_ten) -> list[str]:
-    """Thi hanh ke hoach sua. Tra ve `(giai_doan da dat lai, het vong)`.
+    """Thi hanh ke hoach sua. Tra ve danh sach giai doan da dat lai.
 
     🔴 **Day la nua thu hai cua pha 19, va no da nam cho suot tu pha 19 toi
        pha 29 duoi dang ba nang luc mo coi.**
