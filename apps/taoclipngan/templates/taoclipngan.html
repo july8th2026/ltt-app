@@ -27,7 +27,7 @@
       <div class="clip-panel-head"><span>01</span><div><h2>{{ _("Nguồn video") }}</h2><small>{{ _("Upload mới hoặc dùng lại asset của bạn") }}</small></div></div>
       <label class="clip-drop" for="vfile"><strong>{{ _("Chọn video từ máy") }}</strong><span>{{ _("MP4, MOV, MKV… · video lớn upload thẳng Storage") }}</span><input class="ltt-input-tep-an" type="file" id="vfile" name="video" accept="video/*"></label>
       <section id="clip-source-summary" class="clip-source-summary" aria-live="polite" hidden>
-        <video id="clip-source-preview" controls preload="metadata" hidden></video>
+        <video id="clip-source-preview" controls playsinline preload="metadata" hidden></video>
         <div><strong id="clip-source-label"></strong><small id="clip-source-meta"></small></div>
         <button id="clip-source-clear" type="button" class="btn ghost">{{ _("Đổi nguồn") }}</button>
       </section>
@@ -76,7 +76,7 @@
             {% if job.status not in ['done','error','cancelled'] %}<div class="clip-progress" role="progressbar" aria-label="{{ _('Tiến độ') }} {{ job.source_name }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ job.progress }}"><i style="width:{{ job.progress }}%"></i></div><p>{{ job.progress_label }} · {{ job.progress }}%</p>{% endif %}
             {% if job.status == 'error' %}<p class="clip-error">{{ job.error or _("Không thể xử lý video.") }}</p>{% endif %}
             {% if job.clips %}<div class="clip-results">{% for clip in job.clips %}{% set clip_url = app.route_prefix ~ '/v/' ~ clip.video_key %}<figure data-clip-index="{{ loop.index0 }}">
-              <video controls preload="metadata" src="{{ clip_url }}"></video>
+              <video controls playsinline preload="metadata" src="{{ clip_url }}"></video>
               <figcaption><div><label class="clip-title"><span class="sr-only">{{ _("Tiêu đề clip") }} {{ loop.index }}</span><input data-clip-title value="{{ clip.title or ('Clip ' ~ loop.index) }}" maxlength="120"></label><small>{% if clip.source_end %}{{ clip.source_start }}–{{ clip.source_end }}s{% elif clip.duration_s %}{{ clip.duration_s }}s{% endif %}{% if clip.score %} · {{ _("điểm") }} {{ clip.score }}{% endif %}</small></div><div><button type="button" class="clip-pick" data-src="{{ clip_url }}" data-label="{{ clip.title or ('Clip ' ~ loop.index) }}" aria-pressed="false">{{ _("So sánh") }}</button><a href="{{ clip_url }}" download>{{ _("Tải") }}</a></div></figcaption>
               {% if clip.score_rationale %}<details class="clip-rationale"><summary>{{ _("Vì sao AI chọn đoạn này?") }}</summary><p>{{ clip.score_rationale.why_selected }}</p><dl>{% for name, value in clip.score_rationale.dimensions.items() %}<div><dt>{{ name|replace('_',' ') }}</dt><dd>{{ (value * 100)|round|int }}</dd></div>{% endfor %}</dl><small>{{ _("Điểm xếp hạng nội bộ, không phải dự đoán lượt xem.") }}</small></details>{% endif %}
               <details class="clip-transcript"><summary>{{ _("Transcript & biên tập package") }}</summary><label>{{ _("Nội dung caption") }}<textarea data-transcript>{% for seg in clip.transcript or [] %}{{ seg.text }}{% if not loop.last %} {% endif %}{% endfor %}</textarea></label><div class="clip-range"><label>{{ _("Bắt đầu") }}<input value="{{ clip.source_start or 0 }}" inputmode="decimal" readonly></label><label>{{ _("Kết thúc") }}<input value="{{ clip.source_end or clip.duration_s or 0 }}" inputmode="decimal" readonly></label></div><small>{{ _("Transcript sửa được lưu vào SRT/package; video đã render không đổi caption cháy sẵn.") }}</small></details>

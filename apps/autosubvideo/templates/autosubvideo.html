@@ -97,7 +97,7 @@
             {% if j.status == 'error' and j.error %}<p class="dim" style="font-size:12px;">{{ j.error }}</p>{% endif %}
             {% if j.font_warning %}<p class="dim" style="font-size:11px;">⚠ {{ j.font_warning }}</p>{% endif %}
             {% if j.video_key %}
-              <video controls preload="metadata" style="width:100%; border-radius:8px;"
+              <video controls playsinline preload="metadata" style="width:100%; border-radius:8px;"
                      src="{{ app.route_prefix }}/v/{{ j.video_key }}"></video>
               <div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
                 <a class="btn ghost sm" href="{{ app.route_prefix }}/v/{{ j.video_key }}" download>⬇ Video</a>

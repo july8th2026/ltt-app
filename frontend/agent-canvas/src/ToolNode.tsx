@@ -50,7 +50,7 @@ export function ToolNode({ data, selected }: NodeProps) {
       {previewUrls.length>1&&media==='image'?<div className="node-image-grid">{previewUrls.map((url,index)=><img
         key={`${url}-${index}`} src={url} alt={`Ảnh ${index+1} trong bộ ảnh`}/>)}</div>:
        previewUrl&&media==='image'?<img src={previewUrl} alt={firstArtifact?'Kết quả hình ảnh':'Ảnh đã tải lên'}/>:
-       previewUrl&&media==='video'?<video src={previewUrl} controls preload="metadata"/>:
+       previewUrl&&media==='video'?<video src={previewUrl} controls playsInline preload="metadata"/>:
        previewUrl&&media==='audio'?<audio src={previewUrl} controls preload="metadata"/>:
        modality==='text'&&textField?<div className="node-inline-text nodrag"><textarea aria-label="Nội dung trực tiếp trong node"
          disabled={typed.__readOnly} value={String(params[textField]??'')} placeholder="Viết trực tiếp hoặc dùng Tạo bằng AI…"
@@ -128,7 +128,7 @@ export function CreativeToolNode({data,selected}:NodeProps){
       {previewUrls.length>1&&media==='image'?<div className="node-image-grid">{previewUrls.slice(0,4).map((url,index)=><img
         key={`${url}-${index}`} src={url} alt={`Ảnh ${index+1} trong bộ ảnh`}/>)}</div>:
       previewUrl&&media==='image'?<img src={previewUrl} alt={firstArtifact?'Kết quả hình ảnh':'Ảnh đã tải lên'}/>:
-      previewUrl&&media==='video'?<video src={previewUrl} controls preload="metadata"/>:
+      previewUrl&&media==='video'?<video src={previewUrl} controls playsInline preload="metadata"/>:
       previewUrl&&media==='audio'?<audio src={previewUrl} controls preload="metadata"/>:
       modality==='text'&&textField?<div className="node-inline-text nodrag"><textarea
         aria-label="Nội dung trực tiếp trong node" disabled={typed.__readOnly} value={String(params[textField]??'')}

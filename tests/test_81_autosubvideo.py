@@ -72,15 +72,48 @@ def test_studio_la_public_default_sau_as9_va_off_van_rollback(monkeypatch):
 
 
 def test_video_range_stream_supports_non_seekable_r2_body():
-    from apps.autosubvideo.routes import _iter_storage_range
+    """Body khong tua duoc cua R2 van ra dung byte, va van duoc dong.
+
+    ⚠️ MENH DE KHONG DOI, NHA CUA NO THI DOI. Ngay 05/09 `_iter_storage_range`
+       cua `apps/autosubvideo/routes.py` duoc nang len thanh
+       `platform_core.phat_media.doc_khoi` — no la ban TOT NHAT trong nam ban
+       chep bo Range (ban duy nhat phat theo khoi thay vi `f.read(length)`), nen
+       no duoc chon lam goc cho lop dung chung.
+
+    ⭐ Giu phep kiem nay o day chu khong xoa: no chot mot hanh vi ma `autosubvideo`
+       VAN phu thuoc vao. Chuyen no sang trỏ dung nha moi la cach duy nhat giu
+       duoc menh de ma khong giu mot cai ten da chet.
+
+    ⛔ Mot thu `phat_media.doc_khoi` co ma ban cu KHONG co: `finally: close()`.
+       Ban cu khong dong luong, nen mot client ngat giua chung de lai mot mo ta
+       tep treo toi luc GC don. Dong `assert body.closed` duoi day truoc kia
+       xanh nho `Body.close()` duoc goi o cuoi vong lap binh thuong; nay no
+       xanh ke ca khi bo sinh bi bo do.
+    """
+    from platform_core.phat_media import doc_khoi
     class Body:
         def __init__(self): self.data=io.BytesIO(b"0123456789");self.closed=False
         def read(self,size=-1): return self.data.read(size)
         def seek(self,_position): raise io.UnsupportedOperation("seek")
         def close(self): self.closed=True
     body=Body()
-    assert b"".join(_iter_storage_range(body,2,4))==b"2345"
+    assert b"".join(doc_khoi(body,2,4))==b"2345"
     assert body.closed is True
+
+
+def test_autosubvideo_khong_con_tu_viet_bo_range():
+    """Va app that su di qua lop dung chung, khong chi "co import".
+
+    Neu ai do chep lai bo phan tich Range vao day, `test_704` do truoc — nhung
+    phep kiem nay do o dung tep cua app, tuc dung cho nguoi sua no dang nhin.
+    """
+    import pathlib
+    p = (pathlib.Path(__file__).resolve().parent.parent
+         / "apps" / "autosubvideo" / "routes.py")
+    s = p.read_text(encoding="utf-8")
+    assert "phat_media.phat_tu_kho" in s
+    assert "_iter_storage_range" not in s.replace("`_iter_storage_range`", ""), (
+        "ham cu quay lai — no da chuyen sang `platform_core.phat_media.doc_khoi`")
 
 
 # ── Parse transcript đa định dạng ─────────────────────────────────────────────
