@@ -59,9 +59,22 @@
   🔑 `so_cat=1` on the smart preset is the load-bearing number: the cutting preset
   actually cut, which is what A26-05 said it never did.
 - **gate at RC**: `python tools/gate.py --phien asv-v4` → **`RESULT: PASS`**, run
-  twice: once at `747ca28` and again at `50e8083`.
-  ⚠️ Four frontend steps report **BOQUA**, and the gate's own RESULT line says
-  what that means: *"4 BUOC TU BO QUA, KHONG PHAI BANG CHUNG."*
+  at `747ca28`, `50e8083`, and now **`998018d3`** (2026-09-05, evidence
+  `test-results/gates/20260905T060709Z-19316.json`).
+  ⚠️ **Five** steps report **BOQUA**, and the gate's own RESULT line says what
+  that means: *"5 BUOC TU BO QUA, KHONG PHAI BANG CHUNG."* Four are frontend;
+  the fifth is `bat bien da tien trinh` (needs `LTT_TEST_DATABASE_URL`).
+- 🔴 **The run before it was `FAIL (3/27)`, and the count was misleading — three
+  red steps, two causes.** Recorded because the number is what made me plan
+  three fixes:
+  * `bo qua im lang` **and** `bo test (song song)` were **the same defect**:
+    `test_306` is the test that pins the very ratchet the gate step runs. I had
+    added exactly one skip site — the G17 test, which skips when
+    `asv_e2e_that/` holds no footage. Declared with `--accept`; the diff is one
+    line, which is what a set-based ratchet is designed to make visible.
+  * `system profile` — the branch-lag entry below.
+  ⭐ The gate is now **26 steps, not 27**: syncing trunk's removal deleted the
+  step itself, so this is not a step being skipped quietly.
 - **evidence regenerated at the RC**: `evidence/nghiem_thu_hien_hanh.json` and
   `evidence/hieu_nang_hien_hanh.json`. 🔑 This was not a formality — the Phase 27
   runs predated `9ff469e`, which changes `cache_dung_duoc`, code that executes in
