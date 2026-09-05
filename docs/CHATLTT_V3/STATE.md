@@ -21,6 +21,36 @@
 🔑 **Cờ `LTT_CHATLTT_V3_TOOLS` và `LTT_CHATLTT_V3_PAID_TOOLS` đều đang TẮT, và
 độc lập với nhau.** Không một dòng nào đã viết chạm tới một người dùng thật.
 
+## 🔒 Điều kiện để BẬT `LTT_CHATLTT_V3_TOOLS` — món nợ tự đòi
+
+⛔ **Đọc mục này trước khi bật cờ, kể cả bật để thử.**
+
+| # | Điều kiện | Trạng thái |
+|---|---|---|
+| 1 | Gate đầy đủ PASS trên cây này | ✅ `20260905T052942Z-17052.json` |
+| 2 | **Mở trình duyệt thật, xem bốn nhãn trạng thái V3 hiện đúng** | ❌ **CHƯA LÀM** |
+| 3 | Kiểm trên URL công khai, không chỉ loopback (`CLAUDE.md` 5b) | ❌ chưa |
+| 4 | R2b được chủ dự án chốt | ❌ đang chạy theo giả định (b) |
+
+### Điều kiện 2 — vì sao nó phải nằm ở đây chứ không phải một dòng ghi chú
+
+Tôi sửa `ThongDiepView.tsx` (thêm bốn nhãn cho `tran_vong` · `tran_tool` ·
+`tran_trung` · `huy`) và **chưa mở trình duyệt lần nào**. `CLAUDE.md` mục 5 nói
+thẳng: *"test xanh không chứng minh trang hiển thị đúng"*.
+
+⭐ Có một bào chữa **đúng**: cờ V3 đang tắt nên bốn mã ấy chưa thể xuất hiện
+với người dùng thật, và 9 phép kiểm A5 chạy qua jsdom là **render thật** chứ
+không phải so trạng thái. Thứ chưa phủ hẹp hơn nhiều so với *"chưa kiểm giao
+diện"*: trình duyệt thật + CSS thật + Cloudflare.
+
+🔴 **Nhưng bào chữa đó có HẠN SỬ DỤNG.** Nó đúng cho tới đúng ngày ai đó bật
+cờ — và ngày đó không ai nhớ lại câu này. Viết nó thành **điều kiện gỡ**
+thay vì một dòng ghi chú là cách duy nhất để món nợ này **tự đòi** thay vì
+chờ ai đó nhớ ra.
+
+*(Đề xuất của phiên ASV V4, 05/09 — tôi định chỉ ghi vào mục "chưa chứng
+minh", họ chỉ ra rằng như thế là chưa đủ.)*
+
 ## Quyết định của chủ dự án (2026-09-04)
 
 | # | Câu | Quyết định | Hệ quả |
